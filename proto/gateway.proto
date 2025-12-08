@@ -1,0 +1,35 @@
+syntax = "proto3";
+
+package chirp.gateway;
+
+option go_package = "github.com/cui/chirp/proto/gateway";
+
+import "proto/common.proto";
+
+// Message ID definition for dispatching
+enum MsgID {
+  UNKNOWN = 0;
+  HEARTBEAT_PING = 1001;
+  HEARTBEAT_PONG = 1002;
+  LOGIN_REQ = 1003;
+  LOGIN_RESP = 1004;
+  KICK_NOTIFY = 1005;
+}
+
+// Universal Packet Envelope (Optional, if we want full protobuf wrap)
+// Usually we use Length-Prefixed + Raw Bytes for Body, 
+// but for simplicity in some SDKs, a full envelope is used.
+message Packet {
+  MsgID msg_id = 1;
+  int64 sequence = 2;
+  bytes body = 3;
+}
+
+message HeartbeatPing {
+  int64 timestamp = 1;
+}
+
+message HeartbeatPong {
+  int64 timestamp = 1;
+  int64 server_time = 2;
+}

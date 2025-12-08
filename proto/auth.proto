@@ -1,0 +1,23 @@
+syntax = "proto3";
+
+package chirp.auth;
+
+option go_package = "github.com/cui/chirp/proto/auth";
+
+import "proto/common.proto";
+
+message LoginRequest {
+  string token = 1;
+  string device_id = 2;
+  string platform = 3; // "ios", "android", "web", "pc"
+}
+
+message LoginResponse {
+  common.ErrorCode code = 1;
+  string session_id = 2;
+  int64 server_time = 3;
+}
+
+message KickNotify {
+  string reason = 1;
+}

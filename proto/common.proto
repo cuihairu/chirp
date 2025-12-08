@@ -1,0 +1,17 @@
+syntax = "proto3";
+
+package chirp.common;
+
+option go_package = "github.com/cui/chirp/proto/common";
+
+enum ErrorCode {
+  OK = 0;
+  INTERNAL_ERROR = 1;
+  INVALID_PARAM = 2;
+  AUTH_FAILED = 3;
+  SESSION_EXPIRED = 4;
+  USER_NOT_FOUND = 5;
+  TARGET_OFFLINE = 6;
+}
+
+message Empty {}
