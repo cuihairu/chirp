@@ -1,13 +1,17 @@
 #include <chrono>
 #include <cstdint>
 #include <cstdlib>
+#include <mutex>
+#include <random>
 #include <string>
+#include <unordered_map>
 
 #include <asio.hpp>
 
 #include "common/logger.h"
 #include "network/protobuf_framing.h"
 #include "network/tcp_server.h"
+#include "proto/auth.pb.h"
 #include "proto/gateway.pb.h"
 
 namespace {
@@ -29,6 +33,39 @@ uint16_t ParsePort(int argc, char** argv) {
   return port;
 }
 
+std::string RandomHex(size_t bytes) {
+  static thread_local std::mt19937_64 rng{std::random_device{}()};
+  std::uniform_int_distribution<uint32_t> dist(0, 255);
+  static const char* kHex = "0123456789abcdef";
+
+  std::string out;
+  out.resize(bytes * 2);
+  for (size_t i = 0; i < bytes; i++) {
+    uint8_t b = static_cast<uint8_t>(dist(rng));
+    out[i * 2] = kHex[(b >> 4) & 0xF];
+    out[i * 2 + 1] = kHex[b & 0xF];
+  }
+  return out;
+}
+
+struct GatewayState {
+  std::mutex mu;
+  std::unordered_map<std::string, std::weak_ptr<chirp::network::TcpSession>> user_to_session;
+  std::unordered_map<void*, std::string> session_to_user;
+};
+
+void SendPacket(const std::shared_ptr<chirp::network::TcpSession>& session,
+                chirp::gateway::MsgID msg_id,
+                int64_t seq,
+                const std::string& body) {
+  chirp::gateway::Packet pkt;
+  pkt.set_msg_id(msg_id);
+  pkt.set_sequence(seq);
+  pkt.set_body(body);
+  auto framed = chirp::network::ProtobufFraming::Encode(pkt);
+  session->Send(std::string(reinterpret_cast<const char*>(framed.data()), framed.size()));
+}
+
 } // namespace
 
 int main(int argc, char** argv) {
@@ -40,9 +77,11 @@ int main(int argc, char** argv) {
 
   asio::io_context io;
 
+  auto state = std::make_shared<GatewayState>();
+
   chirp::network::TcpServer server(
       io, port,
-      [](std::shared_ptr<chirp::network::TcpSession> session, std::string&& payload) {
+      [state](std::shared_ptr<chirp::network::TcpSession> session, std::string&& payload) {
         chirp::gateway::Packet pkt;
         if (!pkt.ParseFromArray(payload.data(), static_cast<int>(payload.size()))) {
           Logger::Instance().Warn("failed to parse Packet from client");
@@ -50,6 +89,54 @@ int main(int argc, char** argv) {
         }
 
         switch (pkt.msg_id()) {
+        case chirp::gateway::LOGIN_REQ: {
+          chirp::auth::LoginRequest req;
+          if (!req.ParseFromArray(pkt.body().data(), static_cast<int>(pkt.body().size()))) {
+            chirp::auth::LoginResponse resp;
+            resp.set_code(chirp::common::INVALID_PARAM);
+            resp.set_server_time(NowMs());
+            SendPacket(session, chirp::gateway::LOGIN_RESP, pkt.sequence(), resp.SerializeAsString());
+            return;
+          }
+
+          const std::string user_id = req.token(); // scaffolding: treat token as user id
+
+          // Multi-device policy (scaffolding): last login wins; kick previous session.
+          std::shared_ptr<chirp::network::TcpSession> old;
+          {
+            std::lock_guard<std::mutex> lock(state->mu);
+            auto it = state->user_to_session.find(user_id);
+            if (it != state->user_to_session.end()) {
+              old = it->second.lock();
+            }
+            state->user_to_session[user_id] = session;
+            state->session_to_user[session.get()] = user_id;
+          }
+
+          if (old && old.get() != session.get()) {
+            chirp::auth::KickNotify kick;
+            kick.set_reason("login from another device");
+
+            chirp::gateway::Packet kick_pkt;
+            kick_pkt.set_msg_id(chirp::gateway::KICK_NOTIFY);
+            kick_pkt.set_sequence(0);
+            kick_pkt.set_body(kick.SerializeAsString());
+
+            auto framed = chirp::network::ProtobufFraming::Encode(kick_pkt);
+            old->SendAndClose(std::string(reinterpret_cast<const char*>(framed.data()), framed.size()));
+          }
+
+          chirp::auth::LoginResponse resp;
+          if (user_id.empty()) {
+            resp.set_code(chirp::common::INVALID_PARAM);
+          } else {
+            resp.set_code(chirp::common::OK);
+            resp.set_session_id(RandomHex(16));
+          }
+          resp.set_server_time(NowMs());
+          SendPacket(session, chirp::gateway::LOGIN_RESP, pkt.sequence(), resp.SerializeAsString());
+          break;
+        }
         case chirp::gateway::HEARTBEAT_PING: {
           chirp::gateway::HeartbeatPing ping;
           if (!ping.ParseFromArray(pkt.body().data(), static_cast<int>(pkt.body().size()))) {
@@ -73,6 +160,23 @@ int main(int argc, char** argv) {
         default:
           // For scaffolding: ignore unknown/unimplemented messages.
           break;
+        }
+      },
+      [state](std::shared_ptr<chirp::network::TcpSession> session) {
+        std::lock_guard<std::mutex> lock(state->mu);
+        auto it = state->session_to_user.find(session.get());
+        if (it == state->session_to_user.end()) {
+          return;
+        }
+        const std::string user_id = it->second;
+        state->session_to_user.erase(it);
+
+        auto it2 = state->user_to_session.find(user_id);
+        if (it2 != state->user_to_session.end()) {
+          auto cur = it2->second.lock();
+          if (!cur || cur.get() == session.get()) {
+            state->user_to_session.erase(it2);
+          }
         }
       });
 

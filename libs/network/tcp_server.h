@@ -13,8 +13,9 @@ namespace chirp::network {
 class TcpServer {
 public:
   using FrameCallback = TcpSession::FrameCallback;
+  using CloseCallback = TcpSession::CloseCallback;
 
-  TcpServer(asio::io_context& io, uint16_t port, FrameCallback on_frame);
+  TcpServer(asio::io_context& io, uint16_t port, FrameCallback on_frame, CloseCallback on_close = nullptr);
 
   void Start();
   void Stop();
@@ -25,6 +26,7 @@ private:
   asio::io_context& io_;
   asio::ip::tcp::acceptor acceptor_;
   FrameCallback on_frame_;
+  CloseCallback on_close_;
 };
 
 } // namespace chirp::network
