@@ -1,6 +1,8 @@
 
 # Gateway Service
 
+find_package(Threads REQUIRED)
+
 # Collect proto sources
 file(GLOB PROTO_SRCS "${CMAKE_SOURCE_DIR}/proto/cpp/proto/*.cc")
 
@@ -14,8 +16,9 @@ add_executable(chirp_gateway
 
 target_link_libraries(chirp_gateway
     PRIVATE
+    chirp_network
     ${PROTOBUF_LIBRARIES}
-    pthread
+    Threads::Threads
 )
 
 target_include_directories(chirp_gateway PRIVATE src)

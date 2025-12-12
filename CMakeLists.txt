@@ -40,4 +40,4 @@ add_subdirectory(services/gateway)
 # add_subdirectory(apps)
 
 # 5. Tools / Tests
-# add_subdirectory(tools/benchmark)
+add_subdirectory(tools/benchmark)
