@@ -35,3 +35,37 @@ target_link_libraries(chirp_login_client
 )
 
 target_include_directories(chirp_login_client PRIVATE ${CMAKE_SOURCE_DIR}/libs ${CMAKE_SOURCE_DIR}/proto/cpp)
+
+add_executable(chirp_ws_ping_client
+    ws_ping_client.cc
+    ${CMAKE_SOURCE_DIR}/proto/cpp/proto/common.pb.cc
+    ${CMAKE_SOURCE_DIR}/proto/cpp/proto/auth.pb.cc
+    ${CMAKE_SOURCE_DIR}/proto/cpp/proto/gateway.pb.cc
+)
+
+target_link_libraries(chirp_ws_ping_client
+    PRIVATE
+    chirp_network
+    chirp_common
+    ${PROTOBUF_LIBRARIES}
+    Threads::Threads
+)
+
+target_include_directories(chirp_ws_ping_client PRIVATE ${CMAKE_SOURCE_DIR}/libs ${CMAKE_SOURCE_DIR}/proto/cpp)
+
+add_executable(chirp_ws_login_client
+    ws_login_client.cc
+    ${CMAKE_SOURCE_DIR}/proto/cpp/proto/common.pb.cc
+    ${CMAKE_SOURCE_DIR}/proto/cpp/proto/auth.pb.cc
+    ${CMAKE_SOURCE_DIR}/proto/cpp/proto/gateway.pb.cc
+)
+
+target_link_libraries(chirp_ws_login_client
+    PRIVATE
+    chirp_network
+    chirp_common
+    ${PROTOBUF_LIBRARIES}
+    Threads::Threads
+)
+
+target_include_directories(chirp_ws_login_client PRIVATE ${CMAKE_SOURCE_DIR}/libs ${CMAKE_SOURCE_DIR}/proto/cpp)

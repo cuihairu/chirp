@@ -55,7 +55,7 @@ void TcpSession::DoRead() {
                                 break;
                               }
                               if (self->on_frame_) {
-                                self->on_frame_(self, std::move(*frame));
+                                self->on_frame_(std::static_pointer_cast<Session>(self), std::move(*frame));
                               }
                             }
                             self->DoRead();
@@ -94,7 +94,7 @@ void TcpSession::DoClose() {
   socket_.close(ec);
 
   if (on_close_) {
-    on_close_(shared_from_this());
+    on_close_(std::static_pointer_cast<Session>(shared_from_this()));
   }
 }
 

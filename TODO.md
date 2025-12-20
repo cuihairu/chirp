@@ -5,15 +5,16 @@
 - [x] **Project Scaffolding**: Setup `libs`, `services`, `proto` directory structure.
 - [x] **Build System**: Root `CMakeLists.txt` and module configurations.
 - [x] **Protobuf Definitions**: `common`, `auth`, `gateway` schemas.
-- [ ] **Library - Network**: `chirp_network` (ASIO wrapper, Packet Parser).
-- [ ] **Library - Common**: Config loader, Logger (spdlog wrapper).
+- [x] **Library - Network**: `chirp_network` (ASIO wrapper, Packet Parser).
+- [x] **Library - Common**: Config loader, Logger (spdlog wrapper).
 
 ## 2. Backend Services (Microservices)
 
 - [ ] **Gateway Service** (Edge)
-  - [ ] TCP Server (for Game Clients).
-  - [ ] WebSocket Server (for Web/Mobile App).
-  - [ ] Session Management (Local & Distributed).
+  - [x] TCP Server (for Game Clients).
+  - [x] WebSocket Server (for Web/Mobile App).
+  - [x] Session Management (Local In-Memory).
+  - [ ] Session Management (Distributed, Redis).
 - [ ] **Auth Service**
   - [ ] Login/Logout Logic.
   - [ ] Token Validation (JWT).
