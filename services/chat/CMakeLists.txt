@@ -1,20 +1,16 @@
-
-# Gateway Service
+# Chat Service
 
 find_package(Threads REQUIRED)
 
-# Collect proto sources
 file(GLOB PROTO_SRCS "${CMAKE_SOURCE_DIR}/proto/cpp/proto/*.cc")
-
-# Collect service sources
 file(GLOB_RECURSE SERVICE_SRCS "src/*.cc")
 
-add_executable(chirp_gateway
+add_executable(chirp_chat
     ${SERVICE_SRCS}
     ${PROTO_SRCS}
 )
 
-target_link_libraries(chirp_gateway
+target_link_libraries(chirp_chat
     PRIVATE
     chirp_network
     chirp_common
@@ -23,4 +19,4 @@ target_link_libraries(chirp_gateway
     Threads::Threads
 )
 
-target_include_directories(chirp_gateway PRIVATE src)
+target_include_directories(chirp_chat PRIVATE src)

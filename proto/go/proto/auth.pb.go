@@ -82,18 +82,67 @@ func (x *LoginRequest) GetPlatform() string {
 	return ""
 }
 
-type LoginResponse struct {
+type KickNotify struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
-	Code          common.ErrorCode       `protobuf:"varint,1,opt,name=code,proto3,enum=chirp.common.ErrorCode" json:"code,omitempty"`
-	SessionId     string                 `protobuf:"bytes,2,opt,name=session_id,json=sessionId,proto3" json:"session_id,omitempty"`
-	ServerTime    int64                  `protobuf:"varint,3,opt,name=server_time,json=serverTime,proto3" json:"server_time,omitempty"`
+	Reason        string                 `protobuf:"bytes,1,opt,name=reason,proto3" json:"reason,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *KickNotify) Reset() {
+	*x = KickNotify{}
+	mi := &file_proto_auth_proto_msgTypes[1]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *KickNotify) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*KickNotify) ProtoMessage() {}
+
+func (x *KickNotify) ProtoReflect() protoreflect.Message {
+	mi := &file_proto_auth_proto_msgTypes[1]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use KickNotify.ProtoReflect.Descriptor instead.
+func (*KickNotify) Descriptor() ([]byte, []int) {
+	return file_proto_auth_proto_rawDescGZIP(), []int{1}
+}
+
+func (x *KickNotify) GetReason() string {
+	if x != nil {
+		return x.Reason
+	}
+	return ""
+}
+
+type LoginResponse struct {
+	state      protoimpl.MessageState `protogen:"open.v1"`
+	Code       common.ErrorCode       `protobuf:"varint,1,opt,name=code,proto3,enum=chirp.common.ErrorCode" json:"code,omitempty"`
+	SessionId  string                 `protobuf:"bytes,2,opt,name=session_id,json=sessionId,proto3" json:"session_id,omitempty"`
+	ServerTime int64                  `protobuf:"varint,3,opt,name=server_time,json=serverTime,proto3" json:"server_time,omitempty"`
+	// Derived from token (e.g. JWT "sub").
+	UserId string `protobuf:"bytes,4,opt,name=user_id,json=userId,proto3" json:"user_id,omitempty"`
+	// Whether the previous login should be kicked (last-login-wins policy).
+	KickPrevious  bool        `protobuf:"varint,5,opt,name=kick_previous,json=kickPrevious,proto3" json:"kick_previous,omitempty"`
+	Kick          *KickNotify `protobuf:"bytes,6,opt,name=kick,proto3" json:"kick,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
 
 func (x *LoginResponse) Reset() {
 	*x = LoginResponse{}
-	mi := &file_proto_auth_proto_msgTypes[1]
+	mi := &file_proto_auth_proto_msgTypes[2]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -105,7 +154,7 @@ func (x *LoginResponse) String() string {
 func (*LoginResponse) ProtoMessage() {}
 
 func (x *LoginResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_proto_auth_proto_msgTypes[1]
+	mi := &file_proto_auth_proto_msgTypes[2]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -118,7 +167,7 @@ func (x *LoginResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use LoginResponse.ProtoReflect.Descriptor instead.
 func (*LoginResponse) Descriptor() ([]byte, []int) {
-	return file_proto_auth_proto_rawDescGZIP(), []int{1}
+	return file_proto_auth_proto_rawDescGZIP(), []int{2}
 }
 
 func (x *LoginResponse) GetCode() common.ErrorCode {
@@ -142,28 +191,50 @@ func (x *LoginResponse) GetServerTime() int64 {
 	return 0
 }
 
-type KickNotify struct {
+func (x *LoginResponse) GetUserId() string {
+	if x != nil {
+		return x.UserId
+	}
+	return ""
+}
+
+func (x *LoginResponse) GetKickPrevious() bool {
+	if x != nil {
+		return x.KickPrevious
+	}
+	return false
+}
+
+func (x *LoginResponse) GetKick() *KickNotify {
+	if x != nil {
+		return x.Kick
+	}
+	return nil
+}
+
+type LogoutRequest struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
-	Reason        string                 `protobuf:"bytes,1,opt,name=reason,proto3" json:"reason,omitempty"`
+	UserId        string                 `protobuf:"bytes,1,opt,name=user_id,json=userId,proto3" json:"user_id,omitempty"`
+	SessionId     string                 `protobuf:"bytes,2,opt,name=session_id,json=sessionId,proto3" json:"session_id,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
 
-func (x *KickNotify) Reset() {
-	*x = KickNotify{}
-	mi := &file_proto_auth_proto_msgTypes[2]
+func (x *LogoutRequest) Reset() {
+	*x = LogoutRequest{}
+	mi := &file_proto_auth_proto_msgTypes[3]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
 
-func (x *KickNotify) String() string {
+func (x *LogoutRequest) String() string {
 	return protoimpl.X.MessageStringOf(x)
 }
 
-func (*KickNotify) ProtoMessage() {}
+func (*LogoutRequest) ProtoMessage() {}
 
-func (x *KickNotify) ProtoReflect() protoreflect.Message {
-	mi := &file_proto_auth_proto_msgTypes[2]
+func (x *LogoutRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_proto_auth_proto_msgTypes[3]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -174,16 +245,75 @@ func (x *KickNotify) ProtoReflect() protoreflect.Message {
 	return mi.MessageOf(x)
 }
 
-// Deprecated: Use KickNotify.ProtoReflect.Descriptor instead.
-func (*KickNotify) Descriptor() ([]byte, []int) {
-	return file_proto_auth_proto_rawDescGZIP(), []int{2}
+// Deprecated: Use LogoutRequest.ProtoReflect.Descriptor instead.
+func (*LogoutRequest) Descriptor() ([]byte, []int) {
+	return file_proto_auth_proto_rawDescGZIP(), []int{3}
 }
 
-func (x *KickNotify) GetReason() string {
+func (x *LogoutRequest) GetUserId() string {
 	if x != nil {
-		return x.Reason
+		return x.UserId
 	}
 	return ""
+}
+
+func (x *LogoutRequest) GetSessionId() string {
+	if x != nil {
+		return x.SessionId
+	}
+	return ""
+}
+
+type LogoutResponse struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Code          common.ErrorCode       `protobuf:"varint,1,opt,name=code,proto3,enum=chirp.common.ErrorCode" json:"code,omitempty"`
+	ServerTime    int64                  `protobuf:"varint,2,opt,name=server_time,json=serverTime,proto3" json:"server_time,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *LogoutResponse) Reset() {
+	*x = LogoutResponse{}
+	mi := &file_proto_auth_proto_msgTypes[4]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *LogoutResponse) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*LogoutResponse) ProtoMessage() {}
+
+func (x *LogoutResponse) ProtoReflect() protoreflect.Message {
+	mi := &file_proto_auth_proto_msgTypes[4]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use LogoutResponse.ProtoReflect.Descriptor instead.
+func (*LogoutResponse) Descriptor() ([]byte, []int) {
+	return file_proto_auth_proto_rawDescGZIP(), []int{4}
+}
+
+func (x *LogoutResponse) GetCode() common.ErrorCode {
+	if x != nil {
+		return x.Code
+	}
+	return common.ErrorCode(0)
+}
+
+func (x *LogoutResponse) GetServerTime() int64 {
+	if x != nil {
+		return x.ServerTime
+	}
+	return 0
 }
 
 var File_proto_auth_proto protoreflect.FileDescriptor
@@ -195,16 +325,27 @@ const file_proto_auth_proto_rawDesc = "" +
 	"\fLoginRequest\x12\x14\n" +
 	"\x05token\x18\x01 \x01(\tR\x05token\x12\x1b\n" +
 	"\tdevice_id\x18\x02 \x01(\tR\bdeviceId\x12\x1a\n" +
-	"\bplatform\x18\x03 \x01(\tR\bplatform\"|\n" +
+	"\bplatform\x18\x03 \x01(\tR\bplatform\"$\n" +
+	"\n" +
+	"KickNotify\x12\x16\n" +
+	"\x06reason\x18\x01 \x01(\tR\x06reason\"\xe6\x01\n" +
 	"\rLoginResponse\x12+\n" +
 	"\x04code\x18\x01 \x01(\x0e2\x17.chirp.common.ErrorCodeR\x04code\x12\x1d\n" +
 	"\n" +
 	"session_id\x18\x02 \x01(\tR\tsessionId\x12\x1f\n" +
 	"\vserver_time\x18\x03 \x01(\x03R\n" +
-	"serverTime\"$\n" +
+	"serverTime\x12\x17\n" +
+	"\auser_id\x18\x04 \x01(\tR\x06userId\x12#\n" +
+	"\rkick_previous\x18\x05 \x01(\bR\fkickPrevious\x12*\n" +
+	"\x04kick\x18\x06 \x01(\v2\x16.chirp.auth.KickNotifyR\x04kick\"G\n" +
+	"\rLogoutRequest\x12\x17\n" +
+	"\auser_id\x18\x01 \x01(\tR\x06userId\x12\x1d\n" +
 	"\n" +
-	"KickNotify\x12\x16\n" +
-	"\x06reason\x18\x01 \x01(\tR\x06reasonB!Z\x1fgithub.com/cui/chirp/proto/authb\x06proto3"
+	"session_id\x18\x02 \x01(\tR\tsessionId\"^\n" +
+	"\x0eLogoutResponse\x12+\n" +
+	"\x04code\x18\x01 \x01(\x0e2\x17.chirp.common.ErrorCodeR\x04code\x12\x1f\n" +
+	"\vserver_time\x18\x02 \x01(\x03R\n" +
+	"serverTimeB!Z\x1fgithub.com/cui/chirp/proto/authb\x06proto3"
 
 var (
 	file_proto_auth_proto_rawDescOnce sync.Once
@@ -218,20 +359,24 @@ func file_proto_auth_proto_rawDescGZIP() []byte {
 	return file_proto_auth_proto_rawDescData
 }
 
-var file_proto_auth_proto_msgTypes = make([]protoimpl.MessageInfo, 3)
+var file_proto_auth_proto_msgTypes = make([]protoimpl.MessageInfo, 5)
 var file_proto_auth_proto_goTypes = []any{
-	(*LoginRequest)(nil),  // 0: chirp.auth.LoginRequest
-	(*LoginResponse)(nil), // 1: chirp.auth.LoginResponse
-	(*KickNotify)(nil),    // 2: chirp.auth.KickNotify
-	(common.ErrorCode)(0), // 3: chirp.common.ErrorCode
+	(*LoginRequest)(nil),   // 0: chirp.auth.LoginRequest
+	(*KickNotify)(nil),     // 1: chirp.auth.KickNotify
+	(*LoginResponse)(nil),  // 2: chirp.auth.LoginResponse
+	(*LogoutRequest)(nil),  // 3: chirp.auth.LogoutRequest
+	(*LogoutResponse)(nil), // 4: chirp.auth.LogoutResponse
+	(common.ErrorCode)(0),  // 5: chirp.common.ErrorCode
 }
 var file_proto_auth_proto_depIdxs = []int32{
-	3, // 0: chirp.auth.LoginResponse.code:type_name -> chirp.common.ErrorCode
-	1, // [1:1] is the sub-list for method output_type
-	1, // [1:1] is the sub-list for method input_type
-	1, // [1:1] is the sub-list for extension type_name
-	1, // [1:1] is the sub-list for extension extendee
-	0, // [0:1] is the sub-list for field type_name
+	5, // 0: chirp.auth.LoginResponse.code:type_name -> chirp.common.ErrorCode
+	1, // 1: chirp.auth.LoginResponse.kick:type_name -> chirp.auth.KickNotify
+	5, // 2: chirp.auth.LogoutResponse.code:type_name -> chirp.common.ErrorCode
+	3, // [3:3] is the sub-list for method output_type
+	3, // [3:3] is the sub-list for method input_type
+	3, // [3:3] is the sub-list for extension type_name
+	3, // [3:3] is the sub-list for extension extendee
+	0, // [0:3] is the sub-list for field type_name
 }
 
 func init() { file_proto_auth_proto_init() }
@@ -245,7 +390,7 @@ func file_proto_auth_proto_init() {
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_proto_auth_proto_rawDesc), len(file_proto_auth_proto_rawDesc)),
 			NumEnums:      0,
-			NumMessages:   3,
+			NumMessages:   5,
 			NumExtensions: 0,
 			NumServices:   0,
 		},

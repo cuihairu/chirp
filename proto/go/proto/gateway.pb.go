@@ -7,7 +7,6 @@
 package gateway
 
 import (
-	_ "github.com/cui/chirp/proto/common"
 	protoreflect "google.golang.org/protobuf/reflect/protoreflect"
 	protoimpl "google.golang.org/protobuf/runtime/protoimpl"
 	reflect "reflect"
@@ -32,6 +31,14 @@ const (
 	MsgID_LOGIN_REQ      MsgID = 1003
 	MsgID_LOGIN_RESP     MsgID = 1004
 	MsgID_KICK_NOTIFY    MsgID = 1005
+	MsgID_LOGOUT_REQ     MsgID = 1006
+	MsgID_LOGOUT_RESP    MsgID = 1007
+	// Chat service
+	MsgID_SEND_MESSAGE_REQ    MsgID = 2001
+	MsgID_SEND_MESSAGE_RESP   MsgID = 2002
+	MsgID_GET_HISTORY_REQ     MsgID = 2003
+	MsgID_GET_HISTORY_RESP    MsgID = 2004
+	MsgID_CHAT_MESSAGE_NOTIFY MsgID = 2005
 )
 
 // Enum value maps for MsgID.
@@ -43,14 +50,28 @@ var (
 		1003: "LOGIN_REQ",
 		1004: "LOGIN_RESP",
 		1005: "KICK_NOTIFY",
+		1006: "LOGOUT_REQ",
+		1007: "LOGOUT_RESP",
+		2001: "SEND_MESSAGE_REQ",
+		2002: "SEND_MESSAGE_RESP",
+		2003: "GET_HISTORY_REQ",
+		2004: "GET_HISTORY_RESP",
+		2005: "CHAT_MESSAGE_NOTIFY",
 	}
 	MsgID_value = map[string]int32{
-		"UNKNOWN":        0,
-		"HEARTBEAT_PING": 1001,
-		"HEARTBEAT_PONG": 1002,
-		"LOGIN_REQ":      1003,
-		"LOGIN_RESP":     1004,
-		"KICK_NOTIFY":    1005,
+		"UNKNOWN":             0,
+		"HEARTBEAT_PING":      1001,
+		"HEARTBEAT_PONG":      1002,
+		"LOGIN_REQ":           1003,
+		"LOGIN_RESP":          1004,
+		"KICK_NOTIFY":         1005,
+		"LOGOUT_REQ":          1006,
+		"LOGOUT_RESP":         1007,
+		"SEND_MESSAGE_REQ":    2001,
+		"SEND_MESSAGE_RESP":   2002,
+		"GET_HISTORY_REQ":     2003,
+		"GET_HISTORY_RESP":    2004,
+		"CHAT_MESSAGE_NOTIFY": 2005,
 	}
 )
 
@@ -244,7 +265,7 @@ var File_proto_gateway_proto protoreflect.FileDescriptor
 
 const file_proto_gateway_proto_rawDesc = "" +
 	"\n" +
-	"\x13proto/gateway.proto\x12\rchirp.gateway\x1a\x12proto/common.proto\"e\n" +
+	"\x13proto/gateway.proto\x12\rchirp.gateway\"e\n" +
 	"\x06Packet\x12+\n" +
 	"\x06msg_id\x18\x01 \x01(\x0e2\x14.chirp.gateway.MsgIDR\x05msgId\x12\x1a\n" +
 	"\bsequence\x18\x02 \x01(\x03R\bsequence\x12\x12\n" +
@@ -254,7 +275,7 @@ const file_proto_gateway_proto_rawDesc = "" +
 	"\rHeartbeatPong\x12\x1c\n" +
 	"\ttimestamp\x18\x01 \x01(\x03R\ttimestamp\x12\x1f\n" +
 	"\vserver_time\x18\x02 \x01(\x03R\n" +
-	"serverTime*q\n" +
+	"serverTime*\x8a\x02\n" +
 	"\x05MsgID\x12\v\n" +
 	"\aUNKNOWN\x10\x00\x12\x13\n" +
 	"\x0eHEARTBEAT_PING\x10\xe9\a\x12\x13\n" +
@@ -262,7 +283,15 @@ const file_proto_gateway_proto_rawDesc = "" +
 	"\tLOGIN_REQ\x10\xeb\a\x12\x0f\n" +
 	"\n" +
 	"LOGIN_RESP\x10\xec\a\x12\x10\n" +
-	"\vKICK_NOTIFY\x10\xed\aB$Z\"github.com/cui/chirp/proto/gatewayb\x06proto3"
+	"\vKICK_NOTIFY\x10\xed\a\x12\x0f\n" +
+	"\n" +
+	"LOGOUT_REQ\x10\xee\a\x12\x10\n" +
+	"\vLOGOUT_RESP\x10\xef\a\x12\x15\n" +
+	"\x10SEND_MESSAGE_REQ\x10\xd1\x0f\x12\x16\n" +
+	"\x11SEND_MESSAGE_RESP\x10\xd2\x0f\x12\x14\n" +
+	"\x0fGET_HISTORY_REQ\x10\xd3\x0f\x12\x15\n" +
+	"\x10GET_HISTORY_RESP\x10\xd4\x0f\x12\x18\n" +
+	"\x13CHAT_MESSAGE_NOTIFY\x10\xd5\x0fB$Z\"github.com/cui/chirp/proto/gatewayb\x06proto3"
 
 var (
 	file_proto_gateway_proto_rawDescOnce sync.Once

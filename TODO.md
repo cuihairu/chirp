@@ -20,9 +20,9 @@
   - [ ] Token Validation (JWT).
   - [ ] Mult-device Conflict Handling (Kick logic).
 - [ ] **Chat Service** (Core)
-  - [ ] 1v1 Message Routing.
+  - [x] 1v1 Message Routing.
   - [ ] Offline Message Storage (Redis List -> MySQL).
-  - [ ] History Message Retrieval.
+  - [x] History Message Retrieval.
 - [ ] **Social & Presence Service**
   - [ ] Friend List Management.
   - [ ] Real-time Status Sync (Online/In-Game) via Redis Pub/Sub.

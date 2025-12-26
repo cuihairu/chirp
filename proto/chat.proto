@@ -1,0 +1,70 @@
+syntax = "proto3";
+
+package chirp.chat;
+
+option go_package = "github.com/cui/chirp/proto/chat";
+
+import "proto/common.proto";
+
+// 聊天消息类型
+enum MsgType {
+  TEXT = 0;           // 文本消息
+  EMOJI = 1;          // 表情
+  VOICE = 2;          // 语音片段
+  IMAGE = 3;          // 图片
+  SYSTEM = 99;        // 系统消息
+}
+
+// 聊天频道类型
+enum ChannelType {
+  PRIVATE = 0;        // 私聊 (1v1)
+  TEAM = 1;           // 队伍频道
+  GUILD = 2;          // 公会频道
+  WORLD = 3;          // 世界频道
+}
+
+// 发送消息请求
+message SendMessageRequest {
+  string sender_id = 1;
+  string receiver_id = 2;      // 私聊时的接收者
+  ChannelType channel_type = 3;
+  string channel_id = 4;       // 频道 ID (队伍 ID、公会 ID 等)
+  MsgType msg_type = 5;
+  bytes content = 6;           // 消息内容 (根据 MsgType 解析)
+  int64 client_timestamp = 7;
+}
+
+// 发送消息响应
+message SendMessageResponse {
+  common.ErrorCode code = 1;
+  string message_id = 2;       // 服务器分配的消息 ID
+  int64 server_timestamp = 3;
+}
+
+// 聊天消息
+message ChatMessage {
+  string message_id = 1;
+  string sender_id = 2;
+  string receiver_id = 3;      // 私聊时的接收者
+  ChannelType channel_type = 4;
+  string channel_id = 5;
+  MsgType msg_type = 6;
+  bytes content = 7;
+  int64 timestamp = 8;
+}
+
+// 拉取历史消息请求
+message GetHistoryRequest {
+  string user_id = 1;
+  ChannelType channel_type = 2;
+  string channel_id = 3;
+  int64 before_timestamp = 4;  // 拉取此时间之前的消息
+  int32 limit = 5;             // 最多拉取多少条，默认 50
+}
+
+// 拉取历史消息响应
+message GetHistoryResponse {
+  common.ErrorCode code = 1;
+  repeated ChatMessage messages = 2;
+  bool has_more = 3;           // 是否还有更多历史消息
+}

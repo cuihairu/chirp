@@ -12,12 +12,29 @@ message LoginRequest {
   string platform = 3; // "ios", "android", "web", "pc"
 }
 
+message KickNotify {
+  string reason = 1;
+}
+
 message LoginResponse {
   common.ErrorCode code = 1;
   string session_id = 2;
   int64 server_time = 3;
+
+  // Derived from token (e.g. JWT "sub").
+  string user_id = 4;
+
+  // Whether the previous login should be kicked (last-login-wins policy).
+  bool kick_previous = 5;
+  KickNotify kick = 6;
 }
 
-message KickNotify {
-  string reason = 1;
+message LogoutRequest {
+  string user_id = 1;
+  string session_id = 2;
+}
+
+message LogoutResponse {
+  common.ErrorCode code = 1;
+  int64 server_time = 2;
 }

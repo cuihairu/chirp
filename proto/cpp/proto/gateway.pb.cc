@@ -151,31 +151,31 @@ static const ::_pb::Message* PROTOBUF_NONNULL const file_default_instances[] = {
 };
 const char descriptor_table_protodef_proto_2fgateway_2eproto[] ABSL_ATTRIBUTE_SECTION_VARIABLE(
     protodesc_cold) = {
-    "\n\023proto/gateway.proto\022\rchirp.gateway\032\022pr"
-    "oto/common.proto\"N\n\006Packet\022$\n\006msg_id\030\001 \001"
-    "(\0162\024.chirp.gateway.MsgID\022\020\n\010sequence\030\002 \001"
-    "(\003\022\014\n\004body\030\003 \001(\014\"\"\n\rHeartbeatPing\022\021\n\ttim"
-    "estamp\030\001 \001(\003\"7\n\rHeartbeatPong\022\021\n\ttimesta"
-    "mp\030\001 \001(\003\022\023\n\013server_time\030\002 \001(\003*q\n\005MsgID\022\013"
-    "\n\007UNKNOWN\020\000\022\023\n\016HEARTBEAT_PING\020\351\007\022\023\n\016HEAR"
-    "TBEAT_PONG\020\352\007\022\016\n\tLOGIN_REQ\020\353\007\022\017\n\nLOGIN_R"
-    "ESP\020\354\007\022\020\n\013KICK_NOTIFY\020\355\007B$Z\"github.com/c"
-    "ui/chirp/proto/gatewayb\006proto3"
-};
-static const ::_pbi::DescriptorTable* PROTOBUF_NONNULL const
-    descriptor_table_proto_2fgateway_2eproto_deps[1] = {
-        &::descriptor_table_proto_2fcommon_2eproto,
+    "\n\023proto/gateway.proto\022\rchirp.gateway\"N\n\006"
+    "Packet\022$\n\006msg_id\030\001 \001(\0162\024.chirp.gateway.M"
+    "sgID\022\020\n\010sequence\030\002 \001(\003\022\014\n\004body\030\003 \001(\014\"\"\n\r"
+    "HeartbeatPing\022\021\n\ttimestamp\030\001 \001(\003\"7\n\rHear"
+    "tbeatPong\022\021\n\ttimestamp\030\001 \001(\003\022\023\n\013server_t"
+    "ime\030\002 \001(\003*\212\002\n\005MsgID\022\013\n\007UNKNOWN\020\000\022\023\n\016HEAR"
+    "TBEAT_PING\020\351\007\022\023\n\016HEARTBEAT_PONG\020\352\007\022\016\n\tLO"
+    "GIN_REQ\020\353\007\022\017\n\nLOGIN_RESP\020\354\007\022\020\n\013KICK_NOTI"
+    "FY\020\355\007\022\017\n\nLOGOUT_REQ\020\356\007\022\020\n\013LOGOUT_RESP\020\357\007"
+    "\022\025\n\020SEND_MESSAGE_REQ\020\321\017\022\026\n\021SEND_MESSAGE_"
+    "RESP\020\322\017\022\024\n\017GET_HISTORY_REQ\020\323\017\022\025\n\020GET_HIS"
+    "TORY_RESP\020\324\017\022\030\n\023CHAT_MESSAGE_NOTIFY\020\325\017B$"
+    "Z\"github.com/cui/chirp/proto/gatewayb\006pr"
+    "oto3"
 };
 static ::absl::once_flag descriptor_table_proto_2fgateway_2eproto_once;
 PROTOBUF_CONSTINIT const ::_pbi::DescriptorTable descriptor_table_proto_2fgateway_2eproto = {
     false,
     false,
-    390,
+    524,
     descriptor_table_protodef_proto_2fgateway_2eproto,
     "proto/gateway.proto",
     &descriptor_table_proto_2fgateway_2eproto_once,
-    descriptor_table_proto_2fgateway_2eproto_deps,
-    1,
+    nullptr,
+    0,
     3,
     schemas,
     file_default_instances,
@@ -190,7 +190,7 @@ const ::google::protobuf::EnumDescriptor* PROTOBUF_NONNULL MsgID_descriptor() {
   return file_level_enum_descriptors_proto_2fgateway_2eproto[0];
 }
 PROTOBUF_CONSTINIT const uint32_t MsgID_internal_data_[] = {
-    65536u, 327680u, 1004u, 1002u, 1005u, 1001u, 1003u, };
+    65536u, 786432u, 2001u, 1004u, 2004u, 1002u, 1006u, 2003u, 2005u, 1001u, 1003u, 1005u, 1007u, 2002u, };
 // ===================================================================
 
 class Packet::_Internal {

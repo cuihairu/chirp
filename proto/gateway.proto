@@ -4,8 +4,6 @@ package chirp.gateway;
 
 option go_package = "github.com/cui/chirp/proto/gateway";
 
-import "proto/common.proto";
-
 // Message ID definition for dispatching
 enum MsgID {
   UNKNOWN = 0;
@@ -14,6 +12,15 @@ enum MsgID {
   LOGIN_REQ = 1003;
   LOGIN_RESP = 1004;
   KICK_NOTIFY = 1005;
+  LOGOUT_REQ = 1006;
+  LOGOUT_RESP = 1007;
+
+  // Chat service
+  SEND_MESSAGE_REQ = 2001;
+  SEND_MESSAGE_RESP = 2002;
+  GET_HISTORY_REQ = 2003;
+  GET_HISTORY_RESP = 2004;
+  CHAT_MESSAGE_NOTIFY = 2005;
 }
 
 // Universal Packet Envelope (Optional, if we want full protobuf wrap)

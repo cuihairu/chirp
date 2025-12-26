@@ -1,6 +1,7 @@
 #include "network/protobuf_framing.h"
 
 #include "network/byte_order.h"
+#include <google/protobuf/arena.h>
 
 namespace chirp::network {
 

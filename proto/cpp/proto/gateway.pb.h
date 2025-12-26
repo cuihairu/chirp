@@ -30,7 +30,6 @@
 #include "google/protobuf/extension_set.h"  // IWYU pragma: export
 #include "google/protobuf/generated_enum_reflection.h"
 #include "google/protobuf/unknown_field_set.h"
-#include "proto/common.pb.h"
 // @@protoc_insertion_point(includes)
 
 // Must be included last.
@@ -89,6 +88,13 @@ enum MsgID : int {
   LOGIN_REQ = 1003,
   LOGIN_RESP = 1004,
   KICK_NOTIFY = 1005,
+  LOGOUT_REQ = 1006,
+  LOGOUT_RESP = 1007,
+  SEND_MESSAGE_REQ = 2001,
+  SEND_MESSAGE_RESP = 2002,
+  GET_HISTORY_REQ = 2003,
+  GET_HISTORY_RESP = 2004,
+  CHAT_MESSAGE_NOTIFY = 2005,
   MsgID_INT_MIN_SENTINEL_DO_NOT_USE_ =
       ::std::numeric_limits<::int32_t>::min(),
   MsgID_INT_MAX_SENTINEL_DO_NOT_USE_ =
@@ -99,11 +105,11 @@ extern const uint32_t MsgID_internal_data_[];
 inline constexpr MsgID MsgID_MIN =
     static_cast<MsgID>(0);
 inline constexpr MsgID MsgID_MAX =
-    static_cast<MsgID>(1005);
+    static_cast<MsgID>(2005);
 inline bool MsgID_IsValid(int value) {
   return ::google::protobuf::internal::ValidateEnum(value, MsgID_internal_data_);
 }
-inline constexpr int MsgID_ARRAYSIZE = 1005 + 1;
+inline constexpr int MsgID_ARRAYSIZE = 2005 + 1;
 const ::google::protobuf::EnumDescriptor* PROTOBUF_NONNULL MsgID_descriptor();
 template <typename T>
 const ::std::string& MsgID_Name(T value) {
