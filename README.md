@@ -41,6 +41,7 @@ cmake --build build -j
 ```bash
 ./test_services.sh --smoke       # auth + gateway + tcp/ws 客户端
 ./test_services.sh --smoke-chat  # chat + chat clients
+./test_services.sh --smoke-redis # 需要 Docker：Redis 分布式 session + 跨实例 kick（tcp + ws）
 ```
 
 ### 手动启动（默认端口）

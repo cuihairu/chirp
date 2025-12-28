@@ -120,6 +120,7 @@ elif [[ "${1:-}" == "--smoke-redis" ]]; then
   GW1_LOG="${GW1_LOG:-/tmp/chirp_gateway1_smoke_redis.log}"
   GW2_LOG="${GW2_LOG:-/tmp/chirp_gateway2_smoke_redis.log}"
   CLIENT1_LOG="${CLIENT1_LOG:-/tmp/chirp_client_hold_smoke_redis.log}"
+  WS_CLIENT1_LOG="${WS_CLIENT1_LOG:-/tmp/chirp_ws_client_hold_smoke_redis.log}"
 
   REDIS_CONTAINER="${REDIS_CONTAINER:-chirp_redis_smoke_$$}"
 
@@ -180,8 +181,34 @@ elif [[ "${1:-}" == "--smoke-redis" ]]; then
   fi
 
   echo ""
+  echo "[ws] hold login on gw_a (expect kick)"
+  ./build/tools/benchmark/chirp_ws_login_client --host 127.0.0.1 --port "${WS1_PORT}" \
+    --token user_2 --device dev_a --platform web --wait_kick_ms 5000 > "${WS_CLIENT1_LOG}" 2>&1 &
+  WS_CLIENT1_PID=$!
+
+  sleep 0.4
+
+  echo ""
+  echo "[ws] login on gw_b (should kick gw_a)"
+  ./build/tools/benchmark/chirp_ws_login_client --host 127.0.0.1 --port "${WS2_PORT}" --token user_2 --device dev_b --platform web
+
+  set +e
+  wait "${WS_CLIENT1_PID}"
+  WS_CLIENT1_RC=$?
+  set -e
+  if [[ "${WS_CLIENT1_RC}" != "0" ]]; then
+    echo ""
+    echo "ws client hold did not observe kick (rc=${WS_CLIENT1_RC})"
+    cat "${WS_CLIENT1_LOG}" || true
+    exit 1
+  fi
+
+  echo ""
   echo "client hold log: ${CLIENT1_LOG}"
   tail -n 20 "${CLIENT1_LOG}" || true
+  echo ""
+  echo "ws client hold log: ${WS_CLIENT1_LOG}"
+  tail -n 20 "${WS_CLIENT1_LOG}" || true
   echo ""
   echo "gateway1 log: ${GW1_LOG}"
   tail -n 30 "${GW1_LOG}" || true
