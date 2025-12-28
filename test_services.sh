@@ -38,13 +38,15 @@ echo "  ./build/services/gateway/chirp_gateway --port 5000 --ws_port 5001"
 echo "  ./build/services/auth/chirp_auth --port 6000"
 echo "  ./build/services/chat/chirp_chat --port 7000"
 
-if [[ "${1:-}" != "--smoke" && "${1:-}" != "--smoke-chat" ]]; then
+if [[ "${1:-}" != "--smoke" && "${1:-}" != "--smoke-chat" && "${1:-}" != "--smoke-redis" ]]; then
   exit 0
 fi
 
 echo ""
 if [[ "${1:-}" == "--smoke" ]]; then
   echo "=== Smoke Test (auth + gateway + clients) ==="
+elif [[ "${1:-}" == "--smoke-redis" ]]; then
+  echo "=== Smoke Test (redis distributed sessions + cross-instance kick) ==="
 else
   echo "=== Smoke Test (chat + clients) ==="
 fi
@@ -97,6 +99,98 @@ if [[ "${1:-}" == "--smoke" ]]; then
   echo ""
   echo "gateway log: ${GW_LOG}"
   tail -n 20 "${GW_LOG}" || true
+elif [[ "${1:-}" == "--smoke-redis" ]]; then
+  if ! command -v docker >/dev/null 2>&1; then
+    echo "错误: 未找到 docker，无法运行 --smoke-redis"
+    exit 1
+  fi
+  if ! docker info >/dev/null 2>&1; then
+    echo "错误: 无法连接 Docker daemon，请先启动 Docker Desktop（或确保 docker daemon 在运行）"
+    exit 1
+  fi
+
+  AUTH_PORT="${AUTH_PORT:-$(pick_port)}"
+  REDIS_PORT="${REDIS_PORT:-$(pick_port)}"
+  GW1_PORT="${GW1_PORT:-$(pick_port)}"
+  GW2_PORT="${GW2_PORT:-$(pick_port)}"
+  WS1_PORT="${WS1_PORT:-$(pick_port)}"
+  WS2_PORT="${WS2_PORT:-$(pick_port)}"
+
+  AUTH_LOG="${AUTH_LOG:-/tmp/chirp_auth_smoke_redis.log}"
+  GW1_LOG="${GW1_LOG:-/tmp/chirp_gateway1_smoke_redis.log}"
+  GW2_LOG="${GW2_LOG:-/tmp/chirp_gateway2_smoke_redis.log}"
+  CLIENT1_LOG="${CLIENT1_LOG:-/tmp/chirp_client_hold_smoke_redis.log}"
+
+  REDIS_CONTAINER="${REDIS_CONTAINER:-chirp_redis_smoke_$$}"
+
+  docker run --rm -d --name "${REDIS_CONTAINER}" -p "127.0.0.1:${REDIS_PORT}:6379" redis:7-alpine >/dev/null
+
+  cleanup() {
+    kill -TERM "${GW1_PID:-}" "${GW2_PID:-}" "${AUTH_PID:-}" 2>/dev/null || true
+    wait "${GW1_PID:-}" 2>/dev/null || true
+    wait "${GW2_PID:-}" 2>/dev/null || true
+    wait "${AUTH_PID:-}" 2>/dev/null || true
+    docker rm -f "${REDIS_CONTAINER}" >/dev/null 2>&1 || true
+  }
+  trap cleanup EXIT
+
+  for _ in {1..50}; do
+    if docker exec "${REDIS_CONTAINER}" redis-cli ping >/dev/null 2>&1; then
+      break
+    fi
+    sleep 0.1
+  done
+
+  ./build/services/auth/chirp_auth --port "${AUTH_PORT}" --jwt_secret dev_secret > "${AUTH_LOG}" 2>&1 &
+  AUTH_PID=$!
+
+  ./build/services/gateway/chirp_gateway --port "${GW1_PORT}" --ws_port "${WS1_PORT}" \
+    --auth_host 127.0.0.1 --auth_port "${AUTH_PORT}" \
+    --redis_host 127.0.0.1 --redis_port "${REDIS_PORT}" --redis_ttl 3600 --instance_id gw_a > "${GW1_LOG}" 2>&1 &
+  GW1_PID=$!
+
+  ./build/services/gateway/chirp_gateway --port "${GW2_PORT}" --ws_port "${WS2_PORT}" \
+    --auth_host 127.0.0.1 --auth_port "${AUTH_PORT}" \
+    --redis_host 127.0.0.1 --redis_port "${REDIS_PORT}" --redis_ttl 3600 --instance_id gw_b > "${GW2_LOG}" 2>&1 &
+  GW2_PID=$!
+
+  sleep 0.4
+
+  echo ""
+  echo "[tcp] hold login on gw_a (expect kick)"
+  ./build/tools/benchmark/chirp_login_client --host 127.0.0.1 --port "${GW1_PORT}" \
+    --token user_1 --device dev_a --platform pc --wait_kick_ms 5000 > "${CLIENT1_LOG}" 2>&1 &
+  CLIENT1_PID=$!
+
+  sleep 0.4
+
+  echo ""
+  echo "[tcp] login on gw_b (should kick gw_a)"
+  ./build/tools/benchmark/chirp_login_client --host 127.0.0.1 --port "${GW2_PORT}" --token user_1 --device dev_b --platform pc
+
+  set +e
+  wait "${CLIENT1_PID}"
+  CLIENT1_RC=$?
+  set -e
+  if [[ "${CLIENT1_RC}" != "0" ]]; then
+    echo ""
+    echo "client hold did not observe kick (rc=${CLIENT1_RC})"
+    cat "${CLIENT1_LOG}" || true
+    exit 1
+  fi
+
+  echo ""
+  echo "client hold log: ${CLIENT1_LOG}"
+  tail -n 20 "${CLIENT1_LOG}" || true
+  echo ""
+  echo "gateway1 log: ${GW1_LOG}"
+  tail -n 30 "${GW1_LOG}" || true
+  echo ""
+  echo "gateway2 log: ${GW2_LOG}"
+  tail -n 30 "${GW2_LOG}" || true
+  echo ""
+  echo "auth log: ${AUTH_LOG}"
+  tail -n 10 "${AUTH_LOG}" || true
 else
   CHAT_PORT="${CHAT_PORT:-$(pick_port)}"
   CHAT_LOG="${CHAT_LOG:-/tmp/chirp_chat_smoke.log}"

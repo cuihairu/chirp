@@ -3,6 +3,7 @@
 #include <cstdlib>
 #include <iostream>
 #include <string>
+#include <thread>
 
 #include <asio.hpp>
 
@@ -81,6 +82,51 @@ bool ReadOnePacket(asio::ip::tcp::socket& sock,
   }
 }
 
+enum class ReadResult { kOk, kTimeout, kClosedOrError };
+
+ReadResult ReadOnePacketWithTimeout(asio::ip::tcp::socket& sock,
+                                    chirp::network::WebSocketFrameParser* ws_parser,
+                                    chirp::network::LengthPrefixedFramer* framer,
+                                    chirp::gateway::Packet* out_pkt,
+                                    int timeout_ms) {
+  using namespace std::chrono;
+  const auto deadline = steady_clock::now() + milliseconds(timeout_ms);
+  std::array<uint8_t, 4096> buf{};
+
+  sock.non_blocking(true);
+  while (steady_clock::now() < deadline) {
+    while (true) {
+      auto f = ws_parser->PopFrame();
+      if (!f) {
+        break;
+      }
+      if (f->opcode != 0x2) {
+        continue;
+      }
+      framer->Append(reinterpret_cast<const uint8_t*>(f->payload.data()), f->payload.size());
+      auto frame = framer->PopFrame();
+      if (!frame) {
+        continue;
+      }
+      return out_pkt->ParseFromArray(frame->data(), static_cast<int>(frame->size())) ? ReadResult::kOk
+                                                                                    : ReadResult::kClosedOrError;
+    }
+
+    asio::error_code ec;
+    const size_t n = sock.read_some(asio::buffer(buf), ec);
+    if (!ec) {
+      ws_parser->Append(buf.data(), n);
+      continue;
+    }
+    if (ec == asio::error::would_block || ec == asio::error::try_again) {
+      std::this_thread::sleep_for(std::chrono::milliseconds(5));
+      continue;
+    }
+    return ReadResult::kClosedOrError;
+  }
+  return ReadResult::kTimeout;
+}
+
 } // namespace
 
 int main(int argc, char** argv) {
@@ -89,6 +135,7 @@ int main(int argc, char** argv) {
   const std::string token = GetArg(argc, argv, "--token", "user_1");
   const std::string device_id = GetArg(argc, argv, "--device", "dev_1");
   const std::string platform = GetArg(argc, argv, "--platform", "pc");
+  const int wait_kick_ms = std::atoi(GetArg(argc, argv, "--wait_kick_ms", "0").c_str());
 
   asio::io_context io;
   asio::ip::tcp::resolver resolver(io);
@@ -178,6 +225,25 @@ int main(int argc, char** argv) {
   }
   std::cout << "pong msg_id=" << pong_pkt.msg_id() << " seq=" << pong_pkt.sequence() << "\n";
 
+  if (wait_kick_ms > 0) {
+    chirp::gateway::Packet maybe_kick;
+    const ReadResult r = ReadOnePacketWithTimeout(sock, &ws_parser, &framer2, &maybe_kick, wait_kick_ms);
+    if (r == ReadResult::kOk && maybe_kick.msg_id() == chirp::gateway::KICK_NOTIFY) {
+      chirp::auth::KickNotify kn;
+      if (kn.ParseFromArray(maybe_kick.body().data(), static_cast<int>(maybe_kick.body().size()))) {
+        std::cout << "kick reason=" << kn.reason() << "\n";
+      } else {
+        std::cout << "kick\n";
+      }
+      return 0;
+    }
+    if (r == ReadResult::kTimeout) {
+      std::cerr << "no kick within " << wait_kick_ms << "ms\n";
+      return 2;
+    }
+    std::cerr << "connection closed before kick\n";
+    return 3;
+  }
+
   return 0;
 }
-

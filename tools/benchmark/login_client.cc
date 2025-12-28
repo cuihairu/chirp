@@ -2,11 +2,12 @@
 #include <cstdint>
 #include <cstdlib>
 #include <iostream>
+#include <thread>
 #include <string>
 
 #include <asio.hpp>
 
-#include "network/byte_order.h"
+#include "network/length_prefixed_framer.h"
 #include "network/protobuf_framing.h"
 #include "proto/auth.pb.h"
 #include "proto/gateway.pb.h"
@@ -27,17 +28,56 @@ std::string GetArg(int argc, char** argv, const std::string& key, const std::str
   return def;
 }
 
-bool ReadFrame(asio::ip::tcp::socket& sock, std::string* payload) {
-  uint8_t len_be[4];
-  asio::error_code ec;
-  asio::read(sock, asio::buffer(len_be, 4), ec);
-  if (ec) {
-    return false;
+bool ReadOnePacket(asio::ip::tcp::socket& sock,
+                   chirp::network::LengthPrefixedFramer* framer,
+                   chirp::gateway::Packet* out_pkt) {
+  std::array<uint8_t, 4096> buf{};
+  while (true) {
+    auto frame = framer->PopFrame();
+    if (frame) {
+      return out_pkt->ParseFromArray(frame->data(), static_cast<int>(frame->size()));
+    }
+
+    asio::error_code ec;
+    const size_t n = sock.read_some(asio::buffer(buf), ec);
+    if (ec) {
+      return false;
+    }
+    framer->Append(buf.data(), n);
   }
-  const uint32_t len = chirp::network::ReadU32BE(len_be);
-  payload->resize(len);
-  asio::read(sock, asio::buffer(payload->data(), payload->size()), ec);
-  return !ec;
+}
+
+enum class ReadResult { kOk, kTimeout, kClosedOrError };
+
+ReadResult ReadOnePacketWithTimeout(asio::ip::tcp::socket& sock,
+                                    chirp::network::LengthPrefixedFramer* framer,
+                                    chirp::gateway::Packet* out_pkt,
+                                    int timeout_ms) {
+  using namespace std::chrono;
+  const auto deadline = steady_clock::now() + milliseconds(timeout_ms);
+  std::array<uint8_t, 4096> buf{};
+
+  sock.non_blocking(true);
+  while (steady_clock::now() < deadline) {
+    auto frame = framer->PopFrame();
+    if (frame) {
+      return out_pkt->ParseFromArray(frame->data(), static_cast<int>(frame->size())) ? ReadResult::kOk
+                                                                                    : ReadResult::kClosedOrError;
+    }
+
+    asio::error_code ec;
+    const size_t n = sock.read_some(asio::buffer(buf), ec);
+    if (!ec) {
+      framer->Append(buf.data(), n);
+      continue;
+    }
+    if (ec == asio::error::would_block || ec == asio::error::try_again) {
+      std::this_thread::sleep_for(std::chrono::milliseconds(5));
+      continue;
+    }
+    return ReadResult::kClosedOrError;
+  }
+  return ReadResult::kTimeout;
 }
 
 } // namespace
@@ -48,6 +88,7 @@ int main(int argc, char** argv) {
   const std::string token = GetArg(argc, argv, "--token", "user_1");
   const std::string device_id = GetArg(argc, argv, "--device", "dev_1");
   const std::string platform = GetArg(argc, argv, "--platform", "pc");
+  const int wait_kick_ms = std::atoi(GetArg(argc, argv, "--wait_kick_ms", "0").c_str());
 
   asio::io_context io;
   asio::ip::tcp::resolver resolver(io);
@@ -69,15 +110,10 @@ int main(int argc, char** argv) {
   auto out = chirp::network::ProtobufFraming::Encode(pkt);
   asio::write(sock, asio::buffer(out));
 
-  std::string payload;
-  if (!ReadFrame(sock, &payload)) {
-    std::cerr << "failed to read response frame\n";
-    return 1;
-  }
-
+  chirp::network::LengthPrefixedFramer framer;
   chirp::gateway::Packet resp;
-  if (!resp.ParseFromArray(payload.data(), static_cast<int>(payload.size()))) {
-    std::cerr << "failed to parse response Packet\n";
+  if (!ReadOnePacket(sock, &framer, &resp)) {
+    std::cerr << "failed to read response frame\n";
     return 1;
   }
 
@@ -107,15 +143,32 @@ int main(int argc, char** argv) {
   auto ping_out = chirp::network::ProtobufFraming::Encode(ping_pkt);
   asio::write(sock, asio::buffer(ping_out));
 
-  if (!ReadFrame(sock, &payload)) {
+  chirp::gateway::Packet pong_pkt;
+  if (!ReadOnePacket(sock, &framer, &pong_pkt)) {
     std::cerr << "failed to read ping response frame\n";
     return 1;
   }
-  chirp::gateway::Packet pong_pkt;
-  if (pong_pkt.ParseFromArray(payload.data(), static_cast<int>(payload.size()))) {
-    std::cout << "pong msg_id=" << pong_pkt.msg_id() << " seq=" << pong_pkt.sequence() << "\n";
+  std::cout << "pong msg_id=" << pong_pkt.msg_id() << " seq=" << pong_pkt.sequence() << "\n";
+
+  if (wait_kick_ms > 0) {
+    chirp::gateway::Packet maybe_kick;
+    const ReadResult r = ReadOnePacketWithTimeout(sock, &framer, &maybe_kick, wait_kick_ms);
+    if (r == ReadResult::kOk && maybe_kick.msg_id() == chirp::gateway::KICK_NOTIFY) {
+      chirp::auth::KickNotify kn;
+      if (kn.ParseFromArray(maybe_kick.body().data(), static_cast<int>(maybe_kick.body().size()))) {
+        std::cout << "kick reason=" << kn.reason() << "\n";
+      } else {
+        std::cout << "kick\n";
+      }
+      return 0;
+    }
+    if (r == ReadResult::kTimeout) {
+      std::cerr << "no kick within " << wait_kick_ms << "ms\n";
+      return 2;
+    }
+    std::cerr << "connection closed before kick\n";
+    return 3;
   }
 
   return 0;
 }
-

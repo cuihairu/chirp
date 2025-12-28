@@ -14,7 +14,7 @@
   - [x] TCP Server (for Game Clients).
   - [x] WebSocket Server (for Web/Mobile App).
   - [x] Session Management (Local In-Memory).
-  - [ ] Session Management (Distributed, Redis).
+  - [x] Session Management (Distributed, Redis).
 - [ ] **Auth Service**
   - [ ] Login/Logout Logic.
   - [ ] Token Validation (JWT).
