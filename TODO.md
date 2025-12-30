@@ -58,6 +58,6 @@
 
 ## 6. Operations & Testing
 
-- [ ] **Deployment**: Dockerfiles for all services.
-- [ ] **Orchestration**: Docker Compose / K8s manifests.
+- [x] **Deployment**: Dockerfiles for all services.
+- [x] **Orchestration**: Docker Compose / K8s manifests.
 - [ ] **Load Testing**: Benchmark 10k+ concurrent connections (Gateway).

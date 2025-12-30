@@ -44,6 +44,18 @@ cmake --build build -j
 ./test_services.sh --smoke-redis # 需要 Docker：Redis 分布式 session + 跨实例 kick（tcp + ws）
 ```
 
+### Docker Compose 一键启动（推荐）
+
+```bash
+docker compose up --build
+```
+
+默认会启动：
+- `redis`（6379）
+- `chirp_auth`（6000）
+- `chirp_gateway`：TCP 5000 / WebSocket 5001（连接 `auth` + `redis`）
+- `chirp_chat`（7000）
+
 ### 手动启动（默认端口）
 
 ```bash

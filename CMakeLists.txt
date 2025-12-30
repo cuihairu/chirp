@@ -8,36 +8,46 @@ set(CMAKE_CXX_STANDARD_REQUIRED ON)
 # Dependencies
 # ------------------------------------------------------------------------------
 
-# Find Abseil (required for Protobuf 6.x)
-# Try using PkgConfig for system Abseil first
-find_package(PkgConfig)
-if(PKG_CONFIG_FOUND)
-  pkg_check_modules(absl_pkg absl_base absl_log)
-endif()
-
-if(absl_pkg_FOUND)
-  # Use system Abseil from Homebrew
-  message(STATUS "Using system Abseil from: ${absl_pkg_INCLUDE_DIRS}")
-  include_directories(SYSTEM ${absl_pkg_INCLUDE_DIRS})
-  link_directories(${absl_pkg_LIBRARY_DIRS})
-  add_compile_options(${absl_pkg_CFLAGS_OTHER})
-  # Add missing log library that pkg-config doesn't include
-  list(APPEND absl_pkg_LIBRARIES absl_log_internal_check_op)
-else()
-  # Use FetchContent for Abseil
-  include(FetchContent)
-  FetchContent_Declare(
-    abseil_cpp
-    GIT_REPOSITORY https://github.com/abseil/abseil-cpp.git
-    GIT_TAG 20240116.2
-    GIT_SHALLOW TRUE
-  )
-  set(ABSL_PROPAGATE_CXX_STD ON)
-  set(ABSL_ENABLE_INSTALL ON)
-  FetchContent_MakeAvailable(abseil_cpp)
-endif()
-
 find_package(Protobuf REQUIRED)
+
+# Find Abseil (required for Protobuf 6.x)
+set(CHIRP_NEEDS_ABSL OFF)
+if(NOT Protobuf_VERSION)
+  # Older CMake FindProtobuf may not expose a version; keep the previous behavior to be safe.
+  set(CHIRP_NEEDS_ABSL ON)
+elseif(Protobuf_VERSION VERSION_GREATER_EQUAL "6.0")
+  set(CHIRP_NEEDS_ABSL ON)
+endif()
+
+if(CHIRP_NEEDS_ABSL)
+  # Try using PkgConfig for system Abseil first
+  find_package(PkgConfig)
+  if(PKG_CONFIG_FOUND)
+    pkg_check_modules(absl_pkg absl_base absl_log)
+  endif()
+
+  if(absl_pkg_FOUND)
+    # Use system Abseil from Homebrew
+    message(STATUS "Using system Abseil from: ${absl_pkg_INCLUDE_DIRS}")
+    include_directories(SYSTEM ${absl_pkg_INCLUDE_DIRS})
+    link_directories(${absl_pkg_LIBRARY_DIRS})
+    add_compile_options(${absl_pkg_CFLAGS_OTHER})
+    # Add missing log library that pkg-config doesn't include
+    list(APPEND absl_pkg_LIBRARIES absl_log_internal_check_op)
+  else()
+    # Use FetchContent for Abseil
+    include(FetchContent)
+    FetchContent_Declare(
+      abseil_cpp
+      GIT_REPOSITORY https://github.com/abseil/abseil-cpp.git
+      GIT_TAG 20240116.2
+      GIT_SHALLOW TRUE
+    )
+    set(ABSL_PROPAGATE_CXX_STD ON)
+    set(ABSL_ENABLE_INSTALL ON)
+    FetchContent_MakeAvailable(abseil_cpp)
+  endif()
+endif()
 
 # Use FetchContent for ASIO (header-only)
 if(NOT TARGET asio)

@@ -1,0 +1,12 @@
+.git
+.github
+build
+proto/cpp
+proto/go
+**/*.o
+**/*.a
+**/*.so
+**/*.dylib
+**/*.exe
+**/*.obj
+**/.DS_Store

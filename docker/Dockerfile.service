@@ -1,0 +1,41 @@
+ARG UBUNTU_VERSION=22.04
+
+FROM ubuntu:${UBUNTU_VERSION} AS build
+
+ARG SERVICE=gateway
+
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    build-essential \
+    ca-certificates \
+    cmake \
+    git \
+    pkg-config \
+    protobuf-compiler \
+    libprotobuf-dev \
+    python3 \
+  && rm -rf /var/lib/apt/lists/*
+
+WORKDIR /src
+COPY . .
+
+RUN ./gen_proto.sh
+RUN cmake -S . -B build -DCMAKE_BUILD_TYPE=Release -DENABLE_TESTS=OFF
+RUN cmake --build build --target chirp_${SERVICE} -j"$(nproc)"
+
+FROM ubuntu:${UBUNTU_VERSION} AS runtime
+
+ARG SERVICE=gateway
+
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    ca-certificates \
+    libprotobuf23 \
+  && rm -rf /var/lib/apt/lists/*
+
+COPY --from=build /src/build/services/${SERVICE}/chirp_${SERVICE} /usr/local/bin/chirp_${SERVICE}
+COPY docker/docker-entrypoint.sh /usr/local/bin/docker-entrypoint.sh
+RUN chmod 0755 /usr/local/bin/docker-entrypoint.sh
+
+ENV CHIRP_BIN=/usr/local/bin/chirp_${SERVICE}
+
+EXPOSE 5000 5001 6000 7000
+ENTRYPOINT ["/usr/local/bin/docker-entrypoint.sh"]

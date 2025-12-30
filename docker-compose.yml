@@ -1,0 +1,49 @@
+services:
+  redis:
+    image: redis:7-alpine
+    ports:
+      - "6379:6379"
+
+  auth:
+    build:
+      context: .
+      dockerfile: docker/Dockerfile.service
+      args:
+        SERVICE: auth
+    command: ["--port", "6000", "--jwt_secret", "dev_secret"]
+    ports:
+      - "6000:6000"
+
+  gateway:
+    build:
+      context: .
+      dockerfile: docker/Dockerfile.service
+      args:
+        SERVICE: gateway
+    command:
+      [
+        "--port", "5000",
+        "--ws_port", "5001",
+        "--auth_host", "auth",
+        "--auth_port", "6000",
+        "--redis_host", "redis",
+        "--redis_port", "6379",
+        "--redis_ttl", "3600",
+        "--instance_id", "gw_1"
+      ]
+    ports:
+      - "5000:5000"
+      - "5001:5001"
+    depends_on:
+      - auth
+      - redis
+
+  chat:
+    build:
+      context: .
+      dockerfile: docker/Dockerfile.service
+      args:
+        SERVICE: chat
+    command: ["--port", "7000"]
+    ports:
+      - "7000:7000"
