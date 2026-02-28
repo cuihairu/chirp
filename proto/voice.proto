@@ -1,0 +1,177 @@
+syntax = "proto3";
+
+package chirp.voice;
+
+option go_package = "github.com/cui/chirp/proto/voice";
+
+import "proto/common.proto";
+
+// Voice room types
+enum RoomType {
+  PEER_TO_PEER = 0;    // 1:1 voice call
+  GROUP = 1;           // Group voice chat
+  CHANNEL = 2;         // Persistent voice channel (like Discord)
+}
+
+// Participant state in voice room
+enum ParticipantState {
+  JOINING = 0;         // Connecting to room
+  CONNECTED = 1;       // Connected and can send/receive audio
+  MUTED = 2;           // Connected but mic muted
+  DEAFENED = 3;        // Connected but speaker muted
+  DISCONNECTED = 4;    // Left the room
+}
+
+// Create voice room
+message CreateRoomRequest {
+  string user_id = 1;
+  RoomType room_type = 2;
+  string room_name = 3;
+  int32 max_participants = 4;   // 0 for unlimited
+  map<string, string> metadata = 5;
+}
+
+message CreateRoomResponse {
+  common.ErrorCode code = 1;
+  string room_id = 2;
+  int64 server_time = 3;
+}
+
+// Join voice room
+message JoinRoomRequest {
+  string user_id = 1;
+  string room_id = 2;
+  string sdp_offer = 3;         // WebRTC SDP offer
+}
+
+message JoinRoomResponse {
+  common.ErrorCode code = 1;
+  string room_id = 2;
+  string sdp_answer = 3;        // WebRTC SDP answer from server/peer
+  repeated string participant_ids = 4;
+  int64 server_time = 5;
+}
+
+// Leave voice room
+message LeaveRoomRequest {
+  string user_id = 1;
+  string room_id = 2;
+}
+
+message LeaveRoomResponse {
+  common.ErrorCode code = 1;
+  int64 server_time = 2;
+}
+
+// WebRTC signaling messages
+message IceCandidate {
+  string candidate = 1;
+  string sdp_mid = 2;
+  int32 sdp_mline_index = 3;
+}
+
+message IceCandidateMessage {
+  string room_id = 1;
+  string from_user_id = 2;
+  string to_user_id = 3;         // Empty for broadcast to all
+  IceCandidate candidate = 4;
+}
+
+message SdpOfferMessage {
+  string room_id = 1;
+  string from_user_id = 2;
+  string to_user_id = 3;
+  string sdp_offer = 4;
+}
+
+message SdpAnswerMessage {
+  string room_id = 1;
+  string from_user_id = 2;
+  string to_user_id = 3;
+  string sdp_answer = 4;
+}
+
+// Room participant info
+message ParticipantInfo {
+  string user_id = 1;
+  string username = 2;
+  ParticipantState state = 3;
+  int64 joined_at = 4;
+  bool is_speaking = 5;
+}
+
+// Get room info
+message GetRoomInfoRequest {
+  string room_id = 1;
+}
+
+message GetRoomInfoResponse {
+  common.ErrorCode code = 1;
+  string room_id = 2;
+  string room_name = 3;
+  RoomType room_type = 4;
+  repeated ParticipantInfo participants = 5;
+  int32 max_participants = 6;
+}
+
+// Get user's current room
+message GetUserRoomRequest {
+  string user_id = 1;
+}
+
+message GetUserRoomResponse {
+  common.ErrorCode code = 1;
+  string room_id = 2;
+  ParticipantInfo participant = 3;
+}
+
+// Mute/unmute microphone
+message SetMuteRequest {
+  string user_id = 1;
+  string room_id = 2;
+  bool muted = 3;
+}
+
+message SetMuteResponse {
+  common.ErrorCode code = 1;
+  int64 server_time = 2;
+}
+
+// Deafen/undeafen speaker
+message SetDeafenRequest {
+  string user_id = 1;
+  string room_id = 2;
+  bool deafened = 3;
+}
+
+message SetDeafenResponse {
+  common.ErrorCode code = 1;
+  int64 server_time = 2;
+}
+
+// Notifications
+message ParticipantJoinedNotify {
+  string room_id = 1;
+  ParticipantInfo participant = 2;
+  int64 timestamp = 3;
+}
+
+message ParticipantLeftNotify {
+  string room_id = 1;
+  string user_id = 2;
+  int64 timestamp = 3;
+}
+
+message ParticipantStateChangedNotify {
+  string room_id = 1;
+  string user_id = 2;
+  ParticipantState state = 3;
+  int64 timestamp = 4;
+}
+
+message SpeakingNotify {
+  string room_id = 1;
+  string user_id = 2;
+  bool speaking = 3;
+  int64 timestamp = 4;
+}

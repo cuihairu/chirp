@@ -8,16 +8,37 @@ set(CMAKE_CXX_STANDARD_REQUIRED ON)
 # Dependencies
 # ------------------------------------------------------------------------------
 
-find_package(Protobuf REQUIRED)
+# Try to find Protobuf via vcpkg or system
+find_package(Protobuf CONFIG QUIET)
 
-# Find Abseil (required for Protobuf 6.x)
-set(CHIRP_NEEDS_ABSL OFF)
-if(NOT Protobuf_VERSION)
-  # Older CMake FindProtobuf may not expose a version; keep the previous behavior to be safe.
-  set(CHIRP_NEEDS_ABSL ON)
-elseif(Protobuf_VERSION VERSION_GREATER_EQUAL "6.0")
-  set(CHIRP_NEEDS_ABSL ON)
+# If Protobuf CONFIG is not found, try regular FindProtobuf
+if(NOT Protobuf_FOUND)
+  find_package(Protobuf QUIET)
 endif()
+
+# If still not found, use pre-generated proto files as fallback
+if(NOT Protobuf_FOUND)
+  message(STATUS "Protobuf not found, using pre-generated proto files from proto/cpp/proto/")
+
+  # Set up paths to pre-generated protobuf files
+  set(PROTOBUF_INCLUDE_DIRS "${CMAKE_SOURCE_DIR}/proto/cpp/proto" CACHE PATH "Proto files include dir")
+
+  message(STATUS "Using pre-generated proto files from: ${PROTOBUF_INCLUDE_DIRS}")
+  message(STATUS "Pre-generated proto files will be built from proto/CMakeLists.txt")
+
+  # Skip Abseil requirement since we're using pre-generated files
+  set(CHIRP_NEEDS_ABSL OFF)
+else()
+  message(STATUS "Protobuf found: ${Protobuf_VERSION}")
+
+  # Find Abseil (required for Protobuf 6.x)
+  set(CHIRP_NEEDS_ABSL OFF)
+  if(NOT Protobuf_VERSION)
+    # Older CMake FindProtobuf may not expose a version; keep the previous behavior to be safe.
+    set(CHIRP_NEEDS_ABSL ON)
+  elseif(Protobuf_VERSION VERSION_GREATER_EQUAL "6.0")
+    set(CHIRP_NEEDS_ABSL ON)
+  endif()
 
 if(CHIRP_NEEDS_ABSL)
   # Try using PkgConfig for system Abseil first
@@ -47,6 +68,7 @@ if(CHIRP_NEEDS_ABSL)
     set(ABSL_ENABLE_INSTALL ON)
     FetchContent_MakeAvailable(abseil_cpp)
   endif()
+  endif()
 endif()
 
 # Use FetchContent for ASIO (header-only)
@@ -68,12 +90,16 @@ endif()
 include_directories(
     ${CMAKE_SOURCE_DIR}/libs
     ${CMAKE_SOURCE_DIR}/proto/cpp
+    ${CMAKE_SOURCE_DIR}/proto/cpp/proto
     ${PROTOBUF_INCLUDE_DIRS}
 )
 
 # ------------------------------------------------------------------------------
 # Subdirectories (Monorepo Modules)
 # ------------------------------------------------------------------------------
+
+# 0. Protocol Buffers (must be first)
+add_subdirectory(proto)
 
 # 1. Libraries (Shared Code)
 add_subdirectory(libs/common)
@@ -83,13 +109,15 @@ add_subdirectory(libs/network)
 add_subdirectory(services/gateway)
 add_subdirectory(services/auth)
 add_subdirectory(services/chat)
+add_subdirectory(services/social)
+add_subdirectory(services/voice)
 # add_subdirectory(services/router)
 
 # 3. SDKs
 add_subdirectory(sdks/core)
 
 # 4. Apps
-# add_subdirectory(apps)
+add_subdirectory(apps/cli_client)
 
 # 5. Tools / Tests
 add_subdirectory(tools/benchmark)

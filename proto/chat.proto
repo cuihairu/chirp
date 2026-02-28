@@ -68,3 +68,235 @@ message GetHistoryResponse {
   repeated ChatMessage messages = 2;
   bool has_more = 3;           // 是否还有更多历史消息
 }
+
+// ========== Group Chat ==========
+
+// Group member role
+enum GroupMemberRole {
+  MEMBER = 0;         // Regular member
+  MODERATOR = 1;      // Can kick/ban members
+  ADMIN = 2;          // Full admin privileges
+  OWNER = 3;          // Group owner
+}
+
+// Create group request
+message CreateGroupRequest {
+  string creator_id = 1;
+  string group_name = 2;
+  string description = 3;
+  string avatar_url = 4;
+  int32 max_members = 5;       // 0 for unlimited
+  repeated string initial_members = 6;
+}
+
+message CreateGroupResponse {
+  common.ErrorCode code = 1;
+  string group_id = 2;
+  int64 server_time = 3;
+}
+
+// Group information
+message GroupInfo {
+  string group_id = 1;
+  string group_name = 2;
+  string description = 3;
+  string avatar_url = 4;
+  string owner_id = 5;
+  int32 member_count = 6;
+  int32 max_members = 7;
+  int64 created_at = 8;
+  map<string, string> metadata = 9;
+}
+
+// Group member information
+message GroupMember {
+  string user_id = 1;
+  string username = 2;
+  string avatar_url = 3;
+  GroupMemberRole role = 4;
+  int64 joined_at = 5;
+  int64 last_read_at = 6;      // Last read message timestamp
+}
+
+// Join group request
+message JoinGroupRequest {
+  string user_id = 1;
+  string group_id = 2;
+  string invite_code = 3;      // Optional invite code
+}
+
+message JoinGroupResponse {
+  common.ErrorCode code = 1;
+  GroupInfo group = 2;
+  int64 server_time = 3;
+}
+
+// Leave group request
+message LeaveGroupRequest {
+  string user_id = 1;
+  string group_id = 2;
+}
+
+message LeaveGroupResponse {
+  common.ErrorCode code = 1;
+  int64 server_time = 2;
+}
+
+// Kick member from group
+message KickMemberRequest {
+  string requester_id = 1;
+  string group_id = 2;
+  string target_user_id = 3;
+}
+
+message KickMemberResponse {
+  common.ErrorCode code = 1;
+  int64 server_time = 2;
+}
+
+// Get group info
+message GetGroupInfoRequest {
+  string group_id = 1;
+}
+
+message GetGroupInfoResponse {
+  common.ErrorCode code = 1;
+  GroupInfo group = 2;
+}
+
+// Get group members
+message GetGroupMembersRequest {
+  string group_id = 1;
+  int32 limit = 2;
+  int32 offset = 3;
+}
+
+message GetGroupMembersResponse {
+  common.ErrorCode code = 1;
+  repeated GroupMember members = 2;
+  int32 total_count = 3;
+}
+
+// Get user's groups
+message GetUserGroupsRequest {
+  string user_id = 1;
+  int32 limit = 2;
+  int32 offset = 3;
+}
+
+message GetUserGroupsResponse {
+  common.ErrorCode code = 1;
+  repeated GroupInfo groups = 2;
+  int32 total_count = 3;
+}
+
+// Invite user to group
+message InviteToGroupRequest {
+  string inviter_id = 1;
+  string group_id = 2;
+  string target_user_id = 3;
+}
+
+message InviteToGroupResponse {
+  common.ErrorCode code = 1;
+  int64 server_time = 2;
+}
+
+// Group notification messages
+message GroupCreatedNotify {
+  GroupInfo group = 1;
+  int64 timestamp = 2;
+}
+
+message GroupMemberJoinedNotify {
+  string group_id = 1;
+  GroupMember member = 2;
+  int64 timestamp = 3;
+}
+
+message GroupMemberLeftNotify {
+  string group_id = 1;
+  string user_id = 2;
+  int64 timestamp = 3;
+}
+
+message GroupMemberKickedNotify {
+  string group_id = 1;
+  string user_id = 2;
+  string kicked_by = 3;
+  int64 timestamp = 4;
+}
+
+message GroupUpdatedNotify {
+  GroupInfo group = 1;
+  int64 timestamp = 2;
+}
+
+// ========== Read Receipts ==========
+
+// Mark message(s) as read
+message MarkReadRequest {
+  string user_id = 1;
+  string channel_id = 2;
+  ChannelType channel_type = 3;
+  string message_id = 4;       // Read up to this message
+  int64 read_timestamp = 5;    // When user read the message
+}
+
+message MarkReadResponse {
+  common.ErrorCode code = 1;
+  int64 server_time = 2;
+}
+
+// Read receipt information
+message ReadReceipt {
+  string user_id = 1;
+  string message_id = 2;
+  int64 read_at = 3;
+}
+
+// Get read receipts for a message
+message GetReadReceiptsRequest {
+  string message_id = 1;
+}
+
+message GetReadReceiptsResponse {
+  common.ErrorCode code = 1;
+  repeated ReadReceipt receipts = 2;
+}
+
+// Get unread count
+message GetUnreadCountRequest {
+  string user_id = 1;
+}
+
+message GetUnreadCountResponse {
+  common.ErrorCode code = 1;
+  int32 total_unread = 2;
+  message ChannelUnread {
+    string channel_id = 1;
+    ChannelType channel_type = 2;
+    int32 count = 3;
+    string last_message_id = 4;
+  }
+  repeated ChannelUnread channels = 3;
+}
+
+// Read notification (sent to sender)
+message MessageReadNotify {
+  string channel_id = 1;
+  ChannelType channel_type = 2;
+  string message_id = 3;
+  string reader_user_id = 4;
+  int64 read_at = 5;
+}
+
+// ========== Typing Indicators ==========
+
+message TypingIndicator {
+  string channel_id = 1;
+  ChannelType channel_type = 2;
+  string user_id = 3;
+  bool is_typing = 4;
+  int64 timestamp = 5;
+}

@@ -23,6 +23,7 @@ public:
 
   void Start();
   void Close() override;
+  bool IsClosed() const override { return closed_; }
 
   void Send(std::string bytes) override;
   void SendAndClose(std::string bytes) override;

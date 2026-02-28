@@ -4,6 +4,24 @@ services:
     ports:
       - "6379:6379"
 
+  mysql:
+    image: mysql:8.0
+    environment:
+      MYSQL_ROOT_PASSWORD: chirp_password
+      MYSQL_DATABASE: chirp
+      MYSQL_USER: chirp
+      MYSQL_PASSWORD: chirp_pass
+    ports:
+      - "3306:3306"
+    volumes:
+      - mysql_data:/var/lib/mysql
+      - ./scripts/init_db.sql:/docker-entrypoint-initdb.d/init_db.sql
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-u", "root", "-p$$MYSQL_ROOT_PASSWORD"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
   auth:
     build:
       context: .
@@ -44,7 +62,37 @@ services:
       dockerfile: docker/Dockerfile.service
       args:
         SERVICE: chat
-    command: ["--port", "7000", "--ws_port", "7001", "--redis_host", "redis", "--redis_port", "6379", "--offline_ttl", "604800"]
+    command: ["--port", "7000", "--ws_port", "7001", "--redis_host", "redis", "--redis_port", "6379", "--offline_ttl", "604800", "--mysql_host", "mysql", "--mysql_port", "3306", "--mysql_db", "chirp", "--mysql_user", "chirp", "--mysql_pass", "chirp_pass"]
     ports:
       - "7000:7000"
       - "7001:7001"
+    depends_on:
+      - redis
+      - mysql
+
+  social:
+    build:
+      context: .
+      dockerfile: docker/Dockerfile.service
+      args:
+        SERVICE: social
+    command: ["--port", "8000", "--ws_port", "8001", "--redis_host", "redis", "--redis_port", "6379"]
+    ports:
+      - "8000:8000"
+      - "8001:8001"
+    depends_on:
+      - redis
+
+  voice:
+    build:
+      context: .
+      dockerfile: docker/Dockerfile.service
+      args:
+        SERVICE: voice
+    command: ["--port", "9000", "--ws_port", "9001"]
+    ports:
+      - "9000:9000"
+      - "9001:9001"
+
+volumes:
+  mysql_data:

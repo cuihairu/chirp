@@ -23,6 +23,7 @@ public:
 
   void Start();
   void Close() override;
+  bool IsClosed() const override { return closed_; }
 
   // Sends bytes as-is (caller decides framing). Thread-safe.
   void Send(std::string bytes) override;

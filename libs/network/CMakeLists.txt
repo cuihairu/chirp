@@ -20,11 +20,19 @@ file(GLOB HEADERS "*.h")
 
 add_library(chirp_network STATIC ${SRCS} ${HEADERS})
 
-target_include_directories(chirp_network PUBLIC ${CMAKE_SOURCE_DIR}/libs)
+target_include_directories(chirp_network PUBLIC
+    ${CMAKE_SOURCE_DIR}/libs
+)
 
 target_link_libraries(chirp_network PUBLIC
     chirp_common
     chirp_asio
-    ${PROTOBUF_LIBRARIES}
     Threads::Threads
 )
+
+# Link against protobuf if found via vcpkg
+if(TARGET protobuf::libprotobuf)
+    target_link_libraries(chirp_network PUBLIC protobuf::libprotobuf)
+elseif(DEFINED PROTOBUF_LIBRARIES)
+    target_link_libraries(chirp_network PUBLIC ${PROTOBUF_LIBRARIES})
+endif()

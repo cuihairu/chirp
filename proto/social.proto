@@ -1,0 +1,196 @@
+syntax = "proto3";
+
+package chirp.social;
+
+option go_package = "github.com/cui/chirp/proto/social";
+
+import "proto/common.proto";
+
+// User presence states
+enum PresenceStatus {
+  OFFLINE = 0;       // User is offline
+  ONLINE = 1;        // User is online
+  AWAY = 2;          // User is away
+  DND = 3;           // Do not disturb
+  IN_GAME = 4;       // In a game
+  IN_BATTLE = 5;     // In a battle/match
+}
+
+// Friend relationship
+enum FriendStatus {
+  NONE = 0;          // No relationship
+  PENDING = 1;       // Friend request pending
+  ACCEPTED = 2;      // Friends
+  BLOCKED = 3;       // Blocked
+}
+
+// Friend request
+message FriendRequest {
+  string from_user_id = 1;
+  string to_user_id = 2;
+  string message = 3;      // Optional message with request
+  int64 timestamp = 4;
+}
+
+// Friend information
+message FriendInfo {
+  string user_id = 1;
+  string username = 2;
+  string avatar_url = 3;
+  FriendStatus status = 4;
+  int64 added_at = 5;
+}
+
+// Add friend request
+message AddFriendRequest {
+  string user_id = 1;
+  string target_user_id = 2;
+  string message = 3;
+}
+
+message AddFriendResponse {
+  common.ErrorCode code = 1;
+  string request_id = 2;
+  int64 server_time = 3;
+}
+
+// Accept/decline friend request
+message FriendRequestAction {
+  string user_id = 1;
+  string request_id = 2;
+  bool accept = 3;        // true = accept, false = decline
+}
+
+message FriendRequestActionResponse {
+  common.ErrorCode code = 1;
+  int64 server_time = 2;
+}
+
+// Remove friend
+message RemoveFriendRequest {
+  string user_id = 1;
+  string friend_user_id = 2;
+}
+
+message RemoveFriendResponse {
+  common.ErrorCode code = 1;
+  int64 server_time = 2;
+}
+
+// Get friend list
+message GetFriendListRequest {
+  string user_id = 1;
+  int32 limit = 2;
+  int32 offset = 3;
+}
+
+message GetFriendListResponse {
+  common.ErrorCode code = 1;
+  repeated FriendInfo friends = 2;
+  int32 total_count = 3;
+}
+
+// Get pending friend requests
+message GetPendingRequestsRequest {
+  string user_id = 1;
+}
+
+message GetPendingRequestsResponse {
+  common.ErrorCode code = 1;
+  repeated FriendRequest requests = 2;
+}
+
+// Block user
+message BlockUserRequest {
+  string user_id = 1;
+  string target_user_id = 2;
+}
+
+message BlockUserResponse {
+  common.ErrorCode code = 1;
+  int64 server_time = 2;
+}
+
+// Unblock user
+message UnblockUserRequest {
+  string user_id = 1;
+  string target_user_id = 2;
+}
+
+message UnblockUserResponse {
+  common.ErrorCode code = 1;
+  int64 server_time = 2;
+}
+
+// Get blocked list
+message GetBlockedListRequest {
+  string user_id = 1;
+}
+
+message GetBlockedListResponse {
+  common.ErrorCode code = 1;
+  repeated string blocked_user_ids = 2;
+}
+
+// Set presence
+message SetPresenceRequest {
+  string user_id = 1;
+  PresenceStatus status = 2;
+  string status_message = 3;    // Optional custom message
+  map<string, string> metadata = 4;  // Game info, location, etc.
+}
+
+message SetPresenceResponse {
+  common.ErrorCode code = 1;
+  int64 server_time = 2;
+}
+
+// Presence information
+message PresenceInfo {
+  string user_id = 1;
+  PresenceStatus status = 2;
+  string status_message = 3;
+  int64 last_seen = 4;
+  map<string, string> metadata = 5;
+}
+
+// Get presence of users
+message GetPresenceRequest {
+  repeated string user_ids = 1;
+}
+
+message GetPresenceResponse {
+  common.ErrorCode code = 1;
+  repeated PresenceInfo presences = 2;
+}
+
+// Presence notification (broadcast to friends)
+message PresenceNotify {
+  string user_id = 1;
+  PresenceStatus status = 2;
+  string status_message = 3;
+  int64 timestamp = 4;
+  map<string, string> metadata = 5;
+}
+
+// Friend request notification (sent to target user)
+message FriendRequestNotify {
+  string request_id = 1;
+  string from_user_id = 2;
+  string from_username = 3;
+  string message = 4;
+  int64 timestamp = 5;
+}
+
+// Friend request accepted notification
+message FriendAcceptedNotify {
+  string user_id = 1;
+  string username = 2;
+  int64 timestamp = 3;
+}
+
+// Friend removed notification
+message FriendRemovedNotify {
+  string user_id = 1;
+  int64 timestamp = 2;
+}

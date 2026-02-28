@@ -16,6 +16,9 @@ public:
 
   // Closes the connection.
   virtual void Close() = 0;
+
+  // Check if the session is closed.
+  virtual bool IsClosed() const = 0;
 };
 
 } // namespace chirp::network
