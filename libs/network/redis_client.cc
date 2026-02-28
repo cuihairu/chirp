@@ -76,6 +76,31 @@ bool RedisClient::Publish(const std::string& channel, const std::string& message
   return r && r->type == RedisResp::Type::kInteger;
 }
 
+bool RedisClient::RPush(const std::string& key, const std::string& value) {
+  auto r = SendCmd(host_, port_, {"RPUSH", key, value});
+  return r && r->type == RedisResp::Type::kInteger;
+}
+
+bool RedisClient::Expire(const std::string& key, int ttl_seconds) {
+  auto r = SendCmd(host_, port_, {"EXPIRE", key, std::to_string(ttl_seconds)});
+  return r && r->type == RedisResp::Type::kInteger && r->integer > 0;
+}
+
+std::vector<std::string> RedisClient::LRange(const std::string& key, int64_t start, int64_t stop) {
+  std::vector<std::string> out;
+  auto r = SendCmd(host_, port_, {"LRANGE", key, std::to_string(start), std::to_string(stop)});
+  if (!r || r->type != RedisResp::Type::kArray) {
+    return out;
+  }
+  out.reserve(r->array.size());
+  for (const auto& e : r->array) {
+    if (e.type == RedisResp::Type::kBulkString || e.type == RedisResp::Type::kSimpleString) {
+      out.push_back(e.str);
+    }
+  }
+  return out;
+}
+
 RedisSubscriber::RedisSubscriber(std::string host, uint16_t port) : host_(std::move(host)), port_(port) {}
 
 RedisSubscriber::~RedisSubscriber() { Stop(); }

@@ -6,6 +6,7 @@
 #include <memory>
 #include <optional>
 #include <string>
+#include <vector>
 #include <mutex>
 #include <thread>
 
@@ -19,6 +20,9 @@ public:
   bool SetEx(const std::string& key, const std::string& value, int ttl_seconds);
   bool Del(const std::string& key);
   bool Publish(const std::string& channel, const std::string& message);
+  bool RPush(const std::string& key, const std::string& value);
+  bool Expire(const std::string& key, int ttl_seconds);
+  std::vector<std::string> LRange(const std::string& key, int64_t start, int64_t stop);
 
 private:
   std::string host_;

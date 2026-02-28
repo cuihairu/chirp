@@ -44,6 +44,7 @@ services:
       dockerfile: docker/Dockerfile.service
       args:
         SERVICE: chat
-    command: ["--port", "7000"]
+    command: ["--port", "7000", "--ws_port", "7001", "--redis_host", "redis", "--redis_port", "6379", "--offline_ttl", "604800"]
     ports:
       - "7000:7000"
+      - "7001:7001"

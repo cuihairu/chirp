@@ -54,14 +54,14 @@ docker compose up --build
 - `redis`（6379）
 - `chirp_auth`（6000）
 - `chirp_gateway`：TCP 5000 / WebSocket 5001（连接 `auth` + `redis`）
-- `chirp_chat`（7000）
+- `chirp_chat`：TCP 7000 / WebSocket 7001
 
 ### 手动启动（默认端口）
 
 ```bash
 ./build/services/auth/chirp_auth --port 6000 --jwt_secret dev_secret
 ./build/services/gateway/chirp_gateway --port 5000 --ws_port 5001 --auth_host 127.0.0.1 --auth_port 6000
-./build/services/chat/chirp_chat --port 7000
+./build/services/chat/chirp_chat --port 7000 --ws_port 7001 --redis_host 127.0.0.1 --redis_port 6379 --offline_ttl 604800
 ```
 
 可选：启用 Redis 分布式 session（多实例 gateway 时有用）：
@@ -102,7 +102,9 @@ docker compose up --build
 
 `services/gateway` 同时提供 WebSocket（`--ws_port`）。WebSocket 客户端发送 binary frame，frame payload 仍然是长度前缀 + `chirp.gateway.Packet`。
 
-> 当前 gateway 的 WebSocket 主要用于 Login/Heartbeat/Session（控制面）；聊天收发能力目前在 `services/chat`（TCP）里演示实现。要做“聊天 App 全 WebSocket”，可以在 chat service 增加 WS 支持或由 gateway 转发到 chat。
+`services/chat` 现在也提供 WebSocket（默认 `--ws_port 7001`），协议同样是 binary frame + 长度前缀 + `chirp.gateway.Packet`，可用于聊天能力直连验证。
+
+当 `services/chat` 配置了 `--redis_host/--redis_port` 时，私聊消息会在接收方离线时写入 Redis 列表，并在接收方下次 `LOGIN_REQ` 后回放为 `CHAT_MESSAGE_NOTIFY`（当前为轻量离线能力，便于后续迁移到 MySQL 持久化）。
 
 可以用仓库内工具快速验证：
 

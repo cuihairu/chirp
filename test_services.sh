@@ -36,7 +36,7 @@ echo ""
 echo "要运行服务，执行:"
 echo "  ./build/services/gateway/chirp_gateway --port 5000 --ws_port 5001"
 echo "  ./build/services/auth/chirp_auth --port 6000"
-echo "  ./build/services/chat/chirp_chat --port 7000"
+echo "  ./build/services/chat/chirp_chat --port 7000 --ws_port 7001"
 
 if [[ "${1:-}" != "--smoke" && "${1:-}" != "--smoke-chat" && "${1:-}" != "--smoke-redis" ]]; then
   exit 0
@@ -220,10 +220,18 @@ elif [[ "${1:-}" == "--smoke-redis" ]]; then
   tail -n 10 "${AUTH_LOG}" || true
 else
   CHAT_PORT="${CHAT_PORT:-$(pick_port)}"
+  CHAT_WS_PORT="${CHAT_WS_PORT:-$(pick_port)}"
   CHAT_LOG="${CHAT_LOG:-/tmp/chirp_chat_smoke.log}"
   LISTEN_LOG="${LISTEN_LOG:-/tmp/chirp_chat_listen_smoke.log}"
+  CHAT_REDIS_HOST="${CHAT_REDIS_HOST:-}"
+  CHAT_REDIS_PORT="${CHAT_REDIS_PORT:-6379}"
+  CHAT_OFFLINE_TTL="${CHAT_OFFLINE_TTL:-604800}"
+  CHAT_EXTRA_ARGS=()
+  if [[ -n "${CHAT_REDIS_HOST}" ]]; then
+    CHAT_EXTRA_ARGS+=(--redis_host "${CHAT_REDIS_HOST}" --redis_port "${CHAT_REDIS_PORT}" --offline_ttl "${CHAT_OFFLINE_TTL}")
+  fi
 
-  ./build/services/chat/chirp_chat --port "${CHAT_PORT}" > "${CHAT_LOG}" 2>&1 &
+  ./build/services/chat/chirp_chat --port "${CHAT_PORT}" --ws_port "${CHAT_WS_PORT}" "${CHAT_EXTRA_ARGS[@]}" > "${CHAT_LOG}" 2>&1 &
   CHAT_PID=$!
 
   cleanup() {
@@ -251,6 +259,10 @@ else
   echo ""
   echo "[tcp] history private (user_1|user_2)"
   ./build/tools/benchmark/chirp_chat_history_client --host 127.0.0.1 --port "${CHAT_PORT}" --user user_1 --channel_type 0 --channel_id "user_1|user_2" --limit 10
+
+  echo ""
+  echo "[ws] login -> ping on chat"
+  ./build/tools/benchmark/chirp_ws_login_client --host 127.0.0.1 --port "${CHAT_WS_PORT}" --token user_3 --device dev_c --platform web
 
   echo ""
   echo "chat log: ${CHAT_LOG}"
