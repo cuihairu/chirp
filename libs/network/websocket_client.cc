@@ -1,6 +1,7 @@
 #include "websocket_client.h"
 
 #include "common/logger.h"
+#include "websocket_utils.h"
 
 using chirp::common::Logger;
 
@@ -29,15 +30,8 @@ bool WebSocketClient::Connect(const std::string& host, uint16_t port, const std:
       return false;
     }
 
-    // Send WebSocket handshake
-    std::string handshake =
-        "GET " + path + " HTTP/1.1\r\n"
-        "Host: " + host + ":" + std::to_string(port) + "\r\n"
-        "Upgrade: websocket\r\n"
-        "Connection: Upgrade\r\n"
-        "Sec-WebSocket-Key: dGhlIHNhbXBsZSBub25jZQ==\r\n"
-        "Sec-WebSocket-Version: 13\r\n"
-        "\r\n";
+    // Send WebSocket handshake using helper function
+    std::string handshake = BuildWebSocketHandshake(host, port, path);
 
     asio::write(socket_, asio::buffer(handshake), ec);
     if (ec) {
@@ -54,7 +48,7 @@ bool WebSocketClient::Connect(const std::string& host, uint16_t port, const std:
     }
 
     std::string response(response_buf.data(), bytes_read);
-    if (response.find("101 Switching Protocols") == std::string::npos) {
+    if (!IsWebSocketUpgradeSuccessful(response)) {
       Logger::Instance().Error("WebSocket handshake failed: Invalid response");
       return false;
     }
