@@ -1,0 +1,347 @@
+# Chirp 分布式集群部署配置
+# 用于生产环境的分布式部署
+
+version: '3.8'
+
+services:
+  # ============================================
+  # 基础设施层
+  # ============================================
+
+  # Redis (用于会话管理、Pub/Sub、缓存)
+  redis:
+    image: redis:7-alpine
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+    command: redis-server --appendonly yes --maxmemory 512mb --maxmemory-policy allkeys-lru
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 3
+
+  # MySQL (用于持久化存储)
+  mysql:
+    image: mysql:8.0
+    ports:
+      - "3306:3306"
+    environment:
+      MYSQL_ROOT_PASSWORD: chirp_root_password_change_me
+      MYSQL_DATABASE: chirp
+      MYSQL_USER: chirp
+      MYSQL_PASSWORD: chirp_password_change_me
+    volumes:
+      - mysql_data:/var/lib/mysql
+      - ./scripts/init_db.sql:/docker-entrypoint-initdb.d/init_db.sql:ro
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-u", "root", "-p$$MYSQL_ROOT_PASSWORD"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 30s
+
+  # HAProxy 负载均衡器
+  haproxy:
+    image: haproxy:2.8-alpine
+    ports:
+      - "5000:5000"   # Gateway TCP
+      - "5001:5001"   # Gateway WebSocket
+      - "7000:7000"   # Chat TCP
+      - "7001:7001"   # Chat WebSocket
+      - "8000:8000"   # Social TCP
+      - "8001:8001"   # Social WebSocket
+      - "8404:8404"   # HAProxy Stats
+    volumes:
+      - ./deploy/haproxy.cfg:/usr/local/etc/haproxy/haproxy.cfg:ro
+    depends_on:
+      - gateway-1
+      - gateway-2
+      - gateway-3
+    networks:
+      - chirp_net
+
+  # ============================================
+  # Gateway 服务层 (无状态，可水平扩展)
+  # ============================================
+
+  gateway-1:
+    build:
+      context: .
+      dockerfile: docker/Dockerfile.service
+      args:
+        SERVICE: gateway
+    command:
+      - "--port=5000"
+      - "--ws_port=5001"
+      - "--auth_host=auth-1"
+      - "--auth_port=6000"
+      - "--redis_host=redis"
+      - "--redis_port=6379"
+      - "--redis_ttl=3600"
+      - "--instance_id=gw_1"
+    depends_on:
+      - redis
+      - auth-1
+    networks:
+      - chirp_net
+    deploy:
+      resources:
+        limits:
+          cpus: '1'
+          memory: 1G
+        reservations:
+          cpus: '0.25'
+          memory: 256M
+
+  gateway-2:
+    build:
+      context: .
+      dockerfile: docker/Dockerfile.service
+      args:
+        SERVICE: gateway
+    command:
+      - "--port=5000"
+      - "--ws_port=5001"
+      - "--auth_host=auth-2"
+      - "--auth_port=6000"
+      - "--redis_host=redis"
+      - "--redis_port=6379"
+      - "--redis_ttl=3600"
+      - "--instance_id=gw_2"
+    depends_on:
+      - redis
+      - auth-2
+    networks:
+      - chirp_net
+    deploy:
+      resources:
+        limits:
+          cpus: '1'
+          memory: 1G
+        reservations:
+          cpus: '0.25'
+          memory: 256M
+
+  gateway-3:
+    build:
+      context: .
+      dockerfile: docker/Dockerfile.service
+      args:
+        SERVICE: gateway
+    command:
+      - "--port=5000"
+      - "--ws_port=5001"
+      - "--auth_host=auth-3"
+      - "--auth_port=6000"
+      - "--redis_host=redis"
+      - "--redis_port=6379"
+      - "--redis_ttl=3600"
+      - "--instance_id=gw_3"
+    depends_on:
+      - redis
+      - auth-3
+    networks:
+      - chirp_net
+    deploy:
+      resources:
+        limits:
+          cpus: '1'
+          memory: 1G
+        reservations:
+          cpus: '0.25'
+          memory: 256M
+
+  # ============================================
+  # Auth 服务层 (无状态，可水平扩展)
+  # ============================================
+
+  auth-1:
+    build:
+      context: .
+      dockerfile: docker/Dockerfile.service
+      args:
+        SERVICE: auth
+    command: ["--port=6000", "--jwt_secret=production_jwt_secret_change_me"]
+    networks:
+      - chirp_net
+
+  auth-2:
+    build:
+      context: .
+      dockerfile: docker/Dockerfile.service
+      args:
+        SERVICE: auth
+    command: ["--port=6000", "--jwt_secret=production_jwt_secret_change_me"]
+    networks:
+      - chirp_net
+
+  auth-3:
+    build:
+      context: .
+      dockerfile: docker/Dockerfile.service
+      args:
+        SERVICE: auth
+    command: ["--port=6000", "--jwt_secret=production_jwt_secret_change_me"]
+    networks:
+      - chirp_net
+
+  # ============================================
+  # Chat 服务层 (分布式，使用 MessageRouter)
+  # ============================================
+
+  chat-1:
+    build:
+      context: .
+      dockerfile: docker/Dockerfile.service
+      args:
+        SERVICE: chat_distributed
+    command:
+      - "--port=7000"
+      - "--ws_port=7001"
+      - "--redis_host=redis"
+      - "--redis_port=6379"
+      - "--offline_ttl=604800"
+      - "--instance_id=chat_1"
+    depends_on:
+      - redis
+      - mysql
+    networks:
+      - chirp_net
+    deploy:
+      resources:
+        limits:
+          cpus: '2'
+          memory: 2G
+        reservations:
+          cpus: '0.5'
+          memory: 512M
+
+  chat-2:
+    build:
+      context: .
+      dockerfile: docker/Dockerfile.service
+      args:
+        SERVICE: chat_distributed
+    command:
+      - "--port=7000"
+      - "--ws_port=7001"
+      - "--redis_host=redis"
+      - "--redis_port=6379"
+      - "--offline_ttl=604800"
+      - "--instance_id=chat_2"
+    depends_on:
+      - redis
+      - mysql
+    networks:
+      - chirp_net
+    deploy:
+      resources:
+        limits:
+          cpus: '2'
+          memory: 2G
+        reservations:
+          cpus: '0.5'
+          memory: 512M
+
+  chat-3:
+    build:
+      context: .
+      dockerfile: docker/Dockerfile.service
+      args:
+        SERVICE: chat_distributed
+    command:
+      - "--port=7000"
+      - "--ws_port=7001"
+      - "--redis_host=redis"
+      - "--redis_port=6379"
+      - "--offline_ttl=604800"
+      - "--instance_id=chat_3"
+    depends_on:
+      - redis
+      - mysql
+    networks:
+      - chirp_net
+    deploy:
+      resources:
+        limits:
+          cpus: '2'
+          memory: 2G
+        reservations:
+          cpus: '0.5'
+          memory: 512M
+
+  # ============================================
+  # Social 服务层 (可选)
+  # ============================================
+
+  social-1:
+    build:
+      context: .
+      dockerfile: docker/Dockerfile.service
+      args:
+        SERVICE: social
+    command:
+      - "--port=8000"
+      - "--ws_port=8001"
+      - "--redis_host=redis"
+      - "--redis_port=6379"
+    depends_on:
+      - redis
+    networks:
+      - chirp_net
+
+  social-2:
+    build:
+      context: .
+      dockerfile: docker/Dockerfile.service
+      args:
+        SERVICE: social
+    command:
+      - "--port=8000"
+      - "--ws_port=8001"
+      - "--redis_host=redis"
+      - "--redis_port=6379"
+    depends_on:
+      - redis
+    networks:
+      - chirp_net
+
+  # ============================================
+  # 监控和管理工具 (可选)
+  # ============================================
+
+  # Redis Commander - Redis Web 管理界面
+  redis-commander:
+    image: rediscommander/redis-commander:latest
+    ports:
+      - "8081:8081"
+    environment:
+      - REDIS_HOSTS=local:redis:6379
+    depends_on:
+      - redis
+    networks:
+      - chirp_net
+    profiles:
+      - tools
+
+  # Adminer - 数据库管理界面
+  adminer:
+    image: adminer:latest
+    ports:
+      - "8080:8080"
+    depends_on:
+      - mysql
+    networks:
+      - chirp_net
+    profiles:
+      - tools
+
+networks:
+  chirp_net:
+    driver: bridge
+
+volumes:
+  redis_data:
+  mysql_data:

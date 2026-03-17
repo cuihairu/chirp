@@ -10,6 +10,7 @@
 #include <asio.hpp>
 
 #include "network/redis_protocol.h"
+#include "common/logger.h"
 
 namespace chirp::network {
 namespace {
@@ -101,15 +102,149 @@ std::vector<std::string> RedisClient::LRange(const std::string& key, int64_t sta
   return out;
 }
 
-RedisSubscriber::RedisSubscriber(std::string host, uint16_t port) : host_(std::move(host)), port_(port) {}
+std::vector<std::string> RedisClient::Keys(const std::string& pattern) {
+  std::vector<std::string> out;
+  auto r = SendCmd(host_, port_, {"KEYS", pattern});
+  if (!r || r->type != RedisResp::Type::kArray) {
+    return out;
+  }
+  out.reserve(r->array.size());
+  for (const auto& e : r->array) {
+    if (e.type == RedisResp::Type::kBulkString || e.type == RedisResp::Type::kSimpleString) {
+      out.push_back(e.str);
+    }
+  }
+  return out;
+}
 
-RedisSubscriber::~RedisSubscriber() { Stop(); }
+// ============================================================================
+// RedisSubscriber - Enhanced version with multi-channel support
+// ============================================================================
 
-void RedisSubscriber::Start(const std::string& channel, MessageCallback cb) {
+namespace {
+
+class SubscribeParser {
+public:
+  void Append(const char* data, size_t size) {
+    buffer_.append(data, size);
+    Process();
+  }
+
+  void Process() {
+    while (!buffer_.empty()) {
+      // Find \r\n
+      size_t pos = buffer_.find("\r\n");
+      if (pos == std::string::npos) {
+        return;  // Incomplete line
+      }
+
+      std::string line = buffer_.substr(0, pos);
+      buffer_.erase(0, pos + 2);
+
+      if (line.empty() || line[0] != '$') {
+        continue;
+      }
+
+      // Parse bulk string size: $<size>\r\n<data>\r\n
+      size_t size;
+      try {
+        size = std::stoul(line.substr(1));
+      } catch (...) {
+        continue;
+      }
+
+      if (size == static_cast<size_t>(-1)) {
+        // Null bulk string
+        current_array_.emplace_back();
+        current_array_.back().type = RedisResp::Type::kNull;
+        continue;
+      }
+
+      // Read the data
+      if (buffer_.size() < size + 2) {
+        return;  // Incomplete data
+      }
+
+      std::string data = buffer_.substr(0, size);
+      buffer_.erase(0, size + 2);  // +2 for \r\n
+
+      RedisResp resp;
+      resp.type = RedisResp::Type::kBulkString;
+      resp.str = data;
+      current_array_.push_back(resp);
+
+      // Subscribe messages come in arrays of 3: ["message", "channel", "payload"]
+      if (current_array_.size() == 3) {
+        // We have a complete subscribe message
+        if (current_array_[0].type == RedisResp::Type::kBulkString &&
+            current_array_[0].str == "message") {
+          // Valid subscribe message
+          pending_messages_.push({
+            current_array_[1].str,  // channel
+            current_array_[2].str   // payload
+          });
+        }
+        current_array_.clear();
+      }
+    }
+  }
+
+  std::vector<std::pair<std::string, std::string>> PopMessages() {
+    std::vector<std::pair<std::string, std::string>> result;
+    result.swap(pending_messages_);
+    return result;
+  }
+
+private:
+  std::string buffer_;
+  std::vector<RedisResp> current_array_;
+  std::vector<std::pair<std::string, std::string>> pending_messages_;
+};
+
+}  // namespace
+
+RedisSubscriber::RedisSubscriber(std::string host, uint16_t port)
+    : host_(std::move(host)),
+      port_(port),
+      io_(std::make_unique<asio::io_context>()),
+      socket_(std::make_unique<asio::ip::tcp::socket>(*io_)) {
+  socket_ptr_ = socket_.get();
+}
+
+RedisSubscriber::~RedisSubscriber() {
   Stop();
-  channel_ = channel;
-  cb_ = std::move(cb);
+}
+
+bool RedisSubscriber::Subscribe(const std::string& channel) {
+  std::string cmd = BuildRedisCommand({"SUBSCRIBE", channel});
+  return SendCommand(cmd);
+}
+
+bool RedisSubscriber::Unsubscribe(const std::string& channel) {
+  std::string cmd = BuildRedisCommand({"UNSUBSCRIBE", channel});
+  return SendCommand(cmd);
+}
+
+bool RedisSubscriber::SendCommand(const std::string& cmd) {
+  std::lock_guard<std::mutex> lock(sock_mu_);
+  if (!socket_ || !socket_->is_open()) {
+    return false;
+  }
+  try {
+    asio::write(*socket_, asio::buffer(cmd));
+    return true;
+  } catch (const std::exception& e) {
+    if (error_cb_) {
+      error_cb_(std::string("SendCommand failed: ") + e.what());
+    }
+    return false;
+  }
+}
+
+void RedisSubscriber::Start() {
+  Stop();
   stop_.store(false);
+  connected_.store(false);
   th_ = std::thread([this] { Run(); });
 }
 
@@ -117,13 +252,13 @@ void RedisSubscriber::Stop() {
   stop_.store(true);
   {
     std::lock_guard<std::mutex> lock(sock_mu_);
-    if (sock_holder_) {
-      // Stored as void to avoid including asio in header; we know it's a tcp::socket.
-      auto* sock = static_cast<asio::ip::tcp::socket*>(sock_holder_.get());
+    if (socket_ && socket_->is_open()) {
       asio::error_code ec;
-      sock->close(ec);
-      sock_holder_.reset();
+      socket_->close(ec);
     }
+  }
+  if (io_) {
+    io_->stop();
   }
   if (th_.joinable()) {
     th_.join();
@@ -131,53 +266,49 @@ void RedisSubscriber::Stop() {
 }
 
 void RedisSubscriber::Run() {
+  using chirp::common::Logger;
+
   try {
-    asio::io_context io;
-    asio::ip::tcp::resolver resolver(io);
-    auto sock = std::make_shared<asio::ip::tcp::socket>(io);
-    {
-      std::lock_guard<std::mutex> lock(sock_mu_);
-      sock_holder_ = sock;
-    }
-
+    asio::ip::tcp::resolver resolver(*io_);
     auto endpoints = resolver.resolve(host_, std::to_string(port_));
-    asio::connect(*sock, endpoints);
+    asio::connect(*socket_, endpoints);
 
-    const std::string subscribe_cmd = BuildRedisCommand({"SUBSCRIBE", channel_});
-    asio::write(*sock, asio::buffer(subscribe_cmd));
+    connected_.store(true);
+    if (connect_cb_) {
+      connect_cb_();
+    }
 
-    RedisRespParser parser;
-    std::array<uint8_t, 4096> buf{};
+    SubscribeParser parser;
+    std::array<uint8_t, 8192> buf{};
+
     while (!stop_.load()) {
-      auto v = parser.Pop();
-      if (!v) {
-        asio::error_code ec;
-        const size_t n = sock->read_some(asio::buffer(buf), ec);
-        if (ec) {
-          break;
+      asio::error_code ec;
+      const size_t n = socket_->read_some(asio::buffer(buf), ec);
+
+      if (ec) {
+        if (error_cb_ && ec != asio::error::eof) {
+          error_cb_("Read error: " + ec.message());
         }
-        parser.Append(buf.data(), n);
-        continue;
+        break;
       }
 
-      if (v->type != RedisResp::Type::kArray || v->array.size() < 3) {
-        continue;
-      }
-      const auto& kind = v->array[0];
-      const auto& ch = v->array[1];
-      const auto& payload = v->array[2];
-      if ((kind.type == RedisResp::Type::kBulkString || kind.type == RedisResp::Type::kSimpleString) &&
-          kind.str == "message") {
-        if (cb_ && (ch.type == RedisResp::Type::kBulkString || ch.type == RedisResp::Type::kSimpleString) &&
-            payload.type == RedisResp::Type::kBulkString) {
-          cb_(ch.str, payload.str);
+      parser.Append(reinterpret_cast<const char*>(buf.data()), n);
+
+      // Process all pending messages
+      auto messages = parser.PopMessages();
+      for (const auto& [channel, payload] : messages) {
+        if (msg_cb_) {
+          msg_cb_(channel, payload);
         }
       }
     }
-  } catch (...) {
-    // best-effort
+  } catch (const std::exception& e) {
+    if (error_cb_) {
+      error_cb_(std::string("Subscriber exception: ") + e.what());
+    }
   }
+
+  connected_.store(false);
 }
 
 } // namespace chirp::network
-

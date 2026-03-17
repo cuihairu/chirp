@@ -1,0 +1,218 @@
+# Kubernetes 部署配置 - Chirp Chat Service
+
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: chirp-chat-config
+  namespace: chirp
+data:
+  REDIS_HOST: "redis-cluster"
+  REDIS_PORT: "6379"
+  MYSQL_HOST: "mysql-primary"
+  MYSQL_PORT: "3306"
+  MYSQL_DB: "chirp"
+  OFFLINE_TTL: "604800"
+
+---
+apiVersion: v1
+kind: Secret
+metadata:
+  name: chirp-chat-secret
+  namespace: chirp
+type: Opaque
+data:
+  # Base64 编码的密码
+  MYSQL_PASS: Y2hpcnBfcGFzcw==  # chirp_pass
+  MYSQL_USER: Y2hpcnA=           # chirp
+
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: chirp-chat
+  namespace: chirp
+  labels:
+    app: chirp-chat
+    version: v1
+spec:
+  replicas: 3
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxSurge: 1
+      maxUnavailable: 0
+  selector:
+    matchLabels:
+      app: chirp-chat
+  template:
+    metadata:
+      labels:
+        app: chirp-chat
+        version: v1
+    spec:
+      affinity:
+        # Pod 反亲和性
+        podAntiAffinity:
+          preferredDuringSchedulingIgnoredDuringExecution:
+          - weight: 100
+            podAffinityTerm:
+              labelSelector:
+                matchExpressions:
+                - key: app
+                  operator: In
+                  values:
+                  - chirp-chat
+              topologyKey: kubernetes.io/hostname
+
+      initContainers:
+      - name: wait-for-redis
+        image: busybox:1.36
+        command: ['sh', '-c', 'until nc -z redis-cluster 6379; do echo waiting for redis; sleep 2; done;']
+      - name: wait-for-mysql
+        image: busybox:1.36
+        command: ['sh', '-c', 'until nc -z mysql-primary 3306; do echo waiting for mysql; sleep 2; done;']
+
+      containers:
+      - name: chat
+        image: chirp/chat:latest
+        imagePullPolicy: IfNotPresent
+        ports:
+        - name: tcp
+          containerPort: 7000
+          protocol: TCP
+        - name: websocket
+          containerPort: 7001
+          protocol: TCP
+        env:
+        - name: PORT
+          value: "7000"
+        - name: WS_PORT
+          value: "7001"
+        - name: INSTANCE_ID
+          valueFrom:
+            fieldRef:
+              fieldPath: metadata.name
+        - name: REDIS_HOST
+          valueFrom:
+            configMapKeyRef:
+              name: chirp-chat-config
+              key: REDIS_HOST
+        - name: REDIS_PORT
+          valueFrom:
+            configMapKeyRef:
+              name: chirp-chat-config
+              key: REDIS_PORT
+        - name: MYSQL_HOST
+          valueFrom:
+            configMapKeyRef:
+              name: chirp-chat-config
+              key: MYSQL_HOST
+        - name: MYSQL_PORT
+          valueFrom:
+            configMapKeyRef:
+              name: chirp-chat-config
+              key: MYSQL_PORT
+        - name: MYSQL_DB
+          valueFrom:
+            configMapKeyRef:
+              name: chirp-chat-config
+              key: MYSQL_DB
+        - name: MYSQL_USER
+          valueFrom:
+            secretKeyRef:
+              name: chirp-chat-secret
+              key: MYSQL_USER
+        - name: MYSQL_PASS
+          valueFrom:
+            secretKeyRef:
+              name: chirp-chat-secret
+              key: MYSQL_PASS
+        - name: OFFLINE_TTL
+          valueFrom:
+            configMapKeyRef:
+              name: chirp-chat-config
+              key: OFFLINE_TTL
+
+        resources:
+          requests:
+            memory: "512Mi"
+            cpu: "500m"
+          limits:
+            memory: "2Gi"
+            cpu: "2000m"
+
+        livenessProbe:
+          tcpSocket:
+            port: 7000
+          initialDelaySeconds: 30
+          periodSeconds: 10
+          failureThreshold: 3
+
+        readinessProbe:
+          tcpSocket:
+            port: 7000
+          initialDelaySeconds: 10
+          periodSeconds: 5
+          failureThreshold: 2
+
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: chirp-chat
+  namespace: chirp
+  labels:
+    app: chirp-chat
+spec:
+  type: ClusterIP
+  sessionAffinity: None  # Chat 服务需要无状态访问
+  ports:
+  - name: tcp
+    port: 7000
+    targetPort: 7000
+    protocol: TCP
+  - name: websocket
+    port: 7001
+    targetPort: 7001
+    protocol: TCP
+  selector:
+    app: chirp-chat
+
+---
+apiVersion: autoscaling/v2
+kind: HorizontalPodAutoscaler
+metadata:
+  name: chirp-chat-hpa
+  namespace: chirp
+spec:
+  scaleTargetRef:
+    apiVersion: apps/v1
+    kind: Deployment
+    name: chirp-chat
+  minReplicas: 3
+  maxReplicas: 20
+  metrics:
+  - type: Resource
+    resource:
+      name: cpu
+      target:
+        type: Utilization
+        averageUtilization: 70
+  - type: Resource
+    resource:
+      name: memory
+      target:
+        type: Utilization
+        averageUtilization: 80
+
+---
+apiVersion: policy/v1
+kind: PodDisruptionBudget
+metadata:
+  name: chirp-chat-pdb
+  namespace: chirp
+spec:
+  minAvailable: 2
+  selector:
+    matchLabels:
+      app: chirp-chat

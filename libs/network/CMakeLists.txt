@@ -18,6 +18,10 @@ target_compile_definitions(chirp_asio INTERFACE ASIO_STANDALONE ASIO_NO_DEPRECAT
 file(GLOB SRCS "*.cc")
 file(GLOB HEADERS "*.h")
 
+# Exclude redis_client.cc if we need to customize the build
+# But we want to include message_router.cc
+set(SRCS ${SRCS})
+
 add_library(chirp_network STATIC ${SRCS} ${HEADERS})
 
 target_include_directories(chirp_network PUBLIC

@@ -1,0 +1,188 @@
+# Kubernetes Redis 集群部署（使用 Redis Operator）
+
+# 命名空间
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: chirp
+
+---
+# Redis 集群 (使用 Redis Operator)
+# 注意：需要先安装 Redis Operator
+# kubectl apply -f https://raw.githubusercontent.com/spotahome/redis-operator/master/manifests/databases.spotahome.com_redbises.yaml
+
+apiVersion: databases.spotahome.com/v1
+kind: RedisFailover
+metadata:
+  name: redis-cluster
+  namespace: chirp
+spec:
+  # Sentinel 配置
+  sentinel:
+    replicas: 3
+    resources:
+      requests:
+        cpu: 100m
+        memory: 128Mi
+      limits:
+        cpu: 400m
+        memory: 512Mi
+
+  # Redis 配置
+  redis:
+    replicas: 3
+    resources:
+      requests:
+        cpu: 100m
+        memory: 256Mi
+      limits:
+        cpu: 500m
+        memory: 1Gi
+
+    # Redis 配置参数
+    customConfig: |
+      maxmemory 512mb
+      maxmemory-policy allkeys-lru
+      save 900 1
+      save 300 10
+      save 60 10000
+      appendonly yes
+      appendfsync everysec
+
+  # 存储配置
+  storage:
+    persistentVolumeClaim:
+      metadata:
+        name: redis-cluster-pvc
+      spec:
+        accessModes: ["ReadWriteOnce"]
+        storageClassName: fast-ssd
+        resources:
+          requests:
+            storage: 5Gi
+
+---
+# Redis 服务（通过 Sentinel 自动发现）
+apiVersion: v1
+kind: Service
+metadata:
+  name: redis-cluster
+  namespace: chirp
+  labels:
+    app: redis-cluster
+spec:
+  ports:
+  - name: redis
+    port: 6379
+    targetPort: 6379
+  - name: sentinel
+    port: 26379
+    targetPort: 26379
+  selector:
+    app: redis-cluster
+    role: master
+  type: ClusterIP
+
+---
+# 如果不用 Redis Operator，可以用简单的 StatefulSet
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: redis-config
+  namespace: chirp
+data:
+  redis.conf: |
+    bind 0.0.0.0
+    protected-mode no
+    port 6379
+    cluster-enabled yes
+    cluster-config-file nodes.conf
+    cluster-node-timeout 5000
+    appendonly yes
+    dir /data
+    maxmemory 512mb
+    maxmemory-policy allkeys-lru
+
+---
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: redis
+  namespace: chirp
+spec:
+  serviceName: redis-cluster
+  replicas: 6
+  selector:
+    matchLabels:
+      app: redis
+  template:
+    metadata:
+      labels:
+        app: redis
+    spec:
+      containers:
+      - name: redis
+        image: redis:7-alpine
+        command:
+        - redis-server
+        - /conf/redis.conf
+        - --cluster-announce-ip
+        - $(POD_IP)
+        env:
+        - name: POD_IP
+          valueFrom:
+            fieldRef:
+              fieldPath: status.podIP
+        ports:
+        - containerPort: 6379
+          name: client
+        - containerPort: 16379
+          name: cluster
+        volumeMounts:
+        - name: conf
+          mountPath: /conf
+        - name: data
+          mountPath: /data
+      - name: redis-init
+        image: redis:7-alpine
+        command: ["/bin/sh", "-c"]
+        args:
+        - |
+          sleep 10
+          redis-cli -h redis-0.redis-cluster --cluster create \
+            $(seq -f 'redis-%g.redis-cluster:6379 ' 0 5) \
+            --cluster-replicas 1 --cluster-yes
+        volumeMounts: []
+      volumes:
+      - name: conf
+        configMap:
+          name: redis-config
+  volumeClaimTemplates:
+  - metadata:
+      name: data
+    spec:
+      accessModes: ["ReadWriteOnce"]
+      storageClassName: fast-ssd
+      resources:
+        requests:
+          storage: 5Gi
+
+---
+# Redis 集群服务
+apiVersion: v1
+kind: Service
+metadata:
+  name: redis-cluster
+  namespace: chirp
+spec:
+  clusterIP: None
+  ports:
+  - port: 6379
+    targetPort: 6379
+    name: client
+  - port: 16379
+    targetPort: 16379
+    name: cluster
+  selector:
+    app: redis

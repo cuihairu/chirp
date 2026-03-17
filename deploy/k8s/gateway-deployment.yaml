@@ -1,0 +1,231 @@
+# Kubernetes 部署配置 - Chirp Gateway
+# 用于在 Kubernetes 集群中部署 Gateway 服务
+
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: chirp-gateway-config
+  namespace: chirp
+data:
+  AUTH_HOST: "chirp-auth"
+  AUTH_PORT: "6000"
+  REDIS_HOST: "redis-cluster"
+  REDIS_PORT: "6379"
+  REDIS_TTL: "3600"
+
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: chirp-gateway
+  namespace: chirp
+  labels:
+    app: chirp-gateway
+    version: v1
+spec:
+  # 副本数量（可根据负载调整）
+  replicas: 3
+  # 更新策略
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxSurge: 1
+      maxUnavailable: 0
+  selector:
+    matchLabels:
+      app: chirp-gateway
+  template:
+    metadata:
+      labels:
+        app: chirp-gateway
+        version: v1
+      annotations:
+        prometheus.io/scrape: "true"
+        prometheus.io/port: "9090"
+    spec:
+      # 反亲和性：确保 Pod 分布在不同节点
+      affinity:
+        podAntiAffinity:
+          preferredDuringSchedulingIgnoredDuringExecution:
+          - weight: 100
+            podAffinityTerm:
+              labelSelector:
+                matchExpressions:
+                - key: app
+                  operator: In
+                  values:
+                  - chirp-gateway
+              topologyKey: kubernetes.io/hostname
+
+      # 初始化容器：等待依赖服务就绪
+      initContainers:
+      - name: wait-for-redis
+        image: busybox:1.36
+        command: ['sh', '-c', 'until nc -z redis-cluster 6379; do echo waiting for redis; sleep 2; done']
+      - name: wait-for-auth
+        image: busybox:1.36
+        command: ['sh', '-c', 'until nc -z chirp-auth 6000; do echo waiting for auth; sleep 2; done']
+
+      containers:
+      - name: gateway
+        image: chirp/gateway:latest
+        imagePullPolicy: IfNotPresent
+        ports:
+        - name: tcp
+          containerPort: 5000
+          protocol: TCP
+        - name: websocket
+          containerPort: 5001
+          protocol: TCP
+        env:
+        - name: PORT
+          value: "5000"
+        - name: WS_PORT
+          value: "5001"
+        - name: INSTANCE_ID
+          valueFrom:
+            fieldRef:
+              fieldPath: metadata.name
+        - name: AUTH_HOST
+          valueFrom:
+            configMapKeyRef:
+              name: chirp-gateway-config
+              key: AUTH_HOST
+        - name: AUTH_PORT
+          valueFrom:
+            configMapKeyRef:
+              name: chirp-gateway-config
+              key: AUTH_PORT
+        - name: REDIS_HOST
+          valueFrom:
+            configMapKeyRef:
+              name: chirp-gateway-config
+              key: REDIS_HOST
+        - name: REDIS_PORT
+          valueFrom:
+            configMapKeyRef:
+              name: chirp-gateway-config
+              key: REDIS_PORT
+        - name: REDIS_TTL
+          valueFrom:
+            configMapKeyRef:
+              name: chirp-gateway-config
+              key: REDIS_TTL
+
+        # 资源限制
+        resources:
+          requests:
+            memory: "256Mi"
+            cpu: "250m"
+          limits:
+            memory: "1Gi"
+            cpu: "1000m"
+
+        # 健康检查
+        livenessProbe:
+          tcpSocket:
+            port: 5000
+          initialDelaySeconds: 30
+          periodSeconds: 10
+          timeoutSeconds: 5
+          failureThreshold: 3
+
+        readinessProbe:
+          tcpSocket:
+            port: 5000
+          initialDelaySeconds: 10
+          periodSeconds: 5
+          timeoutSeconds: 3
+          failureThreshold: 2
+
+        # 启动探针（慢启动容器）
+        startupProbe:
+          tcpSocket:
+            port: 5000
+          initialDelaySeconds: 5
+          periodSeconds: 5
+          timeoutSeconds: 3
+          failureThreshold: 30
+
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: chirp-gateway
+  namespace: chirp
+  labels:
+    app: chirp-gateway
+  annotations:
+    service.beta.kubernetes.io/aws-load-balancer-type: "nlb"
+spec:
+  type: LoadBalancer
+  externalTrafficPolicy: Local  # 保留客户端源 IP
+  sessionAffinity: ClientIP     # 会话亲和（同一客户端连同一 Pod）
+  sessionAffinityConfig:
+    clientIP:
+      timeoutSeconds: 3600       # 1 小时亲和
+  ports:
+  - name: tcp
+    port: 5000
+    targetPort: 5000
+    protocol: TCP
+  - name: websocket
+    port: 5001
+    targetPort: 5001
+    protocol: TCP
+  selector:
+    app: chirp-gateway
+
+---
+# 水平自动扩缩容
+apiVersion: autoscaling/v2
+kind: HorizontalPodAutoscaler
+metadata:
+  name: chirp-gateway-hpa
+  namespace: chirp
+spec:
+  scaleTargetRef:
+    apiVersion: apps/v1
+    kind: Deployment
+    name: chirp-gateway
+  minReplicas: 3
+  maxReplicas: 20
+  metrics:
+  - type: Resource
+    resource:
+      name: cpu
+      target:
+        type: Utilization
+        averageUtilization: 70
+  - type: Resource
+    resource:
+      name: memory
+      target:
+        type: Utilization
+        averageUtilization: 80
+  behavior:
+    scaleUp:
+      stabilizationWindowSeconds: 60
+      policies:
+      - type: Percent
+        value: 50
+        periodSeconds: 60
+    scaleDown:
+      stabilizationWindowSeconds: 300
+      policies:
+      - type: Percent
+        value: 10
+        periodSeconds: 60
+
+---
+# PodDisruptionBudget（确保最少可用副本）
+apiVersion: policy/v1
+kind: PodDisruptionBudget
+metadata:
+  name: chirp-gateway-pdb
+  namespace: chirp
+spec:
+  minAvailable: 2
+  selector:
+    matchLabels:
+      app: chirp-gateway
