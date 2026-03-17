@@ -38,3 +38,104 @@ message LogoutResponse {
   common.ErrorCode code = 1;
   int64 server_time = 2;
 }
+
+// Registration request
+message RegisterRequest {
+  string username = 1;
+  string email = 2;
+  string password = 3;
+  string display_name = 4;
+}
+
+// Registration response
+message RegisterResponse {
+  common.ErrorCode code = 1;
+  string user_id = 2;
+  int64 server_time = 3;
+  string error_message = 4;
+}
+
+// Password login request
+message PasswordLoginRequest {
+  string identifier = 1;  // username or email
+  string password = 2;
+  string device_id = 3;
+  string platform = 4;
+}
+
+// Password login response
+message PasswordLoginResponse {
+  common.ErrorCode code = 1;
+  string user_id = 2;
+  string username = 3;
+  string session_id = 4;
+  string access_token = 5;
+  string refresh_token = 6;
+  int64 access_token_expires_at = 7;
+  int64 refresh_token_expires_at = 8;
+  int64 server_time = 9;
+  bool kick_previous = 10;
+  string error_message = 11;
+}
+
+// Refresh token request
+message RefreshTokenRequest {
+  string refresh_token = 1;
+}
+
+// Refresh token response
+message RefreshTokenResponse {
+  common.ErrorCode code = 1;
+  string access_token = 2;
+  int64 access_token_expires_at = 3;
+  int64 server_time = 4;
+  string error_message = 5;
+}
+
+// Get user sessions request
+message GetSessionsRequest {
+  string user_id = 1;
+}
+
+// Session info
+message SessionInfo {
+  string session_id = 1;
+  string device_id = 2;
+  string platform = 3;
+  int64 created_at = 4;
+  int64 last_activity_at = 5;
+  bool is_current = 6;
+}
+
+// Get sessions response
+message GetSessionsResponse {
+  common.ErrorCode code = 1;
+  repeated SessionInfo sessions = 2;
+  int64 server_time = 3;
+}
+
+// Revoke session request
+message RevokeSessionRequest {
+  string user_id = 1;
+  string session_id = 2;
+}
+
+// Revoke session response
+message RevokeSessionResponse {
+  common.ErrorCode code = 1;
+  int64 server_time = 2;
+}
+
+// Change password request
+message ChangePasswordRequest {
+  string user_id = 1;
+  string old_password = 2;
+  string new_password = 3;
+}
+
+// Change password response
+message ChangePasswordResponse {
+  common.ErrorCode code = 1;
+  int64 server_time = 2;
+  string error_message = 3;
+}

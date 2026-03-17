@@ -1,0 +1,41 @@
+{
+	"FileVersion": 3,
+	"Version": 1,
+	"VersionName": "1.0",
+	"FriendlyName": "Chirp SDK",
+	"Description": "Real-time communication SDK for Chirp platform - Chat, Social, and Voice features",
+	"Category": "Networking",
+	"CreatedBy": "Chirp",
+	"CreatedByURL": "https://github.com/cui/chirp",
+	"DocsURL": "https://github.com/cui/chirp/docs",
+	"MarketplaceURL": "",
+	"SupportURL": "https://github.com/cui/chirp/issues",
+	"CanContainContent": false,
+	"IsBetaVersion": false,
+	"Installed": false,
+	"Modules": [
+		{
+			"Name": "ChirpSDK",
+			"Type": "Runtime",
+			"LoadingPhase": "PostConfigInit"
+		}
+	],
+	"Plugins": [
+	],
+	"EnabledByDefault": true,
+	"CanContainContent": false,
+	"IsBetaVersion": false,
+	"SupportedPrograms": [
+		"UnrealEditor",
+		"UnrealEditor_Client",
+		"UnrealEditor_Server"
+	],
+	"SupportedTargetPlatforms": [
+		"Windows",
+		"Mac",
+		"Linux",
+		"Android",
+		"IOS"
+	],
+	"HasBinaryVersion": false
+}

@@ -300,3 +300,79 @@ message TypingIndicator {
   bool is_typing = 4;
   int64 timestamp = 5;
 }
+
+// ========== Message Delivery (ACK/NACK) ==========
+
+// Message acknowledgment
+message MessageAck {
+  string message_id = 1;
+  string user_id = 2;
+  int64 received_at = 3;
+}
+
+// Message negative acknowledgment (delivery failed)
+message MessageNack {
+  string message_id = 1;
+  string user_id = 2;
+  common.ErrorCode error_code = 3;
+  string error_message = 4;
+  int64 failed_at = 5;
+}
+
+// Delivery status
+message DeliveryStatus {
+  string message_id = 1;
+  string user_id = 2;
+  enum Status {
+    PENDING = 0;
+    DELIVERED = 1;
+    FAILED = 2;
+    ACKNOWLEDGED = 3;
+  }
+  Status status = 3;
+  int64 timestamp = 4;
+  int retry_count = 5;
+}
+
+// ========== Enhanced History with Pagination ==========
+
+// Pagination token for cursor-based pagination
+message PaginationToken {
+  string cursor = 1;
+  int64 timestamp = 2;
+  int32 page_size = 3;
+}
+
+// Enhanced history request with pagination
+message GetHistoryRequestV2 {
+  string user_id = 1;
+  ChannelType channel_type = 2;
+  string channel_id = 3;
+  PaginationToken pagination = 4;  // Cursor for next page
+  int32 limit = 5;                 // Max messages per page (default: 50)
+  bool include_deleted = 6;        // Include soft-deleted messages
+  int64 since_timestamp = 7;       // Only messages after this time
+}
+
+// Enhanced history response
+message GetHistoryResponseV2 {
+  common.ErrorCode code = 1;
+  repeated ChatMessage messages = 2;
+  PaginationToken next_page = 3;   // Token for next page
+  bool has_more = 4;
+  int32 total_count = 5;           // Total messages matching query
+}
+
+// Message delivery tracking request
+message TrackMessageRequest {
+  string message_id = 1;
+  string receiver_id = 2;
+  int64 expires_at = 3;
+}
+
+// Message delivery tracking response
+message TrackMessageResponse {
+  common.ErrorCode code = 1;
+  string tracking_id = 2;
+  int64 server_time = 3;
+}

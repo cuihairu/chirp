@@ -165,3 +165,44 @@ CREATE TABLE IF NOT EXISTS voice_participants (
   INDEX idx_room_id (room_id),
   INDEX idx_user_id (user_id)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+-- Refresh tokens table (for Auth service - enhanced authentication)
+CREATE TABLE IF NOT EXISTS refresh_tokens (
+  id BIGINT AUTO_INCREMENT PRIMARY KEY,
+  token_id VARCHAR(255) NOT NULL UNIQUE,
+  user_id VARCHAR(255) NOT NULL,
+  session_id VARCHAR(255),
+  device_id VARCHAR(255),
+  token_hash VARCHAR(255) NOT NULL,
+  created_at BIGINT NOT NULL,
+  expires_at BIGINT NOT NULL,
+  revoked_at BIGINT,
+  is_revoked BOOLEAN DEFAULT FALSE,
+  INDEX idx_user_id (user_id),
+  INDEX idx_expires (expires_at),
+  INDEX idx_token_id (token_id)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+-- Failed login attempts table (for Auth service - brute force protection)
+CREATE TABLE IF NOT EXISTS failed_login_attempts (
+  id BIGINT AUTO_INCREMENT PRIMARY KEY,
+  identifier VARCHAR(255) NOT NULL,
+  attempt_time BIGINT NOT NULL,
+  ip_address VARCHAR(64),
+  INDEX idx_identifier_time (identifier, attempt_time),
+  INDEX idx_ip_address (ip_address)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+-- Password reset tokens table (for Auth service - password recovery)
+CREATE TABLE IF NOT EXISTS password_reset_tokens (
+  id BIGINT AUTO_INCREMENT PRIMARY KEY,
+  token_id VARCHAR(255) NOT NULL UNIQUE,
+  user_id VARCHAR(255) NOT NULL,
+  token_hash VARCHAR(255) NOT NULL,
+  created_at BIGINT NOT NULL,
+  expires_at BIGINT NOT NULL,
+  used_at BIGINT,
+  is_used BOOLEAN DEFAULT FALSE,
+  INDEX idx_user_id (user_id),
+  INDEX idx_expires (expires_at)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
