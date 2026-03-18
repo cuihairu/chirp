@@ -1,0 +1,14 @@
+{
+  "$schema": "https://raw.githubusercontent.com/microsoft/vcpkg-tool/main/docs/vcpkg.schema.json",
+  "name": "chirp",
+  "version": "0.1.0",
+  "description": "Real-time communication platform",
+  "dependencies": [
+    "protobuf",
+    "abseil",
+    "libsodium",
+    "mysql-connector-cpp",
+    "pkgconf"
+  ],
+  "builtin-baseline": "2024-03-15"
+}

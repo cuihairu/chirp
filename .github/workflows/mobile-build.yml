@@ -179,12 +179,13 @@ jobs:
           libprotobuf-dev \
           protobuf-compiler \
           libabsl-dev \
+          libsodium-dev \
           pkg-config
 
     - name: Install dependencies (macOS)
       if: runner.os == 'macOS'
       run: |
-        brew install cmake protobuf abseil pkg-config ninja
+        brew install cmake protobuf abseil libsodium pkg-config ninja
 
     - name: Install dependencies (Windows)
       if: runner.os == 'Windows'

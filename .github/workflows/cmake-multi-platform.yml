@@ -43,6 +43,7 @@ jobs:
           libprotobuf-dev \
           protobuf-compiler \
           libabsl-dev \
+          libsodium-dev \
           libmysqlclient-dev \
           pkg-config
 

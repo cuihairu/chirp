@@ -29,6 +29,7 @@ jobs:
           libprotobuf-dev \
           protobuf-compiler \
           libabsl-dev \
+          libsodium-dev \
           libgtest-dev \
           libmysqlclient-dev \
           pkg-config
@@ -36,7 +37,7 @@ jobs:
     - name: Install dependencies (macOS)
       if: runner.os == 'macOS'
       run: |
-        brew install cmake protobuf abseil googletest pkg-config mysql
+        brew install cmake protobuf abseil libsodium googletest pkg-config mysql
 
     - name: Generate proto files
       run: ./gen_proto.sh
