@@ -68,6 +68,8 @@ add_executable(chirp_chat_enhanced
     src/message_delivery_tracker.cc
     src/message_migration_worker.cc
     src/paginated_history_retriever.cc
+    src/channel_manager.cc
+    src/reaction_manager.cc
 )
 
 target_link_libraries(chirp_chat_enhanced

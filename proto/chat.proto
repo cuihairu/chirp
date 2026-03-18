@@ -376,3 +376,255 @@ message TrackMessageResponse {
   string tracking_id = 2;
   int64 server_time = 3;
 }
+
+// ========== Discord-like Channel System ==========
+
+// Channel type (for hierarchical channels within groups/servers)
+enum ChannelKind {
+  TEXT = 0;           // Text channel
+  VOICE = 1;          // Voice channel
+  ANNOUNCEMENT = 2;   // Announcement channel (admin only post)
+  STAGE = 3;          // Stage channel (for events)
+  FORUM = 4;          // Forum channel (threaded discussions)
+}
+
+// Channel permission override
+enum PermissionType {
+  ROLE = 0;           // Role-based permission
+  USER = 1;           // User-specific permission
+}
+
+enum PermissionOverride {
+  INHERIT = 0;        // Use parent's permission
+  ALLOW = 1;          // Explicitly allow
+  DENY = 2;           // Explicitly deny (takes precedence)
+}
+
+// Channel permissions
+message ChannelPermissions {
+  bool can_read = 1;
+  bool can_write = 2;
+  bool can_speak = 3;       // For voice channels
+  bool can_join = 4;        // For voice channels
+  bool can_manage = 5;      // Can edit channel settings
+}
+
+// Permission override for a role/user
+message PermissionOverrideEntry {
+  PermissionType type = 1;     // ROLE or USER
+  string id = 2;               // Role ID or User ID
+  ChannelPermissions permissions = 3;
+  PermissionOverride allow = 4;
+  PermissionOverride deny = 5;
+}
+
+// Channel category (for organizing channels)
+message ChannelCategory {
+  string category_id = 1;
+  string group_id = 2;
+  string name = 3;
+  int32 position = 4;          // Display order
+  bool is_collapsed = 5;       // Default collapsed state
+  int64 created_at = 6;
+}
+
+// Channel within a group/server
+message Channel {
+  string channel_id = 1;
+  string group_id = 2;
+  string category_id = 3;      // Optional category
+  string name = 4;
+  ChannelKind kind = 5;
+  int32 position = 6;          // Display order within category
+  string description = 7;
+  bool is_nsfw = 8;
+  int64 created_at = 9;
+  int64 slowmode_seconds = 10; // Slow mode: users can only send one message per X seconds
+  repeated PermissionOverrideEntry permission_overrides = 11;
+
+  // Voice-specific fields
+  int32 bitrate = 12;          // Voice channel bitrate
+  int32 user_limit = 13;       // 0 for unlimited
+  string rtc_region = 14;      // Voice region (auto if empty)
+}
+
+// Create channel request
+message CreateChannelRequest {
+  string group_id = 1;
+  string requester_id = 2;
+  string name = 3;
+  ChannelKind kind = 4;
+  string category_id = 5;      // Optional
+  string description = 6;
+  repeated PermissionOverrideEntry permission_overrides = 7;
+  int32 position = 8;
+}
+
+message CreateChannelResponse {
+  common.ErrorCode code = 1;
+  Channel channel = 2;
+  int64 server_time = 3;
+}
+
+// Update channel request
+message UpdateChannelRequest {
+  string channel_id = 1;
+  string requester_id = 2;
+  optional string name = 3;
+  optional string description = 4;
+  optional int32 position = 5;
+  optional string category_id = 6;
+  repeated PermissionOverrideEntry permission_overrides = 7;
+}
+
+message UpdateChannelResponse {
+  common.ErrorCode code = 1;
+  Channel channel = 2;
+  int64 server_time = 3;
+}
+
+// Delete channel request
+message DeleteChannelRequest {
+  string channel_id = 1;
+  string requester_id = 2;
+}
+
+message DeleteChannelResponse {
+  common.ErrorCode code = 1;
+  int64 server_time = 2;
+}
+
+// Get channels in a group
+message GetChannelsRequest {
+  string group_id = 1;
+  string user_id = 2;          // For permission checking
+}
+
+message GetChannelsResponse {
+  common.ErrorCode code = 1;
+  repeated Channel channels = 2;
+  repeated ChannelCategory categories = 3;
+}
+
+// Create category request
+message CreateCategoryRequest {
+  string group_id = 1;
+  string requester_id = 2;
+  string name = 3;
+  int32 position = 4;
+}
+
+message CreateCategoryResponse {
+  common.ErrorCode code = 1;
+  ChannelCategory category = 2;
+  int64 server_time = 3;
+}
+
+// Channel notification messages
+message ChannelCreatedNotify {
+  Channel channel = 1;
+  int64 timestamp = 2;
+}
+
+message ChannelUpdatedNotify {
+  Channel channel = 1;
+  int64 timestamp = 2;
+}
+
+message ChannelDeletedNotify {
+  string channel_id = 1;
+  string group_id = 2;
+  int64 timestamp = 3;
+}
+
+// ========== Message Reactions ==========
+
+// Message reaction
+message MessageReaction {
+  string message_id = 1;
+  string emoji = 2;            // Unicode emoji or custom emoji ID
+  int32 count = 3;             // Number of reactions
+  repeated string user_ids = 4; // Users who reacted (for small counts)
+  bool reacted_by_me = 5;      // Whether the requesting user reacted
+}
+
+// Add reaction request
+message AddReactionRequest {
+  string message_id = 1;
+  string user_id = 2;
+  string emoji = 3;            // Unicode emoji (e.g., "👍") or custom ID
+}
+
+message AddReactionResponse {
+  common.ErrorCode code = 1;
+  MessageReaction reaction = 2;
+  int64 server_time = 3;
+}
+
+// Remove reaction request
+message RemoveReactionRequest {
+  string message_id = 1;
+  string user_id = 2;
+  string emoji = 3;
+}
+
+message RemoveReactionResponse {
+  common.ErrorCode code = 1;
+  int64 server_time = 2;
+}
+
+// Get reactions for a message
+message GetReactionsRequest {
+  string message_id = 1;
+  string emoji = 2;            // Optional: get reactions for specific emoji
+}
+
+message GetReactionsResponse {
+  common.ErrorCode code = 1;
+  repeated MessageReaction reactions = 2;
+}
+
+// Reaction notification
+message ReactionAddedNotify {
+  string message_id = 1;
+  string channel_id = 2;
+  string emoji = 3;
+  string user_id = 4;
+  int64 timestamp = 5;
+}
+
+message ReactionRemovedNotify {
+  string message_id = 1;
+  string channel_id = 2;
+  string emoji = 3;
+  string user_id = 4;
+  int64 timestamp = 5;
+}
+
+// ========== Message Mentions ==========
+
+// Mention type
+enum MentionType {
+  USER = 0;           // @username
+  ROLE = 1;           // @role
+  CHANNEL = 2;        // #channel
+  EVERYONE = 3;       // @everyone
+  HERE = 4;           // @here
+}
+
+// Mention in a message
+message Mention {
+  MentionType type = 1;
+  string id = 2;              // User ID, Role ID, or Channel ID
+  int32 start_index = 3;      // Position in message content
+  int32 length = 4;
+}
+
+// Extended chat message with mentions
+message ChatMessageEx {
+  ChatMessage base_message = 1;
+  repeated Mention mentions = 2;
+  repeated string mentioned_user_ids = 3;  // Users who should be notified
+  bool mentions_everyone = 4;
+  bool mentions_here = 5;
+}

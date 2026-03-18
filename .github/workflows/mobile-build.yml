@@ -1,0 +1,216 @@
+name: Mobile Build
+
+on:
+  push:
+    branches: [ main, develop ]
+  pull_request:
+    branches: [ main, develop ]
+
+jobs:
+  # Android build
+  android:
+    runs-on: ubuntu-22.04
+    timeout-minutes: 60
+
+    steps:
+    - uses: actions/checkout@v3
+
+    - name: Set up Flutter
+      uses: subosito/flutter-action@v2
+      with:
+        flutter-version: '3.19.0'
+        channel: 'stable'
+        cache: true
+
+    - name: Set up Java
+      uses: actions/setup-java@v3
+      with:
+        distribution: 'zulu'
+        java-version: '17'
+
+    - name: Set up Android SDK
+      uses: android-actions/setup-android@v2
+
+    - name: Flutter version
+      run: flutter --version
+
+    - name: Flutter doctor
+      run: flutter doctor -v
+
+    - name: Install Flutter dependencies
+      working-directory: apps/mobile_companion
+      run: flutter pub get
+
+    - name: Generate proto files
+      run: ./gen_proto.sh
+
+    - name: Build Android APK (Debug)
+      working-directory: apps/mobile_companion
+      run: flutter build apk --debug --build-number=${{ github.run_number }}
+
+    - name: Build Android APK (Release)
+      working-directory: apps/mobile_companion
+      run: flutter build apk --release --build-number=${{ github.run_number }}
+
+    - name: Build Android App Bundle (Release)
+      working-directory: apps/mobile_companion
+      run: flutter build appbundle --release --build-number=${{ github.run_number }}
+
+    - name: Upload Android APK
+      uses: actions/upload-artifact@v3
+      with:
+        name: android-apk
+        path: apps/mobile_companion/build/app/outputs/flutter-apk/app-release.apk
+        retention-days: 30
+
+    - name: Upload Android App Bundle
+      uses: actions/upload-artifact@v3
+      with:
+        name: android-aab
+        path: apps/mobile_companion/build/app/outputs/bundle/release/app-release.aab
+        retention-days: 30
+
+    - name: Run Flutter tests
+      working-directory: apps/mobile_companion
+      run: flutter test
+
+  # iOS build
+  ios:
+    runs-on: macos-13
+    timeout-minutes: 90
+
+    steps:
+    - uses: actions/checkout@v3
+
+    - name: Set up Flutter
+      uses: subosito/flutter-action@v2
+      with:
+        flutter-version: '3.19.0'
+        channel: 'stable'
+        cache: true
+
+    - name: Flutter version
+      run: flutter --version
+
+    - name: Install CocoaPods
+      run: |
+        cd apps/mobile_companion/ios
+        pod install
+
+    - name: Install Flutter dependencies
+      working-directory: apps/mobile_companion
+      run: flutter pub get
+
+    - name: Generate proto files
+      run: ./gen_proto.sh
+
+    - name: Build iOS (Debug - No Codesigning)
+      working-directory: apps/mobile_companion
+      run: flutter build ios --debug --no-codesign
+
+    - name: Build iOS (Release - No Codesigning)
+      working-directory: apps/mobile_companion
+      run: flutter build ios --release --no-codesign
+
+    - name: Run Flutter tests
+      working-directory: apps/mobile_companion
+      run: flutter test
+
+    - name: Run integration tests
+      working-directory: apps/mobile_companion
+      run: flutter test integration_test
+
+  # Code analysis
+  analyze:
+    runs-on: ubuntu-22.04
+
+    steps:
+    - uses: actions/checkout@v3
+
+    - name: Set up Flutter
+      uses: subosito/flutter-action@v2
+      with:
+        flutter-version: '3.19.0'
+        channel: 'stable'
+        cache: true
+
+    - name: Install Flutter dependencies
+      working-directory: apps/mobile_companion
+      run: flutter pub get
+
+    - name: Analyze Flutter code
+      working-directory: apps/mobile_companion
+      run: flutter analyze --fatal-infos
+
+    - name: Check formatting
+      working-directory: apps/mobile_companion
+      run: dart format --set-exit-if-changed .
+
+    - name: Verify build
+      working-directory: apps/mobile_companion
+      run: flutter pub run build_runner build --delete-conflicting-outputs
+
+  # Native SDK build (for Flutter FFI)
+  native-sdk:
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        os: [ubuntu-22.04, macos-13, windows-2022]
+        include:
+          - os: ubuntu-22.04
+            triplet: x64-linux
+          - os: macos-13
+            triplet: x64-osx
+          - os: windows-2022
+            triplet: x64-windows
+
+    steps:
+    - uses: actions/checkout@v3
+      with:
+        submodules: recursive
+
+    - name: Install dependencies (Ubuntu)
+      if: runner.os == 'Linux'
+      run: |
+        sudo apt-get update
+        sudo apt-get install -y \
+          cmake \
+          ninja-build \
+          libprotobuf-dev \
+          protobuf-compiler \
+          libabsl-dev \
+          pkg-config
+
+    - name: Install dependencies (macOS)
+      if: runner.os == 'macOS'
+      run: |
+        brew install cmake protobuf abseil pkg-config ninja
+
+    - name: Install dependencies (Windows)
+      if: runner.os == 'Windows'
+      run: |
+        vcpkg install protobuf absl pkg-config
+
+    - name: Generate proto files
+      run: ./gen_proto.sh
+
+    - name: Configure CMake
+      run: |
+        cmake -S sdks/core -B sdk_build \
+          -DCMAKE_BUILD_TYPE=Release \
+          -DBUILD_SHARED_LIBS=ON \
+          -DENABLE_TESTS=OFF
+
+    - name: Build native SDK
+      run: cmake --build sdk_build --config Release -j$(nproc 2>/dev/null || sysctl -n hw.ncpu)
+
+    - name: Upload native library
+      uses: actions/upload-artifact@v3
+      with:
+        name: native-sdk-${{ matrix.triplet }}
+        path: |
+          sdk_build/lib/*.so
+          sdk_build/lib/*.dylib
+          sdk_build/lib/*.dll
+        retention-days: 30
+        if-no-files-found: ignore
