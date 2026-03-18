@@ -50,7 +50,7 @@ jobs:
 
     - name: Install vcpkg dependencies
       run: |
-        ./vcpkg/vcpkg install protobuf abseil libsodium mysql-connector-cpp pkgconf --triplet ${{ matrix.vcpkg_triplet }}
+        ./vcpkg/vcpkg install --triplet ${{ matrix.vcpkg_triplet }}
 
     - name: Generate proto files
       run: ./gen_proto.sh

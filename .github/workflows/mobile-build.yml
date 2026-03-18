@@ -198,7 +198,7 @@ jobs:
 
     - name: Install vcpkg dependencies
       run: |
-        ./vcpkg/vcpkg install protobuf abseil pkgconf --triplet ${{ matrix.vcpkg_triplet }}
+        ./vcpkg/vcpkg install --triplet ${{ matrix.vcpkg_triplet }}
       shell: bash
 
     - name: Generate proto files
