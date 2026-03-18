@@ -70,6 +70,10 @@ add_executable(chirp_chat_enhanced
     src/paginated_history_retriever.cc
     src/channel_manager.cc
     src/reaction_manager.cc
+    src/message_edit_manager.cc
+    src/typing_manager.cc
+    src/mention_manager.cc
+    src/file_storage_manager.cc
 )
 
 target_link_libraries(chirp_chat_enhanced

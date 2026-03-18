@@ -628,3 +628,200 @@ message ChatMessageEx {
   bool mentions_everyone = 4;
   bool mentions_here = 5;
 }
+
+// ========== Message Edit/Delete ==========
+// Message edit history
+message MessageEdit {
+  bytes old_content = 1;         // Previous content
+  bytes new_content = 2;         // New content
+  int64 edited_at = 3;           // When the edit was made
+  string edited_by = 4;          // User who made the edit (for mod edits)
+}
+
+// Extended message with edit/delete support
+message ChatMessageFull {
+  string message_id = 1;
+  string sender_id = 2;
+  string receiver_id = 3;
+  ChannelType channel_type = 4;
+  string channel_id = 5;
+  MsgType msg_type = 6;
+  bytes content = 7;
+  int64 timestamp = 8;
+
+  // Edit/delete fields
+  bool is_deleted = 9;           // Soft delete flag
+  int64 deleted_at = 10;          // When deleted
+  string deleted_by = 11;         // Who deleted (mod/admin)
+  bool is_edited = 12;            // Has been edited
+  int64 edited_at = 13;           // Last edit time
+  int32 edit_count = 14;          // Number of edits
+  repeated MessageEdit edit_history = 15;  // Edit history
+
+  // Reply thread support
+  string reply_to_message_id = 16;  // If this is a reply
+  int32 reply_count = 17;            // Number of replies
+
+  // Reactions and mentions
+  repeated MessageReaction reactions = 18;
+  repeated Mention mentions = 19;
+}
+
+// Edit message request
+message EditMessageRequest {
+  string message_id = 1;
+  string user_id = 2;             // User editing the message
+  bytes new_content = 3;          // New message content
+  int64 edit_timestamp = 4;       // Client timestamp
+}
+
+message EditMessageResponse {
+  common.ErrorCode code = 1;
+  ChatMessageFull message = 2;    // Updated message
+  int64 server_time = 3;
+}
+
+// Delete message request
+message DeleteMessageRequest {
+  string message_id = 1;
+  string user_id = 2;             // User requesting delete
+  bool is_hard_delete = 3;        // True to permanently delete (admin only)
+}
+
+message DeleteMessageResponse {
+  common.ErrorCode code = 1;
+  int64 server_time = 2;
+  bool was_permanently_deleted = 3;
+}
+
+// Bulk delete (for mods)
+message BulkDeleteRequest {
+  repeated string message_ids = 1;
+  string requester_id = 2;
+  string channel_id = 3;          // For verification
+}
+
+message BulkDeleteResponse {
+  common.ErrorCode code = 1;
+  int32 deleted_count = 2;
+  repeated string failed_message_ids = 3;
+  int64 server_time = 4;
+}
+
+// Message edit notification
+message MessageEditedNotify {
+  string message_id = 1;
+  string channel_id = 2;
+  bytes new_content = 3;          // New content
+  int64 edited_at = 4;
+  string edited_by = 5;
+}
+
+// Message delete notification
+message MessageDeletedNotify {
+  string message_id = 1;
+  string channel_id = 2;
+  bool is_hard_delete = 3;
+  string deleted_by = 4;
+  int64 deleted_at = 5;
+}
+
+// ========== Typing Indicators ==========
+
+// Typing indicator (broadcast to channel)
+message TypingIndicator {
+  string channel_id = 1;
+  ChannelType channel_type = 2;
+  string user_id = 3;
+  string username = 4;            // For UI display
+  bool is_typing = 5;             // false when user stops typing
+  int64 timestamp = 6;
+}
+
+// Get currently typing users in a channel
+message GetTypingUsersRequest {
+  string channel_id = 1;
+  ChannelType channel_type = 2;
+}
+
+message GetTypingUsersResponse {
+  common.ErrorCode code = 1;
+  repeated string typing_user_ids = 2;
+  repeated string usernames = 3;
+}
+
+// ========== File Sharing ==========
+
+// File info
+message FileInfo {
+  string file_id = 1;
+  string filename = 2;
+  int64 file_size = 3;            // Size in bytes
+  string mime_type = 4;
+  string checksum = 5;            // SHA256 hash
+  string storage_url = 6;         // URL to download from
+  int64 uploaded_at = 7;
+  string uploaded_by = 8;
+  int32 width = 9;                // For images/videos
+  int32 height = 10;
+  int32 duration = 11;            // For audio/video (seconds)
+}
+
+// Upload file request (first step - get upload URL)
+message PrepareFileUploadRequest {
+  string user_id = 1;
+  string channel_id = 2;
+  ChannelType channel_type = 3;
+  string filename = 4;
+  int64 file_size = 5;
+  string mime_type = 6;
+  string checksum = 7;            // Client-calculated SHA256
+}
+
+message PrepareFileUploadResponse {
+  common.ErrorCode code = 1;
+  string upload_id = 2;           // Upload session ID
+  string upload_url = 3;          // Presigned URL for upload
+  int64 expires_at = 4;           // When upload URL expires
+  string file_id = 5;             // File ID to use
+  map<string, string> headers = 6;  // Required headers
+}
+
+// Confirm file upload (after upload completes)
+message ConfirmFileUploadRequest {
+  string upload_id = 1;
+  string file_id = 2;
+  string message_id = 3;          // Optional: attach to message
+}
+
+message ConfirmFileUploadResponse {
+  common.ErrorCode code = 1;
+  FileInfo file_info = 2;
+  int64 server_time = 3;
+}
+
+// Download file request (get download URL)
+message GetFileDownloadRequest {
+  string file_id = 1;
+  string user_id = 2;             // For permission check
+}
+
+message GetFileDownloadResponse {
+  common.ErrorCode code = 1;
+  string download_url = 2;        // Presigned download URL
+  int64 expires_at = 3;
+  FileInfo file_info = 4;
+}
+
+// File attachment in message
+message FileAttachment {
+  FileInfo file = 1;
+  bool is_spoiler = 2;            // Hide content until clicked
+  string alt_text = 3;            // Accessibility text
+}
+
+// Message with file attachment
+message FileMessage {
+  ChatMessage base_message = 1;
+  repeated FileAttachment attachments = 2;
+}
