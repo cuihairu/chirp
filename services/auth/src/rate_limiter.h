@@ -44,8 +44,9 @@ public:
     std::string error_message;
   };
 
+  // Constructor without default parameter to avoid self-reference
   explicit RateLimiter(std::shared_ptr<RedisAuthStore> redis_store,
-                      const Config& config = Config{});
+                      const Config& config);
   ~RateLimiter();
 
   /// @brief Check login rate limit for identifier
@@ -75,9 +76,16 @@ public:
   /// @brief Update configuration
   void SetConfig(const Config& config) { config_ = config; }
 
+  /// @brief Create with default config
+  static std::shared_ptr<RateLimiter> Create(std::shared_ptr<RedisAuthStore> redis_store);
+
 private:
   std::shared_ptr<RedisAuthStore> redis_store_;
   Config config_;
 };
+
+inline RateLimiter::Config MakeDefaultRateLimiterConfig() {
+  return RateLimiter::Config{};
+}
 
 } // namespace chirp::auth

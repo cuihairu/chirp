@@ -5,6 +5,8 @@
 #include <string>
 #include <vector>
 
+#include "common/error_code.h"
+
 namespace chirp::auth {
 
 /// @brief User data structure

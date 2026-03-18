@@ -8,8 +8,10 @@
 
 #include <asio.hpp>
 
+#include "common/error_code.h"
 #include "brute_force_protector.h"
 #include "rate_limiter.h"
+#include "redis_auth_store.h"
 #include "session_store.h"
 #include "user_store.h"
 

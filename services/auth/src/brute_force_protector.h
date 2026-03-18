@@ -35,9 +35,10 @@ public:
     std::string error_message;
   };
 
+  // Constructor without default parameter to avoid self-reference
   explicit BruteForceProtector(std::shared_ptr<RedisAuthStore> redis_store,
                               std::shared_ptr<UserStore> user_store,
-                              const Config& config = Config{});
+                              const Config& config);
   ~BruteForceProtector();
 
   /// @brief Check if login attempt should be allowed
@@ -67,6 +68,11 @@ public:
   /// @brief Update configuration
   void SetConfig(const Config& config) { config_ = config; }
 
+  /// @brief Create with default config
+  static std::shared_ptr<BruteForceProtector> Create(
+      std::shared_ptr<RedisAuthStore> redis_store,
+      std::shared_ptr<UserStore> user_store);
+
 private:
   int64_t CalculateLockDuration(int failed_attempts);
   std::string NormalizeIdentifier(const std::string& identifier);
@@ -75,5 +81,9 @@ private:
   std::shared_ptr<UserStore> user_store_;
   Config config_;
 };
+
+inline BruteForceProtector::Config MakeDefaultBruteForceConfig() {
+  return BruteForceProtector::Config{};
+}
 
 } // namespace chirp::auth
