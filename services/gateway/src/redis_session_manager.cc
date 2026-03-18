@@ -53,13 +53,18 @@ struct RedisSessionManager::Impl {
         on_kick(std::move(kick_cb)) {}
 
   void Start() {
-    sub.Start(KickChannel(instance_id), [this](const std::string& /*ch*/, const std::string& payload) {
+    // Set message callback before starting
+    sub.SetMessageCallback([this](const std::string& /*ch*/, const std::string& payload) {
       asio::post(main_io, [cb = on_kick, user_id = payload] {
         if (cb) {
           cb(user_id);
         }
       });
     });
+    // Subscribe to kick channel
+    sub.Subscribe(KickChannel(instance_id));
+    // Start the subscriber
+    sub.Start();
     worker = std::thread([this] { Run(); });
   }
 
