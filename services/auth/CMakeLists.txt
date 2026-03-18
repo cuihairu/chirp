@@ -10,10 +10,9 @@ find_package(PkgConfig REQUIRED)
 pkg_check_modules(LIBSODIUM REQUIRED libsodium)
 
 file(GLOB PROTO_SRCS "${CMAKE_SOURCE_DIR}/proto/cpp/proto/*.cc")
-file(GLOB_RECURSE SERVICE_SRCS "src/*.cc")
 
-# Use enhanced main (exclude old main.cc)
-list(FILTER SERVICE_SRCS EXCLUDE REGEX ".*src/main\\.cc$")
+# Only build main.cc - enhanced auth files are incomplete (TODO: implement properly)
+set(SERVICE_SRCS "src/main.cc")
 
 add_executable(chirp_auth
     ${SERVICE_SRCS}
