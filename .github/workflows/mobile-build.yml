@@ -57,14 +57,14 @@ jobs:
       run: flutter build appbundle --release --build-number=${{ github.run_number }}
 
     - name: Upload Android APK
-      uses: actions/upload-artifact@v3
+      uses: actions/upload-artifact@v4
       with:
         name: android-apk
         path: apps/mobile_companion/build/app/outputs/flutter-apk/app-release.apk
         retention-days: 30
 
     - name: Upload Android App Bundle
-      uses: actions/upload-artifact@v3
+      uses: actions/upload-artifact@v4
       with:
         name: android-aab
         path: apps/mobile_companion/build/app/outputs/bundle/release/app-release.aab
@@ -205,7 +205,7 @@ jobs:
       run: cmake --build sdk_build --config Release -j$(nproc 2>/dev/null || sysctl -n hw.ncpu)
 
     - name: Upload native library
-      uses: actions/upload-artifact@v3
+      uses: actions/upload-artifact@v4
       with:
         name: native-sdk-${{ matrix.triplet }}
         path: |
