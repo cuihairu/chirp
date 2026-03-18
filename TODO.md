@@ -167,3 +167,62 @@
 - Message storm scenario (high throughput)
 - Mixed load scenario (realistic usage)
 - Statistics reporting with latency metrics
+
+## Recent Updates (2026-03-18 Continued)
+
+### Discord-like Channel System
+- Created `channel_manager.h/cc` for hierarchical channel management
+- Channel categories for organization
+- Text/Voice/Announcement/Stage/Forum channel types
+- Permission system with role/user overrides
+- Slow mode support for channels
+- Voice channel participant management
+
+### Message Reactions
+- Created `reaction_manager.h/cc` for emoji reactions on messages
+- Add/remove reactions with aggregation
+- Bulk reaction retrieval for multiple messages
+- Top reactions for UI display
+
+### Message Edit/Delete
+- Created `message_edit_manager.h/cc` for message editing
+- Configurable edit time window (default 15 minutes)
+- Edit history tracking with limit
+- Soft delete with retention period
+- Hard delete for moderators
+- Bulk delete operations
+
+### Typing Indicators
+- Created `typing_manager.h/cc` for real-time typing feedback
+- Typing broadcast to channel participants
+- Configurable timeout (default 10 seconds)
+- Cooldown to prevent excessive broadcasts
+
+### Mention System
+- Created `mention_manager.h/cc` for @mentions parsing
+- @user, @role, @channel, @everyone, @here support
+- Cooldown for mass mentions
+- Notification recipient building
+- Autocomplete support hooks
+
+### File Sharing
+- Created `file_storage_manager.h/cc` for file uploads/downloads
+- Prepare upload with presigned URLs
+- File type validation (images, videos, audio, documents)
+- Configurable size limits (default 100MB)
+- Download URL generation
+- Virus scan hooks
+
+### Prometheus Metrics
+- Created `metrics.h/cc` for metrics collection
+- Counter, Gauge, Histogram metric types
+- HTTP server for /metrics endpoint
+- Health check endpoint
+- Simple implementation (no external dependency)
+
+### Mobile CI/CD
+- Created `.github/workflows/mobile-build.yml`
+- Android APK/AppBundle builds
+- iOS build workflow
+- Flutter code analysis
+- Native SDK cross-platform builds
