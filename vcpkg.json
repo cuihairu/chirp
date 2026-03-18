@@ -10,5 +10,5 @@
     "mysql-connector-cpp",
     "pkgconf"
   ],
-  "builtin-baseline": "2024-03-15"
+  "builtin-baseline": "4ef2a7144d00c2f446029b9700e701a3094b8bfb"
 }
