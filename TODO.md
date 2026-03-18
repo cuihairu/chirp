@@ -226,3 +226,71 @@
 - iOS build workflow
 - Flutter code analysis
 - Native SDK cross-platform builds
+
+## Recent Updates (2026-03-18 Continued)
+
+### Message Edit/Delete
+- Created `message_edit_manager.h/cc` for message editing
+- Configurable edit time window (default 15 minutes)
+- Edit history tracking with limit
+- Soft delete with retention period
+- Hard delete for moderators
+- Bulk delete operations
+
+### Typing Indicators
+- Created `typing_manager.h/cc` for real-time typing feedback
+- Typing broadcast to channel participants
+- Configurable timeout (default 10 seconds)
+- Cooldown to prevent excessive broadcasts
+
+### Mention System
+- Created `mention_manager.h/cc` for @mentions parsing
+- @user, @role, @channel, @everyone, @here support
+- Cooldown for mass mentions
+- Notification recipient building
+- Autocomplete support hooks
+
+### File Sharing
+- Created `file_storage_manager.h/cc` for file uploads/downloads
+- Prepare upload with presigned URLs
+- File type validation (images, videos, audio, documents)
+- Configurable size limits (default 100MB)
+- Download URL generation
+- Virus scan hooks
+
+### Push Notification Service
+- Created `services/notification` with FCM/APNs support
+- Device registration and token management
+- Message, mention, and call notifications
+- Silent notification support
+- Badge count management
+- Notification cooldown to prevent spam
+- Inactive device cleanup
+
+### Enhanced User Presence
+- Created `presence_manager_v2.h/cc` for multi-device presence
+- Status types: Online, Idle, DND, Invisible, In-Game, In-Voice, In-Call
+- Custom status messages with emoji support
+- Activity detection and idle/offline timeout
+- Session management per device
+- Bulk presence queries
+- Online friend detection
+
+### Message Search Service
+- Created `services/search` with full-text indexing
+- Inverted index for fast text search
+- Filter by channel, sender, time range, type
+- Phrase matching and relevance scoring
+- Highlighted snippets with context
+- Query suggestions/autocomplete
+- Search statistics tracking
+
+### Web Admin Dashboard
+- Created `apps/admin_dashboard` React application
+- Real-time metrics dashboard with charts
+- User management with search and actions
+- Channel management and monitoring
+- Message search interface
+- System settings panel
+- Material-UI dark theme
+- Vite for fast development
