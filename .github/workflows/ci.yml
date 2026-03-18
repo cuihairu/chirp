@@ -15,7 +15,7 @@ jobs:
         build_type: [Debug, Release]
 
     steps:
-    - uses: actions/checkout@v3
+    - uses: actions/checkout@v5
       with:
         submodules: recursive
 
@@ -30,12 +30,13 @@ jobs:
           protobuf-compiler \
           libabsl-dev \
           libgtest-dev \
+          libmysqlclient-dev \
           pkg-config
 
     - name: Install dependencies (macOS)
       if: runner.os == 'macOS'
       run: |
-        brew install cmake protobuf abseil googletest pkg-config
+        brew install cmake protobuf abseil googletest pkg-config mysql
 
     - name: Generate proto files
       run: ./gen_proto.sh
@@ -62,7 +63,7 @@ jobs:
         os: [ubuntu-22.04, macos-12]
 
     steps:
-    - uses: actions/checkout@v3
+    - uses: actions/checkout@v5
       with:
         submodules: recursive
 
@@ -76,12 +77,13 @@ jobs:
           libprotobuf-dev \
           protobuf-compiler \
           libabsl-dev \
+          libmysqlclient-dev \
           pkg-config
 
     - name: Install dependencies (macOS)
       if: runner.os == 'macOS'
       run: |
-        brew install cmake protobuf abseil pkg-config
+        brew install cmake protobuf abseil pkg-config mysql
 
     - name: Generate proto files
       run: ./gen_proto.sh
@@ -101,7 +103,7 @@ jobs:
     runs-on: ubuntu-22.04
 
     steps:
-    - uses: actions/checkout@v3
+    - uses: actions/checkout@v5
 
     - name: Install clang-tidy
       run: |
