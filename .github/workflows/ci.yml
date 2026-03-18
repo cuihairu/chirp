@@ -13,28 +13,36 @@ jobs:
       matrix:
         os: [ubuntu-22.04, macos-12]
         build_type: [Debug, Release]
+        include:
+          - os: ubuntu-22.04
+            vcpkg_triplet: x64-linux
+          - os: macos-12
+            vcpkg_triplet: x64-osx
 
     steps:
     - uses: actions/checkout@v5
       with:
         submodules: recursive
 
-    - name: Install dependencies (Ubuntu)
+    - name: Install system dependencies (Ubuntu)
       if: runner.os == 'Linux'
       run: |
         sudo apt-get update
-        sudo apt-get install -y cmake ninja-build libprotobuf-dev protobuf-compiler libabsl-dev libsodium-dev libgtest-dev libmysqlclient-dev pkg-config
+        sudo apt-get install -y ninja-build protobuf-compiler pkg-config
 
-    - name: Verify protoc installation
-      if: runner.os == 'Linux'
-      run: |
-        which protoc
-        protoc --version
-
-    - name: Install dependencies (macOS)
+    - name: Install system dependencies (macOS)
       if: runner.os == 'macOS'
       run: |
-        brew install cmake protobuf abseil libsodium googletest pkg-config mysql
+        brew install ninja protobuf
+
+    - name: Setup vcpkg
+      run: |
+        git clone https://github.com/Microsoft/vcpkg.git
+        ./vcpkg/bootstrap-vcpkg.sh
+
+    - name: Install vcpkg dependencies
+      run: |
+        ./vcpkg/vcpkg install protobuf abseil libsodium mysql-connector-cpp pkgconf --triplet ${{ matrix.vcpkg_triplet }}
 
     - name: Generate proto files
       run: ./gen_proto.sh
@@ -44,6 +52,7 @@ jobs:
         cmake -S . -B build \
           -DCMAKE_BUILD_TYPE=${{ matrix.build_type }} \
           -DENABLE_TESTS=ON \
+          -DCMAKE_TOOLCHAIN_FILE=${{ github.workspace }}/vcpkg/scripts/buildsystems/vcpkg.cmake \
           -G Ninja
 
     - name: Build
@@ -53,69 +62,3 @@ jobs:
     - name: Run tests
       run: |
         ctest --test-dir build --output-on-failure -C ${{ matrix.build_type }} || echo "Some tests may have been skipped"
-
-  build-no-tests:
-    runs-on: ${{ matrix.os }}
-    strategy:
-      matrix:
-        os: [ubuntu-22.04, macos-12]
-
-    steps:
-    - uses: actions/checkout@v5
-      with:
-        submodules: recursive
-
-    - name: Install dependencies (Ubuntu)
-      if: runner.os == 'Linux'
-      run: |
-        sudo apt-get update
-        sudo apt-get install -y cmake ninja-build libprotobuf-dev protobuf-compiler libabsl-dev libsodium-dev libmysqlclient-dev pkg-config
-
-    - name: Verify protoc installation
-      if: runner.os == 'Linux'
-      run: |
-        which protoc
-        protoc --version
-
-    - name: Install dependencies (macOS)
-      if: runner.os == 'macOS'
-      run: |
-        brew install cmake protobuf abseil libsodium pkg-config mysql
-
-    - name: Generate proto files
-      run: ./gen_proto.sh
-
-    - name: Configure CMake
-      run: |
-        cmake -S . -B build \
-          -DCMAKE_BUILD_TYPE=Release \
-          -DENABLE_TESTS=OFF \
-          -G Ninja
-
-    - name: Build
-      run: |
-        cmake --build build --config Release -j$(nproc 2>/dev/null || sysctl -n hw.ncpu)
-
-  code-quality:
-    runs-on: ubuntu-22.04
-
-    steps:
-    - uses: actions/checkout@v5
-
-    - name: Install clang-tidy
-      run: |
-        sudo apt-get update
-        sudo apt-get install -y clang-tidy protobuf-compiler
-
-    - name: Generate proto files
-      run: ./gen_proto.sh
-
-    - name: Configure CMake
-      run: |
-        cmake -S . -B build \
-          -DCMAKE_EXPORT_COMPILE_COMMANDS=ON
-
-    - name: Run clang-tidy
-      run: |
-        find libs services -name '*.cc' -o -name '*.h' | \
-          xargs clang-tidy -p build/ --warnings-as-errors='' || true

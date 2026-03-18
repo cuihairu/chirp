@@ -158,38 +158,48 @@ jobs:
         os: [ubuntu-22.04, macos-13, windows-2022]
         include:
           - os: ubuntu-22.04
-            triplet: x64-linux
+            vcpkg_triplet: x64-linux
           - os: macos-13
-            triplet: x64-osx
+            vcpkg_triplet: x64-osx
           - os: windows-2022
-            triplet: x64-windows
+            vcpkg_triplet: x64-windows
 
     steps:
     - uses: actions/checkout@v5
       with:
         submodules: recursive
 
-    - name: Install dependencies (Ubuntu)
+    - name: Install system dependencies (Ubuntu)
       if: runner.os == 'Linux'
       run: |
         sudo apt-get update
-        sudo apt-get install -y cmake ninja-build libprotobuf-dev protobuf-compiler libabsl-dev libsodium-dev pkg-config
+        sudo apt-get install -y ninja-build protobuf-compiler pkg-config
 
-    - name: Verify protoc installation
+    - name: Verify protoc installation (Ubuntu)
       if: runner.os == 'Linux'
       run: |
         which protoc
         protoc --version
 
-    - name: Install dependencies (macOS)
+    - name: Install system dependencies (macOS)
       if: runner.os == 'macOS'
       run: |
-        brew install cmake protobuf abseil libsodium pkg-config ninja
+        brew install ninja protobuf
 
-    - name: Install dependencies (Windows)
-      if: runner.os == 'Windows'
+    - name: Setup vcpkg
       run: |
-        vcpkg install protobuf absl pkg-config
+        git clone https://github.com/Microsoft/vcpkg.git
+        if [ "$RUNNER_OS" = "Windows" ]; then
+          ./vcpkg/bootstrap-vcpkg.bat
+        else
+          ./vcpkg/bootstrap-vcpkg.sh
+        fi
+      shell: bash
+
+    - name: Install vcpkg dependencies
+      run: |
+        ./vcpkg/vcpkg install protobuf abseil pkgconf --triplet ${{ matrix.vcpkg_triplet }}
+      shell: bash
 
     - name: Generate proto files
       run: ./gen_proto.sh
@@ -199,7 +209,8 @@ jobs:
         cmake -S sdks/core -B sdk_build \
           -DCMAKE_BUILD_TYPE=Release \
           -DBUILD_SHARED_LIBS=ON \
-          -DENABLE_TESTS=OFF
+          -DENABLE_TESTS=OFF \
+          -DCMAKE_TOOLCHAIN_FILE=${{ github.workspace }}/vcpkg/scripts/buildsystems/vcpkg.cmake
 
     - name: Build native SDK
       run: cmake --build sdk_build --config Release -j$(nproc 2>/dev/null || sysctl -n hw.ncpu)
@@ -207,7 +218,7 @@ jobs:
     - name: Upload native library
       uses: actions/upload-artifact@v4
       with:
-        name: native-sdk-${{ matrix.triplet }}
+        name: native-sdk-${{ matrix.vcpkg_triplet }}
         path: |
           sdk_build/lib/*.so
           sdk_build/lib/*.dylib

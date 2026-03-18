@@ -12,11 +12,8 @@ jobs:
     runs-on: ${{ matrix.os }}
 
     strategy:
-      # Set fail-fast to false to ensure that feedback is delivered for all matrix combinations. Consider changing this to true when your workflow is stable.
       fail-fast: false
 
-      # Matrix of Linux builds with GCC and Clang
-      # To add more build types (Release, Debug, RelWithDebInfo, etc.) customize the build_type list.
       matrix:
         os: [ubuntu-latest]
         build_type: [Release]
@@ -25,44 +22,53 @@ jobs:
           - os: ubuntu-latest
             c_compiler: gcc
             cpp_compiler: g++
+            vcpkg_triplet: x64-linux
           - os: ubuntu-latest
             c_compiler: clang
             cpp_compiler: clang++
+            vcpkg_triplet: x64-linux
 
     steps:
     - uses: actions/checkout@v5
       with:
         submodules: recursive
 
-    - name: Install dependencies
+    - name: Install system dependencies
       run: |
         sudo apt-get update
-        sudo apt-get install -y cmake ninja-build libprotobuf-dev protobuf-compiler libabsl-dev libsodium-dev libmysqlclient-dev pkg-config
+        sudo apt-get install -y ninja-build protobuf-compiler pkg-config
 
     - name: Verify protoc installation
       run: |
         which protoc
         protoc --version
 
+    - name: Setup vcpkg
+      run: |
+        git clone https://github.com/Microsoft/vcpkg.git
+        ./vcpkg/bootstrap-vcpkg.sh
+
+    - name: Install vcpkg dependencies
+      run: |
+        ./vcpkg/vcpkg install protobuf abseil libsodium mysql-connector-cpp pkgconf --triplet ${{ matrix.vcpkg_triplet }}
+
     - name: Generate proto files
       run: ./gen_proto.sh
 
     - name: Set reusable strings
-      # Turn repeated input strings (such as the build output directory) into step outputs. These step outputs can be used throughout the workflow file.
       id: strings
       shell: bash
       run: |
         echo "build-output-dir=${{ github.workspace }}/build" >> "$GITHUB_OUTPUT"
 
     - name: Configure CMake
-      # Configure CMake in a 'build' subdirectory. `CMAKE_BUILD_TYPE` is only required if you are using a single-configuration generator such as make.
-      # See https://cmake.org/cmake/help/latest/variable/CMAKE_BUILD_TYPE.html?highlight=cmake_build_type
       run: >
         cmake -B ${{ steps.strings.outputs.build-output-dir }}
         -DCMAKE_CXX_COMPILER=${{ matrix.cpp_compiler }}
         -DCMAKE_C_COMPILER=${{ matrix.c_compiler }}
         -DCMAKE_BUILD_TYPE=${{ matrix.build_type }}
         -DENABLE_TESTS=OFF
+        -DCMAKE_TOOLCHAIN_FILE=${{ github.workspace }}/vcpkg/scripts/buildsystems/vcpkg.cmake
         -G Ninja
         -S ${{ github.workspace }}
 
@@ -71,6 +77,4 @@ jobs:
 
     - name: Test
       working-directory: ${{ steps.strings.outputs.build-output-dir }}
-      # Execute tests defined by the CMake configuration. Note that --build-config is needed because the default Windows generator is a multi-config generator (Visual Studio generator).
-      # See https://cmake.org/cmake/help/latest/manual/ctest.1.html for more detail
       run: ctest --build-config ${{ matrix.build_type }}
