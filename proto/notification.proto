@@ -1,0 +1,191 @@
+syntax = "proto3";
+
+package chirp.notification;
+
+option go_package = "github.com/cui/chirp/proto/notification";
+
+import "proto/common.proto";
+
+// Notification priority
+enum NotificationPriority {
+  LOW = 0;
+  NORMAL = 1;
+  HIGH = 2;
+  URGENT = 3;
+}
+
+// Notification type
+enum NotificationType {
+  MESSAGE = 0;           // New message
+  MENTION = 1;           // @mention
+  REACTION = 2;          // Reaction to message
+  FRIEND_REQUEST = 3;    // New friend request
+  FRIEND_ACCEPTED = 4;   // Friend request accepted
+  VOICE_CALL = 5;        // Incoming voice call
+  VOICE_INVITE = 6;      // Voice room invite
+  SYSTEM = 99;           // System notification
+}
+
+// Push notification request
+struct PushNotificationRequest {
+  string user_id = 1;
+  NotificationType type = 2;
+  NotificationPriority priority = 3;
+
+  string title = 4;
+  string body = 5;
+  string icon = 6;
+  string image = 7;
+  string sound = 8;
+  string tag = 9;
+
+  map<string, string> data = 10;  // Custom key-value data
+
+  int32 badge = 11;               // iOS badge count
+  string click_action = 12;       // Deep link
+
+  int64 ttl_ms = 13;              // Time to live
+  bool collapse_key = 14;         // Collapse duplicate notifications
+}
+
+// Push notification response
+message PushNotificationResponse {
+  common.ErrorCode code = 1;
+  string notification_id = 2;
+  int64 server_time = 3;
+}
+
+// Register device request
+message RegisterDeviceRequest {
+  string user_id = 1;
+  string device_id = 2;
+  string platform = 3;            // "ios", "android", "web"
+
+  // FCM/APNs tokens
+  string fcm_token = 4;           // Android/Web
+  string apns_token = 5;          // iOS
+  string push_kit_token = 6;      // iOS VoIP
+
+  string app_version = 7;
+  string os_version = 8;
+  string device_name = 9;
+}
+
+message RegisterDeviceResponse {
+  common.ErrorCode code = 1;
+  int64 server_time = 2;
+}
+
+// Unregister device request
+message UnregisterDeviceRequest {
+  string user_id = 1;
+  string device_id = 2;
+}
+
+message UnregisterDeviceResponse {
+  common.ErrorCode code = 1;
+  int64 server_time = 2;
+}
+
+// Update device token request
+message UpdateDeviceTokenRequest {
+  string device_id = 1;
+  string fcm_token = 2;
+  string apns_token = 3;
+  string push_kit_token = 4;
+}
+
+message UpdateDeviceTokenResponse {
+  common.ErrorCode code = 1;
+  int64 server_time = 2;
+}
+
+// Get user devices request
+message GetUserDevicesRequest {
+  string user_id = 1;
+}
+
+message GetUserDevicesResponse {
+  common.ErrorCode code = 1;
+  repeated DeviceInfo devices = 2;
+}
+
+// Device info
+message DeviceInfo {
+  string device_id = 1;
+  string user_id = 2;
+  string platform = 3;
+  string app_version = 4;
+  string os_version = 5;
+  string device_name = 6;
+  int64 registered_at = 7;
+  bool is_active = 8;
+}
+
+// Set badge count request
+message SetBadgeCountRequest {
+  string user_id = 1;
+  int32 count = 2;
+}
+
+message SetBadgeCountResponse {
+  common.ErrorCode code = 1;
+  int64 server_time = 2;
+}
+
+// Silent notification (data only)
+message SilentNotificationRequest {
+  string user_id = 1;
+  map<string, string> data = 2;
+  int64 ttl_ms = 3;
+}
+
+// Notification preferences per user
+message NotificationPreferences {
+  bool enabled = 1;
+  bool sound_enabled = 2;
+  bool vibration_enabled = 3;
+  bool show_preview = 4;
+
+  bool allow_messages = 5;
+  bool allow_mentions = 6;
+  bool allow_friend_requests = 7;
+  bool allow_voice_calls = 8;
+
+  // Do Not Disturb
+  bool dnd_enabled = 9;
+  int32 dnd_start_hour = 10;      // 0-23
+  int32 dnd_end_hour = 11;
+  repeated int32 dnd_days = 12;   // 0=Sunday, 6=Saturday
+
+  // Per-channel settings
+  map<string, ChannelNotificationSettings> channel_settings = 13;
+}
+
+// Channel notification settings
+message ChannelNotificationSettings {
+  bool muted = 1;
+  bool only_mentions = 2;
+  bool notify_on_mentions = 3;
+}
+
+// Set notification preferences request
+message SetPreferencesRequest {
+  string user_id = 1;
+  NotificationPreferences preferences = 2;
+}
+
+message SetPreferencesResponse {
+  common.ErrorCode code = 1;
+  int64 server_time = 2;
+}
+
+// Get preferences request
+message GetPreferencesRequest {
+  string user_id = 1;
+}
+
+message GetPreferencesResponse {
+  common.ErrorCode code = 1;
+  NotificationPreferences preferences = 2;
+}
