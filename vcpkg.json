@@ -8,7 +8,8 @@
     "abseil",
     "libsodium",
     "mysql-connector-cpp",
-    "pkgconf"
+    "pkgconf",
+    "asio"
   ],
   "builtin-baseline": "4ef2a7144d00c2f446029b9700e701a3094b8bfb"
 }

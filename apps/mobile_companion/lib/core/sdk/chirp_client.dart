@@ -1,5 +1,6 @@
 import 'dart:async';
 import 'dart:convert';
+import 'dart:io';
 import 'package:ffi/ffi.dart';
 
 import 'chirp_ffi.dart';
@@ -44,7 +45,7 @@ class ChirpClient {
       'app_id': 'chirp_mobile'
     };
 
-    final result = ChirpFFI._initialize(jsonEncode(config));
+    final result = ChirpFFI.initialize(jsonEncode(config));
     _isInitialized = (result == ChirpFFI.CHIRP_OK);
 
     if (_isInitialized) {
@@ -62,7 +63,7 @@ class ChirpClient {
     _connectionController.close();
     _responseController.close();
 
-    ChirpFFI._shutdown();
+    ChirpFFI.shutdown();
     _isInitialized = false;
     _isConnected = false;
   }
@@ -71,7 +72,7 @@ class ChirpClient {
   Future<bool> connect() async {
     if (!_isInitialized) return false;
 
-    final result = ChirpFFI._connect();
+    final result = ChirpFFI.connect();
     _isConnected = (result == ChirpFFI.CHIRP_OK);
     return _isConnected;
   }
@@ -80,21 +81,21 @@ class ChirpClient {
   void disconnect() {
     if (!_isInitialized) return;
 
-    ChirpFFI._disconnect();
+    ChirpFFI.disconnect();
     _isConnected = false;
   }
 
   /// Check connection status
   bool get isConnected {
     if (!_isInitialized) return false;
-    return ChirpFFI._isConnected() != 0;
+    return ChirpFFI.isConnected();
   }
 
   /// Login with user credentials
   Future<bool> login(String userId, String token, {String deviceId = ''}) async {
     if (!_isInitialized) return false;
 
-    final result = ChirpFFI._login(
+    final result = ChirpFFI.login(
       userId,
       token,
       deviceId,
@@ -107,41 +108,19 @@ class ChirpClient {
   /// Logout
   void logout() {
     if (!_isInitialized) return;
-    ChirpFFI._logout();
+    ChirpFFI.logout();
   }
 
   /// Get current user ID
   String get userId {
     if (!_isInitialized) return '';
-
-    final buffer = calloc.allocate<Uint8>(256);
-    try {
-      final result = ChirpFFI._getUserId(buffer.cast<Char>(), 256);
-      if (result == ChirpFFI.CHIRP_OK) {
-        final userIdStr = buffer.cast<Utf8>().toDartString(length: 256);
-        return userIdStr.split('\x00')[0];
-      }
-    } finally {
-      calloc.free(buffer);
-    }
-    return '';
+    return ChirpFFI.getUserId() ?? '';
   }
 
   /// Get current session ID
   String get sessionId {
     if (!_isInitialized) return '';
-
-    final buffer = calloc.allocate<Uint8>(256);
-    try {
-      final result = ChirpFFI._getSessionId(buffer.cast<Char>(), 256);
-      if (result == ChirpFFI.CHIRP_OK) {
-        final sessionIdStr = buffer.cast<Utf8>().toDartString(length: 256);
-        return sessionIdStr.split('\x00')[0];
-      }
-    } finally {
-      calloc.free(buffer);
-    }
-    return '';
+    return ChirpFFI.getSessionId() ?? '';
   }
 
   /// Send a text message
@@ -149,7 +128,7 @@ class ChirpClient {
     if (!_isInitialized || !isConnected) return false;
 
     final callbackId = _nextCallbackId++;
-    final result = ChirpFFI._sendMessage(toUserId, '', 0, content, callbackId);
+    final result = ChirpFFI.sendMessage(toUserId, '', 0, content, callbackId);
 
     return result == ChirpFFI.CHIRP_OK;
   }
@@ -175,7 +154,7 @@ class ChirpClient {
       }
     };
 
-    ChirpFFI._getHistory(channelId, channelType.index, 0, limit, callbackId);
+    ChirpFFI.getHistory(channelId, channelType.index, 0, limit, callbackId);
 
     return completer.future;
   }
@@ -184,24 +163,14 @@ class ChirpClient {
   Future<bool> markRead(String channelId, ChannelType channelType, String messageId) async {
     if (!_isInitialized || !isConnected) return false;
 
-    final result = ChirpFFI._markRead(channelId, channelType.index, messageId);
+    final result = ChirpFFI.markRead(channelId, channelType.index, messageId);
     return result == ChirpFFI.CHIRP_OK;
   }
 
   /// Get unread count
   int getUnreadCount() {
     if (!_isInitialized) return 0;
-
-    final countPtr = calloc.allocate<Int32>();
-    try {
-      final result = ChirpFFI._getUnreadCount(countPtr);
-      if (result == ChirpFFI.CHIRP_OK) {
-        return countPtr.value;
-      }
-    } finally {
-      calloc.free(countPtr);
-    }
-    return 0;
+    return ChirpFFI.getUnreadCount() ?? 0;
   }
 
   /// Join a voice room
@@ -209,7 +178,7 @@ class ChirpClient {
     if (!_isInitialized || !isConnected) return false;
 
     final callbackId = _nextCallbackId++;
-    final result = ChirpFFI._joinVoiceRoom(roomId, callbackId);
+    final result = ChirpFFI.joinVoiceRoom(roomId, callbackId);
 
     return result == ChirpFFI.CHIRP_OK;
   }
@@ -218,7 +187,7 @@ class ChirpClient {
   Future<bool> leaveVoiceRoom() async {
     if (!_isInitialized) return false;
 
-    final result = ChirpFFI._leaveVoiceRoom();
+    final result = ChirpFFI.leaveVoiceRoom();
     return result == ChirpFFI.CHIRP_OK;
   }
 
@@ -226,7 +195,7 @@ class ChirpClient {
   Future<bool> setMicMuted(bool muted) async {
     if (!_isInitialized) return false;
 
-    final result = ChirpFFI._setMicMuted(muted ? 1 : 0);
+    final result = ChirpFFI.setMicMuted(muted ? 1 : 0);
     return result == ChirpFFI.CHIRP_OK;
   }
 
@@ -234,20 +203,20 @@ class ChirpClient {
   Future<bool> setSpeakerMuted(bool muted) async {
     if (!_isInitialized) return false;
 
-    final result = ChirpFFI._setSpeakerMuted(muted ? 1 : 0);
+    final result = ChirpFFI.setSpeakerMuted(muted ? 1 : 0);
     return result == ChirpFFI.CHIRP_OK;
   }
 
   /// Check if mic is muted
   bool get isMicMuted {
     if (!_isInitialized) return true;
-    return ChirpFFI._isMicMuted() != 0;
+    return ChirpFFI.isMicMuted();
   }
 
   /// Check if speaker is muted
   bool get isSpeakerMuted {
     if (!_isInitialized) return true;
-    return ChirpFFI._isSpeakerMuted() != 0;
+    return ChirpFFI.isSpeakerMuted();
   }
 
   // Voice room methods with enhanced functionality
@@ -285,7 +254,7 @@ class ChirpClient {
       }
     };
 
-    ChirpFFI._getVoiceRoomInfo(roomId, callbackId);
+    ChirpFFI.getVoiceRoomInfo(roomId, callbackId);
 
     return completer.future.timeout(
       const Duration(seconds: 5),
@@ -298,7 +267,7 @@ class ChirpClient {
     if (!_isInitialized || !isConnected) return false;
 
     final callbackId = _nextCallbackId++;
-    final result = ChirpFFI._joinVoiceRoomWithType(roomId, roomType.index, callbackId);
+    final result = ChirpFFI.joinVoiceRoomWithType(roomId, roomType.index, callbackId);
 
     return result == ChirpFFI.CHIRP_OK;
   }
@@ -307,7 +276,7 @@ class ChirpClient {
   Future<bool> leaveVoiceRoom(String roomId) async {
     if (!_isInitialized) return false;
 
-    final result = ChirpFFI._leaveVoiceRoomById(roomId);
+    final result = ChirpFFI.leaveVoiceRoomById(roomId);
     return result == ChirpFFI.CHIRP_OK;
   }
 
@@ -315,7 +284,7 @@ class ChirpClient {
   Future<bool> setVoiceMute(String roomId, bool muted) async {
     if (!_isInitialized) return false;
 
-    final result = ChirpFFI._setVoiceMute(roomId, muted ? 1 : 0);
+    final result = ChirpFFI.setVoiceMute(roomId, muted ? 1 : 0);
     return result == ChirpFFI.CHIRP_OK;
   }
 
@@ -329,7 +298,7 @@ class ChirpClient {
   }) async {
     if (!_isInitialized) return false;
 
-    final result = ChirpFFI._sendIceCandidate(
+    final result = ChirpFFI.sendIceCandidate(
       roomId,
       toUserId ?? '',
       candidate,
@@ -347,7 +316,7 @@ class ChirpClient {
   ) async {
     if (!_isInitialized) return false;
 
-    final result = ChirpFFI._sendSdpAnswer(roomId, toUserId, sdpAnswer);
+    final result = ChirpFFI.sendSdpAnswer(roomId, toUserId, sdpAnswer);
     return result == ChirpFFI.CHIRP_OK;
   }
 
@@ -371,7 +340,7 @@ class ChirpClient {
       }
     };
 
-    ChirpFFI._createVoiceRoom(roomType.index, roomName, maxParticipants, callbackId);
+    ChirpFFI.createVoiceRoom(roomType.index, roomName, maxParticipants, callbackId);
 
     return completer.future.timeout(
       const Duration(seconds: 5),
@@ -397,34 +366,28 @@ class ChirpClient {
 
   void _setupNativeCallbacks() {
     // Message callback
-    final messageCallback = Pointer.fromFunction<MessageCallbackNative>((messageJsonPtr) {
-      final messageJson = messageJsonPtr.cast<Utf8>().toDartString();
+    ChirpFFI.setMessageCallback((messageJsonPtr) {
+      final messageJson = messageJsonPtr.toDartString();
       _handleMessageCallback(messageJson);
-      return;
     });
-    ChirpFFI._setMessageCallback(messageCallback);
 
     // Response callback
-    final responseCallback = Pointer.fromFunction<ResponseCallbackNative>((callbackId, success, dataJsonPtr) {
-      _handleResponseCallback(callbackId, success != 0, dataJsonPtr.cast<Utf8>().toDartString());
-      return;
+    ChirpFFI.setResponseCallback((callbackId, success, dataJsonPtr) {
+      _handleResponseCallback(callbackId, success != 0, dataJsonPtr.toDartString());
     });
-    ChirpFFI._setResponseCallback(responseCallback);
 
     // Connection callback
-    final connectionCallback = Pointer.fromFunction<ConnectionCallbackNative>((connected, errorCode) {
+    ChirpFFI.setConnectionCallback((connected, errorCode) {
       _handleConnectionCallback(connected != 0, errorCode);
-      return;
     });
-    ChirpFFI._setConnectionCallback(connectionCallback);
   }
 
   void _handleMessageCallback(String messageJson) {
     try {
-      final message = ChirpMessage.fromJson(messageJson);
+      final message = ChirpMessage.fromJson(jsonDecode(messageJson));
       _messageController.add(message);
     } catch (e) {
-      print('Error parsing message: $e');
+      // Ignore parse errors
     }
   }
 
@@ -441,9 +404,8 @@ class ChirpClient {
   List<ChirpMessage> _parseHistoryMessages(String json) {
     try {
       final List<dynamic> jsonList = jsonDecode(json);
-      return jsonList.map((msg) => ChirpMessage.fromJson(jsonEncode(msg))).toList();
+      return jsonList.map((msg) => ChirpMessage.fromJson(msg as Map<String, dynamic>)).toList();
     } catch (e) {
-      print('Error parsing history: $e');
       return [];
     }
   }
