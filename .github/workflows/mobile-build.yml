@@ -173,7 +173,7 @@ jobs:
       if: runner.os == 'Linux'
       run: |
         sudo apt-get update
-        sudo apt-get install -y ninja-build protobuf-compiler pkg-config
+        sudo apt-get install -y ninja-build protobuf-compiler pkg-config autoconf automake libtool libtool-bin
 
     - name: Verify protoc installation (Ubuntu)
       if: runner.os == 'Linux'
