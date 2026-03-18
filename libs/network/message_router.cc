@@ -47,7 +47,7 @@ struct MessageRouter::Impl {
     subscriber = std::make_unique<RedisSubscriber>(host, port);
 
     // 设置订阅者回调
-    subscriber->SetMessageCallback([this](const std::string& channel, const std::string& message) {
+    subscriber->SetMessageCallback([this, &io](const std::string& channel, const std::string& message) {
       auto it = subscriptions.find(channel);
       if (it != subscriptions.end() && it->second) {
         // 将回调投递到主 io_context

@@ -95,9 +95,9 @@ private:
   std::atomic<bool> connected_{false};
 
   std::mutex sock_mu_;
+  std::unique_ptr<asio::io_context> io_;
   asio::ip::tcp::socket* socket_ptr_{nullptr};
   std::unique_ptr<asio::ip::tcp::socket> socket_;
-  std::unique_ptr<asio::io_context> io_;
   std::thread th_;
 };
 

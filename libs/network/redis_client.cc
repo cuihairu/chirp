@@ -179,7 +179,7 @@ public:
         if (current_array_[0].type == RedisResp::Type::kBulkString &&
             current_array_[0].str == "message") {
           // Valid subscribe message
-          pending_messages_.push({
+          pending_messages_.push_back({
             current_array_[1].str,  // channel
             current_array_[2].str   // payload
           });
