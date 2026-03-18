@@ -173,14 +173,13 @@ jobs:
       if: runner.os == 'Linux'
       run: |
         sudo apt-get update
-        sudo apt-get install -y \
-          cmake \
-          ninja-build \
-          libprotobuf-dev \
-          protobuf-compiler \
-          libabsl-dev \
-          libsodium-dev \
-          pkg-config
+        sudo apt-get install -y cmake ninja-build libprotobuf-dev protobuf-compiler libabsl-dev libsodium-dev pkg-config
+
+    - name: Verify protoc installation
+      if: runner.os == 'Linux'
+      run: |
+        which protoc
+        protoc --version
 
     - name: Install dependencies (macOS)
       if: runner.os == 'macOS'
