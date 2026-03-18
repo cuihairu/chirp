@@ -1,0 +1,15 @@
+{
+  "name": "chirp-docs",
+  "version": "1.0.0",
+  "description": "Chirp Project Documentation",
+  "scripts": {
+    "docs:dev": "vuepress dev docs",
+    "docs:build": "vuepress build docs"
+  },
+  "devDependencies": {
+    "vuepress": "^2.0.0-rc.15",
+    "@vuepress/theme-default": "^2.0.0-rc.49",
+    "@vuepress/plugin-search": "^2.0.0-rc.40",
+    "vuepress-plugin-sitemap2": "^2.0.0-rc.1"
+  }
+}
