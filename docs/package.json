@@ -11,9 +11,5 @@
     "@vuepress/theme-default": "2.0.0-rc.49",
     "@vuepress/plugin-search": "2.0.0-rc.40"
   },
-  "overrides": {
-    "vuepress-plugin-sitemap2": {
-      "vuepress": "2.0.0-rc.15"
-    }
-  }
+  "packageManager": "pnpm@9.15.0"
 }

@@ -40,13 +40,18 @@ jobs:
         with:
           node-version: '24'
 
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 9
+
       - name: Install dependencies
         working-directory: ./docs
-        run: npm install
+        run: pnpm install
 
       - name: Build VuePress docs
         working-directory: ./docs
-        run: npm run docs:build
+        run: pnpm run docs:build
         env:
           VUEPRESS_BASE: "/chirp/"
 
