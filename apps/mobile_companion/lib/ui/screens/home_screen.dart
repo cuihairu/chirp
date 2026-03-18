@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:chirp_mobile/core/sdk/chirp_client.dart';
 import 'package:chirp_mobile/ui/screens/chat_screen.dart';
+import 'package:chirp_mobile/ui/screens/voice_room_screen.dart';
 
 /// Main home screen for the Chirp mobile app
 class HomeScreen extends StatefulWidget {
@@ -173,28 +174,252 @@ class _ContactsScreen extends StatelessWidget {
 }
 
 /// Voice screen
-class _VoiceScreen extends StatelessWidget {
+class _VoiceScreen extends StatefulWidget {
   const _VoiceScreen({super.key});
 
   @override
+  State<_VoiceScreen> createState() => _VoiceScreenState();
+}
+
+class _VoiceScreenState extends State<_VoiceScreen> {
+  final List<_VoiceRoomItem> _availableRooms = const [
+    _VoiceRoomItem(
+      id: 'voice_lobby',
+      name: 'General Lobby',
+      type: VoiceRoomType.channel,
+      participants: 5,
+    ),
+    _VoiceRoomItem(
+      id: 'voice_gaming',
+      name: 'Gaming Chat',
+      type: VoiceRoomType.channel,
+      participants: 3,
+    ),
+    _VoiceRoomItem(
+      id: 'voice_strategy',
+      name: 'Strategy Room',
+      type: VoiceRoomType.group,
+      participants: 2,
+    ),
+  ];
+
+  @override
   Widget build(BuildContext context) {
-    return Center(
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          const Icon(Icons.call, size: 64),
-          const SizedBox(height: 16),
-          const Text('Join a voice room to start talking'),
-          const SizedBox(height: 32),
-          ElevatedButton.icon(
-            onPressed: () {},
-            icon: const Icon(Icons.add_call),
-            label: const Text('Join Room'),
+    return Column(
+      children: [
+        // Quick join section
+        Container(
+          padding: const EdgeInsets.all(16),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                'Voice Channels',
+                style: Theme.of(context).textTheme.titleLarge,
+              ),
+              const SizedBox(height: 8),
+              Text(
+                'Join a voice channel to start talking with friends',
+                style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                  color: Colors.grey,
+                ),
+              ),
+            ],
+          ),
+        ),
+
+        const Divider(),
+
+        // Voice rooms list
+        Expanded(
+          child: ListView.builder(
+            padding: const EdgeInsets.all(16),
+            itemCount: _availableRooms.length,
+            itemBuilder: (context, index) {
+              final room = _availableRooms[index];
+              return _buildVoiceRoomTile(context, room);
+            },
+          ),
+        ),
+
+        // Create room button
+        Container(
+          padding: const EdgeInsets.all(16),
+          child: SizedBox(
+            width: double.infinity,
+            child: ElevatedButton.icon(
+              onPressed: _showCreateRoomDialog,
+              icon: const Icon(Icons.add),
+              label: const Text('Create Voice Room'),
+              style: ElevatedButton.styleFrom(
+                padding: const EdgeInsets.symmetric(vertical: 16),
+              ),
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildVoiceRoomTile(BuildContext context, _VoiceRoomItem room) {
+    return Card(
+      margin: const EdgeInsets.only(bottom: 12),
+      child: ListTile(
+        leading: CircleAvatar(
+          backgroundColor: room.type == VoiceRoomType.channel
+              ? Colors.deepPurple
+              : Colors.orange,
+          child: Icon(
+            room.type == VoiceRoomType.channel
+                ? Icons.speaker_notes
+                : Icons.group,
+            color: Colors.white,
+          ),
+        ),
+        title: Text(room.name),
+        subtitle: Text('${room.participants} participants'),
+        trailing: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(
+              Icons.people,
+              size: 16,
+              color: Colors.grey.shade600,
+            ),
+            const SizedBox(width: 4),
+            Text(
+              '${room.participants}',
+              style: TextStyle(color: Colors.grey.shade600),
+            ),
+            const SizedBox(width: 8),
+            const Icon(Icons.arrow_forward_ios, size: 16),
+          ],
+        ),
+        onTap: () => _joinVoiceRoom(context, room),
+      ),
+    );
+  }
+
+  void _joinVoiceRoom(BuildContext context, _VoiceRoomItem room) {
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) => VoiceRoomScreen(
+          roomId: room.id,
+          roomName: room.name,
+          roomType: room.type,
+        ),
+      ),
+    );
+  }
+
+  void _showCreateRoomDialog() {
+    final nameController = TextEditingController();
+    final formKey = GlobalKey<FormState>();
+
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Create Voice Room'),
+        content: Form(
+          key: formKey,
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              TextFormField(
+                controller: nameController,
+                decoration: const InputDecoration(
+                  labelText: 'Room Name',
+                  border: OutlineInputBorder(),
+                ),
+                validator: (value) {
+                  if (value == null || value.trim().isEmpty) {
+                    return 'Please enter a room name';
+                  }
+                  return null;
+                },
+              ),
+              const SizedBox(height: 16),
+              DropdownButtonFormField<VoiceRoomType>(
+                value: VoiceRoomType.group,
+                decoration: const InputDecoration(
+                  labelText: 'Room Type',
+                  border: OutlineInputBorder(),
+                ),
+                items: const [
+                  DropdownMenuItem(
+                    value: VoiceRoomType.peerToPeer,
+                    child: Text('1:1 Call'),
+                  ),
+                  DropdownMenuItem(
+                    value: VoiceRoomType.group,
+                    child: Text('Group Call'),
+                  ),
+                  DropdownMenuItem(
+                    value: VoiceRoomType.channel,
+                    child: Text('Channel'),
+                  ),
+                ],
+                onChanged: (value) {},
+              ),
+            ],
+          ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('Cancel'),
+          ),
+          ElevatedButton(
+            onPressed: () {
+              if (formKey.currentState!.validate()) {
+                Navigator.pop(context);
+                // Create and join the room
+                _createAndJoinRoom(nameController.text.trim());
+              }
+            },
+            child: const Text('Create'),
           ),
         ],
       ),
     );
   }
+
+  void _createAndJoinRoom(String roomName) async {
+    final roomId = await ChirpClient.instance.createVoiceRoom(
+      VoiceRoomType.group,
+      roomName,
+      10, // max participants
+    );
+
+    if (roomId != null && mounted) {
+      Navigator.push(
+        context,
+        MaterialPageRoute(
+          builder: (context) => VoiceRoomScreen(
+            roomId: roomId,
+            roomName: roomName,
+            roomType: VoiceRoomType.group,
+          ),
+        ),
+      );
+    }
+  }
+}
+
+// Voice room item
+class _VoiceRoomItem {
+  final String id;
+  final String name;
+  final VoiceRoomType type;
+  final int participants;
+
+  const _VoiceRoomItem({
+    required this.id,
+    required this.name,
+    required this.type,
+    required this.participants,
+  });
 }
 
 /// Profile screen

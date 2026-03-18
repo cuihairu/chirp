@@ -40,19 +40,19 @@
 
 > Target: Low latency team voice for Gaming & Mobile App.
 
-- [ ] **Signaling Service**
-  - [ ] Room Management (Create/Join/Leave).
-  - [ ] SDP & ICE Candidate Exchange.
-- [ ] **Voice Client Module**
-  - [ ] WebRTC Native Integration (C++).
-  - [ ] Audio Device Management (Mic/Speaker).
-  - [ ] Network Adaptability (Jitter Buffer, FEC configuration).
+- [x] **Signaling Service**
+  - [x] Room Management (Create/Join/Leave).
+  - [x] SDP & ICE Candidate Exchange.
+- [x] **Voice Client Module**
+  - [x] WebRTC Native Integration (C++).
+  - [x] Audio Device Management (Mic/Speaker).
+  - [x] Network Adaptability (Jitter Buffer, FEC configuration).
 
 ## 4. SDKs (in `sdks/`)
 
 - [x] **Core SDK (C++)** (`sdks/core`)
   - [x] Unified interface for Chat & Voice.
-  - [ ] Cross-platform compilation (Windows/Mac/iOS/Android).
+  - [x] Cross-platform compilation (Windows/Mac/iOS/Android).
 - [x] **Unity SDK** (`sdks/unity` - C# Adapter)
   - [x] C ABI bridge for native plugin
   - [x] C# wrapper with P/Invoke
@@ -66,10 +66,10 @@
 
 ## 5. Client Apps (in `apps/`)
 
-- [ ] **Mobile Companion App** (`apps/mobile_companion` - Flutter/RN)
-  - [ ] **UI Framework**: Contact List, Chat Window, Voice Room.
-  - [ ] **Background Services**: Push Notifications (APNs/FCM) for keeping users "reachable" when app is killed.
-  - [ ] **Voice Interaction**: CallKit/ConnectionService integration (System Phone UI).
+- [x] **Mobile Companion App** (`apps/mobile_companion` - Flutter/RN)
+  - [x] **UI Framework**: Contact List, Chat Window, Voice Room.
+  - [x] **Background Services**: Push Notifications (APNs/FCM) for keeping users "reachable" when app is killed.
+  - [x] **Voice Interaction**: CallKit/ConnectionService integration (System Phone UI).
 - [x] **CLI Client** (`apps/cli_client` - C++)
   - [x] Simple terminal based chat client for testing.
 - [x] **Load Tester** (`apps/load_tester` - C++)
@@ -83,7 +83,48 @@
 - [x] **Orchestration**: Docker Compose / K8s manifests.
 - [x] **Load Testing**: Benchmark 10k+ concurrent connections (Gateway).
 
-## Recent Updates (2026-03-17)
+## Recent Updates (2026-03-18)
+
+### Mobile Companion App (Flutter)
+- Added voice room screen with WebRTC integration
+- Added participant list with speaking indicators
+- Added mute/unmute controls
+- Added speaker toggle
+- Integrated with ChirpClient for voice signaling
+- Enhanced home screen with voice room navigation
+
+### Native Android Integration
+- Created MainActivity.kt with native method channel
+- Implemented VoiceForegroundService for background calls
+- Implemented VoiceBroadcastReceiver for notification actions
+- Implemented VoiceCallNotification for incoming call UI
+- Implemented ChirpFirebaseMessagingService for push notifications
+- Created AndroidManifest.xml with all required permissions
+- Added build.gradle with Firebase and Kotlin dependencies
+
+### Native iOS Integration
+- Created AppDelegate.swift with CallKit integration
+- Implemented PKPushRegistryDelegate for VoIP pushes
+- Implemented CXProviderDelegate for call management
+- Added audio focus and speakerphone control
+- Created Info.plist with microphone/camera permissions
+- Created Podfile with Firebase and CallKit dependencies
+
+### Cross-Platform Build Scripts
+- Created build_all.sh for macOS/Linux builds
+- Created build_all.bat for Windows builds
+- Created iOS.cmake toolchain file
+- Created linux-gcc.cmake toolchain file
+- Created Unity plugin build scripts for all platforms
+- Added XCFramework creation for iOS
+
+### WebRTC Native Client Module
+- Created webrtc_client.h with WebRTC abstraction
+- Created webrtc_client.cc with audio device management
+- Integrated WebRTC client with voice module
+- Added audio level monitoring
+- Added device enumeration APIs
+- Added input/output enable/disable controls
 
 ### Auth Service Enhancement
 - Added `refresh_tokens` table for refresh token persistence

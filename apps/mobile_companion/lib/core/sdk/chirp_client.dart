@@ -250,6 +250,149 @@ class ChirpClient {
     return ChirpFFI._isSpeakerMuted() != 0;
   }
 
+  // Voice room methods with enhanced functionality
+
+  /// Get voice room info
+  Future<VoiceRoomInfo?> getVoiceRoomInfo(String roomId) async {
+    if (!_isInitialized || !isConnected) return null;
+
+    final callbackId = _nextCallbackId++;
+    final completer = Completer<VoiceRoomInfo?>();
+
+    _responseCallbacks[callbackId] = (success, data) {
+      if (success && data.isNotEmpty) {
+        try {
+          final json = jsonDecode(data);
+          final info = VoiceRoomInfo(
+            roomId: json['room_id'] ?? roomId,
+            roomName: json['room_name'] ?? '',
+            roomType: VoiceRoomType.values[json['room_type'] ?? 0],
+            participants: (json['participants'] as List? ?? [])
+                .map((p) => VoiceParticipant(
+                      userId: p['user_id'] ?? '',
+                      username: p['username'] ?? '',
+                      isMuted: p['state'] == 2,
+                      isSpeaking: p['is_speaking'] ?? false,
+                    ))
+                .toList(),
+          );
+          completer.complete(info);
+        } catch (e) {
+          completer.complete(null);
+        }
+      } else {
+        completer.complete(null);
+      }
+    };
+
+    ChirpFFI._getVoiceRoomInfo(roomId, callbackId);
+
+    return completer.future.timeout(
+      const Duration(seconds: 5),
+      onTimeout: () => null,
+    );
+  }
+
+  /// Join voice room with room type
+  Future<bool> joinVoiceRoom(String roomId, VoiceRoomType roomType) async {
+    if (!_isInitialized || !isConnected) return false;
+
+    final callbackId = _nextCallbackId++;
+    final result = ChirpFFI._joinVoiceRoomWithType(roomId, roomType.index, callbackId);
+
+    return result == ChirpFFI.CHIRP_OK;
+  }
+
+  /// Leave voice room
+  Future<bool> leaveVoiceRoom(String roomId) async {
+    if (!_isInitialized) return false;
+
+    final result = ChirpFFI._leaveVoiceRoomById(roomId);
+    return result == ChirpFFI.CHIRP_OK;
+  }
+
+  /// Set voice mute state (notifies server)
+  Future<bool> setVoiceMute(String roomId, bool muted) async {
+    if (!_isInitialized) return false;
+
+    final result = ChirpFFI._setVoiceMute(roomId, muted ? 1 : 0);
+    return result == ChirpFFI.CHIRP_OK;
+  }
+
+  /// Send ICE candidate through signaling
+  Future<bool> sendIceCandidate(
+    String roomId,
+    String candidate,
+    String sdpMid,
+    int sdpMLineIndex, {
+    String? toUserId,
+  }) async {
+    if (!_isInitialized) return false;
+
+    final result = ChirpFFI._sendIceCandidate(
+      roomId,
+      toUserId ?? '',
+      candidate,
+      sdpMid,
+      sdpMLineIndex,
+    );
+    return result == ChirpFFI.CHIRP_OK;
+  }
+
+  /// Send SDP answer through signaling
+  Future<bool> sendSdpAnswer(
+    String roomId,
+    String sdpAnswer,
+    String toUserId,
+  ) async {
+    if (!_isInitialized) return false;
+
+    final result = ChirpFFI._sendSdpAnswer(roomId, toUserId, sdpAnswer);
+    return result == ChirpFFI.CHIRP_OK;
+  }
+
+  /// Create voice room
+  Future<String?> createVoiceRoom(VoiceRoomType roomType, String roomName, int maxParticipants) async {
+    if (!_isInitialized || !isConnected) return null;
+
+    final callbackId = _nextCallbackId++;
+    final completer = Completer<String?>();
+
+    _responseCallbacks[callbackId] = (success, data) {
+      if (success && data.isNotEmpty) {
+        try {
+          final json = jsonDecode(data);
+          completer.complete(json['room_id'] as String?);
+        } catch (e) {
+          completer.complete(null);
+        }
+      } else {
+        completer.complete(null);
+      }
+    };
+
+    ChirpFFI._createVoiceRoom(roomType.index, roomName, maxParticipants, callbackId);
+
+    return completer.future.timeout(
+      const Duration(seconds: 5),
+      onTimeout: () => null,
+    );
+  }
+
+  // Voice event streams
+
+  final _voiceParticipantJoinedController = StreamController<VoiceParticipant>.broadcast();
+  final _voiceParticipantLeftController = StreamController<String>.broadcast();
+  final _voiceSpeakingController = StreamController<VoiceSpeakingEvent>.broadcast();
+  final _voiceIceCandidateController = StreamController<VoiceIceCandidateEvent>.broadcast();
+  final _voiceSdpOfferController = StreamController<VoiceSdpOfferEvent>.broadcast();
+
+  Stream<VoiceParticipant> get voiceParticipantJoinedStream => _voiceParticipantJoinedController.stream;
+  Stream<String> get voiceParticipantLeftStream => _voiceParticipantLeftController.stream;
+  Stream<VoiceSpeakingEvent> get voiceSpeakingStream => _voiceSpeakingController.stream;
+  Stream<VoiceIceCandidateEvent> get voiceIceCandidateStream => _voiceIceCandidateController.stream;
+  Stream<VoiceSdpOfferEvent> get voiceSdpOfferStream => _voiceSdpOfferController.stream;
+
   // Private methods
 
   void _setupNativeCallbacks() {
@@ -379,4 +522,103 @@ enum MsgType {
   voice,
   image,
   system,
+}
+
+// Voice room supporting types
+
+/// Voice room types
+enum VoiceRoomType {
+  peerToPeer,
+  group,
+  channel,
+}
+
+/// Voice participant info
+class VoiceParticipant {
+  final String userId;
+  final String username;
+  final bool isSpeaking;
+  final bool isMuted;
+
+  VoiceParticipant({
+    required this.userId,
+    required this.username,
+    this.isSpeaking = false,
+    this.isMuted = false,
+  });
+}
+
+/// Voice room info
+class VoiceRoomInfo {
+  final String roomId;
+  final String roomName;
+  final VoiceRoomType roomType;
+  final List<VoiceParticipant> participants;
+
+  VoiceRoomInfo({
+    required this.roomId,
+    required this.roomName,
+    required this.roomType,
+    required this.participants,
+  });
+}
+
+/// Voice ICE candidate event
+class VoiceIceCandidateEvent {
+  final String fromUserId;
+  final String candidate;
+  final String sdpMid;
+  final int sdpMLineIndex;
+
+  VoiceIceCandidateEvent({
+    required this.fromUserId,
+    required this.candidate,
+    required this.sdpMid,
+    required this.sdpMLineIndex,
+  });
+
+  factory VoiceIceCandidateEvent.fromJson(Map<String, dynamic> json) {
+    return VoiceIceCandidateEvent(
+      fromUserId: json['from_user_id'] ?? '',
+      candidate: json['candidate'] ?? '',
+      sdpMid: json['sdp_mid'] ?? '',
+      sdpMLineIndex: json['sdp_mline_index'] ?? 0,
+    );
+  }
+}
+
+/// Voice SDP offer event
+class VoiceSdpOfferEvent {
+  final String fromUserId;
+  final String sdpOffer;
+
+  VoiceSdpOfferEvent({
+    required this.fromUserId,
+    required this.sdpOffer,
+  });
+
+  factory VoiceSdpOfferEvent.fromJson(Map<String, dynamic> json) {
+    return VoiceSdpOfferEvent(
+      fromUserId: json['from_user_id'] ?? '',
+      sdpOffer: json['sdp_offer'] ?? '',
+    );
+  }
+}
+
+/// Voice speaking state event
+class VoiceSpeakingEvent {
+  final String userId;
+  final bool isSpeaking;
+
+  VoiceSpeakingEvent({
+    required this.userId,
+    required this.isSpeaking,
+  });
+
+  factory VoiceSpeakingEvent.fromJson(Map<String, dynamic> json) {
+    return VoiceSpeakingEvent(
+      userId: json['user_id'] ?? '',
+      isSpeaking: json['speaking'] ?? false,
+    );
+  }
 }

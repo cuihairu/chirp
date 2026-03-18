@@ -13,6 +13,7 @@
 #include <asio.hpp>
 
 #include "chirp/core/modules/voice/voice_module.h"
+#include "chirp/core/modules/voice/webrtc_client.h"
 #include "network/protobuf_framing.h"
 #include "network/session.h"
 #include "network/tcp_client.h"
@@ -114,6 +115,10 @@ public:
   // Get current room ID
   std::string GetCurrentRoomId() const { return current_room_id_; }
 
+  // WebRTC integration
+  bool InitializeWebRTC(const WebRTCConfig& config);
+  WebRTCClient* GetWebRTCClient() { return webrtc_client_.get(); }
+
 private:
   void SendPacket(const chirp::gateway::Packet& pkt);
   void ReceiveLoop();
@@ -156,6 +161,10 @@ private:
 
   // Receive thread
   std::thread receive_thread_;
+
+  // WebRTC client for audio processing
+  std::unique_ptr<WebRTCClient> webrtc_client_;
+  bool webrtc_initialized_ = false;
 };
 
 } // namespace voice

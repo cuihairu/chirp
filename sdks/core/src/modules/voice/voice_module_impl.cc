@@ -36,6 +36,26 @@ VoiceModuleImpl::VoiceModuleImpl(asio::io_context& io,
 
 VoiceModuleImpl::~VoiceModuleImpl() {
   Disconnect();
+  webrtc_client_.reset();
+}
+
+bool VoiceModuleImpl::InitializeWebRTC(const WebRTCConfig& config) {
+  if (webrtc_initialized_) {
+    return true;
+  }
+
+  webrtc_client_ = WebRTCClientFactory::Create();
+  if (!webrtc_client_) {
+    return false;
+  }
+
+  if (!webrtc_client_->Initialize(config)) {
+    webrtc_client_.reset();
+    return false;
+  }
+
+  webrtc_initialized_ = true;
+  return true;
 }
 
 bool VoiceModuleImpl::Connect() {

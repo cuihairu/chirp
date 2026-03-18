@@ -103,6 +103,35 @@ class ChirpFFI {
       .lookup<NativeFunction<Int32 Function()>>('Chirp_IsSpeakerMuted')
       .asFunction();
 
+  // Enhanced voice API functions
+  late final int Function(String, Int32, Int32) _joinVoiceRoomWithType = _lib
+      .lookup<NativeFunction<Int32 Function(Pointer<Char>, Int32, Int32)>>('Chirp_JoinVoiceRoomWithType')
+      .asFunction();
+
+  late final int Function(String) _leaveVoiceRoomById = _lib
+      .lookup<NativeFunction<Int32 Function(Pointer<Char>)>>('Chirp_LeaveVoiceRoomById')
+      .asFunction();
+
+  late final int Function(String, Int32) _setVoiceMute = _lib
+      .lookup<NativeFunction<Int32 Function(Pointer<Char>, Int32)>>('Chirp_SetVoiceMute')
+      .asFunction();
+
+  late final int Function(String, String, String, String, Int32) _sendIceCandidate = _lib
+      .lookup<NativeFunction<Int32 Function(Pointer<Char>, Pointer<Char>, Pointer<Char>, Pointer<Char>, Int32)>>('Chirp_SendIceCandidate')
+      .asFunction();
+
+  late final int Function(String, String, String) _sendSdpAnswer = _lib
+      .lookup<NativeFunction<Int32 Function(Pointer<Char>, Pointer<Char>, Pointer<Char>)>>('Chirp_SendSdpAnswer')
+      .asFunction();
+
+  late final int Function(Int32, String, Int32, Int32) _createVoiceRoom = _lib
+      .lookup<NativeFunction<Int32 Function(Int32, Pointer<Char>, Int32, Int32)>>('Chirp_CreateVoiceRoom')
+      .asFunction();
+
+  late final int Function(String, Int32) _getVoiceRoomInfo = _lib
+      .lookup<NativeFunction<Int32 Function(Pointer<Char>, Int32)>>('Chirp_GetVoiceRoomInfo')
+      .asFunction();
+
   // Callback setters
   late final void Function<Pointer> _setMessageCallback = _lib
       .lookup<NativeFunction<Void Function<Pointer>>>('Chirp_SetMessageCallback')
