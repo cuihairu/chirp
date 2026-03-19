@@ -325,6 +325,118 @@ void LoadTester::HandlePong(ClientSession& session) {
   // Update stats
 }
 
+void LoadTester::RunFailureRecovery() {
+  std::cout << "Starting Failure/Recovery test..." << std::endl;
+
+  running_ = true;
+  stop_requested_ = false;
+
+  // Create sessions
+  int total_connections = config_.concurrent_connections;
+  sessions_.resize(total_connections);
+  for (int i = 0; i < total_connections; ++i) {
+    sessions_[i].id = i;
+    sessions_[i].user_id = "load_test_user_" + std::to_string(i);
+  }
+
+  asio::io_context io;
+  asio::steady_timer timer(io);
+
+  int phase = 0;
+  const int phase_duration_seconds = 30;
+
+  auto run_phase = [&]() {
+    phase++;
+
+    switch (phase) {
+      case 1:  // Initial connection
+        std::cout << "[Phase 1] Connecting " << total_connections << " clients..." << std::endl;
+        for (auto& session : sessions_) {
+          if (ConnectClient(session, io)) {
+            stats_.connections_succeeded++;
+          } else {
+            stats_.connections_failed++;
+          }
+        }
+        std::cout << "[Phase 1] Connected: " << stats_.connections_succeeded
+                  << " Failed: " << stats_.connections_failed << std::endl;
+        break;
+
+      case 2:  // Send messages
+        std::cout << "[Phase 2] Sending messages..." << std::endl;
+        for (auto& session : sessions_) {
+          if (session.connected) {
+            SendMessage(session, "Test message during normal operation");
+          }
+        }
+        std::cout << "[Phase 2] Messages sent: " << stats_.messages_sent << std::endl;
+        break;
+
+      case 3:  // Simulate server failure (disconnect all)
+        std::cout << "[Phase 3] Simulating server failure - disconnecting all..." << std::endl;
+        for (auto& session : sessions_) {
+          DisconnectClient(session);
+        }
+        stats_.current_connections = 0;
+        std::cout << "[Phase 3] All clients disconnected" << std::endl;
+        break;
+
+      case 4:  // Recovery attempt (reconnect)
+        std::cout << "[Phase 4] Attempting reconnection..." << std::endl;
+        stats_.connections_succeeded = 0;
+        stats_.connections_failed = 0;
+        for (auto& session : sessions_) {
+          if (ConnectClient(session, io)) {
+            stats_.connections_succeeded++;
+          } else {
+            stats_.connections_failed++;
+          }
+        }
+        std::cout << "[Phase 4] Reconnected: " << stats_.connections_succeeded
+                  << " Failed: " << stats_.connections_failed << std::endl;
+        break;
+
+      case 5:  // Verify functionality after recovery
+        std::cout << "[Phase 5] Verifying functionality after recovery..." << std::endl;
+        for (auto& session : sessions_) {
+          if (session.connected) {
+            SendMessage(session, "Test message after recovery");
+          }
+        }
+        std::cout << "[Phase 5] Recovery test complete" << std::endl;
+        break;
+
+      default:
+        stop_requested_ = true;
+        break;
+    }
+
+    if (!stop_requested_) {
+      timer.expires_after(std::chrono::seconds(phase_duration_seconds));
+      timer.async_wait([&](const std::error_code& ec) {
+        if (!ec) run_phase();
+      });
+    }
+  };
+
+  // Start first phase
+  timer.expires_after(std::chrono::seconds(1));
+  timer.async_wait([&](const std::error_code& ec) {
+    if (!ec) run_phase();
+  });
+
+  // Run the io context
+  io.run();
+
+  // Cleanup
+  for (auto& session : sessions_) {
+    DisconnectClient(session);
+  }
+
+  std::cout << "Failure/Recovery test completed." << std::endl;
+  PrintStatsReport(stats_);
+}
+
 // ============================================================================
 // Helper Functions
 // ============================================================================
@@ -343,7 +455,7 @@ void RunScenario(TestScenario scenario, const LoadTestConfig& config) {
     tester.RunMixedLoad();
     break;
   case TestScenario::kFailureRecovery:
-    // TODO: Implement
+    tester.RunFailureRecovery();
     break;
   }
 }

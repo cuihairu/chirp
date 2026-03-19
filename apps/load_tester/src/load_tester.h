@@ -87,6 +87,7 @@ public:
   void RunConnectionFlood();
   void RunMessageStorm();
   void RunMixedLoad();
+  void RunFailureRecovery();
 
 private:
   struct ClientSession {

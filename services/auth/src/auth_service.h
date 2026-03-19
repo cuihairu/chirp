@@ -3,8 +3,10 @@
 #include <cstdint>
 #include <functional>
 #include <memory>
+#include <mutex>
 #include <optional>
 #include <string>
+#include <unordered_map>
 
 #include <asio.hpp>
 
@@ -150,6 +152,14 @@ private:
   std::shared_ptr<RedisAuthStore> redis_store_;
   std::shared_ptr<RateLimiter> rate_limiter_;
   std::shared_ptr<BruteForceProtector> brute_force_protector_;
+
+  // Password reset token storage (token -> user_id + expiry)
+  struct PasswordResetToken {
+    std::string user_id;
+    int64_t expires_at;
+  };
+  std::unordered_map<std::string, PasswordResetToken> password_reset_tokens_;
+  std::mutex password_reset_mutex_;
 };
 
 } // namespace chirp::auth

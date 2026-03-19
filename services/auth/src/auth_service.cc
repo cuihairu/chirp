@@ -365,17 +365,79 @@ bool AuthService::InitiatePasswordReset(const std::string& identifier) {
     return false;
   }
 
-  // TODO: Generate and store reset token, send email
-  // For now, just log
-  Logger::Instance().Info("Password reset initiated for: " + user_data->user_id);
+  // Generate reset token (valid for 1 hour)
+  std::string reset_token = GenerateRefreshToken();
+  std::string token_hash = TokenGenerator::HashToken(reset_token);
+  int64_t expires_at = NowMs() + (3600 * 1000);  // 1 hour from now
+
+  // Store the token
+  {
+    std::lock_guard<std::mutex> lock(password_reset_mutex_);
+    password_reset_tokens_[token_hash] = PasswordResetToken{
+      user_data->user_id,
+      expires_at
+    };
+  }
+
+  // In production, send email with reset_token
+  // For now, just log the token (for testing)
+  Logger::Instance().Info("Password reset initiated for: " + user_data->user_id +
+                         " token: " + reset_token + " (valid for 1 hour)");
 
   return true;
 }
 
 bool AuthService::CompletePasswordReset(const std::string& token, std::string_view new_password) {
-  // TODO: Verify reset token and update password
-  Logger::Instance().Info("Password reset completion requested");
-  return false;
+  if (token.empty()) {
+    return false;
+  }
+
+  // Hash and verify token
+  std::string token_hash = TokenGenerator::HashToken(token);
+
+  std::string user_id;
+  {
+    std::lock_guard<std::mutex> lock(password_reset_mutex_);
+    auto it = password_reset_tokens_.find(token_hash);
+    if (it == password_reset_tokens_.end()) {
+      Logger::Instance().Warn("Password reset attempted with invalid token");
+      return false;
+    }
+
+    // Check expiration
+    if (it->second.expires_at < NowMs()) {
+      password_reset_tokens_.erase(it);
+      Logger::Instance().Warn("Password reset attempted with expired token");
+      return false;
+    }
+
+    user_id = it->second.user_id;
+    password_reset_tokens_.erase(it);
+  }
+
+  // Validate new password strength
+  std::string validation_error = PasswordHasher::ValidateStrength(new_password);
+  if (!validation_error.empty()) {
+    Logger::Instance().Warn("Password reset failed validation: " + validation_error);
+    return false;
+  }
+
+  // Hash new password
+  std::string new_hash = PasswordHasher::HashPassword(new_password);
+  if (new_hash.empty()) {
+    return false;
+  }
+
+  // Update password
+  bool success = user_store_->ChangePassword(user_id, new_hash);
+  if (success) {
+    // Revoke all sessions to force re-login
+    session_store_->RevokeAllUserSessions(user_id);
+    redis_store_->DeleteAllUserSessions(user_id);
+    Logger::Instance().Info("Password reset completed for user: " + user_id);
+  }
+
+  return success;
 }
 
 bool AuthService::ChangePassword(const std::string& user_id,
