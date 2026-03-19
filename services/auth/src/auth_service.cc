@@ -1,9 +1,11 @@
 #include "auth_service.h"
 
-#include "common/jwt.h"
-#include "common/logger.h"
+#include "jwt.h"
+#include "logger.h"
 #include "password_hasher.h"
 #include "token_generator.h"
+
+using chirp::common::Logger;
 
 namespace chirp::auth {
 namespace {
