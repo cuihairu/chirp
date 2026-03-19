@@ -12,7 +12,7 @@
 
 #include <asio.hpp>
 
-#include "common/logger.h"
+#include "logger.h"
 #include "network/byte_order.h"
 #include "network/protobuf_framing.h"
 #include "proto/common.pb.h"

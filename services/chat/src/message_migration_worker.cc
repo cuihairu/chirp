@@ -2,7 +2,7 @@
 
 #include <mutex>
 
-#include "common/logger.h"
+#include "logger.h"
 
 namespace chirp::chat {
 namespace {

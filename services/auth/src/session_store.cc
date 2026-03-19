@@ -5,7 +5,7 @@
 
 #include <mysql.h>
 
-#include "common/logger.h"
+#include "logger.h"
 #include "token_generator.h"
 
 namespace chirp::auth {

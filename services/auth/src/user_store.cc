@@ -6,7 +6,7 @@
 
 #include <mysql.h>
 
-#include "common/logger.h"
+#include "logger.h"
 #include "password_hasher.h"
 #include "token_generator.h"
 

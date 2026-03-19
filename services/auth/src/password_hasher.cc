@@ -5,7 +5,7 @@
 #include <sstream>
 #include <string>
 
-#include "common/logger.h"
+#include "logger.h"
 
 // Argon2 header - using libsodium's crypto_pwhash implementation
 #include <sodium.h>

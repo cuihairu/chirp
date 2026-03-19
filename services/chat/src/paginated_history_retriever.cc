@@ -2,7 +2,7 @@
 
 #include <sstream>
 
-#include "common/logger.h"
+#include "logger.h"
 
 namespace chirp::chat {
 

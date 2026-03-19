@@ -1,6 +1,6 @@
 #include "brute_force_protector.h"
 
-#include "common/logger.h"
+#include "logger.h"
 #include "user_store.h"
 
 namespace chirp::auth {

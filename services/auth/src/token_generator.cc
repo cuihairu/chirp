@@ -8,8 +8,8 @@
 
 #include <sodium.h>
 
-#include "common/jwt.h"
-#include "common/sha256.h"
+#include "jwt.h"
+#include "sha256.h"
 
 namespace chirp::auth {
 namespace {

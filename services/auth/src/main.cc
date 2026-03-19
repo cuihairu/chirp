@@ -7,8 +7,8 @@
 
 #include <asio.hpp>
 
-#include "common/jwt.h"
-#include "common/logger.h"
+#include "jwt.h"
+#include "logger.h"
 #include "network/protobuf_framing.h"
 #include "network/session.h"
 #include "network/tcp_server.h"

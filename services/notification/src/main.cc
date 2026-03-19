@@ -7,7 +7,7 @@
 
 #include "notification_service.h"
 #include "network/tcp_server.h"
-#include "common/logger.h"
+#include "logger.h"
 
 using namespace chirp;
 

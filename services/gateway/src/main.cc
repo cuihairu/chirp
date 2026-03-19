@@ -10,7 +10,7 @@
 #include <asio.hpp>
 
 #include "auth_client.h"
-#include "common/logger.h"
+#include "logger.h"
 #include "network/protobuf_framing.h"
 #include "redis_session_manager.h"
 #include "network/session.h"

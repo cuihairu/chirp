@@ -4,9 +4,9 @@
 #include <cstring>
 #include <string_view>
 
-#include "common/base64.h"
-#include "common/jwt.h"
-#include "common/sha256.h"
+#include "base64.h"
+#include "jwt.h"
+#include "sha256.h"
 
 namespace chirp::common {
 namespace {

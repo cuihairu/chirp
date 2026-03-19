@@ -9,7 +9,7 @@
 
 #include <asio.hpp>
 
-#include "common/logger.h"
+#include "logger.h"
 #include "network/protobuf_framing.h"
 #include "network/session.h"
 #include "network/tcp_client.h"

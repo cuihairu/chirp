@@ -8,7 +8,7 @@
 
 #include <asio.hpp>
 
-#include "common/error_code.h"
+#include "error_code.h"
 #include "brute_force_protector.h"
 #include "rate_limiter.h"
 #include "redis_auth_store.h"

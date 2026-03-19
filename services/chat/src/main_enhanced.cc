@@ -17,7 +17,7 @@
 #include "chat/src/message_delivery_tracker.h"
 #include "chat/src/message_migration_worker.h"
 #include "chat/src/paginated_history_retriever.h"
-#include "common/logger.h"
+#include "logger.h"
 #include "network/message_router.h"
 #include "network/protobuf_framing.h"
 #include "network/redis_client.h"

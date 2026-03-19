@@ -9,7 +9,7 @@
 
 #include <asio.hpp>
 
-#include "common/logger.h"
+#include "logger.h"
 #include "network/message_router.h"
 #include "network/protobuf_framing.h"
 #include "network/redis_client.h"

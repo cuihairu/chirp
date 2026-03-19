@@ -5,7 +5,7 @@
 #include <deque>
 #include <unordered_map>
 
-#include "common/logger.h"
+#include "logger.h"
 #include "network/length_prefixed_framer.h"
 #include "network/protobuf_framing.h"
 #include "proto/auth.pb.h"

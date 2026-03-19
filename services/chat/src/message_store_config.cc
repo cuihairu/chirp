@@ -3,7 +3,7 @@
 #include <cstdlib>
 #include <cstring>
 
-#include "common/logger.h"
+#include "logger.h"
 
 namespace chirp::chat {
 

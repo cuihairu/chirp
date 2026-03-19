@@ -3,7 +3,7 @@
 #include <sstream>
 #include <thread>
 
-#include "common/logger.h"
+#include "logger.h"
 #include "network/redis_client.h"
 
 namespace chirp::auth {

@@ -8,7 +8,7 @@
 
 #include <asio.hpp>
 
-#include "common/logger.h"
+#include "logger.h"
 #include "network/protobuf_framing.h"
 #include "network/tcp_client.h"
 #include "network/websocket_client.h"

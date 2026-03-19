@@ -8,7 +8,7 @@
 
 #include <asio.hpp>
 
-#include "common/logger.h"
+#include "logger.h"
 
 namespace chirp::gateway {
 namespace {

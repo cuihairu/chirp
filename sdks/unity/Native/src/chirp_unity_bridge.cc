@@ -6,7 +6,7 @@
 #include <string>
 
 #include "chirp/core/sdk.h"
-#include "common/logger.h"
+#include "logger.h"
 
 namespace {
 

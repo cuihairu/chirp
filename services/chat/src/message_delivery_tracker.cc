@@ -1,6 +1,6 @@
 #include "message_delivery_tracker.h"
 
-#include "common/logger.h"
+#include "logger.h"
 
 namespace chirp::chat {
 namespace {

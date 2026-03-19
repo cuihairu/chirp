@@ -1,6 +1,6 @@
 #include "rate_limiter.h"
 
-#include "common/logger.h"
+#include "logger.h"
 
 namespace chirp::auth {
 namespace {

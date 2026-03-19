@@ -5,7 +5,7 @@
 #include <string>
 #include <vector>
 
-#include "common/error_code.h"
+#include "error_code.h"
 
 namespace chirp::auth {
 
