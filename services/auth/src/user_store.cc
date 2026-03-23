@@ -1,10 +1,11 @@
 #include "user_store.h"
 
+#include <chrono>
 #include <cstring>
 #include <mutex>
 #include <random>
 
-#include <mysql.h>
+#include <mysql/mysql.h>
 
 #include "logger.h"
 #include "password_hasher.h"
@@ -12,6 +13,8 @@
 
 namespace chirp::auth {
 namespace {
+
+using chirp::common::Logger;
 
 int64_t NowMs() {
   using namespace std::chrono;
@@ -59,7 +62,7 @@ struct UserStore::Impl {
       return nullptr;
     }
 
-    my_bool reconnect = 1;
+    const bool reconnect = true;
     mysql_options(conn, MYSQL_OPT_RECONNECT, &reconnect);
 
     if (!mysql_real_connect(conn,
@@ -122,8 +125,8 @@ bool UserStore::Initialize() {
   return true;
 }
 
-RegisterResult UserStore::Register(const RegisterRequest& req) {
-  RegisterResult result;
+UserRegisterResult UserStore::Register(const UserRegisterRequest& req) {
+  UserRegisterResult result;
 
   // Validate password strength
   std::string validation_error = PasswordHasher::ValidateStrength(req.password);
@@ -138,7 +141,7 @@ RegisterResult UserStore::Register(const RegisterRequest& req) {
   if (UsernameExists(req.username)) {
     result.success = false;
     result.error_message = "Username already exists";
-    result.error_code = chirp::common::ALREADY_EXISTS;
+    result.error_code = chirp::common::INVALID_PARAM;
     return result;
   }
 
@@ -146,7 +149,7 @@ RegisterResult UserStore::Register(const RegisterRequest& req) {
   if (!req.email.empty() && EmailExists(req.email)) {
     result.success = false;
     result.error_message = "Email already exists";
-    result.error_code = chirp::common::ALREADY_EXISTS;
+    result.error_code = chirp::common::INVALID_PARAM;
     return result;
   }
 

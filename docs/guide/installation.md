@@ -68,7 +68,7 @@ git clone https://github.com/Microsoft/vcpkg.git C:\vcpkg
 .\vcpkg\integrate install
 
 # Install dependencies
-vcpkg install protobuf absl openssl mysql-connector-cpp redis-plus
+vcpkg install protobuf absl openssl libmysql redis-plus asio
 ```
 
 ## Building from Source

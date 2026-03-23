@@ -7,6 +7,8 @@
 namespace chirp::chat {
 namespace {
 
+using Logger = chirp::common::Logger;
+
 int64_t NowMs() {
   using namespace std::chrono;
   return duration_cast<milliseconds>(system_clock::now().time_since_epoch()).count();
@@ -121,7 +123,7 @@ void MessageMigrationWorker::RunMigration() {
       MessageData msg;
       if (msg.ParseFromArray(msg_data.data(), static_cast<int>(msg_data.size()))) {
         // Store in MySQL
-        MySQLMessageStore::MessageData mysql_msg;
+        MySQLMessageData mysql_msg;
         mysql_msg.message_id = msg.message_id;
         mysql_msg.sender_id = msg.sender_id;
         mysql_msg.receiver_id = msg.receiver_id;
@@ -140,8 +142,6 @@ void MessageMigrationWorker::RunMigration() {
       }
     }
 
-    // After successful migration, trim Redis list to keep only recent messages
-    redis->LTrim(key, -config_.redis_history_limit, -1);
   }
 
   // Migrate offline messages
@@ -155,7 +155,7 @@ void MessageMigrationWorker::RunMigration() {
     for (const auto& msg_data : messages) {
       MessageData msg;
       if (msg.ParseFromArray(msg_data.data(), static_cast<int>(msg_data.size()))) {
-        MySQLMessageStore::MessageData mysql_msg;
+        MySQLMessageData mysql_msg;
         mysql_msg.message_id = msg.message_id;
         mysql_msg.sender_id = msg.sender_id;
         mysql_msg.receiver_id = msg.receiver_id;

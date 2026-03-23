@@ -72,13 +72,12 @@ std::string PasswordHasher::HashPassword(std::string_view password) {
 
   // Hash using Argon2id (recommended for passwords)
   // This stores the salt and parameters in the output string
-  if (crypto_pwhash_argon2id_str(
+  if (crypto_pwhash_str(
           out.data(),
           password.data(),
           password.size(),
-          cfg.memory_cost,  // memory cost in KiB
-          cfg.time_cost,    // time cost (iterations)
-          crypto_pwhash_argon2id_OPSLIMIT_MODERATE) != 0) {
+          cfg.time_cost,
+          cfg.memory_cost) != 0) {
     chirp::common::Logger::Instance().Error("Failed to hash password");
     return "";
   }

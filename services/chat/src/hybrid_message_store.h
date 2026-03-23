@@ -9,8 +9,8 @@
 
 #include <asio.hpp>
 
-#include "chat/src/message_store_config.h"
-#include "chat/src/mysql_message_store.h"
+#include "message_store_config.h"
+#include "mysql_message_store.h"
 #include "network/redis_client.h"
 
 namespace chirp::chat {
@@ -26,6 +26,9 @@ struct MessageData {
   std::string content;
   int64_t timestamp{0};
   int64_t created_at{0};
+
+  std::string SerializeAsString() const;
+  bool ParseFromArray(const void* data, int size);
 };
 
 /// @brief Delivery status for a message

@@ -8,7 +8,9 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     build-essential \
     ca-certificates \
     cmake \
+    libasio-dev \
     git \
+    default-libmysqlclient-dev \
     pkg-config \
     protobuf-compiler \
     libprotobuf-dev \
@@ -21,6 +23,11 @@ COPY . .
 RUN ./gen_proto.sh
 RUN cmake -S . -B build -DCMAKE_BUILD_TYPE=Release -DENABLE_TESTS=OFF
 RUN cmake --build build --target chirp_${SERVICE} -j"$(nproc)"
+RUN case "${SERVICE}" in \
+      chat|chat_distributed|chat_enhanced) cp "/src/build/services/chat/chirp_${SERVICE}" /tmp/chirp_bin ;; \
+      gateway|auth|social|voice|notification|search) cp "/src/build/services/${SERVICE}/chirp_${SERVICE}" /tmp/chirp_bin ;; \
+      *) echo "Unsupported service target: ${SERVICE}" >&2; exit 1 ;; \
+    esac
 
 FROM ubuntu:${UBUNTU_VERSION} AS runtime
 
@@ -28,10 +35,11 @@ ARG SERVICE=gateway
 
 RUN apt-get update && apt-get install -y --no-install-recommends \
     ca-certificates \
+    default-libmysqlclient-dev \
     libprotobuf23 \
   && rm -rf /var/lib/apt/lists/*
 
-COPY --from=build /src/build/services/${SERVICE}/chirp_${SERVICE} /usr/local/bin/chirp_${SERVICE}
+COPY --from=build /tmp/chirp_bin /usr/local/bin/chirp_${SERVICE}
 COPY docker/docker-entrypoint.sh /usr/local/bin/docker-entrypoint.sh
 RUN chmod 0755 /usr/local/bin/docker-entrypoint.sh
 

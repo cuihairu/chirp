@@ -61,8 +61,8 @@ services:
       context: .
       dockerfile: docker/Dockerfile.service
       args:
-        SERVICE: chat
-    command: ["--port", "7000", "--ws_port", "7001", "--redis_host", "redis", "--redis_port", "6379", "--offline_ttl", "604800", "--mysql_host", "mysql", "--mysql_port", "3306", "--mysql_db", "chirp", "--mysql_user", "chirp", "--mysql_pass", "chirp_pass"]
+        SERVICE: chat_enhanced
+    command: ["--port", "7000", "--ws_port", "7001", "--redis_host", "redis", "--redis_port", "6379", "--mysql_host", "mysql", "--mysql_port", "3306", "--mysql_database", "chirp", "--mysql_user", "chirp", "--mysql_password", "chirp_pass"]
     ports:
       - "7000:7000"
       - "7001:7001"
@@ -93,6 +93,26 @@ services:
     ports:
       - "9000:9000"
       - "9001:9001"
+
+  notification:
+    build:
+      context: .
+      dockerfile: docker/Dockerfile.service
+      args:
+        SERVICE: notification
+    command: ["--port", "5006"]
+    ports:
+      - "5006:5006"
+
+  search:
+    build:
+      context: .
+      dockerfile: docker/Dockerfile.service
+      args:
+        SERVICE: search
+    command: ["--port", "5007"]
+    ports:
+      - "5007:5007"
 
 volumes:
   mysql_data:

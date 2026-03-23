@@ -22,8 +22,7 @@ echo -e "${BLUE}=== Chirp Build and Test Script ===${NC}"
 echo ""
 
 # Detect vcpkg location
-VCPKG_ROOT=""
-if [ -n "$VCPKG_ROOT" ]; then
+if [ -n "${VCPKG_ROOT:-}" ]; then
     VCPKG_ROOT="$VCPKG_ROOT"
 elif [ -d "$HOME/vcpkg" ]; then
     VCPKG_ROOT="$HOME/vcpkg"
@@ -62,8 +61,8 @@ check_command cmake || MISSING=1
 check_command git || MISSING=1
 
 # Check for vcpkg
-if [ -f "$VCPKG_ROOT/vcpkg" ]; then
-    echo -e "  ${GREEN}✓${NC} vcpkg: $VCPKG_ROOT/vcpkg"
+if [ -f "$VCPKG_ROOT/vcpkg" ] || [ -f "$VCPKG_ROOT/vcpkg.exe" ]; then
+    echo -e "  ${GREEN}✓${NC} vcpkg: $VCPKG_ROOT"
 else
     echo -e "  ${RED}✗${NC} vcpkg: not found at $VCPKG_ROOT"
     MISSING=1
@@ -105,9 +104,14 @@ PROJECT_ROOT="$(cd "$SCRIPT_DIR/.." && pwd)"
 # Step 1: Check/install vcpkg packages
 echo -e "${BLUE}[1/6] Checking vcpkg dependencies...${NC}"
 
-if ! "$VCPKG_ROOT/vcpkg" list protobuf | grep -q "protobuf"; then
-    echo "Installing protobuf via vcpkg..."
-    "$VCPKG_ROOT/vcpkg" install protobuf:x64-windows
+VCPKG_BIN="$VCPKG_ROOT/vcpkg"
+if [ -f "$VCPKG_ROOT/vcpkg.exe" ]; then
+    VCPKG_BIN="$VCPKG_ROOT/vcpkg.exe"
+fi
+
+if ! "$VCPKG_BIN" list protobuf | grep -q "protobuf"; then
+    echo "Installing vcpkg manifest dependencies..."
+    "$VCPKG_BIN" install
 fi
 
 # Step 2: Generate protobuf files
@@ -128,7 +132,7 @@ if [ -n "$PROTOC" ]; then
     rm -f proto/cpp/proto/*.pb.cc proto/cpp/proto/*.pb.h 2>/dev/null || true
     "$PROTOC" --proto_path=. --cpp_out=proto/cpp \
         proto/common.proto proto/gateway.proto proto/auth.proto \
-        proto/chat.proto proto/social.proto proto/voice.proto
+        proto/chat.proto proto/social.proto proto/voice.proto proto/notification.proto
     echo -e "${GREEN}✓ Protobuf files generated${NC}"
 fi
 

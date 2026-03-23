@@ -37,8 +37,8 @@ cd vcpkg
 # or
 ./bootstrap-vcpkg.sh   # Linux/Mac
 
-# Install protobuf
-./vcpkg install protobuf:x64-windows
+# Install manifest dependencies from vcpkg.json
+./vcpkg install
 ```
 
 Set environment variable (optional, for convenience):
@@ -68,7 +68,7 @@ Or manually:
 /vc/vcpkg/installed/x64-windows/tools/protobuf/protoc \
   --proto_path=. --cpp_out=proto/cpp \
   proto/common.proto proto/gateway.proto proto/auth.proto \
-  proto/chat.proto proto/social.proto proto/voice.proto
+  proto/chat.proto proto/social.proto proto/voice.proto proto/notification.proto
 
 # Configure with vcpkg toolchain
 mkdir build && cd build

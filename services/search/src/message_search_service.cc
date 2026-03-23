@@ -17,6 +17,42 @@ const std::vector<std::string> kDefaultStopWords = {
   "to", "was", "were", "will", "with"
 };
 
+std::vector<std::string> TokenizeForIndex(const std::string& text) {
+  std::vector<std::string> tokens;
+  std::string current;
+
+  for (unsigned char c : text) {
+    if (std::isalnum(c) || c == '_' || c == '@' || c == '#') {
+      current += static_cast<char>(std::tolower(c));
+    } else if (!current.empty()) {
+      tokens.push_back(current);
+      current.clear();
+    }
+  }
+
+  if (!current.empty()) {
+    tokens.push_back(current);
+  }
+
+  return tokens;
+}
+
+void RemoveDocumentFromIndex(
+    const chirp::search::IndexedDocument& doc,
+    std::unordered_map<std::string, std::unordered_set<std::string>>* inverted_index) {
+  auto tokens = TokenizeForIndex(doc.content);
+  for (const auto& token : tokens) {
+    auto index_it = inverted_index->find(token);
+    if (index_it == inverted_index->end()) {
+      continue;
+    }
+    index_it->second.erase(doc.doc_id);
+    if (index_it->second.empty()) {
+      inverted_index->erase(index_it);
+    }
+  }
+}
+
 } // namespace
 
 MessageSearchService::MessageSearchService(const SearchConfig& config)
@@ -64,8 +100,11 @@ bool MessageSearchService::IsStopWord(const std::string& word) const {
 bool MessageSearchService::IndexDocument(const IndexedDocument& doc) {
   std::lock_guard<std::mutex> lock(mu_);
 
-  // Remove old document if exists
-  DeleteDocument(doc.doc_id);
+  auto existing = documents_.find(doc.doc_id);
+  if (existing != documents_.end()) {
+    RemoveDocumentFromIndex(existing->second, &inverted_index_);
+    documents_.erase(existing);
+  }
 
   // Store document
   documents_[doc.doc_id] = doc;
@@ -98,19 +137,7 @@ bool MessageSearchService::DeleteDocument(const std::string& doc_id) {
     return false;
   }
 
-  // Remove from inverted index
-  const auto& doc = it->second;
-  auto tokens = Tokenize(doc.content);
-
-  for (const auto& token : tokens) {
-    auto index_it = inverted_index_.find(token);
-    if (index_it != inverted_index_.end()) {
-      index_it->second.erase(doc_id);
-      if (index_it->second.empty()) {
-        inverted_index_.erase(index_it);
-      }
-    }
-  }
+  RemoveDocumentFromIndex(it->second, &inverted_index_);
 
   documents_.erase(it);
   return true;
@@ -186,7 +213,7 @@ SearchResponse MessageSearchService::Search(const SearchQuery& query) {
       continue;
     }
 
-    if (query.msg_type != MsgType::TEXT && doc.msg_type != query.msg_type) {
+    if (query.msg_type != ::chirp::chat::TEXT && doc.msg_type != query.msg_type) {
       continue;
     }
 

@@ -1,9 +1,17 @@
 # FindMySQL.cmake
 # Find MySQL client library
 
+# Prefer vcpkg's libmysql target when available
+find_package(unofficial-libmysql CONFIG QUIET)
+if(TARGET unofficial::libmysql::libmysql)
+  set(MYSQL_FOUND TRUE)
+  set(MYSQL_LIBRARIES unofficial::libmysql::libmysql)
+  set(MYSQL_CLIENT_LIBRARIES unofficial::libmysql::libmysql)
+endif()
+
 # Try pkg-config first
 find_package(PkgConfig QUIET)
-if(PKG_CONFIG_FOUND)
+if(NOT MYSQL_FOUND AND PKG_CONFIG_FOUND)
   pkg_check_modules(MYSQL QUIET mysqlclient)
 endif()
 
@@ -37,9 +45,17 @@ if(NOT MYSQL_FOUND)
 
   if(MYSQL_INCLUDE_DIR AND MYSQL_LIBRARY)
     set(MYSQL_FOUND TRUE)
-    set(MYSQL_INCLUDE_DIRS "${MYSQL_INCLUDE_DIR}")
     set(MYSQL_LIBRARIES "${MYSQL_LIBRARY}")
     set(MYSQL_CLIENT_LIBRARIES "${MYSQL_LIBRARY}")
+    set(MYSQL_INCLUDE_DIRS "${MYSQL_INCLUDE_DIR}")
+  endif()
+endif()
+
+if(MYSQL_FOUND AND NOT MYSQL_INCLUDE_DIRS)
+  find_path(MYSQL_INCLUDE_DIR
+    NAMES mysql/mysql.h mysql.h
+  )
+  if(MYSQL_INCLUDE_DIR)
     set(MYSQL_INCLUDE_DIRS "${MYSQL_INCLUDE_DIR}")
   endif()
 endif()

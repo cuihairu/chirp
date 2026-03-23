@@ -21,10 +21,15 @@ target_link_libraries(chirp_chat
     PRIVATE
     chirp_network
     chirp_common
-    ${PROTOBUF_LIBRARIES}
     ${absl_pkg_LIBRARIES}
     Threads::Threads
 )
+
+if(TARGET protobuf::libprotobuf)
+    target_link_libraries(chirp_chat PRIVATE protobuf::libprotobuf)
+elseif(DEFINED PROTOBUF_LIBRARIES)
+    target_link_libraries(chirp_chat PRIVATE ${PROTOBUF_LIBRARIES})
+endif()
 
 target_include_directories(chirp_chat PRIVATE src)
 
@@ -43,10 +48,15 @@ target_link_libraries(chirp_chat_distributed
     PRIVATE
     chirp_network
     chirp_common
-    ${PROTOBUF_LIBRARIES}
     ${absl_pkg_LIBRARIES}
     Threads::Threads
 )
+
+if(TARGET protobuf::libprotobuf)
+    target_link_libraries(chirp_chat_distributed PRIVATE protobuf::libprotobuf)
+elseif(DEFINED PROTOBUF_LIBRARIES)
+    target_link_libraries(chirp_chat_distributed PRIVATE ${PROTOBUF_LIBRARIES})
+endif()
 
 target_include_directories(chirp_chat_distributed PRIVATE src)
 
@@ -68,23 +78,22 @@ add_executable(chirp_chat_enhanced
     src/message_delivery_tracker.cc
     src/message_migration_worker.cc
     src/paginated_history_retriever.cc
-    src/channel_manager.cc
-    src/reaction_manager.cc
-    src/message_edit_manager.cc
-    src/typing_manager.cc
-    src/mention_manager.cc
-    src/file_storage_manager.cc
 )
 
 target_link_libraries(chirp_chat_enhanced
     PRIVATE
     chirp_network
     chirp_common
-    ${PROTOBUF_LIBRARIES}
     ${absl_pkg_LIBRARIES}
     ${MYSQL_CLIENT_LIBRARIES}
     Threads::Threads
 )
+
+if(TARGET protobuf::libprotobuf)
+    target_link_libraries(chirp_chat_enhanced PRIVATE protobuf::libprotobuf)
+elseif(DEFINED PROTOBUF_LIBRARIES)
+    target_link_libraries(chirp_chat_enhanced PRIVATE ${PROTOBUF_LIBRARIES})
+endif()
 
 target_include_directories(chirp_chat_enhanced PRIVATE src)
 target_include_directories(chirp_chat_enhanced PRIVATE ${MYSQL_INCLUDE_DIRS})

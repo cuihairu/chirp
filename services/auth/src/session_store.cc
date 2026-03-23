@@ -1,15 +1,18 @@
 #include "session_store.h"
 
+#include <chrono>
 #include <cstring>
 #include <mutex>
 
-#include <mysql.h>
+#include <mysql/mysql.h>
 
 #include "logger.h"
 #include "token_generator.h"
 
 namespace chirp::auth {
 namespace {
+
+using chirp::common::Logger;
 
 int64_t NowMs() {
   using namespace std::chrono;
@@ -54,7 +57,7 @@ struct SessionStore::Impl {
       return nullptr;
     }
 
-    my_bool reconnect = 1;
+    const bool reconnect = true;
     mysql_options(conn, MYSQL_OPT_RECONNECT, &reconnect);
 
     if (!mysql_real_connect(conn,

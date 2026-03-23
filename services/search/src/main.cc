@@ -1,3 +1,6 @@
+#include <atomic>
+#include <chrono>
+#include <thread>
 #include <iostream>
 #include <memory>
 #include <string>
@@ -15,7 +18,7 @@ using namespace chirp;
 std::atomic<bool> running{true};
 
 void SignalHandler(int signal) {
-  LOG_INFO("Shutting down search service...");
+  common::Logger::Instance().Info("Shutting down search service...");
   running = false;
 }
 
@@ -26,13 +29,13 @@ int main(int argc, char* argv[]) {
 
   // Initialize logger
   auto& logger = common::Logger::Instance();
-  logger.SetLevel(common::LogLevel::INFO);
+  logger.SetLevel(common::Logger::Level::kInfo);
 
-  LOG_INFO("Chirp Search Service starting...");
+  logger.Info("Chirp Search Service starting...");
 
   // Parse command line arguments
   std::string host = "0.0.0.0";
-  uint16_t port = 5006;
+  uint16_t port = 5007;
   size_t max_results = 100;
 
   for (int i = 1; i < argc; ++i) {
@@ -48,7 +51,7 @@ int main(int argc, char* argv[]) {
       std::cout << "Usage: " << argv[0] << " [options]\n"
                 << "Options:\n"
                 << "  --host <address>       Server host (default: 0.0.0.0)\n"
-                << "  --port <port>          Server port (default: 5006)\n"
+                << "  --port <port>          Server port (default: 5007)\n"
                 << "  --max-results <count>  Max search results (default: 100)\n"
                 << "  --help                 Show this help\n";
       return 0;
@@ -71,15 +74,16 @@ int main(int argc, char* argv[]) {
       std::this_thread::sleep_for(std::chrono::minutes(5));
 
       if (running) {
-        LOG_INFO("Search service stats:");
-        LOG_INFO("  Documents indexed: {}", search_service->GetDocumentCount());
-        LOG_INFO("  Index size: {} bytes", search_service->GetIndexSizeBytes());
+        auto& stats_logger = common::Logger::Instance();
+        stats_logger.Info("Search service stats:");
+        stats_logger.Info("  Documents indexed: " + std::to_string(search_service->GetDocumentCount()));
+        stats_logger.Info("  Index size: " + std::to_string(search_service->GetIndexSizeBytes()) + " bytes");
       }
     }
   });
 
-  LOG_INFO("Search service listening on {}:{}", host, port);
-  LOG_INFO("Max results per query: {}", max_results);
+  logger.Info("Search service listening on " + host + ":" + std::to_string(port));
+  logger.Info("Max results per query: " + std::to_string(max_results));
 
   // Run IO context
   asio::executor_work_guard<asio::io_context::executor_type> work(
@@ -93,7 +97,7 @@ int main(int argc, char* argv[]) {
   work.reset();
   stats_thread.join();
 
-  LOG_INFO("Search service stopped.");
+  logger.Info("Search service stopped.");
 
   return 0;
 }

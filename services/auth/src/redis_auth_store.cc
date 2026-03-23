@@ -1,5 +1,6 @@
 #include "redis_auth_store.h"
 
+#include <chrono>
 #include <sstream>
 #include <thread>
 
@@ -8,6 +9,8 @@
 
 namespace chirp::auth {
 namespace {
+
+using chirp::common::Logger;
 
 int64_t NowMs() {
   using namespace std::chrono;
@@ -394,7 +397,7 @@ std::vector<std::string> RedisAuthStore::GetUserDevices(const std::string& user_
   std::vector<std::string> devices;
   for (const auto& key : keys) {
     // Extract device_id from key
-    size_t pos = key.find_last_key(':');
+    size_t pos = key.find_last_of(':');
     if (pos != std::string::npos) {
       devices.push_back(key.substr(pos + 1));
     }

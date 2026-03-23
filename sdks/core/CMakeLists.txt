@@ -27,12 +27,29 @@ set(PROTO_DIR "${PROJECT_ROOT}/proto/cpp")
 
 # Only create chirp_asio if it doesn't exist (for standalone SDK builds)
 if(NOT TARGET chirp_asio)
-    include(FetchContent)
-    if(TARGET asio::asio)
+    find_path(ASIO_INCLUDE_DIR
+        NAMES asio.hpp
+        PATHS
+            "${PROJECT_ROOT}/third_party/asio/asio/include"
+            "${PROJECT_ROOT}/third_party/asio/include"
+        PATH_SUFFIXES include asio/include
+    )
+
+    if(ASIO_INCLUDE_DIR)
+        add_library(chirp_asio INTERFACE)
+        target_include_directories(chirp_asio INTERFACE ${ASIO_INCLUDE_DIR})
+        target_compile_definitions(chirp_asio INTERFACE ASIO_STANDALONE ASIO_NO_DEPRECATED)
+    elseif(TARGET asio::asio)
         add_library(chirp_asio INTERFACE)
         target_link_libraries(chirp_asio INTERFACE asio::asio)
         target_compile_definitions(chirp_asio INTERFACE ASIO_STANDALONE ASIO_NO_DEPRECATED)
     else()
+        if(DEFINED CHIRP_FETCH_DEPS AND NOT CHIRP_FETCH_DEPS)
+            message(FATAL_ERROR
+                "ASIO headers were not found for standalone SDK build. Preferred fix: configure with the "
+                "vcpkg toolchain so vcpkg.json can provide asio, or enable CHIRP_FETCH_DEPS.")
+        endif()
+        include(FetchContent)
         FetchContent_Declare(
             asio
             GIT_REPOSITORY https://github.com/chriskohlhoff/asio.git

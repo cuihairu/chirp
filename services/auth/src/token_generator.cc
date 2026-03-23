@@ -33,8 +33,7 @@ int64_t NowSeconds() {
 
 std::string HashCombined(std::string_view a, std::string_view b) {
   std::string combined = std::string(a) + "|" + std::string(b);
-  auto hash = chirp::common::Sha256(
-      reinterpret_cast<const uint8_t*>(combined.data()), combined.size());
+  auto hash = chirp::common::Sha256(combined);
   return ToHex(hash.data(), hash.size());
 }
 
@@ -83,8 +82,7 @@ std::string TokenGenerator::HashDeviceId(std::string_view device_id, std::string
 }
 
 std::string TokenGenerator::HashToken(std::string_view token) {
-  auto hash = chirp::common::Sha256(
-      reinterpret_cast<const uint8_t*>(token.data()), token.size());
+  auto hash = chirp::common::Sha256(token);
   return ToHex(hash.data(), hash.size());
 }
 
@@ -113,8 +111,7 @@ std::string TokenGenerator::GenerateAccessToken(std::string_view user_id,
 
 std::string TokenGenerator::GenerateUserId(std::string_view identifier) {
   // Create a consistent user_id from identifier
-  auto hash = chirp::common::Sha256(
-      reinterpret_cast<const uint8_t*>(identifier.data()), identifier.size());
+  auto hash = chirp::common::Sha256(identifier);
 
   // Use first 16 bytes (128 bits) for user_id
   return "user_" + ToHex(hash.data(), 16);

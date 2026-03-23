@@ -27,7 +27,7 @@ enum NotificationType {
 }
 
 // Push notification request
-struct PushNotificationRequest {
+message PushNotificationRequest {
   string user_id = 1;
   NotificationType type = 2;
   NotificationPriority priority = 3;

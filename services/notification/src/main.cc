@@ -1,3 +1,6 @@
+#include <atomic>
+#include <chrono>
+#include <thread>
 #include <iostream>
 #include <memory>
 #include <string>
@@ -15,7 +18,7 @@ using namespace chirp;
 std::atomic<bool> running{true};
 
 void SignalHandler(int signal) {
-  LOG_INFO("Shutting down notification service...");
+  common::Logger::Instance().Info("Shutting down notification service...");
   running = false;
 }
 
@@ -26,13 +29,13 @@ int main(int argc, char* argv[]) {
 
   // Initialize logger
   auto& logger = common::Logger::Instance();
-  logger.SetLevel(common::LogLevel::INFO);
+  logger.SetLevel(common::Logger::Level::kInfo);
 
-  LOG_INFO("Chirp Notification Service starting...");
+  logger.Info("Chirp Notification Service starting...");
 
   // Parse command line arguments
   std::string host = "0.0.0.0";
-  uint16_t port = 5005;
+  uint16_t port = 5006;
   std::string fcm_server_key;
   std::string apns_key_path;
   std::string apns_key_id;
@@ -63,7 +66,7 @@ int main(int argc, char* argv[]) {
       std::cout << "Usage: " << argv[0] << " [options]\n"
                 << "Options:\n"
                 << "  --host <address>    Server host (default: 0.0.0.0)\n"
-                << "  --port <port>       Server port (default: 5005)\n"
+                << "  --port <port>       Server port (default: 5006)\n"
                 << "  --fcm-key <key>     FCM server key\n"
                 << "  --apns-key <path>   APNs private key path\n"
                 << "  --apns-key-id <id>  APNs key ID\n"
@@ -105,9 +108,9 @@ int main(int argc, char* argv[]) {
     }
   });
 
-  LOG_INFO("Notification service listening on {}:{}", host, port);
-  LOG_INFO("FCM configured: {}", fcm_server_key.empty() ? "no" : "yes");
-  LOG_INFO("APNs configured: {}", apns_key_id.empty() ? "no" : "yes");
+  logger.Info("Notification service listening on " + host + ":" + std::to_string(port));
+  logger.Info("FCM configured: " + std::string(fcm_server_key.empty() ? "no" : "yes"));
+  logger.Info("APNs configured: " + std::string(apns_key_id.empty() ? "no" : "yes"));
 
   // Run IO context
   asio::executor_work_guard<asio::io_context::executor_type> work(
@@ -123,14 +126,14 @@ int main(int argc, char* argv[]) {
 
   // Print stats
   const auto& stats = notification_service->GetStats();
-  LOG_INFO("Statistics:");
-  LOG_INFO("  Notifications sent: {}", stats.notifications_sent.load());
-  LOG_INFO("  Notifications failed: {}", stats.notifications_failed.load());
-  LOG_INFO("  Devices registered: {}", stats.devices_registered.load());
-  LOG_INFO("  FCM sent: {}", stats.fcm_sent.load());
-  LOG_INFO("  APNs sent: {}", stats.apns_sent.load());
+  logger.Info("Statistics:");
+  logger.Info("  Notifications sent: " + std::to_string(stats.notifications_sent.load()));
+  logger.Info("  Notifications failed: " + std::to_string(stats.notifications_failed.load()));
+  logger.Info("  Devices registered: " + std::to_string(stats.devices_registered.load()));
+  logger.Info("  FCM sent: " + std::to_string(stats.fcm_sent.load()));
+  logger.Info("  APNs sent: " + std::to_string(stats.apns_sent.load()));
 
-  LOG_INFO("Notification service stopped.");
+  logger.Info("Notification service stopped.");
 
   return 0;
 }

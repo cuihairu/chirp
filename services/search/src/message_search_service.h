@@ -15,6 +15,8 @@
 namespace chirp {
 namespace search {
 
+using ::chirp::chat::MsgType;
+
 // Search query
 struct SearchQuery {
   std::string query;              // Search text
@@ -27,7 +29,7 @@ struct SearchQuery {
   int64_t before_timestamp = 0;   // Only messages before this time
   int64_t after_timestamp = 0;    // Only messages after this time
 
-  MsgType msg_type = MsgType::TEXT;  // Filter by message type
+  MsgType msg_type = ::chirp::chat::TEXT;  // Filter by message type
   bool has_attachments = false;   // Only messages with files
 
   int32_t limit = 50;             // Max results
@@ -68,7 +70,7 @@ struct IndexedDocument {
   std::string sender_id;
   std::string channel_id;
   int64_t timestamp = 0;
-  MsgType msg_type = MsgType::TEXT;
+  MsgType msg_type = ::chirp::chat::TEXT;
 
   // For ranking
   int32_t reply_count = 0;

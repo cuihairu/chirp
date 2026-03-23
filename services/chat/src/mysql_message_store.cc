@@ -30,7 +30,7 @@ bool MySQLConnection::Connect() {
     return false;
   }
 
-  my_bool reconnect = 1;
+  const bool reconnect = true;
   mysql_options(mysql_, MYSQL_OPT_RECONNECT, &reconnect);
 
   if (!mysql_real_connect(mysql_, host_.c_str(), user_.c_str(), password_.c_str(),
@@ -226,7 +226,7 @@ bool MySQLMessageStore::Initialize() {
   return result;
 }
 
-bool MySQLMessageStore::StoreMessage(const MessageData& message) {
+bool MySQLMessageStore::StoreMessage(const MySQLMessageData& message) {
   auto conn = pool_->GetConnection();
   if (!conn) {
     return false;
@@ -249,10 +249,10 @@ bool MySQLMessageStore::StoreMessage(const MessageData& message) {
   return result;
 }
 
-std::vector<MessageData> MySQLMessageStore::GetHistory(const std::string& channel_id,
-                                                      int channel_type,
-                                                      int64_t before_timestamp,
-                                                      int32_t limit) {
+std::vector<MySQLMessageData> MySQLMessageStore::GetHistory(const std::string& channel_id,
+                                                           int channel_type,
+                                                           int64_t before_timestamp,
+                                                           int32_t limit) {
   auto conn = pool_->GetConnection();
   if (!conn) {
     return {};
@@ -277,9 +277,9 @@ std::vector<MessageData> MySQLMessageStore::GetHistory(const std::string& channe
   auto rows = conn->FetchResults();
   pool_->ReturnConnection(std::move(conn));
 
-  std::vector<MessageData> messages;
+  std::vector<MySQLMessageData> messages;
   for (auto& row : rows) {
-    MessageData msg;
+    MySQLMessageData msg;
     msg.message_id = row[0];
     msg.sender_id = row[1];
     msg.receiver_id = row[2];
@@ -296,7 +296,7 @@ std::vector<MessageData> MySQLMessageStore::GetHistory(const std::string& channe
   return messages;
 }
 
-std::vector<MessageData> MySQLMessageStore::GetOfflineMessages(const std::string& user_id) {
+std::vector<MySQLMessageData> MySQLMessageStore::GetOfflineMessages(const std::string& user_id) {
   auto conn = pool_->GetConnection();
   if (!conn) {
     return {};
@@ -315,9 +315,9 @@ std::vector<MessageData> MySQLMessageStore::GetOfflineMessages(const std::string
   auto rows = conn->FetchResults();
   pool_->ReturnConnection(std::move(conn));
 
-  std::vector<MessageData> messages;
+  std::vector<MySQLMessageData> messages;
   for (auto& row : rows) {
-    MessageData msg;
+    MySQLMessageData msg;
     msg.message_id = row[0];
     msg.sender_id = row[1];
     msg.receiver_id = row[2];

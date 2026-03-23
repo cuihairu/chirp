@@ -6,6 +6,8 @@
 
 namespace chirp::chat {
 
+using Logger = chirp::common::Logger;
+
 PaginatedHistoryRetriever::PaginatedHistoryRetriever(std::shared_ptr<HybridMessageStore> store)
     : store_(std::move(store)) {}
 

@@ -1,9 +1,12 @@
 #include "brute_force_protector.h"
 
 #include "logger.h"
+#include "redis_auth_store.h"
 #include "user_store.h"
 
 namespace chirp::auth {
+
+using chirp::common::Logger;
 
 BruteForceProtector::BruteForceProtector(std::shared_ptr<RedisAuthStore> redis_store,
                                         std::shared_ptr<UserStore> user_store,

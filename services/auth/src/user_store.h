@@ -1,11 +1,13 @@
 #pragma once
 
 #include <cstdint>
+#include <memory>
 #include <optional>
 #include <string>
+#include <string_view>
 #include <vector>
 
-#include "error_code.h"
+#include "proto/common.pb.h"
 
 namespace chirp::auth {
 
@@ -23,7 +25,7 @@ struct UserData {
 };
 
 /// @brief User registration request
-struct RegisterRequest {
+struct UserRegisterRequest {
   std::string username;
   std::string email;
   std::string password;
@@ -31,7 +33,7 @@ struct RegisterRequest {
 };
 
 /// @brief User registration result
-struct RegisterResult {
+struct UserRegisterResult {
   bool success{false};
   std::string user_id;
   std::string error_message;
@@ -60,7 +62,7 @@ public:
   /// @brief Register a new user
   /// @param req Registration request
   /// @return Registration result with user_id or error
-  RegisterResult Register(const RegisterRequest& req);
+  UserRegisterResult Register(const UserRegisterRequest& req);
 
   /// @brief Find user by user_id
   std::optional<UserData> FindByUserId(const std::string& user_id);

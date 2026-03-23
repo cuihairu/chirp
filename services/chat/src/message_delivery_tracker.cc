@@ -5,6 +5,8 @@
 namespace chirp::chat {
 namespace {
 
+using Logger = chirp::common::Logger;
+
 int64_t NowMs() {
   using namespace std::chrono;
   return duration_cast<milliseconds>(system_clock::now().time_since_epoch()).count();

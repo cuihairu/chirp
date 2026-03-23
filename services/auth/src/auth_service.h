@@ -10,7 +10,7 @@
 
 #include <asio.hpp>
 
-#include "error_code.h"
+#include "proto/common.pb.h"
 #include "brute_force_protector.h"
 #include "rate_limiter.h"
 #include "redis_auth_store.h"
@@ -96,7 +96,8 @@ public:
   void Shutdown();
 
   /// @brief Register a new user
-  RegisterResult Register(const RegisterRequest& req, const std::string& ip_address = "");
+  UserRegisterResult Register(const UserRegisterRequest& req,
+                              const std::string& ip_address = "");
 
   /// @brief Login with username/email and password
   LoginResult Login(std::string_view identifier,

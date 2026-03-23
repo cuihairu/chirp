@@ -9,6 +9,8 @@
 namespace chirp::chat {
 namespace {
 
+using Logger = chirp::common::Logger;
+
 int64_t NowMs() {
   using namespace std::chrono;
   return duration_cast<milliseconds>(system_clock::now().time_since_epoch()).count();
@@ -27,6 +29,37 @@ std::string ToHex(const uint8_t* data, size_t len) {
 }
 
 } // namespace
+
+std::string MessageData::SerializeAsString() const {
+  ChatMessage msg;
+  msg.set_message_id(message_id);
+  msg.set_sender_id(sender_id);
+  msg.set_receiver_id(receiver_id);
+  msg.set_channel_id(channel_id);
+  msg.set_channel_type(static_cast<ChannelType>(channel_type));
+  msg.set_msg_type(static_cast<MsgType>(msg_type));
+  msg.set_content(content);
+  msg.set_timestamp(timestamp);
+  return msg.SerializeAsString();
+}
+
+bool MessageData::ParseFromArray(const void* data, int size) {
+  ChatMessage msg;
+  if (!msg.ParseFromArray(data, size)) {
+    return false;
+  }
+
+  message_id = msg.message_id();
+  sender_id = msg.sender_id();
+  receiver_id = msg.receiver_id();
+  channel_id = msg.channel_id();
+  channel_type = static_cast<int>(msg.channel_type());
+  msg_type = static_cast<int>(msg.msg_type());
+  content = msg.content();
+  timestamp = msg.timestamp();
+  created_at = msg.timestamp();
+  return true;
+}
 
 HybridMessageStore::HybridMessageStore(asio::io_context& io,
                                       const MessageStoreConfig& config)
@@ -81,10 +114,9 @@ bool HybridMessageStore::StoreMessage(const MessageData& message) {
   std::string msg_data = message.SerializeAsString();
 
   redis_->RPush(history_key, msg_data);
-  redis_->LTrim(history_key, -config_.redis_history_limit, -1);
 
   // 2. Store in MySQL for persistence
-  MySQLMessageStore::MessageData mysql_msg;
+  MySQLMessageData mysql_msg;
   mysql_msg.message_id = message.message_id;
   mysql_msg.sender_id = message.sender_id;
   mysql_msg.receiver_id = message.receiver_id;
@@ -114,7 +146,6 @@ void HybridMessageStore::StoreMessageAsync(const MessageData& message,
   std::string msg_data = message.SerializeAsString();
 
   redis_->RPush(history_key, msg_data);
-  redis_->LTrim(history_key, -config_.redis_history_limit, -1);
 
   // For offline messages
   if (!message.receiver_id.empty() && message.channel_type == 0) {
@@ -125,7 +156,7 @@ void HybridMessageStore::StoreMessageAsync(const MessageData& message,
 
   // Post MySQL write to background thread
   asio::post(io_, [this, message, callback]() {
-    MySQLMessageStore::MessageData mysql_msg;
+    MySQLMessageData mysql_msg;
     mysql_msg.message_id = message.message_id;
     mysql_msg.sender_id = message.sender_id;
     mysql_msg.receiver_id = message.receiver_id;
@@ -182,7 +213,17 @@ std::vector<MessageData> HybridMessageStore::GetHistory(const std::string& chann
         }
       }
       if (!duplicate) {
-        results.push_back(std::move(msg));
+        MessageData converted;
+        converted.message_id = std::move(msg.message_id);
+        converted.sender_id = std::move(msg.sender_id);
+        converted.receiver_id = std::move(msg.receiver_id);
+        converted.channel_id = std::move(msg.channel_id);
+        converted.channel_type = msg.channel_type;
+        converted.msg_type = msg.msg_type;
+        converted.content = std::move(msg.content);
+        converted.timestamp = msg.timestamp;
+        converted.created_at = msg.created_at;
+        results.push_back(std::move(converted));
       }
     }
   }

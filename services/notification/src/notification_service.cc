@@ -4,12 +4,6 @@
 #include <sstream>
 #include <algorithm>
 
-#ifdef _WIN32
-#include <winhttp.h>
-#else
-#include <curl/curl.h>
-#endif
-
 namespace chirp {
 namespace notification {
 
@@ -47,9 +41,56 @@ NotificationService::NotificationService(const FCMConfig& fcm_config,
                                        const APNsConfig& apns_config)
     : fcm_config_(fcm_config), apns_config_(apns_config) {}
 
+DeviceRegistration::DeviceRegistration(const DeviceRegistration& other)
+    : device_id(other.device_id),
+      user_id(other.user_id),
+      platform(other.platform),
+      app_version(other.app_version),
+      os_version(other.os_version),
+      registered_at(other.registered_at),
+      is_active(other.is_active),
+      apns_token(other.apns_token),
+      apns_environment(other.apns_environment),
+      push_kit_token(other.push_kit_token),
+      fcm_token(other.fcm_token) {}
+
+DeviceRegistration& DeviceRegistration::operator=(const DeviceRegistration& other) {
+  if (this == &other) {
+    return *this;
+  }
+  device_id = other.device_id;
+  user_id = other.user_id;
+  platform = other.platform;
+  app_version = other.app_version;
+  os_version = other.os_version;
+  registered_at = other.registered_at;
+  is_active = other.is_active;
+  apns_token = other.apns_token;
+  apns_environment = other.apns_environment;
+  push_kit_token = other.push_kit_token;
+  fcm_token = other.fcm_token;
+  return *this;
+}
+
 int64_t NotificationService::GetCurrentTimeMs() const {
   return std::chrono::duration_cast<std::chrono::milliseconds>(
       std::chrono::system_clock::now().time_since_epoch()).count();
+}
+
+bool IsCooldownActive(std::unordered_map<std::string, int64_t>* cooldowns,
+                      const std::string& user_id,
+                      int64_t now) {
+  auto it = cooldowns->find(user_id);
+  if (it == cooldowns->end()) {
+    return false;
+  }
+
+  if (now >= it->second) {
+    cooldowns->erase(it);
+    return false;
+  }
+
+  return true;
 }
 
 bool NotificationService::RegisterDevice(const DeviceRegistration& registration) {
@@ -168,8 +209,7 @@ bool NotificationService::SendNotificationToDevice(const std::string& device_id,
     return false;
   }
 
-  // Check cooldown
-  if (IsOnCooldown(device->user_id)) {
+  if (IsCooldownActive(&cooldowns_, device->user_id, GetCurrentTimeMs())) {
     return false;
   }
 
@@ -186,7 +226,7 @@ bool NotificationService::SendNotificationToDevice(const std::string& device_id,
 
   if (success) {
     stats_.notifications_sent++;
-    SetNotificationCooldown(device->user_id, 60000);  // 1 minute default
+    cooldowns_[device->user_id] = GetCurrentTimeMs() + 60000;  // 1 minute default
   } else {
     stats_.notifications_failed++;
   }
@@ -318,18 +358,7 @@ void NotificationService::SetNotificationCooldown(const std::string& user_id,
 
 bool NotificationService::IsOnCooldown(const std::string& user_id) {
   std::lock_guard<std::mutex> lock(mu_);
-
-  auto it = cooldowns_.find(user_id);
-  if (it == cooldowns_.end()) {
-    return false;
-  }
-
-  if (GetCurrentTimeMs() >= it->second) {
-    cooldowns_.erase(it);
-    return false;
-  }
-
-  return true;
+  return IsCooldownActive(&cooldowns_, user_id, GetCurrentTimeMs());
 }
 
 void NotificationService::CleanupInactiveDevices(int64_t inactive_threshold_ms) {
@@ -386,7 +415,7 @@ std::string NotificationService::HTTPPost(
 bool NotificationService::SendFCM(const DeviceRegistration& device,
                                  const NotificationPayload& payload) {
   // Build FCM payload
-  std::string fcm_payload = BuildFCMPayload(payload);
+  std::string fcm_payload = BuildFCMPayload(device.fcm_token, payload);
 
   // Build headers
   std::unordered_map<std::string, std::string> headers;
@@ -425,11 +454,16 @@ bool NotificationService::SendAPNs(const DeviceRegistration& device,
 }
 
 std::string NotificationService::BuildFCMPayload(const NotificationPayload& payload) {
+  return BuildFCMPayload("", payload);
+}
+
+std::string NotificationService::BuildFCMPayload(const std::string& device_token,
+                                                 const NotificationPayload& payload) {
   // Build JSON payload for FCM
   std::ostringstream ss;
 
   ss << "{"
-     << "\"to\": \"" << "" << "\","  // Device token
+     << "\"to\": \"" << device_token << "\","
      << "\"notification\": {"
      << "\"title\": \"" << payload.title << "\","
      << "\"body\": \"" << payload.body << "\"";

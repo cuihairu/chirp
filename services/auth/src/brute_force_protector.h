@@ -23,7 +23,7 @@ public:
     int max_lock_duration_seconds = 86400;  // 24 hours max
     int attempt_window_seconds = 900;       // 15 minutes tracking window
     bool lock_by_ip = true;                 // Also lock by IP address
-    bool permanent_lock_threshold = 20;     // Permanent lock after N attempts (0 = disabled)
+    int permanent_lock_threshold = 20;      // Permanent lock after N attempts (0 = disabled)
   };
 
   /// @brief Protection check result

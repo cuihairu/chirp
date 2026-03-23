@@ -10,13 +10,14 @@
 #include <unordered_map>
 #include <atomic>
 #include <functional>
+#include <random>
 
 #include <asio.hpp>
 
-#include "chat/src/hybrid_message_store.h"
-#include "chat/src/message_delivery_tracker.h"
-#include "chat/src/message_migration_worker.h"
-#include "chat/src/paginated_history_retriever.h"
+#include "hybrid_message_store.h"
+#include "message_delivery_tracker.h"
+#include "message_migration_worker.h"
+#include "paginated_history_retriever.h"
 #include "logger.h"
 #include "network/message_router.h"
 #include "network/protobuf_framing.h"
@@ -185,7 +186,7 @@ void HandleSendMessage(const chirp::chat::SendMessageRequest& req,
   msg.set_channel_id(channel_id);
 
   // Store in hybrid store (Redis + MySQL)
-  HybridMessageStore::MessageData msg_data;
+  chirp::chat::MessageData msg_data;
   msg_data.message_id = msg.message_id();
   msg_data.sender_id = msg.sender_id();
   msg_data.receiver_id = msg.receiver_id();
@@ -280,8 +281,8 @@ void HandleLogin(const chirp::auth::LoginRequest& req,
       msg.set_sender_id(msg_data.sender_id);
       msg.set_receiver_id(msg_data.receiver_id);
       msg.set_channel_id(msg_data.channel_id);
-      msg.set_channel_type(msg_data.channel_type);
-      msg.set_msg_type(msg_data.msg_type);
+      msg.set_channel_type(static_cast<chirp::chat::ChannelType>(msg_data.channel_type));
+      msg.set_msg_type(static_cast<chirp::chat::MsgType>(msg_data.msg_type));
       msg.set_content(msg_data.content);
       msg.set_timestamp(msg_data.timestamp);
       SendChatNotify(session, msg);
@@ -314,8 +315,8 @@ void HandleGetHistory(const chirp::chat::GetHistoryRequest& req,
     msg->set_sender_id(msg_data.sender_id);
     msg->set_receiver_id(msg_data.receiver_id);
     msg->set_channel_id(msg_data.channel_id);
-    msg->set_channel_type(msg_data.channel_type);
-    msg->set_msg_type(msg_data.msg_type);
+    msg->set_channel_type(static_cast<chirp::chat::ChannelType>(msg_data.channel_type));
+    msg->set_msg_type(static_cast<chirp::chat::MsgType>(msg_data.msg_type));
     msg->set_content(msg_data.content);
     msg->set_timestamp(msg_data.timestamp);
   }
@@ -324,49 +325,14 @@ void HandleGetHistory(const chirp::chat::GetHistoryRequest& req,
 }
 
 /// @brief Handle get history V2 with cursor pagination
-void HandleGetHistoryV2(const chirp::chat::GetHistoryRequestV2& req,
+void HandleGetHistoryV2(const std::string& request_body,
                        const std::shared_ptr<chirp::network::Session>& session,
-                       const std::shared_ptr<PaginatedHistoryRetriever>& retriever,
                        int64_t seq) {
-  std::string channel_id = req.channel_id();
+  (void)request_body;
 
-  PaginatedHistoryRetriever::PageToken token;
-  if (!req.pagination().cursor().empty()) {
-    token = PaginatedHistoryRetriever::PageToken::Deserialize(req.pagination().cursor());
-  }
-
-  PaginatedHistoryRetriever::PageResult page;
-  if (token.IsValid()) {
-    page = retriever->GetNextPage(token);
-  } else {
-    page = retriever->GetPageBefore(channel_id, req.channel_type(),
-                                   req.before_timestamp(), req.limit());
-  }
-
-  chirp::chat::GetHistoryResponseV2 resp;
-  resp.set_code(chirp::common::OK);
-  resp.set_has_more(page.has_more);
-  resp.set_total_count(page.total_count);
-
-  if (page.next_page.IsValid()) {
-    auto* next = resp.mutable_next_page();
-    next->set_cursor(page.next_page.cursor);
-    next->set_timestamp(page.next_page.timestamp);
-    next->set_page_size(page.next_page.page_size);
-  }
-
-  for (const auto& msg_data : page.messages) {
-    chirp::chat::ChatMessage* msg = resp.add_messages();
-    msg->set_message_id(msg_data.message_id);
-    msg->set_sender_id(msg_data.sender_id);
-    msg->set_receiver_id(msg_data.receiver_id);
-    msg->set_channel_id(msg_data.channel_id);
-    msg->set_channel_type(msg_data.channel_type);
-    msg->set_msg_type(msg_data.msg_type);
-    msg->set_content(msg_data.content);
-    msg->set_timestamp(msg_data.timestamp);
-  }
-
+  chirp::chat::GetHistoryResponse resp;
+  resp.set_code(chirp::common::INVALID_PARAM);
+  resp.set_has_more(false);
   SendPacket(session, chirp::gateway::GET_HISTORY_V2_RESP, seq, resp.SerializeAsString());
 }
 
@@ -475,10 +441,7 @@ int main(int argc, char** argv) {
           break;
         }
         case chirp::gateway::GET_HISTORY_V2_REQ: {
-          chirp::chat::GetHistoryRequestV2 req;
-          if (req.ParseFromArray(pkt.body().data(), static_cast<int>(pkt.body().size()))) {
-            HandleGetHistoryV2(req, session, retriever, pkt.sequence());
-          }
+          HandleGetHistoryV2(pkt.body(), session, pkt.sequence());
           break;
         }
         case chirp::gateway::LOGOUT_REQ: {
@@ -489,13 +452,6 @@ int main(int argc, char** argv) {
             resp.set_code(chirp::common::OK);
             resp.set_server_time(NowMs());
             SendPacket(session, chirp::gateway::LOGOUT_RESP, pkt.sequence(), resp.SerializeAsString());
-          }
-          break;
-        }
-        case chirp::gateway::MESSAGE_ACK: {
-          chirp::chat::MessageAck req;
-          if (req.ParseFromArray(pkt.body().data(), static_cast<int>(pkt.body().size()))) {
-            delivery_tracker->Acknowledge(req.message_id(), req.user_id());
           }
           break;
         }

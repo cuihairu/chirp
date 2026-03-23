@@ -14,27 +14,27 @@
 
 namespace chirp::network {
 
-/// @brief Redis 同步客户端（用于命令操作）
+/// @brief Synchronous Redis client for command operations.
 class RedisClient {
 public:
   RedisClient(std::string host, uint16_t port);
 
-  // 基本命令
+  // Basic commands
   std::optional<std::string> Get(const std::string& key);
   bool SetEx(const std::string& key, const std::string& value, int ttl_seconds);
   bool Del(const std::string& key);
 
-  // Pub/Sub 命令
+  // Pub/Sub commands
   bool Publish(const std::string& channel, const std::string& message);
 
-  // List 命令
+  // List commands
   bool RPush(const std::string& key, const std::string& value);
   std::vector<std::string> LRange(const std::string& key, int64_t start, int64_t stop);
 
-  // 过期命令
+  // Expiration commands
   bool Expire(const std::string& key, int ttl_seconds);
 
-  // Keys 命令
+  // Keys command
   std::vector<std::string> Keys(const std::string& pattern);
 
 private:
@@ -42,7 +42,7 @@ private:
   uint16_t port_;
 };
 
-/// @brief Redis 订阅者（支持多频道订阅）
+/// @brief Redis subscriber with multi-channel support.
 class RedisSubscriber {
 public:
   using MessageCallback = std::function<void(const std::string& channel, const std::string& payload)>;
@@ -55,28 +55,28 @@ public:
   RedisSubscriber(const RedisSubscriber&) = delete;
   RedisSubscriber& operator=(const RedisSubscriber&) = delete;
 
-  /// @brief 设置消息回调
+  /// @brief Set the message callback.
   void SetMessageCallback(MessageCallback cb) { msg_cb_ = std::move(cb); }
 
-  /// @brief 设置错误回调
+  /// @brief Set the error callback.
   void SetErrorCallback(ErrorCallback cb) { error_cb_ = std::move(cb); }
 
-  /// @brief 设置连接回调
+  /// @brief Set the connect callback.
   void SetConnectCallback(ConnectCallback cb) { connect_cb_ = std::move(cb); }
 
-  /// @brief 订阅频道
+  /// @brief Subscribe to a channel.
   bool Subscribe(const std::string& channel);
 
-  /// @brief 取消订阅频道
+  /// @brief Unsubscribe from a channel.
   bool Unsubscribe(const std::string& channel);
 
-  /// @brief 启动订阅者（需要先设置回调）
+  /// @brief Start the subscriber.
   void Start();
 
-  /// @brief 停止订阅者
+  /// @brief Stop the subscriber.
   void Stop();
 
-  /// @brief 检查是否已连接
+  /// @brief Check whether the subscriber is connected.
   bool IsConnected() const { return connected_; }
 
 private:

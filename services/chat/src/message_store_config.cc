@@ -7,6 +7,8 @@
 
 namespace chirp::chat {
 
+using chirp::common::Logger;
+
 MessageStoreConfig MessageStoreConfig::FromEnv() {
   MessageStoreConfig config;
 

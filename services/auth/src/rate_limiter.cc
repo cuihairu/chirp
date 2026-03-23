@@ -1,9 +1,12 @@
 #include "rate_limiter.h"
 
 #include "logger.h"
+#include "redis_auth_store.h"
 
 namespace chirp::auth {
 namespace {
+
+using chirp::common::Logger;
 
 std::string KeyFor(const std::string& prefix, const std::string& identifier) {
   return prefix + ":" + identifier;

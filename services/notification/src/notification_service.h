@@ -1,14 +1,14 @@
 #ifndef CHIRP_SERVICES_NOTIFICATION_NOTIFICATION_SERVICE_H_
 #define CHIRP_SERVICES_NOTIFICATION_NOTIFICATION_SERVICE_H_
 
+#include <atomic>
 #include <functional>
 #include <memory>
 #include <mutex>
 #include <string>
 #include <unordered_map>
+#include <unordered_set>
 #include <vector>
-
-#include "proto/notification.pb.h"
 
 namespace chirp {
 namespace notification {
@@ -36,13 +36,13 @@ struct DeviceRegistration {
   std::string device_id;
   std::string user_id;
   std::string platform;            // "ios", "android", "web"
-  std::string token;               // FCM/APNs token
   std::string app_version;
   std::string os_version;
   int64_t registered_at = 0;
   bool is_active = true;
 
   // iOS-specific
+  std::string apns_token;
   std::string apns_environment;    // "development" or "production"
   std::string push_kit_token;      // VoIP token
 
@@ -50,6 +50,10 @@ struct DeviceRegistration {
   std::string fcm_token;
 
   mutable std::mutex mu;
+
+  DeviceRegistration() = default;
+  DeviceRegistration(const DeviceRegistration& other);
+  DeviceRegistration& operator=(const DeviceRegistration& other);
 };
 
 // FCM configuration
@@ -128,7 +132,8 @@ public:
   bool IsOnCooldown(const std::string& user_id);
 
   // Cleanup
-  void CleanupInactiveDevices(int64_t inactive_threshold_ms = 30 * 24 * 3600 * 1000);
+  void CleanupInactiveDevices(
+      int64_t inactive_threshold_ms = 30LL * 24 * 3600 * 1000);
   void CleanupExpiredCooldowns();
 
   // Statistics
@@ -149,6 +154,8 @@ private:
                const NotificationPayload& payload);
 
   std::string BuildFCMPayload(const NotificationPayload& payload);
+  std::string BuildFCMPayload(const std::string& device_token,
+                              const NotificationPayload& payload);
   std::string BuildAPNsPayload(const NotificationPayload& payload);
 
   std::string HTTPPost(const std::string& url,

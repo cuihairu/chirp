@@ -54,8 +54,8 @@ int ParseIntArg(int argc, char** argv, const std::string& key, int def) {
 }
 
 std::string GetClientIp(const std::shared_ptr<chirp::network::Session>& session) {
-  // Try to get remote endpoint
-  return session->GetRemoteEndpoint();
+  (void)session;
+  return "";
 }
 
 void SendPacket(const std::shared_ptr<chirp::network::Session>& session,
@@ -99,7 +99,12 @@ int main(int argc, char** argv) {
   config.user_store_config.password = GetArg(argc, argv, "--mysql_password", "chirp_password");
   config.user_store_config.pool_size = ParseIntArg(argc, argv, "--mysql_pool_size", 10);
 
-  config.session_store_config = config.user_store_config;
+  config.session_store_config.host = config.user_store_config.host;
+  config.session_store_config.port = config.user_store_config.port;
+  config.session_store_config.database = config.user_store_config.database;
+  config.session_store_config.user = config.user_store_config.user;
+  config.session_store_config.password = config.user_store_config.password;
+  config.session_store_config.pool_size = config.user_store_config.pool_size;
 
   // Redis configuration
   config.redis_config.host = GetArg(argc, argv, "--redis_host", "127.0.0.1");
@@ -160,11 +165,11 @@ int main(int argc, char** argv) {
             return;
           }
 
-          chirp::auth::RegisterRequest auth_req;
-          auth_req.set_username(req.username());
-          auth_req.set_email(req.email());
-          auth_req.set_password(req.password());
-          auth_req.set_display_name(req.display_name());
+          chirp::auth::UserRegisterRequest auth_req;
+          auth_req.username = req.username();
+          auth_req.email = req.email();
+          auth_req.password = req.password();
+          auth_req.display_name = req.display_name();
 
           auto result = auth_service->Register(auth_req, client_ip);
 

@@ -1,5 +1,7 @@
 #include "auth_service.h"
 
+#include <chrono>
+
 #include "jwt.h"
 #include "logger.h"
 #include "password_hasher.h"
@@ -63,21 +65,22 @@ void AuthService::Shutdown() {
   redis_store_->Disconnect();
 }
 
-RegisterResult AuthService::Register(const RegisterRequest& req, const std::string& ip_address) {
+UserRegisterResult AuthService::Register(const UserRegisterRequest& req,
+                                         const std::string& ip_address) {
   Logger::Instance().Info("Registration request for: " + req.username);
 
   // Check rate limit
   auto rate_check = rate_limiter_->CheckRegistrationLimit(ip_address);
   if (!rate_check.allowed) {
-    RegisterResult result;
+    UserRegisterResult result;
     result.success = false;
     result.error_message = rate_check.error_message;
-    result.error_code = chirp::common::RATE_LIMITED;
+    result.error_code = chirp::common::AUTH_FAILED;
     return result;
   }
 
   // Attempt registration
-  RegisterResult result = user_store_->Register(req);
+  UserRegisterResult result = user_store_->Register(req);
 
   if (result.success) {
     Logger::Instance().Info("User registered successfully: " + result.user_id);
@@ -88,12 +91,12 @@ RegisterResult AuthService::Register(const RegisterRequest& req, const std::stri
   return result;
 }
 
-LoginResult AuthService::Login(std::string_view identifier,
-                               std::string_view password,
-                               const std::string& device_id,
-                               const std::string& platform,
-                               const std::string& ip_address) {
-  LoginResult result;
+AuthService::LoginResult AuthService::Login(std::string_view identifier,
+                                           std::string_view password,
+                                           const std::string& device_id,
+                                           const std::string& platform,
+                                           const std::string& ip_address) {
+  AuthService::LoginResult result;
   std::string identifier_str(identifier);
 
   Logger::Instance().Info("Login request for: " + identifier_str + " from " + ip_address);
@@ -102,7 +105,7 @@ LoginResult AuthService::Login(std::string_view identifier,
   auto rate_check = rate_limiter_->CheckLoginLimit(identifier_str, ip_address);
   if (!rate_check.allowed) {
     result.success = false;
-    result.error_code = chirp::common::RATE_LIMITED;
+    result.error_code = chirp::common::AUTH_FAILED;
     result.error_message = rate_check.error_message;
     return result;
   }
@@ -111,7 +114,7 @@ LoginResult AuthService::Login(std::string_view identifier,
   auto brute_check = brute_force_protector_->CheckLoginAttempt(identifier_str, ip_address);
   if (!brute_check.allowed) {
     result.success = false;
-    result.error_code = chirp::common::ACCOUNT_LOCKED;
+    result.error_code = chirp::common::AUTH_FAILED;
     result.error_message = brute_check.error_message;
     return result;
   }
@@ -146,7 +149,7 @@ LoginResult AuthService::Login(std::string_view identifier,
                              user_data->user_id);
     } else {
       result.success = false;
-      result.error_code = chirp::common::SESSION_LIMIT_REACHED;
+      result.error_code = chirp::common::SESSION_EXPIRED;
       result.error_message = "Maximum session limit reached. Please logout from other devices.";
       return result;
     }
@@ -206,8 +209,8 @@ LoginResult AuthService::Login(std::string_view identifier,
   return result;
 }
 
-RefreshResult AuthService::RefreshAccessToken(const std::string& refresh_token) {
-  RefreshResult result;
+AuthService::RefreshResult AuthService::RefreshAccessToken(const std::string& refresh_token) {
+  AuthService::RefreshResult result;
 
   if (refresh_token.empty()) {
     result.success = false;

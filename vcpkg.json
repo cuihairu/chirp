@@ -7,9 +7,9 @@
     "protobuf",
     "abseil",
     "libsodium",
-    "mysql-connector-cpp",
+    "libmysql",
     "pkgconf",
     "asio"
   ],
-  "builtin-baseline": "4ef2a7144d00c2f446029b9700e701a3094b8bfb"
+  "builtin-baseline": "05442024c3fda64320bd25d2251cc9807b84fb6f"
 }

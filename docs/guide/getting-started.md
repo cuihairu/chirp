@@ -52,7 +52,7 @@ sudo apt-get install mysql-server libmysqlclient-dev
 
 ```bash
 # Use vcpkg for dependencies
-vcpkg install protobuf redis-plus mysql-connector-cpp
+vcpkg install protobuf redis-plus libmysql asio
 ```
 
 ### 3. Build Protobuf Files

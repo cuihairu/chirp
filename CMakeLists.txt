@@ -3,6 +3,11 @@ project(chirp_monorepo)
 
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
+option(CHIRP_FETCH_DEPS "Allow CMake to download third-party dependencies when not installed" ON)
+
+if(WIN32)
+  add_compile_definitions(_WIN32_WINNT=0x0601 WINVER=0x0601)
+endif()
 
 # Add cmake module path for custom Find modules
 list(APPEND CMAKE_MODULE_PATH "${CMAKE_SOURCE_DIR}/cmake")
@@ -51,13 +56,11 @@ if(CHIRP_NEEDS_ABSL)
   endif()
 
   if(absl_pkg_FOUND)
-    # Use system Abseil from Homebrew
+    # Use the installed Abseil discovered through pkg-config/vcpkg.
     message(STATUS "Using system Abseil from: ${absl_pkg_INCLUDE_DIRS}")
     include_directories(SYSTEM ${absl_pkg_INCLUDE_DIRS})
     link_directories(${absl_pkg_LIBRARY_DIRS})
     add_compile_options(${absl_pkg_CFLAGS_OTHER})
-    # Add missing log library that pkg-config doesn't include
-    list(APPEND absl_pkg_LIBRARIES absl_log_internal_check_op)
   else()
     # Use FetchContent for Abseil
     include(FetchContent)
@@ -74,16 +77,45 @@ if(CHIRP_NEEDS_ABSL)
   endif()
 endif()
 
-# Use FetchContent for ASIO (header-only)
-if(NOT TARGET asio)
-  include(FetchContent)
-  FetchContent_Declare(
-    asio
-    GIT_REPOSITORY https://github.com/chriskohlhoff/asio.git
-    GIT_TAG asio-1-30-2
-    GIT_SHALLOW TRUE
+# Resolve ASIO once at the top level: prefer installed headers, fallback to FetchContent.
+if(NOT TARGET chirp_asio)
+  find_path(ASIO_INCLUDE_DIR
+    NAMES asio.hpp
+    PATHS
+      "${CMAKE_SOURCE_DIR}/third_party/asio/asio/include"
+      "${CMAKE_SOURCE_DIR}/third_party/asio/include"
+    PATH_SUFFIXES include asio/include
   )
-  FetchContent_MakeAvailable(asio)
+
+  if(ASIO_INCLUDE_DIR)
+    message(STATUS "Using system ASIO headers from: ${ASIO_INCLUDE_DIR}")
+    add_library(chirp_asio INTERFACE)
+    target_include_directories(chirp_asio INTERFACE ${ASIO_INCLUDE_DIR})
+    target_compile_definitions(chirp_asio INTERFACE ASIO_STANDALONE ASIO_NO_DEPRECATED)
+  elseif(TARGET asio::asio)
+    add_library(chirp_asio INTERFACE)
+    target_link_libraries(chirp_asio INTERFACE asio::asio)
+    target_compile_definitions(chirp_asio INTERFACE ASIO_STANDALONE ASIO_NO_DEPRECATED)
+  elseif(NOT CHIRP_FETCH_DEPS)
+    message(FATAL_ERROR
+      "ASIO headers were not found. Preferred fix: configure CMake with the vcpkg toolchain "
+      "(-DCMAKE_TOOLCHAIN_FILE=<vcpkg>/scripts/buildsystems/vcpkg.cmake) so the manifest in vcpkg.json "
+      "can provide asio. You can also provide CHIRP_ASIO_INCLUDE_DIR/ASIO_INCLUDE_DIR, or enable "
+      "CHIRP_FETCH_DEPS to allow FetchContent.")
+  else()
+    include(FetchContent)
+    FetchContent_Declare(
+      asio
+      GIT_REPOSITORY https://github.com/chriskohlhoff/asio.git
+      GIT_TAG asio-1-30-2
+      GIT_SHALLOW TRUE
+    )
+    FetchContent_MakeAvailable(asio)
+
+    add_library(chirp_asio INTERFACE)
+    target_include_directories(chirp_asio INTERFACE ${asio_SOURCE_DIR}/asio/include)
+    target_compile_definitions(chirp_asio INTERFACE ASIO_STANDALONE ASIO_NO_DEPRECATED)
+  endif()
 endif()
 
 # ------------------------------------------------------------------------------
@@ -114,6 +146,8 @@ add_subdirectory(services/auth)
 add_subdirectory(services/chat)
 add_subdirectory(services/social)
 add_subdirectory(services/voice)
+add_subdirectory(services/notification)
+add_subdirectory(services/search)
 # add_subdirectory(services/router)
 
 # 3. SDKs

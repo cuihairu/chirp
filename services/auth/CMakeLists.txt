@@ -5,9 +5,14 @@ find_package(Threads REQUIRED)
 # Find MySQL
 find_package(MySQL REQUIRED)
 
-# Find libsodium
-find_package(PkgConfig REQUIRED)
-pkg_check_modules(LIBSODIUM REQUIRED libsodium)
+# Find libsodium (prefer vcpkg target, fallback to pkg-config)
+find_package(unofficial-sodium CONFIG QUIET)
+if(TARGET unofficial-sodium::sodium)
+  set(LIBSODIUM_LIBRARIES unofficial-sodium::sodium)
+else()
+  find_package(PkgConfig REQUIRED)
+  pkg_check_modules(LIBSODIUM REQUIRED libsodium)
+endif()
 
 file(GLOB PROTO_SRCS "${CMAKE_SOURCE_DIR}/proto/cpp/proto/*.cc")
 
@@ -44,12 +49,17 @@ target_link_libraries(chirp_auth
     PRIVATE
     chirp_network
     chirp_common
-    ${PROTOBUF_LIBRARIES}
     ${absl_pkg_LIBRARIES}
     ${LIBSODIUM_LIBRARIES}
     ${MYSQL_CLIENT_LIBRARIES}
     Threads::Threads
 )
+
+if(TARGET protobuf::libprotobuf)
+    target_link_libraries(chirp_auth PRIVATE protobuf::libprotobuf)
+elseif(DEFINED PROTOBUF_LIBRARIES)
+    target_link_libraries(chirp_auth PRIVATE ${PROTOBUF_LIBRARIES})
+endif()
 
 target_include_directories(chirp_auth PRIVATE src)
 target_include_directories(chirp_auth PRIVATE ${LIBSODIUM_INCLUDE_DIRS})
@@ -60,12 +70,17 @@ target_link_libraries(chirp_auth_enhanced
     PRIVATE
     chirp_network
     chirp_common
-    ${PROTOBUF_LIBRARIES}
     ${absl_pkg_LIBRARIES}
     ${LIBSODIUM_LIBRARIES}
     ${MYSQL_CLIENT_LIBRARIES}
     Threads::Threads
 )
+
+if(TARGET protobuf::libprotobuf)
+    target_link_libraries(chirp_auth_enhanced PRIVATE protobuf::libprotobuf)
+elseif(DEFINED PROTOBUF_LIBRARIES)
+    target_link_libraries(chirp_auth_enhanced PRIVATE ${PROTOBUF_LIBRARIES})
+endif()
 
 target_include_directories(chirp_auth_enhanced PRIVATE src)
 target_include_directories(chirp_auth_enhanced PRIVATE ${LIBSODIUM_INCLUDE_DIRS})

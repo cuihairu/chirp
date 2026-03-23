@@ -15,7 +15,7 @@ namespace chirp {
 namespace chat {
 
 // Message data for database storage
-struct MessageData {
+struct MySQLMessageData {
   std::string message_id;
   std::string sender_id;
   std::string receiver_id;
@@ -116,16 +116,16 @@ public:
   bool Initialize();
 
   // Store message
-  bool StoreMessage(const MessageData& message);
+  bool StoreMessage(const MySQLMessageData& message);
 
   // Get message history
-  std::vector<MessageData> GetHistory(const std::string& channel_id,
-                                     int channel_type,
-                                     int64_t before_timestamp,
-                                     int32_t limit);
+  std::vector<MySQLMessageData> GetHistory(const std::string& channel_id,
+                                          int channel_type,
+                                          int64_t before_timestamp,
+                                          int32_t limit);
 
   // Get offline messages for a user
-  std::vector<MessageData> GetOfflineMessages(const std::string& user_id);
+  std::vector<MySQLMessageData> GetOfflineMessages(const std::string& user_id);
 
   // Delete offline messages for a user
   bool ClearOfflineMessages(const std::string& user_id);

@@ -8,7 +8,7 @@
 
 #include <asio.hpp>
 
-#include "chat/src/hybrid_message_store.h"
+#include "hybrid_message_store.h"
 
 namespace chirp::chat {
 

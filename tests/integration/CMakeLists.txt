@@ -13,31 +13,13 @@ get_filename_component(CHIRP_ROOT ${CHIRP_ROOT} DIRECTORY)
 # Find required packages
 find_package(Threads REQUIRED)
 
-# Find protobuf via vcpkg
-find_package(protobuf CONFIG REQUIRED)
-
-# Use FetchContent for ASIO (header-only)
-include(FetchContent)
-if(NOT TARGET asio)
-  FetchContent_Declare(
-    asio
-    GIT_REPOSITORY https://github.com/chriskohlhoff/asio.git
-    GIT_TAG asio-1-30-2
-    GIT_SHALLOW TRUE
-  )
-  FetchContent_MakeAvailable(asio)
-endif()
+find_package(protobuf CONFIG QUIET)
 
 # Include directories
 include_directories(${CHIRP_ROOT})
 include_directories(${CHIRP_ROOT}/libs)
 include_directories(${CHIRP_ROOT}/sdks/core/include)
 include_directories(${CHIRP_ROOT}/proto/cpp)
-
-# Add ASIO include directory
-if(EXISTS "${CMAKE_CURRENT_BINARY_DIR}/_deps/asio-src/asio/include")
-  include_directories("${CMAKE_CURRENT_BINARY_DIR}/_deps/asio-src/asio/include")
-endif()
 
 # Protocol buffers - use pre-generated files
 set(PROTO_CPP_PATH ${CHIRP_ROOT}/proto/cpp/proto)
@@ -49,13 +31,27 @@ add_executable(chirp_integration_test
   ${PROTO_SRCS}
 )
 
-# Link against libraries from main build
-target_link_libraries(chirp_integration_test
-  ${CHIRP_ROOT}/build/libs/common/Debug/chirp_common.lib
-  ${CHIRP_ROOT}/build/libs/network/Debug/chirp_network.lib
-  protobuf::libprotobuf
-  Threads::Threads
-)
+if(TARGET chirp_network AND TARGET chirp_common)
+  target_link_libraries(chirp_integration_test
+    PRIVATE
+    chirp_common
+    chirp_network
+    Threads::Threads
+  )
+else()
+  target_link_libraries(chirp_integration_test
+    PRIVATE
+    ${CHIRP_ROOT}/build/libs/common/Debug/chirp_common.lib
+    ${CHIRP_ROOT}/build/libs/network/Debug/chirp_network.lib
+    Threads::Threads
+  )
+endif()
+
+if(TARGET protobuf::libprotobuf)
+  target_link_libraries(chirp_integration_test PRIVATE protobuf::libprotobuf)
+elseif(DEFINED PROTOBUF_LIBRARIES)
+  target_link_libraries(chirp_integration_test PRIVATE ${PROTOBUF_LIBRARIES})
+endif()
 
 # Platform-specific libraries
 if(WIN32)

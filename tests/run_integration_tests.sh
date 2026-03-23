@@ -17,8 +17,7 @@ GATEWAY_HOST="localhost"
 GATEWAY_PORT=5000
 
 # Detect vcpkg location
-VCPKG_ROOT=""
-if [ -n "$VCPKG_ROOT" ]; then
+if [ -n "${VCPKG_ROOT:-}" ]; then
     VCPKG_ROOT="$VCPKG_ROOT"
 elif [ -d "$HOME/vcpkg" ]; then
     VCPKG_ROOT="$HOME/vcpkg"
@@ -33,11 +32,17 @@ else
 fi
 
 VCPKG_TOOLCHAIN="$VCPKG_ROOT/scripts/buildsystems/vcpkg.cmake"
+VCPKG_BIN="$VCPKG_ROOT/vcpkg"
+if [ -f "$VCPKG_ROOT/vcpkg.exe" ]; then
+  VCPKG_BIN="$VCPKG_ROOT/vcpkg.exe"
+fi
 
 echo -e "${YELLOW}=== Chirp Integration Test Runner ===${NC}"
 echo ""
 echo "Using vcpkg at: $VCPKG_ROOT"
 echo ""
+
+"$VCPKG_BIN" install
 
 # Parse arguments
 while [[ $# -gt 0 ]]; do
