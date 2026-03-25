@@ -72,6 +72,10 @@ struct MessageStore {
   explicit MessageStore(std::shared_ptr<chirp::network::RedisClient> redis_client, int ttl)
       : redis(std::move(redis_client)), offline_ttl_seconds(ttl) {}
 
+  std::string HistoryKey(chirp::chat::ChannelType type, const std::string& channel_id) {
+    return "chat:history:" + ChannelKey(type, channel_id);
+  }
+
   std::string ChannelKey(chirp::chat::ChannelType type, const std::string& channel_id) {
     return std::to_string(static_cast<int>(type)) + ":" + channel_id;
   }
@@ -84,8 +88,11 @@ struct MessageStore {
   }
 
   void AddMessage(const chirp::chat::ChatMessage& msg) {
-    std::string key = ChannelKey(msg.channel_type(), msg.channel_id());
-    auto& msgs = history[key];
+    if (redis) {
+      redis->RPush(HistoryKey(msg.channel_type(), msg.channel_id()), msg.SerializeAsString());
+    }
+
+    auto& msgs = history[ChannelKey(msg.channel_type(), msg.channel_id())];
     msgs.push_back(msg);
 
     // 只保留最近 100 条消息
@@ -94,7 +101,7 @@ struct MessageStore {
     }
   }
 
-  std::string OfflineKey(const std::string& user_id) { return "chirp:chat:offline:" + user_id; }
+  std::string OfflineKey(const std::string& user_id) { return "chat:offline:" + user_id; }
 
   void AddOffline(const std::string& receiver_id, const chirp::chat::ChatMessage& msg) {
     if (receiver_id.empty()) {
@@ -155,15 +162,6 @@ struct MessageStore {
       *has_more = false;
     }
 
-    std::string key = ChannelKey(type, channel_id);
-    auto it = history.find(key);
-    if (it == history.end()) {
-      return {};
-    }
-
-    const auto& all_msgs = it->second;
-    std::vector<chirp::chat::ChatMessage> result;
-
     int64_t before = before_timestamp;
     if (before <= 0) {
       before = NowMs() + 1;
@@ -173,6 +171,39 @@ struct MessageStore {
       lim = 50;
     }
 
+    if (redis) {
+      auto raw = redis->LRange(HistoryKey(type, channel_id), 0, -1);
+      if (!raw.empty()) {
+        std::vector<chirp::chat::ChatMessage> result;
+        result.reserve(raw.size());
+        for (auto rit = raw.rbegin(); rit != raw.rend(); ++rit) {
+          chirp::chat::ChatMessage msg;
+          if (!msg.ParseFromArray(rit->data(), static_cast<int>(rit->size()))) {
+            continue;
+          }
+          if (msg.timestamp() >= before) {
+            continue;
+          }
+          result.push_back(std::move(msg));
+          if (static_cast<int32_t>(result.size()) >= lim) {
+            if (has_more) {
+              *has_more = (rit + 1) != raw.rend();
+            }
+            break;
+          }
+        }
+        std::reverse(result.begin(), result.end());
+        return result;
+      }
+    }
+
+    auto it = history.find(ChannelKey(type, channel_id));
+    if (it == history.end()) {
+      return {};
+    }
+
+    const auto& all_msgs = it->second;
+    std::vector<chirp::chat::ChatMessage> result;
     for (auto rit = all_msgs.rbegin(); rit != all_msgs.rend(); ++rit) {
       if (rit->timestamp() >= before) {
         continue;
@@ -356,10 +387,8 @@ void HandlePacket(const std::shared_ptr<MessageStore>& store,
     store->AddMessage(msg);
 
     chirp::chat::SendMessageResponse resp;
-    resp.set_code(chirp::common::OK);
     resp.set_message_id(msg.message_id());
     resp.set_server_timestamp(msg.timestamp());
-    SendPacket(session, chirp::gateway::SEND_MESSAGE_RESP, pkt.sequence(), resp.SerializeAsString());
 
     if (req.channel_type() == chirp::chat::PRIVATE) {
       std::shared_ptr<chirp::network::Session> recv;
@@ -371,11 +400,16 @@ void HandlePacket(const std::shared_ptr<MessageStore>& store,
         }
       }
       if (recv) {
+        resp.set_code(chirp::common::OK);
         SendChatNotify(recv, msg);
       } else {
+        resp.set_code(chirp::common::TARGET_OFFLINE);
         store->AddOffline(req.receiver_id(), msg);
       }
+    } else {
+      resp.set_code(chirp::common::OK);
     }
+    SendPacket(session, chirp::gateway::SEND_MESSAGE_RESP, pkt.sequence(), resp.SerializeAsString());
     break;
   }
   case chirp::gateway::GET_HISTORY_REQ: {

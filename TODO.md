@@ -31,6 +31,8 @@
   - [x] History Message Retrieval with pagination
   - [x] Message delivery tracking (ACK/NACK)
   - [x] Hybrid message store (Redis + MySQL)
+    - [x] MySQL-compatible SQL export from Redis history/offline queues
+    - [x] Archive scripts and loop worker
 
 - [x] **Social & Presence Service**
   - [x] Friend List Management.

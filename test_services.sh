@@ -223,20 +223,32 @@ else
   CHAT_WS_PORT="${CHAT_WS_PORT:-$(pick_port)}"
   CHAT_LOG="${CHAT_LOG:-/tmp/chirp_chat_smoke.log}"
   LISTEN_LOG="${LISTEN_LOG:-/tmp/chirp_chat_listen_smoke.log}"
-  CHAT_REDIS_HOST="${CHAT_REDIS_HOST:-}"
-  CHAT_REDIS_PORT="${CHAT_REDIS_PORT:-6379}"
-  CHAT_OFFLINE_TTL="${CHAT_OFFLINE_TTL:-604800}"
-  CHAT_EXTRA_ARGS=()
-  if [[ -n "${CHAT_REDIS_HOST}" ]]; then
-    CHAT_EXTRA_ARGS+=(--redis_host "${CHAT_REDIS_HOST}" --redis_port "${CHAT_REDIS_PORT}" --offline_ttl "${CHAT_OFFLINE_TTL}")
-  fi
+  OFFLINE_LISTEN_LOG="${OFFLINE_LISTEN_LOG:-/tmp/chirp_chat_offline_listen_smoke.log}"
+  REDIS_PORT="${REDIS_PORT:-$(pick_port)}"
+  REDIS_DIR="${REDIS_DIR:-$(mktemp -d /tmp/chirp_chat_smoke_redis.XXXXXX)}"
+  REDIS_LOG="${REDIS_LOG:-/tmp/chirp_chat_smoke_redis.log}"
+  ARCHIVE_SQL="${ARCHIVE_SQL:-/tmp/chirp_chat_smoke_archive.sql}"
+  ARCHIVE_ACK="${ARCHIVE_ACK:-/tmp/chirp_chat_smoke_archive_ack.sh}"
 
-  ./build/services/chat/chirp_chat --port "${CHAT_PORT}" --ws_port "${CHAT_WS_PORT}" "${CHAT_EXTRA_ARGS[@]}" > "${CHAT_LOG}" 2>&1 &
+  /usr/local/opt/redis/bin/redis-server --port "${REDIS_PORT}" --save '' --appendonly no --dir "${REDIS_DIR}" > "${REDIS_LOG}" 2>&1 &
+  REDIS_PID=$!
+
+  for _ in {1..50}; do
+    if /usr/local/opt/redis/bin/redis-cli -p "${REDIS_PORT}" ping >/dev/null 2>&1; then
+      break
+    fi
+    sleep 0.1
+  done
+
+  ./build/services/chat/chirp_chat --port "${CHAT_PORT}" --ws_port "${CHAT_WS_PORT}" --redis_host 127.0.0.1 --redis_port "${REDIS_PORT}" > "${CHAT_LOG}" 2>&1 &
   CHAT_PID=$!
 
   cleanup() {
     kill -TERM "${CHAT_PID}" 2>/dev/null || true
     wait "${CHAT_PID}" 2>/dev/null || true
+    kill -TERM "${REDIS_PID}" 2>/dev/null || true
+    wait "${REDIS_PID}" 2>/dev/null || true
+    rm -rf "${REDIS_DIR}"
   }
   trap cleanup EXIT
 
@@ -261,8 +273,50 @@ else
   ./build/tools/benchmark/chirp_chat_history_client --host 127.0.0.1 --port "${CHAT_PORT}" --user user_1 --channel_type 0 --channel_id "user_1|user_2" --limit 10
 
   echo ""
+  echo "[tcp] send user_1 -> offline user_3"
+  OFFLINE_SEND_OUTPUT=$(./build/tools/benchmark/chirp_chat_send_client --host 127.0.0.1 --port "${CHAT_PORT}" --sender user_1 --receiver user_3 --text "offline hello")
+  echo "${OFFLINE_SEND_OUTPUT}"
+  if [[ "${OFFLINE_SEND_OUTPUT}" != code=6* ]]; then
+    echo "错误: 预期离线发送返回 code=6(TARGET_OFFLINE)"
+    exit 1
+  fi
+
+  echo ""
+  echo "[tcp] login offline user_3 (expect queued notify)"
+  ./build/tools/benchmark/chirp_chat_listen_client --host 127.0.0.1 --port "${CHAT_PORT}" --user user_3 --max 1 > "${OFFLINE_LISTEN_LOG}" 2>&1 &
+  OFFLINE_LISTEN_PID=$!
+
+  wait "${OFFLINE_LISTEN_PID}"
+  cat "${OFFLINE_LISTEN_LOG}" || true
+
+  if ! rg -q "notify ts=.*user_1 -> user_3" "${OFFLINE_LISTEN_LOG}"; then
+    echo "错误: 离线消息未在 user_3 登录后补投递"
+    exit 1
+  fi
+
+  echo ""
+  echo "[tcp] history private (user_1|user_3)"
+  ./build/tools/benchmark/chirp_chat_history_client --host 127.0.0.1 --port "${CHAT_PORT}" --user user_1 --channel_type 0 --channel_id "user_1|user_3" --limit 10
+
+  echo ""
   echo "[ws] login -> ping on chat"
-  ./build/tools/benchmark/chirp_ws_login_client --host 127.0.0.1 --port "${CHAT_WS_PORT}" --token user_3 --device dev_c --platform web
+  ./build/tools/benchmark/chirp_ws_login_client --host 127.0.0.1 --port "${CHAT_WS_PORT}" --token user_4 --device dev_c --platform web
+
+  echo ""
+  echo "[archive] export + fake mysql apply + redis ack"
+  ./tools/archive_chat_redis.sh \
+    --redis_host 127.0.0.1 --redis_port "${REDIS_PORT}" \
+    --out "${ARCHIVE_SQL}" \
+    --ack_out "${ARCHIVE_ACK}" \
+    --mysql_cmd "cat >/dev/null" \
+    --apply_ack 1
+
+  REMAINING_KEYS=$(/usr/local/opt/redis/bin/redis-cli -p "${REDIS_PORT}" --scan --pattern 'chat:*' | wc -l | tr -d ' ')
+  if [[ "${REMAINING_KEYS}" != "0" ]]; then
+    echo "错误: 归档 ack 后 Redis 中仍有残留 chat:* keys"
+    /usr/local/opt/redis/bin/redis-cli -p "${REDIS_PORT}" --scan --pattern 'chat:*' || true
+    exit 1
+  fi
 
   echo ""
   echo "chat log: ${CHAT_LOG}"

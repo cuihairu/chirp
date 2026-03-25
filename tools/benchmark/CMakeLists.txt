@@ -130,3 +130,20 @@ target_link_libraries(chirp_chat_listen_client
 )
 
 target_include_directories(chirp_chat_listen_client PRIVATE ${CMAKE_SOURCE_DIR}/libs ${CMAKE_SOURCE_DIR}/proto/cpp)
+
+add_executable(chirp_chat_mysql_exporter
+    chat_mysql_exporter.cc
+    ${CMAKE_SOURCE_DIR}/proto/cpp/proto/common.pb.cc
+    ${CMAKE_SOURCE_DIR}/proto/cpp/proto/chat.pb.cc
+)
+
+target_link_libraries(chirp_chat_mysql_exporter
+    PRIVATE
+    chirp_network
+    chirp_common
+    ${PROTOBUF_LIBRARIES}
+    ${absl_pkg_LIBRARIES}
+    Threads::Threads
+)
+
+target_include_directories(chirp_chat_mysql_exporter PRIVATE ${CMAKE_SOURCE_DIR}/libs ${CMAKE_SOURCE_DIR}/proto/cpp)

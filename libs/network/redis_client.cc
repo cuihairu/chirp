@@ -35,13 +35,17 @@ std::optional<RedisResp> SendAndReadOne(asio::ip::tcp::socket& sock, const std::
 }
 
 std::optional<RedisResp> SendCmd(const std::string& host, uint16_t port, const std::vector<std::string>& args) {
-  asio::io_context io;
-  asio::ip::tcp::resolver resolver(io);
-  asio::ip::tcp::socket sock(io);
-  auto endpoints = resolver.resolve(host, std::to_string(port));
-  asio::connect(sock, endpoints);
-  const std::string cmd = BuildRedisCommand(args);
-  return SendAndReadOne(sock, cmd);
+  try {
+    asio::io_context io;
+    asio::ip::tcp::resolver resolver(io);
+    asio::ip::tcp::socket sock(io);
+    auto endpoints = resolver.resolve(host, std::to_string(port));
+    asio::connect(sock, endpoints);
+    const std::string cmd = BuildRedisCommand(args);
+    return SendAndReadOne(sock, cmd);
+  } catch (...) {
+    return std::nullopt;
+  }
 }
 
 } // namespace

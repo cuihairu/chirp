@@ -114,5 +114,27 @@ services:
     ports:
       - "5007:5007"
 
+  chat_archive:
+    build:
+      context: .
+      dockerfile: docker/Dockerfile.service
+      args:
+        SERVICE: chat_enhanced
+    profiles: ["archive"]
+    environment:
+      CHIRP_BIN: /usr/local/bin/archive_chat_redis_loop.sh
+    command:
+      [
+        "--redis_host", "redis",
+        "--redis_port", "6379",
+        "--interval_secs", "60",
+        "--work_dir", "/var/lib/chirp/archive"
+      ]
+    volumes:
+      - archive_data:/var/lib/chirp/archive
+    depends_on:
+      - redis
+
 volumes:
   mysql_data:
+  archive_data:

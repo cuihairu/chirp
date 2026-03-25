@@ -56,6 +56,15 @@ docker compose up --build
 - `chirp_gateway`：TCP 5000 / WebSocket 5001（连接 `auth` + `redis`）
 - `chirp_chat`：TCP 7000 / WebSocket 7001
 
+可选：启用归档 worker（默认不启用）：
+
+```bash
+docker compose --profile archive up --build
+```
+
+`chat_archive` 默认只会周期性导出 SQL/ack 文件到 volume，不会自动执行 MySQL 导入或删除 Redis 数据。
+如果你有外部 MySQL，可以覆盖 command 追加 `--mysql_cmd ... --apply_ack 1`。
+
 ### 手动启动（默认端口）
 
 ```bash
@@ -68,6 +77,43 @@ docker compose up --build
 
 ```bash
 ./build/services/gateway/chirp_gateway --port 5000 --ws_port 5001 --redis_host 127.0.0.1 --redis_port 6379
+```
+
+可选：启用 Redis 聊天历史/离线缓冲（chat service）：
+
+```bash
+./build/services/chat/chirp_chat --port 7000 --redis_host 127.0.0.1 --redis_port 6379
+```
+
+可选：将 Redis 中的聊天历史/离线队列导出为 MySQL 可执行 SQL，并生成 Redis 清理脚本：
+
+```bash
+./build/tools/benchmark/chirp_chat_mysql_exporter \
+  --redis_host 127.0.0.1 --redis_port 6379 \
+  --out /tmp/chirp_chat_export.sql \
+  --ack_out /tmp/chirp_chat_export_ack.sh
+
+mysql -h 127.0.0.1 -u root -p your_db < /tmp/chirp_chat_export.sql
+sh /tmp/chirp_chat_export_ack.sh
+```
+
+也可以直接使用仓库脚本串起来执行“导出 -> 入库 -> 成功后 ack 清理”：
+
+```bash
+./tools/archive_chat_redis.sh \
+  --redis_host 127.0.0.1 --redis_port 6379 \
+  --mysql_cmd "mysql -h 127.0.0.1 -u root -p your_db" \
+  --apply_ack 1
+```
+
+如果需要周期性批量归档，可以直接跑 loop worker：
+
+```bash
+./tools/archive_chat_redis_loop.sh \
+  --redis_host 127.0.0.1 --redis_port 6379 \
+  --mysql_cmd "mysql -h 127.0.0.1 -u root -p your_db" \
+  --apply_ack 1 \
+  --interval_secs 60
 ```
 
 ## 游戏快速接入（推荐路径）
@@ -96,7 +142,7 @@ docker compose up --build
 - 收到 `KICK_NOTIFY`：提示并断开/重登
 - 聊天：`SEND_MESSAGE_REQ` / `CHAT_MESSAGE_NOTIFY` / `GET_HISTORY_REQ`
 
-> 当前仓库中，`services/chat` 支持 1v1 消息路由与内存历史（示例实现）。生产环境建议接入 Redis/MySQL 做离线与持久化。
+> 当前仓库中，`services/chat` 支持 1v1 消息路由、离线消息补投递与历史拉取；未配置 Redis 时使用内存队列/历史，配置 `--redis_host/--redis_port` 后会把最近消息和离线队列缓存在 Redis List 中。生产环境建议继续落到 MySQL 做持久化归档。
 
 ## 聊天 App 接入（WebSocket）
 
