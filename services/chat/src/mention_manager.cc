@@ -78,7 +78,7 @@ ParsedMentions MentionManager::ParseMentions(const std::string& content,
     for (int32_t count = 0; it != end && count < config_.max_mentions_per_message; ++it, ++count) {
       const std::smatch& match = *it;
       Mention mention;
-      mention.set_type(MentionType::USER);
+      mention.set_type(MentionType::MENTION_TYPE_USER);
       mention.set_id(match[1].str());  // Use username as ID for now
       mention.set_start_index(match.position());
       mention.set_length(match.length());
@@ -95,7 +95,7 @@ ParsedMentions MentionManager::ParseMentions(const std::string& content,
     for (int32_t count = 0; it != end && count < config_.max_mentions_per_message; ++it, ++count) {
       const std::smatch& match = *it;
       Mention mention;
-      mention.set_type(MentionType::CHANNEL);
+      mention.set_type(MentionType::MENTION_TYPE_CHANNEL);
       mention.set_id(match[1].str());
       mention.set_start_index(match.position());
       mention.set_length(match.length());
@@ -111,7 +111,7 @@ ParsedMentions MentionManager::ParseMentions(const std::string& content,
     if (it != end) {
       const std::smatch& match = *it;
       Mention mention;
-      mention.set_type(MentionType::EVERYONE);
+      mention.set_type(MentionType::MENTION_TYPE_EVERYONE);
       mention.set_id("");
       mention.set_start_index(match.position());
       mention.set_length(match.length());
@@ -128,7 +128,7 @@ ParsedMentions MentionManager::ParseMentions(const std::string& content,
     if (it != end) {
       const std::smatch& match = *it;
       Mention mention;
-      mention.set_type(MentionType::HERE);
+      mention.set_type(MentionType::MENTION_TYPE_HERE);
       mention.set_id("");
       mention.set_start_index(match.position());
       mention.set_length(match.length());
@@ -211,7 +211,7 @@ MentionManager::GetMentionSuggestions(const std::string& query,
     MentionSuggestion sugg;
     sugg.display_text = "@everyone";
     sugg.id = "";
-    sugg.type = MentionType::EVERYONE;
+    sugg.type = MentionType::MENTION_TYPE_EVERYONE;
     result.push_back(sugg);
   }
 
@@ -219,7 +219,7 @@ MentionManager::GetMentionSuggestions(const std::string& query,
     MentionSuggestion sugg;
     sugg.display_text = "@here";
     sugg.id = "";
-    sugg.type = MentionType::HERE;
+    sugg.type = MentionType::MENTION_TYPE_HERE;
     result.push_back(sugg);
   }
 
@@ -277,19 +277,19 @@ std::string MentionManager::FormatMentions(const std::string& content,
       std::string replacement;
 
       switch (mention.type()) {
-        case MentionType::USER:
+        case MentionType::MENTION_TYPE_USER:
           replacement = "**@" + result.substr(pos, len) + "**";
           break;
-        case MentionType::ROLE:
+        case MentionType::MENTION_TYPE_ROLE:
           replacement = "**@" + result.substr(pos, len) + "**";
           break;
-        case MentionType::CHANNEL:
+        case MentionType::MENTION_TYPE_CHANNEL:
           replacement = "**#" + result.substr(pos, len) + "**";
           break;
-        case MentionType::EVERYONE:
+        case MentionType::MENTION_TYPE_EVERYONE:
           replacement = "**@everyone**";
           break;
-        case MentionType::HERE:
+        case MentionType::MENTION_TYPE_HERE:
           replacement = "**@here**";
           break;
         default:

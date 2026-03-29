@@ -1,4 +1,5 @@
 #include <chrono>
+#include <optional>
 #include <iostream>
 #include <memory>
 #include <string>
@@ -77,7 +78,7 @@ public:
     // Start receive thread
     receiving_ = true;
     receive_thread_ = std::thread([this]() {
-      asio::io_context::work work(io_);
+      auto work_guard = asio::make_work_guard(io_);
       while (receiving_) {
         try {
           io_.run();

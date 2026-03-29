@@ -2,16 +2,18 @@
 
 find_package(Threads REQUIRED)
 
-# Find MySQL
-find_package(MySQL REQUIRED)
+# Find MySQL for enhanced auth targets only
+find_package(MySQL QUIET)
 
 # Find libsodium (prefer vcpkg target, fallback to pkg-config)
 find_package(unofficial-sodium CONFIG QUIET)
 if(TARGET unofficial-sodium::sodium)
   set(LIBSODIUM_LIBRARIES unofficial-sodium::sodium)
 else()
-  find_package(PkgConfig REQUIRED)
-  pkg_check_modules(LIBSODIUM REQUIRED libsodium)
+  find_package(PkgConfig QUIET)
+  if(PKG_CONFIG_FOUND)
+    pkg_check_modules(LIBSODIUM QUIET libsodium)
+  endif()
 endif()
 
 file(GLOB PROTO_SRCS "${CMAKE_SOURCE_DIR}/proto/cpp/proto/*.cc")
@@ -38,12 +40,6 @@ add_executable(chirp_auth
     ${PROTO_SRCS}
 )
 
-add_executable(chirp_auth_enhanced
-    ${ENHANCED_AUTH_SRCS}
-    ${PROTO_SRCS}
-    "src/main_enhanced.cc"
-)
-
 # chirp_auth target
 target_link_libraries(chirp_auth
     PRIVATE
@@ -51,7 +47,6 @@ target_link_libraries(chirp_auth
     chirp_common
     ${absl_pkg_LIBRARIES}
     ${LIBSODIUM_LIBRARIES}
-    ${MYSQL_CLIENT_LIBRARIES}
     Threads::Threads
 )
 
@@ -63,26 +58,35 @@ endif()
 
 target_include_directories(chirp_auth PRIVATE src)
 target_include_directories(chirp_auth PRIVATE ${LIBSODIUM_INCLUDE_DIRS})
-target_include_directories(chirp_auth PRIVATE ${MYSQL_INCLUDE_DIRS})
 
-# chirp_auth_enhanced target
-target_link_libraries(chirp_auth_enhanced
-    PRIVATE
-    chirp_network
-    chirp_common
-    ${absl_pkg_LIBRARIES}
-    ${LIBSODIUM_LIBRARIES}
-    ${MYSQL_CLIENT_LIBRARIES}
-    Threads::Threads
-)
+if(MYSQL_FOUND AND (TARGET unofficial-sodium::sodium OR LIBSODIUM_FOUND))
+    add_executable(chirp_auth_enhanced
+        ${ENHANCED_AUTH_SRCS}
+        ${PROTO_SRCS}
+        "src/main_enhanced.cc"
+    )
 
-if(TARGET protobuf::libprotobuf)
-    target_link_libraries(chirp_auth_enhanced PRIVATE protobuf::libprotobuf)
-elseif(DEFINED PROTOBUF_LIBRARIES)
-    target_link_libraries(chirp_auth_enhanced PRIVATE ${PROTOBUF_LIBRARIES})
+    # chirp_auth_enhanced target
+    target_link_libraries(chirp_auth_enhanced
+        PRIVATE
+        chirp_network
+        chirp_common
+        ${absl_pkg_LIBRARIES}
+        ${LIBSODIUM_LIBRARIES}
+        ${MYSQL_CLIENT_LIBRARIES}
+        Threads::Threads
+    )
+
+    if(TARGET protobuf::libprotobuf)
+        target_link_libraries(chirp_auth_enhanced PRIVATE protobuf::libprotobuf)
+    elseif(DEFINED PROTOBUF_LIBRARIES)
+        target_link_libraries(chirp_auth_enhanced PRIVATE ${PROTOBUF_LIBRARIES})
+    endif()
+
+    target_include_directories(chirp_auth_enhanced PRIVATE src)
+    target_include_directories(chirp_auth_enhanced PRIVATE ${LIBSODIUM_INCLUDE_DIRS})
+    target_include_directories(chirp_auth_enhanced PRIVATE ${MYSQL_INCLUDE_DIRS})
+else()
+    message(WARNING
+        "MySQL client library or libsodium not found; skipping chirp_auth_enhanced target")
 endif()
-
-target_include_directories(chirp_auth_enhanced PRIVATE src)
-target_include_directories(chirp_auth_enhanced PRIVATE ${LIBSODIUM_INCLUDE_DIRS})
-target_include_directories(chirp_auth_enhanced PRIVATE ${MYSQL_INCLUDE_DIRS})
-

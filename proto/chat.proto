@@ -293,7 +293,7 @@ message MessageReadNotify {
 
 // ========== Typing Indicators ==========
 
-message TypingIndicator {
+message TypingIndicatorState {
   string channel_id = 1;
   ChannelType channel_type = 2;
   string user_id = 3;
@@ -331,7 +331,7 @@ message DeliveryStatus {
   }
   Status status = 3;
   int64 timestamp = 4;
-  int retry_count = 5;
+  int32 retry_count = 5;
 }
 
 // ========== Enhanced History with Pagination ==========
@@ -381,17 +381,17 @@ message TrackMessageResponse {
 
 // Channel type (for hierarchical channels within groups/servers)
 enum ChannelKind {
-  TEXT = 0;           // Text channel
-  VOICE = 1;          // Voice channel
-  ANNOUNCEMENT = 2;   // Announcement channel (admin only post)
-  STAGE = 3;          // Stage channel (for events)
-  FORUM = 4;          // Forum channel (threaded discussions)
+  CHANNEL_KIND_TEXT = 0;           // Text channel
+  CHANNEL_KIND_VOICE = 1;          // Voice channel
+  CHANNEL_KIND_ANNOUNCEMENT = 2;   // Announcement channel (admin only post)
+  CHANNEL_KIND_STAGE = 3;          // Stage channel (for events)
+  CHANNEL_KIND_FORUM = 4;          // Forum channel (threaded discussions)
 }
 
 // Channel permission override
 enum PermissionType {
-  ROLE = 0;           // Role-based permission
-  USER = 1;           // User-specific permission
+  PERMISSION_TYPE_ROLE = 0;           // Role-based permission
+  PERMISSION_TYPE_USER = 1;           // User-specific permission
 }
 
 enum PermissionOverride {
@@ -605,11 +605,11 @@ message ReactionRemovedNotify {
 
 // Mention type
 enum MentionType {
-  USER = 0;           // @username
-  ROLE = 1;           // @role
-  CHANNEL = 2;        // #channel
-  EVERYONE = 3;       // @everyone
-  HERE = 4;           // @here
+  MENTION_TYPE_USER = 0;           // @username
+  MENTION_TYPE_ROLE = 1;           // @role
+  MENTION_TYPE_CHANNEL = 2;        // #channel
+  MENTION_TYPE_EVERYONE = 3;       // @everyone
+  MENTION_TYPE_HERE = 4;           // @here
 }
 
 // Mention in a message

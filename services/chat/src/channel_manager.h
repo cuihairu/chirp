@@ -46,7 +46,7 @@ struct ChannelData {
   std::string group_id;
   std::string category_id;
   std::string name;
-  ChannelKind kind = ChannelKind::TEXT;
+  ChannelKind kind = ChannelKind::CHANNEL_KIND_TEXT;
   int32_t position = 0;
   std::string description;
   bool is_nsfw = false;

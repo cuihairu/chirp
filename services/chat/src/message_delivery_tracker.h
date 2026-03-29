@@ -1,8 +1,10 @@
 #pragma once
 
 #include <cstdint>
+#include <atomic>
 #include <functional>
 #include <memory>
+#include <optional>
 #include <string>
 #include <unordered_map>
 
@@ -17,7 +19,7 @@ class MessageDeliveryTracker {
 public:
   using DeliveryCallback = std::function<void(const std::string& message_id,
                                               const std::string& receiver_id,
-                                              DeliveryStatus status,
+                                              DeliveryState status,
                                               const std::string& error)>;
 
   /// @brief Configuration
@@ -29,8 +31,10 @@ public:
   };
 
   explicit MessageDeliveryTracker(asio::io_context& io,
-                                 std::shared_ptr<HybridMessageStore> store,
-                                 const Config& config = Config{});
+                                 std::shared_ptr<HybridMessageStore> store);
+  MessageDeliveryTracker(asio::io_context& io,
+                        std::shared_ptr<HybridMessageStore> store,
+                        Config config);
   ~MessageDeliveryTracker();
 
   /// @brief Start the tracker

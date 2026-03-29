@@ -22,6 +22,8 @@ target_link_libraries(common_tests
 target_include_directories(common_tests
   PRIVATE
   ${CMAKE_SOURCE_DIR}/libs
+  ${CMAKE_SOURCE_DIR}/libs/common
+  ${CMAKE_SOURCE_DIR}/libs/common/include
   ${CMAKE_SOURCE_DIR}/proto/cpp
 )
 
@@ -40,13 +42,20 @@ target_link_libraries(network_tests
   PRIVATE
   GTest::gtest
   GTest::gtest_main
-  ${PROTOBUF_LIBRARIES}
   ${absl_pkg_LIBRARIES}
 )
+
+if(TARGET protobuf::libprotobuf)
+  target_link_libraries(network_tests PRIVATE protobuf::libprotobuf)
+elseif(DEFINED PROTOBUF_LIBRARIES)
+  target_link_libraries(network_tests PRIVATE ${PROTOBUF_LIBRARIES})
+endif()
 
 target_include_directories(network_tests
   PRIVATE
   ${CMAKE_SOURCE_DIR}/libs
+  ${CMAKE_SOURCE_DIR}/libs/common
+  ${CMAKE_SOURCE_DIR}/libs/common/include
   ${CMAKE_SOURCE_DIR}/proto/cpp
 )
 

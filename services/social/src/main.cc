@@ -17,6 +17,7 @@
 #include "network/session.h"
 #include "network/tcp_server.h"
 #include "network/websocket_server.h"
+#include "proto/auth.pb.h"
 #include "proto/chat.pb.h"
 #include "proto/common.pb.h"
 #include "proto/gateway.pb.h"
@@ -284,7 +285,7 @@ void HandleSetPresence(const std::shared_ptr<SocialState>& state,
   // Store in Redis for cross-instance presence
   if (redis) {
     std::string key = "chirp:social:presence:" + req.user_id();
-    redis->Set(key, notify.SerializeAsString(), 3600);  // 1 hour TTL
+    redis->SetEx(key, notify.SerializeAsString(), 3600);  // 1 hour TTL
   }
 
   // Broadcast to friends

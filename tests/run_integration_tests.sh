@@ -15,36 +15,9 @@ NC='\033[0m' # No Color
 USE_DOCKER=false
 GATEWAY_HOST="localhost"
 GATEWAY_PORT=5000
+USE_VCPKG_TOOLCHAIN="false"
 
-# Detect vcpkg location
-if [ -n "${VCPKG_ROOT:-}" ]; then
-    VCPKG_ROOT="$VCPKG_ROOT"
-elif [ -d "$HOME/vcpkg" ]; then
-    VCPKG_ROOT="$HOME/vcpkg"
-elif [ -d "/c/Users/$USER/vcpkg" ]; then
-    VCPKG_ROOT="/c/Users/$USER/vcpkg"
-elif [ -d "./vcpkg" ]; then
-    VCPKG_ROOT="./vcpkg"
-else
-    echo -e "${RED}Error: Could not find vcpkg installation${NC}"
-    echo "Please set VCPKG_ROOT environment variable or install vcpkg"
-    exit 1
-fi
-
-VCPKG_TOOLCHAIN="$VCPKG_ROOT/scripts/buildsystems/vcpkg.cmake"
-VCPKG_BIN="$VCPKG_ROOT/vcpkg"
-if [ -f "$VCPKG_ROOT/vcpkg.exe" ]; then
-  VCPKG_BIN="$VCPKG_ROOT/vcpkg.exe"
-fi
-
-echo -e "${YELLOW}=== Chirp Integration Test Runner ===${NC}"
-echo ""
-echo "Using vcpkg at: $VCPKG_ROOT"
-echo ""
-
-"$VCPKG_BIN" install
-
-# Parse arguments
+# Parse arguments first so --help does not trigger dependency setup.
 while [[ $# -gt 0 ]]; do
   case $1 in
     --docker)
@@ -75,6 +48,59 @@ while [[ $# -gt 0 ]]; do
   esac
 done
 
+# Detect vcpkg location
+if [ -n "${VCPKG_ROOT:-}" ]; then
+    VCPKG_ROOT="$VCPKG_ROOT"
+elif [ -d "$HOME/vcpkg" ]; then
+    VCPKG_ROOT="$HOME/vcpkg"
+elif [ -d "/c/Users/$USER/vcpkg" ]; then
+    VCPKG_ROOT="/c/Users/$USER/vcpkg"
+elif [ -d "./vcpkg" ]; then
+    VCPKG_ROOT="./vcpkg"
+else
+    echo -e "${RED}Error: Could not find vcpkg installation${NC}"
+    echo "Please set VCPKG_ROOT environment variable or install vcpkg"
+    exit 1
+fi
+
+VCPKG_TOOLCHAIN="$VCPKG_ROOT/scripts/buildsystems/vcpkg.cmake"
+VCPKG_BIN="$VCPKG_ROOT/vcpkg"
+if [ -f "$VCPKG_ROOT/vcpkg.exe" ]; then
+  VCPKG_BIN="$VCPKG_ROOT/vcpkg.exe"
+fi
+if [ -f "$VCPKG_TOOLCHAIN" ]; then
+  USE_VCPKG_TOOLCHAIN="true"
+fi
+
+# Get the chirp root directory
+CHIRP_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+
+if [[ "$OSTYPE" == "msys" || "$OSTYPE" == "win32" || "$OSTYPE" == "cygwin" ]]; then
+  CMAKE_GENERATOR="Visual Studio 17 2022"
+  CMAKE_PLATFORM=(-A x64)
+  MAIN_LIB_NETWORK="$CHIRP_ROOT/build/libs/network/Debug/chirp_network.lib"
+  TEST_BIN="./Debug/chirp_integration_test.exe"
+else
+  CMAKE_GENERATOR="Unix Makefiles"
+  CMAKE_PLATFORM=()
+  MAIN_LIB_NETWORK="$CHIRP_ROOT/build/libs/network/libchirp_network.a"
+  TEST_BIN="./chirp_integration_test"
+fi
+
+echo -e "${YELLOW}=== Chirp Integration Test Runner ===${NC}"
+echo ""
+echo "Using vcpkg at: $VCPKG_ROOT"
+echo ""
+
+if [ "$USE_VCPKG_TOOLCHAIN" = "true" ]; then
+  if ! "$VCPKG_BIN" install; then
+    echo -e "${YELLOW}Warning: vcpkg install failed, falling back to system dependencies${NC}"
+    USE_VCPKG_TOOLCHAIN="false"
+  fi
+else
+  echo -e "${YELLOW}Skipping vcpkg install; using system dependencies${NC}"
+fi
+
 # Function to cleanup Docker containers
 cleanup_docker() {
   if [ "$USE_DOCKER" = true ]; then
@@ -99,17 +125,19 @@ if [ "$USE_DOCKER" = true ]; then
   sleep 5
 fi
 
-# Get the chirp root directory
-CHIRP_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
-
 # Build main libraries first if needed
-if [ ! -f "$CHIRP_ROOT/build/libs/network/Debug/chirp_network.lib" ]; then
+if [ ! -f "$MAIN_LIB_NETWORK" ]; then
     echo -e "${YELLOW}Building main libraries...${NC}"
     mkdir -p "$CHIRP_ROOT/build"
     cd "$CHIRP_ROOT/build"
-    cmake .. -G "Visual Studio 17 2022" -A x64 \
-        -DCMAKE_TOOLCHAIN_FILE="$VCPKG_TOOLCHAIN" \
-        -DENABLE_TESTS=OFF
+    if [ "$USE_VCPKG_TOOLCHAIN" = "true" ]; then
+      cmake .. -G "$CMAKE_GENERATOR" "${CMAKE_PLATFORM[@]}" \
+          -DCMAKE_TOOLCHAIN_FILE="$VCPKG_TOOLCHAIN" \
+          -DENABLE_TESTS=ON
+    else
+      cmake .. -G "$CMAKE_GENERATOR" "${CMAKE_PLATFORM[@]}" \
+          -DENABLE_TESTS=ON
+    fi
     cmake --build . --config Debug --target chirp_common chirp_network
 fi
 
@@ -119,8 +147,12 @@ cd "$CHIRP_ROOT/tests/integration"
 mkdir -p build
 cd build
 
-cmake .. -G "Visual Studio 17 2022" -A x64 \
-    -DCMAKE_TOOLCHAIN_FILE="$VCPKG_TOOLCHAIN"
+if [ "$USE_VCPKG_TOOLCHAIN" = "true" ]; then
+  cmake .. -G "$CMAKE_GENERATOR" "${CMAKE_PLATFORM[@]}" \
+      -DCMAKE_TOOLCHAIN_FILE="$VCPKG_TOOLCHAIN"
+else
+  cmake .. -G "$CMAKE_GENERATOR" "${CMAKE_PLATFORM[@]}"
+fi
 
 if [ $? -ne 0 ]; then
   echo -e "${RED}CMake configuration failed${NC}"
@@ -140,9 +172,9 @@ echo ""
 
 # Run the test
 if [ "$USE_DOCKER" = true ]; then
-    ./Debug/chirp_integration_test.exe --connect --gateway "$GATEWAY_HOST" --gateway-port "$GATEWAY_PORT"
+    "$TEST_BIN" --connect --gateway "$GATEWAY_HOST" --gateway-port "$GATEWAY_PORT"
 else
-    ./Debug/chirp_integration_test.exe
+    "$TEST_BIN"
 fi
 
 TEST_RESULT=$?

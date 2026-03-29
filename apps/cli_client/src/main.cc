@@ -35,8 +35,18 @@ public:
       : use_ws_(use_ws), io_(), host_(host), port_(port) {
     if (use_ws) {
       ws_client_ = std::make_unique<chirp::network::WebSocketClient>(io_);
+      ws_client_->SetCallbacks(
+          [this](std::shared_ptr<chirp::network::Session>, std::string&& data) {
+            HandleRawFrame(std::move(data));
+          },
+          [this](std::shared_ptr<chirp::network::Session>) { NotifyDisconnected(); });
     } else {
       tcp_client_ = std::make_unique<chirp::network::TcpClient>(io_);
+      tcp_client_->SetCallbacks(
+          [this](std::shared_ptr<chirp::network::Session>, std::string&& data) {
+            HandleRawFrame(std::move(data));
+          },
+          [this](std::shared_ptr<chirp::network::Session>) { NotifyDisconnected(); });
     }
   }
 
@@ -52,19 +62,20 @@ public:
       }
       session_ = tcp_client_->GetSession();
     }
-
-    // Start receive thread
-    receive_thread_ = std::thread([this]() { ReceiveLoop(); });
     return true;
   }
 
   void Disconnect() {
-    if (session_) {
-      session_->Close();
+    if (use_ws_) {
+      if (ws_client_) {
+        ws_client_->Disconnect();
+      }
+    } else {
+      if (tcp_client_) {
+        tcp_client_->Disconnect();
+      }
     }
-    if (receive_thread_.joinable()) {
-      receive_thread_.join();
-    }
+    NotifyDisconnected();
   }
 
   bool Login(const std::string& user_id) {
@@ -138,20 +149,18 @@ private:
     return true;
   }
 
-  void ReceiveLoop() {
-    while (session_ && !session_->IsClosed()) {
-      auto data = session_->Receive();
-      if (data.empty()) {
-        break;
-      }
-
-      chirp::gateway::Packet pkt;
-      if (!pkt.ParseFromArray(data.data(), static_cast<int>(data.size()))) {
-        continue;
-      }
-
-      HandlePacket(pkt);
+  void HandleRawFrame(std::string&& data) {
+    chirp::gateway::Packet pkt;
+    if (!pkt.ParseFromArray(data.data(), static_cast<int>(data.size()))) {
+      return;
     }
+
+    HandlePacket(pkt);
+  }
+
+  void NotifyDisconnected() {
+    std::lock_guard<std::mutex> lock(response_mu_);
+    response_cv_.notify_all();
   }
 
   void HandlePacket(const chirp::gateway::Packet& pkt) {
@@ -241,8 +250,6 @@ private:
   std::shared_ptr<chirp::network::Session> session_;
 
   std::string current_user_id_;
-  std::thread receive_thread_;
-
   std::mutex response_mu_;
   std::condition_variable response_cv_;
   chirp::auth::LoginResponse last_login_response_;
@@ -287,7 +294,7 @@ int main(int argc, char** argv) {
   std::cout << "Chirp CLI Client" << std::endl;
   std::cout << "Connecting to " << host << ":" << port << (use_ws ? " (WebSocket)" : " (TCP)") << std::endl;
 
-  ChirpClient client(host, port, use_ws);
+  auto client = std::make_unique<ChirpClient>(host, port, use_ws);
 
   std::string line;
   std::vector<std::string> history;
@@ -318,11 +325,10 @@ int main(int argc, char** argv) {
       std::string ws_flag;
       iss >> new_host >> new_port >> ws_flag;
 
-      client.Disconnect();
-      ChirpClient new_client(new_host, new_port, ws_flag == "ws");
-      client = std::move(new_client);
+      client->Disconnect();
+      client = std::make_unique<ChirpClient>(new_host, new_port, ws_flag == "ws");
 
-      if (client.Connect()) {
+      if (client->Connect()) {
         std::cout << "Connected successfully!" << std::endl;
       } else {
         std::cout << "Connection failed!" << std::endl;
@@ -331,8 +337,8 @@ int main(int argc, char** argv) {
       std::string user_id;
       iss >> user_id;
 
-      client.SetCurrentUserId(user_id);
-      if (client.Login(user_id)) {
+      client->SetCurrentUserId(user_id);
+      if (client->Login(user_id)) {
         std::cout << "Login successful!" << std::endl;
       } else {
         std::cout << "Login failed!" << std::endl;
@@ -343,7 +349,7 @@ int main(int argc, char** argv) {
       std::getline(iss >> std::ws, text);
 
       if (!to_user.empty() && !text.empty()) {
-        client.SendMessage(to_user, text);
+        client->SendMessage(to_user, text);
       }
     } else if (cmd == "presence") {
       std::string status_str, message;
@@ -351,7 +357,7 @@ int main(int argc, char** argv) {
       std::getline(iss >> std::ws, message);
 
       auto status = ParsePresence(status_str);
-      client.SetPresence(status, message);
+      client->SetPresence(status, message);
     } else {
       std::cout << "Unknown command: " << cmd << std::endl;
       std::cout << "Type 'help' for available commands." << std::endl;
@@ -360,6 +366,6 @@ int main(int argc, char** argv) {
     std::cout << "> ";
   }
 
-  client.Disconnect();
+  client->Disconnect();
   return 0;
 }

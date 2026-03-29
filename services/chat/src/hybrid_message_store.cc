@@ -360,7 +360,7 @@ std::optional<DeliveryInfo> HybridMessageStore::GetDeliveryStatus(const std::str
   size_t colon1 = value.find(':');
   if (colon1 != std::string::npos) {
     int status = std::stoi(value.substr(0, colon1));
-    info.status = static_cast<DeliveryStatus>(status);
+    info.status = static_cast<DeliveryState>(status);
     info.created_at = std::stoll(value.substr(colon1 + 1));
 
     size_t colon2 = value.find(':', colon1 + 1);
@@ -393,7 +393,7 @@ std::vector<DeliveryInfo> HybridMessageStore::GetPendingDeliveries(int64_t befor
         DeliveryInfo info;
         info.message_id = message_id;
         info.receiver_id = receiver_id;
-        info.status = DeliveryStatus::kPending;
+        info.status = DeliveryState::kPending;
         info.created_at = NowMs();
         pending.push_back(std::move(info));
       }

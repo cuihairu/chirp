@@ -15,11 +15,25 @@ find_package(Threads REQUIRED)
 
 find_package(protobuf CONFIG QUIET)
 
+find_path(ASIO_INCLUDE_DIR
+  NAMES asio.hpp
+  PATHS
+    ${CHIRP_ROOT}/build/_deps/asio-src/asio/include
+    ${CHIRP_ROOT}/third_party/asio/asio/include
+    ${CHIRP_ROOT}/third_party/asio/include
+)
+
 # Include directories
 include_directories(${CHIRP_ROOT})
 include_directories(${CHIRP_ROOT}/libs)
+include_directories(${CHIRP_ROOT}/libs/common)
+include_directories(${CHIRP_ROOT}/libs/common/include)
 include_directories(${CHIRP_ROOT}/sdks/core/include)
 include_directories(${CHIRP_ROOT}/proto/cpp)
+if(ASIO_INCLUDE_DIR)
+  include_directories(${ASIO_INCLUDE_DIR})
+  add_compile_definitions(ASIO_STANDALONE ASIO_NO_DEPRECATED)
+endif()
 
 # Protocol buffers - use pre-generated files
 set(PROTO_CPP_PATH ${CHIRP_ROOT}/proto/cpp/proto)
@@ -39,10 +53,18 @@ if(TARGET chirp_network AND TARGET chirp_common)
     Threads::Threads
   )
 else()
+  if(WIN32)
+    set(CHIRP_COMMON_LIB "${CHIRP_ROOT}/build/libs/common/Debug/chirp_common.lib")
+    set(CHIRP_NETWORK_LIB "${CHIRP_ROOT}/build/libs/network/Debug/chirp_network.lib")
+  else()
+    set(CHIRP_COMMON_LIB "${CHIRP_ROOT}/build/libs/common/libchirp_common.a")
+    set(CHIRP_NETWORK_LIB "${CHIRP_ROOT}/build/libs/network/libchirp_network.a")
+  endif()
+
   target_link_libraries(chirp_integration_test
     PRIVATE
-    ${CHIRP_ROOT}/build/libs/common/Debug/chirp_common.lib
-    ${CHIRP_ROOT}/build/libs/network/Debug/chirp_network.lib
+    ${CHIRP_COMMON_LIB}
+    ${CHIRP_NETWORK_LIB}
     Threads::Threads
   )
 endif()

@@ -31,8 +31,8 @@ struct MessageData {
   bool ParseFromArray(const void* data, int size);
 };
 
-/// @brief Delivery status for a message
-enum class DeliveryStatus {
+/// @brief Internal delivery state for a tracked message
+enum class DeliveryState {
   kPending = 0,
   kDelivered = 1,
   kFailed = 2,
@@ -43,7 +43,7 @@ enum class DeliveryStatus {
 struct DeliveryInfo {
   std::string message_id;
   std::string receiver_id;
-  DeliveryStatus status{DeliveryStatus::kPending};
+  DeliveryState status{DeliveryState::kPending};
   int64_t created_at{0};
   int64_t delivered_at{0};
   int retry_count{0};
@@ -57,7 +57,7 @@ public:
   using MessageCallback = std::function<void(const MessageData&)>;
   using DeliveryCallback = std::function<void(const std::string& message_id,
                                              const std::string& receiver_id,
-                                             DeliveryStatus status)>;
+                                             DeliveryState status)>;
 
   explicit HybridMessageStore(asio::io_context& io,
                               const MessageStoreConfig& config);

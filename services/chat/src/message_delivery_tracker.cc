@@ -15,9 +15,13 @@ int64_t NowMs() {
 } // namespace
 
 MessageDeliveryTracker::MessageDeliveryTracker(asio::io_context& io,
+                                              std::shared_ptr<HybridMessageStore> store)
+    : MessageDeliveryTracker(io, std::move(store), Config{}) {}
+
+MessageDeliveryTracker::MessageDeliveryTracker(asio::io_context& io,
                                               std::shared_ptr<HybridMessageStore> store,
-                                              const Config& config)
-    : timer_(io), io_(io), store_(std::move(store)), config_(config) {}
+                                              Config config)
+    : timer_(io), io_(io), store_(std::move(store)), config_(std::move(config)) {}
 
 MessageDeliveryTracker::~MessageDeliveryTracker() {
   Stop();
@@ -63,7 +67,7 @@ void MessageDeliveryTracker::Acknowledge(const std::string& message_id,
   successful_count_.fetch_add(1);
 
   if (delivery_callback_) {
-    delivery_callback_(message_id, user_id, DeliveryStatus::kDelivered, "");
+    delivery_callback_(message_id, user_id, DeliveryState::kDelivered, "");
   }
 }
 
@@ -74,7 +78,7 @@ void MessageDeliveryTracker::Fail(const std::string& message_id,
   failed_count_.fetch_add(1);
 
   if (delivery_callback_) {
-    delivery_callback_(message_id, user_id, DeliveryStatus::kFailed, error);
+    delivery_callback_(message_id, user_id, DeliveryState::kFailed, error);
   }
 }
 
@@ -111,7 +115,7 @@ void MessageDeliveryTracker::RunCheck() {
     // Check current status
     auto status = store_->GetDeliveryStatus(info.message_id, info.receiver_id);
 
-    if (status && status->status == DeliveryStatus::kPending) {
+    if (status && status->status == DeliveryState::kPending) {
       // Mark as failed if timeout exceeded
       Fail(info.message_id, info.receiver_id, "Delivery timeout");
       Logger::Instance().Warn("Message delivery timeout: " + info.message_id +

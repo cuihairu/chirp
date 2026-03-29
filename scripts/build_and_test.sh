@@ -21,6 +21,8 @@ START_SERVICES="${START_SERVICES:-false}"
 echo -e "${BLUE}=== Chirp Build and Test Script ===${NC}"
 echo ""
 
+USE_VCPKG_TOOLCHAIN="false"
+
 # Detect vcpkg location
 if [ -n "${VCPKG_ROOT:-}" ]; then
     VCPKG_ROOT="$VCPKG_ROOT"
@@ -38,7 +40,12 @@ else
 fi
 
 VCPKG_TOOLCHAIN="$VCPKG_ROOT/scripts/buildsystems/vcpkg.cmake"
-echo -e "${GREEN}Using vcpkg at: $VCPKG_ROOT${NC}"
+if [ -f "$VCPKG_TOOLCHAIN" ]; then
+    USE_VCPKG_TOOLCHAIN="true"
+    echo -e "${GREEN}Using vcpkg at: $VCPKG_ROOT${NC}"
+else
+    echo -e "${YELLOW}Warning: vcpkg toolchain file not found, using system dependencies${NC}"
+fi
 echo ""
 
 # Check prerequisites
@@ -82,19 +89,30 @@ fi
 echo ""
 
 # Detect OS and set generator
-if [[ "$OSTYPE" == "msys" || "$OSTYPE" == "win32" ]]; then
+if [[ "$OSTYPE" == "msys" || "$OSTYPE" == "win32" || "$OSTYPE" == "cygwin" ]]; then
     CMAKE_GENERATOR="Visual Studio 17 2022"
     CMAKE_PLATFORM="-A x64"
-    CONFIG_CMD="cmake .. -G \"$CMAKE_GENERATOR\" $CMAKE_PLATFORM -DCMAKE_TOOLCHAIN_FILE=\"$VCPKG_TOOLCHAIN\" -DENABLE_TESTS=OFF"
+    CONFIG_CMD="cmake .. -G \"$CMAKE_GENERATOR\" $CMAKE_PLATFORM -DENABLE_TESTS=ON"
     BUILD_CMD="cmake --build . --config $BUILD_TYPE"
+    INTEGRATION_TEST_BIN="$PROJECT_ROOT/tests/integration/build/Debug/chirp_integration_test.exe"
 elif [[ "$OSTYPE" == "darwin"* ]]; then
     CMAKE_GENERATOR="Unix Makefiles"
-    CONFIG_CMD="cmake .. -DCMAKE_TOOLCHAIN_FILE=\"$VCPKG_TOOLCHAIN\" -DENABLE_TESTS=OFF"
+    CONFIG_CMD="cmake .. -DENABLE_TESTS=ON"
     BUILD_CMD="cmake --build . --config $BUILD_TYPE"
+    INTEGRATION_TEST_BIN="$PROJECT_ROOT/tests/integration/build/chirp_integration_test"
 else
     CMAKE_GENERATOR="Unix Makefiles"
-    CONFIG_CMD="cmake .. -DCMAKE_TOOLCHAIN_FILE=\"$VCPKG_TOOLCHAIN\" -DENABLE_TESTS=OFF"
+    CONFIG_CMD="cmake .. -DENABLE_TESTS=ON"
     BUILD_CMD="cmake --build . --config $BUILD_TYPE"
+    INTEGRATION_TEST_BIN="$PROJECT_ROOT/tests/integration/build/chirp_integration_test"
+fi
+
+if [ "$USE_VCPKG_TOOLCHAIN" = "true" ]; then
+    if [[ "$OSTYPE" == "msys" || "$OSTYPE" == "win32" || "$OSTYPE" == "cygwin" ]]; then
+        CONFIG_CMD="$CONFIG_CMD -DCMAKE_TOOLCHAIN_FILE=\"$VCPKG_TOOLCHAIN\""
+    else
+        CONFIG_CMD="$CONFIG_CMD -DCMAKE_TOOLCHAIN_FILE=\"$VCPKG_TOOLCHAIN\""
+    fi
 fi
 
 # Get script directory
@@ -102,16 +120,24 @@ SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 PROJECT_ROOT="$(cd "$SCRIPT_DIR/.." && pwd)"
 
 # Step 1: Check/install vcpkg packages
-echo -e "${BLUE}[1/6] Checking vcpkg dependencies...${NC}"
+echo -e "${BLUE}[1/6] Checking dependency setup...${NC}"
 
 VCPKG_BIN="$VCPKG_ROOT/vcpkg"
 if [ -f "$VCPKG_ROOT/vcpkg.exe" ]; then
     VCPKG_BIN="$VCPKG_ROOT/vcpkg.exe"
 fi
 
-if ! "$VCPKG_BIN" list protobuf | grep -q "protobuf"; then
-    echo "Installing vcpkg manifest dependencies..."
-    "$VCPKG_BIN" install
+if [ "$USE_VCPKG_TOOLCHAIN" = "true" ]; then
+    if ! "$VCPKG_BIN" list protobuf | grep -q "protobuf"; then
+        echo "Installing vcpkg manifest dependencies..."
+        if ! "$VCPKG_BIN" install; then
+            echo -e "${YELLOW}Warning: vcpkg install failed, continuing with system dependencies${NC}"
+            USE_VCPKG_TOOLCHAIN="false"
+            CONFIG_CMD="${CONFIG_CMD/ -DCMAKE_TOOLCHAIN_FILE=\"$VCPKG_TOOLCHAIN\"/}"
+        fi
+    fi
+else
+    echo -e "${YELLOW}Skipping vcpkg install; using system dependencies${NC}"
 fi
 
 # Step 2: Generate protobuf files
@@ -181,9 +207,9 @@ echo -e "${BLUE}[6/6] Running tests...${NC}"
 
 if [ "$RUN_TESTS" = "true" ]; then
     # Run integration tests
-    if [ -f "$PROJECT_ROOT/tests/integration/build/Debug/chirp_integration_test.exe" ]; then
+    if [ -f "$INTEGRATION_TEST_BIN" ]; then
         echo "Running integration tests..."
-        "$PROJECT_ROOT/tests/integration/build/Debug/chirp_integration_test.exe"
+        "$INTEGRATION_TEST_BIN"
         TEST_RESULT=$?
         if [ $TEST_RESULT -eq 0 ]; then
             echo -e "${GREEN}✓ Integration tests passed${NC}"

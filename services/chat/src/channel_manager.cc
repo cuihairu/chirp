@@ -56,11 +56,11 @@ ChannelPermissions ChannelPermissionChecker::GetEffectivePermissions(
   for (const auto& override_entry : channel.permission_overrides()) {
     bool applies = false;
 
-    if (override_entry.type() == PermissionType::ROLE &&
+    if (override_entry.type() == PermissionType::PERMISSION_TYPE_ROLE &&
         !role_id.empty() &&
         override_entry.id() == role_id) {
       applies = true;
-    } else if (override_entry.type() == PermissionType::USER &&
+    } else if (override_entry.type() == PermissionType::PERMISSION_TYPE_USER &&
                override_entry.id() == user_id) {
       applies = true;
     }
@@ -238,7 +238,7 @@ std::string ChannelManager::CreateChannel(
   channel->created_at = std::chrono::duration_cast<std::chrono::milliseconds>(
       std::chrono::system_clock::now().time_since_epoch()).count();
   channel->slowmode_seconds = 0;
-  channel->bitrate = kind == ChannelKind::VOICE ? 64000 : 0;
+  channel->bitrate = kind == ChannelKind::CHANNEL_KIND_VOICE ? 64000 : 0;
   channel->user_limit = 0;
   channel->permission_overrides = permission_overrides;
 
@@ -482,7 +482,8 @@ bool ChannelManager::JoinVoiceChannel(const std::string& channel_id,
   const auto& ch = it->second;
   std::lock_guard<std::mutex> ch_lock(ch->mu);
 
-  if (ch->kind != ChannelKind::VOICE && ch->kind != ChannelKind::STAGE) {
+  if (ch->kind != ChannelKind::CHANNEL_KIND_VOICE &&
+      ch->kind != ChannelKind::CHANNEL_KIND_STAGE) {
     return false;
   }
 
