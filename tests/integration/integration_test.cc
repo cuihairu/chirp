@@ -276,12 +276,24 @@ private:
 };
 
 // Simple tests
-void TestBasicConnection() {
+bool TestBasicConnection(const std::string& gateway_host, uint16_t gateway_port) {
   std::cout << "\n=== Test: Basic Connection ===" << std::endl;
-  std::cout << "This test requires the services to be running." << std::endl;
-  std::cout << "To start services:" << std::endl;
-  std::cout << "  docker compose up -d redis auth gateway chat social" << std::endl;
-  std::cout << "\nSkipping connection test (services may not be running)." << std::endl;
+  std::cout << "Gateway: " << gateway_host << ":" << gateway_port << std::endl;
+
+  TestClient client(gateway_host, gateway_port);
+  if (!client.Connect()) {
+    std::cout << "✗ Failed to connect to gateway" << std::endl;
+    return false;
+  }
+
+  const std::string user_id = "integration_user";
+  if (!client.Login(user_id)) {
+    std::cout << "✗ Failed to login through gateway" << std::endl;
+    return false;
+  }
+
+  std::cout << "✓ Gateway connection test PASSED" << std::endl;
+  return true;
 }
 
 void TestProtobufEncoding() {
@@ -353,18 +365,23 @@ int main(int argc, char* argv[]) {
     }
   }
 
+  bool all_passed = true;
+
   // Always run protobuf encoding test (doesn't require services)
   chirp::test::TestProtobufEncoding();
 
   // Optionally run connection tests (requires services)
   if (run_connection_tests) {
-    chirp::test::TestBasicConnection();
+    all_passed = chirp::test::TestBasicConnection(gateway_host, gateway_port) && all_passed;
   }
 
   std::cout << "\n=== Tests Complete ===" << std::endl;
-  std::cout << "\nNote: Full integration tests require running services." << std::endl;
-  std::cout << "Start services with: docker compose up -d redis auth gateway chat social" << std::endl;
-  std::cout << "Then run with: chirp_integration_test --connect" << std::endl;
+  if (!run_connection_tests) {
+    std::cout << "\nNote: Live connection smoke requires running services." << std::endl;
+    std::cout << "Start services with: docker compose up -d redis auth gateway chat social" << std::endl;
+    std::cout << "Then run with: bash tests/run_integration_tests.sh --docker --connect" << std::endl;
+    std::cout << "Or without Docker: bash tests/run_integration_tests.sh --local-services --gateway-port 5500 --auth-port 6500" << std::endl;
+  }
 
-  return 0;
+  return all_passed ? 0 : 1;
 }

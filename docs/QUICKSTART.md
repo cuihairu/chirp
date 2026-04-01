@@ -207,7 +207,8 @@ int main() {
 1. Read [Architecture Overview](../docs/API.md)
 2. Check [API Documentation](../docs/API.md)
 3. See [Deployment Guide](../docs/DEPLOYMENT.md)
-4. Run [Integration Tests](../tests/run_integration_tests.sh)
+4. Run integration tests with `bash tests/run_integration_tests.sh`
+5. Run a real login smoke without Docker with `bash tests/run_integration_tests.sh --local-services --gateway-port 5500 --auth-port 6500`
 
 ## Troubleshooting
 

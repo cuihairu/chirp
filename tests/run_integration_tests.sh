@@ -13,9 +13,17 @@ NC='\033[0m' # No Color
 
 # Default values
 USE_DOCKER=false
+USE_LOCAL_SERVICES=false
+RUN_CONNECTION_TESTS=false
 GATEWAY_HOST="localhost"
 GATEWAY_PORT=5000
+AUTH_PORT=6000
+GATEWAY_WS_PORT=5001
 USE_VCPKG_TOOLCHAIN="false"
+FORCE_VCPKG_INSTALL=false
+AUTH_PID=""
+GATEWAY_PID=""
+LOG_DIR=""
 
 # Parse arguments first so --help does not trigger dependency setup.
 while [[ $# -gt 0 ]]; do
@@ -24,20 +32,42 @@ while [[ $# -gt 0 ]]; do
       USE_DOCKER=true
       shift
       ;;
+    --local-services)
+      USE_LOCAL_SERVICES=true
+      RUN_CONNECTION_TESTS=true
+      shift
+      ;;
+    --connect|-c)
+      RUN_CONNECTION_TESTS=true
+      shift
+      ;;
     --gateway-host)
       GATEWAY_HOST="$2"
       shift 2
       ;;
     --gateway-port)
       GATEWAY_PORT="$2"
+      GATEWAY_WS_PORT="$((GATEWAY_PORT + 1))"
       shift 2
+      ;;
+    --auth-port)
+      AUTH_PORT="$2"
+      shift 2
+      ;;
+    --use-vcpkg)
+      FORCE_VCPKG_INSTALL=true
+      shift
       ;;
     --help|-h)
       echo "Usage: $0 [options]"
       echo "Options:"
       echo "  --docker             Start Docker services before testing"
+      echo "  --local-services     Start local auth/gateway binaries and run connection smoke"
+      echo "  --connect, -c        Run connection smoke tests against a live gateway"
       echo "  --gateway-host HOST  Gateway host (default: localhost)"
       echo "  --gateway-port PORT  Gateway port (default: 5000)"
+      echo "  --auth-port PORT     Auth port for --local-services (default: 6000)"
+      echo "  --use-vcpkg          Run 'vcpkg install' before configuring tests"
       echo "  --help, -h           Show this help"
       exit 0
       ;;
@@ -58,17 +88,19 @@ elif [ -d "/c/Users/$USER/vcpkg" ]; then
 elif [ -d "./vcpkg" ]; then
     VCPKG_ROOT="./vcpkg"
 else
-    echo -e "${RED}Error: Could not find vcpkg installation${NC}"
-    echo "Please set VCPKG_ROOT environment variable or install vcpkg"
-    exit 1
+    VCPKG_ROOT=""
 fi
 
-VCPKG_TOOLCHAIN="$VCPKG_ROOT/scripts/buildsystems/vcpkg.cmake"
-VCPKG_BIN="$VCPKG_ROOT/vcpkg"
-if [ -f "$VCPKG_ROOT/vcpkg.exe" ]; then
-  VCPKG_BIN="$VCPKG_ROOT/vcpkg.exe"
+VCPKG_TOOLCHAIN=""
+VCPKG_BIN=""
+if [ -n "$VCPKG_ROOT" ]; then
+  VCPKG_TOOLCHAIN="$VCPKG_ROOT/scripts/buildsystems/vcpkg.cmake"
+  VCPKG_BIN="$VCPKG_ROOT/vcpkg"
+  if [ -f "$VCPKG_ROOT/vcpkg.exe" ]; then
+    VCPKG_BIN="$VCPKG_ROOT/vcpkg.exe"
+  fi
 fi
-if [ -f "$VCPKG_TOOLCHAIN" ]; then
+if [ -n "$VCPKG_TOOLCHAIN" ] && [ -f "$VCPKG_TOOLCHAIN" ]; then
   USE_VCPKG_TOOLCHAIN="true"
 fi
 
@@ -87,18 +119,45 @@ else
   TEST_BIN="./chirp_integration_test"
 fi
 
+AUTH_BIN="$CHIRP_ROOT/build/services/auth/chirp_auth"
+GATEWAY_BIN="$CHIRP_ROOT/build/services/gateway/chirp_gateway"
+
+is_port_listening() {
+  local port="$1"
+  lsof -nP -iTCP:"$port" -sTCP:LISTEN >/dev/null 2>&1
+}
+
+wait_for_port() {
+  local port="$1"
+  local label="$2"
+  local attempts=50
+  local i
+  for ((i=1; i<=attempts; i++)); do
+    if is_port_listening "$port"; then
+      return 0
+    fi
+    sleep 0.2
+  done
+  echo -e "${RED}${label} did not start on port ${port}${NC}"
+  return 1
+}
+
 echo -e "${YELLOW}=== Chirp Integration Test Runner ===${NC}"
 echo ""
-echo "Using vcpkg at: $VCPKG_ROOT"
+if [ -n "$VCPKG_ROOT" ]; then
+  echo "Using vcpkg at: $VCPKG_ROOT"
+else
+  echo "vcpkg not detected; using system dependencies"
+fi
 echo ""
 
-if [ "$USE_VCPKG_TOOLCHAIN" = "true" ]; then
+if [ "$FORCE_VCPKG_INSTALL" = "true" ] && [ "$USE_VCPKG_TOOLCHAIN" = "true" ]; then
   if ! "$VCPKG_BIN" install; then
     echo -e "${YELLOW}Warning: vcpkg install failed, falling back to system dependencies${NC}"
     USE_VCPKG_TOOLCHAIN="false"
   fi
 else
-  echo -e "${YELLOW}Skipping vcpkg install; using system dependencies${NC}"
+  echo -e "${YELLOW}Skipping vcpkg install; reusing available dependencies${NC}"
 fi
 
 # Function to cleanup Docker containers
@@ -109,8 +168,24 @@ cleanup_docker() {
   fi
 }
 
+cleanup_local_services() {
+  if [ -n "$GATEWAY_PID" ]; then
+    kill "$GATEWAY_PID" 2>/dev/null || true
+    wait "$GATEWAY_PID" 2>/dev/null || true
+  fi
+  if [ -n "$AUTH_PID" ]; then
+    kill "$AUTH_PID" 2>/dev/null || true
+    wait "$AUTH_PID" 2>/dev/null || true
+  fi
+}
+
+cleanup_all() {
+  cleanup_local_services
+  cleanup_docker
+}
+
 # Trap to ensure cleanup on exit
-trap cleanup_docker EXIT INT TERM
+trap cleanup_all EXIT INT TERM
 
 # Start Docker services if requested
 if [ "$USE_DOCKER" = true ]; then
@@ -123,6 +198,28 @@ if [ "$USE_DOCKER" = true ]; then
 
   echo -e "${YELLOW}Waiting for services to be ready...${NC}"
   sleep 5
+fi
+
+if [ "$USE_LOCAL_SERVICES" = true ]; then
+  if [ "$USE_DOCKER" = true ]; then
+    echo -e "${RED}Choose either --docker or --local-services, not both${NC}"
+    exit 1
+  fi
+
+  if is_port_listening "$AUTH_PORT"; then
+    echo -e "${RED}Auth port ${AUTH_PORT} is already in use${NC}"
+    exit 1
+  fi
+
+  if is_port_listening "$GATEWAY_PORT"; then
+    echo -e "${RED}Gateway port ${GATEWAY_PORT} is already in use${NC}"
+    exit 1
+  fi
+
+  if is_port_listening "$GATEWAY_WS_PORT"; then
+    echo -e "${RED}Gateway WebSocket port ${GATEWAY_WS_PORT} is already in use${NC}"
+    exit 1
+  fi
 fi
 
 # Build main libraries first if needed
@@ -166,13 +263,29 @@ if [ $? -ne 0 ]; then
   exit 1
 fi
 
+if [ "$USE_LOCAL_SERVICES" = true ]; then
+  echo -e "${YELLOW}Starting local auth/gateway services...${NC}"
+  LOG_DIR="$CHIRP_ROOT/tests/integration/logs"
+  mkdir -p "$LOG_DIR"
+
+  "$AUTH_BIN" --port "$AUTH_PORT" --jwt_secret dev_secret >"$LOG_DIR/auth.log" 2>&1 &
+  AUTH_PID=$!
+  wait_for_port "$AUTH_PORT" "Auth service"
+
+  GATEWAY_HOST="127.0.0.1"
+  "$GATEWAY_BIN" --port "$GATEWAY_PORT" --ws_port "$GATEWAY_WS_PORT" \
+      --auth_host 127.0.0.1 --auth_port "$AUTH_PORT" >"$LOG_DIR/gateway.log" 2>&1 &
+  GATEWAY_PID=$!
+  wait_for_port "$GATEWAY_PORT" "Gateway service"
+fi
+
 echo ""
 echo -e "${YELLOW}Running integration tests...${NC}"
 echo ""
 
 # Run the test
-if [ "$USE_DOCKER" = true ]; then
-    "$TEST_BIN" --connect --gateway "$GATEWAY_HOST" --gateway-port "$GATEWAY_PORT"
+if [ "$RUN_CONNECTION_TESTS" = true ]; then
+    "$TEST_BIN" --connect --gateway-host "$GATEWAY_HOST" --gateway-port "$GATEWAY_PORT"
 else
     "$TEST_BIN"
 fi

@@ -147,7 +147,8 @@ if [ $VALIDATION_FAILED -eq 0 ]; then
     echo "Project structure is complete. You can now:"
     echo "  1. Build the project: ./scripts/build_and_test.sh"
     echo "  2. Start services: docker compose up -d"
-    echo "  3. Run tests: ./tests/run_integration_tests.sh"
+    echo "  3. Run tests: bash tests/run_integration_tests.sh"
+    echo "  4. Run login smoke without Docker: bash tests/run_integration_tests.sh --local-services --gateway-port 5500 --auth-port 6500"
     exit 0
 else
     echo -e "${RED}Validation failed: $VALIDATION_FAILED required item(s) missing${NC}"

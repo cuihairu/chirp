@@ -42,7 +42,13 @@ cmake --build build -j
 ./test_services.sh --smoke       # auth + gateway + tcp/ws 客户端
 ./test_services.sh --smoke-chat  # chat + chat clients
 ./test_services.sh --smoke-redis # 需要 Docker：Redis 分布式 session + 跨实例 kick（tcp + ws）
+bash tests/run_integration_tests.sh
+bash tests/run_integration_tests.sh --local-services --gateway-port 5500 --auth-port 6500
 ```
+
+其中：
+- `bash tests/run_integration_tests.sh`：跑本地 protobuf/framing smoke
+- `bash tests/run_integration_tests.sh --local-services ...`：脚本会自动拉起本地 `auth` 和 `gateway`，执行真实 `LOGIN_REQ -> LOGIN_RESP` 验证后自动清理
 
 ### Docker Compose 一键启动（推荐）
 
@@ -71,6 +77,12 @@ docker compose --profile archive up --build
 ./build/services/auth/chirp_auth --port 6000 --jwt_secret dev_secret
 ./build/services/gateway/chirp_gateway --port 5000 --ws_port 5001 --auth_host 127.0.0.1 --auth_port 6000
 ./build/services/chat/chirp_chat --port 7000 --ws_port 7001 --redis_host 127.0.0.1 --redis_port 6379 --offline_ttl 604800
+```
+
+如果你只是想验证登录链路，不需要手工起服务，也可以直接运行：
+
+```bash
+bash tests/run_integration_tests.sh --local-services --gateway-port 5500 --auth-port 6500
 ```
 
 可选：启用 Redis 分布式 session（多实例 gateway 时有用）：
