@@ -111,11 +111,13 @@ if [[ "$OSTYPE" == "msys" || "$OSTYPE" == "win32" || "$OSTYPE" == "cygwin" ]]; t
   CMAKE_GENERATOR="Visual Studio 17 2022"
   CMAKE_PLATFORM=(-A x64)
   MAIN_LIB_NETWORK="$CHIRP_ROOT/build/libs/network/Debug/chirp_network.lib"
+  MAIN_LIB_PROTOS="$CHIRP_ROOT/build/proto/Debug/chirp_protos.lib"
   TEST_BIN="./Debug/chirp_integration_test.exe"
 else
   CMAKE_GENERATOR="Unix Makefiles"
   CMAKE_PLATFORM=()
   MAIN_LIB_NETWORK="$CHIRP_ROOT/build/libs/network/libchirp_network.a"
+  MAIN_LIB_PROTOS="$CHIRP_ROOT/build/proto/libchirp_protos.a"
   TEST_BIN="./chirp_integration_test"
 fi
 
@@ -223,7 +225,7 @@ if [ "$USE_LOCAL_SERVICES" = true ]; then
 fi
 
 # Build main libraries first if needed
-if [ ! -f "$MAIN_LIB_NETWORK" ]; then
+if [ ! -f "$MAIN_LIB_NETWORK" ] || [ ! -f "$MAIN_LIB_PROTOS" ]; then
     echo -e "${YELLOW}Building main libraries...${NC}"
     mkdir -p "$CHIRP_ROOT/build"
     cd "$CHIRP_ROOT/build"
@@ -235,7 +237,7 @@ if [ ! -f "$MAIN_LIB_NETWORK" ]; then
       cmake .. -G "$CMAKE_GENERATOR" "${CMAKE_PLATFORM[@]}" \
           -DENABLE_TESTS=ON
     fi
-    cmake --build . --config Debug --target chirp_common chirp_network
+    cmake --build . --config Debug --target chirp_common chirp_network chirp_protos
 fi
 
 # Build integration test

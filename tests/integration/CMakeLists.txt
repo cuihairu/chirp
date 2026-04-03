@@ -35,36 +35,35 @@ if(ASIO_INCLUDE_DIR)
   add_compile_definitions(ASIO_STANDALONE ASIO_NO_DEPRECATED)
 endif()
 
-# Protocol buffers - use pre-generated files
-set(PROTO_CPP_PATH ${CHIRP_ROOT}/proto/cpp/proto)
-file(GLOB PROTO_SRCS "${PROTO_CPP_PATH}/*.pb.cc")
-
 # Integration test executable
 add_executable(chirp_integration_test
   integration_test.cc
-  ${PROTO_SRCS}
 )
 
-if(TARGET chirp_network AND TARGET chirp_common)
+if(TARGET chirp_network AND TARGET chirp_common AND TARGET chirp_protos)
   target_link_libraries(chirp_integration_test
     PRIVATE
     chirp_common
     chirp_network
+    chirp_protos
     Threads::Threads
   )
 else()
   if(WIN32)
     set(CHIRP_COMMON_LIB "${CHIRP_ROOT}/build/libs/common/Debug/chirp_common.lib")
     set(CHIRP_NETWORK_LIB "${CHIRP_ROOT}/build/libs/network/Debug/chirp_network.lib")
+    set(CHIRP_PROTOS_LIB "${CHIRP_ROOT}/build/proto/Debug/chirp_protos.lib")
   else()
     set(CHIRP_COMMON_LIB "${CHIRP_ROOT}/build/libs/common/libchirp_common.a")
     set(CHIRP_NETWORK_LIB "${CHIRP_ROOT}/build/libs/network/libchirp_network.a")
+    set(CHIRP_PROTOS_LIB "${CHIRP_ROOT}/build/proto/libchirp_protos.a")
   endif()
 
   target_link_libraries(chirp_integration_test
     PRIVATE
     ${CHIRP_COMMON_LIB}
     ${CHIRP_NETWORK_LIB}
+    ${CHIRP_PROTOS_LIB}
     Threads::Threads
   )
 endif()
