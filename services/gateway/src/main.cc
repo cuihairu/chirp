@@ -10,6 +10,7 @@
 #include <asio.hpp>
 
 #include "auth_client.h"
+#include "gateway_session_registry.h"
 #include "logger.h"
 #include "network/protobuf_framing.h"
 #include "redis_session_manager.h"
@@ -55,13 +56,6 @@ std::string RandomHex(size_t bytes) {
   return out;
 }
 
-struct GatewayState {
-  std::mutex mu;
-  std::unordered_map<std::string, std::weak_ptr<chirp::network::Session>> user_to_session;
-  std::unordered_map<void*, std::string> session_to_user;
-  std::unordered_map<void*, std::string> session_to_session_id;
-};
-
 void SendPacket(const std::shared_ptr<chirp::network::Session>& session,
                 chirp::gateway::MsgID msg_id,
                 int64_t seq,
@@ -102,7 +96,7 @@ void KickSession(const std::shared_ptr<chirp::network::Session>& session, const 
 void HandleLogin(const std::shared_ptr<chirp::network::Session>& session,
                  const chirp::gateway::Packet& pkt,
                  const chirp::auth::LoginRequest& req,
-                 const std::shared_ptr<GatewayState>& state,
+                 const std::shared_ptr<chirp::gateway::GatewayState>& state,
                  const std::shared_ptr<chirp::gateway::AuthClient>& auth,
                  const std::shared_ptr<chirp::gateway::RedisSessionManager>& redis_mgr) {
   const int64_t seq = pkt.sequence();
@@ -139,17 +133,7 @@ void HandleLogin(const std::shared_ptr<chirp::network::Session>& session,
       return;
     }
 
-    std::shared_ptr<chirp::network::Session> old;
-    {
-      std::lock_guard<std::mutex> lock(state->mu);
-      auto it = state->user_to_session.find(user_id);
-      if (it != state->user_to_session.end()) {
-        old = it->second.lock();
-      }
-      state->user_to_session[user_id] = session;
-      state->session_to_user[session.get()] = user_id;
-      state->session_to_session_id[session.get()] = resp.session_id();
-    }
+    auto old = chirp::gateway::BindAuthenticatedSession(state, user_id, resp.session_id(), session);
 
     if (old && old.get() != session.get()) {
       const std::string reason = resp.has_kick() ? resp.kick().reason() : "login from another device";
@@ -169,7 +153,7 @@ void HandleLogin(const std::shared_ptr<chirp::network::Session>& session,
 void HandleLogout(const std::shared_ptr<chirp::network::Session>& session,
                   const chirp::gateway::Packet& pkt,
                   const chirp::auth::LogoutRequest& req,
-                  const std::shared_ptr<GatewayState>& state,
+                  const std::shared_ptr<chirp::gateway::GatewayState>& state,
                   const std::shared_ptr<chirp::gateway::AuthClient>& auth,
                   const std::shared_ptr<chirp::gateway::RedisSessionManager>& redis_mgr) {
   const int64_t seq = pkt.sequence();
@@ -189,19 +173,9 @@ void HandleLogout(const std::shared_ptr<chirp::network::Session>& session,
     return;
   }
 
-  std::string cur_user;
-  std::string cur_session_id;
-  {
-    std::lock_guard<std::mutex> lock(state->mu);
-    auto it = state->session_to_user.find(session.get());
-    if (it != state->session_to_user.end()) {
-      cur_user = it->second;
-    }
-    auto it2 = state->session_to_session_id.find(session.get());
-    if (it2 != state->session_to_session_id.end()) {
-      cur_session_id = it2->second;
-    }
-  }
+  const auto current = chirp::gateway::GetAuthenticatedSession(state, session);
+  const std::string& cur_user = current.user_id;
+  const std::string& cur_session_id = current.session_id;
 
   if (cur_user.empty() || cur_user != req.user_id()) {
     send(chirp::common::AUTH_FAILED, false);
@@ -216,22 +190,10 @@ void HandleLogout(const std::shared_ptr<chirp::network::Session>& session,
     chirp::auth::LogoutResponse resp = auth_resp;
     if (resp.code() == chirp::common::OK) {
       bool should_release = false;
-      {
-        std::lock_guard<std::mutex> lock(state->mu);
-        state->session_to_user.erase(session.get());
-        state->session_to_session_id.erase(session.get());
-
-        auto it = state->user_to_session.find(req.user_id());
-        if (it != state->user_to_session.end()) {
-          auto cur = it->second.lock();
-          if (cur && cur.get() == session.get()) {
-            state->user_to_session.erase(it);
-            should_release = true;
-          }
-        }
-      }
+      std::string removed_user_id;
+      should_release = chirp::gateway::RemoveAuthenticatedSession(state, session, &removed_user_id);
       if (should_release && redis_mgr) {
-        redis_mgr->AsyncRelease(req.user_id());
+        redis_mgr->AsyncRelease(removed_user_id.empty() ? req.user_id() : removed_user_id);
       }
       SendPacketAndClose(session, chirp::gateway::LOGOUT_RESP, seq, resp.SerializeAsString());
       return;
@@ -275,7 +237,7 @@ int main(int argc, char** argv) {
 
   asio::io_context io;
 
-  auto state = std::make_shared<GatewayState>();
+  auto state = std::make_shared<chirp::gateway::GatewayState>();
   std::shared_ptr<chirp::gateway::AuthClient> auth;
   if (!auth_host.empty()) {
     auth = std::make_shared<chirp::gateway::AuthClient>(io, auth_host, auth_port);

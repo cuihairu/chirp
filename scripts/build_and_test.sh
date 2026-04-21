@@ -211,6 +211,9 @@ fi
 echo -e "${BLUE}[6/6] Running tests...${NC}"
 
 if [ "$RUN_TESTS" = "true" ]; then
+    echo "Running unit tests with CTest..."
+    ctest --test-dir "$PROJECT_ROOT/$BUILD_DIR" --output-on-failure
+
     if [ "$START_SERVICES" = "true" ] && command -v docker >/dev/null 2>&1; then
         echo "Running integration tests with Docker-backed connection smoke..."
         bash "$PROJECT_ROOT/tests/run_integration_tests.sh" --docker --connect

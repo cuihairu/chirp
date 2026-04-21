@@ -11,6 +11,8 @@
 
 #include <asio.hpp>
 
+#include "chat_session_registry.h"
+#include "chat_validation.h"
 #include "logger.h"
 #include "network/protobuf_framing.h"
 #include "network/redis_client.h"
@@ -51,11 +53,10 @@ std::string GenerateMessageId() {
   return "msg_" + std::to_string(NowMs()) + "_" + std::to_string(counter.fetch_add(1));
 }
 
-struct ChatState {
-  std::mutex mu;
-  std::unordered_map<std::string, std::weak_ptr<chirp::network::Session>> user_to_session;
-  std::unordered_map<void*, std::string> session_to_user;
-};
+std::string GenerateSessionId() {
+  static std::atomic<uint64_t> counter{1};
+  return "chat_session_" + std::to_string(NowMs()) + "_" + std::to_string(counter.fetch_add(1));
+}
 
 struct MessageStore {
   static constexpr size_t kMaxHistory = 100;
@@ -234,6 +235,18 @@ void SendPacket(const std::shared_ptr<chirp::network::Session>& session,
   session->Send(std::string(reinterpret_cast<const char*>(framed.data()), framed.size()));
 }
 
+void SendPacketAndClose(const std::shared_ptr<chirp::network::Session>& session,
+                        chirp::gateway::MsgID msg_id,
+                        int64_t seq,
+                        const std::string& body) {
+  chirp::gateway::Packet pkt;
+  pkt.set_msg_id(msg_id);
+  pkt.set_sequence(seq);
+  pkt.set_body(body);
+  auto framed = chirp::network::ProtobufFraming::Encode(pkt);
+  session->SendAndClose(std::string(reinterpret_cast<const char*>(framed.data()), framed.size()));
+}
+
 void SendChatNotify(const std::shared_ptr<chirp::network::Session>& session, const chirp::chat::ChatMessage& msg) {
   chirp::gateway::Packet pkt;
   pkt.set_msg_id(chirp::gateway::CHAT_MESSAGE_NOTIFY);
@@ -256,25 +269,13 @@ void KickSession(const std::shared_ptr<chirp::network::Session>& session, const 
   session->SendAndClose(std::string(reinterpret_cast<const char*>(framed.data()), framed.size()));
 }
 
-void HandleDisconnect(const std::shared_ptr<ChatState>& state, const std::shared_ptr<chirp::network::Session>& session) {
-  std::lock_guard<std::mutex> lock(state->mu);
-  auto it = state->session_to_user.find(session.get());
-  if (it == state->session_to_user.end()) {
-    return;
-  }
-  const std::string user_id = it->second;
-  state->session_to_user.erase(it);
-  auto it2 = state->user_to_session.find(user_id);
-  if (it2 != state->user_to_session.end()) {
-    auto cur = it2->second.lock();
-    if (!cur || cur.get() == session.get()) {
-      state->user_to_session.erase(it2);
-    }
-  }
+void HandleDisconnect(const std::shared_ptr<chirp::chat::ChatState>& state,
+                      const std::shared_ptr<chirp::network::Session>& session) {
+  chirp::chat::RemoveAuthenticatedSession(state, session);
 }
 
 void HandlePacket(const std::shared_ptr<MessageStore>& store,
-                  const std::shared_ptr<ChatState>& state,
+                  const std::shared_ptr<chirp::chat::ChatState>& state,
                   const std::shared_ptr<chirp::network::Session>& session,
                   std::string&& payload) {
   using chirp::common::Logger;
@@ -284,6 +285,10 @@ void HandlePacket(const std::shared_ptr<MessageStore>& store,
     Logger::Instance().Warn("failed to parse Packet from client");
     return;
   }
+
+  const auto authenticated = chirp::chat::GetAuthenticatedSession(state, session);
+  const std::string& authenticated_user_id = authenticated.user_id;
+  const std::string& authenticated_session_id = authenticated.session_id;
 
   switch (pkt.msg_id()) {
   case chirp::gateway::LOGIN_REQ: {
@@ -304,23 +309,15 @@ void HandlePacket(const std::shared_ptr<MessageStore>& store,
     } else {
       login_resp.set_code(chirp::common::OK);
       login_resp.set_user_id(user_id);
-      login_resp.set_session_id("chat_session_" + user_id);
+      login_resp.set_session_id(GenerateSessionId());
       login_resp.set_kick_previous(true);
       login_resp.mutable_kick()->set_reason("login from another device");
     }
     login_resp.set_server_time(NowMs());
 
     if (!user_id.empty()) {
-      std::shared_ptr<chirp::network::Session> old;
-      {
-        std::lock_guard<std::mutex> lock(state->mu);
-        auto it = state->user_to_session.find(user_id);
-        if (it != state->user_to_session.end()) {
-          old = it->second.lock();
-        }
-        state->user_to_session[user_id] = session;
-        state->session_to_user[session.get()] = user_id;
-      }
+      auto old =
+          chirp::chat::BindAuthenticatedSession(state, user_id, login_resp.session_id(), session);
       if (old && old.get() != session.get()) {
         KickSession(old, "login from another device");
       }
@@ -346,9 +343,13 @@ void HandlePacket(const std::shared_ptr<MessageStore>& store,
     }
 
     chirp::auth::LogoutResponse resp;
-    resp.set_code(chirp::common::OK);
+    resp.set_code(chirp::chat::ValidateLogoutRequest(req, authenticated_user_id, authenticated_session_id));
     resp.set_server_time(NowMs());
-    HandleDisconnect(state, session);
+    if (resp.code() == chirp::common::OK) {
+      HandleDisconnect(state, session);
+      SendPacketAndClose(session, chirp::gateway::LOGOUT_RESP, pkt.sequence(), resp.SerializeAsString());
+      break;
+    }
     SendPacket(session, chirp::gateway::LOGOUT_RESP, pkt.sequence(), resp.SerializeAsString());
     break;
   }
@@ -361,10 +362,10 @@ void HandlePacket(const std::shared_ptr<MessageStore>& store,
       SendPacket(session, chirp::gateway::SEND_MESSAGE_RESP, pkt.sequence(), resp.SerializeAsString());
       return;
     }
-    if (req.sender_id().empty() || (req.channel_type() == chirp::chat::PRIVATE && req.receiver_id().empty()) ||
-        (req.channel_type() != chirp::chat::PRIVATE && req.channel_id().empty())) {
+    const auto validation = chirp::chat::ValidateSendMessageRequest(req, authenticated_user_id);
+    if (validation != chirp::common::OK) {
       chirp::chat::SendMessageResponse resp;
-      resp.set_code(chirp::common::INVALID_PARAM);
+      resp.set_code(validation);
       resp.set_server_timestamp(NowMs());
       SendPacket(session, chirp::gateway::SEND_MESSAGE_RESP, pkt.sequence(), resp.SerializeAsString());
       return;
@@ -421,9 +422,10 @@ void HandlePacket(const std::shared_ptr<MessageStore>& store,
       SendPacket(session, chirp::gateway::GET_HISTORY_RESP, pkt.sequence(), resp.SerializeAsString());
       return;
     }
-    if (req.channel_id().empty()) {
+    const auto validation = chirp::chat::ValidateGetHistoryRequest(req, authenticated_user_id);
+    if (validation != chirp::common::OK) {
       chirp::chat::GetHistoryResponse resp;
-      resp.set_code(chirp::common::INVALID_PARAM);
+      resp.set_code(validation);
       resp.set_has_more(false);
       SendPacket(session, chirp::gateway::GET_HISTORY_RESP, pkt.sequence(), resp.SerializeAsString());
       return;
@@ -484,7 +486,7 @@ int main(int argc, char** argv) {
   }
 
   auto store = std::make_shared<MessageStore>(redis, offline_ttl_seconds);
-  auto state = std::make_shared<ChatState>();
+  auto state = std::make_shared<chirp::chat::ChatState>();
 
   chirp::network::TcpServer server(
       io, port,
