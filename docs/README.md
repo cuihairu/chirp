@@ -1,30 +1,30 @@
 ---
 home: true
-title: Home
+title: 首页
 heroImage: /logo.png
-heroText: Chirp Documentation
-tagline: Real-time Communication Platform for Gaming and Interactive Applications
+heroText: Chirp
+tagline: 面向游戏开发的轻量聊天后端骨架
 actions:
-  - text: Get Started
-    link: /guide/introduction.html
+  - text: 快速开始 →
+    link: /guide/getting-started
     type: primary
-  - text: API Reference
-    link: /api/overview.html
+  - text: NPC 对话系统
+    link: /npc_dialog_system
     type: secondary
 
 features:
-  - title: 🚀 High Performance
-    details: Ultra-low latency message delivery with support for 10k+ concurrent connections per server.
-  - title: 💬 Rich Communication
-    details: Private chat, groups, channels, reactions, and more - everything you need for in-game communication.
-  - title: 🎤 Voice Chat
-    details: WebRTC-based voice with P2P, group rooms, and channel-based communication.
-  - title: 👥 Social Features
-    details: Friends, presence, custom status, and real-time updates.
-  - title: 🔔 Notifications
-    details: Push notifications with FCM and APNs support.
-  - title: 🔍 Search
-    details: Full-text message search with filters and snippets.
+  - title: 高性能
+    details: 超低延迟消息传递，单服务器支持 10k+ 并发连接。
+  - title: 丰富通信
+    details: 私聊、群组、频道、表情反应等游戏内通信所需的一切。
+  - title: 游戏优先
+    details: 专为游戏服务器集成设计，支持 TCP/WebSocket 双协议。
+  - title: 多端登录
+    details: 支持同一账号多设备登录，支持踢出（最后登录优先）。
+  - title: 分布式会话
+    details: 可选 Redis 实现分布式会话管理。
+  - title: NPC 对话
+    details: 支持 AI NPC 对话系统，包含人设、任务、指令响应。
 
 footer: MIT Licensed | Copyright © 2024-Present Chirp Project
 ---

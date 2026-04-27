@@ -1,6 +1,5 @@
 ---
 title: Introduction
-icon: 🚀
 ---
 
 # Introduction to Chirp

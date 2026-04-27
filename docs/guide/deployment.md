@@ -1,6 +1,5 @@
 ---
 title: Deployment
-icon: 🚀
 ---
 
 # Deployment Guide

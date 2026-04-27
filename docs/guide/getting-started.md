@@ -1,6 +1,5 @@
 ---
 title: Getting Started
-icon: 📖
 ---
 
 # Getting Started

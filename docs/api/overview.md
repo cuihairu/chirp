@@ -1,6 +1,5 @@
 ---
 title: API Overview
-icon: 🔌
 ---
 
 # API Overview
