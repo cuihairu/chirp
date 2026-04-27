@@ -9,7 +9,8 @@
 - **游戏内聊天**：游戏客户端（C++/Unity/Unreal 等）通过 TCP 连接，低延迟、易控。
 - **聊天 App/移动端**：App 通过 WebSocket 接入（适合浏览器/移动端网络环境）。
 - **多端登录/挤下线**：同一账号多设备登录，支持 kick（最后登录优先）。
-- **多实例 Gateway**：可选 Redis 实现分布式“session owner”并通过 Pub/Sub 触发跨实例踢人。
+- **多实例 Gateway**：可选 Redis 实现分布式”session owner”并通过 Pub/Sub 触发跨实例踢人。
+- **玩家与 NPC 对话**：支持游戏内 AI NPC 对话系统，包含人设绑定、任务触发、指令响应和智能闲聊。
 
 ## 协议（对接要点）
 
@@ -170,6 +171,44 @@ sh /tmp/chirp_chat_export_ack.sh
 ./build/tools/benchmark/chirp_ws_login_client --host 127.0.0.1 --port 5001 --token user_1 --device dev --platform web
 ./build/tools/benchmark/chirp_ws_ping_client  --host 127.0.0.1 --port 5001
 ```
+
+## NPC 对话系统
+
+`chirp` 支持游戏内玩家与 AI NPC 的对话交互，提供完整的对话管理能力。
+
+### 功能特性
+
+- **NPC 人设系统**：每个 NPC 拥有独立的人设配置（性格、说话风格、背景故事）
+- **任务对话触发**：支持通过对话触发、推进游戏任务
+- **指令响应系统**：NPC 可识别并响应特定指令（交易、传送、领取奖励等）
+- **AI 智能闲聊**：基于大语言模型的自然对话，严格符合 NPC 人设
+
+### 对话流程
+
+```
+玩家发起对话 -> Gateway -> Chat Service -> NPC 引擎
+    ↓
+[人设加载] -> [意图识别] -> [对话生成/指令执行] -> [响应返回]
+```
+
+### 接入示例
+
+```protobuf
+// 发送 NPC 消息
+message NpcChatRequest {
+  uint64 npc_id = 1;       // NPC ID
+  string message = 2;      // 玩家消息
+  uint64 scene_id = 3;     // 当前场景 ID（上下文）
+}
+
+message NpcChatResponse {
+  uint64 npc_id = 1;
+  string reply = 2;        // NPC 回复
+  NpcAction action = 3;    // 触发的动作（任务/指令等）
+}
+```
+
+> NPC 对话功能的完整实现参考 `docs/npc_dialog_system.md`
 
 ## 工程结构
 
