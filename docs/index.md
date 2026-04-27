@@ -29,52 +29,69 @@ features:
 footer: MIT Licensed | Copyright © 2024-Present Chirp Project
 ---
 
-## Quick Start
+## 文档导航
+
+- **[指南](/guide/)** - 快速开始、安装、部署
+- **[架构文档](/game_chat_architecture)** - 系统设计与组件化架构
+- **[功能特性](/game_chat_features)** - 游戏聊天功能详解
+- **[NPC 对话系统](/npc_dialog_system)** - AI NPC 对话完整设计
+- **[API 参考](/api/overview)** - 协议与接口说明
+
+## 快速开始
 
 ```bash
-# Clone the repository
+# 克隆仓库
 git clone https://github.com/cuihairu/chirp.git
 cd chirp
 
-# Install dependencies
+# 生成 Protobuf 文件
 ./gen_proto.sh
 
-# Build
-mkdir build && cd build
-cmake -G Ninja -DCMAKE_BUILD_TYPE=Release ..
-cmake --build . --parallel
+# 构建
+cmake -S . -B build
+cmake --build build -j
 
-# Run with Docker Compose
-docker-compose up -d
+# Docker Compose 一键启动
+docker compose up -d
 ```
 
-## Documentation
+## 核心服务
 
-- **[Getting Started](/guide/getting-started.html)**
-- **[API Reference](/api/overview.html)**
-- **[SDK Guides](/sdk/overview.html)**
+| 服务 | TCP 端口 | WebSocket 端口 | 说明 |
+|-----|---------|---------------|------|
+| Gateway | 5000 | 5001 | 连接路由与会话管理 |
+| Auth | 6000 | - | 认证与会话验证 |
+| Chat | 7000 | 7001 | 消息与群聊 |
 
-## Services
+## SDK 支持
 
-| Service | Port | Description |
-|---------|------|-------------|
-| Gateway | 5000 (TCP), 5001 (WS) | Connection routing and session management |
-| Auth | 6000 (TCP) | Authentication and session validation |
-| Chat | 7000 (TCP), 7001 (WS) | Messaging and group chat |
-| Social | 8000 (TCP), 8001 (WS) | Friends and presence |
-| Voice | 9000 (TCP), 9001 (WS) | WebRTC signaling |
-| Notification | 5006 | Push notification delivery |
-| Search | 5007 | Full-text message search |
+| 平台 | SDK | 状态 |
+|------|-----|------|
+| C++ | Core SDK | ✅ 稳定 |
+| Unity | C# Wrapper | 规划中 |
+| Unreal | UPlugin | 规划中 |
+| Flutter | Dart/FFI | 规划中 |
 
-## SDKs
+## 技术栈
 
-| Platform | SDK | Status |
-|----------|-----|--------|
-| C++ | Core SDK | ✅ Stable |
-| Unity | C# Wrapper | ✅ Stable |
-| Unreal | UPlugin | ✅ Stable |
-| Flutter | Dart/FFI | ✅ Stable |
+- **语言**: C++20
+- **网络**: ASIO (Boost.Asio standalone)
+- **序列化**: Protocol Buffers
+- **存储**: Redis (缓存)、MySQL (持久化)
+- **构建**: CMake
+- **AI**: LLM 驱动的 NPC 对话系统
 
-## License
+## 协议
+
+传输层支持 TCP 和 WebSocket，统一使用 Protobuf 编码：
+
+```
+┌───────────────┬───────────────┬───────────────────────┐
+│   Length     │   MsgID      │   Protobuf Body       │
+│  (4 bytes)   │  (2 bytes)   │   (variable)          │
+└───────────────┴───────────────┴───────────────────────┘
+```
+
+## 许可证
 
 MIT License - see [LICENSE](https://github.com/cuihairu/chirp/LICENSE) for details.
