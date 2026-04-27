@@ -49,16 +49,14 @@ jobs:
         working-directory: ./docs
         run: pnpm install
 
-      - name: Build VuePress docs
+      - name: Build VitePress docs
         working-directory: ./docs
-        run: pnpm run docs:build
-        env:
-          VUEPRESS_BASE: "/chirp/"
+        run: pnpm build
 
       - name: Upload artifact
         uses: actions/upload-pages-artifact@v3
         with:
-          path: ./docs/.vuepress/dist
+          path: ./docs/.vitepress/dist
 
   # Deployment job
   deploy:
