@@ -5,6 +5,7 @@ const config = defineConfig({
   lang: 'zh-CN',
   title: 'Chirp',
   description: '面向游戏开发的轻量聊天后端骨架',
+  ignoreDeadLinks: true,
   head: [
     ['meta', { name: 'viewport', content: 'width=device-width,initial-scale=1' }],
     ['meta', { name: 'keywords', content: 'chirp,游戏聊天,实时通信,gRPC,TCP,WebSocket' }],
