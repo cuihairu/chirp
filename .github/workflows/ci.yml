@@ -20,7 +20,7 @@ jobs:
             vcpkg_triplet: x64-osx
 
     steps:
-    - uses: actions/checkout@v5
+    - uses: actions/checkout@v6
       with:
         submodules: recursive
 
