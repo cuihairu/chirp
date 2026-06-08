@@ -1,8 +1,16 @@
 # chirp
 
-`chirp` 是一个面向游戏开发的轻量聊天后端骨架：支持游戏内聊天（TCP）、聊天 App（WebSocket）、以及共享账号/会话能力（Auth + 可选 Redis 分布式会话）。
+`chirp` 是一个面向游戏开发的实时通信后端仓库，目前最成熟的主线是 `gateway + auth + chat` 三个核心服务。
 
-目标是让你“几分钟跑起来、几天接入上线”，后续再逐步演进到更完整的社交/语音体系。
+仓库中还包含社交、语音、搜索、通知、多端 SDK、移动端和管理后台等扩展模块，但这些模块的完成度并不一致。阅读本文时，请优先把它理解为一个“可运行的核心通信骨架 + 一批实验性扩展”，而不是所有目录都同等成熟的完整产品。
+
+当前能力状态见 [docs/CAPABILITY_MATRIX.md](docs/CAPABILITY_MATRIX.md)。
+
+## 当前建议使用范围
+
+- **核心后端链路**：`gateway + auth + chat`
+- **适合用途**：本地验证、协议接入、游戏聊天原型、后续二次开发
+- **实验性模块**：`social`、`voice`、`notification`、`search`、多端 SDK、移动端、管理后台
 
 ## 适用场景
 
@@ -33,8 +41,16 @@
 
 ```bash
 ./gen_proto.sh
-cmake -S . -B build
-cmake --build build -j
+cmake --preset dev
+cmake --build --preset dev
+ctest --preset dev
+```
+
+如果你不想编译测试目标，可以使用：
+
+```bash
+cmake --preset minimal
+cmake --build --preset minimal
 ```
 
 ### 一键 smoke test
@@ -57,7 +73,16 @@ bash tests/run_integration_tests.sh --local-services --gateway-port 5500 --auth-
 docker compose up --build
 ```
 
-默认会启动：
+默认会启动多个服务，但建议你优先只验证这条核心路径：
+
+- `redis`
+- `auth`
+- `gateway`
+- `chat`
+
+其余服务目前更适合作为实验性模块查看和二次开发。
+
+完整 Compose 默认会启动：
 - `redis`（6379）
 - `chirp_auth`（6000）
 - `chirp_gateway`：TCP 5000 / WebSocket 5001（连接 `auth` + `redis`）
@@ -129,13 +154,41 @@ sh /tmp/chirp_chat_export_ack.sh
   --interval_secs 60
 ```
 
+## 真实完成度说明
+
+### Supported
+
+- `services/gateway`
+- `services/auth` 默认目标 `chirp_auth`
+  - 检测到 MySQL 和 libsodium 依赖时，`chirp_auth` 会优先构建增强实现
+- `services/chat` 默认目标 `chirp_chat`
+  - 检测到 MySQL 依赖时，`chirp_chat` 会优先构建增强实现
+- `tools/benchmark`
+- Docker Compose 下的核心联调路径
+
+### Experimental
+
+- `chirp_auth_enhanced`（兼容命名，实际收敛到 `chirp_auth` 产品入口）
+- `chirp_chat_distributed`
+- `chirp_chat_enhanced`（兼容命名，实际收敛到 `chirp_chat` 产品入口）
+- `services/social`
+- `services/voice`
+- `services/notification`
+- `services/search`
+- `sdks/core`、`sdks/unity`、`sdks/unreal`
+
+### Demo / Stub
+
+- `apps/mobile_companion`
+- `apps/admin_dashboard`
+
 ## 游戏快速接入（推荐路径）
 
 ### 方案 A：直接使用 Core SDK（C++）
 
 `sdks/core` 提供了一个最小可用的 C++ 客户端（TCP + 长度前缀 Protobuf framing），适合在游戏客户端里快速打通登录、收消息、发消息的链路。
 
-> 目前示例客户端默认直连 `services/chat`（端口 7000）来演示收发与历史；`services/gateway` 主要提供边缘接入与会话能力，后续可扩展为统一路由入口。
+> 目前示例客户端默认直连 `services/chat`（端口 7000）来演示收发与历史；`services/gateway` 目前主要提供边缘接入与会话能力。这也意味着仓库的“统一入口”架构还在继续收敛中。
 
 示例程序：
 
@@ -208,7 +261,7 @@ message NpcChatResponse {
 }
 ```
 
-> NPC 对话功能的完整实现参考 `docs/npc_dialog_system.md`
+> NPC 对话功能目前主要体现在设计文档层，参考 `docs/npc_dialog_system.md`。在将其视为正式能力前，请先自行核对对应服务集成情况。
 
 ## 工程结构
 
@@ -224,4 +277,7 @@ message NpcChatResponse {
 
 ## Docs
 
-更多说明见 `docs/README.md`。
+- 总览文档：`docs/README.md`
+- 能力矩阵：`docs/CAPABILITY_MATRIX.md`
+- 标准本地构建：`CMakePresets.json`
+- 在阅读路线图或功能介绍前，建议先看能力矩阵，避免把规划中的能力误解为默认可用能力

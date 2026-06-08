@@ -47,6 +47,8 @@ Thumbs.db
 *~
 
 # vcpkg (user-specific)
+vcpkg_installed/
+vcpkg/
 
 # Node.js
 node_modules/

@@ -24,7 +24,9 @@ RUN ./gen_proto.sh
 RUN cmake -S . -B build -DCMAKE_BUILD_TYPE=Release -DENABLE_TESTS=OFF
 RUN cmake --build build --target chirp_${SERVICE} chirp_chat_mysql_exporter -j"$(nproc)"
 RUN case "${SERVICE}" in \
-      chat|chat_distributed|chat_enhanced) cp "/src/build/services/chat/chirp_${SERVICE}" /tmp/chirp_bin ;; \
+      chat|chat_distributed) cp "/src/build/services/chat/chirp_${SERVICE}" /tmp/chirp_bin ;; \
+      chat_enhanced) cp "/src/build/services/chat/chirp_chat" /tmp/chirp_bin ;; \
+      auth_enhanced) cp "/src/build/services/auth/chirp_auth" /tmp/chirp_bin ;; \
       gateway|auth|social|voice|notification|search) cp "/src/build/services/${SERVICE}/chirp_${SERVICE}" /tmp/chirp_bin ;; \
       *) echo "Unsupported service target: ${SERVICE}" >&2; exit 1 ;; \
     esac

@@ -81,7 +81,7 @@ sudo systemctl start mysql
 ./build/services/gateway/chirp_gateway
 
 # Start Chat Service
-./build/services/chat/chirp_chat_enhanced
+./build/services/chat/chirp_chat
 
 # Start other services as needed...
 ```

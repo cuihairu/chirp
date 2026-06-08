@@ -18,6 +18,9 @@ BUILD_DIR="${BUILD_DIR:-build}"
 RUN_TESTS="${RUN_TESTS:-true}"
 START_SERVICES="${START_SERVICES:-false}"
 FORCE_VCPKG_INSTALL="${FORCE_VCPKG_INSTALL:-false}"
+CONFIGURE_PRESET="${CONFIGURE_PRESET:-dev}"
+BUILD_PRESET="${BUILD_PRESET:-dev}"
+TEST_PRESET="${TEST_PRESET:-dev}"
 
 echo -e "${BLUE}=== Chirp Build and Test Script ===${NC}"
 echo ""
@@ -96,25 +99,21 @@ echo ""
 if [[ "$OSTYPE" == "msys" || "$OSTYPE" == "win32" || "$OSTYPE" == "cygwin" ]]; then
     CMAKE_GENERATOR="Visual Studio 17 2022"
     CMAKE_PLATFORM="-A x64"
-    CONFIG_CMD="cmake -S \"$PROJECT_ROOT\" -B \"$PROJECT_ROOT/$BUILD_DIR\" -G \"$CMAKE_GENERATOR\" $CMAKE_PLATFORM -DENABLE_TESTS=ON"
-    BUILD_CMD="cmake --build \"$PROJECT_ROOT/$BUILD_DIR\" --config $BUILD_TYPE"
+    CONFIG_CMD="cmake --preset \"$CONFIGURE_PRESET\" -G \"$CMAKE_GENERATOR\" $CMAKE_PLATFORM -DCMAKE_BUILD_TYPE=$BUILD_TYPE"
+    BUILD_CMD="cmake --build --preset \"$BUILD_PRESET\" --config $BUILD_TYPE"
     INTEGRATION_TEST_BIN="$PROJECT_ROOT/tests/integration/build/Debug/chirp_integration_test.exe"
 elif [[ "$OSTYPE" == "darwin"* ]]; then
-    CONFIG_CMD="cmake -S \"$PROJECT_ROOT\" -B \"$PROJECT_ROOT/$BUILD_DIR\" -DENABLE_TESTS=ON"
-    BUILD_CMD="cmake --build \"$PROJECT_ROOT/$BUILD_DIR\" --config $BUILD_TYPE"
+    CONFIG_CMD="cmake --preset \"$CONFIGURE_PRESET\" -DCMAKE_BUILD_TYPE=$BUILD_TYPE"
+    BUILD_CMD="cmake --build --preset \"$BUILD_PRESET\" --config $BUILD_TYPE"
     INTEGRATION_TEST_BIN="$PROJECT_ROOT/tests/integration/build/chirp_integration_test"
 else
-    CONFIG_CMD="cmake -S \"$PROJECT_ROOT\" -B \"$PROJECT_ROOT/$BUILD_DIR\" -DENABLE_TESTS=ON"
-    BUILD_CMD="cmake --build \"$PROJECT_ROOT/$BUILD_DIR\" --config $BUILD_TYPE"
+    CONFIG_CMD="cmake --preset \"$CONFIGURE_PRESET\" -DCMAKE_BUILD_TYPE=$BUILD_TYPE"
+    BUILD_CMD="cmake --build --preset \"$BUILD_PRESET\" --config $BUILD_TYPE"
     INTEGRATION_TEST_BIN="$PROJECT_ROOT/tests/integration/build/chirp_integration_test"
 fi
 
 if [ "$USE_VCPKG_TOOLCHAIN" = "true" ]; then
-    if [[ "$OSTYPE" == "msys" || "$OSTYPE" == "win32" || "$OSTYPE" == "cygwin" ]]; then
-        CONFIG_CMD="$CONFIG_CMD -DCMAKE_TOOLCHAIN_FILE=\"$VCPKG_TOOLCHAIN\""
-    else
-        CONFIG_CMD="$CONFIG_CMD -DCMAKE_TOOLCHAIN_FILE=\"$VCPKG_TOOLCHAIN\""
-    fi
+    CONFIG_CMD="$CONFIG_CMD -DCMAKE_TOOLCHAIN_FILE=\"$VCPKG_TOOLCHAIN\""
 fi
 
 # Step 1: Check/install vcpkg packages
@@ -172,7 +171,6 @@ fi
 echo -e "${BLUE}[3/6] Configuring build...${NC}"
 
 cd "$PROJECT_ROOT"
-mkdir -p "$BUILD_DIR"
 
 eval $CONFIG_CMD
 
@@ -211,8 +209,20 @@ fi
 echo -e "${BLUE}[6/6] Running tests...${NC}"
 
 if [ "$RUN_TESTS" = "true" ]; then
+    echo "Verifying test discovery..."
+    TEST_LIST_OUTPUT="$(ctest --test-dir "$PROJECT_ROOT/$BUILD_DIR" -N)"
+    echo "$TEST_LIST_OUTPUT"
+    if ! echo "$TEST_LIST_OUTPUT" | grep -Eq "Total Tests: [1-9][0-9]*"; then
+        echo -e "${RED}✗ No tests were discovered in $BUILD_DIR${NC}"
+        exit 1
+    fi
+
     echo "Running unit tests with CTest..."
-    ctest --test-dir "$PROJECT_ROOT/$BUILD_DIR" --output-on-failure
+    if ctest --help | grep -q -- "--preset"; then
+        ctest --preset "$TEST_PRESET"
+    else
+        ctest --test-dir "$PROJECT_ROOT/$BUILD_DIR" --output-on-failure
+    fi
 
     if [ "$START_SERVICES" = "true" ] && command -v docker >/dev/null 2>&1; then
         echo "Running integration tests with Docker-backed connection smoke..."

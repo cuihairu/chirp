@@ -45,7 +45,7 @@ Deploy individual services:
 ```bash
 # Start each service
 ./services/gateway/chirp_gateway &
-./services/chat/chirp_chat_enhanced &
+./services/chat/chirp_chat &
 ./services/social/chirp_social &
 ./services/voice/chirp_voice &
 ./services/auth/chirp_auth &

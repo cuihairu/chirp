@@ -49,16 +49,21 @@ jobs:
 
     - name: Configure CMake
       run: |
-        cmake -S . -B build \
+        cmake --preset ci \
           -DCMAKE_BUILD_TYPE=${{ matrix.build_type }} \
-          -DENABLE_TESTS=ON \
           -DCMAKE_TOOLCHAIN_FILE=${{ github.workspace }}/vcpkg/scripts/buildsystems/vcpkg.cmake \
           -G Ninja
 
     - name: Build
       run: |
-        cmake --build build --config ${{ matrix.build_type }} -j$(nproc 2>/dev/null || sysctl -n hw.ncpu)
+        cmake --build --preset ci --config ${{ matrix.build_type }} -j$(nproc 2>/dev/null || sysctl -n hw.ncpu)
+
+    - name: Verify tests are discovered
+      shell: bash
+      run: |
+        ctest --test-dir build -N -C ${{ matrix.build_type }} | tee ctest-list.txt
+        grep -Eq "Total Tests: [1-9][0-9]*" ctest-list.txt
 
     - name: Run tests
       run: |
-        ctest --test-dir build --output-on-failure -C ${{ matrix.build_type }} || echo "Some tests may have been skipped"
+        ctest --test-dir build --output-on-failure -C ${{ matrix.build_type }}
