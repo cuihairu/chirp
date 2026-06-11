@@ -1,5 +1,7 @@
 # Chat 服务分布式改造示例
 
+> 状态说明：本文是分布式 Chat 改造示例和实现笔记。实际当前架构边界请以 [Overall Architecture](./architecture.md) 与 [Capability Matrix](./CAPABILITY_MATRIX.md) 为准。
+
 ## 改造后的 Chat 服务主文件
 
 ```cpp

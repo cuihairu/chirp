@@ -19,9 +19,9 @@ const config = defineConfig({
     logo: '/logo.png',
 
     nav: [
-      { text: '指南', link: '/guide/' },
-      { text: '架构', link: '/game_chat_architecture' },
-      { text: 'API 参考', link: '/api/' },
+      { text: '指南', link: '/guide/introduction' },
+      { text: '架构', link: '/architecture' },
+      { text: 'API 参考', link: '/api/overview' },
       { text: 'NPC 系统', link: '/npc_dialog_system' },
       {
         text: 'GitHub',
@@ -47,11 +47,13 @@ const config = defineConfig({
         { text: '概览', collapsed: false, items: [
           { text: '首页', link: '/' },
           { text: '快速开始', link: '/QUICKSTART' },
-          { text: '指南', link: '/guide/' },
-          { text: '架构文档', link: '/game_chat_architecture' },
+          { text: '指南', link: '/guide/introduction' },
+          { text: '整体架构', link: '/architecture' },
+          { text: '能力矩阵', link: '/CAPABILITY_MATRIX' },
+          { text: '游戏聊天设计', link: '/game_chat_architecture' },
           { text: '功能特性', link: '/game_chat_features' },
           { text: 'NPC 对话系统', link: '/npc_dialog_system' },
-          { text: 'API 参考', link: '/api/' },
+          { text: 'API 参考', link: '/api/overview' },
           { text: '部署', link: '/DEPLOYMENT' },
           { text: '分布式部署', link: '/DISTRIBUTED_DEPLOYMENT' },
           { text: '扩展性', link: '/SCALABILITY' },

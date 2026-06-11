@@ -4,6 +4,8 @@ title: Installation
 
 # Installation Guide
 
+> Status note: this page contains environment setup guidance, but the current supported runtime target is still the core `gateway + auth + chat` path. Redis and MySQL are optional for the most basic local build; enhanced auth/chat paths require additional native dependencies.
+
 This guide covers installing Chirp from source and setting up the development environment.
 
 ## System Requirements
@@ -12,11 +14,13 @@ This guide covers installing Chirp from source and setting up the development en
 
 **Required:**
 - GCC 9+ or Clang 11+
-- CMake 3.20+
+- CMake 3.15+
 - Ninja build system
 - Protocol Buffers compiler
-- Redis 7.0+
-- MySQL 8.0+
+
+**Optional for extended runtime paths:**
+- Redis
+- MySQL
 
 **Install:**
 ```bash
@@ -268,6 +272,6 @@ netstat -an | grep 6379
 
 ## Next Steps
 
-- [Quick Start Guide](./quickstart.md)
-- [Architecture Overview](./architecture.md)
+- [Quick Start Guide](../QUICKSTART.md)
+- [Architecture Overview](../architecture.md)
 - [Deployment Guide](./deployment.md)

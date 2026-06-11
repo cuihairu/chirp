@@ -54,6 +54,7 @@ vcpkg/
 node_modules/
 package-lock.json
 yarn.lock
+docs/.vitepress/dist/
 
 # Test build directories
 tests/integration/build/

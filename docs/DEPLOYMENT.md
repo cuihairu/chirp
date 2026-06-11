@@ -1,5 +1,7 @@
 # Chirp Deployment Guide
 
+> Status note: this guide mixes current local deployment notes with production-oriented templates. Verify every command and endpoint against the current service flags before using it as an operations runbook. The supported core path is `gateway + auth + chat`; other services are experimental unless documented in [CAPABILITY_MATRIX.md](./CAPABILITY_MATRIX.md).
+
 ## Table of Contents
 
 - [Deployment Overview](#deployment-overview)
@@ -442,7 +444,9 @@ Services can be configured via command-line arguments or environment variables:
 
 ### Health Checks
 
-All services expose health check endpoints:
+The examples below describe a target operational shape. The current repository does not expose a uniform HTTP health endpoint across all services by default.
+
+Examples:
 
 ```bash
 # Gateway
@@ -456,6 +460,8 @@ curl http://localhost:8000/health
 ```
 
 ### Metrics Export (Prometheus format)
+
+This is a target-state example, not a guarantee that every current service exposes `/metrics` without additional wiring.
 
 Services expose metrics at `/metrics`:
 
@@ -632,8 +638,8 @@ netstat -tlnp | grep 5000
 
 **Can't connect:**
 ```bash
-# Verify service is running
-curl http://localhost:5000/health
+# Verify service process and logs
+docker compose logs gateway
 
 # Check firewall
 sudo ufw status

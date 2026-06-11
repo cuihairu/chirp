@@ -1,5 +1,7 @@
 # Chirp 分布式扩展方案
 
+> 状态说明：本文是扩展性设计和演进文档，不是当前生产容量承诺。当前实现边界请先阅读 [Overall Architecture](./architecture.md) 和 [Capability Matrix](./CAPABILITY_MATRIX.md)。其中 `chirp_chat_distributed`、增强存储、Social/Voice 分布式化等路径应按实验性能力理解。
+
 ## 当前架构分析
 
 ### 单机架构问题

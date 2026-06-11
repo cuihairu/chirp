@@ -1,5 +1,7 @@
 # Chirp 分布式扩展 - 完整指南
 
+> 状态说明：本文描述分布式扩展方案和部署示例。当前默认支持路径与实验性边界请以 [Overall Architecture](./architecture.md) 和 [Capability Matrix](./CAPABILITY_MATRIX.md) 为准；不要把容量数字或集群示例直接理解为已压测的生产承诺。
+
 ## 概述
 
 本文档描述如何将 Chirp 从单机部署扩展到分布式集群部署，支持水平扩展和高可用性。

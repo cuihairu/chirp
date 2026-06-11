@@ -4,197 +4,100 @@ title: Getting Started
 
 # Getting Started
 
-This guide will help you get up and running with Chirp quickly.
+This guide focuses on the current supported backend path: `gateway + auth + chat`.
 
 ## Prerequisites
 
-### Development Environment
+Required:
 
-- **C++ Compiler**: GCC 9+ / Clang 11+ / MSVC 2022+
-- **CMake**: Version 3.20 or higher
-- **vcpkg**: For dependency management
-- **Protocol Buffers**: `protoc` compiler
-- **Redis**: For session management and pub/sub
-- **MySQL**: 8.0+ for persistent storage
+- CMake 3.15 or newer
+- C++17 compiler
+- Protocol Buffers compiler and C++ runtime
 
-### Optional Dependencies
+Optional:
 
-- **Docker**: For containerized deployment
-- **Python 3**: For build scripts
-- **Node.js 18+**: For web dashboard
+- Docker and Docker Compose for Redis/MySQL and multi-service startup
+- MySQL client development library for enhanced auth/chat builds
+- libsodium for enhanced auth builds
 
-## Quick Start
+## Build Locally
 
-### 1. Clone the Repository
-
-```bash
-git clone https://github.com/cuihairu/chirp.git
-cd chirp
-```
-
-### 2. Install Dependencies
-
-#### On Linux/macOS
-
-```bash
-# Install build tools
-sudo apt-get install cmake ninja-build gcc g++ libprotobuf-dev protobuf-compiler
-
-# Install Redis (Ubuntu/Debian)
-sudo apt-get install redis-server
-
-# Install MySQL (Ubuntu/Debian)
-sudo apt-get install mysql-server libmysqlclient-dev
-```
-
-#### On Windows
-
-```bash
-# Use vcpkg for dependencies
-vcpkg install protobuf redis-plus libmysql asio
-```
-
-### 3. Build Protobuf Files
+From the repository root:
 
 ```bash
 ./gen_proto.sh
+cmake --preset dev
+cmake --build --preset dev
+ctest --preset dev
 ```
 
-### 4. Build the Project
+If you only want the minimal build path:
 
 ```bash
-mkdir build && cd build
-cmake -G Ninja -DCMAKE_BUILD_TYPE=Release ..
-cmake --build . --parallel
+cmake --preset minimal
+cmake --build --preset minimal
 ```
 
-### 5. Start Services
+## Smoke Tests
 
 ```bash
-# Start Redis
-redis-server --daemonize yes
-
-# Start MySQL (if needed)
-sudo systemctl start mysql
-
-# Start Gateway
-./build/services/gateway/chirp_gateway
-
-# Start Chat Service
-./build/services/chat/chirp_chat
-
-# Start other services as needed...
+./test_services.sh --smoke       # auth + gateway + TCP/WS login clients
+./test_services.sh --smoke-chat  # chat service + chat clients
+./test_services.sh --smoke-redis # Redis-backed distributed session/kick path
 ```
 
-## Running the CLI Client
-
-Chirp includes a simple CLI client for testing:
+Integration smoke tests:
 
 ```bash
-./build/apps/cli_client/chirp_cli
+bash tests/run_integration_tests.sh
+bash tests/run_integration_tests.sh --local-services --gateway-port 5500 --auth-port 6500
 ```
 
-Example CLI session:
-```
-> connect localhost 5000
-Connected!
-> login user123
-Logged in as user123
-> send Hello, Chirp!
-Message sent
-> quit
-```
-
-## Docker Quick Start
-
-For a complete development environment, use Docker Compose:
+## Docker Compose
 
 ```bash
-docker-compose up -d
+docker compose up --build
 ```
 
-This will start:
-- Gateway Service (ports 5000, 5001)
-- Chat Service (ports 7000, 7001)
-- Social Service (ports 8000, 8001)
-- Voice Service (ports 9000, 9001)
-- Auth Service (port 6000)
-- Notification Service (port 5006)
-- Redis
-- MySQL
+Compose starts Redis, MySQL, Auth, Gateway, Chat, and experimental services. For first validation, focus on:
 
-## Configuration
+- `redis`
+- `auth`
+- `gateway`
+- `chat`
 
-### Environment Variables
+Default useful ports:
 
-| Variable | Description | Default |
-|----------|-------------|---------|
-| `CHIRP_ENV` | Environment (dev/staging/prod) | `dev` |
-| `REDIS_HOST` | Redis server host | `localhost` |
-| `REDIS_PORT` | Redis server port | `6379` |
-| `MYSQL_HOST` | MySQL server host | `localhost` |
-| `MYSQL_PORT` | MySQL server port | `3306` |
-| `MYSQL_DATABASE` | Database name | `chirp` |
-| `MYSQL_USER` | Database user | `chirp` |
-| `MYSQL_PASSWORD` | Database password | `chirp123` |
+| Service | TCP | WebSocket | Notes |
+| --- | --- | --- | --- |
+| Gateway | 5000 | 5001 | login, logout, heartbeat, session |
+| Auth | 6000 | - | auth validation |
+| Chat | 7000 | 7001 | direct chat entry |
 
-### Configuration Files
+## Manual Startup
 
-Services can be configured via JSON config files:
-
-```json
-{
-  "host": "0.0.0.0",
-  "port": 5000,
-  "redis": {
-    "host": "localhost",
-    "port": 6379
-  },
-  "log_level": "info"
-}
-```
-
-## Next Steps
-
-- Learn about the [Architecture](./architecture.md)
-- Explore the [API Reference](../api/overview.md)
-- Check out [SDK Guides](../sdk/overview.md)
-- Read about [Deployment](./deployment.md)
-
-## Troubleshooting
-
-### Build Issues
-
-**Problem**: CMake can't find Protobuf
 ```bash
-export CMAKE_PREFIX_PATH=/usr/local
-cmake ..
+./build/services/auth/chirp_auth --port 6000 --jwt_secret dev_secret
+./build/services/gateway/chirp_gateway --port 5000 --ws_port 5001 --auth_host 127.0.0.1 --auth_port 6000
+./build/services/chat/chirp_chat --port 7000 --ws_port 7001 --redis_host 127.0.0.1 --redis_port 6379 --offline_ttl 604800
 ```
 
-**Problem**: Linker errors on Linux
-```bash
-sudo apt-get install libabsl-dev
+Redis is optional for the most basic local chat test, but it is recommended when validating offline queues, history lists, or distributed session behavior.
+
+## Protocol Reminder
+
+Both TCP and WebSocket carry:
+
+```text
+[uint32_be payload_size][chirp.gateway.Packet protobuf bytes]
 ```
 
-### Runtime Issues
+`Packet.msg_id` is inside the protobuf envelope. It is not a separate 2-byte network header.
 
-**Problem**: Services can't connect to Redis
-```bash
-# Check if Redis is running
-redis-cli ping
-# Should return: PONG
-```
+## Current Limitations
 
-**Problem**: Database connection errors
-```bash
-# Check MySQL
-mysql -u chirp -p chirp123
-# Create database if needed
-CREATE DATABASE chirp;
-```
+- Gateway login does not automatically authenticate a separate Chat connection.
+- Chat messages currently go to the Chat service directly, not through Gateway.
+- Social, voice, notification, search, mobile app, admin dashboard, and SDK wrappers are not all production-ready.
 
-## Getting Help
-
-- Check the [GitHub Issues](https://github.com/cuihairu/chirp/issues)
-- Start a [Discussion](https://github.com/cuihairu/chirp/discussions)
-- Read the [API Documentation](../api/overview.md)
+See [Overall Architecture](../architecture.md) and [Capability Matrix](../CAPABILITY_MATRIX.md) for the exact status.

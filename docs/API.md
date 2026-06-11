@@ -1,5 +1,9 @@
 # Chirp API Documentation
 
+> Current status: this file contains both supported core API notes and broader experimental protocol surface. For the currently verified packet format and endpoint status, read [api/overview.md](./api/overview.md). For implementation status, read [CAPABILITY_MATRIX.md](./CAPABILITY_MATRIX.md).
+>
+> The current supported backend path is `gateway + auth + chat`. Gateway does not yet forward chat/social/voice business packets; current chat clients connect to the Chat service directly.
+
 ## Table of Contents
 
 - [Protocol Reference](#protocol-reference)
@@ -10,6 +14,16 @@
 ---
 
 ## Protocol Reference
+
+### Packet Framing
+
+TCP and WebSocket binary frames both carry:
+
+```text
+[uint32_be payload_size][chirp.gateway.Packet protobuf bytes]
+```
+
+`MsgID` is a field inside `chirp.gateway.Packet`, not a separate 2-byte network-frame header.
 
 ### Common Types
 
@@ -202,9 +216,9 @@ message CreateRoomRequest {
 
 **Message Flow:**
 ```
-Client → Gateway → Auth Service (login)
-Client → Gateway → Chat/Social/Voice (requests)
-Client ← Gateway ← Chat/Social/Voice (responses)
+Client → Gateway → Auth Service (login/logout when auth_host is configured)
+Client → Chat Service directly (current chat requests)
+Client → Social/Voice directly only for experimental validation
 ```
 
 ### Auth Service (port 6000)

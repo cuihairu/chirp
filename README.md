@@ -18,7 +18,7 @@
 - **聊天 App/移动端**：App 通过 WebSocket 接入（适合浏览器/移动端网络环境）。
 - **多端登录/挤下线**：同一账号多设备登录，支持 kick（最后登录优先）。
 - **多实例 Gateway**：可选 Redis 实现分布式”session owner”并通过 Pub/Sub 触发跨实例踢人。
-- **玩家与 NPC 对话**：支持游戏内 AI NPC 对话系统，包含人设绑定、任务触发、指令响应和智能闲聊。
+- **玩家与 NPC 对话设计**：包含人设绑定、任务触发、指令响应和智能闲聊等设计方向。
 
 ## 协议（对接要点）
 
@@ -227,7 +227,7 @@ sh /tmp/chirp_chat_export_ack.sh
 
 ## NPC 对话系统
 
-`chirp` 支持游戏内玩家与 AI NPC 的对话交互，提供完整的对话管理能力。
+`chirp` 包含游戏内玩家与 AI NPC 对话交互的设计文档，用于指导后续实现。
 
 ### 功能特性
 
@@ -278,6 +278,7 @@ message NpcChatResponse {
 ## Docs
 
 - 总览文档：`docs/README.md`
+- 整体架构：`docs/architecture.md`
 - 能力矩阵：`docs/CAPABILITY_MATRIX.md`
 - 标准本地构建：`CMakePresets.json`
 - 在阅读路线图或功能介绍前，建议先看能力矩阵，避免把规划中的能力误解为默认可用能力

@@ -4,6 +4,8 @@ title: Deployment
 
 # Deployment Guide
 
+> Status note: this page is a deployment guide draft. The current supported path is `gateway + auth + chat`; social, voice, notification, and search services are experimental. Verify commands and endpoint assumptions against [Overall Architecture](../architecture.md) and [Capability Matrix](../CAPABILITY_MATRIX.md).
+
 This guide covers deploying Chirp to production environments.
 
 ## Deployment Options
@@ -247,8 +249,8 @@ docker-compose down
 # Deploy previous version
 docker-compose -f docker-compose.v1.yml up -d
 
-# Verify health
-./scripts/health_check.sh
+# Verify by checking service logs and running the smoke tests again
+docker-compose logs --tail=50
 ```
 
 ### Database Rollback
@@ -289,6 +291,6 @@ sudo systemctl start mysql
 
 ## Next Steps
 
-- [Monitoring Guide](../ops/monitoring.md)
-- [Scalability Guide](../ops/scalability.md)
+- [Overall Architecture](../architecture.md)
+- [Scalability Notes](../SCALABILITY.md)
 - [API Reference](../api/overview.md)

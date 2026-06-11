@@ -3,95 +3,57 @@ home: true
 title: 首页
 heroImage: /logo.png
 heroText: Chirp
-tagline: 面向游戏开发的轻量聊天后端骨架
+tagline: 面向游戏开发的轻量实时通信后端骨架
 actions:
-  - text: 快速开始 →
-    link: /guide/getting-started
+  - text: 整体架构
+    link: /architecture
     type: primary
-  - text: NPC 对话系统
-    link: /npc_dialog_system
+  - text: 快速开始
+    link: /guide/getting-started
     type: secondary
 
 features:
-  - title: 高性能
-    details: 超低延迟消息传递，单服务器支持 10k+ 并发连接。
-  - title: 丰富通信
-    details: 私聊、群组、频道、表情反应等游戏内通信所需的一切。
-  - title: 游戏优先
-    details: 专为游戏服务器集成设计，支持 TCP/WebSocket 双协议。
-  - title: 多端登录
-    details: 支持同一账号多设备登录，支持踢出（最后登录优先）。
-  - title: 分布式会话
-    details: 可选 Redis 实现分布式会话管理。
-  - title: NPC 对话
-    details: 支持 AI NPC 对话系统，包含人设、任务、指令响应。
+  - title: 核心链路
+    details: 当前建议优先验证 gateway + auth + chat 三个核心服务。
+  - title: 双协议接入
+    details: TCP 和 WebSocket 使用同一套长度前缀 Protobuf Packet 协议。
+  - title: Redis 扩展
+    details: Redis 可用于 Gateway 分布式 session、跨实例 kick、聊天历史和离线队列。
+  - title: 渐进演进
+    details: 社交、语音、通知、搜索、SDK 和应用侧代码已在仓库中，但完成度不一致。
 
 footer: MIT Licensed | Copyright © 2024-Present Chirp Project
 ---
 
-## 文档导航
+## 当前定位
 
-- **[指南](/guide/)** - 快速开始、安装、部署
-- **[架构文档](/game_chat_architecture)** - 系统设计与组件化架构
-- **[功能特性](/game_chat_features)** - 游戏聊天功能详解
-- **[NPC 对话系统](/npc_dialog_system)** - AI NPC 对话完整设计
-- **[API 参考](/api/overview)** - 协议与接口说明
+Chirp 目前应被理解为一个“可运行的核心通信骨架 + 一批实验性扩展”，而不是所有目录都同等成熟的完整产品套件。
 
-## 快速开始
+优先阅读：
 
-```bash
-# 克隆仓库
-git clone https://github.com/cuihairu/chirp.git
-cd chirp
-
-# 生成 Protobuf 文件
-./gen_proto.sh
-
-# 构建
-cmake -S . -B build
-cmake --build build -j
-
-# Docker Compose 一键启动
-docker compose up -d
-```
+- [整体架构](/architecture)：当前服务边界、协议、数据流和架构合理性判断
+- [能力矩阵](/CAPABILITY_MATRIX)：各服务、SDK、应用的真实完成度
+- [快速开始](/guide/getting-started)：本地构建和 smoke test
+- [API 概述](/api/overview)：当前协议 envelope 和核心消息
 
 ## 核心服务
 
-| 服务 | TCP 端口 | WebSocket 端口 | 说明 |
-|-----|---------|---------------|------|
-| Gateway | 5000 | 5001 | 连接路由与会话管理 |
-| Auth | 6000 | - | 认证与会话验证 |
-| Chat | 7000 | 7001 | 消息与群聊 |
+| 服务 | 默认端口 | 当前状态 | 说明 |
+| --- | --- | --- | --- |
+| Gateway | TCP 5000 / WS 5001 | Supported | 登录、登出、心跳、会话绑定、可选 Redis 跨实例 kick |
+| Auth | TCP 6000 | Supported | 基础 token flow；依赖满足时构建增强认证实现 |
+| Chat | TCP 7000 / WS 7001 | Supported | 私聊、历史、离线队列；依赖满足时构建增强存储路径 |
 
-## SDK 支持
+实验性模块：
 
-| 平台 | SDK | 状态 |
-|------|-----|------|
-| C++ | Core SDK | ✅ 稳定 |
-| Unity | C# Wrapper | 规划中 |
-| Unreal | UPlugin | 规划中 |
-| Flutter | Dart/FFI | 规划中 |
+| 模块 | 默认端口 | 状态 |
+| --- | --- | --- |
+| Social | TCP 8000 / WS 8001 | Experimental |
+| Voice | TCP 9000 / WS 9001 | Experimental |
+| Notification | 5006 | Experimental |
+| Search | 5007 | Experimental |
+| SDKs / mobile / admin | varies | Experimental / Demo / Stub |
 
-## 技术栈
+## 架构判断
 
-- **语言**: C++20
-- **网络**: ASIO (Boost.Asio standalone)
-- **序列化**: Protocol Buffers
-- **存储**: Redis (缓存)、MySQL (持久化)
-- **构建**: CMake
-- **AI**: LLM 驱动的 NPC 对话系统
-
-## 协议
-
-传输层支持 TCP 和 WebSocket，统一使用 Protobuf 编码：
-
-```
-┌───────────────┬───────────────┬───────────────────────┐
-│   Length     │   MsgID      │   Protobuf Body       │
-│  (4 bytes)   │  (2 bytes)   │   (variable)          │
-└───────────────┴───────────────┴───────────────────────┘
-```
-
-## 许可证
-
-MIT License - see [LICENSE](https://github.com/cuihairu/chirp/LICENSE) for details.
+当前架构对“游戏聊天后端骨架、本地验证、协议接入和二次开发”是合理的。它还不应该被描述为生产级统一通信平台，因为 `gateway` 尚未转发聊天等业务包，`chat` 仍是独立接入口，部分高级能力缺少统一会话和验证链路。
