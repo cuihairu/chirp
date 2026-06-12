@@ -1,43 +1,38 @@
 # chirp
 
-`chirp` 是一个面向游戏开发的实时通信后端仓库，目前最成熟的主线是 `gateway + auth + chat` 三个核心服务。
+`chirp` 是一个面向游戏开发的实时通信后端骨架。当前最成熟、最应该优先验证的主线是：
 
-仓库中还包含社交、语音、搜索、通知、多端 SDK、移动端和管理后台等扩展模块，但这些模块的完成度并不一致。阅读本文时，请优先把它理解为一个“可运行的核心通信骨架 + 一批实验性扩展”，而不是所有目录都同等成熟的完整产品。
+```text
+gateway + auth + chat
+```
 
-当前能力状态见 [docs/CAPABILITY_MATRIX.md](docs/CAPABILITY_MATRIX.md)。
+仓库里还包含 `social`、`voice`、`notification`、`search`、多端 SDK、移动端和管理后台等扩展代码，但这些模块完成度不一致。阅读或对外介绍时，请把它定位为“可运行的核心通信骨架 + 实验性扩展”，不要把所有目录都描述成稳定产品能力。
 
-## 当前建议使用范围
+## 先读什么
 
-- **核心后端链路**：`gateway + auth + chat`
-- **适合用途**：本地验证、协议接入、游戏聊天原型、后续二次开发
-- **实验性模块**：`social`、`voice`、`notification`、`search`、多端 SDK、移动端、管理后台
+- [核心说明](docs/CORE.md)：当前可用链路、服务边界、协议和本地验证命令
+- [能力矩阵](docs/CAPABILITY_MATRIX.md)：各服务、SDK、应用的真实完成度
+- [快速开始](docs/guide/getting-started.md)：构建、Docker Compose、smoke test
+- [API 概述](docs/api/overview.md)：当前 Packet 协议、消息 ID 和核心流程
+- [整体架构](docs/architecture.md)：服务拓扑、数据流和架构判断
 
-## 适用场景
+## 核心服务
 
-- **游戏内聊天**：游戏客户端（C++/Unity/Unreal 等）通过 TCP 连接，低延迟、易控。
-- **聊天 App/移动端**：App 通过 WebSocket 接入（适合浏览器/移动端网络环境）。
-- **多端登录/挤下线**：同一账号多设备登录，支持 kick（最后登录优先）。
-- **多实例 Gateway**：可选 Redis 实现分布式”session owner”并通过 Pub/Sub 触发跨实例踢人。
-- **玩家与 NPC 对话设计**：包含人设绑定、任务触发、指令响应和智能闲聊等设计方向。
+| 服务 | 默认端口 | 当前状态 | 作用 |
+| --- | --- | --- | --- |
+| Gateway | TCP 5000 / WS 5001 | Supported | 登录、登出、心跳、会话绑定、可选 Redis 跨实例 kick |
+| Auth | TCP 6000 | Supported | 基础 token flow；依赖满足时可构建增强认证实现 |
+| Chat | TCP 7000 / WS 7001 | Supported | 私聊、历史、离线队列；可选 Redis/MySQL 增强路径 |
 
-## 协议（对接要点）
+当前核心使用方式：
 
-传输层分两种：
-- **TCP**：4 字节大端长度前缀 + Protobuf payload。
-- **WebSocket**：WebSocket binary frame 内同样是“长度前缀 + Protobuf payload”。
+- 客户端连接 `gateway` 做登录、心跳和会话验证。
+- 聊天消息当前直连 `chat`，不是经由 `gateway` 统一转发。
+- Redis 是可选增强，用于 Gateway 分布式 session、跨实例 kick、Chat 历史和离线队列。
 
-业务层统一用 `proto/gateway.proto` 里的 `chirp.gateway.Packet` 做 envelope：
-- `msg_id`：消息类型（Login/Heartbeat/Chat 等）
-- `sequence`：请求序号（用于匹配响应）
-- `body`：具体业务消息（protobuf bytes）
+## 快速开始
 
-对应的业务 proto：
-- `proto/auth.proto`：登录/登出响应、Kick 通知等
-- `proto/chat.proto`：1v1 消息、历史拉取等
-
-## 快速开始（本地）
-
-依赖：CMake >= 3.15、C++17、Protobuf（`protoc` + C++ runtime）。Go **可选**（用于生成 `proto/go`）。
+依赖：CMake 3.15+、C++17、Protocol Buffers。Docker、MySQL、libsodium 为可选增强依赖。
 
 ```bash
 ./gen_proto.sh
@@ -46,239 +41,56 @@ cmake --build --preset dev
 ctest --preset dev
 ```
 
-如果你不想编译测试目标，可以使用：
+最小构建：
 
 ```bash
 cmake --preset minimal
 cmake --build --preset minimal
 ```
 
-### 一键 smoke test
+smoke test：
 
 ```bash
-./test_services.sh --smoke       # auth + gateway + tcp/ws 客户端
+./test_services.sh --smoke       # auth + gateway + TCP/WS login
 ./test_services.sh --smoke-chat  # chat + chat clients
-./test_services.sh --smoke-redis # 需要 Docker：Redis 分布式 session + 跨实例 kick（tcp + ws）
-bash tests/run_integration_tests.sh
-bash tests/run_integration_tests.sh --local-services --gateway-port 5500 --auth-port 6500
+./test_services.sh --smoke-redis # Redis session/kick path
 ```
 
-其中：
-- `bash tests/run_integration_tests.sh`：跑本地 protobuf/framing smoke
-- `bash tests/run_integration_tests.sh --local-services ...`：脚本会自动拉起本地 `auth` 和 `gateway`，执行真实 `LOGIN_REQ -> LOGIN_RESP` 验证后自动清理
-
-### Docker Compose 一键启动（推荐）
+Docker Compose：
 
 ```bash
 docker compose up --build
 ```
 
-默认会启动多个服务，但建议你优先只验证这条核心路径：
+## 协议要点
 
-- `redis`
-- `auth`
-- `gateway`
-- `chat`
+TCP 和 WebSocket 使用同一套二进制 payload：
 
-其余服务目前更适合作为实验性模块查看和二次开发。
-
-完整 Compose 默认会启动：
-- `redis`（6379）
-- `chirp_auth`（6000）
-- `chirp_gateway`：TCP 5000 / WebSocket 5001（连接 `auth` + `redis`）
-- `chirp_chat`：TCP 7000 / WebSocket 7001
-
-可选：启用归档 worker（默认不启用）：
-
-```bash
-docker compose --profile archive up --build
+```text
+[uint32_be payload_size][chirp.gateway.Packet protobuf bytes]
 ```
 
-`chat_archive` 默认只会周期性导出 SQL/ack 文件到 volume，不会自动执行 MySQL 导入或删除 Redis 数据。
-如果你有外部 MySQL，可以覆盖 command 追加 `--mysql_cmd ... --apply_ack 1`。
+业务 envelope 定义在 `proto/gateway.proto`：
 
-### 手动启动（默认端口）
+- `msg_id`：消息类型，例如 `LOGIN_REQ`、`HEARTBEAT_PING`、`SEND_MESSAGE_REQ`
+- `sequence`：请求序号，用于匹配响应
+- `body`：具体业务 protobuf bytes，例如 `chirp.auth.LoginRequest`
 
-```bash
-./build/services/auth/chirp_auth --port 6000 --jwt_secret dev_secret
-./build/services/gateway/chirp_gateway --port 5000 --ws_port 5001 --auth_host 127.0.0.1 --auth_port 6000
-./build/services/chat/chirp_chat --port 7000 --ws_port 7001 --redis_host 127.0.0.1 --redis_port 6379 --offline_ttl 604800
-```
+## 当前边界
 
-如果你只是想验证登录链路，不需要手工起服务，也可以直接运行：
-
-```bash
-bash tests/run_integration_tests.sh --local-services --gateway-port 5500 --auth-port 6500
-```
-
-可选：启用 Redis 分布式 session（多实例 gateway 时有用）：
-
-```bash
-./build/services/gateway/chirp_gateway --port 5000 --ws_port 5001 --redis_host 127.0.0.1 --redis_port 6379
-```
-
-可选：启用 Redis 聊天历史/离线缓冲（chat service）：
-
-```bash
-./build/services/chat/chirp_chat --port 7000 --redis_host 127.0.0.1 --redis_port 6379
-```
-
-可选：将 Redis 中的聊天历史/离线队列导出为 MySQL 可执行 SQL，并生成 Redis 清理脚本：
-
-```bash
-./build/tools/benchmark/chirp_chat_mysql_exporter \
-  --redis_host 127.0.0.1 --redis_port 6379 \
-  --out /tmp/chirp_chat_export.sql \
-  --ack_out /tmp/chirp_chat_export_ack.sh
-
-mysql -h 127.0.0.1 -u root -p your_db < /tmp/chirp_chat_export.sql
-sh /tmp/chirp_chat_export_ack.sh
-```
-
-也可以直接使用仓库脚本串起来执行“导出 -> 入库 -> 成功后 ack 清理”：
-
-```bash
-./tools/archive_chat_redis.sh \
-  --redis_host 127.0.0.1 --redis_port 6379 \
-  --mysql_cmd "mysql -h 127.0.0.1 -u root -p your_db" \
-  --apply_ack 1
-```
-
-如果需要周期性批量归档，可以直接跑 loop worker：
-
-```bash
-./tools/archive_chat_redis_loop.sh \
-  --redis_host 127.0.0.1 --redis_port 6379 \
-  --mysql_cmd "mysql -h 127.0.0.1 -u root -p your_db" \
-  --apply_ack 1 \
-  --interval_secs 60
-```
-
-## 真实完成度说明
-
-### Supported
-
-- `services/gateway`
-- `services/auth` 默认目标 `chirp_auth`
-  - 检测到 MySQL 和 libsodium 依赖时，`chirp_auth` 会优先构建增强实现
-- `services/chat` 默认目标 `chirp_chat`
-  - 检测到 MySQL 依赖时，`chirp_chat` 会优先构建增强实现
-- `tools/benchmark`
-- Docker Compose 下的核心联调路径
-
-### Experimental
-
-- `chirp_auth_enhanced`（兼容命名，实际收敛到 `chirp_auth` 产品入口）
-- `chirp_chat_distributed`
-- `chirp_chat_enhanced`（兼容命名，实际收敛到 `chirp_chat` 产品入口）
-- `services/social`
-- `services/voice`
-- `services/notification`
-- `services/search`
-- `sdks/core`、`sdks/unity`、`sdks/unreal`
-
-### Demo / Stub
-
-- `apps/mobile_companion`
-- `apps/admin_dashboard`
-
-## 游戏快速接入（推荐路径）
-
-### 方案 A：直接使用 Core SDK（C++）
-
-`sdks/core` 提供了一个最小可用的 C++ 客户端（TCP + 长度前缀 Protobuf framing），适合在游戏客户端里快速打通登录、收消息、发消息的链路。
-
-> 目前示例客户端默认直连 `services/chat`（端口 7000）来演示收发与历史；`services/gateway` 目前主要提供边缘接入与会话能力。这也意味着仓库的“统一入口”架构还在继续收敛中。
-
-示例程序：
-
-```bash
-./build/sdks/core/sdk_example
-```
-
-### 方案 B：自己实现客户端（Unity/Unreal/自研引擎）
-
-你只需要实现两件事：
-1) **连接**：TCP 或 WebSocket（二进制帧）
-2) **拆包/粘包处理**：4 字节大端长度 + payload（payload 是 `chirp.gateway.Packet`）
-
-典型流程：
-- `LOGIN_REQ` -> `LOGIN_RESP`
-- 定时 `HEARTBEAT_PING` -> `HEARTBEAT_PONG`
-- 收到 `KICK_NOTIFY`：提示并断开/重登
-- 聊天：`SEND_MESSAGE_REQ` / `CHAT_MESSAGE_NOTIFY` / `GET_HISTORY_REQ`
-
-> 当前仓库中，`services/chat` 支持 1v1 消息路由、离线消息补投递与历史拉取；未配置 Redis 时使用内存队列/历史，配置 `--redis_host/--redis_port` 后会把最近消息和离线队列缓存在 Redis List 中。生产环境建议继续落到 MySQL 做持久化归档。
-
-## 聊天 App 接入（WebSocket）
-
-`services/gateway` 同时提供 WebSocket（`--ws_port`）。WebSocket 客户端发送 binary frame，frame payload 仍然是长度前缀 + `chirp.gateway.Packet`。
-
-`services/chat` 现在也提供 WebSocket（默认 `--ws_port 7001`），协议同样是 binary frame + 长度前缀 + `chirp.gateway.Packet`，可用于聊天能力直连验证。
-
-当 `services/chat` 配置了 `--redis_host/--redis_port` 时，私聊消息会在接收方离线时写入 Redis 列表，并在接收方下次 `LOGIN_REQ` 后回放为 `CHAT_MESSAGE_NOTIFY`（当前为轻量离线能力，便于后续迁移到 MySQL 持久化）。
-
-可以用仓库内工具快速验证：
-
-```bash
-./build/tools/benchmark/chirp_ws_login_client --host 127.0.0.1 --port 5001 --token user_1 --device dev --platform web
-./build/tools/benchmark/chirp_ws_ping_client  --host 127.0.0.1 --port 5001
-```
-
-## NPC 对话系统
-
-`chirp` 包含游戏内玩家与 AI NPC 对话交互的设计文档，用于指导后续实现。
-
-### 功能特性
-
-- **NPC 人设系统**：每个 NPC 拥有独立的人设配置（性格、说话风格、背景故事）
-- **任务对话触发**：支持通过对话触发、推进游戏任务
-- **指令响应系统**：NPC 可识别并响应特定指令（交易、传送、领取奖励等）
-- **AI 智能闲聊**：基于大语言模型的自然对话，严格符合 NPC 人设
-
-### 对话流程
-
-```
-玩家发起对话 -> Gateway -> Chat Service -> NPC 引擎
-    ↓
-[人设加载] -> [意图识别] -> [对话生成/指令执行] -> [响应返回]
-```
-
-### 接入示例
-
-```protobuf
-// 发送 NPC 消息
-message NpcChatRequest {
-  uint64 npc_id = 1;       // NPC ID
-  string message = 2;      // 玩家消息
-  uint64 scene_id = 3;     // 当前场景 ID（上下文）
-}
-
-message NpcChatResponse {
-  uint64 npc_id = 1;
-  string reply = 2;        // NPC 回复
-  NpcAction action = 3;    // 触发的动作（任务/指令等）
-}
-```
-
-> NPC 对话功能目前主要体现在设计文档层，参考 `docs/npc_dialog_system.md`。在将其视为正式能力前，请先自行核对对应服务集成情况。
+- `gateway` 还不是通用业务路由层；聊天包请发到 `chat`。
+- `gateway` 登录不会自动授权一个独立的 `chat` 连接。
+- `social`、`voice`、`notification`、`search`、SDK、移动端、管理后台都不应默认视为生产稳定能力。
+- NPC 对话系统目前主要是设计文档，不能当作已落地后端能力。
 
 ## 工程结构
 
-- `proto/`：协议定义（生成代码在 `proto/cpp`、`proto/go`）
-- `libs/common`：基础工具（logger、JWT/HS256、base64、sha256）
-- `libs/network`：ASIO TCP/WS server/session + framing + Redis RESP（用于分布式 session）
-- `services/gateway`：边缘入口（TCP + WebSocket），可选 Auth RPC、可选 Redis 分布式 session
-- `services/auth`：认证服务（JWT HS256 校验示例）
-- `services/chat`：聊天服务（1v1 + history 示例实现）
-- `sdks/core`：C++ Core SDK（快速集成）
-- `tools/benchmark`：本地验证工具（login/ping/ws/chat）
-- `tests`：单元测试（gtest）
-
-## Docs
-
-- 总览文档：`docs/README.md`
-- 整体架构：`docs/architecture.md`
-- 能力矩阵：`docs/CAPABILITY_MATRIX.md`
-- 标准本地构建：`CMakePresets.json`
-- 在阅读路线图或功能介绍前，建议先看能力矩阵，避免把规划中的能力误解为默认可用能力
+- `proto/`：协议定义
+- `libs/common`：日志、JWT/HS256、base64、sha256 等基础工具
+- `libs/network`：ASIO TCP/WS server/session、framing、Redis RESP
+- `services/gateway`：边缘入口和会话能力
+- `services/auth`：认证服务
+- `services/chat`：私聊、历史和离线队列
+- `sdks/core`：C++ 客户端集成实验
+- `tools/benchmark`：本地验证工具
+- `tests`：单元和集成 smoke 测试

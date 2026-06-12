@@ -174,4 +174,4 @@ The common response code enum is defined in `proto/common.proto`.
 
 - [Overall Architecture](../architecture.md)
 - [Capability Matrix](../CAPABILITY_MATRIX.md)
-- [Top-level API Notes](../API.md)
+- [Core](../CORE.md)

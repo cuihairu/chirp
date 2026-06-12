@@ -272,6 +272,6 @@ netstat -an | grep 6379
 
 ## Next Steps
 
-- [Quick Start Guide](../QUICKSTART.md)
+- [Getting Started](./getting-started.md)
 - [Architecture Overview](../architecture.md)
 - [Deployment Guide](./deployment.md)
