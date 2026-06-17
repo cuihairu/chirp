@@ -1,5 +1,7 @@
 # 游戏聊天服务组件化架构 (Modular Game Chat Architecture)
 
+> 状态说明：本文是游戏聊天功能拆解的设计笔记，不代表 Chirp 当前已支持这些完整能力。当前可验证路径请以 [Core](./CORE.md) 和 [Capability Matrix](./CAPABILITY_MATRIX.md) 为准。
+
 ## 1. 设计理念 (Design Philosophy)
 
 为了适应不同终端（PC/Mobile/Web/Watch）和不同场景（激烈战斗/休闲大厅/独立 App）的需求，聊天服务不再是一个单体功能块，而是 **可配置、可组合的组件集合 (Composable Feature Modules)**。

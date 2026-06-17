@@ -1,5 +1,7 @@
 # 游戏战斗系统最佳实践 (Game Combat System Best Practices)
 
+> 状态说明：本文是通用游戏战斗设计笔记，不是 Chirp 当前后端能力说明。它更适合作为玩法系统或客户端实现的参考。
+
 针对塔防 (Tower Defense) 和 MMORPG 两类游戏，战斗系统的设计重心虽然不同，但在架构模式上有很多通用的最佳实践。以下是分门别类的详细建议。
 
 ## 1. 核心架构模式：Entity-Component-System (ECS) vs 面向对象 (OOP)
