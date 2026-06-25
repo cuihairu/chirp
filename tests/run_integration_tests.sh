@@ -24,6 +24,7 @@ FORCE_VCPKG_INSTALL=false
 AUTH_PID=""
 GATEWAY_PID=""
 LOG_DIR=""
+MACOS_ARCH_ARGS=()
 
 # Parse arguments first so --help does not trigger dependency setup.
 while [[ $# -gt 0 ]]; do
@@ -113,6 +114,21 @@ if [[ "$OSTYPE" == "msys" || "$OSTYPE" == "win32" || "$OSTYPE" == "cygwin" ]]; t
   MAIN_LIB_NETWORK="$CHIRP_ROOT/build/libs/network/Debug/chirp_network.lib"
   MAIN_LIB_PROTOS="$CHIRP_ROOT/build/proto/Debug/chirp_protos.lib"
   TEST_BIN="./Debug/chirp_integration_test.exe"
+elif [[ "$OSTYPE" == "darwin"* ]]; then
+  MACOS_ARCH="${CMAKE_OSX_ARCHITECTURES:-$(uname -m)}"
+  case "$MACOS_ARCH" in
+    arm64|x86_64) ;;
+    *)
+      echo -e "${YELLOW}Warning: unsupported macOS architecture '${MACOS_ARCH}', defaulting to host arch from uname -m${NC}"
+      MACOS_ARCH="$(uname -m)"
+      ;;
+  esac
+  MACOS_ARCH_ARGS=(-DCMAKE_OSX_ARCHITECTURES="$MACOS_ARCH")
+  CMAKE_GENERATOR="Unix Makefiles"
+  CMAKE_PLATFORM=()
+  MAIN_LIB_NETWORK="$CHIRP_ROOT/build/libs/network/libchirp_network.a"
+  MAIN_LIB_PROTOS="$CHIRP_ROOT/build/proto/libchirp_protos.a"
+  TEST_BIN="./chirp_integration_test"
 else
   CMAKE_GENERATOR="Unix Makefiles"
   CMAKE_PLATFORM=()
@@ -232,9 +248,11 @@ if [ ! -f "$MAIN_LIB_NETWORK" ] || [ ! -f "$MAIN_LIB_PROTOS" ]; then
     if [ "$USE_VCPKG_TOOLCHAIN" = "true" ]; then
       cmake .. -G "$CMAKE_GENERATOR" "${CMAKE_PLATFORM[@]}" \
           -DCMAKE_TOOLCHAIN_FILE="$VCPKG_TOOLCHAIN" \
+          "${MACOS_ARCH_ARGS[@]}" \
           -DENABLE_TESTS=ON
     else
       cmake .. -G "$CMAKE_GENERATOR" "${CMAKE_PLATFORM[@]}" \
+          "${MACOS_ARCH_ARGS[@]}" \
           -DENABLE_TESTS=ON
     fi
     cmake --build . --config Debug --target chirp_common chirp_network chirp_protos
@@ -248,9 +266,11 @@ cd build
 
 if [ "$USE_VCPKG_TOOLCHAIN" = "true" ]; then
   cmake .. -G "$CMAKE_GENERATOR" "${CMAKE_PLATFORM[@]}" \
-      -DCMAKE_TOOLCHAIN_FILE="$VCPKG_TOOLCHAIN"
+      -DCMAKE_TOOLCHAIN_FILE="$VCPKG_TOOLCHAIN" \
+      "${MACOS_ARCH_ARGS[@]}"
 else
-  cmake .. -G "$CMAKE_GENERATOR" "${CMAKE_PLATFORM[@]}"
+  cmake .. -G "$CMAKE_GENERATOR" "${CMAKE_PLATFORM[@]}" \
+      "${MACOS_ARCH_ARGS[@]}"
 fi
 
 if [ $? -ne 0 ]; then

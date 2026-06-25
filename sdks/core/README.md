@@ -10,11 +10,10 @@ The Chirp Core SDK is a C++ client library that provides a unified interface for
 
 ## Platform Support
 
-- Windows (MSVC 2019+)
-- macOS (Xcode 12+)
-- Linux (GCC 9+, Clang 10+)
-- iOS (Xcode 12+)
-- Android (NDK 21+)
+- Windows (MSVC 2022 17.10+)
+- macOS / iOS (Xcode 15.3+)
+- Linux (GCC 13+ or Clang 17+)
+- Android (NDK r27+)
 
 ## Building
 

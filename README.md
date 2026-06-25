@@ -32,7 +32,7 @@ gateway + auth + chat
 
 ## 快速开始
 
-依赖：CMake 3.15+、C++17、Protocol Buffers。Docker、MySQL、libsodium 为可选增强依赖。
+依赖：CMake 3.21+、C++23、Protocol Buffers。Docker、MySQL、libsodium 为可选增强依赖。
 
 ```bash
 ./gen_proto.sh
@@ -54,6 +54,14 @@ smoke test：
 ./test_services.sh --smoke       # auth + gateway + TCP/WS login
 ./test_services.sh --smoke-chat  # chat + chat clients
 ./test_services.sh --smoke-redis # Redis session/kick path
+```
+
+如果你在 macOS 上通过 vcpkg 配置，记得显式传架构，否则 vcpkg 可能回退到系统依赖：
+
+```bash
+cmake --preset dev \
+  -DCMAKE_TOOLCHAIN_FILE="$VCPKG_ROOT/scripts/buildsystems/vcpkg.cmake" \
+  -DCMAKE_OSX_ARCHITECTURES="$(uname -m)"
 ```
 
 Docker Compose：

@@ -6,8 +6,8 @@ public class ChirpSDK : ModuleRules
 	{
 		PCHUsage = ModuleRules.PCHUsageMode.UseExplicitOrSharedPCHs;
 
-		// Enable C++17
-		CppStandard = CppStandardVersion.Cpp17;
+		// Enable C++23
+		CppStandard = CppStandardVersion.Cpp23;
 
 		// Include directories
 		string ChirpRootPath = System.IO.Path.GetFullPath(

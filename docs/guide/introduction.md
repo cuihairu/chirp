@@ -4,7 +4,7 @@ title: Introduction
 
 # Introduction
 
-Chirp is a game-oriented realtime communication backend skeleton. The current supported path is `gateway + auth + chat`; other services, SDKs, and apps should be treated as experimental, demo, or stub unless [Capability Matrix](../CAPABILITY_MATRIX.md) says otherwise.
+Chirp is a game-oriented realtime communication backend skeleton. The current supported path is `gateway + auth + chat`; other services, SDKs, and apps should be treated as experimental, demo, or stub unless [Capability Matrix](../CAPABILITY_MATRIX.md) says otherwise. The current build baseline is C++23.
 
 Start here:
 

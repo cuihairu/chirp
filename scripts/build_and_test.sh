@@ -26,6 +26,7 @@ echo -e "${BLUE}=== Chirp Build and Test Script ===${NC}"
 echo ""
 
 USE_VCPKG_TOOLCHAIN="false"
+MACOS_ARCH_ARGS=()
 
 # Get script directory
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
@@ -103,6 +104,15 @@ if [[ "$OSTYPE" == "msys" || "$OSTYPE" == "win32" || "$OSTYPE" == "cygwin" ]]; t
     BUILD_CMD="cmake --build --preset \"$BUILD_PRESET\" --config $BUILD_TYPE"
     INTEGRATION_TEST_BIN="$PROJECT_ROOT/tests/integration/build/Debug/chirp_integration_test.exe"
 elif [[ "$OSTYPE" == "darwin"* ]]; then
+    MACOS_ARCH="${CMAKE_OSX_ARCHITECTURES:-$(uname -m)}"
+    case "$MACOS_ARCH" in
+        arm64|x86_64) ;;
+        *)
+            echo -e "${YELLOW}Warning: unsupported macOS architecture '${MACOS_ARCH}', defaulting to host arch from uname -m${NC}"
+            MACOS_ARCH="$(uname -m)"
+            ;;
+    esac
+    MACOS_ARCH_ARGS=(-DCMAKE_OSX_ARCHITECTURES="$MACOS_ARCH")
     CONFIG_CMD="cmake --preset \"$CONFIGURE_PRESET\" -DCMAKE_BUILD_TYPE=$BUILD_TYPE"
     BUILD_CMD="cmake --build --preset \"$BUILD_PRESET\" --config $BUILD_TYPE"
     INTEGRATION_TEST_BIN="$PROJECT_ROOT/tests/integration/build/chirp_integration_test"
@@ -114,6 +124,10 @@ fi
 
 if [ "$USE_VCPKG_TOOLCHAIN" = "true" ]; then
     CONFIG_CMD="$CONFIG_CMD -DCMAKE_TOOLCHAIN_FILE=\"$VCPKG_TOOLCHAIN\""
+fi
+
+if [[ "$OSTYPE" == "darwin"* ]] && [ ${#MACOS_ARCH_ARGS[@]} -gt 0 ]; then
+    CONFIG_CMD="$CONFIG_CMD ${MACOS_ARCH_ARGS[*]}"
 fi
 
 # Step 1: Check/install vcpkg packages

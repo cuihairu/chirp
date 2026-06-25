@@ -13,8 +13,8 @@ This guide covers installing Chirp from source and setting up the development en
 ### Linux (Ubuntu 22.04+)
 
 **Required:**
-- GCC 9+ or Clang 11+
-- CMake 3.15+
+- GCC 13+ or Clang 17+
+- CMake 3.21+
 - Ninja build system
 - Protocol Buffers compiler
 
@@ -28,7 +28,7 @@ sudo apt-get update
 sudo apt-get install -y \
     cmake \
     ninja-build \
-    gcc g++ \
+    gcc-13 g++-13 \
     libprotobuf-dev \
     protobuf-compiler \
     libabsl-dev \
@@ -59,7 +59,7 @@ brew services start mysql
 ### Windows (11+)
 
 **Required:**
-- Visual Studio 2022
+- Visual Studio 2022 17.10+
 - vcpkg
 - CMake
 
@@ -112,6 +112,12 @@ cmake -G Ninja -DCMAKE_BUILD_TYPE=Release \
 
 ```bash
 cmake --build . --parallel
+```
+
+On macOS with vcpkg, also pass:
+
+```bash
+-DCMAKE_OSX_ARCHITECTURES="$(uname -m)"
 ```
 
 ### 5. Run Tests (Optional)

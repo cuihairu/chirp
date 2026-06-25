@@ -10,8 +10,8 @@ This guide focuses on the current supported backend path: `gateway + auth + chat
 
 Required:
 
-- CMake 3.15 or newer
-- C++17 compiler
+- CMake 3.21 or newer
+- C++23 compiler
 - Protocol Buffers compiler and C++ runtime
 
 Optional:
@@ -36,6 +36,14 @@ If you only want the minimal build path:
 ```bash
 cmake --preset minimal
 cmake --build --preset minimal
+```
+
+If you use vcpkg on macOS, also pass the host architecture:
+
+```bash
+cmake --preset dev \
+  -DCMAKE_TOOLCHAIN_FILE="$VCPKG_ROOT/scripts/buildsystems/vcpkg.cmake" \
+  -DCMAKE_OSX_ARCHITECTURES="$(uname -m)"
 ```
 
 ## Smoke Tests

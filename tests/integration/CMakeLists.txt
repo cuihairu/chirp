@@ -3,8 +3,9 @@
 cmake_minimum_required(VERSION 3.20)
 project(chirp_integration_test)
 
-set(CMAKE_CXX_STANDARD 17)
+set(CMAKE_CXX_STANDARD 23)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
+set(CMAKE_CXX_EXTENSIONS OFF)
 
 # Get the chirp root directory (two levels up from integration test)
 get_filename_component(CHIRP_ROOT ${CMAKE_CURRENT_SOURCE_DIR} DIRECTORY)
