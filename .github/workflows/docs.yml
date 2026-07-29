@@ -41,7 +41,7 @@ jobs:
           node-version: '24'
 
       - name: Setup pnpm
-        uses: pnpm/action-setup@v7
+        uses: pnpm/action-setup@v6
         with:
           version: 9
 
@@ -54,7 +54,7 @@ jobs:
         run: pnpm build
 
       - name: Upload artifact
-        uses: actions/upload-pages-artifact@v6
+        uses: actions/upload-pages-artifact@v5
         with:
           path: ./docs/.vitepress/dist
 
@@ -68,4 +68,4 @@ jobs:
     steps:
       - name: Deploy to GitHub Pages
         id: deployment
-        uses: actions/deploy-pages@v6
+        uses: actions/deploy-pages@v5
