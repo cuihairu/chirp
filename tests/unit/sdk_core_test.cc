@@ -982,4 +982,47 @@ TEST_F(ChatClientLoopbackTest, SendAfterServerCloseIsDropped) {
   client.Disconnect();
 }
 
+TEST_F(ChatClientLoopbackTest, LargeWriteAgainstResetPeerSurfacesError) {
+  FakeGateway gateway([](const chirp::gateway::Packet& pkt, auto send) {
+    if (pkt.msg_id() == chirp::gateway::LOGIN_REQ) {
+      chirp::auth::LoginResponse resp;
+      resp.set_code(chirp::common::OK);
+      resp.set_user_id("u");
+      chirp::gateway::Packet out;
+      out.set_msg_id(chirp::gateway::LOGIN_RESP);
+      out.set_sequence(pkt.sequence());
+      out.set_body(resp.SerializeAsString());
+      send(out);
+    }
+  });
+
+  ChatClient client(LoopbackConfig(gateway.port()));
+  std::atomic<int> disconnects{0};
+  client.SetDisconnectCallback([&](const std::error_code&) { ++disconnects; });
+
+  client.Connect();
+  WaitState(client, ConnectionState::Connected);
+  std::promise<std::error_code> promise;
+  auto future = promise.get_future();
+  client.Login("t", [&promise](const std::error_code& ec, const std::string&) {
+    promise.set_value(ec);
+  });
+  ASSERT_EQ(future.wait_for(std::chrono::milliseconds(kWaitMs)),
+            std::future_status::ready);
+  EXPECT_FALSE(future.get());
+
+  // Queue a multi-megabyte write and drop the peer mid-flight: the pending
+  // async write must complete with an error and surface through the
+  // disconnect callback.
+  client.SendMessage("peer", std::string(8 * 1024 * 1024, 'x'));
+  std::this_thread::sleep_for(std::chrono::milliseconds(150));
+  gateway.DropConnections();
+
+  for (int i = 0; i < kWaitMs / 2 && disconnects.load() == 0; ++i) {
+    std::this_thread::sleep_for(std::chrono::milliseconds(2));
+  }
+  EXPECT_GE(disconnects.load(), 1);
+  client.Disconnect();
+}
+
 }  // namespace

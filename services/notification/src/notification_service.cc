@@ -306,6 +306,20 @@ bool NotificationService::NotifyMention(const std::string& user_id,
   return SendNotification(user_id, payload);
 }
 
+bool NotificationService::NotifyIncomingCall(const std::string& to_user_id,
+                                            const std::string& from_username) {
+  NotificationPayload payload;
+  payload.title = GetCallNotificationTitle();
+  payload.body = "Call from " + from_username;
+  payload.sound = "default";
+  payload.tag = "incoming-call";
+
+  payload.data["type"] = "call";
+  payload.data["from_username"] = from_username;
+
+  return SendNotification(to_user_id, payload);
+}
+
 bool NotificationService::SendSilentNotification(
     const std::string& user_id,
     const std::unordered_map<std::string, std::string>& data) {
@@ -442,9 +456,12 @@ bool NotificationService::SendAPNs(const DeviceRegistration& device,
   headers["apns-priority"] = "10";
   headers["apns-collapse-id"] = payload.tag;
 
-  std::string endpoint = apns_config_.use_sandbox
-      ? "https://api.development.push.apple.com:443"
-      : "https://api.push.apple.com:443";
+  std::string endpoint;
+  if (apns_config_.use_sandbox) {
+    endpoint = "https://api.development.push.apple.com:443";
+  } else {
+    endpoint = "https://api.push.apple.com:443";
+  }
 
   // Send HTTP/2 POST (requires HTTP/2 support)
   std::string response = HTTPPost(endpoint, apns_payload, headers);

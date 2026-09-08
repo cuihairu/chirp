@@ -27,7 +27,7 @@ struct RedisSessionManager::Impl {
   };
 
   asio::io_context& main_io;
-  chirp::network::RedisClient client;
+  std::unique_ptr<chirp::network::RedisClient> client;
   chirp::network::RedisSubscriber sub;
   std::string instance_id;
   int ttl{3600};
@@ -44,13 +44,19 @@ struct RedisSessionManager::Impl {
        uint16_t port,
        std::string inst,
        int ttl_seconds,
-       KickCallback kick_cb)
+       KickCallback kick_cb,
+       const ClientFactory& client_factory)
       : main_io(io),
-        client(host, port),
-        sub(std::move(host), port),
+        sub(host, port),
         instance_id(std::move(inst)),
         ttl(ttl_seconds),
-        on_kick(std::move(kick_cb)) {}
+        on_kick(std::move(kick_cb)) {
+    if (client_factory) {
+      client = client_factory();
+    } else {
+      client = std::make_unique<chirp::network::RedisClient>(std::move(host), port);
+    }
+  }
 
   void Start() {
     // Set message callback before starting
@@ -99,11 +105,11 @@ struct RedisSessionManager::Impl {
 
       try {
         if (job.type == Job::Type::kClaim) {
-          std::optional<std::string> prev = client.Get(SessionKey(job.user_id));
+          std::optional<std::string> prev = client->Get(SessionKey(job.user_id));
           if (prev && *prev != instance_id) {
-            client.Publish(KickChannel(*prev), job.user_id);
+            client->Publish(KickChannel(*prev), job.user_id);
           }
-          client.SetEx(SessionKey(job.user_id), instance_id, ttl);
+          client->SetEx(SessionKey(job.user_id), instance_id, ttl);
 
           asio::post(main_io, [cb = std::move(job.cb), prev]() mutable {
             if (cb) {
@@ -111,9 +117,9 @@ struct RedisSessionManager::Impl {
             }
           });
         } else {
-          auto cur = client.Get(SessionKey(job.user_id));
+          auto cur = client->Get(SessionKey(job.user_id));
           if (cur && *cur == instance_id) {
-            client.Del(SessionKey(job.user_id));
+            client->Del(SessionKey(job.user_id));
           }
         }
       } catch (const std::exception& e) {
@@ -144,10 +150,12 @@ RedisSessionManager::RedisSessionManager(asio::io_context& main_io,
                                          uint16_t redis_port,
                                          std::string instance_id,
                                          int session_ttl_seconds,
-                                         KickCallback on_kick)
+                                         KickCallback on_kick,
+                                         ClientFactory client_factory)
     : instance_id_(std::move(instance_id)) {
   impl_ = std::make_unique<Impl>(
-      main_io, std::move(redis_host), redis_port, instance_id_, session_ttl_seconds, std::move(on_kick));
+      main_io, std::move(redis_host), redis_port, instance_id_, session_ttl_seconds,
+      std::move(on_kick), std::move(client_factory));
   impl_->Start();
 }
 

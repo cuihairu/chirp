@@ -2,8 +2,11 @@
 
 #include <atomic>
 #include <chrono>
+#include <cstdint>
 #include <cstring>
+#include <limits>
 #include <future>
+#include <stdexcept>
 #include <string>
 #include <vector>
 
@@ -828,6 +831,79 @@ TEST_F(RedisLoopbackTest, MessageRouterDeliversSubscribedMessages) {
   EXPECT_TRUE(router.BroadcastToGroup("g1", "group-data"));
   EXPECT_TRUE(router.SendChatMessage("bob", "m", [](const std::string&) { return false; }));
 
+  router.Stop();
+}
+
+TEST_F(WebSocketUtilTest, EncodeBase64AllLengthClasses) {
+  using chirp::network::EncodeBase64;
+  // len % 3 == 0
+  EXPECT_EQ(EncodeBase64(reinterpret_cast<const uint8_t*>("abc"), 3), "YWJj");
+  // len % 3 == 1 -> "==" padding
+  EXPECT_EQ(EncodeBase64(reinterpret_cast<const uint8_t*>("a"), 1), "YQ==");
+  EXPECT_EQ(EncodeBase64(reinterpret_cast<const uint8_t*>("abcd"), 4), "YWJjZA==");
+  // len % 3 == 2 -> "=" padding
+  EXPECT_EQ(EncodeBase64(reinterpret_cast<const uint8_t*>("ab"), 2), "YWI=");
+  EXPECT_EQ(EncodeBase64(reinterpret_cast<const uint8_t*>("abcde"), 5), "YWJjZGU=");
+  EXPECT_TRUE(EncodeBase64(nullptr, 0).empty());
+}
+
+// ---------------------------------------------------------------------------
+// MessageRouter with injected misbehaving Redis doubles.
+// ---------------------------------------------------------------------------
+
+namespace {
+
+class ThrowingPublisher : public RedisClient {
+ public:
+  ThrowingPublisher() : RedisClient("127.0.0.1", 1) {}
+  bool Publish(const std::string&, const std::string&) override {
+    throw std::runtime_error("redis publish exploded");
+  }
+};
+
+class ThrowingSubscriber : public RedisSubscriber {
+ public:
+  ThrowingSubscriber() : RedisSubscriber("127.0.0.1", 1) {}
+  void Start() override { throw std::runtime_error("subscriber start exploded"); }
+};
+
+}  // namespace
+
+TEST(MessageRouterInjectionTest, StartPropagatesSubscriberFailure) {
+  asio::io_context io;
+  MessageRouter router(io, "127.0.0.1", 1, nullptr, [] {
+    return std::unique_ptr<RedisSubscriber>(std::make_unique<ThrowingSubscriber>());
+  });
+  EXPECT_FALSE(router.Start());
+  router.Stop();
+}
+
+TEST(MessageRouterInjectionTest, PublishReportsPublisherException) {
+  asio::io_context io;
+  MessageRouter router(io, "127.0.0.1", 1,
+                       [] {
+                         return std::unique_ptr<RedisClient>(std::make_unique<ThrowingPublisher>());
+                       },
+                       nullptr);
+  ASSERT_TRUE(router.Start());
+  EXPECT_FALSE(router.Publish("chan", "m"));
+  router.Stop();
+}
+
+TEST(MessageRouterLocalModeTest, EmptyHostRegistersSubscriptionsLocally) {
+  asio::io_context io;
+  MessageRouter router(io, "", 6379);
+
+  // Without a Redis backend: publish fails...
+  EXPECT_FALSE(router.Publish("chan", "m"));
+  // ...but subscriptions are still recorded and report success.
+  EXPECT_TRUE(router.SubscribeUserChat("alice", [](const std::string&) {}));
+  EXPECT_TRUE(router.SubscribeGroupChat("g1", [](const std::string&) {}));
+  EXPECT_TRUE(router.SubscribeUserSocial("alice", [](const std::string&) {}));
+  EXPECT_TRUE(router.SubscribeKickNotification("inst-1", [](const std::string&) {}));
+  // Start/Stop without a subscriber backend succeed trivially.
+  EXPECT_TRUE(router.Start());
+  router.Unsubscribe(RouterChannels::UserChat("alice"));
   router.Stop();
 }
 

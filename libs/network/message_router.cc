@@ -41,10 +41,24 @@ struct MessageRouter::Impl {
   std::atomic<bool> running{false};
   std::atomic<bool> connected{false};
 
-  Impl(asio::io_context& io, std::string redis_host, uint16_t redis_port)
+  Impl(asio::io_context& io, std::string redis_host, uint16_t redis_port,
+       const MessageRouter::PublisherFactory& publisher_factory,
+       const MessageRouter::SubscriberFactory& subscriber_factory)
       : io(io), host(std::move(redis_host)), port(redis_port) {
-    publisher = std::make_unique<RedisClient>(host, port);
-    subscriber = std::make_unique<RedisSubscriber>(host, port);
+    if (publisher_factory) {
+      publisher = publisher_factory();
+    } else if (!host.empty()) {
+      publisher = std::make_unique<RedisClient>(host, port);
+    }
+    if (subscriber_factory) {
+      subscriber = subscriber_factory();
+    } else if (!host.empty()) {
+      subscriber = std::make_unique<RedisSubscriber>(host, port);
+    }
+    if (!subscriber) {
+      // No backend: nothing to wire up.
+      return;
+    }
 
     // 设置订阅者回调
     subscriber->SetMessageCallback([this, &io](const std::string& channel, const std::string& message) {
@@ -74,6 +88,11 @@ struct MessageRouter::Impl {
   }
 
   bool Start() {
+    if (!subscriber) {
+      // Local-only mode (no Redis backend): nothing to start.
+      running = true;
+      return true;
+    }
     try {
       subscriber->Start();
       running = true;
@@ -96,9 +115,12 @@ struct MessageRouter::Impl {
 
 MessageRouter::MessageRouter(asio::io_context& io,
                              std::string redis_host,
-                             uint16_t redis_port)
+                             uint16_t redis_port,
+                             PublisherFactory publisher_factory,
+                             SubscriberFactory subscriber_factory)
     : io_(io), redis_host_(std::move(redis_host)), redis_port_(redis_port) {
-  impl_ = std::make_unique<Impl>(io_, redis_host_, redis_port_);
+  impl_ = std::make_unique<Impl>(io_, redis_host_, redis_port_,
+                                 publisher_factory, subscriber_factory);
 }
 
 MessageRouter::~MessageRouter() {

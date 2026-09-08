@@ -114,6 +114,83 @@ TEST_F(AuthClientTest, DestroyWithoutPendingJobsIsClean) {
 
 class RedisSessionManagerTest : public ::testing::Test {};
 
+namespace {
+
+// A Redis client double whose every command throws: exercises the worker's
+// exception paths (both claim and release jobs).
+class ThrowingRedisClient : public chirp::network::RedisClient {
+ public:
+  ThrowingRedisClient() : RedisClient("127.0.0.1", 1) {}
+  std::optional<std::string> Get(const std::string&) override {
+    throw std::runtime_error("get failed");
+  }
+  bool SetEx(const std::string&, const std::string&, int) override {
+    throw std::runtime_error("setex failed");
+  }
+  bool Del(const std::string&) override {
+    throw std::runtime_error("del failed");
+  }
+  bool Publish(const std::string&, const std::string&) override {
+    throw std::runtime_error("publish failed");
+  }
+};
+
+// A double that throws a non-std exception for the catch-all branch.
+struct WeirdException {};
+class WeirdThrowingRedisClient : public ThrowingRedisClient {
+ public:
+  std::optional<std::string> Get(const std::string&) override { throw WeirdException{}; }
+};
+
+}  // namespace
+
+TEST_F(RedisSessionManagerTest, ClaimWithThrowingRedisDeliversEmptyOwner) {
+  asio::io_context io;
+  auto work = asio::make_work_guard(io);
+  std::thread runner([&] { io.run(); });
+
+  {
+    RedisSessionManager mgr(io, "127.0.0.1", 1, "inst-1", 60, nullptr,
+                            [] { return std::unique_ptr<chirp::network::RedisClient>(std::make_unique<ThrowingRedisClient>()); });
+
+    std::promise<std::optional<std::string>> promise;
+    auto future = promise.get_future();
+    mgr.AsyncClaim("alice", [&promise](std::optional<std::string> prev) {
+      promise.set_value(prev);
+    });
+    ASSERT_EQ(future.wait_for(std::chrono::milliseconds(3000)), std::future_status::ready);
+    EXPECT_FALSE(future.get().has_value());
+
+    // Release path with a throwing client must not crash either.
+    mgr.AsyncRelease("alice");
+    std::this_thread::sleep_for(std::chrono::milliseconds(200));
+  }
+
+  io.stop();
+  runner.join();
+}
+
+TEST_F(RedisSessionManagerTest, ClaimWithNonStdExceptionAlsoDeliversEmptyOwner) {
+  asio::io_context io;
+  auto work = asio::make_work_guard(io);
+  std::thread runner([&] { io.run(); });
+
+  {
+    RedisSessionManager mgr(io, "127.0.0.1", 1, "inst-2", 60, nullptr,
+                            [] { return std::unique_ptr<chirp::network::RedisClient>(std::make_unique<WeirdThrowingRedisClient>()); });
+    std::promise<std::optional<std::string>> promise;
+    auto future = promise.get_future();
+    mgr.AsyncClaim("bob", [&promise](std::optional<std::string> prev) {
+      promise.set_value(prev);
+    });
+    ASSERT_EQ(future.wait_for(std::chrono::milliseconds(3000)), std::future_status::ready);
+    EXPECT_FALSE(future.get().has_value());
+  }
+
+  io.stop();
+  runner.join();
+}
+
 TEST_F(RedisSessionManagerTest, ClaimWithoutRedisDeliversEmptyOwner) {
   asio::io_context io;
   std::atomic<int> kicks{0};

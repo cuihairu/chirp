@@ -119,6 +119,10 @@ public:
                     const std::string& channel_id,
                     bool is_everyone = false);
 
+  // Incoming call (VoIP push) notification
+  bool NotifyIncomingCall(const std::string& to_user_id,
+                         const std::string& from_username);
+
   // Silent notification (for data sync)
   bool SendSilentNotification(const std::string& user_id,
                             const std::unordered_map<std::string, std::string>& data);
@@ -147,6 +151,10 @@ public:
   const Stats& GetStats() const { return stats_; }
 
 private:
+  // Test access: internal tests befriend this tag to reach private state
+  // without changing the compiled token stream.
+  friend struct NotificationServiceInternalAccess;
+
   bool SendFCM(const DeviceRegistration& device,
               const NotificationPayload& payload);
 

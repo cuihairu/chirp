@@ -94,7 +94,9 @@ std::array<uint8_t, 20> Sha1(const uint8_t* data, size_t len) {
   return out;
 }
 
-std::string Base64Encode(const uint8_t* data, size_t len) {
+} // namespace
+
+std::string EncodeBase64(const uint8_t* data, size_t len) {
   static constexpr char kTable[] = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/";
   std::string out;
   out.reserve(((len + 2) / 3) * 4);
@@ -128,13 +130,11 @@ std::string Base64Encode(const uint8_t* data, size_t len) {
   return out;
 }
 
-} // namespace
-
 std::string ComputeWebSocketAccept(const std::string& sec_websocket_key) {
   std::string in = sec_websocket_key;
   in += kWebSocketGuid;
   auto digest = Sha1(reinterpret_cast<const uint8_t*>(in.data()), in.size());
-  return Base64Encode(digest.data(), digest.size());
+  return EncodeBase64(digest.data(), digest.size());
 }
 
 bool IStartsWith(const std::string& s, const std::string& prefix) {

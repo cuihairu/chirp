@@ -11,6 +11,13 @@
 
 namespace chirp::gateway {
 
+class AuthClient;
+
+// Test hook: stops the internal worker and drops the pimpl so the
+// destructor takes its empty guard (defined in auth_client.cc). Used by
+// internal unit tests.
+void DrainAndDropAuthClientForTest(AuthClient& client);
+
 class AuthClient {
 public:
   using LoginCallback = std::function<void(const chirp::auth::LoginResponse&)>;
@@ -26,6 +33,11 @@ public:
   void AsyncLogout(const chirp::auth::LogoutRequest& req, int64_t seq, LogoutCallback cb);
 
 private:
+  // Test access: internal tests befriend this tag to reach private state
+  // without changing the compiled token stream.
+  friend struct AuthClientInternalAccess;
+  friend void DrainAndDropAuthClientForTest(AuthClient& client);
+
   struct Impl;
   std::unique_ptr<Impl> impl_;
 };

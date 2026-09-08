@@ -22,9 +22,18 @@ public:
   /// @brief Subscription callback type.
   using SubscribeCallback = std::function<void(const std::string& message)>;
 
+  /// @brief Optional factories used by tests to substitute the Redis
+  /// dependencies (e.g. doubles whose methods throw).
+  using PublisherFactory = std::function<std::unique_ptr<RedisClient>()>;
+  using SubscriberFactory = std::function<std::unique_ptr<RedisSubscriber>()>;
+
+  /// @brief Construct a router. An empty redis_host creates a router without
+  /// a Redis backend: publishes fail and subscriptions register locally.
   MessageRouter(asio::io_context& io,
                 std::string redis_host,
-                uint16_t redis_port);
+                uint16_t redis_port,
+                PublisherFactory publisher_factory = nullptr,
+                SubscriberFactory subscriber_factory = nullptr);
   ~MessageRouter();
 
   /// @brief Start the router.

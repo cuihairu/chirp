@@ -162,6 +162,21 @@ AuthClient::AuthClient(asio::io_context& main_io, std::string host, uint16_t por
   impl_->Start();
 }
 
+void DrainAndDropAuthClientForTest(AuthClient& client) {
+  if (!client.impl_) {
+    return;
+  }
+  {
+    std::lock_guard<std::mutex> lock(client.impl_->mu);
+    client.impl_->stop = true;
+  }
+  client.impl_->cv.notify_all();
+  if (client.impl_->worker.joinable()) {
+    client.impl_->worker.join();
+  }
+  client.impl_.reset();
+}
+
 AuthClient::~AuthClient() {
   if (!impl_) {
     return;

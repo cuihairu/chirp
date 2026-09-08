@@ -58,3 +58,12 @@ docs/.vitepress/dist/
 
 # Test build directories
 tests/integration/build/
+*.gcov.json.gz
+coverage_c.txt
+single2.txt
+coverage_html/
+coverage.txt
+coverage.csv
+coverage-packages.csv
+coverage-summary.json
+coverage.json

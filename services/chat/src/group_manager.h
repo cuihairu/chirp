@@ -65,6 +65,10 @@ public:
                     chirp::chat::GroupMemberRole role);
 
 private:
+  // Test access: internal tests befriend this tag to reach private state
+  // without changing the compiled token stream.
+  friend struct GroupManagerInternalAccess;
+
   std::string GenerateGroupId() {
     static std::atomic<uint64_t> counter{1};
     return "group_" + std::to_string(std::chrono::duration_cast<std::chrono::milliseconds>(

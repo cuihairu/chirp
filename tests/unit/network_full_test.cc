@@ -1129,13 +1129,15 @@ TEST_F(WsSessionTest, WriteErrorAfterPeerCloseTriggersCloseCallback) {
   auto session = MakeSession(nullptr, [&](std::shared_ptr<Session>) { closes.fetch_add(1); });
   ASSERT_NO_FATAL_FAILURE(Handshake());
 
-  // Drop the peer abruptly (RST), then send: the queued async write fails
-  // and the session must run its close path.
+  // Queue a write that cannot drain (the peer never reads), then reset the
+  // peer: the pending async write completes with an error and the session
+  // must run its close path.
+  session->Send(LpFrame(std::string(4 * 1024 * 1024, 'x')));
+  std::this_thread::sleep_for(std::chrono::milliseconds(100));
   std::error_code ec;
   client().set_option(asio::socket_base::linger(true, 0), ec);
   client().close(ec);
 
-  session->Send(LpFrame("after-close"));
   EXPECT_TRUE(WaitFor([&] { return closes.load() >= 1 && session->IsClosed(); }));
 }
 
@@ -1606,6 +1608,54 @@ TEST(WebSocketClientTest, HandshakeAgainstClosedConnectionFails) {
   EXPECT_FALSE(client.Connect("127.0.0.1", server.port(), "/ws"));
   connector.join();
   EXPECT_FALSE(client.IsConnected());
+}
+
+TEST(WebSocketClientTest, HandshakeWriteAgainstResetPeerFails) {
+  // Server that resets the connection as soon as it is accepted. The reset
+  // races with the client's handshake write; repeating the attempt makes
+  // the write-error branch (as opposed to the read-error branch) fire.
+  class ResetOnAcceptServer {
+   public:
+    ResetOnAcceptServer()
+        : acceptor_(io_, asio::ip::tcp::endpoint(asio::ip::tcp::v4(), 0)) {
+      port_ = static_cast<uint16_t>(acceptor_.local_endpoint().port());
+      DoAccept();
+      thread_ = std::thread([this] { io_.run(); });
+    }
+    ~ResetOnAcceptServer() {
+      io_.stop();
+      if (thread_.joinable()) {
+        thread_.join();
+      }
+    }
+    uint16_t port() const { return port_; }
+
+   private:
+    void DoAccept() {
+      auto sock = std::make_shared<asio::ip::tcp::socket>(io_);
+      acceptor_.async_accept(*sock, [this, sock](const std::error_code& ec) {
+        if (ec) {
+          return;
+        }
+        std::error_code ignore;
+        sock->set_option(asio::socket_base::linger(true, 0), ignore);
+        sock->close(ignore);
+        DoAccept();
+      });
+    }
+    asio::io_context io_;
+    asio::ip::tcp::acceptor acceptor_;
+    uint16_t port_{0};
+    std::thread thread_;
+  };
+
+  ResetOnAcceptServer server;
+  for (int attempt = 0; attempt < 20; ++attempt) {
+    asio::io_context io;
+    WebSocketClient client(io);
+    EXPECT_FALSE(client.Connect("127.0.0.1", server.port(), "/ws"));
+    EXPECT_FALSE(client.IsConnected());
+  }
 }
 
 } // namespace

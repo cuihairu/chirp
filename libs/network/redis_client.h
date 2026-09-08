@@ -15,17 +15,19 @@
 namespace chirp::network {
 
 /// @brief Synchronous Redis client for command operations.
+/// Methods are virtual so tests can substitute throwing/misbehaving doubles.
 class RedisClient {
 public:
   RedisClient(std::string host, uint16_t port);
+  virtual ~RedisClient() = default;
 
   // Basic commands
-  std::optional<std::string> Get(const std::string& key);
-  bool SetEx(const std::string& key, const std::string& value, int ttl_seconds);
-  bool Del(const std::string& key);
+  virtual std::optional<std::string> Get(const std::string& key);
+  virtual bool SetEx(const std::string& key, const std::string& value, int ttl_seconds);
+  virtual bool Del(const std::string& key);
 
   // Pub/Sub commands
-  bool Publish(const std::string& channel, const std::string& message);
+  virtual bool Publish(const std::string& channel, const std::string& message);
 
   // List commands
   bool RPush(const std::string& key, const std::string& value);
@@ -50,7 +52,7 @@ public:
   using ConnectCallback = std::function<void()>;
 
   RedisSubscriber(std::string host, uint16_t port);
-  ~RedisSubscriber();
+  virtual ~RedisSubscriber();
 
   RedisSubscriber(const RedisSubscriber&) = delete;
   RedisSubscriber& operator=(const RedisSubscriber&) = delete;
@@ -65,16 +67,16 @@ public:
   void SetConnectCallback(ConnectCallback cb) { connect_cb_ = std::move(cb); }
 
   /// @brief Subscribe to a channel.
-  bool Subscribe(const std::string& channel);
+  virtual bool Subscribe(const std::string& channel);
 
   /// @brief Unsubscribe from a channel.
-  bool Unsubscribe(const std::string& channel);
+  virtual bool Unsubscribe(const std::string& channel);
 
   /// @brief Start the subscriber.
-  void Start();
+  virtual void Start();
 
   /// @brief Stop the subscriber.
-  void Stop();
+  virtual void Stop();
 
   /// @brief Check whether the subscriber is connected.
   bool IsConnected() const { return connected_; }

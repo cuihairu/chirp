@@ -284,8 +284,8 @@ SearchResponse MessageSearchService::Search(const SearchQuery& query) {
 
   // Calculate search time
   auto end_time = std::chrono::steady_clock::now();
-  response.search_time_ms = std::chrono::duration<double, std::milli>(
-      end_time - start_time).count();
+  response.search_time_ms =
+      std::chrono::duration<double, std::milli>(end_time - start_time).count();
 
   // Update query frequency for suggestions
   if (!query.query.empty()) {

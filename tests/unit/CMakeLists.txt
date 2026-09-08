@@ -191,6 +191,7 @@ add_test(NAME network_full_tests COMMAND network_full_tests)
 # Chat service manager coverage tests
 add_executable(chat_managers_tests
   chat_managers_test.cc
+  chat_group_internal_test.cc
   ${CMAKE_SOURCE_DIR}/services/chat/src/distributed_dispatch.cc
   ${CMAKE_SOURCE_DIR}/services/chat/src/distributed_runtime.cc
   ${CMAKE_SOURCE_DIR}/services/chat/src/group_manager.cc
@@ -222,6 +223,7 @@ add_test(NAME chat_managers_tests COMMAND chat_managers_tests)
 # Gateway auth client / redis session manager coverage tests
 add_executable(gateway_extra_tests
   gateway_extra_test.cc
+  gateway_auth_internal_test.cc
   ${CMAKE_SOURCE_DIR}/services/gateway/src/auth_client.cc
   ${CMAKE_SOURCE_DIR}/services/gateway/src/redis_session_manager.cc
 )
@@ -242,9 +244,11 @@ target_include_directories(gateway_extra_tests
 
 add_test(NAME gateway_extra_tests COMMAND gateway_extra_tests)
 
-# Notification service coverage tests
+# Notification service coverage tests (internal access tests are compiled
+# into the same binary: the implementation is compiled exactly once).
 add_executable(notification_tests
   notification_test.cc
+  notification_internal_test.cc
   ${CMAKE_SOURCE_DIR}/services/notification/src/notification_service.cc
 )
 
@@ -262,6 +266,10 @@ target_include_directories(notification_tests
 )
 
 add_test(NAME notification_tests COMMAND notification_tests)
+
+# Gateway auth client target above already compiles auth_client.cc together
+# with gateway_auth_internal_test.cc; chat_managers_tests compiles
+# group_manager.cc together with chat_group_internal_test.cc.
 
 # Message search service coverage tests
 add_executable(search_tests
