@@ -160,14 +160,27 @@ std::vector<chirp::chat::GroupInfo> GroupManager::GetUserGroups(const std::strin
     return result;
   }
 
+  // NOTE: GetGroup() also locks mu_; call it while holding mu_ would
+  // deadlock (std::mutex is not recursive), so fill the info inline here.
   for (const auto& group_id : user_it->second) {
     auto group_it = groups_.find(group_id);
-    if (group_it != groups_.end()) {
-      chirp::chat::GroupInfo info;
-      if (GetGroup(group_id, &info)) {
-        result.push_back(std::move(info));
-      }
+    if (group_it == groups_.end()) {
+      continue;
     }
+
+    const auto& group = group_it->second;
+    std::lock_guard<std::mutex> group_lock(group->mu);
+
+    chirp::chat::GroupInfo info;
+    info.set_group_id(group->group_id);
+    info.set_group_name(group->group_name);
+    info.set_description(group->description);
+    info.set_avatar_url(group->avatar_url);
+    info.set_owner_id(group->owner_id);
+    info.set_member_count(static_cast<int32_t>(group->members.size()));
+    info.set_max_members(group->max_members);
+    info.set_created_at(group->created_at);
+    result.push_back(std::move(info));
   }
 
   return result;

@@ -1,0 +1,1957 @@
+<!DOCTYPE html>
+<html class="theme-green">
+
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8"/>
+    <title>libs/network/message_router.cc - GCC Code Coverage Report</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+    <link rel="stylesheet" href="index.css"/>
+    <script src="index.js"></script>
+  </head>
+
+  <body>
+    <div class="Layout-main">
+      <div class="Layout-main-centered-lg" style="max-width: 1280px;">
+        <div class="d-flex flex-justify-center">
+          <h1>GCC Code Coverage Report</h1>
+        </div>
+        <hr class="block-separator"/>
+        <header>
+<div id="summary-index.message_router.cc.639c82dd63ca735336b89a4abb2d9b98.html" class="summary">
+  <div>
+    <table class="legend">
+      <tr>
+        <th scope="row">Directory:</th>
+        <td>./</td>
+      </tr>
+      <tr>
+        <th scope="row">Coverage:</th>
+        <td class="legend">
+          <span class="coverage-low">low: &ge; 0%</span>
+          <span class="coverage-medium">medium: &ge; 75.0%</span>
+          <span class="coverage-high">high: &ge; 90.0%</span>
+        </td>
+      </tr>
+    </table>
+  </div>
+  <div>
+    <table class="coverage">
+      <tr>
+        <th></th>
+        <th scope="col">Coverage</th>
+        <th scope="col">Exec / Excl / Total</th>
+      </tr>
+      <tr>
+        <th scope="row">Lines:</th>
+        <td class="coverage-medium">87.7%</td>
+        <td class="coverage-medium">93 / 0 / 106</td>
+      </tr>
+      <tr>
+        <th scope="row">Functions:</th>
+        <td class="coverage-high">100.0%</td>
+        <td class="coverage-high">19 / 0 / 19</td>
+      </tr>
+      <tr>
+        <th scope="row">Branches:</th>
+        <td class="coverage-low">44.2%</td>
+        <td class="coverage-low">53 / 0 / 120</td>
+      </tr>
+    </table>
+  </div>
+</div>
+        </header>
+        <hr/>
+        <nav>
+<div class="m-3">
+  <details>
+    <summary>List of functions</summary>
+<div class="Box m-3 functionslist">
+  <div class="Box-header py-2 d-flex sticky">
+    <div role="rowheader" class="color-fg-muted flex-auto min-width-0 col-md-2 sortable sorted-ascending">Function (File:Line)</div>
+    <div role="rowheader" class="color-fg-muted flex-auto min-width-0 d-flex flex-justify-end flex-wrap flex-items-baseline sortable">Calls</div>
+    <div role="rowheader" class="color-fg-muted d-flex flex-justify-end flex-wrap col-2 sortable">Lines</div>
+    <div role="rowheader" class="color-fg-muted d-flex flex-justify-end flex-wrap col-2 sortable">Branches</div>
+    <div role="rowheader" class="color-fg-muted d-flex flex-justify-end flex-wrap col-2 sortable">Blocks</div>
+  </div>
+  <div class="Box-row Box-row--focus-gray py-2 d-flex">
+    <div role="gridcell" class="color-fg-muted flex-auto min-width-0 col-md-2"><a href="#l195">chirp::network::MessageRouter::BroadcastToGroup(std::__cxx11::basic_string&lt;char, std::char_traits&lt;char&gt;, std::allocator&lt;char&gt; &gt; const&amp;, std::__cxx11::basic_string&lt;char, std::char_traits&lt;char&gt;, std::allocator&lt;char&gt; &gt; const&amp;) (libs/network/message_router.cc:195)</a>    </div>
+    <div role="gridcell" class="color-fg-muted flex-auto min-width-0 d-flex flex-justify-end flex-wrap flex-items-baseline" data-sort="10">called 10 times</div>
+    <div role="gridcell" class="color-fg-muted d-flex flex-justify-end flex-wrap col-2">100.0%</div>
+    <div role="gridcell" class="color-fg-muted d-flex flex-justify-end flex-wrap col-2">50.0%</div>
+    <div role="gridcell" class="color-fg-muted d-flex flex-justify-end flex-wrap col-2">77.8%</div>
+  </div>
+  <div class="Box-row Box-row--focus-gray py-2 d-flex">
+    <div role="gridcell" class="color-fg-muted flex-auto min-width-0 col-md-2"><a href="#l44">chirp::network::MessageRouter::Impl::Impl(asio::io_context&amp;, std::__cxx11::basic_string&lt;char, std::char_traits&lt;char&gt;, std::allocator&lt;char&gt; &gt;, unsigned short) (libs/network/message_router.cc:44)</a>    </div>
+    <div role="gridcell" class="color-fg-muted flex-auto min-width-0 d-flex flex-justify-end flex-wrap flex-items-baseline" data-sort="38">called 38 times</div>
+    <div role="gridcell" class="color-fg-muted d-flex flex-justify-end flex-wrap col-2">100.0%</div>
+    <div role="gridcell" class="color-fg-muted d-flex flex-justify-end flex-wrap col-2">50.0%</div>
+    <div role="gridcell" class="color-fg-muted d-flex flex-justify-end flex-wrap col-2">72.5%</div>
+  </div>
+  <div class="Box-row Box-row--focus-gray py-2 d-flex">
+    <div role="gridcell" class="color-fg-muted flex-auto min-width-0 col-md-2"><a href="#l65">chirp::network::MessageRouter::Impl::Impl(asio::io_context&amp;, std::__cxx11::basic_string&lt;char, std::char_traits&lt;char&gt;, std::allocator&lt;char&gt; &gt;, unsigned short)::{lambda()#1}::operator()() const (libs/network/message_router.cc:65)</a>    </div>
+    <div role="gridcell" class="color-fg-muted flex-auto min-width-0 d-flex flex-justify-end flex-wrap flex-items-baseline" data-sort="4">called 4 times</div>
+    <div role="gridcell" class="color-fg-muted d-flex flex-justify-end flex-wrap col-2">100.0%</div>
+    <div role="gridcell" class="color-fg-muted d-flex flex-justify-end flex-wrap col-2">66.7%</div>
+    <div role="gridcell" class="color-fg-muted d-flex flex-justify-end flex-wrap col-2">93.3%</div>
+  </div>
+  <div class="Box-row Box-row--focus-gray py-2 d-flex">
+    <div role="gridcell" class="color-fg-muted flex-auto min-width-0 col-md-2"><a href="#l60">chirp::network::MessageRouter::Impl::Impl(asio::io_context&amp;, std::__cxx11::basic_string&lt;char, std::char_traits&lt;char&gt;, std::allocator&lt;char&gt; &gt;, unsigned short)::{lambda(std::__cxx11::basic_string&lt;char, std::char_traits&lt;char&gt;, std::allocator&lt;char&gt; &gt; const&amp;)#1}::operator()(std::__cxx11::basic_string&lt;char, std::char_traits&lt;char&gt;, std::allocator&lt;char&gt; &gt; const&amp;) const (libs/network/message_router.cc:60)</a>    </div>
+    <div role="gridcell" class="color-fg-muted flex-auto min-width-0 d-flex flex-justify-end flex-wrap flex-items-baseline" data-sort="10">called 10 times</div>
+    <div role="gridcell" class="color-fg-muted d-flex flex-justify-end flex-wrap col-2">100.0%</div>
+    <div role="gridcell" class="color-fg-muted d-flex flex-justify-end flex-wrap col-2">50.0%</div>
+    <div role="gridcell" class="color-fg-muted d-flex flex-justify-end flex-wrap col-2">80.0%</div>
+  </div>
+  <div class="Box-row Box-row--focus-gray py-2 d-flex">
+    <div role="gridcell" class="color-fg-muted flex-auto min-width-0 col-md-2"><a href="#l50">chirp::network::MessageRouter::Impl::Impl(asio::io_context&amp;, std::__cxx11::basic_string&lt;char, std::char_traits&lt;char&gt;, std::allocator&lt;char&gt; &gt;, unsigned short)::{lambda(std::__cxx11::basic_string&lt;char, std::char_traits&lt;char&gt;, std::allocator&lt;char&gt; &gt; const&amp;, std::__cxx11::basic_string&lt;char, std::char_traits&lt;char&gt;, std::allocator&lt;char&gt; &gt; const&amp;)#1}::operator()(std::__cxx11::basic_string&lt;char, std::char_traits&lt;char&gt;, std::allocator&lt;char&gt; &gt; const&amp;, std::__cxx11::basic_string&lt;char, std::char_traits&lt;char&gt;, std::allocator&lt;char&gt; &gt; const&amp;) const (libs/network/message_router.cc:50)</a>    </div>
+    <div role="gridcell" class="color-fg-muted flex-auto min-width-0 d-flex flex-justify-end flex-wrap flex-items-baseline" data-sort="4">called 4 times</div>
+    <div role="gridcell" class="color-fg-muted d-flex flex-justify-end flex-wrap col-2">100.0%</div>
+    <div role="gridcell" class="color-fg-muted d-flex flex-justify-end flex-wrap col-2">50.0%</div>
+    <div role="gridcell" class="color-fg-muted d-flex flex-justify-end flex-wrap col-2">69.2%</div>
+  </div>
+  <div class="Box-row Box-row--focus-gray py-2 d-flex">
+    <div role="gridcell" class="color-fg-muted flex-auto min-width-0 col-md-2"><a href="#l54">chirp::network::MessageRouter::Impl::Impl(asio::io_context&amp;, std::__cxx11::basic_string&lt;char, std::char_traits&lt;char&gt;, std::allocator&lt;char&gt; &gt;, unsigned short)::{lambda(std::__cxx11::basic_string&lt;char, std::char_traits&lt;char&gt;, std::allocator&lt;char&gt; &gt; const&amp;, std::__cxx11::basic_string&lt;char, std::char_traits&lt;char&gt;, std::allocator&lt;char&gt; &gt; const&amp;)#1}::operator()(std::__cxx11::basic_string&lt;char, std::char_traits&lt;char&gt;, std::allocator&lt;char&gt; &gt; const&amp;, std::__cxx11::basic_string&lt;char, std::char_traits&lt;char&gt;, std::allocator&lt;char&gt; &gt; const&amp;) const::{lambda()#1}::operator()() const (libs/network/message_router.cc:54)</a>    </div>
+    <div role="gridcell" class="color-fg-muted flex-auto min-width-0 d-flex flex-justify-end flex-wrap flex-items-baseline" data-sort="4">called 4 times</div>
+    <div role="gridcell" class="color-fg-muted d-flex flex-justify-end flex-wrap col-2">100.0%</div>
+    <div role="gridcell" class="color-fg-muted d-flex flex-justify-end flex-wrap col-2">40.0%</div>
+    <div role="gridcell" class="color-fg-muted d-flex flex-justify-end flex-wrap col-2">100.0%</div>
+  </div>
+  <div class="Box-row Box-row--focus-gray py-2 d-flex">
+    <div role="gridcell" class="color-fg-muted flex-auto min-width-0 col-md-2"><a href="#l76">chirp::network::MessageRouter::Impl::Start() (libs/network/message_router.cc:76)</a>    </div>
+    <div role="gridcell" class="color-fg-muted flex-auto min-width-0 d-flex flex-justify-end flex-wrap flex-items-baseline" data-sort="12">called 12 times</div>
+    <div role="gridcell" class="color-fg-muted d-flex flex-justify-end flex-wrap col-2">50.0%</div>
+    <div role="gridcell" class="color-fg-muted d-flex flex-justify-end flex-wrap col-2">8.3%</div>
+    <div role="gridcell" class="color-fg-muted d-flex flex-justify-end flex-wrap col-2">19.4%</div>
+  </div>
+  <div class="Box-row Box-row--focus-gray py-2 d-flex">
+    <div role="gridcell" class="color-fg-muted flex-auto min-width-0 col-md-2"><a href="#l87">chirp::network::MessageRouter::Impl::Stop() (libs/network/message_router.cc:87)</a>    </div>
+    <div role="gridcell" class="color-fg-muted flex-auto min-width-0 d-flex flex-justify-end flex-wrap flex-items-baseline" data-sort="54">called 54 times</div>
+    <div role="gridcell" class="color-fg-muted d-flex flex-justify-end flex-wrap col-2">100.0%</div>
+    <div role="gridcell" class="color-fg-muted d-flex flex-justify-end flex-wrap col-2">50.0%</div>
+    <div role="gridcell" class="color-fg-muted d-flex flex-justify-end flex-wrap col-2">100.0%</div>
+  </div>
+  <div class="Box-row Box-row--focus-gray py-2 d-flex">
+    <div role="gridcell" class="color-fg-muted flex-auto min-width-0 col-md-2"><a href="#l97">chirp::network::MessageRouter::MessageRouter(asio::io_context&amp;, std::__cxx11::basic_string&lt;char, std::char_traits&lt;char&gt;, std::allocator&lt;char&gt; &gt;, unsigned short) (libs/network/message_router.cc:97)</a>    </div>
+    <div role="gridcell" class="color-fg-muted flex-auto min-width-0 d-flex flex-justify-end flex-wrap flex-items-baseline" data-sort="38">called 38 times</div>
+    <div role="gridcell" class="color-fg-muted d-flex flex-justify-end flex-wrap col-2">100.0%</div>
+    <div role="gridcell" class="color-fg-muted d-flex flex-justify-end flex-wrap col-2">50.0%</div>
+    <div role="gridcell" class="color-fg-muted d-flex flex-justify-end flex-wrap col-2">69.2%</div>
+  </div>
+  <div class="Box-row Box-row--focus-gray py-2 d-flex">
+    <div role="gridcell" class="color-fg-muted flex-auto min-width-0 col-md-2"><a href="#l116">chirp::network::MessageRouter::Publish(std::__cxx11::basic_string&lt;char, std::char_traits&lt;char&gt;, std::allocator&lt;char&gt; &gt; const&amp;, std::__cxx11::basic_string&lt;char, std::char_traits&lt;char&gt;, std::allocator&lt;char&gt; &gt; const&amp;) (libs/network/message_router.cc:116)</a>    </div>
+    <div role="gridcell" class="color-fg-muted flex-auto min-width-0 d-flex flex-justify-end flex-wrap flex-items-baseline" data-sort="32">called 32 times</div>
+    <div role="gridcell" class="color-fg-muted d-flex flex-justify-end flex-wrap col-2">37.5%</div>
+    <div role="gridcell" class="color-fg-muted d-flex flex-justify-end flex-wrap col-2">14.3%</div>
+    <div role="gridcell" class="color-fg-muted d-flex flex-justify-end flex-wrap col-2">25.7%</div>
+  </div>
+  <div class="Box-row Box-row--focus-gray py-2 d-flex">
+    <div role="gridcell" class="color-fg-muted flex-auto min-width-0 col-md-2"><a href="#l182">chirp::network::MessageRouter::SendChatMessage(std::__cxx11::basic_string&lt;char, std::char_traits&lt;char&gt;, std::allocator&lt;char&gt; &gt; const&amp;, std::__cxx11::basic_string&lt;char, std::char_traits&lt;char&gt;, std::allocator&lt;char&gt; &gt; const&amp;, std::function&lt;bool (std::__cxx11::basic_string&lt;char, std::char_traits&lt;char&gt;, std::allocator&lt;char&gt; &gt; const&amp;)&gt;) (libs/network/message_router.cc:182)</a>    </div>
+    <div role="gridcell" class="color-fg-muted flex-auto min-width-0 d-flex flex-justify-end flex-wrap flex-items-baseline" data-sort="20">called 20 times</div>
+    <div role="gridcell" class="color-fg-muted d-flex flex-justify-end flex-wrap col-2">100.0%</div>
+    <div role="gridcell" class="color-fg-muted d-flex flex-justify-end flex-wrap col-2">75.0%</div>
+    <div role="gridcell" class="color-fg-muted d-flex flex-justify-end flex-wrap col-2">88.2%</div>
+  </div>
+  <div class="Box-row Box-row--focus-gray py-2 d-flex">
+    <div role="gridcell" class="color-fg-muted flex-auto min-width-0 col-md-2"><a href="#l108">chirp::network::MessageRouter::Start() (libs/network/message_router.cc:108)</a>    </div>
+    <div role="gridcell" class="color-fg-muted flex-auto min-width-0 d-flex flex-justify-end flex-wrap flex-items-baseline" data-sort="12">called 12 times</div>
+    <div role="gridcell" class="color-fg-muted d-flex flex-justify-end flex-wrap col-2">100.0%</div>
+    <div role="gridcell" class="color-fg-muted d-flex flex-justify-end flex-wrap col-2">-%</div>
+    <div role="gridcell" class="color-fg-muted d-flex flex-justify-end flex-wrap col-2">100.0%</div>
+  </div>
+  <div class="Box-row Box-row--focus-gray py-2 d-flex">
+    <div role="gridcell" class="color-fg-muted flex-auto min-width-0 col-md-2"><a href="#l112">chirp::network::MessageRouter::Stop() (libs/network/message_router.cc:112)</a>    </div>
+    <div role="gridcell" class="color-fg-muted flex-auto min-width-0 d-flex flex-justify-end flex-wrap flex-items-baseline" data-sort="54">called 54 times</div>
+    <div role="gridcell" class="color-fg-muted d-flex flex-justify-end flex-wrap col-2">100.0%</div>
+    <div role="gridcell" class="color-fg-muted d-flex flex-justify-end flex-wrap col-2">-%</div>
+    <div role="gridcell" class="color-fg-muted d-flex flex-justify-end flex-wrap col-2">100.0%</div>
+  </div>
+  <div class="Box-row Box-row--focus-gray py-2 d-flex">
+    <div role="gridcell" class="color-fg-muted flex-auto min-width-0 col-md-2"><a href="#l140">chirp::network::MessageRouter::SubscribeGroupChat(std::__cxx11::basic_string&lt;char, std::char_traits&lt;char&gt;, std::allocator&lt;char&gt; &gt; const&amp;, std::function&lt;void (std::__cxx11::basic_string&lt;char, std::char_traits&lt;char&gt;, std::allocator&lt;char&gt; &gt; const&amp;)&gt;) (libs/network/message_router.cc:140)</a>    </div>
+    <div role="gridcell" class="color-fg-muted flex-auto min-width-0 d-flex flex-justify-end flex-wrap flex-items-baseline" data-sort="4">called 4 times</div>
+    <div role="gridcell" class="color-fg-muted d-flex flex-justify-end flex-wrap col-2">87.5%</div>
+    <div role="gridcell" class="color-fg-muted d-flex flex-justify-end flex-wrap col-2">50.0%</div>
+    <div role="gridcell" class="color-fg-muted d-flex flex-justify-end flex-wrap col-2">86.4%</div>
+  </div>
+  <div class="Box-row Box-row--focus-gray py-2 d-flex">
+    <div role="gridcell" class="color-fg-muted flex-auto min-width-0 col-md-2"><a href="#l162">chirp::network::MessageRouter::SubscribeKickNotification(std::__cxx11::basic_string&lt;char, std::char_traits&lt;char&gt;, std::allocator&lt;char&gt; &gt; const&amp;, std::function&lt;void (std::__cxx11::basic_string&lt;char, std::char_traits&lt;char&gt;, std::allocator&lt;char&gt; &gt; const&amp;)&gt;) (libs/network/message_router.cc:162)</a>    </div>
+    <div role="gridcell" class="color-fg-muted flex-auto min-width-0 d-flex flex-justify-end flex-wrap flex-items-baseline" data-sort="4">called 4 times</div>
+    <div role="gridcell" class="color-fg-muted d-flex flex-justify-end flex-wrap col-2">87.5%</div>
+    <div role="gridcell" class="color-fg-muted d-flex flex-justify-end flex-wrap col-2">50.0%</div>
+    <div role="gridcell" class="color-fg-muted d-flex flex-justify-end flex-wrap col-2">86.4%</div>
+  </div>
+  <div class="Box-row Box-row--focus-gray py-2 d-flex">
+    <div role="gridcell" class="color-fg-muted flex-auto min-width-0 col-md-2"><a href="#l129">chirp::network::MessageRouter::SubscribeUserChat(std::__cxx11::basic_string&lt;char, std::char_traits&lt;char&gt;, std::allocator&lt;char&gt; &gt; const&amp;, std::function&lt;void (std::__cxx11::basic_string&lt;char, std::char_traits&lt;char&gt;, std::allocator&lt;char&gt; &gt; const&amp;)&gt;) (libs/network/message_router.cc:129)</a>    </div>
+    <div role="gridcell" class="color-fg-muted flex-auto min-width-0 d-flex flex-justify-end flex-wrap flex-items-baseline" data-sort="14">called 14 times</div>
+    <div role="gridcell" class="color-fg-muted d-flex flex-justify-end flex-wrap col-2">87.5%</div>
+    <div role="gridcell" class="color-fg-muted d-flex flex-justify-end flex-wrap col-2">50.0%</div>
+    <div role="gridcell" class="color-fg-muted d-flex flex-justify-end flex-wrap col-2">86.4%</div>
+  </div>
+  <div class="Box-row Box-row--focus-gray py-2 d-flex">
+    <div role="gridcell" class="color-fg-muted flex-auto min-width-0 col-md-2"><a href="#l151">chirp::network::MessageRouter::SubscribeUserSocial(std::__cxx11::basic_string&lt;char, std::char_traits&lt;char&gt;, std::allocator&lt;char&gt; &gt; const&amp;, std::function&lt;void (std::__cxx11::basic_string&lt;char, std::char_traits&lt;char&gt;, std::allocator&lt;char&gt; &gt; const&amp;)&gt;) (libs/network/message_router.cc:151)</a>    </div>
+    <div role="gridcell" class="color-fg-muted flex-auto min-width-0 d-flex flex-justify-end flex-wrap flex-items-baseline" data-sort="4">called 4 times</div>
+    <div role="gridcell" class="color-fg-muted d-flex flex-justify-end flex-wrap col-2">87.5%</div>
+    <div role="gridcell" class="color-fg-muted d-flex flex-justify-end flex-wrap col-2">50.0%</div>
+    <div role="gridcell" class="color-fg-muted d-flex flex-justify-end flex-wrap col-2">86.4%</div>
+  </div>
+  <div class="Box-row Box-row--focus-gray py-2 d-flex">
+    <div role="gridcell" class="color-fg-muted flex-auto min-width-0 col-md-2"><a href="#l173">chirp::network::MessageRouter::Unsubscribe(std::__cxx11::basic_string&lt;char, std::char_traits&lt;char&gt;, std::allocator&lt;char&gt; &gt; const&amp;) (libs/network/message_router.cc:173)</a>    </div>
+    <div role="gridcell" class="color-fg-muted flex-auto min-width-0 d-flex flex-justify-end flex-wrap flex-items-baseline" data-sort="4">called 4 times</div>
+    <div role="gridcell" class="color-fg-muted d-flex flex-justify-end flex-wrap col-2">100.0%</div>
+    <div role="gridcell" class="color-fg-muted d-flex flex-justify-end flex-wrap col-2">50.0%</div>
+    <div role="gridcell" class="color-fg-muted d-flex flex-justify-end flex-wrap col-2">100.0%</div>
+  </div>
+  <div class="Box-row Box-row--focus-gray py-2 d-flex">
+    <div role="gridcell" class="color-fg-muted flex-auto min-width-0 col-md-2"><a href="#l104">chirp::network::MessageRouter::~MessageRouter() (libs/network/message_router.cc:104)</a>    </div>
+    <div role="gridcell" class="color-fg-muted flex-auto min-width-0 d-flex flex-justify-end flex-wrap flex-items-baseline" data-sort="38">called 38 times</div>
+    <div role="gridcell" class="color-fg-muted d-flex flex-justify-end flex-wrap col-2">100.0%</div>
+    <div role="gridcell" class="color-fg-muted d-flex flex-justify-end flex-wrap col-2">-%</div>
+    <div role="gridcell" class="color-fg-muted d-flex flex-justify-end flex-wrap col-2">100.0%</div>
+  </div>
+</div>  </details>
+</div>
+
+        </nav>
+        <main>
+<div class="Box m-3 file-source">
+  <div class="Box-header d-flex flex-space-between sticky">
+    libs/network/message_router.cc
+    <div class="toggle-buttons">
+      <button type="button" class="button_toggle_coveredLine show_coveredLine" value="coveredLine" title="Toggle covered lines">54 covered</button>
+      <button type="button" class="button_toggle_uncoveredLine show_uncoveredLine" value="uncoveredLine" title="Toggle uncovered lines">13 uncovered</button>
+      <button type="button" class="button_toggle_partialCoveredLine show_partialCoveredLine" value="partialCoveredLine" title="Toggle partial covered lines">39 partial covered</button>
+      <button type="button" class="button_toggle_excludedLine show_excludedLine" value="excludedLine" title="Toggle excluded lines">0 excluded</button>
+    </div>
+    <div class="nav">
+      <a class="nav prev" href="index.length_prefixed_framer.h.4cf29540aef68f5b408ed0872329444c.html"></a>
+      <a class="nav index" href="index.html"></a>
+      <a class="nav next" href="index.message_router.h.f0a63bb5fcf7fef77ac110799ddb599c.html"></a>
+    </div>
+  </div>
+  <div class="source-table-container">
+    <table class="text-mono text-small">
+      <tr>
+        <th align="right">Line</th>
+        <th align="right">Branch</th>
+        <th align="right">Exec</th>
+        <th align="left" style="width: 100%;">Source</th>
+      </tr>
+      <tr class="source-line">
+        <td class="lineno"><a id="l1" href="#l1">1</a></td>
+        <td class="linebranch">
+        </td>
+        <td class="linecount"></td>
+        <td class="src "><span class="cp">#include</span><span class="w"> </span><span class="cpf">"message_router.h"</span></td>
+      </tr>
+      <tr class="source-line">
+        <td class="lineno"><a id="l2" href="#l2">2</a></td>
+        <td class="linebranch">
+        </td>
+        <td class="linecount"></td>
+        <td class="src "></td>
+      </tr>
+      <tr class="source-line">
+        <td class="lineno"><a id="l3" href="#l3">3</a></td>
+        <td class="linebranch">
+        </td>
+        <td class="linecount"></td>
+        <td class="src "><span class="cp">#include</span><span class="w"> </span><span class="cpf">&lt;chrono&gt;</span></td>
+      </tr>
+      <tr class="source-line">
+        <td class="lineno"><a id="l4" href="#l4">4</a></td>
+        <td class="linebranch">
+        </td>
+        <td class="linecount"></td>
+        <td class="src "><span class="cp">#include</span><span class="w"> </span><span class="cpf">&lt;condition_variable&gt;</span></td>
+      </tr>
+      <tr class="source-line">
+        <td class="lineno"><a id="l5" href="#l5">5</a></td>
+        <td class="linebranch">
+        </td>
+        <td class="linecount"></td>
+        <td class="src "><span class="cp">#include</span><span class="w"> </span><span class="cpf">&lt;deque&gt;</span></td>
+      </tr>
+      <tr class="source-line">
+        <td class="lineno"><a id="l6" href="#l6">6</a></td>
+        <td class="linebranch">
+        </td>
+        <td class="linecount"></td>
+        <td class="src "><span class="cp">#include</span><span class="w"> </span><span class="cpf">&lt;mutex&gt;</span></td>
+      </tr>
+      <tr class="source-line">
+        <td class="lineno"><a id="l7" href="#l7">7</a></td>
+        <td class="linebranch">
+        </td>
+        <td class="linecount"></td>
+        <td class="src "><span class="cp">#include</span><span class="w"> </span><span class="cpf">&lt;thread&gt;</span></td>
+      </tr>
+      <tr class="source-line">
+        <td class="lineno"><a id="l8" href="#l8">8</a></td>
+        <td class="linebranch">
+        </td>
+        <td class="linecount"></td>
+        <td class="src "><span class="cp">#include</span><span class="w"> </span><span class="cpf">&lt;vector&gt;</span></td>
+      </tr>
+      <tr class="source-line">
+        <td class="lineno"><a id="l9" href="#l9">9</a></td>
+        <td class="linebranch">
+        </td>
+        <td class="linecount"></td>
+        <td class="src "><span class="cp">#include</span><span class="w"> </span><span class="cpf">&lt;set&gt;</span></td>
+      </tr>
+      <tr class="source-line">
+        <td class="lineno"><a id="l10" href="#l10">10</a></td>
+        <td class="linebranch">
+        </td>
+        <td class="linecount"></td>
+        <td class="src "><span class="cp">#include</span><span class="w"> </span><span class="cpf">&lt;asio.hpp&gt;</span></td>
+      </tr>
+      <tr class="source-line">
+        <td class="lineno"><a id="l11" href="#l11">11</a></td>
+        <td class="linebranch">
+        </td>
+        <td class="linecount"></td>
+        <td class="src "></td>
+      </tr>
+      <tr class="source-line">
+        <td class="lineno"><a id="l12" href="#l12">12</a></td>
+        <td class="linebranch">
+        </td>
+        <td class="linecount"></td>
+        <td class="src "><span class="cp">#include</span><span class="w"> </span><span class="cpf">"common/logger.h"</span></td>
+      </tr>
+      <tr class="source-line">
+        <td class="lineno"><a id="l13" href="#l13">13</a></td>
+        <td class="linebranch">
+        </td>
+        <td class="linecount"></td>
+        <td class="src "></td>
+      </tr>
+      <tr class="source-line">
+        <td class="lineno"><a id="l14" href="#l14">14</a></td>
+        <td class="linebranch">
+        </td>
+        <td class="linecount"></td>
+        <td class="src "><span class="k">namespace</span><span class="w"> </span><span class="nn">chirp</span><span class="o">::</span><span class="nn">network</span><span class="w"> </span><span class="p">{</span></td>
+      </tr>
+      <tr class="source-line">
+        <td class="lineno"><a id="l15" href="#l15">15</a></td>
+        <td class="linebranch">
+        </td>
+        <td class="linecount"></td>
+        <td class="src "></td>
+      </tr>
+      <tr class="source-line">
+        <td class="lineno"><a id="l16" href="#l16">16</a></td>
+        <td class="linebranch">
+        </td>
+        <td class="linecount"></td>
+        <td class="src "><span class="k">namespace</span><span class="w"> </span><span class="p">{</span></td>
+      </tr>
+      <tr class="source-line">
+        <td class="lineno"><a id="l17" href="#l17">17</a></td>
+        <td class="linebranch">
+        </td>
+        <td class="linecount"></td>
+        <td class="src "></td>
+      </tr>
+      <tr class="source-line">
+        <td class="lineno"><a id="l18" href="#l18">18</a></td>
+        <td class="linebranch">
+        </td>
+        <td class="linecount"></td>
+        <td class="src "><span class="k">constexpr</span><span class="w"> </span><span class="kt">int</span><span class="w"> </span><span class="n">kConnectRetryIntervalMs</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mi">5000</span><span class="p">;</span></td>
+      </tr>
+      <tr class="source-line">
+        <td class="lineno"><a id="l19" href="#l19">19</a></td>
+        <td class="linebranch">
+        </td>
+        <td class="linecount"></td>
+        <td class="src "><span class="k">constexpr</span><span class="w"> </span><span class="kt">int</span><span class="w"> </span><span class="n">kSubscribeTimeoutMs</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mi">5000</span><span class="p">;</span></td>
+      </tr>
+      <tr class="source-line">
+        <td class="lineno"><a id="l20" href="#l20">20</a></td>
+        <td class="linebranch">
+        </td>
+        <td class="linecount"></td>
+        <td class="src "></td>
+      </tr>
+      <tr class="source-line">
+        <td class="lineno"><a id="l21" href="#l21">21</a></td>
+        <td class="linebranch">
+        </td>
+        <td class="linecount"></td>
+        <td class="src "><span class="p">}</span><span class="w"> </span><span class="c1">// namespace</span></td>
+      </tr>
+      <tr class="source-line">
+        <td class="lineno"><a id="l22" href="#l22">22</a></td>
+        <td class="linebranch">
+        </td>
+        <td class="linecount"></td>
+        <td class="src "></td>
+      </tr>
+      <tr class="source-line">
+        <td class="lineno"><a id="l23" href="#l23">23</a></td>
+        <td class="linebranch">
+        </td>
+        <td class="linecount"></td>
+        <td class="src "><span class="k">struct</span><span class="w"> </span><span class="nc">MessageRouter</span><span class="o">::</span><span class="n">Impl</span><span class="w"> </span><span class="p">{</span></td>
+      </tr>
+      <tr class="source-line">
+        <td class="lineno"><a id="l24" href="#l24">24</a></td>
+        <td class="linebranch">
+        </td>
+        <td class="linecount"></td>
+        <td class="src "><span class="w">  </span><span class="n">asio</span><span class="o">::</span><span class="n">io_context</span><span class="o">&amp;</span><span class="w"> </span><span class="n">io</span><span class="p">;</span></td>
+      </tr>
+      <tr class="source-line">
+        <td class="lineno"><a id="l25" href="#l25">25</a></td>
+        <td class="linebranch">
+        </td>
+        <td class="linecount"></td>
+        <td class="src "><span class="w">  </span><span class="n">std</span><span class="o">::</span><span class="n">string</span><span class="w"> </span><span class="n">host</span><span class="p">;</span></td>
+      </tr>
+      <tr class="source-line">
+        <td class="lineno"><a id="l26" href="#l26">26</a></td>
+        <td class="linebranch">
+        </td>
+        <td class="linecount"></td>
+        <td class="src "><span class="w">  </span><span class="kt">uint16_t</span><span class="w"> </span><span class="n">port</span><span class="p">;</span></td>
+      </tr>
+      <tr class="source-line">
+        <td class="lineno"><a id="l27" href="#l27">27</a></td>
+        <td class="linebranch">
+        </td>
+        <td class="linecount"></td>
+        <td class="src "></td>
+      </tr>
+      <tr class="source-line">
+        <td class="lineno"><a id="l28" href="#l28">28</a></td>
+        <td class="linebranch">
+        </td>
+        <td class="linecount"></td>
+        <td class="src "><span class="w">  </span><span class="c1">// Redis 客户端（用于发布）</span></td>
+      </tr>
+      <tr class="source-line">
+        <td class="lineno"><a id="l29" href="#l29">29</a></td>
+        <td class="linebranch">
+        </td>
+        <td class="linecount"></td>
+        <td class="src "><span class="w">  </span><span class="n">std</span><span class="o">::</span><span class="n">unique_ptr</span><span class="o">&lt;</span><span class="n">RedisClient</span><span class="o">&gt;</span><span class="w"> </span><span class="n">publisher</span><span class="p">;</span></td>
+      </tr>
+      <tr class="source-line">
+        <td class="lineno"><a id="l30" href="#l30">30</a></td>
+        <td class="linebranch">
+        </td>
+        <td class="linecount"></td>
+        <td class="src "></td>
+      </tr>
+      <tr class="source-line">
+        <td class="lineno"><a id="l31" href="#l31">31</a></td>
+        <td class="linebranch">
+        </td>
+        <td class="linecount"></td>
+        <td class="src "><span class="w">  </span><span class="c1">// Redis 订阅者</span></td>
+      </tr>
+      <tr class="source-line">
+        <td class="lineno"><a id="l32" href="#l32">32</a></td>
+        <td class="linebranch">
+        </td>
+        <td class="linecount"></td>
+        <td class="src "><span class="w">  </span><span class="n">std</span><span class="o">::</span><span class="n">unique_ptr</span><span class="o">&lt;</span><span class="n">RedisSubscriber</span><span class="o">&gt;</span><span class="w"> </span><span class="n">subscriber</span><span class="p">;</span></td>
+      </tr>
+      <tr class="source-line">
+        <td class="lineno"><a id="l33" href="#l33">33</a></td>
+        <td class="linebranch">
+        </td>
+        <td class="linecount"></td>
+        <td class="src "></td>
+      </tr>
+      <tr class="source-line">
+        <td class="lineno"><a id="l34" href="#l34">34</a></td>
+        <td class="linebranch">
+        </td>
+        <td class="linecount"></td>
+        <td class="src "><span class="w">  </span><span class="c1">// 订阅的频道集合</span></td>
+      </tr>
+      <tr class="source-line">
+        <td class="lineno"><a id="l35" href="#l35">35</a></td>
+        <td class="linebranch">
+        </td>
+        <td class="linecount"></td>
+        <td class="src "><span class="w">  </span><span class="n">std</span><span class="o">::</span><span class="n">set</span><span class="o">&lt;</span><span class="n">std</span><span class="o">::</span><span class="n">string</span><span class="o">&gt;</span><span class="w"> </span><span class="n">subscribed_channels</span><span class="p">;</span></td>
+      </tr>
+      <tr class="source-line">
+        <td class="lineno"><a id="l36" href="#l36">36</a></td>
+        <td class="linebranch">
+        </td>
+        <td class="linecount"></td>
+        <td class="src "></td>
+      </tr>
+      <tr class="source-line">
+        <td class="lineno"><a id="l37" href="#l37">37</a></td>
+        <td class="linebranch">
+        </td>
+        <td class="linecount"></td>
+        <td class="src "><span class="w">  </span><span class="c1">// 订阅回调映射</span></td>
+      </tr>
+      <tr class="source-line">
+        <td class="lineno"><a id="l38" href="#l38">38</a></td>
+        <td class="linebranch">
+        </td>
+        <td class="linecount"></td>
+        <td class="src "><span class="w">  </span><span class="n">std</span><span class="o">::</span><span class="n">unordered_map</span><span class="o">&lt;</span><span class="n">std</span><span class="o">::</span><span class="n">string</span><span class="p">,</span><span class="w"> </span><span class="n">SubscribeCallback</span><span class="o">&gt;</span><span class="w"> </span><span class="n">subscriptions</span><span class="p">;</span></td>
+      </tr>
+      <tr class="source-line">
+        <td class="lineno"><a id="l39" href="#l39">39</a></td>
+        <td class="linebranch">
+        </td>
+        <td class="linecount"></td>
+        <td class="src "></td>
+      </tr>
+      <tr class="source-line">
+        <td class="lineno"><a id="l40" href="#l40">40</a></td>
+        <td class="linebranch">
+        </td>
+        <td class="linecount"></td>
+        <td class="src "><span class="w">  </span><span class="c1">// 运行状态</span></td>
+      </tr>
+      <tr class="source-line">
+        <td class="lineno"><a id="l41" href="#l41">41</a></td>
+        <td class="linebranch">
+        </td>
+        <td class="linecount"></td>
+        <td class="src "><span class="w">  </span><span class="n">std</span><span class="o">::</span><span class="n">atomic</span><span class="o">&lt;</span><span class="kt">bool</span><span class="o">&gt;</span><span class="w"> </span><span class="n">running</span><span class="p">{</span><span class="nb">false</span><span class="p">};</span></td>
+      </tr>
+      <tr class="source-line">
+        <td class="lineno"><a id="l42" href="#l42">42</a></td>
+        <td class="linebranch">
+        </td>
+        <td class="linecount"></td>
+        <td class="src "><span class="w">  </span><span class="n">std</span><span class="o">::</span><span class="n">atomic</span><span class="o">&lt;</span><span class="kt">bool</span><span class="o">&gt;</span><span class="w"> </span><span class="n">connected</span><span class="p">{</span><span class="nb">false</span><span class="p">};</span></td>
+      </tr>
+      <tr class="source-line">
+        <td class="lineno"><a id="l43" href="#l43">43</a></td>
+        <td class="linebranch">
+        </td>
+        <td class="linecount"></td>
+        <td class="src "></td>
+      </tr>
+      <tr class="source-line">
+        <td class="lineno"><a id="l44" href="#l44">44</a></td>
+        <td class="linebranch">
+        </td>
+        <td class="linecount coveredLine show_coveredLine">38</td>
+        <td class="src  coveredLine show_coveredLine"><span class="w">  </span><span class="n">Impl</span><span class="p">(</span><span class="n">asio</span><span class="o">::</span><span class="n">io_context</span><span class="o">&amp;</span><span class="w"> </span><span class="n">io</span><span class="p">,</span><span class="w"> </span><span class="n">std</span><span class="o">::</span><span class="n">string</span><span class="w"> </span><span class="n">redis_host</span><span class="p">,</span><span class="w"> </span><span class="kt">uint16_t</span><span class="w"> </span><span class="n">redis_port</span><span class="p">)</span></td>
+      </tr>
+      <tr class="source-line">
+        <td class="lineno"><a id="l45" href="#l45">45</a></td>
+        <td class="linebranch">
+        </td>
+        <td class="linecount coveredLine show_coveredLine">76</td>
+        <td class="src  coveredLine show_coveredLine"><span class="w">      </span><span class="o">:</span><span class="w"> </span><span class="n">io</span><span class="p">(</span><span class="n">io</span><span class="p">),</span><span class="w"> </span><span class="n">host</span><span class="p">(</span><span class="n">std</span><span class="o">::</span><span class="n">move</span><span class="p">(</span><span class="n">redis_host</span><span class="p">)),</span><span class="w"> </span><span class="n">port</span><span class="p">(</span><span class="n">redis_port</span><span class="p">)</span><span class="w"> </span><span class="p">{</span></td>
+      </tr>
+      <tr class="source-line">
+        <td class="lineno"><a id="l46" href="#l46">46</a></td>
+        <td class="linebranch">
+          <details class="linebranchDetails">
+            <summary class="linebranchSummary">1/2</summary>
+            <div class="linebranchContents">
+              <div class="takenBranch">&check; Branch 11 &rightarrow; 12 taken 38 times.</div>
+              <div class="notTakenBranch">&cross; Branch 11 &rightarrow; 30 not taken.</div>
+            </div>
+          </details>
+        </td>
+        <td class="linecount partialCoveredLine show_partialCoveredLine">38</td>
+        <td class="src  partialCoveredLine show_partialCoveredLine"><span class="w">    </span><span class="n">publisher</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">std</span><span class="o">::</span><span class="n">make_unique</span><span class="o">&lt;</span><span class="n">RedisClient</span><span class="o">&gt;</span><span class="p">(</span><span class="n">host</span><span class="p">,</span><span class="w"> </span><span class="n">port</span><span class="p">);</span></td>
+      </tr>
+      <tr class="source-line">
+        <td class="lineno"><a id="l47" href="#l47">47</a></td>
+        <td class="linebranch">
+          <details class="linebranchDetails">
+            <summary class="linebranchSummary">1/2</summary>
+            <div class="linebranchContents">
+              <div class="takenBranch">&check; Branch 14 &rightarrow; 15 taken 38 times.</div>
+              <div class="notTakenBranch">&cross; Branch 14 &rightarrow; 31 not taken.</div>
+            </div>
+          </details>
+        </td>
+        <td class="linecount partialCoveredLine show_partialCoveredLine">38</td>
+        <td class="src  partialCoveredLine show_partialCoveredLine"><span class="w">    </span><span class="n">subscriber</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">std</span><span class="o">::</span><span class="n">make_unique</span><span class="o">&lt;</span><span class="n">RedisSubscriber</span><span class="o">&gt;</span><span class="p">(</span><span class="n">host</span><span class="p">,</span><span class="w"> </span><span class="n">port</span><span class="p">);</span></td>
+      </tr>
+      <tr class="source-line">
+        <td class="lineno"><a id="l48" href="#l48">48</a></td>
+        <td class="linebranch">
+        </td>
+        <td class="linecount"></td>
+        <td class="src "></td>
+      </tr>
+      <tr class="source-line">
+        <td class="lineno"><a id="l49" href="#l49">49</a></td>
+        <td class="linebranch">
+        </td>
+        <td class="linecount"></td>
+        <td class="src "><span class="w">    </span><span class="c1">// 设置订阅者回调</span></td>
+      </tr>
+      <tr class="source-line">
+        <td class="lineno"><a id="l50" href="#l50">50</a></td>
+        <td class="linebranch">
+        </td>
+        <td class="linecount coveredLine show_coveredLine">38</td>
+        <td class="src  coveredLine show_coveredLine"><span class="w">    </span><span class="n">subscriber</span><span class="o">-&gt;</span><span class="n">SetMessageCallback</span><span class="p">([</span><span class="k">this</span><span class="p">,</span><span class="w"> </span><span class="o">&amp;</span><span class="n">io</span><span class="p">](</span><span class="k">const</span><span class="w"> </span><span class="n">std</span><span class="o">::</span><span class="n">string</span><span class="o">&amp;</span><span class="w"> </span><span class="n">channel</span><span class="p">,</span><span class="w"> </span><span class="k">const</span><span class="w"> </span><span class="n">std</span><span class="o">::</span><span class="n">string</span><span class="o">&amp;</span><span class="w"> </span><span class="n">message</span><span class="p">)</span><span class="w"> </span><span class="p">{</span></td>
+      </tr>
+      <tr class="source-line">
+        <td class="lineno"><a id="l51" href="#l51">51</a></td>
+        <td class="linebranch">
+          <details class="linebranchDetails">
+            <summary class="linebranchSummary">1/2</summary>
+            <div class="linebranchContents">
+              <div class="takenBranch">&check; Branch 2 &rightarrow; 3 taken 4 times.</div>
+              <div class="notTakenBranch">&cross; Branch 2 &rightarrow; 27 not taken.</div>
+            </div>
+          </details>
+        </td>
+        <td class="linecount partialCoveredLine show_partialCoveredLine">4</td>
+        <td class="src  partialCoveredLine show_partialCoveredLine"><span class="w">      </span><span class="k">auto</span><span class="w"> </span><span class="n">it</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">subscriptions</span><span class="p">.</span><span class="n">find</span><span class="p">(</span><span class="n">channel</span><span class="p">);</span></td>
+      </tr>
+      <tr class="source-line">
+        <td class="lineno"><a id="l52" href="#l52">52</a></td>
+        <td class="linebranch">
+          <details class="linebranchDetails">
+            <summary class="linebranchSummary">3/6</summary>
+            <div class="linebranchContents">
+              <div class="takenBranch">&check; Branch 5 &rightarrow; 6 taken 4 times.</div>
+              <div class="notTakenBranch">&cross; Branch 5 &rightarrow; 10 not taken.</div>
+              <div class="takenBranch">&check; Branch 8 &rightarrow; 9 taken 4 times.</div>
+              <div class="notTakenBranch">&cross; Branch 8 &rightarrow; 10 not taken.</div>
+              <div class="takenBranch">&check; Branch 11 &rightarrow; 12 taken 4 times.</div>
+              <div class="notTakenBranch">&cross; Branch 11 &rightarrow; 20 not taken.</div>
+            </div>
+          </details>
+        </td>
+        <td class="linecount partialCoveredLine show_partialCoveredLine">4</td>
+        <td class="src  partialCoveredLine show_partialCoveredLine"><span class="w">      </span><span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="n">it</span><span class="w"> </span><span class="o">!=</span><span class="w"> </span><span class="n">subscriptions</span><span class="p">.</span><span class="n">end</span><span class="p">()</span><span class="w"> </span><span class="o">&amp;&amp;</span><span class="w"> </span><span class="n">it</span><span class="o">-&gt;</span><span class="n">second</span><span class="p">)</span><span class="w"> </span><span class="p">{</span></td>
+      </tr>
+      <tr class="source-line">
+        <td class="lineno"><a id="l53" href="#l53">53</a></td>
+        <td class="linebranch">
+        </td>
+        <td class="linecount"></td>
+        <td class="src "><span class="w">        </span><span class="c1">// 将回调投递到主 io_context</span></td>
+      </tr>
+      <tr class="source-line">
+        <td class="lineno"><a id="l54" href="#l54">54</a></td>
+        <td class="linebranch">
+          <details class="linebranchDetails">
+            <summary class="linebranchSummary">4/10</summary>
+            <div class="linebranchContents">
+              <div class="takenBranch">&check; Branch 13 &rightarrow; 14 taken 4 times.</div>
+              <div class="notTakenBranch">&cross; Branch 13 &rightarrow; 26 not taken.</div>
+              <div class="takenBranch">&check; Branch 14 &rightarrow; 15 taken 4 times.</div>
+              <div class="notTakenBranch">&cross; Branch 14 &rightarrow; 23 not taken.</div>
+              <div class="takenBranch">&check; Branch 15 &rightarrow; 16 taken 4 times.</div>
+              <div class="notTakenBranch">&cross; Branch 15 &rightarrow; 21 not taken.</div>
+              <div class="notTakenBranch">&cross; Branch 17 &rightarrow; 18 not taken.</div>
+              <div class="takenBranch">&check; Branch 17 &rightarrow; 19 taken 4 times.</div>
+              <div class="notTakenBranch">&cross; Branch 23 &rightarrow; 24 not taken.</div>
+              <div class="notTakenBranch">&cross; Branch 23 &rightarrow; 25 not taken.</div>
+            </div>
+          </details>
+        </td>
+        <td class="linecount partialCoveredLine show_partialCoveredLine">4</td>
+        <td class="src  partialCoveredLine show_partialCoveredLine"><span class="w">        </span><span class="n">asio</span><span class="o">::</span><span class="k">post</span><span class="p">(</span><span class="n">io</span><span class="p">,</span><span class="w"> </span><span class="p">[</span><span class="n">cb</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">it</span><span class="o">-&gt;</span><span class="n">second</span><span class="p">,</span><span class="w"> </span><span class="n">msg</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">message</span><span class="p">]()</span><span class="w"> </span><span class="p">{</span></td>
+      </tr>
+      <tr class="source-line">
+        <td class="lineno"><a id="l55" href="#l55">55</a></td>
+        <td class="linebranch">
+        </td>
+        <td class="linecount coveredLine show_coveredLine">4</td>
+        <td class="src  coveredLine show_coveredLine"><span class="w">          </span><span class="n">cb</span><span class="p">(</span><span class="n">msg</span><span class="p">);</span></td>
+      </tr>
+      <tr class="source-line">
+        <td class="lineno"><a id="l56" href="#l56">56</a></td>
+        <td class="linebranch">
+        </td>
+        <td class="linecount coveredLine show_coveredLine">4</td>
+        <td class="src  coveredLine show_coveredLine"><span class="w">        </span><span class="p">});</span></td>
+      </tr>
+      <tr class="source-line">
+        <td class="lineno"><a id="l57" href="#l57">57</a></td>
+        <td class="linebranch">
+        </td>
+        <td class="linecount"></td>
+        <td class="src "><span class="w">      </span><span class="p">}</span></td>
+      </tr>
+      <tr class="source-line">
+        <td class="lineno"><a id="l58" href="#l58">58</a></td>
+        <td class="linebranch">
+        </td>
+        <td class="linecount coveredLine show_coveredLine">4</td>
+        <td class="src  coveredLine show_coveredLine"><span class="w">    </span><span class="p">});</span></td>
+      </tr>
+      <tr class="source-line">
+        <td class="lineno"><a id="l59" href="#l59">59</a></td>
+        <td class="linebranch">
+        </td>
+        <td class="linecount"></td>
+        <td class="src "></td>
+      </tr>
+      <tr class="source-line">
+        <td class="lineno"><a id="l60" href="#l60">60</a></td>
+        <td class="linebranch">
+        </td>
+        <td class="linecount coveredLine show_coveredLine">38</td>
+        <td class="src  coveredLine show_coveredLine"><span class="w">    </span><span class="n">subscriber</span><span class="o">-&gt;</span><span class="n">SetErrorCallback</span><span class="p">([</span><span class="k">this</span><span class="p">](</span><span class="k">const</span><span class="w"> </span><span class="n">std</span><span class="o">::</span><span class="n">string</span><span class="o">&amp;</span><span class="w"> </span><span class="n">error</span><span class="p">)</span><span class="w"> </span><span class="p">{</span></td>
+      </tr>
+      <tr class="source-line">
+        <td class="lineno"><a id="l61" href="#l61">61</a></td>
+        <td class="linebranch">
+          <details class="linebranchDetails">
+            <summary class="linebranchSummary">2/4</summary>
+            <div class="linebranchContents">
+              <div class="takenBranch">&check; Branch 3 &rightarrow; 4 taken 10 times.</div>
+              <div class="notTakenBranch">&cross; Branch 3 &rightarrow; 11 not taken.</div>
+              <div class="takenBranch">&check; Branch 5 &rightarrow; 6 taken 10 times.</div>
+              <div class="notTakenBranch">&cross; Branch 5 &rightarrow; 9 not taken.</div>
+            </div>
+          </details>
+        </td>
+        <td class="linecount partialCoveredLine show_partialCoveredLine">10</td>
+        <td class="src  partialCoveredLine show_partialCoveredLine"><span class="w">      </span><span class="n">chirp</span><span class="o">::</span><span class="n">common</span><span class="o">::</span><span class="n">Logger</span><span class="o">::</span><span class="n">Instance</span><span class="p">().</span><span class="n">Warn</span><span class="p">(</span><span class="s">"MessageRouter Redis error: "</span><span class="w"> </span><span class="o">+</span><span class="w"> </span><span class="n">error</span><span class="p">);</span></td>
+      </tr>
+      <tr class="source-line">
+        <td class="lineno"><a id="l62" href="#l62">62</a></td>
+        <td class="linebranch">
+        </td>
+        <td class="linecount coveredLine show_coveredLine">10</td>
+        <td class="src  coveredLine show_coveredLine"><span class="w">      </span><span class="n">connected</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nb">false</span><span class="p">;</span></td>
+      </tr>
+      <tr class="source-line">
+        <td class="lineno"><a id="l63" href="#l63">63</a></td>
+        <td class="linebranch">
+        </td>
+        <td class="linecount coveredLine show_coveredLine">10</td>
+        <td class="src  coveredLine show_coveredLine"><span class="w">    </span><span class="p">});</span></td>
+      </tr>
+      <tr class="source-line">
+        <td class="lineno"><a id="l64" href="#l64">64</a></td>
+        <td class="linebranch">
+        </td>
+        <td class="linecount"></td>
+        <td class="src "></td>
+      </tr>
+      <tr class="source-line">
+        <td class="lineno"><a id="l65" href="#l65">65</a></td>
+        <td class="linebranch">
+        </td>
+        <td class="linecount coveredLine show_coveredLine">38</td>
+        <td class="src  coveredLine show_coveredLine"><span class="w">    </span><span class="n">subscriber</span><span class="o">-&gt;</span><span class="n">SetConnectCallback</span><span class="p">([</span><span class="k">this</span><span class="p">]()</span><span class="w"> </span><span class="p">{</span></td>
+      </tr>
+      <tr class="source-line">
+        <td class="lineno"><a id="l66" href="#l66">66</a></td>
+        <td class="linebranch">
+          <details class="linebranchDetails">
+            <summary class="linebranchSummary">1/2</summary>
+            <div class="linebranchContents">
+              <div class="takenBranch">&check; Branch 4 &rightarrow; 5 taken 4 times.</div>
+              <div class="notTakenBranch">&cross; Branch 4 &rightarrow; 15 not taken.</div>
+            </div>
+          </details>
+        </td>
+        <td class="linecount partialCoveredLine show_partialCoveredLine">4</td>
+        <td class="src  partialCoveredLine show_partialCoveredLine"><span class="w">      </span><span class="n">chirp</span><span class="o">::</span><span class="n">common</span><span class="o">::</span><span class="n">Logger</span><span class="o">::</span><span class="n">Instance</span><span class="p">().</span><span class="n">Info</span><span class="p">(</span><span class="s">"MessageRouter Redis connected"</span><span class="p">);</span></td>
+      </tr>
+      <tr class="source-line">
+        <td class="lineno"><a id="l67" href="#l67">67</a></td>
+        <td class="linebranch">
+        </td>
+        <td class="linecount coveredLine show_coveredLine">4</td>
+        <td class="src  coveredLine show_coveredLine"><span class="w">      </span><span class="n">connected</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nb">true</span><span class="p">;</span></td>
+      </tr>
+      <tr class="source-line">
+        <td class="lineno"><a id="l68" href="#l68">68</a></td>
+        <td class="linebranch">
+        </td>
+        <td class="linecount"></td>
+        <td class="src "></td>
+      </tr>
+      <tr class="source-line">
+        <td class="lineno"><a id="l69" href="#l69">69</a></td>
+        <td class="linebranch">
+        </td>
+        <td class="linecount"></td>
+        <td class="src "><span class="w">      </span><span class="c1">// 重新订阅之前的频道</span></td>
+      </tr>
+      <tr class="source-line">
+        <td class="lineno"><a id="l70" href="#l70">70</a></td>
+        <td class="linebranch">
+          <details class="linebranchDetails">
+            <summary class="linebranchSummary">2/2</summary>
+            <div class="linebranchContents">
+              <div class="takenBranch">&check; Branch 13 &rightarrow; 8 taken 4 times.</div>
+              <div class="takenBranch">&check; Branch 13 &rightarrow; 14 taken 4 times.</div>
+            </div>
+          </details>
+        </td>
+        <td class="linecount coveredLine show_coveredLine">8</td>
+        <td class="src  coveredLine show_coveredLine"><span class="w">      </span><span class="k">for</span><span class="w"> </span><span class="p">(</span><span class="k">const</span><span class="w"> </span><span class="k">auto</span><span class="o">&amp;</span><span class="w"> </span><span class="n">channel</span><span class="w"> </span><span class="o">:</span><span class="w"> </span><span class="n">subscribed_channels</span><span class="p">)</span><span class="w"> </span><span class="p">{</span></td>
+      </tr>
+      <tr class="source-line">
+        <td class="lineno"><a id="l71" href="#l71">71</a></td>
+        <td class="linebranch">
+          <details class="linebranchDetails">
+            <summary class="linebranchSummary">1/2</summary>
+            <div class="linebranchContents">
+              <div class="takenBranch">&check; Branch 10 &rightarrow; 11 taken 4 times.</div>
+              <div class="notTakenBranch">&cross; Branch 10 &rightarrow; 16 not taken.</div>
+            </div>
+          </details>
+        </td>
+        <td class="linecount partialCoveredLine show_partialCoveredLine">4</td>
+        <td class="src  partialCoveredLine show_partialCoveredLine"><span class="w">        </span><span class="n">subscriber</span><span class="o">-&gt;</span><span class="n">Subscribe</span><span class="p">(</span><span class="n">channel</span><span class="p">);</span></td>
+      </tr>
+      <tr class="source-line">
+        <td class="lineno"><a id="l72" href="#l72">72</a></td>
+        <td class="linebranch">
+        </td>
+        <td class="linecount"></td>
+        <td class="src "><span class="w">      </span><span class="p">}</span></td>
+      </tr>
+      <tr class="source-line">
+        <td class="lineno"><a id="l73" href="#l73">73</a></td>
+        <td class="linebranch">
+        </td>
+        <td class="linecount coveredLine show_coveredLine">4</td>
+        <td class="src  coveredLine show_coveredLine"><span class="w">    </span><span class="p">});</span></td>
+      </tr>
+      <tr class="source-line">
+        <td class="lineno"><a id="l74" href="#l74">74</a></td>
+        <td class="linebranch">
+        </td>
+        <td class="linecount coveredLine show_coveredLine">38</td>
+        <td class="src  coveredLine show_coveredLine"><span class="w">  </span><span class="p">}</span></td>
+      </tr>
+      <tr class="source-line">
+        <td class="lineno"><a id="l75" href="#l75">75</a></td>
+        <td class="linebranch">
+        </td>
+        <td class="linecount"></td>
+        <td class="src "></td>
+      </tr>
+      <tr class="source-line">
+        <td class="lineno"><a id="l76" href="#l76">76</a></td>
+        <td class="linebranch">
+        </td>
+        <td class="linecount coveredLine show_coveredLine">12</td>
+        <td class="src  coveredLine show_coveredLine"><span class="w">  </span><span class="kt">bool</span><span class="w"> </span><span class="n">Start</span><span class="p">()</span><span class="w"> </span><span class="p">{</span></td>
+      </tr>
+      <tr class="source-line">
+        <td class="lineno"><a id="l77" href="#l77">77</a></td>
+        <td class="linebranch">
+        </td>
+        <td class="linecount"></td>
+        <td class="src "><span class="w">    </span><span class="k">try</span><span class="w"> </span><span class="p">{</span></td>
+      </tr>
+      <tr class="source-line">
+        <td class="lineno"><a id="l78" href="#l78">78</a></td>
+        <td class="linebranch">
+          <details class="linebranchDetails">
+            <summary class="linebranchSummary">1/2</summary>
+            <div class="linebranchContents">
+              <div class="takenBranch">&check; Branch 3 &rightarrow; 4 taken 12 times.</div>
+              <div class="notTakenBranch">&cross; Branch 3 &rightarrow; 7 not taken.</div>
+            </div>
+          </details>
+        </td>
+        <td class="linecount partialCoveredLine show_partialCoveredLine">12</td>
+        <td class="src  partialCoveredLine show_partialCoveredLine"><span class="w">      </span><span class="n">subscriber</span><span class="o">-&gt;</span><span class="n">Start</span><span class="p">();</span></td>
+      </tr>
+      <tr class="source-line">
+        <td class="lineno"><a id="l79" href="#l79">79</a></td>
+        <td class="linebranch">
+        </td>
+        <td class="linecount coveredLine show_coveredLine">12</td>
+        <td class="src  coveredLine show_coveredLine"><span class="w">      </span><span class="n">running</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nb">true</span><span class="p">;</span></td>
+      </tr>
+      <tr class="source-line">
+        <td class="lineno"><a id="l80" href="#l80">80</a></td>
+        <td class="linebranch">
+        </td>
+        <td class="linecount coveredLine show_coveredLine">12</td>
+        <td class="src  coveredLine show_coveredLine"><span class="w">      </span><span class="k">return</span><span class="w"> </span><span class="nb">true</span><span class="p">;</span></td>
+      </tr>
+      <tr class="source-line">
+        <td class="lineno"><a id="l81" href="#l81">81</a></td>
+        <td class="linebranch">
+        </td>
+        <td class="linecount uncoveredLine show_uncoveredLine">&cross;</td>
+        <td class="src  uncoveredLine show_uncoveredLine"><span class="w">    </span><span class="p">}</span><span class="w"> </span><span class="k">catch</span><span class="w"> </span><span class="p">(</span><span class="k">const</span><span class="w"> </span><span class="n">std</span><span class="o">::</span><span class="n">exception</span><span class="o">&amp;</span><span class="w"> </span><span class="n">e</span><span class="p">)</span><span class="w"> </span><span class="p">{</span></td>
+      </tr>
+      <tr class="source-line">
+        <td class="lineno"><a id="l82" href="#l82">82</a></td>
+        <td class="linebranch">
+        </td>
+        <td class="linecount uncoveredLine show_uncoveredLine">&cross;</td>
+        <td class="src  uncoveredLine show_uncoveredLine"><span class="w">      </span><span class="n">chirp</span><span class="o">::</span><span class="n">common</span><span class="o">::</span><span class="n">Logger</span><span class="o">::</span><span class="n">Instance</span><span class="p">().</span><span class="n">Error</span><span class="p">(</span><span class="s">"Failed to start MessageRouter: "</span><span class="w"> </span><span class="o">+</span><span class="w"> </span><span class="n">std</span><span class="o">::</span><span class="n">string</span><span class="p">(</span><span class="n">e</span><span class="p">.</span><span class="n">what</span><span class="p">()));</span></td>
+      </tr>
+      <tr class="source-line">
+        <td class="lineno"><a id="l83" href="#l83">83</a></td>
+        <td class="linebranch">
+        </td>
+        <td class="linecount uncoveredLine show_uncoveredLine">&cross;</td>
+        <td class="src  uncoveredLine show_uncoveredLine"><span class="w">      </span><span class="k">return</span><span class="w"> </span><span class="nb">false</span><span class="p">;</span></td>
+      </tr>
+      <tr class="source-line">
+        <td class="lineno"><a id="l84" href="#l84">84</a></td>
+        <td class="linebranch">
+        </td>
+        <td class="linecount uncoveredLine show_uncoveredLine">&cross;</td>
+        <td class="src  uncoveredLine show_uncoveredLine"><span class="w">    </span><span class="p">}</span></td>
+      </tr>
+      <tr class="source-line">
+        <td class="lineno"><a id="l85" href="#l85">85</a></td>
+        <td class="linebranch">
+        </td>
+        <td class="linecount"></td>
+        <td class="src "><span class="w">  </span><span class="p">}</span></td>
+      </tr>
+      <tr class="source-line">
+        <td class="lineno"><a id="l86" href="#l86">86</a></td>
+        <td class="linebranch">
+        </td>
+        <td class="linecount"></td>
+        <td class="src "></td>
+      </tr>
+      <tr class="source-line">
+        <td class="lineno"><a id="l87" href="#l87">87</a></td>
+        <td class="linebranch">
+        </td>
+        <td class="linecount coveredLine show_coveredLine">54</td>
+        <td class="src  coveredLine show_coveredLine"><span class="w">  </span><span class="kt">void</span><span class="w"> </span><span class="n">Stop</span><span class="p">()</span><span class="w"> </span><span class="p">{</span></td>
+      </tr>
+      <tr class="source-line">
+        <td class="lineno"><a id="l88" href="#l88">88</a></td>
+        <td class="linebranch">
+        </td>
+        <td class="linecount coveredLine show_coveredLine">54</td>
+        <td class="src  coveredLine show_coveredLine"><span class="w">    </span><span class="n">running</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nb">false</span><span class="p">;</span></td>
+      </tr>
+      <tr class="source-line">
+        <td class="lineno"><a id="l89" href="#l89">89</a></td>
+        <td class="linebranch">
+          <details class="linebranchDetails">
+            <summary class="linebranchSummary">1/2</summary>
+            <div class="linebranchContents">
+              <div class="takenBranch">&check; Branch 4 &rightarrow; 5 taken 54 times.</div>
+              <div class="notTakenBranch">&cross; Branch 4 &rightarrow; 7 not taken.</div>
+            </div>
+          </details>
+        </td>
+        <td class="linecount partialCoveredLine show_partialCoveredLine">54</td>
+        <td class="src  partialCoveredLine show_partialCoveredLine"><span class="w">    </span><span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="n">subscriber</span><span class="p">)</span><span class="w"> </span><span class="p">{</span></td>
+      </tr>
+      <tr class="source-line">
+        <td class="lineno"><a id="l90" href="#l90">90</a></td>
+        <td class="linebranch">
+        </td>
+        <td class="linecount coveredLine show_coveredLine">54</td>
+        <td class="src  coveredLine show_coveredLine"><span class="w">      </span><span class="n">subscriber</span><span class="o">-&gt;</span><span class="n">Stop</span><span class="p">();</span></td>
+      </tr>
+      <tr class="source-line">
+        <td class="lineno"><a id="l91" href="#l91">91</a></td>
+        <td class="linebranch">
+        </td>
+        <td class="linecount"></td>
+        <td class="src "><span class="w">    </span><span class="p">}</span></td>
+      </tr>
+      <tr class="source-line">
+        <td class="lineno"><a id="l92" href="#l92">92</a></td>
+        <td class="linebranch">
+        </td>
+        <td class="linecount coveredLine show_coveredLine">54</td>
+        <td class="src  coveredLine show_coveredLine"><span class="w">    </span><span class="n">subscribed_channels</span><span class="p">.</span><span class="n">clear</span><span class="p">();</span></td>
+      </tr>
+      <tr class="source-line">
+        <td class="lineno"><a id="l93" href="#l93">93</a></td>
+        <td class="linebranch">
+        </td>
+        <td class="linecount coveredLine show_coveredLine">54</td>
+        <td class="src  coveredLine show_coveredLine"><span class="w">    </span><span class="n">subscriptions</span><span class="p">.</span><span class="n">clear</span><span class="p">();</span></td>
+      </tr>
+      <tr class="source-line">
+        <td class="lineno"><a id="l94" href="#l94">94</a></td>
+        <td class="linebranch">
+        </td>
+        <td class="linecount coveredLine show_coveredLine">54</td>
+        <td class="src  coveredLine show_coveredLine"><span class="w">  </span><span class="p">}</span></td>
+      </tr>
+      <tr class="source-line">
+        <td class="lineno"><a id="l95" href="#l95">95</a></td>
+        <td class="linebranch">
+        </td>
+        <td class="linecount"></td>
+        <td class="src "><span class="p">};</span></td>
+      </tr>
+      <tr class="source-line">
+        <td class="lineno"><a id="l96" href="#l96">96</a></td>
+        <td class="linebranch">
+        </td>
+        <td class="linecount"></td>
+        <td class="src "></td>
+      </tr>
+      <tr class="source-line">
+        <td class="lineno"><a id="l97" href="#l97">97</a></td>
+        <td class="linebranch">
+        </td>
+        <td class="linecount coveredLine show_coveredLine">38</td>
+        <td class="src  coveredLine show_coveredLine"><span class="n">MessageRouter</span><span class="o">::</span><span class="n">MessageRouter</span><span class="p">(</span><span class="n">asio</span><span class="o">::</span><span class="n">io_context</span><span class="o">&amp;</span><span class="w"> </span><span class="n">io</span><span class="p">,</span></td>
+      </tr>
+      <tr class="source-line">
+        <td class="lineno"><a id="l98" href="#l98">98</a></td>
+        <td class="linebranch">
+        </td>
+        <td class="linecount"></td>
+        <td class="src "><span class="w">                             </span><span class="n">std</span><span class="o">::</span><span class="n">string</span><span class="w"> </span><span class="n">redis_host</span><span class="p">,</span></td>
+      </tr>
+      <tr class="source-line">
+        <td class="lineno"><a id="l99" href="#l99">99</a></td>
+        <td class="linebranch">
+        </td>
+        <td class="linecount coveredLine show_coveredLine">38</td>
+        <td class="src  coveredLine show_coveredLine"><span class="w">                             </span><span class="kt">uint16_t</span><span class="w"> </span><span class="n">redis_port</span><span class="p">)</span></td>
+      </tr>
+      <tr class="source-line">
+        <td class="lineno"><a id="l100" href="#l100">100</a></td>
+        <td class="linebranch">
+        </td>
+        <td class="linecount coveredLine show_coveredLine">76</td>
+        <td class="src  coveredLine show_coveredLine"><span class="w">    </span><span class="o">:</span><span class="w"> </span><span class="n">io_</span><span class="p">(</span><span class="n">io</span><span class="p">),</span><span class="w"> </span><span class="n">redis_host_</span><span class="p">(</span><span class="n">std</span><span class="o">::</span><span class="n">move</span><span class="p">(</span><span class="n">redis_host</span><span class="p">)),</span><span class="w"> </span><span class="n">redis_port_</span><span class="p">(</span><span class="n">redis_port</span><span class="p">)</span><span class="w"> </span><span class="p">{</span></td>
+      </tr>
+      <tr class="source-line">
+        <td class="lineno"><a id="l101" href="#l101">101</a></td>
+        <td class="linebranch">
+          <details class="linebranchDetails">
+            <summary class="linebranchSummary">1/2</summary>
+            <div class="linebranchContents">
+              <div class="takenBranch">&check; Branch 6 &rightarrow; 7 taken 38 times.</div>
+              <div class="notTakenBranch">&cross; Branch 6 &rightarrow; 10 not taken.</div>
+            </div>
+          </details>
+        </td>
+        <td class="linecount partialCoveredLine show_partialCoveredLine">38</td>
+        <td class="src  partialCoveredLine show_partialCoveredLine"><span class="w">  </span><span class="n">impl_</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">std</span><span class="o">::</span><span class="n">make_unique</span><span class="o">&lt;</span><span class="n">Impl</span><span class="o">&gt;</span><span class="p">(</span><span class="n">io_</span><span class="p">,</span><span class="w"> </span><span class="n">redis_host_</span><span class="p">,</span><span class="w"> </span><span class="n">redis_port_</span><span class="p">);</span></td>
+      </tr>
+      <tr class="source-line">
+        <td class="lineno"><a id="l102" href="#l102">102</a></td>
+        <td class="linebranch">
+        </td>
+        <td class="linecount coveredLine show_coveredLine">38</td>
+        <td class="src  coveredLine show_coveredLine"><span class="p">}</span></td>
+      </tr>
+      <tr class="source-line">
+        <td class="lineno"><a id="l103" href="#l103">103</a></td>
+        <td class="linebranch">
+        </td>
+        <td class="linecount"></td>
+        <td class="src "></td>
+      </tr>
+      <tr class="source-line">
+        <td class="lineno"><a id="l104" href="#l104">104</a></td>
+        <td class="linebranch">
+        </td>
+        <td class="linecount coveredLine show_coveredLine">38</td>
+        <td class="src  coveredLine show_coveredLine"><span class="n">MessageRouter</span><span class="o">::~</span><span class="n">MessageRouter</span><span class="p">()</span><span class="w"> </span><span class="p">{</span></td>
+      </tr>
+      <tr class="source-line">
+        <td class="lineno"><a id="l105" href="#l105">105</a></td>
+        <td class="linebranch">
+        </td>
+        <td class="linecount coveredLine show_coveredLine">38</td>
+        <td class="src  coveredLine show_coveredLine"><span class="w">  </span><span class="n">Stop</span><span class="p">();</span></td>
+      </tr>
+      <tr class="source-line">
+        <td class="lineno"><a id="l106" href="#l106">106</a></td>
+        <td class="linebranch">
+        </td>
+        <td class="linecount coveredLine show_coveredLine">38</td>
+        <td class="src  coveredLine show_coveredLine"><span class="p">}</span></td>
+      </tr>
+      <tr class="source-line">
+        <td class="lineno"><a id="l107" href="#l107">107</a></td>
+        <td class="linebranch">
+        </td>
+        <td class="linecount"></td>
+        <td class="src "></td>
+      </tr>
+      <tr class="source-line">
+        <td class="lineno"><a id="l108" href="#l108">108</a></td>
+        <td class="linebranch">
+        </td>
+        <td class="linecount coveredLine show_coveredLine">12</td>
+        <td class="src  coveredLine show_coveredLine"><span class="kt">bool</span><span class="w"> </span><span class="n">MessageRouter</span><span class="o">::</span><span class="n">Start</span><span class="p">()</span><span class="w"> </span><span class="p">{</span></td>
+      </tr>
+      <tr class="source-line">
+        <td class="lineno"><a id="l109" href="#l109">109</a></td>
+        <td class="linebranch">
+        </td>
+        <td class="linecount coveredLine show_coveredLine">12</td>
+        <td class="src  coveredLine show_coveredLine"><span class="w">  </span><span class="k">return</span><span class="w"> </span><span class="n">impl_</span><span class="o">-&gt;</span><span class="n">Start</span><span class="p">();</span></td>
+      </tr>
+      <tr class="source-line">
+        <td class="lineno"><a id="l110" href="#l110">110</a></td>
+        <td class="linebranch">
+        </td>
+        <td class="linecount"></td>
+        <td class="src "><span class="p">}</span></td>
+      </tr>
+      <tr class="source-line">
+        <td class="lineno"><a id="l111" href="#l111">111</a></td>
+        <td class="linebranch">
+        </td>
+        <td class="linecount"></td>
+        <td class="src "></td>
+      </tr>
+      <tr class="source-line">
+        <td class="lineno"><a id="l112" href="#l112">112</a></td>
+        <td class="linebranch">
+        </td>
+        <td class="linecount coveredLine show_coveredLine">54</td>
+        <td class="src  coveredLine show_coveredLine"><span class="kt">void</span><span class="w"> </span><span class="n">MessageRouter</span><span class="o">::</span><span class="n">Stop</span><span class="p">()</span><span class="w"> </span><span class="p">{</span></td>
+      </tr>
+      <tr class="source-line">
+        <td class="lineno"><a id="l113" href="#l113">113</a></td>
+        <td class="linebranch">
+        </td>
+        <td class="linecount coveredLine show_coveredLine">54</td>
+        <td class="src  coveredLine show_coveredLine"><span class="w">  </span><span class="n">impl_</span><span class="o">-&gt;</span><span class="n">Stop</span><span class="p">();</span></td>
+      </tr>
+      <tr class="source-line">
+        <td class="lineno"><a id="l114" href="#l114">114</a></td>
+        <td class="linebranch">
+        </td>
+        <td class="linecount coveredLine show_coveredLine">54</td>
+        <td class="src  coveredLine show_coveredLine"><span class="p">}</span></td>
+      </tr>
+      <tr class="source-line">
+        <td class="lineno"><a id="l115" href="#l115">115</a></td>
+        <td class="linebranch">
+        </td>
+        <td class="linecount"></td>
+        <td class="src "></td>
+      </tr>
+      <tr class="source-line">
+        <td class="lineno"><a id="l116" href="#l116">116</a></td>
+        <td class="linebranch">
+        </td>
+        <td class="linecount coveredLine show_coveredLine">32</td>
+        <td class="src  coveredLine show_coveredLine"><span class="kt">bool</span><span class="w"> </span><span class="n">MessageRouter</span><span class="o">::</span><span class="n">Publish</span><span class="p">(</span><span class="k">const</span><span class="w"> </span><span class="n">std</span><span class="o">::</span><span class="n">string</span><span class="o">&amp;</span><span class="w"> </span><span class="n">channel</span><span class="p">,</span><span class="w"> </span><span class="k">const</span><span class="w"> </span><span class="n">std</span><span class="o">::</span><span class="n">string</span><span class="o">&amp;</span><span class="w"> </span><span class="n">message</span><span class="p">)</span><span class="w"> </span><span class="p">{</span></td>
+      </tr>
+      <tr class="source-line">
+        <td class="lineno"><a id="l117" href="#l117">117</a></td>
+        <td class="linebranch">
+          <details class="linebranchDetails">
+            <summary class="linebranchSummary">1/2</summary>
+            <div class="linebranchContents">
+              <div class="notTakenBranch">&cross; Branch 4 &rightarrow; 5 not taken.</div>
+              <div class="takenBranch">&check; Branch 4 &rightarrow; 6 taken 32 times.</div>
+            </div>
+          </details>
+        </td>
+        <td class="linecount partialCoveredLine show_partialCoveredLine">32</td>
+        <td class="src  partialCoveredLine show_partialCoveredLine"><span class="w">  </span><span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="o">!</span><span class="n">impl_</span><span class="o">-&gt;</span><span class="n">publisher</span><span class="p">)</span><span class="w"> </span><span class="p">{</span></td>
+      </tr>
+      <tr class="source-line">
+        <td class="lineno"><a id="l118" href="#l118">118</a></td>
+        <td class="linebranch">
+        </td>
+        <td class="linecount uncoveredLine show_uncoveredLine">&cross;</td>
+        <td class="src  uncoveredLine show_uncoveredLine"><span class="w">    </span><span class="k">return</span><span class="w"> </span><span class="nb">false</span><span class="p">;</span></td>
+      </tr>
+      <tr class="source-line">
+        <td class="lineno"><a id="l119" href="#l119">119</a></td>
+        <td class="linebranch">
+        </td>
+        <td class="linecount"></td>
+        <td class="src "><span class="w">  </span><span class="p">}</span></td>
+      </tr>
+      <tr class="source-line">
+        <td class="lineno"><a id="l120" href="#l120">120</a></td>
+        <td class="linebranch">
+        </td>
+        <td class="linecount"></td>
+        <td class="src "></td>
+      </tr>
+      <tr class="source-line">
+        <td class="lineno"><a id="l121" href="#l121">121</a></td>
+        <td class="linebranch">
+        </td>
+        <td class="linecount"></td>
+        <td class="src "><span class="w">  </span><span class="k">try</span><span class="w"> </span><span class="p">{</span></td>
+      </tr>
+      <tr class="source-line">
+        <td class="lineno"><a id="l122" href="#l122">122</a></td>
+        <td class="linebranch">
+          <details class="linebranchDetails">
+            <summary class="linebranchSummary">1/2</summary>
+            <div class="linebranchContents">
+              <div class="takenBranch">&check; Branch 8 &rightarrow; 9 taken 32 times.</div>
+              <div class="notTakenBranch">&cross; Branch 8 &rightarrow; 11 not taken.</div>
+            </div>
+          </details>
+        </td>
+        <td class="linecount partialCoveredLine show_partialCoveredLine">32</td>
+        <td class="src  partialCoveredLine show_partialCoveredLine"><span class="w">    </span><span class="k">return</span><span class="w"> </span><span class="n">impl_</span><span class="o">-&gt;</span><span class="n">publisher</span><span class="o">-&gt;</span><span class="n">Publish</span><span class="p">(</span><span class="n">channel</span><span class="p">,</span><span class="w"> </span><span class="n">message</span><span class="p">);</span></td>
+      </tr>
+      <tr class="source-line">
+        <td class="lineno"><a id="l123" href="#l123">123</a></td>
+        <td class="linebranch">
+        </td>
+        <td class="linecount uncoveredLine show_uncoveredLine">&cross;</td>
+        <td class="src  uncoveredLine show_uncoveredLine"><span class="w">  </span><span class="p">}</span><span class="w"> </span><span class="k">catch</span><span class="w"> </span><span class="p">(</span><span class="k">const</span><span class="w"> </span><span class="n">std</span><span class="o">::</span><span class="n">exception</span><span class="o">&amp;</span><span class="w"> </span><span class="n">e</span><span class="p">)</span><span class="w"> </span><span class="p">{</span></td>
+      </tr>
+      <tr class="source-line">
+        <td class="lineno"><a id="l124" href="#l124">124</a></td>
+        <td class="linebranch">
+        </td>
+        <td class="linecount uncoveredLine show_uncoveredLine">&cross;</td>
+        <td class="src  uncoveredLine show_uncoveredLine"><span class="w">    </span><span class="n">chirp</span><span class="o">::</span><span class="n">common</span><span class="o">::</span><span class="n">Logger</span><span class="o">::</span><span class="n">Instance</span><span class="p">().</span><span class="n">Error</span><span class="p">(</span><span class="s">"MessageRouter::Publish failed: "</span><span class="w"> </span><span class="o">+</span><span class="w"> </span><span class="n">std</span><span class="o">::</span><span class="n">string</span><span class="p">(</span><span class="n">e</span><span class="p">.</span><span class="n">what</span><span class="p">()));</span></td>
+      </tr>
+      <tr class="source-line">
+        <td class="lineno"><a id="l125" href="#l125">125</a></td>
+        <td class="linebranch">
+        </td>
+        <td class="linecount uncoveredLine show_uncoveredLine">&cross;</td>
+        <td class="src  uncoveredLine show_uncoveredLine"><span class="w">    </span><span class="k">return</span><span class="w"> </span><span class="nb">false</span><span class="p">;</span></td>
+      </tr>
+      <tr class="source-line">
+        <td class="lineno"><a id="l126" href="#l126">126</a></td>
+        <td class="linebranch">
+        </td>
+        <td class="linecount uncoveredLine show_uncoveredLine">&cross;</td>
+        <td class="src  uncoveredLine show_uncoveredLine"><span class="w">  </span><span class="p">}</span></td>
+      </tr>
+      <tr class="source-line">
+        <td class="lineno"><a id="l127" href="#l127">127</a></td>
+        <td class="linebranch">
+        </td>
+        <td class="linecount"></td>
+        <td class="src "><span class="p">}</span></td>
+      </tr>
+      <tr class="source-line">
+        <td class="lineno"><a id="l128" href="#l128">128</a></td>
+        <td class="linebranch">
+        </td>
+        <td class="linecount"></td>
+        <td class="src "></td>
+      </tr>
+      <tr class="source-line">
+        <td class="lineno"><a id="l129" href="#l129">129</a></td>
+        <td class="linebranch">
+        </td>
+        <td class="linecount coveredLine show_coveredLine">14</td>
+        <td class="src  coveredLine show_coveredLine"><span class="kt">bool</span><span class="w"> </span><span class="n">MessageRouter</span><span class="o">::</span><span class="n">SubscribeUserChat</span><span class="p">(</span><span class="k">const</span><span class="w"> </span><span class="n">std</span><span class="o">::</span><span class="n">string</span><span class="o">&amp;</span><span class="w"> </span><span class="n">user_id</span><span class="p">,</span><span class="w"> </span><span class="n">SubscribeCallback</span><span class="w"> </span><span class="n">cb</span><span class="p">)</span><span class="w"> </span><span class="p">{</span></td>
+      </tr>
+      <tr class="source-line">
+        <td class="lineno"><a id="l130" href="#l130">130</a></td>
+        <td class="linebranch">
+          <details class="linebranchDetails">
+            <summary class="linebranchSummary">1/2</summary>
+            <div class="linebranchContents">
+              <div class="takenBranch">&check; Branch 2 &rightarrow; 3 taken 14 times.</div>
+              <div class="notTakenBranch">&cross; Branch 2 &rightarrow; 23 not taken.</div>
+            </div>
+          </details>
+        </td>
+        <td class="linecount partialCoveredLine show_partialCoveredLine">14</td>
+        <td class="src  partialCoveredLine show_partialCoveredLine"><span class="w">  </span><span class="n">std</span><span class="o">::</span><span class="n">string</span><span class="w"> </span><span class="n">channel</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">RouterChannels</span><span class="o">::</span><span class="n">UserChat</span><span class="p">(</span><span class="n">user_id</span><span class="p">);</span></td>
+      </tr>
+      <tr class="source-line">
+        <td class="lineno"><a id="l131" href="#l131">131</a></td>
+        <td class="linebranch">
+          <details class="linebranchDetails">
+            <summary class="linebranchSummary">1/2</summary>
+            <div class="linebranchContents">
+              <div class="takenBranch">&check; Branch 6 &rightarrow; 7 taken 14 times.</div>
+              <div class="notTakenBranch">&cross; Branch 6 &rightarrow; 21 not taken.</div>
+            </div>
+          </details>
+        </td>
+        <td class="linecount partialCoveredLine show_partialCoveredLine">14</td>
+        <td class="src  partialCoveredLine show_partialCoveredLine"><span class="w">  </span><span class="n">impl_</span><span class="o">-&gt;</span><span class="n">subscriptions</span><span class="p">[</span><span class="n">channel</span><span class="p">]</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">std</span><span class="o">::</span><span class="n">move</span><span class="p">(</span><span class="n">cb</span><span class="p">);</span></td>
+      </tr>
+      <tr class="source-line">
+        <td class="lineno"><a id="l132" href="#l132">132</a></td>
+        <td class="linebranch">
+          <details class="linebranchDetails">
+            <summary class="linebranchSummary">1/2</summary>
+            <div class="linebranchContents">
+              <div class="takenBranch">&check; Branch 9 &rightarrow; 10 taken 14 times.</div>
+              <div class="notTakenBranch">&cross; Branch 9 &rightarrow; 21 not taken.</div>
+            </div>
+          </details>
+        </td>
+        <td class="linecount partialCoveredLine show_partialCoveredLine">14</td>
+        <td class="src  partialCoveredLine show_partialCoveredLine"><span class="w">  </span><span class="n">impl_</span><span class="o">-&gt;</span><span class="n">subscribed_channels</span><span class="p">.</span><span class="n">insert</span><span class="p">(</span><span class="n">channel</span><span class="p">);</span></td>
+      </tr>
+      <tr class="source-line">
+        <td class="lineno"><a id="l133" href="#l133">133</a></td>
+        <td class="linebranch">
+        </td>
+        <td class="linecount"></td>
+        <td class="src "></td>
+      </tr>
+      <tr class="source-line">
+        <td class="lineno"><a id="l134" href="#l134">134</a></td>
+        <td class="linebranch">
+          <details class="linebranchDetails">
+            <summary class="linebranchSummary">1/2</summary>
+            <div class="linebranchContents">
+              <div class="takenBranch">&check; Branch 12 &rightarrow; 13 taken 14 times.</div>
+              <div class="notTakenBranch">&cross; Branch 12 &rightarrow; 17 not taken.</div>
+            </div>
+          </details>
+        </td>
+        <td class="linecount partialCoveredLine show_partialCoveredLine">14</td>
+        <td class="src  partialCoveredLine show_partialCoveredLine"><span class="w">  </span><span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="n">impl_</span><span class="o">-&gt;</span><span class="n">subscriber</span><span class="p">)</span><span class="w"> </span><span class="p">{</span></td>
+      </tr>
+      <tr class="source-line">
+        <td class="lineno"><a id="l135" href="#l135">135</a></td>
+        <td class="linebranch">
+          <details class="linebranchDetails">
+            <summary class="linebranchSummary">1/2</summary>
+            <div class="linebranchContents">
+              <div class="takenBranch">&check; Branch 15 &rightarrow; 16 taken 14 times.</div>
+              <div class="notTakenBranch">&cross; Branch 15 &rightarrow; 21 not taken.</div>
+            </div>
+          </details>
+        </td>
+        <td class="linecount partialCoveredLine show_partialCoveredLine">14</td>
+        <td class="src  partialCoveredLine show_partialCoveredLine"><span class="w">    </span><span class="k">return</span><span class="w"> </span><span class="n">impl_</span><span class="o">-&gt;</span><span class="n">subscriber</span><span class="o">-&gt;</span><span class="n">Subscribe</span><span class="p">(</span><span class="n">channel</span><span class="p">);</span></td>
+      </tr>
+      <tr class="source-line">
+        <td class="lineno"><a id="l136" href="#l136">136</a></td>
+        <td class="linebranch">
+        </td>
+        <td class="linecount"></td>
+        <td class="src "><span class="w">  </span><span class="p">}</span></td>
+      </tr>
+      <tr class="source-line">
+        <td class="lineno"><a id="l137" href="#l137">137</a></td>
+        <td class="linebranch">
+        </td>
+        <td class="linecount uncoveredLine show_uncoveredLine">&cross;</td>
+        <td class="src  uncoveredLine show_uncoveredLine"><span class="w">  </span><span class="k">return</span><span class="w"> </span><span class="nb">true</span><span class="p">;</span></td>
+      </tr>
+      <tr class="source-line">
+        <td class="lineno"><a id="l138" href="#l138">138</a></td>
+        <td class="linebranch">
+        </td>
+        <td class="linecount coveredLine show_coveredLine">14</td>
+        <td class="src  coveredLine show_coveredLine"><span class="p">}</span></td>
+      </tr>
+      <tr class="source-line">
+        <td class="lineno"><a id="l139" href="#l139">139</a></td>
+        <td class="linebranch">
+        </td>
+        <td class="linecount"></td>
+        <td class="src "></td>
+      </tr>
+      <tr class="source-line">
+        <td class="lineno"><a id="l140" href="#l140">140</a></td>
+        <td class="linebranch">
+        </td>
+        <td class="linecount coveredLine show_coveredLine">4</td>
+        <td class="src  coveredLine show_coveredLine"><span class="kt">bool</span><span class="w"> </span><span class="n">MessageRouter</span><span class="o">::</span><span class="n">SubscribeGroupChat</span><span class="p">(</span><span class="k">const</span><span class="w"> </span><span class="n">std</span><span class="o">::</span><span class="n">string</span><span class="o">&amp;</span><span class="w"> </span><span class="n">group_id</span><span class="p">,</span><span class="w"> </span><span class="n">SubscribeCallback</span><span class="w"> </span><span class="n">cb</span><span class="p">)</span><span class="w"> </span><span class="p">{</span></td>
+      </tr>
+      <tr class="source-line">
+        <td class="lineno"><a id="l141" href="#l141">141</a></td>
+        <td class="linebranch">
+          <details class="linebranchDetails">
+            <summary class="linebranchSummary">1/2</summary>
+            <div class="linebranchContents">
+              <div class="takenBranch">&check; Branch 2 &rightarrow; 3 taken 4 times.</div>
+              <div class="notTakenBranch">&cross; Branch 2 &rightarrow; 23 not taken.</div>
+            </div>
+          </details>
+        </td>
+        <td class="linecount partialCoveredLine show_partialCoveredLine">4</td>
+        <td class="src  partialCoveredLine show_partialCoveredLine"><span class="w">  </span><span class="n">std</span><span class="o">::</span><span class="n">string</span><span class="w"> </span><span class="n">channel</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">RouterChannels</span><span class="o">::</span><span class="n">GroupChat</span><span class="p">(</span><span class="n">group_id</span><span class="p">);</span></td>
+      </tr>
+      <tr class="source-line">
+        <td class="lineno"><a id="l142" href="#l142">142</a></td>
+        <td class="linebranch">
+          <details class="linebranchDetails">
+            <summary class="linebranchSummary">1/2</summary>
+            <div class="linebranchContents">
+              <div class="takenBranch">&check; Branch 6 &rightarrow; 7 taken 4 times.</div>
+              <div class="notTakenBranch">&cross; Branch 6 &rightarrow; 21 not taken.</div>
+            </div>
+          </details>
+        </td>
+        <td class="linecount partialCoveredLine show_partialCoveredLine">4</td>
+        <td class="src  partialCoveredLine show_partialCoveredLine"><span class="w">  </span><span class="n">impl_</span><span class="o">-&gt;</span><span class="n">subscriptions</span><span class="p">[</span><span class="n">channel</span><span class="p">]</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">std</span><span class="o">::</span><span class="n">move</span><span class="p">(</span><span class="n">cb</span><span class="p">);</span></td>
+      </tr>
+      <tr class="source-line">
+        <td class="lineno"><a id="l143" href="#l143">143</a></td>
+        <td class="linebranch">
+          <details class="linebranchDetails">
+            <summary class="linebranchSummary">1/2</summary>
+            <div class="linebranchContents">
+              <div class="takenBranch">&check; Branch 9 &rightarrow; 10 taken 4 times.</div>
+              <div class="notTakenBranch">&cross; Branch 9 &rightarrow; 21 not taken.</div>
+            </div>
+          </details>
+        </td>
+        <td class="linecount partialCoveredLine show_partialCoveredLine">4</td>
+        <td class="src  partialCoveredLine show_partialCoveredLine"><span class="w">  </span><span class="n">impl_</span><span class="o">-&gt;</span><span class="n">subscribed_channels</span><span class="p">.</span><span class="n">insert</span><span class="p">(</span><span class="n">channel</span><span class="p">);</span></td>
+      </tr>
+      <tr class="source-line">
+        <td class="lineno"><a id="l144" href="#l144">144</a></td>
+        <td class="linebranch">
+        </td>
+        <td class="linecount"></td>
+        <td class="src "></td>
+      </tr>
+      <tr class="source-line">
+        <td class="lineno"><a id="l145" href="#l145">145</a></td>
+        <td class="linebranch">
+          <details class="linebranchDetails">
+            <summary class="linebranchSummary">1/2</summary>
+            <div class="linebranchContents">
+              <div class="takenBranch">&check; Branch 12 &rightarrow; 13 taken 4 times.</div>
+              <div class="notTakenBranch">&cross; Branch 12 &rightarrow; 17 not taken.</div>
+            </div>
+          </details>
+        </td>
+        <td class="linecount partialCoveredLine show_partialCoveredLine">4</td>
+        <td class="src  partialCoveredLine show_partialCoveredLine"><span class="w">  </span><span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="n">impl_</span><span class="o">-&gt;</span><span class="n">subscriber</span><span class="p">)</span><span class="w"> </span><span class="p">{</span></td>
+      </tr>
+      <tr class="source-line">
+        <td class="lineno"><a id="l146" href="#l146">146</a></td>
+        <td class="linebranch">
+          <details class="linebranchDetails">
+            <summary class="linebranchSummary">1/2</summary>
+            <div class="linebranchContents">
+              <div class="takenBranch">&check; Branch 15 &rightarrow; 16 taken 4 times.</div>
+              <div class="notTakenBranch">&cross; Branch 15 &rightarrow; 21 not taken.</div>
+            </div>
+          </details>
+        </td>
+        <td class="linecount partialCoveredLine show_partialCoveredLine">4</td>
+        <td class="src  partialCoveredLine show_partialCoveredLine"><span class="w">    </span><span class="k">return</span><span class="w"> </span><span class="n">impl_</span><span class="o">-&gt;</span><span class="n">subscriber</span><span class="o">-&gt;</span><span class="n">Subscribe</span><span class="p">(</span><span class="n">channel</span><span class="p">);</span></td>
+      </tr>
+      <tr class="source-line">
+        <td class="lineno"><a id="l147" href="#l147">147</a></td>
+        <td class="linebranch">
+        </td>
+        <td class="linecount"></td>
+        <td class="src "><span class="w">  </span><span class="p">}</span></td>
+      </tr>
+      <tr class="source-line">
+        <td class="lineno"><a id="l148" href="#l148">148</a></td>
+        <td class="linebranch">
+        </td>
+        <td class="linecount uncoveredLine show_uncoveredLine">&cross;</td>
+        <td class="src  uncoveredLine show_uncoveredLine"><span class="w">  </span><span class="k">return</span><span class="w"> </span><span class="nb">true</span><span class="p">;</span></td>
+      </tr>
+      <tr class="source-line">
+        <td class="lineno"><a id="l149" href="#l149">149</a></td>
+        <td class="linebranch">
+        </td>
+        <td class="linecount coveredLine show_coveredLine">4</td>
+        <td class="src  coveredLine show_coveredLine"><span class="p">}</span></td>
+      </tr>
+      <tr class="source-line">
+        <td class="lineno"><a id="l150" href="#l150">150</a></td>
+        <td class="linebranch">
+        </td>
+        <td class="linecount"></td>
+        <td class="src "></td>
+      </tr>
+      <tr class="source-line">
+        <td class="lineno"><a id="l151" href="#l151">151</a></td>
+        <td class="linebranch">
+        </td>
+        <td class="linecount coveredLine show_coveredLine">4</td>
+        <td class="src  coveredLine show_coveredLine"><span class="kt">bool</span><span class="w"> </span><span class="n">MessageRouter</span><span class="o">::</span><span class="n">SubscribeUserSocial</span><span class="p">(</span><span class="k">const</span><span class="w"> </span><span class="n">std</span><span class="o">::</span><span class="n">string</span><span class="o">&amp;</span><span class="w"> </span><span class="n">user_id</span><span class="p">,</span><span class="w"> </span><span class="n">SubscribeCallback</span><span class="w"> </span><span class="n">cb</span><span class="p">)</span><span class="w"> </span><span class="p">{</span></td>
+      </tr>
+      <tr class="source-line">
+        <td class="lineno"><a id="l152" href="#l152">152</a></td>
+        <td class="linebranch">
+          <details class="linebranchDetails">
+            <summary class="linebranchSummary">1/2</summary>
+            <div class="linebranchContents">
+              <div class="takenBranch">&check; Branch 2 &rightarrow; 3 taken 4 times.</div>
+              <div class="notTakenBranch">&cross; Branch 2 &rightarrow; 23 not taken.</div>
+            </div>
+          </details>
+        </td>
+        <td class="linecount partialCoveredLine show_partialCoveredLine">4</td>
+        <td class="src  partialCoveredLine show_partialCoveredLine"><span class="w">  </span><span class="n">std</span><span class="o">::</span><span class="n">string</span><span class="w"> </span><span class="n">channel</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">RouterChannels</span><span class="o">::</span><span class="n">UserSocial</span><span class="p">(</span><span class="n">user_id</span><span class="p">);</span></td>
+      </tr>
+      <tr class="source-line">
+        <td class="lineno"><a id="l153" href="#l153">153</a></td>
+        <td class="linebranch">
+          <details class="linebranchDetails">
+            <summary class="linebranchSummary">1/2</summary>
+            <div class="linebranchContents">
+              <div class="takenBranch">&check; Branch 6 &rightarrow; 7 taken 4 times.</div>
+              <div class="notTakenBranch">&cross; Branch 6 &rightarrow; 21 not taken.</div>
+            </div>
+          </details>
+        </td>
+        <td class="linecount partialCoveredLine show_partialCoveredLine">4</td>
+        <td class="src  partialCoveredLine show_partialCoveredLine"><span class="w">  </span><span class="n">impl_</span><span class="o">-&gt;</span><span class="n">subscriptions</span><span class="p">[</span><span class="n">channel</span><span class="p">]</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">std</span><span class="o">::</span><span class="n">move</span><span class="p">(</span><span class="n">cb</span><span class="p">);</span></td>
+      </tr>
+      <tr class="source-line">
+        <td class="lineno"><a id="l154" href="#l154">154</a></td>
+        <td class="linebranch">
+          <details class="linebranchDetails">
+            <summary class="linebranchSummary">1/2</summary>
+            <div class="linebranchContents">
+              <div class="takenBranch">&check; Branch 9 &rightarrow; 10 taken 4 times.</div>
+              <div class="notTakenBranch">&cross; Branch 9 &rightarrow; 21 not taken.</div>
+            </div>
+          </details>
+        </td>
+        <td class="linecount partialCoveredLine show_partialCoveredLine">4</td>
+        <td class="src  partialCoveredLine show_partialCoveredLine"><span class="w">  </span><span class="n">impl_</span><span class="o">-&gt;</span><span class="n">subscribed_channels</span><span class="p">.</span><span class="n">insert</span><span class="p">(</span><span class="n">channel</span><span class="p">);</span></td>
+      </tr>
+      <tr class="source-line">
+        <td class="lineno"><a id="l155" href="#l155">155</a></td>
+        <td class="linebranch">
+        </td>
+        <td class="linecount"></td>
+        <td class="src "></td>
+      </tr>
+      <tr class="source-line">
+        <td class="lineno"><a id="l156" href="#l156">156</a></td>
+        <td class="linebranch">
+          <details class="linebranchDetails">
+            <summary class="linebranchSummary">1/2</summary>
+            <div class="linebranchContents">
+              <div class="takenBranch">&check; Branch 12 &rightarrow; 13 taken 4 times.</div>
+              <div class="notTakenBranch">&cross; Branch 12 &rightarrow; 17 not taken.</div>
+            </div>
+          </details>
+        </td>
+        <td class="linecount partialCoveredLine show_partialCoveredLine">4</td>
+        <td class="src  partialCoveredLine show_partialCoveredLine"><span class="w">  </span><span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="n">impl_</span><span class="o">-&gt;</span><span class="n">subscriber</span><span class="p">)</span><span class="w"> </span><span class="p">{</span></td>
+      </tr>
+      <tr class="source-line">
+        <td class="lineno"><a id="l157" href="#l157">157</a></td>
+        <td class="linebranch">
+          <details class="linebranchDetails">
+            <summary class="linebranchSummary">1/2</summary>
+            <div class="linebranchContents">
+              <div class="takenBranch">&check; Branch 15 &rightarrow; 16 taken 4 times.</div>
+              <div class="notTakenBranch">&cross; Branch 15 &rightarrow; 21 not taken.</div>
+            </div>
+          </details>
+        </td>
+        <td class="linecount partialCoveredLine show_partialCoveredLine">4</td>
+        <td class="src  partialCoveredLine show_partialCoveredLine"><span class="w">    </span><span class="k">return</span><span class="w"> </span><span class="n">impl_</span><span class="o">-&gt;</span><span class="n">subscriber</span><span class="o">-&gt;</span><span class="n">Subscribe</span><span class="p">(</span><span class="n">channel</span><span class="p">);</span></td>
+      </tr>
+      <tr class="source-line">
+        <td class="lineno"><a id="l158" href="#l158">158</a></td>
+        <td class="linebranch">
+        </td>
+        <td class="linecount"></td>
+        <td class="src "><span class="w">  </span><span class="p">}</span></td>
+      </tr>
+      <tr class="source-line">
+        <td class="lineno"><a id="l159" href="#l159">159</a></td>
+        <td class="linebranch">
+        </td>
+        <td class="linecount uncoveredLine show_uncoveredLine">&cross;</td>
+        <td class="src  uncoveredLine show_uncoveredLine"><span class="w">  </span><span class="k">return</span><span class="w"> </span><span class="nb">true</span><span class="p">;</span></td>
+      </tr>
+      <tr class="source-line">
+        <td class="lineno"><a id="l160" href="#l160">160</a></td>
+        <td class="linebranch">
+        </td>
+        <td class="linecount coveredLine show_coveredLine">4</td>
+        <td class="src  coveredLine show_coveredLine"><span class="p">}</span></td>
+      </tr>
+      <tr class="source-line">
+        <td class="lineno"><a id="l161" href="#l161">161</a></td>
+        <td class="linebranch">
+        </td>
+        <td class="linecount"></td>
+        <td class="src "></td>
+      </tr>
+      <tr class="source-line">
+        <td class="lineno"><a id="l162" href="#l162">162</a></td>
+        <td class="linebranch">
+        </td>
+        <td class="linecount coveredLine show_coveredLine">4</td>
+        <td class="src  coveredLine show_coveredLine"><span class="kt">bool</span><span class="w"> </span><span class="n">MessageRouter</span><span class="o">::</span><span class="n">SubscribeKickNotification</span><span class="p">(</span><span class="k">const</span><span class="w"> </span><span class="n">std</span><span class="o">::</span><span class="n">string</span><span class="o">&amp;</span><span class="w"> </span><span class="n">instance_id</span><span class="p">,</span><span class="w"> </span><span class="n">SubscribeCallback</span><span class="w"> </span><span class="n">cb</span><span class="p">)</span><span class="w"> </span><span class="p">{</span></td>
+      </tr>
+      <tr class="source-line">
+        <td class="lineno"><a id="l163" href="#l163">163</a></td>
+        <td class="linebranch">
+          <details class="linebranchDetails">
+            <summary class="linebranchSummary">1/2</summary>
+            <div class="linebranchContents">
+              <div class="takenBranch">&check; Branch 2 &rightarrow; 3 taken 4 times.</div>
+              <div class="notTakenBranch">&cross; Branch 2 &rightarrow; 23 not taken.</div>
+            </div>
+          </details>
+        </td>
+        <td class="linecount partialCoveredLine show_partialCoveredLine">4</td>
+        <td class="src  partialCoveredLine show_partialCoveredLine"><span class="w">  </span><span class="n">std</span><span class="o">::</span><span class="n">string</span><span class="w"> </span><span class="n">channel</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">RouterChannels</span><span class="o">::</span><span class="n">KickNotification</span><span class="p">(</span><span class="n">instance_id</span><span class="p">);</span></td>
+      </tr>
+      <tr class="source-line">
+        <td class="lineno"><a id="l164" href="#l164">164</a></td>
+        <td class="linebranch">
+          <details class="linebranchDetails">
+            <summary class="linebranchSummary">1/2</summary>
+            <div class="linebranchContents">
+              <div class="takenBranch">&check; Branch 6 &rightarrow; 7 taken 4 times.</div>
+              <div class="notTakenBranch">&cross; Branch 6 &rightarrow; 21 not taken.</div>
+            </div>
+          </details>
+        </td>
+        <td class="linecount partialCoveredLine show_partialCoveredLine">4</td>
+        <td class="src  partialCoveredLine show_partialCoveredLine"><span class="w">  </span><span class="n">impl_</span><span class="o">-&gt;</span><span class="n">subscriptions</span><span class="p">[</span><span class="n">channel</span><span class="p">]</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">std</span><span class="o">::</span><span class="n">move</span><span class="p">(</span><span class="n">cb</span><span class="p">);</span></td>
+      </tr>
+      <tr class="source-line">
+        <td class="lineno"><a id="l165" href="#l165">165</a></td>
+        <td class="linebranch">
+          <details class="linebranchDetails">
+            <summary class="linebranchSummary">1/2</summary>
+            <div class="linebranchContents">
+              <div class="takenBranch">&check; Branch 9 &rightarrow; 10 taken 4 times.</div>
+              <div class="notTakenBranch">&cross; Branch 9 &rightarrow; 21 not taken.</div>
+            </div>
+          </details>
+        </td>
+        <td class="linecount partialCoveredLine show_partialCoveredLine">4</td>
+        <td class="src  partialCoveredLine show_partialCoveredLine"><span class="w">  </span><span class="n">impl_</span><span class="o">-&gt;</span><span class="n">subscribed_channels</span><span class="p">.</span><span class="n">insert</span><span class="p">(</span><span class="n">channel</span><span class="p">);</span></td>
+      </tr>
+      <tr class="source-line">
+        <td class="lineno"><a id="l166" href="#l166">166</a></td>
+        <td class="linebranch">
+        </td>
+        <td class="linecount"></td>
+        <td class="src "></td>
+      </tr>
+      <tr class="source-line">
+        <td class="lineno"><a id="l167" href="#l167">167</a></td>
+        <td class="linebranch">
+          <details class="linebranchDetails">
+            <summary class="linebranchSummary">1/2</summary>
+            <div class="linebranchContents">
+              <div class="takenBranch">&check; Branch 12 &rightarrow; 13 taken 4 times.</div>
+              <div class="notTakenBranch">&cross; Branch 12 &rightarrow; 17 not taken.</div>
+            </div>
+          </details>
+        </td>
+        <td class="linecount partialCoveredLine show_partialCoveredLine">4</td>
+        <td class="src  partialCoveredLine show_partialCoveredLine"><span class="w">  </span><span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="n">impl_</span><span class="o">-&gt;</span><span class="n">subscriber</span><span class="p">)</span><span class="w"> </span><span class="p">{</span></td>
+      </tr>
+      <tr class="source-line">
+        <td class="lineno"><a id="l168" href="#l168">168</a></td>
+        <td class="linebranch">
+          <details class="linebranchDetails">
+            <summary class="linebranchSummary">1/2</summary>
+            <div class="linebranchContents">
+              <div class="takenBranch">&check; Branch 15 &rightarrow; 16 taken 4 times.</div>
+              <div class="notTakenBranch">&cross; Branch 15 &rightarrow; 21 not taken.</div>
+            </div>
+          </details>
+        </td>
+        <td class="linecount partialCoveredLine show_partialCoveredLine">4</td>
+        <td class="src  partialCoveredLine show_partialCoveredLine"><span class="w">    </span><span class="k">return</span><span class="w"> </span><span class="n">impl_</span><span class="o">-&gt;</span><span class="n">subscriber</span><span class="o">-&gt;</span><span class="n">Subscribe</span><span class="p">(</span><span class="n">channel</span><span class="p">);</span></td>
+      </tr>
+      <tr class="source-line">
+        <td class="lineno"><a id="l169" href="#l169">169</a></td>
+        <td class="linebranch">
+        </td>
+        <td class="linecount"></td>
+        <td class="src "><span class="w">  </span><span class="p">}</span></td>
+      </tr>
+      <tr class="source-line">
+        <td class="lineno"><a id="l170" href="#l170">170</a></td>
+        <td class="linebranch">
+        </td>
+        <td class="linecount uncoveredLine show_uncoveredLine">&cross;</td>
+        <td class="src  uncoveredLine show_uncoveredLine"><span class="w">  </span><span class="k">return</span><span class="w"> </span><span class="nb">true</span><span class="p">;</span></td>
+      </tr>
+      <tr class="source-line">
+        <td class="lineno"><a id="l171" href="#l171">171</a></td>
+        <td class="linebranch">
+        </td>
+        <td class="linecount coveredLine show_coveredLine">4</td>
+        <td class="src  coveredLine show_coveredLine"><span class="p">}</span></td>
+      </tr>
+      <tr class="source-line">
+        <td class="lineno"><a id="l172" href="#l172">172</a></td>
+        <td class="linebranch">
+        </td>
+        <td class="linecount"></td>
+        <td class="src "></td>
+      </tr>
+      <tr class="source-line">
+        <td class="lineno"><a id="l173" href="#l173">173</a></td>
+        <td class="linebranch">
+        </td>
+        <td class="linecount coveredLine show_coveredLine">4</td>
+        <td class="src  coveredLine show_coveredLine"><span class="kt">void</span><span class="w"> </span><span class="n">MessageRouter</span><span class="o">::</span><span class="n">Unsubscribe</span><span class="p">(</span><span class="k">const</span><span class="w"> </span><span class="n">std</span><span class="o">::</span><span class="n">string</span><span class="o">&amp;</span><span class="w"> </span><span class="n">channel</span><span class="p">)</span><span class="w"> </span><span class="p">{</span></td>
+      </tr>
+      <tr class="source-line">
+        <td class="lineno"><a id="l174" href="#l174">174</a></td>
+        <td class="linebranch">
+        </td>
+        <td class="linecount coveredLine show_coveredLine">4</td>
+        <td class="src  coveredLine show_coveredLine"><span class="w">  </span><span class="n">impl_</span><span class="o">-&gt;</span><span class="n">subscriptions</span><span class="p">.</span><span class="n">erase</span><span class="p">(</span><span class="n">channel</span><span class="p">);</span></td>
+      </tr>
+      <tr class="source-line">
+        <td class="lineno"><a id="l175" href="#l175">175</a></td>
+        <td class="linebranch">
+        </td>
+        <td class="linecount coveredLine show_coveredLine">4</td>
+        <td class="src  coveredLine show_coveredLine"><span class="w">  </span><span class="n">impl_</span><span class="o">-&gt;</span><span class="n">subscribed_channels</span><span class="p">.</span><span class="n">erase</span><span class="p">(</span><span class="n">channel</span><span class="p">);</span></td>
+      </tr>
+      <tr class="source-line">
+        <td class="lineno"><a id="l176" href="#l176">176</a></td>
+        <td class="linebranch">
+        </td>
+        <td class="linecount"></td>
+        <td class="src "></td>
+      </tr>
+      <tr class="source-line">
+        <td class="lineno"><a id="l177" href="#l177">177</a></td>
+        <td class="linebranch">
+          <details class="linebranchDetails">
+            <summary class="linebranchSummary">1/2</summary>
+            <div class="linebranchContents">
+              <div class="takenBranch">&check; Branch 8 &rightarrow; 9 taken 4 times.</div>
+              <div class="notTakenBranch">&cross; Branch 8 &rightarrow; 12 not taken.</div>
+            </div>
+          </details>
+        </td>
+        <td class="linecount partialCoveredLine show_partialCoveredLine">4</td>
+        <td class="src  partialCoveredLine show_partialCoveredLine"><span class="w">  </span><span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="n">impl_</span><span class="o">-&gt;</span><span class="n">subscriber</span><span class="p">)</span><span class="w"> </span><span class="p">{</span></td>
+      </tr>
+      <tr class="source-line">
+        <td class="lineno"><a id="l178" href="#l178">178</a></td>
+        <td class="linebranch">
+        </td>
+        <td class="linecount coveredLine show_coveredLine">4</td>
+        <td class="src  coveredLine show_coveredLine"><span class="w">    </span><span class="n">impl_</span><span class="o">-&gt;</span><span class="n">subscriber</span><span class="o">-&gt;</span><span class="n">Unsubscribe</span><span class="p">(</span><span class="n">channel</span><span class="p">);</span></td>
+      </tr>
+      <tr class="source-line">
+        <td class="lineno"><a id="l179" href="#l179">179</a></td>
+        <td class="linebranch">
+        </td>
+        <td class="linecount"></td>
+        <td class="src "><span class="w">  </span><span class="p">}</span></td>
+      </tr>
+      <tr class="source-line">
+        <td class="lineno"><a id="l180" href="#l180">180</a></td>
+        <td class="linebranch">
+        </td>
+        <td class="linecount coveredLine show_coveredLine">4</td>
+        <td class="src  coveredLine show_coveredLine"><span class="p">}</span></td>
+      </tr>
+      <tr class="source-line">
+        <td class="lineno"><a id="l181" href="#l181">181</a></td>
+        <td class="linebranch">
+        </td>
+        <td class="linecount"></td>
+        <td class="src "></td>
+      </tr>
+      <tr class="source-line">
+        <td class="lineno"><a id="l182" href="#l182">182</a></td>
+        <td class="linebranch">
+        </td>
+        <td class="linecount coveredLine show_coveredLine">20</td>
+        <td class="src  coveredLine show_coveredLine"><span class="kt">bool</span><span class="w"> </span><span class="n">MessageRouter</span><span class="o">::</span><span class="n">SendChatMessage</span><span class="p">(</span><span class="k">const</span><span class="w"> </span><span class="n">std</span><span class="o">::</span><span class="n">string</span><span class="o">&amp;</span><span class="w"> </span><span class="n">user_id</span><span class="p">,</span></td>
+      </tr>
+      <tr class="source-line">
+        <td class="lineno"><a id="l183" href="#l183">183</a></td>
+        <td class="linebranch">
+        </td>
+        <td class="linecount"></td>
+        <td class="src "><span class="w">                                    </span><span class="k">const</span><span class="w"> </span><span class="n">std</span><span class="o">::</span><span class="n">string</span><span class="o">&amp;</span><span class="w"> </span><span class="n">message</span><span class="p">,</span></td>
+      </tr>
+      <tr class="source-line">
+        <td class="lineno"><a id="l184" href="#l184">184</a></td>
+        <td class="linebranch">
+        </td>
+        <td class="linecount"></td>
+        <td class="src "><span class="w">                                    </span><span class="n">std</span><span class="o">::</span><span class="n">function</span><span class="o">&lt;</span><span class="kt">bool</span><span class="p">(</span><span class="k">const</span><span class="w"> </span><span class="n">std</span><span class="o">::</span><span class="n">string</span><span class="o">&amp;</span><span class="p">)</span><span class="o">&gt;</span><span class="w"> </span><span class="n">local_send</span><span class="p">)</span><span class="w"> </span><span class="p">{</span></td>
+      </tr>
+      <tr class="source-line">
+        <td class="lineno"><a id="l185" href="#l185">185</a></td>
+        <td class="linebranch">
+        </td>
+        <td class="linecount"></td>
+        <td class="src "><span class="w">  </span><span class="c1">// 1. 尝试本地投递</span></td>
+      </tr>
+      <tr class="source-line">
+        <td class="lineno"><a id="l186" href="#l186">186</a></td>
+        <td class="linebranch">
+          <details class="linebranchDetails">
+            <summary class="linebranchSummary">7/8</summary>
+            <div class="linebranchContents">
+              <div class="takenBranch">&check; Branch 3 &rightarrow; 4 taken 16 times.</div>
+              <div class="takenBranch">&check; Branch 3 &rightarrow; 7 taken 4 times.</div>
+              <div class="takenBranch">&check; Branch 4 &rightarrow; 5 taken 16 times.</div>
+              <div class="notTakenBranch">&cross; Branch 4 &rightarrow; 18 not taken.</div>
+              <div class="takenBranch">&check; Branch 5 &rightarrow; 6 taken 6 times.</div>
+              <div class="takenBranch">&check; Branch 5 &rightarrow; 7 taken 10 times.</div>
+              <div class="takenBranch">&check; Branch 8 &rightarrow; 9 taken 6 times.</div>
+              <div class="takenBranch">&check; Branch 8 &rightarrow; 10 taken 14 times.</div>
+            </div>
+          </details>
+        </td>
+        <td class="linecount partialCoveredLine show_partialCoveredLine">20</td>
+        <td class="src  partialCoveredLine show_partialCoveredLine"><span class="w">  </span><span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="n">local_send</span><span class="w"> </span><span class="o">&amp;&amp;</span><span class="w"> </span><span class="n">local_send</span><span class="p">(</span><span class="n">user_id</span><span class="p">))</span><span class="w"> </span><span class="p">{</span></td>
+      </tr>
+      <tr class="source-line">
+        <td class="lineno"><a id="l187" href="#l187">187</a></td>
+        <td class="linebranch">
+        </td>
+        <td class="linecount coveredLine show_coveredLine">6</td>
+        <td class="src  coveredLine show_coveredLine"><span class="w">    </span><span class="k">return</span><span class="w"> </span><span class="nb">true</span><span class="p">;</span></td>
+      </tr>
+      <tr class="source-line">
+        <td class="lineno"><a id="l188" href="#l188">188</a></td>
+        <td class="linebranch">
+        </td>
+        <td class="linecount"></td>
+        <td class="src "><span class="w">  </span><span class="p">}</span></td>
+      </tr>
+      <tr class="source-line">
+        <td class="lineno"><a id="l189" href="#l189">189</a></td>
+        <td class="linebranch">
+        </td>
+        <td class="linecount"></td>
+        <td class="src "></td>
+      </tr>
+      <tr class="source-line">
+        <td class="lineno"><a id="l190" href="#l190">190</a></td>
+        <td class="linebranch">
+        </td>
+        <td class="linecount"></td>
+        <td class="src "><span class="w">  </span><span class="c1">// 2. 本地投递失败，通过 Redis Pub/Sub 转发</span></td>
+      </tr>
+      <tr class="source-line">
+        <td class="lineno"><a id="l191" href="#l191">191</a></td>
+        <td class="linebranch">
+          <details class="linebranchDetails">
+            <summary class="linebranchSummary">1/2</summary>
+            <div class="linebranchContents">
+              <div class="takenBranch">&check; Branch 10 &rightarrow; 11 taken 14 times.</div>
+              <div class="notTakenBranch">&cross; Branch 10 &rightarrow; 18 not taken.</div>
+            </div>
+          </details>
+        </td>
+        <td class="linecount partialCoveredLine show_partialCoveredLine">14</td>
+        <td class="src  partialCoveredLine show_partialCoveredLine"><span class="w">  </span><span class="n">std</span><span class="o">::</span><span class="n">string</span><span class="w"> </span><span class="n">channel</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">RouterChannels</span><span class="o">::</span><span class="n">UserChat</span><span class="p">(</span><span class="n">user_id</span><span class="p">);</span></td>
+      </tr>
+      <tr class="source-line">
+        <td class="lineno"><a id="l192" href="#l192">192</a></td>
+        <td class="linebranch">
+          <details class="linebranchDetails">
+            <summary class="linebranchSummary">1/2</summary>
+            <div class="linebranchContents">
+              <div class="takenBranch">&check; Branch 11 &rightarrow; 12 taken 14 times.</div>
+              <div class="notTakenBranch">&cross; Branch 11 &rightarrow; 16 not taken.</div>
+            </div>
+          </details>
+        </td>
+        <td class="linecount partialCoveredLine show_partialCoveredLine">14</td>
+        <td class="src  partialCoveredLine show_partialCoveredLine"><span class="w">  </span><span class="k">return</span><span class="w"> </span><span class="n">Publish</span><span class="p">(</span><span class="n">channel</span><span class="p">,</span><span class="w"> </span><span class="n">message</span><span class="p">);</span></td>
+      </tr>
+      <tr class="source-line">
+        <td class="lineno"><a id="l193" href="#l193">193</a></td>
+        <td class="linebranch">
+        </td>
+        <td class="linecount coveredLine show_coveredLine">14</td>
+        <td class="src  coveredLine show_coveredLine"><span class="p">}</span></td>
+      </tr>
+      <tr class="source-line">
+        <td class="lineno"><a id="l194" href="#l194">194</a></td>
+        <td class="linebranch">
+        </td>
+        <td class="linecount"></td>
+        <td class="src "></td>
+      </tr>
+      <tr class="source-line">
+        <td class="lineno"><a id="l195" href="#l195">195</a></td>
+        <td class="linebranch">
+        </td>
+        <td class="linecount coveredLine show_coveredLine">10</td>
+        <td class="src  coveredLine show_coveredLine"><span class="kt">bool</span><span class="w"> </span><span class="n">MessageRouter</span><span class="o">::</span><span class="n">BroadcastToGroup</span><span class="p">(</span><span class="k">const</span><span class="w"> </span><span class="n">std</span><span class="o">::</span><span class="n">string</span><span class="o">&amp;</span><span class="w"> </span><span class="n">group_id</span><span class="p">,</span><span class="w"> </span><span class="k">const</span><span class="w"> </span><span class="n">std</span><span class="o">::</span><span class="n">string</span><span class="o">&amp;</span><span class="w"> </span><span class="n">message</span><span class="p">)</span><span class="w"> </span><span class="p">{</span></td>
+      </tr>
+      <tr class="source-line">
+        <td class="lineno"><a id="l196" href="#l196">196</a></td>
+        <td class="linebranch">
+          <details class="linebranchDetails">
+            <summary class="linebranchSummary">1/2</summary>
+            <div class="linebranchContents">
+              <div class="takenBranch">&check; Branch 2 &rightarrow; 3 taken 10 times.</div>
+              <div class="notTakenBranch">&cross; Branch 2 &rightarrow; 10 not taken.</div>
+            </div>
+          </details>
+        </td>
+        <td class="linecount partialCoveredLine show_partialCoveredLine">10</td>
+        <td class="src  partialCoveredLine show_partialCoveredLine"><span class="w">  </span><span class="n">std</span><span class="o">::</span><span class="n">string</span><span class="w"> </span><span class="n">channel</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">RouterChannels</span><span class="o">::</span><span class="n">GroupChat</span><span class="p">(</span><span class="n">group_id</span><span class="p">);</span></td>
+      </tr>
+      <tr class="source-line">
+        <td class="lineno"><a id="l197" href="#l197">197</a></td>
+        <td class="linebranch">
+          <details class="linebranchDetails">
+            <summary class="linebranchSummary">1/2</summary>
+            <div class="linebranchContents">
+              <div class="takenBranch">&check; Branch 3 &rightarrow; 4 taken 10 times.</div>
+              <div class="notTakenBranch">&cross; Branch 3 &rightarrow; 8 not taken.</div>
+            </div>
+          </details>
+        </td>
+        <td class="linecount partialCoveredLine show_partialCoveredLine">20</td>
+        <td class="src  partialCoveredLine show_partialCoveredLine"><span class="w">  </span><span class="k">return</span><span class="w"> </span><span class="n">Publish</span><span class="p">(</span><span class="n">channel</span><span class="p">,</span><span class="w"> </span><span class="n">message</span><span class="p">);</span></td>
+      </tr>
+      <tr class="source-line">
+        <td class="lineno"><a id="l198" href="#l198">198</a></td>
+        <td class="linebranch">
+        </td>
+        <td class="linecount coveredLine show_coveredLine">10</td>
+        <td class="src  coveredLine show_coveredLine"><span class="p">}</span></td>
+      </tr>
+      <tr class="source-line">
+        <td class="lineno"><a id="l199" href="#l199">199</a></td>
+        <td class="linebranch">
+        </td>
+        <td class="linecount"></td>
+        <td class="src "></td>
+      </tr>
+      <tr class="source-line">
+        <td class="lineno"><a id="l200" href="#l200">200</a></td>
+        <td class="linebranch">
+        </td>
+        <td class="linecount"></td>
+        <td class="src "><span class="p">}</span><span class="w"> </span><span class="c1">// namespace chirp::network</span></td>
+      </tr>
+      <tr class="source-line">
+        <td class="lineno"><a id="l201" href="#l201">201</a></td>
+        <td class="linebranch">
+        </td>
+        <td class="linecount"></td>
+        <td class="src "></td>
+      </tr>
+    </table>
+  </div>
+</div>
+        </main>
+        <hr class="block-separator"/>
+        <footer class="text-center">
+          Created using <a href="http://gcovr.com/en/8.6">GCOVR (Version 8.6)</a>
+          at 2026-09-08 05:58:57
+        </footer>
+      </div>
+    </div>
+  </body>
+
+</html>

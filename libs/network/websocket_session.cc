@@ -24,11 +24,13 @@ std::string FindHeaderValue(const std::string& headers, const std::string& key) 
 
 } // namespace
 
-WebSocketSession::WebSocketSession(asio::ip::tcp::socket socket, FrameCallback on_frame, CloseCallback on_close)
+WebSocketSession::WebSocketSession(asio::ip::tcp::socket socket, FrameCallback on_frame,
+                                   CloseCallback on_close, bool handshake_done)
     : socket_(std::move(socket)),
       strand_(socket_.get_executor()),
       on_frame_(std::move(on_frame)),
-      on_close_(std::move(on_close)) {}
+      on_close_(std::move(on_close)),
+      handshake_done_(handshake_done) {}
 
 void WebSocketSession::Start() { DoRead(); }
 

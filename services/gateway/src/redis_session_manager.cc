@@ -61,8 +61,12 @@ struct RedisSessionManager::Impl {
         }
       });
     });
-    // Subscribe to kick channel
-    sub.Subscribe(KickChannel(instance_id));
+    // Subscribe once the connection is up: calling Subscribe() before
+    // Start() is a silent no-op (the socket is not open yet), and without
+    // re-subscribing here the manager would never receive kick messages.
+    sub.SetConnectCallback([this] {
+      sub.Subscribe(KickChannel(instance_id));
+    });
     // Start the subscriber
     sub.Start();
     worker = std::thread([this] { Run(); });

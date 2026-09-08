@@ -224,6 +224,12 @@ public:
 	UFUNCTION(BlueprintPure, Category = "Chirp|Voice")
 	bool IsSpeakerMuted() const;
 
+	/**
+	 * Get current voice room info
+	 */
+	UFUNCTION(BlueprintPure, Category = "Chirp|Voice")
+	FChirpVoiceRoomInfo GetCurrentVoiceRoom() const;
+
 private:
 	// Implementation pointer (PIMPL pattern)
 	UChirpClientImpl* Impl;

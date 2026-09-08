@@ -53,8 +53,12 @@ bool WebSocketClient::Connect(const std::string& host, uint16_t port, const std:
       return false;
     }
 
-    // Create session with stored callbacks and start it
-    session_ = std::make_shared<WebSocketSession>(std::move(socket_), on_frame_, on_close_);
+    // Create session with stored callbacks and start it. The upgrade
+    // handshake is already done here, so mark the session accordingly
+    // (otherwise it would wait for a server-style HTTP request forever and
+    // never deliver incoming frames).
+    session_ = std::make_shared<WebSocketSession>(std::move(socket_), on_frame_,
+                                                  on_close_, /*handshake_done=*/true);
     session_->Start();
     return true;
   } catch (const std::exception& e) {

@@ -1,0 +1,73 @@
+------------------------------------------------------------------------------
+                           GCC Code Coverage Report
+Directory: .
+------------------------------------------------------------------------------
+File                                       Lines     Exec  Cover   Missing
+------------------------------------------------------------------------------
+libs/common/base64.cc                         59       58    98%   55
+libs/common/config.cc                         53       53   100%
+libs/common/jwt.cc                           167      166    99%   38
+libs/common/logger.cc                         40       40   100%
+libs/common/logger.h                           5        5   100%
+libs/common/sha256.cc                        106      106   100%
+libs/network/byte_order.h                      9        9   100%
+libs/network/length_prefixed_framer.cc        15       15   100%
+libs/network/length_prefixed_framer.h          2        2   100%
+libs/network/message_router.cc               106       93    87%   81-84,118,123-126,137,148,159,170
+libs/network/message_router.h                 14       14   100%
+libs/network/protobuf_framing.cc              15       13    86%   14,20
+libs/network/redis_client.cc                 201      201   100%
+libs/network/redis_client.h                    4        4   100%
+libs/network/redis_protocol.cc                91       90    98%   119
+libs/network/redis_protocol.h                  1        1   100%
+libs/network/session.h                         2        1    50%   9
+libs/network/tcp_client.cc                    28       28   100%
+libs/network/tcp_client.h                      2        2   100%
+libs/network/tcp_server.cc                    20       20   100%
+libs/network/tcp_session.cc                   69       69   100%
+libs/network/tcp_session.h                     1        1   100%
+libs/network/websocket_client.cc              42       40    95%   38-39
+libs/network/websocket_client.h                3        3   100%
+libs/network/websocket_frame.cc               85       84    98%   136
+libs/network/websocket_frame.h                 1        1   100%
+libs/network/websocket_server.cc              20       20   100%
+libs/network/websocket_session.cc            139      139   100%
+libs/network/websocket_session.h               1        1   100%
+libs/network/websocket_util.cc               118      112    94%   115-119,129
+libs/network/websocket_utils.h                 6        6   100%
+sdks/core/src/sdk.cc                          24       24   100%
+sdks/core/src/sdk_client.cc                  315      311    98%   205,209,365-366
+services/chat/src/chat_session_registry.cc
+                                              48       48   100%
+services/chat/src/chat_validation.cc          43       43   100%
+services/chat/src/distributed_dispatch.cc
+                                              44       44   100%
+services/chat/src/distributed_runtime.cc      28       28   100%
+services/chat/src/group_manager.cc           133      132    99%   168
+services/chat/src/group_manager.h              5        5   100%
+services/chat/src/reaction_manager.cc        158      158   100%
+services/chat/src/reaction_manager.h           1        1   100%
+services/chat/src/read_receipt_manager.cc
+                                              81       81   100%
+services/chat/src/read_receipt_manager.h       3        3   100%
+services/chat/src/runtime_utils.cc            38       37    97%   46
+services/chat/src/typing_manager.cc          106      106   100%
+services/chat/src/typing_manager.h             1        1   100%
+services/gateway/src/auth_client.cc          119      118    99%   167
+services/gateway/src/gateway_session_registry.cc
+                                              51       51   100%
+services/gateway/src/redis_session_manager.cc
+                                              93       78    83%   119-124,126,128-133,135,137
+services/gateway/src/redis_session_manager.h
+                                               1        1   100%
+services/notification/src/notification_service.cc
+                                             291      279    95%   34-35,209,375-379,383,446,456-457
+services/notification/src/notification_service.h
+                                               3        3   100%
+services/search/src/message_search_service.cc
+                                             282      280    99%   93,287
+services/search/src/message_search_service.h
+                                               1        1   100%
+------------------------------------------------------------------------------
+TOTAL                                       3294     3230    98%
+------------------------------------------------------------------------------

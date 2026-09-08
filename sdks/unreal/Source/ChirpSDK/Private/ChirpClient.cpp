@@ -161,6 +161,11 @@ bool UChirpClient::IsSpeakerMuted() const
 	return Impl ? Impl->IsSpeakerMuted() : true;
 }
 
+FChirpVoiceRoomInfo UChirpClient::GetCurrentVoiceRoom() const
+{
+	return Impl ? Impl->GetCurrentVoiceRoom() : FChirpVoiceRoomInfo();
+}
+
 // ============================================================================
 // Blueprint Function Library Implementation
 // ============================================================================
@@ -309,5 +314,5 @@ bool UChirpBlueprintFunctionLibrary::IsSpeakerMuted()
 
 FChirpVoiceRoomInfo UChirpBlueprintFunctionLibrary::GetCurrentVoiceRoom()
 {
-	return FChirpVoiceRoomInfo();  // TODO: Implement
+	return GetClient()->GetCurrentVoiceRoom();
 }

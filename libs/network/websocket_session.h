@@ -19,7 +19,12 @@ public:
   using FrameCallback = std::function<void(std::shared_ptr<Session>, std::string&& payload)>;
   using CloseCallback = std::function<void(std::shared_ptr<Session>)>;
 
-  WebSocketSession(asio::ip::tcp::socket socket, FrameCallback on_frame, CloseCallback on_close = nullptr);
+  // `handshake_done` must be true for client-side sessions whose upgrade
+  // handshake was already completed elsewhere (e.g. WebSocketClient::Connect);
+  // such sessions parse incoming bytes as WebSocket frames right away.
+  WebSocketSession(asio::ip::tcp::socket socket, FrameCallback on_frame,
+                   CloseCallback on_close = nullptr,
+                   bool handshake_done = false);
 
   void Start();
   void Close() override;

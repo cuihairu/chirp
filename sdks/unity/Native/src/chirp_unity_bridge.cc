@@ -4,6 +4,8 @@
 #include <memory>
 #include <mutex>
 #include <string>
+#include <utility>
+#include <vector>
 
 #include "chirp/core/sdk.h"
 #include "logger.h"
@@ -299,12 +301,25 @@ int32_t Chirp_SendFriendRequest(const char* user_id, const char* message, int32_
     return CHIRP_ERROR_NOT_CONNECTED;
   }
 
+  if (!user_id) {
+    return CHIRP_ERROR_INVALID_PARAM;
+  }
+
   auto* social_module = g_client->GetSocialModule();
   if (!social_module) {
     return CHIRP_ERROR_UNKNOWN;
   }
 
-  // TODO: Implement via social module
+  social_module->AddFriend(
+    std::string(user_id),
+    message ? std::string(message) : "",
+    [callback_id](bool success, const std::string& request_id) {
+      std::lock_guard<std::mutex> lock(g_callback_mutex);
+      if (g_response_callback) {
+        g_response_callback(callback_id, success ? 1 : 0, request_id.c_str());
+      }
+    });
+
   return CHIRP_OK;
 }
 
@@ -313,12 +328,24 @@ int32_t Chirp_AcceptFriendRequest(const char* request_id, int32_t callback_id) {
     return CHIRP_ERROR_NOT_CONNECTED;
   }
 
+  if (!request_id) {
+    return CHIRP_ERROR_INVALID_PARAM;
+  }
+
   auto* social_module = g_client->GetSocialModule();
   if (!social_module) {
     return CHIRP_ERROR_UNKNOWN;
   }
 
-  // TODO: Implement via social module
+  social_module->AcceptFriendRequest(
+    std::string(request_id),
+    [callback_id](bool success) {
+      std::lock_guard<std::mutex> lock(g_callback_mutex);
+      if (g_response_callback) {
+        g_response_callback(callback_id, success ? 1 : 0, "");
+      }
+    });
+
   return CHIRP_OK;
 }
 
@@ -327,12 +354,24 @@ int32_t Chirp_RemoveFriend(const char* user_id, int32_t callback_id) {
     return CHIRP_ERROR_NOT_CONNECTED;
   }
 
+  if (!user_id) {
+    return CHIRP_ERROR_INVALID_PARAM;
+  }
+
   auto* social_module = g_client->GetSocialModule();
   if (!social_module) {
     return CHIRP_ERROR_UNKNOWN;
   }
 
-  // TODO: Implement via social module
+  social_module->RemoveFriend(
+    std::string(user_id),
+    [callback_id](bool success) {
+      std::lock_guard<std::mutex> lock(g_callback_mutex);
+      if (g_response_callback) {
+        g_response_callback(callback_id, success ? 1 : 0, "");
+      }
+    });
+
   return CHIRP_OK;
 }
 
@@ -346,7 +385,27 @@ int32_t Chirp_GetFriendList(int32_t callback_id) {
     return CHIRP_ERROR_UNKNOWN;
   }
 
-  // TODO: Implement via social module
+  social_module->GetFriendList(
+    100,
+    0,
+    [callback_id](const std::vector<chirp::core::modules::social::Friend>& friends) {
+      std::string json = "[";
+      for (size_t i = 0; i < friends.size(); ++i) {
+        if (i > 0) json += ",";
+        json += R"({"user_id":")" + friends[i].user_id +
+                R"(","username":")" + friends[i].username +
+                R"(","avatar_url":")" + friends[i].avatar_url +
+                R"(","status":)" + std::to_string(static_cast<int32_t>(friends[i].status)) +
+                R"(,"added_at":)" + std::to_string(friends[i].added_at) + "}";
+      }
+      json += "]";
+
+      std::lock_guard<std::mutex> lock(g_callback_mutex);
+      if (g_response_callback) {
+        g_response_callback(callback_id, 1, json.c_str());
+      }
+    });
+
   return CHIRP_OK;
 }
 
@@ -360,7 +419,14 @@ int32_t Chirp_SetPresence(int32_t status, const char* status_text) {
     return CHIRP_ERROR_UNKNOWN;
   }
 
-  // TODO: Implement via social module
+  if (status < 0 || status > 5) {
+    return CHIRP_ERROR_INVALID_PARAM;
+  }
+
+  social_module->SetPresence(
+    static_cast<chirp::core::modules::social::PresenceStatus>(status),
+    status_text ? std::string(status_text) : "");
+
   return CHIRP_OK;
 }
 

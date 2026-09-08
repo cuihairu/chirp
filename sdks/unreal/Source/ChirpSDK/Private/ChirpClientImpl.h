@@ -55,6 +55,7 @@ public:
 	void SetSpeakerMuted(bool bMuted);
 	bool IsMicMuted() const;
 	bool IsSpeakerMuted() const;
+	FChirpVoiceRoomInfo GetCurrentVoiceRoom() const;
 
 	// Event callback setters (for internal use)
 	void SetMessageCallback(TFunction<void(const FChirpMessage&)> Callback);
@@ -63,6 +64,10 @@ public:
 private:
 	chirp::core::Client* Client = nullptr;
 	bool bIsInitialized = false;
+
+	// Current voice room tracking (populated on JoinVoiceRoom/LeaveVoiceRoom)
+	FString CurrentVoiceRoomId;
+	int32 CurrentVoiceRoomParticipants = 0;
 
 	// Convert between Unreal and Chirp types
 	static chirp::core::Config ConvertConfig(const FChirpConfig& Config);

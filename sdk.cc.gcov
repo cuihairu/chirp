@@ -1,0 +1,50 @@
+        -:    0:Source:/home/cui/workspaces/chirp/sdks/core/src/sdk.cc
+        -:    0:Graph:build-cov/tests/unit/CMakeFiles/sdk_core_tests.dir/__/__/sdks/core/src/sdk.cc.gcno
+        -:    0:Data:build-cov/tests/unit/CMakeFiles/sdk_core_tests.dir/__/__/sdks/core/src/sdk.cc.gcda
+        -:    0:Runs:1
+        -:    1:#include "chirp/sdk.h"
+        -:    2:
+        -:    3:namespace chirp {
+        -:    4:namespace sdk {
+        -:    5:
+        -:    6:namespace {
+        -:    7:
+        -:    8:class ChatErrorCategory final : public std::error_category {
+        -:    9:public:
+        1:   10:  const char* name() const noexcept override { return "chirp.sdk"; }
+        -:   11:
+        7:   12:  std::string message(int ev) const override {
+        7:   13:    switch (static_cast<ChatError>(ev)) {
+        1:   14:    case ChatError::OK:
+        2:   15:      return "ok";
+        1:   16:    case ChatError::NotConnected:
+        2:   17:      return "not connected";
+        1:   18:    case ChatError::AlreadyConnected:
+        2:   19:      return "already connected";
+        1:   20:    case ChatError::LoginFailed:
+        2:   21:      return "login failed";
+        1:   22:    case ChatError::SendFailed:
+        2:   23:      return "send failed";
+        1:   24:    case ChatError::InvalidParam:
+        2:   25:      return "invalid parameter";
+        1:   26:    case ChatError::Timeout:
+        2:   27:      return "timeout";
+    #####:   28:    default:
+    #####:   29:      return "unknown error";
+        -:   30:    }
+        -:   31:  }
+        -:   32:};
+        -:   33:
+        8:   34:const ChatErrorCategory& Category() {
+        8:   35:  static ChatErrorCategory cat;
+        8:   36:  return cat;
+        -:   37:}
+        -:   38:
+        -:   39:} // namespace
+        -:   40:
+        8:   41:std::error_code make_error_code(ChatError e) {
+        8:   42:  return std::error_code(static_cast<int>(e), Category());
+        -:   43:}
+        -:   44:
+        -:   45:} // namespace sdk
+        -:   46:} // namespace chirp

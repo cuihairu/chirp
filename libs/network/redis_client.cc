@@ -145,7 +145,19 @@ public:
       std::string line = buffer_.substr(0, pos);
       buffer_.erase(0, pos + 2);
 
-      if (line.empty() || line[0] != '$') {
+      // A new RESP array header resets pending accumulation. Without this,
+      // leftover bulk items from a previous reply (e.g. the SUBSCRIBE ack
+      // array) would shift the frame alignment and drop subsequent
+      // ["message", channel, payload] pushes.
+      if (line.empty()) {
+        continue;
+      }
+      if (line[0] == '*') {
+        current_array_.clear();
+        continue;
+      }
+
+      if (line[0] != '$') {
         continue;
       }
 
@@ -258,6 +270,9 @@ void RedisSubscriber::Stop() {
     std::lock_guard<std::mutex> lock(sock_mu_);
     if (socket_ && socket_->is_open()) {
       asio::error_code ec;
+      // shutdown() first: a plain close() does not wake a blocking read_some
+      // on Linux, which would deadlock the join() below.
+      socket_->shutdown(asio::ip::tcp::socket::shutdown_both, ec);
       socket_->close(ec);
     }
   }

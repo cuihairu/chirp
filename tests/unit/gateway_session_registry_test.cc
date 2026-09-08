@@ -60,5 +60,14 @@ TEST(GatewaySessionRegistryTest, RemoveAuthenticatedSessionClearsAllMappings) {
   EXPECT_EQ(state->session_to_session_id.count(session.get()), 0u);
 }
 
+TEST(GatewaySessionRegistryTest, RemoveUnknownSessionReturnsFalse) {
+  auto state = std::make_shared<GatewayState>();
+  auto stranger = std::make_shared<FakeSession>();
+
+  std::string removed;
+  EXPECT_FALSE(RemoveAuthenticatedSession(state, stranger, &removed));
+  EXPECT_TRUE(removed.empty());
+}
+
 } // namespace
 } // namespace chirp::gateway

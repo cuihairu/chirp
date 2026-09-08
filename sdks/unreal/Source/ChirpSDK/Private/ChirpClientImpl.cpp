@@ -357,7 +357,13 @@ bool UChirpClientImpl::JoinVoiceRoom(const FString& RoomId)
 		return false;
 	}
 
-	return VoiceModule->JoinRoom(FStringToStdString(RoomId));
+	const bool bJoined = VoiceModule->JoinRoom(FStringToStdString(RoomId));
+	if (bJoined)
+	{
+		CurrentVoiceRoomId = RoomId;
+		CurrentVoiceRoomParticipants = 1;
+	}
+	return bJoined;
 }
 
 bool UChirpClientImpl::LeaveVoiceRoom()
@@ -373,7 +379,13 @@ bool UChirpClientImpl::LeaveVoiceRoom()
 		return false;
 	}
 
-	return VoiceModule->LeaveRoom();
+	const bool bLeft = VoiceModule->LeaveRoom();
+	if (bLeft)
+	{
+		CurrentVoiceRoomId.Reset();
+		CurrentVoiceRoomParticipants = 0;
+	}
+	return bLeft;
 }
 
 void UChirpClientImpl::SetMicMuted(bool bMuted)
@@ -438,6 +450,16 @@ bool UChirpClientImpl::IsSpeakerMuted() const
 	}
 
 	return VoiceModule->IsSpeakerMuted();
+}
+
+FChirpVoiceRoomInfo UChirpClientImpl::GetCurrentVoiceRoom() const
+{
+	FChirpVoiceRoomInfo Info;
+	Info.RoomId = CurrentVoiceRoomId;
+	Info.RoomName = CurrentVoiceRoomId;
+	Info.ParticipantCount = CurrentVoiceRoomParticipants;
+	Info.bIsActive = !CurrentVoiceRoomId.IsEmpty();
+	return Info;
 }
 
 // ============================================================================

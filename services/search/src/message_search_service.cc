@@ -344,10 +344,11 @@ std::string MessageSearchService::GenerateSnippet(
   // Find the best match (first one for now)
   auto [start, length] = matches[0];
 
-  // Add context around the match
-  size_t context_start = std::max(
-      static_cast<size_t>(0),
-      start - config_.max_context_length);
+  // Add context around the match (guard against unsigned underflow when the
+  // match is closer to the start than max_context_length).
+  size_t context_start = start > config_.max_context_length
+      ? start - config_.max_context_length
+      : 0;
 
   size_t context_end = std::min(
       content.length(),

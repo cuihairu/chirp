@@ -64,6 +64,60 @@ TEST(ChatValidationTest, AcceptsValidPrivateMessage) {
   EXPECT_EQ(ValidateSendMessageRequest(req, "alice"), chirp::common::OK);
 }
 
+TEST(ChatValidationTest, PrivateChannelContainsUserEdgeCases) {
+  EXPECT_FALSE(PrivateChannelContainsUser("", "alice"));   // empty channel
+  EXPECT_FALSE(PrivateChannelContainsUser("alice|bob", "")); // empty user
+  EXPECT_FALSE(PrivateChannelContainsUser("noseparator", "alice"));
+  EXPECT_FALSE(PrivateChannelContainsUser("|bob", "alice"));    // empty left side
+  EXPECT_FALSE(PrivateChannelContainsUser("alice|", "alice"));  // empty right side
+  EXPECT_TRUE(PrivateChannelContainsUser("alice|bob", "bob"));
+}
+
+TEST(ChatValidationTest, RejectsUnauthenticatedSend) {
+  SendMessageRequest req;
+  req.set_sender_id("alice");
+  req.set_receiver_id("bob");
+  req.set_channel_type(PRIVATE);
+
+  EXPECT_EQ(ValidateSendMessageRequest(req, ""), chirp::common::AUTH_FAILED);
+}
+
+TEST(ChatValidationTest, RejectsGroupSendWithoutChannelId) {
+  SendMessageRequest req;
+  req.set_sender_id("alice");
+  req.set_channel_type(GUILD);
+
+  EXPECT_EQ(ValidateSendMessageRequest(req, "alice"), chirp::common::INVALID_PARAM);
+}
+
+TEST(ChatValidationTest, RejectsGroupSendWithReceiverId) {
+  SendMessageRequest req;
+  req.set_sender_id("alice");
+  req.set_channel_type(GUILD);
+  req.set_channel_id("g1");
+  req.set_receiver_id("bob");
+
+  EXPECT_EQ(ValidateSendMessageRequest(req, "alice"), chirp::common::INVALID_PARAM);
+}
+
+TEST(ChatValidationTest, AcceptsValidGroupSend) {
+  SendMessageRequest req;
+  req.set_sender_id("alice");
+  req.set_channel_type(GUILD);
+  req.set_channel_id("g1");
+
+  EXPECT_EQ(ValidateSendMessageRequest(req, "alice"), chirp::common::OK);
+}
+
+TEST(ChatValidationTest, AcceptsValidGroupHistory) {
+  GetHistoryRequest req;
+  req.set_user_id("alice");
+  req.set_channel_type(GUILD);
+  req.set_channel_id("g1");
+
+  EXPECT_EQ(ValidateGetHistoryRequest(req, "alice"), chirp::common::OK);
+}
+
 TEST(ChatValidationTest, RejectsHistoryForDifferentUser) {
   GetHistoryRequest req;
   req.set_user_id("mallory");
@@ -170,6 +224,18 @@ TEST(ChatSessionRegistryTest, RemoveAuthenticatedSessionClearsAllMappings) {
   EXPECT_EQ(state->user_to_session.count("alice"), 0u);
   EXPECT_EQ(state->session_to_user.count(session.get()), 0u);
   EXPECT_EQ(state->session_to_session_id.count(session.get()), 0u);
+}
+
+TEST(ChatSessionRegistryTest, RemoveUnknownSessionIsSafe) {
+  auto state = std::make_shared<ChatState>();
+  auto bound = std::make_shared<FakeSession>();
+  auto stranger = std::make_shared<FakeSession>();
+
+  EXPECT_FALSE(BindAuthenticatedSession(state, "alice", "s1", bound));
+  // Removing a session that was never bound must not disturb the mapping.
+  RemoveAuthenticatedSession(state, stranger);
+  EXPECT_EQ(state->session_to_user.count(bound.get()), 1u);
+  EXPECT_EQ(state->session_to_user.count(stranger.get()), 0u);
 }
 
 TEST(ChatSessionRegistryTest, LogoutSuccessWouldCloseSessionAfterResponse) {
