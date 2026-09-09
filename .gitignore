@@ -67,3 +67,10 @@ coverage.csv
 coverage-packages.csv
 coverage-summary.json
 coverage.json
+*.gcno
+*.gcda
+*.gcov
+*.gcov.json.gz
+*.gcda.*
+*.gcno.*
+build-cov/
