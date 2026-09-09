@@ -278,13 +278,14 @@ std::string MentionManager::FormatMentions(const std::string& content,
 
       switch (mention.type()) {
         case MentionType::MENTION_TYPE_USER:
-          replacement = "**@" + result.substr(pos, len) + "**";
+          // substr already carries the '@' prefix.
+          replacement = "**" + result.substr(pos, len) + "**";
           break;
         case MentionType::MENTION_TYPE_ROLE:
-          replacement = "**@" + result.substr(pos, len) + "**";
+          replacement = "**" + result.substr(pos, len) + "**";
           break;
         case MentionType::MENTION_TYPE_CHANNEL:
-          replacement = "**#" + result.substr(pos, len) + "**";
+          replacement = "**" + result.substr(pos, len) + "**";
           break;
         case MentionType::MENTION_TYPE_EVERYONE:
           replacement = "**@everyone**";

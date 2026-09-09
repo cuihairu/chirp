@@ -75,14 +75,14 @@
   </div>
   <div class="Box-row Box-row--focus-gray py-2 d-flex">
     <div role="gridcell" class="color-fg-muted flex-auto min-width-0 col-md-2"><a href="#l7">chirp::network::LengthPrefixedFramer::Append(unsigned char const*, unsigned long) (libs/network/length_prefixed_framer.cc:7)</a>    </div>
-    <div role="gridcell" class="color-fg-muted flex-auto min-width-0 d-flex flex-justify-end flex-wrap flex-items-baseline" data-sort="123">called 123 times</div>
+    <div role="gridcell" class="color-fg-muted flex-auto min-width-0 d-flex flex-justify-end flex-wrap flex-items-baseline" data-sort="66">called 66 times</div>
     <div role="gridcell" class="color-fg-muted d-flex flex-justify-end flex-wrap col-2">100.0%</div>
     <div role="gridcell" class="color-fg-muted d-flex flex-justify-end flex-wrap col-2">-%</div>
     <div role="gridcell" class="color-fg-muted d-flex flex-justify-end flex-wrap col-2">100.0%</div>
   </div>
   <div class="Box-row Box-row--focus-gray py-2 d-flex">
     <div role="gridcell" class="color-fg-muted flex-auto min-width-0 col-md-2"><a href="#l11">chirp::network::LengthPrefixedFramer::PopFrame[abi:cxx11]() (libs/network/length_prefixed_framer.cc:11)</a>    </div>
-    <div role="gridcell" class="color-fg-muted flex-auto min-width-0 d-flex flex-justify-end flex-wrap flex-items-baseline" data-sort="225">called 225 times</div>
+    <div role="gridcell" class="color-fg-muted flex-auto min-width-0 d-flex flex-justify-end flex-wrap flex-items-baseline" data-sort="118">called 118 times</div>
     <div role="gridcell" class="color-fg-muted d-flex flex-justify-end flex-wrap col-2">100.0%</div>
     <div role="gridcell" class="color-fg-muted d-flex flex-justify-end flex-wrap col-2">75.0%</div>
     <div role="gridcell" class="color-fg-muted d-flex flex-justify-end flex-wrap col-2">88.2%</div>
@@ -161,21 +161,21 @@
         <td class="lineno"><a id="l7" href="#l7">7</a></td>
         <td class="linebranch">
         </td>
-        <td class="linecount coveredLine show_coveredLine">123</td>
+        <td class="linecount coveredLine show_coveredLine">66</td>
         <td class="src  coveredLine show_coveredLine"><span class="kt">void</span><span class="w"> </span><span class="nf">LengthPrefixedFramer::Append</span><span class="p">(</span><span class="k">const</span><span class="w"> </span><span class="kt">uint8_t</span><span class="o">*</span><span class="w"> </span><span class="n">data</span><span class="p">,</span><span class="w"> </span><span class="kt">size_t</span><span class="w"> </span><span class="n">len</span><span class="p">)</span><span class="w"> </span><span class="p">{</span></td>
       </tr>
       <tr class="source-line">
         <td class="lineno"><a id="l8" href="#l8">8</a></td>
         <td class="linebranch">
         </td>
-        <td class="linecount coveredLine show_coveredLine">123</td>
+        <td class="linecount coveredLine show_coveredLine">66</td>
         <td class="src  coveredLine show_coveredLine"><span class="w">  </span><span class="n">buf_</span><span class="p">.</span><span class="n">append</span><span class="p">(</span><span class="k">reinterpret_cast</span><span class="o">&lt;</span><span class="k">const</span><span class="w"> </span><span class="kt">char</span><span class="o">*&gt;</span><span class="p">(</span><span class="n">data</span><span class="p">),</span><span class="w"> </span><span class="n">len</span><span class="p">);</span></td>
       </tr>
       <tr class="source-line">
         <td class="lineno"><a id="l9" href="#l9">9</a></td>
         <td class="linebranch">
         </td>
-        <td class="linecount coveredLine show_coveredLine">123</td>
+        <td class="linecount coveredLine show_coveredLine">66</td>
         <td class="src  coveredLine show_coveredLine"><span class="p">}</span></td>
       </tr>
       <tr class="source-line">
@@ -189,14 +189,14 @@
         <td class="lineno"><a id="l11" href="#l11">11</a></td>
         <td class="linebranch">
         </td>
-        <td class="linecount coveredLine show_coveredLine">225</td>
+        <td class="linecount coveredLine show_coveredLine">118</td>
         <td class="src  coveredLine show_coveredLine"><span class="n">std</span><span class="o">::</span><span class="n">optional</span><span class="o">&lt;</span><span class="n">std</span><span class="o">::</span><span class="n">string</span><span class="o">&gt;</span><span class="w"> </span><span class="n">LengthPrefixedFramer</span><span class="o">::</span><span class="n">PopFrame</span><span class="p">()</span><span class="w"> </span><span class="p">{</span></td>
       </tr>
       <tr class="source-line">
         <td class="lineno"><a id="l12" href="#l12">12</a></td>
         <td class="linebranch">
         </td>
-        <td class="linecount coveredLine show_coveredLine">225</td>
+        <td class="linecount coveredLine show_coveredLine">118</td>
         <td class="src  coveredLine show_coveredLine"><span class="w">  </span><span class="k">constexpr</span><span class="w"> </span><span class="kt">size_t</span><span class="w"> </span><span class="n">kLenBytes</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mi">4</span><span class="p">;</span></td>
       </tr>
       <tr class="source-line">
@@ -205,19 +205,19 @@
           <details class="linebranchDetails">
             <summary class="linebranchSummary">2/2</summary>
             <div class="linebranchContents">
-              <div class="takenBranch">&check; Branch 3 &rightarrow; 4 taken 103 times.</div>
-              <div class="takenBranch">&check; Branch 3 &rightarrow; 5 taken 122 times.</div>
+              <div class="takenBranch">&check; Branch 3 &rightarrow; 4 taken 56 times.</div>
+              <div class="takenBranch">&check; Branch 3 &rightarrow; 5 taken 62 times.</div>
             </div>
           </details>
         </td>
-        <td class="linecount coveredLine show_coveredLine">225</td>
+        <td class="linecount coveredLine show_coveredLine">118</td>
         <td class="src  coveredLine show_coveredLine"><span class="w">  </span><span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="n">buf_</span><span class="p">.</span><span class="n">size</span><span class="p">()</span><span class="w"> </span><span class="o">&lt;</span><span class="w"> </span><span class="n">kLenBytes</span><span class="p">)</span><span class="w"> </span><span class="p">{</span></td>
       </tr>
       <tr class="source-line">
         <td class="lineno"><a id="l14" href="#l14">14</a></td>
         <td class="linebranch">
         </td>
-        <td class="linecount coveredLine show_coveredLine">103</td>
+        <td class="linecount coveredLine show_coveredLine">56</td>
         <td class="src  coveredLine show_coveredLine"><span class="w">    </span><span class="k">return</span><span class="w"> </span><span class="n">std</span><span class="o">::</span><span class="n">nullopt</span><span class="p">;</span></td>
       </tr>
       <tr class="source-line">
@@ -231,14 +231,14 @@
         <td class="lineno"><a id="l16" href="#l16">16</a></td>
         <td class="linebranch">
         </td>
-        <td class="linecount coveredLine show_coveredLine">122</td>
+        <td class="linecount coveredLine show_coveredLine">62</td>
         <td class="src  coveredLine show_coveredLine"><span class="w">  </span><span class="k">const</span><span class="w"> </span><span class="k">auto</span><span class="o">*</span><span class="w"> </span><span class="n">p</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="k">reinterpret_cast</span><span class="o">&lt;</span><span class="k">const</span><span class="w"> </span><span class="kt">uint8_t</span><span class="o">*&gt;</span><span class="p">(</span><span class="n">buf_</span><span class="p">.</span><span class="n">data</span><span class="p">());</span></td>
       </tr>
       <tr class="source-line">
         <td class="lineno"><a id="l17" href="#l17">17</a></td>
         <td class="linebranch">
         </td>
-        <td class="linecount coveredLine show_coveredLine">122</td>
+        <td class="linecount coveredLine show_coveredLine">62</td>
         <td class="src  coveredLine show_coveredLine"><span class="w">  </span><span class="kt">uint32_t</span><span class="w"> </span><span class="n">n</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">ReadU32BE</span><span class="p">(</span><span class="n">p</span><span class="p">);</span></td>
       </tr>
       <tr class="source-line">
@@ -247,19 +247,19 @@
           <details class="linebranchDetails">
             <summary class="linebranchSummary">2/2</summary>
             <div class="linebranchContents">
-              <div class="takenBranch">&check; Branch 8 &rightarrow; 9 taken 6 times.</div>
-              <div class="takenBranch">&check; Branch 8 &rightarrow; 10 taken 116 times.</div>
+              <div class="takenBranch">&check; Branch 8 &rightarrow; 9 taken 3 times.</div>
+              <div class="takenBranch">&check; Branch 8 &rightarrow; 10 taken 59 times.</div>
             </div>
           </details>
         </td>
-        <td class="linecount coveredLine show_coveredLine">122</td>
+        <td class="linecount coveredLine show_coveredLine">62</td>
         <td class="src  coveredLine show_coveredLine"><span class="w">  </span><span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="n">buf_</span><span class="p">.</span><span class="n">size</span><span class="p">()</span><span class="w"> </span><span class="o">&lt;</span><span class="w"> </span><span class="n">kLenBytes</span><span class="w"> </span><span class="o">+</span><span class="w"> </span><span class="n">n</span><span class="p">)</span><span class="w"> </span><span class="p">{</span></td>
       </tr>
       <tr class="source-line">
         <td class="lineno"><a id="l19" href="#l19">19</a></td>
         <td class="linebranch">
         </td>
-        <td class="linecount coveredLine show_coveredLine">6</td>
+        <td class="linecount coveredLine show_coveredLine">3</td>
         <td class="src  coveredLine show_coveredLine"><span class="w">    </span><span class="k">return</span><span class="w"> </span><span class="n">std</span><span class="o">::</span><span class="n">nullopt</span><span class="p">;</span></td>
       </tr>
       <tr class="source-line">
@@ -275,12 +275,12 @@
           <details class="linebranchDetails">
             <summary class="linebranchSummary">1/2</summary>
             <div class="linebranchContents">
-              <div class="takenBranch">&check; Branch 10 &rightarrow; 11 taken 116 times.</div>
+              <div class="takenBranch">&check; Branch 10 &rightarrow; 11 taken 59 times.</div>
               <div class="notTakenBranch">&cross; Branch 10 &rightarrow; 18 not taken.</div>
             </div>
           </details>
         </td>
-        <td class="linecount partialCoveredLine show_partialCoveredLine">116</td>
+        <td class="linecount partialCoveredLine show_partialCoveredLine">59</td>
         <td class="src  partialCoveredLine show_partialCoveredLine"><span class="w">  </span><span class="n">std</span><span class="o">::</span><span class="n">string</span><span class="w"> </span><span class="n">payload</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">buf_</span><span class="p">.</span><span class="n">substr</span><span class="p">(</span><span class="n">kLenBytes</span><span class="p">,</span><span class="w"> </span><span class="n">n</span><span class="p">);</span></td>
       </tr>
       <tr class="source-line">
@@ -289,26 +289,26 @@
           <details class="linebranchDetails">
             <summary class="linebranchSummary">1/2</summary>
             <div class="linebranchContents">
-              <div class="takenBranch">&check; Branch 11 &rightarrow; 12 taken 116 times.</div>
+              <div class="takenBranch">&check; Branch 11 &rightarrow; 12 taken 59 times.</div>
               <div class="notTakenBranch">&cross; Branch 11 &rightarrow; 16 not taken.</div>
             </div>
           </details>
         </td>
-        <td class="linecount partialCoveredLine show_partialCoveredLine">116</td>
+        <td class="linecount partialCoveredLine show_partialCoveredLine">59</td>
         <td class="src  partialCoveredLine show_partialCoveredLine"><span class="w">  </span><span class="n">buf_</span><span class="p">.</span><span class="n">erase</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span><span class="w"> </span><span class="n">kLenBytes</span><span class="w"> </span><span class="o">+</span><span class="w"> </span><span class="n">n</span><span class="p">);</span></td>
       </tr>
       <tr class="source-line">
         <td class="lineno"><a id="l23" href="#l23">23</a></td>
         <td class="linebranch">
         </td>
-        <td class="linecount coveredLine show_coveredLine">116</td>
+        <td class="linecount coveredLine show_coveredLine">59</td>
         <td class="src  coveredLine show_coveredLine"><span class="w">  </span><span class="k">return</span><span class="w"> </span><span class="n">payload</span><span class="p">;</span></td>
       </tr>
       <tr class="source-line">
         <td class="lineno"><a id="l24" href="#l24">24</a></td>
         <td class="linebranch">
         </td>
-        <td class="linecount coveredLine show_coveredLine">116</td>
+        <td class="linecount coveredLine show_coveredLine">59</td>
         <td class="src  coveredLine show_coveredLine"><span class="p">}</span></td>
       </tr>
       <tr class="source-line">
@@ -346,7 +346,7 @@
         <hr class="block-separator"/>
         <footer class="text-center">
           Created using <a href="http://gcovr.com/en/8.6">GCOVR (Version 8.6)</a>
-          at 2026-09-08 05:58:57
+          at 2026-09-08 14:58:17
         </footer>
       </div>
     </div>

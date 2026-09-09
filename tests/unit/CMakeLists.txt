@@ -354,3 +354,34 @@ target_include_directories(network_session_tests
 )
 
 add_test(NAME network_session_tests COMMAND network_session_tests)
+
+# Chat extension managers (mentions / edits / channels / store config)
+add_executable(chat_extensions_tests
+  chat_extensions_test.cc
+  ${CMAKE_SOURCE_DIR}/services/chat/src/channel_manager.cc
+  ${CMAKE_SOURCE_DIR}/services/chat/src/mention_manager.cc
+  ${CMAKE_SOURCE_DIR}/services/chat/src/message_edit_manager.cc
+  ${CMAKE_SOURCE_DIR}/services/chat/src/message_store_config.cc
+)
+
+chirp_unit_test_common_links(chat_extensions_tests)
+target_link_libraries(chat_extensions_tests PRIVATE chirp_network chirp_common chirp_protos)
+
+target_include_directories(chat_extensions_tests
+  PRIVATE
+  ${CMAKE_SOURCE_DIR}/services/chat/src
+  ${CMAKE_SOURCE_DIR}/libs
+  ${CMAKE_SOURCE_DIR}/libs/common
+  ${CMAKE_SOURCE_DIR}/libs/common/include
+  ${CMAKE_SOURCE_DIR}/proto/cpp
+  ${CMAKE_SOURCE_DIR}/proto/cpp/proto
+)
+
+add_test(NAME chat_extensions_tests COMMAND chat_extensions_tests)
+
+# NOTE: presence_manager_v2.cc is explicitly excluded from the social service
+# build (it does not compile: proto enum conflicts and a copyable mutex); and
+# the enhanced auth components (password_hasher / token_generator) require
+# libsodium, which is not installed in this workspace, so they have never
+# been part of an actual build. Both groups are tracked as dead code instead
+# of being tested here.

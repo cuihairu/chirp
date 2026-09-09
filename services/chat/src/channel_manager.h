@@ -17,16 +17,25 @@ namespace chat {
 // Permission checker for channels
 class ChannelPermissionChecker {
 public:
+  // Selectable permission fields (proto messages cannot own enum members).
+  enum class Field {
+    kCanRead,
+    kCanWrite,
+    kCanSpeak,
+    kCanJoin,
+    kCanManage,
+  };
+
   // Check if user has permission in channel
   static bool HasPermission(const Channel& channel,
-                           const std::string& user_id,
-                           const std::string& role_id,
-                           ChannelPermissions::Field field);
+                            const std::string& user_id,
+                            const std::string& role_id,
+                            Field field);
 
   // Get effective permissions for user in channel
   static ChannelPermissions GetEffectivePermissions(const Channel& channel,
-                                                     const std::string& user_id,
-                                                     const std::string& role_id);
+                                                      const std::string& user_id,
+                                                      const std::string& role_id);
 };
 
 // Channel category data
@@ -99,6 +108,9 @@ public:
                     const std::vector<PermissionOverrideEntry>& permission_overrides);
   bool DeleteChannel(const std::string& channel_id);
 
+  // Configure the slow-mode send cooldown for a channel (0 disables it).
+  bool SetSlowmode(const std::string& channel_id, int64_t slowmode_seconds);
+
   std::vector<Channel> GetChannels(const std::string& group_id,
                                   const std::string& user_id,
                                   const std::string& role_id);
@@ -108,6 +120,11 @@ public:
                     const std::string& user_id,
                     const std::string& role_id,
                     const ChannelPermissions& required);
+
+  bool HasPermission(const std::string& channel_id,
+                    const std::string& user_id,
+                    const std::string& role_id,
+                    ChannelPermissionChecker::Field field);
 
   bool CanRead(const std::string& channel_id,
               const std::string& user_id,
@@ -150,7 +167,7 @@ private:
   void SortByPosition(std::vector<T>& items) {
     std::sort(items.begin(), items.end(),
       [](const T& a, const T& b) {
-        return a.position < b.position;
+        return a.position() < b.position();
       });
   }
 

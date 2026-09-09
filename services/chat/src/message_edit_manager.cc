@@ -29,7 +29,8 @@ void MessageEditManager::RegisterMessage(const std::string& message_id,
 bool MessageEditManager::EditMessage(const std::string& message_id,
                                     const std::string& user_id,
                                     const std::string& new_content,
-                                    ChatMessageFull* out_message) {
+                                    ChatMessageFull* out_message,
+                                    bool is_moderator) {
   std::lock_guard<std::mutex> lock(mu_);
 
   auto it = messages_.find(message_id);
@@ -40,8 +41,10 @@ bool MessageEditManager::EditMessage(const std::string& message_id,
   auto& data = it->second;
   std::lock_guard<std::mutex> data_lock(data->mu);
 
-  // Check permissions
-  if (data->sender_id != user_id && !config_.allow_mod_edit) {
+  // Check permissions: only the sender, or a moderator when mod edits are
+  // enabled, may edit.
+  if (data->sender_id != user_id &&
+      !(is_moderator && config_.allow_mod_edit)) {
     return false;  // Not authorized
   }
 
@@ -261,7 +264,7 @@ void MessageEditManager::CleanupOldDeletedMessages() {
   std::lock_guard<std::mutex> lock(mu_);
 
   int64_t cutoff_time = GetCurrentTimeMs() -
-      (config_.soft_delete_retention_days * 24 * 60 * 60 * 1000);
+      (static_cast<int64_t>(config_.soft_delete_retention_days) * 24LL * 60 * 60 * 1000);
 
   for (auto it = deleted_messages_.begin(); it != deleted_messages_.end();) {
     const auto& data = it->second;

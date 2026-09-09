@@ -75,14 +75,14 @@
   </div>
   <div class="Box-row Box-row--focus-gray py-2 d-flex">
     <div role="gridcell" class="color-fg-muted flex-auto min-width-0 col-md-2"><a href="#l25">chirp::network::ProtobufFraming::Decode(std::__cxx11::basic_string&lt;char, std::char_traits&lt;char&gt;, std::allocator&lt;char&gt; &gt; const&amp;, google::protobuf::Message*) (libs/network/protobuf_framing.cc:25)</a>    </div>
-    <div role="gridcell" class="color-fg-muted flex-auto min-width-0 d-flex flex-justify-end flex-wrap flex-items-baseline" data-sort="46">called 46 times</div>
+    <div role="gridcell" class="color-fg-muted flex-auto min-width-0 d-flex flex-justify-end flex-wrap flex-items-baseline" data-sort="24">called 24 times</div>
     <div role="gridcell" class="color-fg-muted d-flex flex-justify-end flex-wrap col-2">100.0%</div>
     <div role="gridcell" class="color-fg-muted d-flex flex-justify-end flex-wrap col-2">100.0%</div>
     <div role="gridcell" class="color-fg-muted d-flex flex-justify-end flex-wrap col-2">100.0%</div>
   </div>
   <div class="Box-row Box-row--focus-gray py-2 d-flex">
     <div role="gridcell" class="color-fg-muted flex-auto min-width-0 col-md-2"><a href="#l10">chirp::network::ProtobufFraming::Encode(google::protobuf::Message const&amp;) (libs/network/protobuf_framing.cc:10)</a>    </div>
-    <div role="gridcell" class="color-fg-muted flex-auto min-width-0 d-flex flex-justify-end flex-wrap flex-items-baseline" data-sort="130">called 130 times</div>
+    <div role="gridcell" class="color-fg-muted flex-auto min-width-0 d-flex flex-justify-end flex-wrap flex-items-baseline" data-sort="68">called 68 times</div>
     <div role="gridcell" class="color-fg-muted d-flex flex-justify-end flex-wrap col-2">81.8%</div>
     <div role="gridcell" class="color-fg-muted d-flex flex-justify-end flex-wrap col-2">50.0%</div>
     <div role="gridcell" class="color-fg-muted d-flex flex-justify-end flex-wrap col-2">72.4%</div>
@@ -182,7 +182,7 @@
         <td class="lineno"><a id="l10" href="#l10">10</a></td>
         <td class="linebranch">
         </td>
-        <td class="linecount coveredLine show_coveredLine">130</td>
+        <td class="linecount coveredLine show_coveredLine">68</td>
         <td class="src  coveredLine show_coveredLine"><span class="n">std</span><span class="o">::</span><span class="n">vector</span><span class="o">&lt;</span><span class="kt">uint8_t</span><span class="o">&gt;</span><span class="w"> </span><span class="n">ProtobufFraming</span><span class="o">::</span><span class="n">Encode</span><span class="p">(</span><span class="k">const</span><span class="w"> </span><span class="n">google</span><span class="o">::</span><span class="n">protobuf</span><span class="o">::</span><span class="n">Message</span><span class="o">&amp;</span><span class="w"> </span><span class="n">msg</span><span class="p">)</span><span class="w"> </span><span class="p">{</span></td>
       </tr>
       <tr class="source-line">
@@ -191,12 +191,12 @@
           <details class="linebranchDetails">
             <summary class="linebranchSummary">1/2</summary>
             <div class="linebranchContents">
-              <div class="takenBranch">&check; Branch 2 &rightarrow; 3 taken 130 times.</div>
+              <div class="takenBranch">&check; Branch 2 &rightarrow; 3 taken 68 times.</div>
               <div class="notTakenBranch">&cross; Branch 2 &rightarrow; 30 not taken.</div>
             </div>
           </details>
         </td>
-        <td class="linecount partialCoveredLine show_partialCoveredLine">130</td>
+        <td class="linecount partialCoveredLine show_partialCoveredLine">68</td>
         <td class="src  partialCoveredLine show_partialCoveredLine"><span class="w">  </span><span class="k">const</span><span class="w"> </span><span class="kt">size_t</span><span class="w"> </span><span class="n">payload_size</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">msg</span><span class="p">.</span><span class="n">ByteSizeLong</span><span class="p">();</span></td>
       </tr>
       <tr class="source-line">
@@ -205,14 +205,14 @@
           <details class="linebranchDetails">
             <summary class="linebranchSummary">2/4</summary>
             <div class="linebranchContents">
-              <div class="takenBranch">&check; Branch 4 &rightarrow; 5 taken 130 times.</div>
+              <div class="takenBranch">&check; Branch 4 &rightarrow; 5 taken 68 times.</div>
               <div class="notTakenBranch">&cross; Branch 4 &rightarrow; 7 not taken.</div>
               <div class="notTakenBranch">&cross; Branch 9 &rightarrow; 10 not taken.</div>
-              <div class="takenBranch">&check; Branch 9 &rightarrow; 11 taken 130 times.</div>
+              <div class="takenBranch">&check; Branch 9 &rightarrow; 11 taken 68 times.</div>
             </div>
           </details>
         </td>
-        <td class="linecount partialCoveredLine show_partialCoveredLine">260</td>
+        <td class="linecount partialCoveredLine show_partialCoveredLine">136</td>
         <td class="src  partialCoveredLine show_partialCoveredLine"><span class="w">  </span><span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="n">payload_size</span><span class="w"> </span><span class="o">&gt;</span><span class="w"> </span><span class="k">static_cast</span><span class="o">&lt;</span><span class="kt">size_t</span><span class="o">&gt;</span><span class="p">(</span><span class="n">std</span><span class="o">::</span><span class="n">numeric_limits</span><span class="o">&lt;</span><span class="kt">uint32_t</span><span class="o">&gt;::</span><span class="n">max</span><span class="p">())</span><span class="w"> </span><span class="o">||</span></td>
       </tr>
       <tr class="source-line">
@@ -222,11 +222,11 @@
             <summary class="linebranchSummary">1/2</summary>
             <div class="linebranchContents">
               <div class="notTakenBranch">&cross; Branch 6 &rightarrow; 7 not taken.</div>
-              <div class="takenBranch">&check; Branch 6 &rightarrow; 8 taken 130 times.</div>
+              <div class="takenBranch">&check; Branch 6 &rightarrow; 8 taken 68 times.</div>
             </div>
           </details>
         </td>
-        <td class="linecount partialCoveredLine show_partialCoveredLine">130</td>
+        <td class="linecount partialCoveredLine show_partialCoveredLine">68</td>
         <td class="src  partialCoveredLine show_partialCoveredLine"><span class="w">      </span><span class="n">payload_size</span><span class="w"> </span><span class="o">&gt;</span><span class="w"> </span><span class="k">static_cast</span><span class="o">&lt;</span><span class="kt">size_t</span><span class="o">&gt;</span><span class="p">(</span><span class="n">std</span><span class="o">::</span><span class="n">numeric_limits</span><span class="o">&lt;</span><span class="kt">int</span><span class="o">&gt;::</span><span class="n">max</span><span class="p">()))</span><span class="w"> </span><span class="p">{</span></td>
       </tr>
       <tr class="source-line">
@@ -256,19 +256,19 @@
           <details class="linebranchDetails">
             <summary class="linebranchSummary">1/2</summary>
             <div class="linebranchContents">
-              <div class="takenBranch">&check; Branch 13 &rightarrow; 14 taken 130 times.</div>
+              <div class="takenBranch">&check; Branch 13 &rightarrow; 14 taken 68 times.</div>
               <div class="notTakenBranch">&cross; Branch 13 &rightarrow; 25 not taken.</div>
             </div>
           </details>
         </td>
-        <td class="linecount partialCoveredLine show_partialCoveredLine">130</td>
+        <td class="linecount partialCoveredLine show_partialCoveredLine">68</td>
         <td class="src  partialCoveredLine show_partialCoveredLine"><span class="w">  </span><span class="n">std</span><span class="o">::</span><span class="n">vector</span><span class="o">&lt;</span><span class="kt">uint8_t</span><span class="o">&gt;</span><span class="w"> </span><span class="n">out</span><span class="p">(</span><span class="mi">4</span><span class="w"> </span><span class="o">+</span><span class="w"> </span><span class="n">payload_size</span><span class="p">);</span></td>
       </tr>
       <tr class="source-line">
         <td class="lineno"><a id="l18" href="#l18">18</a></td>
         <td class="linebranch">
         </td>
-        <td class="linecount coveredLine show_coveredLine">130</td>
+        <td class="linecount coveredLine show_coveredLine">68</td>
         <td class="src  coveredLine show_coveredLine"><span class="w">  </span><span class="n">WriteU32BE</span><span class="p">(</span><span class="n">out</span><span class="p">.</span><span class="n">data</span><span class="p">(),</span><span class="w"> </span><span class="k">static_cast</span><span class="o">&lt;</span><span class="kt">uint32_t</span><span class="o">&gt;</span><span class="p">(</span><span class="n">payload_size</span><span class="p">));</span></td>
       </tr>
       <tr class="source-line">
@@ -277,14 +277,14 @@
           <details class="linebranchDetails">
             <summary class="linebranchSummary">2/4</summary>
             <div class="linebranchContents">
-              <div class="takenBranch">&check; Branch 18 &rightarrow; 19 taken 130 times.</div>
+              <div class="takenBranch">&check; Branch 18 &rightarrow; 19 taken 68 times.</div>
               <div class="notTakenBranch">&cross; Branch 18 &rightarrow; 28 not taken.</div>
               <div class="notTakenBranch">&cross; Branch 19 &rightarrow; 20 not taken.</div>
-              <div class="takenBranch">&check; Branch 19 &rightarrow; 21 taken 130 times.</div>
+              <div class="takenBranch">&check; Branch 19 &rightarrow; 21 taken 68 times.</div>
             </div>
           </details>
         </td>
-        <td class="linecount partialCoveredLine show_partialCoveredLine">130</td>
+        <td class="linecount partialCoveredLine show_partialCoveredLine">68</td>
         <td class="src  partialCoveredLine show_partialCoveredLine"><span class="w">  </span><span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="o">!</span><span class="n">msg</span><span class="p">.</span><span class="n">SerializeToArray</span><span class="p">(</span><span class="n">out</span><span class="p">.</span><span class="n">data</span><span class="p">()</span><span class="w"> </span><span class="o">+</span><span class="w"> </span><span class="mi">4</span><span class="p">,</span><span class="w"> </span><span class="k">static_cast</span><span class="o">&lt;</span><span class="kt">int</span><span class="o">&gt;</span><span class="p">(</span><span class="n">payload_size</span><span class="p">)))</span><span class="w"> </span><span class="p">{</span></td>
       </tr>
       <tr class="source-line">
@@ -305,14 +305,14 @@
         <td class="lineno"><a id="l22" href="#l22">22</a></td>
         <td class="linebranch">
         </td>
-        <td class="linecount coveredLine show_coveredLine">130</td>
+        <td class="linecount coveredLine show_coveredLine">68</td>
         <td class="src  coveredLine show_coveredLine"><span class="w">  </span><span class="k">return</span><span class="w"> </span><span class="n">out</span><span class="p">;</span></td>
       </tr>
       <tr class="source-line">
         <td class="lineno"><a id="l23" href="#l23">23</a></td>
         <td class="linebranch">
         </td>
-        <td class="linecount coveredLine show_coveredLine">130</td>
+        <td class="linecount coveredLine show_coveredLine">68</td>
         <td class="src  coveredLine show_coveredLine"><span class="p">}</span></td>
       </tr>
       <tr class="source-line">
@@ -326,7 +326,7 @@
         <td class="lineno"><a id="l25" href="#l25">25</a></td>
         <td class="linebranch">
         </td>
-        <td class="linecount coveredLine show_coveredLine">46</td>
+        <td class="linecount coveredLine show_coveredLine">24</td>
         <td class="src  coveredLine show_coveredLine"><span class="kt">bool</span><span class="w"> </span><span class="n">ProtobufFraming</span><span class="o">::</span><span class="n">Decode</span><span class="p">(</span><span class="k">const</span><span class="w"> </span><span class="n">std</span><span class="o">::</span><span class="n">string</span><span class="o">&amp;</span><span class="w"> </span><span class="n">payload</span><span class="p">,</span><span class="w"> </span><span class="n">google</span><span class="o">::</span><span class="n">protobuf</span><span class="o">::</span><span class="n">Message</span><span class="o">*</span><span class="w"> </span><span class="n">out</span><span class="p">)</span><span class="w"> </span><span class="p">{</span></td>
       </tr>
       <tr class="source-line">
@@ -335,19 +335,19 @@
           <details class="linebranchDetails">
             <summary class="linebranchSummary">2/2</summary>
             <div class="linebranchContents">
-              <div class="takenBranch">&check; Branch 2 &rightarrow; 3 taken 6 times.</div>
-              <div class="takenBranch">&check; Branch 2 &rightarrow; 4 taken 40 times.</div>
+              <div class="takenBranch">&check; Branch 2 &rightarrow; 3 taken 3 times.</div>
+              <div class="takenBranch">&check; Branch 2 &rightarrow; 4 taken 21 times.</div>
             </div>
           </details>
         </td>
-        <td class="linecount coveredLine show_coveredLine">46</td>
+        <td class="linecount coveredLine show_coveredLine">24</td>
         <td class="src  coveredLine show_coveredLine"><span class="w">  </span><span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="o">!</span><span class="n">out</span><span class="p">)</span><span class="w"> </span><span class="p">{</span></td>
       </tr>
       <tr class="source-line">
         <td class="lineno"><a id="l27" href="#l27">27</a></td>
         <td class="linebranch">
         </td>
-        <td class="linecount coveredLine show_coveredLine">6</td>
+        <td class="linecount coveredLine show_coveredLine">3</td>
         <td class="src  coveredLine show_coveredLine"><span class="w">    </span><span class="k">return</span><span class="w"> </span><span class="nb">false</span><span class="p">;</span></td>
       </tr>
       <tr class="source-line">
@@ -361,7 +361,7 @@
         <td class="lineno"><a id="l29" href="#l29">29</a></td>
         <td class="linebranch">
         </td>
-        <td class="linecount coveredLine show_coveredLine">40</td>
+        <td class="linecount coveredLine show_coveredLine">21</td>
         <td class="src  coveredLine show_coveredLine"><span class="w">  </span><span class="k">return</span><span class="w"> </span><span class="n">out</span><span class="o">-&gt;</span><span class="n">ParseFromArray</span><span class="p">(</span><span class="n">payload</span><span class="p">.</span><span class="n">data</span><span class="p">(),</span><span class="w"> </span><span class="k">static_cast</span><span class="o">&lt;</span><span class="kt">int</span><span class="o">&gt;</span><span class="p">(</span><span class="n">payload</span><span class="p">.</span><span class="n">size</span><span class="p">()));</span></td>
       </tr>
       <tr class="source-line">
@@ -399,7 +399,7 @@
         <hr class="block-separator"/>
         <footer class="text-center">
           Created using <a href="http://gcovr.com/en/8.6">GCOVR (Version 8.6)</a>
-          at 2026-09-08 05:58:57
+          at 2026-09-08 14:58:17
         </footer>
       </div>
     </div>

@@ -50,11 +50,12 @@ public:
                      const std::string& sender_id,
                      const std::string& content);
 
-  // Edit a message
+  // Edit a message (sender or, when allowed, a moderator)
   bool EditMessage(const std::string& message_id,
-                  const std::string& user_id,
-                  const std::string& new_content,
-                  ChatMessageFull* out_message = nullptr);
+                   const std::string& user_id,
+                   const std::string& new_content,
+                   ChatMessageFull* out_message = nullptr,
+                   bool is_moderator = false);
 
   // Delete a message (soft delete)
   bool DeleteMessage(const std::string& message_id,

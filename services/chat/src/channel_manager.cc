@@ -25,23 +25,22 @@ ChannelPermissions GetDefaultPermissions(ChannelKind kind) {
 bool ChannelPermissionChecker::HasPermission(const Channel& channel,
                                             const std::string& user_id,
                                             const std::string& role_id,
-                                            ChannelPermissions::Field field) {
+                                            Field field) {
   auto perms = GetEffectivePermissions(channel, user_id, role_id);
 
   switch (field) {
-    case ChannelPermissions::kCanRead:
+    case Field::kCanRead:
       return perms.can_read();
-    case ChannelPermissions::kCanWrite:
+    case Field::kCanWrite:
       return perms.can_write();
-    case ChannelPermissions::kCanSpeak:
+    case Field::kCanSpeak:
       return perms.can_speak();
-    case ChannelPermissions::kCanJoin:
+    case Field::kCanJoin:
       return perms.can_join();
-    case ChannelPermissions::kCanManage:
+    case Field::kCanManage:
       return perms.can_manage();
-    default:
-      return true;  // Default to allow
   }
+  return true;  // Default to allow
 }
 
 ChannelPermissions ChannelPermissionChecker::GetEffectivePermissions(
@@ -66,24 +65,18 @@ ChannelPermissions ChannelPermissionChecker::GetEffectivePermissions(
     }
 
     if (applies) {
-      // Apply allow overrides
-      if (override_entry.has_allow()) {
-        const auto& allow = override_entry.allow();
-        if (allow.has_can_read()) perms.set_can_read(allow.can_read());
-        if (allow.has_can_write()) perms.set_can_write(allow.can_write());
-        if (allow.has_can_speak()) perms.set_can_speak(allow.can_speak());
-        if (allow.has_can_join()) perms.set_can_join(allow.can_join());
-        if (allow.has_can_manage()) perms.set_can_manage(allow.can_manage());
-      }
+      // PermissionOverrideEntry carries a single permission set plus an
+      // allow/deny verdict per entry (proto3 enums have no presence).
+      const bool allow = override_entry.allow() == PermissionOverride::ALLOW;
+      const bool deny = override_entry.deny() == PermissionOverride::DENY;
 
-      // Apply deny overrides (takes precedence)
-      if (override_entry.has_deny()) {
-        const auto& deny = override_entry.deny();
-        if (deny.has_can_read()) perms.set_can_read(deny.can_read());
-        if (deny.has_can_write()) perms.set_can_write(deny.can_write());
-        if (deny.has_can_speak()) perms.set_can_speak(deny.can_speak());
-        if (deny.has_can_join()) perms.set_can_join(deny.can_join());
-        if (deny.has_can_manage()) perms.set_can_manage(deny.can_manage());
+      if (allow || deny) {
+        const auto& verdict = override_entry.permissions();
+        if (verdict.can_read()) perms.set_can_read(allow);
+        if (verdict.can_write()) perms.set_can_write(allow);
+        if (verdict.can_speak()) perms.set_can_speak(allow);
+        if (verdict.can_join()) perms.set_can_join(allow);
+        if (verdict.can_manage()) perms.set_can_manage(allow);
       }
     }
   }
@@ -207,10 +200,18 @@ std::vector<ChannelCategory> ChannelManager::GetCategories(
   for (const auto& cat_id : it->second) {
     auto cat_it = categories_.find(cat_id);
     if (cat_it != categories_.end()) {
+      // mu_ is already held here; GetCategory would deadlock on it, so the
+      // snapshot logic is inlined.
+      const auto& cat = cat_it->second;
+      std::lock_guard<std::mutex> cat_lock(cat->mu);
       ChannelCategory info;
-      if (GetCategory(cat_id, &info)) {
-        result.push_back(std::move(info));
-      }
+      info.set_category_id(cat->category_id);
+      info.set_group_id(cat->group_id);
+      info.set_name(cat->name);
+      info.set_position(cat->position);
+      info.set_is_collapsed(cat->is_collapsed);
+      info.set_created_at(cat->created_at);
+      result.push_back(std::move(info));
     }
   }
 
@@ -318,6 +319,18 @@ bool ChannelManager::UpdateChannel(
   return true;
 }
 
+bool ChannelManager::SetSlowmode(const std::string& channel_id,
+                                 int64_t slowmode_seconds) {
+  std::lock_guard<std::mutex> lock(mu_);
+  auto it = channels_.find(channel_id);
+  if (it == channels_.end()) {
+    return false;
+  }
+  std::lock_guard<std::mutex> ch_lock(it->second->mu);
+  it->second->slowmode_seconds = slowmode_seconds;
+  return true;
+}
+
 bool ChannelManager::DeleteChannel(const std::string& channel_id) {
   std::lock_guard<std::mutex> lock(mu_);
   auto it = channels_.find(channel_id);
@@ -349,15 +362,36 @@ std::vector<Channel> ChannelManager::GetChannels(
 
   for (const auto& ch_id : it->second) {
     auto ch_it = channels_.find(ch_id);
-    if (ch_it != channels_.end()) {
-      Channel info;
-      if (GetChannel(ch_id, &info)) {
-        // Filter channels user can read
-        if (HasPermission(ch_id, user_id, role_id,
-                         ChannelPermissions::kCanRead)) {
-          result.push_back(std::move(info));
-        }
+    if (ch_it == channels_.end()) {
+      continue;
+    }
+    // mu_ is already held here; GetChannel/HasPermission(channel_id, ...)
+    // would deadlock on it, so the snapshot + static permission check are
+    // done inline instead.
+    const auto& ch = ch_it->second;
+    Channel info;
+    {
+      std::lock_guard<std::mutex> ch_lock(ch->mu);
+      info.set_channel_id(ch->channel_id);
+      info.set_group_id(ch->group_id);
+      info.set_category_id(ch->category_id);
+      info.set_name(ch->name);
+      info.set_kind(ch->kind);
+      info.set_position(ch->position);
+      info.set_description(ch->description);
+      info.set_is_nsfw(ch->is_nsfw);
+      info.set_created_at(ch->created_at);
+      info.set_slowmode_seconds(ch->slowmode_seconds);
+      info.set_bitrate(ch->bitrate);
+      info.set_user_limit(ch->user_limit);
+      info.set_rtc_region(ch->rtc_region);
+      for (const auto& override_entry : ch->permission_overrides) {
+        *info.add_permission_overrides() = override_entry;
       }
+    }
+    if (ChannelPermissionChecker::HasPermission(info, user_id, role_id,
+                                                ChannelPermissionChecker::Field::kCanRead)) {
+      result.push_back(std::move(info));
     }
   }
 
@@ -377,24 +411,35 @@ bool ChannelManager::HasPermission(const std::string& channel_id,
   auto perms = ChannelPermissionChecker::GetEffectivePermissions(
       channel, user_id, role_id);
 
-  // Check all required permissions
-  if (required.has_can_read() && required.can_read() && !perms.can_read()) {
+  // proto3 has no field presence: treat "required" as a positive bitmask.
+  if (required.can_read() && !perms.can_read()) {
     return false;
   }
-  if (required.has_can_write() && required.can_write() && !perms.can_write()) {
+  if (required.can_write() && !perms.can_write()) {
     return false;
   }
-  if (required.has_can_speak() && required.can_speak() && !perms.can_speak()) {
+  if (required.can_speak() && !perms.can_speak()) {
     return false;
   }
-  if (required.has_can_join() && required.can_join() && !perms.can_join()) {
+  if (required.can_join() && !perms.can_join()) {
     return false;
   }
-  if (required.has_can_manage() && required.can_manage() && !perms.can_manage()) {
+  if (required.can_manage() && !perms.can_manage()) {
     return false;
   }
 
   return true;
+}
+
+bool ChannelManager::HasPermission(const std::string& channel_id,
+                                  const std::string& user_id,
+                                  const std::string& role_id,
+                                  ChannelPermissionChecker::Field field) {
+  Channel channel;
+  if (!GetChannel(channel_id, &channel)) {
+    return false;
+  }
+  return ChannelPermissionChecker::HasPermission(channel, user_id, role_id, field);
 }
 
 bool ChannelManager::CanRead(const std::string& channel_id,
@@ -557,10 +602,26 @@ std::vector<Channel> ChannelManager::SearchChannels(const std::string& group_id,
 
       if (lower_name.find(lower_query) != std::string::npos ||
           lower_desc.find(lower_query) != std::string::npos) {
+        // mu_ is already held here; GetChannel would deadlock on it, so the
+        // snapshot is built inline.
         Channel info;
-        if (GetChannel(ch_id, &info)) {
-          result.push_back(std::move(info));
+        info.set_channel_id(ch->channel_id);
+        info.set_group_id(ch->group_id);
+        info.set_category_id(ch->category_id);
+        info.set_name(ch->name);
+        info.set_kind(ch->kind);
+        info.set_position(ch->position);
+        info.set_description(ch->description);
+        info.set_is_nsfw(ch->is_nsfw);
+        info.set_created_at(ch->created_at);
+        info.set_slowmode_seconds(ch->slowmode_seconds);
+        info.set_bitrate(ch->bitrate);
+        info.set_user_limit(ch->user_limit);
+        info.set_rtc_region(ch->rtc_region);
+        for (const auto& override_entry : ch->permission_overrides) {
+          *info.add_permission_overrides() = override_entry;
         }
+        result.push_back(std::move(info));
       }
     }
   }
