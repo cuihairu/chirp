@@ -39,9 +39,10 @@ chirp::common::ErrorCode ValidateSendMessageRequest(const SendMessageRequest& re
     if (req.receiver_id().empty() || req.receiver_id() == authenticated_user_id) {
       return chirp::common::INVALID_PARAM;
     }
-    if (!req.channel_id().empty()) {
-      return chirp::common::INVALID_PARAM;
-    }
+    // A client-supplied channel_id is tolerated here: the service always
+    // derives the canonical private channel from (sender, receiver), so the
+    // request field is never trusted. Both the bundled send client and the
+    // core SDK fill it in for convenience.
     return chirp::common::OK;
   }
 

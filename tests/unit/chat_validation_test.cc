@@ -45,14 +45,16 @@ TEST(ChatValidationTest, RejectsPrivateMessageToSelf) {
   EXPECT_EQ(ValidateSendMessageRequest(req, "alice"), chirp::common::INVALID_PARAM);
 }
 
-TEST(ChatValidationTest, RejectsPrivateMessageWithExplicitChannelId) {
+TEST(ChatValidationTest, ToleratesPrivateMessageWithExplicitChannelId) {
+  // Clients (send client, core SDK) may fill channel_id for convenience;
+  // the service derives the canonical private channel from the pair itself.
   SendMessageRequest req;
   req.set_sender_id("alice");
   req.set_receiver_id("bob");
   req.set_channel_type(PRIVATE);
   req.set_channel_id("alice|bob");
 
-  EXPECT_EQ(ValidateSendMessageRequest(req, "alice"), chirp::common::INVALID_PARAM);
+  EXPECT_EQ(ValidateSendMessageRequest(req, "alice"), chirp::common::OK);
 }
 
 TEST(ChatValidationTest, AcceptsValidPrivateMessage) {
