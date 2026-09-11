@@ -29,6 +29,15 @@ std::string GetArg(int argc, char** argv, const std::string& key, const std::str
   return def;
 }
 
+bool HasArg(int argc, char** argv, const std::string& key) {
+  for (int i = 1; i < argc; i++) {
+    if (argv[i] == key) {
+      return true;
+    }
+  }
+  return false;
+}
+
 bool ReadFrame(asio::ip::tcp::socket& sock, std::string* payload) {
   uint8_t len_be[4];
   asio::error_code ec;
@@ -91,6 +100,12 @@ int main(int argc, char** argv) {
   // and print the assigned group_id. --group <id>: send a group message.
   const std::string create_group = GetArg(argc, argv, "--create_group", "");
   const std::string group = GetArg(argc, argv, "--group", "");
+  // Feature actions over the established private channel (sender|receiver):
+  // --act mark_read|get_receipts|typing_start|typing_stop|react|unreact|get_reactions
+  // with --message-id <id> and --emoji <emoji> where applicable.
+  const std::string act = GetArg(argc, argv, "--act", "");
+  const std::string message_id = GetArg(argc, argv, "--message-id", "");
+  const std::string emoji = GetArg(argc, argv, "--emoji", "👍");
 
   asio::io_context io;
   asio::ip::tcp::resolver resolver(io);
@@ -145,6 +160,120 @@ int main(int argc, char** argv) {
     return 0;
   }
 
+  int64_t seq = 3;
+
+  // Feature actions run instead of a plain message send.
+  if (!act.empty()) {
+    chirp::gateway::Packet resp_pkt;
+    chirp::gateway::MsgID req_id = chirp::gateway::MARK_READ_REQ;
+    chirp::gateway::MsgID resp_id = chirp::gateway::MARK_READ_RESP;
+    std::string body;
+
+    const std::string channel = PrivateChannelId(sender, receiver);
+    if (act == "mark_read" || act == "get_receipts") {
+      if (act == "mark_read") {
+        chirp::chat::MarkReadRequest req;
+        req.set_user_id(sender);
+        req.set_channel_id(channel);
+        req.set_channel_type(chirp::chat::PRIVATE);
+        req.set_message_id(message_id);
+        body = req.SerializeAsString();
+      } else {
+        chirp::chat::GetReadReceiptsRequest req;
+        req.set_message_id(message_id);
+        body = req.SerializeAsString();
+        req_id = chirp::gateway::GET_READ_RECEIPTS_REQ;
+        resp_id = chirp::gateway::GET_READ_RECEIPTS_RESP;
+      }
+    } else if (act == "typing_start" || act == "typing_stop") {
+      chirp::chat::TypingIndicator req;
+      req.set_channel_id(channel);
+      req.set_channel_type(chirp::chat::PRIVATE);
+      req.set_user_id(sender);
+      req.set_username(sender);
+      req.set_is_typing(act == "typing_start");
+      req.set_timestamp(NowMs());
+      // Inbound-only: the server broadcasts to the other party and never
+      // replies on this connection, so fire and forget.
+      chirp::gateway::Packet pkt;
+      pkt.set_msg_id(chirp::gateway::TYPING_INDICATOR_NOTIFY);
+      pkt.set_sequence(seq);
+      pkt.set_body(req.SerializeAsString());
+      auto out = chirp::network::ProtobufFraming::Encode(pkt);
+      asio::write(sock, asio::buffer(out));
+      std::cout << act << " sent\n";
+      return 0;
+    } else if (act == "react" || act == "unreact") {
+      if (act == "react") {
+        chirp::chat::AddReactionRequest req;
+        req.set_message_id(message_id);
+        req.set_user_id(sender);
+        req.set_emoji(emoji);
+        body = req.SerializeAsString();
+        req_id = chirp::gateway::ADD_REACTION_REQ;
+        resp_id = chirp::gateway::ADD_REACTION_RESP;
+      } else {
+        chirp::chat::RemoveReactionRequest req;
+        req.set_message_id(message_id);
+        req.set_user_id(sender);
+        req.set_emoji(emoji);
+        body = req.SerializeAsString();
+        req_id = chirp::gateway::REMOVE_REACTION_REQ;
+        resp_id = chirp::gateway::REMOVE_REACTION_RESP;
+      }
+    } else if (act == "get_reactions") {
+      chirp::chat::GetReactionsRequest req;
+      req.set_message_id(message_id);
+      body = req.SerializeAsString();
+      req_id = chirp::gateway::GET_REACTIONS_REQ;
+      resp_id = chirp::gateway::GET_REACTIONS_RESP;
+    } else if (act == "get_typing") {
+      chirp::chat::GetTypingUsersRequest req;
+      req.set_channel_id(channel);
+      req.set_channel_type(chirp::chat::PRIVATE);
+      body = req.SerializeAsString();
+      req_id = chirp::gateway::GET_TYPING_USERS_REQ;
+      resp_id = chirp::gateway::GET_TYPING_USERS_RESP;
+    } else {
+      std::cerr << "unknown act: " << act << "\n";
+      return 1;
+    }
+
+    if (!SendAndRead(sock, req_id, seq, body, &resp_pkt) || resp_pkt.msg_id() != resp_id) {
+      std::cerr << act << " failed (msg_id=" << resp_pkt.msg_id() << ")\n";
+      return 1;
+    }
+
+    if (resp_id == chirp::gateway::GET_READ_RECEIPTS_RESP) {
+      chirp::chat::GetReadReceiptsResponse r;
+      r.ParseFromArray(resp_pkt.body().data(), static_cast<int>(resp_pkt.body().size()));
+      std::cout << "code=" << r.code() << " receipts=" << r.receipts_size();
+      for (const auto& rc : r.receipts()) {
+        std::cout << " [" << rc.user_id() << "@" << rc.read_at() << "]";
+      }
+      std::cout << "\n";
+    } else if (resp_id == chirp::gateway::GET_REACTIONS_RESP) {
+      chirp::chat::GetReactionsResponse r;
+      r.ParseFromArray(resp_pkt.body().data(), static_cast<int>(resp_pkt.body().size()));
+      std::cout << "code=" << r.code() << " reactions=" << r.reactions_size();
+      for (const auto& rc : r.reactions()) {
+        std::cout << " [" << rc.emoji() << "x" << rc.count() << "]";
+      }
+      std::cout << "\n";
+    } else if (resp_id == chirp::gateway::GET_TYPING_USERS_RESP) {
+      chirp::chat::GetTypingUsersResponse r;
+      r.ParseFromArray(resp_pkt.body().data(), static_cast<int>(resp_pkt.body().size()));
+      std::cout << "code=" << r.code() << " typing_users=" << r.typing_user_ids_size();
+      for (const auto& uid : r.typing_user_ids()) {
+        std::cout << " [" << uid << "]";
+      }
+      std::cout << "\n";
+    } else {
+      std::cout << act << " ok\n";
+    }
+    return 0;
+  }
+
   chirp::chat::SendMessageRequest req;
   req.set_sender_id(sender);
   req.set_msg_type(chirp::chat::TEXT);
@@ -160,7 +289,7 @@ int main(int argc, char** argv) {
   }
 
   chirp::gateway::Packet resp_pkt;
-  if (!SendAndRead(sock, chirp::gateway::SEND_MESSAGE_REQ, 3, req.SerializeAsString(), &resp_pkt) ||
+  if (!SendAndRead(sock, chirp::gateway::SEND_MESSAGE_REQ, seq, req.SerializeAsString(), &resp_pkt) ||
       resp_pkt.msg_id() != chirp::gateway::SEND_MESSAGE_RESP) {
     std::cerr << "send message failed\n";
     return 1;
@@ -174,6 +303,17 @@ int main(int argc, char** argv) {
 
   std::cout << "code=" << resp.code() << " message_id=" << resp.message_id()
             << " server_ts=" << resp.server_timestamp() << "\n";
+
+  if (HasArg(argc, argv, "--print-unread")) {
+    chirp::chat::GetUnreadCountRequest ureq;
+    ureq.set_user_id(sender);
+    chirp::gateway::Packet ureq_pkt;
+    if (SendAndRead(sock, chirp::gateway::GET_UNREAD_COUNT_REQ, 4, ureq.SerializeAsString(), &ureq_pkt) &&
+        ureq_pkt.msg_id() == chirp::gateway::GET_UNREAD_COUNT_RESP) {
+      chirp::chat::GetUnreadCountResponse uresp;
+      uresp.ParseFromArray(ureq_pkt.body().data(), static_cast<int>(ureq_pkt.body().size()));
+      std::cout << "unread total=" << uresp.total_unread() << " channels=" << uresp.channels_size() << "\n";
+    }
+  }
   return 0;
 }
-

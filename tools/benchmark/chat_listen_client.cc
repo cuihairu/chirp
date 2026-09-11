@@ -92,6 +92,34 @@ int main(int argc, char** argv) {
                   << " id=" << msg.message_id() << " bytes=" << msg.content().size() << "\n";
         got++;
       }
+    } else if (pkt.msg_id() == chirp::gateway::MESSAGE_READ_NOTIFY) {
+      chirp::chat::MessageReadNotify msg;
+      if (msg.ParseFromArray(pkt.body().data(), static_cast<int>(pkt.body().size()))) {
+        std::cout << "read_notify channel=" << msg.channel_id() << " reader=" << msg.reader_user_id()
+                  << " message=" << msg.message_id() << " read_at=" << msg.read_at() << "\n";
+        got++;
+      }
+    } else if (pkt.msg_id() == chirp::gateway::TYPING_INDICATOR_NOTIFY) {
+      chirp::chat::TypingIndicator msg;
+      if (msg.ParseFromArray(pkt.body().data(), static_cast<int>(pkt.body().size()))) {
+        std::cout << "typing_notify channel=" << msg.channel_id() << " user=" << msg.user_id()
+                  << " is_typing=" << (msg.is_typing() ? 1 : 0) << "\n";
+        got++;
+      }
+    } else if (pkt.msg_id() == chirp::gateway::REACTION_ADDED_NOTIFY) {
+      chirp::chat::ReactionAddedNotify msg;
+      if (msg.ParseFromArray(pkt.body().data(), static_cast<int>(pkt.body().size()))) {
+        std::cout << "reaction_added channel=" << msg.channel_id() << " user=" << msg.user_id()
+                  << " emoji=" << msg.emoji() << " message=" << msg.message_id() << "\n";
+        got++;
+      }
+    } else if (pkt.msg_id() == chirp::gateway::REACTION_REMOVED_NOTIFY) {
+      chirp::chat::ReactionRemovedNotify msg;
+      if (msg.ParseFromArray(pkt.body().data(), static_cast<int>(pkt.body().size()))) {
+        std::cout << "reaction_removed channel=" << msg.channel_id() << " user=" << msg.user_id()
+                  << " emoji=" << msg.emoji() << " message=" << msg.message_id() << "\n";
+        got++;
+      }
     }
   }
 
