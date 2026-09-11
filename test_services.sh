@@ -230,15 +230,24 @@ else
   ARCHIVE_SQL="${ARCHIVE_SQL:-/tmp/chirp_chat_smoke_archive.sql}"
   ARCHIVE_ACK="${ARCHIVE_ACK:-/tmp/chirp_chat_smoke_archive_ack.sh}"
 
-  /usr/local/opt/redis/bin/redis-server --port "${REDIS_PORT}" --save '' --appendonly no --dir "${REDIS_DIR}" > "${REDIS_LOG}" 2>&1 &
-  REDIS_PID=$!
+  REDIS_SERVER_BIN="${REDIS_SERVER_BIN:-$(command -v redis-server || true)}"
+  REDIS_CLI_BIN="${REDIS_CLI_BIN:-$(command -v redis-cli || true)}"
 
-  for _ in {1..50}; do
-    if /usr/local/opt/redis/bin/redis-cli -p "${REDIS_PORT}" ping >/dev/null 2>&1; then
-      break
-    fi
-    sleep 0.1
-  done
+  if [[ -z "${REDIS_SERVER_BIN}" ]]; then
+    echo "警告: 未找到 redis-server，chat smoke 将以内存模式运行（跳过 Redis 相关验证）"
+  else
+    "${REDIS_SERVER_BIN}" --port "${REDIS_PORT}" --save '' --appendonly no --dir "${REDIS_DIR}" > "${REDIS_LOG}" 2>&1 &
+    REDIS_PID=$!
+  fi
+
+  if [[ -n "${REDIS_SERVER_BIN}" && -n "${REDIS_CLI_BIN}" ]]; then
+    for _ in {1..50}; do
+      if "${REDIS_CLI_BIN}" -p "${REDIS_PORT}" ping >/dev/null 2>&1; then
+        break
+      fi
+      sleep 0.1
+    done
+  fi
 
   ./build/services/chat/chirp_chat --port "${CHAT_PORT}" --ws_port "${CHAT_WS_PORT}" --redis_host 127.0.0.1 --redis_port "${REDIS_PORT}" > "${CHAT_LOG}" 2>&1 &
   CHAT_PID=$!
@@ -246,8 +255,8 @@ else
   cleanup() {
     kill -TERM "${CHAT_PID}" 2>/dev/null || true
     wait "${CHAT_PID}" 2>/dev/null || true
-    kill -TERM "${REDIS_PID}" 2>/dev/null || true
-    wait "${REDIS_PID}" 2>/dev/null || true
+    kill -TERM "${REDIS_PID:-}" 2>/dev/null || true
+    wait "${REDIS_PID:-}" 2>/dev/null || true
     rm -rf "${REDIS_DIR}"
   }
   trap cleanup EXIT
@@ -311,11 +320,15 @@ else
     --mysql_cmd "cat >/dev/null" \
     --apply_ack 1
 
-  REMAINING_KEYS=$(/usr/local/opt/redis/bin/redis-cli -p "${REDIS_PORT}" --scan --pattern 'chat:*' | wc -l | tr -d ' ')
-  if [[ "${REMAINING_KEYS}" != "0" ]]; then
-    echo "错误: 归档 ack 后 Redis 中仍有残留 chat:* keys"
-    /usr/local/opt/redis/bin/redis-cli -p "${REDIS_PORT}" --scan --pattern 'chat:*' || true
-    exit 1
+  if [[ -n "${REDIS_SERVER_BIN}" && -n "${REDIS_CLI_BIN}" ]]; then
+    REMAINING_KEYS=$("${REDIS_CLI_BIN}" -p "${REDIS_PORT}" --scan --pattern 'chat:*' | wc -l | tr -d ' ')
+    if [[ "${REMAINING_KEYS}" != "0" ]]; then
+      echo "错误: 归档 ack 后 Redis 中仍有残留 chat:* keys"
+      "${REDIS_CLI_BIN}" -p "${REDIS_PORT}" --scan --pattern 'chat:*' || true
+      exit 1
+    fi
+  else
+    echo "警告: 无 redis-cli，跳过归档后的残留 key 检查"
   fi
 
   echo ""

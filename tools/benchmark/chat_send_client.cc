@@ -54,11 +54,21 @@ bool SendAndRead(asio::ip::tcp::socket& sock,
   auto out = chirp::network::ProtobufFraming::Encode(pkt);
   asio::write(sock, asio::buffer(out));
 
-  std::string payload;
-  if (!ReadFrame(sock, &payload)) {
-    return false;
+  // The server may push notifications (chat messages, group events) before
+  // the response for this request; skip frames until the matching response
+  // with the same sequence arrives.
+  for (;;) {
+    std::string payload;
+    if (!ReadFrame(sock, &payload)) {
+      return false;
+    }
+    if (!out_pkt->ParseFromArray(payload.data(), static_cast<int>(payload.size()))) {
+      return false;
+    }
+    if (out_pkt->sequence() == seq) {
+      return true;
+    }
   }
-  return out_pkt->ParseFromArray(payload.data(), static_cast<int>(payload.size()));
 }
 
 std::string PrivateChannelId(std::string a, std::string b) {
@@ -77,6 +87,10 @@ int main(int argc, char** argv) {
   const std::string sender = GetArg(argc, argv, "--sender", "user_1");
   const std::string receiver = GetArg(argc, argv, "--receiver", "user_2");
   const std::string text = GetArg(argc, argv, "--text", "hello from chirp_chat_send_client");
+  // --create_group <name>: create a group (comma-separated --initial members)
+  // and print the assigned group_id. --group <id>: send a group message.
+  const std::string create_group = GetArg(argc, argv, "--create_group", "");
+  const std::string group = GetArg(argc, argv, "--group", "");
 
   asio::io_context io;
   asio::ip::tcp::resolver resolver(io);
@@ -98,17 +112,55 @@ int main(int argc, char** argv) {
     }
   }
 
+  if (!create_group.empty()) {
+    chirp::chat::CreateGroupRequest greq;
+    greq.set_creator_id(sender);
+    greq.set_group_name(create_group);
+    const std::string initial = GetArg(argc, argv, "--initial", "");
+    size_t start = 0;
+    while (start <= initial.size()) {
+      size_t comma = initial.find(',', start);
+      if (comma == std::string::npos) {
+        comma = initial.size();
+      }
+      if (comma > start) {
+        greq.add_initial_members(initial.substr(start, comma - start));
+      }
+      start = comma + 1;
+    }
+
+    chirp::gateway::Packet resp_pkt;
+    if (!SendAndRead(sock, chirp::gateway::CREATE_GROUP_REQ, 2, greq.SerializeAsString(), &resp_pkt) ||
+        resp_pkt.msg_id() != chirp::gateway::CREATE_GROUP_RESP) {
+      std::cerr << "create group failed\n";
+      return 1;
+    }
+    chirp::chat::CreateGroupResponse gresp;
+    if (!gresp.ParseFromArray(resp_pkt.body().data(), static_cast<int>(resp_pkt.body().size())) ||
+        gresp.code() != chirp::common::OK) {
+      std::cerr << "create group rejected code=" << gresp.code() << "\n";
+      return 1;
+    }
+    std::cout << "group_id=" << gresp.group_id() << "\n";
+    return 0;
+  }
+
   chirp::chat::SendMessageRequest req;
   req.set_sender_id(sender);
-  req.set_receiver_id(receiver);
-  req.set_channel_type(chirp::chat::PRIVATE);
-  req.set_channel_id(PrivateChannelId(sender, receiver));
   req.set_msg_type(chirp::chat::TEXT);
   req.set_content(text);
   req.set_client_timestamp(NowMs());
+  if (!group.empty()) {
+    req.set_channel_type(chirp::chat::GUILD);
+    req.set_channel_id(group);
+  } else {
+    req.set_receiver_id(receiver);
+    req.set_channel_type(chirp::chat::PRIVATE);
+    req.set_channel_id(PrivateChannelId(sender, receiver));
+  }
 
   chirp::gateway::Packet resp_pkt;
-  if (!SendAndRead(sock, chirp::gateway::SEND_MESSAGE_REQ, 2, req.SerializeAsString(), &resp_pkt) ||
+  if (!SendAndRead(sock, chirp::gateway::SEND_MESSAGE_REQ, 3, req.SerializeAsString(), &resp_pkt) ||
       resp_pkt.msg_id() != chirp::gateway::SEND_MESSAGE_RESP) {
     std::cerr << "send message failed\n";
     return 1;

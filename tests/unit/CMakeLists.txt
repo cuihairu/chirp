@@ -192,9 +192,11 @@ add_test(NAME network_full_tests COMMAND network_full_tests)
 add_executable(chat_managers_tests
   chat_managers_test.cc
   chat_group_internal_test.cc
+  chat_group_handlers_test.cc
   ${CMAKE_SOURCE_DIR}/services/chat/src/distributed_dispatch.cc
   ${CMAKE_SOURCE_DIR}/services/chat/src/distributed_runtime.cc
   ${CMAKE_SOURCE_DIR}/services/chat/src/group_manager.cc
+  ${CMAKE_SOURCE_DIR}/services/chat/src/group_handlers.cc
   ${CMAKE_SOURCE_DIR}/services/chat/src/reaction_manager.cc
   ${CMAKE_SOURCE_DIR}/services/chat/src/read_receipt_manager.cc
   ${CMAKE_SOURCE_DIR}/services/chat/src/runtime_utils.cc

@@ -47,6 +47,7 @@ if(MYSQL_FOUND)
         src/runtime_utils.cc
         ${PROTO_SRCS}
         src/group_manager.cc
+        src/group_handlers.cc
         src/read_receipt_manager.cc
         src/mysql_message_store.cc
         src/message_store_config.cc
