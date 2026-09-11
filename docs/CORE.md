@@ -10,7 +10,7 @@ Chirp should currently be understood as a game-oriented realtime communication b
 | --- | --- | --- | --- |
 | Gateway | TCP 5000 / WS 5001 | Supported | Login, logout, heartbeat, session binding, optional Redis-backed cross-instance kick |
 | Auth | TCP 6000 | Supported | Token validation path; enhanced auth is conditional on native dependencies |
-| Chat | TCP 7000 / WS 7001 | Supported | Private messages, history, offline queue, optional Redis/MySQL enhanced paths |
+| Chat | TCP 7000 / WS 7001 | Supported | Private messages, groups, history, offline queue, optional Redis/MySQL enhanced paths |
 
 Minimal useful topology:
 
