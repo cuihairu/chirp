@@ -65,6 +65,28 @@ Important mappings:
 | `GET_HISTORY_REQ` | `chirp.chat.GetHistoryRequest` |
 | `GET_HISTORY_RESP` | `chirp.chat.GetHistoryResponse` |
 | `CHAT_MESSAGE_NOTIFY` | `chirp.chat.ChatMessage` |
+| `MARK_READ_REQ` | `chirp.chat.MarkReadRequest` |
+| `MARK_READ_RESP` | `chirp.chat.MarkReadResponse` |
+| `GET_READ_RECEIPTS_REQ` | `chirp.chat.GetReadReceiptsRequest` |
+| `GET_READ_RECEIPTS_RESP` | `chirp.chat.GetReadReceiptsResponse` |
+| `GET_UNREAD_COUNT_REQ` | `chirp.chat.GetUnreadCountRequest` |
+| `GET_UNREAD_COUNT_RESP` | `chirp.chat.GetUnreadCountResponse` |
+| `MESSAGE_READ_NOTIFY` | `chirp.chat.MessageReadNotify` |
+| `TYPING_INDICATOR_NOTIFY` | `chirp.chat.TypingIndicator` |
+| `GET_TYPING_USERS_REQ` | `chirp.chat.GetTypingUsersRequest` |
+| `GET_TYPING_USERS_RESP` | `chirp.chat.GetTypingUsersResponse` |
+| `ADD_REACTION_REQ` | `chirp.chat.AddReactionRequest` |
+| `ADD_REACTION_RESP` | `chirp.chat.AddReactionResponse` |
+| `REMOVE_REACTION_REQ` | `chirp.chat.RemoveReactionRequest` |
+| `REMOVE_REACTION_RESP` | `chirp.chat.RemoveReactionResponse` |
+| `GET_REACTIONS_REQ` | `chirp.chat.GetReactionsRequest` |
+| `GET_REACTIONS_RESP` | `chirp.chat.GetReactionsResponse` |
+| `REACTION_ADDED_NOTIFY` | `chirp.chat.ReactionAddedNotify` |
+| `REACTION_REMOVED_NOTIFY` | `chirp.chat.ReactionRemovedNotify` |
+
+Note: `TYPING_INDICATOR_NOTIFY` is inbound-only from clients (the server never
+replies on that connection; it broadcasts to the other channel members) and
+server-pushed typing/reaction/read notifications use sequence `0`.
 
 ## Local Verification
 

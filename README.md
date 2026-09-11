@@ -25,7 +25,7 @@ gateway + auth + chat
 | --- | --- | --- | --- |
 | Gateway | TCP 5000 / WS 5001 | Supported | 登录、登出、心跳、会话绑定、可选 Redis 跨实例 kick |
 | Auth | TCP 6000 | Supported | 基础 token flow；依赖满足时可构建增强认证实现 |
-| Chat | TCP 7000 / WS 7001 | Supported | 私聊、群组、历史、离线队列；可选 Redis/MySQL 增强路径 |
+| Chat | TCP 7000 / WS 7001 | Supported | 私聊、群组、已读回执、正在输入、消息表情回应、历史、离线队列；可选 Redis/MySQL 增强路径 |
 
 当前核心使用方式：
 
