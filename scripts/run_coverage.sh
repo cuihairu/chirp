@@ -32,7 +32,8 @@ while [[ $# -gt 0 ]]; do
 done
 
 if [[ ${SKIP_BUILD} -eq 0 ]]; then
-  cmake --preset coverage
+  # shellcheck disable=SC2086
+  cmake --preset coverage ${CMAKE_ARGS:-}
   cmake --build --preset coverage --target \
     common_tests network_tests chat_validation_tests gateway_session_registry_tests \
     2>/dev/null || cmake --build --preset coverage
@@ -213,6 +214,18 @@ files_json = [{"file": os.path.relpath(name, root),
               for name, _, _, _ in report]
 with open("coverage.json", "w") as fh:
     json.dump({"files": files_json}, fh)
+
+# lcov tracefile for Codecov (and any other lcov-aware consumer).
+with open("coverage.lcov", "w") as fh:
+    for name, t, c, _ in report:
+        fh.write("TN:\n")
+        fh.write(f"SF:{os.path.relpath(name, root)}\n")
+        for ln in sorted(data[name]):
+            if executable_line(name, ln):
+                fh.write(f"DA:{ln},{data[name][ln]}\n")
+        fh.write(f"LF:{t}\n")
+        fh.write(f"LH:{c}\n")
+        fh.write("end_of_record\n")
 
 pct = 100.0 * covered_all / total_all if total_all else 100.0
 with open("coverage-summary.json", "w") as fh:

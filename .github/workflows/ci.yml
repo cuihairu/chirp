@@ -7,6 +7,41 @@ on:
     branches: [ main, develop ]
 
 jobs:
+  coverage:
+    runs-on: ubuntu-22.04
+    env:
+      CMAKE_ARGS: -DCMAKE_TOOLCHAIN_FILE=${{ github.workspace }}/vcpkg/scripts/buildsystems/vcpkg.cmake
+    steps:
+    - uses: actions/checkout@v7
+      with:
+        submodules: recursive
+
+    - name: Install system dependencies
+      run: |
+        sudo apt-get update
+        sudo apt-get install -y ninja-build protobuf-compiler pkg-config autoconf automake libtool libtool-bin autoconf-archive
+
+    - name: Setup vcpkg
+      run: |
+        git clone https://github.com/Microsoft/vcpkg.git
+        ./vcpkg/bootstrap-vcpkg.sh
+
+    - name: Install vcpkg dependencies
+      run: ./vcpkg/vcpkg install --triplet x64-linux
+
+    - name: Generate proto files
+      run: ./gen_proto.sh
+
+    - name: Run tests with coverage
+      run: scripts/run_coverage.sh
+
+    - name: Upload coverage to Codecov
+      uses: codecov/codecov-action@v7
+      with:
+        files: coverage.lcov
+        token: ${{ secrets.CODECOV_TOKEN }}
+        fail_ci_if_error: false
+
   build-and-test:
     runs-on: ${{ matrix.os }}
     strategy:

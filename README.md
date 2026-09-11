@@ -1,5 +1,8 @@
 # chirp
 
+[![CI](https://github.com/cuihairu/chirp/actions/workflows/ci.yml/badge.svg)](https://github.com/cuihairu/chirp/actions/workflows/ci.yml)
+[![codecov](https://codecov.io/gh/cuihairu/chirp/branch/main/graph/badge.svg)](https://codecov.io/gh/cuihairu/chirp)
+
 `chirp` 是一个面向游戏开发的实时通信后端骨架。当前最成熟、最应该优先验证的主线是：
 
 ```text
