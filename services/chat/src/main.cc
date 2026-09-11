@@ -15,6 +15,7 @@
 #include "chat_validation.h"
 #include "group_handlers.h"
 #include "logger.h"
+#include "message_handlers.h"
 #include "network/protobuf_framing.h"
 #include "network/redis_client.h"
 #include "network/session.h"
@@ -227,9 +228,17 @@ void HandleDisconnect(const std::shared_ptr<chirp::chat::ChatState>& state,
   chirp::chat::RemoveAuthenticatedSession(state, session);
 }
 
+// Aggregate of the per-feature request handlers wired into the dispatch.
+struct FeatureHandlers {
+  chirp::chat::GroupHandlers& groups;
+  chirp::chat::ReadReceiptHandlers& receipts;
+  chirp::chat::TypingHandlers& typing;
+  chirp::chat::ReactionHandlers& reactions;
+};
+
 void HandlePacket(const std::shared_ptr<MessageStore>& store,
                   const std::shared_ptr<chirp::chat::ChatState>& state,
-                  chirp::chat::GroupHandlers& handlers,
+                  FeatureHandlers& features,
                   const std::shared_ptr<chirp::network::Session>& session,
                   std::string&& payload) {
   using chirp::common::Logger;
@@ -340,6 +349,10 @@ void HandlePacket(const std::shared_ptr<MessageStore>& store,
     }
 
     store->AddMessage(msg);
+    // Let the receipt/reaction features resolve the channel of this message
+    // later (their requests only carry a message_id).
+    features.receipts.TrackMessage(msg.message_id(), msg.channel_type(), msg.channel_id());
+    features.reactions.TrackMessage(msg.message_id(), msg.channel_type(), msg.channel_id());
 
     chirp::chat::SendMessageResponse resp;
     resp.set_message_id(msg.message_id());
@@ -364,9 +377,9 @@ void HandlePacket(const std::shared_ptr<MessageStore>& store,
     } else {
       // GROUP channel: fan the message out to every member via the group
       // handlers; members not online right now land in the offline queue.
-      if (handlers.IsMember(req.channel_id(), req.sender_id())) {
+      if (features.groups.IsMember(req.channel_id(), req.sender_id())) {
         resp.set_code(chirp::common::OK);
-        auto offline = handlers.BroadcastGroupMessage(req.channel_id(), req.sender_id(), msg);
+        auto offline = features.groups.BroadcastGroupMessage(req.channel_id(), req.sender_id(), msg);
         for (const auto& member_id : offline) {
           store->AddOffline(member_id, msg);
         }
@@ -415,7 +428,7 @@ void HandlePacket(const std::shared_ptr<MessageStore>& store,
       chirp::chat::runtime::SendPacket(session, chirp::gateway::CREATE_GROUP_RESP, pkt.sequence(), resp.SerializeAsString());
       return;
     }
-    auto resp = handlers.HandleCreateGroup(req, authenticated_user_id);
+    auto resp = features.groups.HandleCreateGroup(req, authenticated_user_id);
     chirp::chat::runtime::SendPacket(session, chirp::gateway::CREATE_GROUP_RESP, pkt.sequence(), resp.SerializeAsString());
     break;
   }
@@ -427,7 +440,7 @@ void HandlePacket(const std::shared_ptr<MessageStore>& store,
       chirp::chat::runtime::SendPacket(session, chirp::gateway::JOIN_GROUP_RESP, pkt.sequence(), resp.SerializeAsString());
       return;
     }
-    auto resp = handlers.HandleJoinGroup(req, authenticated_user_id);
+    auto resp = features.groups.HandleJoinGroup(req, authenticated_user_id);
     chirp::chat::runtime::SendPacket(session, chirp::gateway::JOIN_GROUP_RESP, pkt.sequence(), resp.SerializeAsString());
     break;
   }
@@ -439,7 +452,7 @@ void HandlePacket(const std::shared_ptr<MessageStore>& store,
       chirp::chat::runtime::SendPacket(session, chirp::gateway::LEAVE_GROUP_RESP, pkt.sequence(), resp.SerializeAsString());
       return;
     }
-    auto resp = handlers.HandleLeaveGroup(req, authenticated_user_id);
+    auto resp = features.groups.HandleLeaveGroup(req, authenticated_user_id);
     chirp::chat::runtime::SendPacket(session, chirp::gateway::LEAVE_GROUP_RESP, pkt.sequence(), resp.SerializeAsString());
     break;
   }
@@ -451,7 +464,7 @@ void HandlePacket(const std::shared_ptr<MessageStore>& store,
       chirp::chat::runtime::SendPacket(session, chirp::gateway::KICK_MEMBER_RESP, pkt.sequence(), resp.SerializeAsString());
       return;
     }
-    auto resp = handlers.HandleKickMember(req, authenticated_user_id);
+    auto resp = features.groups.HandleKickMember(req, authenticated_user_id);
     chirp::chat::runtime::SendPacket(session, chirp::gateway::KICK_MEMBER_RESP, pkt.sequence(), resp.SerializeAsString());
     break;
   }
@@ -463,7 +476,7 @@ void HandlePacket(const std::shared_ptr<MessageStore>& store,
       chirp::chat::runtime::SendPacket(session, chirp::gateway::GET_GROUP_INFO_RESP, pkt.sequence(), resp.SerializeAsString());
       return;
     }
-    auto resp = handlers.HandleGetGroupInfo(req, authenticated_user_id);
+    auto resp = features.groups.HandleGetGroupInfo(req, authenticated_user_id);
     chirp::chat::runtime::SendPacket(session, chirp::gateway::GET_GROUP_INFO_RESP, pkt.sequence(), resp.SerializeAsString());
     break;
   }
@@ -475,7 +488,7 @@ void HandlePacket(const std::shared_ptr<MessageStore>& store,
       chirp::chat::runtime::SendPacket(session, chirp::gateway::GET_GROUP_MEMBERS_RESP, pkt.sequence(), resp.SerializeAsString());
       return;
     }
-    auto resp = handlers.HandleGetGroupMembers(req, authenticated_user_id);
+    auto resp = features.groups.HandleGetGroupMembers(req, authenticated_user_id);
     chirp::chat::runtime::SendPacket(session, chirp::gateway::GET_GROUP_MEMBERS_RESP, pkt.sequence(), resp.SerializeAsString());
     break;
   }
@@ -487,7 +500,7 @@ void HandlePacket(const std::shared_ptr<MessageStore>& store,
       chirp::chat::runtime::SendPacket(session, chirp::gateway::GET_USER_GROUPS_RESP, pkt.sequence(), resp.SerializeAsString());
       return;
     }
-    auto resp = handlers.HandleGetUserGroups(req, authenticated_user_id);
+    auto resp = features.groups.HandleGetUserGroups(req, authenticated_user_id);
     chirp::chat::runtime::SendPacket(session, chirp::gateway::GET_USER_GROUPS_RESP, pkt.sequence(), resp.SerializeAsString());
     break;
   }
@@ -499,8 +512,103 @@ void HandlePacket(const std::shared_ptr<MessageStore>& store,
       chirp::chat::runtime::SendPacket(session, chirp::gateway::INVITE_TO_GROUP_RESP, pkt.sequence(), resp.SerializeAsString());
       return;
     }
-    auto resp = handlers.HandleInviteToGroup(req, authenticated_user_id);
+    auto resp = features.groups.HandleInviteToGroup(req, authenticated_user_id);
     chirp::chat::runtime::SendPacket(session, chirp::gateway::INVITE_TO_GROUP_RESP, pkt.sequence(), resp.SerializeAsString());
+    break;
+  }
+  case chirp::gateway::MARK_READ_REQ: {
+    chirp::chat::MarkReadRequest req;
+    if (!req.ParseFromArray(pkt.body().data(), static_cast<int>(pkt.body().size()))) {
+      chirp::chat::MarkReadResponse resp;
+      resp.set_code(chirp::common::INVALID_PARAM);
+      chirp::chat::runtime::SendPacket(session, chirp::gateway::MARK_READ_RESP, pkt.sequence(), resp.SerializeAsString());
+      return;
+    }
+    auto resp = features.receipts.HandleMarkRead(req, authenticated_user_id);
+    chirp::chat::runtime::SendPacket(session, chirp::gateway::MARK_READ_RESP, pkt.sequence(), resp.SerializeAsString());
+    break;
+  }
+  case chirp::gateway::GET_READ_RECEIPTS_REQ: {
+    chirp::chat::GetReadReceiptsRequest req;
+    if (!req.ParseFromArray(pkt.body().data(), static_cast<int>(pkt.body().size()))) {
+      chirp::chat::GetReadReceiptsResponse resp;
+      resp.set_code(chirp::common::INVALID_PARAM);
+      chirp::chat::runtime::SendPacket(session, chirp::gateway::GET_READ_RECEIPTS_RESP, pkt.sequence(), resp.SerializeAsString());
+      return;
+    }
+    auto resp = features.receipts.HandleGetReadReceipts(req, authenticated_user_id);
+    chirp::chat::runtime::SendPacket(session, chirp::gateway::GET_READ_RECEIPTS_RESP, pkt.sequence(), resp.SerializeAsString());
+    break;
+  }
+  case chirp::gateway::GET_UNREAD_COUNT_REQ: {
+    chirp::chat::GetUnreadCountRequest req;
+    if (!req.ParseFromArray(pkt.body().data(), static_cast<int>(pkt.body().size()))) {
+      chirp::chat::GetUnreadCountResponse resp;
+      resp.set_code(chirp::common::INVALID_PARAM);
+      chirp::chat::runtime::SendPacket(session, chirp::gateway::GET_UNREAD_COUNT_RESP, pkt.sequence(), resp.SerializeAsString());
+      return;
+    }
+    auto resp = features.receipts.HandleGetUnreadCount(req, authenticated_user_id);
+    chirp::chat::runtime::SendPacket(session, chirp::gateway::GET_UNREAD_COUNT_RESP, pkt.sequence(), resp.SerializeAsString());
+    break;
+  }
+  case chirp::gateway::TYPING_INDICATOR_NOTIFY: {
+    // Inbound from the client: start/stop typing and fan out to the other
+    // channel members. Notify-class messages get no response frame.
+    chirp::chat::TypingIndicator req;
+    if (!req.ParseFromArray(pkt.body().data(), static_cast<int>(pkt.body().size()))) {
+      Logger::Instance().Warn("failed to parse TypingIndicator body");
+      return;
+    }
+    features.typing.HandleTypingIndicator(req, authenticated_user_id);
+    break;
+  }
+  case chirp::gateway::GET_TYPING_USERS_REQ: {
+    chirp::chat::GetTypingUsersRequest req;
+    if (!req.ParseFromArray(pkt.body().data(), static_cast<int>(pkt.body().size()))) {
+      chirp::chat::GetTypingUsersResponse resp;
+      resp.set_code(chirp::common::INVALID_PARAM);
+      chirp::chat::runtime::SendPacket(session, chirp::gateway::GET_TYPING_USERS_RESP, pkt.sequence(), resp.SerializeAsString());
+      return;
+    }
+    auto resp = features.typing.HandleGetTypingUsers(req, authenticated_user_id);
+    chirp::chat::runtime::SendPacket(session, chirp::gateway::GET_TYPING_USERS_RESP, pkt.sequence(), resp.SerializeAsString());
+    break;
+  }
+  case chirp::gateway::ADD_REACTION_REQ: {
+    chirp::chat::AddReactionRequest req;
+    if (!req.ParseFromArray(pkt.body().data(), static_cast<int>(pkt.body().size()))) {
+      chirp::chat::AddReactionResponse resp;
+      resp.set_code(chirp::common::INVALID_PARAM);
+      chirp::chat::runtime::SendPacket(session, chirp::gateway::ADD_REACTION_RESP, pkt.sequence(), resp.SerializeAsString());
+      return;
+    }
+    auto resp = features.reactions.HandleAddReaction(req, authenticated_user_id);
+    chirp::chat::runtime::SendPacket(session, chirp::gateway::ADD_REACTION_RESP, pkt.sequence(), resp.SerializeAsString());
+    break;
+  }
+  case chirp::gateway::REMOVE_REACTION_REQ: {
+    chirp::chat::RemoveReactionRequest req;
+    if (!req.ParseFromArray(pkt.body().data(), static_cast<int>(pkt.body().size()))) {
+      chirp::chat::RemoveReactionResponse resp;
+      resp.set_code(chirp::common::INVALID_PARAM);
+      chirp::chat::runtime::SendPacket(session, chirp::gateway::REMOVE_REACTION_RESP, pkt.sequence(), resp.SerializeAsString());
+      return;
+    }
+    auto resp = features.reactions.HandleRemoveReaction(req, authenticated_user_id);
+    chirp::chat::runtime::SendPacket(session, chirp::gateway::REMOVE_REACTION_RESP, pkt.sequence(), resp.SerializeAsString());
+    break;
+  }
+  case chirp::gateway::GET_REACTIONS_REQ: {
+    chirp::chat::GetReactionsRequest req;
+    if (!req.ParseFromArray(pkt.body().data(), static_cast<int>(pkt.body().size()))) {
+      chirp::chat::GetReactionsResponse resp;
+      resp.set_code(chirp::common::INVALID_PARAM);
+      chirp::chat::runtime::SendPacket(session, chirp::gateway::GET_REACTIONS_RESP, pkt.sequence(), resp.SerializeAsString());
+      return;
+    }
+    auto resp = features.reactions.HandleGetReactions(req, authenticated_user_id);
+    chirp::chat::runtime::SendPacket(session, chirp::gateway::GET_REACTIONS_RESP, pkt.sequence(), resp.SerializeAsString());
     break;
   }
   case chirp::gateway::HEARTBEAT_PING: {
@@ -569,19 +677,57 @@ int main(int argc, char** argv) {
   };
 
   chirp::chat::GroupManager groups;
-  chirp::chat::GroupHandlers handlers(groups, notify_member);
+  chirp::chat::GroupHandlers group_handlers(groups, notify_member);
+
+  // Resolves who should receive a channel broadcast: the other party for
+  // private channels, the group membership otherwise.
+  chirp::chat::ChannelMemberResolver resolve_members =
+      [&groups](chirp::chat::ChannelType channel_type, const std::string& channel_id,
+                const std::string& exclude_user_id) -> std::vector<std::string> {
+    if (channel_type == chirp::chat::PRIVATE) {
+      const size_t sep = channel_id.find('|');
+      if (sep == std::string::npos || sep == 0 || sep + 1 >= channel_id.size()) {
+        return {};
+      }
+      std::string left = channel_id.substr(0, sep);
+      std::string right = channel_id.substr(sep + 1);
+      const std::string& other = (left == exclude_user_id) ? right : left;
+      if (other.empty() || other == exclude_user_id) {
+        return {};
+      }
+      return {other};
+    }
+    std::vector<std::string> out;
+    for (const auto& member : groups.GetMembers(channel_id)) {
+      if (member.user_id() != exclude_user_id) {
+        out.push_back(member.user_id());
+      }
+    }
+    return out;
+  };
+
+  chirp::chat::ReadReceiptManager receipts;
+  chirp::chat::TypingConfig typing_config;
+  chirp::chat::TypingManager typing(typing_config);
+  chirp::chat::ReactionManager reactions;
+
+  chirp::chat::ReadReceiptHandlers receipt_handlers(receipts, resolve_members, notify_member);
+  chirp::chat::TypingHandlers typing_handlers(typing, resolve_members, notify_member);
+  chirp::chat::ReactionHandlers reaction_handlers(reactions, resolve_members, notify_member);
+
+  FeatureHandlers features{group_handlers, receipt_handlers, typing_handlers, reaction_handlers};
 
   chirp::network::TcpServer server(
       io, port,
-      [store, state, &handlers](std::shared_ptr<chirp::network::Session> session, std::string&& payload) {
-        HandlePacket(store, state, handlers, session, std::move(payload));
+      [store, state, &features](std::shared_ptr<chirp::network::Session> session, std::string&& payload) {
+        HandlePacket(store, state, features, session, std::move(payload));
       },
       [state](std::shared_ptr<chirp::network::Session> session) { HandleDisconnect(state, session); });
 
   chirp::network::WebSocketServer ws_server(
       io, ws_port,
-      [store, state, &handlers](std::shared_ptr<chirp::network::Session> session, std::string&& payload) {
-        HandlePacket(store, state, handlers, session, std::move(payload));
+      [store, state, &features](std::shared_ptr<chirp::network::Session> session, std::string&& payload) {
+        HandlePacket(store, state, features, session, std::move(payload));
       },
       [state](std::shared_ptr<chirp::network::Session> session) { HandleDisconnect(state, session); });
 
