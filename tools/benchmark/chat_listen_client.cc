@@ -120,6 +120,21 @@ int main(int argc, char** argv) {
                   << " emoji=" << msg.emoji() << " message=" << msg.message_id() << "\n";
         got++;
       }
+    } else if (pkt.msg_id() == chirp::gateway::MESSAGE_EDITED_NOTIFY) {
+      chirp::chat::MessageEditedNotify msg;
+      if (msg.ParseFromArray(pkt.body().data(), static_cast<int>(pkt.body().size()))) {
+        std::cout << "edited_notify channel=" << msg.channel_id() << " by=" << msg.edited_by()
+                  << " message=" << msg.message_id() << " content=" << msg.new_content() << "\n";
+        got++;
+      }
+    } else if (pkt.msg_id() == chirp::gateway::MESSAGE_DELETED_NOTIFY) {
+      chirp::chat::MessageDeletedNotify msg;
+      if (msg.ParseFromArray(pkt.body().data(), static_cast<int>(pkt.body().size()))) {
+        std::cout << "deleted_notify channel=" << msg.channel_id() << " by=" << msg.deleted_by()
+                  << " message=" << msg.message_id() << " hard=" << (msg.is_hard_delete() ? 1 : 0)
+                  << "\n";
+        got++;
+      }
     }
   }
 

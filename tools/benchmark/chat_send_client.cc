@@ -227,6 +227,29 @@ int main(int argc, char** argv) {
       body = req.SerializeAsString();
       req_id = chirp::gateway::GET_REACTIONS_REQ;
       resp_id = chirp::gateway::GET_REACTIONS_RESP;
+    } else if (act == "edit") {
+      chirp::chat::EditMessageRequest req;
+      req.set_message_id(message_id);
+      req.set_user_id(sender);
+      req.set_new_content(text);
+      body = req.SerializeAsString();
+      req_id = chirp::gateway::EDIT_MESSAGE_REQ;
+      resp_id = chirp::gateway::EDIT_MESSAGE_RESP;
+    } else if (act == "delete") {
+      chirp::chat::DeleteMessageRequest req;
+      req.set_message_id(message_id);
+      req.set_user_id(sender);
+      body = req.SerializeAsString();
+      req_id = chirp::gateway::DELETE_MESSAGE_REQ;
+      resp_id = chirp::gateway::DELETE_MESSAGE_RESP;
+    } else if (act == "suggest") {
+      chirp::chat::GetMentionSuggestionsRequest req;
+      req.set_user_id(sender);
+      req.set_channel_id(PrivateChannelId(sender, receiver));
+      req.set_query(GetArg(argc, argv, "--query", ""));
+      body = req.SerializeAsString();
+      req_id = chirp::gateway::GET_MENTION_SUGGESTIONS_REQ;
+      resp_id = chirp::gateway::GET_MENTION_SUGGESTIONS_RESP;
     } else if (act == "get_typing") {
       chirp::chat::GetTypingUsersRequest req;
       req.set_channel_id(channel);
@@ -266,6 +289,24 @@ int main(int argc, char** argv) {
       std::cout << "code=" << r.code() << " typing_users=" << r.typing_user_ids_size();
       for (const auto& uid : r.typing_user_ids()) {
         std::cout << " [" << uid << "]";
+      }
+      std::cout << "\n";
+    } else if (resp_id == chirp::gateway::EDIT_MESSAGE_RESP) {
+      chirp::chat::EditMessageResponse r;
+      r.ParseFromArray(resp_pkt.body().data(), static_cast<int>(resp_pkt.body().size()));
+      std::cout << "code=" << r.code() << " edited=" << (r.has_message() ? "yes" : "no")
+                << " content=" << r.message().content() << "\n";
+    } else if (resp_id == chirp::gateway::DELETE_MESSAGE_RESP) {
+      chirp::chat::DeleteMessageResponse r;
+      r.ParseFromArray(resp_pkt.body().data(), static_cast<int>(resp_pkt.body().size()));
+      std::cout << "code=" << r.code() << " permanent=" << (r.was_permanently_deleted() ? 1 : 0)
+                << "\n";
+    } else if (resp_id == chirp::gateway::GET_MENTION_SUGGESTIONS_RESP) {
+      chirp::chat::GetMentionSuggestionsResponse r;
+      r.ParseFromArray(resp_pkt.body().data(), static_cast<int>(resp_pkt.body().size()));
+      std::cout << "code=" << r.code() << " suggestions=" << r.suggestions_size();
+      for (const auto& s : r.suggestions()) {
+        std::cout << " [" << s.display_text() << "]";
       }
       std::cout << "\n";
     } else {
