@@ -248,6 +248,14 @@ class GetHistoryResponseV2;
 struct GetHistoryResponseV2DefaultTypeInternal;
 extern GetHistoryResponseV2DefaultTypeInternal _GetHistoryResponseV2_default_instance_;
 extern const ::google::protobuf::internal::ClassDataFull GetHistoryResponseV2_class_data_;
+class GetMentionSuggestionsRequest;
+struct GetMentionSuggestionsRequestDefaultTypeInternal;
+extern GetMentionSuggestionsRequestDefaultTypeInternal _GetMentionSuggestionsRequest_default_instance_;
+extern const ::google::protobuf::internal::ClassDataFull GetMentionSuggestionsRequest_class_data_;
+class GetMentionSuggestionsResponse;
+struct GetMentionSuggestionsResponseDefaultTypeInternal;
+extern GetMentionSuggestionsResponseDefaultTypeInternal _GetMentionSuggestionsResponse_default_instance_;
+extern const ::google::protobuf::internal::ClassDataFull GetMentionSuggestionsResponse_class_data_;
 class GetReactionsRequest;
 struct GetReactionsRequestDefaultTypeInternal;
 extern GetReactionsRequestDefaultTypeInternal _GetReactionsRequest_default_instance_;
@@ -368,6 +376,10 @@ class Mention;
 struct MentionDefaultTypeInternal;
 extern MentionDefaultTypeInternal _Mention_default_instance_;
 extern const ::google::protobuf::internal::ClassDataFull Mention_class_data_;
+class MentionSuggestion;
+struct MentionSuggestionDefaultTypeInternal;
+extern MentionSuggestionDefaultTypeInternal _MentionSuggestion_default_instance_;
+extern const ::google::protobuf::internal::ClassDataFull MentionSuggestion_class_data_;
 class MessageAck;
 struct MessageAckDefaultTypeInternal;
 extern MessageAckDefaultTypeInternal _MessageAck_default_instance_;
@@ -1109,7 +1121,7 @@ class TypingIndicator final : public ::google::protobuf::Message
     return *reinterpret_cast<const TypingIndicator*>(
         &_TypingIndicator_default_instance_);
   }
-  static constexpr int kIndexInFileMessages = 85;
+  static constexpr int kIndexInFileMessages = 88;
   friend void swap(TypingIndicator& a, TypingIndicator& b) { a.Swap(&b); }
   inline void Swap(TypingIndicator* PROTOBUF_NONNULL other) {
     if (other == this) return;
@@ -3528,7 +3540,7 @@ class PrepareFileUploadRequest final : public ::google::protobuf::Message
     return *reinterpret_cast<const PrepareFileUploadRequest*>(
         &_PrepareFileUploadRequest_default_instance_);
   }
-  static constexpr int kIndexInFileMessages = 89;
+  static constexpr int kIndexInFileMessages = 92;
   friend void swap(PrepareFileUploadRequest& a, PrepareFileUploadRequest& b) { a.Swap(&b); }
   inline void Swap(PrepareFileUploadRequest* PROTOBUF_NONNULL other) {
     if (other == this) return;
@@ -4800,7 +4812,7 @@ class MessageEditedNotify final : public ::google::protobuf::Message
     return *reinterpret_cast<const MessageEditedNotify*>(
         &_MessageEditedNotify_default_instance_);
   }
-  static constexpr int kIndexInFileMessages = 83;
+  static constexpr int kIndexInFileMessages = 86;
   friend void swap(MessageEditedNotify& a, MessageEditedNotify& b) { a.Swap(&b); }
   inline void Swap(MessageEditedNotify* PROTOBUF_NONNULL other) {
     if (other == this) return;
@@ -5058,7 +5070,7 @@ class MessageEdit final : public ::google::protobuf::Message
     return *reinterpret_cast<const MessageEdit*>(
         &_MessageEdit_default_instance_);
   }
-  static constexpr int kIndexInFileMessages = 75;
+  static constexpr int kIndexInFileMessages = 78;
   friend void swap(MessageEdit& a, MessageEdit& b) { a.Swap(&b); }
   inline void Swap(MessageEdit* PROTOBUF_NONNULL other) {
     if (other == this) return;
@@ -5299,7 +5311,7 @@ class MessageDeletedNotify final : public ::google::protobuf::Message
     return *reinterpret_cast<const MessageDeletedNotify*>(
         &_MessageDeletedNotify_default_instance_);
   }
-  static constexpr int kIndexInFileMessages = 84;
+  static constexpr int kIndexInFileMessages = 87;
   friend void swap(MessageDeletedNotify& a, MessageDeletedNotify& b) { a.Swap(&b); }
   inline void Swap(MessageDeletedNotify* PROTOBUF_NONNULL other) {
     if (other == this) return;
@@ -5719,6 +5731,247 @@ class MessageAck final : public ::google::protobuf::Message
 };
 
 extern const ::google::protobuf::internal::ClassDataFull MessageAck_class_data_;
+// -------------------------------------------------------------------
+
+class MentionSuggestion final : public ::google::protobuf::Message
+/* @@protoc_insertion_point(class_definition:chirp.chat.MentionSuggestion) */ {
+ public:
+  inline MentionSuggestion() : MentionSuggestion(nullptr) {}
+  ~MentionSuggestion() PROTOBUF_FINAL;
+
+#if defined(PROTOBUF_CUSTOM_VTABLE)
+  void operator delete(MentionSuggestion* PROTOBUF_NONNULL msg, ::std::destroying_delete_t) {
+    SharedDtor(*msg);
+    ::google::protobuf::internal::SizedDelete(msg, sizeof(MentionSuggestion));
+  }
+#endif
+
+  template <typename = void>
+  explicit PROTOBUF_CONSTEXPR MentionSuggestion(::google::protobuf::internal::ConstantInitialized);
+
+  inline MentionSuggestion(const MentionSuggestion& from) : MentionSuggestion(nullptr, from) {}
+  inline MentionSuggestion(MentionSuggestion&& from) noexcept
+      : MentionSuggestion(nullptr, ::std::move(from)) {}
+  inline MentionSuggestion& operator=(const MentionSuggestion& from) {
+    CopyFrom(from);
+    return *this;
+  }
+  inline MentionSuggestion& operator=(MentionSuggestion&& from) noexcept {
+    if (this == &from) return *this;
+    if (::google::protobuf::internal::CanMoveWithInternalSwap(GetArena(), from.GetArena())) {
+      InternalSwap(&from);
+    } else {
+      CopyFrom(from);
+    }
+    return *this;
+  }
+
+  inline const ::google::protobuf::UnknownFieldSet& unknown_fields() const
+      ABSL_ATTRIBUTE_LIFETIME_BOUND {
+    return _internal_metadata_.unknown_fields<::google::protobuf::UnknownFieldSet>(::google::protobuf::UnknownFieldSet::default_instance);
+  }
+  inline ::google::protobuf::UnknownFieldSet* PROTOBUF_NONNULL mutable_unknown_fields()
+      ABSL_ATTRIBUTE_LIFETIME_BOUND {
+    return _internal_metadata_.mutable_unknown_fields<::google::protobuf::UnknownFieldSet>();
+  }
+
+  static const ::google::protobuf::Descriptor* PROTOBUF_NONNULL descriptor() {
+    return GetDescriptor();
+  }
+  static const ::google::protobuf::Descriptor* PROTOBUF_NONNULL GetDescriptor() {
+    return default_instance().GetMetadata().descriptor;
+  }
+  static const ::google::protobuf::Reflection* PROTOBUF_NONNULL GetReflection() {
+    return default_instance().GetMetadata().reflection;
+  }
+  static const MentionSuggestion& default_instance() {
+    return *reinterpret_cast<const MentionSuggestion*>(
+        &_MentionSuggestion_default_instance_);
+  }
+  static constexpr int kIndexInFileMessages = 75;
+  friend void swap(MentionSuggestion& a, MentionSuggestion& b) { a.Swap(&b); }
+  inline void Swap(MentionSuggestion* PROTOBUF_NONNULL other) {
+    if (other == this) return;
+    if (::google::protobuf::internal::CanUseInternalSwap(GetArena(), other->GetArena())) {
+      InternalSwap(other);
+    } else {
+      ::google::protobuf::internal::GenericSwap(this, other);
+    }
+  }
+  void UnsafeArenaSwap(MentionSuggestion* PROTOBUF_NONNULL other) {
+    if (other == this) return;
+    ABSL_DCHECK(GetArena() == other->GetArena());
+    InternalSwap(other);
+  }
+
+  // implements Message ----------------------------------------------
+
+  MentionSuggestion* PROTOBUF_NONNULL New(::google::protobuf::Arena* PROTOBUF_NULLABLE arena = nullptr) const {
+    return ::google::protobuf::Message::DefaultConstruct<MentionSuggestion>(arena);
+  }
+  using ::google::protobuf::Message::CopyFrom;
+  void CopyFrom(const MentionSuggestion& from);
+  using ::google::protobuf::Message::MergeFrom;
+  void MergeFrom(const MentionSuggestion& from) { MentionSuggestion::MergeImpl(*this, from); }
+
+  private:
+  static void MergeImpl(::google::protobuf::MessageLite& to_msg,
+                        const ::google::protobuf::MessageLite& from_msg);
+
+  public:
+  bool IsInitialized() const {
+    return true;
+  }
+  ABSL_ATTRIBUTE_REINITIALIZES void Clear() PROTOBUF_FINAL;
+  #if defined(PROTOBUF_CUSTOM_VTABLE)
+  private:
+  static ::size_t ByteSizeLong(const ::google::protobuf::MessageLite& msg);
+  static ::uint8_t* PROTOBUF_NONNULL _InternalSerialize(
+      const ::google::protobuf::MessageLite& msg, ::uint8_t* PROTOBUF_NONNULL target,
+      ::google::protobuf::io::EpsCopyOutputStream* PROTOBUF_NONNULL stream);
+
+  public:
+  ::size_t ByteSizeLong() const { return ByteSizeLong(*this); }
+  ::uint8_t* PROTOBUF_NONNULL _InternalSerialize(
+      ::uint8_t* PROTOBUF_NONNULL target,
+      ::google::protobuf::io::EpsCopyOutputStream* PROTOBUF_NONNULL stream) const {
+    return _InternalSerialize(*this, target, stream);
+  }
+  #else   // PROTOBUF_CUSTOM_VTABLE
+  ::size_t ByteSizeLong() const final;
+  ::uint8_t* PROTOBUF_NONNULL _InternalSerialize(
+      ::uint8_t* PROTOBUF_NONNULL target,
+      ::google::protobuf::io::EpsCopyOutputStream* PROTOBUF_NONNULL stream) const final;
+  #endif  // PROTOBUF_CUSTOM_VTABLE
+  int GetCachedSize() const { return _impl_._cached_size_.Get(); }
+
+  private:
+  void SharedCtor(::google::protobuf::Arena* PROTOBUF_NULLABLE arena);
+  static void SharedDtor(MessageLite& self);
+  void InternalSwap(MentionSuggestion* PROTOBUF_NONNULL other);
+ private:
+  template <typename T>
+  friend ::absl::string_view(::google::protobuf::internal::GetAnyMessageName)();
+  static ::absl::string_view FullMessageName() { return "chirp.chat.MentionSuggestion"; }
+
+  explicit MentionSuggestion(::google::protobuf::Arena* PROTOBUF_NULLABLE arena);
+  MentionSuggestion(::google::protobuf::Arena* PROTOBUF_NULLABLE arena, const MentionSuggestion& from);
+  MentionSuggestion(
+      ::google::protobuf::Arena* PROTOBUF_NULLABLE arena, MentionSuggestion&& from) noexcept
+      : MentionSuggestion(arena) {
+    *this = ::std::move(from);
+  }
+  const ::google::protobuf::internal::ClassData* PROTOBUF_NONNULL GetClassData() const PROTOBUF_FINAL;
+  static void* PROTOBUF_NONNULL PlacementNew_(
+      const void* PROTOBUF_NONNULL, void* PROTOBUF_NONNULL mem,
+      ::google::protobuf::Arena* PROTOBUF_NULLABLE arena);
+  static constexpr auto InternalNewImpl_();
+
+ public:
+  static constexpr auto InternalGenerateClassData_();
+
+  ::google::protobuf::Metadata GetMetadata() const;
+  // nested types ----------------------------------------------------
+
+  // accessors -------------------------------------------------------
+  enum : int {
+    kDisplayTextFieldNumber = 1,
+    kIdFieldNumber = 2,
+    kIconUrlFieldNumber = 4,
+    kTypeFieldNumber = 3,
+  };
+  // string display_text = 1;
+  void clear_display_text() ;
+  const ::std::string& display_text() const;
+  template <typename Arg_ = const ::std::string&, typename... Args_>
+  void set_display_text(Arg_&& arg, Args_... args);
+  ::std::string* PROTOBUF_NONNULL mutable_display_text();
+  [[nodiscard]] ::std::string* PROTOBUF_NULLABLE release_display_text();
+  void set_allocated_display_text(::std::string* PROTOBUF_NULLABLE value);
+
+  private:
+  const ::std::string& _internal_display_text() const;
+  PROTOBUF_ALWAYS_INLINE void _internal_set_display_text(const ::std::string& value);
+  ::std::string* PROTOBUF_NONNULL _internal_mutable_display_text();
+
+  public:
+  // string id = 2;
+  void clear_id() ;
+  const ::std::string& id() const;
+  template <typename Arg_ = const ::std::string&, typename... Args_>
+  void set_id(Arg_&& arg, Args_... args);
+  ::std::string* PROTOBUF_NONNULL mutable_id();
+  [[nodiscard]] ::std::string* PROTOBUF_NULLABLE release_id();
+  void set_allocated_id(::std::string* PROTOBUF_NULLABLE value);
+
+  private:
+  const ::std::string& _internal_id() const;
+  PROTOBUF_ALWAYS_INLINE void _internal_set_id(const ::std::string& value);
+  ::std::string* PROTOBUF_NONNULL _internal_mutable_id();
+
+  public:
+  // string icon_url = 4;
+  void clear_icon_url() ;
+  const ::std::string& icon_url() const;
+  template <typename Arg_ = const ::std::string&, typename... Args_>
+  void set_icon_url(Arg_&& arg, Args_... args);
+  ::std::string* PROTOBUF_NONNULL mutable_icon_url();
+  [[nodiscard]] ::std::string* PROTOBUF_NULLABLE release_icon_url();
+  void set_allocated_icon_url(::std::string* PROTOBUF_NULLABLE value);
+
+  private:
+  const ::std::string& _internal_icon_url() const;
+  PROTOBUF_ALWAYS_INLINE void _internal_set_icon_url(const ::std::string& value);
+  ::std::string* PROTOBUF_NONNULL _internal_mutable_icon_url();
+
+  public:
+  // .chirp.chat.MentionType type = 3;
+  void clear_type() ;
+  ::chirp::chat::MentionType type() const;
+  void set_type(::chirp::chat::MentionType value);
+
+  private:
+  ::chirp::chat::MentionType _internal_type() const;
+  void _internal_set_type(::chirp::chat::MentionType value);
+
+  public:
+  // @@protoc_insertion_point(class_scope:chirp.chat.MentionSuggestion)
+ private:
+  class _Internal;
+  friend class ::google::protobuf::internal::TcParser;
+  static const ::google::protobuf::internal::TcParseTable<2, 4,
+                                   0, 59,
+                                   2>
+      _table_;
+
+  friend class ::google::protobuf::MessageLite;
+  friend class ::google::protobuf::Arena;
+  template <typename T>
+  friend class ::google::protobuf::Arena::InternalHelper;
+  using InternalArenaConstructable_ = void;
+  using DestructorSkippable_ = void;
+  struct Impl_ {
+    inline explicit constexpr Impl_(::google::protobuf::internal::ConstantInitialized) noexcept;
+    inline explicit Impl_(
+        ::google::protobuf::internal::InternalVisibility visibility,
+        ::google::protobuf::Arena* PROTOBUF_NULLABLE arena);
+    inline explicit Impl_(
+        ::google::protobuf::internal::InternalVisibility visibility,
+        ::google::protobuf::Arena* PROTOBUF_NULLABLE arena, const Impl_& from,
+        const MentionSuggestion& from_msg);
+    ::google::protobuf::internal::HasBits<1> _has_bits_;
+    ::google::protobuf::internal::CachedSize _cached_size_;
+    ::google::protobuf::internal::ArenaStringPtr display_text_;
+    ::google::protobuf::internal::ArenaStringPtr id_;
+    ::google::protobuf::internal::ArenaStringPtr icon_url_;
+    int type_;
+    PROTOBUF_TSAN_DECLARE_MEMBER
+  };
+  union { Impl_ _impl_; };
+  friend struct ::TableStruct_proto_2fchat_2eproto;
+};
+
+extern const ::google::protobuf::internal::ClassDataFull MentionSuggestion_class_data_;
 // -------------------------------------------------------------------
 
 class Mention final : public ::google::protobuf::Message
@@ -9386,7 +9639,7 @@ class GetTypingUsersResponse final : public ::google::protobuf::Message
     return *reinterpret_cast<const GetTypingUsersResponse*>(
         &_GetTypingUsersResponse_default_instance_);
   }
-  static constexpr int kIndexInFileMessages = 87;
+  static constexpr int kIndexInFileMessages = 90;
   friend void swap(GetTypingUsersResponse& a, GetTypingUsersResponse& b) { a.Swap(&b); }
   inline void Swap(GetTypingUsersResponse* PROTOBUF_NONNULL other) {
     if (other == this) return;
@@ -9624,7 +9877,7 @@ class GetTypingUsersRequest final : public ::google::protobuf::Message
     return *reinterpret_cast<const GetTypingUsersRequest*>(
         &_GetTypingUsersRequest_default_instance_);
   }
-  static constexpr int kIndexInFileMessages = 86;
+  static constexpr int kIndexInFileMessages = 89;
   friend void swap(GetTypingUsersRequest& a, GetTypingUsersRequest& b) { a.Swap(&b); }
   inline void Swap(GetTypingUsersRequest* PROTOBUF_NONNULL other) {
     if (other == this) return;
@@ -10181,6 +10434,235 @@ class GetReactionsRequest final : public ::google::protobuf::Message
 };
 
 extern const ::google::protobuf::internal::ClassDataFull GetReactionsRequest_class_data_;
+// -------------------------------------------------------------------
+
+class GetMentionSuggestionsRequest final : public ::google::protobuf::Message
+/* @@protoc_insertion_point(class_definition:chirp.chat.GetMentionSuggestionsRequest) */ {
+ public:
+  inline GetMentionSuggestionsRequest() : GetMentionSuggestionsRequest(nullptr) {}
+  ~GetMentionSuggestionsRequest() PROTOBUF_FINAL;
+
+#if defined(PROTOBUF_CUSTOM_VTABLE)
+  void operator delete(GetMentionSuggestionsRequest* PROTOBUF_NONNULL msg, ::std::destroying_delete_t) {
+    SharedDtor(*msg);
+    ::google::protobuf::internal::SizedDelete(msg, sizeof(GetMentionSuggestionsRequest));
+  }
+#endif
+
+  template <typename = void>
+  explicit PROTOBUF_CONSTEXPR GetMentionSuggestionsRequest(::google::protobuf::internal::ConstantInitialized);
+
+  inline GetMentionSuggestionsRequest(const GetMentionSuggestionsRequest& from) : GetMentionSuggestionsRequest(nullptr, from) {}
+  inline GetMentionSuggestionsRequest(GetMentionSuggestionsRequest&& from) noexcept
+      : GetMentionSuggestionsRequest(nullptr, ::std::move(from)) {}
+  inline GetMentionSuggestionsRequest& operator=(const GetMentionSuggestionsRequest& from) {
+    CopyFrom(from);
+    return *this;
+  }
+  inline GetMentionSuggestionsRequest& operator=(GetMentionSuggestionsRequest&& from) noexcept {
+    if (this == &from) return *this;
+    if (::google::protobuf::internal::CanMoveWithInternalSwap(GetArena(), from.GetArena())) {
+      InternalSwap(&from);
+    } else {
+      CopyFrom(from);
+    }
+    return *this;
+  }
+
+  inline const ::google::protobuf::UnknownFieldSet& unknown_fields() const
+      ABSL_ATTRIBUTE_LIFETIME_BOUND {
+    return _internal_metadata_.unknown_fields<::google::protobuf::UnknownFieldSet>(::google::protobuf::UnknownFieldSet::default_instance);
+  }
+  inline ::google::protobuf::UnknownFieldSet* PROTOBUF_NONNULL mutable_unknown_fields()
+      ABSL_ATTRIBUTE_LIFETIME_BOUND {
+    return _internal_metadata_.mutable_unknown_fields<::google::protobuf::UnknownFieldSet>();
+  }
+
+  static const ::google::protobuf::Descriptor* PROTOBUF_NONNULL descriptor() {
+    return GetDescriptor();
+  }
+  static const ::google::protobuf::Descriptor* PROTOBUF_NONNULL GetDescriptor() {
+    return default_instance().GetMetadata().descriptor;
+  }
+  static const ::google::protobuf::Reflection* PROTOBUF_NONNULL GetReflection() {
+    return default_instance().GetMetadata().reflection;
+  }
+  static const GetMentionSuggestionsRequest& default_instance() {
+    return *reinterpret_cast<const GetMentionSuggestionsRequest*>(
+        &_GetMentionSuggestionsRequest_default_instance_);
+  }
+  static constexpr int kIndexInFileMessages = 76;
+  friend void swap(GetMentionSuggestionsRequest& a, GetMentionSuggestionsRequest& b) { a.Swap(&b); }
+  inline void Swap(GetMentionSuggestionsRequest* PROTOBUF_NONNULL other) {
+    if (other == this) return;
+    if (::google::protobuf::internal::CanUseInternalSwap(GetArena(), other->GetArena())) {
+      InternalSwap(other);
+    } else {
+      ::google::protobuf::internal::GenericSwap(this, other);
+    }
+  }
+  void UnsafeArenaSwap(GetMentionSuggestionsRequest* PROTOBUF_NONNULL other) {
+    if (other == this) return;
+    ABSL_DCHECK(GetArena() == other->GetArena());
+    InternalSwap(other);
+  }
+
+  // implements Message ----------------------------------------------
+
+  GetMentionSuggestionsRequest* PROTOBUF_NONNULL New(::google::protobuf::Arena* PROTOBUF_NULLABLE arena = nullptr) const {
+    return ::google::protobuf::Message::DefaultConstruct<GetMentionSuggestionsRequest>(arena);
+  }
+  using ::google::protobuf::Message::CopyFrom;
+  void CopyFrom(const GetMentionSuggestionsRequest& from);
+  using ::google::protobuf::Message::MergeFrom;
+  void MergeFrom(const GetMentionSuggestionsRequest& from) { GetMentionSuggestionsRequest::MergeImpl(*this, from); }
+
+  private:
+  static void MergeImpl(::google::protobuf::MessageLite& to_msg,
+                        const ::google::protobuf::MessageLite& from_msg);
+
+  public:
+  bool IsInitialized() const {
+    return true;
+  }
+  ABSL_ATTRIBUTE_REINITIALIZES void Clear() PROTOBUF_FINAL;
+  #if defined(PROTOBUF_CUSTOM_VTABLE)
+  private:
+  static ::size_t ByteSizeLong(const ::google::protobuf::MessageLite& msg);
+  static ::uint8_t* PROTOBUF_NONNULL _InternalSerialize(
+      const ::google::protobuf::MessageLite& msg, ::uint8_t* PROTOBUF_NONNULL target,
+      ::google::protobuf::io::EpsCopyOutputStream* PROTOBUF_NONNULL stream);
+
+  public:
+  ::size_t ByteSizeLong() const { return ByteSizeLong(*this); }
+  ::uint8_t* PROTOBUF_NONNULL _InternalSerialize(
+      ::uint8_t* PROTOBUF_NONNULL target,
+      ::google::protobuf::io::EpsCopyOutputStream* PROTOBUF_NONNULL stream) const {
+    return _InternalSerialize(*this, target, stream);
+  }
+  #else   // PROTOBUF_CUSTOM_VTABLE
+  ::size_t ByteSizeLong() const final;
+  ::uint8_t* PROTOBUF_NONNULL _InternalSerialize(
+      ::uint8_t* PROTOBUF_NONNULL target,
+      ::google::protobuf::io::EpsCopyOutputStream* PROTOBUF_NONNULL stream) const final;
+  #endif  // PROTOBUF_CUSTOM_VTABLE
+  int GetCachedSize() const { return _impl_._cached_size_.Get(); }
+
+  private:
+  void SharedCtor(::google::protobuf::Arena* PROTOBUF_NULLABLE arena);
+  static void SharedDtor(MessageLite& self);
+  void InternalSwap(GetMentionSuggestionsRequest* PROTOBUF_NONNULL other);
+ private:
+  template <typename T>
+  friend ::absl::string_view(::google::protobuf::internal::GetAnyMessageName)();
+  static ::absl::string_view FullMessageName() { return "chirp.chat.GetMentionSuggestionsRequest"; }
+
+  explicit GetMentionSuggestionsRequest(::google::protobuf::Arena* PROTOBUF_NULLABLE arena);
+  GetMentionSuggestionsRequest(::google::protobuf::Arena* PROTOBUF_NULLABLE arena, const GetMentionSuggestionsRequest& from);
+  GetMentionSuggestionsRequest(
+      ::google::protobuf::Arena* PROTOBUF_NULLABLE arena, GetMentionSuggestionsRequest&& from) noexcept
+      : GetMentionSuggestionsRequest(arena) {
+    *this = ::std::move(from);
+  }
+  const ::google::protobuf::internal::ClassData* PROTOBUF_NONNULL GetClassData() const PROTOBUF_FINAL;
+  static void* PROTOBUF_NONNULL PlacementNew_(
+      const void* PROTOBUF_NONNULL, void* PROTOBUF_NONNULL mem,
+      ::google::protobuf::Arena* PROTOBUF_NULLABLE arena);
+  static constexpr auto InternalNewImpl_();
+
+ public:
+  static constexpr auto InternalGenerateClassData_();
+
+  ::google::protobuf::Metadata GetMetadata() const;
+  // nested types ----------------------------------------------------
+
+  // accessors -------------------------------------------------------
+  enum : int {
+    kUserIdFieldNumber = 1,
+    kChannelIdFieldNumber = 2,
+    kQueryFieldNumber = 3,
+  };
+  // string user_id = 1;
+  void clear_user_id() ;
+  const ::std::string& user_id() const;
+  template <typename Arg_ = const ::std::string&, typename... Args_>
+  void set_user_id(Arg_&& arg, Args_... args);
+  ::std::string* PROTOBUF_NONNULL mutable_user_id();
+  [[nodiscard]] ::std::string* PROTOBUF_NULLABLE release_user_id();
+  void set_allocated_user_id(::std::string* PROTOBUF_NULLABLE value);
+
+  private:
+  const ::std::string& _internal_user_id() const;
+  PROTOBUF_ALWAYS_INLINE void _internal_set_user_id(const ::std::string& value);
+  ::std::string* PROTOBUF_NONNULL _internal_mutable_user_id();
+
+  public:
+  // string channel_id = 2;
+  void clear_channel_id() ;
+  const ::std::string& channel_id() const;
+  template <typename Arg_ = const ::std::string&, typename... Args_>
+  void set_channel_id(Arg_&& arg, Args_... args);
+  ::std::string* PROTOBUF_NONNULL mutable_channel_id();
+  [[nodiscard]] ::std::string* PROTOBUF_NULLABLE release_channel_id();
+  void set_allocated_channel_id(::std::string* PROTOBUF_NULLABLE value);
+
+  private:
+  const ::std::string& _internal_channel_id() const;
+  PROTOBUF_ALWAYS_INLINE void _internal_set_channel_id(const ::std::string& value);
+  ::std::string* PROTOBUF_NONNULL _internal_mutable_channel_id();
+
+  public:
+  // string query = 3;
+  void clear_query() ;
+  const ::std::string& query() const;
+  template <typename Arg_ = const ::std::string&, typename... Args_>
+  void set_query(Arg_&& arg, Args_... args);
+  ::std::string* PROTOBUF_NONNULL mutable_query();
+  [[nodiscard]] ::std::string* PROTOBUF_NULLABLE release_query();
+  void set_allocated_query(::std::string* PROTOBUF_NULLABLE value);
+
+  private:
+  const ::std::string& _internal_query() const;
+  PROTOBUF_ALWAYS_INLINE void _internal_set_query(const ::std::string& value);
+  ::std::string* PROTOBUF_NONNULL _internal_mutable_query();
+
+  public:
+  // @@protoc_insertion_point(class_scope:chirp.chat.GetMentionSuggestionsRequest)
+ private:
+  class _Internal;
+  friend class ::google::protobuf::internal::TcParser;
+  static const ::google::protobuf::internal::TcParseTable<2, 3,
+                                   0, 70,
+                                   2>
+      _table_;
+
+  friend class ::google::protobuf::MessageLite;
+  friend class ::google::protobuf::Arena;
+  template <typename T>
+  friend class ::google::protobuf::Arena::InternalHelper;
+  using InternalArenaConstructable_ = void;
+  using DestructorSkippable_ = void;
+  struct Impl_ {
+    inline explicit constexpr Impl_(::google::protobuf::internal::ConstantInitialized) noexcept;
+    inline explicit Impl_(
+        ::google::protobuf::internal::InternalVisibility visibility,
+        ::google::protobuf::Arena* PROTOBUF_NULLABLE arena);
+    inline explicit Impl_(
+        ::google::protobuf::internal::InternalVisibility visibility,
+        ::google::protobuf::Arena* PROTOBUF_NULLABLE arena, const Impl_& from,
+        const GetMentionSuggestionsRequest& from_msg);
+    ::google::protobuf::internal::HasBits<1> _has_bits_;
+    ::google::protobuf::internal::CachedSize _cached_size_;
+    ::google::protobuf::internal::ArenaStringPtr user_id_;
+    ::google::protobuf::internal::ArenaStringPtr channel_id_;
+    ::google::protobuf::internal::ArenaStringPtr query_;
+    PROTOBUF_TSAN_DECLARE_MEMBER
+  };
+  union { Impl_ _impl_; };
+  friend struct ::TableStruct_proto_2fchat_2eproto;
+};
+
+extern const ::google::protobuf::internal::ClassDataFull GetMentionSuggestionsRequest_class_data_;
 // -------------------------------------------------------------------
 
 class GetHistoryRequest final : public ::google::protobuf::Message
@@ -10900,7 +11382,7 @@ class GetFileDownloadRequest final : public ::google::protobuf::Message
     return *reinterpret_cast<const GetFileDownloadRequest*>(
         &_GetFileDownloadRequest_default_instance_);
   }
-  static constexpr int kIndexInFileMessages = 94;
+  static constexpr int kIndexInFileMessages = 97;
   friend void swap(GetFileDownloadRequest& a, GetFileDownloadRequest& b) { a.Swap(&b); }
   inline void Swap(GetFileDownloadRequest* PROTOBUF_NONNULL other) {
     if (other == this) return;
@@ -11324,7 +11806,7 @@ class FileInfo final : public ::google::protobuf::Message
     return *reinterpret_cast<const FileInfo*>(
         &_FileInfo_default_instance_);
   }
-  static constexpr int kIndexInFileMessages = 88;
+  static constexpr int kIndexInFileMessages = 91;
   friend void swap(FileInfo& a, FileInfo& b) { a.Swap(&b); }
   inline void Swap(FileInfo* PROTOBUF_NONNULL other) {
     if (other == this) return;
@@ -11664,7 +12146,7 @@ class EditMessageRequest final : public ::google::protobuf::Message
     return *reinterpret_cast<const EditMessageRequest*>(
         &_EditMessageRequest_default_instance_);
   }
-  static constexpr int kIndexInFileMessages = 77;
+  static constexpr int kIndexInFileMessages = 80;
   friend void swap(EditMessageRequest& a, EditMessageRequest& b) { a.Swap(&b); }
   inline void Swap(EditMessageRequest* PROTOBUF_NONNULL other) {
     if (other == this) return;
@@ -12175,7 +12657,7 @@ class DeleteMessageResponse final : public ::google::protobuf::Message
     return *reinterpret_cast<const DeleteMessageResponse*>(
         &_DeleteMessageResponse_default_instance_);
   }
-  static constexpr int kIndexInFileMessages = 80;
+  static constexpr int kIndexInFileMessages = 83;
   friend void swap(DeleteMessageResponse& a, DeleteMessageResponse& b) { a.Swap(&b); }
   inline void Swap(DeleteMessageResponse* PROTOBUF_NONNULL other) {
     if (other == this) return;
@@ -12389,7 +12871,7 @@ class DeleteMessageRequest final : public ::google::protobuf::Message
     return *reinterpret_cast<const DeleteMessageRequest*>(
         &_DeleteMessageRequest_default_instance_);
   }
-  static constexpr int kIndexInFileMessages = 79;
+  static constexpr int kIndexInFileMessages = 82;
   friend void swap(DeleteMessageRequest& a, DeleteMessageRequest& b) { a.Swap(&b); }
   inline void Swap(DeleteMessageRequest* PROTOBUF_NONNULL other) {
     if (other == this) return;
@@ -13769,7 +14251,7 @@ class ConfirmFileUploadRequest final : public ::google::protobuf::Message
     return *reinterpret_cast<const ConfirmFileUploadRequest*>(
         &_ConfirmFileUploadRequest_default_instance_);
   }
-  static constexpr int kIndexInFileMessages = 92;
+  static constexpr int kIndexInFileMessages = 95;
   friend void swap(ConfirmFileUploadRequest& a, ConfirmFileUploadRequest& b) { a.Swap(&b); }
   inline void Swap(ConfirmFileUploadRequest* PROTOBUF_NONNULL other) {
     if (other == this) return;
@@ -15024,7 +15506,7 @@ class BulkDeleteResponse final : public ::google::protobuf::Message
     return *reinterpret_cast<const BulkDeleteResponse*>(
         &_BulkDeleteResponse_default_instance_);
   }
-  static constexpr int kIndexInFileMessages = 82;
+  static constexpr int kIndexInFileMessages = 85;
   friend void swap(BulkDeleteResponse& a, BulkDeleteResponse& b) { a.Swap(&b); }
   inline void Swap(BulkDeleteResponse* PROTOBUF_NONNULL other) {
     if (other == this) return;
@@ -15262,7 +15744,7 @@ class BulkDeleteRequest final : public ::google::protobuf::Message
     return *reinterpret_cast<const BulkDeleteRequest*>(
         &_BulkDeleteRequest_default_instance_);
   }
-  static constexpr int kIndexInFileMessages = 81;
+  static constexpr int kIndexInFileMessages = 84;
   friend void swap(BulkDeleteRequest& a, BulkDeleteRequest& b) { a.Swap(&b); }
   inline void Swap(BulkDeleteRequest* PROTOBUF_NONNULL other) {
     if (other == this) return;
@@ -15727,7 +16209,7 @@ class PrepareFileUploadResponse final : public ::google::protobuf::Message
     return *reinterpret_cast<const PrepareFileUploadResponse*>(
         &_PrepareFileUploadResponse_default_instance_);
   }
-  static constexpr int kIndexInFileMessages = 91;
+  static constexpr int kIndexInFileMessages = 94;
   friend void swap(PrepareFileUploadResponse& a, PrepareFileUploadResponse& b) { a.Swap(&b); }
   inline void Swap(PrepareFileUploadResponse* PROTOBUF_NONNULL other) {
     if (other == this) return;
@@ -17376,6 +17858,215 @@ class GetReactionsResponse final : public ::google::protobuf::Message
 extern const ::google::protobuf::internal::ClassDataFull GetReactionsResponse_class_data_;
 // -------------------------------------------------------------------
 
+class GetMentionSuggestionsResponse final : public ::google::protobuf::Message
+/* @@protoc_insertion_point(class_definition:chirp.chat.GetMentionSuggestionsResponse) */ {
+ public:
+  inline GetMentionSuggestionsResponse() : GetMentionSuggestionsResponse(nullptr) {}
+  ~GetMentionSuggestionsResponse() PROTOBUF_FINAL;
+
+#if defined(PROTOBUF_CUSTOM_VTABLE)
+  void operator delete(GetMentionSuggestionsResponse* PROTOBUF_NONNULL msg, ::std::destroying_delete_t) {
+    SharedDtor(*msg);
+    ::google::protobuf::internal::SizedDelete(msg, sizeof(GetMentionSuggestionsResponse));
+  }
+#endif
+
+  template <typename = void>
+  explicit PROTOBUF_CONSTEXPR GetMentionSuggestionsResponse(::google::protobuf::internal::ConstantInitialized);
+
+  inline GetMentionSuggestionsResponse(const GetMentionSuggestionsResponse& from) : GetMentionSuggestionsResponse(nullptr, from) {}
+  inline GetMentionSuggestionsResponse(GetMentionSuggestionsResponse&& from) noexcept
+      : GetMentionSuggestionsResponse(nullptr, ::std::move(from)) {}
+  inline GetMentionSuggestionsResponse& operator=(const GetMentionSuggestionsResponse& from) {
+    CopyFrom(from);
+    return *this;
+  }
+  inline GetMentionSuggestionsResponse& operator=(GetMentionSuggestionsResponse&& from) noexcept {
+    if (this == &from) return *this;
+    if (::google::protobuf::internal::CanMoveWithInternalSwap(GetArena(), from.GetArena())) {
+      InternalSwap(&from);
+    } else {
+      CopyFrom(from);
+    }
+    return *this;
+  }
+
+  inline const ::google::protobuf::UnknownFieldSet& unknown_fields() const
+      ABSL_ATTRIBUTE_LIFETIME_BOUND {
+    return _internal_metadata_.unknown_fields<::google::protobuf::UnknownFieldSet>(::google::protobuf::UnknownFieldSet::default_instance);
+  }
+  inline ::google::protobuf::UnknownFieldSet* PROTOBUF_NONNULL mutable_unknown_fields()
+      ABSL_ATTRIBUTE_LIFETIME_BOUND {
+    return _internal_metadata_.mutable_unknown_fields<::google::protobuf::UnknownFieldSet>();
+  }
+
+  static const ::google::protobuf::Descriptor* PROTOBUF_NONNULL descriptor() {
+    return GetDescriptor();
+  }
+  static const ::google::protobuf::Descriptor* PROTOBUF_NONNULL GetDescriptor() {
+    return default_instance().GetMetadata().descriptor;
+  }
+  static const ::google::protobuf::Reflection* PROTOBUF_NONNULL GetReflection() {
+    return default_instance().GetMetadata().reflection;
+  }
+  static const GetMentionSuggestionsResponse& default_instance() {
+    return *reinterpret_cast<const GetMentionSuggestionsResponse*>(
+        &_GetMentionSuggestionsResponse_default_instance_);
+  }
+  static constexpr int kIndexInFileMessages = 77;
+  friend void swap(GetMentionSuggestionsResponse& a, GetMentionSuggestionsResponse& b) { a.Swap(&b); }
+  inline void Swap(GetMentionSuggestionsResponse* PROTOBUF_NONNULL other) {
+    if (other == this) return;
+    if (::google::protobuf::internal::CanUseInternalSwap(GetArena(), other->GetArena())) {
+      InternalSwap(other);
+    } else {
+      ::google::protobuf::internal::GenericSwap(this, other);
+    }
+  }
+  void UnsafeArenaSwap(GetMentionSuggestionsResponse* PROTOBUF_NONNULL other) {
+    if (other == this) return;
+    ABSL_DCHECK(GetArena() == other->GetArena());
+    InternalSwap(other);
+  }
+
+  // implements Message ----------------------------------------------
+
+  GetMentionSuggestionsResponse* PROTOBUF_NONNULL New(::google::protobuf::Arena* PROTOBUF_NULLABLE arena = nullptr) const {
+    return ::google::protobuf::Message::DefaultConstruct<GetMentionSuggestionsResponse>(arena);
+  }
+  using ::google::protobuf::Message::CopyFrom;
+  void CopyFrom(const GetMentionSuggestionsResponse& from);
+  using ::google::protobuf::Message::MergeFrom;
+  void MergeFrom(const GetMentionSuggestionsResponse& from) { GetMentionSuggestionsResponse::MergeImpl(*this, from); }
+
+  private:
+  static void MergeImpl(::google::protobuf::MessageLite& to_msg,
+                        const ::google::protobuf::MessageLite& from_msg);
+
+  public:
+  bool IsInitialized() const {
+    return true;
+  }
+  ABSL_ATTRIBUTE_REINITIALIZES void Clear() PROTOBUF_FINAL;
+  #if defined(PROTOBUF_CUSTOM_VTABLE)
+  private:
+  static ::size_t ByteSizeLong(const ::google::protobuf::MessageLite& msg);
+  static ::uint8_t* PROTOBUF_NONNULL _InternalSerialize(
+      const ::google::protobuf::MessageLite& msg, ::uint8_t* PROTOBUF_NONNULL target,
+      ::google::protobuf::io::EpsCopyOutputStream* PROTOBUF_NONNULL stream);
+
+  public:
+  ::size_t ByteSizeLong() const { return ByteSizeLong(*this); }
+  ::uint8_t* PROTOBUF_NONNULL _InternalSerialize(
+      ::uint8_t* PROTOBUF_NONNULL target,
+      ::google::protobuf::io::EpsCopyOutputStream* PROTOBUF_NONNULL stream) const {
+    return _InternalSerialize(*this, target, stream);
+  }
+  #else   // PROTOBUF_CUSTOM_VTABLE
+  ::size_t ByteSizeLong() const final;
+  ::uint8_t* PROTOBUF_NONNULL _InternalSerialize(
+      ::uint8_t* PROTOBUF_NONNULL target,
+      ::google::protobuf::io::EpsCopyOutputStream* PROTOBUF_NONNULL stream) const final;
+  #endif  // PROTOBUF_CUSTOM_VTABLE
+  int GetCachedSize() const { return _impl_._cached_size_.Get(); }
+
+  private:
+  void SharedCtor(::google::protobuf::Arena* PROTOBUF_NULLABLE arena);
+  static void SharedDtor(MessageLite& self);
+  void InternalSwap(GetMentionSuggestionsResponse* PROTOBUF_NONNULL other);
+ private:
+  template <typename T>
+  friend ::absl::string_view(::google::protobuf::internal::GetAnyMessageName)();
+  static ::absl::string_view FullMessageName() { return "chirp.chat.GetMentionSuggestionsResponse"; }
+
+  explicit GetMentionSuggestionsResponse(::google::protobuf::Arena* PROTOBUF_NULLABLE arena);
+  GetMentionSuggestionsResponse(::google::protobuf::Arena* PROTOBUF_NULLABLE arena, const GetMentionSuggestionsResponse& from);
+  GetMentionSuggestionsResponse(
+      ::google::protobuf::Arena* PROTOBUF_NULLABLE arena, GetMentionSuggestionsResponse&& from) noexcept
+      : GetMentionSuggestionsResponse(arena) {
+    *this = ::std::move(from);
+  }
+  const ::google::protobuf::internal::ClassData* PROTOBUF_NONNULL GetClassData() const PROTOBUF_FINAL;
+  static void* PROTOBUF_NONNULL PlacementNew_(
+      const void* PROTOBUF_NONNULL, void* PROTOBUF_NONNULL mem,
+      ::google::protobuf::Arena* PROTOBUF_NULLABLE arena);
+  static constexpr auto InternalNewImpl_();
+
+ public:
+  static constexpr auto InternalGenerateClassData_();
+
+  ::google::protobuf::Metadata GetMetadata() const;
+  // nested types ----------------------------------------------------
+
+  // accessors -------------------------------------------------------
+  enum : int {
+    kSuggestionsFieldNumber = 2,
+    kCodeFieldNumber = 1,
+  };
+  // repeated .chirp.chat.MentionSuggestion suggestions = 2;
+  int suggestions_size() const;
+  private:
+  int _internal_suggestions_size() const;
+
+  public:
+  void clear_suggestions() ;
+  ::chirp::chat::MentionSuggestion* PROTOBUF_NONNULL mutable_suggestions(int index);
+  ::google::protobuf::RepeatedPtrField<::chirp::chat::MentionSuggestion>* PROTOBUF_NONNULL mutable_suggestions();
+
+  private:
+  const ::google::protobuf::RepeatedPtrField<::chirp::chat::MentionSuggestion>& _internal_suggestions() const;
+  ::google::protobuf::RepeatedPtrField<::chirp::chat::MentionSuggestion>* PROTOBUF_NONNULL _internal_mutable_suggestions();
+  public:
+  const ::chirp::chat::MentionSuggestion& suggestions(int index) const;
+  ::chirp::chat::MentionSuggestion* PROTOBUF_NONNULL add_suggestions();
+  const ::google::protobuf::RepeatedPtrField<::chirp::chat::MentionSuggestion>& suggestions() const;
+  // .chirp.common.ErrorCode code = 1;
+  void clear_code() ;
+  ::chirp::common::ErrorCode code() const;
+  void set_code(::chirp::common::ErrorCode value);
+
+  private:
+  ::chirp::common::ErrorCode _internal_code() const;
+  void _internal_set_code(::chirp::common::ErrorCode value);
+
+  public:
+  // @@protoc_insertion_point(class_scope:chirp.chat.GetMentionSuggestionsResponse)
+ private:
+  class _Internal;
+  friend class ::google::protobuf::internal::TcParser;
+  static const ::google::protobuf::internal::TcParseTable<1, 2,
+                                   1, 0,
+                                   2>
+      _table_;
+
+  friend class ::google::protobuf::MessageLite;
+  friend class ::google::protobuf::Arena;
+  template <typename T>
+  friend class ::google::protobuf::Arena::InternalHelper;
+  using InternalArenaConstructable_ = void;
+  using DestructorSkippable_ = void;
+  struct Impl_ {
+    inline explicit constexpr Impl_(::google::protobuf::internal::ConstantInitialized) noexcept;
+    inline explicit Impl_(
+        ::google::protobuf::internal::InternalVisibility visibility,
+        ::google::protobuf::Arena* PROTOBUF_NULLABLE arena);
+    inline explicit Impl_(
+        ::google::protobuf::internal::InternalVisibility visibility,
+        ::google::protobuf::Arena* PROTOBUF_NULLABLE arena, const Impl_& from,
+        const GetMentionSuggestionsResponse& from_msg);
+    ::google::protobuf::internal::HasBits<1> _has_bits_;
+    ::google::protobuf::internal::CachedSize _cached_size_;
+    ::google::protobuf::RepeatedPtrField< ::chirp::chat::MentionSuggestion > suggestions_;
+    int code_;
+    PROTOBUF_TSAN_DECLARE_MEMBER
+  };
+  union { Impl_ _impl_; };
+  friend struct ::TableStruct_proto_2fchat_2eproto;
+};
+
+extern const ::google::protobuf::internal::ClassDataFull GetMentionSuggestionsResponse_class_data_;
+// -------------------------------------------------------------------
+
 class GetHistoryResponseV2 final : public ::google::protobuf::Message
 /* @@protoc_insertion_point(class_definition:chirp.chat.GetHistoryResponseV2) */ {
  public:
@@ -18400,7 +19091,7 @@ class GetFileDownloadResponse final : public ::google::protobuf::Message
     return *reinterpret_cast<const GetFileDownloadResponse*>(
         &_GetFileDownloadResponse_default_instance_);
   }
-  static constexpr int kIndexInFileMessages = 95;
+  static constexpr int kIndexInFileMessages = 98;
   friend void swap(GetFileDownloadResponse& a, GetFileDownloadResponse& b) { a.Swap(&b); }
   inline void Swap(GetFileDownloadResponse* PROTOBUF_NONNULL other) {
     if (other == this) return;
@@ -18636,7 +19327,7 @@ class FileAttachment final : public ::google::protobuf::Message
     return *reinterpret_cast<const FileAttachment*>(
         &_FileAttachment_default_instance_);
   }
-  static constexpr int kIndexInFileMessages = 96;
+  static constexpr int kIndexInFileMessages = 99;
   friend void swap(FileAttachment& a, FileAttachment& b) { a.Swap(&b); }
   inline void Swap(FileAttachment* PROTOBUF_NONNULL other) {
     if (other == this) return;
@@ -19079,7 +19770,7 @@ class ConfirmFileUploadResponse final : public ::google::protobuf::Message
     return *reinterpret_cast<const ConfirmFileUploadResponse*>(
         &_ConfirmFileUploadResponse_default_instance_);
   }
-  static constexpr int kIndexInFileMessages = 93;
+  static constexpr int kIndexInFileMessages = 96;
   friend void swap(ConfirmFileUploadResponse& a, ConfirmFileUploadResponse& b) { a.Swap(&b); }
   inline void Swap(ConfirmFileUploadResponse* PROTOBUF_NONNULL other) {
     if (other == this) return;
@@ -19298,7 +19989,7 @@ class ChatMessageFull final : public ::google::protobuf::Message
     return *reinterpret_cast<const ChatMessageFull*>(
         &_ChatMessageFull_default_instance_);
   }
-  static constexpr int kIndexInFileMessages = 76;
+  static constexpr int kIndexInFileMessages = 79;
   friend void swap(ChatMessageFull& a, ChatMessageFull& b) { a.Swap(&b); }
   inline void Swap(ChatMessageFull* PROTOBUF_NONNULL other) {
     if (other == this) return;
@@ -21600,7 +22291,7 @@ class FileMessage final : public ::google::protobuf::Message
     return *reinterpret_cast<const FileMessage*>(
         &_FileMessage_default_instance_);
   }
-  static constexpr int kIndexInFileMessages = 97;
+  static constexpr int kIndexInFileMessages = 100;
   friend void swap(FileMessage& a, FileMessage& b) { a.Swap(&b); }
   inline void Swap(FileMessage* PROTOBUF_NONNULL other) {
     if (other == this) return;
@@ -21814,7 +22505,7 @@ class EditMessageResponse final : public ::google::protobuf::Message
     return *reinterpret_cast<const EditMessageResponse*>(
         &_EditMessageResponse_default_instance_);
   }
-  static constexpr int kIndexInFileMessages = 78;
+  static constexpr int kIndexInFileMessages = 81;
   friend void swap(EditMessageResponse& a, EditMessageResponse& b) { a.Swap(&b); }
   inline void Swap(EditMessageResponse* PROTOBUF_NONNULL other) {
     if (other == this) return;
@@ -37456,6 +38147,514 @@ inline bool ChatMessageEx::_internal_mentions_here() const {
 inline void ChatMessageEx::_internal_set_mentions_here(bool value) {
   ::google::protobuf::internal::TSanWrite(&_impl_);
   _impl_.mentions_here_ = value;
+}
+
+// -------------------------------------------------------------------
+
+// MentionSuggestion
+
+// string display_text = 1;
+inline void MentionSuggestion::clear_display_text() {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_.display_text_.ClearToEmpty();
+  ClearHasBit(_impl_._has_bits_[0],
+                  0x00000001U);
+}
+inline const ::std::string& MentionSuggestion::display_text() const
+    ABSL_ATTRIBUTE_LIFETIME_BOUND {
+  // @@protoc_insertion_point(field_get:chirp.chat.MentionSuggestion.display_text)
+  return _internal_display_text();
+}
+template <typename Arg_, typename... Args_>
+PROTOBUF_ALWAYS_INLINE void MentionSuggestion::set_display_text(Arg_&& arg, Args_... args) {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  SetHasBit(_impl_._has_bits_[0], 0x00000001U);
+  _impl_.display_text_.Set(static_cast<Arg_&&>(arg), args..., GetArena());
+  // @@protoc_insertion_point(field_set:chirp.chat.MentionSuggestion.display_text)
+}
+inline ::std::string* PROTOBUF_NONNULL MentionSuggestion::mutable_display_text()
+    ABSL_ATTRIBUTE_LIFETIME_BOUND {
+  SetHasBit(_impl_._has_bits_[0], 0x00000001U);
+  ::std::string* _s = _internal_mutable_display_text();
+  // @@protoc_insertion_point(field_mutable:chirp.chat.MentionSuggestion.display_text)
+  return _s;
+}
+inline const ::std::string& MentionSuggestion::_internal_display_text() const {
+  ::google::protobuf::internal::TSanRead(&_impl_);
+  return _impl_.display_text_.Get();
+}
+inline void MentionSuggestion::_internal_set_display_text(const ::std::string& value) {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_.display_text_.Set(value, GetArena());
+}
+inline ::std::string* PROTOBUF_NONNULL MentionSuggestion::_internal_mutable_display_text() {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  return _impl_.display_text_.Mutable( GetArena());
+}
+inline ::std::string* PROTOBUF_NULLABLE MentionSuggestion::release_display_text() {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  // @@protoc_insertion_point(field_release:chirp.chat.MentionSuggestion.display_text)
+  if (!CheckHasBit(_impl_._has_bits_[0], 0x00000001U)) {
+    return nullptr;
+  }
+  ClearHasBit(_impl_._has_bits_[0], 0x00000001U);
+  auto* released = _impl_.display_text_.Release();
+  if (::google::protobuf::internal::DebugHardenForceCopyDefaultString()) {
+    _impl_.display_text_.Set("", GetArena());
+  }
+  return released;
+}
+inline void MentionSuggestion::set_allocated_display_text(::std::string* PROTOBUF_NULLABLE value) {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  if (value != nullptr) {
+    SetHasBit(_impl_._has_bits_[0], 0x00000001U);
+  } else {
+    ClearHasBit(_impl_._has_bits_[0], 0x00000001U);
+  }
+  _impl_.display_text_.SetAllocated(value, GetArena());
+  if (::google::protobuf::internal::DebugHardenForceCopyDefaultString() && _impl_.display_text_.IsDefault()) {
+    _impl_.display_text_.Set("", GetArena());
+  }
+  // @@protoc_insertion_point(field_set_allocated:chirp.chat.MentionSuggestion.display_text)
+}
+
+// string id = 2;
+inline void MentionSuggestion::clear_id() {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_.id_.ClearToEmpty();
+  ClearHasBit(_impl_._has_bits_[0],
+                  0x00000002U);
+}
+inline const ::std::string& MentionSuggestion::id() const
+    ABSL_ATTRIBUTE_LIFETIME_BOUND {
+  // @@protoc_insertion_point(field_get:chirp.chat.MentionSuggestion.id)
+  return _internal_id();
+}
+template <typename Arg_, typename... Args_>
+PROTOBUF_ALWAYS_INLINE void MentionSuggestion::set_id(Arg_&& arg, Args_... args) {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  SetHasBit(_impl_._has_bits_[0], 0x00000002U);
+  _impl_.id_.Set(static_cast<Arg_&&>(arg), args..., GetArena());
+  // @@protoc_insertion_point(field_set:chirp.chat.MentionSuggestion.id)
+}
+inline ::std::string* PROTOBUF_NONNULL MentionSuggestion::mutable_id()
+    ABSL_ATTRIBUTE_LIFETIME_BOUND {
+  SetHasBit(_impl_._has_bits_[0], 0x00000002U);
+  ::std::string* _s = _internal_mutable_id();
+  // @@protoc_insertion_point(field_mutable:chirp.chat.MentionSuggestion.id)
+  return _s;
+}
+inline const ::std::string& MentionSuggestion::_internal_id() const {
+  ::google::protobuf::internal::TSanRead(&_impl_);
+  return _impl_.id_.Get();
+}
+inline void MentionSuggestion::_internal_set_id(const ::std::string& value) {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_.id_.Set(value, GetArena());
+}
+inline ::std::string* PROTOBUF_NONNULL MentionSuggestion::_internal_mutable_id() {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  return _impl_.id_.Mutable( GetArena());
+}
+inline ::std::string* PROTOBUF_NULLABLE MentionSuggestion::release_id() {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  // @@protoc_insertion_point(field_release:chirp.chat.MentionSuggestion.id)
+  if (!CheckHasBit(_impl_._has_bits_[0], 0x00000002U)) {
+    return nullptr;
+  }
+  ClearHasBit(_impl_._has_bits_[0], 0x00000002U);
+  auto* released = _impl_.id_.Release();
+  if (::google::protobuf::internal::DebugHardenForceCopyDefaultString()) {
+    _impl_.id_.Set("", GetArena());
+  }
+  return released;
+}
+inline void MentionSuggestion::set_allocated_id(::std::string* PROTOBUF_NULLABLE value) {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  if (value != nullptr) {
+    SetHasBit(_impl_._has_bits_[0], 0x00000002U);
+  } else {
+    ClearHasBit(_impl_._has_bits_[0], 0x00000002U);
+  }
+  _impl_.id_.SetAllocated(value, GetArena());
+  if (::google::protobuf::internal::DebugHardenForceCopyDefaultString() && _impl_.id_.IsDefault()) {
+    _impl_.id_.Set("", GetArena());
+  }
+  // @@protoc_insertion_point(field_set_allocated:chirp.chat.MentionSuggestion.id)
+}
+
+// .chirp.chat.MentionType type = 3;
+inline void MentionSuggestion::clear_type() {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_.type_ = 0;
+  ClearHasBit(_impl_._has_bits_[0],
+                  0x00000008U);
+}
+inline ::chirp::chat::MentionType MentionSuggestion::type() const {
+  // @@protoc_insertion_point(field_get:chirp.chat.MentionSuggestion.type)
+  return _internal_type();
+}
+inline void MentionSuggestion::set_type(::chirp::chat::MentionType value) {
+  _internal_set_type(value);
+  SetHasBit(_impl_._has_bits_[0], 0x00000008U);
+  // @@protoc_insertion_point(field_set:chirp.chat.MentionSuggestion.type)
+}
+inline ::chirp::chat::MentionType MentionSuggestion::_internal_type() const {
+  ::google::protobuf::internal::TSanRead(&_impl_);
+  return static_cast<::chirp::chat::MentionType>(_impl_.type_);
+}
+inline void MentionSuggestion::_internal_set_type(::chirp::chat::MentionType value) {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_.type_ = value;
+}
+
+// string icon_url = 4;
+inline void MentionSuggestion::clear_icon_url() {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_.icon_url_.ClearToEmpty();
+  ClearHasBit(_impl_._has_bits_[0],
+                  0x00000004U);
+}
+inline const ::std::string& MentionSuggestion::icon_url() const
+    ABSL_ATTRIBUTE_LIFETIME_BOUND {
+  // @@protoc_insertion_point(field_get:chirp.chat.MentionSuggestion.icon_url)
+  return _internal_icon_url();
+}
+template <typename Arg_, typename... Args_>
+PROTOBUF_ALWAYS_INLINE void MentionSuggestion::set_icon_url(Arg_&& arg, Args_... args) {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  SetHasBit(_impl_._has_bits_[0], 0x00000004U);
+  _impl_.icon_url_.Set(static_cast<Arg_&&>(arg), args..., GetArena());
+  // @@protoc_insertion_point(field_set:chirp.chat.MentionSuggestion.icon_url)
+}
+inline ::std::string* PROTOBUF_NONNULL MentionSuggestion::mutable_icon_url()
+    ABSL_ATTRIBUTE_LIFETIME_BOUND {
+  SetHasBit(_impl_._has_bits_[0], 0x00000004U);
+  ::std::string* _s = _internal_mutable_icon_url();
+  // @@protoc_insertion_point(field_mutable:chirp.chat.MentionSuggestion.icon_url)
+  return _s;
+}
+inline const ::std::string& MentionSuggestion::_internal_icon_url() const {
+  ::google::protobuf::internal::TSanRead(&_impl_);
+  return _impl_.icon_url_.Get();
+}
+inline void MentionSuggestion::_internal_set_icon_url(const ::std::string& value) {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_.icon_url_.Set(value, GetArena());
+}
+inline ::std::string* PROTOBUF_NONNULL MentionSuggestion::_internal_mutable_icon_url() {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  return _impl_.icon_url_.Mutable( GetArena());
+}
+inline ::std::string* PROTOBUF_NULLABLE MentionSuggestion::release_icon_url() {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  // @@protoc_insertion_point(field_release:chirp.chat.MentionSuggestion.icon_url)
+  if (!CheckHasBit(_impl_._has_bits_[0], 0x00000004U)) {
+    return nullptr;
+  }
+  ClearHasBit(_impl_._has_bits_[0], 0x00000004U);
+  auto* released = _impl_.icon_url_.Release();
+  if (::google::protobuf::internal::DebugHardenForceCopyDefaultString()) {
+    _impl_.icon_url_.Set("", GetArena());
+  }
+  return released;
+}
+inline void MentionSuggestion::set_allocated_icon_url(::std::string* PROTOBUF_NULLABLE value) {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  if (value != nullptr) {
+    SetHasBit(_impl_._has_bits_[0], 0x00000004U);
+  } else {
+    ClearHasBit(_impl_._has_bits_[0], 0x00000004U);
+  }
+  _impl_.icon_url_.SetAllocated(value, GetArena());
+  if (::google::protobuf::internal::DebugHardenForceCopyDefaultString() && _impl_.icon_url_.IsDefault()) {
+    _impl_.icon_url_.Set("", GetArena());
+  }
+  // @@protoc_insertion_point(field_set_allocated:chirp.chat.MentionSuggestion.icon_url)
+}
+
+// -------------------------------------------------------------------
+
+// GetMentionSuggestionsRequest
+
+// string user_id = 1;
+inline void GetMentionSuggestionsRequest::clear_user_id() {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_.user_id_.ClearToEmpty();
+  ClearHasBit(_impl_._has_bits_[0],
+                  0x00000001U);
+}
+inline const ::std::string& GetMentionSuggestionsRequest::user_id() const
+    ABSL_ATTRIBUTE_LIFETIME_BOUND {
+  // @@protoc_insertion_point(field_get:chirp.chat.GetMentionSuggestionsRequest.user_id)
+  return _internal_user_id();
+}
+template <typename Arg_, typename... Args_>
+PROTOBUF_ALWAYS_INLINE void GetMentionSuggestionsRequest::set_user_id(Arg_&& arg, Args_... args) {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  SetHasBit(_impl_._has_bits_[0], 0x00000001U);
+  _impl_.user_id_.Set(static_cast<Arg_&&>(arg), args..., GetArena());
+  // @@protoc_insertion_point(field_set:chirp.chat.GetMentionSuggestionsRequest.user_id)
+}
+inline ::std::string* PROTOBUF_NONNULL GetMentionSuggestionsRequest::mutable_user_id()
+    ABSL_ATTRIBUTE_LIFETIME_BOUND {
+  SetHasBit(_impl_._has_bits_[0], 0x00000001U);
+  ::std::string* _s = _internal_mutable_user_id();
+  // @@protoc_insertion_point(field_mutable:chirp.chat.GetMentionSuggestionsRequest.user_id)
+  return _s;
+}
+inline const ::std::string& GetMentionSuggestionsRequest::_internal_user_id() const {
+  ::google::protobuf::internal::TSanRead(&_impl_);
+  return _impl_.user_id_.Get();
+}
+inline void GetMentionSuggestionsRequest::_internal_set_user_id(const ::std::string& value) {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_.user_id_.Set(value, GetArena());
+}
+inline ::std::string* PROTOBUF_NONNULL GetMentionSuggestionsRequest::_internal_mutable_user_id() {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  return _impl_.user_id_.Mutable( GetArena());
+}
+inline ::std::string* PROTOBUF_NULLABLE GetMentionSuggestionsRequest::release_user_id() {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  // @@protoc_insertion_point(field_release:chirp.chat.GetMentionSuggestionsRequest.user_id)
+  if (!CheckHasBit(_impl_._has_bits_[0], 0x00000001U)) {
+    return nullptr;
+  }
+  ClearHasBit(_impl_._has_bits_[0], 0x00000001U);
+  auto* released = _impl_.user_id_.Release();
+  if (::google::protobuf::internal::DebugHardenForceCopyDefaultString()) {
+    _impl_.user_id_.Set("", GetArena());
+  }
+  return released;
+}
+inline void GetMentionSuggestionsRequest::set_allocated_user_id(::std::string* PROTOBUF_NULLABLE value) {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  if (value != nullptr) {
+    SetHasBit(_impl_._has_bits_[0], 0x00000001U);
+  } else {
+    ClearHasBit(_impl_._has_bits_[0], 0x00000001U);
+  }
+  _impl_.user_id_.SetAllocated(value, GetArena());
+  if (::google::protobuf::internal::DebugHardenForceCopyDefaultString() && _impl_.user_id_.IsDefault()) {
+    _impl_.user_id_.Set("", GetArena());
+  }
+  // @@protoc_insertion_point(field_set_allocated:chirp.chat.GetMentionSuggestionsRequest.user_id)
+}
+
+// string channel_id = 2;
+inline void GetMentionSuggestionsRequest::clear_channel_id() {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_.channel_id_.ClearToEmpty();
+  ClearHasBit(_impl_._has_bits_[0],
+                  0x00000002U);
+}
+inline const ::std::string& GetMentionSuggestionsRequest::channel_id() const
+    ABSL_ATTRIBUTE_LIFETIME_BOUND {
+  // @@protoc_insertion_point(field_get:chirp.chat.GetMentionSuggestionsRequest.channel_id)
+  return _internal_channel_id();
+}
+template <typename Arg_, typename... Args_>
+PROTOBUF_ALWAYS_INLINE void GetMentionSuggestionsRequest::set_channel_id(Arg_&& arg, Args_... args) {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  SetHasBit(_impl_._has_bits_[0], 0x00000002U);
+  _impl_.channel_id_.Set(static_cast<Arg_&&>(arg), args..., GetArena());
+  // @@protoc_insertion_point(field_set:chirp.chat.GetMentionSuggestionsRequest.channel_id)
+}
+inline ::std::string* PROTOBUF_NONNULL GetMentionSuggestionsRequest::mutable_channel_id()
+    ABSL_ATTRIBUTE_LIFETIME_BOUND {
+  SetHasBit(_impl_._has_bits_[0], 0x00000002U);
+  ::std::string* _s = _internal_mutable_channel_id();
+  // @@protoc_insertion_point(field_mutable:chirp.chat.GetMentionSuggestionsRequest.channel_id)
+  return _s;
+}
+inline const ::std::string& GetMentionSuggestionsRequest::_internal_channel_id() const {
+  ::google::protobuf::internal::TSanRead(&_impl_);
+  return _impl_.channel_id_.Get();
+}
+inline void GetMentionSuggestionsRequest::_internal_set_channel_id(const ::std::string& value) {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_.channel_id_.Set(value, GetArena());
+}
+inline ::std::string* PROTOBUF_NONNULL GetMentionSuggestionsRequest::_internal_mutable_channel_id() {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  return _impl_.channel_id_.Mutable( GetArena());
+}
+inline ::std::string* PROTOBUF_NULLABLE GetMentionSuggestionsRequest::release_channel_id() {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  // @@protoc_insertion_point(field_release:chirp.chat.GetMentionSuggestionsRequest.channel_id)
+  if (!CheckHasBit(_impl_._has_bits_[0], 0x00000002U)) {
+    return nullptr;
+  }
+  ClearHasBit(_impl_._has_bits_[0], 0x00000002U);
+  auto* released = _impl_.channel_id_.Release();
+  if (::google::protobuf::internal::DebugHardenForceCopyDefaultString()) {
+    _impl_.channel_id_.Set("", GetArena());
+  }
+  return released;
+}
+inline void GetMentionSuggestionsRequest::set_allocated_channel_id(::std::string* PROTOBUF_NULLABLE value) {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  if (value != nullptr) {
+    SetHasBit(_impl_._has_bits_[0], 0x00000002U);
+  } else {
+    ClearHasBit(_impl_._has_bits_[0], 0x00000002U);
+  }
+  _impl_.channel_id_.SetAllocated(value, GetArena());
+  if (::google::protobuf::internal::DebugHardenForceCopyDefaultString() && _impl_.channel_id_.IsDefault()) {
+    _impl_.channel_id_.Set("", GetArena());
+  }
+  // @@protoc_insertion_point(field_set_allocated:chirp.chat.GetMentionSuggestionsRequest.channel_id)
+}
+
+// string query = 3;
+inline void GetMentionSuggestionsRequest::clear_query() {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_.query_.ClearToEmpty();
+  ClearHasBit(_impl_._has_bits_[0],
+                  0x00000004U);
+}
+inline const ::std::string& GetMentionSuggestionsRequest::query() const
+    ABSL_ATTRIBUTE_LIFETIME_BOUND {
+  // @@protoc_insertion_point(field_get:chirp.chat.GetMentionSuggestionsRequest.query)
+  return _internal_query();
+}
+template <typename Arg_, typename... Args_>
+PROTOBUF_ALWAYS_INLINE void GetMentionSuggestionsRequest::set_query(Arg_&& arg, Args_... args) {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  SetHasBit(_impl_._has_bits_[0], 0x00000004U);
+  _impl_.query_.Set(static_cast<Arg_&&>(arg), args..., GetArena());
+  // @@protoc_insertion_point(field_set:chirp.chat.GetMentionSuggestionsRequest.query)
+}
+inline ::std::string* PROTOBUF_NONNULL GetMentionSuggestionsRequest::mutable_query()
+    ABSL_ATTRIBUTE_LIFETIME_BOUND {
+  SetHasBit(_impl_._has_bits_[0], 0x00000004U);
+  ::std::string* _s = _internal_mutable_query();
+  // @@protoc_insertion_point(field_mutable:chirp.chat.GetMentionSuggestionsRequest.query)
+  return _s;
+}
+inline const ::std::string& GetMentionSuggestionsRequest::_internal_query() const {
+  ::google::protobuf::internal::TSanRead(&_impl_);
+  return _impl_.query_.Get();
+}
+inline void GetMentionSuggestionsRequest::_internal_set_query(const ::std::string& value) {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_.query_.Set(value, GetArena());
+}
+inline ::std::string* PROTOBUF_NONNULL GetMentionSuggestionsRequest::_internal_mutable_query() {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  return _impl_.query_.Mutable( GetArena());
+}
+inline ::std::string* PROTOBUF_NULLABLE GetMentionSuggestionsRequest::release_query() {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  // @@protoc_insertion_point(field_release:chirp.chat.GetMentionSuggestionsRequest.query)
+  if (!CheckHasBit(_impl_._has_bits_[0], 0x00000004U)) {
+    return nullptr;
+  }
+  ClearHasBit(_impl_._has_bits_[0], 0x00000004U);
+  auto* released = _impl_.query_.Release();
+  if (::google::protobuf::internal::DebugHardenForceCopyDefaultString()) {
+    _impl_.query_.Set("", GetArena());
+  }
+  return released;
+}
+inline void GetMentionSuggestionsRequest::set_allocated_query(::std::string* PROTOBUF_NULLABLE value) {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  if (value != nullptr) {
+    SetHasBit(_impl_._has_bits_[0], 0x00000004U);
+  } else {
+    ClearHasBit(_impl_._has_bits_[0], 0x00000004U);
+  }
+  _impl_.query_.SetAllocated(value, GetArena());
+  if (::google::protobuf::internal::DebugHardenForceCopyDefaultString() && _impl_.query_.IsDefault()) {
+    _impl_.query_.Set("", GetArena());
+  }
+  // @@protoc_insertion_point(field_set_allocated:chirp.chat.GetMentionSuggestionsRequest.query)
+}
+
+// -------------------------------------------------------------------
+
+// GetMentionSuggestionsResponse
+
+// .chirp.common.ErrorCode code = 1;
+inline void GetMentionSuggestionsResponse::clear_code() {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_.code_ = 0;
+  ClearHasBit(_impl_._has_bits_[0],
+                  0x00000002U);
+}
+inline ::chirp::common::ErrorCode GetMentionSuggestionsResponse::code() const {
+  // @@protoc_insertion_point(field_get:chirp.chat.GetMentionSuggestionsResponse.code)
+  return _internal_code();
+}
+inline void GetMentionSuggestionsResponse::set_code(::chirp::common::ErrorCode value) {
+  _internal_set_code(value);
+  SetHasBit(_impl_._has_bits_[0], 0x00000002U);
+  // @@protoc_insertion_point(field_set:chirp.chat.GetMentionSuggestionsResponse.code)
+}
+inline ::chirp::common::ErrorCode GetMentionSuggestionsResponse::_internal_code() const {
+  ::google::protobuf::internal::TSanRead(&_impl_);
+  return static_cast<::chirp::common::ErrorCode>(_impl_.code_);
+}
+inline void GetMentionSuggestionsResponse::_internal_set_code(::chirp::common::ErrorCode value) {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_.code_ = value;
+}
+
+// repeated .chirp.chat.MentionSuggestion suggestions = 2;
+inline int GetMentionSuggestionsResponse::_internal_suggestions_size() const {
+  return _internal_suggestions().size();
+}
+inline int GetMentionSuggestionsResponse::suggestions_size() const {
+  return _internal_suggestions_size();
+}
+inline void GetMentionSuggestionsResponse::clear_suggestions() {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_.suggestions_.Clear();
+  ClearHasBitForRepeated(_impl_._has_bits_[0],
+                  0x00000001U);
+}
+inline ::chirp::chat::MentionSuggestion* PROTOBUF_NONNULL GetMentionSuggestionsResponse::mutable_suggestions(int index)
+    ABSL_ATTRIBUTE_LIFETIME_BOUND {
+  // @@protoc_insertion_point(field_mutable:chirp.chat.GetMentionSuggestionsResponse.suggestions)
+  return _internal_mutable_suggestions()->Mutable(index);
+}
+inline ::google::protobuf::RepeatedPtrField<::chirp::chat::MentionSuggestion>* PROTOBUF_NONNULL GetMentionSuggestionsResponse::mutable_suggestions()
+    ABSL_ATTRIBUTE_LIFETIME_BOUND {
+  SetHasBitForRepeated(_impl_._has_bits_[0], 0x00000001U);
+  // @@protoc_insertion_point(field_mutable_list:chirp.chat.GetMentionSuggestionsResponse.suggestions)
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  return _internal_mutable_suggestions();
+}
+inline const ::chirp::chat::MentionSuggestion& GetMentionSuggestionsResponse::suggestions(int index) const
+    ABSL_ATTRIBUTE_LIFETIME_BOUND {
+  // @@protoc_insertion_point(field_get:chirp.chat.GetMentionSuggestionsResponse.suggestions)
+  return _internal_suggestions().Get(index);
+}
+inline ::chirp::chat::MentionSuggestion* PROTOBUF_NONNULL GetMentionSuggestionsResponse::add_suggestions()
+    ABSL_ATTRIBUTE_LIFETIME_BOUND {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  ::chirp::chat::MentionSuggestion* _add =
+      _internal_mutable_suggestions()->InternalAddWithArena(
+          ::google::protobuf::MessageLite::internal_visibility(), GetArena());
+  SetHasBitForRepeated(_impl_._has_bits_[0], 0x00000001U);
+  // @@protoc_insertion_point(field_add:chirp.chat.GetMentionSuggestionsResponse.suggestions)
+  return _add;
+}
+inline const ::google::protobuf::RepeatedPtrField<::chirp::chat::MentionSuggestion>& GetMentionSuggestionsResponse::suggestions() const
+    ABSL_ATTRIBUTE_LIFETIME_BOUND {
+  // @@protoc_insertion_point(field_list:chirp.chat.GetMentionSuggestionsResponse.suggestions)
+  return _internal_suggestions();
+}
+inline const ::google::protobuf::RepeatedPtrField<::chirp::chat::MentionSuggestion>&
+GetMentionSuggestionsResponse::_internal_suggestions() const {
+  ::google::protobuf::internal::TSanRead(&_impl_);
+  return _impl_.suggestions_;
+}
+inline ::google::protobuf::RepeatedPtrField<::chirp::chat::MentionSuggestion>* PROTOBUF_NONNULL
+GetMentionSuggestionsResponse::_internal_mutable_suggestions() {
+  ::google::protobuf::internal::TSanRead(&_impl_);
+  return &_impl_.suggestions_;
 }
 
 // -------------------------------------------------------------------

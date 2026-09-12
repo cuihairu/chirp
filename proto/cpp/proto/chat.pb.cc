@@ -716,6 +716,40 @@ struct MessageAckDefaultTypeInternal {
 PROTOBUF_ATTRIBUTE_NO_DESTROY PROTOBUF_CONSTINIT
     PROTOBUF_ATTRIBUTE_INIT_PRIORITY1 MessageAckDefaultTypeInternal _MessageAck_default_instance_;
 
+inline constexpr MentionSuggestion::Impl_::Impl_(
+    ::_pbi::ConstantInitialized) noexcept
+      : _cached_size_{0},
+        display_text_(
+            &::google::protobuf::internal::fixed_address_empty_string,
+            ::_pbi::ConstantInitialized()),
+        id_(
+            &::google::protobuf::internal::fixed_address_empty_string,
+            ::_pbi::ConstantInitialized()),
+        icon_url_(
+            &::google::protobuf::internal::fixed_address_empty_string,
+            ::_pbi::ConstantInitialized()),
+        type_{static_cast< ::chirp::chat::MentionType >(0)} {}
+
+template <typename>
+PROTOBUF_CONSTEXPR MentionSuggestion::MentionSuggestion(::_pbi::ConstantInitialized)
+#if defined(PROTOBUF_CUSTOM_VTABLE)
+    : ::google::protobuf::Message(MentionSuggestion_class_data_.base()),
+#else   // PROTOBUF_CUSTOM_VTABLE
+    : ::google::protobuf::Message(),
+#endif  // PROTOBUF_CUSTOM_VTABLE
+      _impl_(::_pbi::ConstantInitialized()) {
+}
+struct MentionSuggestionDefaultTypeInternal {
+  PROTOBUF_CONSTEXPR MentionSuggestionDefaultTypeInternal() : _instance(::_pbi::ConstantInitialized{}) {}
+  ~MentionSuggestionDefaultTypeInternal() {}
+  union {
+    MentionSuggestion _instance;
+  };
+};
+
+PROTOBUF_ATTRIBUTE_NO_DESTROY PROTOBUF_CONSTINIT
+    PROTOBUF_ATTRIBUTE_INIT_PRIORITY1 MentionSuggestionDefaultTypeInternal _MentionSuggestion_default_instance_;
+
 inline constexpr Mention::Impl_::Impl_(
     ::_pbi::ConstantInitialized) noexcept
       : _cached_size_{0},
@@ -1332,6 +1366,39 @@ struct GetReactionsRequestDefaultTypeInternal {
 
 PROTOBUF_ATTRIBUTE_NO_DESTROY PROTOBUF_CONSTINIT
     PROTOBUF_ATTRIBUTE_INIT_PRIORITY1 GetReactionsRequestDefaultTypeInternal _GetReactionsRequest_default_instance_;
+
+inline constexpr GetMentionSuggestionsRequest::Impl_::Impl_(
+    ::_pbi::ConstantInitialized) noexcept
+      : _cached_size_{0},
+        user_id_(
+            &::google::protobuf::internal::fixed_address_empty_string,
+            ::_pbi::ConstantInitialized()),
+        channel_id_(
+            &::google::protobuf::internal::fixed_address_empty_string,
+            ::_pbi::ConstantInitialized()),
+        query_(
+            &::google::protobuf::internal::fixed_address_empty_string,
+            ::_pbi::ConstantInitialized()) {}
+
+template <typename>
+PROTOBUF_CONSTEXPR GetMentionSuggestionsRequest::GetMentionSuggestionsRequest(::_pbi::ConstantInitialized)
+#if defined(PROTOBUF_CUSTOM_VTABLE)
+    : ::google::protobuf::Message(GetMentionSuggestionsRequest_class_data_.base()),
+#else   // PROTOBUF_CUSTOM_VTABLE
+    : ::google::protobuf::Message(),
+#endif  // PROTOBUF_CUSTOM_VTABLE
+      _impl_(::_pbi::ConstantInitialized()) {
+}
+struct GetMentionSuggestionsRequestDefaultTypeInternal {
+  PROTOBUF_CONSTEXPR GetMentionSuggestionsRequestDefaultTypeInternal() : _instance(::_pbi::ConstantInitialized{}) {}
+  ~GetMentionSuggestionsRequestDefaultTypeInternal() {}
+  union {
+    GetMentionSuggestionsRequest _instance;
+  };
+};
+
+PROTOBUF_ATTRIBUTE_NO_DESTROY PROTOBUF_CONSTINIT
+    PROTOBUF_ATTRIBUTE_INIT_PRIORITY1 GetMentionSuggestionsRequestDefaultTypeInternal _GetMentionSuggestionsRequest_default_instance_;
 
 inline constexpr GetHistoryRequest::Impl_::Impl_(
     ::_pbi::ConstantInitialized) noexcept
@@ -2291,6 +2358,32 @@ struct GetReactionsResponseDefaultTypeInternal {
 
 PROTOBUF_ATTRIBUTE_NO_DESTROY PROTOBUF_CONSTINIT
     PROTOBUF_ATTRIBUTE_INIT_PRIORITY1 GetReactionsResponseDefaultTypeInternal _GetReactionsResponse_default_instance_;
+
+inline constexpr GetMentionSuggestionsResponse::Impl_::Impl_(
+    ::_pbi::ConstantInitialized) noexcept
+      : _cached_size_{0},
+        suggestions_{},
+        code_{static_cast< ::chirp::common::ErrorCode >(0)} {}
+
+template <typename>
+PROTOBUF_CONSTEXPR GetMentionSuggestionsResponse::GetMentionSuggestionsResponse(::_pbi::ConstantInitialized)
+#if defined(PROTOBUF_CUSTOM_VTABLE)
+    : ::google::protobuf::Message(GetMentionSuggestionsResponse_class_data_.base()),
+#else   // PROTOBUF_CUSTOM_VTABLE
+    : ::google::protobuf::Message(),
+#endif  // PROTOBUF_CUSTOM_VTABLE
+      _impl_(::_pbi::ConstantInitialized()) {
+}
+struct GetMentionSuggestionsResponseDefaultTypeInternal {
+  PROTOBUF_CONSTEXPR GetMentionSuggestionsResponseDefaultTypeInternal() : _instance(::_pbi::ConstantInitialized{}) {}
+  ~GetMentionSuggestionsResponseDefaultTypeInternal() {}
+  union {
+    GetMentionSuggestionsResponse _instance;
+  };
+};
+
+PROTOBUF_ATTRIBUTE_NO_DESTROY PROTOBUF_CONSTINIT
+    PROTOBUF_ATTRIBUTE_INIT_PRIORITY1 GetMentionSuggestionsResponseDefaultTypeInternal _GetMentionSuggestionsResponse_default_instance_;
 
 inline constexpr GetHistoryResponseV2::Impl_::Impl_(
     ::_pbi::ConstantInitialized) noexcept
@@ -3879,6 +3972,33 @@ const ::uint32_t
         3,
         4,
         0x081, // bitmap
+        PROTOBUF_FIELD_OFFSET(::chirp::chat::MentionSuggestion, _impl_._has_bits_),
+        7, // hasbit index offset
+        PROTOBUF_FIELD_OFFSET(::chirp::chat::MentionSuggestion, _impl_.display_text_),
+        PROTOBUF_FIELD_OFFSET(::chirp::chat::MentionSuggestion, _impl_.id_),
+        PROTOBUF_FIELD_OFFSET(::chirp::chat::MentionSuggestion, _impl_.type_),
+        PROTOBUF_FIELD_OFFSET(::chirp::chat::MentionSuggestion, _impl_.icon_url_),
+        0,
+        1,
+        3,
+        2,
+        0x081, // bitmap
+        PROTOBUF_FIELD_OFFSET(::chirp::chat::GetMentionSuggestionsRequest, _impl_._has_bits_),
+        6, // hasbit index offset
+        PROTOBUF_FIELD_OFFSET(::chirp::chat::GetMentionSuggestionsRequest, _impl_.user_id_),
+        PROTOBUF_FIELD_OFFSET(::chirp::chat::GetMentionSuggestionsRequest, _impl_.channel_id_),
+        PROTOBUF_FIELD_OFFSET(::chirp::chat::GetMentionSuggestionsRequest, _impl_.query_),
+        0,
+        1,
+        2,
+        0x081, // bitmap
+        PROTOBUF_FIELD_OFFSET(::chirp::chat::GetMentionSuggestionsResponse, _impl_._has_bits_),
+        5, // hasbit index offset
+        PROTOBUF_FIELD_OFFSET(::chirp::chat::GetMentionSuggestionsResponse, _impl_.code_),
+        PROTOBUF_FIELD_OFFSET(::chirp::chat::GetMentionSuggestionsResponse, _impl_.suggestions_),
+        1,
+        0,
+        0x081, // bitmap
         PROTOBUF_FIELD_OFFSET(::chirp::chat::MessageEdit, _impl_._has_bits_),
         7, // hasbit index offset
         PROTOBUF_FIELD_OFFSET(::chirp::chat::MessageEdit, _impl_.old_content_),
@@ -4240,29 +4360,32 @@ static const ::_pbi::MigrationSchema
         {746, sizeof(::chirp::chat::ReactionRemovedNotify)},
         {759, sizeof(::chirp::chat::Mention)},
         {770, sizeof(::chirp::chat::ChatMessageEx)},
-        {783, sizeof(::chirp::chat::MessageEdit)},
-        {794, sizeof(::chirp::chat::ChatMessageFull)},
-        {835, sizeof(::chirp::chat::EditMessageRequest)},
-        {846, sizeof(::chirp::chat::EditMessageResponse)},
-        {855, sizeof(::chirp::chat::DeleteMessageRequest)},
-        {864, sizeof(::chirp::chat::DeleteMessageResponse)},
-        {873, sizeof(::chirp::chat::BulkDeleteRequest)},
-        {882, sizeof(::chirp::chat::BulkDeleteResponse)},
-        {893, sizeof(::chirp::chat::MessageEditedNotify)},
-        {906, sizeof(::chirp::chat::MessageDeletedNotify)},
-        {919, sizeof(::chirp::chat::TypingIndicator)},
-        {934, sizeof(::chirp::chat::GetTypingUsersRequest)},
-        {941, sizeof(::chirp::chat::GetTypingUsersResponse)},
-        {950, sizeof(::chirp::chat::FileInfo)},
-        {975, sizeof(::chirp::chat::PrepareFileUploadRequest)},
-        {992, sizeof(::chirp::chat::PrepareFileUploadResponse_HeadersEntry_DoNotUse)},
-        {999, sizeof(::chirp::chat::PrepareFileUploadResponse)},
-        {1014, sizeof(::chirp::chat::ConfirmFileUploadRequest)},
-        {1023, sizeof(::chirp::chat::ConfirmFileUploadResponse)},
-        {1032, sizeof(::chirp::chat::GetFileDownloadRequest)},
-        {1039, sizeof(::chirp::chat::GetFileDownloadResponse)},
-        {1050, sizeof(::chirp::chat::FileAttachment)},
-        {1059, sizeof(::chirp::chat::FileMessage)},
+        {783, sizeof(::chirp::chat::MentionSuggestion)},
+        {794, sizeof(::chirp::chat::GetMentionSuggestionsRequest)},
+        {803, sizeof(::chirp::chat::GetMentionSuggestionsResponse)},
+        {810, sizeof(::chirp::chat::MessageEdit)},
+        {821, sizeof(::chirp::chat::ChatMessageFull)},
+        {862, sizeof(::chirp::chat::EditMessageRequest)},
+        {873, sizeof(::chirp::chat::EditMessageResponse)},
+        {882, sizeof(::chirp::chat::DeleteMessageRequest)},
+        {891, sizeof(::chirp::chat::DeleteMessageResponse)},
+        {900, sizeof(::chirp::chat::BulkDeleteRequest)},
+        {909, sizeof(::chirp::chat::BulkDeleteResponse)},
+        {920, sizeof(::chirp::chat::MessageEditedNotify)},
+        {933, sizeof(::chirp::chat::MessageDeletedNotify)},
+        {946, sizeof(::chirp::chat::TypingIndicator)},
+        {961, sizeof(::chirp::chat::GetTypingUsersRequest)},
+        {968, sizeof(::chirp::chat::GetTypingUsersResponse)},
+        {977, sizeof(::chirp::chat::FileInfo)},
+        {1002, sizeof(::chirp::chat::PrepareFileUploadRequest)},
+        {1019, sizeof(::chirp::chat::PrepareFileUploadResponse_HeadersEntry_DoNotUse)},
+        {1026, sizeof(::chirp::chat::PrepareFileUploadResponse)},
+        {1041, sizeof(::chirp::chat::ConfirmFileUploadRequest)},
+        {1050, sizeof(::chirp::chat::ConfirmFileUploadResponse)},
+        {1059, sizeof(::chirp::chat::GetFileDownloadRequest)},
+        {1066, sizeof(::chirp::chat::GetFileDownloadResponse)},
+        {1077, sizeof(::chirp::chat::FileAttachment)},
+        {1086, sizeof(::chirp::chat::FileMessage)},
 };
 static const ::_pb::Message* PROTOBUF_NONNULL const file_default_instances[] = {
     &::chirp::chat::_SendMessageRequest_default_instance_._instance,
@@ -4340,6 +4463,9 @@ static const ::_pb::Message* PROTOBUF_NONNULL const file_default_instances[] = {
     &::chirp::chat::_ReactionRemovedNotify_default_instance_._instance,
     &::chirp::chat::_Mention_default_instance_._instance,
     &::chirp::chat::_ChatMessageEx_default_instance_._instance,
+    &::chirp::chat::_MentionSuggestion_default_instance_._instance,
+    &::chirp::chat::_GetMentionSuggestionsRequest_default_instance_._instance,
+    &::chirp::chat::_GetMentionSuggestionsResponse_default_instance_._instance,
     &::chirp::chat::_MessageEdit_default_instance_._instance,
     &::chirp::chat::_ChatMessageFull_default_instance_._instance,
     &::chirp::chat::_EditMessageRequest_default_instance_._instance,
@@ -4590,7 +4716,15 @@ const char descriptor_table_protodef_proto_2fchat_2eproto[] ABSL_ATTRIBUTE_SECTI
     "essage\022%\n\010mentions\030\002 \003(\0132\023.chirp.chat.Me"
     "ntion\022\032\n\022mentioned_user_ids\030\003 \003(\t\022\031\n\021men"
     "tions_everyone\030\004 \001(\010\022\025\n\rmentions_here\030\005 "
-    "\001(\010\"]\n\013MessageEdit\022\023\n\013old_content\030\001 \001(\014\022"
+    "\001(\010\"n\n\021MentionSuggestion\022\024\n\014display_text"
+    "\030\001 \001(\t\022\n\n\002id\030\002 \001(\t\022%\n\004type\030\003 \001(\0162\027.chirp"
+    ".chat.MentionType\022\020\n\010icon_url\030\004 \001(\t\"R\n\034G"
+    "etMentionSuggestionsRequest\022\017\n\007user_id\030\001"
+    " \001(\t\022\022\n\nchannel_id\030\002 \001(\t\022\r\n\005query\030\003 \001(\t\""
+    "z\n\035GetMentionSuggestionsResponse\022%\n\004code"
+    "\030\001 \001(\0162\027.chirp.common.ErrorCode\0222\n\013sugge"
+    "stions\030\002 \003(\0132\035.chirp.chat.MentionSuggest"
+    "ion\"]\n\013MessageEdit\022\023\n\013old_content\030\001 \001(\014\022"
     "\023\n\013new_content\030\002 \001(\014\022\021\n\tedited_at\030\003 \001(\003\022"
     "\021\n\tedited_by\030\004 \001(\t\"\211\004\n\017ChatMessageFull\022\022"
     "\n\nmessage_id\030\001 \001(\t\022\021\n\tsender_id\030\002 \001(\t\022\023\n"
@@ -4695,13 +4829,13 @@ static ::absl::once_flag descriptor_table_proto_2fchat_2eproto_once;
 PROTOBUF_CONSTINIT const ::_pbi::DescriptorTable descriptor_table_proto_2fchat_2eproto = {
     false,
     false,
-    12783,
+    13103,
     descriptor_table_protodef_proto_2fchat_2eproto,
     "proto/chat.proto",
     &descriptor_table_proto_2fchat_2eproto_once,
     descriptor_table_proto_2fchat_2eproto_deps,
     1,
-    98,
+    101,
     schemas,
     file_default_instances,
     TableStruct_proto_2fchat_2eproto::offsets,
@@ -33098,6 +33232,1075 @@ void ChatMessageEx::InternalSwap(ChatMessageEx* PROTOBUF_RESTRICT PROTOBUF_NONNU
 }
 
 ::google::protobuf::Metadata ChatMessageEx::GetMetadata() const {
+  return ::google::protobuf::Message::GetMetadataImpl(GetClassData()->full());
+}
+// ===================================================================
+
+class MentionSuggestion::_Internal {
+ public:
+  using HasBits =
+      decltype(::std::declval<MentionSuggestion>()._impl_._has_bits_);
+  static constexpr ::int32_t kHasBitsOffset =
+      8 * PROTOBUF_FIELD_OFFSET(MentionSuggestion, _impl_._has_bits_);
+};
+
+MentionSuggestion::MentionSuggestion(::google::protobuf::Arena* PROTOBUF_NULLABLE arena)
+#if defined(PROTOBUF_CUSTOM_VTABLE)
+    : ::google::protobuf::Message(arena, MentionSuggestion_class_data_.base()) {
+#else   // PROTOBUF_CUSTOM_VTABLE
+    : ::google::protobuf::Message(arena) {
+#endif  // PROTOBUF_CUSTOM_VTABLE
+  SharedCtor(arena);
+  // @@protoc_insertion_point(arena_constructor:chirp.chat.MentionSuggestion)
+}
+PROTOBUF_NDEBUG_INLINE MentionSuggestion::Impl_::Impl_(
+    [[maybe_unused]] ::google::protobuf::internal::InternalVisibility visibility,
+    [[maybe_unused]] ::google::protobuf::Arena* PROTOBUF_NULLABLE arena, const Impl_& from,
+    [[maybe_unused]] const ::chirp::chat::MentionSuggestion& from_msg)
+      : _has_bits_{from._has_bits_},
+        _cached_size_{0},
+        display_text_(arena, from.display_text_),
+        id_(arena, from.id_),
+        icon_url_(arena, from.icon_url_) {}
+
+MentionSuggestion::MentionSuggestion(
+    ::google::protobuf::Arena* PROTOBUF_NULLABLE arena,
+    const MentionSuggestion& from)
+#if defined(PROTOBUF_CUSTOM_VTABLE)
+    : ::google::protobuf::Message(arena, MentionSuggestion_class_data_.base()) {
+#else   // PROTOBUF_CUSTOM_VTABLE
+    : ::google::protobuf::Message(arena) {
+#endif  // PROTOBUF_CUSTOM_VTABLE
+  MentionSuggestion* const _this = this;
+  (void)_this;
+  _internal_metadata_.MergeFrom<::google::protobuf::UnknownFieldSet>(
+      from._internal_metadata_);
+  new (&_impl_) Impl_(internal_visibility(), arena, from._impl_, from);
+  _impl_.type_ = from._impl_.type_;
+
+  // @@protoc_insertion_point(copy_constructor:chirp.chat.MentionSuggestion)
+}
+PROTOBUF_NDEBUG_INLINE MentionSuggestion::Impl_::Impl_(
+    [[maybe_unused]] ::google::protobuf::internal::InternalVisibility visibility,
+    [[maybe_unused]] ::google::protobuf::Arena* PROTOBUF_NULLABLE arena)
+      : _cached_size_{0},
+        display_text_(arena),
+        id_(arena),
+        icon_url_(arena) {}
+
+inline void MentionSuggestion::SharedCtor(::_pb::Arena* PROTOBUF_NULLABLE arena) {
+  new (&_impl_) Impl_(internal_visibility(), arena);
+  _impl_.type_ = {};
+}
+MentionSuggestion::~MentionSuggestion() {
+  // @@protoc_insertion_point(destructor:chirp.chat.MentionSuggestion)
+  SharedDtor(*this);
+}
+inline void MentionSuggestion::SharedDtor(MessageLite& self) {
+  MentionSuggestion& this_ = static_cast<MentionSuggestion&>(self);
+  if constexpr (::_pbi::DebugHardenCheckHasBitConsistency()) {
+    this_.CheckHasBitConsistency();
+  }
+  this_._internal_metadata_.Delete<::google::protobuf::UnknownFieldSet>();
+  ABSL_DCHECK(this_.GetArena() == nullptr);
+  this_._impl_.display_text_.Destroy();
+  this_._impl_.id_.Destroy();
+  this_._impl_.icon_url_.Destroy();
+  this_._impl_.~Impl_();
+}
+
+inline void* PROTOBUF_NONNULL MentionSuggestion::PlacementNew_(
+    const void* PROTOBUF_NONNULL, void* PROTOBUF_NONNULL mem,
+    ::google::protobuf::Arena* PROTOBUF_NULLABLE arena) {
+  return ::new (mem) MentionSuggestion(arena);
+}
+constexpr auto MentionSuggestion::InternalNewImpl_() {
+  return ::google::protobuf::internal::MessageCreator::CopyInit(sizeof(MentionSuggestion),
+                                            alignof(MentionSuggestion));
+}
+constexpr auto MentionSuggestion::InternalGenerateClassData_() {
+  return ::google::protobuf::internal::ClassDataFull{
+      ::google::protobuf::internal::ClassData{
+          &_MentionSuggestion_default_instance_._instance,
+          &_table_.header,
+          nullptr,  // OnDemandRegisterArenaDtor
+          nullptr,  // IsInitialized
+          &MentionSuggestion::MergeImpl,
+          ::google::protobuf::Message::GetNewImpl<MentionSuggestion>(),
+#if defined(PROTOBUF_CUSTOM_VTABLE)
+          &MentionSuggestion::SharedDtor,
+          ::google::protobuf::Message::GetClearImpl<MentionSuggestion>(), &MentionSuggestion::ByteSizeLong,
+              &MentionSuggestion::_InternalSerialize,
+#endif  // PROTOBUF_CUSTOM_VTABLE
+          PROTOBUF_FIELD_OFFSET(MentionSuggestion, _impl_._cached_size_),
+          false,
+      },
+      &MentionSuggestion::kDescriptorMethods,
+      &descriptor_table_proto_2fchat_2eproto,
+      nullptr,  // tracker
+  };
+}
+
+PROTOBUF_CONSTINIT PROTOBUF_ATTRIBUTE_INIT_PRIORITY1 const
+    ::google::protobuf::internal::ClassDataFull MentionSuggestion_class_data_ =
+        MentionSuggestion::InternalGenerateClassData_();
+
+PROTOBUF_ATTRIBUTE_WEAK const ::google::protobuf::internal::ClassData* PROTOBUF_NONNULL
+MentionSuggestion::GetClassData() const {
+  ::google::protobuf::internal::PrefetchToLocalCache(&MentionSuggestion_class_data_);
+  ::google::protobuf::internal::PrefetchToLocalCache(MentionSuggestion_class_data_.tc_table);
+  return MentionSuggestion_class_data_.base();
+}
+PROTOBUF_CONSTINIT PROTOBUF_ATTRIBUTE_INIT_PRIORITY1
+const ::_pbi::TcParseTable<2, 4, 0, 59, 2>
+MentionSuggestion::_table_ = {
+  {
+    PROTOBUF_FIELD_OFFSET(MentionSuggestion, _impl_._has_bits_),
+    0, // no _extensions_
+    4, 24,  // max_field_number, fast_idx_mask
+    offsetof(decltype(_table_), field_lookup_table),
+    4294967280,  // skipmap
+    offsetof(decltype(_table_), field_entries),
+    4,  // num_field_entries
+    0,  // num_aux_entries
+    offsetof(decltype(_table_), field_names),  // no aux_entries
+    MentionSuggestion_class_data_.base(),
+    nullptr,  // post_loop_handler
+    ::_pbi::TcParser::GenericFallback,  // fallback
+    #ifdef PROTOBUF_PREFETCH_PARSE_TABLE
+    ::_pbi::TcParser::GetTable<::chirp::chat::MentionSuggestion>(),  // to_prefetch
+    #endif  // PROTOBUF_PREFETCH_PARSE_TABLE
+  }, {{
+    // string icon_url = 4;
+    {::_pbi::TcParser::FastUS1,
+     {34, 2, 0,
+      PROTOBUF_FIELD_OFFSET(MentionSuggestion, _impl_.icon_url_)}},
+    // string display_text = 1;
+    {::_pbi::TcParser::FastUS1,
+     {10, 0, 0,
+      PROTOBUF_FIELD_OFFSET(MentionSuggestion, _impl_.display_text_)}},
+    // string id = 2;
+    {::_pbi::TcParser::FastUS1,
+     {18, 1, 0,
+      PROTOBUF_FIELD_OFFSET(MentionSuggestion, _impl_.id_)}},
+    // .chirp.chat.MentionType type = 3;
+    {::_pbi::TcParser::SingularVarintNoZag1<::uint32_t, offsetof(MentionSuggestion, _impl_.type_), 3>(),
+     {24, 3, 0,
+      PROTOBUF_FIELD_OFFSET(MentionSuggestion, _impl_.type_)}},
+  }}, {{
+    65535, 65535
+  }}, {{
+    // string display_text = 1;
+    {PROTOBUF_FIELD_OFFSET(MentionSuggestion, _impl_.display_text_), _Internal::kHasBitsOffset + 0, 0, (0 | ::_fl::kFcOptional | ::_fl::kUtf8String | ::_fl::kRepAString)},
+    // string id = 2;
+    {PROTOBUF_FIELD_OFFSET(MentionSuggestion, _impl_.id_), _Internal::kHasBitsOffset + 1, 0, (0 | ::_fl::kFcOptional | ::_fl::kUtf8String | ::_fl::kRepAString)},
+    // .chirp.chat.MentionType type = 3;
+    {PROTOBUF_FIELD_OFFSET(MentionSuggestion, _impl_.type_), _Internal::kHasBitsOffset + 3, 0, (0 | ::_fl::kFcOptional | ::_fl::kOpenEnum)},
+    // string icon_url = 4;
+    {PROTOBUF_FIELD_OFFSET(MentionSuggestion, _impl_.icon_url_), _Internal::kHasBitsOffset + 2, 0, (0 | ::_fl::kFcOptional | ::_fl::kUtf8String | ::_fl::kRepAString)},
+  }},
+  // no aux_entries
+  {{
+    "\34\14\2\0\10\0\0\0"
+    "chirp.chat.MentionSuggestion"
+    "display_text"
+    "id"
+    "icon_url"
+  }},
+};
+PROTOBUF_NOINLINE void MentionSuggestion::Clear() {
+// @@protoc_insertion_point(message_clear_start:chirp.chat.MentionSuggestion)
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  ::uint32_t cached_has_bits = 0;
+  // Prevent compiler warnings about cached_has_bits being unused
+  (void) cached_has_bits;
+
+  cached_has_bits = _impl_._has_bits_[0];
+  if (BatchCheckHasBit(cached_has_bits, 0x00000007U)) {
+    if (CheckHasBit(cached_has_bits, 0x00000001U)) {
+      _impl_.display_text_.ClearNonDefaultToEmpty();
+    }
+    if (CheckHasBit(cached_has_bits, 0x00000002U)) {
+      _impl_.id_.ClearNonDefaultToEmpty();
+    }
+    if (CheckHasBit(cached_has_bits, 0x00000004U)) {
+      _impl_.icon_url_.ClearNonDefaultToEmpty();
+    }
+  }
+  _impl_.type_ = 0;
+  _impl_._has_bits_.Clear();
+  _internal_metadata_.Clear<::google::protobuf::UnknownFieldSet>();
+}
+
+#if defined(PROTOBUF_CUSTOM_VTABLE)
+::uint8_t* PROTOBUF_NONNULL MentionSuggestion::_InternalSerialize(
+    const ::google::protobuf::MessageLite& base, ::uint8_t* PROTOBUF_NONNULL target,
+    ::google::protobuf::io::EpsCopyOutputStream* PROTOBUF_NONNULL stream) {
+  const MentionSuggestion& this_ = static_cast<const MentionSuggestion&>(base);
+#else   // PROTOBUF_CUSTOM_VTABLE
+::uint8_t* PROTOBUF_NONNULL MentionSuggestion::_InternalSerialize(
+    ::uint8_t* PROTOBUF_NONNULL target,
+    ::google::protobuf::io::EpsCopyOutputStream* PROTOBUF_NONNULL stream) const {
+  const MentionSuggestion& this_ = *this;
+#endif  // PROTOBUF_CUSTOM_VTABLE
+  if constexpr (::_pbi::DebugHardenCheckHasBitConsistency()) {
+    this_.CheckHasBitConsistency();
+  }
+  // @@protoc_insertion_point(serialize_to_array_start:chirp.chat.MentionSuggestion)
+  ::uint32_t cached_has_bits = 0;
+  (void)cached_has_bits;
+
+  cached_has_bits = this_._impl_._has_bits_[0];
+  // string display_text = 1;
+  if (CheckHasBit(cached_has_bits, 0x00000001U)) {
+    if (!this_._internal_display_text().empty()) {
+      const ::std::string& _s = this_._internal_display_text();
+      ::google::protobuf::internal::WireFormatLite::VerifyUtf8String(
+          _s.data(), static_cast<int>(_s.length()), ::google::protobuf::internal::WireFormatLite::SERIALIZE, "chirp.chat.MentionSuggestion.display_text");
+      target = stream->WriteStringMaybeAliased(1, _s, target);
+    }
+  }
+
+  // string id = 2;
+  if (CheckHasBit(cached_has_bits, 0x00000002U)) {
+    if (!this_._internal_id().empty()) {
+      const ::std::string& _s = this_._internal_id();
+      ::google::protobuf::internal::WireFormatLite::VerifyUtf8String(
+          _s.data(), static_cast<int>(_s.length()), ::google::protobuf::internal::WireFormatLite::SERIALIZE, "chirp.chat.MentionSuggestion.id");
+      target = stream->WriteStringMaybeAliased(2, _s, target);
+    }
+  }
+
+  // .chirp.chat.MentionType type = 3;
+  if (CheckHasBit(cached_has_bits, 0x00000008U)) {
+    if (this_._internal_type() != 0) {
+      target = stream->EnsureSpace(target);
+      target = ::_pbi::WireFormatLite::WriteEnumToArray(
+          3, this_._internal_type(), target);
+    }
+  }
+
+  // string icon_url = 4;
+  if (CheckHasBit(cached_has_bits, 0x00000004U)) {
+    if (!this_._internal_icon_url().empty()) {
+      const ::std::string& _s = this_._internal_icon_url();
+      ::google::protobuf::internal::WireFormatLite::VerifyUtf8String(
+          _s.data(), static_cast<int>(_s.length()), ::google::protobuf::internal::WireFormatLite::SERIALIZE, "chirp.chat.MentionSuggestion.icon_url");
+      target = stream->WriteStringMaybeAliased(4, _s, target);
+    }
+  }
+
+  if (ABSL_PREDICT_FALSE(this_._internal_metadata_.have_unknown_fields())) {
+    target =
+        ::_pbi::WireFormat::InternalSerializeUnknownFieldsToArray(
+            this_._internal_metadata_.unknown_fields<::google::protobuf::UnknownFieldSet>(::google::protobuf::UnknownFieldSet::default_instance), target, stream);
+  }
+  // @@protoc_insertion_point(serialize_to_array_end:chirp.chat.MentionSuggestion)
+  return target;
+}
+
+#if defined(PROTOBUF_CUSTOM_VTABLE)
+::size_t MentionSuggestion::ByteSizeLong(const MessageLite& base) {
+  const MentionSuggestion& this_ = static_cast<const MentionSuggestion&>(base);
+#else   // PROTOBUF_CUSTOM_VTABLE
+::size_t MentionSuggestion::ByteSizeLong() const {
+  const MentionSuggestion& this_ = *this;
+#endif  // PROTOBUF_CUSTOM_VTABLE
+  // @@protoc_insertion_point(message_byte_size_start:chirp.chat.MentionSuggestion)
+  ::size_t total_size = 0;
+
+  ::uint32_t cached_has_bits = 0;
+  // Prevent compiler warnings about cached_has_bits being unused
+  (void)cached_has_bits;
+
+  ::_pbi::Prefetch5LinesFrom7Lines(&this_);
+  cached_has_bits = this_._impl_._has_bits_[0];
+  if (BatchCheckHasBit(cached_has_bits, 0x0000000fU)) {
+    // string display_text = 1;
+    if (CheckHasBit(cached_has_bits, 0x00000001U)) {
+      if (!this_._internal_display_text().empty()) {
+        total_size += 1 + ::google::protobuf::internal::WireFormatLite::StringSize(
+                                        this_._internal_display_text());
+      }
+    }
+    // string id = 2;
+    if (CheckHasBit(cached_has_bits, 0x00000002U)) {
+      if (!this_._internal_id().empty()) {
+        total_size += 1 + ::google::protobuf::internal::WireFormatLite::StringSize(
+                                        this_._internal_id());
+      }
+    }
+    // string icon_url = 4;
+    if (CheckHasBit(cached_has_bits, 0x00000004U)) {
+      if (!this_._internal_icon_url().empty()) {
+        total_size += 1 + ::google::protobuf::internal::WireFormatLite::StringSize(
+                                        this_._internal_icon_url());
+      }
+    }
+    // .chirp.chat.MentionType type = 3;
+    if (CheckHasBit(cached_has_bits, 0x00000008U)) {
+      if (this_._internal_type() != 0) {
+        total_size += 1 +
+                      ::_pbi::WireFormatLite::EnumSize(this_._internal_type());
+      }
+    }
+  }
+  return this_.MaybeComputeUnknownFieldsSize(total_size,
+                                             &this_._impl_._cached_size_);
+}
+
+void MentionSuggestion::MergeImpl(::google::protobuf::MessageLite& to_msg,
+                            const ::google::protobuf::MessageLite& from_msg) {
+   auto* const _this =
+      static_cast<MentionSuggestion*>(&to_msg);
+  auto& from = static_cast<const MentionSuggestion&>(from_msg);
+  if constexpr (::_pbi::DebugHardenCheckHasBitConsistency()) {
+    from.CheckHasBitConsistency();
+  }
+  // @@protoc_insertion_point(class_specific_merge_from_start:chirp.chat.MentionSuggestion)
+  ABSL_DCHECK_NE(&from, _this);
+  ::uint32_t cached_has_bits = 0;
+  (void)cached_has_bits;
+
+  cached_has_bits = from._impl_._has_bits_[0];
+  if (BatchCheckHasBit(cached_has_bits, 0x0000000fU)) {
+    if (CheckHasBit(cached_has_bits, 0x00000001U)) {
+      if (!from._internal_display_text().empty()) {
+        _this->_internal_set_display_text(from._internal_display_text());
+      } else {
+        if (_this->_impl_.display_text_.IsDefault()) {
+          _this->_internal_set_display_text("");
+        }
+      }
+    }
+    if (CheckHasBit(cached_has_bits, 0x00000002U)) {
+      if (!from._internal_id().empty()) {
+        _this->_internal_set_id(from._internal_id());
+      } else {
+        if (_this->_impl_.id_.IsDefault()) {
+          _this->_internal_set_id("");
+        }
+      }
+    }
+    if (CheckHasBit(cached_has_bits, 0x00000004U)) {
+      if (!from._internal_icon_url().empty()) {
+        _this->_internal_set_icon_url(from._internal_icon_url());
+      } else {
+        if (_this->_impl_.icon_url_.IsDefault()) {
+          _this->_internal_set_icon_url("");
+        }
+      }
+    }
+    if (CheckHasBit(cached_has_bits, 0x00000008U)) {
+      if (from._internal_type() != 0) {
+        _this->_impl_.type_ = from._impl_.type_;
+      }
+    }
+  }
+  _this->_impl_._has_bits_[0] |= cached_has_bits;
+  _this->_internal_metadata_.MergeFrom<::google::protobuf::UnknownFieldSet>(
+      from._internal_metadata_);
+}
+
+void MentionSuggestion::CopyFrom(const MentionSuggestion& from) {
+  // @@protoc_insertion_point(class_specific_copy_from_start:chirp.chat.MentionSuggestion)
+  if (&from == this) return;
+  Clear();
+  MergeFrom(from);
+}
+
+
+void MentionSuggestion::InternalSwap(MentionSuggestion* PROTOBUF_RESTRICT PROTOBUF_NONNULL other) {
+  using ::std::swap;
+  auto* arena = GetArena();
+  ABSL_DCHECK_EQ(arena, other->GetArena());
+  _internal_metadata_.InternalSwap(&other->_internal_metadata_);
+  swap(_impl_._has_bits_[0], other->_impl_._has_bits_[0]);
+  ::_pbi::ArenaStringPtr::InternalSwap(&_impl_.display_text_, &other->_impl_.display_text_, arena);
+  ::_pbi::ArenaStringPtr::InternalSwap(&_impl_.id_, &other->_impl_.id_, arena);
+  ::_pbi::ArenaStringPtr::InternalSwap(&_impl_.icon_url_, &other->_impl_.icon_url_, arena);
+  swap(_impl_.type_, other->_impl_.type_);
+}
+
+::google::protobuf::Metadata MentionSuggestion::GetMetadata() const {
+  return ::google::protobuf::Message::GetMetadataImpl(GetClassData()->full());
+}
+// ===================================================================
+
+class GetMentionSuggestionsRequest::_Internal {
+ public:
+  using HasBits =
+      decltype(::std::declval<GetMentionSuggestionsRequest>()._impl_._has_bits_);
+  static constexpr ::int32_t kHasBitsOffset =
+      8 * PROTOBUF_FIELD_OFFSET(GetMentionSuggestionsRequest, _impl_._has_bits_);
+};
+
+GetMentionSuggestionsRequest::GetMentionSuggestionsRequest(::google::protobuf::Arena* PROTOBUF_NULLABLE arena)
+#if defined(PROTOBUF_CUSTOM_VTABLE)
+    : ::google::protobuf::Message(arena, GetMentionSuggestionsRequest_class_data_.base()) {
+#else   // PROTOBUF_CUSTOM_VTABLE
+    : ::google::protobuf::Message(arena) {
+#endif  // PROTOBUF_CUSTOM_VTABLE
+  SharedCtor(arena);
+  // @@protoc_insertion_point(arena_constructor:chirp.chat.GetMentionSuggestionsRequest)
+}
+PROTOBUF_NDEBUG_INLINE GetMentionSuggestionsRequest::Impl_::Impl_(
+    [[maybe_unused]] ::google::protobuf::internal::InternalVisibility visibility,
+    [[maybe_unused]] ::google::protobuf::Arena* PROTOBUF_NULLABLE arena, const Impl_& from,
+    [[maybe_unused]] const ::chirp::chat::GetMentionSuggestionsRequest& from_msg)
+      : _has_bits_{from._has_bits_},
+        _cached_size_{0},
+        user_id_(arena, from.user_id_),
+        channel_id_(arena, from.channel_id_),
+        query_(arena, from.query_) {}
+
+GetMentionSuggestionsRequest::GetMentionSuggestionsRequest(
+    ::google::protobuf::Arena* PROTOBUF_NULLABLE arena,
+    const GetMentionSuggestionsRequest& from)
+#if defined(PROTOBUF_CUSTOM_VTABLE)
+    : ::google::protobuf::Message(arena, GetMentionSuggestionsRequest_class_data_.base()) {
+#else   // PROTOBUF_CUSTOM_VTABLE
+    : ::google::protobuf::Message(arena) {
+#endif  // PROTOBUF_CUSTOM_VTABLE
+  GetMentionSuggestionsRequest* const _this = this;
+  (void)_this;
+  _internal_metadata_.MergeFrom<::google::protobuf::UnknownFieldSet>(
+      from._internal_metadata_);
+  new (&_impl_) Impl_(internal_visibility(), arena, from._impl_, from);
+
+  // @@protoc_insertion_point(copy_constructor:chirp.chat.GetMentionSuggestionsRequest)
+}
+PROTOBUF_NDEBUG_INLINE GetMentionSuggestionsRequest::Impl_::Impl_(
+    [[maybe_unused]] ::google::protobuf::internal::InternalVisibility visibility,
+    [[maybe_unused]] ::google::protobuf::Arena* PROTOBUF_NULLABLE arena)
+      : _cached_size_{0},
+        user_id_(arena),
+        channel_id_(arena),
+        query_(arena) {}
+
+inline void GetMentionSuggestionsRequest::SharedCtor(::_pb::Arena* PROTOBUF_NULLABLE arena) {
+  new (&_impl_) Impl_(internal_visibility(), arena);
+}
+GetMentionSuggestionsRequest::~GetMentionSuggestionsRequest() {
+  // @@protoc_insertion_point(destructor:chirp.chat.GetMentionSuggestionsRequest)
+  SharedDtor(*this);
+}
+inline void GetMentionSuggestionsRequest::SharedDtor(MessageLite& self) {
+  GetMentionSuggestionsRequest& this_ = static_cast<GetMentionSuggestionsRequest&>(self);
+  if constexpr (::_pbi::DebugHardenCheckHasBitConsistency()) {
+    this_.CheckHasBitConsistency();
+  }
+  this_._internal_metadata_.Delete<::google::protobuf::UnknownFieldSet>();
+  ABSL_DCHECK(this_.GetArena() == nullptr);
+  this_._impl_.user_id_.Destroy();
+  this_._impl_.channel_id_.Destroy();
+  this_._impl_.query_.Destroy();
+  this_._impl_.~Impl_();
+}
+
+inline void* PROTOBUF_NONNULL GetMentionSuggestionsRequest::PlacementNew_(
+    const void* PROTOBUF_NONNULL, void* PROTOBUF_NONNULL mem,
+    ::google::protobuf::Arena* PROTOBUF_NULLABLE arena) {
+  return ::new (mem) GetMentionSuggestionsRequest(arena);
+}
+constexpr auto GetMentionSuggestionsRequest::InternalNewImpl_() {
+  return ::google::protobuf::internal::MessageCreator::CopyInit(sizeof(GetMentionSuggestionsRequest),
+                                            alignof(GetMentionSuggestionsRequest));
+}
+constexpr auto GetMentionSuggestionsRequest::InternalGenerateClassData_() {
+  return ::google::protobuf::internal::ClassDataFull{
+      ::google::protobuf::internal::ClassData{
+          &_GetMentionSuggestionsRequest_default_instance_._instance,
+          &_table_.header,
+          nullptr,  // OnDemandRegisterArenaDtor
+          nullptr,  // IsInitialized
+          &GetMentionSuggestionsRequest::MergeImpl,
+          ::google::protobuf::Message::GetNewImpl<GetMentionSuggestionsRequest>(),
+#if defined(PROTOBUF_CUSTOM_VTABLE)
+          &GetMentionSuggestionsRequest::SharedDtor,
+          ::google::protobuf::Message::GetClearImpl<GetMentionSuggestionsRequest>(), &GetMentionSuggestionsRequest::ByteSizeLong,
+              &GetMentionSuggestionsRequest::_InternalSerialize,
+#endif  // PROTOBUF_CUSTOM_VTABLE
+          PROTOBUF_FIELD_OFFSET(GetMentionSuggestionsRequest, _impl_._cached_size_),
+          false,
+      },
+      &GetMentionSuggestionsRequest::kDescriptorMethods,
+      &descriptor_table_proto_2fchat_2eproto,
+      nullptr,  // tracker
+  };
+}
+
+PROTOBUF_CONSTINIT PROTOBUF_ATTRIBUTE_INIT_PRIORITY1 const
+    ::google::protobuf::internal::ClassDataFull GetMentionSuggestionsRequest_class_data_ =
+        GetMentionSuggestionsRequest::InternalGenerateClassData_();
+
+PROTOBUF_ATTRIBUTE_WEAK const ::google::protobuf::internal::ClassData* PROTOBUF_NONNULL
+GetMentionSuggestionsRequest::GetClassData() const {
+  ::google::protobuf::internal::PrefetchToLocalCache(&GetMentionSuggestionsRequest_class_data_);
+  ::google::protobuf::internal::PrefetchToLocalCache(GetMentionSuggestionsRequest_class_data_.tc_table);
+  return GetMentionSuggestionsRequest_class_data_.base();
+}
+PROTOBUF_CONSTINIT PROTOBUF_ATTRIBUTE_INIT_PRIORITY1
+const ::_pbi::TcParseTable<2, 3, 0, 70, 2>
+GetMentionSuggestionsRequest::_table_ = {
+  {
+    PROTOBUF_FIELD_OFFSET(GetMentionSuggestionsRequest, _impl_._has_bits_),
+    0, // no _extensions_
+    3, 24,  // max_field_number, fast_idx_mask
+    offsetof(decltype(_table_), field_lookup_table),
+    4294967288,  // skipmap
+    offsetof(decltype(_table_), field_entries),
+    3,  // num_field_entries
+    0,  // num_aux_entries
+    offsetof(decltype(_table_), field_names),  // no aux_entries
+    GetMentionSuggestionsRequest_class_data_.base(),
+    nullptr,  // post_loop_handler
+    ::_pbi::TcParser::GenericFallback,  // fallback
+    #ifdef PROTOBUF_PREFETCH_PARSE_TABLE
+    ::_pbi::TcParser::GetTable<::chirp::chat::GetMentionSuggestionsRequest>(),  // to_prefetch
+    #endif  // PROTOBUF_PREFETCH_PARSE_TABLE
+  }, {{
+    {::_pbi::TcParser::MiniParse, {}},
+    // string user_id = 1;
+    {::_pbi::TcParser::FastUS1,
+     {10, 0, 0,
+      PROTOBUF_FIELD_OFFSET(GetMentionSuggestionsRequest, _impl_.user_id_)}},
+    // string channel_id = 2;
+    {::_pbi::TcParser::FastUS1,
+     {18, 1, 0,
+      PROTOBUF_FIELD_OFFSET(GetMentionSuggestionsRequest, _impl_.channel_id_)}},
+    // string query = 3;
+    {::_pbi::TcParser::FastUS1,
+     {26, 2, 0,
+      PROTOBUF_FIELD_OFFSET(GetMentionSuggestionsRequest, _impl_.query_)}},
+  }}, {{
+    65535, 65535
+  }}, {{
+    // string user_id = 1;
+    {PROTOBUF_FIELD_OFFSET(GetMentionSuggestionsRequest, _impl_.user_id_), _Internal::kHasBitsOffset + 0, 0, (0 | ::_fl::kFcOptional | ::_fl::kUtf8String | ::_fl::kRepAString)},
+    // string channel_id = 2;
+    {PROTOBUF_FIELD_OFFSET(GetMentionSuggestionsRequest, _impl_.channel_id_), _Internal::kHasBitsOffset + 1, 0, (0 | ::_fl::kFcOptional | ::_fl::kUtf8String | ::_fl::kRepAString)},
+    // string query = 3;
+    {PROTOBUF_FIELD_OFFSET(GetMentionSuggestionsRequest, _impl_.query_), _Internal::kHasBitsOffset + 2, 0, (0 | ::_fl::kFcOptional | ::_fl::kUtf8String | ::_fl::kRepAString)},
+  }},
+  // no aux_entries
+  {{
+    "\47\7\12\5\0\0\0\0"
+    "chirp.chat.GetMentionSuggestionsRequest"
+    "user_id"
+    "channel_id"
+    "query"
+  }},
+};
+PROTOBUF_NOINLINE void GetMentionSuggestionsRequest::Clear() {
+// @@protoc_insertion_point(message_clear_start:chirp.chat.GetMentionSuggestionsRequest)
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  ::uint32_t cached_has_bits = 0;
+  // Prevent compiler warnings about cached_has_bits being unused
+  (void) cached_has_bits;
+
+  cached_has_bits = _impl_._has_bits_[0];
+  if (BatchCheckHasBit(cached_has_bits, 0x00000007U)) {
+    if (CheckHasBit(cached_has_bits, 0x00000001U)) {
+      _impl_.user_id_.ClearNonDefaultToEmpty();
+    }
+    if (CheckHasBit(cached_has_bits, 0x00000002U)) {
+      _impl_.channel_id_.ClearNonDefaultToEmpty();
+    }
+    if (CheckHasBit(cached_has_bits, 0x00000004U)) {
+      _impl_.query_.ClearNonDefaultToEmpty();
+    }
+  }
+  _impl_._has_bits_.Clear();
+  _internal_metadata_.Clear<::google::protobuf::UnknownFieldSet>();
+}
+
+#if defined(PROTOBUF_CUSTOM_VTABLE)
+::uint8_t* PROTOBUF_NONNULL GetMentionSuggestionsRequest::_InternalSerialize(
+    const ::google::protobuf::MessageLite& base, ::uint8_t* PROTOBUF_NONNULL target,
+    ::google::protobuf::io::EpsCopyOutputStream* PROTOBUF_NONNULL stream) {
+  const GetMentionSuggestionsRequest& this_ = static_cast<const GetMentionSuggestionsRequest&>(base);
+#else   // PROTOBUF_CUSTOM_VTABLE
+::uint8_t* PROTOBUF_NONNULL GetMentionSuggestionsRequest::_InternalSerialize(
+    ::uint8_t* PROTOBUF_NONNULL target,
+    ::google::protobuf::io::EpsCopyOutputStream* PROTOBUF_NONNULL stream) const {
+  const GetMentionSuggestionsRequest& this_ = *this;
+#endif  // PROTOBUF_CUSTOM_VTABLE
+  if constexpr (::_pbi::DebugHardenCheckHasBitConsistency()) {
+    this_.CheckHasBitConsistency();
+  }
+  // @@protoc_insertion_point(serialize_to_array_start:chirp.chat.GetMentionSuggestionsRequest)
+  ::uint32_t cached_has_bits = 0;
+  (void)cached_has_bits;
+
+  cached_has_bits = this_._impl_._has_bits_[0];
+  // string user_id = 1;
+  if (CheckHasBit(cached_has_bits, 0x00000001U)) {
+    if (!this_._internal_user_id().empty()) {
+      const ::std::string& _s = this_._internal_user_id();
+      ::google::protobuf::internal::WireFormatLite::VerifyUtf8String(
+          _s.data(), static_cast<int>(_s.length()), ::google::protobuf::internal::WireFormatLite::SERIALIZE, "chirp.chat.GetMentionSuggestionsRequest.user_id");
+      target = stream->WriteStringMaybeAliased(1, _s, target);
+    }
+  }
+
+  // string channel_id = 2;
+  if (CheckHasBit(cached_has_bits, 0x00000002U)) {
+    if (!this_._internal_channel_id().empty()) {
+      const ::std::string& _s = this_._internal_channel_id();
+      ::google::protobuf::internal::WireFormatLite::VerifyUtf8String(
+          _s.data(), static_cast<int>(_s.length()), ::google::protobuf::internal::WireFormatLite::SERIALIZE, "chirp.chat.GetMentionSuggestionsRequest.channel_id");
+      target = stream->WriteStringMaybeAliased(2, _s, target);
+    }
+  }
+
+  // string query = 3;
+  if (CheckHasBit(cached_has_bits, 0x00000004U)) {
+    if (!this_._internal_query().empty()) {
+      const ::std::string& _s = this_._internal_query();
+      ::google::protobuf::internal::WireFormatLite::VerifyUtf8String(
+          _s.data(), static_cast<int>(_s.length()), ::google::protobuf::internal::WireFormatLite::SERIALIZE, "chirp.chat.GetMentionSuggestionsRequest.query");
+      target = stream->WriteStringMaybeAliased(3, _s, target);
+    }
+  }
+
+  if (ABSL_PREDICT_FALSE(this_._internal_metadata_.have_unknown_fields())) {
+    target =
+        ::_pbi::WireFormat::InternalSerializeUnknownFieldsToArray(
+            this_._internal_metadata_.unknown_fields<::google::protobuf::UnknownFieldSet>(::google::protobuf::UnknownFieldSet::default_instance), target, stream);
+  }
+  // @@protoc_insertion_point(serialize_to_array_end:chirp.chat.GetMentionSuggestionsRequest)
+  return target;
+}
+
+#if defined(PROTOBUF_CUSTOM_VTABLE)
+::size_t GetMentionSuggestionsRequest::ByteSizeLong(const MessageLite& base) {
+  const GetMentionSuggestionsRequest& this_ = static_cast<const GetMentionSuggestionsRequest&>(base);
+#else   // PROTOBUF_CUSTOM_VTABLE
+::size_t GetMentionSuggestionsRequest::ByteSizeLong() const {
+  const GetMentionSuggestionsRequest& this_ = *this;
+#endif  // PROTOBUF_CUSTOM_VTABLE
+  // @@protoc_insertion_point(message_byte_size_start:chirp.chat.GetMentionSuggestionsRequest)
+  ::size_t total_size = 0;
+
+  ::uint32_t cached_has_bits = 0;
+  // Prevent compiler warnings about cached_has_bits being unused
+  (void)cached_has_bits;
+
+  ::_pbi::Prefetch5LinesFrom7Lines(&this_);
+  cached_has_bits = this_._impl_._has_bits_[0];
+  if (BatchCheckHasBit(cached_has_bits, 0x00000007U)) {
+    // string user_id = 1;
+    if (CheckHasBit(cached_has_bits, 0x00000001U)) {
+      if (!this_._internal_user_id().empty()) {
+        total_size += 1 + ::google::protobuf::internal::WireFormatLite::StringSize(
+                                        this_._internal_user_id());
+      }
+    }
+    // string channel_id = 2;
+    if (CheckHasBit(cached_has_bits, 0x00000002U)) {
+      if (!this_._internal_channel_id().empty()) {
+        total_size += 1 + ::google::protobuf::internal::WireFormatLite::StringSize(
+                                        this_._internal_channel_id());
+      }
+    }
+    // string query = 3;
+    if (CheckHasBit(cached_has_bits, 0x00000004U)) {
+      if (!this_._internal_query().empty()) {
+        total_size += 1 + ::google::protobuf::internal::WireFormatLite::StringSize(
+                                        this_._internal_query());
+      }
+    }
+  }
+  return this_.MaybeComputeUnknownFieldsSize(total_size,
+                                             &this_._impl_._cached_size_);
+}
+
+void GetMentionSuggestionsRequest::MergeImpl(::google::protobuf::MessageLite& to_msg,
+                            const ::google::protobuf::MessageLite& from_msg) {
+   auto* const _this =
+      static_cast<GetMentionSuggestionsRequest*>(&to_msg);
+  auto& from = static_cast<const GetMentionSuggestionsRequest&>(from_msg);
+  if constexpr (::_pbi::DebugHardenCheckHasBitConsistency()) {
+    from.CheckHasBitConsistency();
+  }
+  // @@protoc_insertion_point(class_specific_merge_from_start:chirp.chat.GetMentionSuggestionsRequest)
+  ABSL_DCHECK_NE(&from, _this);
+  ::uint32_t cached_has_bits = 0;
+  (void)cached_has_bits;
+
+  cached_has_bits = from._impl_._has_bits_[0];
+  if (BatchCheckHasBit(cached_has_bits, 0x00000007U)) {
+    if (CheckHasBit(cached_has_bits, 0x00000001U)) {
+      if (!from._internal_user_id().empty()) {
+        _this->_internal_set_user_id(from._internal_user_id());
+      } else {
+        if (_this->_impl_.user_id_.IsDefault()) {
+          _this->_internal_set_user_id("");
+        }
+      }
+    }
+    if (CheckHasBit(cached_has_bits, 0x00000002U)) {
+      if (!from._internal_channel_id().empty()) {
+        _this->_internal_set_channel_id(from._internal_channel_id());
+      } else {
+        if (_this->_impl_.channel_id_.IsDefault()) {
+          _this->_internal_set_channel_id("");
+        }
+      }
+    }
+    if (CheckHasBit(cached_has_bits, 0x00000004U)) {
+      if (!from._internal_query().empty()) {
+        _this->_internal_set_query(from._internal_query());
+      } else {
+        if (_this->_impl_.query_.IsDefault()) {
+          _this->_internal_set_query("");
+        }
+      }
+    }
+  }
+  _this->_impl_._has_bits_[0] |= cached_has_bits;
+  _this->_internal_metadata_.MergeFrom<::google::protobuf::UnknownFieldSet>(
+      from._internal_metadata_);
+}
+
+void GetMentionSuggestionsRequest::CopyFrom(const GetMentionSuggestionsRequest& from) {
+  // @@protoc_insertion_point(class_specific_copy_from_start:chirp.chat.GetMentionSuggestionsRequest)
+  if (&from == this) return;
+  Clear();
+  MergeFrom(from);
+}
+
+
+void GetMentionSuggestionsRequest::InternalSwap(GetMentionSuggestionsRequest* PROTOBUF_RESTRICT PROTOBUF_NONNULL other) {
+  using ::std::swap;
+  auto* arena = GetArena();
+  ABSL_DCHECK_EQ(arena, other->GetArena());
+  _internal_metadata_.InternalSwap(&other->_internal_metadata_);
+  swap(_impl_._has_bits_[0], other->_impl_._has_bits_[0]);
+  ::_pbi::ArenaStringPtr::InternalSwap(&_impl_.user_id_, &other->_impl_.user_id_, arena);
+  ::_pbi::ArenaStringPtr::InternalSwap(&_impl_.channel_id_, &other->_impl_.channel_id_, arena);
+  ::_pbi::ArenaStringPtr::InternalSwap(&_impl_.query_, &other->_impl_.query_, arena);
+}
+
+::google::protobuf::Metadata GetMentionSuggestionsRequest::GetMetadata() const {
+  return ::google::protobuf::Message::GetMetadataImpl(GetClassData()->full());
+}
+// ===================================================================
+
+class GetMentionSuggestionsResponse::_Internal {
+ public:
+  using HasBits =
+      decltype(::std::declval<GetMentionSuggestionsResponse>()._impl_._has_bits_);
+  static constexpr ::int32_t kHasBitsOffset =
+      8 * PROTOBUF_FIELD_OFFSET(GetMentionSuggestionsResponse, _impl_._has_bits_);
+};
+
+GetMentionSuggestionsResponse::GetMentionSuggestionsResponse(::google::protobuf::Arena* PROTOBUF_NULLABLE arena)
+#if defined(PROTOBUF_CUSTOM_VTABLE)
+    : ::google::protobuf::Message(arena, GetMentionSuggestionsResponse_class_data_.base()) {
+#else   // PROTOBUF_CUSTOM_VTABLE
+    : ::google::protobuf::Message(arena) {
+#endif  // PROTOBUF_CUSTOM_VTABLE
+  SharedCtor(arena);
+  // @@protoc_insertion_point(arena_constructor:chirp.chat.GetMentionSuggestionsResponse)
+}
+PROTOBUF_NDEBUG_INLINE GetMentionSuggestionsResponse::Impl_::Impl_(
+    [[maybe_unused]] ::google::protobuf::internal::InternalVisibility visibility,
+    [[maybe_unused]] ::google::protobuf::Arena* PROTOBUF_NULLABLE arena, const Impl_& from,
+    [[maybe_unused]] const ::chirp::chat::GetMentionSuggestionsResponse& from_msg)
+      : _has_bits_{from._has_bits_},
+        _cached_size_{0},
+        suggestions_{visibility, arena, from.suggestions_} {}
+
+GetMentionSuggestionsResponse::GetMentionSuggestionsResponse(
+    ::google::protobuf::Arena* PROTOBUF_NULLABLE arena,
+    const GetMentionSuggestionsResponse& from)
+#if defined(PROTOBUF_CUSTOM_VTABLE)
+    : ::google::protobuf::Message(arena, GetMentionSuggestionsResponse_class_data_.base()) {
+#else   // PROTOBUF_CUSTOM_VTABLE
+    : ::google::protobuf::Message(arena) {
+#endif  // PROTOBUF_CUSTOM_VTABLE
+  GetMentionSuggestionsResponse* const _this = this;
+  (void)_this;
+  _internal_metadata_.MergeFrom<::google::protobuf::UnknownFieldSet>(
+      from._internal_metadata_);
+  new (&_impl_) Impl_(internal_visibility(), arena, from._impl_, from);
+  _impl_.code_ = from._impl_.code_;
+
+  // @@protoc_insertion_point(copy_constructor:chirp.chat.GetMentionSuggestionsResponse)
+}
+PROTOBUF_NDEBUG_INLINE GetMentionSuggestionsResponse::Impl_::Impl_(
+    [[maybe_unused]] ::google::protobuf::internal::InternalVisibility visibility,
+    [[maybe_unused]] ::google::protobuf::Arena* PROTOBUF_NULLABLE arena)
+      : _cached_size_{0},
+        suggestions_{visibility, arena} {}
+
+inline void GetMentionSuggestionsResponse::SharedCtor(::_pb::Arena* PROTOBUF_NULLABLE arena) {
+  new (&_impl_) Impl_(internal_visibility(), arena);
+  _impl_.code_ = {};
+}
+GetMentionSuggestionsResponse::~GetMentionSuggestionsResponse() {
+  // @@protoc_insertion_point(destructor:chirp.chat.GetMentionSuggestionsResponse)
+  SharedDtor(*this);
+}
+inline void GetMentionSuggestionsResponse::SharedDtor(MessageLite& self) {
+  GetMentionSuggestionsResponse& this_ = static_cast<GetMentionSuggestionsResponse&>(self);
+  if constexpr (::_pbi::DebugHardenCheckHasBitConsistency()) {
+    this_.CheckHasBitConsistency();
+  }
+  this_._internal_metadata_.Delete<::google::protobuf::UnknownFieldSet>();
+  ABSL_DCHECK(this_.GetArena() == nullptr);
+  this_._impl_.~Impl_();
+}
+
+inline void* PROTOBUF_NONNULL GetMentionSuggestionsResponse::PlacementNew_(
+    const void* PROTOBUF_NONNULL, void* PROTOBUF_NONNULL mem,
+    ::google::protobuf::Arena* PROTOBUF_NULLABLE arena) {
+  return ::new (mem) GetMentionSuggestionsResponse(arena);
+}
+constexpr auto GetMentionSuggestionsResponse::InternalNewImpl_() {
+  constexpr auto arena_bits = ::google::protobuf::internal::EncodePlacementArenaOffsets({
+      PROTOBUF_FIELD_OFFSET(GetMentionSuggestionsResponse, _impl_.suggestions_) +
+          decltype(GetMentionSuggestionsResponse::_impl_.suggestions_)::
+              InternalGetArenaOffset(
+                  ::google::protobuf::Message::internal_visibility()),
+  });
+  if (arena_bits.has_value()) {
+    return ::google::protobuf::internal::MessageCreator::ZeroInit(
+        sizeof(GetMentionSuggestionsResponse), alignof(GetMentionSuggestionsResponse), *arena_bits);
+  } else {
+    return ::google::protobuf::internal::MessageCreator(&GetMentionSuggestionsResponse::PlacementNew_,
+                                 sizeof(GetMentionSuggestionsResponse),
+                                 alignof(GetMentionSuggestionsResponse));
+  }
+}
+constexpr auto GetMentionSuggestionsResponse::InternalGenerateClassData_() {
+  return ::google::protobuf::internal::ClassDataFull{
+      ::google::protobuf::internal::ClassData{
+          &_GetMentionSuggestionsResponse_default_instance_._instance,
+          &_table_.header,
+          nullptr,  // OnDemandRegisterArenaDtor
+          nullptr,  // IsInitialized
+          &GetMentionSuggestionsResponse::MergeImpl,
+          ::google::protobuf::Message::GetNewImpl<GetMentionSuggestionsResponse>(),
+#if defined(PROTOBUF_CUSTOM_VTABLE)
+          &GetMentionSuggestionsResponse::SharedDtor,
+          ::google::protobuf::Message::GetClearImpl<GetMentionSuggestionsResponse>(), &GetMentionSuggestionsResponse::ByteSizeLong,
+              &GetMentionSuggestionsResponse::_InternalSerialize,
+#endif  // PROTOBUF_CUSTOM_VTABLE
+          PROTOBUF_FIELD_OFFSET(GetMentionSuggestionsResponse, _impl_._cached_size_),
+          false,
+      },
+      &GetMentionSuggestionsResponse::kDescriptorMethods,
+      &descriptor_table_proto_2fchat_2eproto,
+      nullptr,  // tracker
+  };
+}
+
+PROTOBUF_CONSTINIT PROTOBUF_ATTRIBUTE_INIT_PRIORITY1 const
+    ::google::protobuf::internal::ClassDataFull GetMentionSuggestionsResponse_class_data_ =
+        GetMentionSuggestionsResponse::InternalGenerateClassData_();
+
+PROTOBUF_ATTRIBUTE_WEAK const ::google::protobuf::internal::ClassData* PROTOBUF_NONNULL
+GetMentionSuggestionsResponse::GetClassData() const {
+  ::google::protobuf::internal::PrefetchToLocalCache(&GetMentionSuggestionsResponse_class_data_);
+  ::google::protobuf::internal::PrefetchToLocalCache(GetMentionSuggestionsResponse_class_data_.tc_table);
+  return GetMentionSuggestionsResponse_class_data_.base();
+}
+PROTOBUF_CONSTINIT PROTOBUF_ATTRIBUTE_INIT_PRIORITY1
+const ::_pbi::TcParseTable<1, 2, 1, 0, 2>
+GetMentionSuggestionsResponse::_table_ = {
+  {
+    PROTOBUF_FIELD_OFFSET(GetMentionSuggestionsResponse, _impl_._has_bits_),
+    0, // no _extensions_
+    2, 8,  // max_field_number, fast_idx_mask
+    offsetof(decltype(_table_), field_lookup_table),
+    4294967292,  // skipmap
+    offsetof(decltype(_table_), field_entries),
+    2,  // num_field_entries
+    1,  // num_aux_entries
+    offsetof(decltype(_table_), aux_entries),
+    GetMentionSuggestionsResponse_class_data_.base(),
+    nullptr,  // post_loop_handler
+    ::_pbi::TcParser::GenericFallback,  // fallback
+    #ifdef PROTOBUF_PREFETCH_PARSE_TABLE
+    ::_pbi::TcParser::GetTable<::chirp::chat::GetMentionSuggestionsResponse>(),  // to_prefetch
+    #endif  // PROTOBUF_PREFETCH_PARSE_TABLE
+  }, {{
+    // repeated .chirp.chat.MentionSuggestion suggestions = 2;
+    {::_pbi::TcParser::FastMtR1,
+     {18, 0, 0,
+      PROTOBUF_FIELD_OFFSET(GetMentionSuggestionsResponse, _impl_.suggestions_)}},
+    // .chirp.common.ErrorCode code = 1;
+    {::_pbi::TcParser::SingularVarintNoZag1<::uint32_t, offsetof(GetMentionSuggestionsResponse, _impl_.code_), 1>(),
+     {8, 1, 0,
+      PROTOBUF_FIELD_OFFSET(GetMentionSuggestionsResponse, _impl_.code_)}},
+  }}, {{
+    65535, 65535
+  }}, {{
+    // .chirp.common.ErrorCode code = 1;
+    {PROTOBUF_FIELD_OFFSET(GetMentionSuggestionsResponse, _impl_.code_), _Internal::kHasBitsOffset + 1, 0, (0 | ::_fl::kFcOptional | ::_fl::kOpenEnum)},
+    // repeated .chirp.chat.MentionSuggestion suggestions = 2;
+    {PROTOBUF_FIELD_OFFSET(GetMentionSuggestionsResponse, _impl_.suggestions_), _Internal::kHasBitsOffset + 0, 0, (0 | ::_fl::kFcRepeated | ::_fl::kMessage | ::_fl::kTvTable)},
+  }},
+  {{
+      {::_pbi::TcParser::GetTable<::chirp::chat::MentionSuggestion>()},
+  }},
+  {{
+  }},
+};
+PROTOBUF_NOINLINE void GetMentionSuggestionsResponse::Clear() {
+// @@protoc_insertion_point(message_clear_start:chirp.chat.GetMentionSuggestionsResponse)
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  ::uint32_t cached_has_bits = 0;
+  // Prevent compiler warnings about cached_has_bits being unused
+  (void) cached_has_bits;
+
+  cached_has_bits = _impl_._has_bits_[0];
+  if (CheckHasBitForRepeated(cached_has_bits, 0x00000001U)) {
+    _impl_.suggestions_.Clear();
+  }
+  _impl_.code_ = 0;
+  _impl_._has_bits_.Clear();
+  _internal_metadata_.Clear<::google::protobuf::UnknownFieldSet>();
+}
+
+#if defined(PROTOBUF_CUSTOM_VTABLE)
+::uint8_t* PROTOBUF_NONNULL GetMentionSuggestionsResponse::_InternalSerialize(
+    const ::google::protobuf::MessageLite& base, ::uint8_t* PROTOBUF_NONNULL target,
+    ::google::protobuf::io::EpsCopyOutputStream* PROTOBUF_NONNULL stream) {
+  const GetMentionSuggestionsResponse& this_ = static_cast<const GetMentionSuggestionsResponse&>(base);
+#else   // PROTOBUF_CUSTOM_VTABLE
+::uint8_t* PROTOBUF_NONNULL GetMentionSuggestionsResponse::_InternalSerialize(
+    ::uint8_t* PROTOBUF_NONNULL target,
+    ::google::protobuf::io::EpsCopyOutputStream* PROTOBUF_NONNULL stream) const {
+  const GetMentionSuggestionsResponse& this_ = *this;
+#endif  // PROTOBUF_CUSTOM_VTABLE
+  if constexpr (::_pbi::DebugHardenCheckHasBitConsistency()) {
+    this_.CheckHasBitConsistency();
+  }
+  // @@protoc_insertion_point(serialize_to_array_start:chirp.chat.GetMentionSuggestionsResponse)
+  ::uint32_t cached_has_bits = 0;
+  (void)cached_has_bits;
+
+  cached_has_bits = this_._impl_._has_bits_[0];
+  // .chirp.common.ErrorCode code = 1;
+  if (CheckHasBit(cached_has_bits, 0x00000002U)) {
+    if (this_._internal_code() != 0) {
+      target = stream->EnsureSpace(target);
+      target = ::_pbi::WireFormatLite::WriteEnumToArray(
+          1, this_._internal_code(), target);
+    }
+  }
+
+  // repeated .chirp.chat.MentionSuggestion suggestions = 2;
+  if (CheckHasBitForRepeated(cached_has_bits, 0x00000001U)) {
+    for (unsigned i = 0, n = static_cast<unsigned>(
+                             this_._internal_suggestions_size());
+         i < n; i++) {
+      const auto& repfield = this_._internal_suggestions().Get(i);
+      target =
+          ::google::protobuf::internal::WireFormatLite::InternalWriteMessage(
+              2, repfield, repfield.GetCachedSize(),
+              target, stream);
+    }
+  }
+
+  if (ABSL_PREDICT_FALSE(this_._internal_metadata_.have_unknown_fields())) {
+    target =
+        ::_pbi::WireFormat::InternalSerializeUnknownFieldsToArray(
+            this_._internal_metadata_.unknown_fields<::google::protobuf::UnknownFieldSet>(::google::protobuf::UnknownFieldSet::default_instance), target, stream);
+  }
+  // @@protoc_insertion_point(serialize_to_array_end:chirp.chat.GetMentionSuggestionsResponse)
+  return target;
+}
+
+#if defined(PROTOBUF_CUSTOM_VTABLE)
+::size_t GetMentionSuggestionsResponse::ByteSizeLong(const MessageLite& base) {
+  const GetMentionSuggestionsResponse& this_ = static_cast<const GetMentionSuggestionsResponse&>(base);
+#else   // PROTOBUF_CUSTOM_VTABLE
+::size_t GetMentionSuggestionsResponse::ByteSizeLong() const {
+  const GetMentionSuggestionsResponse& this_ = *this;
+#endif  // PROTOBUF_CUSTOM_VTABLE
+  // @@protoc_insertion_point(message_byte_size_start:chirp.chat.GetMentionSuggestionsResponse)
+  ::size_t total_size = 0;
+
+  ::uint32_t cached_has_bits = 0;
+  // Prevent compiler warnings about cached_has_bits being unused
+  (void)cached_has_bits;
+
+  ::_pbi::Prefetch5LinesFrom7Lines(&this_);
+  cached_has_bits = this_._impl_._has_bits_[0];
+  if (BatchCheckHasBit(cached_has_bits, 0x00000003U)) {
+    // repeated .chirp.chat.MentionSuggestion suggestions = 2;
+    if (CheckHasBitForRepeated(cached_has_bits, 0x00000001U)) {
+      total_size += 1UL * this_._internal_suggestions_size();
+      for (const auto& msg : this_._internal_suggestions()) {
+        total_size += ::google::protobuf::internal::WireFormatLite::MessageSize(msg);
+      }
+    }
+    // .chirp.common.ErrorCode code = 1;
+    if (CheckHasBit(cached_has_bits, 0x00000002U)) {
+      if (this_._internal_code() != 0) {
+        total_size += 1 +
+                      ::_pbi::WireFormatLite::EnumSize(this_._internal_code());
+      }
+    }
+  }
+  return this_.MaybeComputeUnknownFieldsSize(total_size,
+                                             &this_._impl_._cached_size_);
+}
+
+void GetMentionSuggestionsResponse::MergeImpl(::google::protobuf::MessageLite& to_msg,
+                            const ::google::protobuf::MessageLite& from_msg) {
+   auto* const _this =
+      static_cast<GetMentionSuggestionsResponse*>(&to_msg);
+  auto& from = static_cast<const GetMentionSuggestionsResponse&>(from_msg);
+  if constexpr (::_pbi::DebugHardenCheckHasBitConsistency()) {
+    from.CheckHasBitConsistency();
+  }
+  ::google::protobuf::Arena* arena = _this->GetArena();
+  // @@protoc_insertion_point(class_specific_merge_from_start:chirp.chat.GetMentionSuggestionsResponse)
+  ABSL_DCHECK_NE(&from, _this);
+  ::uint32_t cached_has_bits = 0;
+  (void)cached_has_bits;
+
+  cached_has_bits = from._impl_._has_bits_[0];
+  if (BatchCheckHasBit(cached_has_bits, 0x00000003U)) {
+    if (CheckHasBitForRepeated(cached_has_bits, 0x00000001U)) {
+      _this->_internal_mutable_suggestions()->InternalMergeFromWithArena(
+          ::google::protobuf::MessageLite::internal_visibility(), arena,
+          from._internal_suggestions());
+    }
+    if (CheckHasBit(cached_has_bits, 0x00000002U)) {
+      if (from._internal_code() != 0) {
+        _this->_impl_.code_ = from._impl_.code_;
+      }
+    }
+  }
+  _this->_impl_._has_bits_[0] |= cached_has_bits;
+  _this->_internal_metadata_.MergeFrom<::google::protobuf::UnknownFieldSet>(
+      from._internal_metadata_);
+}
+
+void GetMentionSuggestionsResponse::CopyFrom(const GetMentionSuggestionsResponse& from) {
+  // @@protoc_insertion_point(class_specific_copy_from_start:chirp.chat.GetMentionSuggestionsResponse)
+  if (&from == this) return;
+  Clear();
+  MergeFrom(from);
+}
+
+
+void GetMentionSuggestionsResponse::InternalSwap(GetMentionSuggestionsResponse* PROTOBUF_RESTRICT PROTOBUF_NONNULL other) {
+  using ::std::swap;
+  _internal_metadata_.InternalSwap(&other->_internal_metadata_);
+  swap(_impl_._has_bits_[0], other->_impl_._has_bits_[0]);
+  _impl_.suggestions_.InternalSwap(&other->_impl_.suggestions_);
+  swap(_impl_.code_, other->_impl_.code_);
+}
+
+::google::protobuf::Metadata GetMentionSuggestionsResponse::GetMetadata() const {
   return ::google::protobuf::Message::GetMetadataImpl(GetClassData()->full());
 }
 // ===================================================================

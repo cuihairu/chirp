@@ -629,6 +629,26 @@ message ChatMessageEx {
   bool mentions_here = 5;
 }
 
+// Mention autocomplete entry
+message MentionSuggestion {
+  string display_text = 1;    // e.g. "@username" or "@everyone"
+  string id = 2;              // User ID / Role ID (empty for @everyone/@here)
+  MentionType type = 3;
+  string icon_url = 4;
+}
+
+// Mention autocomplete query
+message GetMentionSuggestionsRequest {
+  string user_id = 1;
+  string channel_id = 2;
+  string query = 3;
+}
+
+message GetMentionSuggestionsResponse {
+  common.ErrorCode code = 1;
+  repeated MentionSuggestion suggestions = 2;
+}
+
 // ========== Message Edit/Delete ==========
 // Message edit history
 message MessageEdit {
