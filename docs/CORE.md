@@ -83,10 +83,24 @@ Important mappings:
 | `GET_REACTIONS_RESP` | `chirp.chat.GetReactionsResponse` |
 | `REACTION_ADDED_NOTIFY` | `chirp.chat.ReactionAddedNotify` |
 | `REACTION_REMOVED_NOTIFY` | `chirp.chat.ReactionRemovedNotify` |
+| `EDIT_MESSAGE_REQ` | `chirp.chat.EditMessageRequest` |
+| `EDIT_MESSAGE_RESP` | `chirp.chat.EditMessageResponse` |
+| `DELETE_MESSAGE_REQ` | `chirp.chat.DeleteMessageRequest` |
+| `DELETE_MESSAGE_RESP` | `chirp.chat.DeleteMessageResponse` |
+| `BULK_DELETE_REQ` | `chirp.chat.BulkDeleteRequest` |
+| `BULK_DELETE_RESP` | `chirp.chat.BulkDeleteResponse` |
+| `MESSAGE_EDITED_NOTIFY` | `chirp.chat.MessageEditedNotify` |
+| `MESSAGE_DELETED_NOTIFY` | `chirp.chat.MessageDeletedNotify` |
+| `GET_MENTION_SUGGESTIONS_REQ` | `chirp.chat.GetMentionSuggestionsRequest` |
+| `GET_MENTION_SUGGESTIONS_RESP` | `chirp.chat.GetMentionSuggestionsResponse` |
 
 Note: `TYPING_INDICATOR_NOTIFY` is inbound-only from clients (the server never
 replies on that connection; it broadcasts to the other channel members) and
-server-pushed typing/reaction/read notifications use sequence `0`.
+server-pushed typing/reaction/read/edit/delete notifications use sequence `0`.
+Messages carry a 15-minute edit window and soft delete by default; moderator
+rights come from group roles (MODERATOR and above). @everyone/@here mentions
+share a per-user, per-channel cooldown and are rejected with `AUTH_FAILED`
+while cooling down.
 
 ## Local Verification
 

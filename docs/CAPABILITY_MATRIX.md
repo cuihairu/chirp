@@ -17,7 +17,7 @@ This document describes the repository's current implementation status by runtim
 | --- | --- | --- | --- |
 | Gateway core login/session routing | `chirp_gateway` | Supported | Main edge entry for TCP/WS login, heartbeat, kick flow |
 | Auth basic token flow | `chirp_auth` | Supported | Default auth binary exists; without MySQL/libsodium it falls back to the simpler token validation path |
-| Chat basic messaging | `chirp_chat` | Supported | Private messaging, history, offline queue, group management (create/join/leave/kick/invite/members), read receipts, typing indicators, and message reactions wired into the default binary |
+| Chat basic messaging | `chirp_chat` | Supported | Private messaging, history, offline queue, group management (create/join/leave/kick/invite/members), read receipts, typing indicators, message reactions, message edit/delete (with moderator support and bulk delete), and @mention parsing/autocomplete wired into the default binary |
 | Chat distributed routing | `chirp_chat_distributed` | Experimental | Separate target; not the default documented service binary |
 | Chat hybrid Redis + MySQL storage | `chirp_chat` / `chirp_chat_enhanced` | Experimental | With MySQL available, the default `chirp_chat` target builds the enhanced implementation; `chirp_chat_enhanced` is now a compatibility alias |
 | Auth registration / refresh / brute-force / rate-limit stack | `chirp_auth` / `chirp_auth_enhanced` | Experimental | With MySQL and libsodium available, the default `chirp_auth` target builds the enhanced implementation; `chirp_auth_enhanced` is now a compatibility alias |
