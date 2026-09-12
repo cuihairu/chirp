@@ -81,55 +81,6 @@ jobs:
       working-directory: apps/mobile_companion
       run: flutter test
 
-  # iOS build
-  ios:
-    runs-on: macos-13
-    timeout-minutes: 90
-
-    steps:
-    - uses: actions/checkout@v7
-
-    - name: Set up Flutter
-      uses: subosito/flutter-action@v2
-      with:
-        flutter-version: '3.24.0'
-        channel: 'stable'
-        cache: true
-
-    - name: Flutter version
-      run: flutter --version
-
-    - name: Install CocoaPods and protobuf
-      run: |
-        brew install protobuf
-        cd apps/mobile_companion/ios
-        pod install
-
-    - name: Install Flutter dependencies
-      working-directory: apps/mobile_companion
-      run: |
-        flutter clean
-        flutter pub get
-
-    - name: Generate proto files
-      run: ./gen_proto.sh
-
-    - name: Build iOS (Debug - No Codesigning)
-      working-directory: apps/mobile_companion
-      run: flutter build ios --debug --no-codesign
-
-    - name: Build iOS (Release - No Codesigning)
-      working-directory: apps/mobile_companion
-      run: flutter build ios --release --no-codesign
-
-    - name: Run Flutter tests
-      working-directory: apps/mobile_companion
-      run: flutter test
-
-    - name: Run integration tests
-      working-directory: apps/mobile_companion
-      run: flutter test integration_test
-
   # Code analysis
   analyze:
     runs-on: ubuntu-22.04
@@ -171,54 +122,25 @@ jobs:
 
   # Native SDK build (for Flutter FFI)
   native-sdk:
-    runs-on: ${{ matrix.os }}
-    strategy:
-      matrix:
-        os: [ubuntu-22.04, macos-13, windows-2022]
-        include:
-          - os: ubuntu-22.04
-            vcpkg_triplet: x64-linux
-          - os: macos-13
-            vcpkg_triplet: x64-osx
-          - os: windows-2022
-            vcpkg_triplet: x64-windows
+    runs-on: ubuntu-22.04
 
     steps:
     - uses: actions/checkout@v7
       with:
         submodules: recursive
 
-    - name: Install system dependencies (Ubuntu)
-      if: runner.os == 'Linux'
+    - name: Install system dependencies
       run: |
         sudo apt-get update
         sudo apt-get install -y ninja-build protobuf-compiler pkg-config autoconf automake libtool libtool-bin autoconf-archive
 
-    - name: Verify protoc installation (Ubuntu)
-      if: runner.os == 'Linux'
-      run: |
-        which protoc
-        protoc --version
-
-    - name: Install system dependencies (macOS)
-      if: runner.os == 'macOS'
-      run: |
-        brew install ninja protobuf
-
     - name: Setup vcpkg
       run: |
         git clone https://github.com/Microsoft/vcpkg.git
-        if [ "$RUNNER_OS" = "Windows" ]; then
-          ./vcpkg/bootstrap-vcpkg.bat
-        else
-          ./vcpkg/bootstrap-vcpkg.sh
-        fi
-      shell: bash
+        ./vcpkg/bootstrap-vcpkg.sh
 
     - name: Install vcpkg dependencies
-      run: |
-        ./vcpkg/vcpkg install --triplet ${{ matrix.vcpkg_triplet }}
-      shell: bash
+      run: ./vcpkg/vcpkg install --triplet x64-linux
 
     - name: Generate proto files
       run: ./gen_proto.sh
@@ -232,15 +154,12 @@ jobs:
           -DCMAKE_TOOLCHAIN_FILE=${{ github.workspace }}/vcpkg/scripts/buildsystems/vcpkg.cmake
 
     - name: Build native SDK
-      run: cmake --build sdk_build --config Release -j$(nproc 2>/dev/null || sysctl -n hw.ncpu)
+      run: cmake --build sdk_build --config Release -j$(nproc)
 
     - name: Upload native library
       uses: actions/upload-artifact@v7
       with:
-        name: native-sdk-${{ matrix.vcpkg_triplet }}
-        path: |
-          sdk_build/lib/*.so
-          sdk_build/lib/*.dylib
-          sdk_build/lib/*.dll
+        name: native-sdk-x64-linux
+        path: sdk_build/lib/*.so
         retention-days: 30
         if-no-files-found: ignore

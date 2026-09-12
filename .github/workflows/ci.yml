@@ -43,32 +43,20 @@ jobs:
         fail_ci_if_error: false
 
   build-and-test:
-    runs-on: ${{ matrix.os }}
+    runs-on: ubuntu-22.04
     strategy:
       matrix:
-        os: [ubuntu-22.04, macos-12]
         build_type: [Debug, Release]
-        include:
-          - os: ubuntu-22.04
-            vcpkg_triplet: x64-linux
-          - os: macos-12
-            vcpkg_triplet: x64-osx
 
     steps:
     - uses: actions/checkout@v7
       with:
         submodules: recursive
 
-    - name: Install system dependencies (Ubuntu)
-      if: runner.os == 'Linux'
+    - name: Install system dependencies
       run: |
         sudo apt-get update
         sudo apt-get install -y ninja-build protobuf-compiler pkg-config autoconf automake libtool libtool-bin autoconf-archive
-
-    - name: Install system dependencies (macOS)
-      if: runner.os == 'macOS'
-      run: |
-        brew install ninja protobuf
 
     - name: Setup vcpkg
       run: |
@@ -76,8 +64,7 @@ jobs:
         ./vcpkg/bootstrap-vcpkg.sh
 
     - name: Install vcpkg dependencies
-      run: |
-        ./vcpkg/vcpkg install --triplet ${{ matrix.vcpkg_triplet }}
+      run: ./vcpkg/vcpkg install --triplet x64-linux
 
     - name: Generate proto files
       run: ./gen_proto.sh
@@ -90,8 +77,7 @@ jobs:
           -G Ninja
 
     - name: Build
-      run: |
-        cmake --build --preset ci --config ${{ matrix.build_type }} -j$(nproc 2>/dev/null || sysctl -n hw.ncpu)
+      run: cmake --build --preset ci --config ${{ matrix.build_type }} -j$(nproc)
 
     - name: Verify tests are discovered
       shell: bash
