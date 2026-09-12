@@ -14,10 +14,10 @@ This directory contains the VitePress documentation for the current runtime, onb
 
 ## Page Map
 
-- `Core docs`: supported runtime path and protocol contract
-- `Guide docs`: onboarding and local validation
-- `Historical / design notes`: deployment, scalability, game chat, combat, NPC, and integration-test writeups
+- `Core docs` (this directory + `guide/` + `api/`): supported runtime path and protocol contract
+- `design-notes/`: historical / design writeups — deployment, scalability, game chat, combat, NPC dialog, and integration-test notes; kept for reference, not maintained as current contracts
 - `Redirect pages`: `API.md` and `QUICKSTART.md` point to the maintained pages and are kept for compatibility
+- `server_plane.md`: the server-plane (game backend <-> chirp) integration contract
 
 ## Current Positioning
 

@@ -1,6 +1,6 @@
 # 游戏聊天服务组件化架构 (Modular Game Chat Architecture)
 
-> 状态说明：本文是游戏聊天功能拆解的设计笔记，不代表 Chirp 当前已支持这些完整能力。当前可验证路径请以 [Core](./CORE.md) 和 [Capability Matrix](./CAPABILITY_MATRIX.md) 为准。
+> 状态说明：本文是游戏聊天功能拆解的设计笔记，不代表 Chirp 当前已支持这些完整能力。当前可验证路径请以 [Core](../CORE.md) 和 [Capability Matrix](../CAPABILITY_MATRIX.md) 为准。
 
 ## 1. 设计理念 (Design Philosophy)
 

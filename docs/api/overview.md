@@ -55,6 +55,7 @@ Example mapping:
 | Gateway | 5000 | 5001 | Supported | Login, logout, heartbeat, session registry, optional Redis kick |
 | Auth | 6000 | - | Supported | Called by Gateway when `--auth_host` is configured |
 | Chat | 7000 | 7001 | Supported | Direct chat entry for current smoke tests and SDK examples |
+| Server Gateway | 8100 | - | Experimental | Trusted service-plane hub; see [Server Plane](../server_plane.md) |
 | Social | 8000 | 8001 | Experimental | Not part of the minimal verified path |
 | Voice | 9000 | 9001 | Experimental | Signaling surface exists, not a full media backend guarantee |
 | Notification | 5006 | - | Experimental | Placeholder/provider-dependent behavior |
@@ -85,6 +86,25 @@ Example mapping:
 | 2005 | `CHAT_MESSAGE_NOTIFY` | Chat -> Client | Supported |
 
 Gateway currently ignores unimplemented business messages, including chat messages. Send chat packets to the Chat service unless gateway routing has been implemented.
+
+### Server plane (5xxx)
+
+`chirp_server_gateway` (TCP 8100) uses the same Packet framing on a separate
+trust plane. Peers are game backends and internal services authenticated by
+`service_id` + shared secret — never user accounts.
+
+| MsgID | Name | Direction |
+| --- | --- | --- |
+| 5001 / 5002 | `SERVER_AUTH_REQ` / `SERVER_AUTH_RESP` | Service <-> Hub |
+| 5003 / 5004 | `SERVER_HEARTBEAT_PING` / `PONG` | Service <-> Hub |
+| 5005 / 5006 / 5007 | `INJECT_MESSAGE_REQ` / `RESP` / `NOTIFY` | Service -> Hub; NOTIFY forwarded to chat |
+| 5008 / 5009 | `EVENT_PUBLISH_REQ` / `RESP` | Service -> Hub |
+| 5010 | `EVENT_DELIVER_NOTIFY` | Hub -> target service |
+| 5011 / 5012 | `EVENT_ACK_REQ` / `RESP` | Service <-> Hub |
+
+Status: Experimental. The full contract (dial-out, at-least-once event
+delivery, injection validation) lives in [Server Plane](../server_plane.md);
+the complete msg-id-to-body mapping is in [Core](../CORE.md).
 
 ## Login Flows
 
@@ -169,6 +189,7 @@ The common response code enum is defined in `proto/common.proto`.
 | 4 | `SESSION_EXPIRED` | Session no longer valid |
 | 5 | `USER_NOT_FOUND` | User does not exist |
 | 6 | `TARGET_OFFLINE` | Recipient is not currently online |
+| 7 | `SERVER_UNAVAILABLE` | Server-plane target service is not connected, or its event queue is full |
 
 ## Related Docs
 

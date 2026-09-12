@@ -292,5 +292,5 @@ sudo systemctl start mysql
 ## Next Steps
 
 - [Overall Architecture](../architecture.md)
-- [Scalability Notes](../SCALABILITY.md)
+- [Scalability Notes](../design-notes/SCALABILITY.md)
 - [API Reference](../api/overview.md)

@@ -1,6 +1,6 @@
 # Chirp Deployment Guide
 
-> Status note: this guide mixes current local deployment notes with production-oriented templates. Verify every command and endpoint against the current service flags before using it as an operations runbook. The supported core path is `gateway + auth + chat`; other services are experimental unless documented in [CAPABILITY_MATRIX.md](./CAPABILITY_MATRIX.md).
+> Status note: this guide mixes current local deployment notes with production-oriented templates. Verify every command and endpoint against the current service flags before using it as an operations runbook. The supported core path is `gateway + auth + chat`; other services are experimental unless documented in [CAPABILITY_MATRIX.md](../CAPABILITY_MATRIX.md).
 
 ## Table of Contents
 

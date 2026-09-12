@@ -11,7 +11,7 @@ Chirp should currently be understood as a game-oriented realtime communication b
 | Gateway | TCP 5000 / WS 5001 | Supported | Login, logout, heartbeat, session binding, optional Redis-backed cross-instance kick |
 | Auth | TCP 6000 | Supported | Token validation path; enhanced auth is conditional on native dependencies |
 | Chat | TCP 7000 / WS 7001 | Supported | Private messages, groups, history, offline queue, optional Redis/MySQL enhanced paths |
-| Server Gateway | TCP 8000 | Experimental | Trusted service-plane hub: game backends authenticate with `service_id` + secret, inject system/NPC messages, and receive events queued until acked |
+| Server Gateway | TCP 8100 | Experimental | Trusted service-plane hub: game backends authenticate with `service_id` + secret, inject system/NPC messages, and receive events queued until acked |
 
 Minimal useful topology:
 
@@ -105,7 +105,7 @@ while cooling down.
 
 ### Server plane (5xxx)
 
-`chirp_server_gateway` (TCP 8000) speaks the same Packet framing on a separate
+`chirp_server_gateway` (TCP 8100) speaks the same Packet framing on a separate
 trust plane: peers are game backends and internal services authenticated by
 `service_id` + secret — never user accounts. See
 [Server Plane](./server_plane.md) for the full contract.

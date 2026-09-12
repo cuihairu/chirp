@@ -2,7 +2,7 @@
 
 This page is kept as a design-notes entry for game chat scenarios.
 
-For the current repository architecture, service boundaries, protocol baseline, and architecture reasonableness review, read [Overall Architecture](./architecture.md) first.
+For the current repository architecture, service boundaries, protocol baseline, and architecture reasonableness review, read [Overall Architecture](../architecture.md) first.
 
 ## Current Position
 
@@ -10,7 +10,7 @@ The current supported backend path is `gateway + auth + chat`.
 
 - `gateway` is the login/session edge and currently handles login, logout, heartbeat, and optional Redis-backed cross-instance kick.
 - `chat` is a separate TCP/WebSocket service today and is the practical entrypoint for current chat smoke tests.
-- Social, voice, notification, search, SDK wrappers, mobile app, and admin dashboard are experimental or demo surfaces unless the [Capability Matrix](./CAPABILITY_MATRIX.md) says otherwise.
+- Social, voice, notification, search, SDK wrappers, mobile app, and admin dashboard are experimental or demo surfaces unless the [Capability Matrix](../CAPABILITY_MATRIX.md) says otherwise.
 
 ## Design Intent
 
@@ -54,6 +54,6 @@ This is a good choice for game clients because it is compact, stable across lang
 
 ## Practical Guidance
 
-- For local validation, use the current direct `chat` path described in [Overall Architecture](./architecture.md).
+- For local validation, use the current direct `chat` path described in [Overall Architecture](../architecture.md).
 - For product architecture, prefer a single public edge once gateway routing is implemented.
 - Do not document social, voice, search, push, or advanced chat features as supported until they have matching tests and a clear runtime topology.

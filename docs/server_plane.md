@@ -15,7 +15,7 @@ The server plane is how a game backend talks to chirp. It is deliberately separa
 ```bash
 cmake --preset dev && cmake --build --preset dev
 ./build/services/server_gateway/chirp_server_gateway \
-  --port 8000 \
+  --port 8100 \
   --service game=game-secret \
   --service chat=chat-secret \
   --chat_service_id chat \
@@ -26,7 +26,7 @@ cmake --preset dev && cmake --build --preset dev
 
 | Flag | Default | Meaning |
 | --- | --- | --- |
-| `--port` | 8000 | TCP listener for service connections |
+| `--port` | 8100 | TCP listener for service connections |
 | `--service` | (none) | Repeatable `service_id=secret` credential entry |
 | `--chat_service_id` | `chat` | The service that receives message injections |
 | `--heartbeat_interval` | 30 | Assigned keepalive cadence (seconds) |

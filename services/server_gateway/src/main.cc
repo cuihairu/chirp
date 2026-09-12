@@ -102,7 +102,7 @@ int main(int argc, char** argv) {
 
   Logger::Instance().SetLevel(Logger::Level::kInfo);
 
-  const uint16_t port = ParseU16Arg(argc, argv, "--port", 8000);
+  const uint16_t port = ParseU16Arg(argc, argv, "--port", 8100);
   const int auth_timeout = std::atoi(GetArg(argc, argv, "--auth_timeout", "10").c_str());
 
   sg::ServerGatewayConfig config;

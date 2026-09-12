@@ -15,14 +15,14 @@ actions:
 features:
   - title: 核心链路
     details: 当前建议优先验证 gateway + auth + chat。
+  - title: 三边缘接入
+    details: 游戏客户端、App、游戏服务端三条接入平面相互独立；服务器平面用出站长连接 + 服务凭证。
   - title: 双协议接入
     details: TCP 和 WebSocket 使用同一套长度前缀 Protobuf Packet 协议。
-  - title: 可选 Redis 增强
-    details: Redis 可用于 Gateway 分布式 session、跨实例 kick、聊天历史和离线队列。
   - title: 明确能力边界
-    details: 社交、语音、通知、搜索、SDK 和应用侧代码存在，但完成度不一致。
+    details: 可选 Redis 增强；社交、语音、通知、搜索、SDK 完成度不一致，见能力矩阵。
 
-footer: MIT Licensed | Copyright © 2024-Present Chirp Project
+footer: Apache-2.0 Licensed | Copyright © 2024-Present Chirp Project
 ---
 
 ## 当前定位
@@ -43,9 +43,9 @@ Chirp 目前是“可运行的核心通信骨架 + 一批实验性扩展”，�
 
 | 层级 | 代表页面 | 用途 |
 | --- | --- | --- |
-| 当前运行时 | `CORE`, `CAPABILITY_MATRIX`, `guide/getting-started`, `api/overview`, `architecture` | 当前可用链路、协议和边界约束 |
+| 当前运行时 | `CORE`, `CAPABILITY_MATRIX`, `guide/getting-started`, `api/overview`, `architecture`, `server_plane` | 当前可用链路、协议和边界约束 |
 | 入门指南 | `guide/introduction`, `guide/installation`, `guide/getting-started`, `guide/deployment` | 环境准备、本地构建和验证 |
-| 专题 / 历史 | `DEPLOYMENT`, `DISTRIBUTED_DEPLOYMENT`, `SCALABILITY*`, `game_chat_*`, `npc_dialog_system`, `INTEGRATION_TEST_FIXES` | 设计记录、演进方案和旧版说明 |
+| 专题 / 历史 | `design-notes/DEPLOYMENT`, `design-notes/DISTRIBUTED_DEPLOYMENT`, `design-notes/SCALABILITY*`, `design-notes/game_chat_*`, `design-notes/npc_dialog_system`, `design-notes/INTEGRATION_TEST_FIXES` | 设计记录、演进方案和旧版说明 |
 | 兼容页 | `API`, `QUICKSTART` | 兼容入口，优先跳转到维护中的页面 |
 
 ## 核心服务
@@ -55,7 +55,8 @@ Chirp 目前是“可运行的核心通信骨架 + 一批实验性扩展”，�
 | Gateway | TCP 5000 / WS 5001 | Supported | 登录、登出、心跳、会话绑定、可选 Redis 跨实例 kick |
 | Auth | TCP 6000 | Supported | 基础 token flow；依赖满足时构建增强认证实现 |
 | Chat | TCP 7000 / WS 7001 | Supported | 私聊、历史、离线队列；依赖满足时构建增强存储路径 |
+| Server Gateway | TCP 8100 | Experimental | 服务平面枢纽：游戏服出站长连接 + `service_id`+secret 凭证，消息注入、事件离线排队重投，见[服务器平面](/server_plane) |
 
 ## 关键边界
 
-当前架构对“游戏聊天后端骨架、本地验证、协议接入和二次开发”是合理的。它还不是生产级统一通信平台：`gateway` 尚未转发聊天等业务包，`chat` 仍是独立接入口，部分高级能力缺少统一会话和验证链路。
+当前架构对“游戏聊天后端骨架、本地验证、协议接入和二次开发”是合理的。它还不是生产级统一通信平台：`gateway` 尚未转发聊天等业务包，`chat` 仍是独立接入口，服务器平面的注入链路尚未端到端打通（chat 侧消费是下一个增量），部分高级能力缺少统一会话和验证链路。
