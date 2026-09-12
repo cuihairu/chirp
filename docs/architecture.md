@@ -4,9 +4,9 @@ title: Overall Architecture
 
 # Chirp Overall Architecture
 
-Last reviewed: 2026-06-11
+Last reviewed: 2026-09-12
 
-This document describes the current repository architecture, not the full roadmap. The current supported path is a runnable `gateway + auth + chat` backend skeleton. Social, voice, notification, search, multi-engine SDKs, mobile app, and admin dashboard exist in the tree, but they should be treated as experimental or demo surfaces unless the [Capability Matrix](./CAPABILITY_MATRIX.md) says otherwise.
+This document describes the repository architecture, including the decided target topology and the migration path toward it. The currently supported path is a runnable `gateway + auth + chat` backend skeleton. Social, voice, notification, search, multi-engine SDKs, mobile app, and admin dashboard exist in the tree, but they should be treated as experimental or demo surfaces unless the [Capability Matrix](./CAPABILITY_MATRIX.md) says otherwise.
 
 ## Executive Summary
 
@@ -25,7 +25,39 @@ It is not yet reasonable to present the project as a complete unified communicat
 - Many protocol messages and docs describe richer group, read receipt, voice, social, notification, and search behavior than the default verified path proves.
 - Distributed chat, enhanced auth, and hybrid storage are conditional or alternate paths, not one fully hardened production topology.
 
+## Access Topology: Three Independent Edges
+
+Chirp has three access points with different trust models, transports, and lifecycles. The decided topology (2026-09) gives each its own edge service. **Edges are independent; the core underneath is shared.**
+
+| Access point | Edge | Transport | Identity | Network reality |
+| --- | --- | --- | --- | --- |
+| Game client | `game_gateway` (evolved from `services/gateway`) | TCP + Packet | user token | lives and dies with the game process |
+| Companion app | `app_gateway` (planned) | WebSocket/TLS | user token | mobile network: reconnects, NAT timeouts, backgrounding |
+| Game backend | `server_gateway` | outbound long connection; broker fallback | `service_id` + service secret | always-on trusted service, usually in a private subnet |
+
+Rules that make independence work:
+
+- **Edges are thin**: connection management, protocol adaptation, auth forwarding, heartbeat. No business state lives in an edge.
+- **The core is shared**: auth, the device-level session/Presence registry, chat, and notification (the app edge's offline push bridge). Same user on the game client and the app simultaneously is a core scenario, so cross-device delivery, kick policy, and unified unread counts are resolved in the core, not in any edge.
+- **The game backend plane never uses user identity** and never touches the player edges. A game server that logs into a player gateway would have to masquerade as a user: it would pollute session semantics, break kick/presence, and distort rate-limiting designed for untrusted peers.
+
+### Server plane design
+
+- **Dial-out, not call-in.** Game servers open the connection to `server_gateway` (agent model). Chirp never needs inbound access into game networks, and game servers in private subnets need no public callback endpoint.
+- **Protocol.** Same Packet framing, a dedicated `5xxx` msg-id block. The first frame on any connection must be `SERVER_AUTH_REQ` carrying `service_id` + secret; unauthenticated connections are closed after a short timeout.
+- **Long connection first, broker second.** The long connection provides push semantics with in-connection ack/retry. Integrations that cannot host a long-connection client use a broker fallback (Redis Streams: consumer groups + ack + replay). Raw pub/sub is avoided because it loses events across restarts.
+- **Non-user sender identities.** Injected messages carry `SenderKind`: `SYSTEM` (announcements), `NPC` (in-game AI), `SERVICE` (game logic such as trade state). The chat data model must accept these identities under permission rules distinct from user accounts.
+- **At-least-once downlink.** Events pushed to a game service are queued per target service and redelivered on reconnect until acknowledged. Queue overflow rejects new publishes rather than silently dropping older events.
+
+### Platform and I/O backend
+
+- **Target platform is Linux only.** Backend CI already runs Linux only (`cmake-multi-platform.yml` builds on ubuntu; the sole macOS job builds the iOS app shell, which is an Apple toolchain constraint, not a backend target).
+- **Reactor encapsulation.** All socket I/O goes through `libs/network` on ASIO. The reactor stays an implementation detail behind that library: services never construct reactors directly.
+- **io_uring is a planned optional backend**, not a rewrite: ASIO supports it natively (`ASIO_HAS_IO_URING` + linking `liburing`, using `asio::io_uring` as the execution context), so the work is a `libs/network` facade with a backend switch plus per-backend smoke coverage. Recorded caveats: requires kernel ≥ 5.1 (≥ 5.10 recommended); container seccomp profiles may block io_uring syscalls; not every ASIO service is io_uring-complete. epoll therefore remains the default and io_uring ships opt-in behind configuration. Current throughput targets are not epoll-bound; this is scheduled after the server plane.
+
 ## Current Runtime Topology
+
+What actually runs today:
 
 ```mermaid
 graph TD
@@ -49,7 +81,7 @@ graph TD
 
 Important interpretation:
 
-- `gateway` and `chat` are both client-facing services today.
+- `gateway` and `chat` are both client-facing services today; the game backend plane does not exist yet as runtime, only as protocol and service skeleton.
 - `gateway` is not yet a universal business router.
 - `chat` direct access is the practical path for current chat smoke tests and the C++ SDK example.
 - Redis is optional for local validation, but required for meaningful multi-instance gateway session behavior and distributed chat routing experiments.
@@ -61,8 +93,8 @@ Important interpretation:
 | --- | --- | --- |
 | Protocol | `proto/*.proto`, generated `proto/cpp`, `proto/go` | Shared message IDs and message schemas |
 | Common library | `libs/common` | Logger, JWT/base64/sha256 helpers, metrics primitives |
-| Network library | `libs/network` | ASIO TCP/WS sessions, length-prefixed framing, Redis RESP client, Redis Pub/Sub router |
-| Core services | `services/gateway`, `services/auth`, `services/chat` | Supported backend skeleton |
+| Network library | `libs/network` | ASIO TCP/WS sessions, length-prefixed framing, Redis RESP client, Redis Pub/Sub router; the future reactor-encapsulation point |
+| Core services | `services/gateway`, `services/auth`, `services/chat`, `services/server_gateway` | Supported backend skeleton |
 | Experimental services | `services/social`, `services/voice`, `services/notification`, `services/search` | Useful implementation surface, not core verified path |
 | SDKs | `sdks/core`, `sdks/unity`, `sdks/unreal` | Integration base and wrappers, currently experimental |
 | Apps/tools | `apps/*`, `tools/benchmark` | Demos, smoke clients, benchmarks, archive helpers |
@@ -94,9 +126,11 @@ message Packet {
 
 This means `MsgID` is not a separate 2-byte field in the network frame. It is inside the protobuf `Packet`.
 
+Message-ID blocks are planned per access point so no single enum grows without bounds: `1xxx` auth/session, `2xxx` chat, `3xxx` social, `4xxx` voice, `5xxx` server plane (game backend).
+
 ## Core Service Responsibilities
 
-### Gateway
+### Gateway (game client edge, in evolution)
 
 `services/gateway` is the edge session service for the current login path.
 
@@ -117,6 +151,8 @@ It currently does not handle:
 - Service discovery.
 - Centralized authorization for all business services.
 
+Its target role is `game_gateway`: the game-client edge of the three-edge topology, eventually absorbing the direct chat entry so clients only know edges.
+
 ### Auth
 
 `services/auth` has two build-time modes:
@@ -134,10 +170,8 @@ Basic mode currently supports:
 
 - TCP and WebSocket direct entry.
 - Lightweight `LOGIN_REQ` where token is treated as `user_id`.
-- Private `SEND_MESSAGE_REQ`.
-- `CHAT_MESSAGE_NOTIFY` for online recipients.
+- Private messages, group lifecycle and roles, read receipts, typing indicators, reactions, message edit/delete with moderator support, and @mention parsing/autocomplete.
 - Offline queue fallback.
-- `GET_HISTORY_REQ`.
 - Optional Redis list storage for history and offline messages.
 
 Enhanced/distributed paths add:
@@ -147,7 +181,18 @@ Enhanced/distributed paths add:
 - Delivery tracking and pagination scaffolding.
 - Separate `chirp_chat_distributed` target.
 
-Current limitation: direct chat login and gateway login are separate session concepts. A client that logs in through `gateway` is not automatically authenticated in `chat`.
+Current limitation: direct chat login and gateway login are separate session concepts. A client that logs in through `gateway` is not automatically authenticated in `chat`. In the target topology chat becomes an internal service; it must also learn to accept server-plane injected messages carrying non-user sender identities.
+
+### Server Gateway (game backend edge)
+
+`services/server_gateway` (`chirp_server_gateway`) is the trusted service plane hub:
+
+- Authenticates game backends (and internal services such as chat) via `service_id` + secret on a dedicated listener.
+- Uplink: forwards message injections toward the chat service (`INJECT_MESSAGE_REQ` in, `InjectMessageNotify` out) with non-user sender identities.
+- Downlink: reliable event delivery to connected services with per-service queues, acks, and redelivery on reconnect.
+- No user-session semantics: it does not participate in login/kick/presence for players.
+
+See the `5xxx` msg-id block in `proto/gateway.proto` and `proto/server_gateway.proto` for the wire contract.
 
 ## Data Flow
 
@@ -194,65 +239,50 @@ sequenceDiagram
     C-->>B: CHAT_MESSAGE_NOTIFY
 ```
 
-### Offline Message Flow
+### Server Plane Flow (target)
 
 ```mermaid
 sequenceDiagram
-    participant A as Sender
-    participant C as Chat
-    participant R as Redis
-    participant B as Receiver
+    participant GS as Game Server
+    participant SG as server_gateway
+    participant CH as Chat (internal peer)
+    participant P as Players
 
-    A->>C: SEND_MESSAGE_REQ to offline B
-    C->>R: RPUSH chat:offline:B
-    C-->>A: SEND_MESSAGE_RESP TARGET_OFFLINE
-    B->>C: LOGIN_REQ
-    C->>R: LRANGE + DEL chat:offline:B
-    C-->>B: CHAT_MESSAGE_NOTIFY repeated
+    GS->>SG: connect (dial out) + SERVER_AUTH_REQ (service_id + secret)
+    SG-->>GS: SERVER_AUTH_RESP (delivers queued events if reconnect)
+    GS->>SG: INJECT_MESSAGE_REQ (sender_kind = SYSTEM / NPC / SERVICE)
+    SG->>CH: InjectMessageNotify
+    CH->>P: message broadcast / offline queue
+    SG-->>GS: INJECT_MESSAGE_RESP
+    CH->>SG: EVENT_PUBLISH_REQ (e.g. quest trigger)
+    SG->>GS: EVENT_DELIVER_NOTIFY (queued + redelivered until acked)
+    GS-->>SG: EVENT_ACK_REQ
 ```
+
+## Migration Path
+
+From the current runtime to the three-edge topology, in order:
+
+1. **Server plane hub** (`chirp_server_gateway`): greenfield, no legacy constraints; unblocks NPC quest callbacks, system/trade message injection. Chat consumes injections as an internal peer.
+2. **Device-level session core**: upgrade the existing Redis session registry from "user → instance" to "user → device → edge instance". Prerequisite for the app edge and for cross-device semantics.
+3. **App edge** (`app_gateway`): WebSocket-first with mobile tuning (heartbeat, reconnect backoff) plus the notification service as a real APNs/FCM push bridge.
+4. **Game edge consolidation**: `game_gateway` absorbs the direct chat entry so clients only know edges; chat becomes internal-only.
+
+At every step the currently supported direct path stays buildable and smoke-tested until its replacement is verified.
 
 ## Is The Architecture Reasonable?
 
-Yes, with a narrow product definition:
+Yes, with the three-edge decision applied:
 
-- It is a reasonable foundation for a game-chat prototype, protocol experiments, SDK integration work, and local smoke testing.
-- It is reasonable to keep `chat` independently runnable while the gateway routing contract is still being designed.
-- It is reasonable to use Redis first for session ownership, offline queues, and Pub/Sub because it keeps the early distributed design simple.
-- It is reasonable for MySQL support to be conditional at this stage, as long as documentation clearly marks what changes when dependencies exist.
+- Separating the game backend plane from the player edges resolves the trust-model mismatch: trusted services authenticate with service credentials over their own protocol, and never masquerade as users.
+- Independent edges with a shared core match the product: the same user plays on the game client and chats from the app, so session/Presence must be shared, while transports and lifecycles legitimately differ per edge.
+- Dial-out long connections for game backends fit real deployments (private subnets, no public callback endpoints) and give push semantics; the Redis Streams fallback covers integrations that cannot host a connection client.
 
-No, if the intended promise is a production-grade, unified realtime platform today:
+What remains unreasonable today, and is being closed by the migration path:
 
-- A single client session should not have to log in separately to `gateway` and `chat`.
-- Public service entrypoints need a clear security model. If clients can directly reach `chat`, `chat` must become a first-class edge service with full auth, rate limiting, and abuse controls.
-- If `gateway` is meant to be the only edge, it must route or proxy chat/social/voice traffic and own the end-to-end session contract.
+- Clients currently authenticate separately to `gateway` and `chat`.
+- Public service entrypoints still need the full security model (rate limiting, abuse controls) before client-direct chat can be presented as a hardened edge.
 - Capacity numbers, stable SDK claims, and production operations docs need measured evidence before being presented as guarantees.
-
-## Recommended Direction
-
-The cleanest target architecture is a unified edge gateway:
-
-```mermaid
-graph TD
-    Client[Client SDKs] --> LB[Load Balancer]
-    LB --> Gateway[Gateway Cluster<br/>TCP / WebSocket]
-    Gateway --> Auth[Auth Service]
-    Gateway --> Router[Internal Router / RPC / PubSub]
-    Router --> Chat[Chat Service]
-    Router --> Social[Social Service]
-    Router --> Voice[Voice Signaling]
-    Chat --> Redis[(Redis)]
-    Chat --> MySQL[(MySQL)]
-    Gateway --> Redis
-```
-
-Recommended migration steps:
-
-1. Keep documenting the current direct `chat` path as supported for local validation.
-2. Decide whether `chat` remains public or becomes internal-only behind `gateway`.
-3. If `gateway` becomes the only public edge, implement forwarding for chat packets before expanding social/voice routing.
-4. Unify login/session semantics so `LOGIN_REQ` creates one authenticated identity that downstream services trust.
-5. Move runtime configuration docs to the real command-line flags first, then add environment/config-file support only after code supports it.
-6. Add smoke tests for the documented topology before claiming it as supported.
 
 ## Documentation Rules Going Forward
 
