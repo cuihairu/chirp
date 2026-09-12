@@ -345,6 +345,19 @@ TEST_F(GroupHandlersTest, GetUserGroupsPaginates) {
   EXPECT_EQ(resp.groups_size(), 1);
 }
 
+TEST_F(GroupHandlersTest, GetUserGroupsAppliesOffset) {
+  MakeGroup("alice");
+  MakeGroup("alice");
+
+  chirp::chat::GetUserGroupsRequest req;
+  req.set_user_id("alice");
+  req.set_offset(1);
+  const auto resp = handlers_->HandleGetUserGroups(req, "alice");
+  EXPECT_EQ(resp.code(), chirp::common::OK);
+  EXPECT_EQ(resp.total_count(), 2);
+  EXPECT_EQ(resp.groups_size(), 1);
+}
+
 TEST_F(GroupHandlersTest, InviteValidatesInput) {
   chirp::chat::InviteToGroupRequest missing_fields;
   missing_fields.set_inviter_id("alice");
@@ -397,6 +410,41 @@ TEST_F(GroupHandlersTest, InviteNotifiesMembers) {
   EXPECT_EQ(resp.code(), chirp::common::OK);
   EXPECT_TRUE(groups_.IsMember(group.group_id(), "bob"));
   EXPECT_EQ(CountNotifications("alice", chirp::gateway::GROUP_MEMBER_JOINED_NOTIFY), 1);
+}
+
+TEST_F(GroupHandlersTest, InviteFullGroupRejected) {
+  // The creator already fills the only slot (max_members=1), so the invite
+  // reaches GroupManager::AddMember and is rejected as a full group.
+  const auto group = MakeGroup("alice", /*initial=*/{}, /*max_members=*/1);
+  chirp::chat::InviteToGroupRequest req;
+  req.set_inviter_id("alice");
+  req.set_group_id(group.group_id());
+  req.set_target_user_id("bob");
+  EXPECT_EQ(handlers_->HandleInviteToGroup(req, "alice").code(),
+            chirp::common::INVALID_PARAM);
+  EXPECT_FALSE(groups_.IsMember(group.group_id(), "bob"));
+}
+
+TEST_F(GroupHandlersTest, KickByNonMemberRequesterFails) {
+  const auto group = MakeGroup("alice", {"bob"});
+  chirp::chat::KickMemberRequest req;
+  req.set_group_id(group.group_id());
+  req.set_target_user_id("bob");
+  req.set_requester_id("carl");
+  // carl is neither the owner nor a member: the permission lookup finds no
+  // role for him and rejects the kick.
+  EXPECT_EQ(handlers_->HandleKickMember(req, "carl").code(), chirp::common::AUTH_FAILED);
+  EXPECT_TRUE(groups_.IsMember(group.group_id(), "bob"));
+}
+
+TEST_F(GroupHandlersTest, GetMembersAppliesLimit) {
+  const auto group = MakeGroup("alice", {"bob", "carl"});
+  chirp::chat::GetGroupMembersRequest req;
+  req.set_group_id(group.group_id());
+  req.set_limit(2);
+  const auto resp = handlers_->HandleGetGroupMembers(req, "alice");
+  EXPECT_EQ(resp.code(), chirp::common::OK);
+  EXPECT_EQ(resp.members_size(), 2);
 }
 
 TEST_F(GroupHandlersTest, BroadcastExcludesSenderAndQueuesOfflineMembers) {
