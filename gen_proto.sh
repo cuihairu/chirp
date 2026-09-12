@@ -19,7 +19,8 @@ protoc --proto_path=. \
        proto/chat.proto \
        proto/social.proto \
        proto/voice.proto \
-       proto/notification.proto
+       proto/notification.proto \
+       proto/server_gateway.proto
 
 # Generate Go Code
 # We simply output to proto/go. The go_package in .proto files will handle the subdirectories usually,
@@ -33,7 +34,8 @@ if command -v protoc-gen-go >/dev/null 2>&1; then
          proto/chat.proto \
          proto/social.proto \
          proto/voice.proto \
-         proto/notification.proto
+         proto/notification.proto \
+         proto/server_gateway.proto
 else
   echo "warning: protoc-gen-go not found; skipping Go code generation (install Go + protoc-gen-go to enable)"
 fi

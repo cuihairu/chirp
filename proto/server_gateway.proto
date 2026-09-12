@@ -1,0 +1,102 @@
+syntax = "proto3";
+
+package chirp.server_gateway;
+
+option go_package = "github.com/cui/chirp/proto/server_gateway";
+
+import "proto/common.proto";
+
+// Server plane wire contract (game backend <-> chirp).
+//
+// Peers are trusted services (game backends, internal services such as chat),
+// authenticated with a service_id + shared secret - never user accounts.
+// Connections dial out from the game backend to chirp_server_gateway; the
+// first frame must be SERVER_AUTH_REQ or the connection is closed.
+
+// Identity of an injected message's sender. Server-plane senders are not user
+// accounts; chat applies permission rules distinct from user accounts to them.
+enum SenderKind {
+  SENDER_UNKNOWN = 0;
+  SENDER_SYSTEM = 1;   // platform announcements
+  SENDER_NPC = 2;      // in-game NPC dialogue
+  SENDER_SERVICE = 3;  // game service logic (trade state, matchmaking, ...)
+}
+
+message ServerAuthRequest {
+  string service_id = 1;
+  string secret = 2;
+  int32 protocol_version = 3;  // must match the server's supported version
+}
+
+message ServerAuthResponse {
+  chirp.common.ErrorCode code = 1;
+  int64 server_time_ms = 2;
+  // Keepalive cadence the server assigns; connections silent for more than
+  // twice this interval are closed.
+  int32 heartbeat_interval_seconds = 3;
+}
+
+message ServerHeartbeatPing {
+  int64 client_time_ms = 1;
+}
+
+message ServerHeartbeatPong {
+  int64 server_time_ms = 1;
+}
+
+// Uplink: a trusted service asks chirp to deliver a message whose sender is
+// not a user. Routed to the chat service, which owns storage and delivery.
+message MessageInjectRequest {
+  string inject_id = 1;  // caller-supplied idempotency key
+  SenderKind sender_kind = 2;
+  string sender_id = 3;  // e.g. "npc:blacksmith_01", "system", "trade"
+  int32 channel_type = 4;
+  string channel_id = 5;    // set for channel injections
+  string receiver_id = 6;   // set for 1:1 injections
+  bytes content = 7;
+}
+
+message MessageInjectResponse {
+  chirp.common.ErrorCode code = 1;
+  string inject_id = 2;
+}
+
+// server_gateway -> chat (internal peer): the forwarded injection.
+message InjectMessageNotify {
+  MessageInjectRequest message = 1;
+}
+
+// Uplink: publish an event that must reach the target service reliably.
+// Events are queued per target while it is offline and redelivered on
+// reconnect until acknowledged (at-least-once).
+message EventPublishRequest {
+  string event_id = 1;  // optional caller-supplied idempotency key
+  string target_service_id = 2;
+  string event_type = 3;  // e.g. "quest.trigger", "trade.state"
+  bytes payload = 4;
+}
+
+message EventPublishResponse {
+  chirp.common.ErrorCode code = 1;
+  string event_id = 2;
+  // True when the target service was offline and the event was queued for
+  // later delivery.
+  bool queued = 3;
+}
+
+// Downlink: an event delivered (or redelivered) to its target service.
+message EventDeliverNotify {
+  string event_id = 1;
+  string event_type = 2;
+  bytes payload = 3;
+  int64 published_at_ms = 4;
+  int32 attempt = 5;  // 1 on first delivery, incremented per redelivery
+}
+
+message EventAckRequest {
+  repeated string event_ids = 1;
+}
+
+message EventAckResponse {
+  chirp.common.ErrorCode code = 1;
+}

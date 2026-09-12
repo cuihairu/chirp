@@ -1,6 +1,6 @@
 # Chirp Capability Matrix
 
-Last reviewed: 2026-09-11
+Last reviewed: 2026-09-12
 
 This document describes the repository's current implementation status by runtime target, not by roadmap intent.
 
@@ -21,6 +21,7 @@ This document describes the repository's current implementation status by runtim
 | Chat distributed routing | `chirp_chat_distributed` | Experimental | Separate target; not the default documented service binary |
 | Chat hybrid Redis + MySQL storage | `chirp_chat` / `chirp_chat_enhanced` | Experimental | With MySQL available, the default `chirp_chat` target builds the enhanced implementation; `chirp_chat_enhanced` is now a compatibility alias |
 | Auth registration / refresh / brute-force / rate-limit stack | `chirp_auth` / `chirp_auth_enhanced` | Experimental | With MySQL and libsodium available, the default `chirp_auth` target builds the enhanced implementation; `chirp_auth_enhanced` is now a compatibility alias |
+| Server plane hub (game backend <-> chirp) | `chirp_server_gateway` | Experimental | Service auth (`service_id` + secret), message injection routing toward chat, reliable event delivery (per-service queues, acks, reconnect redelivery); chat does not yet consume injections as an internal peer |
 | Social / presence | `services/social` | Experimental | Present as service code, but not validated as a core path |
 | Voice signaling / WebRTC integration | `services/voice`, `sdks/core/modules/voice` | Experimental | Broad surface area, environment-heavy, not part of the minimal verified path |
 | Notification delivery | `services/notification` | Experimental | Contains placeholder behavior |

@@ -156,7 +156,7 @@ const char descriptor_table_protodef_proto_2fgateway_2eproto[] ABSL_ATTRIBUTE_SE
     "sgID\022\020\n\010sequence\030\002 \001(\003\022\014\n\004body\030\003 \001(\014\"\"\n\r"
     "HeartbeatPing\022\021\n\ttimestamp\030\001 \001(\003\"7\n\rHear"
     "tbeatPong\022\021\n\ttimestamp\030\001 \001(\003\022\023\n\013server_t"
-    "ime\030\002 \001(\003*\226\030\n\005MsgID\022\013\n\007UNKNOWN\020\000\022\023\n\016HEAR"
+    "ime\030\002 \001(\003*\277\032\n\005MsgID\022\013\n\007UNKNOWN\020\000\022\023\n\016HEAR"
     "TBEAT_PING\020\351\007\022\023\n\016HEARTBEAT_PONG\020\352\007\022\016\n\tLO"
     "GIN_REQ\020\353\007\022\017\n\nLOGIN_RESP\020\354\007\022\020\n\013KICK_NOTI"
     "FY\020\355\007\022\017\n\nLOGOUT_REQ\020\356\007\022\020\n\013LOGOUT_RESP\020\357\007"
@@ -233,14 +233,22 @@ const char descriptor_table_protodef_proto_2fgateway_2eproto[] ABSL_ATTRIBUTE_SE
     "\037\022\024\n\017SET_DEAFEN_RESP\020\261\037\022\036\n\031PARTICIPANT_J"
     "OINED_NOTIFY\020\262\037\022\034\n\027PARTICIPANT_LEFT_NOTI"
     "FY\020\263\037\022%\n PARTICIPANT_STATE_CHANGED_NOTIF"
-    "Y\020\264\037\022\024\n\017SPEAKING_NOTIFY\020\265\037B$Z\"github.com"
-    "/cui/chirp/proto/gatewayb\006proto3"
+    "Y\020\264\037\022\024\n\017SPEAKING_NOTIFY\020\265\037\022\024\n\017SERVER_AUT"
+    "H_REQ\020\211\'\022\025\n\020SERVER_AUTH_RESP\020\212\'\022\032\n\025SERVE"
+    "R_HEARTBEAT_PING\020\213\'\022\032\n\025SERVER_HEARTBEAT_"
+    "PONG\020\214\'\022\027\n\022INJECT_MESSAGE_REQ\020\215\'\022\030\n\023INJE"
+    "CT_MESSAGE_RESP\020\216\'\022\032\n\025INJECT_MESSAGE_NOT"
+    "IFY\020\217\'\022\026\n\021EVENT_PUBLISH_REQ\020\220\'\022\027\n\022EVENT_"
+    "PUBLISH_RESP\020\221\'\022\031\n\024EVENT_DELIVER_NOTIFY\020"
+    "\222\'\022\022\n\rEVENT_ACK_REQ\020\223\'\022\023\n\016EVENT_ACK_RESP"
+    "\020\224\'B$Z\"github.com/cui/chirp/proto/gatewa"
+    "yb\006proto3"
 };
 static ::absl::once_flag descriptor_table_proto_2fgateway_2eproto_once;
 PROTOBUF_CONSTINIT const ::_pbi::DescriptorTable descriptor_table_proto_2fgateway_2eproto = {
     false,
     false,
-    3352,
+    3649,
     descriptor_table_protodef_proto_2fgateway_2eproto,
     "proto/gateway.proto",
     &descriptor_table_proto_2fgateway_2eproto_once,
@@ -260,7 +268,7 @@ const ::google::protobuf::EnumDescriptor* PROTOBUF_NONNULL MsgID_descriptor() {
   return file_level_enum_descriptors_proto_2fgateway_2eproto[0];
 }
 PROTOBUF_CONSTINIT const uint32_t MsgID_internal_data_[] = {
-    65536u, 2951360u, 0u, 0u, 0u, 0u, 0u, 0u, 0u, 0u, 0u, 0u, 0u, 0u, 0u, 0u, 0u, 0u, 0u, 0u, 0u, 0u, 0u, 0u, 0u, 0u, 0u, 0u, 0u, 0u, 0u, 0u, 0u, 134217472u, 0u, 0u, 0u, 0u, 0u, 0u, 0u, 0u, 0u, 0u, 0u, 0u, 0u, 0u, 0u, 0u, 0u, 0u, 0u, 0u, 0u, 0u, 0u, 0u, 0u, 0u, 0u, 0u, 0u, 0u, 2031616u, 0u, 0u, 4293918720u, 511u, 0u, 4278190080u, 67108863u, 4006u, 3016u, 4014u, 3008u, 3024u, 4010u, 4018u, 3004u, 3012u, 3020u, 4004u, 4008u, 4012u, 4016u, 4020u, 3002u, 3006u, 3010u, 3014u, 3018u, 3022u, 4002u, 4005u, 4007u, 4009u, 4011u, 4013u, 4015u, 4017u, 4019u, 4021u, 3001u, 3003u, 3005u, 3007u, 3009u, 3011u, 3013u, 3015u, 3017u, 3019u, 3021u, 3023u, 4001u, 4003u, };
+    65536u, 3737792u, 0u, 0u, 0u, 0u, 0u, 0u, 0u, 0u, 0u, 0u, 0u, 0u, 0u, 0u, 0u, 0u, 0u, 0u, 0u, 0u, 0u, 0u, 0u, 0u, 0u, 0u, 0u, 0u, 0u, 0u, 0u, 134217472u, 0u, 0u, 0u, 0u, 0u, 0u, 0u, 0u, 0u, 0u, 0u, 0u, 0u, 0u, 0u, 0u, 0u, 0u, 0u, 0u, 0u, 0u, 0u, 0u, 0u, 0u, 0u, 0u, 0u, 0u, 2031616u, 0u, 0u, 4293918720u, 511u, 0u, 4278190080u, 67108863u, 4008u, 3016u, 5003u, 3008u, 3024u, 4016u, 5009u, 3004u, 3012u, 3020u, 4004u, 4012u, 4020u, 5007u, 5011u, 3002u, 3006u, 3010u, 3014u, 3018u, 3022u, 4002u, 4006u, 4010u, 4014u, 4018u, 5001u, 5005u, 5008u, 5010u, 5012u, 3001u, 3003u, 3005u, 3007u, 3009u, 3011u, 3013u, 3015u, 3017u, 3019u, 3021u, 3023u, 4001u, 4003u, 4005u, 4007u, 4009u, 4011u, 4013u, 4015u, 4017u, 4019u, 4021u, 5002u, 5004u, 5006u, };
 // ===================================================================
 
 class Packet::_Internal {

@@ -386,6 +386,30 @@ target_include_directories(chat_extensions_tests
 
 add_test(NAME chat_extensions_tests COMMAND chat_extensions_tests)
 
+# Server gateway (service plane hub) coverage tests
+add_executable(server_gateway_tests
+  server_gateway_test.cc
+  ${CMAKE_SOURCE_DIR}/services/server_gateway/src/event_queue.cc
+  ${CMAKE_SOURCE_DIR}/services/server_gateway/src/server_gateway_handlers.cc
+  ${CMAKE_SOURCE_DIR}/services/server_gateway/src/service_registry.cc
+)
+
+chirp_unit_test_common_links(server_gateway_tests)
+target_link_libraries(server_gateway_tests PRIVATE chirp_network chirp_common chirp_protos)
+
+target_include_directories(server_gateway_tests
+  PRIVATE
+  ${CMAKE_SOURCE_DIR}/services/server_gateway/src
+  ${CMAKE_SOURCE_DIR}/libs
+  ${CMAKE_SOURCE_DIR}/libs/common
+  ${CMAKE_SOURCE_DIR}/libs/common/include
+  ${CMAKE_SOURCE_DIR}/libs/network
+  ${CMAKE_SOURCE_DIR}/proto/cpp
+  ${CMAKE_SOURCE_DIR}/proto/cpp/proto
+)
+
+add_test(NAME server_gateway_tests COMMAND server_gateway_tests)
+
 # NOTE: presence_manager_v2.cc is explicitly excluded from the social service
 # build (it does not compile: proto enum conflicts and a copyable mutex); and
 # the enhanced auth components (password_hasher / token_generator) require

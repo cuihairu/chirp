@@ -1,0 +1,495 @@
+// Coverage tests for the server plane hub: service registry, event queue,
+// and the packet handlers. Peers are recording fakes, so no sockets are
+// involved and every routing branch is exercised directly.
+#include <gtest/gtest.h>
+
+#include <memory>
+#include <string>
+#include <vector>
+
+#include "event_queue.h"
+#include "proto/common.pb.h"
+#include "proto/gateway.pb.h"
+#include "proto/server_gateway.pb.h"
+#include "server_gateway_handlers.h"
+#include "service_registry.h"
+
+namespace {
+
+namespace sg = chirp::server_gateway;
+
+using chirp::common::AUTH_FAILED;
+using chirp::common::INVALID_PARAM;
+using chirp::common::OK;
+using chirp::common::SERVER_UNAVAILABLE;
+
+struct SentFrame {
+  chirp::gateway::MsgID msg_id;
+  std::string body;
+};
+
+class RecordingPeer : public sg::PeerSender {
+ public:
+  bool Send(chirp::gateway::MsgID msg_id, const google::protobuf::Message& body) override {
+    if (!send_ok) {
+      return false;
+    }
+    sent.push_back({msg_id, body.SerializeAsString()});
+    return true;
+  }
+
+  template <typename T>
+  std::vector<T> Decode(chirp::gateway::MsgID msg_id) const {
+    std::vector<T> out;
+    for (const auto& frame : sent) {
+      if (frame.msg_id != msg_id) {
+        continue;
+      }
+      T message;
+      message.ParseFromString(frame.body);
+      out.push_back(std::move(message));
+    }
+    return out;
+  }
+
+  int Count(chirp::gateway::MsgID msg_id) const {
+    int total = 0;
+    for (const auto& frame : sent) {
+      if (frame.msg_id == msg_id) {
+        ++total;
+      }
+    }
+    return total;
+  }
+
+  std::vector<SentFrame> sent;
+  bool send_ok = true;
+};
+
+sg::EventPublishRequest MakePublishRequest(const std::string& target,
+                                           const std::string& event_type) {
+  sg::EventPublishRequest req;
+  req.set_target_service_id(target);
+  req.set_event_type(event_type);
+  req.set_payload("payload");
+  return req;
+}
+
+class ServerGatewayTest : public ::testing::Test {
+ protected:
+  void SetUp() override {
+    config_.service_secrets = {{"chat", "chat-secret"},
+                               {"game", "game-secret"},
+                               {"trade", "trade-secret"}};
+    handlers_ = std::make_unique<sg::ServerGatewayHandlers>(config_, registry_, queue_);
+  }
+
+  std::shared_ptr<RecordingPeer> AuthAs(const std::string& service_id) {
+    auto peer = std::make_shared<RecordingPeer>();
+    const auto out = TryAuthAs(service_id, peer);
+    EXPECT_EQ(out.code, OK);
+    EXPECT_EQ(out.service_id, service_id);
+    return peer;
+  }
+
+  sg::AuthOutcome TryAuthAs(const std::string& service_id,
+                            const std::shared_ptr<RecordingPeer>& peer) {
+    sg::ServerAuthRequest req;
+    req.set_service_id(service_id);
+    req.set_secret(service_id + "-secret");
+    req.set_protocol_version(1);
+    return handlers_->HandleAuth(req, peer);
+  }
+
+  sg::EventPublishResponse Publish(const std::string& target, const std::string& event_type,
+                                   const std::string& event_id = "") {
+    sg::EventPublishRequest req;
+    req.set_target_service_id(target);
+    req.set_event_type(event_type);
+    req.set_payload("payload");
+    if (!event_id.empty()) {
+      req.set_event_id(event_id);
+    }
+    return handlers_->HandleEventPublish(req);
+  }
+
+  sg::EventAckResponse AckAs(const std::string& service_id,
+                             const std::vector<std::string>& event_ids) {
+    sg::EventAckRequest req;
+    for (const auto& id : event_ids) {
+      req.add_event_ids(id);
+    }
+    return handlers_->HandleEventAck(req, service_id);
+  }
+
+  sg::ServerGatewayConfig config_;
+  sg::ServiceRegistry registry_;
+  sg::EventQueue queue_{1000};
+  std::unique_ptr<sg::ServerGatewayHandlers> handlers_;
+};
+
+// ---------------------------------------------------------------------------
+// ServiceRegistry
+// ---------------------------------------------------------------------------
+
+TEST_F(ServerGatewayTest, RegistryRoundTrip) {
+  auto peer = std::make_shared<RecordingPeer>();
+  EXPECT_FALSE(registry_.IsOnline("game"));
+  EXPECT_EQ(registry_.Size(), 0u);
+  EXPECT_EQ(registry_.Register("game", peer), nullptr);
+  EXPECT_TRUE(registry_.IsOnline("game"));
+  EXPECT_EQ(registry_.Get("game").get(), peer.get());
+  EXPECT_EQ(registry_.Size(), 1u);
+}
+
+TEST_F(ServerGatewayTest, RegistryReplacesAndReturnsOldPeer) {
+  auto first = std::make_shared<RecordingPeer>();
+  auto second = std::make_shared<RecordingPeer>();
+  EXPECT_EQ(registry_.Register("game", first), nullptr);
+  EXPECT_EQ(registry_.Register("game", second).get(), first.get());
+  EXPECT_EQ(registry_.Get("game").get(), second.get());
+  EXPECT_EQ(registry_.Size(), 1u);
+}
+
+TEST_F(ServerGatewayTest, UnregisterOnlyRemovesMatchingPeer) {
+  auto first = std::make_shared<RecordingPeer>();
+  auto second = std::make_shared<RecordingPeer>();
+  registry_.Register("game", first);
+  registry_.Register("game", second);
+  // The displaced connection closing late must not remove the new peer.
+  EXPECT_FALSE(registry_.Unregister("game", first.get()));
+  EXPECT_TRUE(registry_.IsOnline("game"));
+  EXPECT_TRUE(registry_.Unregister("game", second.get()));
+  EXPECT_FALSE(registry_.IsOnline("game"));
+}
+
+TEST_F(ServerGatewayTest, UnregisterUnknownServiceReturnsFalse) {
+  EXPECT_FALSE(registry_.Unregister("ghost", nullptr));
+}
+
+// ---------------------------------------------------------------------------
+// EventQueue
+// ---------------------------------------------------------------------------
+
+TEST_F(ServerGatewayTest, QueueClaimPreservesOrderAndMarksInFlight) {
+  sg::EventQueue q(10);
+  sg::PendingEvent a;
+  a.event_id = "a";
+  sg::PendingEvent b;
+  b.event_id = "b";
+  EXPECT_TRUE(q.Enqueue("game", a));
+  EXPECT_TRUE(q.Enqueue("game", b));
+  EXPECT_EQ(q.UnackedCount("game"), 2u);
+
+  const auto batch = q.ClaimDeliverable("game");
+  ASSERT_EQ(batch.size(), 2u);
+  EXPECT_EQ(batch[0].event_id, "a");
+  EXPECT_EQ(batch[1].event_id, "b");
+  EXPECT_EQ(batch[0].attempt, 1);
+  // Everything claimed is in flight: a second claim returns nothing.
+  EXPECT_TRUE(q.ClaimDeliverable("game").empty());
+  EXPECT_EQ(q.UnackedCount("game"), 2u);
+}
+
+TEST_F(ServerGatewayTest, QueueAckRemovesOnlyAckedEvents) {
+  sg::EventQueue q(10);
+  for (const char* id : {"a", "b", "c"}) {
+    sg::PendingEvent ev;
+    ev.event_id = id;
+    ASSERT_TRUE(q.Enqueue("game", ev));
+  }
+  q.Ack("game", {"b", "unknown-id"});
+  EXPECT_EQ(q.UnackedCount("game"), 2u);
+  q.ResetInFlight("game");
+  const auto batch = q.ClaimDeliverable("game");
+  ASSERT_EQ(batch.size(), 2u);
+  EXPECT_EQ(batch[0].event_id, "a");
+  EXPECT_EQ(batch[1].event_id, "c");
+}
+
+TEST_F(ServerGatewayTest, QueueResetAllowsRedeliveryWithIncrementedAttempt) {
+  sg::EventQueue q(10);
+  sg::PendingEvent ev;
+  ev.event_id = "a";
+  ASSERT_TRUE(q.Enqueue("game", ev));
+
+  ASSERT_EQ(q.ClaimDeliverable("game").size(), 1u);
+  q.ResetInFlight("game");
+  const auto redelivered = q.ClaimDeliverable("game");
+  ASSERT_EQ(redelivered.size(), 1u);
+  EXPECT_EQ(redelivered[0].attempt, 2);
+}
+
+TEST_F(ServerGatewayTest, QueueRejectsPublishesWhenFull) {
+  sg::EventQueue q(2);
+  for (int i = 0; i < 2; ++i) {
+    sg::PendingEvent ev;
+    ev.event_id = "e" + std::to_string(i);
+    EXPECT_TRUE(q.Enqueue("game", ev));
+  }
+  sg::PendingEvent overflow;
+  overflow.event_id = "overflow";
+  EXPECT_FALSE(q.Enqueue("game", overflow));
+  EXPECT_EQ(q.UnackedCount("game"), 2u);
+}
+
+TEST_F(ServerGatewayTest, QueueIsolatesServices) {
+  sg::EventQueue q(10);
+  sg::PendingEvent ev;
+  ev.event_id = "a";
+  ASSERT_TRUE(q.Enqueue("game", ev));
+  ASSERT_TRUE(q.Enqueue("trade", ev));
+  EXPECT_EQ(q.ClaimDeliverable("game").size(), 1u);
+  EXPECT_EQ(q.UnackedCount("game"), 1u);
+  EXPECT_EQ(q.UnackedCount("trade"), 1u);
+  EXPECT_EQ(q.UnackedCount("nobody"), 0u);
+}
+
+// ---------------------------------------------------------------------------
+// Auth
+// ---------------------------------------------------------------------------
+
+TEST_F(ServerGatewayTest, AuthOkRegistersPeerAndReportsHeartbeatInterval) {
+  const auto peer = AuthAs("game");
+  EXPECT_TRUE(registry_.IsOnline("game"));
+}
+
+TEST_F(ServerGatewayTest, AuthRejectsUnknownService) {
+  auto peer = std::make_shared<RecordingPeer>();
+  sg::ServerAuthRequest req;
+  req.set_service_id("intruder");
+  req.set_secret("anything");
+  req.set_protocol_version(1);
+  EXPECT_EQ(handlers_->HandleAuth(req, peer).code, AUTH_FAILED);
+  EXPECT_FALSE(registry_.IsOnline("intruder"));
+}
+
+TEST_F(ServerGatewayTest, AuthRejectsWrongSecret) {
+  auto peer = std::make_shared<RecordingPeer>();
+  sg::ServerAuthRequest req;
+  req.set_service_id("game");
+  req.set_secret("nope");
+  req.set_protocol_version(1);
+  EXPECT_EQ(handlers_->HandleAuth(req, peer).code, AUTH_FAILED);
+  EXPECT_FALSE(registry_.IsOnline("game"));
+}
+
+TEST_F(ServerGatewayTest, AuthRejectsWrongProtocolVersion) {
+  auto peer = std::make_shared<RecordingPeer>();
+  sg::ServerAuthRequest req;
+  req.set_service_id("game");
+  req.set_secret("game-secret");
+  req.set_protocol_version(99);
+  const auto out = handlers_->HandleAuth(req, peer);
+  EXPECT_EQ(out.code, AUTH_FAILED);
+}
+
+TEST_F(ServerGatewayTest, AuthRedeliversPendingEventsOnReconnect) {
+  // The target is offline when the event is published, so it is queued.
+  const auto published = Publish("game", "quest.trigger");
+  EXPECT_TRUE(published.queued());
+
+  const auto peer = AuthAs("game");
+  const auto delivered = peer->Decode<chirp::server_gateway::EventDeliverNotify>(
+      chirp::gateway::EVENT_DELIVER_NOTIFY);
+  ASSERT_EQ(delivered.size(), 1u);
+  EXPECT_EQ(delivered[0].event_id(), published.event_id());
+  EXPECT_EQ(delivered[0].event_type(), "quest.trigger");
+  EXPECT_EQ(delivered[0].attempt(), 1);
+}
+
+TEST_F(ServerGatewayTest, AuthReplacesPreviousConnection) {
+  auto first = std::make_shared<RecordingPeer>();
+  ASSERT_EQ(TryAuthAs("game", first).code, OK);
+
+  auto second = std::make_shared<RecordingPeer>();
+  const auto second_out = TryAuthAs("game", second);
+  ASSERT_EQ(second_out.code, OK);
+  // The second login displaced the first connection.
+  ASSERT_TRUE(second_out.replaced_peer);
+  EXPECT_EQ(second_out.replaced_peer.get(), first.get());
+  EXPECT_EQ(registry_.Get("game").get(), second.get());
+
+  // The displaced connection closing late must not drop the live one, and
+  // must not reset the live connection's in-flight tracking (no redelivery).
+  handlers_->OnPeerDisconnected("game", first.get());
+  EXPECT_TRUE(registry_.IsOnline("game"));
+
+  const auto published = Publish("game", "trade.state");
+  EXPECT_FALSE(published.queued());
+  EXPECT_EQ(first->Count(chirp::gateway::EVENT_DELIVER_NOTIFY), 0);
+  EXPECT_EQ(second->Count(chirp::gateway::EVENT_DELIVER_NOTIFY), 1);
+}
+
+TEST_F(ServerGatewayTest, DisconnectedPeerIsRequeuedForRedelivery) {
+  const auto peer = AuthAs("game");
+  const auto published = Publish("game", "quest.trigger");
+  EXPECT_FALSE(published.queued());
+  EXPECT_EQ(peer->Count(chirp::gateway::EVENT_DELIVER_NOTIFY), 1);
+
+  handlers_->OnPeerDisconnected("game", peer.get());
+  EXPECT_FALSE(registry_.IsOnline("game"));
+
+  // Reconnect: the unacknowledged event is redelivered with attempt 2.
+  const auto returning = AuthAs("game");
+  const auto redelivered = returning->Decode<chirp::server_gateway::EventDeliverNotify>(
+      chirp::gateway::EVENT_DELIVER_NOTIFY);
+  ASSERT_EQ(redelivered.size(), 1u);
+  EXPECT_EQ(redelivered[0].attempt(), 2);
+}
+
+// ---------------------------------------------------------------------------
+// Heartbeat
+// ---------------------------------------------------------------------------
+
+TEST_F(ServerGatewayTest, HeartbeatAnswersWithServerTime) {
+  chirp::server_gateway::ServerHeartbeatPing ping;
+  ping.set_client_time_ms(1234);
+  const auto pong = handlers_->HandleHeartbeat(ping);
+  EXPECT_GT(pong.server_time_ms(), 0);
+}
+
+// ---------------------------------------------------------------------------
+// Message injection
+// ---------------------------------------------------------------------------
+
+sg::MessageInjectRequest ValidInject() {
+  sg::MessageInjectRequest req;
+  req.set_inject_id("inj-1");
+  req.set_sender_kind(chirp::server_gateway::SENDER_NPC);
+  req.set_sender_id("npc:blacksmith_01");
+  req.set_channel_type(3);  // WORLD
+  req.set_channel_id("world");
+  req.set_content("hello travelers");
+  return req;
+}
+
+TEST_F(ServerGatewayTest, InjectRejectsEmptyContent) {
+  auto req = ValidInject();
+  req.clear_content();
+  EXPECT_EQ(handlers_->HandleInject(req).code(), INVALID_PARAM);
+}
+
+TEST_F(ServerGatewayTest, InjectRejectsUnknownSenderKind) {
+  auto req = ValidInject();
+  req.set_sender_kind(chirp::server_gateway::SENDER_UNKNOWN);
+  EXPECT_EQ(handlers_->HandleInject(req).code(), INVALID_PARAM);
+}
+
+TEST_F(ServerGatewayTest, InjectRejectsEmptySenderId) {
+  auto req = ValidInject();
+  req.clear_sender_id();
+  EXPECT_EQ(handlers_->HandleInject(req).code(), INVALID_PARAM);
+}
+
+TEST_F(ServerGatewayTest, InjectRejectsMissingTarget) {
+  auto req = ValidInject();
+  req.clear_channel_id();
+  req.clear_receiver_id();
+  EXPECT_EQ(handlers_->HandleInject(req).code(), INVALID_PARAM);
+}
+
+TEST_F(ServerGatewayTest, InjectForwardsToChatWhenOnline) {
+  const auto chat = AuthAs("chat");
+  const auto resp = handlers_->HandleInject(ValidInject());
+  EXPECT_EQ(resp.code(), OK);
+  EXPECT_EQ(resp.inject_id(), "inj-1");
+
+  const auto forwarded = chat->Decode<chirp::server_gateway::InjectMessageNotify>(
+      chirp::gateway::INJECT_MESSAGE_NOTIFY);
+  ASSERT_EQ(forwarded.size(), 1u);
+  EXPECT_EQ(forwarded[0].message().inject_id(), "inj-1");
+  EXPECT_EQ(forwarded[0].message().sender_id(), "npc:blacksmith_01");
+  EXPECT_EQ(forwarded[0].message().sender_kind(),
+            chirp::server_gateway::SENDER_NPC);
+  EXPECT_EQ(forwarded[0].message().content(), "hello travelers");
+}
+
+TEST_F(ServerGatewayTest, InjectFailsWhenChatOffline) {
+  EXPECT_EQ(handlers_->HandleInject(ValidInject()).code(), SERVER_UNAVAILABLE);
+}
+
+TEST_F(ServerGatewayTest, InjectFailsWhenChatWriteFails) {
+  const auto chat = AuthAs("chat");
+  chat->send_ok = false;
+  EXPECT_EQ(handlers_->HandleInject(ValidInject()).code(), SERVER_UNAVAILABLE);
+}
+
+// ---------------------------------------------------------------------------
+// Event publish / ack
+// ---------------------------------------------------------------------------
+
+TEST_F(ServerGatewayTest, PublishRejectsMissingFields) {
+  sg::EventPublishRequest req;
+  req.set_target_service_id("game");
+  req.set_event_type("quest.trigger");
+  req.set_payload("payload");
+
+  // Missing event type.
+  req.clear_event_type();
+  EXPECT_EQ(handlers_->HandleEventPublish(req).code(), INVALID_PARAM);
+
+  // Missing payload.
+  req.set_event_type("quest.trigger");
+  req.clear_payload();
+  EXPECT_EQ(handlers_->HandleEventPublish(req).code(), INVALID_PARAM);
+
+  // Missing target service.
+  req.set_payload("payload");
+  req.clear_target_service_id();
+  EXPECT_EQ(handlers_->HandleEventPublish(req).code(), INVALID_PARAM);
+}
+
+TEST_F(ServerGatewayTest, PublishOfflineQueuesEvent) {
+  const auto resp = Publish("game", "quest.trigger");
+  EXPECT_EQ(resp.code(), OK);
+  EXPECT_TRUE(resp.queued());
+  EXPECT_FALSE(resp.event_id().empty());
+  EXPECT_EQ(queue_.UnackedCount("game"), 1u);
+}
+
+TEST_F(ServerGatewayTest, PublishOnlineDeliversImmediately) {
+  const auto game = AuthAs("game");
+  const auto resp = Publish("game", "quest.trigger", "quest-42");
+  EXPECT_EQ(resp.code(), OK);
+  EXPECT_FALSE(resp.queued());
+  EXPECT_EQ(resp.event_id(), "quest-42");
+
+  const auto delivered = game->Decode<chirp::server_gateway::EventDeliverNotify>(
+      chirp::gateway::EVENT_DELIVER_NOTIFY);
+  ASSERT_EQ(delivered.size(), 1u);
+  EXPECT_EQ(delivered[0].event_id(), "quest-42");
+  EXPECT_EQ(delivered[0].attempt(), 1);
+  EXPECT_GT(delivered[0].published_at_ms(), 0);
+  EXPECT_EQ(queue_.UnackedCount("game"), 1u);  // still unacked (in flight)
+}
+
+TEST_F(ServerGatewayTest, PublishGeneratesEventIdWhenMissing) {
+  const auto first = Publish("game", "a");
+  const auto second = Publish("game", "b");
+  EXPECT_NE(first.event_id(), second.event_id());
+  EXPECT_EQ(first.event_id().rfind("evt-", 0), 0);
+}
+
+TEST_F(ServerGatewayTest, PublishFailsWhenQueueFull) {
+  sg::ServerGatewayConfig small = config_;
+  small.max_pending_events_per_service = 1;
+  sg::EventQueue small_queue(1);
+  sg::ServerGatewayHandlers small_handlers(small, registry_, small_queue);
+  small_handlers.HandleEventPublish(MakePublishRequest("game", "first"));
+  const auto resp = small_handlers.HandleEventPublish(MakePublishRequest("game", "second"));
+  EXPECT_EQ(resp.code(), SERVER_UNAVAILABLE);
+}
+
+TEST_F(ServerGatewayTest, AckRemovesPendingEvents) {
+  const auto resp = Publish("game", "quest.trigger");
+  EXPECT_EQ(AckAs("game", {resp.event_id()}).code(), OK);
+  EXPECT_EQ(queue_.UnackedCount("game"), 0u);
+}
+
+TEST_F(ServerGatewayTest, AckUnknownIdsAreIdempotent) {
+  EXPECT_EQ(AckAs("game", {"never-published"}).code(), OK);
+  EXPECT_EQ(queue_.UnackedCount("game"), 0u);
+}
+
+}  // namespace

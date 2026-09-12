@@ -26,11 +26,13 @@ gateway + auth + chat
 | Gateway | TCP 5000 / WS 5001 | Supported | 登录、登出、心跳、会话绑定、可选 Redis 跨实例 kick |
 | Auth | TCP 6000 | Supported | 基础 token flow；依赖满足时可构建增强认证实现 |
 | Chat | TCP 7000 / WS 7001 | Supported | 私聊、群组、已读回执、正在输入、表情回应、消息编辑/删除、@提及、历史、离线队列；可选 Redis/MySQL 增强路径 |
+| Server Gateway | TCP 8000 | 实验中 | 服务平面枢纽：游戏服以 service_id+secret 凭证接入，注入系统/NPC 消息，事件离线排队、重连重投直到 ack |
 
 当前核心使用方式：
 
 - 客户端连接 `gateway` 做登录、心跳和会话验证。
 - 聊天消息当前直连 `chat`，不是经由 `gateway` 统一转发。
+- 游戏服务端（服务器平面）走独立的 `server_gateway`：出站长连接 + 服务凭证，与玩家边缘互不混用，见 [docs/server_plane.md](docs/server_plane.md) 与 [docs/architecture.md](docs/architecture.md)。
 - Redis 是可选增强，用于 Gateway 分布式 session、跨实例 kick、Chat 历史和离线队列。
 
 ## 快速开始
@@ -91,6 +93,7 @@ TCP 和 WebSocket 使用同一套二进制 payload：
 
 - `gateway` 还不是通用业务路由层；聊天包请发到 `chat`。
 - `gateway` 登录不会自动授权一个独立的 `chat` 连接。
+- `server_gateway` 目前只有枢纽实现（单元测试验证，覆盖率 100%）；chat 消费注入消息的端到端链路是下一个增量，暂不要当作可用能力对外介绍。
 - `social`、`voice`、`notification`、`search`、SDK、移动端、管理后台都不应默认视为生产稳定能力。
 - NPC 对话系统目前主要是设计文档，不能当作已落地后端能力。
 

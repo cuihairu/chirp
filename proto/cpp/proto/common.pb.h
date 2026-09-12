@@ -82,6 +82,7 @@ enum ErrorCode : int {
   SESSION_EXPIRED = 4,
   USER_NOT_FOUND = 5,
   TARGET_OFFLINE = 6,
+  SERVER_UNAVAILABLE = 7,
   ErrorCode_INT_MIN_SENTINEL_DO_NOT_USE_ =
       ::std::numeric_limits<::int32_t>::min(),
   ErrorCode_INT_MAX_SENTINEL_DO_NOT_USE_ =
@@ -92,11 +93,11 @@ extern const uint32_t ErrorCode_internal_data_[];
 inline constexpr ErrorCode ErrorCode_MIN =
     static_cast<ErrorCode>(0);
 inline constexpr ErrorCode ErrorCode_MAX =
-    static_cast<ErrorCode>(6);
+    static_cast<ErrorCode>(7);
 inline bool ErrorCode_IsValid(int value) {
-  return 0 <= value && value <= 6;
+  return 0 <= value && value <= 7;
 }
-inline constexpr int ErrorCode_ARRAYSIZE = 6 + 1;
+inline constexpr int ErrorCode_ARRAYSIZE = 7 + 1;
 const ::google::protobuf::EnumDescriptor* PROTOBUF_NONNULL ErrorCode_descriptor();
 template <typename T>
 const ::std::string& ErrorCode_Name(T value) {
@@ -107,7 +108,7 @@ const ::std::string& ErrorCode_Name(T value) {
 }
 template <>
 inline const ::std::string& ErrorCode_Name(ErrorCode value) {
-  return ::google::protobuf::internal::NameOfDenseEnum<ErrorCode_descriptor, 0, 6>(
+  return ::google::protobuf::internal::NameOfDenseEnum<ErrorCode_descriptor, 0, 7>(
       static_cast<int>(value));
 }
 inline bool ErrorCode_Parse(

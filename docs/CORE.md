@@ -11,6 +11,7 @@ Chirp should currently be understood as a game-oriented realtime communication b
 | Gateway | TCP 5000 / WS 5001 | Supported | Login, logout, heartbeat, session binding, optional Redis-backed cross-instance kick |
 | Auth | TCP 6000 | Supported | Token validation path; enhanced auth is conditional on native dependencies |
 | Chat | TCP 7000 / WS 7001 | Supported | Private messages, groups, history, offline queue, optional Redis/MySQL enhanced paths |
+| Server Gateway | TCP 8000 | Experimental | Trusted service-plane hub: game backends authenticate with `service_id` + secret, inject system/NPC messages, and receive events queued until acked |
 
 Minimal useful topology:
 
@@ -102,6 +103,31 @@ rights come from group roles (MODERATOR and above). @everyone/@here mentions
 share a per-user, per-channel cooldown and are rejected with `AUTH_FAILED`
 while cooling down.
 
+### Server plane (5xxx)
+
+`chirp_server_gateway` (TCP 8000) speaks the same Packet framing on a separate
+trust plane: peers are game backends and internal services authenticated by
+`service_id` + secret — never user accounts. See
+[Server Plane](./server_plane.md) for the full contract.
+
+| Packet `msg_id` | Packet `body` |
+| --- | --- |
+| `SERVER_AUTH_REQ` | `chirp.server_gateway.ServerAuthRequest` |
+| `SERVER_AUTH_RESP` | `chirp.server_gateway.ServerAuthResponse` |
+| `SERVER_HEARTBEAT_PING` / `PONG` | `chirp.server_gateway.ServerHeartbeatPing` / `Pong` |
+| `INJECT_MESSAGE_REQ` | `chirp.server_gateway.MessageInjectRequest` |
+| `INJECT_MESSAGE_RESP` | `chirp.server_gateway.MessageInjectResponse` |
+| `INJECT_MESSAGE_NOTIFY` | `chirp.server_gateway.InjectMessageNotify` (hub -> chat) |
+| `EVENT_PUBLISH_REQ` | `chirp.server_gateway.EventPublishRequest` |
+| `EVENT_PUBLISH_RESP` | `chirp.server_gateway.EventPublishResponse` |
+| `EVENT_DELIVER_NOTIFY` | `chirp.server_gateway.EventDeliverNotify` (hub -> target service) |
+| `EVENT_ACK_REQ` / `RESP` | `chirp.server_gateway.EventAckRequest` / `Response` |
+
+Status: Experimental — handlers are unit-verified at full coverage; the
+chat-side consumption of `INJECT_MESSAGE_NOTIFY` (end-to-end E2E) is the next
+increment. Events are at-least-once: queued while the target is offline and
+redelivered on reconnect until acked.
+
 ## Local Verification
 
 ```bash
@@ -135,6 +161,7 @@ These areas exist in the repository but should not be presented as stable core c
 - `services/voice`
 - `services/notification`
 - `services/search`
+- `services/server_gateway` (new; unit-verified protocol, E2E pending)
 - `sdks/core`, `sdks/unity`, `sdks/unreal`
 - `apps/mobile_companion`
 - `apps/admin_dashboard`

@@ -207,6 +207,18 @@ enum MsgID : int {
   PARTICIPANT_LEFT_NOTIFY = 4019,
   PARTICIPANT_STATE_CHANGED_NOTIFY = 4020,
   SPEAKING_NOTIFY = 4021,
+  SERVER_AUTH_REQ = 5001,
+  SERVER_AUTH_RESP = 5002,
+  SERVER_HEARTBEAT_PING = 5003,
+  SERVER_HEARTBEAT_PONG = 5004,
+  INJECT_MESSAGE_REQ = 5005,
+  INJECT_MESSAGE_RESP = 5006,
+  INJECT_MESSAGE_NOTIFY = 5007,
+  EVENT_PUBLISH_REQ = 5008,
+  EVENT_PUBLISH_RESP = 5009,
+  EVENT_DELIVER_NOTIFY = 5010,
+  EVENT_ACK_REQ = 5011,
+  EVENT_ACK_RESP = 5012,
   MsgID_INT_MIN_SENTINEL_DO_NOT_USE_ =
       ::std::numeric_limits<::int32_t>::min(),
   MsgID_INT_MAX_SENTINEL_DO_NOT_USE_ =
@@ -217,11 +229,11 @@ extern const uint32_t MsgID_internal_data_[];
 inline constexpr MsgID MsgID_MIN =
     static_cast<MsgID>(0);
 inline constexpr MsgID MsgID_MAX =
-    static_cast<MsgID>(4021);
+    static_cast<MsgID>(5012);
 inline bool MsgID_IsValid(int value) {
   return ::google::protobuf::internal::ValidateEnum(value, MsgID_internal_data_);
 }
-inline constexpr int MsgID_ARRAYSIZE = 4021 + 1;
+inline constexpr int MsgID_ARRAYSIZE = 5012 + 1;
 const ::google::protobuf::EnumDescriptor* PROTOBUF_NONNULL MsgID_descriptor();
 template <typename T>
 const ::std::string& MsgID_Name(T value) {
