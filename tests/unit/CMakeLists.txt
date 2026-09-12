@@ -195,6 +195,7 @@ add_executable(chat_managers_tests
   chat_group_handlers_test.cc
   chat_message_handlers_test.cc
   chat_edit_mention_test.cc
+  chat_inject_consumer_test.cc
   ${CMAKE_SOURCE_DIR}/services/chat/src/distributed_dispatch.cc
   ${CMAKE_SOURCE_DIR}/services/chat/src/distributed_runtime.cc
   ${CMAKE_SOURCE_DIR}/services/chat/src/group_manager.cc
@@ -204,6 +205,7 @@ add_executable(chat_managers_tests
   ${CMAKE_SOURCE_DIR}/services/chat/src/read_receipt_manager.cc
   ${CMAKE_SOURCE_DIR}/services/chat/src/message_edit_manager.cc
   ${CMAKE_SOURCE_DIR}/services/chat/src/mention_manager.cc
+  ${CMAKE_SOURCE_DIR}/services/chat/src/inject_consumer.cc
   ${CMAKE_SOURCE_DIR}/services/chat/src/runtime_utils.cc
   ${CMAKE_SOURCE_DIR}/services/chat/src/typing_manager.cc
 )
@@ -416,3 +418,26 @@ add_test(NAME server_gateway_tests COMMAND server_gateway_tests)
 # libsodium, which is not installed in this workspace, so they have never
 # been part of an actual build. Both groups are tracked as dead code instead
 # of being tested here.
+
+# Chat <-> server_gateway peer loopback tests (real TCP through the peer's
+# reconnect/auth/heartbeat state machine).
+add_executable(chat_hub_peer_tests
+  chat_hub_peer_test.cc
+  ${CMAKE_SOURCE_DIR}/services/chat/src/server_gateway_peer.cc
+)
+
+chirp_unit_test_common_links(chat_hub_peer_tests)
+target_link_libraries(chat_hub_peer_tests PRIVATE chirp_network chirp_common chirp_protos)
+
+target_include_directories(chat_hub_peer_tests
+  PRIVATE
+  ${CMAKE_SOURCE_DIR}/services/chat/src
+  ${CMAKE_SOURCE_DIR}/libs
+  ${CMAKE_SOURCE_DIR}/libs/common
+  ${CMAKE_SOURCE_DIR}/libs/common/include
+  ${CMAKE_SOURCE_DIR}/libs/network
+  ${CMAKE_SOURCE_DIR}/proto/cpp
+  ${CMAKE_SOURCE_DIR}/proto/cpp/proto
+)
+
+add_test(NAME chat_hub_peer_tests COMMAND chat_hub_peer_tests)

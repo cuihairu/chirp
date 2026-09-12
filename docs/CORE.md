@@ -161,7 +161,7 @@ These areas exist in the repository but should not be presented as stable core c
 - `services/voice`
 - `services/notification`
 - `services/search`
-- `services/server_gateway` (new; unit-verified protocol, E2E pending)
+- `services/server_gateway` (new; unit-verified protocol incl. chat-side injection consumption, E2E pending)
 - `sdks/core`, `sdks/unity`, `sdks/unreal`
 - `apps/mobile_companion`
 - `apps/admin_dashboard`

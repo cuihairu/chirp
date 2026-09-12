@@ -23,7 +23,7 @@ chirp 想解决的就是这件事，设计目标按优先级排列：
 诚实地讲：chirp 目前是**可运行的核心通信骨架 + 一批实验性扩展**，不是所有目录都同等成熟的完整产品。
 
 - 成熟主线是 `gateway + auth + chat`：登录、心跳、会话绑定、私聊、群组、历史、离线队列，单测与 smoke test 覆盖。
-- 服务器平面 `server_gateway`（游戏服务端接入）已实现枢纽并 100% 单测覆盖，标记为实验中：chat 侧消费注入消息的端到端链路是下一个增量。
+- 服务器平面 `server_gateway`（游戏服务端接入）枢纽与 chat 侧注入消费均已实现并 100% 单测覆盖（回环级端到端验证），标记为实验中。
 - 其余（`social`、`voice`、`notification`、`search`、多端 SDK、移动端、管理后台）完成度不一致，不要对外当作稳定能力介绍。真实状态见[能力矩阵](docs/CAPABILITY_MATRIX.md)。
 
 ## 三条接入边缘
@@ -107,14 +107,14 @@ TCP 和 WebSocket 使用同一套二进制 payload：
 
 - `gateway` 还不是通用业务路由层；聊天包请发到 `chat`。
 - `gateway` 登录不会自动授权一个独立的 `chat` 连接。
-- `server_gateway` 的 `OK` 目前表示"服务平面已受理"，注入消息到达玩家侧的端到端链路（chat 侧消费）尚未落地。
+- `server_gateway` 的注入链路已在回环级打通（chat 作为内部节点消费 `InjectMessageNotify`，走与玩家发消息相同的存储/投递尾巴），但 `OK` 仍只表示"服务平面已受理"，未确认玩家侧送达；进程级 E2E smoke 尚未覆盖。
 - `social`、`voice`、`notification`、`search`、SDK、移动端、管理后台不应默认视为生产稳定能力。
 - App 接入边缘（`app_gateway`）与推送桥接还在规划中。
 - NPC 对话系统目前主要是设计文档（[docs/design-notes/](docs/design-notes/)），不能当作已落地后端能力。
 
 ## Roadmap
 
-1. chat 作为内部节点接入服务器平面，消费注入消息，打通端到端注入链路
+1. ~~chat 作为内部节点接入服务器平面，消费注入消息，打通端到端注入链路~~（已完成，回环级验证；进程级 E2E smoke 待做）
 2. 服务器平面增加 Redis Streams broker 回退（无法长连接的游戏服走 ack + 重放）
 3. `app_gateway` 与推送桥接（APNs/FCM，经 notification 服务）
 4. libs/network 封装 I/O 后端开关（epoll 默认，io_uring 可选）

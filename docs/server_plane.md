@@ -1,6 +1,6 @@
 # Server Plane: Game Backend Integration
 
-Status: **Experimental** — the hub (`chirp_server_gateway`) is implemented and unit-verified at 100% line coverage; the chat service does not yet consume injections as an internal peer (next increment). See [Architecture](./architecture.md) for the three-edge topology decision.
+Status: **Experimental** — the hub (`chirp_server_gateway`) and the chat-side consumer are implemented and unit-verified at 100% line coverage: chat dials in as an internal peer and injection messages flow through the same storage/delivery tail as player-sent messages. See [Architecture](./architecture.md) for the three-edge topology decision.
 
 ## What it is
 
@@ -59,7 +59,16 @@ Response codes:
 | `INVALID_PARAM` | Empty content / `SENDER_UNKNOWN` / empty `sender_id` / no channel or receiver |
 | `SERVER_UNAVAILABLE` | Chat service not connected, or the write failed |
 
-Until the chat integration increment lands, `OK` means "accepted by the plane", not "delivered to players".
+`OK` still means "accepted by the plane": the chat side consumes the injection asynchronously, so the response does not confirm delivery to players.
+
+### Chat-side consumption
+
+The chat service connects to the hub as an internal peer (`--server_gateway_host`, default disabled when empty) and answers auth + heartbeats. A forwarded `InjectMessageNotify` follows the same tail as `SEND_MESSAGE`:
+
+- Stored to history first; no membership checks and no mention cooldowns (the sender is not a user).
+- `PRIVATE` with an online receiver is delivered immediately, otherwise queued for the offline user.
+- Non-private channels (`TEAM` / `GUILD` / `WORLD`) broadcast to members and queue the message for offline members.
+- A malformed `InjectMessageNotify` is logged and skipped; the connection stays up.
 
 ## Downlink: events (at-least-once)
 
@@ -79,6 +88,6 @@ Delivery semantics:
 
 ## Roadmap
 
-1. Chat service connects as an internal peer and consumes `InjectMessageNotify` (end-to-end injection E2E).
+1. ~~Chat service connects as an internal peer and consumes `InjectMessageNotify`~~ — done (loopback-verified end to end); a process-level E2E smoke is still an option for later.
 2. Redis Streams fallback broker for integrations that cannot host a long-connection client (ack + replay, no raw pub/sub).
 3. Event production on the chat side: NPC quest triggers, sensitive-word penalties, trade state transitions.

@@ -14,6 +14,7 @@
 #include "chat_session_registry.h"
 #include "chat_validation.h"
 #include "group_handlers.h"
+#include "inject_consumer.h"
 #include "logger.h"
 #include "message_handlers.h"
 #include "network/protobuf_framing.h"
@@ -25,6 +26,7 @@
 #include "proto/chat.pb.h"
 #include "proto/common.pb.h"
 #include "runtime_utils.h"
+#include "server_gateway_peer.h"
 
 namespace {
 
@@ -800,6 +802,76 @@ int main(int argc, char** argv) {
 
   FeatureHandlers features{group_handlers, receipt_handlers, typing_handlers,
                            reaction_handlers, edit_handlers, mention_handlers};
+
+  // Server-plane injection: when --server_gateway_host is set, chat dials the
+  // hub as an internal service and delivers forwarded injections through the
+  // same store/deliver tail as SEND_MESSAGE (minus mention enforcement -
+  // senders are non-user identities, never membership-checked).
+  const std::string hub_host = chirp::chat::runtime::GetArg(argc, argv, "--server_gateway_host", "");
+  std::shared_ptr<chirp::chat::ServerGatewayPeer> hub_peer;
+  if (!hub_host.empty()) {
+    const uint16_t hub_port = chirp::chat::runtime::ParseU16Arg(
+        argc, argv, "--server_gateway_port", 8100);
+    chirp::chat::InjectHooks hooks;
+    hooks.private_channel_id =
+        [&store](const std::string& a, const std::string& b) {
+          return store->PrivateChannelId(a, b);
+        };
+    hooks.store_message =
+        [&store, &features](const chirp::chat::ChatMessage& msg) {
+          store->AddMessage(msg);
+          features.receipts.TrackMessage(msg.message_id(), msg.channel_type(), msg.channel_id());
+          features.reactions.TrackMessage(msg.message_id(), msg.channel_type(), msg.channel_id());
+          features.edits.TrackMessage(msg.message_id(), msg.channel_type(), msg.channel_id());
+          features.edits.RegisterMessage(msg.message_id(), msg.sender_id(), msg.content());
+        };
+    hooks.deliver_private =
+        [state](const std::string& receiver_id,
+                const chirp::chat::ChatMessage& msg) -> bool {
+      std::shared_ptr<chirp::network::Session> recv;
+      {
+        std::lock_guard<std::mutex> lock(state->mu);
+        auto it = state->user_to_session.find(receiver_id);
+        if (it != state->user_to_session.end()) {
+          recv = it->second.lock();
+        }
+      }
+      if (!recv) {
+        return false;
+      }
+      chirp::chat::runtime::SendChatNotify(recv, msg);
+      return true;
+    };
+    hooks.queue_offline =
+        [&store](const std::string& user_id, const chirp::chat::ChatMessage& msg) {
+          store->AddOffline(user_id, msg);
+        };
+    hooks.broadcast_channel =
+        [&features](const std::string& channel_id,
+                    const chirp::chat::ChatMessage& msg) {
+          return features.groups.BroadcastGroupMessage(channel_id, msg.sender_id(), msg);
+        };
+
+    chirp::chat::ServerGatewayPeer::Options hub_options;
+    hub_options.host = hub_host;
+    hub_options.port = hub_port;
+    hub_options.service_id =
+        chirp::chat::runtime::GetArg(argc, argv, "--server_gateway_service", "chat");
+    hub_options.secret = chirp::chat::runtime::GetArg(argc, argv, "--server_gateway_secret", "");
+    hub_options.reconnect_delay_seconds = chirp::chat::runtime::ParseIntArg(
+        argc, argv, "--server_gateway_reconnect", 3);
+
+    const std::string hub_service = hub_options.service_id;
+    auto consumer = std::make_shared<chirp::chat::InjectConsumer>(std::move(hooks));
+    hub_peer = chirp::chat::ServerGatewayPeer::Create(
+        io, std::move(hub_options),
+        [consumer](const chirp::server_gateway::InjectMessageNotify& notify) {
+          consumer->HandleInject(notify);
+        });
+    hub_peer->Start();
+    Logger::Instance().Info("server-plane peer enabled hub=" + hub_host + ":" +
+                            std::to_string(hub_port) + " service=" + hub_service);
+  }
 
   chirp::network::TcpServer server(
       io, port,
