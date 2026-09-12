@@ -34,9 +34,9 @@ done
 if [[ ${SKIP_BUILD} -eq 0 ]]; then
   # shellcheck disable=SC2086
   cmake --preset coverage ${CMAKE_ARGS:-}
-  cmake --build --preset coverage --target \
-    common_tests network_tests chat_validation_tests gateway_session_registry_tests \
-    2>/dev/null || cmake --build --preset coverage
+  # Build everything: a fixed target list here would silently skip targets
+  # whose source list changed (or new ones), reporting stale coverage.
+  cmake --build --preset coverage
 fi
 
 ctest --preset coverage --output-on-failure
@@ -115,6 +115,10 @@ KNOWN_UNCOVERABLE = {
     # intermittently, so the lines are excluded from the stable statistics.
     ("libs/network/websocket_client.cc", 38),
     ("libs/network/websocket_client.cc", 39),
+    # ReactionHandlers::HandleAddReaction guard: ReactionManager::AddReaction
+    # has set semantics (re-adding is idempotent) and never returns false.
+    ("services/chat/src/message_handlers.cc", 228),
+    ("services/chat/src/message_handlers.cc", 229),
 }
 
 src_cache = {}
