@@ -16,6 +16,8 @@
 #include "read_receipt_manager.h"
 #include "reaction_manager.h"
 #include "typing_manager.h"
+#include "message_edit_manager.h"
+#include "mention_manager.h"
 
 namespace chirp::chat {
 
@@ -34,6 +36,13 @@ using UserNotifier = std::function<bool(
 using ChannelMemberResolver = std::function<std::vector<std::string>(
     chirp::chat::ChannelType channel_type, const std::string& channel_id,
     const std::string& exclude_user_id)>;
+
+// Returns true when user_id holds a moderator-or-above role in the channel.
+// Group-style channels consult the group membership; private channels have
+// no moderators (always false).
+using ChannelModeratorChecker = std::function<bool(
+    chirp::chat::ChannelType channel_type, const std::string& channel_id,
+    const std::string& user_id)>;
 
 // Handlers for the read-receipt message ids (MARK_READ, GET_READ_RECEIPTS,
 // GET_UNREAD_COUNT). Marking a channel read notifies the other channel
@@ -136,6 +145,77 @@ class ReactionHandlers {
     std::string channel_id;
   };
   std::unordered_map<std::string, MessageChannel> message_channels_;
+};
+
+// Handlers for message edit/delete (EDIT_MESSAGE, DELETE_MESSAGE, BULK_DELETE).
+// Requests carry only a message_id, so the handlers keep a message -> channel
+// map (fed via TrackMessage from the SEND_MESSAGE path) to know where to
+// broadcast MessageEditedNotify / MessageDeletedNotify and where moderator
+// rights apply.
+class MessageEditHandlers {
+ public:
+  MessageEditHandlers(MessageEditManager& edits, ChannelMemberResolver members,
+                      ChannelModeratorChecker is_moderator, UserNotifier notify);
+
+  // Remember which channel a message belongs to (called when the message
+  // is accepted for delivery).
+  void TrackMessage(const std::string& message_id,
+                    chirp::chat::ChannelType channel_type,
+                    const std::string& channel_id);
+
+  // Register the message for edit tracking (delegates to the manager).
+  void RegisterMessage(const std::string& message_id, const std::string& sender_id,
+                       const std::string& content) {
+    edits_.RegisterMessage(message_id, sender_id, content);
+  }
+
+  chirp::chat::EditMessageResponse HandleEditMessage(
+      const chirp::chat::EditMessageRequest& req,
+      std::string_view authenticated_user_id);
+
+  chirp::chat::DeleteMessageResponse HandleDeleteMessage(
+      const chirp::chat::DeleteMessageRequest& req,
+      std::string_view authenticated_user_id);
+
+  chirp::chat::BulkDeleteResponse HandleBulkDelete(
+      const chirp::chat::BulkDeleteRequest& req,
+      std::string_view authenticated_user_id);
+
+ private:
+  // Returns the channel of the message, or false when unknown.
+  bool ChannelOfMessage(const std::string& message_id,
+                        chirp::chat::ChannelType* channel_type,
+                        std::string* channel_id);
+
+  MessageEditManager& edits_;
+  ChannelMemberResolver members_;
+  ChannelModeratorChecker is_moderator_;
+  UserNotifier notify_;
+
+  std::mutex mu_;
+  std::unordered_map<std::string, std::pair<chirp::chat::ChannelType, std::string>>
+      message_channels_;
+};
+
+// Handlers for mentions. The SEND_MESSAGE path calls ProcessOutgoingMessage to
+// parse mentions and enforce the @everyone/@here cooldown; clients query
+// autocomplete entries via GET_MENTION_SUGGESTIONS.
+class MentionHandlers {
+ public:
+  MentionHandlers(MentionManager& mentions, ChannelModeratorChecker is_moderator);
+
+  // Parses msg.content() and enforces mention permissions. Returns false with
+  // reason set when the message must be rejected (@everyone/@here cooldown).
+  bool ProcessOutgoingMessage(const chirp::chat::ChatMessage& msg,
+                              chirp::common::ErrorCode* reason);
+
+  chirp::chat::GetMentionSuggestionsResponse HandleGetMentionSuggestions(
+      const chirp::chat::GetMentionSuggestionsRequest& req,
+      std::string_view authenticated_user_id);
+
+ private:
+  MentionManager& mentions_;
+  ChannelModeratorChecker is_moderator_;
 };
 
 }  // namespace chirp::chat

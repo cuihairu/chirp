@@ -234,6 +234,8 @@ struct FeatureHandlers {
   chirp::chat::ReadReceiptHandlers& receipts;
   chirp::chat::TypingHandlers& typing;
   chirp::chat::ReactionHandlers& reactions;
+  chirp::chat::MessageEditHandlers& edits;
+  chirp::chat::MentionHandlers& mentions;
 };
 
 void HandlePacket(const std::shared_ptr<MessageStore>& store,
@@ -348,11 +350,24 @@ void HandlePacket(const std::shared_ptr<MessageStore>& store,
       msg.set_channel_id(req.channel_id());
     }
 
+    // Enforce mention permissions (@everyone/@here cooldown) before the
+    // message becomes visible to anyone.
+    chirp::common::ErrorCode mention_code = chirp::common::OK;
+    if (!features.mentions.ProcessOutgoingMessage(msg, &mention_code)) {
+      chirp::chat::SendMessageResponse resp;
+      resp.set_code(mention_code);
+      resp.set_server_timestamp(chirp::chat::runtime::NowMs());
+      chirp::chat::runtime::SendPacket(session, chirp::gateway::SEND_MESSAGE_RESP, pkt.sequence(), resp.SerializeAsString());
+      return;
+    }
+
     store->AddMessage(msg);
-    // Let the receipt/reaction features resolve the channel of this message
-    // later (their requests only carry a message_id).
+    // Let the receipt/reaction/edit features resolve the channel of this
+    // message later (their requests only carry a message_id).
     features.receipts.TrackMessage(msg.message_id(), msg.channel_type(), msg.channel_id());
     features.reactions.TrackMessage(msg.message_id(), msg.channel_type(), msg.channel_id());
+    features.edits.TrackMessage(msg.message_id(), msg.channel_type(), msg.channel_id());
+    features.edits.RegisterMessage(msg.message_id(), msg.sender_id(), msg.content());
 
     chirp::chat::SendMessageResponse resp;
     resp.set_message_id(msg.message_id());
@@ -611,6 +626,54 @@ void HandlePacket(const std::shared_ptr<MessageStore>& store,
     chirp::chat::runtime::SendPacket(session, chirp::gateway::GET_REACTIONS_RESP, pkt.sequence(), resp.SerializeAsString());
     break;
   }
+  case chirp::gateway::EDIT_MESSAGE_REQ: {
+    chirp::chat::EditMessageRequest req;
+    if (!req.ParseFromArray(pkt.body().data(), static_cast<int>(pkt.body().size()))) {
+      chirp::chat::EditMessageResponse resp;
+      resp.set_code(chirp::common::INVALID_PARAM);
+      chirp::chat::runtime::SendPacket(session, chirp::gateway::EDIT_MESSAGE_RESP, pkt.sequence(), resp.SerializeAsString());
+      return;
+    }
+    auto resp = features.edits.HandleEditMessage(req, authenticated_user_id);
+    chirp::chat::runtime::SendPacket(session, chirp::gateway::EDIT_MESSAGE_RESP, pkt.sequence(), resp.SerializeAsString());
+    break;
+  }
+  case chirp::gateway::DELETE_MESSAGE_REQ: {
+    chirp::chat::DeleteMessageRequest req;
+    if (!req.ParseFromArray(pkt.body().data(), static_cast<int>(pkt.body().size()))) {
+      chirp::chat::DeleteMessageResponse resp;
+      resp.set_code(chirp::common::INVALID_PARAM);
+      chirp::chat::runtime::SendPacket(session, chirp::gateway::DELETE_MESSAGE_RESP, pkt.sequence(), resp.SerializeAsString());
+      return;
+    }
+    auto resp = features.edits.HandleDeleteMessage(req, authenticated_user_id);
+    chirp::chat::runtime::SendPacket(session, chirp::gateway::DELETE_MESSAGE_RESP, pkt.sequence(), resp.SerializeAsString());
+    break;
+  }
+  case chirp::gateway::BULK_DELETE_REQ: {
+    chirp::chat::BulkDeleteRequest req;
+    if (!req.ParseFromArray(pkt.body().data(), static_cast<int>(pkt.body().size()))) {
+      chirp::chat::BulkDeleteResponse resp;
+      resp.set_code(chirp::common::INVALID_PARAM);
+      chirp::chat::runtime::SendPacket(session, chirp::gateway::BULK_DELETE_RESP, pkt.sequence(), resp.SerializeAsString());
+      return;
+    }
+    auto resp = features.edits.HandleBulkDelete(req, authenticated_user_id);
+    chirp::chat::runtime::SendPacket(session, chirp::gateway::BULK_DELETE_RESP, pkt.sequence(), resp.SerializeAsString());
+    break;
+  }
+  case chirp::gateway::GET_MENTION_SUGGESTIONS_REQ: {
+    chirp::chat::GetMentionSuggestionsRequest req;
+    if (!req.ParseFromArray(pkt.body().data(), static_cast<int>(pkt.body().size()))) {
+      chirp::chat::GetMentionSuggestionsResponse resp;
+      resp.set_code(chirp::common::INVALID_PARAM);
+      chirp::chat::runtime::SendPacket(session, chirp::gateway::GET_MENTION_SUGGESTIONS_RESP, pkt.sequence(), resp.SerializeAsString());
+      return;
+    }
+    auto resp = features.mentions.HandleGetMentionSuggestions(req, authenticated_user_id);
+    chirp::chat::runtime::SendPacket(session, chirp::gateway::GET_MENTION_SUGGESTIONS_RESP, pkt.sequence(), resp.SerializeAsString());
+    break;
+  }
   case chirp::gateway::HEARTBEAT_PING: {
     chirp::gateway::HeartbeatPing ping;
     if (!ping.ParseFromArray(pkt.body().data(), static_cast<int>(pkt.body().size()))) {
@@ -710,12 +773,33 @@ int main(int argc, char** argv) {
   chirp::chat::TypingConfig typing_config;
   chirp::chat::TypingManager typing(typing_config);
   chirp::chat::ReactionManager reactions;
+  chirp::chat::MessageEditManager edits;
+  chirp::chat::MentionManager mentions;
+
+  // Resolves moderator rights in a channel: group roles for group-style
+  // channels, never for private channels.
+  chirp::chat::ChannelModeratorChecker is_moderator =
+      [&groups](chirp::chat::ChannelType channel_type, const std::string& channel_id,
+                const std::string& user_id) -> bool {
+    if (channel_type != chirp::chat::GUILD) {
+      return false;
+    }
+    for (const auto& member : groups.GetMembers(channel_id)) {
+      if (member.user_id() == user_id) {
+        return member.role() >= chirp::chat::MODERATOR;
+      }
+    }
+    return false;
+  };
 
   chirp::chat::ReadReceiptHandlers receipt_handlers(receipts, resolve_members, notify_member);
   chirp::chat::TypingHandlers typing_handlers(typing, resolve_members, notify_member);
   chirp::chat::ReactionHandlers reaction_handlers(reactions, resolve_members, notify_member);
+  chirp::chat::MessageEditHandlers edit_handlers(edits, resolve_members, is_moderator, notify_member);
+  chirp::chat::MentionHandlers mention_handlers(mentions, is_moderator);
 
-  FeatureHandlers features{group_handlers, receipt_handlers, typing_handlers, reaction_handlers};
+  FeatureHandlers features{group_handlers, receipt_handlers, typing_handlers,
+                           reaction_handlers, edit_handlers, mention_handlers};
 
   chirp::network::TcpServer server(
       io, port,

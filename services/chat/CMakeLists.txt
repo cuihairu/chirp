@@ -17,8 +17,6 @@ list(FILTER CHAT_BASE_SRCS EXCLUDE REGEX ".*message_delivery_tracker\\.cc")
 list(FILTER CHAT_BASE_SRCS EXCLUDE REGEX ".*message_migration_worker\\.cc")
 list(FILTER CHAT_BASE_SRCS EXCLUDE REGEX ".*paginated_history_retriever\\.cc")
 list(FILTER CHAT_BASE_SRCS EXCLUDE REGEX ".*channel_manager\\.cc")
-list(FILTER CHAT_BASE_SRCS EXCLUDE REGEX ".*mention_manager\\.cc")
-list(FILTER CHAT_BASE_SRCS EXCLUDE REGEX ".*message_edit_manager\\.cc")
 list(FILTER CHAT_BASE_SRCS EXCLUDE REGEX ".*file_storage_manager\\.cc")
 
 function(chirp_configure_chat_target target_name)
@@ -50,6 +48,10 @@ if(MYSQL_FOUND)
         src/group_handlers.cc
         src/message_handlers.cc
         src/read_receipt_manager.cc
+        src/typing_manager.cc
+        src/reaction_manager.cc
+        src/message_edit_manager.cc
+        src/mention_manager.cc
         src/mysql_message_store.cc
         src/message_store_config.cc
         src/hybrid_message_store.cc
