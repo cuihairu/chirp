@@ -16,8 +16,10 @@
 #include "notification_client.h"
 #include "notification_handlers.h"
 #include "notification_service.h"
+#include "proto/chat.pb.h"
 #include "proto/common.pb.h"
 #include "proto/gateway.pb.h"
+#include "push_bridge.h"
 
 using chirp::notification::NotificationClient;
 
@@ -188,7 +190,174 @@ struct Loopback {
   FakeNotificationServer server;
 };
 
+// Answers push requests with a canned OK while recording the parsed request
+// bodies, so tests can assert what a producer actually sent.
+struct RecordingPushServer {
+  RecordingPushServer() : server([this](const chirp::gateway::Packet& pkt) {
+    if (pkt.msg_id() == chirp::gateway::PUSH_NOTIFICATION_REQ) {
+      chirp::notification::PushNotificationRequest req;
+      if (req.ParseFromString(pkt.body())) {
+        std::lock_guard<std::mutex> lock(mu);
+        pushes.push_back(std::move(req));
+      }
+    }
+    chirp::notification::PushNotificationResponse body;
+    body.set_code(chirp::common::OK);
+    body.set_server_time(1);
+    chirp::gateway::Packet out;
+    out.set_msg_id(chirp::gateway::PUSH_NOTIFICATION_RESP);
+    out.set_sequence(pkt.sequence());
+    out.set_body(body.SerializeAsString());
+    return out;
+  }) {}
+
+  uint16_t port() const { return server.port(); }
+
+  std::mutex mu;
+  std::vector<chirp::notification::PushNotificationRequest> pushes;
+  FakeNotificationServer server;
+};
+
+chirp::chat::ChatMessage MakeChatMessage(const std::string& content) {
+  chirp::chat::ChatMessage msg;
+  msg.set_message_id("m-1");
+  msg.set_sender_id("bob");
+  msg.set_receiver_id("alice");
+  msg.set_channel_type(chirp::chat::PRIVATE);
+  msg.set_channel_id("alice|bob");
+  msg.set_content(content);
+  return msg;
+}
+
 }  // namespace
+
+// --- PushBridge ---------------------------------------------------------------
+
+TEST(PushBridgeTest, NullClientIsNoOp) {
+  chirp::chat::PushBridge bridge(nullptr);
+  bridge.NotifyOffline(MakeChatMessage("hi"), "alice");
+  bridge.NotifyOffline(MakeChatMessage("hi"), "");  // empty user is skipped too
+}
+
+TEST(PushBridgeTest, PayloadCarriesMessageMetadata) {
+  RecordingPushServer server;
+  asio::io_context io;
+  chirp::chat::PushBridge bridge(
+      std::make_shared<NotificationClient>(io, "127.0.0.1", server.port()));
+
+  bridge.NotifyOffline(MakeChatMessage("hello there"), "alice");
+
+  // Wait outside the mutex: holding mu across the sleep can starve the
+  // server thread's own lock in the handler, delaying the push past the
+  // whole deadline (observed as a 3s flake).
+  const auto deadline = std::chrono::steady_clock::now() + std::chrono::seconds(3);
+  bool done = false;
+  while (std::chrono::steady_clock::now() < deadline && !done) {
+    io.poll();
+    io.restart();
+    {
+      std::lock_guard<std::mutex> lock(server.mu);
+      done = !server.pushes.empty();
+    }
+    if (!done) {
+      std::this_thread::sleep_for(std::chrono::milliseconds(2));
+    }
+  }
+
+  std::lock_guard<std::mutex> lock(server.mu);
+  ASSERT_EQ(server.pushes.size(), 1u);
+  const auto& req = server.pushes[0];
+  EXPECT_EQ(req.user_id(), "alice");
+  EXPECT_EQ(req.title(), "bob");
+  EXPECT_EQ(req.body(), "hello there");
+  EXPECT_EQ(req.tag(), "alice|bob");
+  EXPECT_EQ(req.click_action(), "chirp://chat/alice|bob");
+  EXPECT_EQ(req.data().at("type"), "message");
+  EXPECT_EQ(req.data().at("from_user_id"), "bob");
+  EXPECT_EQ(req.data().at("channel_id"), "alice|bob");
+  EXPECT_EQ(req.data().at("channel_type"), "private");
+  EXPECT_EQ(req.data().at("message_id"), "m-1");
+}
+
+TEST(PushBridgeTest, LongBodyIsTruncated) {
+  RecordingPushServer server;
+  asio::io_context io;
+  chirp::chat::PushBridge bridge(
+      std::make_shared<NotificationClient>(io, "127.0.0.1", server.port()));
+
+  bridge.NotifyOffline(MakeChatMessage(std::string(150, 'x')), "alice");
+
+  // Same lock-free wait as above: never sleep while holding server.mu.
+  const auto deadline = std::chrono::steady_clock::now() + std::chrono::seconds(3);
+  bool done = false;
+  while (std::chrono::steady_clock::now() < deadline && !done) {
+    io.poll();
+    io.restart();
+    {
+      std::lock_guard<std::mutex> lock(server.mu);
+      done = !server.pushes.empty();
+    }
+    if (!done) {
+      std::this_thread::sleep_for(std::chrono::milliseconds(2));
+    }
+  }
+
+  std::lock_guard<std::mutex> lock(server.mu);
+  ASSERT_EQ(server.pushes.size(), 1u);
+  EXPECT_EQ(server.pushes[0].body(), std::string(100, 'x') + "...");
+}
+
+TEST(PushBridgeTest, ChannelTypeIsNamedPerChannelKind) {
+  const std::vector<std::pair<chirp::chat::ChannelType, std::string>> cases = {
+      {chirp::chat::TEAM, "team"},
+      {chirp::chat::GUILD, "guild"},
+      {chirp::chat::WORLD, "world"},
+      {chirp::chat::PRIVATE, "private"},
+  };
+  for (const auto& [type, name] : cases) {
+    RecordingPushServer server;
+    asio::io_context io;
+    chirp::chat::PushBridge bridge(
+        std::make_shared<NotificationClient>(io, "127.0.0.1", server.port()));
+
+    chirp::chat::ChatMessage msg = MakeChatMessage("hi");
+    msg.set_channel_type(type);
+    bridge.NotifyOffline(msg, "alice");
+
+    const auto deadline = std::chrono::steady_clock::now() + std::chrono::seconds(3);
+    bool done = false;
+    while (std::chrono::steady_clock::now() < deadline && !done) {
+      io.poll();
+      io.restart();
+      {
+        std::lock_guard<std::mutex> lock(server.mu);
+        done = !server.pushes.empty();
+      }
+      if (!done) {
+        std::this_thread::sleep_for(std::chrono::milliseconds(2));
+      }
+    }
+    std::lock_guard<std::mutex> lock(server.mu);
+    ASSERT_EQ(server.pushes.size(), 1u) << static_cast<int>(type);
+    EXPECT_EQ(server.pushes[0].data().at("channel_type"), name) << static_cast<int>(type);
+  }
+}
+
+TEST(PushBridgeTest, RefusedEndpointDoesNotAffectCaller) {
+  asio::io_context io;
+  chirp::chat::PushBridge bridge(
+      std::make_shared<NotificationClient>(io, kRefusedHost, kRefusedPort));
+
+  bridge.NotifyOffline(MakeChatMessage("hi"), "alice");
+
+  // Just spin: the failure is reported to nobody and must not throw.
+  const auto deadline = std::chrono::steady_clock::now() + std::chrono::milliseconds(300);
+  while (std::chrono::steady_clock::now() < deadline) {
+    io.poll();
+    io.restart();
+    std::this_thread::sleep_for(std::chrono::milliseconds(2));
+  }
+}
 
 class NotificationClientTest : public ::testing::Test {};
 

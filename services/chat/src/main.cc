@@ -22,6 +22,8 @@
 #include "network/session.h"
 #include "network/tcp_server.h"
 #include "network/websocket_server.h"
+#include "push_bridge.h"
+#include "notification_client.h"
 #include "proto/auth.pb.h"
 #include "proto/chat.pb.h"
 #include "proto/common.pb.h"
@@ -238,6 +240,7 @@ struct FeatureHandlers {
   chirp::chat::ReactionHandlers& reactions;
   chirp::chat::MessageEditHandlers& edits;
   chirp::chat::MentionHandlers& mentions;
+  chirp::chat::PushBridge& push;
 };
 
 void HandlePacket(const std::shared_ptr<MessageStore>& store,
@@ -390,6 +393,7 @@ void HandlePacket(const std::shared_ptr<MessageStore>& store,
       } else {
         resp.set_code(chirp::common::TARGET_OFFLINE);
         store->AddOffline(req.receiver_id(), msg);
+        features.push.NotifyOffline(msg, req.receiver_id());
       }
     } else {
       // GROUP channel: fan the message out to every member via the group
@@ -399,6 +403,7 @@ void HandlePacket(const std::shared_ptr<MessageStore>& store,
         auto offline = features.groups.BroadcastGroupMessage(req.channel_id(), req.sender_id(), msg);
         for (const auto& member_id : offline) {
           store->AddOffline(member_id, msg);
+          features.push.NotifyOffline(msg, member_id);
         }
       } else {
         resp.set_code(chirp::common::AUTH_FAILED);
@@ -705,11 +710,16 @@ int main(int argc, char** argv) {
   const std::string redis_host = chirp::chat::runtime::GetArg(argc, argv, "--redis_host", "");
   const uint16_t redis_port = chirp::chat::runtime::ParseU16Arg(argc, argv, "--redis_port", 6379);
   const int offline_ttl_seconds = chirp::chat::runtime::ParseIntArg(argc, argv, "--offline_ttl", 604800);
+  const std::string notification_host = chirp::chat::runtime::GetArg(argc, argv, "--notification_host", "");
+  const uint16_t notification_port = chirp::chat::runtime::ParseU16Arg(argc, argv, "--notification_port", 5006);
   Logger::Instance().Info("chirp_chat starting tcp=" + std::to_string(port) + " ws=" + std::to_string(ws_port) +
                           (redis_host.empty()
                                ? ""
                                : (" redis=" + redis_host + ":" + std::to_string(redis_port) +
-                                  " offline_ttl=" + std::to_string(offline_ttl_seconds))));
+                                  " offline_ttl=" + std::to_string(offline_ttl_seconds))) +
+                          (notification_host.empty()
+                               ? ""
+                               : (" notification=" + notification_host + ":" + std::to_string(notification_port))));
 
   asio::io_context io;
 
@@ -720,6 +730,15 @@ int main(int argc, char** argv) {
 
   auto store = std::make_shared<MessageStore>(redis, offline_ttl_seconds);
   auto state = std::make_shared<chirp::chat::ChatState>();
+
+  // Offline pushes are only wired when a notification service is configured;
+  // a null client turns the bridge into a no-op.
+  std::shared_ptr<chirp::notification::NotificationClient> notification;
+  if (!notification_host.empty()) {
+    notification = std::make_shared<chirp::notification::NotificationClient>(
+        io, notification_host, notification_port);
+  }
+  chirp::chat::PushBridge push(notification);
 
   // Delivers group notifications to a member's live session; false means the
   // member has no session right now.
@@ -801,7 +820,7 @@ int main(int argc, char** argv) {
   chirp::chat::MentionHandlers mention_handlers(mentions, is_moderator);
 
   FeatureHandlers features{group_handlers, receipt_handlers, typing_handlers,
-                           reaction_handlers, edit_handlers, mention_handlers};
+                           reaction_handlers, edit_handlers, mention_handlers, push};
 
   // Server-plane injection: when --server_gateway_host is set, chat dials the
   // hub as an internal service and delivers forwarded injections through the
@@ -843,8 +862,9 @@ int main(int argc, char** argv) {
       return true;
     };
     hooks.queue_offline =
-        [&store](const std::string& user_id, const chirp::chat::ChatMessage& msg) {
+        [&store, &features](const std::string& user_id, const chirp::chat::ChatMessage& msg) {
           store->AddOffline(user_id, msg);
+          features.push.NotifyOffline(msg, user_id);
         };
     hooks.broadcast_channel =
         [&features](const std::string& channel_id,

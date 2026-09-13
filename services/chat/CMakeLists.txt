@@ -34,7 +34,10 @@ function(chirp_configure_chat_target target_name)
         target_link_libraries(${target_name} PRIVATE ${PROTOBUF_LIBRARIES})
     endif()
 
-    target_include_directories(${target_name} PRIVATE src)
+    target_include_directories(${target_name} PRIVATE
+        src
+        ${CMAKE_SOURCE_DIR}/services/notification/src
+    )
 endfunction()
 
 if(MYSQL_FOUND)
@@ -68,6 +71,7 @@ if(MYSQL_FOUND)
 else()
     add_executable(chirp_chat
         ${CHAT_BASE_SRCS}
+        ${CMAKE_SOURCE_DIR}/services/notification/src/notification_client.cc
         ${PROTO_SRCS}
     )
 

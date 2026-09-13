@@ -300,13 +300,15 @@ target_include_directories(notification_handlers_tests
 
 add_test(NAME notification_handlers_tests COMMAND notification_handlers_tests)
 
-# Notification plane RPC client (worker-thread loopback tests)
+# Notification plane RPC client (worker-thread loopback tests) plus the chat
+# push bridge that produces through it
 add_executable(notification_client_tests
   notification_client_test.cc
   ${CMAKE_SOURCE_DIR}/services/notification/src/notification_client.cc
   ${CMAKE_SOURCE_DIR}/services/notification/src/notification_handlers.cc
   ${CMAKE_SOURCE_DIR}/services/notification/src/notification_service.cc
   ${CMAKE_SOURCE_DIR}/services/notification/src/push_transport.cc
+  ${CMAKE_SOURCE_DIR}/services/chat/src/push_bridge.cc
 )
 
 chirp_unit_test_common_links(notification_client_tests)
@@ -315,6 +317,7 @@ target_link_libraries(notification_client_tests PRIVATE chirp_network chirp_comm
 target_include_directories(notification_client_tests
   PRIVATE
   ${CMAKE_SOURCE_DIR}/services/notification/src
+  ${CMAKE_SOURCE_DIR}/services/chat/src
   ${CMAKE_SOURCE_DIR}/libs
   ${CMAKE_SOURCE_DIR}/libs/common
   ${CMAKE_SOURCE_DIR}/libs/common/include
