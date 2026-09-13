@@ -91,5 +91,9 @@ dependencies {
     implementation 'androidx.work:work-runtime-ktx:2.9.0'
 }
 
-// Apply Google Services plugin
-apply plugin: 'com.google.gms.google-services'
+// Apply Google Services plugin only when its config file is present,
+// so CI builds work without Firebase credentials.
+def googleServicesJson = file('google-services.json')
+if (googleServicesJson.exists()) {
+    apply plugin: 'com.google.gms.google-services'
+}
