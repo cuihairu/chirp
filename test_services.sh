@@ -38,7 +38,7 @@ echo "  ./build/services/gateway/chirp_gateway --port 5000 --ws_port 5001"
 echo "  ./build/services/auth/chirp_auth --port 6000"
 echo "  ./build/services/chat/chirp_chat --port 7000 --ws_port 7001"
 
-if [[ "${1:-}" != "--smoke" && "${1:-}" != "--smoke-chat" && "${1:-}" != "--smoke-redis" ]]; then
+if [[ "${1:-}" != "--smoke" && "${1:-}" != "--smoke-chat" && "${1:-}" != "--smoke-redis" && "${1:-}" != "--smoke-npc" ]]; then
   exit 0
 fi
 
@@ -47,6 +47,8 @@ if [[ "${1:-}" == "--smoke" ]]; then
   echo "=== Smoke Test (auth + gateway + clients) ==="
 elif [[ "${1:-}" == "--smoke-redis" ]]; then
   echo "=== Smoke Test (redis distributed sessions + cross-instance kick) ==="
+elif [[ "${1:-}" == "--smoke-npc" ]]; then
+  echo "=== Smoke Test (server plane + NPC dialog loop) ==="
 else
   echo "=== Smoke Test (chat + clients) ==="
 fi
@@ -218,6 +220,99 @@ elif [[ "${1:-}" == "--smoke-redis" ]]; then
   echo ""
   echo "auth log: ${AUTH_LOG}"
   tail -n 10 "${AUTH_LOG}" || true
+elif [[ "${1:-}" == "--smoke-npc" ]]; then
+  # Full NPC dialog loop over real processes: hub + chat + npc_dialog.
+  #
+  # Timing: the sender must NOT be online when the NPC reply comes back -
+  # the reply would be delivered to the sender's own connection (which the
+  # one-shot send client never reads). So every listener connects only
+  # after its sender exited, and receives the reply through the offline
+  # queue; that also exercises the queue refill tail.
+  HUB_PORT="${HUB_PORT:-$(pick_port)}"
+  CHAT_PORT="${CHAT_PORT:-$(pick_port)}"
+  CHAT_WS_PORT="${CHAT_WS_PORT:-$(pick_port)}"
+  HUB_LOG="${HUB_LOG:-/tmp/chirp_hub_smoke_npc.log}"
+  CHAT_LOG="${CHAT_LOG:-/tmp/chirp_chat_smoke_npc.log}"
+  NPC_LOG="${NPC_LOG:-/tmp/chirp_npc_smoke_npc.log}"
+  NPC_LISTEN_LOG="${NPC_LISTEN_LOG:-/tmp/chirp_npc_listen_smoke.log}"
+  NPC_OFFLINE_LISTEN_LOG="${NPC_OFFLINE_LISTEN_LOG:-/tmp/chirp_npc_offline_listen_smoke.log}"
+
+  ./build/services/server_gateway/chirp_server_gateway --port "${HUB_PORT}" \
+    --service chat=chat-secret --service npc_dialog=npc-secret --chat_service_id chat \
+    > "${HUB_LOG}" 2>&1 &
+  HUB_PID=$!
+
+  sleep 0.3
+
+  ./build/services/chat/chirp_chat --port "${CHAT_PORT}" --ws_port "${CHAT_WS_PORT}" \
+    --server_gateway_host 127.0.0.1 --server_gateway_port "${HUB_PORT}" \
+    --server_gateway_secret chat-secret --npc_service_id npc_dialog \
+    > "${CHAT_LOG}" 2>&1 &
+  CHAT_PID=$!
+  ./build/services/npc_dialog/chirp_npc_dialog \
+    --server_gateway_host 127.0.0.1 --server_gateway_port "${HUB_PORT}" \
+    --server_gateway_secret npc-secret \
+    > "${NPC_LOG}" 2>&1 &
+  NPC_PID=$!
+
+  cleanup() {
+    kill -TERM "${NPC_PID}" "${CHAT_PID}" "${HUB_PID}" 2>/dev/null || true
+    wait "${NPC_PID}" 2>/dev/null || true
+    wait "${CHAT_PID}" 2>/dev/null || true
+    wait "${HUB_PID}" 2>/dev/null || true
+  }
+  trap cleanup EXIT
+
+  sleep 0.5
+
+  echo ""
+  echo "[npc] send user_2 -> npc:blacksmith_01 (keyword hit)"
+  NPC_SEND_OUTPUT=$(./build/tools/benchmark/chirp_chat_send_client --host 127.0.0.1 --port "${CHAT_PORT}" --sender user_2 --receiver "npc:blacksmith_01" --text "any quests?")
+  echo "${NPC_SEND_OUTPUT}"
+  if [[ "${NPC_SEND_OUTPUT}" != code=0* ]]; then
+    echo "错误: NPC 私聊应返回 code=0（事件已发布，绕过玩家投递），实际: ${NPC_SEND_OUTPUT}"
+    exit 1
+  fi
+
+  echo ""
+  echo "[npc] login user_2 (expect the NPC reply)"
+  ./build/tools/benchmark/chirp_chat_listen_client --host 127.0.0.1 --port "${CHAT_PORT}" --user user_2 --max 1 > "${NPC_LISTEN_LOG}" 2>&1 &
+  NPC_LISTEN_PID=$!
+  wait "${NPC_LISTEN_PID}"
+  cat "${NPC_LISTEN_LOG}" || true
+  if ! rg -q "notify ts=.*npc:blacksmith_01 -> user_2" "${NPC_LISTEN_LOG}"; then
+    echo "错误: 未在 user_2 收到 NPC 回复"
+    exit 1
+  fi
+
+  echo ""
+  echo "[npc] history private (npc:blacksmith_01|user_2, player line + reply)"
+  ./build/tools/benchmark/chirp_chat_history_client --host 127.0.0.1 --port "${CHAT_PORT}" --user user_2 --channel_type 0 --channel_id "npc:blacksmith_01|user_2" --limit 10
+
+  echo ""
+  echo "[npc] offline path: user_3 sends (fallback reply), then logs in"
+  NPC_OFFLINE_SEND_OUTPUT=$(./build/tools/benchmark/chirp_chat_send_client --host 127.0.0.1 --port "${CHAT_PORT}" --sender user_3 --receiver "npc:blacksmith_01" --text "hello forge")
+  echo "${NPC_OFFLINE_SEND_OUTPUT}"
+  if [[ "${NPC_OFFLINE_SEND_OUTPUT}" != code=0* ]]; then
+    echo "错误: NPC 私聊（离线玩家）应返回 code=0，实际: ${NPC_OFFLINE_SEND_OUTPUT}"
+    exit 1
+  fi
+
+  ./build/tools/benchmark/chirp_chat_listen_client --host 127.0.0.1 --port "${CHAT_PORT}" --user user_3 --max 1 > "${NPC_OFFLINE_LISTEN_LOG}" 2>&1 &
+  OFFLINE_NPC_LISTEN_PID=$!
+  wait "${OFFLINE_NPC_LISTEN_PID}"
+  cat "${NPC_OFFLINE_LISTEN_LOG}" || true
+  if ! rg -q "notify ts=.*npc:blacksmith_01 -> user_3" "${NPC_OFFLINE_LISTEN_LOG}"; then
+    echo "错误: NPC 回复未在 user_3 登录后补投递"
+    exit 1
+  fi
+
+  echo ""
+  echo "chat log: ${CHAT_LOG}"
+  tail -n 12 "${CHAT_LOG}" || true
+  echo ""
+  echo "hub log: ${HUB_LOG}"
+  tail -n 8 "${HUB_LOG}" || true
 else
   CHAT_PORT="${CHAT_PORT:-$(pick_port)}"
   CHAT_WS_PORT="${CHAT_WS_PORT:-$(pick_port)}"

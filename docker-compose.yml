@@ -62,13 +62,14 @@ services:
       dockerfile: docker/Dockerfile.service
       args:
         SERVICE: chat_enhanced
-    command: ["--port", "7000", "--ws_port", "7001", "--redis_host", "redis", "--redis_port", "6379", "--mysql_host", "mysql", "--mysql_port", "3306", "--mysql_database", "chirp", "--mysql_user", "chirp", "--mysql_password", "chirp_pass"]
+    command: ["--port", "7000", "--ws_port", "7001", "--redis_host", "redis", "--redis_port", "6379", "--mysql_host", "mysql", "--mysql_port", "3306", "--mysql_database", "chirp", "--mysql_user", "chirp", "--mysql_password", "chirp_pass", "--server_gateway_host", "server_gateway", "--server_gateway_secret", "chat-secret", "--npc_service_id", "npc_dialog"]
     ports:
       - "7000:7000"
       - "7001:7001"
     depends_on:
       - redis
       - mysql
+      - server_gateway
 
   social:
     build:
@@ -141,6 +142,38 @@ services:
     command: ["--port", "5007"]
     ports:
       - "5007:5007"
+
+  server_gateway:
+    build:
+      context: .
+      dockerfile: docker/Dockerfile.service
+      args:
+        SERVICE: server_gateway
+    command:
+      [
+        "--port", "8100",
+        "--service", "chat=chat-secret",
+        "--service", "npc_dialog=npc-secret",
+        "--chat_service_id", "chat"
+      ]
+    ports:
+      - "8100:8100"
+
+  npc_dialog:
+    build:
+      context: .
+      dockerfile: docker/Dockerfile.service
+      args:
+        SERVICE: npc_dialog
+    command:
+      [
+        "--server_gateway_host", "server_gateway",
+        "--server_gateway_port", "8100",
+        "--server_gateway_service", "npc_dialog",
+        "--server_gateway_secret", "npc-secret"
+      ]
+    depends_on:
+      - server_gateway
 
   chat_archive:
     build:
