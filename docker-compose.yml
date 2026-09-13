@@ -104,6 +104,33 @@ services:
     ports:
       - "5006:5006"
 
+  app_gateway:
+    build:
+      context: .
+      dockerfile: docker/Dockerfile.service
+      args:
+        SERVICE: app_gateway
+    command:
+      [
+        "--port", "5200",
+        "--ws_port", "5201",
+        "--auth_host", "auth",
+        "--auth_port", "6000",
+        "--redis_host", "redis",
+        "--redis_port", "6379",
+        "--redis_ttl", "3600",
+        "--instance_id", "app_gw_1",
+        "--notification_host", "notification",
+        "--notification_port", "5006"
+      ]
+    ports:
+      - "5200:5200"
+      - "5201:5201"
+    depends_on:
+      - auth
+      - redis
+      - notification
+
   search:
     build:
       context: .

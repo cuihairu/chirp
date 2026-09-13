@@ -160,6 +160,7 @@ add_subdirectory(services/server_gateway)
 add_subdirectory(services/social)
 add_subdirectory(services/voice)
 add_subdirectory(services/notification)
+add_subdirectory(services/app_gateway)
 add_subdirectory(services/search)
 # add_subdirectory(services/router)
 
