@@ -10,6 +10,13 @@ The server plane is how a game backend talks to chirp. It is deliberately separa
 - **Service identity, not user identity**: peers authenticate with `service_id` + shared secret. They are never user accounts, never appear in session/kick/presence, and injected messages carry non-user sender kinds (`SYSTEM` / `NPC` / `SERVICE`).
 - **Same framing**: TCP + `[uint32_be size][chirp.gateway.Packet]`, with the `5xxx` msg-id block.
 
+### Credential boundary
+
+The `service_id` + secret pair is an appkey/appSecret-style credential: it identifies the integrating backend and is long-lived. Two rules follow:
+
+- **Never ship it in a client.** Anything bundled into a game client or app binary is effectively public. Clients hold short-lived user tokens instead; the game backend exchanges/derives those after the player's own login. See [Credential model](./architecture.md#credential-model-service-credentials-vs-user-tokens).
+- **Never use it to impersonate a user.** Injections carry `sender_kind` (`SYSTEM` / `NPC` / `SERVICE`) precisely so the server plane can act without pretending to be a player account.
+
 ## Running
 
 ```bash
@@ -121,8 +128,18 @@ Delivery semantics:
 - Acks are idempotent; unknown ids answer `OK`.
 - A displaced connection closing late does not reset the live connection's in-flight tracking (no duplicate redelivery storm).
 
+## NPC dialog service
+
+`services/npc_dialog` is the first event consumer on the plane: a pure server-plane client (no player-facing listener) that closes the NPC conversation loop end to end.
+
+- **Uplink (chat → hub → npc_dialog).** Chat rewrites a player's private message to an `npc:`-prefixed receiver into an `EventPublishRequest` of type `npc.player_message` (payload: `chirp.chat.NpcPlayerUtterance`; `event_id` = chat message id) and fire-and-forgets it — the player's `OK` means accepted, not that a reply will come. The chat history keeps the player's original line.
+- **Reply (npc_dialog → hub → chat).** The responder renders a reply with a keyword rule table (`npc_id<TAB>keyword<TAB>reply` TSV, `*` = the NPC's fallback line, ASCII case-insensitive substring, first match wins; built-in demo rules when no `--rules_file`) and injects it as `SENDER_NPC` on a private channel to the player, with the event id as the `inject_id` idempotency key.
+- **Ack policy.** Foreign event types, unparseable payloads, and utterances missing sender/NPC identity are acked immediately (poison-pill: they can never become valid by retrying). A valid event is acked **only after** the hub accepted its reply injection (`OK`); any other outcome stays unacked, so the hub redelivers — at-least-once, and a redelivery inside the retry window can produce a duplicate reply. The MVP accepts this; dedupe by `inject_id`/event id is the later fix.
+
+Process-level verification: `./test_services.sh --smoke-npc` runs hub + chat + npc_dialog as real processes and checks the keyword reply, the fallback reply, history (player line + reply), and the offline-queue refill path.
+
 ## Roadmap
 
 1. ~~Chat service connects as an internal peer and consumes `InjectMessageNotify`~~ — done (loopback-verified end to end); a process-level E2E smoke is still an option for later.
 2. ~~Redis Streams fallback broker for integrations that cannot host a long-connection client (ack + replay, no raw pub/sub)~~ — done, upstream injection only (see "Broker fallback" above); downlink events still use the long-connection plane.
-3. Event production on the chat side: NPC quest triggers, sensitive-word penalties, trade state transitions.
+3. ~~Event production on the chat side~~ — done for NPC dialogue (`npc.player_message`, consumed by `services/npc_dialog`, see above); sensitive-word penalties and trade state transitions remain open.

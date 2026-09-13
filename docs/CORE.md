@@ -12,6 +12,7 @@ Chirp should currently be understood as a game-oriented realtime communication b
 | Auth | TCP 6000 | Supported | Token validation path; enhanced auth is conditional on native dependencies |
 | Chat | TCP 7000 / WS 7001 | Supported | Private messages, groups, history, offline queue, optional Redis/MySQL enhanced paths |
 | Server Gateway | TCP 8100 | Experimental | Trusted service-plane hub: game backends authenticate with `service_id` + secret, inject system/NPC messages, and receive events queued until acked |
+| NPC Dialog | no listener | Experimental | Server-plane client: answers `npc.player_message` events with keyword-rule replies injected back into chat (see [server_plane.md](./server_plane.md)) |
 | Notification | TCP 5006 / WS 5016 | Experimental | Device registry and push plane (6xxx); provider HTTP delivery is a logging `PushTransport` stub |
 | App Gateway | TCP 5200 / WS 5201 | Experimental | Companion-app edge: login/heartbeat/session binding plus device-message forwarding to Notification (authenticated sessions only) |
 
@@ -32,6 +33,11 @@ graph TD
     App[Companion App] -- login / device messages --> AppGateway[App Gateway]
     AppGateway --> Auth
     AppGateway -- 6xxx forwarding --> Notification
+
+    GameBackend[Game Backend] -. service auth .-> ServerGateway[Server Gateway]
+    ServerGateway -- injections --> Chat
+    ServerGateway -- events (npc.player_message) --> NpcDialog[NPC Dialog]
+    NpcDialog -- NPC replies --> ServerGateway
 ```
 
 ## Current Contract
@@ -168,6 +174,8 @@ Smoke tests:
 ```bash
 ./test_services.sh --smoke
 ./test_services.sh --smoke-chat
+./test_services.sh --smoke-sdk
+./test_services.sh --smoke-npc
 ./test_services.sh --smoke-redis
 ```
 
@@ -187,11 +195,11 @@ These areas exist in the repository but should not be presented as stable core c
 - `services/voice`
 - `services/notification`
 - `services/search`
-- `services/server_gateway` (new; unit-verified protocol incl. chat-side injection consumption, E2E pending)
+- `services/server_gateway` (unit-verified protocol incl. chat-side injection consumption; NPC dialog loop has a process-level smoke)
 - `sdks/core`, `sdks/unity`, `sdks/unreal`
 - `apps/mobile_companion`
 - `apps/admin_dashboard`
-- NPC dialog system design
+- NPC dialog system design (the landed keyword-rule service in `services/npc_dialog` is narrower; the design notes describe the fuller vision)
 - distributed chat alternate targets and scalability examples
 
 Use [Capability Matrix](./CAPABILITY_MATRIX.md) as the status source of truth.

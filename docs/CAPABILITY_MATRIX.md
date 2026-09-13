@@ -21,7 +21,8 @@ This document describes the repository's current implementation status by runtim
 | Chat distributed routing | `chirp_chat_distributed` | Experimental | Separate target; not the default documented service binary |
 | Chat hybrid Redis + MySQL storage | `chirp_chat` / `chirp_chat_enhanced` | Experimental | With MySQL available, the default `chirp_chat` target builds the enhanced implementation; `chirp_chat_enhanced` is now a compatibility alias |
 | Auth registration / refresh / brute-force / rate-limit stack | `chirp_auth` / `chirp_auth_enhanced` | Experimental | With MySQL and libsodium available, the default `chirp_auth` target builds the enhanced implementation; `chirp_auth_enhanced` is now a compatibility alias |
-| Server plane hub (game backend <-> chirp) | `chirp_server_gateway` | Experimental | Service auth (`service_id` + secret), message injection routing toward chat, reliable event delivery (per-service queues, acks, reconnect redelivery); chat consumes injections as an internal peer (loopback-verified, process-level E2E smoke pending); upstream injection also available over a Redis Stream (`--broker_redis_host`, consumer group + `XAUTOCLAIM` replay, needs Redis >= 6.2; downlink events still long-connection only) |
+| Server plane hub (game backend <-> chirp) | `chirp_server_gateway` | Experimental | Service auth (`service_id` + secret), message injection routing toward chat, reliable event delivery (per-service queues, acks, reconnect redelivery); chat consumes injections as an internal peer; upstream injection also available over a Redis Stream (`--broker_redis_host`, consumer group + `XAUTOCLAIM` replay, needs Redis >= 6.2; downlink events still long-connection only) |
+| NPC dialog (keyword rule engine) | `chirp_npc_dialog` | Experimental | Pure server-plane client (no player-facing listener): chat turns `npc:`-prefixed private messages into `npc.player_message` events, the service answers with keyword-table replies injected back as `SENDER_NPC` (at-least-once; a hub redelivery can duplicate a reply). Process-level smoke: `./test_services.sh --smoke-npc` |
 | Offline-message push trigger | `chirp_chat` (default build) | Experimental | Offline private/group messages and server-plane injections enqueue a push through `PushBridge` -> notification (fire-and-forget, logged failures). Only wired into the default `chirp_chat` build (`main_enhanced` / `main_distributed` are not); actual delivery still depends on the notification transport stub |
 | Social / presence | `services/social` | Experimental | Present as service code, but not validated as a core path |
 | Voice signaling / WebRTC integration | `services/voice`, `sdks/core/modules/voice` | Experimental | Broad surface area, environment-heavy, not part of the minimal verified path |
@@ -33,7 +34,7 @@ This document describes the repository's current implementation status by runtim
 
 | Area | Target | Status | Notes |
 | --- | --- | --- | --- |
-| C++ Core SDK | `sdks/core` | Experimental | Useful integration base, but repo docs should avoid calling it fully stable |
+| C++ Core SDK | `sdks/core` | Experimental | Game-client integration base (`chirp::sdk::ChatClient`); process-level smoke covers login / bidirectional online delivery / offline-queue refill against a real `chirp_chat` (`./test_services.sh --smoke-sdk`). Still avoid calling it fully stable |
 | Unity SDK | `sdks/unity` | Experimental | Contains TODO-backed social bindings |
 | Unreal SDK | `sdks/unreal` | Experimental | Contains unimplemented return paths |
 | Mobile companion app | `apps/mobile_companion` | Demo | UI and integration exist, but should not be presented as production-ready |

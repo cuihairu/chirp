@@ -51,6 +51,8 @@ cmake --preset dev \
 ```bash
 ./test_services.sh --smoke       # auth + gateway + TCP/WS login clients
 ./test_services.sh --smoke-chat  # chat service + chat clients
+./test_services.sh --smoke-sdk   # game client SDK (sdks/core) + chat: login / online delivery / offline queue
+./test_services.sh --smoke-npc   # NPC dialog loop over the server plane
 ./test_services.sh --smoke-redis # Redis-backed distributed session/kick path
 ```
 

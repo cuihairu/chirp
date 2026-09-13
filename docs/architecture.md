@@ -41,6 +41,69 @@ Rules that make independence work:
 - **The core is shared**: auth, the device-level session/Presence registry, chat, and notification (the app edge's offline push bridge). Same user on the game client and the app simultaneously is a core scenario, so cross-device delivery, kick policy, and unified unread counts are resolved in the core, not in any edge.
 - **The game backend plane never uses user identity** and never touches the player edges. A game server that logs into a player gateway would have to masquerade as a user: it would pollute session semantics, break kick/presence, and distort rate-limiting designed for untrusted peers.
 
+### Credential model: service credentials vs user tokens
+
+The three edges use two different kinds of credentials. They answer different questions and are not interchangeable:
+
+- **Service credentials** (`service_id` + shared secret, i.e. appkey/appSecret-style) identify **the integrating backend** — "which game or service are you". They are long-lived, must be stored securely, and are only ever used server-to-server on the server plane. They must never ship inside a client: anything bundled into a game client or app binary is effectively public (reverse engineering, packet capture), and a leaked service credential compromises the entire integration.
+- **User tokens** identify **one user session** — "which player is behind this connection". They are short-lived and revocable, so leakage has a bounded blast radius. Clients only ever hold user tokens, never service credentials.
+
+The typical issuance flow for a game client:
+
+```text
+player ── login ──► game's own login server ──► game backend (holds the appSecret)
+        ── issues/derives a short-lived user token ──► client connects to game_gateway with it
+```
+
+How a user token is verified is an implementation choice, not a protocol requirement:
+
+| Scheme | Verification | Cost |
+| --- | --- | --- |
+| Opaque token + Redis lookup | Every service queries Redis per token | One network hop per verification |
+| Signed token (HMAC or JWT) | Local signature check, zero network hops | Revocation waits for expiry (mitigate with a short TTL) |
+| Hybrid | Signed token + Redis revocation/device state | Slightly more complex |
+
+### Why the shared core is not a single point of failure
+
+"Shared core" means a shared data model and shared libraries — not a single process:
+
+- **Edges are stateless.** Any number of `game_gateway` / `app_gateway` instances can run behind a load balancer; losing one only drops its current connections, which reconnect elsewhere.
+- **Auth is only on the login path.** If token verification is a local signature check (see above), an auth outage blocks *new logins* while existing sessions — messages, heartbeats, kick — keep working untouched.
+- **The session registry degrades, it does not halt.** Redis (Sentinel/Cluster) is the source of truth for `user → device → edge instance` state; if it is unavailable, an edge falls back to its local in-memory registry — the same behavior `gateway` already exhibits when `redis_host` is unset. The failure mode is *degradation* (no cross-instance kick, no cross-device sync), not *outage* (messaging keeps working).
+- **The alternative is worse.** Per-service session registries — the current shape, where `gateway` and `chat` each keep their own — trade a manageable availability concern for an unmanageable consistency split: the same player can be "online" in one service and "offline" in another, and cross-device delivery/kick/unread semantics become unanswerable. A single source of truth with graceful degradation is strictly more robust than N conflicting registries.
+
+### Edge comparison: what differs, what is shared
+
+The three access points share a common skeleton but differ on almost every operational dimension. This matrix is the evidence base for the three-edge decision:
+
+| Dimension | Game client | Companion app | Game backend |
+| --- | --- | --- | --- |
+| Identity granularity | User session (user + device) | User session + device push token | Service identity (**never a user**) |
+| Credential | Short-lived user token | Short-lived user token | Long-lived appkey/appSecret (`service_id` + secret) |
+| Connection direction | Dial-in | Dial-in | **Dial-out** (no callback port into private subnets) |
+| Transport | TCP preferred (no WS frame/masking overhead), WS offered on the same edge | WS common — for **web-version reachability, middlebox traversal, and L7 infrastructure**, not because WS suits mobile networks (WS rides on TCP; NAT timeouts and radio wakeups hit both equally). Process death on mobile is absorbed by APNs/FCM push, not by transport choice | TCP; Redis Streams broker fallback |
+| Network environment | Public internet; mobile games included — transport choice is the integrator's tradeoff, not an edge property | Mobile: NAT timeouts, backgrounding, restrictive proxies | Private subnet, stable |
+| Process lifecycle | Lives and dies with the game process | Killable by the OS at any time; push is the fallback | Always-on daemon |
+| Message pattern | High-frequency, low-latency: chat, heartbeat, state sync | Low-frequency IM; **offline push is the critical path** | System injection + event callbacks |
+| Offline semantics | Pull offline queue / history on next login | APNs/FCM push brings the user back | Events persist and redeliver on reconnect **until acked** |
+| Trust & rate limiting | Untrusted: strict rate/size limits | Untrusted: same + TLS | Trusted intranet: credential auth, no user-level limits |
+| Msg-id blocks | 1xxx / 2xxx (+ 3xxx/4xxx) | 1xxx + 6xxx | 5xxx |
+| SDK shape | Engine plugins (Unity/Unreal/C++) | Flutter + CallKit/FCM system integration | Embedded client lib, or plain `XADD` from any language |
+| Reconnect recovery | Reconnect + re-login | Reconnect + backoff + push fallback | Reconnect + replay of unacked events |
+
+What all three share (the shared core's scope):
+
+- The same wire framing: `[uint32_be size][chirp.gateway.Packet]` — and each edge listens on TCP and WS simultaneously carrying the same payload, so transport is the integrator's choice, not an edge-defining property.
+- The same connection lifecycle skeleton: authenticate on the first frame within a timeout, heartbeat, reconnect.
+- The same destination: auth, session/presence, chat, notification. The same user playing in-game and chatting from the app simultaneously is a core scenario, not an edge case.
+- Idempotency keys for retries: `sequence` on client requests, `inject_id` / `event_id` on the server plane.
+
+Design conclusions drawn from the matrix:
+
+1. **Game client vs app differ in tuning, not in trust model** — both are untrusted user-token edges. The code already shows this: `app_gateway` reuses the gateway's session registry and auth client by compiling its sources. The correct shape is one shared edge library with per-edge configuration (heartbeat cadence, push bridge, TLS), not copied code (tracked as P0 in TODO.md).
+2. **The game backend differs in trust model fundamentally** — non-user identity, credentials that must never ship in a client, opposite connection direction, at-least-once semantics. Any shortcut that reuses a player edge for game servers corrupts session semantics.
+3. **The sharing boundary is exactly four things**: the envelope/framing, the codec, the session core, and base libraries. Transport tuning, reconnect policy, rate limits, and offline semantics are edge-private.
+
 ### Server plane design
 
 - **Dial-out, not call-in.** Game servers open the connection to `server_gateway` (agent model). Chirp never needs inbound access into game networks, and game servers in private subnets need no public callback endpoint.
@@ -78,6 +141,11 @@ graph TD
 
     ChatDist[chirp_chat_distributed / enhanced chat router] -. experimental Redis Pub/Sub .-> Redis
 
+    GameBackend[Game Backend] -. service auth .-> ServerGateway[services/server_gateway<br/>chirp_server_gateway]
+    ServerGateway -- injections --> Chat
+    ServerGateway -- npc.player_message events --> NpcDialog[services/npc_dialog<br/>chirp_npc_dialog]
+    NpcDialog -- NPC replies (injections) --> ServerGateway
+
     Client -. experimental direct entry .-> Social[services/social]
     Client -. experimental direct entry .-> Voice[services/voice]
     Notification[services/notification] -. experimental, logging stub .-> ExternalPush[FCM / APNs or HTTP provider]
@@ -86,7 +154,7 @@ graph TD
 
 Important interpretation:
 
-- `gateway` and `chat` are both client-facing services today; the game backend plane does not exist yet as runtime, only as protocol and service skeleton.
+- `gateway` and `chat` are both client-facing services today; the game backend plane runs as `server_gateway` (hub, TCP 8100) plus plane clients — `chat` as an internal node and `npc_dialog` as the first event consumer, with a process-level smoke (`./test_services.sh --smoke-npc`). Game backends still integrate through the protocol, not a shipped reference client.
 - `app_gateway` (TCP 5200 / WS 5201) is live as an experimental companion-app edge: gateway-style auth/heartbeat plus 6xxx device-message forwarding to notification. Chat business packets are not accepted there (that is migration step 4).
 - `gateway` is not yet a universal business router.
 - `chat` direct access is the practical path for current chat smoke tests and the C++ SDK example.
@@ -101,7 +169,7 @@ Important interpretation:
 | Common library | `libs/common` | Logger, JWT/base64/sha256 helpers, metrics primitives |
 | Network library | `libs/network` | ASIO TCP/WS sessions, length-prefixed framing, Redis RESP client, Redis Pub/Sub router; the future reactor-encapsulation point |
 | Core services | `services/gateway`, `services/auth`, `services/chat`, `services/server_gateway` | Supported backend skeleton |
-| Experimental services | `services/social`, `services/voice`, `services/notification`, `services/search` | Useful implementation surface, not core verified path |
+| Experimental services | `services/social`, `services/voice`, `services/notification`, `services/search`, `services/npc_dialog` | Useful implementation surface, not core verified path |
 | SDKs | `sdks/core`, `sdks/unity`, `sdks/unreal` | Integration base and wrappers, currently experimental |
 | Apps/tools | `apps/*`, `tools/benchmark` | Demos, smoke clients, benchmarks, archive helpers |
 | Delivery | `docker-compose.yml`, `deploy/`, `scripts/`, `tests/` | Local orchestration, cluster sketches, build and smoke validation |

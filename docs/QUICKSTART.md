@@ -16,6 +16,8 @@ Smoke tests:
 ```bash
 ./test_services.sh --smoke
 ./test_services.sh --smoke-chat
+./test_services.sh --smoke-sdk
+./test_services.sh --smoke-npc
 ./test_services.sh --smoke-redis
 ```
 
