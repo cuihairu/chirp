@@ -1,33 +1,33 @@
-#include <atomic>
 #include <chrono>
-#include <thread>
+#include <functional>
 #include <iostream>
 #include <memory>
 #include <string>
-#include <csignal>
+#include <utility>
 
 #include <asio.hpp>
 
-#include "notification_service.h"
-#include "network/tcp_server.h"
 #include "logger.h"
+#include "network/protobuf_framing.h"
+#include "network/tcp_server.h"
+#include "network/websocket_server.h"
+#include "notification_handlers.h"
+#include "notification_service.h"
+#include "proto/gateway.pb.h"
 
 using namespace chirp;
 
-// Global flag for shutdown
-std::atomic<bool> running{true};
+namespace {
 
-void SignalHandler(int signal) {
-  common::Logger::Instance().Info("Shutting down notification service...");
-  running = false;
+void SendPacket(const std::shared_ptr<network::Session>& session,
+                chirp::gateway::Packet resp) {
+  auto framed = network::ProtobufFraming::Encode(resp);
+  session->Send(std::string(reinterpret_cast<const char*>(framed.data()), framed.size()));
 }
 
-int main(int argc, char* argv[]) {
-  // Setup signal handling
-  std::signal(SIGINT, SignalHandler);
-  std::signal(SIGTERM, SignalHandler);
+}  // namespace
 
-  // Initialize logger
+int main(int argc, char* argv[]) {
   auto& logger = common::Logger::Instance();
   logger.SetLevel(common::Logger::Level::kInfo);
 
@@ -36,6 +36,7 @@ int main(int argc, char* argv[]) {
   // Parse command line arguments
   std::string host = "0.0.0.0";
   uint16_t port = 5006;
+  uint16_t ws_port = 5016;  // 5007 is taken by the search service
   std::string fcm_server_key;
   std::string apns_key_path;
   std::string apns_key_id;
@@ -50,6 +51,8 @@ int main(int argc, char* argv[]) {
       host = argv[++i];
     } else if (arg == "--port" && i + 1 < argc) {
       port = static_cast<uint16_t>(std::stoi(argv[++i]));
+    } else if (arg == "--ws_port" && i + 1 < argc) {
+      ws_port = static_cast<uint16_t>(std::stoi(argv[++i]));
     } else if (arg == "--fcm-key" && i + 1 < argc) {
       fcm_server_key = argv[++i];
     } else if (arg == "--apns-key" && i + 1 < argc) {
@@ -66,7 +69,8 @@ int main(int argc, char* argv[]) {
       std::cout << "Usage: " << argv[0] << " [options]\n"
                 << "Options:\n"
                 << "  --host <address>    Server host (default: 0.0.0.0)\n"
-                << "  --port <port>       Server port (default: 5006)\n"
+                << "  --port <port>       TCP port (default: 5006)\n"
+                << "  --ws_port <port>    WebSocket port (default: 5016)\n"
                 << "  --fcm-key <key>     FCM server key\n"
                 << "  --apns-key <path>   APNs private key path\n"
                 << "  --apns-key-id <id>  APNs key ID\n"
@@ -89,43 +93,61 @@ int main(int argc, char* argv[]) {
   apns_config.private_key_path = apns_key_path;
   apns_config.use_sandbox = apns_sandbox;
 
-  // Create notification service
-  auto notification_service = std::make_shared<notification::NotificationService>(
-      fcm_config, apns_config);
+  auto service = std::make_shared<notification::NotificationService>(fcm_config, apns_config);
+  notification::NotificationHandlers handlers(*service);
 
-  // Create IO context
-  asio::io_context io_context;
+  asio::io_context io;
 
-  // Setup cleanup timer
-  std::thread cleanup_thread([&]() {
-    while (running) {
-      std::this_thread::sleep_for(std::chrono::minutes(5));
-
-      if (running) {
-        notification_service->CleanupInactiveDevices();
-        notification_service->CleanupExpiredCooldowns();
-      }
+  auto on_frame = [handlers, &logger](std::shared_ptr<network::Session> session,
+                                      std::string&& payload) mutable {
+    gateway::Packet pkt;
+    if (!pkt.ParseFromArray(payload.data(), static_cast<int>(payload.size()))) {
+      logger.Warn("failed to parse Packet on the notification plane");
+      return;
     }
+    gateway::Packet resp;
+    if (handlers.HandlePacket(pkt, &resp)) {
+      SendPacket(session, std::move(resp));
+    }
+  };
+
+  network::TcpServer server(io, port, on_frame);
+  network::WebSocketServer ws_server(io, ws_port, on_frame);
+  server.Start();
+  ws_server.Start();
+
+  // Periodic device/cooldown cleanup on the io thread.
+  asio::steady_timer cleanup_timer(io);
+  std::function<void()> schedule_cleanup = [&]() {
+    cleanup_timer.expires_after(std::chrono::minutes(5));
+    cleanup_timer.async_wait([&](const asio::error_code& ec) {
+      if (ec) {
+        return;
+      }
+      service->CleanupInactiveDevices();
+      service->CleanupExpiredCooldowns();
+      schedule_cleanup();
+    });
+  };
+  schedule_cleanup();
+
+  asio::signal_set signals(io, SIGINT, SIGTERM);
+  signals.async_wait([&](const std::error_code& /*ec*/, int /*sig*/) {
+    logger.Info("shutdown requested");
+    server.Stop();
+    ws_server.Stop();
+    io.stop();
   });
 
-  logger.Info("Notification service listening on " + host + ":" + std::to_string(port));
+  logger.Info("Notification service listening on " + host + " tcp/" + std::to_string(port) +
+              " ws/" + std::to_string(ws_port));
   logger.Info("FCM configured: " + std::string(fcm_server_key.empty() ? "no" : "yes"));
   logger.Info("APNs configured: " + std::string(apns_key_id.empty() ? "no" : "yes"));
 
-  // Run IO context
-  asio::executor_work_guard<asio::io_context::executor_type> work(
-      io_context.get_executor());
-
-  while (running) {
-    std::this_thread::sleep_for(std::chrono::milliseconds(100));
-  }
-
-  // Cleanup
-  work.reset();
-  cleanup_thread.join();
+  io.run();
 
   // Print stats
-  const auto& stats = notification_service->GetStats();
+  const auto& stats = service->GetStats();
   logger.Info("Statistics:");
   logger.Info("  Notifications sent: " + std::to_string(stats.notifications_sent.load()));
   logger.Info("  Notifications failed: " + std::to_string(stats.notifications_failed.load()));

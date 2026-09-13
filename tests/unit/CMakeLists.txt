@@ -259,6 +259,7 @@ add_executable(notification_tests
   notification_test.cc
   notification_internal_test.cc
   ${CMAKE_SOURCE_DIR}/services/notification/src/notification_service.cc
+  ${CMAKE_SOURCE_DIR}/services/notification/src/push_transport.cc
 )
 
 chirp_unit_test_common_links(notification_tests)
@@ -275,6 +276,54 @@ target_include_directories(notification_tests
 )
 
 add_test(NAME notification_tests COMMAND notification_tests)
+
+# Notification plane packet handlers (6xxx dispatch over NotificationService)
+add_executable(notification_handlers_tests
+  notification_handlers_test.cc
+  ${CMAKE_SOURCE_DIR}/services/notification/src/notification_handlers.cc
+  ${CMAKE_SOURCE_DIR}/services/notification/src/notification_service.cc
+  ${CMAKE_SOURCE_DIR}/services/notification/src/push_transport.cc
+)
+
+chirp_unit_test_common_links(notification_handlers_tests)
+target_link_libraries(notification_handlers_tests PRIVATE chirp_network chirp_common chirp_protos)
+
+target_include_directories(notification_handlers_tests
+  PRIVATE
+  ${CMAKE_SOURCE_DIR}/services/notification/src
+  ${CMAKE_SOURCE_DIR}/libs
+  ${CMAKE_SOURCE_DIR}/libs/common
+  ${CMAKE_SOURCE_DIR}/libs/common/include
+  ${CMAKE_SOURCE_DIR}/proto/cpp
+  ${CMAKE_SOURCE_DIR}/proto/cpp/proto
+)
+
+add_test(NAME notification_handlers_tests COMMAND notification_handlers_tests)
+
+# Notification plane RPC client (worker-thread loopback tests)
+add_executable(notification_client_tests
+  notification_client_test.cc
+  ${CMAKE_SOURCE_DIR}/services/notification/src/notification_client.cc
+  ${CMAKE_SOURCE_DIR}/services/notification/src/notification_handlers.cc
+  ${CMAKE_SOURCE_DIR}/services/notification/src/notification_service.cc
+  ${CMAKE_SOURCE_DIR}/services/notification/src/push_transport.cc
+)
+
+chirp_unit_test_common_links(notification_client_tests)
+target_link_libraries(notification_client_tests PRIVATE chirp_network chirp_common chirp_protos)
+
+target_include_directories(notification_client_tests
+  PRIVATE
+  ${CMAKE_SOURCE_DIR}/services/notification/src
+  ${CMAKE_SOURCE_DIR}/libs
+  ${CMAKE_SOURCE_DIR}/libs/common
+  ${CMAKE_SOURCE_DIR}/libs/common/include
+  ${CMAKE_SOURCE_DIR}/libs/network
+  ${CMAKE_SOURCE_DIR}/proto/cpp
+  ${CMAKE_SOURCE_DIR}/proto/cpp/proto
+)
+
+add_test(NAME notification_client_tests COMMAND notification_client_tests)
 
 # Gateway auth client target above already compiles auth_client.cc together
 # with gateway_auth_internal_test.cc; chat_managers_tests compiles

@@ -10,6 +10,8 @@
 #include <unordered_set>
 #include <vector>
 
+#include "push_transport.h"
+
 namespace chirp {
 namespace notification {
 
@@ -80,7 +82,8 @@ struct APNsConfig {
 class NotificationService {
 public:
   NotificationService(const FCMConfig& fcm_config = FCMConfig(),
-                     const APNsConfig& apns_config = APNsConfig());
+                     const APNsConfig& apns_config = APNsConfig(),
+                     std::shared_ptr<PushTransport> transport = nullptr);
   ~NotificationService() = default;
 
   // Device registration
@@ -166,14 +169,12 @@ private:
                               const NotificationPayload& payload);
   std::string BuildAPNsPayload(const NotificationPayload& payload);
 
-  std::string HTTPPost(const std::string& url,
-                      const std::string& payload,
-                      const std::unordered_map<std::string, std::string>& headers);
-
   int64_t GetCurrentTimeMs() const;
 
   FCMConfig fcm_config_;
   APNsConfig apns_config_;
+  // Never null after the ctor; defaults to the logging stub.
+  std::shared_ptr<PushTransport> transport_;
 
   mutable std::mutex mu_;
 

@@ -38,8 +38,12 @@ std::string GetCallNotificationTitle() {
 } // namespace
 
 NotificationService::NotificationService(const FCMConfig& fcm_config,
-                                       const APNsConfig& apns_config)
-    : fcm_config_(fcm_config), apns_config_(apns_config) {}
+                                       const APNsConfig& apns_config,
+                                       std::shared_ptr<PushTransport> transport)
+    : fcm_config_(fcm_config),
+      apns_config_(apns_config),
+      transport_(transport ? std::move(transport)
+                           : std::make_shared<LoggingPushTransport>()) {}
 
 DeviceRegistration::DeviceRegistration(const DeviceRegistration& other)
     : device_id(other.device_id),
@@ -415,17 +419,6 @@ void NotificationService::CleanupExpiredCooldowns() {
   }
 }
 
-// HTTP POST helper (simplified - use libcurl in production)
-std::string NotificationService::HTTPPost(
-    const std::string& url,
-    const std::string& payload,
-    const std::unordered_map<std::string, std::string>& headers) {
-
-  // In production, use libcurl or similar
-  // For demo, return empty response
-  return "";
-}
-
 bool NotificationService::SendFCM(const DeviceRegistration& device,
                                  const NotificationPayload& payload) {
   // Build FCM payload
@@ -436,8 +429,14 @@ bool NotificationService::SendFCM(const DeviceRegistration& device,
   headers["Content-Type"] = "application/json";
   headers["Authorization"] = "key=" + fcm_config_.server_key;
 
-  // Send HTTP POST
-  std::string response = HTTPPost(fcm_config_.endpoint, fcm_payload, headers);
+  PushRequest request;
+  request.provider = "fcm";
+  request.url = fcm_config_.endpoint;
+  request.payload = std::move(fcm_payload);
+  request.device_token = device.fcm_token;
+  request.headers = std::move(headers);
+
+  std::string response = transport_->Post(request);
 
   // In production, parse response to determine success
   return !response.empty() || device.fcm_token.empty();  // Don't fail if no token
@@ -463,8 +462,14 @@ bool NotificationService::SendAPNs(const DeviceRegistration& device,
     endpoint = "https://api.push.apple.com:443";
   }
 
-  // Send HTTP/2 POST (requires HTTP/2 support)
-  std::string response = HTTPPost(endpoint, apns_payload, headers);
+  PushRequest request;
+  request.provider = "apns";
+  request.url = std::move(endpoint);
+  request.payload = std::move(apns_payload);
+  request.device_token = device.apns_token;
+  request.headers = std::move(headers);
+
+  std::string response = transport_->Post(request);
 
   // In production, parse response to determine success
   return !response.empty() || device.apns_token.empty();

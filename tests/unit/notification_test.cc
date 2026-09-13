@@ -370,4 +370,106 @@ TEST_F(NotificationServiceTest, PayloadsWithDataAndBadgeAreSerialized) {
   EXPECT_TRUE(svc_.SendNotificationToDevice("d2", ios_payload));
 }
 
+// Records provider requests; the canned body stands in for the provider's
+// HTTP response (empty = the historical stub semantics).
+class RecordingTransport : public chirp::notification::PushTransport {
+ public:
+  std::string Post(const chirp::notification::PushRequest& request) override {
+    std::lock_guard<std::mutex> lock(mu);
+    requests.push_back(request);
+    return canned;
+  }
+
+  std::mutex mu;
+  std::vector<chirp::notification::PushRequest> requests;
+  std::string canned;
+};
+
+TEST(NotificationTransportTest, TokenedDeviceSucceedsWhenProviderResponds) {
+  auto transport = std::make_shared<RecordingTransport>();
+  transport->canned = "{}";
+  NotificationService svc(FCMConfig{}, APNsConfig{}, transport);
+
+  DeviceRegistration reg = MakeDevice("d1", "tr-u1", "android");
+  reg.fcm_token = "tok";
+  svc.RegisterDevice(reg);
+
+  EXPECT_TRUE(svc.SendNotification("tr-u1", MakePayload()));
+  EXPECT_EQ(svc.GetStats().notifications_sent.load(), 1u);
+  EXPECT_EQ(svc.GetStats().fcm_sent.load(), 1u);
+  EXPECT_TRUE(svc.IsOnCooldown("tr-u1"));  // success engages the cooldown
+}
+
+TEST(NotificationTransportTest, TokenedDeviceFailsWhenProviderSilent) {
+  auto transport = std::make_shared<RecordingTransport>();  // canned ""
+  NotificationService svc(FCMConfig{}, APNsConfig{}, transport);
+
+  DeviceRegistration reg = MakeDevice("d1", "tr-u2", "android");
+  reg.fcm_token = "tok";
+  svc.RegisterDevice(reg);
+
+  EXPECT_FALSE(svc.SendNotification("tr-u2", MakePayload()));
+  EXPECT_EQ(svc.GetStats().notifications_failed.load(), 1u);
+}
+
+TEST(NotificationTransportTest, ApnsRequestCarriesSandboxEndpointAndHeaders) {
+  auto transport = std::make_shared<RecordingTransport>();
+  transport->canned = "ok";
+  APNsConfig apns;
+  apns.use_sandbox = true;
+  apns.bundle_id = "com.chirp.app";
+  NotificationService svc(FCMConfig{}, apns, transport);
+
+  DeviceRegistration reg = MakeDevice("d1", "tr-u3", "ios");
+  reg.apns_token = "apns-tok";
+  svc.RegisterDevice(reg);
+  EXPECT_TRUE(svc.SendNotification("tr-u3", MakePayload()));
+
+  ASSERT_EQ(transport->requests.size(), 1u);
+  const auto& req = transport->requests[0];
+  EXPECT_EQ(req.provider, "apns");
+  EXPECT_EQ(req.url, "https://api.development.push.apple.com:443");
+  EXPECT_EQ(req.device_token, "apns-tok");
+  EXPECT_EQ(req.headers.at("apns-topic"), "com.chirp.app");
+  EXPECT_NE(req.payload.find("Hello world"), std::string::npos);
+}
+
+TEST(NotificationTransportTest, FcmRequestCarriesEndpointAndAuthHeader) {
+  auto transport = std::make_shared<RecordingTransport>();
+  transport->canned = "ok";
+  FCMConfig fcm;
+  fcm.server_key = "sk";
+  NotificationService svc(fcm, APNsConfig{}, transport);
+
+  DeviceRegistration reg = MakeDevice("d1", "tr-u4", "android");
+  reg.fcm_token = "tok";
+  svc.RegisterDevice(reg);
+  EXPECT_TRUE(svc.SendNotification("tr-u4", MakePayload()));
+
+  ASSERT_EQ(transport->requests.size(), 1u);
+  EXPECT_EQ(transport->requests[0].provider, "fcm");
+  EXPECT_EQ(transport->requests[0].url, fcm.endpoint);
+  EXPECT_EQ(transport->requests[0].headers.at("Authorization"), "key=sk");
+}
+
+TEST(NotificationTransportTest, CooldownBlocksSubsequentSendsAcrossDevices) {
+  auto transport = std::make_shared<RecordingTransport>();
+  transport->canned = "ok";
+  NotificationService svc(FCMConfig{}, APNsConfig{}, transport);
+
+  DeviceRegistration a = MakeDevice("d1", "tr-u5", "android");
+  a.fcm_token = "t1";
+  DeviceRegistration b = MakeDevice("d2", "tr-u5", "ios");
+  b.apns_token = "t2";
+  svc.RegisterDevice(a);
+  svc.RegisterDevice(b);
+
+  EXPECT_TRUE(svc.SendNotification("tr-u5", MakePayload()));
+  // The first device's success puts the user on cooldown before the second
+  // device is attempted.
+  EXPECT_EQ(transport->requests.size(), 1u);
+  EXPECT_FALSE(svc.SendNotification("tr-u5", MakePayload()));
+  EXPECT_EQ(transport->requests.size(), 1u);
+}
+
 }  // namespace
