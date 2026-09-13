@@ -172,6 +172,22 @@ enum MsgID {
   EVENT_DELIVER_NOTIFY = 5010;
   EVENT_ACK_REQ = 5011;
   EVENT_ACK_RESP = 5012;
+
+  // Notification plane: device registration forwarded by app_gateway and
+  // push requests from internal services (chat). Bodies are
+  // chirp.notification.* messages; see proto/notification.proto.
+  REGISTER_DEVICE_REQ = 6001;
+  REGISTER_DEVICE_RESP = 6002;
+  UNREGISTER_DEVICE_REQ = 6003;
+  UNREGISTER_DEVICE_RESP = 6004;
+  UPDATE_DEVICE_TOKEN_REQ = 6005;
+  UPDATE_DEVICE_TOKEN_RESP = 6006;
+  GET_USER_DEVICES_REQ = 6007;
+  GET_USER_DEVICES_RESP = 6008;
+  PUSH_NOTIFICATION_REQ = 6009;
+  PUSH_NOTIFICATION_RESP = 6010;
+  // Reserved for later increments: SET_BADGE_COUNT (6011/6012),
+  // SILENT_NOTIFICATION (6013/6014), notification preferences (6015-6018).
 }
 
 // Universal Packet Envelope (Optional, if we want full protobuf wrap)
