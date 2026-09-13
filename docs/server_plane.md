@@ -1,6 +1,6 @@
 # Server Plane: Game Backend Integration
 
-Status: **Experimental** — the hub (`chirp_server_gateway`) and the chat-side consumer are implemented and unit-verified at 100% line coverage: chat dials in as an internal peer and injection messages flow through the same storage/delivery tail as player-sent messages. See [Architecture](./architecture.md) for the three-edge topology decision.
+Status: **Experimental** — the hub (`chirp_server_gateway`), the chat-side consumer, and the Redis Streams broker fallback are implemented and unit-verified at 100% line coverage: chat dials in as an internal peer and injection messages flow through the same storage/delivery tail as player-sent messages. See [Architecture](./architecture.md) for the three-edge topology decision.
 
 ## What it is
 
@@ -70,6 +70,41 @@ The chat service connects to the hub as an internal peer (`--server_gateway_host
 - Non-private channels (`TEAM` / `GUILD` / `WORLD`) broadcast to members and queue the message for offline members.
 - A malformed `InjectMessageNotify` is logged and skipped; the connection stays up.
 
+### Broker fallback (upstream over Redis Streams)
+
+For game backends that cannot host a long-connection client, the same injection path is also available over a Redis Stream. Start the hub with `--broker_redis_host` (empty, the default, disables the consumer):
+
+| Flag | Default | Meaning |
+| --- | --- | --- |
+| `--broker_redis_host` | (empty) | Redis host; empty disables the broker |
+| `--broker_redis_port` | 6379 | Redis port |
+| `--broker_stream` | `chirp:server_plane:inject` | Stream to consume |
+| `--broker_group` | `chirp-plane` | Consumer group (created idempotently) |
+| `--broker_consumer` | `<hostname>:<pid>` | Consumer name inside the group |
+| `--broker_claim_min_idle_ms` | 30000 | `XAUTOCLAIM` min-idle-time for redelivery |
+
+Requires Redis >= 6.2 (`XAUTOCLAIM`). A producer writes one entry per message with flat string fields — any language that can `XADD` can integrate:
+
+| Field | Required | Meaning |
+| --- | --- | --- |
+| `service_id` | yes | Service identity (must exist in `--service`) |
+| `secret` | yes | Shared secret, same credentials as the connection plane |
+| `sender_kind` | yes | `SYSTEM` / `NPC` / `SERVICE` (`SENDER_` prefix tolerated) |
+| `channel_type` | yes | `PRIVATE` / `TEAM` / `GUILD` / `WORLD`, or `0`–`3` |
+| `sender_id` | yes* | Validated downstream like the proto path |
+| `channel_id` / `receiver_id` | — | Channel target, or receiver for 1:1 |
+| `content` | yes* | Message body |
+| `inject_id` | no | Idempotency key; `<consumer>-<seq>` is generated when absent |
+| `reply_to` | no | Stream name to receive the `{inject_id, code}` result entry |
+
+Semantics:
+
+- The hub runs a consumer group (`XREADGROUP ... BLOCK`) and turns each entry into the same `HandleInject` path as the long-connection plane, with identical validation and response codes.
+- `OK` / `INVALID_PARAM` / `AUTH_FAILED` are **acked immediately** (`XACK`): malformed or rejected entries are poison and must not replay.
+- `SERVER_UNAVAILABLE` (chat service offline) is **not acked**: the entry stays in the pending entries list and is redelivered by a periodic `XAUTOCLAIM` sweep until chat is back. Redelivery is unbounded by design — poison is bounded out by the immediate-ack rule above.
+- With `reply_to`, the result (`inject_id` + `ErrorCode` name, e.g. `OK`) is written back only for **acked terminal outcomes**, so a replayed entry answers exactly once.
+- Transport failures between commands drop the connection and reconnect; unacked entries replay. At-least-once overall.
+
 ## Downlink: events (at-least-once)
 
 `EVENT_PUBLISH_REQ` (`chirp.server_gateway.EventPublishRequest`) publishes an event that must reach a target service — e.g. a quest trigger produced by chat-side logic:
@@ -89,5 +124,5 @@ Delivery semantics:
 ## Roadmap
 
 1. ~~Chat service connects as an internal peer and consumes `InjectMessageNotify`~~ — done (loopback-verified end to end); a process-level E2E smoke is still an option for later.
-2. Redis Streams fallback broker for integrations that cannot host a long-connection client (ack + replay, no raw pub/sub).
+2. ~~Redis Streams fallback broker for integrations that cannot host a long-connection client (ack + replay, no raw pub/sub)~~ — done, upstream injection only (see "Broker fallback" above); downlink events still use the long-connection plane.
 3. Event production on the chat side: NPC quest triggers, sensitive-word penalties, trade state transitions.

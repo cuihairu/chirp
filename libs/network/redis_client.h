@@ -12,6 +12,8 @@
 #include <unordered_map>
 #include <asio.hpp>
 
+#include "network/redis_protocol.h"
+
 namespace chirp::network {
 
 /// @brief Synchronous Redis client for command operations.
@@ -20,6 +22,10 @@ class RedisClient {
 public:
   RedisClient(std::string host, uint16_t port);
   virtual ~RedisClient() = default;
+
+  // Generic escape hatch for commands without a dedicated wrapper (e.g.
+  // streams). Returns std::nullopt on connection or transport failure.
+  virtual std::optional<RedisResp> Command(const std::vector<std::string>& args);
 
   // Basic commands
   virtual std::optional<std::string> Get(const std::string& key);

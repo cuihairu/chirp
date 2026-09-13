@@ -12,6 +12,8 @@
 #include <utility>
 #include <vector>
 
+#include <unistd.h>
+
 #include <asio.hpp>
 
 #include "event_queue.h"
@@ -24,6 +26,7 @@
 #include "proto/server_gateway.pb.h"
 #include "server_gateway_handlers.h"
 #include "service_registry.h"
+#include "stream_broker.h"
 
 namespace {
 
@@ -136,6 +139,37 @@ int main(int argc, char** argv) {
   sg::ServiceRegistry registry;
   sg::EventQueue queue(config.max_pending_events_per_service);
   sg::ServerGatewayHandlers handlers(config, registry, queue);
+
+  // Optional Redis Streams intake for game backends that cannot host a
+  // long-connection client (empty --broker_redis_host disables it).
+  sg::StreamBrokerConfig broker_config;
+  broker_config.redis_host = GetArg(argc, argv, "--broker_redis_host", "");
+  broker_config.redis_port = ParseU16Arg(argc, argv, "--broker_redis_port", 6379);
+  broker_config.stream = GetArg(argc, argv, "--broker_stream", "chirp:server_plane:inject");
+  broker_config.group = GetArg(argc, argv, "--broker_group", "chirp-plane");
+  broker_config.consumer = GetArg(argc, argv, "--broker_consumer", "");
+  broker_config.claim_min_idle_ms =
+      std::atoi(GetArg(argc, argv, "--broker_claim_min_idle_ms", "30000").c_str());
+  broker_config.service_secrets = config.service_secrets;
+  if (broker_config.consumer.empty()) {
+    char hostname[256] = {0};
+    if (gethostname(hostname, sizeof(hostname) - 1) != 0) {
+      std::strncpy(hostname, "unknown", sizeof(hostname) - 1);
+    }
+    broker_config.consumer = std::string(hostname) + ":" + std::to_string(getpid());
+  }
+
+  std::unique_ptr<sg::StreamBrokerConsumer> broker;
+  if (!broker_config.redis_host.empty()) {
+    broker = std::make_unique<sg::StreamBrokerConsumer>(
+        broker_config, [&handlers](const sg::MessageInjectRequest& req) {
+          return handlers.HandleInject(req);
+        });
+    broker->Start();
+    Logger::Instance().Info("stream broker enabled: stream=" + broker_config.stream +
+                            " group=" + broker_config.group +
+                            " consumer=" + broker_config.consumer);
+  }
 
   // Everything runs on the single io thread; the peers map needs no lock.
   std::unordered_map<const Session*, PeerContext> peers;
@@ -317,6 +351,9 @@ int main(int argc, char** argv) {
   asio::signal_set signals(io, SIGINT, SIGTERM);
   signals.async_wait([&](const std::error_code& /*ec*/, int /*sig*/) {
     Logger::Instance().Info("shutdown requested");
+    if (broker) {
+      broker->Stop();
+    }
     server.Stop();
     io.stop();
   });

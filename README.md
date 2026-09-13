@@ -46,7 +46,7 @@ chirp 想解决的就是这件事，设计目标按优先级排列：
 | Gateway | TCP 5000 / WS 5001 | Supported | 游戏客户端边缘：登录、登出、心跳、会话绑定、可选 Redis 跨实例 kick |
 | Auth | TCP 6000 | Supported | token 校验；依赖满足时可构建增强认证 |
 | Chat | TCP 7000 / WS 7001 | Supported | 私聊、群组、已读回执、正在输入、表情回应、消息编辑/删除、@提及、历史、离线队列 |
-| Server Gateway | TCP 8100 | Experimental | 服务平面枢纽：游戏服出站长连接 + 凭证接入，注入系统/NPC 消息，事件离线排队、重连重投直到 ack，见 [docs/server_plane.md](docs/server_plane.md) |
+| Server Gateway | TCP 8100 | Experimental | 服务平面枢纽：游戏服出站长连接 + 凭证接入，注入系统/NPC 消息，事件离线排队、重连重投直到 ack；支持 Redis Streams 上行注入回退（`--broker_redis_host`），见 [docs/server_plane.md](docs/server_plane.md) |
 
 ## 先读什么
 
@@ -107,7 +107,7 @@ TCP 和 WebSocket 使用同一套二进制 payload：
 
 - `gateway` 还不是通用业务路由层；聊天包请发到 `chat`。
 - `gateway` 登录不会自动授权一个独立的 `chat` 连接。
-- `server_gateway` 的注入链路已在回环级打通（chat 作为内部节点消费 `InjectMessageNotify`，走与玩家发消息相同的存储/投递尾巴），但 `OK` 仍只表示"服务平面已受理"，未确认玩家侧送达；进程级 E2E smoke 尚未覆盖。
+- `server_gateway` 的注入链路已在回环级打通（chat 作为内部节点消费 `InjectMessageNotify`，走与玩家发消息相同的存储/投递尾巴），并支持 Redis Streams 上行回退（游戏服无法长连接时 `XADD` 注入，ack + PEL 重放，需 Redis >= 6.2），但 `OK` 仍只表示"服务平面已受理"，未确认玩家侧送达；进程级 E2E smoke 尚未覆盖。
 - `social`、`voice`、`notification`、`search`、SDK、移动端、管理后台不应默认视为生产稳定能力。
 - App 接入边缘（`app_gateway`）与推送桥接还在规划中。
 - NPC 对话系统目前主要是设计文档（[docs/design-notes/](docs/design-notes/)），不能当作已落地后端能力。
@@ -115,7 +115,7 @@ TCP 和 WebSocket 使用同一套二进制 payload：
 ## Roadmap
 
 1. ~~chat 作为内部节点接入服务器平面，消费注入消息，打通端到端注入链路~~（已完成，回环级验证；进程级 E2E smoke 待做）
-2. 服务器平面增加 Redis Streams broker 回退（无法长连接的游戏服走 ack + 重放）
+2. ~~服务器平面增加 Redis Streams broker 回退（无法长连接的游戏服走 ack + 重放）~~（已完成，仅上行注入：游戏服 `XADD` → hub 消费组 → 现有注入链路，见 [docs/server_plane.md](docs/server_plane.md)）
 3. `app_gateway` 与推送桥接（APNs/FCM，经 notification 服务）
 4. libs/network 封装 I/O 后端开关（epoll 默认，io_uring 可选）
 5. NPC 对话服务落地（依赖注入通道 + 事件通道）

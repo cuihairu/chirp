@@ -52,6 +52,10 @@ std::optional<RedisResp> SendCmd(const std::string& host, uint16_t port, const s
 
 RedisClient::RedisClient(std::string host, uint16_t port) : host_(std::move(host)), port_(port) {}
 
+std::optional<RedisResp> RedisClient::Command(const std::vector<std::string>& args) {
+  return SendCmd(host_, port_, args);
+}
+
 std::optional<std::string> RedisClient::Get(const std::string& key) {
   auto r = SendCmd(host_, port_, {"GET", key});
   if (!r) {

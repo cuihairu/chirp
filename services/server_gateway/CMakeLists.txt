@@ -8,6 +8,7 @@ set(SG_SRCS
     src/event_queue.cc
     src/server_gateway_handlers.cc
     src/service_registry.cc
+    src/stream_broker.cc
 )
 
 add_executable(chirp_server_gateway

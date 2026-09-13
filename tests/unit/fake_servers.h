@@ -50,6 +50,18 @@ class FakeRedisServer {
 
   uint16_t port() const { return port_; }
 
+  // Closes every open connection (acceptor stays live): lets tests drive
+  // client-side reconnect paths. Posted to the server io thread.
+  void CloseAll() {
+    asio::post(io_, [this] {
+      std::lock_guard<std::mutex> lock(mu_);
+      asio::error_code ec;
+      for (auto& s : sockets_) {
+        s->close(ec);
+      }
+    });
+  }
+
   // Pushes a pub/sub message array on every open connection. Posted to the
   // server io thread so writes never interleave with command replies.
   void Publish(const std::string& channel, const std::string& payload) {
