@@ -4,10 +4,6 @@ import android.content.BroadcastReceiver
 import android.content.Context
 import android.content.Intent
 import android.media.AudioManager
-import io.flutter.plugin.common.MethodChannel
-import io.flutter.embedding.engine.FlutterEngine
-import io.flutter.embedding.engine.dart.DartExecutor
-import io.flutter.embedding.engine.loader.FlutterEngineGroup
 
 class VoiceBroadcastReceiver : BroadcastReceiver() {
     override fun onReceive(context: Context?, intent: Intent?) {
@@ -37,7 +33,7 @@ class VoiceBroadcastReceiver : BroadcastReceiver() {
         val audioManager = context.getSystemService(Context.AUDIO_SERVICE) as AudioManager
         val isOn = audioManager.isSpeakerphoneOn
         audioManager.isSpeakerphoneOn = !isOn
-        sendEventToFlutter(context, "speaker_toggled", !isOn)
+        sendEventToFlutter(context, "speaker_toggled", mapOf("enabled" to !isOn))
     }
 
     private fun endCall(context: Context, roomId: String?) {
