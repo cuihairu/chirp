@@ -82,6 +82,8 @@ smoke test：
 ```bash
 ./test_services.sh --smoke       # auth + gateway + TCP/WS login
 ./test_services.sh --smoke-chat  # chat + chat clients
+./test_services.sh --smoke-sdk   # 游戏客户端 SDK(sdks/core)+ chat:登录/双向收发/离线队列
+./test_services.sh --smoke-npc   # 服务器平面 + NPC 对话回环
 ./test_services.sh --smoke-redis # Redis session/kick path
 ```
 
@@ -109,17 +111,17 @@ TCP 和 WebSocket 使用同一套二进制 payload：
 
 - `gateway` 还不是通用业务路由层；聊天包请发到 `chat`。
 - `gateway` 登录不会自动授权一个独立的 `chat` 连接。
-- `server_gateway` 的注入链路已在回环级打通（chat 作为内部节点消费 `InjectMessageNotify`，走与玩家发消息相同的存储/投递尾巴），并支持 Redis Streams 上行回退（游戏服无法长连接时 `XADD` 注入，ack + PEL 重放，需 Redis >= 6.2），但 `OK` 仍只表示"服务平面已受理"，未确认玩家侧送达；进程级 E2E smoke 尚未覆盖。
+- `server_gateway` 的注入链路已在回环级打通（chat 作为内部节点消费 `InjectMessageNotify`，走与玩家发消息相同的存储/投递尾巴），并支持 Redis Streams 上行回退（游戏服无法长连接时 `XADD` 注入，ack + PEL 重放，需 Redis >= 6.2），但 `OK` 仍只表示"服务平面已受理"，未确认玩家侧送达；NPC 对话环路的进程级 E2E 见 `./test_services.sh --smoke-npc`。
 - `social`、`voice`、`notification`、`search`、SDK、移动端、管理后台不应默认视为生产稳定能力。
 - `app_gateway` 与推送链路已可用但边界明确：chat 离线消息会经 `PushBridge` → notification 触发设备推送；notification 的 provider HTTP 投递是日志 stub（无 TLS，真实 APNs HTTP/2 / FCM HTTP 待接），推送桥仅接入默认构建的 `chirp_chat`（`main_enhanced`/`main_distributed` 未接）。
-- NPC 对话系统目前主要是设计文档（[docs/design-notes/](docs/design-notes/)），不能当作已落地后端能力。
+- NPC 对话已落地为关键词规则引擎（`services/npc_dialog`）：玩家私聊 `npc:` 前缀的接收者会转为 `npc.player_message` 事件发给 NPC 服务，NPC 的回复经注入通道回到 chat（at-least-once，hub 重投窗口内可能重复回复）；对话质量是规则表（`*` 为默认台词），LLM 引擎留作接口替换。设计文档（[docs/design-notes/](docs/design-notes/)）描述的完整 NPC 系统仍不是现状。
 
 ## Roadmap
 
 1. ~~chat 作为内部节点接入服务器平面，消费注入消息，打通端到端注入链路~~（已完成，回环级验证；进程级 E2E smoke 待做）
 2. ~~服务器平面增加 Redis Streams broker 回退（无法长连接的游戏服走 ack + 重放）~~（已完成，仅上行注入：游戏服 `XADD` → hub 消费组 → 现有注入链路，见 [docs/server_plane.md](docs/server_plane.md)）
 3. ~~`app_gateway` 与推送桥接（APNs/FCM，经 notification 服务）~~（已完成，部分交付：`app_gateway` 5200/5201、notification 协议面 5006/5016、chat 离线消息触发推送；推送 HTTP 层是 `PushTransport` 抽象 + 日志 stub，真实 APNs/FCM 投递待接）
-4. NPC 对话服务落地（依赖注入通道 + 事件通道）
+4. ~~NPC 对话服务落地（依赖注入通道 + 事件通道）~~（已完成：chat 识别 `npc:` 前缀私聊转 `npc.player_message` 事件，`npc_dialog` 服务经关键词规则引擎回复并走注入通道投递；`./test_services.sh --smoke-npc` 进程级验证）
 
 ## 工程结构
 
@@ -130,6 +132,7 @@ TCP 和 WebSocket 使用同一套二进制 payload：
 - `services/auth`：认证服务
 - `services/chat`：私聊、群组、历史和离线队列
 - `services/server_gateway`：服务器平面枢纽
+- `services/npc_dialog`：NPC 对话服务（关键词规则引擎，纯服务器平面客户端）
 - `sdks/core`：C++ 客户端集成实验
 - `tools/benchmark`：本地验证工具
 - `tests`：单元和集成 smoke 测试

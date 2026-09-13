@@ -38,7 +38,7 @@ echo "  ./build/services/gateway/chirp_gateway --port 5000 --ws_port 5001"
 echo "  ./build/services/auth/chirp_auth --port 6000"
 echo "  ./build/services/chat/chirp_chat --port 7000 --ws_port 7001"
 
-if [[ "${1:-}" != "--smoke" && "${1:-}" != "--smoke-chat" && "${1:-}" != "--smoke-redis" && "${1:-}" != "--smoke-npc" ]]; then
+if [[ "${1:-}" != "--smoke" && "${1:-}" != "--smoke-chat" && "${1:-}" != "--smoke-redis" && "${1:-}" != "--smoke-npc" && "${1:-}" != "--smoke-sdk" ]]; then
   exit 0
 fi
 
@@ -49,6 +49,8 @@ elif [[ "${1:-}" == "--smoke-redis" ]]; then
   echo "=== Smoke Test (redis distributed sessions + cross-instance kick) ==="
 elif [[ "${1:-}" == "--smoke-npc" ]]; then
   echo "=== Smoke Test (server plane + NPC dialog loop) ==="
+elif [[ "${1:-}" == "--smoke-sdk" ]]; then
+  echo "=== Smoke Test (game client SDK + chat) ==="
 else
   echo "=== Smoke Test (chat + clients) ==="
 fi
@@ -313,6 +315,84 @@ elif [[ "${1:-}" == "--smoke-npc" ]]; then
   echo ""
   echo "hub log: ${HUB_LOG}"
   tail -n 8 "${HUB_LOG}" || true
+elif [[ "${1:-}" == "--smoke-sdk" ]]; then
+  # 游戏客户端 SDK 进程级 E2E: 起 chat (内存模式), 两个 SDK 客户端互发,
+  # 再验证离线队列补投递。SDK 走 docs/CORE.md 的 supported 路径: 直连 chat。
+  SDK_BIN="./build/sdks/core/sdk_example"
+  if [ ! -f "${SDK_BIN}" ]; then
+    echo "错误: ${SDK_BIN} 未构建 (需要 CHIRP_BUILD_SDK_EXAMPLES=ON, dev/ci preset 已默认开启)"
+    exit 1
+  fi
+
+  CHAT_PORT="${CHAT_PORT:-$(pick_port)}"
+  CHAT_WS_PORT="${CHAT_WS_PORT:-$(pick_port)}"
+  CHAT_LOG="${CHAT_LOG:-/tmp/chirp_chat_smoke_sdk.log}"
+  SDK_A_LOG="${SDK_A_LOG:-/tmp/chirp_sdk_a_smoke.log}"
+  SDK_B_LOG="${SDK_B_LOG:-/tmp/chirp_sdk_b_smoke.log}"
+  SDK_D_LOG="${SDK_D_LOG:-/tmp/chirp_sdk_d_smoke.log}"
+
+  ./build/services/chat/chirp_chat --port "${CHAT_PORT}" --ws_port "${CHAT_WS_PORT}" > "${CHAT_LOG}" 2>&1 &
+  CHAT_PID=$!
+
+  cleanup() {
+    kill -TERM "${CHAT_PID}" 2>/dev/null || true
+    wait "${CHAT_PID}" 2>/dev/null || true
+  }
+  trap cleanup EXIT
+
+  sleep 0.3
+
+  echo ""
+  echo "[sdk] online delivery: sdk_a <-> sdk_b"
+  "${SDK_BIN}" --host 127.0.0.1 --port "${CHAT_PORT}" --user sdk_a \
+    --peer sdk_b --message "a2b-hello" \
+    --expect "b2a-hello" --expect-from sdk_b --timeout-ms 8000 > "${SDK_A_LOG}" 2>&1 &
+  SDK_A_PID=$!
+
+  "${SDK_BIN}" --host 127.0.0.1 --port "${CHAT_PORT}" --user sdk_b \
+    --peer sdk_a --message "b2a-hello" \
+    --expect "a2b-hello" --expect-from sdk_a --timeout-ms 8000 > "${SDK_B_LOG}" 2>&1 &
+  SDK_B_PID=$!
+
+  set +e
+  wait "${SDK_A_PID}"
+  SDK_A_RC=$?
+  wait "${SDK_B_PID}"
+  SDK_B_RC=$?
+  set -e
+  cat "${SDK_A_LOG}" || true
+  cat "${SDK_B_LOG}" || true
+  if [[ "${SDK_A_RC}" != "0" || "${SDK_B_RC}" != "0" ]]; then
+    echo "错误: SDK 在线互发失败 (sdk_a rc=${SDK_A_RC}, sdk_b rc=${SDK_B_RC})"
+    exit 1
+  fi
+  if ! rg -q "SMOKE_OK sdk_b -> sdk_a" "${SDK_A_LOG}" || ! rg -q "SMOKE_OK sdk_a -> sdk_b" "${SDK_B_LOG}"; then
+    echo "错误: 未观察到双向 SMOKE_OK"
+    exit 1
+  fi
+
+  echo ""
+  echo "[sdk] offline queue: sdk_c -> sdk_d (offline), sdk_d 登录后补投递"
+  "${SDK_BIN}" --host 127.0.0.1 --port "${CHAT_PORT}" --user sdk_c \
+    --peer sdk_d --message "c2d-offline" --settle-ms 800
+
+  "${SDK_BIN}" --host 127.0.0.1 --port "${CHAT_PORT}" --user sdk_d \
+    --expect "c2d-offline" --expect-from sdk_c --timeout-ms 8000 > "${SDK_D_LOG}" 2>&1 &
+  SDK_D_PID=$!
+
+  set +e
+  wait "${SDK_D_PID}"
+  SDK_D_RC=$?
+  set -e
+  cat "${SDK_D_LOG}" || true
+  if [[ "${SDK_D_RC}" != "0" ]] || ! rg -q "SMOKE_OK sdk_c -> sdk_d" "${SDK_D_LOG}"; then
+    echo "错误: SDK 离线消息未在 sdk_d 登录后补投递 (rc=${SDK_D_RC})"
+    exit 1
+  fi
+
+  echo ""
+  echo "chat log: ${CHAT_LOG}"
+  tail -n 12 "${CHAT_LOG}" || true
 else
   CHAT_PORT="${CHAT_PORT:-$(pick_port)}"
   CHAT_WS_PORT="${CHAT_WS_PORT:-$(pick_port)}"

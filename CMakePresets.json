@@ -13,7 +13,8 @@
       "binaryDir": "${sourceDir}/build",
       "cacheVariables": {
         "CMAKE_BUILD_TYPE": "Debug",
-        "ENABLE_TESTS": "ON"
+        "ENABLE_TESTS": "ON",
+        "CHIRP_BUILD_SDK_EXAMPLES": "ON"
       }
     },
     {
@@ -23,7 +24,8 @@
       "binaryDir": "${sourceDir}/build",
       "cacheVariables": {
         "CMAKE_BUILD_TYPE": "Release",
-        "ENABLE_TESTS": "ON"
+        "ENABLE_TESTS": "ON",
+        "CHIRP_BUILD_SDK_EXAMPLES": "ON"
       }
     },
     {
