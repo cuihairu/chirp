@@ -10,6 +10,18 @@ get_filename_component(PROJECT_ROOT "${CMAKE_CURRENT_SOURCE_DIR}/../.." ABSOLUTE
 
 find_package(Threads REQUIRED)
 
+# Standalone SDK builds compile the checked-in protobuf gencode
+# (proto/cpp), so protobuf must be discoverable here: the vcpkg
+# toolchain provides the CONFIG package, the CMake module form covers
+# system installs. QUIET keeps protobuf optional for pure consumers
+# that do not compile the generated sources.
+if(NOT TARGET protobuf::libprotobuf)
+    find_package(Protobuf CONFIG QUIET)
+endif()
+if(NOT TARGET protobuf::libprotobuf)
+    find_package(Protobuf QUIET)
+endif()
+
 # Proto files from project root
 file(GLOB PROTO_SRCS "${PROJECT_ROOT}/proto/cpp/proto/*.cc")
 
