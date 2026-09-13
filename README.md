@@ -54,7 +54,7 @@ chirp 想解决的就是这件事，设计目标按优先级排列：
 
 - [核心说明](docs/CORE.md)：当前可用链路、服务边界、协议和本地验证命令
 - [能力矩阵](docs/CAPABILITY_MATRIX.md)：各服务、SDK、应用的真实完成度
-- [整体架构](docs/architecture.md)：三边缘拓扑、服务器平面设计、I/O 后端（io_uring）规划
+- [整体架构](docs/architecture.md)：三边缘拓扑、服务器平面设计
 - [服务器平面](docs/server_plane.md)：游戏服务端接入契约
 - [API 概述](docs/api/overview.md)：Packet 协议、消息 ID 和核心流程
 - [快速开始](docs/guide/getting-started.md)：构建、Docker Compose、smoke test
@@ -119,8 +119,7 @@ TCP 和 WebSocket 使用同一套二进制 payload：
 1. ~~chat 作为内部节点接入服务器平面，消费注入消息，打通端到端注入链路~~（已完成，回环级验证；进程级 E2E smoke 待做）
 2. ~~服务器平面增加 Redis Streams broker 回退（无法长连接的游戏服走 ack + 重放）~~（已完成，仅上行注入：游戏服 `XADD` → hub 消费组 → 现有注入链路，见 [docs/server_plane.md](docs/server_plane.md)）
 3. ~~`app_gateway` 与推送桥接（APNs/FCM，经 notification 服务）~~（已完成，部分交付：`app_gateway` 5200/5201、notification 协议面 5006/5016、chat 离线消息触发推送；推送 HTTP 层是 `PushTransport` 抽象 + 日志 stub，真实 APNs/FCM 投递待接）
-4. libs/network 封装 I/O 后端开关（epoll 默认，io_uring 可选）
-5. NPC 对话服务落地（依赖注入通道 + 事件通道）
+4. NPC 对话服务落地（依赖注入通道 + 事件通道）
 
 ## 工程结构
 

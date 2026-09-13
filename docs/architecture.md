@@ -53,7 +53,7 @@ Rules that make independence work:
 
 - **Target platform is Linux only.** Backend CI already runs Linux only (`cmake-multi-platform.yml` builds on ubuntu; the sole macOS job builds the iOS app shell, which is an Apple toolchain constraint, not a backend target).
 - **Reactor encapsulation.** All socket I/O goes through `libs/network` on ASIO. The reactor stays an implementation detail behind that library: services never construct reactors directly.
-- **io_uring is a planned optional backend**, not a rewrite: ASIO supports it natively (`ASIO_HAS_IO_URING` + linking `liburing`, using `asio::io_uring` as the execution context), so the work is a `libs/network` facade with a backend switch plus per-backend smoke coverage. Recorded caveats: requires kernel ≥ 5.1 (≥ 5.10 recommended); container seccomp profiles may block io_uring syscalls; not every ASIO service is io_uring-complete. epoll therefore remains the default and io_uring ships opt-in behind configuration. Current throughput targets are not epoll-bound; this is scheduled after the server plane.
+- **io_uring backend: dropped from the roadmap (2026-09).** epoll via ASIO meets current throughput targets with headroom; ASIO's io_uring support does not cover every service the codebase uses, so a backend switch would buy complexity without a measured win. Revisit only with real epoll-bound bottleneck evidence.
 
 ## Current Runtime Topology
 
