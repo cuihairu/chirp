@@ -22,7 +22,7 @@ class MainActivity: FlutterActivity() {
                     result.success("Android ${android.os.Build.VERSION.RELEASE}")
                 }
                 "getDeviceId" -> {
-                    result.success(getDeviceId())
+                    result.success(retrieveAndroidId())
                 }
                 "startForegroundService" -> {
                     val roomId = call.argument<String>("roomId")
@@ -70,7 +70,8 @@ class MainActivity: FlutterActivity() {
         stopVoiceForegroundService()
     }
 
-    private fun getDeviceId(): String {
+    // Named to avoid clashing with FlutterActivity's public getDeviceId().
+    private fun retrieveAndroidId(): String {
         return android.provider.Settings.Secure.getString(
             contentResolver,
             android.provider.Settings.Secure.ANDROID_ID
