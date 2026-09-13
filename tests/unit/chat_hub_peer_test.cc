@@ -654,6 +654,19 @@ TEST(ChatHubPeerTest, StartAfterStopDoesNothing) {
   SUCCEED();
 }
 
+TEST(ChatHubPeerTest, StopIsIdempotent) {
+  chirp::common::Logger::Instance().SetLevel(chirp::common::Logger::Level::kError);
+  asio::io_context io;
+  auto peer = chirp::chat::ServerGatewayPeer::Create(
+      io, chirp::chat::ServerGatewayPeer::Options{},
+      [](const chirp::server_gateway::InjectMessageNotify&) {});
+  peer->Stop();
+  peer->Stop();  // second call (e.g. SIGINT then SIGTERM) must be a no-op
+  while (io.poll() > 0) {
+  }
+  SUCCEED();
+}
+
 // Uplink RPCs round-trip through the hub: the peer correlates the response by
 // sequence and hands the response code to the caller.
 TEST(ChatHubPeerTest, RpcRoundTripsWithEchoedIds) {
