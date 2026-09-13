@@ -53,6 +53,17 @@ message ChatMessage {
   int64 timestamp = 8;
 }
 
+// Player -> NPC utterance, published as an event payload to the NPC dialog
+// service (event_type "npc.player_message"). The chat history keeps the
+// player's original message; the NPC replies through the injection path.
+message NpcPlayerUtterance {
+  string message_id = 1;
+  string sender_id = 2;
+  string npc_id = 3;
+  bytes content = 4;
+  int64 timestamp = 5;
+}
+
 // 拉取历史消息请求
 message GetHistoryRequest {
   string user_id = 1;

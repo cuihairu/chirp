@@ -22,6 +22,7 @@
 #include "network/session.h"
 #include "network/tcp_server.h"
 #include "network/websocket_server.h"
+#include "npc_uplink.h"
 #include "push_bridge.h"
 #include "notification_client.h"
 #include "proto/auth.pb.h"
@@ -241,6 +242,11 @@ struct FeatureHandlers {
   chirp::chat::MessageEditHandlers& edits;
   chirp::chat::MentionHandlers& mentions;
   chirp::chat::PushBridge& push;
+  // NPC uplink: peer is null unless --server_gateway_host is set; an empty
+  // npc_service_id keeps the feature off even with a live peer.
+  chirp::chat::ServerGatewayPeer* hub_peer = nullptr;
+  std::string npc_service_id;
+  std::string npc_prefix = "npc:";
 };
 
 void HandlePacket(const std::shared_ptr<MessageStore>& store,
@@ -379,6 +385,28 @@ void HandlePacket(const std::shared_ptr<MessageStore>& store,
     resp.set_server_timestamp(msg.timestamp());
 
     if (req.channel_type() == chirp::chat::PRIVATE) {
+      // NPC-addressed private messages bypass player delivery: the receiver
+      // is not a user, so there is no session to deliver to and nothing to
+      // queue offline. The utterance is published to the NPC dialog service
+      // (fire-and-forget: OK here means accepted, not that a reply will
+      // come); the NPC answers through the injection path.
+      if (features.hub_peer && !features.npc_service_id.empty() &&
+          chirp::chat::npc::IsNpcReceiver(features.npc_prefix, req.receiver_id())) {
+        features.hub_peer->SendEventPublish(
+            chirp::chat::npc::MakeUtteranceEvent(msg, features.npc_prefix,
+                                                 features.npc_service_id),
+            [message_id = msg.message_id()](chirp::common::ErrorCode code) {
+              if (code != chirp::common::OK) {
+                Logger::Instance().Warn(
+                    "npc utterance publish failed for message " + message_id +
+                    " (code " + std::to_string(static_cast<int>(code)) + ")");
+              }
+            });
+        resp.set_code(chirp::common::OK);
+        chirp::chat::runtime::SendPacket(session, chirp::gateway::SEND_MESSAGE_RESP,
+                                         pkt.sequence(), resp.SerializeAsString());
+        break;
+      }
       std::shared_ptr<chirp::network::Session> recv;
       {
         std::lock_guard<std::mutex> lock(state->mu);
@@ -827,6 +855,18 @@ int main(int argc, char** argv) {
   // same store/deliver tail as SEND_MESSAGE (minus mention enforcement -
   // senders are non-user identities, never membership-checked).
   const std::string hub_host = chirp::chat::runtime::GetArg(argc, argv, "--server_gateway_host", "");
+  // NPC dialog uplink: player -> NPC private messages become events published
+  // to the NPC dialog service over the hub peer. Empty --npc_service_id keeps
+  // the feature off entirely.
+  const std::string npc_service_id =
+      chirp::chat::runtime::GetArg(argc, argv, "--npc_service_id", "");
+  const std::string npc_prefix =
+      chirp::chat::runtime::GetArg(argc, argv, "--npc_prefix", "npc:");
+  if (!npc_service_id.empty() && hub_host.empty()) {
+    Logger::Instance().Warn(
+        "--npc_service_id is set but --server_gateway_host is not; the NPC "
+        "uplink stays disabled");
+  }
   std::shared_ptr<chirp::chat::ServerGatewayPeer> hub_peer;
   if (!hub_host.empty()) {
     const uint16_t hub_port = chirp::chat::runtime::ParseU16Arg(
@@ -889,8 +929,14 @@ int main(int argc, char** argv) {
           consumer->HandleInject(notify);
         });
     hub_peer->Start();
+    features.hub_peer = hub_peer.get();
+    features.npc_service_id = npc_service_id;
+    features.npc_prefix = npc_prefix;
     Logger::Instance().Info("server-plane peer enabled hub=" + hub_host + ":" +
-                            std::to_string(hub_port) + " service=" + hub_service);
+                            std::to_string(hub_port) + " service=" + hub_service +
+                            (npc_service_id.empty()
+                                 ? std::string()
+                                 : " npc_service=" + npc_service_id));
   }
 
   chirp::network::TcpServer server(
