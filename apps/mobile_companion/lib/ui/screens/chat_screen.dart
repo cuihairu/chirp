@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:provider/provider.dart';
 import 'package:chirp_mobile/core/sdk/chirp_client.dart';
 import 'package:chirp_mobile/ui/widgets/chat_bubble.dart';
 
@@ -63,7 +62,9 @@ class _ChatScreenState extends State<ChatScreen> {
       );
 
       setState(() {
-        _messages = messages;
+        _messages
+          ..clear()
+          ..addAll(messages);
         _isLoading = false;
       });
 
@@ -135,7 +136,8 @@ class _ChatScreenState extends State<ChatScreen> {
                         itemCount: _messages.length,
                         itemBuilder: (context, index) {
                           final message = _messages[index];
-                          final isMe = message.senderId == ChirpClient.instance.userId;
+                          final isMe =
+                              message.senderId == ChirpClient.instance.userId;
 
                           return ChatBubble(
                             message: message,

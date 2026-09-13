@@ -1,6 +1,5 @@
 import 'dart:async';
 import 'dart:convert';
-import 'dart:io';
 import 'package:ffi/ffi.dart';
 
 import 'chirp_ffi.dart';
@@ -36,7 +35,8 @@ class ChirpClient {
   Stream<_ChirpResponse> get responseStream => _responseController.stream;
 
   /// Initialize the SDK
-  Future<bool> initialize({String gatewayHost = '127.0.0.1', int gatewayPort = 7000}) async {
+  Future<bool> initialize(
+      {String gatewayHost = '127.0.0.1', int gatewayPort = 7000}) async {
     if (_isInitialized) return true;
 
     final config = {
@@ -92,7 +92,8 @@ class ChirpClient {
   }
 
   /// Login with user credentials
-  Future<bool> login(String userId, String token, {String deviceId = ''}) async {
+  Future<bool> login(String userId, String token,
+      {String deviceId = ''}) async {
     if (!_isInitialized) return false;
 
     final result = ChirpFFI.login(
@@ -134,7 +135,9 @@ class ChirpClient {
   }
 
   /// Get chat history
-  Future<List<ChirpMessage>> getHistory(String channelId, ChannelType channelType, {int limit = 50}) async {
+  Future<List<ChirpMessage>> getHistory(
+      String channelId, ChannelType channelType,
+      {int limit = 50}) async {
     if (!_isInitialized || !isConnected) return [];
 
     final callbackId = _nextCallbackId++;
@@ -160,7 +163,8 @@ class ChirpClient {
   }
 
   /// Mark messages as read
-  Future<bool> markRead(String channelId, ChannelType channelType, String messageId) async {
+  Future<bool> markRead(
+      String channelId, ChannelType channelType, String messageId) async {
     if (!_isInitialized || !isConnected) return false;
 
     final result = ChirpFFI.markRead(channelId, channelType.index, messageId);
@@ -171,24 +175,6 @@ class ChirpClient {
   int getUnreadCount() {
     if (!_isInitialized) return 0;
     return ChirpFFI.getUnreadCount() ?? 0;
-  }
-
-  /// Join a voice room
-  Future<bool> joinVoiceRoom(String roomId) async {
-    if (!_isInitialized || !isConnected) return false;
-
-    final callbackId = _nextCallbackId++;
-    final result = ChirpFFI.joinVoiceRoom(roomId, callbackId);
-
-    return result == ChirpFFI.CHIRP_OK;
-  }
-
-  /// Leave voice room
-  Future<bool> leaveVoiceRoom() async {
-    if (!_isInitialized) return false;
-
-    final result = ChirpFFI.leaveVoiceRoom();
-    return result == ChirpFFI.CHIRP_OK;
   }
 
   /// Set microphone muted state
@@ -267,7 +253,8 @@ class ChirpClient {
     if (!_isInitialized || !isConnected) return false;
 
     final callbackId = _nextCallbackId++;
-    final result = ChirpFFI.joinVoiceRoomWithType(roomId, roomType.index, callbackId);
+    final result =
+        ChirpFFI.joinVoiceRoomWithType(roomId, roomType.index, callbackId);
 
     return result == ChirpFFI.CHIRP_OK;
   }
@@ -321,7 +308,8 @@ class ChirpClient {
   }
 
   /// Create voice room
-  Future<String?> createVoiceRoom(VoiceRoomType roomType, String roomName, int maxParticipants) async {
+  Future<String?> createVoiceRoom(
+      VoiceRoomType roomType, String roomName, int maxParticipants) async {
     if (!_isInitialized || !isConnected) return null;
 
     final callbackId = _nextCallbackId++;
@@ -340,7 +328,8 @@ class ChirpClient {
       }
     };
 
-    ChirpFFI.createVoiceRoom(roomType.index, roomName, maxParticipants, callbackId);
+    ChirpFFI.createVoiceRoom(
+        roomType.index, roomName, maxParticipants, callbackId);
 
     return completer.future.timeout(
       const Duration(seconds: 5),
@@ -350,17 +339,26 @@ class ChirpClient {
 
   // Voice event streams
 
-  final _voiceParticipantJoinedController = StreamController<VoiceParticipant>.broadcast();
+  final _voiceParticipantJoinedController =
+      StreamController<VoiceParticipant>.broadcast();
   final _voiceParticipantLeftController = StreamController<String>.broadcast();
-  final _voiceSpeakingController = StreamController<VoiceSpeakingEvent>.broadcast();
-  final _voiceIceCandidateController = StreamController<VoiceIceCandidateEvent>.broadcast();
-  final _voiceSdpOfferController = StreamController<VoiceSdpOfferEvent>.broadcast();
+  final _voiceSpeakingController =
+      StreamController<VoiceSpeakingEvent>.broadcast();
+  final _voiceIceCandidateController =
+      StreamController<VoiceIceCandidateEvent>.broadcast();
+  final _voiceSdpOfferController =
+      StreamController<VoiceSdpOfferEvent>.broadcast();
 
-  Stream<VoiceParticipant> get voiceParticipantJoinedStream => _voiceParticipantJoinedController.stream;
-  Stream<String> get voiceParticipantLeftStream => _voiceParticipantLeftController.stream;
-  Stream<VoiceSpeakingEvent> get voiceSpeakingStream => _voiceSpeakingController.stream;
-  Stream<VoiceIceCandidateEvent> get voiceIceCandidateStream => _voiceIceCandidateController.stream;
-  Stream<VoiceSdpOfferEvent> get voiceSdpOfferStream => _voiceSdpOfferController.stream;
+  Stream<VoiceParticipant> get voiceParticipantJoinedStream =>
+      _voiceParticipantJoinedController.stream;
+  Stream<String> get voiceParticipantLeftStream =>
+      _voiceParticipantLeftController.stream;
+  Stream<VoiceSpeakingEvent> get voiceSpeakingStream =>
+      _voiceSpeakingController.stream;
+  Stream<VoiceIceCandidateEvent> get voiceIceCandidateStream =>
+      _voiceIceCandidateController.stream;
+  Stream<VoiceSdpOfferEvent> get voiceSdpOfferStream =>
+      _voiceSdpOfferController.stream;
 
   // Private methods
 
@@ -373,7 +371,8 @@ class ChirpClient {
 
     // Response callback
     ChirpFFI.setResponseCallback((callbackId, success, dataJsonPtr) {
-      _handleResponseCallback(callbackId, success != 0, dataJsonPtr.toDartString());
+      _handleResponseCallback(
+          callbackId, success != 0, dataJsonPtr.toDartString());
     });
 
     // Connection callback
@@ -404,7 +403,9 @@ class ChirpClient {
   List<ChirpMessage> _parseHistoryMessages(String json) {
     try {
       final List<dynamic> jsonList = jsonDecode(json);
-      return jsonList.map((msg) => ChirpMessage.fromJson(msg as Map<String, dynamic>)).toList();
+      return jsonList
+          .map((msg) => ChirpMessage.fromJson(msg as Map<String, dynamic>))
+          .toList();
     } catch (e) {
       return [];
     }

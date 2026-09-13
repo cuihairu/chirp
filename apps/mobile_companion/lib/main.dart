@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:provider/provider.dart';
 import 'package:chirp_mobile/core/sdk/chirp_client.dart';
 import 'package:chirp_mobile/ui/screens/home_screen.dart';
 import 'package:chirp_mobile/ui/screens/login_screen.dart';
@@ -36,7 +35,7 @@ class ChirpApp extends StatelessWidget {
 
 /// Initializes the app and handles login flow
 class _AppInitializer extends StatefulWidget {
-  const _AppInitializer({super.key});
+  const _AppInitializer();
 
   @override
   State<_AppInitializer> createState() => _AppInitializerState();

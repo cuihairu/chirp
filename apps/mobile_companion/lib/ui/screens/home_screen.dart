@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:provider/provider.dart';
 import 'package:chirp_mobile/core/sdk/chirp_client.dart';
 import 'package:chirp_mobile/ui/screens/chat_screen.dart';
 import 'package:chirp_mobile/ui/screens/voice_room_screen.dart';
@@ -42,7 +41,7 @@ class _HomeScreenState extends State<HomeScreen> {
             label: 'Contacts',
           ),
           BottomNavigationBarItem(
-            icon: Icon.call,
+            icon: Icon(Icons.call),
             label: 'Voice',
           ),
           BottomNavigationBarItem(
@@ -58,7 +57,7 @@ class _HomeScreenState extends State<HomeScreen> {
 
 /// Chats list screen
 class _ChatsListScreen extends StatelessWidget {
-  const _ChatsListScreen({super.key});
+  const _ChatsListScreen();
 
   final List<_ChatItem> _recentChats = const [
     _ChatItem(
@@ -131,7 +130,7 @@ class _ChatsListScreen extends StatelessWidget {
 
 /// Contacts screen
 class _ContactsScreen extends StatelessWidget {
-  const _ContactsScreen({super.key});
+  const _ContactsScreen();
 
   final List<_ContactItem> _contacts = const [
     _ContactItem(id: 'user_alice', name: 'Alice', status: 'Online'),
@@ -175,7 +174,7 @@ class _ContactsScreen extends StatelessWidget {
 
 /// Voice screen
 class _VoiceScreen extends StatefulWidget {
-  const _VoiceScreen({super.key});
+  const _VoiceScreen();
 
   @override
   State<_VoiceScreen> createState() => _VoiceScreenState();
@@ -221,8 +220,8 @@ class _VoiceScreenState extends State<_VoiceScreen> {
               Text(
                 'Join a voice channel to start talking with friends',
                 style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                  color: Colors.grey,
-                ),
+                      color: Colors.grey,
+                    ),
               ),
             ],
           ),
@@ -424,7 +423,7 @@ class _VoiceRoomItem {
 
 /// Profile screen
 class _ProfileScreen extends StatelessWidget {
-  const _ProfileScreen({super.key});
+  const _ProfileScreen();
 
   @override
   Widget build(BuildContext context) {
@@ -457,7 +456,8 @@ class _ProfileScreen extends StatelessWidget {
     );
   }
 
-  Widget _buildSettingTile(BuildContext context, IconData icon, String title, {bool isDestructive = false}) {
+  Widget _buildSettingTile(BuildContext context, IconData icon, String title,
+      {bool isDestructive = false}) {
     return ListTile(
       leading: Icon(icon),
       title: Text(title),

@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:provider/provider.dart';
 import 'package:chirp_mobile/core/sdk/chirp_client.dart';
 
 /// Login screen for authentication
@@ -19,7 +18,8 @@ class _LoginScreenState extends State<LoginScreen> {
   bool _isLoading = false;
   String? _errorMessage;
 
-  String _generateDeviceId() {
+  // Static so the field initializer can call it
+  static String _generateDeviceId() {
     // In production, use device_info_plus package
     return 'flutter_${DateTime.now().millisecondsSinceEpoch}';
   }
@@ -33,7 +33,8 @@ class _LoginScreenState extends State<LoginScreen> {
     try {
       // For demo, use username as user_id and password as token
       final userId = _usernameController.text.trim();
-      final token = _passwordController.text; // In production, this would be a real JWT
+      final token =
+          _passwordController.text; // In production, this would be a real JWT
 
       if (userId.isEmpty || token.isEmpty) {
         setState(() {
@@ -54,7 +55,8 @@ class _LoginScreenState extends State<LoginScreen> {
       }
 
       // Then login
-      final success = await ChirpClient.instance.login(userId, token, _deviceIdController.text);
+      final success = await ChirpClient.instance
+          .login(userId, token, deviceId: _deviceIdController.text);
 
       setState(() {
         _isLoading = false;
@@ -103,15 +105,15 @@ class _LoginScreenState extends State<LoginScreen> {
                 Text(
                   'Chirp',
                   style: Theme.of(context).textTheme.headlineMedium?.copyWith(
-                    fontWeight: FontWeight.bold,
-                  ),
+                        fontWeight: FontWeight.bold,
+                      ),
                 ),
                 const SizedBox(height: 8),
                 Text(
                   'Real-time communication for gaming',
                   style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                    color: Colors.grey,
-                  ),
+                        color: Colors.grey,
+                      ),
                 ),
                 const SizedBox(height: 48),
 
@@ -211,8 +213,8 @@ class _LoginScreenState extends State<LoginScreen> {
                 Text(
                   'Demo: Use any username/password to test',
                   style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                    color: Colors.grey,
-                  ),
+                        color: Colors.grey,
+                      ),
                   textAlign: TextAlign.center,
                 ),
               ],

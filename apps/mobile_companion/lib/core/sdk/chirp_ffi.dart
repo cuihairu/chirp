@@ -1,5 +1,17 @@
 import 'dart:ffi';
+import 'dart:io';
 import 'package:ffi/ffi.dart';
+
+// Native callback types (must live at the top level: Dart forbids
+// typedefs inside classes)
+typedef NativeMessageCallback = Void Function(Pointer<Utf8>);
+typedef NativeResponseCallback = Void Function(Int32, Int32, Pointer<Utf8>);
+typedef NativeConnectionCallback = Void Function(Int32, Int32);
+
+// Dart callback types
+typedef MessageCallback = void Function(Pointer<Utf8>);
+typedef ResponseCallback = void Function(int, int, Pointer<Utf8>);
+typedef ConnectionCallback = void Function(int, int);
 
 /// Native FFI bindings for the Chirp C++ SDK
 /// This class provides the interface to the native chirp library
@@ -33,23 +45,34 @@ class ChirpFFI {
   static const int CHIRP_ERROR_RATE_LIMITED = -10;
   static const int CHIRP_ERROR_SESSION_EXPIRED = -11;
 
-  // Native callback types
-  typedef NativeMessageCallback = Void Function(Pointer<Utf8>);
-  typedef NativeResponseCallback = Void Function(Int32, Int32, Pointer<Utf8>);
-  typedef NativeConnectionCallback = Void Function(Int32, Int32);
-
-  // Dart callback types
-  typedef MessageCallback = void Function(Pointer<Utf8>);
-  typedef ResponseCallback = void Function(int, int, Pointer<Utf8>);
-  typedef ConnectionCallback = void Function(int, int);
-
   // Keep references to callbacks to prevent garbage collection
-  static final List<Pointer<NativeFunction<>>> _callbacks = [];
+  static final List<Pointer<NativeFunction>> _callbacks = [];
+
+  // Handler storage for the static trampolines below: dart:ffi only
+  // allows Pointer.fromFunction with static functions, so closures are
+  // parked here and invoked through the trampolines.
+  static MessageCallback? _messageHandler;
+  static ResponseCallback? _responseHandler;
+  static ConnectionCallback? _connectionHandler;
+
+  static void _messageTrampoline(Pointer<Utf8> messageJson) {
+    _messageHandler?.call(messageJson);
+  }
+
+  static void _responseTrampoline(
+      int callbackId, int success, Pointer<Utf8> data) {
+    _responseHandler?.call(callbackId, success, data);
+  }
+
+  static void _connectionTrampoline(int connected, int errorCode) {
+    _connectionHandler?.call(connected, errorCode);
+  }
 
   // Core API functions
   static int Function(Pointer<Utf8>) get _initialize {
     return _lib()
-        .lookup<NativeFunction<Int32 Function(Pointer<Utf8>)>>('Chirp_Initialize')
+        .lookup<NativeFunction<Int32 Function(Pointer<Utf8>)>>(
+            'Chirp_Initialize')
         .asFunction();
   }
 
@@ -77,9 +100,13 @@ class ChirpFFI {
         .asFunction();
   }
 
-  static int Function(Pointer<Utf8>, Pointer<Utf8>, Pointer<Utf8>, Pointer<Utf8>) get _login {
+  static int Function(
+      Pointer<Utf8>, Pointer<Utf8>, Pointer<Utf8>, Pointer<Utf8>) get _login {
     return _lib()
-        .lookup<NativeFunction<Int32 Function(Pointer<Utf8>, Pointer<Utf8>, Pointer<Utf8>, Pointer<Utf8>)>>('Chirp_Login')
+        .lookup<
+            NativeFunction<
+                Int32 Function(Pointer<Utf8>, Pointer<Utf8>, Pointer<Utf8>,
+                    Pointer<Utf8>)>>('Chirp_Login')
         .asFunction();
   }
 
@@ -89,47 +116,61 @@ class ChirpFFI {
         .asFunction();
   }
 
-  static int Function(Pointer<Utf8>, Uint32) get _getUserId {
+  static int Function(Pointer<Utf8>, int) get _getUserId {
     return _lib()
-        .lookup<NativeFunction<Int32 Function(Pointer<Utf8>, Uint32)>>('Chirp_GetUserId')
+        .lookup<NativeFunction<Int32 Function(Pointer<Utf8>, Uint32)>>(
+            'Chirp_GetUserId')
         .asFunction();
   }
 
-  static int Function(Pointer<Utf8>, Uint32) get _getSessionId {
+  static int Function(Pointer<Utf8>, int) get _getSessionId {
     return _lib()
-        .lookup<NativeFunction<Int32 Function(Pointer<Utf8>, Uint32)>>('Chirp_GetSessionId')
+        .lookup<NativeFunction<Int32 Function(Pointer<Utf8>, Uint32)>>(
+            'Chirp_GetSessionId')
         .asFunction();
   }
 
   // Chat API functions
-  static int Function(Pointer<Utf8>, Pointer<Utf8>, Int32, Pointer<Utf8>, Int32) get _sendMessage {
+  static int Function(Pointer<Utf8>, Pointer<Utf8>, int, Pointer<Utf8>, int)
+      get _sendMessage {
     return _lib()
-        .lookup<NativeFunction<Int32 Function(Pointer<Utf8>, Pointer<Utf8>, Int32, Pointer<Utf8>, Int32)>>('Chirp_SendMessage')
+        .lookup<
+            NativeFunction<
+                Int32 Function(Pointer<Utf8>, Pointer<Utf8>, Int32,
+                    Pointer<Utf8>, Int32)>>('Chirp_SendMessage')
         .asFunction();
   }
 
-  static int Function(Pointer<Utf8>, Int32, Int64, Int32, Int32) get _getHistory {
+  static int Function(Pointer<Utf8>, int, int, int, int) get _getHistory {
     return _lib()
-        .lookup<NativeFunction<Int32 Function(Pointer<Utf8>, Int32, Int64, Int32, Int32)>>('Chirp_GetHistory')
+        .lookup<
+            NativeFunction<
+                Int32 Function(Pointer<Utf8>, Int32, Int64, Int32,
+                    Int32)>>('Chirp_GetHistory')
         .asFunction();
   }
 
-  static int Function(Pointer<Utf8>, Int32, Pointer<Utf8>) get _markRead {
+  static int Function(Pointer<Utf8>, int, Pointer<Utf8>) get _markRead {
     return _lib()
-        .lookup<NativeFunction<Int32 Function(Pointer<Utf8>, Int32, Pointer<Utf8>)>>('Chirp_MarkRead')
+        .lookup<
+            NativeFunction<
+                Int32 Function(
+                    Pointer<Utf8>, Int32, Pointer<Utf8>)>>('Chirp_MarkRead')
         .asFunction();
   }
 
   static int Function(Pointer<Int32>) get _getUnreadCount {
     return _lib()
-        .lookup<NativeFunction<Int32 Function(Pointer<Int32>)>>('Chirp_GetUnreadCount')
+        .lookup<NativeFunction<Int32 Function(Pointer<Int32>)>>(
+            'Chirp_GetUnreadCount')
         .asFunction();
   }
 
   // Voice API functions
-  static int Function(Pointer<Utf8>, Int32) get _joinVoiceRoom {
+  static int Function(Pointer<Utf8>, int) get _joinVoiceRoom {
     return _lib()
-        .lookup<NativeFunction<Int32 Function(Pointer<Utf8>, Int32)>>('Chirp_JoinVoiceRoom')
+        .lookup<NativeFunction<Int32 Function(Pointer<Utf8>, Int32)>>(
+            'Chirp_JoinVoiceRoom')
         .asFunction();
   }
 
@@ -139,13 +180,13 @@ class ChirpFFI {
         .asFunction();
   }
 
-  static int Function(Int32) get _setMicMuted {
+  static int Function(int) get _setMicMuted {
     return _lib()
         .lookup<NativeFunction<Int32 Function(Int32)>>('Chirp_SetMicMuted')
         .asFunction();
   }
 
-  static int Function(Int32) get _setSpeakerMuted {
+  static int Function(int) get _setSpeakerMuted {
     return _lib()
         .lookup<NativeFunction<Int32 Function(Int32)>>('Chirp_SetSpeakerMuted')
         .asFunction();
@@ -164,64 +205,95 @@ class ChirpFFI {
   }
 
   // Enhanced voice API functions
-  static int Function(Pointer<Utf8>, Int32, Int32) get _joinVoiceRoomWithType {
+  static int Function(Pointer<Utf8>, int, int) get _joinVoiceRoomWithType {
     return _lib()
-        .lookup<NativeFunction<Int32 Function(Pointer<Utf8>, Int32, Int32)>>('Chirp_JoinVoiceRoomWithType')
+        .lookup<NativeFunction<Int32 Function(Pointer<Utf8>, Int32, Int32)>>(
+            'Chirp_JoinVoiceRoomWithType')
         .asFunction();
   }
 
   static int Function(Pointer<Utf8>) get _leaveVoiceRoomById {
     return _lib()
-        .lookup<NativeFunction<Int32 Function(Pointer<Utf8>)>>('Chirp_LeaveVoiceRoomById')
+        .lookup<NativeFunction<Int32 Function(Pointer<Utf8>)>>(
+            'Chirp_LeaveVoiceRoomById')
         .asFunction();
   }
 
-  static int Function(Pointer<Utf8>, Int32) get _setVoiceMute {
+  static int Function(Pointer<Utf8>, int) get _setVoiceMute {
     return _lib()
-        .lookup<NativeFunction<Int32 Function(Pointer<Utf8>, Int32)>>('Chirp_SetVoiceMute')
+        .lookup<NativeFunction<Int32 Function(Pointer<Utf8>, Int32)>>(
+            'Chirp_SetVoiceMute')
         .asFunction();
   }
 
-  static int Function(Pointer<Utf8>, Pointer<Utf8>, Pointer<Utf8>, Pointer<Utf8>, Int32) get _sendIceCandidate {
+  static int Function(
+          Pointer<Utf8>, Pointer<Utf8>, Pointer<Utf8>, Pointer<Utf8>, int)
+      get _sendIceCandidate {
     return _lib()
-        .lookup<NativeFunction<Int32 Function(Pointer<Utf8>, Pointer<Utf8>, Pointer<Utf8>, Pointer<Utf8>, Int32)>>('Chirp_SendIceCandidate')
+        .lookup<
+            NativeFunction<
+                Int32 Function(Pointer<Utf8>, Pointer<Utf8>, Pointer<Utf8>,
+                    Pointer<Utf8>, Int32)>>('Chirp_SendIceCandidate')
         .asFunction();
   }
 
-  static int Function(Pointer<Utf8>, Pointer<Utf8>, Pointer<Utf8>) get _sendSdpAnswer {
+  static int Function(Pointer<Utf8>, Pointer<Utf8>, Pointer<Utf8>)
+      get _sendSdpAnswer {
     return _lib()
-        .lookup<NativeFunction<Int32 Function(Pointer<Utf8>, Pointer<Utf8>, Pointer<Utf8>)>>('Chirp_SendSdpAnswer')
+        .lookup<
+            NativeFunction<
+                Int32 Function(Pointer<Utf8>, Pointer<Utf8>,
+                    Pointer<Utf8>)>>('Chirp_SendSdpAnswer')
         .asFunction();
   }
 
-  static int Function(Int32, Pointer<Utf8>, Int32, Int32) get _createVoiceRoom {
+  static int Function(int, Pointer<Utf8>, int, int) get _createVoiceRoom {
     return _lib()
-        .lookup<NativeFunction<Int32 Function(Int32, Pointer<Utf8>, Int32, Int32)>>('Chirp_CreateVoiceRoom')
+        .lookup<
+            NativeFunction<
+                Int32 Function(Int32, Pointer<Utf8>, Int32,
+                    Int32)>>('Chirp_CreateVoiceRoom')
         .asFunction();
   }
 
-  static int Function(Pointer<Utf8>, Int32) get _getVoiceRoomInfo {
+  static int Function(Pointer<Utf8>, int) get _getVoiceRoomInfo {
     return _lib()
-        .lookup<NativeFunction<Int32 Function(Pointer<Utf8>, Int32)>>('Chirp_GetVoiceRoomInfo')
+        .lookup<NativeFunction<Int32 Function(Pointer<Utf8>, Int32)>>(
+            'Chirp_GetVoiceRoomInfo')
         .asFunction();
   }
 
   // Callback setters
-  static void Function(Pointer<NativeFunction<NativeMessageCallback>>) get _setMessageCallback {
+  static void Function(Pointer<NativeFunction<NativeMessageCallback>>)
+      get _setMessageCallback {
     return _lib()
-        .lookup<NativeFunction<Void Function(Pointer<NativeFunction<NativeMessageCallback>>)>>('Chirp_SetMessageCallback')
+        .lookup<
+                NativeFunction<
+                    Void Function(
+                        Pointer<NativeFunction<NativeMessageCallback>>)>>(
+            'Chirp_SetMessageCallback')
         .asFunction();
   }
 
-  static void Function(Pointer<NativeFunction<NativeResponseCallback>>) get _setResponseCallback {
+  static void Function(Pointer<NativeFunction<NativeResponseCallback>>)
+      get _setResponseCallback {
     return _lib()
-        .lookup<NativeFunction<Void Function(Pointer<NativeFunction<NativeResponseCallback>>)>>('Chirp_SetResponseCallback')
+        .lookup<
+                NativeFunction<
+                    Void Function(
+                        Pointer<NativeFunction<NativeResponseCallback>>)>>(
+            'Chirp_SetResponseCallback')
         .asFunction();
   }
 
-  static void Function(Pointer<NativeFunction<NativeConnectionCallback>>) get _setConnectionCallback {
+  static void Function(Pointer<NativeFunction<NativeConnectionCallback>>)
+      get _setConnectionCallback {
     return _lib()
-        .lookup<NativeFunction<Void Function(Pointer<NativeFunction<NativeConnectionCallback>>)>>('Chirp_SetConnectionCallback')
+        .lookup<
+                NativeFunction<
+                    Void Function(
+                        Pointer<NativeFunction<NativeConnectionCallback>>)>>(
+            'Chirp_SetConnectionCallback')
         .asFunction();
   }
 
@@ -252,7 +324,8 @@ class ChirpFFI {
     return _isConnected() != 0;
   }
 
-  static int login(String userId, String token, String deviceId, String platform) {
+  static int login(
+      String userId, String token, String deviceId, String platform) {
     final userIdPtr = userId.toNativeUtf8();
     final tokenPtr = token.toNativeUtf8();
     final deviceIdPtr = deviceId.toNativeUtf8();
@@ -297,12 +370,14 @@ class ChirpFFI {
     return null;
   }
 
-  static int sendMessage(String toUser, String channelId, int msgType, String content, int callbackId) {
+  static int sendMessage(String toUser, String channelId, int msgType,
+      String content, int callbackId) {
     final toUserPtr = toUser.toNativeUtf8();
     final channelIdPtr = channelId.toNativeUtf8();
     final contentPtr = content.toNativeUtf8();
     try {
-      return _sendMessage(toUserPtr, channelIdPtr, msgType, contentPtr, callbackId);
+      return _sendMessage(
+          toUserPtr, channelIdPtr, msgType, contentPtr, callbackId);
     } finally {
       calloc.free(toUserPtr);
       calloc.free(channelIdPtr);
@@ -310,10 +385,12 @@ class ChirpFFI {
     }
   }
 
-  static int getHistory(String channelId, int channelType, int beforeTime, int limit, int callbackId) {
+  static int getHistory(String channelId, int channelType, int beforeTime,
+      int limit, int callbackId) {
     final channelIdPtr = channelId.toNativeUtf8();
     try {
-      return _getHistory(channelIdPtr, channelType, beforeTime, limit, callbackId);
+      return _getHistory(
+          channelIdPtr, channelType, beforeTime, limit, callbackId);
     } finally {
       calloc.free(channelIdPtr);
     }
@@ -331,7 +408,7 @@ class ChirpFFI {
   }
 
   static int? getUnreadCount() {
-    final countPtr = calloc.allocate<Int32>();
+    final countPtr = calloc.allocate<Int32>(1);
     try {
       final result = _getUnreadCount(countPtr);
       if (result == CHIRP_OK) {
@@ -372,7 +449,8 @@ class ChirpFFI {
     return _isSpeakerMuted() != 0;
   }
 
-  static int joinVoiceRoomWithType(String roomId, int roomType, int callbackId) {
+  static int joinVoiceRoomWithType(
+      String roomId, int roomType, int callbackId) {
     final roomIdPtr = roomId.toNativeUtf8();
     try {
       return _joinVoiceRoomWithType(roomIdPtr, roomType, callbackId);
@@ -399,13 +477,15 @@ class ChirpFFI {
     }
   }
 
-  static int sendIceCandidate(String roomId, String toUser, String candidate, String sdpMid, int sdpMLineIndex) {
+  static int sendIceCandidate(String roomId, String toUser, String candidate,
+      String sdpMid, int sdpMLineIndex) {
     final roomIdPtr = roomId.toNativeUtf8();
     final toUserPtr = toUser.toNativeUtf8();
     final candidatePtr = candidate.toNativeUtf8();
     final sdpMidPtr = sdpMid.toNativeUtf8();
     try {
-      return _sendIceCandidate(roomIdPtr, toUserPtr, candidatePtr, sdpMidPtr, sdpMLineIndex);
+      return _sendIceCandidate(
+          roomIdPtr, toUserPtr, candidatePtr, sdpMidPtr, sdpMLineIndex);
     } finally {
       calloc.free(roomIdPtr);
       calloc.free(toUserPtr);
@@ -427,10 +507,12 @@ class ChirpFFI {
     }
   }
 
-  static int createVoiceRoom(int roomType, String roomName, int maxParticipants, int callbackId) {
+  static int createVoiceRoom(
+      int roomType, String roomName, int maxParticipants, int callbackId) {
     final roomNamePtr = roomName.toNativeUtf8();
     try {
-      return _createVoiceRoom(roomType, roomNamePtr, maxParticipants, callbackId);
+      return _createVoiceRoom(
+          roomType, roomNamePtr, maxParticipants, callbackId);
     } finally {
       calloc.free(roomNamePtr);
     }
@@ -446,19 +528,25 @@ class ChirpFFI {
   }
 
   static void setMessageCallback(MessageCallback callback) {
-    final pointer = Pointer.fromFunction<NativeMessageCallback>(callback);
+    _messageHandler = callback;
+    final pointer =
+        Pointer.fromFunction<NativeMessageCallback>(_messageTrampoline);
     _callbacks.add(pointer);
     _setMessageCallback(pointer);
   }
 
   static void setResponseCallback(ResponseCallback callback) {
-    final pointer = Pointer.fromFunction<NativeResponseCallback>(callback);
+    _responseHandler = callback;
+    final pointer =
+        Pointer.fromFunction<NativeResponseCallback>(_responseTrampoline);
     _callbacks.add(pointer);
     _setResponseCallback(pointer);
   }
 
   static void setConnectionCallback(ConnectionCallback callback) {
-    final pointer = Pointer.fromFunction<NativeConnectionCallback>(callback);
+    _connectionHandler = callback;
+    final pointer =
+        Pointer.fromFunction<NativeConnectionCallback>(_connectionTrampoline);
     _callbacks.add(pointer);
     _setConnectionCallback(pointer);
   }

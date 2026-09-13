@@ -48,8 +48,11 @@ class ChatBubble extends StatelessWidget {
             Text(
               _formatTimestamp(message.timestamp),
               style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                color: Theme.of(context).colorScheme.onSurface.withOpacity(0.6),
-              ),
+                    color: Theme.of(context)
+                        .colorScheme
+                        .onSurface
+                        .withOpacity(0.6),
+                  ),
             ),
           ],
         ),

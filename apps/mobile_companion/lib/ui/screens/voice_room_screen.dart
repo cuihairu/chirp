@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:provider/provider.dart';
 import 'package:flutter_webrtc/flutter_webrtc.dart';
 import 'package:chirp_mobile/core/sdk/chirp_client.dart';
 
@@ -24,7 +23,6 @@ class _VoiceRoomScreenState extends State<VoiceRoomScreen> {
   bool _isMuted = false;
   bool _isSpeakerOn = false;
   bool _isConnecting = true;
-  bool _isConnected = false;
   final List<VoiceParticipant> _participants = [];
 
   RTCPeerConnection? _peerConnection;
@@ -47,7 +45,8 @@ class _VoiceRoomScreenState extends State<VoiceRoomScreen> {
   Future<void> _initializeVoiceRoom() async {
     try {
       // Get initial room info
-      final roomInfo = await ChirpClient.instance.getVoiceRoomInfo(widget.roomId);
+      final roomInfo =
+          await ChirpClient.instance.getVoiceRoomInfo(widget.roomId);
       if (roomInfo != null) {
         setState(() {
           _participants.clear();
@@ -66,7 +65,6 @@ class _VoiceRoomScreenState extends State<VoiceRoomScreen> {
 
       if (success) {
         setState(() {
-          _isConnected = true;
           _isConnecting = false;
         });
 
@@ -92,8 +90,9 @@ class _VoiceRoomScreenState extends State<VoiceRoomScreen> {
 
   Future<void> _setupWebRTC() async {
     // Create local audio stream
+    // flutter_webrtc 0.9.x accepts a plain map of constraints
     final stream = await navigator.mediaDevices.getUserMedia(
-      const MediaStreamConstraints(audio: true),
+      const <String, dynamic>{'audio': true, 'video': false},
     );
     setState(() {
       _localStream = stream;
@@ -218,7 +217,11 @@ class _VoiceRoomScreenState extends State<VoiceRoomScreen> {
   Future<void> _handleIceCandidate(VoiceIceCandidateEvent candidate) async {
     final pc = _peerConnections[candidate.fromUserId];
     if (pc != null) {
-      await pc.addCandidate(candidate.candidate, candidate.sdpMid, candidate.sdpMLineIndex);
+      await pc.addCandidate(RTCIceCandidate(
+        candidate.candidate,
+        candidate.sdpMid,
+        candidate.sdpMLineIndex,
+      ));
     }
   }
 
@@ -227,7 +230,8 @@ class _VoiceRoomScreenState extends State<VoiceRoomScreen> {
     if (pc == null) return;
 
     // Set remote description
-    await pc.setRemoteDescription(offer.sdpOffer);
+    await pc
+        .setRemoteDescription(RTCSessionDescription(offer.sdpOffer, 'offer'));
 
     // Create answer
     final answer = await pc.createAnswer();
@@ -309,7 +313,8 @@ class _VoiceRoomScreenState extends State<VoiceRoomScreen> {
               child: SizedBox(
                 width: 20,
                 height: 20,
-                child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white),
+                child: CircularProgressIndicator(
+                    strokeWidth: 2, color: Colors.white),
               ),
             ),
         ],
@@ -375,7 +380,8 @@ class _VoiceRoomScreenState extends State<VoiceRoomScreen> {
             padding: const EdgeInsets.all(24),
             decoration: BoxDecoration(
               color: Colors.grey.shade800,
-              borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
+              borderRadius:
+                  const BorderRadius.vertical(top: Radius.circular(24)),
             ),
             child: SafeArea(
               child: Row(
@@ -426,8 +432,11 @@ class _VoiceRoomScreenState extends State<VoiceRoomScreen> {
                 ? Colors.green
                 : Theme.of(context).colorScheme.primary,
             child: Text(
-              participant.username.isNotEmpty ? participant.username[0].toUpperCase() : '?',
-              style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
+              participant.username.isNotEmpty
+                  ? participant.username[0].toUpperCase()
+                  : '?',
+              style: const TextStyle(
+                  color: Colors.white, fontWeight: FontWeight.bold),
             ),
           ),
           const SizedBox(width: 16),
@@ -517,74 +526,4 @@ class _VoiceRoomScreenState extends State<VoiceRoomScreen> {
       ],
     );
   }
-}
-
-// Supporting classes
-
-enum VoiceRoomType {
-  peerToPeer,
-  group,
-  channel,
-}
-
-class VoiceParticipant {
-  final String userId;
-  final String username;
-  final bool isSpeaking;
-  final bool isMuted;
-
-  VoiceParticipant({
-    required this.userId,
-    required this.username,
-    this.isSpeaking = false,
-    this.isMuted = false,
-  });
-}
-
-class VoiceRoomInfo {
-  final String roomId;
-  final String roomName;
-  final VoiceRoomType roomType;
-  final List<VoiceParticipant> participants;
-
-  VoiceRoomInfo({
-    required this.roomId,
-    required this.roomName,
-    required this.roomType,
-    required this.participants,
-  });
-}
-
-class VoiceIceCandidateEvent {
-  final String fromUserId;
-  final String candidate;
-  final String sdpMid;
-  final int sdpMLineIndex;
-
-  VoiceIceCandidateEvent({
-    required this.fromUserId,
-    required this.candidate,
-    required this.sdpMid,
-    required this.sdpMLineIndex,
-  });
-}
-
-class VoiceSdpOfferEvent {
-  final String fromUserId;
-  final String sdpOffer;
-
-  VoiceSdpOfferEvent({
-    required this.fromUserId,
-    required this.sdpOffer,
-  });
-}
-
-class VoiceSpeakingEvent {
-  final String userId;
-  final bool isSpeaking;
-
-  VoiceSpeakingEvent({
-    required this.userId,
-    required this.isSpeaking,
-  });
 }
