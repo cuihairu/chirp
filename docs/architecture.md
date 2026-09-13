@@ -32,7 +32,7 @@ Chirp has three access points with different trust models, transports, and lifec
 | Access point | Edge | Transport | Identity | Network reality |
 | --- | --- | --- | --- | --- |
 | Game client | `game_gateway` (evolved from `services/gateway`) | TCP + Packet | user token | lives and dies with the game process |
-| Companion app | `app_gateway` (planned) | WebSocket/TLS | user token | mobile network: reconnects, NAT timeouts, backgrounding |
+| Companion app | `app_gateway` (experimental) | WebSocket/TCP (TLS planned) | user token | mobile network: reconnects, NAT timeouts, backgrounding |
 | Game backend | `server_gateway` | outbound long connection; broker fallback | `service_id` + service secret | always-on trusted service, usually in a private subnet |
 
 Rules that make independence work:
@@ -70,18 +70,24 @@ graph TD
     Client -- TCP 7000 / WS 7001 --> Chat[services/chat<br/>chirp_chat]
     Chat -- optional recent history / offline queue --> Redis
     Chat -- optional enhanced persistence --> MySQL[(MySQL)]
+    Chat -- offline push via PushBridge --> Notification2[services/notification]
+
+    App[Companion App] -- TCP 5200 / WS 5201 --> AppGateway[services/app_gateway<br/>chirp_app_gateway]
+    AppGateway -- LOGIN forwarding --> Auth
+    AppGateway -- 6xxx device messages --> Notification2
 
     ChatDist[chirp_chat_distributed / enhanced chat router] -. experimental Redis Pub/Sub .-> Redis
 
     Client -. experimental direct entry .-> Social[services/social]
     Client -. experimental direct entry .-> Voice[services/voice]
-    Notification[services/notification] -. experimental .-> ExternalPush[FCM / APNs or HTTP provider]
+    Notification[services/notification] -. experimental, logging stub .-> ExternalPush[FCM / APNs or HTTP provider]
     Search[services/search] -. experimental .-> Index[(Search Index / In-Memory)]
 ```
 
 Important interpretation:
 
 - `gateway` and `chat` are both client-facing services today; the game backend plane does not exist yet as runtime, only as protocol and service skeleton.
+- `app_gateway` (TCP 5200 / WS 5201) is live as an experimental companion-app edge: gateway-style auth/heartbeat plus 6xxx device-message forwarding to notification. Chat business packets are not accepted there (that is migration step 4).
 - `gateway` is not yet a universal business router.
 - `chat` direct access is the practical path for current chat smoke tests and the C++ SDK example.
 - Redis is optional for local validation, but required for meaningful multi-instance gateway session behavior and distributed chat routing experiments.
@@ -265,7 +271,7 @@ From the current runtime to the three-edge topology, in order:
 
 1. **Server plane hub** (`chirp_server_gateway`): greenfield, no legacy constraints; unblocks NPC quest callbacks, system/trade message injection. Chat consumes injections as an internal peer.
 2. **Device-level session core**: upgrade the existing Redis session registry from "user → instance" to "user → device → edge instance". Prerequisite for the app edge and for cross-device semantics.
-3. **App edge** (`app_gateway`): WebSocket-first with mobile tuning (heartbeat, reconnect backoff) plus the notification service as a real APNs/FCM push bridge.
+3. **App edge** (`app_gateway`): WebSocket-first with mobile tuning (heartbeat, reconnect backoff) plus the notification service as a real APNs/FCM push bridge. **Partial delivery (2026-09):** `chirp_app_gateway` serves auth/heartbeat/device-forwarding on TCP 5200 / WS 5201 and chat's offline queue triggers pushes through notification; still missing are TLS, mobile tuning, and real provider delivery (the `PushTransport` seam is backed by a logging stub).
 4. **Game edge consolidation**: `game_gateway` absorbs the direct chat entry so clients only know edges; chat becomes internal-only.
 
 At every step the currently supported direct path stays buildable and smoke-tested until its replacement is verified.

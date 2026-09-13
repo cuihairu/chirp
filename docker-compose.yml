@@ -100,9 +100,10 @@ services:
       dockerfile: docker/Dockerfile.service
       args:
         SERVICE: notification
-    command: ["--port", "5006"]
+    command: ["--port", "5006", "--ws_port", "5016"]
     ports:
       - "5006:5006"
+      - "5016:5016"
 
   app_gateway:
     build:

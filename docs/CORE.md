@@ -12,6 +12,8 @@ Chirp should currently be understood as a game-oriented realtime communication b
 | Auth | TCP 6000 | Supported | Token validation path; enhanced auth is conditional on native dependencies |
 | Chat | TCP 7000 / WS 7001 | Supported | Private messages, groups, history, offline queue, optional Redis/MySQL enhanced paths |
 | Server Gateway | TCP 8100 | Experimental | Trusted service-plane hub: game backends authenticate with `service_id` + secret, inject system/NPC messages, and receive events queued until acked |
+| Notification | TCP 5006 / WS 5016 | Experimental | Device registry and push plane (6xxx); provider HTTP delivery is a logging `PushTransport` stub |
+| App Gateway | TCP 5200 / WS 5201 | Experimental | Companion-app edge: login/heartbeat/session binding plus device-message forwarding to Notification (authenticated sessions only) |
 
 Minimal useful topology:
 
@@ -25,6 +27,11 @@ graph TD
     Client -- private chat / history --> Chat[Chat]
     Chat -. optional history / offline queue .-> Redis
     Chat -. optional archive / enhanced storage .-> MySQL[(MySQL)]
+    Chat -- offline push (fire-and-forget) --> Notification[Notification]
+
+    App[Companion App] -- login / device messages --> AppGateway[App Gateway]
+    AppGateway --> Auth
+    AppGateway -- 6xxx forwarding --> Notification
 ```
 
 ## Current Contract
@@ -127,6 +134,25 @@ Status: Experimental — handlers are unit-verified at full coverage; the
 chat-side consumption of `INJECT_MESSAGE_NOTIFY` (end-to-end E2E) is the next
 increment. Events are at-least-once: queued while the target is offline and
 redelivered on reconnect until acked.
+
+### Notification / device plane (6xxx)
+
+`chirp_notification` (TCP 5006 / WS 5016) owns the device registry and push
+dispatch. `chirp_app_gateway` (TCP 5200 / WS 5201) forwards these messages
+for authenticated app sessions with `user_id` pinned to the session owner.
+
+| Packet `msg_id` | Packet `body` |
+| --- | --- |
+| `REGISTER_DEVICE_REQ` / `RESP` | `chirp.notification.RegisterDeviceRequest` / `RegisterDeviceResponse` |
+| `UNREGISTER_DEVICE_REQ` / `RESP` | `chirp.notification.UnregisterDeviceRequest` / `UnregisterDeviceResponse` |
+| `UPDATE_DEVICE_TOKEN_REQ` / `RESP` | `chirp.notification.UpdateDeviceTokenRequest` / `UpdateDeviceTokenResponse` |
+| `GET_USER_DEVICES_REQ` / `RESP` | `chirp.notification.GetUserDevicesRequest` / `GetUserDevicesResponse` |
+| `PUSH_NOTIFICATION_REQ` / `RESP` | `chirp.notification.PushNotificationRequest` / `PushNotificationResponse` |
+
+Ids 6011+ are reserved (badge / silent / preferences). Provider HTTP delivery
+(APNs HTTP/2 / FCM HTTP) is behind a `PushTransport` seam currently backed by
+a logging stub; chat enqueues offline-message pushes through this plane only
+in the default `chirp_chat` build.
 
 ## Local Verification
 

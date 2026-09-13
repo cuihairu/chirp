@@ -58,7 +58,8 @@ Example mapping:
 | Server Gateway | 8100 | - | Experimental | Trusted service-plane hub; see [Server Plane](../server_plane.md) |
 | Social | 8000 | 8001 | Experimental | Not part of the minimal verified path |
 | Voice | 9000 | 9001 | Experimental | Signaling surface exists, not a full media backend guarantee |
-| Notification | 5006 | - | Experimental | Placeholder/provider-dependent behavior |
+| Notification | 5006 | 5016 | Experimental | Device registry + push plane (6xxx); provider HTTP delivery is a logging stub |
+| App Gateway | 5200 | 5201 | Experimental | Companion-app edge: auth/heartbeat + device-message forwarding to Notification |
 | Search | 5007 | - | Experimental | Present in tree, not a core path |
 
 ## Core Message IDs
@@ -106,6 +107,35 @@ Status: Experimental. The full contract (dial-out, at-least-once event
 delivery, injection validation) lives in [Server Plane](../server_plane.md);
 the complete msg-id-to-body mapping is in [Core](../CORE.md).
 
+### Notification / device plane (6xxx)
+
+Served by `chirp_notification` (TCP 5006 / WS 5016) and forwarded by
+`chirp_app_gateway` (TCP 5200 / WS 5201). Bodies are `chirp.notification.*`
+messages.
+
+| MsgID | Name | Body |
+| --- | --- | --- |
+| 6001 / 6002 | `REGISTER_DEVICE_REQ` / `RESP` | `RegisterDeviceRequest` / `RegisterDeviceResponse` |
+| 6003 / 6004 | `UNREGISTER_DEVICE_REQ` / `RESP` | `UnregisterDeviceRequest` / `UnregisterDeviceResponse` |
+| 6005 / 6006 | `UPDATE_DEVICE_TOKEN_REQ` / `RESP` | `UpdateDeviceTokenRequest` / `UpdateDeviceTokenResponse` |
+| 6007 / 6008 | `GET_USER_DEVICES_REQ` / `RESP` | `GetUserDevicesRequest` / `GetUserDevicesResponse` |
+| 6009 / 6010 | `PUSH_NOTIFICATION_REQ` / `RESP` | `PushNotificationRequest` / `PushNotificationResponse` |
+
+Ids 6011+ are reserved (badge / silent / preferences) and not implemented.
+
+Auth rules:
+
+- On `app_gateway`, 6xxx device messages require an authenticated session
+  (`AUTH_FAILED` otherwise) and `user_id` is always overwritten with the
+  authenticated user — clients cannot register or query for someone else.
+  `UPDATE_DEVICE_TOKEN_REQ` addresses devices by `device_id` and has no
+  `user_id` field, but still requires authentication.
+- Direct `notification` access has no session concept; it is meant for
+  internal services (e.g. chat's push bridge) on a trusted network.
+- Provider HTTP delivery (APNs/FCM) currently runs through a logging
+  `PushTransport` stub: requests are built and logged, and a device with a
+  real token counts as "send failed" until a real transport is injected.
+
 ## Login Flows
 
 ### Gateway Login
@@ -150,7 +180,7 @@ sequenceDiagram
     S-->>B: Packet(CHAT_MESSAGE_NOTIFY, ChatMessage)
 ```
 
-If the receiver is offline, Chat may store the message in Redis or in-memory fallback and return `TARGET_OFFLINE`; the message is replayed when the receiver logs in to Chat.
+If the receiver is offline, Chat may store the message in Redis or in-memory fallback and return `TARGET_OFFLINE`; the message is replayed when the receiver logs in to Chat. Offline messages also trigger a device push through the notification service when chat is started with `--notification_host` (fire-and-forget; see the 6xxx section above).
 
 ## WebSocket Usage
 

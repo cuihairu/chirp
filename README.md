@@ -33,7 +33,7 @@ chirp 想解决的就是这件事，设计目标按优先级排列：
 ```text
                       ┌─────────────────────────────┐
  游戏客户端 ──────────►│  game_gateway  (TCP/WS)     │  用户 token
- App        ──────────►│  app_gateway   (WS/TLS 规划)│  用户 token + 推送桥接（规划）
+ App        ──────────►│  app_gateway   (WS/TCP)     │  用户 token + 设备推送转发
  游戏服务端 ──────────►│  server_gateway (TCP 出站)  │  service_id + secret
                       └──────────────┬──────────────┘
                                      │ 共享核心：auth / 会话与在线 / chat / notification
@@ -47,6 +47,8 @@ chirp 想解决的就是这件事，设计目标按优先级排列：
 | Auth | TCP 6000 | Supported | token 校验；依赖满足时可构建增强认证 |
 | Chat | TCP 7000 / WS 7001 | Supported | 私聊、群组、已读回执、正在输入、表情回应、消息编辑/删除、@提及、历史、离线队列 |
 | Server Gateway | TCP 8100 | Experimental | 服务平面枢纽：游戏服出站长连接 + 凭证接入，注入系统/NPC 消息，事件离线排队、重连重投直到 ack；支持 Redis Streams 上行注入回退（`--broker_redis_host`），见 [docs/server_plane.md](docs/server_plane.md) |
+| Notification | TCP 5006 / WS 5016 | Experimental | 推送平面：设备注册/注销/token 更新/查询（6xxx）、按用户推送；APNs/FCM 的 HTTP 投递目前是日志 stub（`PushTransport` 可注入真实实现） |
+| App Gateway | TCP 5200 / WS 5201 | Experimental | App 接入边缘：登录/心跳/会话绑定 + 设备消息转发到 notification（要求已认证会话，user_id 以服务端认证结果为准） |
 
 ## 先读什么
 
@@ -99,7 +101,7 @@ TCP 和 WebSocket 使用同一套二进制 payload：
 
 业务 envelope 定义在 `proto/gateway.proto`：
 
-- `msg_id`：消息类型，按接入平面分段——1xxx 认证/会话、2xxx 聊天、3xxx 社交、4xxx 语音、5xxx 服务器平面
+- `msg_id`：消息类型，按接入平面分段——1xxx 认证/会话、2xxx 聊天、3xxx 社交、4xxx 语音、5xxx 服务器平面、6xxx 推送/设备
 - `sequence`：请求序号，用于匹配响应
 - `body`：具体业务 protobuf bytes，例如 `chirp.auth.LoginRequest`、`chirp.server_gateway.MessageInjectRequest`
 
@@ -109,14 +111,14 @@ TCP 和 WebSocket 使用同一套二进制 payload：
 - `gateway` 登录不会自动授权一个独立的 `chat` 连接。
 - `server_gateway` 的注入链路已在回环级打通（chat 作为内部节点消费 `InjectMessageNotify`，走与玩家发消息相同的存储/投递尾巴），并支持 Redis Streams 上行回退（游戏服无法长连接时 `XADD` 注入，ack + PEL 重放，需 Redis >= 6.2），但 `OK` 仍只表示"服务平面已受理"，未确认玩家侧送达；进程级 E2E smoke 尚未覆盖。
 - `social`、`voice`、`notification`、`search`、SDK、移动端、管理后台不应默认视为生产稳定能力。
-- App 接入边缘（`app_gateway`）与推送桥接还在规划中。
+- `app_gateway` 与推送链路已可用但边界明确：chat 离线消息会经 `PushBridge` → notification 触发设备推送；notification 的 provider HTTP 投递是日志 stub（无 TLS，真实 APNs HTTP/2 / FCM HTTP 待接），推送桥仅接入默认构建的 `chirp_chat`（`main_enhanced`/`main_distributed` 未接）。
 - NPC 对话系统目前主要是设计文档（[docs/design-notes/](docs/design-notes/)），不能当作已落地后端能力。
 
 ## Roadmap
 
 1. ~~chat 作为内部节点接入服务器平面，消费注入消息，打通端到端注入链路~~（已完成，回环级验证；进程级 E2E smoke 待做）
 2. ~~服务器平面增加 Redis Streams broker 回退（无法长连接的游戏服走 ack + 重放）~~（已完成，仅上行注入：游戏服 `XADD` → hub 消费组 → 现有注入链路，见 [docs/server_plane.md](docs/server_plane.md)）
-3. `app_gateway` 与推送桥接（APNs/FCM，经 notification 服务）
+3. ~~`app_gateway` 与推送桥接（APNs/FCM，经 notification 服务）~~（已完成，部分交付：`app_gateway` 5200/5201、notification 协议面 5006/5016、chat 离线消息触发推送；推送 HTTP 层是 `PushTransport` 抽象 + 日志 stub，真实 APNs/FCM 投递待接）
 4. libs/network 封装 I/O 后端开关（epoll 默认，io_uring 可选）
 5. NPC 对话服务落地（依赖注入通道 + 事件通道）
 
