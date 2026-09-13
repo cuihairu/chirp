@@ -51,9 +51,15 @@ Packet MakeRawPacket(MsgID msg_id, int64_t seq, const std::string& body) {
 }
 
 // Minimal in-process hub: accepts connections, records every framed packet,
-// answers auth according to the scripted code, and pongs heartbeats.
+// answers auth according to the scripted code, pongs heartbeats, and replies
+// to service-plane RPCs according to the scripted rpc mode.
 class FakeHubServer {
  public:
+  // How INJECT_MESSAGE_REQ / EVENT_PUBLISH_REQ / EVENT_ACK_REQ are answered:
+  // kEchoOk echoes the request's id with OK, kEchoError answers with the
+  // scripted error code, kOff leaves the RPC unanswered (stays pending).
+  enum class RpcMode { kEchoOk, kEchoError, kOff };
+
   explicit FakeHubServer(chirp::common::ErrorCode auth_code = chirp::common::OK,
                          int heartbeat_interval = 1)
       : auth_code_(auth_code),
@@ -80,6 +86,18 @@ class FakeHubServer {
   }
 
   uint16_t port() const { return port_; }
+
+  void SetRpcMode(RpcMode mode) {
+    asio::post(io_, [this, mode] {
+      std::lock_guard<std::mutex> lock(mu_);
+      rpc_mode_ = mode;
+    });
+  }
+
+  RpcMode rpc_mode() {
+    std::lock_guard<std::mutex> lock(mu_);
+    return rpc_mode_;
+  }
 
   size_t Count(MsgID msg_id) {
     std::lock_guard<std::mutex> lock(mu_);
@@ -201,6 +219,41 @@ class FakeHubServer {
       chirp::server_gateway::ServerHeartbeatPong pong;
       pong.set_server_time_ms(0);
       WriteTo(*sock, MakePacket(chirp::gateway::SERVER_HEARTBEAT_PONG, pkt.sequence(), pong));
+    } else if (pkt.msg_id() == chirp::gateway::INJECT_MESSAGE_REQ ||
+               pkt.msg_id() == chirp::gateway::EVENT_PUBLISH_REQ ||
+               pkt.msg_id() == chirp::gateway::EVENT_ACK_REQ) {
+      std::lock_guard<std::mutex> lock(mu_);
+      if (rpc_mode_ == RpcMode::kOff) {
+        return;  // leave the RPC pending on the peer
+      }
+      const auto code = rpc_mode_ == RpcMode::kEchoOk
+                            ? chirp::common::OK
+                            : chirp::common::SERVER_UNAVAILABLE;
+      MsgID resp_id = chirp::gateway::INJECT_MESSAGE_RESP;
+      std::string body;
+      if (pkt.msg_id() == chirp::gateway::INJECT_MESSAGE_REQ) {
+        chirp::server_gateway::MessageInjectRequest req;
+        req.ParseFromString(pkt.body());
+        chirp::server_gateway::MessageInjectResponse resp;
+        resp.set_code(code);
+        resp.set_inject_id(req.inject_id());
+        body = resp.SerializeAsString();
+      } else if (pkt.msg_id() == chirp::gateway::EVENT_PUBLISH_REQ) {
+        chirp::server_gateway::EventPublishRequest req;
+        req.ParseFromString(pkt.body());
+        chirp::server_gateway::EventPublishResponse resp;
+        resp.set_code(code);
+        resp.set_event_id(req.event_id());
+        resp.set_queued(code != chirp::common::OK);
+        resp_id = chirp::gateway::EVENT_PUBLISH_RESP;
+        body = resp.SerializeAsString();
+      } else {
+        chirp::server_gateway::EventAckResponse resp;
+        resp.set_code(code);
+        resp_id = chirp::gateway::EVENT_ACK_RESP;
+        body = resp.SerializeAsString();
+      }
+      WriteTo(*sock, MakeRawPacket(resp_id, pkt.sequence(), body));
     }
   }
 
@@ -220,6 +273,7 @@ class FakeHubServer {
   std::vector<std::shared_ptr<asio::ip::tcp::socket>> sockets_;
   std::vector<Packet> received_;
   std::vector<std::string> auth_service_ids_;
+  RpcMode rpc_mode_{RpcMode::kEchoOk};
 };
 
 template <typename Pred>
@@ -275,6 +329,13 @@ chirp::chat::ServerGatewayPeer::Options HubOptions(const FakeHubServer& hub,
   opts.secret = secret;
   opts.reconnect_delay_seconds = 1;
   return opts;
+}
+
+// Applies an rpc mode and waits until it took effect on the hub thread, so a
+// request sent afterwards cannot race the switch.
+void SetRpcModeSync(FakeHubServer& hub, FakeHubServer::RpcMode mode) {
+  hub.SetRpcMode(mode);
+  ASSERT_TRUE(WaitFor([&] { return hub.rpc_mode() == mode; }, std::chrono::seconds(5)));
 }
 
 TEST(ChatHubPeerTest, AuthenticatesSendsHeartbeatAndDeliversInjections) {
@@ -591,6 +652,407 @@ TEST(ChatHubPeerTest, StartAfterStopDoesNothing) {
   while (io.poll() > 0) {
   }
   SUCCEED();
+}
+
+// Uplink RPCs round-trip through the hub: the peer correlates the response by
+// sequence and hands the response code to the caller.
+TEST(ChatHubPeerTest, RpcRoundTripsWithEchoedIds) {
+  chirp::common::Logger::Instance().SetLevel(chirp::common::Logger::Level::kError);
+  FakeHubServer hub;
+  asio::io_context io;
+  PeerIoRunner runner(io);
+
+  auto peer = chirp::chat::ServerGatewayPeer::Create(
+      io, HubOptions(hub), [](const chirp::server_gateway::InjectMessageNotify&) {});
+  peer->Start();
+  ASSERT_TRUE(WaitFor([&] { return hub.Count(chirp::gateway::SERVER_AUTH_REQ) >= 1; },
+                      std::chrono::seconds(5)));
+
+  std::mutex mu;
+  chirp::server_gateway::MessageInjectRequest inject_req;
+  inject_req.set_inject_id("inj-1");
+  inject_req.set_sender_kind(chirp::server_gateway::SENDER_NPC);
+  inject_req.set_sender_id("npc:blacksmith_01");
+  inject_req.set_content("forged blade");
+  chirp::server_gateway::EventPublishRequest publish_req;
+  publish_req.set_event_id("evt-1");
+  publish_req.set_target_service_id("npc_dialog");
+  publish_req.set_event_type("npc.player_message");
+  chirp::server_gateway::EventAckRequest ack_req;
+  ack_req.add_event_ids("evt-1");
+
+  size_t done = 0;
+  std::vector<chirp::common::ErrorCode> codes;
+  peer->SendInject(inject_req, [&](chirp::common::ErrorCode c) {
+    std::lock_guard<std::mutex> lock(mu);
+    codes.push_back(c);
+    done++;
+  });
+  peer->SendEventPublish(publish_req, [&](chirp::common::ErrorCode c) {
+    std::lock_guard<std::mutex> lock(mu);
+    codes.push_back(c);
+    done++;
+  });
+  peer->SendEventAck(ack_req, [&](chirp::common::ErrorCode c) {
+    std::lock_guard<std::mutex> lock(mu);
+    codes.push_back(c);
+    done++;
+  });
+  EXPECT_TRUE(WaitFor([&] {
+    std::lock_guard<std::mutex> lock(mu);
+    return done == 3;
+  }, std::chrono::seconds(5)));
+  for (auto code : codes) {
+    EXPECT_EQ(code, chirp::common::OK);
+  }
+
+  // The hub saw well-formed requests echoing the caller-supplied ids.
+  const auto inj = hub.All(chirp::gateway::INJECT_MESSAGE_REQ);
+  ASSERT_EQ(inj.size(), 1u);
+  chirp::server_gateway::MessageInjectRequest seen_inject;
+  ASSERT_TRUE(seen_inject.ParseFromString(inj[0].body()));
+  EXPECT_EQ(seen_inject.inject_id(), "inj-1");
+  EXPECT_EQ(seen_inject.sender_id(), "npc:blacksmith_01");
+  const auto pub = hub.All(chirp::gateway::EVENT_PUBLISH_REQ);
+  ASSERT_EQ(pub.size(), 1u);
+  chirp::server_gateway::EventPublishRequest seen_pub;
+  ASSERT_TRUE(seen_pub.ParseFromString(pub[0].body()));
+  EXPECT_EQ(seen_pub.event_id(), "evt-1");
+  EXPECT_EQ(seen_pub.target_service_id(), "npc_dialog");
+  const auto ack = hub.All(chirp::gateway::EVENT_ACK_REQ);
+  ASSERT_EQ(ack.size(), 1u);
+  chirp::server_gateway::EventAckRequest seen_ack;
+  ASSERT_TRUE(seen_ack.ParseFromString(ack[0].body()));
+  EXPECT_EQ(seen_ack.event_ids(0), "evt-1");
+
+  peer->Stop();
+  runner.Drain();
+  runner.Finish();
+}
+
+// Sending before (or without) a connection fails fast instead of queueing.
+TEST(ChatHubPeerTest, RpcWithoutConnectionFailsFast) {
+  chirp::common::Logger::Instance().SetLevel(chirp::common::Logger::Level::kError);
+  asio::io_context io;
+  auto peer = chirp::chat::ServerGatewayPeer::Create(
+      io, chirp::chat::ServerGatewayPeer::Options{},
+      [](const chirp::server_gateway::InjectMessageNotify&) {});
+  // Never started: not connected, so every send fails immediately.
+
+  chirp::server_gateway::MessageInjectRequest inject_req;
+  inject_req.set_inject_id("inj-1");
+  chirp::server_gateway::EventPublishRequest publish_req;
+  publish_req.set_event_id("evt-1");
+  chirp::server_gateway::EventAckRequest ack_req;
+  ack_req.add_event_ids("evt-1");
+
+  std::vector<chirp::common::ErrorCode> codes;
+  peer->SendInject(inject_req, [&](chirp::common::ErrorCode c) { codes.push_back(c); });
+  peer->SendEventPublish(publish_req,
+                         [&](chirp::common::ErrorCode c) { codes.push_back(c); });
+  peer->SendEventAck(ack_req, [&](chirp::common::ErrorCode c) { codes.push_back(c); });
+  ASSERT_EQ(codes.size(), 3u);
+  for (auto code : codes) {
+    EXPECT_EQ(code, chirp::common::SERVER_UNAVAILABLE);
+  }
+}
+
+// A hub error reply reaches the caller as its error code.
+TEST(ChatHubPeerTest, RpcErrorResponsePropagates) {
+  chirp::common::Logger::Instance().SetLevel(chirp::common::Logger::Level::kError);
+  FakeHubServer hub;
+  SetRpcModeSync(hub, FakeHubServer::RpcMode::kEchoError);
+  asio::io_context io;
+  PeerIoRunner runner(io);
+
+  auto peer = chirp::chat::ServerGatewayPeer::Create(
+      io, HubOptions(hub), [](const chirp::server_gateway::InjectMessageNotify&) {});
+  peer->Start();
+  ASSERT_TRUE(WaitFor([&] { return hub.Count(chirp::gateway::SERVER_AUTH_REQ) >= 1; },
+                      std::chrono::seconds(5)));
+
+  std::mutex mu;
+  chirp::common::ErrorCode code = chirp::common::OK;
+  size_t calls = 0;
+  chirp::server_gateway::EventPublishRequest req;
+  req.set_event_id("evt-err");
+  peer->SendEventPublish(req, [&](chirp::common::ErrorCode c) {
+    std::lock_guard<std::mutex> lock(mu);
+    code = c;
+    calls++;
+  });
+  EXPECT_TRUE(WaitFor([&] {
+    std::lock_guard<std::mutex> lock(mu);
+    return calls == 1;
+  }, std::chrono::seconds(5)));
+  EXPECT_EQ(code, chirp::common::SERVER_UNAVAILABLE);
+
+  peer->Stop();
+  runner.Drain();
+  runner.Finish();
+}
+
+// A connection drop with RPCs in flight fails them all; the reconnect recovers.
+TEST(ChatHubPeerTest, ConnectionLossFailsPendingRpc) {
+  chirp::common::Logger::Instance().SetLevel(chirp::common::Logger::Level::kError);
+  FakeHubServer hub;
+  SetRpcModeSync(hub, FakeHubServer::RpcMode::kOff);  // keep the first RPC pending
+  asio::io_context io;
+  PeerIoRunner runner(io);
+
+  auto peer = chirp::chat::ServerGatewayPeer::Create(
+      io, HubOptions(hub), [](const chirp::server_gateway::InjectMessageNotify&) {});
+  peer->Start();
+  ASSERT_TRUE(WaitFor([&] { return hub.Count(chirp::gateway::SERVER_AUTH_REQ) >= 1; },
+                      std::chrono::seconds(5)));
+
+  std::mutex mu;
+  std::vector<chirp::common::ErrorCode> codes;
+  chirp::server_gateway::EventAckRequest ack_req;
+  ack_req.add_event_ids("evt-drop");
+  peer->SendEventAck(ack_req, [&](chirp::common::ErrorCode c) {
+    std::lock_guard<std::mutex> lock(mu);
+    codes.push_back(c);
+  });
+  ASSERT_TRUE(WaitFor([&] { return hub.Count(chirp::gateway::EVENT_ACK_REQ) >= 1; },
+                      std::chrono::seconds(5)));
+
+  hub.CloseLatest();
+  EXPECT_TRUE(WaitFor([&] {
+    std::lock_guard<std::mutex> lock(mu);
+    return !codes.empty();
+  }, std::chrono::seconds(5)));
+  {
+    std::lock_guard<std::mutex> lock(mu);
+    ASSERT_EQ(codes.size(), 1u);
+    EXPECT_EQ(codes[0], chirp::common::SERVER_UNAVAILABLE);
+  }
+
+  // The connection comes back and later RPCs succeed.
+  EXPECT_TRUE(WaitFor([&] { return hub.Count(chirp::gateway::SERVER_AUTH_REQ) >= 2; },
+                      std::chrono::seconds(6)));
+  SetRpcModeSync(hub, FakeHubServer::RpcMode::kEchoOk);
+  peer->SendEventAck(ack_req, [&](chirp::common::ErrorCode c) {
+    std::lock_guard<std::mutex> lock(mu);
+    codes.push_back(c);
+  });
+  EXPECT_TRUE(WaitFor([&] {
+    std::lock_guard<std::mutex> lock(mu);
+    return codes.size() == 2;
+  }, std::chrono::seconds(5)));
+  {
+    std::lock_guard<std::mutex> lock(mu);
+    EXPECT_EQ(codes[1], chirp::common::OK);
+  }
+
+  peer->Stop();
+  runner.Drain();
+  runner.Finish();
+}
+
+// An unparseable response body maps to INTERNAL_ERROR, not a crash or hang.
+TEST(ChatHubPeerTest, GarbageRpcBodyMapsToInternalError) {
+  chirp::common::Logger::Instance().SetLevel(chirp::common::Logger::Level::kError);
+  FakeHubServer hub;
+  SetRpcModeSync(hub, FakeHubServer::RpcMode::kOff);
+  asio::io_context io;
+  PeerIoRunner runner(io);
+
+  auto peer = chirp::chat::ServerGatewayPeer::Create(
+      io, HubOptions(hub), [](const chirp::server_gateway::InjectMessageNotify&) {});
+  peer->Start();
+  ASSERT_TRUE(WaitFor([&] { return hub.Count(chirp::gateway::SERVER_AUTH_REQ) >= 1; },
+                      std::chrono::seconds(5)));
+
+  std::mutex mu;
+  chirp::common::ErrorCode code = chirp::common::OK;
+  size_t calls = 0;
+  chirp::server_gateway::MessageInjectRequest req;
+  req.set_inject_id("inj-garbage");
+  peer->SendInject(req, [&](chirp::common::ErrorCode c) {
+    std::lock_guard<std::mutex> lock(mu);
+    code = c;
+    calls++;
+  });
+  ASSERT_TRUE(WaitFor([&] { return hub.Count(chirp::gateway::INJECT_MESSAGE_REQ) >= 1; },
+                      std::chrono::seconds(5)));
+  // Reply on the pending sequence with a body that is not a valid protobuf.
+  const int64_t seq = hub.All(chirp::gateway::INJECT_MESSAGE_REQ)[0].sequence();
+  hub.SendToLatest(
+      MakeRawPacket(chirp::gateway::INJECT_MESSAGE_RESP, seq, "not-a-proto"));
+  EXPECT_TRUE(WaitFor([&] {
+    std::lock_guard<std::mutex> lock(mu);
+    return calls == 1;
+  }, std::chrono::seconds(5)));
+  EXPECT_EQ(code, chirp::common::INTERNAL_ERROR);
+  std::this_thread::sleep_for(std::chrono::milliseconds(200));
+  EXPECT_EQ(hub.Count(chirp::gateway::SERVER_AUTH_REQ), 1u);  // connection stayed up
+
+  peer->Stop();
+  runner.Drain();
+  runner.Finish();
+}
+
+// A response whose msg id does not match the pending request is ignored, and
+// the real response still correlates afterwards.
+TEST(ChatHubPeerTest, MismatchedResponseIdIsIgnored) {
+  chirp::common::Logger::Instance().SetLevel(chirp::common::Logger::Level::kError);
+  FakeHubServer hub;
+  SetRpcModeSync(hub, FakeHubServer::RpcMode::kOff);
+  asio::io_context io;
+  PeerIoRunner runner(io);
+
+  auto peer = chirp::chat::ServerGatewayPeer::Create(
+      io, HubOptions(hub), [](const chirp::server_gateway::InjectMessageNotify&) {});
+  peer->Start();
+  ASSERT_TRUE(WaitFor([&] { return hub.Count(chirp::gateway::SERVER_AUTH_REQ) >= 1; },
+                      std::chrono::seconds(5)));
+
+  std::mutex mu;
+  chirp::common::ErrorCode code = chirp::common::OK;
+  size_t calls = 0;
+  chirp::server_gateway::MessageInjectRequest req;
+  req.set_inject_id("inj-mismatch");
+  peer->SendInject(req, [&](chirp::common::ErrorCode c) {
+    std::lock_guard<std::mutex> lock(mu);
+    code = c;
+    calls++;
+  });
+  ASSERT_TRUE(WaitFor([&] { return hub.Count(chirp::gateway::INJECT_MESSAGE_REQ) >= 1; },
+                      std::chrono::seconds(5)));
+  const int64_t seq = hub.All(chirp::gateway::INJECT_MESSAGE_REQ)[0].sequence();
+
+  // The hub answers an inject sequence with an event-ack reply: no callback,
+  // the pending entry stays alive.
+  hub.SendToLatest(MakeRawPacket(chirp::gateway::EVENT_ACK_RESP, seq,
+                                 chirp::server_gateway::EventAckResponse().SerializeAsString()));
+  std::this_thread::sleep_for(std::chrono::milliseconds(200));
+  EXPECT_EQ(calls, 0);
+
+  // The matching reply still completes the RPC.
+  chirp::server_gateway::MessageInjectResponse ok;
+  ok.set_code(chirp::common::OK);
+  ok.set_inject_id("inj-mismatch");
+  hub.SendToLatest(MakeRawPacket(chirp::gateway::INJECT_MESSAGE_RESP, seq,
+                                 ok.SerializeAsString()));
+  EXPECT_TRUE(WaitFor([&] {
+    std::lock_guard<std::mutex> lock(mu);
+    return calls == 1;
+  }, std::chrono::seconds(5)));
+  EXPECT_EQ(code, chirp::common::OK);
+
+  peer->Stop();
+  runner.Drain();
+  runner.Finish();
+}
+
+// A response for a sequence nothing is waiting on is dropped silently.
+TEST(ChatHubPeerTest, UnknownResponseSequenceIsIgnored) {
+  chirp::common::Logger::Instance().SetLevel(chirp::common::Logger::Level::kError);
+  FakeHubServer hub;
+  asio::io_context io;
+  PeerIoRunner runner(io);
+
+  auto peer = chirp::chat::ServerGatewayPeer::Create(
+      io, HubOptions(hub), [](const chirp::server_gateway::InjectMessageNotify&) {});
+  peer->Start();
+  ASSERT_TRUE(WaitFor([&] { return hub.Count(chirp::gateway::SERVER_AUTH_REQ) >= 1; },
+                      std::chrono::seconds(5)));
+
+  chirp::server_gateway::EventPublishResponse resp;
+  resp.set_code(chirp::common::OK);
+  hub.SendToLatest(
+      MakeRawPacket(chirp::gateway::EVENT_PUBLISH_RESP, 987654, resp.SerializeAsString()));
+  std::this_thread::sleep_for(std::chrono::milliseconds(200));
+  EXPECT_EQ(hub.Count(chirp::gateway::SERVER_AUTH_REQ), 1u);  // connection stayed up
+
+  peer->Stop();
+  runner.Drain();
+  runner.Finish();
+}
+
+// With an event handler installed, delivered events reach it and malformed
+// event bodies are skipped without dropping the connection.
+TEST(ChatHubPeerTest, EventDeliverNotifyReachesHandler) {
+  chirp::common::Logger::Instance().SetLevel(chirp::common::Logger::Level::kError);
+  FakeHubServer hub;
+  asio::io_context io;
+  PeerIoRunner runner(io);
+
+  std::mutex mu;
+  std::vector<chirp::server_gateway::EventDeliverNotify> events;
+  auto peer = chirp::chat::ServerGatewayPeer::Create(
+      io, HubOptions(hub), [](const chirp::server_gateway::InjectMessageNotify&) {},
+      [&](const chirp::server_gateway::EventDeliverNotify& n) {
+        std::lock_guard<std::mutex> lock(mu);
+        events.push_back(n);
+      });
+  peer->Start();
+  ASSERT_TRUE(WaitFor([&] { return hub.Count(chirp::gateway::SERVER_AUTH_REQ) >= 1; },
+                      std::chrono::seconds(5)));
+
+  chirp::server_gateway::EventDeliverNotify event;
+  event.set_event_id("evt-9");
+  event.set_event_type("npc.player_message");
+  event.set_payload("hello");
+  event.set_attempt(1);
+  hub.SendToLatest(MakePacket(chirp::gateway::EVENT_DELIVER_NOTIFY, 0, event));
+  EXPECT_TRUE(WaitFor([&] {
+    std::lock_guard<std::mutex> lock(mu);
+    for (const auto& n : events) {
+      if (n.event_id() == "evt-9") {
+        return true;
+      }
+    }
+    return false;
+  }, std::chrono::seconds(5)));
+
+  // A malformed event body is logged and skipped; the connection stays up.
+  hub.SendToLatest(MakeRawPacket(chirp::gateway::EVENT_DELIVER_NOTIFY, 0, "not-a-proto"));
+  std::this_thread::sleep_for(std::chrono::milliseconds(200));
+  {
+    std::lock_guard<std::mutex> lock(mu);
+    EXPECT_EQ(events.size(), 1u);
+  }
+  EXPECT_EQ(hub.Count(chirp::gateway::SERVER_AUTH_REQ), 1u);  // connection stayed up
+
+  peer->Stop();
+  runner.Drain();
+  runner.Finish();
+}
+
+// Stopping with RPCs in flight fails them on the io thread instead of
+// leaving callers waiting forever.
+TEST(ChatHubPeerTest, StopFailsPendingRpc) {
+  chirp::common::Logger::Instance().SetLevel(chirp::common::Logger::Level::kError);
+  FakeHubServer hub;
+  SetRpcModeSync(hub, FakeHubServer::RpcMode::kOff);
+  asio::io_context io;
+  PeerIoRunner runner(io);
+
+  auto peer = chirp::chat::ServerGatewayPeer::Create(
+      io, HubOptions(hub), [](const chirp::server_gateway::InjectMessageNotify&) {});
+  peer->Start();
+  ASSERT_TRUE(WaitFor([&] { return hub.Count(chirp::gateway::SERVER_AUTH_REQ) >= 1; },
+                      std::chrono::seconds(5)));
+
+  std::mutex mu;
+  std::vector<chirp::common::ErrorCode> codes;
+  chirp::server_gateway::EventPublishRequest req;
+  req.set_event_id("evt-stop");
+  peer->SendEventPublish(req, [&](chirp::common::ErrorCode c) {
+    std::lock_guard<std::mutex> lock(mu);
+    codes.push_back(c);
+  });
+  ASSERT_TRUE(WaitFor([&] { return hub.Count(chirp::gateway::EVENT_PUBLISH_REQ) >= 1; },
+                      std::chrono::seconds(5)));
+
+  peer->Stop();
+  runner.Drain();
+  std::lock_guard<std::mutex> lock(mu);
+  ASSERT_EQ(codes.size(), 1u);
+  EXPECT_EQ(codes[0], chirp::common::SERVER_UNAVAILABLE);
+  runner.Finish();
 }
 
 }  // namespace
