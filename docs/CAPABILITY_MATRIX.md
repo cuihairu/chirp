@@ -27,7 +27,7 @@ This document describes the repository's current implementation status by runtim
 | Social / presence | `services/social` | Experimental | Present as service code, but not validated as a core path |
 | Voice signaling / WebRTC integration | `services/voice`, `sdks/core/modules/voice` | Experimental | Broad surface area, environment-heavy, not part of the minimal verified path |
 | Notification delivery | `services/notification` | Experimental | Protocol face live on TCP 5006 / WS 5016 (6xxx device + push messages, 100% unit coverage); in-process device registry, per-user cooldown and payload builders are real, but provider HTTP delivery is a logging `PushTransport` stub (no TLS; inject a real transport for APNs HTTP/2 / FCM HTTP) |
-| App gateway edge (companion apps) | `chirp_app_gateway` | Experimental | TCP 5200 / WS 5201: login/heartbeat/session binding like the game gateway plus 6xxx device-message forwarding to notification (requires an authenticated session, `user_id` pinned server-side); chat business packets are not accepted |
+| App gateway edge (companion apps) | `chirp_app_gateway` | Experimental | TCP 5200 / WS 5201: login/heartbeat/session binding like the game gateway plus 6xxx device-message forwarding to notification (requires an authenticated session, `user_id` pinned server-side); chat business packets are not accepted. The player-aggregation target model (player identity linked to N games, cross-game subscriptions / voice / chat fan-in) is documented in architecture.md but not implemented |
 | Search service | `services/search` | Experimental | Present in tree, not established as a verified path |
 
 ## SDKs and Apps

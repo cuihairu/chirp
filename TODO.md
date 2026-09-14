@@ -25,6 +25,7 @@
 
 - [ ] **统一登录/会话语义**:gateway 与 chat 各自处理 `LOGIN_REQ`,且 chat 版是 "token 即 user_id" 脚手架(`services/chat/src/main.cc:265`)。目标拓扑中 chat 应成为内部服务,由 `game_gateway` 吸收直连入口,客户端只认边缘。前置决策:token 验证方案选型(不透明 token 查 Redis / HMAC 签名本地验签 / 混合),见 `docs/architecture.md` 凭证模型一节。
 - [ ] **设备级会话核心**:Redis session registry 从 "user → instance" 升级为 "user → device → edge instance",支撑 app 边缘与跨端语义(跨设备投递、kick 策略、统一未读数)。
+- [ ] **玩家聚合平面模型(app_gateway 的目标形态)**:两类玩家边缘定位不同——游戏边缘(SDK/game_gateway/server 平面)**面向游戏接入、不做聚合**(一个接入可覆盖同一运营方的多款游戏,身份是游戏级);app 边缘是**玩家聚合平面**:player 身份(平台级)↔ 多个 game 身份的绑定注册(由游戏后端经服务器平面主张绑定)、跨游戏频道订阅与聊天 fan-in(统一未读)、跨游戏语音组队(语音身份=玩家)。当前 `app_gateway` 只有连接骨架 + 6xxx 转发,聚合模型未实现。与设备级会话核心同批设计;需一并决策"app 平面如何触达各游戏 chat 数据"(共享多租户核心 + 游戏命名空间 vs 联邦桥接),见 `docs/architecture.md`「Game-facing plane vs player aggregation plane」。
 
 ### P1 — 测试与构建一致性
 
@@ -44,6 +45,7 @@
 
 ### P3 — 暂缓项与杂项
 
+- [ ] **Web 版伴侣 app**(低优先级,已加入计划):浏览器端 Discord 式 web app(现状:`apps/mobile_companion` 是移动雏形,`sdks/` 无 web SDK)。不排期;开始做 app 端时**先 web 后 Android/iOS**——web 一套代码即可在桌面/移动浏览器复用,且不依赖应用商店审核,验证成本最低。前置依赖:P1 统一登录/会话语义(web 端走 app_gateway 边缘,而非直连 chat)。
 - [ ] **MsgID 去中心化**(暂缓):单一全局枚举意味着任何服务加消息都要改 `proto/gateway.proto`,但当前规模下中心化枚举天然防号段冲突,是优点;多团队并行开发时再评估按平面拆分。
 - [ ] **容量基准实测**:旧 roadmap 的 "10k+ 并发" 宣称需实测证据后方可对外使用(见 `docs/architecture.md`)。
 - [ ] **命名冗余/历史包袱**:`websocket_util.cc` 与 `websocket_utils.h` 并存;`presence_manager_v2` 只有 v2 没有 v1;libs/common 自研 sha256/base64 与 auth 的 libsodium 两套实现并存(评估统一或文档说明边界)。

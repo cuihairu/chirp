@@ -14,7 +14,7 @@ Chirp should currently be understood as a game-oriented realtime communication b
 | Server Gateway | TCP 8100 | Experimental | Trusted service-plane hub: game backends authenticate with `service_id` + secret, inject system/NPC messages, and receive events queued until acked |
 | NPC Dialog | no listener | Experimental | Server-plane client: answers `npc.player_message` events with keyword-rule replies injected back into chat (see [server_plane.md](./server_plane.md)) |
 | Notification | TCP 5006 / WS 5016 | Experimental | Device registry and push plane (6xxx); provider HTTP delivery is a logging `PushTransport` stub |
-| App Gateway | TCP 5200 / WS 5201 | Experimental | Companion-app edge: login/heartbeat/session binding plus device-message forwarding to Notification (authenticated sessions only). |
+| App Gateway | TCP 5200 / WS 5201 | Experimental | Companion-app edge: login/heartbeat/session binding plus device-message forwarding to Notification (authenticated sessions only). Connection skeleton only today — the target is the **player aggregation plane**: a player identity linked to multiple games (cross-game channel subscriptions, aggregated in-game chat, cross-game voice team-up); see [architecture.md](./architecture.md) "Game-facing plane vs player aggregation plane" |
 
 Minimal useful topology:
 
@@ -30,7 +30,7 @@ graph TD
     Chat -. optional archive / enhanced storage .-> MySQL[(MySQL)]
     Chat -- offline push (fire-and-forget) --> Notification[Notification]
 
-    App[Companion App] -- login / device messages --> AppGateway[App Gateway]
+    App[Companion App] -- login / device messages --> AppGateway["App Gateway<br/>(aggregation = target, not built)"]
     AppGateway --> Auth
     AppGateway -- 6xxx forwarding --> Notification
 
@@ -46,6 +46,7 @@ graph TD
 - Use `chat` directly for private messages and history.
 - Do not assume `gateway` forwards arbitrary business packets yet.
 - Do not assume a successful Gateway login automatically authenticates an independent Chat connection.
+- Do not assume `app_gateway` aggregates anything across games yet. The two player-facing planes are different: the game-facing edge serves game integrations (one integration may cover several titles) with game-scoped identities and never aggregates across games; the app edge targets player-scoped aggregation (subscriptions, cross-game voice, chat fan-in) — documented in [architecture.md](./architecture.md), not implemented.
 - Treat Redis and MySQL paths as optional enhancements unless the deployment explicitly enables them.
 
 ## Protocol

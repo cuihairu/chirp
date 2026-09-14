@@ -31,14 +31,30 @@ Chirp has three access points with different trust models, transports, and lifec
 
 | Access point | Edge | Transport | Identity | Network reality |
 | --- | --- | --- | --- | --- |
-| Game client | `game_gateway` (evolved from `services/gateway`) | TCP + Packet | user token | lives and dies with the game process |
-| Companion app | `app_gateway` (experimental) | WebSocket/TCP (TLS planned) | user token | mobile network: reconnects, NAT timeouts, backgrounding |
+| Game client | `game_gateway` (evolved from `services/gateway`) | TCP + Packet | **game-scoped** user token (issued by that game's backend) | lives and dies with the game process |
+| Companion app | `app_gateway` (experimental) | WebSocket/TCP (TLS planned) | **player identity** (platform-scoped), linked to N game identities | mobile network: reconnects, NAT timeouts, backgrounding |
 | Game backend | `server_gateway` | outbound long connection; broker fallback | `service_id` + service secret | always-on trusted service, usually in a private subnet |
+
+### Game-facing plane vs player aggregation plane
+
+The two untrusted edges are not the same edge tuned differently — they serve two different planes:
+
+- **The game-facing plane is not aggregating.** The SDK, `game_gateway`, the chat plane it enters, and the `server_gateway` integration serve **game integrations**: one deployment may carry a single game or several titles from the same operator (each with its own `service_id` and backend-issued, game-scoped user tokens), and identity/channel/history data stays game-scoped. What this plane never does is aggregate a player's experience **across** games — an integration only sees the games it serves.
+- **The app plane aggregates players.** A player plays multiple games. `app_gateway` authenticates the **player** (a platform-scoped identity, not any single game's user) and is the home for cross-game capabilities: subscribing to / following channels of the games they play, reading those games' in-game chat from one place, and cross-game voice team-up where a room can mix players from different games.
+
+Design consequences of the split (target model; see the open decision below):
+
+1. **Identity binding registry.** The player identity and each game identity must be linked. The natural assertion point is the game backend: it knows "platform user X is game user Y", and links via the server plane (the same trust plane that already carries `service_id`). Chirp stores the bindings; edges never guess them.
+2. **Subscription + fan-in routing.** The app needs a subscription registry (`player → {game, channel}`) and a routing path that fans per-game chat traffic into the player's aggregated feed, with unified unread counts across games.
+3. **Voice identity is player-scoped.** Cross-game team-up rooms belong to the player plane; membership and signaling identity are the player, not a game user. The per-game voice plane (4xxx) stays game-scoped.
+4. **Channels and history carry a game namespace.** Aggregation is only possible if per-game data is namespaced before it reaches the player plane.
+
+Open decision (resolved together with the P1 session-core work): **how the app plane reaches per-game chat data** — a shared multi-tenant core with game-namespaced channels, or federated per-game chirp stacks bridged into the app plane. The repository currently runs one shared core, so the multi-tenant namespace direction is the default assumption; federation remains the fallback if per-game isolation requirements demand it.
 
 Rules that make independence work:
 
 - **Edges are thin**: connection management, protocol adaptation, auth forwarding, heartbeat. No business state lives in an edge.
-- **The core is shared**: auth, the device-level session/Presence registry, chat, and notification (the app edge's offline push bridge). Same user on the game client and the app simultaneously is a core scenario, so cross-device delivery, kick policy, and unified unread counts are resolved in the core, not in any edge.
+- **The core is shared**: auth, the device-level session/Presence registry, the identity-binding registry, chat, and notification (the app edge's offline push bridge). The same **player** being in-game (via a game identity) and on the app (via the player identity) simultaneously is a core scenario, so cross-device delivery, kick policy, binding lookup, and unified unread counts are resolved in the core, not in any edge.
 - **The game backend plane never uses user identity** and never touches the player edges. A game server that logs into a player gateway would have to masquerade as a user: it would pollute session semantics, break kick/presence, and distort rate-limiting designed for untrusted peers.
 
 ### Credential model: service credentials vs user tokens
@@ -87,7 +103,7 @@ The three access points share a common skeleton but differ on almost every opera
 
 | Dimension | Game client | Companion app | Game backend |
 | --- | --- | --- | --- |
-| Identity granularity | User session (user + device) | User session + device push token | Service identity (**never a user**) |
+| Identity granularity | Game-scoped user session (game's own user + device); deployments follow integrations (one integration may cover several titles) | Player session (platform identity) + device push token, linked to N game identities | Service identity (**never a user**) |
 | Credential | Short-lived user token | Short-lived user token | Long-lived appkey/appSecret (`service_id` + secret) |
 | Connection direction | Dial-in | Dial-in | **Dial-out** (no callback port into private subnets) |
 | Transport | TCP preferred (no WS frame/masking overhead), WS offered on the same edge | WS common — for **web-version reachability, middlebox traversal, and L7 infrastructure**, not because WS suits mobile networks (WS rides on TCP; NAT timeouts and radio wakeups hit both equally). Process death on mobile is absorbed by APNs/FCM push, not by transport choice | TCP; Redis Streams broker fallback |
@@ -104,12 +120,12 @@ What all three share (the shared core's scope):
 
 - The same wire framing: `[uint32_be size][chirp.gateway.Packet]` — and each edge listens on TCP and WS simultaneously carrying the same payload, so transport is the integrator's choice, not an edge-defining property.
 - The same connection lifecycle skeleton: authenticate on the first frame within a timeout, heartbeat, reconnect.
-- The same destination: auth, session/presence, chat, notification. The same user playing in-game and chatting from the app simultaneously is a core scenario, not an edge case.
+- The same destination: auth, session/presence, the binding registry, chat, notification. The same **player** playing in-game (game identity) and chatting from the app (player identity) simultaneously is a core scenario, not an edge case.
 - Idempotency keys for retries: `sequence` on client requests, `inject_id` / `event_id` on the server plane.
 
 Design conclusions drawn from the matrix:
 
-1. **Game client vs app differ in tuning, not in trust model** — both are untrusted user-token edges. The code already shows this: `app_gateway` reuses the gateway's session registry and auth client by compiling its sources. The correct shape is one shared edge library with per-edge configuration (heartbeat cadence, push bridge, TLS), not copied code (tracked as P0 in TODO.md).
+1. **Game client vs app share the connection skeleton, not the identity plane** — both are untrusted user-token edges with the same lifecycle needs, so the *connection* skeleton should be one shared edge library with per-edge configuration (heartbeat cadence, push bridge, TLS), not copied code (tracked as P0 in TODO.md) — the code already shows the duplication: `app_gateway` reuses the gateway's session registry and auth client by compiling its sources. But the *business* surface differs fundamentally: the game edge serves one game's deployment and its game-scoped identity; the app edge is the player aggregation plane (subscriptions, cross-game fan-in, cross-game voice). Do not collapse them into "the same edge, different tuning".
 2. **The game backend differs in trust model fundamentally** — non-user identity, credentials that must never ship in a client, opposite connection direction, at-least-once semantics. Any shortcut that reuses a player edge for game servers corrupts session semantics.
 3. **The sharing boundary is exactly four things**: the envelope/framing, the codec, the session core, and base libraries. Transport tuning, reconnect policy, rate limits, and offline semantics are edge-private.
 
@@ -137,9 +153,12 @@ flowchart TB
     App["Companion App"]
     GameBackend["Game Backend"]
 
-    subgraph edges["Player edges (untrusted, user tokens)"]
+    subgraph gameedge["Game-facing edge (untrusted, game-scoped tokens)"]
       Gateway["services/gateway<br/>chirp_gateway<br/>TCP 5000 / WS 5001"]
-      AppGateway["services/app_gateway<br/>chirp_app_gateway<br/>TCP 5200 / WS 5201"]
+    end
+
+    subgraph appedge["Player aggregation edge (untrusted, player identity)"]
+      AppGateway["services/app_gateway<br/>chirp_app_gateway<br/>TCP 5200 / WS 5201<br/>target: cross-game subscriptions / voice / chat fan-in"]
     end
 
     subgraph plane["Server plane (trusted, service credentials)"]
@@ -183,7 +202,7 @@ flowchart TB
 Important interpretation:
 
 - `gateway` and `chat` are both client-facing services today; the game backend plane runs as `server_gateway` (hub, TCP 8100) plus plane clients — `chat` as an internal node and `npc_dialog` as the first event consumer, with a process-level smoke (`./test_services.sh --smoke-npc`). Game backends still integrate through the protocol, not a shipped reference client.
-- `app_gateway` (TCP 5200 / WS 5201) is live as an experimental companion-app edge: gateway-style auth/heartbeat plus 6xxx device-message forwarding to notification. Chat business packets are not accepted there (that is migration step 4).
+- `app_gateway` (TCP 5200 / WS 5201) is live as an experimental companion-app edge: gateway-style auth/heartbeat plus 6xxx device-message forwarding to notification. Chat business packets are not accepted there (that is migration step 4). Its **target role is the player aggregation plane** — the player identity linked to N games, cross-game channel subscriptions, aggregated in-game chat, and cross-game voice team-up (see "Game-facing plane vs player aggregation plane" above). None of that aggregation exists yet; today only the connection skeleton and device forwarding are real.
 - `gateway` is not yet a universal business router.
 - `chat` direct access is the practical path for current chat smoke tests and the C++ SDK example.
 - Redis is optional for local validation, but required for meaningful multi-instance gateway session behavior and distributed chat routing experiments.
@@ -201,7 +220,7 @@ Important interpretation:
 | SDKs | `sdks/core`, `sdks/unity`, `sdks/unreal` | Integration base and wrappers, currently experimental |
 | Apps/tools | `apps/*`, `tools/benchmark` | Demos, smoke clients, benchmarks, archive helpers |
 | Delivery | `docker-compose.yml`, `deploy/`, `scripts/`, `tests/` | Local orchestration, cluster sketches, build and smoke validation |
-| Quality gates | `tests/unit`, `scripts/run_coverage.sh`, `test_services.sh` | 24 unit suites at 100% line coverage per the repo coverage script (documented exclusions only); CI hard-fails any package under 98%; five process-level smokes (`--smoke`, `--smoke-chat`, `--smoke-sdk`, `--smoke-npc`, `--smoke-redis`) |
+| Quality gates | `tests/unit`, `scripts/run_coverage.sh`, `test_services.sh` | 25 unit suites at 100% line coverage per the repo coverage script (documented exclusions only); CI hard-fails any package under 98%; five process-level smokes (`--smoke`, `--smoke-chat`, `--smoke-sdk`, `--smoke-npc`, `--smoke-redis`) |
 
 ## Protocol Baseline
 
@@ -368,7 +387,7 @@ From the current runtime to the three-edge topology, in order:
 
 1. **Server plane hub** (`chirp_server_gateway`): greenfield, no legacy constraints; unblocks NPC quest callbacks, system/trade message injection. Chat consumes injections as an internal peer.
 2. **Device-level session core**: upgrade the existing Redis session registry from "user → instance" to "user → device → edge instance". Prerequisite for the app edge and for cross-device semantics.
-3. **App edge** (`app_gateway`): WebSocket-first with mobile tuning (heartbeat, reconnect backoff) plus the notification service as a real APNs/FCM push bridge. **Partial delivery (2026-09):** `chirp_app_gateway` serves auth/heartbeat/device-forwarding on TCP 5200 / WS 5201 and chat's offline queue triggers pushes through notification; still missing are TLS, mobile tuning, and real provider delivery (the `PushTransport` seam is backed by a logging stub).
+3. **App edge** (`app_gateway`): WebSocket-first with mobile tuning (heartbeat, reconnect backoff) plus the notification service as a real APNs/FCM push bridge. **Partial delivery (2026-09):** `chirp_app_gateway` serves auth/heartbeat/device-forwarding on TCP 5200 / WS 5201 and chat's offline queue triggers pushes through notification; still missing are TLS, mobile tuning, real provider delivery (the `PushTransport` seam is backed by a logging stub), and the entire player-aggregation model — identity bindings, cross-game subscriptions and fan-in, cross-game voice (see "Game-facing plane vs player aggregation plane").
 4. **Game edge consolidation**: `game_gateway` absorbs the direct chat entry so clients only know edges; chat becomes internal-only.
 
 At every step the currently supported direct path stays buildable and smoke-tested until its replacement is verified.
