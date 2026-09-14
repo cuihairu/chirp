@@ -12,10 +12,11 @@ constexpr char kNpcSenderPrefix[] = "npc:";
 }  // namespace
 
 NpcResponder::NpcResponder(NpcEngine& engine, InjectSender send_inject,
-                           AckSender send_ack)
+                           AckSender send_ack, std::size_t dedupe_capacity)
     : engine_(engine),
       send_inject_(std::move(send_inject)),
-      send_ack_(std::move(send_ack)) {}
+      send_ack_(std::move(send_ack)),
+      dedupe_capacity_(dedupe_capacity) {}
 
 void NpcResponder::OnEvent(const chirp::server_gateway::EventDeliverNotify& event) {
   // Not our event type: ack immediately, or it would redeliver forever.
@@ -36,6 +37,13 @@ void NpcResponder::OnEvent(const chirp::server_gateway::EventDeliverNotify& even
     return;
   }
 
+  // Redelivery of an event whose reply was already accepted: stop the hub's
+  // retry loop without replying again.
+  if (AlreadyAnswered(event.event_id())) {
+    Ack(event.event_id());
+    return;
+  }
+
   chirp::server_gateway::MessageInjectRequest reply;
   reply.set_inject_id(event.event_id());  // caller idempotency key = event id
   reply.set_sender_kind(chirp::server_gateway::SENDER_NPC);
@@ -47,11 +55,27 @@ void NpcResponder::OnEvent(const chirp::server_gateway::EventDeliverNotify& even
   send_inject_(reply, [this, event_id = event.event_id()](
                           chirp::common::ErrorCode code) {
     if (code == chirp::common::OK) {
+      RememberAnswered(event_id);
       Ack(event_id);
     }
-    // Anything else: stay unacked; the hub redelivers the event and the
-    // reply is attempted again (at-least-once).
+    // Anything else: stay unacked (and un-remembered), so the hub redelivers
+    // the event and the reply is attempted again (at-least-once).
   });
+}
+
+bool NpcResponder::AlreadyAnswered(const std::string& event_id) const {
+  return answered_.count(event_id) > 0;
+}
+
+void NpcResponder::RememberAnswered(const std::string& event_id) {
+  if (!answered_.insert(event_id).second) {
+    return;  // already tracked; keep its original eviction position
+  }
+  answered_order_.push_back(event_id);
+  while (answered_order_.size() > dedupe_capacity_) {
+    answered_.erase(answered_order_.front());
+    answered_order_.pop_front();
+  }
 }
 
 void NpcResponder::Ack(const std::string& event_id) {

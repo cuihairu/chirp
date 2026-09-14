@@ -52,9 +52,10 @@ class FakeSenders {
 };
 
 EventDeliverNotify MakeEvent(const std::string& payload,
-                             const std::string& type = "npc.player_message") {
+                             const std::string& type = "npc.player_message",
+                             const std::string& id = "evt-1") {
   EventDeliverNotify event;
-  event.set_event_id("evt-1");
+  event.set_event_id(id);
   event.set_event_type(type);
   event.set_payload(payload);
   return event;
@@ -140,6 +141,67 @@ TEST_F(NpcResponderTest, FailedAckIsOnlyLogged) {
   ASSERT_EQ(senders_.acked.size(), 1u);
   senders_.CompleteAck(0, SERVER_UNAVAILABLE);  // must not crash or retry
   EXPECT_EQ(senders_.acked.size(), 1u);
+}
+
+TEST_F(NpcResponderTest, RedeliveredAnsweredEventIsAckedWithoutNewReply) {
+  responder_->OnEvent(MakeEvent(UtterancePayload()));
+  ASSERT_EQ(senders_.injects.size(), 1u);
+  senders_.CompleteInject(0, OK);
+  ASSERT_EQ(senders_.acked.size(), 1u);
+
+  // The hub lost the ack and redelivers: the answer must not repeat.
+  responder_->OnEvent(MakeEvent(UtterancePayload()));
+  EXPECT_EQ(senders_.injects.size(), 1u);
+  ASSERT_EQ(senders_.acked.size(), 2u);
+  EXPECT_EQ(senders_.acked[1], "evt-1");  // ack again to stop the retry loop
+}
+
+TEST_F(NpcResponderTest, FailedInjectIsNotRememberedAndRedeliveryRetries) {
+  responder_->OnEvent(MakeEvent(UtterancePayload()));
+  ASSERT_EQ(senders_.injects.size(), 1u);
+  senders_.CompleteInject(0, SERVER_UNAVAILABLE);
+  EXPECT_TRUE(senders_.acked.empty());
+
+  // Not remembered: the redelivery must attempt the reply again.
+  responder_->OnEvent(MakeEvent(UtterancePayload()));
+  ASSERT_EQ(senders_.injects.size(), 2u);
+  senders_.CompleteInject(1, OK);
+  ASSERT_EQ(senders_.acked.size(), 1u);
+  EXPECT_EQ(senders_.acked[0], "evt-1");
+
+  // From now on it is answered: a further redelivery only acks.
+  responder_->OnEvent(MakeEvent(UtterancePayload()));
+  EXPECT_EQ(senders_.injects.size(), 2u);
+  EXPECT_EQ(senders_.acked.size(), 2u);
+}
+
+TEST_F(NpcResponderTest, DedupeWindowEvictsOldestEvent) {
+  responder_ = std::make_unique<NpcResponder>(
+      *engine_, senders_.inject_sender(), senders_.ack_sender(),
+      /*dedupe_capacity=*/1);
+
+  responder_->OnEvent(MakeEvent(UtterancePayload(), "npc.player_message", "evt-a"));
+  senders_.CompleteInject(0, OK);
+  responder_->OnEvent(MakeEvent(UtterancePayload(), "npc.player_message", "evt-b"));
+  senders_.CompleteInject(1, OK);
+  EXPECT_EQ(senders_.injects.size(), 2u);
+
+  // evt-a was evicted by evt-b: its redelivery answers again.
+  responder_->OnEvent(MakeEvent(UtterancePayload(), "npc.player_message", "evt-a"));
+  EXPECT_EQ(senders_.injects.size(), 3u);
+}
+
+TEST_F(NpcResponderTest, DuplicateBeforeOutcomeIsNotSuppressed) {
+  // Two deliveries of the same event, neither inject answered yet: both
+  // attempt a reply (the hub delivers serially; this only pins the
+  // semantics of an in-flight duplicate).
+  responder_->OnEvent(MakeEvent(UtterancePayload()));
+  responder_->OnEvent(MakeEvent(UtterancePayload()));
+  EXPECT_EQ(senders_.injects.size(), 2u);
+
+  senders_.CompleteInject(0, OK);
+  senders_.CompleteInject(1, OK);
+  EXPECT_EQ(senders_.acked.size(), 2u);
 }
 
 }  // namespace
