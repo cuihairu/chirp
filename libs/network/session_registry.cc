@@ -1,12 +1,12 @@
-#include "gateway_session_registry.h"
+#include "network/session_registry.h"
 
-namespace chirp::gateway {
+namespace chirp::network {
 
-std::shared_ptr<chirp::network::Session> BindAuthenticatedSession(const std::shared_ptr<GatewayState>& state,
-                                                                  const std::string& user_id,
-                                                                  const std::string& session_id,
-                                                                  const std::shared_ptr<chirp::network::Session>& session) {
-  std::shared_ptr<chirp::network::Session> old_user_session;
+std::shared_ptr<Session> BindAuthenticatedSession(const std::shared_ptr<SessionRegistry>& state,
+                                                  const std::string& user_id,
+                                                  const std::string& session_id,
+                                                  const std::shared_ptr<Session>& session) {
+  std::shared_ptr<Session> old_user_session;
   std::string previous_user_id;
 
   std::lock_guard<std::mutex> lock(state->mu);
@@ -37,8 +37,8 @@ std::shared_ptr<chirp::network::Session> BindAuthenticatedSession(const std::sha
   return old_user_session;
 }
 
-AuthenticatedSession GetAuthenticatedSession(const std::shared_ptr<GatewayState>& state,
-                                             const std::shared_ptr<chirp::network::Session>& session) {
+AuthenticatedSession GetAuthenticatedSession(const std::shared_ptr<SessionRegistry>& state,
+                                             const std::shared_ptr<Session>& session) {
   AuthenticatedSession result;
 
   std::lock_guard<std::mutex> lock(state->mu);
@@ -54,8 +54,8 @@ AuthenticatedSession GetAuthenticatedSession(const std::shared_ptr<GatewayState>
   return result;
 }
 
-bool RemoveAuthenticatedSession(const std::shared_ptr<GatewayState>& state,
-                                const std::shared_ptr<chirp::network::Session>& session,
+bool RemoveAuthenticatedSession(const std::shared_ptr<SessionRegistry>& state,
+                                const std::shared_ptr<Session>& session,
                                 std::string* user_id) {
   std::lock_guard<std::mutex> lock(state->mu);
   auto it = state->session_to_user.find(session.get());
@@ -81,4 +81,4 @@ bool RemoveAuthenticatedSession(const std::shared_ptr<GatewayState>& state,
   return true;
 }
 
-} // namespace chirp::gateway
+} // namespace chirp::network

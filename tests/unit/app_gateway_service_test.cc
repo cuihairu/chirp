@@ -17,7 +17,7 @@
 
 #include <asio.hpp>
 
-#include "gateway_session_registry.h"
+#include "network/session_registry.h"
 #include "notification_client.h"
 #include "proto/auth.pb.h"
 #include "proto/common.pb.h"
@@ -242,8 +242,8 @@ class FakeNotificationServer {
 
 class AppGatewayServiceTest : public ::testing::Test {
  protected:
-  std::shared_ptr<chirp::gateway::GatewayState> state_ =
-      std::make_shared<chirp::gateway::GatewayState>();
+  std::shared_ptr<chirp::network::SessionRegistry> state_ =
+      std::make_shared<chirp::network::SessionRegistry>();
   std::shared_ptr<MockSession> session_ = std::make_shared<MockSession>();
 
   // auth=null: the scaffold login path (no auth service configured).
@@ -278,7 +278,7 @@ TEST_F(AppGatewayServiceTest, ScaffoldLoginEmptyTokenRejected) {
   EXPECT_EQ(resp.code(), chirp::common::INVALID_PARAM);
 
   // Nothing bound.
-  EXPECT_TRUE(chirp::gateway::GetAuthenticatedSession(state_, session_).user_id.empty());
+  EXPECT_TRUE(chirp::network::GetAuthenticatedSession(state_, session_).user_id.empty());
 }
 
 TEST_F(AppGatewayServiceTest, ScaffoldLoginBindsSession) {
@@ -291,7 +291,7 @@ TEST_F(AppGatewayServiceTest, ScaffoldLoginBindsSession) {
   EXPECT_TRUE(resp.kick_previous());
   EXPECT_EQ(resp.kick().reason(), "login from another device");
 
-  auto authed = chirp::gateway::GetAuthenticatedSession(state_, session_);
+  auto authed = chirp::network::GetAuthenticatedSession(state_, session_);
   EXPECT_EQ(authed.user_id, "alice");
   EXPECT_EQ(authed.session_id, sid);
 }
@@ -317,15 +317,15 @@ TEST_F(AppGatewayServiceTest, ReLoginKicksPreviousSession) {
   EXPECT_TRUE(s1->close_after_send);
 
   // The registry now points at s2.
-  auto authed = chirp::gateway::GetAuthenticatedSession(state_, s2);
+  auto authed = chirp::network::GetAuthenticatedSession(state_, s2);
   EXPECT_EQ(authed.user_id, "alice");
 
   // The kicked session keeps its registration until the connection actually
   // closes; disconnect is what releases it.
   HandleDisconnect(s1, state_, nullptr);
-  EXPECT_TRUE(chirp::gateway::GetAuthenticatedSession(state_, s1).user_id.empty());
+  EXPECT_TRUE(chirp::network::GetAuthenticatedSession(state_, s1).user_id.empty());
   // s2 must be untouched by s1's disconnect.
-  EXPECT_EQ(chirp::gateway::GetAuthenticatedSession(state_, s2).user_id, "alice");
+  EXPECT_EQ(chirp::network::GetAuthenticatedSession(state_, s2).user_id, "alice");
 }
 
 TEST_F(AppGatewayServiceTest, LogoutEmptyUserRejected) {
@@ -360,7 +360,7 @@ TEST_F(AppGatewayServiceTest, LogoutUserMismatchDenied) {
   ASSERT_TRUE(LastBody(*session_, &resp));
   EXPECT_EQ(resp.code(), chirp::common::AUTH_FAILED);
   // Still bound.
-  EXPECT_EQ(chirp::gateway::GetAuthenticatedSession(state_, session_).user_id, "alice");
+  EXPECT_EQ(chirp::network::GetAuthenticatedSession(state_, session_).user_id, "alice");
 }
 
 TEST_F(AppGatewayServiceTest, LogoutSessionIdMismatchDenied) {
@@ -389,7 +389,7 @@ TEST_F(AppGatewayServiceTest, LogoutHappyPathClosesAndUnbinds) {
   ASSERT_TRUE(LastBody(*session_, &resp));
   EXPECT_EQ(resp.code(), chirp::common::OK);
   EXPECT_TRUE(session_->close_after_send);
-  EXPECT_TRUE(chirp::gateway::GetAuthenticatedSession(state_, session_).user_id.empty());
+  EXPECT_TRUE(chirp::network::GetAuthenticatedSession(state_, session_).user_id.empty());
 }
 
 TEST_F(AppGatewayServiceTest, HeartbeatPongEchoesTimestampAndSequence) {
@@ -528,11 +528,11 @@ TEST_F(AppGatewayServiceTest, DisconnectUnbindsSession) {
 
   HandleDisconnect(session_, state_, nullptr);
 
-  EXPECT_TRUE(chirp::gateway::GetAuthenticatedSession(state_, session_).user_id.empty());
+  EXPECT_TRUE(chirp::network::GetAuthenticatedSession(state_, session_).user_id.empty());
 
   // A second disconnect is a no-op (no crash, no double release).
   HandleDisconnect(session_, state_, nullptr);
-  EXPECT_TRUE(chirp::gateway::GetAuthenticatedSession(state_, session_).user_id.empty());
+  EXPECT_TRUE(chirp::network::GetAuthenticatedSession(state_, session_).user_id.empty());
 }
 
 TEST_F(AppGatewayServiceTest, DisconnectUnboundSessionIsNoop) {

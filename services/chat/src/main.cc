@@ -12,7 +12,7 @@
 #include <asio.hpp>
 
 #include "chat_rate_limiter.h"
-#include "chat_session_registry.h"
+#include "network/session_registry.h"
 #include "login_token_verifier.h"
 #include "chat_validation.h"
 #include "group_handlers.h"
@@ -230,9 +230,9 @@ void KickSession(const std::shared_ptr<chirp::network::Session>& session, const 
   session->SendAndClose(std::string(reinterpret_cast<const char*>(framed.data()), framed.size()));
 }
 
-void HandleDisconnect(const std::shared_ptr<chirp::chat::ChatState>& state,
+void HandleDisconnect(const std::shared_ptr<chirp::network::SessionRegistry>& state,
                       const std::shared_ptr<chirp::network::Session>& session) {
-  chirp::chat::RemoveAuthenticatedSession(state, session);
+  chirp::network::RemoveAuthenticatedSession(state, session);
 }
 
 // Aggregate of the per-feature request handlers wired into the dispatch.
@@ -258,7 +258,7 @@ struct FeatureHandlers {
 };
 
 void HandlePacket(const std::shared_ptr<MessageStore>& store,
-                  const std::shared_ptr<chirp::chat::ChatState>& state,
+                  const std::shared_ptr<chirp::network::SessionRegistry>& state,
                   FeatureHandlers& features,
                   const std::shared_ptr<chirp::network::Session>& session,
                   std::string&& payload) {
@@ -270,7 +270,7 @@ void HandlePacket(const std::shared_ptr<MessageStore>& store,
     return;
   }
 
-  const auto authenticated = chirp::chat::GetAuthenticatedSession(state, session);
+  const auto authenticated = chirp::network::GetAuthenticatedSession(state, session);
   const std::string& authenticated_user_id = authenticated.user_id;
   const std::string& authenticated_session_id = authenticated.session_id;
 
@@ -332,7 +332,7 @@ void HandlePacket(const std::shared_ptr<MessageStore>& store,
 
     if (!user_id.empty()) {
       auto old =
-          chirp::chat::BindAuthenticatedSession(state, user_id, login_resp.session_id(), session);
+          chirp::network::BindAuthenticatedSession(state, user_id, login_resp.session_id(), session);
       if (old && old.get() != session.get()) {
         KickSession(old, "login from another device");
       }
@@ -822,7 +822,7 @@ int main(int argc, char** argv) {
   }
 
   auto store = std::make_shared<MessageStore>(redis, offline_ttl_seconds);
-  auto state = std::make_shared<chirp::chat::ChatState>();
+  auto state = std::make_shared<chirp::network::SessionRegistry>();
 
   chirp::chat::ChatRateLimiter::Config rate_limit_config;
   rate_limit_config.max_logins_per_minute_per_ip = login_rate_limit_per_min;

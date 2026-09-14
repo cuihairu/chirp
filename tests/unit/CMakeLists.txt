@@ -105,7 +105,6 @@ add_test(NAME network_tests COMMAND network_tests)
 add_executable(chat_validation_tests
   chat_validation_test.cc
   chat_login_verifier_test.cc
-  ${CMAKE_SOURCE_DIR}/services/chat/src/chat_session_registry.cc
   ${CMAKE_SOURCE_DIR}/services/chat/src/chat_validation.cc
   ${CMAKE_SOURCE_DIR}/services/chat/src/login_token_verifier.cc
   ${CMAKE_SOURCE_DIR}/libs/network/protobuf_framing.cc
@@ -131,29 +130,28 @@ target_include_directories(chat_validation_tests
 
 add_test(NAME chat_validation_tests COMMAND chat_validation_tests)
 
-# Gateway session registry tests
-add_executable(gateway_session_registry_tests
-  gateway_session_registry_test.cc
-  ${CMAKE_SOURCE_DIR}/services/gateway/src/gateway_session_registry.cc
+# Shared session registry tests (libs/network/session_registry)
+add_executable(session_registry_tests
+  session_registry_test.cc
 )
 
-target_link_libraries(gateway_session_registry_tests
+target_link_libraries(session_registry_tests
   PRIVATE
   GTest::gtest
   GTest::gtest_main
+  chirp_network
   ${absl_pkg_LIBRARIES}
 )
 
-target_include_directories(gateway_session_registry_tests
+target_include_directories(session_registry_tests
   PRIVATE
-  ${CMAKE_SOURCE_DIR}/services/gateway/src
   ${CMAKE_SOURCE_DIR}/libs
   ${CMAKE_SOURCE_DIR}/libs/common
   ${CMAKE_SOURCE_DIR}/libs/common/include
   ${CMAKE_SOURCE_DIR}/proto/cpp
 )
 
-add_test(NAME gateway_session_registry_tests COMMAND gateway_session_registry_tests)
+add_test(NAME session_registry_tests COMMAND session_registry_tests)
 
 # Full network library coverage tests (framing, websocket, tcp, redis)
 add_executable(network_full_tests
@@ -271,7 +269,6 @@ add_test(NAME voice_tests COMMAND voice_tests)
 # through a real NotificationClient against a loopback server
 add_executable(app_gateway_tests
   app_gateway_service_test.cc
-  ${CMAKE_SOURCE_DIR}/services/gateway/src/gateway_session_registry.cc
   ${CMAKE_SOURCE_DIR}/services/gateway/src/auth_client.cc
   ${CMAKE_SOURCE_DIR}/services/gateway/src/redis_session_manager.cc
   ${CMAKE_SOURCE_DIR}/services/notification/src/notification_client.cc

@@ -17,7 +17,7 @@
 #include <asio.hpp>
 
 #include "auth_client.h"
-#include "gateway_session_registry.h"
+#include "network/session_registry.h"
 #include "logger.h"
 #include "network/protobuf_framing.h"
 #include "network/session.h"
@@ -105,7 +105,7 @@ void KickSession(const std::shared_ptr<chirp::network::Session>& session, const 
 void HandleLogin(const std::shared_ptr<chirp::network::Session>& session,
                  const chirp::gateway::Packet& pkt,
                  const chirp::auth::LoginRequest& req,
-                 const std::shared_ptr<chirp::gateway::GatewayState>& state,
+                 const std::shared_ptr<chirp::network::SessionRegistry>& state,
                  const std::shared_ptr<chirp::gateway::AuthClient>& auth,
                  const std::shared_ptr<chirp::gateway::RedisSessionManager>& redis_mgr) {
   const int64_t seq = pkt.sequence();
@@ -127,7 +127,7 @@ void HandleLogin(const std::shared_ptr<chirp::network::Session>& session,
     // Unlike the game gateway's scaffolding fallback, the app edge must bind
     // the session: device messages below require an authenticated session.
     if (!resp.user_id().empty()) {
-      auto old = chirp::gateway::BindAuthenticatedSession(state, resp.user_id(), resp.session_id(), session);
+      auto old = chirp::network::BindAuthenticatedSession(state, resp.user_id(), resp.session_id(), session);
       if (old && old.get() != session.get()) {
         KickSession(old, "login from another device");
       }
@@ -150,7 +150,7 @@ void HandleLogin(const std::shared_ptr<chirp::network::Session>& session,
       return;
     }
 
-    auto old = chirp::gateway::BindAuthenticatedSession(state, user_id, resp.session_id(), session);
+    auto old = chirp::network::BindAuthenticatedSession(state, user_id, resp.session_id(), session);
 
     if (old && old.get() != session.get()) {
       const std::string reason = resp.has_kick() ? resp.kick().reason() : "login from another device";
@@ -170,7 +170,7 @@ void HandleLogin(const std::shared_ptr<chirp::network::Session>& session,
 void HandleLogout(const std::shared_ptr<chirp::network::Session>& session,
                   const chirp::gateway::Packet& pkt,
                   const chirp::auth::LogoutRequest& req,
-                  const std::shared_ptr<chirp::gateway::GatewayState>& state,
+                  const std::shared_ptr<chirp::network::SessionRegistry>& state,
                   const std::shared_ptr<chirp::gateway::AuthClient>& auth,
                   const std::shared_ptr<chirp::gateway::RedisSessionManager>& redis_mgr) {
   const int64_t seq = pkt.sequence();
@@ -190,7 +190,7 @@ void HandleLogout(const std::shared_ptr<chirp::network::Session>& session,
     return;
   }
 
-  const auto current = chirp::gateway::GetAuthenticatedSession(state, session);
+  const auto current = chirp::network::GetAuthenticatedSession(state, session);
   const std::string& cur_user = current.user_id;
   const std::string& cur_session_id = current.session_id;
 
@@ -208,7 +208,7 @@ void HandleLogout(const std::shared_ptr<chirp::network::Session>& session,
     if (resp.code() == chirp::common::OK) {
       bool should_release = false;
       std::string removed_user_id;
-      should_release = chirp::gateway::RemoveAuthenticatedSession(state, session, &removed_user_id);
+      should_release = chirp::network::RemoveAuthenticatedSession(state, session, &removed_user_id);
       if (should_release && redis_mgr) {
         redis_mgr->AsyncRelease(removed_user_id.empty() ? req.user_id() : removed_user_id);
       }
@@ -276,7 +276,7 @@ void ForwardDevicePacket(const std::shared_ptr<chirp::network::Session>& session
 
 void HandleClientPacket(const std::shared_ptr<chirp::network::Session>& session,
                         std::string&& payload,
-                        const std::shared_ptr<chirp::gateway::GatewayState>& state,
+                        const std::shared_ptr<chirp::network::SessionRegistry>& state,
                         const std::shared_ptr<chirp::gateway::AuthClient>& auth,
                         const std::shared_ptr<chirp::gateway::RedisSessionManager>& redis_mgr,
                         chirp::notification::NotificationClient* notification) {
@@ -328,7 +328,7 @@ void HandleClientPacket(const std::shared_ptr<chirp::network::Session>& session,
     ForwardDevicePacket<chirp::notification::RegisterDeviceRequest,
                         chirp::notification::RegisterDeviceResponse>(
         session, pkt, chirp::gateway::REGISTER_DEVICE_RESP,
-        chirp::gateway::GetAuthenticatedSession(state, session).user_id, notification,
+        chirp::network::GetAuthenticatedSession(state, session).user_id, notification,
         &chirp::notification::NotificationClient::AsyncRegisterDevice);
     break;
   }
@@ -336,7 +336,7 @@ void HandleClientPacket(const std::shared_ptr<chirp::network::Session>& session,
     ForwardDevicePacket<chirp::notification::UnregisterDeviceRequest,
                         chirp::notification::UnregisterDeviceResponse>(
         session, pkt, chirp::gateway::UNREGISTER_DEVICE_RESP,
-        chirp::gateway::GetAuthenticatedSession(state, session).user_id, notification,
+        chirp::network::GetAuthenticatedSession(state, session).user_id, notification,
         &chirp::notification::NotificationClient::AsyncUnregisterDevice);
     break;
   }
@@ -344,7 +344,7 @@ void HandleClientPacket(const std::shared_ptr<chirp::network::Session>& session,
     ForwardDevicePacket<chirp::notification::UpdateDeviceTokenRequest,
                         chirp::notification::UpdateDeviceTokenResponse>(
         session, pkt, chirp::gateway::UPDATE_DEVICE_TOKEN_RESP,
-        chirp::gateway::GetAuthenticatedSession(state, session).user_id, notification,
+        chirp::network::GetAuthenticatedSession(state, session).user_id, notification,
         &chirp::notification::NotificationClient::AsyncUpdateDeviceToken);
     break;
   }
@@ -352,7 +352,7 @@ void HandleClientPacket(const std::shared_ptr<chirp::network::Session>& session,
     ForwardDevicePacket<chirp::notification::GetUserDevicesRequest,
                         chirp::notification::GetUserDevicesResponse>(
         session, pkt, chirp::gateway::GET_USER_DEVICES_RESP,
-        chirp::gateway::GetAuthenticatedSession(state, session).user_id, notification,
+        chirp::network::GetAuthenticatedSession(state, session).user_id, notification,
         &chirp::notification::NotificationClient::AsyncGetUserDevices);
     break;
   }
@@ -363,7 +363,7 @@ void HandleClientPacket(const std::shared_ptr<chirp::network::Session>& session,
 }
 
 void HandleDisconnect(const std::shared_ptr<chirp::network::Session>& session,
-                      const std::shared_ptr<chirp::gateway::GatewayState>& state,
+                      const std::shared_ptr<chirp::network::SessionRegistry>& state,
                       const std::shared_ptr<chirp::gateway::RedisSessionManager>& redis_mgr) {
   std::string user_id;
   bool should_release = false;
@@ -424,7 +424,7 @@ int main(int argc, char** argv) {
 
   asio::io_context io;
 
-  auto state = std::make_shared<chirp::gateway::GatewayState>();
+  auto state = std::make_shared<chirp::network::SessionRegistry>();
   std::shared_ptr<chirp::gateway::AuthClient> auth;
   if (!auth_host.empty()) {
     auth = std::make_shared<chirp::gateway::AuthClient>(io, auth_host, auth_port);

@@ -1,14 +1,18 @@
+// Unit tests for the shared authenticated-session registry
+// (libs/network/session_registry.{h,cc}), used by gateway, app_gateway and
+// chat for their login/kick/logout lifecycle.
+
 #include <gtest/gtest.h>
 
 #include <memory>
 
-#include "gateway_session_registry.h"
 #include "network/session.h"
+#include "network/session_registry.h"
 
-namespace chirp::gateway {
+namespace chirp::network {
 namespace {
 
-class FakeSession : public chirp::network::Session {
+class FakeSession : public Session {
 public:
   void Send(std::string) override {}
   void SendAndClose(std::string) override {}
@@ -17,8 +21,8 @@ public:
   std::string RemoteAddress() const override { return "127.0.0.1"; }
 };
 
-TEST(GatewaySessionRegistryTest, RebindingSameConnectionRemovesPreviousUserMapping) {
-  auto state = std::make_shared<GatewayState>();
+TEST(SessionRegistryTest, RebindingSameConnectionRemovesPreviousUserMapping) {
+  auto state = std::make_shared<SessionRegistry>();
   auto session = std::make_shared<FakeSession>();
 
   EXPECT_FALSE(BindAuthenticatedSession(state, "alice", "s1", session));
@@ -33,8 +37,8 @@ TEST(GatewaySessionRegistryTest, RebindingSameConnectionRemovesPreviousUserMappi
   EXPECT_EQ(state->user_to_session["bob"].lock().get(), session.get());
 }
 
-TEST(GatewaySessionRegistryTest, RebindingUserReturnsOldSessionForKick) {
-  auto state = std::make_shared<GatewayState>();
+TEST(SessionRegistryTest, RebindingUserReturnsOldSessionForKick) {
+  auto state = std::make_shared<SessionRegistry>();
   auto old_session = std::make_shared<FakeSession>();
   auto new_session = std::make_shared<FakeSession>();
 
@@ -46,8 +50,8 @@ TEST(GatewaySessionRegistryTest, RebindingUserReturnsOldSessionForKick) {
   EXPECT_EQ(GetAuthenticatedSession(state, new_session).session_id, "s2");
 }
 
-TEST(GatewaySessionRegistryTest, RemoveAuthenticatedSessionClearsAllMappings) {
-  auto state = std::make_shared<GatewayState>();
+TEST(SessionRegistryTest, RemoveAuthenticatedSessionClearsAllMappings) {
+  auto state = std::make_shared<SessionRegistry>();
   auto session = std::make_shared<FakeSession>();
 
   EXPECT_FALSE(BindAuthenticatedSession(state, "alice", "s1", session));
@@ -61,14 +65,19 @@ TEST(GatewaySessionRegistryTest, RemoveAuthenticatedSessionClearsAllMappings) {
   EXPECT_EQ(state->session_to_session_id.count(session.get()), 0u);
 }
 
-TEST(GatewaySessionRegistryTest, RemoveUnknownSessionReturnsFalse) {
-  auto state = std::make_shared<GatewayState>();
+TEST(SessionRegistryTest, RemoveUnknownSessionReturnsFalse) {
+  auto state = std::make_shared<SessionRegistry>();
+  auto bound = std::make_shared<FakeSession>();
   auto stranger = std::make_shared<FakeSession>();
 
+  EXPECT_FALSE(BindAuthenticatedSession(state, "alice", "s1", bound));
+  // Removing a session that was never bound must not disturb the mapping.
   std::string removed;
   EXPECT_FALSE(RemoveAuthenticatedSession(state, stranger, &removed));
   EXPECT_TRUE(removed.empty());
+  EXPECT_EQ(state->session_to_user.count(bound.get()), 1u);
+  EXPECT_EQ(state->session_to_user.count(stranger.get()), 0u);
 }
 
 } // namespace
-} // namespace chirp::gateway
+} // namespace chirp::network

@@ -2,7 +2,6 @@
 
 #include <memory>
 
-#include "chat_session_registry.h"
 #include "chat_validation.h"
 #include "network/protobuf_framing.h"
 #include "network/session.h"
@@ -188,60 +187,7 @@ TEST(ChatValidationTest, AcceptsLogoutWhenSessionMatches) {
   EXPECT_EQ(ValidateLogoutRequest(req, "alice", "chat_session_alice"), chirp::common::OK);
 }
 
-TEST(ChatSessionRegistryTest, RebindingSameConnectionRemovesPreviousUserMapping) {
-  auto state = std::make_shared<ChatState>();
-  auto session = std::make_shared<FakeSession>();
-
-  EXPECT_FALSE(BindAuthenticatedSession(state, "alice", "s1", session));
-  EXPECT_EQ(GetAuthenticatedSession(state, session).user_id, "alice");
-
-  EXPECT_FALSE(BindAuthenticatedSession(state, "bob", "s2", session));
-  EXPECT_EQ(GetAuthenticatedSession(state, session).user_id, "bob");
-
-  EXPECT_EQ(state->user_to_session.count("alice"), 0u);
-  ASSERT_EQ(state->user_to_session.count("bob"), 1u);
-  EXPECT_EQ(state->user_to_session["bob"].lock().get(), session.get());
-}
-
-TEST(ChatSessionRegistryTest, RebindingUserReturnsOldSessionForKick) {
-  auto state = std::make_shared<ChatState>();
-  auto old_session = std::make_shared<FakeSession>();
-  auto new_session = std::make_shared<FakeSession>();
-
-  EXPECT_FALSE(BindAuthenticatedSession(state, "alice", "s1", old_session));
-  auto kicked = BindAuthenticatedSession(state, "alice", "s2", new_session);
-
-  ASSERT_TRUE(kicked);
-  EXPECT_EQ(kicked.get(), old_session.get());
-  EXPECT_EQ(GetAuthenticatedSession(state, new_session).session_id, "s2");
-}
-
-TEST(ChatSessionRegistryTest, RemoveAuthenticatedSessionClearsAllMappings) {
-  auto state = std::make_shared<ChatState>();
-  auto session = std::make_shared<FakeSession>();
-
-  EXPECT_FALSE(BindAuthenticatedSession(state, "alice", "s1", session));
-  RemoveAuthenticatedSession(state, session);
-
-  EXPECT_TRUE(GetAuthenticatedSession(state, session).user_id.empty());
-  EXPECT_EQ(state->user_to_session.count("alice"), 0u);
-  EXPECT_EQ(state->session_to_user.count(session.get()), 0u);
-  EXPECT_EQ(state->session_to_session_id.count(session.get()), 0u);
-}
-
-TEST(ChatSessionRegistryTest, RemoveUnknownSessionIsSafe) {
-  auto state = std::make_shared<ChatState>();
-  auto bound = std::make_shared<FakeSession>();
-  auto stranger = std::make_shared<FakeSession>();
-
-  EXPECT_FALSE(BindAuthenticatedSession(state, "alice", "s1", bound));
-  // Removing a session that was never bound must not disturb the mapping.
-  RemoveAuthenticatedSession(state, stranger);
-  EXPECT_EQ(state->session_to_user.count(bound.get()), 1u);
-  EXPECT_EQ(state->session_to_user.count(stranger.get()), 0u);
-}
-
-TEST(ChatSessionRegistryTest, LogoutSuccessWouldCloseSessionAfterResponse) {
+TEST(SessionCloseBehaviorTest, LogoutSuccessWouldCloseSessionAfterResponse) {
   auto session = std::make_shared<FakeSession>();
 
   chirp::auth::LogoutResponse resp;
