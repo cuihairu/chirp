@@ -30,7 +30,7 @@
 ### P1 — 测试与构建一致性
 
 - [x] **auth 单测**(从 P2 上调:auth 是 Supported 服务且在登录关键路径上,零单测风险高于构建洁癖):(2026-09 完成)`auth_stores_tests` / `auth_service_tests` 覆盖 user_store / session_store / rate_limiter / brute_force 等全部 enhanced 路径,auth 包行覆盖 100%。
-- [ ] **修复 chat 增强构建功能缺失**:`services/chat/CMakeLists.txt` 的 MySQL 增强分支遗漏 `inject_consumer.cc`、`server_gateway_peer.cc`、`push_bridge.cc`、`channel_manager.cc` 等,导致增强构建丢失服务器平面集成与推送桥能力。(2026-09 更新:main_distributed 已完整——JWT 验签 + 推送桥 + 按 router 投递计数决定离线入库,修复了多实例下"他实例在线仍写离线队列"的双重投递;main_enhanced 的对等改造需要能编译 MySQL 分支的环境后做,本机无 mysql 头文件,盲改不验。三个 main 的差异已在 capability matrix 标注。)
+- [ ] **修复 chat 增强构建功能缺失**:`services/chat/CMakeLists.txt` 的 MySQL 增强分支遗漏 `inject_consumer.cc`、`server_gateway_peer.cc`、`push_bridge.cc`、`channel_manager.cc` 等,导致增强构建丢失服务器平面集成与推送桥能力。(2026-09 更新:main_distributed 已完整——JWT 验签 + 推送桥 + 按 router 投递计数决定离线入库,修复了多实例下"他实例在线仍写离线队列"的双重投递;main_enhanced 的对等改造需要能编译 MySQL 分支的环境后做,本机无 mysql 头文件,盲改不验。三个 main 的差异已在 capability matrix 标注。)(2026-09-14 CI 实证:enhanced chat 离线私聊对发送方回 code=0,但 "Store offline" 只打日志、从未入队——登录侧 `PopOfflineMessages` 有消费者无生产者,离线私聊实际丢失。`test_services.sh --smoke-chat` 已按响应探测能力,只在 code=6 构建上断言补投递;修 enhanced 时编译可用 vcpkg toolchain 的 libmysql,运行验证只能靠 CI。)
 - [ ] **推送桥覆盖全部 chat 构建**:(2026-09 推进)`chirp_chat_distributed` 已接(离线私聊消息触发推送,`--notification_host` 配置通知服务);`main_enhanced` 待 MySQL 构建环境可用后一并接入。
 - [x] **proto 改为链接 `chirp_protos` 静态库**:(2026-09 完成)10 个服务、benchmark 工具与单测目标全部改为链接 `chirp_protos`(PIC 静态库,可链入 SDK 动态库);`sdks/core` 保留 TARGET 守卫——树外独立构建仍编译自带 gencode。
 

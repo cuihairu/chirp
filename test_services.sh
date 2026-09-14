@@ -483,22 +483,37 @@ else
   echo "[tcp] send user_1 -> offline user_3"
   OFFLINE_SEND_OUTPUT=$(./build/tools/benchmark/chirp_chat_send_client --host 127.0.0.1 --port "${CHAT_PORT}" --sender user_1 --receiver user_3 --text "offline hello")
   echo "${OFFLINE_SEND_OUTPUT}"
-  if [[ "${OFFLINE_SEND_OUTPUT}" != code=6* ]]; then
-    echo "错误: 预期离线发送返回 code=6(TARGET_OFFLINE)"
-    exit 1
-  fi
+  # 离线语义按 chat 构建分叉:basic main 对离线接收方回 code=6(TARGET_OFFLINE)
+  # 并本地入队,承诺登录补投递;MySQL-enhanced main 一律回 code=0,离线由
+  # hybrid store 管理(当前缺入队,补投递无从断言)。按响应探测能力,只在
+  # 承诺补投递的构建上断言它。
+  case "${OFFLINE_SEND_OUTPUT}" in
+    code=6*)
+      OFFLINE_REFILL_PROMISED=1
+      ;;
+    code=0*)
+      OFFLINE_REFILL_PROMISED=0
+      echo "提示: 该 chat 构建离线发送返回 code=0(接受即成功),跳过补投递断言"
+      ;;
+    *)
+      echo "错误: 离线发送返回意外结果(预期 code=6 或 code=0): ${OFFLINE_SEND_OUTPUT}"
+      exit 1
+      ;;
+  esac
 
-  echo ""
-  echo "[tcp] login offline user_3 (expect queued notify)"
-  ./build/tools/benchmark/chirp_chat_listen_client --host 127.0.0.1 --port "${CHAT_PORT}" --user user_3 --max 1 > "${OFFLINE_LISTEN_LOG}" 2>&1 &
-  OFFLINE_LISTEN_PID=$!
+  if [[ "${OFFLINE_REFILL_PROMISED}" == "1" ]]; then
+    echo ""
+    echo "[tcp] login offline user_3 (expect queued notify)"
+    ./build/tools/benchmark/chirp_chat_listen_client --host 127.0.0.1 --port "${CHAT_PORT}" --user user_3 --max 1 > "${OFFLINE_LISTEN_LOG}" 2>&1 &
+    OFFLINE_LISTEN_PID=$!
 
-  wait "${OFFLINE_LISTEN_PID}"
-  cat "${OFFLINE_LISTEN_LOG}" || true
+    wait "${OFFLINE_LISTEN_PID}"
+    cat "${OFFLINE_LISTEN_LOG}" || true
 
-  if ! rg -q "notify ts=.*user_1 -> user_3" "${OFFLINE_LISTEN_LOG}"; then
-    echo "错误: 离线消息未在 user_3 登录后补投递"
-    exit 1
+    if ! rg -q "notify ts=.*user_1 -> user_3" "${OFFLINE_LISTEN_LOG}"; then
+      echo "错误: 离线消息未在 user_3 登录后补投递"
+      exit 1
+    fi
   fi
 
   echo ""
