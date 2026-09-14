@@ -305,7 +305,7 @@ elif [[ "${1:-}" == "--smoke-npc" ]]; then
   NPC_LISTEN_PID=$!
   wait "${NPC_LISTEN_PID}"
   cat "${NPC_LISTEN_LOG}" || true
-  if ! rg -q "notify ts=.*npc:blacksmith_01 -> user_2" "${NPC_LISTEN_LOG}"; then
+  if ! grep -q "notify ts=.*npc:blacksmith_01 -> user_2" "${NPC_LISTEN_LOG}"; then
     echo "错误: 未在 user_2 收到 NPC 回复"
     exit 1
   fi
@@ -327,7 +327,7 @@ elif [[ "${1:-}" == "--smoke-npc" ]]; then
   OFFLINE_NPC_LISTEN_PID=$!
   wait "${OFFLINE_NPC_LISTEN_PID}"
   cat "${NPC_OFFLINE_LISTEN_LOG}" || true
-  if ! rg -q "notify ts=.*npc:blacksmith_01 -> user_3" "${NPC_OFFLINE_LISTEN_LOG}"; then
+  if ! grep -q "notify ts=.*npc:blacksmith_01 -> user_3" "${NPC_OFFLINE_LISTEN_LOG}"; then
     echo "错误: NPC 回复未在 user_3 登录后补投递"
     exit 1
   fi
@@ -389,7 +389,7 @@ elif [[ "${1:-}" == "--smoke-sdk" ]]; then
     echo "错误: SDK 在线互发失败 (sdk_a rc=${SDK_A_RC}, sdk_b rc=${SDK_B_RC})"
     exit 1
   fi
-  if ! rg -q "SMOKE_OK sdk_b -> sdk_a" "${SDK_A_LOG}" || ! rg -q "SMOKE_OK sdk_a -> sdk_b" "${SDK_B_LOG}"; then
+  if ! grep -q "SMOKE_OK sdk_b -> sdk_a" "${SDK_A_LOG}" || ! grep -q "SMOKE_OK sdk_a -> sdk_b" "${SDK_B_LOG}"; then
     echo "错误: 未观察到双向 SMOKE_OK"
     exit 1
   fi
@@ -408,7 +408,7 @@ elif [[ "${1:-}" == "--smoke-sdk" ]]; then
   SDK_D_RC=$?
   set -e
   cat "${SDK_D_LOG}" || true
-  if [[ "${SDK_D_RC}" != "0" ]] || ! rg -q "SMOKE_OK sdk_c -> sdk_d" "${SDK_D_LOG}"; then
+  if [[ "${SDK_D_RC}" != "0" ]] || ! grep -q "SMOKE_OK sdk_c -> sdk_d" "${SDK_D_LOG}"; then
     echo "错误: SDK 离线消息未在 sdk_d 登录后补投递 (rc=${SDK_D_RC})"
     exit 1
   fi
@@ -510,7 +510,7 @@ else
     wait "${OFFLINE_LISTEN_PID}"
     cat "${OFFLINE_LISTEN_LOG}" || true
 
-    if ! rg -q "notify ts=.*user_1 -> user_3" "${OFFLINE_LISTEN_LOG}"; then
+    if ! grep -q "notify ts=.*user_1 -> user_3" "${OFFLINE_LISTEN_LOG}"; then
       echo "错误: 离线消息未在 user_3 登录后补投递"
       exit 1
     fi
