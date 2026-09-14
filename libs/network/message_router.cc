@@ -136,15 +136,19 @@ void MessageRouter::Stop() {
 }
 
 bool MessageRouter::Publish(const std::string& channel, const std::string& message) {
+  return PublishCount(channel, message) >= 0;
+}
+
+int64_t MessageRouter::PublishCount(const std::string& channel, const std::string& message) {
   if (!impl_->publisher) {
-    return false;
+    return -1;
   }
 
   try {
-    return impl_->publisher->Publish(channel, message);
+    return impl_->publisher->PublishCount(channel, message);
   } catch (const std::exception& e) {
     chirp::common::Logger::Instance().Error("MessageRouter::Publish failed: " + std::string(e.what()));
-    return false;
+    return -1;
   }
 }
 
@@ -204,14 +208,20 @@ void MessageRouter::Unsubscribe(const std::string& channel) {
 bool MessageRouter::SendChatMessage(const std::string& user_id,
                                     const std::string& message,
                                     std::function<bool(const std::string&)> local_send) {
+  return SendChatMessageCount(user_id, message, std::move(local_send)) >= 0;
+}
+
+int64_t MessageRouter::SendChatMessageCount(const std::string& user_id,
+                                            const std::string& message,
+                                            std::function<bool(const std::string&)> local_send) {
   // 1. 尝试本地投递
   if (local_send && local_send(user_id)) {
-    return true;
+    return 1;
   }
 
   // 2. 本地投递失败，通过 Redis Pub/Sub 转发
   std::string channel = RouterChannels::UserChat(user_id);
-  return Publish(channel, message);
+  return PublishCount(channel, message);
 }
 
 bool MessageRouter::BroadcastToGroup(const std::string& group_id, const std::string& message) {

@@ -63,6 +63,15 @@ public:
   /// @brief Send a chat message with local-first routing.
   bool SendChatMessage(const std::string& user_id, const std::string& message, std::function<bool(const std::string&)> local_send);
 
+  /// @brief SendChatMessage reporting the receivers reached: 1 for a local
+  /// delivery, else the PUBLISH subscriber count (0 = published but nobody
+  /// subscribed, <0 = no working publisher). Callers use it to decide
+  /// whether the message must go to the offline queue instead.
+  int64_t SendChatMessageCount(const std::string& user_id, const std::string& message, std::function<bool(const std::string&)> local_send);
+
+  /// @brief Publish and report the PUBLISH subscriber count (-1 on failure).
+  int64_t PublishCount(const std::string& channel, const std::string& message);
+
   /// @brief Broadcast a message to a group.
   bool BroadcastToGroup(const std::string& group_id, const std::string& message);
 

@@ -35,6 +35,10 @@ public:
   // Pub/Sub commands
   virtual bool Publish(const std::string& channel, const std::string& message);
 
+  // PUBLISH with the receiver count Redis reports: how many subscribers got
+  // the message; -1 when the command failed (no connection / bad reply).
+  virtual int64_t PublishCount(const std::string& channel, const std::string& message);
+
   // List commands
   bool RPush(const std::string& key, const std::string& value);
   std::vector<std::string> LRange(const std::string& key, int64_t start, int64_t stop);

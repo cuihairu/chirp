@@ -81,8 +81,12 @@ bool RedisClient::Del(const std::string& key) {
 }
 
 bool RedisClient::Publish(const std::string& channel, const std::string& message) {
+  return PublishCount(channel, message) >= 0;
+}
+
+int64_t RedisClient::PublishCount(const std::string& channel, const std::string& message) {
   auto r = SendCmd(host_, port_, {"PUBLISH", channel, message});
-  return r && r->type == RedisResp::Type::kInteger;
+  return (r && r->type == RedisResp::Type::kInteger) ? r->integer : -1;
 }
 
 bool RedisClient::RPush(const std::string& key, const std::string& value) {

@@ -557,6 +557,38 @@ TEST_F(MessageRouterTest, SendChatMessageWithoutLocalCallback) {
   EXPECT_FALSE(router_.SendChatMessage("alice", "hi", nullptr));
 }
 
+class CountingPublisher : public RedisClient {
+ public:
+  CountingPublisher() : RedisClient("127.0.0.1", 1) {}
+  int64_t PublishCount(const std::string&, const std::string&) override {
+    return next_count;
+  }
+  int64_t next_count = 0;
+};
+
+TEST_F(MessageRouterTest, SendChatMessageCountWithoutRedisIsNegative) {
+  // No backend at all: neither local nor remote delivery happened.
+  EXPECT_EQ(router_.SendChatMessageCount("alice", "hi",
+                                         [](const std::string&) { return false; }),
+            -1);
+  EXPECT_EQ(router_.SendChatMessageCount("alice", "hi", nullptr), -1);
+  // But a local delivery still reports exactly one receiver.
+  EXPECT_EQ(router_.SendChatMessageCount("alice", "hi",
+                                         [](const std::string&) { return true; }),
+            1);
+}
+
+TEST_F(MessageRouterTest, PublishCountReportsReceiverCount) {
+  CountingPublisher publisher;
+  publisher.next_count = 2;
+  EXPECT_EQ(publisher.PublishCount("chan", "msg"), 2);
+  EXPECT_TRUE(publisher.Publish("chan", "msg"));  // published = count >= 0
+
+  publisher.next_count = 0;  // empty channel: published, nobody listening
+  EXPECT_EQ(publisher.PublishCount("chan", "msg"), 0);
+  EXPECT_TRUE(publisher.Publish("chan", "msg"));
+}
+
 TEST_F(MessageRouterTest, BroadcastToGroupFailsWithoutRedis) {
   EXPECT_FALSE(router_.BroadcastToGroup("g1", "msg"));
 }
@@ -859,6 +891,9 @@ class ThrowingPublisher : public RedisClient {
   bool Publish(const std::string&, const std::string&) override {
     throw std::runtime_error("redis publish exploded");
   }
+  int64_t PublishCount(const std::string&, const std::string&) override {
+    throw std::runtime_error("redis publish exploded");
+  }
 };
 
 class ThrowingSubscriber : public RedisSubscriber {
@@ -887,6 +922,8 @@ TEST(MessageRouterInjectionTest, PublishReportsPublisherException) {
                        nullptr);
   ASSERT_TRUE(router.Start());
   EXPECT_FALSE(router.Publish("chan", "m"));
+  EXPECT_EQ(router.PublishCount("chan", "m"), -1);
+  EXPECT_EQ(router.SendChatMessageCount("bob", "m", nullptr), -1);
   router.Stop();
 }
 
