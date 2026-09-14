@@ -114,7 +114,7 @@ bool MessageEditManager::DeleteMessage(const std::string& message_id,
   }
 
   auto& data = it->second;
-  std::lock_guard<std::mutex> data_lock(data->mu);
+  std::unique_lock<std::mutex> data_lock(data->mu);
 
   // Check permissions
   if (data->sender_id != user_id && !is_moderator) {
@@ -127,9 +127,13 @@ bool MessageEditManager::DeleteMessage(const std::string& message_id,
   }
 
   if (is_hard_delete) {
-    // Permanently delete
+    // Permanently delete. `data` aliases the map node and data->mu belongs
+    // to the pointee, so copy the index key and release the per-entry lock
+    // before erase() destroys both (mu_ already serializes access).
+    const std::string sender_id = data->sender_id;
+    data_lock.unlock();
     messages_.erase(it);
-    sender_to_messages_[data->sender_id].erase(message_id);
+    sender_to_messages_[sender_id].erase(message_id);
     return true;
   }
 
@@ -267,10 +271,14 @@ void MessageEditManager::CleanupOldDeletedMessages() {
       (static_cast<int64_t>(config_.soft_delete_retention_days) * 24LL * 60 * 60 * 1000);
 
   for (auto it = deleted_messages_.begin(); it != deleted_messages_.end();) {
-    const auto& data = it->second;
-    std::lock_guard<std::mutex> data_lock(data->mu);
-
-    if (data->deleted_at < cutoff_time) {
+    bool expired = false;
+    {
+      // Evaluate under the per-entry lock, erase without it: the entry may
+      // own the last reference, and destroying a locked mutex is undefined.
+      std::lock_guard<std::mutex> data_lock(it->second->mu);
+      expired = it->second->deleted_at < cutoff_time;
+    }
+    if (expired) {
       it = deleted_messages_.erase(it);
     } else {
       ++it;

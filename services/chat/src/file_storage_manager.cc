@@ -186,7 +186,7 @@ bool FileStorageManager::ConfirmUpload(const std::string& upload_id,
   }
 
   auto& session = it->second;
-  std::lock_guard<std::mutex> session_lock(session->mu);
+  std::unique_lock<std::mutex> session_lock(session->mu);
 
   if (session->completed) {
     return false;  // Already confirmed
@@ -194,6 +194,9 @@ bool FileStorageManager::ConfirmUpload(const std::string& upload_id,
 
   // Check if expired
   if (GetCurrentTimeMs() > session->expires_at) {
+    // Erase without holding the per-entry lock: the map entry may own the
+    // last reference, and destroying a locked mutex is undefined.
+    session_lock.unlock();
     upload_sessions_.erase(it);
     return false;
   }
@@ -299,10 +302,14 @@ void FileStorageManager::CleanupExpiredSessions() {
   int64_t now = GetCurrentTimeMs();
 
   for (auto it = upload_sessions_.begin(); it != upload_sessions_.end();) {
-    const auto& session = it->second;
-    std::lock_guard<std::mutex> session_lock(session->mu);
-
-    if (now > session->expires_at || session->completed) {
+    bool expired = false;
+    {
+      // Evaluate under the per-entry lock, erase without it: the entry may
+      // own the last reference, and destroying a locked mutex is undefined.
+      std::lock_guard<std::mutex> session_lock(it->second->mu);
+      expired = now > it->second->expires_at || it->second->completed;
+    }
+    if (expired) {
       it = upload_sessions_.erase(it);
     } else {
       ++it;

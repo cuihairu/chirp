@@ -1639,7 +1639,10 @@ TEST_F(DistributedInternalsTest, HandleGetHistoryFiltersBadEntries) {
 
   chirp_test::FakeRedisServer fake([&](const std::vector<std::string>& args) {
     if (!args.empty() && args[0] == "LRANGE") {
-      return chirp_test::Array({good.SerializeAsString(), std::string("\xff\xff", 4)});
+      // Fill constructor: the literal "\xff\xff" is only 3 bytes (NUL
+      // included), so string(ptr, 4) would read one byte out of bounds —
+      // an ASLR-dependent segfault that CI hit in Release builds.
+      return chirp_test::Array({good.SerializeAsString(), std::string(4, '\xff')});
     }
     return chirp_test::Simple("OK");
   });
