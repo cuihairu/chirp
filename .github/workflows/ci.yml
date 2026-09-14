@@ -44,6 +44,28 @@ jobs:
 
   smoke:
     runs-on: ubuntu-22.04
+    # The vcpkg toolchain links libmysql, so the smoke job builds the ENHANCED
+    # chirp_auth (main_enhanced.cc), which exits at startup when it cannot
+    # reach MySQL (UserStore::Initialize is fatal; Redis is fail-open). The
+    # credentials match the service's defaults (chirp / chirp_password /
+    # chirp database), so the smoke's plain `chirp_auth --port` launch
+    # connects without extra flags. Tables are not required for the smoke:
+    # UserStore::Initialize only verifies the connection.
+    services:
+      mysql:
+        image: mysql:8.0
+        env:
+          MYSQL_DATABASE: chirp
+          MYSQL_USER: chirp
+          MYSQL_PASSWORD: chirp_password
+          MYSQL_ROOT_PASSWORD: chirp_root_password
+        ports:
+          - 3306:3306
+        options: >-
+          --health-cmd="mysqladmin ping -h 127.0.0.1"
+          --health-interval=10s
+          --health-timeout=5s
+          --health-retries=10
     steps:
     - uses: actions/checkout@v7
       with:
