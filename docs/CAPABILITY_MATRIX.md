@@ -17,7 +17,7 @@ This document describes the repository's current implementation status by runtim
 | --- | --- | --- | --- |
 | Gateway core login/session routing | `chirp_gateway` | Supported | Main edge entry for TCP/WS login, heartbeat, kick flow |
 | Auth basic token flow | `chirp_auth` | Supported | Default auth binary exists; without MySQL/libsodium it falls back to the simpler token validation path |
-| Chat basic messaging | `chirp_chat` | Supported | Private messaging, history, offline queue, group management (create/join/leave/kick/invite/members), read receipts, typing indicators, message reactions, message edit/delete (with moderator support and bulk delete), and @mention parsing/autocomplete wired into the default binary |
+| Chat basic messaging | `chirp_chat` | Supported | Private messaging, history, offline queue, group management (create/join/leave/kick/invite/members), read receipts, typing indicators, message reactions, message edit/delete (with moderator support and bulk delete), @mention parsing/autocomplete, and direct-entry rate limiting (per-IP login / per-user send fixed windows, Redis-backed, fail-open) wired into the default binary |
 | Chat distributed routing | `chirp_chat_distributed` | Experimental | Separate target; not the default documented service binary |
 | Chat hybrid Redis + MySQL storage | `chirp_chat` / `chirp_chat_enhanced` | Experimental | With MySQL available, the default `chirp_chat` target builds the enhanced implementation; `chirp_chat_enhanced` is now a compatibility alias |
 | Auth registration / refresh / brute-force / rate-limit stack | `chirp_auth` / `chirp_auth_enhanced` | Experimental | With MySQL and libsodium available, the default `chirp_auth` target builds the enhanced implementation; `chirp_auth_enhanced` is now a compatibility alias |
@@ -45,7 +45,7 @@ This document describes the repository's current implementation status by runtim
 
 | Concern | Current State | Status |
 | --- | --- | --- |
-| Unit tests | 24 suites in `tests/unit`; every backend package that is linked into a test binary is at 100% line coverage per `scripts/run_coverage.sh` (documented `KNOWN_UNCOVERABLE` exclusions only). `app_gateway` and `voice` are not yet linked into any suite | Supported |
+| Unit tests | 25 suites in `tests/unit`; every backend package that is linked into a test binary is at 100% line coverage per `scripts/run_coverage.sh` (documented `KNOWN_UNCOVERABLE` exclusions only). `app_gateway` and `voice` are not yet linked into any suite | Supported |
 | Standard local build runs tests via `ctest` | `ctest --preset dev` (and `--preset coverage` with the gcov build); a fresh tree builds and passes | Supported |
 | CI treats test failure as hard failure | `ci.yml` runs Debug + Release builds with `ctest`, plus a coverage job that fails when any package drops below 98% line coverage | Supported |
 | Process-level smoke coverage | `test_services.sh --smoke / --smoke-chat / --smoke-sdk / --smoke-npc / --smoke-redis` exist and pass locally; none are wired into CI yet (tracked in TODO.md Current Focus) | Experimental |

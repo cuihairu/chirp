@@ -36,7 +36,7 @@
 ### P2 — 功能缺口与边缘硬化
 
 - [x] **server plane 进程级 E2E**:已由 `--smoke-npc` 覆盖(注入 + 事件回环 + 离线 refill)。如需通用注入(非 NPC)场景的 smoke,再单独立项。
-- [ ] **chat 直连入口的限流/安全模型**:SDK 直连 chat 使用脚手架登录且无 rate limiting / abuse controls(architecture.md 明确列为当前不合理项)。在 chat 成为内部服务(P1)之前,这个公网入口处于裸奔状态。
+- [x] **chat 直连入口的限流/安全模型**:(2026-09 完成)`ChatRateLimiter` 固定窗口计数——登录按客户端 IP(30/分钟)、消息发送按用户(120/分钟),Redis 计数、任何故障一律 fail-open;超限回 `RATE_LIMITED`(common.proto 新增错误码)。阈值可配(`--login_rate_limit_per_min` / `--send_rate_limit_per_min`),无 `--redis_host` 时不生效。多级窗口/封禁列表等留给统一登录(P1)之后。
 - [ ] **NPC 回复去重**:hub 重投窗口内可能产生重复回复,需按 `inject_id` / event id 去重(见 `docs/server_plane.md` NPC dialog 一节)。
 - [ ] **app 边缘 TLS**:`app_gateway` 的 WS/TCP 监听尚无 TLS(docs 多处标注 "TLS planned")。
 - [ ] **真实推送传输**:notification 的 APNs HTTP/2 / FCM HTTP 投递仍是日志 stub(`PushTransport` 接缝已留好,需真实实现 + TLS)。

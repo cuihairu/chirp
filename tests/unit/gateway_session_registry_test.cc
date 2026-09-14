@@ -14,6 +14,7 @@ public:
   void SendAndClose(std::string) override {}
   void Close() override {}
   bool IsClosed() const override { return false; }
+  std::string RemoteAddress() const override { return "127.0.0.1"; }
 };
 
 TEST(GatewaySessionRegistryTest, RebindingSameConnectionRemovesPreviousUserMapping) {

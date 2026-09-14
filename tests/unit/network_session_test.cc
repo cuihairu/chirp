@@ -318,6 +318,8 @@ TEST_F(TcpSessionTest, RemoteEndpointIsCallable) {
   // endpoint; the call itself must not throw.
   auto ep = session_->RemoteEndpoint();
   (void)ep;
+  auto addr = session_->RemoteAddress();
+  (void)addr;
   SUCCEED();
 }
 
@@ -621,6 +623,8 @@ TEST_F(WebSocketSessionTest, RemoteEndpointIsCallable) {
   session_->Start();
   auto ep = session_->RemoteEndpoint();
   (void)ep;
+  auto addr = session_->RemoteAddress();
+  (void)addr;
   SUCCEED();
 }
 

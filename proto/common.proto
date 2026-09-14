@@ -15,6 +15,9 @@ enum ErrorCode {
   // Server plane: the target service is not connected (or its queue is full),
   // so the request cannot be forwarded right now.
   SERVER_UNAVAILABLE = 7;
+  // The client exceeded a rate limit (e.g. chat direct-entry login/send
+  // windows) and should back off before retrying.
+  RATE_LIMITED = 8;
 }
 
 message Empty {}

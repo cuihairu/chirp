@@ -47,6 +47,7 @@ if(MYSQL_FOUND)
         src/runtime_utils.cc
         ${PROTO_SRCS}
         src/group_manager.cc
+        src/chat_rate_limiter.cc
         src/group_handlers.cc
         src/message_handlers.cc
         src/read_receipt_manager.cc

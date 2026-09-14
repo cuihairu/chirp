@@ -936,6 +936,7 @@ TEST_F(TcpSessionTest, ReceivesLengthPrefixedFrames) {
   });
 
   EXPECT_GT(session->RemoteEndpoint().port(), 0u);
+  EXPECT_EQ(session->RemoteAddress(), "127.0.0.1");
 
   const std::string frame = LpFrame("hello tcp");
   WriteAll(client(), frame.substr(0, 3));
@@ -1189,6 +1190,7 @@ TEST_F(WsSessionTest, UnknownOpcodeIgnoredAndHandshakeLeftover) {
   }));
   EXPECT_EQ(frames[0], "after-text");
   EXPECT_GT(session->RemoteEndpoint().port(), 0u);
+  EXPECT_EQ(session->RemoteAddress(), "127.0.0.1");
   session->Close();
 }
 

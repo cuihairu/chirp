@@ -19,6 +19,10 @@ public:
 
   // Check if the session is closed.
   virtual bool IsClosed() const = 0;
+
+  // Best-effort textual address of the remote peer (empty when unknown, e.g.
+  // after the socket is gone). Used by edges for per-address rate limiting.
+  virtual std::string RemoteAddress() const = 0;
 };
 
 } // namespace chirp::network

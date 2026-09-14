@@ -22,7 +22,7 @@ chirp 想解决的就是这件事，设计目标按优先级排列：
 
 诚实地讲：chirp 目前是**可运行的核心通信骨架 + 一批实验性扩展**，不是所有目录都同等成熟的完整产品。
 
-- 成熟主线是 `gateway + auth + chat`：登录、心跳、会话绑定、私聊、群组、历史、离线队列，24 个单测套件覆盖，行覆盖率 100%（CI 按包 98% 门槛硬卡，`scripts/run_coverage.sh` 本地可复现）。
+- 成熟主线是 `gateway + auth + chat`：登录、心跳、会话绑定、私聊、群组、历史、离线队列，25 个单测套件覆盖，行覆盖率 100%（CI 按包 98% 门槛硬卡，`scripts/run_coverage.sh` 本地可复现）。
 - 服务器平面 `server_gateway`（游戏服务端接入）枢纽与 chat 侧注入消费均已实现并全覆盖（进程级端到端验证 `./test_services.sh --smoke-npc`），标记为实验中。
 - 其余（`social`、`voice`、`notification`、`search`、多端 SDK、移动端、管理后台）完成度不一致，不要对外当作稳定能力介绍。真实状态见[能力矩阵](docs/CAPABILITY_MATRIX.md)。
 

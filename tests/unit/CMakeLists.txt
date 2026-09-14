@@ -618,6 +618,28 @@ chirp_fake_deps_include(chat_mysql_tests)
 
 add_test(NAME chat_mysql_tests COMMAND chat_mysql_tests)
 
+# Chat direct-entry rate limiting: login per-IP / send per-user fixed windows
+# against the real RedisClient through the loopback fake server.
+add_executable(chat_rate_limiter_tests
+  chat_rate_limiter_test.cc
+  ${CMAKE_SOURCE_DIR}/services/chat/src/chat_rate_limiter.cc
+)
+
+chirp_unit_test_common_links(chat_rate_limiter_tests)
+target_link_libraries(chat_rate_limiter_tests PRIVATE chirp_network chirp_common)
+
+target_include_directories(chat_rate_limiter_tests
+  PRIVATE
+  ${CMAKE_SOURCE_DIR}/services/chat/src
+  ${CMAKE_SOURCE_DIR}/libs
+  ${CMAKE_SOURCE_DIR}/libs/common
+  ${CMAKE_SOURCE_DIR}/libs/common/include
+  ${CMAKE_SOURCE_DIR}/libs/network
+)
+chirp_fake_deps_include(chat_rate_limiter_tests)
+
+add_test(NAME chat_rate_limiter_tests COMMAND chat_rate_limiter_tests)
+
 # Chat <-> server_gateway peer loopback tests (real TCP through the peer's
 # reconnect/auth/heartbeat state machine).
 add_executable(chat_hub_peer_tests

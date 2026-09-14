@@ -11,6 +11,7 @@
 
 #include <asio.hpp>
 
+#include "chat_rate_limiter.h"
 #include "chat_session_registry.h"
 #include "chat_validation.h"
 #include "group_handlers.h"
@@ -247,6 +248,10 @@ struct FeatureHandlers {
   chirp::chat::ServerGatewayPeer* hub_peer = nullptr;
   std::string npc_service_id;
   std::string npc_prefix = "npc:";
+  // Direct-entry abuse gate: null keeps the legacy unthrottled behavior (not
+  // expected in practice — main always installs one; it fails open without
+  // Redis).
+  chirp::chat::ChatRateLimiter* rate_limiter = nullptr;
 };
 
 void HandlePacket(const std::shared_ptr<MessageStore>& store,
@@ -268,6 +273,19 @@ void HandlePacket(const std::shared_ptr<MessageStore>& store,
 
   switch (pkt.msg_id()) {
   case chirp::gateway::LOGIN_REQ: {
+    // Direct-entry abuse gate: every LOGIN_REQ consumes budget before any
+    // parsing, so malformed-packet floods are throttled too.
+    if (features.rate_limiter) {
+      const auto gate = features.rate_limiter->CheckLogin(session->RemoteAddress());
+      if (!gate.allowed) {
+        chirp::auth::LoginResponse deny;
+        deny.set_code(chirp::common::RATE_LIMITED);
+        deny.set_server_time(chirp::chat::runtime::NowMs());
+        chirp::chat::runtime::SendPacket(session, chirp::gateway::LOGIN_RESP, pkt.sequence(),
+                                         deny.SerializeAsString());
+        return;
+      }
+    }
     // Scaffolding login: treat token as user_id.
     chirp::auth::LoginRequest login_req;
     if (!login_req.ParseFromArray(pkt.body().data(), static_cast<int>(pkt.body().size()))) {
@@ -345,6 +363,20 @@ void HandlePacket(const std::shared_ptr<MessageStore>& store,
       resp.set_server_timestamp(chirp::chat::runtime::NowMs());
       chirp::chat::runtime::SendPacket(session, chirp::gateway::SEND_MESSAGE_RESP, pkt.sequence(), resp.SerializeAsString());
       return;
+    }
+
+    // Per-user send window on the validated path: auth/param failures above
+    // do not consume send budget.
+    if (features.rate_limiter) {
+      const auto gate = features.rate_limiter->CheckSend(authenticated_user_id);
+      if (!gate.allowed) {
+        chirp::chat::SendMessageResponse resp;
+        resp.set_code(chirp::common::RATE_LIMITED);
+        resp.set_server_timestamp(chirp::chat::runtime::NowMs());
+        chirp::chat::runtime::SendPacket(session, chirp::gateway::SEND_MESSAGE_RESP,
+                                         pkt.sequence(), resp.SerializeAsString());
+        return;
+      }
     }
 
     chirp::chat::ChatMessage msg;
@@ -740,11 +772,19 @@ int main(int argc, char** argv) {
   const int offline_ttl_seconds = chirp::chat::runtime::ParseIntArg(argc, argv, "--offline_ttl", 604800);
   const std::string notification_host = chirp::chat::runtime::GetArg(argc, argv, "--notification_host", "");
   const uint16_t notification_port = chirp::chat::runtime::ParseU16Arg(argc, argv, "--notification_port", 5006);
+  // Direct-entry abuse controls: per-IP login and per-user send windows
+  // (Redis-backed, fail-open). Without --redis_host the limiter is inert.
+  const int login_rate_limit_per_min =
+      chirp::chat::runtime::ParseIntArg(argc, argv, "--login_rate_limit_per_min", 30);
+  const int send_rate_limit_per_min =
+      chirp::chat::runtime::ParseIntArg(argc, argv, "--send_rate_limit_per_min", 120);
   Logger::Instance().Info("chirp_chat starting tcp=" + std::to_string(port) + " ws=" + std::to_string(ws_port) +
                           (redis_host.empty()
                                ? ""
                                : (" redis=" + redis_host + ":" + std::to_string(redis_port) +
-                                  " offline_ttl=" + std::to_string(offline_ttl_seconds))) +
+                                  " offline_ttl=" + std::to_string(offline_ttl_seconds) +
+                                  " rate_limit(login/ip/min)=" + std::to_string(login_rate_limit_per_min) +
+                                  " rate_limit(send/user/min)=" + std::to_string(send_rate_limit_per_min))) +
                           (notification_host.empty()
                                ? ""
                                : (" notification=" + notification_host + ":" + std::to_string(notification_port))));
@@ -758,6 +798,11 @@ int main(int argc, char** argv) {
 
   auto store = std::make_shared<MessageStore>(redis, offline_ttl_seconds);
   auto state = std::make_shared<chirp::chat::ChatState>();
+
+  chirp::chat::ChatRateLimiter::Config rate_limit_config;
+  rate_limit_config.max_logins_per_minute_per_ip = login_rate_limit_per_min;
+  rate_limit_config.max_sends_per_minute_per_user = send_rate_limit_per_min;
+  auto rate_limiter = std::make_shared<chirp::chat::ChatRateLimiter>(redis, rate_limit_config);
 
   // Offline pushes are only wired when a notification service is configured;
   // a null client turns the bridge into a no-op.
@@ -849,6 +894,7 @@ int main(int argc, char** argv) {
 
   FeatureHandlers features{group_handlers, receipt_handlers, typing_handlers,
                            reaction_handlers, edit_handlers, mention_handlers, push};
+  features.rate_limiter = rate_limiter.get();
 
   // Server-plane injection: when --server_gateway_host is set, chat dials the
   // hub as an internal service and delivers forwarded injections through the

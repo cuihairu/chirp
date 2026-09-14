@@ -39,6 +39,10 @@ asio::ip::tcp::endpoint WebSocketSession::RemoteEndpoint() const {
   return socket_.remote_endpoint(ec);
 }
 
+std::string WebSocketSession::RemoteAddress() const {
+  return RemoteEndpoint().address().to_string();
+}
+
 void WebSocketSession::Close() {
   asio::post(strand_, [self = shared_from_this()] { self->DoClose(); });
 }

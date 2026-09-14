@@ -14,7 +14,7 @@ Chirp should currently be understood as a game-oriented realtime communication b
 | Server Gateway | TCP 8100 | Experimental | Trusted service-plane hub: game backends authenticate with `service_id` + secret, inject system/NPC messages, and receive events queued until acked |
 | NPC Dialog | no listener | Experimental | Server-plane client: answers `npc.player_message` events with keyword-rule replies injected back into chat (see [server_plane.md](./server_plane.md)) |
 | Notification | TCP 5006 / WS 5016 | Experimental | Device registry and push plane (6xxx); provider HTTP delivery is a logging `PushTransport` stub |
-| App Gateway | TCP 5200 / WS 5201 | Experimental | Companion-app edge: login/heartbeat/session binding plus device-message forwarding to Notification (authenticated sessions only) |
+| App Gateway | TCP 5200 / WS 5201 | Experimental | Companion-app edge: login/heartbeat/session binding plus device-message forwarding to Notification (authenticated sessions only). |
 
 Minimal useful topology:
 
@@ -115,6 +115,13 @@ Messages carry a 15-minute edit window and soft delete by default; moderator
 rights come from group roles (MODERATOR and above). @everyone/@here mentions
 share a per-user, per-channel cooldown and are rejected with `AUTH_FAILED`
 while cooling down.
+
+Direct-entry rate limiting: `chirp_chat` counts login attempts per client IP
+(default 30/minute) and validated message sends per user (default 120/minute)
+in fixed 60s Redis-backed windows. Any Redis failure fails open (the limiter
+is inert without `--redis_host`); denials are answered with `RATE_LIMITED`
+(`common.ErrorCode = 8`). Thresholds are configurable via
+`--login_rate_limit_per_min` / `--send_rate_limit_per_min`.
 
 ### Server plane (5xxx)
 

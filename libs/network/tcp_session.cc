@@ -19,6 +19,10 @@ asio::ip::tcp::endpoint TcpSession::RemoteEndpoint() const {
   return socket_.remote_endpoint(ec);
 }
 
+std::string TcpSession::RemoteAddress() const {
+  return RemoteEndpoint().address().to_string();
+}
+
 void TcpSession::Send(std::string bytes) {
   asio::post(strand_, [self = shared_from_this(), bytes = std::move(bytes)]() mutable {
     self->write_q_.push_back(std::move(bytes));

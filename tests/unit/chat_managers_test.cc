@@ -921,6 +921,7 @@ class MockSession : public Session {
   }
   void Close() override { closed = true; }
   bool IsClosed() const override { return closed; }
+  std::string RemoteAddress() const override { return "127.0.0.1"; }
 
   std::vector<std::string> sent;
   bool closed = false;

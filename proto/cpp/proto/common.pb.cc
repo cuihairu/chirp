@@ -66,18 +66,18 @@ static const ::_pb::Message* PROTOBUF_NONNULL const file_default_instances[] = {
 const char descriptor_table_protodef_proto_2fcommon_2eproto[] ABSL_ATTRIBUTE_SECTION_VARIABLE(
     protodesc_cold) = {
     "\n\022proto/common.proto\022\014chirp.common\"\007\n\005Em"
-    "pty*\240\001\n\tErrorCode\022\006\n\002OK\020\000\022\022\n\016INTERNAL_ER"
+    "pty*\262\001\n\tErrorCode\022\006\n\002OK\020\000\022\022\n\016INTERNAL_ER"
     "ROR\020\001\022\021\n\rINVALID_PARAM\020\002\022\017\n\013AUTH_FAILED\020"
     "\003\022\023\n\017SESSION_EXPIRED\020\004\022\022\n\016USER_NOT_FOUND"
     "\020\005\022\022\n\016TARGET_OFFLINE\020\006\022\026\n\022SERVER_UNAVAIL"
-    "ABLE\020\007B#Z!github.com/cui/chirp/proto/com"
-    "monb\006proto3"
+    "ABLE\020\007\022\020\n\014RATE_LIMITED\020\010B#Z!github.com/c"
+    "ui/chirp/proto/commonb\006proto3"
 };
 static ::absl::once_flag descriptor_table_proto_2fcommon_2eproto_once;
 PROTOBUF_CONSTINIT const ::_pbi::DescriptorTable descriptor_table_proto_2fcommon_2eproto = {
     false,
     false,
-    251,
+    269,
     descriptor_table_protodef_proto_2fcommon_2eproto,
     "proto/common.proto",
     &descriptor_table_proto_2fcommon_2eproto_once,
@@ -97,7 +97,7 @@ const ::google::protobuf::EnumDescriptor* PROTOBUF_NONNULL ErrorCode_descriptor(
   return file_level_enum_descriptors_proto_2fcommon_2eproto[0];
 }
 PROTOBUF_CONSTINIT const uint32_t ErrorCode_internal_data_[] = {
-    524288u, 0u, };
+    589824u, 0u, };
 // ===================================================================
 
 class Empty::_Internal {

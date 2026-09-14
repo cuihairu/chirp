@@ -35,6 +35,8 @@ public:
 
   asio::ip::tcp::endpoint RemoteEndpoint() const;
 
+  std::string RemoteAddress() const override;
+
 private:
   void DoRead();
   void DoWrite();

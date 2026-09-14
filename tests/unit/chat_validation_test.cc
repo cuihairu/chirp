@@ -20,6 +20,7 @@ public:
     closed = true;
   }
   void Close() override { closed = true; }
+  std::string RemoteAddress() const override { return "127.0.0.1"; }
   bool IsClosed() const override { return closed; }
 
   std::string last_sent;
