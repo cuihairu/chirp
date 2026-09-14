@@ -4,7 +4,7 @@ title: Overall Architecture
 
 # Chirp Overall Architecture
 
-Last reviewed: 2026-09-12
+Last reviewed: 2026-09-14
 
 This document describes the repository architecture, including the decided target topology and the migration path toward it. The currently supported path is a runnable `gateway + auth + chat` backend skeleton. Social, voice, notification, search, multi-engine SDKs, mobile app, and admin dashboard exist in the tree, but they should be treated as experimental or demo surfaces unless the [Capability Matrix](./CAPABILITY_MATRIX.md) says otherwise.
 
@@ -50,9 +50,18 @@ The three edges use two different kinds of credentials. They answer different qu
 
 The typical issuance flow for a game client:
 
-```text
-player ── login ──► game's own login server ──► game backend (holds the appSecret)
-        ── issues/derives a short-lived user token ──► client connects to game_gateway with it
+```mermaid
+sequenceDiagram
+    participant P as Player
+    participant LS as Game's own login server
+    participant GB as Game backend (holds the appSecret)
+    participant GW as game_gateway
+
+    P->>LS: login
+    LS->>GB: authenticate player
+    GB-->>LS: issue / derive a short-lived user token
+    LS-->>P: user token
+    P->>GW: connect carrying the user token
 ```
 
 How a user token is verified is an implementation choice, not a protocol requirement:
@@ -123,33 +132,52 @@ Design conclusions drawn from the matrix:
 What actually runs today:
 
 ```mermaid
-graph TD
-    Client[Game / Web / Mobile Client]
+flowchart TB
+    Client["Game / Web / Mobile Client"]
+    App["Companion App"]
+    GameBackend["Game Backend"]
 
-    Client -- TCP 5000 / WS 5001 --> Gateway[services/gateway<br/>chirp_gateway]
-    Gateway -- LOGIN_REQ / LOGOUT_REQ --> Auth[services/auth<br/>chirp_auth]
-    Gateway -- optional session owner / kick --> Redis[(Redis)]
+    subgraph edges["Player edges (untrusted, user tokens)"]
+      Gateway["services/gateway<br/>chirp_gateway<br/>TCP 5000 / WS 5001"]
+      AppGateway["services/app_gateway<br/>chirp_app_gateway<br/>TCP 5200 / WS 5201"]
+    end
 
-    Client -- TCP 7000 / WS 7001 --> Chat[services/chat<br/>chirp_chat]
-    Chat -- optional recent history / offline queue --> Redis
-    Chat -- optional enhanced persistence --> MySQL[(MySQL)]
-    Chat -- offline push via PushBridge --> Notification2[services/notification]
+    subgraph plane["Server plane (trusted, service credentials)"]
+      ServerGateway["services/server_gateway<br/>chirp_server_gateway<br/>TCP 8100"]
+      NpcDialog["services/npc_dialog<br/>chirp_npc_dialog"]
+    end
 
-    App[Companion App] -- TCP 5200 / WS 5201 --> AppGateway[services/app_gateway<br/>chirp_app_gateway]
-    AppGateway -- LOGIN forwarding --> Auth
-    AppGateway -- 6xxx device messages --> Notification2
+    subgraph core["Core & shared state"]
+      Auth["services/auth<br/>chirp_auth"]
+      Chat["services/chat<br/>chirp_chat<br/>TCP 7000 / WS 7001"]
+      Notification["services/notification<br/>TCP 5006 / WS 5016"]
+      Redis[("Redis")]
+      MySQL[("MySQL")]
+    end
 
-    ChatDist[chirp_chat_distributed / enhanced chat router] -. experimental Redis Pub/Sub .-> Redis
+    Client -- "TCP 5000 / WS 5001" --> Gateway
+    Client -- "TCP 7000 / WS 7001" --> Chat
+    App -- "TCP 5200 / WS 5201" --> AppGateway
 
-    GameBackend[Game Backend] -. service auth .-> ServerGateway[services/server_gateway<br/>chirp_server_gateway]
-    ServerGateway -- injections --> Chat
-    ServerGateway -- npc.player_message events --> NpcDialog[services/npc_dialog<br/>chirp_npc_dialog]
-    NpcDialog -- NPC replies (injections) --> ServerGateway
+    Gateway -- "LOGIN_REQ / LOGOUT_REQ" --> Auth
+    Gateway -- "optional session owner / kick" --> Redis
+    AppGateway -- "LOGIN forwarding" --> Auth
+    AppGateway -- "6xxx device messages" --> Notification
 
-    Client -. experimental direct entry .-> Social[services/social]
-    Client -. experimental direct entry .-> Voice[services/voice]
-    Notification[services/notification] -. experimental, logging stub .-> ExternalPush[FCM / APNs or HTTP provider]
-    Search[services/search] -. experimental .-> Index[(Search Index / In-Memory)]
+    Chat -- "optional recent history / offline queue" --> Redis
+    Chat -- "optional enhanced persistence" --> MySQL
+    Chat -- "offline push via PushBridge" --> Notification
+
+    GameBackend -. "service auth (dial out)" .-> ServerGateway
+    ServerGateway -- "injections (InjectMessageNotify)" --> Chat
+    ServerGateway -- "npc.player_message events" --> NpcDialog
+    NpcDialog -- "NPC replies (injections)" --> ServerGateway
+
+    ChatDist["chirp_chat_distributed"] -. "experimental Redis Pub/Sub" .-> Redis
+    Client -. "experimental direct entry" .-> Social["services/social"]
+    Client -. "experimental direct entry" .-> Voice["services/voice"]
+    Notification -. "experimental, logging stub" .-> ExternalPush["FCM / APNs or HTTP provider"]
+    Search["services/search"] -. "experimental" .-> Index[("Search Index / In-Memory")]
 ```
 
 Important interpretation:
@@ -173,6 +201,7 @@ Important interpretation:
 | SDKs | `sdks/core`, `sdks/unity`, `sdks/unreal` | Integration base and wrappers, currently experimental |
 | Apps/tools | `apps/*`, `tools/benchmark` | Demos, smoke clients, benchmarks, archive helpers |
 | Delivery | `docker-compose.yml`, `deploy/`, `scripts/`, `tests/` | Local orchestration, cluster sketches, build and smoke validation |
+| Quality gates | `tests/unit`, `scripts/run_coverage.sh`, `test_services.sh` | 24 unit suites at 100% line coverage per the repo coverage script (documented exclusions only); CI hard-fails any package under 98%; five process-level smokes (`--smoke`, `--smoke-chat`, `--smoke-sdk`, `--smoke-npc`, `--smoke-redis`) |
 
 ## Protocol Baseline
 

@@ -1,6 +1,6 @@
 # Chirp Capability Matrix
 
-Last reviewed: 2026-09-12
+Last reviewed: 2026-09-14
 
 This document describes the repository's current implementation status by runtime target, not by roadmap intent.
 
@@ -45,11 +45,12 @@ This document describes the repository's current implementation status by runtim
 
 | Concern | Current State | Status |
 | --- | --- | --- |
-| Unit test sources exist | Yes | Supported |
-| Standard local build directory always runs tests successfully via `ctest` | Not guaranteed | Experimental |
-| CI treats test absence/failure as hard failure | Not consistently | Experimental |
+| Unit tests | 24 suites in `tests/unit`; every backend package that is linked into a test binary is at 100% line coverage per `scripts/run_coverage.sh` (documented `KNOWN_UNCOVERABLE` exclusions only). `app_gateway` and `voice` are not yet linked into any suite | Supported |
+| Standard local build runs tests via `ctest` | `ctest --preset dev` (and `--preset coverage` with the gcov build); a fresh tree builds and passes | Supported |
+| CI treats test failure as hard failure | `ci.yml` runs Debug + Release builds with `ctest`, plus a coverage job that fails when any package drops below 98% line coverage | Supported |
+| Process-level smoke coverage | `test_services.sh --smoke / --smoke-chat / --smoke-sdk / --smoke-npc / --smoke-redis` exist and pass locally; none are wired into CI yet (tracked in TODO.md Current Focus) | Experimental |
 | Docker Compose path for core services | Present | Supported |
-| Roadmap matches default build outputs | No | Needs correction |
+| Roadmap matches default build outputs | Yes — TODO.md is the live roadmap (rewritten 2026-09); completed items are struck through in README.md | Supported |
 
 ## Recommended Public Positioning
 

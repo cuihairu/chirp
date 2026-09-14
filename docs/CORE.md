@@ -136,10 +136,10 @@ trust plane: peers are game backends and internal services authenticated by
 | `EVENT_DELIVER_NOTIFY` | `chirp.server_gateway.EventDeliverNotify` (hub -> target service) |
 | `EVENT_ACK_REQ` / `RESP` | `chirp.server_gateway.EventAckRequest` / `Response` |
 
-Status: Experimental — handlers are unit-verified at full coverage; the
-chat-side consumption of `INJECT_MESSAGE_NOTIFY` (end-to-end E2E) is the next
-increment. Events are at-least-once: queued while the target is offline and
-redelivered on reconnect until acked.
+Status: Experimental — handlers and the chat-side consumption of
+`INJECT_MESSAGE_NOTIFY` are unit-verified, and the NPC loop has a process-level
+E2E smoke (`./test_services.sh --smoke-npc`). Events are at-least-once: queued
+while the target is offline and redelivered on reconnect until acked.
 
 ### Notification / device plane (6xxx)
 
@@ -167,6 +167,12 @@ in the default `chirp_chat` build.
 cmake --preset dev
 cmake --build --preset dev
 ctest --preset dev
+```
+
+Line coverage (rebuilds `build-cov`, runs all suites, fails under 98% per package):
+
+```bash
+scripts/run_coverage.sh
 ```
 
 Smoke tests:

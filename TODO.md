@@ -28,7 +28,7 @@
 
 ### P1 — 测试与构建一致性
 
-- [ ] **auth 单测**(从 P2 上调:auth 是 Supported 服务且在登录关键路径上,零单测风险高于构建洁癖):enhanced 路径的 user_store / session_store / rate_limiter / brute_force 等。
+- [x] **auth 单测**(从 P2 上调:auth 是 Supported 服务且在登录关键路径上,零单测风险高于构建洁癖):(2026-09 完成)`auth_stores_tests` / `auth_service_tests` 覆盖 user_store / session_store / rate_limiter / brute_force 等全部 enhanced 路径,auth 包行覆盖 100%。
 - [ ] **修复 chat 增强构建功能缺失**:`services/chat/CMakeLists.txt:44-64` 的 MySQL 增强分支遗漏 `inject_consumer.cc`、`server_gateway_peer.cc`、`push_bridge.cc`、`channel_manager.cc` 等,导致增强构建丢失服务器平面集成与推送桥能力。三个 main(`main.cc` / `main_enhanced.cc` / `main_distributed.cc`)功能应对等或在文档中明确差异。
 - [ ] **推送桥覆盖全部 chat 构建**:PushBridge 目前只接入默认 `chirp_chat`,`main_enhanced` / `main_distributed` 未接。
 - [ ] **proto 改为链接 `chirp_protos` 静态库**:9 个服务各自 `file(GLOB ...)` 重复编译全部 .pb.cc,应统一链接 `proto/CMakeLists.txt` 已构建的 `chirp_protos`。
@@ -40,7 +40,7 @@
 - [ ] **NPC 回复去重**:hub 重投窗口内可能产生重复回复,需按 `inject_id` / event id 去重(见 `docs/server_plane.md` NPC dialog 一节)。
 - [ ] **app 边缘 TLS**:`app_gateway` 的 WS/TCP 监听尚无 TLS(docs 多处标注 "TLS planned")。
 - [ ] **真实推送传输**:notification 的 APNs HTTP/2 / FCM HTTP 投递仍是日志 stub(`PushTransport` 接缝已留好,需真实实现 + TLS)。
-- [ ] **app_gateway / social / voice 单测**:三个服务目前没有任何单测(均在 Experimental,可在其转 Supported 前补)。
+- [ ] **app_gateway / voice 单测**:(2026-09 更新:social 已由 `social_presence_tests` 覆盖至行覆盖 100%)这两个服务尚未接入任何单测套件(均在 Experimental,可在其转 Supported 前补)。
 
 ### P3 — 暂缓项与杂项
 

@@ -22,24 +22,48 @@ chirp 想解决的就是这件事，设计目标按优先级排列：
 
 诚实地讲：chirp 目前是**可运行的核心通信骨架 + 一批实验性扩展**，不是所有目录都同等成熟的完整产品。
 
-- 成熟主线是 `gateway + auth + chat`：登录、心跳、会话绑定、私聊、群组、历史、离线队列，单测与 smoke test 覆盖。
-- 服务器平面 `server_gateway`（游戏服务端接入）枢纽与 chat 侧注入消费均已实现并 100% 单测覆盖（回环级端到端验证），标记为实验中。
+- 成熟主线是 `gateway + auth + chat`：登录、心跳、会话绑定、私聊、群组、历史、离线队列，24 个单测套件覆盖，行覆盖率 100%（CI 按包 98% 门槛硬卡，`scripts/run_coverage.sh` 本地可复现）。
+- 服务器平面 `server_gateway`（游戏服务端接入）枢纽与 chat 侧注入消费均已实现并全覆盖（进程级端到端验证 `./test_services.sh --smoke-npc`），标记为实验中。
 - 其余（`social`、`voice`、`notification`、`search`、多端 SDK、移动端、管理后台）完成度不一致，不要对外当作稳定能力介绍。真实状态见[能力矩阵](docs/CAPABILITY_MATRIX.md)。
 
 ## 三条接入边缘
 
 三个接入点相互独立，不共用 gateway；共享的是核心能力（认证、设备级会话/在线状态、聊天、通知）：
 
-```text
-                      ┌─────────────────────────────┐
- 游戏客户端 ──────────►│  game_gateway  (TCP/WS)     │  用户 token
- App        ──────────►│  app_gateway   (WS/TCP)     │  用户 token + 设备推送转发
- 游戏服务端 ──────────►│  server_gateway (TCP 出站)  │  service_id + secret
-                      └──────────────┬──────────────┘
-                                     │ 共享核心：auth / 会话与在线 / chat / notification
-                                     ▼
-                         Redis（可选增强） / MySQL（可选增强）
+```mermaid
+flowchart TB
+    Game["游戏客户端<br/>用户 token<br/>随游戏进程存亡"]
+    App["伴侣 App<br/>用户 token + 设备推送<br/>移动网络 · 后台可被杀"]
+    GS["游戏服务端<br/>service_id + secret<br/>内网常驻 · 永不冒充用户"]
+
+    GG["game_gateway<br/>TCP 5000 / WS 5001<br/><i>services/gateway 演进目标</i>"]
+    AG["app_gateway<br/>TCP 5200 / WS 5201<br/>TLS 规划中"]
+    SG["server_gateway<br/>TCP 8100 · 出站长连接<br/>Redis Streams 回退"]
+
+    subgraph core["共享核心（共享数据模型与库，不是单进程）"]
+        Auth["auth"]
+        Session["会话 / 在线状态<br/><i>user → device → edge</i>"]
+        Chat["chat"]
+        Notif["notification<br/><i>推送桥</i>"]
+    end
+
+    Redis[("Redis<br/>会话 / 历史 / 队列（可选增强）")]
+    MySQL[("MySQL<br/>持久化增强（可选）")]
+
+    Game -- "TCP/WS + 用户 token" --> GG
+    App -- "WS/TCP + 用户 token" --> AG
+    GS -- "出站长连接 + 服务凭证" --> SG
+
+    GG --> Auth & Session & Chat
+    AG --> Auth & Session & Notif
+    SG --> Chat
+
+    Session -.-> Redis
+    Chat -.-> Redis
+    Chat -.-> MySQL
 ```
+
+要点：**边缘薄、核心共享**。边缘只做连接管理、协议适配、认证转发和心跳；同一玩家在游戏内和 App 上同时在线是核心场景，跨设备投递、kick 策略、统一未读数都在核心解决，不落在任何边缘。游戏服务端平面只认服务凭证、只做出站连接，与玩家边缘彻底隔离。详见[整体架构](docs/architecture.md)。
 
 | 服务 | 默认端口 | 状态 | 作用 |
 | --- | --- | --- | --- |
@@ -118,10 +142,14 @@ TCP 和 WebSocket 使用同一套二进制 payload：
 
 ## Roadmap
 
-1. ~~chat 作为内部节点接入服务器平面，消费注入消息，打通端到端注入链路~~（已完成，回环级验证；进程级 E2E smoke 待做）
+已完成的里程碑：
+
+1. ~~chat 作为内部节点接入服务器平面，消费注入消息，打通端到端注入链路~~（已完成，回环级验证 + `--smoke-npc` 进程级 E2E）
 2. ~~服务器平面增加 Redis Streams broker 回退（无法长连接的游戏服走 ack + 重放）~~（已完成，仅上行注入：游戏服 `XADD` → hub 消费组 → 现有注入链路，见 [docs/server_plane.md](docs/server_plane.md)）
 3. ~~`app_gateway` 与推送桥接（APNs/FCM，经 notification 服务）~~（已完成，部分交付：`app_gateway` 5200/5201、notification 协议面 5006/5016、chat 离线消息触发推送；推送 HTTP 层是 `PushTransport` 抽象 + 日志 stub，真实 APNs/FCM 投递待接）
 4. ~~NPC 对话服务落地（依赖注入通道 + 事件通道）~~（已完成：chat 识别 `npc:` 前缀私聊转 `npc.player_message` 事件，`npc_dialog` 服务经关键词规则引擎回复并走注入通道投递；`./test_services.sh --smoke-npc` 进程级验证）
+
+当前焦点与架构债（P0 公共代码沉淀、P1 登录语义统一、两条 smoke 纳入 CI 等）统一维护在 [TODO.md](TODO.md)，本节不再重复。
 
 ## 工程结构
 
