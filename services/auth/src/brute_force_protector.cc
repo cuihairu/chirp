@@ -17,6 +17,13 @@ BruteForceProtector::BruteForceProtector(std::shared_ptr<RedisAuthStore> redis_s
 
 BruteForceProtector::~BruteForceProtector() = default;
 
+std::shared_ptr<BruteForceProtector> BruteForceProtector::Create(
+    std::shared_ptr<RedisAuthStore> redis_store,
+    std::shared_ptr<UserStore> user_store) {
+  return std::make_shared<BruteForceProtector>(std::move(redis_store),
+                                               std::move(user_store), Config{});
+}
+
 BruteForceProtector::Result BruteForceProtector::CheckLoginAttempt(const std::string& identifier,
                                                                  const std::string& ip_address) {
   Result result;

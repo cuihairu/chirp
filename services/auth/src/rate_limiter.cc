@@ -19,6 +19,10 @@ RateLimiter::RateLimiter(std::shared_ptr<RedisAuthStore> redis_store, const Conf
 
 RateLimiter::~RateLimiter() = default;
 
+std::shared_ptr<RateLimiter> RateLimiter::Create(std::shared_ptr<RedisAuthStore> redis_store) {
+  return std::make_shared<RateLimiter>(std::move(redis_store), Config{});
+}
+
 RateLimiter::Result RateLimiter::CheckLoginLimit(const std::string& identifier,
                                                  const std::string& ip_address) {
   Result result;

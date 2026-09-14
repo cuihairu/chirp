@@ -24,7 +24,7 @@ std::string ToHex(const uint8_t* data, size_t len) {
     out.push_back(kHexChars[b & 0x0F]);
   }
   return out;
-}
+}  // GCOVR_EXCL_LINE -- unreachable exit-block line (gcc/NRVO artifact); body is covered
 
 int64_t NowSeconds() {
   using namespace std::chrono;

@@ -517,6 +517,119 @@ target_include_directories(common_metrics_tests
 
 add_test(NAME common_metrics_tests COMMAND common_metrics_tests)
 
+# Scripted fake MySQL C API + fake libsodium, shared by the auth/chat tests
+# below. The include path is prepended so <mysql/mysql.h> / <sodium.h>
+# resolve to the fakes instead of any system library.
+function(chirp_fake_deps_include target)
+  target_include_directories(${target} BEFORE PRIVATE
+    ${CMAKE_CURRENT_SOURCE_DIR}/fake_mysql
+    ${CMAKE_CURRENT_SOURCE_DIR}/fake_sodium
+  )
+endfunction()
+
+# Enhanced auth stores (MySQL UserStore/SessionStore + RedisAuthStore)
+add_executable(auth_stores_tests
+  auth_stores_test.cc
+  fake_mysql.cc
+  fake_sodium.cc
+  ${CMAKE_SOURCE_DIR}/services/auth/src/password_hasher.cc
+  ${CMAKE_SOURCE_DIR}/services/auth/src/redis_auth_store.cc
+  ${CMAKE_SOURCE_DIR}/services/auth/src/session_store.cc
+  ${CMAKE_SOURCE_DIR}/services/auth/src/token_generator.cc
+  ${CMAKE_SOURCE_DIR}/services/auth/src/user_store.cc
+)
+
+chirp_unit_test_common_links(auth_stores_tests)
+target_link_libraries(auth_stores_tests PRIVATE chirp_network chirp_common chirp_protos)
+
+target_include_directories(auth_stores_tests
+  PRIVATE
+  ${CMAKE_SOURCE_DIR}/services/auth/src
+  ${CMAKE_SOURCE_DIR}/libs
+  ${CMAKE_SOURCE_DIR}/libs/common
+  ${CMAKE_SOURCE_DIR}/libs/common/include
+  ${CMAKE_SOURCE_DIR}/libs/network
+  ${CMAKE_SOURCE_DIR}/proto/cpp
+  ${CMAKE_SOURCE_DIR}/proto/cpp/proto
+)
+chirp_fake_deps_include(auth_stores_tests)
+
+add_test(NAME auth_stores_tests COMMAND auth_stores_tests)
+
+# Enhanced auth components (hasher/token/limiter/protector/service)
+add_executable(auth_service_tests
+  auth_service_test.cc
+  fake_mysql.cc
+  fake_sodium.cc
+  ${CMAKE_SOURCE_DIR}/services/auth/src/auth_service.cc
+  ${CMAKE_SOURCE_DIR}/services/auth/src/brute_force_protector.cc
+  ${CMAKE_SOURCE_DIR}/services/auth/src/password_hasher.cc
+  ${CMAKE_SOURCE_DIR}/services/auth/src/rate_limiter.cc
+  ${CMAKE_SOURCE_DIR}/services/auth/src/redis_auth_store.cc
+  ${CMAKE_SOURCE_DIR}/services/auth/src/session_store.cc
+  ${CMAKE_SOURCE_DIR}/services/auth/src/token_generator.cc
+  ${CMAKE_SOURCE_DIR}/services/auth/src/user_store.cc
+)
+
+chirp_unit_test_common_links(auth_service_tests)
+target_link_libraries(auth_service_tests PRIVATE chirp_network chirp_common chirp_protos)
+
+target_include_directories(auth_service_tests
+  PRIVATE
+  ${CMAKE_SOURCE_DIR}/services/auth/src
+  ${CMAKE_SOURCE_DIR}/libs
+  ${CMAKE_SOURCE_DIR}/libs/common
+  ${CMAKE_SOURCE_DIR}/libs/common/include
+  ${CMAKE_SOURCE_DIR}/libs/network
+  ${CMAKE_SOURCE_DIR}/proto/cpp
+  ${CMAKE_SOURCE_DIR}/proto/cpp/proto
+)
+chirp_fake_deps_include(auth_service_tests)
+
+add_test(NAME auth_service_tests COMMAND auth_service_tests)
+
+# Social presence manager (pure in-memory state machine)
+add_executable(social_presence_tests
+  social_presence_test.cc
+  ${CMAKE_SOURCE_DIR}/services/social/src/presence_manager_v2.cc
+)
+
+chirp_unit_test_common_links(social_presence_tests)
+target_link_libraries(social_presence_tests PRIVATE chirp_network chirp_common chirp_protos)
+
+target_include_directories(social_presence_tests
+  PRIVATE
+  ${CMAKE_SOURCE_DIR}/services/social/src
+  ${CMAKE_SOURCE_DIR}/libs
+  ${CMAKE_SOURCE_DIR}/libs/common
+  ${CMAKE_SOURCE_DIR}/libs/common/include
+  ${CMAKE_SOURCE_DIR}/proto/cpp
+  ${CMAKE_SOURCE_DIR}/proto/cpp/proto
+)
+
+add_test(NAME social_presence_tests COMMAND social_presence_tests)
+
+# Common metrics library (counters/gauges/histograms + mini HTTP endpoint)
+add_executable(common_metrics_tests
+  common_metrics_test.cc
+  ${CMAKE_SOURCE_DIR}/libs/common/src/metrics.cc
+  ${CMAKE_SOURCE_DIR}/libs/common/src/metrics_http_server.cc
+)
+
+chirp_unit_test_common_links(common_metrics_tests)
+target_link_libraries(common_metrics_tests PRIVATE chirp_network chirp_common chirp_protos)
+
+target_include_directories(common_metrics_tests
+  PRIVATE
+  ${CMAKE_SOURCE_DIR}/libs
+  ${CMAKE_SOURCE_DIR}/libs/common
+  ${CMAKE_SOURCE_DIR}/libs/common/include
+  ${CMAKE_SOURCE_DIR}/proto/cpp
+  ${CMAKE_SOURCE_DIR}/proto/cpp/proto
+)
+
+add_test(NAME common_metrics_tests COMMAND common_metrics_tests)
+
 # Social presence manager (pure in-memory state machine)
 add_executable(social_presence_tests
   social_presence_test.cc
