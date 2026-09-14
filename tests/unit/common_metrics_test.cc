@@ -9,6 +9,8 @@
 #include "common/metrics.h"
 #include "common/metrics_http_server.h"
 
+#include <chrono>
+#include <future>
 #include <thread>
 
 namespace {
@@ -115,11 +117,22 @@ class MetricsHttpServerTest : public ::testing::Test {
   }
 
   void TearDown() override {
-    server_->Stop();
+    StopServer();
     io_.stop();
     if (runner_.joinable()) {
       runner_.join();
     }
+  }
+
+  // Stops the server and waits until the acceptor-close lambda it posts to
+  // the io context has actually run, so io_.stop() cannot race it.
+  void StopServer() {
+    server_->Stop();
+    std::promise<void> drained;
+    asio::post(io_, [&drained] { drained.set_value(); });
+    // Handlers posted on the same io context run in order: once the sentinel
+    // fires, the close lambda posted by Stop() has already executed.
+    drained.get_future().wait_for(std::chrono::milliseconds(1000));
   }
 
   // Sends one HTTP request on its own io context and returns the response.
@@ -169,6 +182,22 @@ TEST_F(MetricsHttpServerTest, EndpointsServeExpectedBodies) {
   // Unknown paths 404; non-GET methods 405.
   EXPECT_NE(Request("GET /nope HTTP/1.1\r\n\r\n").find("404"), std::string::npos);
   EXPECT_NE(Request("POST /metrics HTTP/1.1\r\n\r\n").find("405"), std::string::npos);
+}
+
+TEST_F(MetricsHttpServerTest, AbortedRequestDoesNotKillServer) {
+  // A client that hangs up mid-request drives the read-error branch of the
+  // request handler.
+  {
+    asio::io_context io;
+    asio::ip::tcp::socket sock(io);
+    sock.connect(
+        asio::ip::tcp::endpoint(asio::ip::address_v4::loopback(), server_->port()));
+    asio::write(sock, asio::buffer("GET /half HTTP/1.1\r\n"));  // no final CRLF
+  }  // socket closed here -> async_read_until errors out server-side
+  std::this_thread::sleep_for(std::chrono::milliseconds(100));
+
+  // The server must keep serving after the aborted connection.
+  EXPECT_NE(Request("GET /health HTTP/1.1\r\n\r\n").find("200"), std::string::npos);
 }
 
 }  // namespace
