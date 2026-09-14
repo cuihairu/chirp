@@ -197,6 +197,9 @@ add_executable(chat_managers_tests
   ${CMAKE_SOURCE_DIR}/services/chat/src/npc_uplink.cc
   ${CMAKE_SOURCE_DIR}/services/chat/src/runtime_utils.cc
   ${CMAKE_SOURCE_DIR}/services/chat/src/typing_manager.cc
+  ${CMAKE_SOURCE_DIR}/services/chat/src/login_token_verifier.cc
+  ${CMAKE_SOURCE_DIR}/services/chat/src/push_bridge.cc
+  ${CMAKE_SOURCE_DIR}/services/notification/src/notification_client.cc
 )
 # main_distributed.cc is pulled in via #include with main() renamed in
 # chat_managers_test.cc; compiling it separately would hijack the test entry
@@ -208,6 +211,7 @@ target_link_libraries(chat_managers_tests PRIVATE chirp_network chirp_common chi
 target_include_directories(chat_managers_tests
   PRIVATE
   ${CMAKE_SOURCE_DIR}/services/chat/src
+  ${CMAKE_SOURCE_DIR}/services/notification/src
   ${CMAKE_SOURCE_DIR}/libs
   ${CMAKE_SOURCE_DIR}/libs/common
   ${CMAKE_SOURCE_DIR}/libs/common/include

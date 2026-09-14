@@ -13,6 +13,9 @@
 
 #include "logger.h"
 #include "distributed_dispatch.h"
+#include "login_token_verifier.h"
+#include "notification_client.h"
+#include "push_bridge.h"
 #include "distributed_runtime.h"
 #include "network/message_router.h"
 #include "network/redis_client.h"
@@ -53,7 +56,6 @@ struct DistributedChatState {
     }
     return it->second.lock();
   }
-
   bool IsUserLocal(const std::string& user_id) {
     std::lock_guard<std::mutex> lock(mu);
     const auto it = local_sessions.find(user_id);
@@ -128,6 +130,7 @@ void HandleSendMessage(const chirp::chat::SendMessageRequest& req,
                        const std::shared_ptr<DistributedChatState>& state,
                        const std::shared_ptr<DistributedMessageStore>& store,
                        const std::shared_ptr<chirp::network::MessageRouter>& router,
+                       chirp::chat::PushBridge& push,
                        int64_t seq) {
   chirp::chat::ChatMessage msg;
   msg.set_message_id(chirp::chat::runtime::GenerateMessageId());
@@ -162,7 +165,11 @@ void HandleSendMessage(const chirp::chat::SendMessageRequest& req,
   chirp::chat::runtime::SendPacket(sender_session, chirp::gateway::SEND_MESSAGE_RESP, seq, resp.SerializeAsString());
 
   if (req.channel_type() == chirp::chat::PRIVATE) {
-    router->SendChatMessage(
+    // Delivered when a live session got it - locally, or via another
+    // instance's user subscription (the PUBLISH receiver count says so).
+    // Only a message that reached nobody goes to the offline queue, and
+    // that same condition fires the notification-plane push.
+    const int64_t receivers = router->SendChatMessageCount(
         req.receiver_id(), msg.SerializeAsString(), [&](const std::string& user_id) -> bool {
           auto recv_session = state->GetLocalSession(user_id);
           if (!recv_session) {
@@ -173,8 +180,9 @@ void HandleSendMessage(const chirp::chat::SendMessageRequest& req,
           return true;
         });
 
-    if (!state->IsUserLocal(req.receiver_id())) {
+    if (receivers <= 0) {
       store->AddOffline(req.receiver_id(), msg.SerializeAsString());
+      push.NotifyOffline(msg, req.receiver_id());
       Logger::Instance().Info("Message stored offline for " + req.receiver_id());
     }
   } else {
@@ -187,8 +195,28 @@ void HandleLogin(const chirp::auth::LoginRequest& req,
                  const std::shared_ptr<DistributedChatState>& state,
                  const std::shared_ptr<DistributedMessageStore>& store,
                  const std::shared_ptr<chirp::network::MessageRouter>& router,
+                 const chirp::chat::LoginTokenVerifier* token_verifier,
                  int64_t seq) {
-  const std::string user_id = req.token();
+  std::string user_id;
+
+  // With a shared secret configured, the token must be an HS256 JWT with
+  // an exp claim and the user in sub (same contract as the basic build).
+  if (token_verifier != nullptr && token_verifier->enabled()) {
+    std::string verify_err;
+    if (!token_verifier->Verify(req.token(), chirp::chat::runtime::NowMs(),
+                                &user_id, &verify_err)) {
+      Logger::Instance().Warn("chat login rejected: " + verify_err);
+      chirp::auth::LoginResponse deny;
+      deny.set_code(chirp::common::AUTH_FAILED);
+      deny.set_server_time(chirp::chat::runtime::NowMs());
+      chirp::chat::runtime::SendPacket(session, chirp::gateway::LOGIN_RESP, seq,
+                                       deny.SerializeAsString());
+      return;
+    }
+  } else {
+    // Scaffolding login: treat token as user_id.
+    user_id = req.token();
+  }
 
   chirp::auth::LoginResponse resp;
   if (!user_id.empty()) {
@@ -253,6 +281,9 @@ int main(int argc, char** argv) {
   const std::string redis_host = chirp::chat::runtime::GetArg(argc, argv, "--redis_host", "127.0.0.1");
   const uint16_t redis_port = chirp::chat::runtime::ParseU16Arg(argc, argv, "--redis_port", 6379);
   const int offline_ttl = chirp::chat::runtime::ParseIntArg(argc, argv, "--offline_ttl", 604800);
+  const std::string token_secret = chirp::chat::runtime::GetArg(argc, argv, "--token_secret", "");
+  const std::string notification_host = chirp::chat::runtime::GetArg(argc, argv, "--notification_host", "");
+  const uint16_t notification_port = chirp::chat::runtime::ParseU16Arg(argc, argv, "--notification_port", 5006);
 
   std::string instance_id = chirp::chat::runtime::GetArg(argc, argv, "--instance_id", "");
   if (instance_id.empty()) {
@@ -264,8 +295,26 @@ int main(int argc, char** argv) {
   Logger::Instance().Info("  tcp_port: " + std::to_string(port));
   Logger::Instance().Info("  ws_port: " + std::to_string(ws_port));
   Logger::Instance().Info("  redis: " + redis_host + ":" + std::to_string(redis_port));
+  Logger::Instance().Info(
+      "  auth=" + std::string(token_secret.empty() ? "scaffold" : "hmac-sha256") +
+      (notification_host.empty()
+           ? ""
+           : " notification=" + notification_host + ":" + std::to_string(notification_port)));
 
   asio::io_context io;
+
+  // With a shared secret, LOGIN tokens are verified locally as HS256 JWTs;
+  // empty keeps the scaffolding login (token = user id).
+  chirp::chat::LoginTokenVerifier token_verifier(token_secret);
+
+  // Offline pushes are wired only when a notification service is
+  // configured; a null client makes the bridge a no-op.
+  std::shared_ptr<chirp::notification::NotificationClient> notification;
+  if (!notification_host.empty()) {
+    notification = std::make_shared<chirp::notification::NotificationClient>(
+        io, notification_host, notification_port);
+  }
+  chirp::chat::PushBridge push(notification);
 
   auto state = std::make_shared<DistributedChatState>();
   state->instance_id = instance_id;
@@ -281,15 +330,17 @@ int main(int argc, char** argv) {
   }
 
   chirp::chat::runtime::DistributedDispatchHandlers handlers;
-  handlers.on_login = [state, store, router](const std::shared_ptr<chirp::network::Session>& session,
-                                             const chirp::auth::LoginRequest& req,
-                                             int64_t seq) {
-    HandleLogin(req, session, state, store, router, seq);
+  handlers.on_login = [state, store, router, &token_verifier](
+                          const std::shared_ptr<chirp::network::Session>& session,
+                          const chirp::auth::LoginRequest& req,
+                          int64_t seq) {
+    HandleLogin(req, session, state, store, router, &token_verifier, seq);
   };
-  handlers.on_send_message = [state, store, router](const std::shared_ptr<chirp::network::Session>& session,
-                                                    const chirp::chat::SendMessageRequest& req,
-                                                    int64_t seq) {
-    HandleSendMessage(req, session, state, store, router, seq);
+  handlers.on_send_message = [state, store, router, &push](
+                                 const std::shared_ptr<chirp::network::Session>& session,
+                                 const chirp::chat::SendMessageRequest& req,
+                                 int64_t seq) {
+    HandleSendMessage(req, session, state, store, router, push, seq);
   };
   handlers.on_get_history = [store](const std::shared_ptr<chirp::network::Session>& session,
                                     const chirp::chat::GetHistoryRequest& req,

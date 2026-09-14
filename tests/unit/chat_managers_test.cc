@@ -1375,6 +1375,10 @@ class DistributedInternalsTest : public ::testing::Test {
  protected:
   std::shared_ptr<DistributedChatState> state_ = std::make_shared<DistributedChatState>();
   std::shared_ptr<DistributedMessageStore> store_ = std::make_shared<DistributedMessageStore>();
+  // Scaffold login and a disabled push bridge: the internals tests below
+  // call the handlers directly.
+  chirp::chat::LoginTokenVerifier verifier_{""};
+  chirp::chat::PushBridge push_{nullptr};
 };
 
 TEST_F(DistributedInternalsTest, ChatStateSessionLifecycle) {
@@ -1427,7 +1431,7 @@ TEST_F(DistributedInternalsTest, HandleLoginSuccessRegistersSession) {
   chirp::auth::LoginRequest req;
   req.set_token("alice");
 
-  HandleLogin(req, session, state_, store_, router, /*seq=*/5);
+  HandleLogin(req, session, state_, store_, router, &verifier_, /*seq=*/5);
 
   ASSERT_EQ(session->sent.size(), 1u);
   Packet pkt;
@@ -1448,7 +1452,7 @@ TEST_F(DistributedInternalsTest, HandleLoginEmptyTokenRejected) {
   auto session = std::make_shared<MockSession>();
 
   chirp::auth::LoginRequest req;  // empty token
-  HandleLogin(req, session, state_, store_, router, 1);
+  HandleLogin(req, session, state_, store_, router, &verifier_, 1);
 
   Packet pkt;
   ASSERT_TRUE(DecodeFramed(session->sent[0], &pkt));
@@ -1468,7 +1472,7 @@ TEST_F(DistributedInternalsTest, HandleSendMessagePrivateEmptyReceiverRejected) 
   req.set_channel_type(chirp::chat::PRIVATE);
   req.set_receiver_id("");  // invalid for private messages
 
-  HandleSendMessage(req, session, state_, store_, router, /*seq=*/9);
+  HandleSendMessage(req, session, state_, store_, router, push_, /*seq=*/9);
 
   Packet pkt;
   ASSERT_TRUE(DecodeFramed(session->sent[0], &pkt));
@@ -1492,7 +1496,7 @@ TEST_F(DistributedInternalsTest, HandleSendMessageDeliversToOnlineReceiver) {
   req.set_channel_type(chirp::chat::PRIVATE);
   req.set_content("hi bob");
 
-  HandleSendMessage(req, sender, state_, store_, router, /*seq=*/3);
+  HandleSendMessage(req, sender, state_, store_, router, push_, /*seq=*/3);
 
   // Sender got an OK response
   Packet pkt;
@@ -1523,7 +1527,7 @@ TEST_F(DistributedInternalsTest, HandleSendMessageGroupUsesChannelAndBroadcast) 
   req.set_channel_id("team-9");
   req.set_content("hello team");
 
-  HandleSendMessage(req, sender, state_, store_, router, 1);
+  HandleSendMessage(req, sender, state_, store_, router, push_, 1);
 
   Packet pkt;
   ASSERT_TRUE(DecodeFramed(sender->sent[0], &pkt));
@@ -1594,7 +1598,7 @@ TEST_F(DistributedInternalsTest, HandleLoginDeliversOfflineMessages) {
   auto session = std::make_shared<MockSession>();
   chirp::auth::LoginRequest req;
   req.set_token("alice");
-  HandleLogin(req, session, state_, store_, router, 1);
+  HandleLogin(req, session, state_, store_, router, &verifier_, 1);
 
   // Offline CHAT_MESSAGE_NOTIFY is delivered first, then LOGIN_RESP.
   ASSERT_EQ(session->sent.size(), 2u);
@@ -1625,7 +1629,7 @@ TEST_F(DistributedInternalsTest, HandleSendMessageOfflineReceiverStored) {
   req.set_channel_type(chirp::chat::PRIVATE);
   req.set_content("store me");
 
-  HandleSendMessage(req, sender, state_, store_, router, 5);
+  HandleSendMessage(req, sender, state_, store_, router, push_, 5);
 
   ASSERT_EQ(sender->sent.size(), 1u);  // OK response only
   Packet pkt;

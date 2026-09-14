@@ -124,8 +124,9 @@ is inert without `--redis_host`); denials are answered with `RATE_LIMITED`
 (`common.ErrorCode = 8`). Thresholds are configurable via
 `--login_rate_limit_per_min` / `--send_rate_limit_per_min`.
 
-Direct-entry login tokens: without `--token_secret`, `chirp_chat` keeps the
-scaffolding login (the token field is taken as the user id). With a shared
+Direct-entry login tokens: without `--token_secret`, `chirp_chat` (basic and
+distributed builds alike) keeps the scaffolding login (the token field is
+taken as the user id). With a shared
 secret set, the token must be an HS256 JWT signed with that secret carrying
 a mandatory `exp` claim and the login user in `sub`; verification is local
 to chat (`libs/common` JWT helpers), and expired/badly-signed/claim-less
