@@ -48,6 +48,7 @@ if(MYSQL_FOUND)
         ${PROTO_SRCS}
         src/group_manager.cc
         src/chat_rate_limiter.cc
+        src/login_token_verifier.cc
         src/group_handlers.cc
         src/message_handlers.cc
         src/read_receipt_manager.cc

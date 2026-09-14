@@ -108,6 +108,27 @@ TEST(JwtTest, EscapedSubjectRoundTrip) {
   EXPECT_EQ(parsed.issued_at, 123);
 }
 
+TEST(JwtTest, ExpiryClaimRoundTrip) {
+  JwtClaims parsed;
+  std::string err;
+  const std::string with_exp = JwtSignHS256("user123", 1700000000, "s3cret", 1700000600);
+  ASSERT_TRUE(JwtVerifyHS256(with_exp, "s3cret", &parsed, &err));
+  EXPECT_EQ(parsed.expires_at, 1700000600);
+
+  // The 3-arg form still produces an exp-free token.
+  const std::string without_exp = JwtSignHS256("user123", 1700000000, "s3cret");
+  ASSERT_TRUE(JwtVerifyHS256(without_exp, "s3cret", &parsed, &err));
+  EXPECT_EQ(parsed.expires_at, 0);
+}
+
+TEST(JwtTest, ExpiryChangesSignature) {
+  // Same sub/iat but different exp must produce a different token (the exp
+  // claim is part of the signed payload).
+  const std::string a = JwtSignHS256("u", 1, "s", 100);
+  const std::string b = JwtSignHS256("u", 1, "s", 200);
+  EXPECT_NE(a, b);
+}
+
 namespace {
 
 // Builds a JWT token with fully custom header/payload JSON, signed with the

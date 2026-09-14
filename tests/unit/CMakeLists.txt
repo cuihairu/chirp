@@ -111,8 +111,10 @@ add_test(NAME network_tests COMMAND network_tests)
 # Chat validation tests
 add_executable(chat_validation_tests
   chat_validation_test.cc
+  chat_login_verifier_test.cc
   ${CMAKE_SOURCE_DIR}/services/chat/src/chat_session_registry.cc
   ${CMAKE_SOURCE_DIR}/services/chat/src/chat_validation.cc
+  ${CMAKE_SOURCE_DIR}/services/chat/src/login_token_verifier.cc
   ${CMAKE_SOURCE_DIR}/libs/network/protobuf_framing.cc
   ${CMAKE_SOURCE_DIR}/proto/cpp/proto/auth.pb.cc
   ${CMAKE_SOURCE_DIR}/proto/cpp/proto/chat.pb.cc
@@ -124,6 +126,7 @@ target_link_libraries(chat_validation_tests
   PRIVATE
   GTest::gtest
   GTest::gtest_main
+  chirp_common
   ${absl_pkg_LIBRARIES}
 )
 

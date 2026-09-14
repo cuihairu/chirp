@@ -144,10 +144,15 @@ bool ExtractJsonInt64(std::string_view json, std::string_view key, int64_t* out)
 
 } // namespace
 
-std::string JwtSignHS256(std::string_view subject, int64_t issued_at, std::string_view secret) {
+std::string JwtSignHS256(std::string_view subject, int64_t issued_at,
+                         std::string_view secret, int64_t expires_at) {
   const std::string header_json = R"({"alg":"HS256","typ":"JWT"})";
-  const std::string payload_json =
-      std::string(R"({"sub":")") + JsonEscape(subject) + R"(","iat":)" + std::to_string(issued_at) + "}";
+  std::string payload_json =
+      std::string(R"({"sub":")") + JsonEscape(subject) + R"(","iat":)" + std::to_string(issued_at);
+  if (expires_at > 0) {
+    payload_json += R"(,"exp":)" + std::to_string(expires_at);
+  }
+  payload_json += "}";
 
   const std::string header_b64 =
       Base64UrlEncode(reinterpret_cast<const uint8_t*>(header_json.data()), header_json.size());
@@ -235,6 +240,7 @@ bool JwtVerifyHS256(std::string_view token, std::string_view secret, JwtClaims* 
     return false;
   }
   ExtractJsonInt64(payload_json, "iat", &claims.issued_at);
+  ExtractJsonInt64(payload_json, "exp", &claims.expires_at);
 
   *out = std::move(claims);
   return true;

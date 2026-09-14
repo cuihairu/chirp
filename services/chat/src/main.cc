@@ -13,6 +13,7 @@
 
 #include "chat_rate_limiter.h"
 #include "chat_session_registry.h"
+#include "login_token_verifier.h"
 #include "chat_validation.h"
 #include "group_handlers.h"
 #include "inject_consumer.h"
@@ -252,6 +253,8 @@ struct FeatureHandlers {
   // expected in practice — main always installs one; it fails open without
   // Redis).
   chirp::chat::ChatRateLimiter* rate_limiter = nullptr;
+  // Null or disabled() keeps the scaffold "token is user_id" login.
+  const chirp::chat::LoginTokenVerifier* token_verifier = nullptr;
 };
 
 void HandlePacket(const std::shared_ptr<MessageStore>& store,
@@ -295,7 +298,25 @@ void HandlePacket(const std::shared_ptr<MessageStore>& store,
       chirp::chat::runtime::SendPacket(session, chirp::gateway::LOGIN_RESP, pkt.sequence(), resp.SerializeAsString());
       return;
     }
-    const std::string user_id = login_req.token();
+    std::string user_id;
+    if (features.token_verifier && features.token_verifier->enabled()) {
+      // Real mode: the token must be an HS256 JWT signed with the shared
+      // secret, unexpired, with the login user in "sub".
+      std::string verify_err;
+      if (!features.token_verifier->Verify(login_req.token(), chirp::chat::runtime::NowMs(),
+                                           &user_id, &verify_err)) {
+        Logger::Instance().Warn("chat login rejected: " + verify_err);
+        chirp::auth::LoginResponse deny;
+        deny.set_code(chirp::common::AUTH_FAILED);
+        deny.set_server_time(chirp::chat::runtime::NowMs());
+        chirp::chat::runtime::SendPacket(session, chirp::gateway::LOGIN_RESP, pkt.sequence(),
+                                         deny.SerializeAsString());
+        return;
+      }
+    } else {
+      // Scaffolding login: treat token as user_id.
+      user_id = login_req.token();
+    }
 
     chirp::auth::LoginResponse login_resp;
     if (user_id.empty()) {
@@ -778,6 +799,9 @@ int main(int argc, char** argv) {
       chirp::chat::runtime::ParseIntArg(argc, argv, "--login_rate_limit_per_min", 30);
   const int send_rate_limit_per_min =
       chirp::chat::runtime::ParseIntArg(argc, argv, "--send_rate_limit_per_min", 120);
+  // Empty keeps the scaffold "token is user_id" login; set to an HS256 secret
+  // shared with the token issuer to require verifiable, unexpired JWTs.
+  const std::string token_secret = chirp::chat::runtime::GetArg(argc, argv, "--token_secret", "");
   Logger::Instance().Info("chirp_chat starting tcp=" + std::to_string(port) + " ws=" + std::to_string(ws_port) +
                           (redis_host.empty()
                                ? ""
@@ -785,6 +809,7 @@ int main(int argc, char** argv) {
                                   " offline_ttl=" + std::to_string(offline_ttl_seconds) +
                                   " rate_limit(login/ip/min)=" + std::to_string(login_rate_limit_per_min) +
                                   " rate_limit(send/user/min)=" + std::to_string(send_rate_limit_per_min))) +
+                          " auth=" + (token_secret.empty() ? "scaffold" : "hmac-sha256") +
                           (notification_host.empty()
                                ? ""
                                : (" notification=" + notification_host + ":" + std::to_string(notification_port))));
@@ -803,6 +828,7 @@ int main(int argc, char** argv) {
   rate_limit_config.max_logins_per_minute_per_ip = login_rate_limit_per_min;
   rate_limit_config.max_sends_per_minute_per_user = send_rate_limit_per_min;
   auto rate_limiter = std::make_shared<chirp::chat::ChatRateLimiter>(redis, rate_limit_config);
+  chirp::chat::LoginTokenVerifier token_verifier(token_secret);
 
   // Offline pushes are only wired when a notification service is configured;
   // a null client turns the bridge into a no-op.
@@ -895,6 +921,7 @@ int main(int argc, char** argv) {
   FeatureHandlers features{group_handlers, receipt_handlers, typing_handlers,
                            reaction_handlers, edit_handlers, mention_handlers, push};
   features.rate_limiter = rate_limiter.get();
+  features.token_verifier = &token_verifier;
 
   // Server-plane injection: when --server_gateway_host is set, chat dials the
   // hub as an internal service and delivers forwarded injections through the
