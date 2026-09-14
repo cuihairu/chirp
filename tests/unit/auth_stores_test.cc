@@ -677,4 +677,146 @@ TEST_F(RedisAuthStoreTest, DeviceRegistry) {
   EXPECT_TRUE(store_->RemoveDevice("u1", "phone"));
 }
 
+TEST_F(RedisAuthStoreTest, DisconnectedStoreRejectsEveryOperation) {
+  // A store that was never Connect()ed must fail closed for every call.
+  RedisAuthStore::Config cfg;
+  cfg.port = fake_->port();
+  RedisAuthStore disconnected(io_, cfg);
+  EXPECT_FALSE(disconnected.IsConnected());
+
+  EXPECT_FALSE(disconnected.StoreSession("s1", "u1", "d1", "web", INT64_MAX));
+  EXPECT_FALSE(disconnected.GetSessionUser("s1").has_value());
+  EXPECT_FALSE(disconnected.UpdateSessionActivity("s1", 1));
+  EXPECT_FALSE(disconnected.DeleteSession("s1"));
+  EXPECT_EQ(disconnected.DeleteAllUserSessions("u1"), 0);
+  EXPECT_FALSE(disconnected.StoreRefreshToken("t1", "u1", "s1", INT64_MAX));
+  EXPECT_FALSE(disconnected.GetRefreshTokenUser("t1").has_value());
+  EXPECT_FALSE(disconnected.DeleteRefreshToken("t1"));
+  EXPECT_TRUE(disconnected.CheckRateLimit("k", 3));  // fail-open by design
+  EXPECT_EQ(disconnected.GetRateLimitCount("k"), 0);
+  EXPECT_FALSE(disconnected.ResetRateLimit("k"));
+  EXPECT_FALSE(disconnected.RecordFailedLogin("alice", "1.1.1.1"));
+  EXPECT_EQ(disconnected.GetFailedLoginCount("alice"), 0);
+  EXPECT_FALSE(disconnected.ClearFailedLogins("alice"));
+  EXPECT_FALSE(disconnected.IsAccountLocked("u1"));
+  EXPECT_FALSE(disconnected.LockAccount("u1", 60));
+  EXPECT_FALSE(disconnected.UnlockAccount("u1"));
+  EXPECT_TRUE(disconnected.GetUserDevices("u1").empty());
+  EXPECT_FALSE(disconnected.RemoveDevice("u1", "d1"));
+}
+
+TEST_F(RedisAuthStoreTest, ConnectedEdgeCases) {
+  ASSERT_TRUE(store_->Connect());
+
+  // Activity update for a session Redis does not know about.
+  EXPECT_FALSE(store_->UpdateSessionActivity("missing", 1));
+
+  // A stored value missing its '|' separators fails to parse.
+  redis_.SetDirect("chirp:auth:session:bad", "garbage");
+  EXPECT_FALSE(store_->UpdateSessionActivity("bad", 1));
+
+  // An expiry already in the past falls back to the configured token TTL.
+  EXPECT_TRUE(store_->StoreRefreshToken("t1", "u1", "s1", 1000));
+
+  // A stored refresh token whose expiry has passed resolves to nothing.
+  redis_.SetDirect("chirp:auth:refresh_token:t2", "u1|s1|1000");
+  EXPECT_FALSE(store_->GetRefreshTokenUser("t2").has_value());
+}
+
+// ---------------------------------------------------------------------------
+// MySQL error-path sweeps: every query failure, failed store_result and
+// broken-pool state must surface as the method's documented default.
+// ---------------------------------------------------------------------------
+
+TEST_F(UserStoreTest, InitFailureGuardsReturnDefaults) {
+  fake_mysql::SetInitShouldFail(true);
+  UserStore store(DefaultUserConfig());
+  EXPECT_FALSE(store.Initialize());
+  EXPECT_FALSE(store.FindByUsername("alice").has_value());
+  EXPECT_FALSE(store.FindByEmail("a@b.c").has_value());
+  EXPECT_EQ(store.GetActiveSessionCount("u1"), 0);
+}
+
+TEST_F(UserStoreTest, QueryErrorPathsReturnDefaults) {
+  UserStore store(DefaultUserConfig());
+  fake_mysql::PushQueryError("x");
+  EXPECT_FALSE(store.FindByUsername("alice").has_value());
+  fake_mysql::PushQueryError("x");
+  EXPECT_FALSE(store.FindByEmail("a@b.c").has_value());
+  fake_mysql::PushQueryError("x");
+  EXPECT_FALSE(store.EmailExists("a@b.c"));
+  fake_mysql::PushQueryError("x");
+  EXPECT_EQ(store.GetActiveSessionCount("u1"), 0);
+}
+
+TEST_F(UserStoreTest, StoreResultFailurePathsReturnDefaults) {
+  UserStore store(DefaultUserConfig());
+  fake_mysql::SetStoreResultShouldFail(true);
+  EXPECT_FALSE(store.FindByUsername("alice").has_value());
+  EXPECT_FALSE(store.FindByEmail("a@b.c").has_value());
+  EXPECT_FALSE(store.UsernameExists("bob"));
+  EXPECT_EQ(store.GetActiveSessionCount("u1"), 0);
+}
+
+TEST_F(UserStoreTest, SurplusConnectionsAreClosedNotPooled) {
+  UserStore::Config cfg;
+  cfg.pool_size = 0;  // nothing ever parks in the pool
+  UserStore store(cfg);
+  fake_mysql::PushRows({{"1"}});
+  EXPECT_TRUE(store.UsernameExists("alice"));
+  EXPECT_EQ(fake_mysql::LiveHandles(), 0);
+}
+
+TEST_F(SessionStoreTest, InitFailureGuardsReturnDefaults) {
+  fake_mysql::SetInitShouldFail(true);
+  SessionStore store(DefaultSessionConfig());
+  EXPECT_FALSE(store.Initialize());
+
+  chirp::auth::CreateSessionRequest req;
+  req.user_id = "u1";
+  req.ttl_seconds = 60;
+  EXPECT_FALSE(store.CreateSession(req).has_value());
+  EXPECT_TRUE(store.GetUserSessions("u1").empty());
+
+  chirp::auth::CreateRefreshTokenRequest token_req;
+  token_req.user_id = "u1";
+  token_req.ttl_seconds = 60;
+  EXPECT_FALSE(store.CreateRefreshToken(token_req, "hash").has_value());
+}
+
+TEST_F(SessionStoreTest, QueryAndStoreResultFailuresReturnDefaults) {
+  SessionStore store(DefaultSessionConfig());
+
+  fake_mysql::PushQueryError("x");
+  EXPECT_EQ(store.RevokeOtherSessions("u1", "keep"), 0);
+
+  fake_mysql::SetStoreResultShouldFail(true);
+  EXPECT_TRUE(store.GetUserSessions("u1").empty());
+  EXPECT_FALSE(store.GetRefreshToken("tok_1").has_value());
+  EXPECT_FALSE(store.VerifyRefreshToken("hash").has_value());
+  EXPECT_EQ(store.RevokeAllUserSessions("u1"), 0);
+  EXPECT_EQ(store.CleanupExpiredSessions(), 0);
+  EXPECT_EQ(store.RevokeAllUserRefreshTokens("u1"), 0);
+  EXPECT_EQ(store.RevokeSessionRefreshTokens("s1"), 0);
+  EXPECT_FALSE(store.CheckSessionLimit("u1", 5));
+}
+
+TEST_F(SessionStoreTest, PooledConnectionPingFailureReopens) {
+  SessionStore store(DefaultSessionConfig());
+  ASSERT_TRUE(store.GetUserSessions("u1").empty());  // parks a connection
+  EXPECT_EQ(fake_mysql::LiveHandles(), 1);
+
+  fake_mysql::SetPingShouldFail(true);
+  ASSERT_TRUE(store.GetUserSessions("u1").empty());  // dead pooled conn replaced
+  EXPECT_EQ(fake_mysql::LiveHandles(), 1);
+}
+
+TEST_F(SessionStoreTest, SurplusConnectionsAreClosedNotPooled) {
+  SessionStore::Config cfg;
+  cfg.pool_size = 0;
+  SessionStore store(cfg);
+  ASSERT_TRUE(store.GetUserSessions("u1").empty());
+  EXPECT_EQ(fake_mysql::LiveHandles(), 0);
+}
+
 }  // namespace

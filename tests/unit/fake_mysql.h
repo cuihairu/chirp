@@ -21,6 +21,11 @@ void SetInitShouldFail(bool fail);
 void SetPingShouldFail(bool fail);
 void SetStoreResultShouldFail(bool fail);
 
+// Lets the first `n` mysql_init calls succeed and every later one fail
+// (until Reset). Use this to fail only the second consumer's connection,
+// e.g. UserStore initializes fine but SessionStore does not.
+void SetInitShouldFailAfter(int n);
+
 // Scripts the rows returned by the next mysql_store_result call. Cells set
 // to std::nullopt come back as SQL NULLs.
 void PushRows(std::vector<std::vector<std::optional<std::string>>> rows);

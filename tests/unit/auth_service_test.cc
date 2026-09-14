@@ -821,4 +821,80 @@ TEST_F(AuthServiceTest, ChangePasswordFlow) {
   EXPECT_TRUE(service_->ChangePassword("user_1", "Str0ng!pass", "Str0ng!pass2"));
 }
 
+// ---------------------------------------------------------------------------
+// Initialize / store-failure propagation
+// ---------------------------------------------------------------------------
+
+TEST_F(AuthServiceTest, InitializeFailsWhenUserStoreProbeFails) {
+  // UserStore::Initialize probes with SHOW TABLES; failing it must abort
+  // the whole service initialization.
+  fake_mysql::FailQueriesMatching("SHOW TABLES");
+  EXPECT_FALSE(service_->Initialize());
+}
+
+TEST_F(AuthServiceTest, InitializeFailsWhenSessionStoreHasNoConnection) {
+  // The first connection (UserStore's probe) is granted, every later one
+  // is refused -- so SessionStore::Initialize fails after UserStore passed.
+  fake_mysql::SetInitShouldFailAfter(1);
+  EXPECT_FALSE(service_->Initialize());
+}
+
+TEST_F(AuthServiceTest, InitializeContinuesWhenRedisIsDown) {
+  AuthService::Config cfg;
+  cfg.redis_config.port = 1;  // nothing listens there
+  AuthService svc(io_, cfg);
+  fake_mysql::PushRows({{"users"}});
+  EXPECT_TRUE(svc.Initialize());  // Redis is optional; rate limiting degrades
+}
+
+TEST_F(AuthServiceTest, GetUserSessionsMapsStoreRows) {
+  ScriptSuccessfulInitialize();
+  ASSERT_TRUE(service_->Initialize());
+
+  fake_mysql::PushRows(
+      {{"7", "sess_1", "user_1", "dev1", "web", "100", "200", "300", "1"}});
+  const auto sessions = service_->GetUserSessions("user_1");
+  ASSERT_EQ(sessions.size(), 1u);
+  EXPECT_EQ(sessions[0].session_id, "sess_1");
+  EXPECT_EQ(sessions[0].device_id, "dev1");
+  EXPECT_EQ(sessions[0].platform, "web");
+  EXPECT_EQ(sessions[0].created_at, 100);
+  EXPECT_EQ(sessions[0].last_activity_at, 300);
+  EXPECT_FALSE(sessions[0].is_current);
+}
+
+TEST_F(AuthServiceTest, PasswordResetIsRateLimited) {
+  ScriptSuccessfulInitialize();
+  ASSERT_TRUE(service_->Initialize());
+
+  // The identifier resolves by username, then the reset-hour counter in
+  // Redis is already at the cap.
+  fake_mysql::PushRows({{"5", "user_1", "alice", "a@b.c", "h", "1", "2", "3", "1"}});
+  redis_->SetDirect("chirp:auth:rate_limit:reset_hour:alice", "999");
+
+  StderrCapture capture;
+  EXPECT_FALSE(service_->InitiatePasswordReset("alice"));
+  EXPECT_NE(capture.Take().find("rate limit exceeded"), std::string::npos);
+}
+
+TEST_F(AuthServiceTest, ChangePasswordFailsWhenHashingFails) {
+  ScriptSuccessfulInitialize();
+  ASSERT_TRUE(service_->Initialize());
+
+  const std::string hash = PasswordHasher::HashPassword("Str0ng!pass");
+  fake_mysql::PushRows({{"5", "user_1", "alice", "a@b.c", hash, "1", "2", "3", "1"}});
+  fake_sodium::SetPwhashShouldFail(true);
+  EXPECT_FALSE(service_->ChangePassword("user_1", "Str0ng!pass", "Str0ng!pass2"));
+}
+
+TEST_F(AuthGuardsTest, GetFailedAttemptCountResolvesEmailToUserId) {
+  auto user_store = std::make_shared<chirp::auth::UserStore>(chirp::auth::UserStore::Config{});
+  BruteForceProtector protector(redis_store_, user_store, BruteForceProtector::Config{});
+
+  fake_mysql::PushRows({});  // FindByUsername("a@b.c") misses
+  fake_mysql::PushRows(
+      {{"5", "user_1", "alice", "a@b.c", "h", "1", "2", "3", "1"}});  // FindByEmail hits
+  EXPECT_EQ(protector.GetFailedAttemptCount("a@b.c"), 0);
+}
+
 }  // namespace

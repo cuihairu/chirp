@@ -27,6 +27,8 @@ struct State {
   std::mutex mu;
   bool connect_should_fail = false;
   bool init_should_fail = false;
+  int init_fail_after = -1;  // fail mysql_init once init_calls exceeds this
+  int init_calls = 0;
   bool ping_should_fail = false;
   bool store_result_should_fail = false;
   std::deque<ScriptedResult> results;      // popped by mysql_store_result
@@ -59,6 +61,8 @@ void Reset() {
   std::lock_guard<std::mutex> lock(s.mu);
   s.connect_should_fail = false;
   s.init_should_fail = false;
+  s.init_fail_after = -1;
+  s.init_calls = 0;
   s.ping_should_fail = false;
   s.store_result_should_fail = false;
   s.results.clear();
@@ -73,6 +77,7 @@ void Reset() {
 
 void SetConnectShouldFail(bool fail) { state().connect_should_fail = fail; }
 void SetInitShouldFail(bool fail) { state().init_should_fail = fail; }
+void SetInitShouldFailAfter(int n) { state().init_fail_after = n; }
 void SetPingShouldFail(bool fail) { state().ping_should_fail = fail; }
 void SetStoreResultShouldFail(bool fail) { state().store_result_should_fail = fail; }
 
@@ -135,7 +140,9 @@ extern "C" {
 MYSQL* mysql_init(MYSQL*) {
   auto& s = state();
   std::lock_guard<std::mutex> lock(s.mu);
-  if (s.init_should_fail) {
+  ++s.init_calls;
+  if (s.init_should_fail ||
+      (s.init_fail_after >= 0 && s.init_calls > s.init_fail_after)) {
     return nullptr;
   }
   ++s.live_handles;
