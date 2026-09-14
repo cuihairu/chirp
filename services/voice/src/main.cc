@@ -120,6 +120,44 @@ void BroadcastToRoom(const std::shared_ptr<VoiceRoom>& room,
   }
 }
 
+// Delivers a signaling message to one participant only; dropped when the
+// target is not in the room or has no bound session (no signaling leaks
+// across rooms).
+void RelayToUser(const std::shared_ptr<VoiceRoom>& room,
+                 const std::string& user_id,
+                 chirp::gateway::MsgID msg_id,
+                 const std::string& body,
+                 const std::shared_ptr<VoiceState>& state) {
+  {
+    std::lock_guard<std::mutex> lock(room->mu);
+    if (room->participants.find(user_id) == room->participants.end()) {
+      return;
+    }
+  }
+
+  std::shared_ptr<chirp::network::Session> target;
+  {
+    std::lock_guard<std::mutex> lock(state->mu);
+    auto it = state->user_to_session.find(user_id);
+    if (it != state->user_to_session.end()) {
+      target = it->second.lock();
+    }
+  }
+  if (target) {
+    SendPacket(target, msg_id, 0, body);
+  }
+}
+
+// Records which session belongs to which user so broadcasts can reach them
+// and disconnect cleanup can find the room to leave.
+void BindSession(const std::shared_ptr<VoiceState>& state,
+                 const std::shared_ptr<chirp::network::Session>& session,
+                 const std::string& user_id) {
+  std::lock_guard<std::mutex> lock(state->mu);
+  state->session_to_user[session.get()] = user_id;
+  state->user_to_session[user_id] = session;
+}
+
 void HandleCreateRoom(const std::shared_ptr<VoiceState>& state,
                       const std::shared_ptr<chirp::network::Session>& session,
                       const chirp::gateway::Packet& pkt) {
@@ -176,7 +214,23 @@ void HandleJoinRoom(const std::shared_ptr<VoiceState>& state,
       return;
     }
     room = it->second;
+  }
 
+  // Capacity check before any state mutation: a rejected join must leave the
+  // user's previous room membership untouched.
+  {
+    std::lock_guard<std::mutex> lock(room->mu);
+    if (room->max_participants > 0 && static_cast<int32_t>(room->participants.size()) >= room->max_participants) {
+      chirp::voice::JoinRoomResponse resp;
+      resp.set_code(chirp::common::INTERNAL_ERROR);  // Room full
+      resp.set_server_time(NowMs());
+      SendPacket(session, chirp::gateway::JOIN_ROOM_RESP, pkt.sequence(), resp.SerializeAsString());
+      return;
+    }
+  }
+
+  {
+    std::lock_guard<std::mutex> lock(state->mu);
     // Remove from previous room if any
     auto prev_room_it = state->user_to_room.find(req.user_id());
     if (prev_room_it != state->user_to_room.end()) {
@@ -193,14 +247,6 @@ void HandleJoinRoom(const std::shared_ptr<VoiceState>& state,
   std::vector<std::string> existing_participants;
   {
     std::lock_guard<std::mutex> lock(room->mu);
-    if (room->max_participants > 0 && static_cast<int32_t>(room->participants.size()) >= room->max_participants) {
-      chirp::voice::JoinRoomResponse resp;
-      resp.set_code(chirp::common::INTERNAL_ERROR);  // Room full
-      resp.set_server_time(NowMs());
-      SendPacket(session, chirp::gateway::JOIN_ROOM_RESP, pkt.sequence(), resp.SerializeAsString());
-      return;
-    }
-
     chirp::voice::ParticipantInfo participant;
     participant.set_user_id(req.user_id());
     participant.set_state(chirp::voice::CONNECTED);
@@ -211,6 +257,8 @@ void HandleJoinRoom(const std::shared_ptr<VoiceState>& state,
       existing_participants.push_back(kv.first);
     }
   }
+
+  BindSession(state, session, req.user_id());
 
   // Notify existing participants
   chirp::voice::ParticipantJoinedNotify joined_notify;
@@ -295,9 +343,13 @@ void HandleIceCandidate(const std::shared_ptr<VoiceState>& state,
     room = it->second;
   }
 
-  // Relay ICE candidate to target or all participants
-  BroadcastToRoom(room, chirp::gateway::ICE_CANDIDATE_MSG, pkt.body(), state,
-                  msg.to_user_id().empty() ? "" : msg.from_user_id());
+  // Relay the ICE candidate to the targeted participant, or broadcast to all
+  // when no target is set (proto: "Empty for broadcast to all").
+  if (msg.to_user_id().empty()) {
+    BroadcastToRoom(room, chirp::gateway::ICE_CANDIDATE_MSG, pkt.body(), state);
+  } else {
+    RelayToUser(room, msg.to_user_id(), chirp::gateway::ICE_CANDIDATE_MSG, pkt.body(), state);
+  }
 }
 
 void HandleSdpOffer(const std::shared_ptr<VoiceState>& state,
@@ -318,8 +370,13 @@ void HandleSdpOffer(const std::shared_ptr<VoiceState>& state,
     room = it->second;
   }
 
-  // Relay SDP offer to target user
-  BroadcastToRoom(room, chirp::gateway::SDP_OFFER_MSG, pkt.body(), state, msg.from_user_id());
+  // Relay the SDP offer to the targeted participant, or broadcast to all when
+  // no target is set (proto: "Empty for broadcast to all").
+  if (msg.to_user_id().empty()) {
+    BroadcastToRoom(room, chirp::gateway::SDP_OFFER_MSG, pkt.body(), state);
+  } else {
+    RelayToUser(room, msg.to_user_id(), chirp::gateway::SDP_OFFER_MSG, pkt.body(), state);
+  }
 }
 
 void HandleDisconnect(const std::shared_ptr<VoiceState>& state,

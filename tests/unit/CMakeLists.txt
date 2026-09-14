@@ -246,6 +246,54 @@ target_include_directories(gateway_extra_tests
 
 add_test(NAME gateway_extra_tests COMMAND gateway_extra_tests)
 
+# Voice service packet-handler tests (main.cc included with renamed main)
+add_executable(voice_tests
+  voice_service_test.cc
+)
+
+chirp_unit_test_common_links(voice_tests)
+target_link_libraries(voice_tests PRIVATE chirp_network chirp_common chirp_protos)
+
+target_include_directories(voice_tests
+  PRIVATE
+  ${CMAKE_SOURCE_DIR}/services/voice/src
+  ${CMAKE_SOURCE_DIR}/libs
+  ${CMAKE_SOURCE_DIR}/libs/common
+  ${CMAKE_SOURCE_DIR}/libs/common/include
+  ${CMAKE_SOURCE_DIR}/libs/network
+  ${CMAKE_SOURCE_DIR}/proto/cpp
+  ${CMAKE_SOURCE_DIR}/proto/cpp/proto
+)
+
+add_test(NAME voice_tests COMMAND voice_tests)
+
+# App gateway edge tests: scaffold login/logout, device-message forwarding
+# through a real NotificationClient against a loopback server
+add_executable(app_gateway_tests
+  app_gateway_service_test.cc
+  ${CMAKE_SOURCE_DIR}/services/gateway/src/gateway_session_registry.cc
+  ${CMAKE_SOURCE_DIR}/services/gateway/src/auth_client.cc
+  ${CMAKE_SOURCE_DIR}/services/gateway/src/redis_session_manager.cc
+  ${CMAKE_SOURCE_DIR}/services/notification/src/notification_client.cc
+)
+
+chirp_unit_test_common_links(app_gateway_tests)
+target_link_libraries(app_gateway_tests PRIVATE chirp_network chirp_common chirp_protos)
+
+target_include_directories(app_gateway_tests
+  PRIVATE
+  ${CMAKE_SOURCE_DIR}/services/gateway/src
+  ${CMAKE_SOURCE_DIR}/services/notification/src
+  ${CMAKE_SOURCE_DIR}/libs
+  ${CMAKE_SOURCE_DIR}/libs/common
+  ${CMAKE_SOURCE_DIR}/libs/common/include
+  ${CMAKE_SOURCE_DIR}/libs/network
+  ${CMAKE_SOURCE_DIR}/proto/cpp
+  ${CMAKE_SOURCE_DIR}/proto/cpp/proto
+)
+
+add_test(NAME app_gateway_tests COMMAND app_gateway_tests)
+
 # Notification service coverage tests (internal access tests are compiled
 # into the same binary: the implementation is compiled exactly once).
 add_executable(notification_tests

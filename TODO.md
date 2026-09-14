@@ -41,7 +41,7 @@
 - [x] **NPC 回复去重**:(2026-09 完成)`NpcResponder` 按事件 id(= `inject_id`)去重——回复注入成功才记入 1024 条的近期窗口;已答事件重投只补 ack 不再回复,注入失败的事件不记录(重投必须重试),窗口满驱逐最旧。见 `docs/server_plane.md` NPC dialog 一节。
 - [ ] **app 边缘 TLS**:`app_gateway` 的 WS/TCP 监听尚无 TLS(docs 多处标注 "TLS planned")。
 - [ ] **真实推送传输**:(2026-09 推进)`HttpPushTransport` 落地——真实 HTTP/1.1 客户端(URL 解析/请求构建/状态与响应解析/整请求 deadline/响应体上限),`--push_transport http` 启用,默认仍为 logging stub;TCP 连接工厂在 `HttpConnectionFactory` 接缝后,单测以脚本化连接全覆盖 + loopback 真连回环。**剩余**:TLS 握手与 APNs HTTP/2(需 OpenSSL/nghttp2;本机 vcpkg 的 ncurses 端口在 gcc 15 下构建失败,阻塞 openssl 安装),FCM HTTP v1 的 OAuth2(RS256)同因缺 OpenSSL 未做;三者都是接缝替换点,协议代码无需再动。
-- [ ] **app_gateway / voice 单测**:(2026-09 更新:social 已由 `social_presence_tests` 覆盖至行覆盖 100%)这两个服务尚未接入任何单测套件(均在 Experimental,可在其转 Supported 前补)。
+- [x] **app_gateway / voice 单测**:(2026-09 完成)social 已由 `social_presence_tests` 覆盖;本批补齐剩余两个——`voice_tests`(房间创建/加入/满员/换房/离开/心跳/断连 + ICE/SDP 定向中继,22 例)、`app_gateway_tests`(scaffold 登录/登出/踢下线/心跳 + 设备消息经真实 NotificationClient 转发到 loopback 服务,17 例)。顺带修 voice 三个缺陷:满员 join 先拒后改状态(原会污染前房映射)、ICE/SDP 按 `to_user_id` 定向(原永远广播)、join 成功时绑定会话(原广播与断连清理永远找不到会话)。两服务均为 Experimental,main.cc 不在覆盖率测量范围。
 
 ### P3 — 暂缓项与杂项
 
