@@ -116,7 +116,7 @@ std::string BuildRedisCommand(const std::vector<std::string>& args) {
     out += "\r\n";
   }
   return out;
-}
+}  // GCOVR_EXCL_LINE -- unreachable exit-block line (gcc/NRVO artifact); body is covered
 
 } // namespace chirp::network
 

@@ -37,7 +37,7 @@ std::string Logger::LevelToString(Level level) {
   case Level::kError:
     return "ERROR";
   }
-  return "UNKNOWN";
+  return "UNKNOWN";  // GCOVR_EXCL_LINE -- every enumerator has a case; trailing return satisfies the compiler
 }
 
 void Logger::Log(Level level, std::string_view msg) {

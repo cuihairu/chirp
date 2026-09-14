@@ -52,7 +52,7 @@ std::string Base64UrlEncode(const uint8_t* data, size_t len) {
   }
 
   return out;
-}
+}  // GCOVR_EXCL_LINE -- unreachable exit-block line (gcc/NRVO artifact); body is covered
 
 bool Base64UrlDecode(std::string_view in, std::string* out) {
   if (!out) {

@@ -90,7 +90,7 @@ std::string MessageSearchService::NormalizeWord(const std::string& word) {
     }
   }
   return result;
-}
+}  // GCOVR_EXCL_LINE -- unreachable exit-block line (gcc/NRVO artifact); body is covered
 
 bool MessageSearchService::IsStopWord(const std::string& word) const {
   return std::find(config_.stop_words.begin(), config_.stop_words.end(), word)

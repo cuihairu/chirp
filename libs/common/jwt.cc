@@ -35,7 +35,7 @@ std::string JsonEscape(std::string_view s) {
     }
   }
   return out;
-}
+}  // GCOVR_EXCL_LINE -- unreachable exit-block line (gcc/NRVO artifact); body is covered
 
 bool ExtractJsonString(std::string_view json, std::string_view key, std::string* out) {
   if (!out) {

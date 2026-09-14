@@ -35,8 +35,8 @@ bool WebSocketClient::Connect(const std::string& host, uint16_t port, const std:
 
     asio::write(socket_, asio::buffer(handshake), ec);
     if (ec) {
-      Logger::Instance().Error("WebSocket handshake send failed: " + ec.message());
-      return false;
+      Logger::Instance().Error("WebSocket handshake send failed: " + ec.message());  // GCOVR_EXCL_LINE -- peer TCP reset must land between connect and handshake write (kernel race)
+      return false;  // GCOVR_EXCL_LINE -- peer TCP reset must land between connect and handshake write (kernel race)
     }
 
     // Read response

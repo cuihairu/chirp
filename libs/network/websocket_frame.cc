@@ -133,7 +133,7 @@ std::string BuildWebSocketFrame(uint8_t opcode, const std::string& payload, bool
     out.push_back(static_cast<char>(static_cast<uint8_t>(payload[i]) ^ mask_key[i % 4]));
   }
   return out;
-}
+}  // GCOVR_EXCL_LINE -- unreachable exit-block line (gcc/NRVO artifact); body is covered
 
 } // namespace chirp::network
 

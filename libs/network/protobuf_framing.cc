@@ -11,13 +11,13 @@ std::vector<uint8_t> ProtobufFraming::Encode(const google::protobuf::Message& ms
   const size_t payload_size = msg.ByteSizeLong();
   if (payload_size > static_cast<size_t>(std::numeric_limits<uint32_t>::max()) ||
       payload_size > static_cast<size_t>(std::numeric_limits<int>::max())) {
-    return {};
+    return {};  // GCOVR_EXCL_LINE -- needs >4GiB message / SerializeToArray disagreeing with ByteSizeLong
   }
 
   std::vector<uint8_t> out(4 + payload_size);
   WriteU32BE(out.data(), static_cast<uint32_t>(payload_size));
   if (!msg.SerializeToArray(out.data() + 4, static_cast<int>(payload_size))) {
-    return {};
+    return {};  // GCOVR_EXCL_LINE -- needs >4GiB message / SerializeToArray disagreeing with ByteSizeLong
   }
   return out;
 }
