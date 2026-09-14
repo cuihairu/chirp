@@ -91,7 +91,10 @@ if(NOT TARGET chirp_network)
     file(GLOB NETWORK_SRCS "${NETWORK_DIR}/*.cc")
     file(GLOB NETWORK_HEADERS "${NETWORK_DIR}/*.h")
     add_library(chirp_network STATIC ${NETWORK_SRCS} ${NETWORK_HEADERS})
-    target_include_directories(chirp_network PUBLIC ${LIBS_DIR})
+    # NETWORK_SRCS includes the auth/session/notification clients, whose
+    # headers include generated proto headers -- the same include surface the
+    # in-tree build gets from the PUBLIC chirp_protos dependency.
+    target_include_directories(chirp_network PUBLIC ${LIBS_DIR} ${PROTO_DIR})
     target_link_libraries(chirp_network PUBLIC chirp_asio Threads::Threads)
 
     # Link protobuf if found via vcpkg
