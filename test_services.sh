@@ -65,6 +65,26 @@ s.close()
 PY
 }
 
+# 等待 TCP 端口可连接。CI runner 冷启动一个刚构建好的 Debug 二进制可能慢于
+# 固定 sleep，benchmark 客户端连不上会以未捕获异常直接 abort（core dumped）。
+# 超时后打印服务日志尾部，启动即崩的服务在这里直接暴露死因。
+wait_port() {
+  local port="$1" name="$2" log="$3" timeout_s="${4:-15}"
+  local deadline=$((SECONDS + timeout_s))
+  while (( SECONDS < deadline )); do
+    if (exec 3<>"/dev/tcp/127.0.0.1/${port}") 2>/dev/null; then
+      return 0
+    fi
+    sleep 0.1
+  done
+  echo "错误: ${name} 端口 ${port} 在 ${timeout_s}s 内未就绪"
+  if [[ -n "${log}" && -f "${log}" ]]; then
+    echo "--- ${name} log: ${log} ---"
+    tail -n 40 "${log}" || true
+  fi
+  return 1
+}
+
 if [[ "${1:-}" == "--smoke" ]]; then
   AUTH_PORT="${AUTH_PORT:-$(pick_port)}"
   GW_PORT="${GW_PORT:-$(pick_port)}"
@@ -87,7 +107,8 @@ if [[ "${1:-}" == "--smoke" ]]; then
   }
   trap cleanup EXIT
 
-  sleep 0.3
+  wait_port "${AUTH_PORT}" chirp_auth "${AUTH_LOG}"
+  wait_port "${GW_PORT}" chirp_gateway "${GW_LOG}"
 
   echo ""
   echo "[tcp] login -> ping"
@@ -159,7 +180,9 @@ elif [[ "${1:-}" == "--smoke-redis" ]]; then
     --redis_host 127.0.0.1 --redis_port "${REDIS_PORT}" --redis_ttl 3600 --instance_id gw_b > "${GW2_LOG}" 2>&1 &
   GW2_PID=$!
 
-  sleep 0.4
+  wait_port "${AUTH_PORT}" chirp_auth "${AUTH_LOG}"
+  wait_port "${GW1_PORT}" chirp_gateway-a "${GW1_LOG}"
+  wait_port "${GW2_PORT}" chirp_gateway-b "${GW2_LOG}"
 
   echo ""
   echo "[tcp] hold login on gw_a (expect kick)"
@@ -244,7 +267,7 @@ elif [[ "${1:-}" == "--smoke-npc" ]]; then
     > "${HUB_LOG}" 2>&1 &
   HUB_PID=$!
 
-  sleep 0.3
+  wait_port "${HUB_PORT}" chirp_server_gateway "${HUB_LOG}"
 
   ./build/services/chat/chirp_chat --port "${CHAT_PORT}" --ws_port "${CHAT_WS_PORT}" \
     --server_gateway_host 127.0.0.1 --server_gateway_port "${HUB_PORT}" \
@@ -265,7 +288,7 @@ elif [[ "${1:-}" == "--smoke-npc" ]]; then
   }
   trap cleanup EXIT
 
-  sleep 0.5
+  wait_port "${CHAT_PORT}" chirp_chat "${CHAT_LOG}"
 
   echo ""
   echo "[npc] send user_2 -> npc:blacksmith_01 (keyword hit)"
@@ -340,7 +363,7 @@ elif [[ "${1:-}" == "--smoke-sdk" ]]; then
   }
   trap cleanup EXIT
 
-  sleep 0.3
+  wait_port "${CHAT_PORT}" chirp_chat "${CHAT_LOG}"
 
   echo ""
   echo "[sdk] online delivery: sdk_a <-> sdk_b"
@@ -436,7 +459,7 @@ else
   }
   trap cleanup EXIT
 
-  sleep 0.3
+  wait_port "${CHAT_PORT}" chirp_chat "${CHAT_LOG}"
 
   echo ""
   echo "[tcp] listen user_2 (1 msg)"
