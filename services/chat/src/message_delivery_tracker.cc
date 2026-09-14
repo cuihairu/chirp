@@ -134,13 +134,4 @@ void MessageDeliveryTracker::RunCheck() {
   }
 }
 
-void MessageDeliveryTracker::ProcessPendingDelivery(const std::string& message_id,
-                                                   const std::string& receiver_id,
-                                                   int64_t expires_at) {
-  // This would trigger a retry logic
-  // For now, just log
-  Logger::Instance().Debug("Processing pending delivery: " + message_id +
-                          " to " + receiver_id);
-}
-
 } // namespace chirp::chat

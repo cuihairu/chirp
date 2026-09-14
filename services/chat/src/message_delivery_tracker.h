@@ -74,9 +74,6 @@ public:
 
 private:
   void RunCheck();
-  void ProcessPendingDelivery(const std::string& message_id,
-                            const std::string& receiver_id,
-                            int64_t expires_at);
 
   asio::steady_timer timer_;
   asio::io_context& io_;
