@@ -22,7 +22,8 @@ std::vector<std::string> SplitTab(const std::string& line) {
     parts.push_back(line.substr(start, tab - start));
     start = tab + 1;
   }
-}  // GCOVR_EXCL_LINE -- unreachable exit-block line (gcc/NRVO artifact); body is covered
+// GCOVR_EXCL_LINE -- unreachable exit-block line (gcc/NRVO artifact); body is covered
+}
 
 }  // namespace
 

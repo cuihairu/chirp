@@ -16,7 +16,8 @@ ChannelPermissions GetDefaultPermissions(ChannelKind kind) {
   perms.set_can_speak(true);
   perms.set_can_join(true);
   return perms;
-}  // GCOVR_EXCL_LINE -- unreachable exit-block line (gcc/NRVO artifact); body is covered
+// GCOVR_EXCL_LINE -- unreachable exit-block line (gcc/NRVO artifact); body is covered
+}
 
 } // namespace
 
@@ -82,7 +83,8 @@ ChannelPermissions ChannelPermissionChecker::GetEffectivePermissions(
   }
 
   return perms;
-}  // GCOVR_EXCL_LINE -- unreachable exit-block line (gcc/NRVO artifact); body is covered
+// GCOVR_EXCL_LINE -- unreachable exit-block line (gcc/NRVO artifact); body is covered
+}
 
 // ChannelManager implementation
 

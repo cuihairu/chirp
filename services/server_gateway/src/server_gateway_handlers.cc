@@ -40,13 +40,15 @@ AuthOutcome ServerGatewayHandlers::HandleAuth(const ServerAuthRequest& req,
   // disconnecting.
   DeliverPending(out.service_id, *peer);
   return out;
-}  // GCOVR_EXCL_LINE -- unreachable exit-block line (gcc/NRVO artifact); body is covered
+// GCOVR_EXCL_LINE -- unreachable exit-block line (gcc/NRVO artifact); body is covered
+}
 
 ServerHeartbeatPong ServerGatewayHandlers::HandleHeartbeat(const ServerHeartbeatPing& /*ping*/) const {
   ServerHeartbeatPong pong;
   pong.set_server_time_ms(NowMs());
   return pong;
-}  // GCOVR_EXCL_LINE -- unreachable exit-block line (gcc/NRVO artifact); body is covered
+// GCOVR_EXCL_LINE -- unreachable exit-block line (gcc/NRVO artifact); body is covered
+}
 
 MessageInjectResponse ServerGatewayHandlers::HandleInject(const MessageInjectRequest& req) const {
   MessageInjectResponse resp;
@@ -107,7 +109,8 @@ EventAckResponse ServerGatewayHandlers::HandleEventAck(const EventAckRequest& re
              std::vector<std::string>(req.event_ids().begin(), req.event_ids().end()));
   resp.set_code(chirp::common::OK);
   return resp;
-}  // GCOVR_EXCL_LINE -- unreachable exit-block line (gcc/NRVO artifact); body is covered
+// GCOVR_EXCL_LINE -- unreachable exit-block line (gcc/NRVO artifact); body is covered
+}
 
 void ServerGatewayHandlers::OnPeerDisconnected(const std::string& service_id,
                                                const PeerSender* peer) {

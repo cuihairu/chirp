@@ -70,7 +70,8 @@ chirp::chat::GetReadReceiptsResponse ReadReceiptHandlers::HandleGetReadReceipts(
   }
   resp.set_code(chirp::common::OK);
   return resp;
-}  // GCOVR_EXCL_LINE -- unreachable exit-block line (gcc/NRVO artifact); body is covered
+// GCOVR_EXCL_LINE -- unreachable exit-block line (gcc/NRVO artifact); body is covered
+}
 
 chirp::chat::GetUnreadCountResponse ReadReceiptHandlers::HandleGetUnreadCount(
     const chirp::chat::GetUnreadCountRequest& req, std::string_view authenticated_user_id) {
@@ -87,7 +88,8 @@ chirp::chat::GetUnreadCountResponse ReadReceiptHandlers::HandleGetUnreadCount(
   resp.set_total_unread(total);
   resp.set_code(chirp::common::OK);
   return resp;
-}  // GCOVR_EXCL_LINE -- unreachable exit-block line (gcc/NRVO artifact); body is covered
+// GCOVR_EXCL_LINE -- unreachable exit-block line (gcc/NRVO artifact); body is covered
+}
 
 // ---------------------------------------------------------------------------
 // Typing indicators
@@ -140,7 +142,8 @@ chirp::chat::GetTypingUsersResponse TypingHandlers::HandleGetTypingUsers(
   }
   resp.set_code(chirp::common::OK);
   return resp;
-}  // GCOVR_EXCL_LINE -- unreachable exit-block line (gcc/NRVO artifact); body is covered
+// GCOVR_EXCL_LINE -- unreachable exit-block line (gcc/NRVO artifact); body is covered
+}
 
 // ---------------------------------------------------------------------------
 // Reactions
@@ -261,7 +264,8 @@ chirp::chat::RemoveReactionResponse ReactionHandlers::HandleRemoveReaction(
   BroadcastReaction(chirp::gateway::REACTION_REMOVED_NOTIFY, req.message_id(), "",
                     chirp::chat::PRIVATE, req.emoji(), req.user_id());
   return resp;
-}  // GCOVR_EXCL_LINE -- unreachable exit-block line (gcc/NRVO artifact); body is covered
+// GCOVR_EXCL_LINE -- unreachable exit-block line (gcc/NRVO artifact); body is covered
+}
 
 chirp::chat::GetReactionsResponse ReactionHandlers::HandleGetReactions(
     const chirp::chat::GetReactionsRequest& req, std::string_view /*authenticated_user_id*/) {
@@ -282,7 +286,8 @@ chirp::chat::GetReactionsResponse ReactionHandlers::HandleGetReactions(
   }
   resp.set_code(chirp::common::OK);
   return resp;
-}  // GCOVR_EXCL_LINE -- unreachable exit-block line (gcc/NRVO artifact); body is covered
+// GCOVR_EXCL_LINE -- unreachable exit-block line (gcc/NRVO artifact); body is covered
+}
 
 // ---------------------------------------------------------------------------
 // Message edit / delete
@@ -510,7 +515,8 @@ MentionHandlers::HandleGetMentionSuggestions(
   }
   resp.set_code(chirp::common::OK);
   return resp;
-}  // GCOVR_EXCL_LINE -- unreachable exit-block line (gcc/NRVO artifact); body is covered
+// GCOVR_EXCL_LINE -- unreachable exit-block line (gcc/NRVO artifact); body is covered
+}
 
 }  // namespace chat
 }  // namespace chirp

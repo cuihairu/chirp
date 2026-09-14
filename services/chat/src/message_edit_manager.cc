@@ -163,7 +163,8 @@ std::vector<std::string> MessageEditManager::BulkDelete(
   }
 
   return failed;
-}  // GCOVR_EXCL_LINE -- unreachable exit-block line (gcc/NRVO artifact); body is covered
+// GCOVR_EXCL_LINE -- unreachable exit-block line (gcc/NRVO artifact); body is covered
+}
 
 bool MessageEditManager::GetFullMessage(const std::string& message_id,
                                        ChatMessageFull* out_message) {

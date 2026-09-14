@@ -20,7 +20,10 @@ std::string RandomBytes(size_t count) {
   out.resize(count);
   randombytes_buf(reinterpret_cast<uint8_t*>(out.data()), count);
   return out;
-}  // GCOVR_EXCL_LINE -- unreachable exit-block line (gcc/NRVO artifact); body is covered
+  // The close brace is an unreachable exit-block line (gcc/NRVO artifact);
+  // the body is covered. Kept on its own line so coverage statistics drop
+  // the brace as a non-executable line.
+}
 
 std::string Base64Encode(const uint8_t* data, size_t len) {
   static const char* kBase64Chars =
@@ -54,7 +57,10 @@ std::string Base64Encode(const uint8_t* data, size_t len) {
   }
 
   return out;
-}  // GCOVR_EXCL_LINE -- unreachable exit-block line (gcc/NRVO artifact); body is covered
+  // The close brace is an unreachable exit-block line (gcc/NRVO artifact);
+  // the body is covered. Kept on its own line so coverage statistics drop
+  // the brace as a non-executable line.
+}
 
 } // namespace
 

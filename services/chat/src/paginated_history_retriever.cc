@@ -1,5 +1,6 @@
 #include "paginated_history_retriever.h"
 
+#include <chrono>
 #include <sstream>
 
 #include "logger.h"
@@ -31,17 +32,16 @@ PaginatedHistoryRetriever::PageToken::Deserialize(const std::string& token) {
   }
 
   return result;
-}  // GCOVR_EXCL_LINE -- unreachable exit-block line (gcc/NRVO artifact); body is covered
+// GCOVR_EXCL_LINE -- unreachable exit-block line (gcc/NRVO artifact); body is covered
+}
 
 PaginatedHistoryRetriever::PageResult
 PaginatedHistoryRetriever::GetFirstPage(const std::string& channel_id,
                                        int channel_type,
                                        int32_t page_size) {
   PageResult result;
-  int64_t now = []() {  // GCOVR_EXCL_LINE -- unreachable exit-block line (gcc/NRVO artifact); body is covered
-    using namespace std::chrono;
-    return duration_cast<milliseconds>(system_clock::now().time_since_epoch()).count();
-  }();
+  const int64_t now = std::chrono::duration_cast<std::chrono::milliseconds>(
+      std::chrono::system_clock::now().time_since_epoch()).count();
 
   auto messages = store_->GetHistory(channel_id, channel_type, now, page_size);
 

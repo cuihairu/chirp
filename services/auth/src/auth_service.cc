@@ -77,7 +77,8 @@ UserRegisterResult AuthService::Register(const UserRegisterRequest& req,
     result.error_message = rate_check.error_message;
     result.error_code = chirp::common::AUTH_FAILED;
     return result;
-  }  // GCOVR_EXCL_LINE -- unreachable exit-block line (gcc/NRVO artifact); body is covered
+  // GCOVR_EXCL_LINE -- unreachable exit-block line (gcc/NRVO artifact); body is covered
+  }
 
   // Attempt registration
   UserRegisterResult result = user_store_->Register(req);
