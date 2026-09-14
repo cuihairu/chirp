@@ -263,8 +263,10 @@ add_test(NAME gateway_extra_tests COMMAND gateway_extra_tests)
 add_executable(notification_tests
   notification_test.cc
   notification_internal_test.cc
+  push_transport_http_test.cc
   ${CMAKE_SOURCE_DIR}/services/notification/src/notification_service.cc
   ${CMAKE_SOURCE_DIR}/services/notification/src/push_transport.cc
+  ${CMAKE_SOURCE_DIR}/services/notification/src/http_push_transport.cc
 )
 
 chirp_unit_test_common_links(notification_tests)

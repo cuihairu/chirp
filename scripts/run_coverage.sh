@@ -88,6 +88,12 @@ EXCLUDE = (".pb.cc", "/proto/", "main", "examples/")
 # Defensive branches that cannot be reached through the public APIs; every
 # entry documents why. Removing one requires a reproducing test.
 KNOWN_UNCOVERABLE = {
+    # HttpPushTransport connect-vs-deadline race: the timer arm only fires
+    # against a packet-blackhole address. Sandboxes whose gateway SYN-proxies
+    # every destination complete the handshake instead, so no
+    # environment-independent unit test can hit this arm deterministically.
+    ("services/notification/src/http_push_transport.cc", 267),
+    ("services/notification/src/http_push_transport.cc", 268),
     # Frame encoder guards: needs a >4GiB message / a Message whose
     # SerializeToArray disagrees with ByteSizeLong.
     ("libs/network/protobuf_framing.cc", 14),

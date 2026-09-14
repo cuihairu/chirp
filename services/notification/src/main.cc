@@ -8,6 +8,7 @@
 #include <asio.hpp>
 
 #include "logger.h"
+#include "http_push_transport.h"
 #include "network/protobuf_framing.h"
 #include "network/tcp_server.h"
 #include "network/websocket_server.h"
@@ -93,7 +94,27 @@ int main(int argc, char* argv[]) {
   apns_config.private_key_path = apns_key_path;
   apns_config.use_sandbox = apns_sandbox;
 
-  auto service = std::make_shared<notification::NotificationService>(fcm_config, apns_config);
+  // Transport selection: "logging" keeps the stub-era drop-and-log behavior;
+  // "http" performs real HTTP/1.1 provider posts (plain TCP here — providers
+  // require TLS/HTTP2 in front of or beyond this seam).
+  std::string push_transport_flag = "logging";
+  for (int i = 1; i < argc; ++i) {
+    if (std::string(argv[i]) == "--push_transport" && i + 1 < argc) {
+      push_transport_flag = argv[++i];
+    }
+  }
+  std::shared_ptr<notification::PushTransport> transport =
+      std::make_shared<notification::LoggingPushTransport>();
+  if (push_transport_flag == "http") {
+    transport = std::make_shared<notification::HttpPushTransport>(
+        std::make_shared<notification::TcpHttpConnectionFactory>());
+  } else if (push_transport_flag != "logging") {
+    logger.Warn("unknown --push_transport '" + push_transport_flag +
+                "', using logging");
+  }
+
+  auto service = std::make_shared<notification::NotificationService>(
+      fcm_config, apns_config, transport);
   notification::NotificationHandlers handlers(*service);
 
   asio::io_context io;
