@@ -10,8 +10,6 @@
 #include <unordered_set>
 #include <vector>
 
-#include "proto/social.pb.h"
-
 namespace chirp {
 namespace social {
 
@@ -59,8 +57,6 @@ struct PresenceData {
 
   // For multiple devices
   std::unordered_map<std::string, PresenceStatus> device_status;  // device_id -> status
-
-  mutable std::mutex mu;
 };
 
 // Configuration
@@ -160,7 +156,9 @@ private:
   int64_t GetCurrentTimeMs() const;
 
   PresenceConfig config_;
-  mutable std::mutex mu_;
+  // Recursive: public entry points (RegisterSession/UnregisterSession) call
+  // UpdatePresence while already holding mu_.
+  mutable std::recursive_mutex mu_;
 
   // User presence storage
   std::unordered_map<std::string, std::shared_ptr<PresenceData>> user_presence_;

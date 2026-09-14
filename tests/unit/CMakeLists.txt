@@ -468,12 +468,33 @@ target_include_directories(server_gateway_tests
 
 add_test(NAME server_gateway_tests COMMAND server_gateway_tests)
 
-# NOTE: presence_manager_v2.cc is explicitly excluded from the social service
-# build (it does not compile: proto enum conflicts and a copyable mutex); and
-# the enhanced auth components (password_hasher / token_generator) require
-# libsodium, which is not installed in this workspace, so they have never
-# been part of an actual build. Both groups are tracked as dead code instead
-# of being tested here.
+# NOTE: presence_manager_v2.cc used to be excluded from the social build
+# because it did not compile (a proto enum name clash plus a copyable-mutex
+# member); it is fixed and covered by social_presence_tests below. The
+# MySQL/sodium-backed components are exercised through scripted fake C API
+# layers (fake_mysql.cc / fake_sodium.cc) so no external database or crypto
+# library is needed to run the tests.
+
+# Social presence manager (pure in-memory state machine)
+add_executable(social_presence_tests
+  social_presence_test.cc
+  ${CMAKE_SOURCE_DIR}/services/social/src/presence_manager_v2.cc
+)
+
+chirp_unit_test_common_links(social_presence_tests)
+target_link_libraries(social_presence_tests PRIVATE chirp_network chirp_common chirp_protos)
+
+target_include_directories(social_presence_tests
+  PRIVATE
+  ${CMAKE_SOURCE_DIR}/services/social/src
+  ${CMAKE_SOURCE_DIR}/libs
+  ${CMAKE_SOURCE_DIR}/libs/common
+  ${CMAKE_SOURCE_DIR}/libs/common/include
+  ${CMAKE_SOURCE_DIR}/proto/cpp
+  ${CMAKE_SOURCE_DIR}/proto/cpp/proto
+)
+
+add_test(NAME social_presence_tests COMMAND social_presence_tests)
 
 # Chat <-> server_gateway peer loopback tests (real TCP through the peer's
 # reconnect/auth/heartbeat state machine).

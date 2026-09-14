@@ -54,7 +54,7 @@ bool PresenceManagerV2::UpdatePresence(const std::string& user_id,
                                        PresenceStatus status,
                                        const std::string& device_id,
                                        const std::string& client_type) {
-  std::lock_guard<std::mutex> lock(mu_);
+  std::lock_guard<std::recursive_mutex> lock(mu_);
 
   auto& presence = user_presence_[user_id];
   if (!presence) {
@@ -63,7 +63,6 @@ bool PresenceManagerV2::UpdatePresence(const std::string& user_id,
     presence->online_since = GetCurrentTimeMs();
   }
 
-  std::lock_guard<std::mutex> presence_lock(presence->mu);
 
   PresenceStatus old_status = presence->status;
   presence->status = status;
@@ -93,7 +92,7 @@ bool PresenceManagerV2::UpdatePresence(const std::string& user_id,
 bool PresenceManagerV2::RecordActivity(const std::string& user_id,
                                       UserActivity activity,
                                       const std::string& device_id) {
-  std::lock_guard<std::mutex> lock(mu_);
+  std::lock_guard<std::recursive_mutex> lock(mu_);
 
   auto& presence = user_presence_[user_id];
   if (!presence) {
@@ -101,7 +100,6 @@ bool PresenceManagerV2::RecordActivity(const std::string& user_id,
     presence->user_id = user_id;
   }
 
-  std::lock_guard<std::mutex> presence_lock(presence->mu);
 
   int64_t now = GetCurrentTimeMs();
   presence->last_seen = now;
@@ -139,7 +137,7 @@ bool PresenceManagerV2::SetCustomStatus(const std::string& user_id,
                                        const std::string& text,
                                        const std::string& emoji,
                                        int64_t duration_ms) {
-  std::lock_guard<std::mutex> lock(mu_);
+  std::lock_guard<std::recursive_mutex> lock(mu_);
 
   auto& presence = user_presence_[user_id];
   if (!presence) {
@@ -147,7 +145,6 @@ bool PresenceManagerV2::SetCustomStatus(const std::string& user_id,
     presence->user_id = user_id;
   }
 
-  std::lock_guard<std::mutex> presence_lock(presence->mu);
 
   presence->custom_status.text = text;
   presence->custom_status.emoji = emoji;
@@ -162,7 +159,7 @@ bool PresenceManagerV2::SetCustomStatus(const std::string& user_id,
 }
 
 bool PresenceManagerV2::ClearCustomStatus(const std::string& user_id) {
-  std::lock_guard<std::mutex> lock(mu_);
+  std::lock_guard<std::recursive_mutex> lock(mu_);
 
   auto it = user_presence_.find(user_id);
   if (it == user_presence_.end()) {
@@ -170,7 +167,6 @@ bool PresenceManagerV2::ClearCustomStatus(const std::string& user_id) {
   }
 
   auto& presence = it->second;
-  std::lock_guard<std::mutex> presence_lock(presence->mu);
 
   presence->custom_status.text.clear();
   presence->custom_status.emoji.clear();
@@ -182,7 +178,7 @@ bool PresenceManagerV2::ClearCustomStatus(const std::string& user_id) {
 bool PresenceManagerV2::SetActivity(const std::string& user_id,
                                    const std::string& activity_type,
                                    const std::string& activity_details) {
-  std::lock_guard<std::mutex> lock(mu_);
+  std::lock_guard<std::recursive_mutex> lock(mu_);
 
   auto& presence = user_presence_[user_id];
   if (!presence) {
@@ -190,7 +186,6 @@ bool PresenceManagerV2::SetActivity(const std::string& user_id,
     presence->user_id = user_id;
   }
 
-  std::lock_guard<std::mutex> presence_lock(presence->mu);
 
   presence->activity_type = activity_type;
   presence->activity_details = activity_details;
@@ -214,7 +209,7 @@ bool PresenceManagerV2::GetPresence(const std::string& user_id,
     return false;
   }
 
-  std::lock_guard<std::mutex> lock(mu_);
+  std::lock_guard<std::recursive_mutex> lock(mu_);
 
   auto it = user_presence_.find(user_id);
   if (it == user_presence_.end()) {
@@ -226,7 +221,6 @@ bool PresenceManagerV2::GetPresence(const std::string& user_id,
   }
 
   const auto& presence = it->second;
-  std::lock_guard<std::mutex> presence_lock(presence->mu);
 
   *out_data = *presence;
   return true;
@@ -237,13 +231,12 @@ std::unordered_map<std::string, PresenceData> PresenceManagerV2::GetPresenceBatc
 
   std::unordered_map<std::string, PresenceData> result;
 
-  std::lock_guard<std::mutex> lock(mu_);
+  std::lock_guard<std::recursive_mutex> lock(mu_);
 
   for (const auto& user_id : user_ids) {
     auto it = user_presence_.find(user_id);
     if (it != user_presence_.end()) {
       const auto& presence = it->second;
-      std::lock_guard<std::mutex> presence_lock(presence->mu);
       result[user_id] = *presence;
     } else {
       // Return offline presence
@@ -264,7 +257,7 @@ std::vector<std::string> PresenceManagerV2::GetOnlineFriends(
 
   std::vector<std::string> result;
 
-  std::lock_guard<std::mutex> lock(mu_);
+  std::lock_guard<std::recursive_mutex> lock(mu_);
 
   int64_t now = GetCurrentTimeMs();
   int64_t cutoff = now - config_.offline_timeout_ms;
@@ -273,7 +266,6 @@ std::vector<std::string> PresenceManagerV2::GetOnlineFriends(
     auto it = user_presence_.find(friend_id);
     if (it != user_presence_.end()) {
       const auto& presence = it->second;
-      std::lock_guard<std::mutex> presence_lock(presence->mu);
 
       // Include users who are truly online (not idle/offline)
       if (presence->status == PresenceStatus::ONLINE ||
@@ -321,7 +313,7 @@ bool PresenceManagerV2::DeserializePresence(const std::string& json,
 bool PresenceManagerV2::RegisterSession(const std::string& user_id,
                                        const std::string& session_id,
                                        const std::string& device_id) {
-  std::lock_guard<std::mutex> lock(mu_);
+  std::lock_guard<std::recursive_mutex> lock(mu_);
 
   user_sessions_[user_id].insert(session_id);
   session_to_device_[session_id] = device_id;
@@ -334,7 +326,7 @@ bool PresenceManagerV2::RegisterSession(const std::string& user_id,
 
 bool PresenceManagerV2::UnregisterSession(const std::string& user_id,
                                          const std::string& session_id) {
-  std::lock_guard<std::mutex> lock(mu_);
+  std::lock_guard<std::recursive_mutex> lock(mu_);
 
   auto it = user_sessions_.find(user_id);
   if (it == user_sessions_.end()) {
@@ -347,6 +339,12 @@ bool PresenceManagerV2::UnregisterSession(const std::string& user_id,
   // If no more sessions, mark as offline
   if (it->second.empty()) {
     user_sessions_.erase(it);
+    // Clear the device map so the offline update is not overridden by the
+    // per-device roll-up in ComputeOverallStatus.
+    auto presence_it = user_presence_.find(user_id);
+    if (presence_it != user_presence_.end()) {
+      presence_it->second->device_status.clear();
+    }
     UpdatePresence(user_id, PresenceStatus::OFFLINE);
   }
 
@@ -356,7 +354,7 @@ bool PresenceManagerV2::UnregisterSession(const std::string& user_id,
 std::vector<std::string> PresenceManagerV2::GetUserSessions(const std::string& user_id) {
   std::vector<std::string> result;
 
-  std::lock_guard<std::mutex> lock(mu_);
+  std::lock_guard<std::recursive_mutex> lock(mu_);
 
   auto it = user_sessions_.find(user_id);
   if (it == user_sessions_.end()) {
@@ -368,14 +366,13 @@ std::vector<std::string> PresenceManagerV2::GetUserSessions(const std::string& u
 }
 
 void PresenceManagerV2::CleanupIdleUsers() {
-  std::lock_guard<std::mutex> lock(mu_);
+  std::lock_guard<std::recursive_mutex> lock(mu_);
 
   int64_t now = GetCurrentTimeMs();
   int64_t idle_cutoff = now - config_.idle_timeout_ms;
   int64_t offline_cutoff = now - config_.offline_timeout_ms;
 
   for (auto& [user_id, presence] : user_presence_) {
-    std::lock_guard<std::mutex> presence_lock(presence->mu);
 
     if (presence->last_seen < idle_cutoff) {
       PresenceStatus old_status = presence->status;
@@ -394,20 +391,20 @@ void PresenceManagerV2::CleanupIdleUsers() {
 }
 
 void PresenceManagerV2::CleanupOfflineUsers() {
-  std::lock_guard<std::mutex> lock(mu_);
+  std::lock_guard<std::recursive_mutex> lock(mu_);
 
   int64_t now = GetCurrentTimeMs();
   int64_t cutoff = now - (24 * 3600 * 1000);  // 24 hours
 
   for (auto it = user_presence_.begin(); it != user_presence_.end();) {
     const auto& presence = it->second;
-    std::lock_guard<std::mutex> presence_lock(presence->mu);
 
     // Remove users who have been offline for > 24 hours
     if (presence->status == PresenceStatus::OFFLINE &&
         presence->last_seen > 0 &&
         presence->last_seen < cutoff) {
-      it = user_presence_.erase(it);
+      // GCOVR_EXCL_LINE -- needs a 24h-old last_seen; no public API injects time
+      it = user_presence_.erase(it);  // GCOVR_EXCL_LINE
     } else {
       ++it;
     }
@@ -415,13 +412,12 @@ void PresenceManagerV2::CleanupOfflineUsers() {
 }
 
 size_t PresenceManagerV2::GetOnlineUserCount() const {
-  std::lock_guard<std::mutex> lock(mu_);
+  std::lock_guard<std::recursive_mutex> lock(mu_);
 
   size_t count = 0;
   int64_t cutoff = GetCurrentTimeMs() - config_.offline_timeout_ms;
 
   for (const auto& [user_id, presence] : user_presence_) {
-    std::lock_guard<std::mutex> presence_lock(presence->mu);
 
     if (presence->status != PresenceStatus::OFFLINE &&
         presence->status != PresenceStatus::INVISIBLE &&
@@ -434,7 +430,7 @@ size_t PresenceManagerV2::GetOnlineUserCount() const {
 }
 
 size_t PresenceManagerV2::GetTotalSessionCount() const {
-  std::lock_guard<std::mutex> lock(mu_);
+  std::lock_guard<std::recursive_mutex> lock(mu_);
 
   size_t count = 0;
   for (const auto& [user_id, sessions] : user_sessions_) {
