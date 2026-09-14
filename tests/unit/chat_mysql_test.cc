@@ -143,11 +143,58 @@ TEST_F(MySqlStoreTest, PoolGrowsOnDemandAndReusesConnections) {
   EXPECT_EQ(pool.GetAvailableCount(), 0u);
 }
 
+TEST_F(MySqlStoreTest, DrainedPoolCreatesConnectionOnDemand) {
+  MySQLConnectionPool pool(1, "h", 3306, "db", "u", "p");
+  auto first = pool.GetConnection();  // pops the pre-created connection
+  ASSERT_TRUE(first != nullptr);
+  EXPECT_EQ(pool.GetAvailableCount(), 0u);
+
+  // The pool is empty now: the next checkout creates a fresh connection.
+  auto second = pool.GetConnection();
+  ASSERT_TRUE(second != nullptr);
+  EXPECT_TRUE(second->IsConnected());
+  EXPECT_EQ(fake_mysql::LiveHandles(), 2);
+}
+
 TEST_F(MySqlStoreTest, PoolWithFailingConnectionsReturnsNull) {
   fake_mysql::SetConnectShouldFail(true);
   MySQLConnectionPool pool(1, "h", 3306, "db", "u", "p");
   EXPECT_EQ(pool.GetAvailableCount(), 0u);
   EXPECT_EQ(pool.GetConnection(), nullptr);
+}
+
+TEST_F(MySqlStoreTest, InitFailureMakesConnectFail) {
+  // mysql_init returning nullptr leaves no handle for Connect to use.
+  fake_mysql::SetInitShouldFail(true);
+  MySQLConnection conn("h", 3306, "db", "u", "p");
+  EXPECT_FALSE(conn.Connect());
+  EXPECT_FALSE(conn.IsConnected());
+}
+
+TEST_F(MySqlStoreTest, FetchResultsWithoutQueryIsEmpty) {
+  MySQLConnection conn("h", 3306, "db", "u", "p");
+  ASSERT_TRUE(conn.Connect());
+  // No Query ran, so there is no result set to fetch.
+  EXPECT_TRUE(conn.FetchResults().empty());
+}
+
+TEST_F(MySqlStoreTest, DeadPoolMakesStoreReadsReturnEmpty) {
+  fake_mysql::SetConnectShouldFail(true);
+  auto pool = std::make_shared<MySQLConnectionPool>(1, "h", 3306, "db", "u", "p");
+  MySQLMessageStore store(pool);
+  // Both readers fail closed when the pool cannot produce a connection.
+  EXPECT_TRUE(store.GetHistory("ch", 0, 1000, 10).empty());
+  EXPECT_TRUE(store.GetOfflineMessages("u9").empty());
+}
+
+TEST_F(MySqlStoreTest, InitializeFailsWhenReceiptTableCreateFails) {
+  auto pool = std::make_shared<MySQLConnectionPool>(1, "h", 3306, "db", "u", "p");
+  MySQLMessageStore store(pool);
+  // The first two CREATE TABLE statements still succeed; only the
+  // read_receipts one fails.
+  fake_mysql::FailQueriesMatching(
+      std::string("\n    CREATE TABLE IF NOT EXISTS read_receipts"));
+  EXPECT_FALSE(store.Initialize());
 }
 
 TEST_F(MySqlStoreTest, StoreInitializeAndFailures) {
@@ -635,6 +682,20 @@ TEST_F(MigrationWorkerTest, RunMigrationNowSkipsGarbageAndCountsFailures) {
   EXPECT_EQ(stats.total_failed, 1);  // the parseable row failed to store
 }
 
+TEST_F(MigrationWorkerTest, RunMigrationNowCountsOfflineFailures) {
+  // A parseable offline message whose INSERT fails is counted as failed too.
+  redis_->PushDirect("chirp:chat:offline:user9",
+                     MakeMessage("o1", "x", 2000).SerializeAsString());
+  fake_mysql::PushQueryError("insert failed");
+
+  worker_->RunMigrationNow();
+  io_.run();
+
+  const auto stats = worker_->GetStats();
+  EXPECT_EQ(stats.total_migrated, 0);
+  EXPECT_EQ(stats.total_failed, 1);
+}
+
 TEST_F(MigrationWorkerTest, ScheduledRunExecutesViaTimer) {
   cfg_.migration_interval_seconds = 0;  // fire immediately
   worker_ = std::make_unique<MessageMigrationWorker>(io_, store_, cfg_);
@@ -734,6 +795,53 @@ TEST_F(PaginatedRetrieverTest, SearchStubAndTimeRange) {
   auto ranged = retriever.GetTimeRange("ch", 0, 1500, 2500, 10);
   ASSERT_EQ(ranged.size(), 1u);
   EXPECT_EQ(ranged[0].message_id, "m2");
+}
+
+TEST_F(PaginatedRetrieverTest, NextPageFillsTokenWhenOlderMessagesExist) {
+  ASSERT_TRUE(store_->Initialize());
+  store_->StoreMessage(MakeMessage("m1", "ch", 1000));
+  store_->StoreMessage(MakeMessage("m2", "ch", 2000));
+  store_->StoreMessage(MakeMessage("m3", "ch", 3000));
+
+  PaginatedHistoryRetriever retriever(store_);
+
+  // A cursor in the middle of the history: the older page is non-empty, so
+  // the continuation token must be filled.
+  chirp::chat::PaginatedHistoryRetriever::PageToken token;
+  token.cursor = "ch";
+  token.timestamp = 3000;
+  token.page_size = 2;
+  ASSERT_TRUE(token.IsValid());
+
+  auto next = retriever.GetNextPage(token);
+  // The hot tier serves the newest page_size slice below the cursor, so only
+  // m2 (2000 < 3000) comes back -- but the older page is non-empty, which is
+  // what fills the continuation token.
+  ASSERT_EQ(next.messages.size(), 1u);
+  EXPECT_EQ(next.messages[0].message_id, "m2");
+  EXPECT_TRUE(next.has_more);
+  EXPECT_EQ(next.next_page.cursor, "ch");
+  EXPECT_EQ(next.next_page.timestamp, 2000);
+  EXPECT_EQ(next.next_page.page_size, 2);
+}
+
+TEST_F(PaginatedRetrieverTest, AfterAndTimeRangeStopAtPageSizeCap) {
+  ASSERT_TRUE(store_->Initialize());
+  store_->StoreMessage(MakeMessage("m1", "ch", 1000));
+  store_->StoreMessage(MakeMessage("m2", "ch", 2000));
+  store_->StoreMessage(MakeMessage("m3", "ch", 3000));
+
+  PaginatedHistoryRetriever retriever(store_);
+
+  // Three candidates but page_size 2: the filter loop must stop at the cap.
+  auto after = retriever.GetPageAfter("ch", 0, 500, 2);
+  ASSERT_EQ(after.messages.size(), 2u);
+  EXPECT_EQ(after.messages[0].message_id, "m1");
+  EXPECT_EQ(after.messages[1].message_id, "m2");
+
+  auto ranged = retriever.GetTimeRange("ch", 0, 1000, 3000, 2);
+  ASSERT_EQ(ranged.size(), 2u);
+  EXPECT_EQ(ranged[1].message_id, "m2");
 }
 
 }  // namespace
