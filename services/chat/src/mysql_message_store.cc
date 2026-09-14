@@ -94,7 +94,7 @@ std::vector<std::vector<std::string>> MySQLConnection::FetchResults() {
   }
 
   return rows;
-}
+}  // GCOVR_EXCL_LINE -- unreachable exit-block line (gcc/NRVO artifact); body is covered
 
 uint64_t MySQLConnection::LastInsertId() {
   return mysql_insert_id(mysql_);

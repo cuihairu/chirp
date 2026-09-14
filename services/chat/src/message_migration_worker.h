@@ -56,8 +56,6 @@ private:
 
   void ScheduleNextRun();
   void RunMigration();
-  void MigrateChannelHistory(const std::string& channel_id);
-  void MigrateOfflineMessages(const std::string& user_id);
 
   asio::steady_timer timer_;
   asio::io_context& io_;

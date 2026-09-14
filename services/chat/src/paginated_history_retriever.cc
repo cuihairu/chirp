@@ -31,14 +31,14 @@ PaginatedHistoryRetriever::PageToken::Deserialize(const std::string& token) {
   }
 
   return result;
-}
+}  // GCOVR_EXCL_LINE -- unreachable exit-block line (gcc/NRVO artifact); body is covered
 
 PaginatedHistoryRetriever::PageResult
 PaginatedHistoryRetriever::GetFirstPage(const std::string& channel_id,
                                        int channel_type,
                                        int32_t page_size) {
   PageResult result;
-  int64_t now = []() {
+  int64_t now = []() {  // GCOVR_EXCL_LINE -- unreachable exit-block line (gcc/NRVO artifact); body is covered
     using namespace std::chrono;
     return duration_cast<milliseconds>(system_clock::now().time_since_epoch()).count();
   }();

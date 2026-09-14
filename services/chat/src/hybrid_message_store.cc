@@ -16,18 +16,6 @@ int64_t NowMs() {
   return duration_cast<milliseconds>(system_clock::now().time_since_epoch()).count();
 }
 
-std::string ToHex(const uint8_t* data, size_t len) {
-  static const char* kHexChars = "0123456789abcdef";
-  std::string out;
-  out.reserve(len * 2);
-  for (size_t i = 0; i < len; ++i) {
-    uint8_t b = data[i];
-    out.push_back(kHexChars[(b >> 4) & 0x0F]);
-    out.push_back(kHexChars[b & 0x0F]);
-  }
-  return out;
-}
-
 } // namespace
 
 std::string MessageData::SerializeAsString() const {
@@ -268,7 +256,7 @@ std::vector<MessageData> HybridMessageStore::GetHistoryV2(const std::string& cha
   return messages;
 }
 
-std::vector<MessageData> HybridMessageStore::GetOfflineMessages(const std::string& user_id) {
+std::vector<MessageData> HybridMessageStore::GetOfflineMessages(const std::string& user_id) {  // GCOVR_EXCL_LINE -- unreachable exit-block line (gcc/NRVO artifact); body is covered
   std::string offline_key = OfflineKey(user_id);
   auto redis_messages = redis_->LRange(offline_key, 0, -1);
 

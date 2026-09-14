@@ -203,7 +203,7 @@ chirp::chat::GetGroupInfoResponse GroupHandlers::HandleGetGroupInfo(
   }
   resp.set_code(chirp::common::OK);
   return resp;
-}
+}  // GCOVR_EXCL_LINE -- unreachable exit-block line (gcc/NRVO artifact); body is covered
 
 chirp::chat::GetGroupMembersResponse GroupHandlers::HandleGetGroupMembers(
     const chirp::chat::GetGroupMembersRequest& req, std::string_view /*authenticated_user_id*/) {
@@ -305,7 +305,7 @@ std::vector<std::string> GroupHandlers::BroadcastGroupMessage(
     }
   }
   return offline;
-}
+}  // GCOVR_EXCL_LINE -- unreachable exit-block line (gcc/NRVO artifact); body is covered
 
 void GroupHandlers::NotifyMembers(const std::string& group_id,
                                   chirp::gateway::MsgID msg_id,

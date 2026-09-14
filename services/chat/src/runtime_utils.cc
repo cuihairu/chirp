@@ -43,7 +43,7 @@ std::string RandomHex(size_t bytes) {
     out[i * 2 + 1] = kHex[b & 0x0F];
   }
   return out;
-}
+}  // GCOVR_EXCL_LINE -- unreachable exit-block line (gcc/NRVO artifact); body is covered
 
 std::string GenerateMessageId() {
   static std::atomic<uint64_t> counter{1};

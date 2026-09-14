@@ -54,7 +54,7 @@ std::unordered_set<std::string> ParsedMentions::GetNotifyUserIds(
   }
 
   return result;
-}
+}  // GCOVR_EXCL_LINE -- unreachable exit-block line (gcc/NRVO artifact); body is covered
 
 // MentionManager implementation
 
@@ -138,7 +138,7 @@ ParsedMentions MentionManager::ParseMentions(const std::string& content,
   }
 
   return result;
-}
+}  // GCOVR_EXCL_LINE -- unreachable exit-block line (gcc/NRVO artifact); body is covered
 
 bool MentionManager::CanMentionEveryone(const std::string& user_id,
                                        const std::string& channel_id,

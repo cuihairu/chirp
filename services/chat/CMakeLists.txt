@@ -17,7 +17,6 @@ list(FILTER CHAT_BASE_SRCS EXCLUDE REGEX ".*message_delivery_tracker\\.cc")
 list(FILTER CHAT_BASE_SRCS EXCLUDE REGEX ".*message_migration_worker\\.cc")
 list(FILTER CHAT_BASE_SRCS EXCLUDE REGEX ".*paginated_history_retriever\\.cc")
 list(FILTER CHAT_BASE_SRCS EXCLUDE REGEX ".*channel_manager\\.cc")
-list(FILTER CHAT_BASE_SRCS EXCLUDE REGEX ".*file_storage_manager\\.cc")
 
 function(chirp_configure_chat_target target_name)
     target_link_libraries(${target_name}

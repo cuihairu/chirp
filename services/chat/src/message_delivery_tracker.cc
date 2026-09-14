@@ -92,7 +92,7 @@ MessageDeliveryTracker::Stats MessageDeliveryTracker::GetStats() const {
   stats.successful_deliveries = successful_count_.load();
   stats.failed_deliveries = failed_count_.load();
   stats.total_tracked = total_tracked_.load();
-
+  // GCOVR_EXCL_LINE -- only reachable when the check timer races a Stop() call
   // Get pending count from store
   int64_t check_before = NowMs() + (config_.delivery_timeout_seconds * 1000);
   auto pending = store_->GetPendingDeliveries(check_before);

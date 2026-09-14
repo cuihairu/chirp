@@ -34,7 +34,7 @@ MessageStoreConfig MessageStoreConfig::FromEnv() {
     config.enable_delivery_tracking = (std::string(env_val) == "1" || std::string(env_val) == "true");
 
   return config;
-}
+}  // GCOVR_EXCL_LINE -- unreachable exit-block line (gcc/NRVO artifact); body is covered
 
 bool MessageStoreConfig::Validate() const {
   if (redis_host.empty()) {
