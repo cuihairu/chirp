@@ -323,8 +323,17 @@ int main(int argc, char** argv) {
     state->RemoveSession(session.get());
   };
 
-  auto server = chirp::chat::runtime::MakeDistributedTcpServer(io, port, on_packet, tcp_disconnect);
-  auto ws_server = chirp::chat::runtime::MakeDistributedWsServer(io, ws_port, on_packet, ws_disconnect);
+  // Acceptors bind in their constructors; a busy port must exit gracefully
+  // (non-zero) instead of letting the system_error terminate the process.
+  std::unique_ptr<chirp::network::TcpServer> server;
+  std::unique_ptr<chirp::network::WebSocketServer> ws_server;
+  try {
+    server = chirp::chat::runtime::MakeDistributedTcpServer(io, port, on_packet, tcp_disconnect);
+    ws_server = chirp::chat::runtime::MakeDistributedWsServer(io, ws_port, on_packet, ws_disconnect);
+  } catch (const std::system_error& e) {
+    Logger::Instance().Error(std::string("chat service failed to bind listen ports: ") + e.what());
+    return 1;
+  }
 
   server->Start();
   ws_server->Start();

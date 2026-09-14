@@ -1685,22 +1685,166 @@ TEST_F(DistributedInternalsTest, HandleGetHistoryWithoutRedisSucceeds) {
 // Full round trip against the real distributed chat main(): a TCP client
 // logs in, exchanges messages, pulls history, logs out, then SIGTERM stops
 // the service. This drives the dispatch lambdas inside main().
+//
+// Picking a free port with a bind+close probe leaves a small window in which
+// the kernel can hand the same port to another process. A lost bind race now
+// makes the service exit gracefully (rc == 1), so the test retries on a
+// fresh port instead of failing.
 TEST(DistributedMainTest, EndToEndClientSession) {
-  // Pick a free port up front (bind+close), then hand it to the service.
-  uint16_t port = 0;
-  {
-    asio::io_context probe_io;
-    asio::ip::tcp::acceptor probe(
-        probe_io, asio::ip::tcp::endpoint(asio::ip::tcp::v4(), 0));
-    port = static_cast<uint16_t>(probe.local_endpoint().port());
-  }
+  constexpr int kMaxBindAttempts = 5;
+  for (int attempt = 0; attempt < kMaxBindAttempts; ++attempt) {
+    // Pick two free ports up front (bind+close), then hand them to the
+    // service. They must be probed independently: the kernel hands out
+    // ephemeral ports sequentially, so port+1 is exactly what the next
+    // outgoing connection (e.g. the dead-Redis reconnect loop) grabs.
+    uint16_t port = 0;
+    uint16_t ws_port = 0;
+    {
+      asio::io_context probe_io;
+      asio::ip::tcp::acceptor probe(
+          probe_io, asio::ip::tcp::endpoint(asio::ip::tcp::v4(), 0));
+      port = static_cast<uint16_t>(probe.local_endpoint().port());
+      asio::ip::tcp::acceptor ws_probe(
+          probe_io, asio::ip::tcp::endpoint(asio::ip::tcp::v4(), 0));
+      ws_port = static_cast<uint16_t>(ws_probe.local_endpoint().port());
+    }
 
-  const std::string port_str = std::to_string(port);
-  const std::string ws_port_str = std::to_string(port + 1);
+    const std::string port_str = std::to_string(port);
+    const std::string ws_port_str = std::to_string(ws_port);
+    std::vector<std::string> args = {
+        "chat", "--port", port_str, "--ws_port", ws_port_str,
+        "--redis_host", "127.0.0.1", "--redis_port", "1",
+        "--instance_id", "e2e-instance"};
+    std::vector<std::unique_ptr<char[]>> holds;
+    std::vector<char*> argv;
+    for (auto& a : args) {
+      auto buf = std::make_unique<char[]>(a.size() + 1);
+      std::memcpy(buf.get(), a.c_str(), a.size() + 1);
+      argv.push_back(buf.get());
+      holds.push_back(std::move(buf));
+    }
+
+    std::atomic<int> rc{12345};
+    std::thread runner([&] {
+      rc = chirp_chat_distributed_main(static_cast<int>(argv.size()), argv.data());
+    });
+
+    // The service io runs on the runner thread; the client uses its own io.
+    asio::io_context client_io;
+    chirp::network::TcpClient client(client_io);
+    std::vector<Packet> received;
+    std::mutex rx_mu;
+    client.SetCallbacks(
+        [&](std::shared_ptr<chirp::network::Session>, std::string&& payload) {
+          Packet pkt;
+          if (pkt.ParseFromArray(payload.data(), static_cast<int>(payload.size()))) {
+            std::lock_guard<std::mutex> lock(rx_mu);
+            received.push_back(pkt);
+          }
+        },
+        [](std::shared_ptr<chirp::network::Session>) {});
+
+    bool connected = false;
+    bool service_exited = false;
+    for (int i = 0; i < 300 && !connected; ++i) {
+      connected = client.Connect("127.0.0.1", port);
+      if (!connected) {
+        if (rc.load() != 12345) {
+          // The service exited before accepting: a lost bind race.
+          service_exited = true;
+          break;
+        }
+        std::this_thread::sleep_for(std::chrono::milliseconds(5));
+      }
+    }
+    if (service_exited) {
+      runner.join();
+      ASSERT_LT(attempt, kMaxBindAttempts - 1) << "service kept losing the port race";
+      continue;
+    }
+    ASSERT_TRUE(connected);
+
+    auto SendAndWait = [&](chirp::gateway::MsgID id, int64_t seq,
+                           const google::protobuf::Message& body, int expect) {
+      Packet pkt;
+      pkt.set_msg_id(id);
+      pkt.set_sequence(seq);
+      pkt.set_body(body.SerializeAsString());
+      std::string framed(4 + pkt.ByteSizeLong(), '\0');
+      const uint32_t len = static_cast<uint32_t>(pkt.ByteSizeLong());
+      framed[0] = static_cast<char>((len >> 24) & 0xFF);
+      framed[1] = static_cast<char>((len >> 16) & 0xFF);
+      framed[2] = static_cast<char>((len >> 8) & 0xFF);
+      framed[3] = static_cast<char>(len & 0xFF);
+      pkt.SerializeToArray(framed.data() + 4, static_cast<int>(len));
+      client.GetSession()->Send(framed);
+      for (int i = 0; i < 400; i++) {
+        client_io.poll();
+        client_io.restart();
+        {
+          std::lock_guard<std::mutex> lock(rx_mu);
+          if (static_cast<int>(received.size()) >= expect) return true;
+        }
+        std::this_thread::sleep_for(std::chrono::milliseconds(5));
+      }
+      return false;
+    };
+
+    chirp::auth::LoginRequest login;
+    login.set_token("e2e-user");
+    EXPECT_TRUE(SendAndWait(chirp::gateway::LOGIN_REQ, 1, login, 1));
+
+    chirp::chat::SendMessageRequest send;
+    send.set_sender_id("e2e-user");
+    send.set_receiver_id("other");
+    send.set_channel_type(chirp::chat::PRIVATE);
+    send.set_content("hello");
+    EXPECT_TRUE(SendAndWait(chirp::gateway::SEND_MESSAGE_REQ, 2, send, 2));
+
+    chirp::chat::GetHistoryRequest hist;
+    hist.set_channel_id("e2e-user|other");
+    hist.set_limit(10);
+    EXPECT_TRUE(SendAndWait(chirp::gateway::GET_HISTORY_REQ, 3, hist, 3));
+
+    chirp::auth::LogoutRequest logout;
+    logout.set_user_id("e2e-user");
+    EXPECT_TRUE(SendAndWait(chirp::gateway::LOGOUT_REQ, 4, logout, 4));
+
+    {
+      std::lock_guard<std::mutex> lock(rx_mu);
+      ASSERT_EQ(received.size(), 4u);
+      EXPECT_EQ(received[0].msg_id(), chirp::gateway::LOGIN_RESP);
+      EXPECT_EQ(received[1].msg_id(), chirp::gateway::SEND_MESSAGE_RESP);
+      EXPECT_EQ(received[2].msg_id(), chirp::gateway::GET_HISTORY_RESP);
+      EXPECT_EQ(received[3].msg_id(), chirp::gateway::LOGOUT_RESP);
+    }
+    client.Disconnect();
+
+    raise(SIGTERM);
+    for (int i = 0; i < 500 && rc.load() == 12345; ++i) {
+      std::this_thread::sleep_for(std::chrono::milliseconds(2));
+    }
+    ASSERT_NE(rc.load(), 12345);
+    EXPECT_EQ(rc.load(), 0);
+    runner.join();
+    return;
+  }
+}
+
+// A bind loss (port already taken) must make the service exit gracefully
+// with a non-zero code instead of letting the system_error abort the whole
+// process.
+TEST(DistributedMainTest, BindFailureExitsGracefully) {
+  // Hold both target ports for the entire call.
+  asio::io_context probe_io;
+  asio::ip::tcp::acceptor probe(
+      probe_io, asio::ip::tcp::endpoint(asio::ip::tcp::v4(), 0));
+  const uint16_t port = probe.local_endpoint().port();
+
   std::vector<std::string> args = {
-      "chat", "--port", port_str, "--ws_port", ws_port_str,
+      "chat", "--port", std::to_string(port), "--ws_port", std::to_string(port + 1),
       "--redis_host", "127.0.0.1", "--redis_port", "1",
-      "--instance_id", "e2e-instance"};
+      "--instance_id", "bind-fail-instance"};
   std::vector<std::unique_ptr<char[]>> holds;
   std::vector<char*> argv;
   for (auto& a : args) {
@@ -1714,93 +1858,10 @@ TEST(DistributedMainTest, EndToEndClientSession) {
   std::thread runner([&] {
     rc = chirp_chat_distributed_main(static_cast<int>(argv.size()), argv.data());
   });
-
-  // The service io runs on the runner thread; the client uses its own io.
-  asio::io_context client_io;
-  chirp::network::TcpClient client(client_io);
-  std::vector<Packet> received;
-  std::mutex rx_mu;
-  client.SetCallbacks(
-      [&](std::shared_ptr<chirp::network::Session>, std::string&& payload) {
-        Packet pkt;
-        if (pkt.ParseFromArray(payload.data(), static_cast<int>(payload.size()))) {
-          std::lock_guard<std::mutex> lock(rx_mu);
-          received.push_back(pkt);
-        }
-      },
-      [](std::shared_ptr<chirp::network::Session>) {});
-
-  bool connected = false;
-  for (int i = 0; i < 300 && !connected; ++i) {
-    connected = client.Connect("127.0.0.1", port);
-    if (!connected) {
-      std::this_thread::sleep_for(std::chrono::milliseconds(5));
-    }
-  }
-  ASSERT_TRUE(connected);
-
-  auto SendAndWait = [&](chirp::gateway::MsgID id, int64_t seq,
-                         const google::protobuf::Message& body, int expect) {
-    Packet pkt;
-    pkt.set_msg_id(id);
-    pkt.set_sequence(seq);
-    pkt.set_body(body.SerializeAsString());
-    std::string framed(4 + pkt.ByteSizeLong(), '\0');
-    const uint32_t len = static_cast<uint32_t>(pkt.ByteSizeLong());
-    framed[0] = static_cast<char>((len >> 24) & 0xFF);
-    framed[1] = static_cast<char>((len >> 16) & 0xFF);
-    framed[2] = static_cast<char>((len >> 8) & 0xFF);
-    framed[3] = static_cast<char>(len & 0xFF);
-    pkt.SerializeToArray(framed.data() + 4, static_cast<int>(len));
-    client.GetSession()->Send(framed);
-    for (int i = 0; i < 400; i++) {
-      client_io.poll();
-      client_io.restart();
-      {
-        std::lock_guard<std::mutex> lock(rx_mu);
-        if (static_cast<int>(received.size()) >= expect) return true;
-      }
-      std::this_thread::sleep_for(std::chrono::milliseconds(5));
-    }
-    return false;
-  };
-
-  chirp::auth::LoginRequest login;
-  login.set_token("e2e-user");
-  EXPECT_TRUE(SendAndWait(chirp::gateway::LOGIN_REQ, 1, login, 1));
-
-  chirp::chat::SendMessageRequest send;
-  send.set_sender_id("e2e-user");
-  send.set_receiver_id("other");
-  send.set_channel_type(chirp::chat::PRIVATE);
-  send.set_content("hello");
-  EXPECT_TRUE(SendAndWait(chirp::gateway::SEND_MESSAGE_REQ, 2, send, 2));
-
-  chirp::chat::GetHistoryRequest hist;
-  hist.set_channel_id("e2e-user|other");
-  hist.set_limit(10);
-  EXPECT_TRUE(SendAndWait(chirp::gateway::GET_HISTORY_REQ, 3, hist, 3));
-
-  chirp::auth::LogoutRequest logout;
-  logout.set_user_id("e2e-user");
-  EXPECT_TRUE(SendAndWait(chirp::gateway::LOGOUT_REQ, 4, logout, 4));
-
-  {
-    std::lock_guard<std::mutex> lock(rx_mu);
-    ASSERT_EQ(received.size(), 4u);
-    EXPECT_EQ(received[0].msg_id(), chirp::gateway::LOGIN_RESP);
-    EXPECT_EQ(received[1].msg_id(), chirp::gateway::SEND_MESSAGE_RESP);
-    EXPECT_EQ(received[2].msg_id(), chirp::gateway::GET_HISTORY_RESP);
-    EXPECT_EQ(received[3].msg_id(), chirp::gateway::LOGOUT_RESP);
-  }
-  client.Disconnect();
-
-  raise(SIGTERM);
   for (int i = 0; i < 500 && rc.load() == 12345; ++i) {
     std::this_thread::sleep_for(std::chrono::milliseconds(2));
   }
-  ASSERT_NE(rc.load(), 12345);
-  EXPECT_EQ(rc.load(), 0);
+  EXPECT_EQ(rc.load(), 1);
   runner.join();
 }
 
