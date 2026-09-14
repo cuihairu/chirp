@@ -5,7 +5,6 @@ find_package(Threads REQUIRED)
 # Find MySQL for enhanced chat service only
 find_package(MySQL QUIET)
 
-file(GLOB PROTO_SRCS "${CMAKE_SOURCE_DIR}/proto/cpp/proto/*.cc")
 file(GLOB_RECURSE CHAT_BASE_SRCS "src/*.cc")
 
 list(FILTER CHAT_BASE_SRCS EXCLUDE REGEX ".*main_distributed\\.cc")
@@ -23,6 +22,7 @@ function(chirp_configure_chat_target target_name)
         PRIVATE
         chirp_network
         chirp_common
+        chirp_protos
         ${absl_pkg_LIBRARIES}
         Threads::Threads
     )
@@ -45,7 +45,6 @@ if(MYSQL_FOUND)
         src/distributed_runtime.cc
         src/main_enhanced.cc
         src/runtime_utils.cc
-        ${PROTO_SRCS}
         src/group_manager.cc
         src/chat_rate_limiter.cc
         src/login_token_verifier.cc
@@ -73,7 +72,6 @@ else()
     add_executable(chirp_chat
         ${CHAT_BASE_SRCS}
         ${CMAKE_SOURCE_DIR}/services/notification/src/notification_client.cc
-        ${PROTO_SRCS}
     )
 
     chirp_configure_chat_target(chirp_chat)
@@ -89,7 +87,6 @@ add_executable(chirp_chat_distributed
     src/distributed_runtime.cc
     src/main_distributed.cc
     src/runtime_utils.cc
-    ${PROTO_SRCS}
     src/group_manager.cc
     src/read_receipt_manager.cc
 )

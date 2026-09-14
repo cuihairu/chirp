@@ -46,6 +46,9 @@ else()
   add_library(chirp_protos STATIC ${PROTO_GENERATED_SRCS})
 endif()
 
+# PIC so the static lib can also link into shared consumers (the core SDK).
+set_property(TARGET chirp_protos PROPERTY POSITION_INDEPENDENT_CODE ON)
+
 target_include_directories(chirp_protos PUBLIC
   "${CMAKE_CURRENT_SOURCE_DIR}/cpp"
   "${PROTO_CPP_DIR}"

@@ -16,8 +16,6 @@ else()
   endif()
 endif()
 
-file(GLOB PROTO_SRCS "${CMAKE_SOURCE_DIR}/proto/cpp/proto/*.cc")
-
 # Enhanced auth service files (when fully implemented)
 set(ENHANCED_AUTH_SRCS
   "src/auth_service.cc"
@@ -35,16 +33,11 @@ function(chirp_configure_auth_target target_name)
         PRIVATE
         chirp_network
         chirp_common
+        chirp_protos
         ${absl_pkg_LIBRARIES}
         ${LIBSODIUM_LIBRARIES}
         Threads::Threads
     )
-
-    if(TARGET protobuf::libprotobuf)
-        target_link_libraries(${target_name} PRIVATE protobuf::libprotobuf)
-    elseif(DEFINED PROTOBUF_LIBRARIES)
-        target_link_libraries(${target_name} PRIVATE ${PROTOBUF_LIBRARIES})
-    endif()
 
     target_include_directories(${target_name} PRIVATE src)
     target_include_directories(${target_name} PRIVATE ${LIBSODIUM_INCLUDE_DIRS})
@@ -53,7 +46,6 @@ endfunction()
 if(MYSQL_FOUND AND (TARGET unofficial-sodium::sodium OR LIBSODIUM_FOUND))
     add_executable(chirp_auth
         ${ENHANCED_AUTH_SRCS}
-        ${PROTO_SRCS}
         "src/main_enhanced.cc"
     )
 
@@ -65,7 +57,6 @@ if(MYSQL_FOUND AND (TARGET unofficial-sodium::sodium OR LIBSODIUM_FOUND))
 else()
     add_executable(chirp_auth
         "src/main.cc"
-        ${PROTO_SRCS}
     )
 
     chirp_configure_auth_target(chirp_auth)

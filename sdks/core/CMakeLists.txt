@@ -22,8 +22,16 @@ if(NOT TARGET protobuf::libprotobuf)
     find_package(Protobuf QUIET)
 endif()
 
-# Proto files from project root
-file(GLOB PROTO_SRCS "${PROJECT_ROOT}/proto/cpp/proto/*.cc")
+# Proto gencode: in-tree builds link the shared chirp_protos static lib;
+# standalone SDK builds (no chirp tree around this file) compile the
+# checked-in gencode from proto/cpp.
+set(SDK_PROTO_SRCS "")
+set(SDK_EXTRA_LIBS "")
+if(TARGET chirp_protos)
+    list(APPEND SDK_EXTRA_LIBS chirp_protos)
+else()
+    file(GLOB SDK_PROTO_SRCS "${PROJECT_ROOT}/proto/cpp/proto/*.cc")
+endif()
 
 set(SDK_PUBLIC_HEADERS
   include/chirp/sdk.h
@@ -118,13 +126,14 @@ endif()
 # Static library
 add_library(chirp_core_sdk_static STATIC
   ${SDK_SOURCES}
-  ${PROTO_SRCS}
+  ${SDK_PROTO_SRCS}
 )
 
 target_link_libraries(chirp_core_sdk_static
   PUBLIC
   chirp_network
   chirp_common
+  ${SDK_EXTRA_LIBS}
   Threads::Threads
 )
 
@@ -138,13 +147,14 @@ target_include_directories(chirp_core_sdk_static
 # Shared library
 add_library(chirp_core_sdk SHARED
   ${SDK_SOURCES}
-  ${PROTO_SRCS}
+  ${SDK_PROTO_SRCS}
 )
 
 target_link_libraries(chirp_core_sdk
   PUBLIC
   chirp_network
   chirp_common
+  ${SDK_EXTRA_LIBS}
   Threads::Threads
 )
 

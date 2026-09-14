@@ -81,22 +81,15 @@ add_executable(network_tests
   network_test.cc
   ${CMAKE_SOURCE_DIR}/libs/network/protobuf_framing.cc
   ${CMAKE_SOURCE_DIR}/libs/network/length_prefixed_framer.cc
-  ${CMAKE_SOURCE_DIR}/proto/cpp/proto/common.pb.cc
-  ${CMAKE_SOURCE_DIR}/proto/cpp/proto/gateway.pb.cc
 )
 
 target_link_libraries(network_tests
   PRIVATE
   GTest::gtest
   GTest::gtest_main
+  chirp_protos
   ${absl_pkg_LIBRARIES}
 )
-
-if(TARGET protobuf::libprotobuf)
-  target_link_libraries(network_tests PRIVATE protobuf::libprotobuf)
-elseif(DEFINED PROTOBUF_LIBRARIES)
-  target_link_libraries(network_tests PRIVATE ${PROTOBUF_LIBRARIES})
-endif()
 
 target_include_directories(network_tests
   PRIVATE
@@ -116,10 +109,6 @@ add_executable(chat_validation_tests
   ${CMAKE_SOURCE_DIR}/services/chat/src/chat_validation.cc
   ${CMAKE_SOURCE_DIR}/services/chat/src/login_token_verifier.cc
   ${CMAKE_SOURCE_DIR}/libs/network/protobuf_framing.cc
-  ${CMAKE_SOURCE_DIR}/proto/cpp/proto/auth.pb.cc
-  ${CMAKE_SOURCE_DIR}/proto/cpp/proto/chat.pb.cc
-  ${CMAKE_SOURCE_DIR}/proto/cpp/proto/common.pb.cc
-  ${CMAKE_SOURCE_DIR}/proto/cpp/proto/gateway.pb.cc
 )
 
 target_link_libraries(chat_validation_tests
@@ -127,14 +116,9 @@ target_link_libraries(chat_validation_tests
   GTest::gtest
   GTest::gtest_main
   chirp_common
+  chirp_protos
   ${absl_pkg_LIBRARIES}
 )
-
-if(TARGET protobuf::libprotobuf)
-  target_link_libraries(chat_validation_tests PRIVATE protobuf::libprotobuf)
-elseif(DEFINED PROTOBUF_LIBRARIES)
-  target_link_libraries(chat_validation_tests PRIVATE ${PROTOBUF_LIBRARIES})
-endif()
 
 target_include_directories(chat_validation_tests
   PRIVATE

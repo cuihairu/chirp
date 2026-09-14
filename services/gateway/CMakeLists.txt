@@ -3,22 +3,18 @@
 
 find_package(Threads REQUIRED)
 
-# Collect proto sources
-file(GLOB PROTO_SRCS "${CMAKE_SOURCE_DIR}/proto/cpp/proto/*.cc")
-
 # Collect service sources
 file(GLOB_RECURSE SERVICE_SRCS "src/*.cc")
 
 add_executable(chirp_gateway
     ${SERVICE_SRCS}
-    ${PROTO_SRCS}
 )
 
 target_link_libraries(chirp_gateway
     PRIVATE
     chirp_network
     chirp_common
-    ${PROTOBUF_LIBRARIES}
+    chirp_protos
     ${absl_pkg_LIBRARIES}
     Threads::Threads
 )
