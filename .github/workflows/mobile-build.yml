@@ -28,8 +28,14 @@ jobs:
         distribution: 'zulu'
         java-version: '17'
 
-    - name: Set up Android SDK
-      uses: android-actions/setup-android@v4
+    # android-actions/setup-android@v4 broke against the 2026-09 runner image:
+    # it rejects the preinstalled sdkmanager as the "wrong version" and then
+    # tries to install the long-deprecated `tools` package, which Google
+    # removed. The runner image already ships the SDK under ANDROID_HOME, so
+    # accepting licenses is all a Flutter build needs -- Gradle fetches any
+    # missing platform/build-tools components itself.
+    - name: Accept Android SDK licenses
+      run: yes | "$ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager" --licenses >/dev/null
 
     - name: Install system dependencies
       run: |
