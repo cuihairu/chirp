@@ -37,6 +37,11 @@ public:
 
   bool IsRunning() const { return running_.load(); }
 
+  // The actual listening port (useful when constructed with port 0).
+  uint16_t port() const {
+    return static_cast<uint16_t>(acceptor_.local_endpoint().port());
+  }
+
 private:
   void AcceptConnection();
   void HandleConnection(std::shared_ptr<asio::ip::tcp::socket> socket);

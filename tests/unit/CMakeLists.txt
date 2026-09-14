@@ -496,6 +496,48 @@ target_include_directories(social_presence_tests
 
 add_test(NAME social_presence_tests COMMAND social_presence_tests)
 
+# Common metrics library (counters/gauges/histograms + mini HTTP endpoint)
+add_executable(common_metrics_tests
+  common_metrics_test.cc
+  ${CMAKE_SOURCE_DIR}/libs/common/src/metrics.cc
+  ${CMAKE_SOURCE_DIR}/libs/common/src/metrics_http_server.cc
+)
+
+chirp_unit_test_common_links(common_metrics_tests)
+target_link_libraries(common_metrics_tests PRIVATE chirp_network chirp_common chirp_protos)
+
+target_include_directories(common_metrics_tests
+  PRIVATE
+  ${CMAKE_SOURCE_DIR}/libs
+  ${CMAKE_SOURCE_DIR}/libs/common
+  ${CMAKE_SOURCE_DIR}/libs/common/include
+  ${CMAKE_SOURCE_DIR}/proto/cpp
+  ${CMAKE_SOURCE_DIR}/proto/cpp/proto
+)
+
+add_test(NAME common_metrics_tests COMMAND common_metrics_tests)
+
+# Social presence manager (pure in-memory state machine)
+add_executable(social_presence_tests
+  social_presence_test.cc
+  ${CMAKE_SOURCE_DIR}/services/social/src/presence_manager_v2.cc
+)
+
+chirp_unit_test_common_links(social_presence_tests)
+target_link_libraries(social_presence_tests PRIVATE chirp_network chirp_common chirp_protos)
+
+target_include_directories(social_presence_tests
+  PRIVATE
+  ${CMAKE_SOURCE_DIR}/services/social/src
+  ${CMAKE_SOURCE_DIR}/libs
+  ${CMAKE_SOURCE_DIR}/libs/common
+  ${CMAKE_SOURCE_DIR}/libs/common/include
+  ${CMAKE_SOURCE_DIR}/proto/cpp
+  ${CMAKE_SOURCE_DIR}/proto/cpp/proto
+)
+
+add_test(NAME social_presence_tests COMMAND social_presence_tests)
+
 # Chat <-> server_gateway peer loopback tests (real TCP through the peer's
 # reconnect/auth/heartbeat state machine).
 add_executable(chat_hub_peer_tests
