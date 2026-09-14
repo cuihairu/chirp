@@ -1,4 +1,4 @@
-#include "redis_session_manager.h"
+#include "network/redis_session_manager.h"
 
 #include <condition_variable>
 #include <deque>
@@ -8,7 +8,7 @@
 
 #include <asio.hpp>
 
-#include "logger.h"
+#include "common/logger.h"
 
 namespace chirp::gateway {
 namespace {

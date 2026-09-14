@@ -3,7 +3,18 @@
 # line-coverage statistics.
 #
 # Usage:
-#   scripts/run_coverage.sh [--fail-under N] [--skip-build]
+#   CMAKE_ARGS="-DCMAKE_TOOLCHAIN_FILE=$HOME/vcpkg/scripts/buildsystems/vcpkg.cmake" \
+#     scripts/run_coverage.sh [--fail-under N] [--skip-build] [--fresh]
+#
+# CMAKE_ARGS is passed straight to the configure step; CI sets it to the
+# vcpkg toolchain (see .github/workflows/ci.yml). Without it the configure
+# falls back to pre-generated protos and a half-successful system
+# FindProtobuf can leave a protobuf::libprotobuf import target pointing at
+# NOTFOUND, which fails at generate time.
+#
+# --fresh wipes the coverage build dir first. Needed after sources move or
+# get deleted: incremental builds leave orphaned .gcda files for removed
+# objects behind, and gcovr happily merges that stale data into the report.
 #
 # Requires: cmake + ninja, a GNU/Clang toolchain and gcov (from gcc).
 
@@ -13,6 +24,7 @@ ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 BUILD_DIR="${ROOT_DIR}/build-cov"
 FAIL_UNDER=98
 SKIP_BUILD=0
+FRESH=0
 
 while [[ $# -gt 0 ]]; do
   case "$1" in
@@ -24,12 +36,20 @@ while [[ $# -gt 0 ]]; do
       SKIP_BUILD=1
       shift
       ;;
+    --fresh)
+      FRESH=1
+      shift
+      ;;
     *)
       echo "Unknown argument: $1" >&2
       exit 2
       ;;
   esac
 done
+
+if [[ ${FRESH} -eq 1 && ${SKIP_BUILD} -eq 0 ]]; then
+  rm -rf "${BUILD_DIR}"
+fi
 
 if [[ ${SKIP_BUILD} -eq 0 ]]; then
   # shellcheck disable=SC2086

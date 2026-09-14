@@ -26,7 +26,7 @@
 #include "network/websocket_server.h"
 #include "npc_uplink.h"
 #include "push_bridge.h"
-#include "notification_client.h"
+#include "network/notification_client.h"
 #include "proto/auth.pb.h"
 #include "proto/chat.pb.h"
 #include "proto/common.pb.h"

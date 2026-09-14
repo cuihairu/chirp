@@ -27,6 +27,7 @@ endif()
 target_link_libraries(chirp_network PUBLIC
     chirp_common
     chirp_asio
+    chirp_protos
     Threads::Threads
 )
 

@@ -16,19 +16,19 @@
 
 #include <asio.hpp>
 
-#include "auth_client.h"
+#include "network/auth_client.h"
 #include "network/session_registry.h"
 #include "logger.h"
 #include "network/protobuf_framing.h"
 #include "network/session.h"
 #include "network/tcp_server.h"
 #include "network/websocket_server.h"
-#include "notification_client.h"
+#include "network/notification_client.h"
 #include "proto/auth.pb.h"
 #include "proto/common.pb.h"
 #include "proto/gateway.pb.h"
 #include "proto/notification.pb.h"
-#include "redis_session_manager.h"
+#include "network/redis_session_manager.h"
 
 namespace {
 

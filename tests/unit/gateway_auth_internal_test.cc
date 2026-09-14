@@ -8,7 +8,7 @@
 #include <mutex>
 #include <string>
 
-#include "auth_client.h"
+#include "network/auth_client.h"
 
 namespace {
 

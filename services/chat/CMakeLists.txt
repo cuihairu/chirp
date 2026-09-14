@@ -35,7 +35,6 @@ function(chirp_configure_chat_target target_name)
 
     target_include_directories(${target_name} PRIVATE
         src
-        ${CMAKE_SOURCE_DIR}/services/notification/src
     )
 endfunction()
 
@@ -71,7 +70,6 @@ if(MYSQL_FOUND)
 else()
     add_executable(chirp_chat
         ${CHAT_BASE_SRCS}
-        ${CMAKE_SOURCE_DIR}/services/notification/src/notification_client.cc
     )
 
     chirp_configure_chat_target(chirp_chat)
@@ -91,7 +89,6 @@ add_executable(chirp_chat_distributed
     src/read_receipt_manager.cc
     src/login_token_verifier.cc
     src/push_bridge.cc
-    ${CMAKE_SOURCE_DIR}/services/notification/src/notification_client.cc
 )
 
 chirp_configure_chat_target(chirp_chat_distributed)

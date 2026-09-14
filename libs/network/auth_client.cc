@@ -1,4 +1,4 @@
-#include "auth_client.h"
+#include "network/auth_client.h"
 
 #include <condition_variable>
 #include <chrono>
@@ -12,7 +12,7 @@
 
 #include <asio.hpp>
 
-#include "logger.h"
+#include "common/logger.h"
 #include "network/byte_order.h"
 #include "network/protobuf_framing.h"
 #include "proto/common.pb.h"

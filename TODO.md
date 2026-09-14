@@ -19,7 +19,7 @@
 ### P0 — 公共代码沉淀(消除跨服务私有耦合)
 
 - [x] **抽取公共 session registry**:(2026-09 完成)两份逐行重复的实现合并为 `libs/network/session_registry.{h,cc}`(`chirp::network::SessionRegistry` + Bind/Get/Remove 自由函数),gateway / chat / app_gateway 共用;`RemoveAuthenticatedSession` 统一为富签名(bool + 可选 user_id 出参,chat 的 void 版调用点兼容)。专用测试合并为 `session_registry_tests`,chat_validation_tests 里 4 个重复用例删除。覆盖率保持 100%。
-- [ ] **消除跨服务直接编译对方源码**:(2026-09 推进:session registry 已随上一条沉淀进 `libs/network`,app_gateway 少编 gateway 的一个 .cc)`services/app_gateway/CMakeLists.txt` 仍直接编译 gateway 的 auth_client / redis_session_manager 和 notification 的 `notification_client.cc`;`services/chat/CMakeLists.txt` 直接 include/编译 notification 的私有源码。将 `auth_client`、`redis_session_manager`、`notification_client` 沉淀为公共库,服务间只通过协议或公共库交互。
+- [x] **消除跨服务直接编译对方源码**:(2026-09 完成)session registry、`auth_client`、`redis_session_manager`、`notification_client` 全部沉淀进 `libs/network`(chirp_network 并 PUBLIC 链接 chirp_protos,保住 .pb.h 的构建顺序依赖);gateway / chat / app_gateway / notification 四个服务的 CMake 不再编译对方的 .cc,全部只链接 chirp_network。namespace 保留原样(`chirp::gateway` / `chirp::notification`,反映对话平面)。附带:`run_coverage.sh` 新增 `--fresh`(源文件移动/删除后必须用,否则孤儿 gcda 混入统计),并在用法注释中写明 CI 同款 `CMAKE_ARGS` toolchain 约定。
 
 ### P1 — 登录语义统一(对应 migration path 第 2/4 步)
 

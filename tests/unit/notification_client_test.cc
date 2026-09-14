@@ -13,7 +13,7 @@
 #include <asio.hpp>
 
 #include "network/protobuf_framing.h"
-#include "notification_client.h"
+#include "network/notification_client.h"
 #include "notification_handlers.h"
 #include "notification_service.h"
 #include "proto/chat.pb.h"

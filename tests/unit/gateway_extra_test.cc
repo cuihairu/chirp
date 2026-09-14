@@ -9,12 +9,12 @@
 
 #include <asio.hpp>
 
-#include "auth_client.h"
+#include "network/auth_client.h"
 #include "fake_servers.h"
 #include "network/redis_client.h"
 #include "proto/auth.pb.h"
 #include "proto/common.pb.h"
-#include "redis_session_manager.h"
+#include "network/redis_session_manager.h"
 
 using chirp::gateway::AuthClient;
 using chirp::gateway::RedisSessionManager;

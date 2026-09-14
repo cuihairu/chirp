@@ -18,7 +18,7 @@
 #include <asio.hpp>
 
 #include "network/session_registry.h"
-#include "notification_client.h"
+#include "network/notification_client.h"
 #include "proto/auth.pb.h"
 #include "proto/common.pb.h"
 #include "proto/gateway.pb.h"

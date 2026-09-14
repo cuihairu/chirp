@@ -14,7 +14,7 @@
 #include "logger.h"
 #include "distributed_dispatch.h"
 #include "login_token_verifier.h"
-#include "notification_client.h"
+#include "network/notification_client.h"
 #include "push_bridge.h"
 #include "distributed_runtime.h"
 #include "network/message_router.h"

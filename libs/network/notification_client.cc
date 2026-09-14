@@ -1,4 +1,4 @@
-#include "notification_client.h"
+#include "network/notification_client.h"
 
 #include <chrono>
 #include <condition_variable>
@@ -11,7 +11,7 @@
 
 #include <asio.hpp>
 
-#include "logger.h"
+#include "common/logger.h"
 #include "network/byte_order.h"
 #include "network/protobuf_framing.h"
 #include "proto/common.pb.h"

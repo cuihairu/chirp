@@ -197,7 +197,6 @@ add_executable(chat_managers_tests
   ${CMAKE_SOURCE_DIR}/services/chat/src/typing_manager.cc
   ${CMAKE_SOURCE_DIR}/services/chat/src/login_token_verifier.cc
   ${CMAKE_SOURCE_DIR}/services/chat/src/push_bridge.cc
-  ${CMAKE_SOURCE_DIR}/services/notification/src/notification_client.cc
 )
 # main_distributed.cc is pulled in via #include with main() renamed in
 # chat_managers_test.cc; compiling it separately would hijack the test entry
@@ -224,8 +223,6 @@ add_test(NAME chat_managers_tests COMMAND chat_managers_tests)
 add_executable(gateway_extra_tests
   gateway_extra_test.cc
   gateway_auth_internal_test.cc
-  ${CMAKE_SOURCE_DIR}/services/gateway/src/auth_client.cc
-  ${CMAKE_SOURCE_DIR}/services/gateway/src/redis_session_manager.cc
 )
 
 chirp_unit_test_common_links(gateway_extra_tests)
@@ -233,7 +230,6 @@ target_link_libraries(gateway_extra_tests PRIVATE chirp_network chirp_common chi
 
 target_include_directories(gateway_extra_tests
   PRIVATE
-  ${CMAKE_SOURCE_DIR}/services/gateway/src
   ${CMAKE_SOURCE_DIR}/libs
   ${CMAKE_SOURCE_DIR}/libs/common
   ${CMAKE_SOURCE_DIR}/libs/common/include
@@ -269,9 +265,6 @@ add_test(NAME voice_tests COMMAND voice_tests)
 # through a real NotificationClient against a loopback server
 add_executable(app_gateway_tests
   app_gateway_service_test.cc
-  ${CMAKE_SOURCE_DIR}/services/gateway/src/auth_client.cc
-  ${CMAKE_SOURCE_DIR}/services/gateway/src/redis_session_manager.cc
-  ${CMAKE_SOURCE_DIR}/services/notification/src/notification_client.cc
 )
 
 chirp_unit_test_common_links(app_gateway_tests)
@@ -279,8 +272,6 @@ target_link_libraries(app_gateway_tests PRIVATE chirp_network chirp_common chirp
 
 target_include_directories(app_gateway_tests
   PRIVATE
-  ${CMAKE_SOURCE_DIR}/services/gateway/src
-  ${CMAKE_SOURCE_DIR}/services/notification/src
   ${CMAKE_SOURCE_DIR}/libs
   ${CMAKE_SOURCE_DIR}/libs/common
   ${CMAKE_SOURCE_DIR}/libs/common/include
@@ -344,7 +335,6 @@ add_test(NAME notification_handlers_tests COMMAND notification_handlers_tests)
 # push bridge that produces through it
 add_executable(notification_client_tests
   notification_client_test.cc
-  ${CMAKE_SOURCE_DIR}/services/notification/src/notification_client.cc
   ${CMAKE_SOURCE_DIR}/services/notification/src/notification_handlers.cc
   ${CMAKE_SOURCE_DIR}/services/notification/src/notification_service.cc
   ${CMAKE_SOURCE_DIR}/services/notification/src/push_transport.cc

@@ -4,7 +4,7 @@
 #include <memory>
 #include <string>
 
-#include "notification_client.h"
+#include "network/notification_client.h"
 #include "proto/chat.pb.h"
 
 namespace chirp::chat {
