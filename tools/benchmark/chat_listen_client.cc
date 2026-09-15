@@ -1,3 +1,4 @@
+#include <chrono>
 #include <cstdint>
 #include <cstdlib>
 #include <iostream>
@@ -25,6 +26,15 @@ std::string GetArg(int argc, char** argv, const std::string& key, const std::str
   return def;
 }
 
+bool HasArg(int argc, char** argv, const std::string& key) {
+  for (int i = 1; i < argc; i++) {
+    if (argv[i] == key) {
+      return true;
+    }
+  }
+  return false;
+}
+
 bool ReadFrame(asio::ip::tcp::socket& sock, std::string* payload) {
   uint8_t len_be[4];
   asio::error_code ec;
@@ -47,6 +57,33 @@ void SendPacket(asio::ip::tcp::socket& sock, chirp::gateway::MsgID msg_id, int64
   asio::write(sock, asio::buffer(out));
 }
 
+int64_t NowMs() {
+  using namespace std::chrono;
+  return duration_cast<milliseconds>(system_clock::now().time_since_epoch()).count();
+}
+
+// The login declares supports_message_ack, so every received
+// CHAT_MESSAGE_NOTIFY must be confirmed with MESSAGE_ACK or the server
+// requeues the message offline after the ack timeout. --skip-ack keeps the
+// capability declared but stays silent, which is how the smoke exercises
+// the timeout/requeue path.
+void MaybeAck(asio::ip::tcp::socket& sock, const chirp::gateway::Packet& pkt,
+              const std::string& user, bool skip_ack) {
+  if (skip_ack || pkt.msg_id() != chirp::gateway::CHAT_MESSAGE_NOTIFY) {
+    return;
+  }
+  chirp::chat::ChatMessage msg;
+  if (!msg.ParseFromArray(pkt.body().data(), static_cast<int>(pkt.body().size()))) {
+    return;
+  }
+  chirp::chat::MessageAck ack;
+  ack.set_message_id(msg.message_id());
+  ack.set_user_id(user);
+  ack.set_received_at(NowMs());
+  SendPacket(sock, chirp::gateway::MESSAGE_ACK, 0, ack.SerializeAsString());
+  std::cout << "acked id=" << msg.message_id() << "\n";
+}
+
 } // namespace
 
 int main(int argc, char** argv) {
@@ -60,6 +97,7 @@ int main(int argc, char** argv) {
   const std::string user = GetArg(argc, argv, "--user", "user_2");
   const int max_msgs = std::atoi(GetArg(argc, argv, "--max", "1").c_str());
   const int timeout_ms = std::atoi(GetArg(argc, argv, "--timeout-ms", "0").c_str());
+  const bool skip_ack = HasArg(argc, argv, "--skip-ack");
 
   asio::io_context io;
   asio::ip::tcp::resolver resolver(io);
@@ -147,6 +185,7 @@ int main(int argc, char** argv) {
     req.set_token(user);
     req.set_device_id("bench");
     req.set_platform("pc");
+    req.set_supports_message_ack(true);
     SendPacket(sock, chirp::gateway::LOGIN_REQ, 1, req.SerializeAsString());
 
     while (true) {
@@ -167,6 +206,7 @@ int main(int argc, char** argv) {
         break;
       }
       print_notify(pkt);
+      MaybeAck(sock, pkt, user, skip_ack);
     }
   }
 
@@ -183,6 +223,7 @@ int main(int argc, char** argv) {
     }
 
     print_notify(pkt);
+    MaybeAck(sock, pkt, user, skip_ack);
   }
 
   return 0;

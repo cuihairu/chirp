@@ -482,6 +482,9 @@ else
   CHAT_LOG="${CHAT_LOG:-/tmp/chirp_chat_smoke.log}"
   LISTEN_LOG="${LISTEN_LOG:-/tmp/chirp_chat_listen_smoke.log}"
   OFFLINE_LISTEN_LOG="${OFFLINE_LISTEN_LOG:-/tmp/chirp_chat_offline_listen_smoke.log}"
+  ACK_LISTEN_LOG="${ACK_LISTEN_LOG:-/tmp/chirp_chat_ack_listen_smoke.log}"
+  SKIP_ACK_LISTEN_LOG="${SKIP_ACK_LISTEN_LOG:-/tmp/chirp_chat_skip_ack_listen_smoke.log}"
+  REQUEUE_LISTEN_LOG="${REQUEUE_LISTEN_LOG:-/tmp/chirp_chat_requeue_listen_smoke.log}"
   REDIS_PORT="${REDIS_PORT:-$(pick_port)}"
   REDIS_DIR="${REDIS_DIR:-$(mktemp -d /tmp/chirp_chat_smoke_redis.XXXXXX)}"
   REDIS_LOG="${REDIS_LOG:-/tmp/chirp_chat_smoke_redis.log}"
@@ -507,7 +510,9 @@ else
     done
   fi
 
-  ./build/services/chat/chirp_chat --port "${CHAT_PORT}" --ws_port "${CHAT_WS_PORT}" --redis_host 127.0.0.1 --redis_port "${REDIS_PORT}" > "${CHAT_LOG}" 2>&1 &
+  # --ack_timeout_ms 1000: 投递 ACK 链路的超时窗口压到 1s,让"静默客户端
+  # 转离线"的 smoke 段不用等默认 10s。
+  ./build/services/chat/chirp_chat --port "${CHAT_PORT}" --ws_port "${CHAT_WS_PORT}" --redis_host 127.0.0.1 --redis_port "${REDIS_PORT}" --ack_timeout_ms 1000 > "${CHAT_LOG}" 2>&1 &
   CHAT_PID=$!
 
   cleanup() {
@@ -573,6 +578,63 @@ else
   echo ""
   echo "[ws] login -> ping on chat"
   timeout 30 ./build/tools/benchmark/chirp_ws_login_client --host 127.0.0.1 --port "${CHAT_WS_PORT}" --token user_4 --device dev_c --platform web
+
+  echo ""
+  echo "[tcp][ack] listen user_5 (acks notifies) + send user_1 -> user_5"
+  timeout 30 ./build/tools/benchmark/chirp_chat_listen_client --host 127.0.0.1 --port "${CHAT_PORT}" --user user_5 --max 1 --timeout-ms 8000 > "${ACK_LISTEN_LOG}" 2>&1 &
+  ACK_LISTEN_PID=$!
+
+  sleep 0.2
+
+  timeout 30 ./build/tools/benchmark/chirp_chat_send_client --host 127.0.0.1 --port "${CHAT_PORT}" --sender user_1 --receiver user_5 --text "ack hello"
+
+  wait "${ACK_LISTEN_PID}" || true
+  cat "${ACK_LISTEN_LOG}" || true
+
+  if ! grep -q "notify ts=.*user_1 -> user_5" "${ACK_LISTEN_LOG}"; then
+    echo "错误: user_5 未收到实时通知"
+    exit 1
+  fi
+  if ! grep -q "message acked .*user_5" "${CHAT_LOG}"; then
+    echo "错误: 服务端未记录 user_5 的 message ack"
+    exit 1
+  fi
+
+  echo ""
+  echo "[tcp][ack] silent user_6 (--skip-ack) -> ack timeout requeue"
+  # user_6 声明了 supports_message_ack 但 --skip-ack 静默:投递成功也必须
+  # 在 --ack_timeout_ms 后转回离线队列,这是僵尸连接丢消息的根治路径。
+  timeout 30 ./build/tools/benchmark/chirp_chat_listen_client --host 127.0.0.1 --port "${CHAT_PORT}" --user user_6 --max 1 --skip-ack --timeout-ms 8000 > "${SKIP_ACK_LISTEN_LOG}" 2>&1 &
+  SKIP_ACK_LISTEN_PID=$!
+
+  sleep 0.2
+
+  timeout 30 ./build/tools/benchmark/chirp_chat_send_client --host 127.0.0.1 --port "${CHAT_PORT}" --sender user_1 --receiver user_6 --text "ack timeout hello"
+
+  for _ in {1..50}; do
+    grep -q "message ack timeout, requeued offline" "${CHAT_LOG}" 2>/dev/null && break
+    sleep 0.1
+  done
+  if ! grep -q "message ack timeout, requeued offline" "${CHAT_LOG}"; then
+    echo "错误: 静默客户端未触发 ack 超时转离线"
+    exit 1
+  fi
+
+  wait "${SKIP_ACK_LISTEN_PID}" || true
+  cat "${SKIP_ACK_LISTEN_LOG}" || true
+
+  echo ""
+  echo "[tcp][ack] relogin user_6 (expect requeued notify)"
+  timeout 30 ./build/tools/benchmark/chirp_chat_listen_client --host 127.0.0.1 --port "${CHAT_PORT}" --user user_6 --max 1 --timeout-ms 8000 > "${REQUEUE_LISTEN_LOG}" 2>&1 &
+  REQUEUE_LISTEN_PID=$!
+
+  wait "${REQUEUE_LISTEN_PID}" || true
+  cat "${REQUEUE_LISTEN_LOG}" || true
+
+  if ! grep -q "notify ts=.*user_1 -> user_6" "${REQUEUE_LISTEN_LOG}"; then
+    echo "错误: 超时转离线消息未在 user_6 重登录后补投递"
+    exit 1
+  fi
 
   echo ""
   echo "[archive] export + fake mysql apply + redis ack"
