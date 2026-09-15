@@ -10,6 +10,11 @@ message LoginRequest {
   string token = 1;
   string device_id = 2;
   string platform = 3; // "ios", "android", "web", "pc"
+
+  // Declared by clients that acknowledge every CHAT_MESSAGE_NOTIFY with
+  // MESSAGE_ACK. The server only tracks unacknowledged deliveries for
+  // capable sessions; legacy clients keep the send-and-forget behavior.
+  bool supports_message_ack = 4;
 }
 
 message KickNotify {

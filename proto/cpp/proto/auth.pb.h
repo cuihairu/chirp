@@ -2891,6 +2891,7 @@ class LoginRequest final : public ::google::protobuf::Message
     kTokenFieldNumber = 1,
     kDeviceIdFieldNumber = 2,
     kPlatformFieldNumber = 3,
+    kSupportsMessageAckFieldNumber = 4,
   };
   // string token = 1;
   void clear_token() ;
@@ -2937,11 +2938,21 @@ class LoginRequest final : public ::google::protobuf::Message
   ::std::string* PROTOBUF_NONNULL _internal_mutable_platform();
 
   public:
+  // bool supports_message_ack = 4;
+  void clear_supports_message_ack() ;
+  bool supports_message_ack() const;
+  void set_supports_message_ack(bool value);
+
+  private:
+  bool _internal_supports_message_ack() const;
+  void _internal_set_supports_message_ack(bool value);
+
+  public:
   // @@protoc_insertion_point(class_scope:chirp.auth.LoginRequest)
  private:
   class _Internal;
   friend class ::google::protobuf::internal::TcParser;
-  static const ::google::protobuf::internal::TcParseTable<2, 3,
+  static const ::google::protobuf::internal::TcParseTable<2, 4,
                                    0, 54,
                                    2>
       _table_;
@@ -2966,6 +2977,7 @@ class LoginRequest final : public ::google::protobuf::Message
     ::google::protobuf::internal::ArenaStringPtr token_;
     ::google::protobuf::internal::ArenaStringPtr device_id_;
     ::google::protobuf::internal::ArenaStringPtr platform_;
+    bool supports_message_ack_;
     PROTOBUF_TSAN_DECLARE_MEMBER
   };
   union { Impl_ _impl_; };
@@ -4507,6 +4519,31 @@ inline void LoginRequest::set_allocated_platform(::std::string* PROTOBUF_NULLABL
     _impl_.platform_.Set("", GetArena());
   }
   // @@protoc_insertion_point(field_set_allocated:chirp.auth.LoginRequest.platform)
+}
+
+// bool supports_message_ack = 4;
+inline void LoginRequest::clear_supports_message_ack() {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_.supports_message_ack_ = false;
+  ClearHasBit(_impl_._has_bits_[0],
+                  0x00000008U);
+}
+inline bool LoginRequest::supports_message_ack() const {
+  // @@protoc_insertion_point(field_get:chirp.auth.LoginRequest.supports_message_ack)
+  return _internal_supports_message_ack();
+}
+inline void LoginRequest::set_supports_message_ack(bool value) {
+  _internal_set_supports_message_ack(value);
+  SetHasBit(_impl_._has_bits_[0], 0x00000008U);
+  // @@protoc_insertion_point(field_set:chirp.auth.LoginRequest.supports_message_ack)
+}
+inline bool LoginRequest::_internal_supports_message_ack() const {
+  ::google::protobuf::internal::TSanRead(&_impl_);
+  return _impl_.supports_message_ack_;
+}
+inline void LoginRequest::_internal_set_supports_message_ack(bool value) {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_.supports_message_ack_ = value;
 }
 
 // -------------------------------------------------------------------
