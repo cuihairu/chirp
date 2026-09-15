@@ -60,6 +60,14 @@ if(MYSQL_FOUND)
         src/message_delivery_tracker.cc
         src/message_migration_worker.cc
         src/paginated_history_retriever.cc
+        # Server-plane integration and the notification push bridge: the
+        # enhanced build dials the hub like the basic/distributed builds do
+        # (inject_consumer turns forwarded injections into deliveries, and
+        # npc_uplink publishes player->NPC utterances).
+        src/inject_consumer.cc
+        src/server_gateway_peer.cc
+        src/npc_uplink.cc
+        src/push_bridge.cc
     )
 
     chirp_configure_chat_target(chirp_chat)

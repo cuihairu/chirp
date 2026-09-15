@@ -15,13 +15,19 @@
 #include <asio.hpp>
 
 #include "hybrid_message_store.h"
+#include "inject_consumer.h"
+#include "login_token_verifier.h"
 #include "message_delivery_tracker.h"
 #include "message_migration_worker.h"
+#include "npc_uplink.h"
 #include "paginated_history_retriever.h"
+#include "push_bridge.h"
+#include "server_gateway_peer.h"
 #include "distributed_dispatch.h"
 #include "distributed_runtime.h"
 #include "logger.h"
 #include "network/message_router.h"
+#include "network/notification_client.h"
 #include "network/redis_client.h"
 #include "network/session.h"
 #include "network/tcp_server.h"
@@ -90,6 +96,21 @@ struct DistributedChatState {
   }
 };
 
+/// @brief Convert a protocol ChatMessage into the store's MessageData.
+chirp::chat::MessageData ToMessageData(const chirp::chat::ChatMessage& msg) {
+  chirp::chat::MessageData data;
+  data.message_id = msg.message_id();
+  data.sender_id = msg.sender_id();
+  data.receiver_id = msg.receiver_id();
+  data.channel_id = msg.channel_id();
+  data.channel_type = msg.channel_type();
+  data.msg_type = msg.msg_type();
+  data.content = msg.content();
+  data.timestamp = msg.timestamp();
+  data.created_at = chirp::chat::runtime::NowMs();
+  return data;
+}
+
 /// @brief Handle send message with hybrid storage
 void HandleSendMessage(const chirp::chat::SendMessageRequest& req,
                       const std::shared_ptr<chirp::network::Session>& sender_session,
@@ -97,6 +118,9 @@ void HandleSendMessage(const chirp::chat::SendMessageRequest& req,
                       const std::shared_ptr<HybridMessageStore>& store,
                       const std::shared_ptr<MessageDeliveryTracker>& delivery_tracker,
                       const std::shared_ptr<chirp::network::MessageRouter>& router,
+                      chirp::chat::ServerGatewayPeer* hub_peer,
+                      const std::string& npc_service_id,
+                      const std::string& npc_prefix,
                       int64_t seq) {
   chirp::chat::ChatMessage msg;
   msg.set_message_id(chirp::chat::runtime::GenerateMessageId());
@@ -123,16 +147,7 @@ void HandleSendMessage(const chirp::chat::SendMessageRequest& req,
   msg.set_channel_id(channel_id);
 
   // Store in hybrid store (Redis + MySQL)
-  chirp::chat::MessageData msg_data;
-  msg_data.message_id = msg.message_id();
-  msg_data.sender_id = msg.sender_id();
-  msg_data.receiver_id = msg.receiver_id();
-  msg_data.channel_id = msg.channel_id();
-  msg_data.channel_type = req.channel_type();
-  msg_data.msg_type = req.msg_type();
-  msg_data.content = req.content();
-  msg_data.timestamp = msg.timestamp();
-  msg_data.created_at = chirp::chat::runtime::NowMs();
+  chirp::chat::MessageData msg_data = ToMessageData(msg);
 
   // Store asynchronously for better performance
   store->StoreMessageAsync(msg_data, [](bool success) {
@@ -156,6 +171,25 @@ void HandleSendMessage(const chirp::chat::SendMessageRequest& req,
 
   // Route to receiver
   if (req.channel_type() == chirp::chat::PRIVATE) {
+    // NPC-addressed private messages bypass player delivery: the receiver is
+    // not a user, so there is nothing to route and nothing to queue offline.
+    // The utterance is published to the NPC dialog service (fire-and-forget;
+    // OK means accepted, not that a reply will come) and the NPC answers
+    // through the injection path.
+    if (hub_peer != nullptr && !npc_service_id.empty() &&
+        chirp::chat::npc::IsNpcReceiver(npc_prefix, req.receiver_id())) {
+      hub_peer->SendEventPublish(
+          chirp::chat::npc::MakeUtteranceEvent(msg, npc_prefix, npc_service_id),
+          [message_id = msg.message_id()](chirp::common::ErrorCode code) {
+            if (code != chirp::common::OK) {
+              Logger::Instance().Warn(
+                  "npc utterance publish failed for message " + message_id +
+                  " (code " + std::to_string(static_cast<int>(code)) + ")");
+            }
+          });
+      return;
+    }
+
     const int64_t receivers = router->SendChatMessageCount(req.receiver_id(), msg.SerializeAsString(),
       [&](const std::string& user_id) -> bool {
         auto recv_session = state->GetLocalSession(user_id);
@@ -187,8 +221,28 @@ void HandleLogin(const chirp::auth::LoginRequest& req,
                 const std::shared_ptr<DistributedChatState>& state,
                 const std::shared_ptr<HybridMessageStore>& store,
                 const std::shared_ptr<chirp::network::MessageRouter>& router,
+                const chirp::chat::LoginTokenVerifier* token_verifier,
                 int64_t seq) {
-  const std::string user_id = req.token();
+  std::string user_id;
+
+  // With a shared secret configured, the token must be an HS256 JWT with
+  // an exp claim and the user in sub (same contract as the basic build).
+  if (token_verifier != nullptr && token_verifier->enabled()) {
+    std::string verify_err;
+    if (!token_verifier->Verify(req.token(), chirp::chat::runtime::NowMs(),
+                                &user_id, &verify_err)) {
+      Logger::Instance().Warn("chat login rejected: " + verify_err);
+      chirp::auth::LoginResponse deny;
+      deny.set_code(chirp::common::AUTH_FAILED);
+      deny.set_server_time(chirp::chat::runtime::NowMs());
+      chirp::chat::runtime::SendPacket(session, chirp::gateway::LOGIN_RESP, seq,
+                                       deny.SerializeAsString());
+      return;
+    }
+  } else {
+    // Scaffolding login: treat token as user_id.
+    user_id = req.token();
+  }
 
   chirp::auth::LoginResponse resp;
   if (!user_id.empty()) {
@@ -349,17 +403,118 @@ int main(int argc, char** argv) {
     return 1;
   }
 
+  // Offline pushes are wired only when a notification service is configured;
+  // a null client makes the bridge a no-op.
+  const std::string notification_host = chirp::chat::runtime::GetArg(argc, argv, "--notification_host", "");
+  const uint16_t notification_port = chirp::chat::runtime::ParseU16Arg(argc, argv, "--notification_port", 5006);
+  std::shared_ptr<chirp::notification::NotificationClient> notification;
+  if (!notification_host.empty()) {
+    notification = std::make_shared<chirp::notification::NotificationClient>(
+        io, notification_host, notification_port);
+  }
+  chirp::chat::PushBridge push(notification);
+
+  // Server-plane injection: when --server_gateway_host is set, chat dials the
+  // hub as an internal service and delivers forwarded injections through the
+  // same store/deliver tail as SEND_MESSAGE. Injection senders are non-user
+  // identities, so they skip the router's cross-instance fan-out and go
+  // straight to the local session/offline queue.
+  const std::string hub_host = chirp::chat::runtime::GetArg(argc, argv, "--server_gateway_host", "");
+  const std::string npc_service_id = chirp::chat::runtime::GetArg(argc, argv, "--npc_service_id", "");
+  const std::string npc_prefix = chirp::chat::runtime::GetArg(argc, argv, "--npc_prefix", "npc:");
+  if (!npc_service_id.empty() && hub_host.empty()) {
+    Logger::Instance().Warn(
+        "--npc_service_id is set but --server_gateway_host is not; the NPC "
+        "uplink stays disabled");
+  }
+  std::shared_ptr<chirp::chat::ServerGatewayPeer> hub_peer;
+  if (!hub_host.empty()) {
+    const uint16_t hub_port = chirp::chat::runtime::ParseU16Arg(
+        argc, argv, "--server_gateway_port", 8100);
+    chirp::chat::InjectHooks hooks;
+    hooks.private_channel_id =
+        [](const std::string& a, const std::string& b) {
+          return HybridMessageStore::PrivateChannelId(a, b);
+        };
+    hooks.store_message =
+        [&store](const chirp::chat::ChatMessage& msg) {
+          chirp::chat::MessageData data = ToMessageData(msg);
+          store->StoreMessageAsync(data, [](bool ok) {
+            if (!ok) {
+              Logger::Instance().Warn("injected message storage to MySQL failed");
+            }
+          });
+        };
+    hooks.deliver_private =
+        [state, &delivery_tracker](const std::string& receiver_id,
+                                   const chirp::chat::ChatMessage& msg) -> bool {
+      auto recv_session = state->GetLocalSession(receiver_id);
+      if (!recv_session) {
+        return false;
+      }
+      chirp::chat::runtime::SendChatNotify(recv_session, msg);
+      delivery_tracker->Acknowledge(msg.message_id(), receiver_id);
+      return true;
+    };
+    hooks.queue_offline =
+        [&store, &push](const std::string& user_id, const chirp::chat::ChatMessage& msg) {
+          chirp::chat::MessageData data = ToMessageData(msg);
+          store->AddOfflineMessage(user_id, data.SerializeAsString());
+          push.NotifyOffline(msg, user_id);
+        };
+    hooks.broadcast_channel =
+        [&router](const std::string& channel_id,
+                  const chirp::chat::ChatMessage& msg) -> std::vector<std::string> {
+      // Multi-instance fan-out goes through the router; members on other
+      // instances are their instances' responsibility, so no local offline
+      // members are reported back.
+      router->BroadcastToGroup(channel_id, msg.SerializeAsString());
+      return {};
+    };
+
+    chirp::chat::ServerGatewayPeer::Options hub_options;
+    hub_options.host = hub_host;
+    hub_options.port = hub_port;
+    hub_options.service_id =
+        chirp::chat::runtime::GetArg(argc, argv, "--server_gateway_service", "chat");
+    hub_options.secret = chirp::chat::runtime::GetArg(argc, argv, "--server_gateway_secret", "");
+    hub_options.reconnect_delay_seconds = chirp::chat::runtime::ParseIntArg(
+        argc, argv, "--server_gateway_reconnect", 3);
+
+    const std::string hub_service = hub_options.service_id;
+    auto consumer = std::make_shared<chirp::chat::InjectConsumer>(std::move(hooks));
+    hub_peer = chirp::chat::ServerGatewayPeer::Create(
+        io, std::move(hub_options),
+        [consumer](const chirp::server_gateway::InjectMessageNotify& notify) {
+          consumer->HandleInject(notify);
+        });
+    hub_peer->Start();
+    Logger::Instance().Info("server-plane peer enabled hub=" + hub_host + ":" +
+                            std::to_string(hub_port) + " service=" + hub_service +
+                            (npc_service_id.empty()
+                                 ? std::string()
+                                 : " npc_service=" + npc_service_id));
+  }
+
+  // With a shared secret, LOGIN tokens are verified locally as HS256 JWTs;
+  // empty keeps the scaffolding login (token = user id).
+  const std::string token_secret = chirp::chat::runtime::GetArg(argc, argv, "--token_secret", "");
+  chirp::chat::LoginTokenVerifier token_verifier(token_secret);
+
   chirp::chat::runtime::DistributedDispatchHandlers handlers;
-  handlers.on_login = [state, store, router](const std::shared_ptr<chirp::network::Session>& session,
-                                             const chirp::auth::LoginRequest& req,
-                                             int64_t seq) {
-    HandleLogin(req, session, state, store, router, seq);
+  handlers.on_login = [state, store, router, &token_verifier](
+                          const std::shared_ptr<chirp::network::Session>& session,
+                          const chirp::auth::LoginRequest& req,
+                          int64_t seq) {
+    HandleLogin(req, session, state, store, router, &token_verifier, seq);
   };
-  handlers.on_send_message = [state, store, delivery_tracker, router](
+  handlers.on_send_message = [state, store, delivery_tracker, router,
+                              peer = hub_peer.get(), npc_service_id, npc_prefix](
                                  const std::shared_ptr<chirp::network::Session>& session,
                                  const chirp::chat::SendMessageRequest& req,
                                  int64_t seq) {
-    HandleSendMessage(req, session, state, store, delivery_tracker, router, seq);
+    HandleSendMessage(req, session, state, store, delivery_tracker, router,
+                      peer, npc_service_id, npc_prefix, seq);
   };
   handlers.on_get_history = [retriever](const std::shared_ptr<chirp::network::Session>& session,
                                         const chirp::chat::GetHistoryRequest& req,
@@ -409,6 +564,9 @@ int main(int argc, char** argv) {
 
   chirp::chat::runtime::InstallSignalStop(io, [&]() {
     Logger::Instance().Info("Shutting down chat service...");
+    if (hub_peer) {
+      hub_peer->Stop();
+    }
     server->Stop();
     ws_server->Stop();
     router->Stop();

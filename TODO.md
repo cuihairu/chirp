@@ -30,8 +30,8 @@
 ### P1 — 测试与构建一致性
 
 - [x] **auth 单测**(从 P2 上调:auth 是 Supported 服务且在登录关键路径上,零单测风险高于构建洁癖):(2026-09 完成)`auth_stores_tests` / `auth_service_tests` 覆盖 user_store / session_store / rate_limiter / brute_force 等全部 enhanced 路径,auth 包行覆盖 100%。
-- [ ] **修复 chat 增强构建功能缺失**:`services/chat/CMakeLists.txt` 的 MySQL 增强分支遗漏 `inject_consumer.cc`、`server_gateway_peer.cc`、`push_bridge.cc`、`channel_manager.cc` 等,导致增强构建丢失服务器平面集成与推送桥能力。(2026-09 更新:main_distributed 已完整——JWT 验签 + 推送桥 + 按 router 投递计数决定离线入库,修复了多实例下"他实例在线仍写离线队列"的双重投递。)(2026-09-15 完成 main_enhanced 离线链路对齐:发送改用 `SendChatMessageCount` 按投递计数决定入队,`HybridMessageStore::AddOfflineMessage` 在 Redis 不可用时落进程内存兜底队列(Get/Pop/Clear 一并合并/清空),修复 CI 实证的"离线私聊只打日志、从未入队、登录后无补投递"丢失问题;单测见 `chat_mysql_tests` 的 `OfflineQueueFallsBackToMemoryWhenRedisDown`。剩余:main_enhanced 的服务器平面集成与推送桥接入,三个 main 的差异已在 capability matrix 标注。)
-- [ ] **推送桥覆盖全部 chat 构建**:(2026-09 推进)`chirp_chat_distributed` 已接(离线私聊消息触发推送,`--notification_host` 配置通知服务);`main_enhanced` 待接(2026-09-15 离线入队已对齐,推送触发是下一步)。
+- [x] **修复 chat 增强构建功能缺失**:(2026-09-15 完成)MySQL 增强分支(main_enhanced)与 basic/distributed 的能力差异全部补齐——① 服务器平面集成:`inject_consumer.cc` + `server_gateway_peer.cc` + `npc_uplink.cc` 编入增强构建,`--server_gateway_host` 拨号 hub,注入经 `InjectHooks` 适配到 hybrid store(在线 `SendChatNotify`+Acknowledge,离线 `AddOfflineMessage`+推送,群组走 router 广播),`--npc_service_id` 玩家→NPC 私聊发布事件;② 推送桥:`--notification_host` 接 `PushBridge`,离线入队即触发;③ 登录验签:`--token_secret` 的 HS256 JWT 本地验签与 distributed 同款;④ 离线链路:`SendChatMessageCount` 按投递计数入队,Redis 不可用落内存兜底(单测 `OfflineQueueFallsBackToMemoryWhenRedisDown`)。背景:该缺失曾让 CI 的 `--smoke-npc` 挂死(注入无人消费,listen 无超时),探测修复见 `test_services.sh` 的 hub 认证探测。
+- [x] **推送桥覆盖全部 chat 构建**:(2026-09-15 完成)basic 与 distributed 之外,`main_enhanced` 也已接入(离线私聊与注入离线入队触发 `NotifyOffline`,`--notification_host` 配置通知服务,未配置时为 no-op)。
 - [x] **proto 改为链接 `chirp_protos` 静态库**:(2026-09 完成)10 个服务、benchmark 工具与单测目标全部改为链接 `chirp_protos`(PIC 静态库,可链入 SDK 动态库);`sdks/core` 保留 TARGET 守卫——树外独立构建仍编译自带 gencode。
 
 ### P2 — 功能缺口与边缘硬化
