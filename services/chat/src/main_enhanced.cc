@@ -202,7 +202,10 @@ void HandleSendMessage(const chirp::chat::SendMessageRequest& req,
     const int64_t receivers = router->SendChatMessageCount(req.receiver_id(), msg.SerializeAsString(),
       [&](const std::string& user_id) -> bool {
         auto recv_session = state->GetLocalSession(user_id);
-        if (recv_session) {
+        // A receiver whose connection already sent FIN would "consume" the
+        // message without ever reading it; report not-delivered so the
+        // caller queues it offline.
+        if (recv_session && !recv_session->PeerHalfClosed()) {
           chirp::chat::runtime::SendChatNotify(recv_session, msg);
           delivery_tracker->Acknowledge(msg.message_id(), user_id);
           Logger::Instance().Info("Message delivered locally to " + user_id);
@@ -462,7 +465,7 @@ int main(int argc, char** argv) {
         [state, &delivery_tracker](const std::string& receiver_id,
                                    const chirp::chat::ChatMessage& msg) -> bool {
       auto recv_session = state->GetLocalSession(receiver_id);
-      if (!recv_session) {
+      if (!recv_session || recv_session->PeerHalfClosed()) {
         Logger::Instance().Info("inject receiver not online: " + receiver_id);
         return false;
       }

@@ -472,7 +472,9 @@ void HandlePacket(const std::shared_ptr<MessageStore>& store,
           recv = it->second.lock();
         }
       }
-      if (recv) {
+      // A receiver whose connection already sent FIN would "consume" the
+      // message without ever reading it; queue offline instead.
+      if (recv && !recv->PeerHalfClosed()) {
         resp.set_code(chirp::common::OK);
         chirp::chat::runtime::SendChatNotify(recv, msg);
       } else {
@@ -972,7 +974,7 @@ int main(int argc, char** argv) {
           recv = it->second.lock();
         }
       }
-      if (!recv) {
+      if (!recv || recv->PeerHalfClosed()) {
         return false;
       }
       chirp::chat::runtime::SendChatNotify(recv, msg);

@@ -24,6 +24,7 @@ public:
   void Start();
   void Close() override;
   bool IsClosed() const override { return closed_; }
+  bool PeerHalfClosed() override;
 
   // Sends bytes as-is (caller decides framing). Thread-safe.
   void Send(std::string bytes) override;

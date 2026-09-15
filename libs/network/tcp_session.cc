@@ -1,5 +1,7 @@
 #include "network/tcp_session.h"
 
+#include <sys/socket.h>
+
 namespace chirp::network {
 
 TcpSession::TcpSession(asio::ip::tcp::socket socket, FrameCallback on_frame, CloseCallback on_close)
@@ -21,6 +23,19 @@ asio::ip::tcp::endpoint TcpSession::RemoteEndpoint() const {
 
 std::string TcpSession::RemoteAddress() const {
   return RemoteEndpoint().address().to_string();
+}
+
+bool TcpSession::PeerHalfClosed() {
+  if (closed_) {
+    return true;
+  }
+  // Non-blocking MSG_PEEK: 0 bytes means the peer's FIN is sitting in the
+  // kernel buffer while the read loop has not processed it yet - writes to
+  // this session would vanish. EAGAIN (nothing pending) or pending data
+  // both mean still alive as far as we can tell.
+  char peek;
+  const ssize_t n = ::recv(socket_.native_handle(), &peek, 1, MSG_PEEK | MSG_DONTWAIT);
+  return n == 0;
 }
 
 void TcpSession::Send(std::string bytes) {

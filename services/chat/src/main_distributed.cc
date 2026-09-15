@@ -179,7 +179,10 @@ void HandleSendMessage(const chirp::chat::SendMessageRequest& req,
     const int64_t receivers = router->SendChatMessageCount(
         req.receiver_id(), msg.SerializeAsString(), [&](const std::string& user_id) -> bool {
           auto recv_session = state->GetLocalSession(user_id);
-          if (!recv_session) {
+          // A receiver whose connection already sent FIN would "consume" the
+          // message without ever reading it; report not-delivered so the
+          // caller queues it offline.
+          if (!recv_session || recv_session->PeerHalfClosed()) {
             return false;
           }
           chirp::chat::runtime::SendChatNotify(recv_session, msg);
