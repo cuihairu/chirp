@@ -253,18 +253,26 @@ void ServerGatewayPeer::HandlePacket(const chirp::gateway::Packet& pkt) {
       chirp::common::Logger::Instance().Warn("failed to parse InjectMessageNotify");
       break;
     }
+    chirp::common::Logger::Instance().Info(
+        "inject received from=" + notify.message().sender_id() +
+        " to=" + notify.message().receiver_id() +
+        " bytes=" + std::to_string(notify.message().content().size()));
     if (on_inject_) {
       on_inject_(notify);
     }
     break;
   }
   case chirp::gateway::EVENT_DELIVER_NOTIFY: {
-    if (!on_event_) {
-      break;  // no event consumer configured; ignore
-    }
     chirp::server_gateway::EventDeliverNotify notify;
     if (!notify.ParseFromArray(pkt.body().data(), static_cast<int>(pkt.body().size()))) {
       chirp::common::Logger::Instance().Warn("failed to parse EventDeliverNotify");
+      break;
+    }
+    if (!on_event_) {
+      // Without this warn a misrouted event would vanish without a trace.
+      chirp::common::Logger::Instance().Warn(
+          "event delivered but no consumer registered type=" + notify.event_type() +
+          " id=" + notify.event_id());
       break;
     }
     on_event_(notify);

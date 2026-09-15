@@ -50,6 +50,11 @@ void SendPacket(asio::ip::tcp::socket& sock, chirp::gateway::MsgID msg_id, int64
 } // namespace
 
 int main(int argc, char** argv) {
+  // Diagnostics must survive being killed by an outer `timeout`: stdout
+  // redirected to a file is fully buffered, and a SIGTERM would discard
+  // every print made so far.
+  std::cout << std::unitbuf;
+
   const std::string host = GetArg(argc, argv, "--host", "127.0.0.1");
   const uint16_t port = static_cast<uint16_t>(std::atoi(GetArg(argc, argv, "--port", "7000").c_str()));
   const std::string user = GetArg(argc, argv, "--user", "user_2");

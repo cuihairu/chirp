@@ -192,6 +192,8 @@ void HandleSendMessage(const chirp::chat::SendMessageRequest& req,
               Logger::Instance().Warn(
                   "npc utterance publish failed for message " + message_id +
                   " (code " + std::to_string(static_cast<int>(code)) + ")");
+            } else {
+              Logger::Instance().Info("npc utterance published for message " + message_id);
             }
           });
       return;
@@ -461,10 +463,12 @@ int main(int argc, char** argv) {
                                    const chirp::chat::ChatMessage& msg) -> bool {
       auto recv_session = state->GetLocalSession(receiver_id);
       if (!recv_session) {
+        Logger::Instance().Info("inject receiver not online: " + receiver_id);
         return false;
       }
       chirp::chat::runtime::SendChatNotify(recv_session, msg);
       delivery_tracker->Acknowledge(msg.message_id(), receiver_id);
+      Logger::Instance().Info("inject delivered live to " + receiver_id);
       return true;
     };
     hooks.queue_offline =
@@ -472,6 +476,7 @@ int main(int argc, char** argv) {
           chirp::chat::MessageData data = ToMessageData(msg);
           store->AddOfflineMessage(user_id, data.SerializeAsString());
           push.NotifyOffline(msg, user_id);
+          Logger::Instance().Info("inject queued offline for " + user_id);
         };
     hooks.broadcast_channel =
         [&router](const std::string& channel_id,

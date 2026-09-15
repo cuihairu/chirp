@@ -52,14 +52,23 @@ void NpcResponder::OnEvent(const chirp::server_gateway::EventDeliverNotify& even
   reply.set_receiver_id(utterance.sender_id());
   reply.set_content(engine_.Reply(utterance.npc_id(), utterance.content()));
 
+  chirp::common::Logger::Instance().Info(
+      "utterance event=" + event.event_id() + " npc=" + utterance.npc_id() +
+      " from=" + utterance.sender_id() + " -> replying as " + reply.sender_id());
+
   send_inject_(reply, [this, event_id = event.event_id()](
                           chirp::common::ErrorCode code) {
     if (code == chirp::common::OK) {
+      chirp::common::Logger::Instance().Info("reply inject accepted for " + event_id);
       RememberAnswered(event_id);
       Ack(event_id);
+    } else {
+      // Anything else: stay unacked (and un-remembered), so the hub redelivers
+      // the event and the reply is attempted again (at-least-once).
+      chirp::common::Logger::Instance().Warn(
+          "reply inject failed for " + event_id + " (code " +
+          std::to_string(static_cast<int>(code)) + "); waiting for redelivery");
     }
-    // Anything else: stay unacked (and un-remembered), so the hub redelivers
-    // the event and the reply is attempted again (at-least-once).
   });
 }
 

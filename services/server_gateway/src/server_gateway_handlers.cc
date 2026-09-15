@@ -4,6 +4,8 @@
 #include <utility>
 #include <vector>
 
+#include "logger.h"
+
 namespace chirp::server_gateway {
 
 namespace {
@@ -66,9 +68,15 @@ MessageInjectResponse ServerGatewayHandlers::HandleInject(const MessageInjectReq
   InjectMessageNotify notify;
   *notify.mutable_message() = req;
   if (!chat || !chat->Send(chirp::gateway::INJECT_MESSAGE_NOTIFY, notify)) {
+    chirp::common::Logger::Instance().Warn(
+        "inject " + req.inject_id() + " from=" + req.sender_id() + " to=" +
+        req.receiver_id() + ": chat service unavailable");
     resp.set_code(chirp::common::SERVER_UNAVAILABLE);
     return resp;
   }
+  chirp::common::Logger::Instance().Info(
+      "inject " + req.inject_id() + " from=" + req.sender_id() + " to=" +
+      req.receiver_id() + " delivered to " + config_.chat_service_id);
   resp.set_code(chirp::common::OK);
   return resp;
 }
@@ -96,6 +104,10 @@ EventPublishResponse ServerGatewayHandlers::HandleEventPublish(const EventPublis
   resp.set_event_id(event.event_id);
   auto target = registry_.Get(req.target_service_id());
   resp.set_queued(target == nullptr);
+  chirp::common::Logger::Instance().Info(
+      "event " + event.event_id + " type=" + event.event_type + " target=" +
+      req.target_service_id() +
+      (target ? " delivered" : " queued (target offline)"));
   if (target) {
     DeliverPending(req.target_service_id(), *target);
   }
