@@ -97,14 +97,24 @@ jobs:
     - name: Build
       run: cmake --build --preset ci -j$(nproc)
 
-    - name: Smoke tests (five process-level smokes)
-      run: |
-        set -e
-        bash test_services.sh --smoke
-        bash test_services.sh --smoke-chat
-        bash test_services.sh --smoke-sdk
-        bash test_services.sh --smoke-npc
-        bash test_services.sh --smoke-redis
+    # One step per smoke: when a smoke wedges, the job's step list names the
+    # culprit directly (in-progress logs are not fetchable via the API), and
+    # the `timeout` wrapper turns a wedge into a failed step instead of a
+    # job that never finishes.
+    - name: Smoke: auth + gateway
+      run: timeout 600 bash test_services.sh --smoke
+
+    - name: Smoke: chat offline/history
+      run: timeout 600 bash test_services.sh --smoke-chat
+
+    - name: Smoke: SDK E2E
+      run: timeout 600 bash test_services.sh --smoke-sdk
+
+    - name: Smoke: NPC server-plane loop
+      run: timeout 600 bash test_services.sh --smoke-npc
+
+    - name: Smoke: cross-instance kick (docker redis)
+      run: timeout 900 bash test_services.sh --smoke-redis
 
   build-and-test:
     runs-on: ubuntu-22.04

@@ -85,6 +85,21 @@ wait_port() {
   return 1
 }
 
+# TERM a process, give it a fixed grace period, then KILL. Never blocks:
+# a bare `wait` on a process stuck outside its signal handler's reach is
+# how a smoke turns into a hung CI job. KILL on an already-exited pid is
+# a harmless no-op.
+stop_proc() {
+  local pid
+  for pid in "$@"; do
+    [[ -z "${pid}" ]] && continue
+    if kill -TERM "${pid}" 2>/dev/null; then
+      sleep 2
+      kill -KILL "${pid}" 2>/dev/null || true
+    fi
+  done
+}
+
 if [[ "${1:-}" == "--smoke" ]]; then
   AUTH_PORT="${AUTH_PORT:-$(pick_port)}"
   GW_PORT="${GW_PORT:-$(pick_port)}"
@@ -101,9 +116,7 @@ if [[ "${1:-}" == "--smoke" ]]; then
   GW_PID=$!
 
   cleanup() {
-    kill -TERM "${GW_PID}" "${AUTH_PID}" 2>/dev/null || true
-    wait "${GW_PID}" 2>/dev/null || true
-    wait "${AUTH_PID}" 2>/dev/null || true
+    stop_proc "${GW_PID}" "${AUTH_PID}"
   }
   trap cleanup EXIT
 
@@ -112,11 +125,11 @@ if [[ "${1:-}" == "--smoke" ]]; then
 
   echo ""
   echo "[tcp] login -> ping"
-  ./build/tools/benchmark/chirp_login_client --host 127.0.0.1 --port "${GW_PORT}" --token user_1 --device dev_a --platform pc
+  timeout 30 ./build/tools/benchmark/chirp_login_client --host 127.0.0.1 --port "${GW_PORT}" --token user_1 --device dev_a --platform pc
 
   echo ""
   echo "[ws] login -> ping"
-  ./build/tools/benchmark/chirp_ws_login_client --host 127.0.0.1 --port "${WS_PORT}" --token user_1 --device dev_b --platform web
+  timeout 30 ./build/tools/benchmark/chirp_ws_login_client --host 127.0.0.1 --port "${WS_PORT}" --token user_1 --device dev_b --platform web
 
   echo ""
   echo "auth log: ${AUTH_LOG}"
@@ -129,7 +142,7 @@ elif [[ "${1:-}" == "--smoke-redis" ]]; then
     echo "错误: 未找到 docker，无法运行 --smoke-redis"
     exit 1
   fi
-  if ! docker info >/dev/null 2>&1; then
+  if ! timeout 30 docker info >/dev/null 2>&1; then
     echo "错误: 无法连接 Docker daemon，请先启动 Docker Desktop（或确保 docker daemon 在运行）"
     exit 1
   fi
@@ -149,13 +162,15 @@ elif [[ "${1:-}" == "--smoke-redis" ]]; then
 
   REDIS_CONTAINER="${REDIS_CONTAINER:-chirp_redis_smoke_$$}"
 
-  docker run --rm -d --name "${REDIS_CONTAINER}" -p "127.0.0.1:${REDIS_PORT}:6379" redis:7-alpine >/dev/null
+  # Bounded: an image pull (or a wedged daemon) must fail the smoke with a
+  # message instead of hanging the job.
+  if ! timeout 180 docker run --rm -d --name "${REDIS_CONTAINER}" -p "127.0.0.1:${REDIS_PORT}:6379" redis:7-alpine >/dev/null; then
+    echo "错误: docker 启动 redis:7-alpine 失败（180s 内未就绪或镜像拉取失败）"
+    exit 1
+  fi
 
   cleanup() {
-    kill -TERM "${GW1_PID:-}" "${GW2_PID:-}" "${AUTH_PID:-}" 2>/dev/null || true
-    wait "${GW1_PID:-}" 2>/dev/null || true
-    wait "${GW2_PID:-}" 2>/dev/null || true
-    wait "${AUTH_PID:-}" 2>/dev/null || true
+    stop_proc "${GW1_PID:-}" "${GW2_PID:-}" "${AUTH_PID:-}"
     docker rm -f "${REDIS_CONTAINER}" >/dev/null 2>&1 || true
   }
   trap cleanup EXIT
@@ -186,7 +201,7 @@ elif [[ "${1:-}" == "--smoke-redis" ]]; then
 
   echo ""
   echo "[tcp] hold login on gw_a (expect kick)"
-  ./build/tools/benchmark/chirp_login_client --host 127.0.0.1 --port "${GW1_PORT}" \
+  timeout 60 ./build/tools/benchmark/chirp_login_client --host 127.0.0.1 --port "${GW1_PORT}" \
     --token user_1 --device dev_a --platform pc --wait_kick_ms 5000 > "${CLIENT1_LOG}" 2>&1 &
   CLIENT1_PID=$!
 
@@ -194,7 +209,7 @@ elif [[ "${1:-}" == "--smoke-redis" ]]; then
 
   echo ""
   echo "[tcp] login on gw_b (should kick gw_a)"
-  ./build/tools/benchmark/chirp_login_client --host 127.0.0.1 --port "${GW2_PORT}" --token user_1 --device dev_b --platform pc
+  timeout 30 ./build/tools/benchmark/chirp_login_client --host 127.0.0.1 --port "${GW2_PORT}" --token user_1 --device dev_b --platform pc
 
   set +e
   wait "${CLIENT1_PID}"
@@ -209,7 +224,7 @@ elif [[ "${1:-}" == "--smoke-redis" ]]; then
 
   echo ""
   echo "[ws] hold login on gw_a (expect kick)"
-  ./build/tools/benchmark/chirp_ws_login_client --host 127.0.0.1 --port "${WS1_PORT}" \
+  timeout 60 ./build/tools/benchmark/chirp_ws_login_client --host 127.0.0.1 --port "${WS1_PORT}" \
     --token user_2 --device dev_a --platform web --wait_kick_ms 5000 > "${WS_CLIENT1_LOG}" 2>&1 &
   WS_CLIENT1_PID=$!
 
@@ -217,7 +232,7 @@ elif [[ "${1:-}" == "--smoke-redis" ]]; then
 
   echo ""
   echo "[ws] login on gw_b (should kick gw_a)"
-  ./build/tools/benchmark/chirp_ws_login_client --host 127.0.0.1 --port "${WS2_PORT}" --token user_2 --device dev_b --platform web
+  timeout 30 ./build/tools/benchmark/chirp_ws_login_client --host 127.0.0.1 --port "${WS2_PORT}" --token user_2 --device dev_b --platform web
 
   set +e
   wait "${WS_CLIENT1_PID}"
@@ -281,10 +296,7 @@ elif [[ "${1:-}" == "--smoke-npc" ]]; then
   NPC_PID=$!
 
   cleanup() {
-    kill -TERM "${NPC_PID}" "${CHAT_PID}" "${HUB_PID}" 2>/dev/null || true
-    wait "${NPC_PID}" 2>/dev/null || true
-    wait "${CHAT_PID}" 2>/dev/null || true
-    wait "${HUB_PID}" 2>/dev/null || true
+    stop_proc "${NPC_PID}" "${CHAT_PID}" "${HUB_PID}"
   }
   trap cleanup EXIT
 
@@ -312,7 +324,7 @@ elif [[ "${1:-}" == "--smoke-npc" ]]; then
   if [[ "${NPC_HUB_BOUND}" == "1" ]]; then
   echo ""
   echo "[npc] send user_2 -> npc:blacksmith_01 (keyword hit)"
-  NPC_SEND_OUTPUT=$(./build/tools/benchmark/chirp_chat_send_client --host 127.0.0.1 --port "${CHAT_PORT}" --sender user_2 --receiver "npc:blacksmith_01" --text "any quests?")
+  NPC_SEND_OUTPUT=$(timeout 30 ./build/tools/benchmark/chirp_chat_send_client --host 127.0.0.1 --port "${CHAT_PORT}" --sender user_2 --receiver "npc:blacksmith_01" --text "any quests?")
   echo "${NPC_SEND_OUTPUT}"
   if [[ "${NPC_SEND_OUTPUT}" != code=0* ]]; then
     echo "错误: NPC 私聊应返回 code=0（事件已发布，绕过玩家投递），实际: ${NPC_SEND_OUTPUT}"
@@ -332,11 +344,11 @@ elif [[ "${1:-}" == "--smoke-npc" ]]; then
 
   echo ""
   echo "[npc] history private (npc:blacksmith_01|user_2, player line + reply)"
-  ./build/tools/benchmark/chirp_chat_history_client --host 127.0.0.1 --port "${CHAT_PORT}" --user user_2 --channel_type 0 --channel_id "npc:blacksmith_01|user_2" --limit 10
+  timeout 30 ./build/tools/benchmark/chirp_chat_history_client --host 127.0.0.1 --port "${CHAT_PORT}" --user user_2 --channel_type 0 --channel_id "npc:blacksmith_01|user_2" --limit 10
 
   echo ""
   echo "[npc] offline path: user_3 sends (fallback reply), then logs in"
-  NPC_OFFLINE_SEND_OUTPUT=$(./build/tools/benchmark/chirp_chat_send_client --host 127.0.0.1 --port "${CHAT_PORT}" --sender user_3 --receiver "npc:blacksmith_01" --text "hello forge")
+  NPC_OFFLINE_SEND_OUTPUT=$(timeout 30 ./build/tools/benchmark/chirp_chat_send_client --host 127.0.0.1 --port "${CHAT_PORT}" --sender user_3 --receiver "npc:blacksmith_01" --text "hello forge")
   echo "${NPC_OFFLINE_SEND_OUTPUT}"
   if [[ "${NPC_OFFLINE_SEND_OUTPUT}" != code=0* ]]; then
     echo "错误: NPC 私聊（离线玩家）应返回 code=0，实际: ${NPC_OFFLINE_SEND_OUTPUT}"
@@ -379,8 +391,7 @@ elif [[ "${1:-}" == "--smoke-sdk" ]]; then
   CHAT_PID=$!
 
   cleanup() {
-    kill -TERM "${CHAT_PID}" 2>/dev/null || true
-    wait "${CHAT_PID}" 2>/dev/null || true
+    stop_proc "${CHAT_PID}"
   }
   trap cleanup EXIT
 
@@ -472,10 +483,8 @@ else
   CHAT_PID=$!
 
   cleanup() {
-    kill -TERM "${CHAT_PID}" 2>/dev/null || true
-    wait "${CHAT_PID}" 2>/dev/null || true
-    kill -TERM "${REDIS_PID:-}" 2>/dev/null || true
-    wait "${REDIS_PID:-}" 2>/dev/null || true
+    stop_proc "${CHAT_PID}"
+    stop_proc "${REDIS_PID:-}"
     rm -rf "${REDIS_DIR}"
   }
   trap cleanup EXIT
@@ -491,18 +500,18 @@ else
 
   echo ""
   echo "[tcp] send user_1 -> user_2"
-  ./build/tools/benchmark/chirp_chat_send_client --host 127.0.0.1 --port "${CHAT_PORT}" --sender user_1 --receiver user_2 --text "hello"
+  timeout 30 ./build/tools/benchmark/chirp_chat_send_client --host 127.0.0.1 --port "${CHAT_PORT}" --sender user_1 --receiver user_2 --text "hello"
 
   wait "${LISTEN_PID}" || true
   cat "${LISTEN_LOG}" || true
 
   echo ""
   echo "[tcp] history private (user_1|user_2)"
-  ./build/tools/benchmark/chirp_chat_history_client --host 127.0.0.1 --port "${CHAT_PORT}" --user user_1 --channel_type 0 --channel_id "user_1|user_2" --limit 10
+  timeout 30 ./build/tools/benchmark/chirp_chat_history_client --host 127.0.0.1 --port "${CHAT_PORT}" --user user_1 --channel_type 0 --channel_id "user_1|user_2" --limit 10
 
   echo ""
   echo "[tcp] send user_1 -> offline user_3"
-  OFFLINE_SEND_OUTPUT=$(./build/tools/benchmark/chirp_chat_send_client --host 127.0.0.1 --port "${CHAT_PORT}" --sender user_1 --receiver user_3 --text "offline hello")
+  OFFLINE_SEND_OUTPUT=$(timeout 30 ./build/tools/benchmark/chirp_chat_send_client --host 127.0.0.1 --port "${CHAT_PORT}" --sender user_1 --receiver user_3 --text "offline hello")
   echo "${OFFLINE_SEND_OUTPUT}"
   # 离线语义:所有 chat 构建都承诺登录补投递。basic main 对离线接收方回
   # code=6(TARGET_OFFLINE),MySQL-enhanced main 接受即回 code=0(2026-09-15
@@ -531,11 +540,11 @@ else
 
   echo ""
   echo "[tcp] history private (user_1|user_3)"
-  ./build/tools/benchmark/chirp_chat_history_client --host 127.0.0.1 --port "${CHAT_PORT}" --user user_1 --channel_type 0 --channel_id "user_1|user_3" --limit 10
+  timeout 30 ./build/tools/benchmark/chirp_chat_history_client --host 127.0.0.1 --port "${CHAT_PORT}" --user user_1 --channel_type 0 --channel_id "user_1|user_3" --limit 10
 
   echo ""
   echo "[ws] login -> ping on chat"
-  ./build/tools/benchmark/chirp_ws_login_client --host 127.0.0.1 --port "${CHAT_WS_PORT}" --token user_4 --device dev_c --platform web
+  timeout 30 ./build/tools/benchmark/chirp_ws_login_client --host 127.0.0.1 --port "${CHAT_WS_PORT}" --token user_4 --device dev_c --platform web
 
   echo ""
   echo "[archive] export + fake mysql apply + redis ack"
