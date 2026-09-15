@@ -14,10 +14,18 @@ if(TARGET unofficial::libmysql::libmysql)
   endif()
 endif()
 
-# Try pkg-config first
+# Try pkg-config first. Skipped under the vcpkg toolchain: vcpkg injects
+# its installed pkgconfig dirs into PKG_CONFIG_PATH and the debug variant
+# would win even for release builds -- the manual search below resolves
+# per-config libraries correctly under vcpkg.
 find_package(PkgConfig QUIET)
-if(NOT MYSQL_FOUND AND PKG_CONFIG_FOUND)
+if(NOT VCPKG_TOOLCHAIN AND NOT MYSQL_FOUND AND PKG_CONFIG_FOUND)
   pkg_check_modules(MYSQL QUIET mysqlclient)
+endif()
+if(MYSQL_FOUND AND NOT MYSQL_CLIENT_LIBRARIES)
+  # Consumers link MYSQL_CLIENT_LIBRARIES; keep it in sync whichever
+  # discovery branch populated MYSQL_LIBRARIES.
+  set(MYSQL_CLIENT_LIBRARIES "${MYSQL_LIBRARIES}")
 endif()
 
 # If pkg-config failed, try manual search
@@ -40,12 +48,15 @@ if(NOT MYSQL_FOUND)
     PATH_SUFFIXES mysql include include/mysql
   )
 
-  # Find library with different possible names
+  # Find library with different possible names (libmariadb last: it is the
+  # drop-in fallback, only used when no real mysqlclient is installed)
   find_library(MYSQL_LIBRARY
     NAMES
       mysqlclient
       libmysqlclient
       mysqlclient_r
+      mariadb
+      libmariadb
     HINTS ${MYSQL_HINTS}
     PATH_SUFFIXES lib lib64 lib/mysql
   )
@@ -55,6 +66,24 @@ if(NOT MYSQL_FOUND)
     set(MYSQL_LIBRARIES "${MYSQL_LIBRARY}")
     set(MYSQL_CLIENT_LIBRARIES "${MYSQL_LIBRARY}")
     set(MYSQL_INCLUDE_DIRS "${MYSQL_INCLUDE_DIR}")
+    if(MYSQL_LIBRARY MATCHES "mariadb")
+      # Static libmariadb ships no dependency metadata: pull in its own
+      # link requirements (zlib compression, TLS, dlopen) the same way
+      # the libmysql CMake target does for CI builds.
+      find_package(ZLIB QUIET)
+      find_package(OpenSSL QUIET)
+      if(TARGET ZLIB::ZLIB)
+        list(APPEND MYSQL_CLIENT_LIBRARIES ZLIB::ZLIB)
+      elseif(ZLIB_LIBRARIES)
+        list(APPEND MYSQL_CLIENT_LIBRARIES ${ZLIB_LIBRARIES})
+      endif()
+      if(TARGET OpenSSL::SSL)
+        list(APPEND MYSQL_CLIENT_LIBRARIES OpenSSL::SSL)
+      elseif(OPENSSL_LIBRARIES)
+        list(APPEND MYSQL_CLIENT_LIBRARIES ${OPENSSL_LIBRARIES})
+      endif()
+      list(APPEND MYSQL_CLIENT_LIBRARIES ${CMAKE_DL_LIBS})
+    endif()
   endif()
 endif()
 

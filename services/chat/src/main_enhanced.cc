@@ -156,7 +156,7 @@ void HandleSendMessage(const chirp::chat::SendMessageRequest& req,
 
   // Route to receiver
   if (req.channel_type() == chirp::chat::PRIVATE) {
-    router->SendChatMessage(req.receiver_id(), msg.SerializeAsString(),
+    const int64_t receivers = router->SendChatMessageCount(req.receiver_id(), msg.SerializeAsString(),
       [&](const std::string& user_id) -> bool {
         auto recv_session = state->GetLocalSession(user_id);
         if (recv_session) {
@@ -168,8 +168,12 @@ void HandleSendMessage(const chirp::chat::SendMessageRequest& req,
         return false;
       });
 
-    // Store offline if not delivered
-    if (!state->IsUserLocal(req.receiver_id())) {
+    // Nobody received it live (offline here, or on another instance with no
+    // Redis pub/sub): enqueue an offline copy. AddOfflineMessage falls back
+    // to an in-memory queue when Redis is unavailable, so single-node
+    // deployments without Redis still refill on login.
+    if (receivers <= 0) {
+      store->AddOfflineMessage(req.receiver_id(), msg_data.SerializeAsString());
       Logger::Instance().Info("Message stored offline for " + req.receiver_id());
     }
   } else {

@@ -117,12 +117,9 @@ bool HybridMessageStore::StoreMessage(const MessageData& message) {
 
   bool mysql_result = mysql_store_->StoreMessage(mysql_msg);
 
-  // 3. Add to offline queue if there's a specific receiver
-  if (!message.receiver_id.empty() && message.channel_type == 0) {  // PRIVATE
-    std::string offline_key = OfflineKey(message.receiver_id);
-    redis_->RPush(offline_key, msg_data);
-    redis_->Expire(offline_key, config_.redis_offline_ttl_seconds);
-  }
+  // Offline queueing is owned by the caller (the send handler decides via
+  // the router's delivery count whether the receiver actually needs an
+  // offline copy), so StoreMessage only persists the history tiers.
 
   return mysql_result;  // Return MySQL result as the source of truth
 }
@@ -134,13 +131,6 @@ void HybridMessageStore::StoreMessageAsync(const MessageData& message,
   std::string msg_data = message.SerializeAsString();
 
   redis_->RPush(history_key, msg_data);
-
-  // For offline messages
-  if (!message.receiver_id.empty() && message.channel_type == 0) {
-    std::string offline_key = OfflineKey(message.receiver_id);
-    redis_->RPush(offline_key, msg_data);
-    redis_->Expire(offline_key, config_.redis_offline_ttl_seconds);
-  }
 
   // Post MySQL write to background thread
   asio::post(io_, [this, message, callback]() {
@@ -256,6 +246,26 @@ std::vector<MessageData> HybridMessageStore::GetHistoryV2(const std::string& cha
   return messages;
 }
 
+bool HybridMessageStore::AddOfflineMessage(const std::string& user_id,
+                                           const std::string& serialized) {
+  std::string offline_key = OfflineKey(user_id);
+  if (redis_->RPush(offline_key, serialized) &&
+      redis_->Expire(offline_key, config_.redis_offline_ttl_seconds)) {
+    return true;
+  }
+
+  // Redis unavailable: keep the message in an in-memory fallback so
+  // single-node deployments (no Redis) still refill on login.
+  std::lock_guard<std::mutex> lock(offline_fallback_mutex_);
+  auto& queue = offline_fallback_[user_id];
+  queue.push_back(serialized);
+  constexpr size_t kMaxFallbackPerUser = 1024;
+  if (queue.size() > kMaxFallbackPerUser) {
+    queue.pop_front();
+  }
+  return false;
+}
+
 std::vector<MessageData> HybridMessageStore::GetOfflineMessages(const std::string& user_id) {  // GCOVR_EXCL_LINE -- unreachable exit-block line (gcc/NRVO artifact); body is covered
   std::string offline_key = OfflineKey(user_id);
   auto redis_messages = redis_->LRange(offline_key, 0, -1);
@@ -270,6 +280,18 @@ std::vector<MessageData> HybridMessageStore::GetOfflineMessages(const std::strin
     }
   }
 
+  // Merge in messages held by the Redis-down fallback.
+  std::lock_guard<std::mutex> lock(offline_fallback_mutex_);
+  auto it = offline_fallback_.find(user_id);
+  if (it != offline_fallback_.end()) {
+    for (const auto& msg_data : it->second) {
+      MessageData msg;
+      if (msg.ParseFromArray(msg_data.data(), static_cast<int>(msg_data.size()))) {
+        results.push_back(std::move(msg));
+      }
+    }
+  }
+
   return results;
 }
 
@@ -280,12 +302,21 @@ std::vector<MessageData> HybridMessageStore::PopOfflineMessages(const std::strin
   std::string offline_key = OfflineKey(user_id);
   redis_->Del(offline_key);
 
+  // Drain the Redis-down fallback too.
+  std::lock_guard<std::mutex> lock(offline_fallback_mutex_);
+  offline_fallback_.erase(user_id);
+
   return messages;
 }
 
 bool HybridMessageStore::ClearOfflineMessages(const std::string& user_id) {
   std::string offline_key = OfflineKey(user_id);
-  return redis_->Del(offline_key);
+  bool redis_cleared = redis_->Del(offline_key);
+
+  std::lock_guard<std::mutex> lock(offline_fallback_mutex_);
+  offline_fallback_.erase(user_id);
+
+  return redis_cleared;
 }
 
 std::string HybridMessageStore::TrackMessage(const std::string& message_id,

@@ -375,15 +375,17 @@ TEST_F(HybridStoreTest, InitializeToleratesDeadRedisAndMysqlFailures) {
   EXPECT_FALSE(dead_redis.Initialize());
 }
 
-TEST_F(HybridStoreTest, StoreMessageWritesBothTiersAndOfflineQueue) {
+TEST_F(HybridStoreTest, StoreMessageWritesHistoryTiersOnly) {
   ASSERT_TRUE(store_->Initialize());
 
   EXPECT_TRUE(store_->StoreMessage(MakeMessage("m1", "ch1", 1000, "r1")));
-  // History list and the private offline queue both received the payload.
+  // StoreMessage persists history only: whether the receiver needs an
+  // offline copy is decided by the send handler from the router's
+  // delivery count, so the offline queue must stay untouched here.
   EXPECT_EQ(redis_->ListDirect("chirp:chat:history:ch1").size(), 1u);
-  EXPECT_EQ(redis_->ListDirect("chirp:chat:offline:r1").size(), 1u);
+  EXPECT_TRUE(redis_->ListDirect("chirp:chat:offline:*").empty());
 
-  // Group channel (channel_type != 0) does not hit the offline queue.
+  // Group channel messages land in their own history list.
   MessageData group = MakeMessage("m2", "ch2", 2000);
   group.channel_type = 1;
   EXPECT_TRUE(store_->StoreMessage(group));
@@ -456,19 +458,52 @@ TEST_F(HybridStoreTest, GetHistoryV2CursorPagination) {
 TEST_F(HybridStoreTest, OfflineQueueOperations) {
   ASSERT_TRUE(store_->Initialize());
 
-  store_->StoreMessage(MakeMessage("m1", "ch", 1000, "r1"));
-  store_->StoreMessage(MakeMessage("m2", "ch", 2000, "r1"));
+  EXPECT_TRUE(store_->AddOfflineMessage("r1", MakeMessage("m1", "ch", 1000, "r1").SerializeAsString()));
+  EXPECT_TRUE(store_->AddOfflineMessage("r1", MakeMessage("m2", "ch", 2000, "r1").SerializeAsString()));
 
   auto messages = store_->GetOfflineMessages("r1");
-  EXPECT_EQ(messages.size(), 2u);
+  ASSERT_EQ(messages.size(), 2u);
+  EXPECT_EQ(messages[0].message_id, "m1");
+  EXPECT_EQ(messages[1].message_id, "m2");
 
   auto popped = store_->PopOfflineMessages("r1");
   EXPECT_EQ(popped.size(), 2u);
   EXPECT_TRUE(store_->GetOfflineMessages("r1").empty());
 
-  store_->StoreMessage(MakeMessage("m3", "ch", 3000, "r1"));
+  EXPECT_TRUE(store_->AddOfflineMessage("r1", MakeMessage("m3", "ch", 3000, "r1").SerializeAsString()));
   EXPECT_TRUE(store_->ClearOfflineMessages("r1"));
   EXPECT_TRUE(store_->GetOfflineMessages("r1").empty());
+}
+
+TEST_F(HybridStoreTest, OfflineQueueFallsBackToMemoryWhenRedisDown) {
+  // Same pattern as InitializeToleratesDeadRedisAndMysqlFailures: port 1
+  // refuses every connection, so every Redis command fails.
+  MessageStoreConfig cfg;
+  cfg.redis_port = 1;
+  HybridMessageStore dead_redis(io_, cfg);
+
+  // With Redis unreachable, every RPush fails and the message must land
+  // in the in-memory fallback instead of being dropped.
+  EXPECT_FALSE(dead_redis.AddOfflineMessage("r1", MakeMessage("m1", "ch", 1000, "r1").SerializeAsString()));
+  EXPECT_FALSE(dead_redis.AddOfflineMessage("r2", MakeMessage("m2", "ch", 2000, "r2").SerializeAsString()));
+
+  auto r1 = dead_redis.GetOfflineMessages("r1");
+  ASSERT_EQ(r1.size(), 1u);
+  EXPECT_EQ(r1[0].message_id, "m1");
+  auto r2 = dead_redis.GetOfflineMessages("r2");
+  ASSERT_EQ(r2.size(), 1u);
+  EXPECT_EQ(r2[0].message_id, "m2");
+
+  // Pop drains the fallback queue; other users are unaffected.
+  auto popped = dead_redis.PopOfflineMessages("r1");
+  ASSERT_EQ(popped.size(), 1u);
+  EXPECT_EQ(popped[0].message_id, "m1");
+  EXPECT_TRUE(dead_redis.GetOfflineMessages("r1").empty());
+  EXPECT_EQ(dead_redis.GetOfflineMessages("r2").size(), 1u);
+
+  // Clear removes the remaining fallback entry without Redis.
+  EXPECT_FALSE(dead_redis.ClearOfflineMessages("r2"));  // Redis Del still fails...
+  EXPECT_TRUE(dead_redis.GetOfflineMessages("r2").empty());  // ...but fallback is gone.
 }
 
 TEST_F(HybridStoreTest, DeliveryTrackingLifecycle) {

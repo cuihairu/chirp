@@ -1,8 +1,11 @@
 #pragma once
 
 #include <cstdint>
+#include <deque>
 #include <functional>
+#include <map>
 #include <memory>
+#include <mutex>
 #include <optional>
 #include <string>
 #include <vector>
@@ -89,7 +92,14 @@ public:
                                        int32_t limit,
                                        std::string* next_cursor);
 
-  /// @brief Get offline messages for a user
+  /// @brief Enqueue an offline message for a user (serialized MessageData).
+  /// Writes to Redis; when Redis is unavailable the message is kept in an
+  /// in-memory fallback so single-node deployments (no Redis) still refill
+  /// on login. Returns true only when the message landed in Redis.
+  bool AddOfflineMessage(const std::string& user_id,
+                         const std::string& serialized);
+
+  /// @brief Get offline messages for a user (Redis queue + in-memory fallback)
   std::vector<MessageData> GetOfflineMessages(const std::string& user_id);
 
   /// @brief Pop offline messages (retrieve and delete)
@@ -138,6 +148,12 @@ private:
 
   asio::io_context& io_;
   MessageStoreConfig config_;
+
+  // In-memory fallback for the offline queue when Redis is down. Keyed by
+  // user_id, holds serialized MessageData payloads; drained together with
+  // the Redis queue by Get/Pop/Clear.
+  std::mutex offline_fallback_mutex_;
+  std::map<std::string, std::deque<std::string>> offline_fallback_;
   std::shared_ptr<network::RedisClient> redis_;
   std::shared_ptr<MySQLConnectionPool> mysql_pool_;
   std::shared_ptr<MySQLMessageStore> mysql_store_;
