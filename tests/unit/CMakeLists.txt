@@ -184,6 +184,7 @@ add_executable(chat_managers_tests
   chat_npc_uplink_test.cc
   ${CMAKE_SOURCE_DIR}/services/chat/src/distributed_dispatch.cc
   ${CMAKE_SOURCE_DIR}/services/chat/src/distributed_runtime.cc
+  ${CMAKE_SOURCE_DIR}/services/chat/src/delivery_ack_manager.cc
   ${CMAKE_SOURCE_DIR}/services/chat/src/group_manager.cc
   ${CMAKE_SOURCE_DIR}/services/chat/src/group_handlers.cc
   ${CMAKE_SOURCE_DIR}/services/chat/src/message_handlers.cc

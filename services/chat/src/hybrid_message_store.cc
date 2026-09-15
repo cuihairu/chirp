@@ -266,6 +266,31 @@ bool HybridMessageStore::AddOfflineMessage(const std::string& user_id,
   return false;
 }
 
+bool HybridMessageStore::RemoveOfflineMessage(const std::string& user_id,
+                                              const std::string& serialized) {
+  // Late-ack cleanup: remove the offline copy the client confirmed after it
+  // had already been requeued. The Redis entry matches byte-for-byte; the
+  // fallback queue holds serialized strings, so it matches directly too.
+  std::string offline_key = OfflineKey(user_id);
+  bool removed = redis_->LRem(offline_key, 1, serialized) > 0;
+
+  std::lock_guard<std::mutex> lock(offline_fallback_mutex_);
+  auto it = offline_fallback_.find(user_id);
+  if (it != offline_fallback_.end()) {
+    for (auto elem = it->second.begin(); elem != it->second.end(); ++elem) {
+      if (*elem == serialized) {
+        it->second.erase(elem);
+        removed = true;
+        break;
+      }
+    }
+    if (it->second.empty()) {
+      offline_fallback_.erase(it);
+    }
+  }
+  return removed;
+}
+
 std::vector<MessageData> HybridMessageStore::GetOfflineMessages(const std::string& user_id) {  // GCOVR_EXCL_LINE -- unreachable exit-block line (gcc/NRVO artifact); body is covered
   std::string offline_key = OfflineKey(user_id);
   auto redis_messages = redis_->LRange(offline_key, 0, -1);

@@ -12,6 +12,7 @@
 #include <asio.hpp>
 
 #include "chat_rate_limiter.h"
+#include "delivery_ack_manager.h"
 #include "network/session_registry.h"
 #include "login_token_verifier.h"
 #include "chat_validation.h"
@@ -136,6 +137,56 @@ struct MessageStore {
     return out;
   }
 
+  // Delivery-ack requeue path: pushes the exact bytes that were tracked so a
+  // late ack can remove the copy byte-for-byte (no parse/re-serialize).
+  void AddOfflineBytes(const std::string& receiver_id, const std::string& bytes) {
+    if (receiver_id.empty()) {
+      return;
+    }
+    if (redis && redis->RPush(OfflineKey(receiver_id), bytes)) {
+      if (offline_ttl_seconds > 0) {
+        redis->Expire(OfflineKey(receiver_id), offline_ttl_seconds);
+      }
+      return;
+    }
+    chirp::chat::ChatMessage msg;
+    if (msg.ParseFromArray(bytes.data(), static_cast<int>(bytes.size()))) {
+      auto& pending = offline_messages[receiver_id];
+      pending.push_back(std::move(msg));
+      if (pending.size() > kMaxOfflineInMemory) {
+        pending.erase(pending.begin());
+      }
+    }
+  }
+
+  // Late-ack cleanup: drop the offline copy the client confirmed after it had
+  // already been requeued. The Redis entry matches byte-for-byte; the
+  // in-memory fallback matches by message_id.
+  bool RemoveOffline(const std::string& receiver_id, const std::string& bytes) {
+    if (receiver_id.empty()) {
+      return false;
+    }
+    bool removed = false;
+    if (redis) {
+      removed = redis->LRem(OfflineKey(receiver_id), 1, bytes) > 0;
+    }
+    chirp::chat::ChatMessage msg;
+    if (msg.ParseFromArray(bytes.data(), static_cast<int>(bytes.size()))) {
+      auto it = offline_messages.find(receiver_id);
+      if (it != offline_messages.end()) {
+        auto& pending = it->second;
+        for (auto mit = pending.begin(); mit != pending.end(); ++mit) {
+          if (mit->message_id() == msg.message_id()) {
+            pending.erase(mit);
+            removed = true;
+            break;
+          }
+        }
+      }
+    }
+    return removed;
+  }
+
   std::vector<chirp::chat::ChatMessage> GetHistory(chirp::chat::ChannelType type,
                                                    const std::string& channel_id,
                                                    int64_t before_timestamp,
@@ -231,7 +282,11 @@ void KickSession(const std::shared_ptr<chirp::network::Session>& session, const 
 }
 
 void HandleDisconnect(const std::shared_ptr<chirp::network::SessionRegistry>& state,
+                      chirp::chat::DeliveryAckManager* acks,
                       const std::shared_ptr<chirp::network::Session>& session) {
+  if (acks) {
+    acks->ForgetSession(session.get());
+  }
   std::string user_id;
   if (chirp::network::RemoveAuthenticatedSession(state, session, &user_id) &&
       !user_id.empty()) {
@@ -259,6 +314,9 @@ struct FeatureHandlers {
   chirp::chat::ChatRateLimiter* rate_limiter = nullptr;
   // Null or disabled() keeps the scaffold "token is user_id" login.
   const chirp::chat::LoginTokenVerifier* token_verifier = nullptr;
+  // Client delivery-ack bookkeeping; null (or a disabled manager) keeps the
+  // send-and-forget delivery for every session.
+  chirp::chat::DeliveryAckManager* acks = nullptr;
 };
 
 void HandlePacket(const std::shared_ptr<MessageStore>& store,
@@ -340,12 +398,21 @@ void HandlePacket(const std::shared_ptr<MessageStore>& store,
       if (old && old.get() != session.get()) {
         KickSession(old, "login from another device");
       }
+      if (features.acks && login_req.supports_message_ack()) {
+        features.acks->MarkCapable(session);
+      }
     }
 
     chirp::chat::runtime::SendPacket(session, chirp::gateway::LOGIN_RESP, pkt.sequence(), login_resp.SerializeAsString());
     if (!user_id.empty()) {
       auto offline = store->PopOffline(user_id);
       for (const auto& m : offline) {
+        // Refills are tracked like live deliveries: if this session dies
+        // before acking, the message returns to the offline queue instead of
+        // being consumed by a zombie connection.
+        if (features.acks && features.acks->IsCapable(session.get())) {
+          features.acks->Track(m.message_id(), user_id, m.SerializeAsString());
+        }
         chirp::chat::runtime::SendChatNotify(session, m);
       }
     }
@@ -365,7 +432,7 @@ void HandlePacket(const std::shared_ptr<MessageStore>& store,
     resp.set_code(chirp::chat::ValidateLogoutRequest(req, authenticated_user_id, authenticated_session_id));
     resp.set_server_time(chirp::chat::runtime::NowMs());
     if (resp.code() == chirp::common::OK) {
-      HandleDisconnect(state, session);
+      HandleDisconnect(state, features.acks, session);
       SendPacketAndClose(session, chirp::gateway::LOGOUT_RESP, pkt.sequence(), resp.SerializeAsString());
       break;
     }
@@ -473,9 +540,14 @@ void HandlePacket(const std::shared_ptr<MessageStore>& store,
         }
       }
       // A receiver whose connection already sent FIN would "consume" the
-      // message without ever reading it; queue offline instead.
+      // message without ever reading it; queue offline instead. Ack-capable
+      // receivers additionally hold the delivery until MESSAGE_ACK - no ack
+      // before the timeout requeues the message instead of losing it.
       if (recv && !recv->PeerHalfClosed()) {
         resp.set_code(chirp::common::OK);
+        if (features.acks && features.acks->IsCapable(recv.get())) {
+          features.acks->Track(msg.message_id(), req.receiver_id(), msg.SerializeAsString());
+        }
         chirp::chat::runtime::SendChatNotify(recv, msg);
       } else {
         resp.set_code(chirp::common::TARGET_OFFLINE);
@@ -497,6 +569,22 @@ void HandlePacket(const std::shared_ptr<MessageStore>& store,
       }
     }
     chirp::chat::runtime::SendPacket(session, chirp::gateway::SEND_MESSAGE_RESP, pkt.sequence(), resp.SerializeAsString());
+    break;
+  }
+  case chirp::gateway::MESSAGE_ACK: {
+    // The client confirms a live CHAT_MESSAGE_NOTIFY reached it; clear the
+    // pending delivery so the ack timeout never requeues it. Acks for
+    // messages nobody tracked (or that were already requeued) are handled
+    // inside the manager; unauthenticated senders are ignored.
+    chirp::chat::MessageAck ack;
+    if (ack.ParseFromArray(pkt.body().data(), static_cast<int>(pkt.body().size())) &&
+        !ack.message_id().empty() && !authenticated_user_id.empty() &&
+        (ack.user_id().empty() || ack.user_id() == authenticated_user_id)) {
+      if (features.acks && features.acks->Acknowledge(ack.message_id())) {
+        Logger::Instance().Info("message acked id=" + ack.message_id() +
+                                " user=" + authenticated_user_id);
+      }
+    }
     break;
   }
   case chirp::gateway::GET_HISTORY_REQ: {
@@ -830,6 +918,21 @@ int main(int argc, char** argv) {
   auto store = std::make_shared<MessageStore>(redis, offline_ttl_seconds);
   auto state = std::make_shared<chirp::network::SessionRegistry>();
 
+  // Client delivery-ack bookkeeping: live deliveries to ack-capable sessions
+  // stay pending until MESSAGE_ACK; the timeout hands them back to the
+  // offline queue. --ack_timeout_ms 0 disables the feature.
+  const int64_t ack_timeout_ms = chirp::chat::runtime::ParseIntArg(argc, argv, "--ack_timeout_ms", 10000);
+  chirp::chat::DeliveryAckManager::Config ack_config;
+  ack_config.timeout_ms = ack_timeout_ms;
+  auto acks = std::make_shared<chirp::chat::DeliveryAckManager>(
+      io, ack_config,
+      [&store](const std::string& receiver_id, const std::string& payload) {
+        store->AddOfflineBytes(receiver_id, payload);
+      },
+      [&store](const std::string& receiver_id, const std::string& payload) {
+        store->RemoveOffline(receiver_id, payload);
+      });
+
   chirp::chat::ChatRateLimiter::Config rate_limit_config;
   rate_limit_config.max_logins_per_minute_per_ip = login_rate_limit_per_min;
   rate_limit_config.max_sends_per_minute_per_user = send_rate_limit_per_min;
@@ -928,6 +1031,7 @@ int main(int argc, char** argv) {
                            reaction_handlers, edit_handlers, mention_handlers, push};
   features.rate_limiter = rate_limiter.get();
   features.token_verifier = &token_verifier;
+  features.acks = acks.get();
 
   // Server-plane injection: when --server_gateway_host is set, chat dials the
   // hub as an internal service and delivers forwarded injections through the
@@ -964,7 +1068,7 @@ int main(int argc, char** argv) {
           features.edits.RegisterMessage(msg.message_id(), msg.sender_id(), msg.content());
         };
     hooks.deliver_private =
-        [state](const std::string& receiver_id,
+        [state, &features](const std::string& receiver_id,
                 const chirp::chat::ChatMessage& msg) -> bool {
       std::shared_ptr<chirp::network::Session> recv;
       {
@@ -976,6 +1080,10 @@ int main(int argc, char** argv) {
       }
       if (!recv || recv->PeerHalfClosed()) {
         return false;
+      }
+      // Injected private replies are tracked like SEND_MESSAGE deliveries.
+      if (features.acks && features.acks->IsCapable(recv.get())) {
+        features.acks->Track(msg.message_id(), receiver_id, msg.SerializeAsString());
       }
       chirp::chat::runtime::SendChatNotify(recv, msg);
       return true;
@@ -1023,21 +1131,27 @@ int main(int argc, char** argv) {
       [store, state, &features](std::shared_ptr<chirp::network::Session> session, std::string&& payload) {
         HandlePacket(store, state, features, session, std::move(payload));
       },
-      [state](std::shared_ptr<chirp::network::Session> session) { HandleDisconnect(state, session); });
+      [state, &features](std::shared_ptr<chirp::network::Session> session) {
+        HandleDisconnect(state, features.acks, session);
+      });
 
   chirp::network::WebSocketServer ws_server(
       io, ws_port,
       [store, state, &features](std::shared_ptr<chirp::network::Session> session, std::string&& payload) {
         HandlePacket(store, state, features, session, std::move(payload));
       },
-      [state](std::shared_ptr<chirp::network::Session> session) { HandleDisconnect(state, session); });
+      [state, &features](std::shared_ptr<chirp::network::Session> session) {
+        HandleDisconnect(state, features.acks, session);
+      });
 
   server.Start();
   ws_server.Start();
+  acks->Start();
 
   asio::signal_set signals(io, SIGINT, SIGTERM);
   signals.async_wait([&](const std::error_code& /*ec*/, int /*sig*/) {
     Logger::Instance().Info("shutdown requested");
+    acks->Stop();
     server.Stop();
     ws_server.Stop();
     io.stop();

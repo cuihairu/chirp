@@ -12,6 +12,7 @@
 #include <asio.hpp>
 
 #include "logger.h"
+#include "delivery_ack_manager.h"
 #include "distributed_dispatch.h"
 #include "login_token_verifier.h"
 #include "network/notification_client.h"
@@ -102,6 +103,21 @@ struct DistributedMessageStore {
     redis->Expire(OfflineKey(receiver_id), offline_ttl_seconds);
   }
 
+  // Delivery-ack requeue path: pushes the exact bytes that were tracked so a
+  // late ack can remove the copy byte-for-byte.
+  void AddOfflineBytes(const std::string& receiver_id, const std::string& bytes) const {
+    AddOffline(receiver_id, bytes);
+  }
+
+  // Late-ack cleanup: drop the offline copy the client confirmed after it had
+  // already been requeued (byte-for-byte match against the queued entry).
+  bool RemoveOffline(const std::string& receiver_id, const std::string& bytes) const {
+    if (!redis || receiver_id.empty()) {
+      return false;
+    }
+    return redis->LRem(OfflineKey(receiver_id), 1, bytes) > 0;
+  }
+
   std::vector<std::string> PopOffline(const std::string& user_id) const {
     if (!redis || user_id.empty()) {
       return {};
@@ -138,6 +154,7 @@ void HandleSendMessage(const chirp::chat::SendMessageRequest& req,
                        const std::shared_ptr<DistributedMessageStore>& store,
                        const std::shared_ptr<chirp::network::MessageRouter>& router,
                        chirp::chat::PushBridge& push,
+                       chirp::chat::DeliveryAckManager* acks,
                        int64_t seq) {
   chirp::chat::ChatMessage msg;
   msg.set_message_id(chirp::chat::runtime::GenerateMessageId());
@@ -176,14 +193,19 @@ void HandleSendMessage(const chirp::chat::SendMessageRequest& req,
     // instance's user subscription (the PUBLISH receiver count says so).
     // Only a message that reached nobody goes to the offline queue, and
     // that same condition fires the notification-plane push.
+    const std::string msg_bytes = msg.SerializeAsString();
     const int64_t receivers = router->SendChatMessageCount(
-        req.receiver_id(), msg.SerializeAsString(), [&](const std::string& user_id) -> bool {
+        req.receiver_id(), msg_bytes, [&](const std::string& user_id) -> bool {
           auto recv_session = state->GetLocalSession(user_id);
           // A receiver whose connection already sent FIN would "consume" the
           // message without ever reading it; report not-delivered so the
-          // caller queues it offline.
+          // caller queues it offline. Ack-capable receivers additionally
+          // hold the delivery until MESSAGE_ACK.
           if (!recv_session || recv_session->PeerHalfClosed()) {
             return false;
+          }
+          if (acks && acks->IsCapable(recv_session.get())) {
+            acks->Track(msg.message_id(), user_id, msg_bytes);
           }
           chirp::chat::runtime::SendChatNotify(recv_session, msg);
           Logger::Instance().Info("Message delivered locally to " + user_id);
@@ -206,6 +228,7 @@ void HandleLogin(const chirp::auth::LoginRequest& req,
                  const std::shared_ptr<DistributedMessageStore>& store,
                  const std::shared_ptr<chirp::network::MessageRouter>& router,
                  const chirp::chat::LoginTokenVerifier* token_verifier,
+                 chirp::chat::DeliveryAckManager* acks,
                  int64_t seq) {
   std::string user_id;
 
@@ -236,9 +259,18 @@ void HandleLogin(const chirp::auth::LoginRequest& req,
 
     state->AddSession(user_id, session);
 
-    router->SubscribeUserChat(user_id, [session](const std::string& msg_data) {
+    if (acks && req.supports_message_ack()) {
+      acks->MarkCapable(session);
+    }
+
+    router->SubscribeUserChat(user_id, [session, state, acks, user_id](const std::string& msg_data) {
       chirp::chat::ChatMessage msg;
       if (msg.ParseFromArray(msg_data.data(), static_cast<int>(msg_data.size()))) {
+        // Cross-instance deliveries are tracked like local ones - this
+        // instance owns the receiving session, so the ack comes back here.
+        if (acks && acks->IsCapable(session.get())) {
+          acks->Track(msg.message_id(), user_id, msg_data);
+        }
         chirp::chat::runtime::SendChatNotify(session, msg);
       }
     });
@@ -261,6 +293,11 @@ void HandleLogin(const chirp::auth::LoginRequest& req,
     for (const auto& msg_data : offline_msgs) {
       chirp::chat::ChatMessage msg;
       if (msg.ParseFromArray(msg_data.data(), static_cast<int>(msg_data.size()))) {
+        // Refills are tracked like live deliveries (payload keeps the exact
+        // bytes that were queued, so a late ack can remove them cleanly).
+        if (acks && acks->IsCapable(session.get())) {
+          acks->Track(msg.message_id(), user_id, msg_data);
+        }
         chirp::chat::runtime::SendChatNotify(session, msg);
       }
     }
@@ -299,6 +336,8 @@ int main(int argc, char** argv) {
   const std::string token_secret = chirp::chat::runtime::GetArg(argc, argv, "--token_secret", "");
   const std::string notification_host = chirp::chat::runtime::GetArg(argc, argv, "--notification_host", "");
   const uint16_t notification_port = chirp::chat::runtime::ParseU16Arg(argc, argv, "--notification_port", 5006);
+  // 0 disables client delivery-ack tracking entirely (kill switch).
+  const int64_t ack_timeout_ms = chirp::chat::runtime::ParseIntArg(argc, argv, "--ack_timeout_ms", 10000);
 
   std::string instance_id = chirp::chat::runtime::GetArg(argc, argv, "--instance_id", "");
   if (instance_id.empty()) {
@@ -338,6 +377,20 @@ int main(int argc, char** argv) {
   store->redis = std::make_shared<chirp::network::RedisClient>(redis_host, redis_port);
   store->offline_ttl_seconds = offline_ttl;
 
+  // Client delivery-ack bookkeeping: live deliveries to ack-capable sessions
+  // stay pending until MESSAGE_ACK; the timeout hands them back to the
+  // offline queue (no push notification - the receiver was just online).
+  chirp::chat::DeliveryAckManager::Config ack_config;
+  ack_config.timeout_ms = ack_timeout_ms;
+  auto acks = std::make_shared<chirp::chat::DeliveryAckManager>(
+      io, ack_config,
+      [store](const std::string& receiver_id, const std::string& payload) {
+        store->AddOfflineBytes(receiver_id, payload);
+      },
+      [store](const std::string& receiver_id, const std::string& payload) {
+        store->RemoveOffline(receiver_id, payload);
+      });
+
   auto router = std::make_shared<chirp::network::MessageRouter>(io, redis_host, redis_port);
   if (!router->Start()) {
     Logger::Instance().Error("Failed to start message router");
@@ -345,31 +398,45 @@ int main(int argc, char** argv) {
   }
 
   chirp::chat::runtime::DistributedDispatchHandlers handlers;
-  handlers.on_login = [state, store, router, &token_verifier](
+  handlers.on_login = [state, store, router, &token_verifier, acks](
                           const std::shared_ptr<chirp::network::Session>& session,
                           const chirp::auth::LoginRequest& req,
                           int64_t seq) {
-    HandleLogin(req, session, state, store, router, &token_verifier, seq);
+    HandleLogin(req, session, state, store, router, &token_verifier, acks.get(), seq);
   };
-  handlers.on_send_message = [state, store, router, &push](
+  handlers.on_send_message = [state, store, router, &push, acks](
                                  const std::shared_ptr<chirp::network::Session>& session,
                                  const chirp::chat::SendMessageRequest& req,
                                  int64_t seq) {
-    HandleSendMessage(req, session, state, store, router, push, seq);
+    HandleSendMessage(req, session, state, store, router, push, acks.get(), seq);
   };
   handlers.on_get_history = [store](const std::shared_ptr<chirp::network::Session>& session,
                                     const chirp::chat::GetHistoryRequest& req,
                                     int64_t seq) {
     HandleGetHistory(req, session, store, seq);
   };
-  handlers.on_logout = [state](const std::shared_ptr<chirp::network::Session>& session,
-                               const chirp::auth::LogoutRequest&,
-                               int64_t seq) {
+  handlers.on_logout = [state, acks](const std::shared_ptr<chirp::network::Session>& session,
+                                     const chirp::auth::LogoutRequest&,
+                                     int64_t seq) {
+    acks->ForgetSession(session.get());
     state->RemoveSession(session.get());
     chirp::auth::LogoutResponse resp;
     resp.set_code(chirp::common::OK);
     resp.set_server_time(chirp::chat::runtime::NowMs());
     chirp::chat::runtime::SendPacket(session, chirp::gateway::LOGOUT_RESP, seq, resp.SerializeAsString());
+  };
+  handlers.on_message_ack = [state, acks](
+                                const std::shared_ptr<chirp::network::Session>& session,
+                                const chirp::chat::MessageAck& req,
+                                int64_t /*seq*/) {
+    const std::string user_id = state->GetUserId(session.get());
+    if (req.message_id().empty() || user_id.empty() ||
+        (!req.user_id().empty() && req.user_id() != user_id)) {
+      return;
+    }
+    if (acks->Acknowledge(req.message_id())) {
+      Logger::Instance().Info("message acked id=" + req.message_id() + " user=" + user_id);
+    }
   };
 
   auto on_packet = [handlers](const std::shared_ptr<chirp::network::Session>& session,
@@ -377,15 +444,17 @@ int main(int argc, char** argv) {
     chirp::chat::runtime::DispatchDistributedPacket(session, pkt, handlers);
   };
 
-  auto tcp_disconnect = [state](const std::shared_ptr<chirp::network::Session>& session) {
+  auto tcp_disconnect = [state, acks](const std::shared_ptr<chirp::network::Session>& session) {
     const std::string user_id = state->GetUserId(session.get());
     if (!user_id.empty()) {
       Logger::Instance().Info("User disconnected: " + user_id);
     }
+    acks->ForgetSession(session.get());
     state->RemoveSession(session.get());
   };
 
-  auto ws_disconnect = [state](const std::shared_ptr<chirp::network::Session>& session) {
+  auto ws_disconnect = [state, acks](const std::shared_ptr<chirp::network::Session>& session) {
+    acks->ForgetSession(session.get());
     state->RemoveSession(session.get());
   };
 
@@ -403,12 +472,14 @@ int main(int argc, char** argv) {
 
   server->Start();
   ws_server->Start();
+  acks->Start();
 
   Logger::Instance().Info(
       "Chat service started, listening on TCP:" + std::to_string(port) + " WS:" + std::to_string(ws_port));
 
   chirp::chat::runtime::InstallSignalStop(io, [&]() {
     Logger::Instance().Info("Shutting down chat service...");
+    acks->Stop();
     server->Stop();
     ws_server->Stop();
     router->Stop();

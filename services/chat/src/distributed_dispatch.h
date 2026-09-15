@@ -25,6 +25,9 @@ using GetHistoryV2Dispatch = std::function<void(const std::shared_ptr<network::S
 using LogoutDispatch = std::function<void(const std::shared_ptr<network::Session>& session,
                                           const auth::LogoutRequest& req,
                                           int64_t seq)>;
+using MessageAckDispatch = std::function<void(const std::shared_ptr<network::Session>& session,
+                                              const chat::MessageAck& req,
+                                              int64_t seq)>;
 
 struct DistributedDispatchHandlers {
   LoginDispatch on_login;
@@ -32,6 +35,8 @@ struct DistributedDispatchHandlers {
   GetHistoryDispatch on_get_history;
   GetHistoryV2Dispatch on_get_history_v2;
   LogoutDispatch on_logout;
+  // Client confirms it received a CHAT_MESSAGE_NOTIFY (delivery tracking).
+  MessageAckDispatch on_message_ack;
 };
 
 void DispatchDistributedPacket(const std::shared_ptr<network::Session>& session,

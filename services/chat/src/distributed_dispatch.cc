@@ -46,6 +46,14 @@ void DispatchDistributedPacket(const std::shared_ptr<network::Session>& session,
       }
       break;
     }
+    case gateway::MESSAGE_ACK: {
+      chat::MessageAck req;
+      if (handlers.on_message_ack &&
+          req.ParseFromArray(pkt.body().data(), static_cast<int>(pkt.body().size()))) {
+        handlers.on_message_ack(session, req, pkt.sequence());
+      }
+      break;
+    }
     case gateway::HEARTBEAT_PING: {
       gateway::HeartbeatPong pong;
       pong.set_timestamp(NowMs());

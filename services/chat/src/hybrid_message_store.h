@@ -99,6 +99,12 @@ public:
   bool AddOfflineMessage(const std::string& user_id,
                          const std::string& serialized);
 
+  /// @brief Removes one offline copy by its exact serialized bytes (late-ack
+  /// cleanup after a delivery timed out and was requeued). Returns true when
+  /// a copy was found and removed.
+  bool RemoveOfflineMessage(const std::string& user_id,
+                            const std::string& serialized);
+
   /// @brief Get offline messages for a user (Redis queue + in-memory fallback)
   std::vector<MessageData> GetOfflineMessages(const std::string& user_id);
 
