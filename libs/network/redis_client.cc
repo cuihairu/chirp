@@ -94,6 +94,11 @@ bool RedisClient::RPush(const std::string& key, const std::string& value) {
   return r && r->type == RedisResp::Type::kInteger;
 }
 
+int64_t RedisClient::LRem(const std::string& key, int64_t count, const std::string& value) {
+  auto r = SendCmd(host_, port_, {"LREM", key, std::to_string(count), value});
+  return (r && r->type == RedisResp::Type::kInteger) ? r->integer : -1;
+}
+
 bool RedisClient::Expire(const std::string& key, int ttl_seconds) {
   auto r = SendCmd(host_, port_, {"EXPIRE", key, std::to_string(ttl_seconds)});
   return r && r->type == RedisResp::Type::kInteger && r->integer > 0;

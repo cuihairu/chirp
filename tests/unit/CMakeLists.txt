@@ -646,6 +646,27 @@ chirp_fake_deps_include(chat_mysql_tests)
 
 add_test(NAME chat_mysql_tests COMMAND chat_mysql_tests)
 
+# Client delivery-ack manager: pending tracking, timeout requeue, late-ack
+# cleanup and the ack-capable session lifecycle.
+add_executable(chat_delivery_ack_tests
+  chat_delivery_ack_test.cc
+  ${CMAKE_SOURCE_DIR}/services/chat/src/delivery_ack_manager.cc
+)
+
+chirp_unit_test_common_links(chat_delivery_ack_tests)
+target_link_libraries(chat_delivery_ack_tests PRIVATE chirp_network chirp_common chirp_protos)
+
+target_include_directories(chat_delivery_ack_tests
+  PRIVATE
+  ${CMAKE_SOURCE_DIR}/services/chat/src
+  ${CMAKE_SOURCE_DIR}/libs
+  ${CMAKE_SOURCE_DIR}/libs/common
+  ${CMAKE_SOURCE_DIR}/libs/common/include
+  ${CMAKE_SOURCE_DIR}/libs/network
+)
+
+add_test(NAME chat_delivery_ack_tests COMMAND chat_delivery_ack_tests)
+
 # Chat direct-entry rate limiting: login per-IP / send per-user fixed windows
 # against the real RedisClient through the loopback fake server.
 add_executable(chat_rate_limiter_tests

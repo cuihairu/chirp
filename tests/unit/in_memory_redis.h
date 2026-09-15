@@ -76,6 +76,26 @@ class InMemoryRedis {
       }
       return Array(items);
     }
+    if (cmd == "LREM") {
+      // Only the count=1 (head-to-tail) form is exercised by production code.
+      auto it = lists_.find(args[1]);
+      if (it == lists_.end()) {
+        return Int(0);
+      }
+      int64_t removed = 0;
+      const std::string& value = args[3];
+      for (auto elem = it->second.begin(); elem != it->second.end(); ++elem) {
+        if (*elem == value) {
+          it->second.erase(elem);
+          ++removed;
+          break;
+        }
+      }
+      if (it->second.empty()) {
+        lists_.erase(it);
+      }
+      return Int(removed);
+    }
     if (cmd == "KEYS") {
       std::vector<std::string> keys;
       for (const auto& [k, v] : kv_) {

@@ -42,6 +42,7 @@ if(MYSQL_FOUND)
     add_executable(chirp_chat
         src/distributed_dispatch.cc
         src/distributed_runtime.cc
+        src/delivery_ack_manager.cc
         src/main_enhanced.cc
         src/runtime_utils.cc
         src/group_manager.cc
@@ -91,6 +92,7 @@ endif()
 add_executable(chirp_chat_distributed
     src/distributed_dispatch.cc
     src/distributed_runtime.cc
+    src/delivery_ack_manager.cc
     src/main_distributed.cc
     src/runtime_utils.cc
     src/group_manager.cc

@@ -43,6 +43,11 @@ public:
   bool RPush(const std::string& key, const std::string& value);
   std::vector<std::string> LRange(const std::string& key, int64_t start, int64_t stop);
 
+  // Removes count occurrences of value from the list stored at key (count=1
+  // scans head to tail). Returns how many elements were removed, or -1 when
+  // the command failed (no connection / bad reply).
+  virtual int64_t LRem(const std::string& key, int64_t count, const std::string& value);
+
   // Expiration commands
   bool Expire(const std::string& key, int ttl_seconds);
 
