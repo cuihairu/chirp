@@ -155,6 +155,10 @@ int main(int argc, char** argv) {
         continue;
       }
       if (pkt.msg_id() == chirp::gateway::LOGIN_RESP) {
+        chirp::auth::LoginResponse resp;
+        if (resp.ParseFromArray(pkt.body().data(), static_cast<int>(pkt.body().size()))) {
+          std::cout << "login_resp code=" << resp.code() << " user=" << resp.user_id() << "\n";
+        }
         break;
       }
       print_notify(pkt);

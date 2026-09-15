@@ -69,7 +69,14 @@ struct DistributedChatState {
     std::lock_guard<std::mutex> lock(mu);
     auto it = session_to_user.find(session);
     if (it != session_to_user.end()) {
-      local_sessions.erase(it->second);
+      // Only clear the user slot while it still points at THIS session: a
+      // newer login for the same user may already own it, and a stale
+      // disconnect (e.g. the send client's late FIN) must not unregister
+      // the current session.
+      auto sit = local_sessions.find(it->second);
+      if (sit != local_sessions.end() && sit->second.lock().get() == session) {
+        local_sessions.erase(sit);
+      }
       session_to_user.erase(it);
     }
   }

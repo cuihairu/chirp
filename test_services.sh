@@ -302,10 +302,19 @@ elif [[ "${1:-}" == "--smoke-npc" ]]; then
 
   wait_port "${CHAT_PORT}" chirp_chat "${CHAT_LOG}"
 
-  # 能力探测:服务器平面集成(server_gateway_peer/inject_consumer)只在
-  # basic 与 distributed chat 构建里编译,MySQL-enhanced 构建尚未接入
-  # (见 TODO「修复 chat 增强构建功能缺失」)。chat 连上 hub 后会在 hub
-  # 日志里完成服务认证;等不到即说明该构建无法跑 NPC 回环,直接跳过。
+  # 失败时把三个服务的日志尾部倒出来，否则断言挂掉时无任何现场可查。
+  dump_npc_logs() {
+    echo "---- chat log tail (${CHAT_LOG}) ----"
+    tail -n 40 "${CHAT_LOG}" 2>/dev/null || true
+    echo "---- hub log tail (${HUB_LOG}) ----"
+    tail -n 30 "${HUB_LOG}" 2>/dev/null || true
+    echo "---- npc_dialog log tail (${NPC_LOG}) ----"
+    tail -n 20 "${NPC_LOG}" 2>/dev/null || true
+  }
+
+  # 能力探测:chat 连上 hub 后会在 hub 日志里完成服务认证
+  # (basic/distributed/enhanced 构建均含服务器平面集成);等不到即说明
+  # 该构建无法跑 NPC 回环,直接跳过。
   NPC_HUB_BOUND=1
   for _ in {1..100}; do
     if grep -q "service authenticated: chat" "${HUB_LOG}" 2>/dev/null; then
@@ -328,6 +337,7 @@ elif [[ "${1:-}" == "--smoke-npc" ]]; then
   echo "${NPC_SEND_OUTPUT}"
   if [[ "${NPC_SEND_OUTPUT}" != code=0* ]]; then
     echo "错误: NPC 私聊应返回 code=0（事件已发布，绕过玩家投递），实际: ${NPC_SEND_OUTPUT}"
+    dump_npc_logs
     exit 1
   fi
 
@@ -339,6 +349,7 @@ elif [[ "${1:-}" == "--smoke-npc" ]]; then
   cat "${NPC_LISTEN_LOG}" || true
   if ! grep -q "notify ts=.*npc:blacksmith_01 -> user_2" "${NPC_LISTEN_LOG}"; then
     echo "错误: 未在 user_2 收到 NPC 回复"
+    dump_npc_logs
     exit 1
   fi
 
@@ -352,6 +363,7 @@ elif [[ "${1:-}" == "--smoke-npc" ]]; then
   echo "${NPC_OFFLINE_SEND_OUTPUT}"
   if [[ "${NPC_OFFLINE_SEND_OUTPUT}" != code=0* ]]; then
     echo "错误: NPC 私聊（离线玩家）应返回 code=0，实际: ${NPC_OFFLINE_SEND_OUTPUT}"
+    dump_npc_logs
     exit 1
   fi
 
@@ -361,6 +373,7 @@ elif [[ "${1:-}" == "--smoke-npc" ]]; then
   cat "${NPC_OFFLINE_LISTEN_LOG}" || true
   if ! grep -q "notify ts=.*npc:blacksmith_01 -> user_3" "${NPC_OFFLINE_LISTEN_LOG}"; then
     echo "错误: NPC 回复未在 user_3 登录后补投递"
+    dump_npc_logs
     exit 1
   fi
   fi

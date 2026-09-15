@@ -44,7 +44,14 @@ struct DistributedChatState {
     if (it == session_to_user.end()) {
       return;
     }
-    local_sessions.erase(it->second);
+    // Only clear the user slot while it still points at THIS session: a
+    // newer login for the same user may already own it, and a stale
+    // disconnect (e.g. the send client's late FIN) must not unregister
+    // the current session.
+    const auto sit = local_sessions.find(it->second);
+    if (sit != local_sessions.end() && sit->second.lock().get() == session) {
+      local_sessions.erase(sit);
+    }
     session_to_user.erase(it);
   }
 

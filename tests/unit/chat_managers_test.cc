@@ -1405,6 +1405,24 @@ TEST_F(DistributedInternalsTest, ChatStateSessionLifecycle) {
   EXPECT_TRUE(state_->IsUserLocal("bob"));
 }
 
+TEST_F(DistributedInternalsTest, StaleDisconnectKeepsNewerSession) {
+  auto old_session = std::make_shared<MockSession>();
+  auto new_session = std::make_shared<MockSession>();
+
+  // The first connection registers, a re-login takes over the user slot,
+  // and only THEN the old connection's disconnect arrives (e.g. the send
+  // client's late FIN). The stale disconnect must not unregister the
+  // session that now owns the user.
+  state_->AddSession("carol", old_session);
+  state_->AddSession("carol", new_session);
+  state_->RemoveSession(old_session.get());
+
+  EXPECT_TRUE(state_->IsUserLocal("carol"));
+  EXPECT_EQ(state_->GetLocalSession("carol"), new_session);
+  EXPECT_EQ(state_->GetUserId(old_session.get()), "");
+  EXPECT_EQ(state_->GetUserId(new_session.get()), "carol");
+}
+
 TEST_F(DistributedInternalsTest, MessageStoreKeyHelpers) {
   EXPECT_EQ(store_->OfflineKey("u1"), "chirp:chat:offline:u1");
   EXPECT_EQ(store_->HistoryKey("c1"), "chirp:chat:history:c1");
@@ -1600,18 +1618,19 @@ TEST_F(DistributedInternalsTest, HandleLoginDeliversOfflineMessages) {
   req.set_token("alice");
   HandleLogin(req, session, state_, store_, router, &verifier_, 1);
 
-  // Offline CHAT_MESSAGE_NOTIFY is delivered first, then LOGIN_RESP.
+  // LOGIN_RESP goes out first (clients read exactly one frame as "the login
+  // response"), then the offline refill notifys.
   ASSERT_EQ(session->sent.size(), 2u);
+  Packet resp_pkt;
+  ASSERT_TRUE(DecodeFramed(session->sent[0], &resp_pkt));
+  EXPECT_EQ(resp_pkt.msg_id(), chirp::gateway::LOGIN_RESP);
+
   Packet notify;
-  ASSERT_TRUE(DecodeFramed(session->sent[0], &notify));
+  ASSERT_TRUE(DecodeFramed(session->sent[1], &notify));
   EXPECT_EQ(notify.msg_id(), chirp::gateway::CHAT_MESSAGE_NOTIFY);
   chirp::chat::ChatMessage got;
   ASSERT_TRUE(got.ParseFromString(notify.body()));
   EXPECT_EQ(got.content(), "offline hello");
-
-  Packet resp_pkt;
-  ASSERT_TRUE(DecodeFramed(session->sent[1], &resp_pkt));
-  EXPECT_EQ(resp_pkt.msg_id(), chirp::gateway::LOGIN_RESP);
 }
 
 TEST_F(DistributedInternalsTest, HandleSendMessageOfflineReceiverStored) {
