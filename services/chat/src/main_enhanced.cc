@@ -265,8 +265,17 @@ void HandleLogin(const chirp::auth::LoginRequest& req,
     });
 
     Logger::Instance().Info("User logged in: " + user_id);
+  } else {
+    resp.set_code(chirp::common::INVALID_PARAM);
+  }
+  resp.set_server_time(chirp::chat::runtime::NowMs());
 
-    // Deliver offline messages
+  chirp::chat::runtime::SendPacket(session, chirp::gateway::LOGIN_RESP, seq, resp.SerializeAsString());
+
+  // Deliver offline messages only after the LOGIN_RESP (same order as the
+  // basic build): a refill notify sent first would be swallowed by clients
+  // that read exactly one frame as "the login response".
+  if (!user_id.empty()) {
     auto offline_msgs = store->PopOfflineMessages(user_id);
     Logger::Instance().Info("Delivering " + std::to_string(offline_msgs.size()) +
                            " offline messages to " + user_id);
@@ -282,12 +291,7 @@ void HandleLogin(const chirp::auth::LoginRequest& req,
       msg.set_timestamp(msg_data.timestamp);
       chirp::chat::runtime::SendChatNotify(session, msg);
     }
-  } else {
-    resp.set_code(chirp::common::INVALID_PARAM);
   }
-  resp.set_server_time(chirp::chat::runtime::NowMs());
-
-  chirp::chat::runtime::SendPacket(session, chirp::gateway::LOGIN_RESP, seq, resp.SerializeAsString());
 }
 
 /// @brief Handle get history with pagination

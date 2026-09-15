@@ -333,7 +333,7 @@ elif [[ "${1:-}" == "--smoke-npc" ]]; then
 
   echo ""
   echo "[npc] login user_2 (expect the NPC reply)"
-  ./build/tools/benchmark/chirp_chat_listen_client --host 127.0.0.1 --port "${CHAT_PORT}" --user user_2 --max 1 --timeout-ms 8000 > "${NPC_LISTEN_LOG}" 2>&1 &
+  timeout 30 ./build/tools/benchmark/chirp_chat_listen_client --host 127.0.0.1 --port "${CHAT_PORT}" --user user_2 --max 1 --timeout-ms 8000 > "${NPC_LISTEN_LOG}" 2>&1 &
   NPC_LISTEN_PID=$!
   wait "${NPC_LISTEN_PID}" || true
   cat "${NPC_LISTEN_LOG}" || true
@@ -355,7 +355,7 @@ elif [[ "${1:-}" == "--smoke-npc" ]]; then
     exit 1
   fi
 
-  ./build/tools/benchmark/chirp_chat_listen_client --host 127.0.0.1 --port "${CHAT_PORT}" --user user_3 --max 1 --timeout-ms 8000 > "${NPC_OFFLINE_LISTEN_LOG}" 2>&1 &
+  timeout 30 ./build/tools/benchmark/chirp_chat_listen_client --host 127.0.0.1 --port "${CHAT_PORT}" --user user_3 --max 1 --timeout-ms 8000 > "${NPC_OFFLINE_LISTEN_LOG}" 2>&1 &
   OFFLINE_NPC_LISTEN_PID=$!
   wait "${OFFLINE_NPC_LISTEN_PID}" || true
   cat "${NPC_OFFLINE_LISTEN_LOG}" || true
@@ -493,7 +493,7 @@ else
 
   echo ""
   echo "[tcp] listen user_2 (1 msg)"
-  ./build/tools/benchmark/chirp_chat_listen_client --host 127.0.0.1 --port "${CHAT_PORT}" --user user_2 --max 1 --timeout-ms 8000 > "${LISTEN_LOG}" 2>&1 &
+  timeout 30 ./build/tools/benchmark/chirp_chat_listen_client --host 127.0.0.1 --port "${CHAT_PORT}" --user user_2 --max 1 --timeout-ms 8000 > "${LISTEN_LOG}" 2>&1 &
   LISTEN_PID=$!
 
   sleep 0.2
@@ -527,7 +527,7 @@ else
 
   echo ""
   echo "[tcp] login offline user_3 (expect queued notify)"
-  ./build/tools/benchmark/chirp_chat_listen_client --host 127.0.0.1 --port "${CHAT_PORT}" --user user_3 --max 1 --timeout-ms 8000 > "${OFFLINE_LISTEN_LOG}" 2>&1 &
+  timeout 30 ./build/tools/benchmark/chirp_chat_listen_client --host 127.0.0.1 --port "${CHAT_PORT}" --user user_3 --max 1 --timeout-ms 8000 > "${OFFLINE_LISTEN_LOG}" 2>&1 &
   OFFLINE_LISTEN_PID=$!
 
   wait "${OFFLINE_LISTEN_PID}" || true
