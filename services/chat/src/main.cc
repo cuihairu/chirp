@@ -232,7 +232,11 @@ void KickSession(const std::shared_ptr<chirp::network::Session>& session, const 
 
 void HandleDisconnect(const std::shared_ptr<chirp::network::SessionRegistry>& state,
                       const std::shared_ptr<chirp::network::Session>& session) {
-  chirp::network::RemoveAuthenticatedSession(state, session);
+  std::string user_id;
+  if (chirp::network::RemoveAuthenticatedSession(state, session, &user_id) &&
+      !user_id.empty()) {
+    chirp::common::Logger::Instance().Info("User disconnected: " + user_id);
+  }
 }
 
 // Aggregate of the per-feature request handlers wired into the dispatch.

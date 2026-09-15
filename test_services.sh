@@ -312,6 +312,19 @@ elif [[ "${1:-}" == "--smoke-npc" ]]; then
     tail -n 20 "${NPC_LOG}" 2>/dev/null || true
   }
 
+  # 等发送方的断连真正被 chat 处理完：NPC 回复可能快过 FIN 的处理，
+  # 若在处理前到达，会被"实时投递"给发送端自己的连接（发送端不读帧），
+  # 消息就此丢失。chat 日志出现 User disconnected 后，监听端才登录。
+  # 最多等 10s，超时按尽力而为继续（不让 smoke 卡死）。
+  wait_disconnect_logged() {
+    local user="$1" i
+    for i in $(seq 1 100); do
+      grep -q "User disconnected: ${user}" "${CHAT_LOG}" 2>/dev/null && return 0
+      sleep 0.1
+    done
+    echo "提示: 10s 内未在 chat 日志看到 User disconnected: ${user}，继续执行"
+  }
+
   # 能力探测:chat 连上 hub 后会在 hub 日志里完成服务认证
   # (basic/distributed/enhanced 构建均含服务器平面集成);等不到即说明
   # 该构建无法跑 NPC 回环,直接跳过。
@@ -343,6 +356,7 @@ elif [[ "${1:-}" == "--smoke-npc" ]]; then
 
   echo ""
   echo "[npc] login user_2 (expect the NPC reply)"
+  wait_disconnect_logged user_2
   timeout 30 ./build/tools/benchmark/chirp_chat_listen_client --host 127.0.0.1 --port "${CHAT_PORT}" --user user_2 --max 1 --timeout-ms 8000 > "${NPC_LISTEN_LOG}" 2>&1 &
   NPC_LISTEN_PID=$!
   wait "${NPC_LISTEN_PID}" || true
@@ -367,6 +381,7 @@ elif [[ "${1:-}" == "--smoke-npc" ]]; then
     exit 1
   fi
 
+  wait_disconnect_logged user_3
   timeout 30 ./build/tools/benchmark/chirp_chat_listen_client --host 127.0.0.1 --port "${CHAT_PORT}" --user user_3 --max 1 --timeout-ms 8000 > "${NPC_OFFLINE_LISTEN_LOG}" 2>&1 &
   OFFLINE_NPC_LISTEN_PID=$!
   wait "${OFFLINE_NPC_LISTEN_PID}" || true
