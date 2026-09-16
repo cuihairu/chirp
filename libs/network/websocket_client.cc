@@ -1,7 +1,7 @@
 #include "websocket_client.h"
 
 #include "common/logger.h"
-#include "websocket_utils.h"
+#include "websocket_util.h"
 
 using chirp::common::Logger;
 

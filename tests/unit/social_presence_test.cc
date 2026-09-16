@@ -1,9 +1,9 @@
-// Unit tests for the social presence manager (PresenceManagerV2). The manager
+// Unit tests for the social presence manager (PresenceManager). The manager
 // is pure in-memory, so every branch is reachable directly; only the 24-hour
 // offline-purge branch of CleanupOfflineUsers needs a time machine and is
 // exercised as far as the public API allows.
 
-#include "presence_manager_v2.h"
+#include "presence_manager.h"
 
 #include <gtest/gtest.h>
 
@@ -16,7 +16,7 @@ namespace {
 
 using chirp::social::PresenceConfig;
 using chirp::social::PresenceData;
-using chirp::social::PresenceManagerV2;
+using chirp::social::PresenceManager;
 using chirp::social::PresenceStatus;
 using chirp::social::UserActivity;
 
@@ -26,13 +26,13 @@ struct PresenceChange {
   PresenceStatus new_status;
 };
 
-class PresenceManagerV2Test : public ::testing::Test {
+class PresenceManagerTest : public ::testing::Test {
  protected:
   void SetUp() override {
-    manager_ = std::make_unique<PresenceManagerV2>(PresenceConfig{});
+    manager_ = std::make_unique<PresenceManager>(PresenceConfig{});
   }
 
-  std::unique_ptr<PresenceManagerV2> manager_;
+  std::unique_ptr<PresenceManager> manager_;
 };
 
 TEST(PresenceStatusConversion, RoundTripsEveryKnownStatus) {
@@ -47,19 +47,19 @@ TEST(PresenceStatusConversion, RoundTripsEveryKnownStatus) {
       {PresenceStatus::IN_CALL, "in_call"},
   };
   for (const auto& [status, name] : cases) {
-    EXPECT_EQ(PresenceManagerV2::StatusToString(status), name);
-    EXPECT_EQ(PresenceManagerV2::StringToStatus(name), status);
+    EXPECT_EQ(PresenceManager::StatusToString(status), name);
+    EXPECT_EQ(PresenceManager::StringToStatus(name), status);
   }
 }
 
 TEST(PresenceStatusConversion, UnknownValuesFallBackToOffline) {
-  EXPECT_EQ(PresenceManagerV2::StatusToString(static_cast<PresenceStatus>(99)), "offline");
-  EXPECT_EQ(PresenceManagerV2::StatusToString(static_cast<PresenceStatus>(-1)), "offline");
-  EXPECT_EQ(PresenceManagerV2::StringToStatus("bogus"), PresenceStatus::OFFLINE);
-  EXPECT_EQ(PresenceManagerV2::StringToStatus("ONLINE"), PresenceStatus::ONLINE);
+  EXPECT_EQ(PresenceManager::StatusToString(static_cast<PresenceStatus>(99)), "offline");
+  EXPECT_EQ(PresenceManager::StatusToString(static_cast<PresenceStatus>(-1)), "offline");
+  EXPECT_EQ(PresenceManager::StringToStatus("bogus"), PresenceStatus::OFFLINE);
+  EXPECT_EQ(PresenceManager::StringToStatus("ONLINE"), PresenceStatus::ONLINE);
 }
 
-TEST_F(PresenceManagerV2Test, UpdatePresenceCreatesOnlineUserAndNotifies) {
+TEST_F(PresenceManagerTest, UpdatePresenceCreatesOnlineUserAndNotifies) {
   std::vector<PresenceChange> changes;
   manager_->SetPresenceChangeCallback(
       [&](const std::string& uid, PresenceStatus old_s, PresenceStatus new_s) {
@@ -84,7 +84,7 @@ TEST_F(PresenceManagerV2Test, UpdatePresenceCreatesOnlineUserAndNotifies) {
   EXPECT_EQ(changes[0].new_status, PresenceStatus::ONLINE);
 }
 
-TEST_F(PresenceManagerV2Test, UpdatePresenceWithoutDeviceKeepsMapsSmall) {
+TEST_F(PresenceManagerTest, UpdatePresenceWithoutDeviceKeepsMapsSmall) {
   EXPECT_TRUE(manager_->UpdatePresence("bob", PresenceStatus::ONLINE));
   PresenceData data;
   ASSERT_TRUE(manager_->GetPresence("bob", &data));
@@ -93,7 +93,7 @@ TEST_F(PresenceManagerV2Test, UpdatePresenceWithoutDeviceKeepsMapsSmall) {
   EXPECT_TRUE(data.device_status.empty());
 }
 
-TEST_F(PresenceManagerV2Test, OverallStatusPrefersHighestPriorityDevice) {
+TEST_F(PresenceManagerTest, OverallStatusPrefersHighestPriorityDevice) {
   // Two devices: one ONLINE, one DO_NOT_DISTURB -> DND wins.
   manager_->UpdatePresence("carol", PresenceStatus::ONLINE, "phone");
   manager_->UpdatePresence("carol", PresenceStatus::DO_NOT_DISTURB, "desktop");
@@ -139,7 +139,7 @@ TEST_F(PresenceManagerV2Test, OverallStatusPrefersHighestPriorityDevice) {
   EXPECT_EQ(data.status, PresenceStatus::OFFLINE);
 }
 
-TEST_F(PresenceManagerV2Test, RecordActivityRevivesIdleUsers) {
+TEST_F(PresenceManagerTest, RecordActivityRevivesIdleUsers) {
   manager_->UpdatePresence("john", PresenceStatus::IDLE, "phone");
 
   EXPECT_TRUE(manager_->RecordActivity("john", UserActivity::TYPING, "phone"));
@@ -161,7 +161,7 @@ TEST_F(PresenceManagerV2Test, RecordActivityRevivesIdleUsers) {
   EXPECT_EQ(data.device_id, "tablet");
 }
 
-TEST_F(PresenceManagerV2Test, RecordActivityOnOfflineUserGoesOnline) {
+TEST_F(PresenceManagerTest, RecordActivityOnOfflineUserGoesOnline) {
   EXPECT_TRUE(manager_->RecordActivity("luke", UserActivity::MOVING_MOUSE));
   PresenceData data;
   ASSERT_TRUE(manager_->GetPresence("luke", &data));
@@ -169,7 +169,7 @@ TEST_F(PresenceManagerV2Test, RecordActivityOnOfflineUserGoesOnline) {
   EXPECT_GT(data.online_since, 0);
 }
 
-TEST_F(PresenceManagerV2Test, CustomStatusSetClearAndMissing) {
+TEST_F(PresenceManagerTest, CustomStatusSetClearAndMissing) {
   EXPECT_TRUE(manager_->SetCustomStatus("mary", "Shipping", ":ship:", 60000));
   PresenceData data;
   ASSERT_TRUE(manager_->GetPresence("mary", &data));
@@ -190,7 +190,7 @@ TEST_F(PresenceManagerV2Test, CustomStatusSetClearAndMissing) {
   EXPECT_FALSE(manager_->ClearCustomStatus("nobody"));
 }
 
-TEST_F(PresenceManagerV2Test, SetActivityMapsKnownActivityTypes) {
+TEST_F(PresenceManagerTest, SetActivityMapsKnownActivityTypes) {
   // Known activity types map to their status; unknown ones leave it alone.
   manager_->SetActivity("nick", "game", "chess");
   PresenceData data;
@@ -218,7 +218,7 @@ TEST_F(PresenceManagerV2Test, SetActivityMapsKnownActivityTypes) {
   EXPECT_EQ(data.status, PresenceStatus::OFFLINE);
 }
 
-TEST_F(PresenceManagerV2Test, GetPresenceRejectsNullAndUnknownUsers) {
+TEST_F(PresenceManagerTest, GetPresenceRejectsNullAndUnknownUsers) {
   EXPECT_FALSE(manager_->GetPresence("alice", nullptr));
 
   PresenceData data;
@@ -229,7 +229,7 @@ TEST_F(PresenceManagerV2Test, GetPresenceRejectsNullAndUnknownUsers) {
   EXPECT_EQ(data.last_seen, 0);
 }
 
-TEST_F(PresenceManagerV2Test, GetPresenceBatchMixesKnownAndUnknown) {
+TEST_F(PresenceManagerTest, GetPresenceBatchMixesKnownAndUnknown) {
   manager_->UpdatePresence("alice", PresenceStatus::ONLINE);
   auto batch = manager_->GetPresenceBatch({"alice", "ghost"});
   ASSERT_EQ(batch.size(), 2u);
@@ -237,10 +237,10 @@ TEST_F(PresenceManagerV2Test, GetPresenceBatchMixesKnownAndUnknown) {
   EXPECT_EQ(batch["ghost"].status, PresenceStatus::OFFLINE);
 }
 
-TEST_F(PresenceManagerV2Test, GetOnlineFriendsFiltersByStatusAndRecency) {
+TEST_F(PresenceManagerTest, GetOnlineFriendsFiltersByStatusAndRecency) {
   PresenceConfig config;
   config.offline_timeout_ms = 600000;
-  chirp::social::PresenceManagerV2 mgr(config);
+  chirp::social::PresenceManager mgr(config);
 
   mgr.UpdatePresence("alice", PresenceStatus::ONLINE);
   mgr.UpdatePresence("bob", PresenceStatus::IN_GAME);
@@ -255,7 +255,7 @@ TEST_F(PresenceManagerV2Test, GetOnlineFriendsFiltersByStatusAndRecency) {
   EXPECT_EQ(friends, (std::vector<std::string>{"alice", "bob", "idle"}));
 }
 
-TEST_F(PresenceManagerV2Test, SerializePresenceEmitsFields) {
+TEST_F(PresenceManagerTest, SerializePresenceEmitsFields) {
   PresenceData data;
   data.user_id = "alice";
   data.status = PresenceStatus::ONLINE;
@@ -279,7 +279,7 @@ TEST_F(PresenceManagerV2Test, SerializePresenceEmitsFields) {
   EXPECT_FALSE(manager_->DeserializePresence(json, &out));
 }
 
-TEST_F(PresenceManagerV2Test, SessionRegisterUnregisterAndCounts) {
+TEST_F(PresenceManagerTest, SessionRegisterUnregisterAndCounts) {
   EXPECT_TRUE(manager_->RegisterSession("oscar", "s1", "phone"));
   EXPECT_TRUE(manager_->RegisterSession("oscar", "s2", "pc"));
 
@@ -302,13 +302,13 @@ TEST_F(PresenceManagerV2Test, SessionRegisterUnregisterAndCounts) {
   EXPECT_EQ(data.status, PresenceStatus::OFFLINE);
 }
 
-TEST_F(PresenceManagerV2Test, CleanupIdleUsersMarksIdleThenOffline) {
+TEST_F(PresenceManagerTest, CleanupIdleUsersMarksIdleThenOffline) {
   // Negative timeouts put the cutoffs reliably past last_seen (a zero
   // timeout can tie within the same millisecond).
   PresenceConfig config;
   config.idle_timeout_ms = -1;
   config.offline_timeout_ms = -1;
-  chirp::social::PresenceManagerV2 fast_offline(config);
+  chirp::social::PresenceManager fast_offline(config);
   fast_offline.UpdatePresence("pete", PresenceStatus::ONLINE);
   fast_offline.CleanupIdleUsers();
   PresenceData data;
@@ -319,19 +319,19 @@ TEST_F(PresenceManagerV2Test, CleanupIdleUsersMarksIdleThenOffline) {
   PresenceConfig idle_only;
   idle_only.idle_timeout_ms = -1;
   idle_only.offline_timeout_ms = 100000000;
-  chirp::social::PresenceManagerV2 idle(idle_only);
+  chirp::social::PresenceManager idle(idle_only);
   idle.UpdatePresence("quinn", PresenceStatus::ONLINE);
   idle.CleanupIdleUsers();
   ASSERT_TRUE(idle.GetPresence("quinn", &data));
   EXPECT_EQ(data.status, PresenceStatus::IDLE);
 }
 
-TEST_F(PresenceManagerV2Test, CleanupIdleUsersNotifiesOnChange) {
+TEST_F(PresenceManagerTest, CleanupIdleUsersNotifiesOnChange) {
   std::atomic<int> notifications{0};
   PresenceConfig config;
   config.idle_timeout_ms = -1;
   config.offline_timeout_ms = -1;
-  chirp::social::PresenceManagerV2 mgr(config);
+  chirp::social::PresenceManager mgr(config);
   mgr.SetPresenceChangeCallback(
       [&](const std::string&, PresenceStatus, PresenceStatus) { ++notifications; });
 
@@ -341,7 +341,7 @@ TEST_F(PresenceManagerV2Test, CleanupIdleUsersNotifiesOnChange) {
   EXPECT_EQ(notifications.load(), 2);
 }
 
-TEST_F(PresenceManagerV2Test, CleanupOfflineUsersKeepsRecentUsers) {
+TEST_F(PresenceManagerTest, CleanupOfflineUsersKeepsRecentUsers) {
   manager_->UpdatePresence("sam", PresenceStatus::OFFLINE);
   manager_->UpdatePresence("tina", PresenceStatus::ONLINE);
   manager_->CleanupOfflineUsers();
@@ -351,8 +351,8 @@ TEST_F(PresenceManagerV2Test, CleanupOfflineUsersKeepsRecentUsers) {
   EXPECT_TRUE(manager_->GetPresence("tina", &data));  // not offline at all
 }
 
-TEST_F(PresenceManagerV2Test, OnlineUserCountIgnoresInvisible) {
-  PresenceManagerV2 mgr(PresenceConfig{});
+TEST_F(PresenceManagerTest, OnlineUserCountIgnoresInvisible) {
+  PresenceManager mgr(PresenceConfig{});
   mgr.UpdatePresence("vic", PresenceStatus::INVISIBLE);
   EXPECT_EQ(mgr.GetOnlineUserCount(), 0u);
 }

@@ -497,7 +497,7 @@ target_include_directories(server_gateway_tests
 
 add_test(NAME server_gateway_tests COMMAND server_gateway_tests)
 
-# NOTE: presence_manager_v2.cc used to be excluded from the social build
+# NOTE: presence_manager.cc used to be excluded from the social build
 # because it did not compile (a proto enum name clash plus a copyable-mutex
 # member); it is fixed and covered by social_presence_tests below. The
 # MySQL/sodium-backed components are exercised through scripted fake C API
@@ -507,7 +507,7 @@ add_test(NAME server_gateway_tests COMMAND server_gateway_tests)
 # Social presence manager (pure in-memory state machine)
 add_executable(social_presence_tests
   social_presence_test.cc
-  ${CMAKE_SOURCE_DIR}/services/social/src/presence_manager_v2.cc
+  ${CMAKE_SOURCE_DIR}/services/social/src/presence_manager.cc
 )
 
 chirp_unit_test_common_links(social_presence_tests)

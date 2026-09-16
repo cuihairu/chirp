@@ -173,9 +173,9 @@ KNOWN_UNCOVERABLE = {
     ("services/auth/src/auth_service.cc", 413),
     ("services/auth/src/auth_service.cc", 414),
     ("services/auth/src/auth_service.cc", 415),
-    # PresenceManagerV2 CleanupOfflineUsers erase: last_seen is written only
+    # PresenceManager CleanupOfflineUsers erase: last_seen is written only
     # from the internal clock, so no test can age an entry past the 24h cutoff.
-    ("services/social/src/presence_manager_v2.cc", 407),
+    ("services/social/src/presence_manager.cc", 407),
 }
 
 src_cache = {}

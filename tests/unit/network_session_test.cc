@@ -17,7 +17,7 @@
 #include "network/websocket_client.h"
 #include "network/websocket_frame.h"
 #include "network/websocket_session.h"
-#include "network/websocket_utils.h"
+#include "network/websocket_util.h"
 
 using chirp::network::BuildWebSocketFrame;
 using chirp::network::ProtobufFraming;
@@ -712,7 +712,7 @@ TEST_F(ClientFailureTest, WebSocketDisconnectWithoutConnectIsSafe) {
 }
 
 // ---------------------------------------------------------------------------
-// websocket_utils.h inline helpers
+// websocket_util.h inline helpers
 // ---------------------------------------------------------------------------
 
 TEST(WebSocketUtilsTest, HandshakeRequestFormat) {

@@ -1,4 +1,4 @@
-#include "presence_manager_v2.h"
+#include "presence_manager.h"
 
 #include <algorithm>
 #include <sstream>
@@ -22,15 +22,15 @@ const char* kStatusStrings[] = {
 
 } // namespace
 
-PresenceManagerV2::PresenceManagerV2(const PresenceConfig& config)
+PresenceManager::PresenceManager(const PresenceConfig& config)
     : config_(config) {}
 
-int64_t PresenceManagerV2::GetCurrentTimeMs() const {
+int64_t PresenceManager::GetCurrentTimeMs() const {
   return std::chrono::duration_cast<std::chrono::milliseconds>(
       std::chrono::system_clock::now().time_since_epoch()).count();
 }
 
-std::string PresenceManagerV2::StatusToString(PresenceStatus status) {
+std::string PresenceManager::StatusToString(PresenceStatus status) {
   int idx = static_cast<int>(status);
   if (idx >= 0 && idx < sizeof(kStatusStrings) / sizeof(kStatusStrings[0])) {
     return kStatusStrings[idx];
@@ -38,7 +38,7 @@ std::string PresenceManagerV2::StatusToString(PresenceStatus status) {
   return "offline";
 }
 
-PresenceStatus PresenceManagerV2::StringToStatus(const std::string& str) {
+PresenceStatus PresenceManager::StringToStatus(const std::string& str) {
   std::string lower = str;
   std::transform(lower.begin(), lower.end(), lower.begin(), ::tolower);
 
@@ -50,7 +50,7 @@ PresenceStatus PresenceManagerV2::StringToStatus(const std::string& str) {
   return PresenceStatus::OFFLINE;
 }
 
-bool PresenceManagerV2::UpdatePresence(const std::string& user_id,
+bool PresenceManager::UpdatePresence(const std::string& user_id,
                                        PresenceStatus status,
                                        const std::string& device_id,
                                        const std::string& client_type) {
@@ -89,7 +89,7 @@ bool PresenceManagerV2::UpdatePresence(const std::string& user_id,
   return true;
 }
 
-bool PresenceManagerV2::RecordActivity(const std::string& user_id,
+bool PresenceManager::RecordActivity(const std::string& user_id,
                                       UserActivity activity,
                                       const std::string& device_id) {
   std::lock_guard<std::recursive_mutex> lock(mu_);
@@ -133,7 +133,7 @@ bool PresenceManagerV2::RecordActivity(const std::string& user_id,
   return true;
 }
 
-bool PresenceManagerV2::SetCustomStatus(const std::string& user_id,
+bool PresenceManager::SetCustomStatus(const std::string& user_id,
                                        const std::string& text,
                                        const std::string& emoji,
                                        int64_t duration_ms) {
@@ -158,7 +158,7 @@ bool PresenceManagerV2::SetCustomStatus(const std::string& user_id,
   return true;
 }
 
-bool PresenceManagerV2::ClearCustomStatus(const std::string& user_id) {
+bool PresenceManager::ClearCustomStatus(const std::string& user_id) {
   std::lock_guard<std::recursive_mutex> lock(mu_);
 
   auto it = user_presence_.find(user_id);
@@ -175,7 +175,7 @@ bool PresenceManagerV2::ClearCustomStatus(const std::string& user_id) {
   return true;
 }
 
-bool PresenceManagerV2::SetActivity(const std::string& user_id,
+bool PresenceManager::SetActivity(const std::string& user_id,
                                    const std::string& activity_type,
                                    const std::string& activity_details) {
   std::lock_guard<std::recursive_mutex> lock(mu_);
@@ -203,7 +203,7 @@ bool PresenceManagerV2::SetActivity(const std::string& user_id,
   return true;
 }
 
-bool PresenceManagerV2::GetPresence(const std::string& user_id,
+bool PresenceManager::GetPresence(const std::string& user_id,
                                     PresenceData* out_data) {
   if (!out_data) {
     return false;
@@ -226,7 +226,7 @@ bool PresenceManagerV2::GetPresence(const std::string& user_id,
   return true;
 }
 
-std::unordered_map<std::string, PresenceData> PresenceManagerV2::GetPresenceBatch(
+std::unordered_map<std::string, PresenceData> PresenceManager::GetPresenceBatch(
     const std::vector<std::string>& user_ids) {
 
   std::unordered_map<std::string, PresenceData> result;
@@ -251,7 +251,7 @@ std::unordered_map<std::string, PresenceData> PresenceManagerV2::GetPresenceBatc
   return result;
 }
 
-std::vector<std::string> PresenceManagerV2::GetOnlineFriends(
+std::vector<std::string> PresenceManager::GetOnlineFriends(
     const std::string& user_id,
     const std::unordered_set<std::string>& friend_ids) {
 
@@ -286,7 +286,7 @@ std::vector<std::string> PresenceManagerV2::GetOnlineFriends(
   return result;
 }
 
-std::string PresenceManagerV2::SerializePresence(const PresenceData& data) {
+std::string PresenceManager::SerializePresence(const PresenceData& data) {
   // Serialize to JSON string
   std::ostringstream ss;
   ss << "{"
@@ -303,14 +303,14 @@ std::string PresenceManagerV2::SerializePresence(const PresenceData& data) {
   return ss.str();
 }
 
-bool PresenceManagerV2::DeserializePresence(const std::string& json,
+bool PresenceManager::DeserializePresence(const std::string& json,
                                           PresenceData* out_data) {
   // In production, use a JSON parser
   // For demo, return false
   return false;
 }
 
-bool PresenceManagerV2::RegisterSession(const std::string& user_id,
+bool PresenceManager::RegisterSession(const std::string& user_id,
                                        const std::string& session_id,
                                        const std::string& device_id) {
   std::lock_guard<std::recursive_mutex> lock(mu_);
@@ -324,7 +324,7 @@ bool PresenceManagerV2::RegisterSession(const std::string& user_id,
   return true;
 }
 
-bool PresenceManagerV2::UnregisterSession(const std::string& user_id,
+bool PresenceManager::UnregisterSession(const std::string& user_id,
                                          const std::string& session_id) {
   std::lock_guard<std::recursive_mutex> lock(mu_);
 
@@ -351,7 +351,7 @@ bool PresenceManagerV2::UnregisterSession(const std::string& user_id,
   return true;
 }
 
-std::vector<std::string> PresenceManagerV2::GetUserSessions(const std::string& user_id) {
+std::vector<std::string> PresenceManager::GetUserSessions(const std::string& user_id) {
   std::vector<std::string> result;
 
   std::lock_guard<std::recursive_mutex> lock(mu_);
@@ -365,7 +365,7 @@ std::vector<std::string> PresenceManagerV2::GetUserSessions(const std::string& u
   return result;
 }
 
-void PresenceManagerV2::CleanupIdleUsers() {
+void PresenceManager::CleanupIdleUsers() {
   std::lock_guard<std::recursive_mutex> lock(mu_);
 
   int64_t now = GetCurrentTimeMs();
@@ -390,7 +390,7 @@ void PresenceManagerV2::CleanupIdleUsers() {
   }
 }
 
-void PresenceManagerV2::CleanupOfflineUsers() {
+void PresenceManager::CleanupOfflineUsers() {
   std::lock_guard<std::recursive_mutex> lock(mu_);
 
   int64_t now = GetCurrentTimeMs();
@@ -411,7 +411,7 @@ void PresenceManagerV2::CleanupOfflineUsers() {
   }
 }
 
-size_t PresenceManagerV2::GetOnlineUserCount() const {
+size_t PresenceManager::GetOnlineUserCount() const {
   std::lock_guard<std::recursive_mutex> lock(mu_);
 
   size_t count = 0;
@@ -429,7 +429,7 @@ size_t PresenceManagerV2::GetOnlineUserCount() const {
   return count;
 }
 
-size_t PresenceManagerV2::GetTotalSessionCount() const {
+size_t PresenceManager::GetTotalSessionCount() const {
   std::lock_guard<std::recursive_mutex> lock(mu_);
 
   size_t count = 0;
@@ -440,7 +440,7 @@ size_t PresenceManagerV2::GetTotalSessionCount() const {
   return count;
 }
 
-PresenceStatus PresenceManagerV2::ComputeOverallStatus(const PresenceData& data) {
+PresenceStatus PresenceManager::ComputeOverallStatus(const PresenceData& data) {
   // Determine overall status from device statuses
   if (data.device_status.empty()) {
     return data.status;
@@ -485,7 +485,7 @@ PresenceStatus PresenceManagerV2::ComputeOverallStatus(const PresenceData& data)
   return PresenceStatus::OFFLINE;
 }
 
-void PresenceManagerV2::NotifyPresenceChange(const std::string& user_id,
+void PresenceManager::NotifyPresenceChange(const std::string& user_id,
                                             PresenceStatus old_status,
                                             PresenceStatus new_status) {
   if (presence_change_callback_) {

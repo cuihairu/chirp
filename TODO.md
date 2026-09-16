@@ -48,6 +48,6 @@
 - [ ] **Web 版伴侣 app**(低优先级,已加入计划):浏览器端 Discord 式 web app(现状:`apps/mobile_companion` 是移动雏形,`sdks/` 无 web SDK)。不排期;开始做 app 端时**先 web 后 Android/iOS**——web 一套代码即可在桌面/移动浏览器复用,且不依赖应用商店审核,验证成本最低。前置依赖:P1 统一登录/会话语义(web 端走 app_gateway 边缘,而非直连 chat)。
 - [ ] **MsgID 去中心化**(暂缓):单一全局枚举意味着任何服务加消息都要改 `proto/gateway.proto`,但当前规模下中心化枚举天然防号段冲突,是优点;多团队并行开发时再评估按平面拆分。
 - [ ] **容量基准实测**:旧 roadmap 的 "10k+ 并发" 宣称需实测证据后方可对外使用(见 `docs/architecture.md`)。
-- [ ] **命名冗余/历史包袱**:`websocket_util.cc` 与 `websocket_utils.h` 并存;`presence_manager_v2` 只有 v2 没有 v1;libs/common 自研 sha256/base64 与 auth 的 libsodium 两套实现并存(评估统一或文档说明边界)。
+- [x] **命名冗余/历史包袱**:(2026-09-16 完成)`websocket_utils.h`(客户端 inline 函数)并入 `websocket_util.{h,cc}`,双名消除;`presence_manager_v2` 改名 `presence_manager`/`PresenceManager`(v1 从未存在,KNOWN_UNCOVERABLE 条目同步);sha256 "双实现"经核实不成立——全项目唯一实现是 `libs/common/sha256.{cc,h}`(JWT HS256、token 摘要),libsodium 只负责 auth 的 Argon2id 密码哈希与随机 token 字节,边界已写入 `libs/common/sha256.h` 头注释。`presence_manager_v2` 之外的文档(roadmap_history.md)为历史归档,保持原样。
 - [x] **清理覆盖率产物**(2026-09 完成):`.gitignore` 早已覆盖,但 `coverage_html/` 与 `coverage-packages.csv` 曾被提交入库,本次连同根目录未跟踪的 `*.gcov` / `*.gcov.json.gz` / `build-cov/` 一并删除(入库部分以 git 删除提交)。
 - [x] **移除死代码**(2026-09 完成):`services/router/` 空目录及顶层 CMakeLists 中被注释的 `add_subdirectory(services/router)`。

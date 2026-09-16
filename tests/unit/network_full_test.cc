@@ -37,7 +37,7 @@
 #include "network/websocket_server.h"
 #include "network/websocket_session.h"
 #include "network/websocket_util.h"
-#include "network/websocket_utils.h"
+#include "network/websocket_util.h"
 
 #include "proto/chat.pb.h"
 
@@ -435,7 +435,7 @@ TEST(RedisProtocolTest, BuildRedisCommandFormat) {
 }
 
 // ---------------------------------------------------------------------------
-// websocket_util / websocket_utils
+// websocket_util
 // ---------------------------------------------------------------------------
 
 TEST(WebSocketUtilTest, AcceptKeyRfc6455Vector) {

@@ -1,5 +1,5 @@
-#ifndef CHIRP_SERVICES_SOCIAL_PRESENCE_MANAGER_V2_H_
-#define CHIRP_SERVICES_SOCIAL_PRESENCE_MANAGER_V2_H_
+#ifndef CHIRP_SERVICES_SOCIAL_PRESENCE_MANAGER_H_
+#define CHIRP_SERVICES_SOCIAL_PRESENCE_MANAGER_H_
 
 #include <chrono>
 #include <functional>
@@ -74,10 +74,10 @@ using PresenceChangeCallback = std::function<void(
     PresenceStatus new_status)>;
 
 // Enhanced presence manager
-class PresenceManagerV2 {
+class PresenceManager {
 public:
-  explicit PresenceManagerV2(const PresenceConfig& config = PresenceConfig());
-  ~PresenceManagerV2() = default;
+  explicit PresenceManager(const PresenceConfig& config = PresenceConfig());
+  ~PresenceManager() = default;
 
   // Update user presence
   bool UpdatePresence(const std::string& user_id,
@@ -176,4 +176,4 @@ private:
 } // namespace social
 } // namespace chirp
 
-#endif // CHIRP_SERVICES_SOCIAL_PRESENCE_MANAGER_V2_H_
+#endif // CHIRP_SERVICES_SOCIAL_PRESENCE_MANAGER_H_
