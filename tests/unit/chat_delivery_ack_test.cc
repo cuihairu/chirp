@@ -164,6 +164,51 @@ TEST(DeliveryAckTest, CapabilityLifecycleTracksLiveSessionsOnly) {
   EXPECT_FALSE(manager.IsCapable(dying_raw));
 }
 
+TEST(DeliveryAckTest, RepeatStartAndNullForgetSessionAreNoops) {
+  asio::io_context io;
+  DeliveryAckManager manager(io, FastConfig(),
+                             [](const std::string&, const std::string&) {},
+                             [](const std::string&, const std::string&) {});
+  manager.Start();
+  // A second start while running must not double-book the scan timer.
+  manager.Start();
+  manager.ForgetSession(nullptr);
+
+  auto session = std::make_shared<FakeSession>();
+  manager.MarkCapable(session);
+  EXPECT_TRUE(manager.IsCapable(session.get()));
+
+  io.run_for(std::chrono::milliseconds(100));
+  EXPECT_TRUE(manager.IsCapable(session.get()));
+}
+
+TEST(DeliveryAckTest, RequeuedRetentionWindowClosesLateAcks) {
+  asio::io_context io;
+  Recorded recorded;
+  DeliveryAckManager::Config config = FastConfig();
+  config.timeout_ms = 30;
+  config.scan_interval_ms = 10;
+  config.requeued_retention_ms = 10;
+  DeliveryAckManager manager(io, config,
+                             [&](const std::string& u, const std::string& p) {
+                               recorded.requeued.emplace_back(u, p);
+                             },
+                             [&](const std::string& u, const std::string& p) {
+                               recorded.late_acked.emplace_back(u, p);
+                             });
+  manager.Start();
+
+  manager.Track("msg_1", "user_2", "the-payload");
+  // Within this window the message times out (~30ms), is requeued, and its
+  // requeued_ entry is swept once the 10ms retention lapses.
+  io.run_for(std::chrono::milliseconds(300));
+
+  ASSERT_EQ(recorded.requeued.size(), 1u);
+  // The retention window has closed: a late ack no longer cleans anything up.
+  EXPECT_FALSE(manager.Acknowledge("msg_1"));
+  EXPECT_TRUE(recorded.late_acked.empty());
+}
+
 TEST(DeliveryAckTest, DisabledManagerIsInert) {
   asio::io_context io;
   Recorded recorded;

@@ -506,6 +506,50 @@ TEST_F(HybridStoreTest, OfflineQueueFallsBackToMemoryWhenRedisDown) {
   EXPECT_TRUE(dead_redis.GetOfflineMessages("r2").empty());  // ...but fallback is gone.
 }
 
+TEST_F(HybridStoreTest, OfflineFallbackQueueIsCappedPerUser) {
+  // Redis down so every push lands in the in-memory fallback; the queue
+  // must cap itself instead of growing without bound.
+  MessageStoreConfig cfg;
+  cfg.redis_port = 1;
+  HybridMessageStore dead_redis(io_, cfg);
+
+  EXPECT_FALSE(dead_redis.AddOfflineMessage("r1", MakeMessage("m0", "ch", 0, "r1").SerializeAsString()));
+  for (int i = 1; i <= 1024; ++i) {
+    dead_redis.AddOfflineMessage(
+        "r1", MakeMessage("m" + std::to_string(i), "ch", i, "r1").SerializeAsString());
+  }
+
+  // The oldest entry was evicted; exactly the newest 1024 remain.
+  auto remaining = dead_redis.GetOfflineMessages("r1");
+  ASSERT_EQ(remaining.size(), 1024u);
+  EXPECT_EQ(remaining.front().message_id, "m1");
+  EXPECT_EQ(remaining.back().message_id, "m1024");
+}
+
+TEST_F(HybridStoreTest, RemoveOfflineMessageDropsRedisAndFallbackCopies) {
+  ASSERT_TRUE(store_->Initialize());
+
+  // Redis-backed copy: the late-ack cleanup removes it via LREM.
+  const std::string blob1 = MakeMessage("m1", "ch", 1000, "r1").SerializeAsString();
+  EXPECT_TRUE(store_->AddOfflineMessage("r1", blob1));
+  EXPECT_TRUE(store_->RemoveOfflineMessage("r1", blob1));
+  EXPECT_TRUE(store_->GetOfflineMessages("r1").empty());
+
+  // An unknown payload has nothing to remove.
+  EXPECT_FALSE(store_->RemoveOfflineMessage("r1", "not-stored"));
+
+  // Fallback copy (Redis down): the in-memory queue is scanned instead, and
+  // the user's fallback entry disappears with its last message.
+  MessageStoreConfig cfg;
+  cfg.redis_port = 1;
+  HybridMessageStore dead_redis(io_, cfg);
+  const std::string blob2 = MakeMessage("m2", "ch", 2000, "r2").SerializeAsString();
+  EXPECT_FALSE(dead_redis.AddOfflineMessage("r2", blob2));
+  EXPECT_TRUE(dead_redis.RemoveOfflineMessage("r2", blob2));
+  EXPECT_TRUE(dead_redis.GetOfflineMessages("r2").empty());
+  EXPECT_FALSE(dead_redis.RemoveOfflineMessage("r2", blob2));  // already gone
+}
+
 TEST_F(HybridStoreTest, DeliveryTrackingLifecycle) {
   ASSERT_TRUE(store_->Initialize());
 

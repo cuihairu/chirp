@@ -155,6 +155,10 @@ KNOWN_UNCOVERABLE = {
     # MessageDeliveryTracker::RunCheck stop guard: firing depends on a timer
     # tick landing after Stop(), a race the deterministic test loop avoids.
     ("services/chat/src/message_delivery_tracker.cc", 106),
+    # DeliveryAckManager::RunCheck stop guard: same shape as the tracker
+    # above - RunCheck is private and only timer-driven, and cancel() wins
+    # the race against a pending tick in every deterministic test loop.
+    ("services/chat/src/delivery_ack_manager.cc", 145),
     # MetricsHttpServer::Start catch arm: async_accept(ec form) does not
     # throw, so the arm is purely defensive.
     ("libs/common/src/metrics_http_server.cc", 35),

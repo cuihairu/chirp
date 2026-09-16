@@ -335,6 +335,37 @@ TEST_F(TcpSessionTest, SendAfterCloseIsDropped) {
   EXPECT_TRUE(pipe_.WaitEof());
 }
 
+TEST_F(TcpSessionTest, PeerHalfClosedTracksPeerFinAndOwnClose) {
+  // No Start(): the read loop would consume the peer's FIN and close the
+  // session before the peek could observe it.
+  MakeSession();
+
+  // Nothing pending and no FIN: still alive.
+  EXPECT_FALSE(session_->PeerHalfClosed());
+
+  // After our own Close() the answer is unconditionally yes.
+  session_->Close();
+  pipe_.Pump();
+  EXPECT_TRUE(session_->PeerHalfClosed());
+
+  // Pending unread data reads as alive (second pipe: the first session is
+  // closed now).
+  SocketPairPipe data_pipe;
+  auto data_session = std::make_shared<TcpSession>(data_pipe.TakeSessionSocket(),
+                                                   nullptr, nullptr);
+  ASSERT_TRUE(data_pipe.WriteAll("payload"));
+  EXPECT_FALSE(data_session->PeerHalfClosed());
+
+  // A FIN with an empty receive buffer is the half-closed state: writes to
+  // this session would vanish. Fresh pipe - the peek above never consumed
+  // the pending payload, and data must not mask the FIN here.
+  SocketPairPipe fin_pipe;
+  auto fin_session = std::make_shared<TcpSession>(fin_pipe.TakeSessionSocket(),
+                                                  nullptr, nullptr);
+  fin_pipe.test_side->shutdown(asio::ip::tcp::socket::shutdown_send);
+  EXPECT_TRUE(fin_session->PeerHalfClosed());
+}
+
 // ---------------------------------------------------------------------------
 // WebSocketSession
 // ---------------------------------------------------------------------------

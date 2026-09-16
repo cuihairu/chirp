@@ -127,7 +127,9 @@ void HandleLogin(const std::shared_ptr<chirp::network::Session>& session,
     // Unlike the game gateway's scaffolding fallback, the app edge must bind
     // the session: device messages below require an authenticated session.
     if (!resp.user_id().empty()) {
-      auto old = chirp::network::BindAuthenticatedSession(state, resp.user_id(), resp.session_id(), session);
+      auto old = chirp::network::BindAuthenticatedSession(state, resp.user_id(), resp.session_id(),
+                                                          chirp::network::NormalizeDeviceId(req.device_id()),
+                                                          session);
       if (old && old.get() != session.get()) {
         KickSession(old, "login from another device");
       }
@@ -150,7 +152,9 @@ void HandleLogin(const std::shared_ptr<chirp::network::Session>& session,
       return;
     }
 
-    auto old = chirp::network::BindAuthenticatedSession(state, user_id, resp.session_id(), session);
+    auto old = chirp::network::BindAuthenticatedSession(state, user_id, resp.session_id(),
+                                                        chirp::network::NormalizeDeviceId(req.device_id()),
+                                                        session);
 
     if (old && old.get() != session.get()) {
       const std::string reason = resp.has_kick() ? resp.kick().reason() : "login from another device";
@@ -366,26 +370,8 @@ void HandleDisconnect(const std::shared_ptr<chirp::network::Session>& session,
                       const std::shared_ptr<chirp::network::SessionRegistry>& state,
                       const std::shared_ptr<chirp::gateway::RedisSessionManager>& redis_mgr) {
   std::string user_id;
-  bool should_release = false;
-  {
-    std::lock_guard<std::mutex> lock(state->mu);
-    auto it = state->session_to_user.find(session.get());
-    if (it == state->session_to_user.end()) {
-      return;
-    }
-    user_id = it->second;
-    state->session_to_user.erase(it);
-    state->session_to_session_id.erase(session.get());
-
-    auto it2 = state->user_to_session.find(user_id);
-    if (it2 != state->user_to_session.end()) {
-      auto cur = it2->second.lock();
-      if (!cur || cur.get() == session.get()) {
-        state->user_to_session.erase(it2);
-        should_release = true;
-      }
-    }
-  }
+  const bool should_release =
+      chirp::network::RemoveAuthenticatedSession(state, session, &user_id);
   if (should_release && redis_mgr) {
     redis_mgr->AsyncRelease(user_id);
   }
@@ -434,16 +420,12 @@ int main(int argc, char** argv) {
   if (!redis_host.empty()) {
     redis_mgr = std::make_shared<chirp::gateway::RedisSessionManager>(
         io, redis_host, redis_port, instance_id, redis_ttl_seconds,
+        // Transitional (device-level rollout): the redis claim key is still
+        // user-level, so a foreign claim means the user logged in elsewhere
+        // — kick every local session. This narrows to a (user, device)
+        // lookup once the claim keys carry the device too.
         [state](const std::string& user_id) {
-          std::shared_ptr<chirp::network::Session> s;
-          {
-            std::lock_guard<std::mutex> lock(state->mu);
-            auto it = state->user_to_session.find(user_id);
-            if (it != state->user_to_session.end()) {
-              s = it->second.lock();
-            }
-          }
-          if (s) {
+          for (const auto& s : chirp::network::GetUserSessions(state, user_id)) {
             KickSession(s, "login from another gateway instance");
           }
         });

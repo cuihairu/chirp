@@ -394,7 +394,9 @@ void HandlePacket(const std::shared_ptr<MessageStore>& store,
 
     if (!user_id.empty()) {
       auto old =
-          chirp::network::BindAuthenticatedSession(state, user_id, login_resp.session_id(), session);
+          chirp::network::BindAuthenticatedSession(state, user_id, login_resp.session_id(),
+                                                   chirp::network::NormalizeDeviceId(login_req.device_id()),
+                                                   session);
       if (old && old.get() != session.get()) {
         KickSession(old, "login from another device");
       }
@@ -531,14 +533,9 @@ void HandlePacket(const std::shared_ptr<MessageStore>& store,
                                          pkt.sequence(), resp.SerializeAsString());
         break;
       }
-      std::shared_ptr<chirp::network::Session> recv;
-      {
-        std::lock_guard<std::mutex> lock(state->mu);
-        auto it = state->user_to_session.find(req.receiver_id());
-        if (it != state->user_to_session.end()) {
-          recv = it->second.lock();
-        }
-      }
+      // Transitional single-session lookup: fan-out across every device of
+      // the receiver lands with the device-level delivery pass.
+      auto recv = chirp::network::GetAnySession(state, req.receiver_id());
       // A receiver whose connection already sent FIN would "consume" the
       // message without ever reading it; queue offline instead. Ack-capable
       // receivers additionally hold the delivery until MESSAGE_ACK - no ack
@@ -953,14 +950,9 @@ int main(int argc, char** argv) {
   chirp::chat::GroupMemberNotifier notify_member =
       [state](const std::string& user_id, chirp::gateway::MsgID msg_id,
               const google::protobuf::Message& body) -> bool {
-    std::shared_ptr<chirp::network::Session> recv;
-    {
-      std::lock_guard<std::mutex> lock(state->mu);
-      auto it = state->user_to_session.find(user_id);
-      if (it != state->user_to_session.end()) {
-        recv = it->second.lock();
-      }
-    }
+    // Transitional single-session lookup; device fan-out comes with the
+    // device-level delivery pass.
+    auto recv = chirp::network::GetAnySession(state, user_id);
     if (!recv) {
       return false;
     }
@@ -1070,14 +1062,9 @@ int main(int argc, char** argv) {
     hooks.deliver_private =
         [state, &features](const std::string& receiver_id,
                 const chirp::chat::ChatMessage& msg) -> bool {
-      std::shared_ptr<chirp::network::Session> recv;
-      {
-        std::lock_guard<std::mutex> lock(state->mu);
-        auto it = state->user_to_session.find(receiver_id);
-        if (it != state->user_to_session.end()) {
-          recv = it->second.lock();
-        }
-      }
+      // Transitional single-session lookup; device fan-out comes with the
+      // device-level delivery pass.
+      auto recv = chirp::network::GetAnySession(state, receiver_id);
       if (!recv || recv->PeerHalfClosed()) {
         return false;
       }
