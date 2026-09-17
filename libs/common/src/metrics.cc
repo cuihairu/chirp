@@ -157,12 +157,13 @@ std::string SimpleMetrics::ExportPrometheus() {
     ss << name << "_count " << hist.GetCount() << "\n";
     ss << name << "_sum " << hist.GetSum() << "\n";
 
-    uint64_t prev = 0;
+    // Prometheus bucket lines are cumulative: each le=N count includes every
+    // observation up to N, not only those that landed in that bucket.
+    uint64_t cumulative = 0;
     const uint64_t buckets[] = {1, 5, 10, 25, 50, 100, 250, 500, 1000, 2500, 5000, 10000};
     for (size_t i = 0; i < Histogram::kNumBuckets; ++i) {
-      uint64_t count = hist.buckets[i].load();
-      ss << name << "_bucket{le=\"" << buckets[i] << "\"} " << count << "\n";
-      prev = count;
+      cumulative += hist.buckets[i].load();
+      ss << name << "_bucket{le=\"" << buckets[i] << "\"} " << cumulative << "\n";
     }
     ss << name << "_bucket{le=\"+Inf\"} " << hist.GetCount() << "\n";
   }
