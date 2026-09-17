@@ -32,7 +32,8 @@ int64_t PresenceManager::GetCurrentTimeMs() const {
 
 std::string PresenceManager::StatusToString(PresenceStatus status) {
   int idx = static_cast<int>(status);
-  if (idx >= 0 && idx < sizeof(kStatusStrings) / sizeof(kStatusStrings[0])) {
+  if (idx >= 0 &&
+      idx < static_cast<int>(sizeof(kStatusStrings) / sizeof(kStatusStrings[0]))) {
     return kStatusStrings[idx];
   }
   return "offline";
@@ -252,7 +253,7 @@ std::unordered_map<std::string, PresenceData> PresenceManager::GetPresenceBatch(
 }
 
 std::vector<std::string> PresenceManager::GetOnlineFriends(
-    const std::string& user_id,
+    [[maybe_unused]] const std::string& user_id,
     const std::unordered_set<std::string>& friend_ids) {
 
   std::vector<std::string> result;
@@ -303,8 +304,8 @@ std::string PresenceManager::SerializePresence(const PresenceData& data) {
   return ss.str();
 }
 
-bool PresenceManager::DeserializePresence(const std::string& json,
-                                          PresenceData* out_data) {
+bool PresenceManager::DeserializePresence([[maybe_unused]] const std::string& json,
+                                          [[maybe_unused]] PresenceData* out_data) {
   // In production, use a JSON parser
   // For demo, return false
   return false;

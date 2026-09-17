@@ -68,7 +68,7 @@ int64_t MentionManager::GetCurrentTimeMs() const {
 }
 
 ParsedMentions MentionManager::ParseMentions(const std::string& content,
-                                             const std::string& sender_id) {
+                                             [[maybe_unused]] const std::string& sender_id) {
   ParsedMentions result;
 
   // Parse @mentions
@@ -194,8 +194,8 @@ void MentionManager::RecordEveryoneMention(const std::string& user_id,
 
 std::vector<MentionManager::MentionSuggestion>
 MentionManager::GetMentionSuggestions(const std::string& query,
-                                     const std::string& channel_id,
-                                     const std::string& user_id) {
+                                      [[maybe_unused]] const std::string& channel_id,
+                                      [[maybe_unused]] const std::string& user_id) {
   std::vector<MentionSuggestion> result;
 
   // In a real implementation, this would query:

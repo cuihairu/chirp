@@ -17,7 +17,7 @@ using namespace chirp;
 // Global flag for shutdown
 std::atomic<bool> running{true};
 
-void SignalHandler(int signal) {
+void SignalHandler([[maybe_unused]] int signal) {
   common::Logger::Instance().Info("Shutting down search service...");
   running = false;
 }

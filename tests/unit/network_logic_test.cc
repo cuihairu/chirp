@@ -148,7 +148,7 @@ TEST_F(WebSocketFrameTest, IncompleteVariantsReturnNullopt) {
 
   WebSocketFrameParser p5;
   // Payload partially delivered
-  AppendStr(&p5, std::string("\x81\x83ab", 3));  // len 3, got 2
+  AppendStr(&p5, std::string("\x81\x83" "ab", 3));  // len 3, got 2
   EXPECT_FALSE(p5.PopFrame().has_value());
 }
 

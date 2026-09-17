@@ -9,7 +9,7 @@ namespace chat {
 namespace {
 
 // Default permissions for different channel types
-ChannelPermissions GetDefaultPermissions(ChannelKind kind) {
+ChannelPermissions GetDefaultPermissions([[maybe_unused]] ChannelKind kind) {
   ChannelPermissions perms;
   perms.set_can_read(true);
   perms.set_can_write(true);
@@ -88,10 +88,7 @@ ChannelPermissions ChannelPermissionChecker::GetEffectivePermissions(
 
 // ChannelManager implementation
 
-ChannelManager::ChannelManager() {
-  auto now = std::chrono::duration_cast<std::chrono::milliseconds>(
-      std::chrono::system_clock::now().time_since_epoch()).count();
-}
+ChannelManager::ChannelManager() {}
 
 std::string ChannelManager::GenerateCategoryId() {
   return "cat_" + std::to_string(++category_seq_);

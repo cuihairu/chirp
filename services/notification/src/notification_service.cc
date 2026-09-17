@@ -253,9 +253,9 @@ bool NotificationService::SendNotificationToUsers(
 }
 
 bool NotificationService::BroadcastToChannel(
-    const std::string& channel_id,
-    const NotificationPayload& payload,
-    const std::vector<std::string>& exclude_users) {
+    [[maybe_unused]] const std::string& channel_id,
+    [[maybe_unused]] const NotificationPayload& payload,
+    [[maybe_unused]] const std::vector<std::string>& exclude_users) {
 
   // In production, get channel members from social service
   // For now, return true (placeholder)

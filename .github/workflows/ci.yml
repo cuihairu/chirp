@@ -91,6 +91,7 @@ jobs:
       run: |
         cmake --preset ci \
           -DCMAKE_BUILD_TYPE=Debug \
+          -DCHIRP_WARNINGS_AS_ERRORS=ON \
           -DCMAKE_TOOLCHAIN_FILE=${{ github.workspace }}/vcpkg/scripts/buildsystems/vcpkg.cmake \
           -G Ninja
 
@@ -147,6 +148,7 @@ jobs:
       run: |
         cmake --preset ci \
           -DCMAKE_BUILD_TYPE=${{ matrix.build_type }} \
+          -DCHIRP_WARNINGS_AS_ERRORS=ON \
           -DCMAKE_TOOLCHAIN_FILE=${{ github.workspace }}/vcpkg/scripts/buildsystems/vcpkg.cmake \
           -G Ninja
 

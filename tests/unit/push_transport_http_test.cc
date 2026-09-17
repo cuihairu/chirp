@@ -245,7 +245,7 @@ TEST(HttpPushTransportScriptedTest, WaitFailureYieldsEmpty) {
 
 TEST(HttpPushTransportScriptedTest, ReadErrorYieldsEmpty) {
   auto connection = std::make_unique<ScriptedConnection>(
-      std::vector<ScriptStep>{{.read_result = -1}});
+      std::vector<ScriptStep>{{.read_result = -1, .bytes = {}}});
   ScriptedFactory factory;
   factory.connection = std::move(connection);
   HttpPushTransport transport(std::shared_ptr<HttpConnectionFactory>(&factory, [](auto*) {}));

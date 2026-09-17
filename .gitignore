@@ -75,3 +75,6 @@ coverage.lcov
 *.gcda.*
 *.gcno.*
 build-cov/
+
+# Local compile scratch space (TMPDIR bypass for /tmp quota)
+.tmpbuild/

@@ -125,7 +125,7 @@ bool MessageSearchService::IndexDocument(const IndexedDocument& doc) {
   return true;
 }
 
-bool MessageSearchService::UpdateDocument(const std::string& doc_id,
+bool MessageSearchService::UpdateDocument([[maybe_unused]] const std::string& doc_id,
                                         const IndexedDocument& doc) {
   return IndexDocument(doc);
 }

@@ -631,8 +631,8 @@ TEST_F(DeliveryTrackerTest, TrackAcknowledgeFailAndStats) {
 
   std::vector<std::string> events;
   tracker_->SetDeliveryCallback(
-      [&](const std::string& id, const std::string&, chirp::chat::DeliveryState s,
-          const std::string& err) { events.push_back(id); });
+      [&](const std::string& id, const std::string&, chirp::chat::DeliveryState,
+          const std::string&) { events.push_back(id); });
 
   tracker_->TrackMessage("m1", "r1", INT64_MAX);
   tracker_->Acknowledge("m1", "r1");

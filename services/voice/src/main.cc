@@ -326,7 +326,7 @@ void HandleLeaveRoom(const std::shared_ptr<VoiceState>& state,
 }
 
 void HandleIceCandidate(const std::shared_ptr<VoiceState>& state,
-                        const std::shared_ptr<chirp::network::Session>& session,
+                        [[maybe_unused]] const std::shared_ptr<chirp::network::Session>& session,
                         const chirp::gateway::Packet& pkt) {
   chirp::voice::IceCandidateMessage msg;
   if (!msg.ParseFromArray(pkt.body().data(), static_cast<int>(pkt.body().size()))) {
@@ -353,7 +353,7 @@ void HandleIceCandidate(const std::shared_ptr<VoiceState>& state,
 }
 
 void HandleSdpOffer(const std::shared_ptr<VoiceState>& state,
-                    const std::shared_ptr<chirp::network::Session>& session,
+                    [[maybe_unused]] const std::shared_ptr<chirp::network::Session>& session,
                     const chirp::gateway::Packet& pkt) {
   chirp::voice::SdpOfferMessage msg;
   if (!msg.ParseFromArray(pkt.body().data(), static_cast<int>(pkt.body().size()))) {

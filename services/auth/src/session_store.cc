@@ -252,7 +252,6 @@ bool SessionStore::RevokeSession(const std::string& session_id) {
     return false;
   }
 
-  int64_t now = NowMs();
   std::string query = "UPDATE sessions SET is_active = 0 WHERE session_id = '" +
                       EscapeString(conn, session_id) + "'";
 

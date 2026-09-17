@@ -129,12 +129,12 @@ KNOWN_UNCOVERABLE = {
     ("services/chat/src/channel_manager.cc", 44),
     # GetChannels skips ids missing from channels_: both maps are updated
     # together under the same lock, so the skip cannot trigger.
-    ("services/chat/src/channel_manager.cc", 368),
+    ("services/chat/src/channel_manager.cc", 365),
     # Voice user_limit enforcement: no public API sets a nonzero user_limit
     # on a channel, so the "channel full" branch is unreachable today.
-    ("services/chat/src/channel_manager.cc", 538),
-    ("services/chat/src/channel_manager.cc", 539),
-    ("services/chat/src/channel_manager.cc", 540),
+    ("services/chat/src/channel_manager.cc", 535),
+    ("services/chat/src/channel_manager.cc", 536),
+    ("services/chat/src/channel_manager.cc", 537),
     # WebSocketClient handshake write-error branch: reaching it requires the
     # peer's TCP reset to land between connect() returning and the handshake
     # write (a sub-millisecond kernel race). The dedicated test hits it only
@@ -175,7 +175,7 @@ KNOWN_UNCOVERABLE = {
     ("services/auth/src/auth_service.cc", 415),
     # PresenceManager CleanupOfflineUsers erase: last_seen is written only
     # from the internal clock, so no test can age an entry past the 24h cutoff.
-    ("services/social/src/presence_manager.cc", 407),
+    ("services/social/src/presence_manager.cc", 408),
 }
 
 src_cache = {}

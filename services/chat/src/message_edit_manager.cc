@@ -79,7 +79,8 @@ bool MessageEditManager::EditMessage(const std::string& message_id,
   size_t history_size = data->edit_history.size();
   size_t new_entry_size = edit.old_content().size() + edit.new_content().size();
 
-  if (history_size > 0 || new_entry_size < config_.max_edit_history_size) {
+  if (history_size > 0 ||
+      new_entry_size < static_cast<size_t>(config_.max_edit_history_size)) {
     data->edit_history.push_back(edit);
   }
 
@@ -150,7 +151,7 @@ bool MessageEditManager::DeleteMessage(const std::string& message_id,
 
 std::vector<std::string> MessageEditManager::BulkDelete(
     const std::vector<std::string>& message_ids,
-    const std::string& channel_id,
+    [[maybe_unused]] const std::string& channel_id,
     const std::string& requester_id,
     bool is_moderator) {
 

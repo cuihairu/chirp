@@ -532,7 +532,7 @@ TEST(WebSocketFrameTest, IncompleteHeaders) {
 
   // Payload incomplete.
   p.Clear();
-  p.Append(reinterpret_cast<const uint8_t*>("\x82\x05ab"), 4);
+  p.Append(reinterpret_cast<const uint8_t*>("\x82\x05" "ab"), 4);
   EXPECT_FALSE(p.PopFrame().has_value());
 }
 

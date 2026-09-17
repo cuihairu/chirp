@@ -178,10 +178,6 @@ class SocketPairPipe {
   int session_fd = -1;
 };
 
-std::string WsPayload(const std::string& lp_framed_bytes) {
-  return lp_framed_bytes;
-}
-
 // ---------------------------------------------------------------------------
 // TcpSession
 // ---------------------------------------------------------------------------
@@ -846,13 +842,13 @@ TEST_F(LoopbackLinkTest, WebSocketServerCompletesClientHandshake) {
     std::this_thread::sleep_for(std::chrono::milliseconds(2));
   }
   EXPECT_EQ(got.size(), 1u);
-  if (!got.empty()) EXPECT_EQ(got[0], "ping");
+  if (!got.empty()) { EXPECT_EQ(got[0], "ping"); }
 
   for (int i = 0; i < 300 && echoed.empty(); ++i) {
     std::this_thread::sleep_for(std::chrono::milliseconds(2));
   }
   EXPECT_EQ(echoed.size(), 1u);
-  if (!echoed.empty()) EXPECT_EQ(echoed[0], "pong");
+  if (!echoed.empty()) { EXPECT_EQ(echoed[0], "pong"); }
 
   client.Disconnect();
   server.Stop();

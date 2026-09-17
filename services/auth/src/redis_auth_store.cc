@@ -57,7 +57,7 @@ struct RedisAuthStore::Impl {
   asio::io_context& io;
   std::atomic<bool> connected{false};
 
-  Impl(asio::io_context& i, const Config& cfg) : io(i), config(cfg) {
+  Impl(asio::io_context& i, const Config& cfg) : config(cfg), io(i) {
     redis = std::make_shared<chirp::network::RedisClient>(config.host, config.port);
   }
 };
@@ -159,7 +159,8 @@ std::optional<std::string> RedisAuthStore::GetSessionUser(const std::string& ses
   return std::nullopt;
 }
 
-bool RedisAuthStore::UpdateSessionActivity(const std::string& session_id, int64_t activity_time) {
+bool RedisAuthStore::UpdateSessionActivity(const std::string& session_id,
+                                           [[maybe_unused]] int64_t activity_time) {
   if (!impl_->connected) {
     return false;
   }

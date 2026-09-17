@@ -99,7 +99,7 @@ public:
       sum += value;
       // Find bucket
       for (size_t i = 0; i < kNumBuckets; ++i) {
-        if (value <= buckets[i].load()) {
+        if (static_cast<uint64_t>(value) <= buckets[i].load()) {
           ++buckets[i];
           break;
         }

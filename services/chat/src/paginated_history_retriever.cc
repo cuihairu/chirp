@@ -145,10 +145,10 @@ PaginatedHistoryRetriever::GetPageAfter(const std::string& channel_id,
 }
 
 std::vector<MessageData>
-PaginatedHistoryRetriever::Search(const std::string& channel_id,
-                                 int channel_type,
+PaginatedHistoryRetriever::Search([[maybe_unused]] const std::string& channel_id,
+                                 [[maybe_unused]] int channel_type,
                                  const std::string& query,
-                                 int32_t limit) {
+                                 [[maybe_unused]] int32_t limit) {
   // Search requires MySQL full-text search
   // For now, return empty as this requires MySQL implementation
   Logger::Instance().Debug("Search requested but not yet implemented: " + query);

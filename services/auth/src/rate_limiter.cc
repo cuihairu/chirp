@@ -23,7 +23,7 @@ std::shared_ptr<RateLimiter> RateLimiter::Create(std::shared_ptr<RedisAuthStore>
   return std::make_shared<RateLimiter>(std::move(redis_store), Config{});
 }
 
-RateLimiter::Result RateLimiter::CheckLoginLimit(const std::string& identifier,
+RateLimiter::Result RateLimiter::CheckLoginLimit([[maybe_unused]] const std::string& identifier,
                                                  const std::string& ip_address) {
   Result result;
   result.limit = config_.max_login_attempts_per_minute;
@@ -116,7 +116,8 @@ RateLimiter::Result RateLimiter::CheckApiLimit(const std::string& user_id_or_ip)
   return result;
 }
 
-void RateLimiter::RecordRequest(const std::string& key, const std::string& window) {
+void RateLimiter::RecordRequest([[maybe_unused]] const std::string& key,
+                                [[maybe_unused]] const std::string& window) {
   // RateLimiter uses CheckRateLimit which auto-increments
   // This is a no-op for the Redis-based implementation
 }

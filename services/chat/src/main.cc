@@ -1056,8 +1056,10 @@ int main(int argc, char** argv) {
   chirp::chat::MessageEditHandlers edit_handlers(edits, resolve_members, is_moderator, notify_member);
   chirp::chat::MentionHandlers mention_handlers(mentions, is_moderator);
 
-  FeatureHandlers features{group_handlers, receipt_handlers, typing_handlers,
-                           reaction_handlers, edit_handlers, mention_handlers, push};
+  FeatureHandlers features{.groups = group_handlers, .receipts = receipt_handlers,
+                           .typing = typing_handlers, .reactions = reaction_handlers,
+                           .edits = edit_handlers, .mentions = mention_handlers,
+                           .push = push, .npc_service_id = {}};
   features.rate_limiter = rate_limiter.get();
   features.token_verifier = &token_verifier;
   features.acks = acks.get();

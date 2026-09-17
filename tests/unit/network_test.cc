@@ -112,13 +112,14 @@ TEST(LengthPrefixedFramerTest, MultipleFrames) {
   LengthPrefixedFramer framer;
 
   auto create_frame = [](const std::string& payload) -> std::vector<uint8_t> {
-    uint32_t length = static_cast<uint32_t>(payload.size());
+    const uint32_t length = static_cast<uint32_t>(payload.size());
+    const std::array<uint8_t, 4> header{static_cast<uint8_t>(length >> 24),
+                                        static_cast<uint8_t>(length >> 16),
+                                        static_cast<uint8_t>(length >> 8),
+                                        static_cast<uint8_t>(length)};
     std::vector<uint8_t> data;
     data.reserve(4 + length);
-    data.push_back((length >> 24) & 0xFF);
-    data.push_back((length >> 16) & 0xFF);
-    data.push_back((length >> 8) & 0xFF);
-    data.push_back(length & 0xFF);
+    data.insert(data.end(), header.begin(), header.end());
     data.insert(data.end(), payload.begin(), payload.end());
     return data;
   };
