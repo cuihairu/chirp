@@ -1,3 +1,5 @@
+#include <algorithm>
+
 #include <gtest/gtest.h>
 
 #include "network/protobuf_framing.h"
@@ -113,14 +115,16 @@ TEST(LengthPrefixedFramerTest, MultipleFrames) {
 
   auto create_frame = [](const std::string& payload) -> std::vector<uint8_t> {
     const uint32_t length = static_cast<uint32_t>(payload.size());
-    const std::array<uint8_t, 4> header{static_cast<uint8_t>(length >> 24),
-                                        static_cast<uint8_t>(length >> 16),
-                                        static_cast<uint8_t>(length >> 8),
-                                        static_cast<uint8_t>(length)};
-    std::vector<uint8_t> data;
-    data.reserve(4 + length);
-    data.insert(data.end(), header.begin(), header.end());
-    data.insert(data.end(), payload.begin(), payload.end());
+    // Size the buffer up front: under -O2, GCC 11 miscounts the remaining
+    // capacity of reserve()+insert() chains and flags the second insert as a
+    // stringop-overflow. A sized constructor + direct writes keeps the buffer
+    // bounds visible to every optimizer we build with.
+    std::vector<uint8_t> data(4 + length);
+    data[0] = static_cast<uint8_t>(length >> 24);
+    data[1] = static_cast<uint8_t>(length >> 16);
+    data[2] = static_cast<uint8_t>(length >> 8);
+    data[3] = static_cast<uint8_t>(length);
+    std::copy(payload.begin(), payload.end(), data.begin() + 4);
     return data;
   };
 
