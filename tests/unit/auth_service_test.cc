@@ -138,6 +138,9 @@ TEST_F(TokenGeneratorTest, AccessTokenIsVerifiableJwt) {
   std::string err;
   ASSERT_TRUE(chirp::common::JwtVerifyHS256(jwt, "s3cret", &claims, &err)) << err;
   EXPECT_EQ(claims.subject, "user_1");
+  // The requested lifetime must materialize as a real exp claim, not be
+  // silently dropped.
+  EXPECT_GT(claims.expires_at, claims.issued_at);
 }
 
 TEST_F(TokenGeneratorTest, UserIdIsDeterministic) {
@@ -414,7 +417,7 @@ class AuthServiceTest : public ::testing::Test {
   // comes back below the max.
   void ScriptSuccessfulLogin(const std::string& username,
                              const std::string& password,
-                             int max_sessions) {
+                             [[maybe_unused]] int max_sessions) {
     const std::string hash = PasswordHasher::HashPassword(password);
     const std::vector<std::optional<std::string>> row = {
         "5", "user_1", username, "a@b.c", hash, "1", "2", "3", "1"};

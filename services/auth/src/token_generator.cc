@@ -99,17 +99,13 @@ std::string TokenGenerator::GenerateAccessToken(std::string_view user_id,
                                                 int64_t expires_in_seconds) {
   int64_t now = NowSeconds();
 
-  // Use JWT library to create token with expiration
-  // First create a basic JWT, then add expiration claim manually
   chirp::common::JwtClaims claims;
   claims.subject = std::string(user_id);
   claims.issued_at = now;
+  claims.expires_at = now + expires_in_seconds;
 
-  std::string jwt = chirp::common::JwtSignHS256(claims.subject, claims.issued_at, secret);
-
-  // Note: Our current JWT implementation only supports sub and iat
-  // For production, consider adding exp claim support to jwt.cc
-  return jwt;
+  return chirp::common::JwtSignHS256(claims.subject, claims.issued_at, secret,
+                                     claims.expires_at);
 }
 
 std::string TokenGenerator::GenerateUserId(std::string_view identifier) {
