@@ -385,7 +385,7 @@ int main(int argc, char** argv) {
           break;
         }
       },
-      [auth_service](std::shared_ptr<chirp::network::Session> session) {
+      [auth_service](std::shared_ptr<chirp::network::Session>) {
         Logger::Instance().Debug("Client disconnected");
       });
 
