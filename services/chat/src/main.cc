@@ -281,6 +281,40 @@ void KickSession(const std::shared_ptr<chirp::network::Session>& session, const 
   session->SendAndClose(std::string(reinterpret_cast<const char*>(framed.data()), framed.size()));
 }
 
+// All live sessions of a user whose connection has not half-closed - the
+// healthy delivery targets across every device. Empty means the user has no
+// connection worth writing to right now.
+std::vector<std::shared_ptr<chirp::network::Session>> HealthyUserSessions(
+    const std::shared_ptr<chirp::network::SessionRegistry>& state,
+    const std::string& user_id) {
+  std::vector<std::shared_ptr<chirp::network::Session>> healthy;
+  for (const auto& recv : chirp::network::GetUserSessions(state, user_id)) {
+    if (!recv->PeerHalfClosed()) {
+      healthy.push_back(recv);
+    }
+  }
+  return healthy;
+}
+
+// Holds a delivery until MESSAGE_ACK when any target device declared the
+// ack capability. Track is idempotent per message id, so one capable device
+// is enough; the ack may arrive over a different one.
+void TrackAckIfCapable(chirp::chat::DeliveryAckManager* acks,
+                       const std::vector<std::shared_ptr<chirp::network::Session>>& sessions,
+                       const std::string& message_id,
+                       const std::string& receiver_id,
+                       const std::string& payload) {
+  if (!acks) {
+    return;
+  }
+  for (const auto& recv : sessions) {
+    if (acks->IsCapable(recv.get())) {
+      acks->Track(message_id, receiver_id, payload);
+      return;
+    }
+  }
+}
+
 void HandleDisconnect(const std::shared_ptr<chirp::network::SessionRegistry>& state,
                       chirp::chat::DeliveryAckManager* acks,
                       const std::shared_ptr<chirp::network::Session>& session) {
@@ -533,19 +567,21 @@ void HandlePacket(const std::shared_ptr<MessageStore>& store,
                                          pkt.sequence(), resp.SerializeAsString());
         break;
       }
-      // Transitional single-session lookup: fan-out across every device of
-      // the receiver lands with the device-level delivery pass.
-      auto recv = chirp::network::GetAnySession(state, req.receiver_id());
-      // A receiver whose connection already sent FIN would "consume" the
-      // message without ever reading it; queue offline instead. Ack-capable
-      // receivers additionally hold the delivery until MESSAGE_ACK - no ack
-      // before the timeout requeues the message instead of losing it.
-      if (recv && !recv->PeerHalfClosed()) {
+      auto receivers = HealthyUserSessions(state, req.receiver_id());
+      // Deliver to every device of the receiver. A connection that already
+      // sent FIN would "consume" the message without ever reading it, so
+      // half-closed devices are not written to; the offline decision stays
+      // user-level (the offline queue has no per-device split yet), meaning
+      // any healthy device accepting the message counts as delivered.
+      // Ack-capable devices additionally hold the delivery until
+      // MESSAGE_ACK - no ack before the timeout requeues it instead.
+      if (!receivers.empty()) {
         resp.set_code(chirp::common::OK);
-        if (features.acks && features.acks->IsCapable(recv.get())) {
-          features.acks->Track(msg.message_id(), req.receiver_id(), msg.SerializeAsString());
+        TrackAckIfCapable(features.acks, receivers, msg.message_id(),
+                          req.receiver_id(), msg.SerializeAsString());
+        for (const auto& recv : receivers) {
+          chirp::chat::runtime::SendChatNotify(recv, msg);
         }
-        chirp::chat::runtime::SendChatNotify(recv, msg);
       } else {
         resp.set_code(chirp::common::TARGET_OFFLINE);
         store->AddOffline(req.receiver_id(), msg);
@@ -945,18 +981,19 @@ int main(int argc, char** argv) {
   }
   chirp::chat::PushBridge push(notification);
 
-  // Delivers group notifications to a member's live session; false means the
-  // member has no session right now.
+  // Delivers group notifications to every live session of a member; false
+  // means the member has no session right now.
   chirp::chat::GroupMemberNotifier notify_member =
       [state](const std::string& user_id, chirp::gateway::MsgID msg_id,
               const google::protobuf::Message& body) -> bool {
-    // Transitional single-session lookup; device fan-out comes with the
-    // device-level delivery pass.
-    auto recv = chirp::network::GetAnySession(state, user_id);
-    if (!recv) {
+    const auto recvs = chirp::network::GetUserSessions(state, user_id);
+    if (recvs.empty()) {
       return false;
     }
-    chirp::chat::runtime::SendPacket(recv, msg_id, 0, body.SerializeAsString());
+    const std::string payload = body.SerializeAsString();
+    for (const auto& recv : recvs) {
+      chirp::chat::runtime::SendPacket(recv, msg_id, 0, payload);
+    }
     return true;
   };
 
@@ -1062,17 +1099,17 @@ int main(int argc, char** argv) {
     hooks.deliver_private =
         [state, &features](const std::string& receiver_id,
                 const chirp::chat::ChatMessage& msg) -> bool {
-      // Transitional single-session lookup; device fan-out comes with the
-      // device-level delivery pass.
-      auto recv = chirp::network::GetAnySession(state, receiver_id);
-      if (!recv || recv->PeerHalfClosed()) {
+      const auto receivers = HealthyUserSessions(state, receiver_id);
+      if (receivers.empty()) {
         return false;
       }
-      // Injected private replies are tracked like SEND_MESSAGE deliveries.
-      if (features.acks && features.acks->IsCapable(recv.get())) {
-        features.acks->Track(msg.message_id(), receiver_id, msg.SerializeAsString());
+      // Injected private replies are tracked like SEND_MESSAGE deliveries,
+      // then fanned out to every device of the receiver.
+      TrackAckIfCapable(features.acks, receivers, msg.message_id(),
+                        receiver_id, msg.SerializeAsString());
+      for (const auto& recv : receivers) {
+        chirp::chat::runtime::SendChatNotify(recv, msg);
       }
-      chirp::chat::runtime::SendChatNotify(recv, msg);
       return true;
     };
     hooks.queue_offline =

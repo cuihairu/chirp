@@ -175,19 +175,4 @@ std::shared_ptr<Session> GetSession(const std::shared_ptr<SessionRegistry>& stat
   return device_it->second.lock();
 }
 
-std::shared_ptr<Session> GetAnySession(const std::shared_ptr<SessionRegistry>& state,
-                                       const std::string& user_id) {
-  std::lock_guard<std::mutex> lock(state->mu);
-  auto user_it = state->user_to_sessions.find(user_id);
-  if (user_it == state->user_to_sessions.end()) {
-    return nullptr;
-  }
-  for (auto& entry : user_it->second) {
-    if (auto session = entry.second.lock()) {
-      return session;
-    }
-  }
-  return nullptr;
-}
-
 } // namespace chirp::network

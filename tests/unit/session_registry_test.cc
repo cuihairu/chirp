@@ -70,10 +70,6 @@ TEST(SessionRegistryTest, DifferentDevicesOfSameUserCoexist) {
   EXPECT_EQ(GetSession(state, "alice", "phone-a").get(), phone.get());
   EXPECT_EQ(GetSession(state, "alice", "tablet-b").get(), tablet.get());
   EXPECT_EQ(GetUserSessions(state, "alice").size(), 2u);
-
-  const auto any = GetAnySession(state, "alice");
-  ASSERT_TRUE(any);
-  EXPECT_TRUE(any.get() == phone.get() || any.get() == tablet.get());
 }
 
 TEST(SessionRegistryTest, EmptyDeviceNormalizesToDefaultSlot) {
@@ -194,7 +190,6 @@ TEST(SessionRegistryTest, LookupsHandleUnknownUsersAndExpiredSlots) {
   // Unknown users read as empty across every lookup flavor.
   EXPECT_TRUE(GetUserSessions(state, "nobody").empty());
   EXPECT_EQ(GetSession(state, "nobody", "phone-a"), nullptr);
-  EXPECT_EQ(GetAnySession(state, "nobody"), nullptr);
 
   // A slot left behind by a session that died without disconnect cleanup
   // reads as absent: expired entries are skipped, never surfaced.
@@ -204,7 +199,6 @@ TEST(SessionRegistryTest, LookupsHandleUnknownUsersAndExpiredSlots) {
   }
   EXPECT_TRUE(GetUserSessions(state, "alice").empty());
   EXPECT_EQ(GetSession(state, "alice", "phone-a"), nullptr);
-  EXPECT_EQ(GetAnySession(state, "alice"), nullptr);
 }
 
 TEST(SessionRegistryTest, RemoveUnknownSessionReturnsFalse) {

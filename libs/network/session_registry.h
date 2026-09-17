@@ -77,11 +77,4 @@ std::shared_ptr<Session> GetSession(const std::shared_ptr<SessionRegistry>& stat
                                     const std::string& user_id,
                                     const std::string& device_id);
 
-/// @brief Transitional helper: any live session of user_id, preserving the
-/// single-delivery behavior of the pre-device registry. Delivery paths
-/// switch to GetUserSessions fan-out one build at a time; this goes away
-/// when the last one does.
-std::shared_ptr<Session> GetAnySession(const std::shared_ptr<SessionRegistry>& state,
-                                       const std::string& user_id);
-
 } // namespace chirp::network
