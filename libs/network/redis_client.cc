@@ -75,6 +75,11 @@ bool RedisClient::SetEx(const std::string& key, const std::string& value, int tt
   return r && r->type == RedisResp::Type::kSimpleString && r->str == "OK";
 }
 
+bool RedisClient::Set(const std::string& key, const std::string& value) {
+  auto r = SendCmd(host_, port_, {"SET", key, value});
+  return r && r->type == RedisResp::Type::kSimpleString && r->str == "OK";
+}
+
 bool RedisClient::Del(const std::string& key) {
   auto r = SendCmd(host_, port_, {"DEL", key});
   return r && r->type == RedisResp::Type::kInteger;

@@ -194,3 +194,23 @@ message FriendRemovedNotify {
   string user_id = 1;
   int64 timestamp = 2;
 }
+
+// ---------------------------------------------------------------------------
+// Server-side storage snapshots. These are Redis VALUES (one key per user,
+// e.g. "chirp:social:friends:<uid>"), never wire messages. Keeping them
+// separate from the response messages lets the storage schema evolve without
+// touching the client-facing protocol: a friend is stored as just an id set
+// (the server holds no profiles), and pending requests keep both sides of
+// each request keyed by request_id (duplicated across the two users'
+// snapshots; the loader dedupes by request_id).
+message StoredFriendList {
+  repeated string friend_user_ids = 1;
+}
+
+message StoredPendingRequests {
+  map<string, FriendRequest> requests = 1;
+}
+
+message StoredBlockedList {
+  repeated string blocked_user_ids = 1;
+}

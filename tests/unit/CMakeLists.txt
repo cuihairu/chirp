@@ -262,6 +262,29 @@ target_include_directories(voice_tests
 
 add_test(NAME voice_tests COMMAND voice_tests)
 
+# Social service packet-handler tests (main.cc included with renamed main,
+# same pattern as voice_tests; main.cc is NOT listed as a source - it would
+# hijack the test entry point and double-compile the handlers)
+add_executable(social_tests
+  social_service_test.cc
+)
+
+chirp_unit_test_common_links(social_tests)
+target_link_libraries(social_tests PRIVATE chirp_network chirp_common chirp_protos)
+
+target_include_directories(social_tests
+  PRIVATE
+  ${CMAKE_SOURCE_DIR}/services/social/src
+  ${CMAKE_SOURCE_DIR}/libs
+  ${CMAKE_SOURCE_DIR}/libs/common
+  ${CMAKE_SOURCE_DIR}/libs/common/include
+  ${CMAKE_SOURCE_DIR}/libs/network
+  ${CMAKE_SOURCE_DIR}/proto/cpp
+  ${CMAKE_SOURCE_DIR}/proto/cpp/proto
+)
+
+add_test(NAME social_tests COMMAND social_tests)
+
 # App gateway edge tests: scaffold login/logout, device-message forwarding
 # through a real NotificationClient against a loopback server
 add_executable(app_gateway_tests

@@ -176,6 +176,22 @@ class SetPresenceResponse;
 struct SetPresenceResponseDefaultTypeInternal;
 extern SetPresenceResponseDefaultTypeInternal _SetPresenceResponse_default_instance_;
 extern const ::google::protobuf::internal::ClassDataFull SetPresenceResponse_class_data_;
+class StoredBlockedList;
+struct StoredBlockedListDefaultTypeInternal;
+extern StoredBlockedListDefaultTypeInternal _StoredBlockedList_default_instance_;
+extern const ::google::protobuf::internal::ClassDataFull StoredBlockedList_class_data_;
+class StoredFriendList;
+struct StoredFriendListDefaultTypeInternal;
+extern StoredFriendListDefaultTypeInternal _StoredFriendList_default_instance_;
+extern const ::google::protobuf::internal::ClassDataFull StoredFriendList_class_data_;
+class StoredPendingRequests;
+struct StoredPendingRequestsDefaultTypeInternal;
+extern StoredPendingRequestsDefaultTypeInternal _StoredPendingRequests_default_instance_;
+extern const ::google::protobuf::internal::ClassDataFull StoredPendingRequests_class_data_;
+class StoredPendingRequests_RequestsEntry_DoNotUse;
+struct StoredPendingRequests_RequestsEntry_DoNotUseDefaultTypeInternal;
+extern StoredPendingRequests_RequestsEntry_DoNotUseDefaultTypeInternal _StoredPendingRequests_RequestsEntry_DoNotUse_default_instance_;
+extern const ::google::protobuf::internal::ClassDataFull StoredPendingRequests_RequestsEntry_DoNotUse_class_data_;
 class UnblockUserRequest;
 struct UnblockUserRequestDefaultTypeInternal;
 extern UnblockUserRequestDefaultTypeInternal _UnblockUserRequest_default_instance_;
@@ -695,6 +711,410 @@ class UnblockUserRequest final : public ::google::protobuf::Message
 };
 
 extern const ::google::protobuf::internal::ClassDataFull UnblockUserRequest_class_data_;
+// -------------------------------------------------------------------
+
+class StoredFriendList final : public ::google::protobuf::Message
+/* @@protoc_insertion_point(class_definition:chirp.social.StoredFriendList) */ {
+ public:
+  inline StoredFriendList() : StoredFriendList(nullptr) {}
+  ~StoredFriendList() PROTOBUF_FINAL;
+
+#if defined(PROTOBUF_CUSTOM_VTABLE)
+  void operator delete(StoredFriendList* PROTOBUF_NONNULL msg, ::std::destroying_delete_t) {
+    SharedDtor(*msg);
+    ::google::protobuf::internal::SizedDelete(msg, sizeof(StoredFriendList));
+  }
+#endif
+
+  template <typename = void>
+  explicit PROTOBUF_CONSTEXPR StoredFriendList(::google::protobuf::internal::ConstantInitialized);
+
+  inline StoredFriendList(const StoredFriendList& from) : StoredFriendList(nullptr, from) {}
+  inline StoredFriendList(StoredFriendList&& from) noexcept
+      : StoredFriendList(nullptr, ::std::move(from)) {}
+  inline StoredFriendList& operator=(const StoredFriendList& from) {
+    CopyFrom(from);
+    return *this;
+  }
+  inline StoredFriendList& operator=(StoredFriendList&& from) noexcept {
+    if (this == &from) return *this;
+    if (::google::protobuf::internal::CanMoveWithInternalSwap(GetArena(), from.GetArena())) {
+      InternalSwap(&from);
+    } else {
+      CopyFrom(from);
+    }
+    return *this;
+  }
+
+  inline const ::google::protobuf::UnknownFieldSet& unknown_fields() const
+      ABSL_ATTRIBUTE_LIFETIME_BOUND {
+    return _internal_metadata_.unknown_fields<::google::protobuf::UnknownFieldSet>(::google::protobuf::UnknownFieldSet::default_instance);
+  }
+  inline ::google::protobuf::UnknownFieldSet* PROTOBUF_NONNULL mutable_unknown_fields()
+      ABSL_ATTRIBUTE_LIFETIME_BOUND {
+    return _internal_metadata_.mutable_unknown_fields<::google::protobuf::UnknownFieldSet>();
+  }
+
+  static const ::google::protobuf::Descriptor* PROTOBUF_NONNULL descriptor() {
+    return GetDescriptor();
+  }
+  static const ::google::protobuf::Descriptor* PROTOBUF_NONNULL GetDescriptor() {
+    return default_instance().GetMetadata().descriptor;
+  }
+  static const ::google::protobuf::Reflection* PROTOBUF_NONNULL GetReflection() {
+    return default_instance().GetMetadata().reflection;
+  }
+  static const StoredFriendList& default_instance() {
+    return *reinterpret_cast<const StoredFriendList*>(
+        &_StoredFriendList_default_instance_);
+  }
+  static constexpr int kIndexInFileMessages = 30;
+  friend void swap(StoredFriendList& a, StoredFriendList& b) { a.Swap(&b); }
+  inline void Swap(StoredFriendList* PROTOBUF_NONNULL other) {
+    if (other == this) return;
+    if (::google::protobuf::internal::CanUseInternalSwap(GetArena(), other->GetArena())) {
+      InternalSwap(other);
+    } else {
+      ::google::protobuf::internal::GenericSwap(this, other);
+    }
+  }
+  void UnsafeArenaSwap(StoredFriendList* PROTOBUF_NONNULL other) {
+    if (other == this) return;
+    ABSL_DCHECK(GetArena() == other->GetArena());
+    InternalSwap(other);
+  }
+
+  // implements Message ----------------------------------------------
+
+  StoredFriendList* PROTOBUF_NONNULL New(::google::protobuf::Arena* PROTOBUF_NULLABLE arena = nullptr) const {
+    return ::google::protobuf::Message::DefaultConstruct<StoredFriendList>(arena);
+  }
+  using ::google::protobuf::Message::CopyFrom;
+  void CopyFrom(const StoredFriendList& from);
+  using ::google::protobuf::Message::MergeFrom;
+  void MergeFrom(const StoredFriendList& from) { StoredFriendList::MergeImpl(*this, from); }
+
+  private:
+  static void MergeImpl(::google::protobuf::MessageLite& to_msg,
+                        const ::google::protobuf::MessageLite& from_msg);
+
+  public:
+  bool IsInitialized() const {
+    return true;
+  }
+  ABSL_ATTRIBUTE_REINITIALIZES void Clear() PROTOBUF_FINAL;
+  #if defined(PROTOBUF_CUSTOM_VTABLE)
+  private:
+  static ::size_t ByteSizeLong(const ::google::protobuf::MessageLite& msg);
+  static ::uint8_t* PROTOBUF_NONNULL _InternalSerialize(
+      const ::google::protobuf::MessageLite& msg, ::uint8_t* PROTOBUF_NONNULL target,
+      ::google::protobuf::io::EpsCopyOutputStream* PROTOBUF_NONNULL stream);
+
+  public:
+  ::size_t ByteSizeLong() const { return ByteSizeLong(*this); }
+  ::uint8_t* PROTOBUF_NONNULL _InternalSerialize(
+      ::uint8_t* PROTOBUF_NONNULL target,
+      ::google::protobuf::io::EpsCopyOutputStream* PROTOBUF_NONNULL stream) const {
+    return _InternalSerialize(*this, target, stream);
+  }
+  #else   // PROTOBUF_CUSTOM_VTABLE
+  ::size_t ByteSizeLong() const final;
+  ::uint8_t* PROTOBUF_NONNULL _InternalSerialize(
+      ::uint8_t* PROTOBUF_NONNULL target,
+      ::google::protobuf::io::EpsCopyOutputStream* PROTOBUF_NONNULL stream) const final;
+  #endif  // PROTOBUF_CUSTOM_VTABLE
+  int GetCachedSize() const { return _impl_._cached_size_.Get(); }
+
+  private:
+  void SharedCtor(::google::protobuf::Arena* PROTOBUF_NULLABLE arena);
+  static void SharedDtor(MessageLite& self);
+  void InternalSwap(StoredFriendList* PROTOBUF_NONNULL other);
+ private:
+  template <typename T>
+  friend ::absl::string_view(::google::protobuf::internal::GetAnyMessageName)();
+  static ::absl::string_view FullMessageName() { return "chirp.social.StoredFriendList"; }
+
+  explicit StoredFriendList(::google::protobuf::Arena* PROTOBUF_NULLABLE arena);
+  StoredFriendList(::google::protobuf::Arena* PROTOBUF_NULLABLE arena, const StoredFriendList& from);
+  StoredFriendList(
+      ::google::protobuf::Arena* PROTOBUF_NULLABLE arena, StoredFriendList&& from) noexcept
+      : StoredFriendList(arena) {
+    *this = ::std::move(from);
+  }
+  const ::google::protobuf::internal::ClassData* PROTOBUF_NONNULL GetClassData() const PROTOBUF_FINAL;
+  static void* PROTOBUF_NONNULL PlacementNew_(
+      const void* PROTOBUF_NONNULL, void* PROTOBUF_NONNULL mem,
+      ::google::protobuf::Arena* PROTOBUF_NULLABLE arena);
+  static constexpr auto InternalNewImpl_();
+
+ public:
+  static constexpr auto InternalGenerateClassData_();
+
+  ::google::protobuf::Metadata GetMetadata() const;
+  // nested types ----------------------------------------------------
+
+  // accessors -------------------------------------------------------
+  enum : int {
+    kFriendUserIdsFieldNumber = 1,
+  };
+  // repeated string friend_user_ids = 1;
+  int friend_user_ids_size() const;
+  private:
+  int _internal_friend_user_ids_size() const;
+
+  public:
+  void clear_friend_user_ids() ;
+  const ::std::string& friend_user_ids(int index) const;
+  ::std::string* PROTOBUF_NONNULL mutable_friend_user_ids(int index);
+  template <typename Arg_ = const ::std::string&, typename... Args_>
+  void set_friend_user_ids(int index, Arg_&& value, Args_... args);
+  ::std::string* PROTOBUF_NONNULL add_friend_user_ids();
+  template <typename Arg_ = const ::std::string&, typename... Args_>
+  void add_friend_user_ids(Arg_&& value, Args_... args);
+  const ::google::protobuf::RepeatedPtrField<::std::string>& friend_user_ids() const;
+  ::google::protobuf::RepeatedPtrField<::std::string>* PROTOBUF_NONNULL mutable_friend_user_ids();
+
+  private:
+  const ::google::protobuf::RepeatedPtrField<::std::string>& _internal_friend_user_ids() const;
+  ::google::protobuf::RepeatedPtrField<::std::string>* PROTOBUF_NONNULL _internal_mutable_friend_user_ids();
+
+  public:
+  // @@protoc_insertion_point(class_scope:chirp.social.StoredFriendList)
+ private:
+  class _Internal;
+  friend class ::google::protobuf::internal::TcParser;
+  static const ::google::protobuf::internal::TcParseTable<0, 1,
+                                   0, 53,
+                                   2>
+      _table_;
+
+  friend class ::google::protobuf::MessageLite;
+  friend class ::google::protobuf::Arena;
+  template <typename T>
+  friend class ::google::protobuf::Arena::InternalHelper;
+  using InternalArenaConstructable_ = void;
+  using DestructorSkippable_ = void;
+  struct Impl_ {
+    inline explicit constexpr Impl_(::google::protobuf::internal::ConstantInitialized) noexcept;
+    inline explicit Impl_(
+        ::google::protobuf::internal::InternalVisibility visibility,
+        ::google::protobuf::Arena* PROTOBUF_NULLABLE arena);
+    inline explicit Impl_(
+        ::google::protobuf::internal::InternalVisibility visibility,
+        ::google::protobuf::Arena* PROTOBUF_NULLABLE arena, const Impl_& from,
+        const StoredFriendList& from_msg);
+    ::google::protobuf::internal::HasBits<1> _has_bits_;
+    ::google::protobuf::internal::CachedSize _cached_size_;
+    ::google::protobuf::RepeatedPtrField<::std::string> friend_user_ids_;
+    PROTOBUF_TSAN_DECLARE_MEMBER
+  };
+  union { Impl_ _impl_; };
+  friend struct ::TableStruct_proto_2fsocial_2eproto;
+};
+
+extern const ::google::protobuf::internal::ClassDataFull StoredFriendList_class_data_;
+// -------------------------------------------------------------------
+
+class StoredBlockedList final : public ::google::protobuf::Message
+/* @@protoc_insertion_point(class_definition:chirp.social.StoredBlockedList) */ {
+ public:
+  inline StoredBlockedList() : StoredBlockedList(nullptr) {}
+  ~StoredBlockedList() PROTOBUF_FINAL;
+
+#if defined(PROTOBUF_CUSTOM_VTABLE)
+  void operator delete(StoredBlockedList* PROTOBUF_NONNULL msg, ::std::destroying_delete_t) {
+    SharedDtor(*msg);
+    ::google::protobuf::internal::SizedDelete(msg, sizeof(StoredBlockedList));
+  }
+#endif
+
+  template <typename = void>
+  explicit PROTOBUF_CONSTEXPR StoredBlockedList(::google::protobuf::internal::ConstantInitialized);
+
+  inline StoredBlockedList(const StoredBlockedList& from) : StoredBlockedList(nullptr, from) {}
+  inline StoredBlockedList(StoredBlockedList&& from) noexcept
+      : StoredBlockedList(nullptr, ::std::move(from)) {}
+  inline StoredBlockedList& operator=(const StoredBlockedList& from) {
+    CopyFrom(from);
+    return *this;
+  }
+  inline StoredBlockedList& operator=(StoredBlockedList&& from) noexcept {
+    if (this == &from) return *this;
+    if (::google::protobuf::internal::CanMoveWithInternalSwap(GetArena(), from.GetArena())) {
+      InternalSwap(&from);
+    } else {
+      CopyFrom(from);
+    }
+    return *this;
+  }
+
+  inline const ::google::protobuf::UnknownFieldSet& unknown_fields() const
+      ABSL_ATTRIBUTE_LIFETIME_BOUND {
+    return _internal_metadata_.unknown_fields<::google::protobuf::UnknownFieldSet>(::google::protobuf::UnknownFieldSet::default_instance);
+  }
+  inline ::google::protobuf::UnknownFieldSet* PROTOBUF_NONNULL mutable_unknown_fields()
+      ABSL_ATTRIBUTE_LIFETIME_BOUND {
+    return _internal_metadata_.mutable_unknown_fields<::google::protobuf::UnknownFieldSet>();
+  }
+
+  static const ::google::protobuf::Descriptor* PROTOBUF_NONNULL descriptor() {
+    return GetDescriptor();
+  }
+  static const ::google::protobuf::Descriptor* PROTOBUF_NONNULL GetDescriptor() {
+    return default_instance().GetMetadata().descriptor;
+  }
+  static const ::google::protobuf::Reflection* PROTOBUF_NONNULL GetReflection() {
+    return default_instance().GetMetadata().reflection;
+  }
+  static const StoredBlockedList& default_instance() {
+    return *reinterpret_cast<const StoredBlockedList*>(
+        &_StoredBlockedList_default_instance_);
+  }
+  static constexpr int kIndexInFileMessages = 33;
+  friend void swap(StoredBlockedList& a, StoredBlockedList& b) { a.Swap(&b); }
+  inline void Swap(StoredBlockedList* PROTOBUF_NONNULL other) {
+    if (other == this) return;
+    if (::google::protobuf::internal::CanUseInternalSwap(GetArena(), other->GetArena())) {
+      InternalSwap(other);
+    } else {
+      ::google::protobuf::internal::GenericSwap(this, other);
+    }
+  }
+  void UnsafeArenaSwap(StoredBlockedList* PROTOBUF_NONNULL other) {
+    if (other == this) return;
+    ABSL_DCHECK(GetArena() == other->GetArena());
+    InternalSwap(other);
+  }
+
+  // implements Message ----------------------------------------------
+
+  StoredBlockedList* PROTOBUF_NONNULL New(::google::protobuf::Arena* PROTOBUF_NULLABLE arena = nullptr) const {
+    return ::google::protobuf::Message::DefaultConstruct<StoredBlockedList>(arena);
+  }
+  using ::google::protobuf::Message::CopyFrom;
+  void CopyFrom(const StoredBlockedList& from);
+  using ::google::protobuf::Message::MergeFrom;
+  void MergeFrom(const StoredBlockedList& from) { StoredBlockedList::MergeImpl(*this, from); }
+
+  private:
+  static void MergeImpl(::google::protobuf::MessageLite& to_msg,
+                        const ::google::protobuf::MessageLite& from_msg);
+
+  public:
+  bool IsInitialized() const {
+    return true;
+  }
+  ABSL_ATTRIBUTE_REINITIALIZES void Clear() PROTOBUF_FINAL;
+  #if defined(PROTOBUF_CUSTOM_VTABLE)
+  private:
+  static ::size_t ByteSizeLong(const ::google::protobuf::MessageLite& msg);
+  static ::uint8_t* PROTOBUF_NONNULL _InternalSerialize(
+      const ::google::protobuf::MessageLite& msg, ::uint8_t* PROTOBUF_NONNULL target,
+      ::google::protobuf::io::EpsCopyOutputStream* PROTOBUF_NONNULL stream);
+
+  public:
+  ::size_t ByteSizeLong() const { return ByteSizeLong(*this); }
+  ::uint8_t* PROTOBUF_NONNULL _InternalSerialize(
+      ::uint8_t* PROTOBUF_NONNULL target,
+      ::google::protobuf::io::EpsCopyOutputStream* PROTOBUF_NONNULL stream) const {
+    return _InternalSerialize(*this, target, stream);
+  }
+  #else   // PROTOBUF_CUSTOM_VTABLE
+  ::size_t ByteSizeLong() const final;
+  ::uint8_t* PROTOBUF_NONNULL _InternalSerialize(
+      ::uint8_t* PROTOBUF_NONNULL target,
+      ::google::protobuf::io::EpsCopyOutputStream* PROTOBUF_NONNULL stream) const final;
+  #endif  // PROTOBUF_CUSTOM_VTABLE
+  int GetCachedSize() const { return _impl_._cached_size_.Get(); }
+
+  private:
+  void SharedCtor(::google::protobuf::Arena* PROTOBUF_NULLABLE arena);
+  static void SharedDtor(MessageLite& self);
+  void InternalSwap(StoredBlockedList* PROTOBUF_NONNULL other);
+ private:
+  template <typename T>
+  friend ::absl::string_view(::google::protobuf::internal::GetAnyMessageName)();
+  static ::absl::string_view FullMessageName() { return "chirp.social.StoredBlockedList"; }
+
+  explicit StoredBlockedList(::google::protobuf::Arena* PROTOBUF_NULLABLE arena);
+  StoredBlockedList(::google::protobuf::Arena* PROTOBUF_NULLABLE arena, const StoredBlockedList& from);
+  StoredBlockedList(
+      ::google::protobuf::Arena* PROTOBUF_NULLABLE arena, StoredBlockedList&& from) noexcept
+      : StoredBlockedList(arena) {
+    *this = ::std::move(from);
+  }
+  const ::google::protobuf::internal::ClassData* PROTOBUF_NONNULL GetClassData() const PROTOBUF_FINAL;
+  static void* PROTOBUF_NONNULL PlacementNew_(
+      const void* PROTOBUF_NONNULL, void* PROTOBUF_NONNULL mem,
+      ::google::protobuf::Arena* PROTOBUF_NULLABLE arena);
+  static constexpr auto InternalNewImpl_();
+
+ public:
+  static constexpr auto InternalGenerateClassData_();
+
+  ::google::protobuf::Metadata GetMetadata() const;
+  // nested types ----------------------------------------------------
+
+  // accessors -------------------------------------------------------
+  enum : int {
+    kBlockedUserIdsFieldNumber = 1,
+  };
+  // repeated string blocked_user_ids = 1;
+  int blocked_user_ids_size() const;
+  private:
+  int _internal_blocked_user_ids_size() const;
+
+  public:
+  void clear_blocked_user_ids() ;
+  const ::std::string& blocked_user_ids(int index) const;
+  ::std::string* PROTOBUF_NONNULL mutable_blocked_user_ids(int index);
+  template <typename Arg_ = const ::std::string&, typename... Args_>
+  void set_blocked_user_ids(int index, Arg_&& value, Args_... args);
+  ::std::string* PROTOBUF_NONNULL add_blocked_user_ids();
+  template <typename Arg_ = const ::std::string&, typename... Args_>
+  void add_blocked_user_ids(Arg_&& value, Args_... args);
+  const ::google::protobuf::RepeatedPtrField<::std::string>& blocked_user_ids() const;
+  ::google::protobuf::RepeatedPtrField<::std::string>* PROTOBUF_NONNULL mutable_blocked_user_ids();
+
+  private:
+  const ::google::protobuf::RepeatedPtrField<::std::string>& _internal_blocked_user_ids() const;
+  ::google::protobuf::RepeatedPtrField<::std::string>* PROTOBUF_NONNULL _internal_mutable_blocked_user_ids();
+
+  public:
+  // @@protoc_insertion_point(class_scope:chirp.social.StoredBlockedList)
+ private:
+  class _Internal;
+  friend class ::google::protobuf::internal::TcParser;
+  static const ::google::protobuf::internal::TcParseTable<0, 1,
+                                   0, 55,
+                                   2>
+      _table_;
+
+  friend class ::google::protobuf::MessageLite;
+  friend class ::google::protobuf::Arena;
+  template <typename T>
+  friend class ::google::protobuf::Arena::InternalHelper;
+  using InternalArenaConstructable_ = void;
+  using DestructorSkippable_ = void;
+  struct Impl_ {
+    inline explicit constexpr Impl_(::google::protobuf::internal::ConstantInitialized) noexcept;
+    inline explicit Impl_(
+        ::google::protobuf::internal::InternalVisibility visibility,
+        ::google::protobuf::Arena* PROTOBUF_NULLABLE arena);
+    inline explicit Impl_(
+        ::google::protobuf::internal::InternalVisibility visibility,
+        ::google::protobuf::Arena* PROTOBUF_NULLABLE arena, const Impl_& from,
+        const StoredBlockedList& from_msg);
+    ::google::protobuf::internal::HasBits<1> _has_bits_;
+    ::google::protobuf::internal::CachedSize _cached_size_;
+    ::google::protobuf::RepeatedPtrField<::std::string> blocked_user_ids_;
+    PROTOBUF_TSAN_DECLARE_MEMBER
+  };
+  union { Impl_ _impl_; };
+  friend struct ::TableStruct_proto_2fsocial_2eproto;
+};
+
+extern const ::google::protobuf::internal::ClassDataFull StoredBlockedList_class_data_;
 // -------------------------------------------------------------------
 
 class SetPresenceResponse final : public ::google::protobuf::Message
@@ -4926,6 +5346,45 @@ class AddFriendRequest final : public ::google::protobuf::Message
 extern const ::google::protobuf::internal::ClassDataFull AddFriendRequest_class_data_;
 // -------------------------------------------------------------------
 
+class StoredPendingRequests_RequestsEntry_DoNotUse final
+    : public ::google::protobuf::internal::MapEntry<::std::string, ::google::protobuf::Message,
+                             ::google::protobuf::internal::WireFormatLite::TYPE_STRING,
+                             ::google::protobuf::internal::WireFormatLite::TYPE_MESSAGE> {
+ public:
+  using SuperType =
+      ::google::protobuf::internal::MapEntry<::std::string, ::google::protobuf::Message,
+                      ::google::protobuf::internal::WireFormatLite::TYPE_STRING,
+                      ::google::protobuf::internal::WireFormatLite::TYPE_MESSAGE>;
+  StoredPendingRequests_RequestsEntry_DoNotUse();
+  template <typename = void>
+  explicit PROTOBUF_CONSTEXPR StoredPendingRequests_RequestsEntry_DoNotUse(::google::protobuf::internal::ConstantInitialized);
+  explicit StoredPendingRequests_RequestsEntry_DoNotUse(::google::protobuf::Arena* PROTOBUF_NULLABLE arena);
+  static constexpr const void* PROTOBUF_NONNULL internal_default_instance() {
+    return &_StoredPendingRequests_RequestsEntry_DoNotUse_default_instance_;
+  }
+
+
+  static constexpr auto InternalGenerateClassData_();
+
+ private:
+  friend class ::google::protobuf::MessageLite;
+  friend struct ::TableStruct_proto_2fsocial_2eproto;
+
+  friend class ::google::protobuf::internal::TcParser;
+  static const ::google::protobuf::internal::TcParseTable<1, 2,
+                                   1, 60,
+                                   2>
+      _table_;
+
+  const ::google::protobuf::internal::ClassData* PROTOBUF_NONNULL GetClassData() const PROTOBUF_FINAL;
+  static void* PROTOBUF_NONNULL PlacementNew_(
+      const void* PROTOBUF_NONNULL, void* PROTOBUF_NONNULL mem,
+      ::google::protobuf::Arena* PROTOBUF_NULLABLE arena);
+  static constexpr auto InternalNewImpl_();
+};
+extern const ::google::protobuf::internal::ClassDataFull StoredPendingRequests_RequestsEntry_DoNotUse_class_data_;
+// -------------------------------------------------------------------
+
 class SetPresenceRequest final : public ::google::protobuf::Message
 /* @@protoc_insertion_point(class_definition:chirp.social.SetPresenceRequest) */ {
  public:
@@ -6110,6 +6569,204 @@ class GetFriendListResponse final : public ::google::protobuf::Message
 };
 
 extern const ::google::protobuf::internal::ClassDataFull GetFriendListResponse_class_data_;
+// -------------------------------------------------------------------
+
+class StoredPendingRequests final : public ::google::protobuf::Message
+/* @@protoc_insertion_point(class_definition:chirp.social.StoredPendingRequests) */ {
+ public:
+  inline StoredPendingRequests() : StoredPendingRequests(nullptr) {}
+  ~StoredPendingRequests() PROTOBUF_FINAL;
+
+#if defined(PROTOBUF_CUSTOM_VTABLE)
+  void operator delete(StoredPendingRequests* PROTOBUF_NONNULL msg, ::std::destroying_delete_t) {
+    SharedDtor(*msg);
+    ::google::protobuf::internal::SizedDelete(msg, sizeof(StoredPendingRequests));
+  }
+#endif
+
+  template <typename = void>
+  explicit PROTOBUF_CONSTEXPR StoredPendingRequests(::google::protobuf::internal::ConstantInitialized);
+
+  inline StoredPendingRequests(const StoredPendingRequests& from) : StoredPendingRequests(nullptr, from) {}
+  inline StoredPendingRequests(StoredPendingRequests&& from) noexcept
+      : StoredPendingRequests(nullptr, ::std::move(from)) {}
+  inline StoredPendingRequests& operator=(const StoredPendingRequests& from) {
+    CopyFrom(from);
+    return *this;
+  }
+  inline StoredPendingRequests& operator=(StoredPendingRequests&& from) noexcept {
+    if (this == &from) return *this;
+    if (::google::protobuf::internal::CanMoveWithInternalSwap(GetArena(), from.GetArena())) {
+      InternalSwap(&from);
+    } else {
+      CopyFrom(from);
+    }
+    return *this;
+  }
+
+  inline const ::google::protobuf::UnknownFieldSet& unknown_fields() const
+      ABSL_ATTRIBUTE_LIFETIME_BOUND {
+    return _internal_metadata_.unknown_fields<::google::protobuf::UnknownFieldSet>(::google::protobuf::UnknownFieldSet::default_instance);
+  }
+  inline ::google::protobuf::UnknownFieldSet* PROTOBUF_NONNULL mutable_unknown_fields()
+      ABSL_ATTRIBUTE_LIFETIME_BOUND {
+    return _internal_metadata_.mutable_unknown_fields<::google::protobuf::UnknownFieldSet>();
+  }
+
+  static const ::google::protobuf::Descriptor* PROTOBUF_NONNULL descriptor() {
+    return GetDescriptor();
+  }
+  static const ::google::protobuf::Descriptor* PROTOBUF_NONNULL GetDescriptor() {
+    return default_instance().GetMetadata().descriptor;
+  }
+  static const ::google::protobuf::Reflection* PROTOBUF_NONNULL GetReflection() {
+    return default_instance().GetMetadata().reflection;
+  }
+  static const StoredPendingRequests& default_instance() {
+    return *reinterpret_cast<const StoredPendingRequests*>(
+        &_StoredPendingRequests_default_instance_);
+  }
+  static constexpr int kIndexInFileMessages = 32;
+  friend void swap(StoredPendingRequests& a, StoredPendingRequests& b) { a.Swap(&b); }
+  inline void Swap(StoredPendingRequests* PROTOBUF_NONNULL other) {
+    if (other == this) return;
+    if (::google::protobuf::internal::CanUseInternalSwap(GetArena(), other->GetArena())) {
+      InternalSwap(other);
+    } else {
+      ::google::protobuf::internal::GenericSwap(this, other);
+    }
+  }
+  void UnsafeArenaSwap(StoredPendingRequests* PROTOBUF_NONNULL other) {
+    if (other == this) return;
+    ABSL_DCHECK(GetArena() == other->GetArena());
+    InternalSwap(other);
+  }
+
+  // implements Message ----------------------------------------------
+
+  StoredPendingRequests* PROTOBUF_NONNULL New(::google::protobuf::Arena* PROTOBUF_NULLABLE arena = nullptr) const {
+    return ::google::protobuf::Message::DefaultConstruct<StoredPendingRequests>(arena);
+  }
+  using ::google::protobuf::Message::CopyFrom;
+  void CopyFrom(const StoredPendingRequests& from);
+  using ::google::protobuf::Message::MergeFrom;
+  void MergeFrom(const StoredPendingRequests& from) { StoredPendingRequests::MergeImpl(*this, from); }
+
+  private:
+  static void MergeImpl(::google::protobuf::MessageLite& to_msg,
+                        const ::google::protobuf::MessageLite& from_msg);
+
+  public:
+  bool IsInitialized() const {
+    return true;
+  }
+  ABSL_ATTRIBUTE_REINITIALIZES void Clear() PROTOBUF_FINAL;
+  #if defined(PROTOBUF_CUSTOM_VTABLE)
+  private:
+  static ::size_t ByteSizeLong(const ::google::protobuf::MessageLite& msg);
+  static ::uint8_t* PROTOBUF_NONNULL _InternalSerialize(
+      const ::google::protobuf::MessageLite& msg, ::uint8_t* PROTOBUF_NONNULL target,
+      ::google::protobuf::io::EpsCopyOutputStream* PROTOBUF_NONNULL stream);
+
+  public:
+  ::size_t ByteSizeLong() const { return ByteSizeLong(*this); }
+  ::uint8_t* PROTOBUF_NONNULL _InternalSerialize(
+      ::uint8_t* PROTOBUF_NONNULL target,
+      ::google::protobuf::io::EpsCopyOutputStream* PROTOBUF_NONNULL stream) const {
+    return _InternalSerialize(*this, target, stream);
+  }
+  #else   // PROTOBUF_CUSTOM_VTABLE
+  ::size_t ByteSizeLong() const final;
+  ::uint8_t* PROTOBUF_NONNULL _InternalSerialize(
+      ::uint8_t* PROTOBUF_NONNULL target,
+      ::google::protobuf::io::EpsCopyOutputStream* PROTOBUF_NONNULL stream) const final;
+  #endif  // PROTOBUF_CUSTOM_VTABLE
+  int GetCachedSize() const { return _impl_._cached_size_.Get(); }
+
+  private:
+  void SharedCtor(::google::protobuf::Arena* PROTOBUF_NULLABLE arena);
+  static void SharedDtor(MessageLite& self);
+  void InternalSwap(StoredPendingRequests* PROTOBUF_NONNULL other);
+ private:
+  template <typename T>
+  friend ::absl::string_view(::google::protobuf::internal::GetAnyMessageName)();
+  static ::absl::string_view FullMessageName() { return "chirp.social.StoredPendingRequests"; }
+
+  explicit StoredPendingRequests(::google::protobuf::Arena* PROTOBUF_NULLABLE arena);
+  StoredPendingRequests(::google::protobuf::Arena* PROTOBUF_NULLABLE arena, const StoredPendingRequests& from);
+  StoredPendingRequests(
+      ::google::protobuf::Arena* PROTOBUF_NULLABLE arena, StoredPendingRequests&& from) noexcept
+      : StoredPendingRequests(arena) {
+    *this = ::std::move(from);
+  }
+  const ::google::protobuf::internal::ClassData* PROTOBUF_NONNULL GetClassData() const PROTOBUF_FINAL;
+  static void* PROTOBUF_NONNULL PlacementNew_(
+      const void* PROTOBUF_NONNULL, void* PROTOBUF_NONNULL mem,
+      ::google::protobuf::Arena* PROTOBUF_NULLABLE arena);
+  static constexpr auto InternalNewImpl_();
+
+ public:
+  static constexpr auto InternalGenerateClassData_();
+
+  ::google::protobuf::Metadata GetMetadata() const;
+  // nested types ----------------------------------------------------
+
+  // accessors -------------------------------------------------------
+  enum : int {
+    kRequestsFieldNumber = 1,
+  };
+  // map<string, .chirp.social.FriendRequest> requests = 1;
+  int requests_size() const;
+  private:
+  int _internal_requests_size() const;
+
+  public:
+  void clear_requests() ;
+  const ::google::protobuf::Map<::std::string, ::chirp::social::FriendRequest>& requests() const;
+  ::google::protobuf::Map<::std::string, ::chirp::social::FriendRequest>* PROTOBUF_NONNULL mutable_requests();
+
+  private:
+  const ::google::protobuf::Map<::std::string, ::chirp::social::FriendRequest>& _internal_requests() const;
+  ::google::protobuf::Map<::std::string, ::chirp::social::FriendRequest>* PROTOBUF_NONNULL _internal_mutable_requests();
+
+  public:
+  // @@protoc_insertion_point(class_scope:chirp.social.StoredPendingRequests)
+ private:
+  class _Internal;
+  friend class ::google::protobuf::internal::TcParser;
+  static const ::google::protobuf::internal::TcParseTable<0, 1,
+                                   2, 51,
+                                   2>
+      _table_;
+
+  friend class ::google::protobuf::MessageLite;
+  friend class ::google::protobuf::Arena;
+  template <typename T>
+  friend class ::google::protobuf::Arena::InternalHelper;
+  using InternalArenaConstructable_ = void;
+  using DestructorSkippable_ = void;
+  struct Impl_ {
+    inline explicit constexpr Impl_(::google::protobuf::internal::ConstantInitialized) noexcept;
+    inline explicit Impl_(
+        ::google::protobuf::internal::InternalVisibility visibility,
+        ::google::protobuf::Arena* PROTOBUF_NULLABLE arena);
+    inline explicit Impl_(
+        ::google::protobuf::internal::InternalVisibility visibility,
+        ::google::protobuf::Arena* PROTOBUF_NULLABLE arena, const Impl_& from,
+        const StoredPendingRequests& from_msg);
+    ::google::protobuf::internal::HasBits<1> _has_bits_;
+    ::google::protobuf::internal::CachedSize _cached_size_;
+    ::google::protobuf::internal::MapField<StoredPendingRequests_RequestsEntry_DoNotUse, ::std::string, ::chirp::social::FriendRequest,
+                      ::google::protobuf::internal::WireFormatLite::TYPE_STRING,
+                      ::google::protobuf::internal::WireFormatLite::TYPE_MESSAGE>
+        requests_;
+    PROTOBUF_TSAN_DECLARE_MEMBER
+  };
+  union { Impl_ _impl_; };
+  friend struct ::TableStruct_proto_2fsocial_2eproto;
+};
+
+extern const ::google::protobuf::internal::ClassDataFull StoredPendingRequests_class_data_;
 // -------------------------------------------------------------------
 
 class GetPresenceResponse final : public ::google::protobuf::Message
@@ -9837,6 +10494,196 @@ inline ::int64_t FriendRemovedNotify::_internal_timestamp() const {
 inline void FriendRemovedNotify::_internal_set_timestamp(::int64_t value) {
   ::google::protobuf::internal::TSanWrite(&_impl_);
   _impl_.timestamp_ = value;
+}
+
+// -------------------------------------------------------------------
+
+// StoredFriendList
+
+// repeated string friend_user_ids = 1;
+inline int StoredFriendList::_internal_friend_user_ids_size() const {
+  return _internal_friend_user_ids().size();
+}
+inline int StoredFriendList::friend_user_ids_size() const {
+  return _internal_friend_user_ids_size();
+}
+inline void StoredFriendList::clear_friend_user_ids() {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_.friend_user_ids_.Clear();
+  ClearHasBitForRepeated(_impl_._has_bits_[0],
+                  0x00000001U);
+}
+inline ::std::string* PROTOBUF_NONNULL StoredFriendList::add_friend_user_ids()
+    ABSL_ATTRIBUTE_LIFETIME_BOUND {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  ::std::string* _s =
+      _internal_mutable_friend_user_ids()->InternalAddWithArena(
+          ::google::protobuf::MessageLite::internal_visibility(), GetArena());
+  SetHasBitForRepeated(_impl_._has_bits_[0], 0x00000001U);
+  // @@protoc_insertion_point(field_add_mutable:chirp.social.StoredFriendList.friend_user_ids)
+  return _s;
+}
+inline const ::std::string& StoredFriendList::friend_user_ids(int index) const
+    ABSL_ATTRIBUTE_LIFETIME_BOUND {
+  // @@protoc_insertion_point(field_get:chirp.social.StoredFriendList.friend_user_ids)
+  return _internal_friend_user_ids().Get(index);
+}
+inline ::std::string* PROTOBUF_NONNULL StoredFriendList::mutable_friend_user_ids(int index)
+    ABSL_ATTRIBUTE_LIFETIME_BOUND {
+  // @@protoc_insertion_point(field_mutable:chirp.social.StoredFriendList.friend_user_ids)
+  return _internal_mutable_friend_user_ids()->Mutable(index);
+}
+template <typename Arg_, typename... Args_>
+inline void StoredFriendList::set_friend_user_ids(int index, Arg_&& value, Args_... args) {
+  ::google::protobuf::internal::AssignToString(*_internal_mutable_friend_user_ids()->Mutable(index), ::std::forward<Arg_>(value),
+                        args... );
+  // @@protoc_insertion_point(field_set:chirp.social.StoredFriendList.friend_user_ids)
+}
+template <typename Arg_, typename... Args_>
+inline void StoredFriendList::add_friend_user_ids(Arg_&& value, Args_... args) {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  ::google::protobuf::internal::AddToRepeatedPtrField(
+      ::google::protobuf::MessageLite::internal_visibility(), GetArena(),
+      *_internal_mutable_friend_user_ids(), ::std::forward<Arg_>(value),
+      args... );
+  SetHasBitForRepeated(_impl_._has_bits_[0], 0x00000001U);
+  // @@protoc_insertion_point(field_add:chirp.social.StoredFriendList.friend_user_ids)
+}
+inline const ::google::protobuf::RepeatedPtrField<::std::string>& StoredFriendList::friend_user_ids()
+    const ABSL_ATTRIBUTE_LIFETIME_BOUND {
+  // @@protoc_insertion_point(field_list:chirp.social.StoredFriendList.friend_user_ids)
+  return _internal_friend_user_ids();
+}
+inline ::google::protobuf::RepeatedPtrField<::std::string>* PROTOBUF_NONNULL
+StoredFriendList::mutable_friend_user_ids() ABSL_ATTRIBUTE_LIFETIME_BOUND {
+  SetHasBitForRepeated(_impl_._has_bits_[0], 0x00000001U);
+  // @@protoc_insertion_point(field_mutable_list:chirp.social.StoredFriendList.friend_user_ids)
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  return _internal_mutable_friend_user_ids();
+}
+inline const ::google::protobuf::RepeatedPtrField<::std::string>&
+StoredFriendList::_internal_friend_user_ids() const {
+  ::google::protobuf::internal::TSanRead(&_impl_);
+  return _impl_.friend_user_ids_;
+}
+inline ::google::protobuf::RepeatedPtrField<::std::string>* PROTOBUF_NONNULL
+StoredFriendList::_internal_mutable_friend_user_ids() {
+  ::google::protobuf::internal::TSanRead(&_impl_);
+  return &_impl_.friend_user_ids_;
+}
+
+// -------------------------------------------------------------------
+
+// -------------------------------------------------------------------
+
+// StoredPendingRequests
+
+// map<string, .chirp.social.FriendRequest> requests = 1;
+inline int StoredPendingRequests::_internal_requests_size() const {
+  return _internal_requests().size();
+}
+inline int StoredPendingRequests::requests_size() const {
+  return _internal_requests_size();
+}
+inline void StoredPendingRequests::clear_requests() {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_.requests_.Clear();
+  ClearHasBitForRepeated(_impl_._has_bits_[0],
+                  0x00000001U);
+}
+inline const ::google::protobuf::Map<::std::string, ::chirp::social::FriendRequest>& StoredPendingRequests::_internal_requests() const {
+  ::google::protobuf::internal::TSanRead(&_impl_);
+  return _impl_.requests_.GetMap();
+}
+inline const ::google::protobuf::Map<::std::string, ::chirp::social::FriendRequest>& StoredPendingRequests::requests() const ABSL_ATTRIBUTE_LIFETIME_BOUND {
+  // @@protoc_insertion_point(field_map:chirp.social.StoredPendingRequests.requests)
+  return _internal_requests();
+}
+inline ::google::protobuf::Map<::std::string, ::chirp::social::FriendRequest>* PROTOBUF_NONNULL StoredPendingRequests::_internal_mutable_requests() {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  return _impl_.requests_.MutableMap();
+}
+inline ::google::protobuf::Map<::std::string, ::chirp::social::FriendRequest>* PROTOBUF_NONNULL StoredPendingRequests::mutable_requests()
+    ABSL_ATTRIBUTE_LIFETIME_BOUND {
+  SetHasBitForRepeated(_impl_._has_bits_[0], 0x00000001U);
+  // @@protoc_insertion_point(field_mutable_map:chirp.social.StoredPendingRequests.requests)
+  return _internal_mutable_requests();
+}
+
+// -------------------------------------------------------------------
+
+// StoredBlockedList
+
+// repeated string blocked_user_ids = 1;
+inline int StoredBlockedList::_internal_blocked_user_ids_size() const {
+  return _internal_blocked_user_ids().size();
+}
+inline int StoredBlockedList::blocked_user_ids_size() const {
+  return _internal_blocked_user_ids_size();
+}
+inline void StoredBlockedList::clear_blocked_user_ids() {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_.blocked_user_ids_.Clear();
+  ClearHasBitForRepeated(_impl_._has_bits_[0],
+                  0x00000001U);
+}
+inline ::std::string* PROTOBUF_NONNULL StoredBlockedList::add_blocked_user_ids()
+    ABSL_ATTRIBUTE_LIFETIME_BOUND {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  ::std::string* _s =
+      _internal_mutable_blocked_user_ids()->InternalAddWithArena(
+          ::google::protobuf::MessageLite::internal_visibility(), GetArena());
+  SetHasBitForRepeated(_impl_._has_bits_[0], 0x00000001U);
+  // @@protoc_insertion_point(field_add_mutable:chirp.social.StoredBlockedList.blocked_user_ids)
+  return _s;
+}
+inline const ::std::string& StoredBlockedList::blocked_user_ids(int index) const
+    ABSL_ATTRIBUTE_LIFETIME_BOUND {
+  // @@protoc_insertion_point(field_get:chirp.social.StoredBlockedList.blocked_user_ids)
+  return _internal_blocked_user_ids().Get(index);
+}
+inline ::std::string* PROTOBUF_NONNULL StoredBlockedList::mutable_blocked_user_ids(int index)
+    ABSL_ATTRIBUTE_LIFETIME_BOUND {
+  // @@protoc_insertion_point(field_mutable:chirp.social.StoredBlockedList.blocked_user_ids)
+  return _internal_mutable_blocked_user_ids()->Mutable(index);
+}
+template <typename Arg_, typename... Args_>
+inline void StoredBlockedList::set_blocked_user_ids(int index, Arg_&& value, Args_... args) {
+  ::google::protobuf::internal::AssignToString(*_internal_mutable_blocked_user_ids()->Mutable(index), ::std::forward<Arg_>(value),
+                        args... );
+  // @@protoc_insertion_point(field_set:chirp.social.StoredBlockedList.blocked_user_ids)
+}
+template <typename Arg_, typename... Args_>
+inline void StoredBlockedList::add_blocked_user_ids(Arg_&& value, Args_... args) {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  ::google::protobuf::internal::AddToRepeatedPtrField(
+      ::google::protobuf::MessageLite::internal_visibility(), GetArena(),
+      *_internal_mutable_blocked_user_ids(), ::std::forward<Arg_>(value),
+      args... );
+  SetHasBitForRepeated(_impl_._has_bits_[0], 0x00000001U);
+  // @@protoc_insertion_point(field_add:chirp.social.StoredBlockedList.blocked_user_ids)
+}
+inline const ::google::protobuf::RepeatedPtrField<::std::string>& StoredBlockedList::blocked_user_ids()
+    const ABSL_ATTRIBUTE_LIFETIME_BOUND {
+  // @@protoc_insertion_point(field_list:chirp.social.StoredBlockedList.blocked_user_ids)
+  return _internal_blocked_user_ids();
+}
+inline ::google::protobuf::RepeatedPtrField<::std::string>* PROTOBUF_NONNULL
+StoredBlockedList::mutable_blocked_user_ids() ABSL_ATTRIBUTE_LIFETIME_BOUND {
+  SetHasBitForRepeated(_impl_._has_bits_[0], 0x00000001U);
+  // @@protoc_insertion_point(field_mutable_list:chirp.social.StoredBlockedList.blocked_user_ids)
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  return _internal_mutable_blocked_user_ids();
+}
+inline const ::google::protobuf::RepeatedPtrField<::std::string>&
+StoredBlockedList::_internal_blocked_user_ids() const {
+  ::google::protobuf::internal::TSanRead(&_impl_);
+  return _impl_.blocked_user_ids_;
+}
+inline ::google::protobuf::RepeatedPtrField<::std::string>* PROTOBUF_NONNULL
+StoredBlockedList::_internal_mutable_blocked_user_ids() {
+  ::google::protobuf::internal::TSanRead(&_impl_);
+  return &_impl_.blocked_user_ids_;
 }
 
 #ifdef __GNUC__

@@ -30,6 +30,9 @@ public:
   // Basic commands
   virtual std::optional<std::string> Get(const std::string& key);
   virtual bool SetEx(const std::string& key, const std::string& value, int ttl_seconds);
+  // SET without a TTL: durable data (e.g. relationship snapshots) must never
+  // silently expire, which any TTL-based variant would eventually do.
+  virtual bool Set(const std::string& key, const std::string& value);
   virtual bool Del(const std::string& key);
 
   // Pub/Sub commands
