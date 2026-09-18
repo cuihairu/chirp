@@ -221,8 +221,12 @@ elif [[ "${1:-}" == "--smoke-redis" ]]; then
 
   echo ""
   echo "[tcp] hold login on gw_a (expect kick: same user+device via redis claim)"
+  # Kick window: 15s. On CI a cold 49M binary needs seconds just to start,
+  # and the whole gw_b chain (cold start + login + claim + publish + kick
+  # frame) ran ~5s locally but >5s there - the window must dwarf that chain
+  # since the gw_b login below blocks until it is done anyway.
   timeout 60 ./build/tools/benchmark/chirp_login_client --host 127.0.0.1 --port "${GW1_PORT}" \
-    --token user_1 --device dev_a --platform pc --wait_kick_ms 5000 > "${CLIENT1_LOG}" 2>&1 &
+    --token user_1 --device dev_a --platform pc --wait_kick_ms 15000 > "${CLIENT1_LOG}" 2>&1 &
   CLIENT1_PID=$!
 
   # The kick window starts when the hold client finishes logging in; wait
@@ -248,7 +252,7 @@ elif [[ "${1:-}" == "--smoke-redis" ]]; then
   echo ""
   echo "[tcp] coexistence: hold on gw_a device dev_a, login gw_b device dev_b (no kick)"
   timeout 60 ./build/tools/benchmark/chirp_login_client --host 127.0.0.1 --port "${GW1_PORT}" \
-    --token user_3 --device dev_a --platform pc --wait_kick_ms 3000 > "${CLIENT3_LOG}" 2>&1 &
+    --token user_3 --device dev_a --platform pc --wait_kick_ms 15000 > "${CLIENT3_LOG}" 2>&1 &
   CLIENT3_PID=$!
   wait_log "${CLIENT3_LOG}" "pong msg_id" 10
 
@@ -280,7 +284,7 @@ elif [[ "${1:-}" == "--smoke-redis" ]]; then
   echo ""
   echo "[ws] hold login on gw_a (expect kick: same user+device via redis claim)"
   timeout 60 ./build/tools/benchmark/chirp_ws_login_client --host 127.0.0.1 --port "${WS1_PORT}" \
-    --token user_2 --device dev_a --platform web --wait_kick_ms 5000 > "${WS_CLIENT1_LOG}" 2>&1 &
+    --token user_2 --device dev_a --platform web --wait_kick_ms 15000 > "${WS_CLIENT1_LOG}" 2>&1 &
   WS_CLIENT1_PID=$!
 
   wait_log "${WS_CLIENT1_LOG}" "pong msg_id" 10
