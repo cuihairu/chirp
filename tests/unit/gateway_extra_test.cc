@@ -3,6 +3,7 @@
 #include <atomic>
 #include <chrono>
 #include <future>
+#include <map>
 #include <memory>
 #include <thread>
 #include <string>
@@ -155,14 +156,14 @@ TEST_F(RedisSessionManagerTest, ClaimWithThrowingRedisDeliversEmptyOwner) {
 
     std::promise<std::optional<std::string>> promise;
     auto future = promise.get_future();
-    mgr.AsyncClaim("alice", [&promise](std::optional<std::string> prev) {
+    mgr.AsyncClaim("alice", "dev-1", [&promise](std::optional<std::string> prev) {
       promise.set_value(prev);
     });
     ASSERT_EQ(future.wait_for(std::chrono::milliseconds(3000)), std::future_status::ready);
     EXPECT_FALSE(future.get().has_value());
 
     // Release path with a throwing client must not crash either.
-    mgr.AsyncRelease("alice");
+    mgr.AsyncRelease("alice", "dev-1");
     std::this_thread::sleep_for(std::chrono::milliseconds(200));
   }
 
@@ -180,7 +181,7 @@ TEST_F(RedisSessionManagerTest, ClaimWithNonStdExceptionAlsoDeliversEmptyOwner) 
                             [] { return std::unique_ptr<chirp::network::RedisClient>(std::make_unique<WeirdThrowingRedisClient>()); });
     std::promise<std::optional<std::string>> promise;
     auto future = promise.get_future();
-    mgr.AsyncClaim("bob", [&promise](std::optional<std::string> prev) {
+    mgr.AsyncClaim("bob", "dev-2", [&promise](std::optional<std::string> prev) {
       promise.set_value(prev);
     });
     ASSERT_EQ(future.wait_for(std::chrono::milliseconds(3000)), std::future_status::ready);
@@ -195,12 +196,12 @@ TEST_F(RedisSessionManagerTest, ClaimWithoutRedisDeliversEmptyOwner) {
   asio::io_context io;
   std::atomic<int> kicks{0};
   RedisSessionManager mgr(io, kRefusedHost, kRefusedPort, "inst-1", 60,
-                          [&kicks](const std::string&) { kicks++; });
+                          [&kicks](const std::string&, const std::string&) { kicks++; });
   EXPECT_EQ(mgr.InstanceId(), "inst-1");
 
   std::promise<std::optional<std::string>> promise;
   auto future = promise.get_future();
-  mgr.AsyncClaim("alice",
+  mgr.AsyncClaim("alice", "dev-a",
                  [&promise](std::optional<std::string> prev) { promise.set_value(prev); });
 
   ASSERT_TRUE(SpinIoFor(io, future));
@@ -212,7 +213,7 @@ TEST_F(RedisSessionManagerTest, ClaimWithoutRedisDeliversEmptyOwner) {
 TEST_F(RedisSessionManagerTest, ClaimCallbackMayBeNull) {
   asio::io_context io;
   RedisSessionManager mgr(io, kRefusedHost, kRefusedPort, "inst-2", 60, nullptr);
-  mgr.AsyncClaim("bob", nullptr);  // null callback must not crash
+  mgr.AsyncClaim("bob", "dev", nullptr);  // null callback must not crash
   io.run_for(std::chrono::milliseconds(1000));
   SUCCEED();
 }
@@ -220,8 +221,8 @@ TEST_F(RedisSessionManagerTest, ClaimCallbackMayBeNull) {
 TEST_F(RedisSessionManagerTest, ReleaseWithoutRedisIsSafe) {
   asio::io_context io;
   RedisSessionManager mgr(io, kRefusedHost, kRefusedPort, "inst-3", 60,
-                          [](const std::string&) {});
-  mgr.AsyncRelease("carol");
+                          [](const std::string&, const std::string&) {});
+  mgr.AsyncRelease("carol", "dev-c");
   io.run_for(std::chrono::milliseconds(1000));
   SUCCEED();
 }
@@ -231,9 +232,9 @@ TEST_F(RedisSessionManagerTest, JobsEnqueuedBeforeStopAreDrained) {
   std::atomic<int> claims{0};
   {
     RedisSessionManager mgr(io, kRefusedHost, kRefusedPort, "inst-4", 60,
-                            [](const std::string&) {});
+                            [](const std::string&, const std::string&) {});
     for (int i = 0; i < 3; ++i) {
-      mgr.AsyncClaim("u" + std::to_string(i),
+      mgr.AsyncClaim("u" + std::to_string(i), "dev",
                      [&](std::optional<std::string>) { claims++; });
     }
     const auto deadline = std::chrono::steady_clock::now() +
@@ -478,11 +479,11 @@ TEST_F(SessionManagerKickTest, ClaimKicksPreviousOwner) {
 
   asio::io_context io;
   RedisSessionManager mgr(io, "127.0.0.1", fake.port(), "my-inst", 60,
-                          [](const std::string&) {});
+                          [](const std::string&, const std::string&) {});
 
   std::promise<std::optional<std::string>> promise;
   auto future = promise.get_future();
-  mgr.AsyncClaim("alice",
+  mgr.AsyncClaim("alice", "phone-a",
                  [&promise](std::optional<std::string> prev) { promise.set_value(prev); });
 
   const auto deadline = std::chrono::steady_clock::now() + std::chrono::milliseconds(3000);
@@ -495,13 +496,14 @@ TEST_F(SessionManagerKickTest, ClaimKicksPreviousOwner) {
   ASSERT_EQ(future.wait_for(std::chrono::milliseconds(1000)), std::future_status::ready);
   EXPECT_EQ(future.get().value_or(""), "other-inst");
 
-  // The manager must have published a kick for the previous owner.
+  // The manager must have published a kick for the previous owner, carrying
+  // both the user and the device it claims.
   bool kicked = false;
   {
     std::lock_guard<std::mutex> lock(mu);
     for (const auto& c : cmds) {
       if (c.size() >= 3 && c[0] == "PUBLISH" && c[1] == "chirp:kick:other-inst" &&
-          c[2] == "alice") {
+          c[2] == "alice\x1Fphone-a") {
         kicked = true;
       }
     }
@@ -525,11 +527,11 @@ TEST_F(SessionManagerKickTest, ClaimKeepsOwnSessionWithoutKick) {
 
   asio::io_context io;
   RedisSessionManager mgr(io, "127.0.0.1", fake.port(), "my-inst", 60,
-                          [](const std::string&) {});
+                          [](const std::string&, const std::string&) {});
 
   std::promise<std::optional<std::string>> promise;
   auto future = promise.get_future();
-  mgr.AsyncClaim("alice",
+  mgr.AsyncClaim("alice", "phone-a",
                  [&promise](std::optional<std::string> prev) { promise.set_value(prev); });
 
   const auto deadline = std::chrono::steady_clock::now() + std::chrono::milliseconds(3000);
@@ -559,11 +561,11 @@ TEST_F(SessionManagerKickTest, KickSubscriptionDeliversCallback) {
   });
 
   asio::io_context io;
-  std::promise<std::string> kick_promise;
+  std::promise<std::pair<std::string, std::string>> kick_promise;
   auto kick_future = kick_promise.get_future();
   RedisSessionManager mgr(io, "127.0.0.1", fake.port(), "inst-1", 60,
-                          [&kick_promise](const std::string& user) {
-                            kick_promise.set_value(user);
+                          [&kick_promise](const std::string& user, const std::string& device) {
+                            kick_promise.set_value({user, device});
                           });
 
   // Wait until the manager subscribed to its kick channel.
@@ -581,7 +583,7 @@ TEST_F(SessionManagerKickTest, KickSubscriptionDeliversCallback) {
     EXPECT_EQ(subscribed[0], "chirp:kick:inst-1");
   }
 
-  fake.Publish("chirp:kick:inst-1", "bob");
+  fake.Publish("chirp:kick:inst-1", "bob\x1Fphone-1");
   const auto deadline = std::chrono::steady_clock::now() + std::chrono::milliseconds(3000);
   while (std::chrono::steady_clock::now() < deadline &&
          kick_future.wait_for(std::chrono::milliseconds(0)) != std::future_status::ready) {
@@ -590,7 +592,9 @@ TEST_F(SessionManagerKickTest, KickSubscriptionDeliversCallback) {
     std::this_thread::sleep_for(std::chrono::milliseconds(2));
   }
   ASSERT_EQ(kick_future.wait_for(std::chrono::milliseconds(1000)), std::future_status::ready);
-  EXPECT_EQ(kick_future.get(), "bob");
+  const auto kick = kick_future.get();
+  EXPECT_EQ(kick.first, "bob");
+  EXPECT_EQ(kick.second, "phone-1");
 }
 
 TEST_F(SessionManagerKickTest, ReleaseDeletesOwnSessionOnly) {
@@ -609,13 +613,182 @@ TEST_F(SessionManagerKickTest, ReleaseDeletesOwnSessionOnly) {
 
   asio::io_context io;
   RedisSessionManager mgr(io, "127.0.0.1", fake.port(), "my-inst", 60,
-                          [](const std::string&) {});
-  mgr.AsyncRelease("alice");
+                          [](const std::string&, const std::string&) {});
+  mgr.AsyncRelease("alice", "phone-a");
   std::this_thread::sleep_for(std::chrono::milliseconds(300));
 
   std::lock_guard<std::mutex> lock(mu);
   ASSERT_EQ(deleted.size(), 1u);
-  EXPECT_EQ(deleted[0], "chirp:sess:alice");
+  EXPECT_EQ(deleted[0], "chirp:sess:alice\x1Fphone-a");
+}
+
+TEST_F(SessionManagerKickTest, ClaimNormalizesEmptyDeviceKey) {
+  std::mutex mu;
+  std::vector<std::string> setex_keys;
+  chirp_test::FakeRedisServer fake([&](const std::vector<std::string>& args) {
+    std::lock_guard<std::mutex> lock(mu);
+    if (!args.empty() && args[0] == "GET") {
+      return std::string("$-1\r\n");  // null bulk: nobody owns the key
+    }
+    if (!args.empty() && args[0] == "SET" && args.size() > 3 && args[3] == "EX") {
+      setex_keys.push_back(args[1]);
+    }
+    return chirp_test::Simple("OK");
+  });
+
+  asio::io_context io;
+  RedisSessionManager mgr(io, "127.0.0.1", fake.port(), "my-inst", 60,
+                          [](const std::string&, const std::string&) {});
+
+  std::promise<std::optional<std::string>> promise;
+  auto future = promise.get_future();
+  mgr.AsyncClaim("u1", "",
+                 [&promise](std::optional<std::string> prev) { promise.set_value(prev); });
+  ASSERT_TRUE(SpinIoFor(io, future));
+
+  std::lock_guard<std::mutex> lock(mu);
+  ASSERT_EQ(setex_keys.size(), 1u);
+  EXPECT_EQ(setex_keys[0], "chirp:sess:u1\x1F" "default");
+}
+
+TEST_F(SessionManagerKickTest, ReleaseNormalizesEmptyDeviceKey) {
+  std::mutex mu;
+  std::vector<std::string> deleted;
+  chirp_test::FakeRedisServer fake([&](const std::vector<std::string>& args) {
+    std::lock_guard<std::mutex> lock(mu);
+    if (!args.empty() && args[0] == "GET") {
+      return chirp_test::Bulk("my-inst");
+    }
+    if (!args.empty() && args[0] == "DEL") {
+      deleted.push_back(args.size() > 1 ? args[1] : "");
+    }
+    return chirp_test::Simple("OK");
+  });
+
+  asio::io_context io;
+  RedisSessionManager mgr(io, "127.0.0.1", fake.port(), "my-inst", 60,
+                          [](const std::string&, const std::string&) {});
+  mgr.AsyncRelease("u1", "");
+  std::this_thread::sleep_for(std::chrono::milliseconds(300));
+
+  std::lock_guard<std::mutex> lock(mu);
+  ASSERT_EQ(deleted.size(), 1u);
+  EXPECT_EQ(deleted[0], "chirp:sess:u1\x1F" "default");
+}
+
+TEST_F(SessionManagerKickTest, MalformedKickPayloadIsDroppedWithoutKick) {
+  std::mutex mu;
+  std::vector<std::string> subscribed;
+  chirp_test::FakeRedisServer fake([&](const std::vector<std::string>& args) {
+    std::lock_guard<std::mutex> lock(mu);
+    if (!args.empty() && args[0] == "SUBSCRIBE") {
+      subscribed.push_back(args.size() > 1 ? args[1] : "");
+    }
+    return chirp_test::Simple("OK");
+  });
+
+  asio::io_context io;
+  std::atomic<int> kicks{0};
+  RedisSessionManager mgr(io, "127.0.0.1", fake.port(), "inst-1", 60,
+                          [&kicks](const std::string&, const std::string&) { kicks++; });
+
+  // Wait until the manager subscribed, so a publish is really delivered.
+  {
+    const auto deadline = std::chrono::steady_clock::now() + std::chrono::milliseconds(3000);
+    while (std::chrono::steady_clock::now() < deadline) {
+      {
+        std::lock_guard<std::mutex> lock(mu);
+        if (!subscribed.empty()) break;
+      }
+      std::this_thread::sleep_for(std::chrono::milliseconds(2));
+    }
+    std::lock_guard<std::mutex> lock(mu);
+    ASSERT_FALSE(subscribed.empty());
+  }
+
+  // A pre-device payload (no separator) must be dropped, not delivered.
+  fake.Publish("chirp:kick:inst-1", "legacy-alice");
+  const auto grace = std::chrono::steady_clock::now() + std::chrono::milliseconds(500);
+  while (std::chrono::steady_clock::now() < grace) {
+    io.poll();
+    io.restart();
+    std::this_thread::sleep_for(std::chrono::milliseconds(5));
+  }
+  EXPECT_EQ(kicks.load(), 0);
+
+  // The manager must survive the drop and deliver a well-formed payload.
+  fake.Publish("chirp:kick:inst-1", "bob\x1Fphone-1");
+  const auto deadline = std::chrono::steady_clock::now() + std::chrono::milliseconds(3000);
+  while (std::chrono::steady_clock::now() < deadline && kicks.load() < 1) {
+    io.poll();
+    io.restart();
+    std::this_thread::sleep_for(std::chrono::milliseconds(2));
+  }
+  EXPECT_EQ(kicks.load(), 1);
+}
+
+TEST_F(SessionManagerKickTest, SameUserDifferentDevicesClaimIndependentKeys) {
+  std::mutex mu;
+  std::map<std::string, std::string> store;
+  std::vector<std::string> setex_keys;
+  chirp_test::FakeRedisServer fake([&](const std::vector<std::string>& args) {
+    std::lock_guard<std::mutex> lock(mu);
+    if (!args.empty() && args[0] == "GET") {
+      auto it = store.find(args[1]);
+      return it == store.end() ? std::string("$-1\r\n") : chirp_test::Bulk(it->second);
+    }
+    if (!args.empty() && args[0] == "SET" && args.size() > 3 && args[3] == "EX") {
+      store[args[1]] = args[2];
+      setex_keys.push_back(args[1]);
+    }
+    return chirp_test::Simple("OK");
+  });
+
+  asio::io_context io;
+  RedisSessionManager mgr(io, "127.0.0.1", fake.port(), "my-inst", 60,
+                          [](const std::string&, const std::string&) {});
+
+  std::promise<std::optional<std::string>> first_promise;
+  auto first_future = first_promise.get_future();
+  mgr.AsyncClaim("alice", "phone-a",
+                 [&](std::optional<std::string> prev) { first_promise.set_value(prev); });
+  ASSERT_TRUE(SpinIoFor(io, first_future));
+  EXPECT_FALSE(first_future.get().has_value());
+
+  std::promise<std::optional<std::string>> second_promise;
+  auto second_future = second_promise.get_future();
+  mgr.AsyncClaim("alice", "tablet-b",
+                 [&](std::optional<std::string> prev) { second_promise.set_value(prev); });
+  ASSERT_TRUE(SpinIoFor(io, second_future));
+  // The second device sees no previous owner: device-level coexistence.
+  EXPECT_FALSE(second_future.get().has_value());
+
+  std::lock_guard<std::mutex> lock(mu);
+  ASSERT_EQ(setex_keys.size(), 2u);
+  EXPECT_EQ(setex_keys[0], "chirp:sess:alice\x1Fphone-a");
+  EXPECT_EQ(setex_keys[1], "chirp:sess:alice\x1Ftablet-b");
+}
+
+TEST_F(SessionManagerKickTest, ReleaseSkipsForeignClaim) {
+  std::mutex mu;
+  std::atomic<int> deletes{0};
+  chirp_test::FakeRedisServer fake([&](const std::vector<std::string>& args) {
+    std::lock_guard<std::mutex> lock(mu);
+    if (!args.empty() && args[0] == "GET") {
+      return chirp_test::Bulk("other-inst");  // someone else owns it
+    }
+    if (!args.empty() && args[0] == "DEL") {
+      ++deletes;
+    }
+    return chirp_test::Simple("OK");
+  });
+
+  asio::io_context io;
+  RedisSessionManager mgr(io, "127.0.0.1", fake.port(), "my-inst", 60,
+                          [](const std::string&, const std::string&) {});
+  mgr.AsyncRelease("alice", "phone-a");
+  std::this_thread::sleep_for(std::chrono::milliseconds(300));
+  EXPECT_EQ(deletes.load(), 0);
 }
 
 // ---------------------------------------------------------------------------

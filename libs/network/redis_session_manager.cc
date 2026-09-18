@@ -9,12 +9,35 @@
 #include <asio.hpp>
 
 #include "common/logger.h"
+#include "network/session_registry.h"
 
 namespace chirp::gateway {
 namespace {
 
-std::string SessionKey(const std::string& user_id) { return "chirp:sess:" + user_id; }
+// Same separator as the Redis claim keys' only structured payload: user and
+// device ids are free-form strings, so they are joined with \x1F (which
+// neither field may contain - see the class comment in the header).
+constexpr char kIdSep = '\x1F';
+
+std::string SessionKey(const std::string& user_id, const std::string& device_id) {
+  return "chirp:sess:" + user_id + kIdSep + device_id;
+}
 std::string KickChannel(const std::string& instance_id) { return "chirp:kick:" + instance_id; }
+std::string KickPayload(const std::string& user_id, const std::string& device_id) {
+  return user_id + kIdSep + device_id;
+}
+// Splits "user<sep>device" on the first separator. Returns false for
+// payloads without one (e.g. user-level kicks from a pre-device instance,
+// which are dropped instead of kicking an arbitrary local session).
+bool ParseKickPayload(const std::string& payload, std::string* user_id, std::string* device_id) {
+  const auto sep = payload.find(kIdSep);
+  if (sep == std::string::npos) {
+    return false;
+  }
+  *user_id = payload.substr(0, sep);
+  *device_id = payload.substr(sep + 1);
+  return true;
+}
 
 } // namespace
 
@@ -23,6 +46,7 @@ struct RedisSessionManager::Impl {
     enum class Type { kClaim, kRelease };
     Type type{Type::kClaim};
     std::string user_id;
+    std::string device_id;
     ClaimCallback cb;
   };
 
@@ -61,9 +85,18 @@ struct RedisSessionManager::Impl {
   void Start() {
     // Set message callback before starting
     sub.SetMessageCallback([this](const std::string& /*ch*/, const std::string& payload) {
-      asio::post(main_io, [cb = on_kick, user_id = payload] {
+      std::string user_id;
+      std::string device_id;
+      // Parsed on the subscriber thread: only local copies are touched, and
+      // malformed payloads (pre-device writers) are dropped with a warning.
+      if (!ParseKickPayload(payload, &user_id, &device_id)) {
+        chirp::common::Logger::Instance().Warn("dropping malformed kick payload on " +
+                                               KickChannel(instance_id));
+        return;
+      }
+      asio::post(main_io, [cb = on_kick, user_id, device_id] {
         if (cb) {
-          cb(user_id);
+          cb(user_id, device_id);
         }
       });
     });
@@ -105,11 +138,11 @@ struct RedisSessionManager::Impl {
 
       try {
         if (job.type == Job::Type::kClaim) {
-          std::optional<std::string> prev = client->Get(SessionKey(job.user_id));
+          std::optional<std::string> prev = client->Get(SessionKey(job.user_id, job.device_id));
           if (prev && *prev != instance_id) {
-            client->Publish(KickChannel(*prev), job.user_id);
+            client->Publish(KickChannel(*prev), KickPayload(job.user_id, job.device_id));
           }
-          client->SetEx(SessionKey(job.user_id), instance_id, ttl);
+          client->SetEx(SessionKey(job.user_id, job.device_id), instance_id, ttl);
 
           asio::post(main_io, [cb = std::move(job.cb), prev]() mutable {
             if (cb) {
@@ -117,9 +150,9 @@ struct RedisSessionManager::Impl {
             }
           });
         } else {
-          auto cur = client->Get(SessionKey(job.user_id));
+          auto cur = client->Get(SessionKey(job.user_id, job.device_id));
           if (cur && *cur == instance_id) {
-            client->Del(SessionKey(job.user_id));
+            client->Del(SessionKey(job.user_id, job.device_id));
           }
         }
       } catch (const std::exception& e) {
@@ -165,18 +198,22 @@ RedisSessionManager::~RedisSessionManager() {
   }
 }
 
-void RedisSessionManager::AsyncClaim(const std::string& user_id, ClaimCallback cb) {
+void RedisSessionManager::AsyncClaim(const std::string& user_id,
+                                     const std::string& device_id,
+                                     ClaimCallback cb) {
   {
     std::lock_guard<std::mutex> lock(impl_->mu);
-    impl_->q.push_back(Impl::Job{Impl::Job::Type::kClaim, user_id, std::move(cb)});
+    impl_->q.push_back(Impl::Job{Impl::Job::Type::kClaim, user_id,
+                                 chirp::network::NormalizeDeviceId(device_id), std::move(cb)});
   }
   impl_->cv.notify_one();
 }
 
-void RedisSessionManager::AsyncRelease(const std::string& user_id) {
+void RedisSessionManager::AsyncRelease(const std::string& user_id, const std::string& device_id) {
   {
     std::lock_guard<std::mutex> lock(impl_->mu);
-    impl_->q.push_back(Impl::Job{Impl::Job::Type::kRelease, user_id, {}});
+    impl_->q.push_back(Impl::Job{Impl::Job::Type::kRelease, user_id,
+                                 chirp::network::NormalizeDeviceId(device_id), {}});
   }
   impl_->cv.notify_one();
 }

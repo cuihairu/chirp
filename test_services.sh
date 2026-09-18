@@ -85,6 +85,25 @@ wait_port() {
   return 1
 }
 
+# 等待日志文件出现指定模式（0.1s 轮询）。用于 hold 型客户端与脚本的登录
+# 同步：客户端打出 `pong msg_id=` 即已完成登录并进入 kick 等待窗口，此时
+# 再触发第二个登录，断言窗口不因慢机启动延迟被吃掉。
+wait_log() {
+  local file="$1" pattern="$2" timeout_s="${3:-10}"
+  local deadline=$((SECONDS + timeout_s))
+  while (( SECONDS < deadline )); do
+    if [[ -f "${file}" ]] && grep -q "${pattern}" "${file}"; then
+      return 0
+    fi
+    sleep 0.1
+  done
+  echo "错误: 日志 ${file} 在 ${timeout_s}s 内未出现模式 '${pattern}'"
+  if [[ -f "${file}" ]]; then
+    tail -n 20 "${file}" || true
+  fi
+  return 1
+}
+
 # TERM a process, give it a fixed grace period, then KILL. Never blocks:
 # a bare `wait` on a process stuck outside its signal handler's reach is
 # how a smoke turns into a hung CI job. KILL on an already-exited pid is
@@ -158,6 +177,7 @@ elif [[ "${1:-}" == "--smoke-redis" ]]; then
   GW1_LOG="${GW1_LOG:-/tmp/chirp_gateway1_smoke_redis.log}"
   GW2_LOG="${GW2_LOG:-/tmp/chirp_gateway2_smoke_redis.log}"
   CLIENT1_LOG="${CLIENT1_LOG:-/tmp/chirp_client_hold_smoke_redis.log}"
+  CLIENT3_LOG="${CLIENT3_LOG:-/tmp/chirp_client_cohold_smoke_redis.log}"
   WS_CLIENT1_LOG="${WS_CLIENT1_LOG:-/tmp/chirp_ws_client_hold_smoke_redis.log}"
 
   REDIS_CONTAINER="${REDIS_CONTAINER:-chirp_redis_smoke_$$}"
@@ -200,16 +220,19 @@ elif [[ "${1:-}" == "--smoke-redis" ]]; then
   wait_port "${GW2_PORT}" chirp_gateway-b "${GW2_LOG}"
 
   echo ""
-  echo "[tcp] hold login on gw_a (expect kick)"
+  echo "[tcp] hold login on gw_a (expect kick: same user+device via redis claim)"
   timeout 60 ./build/tools/benchmark/chirp_login_client --host 127.0.0.1 --port "${GW1_PORT}" \
     --token user_1 --device dev_a --platform pc --wait_kick_ms 5000 > "${CLIENT1_LOG}" 2>&1 &
   CLIENT1_PID=$!
 
-  sleep 0.4
+  # The kick window starts when the hold client finishes logging in; wait
+  # for its pong instead of a bare sleep so slow CI runners keep headroom.
+  wait_log "${CLIENT1_LOG}" "pong msg_id" 10
 
   echo ""
-  echo "[tcp] login on gw_b (should kick gw_a)"
-  timeout 30 ./build/tools/benchmark/chirp_login_client --host 127.0.0.1 --port "${GW2_PORT}" --token user_1 --device dev_b --platform pc
+  echo "[tcp] login on gw_b same device (should kick gw_a)"
+  timeout 30 ./build/tools/benchmark/chirp_login_client --host 127.0.0.1 --port "${GW2_PORT}" \
+    --token user_1 --device dev_a --platform pc
 
   set +e
   wait "${CLIENT1_PID}"
@@ -223,16 +246,48 @@ elif [[ "${1:-}" == "--smoke-redis" ]]; then
   fi
 
   echo ""
-  echo "[ws] hold login on gw_a (expect kick)"
+  echo "[tcp] coexistence: hold on gw_a device dev_a, login gw_b device dev_b (no kick)"
+  timeout 60 ./build/tools/benchmark/chirp_login_client --host 127.0.0.1 --port "${GW1_PORT}" \
+    --token user_3 --device dev_a --platform pc --wait_kick_ms 3000 > "${CLIENT3_LOG}" 2>&1 &
+  CLIENT3_PID=$!
+  wait_log "${CLIENT3_LOG}" "pong msg_id" 10
+
+  # Same user, different device on the other instance: rc must be 0 (login
+  # OK, the tool prints `code=0`) and the hold client must survive its whole
+  # kick window (rc=2 = "no kick within Nms"). rc=0 on the hold would mean a
+  # device-level claim still kicks across devices; rc=3 means the connection
+  # was closed some other way.
+  timeout 30 ./build/tools/benchmark/chirp_login_client --host 127.0.0.1 --port "${GW2_PORT}" \
+    --token user_3 --device dev_b --platform pc > "${CLIENT3_LOG}.login_b" 2>&1
+  grep -q "code=0" "${CLIENT3_LOG}.login_b"
+
+  set +e
+  wait "${CLIENT3_PID}"
+  CLIENT3_RC=$?
+  set -e
+  if [[ "${CLIENT3_RC}" == "0" ]]; then
+    echo ""
+    echo "device-level claim incorrectly kicked the other device (rc=0)"
+    cat "${CLIENT3_LOG}" || true
+    exit 1
+  elif [[ "${CLIENT3_RC}" != "2" ]]; then
+    echo ""
+    echo "coexistence hold exited unexpectedly (rc=${CLIENT3_RC}, want 2=no kick)"
+    cat "${CLIENT3_LOG}" || true
+    exit 1
+  fi
+
+  echo ""
+  echo "[ws] hold login on gw_a (expect kick: same user+device via redis claim)"
   timeout 60 ./build/tools/benchmark/chirp_ws_login_client --host 127.0.0.1 --port "${WS1_PORT}" \
     --token user_2 --device dev_a --platform web --wait_kick_ms 5000 > "${WS_CLIENT1_LOG}" 2>&1 &
   WS_CLIENT1_PID=$!
 
-  sleep 0.4
+  wait_log "${WS_CLIENT1_LOG}" "pong msg_id" 10
 
   echo ""
-  echo "[ws] login on gw_b (should kick gw_a)"
-  timeout 30 ./build/tools/benchmark/chirp_ws_login_client --host 127.0.0.1 --port "${WS2_PORT}" --token user_2 --device dev_b --platform web
+  echo "[ws] login on gw_b same device (should kick gw_a)"
+  timeout 30 ./build/tools/benchmark/chirp_ws_login_client --host 127.0.0.1 --port "${WS2_PORT}" --token user_2 --device dev_a --platform web
 
   set +e
   wait "${WS_CLIENT1_PID}"
@@ -248,6 +303,9 @@ elif [[ "${1:-}" == "--smoke-redis" ]]; then
   echo ""
   echo "client hold log: ${CLIENT1_LOG}"
   tail -n 20 "${CLIENT1_LOG}" || true
+  echo ""
+  echo "client coexistence log: ${CLIENT3_LOG}"
+  tail -n 20 "${CLIENT3_LOG}" || true
   echo ""
   echo "ws client hold log: ${WS_CLIENT1_LOG}"
   tail -n 20 "${WS_CLIENT1_LOG}" || true

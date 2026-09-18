@@ -143,7 +143,8 @@ void HandleLogin(const std::shared_ptr<chirp::network::Session>& session,
     }
 
     if (redis_mgr) {
-      redis_mgr->AsyncClaim(user_id, [session, seq, resp](std::optional<std::string> /*prev_owner*/) mutable {
+      redis_mgr->AsyncClaim(user_id, req.device_id(),
+                            [session, seq, resp](std::optional<std::string> /*prev_owner*/) mutable {
         SendPacket(session, chirp::gateway::LOGIN_RESP, seq, resp.SerializeAsString());
       });
     } else {
@@ -193,9 +194,12 @@ void HandleLogout(const std::shared_ptr<chirp::network::Session>& session,
     if (resp.code() == chirp::common::OK) {
       bool should_release = false;
       std::string removed_user_id;
-      should_release = chirp::network::RemoveAuthenticatedSession(state, session, &removed_user_id);
+      std::string removed_device_id;
+      should_release = chirp::network::RemoveAuthenticatedSession(state, session, &removed_user_id,
+                                                                  &removed_device_id);
       if (should_release && redis_mgr) {
-        redis_mgr->AsyncRelease(removed_user_id.empty() ? req.user_id() : removed_user_id);
+        redis_mgr->AsyncRelease(removed_user_id.empty() ? req.user_id() : removed_user_id,
+                                removed_device_id);
       }
       SendPacketAndClose(session, chirp::gateway::LOGOUT_RESP, seq, resp.SerializeAsString());
       return;
@@ -249,12 +253,10 @@ int main(int argc, char** argv) {
   if (!redis_host.empty()) {
     redis_mgr = std::make_shared<chirp::gateway::RedisSessionManager>(
         io, redis_host, redis_port, instance_id, redis_ttl_seconds,
-        // Transitional (device-level rollout): the redis claim key is still
-        // user-level, so a foreign claim means the user logged in elsewhere
-        // — kick every local session. This narrows to a (user, device)
-        // lookup once the claim keys carry the device too.
-        [state](const std::string& user_id) {
-          for (const auto& s : chirp::network::GetUserSessions(state, user_id)) {
+        // The payload carries the normalized device: kick exactly the
+        // session logged in from the same device, other devices coexist.
+        [state](const std::string& user_id, const std::string& device_id) {
+          if (auto s = chirp::network::GetSession(state, user_id, device_id)) {
             KickSession(s, "login from another gateway instance");
           }
         });
@@ -321,10 +323,11 @@ int main(int argc, char** argv) {
       },
       [state, redis_mgr](std::shared_ptr<chirp::network::Session> session) {
         std::string user_id;
+        std::string device_id;
         const bool should_release =
-            chirp::network::RemoveAuthenticatedSession(state, session, &user_id);
+            chirp::network::RemoveAuthenticatedSession(state, session, &user_id, &device_id);
         if (should_release && redis_mgr) {
-          redis_mgr->AsyncRelease(user_id);
+          redis_mgr->AsyncRelease(user_id, device_id);
         }
       });
 
@@ -388,10 +391,11 @@ int main(int argc, char** argv) {
       },
       [state, redis_mgr](std::shared_ptr<chirp::network::Session> session) {
         std::string user_id;
+        std::string device_id;
         const bool should_release =
-            chirp::network::RemoveAuthenticatedSession(state, session, &user_id);
+            chirp::network::RemoveAuthenticatedSession(state, session, &user_id, &device_id);
         if (should_release && redis_mgr) {
-          redis_mgr->AsyncRelease(user_id);
+          redis_mgr->AsyncRelease(user_id, device_id);
         }
       });
 
