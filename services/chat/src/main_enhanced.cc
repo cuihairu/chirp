@@ -245,7 +245,7 @@ void HandleLogin(const chirp::auth::LoginRequest& req,
                 const std::shared_ptr<DistributedChatState>& state,
                 const std::shared_ptr<HybridMessageStore>& store,
                 const std::shared_ptr<chirp::network::MessageRouter>& router,
-                const chirp::chat::LoginTokenVerifier* token_verifier,
+                const chirp::common::LoginTokenVerifier* token_verifier,
                 chirp::chat::DeliveryAckManager* acks,
                 int64_t seq) {
   std::string user_id;
@@ -568,7 +568,7 @@ int main(int argc, char** argv) {
   // With a shared secret, LOGIN tokens are verified locally as HS256 JWTs;
   // empty keeps the scaffolding login (token = user id).
   const std::string token_secret = chirp::chat::runtime::GetArg(argc, argv, "--token_secret", "");
-  chirp::chat::LoginTokenVerifier token_verifier(token_secret);
+  chirp::common::LoginTokenVerifier token_verifier(token_secret);
 
   chirp::chat::runtime::DistributedDispatchHandlers handlers;
   handlers.on_login = [state, store, router, &token_verifier, acks](

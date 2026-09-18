@@ -4,7 +4,7 @@
 
 #include "common/jwt.h"
 
-namespace chirp::chat {
+namespace chirp::common {
 
 bool LoginTokenVerifier::Verify(const std::string& token, int64_t now_ms,
                                 std::string* user_id, std::string* err) const {
@@ -36,4 +36,4 @@ bool LoginTokenVerifier::Verify(const std::string& token, int64_t now_ms,
   return true;
 }
 
-}  // namespace chirp::chat
+}  // namespace chirp::common

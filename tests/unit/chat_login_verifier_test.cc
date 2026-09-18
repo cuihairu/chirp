@@ -1,4 +1,4 @@
-// LoginTokenVerifier: HS256 login token verification for the chat direct
+// LoginTokenVerifier: HS256 login token verification for direct-entry
 // entry (scaffold mode without a secret, exp-required JWT mode with one).
 
 #include "login_token_verifier.h"
@@ -11,7 +11,7 @@
 
 namespace {
 
-using chirp::chat::LoginTokenVerifier;
+using chirp::common::LoginTokenVerifier;
 
 constexpr int64_t kNowMs = 1700000000000;  // fixed clock for deterministic tests
 

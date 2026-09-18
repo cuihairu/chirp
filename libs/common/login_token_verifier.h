@@ -2,15 +2,15 @@
 
 #include <string>
 
-namespace chirp::chat {
+namespace chirp::common {
 
-// Login token verification for the chat direct entry. With no secret
-// configured, the scaffold "token is user_id" behavior stays (local dev and
-// smokes). With a shared secret (--token_secret), the edge only accepts
-// HS256 JWTs it can verify locally: signed with the same secret, carrying an
-// "exp" claim still in the future, and a non-empty "sub" (the login user).
-// Revocation is TTL-bounded by design; a revocation lookup (hybrid scheme)
-// can be added later without a protocol change.
+// Login token verification for a direct-entry edge (chat, social). With no
+// secret configured, the scaffold "token is user_id" behavior stays (local
+// dev and smokes). With a shared secret (--token_secret), the edge only
+// accepts HS256 JWTs it can verify locally: signed with the same secret,
+// carrying an "exp" claim still in the future, and a non-empty "sub" (the
+// login user). Revocation is TTL-bounded by design; a revocation lookup
+// (hybrid scheme) can be added later without a protocol change.
 class LoginTokenVerifier {
  public:
   explicit LoginTokenVerifier(std::string secret) : secret_(std::move(secret)) {}
@@ -27,4 +27,4 @@ class LoginTokenVerifier {
   std::string secret_;
 };
 
-}  // namespace chirp::chat
+}  // namespace chirp::common

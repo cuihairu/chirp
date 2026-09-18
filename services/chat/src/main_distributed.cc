@@ -227,7 +227,7 @@ void HandleLogin(const chirp::auth::LoginRequest& req,
                  const std::shared_ptr<DistributedChatState>& state,
                  const std::shared_ptr<DistributedMessageStore>& store,
                  const std::shared_ptr<chirp::network::MessageRouter>& router,
-                 const chirp::chat::LoginTokenVerifier* token_verifier,
+                 const chirp::common::LoginTokenVerifier* token_verifier,
                  chirp::chat::DeliveryAckManager* acks,
                  int64_t seq) {
   std::string user_id;
@@ -359,7 +359,7 @@ int main(int argc, char** argv) {
 
   // With a shared secret, LOGIN tokens are verified locally as HS256 JWTs;
   // empty keeps the scaffolding login (token = user id).
-  chirp::chat::LoginTokenVerifier token_verifier(token_secret);
+  chirp::common::LoginTokenVerifier token_verifier(token_secret);
 
   // Offline pushes are wired only when a notification service is
   // configured; a null client makes the bridge a no-op.

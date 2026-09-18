@@ -106,7 +106,7 @@ add_executable(chat_validation_tests
   chat_validation_test.cc
   chat_login_verifier_test.cc
   ${CMAKE_SOURCE_DIR}/services/chat/src/chat_validation.cc
-  ${CMAKE_SOURCE_DIR}/services/chat/src/login_token_verifier.cc
+  ${CMAKE_SOURCE_DIR}/libs/common/login_token_verifier.cc
   ${CMAKE_SOURCE_DIR}/libs/network/protobuf_framing.cc
 )
 
@@ -196,7 +196,7 @@ add_executable(chat_managers_tests
   ${CMAKE_SOURCE_DIR}/services/chat/src/npc_uplink.cc
   ${CMAKE_SOURCE_DIR}/services/chat/src/runtime_utils.cc
   ${CMAKE_SOURCE_DIR}/services/chat/src/typing_manager.cc
-  ${CMAKE_SOURCE_DIR}/services/chat/src/login_token_verifier.cc
+  ${CMAKE_SOURCE_DIR}/libs/common/login_token_verifier.cc
   ${CMAKE_SOURCE_DIR}/services/chat/src/push_bridge.cc
 )
 # main_distributed.cc is pulled in via #include with main() renamed in

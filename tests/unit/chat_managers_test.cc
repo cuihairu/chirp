@@ -1400,7 +1400,7 @@ class DistributedInternalsTest : public ::testing::Test {
   std::shared_ptr<DistributedMessageStore> store_ = std::make_shared<DistributedMessageStore>();
   // Scaffold login and a disabled push bridge: the internals tests below
   // call the handlers directly.
-  chirp::chat::LoginTokenVerifier verifier_{""};
+  chirp::common::LoginTokenVerifier verifier_{""};
   chirp::chat::PushBridge push_{nullptr};
 };
 

@@ -347,7 +347,7 @@ struct FeatureHandlers {
   // Redis).
   chirp::chat::ChatRateLimiter* rate_limiter = nullptr;
   // Null or disabled() keeps the scaffold "token is user_id" login.
-  const chirp::chat::LoginTokenVerifier* token_verifier = nullptr;
+  const chirp::common::LoginTokenVerifier* token_verifier = nullptr;
   // Client delivery-ack bookkeeping; null (or a disabled manager) keeps the
   // send-and-forget delivery for every session.
   chirp::chat::DeliveryAckManager* acks = nullptr;
@@ -970,7 +970,7 @@ int main(int argc, char** argv) {
   rate_limit_config.max_logins_per_minute_per_ip = login_rate_limit_per_min;
   rate_limit_config.max_sends_per_minute_per_user = send_rate_limit_per_min;
   auto rate_limiter = std::make_shared<chirp::chat::ChatRateLimiter>(redis, rate_limit_config);
-  chirp::chat::LoginTokenVerifier token_verifier(token_secret);
+  chirp::common::LoginTokenVerifier token_verifier(token_secret);
 
   // Offline pushes are only wired when a notification service is configured;
   // a null client turns the bridge into a no-op.
