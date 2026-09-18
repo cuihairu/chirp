@@ -1,0 +1,251 @@
+syntax = "proto3";
+
+package chirp.party;
+
+option go_package = "github.com/cui/chirp/proto/party";
+
+import "proto/common.proto";
+
+// Cross-game team-up on the player plane (see docs/architecture.md): party
+// membership and signaling identity are the player, decoupled from the
+// game-scoped voice rooms (4xxx). Joining is invite-accept only — there are
+// no join codes; any member may invite, the invitee decides. Capacity is
+// clamped to [1, 8] by the service (0 => default 5). Party membership is
+// persisted to Redis (StoredParty below); invites are ephemeral — they live
+// in memory only, expire after 10 minutes (lazily enforced) and are lost on
+// restart.
+//
+// Notify fan-out convention: INVITE_NOTIFY and targeted results reach ALL of
+// the recipient's devices; membership notifies reach every member's devices.
+// PARTY_STATE_CHANGED carries the full PartyInfo snapshot to every member
+// INCLUDING the actor (snapshot sync is idempotent, unlike voice's
+// actor-excluded state notify) so clients rebuild their view from one
+// message instead of diffing events.
+
+// A party member as seen on the wire. `ready` is the ready-check flag
+// (SET_READY); always false right after a join.
+message PartyMember {
+  string user_id = 1;
+  bool ready = 2;
+  int64 joined_at = 3;
+}
+
+// Full party snapshot; PARTY_STATE_CHANGED carries it whole.
+message PartyInfo {
+  string party_id = 1;
+  string leader_id = 2;
+  int32 max_members = 3;          // clamped to [1, 8] by the service
+  repeated PartyMember members = 4;
+  int64 created_at = 5;
+}
+
+// Create a party; the creator is its only member and leader.
+message CreatePartyRequest {
+  string user_id = 1;
+  int32 max_members = 2;          // 0 => default 5; > 8 rejected
+}
+
+message CreatePartyResponse {
+  common.ErrorCode code = 1;
+  PartyInfo party = 2;
+  int64 server_time = 3;
+}
+
+// Disband the whole party (leader-only); remaining members get
+// PARTY_DISBANDED_NOTIFY.
+message DisbandPartyRequest {
+  string user_id = 1;
+  string party_id = 2;
+}
+
+message DisbandPartyResponse {
+  common.ErrorCode code = 1;
+  int64 server_time = 2;
+}
+
+// Invite someone (any member may invite). Idempotent: re-inviting the same
+// target while an unexpired invite is open returns the original invite_id
+// and re-pings the invitee.
+message InviteToPartyRequest {
+  string user_id = 1;
+  string party_id = 2;
+  string target_user_id = 3;
+}
+
+message InviteToPartyResponse {
+  common.ErrorCode code = 1;
+  string invite_id = 2;
+  int64 expires_at = 3;
+  int64 server_time = 4;
+}
+
+// Accepting an invite joins the party: the response carries the new
+// snapshot, the invite is consumed and every other open invite to this user
+// is dropped too (joining one party invalidates the rest). Accepting on a
+// second device after already joining is an idempotent OK.
+message AcceptInviteRequest {
+  string user_id = 1;
+  string invite_id = 2;
+}
+
+message AcceptInviteResponse {
+  common.ErrorCode code = 1;
+  PartyInfo party = 2;
+  int64 server_time = 3;
+}
+
+message DeclineInviteRequest {
+  string user_id = 1;
+  string invite_id = 2;
+}
+
+message DeclineInviteResponse {
+  common.ErrorCode code = 1;
+  int64 server_time = 2;
+}
+
+// Leave the party. The last member leaving disbands silently:
+// PARTY_DISBANDED isn't sent because nobody is left to tell;
+// resp.party_disbanded tells the leaver instead.
+message LeavePartyRequest {
+  string user_id = 1;
+  string party_id = 2;
+}
+
+message LeavePartyResponse {
+  common.ErrorCode code = 1;
+  bool party_disbanded = 2;
+  int64 server_time = 3;
+}
+
+// Remove a member (leader-only); the kicked user's devices get
+// PARTY_KICKED_NOTIFY, the remaining members get PARTY_LEFT_NOTIFY with
+// reason "kicked".
+message KickMemberRequest {
+  string user_id = 1;
+  string party_id = 2;
+  string target_user_id = 3;
+}
+
+message KickMemberResponse {
+  common.ErrorCode code = 1;
+  int64 server_time = 2;
+}
+
+// Hand leadership to another member (leader-only).
+message TransferLeaderRequest {
+  string user_id = 1;
+  string party_id = 2;
+  string target_user_id = 3;
+}
+
+message TransferLeaderResponse {
+  common.ErrorCode code = 1;
+  string leader_id = 2;
+  int64 server_time = 3;
+}
+
+// Flip the caller's ready-check flag.
+message SetReadyRequest {
+  string user_id = 1;
+  string party_id = 2;
+  bool ready = 3;
+}
+
+message SetReadyResponse {
+  common.ErrorCode code = 1;
+  int64 server_time = 2;
+}
+
+// Get the caller's current party, if any (GET_* convention, see
+// proto/social.proto:90-94: no server_time).
+message GetMyPartyRequest {
+  string user_id = 1;
+}
+
+message GetMyPartyResponse {
+  common.ErrorCode code = 1;
+  bool in_party = 2;
+  PartyInfo party = 3;
+}
+
+// ---------------------------------------------------------------------------
+// Notifications
+// ---------------------------------------------------------------------------
+
+// New invite for the invitee (all their devices). Offline invitees see
+// nothing — there is no catch-up query yet (see the reserved 7028+ block).
+message InviteNotify {
+  string invite_id = 1;
+  string from_user_id = 2;
+  PartyInfo party = 3;
+  int64 expires_at = 4;
+  int64 timestamp = 5;
+}
+
+// To the inviter: the invitee accepted or declined.
+message InviteResultNotify {
+  string invite_id = 1;
+  string target_user_id = 2;
+  bool accepted = 3;
+  int64 timestamp = 4;
+}
+
+// Someone joined (everyone except the joiner).
+message PartyJoinedNotify {
+  string party_id = 1;
+  PartyMember member = 2;
+  int64 timestamp = 3;
+}
+
+// Someone left, for every reason ("left" | "kicked" | "offline"); everyone
+// except the leaver.
+message PartyLeftNotify {
+  string party_id = 1;
+  string user_id = 2;
+  string reason = 3;
+  int64 timestamp = 4;
+}
+
+// To the kicked user only (their remaining membership view is gone).
+message PartyKickedNotify {
+  string party_id = 1;
+  string actor_user_id = 2;
+  int64 timestamp = 3;
+}
+
+// Full snapshot to ALL members including the actor.
+message PartyStateChangedNotify {
+  PartyInfo party = 1;
+  int64 timestamp = 2;
+}
+
+// The party is gone because the leader disbanded it; remaining members get
+// this. (The last member leaving disbands silently — nobody is left to
+// tell.) actor_user_id is the ex-leader; the service never auto-disbands
+// loudly, so it is never empty in practice.
+message PartyDisbandedNotify {
+  string party_id = 1;
+  string actor_user_id = 2;
+  int64 timestamp = 3;
+}
+
+// ---------------------------------------------------------------------------
+// Server-side storage snapshots. These are Redis VALUES (one key per party,
+// e.g. "chirp:party:party:<party_id>"), never wire messages. Kept separate
+// from PartyInfo so the storage schema can evolve without touching the
+// client-facing protocol. Invites are deliberately NOT stored — they are
+// short-lived and lost on restart by design.
+message StoredParty {
+  string party_id = 1;
+  string leader_id = 2;
+  int32 max_members = 3;
+  int64 created_at = 4;
+  repeated StoredMember members = 5;
+}
+
+message StoredMember {
+  string user_id = 1;
+  bool ready = 2;
+  int64 joined_at = 3;
+}

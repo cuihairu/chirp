@@ -188,6 +188,40 @@ enum MsgID {
   PUSH_NOTIFICATION_RESP = 6010;
   // Reserved for later increments: SET_BADGE_COUNT (6011/6012),
   // SILENT_NOTIFICATION (6013/6014), notification preferences (6015-6018).
+
+  // Party plane: cross-game team-up on the player plane (membership and
+  // signaling identity are the player, decoupled from the game-scoped voice
+  // rooms; see docs/architecture.md). Invite-accept only — no join codes.
+  // Bodies are chirp.party.* messages; see proto/party.proto.
+  CREATE_PARTY_REQ = 7001;
+  CREATE_PARTY_RESP = 7002;
+  DISBAND_PARTY_REQ = 7003;
+  DISBAND_PARTY_RESP = 7004;
+  INVITE_TO_PARTY_REQ = 7005;
+  INVITE_TO_PARTY_RESP = 7006;
+  INVITE_NOTIFY = 7007;              // to the invitee, all their devices
+  ACCEPT_INVITE_REQ = 7008;
+  ACCEPT_INVITE_RESP = 7009;
+  DECLINE_INVITE_REQ = 7010;
+  DECLINE_INVITE_RESP = 7011;
+  INVITE_RESULT_NOTIFY = 7012;       // to the inviter (accept/decline)
+  LEAVE_PARTY_REQ = 7013;
+  LEAVE_PARTY_RESP = 7014;
+  KICK_PARTY_MEMBER_REQ = 7015;
+  KICK_PARTY_MEMBER_RESP = 7016;
+  TRANSFER_LEADER_REQ = 7017;
+  TRANSFER_LEADER_RESP = 7018;
+  SET_READY_REQ = 7019;
+  SET_READY_RESP = 7020;
+  PARTY_JOINED_NOTIFY = 7021;        // everyone except the joiner
+  PARTY_LEFT_NOTIFY = 7022;          // everyone except the leaver
+  PARTY_KICKED_NOTIFY = 7023;        // the kicked user only
+  PARTY_STATE_CHANGED_NOTIFY = 7024; // full PartyInfo snapshot, ALL members
+  PARTY_DISBANDED_NOTIFY = 7025;     // remaining members on disband
+  GET_MY_PARTY_REQ = 7026;
+  GET_MY_PARTY_RESP = 7027;
+  // Reserved for later increments: GET_MY_INVITES (7028/7029), party
+  // settings/roles (703x), invite-expiry sweep notify.
 }
 
 // Universal Packet Envelope (Optional, if we want full protobuf wrap)

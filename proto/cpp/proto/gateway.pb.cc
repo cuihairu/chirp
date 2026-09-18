@@ -156,7 +156,7 @@ const char descriptor_table_protodef_proto_2fgateway_2eproto[] ABSL_ATTRIBUTE_SE
     "sgID\022\020\n\010sequence\030\002 \001(\003\022\014\n\004body\030\003 \001(\014\"\"\n\r"
     "HeartbeatPing\022\021\n\ttimestamp\030\001 \001(\003\"7\n\rHear"
     "tbeatPong\022\021\n\ttimestamp\030\001 \001(\003\022\023\n\013server_t"
-    "ime\030\002 \001(\003*\332\034\n\005MsgID\022\013\n\007UNKNOWN\020\000\022\023\n\016HEAR"
+    "ime\030\002 \001(\003*\377!\n\005MsgID\022\013\n\007UNKNOWN\020\000\022\023\n\016HEAR"
     "TBEAT_PING\020\351\007\022\023\n\016HEARTBEAT_PONG\020\352\007\022\016\n\tLO"
     "GIN_REQ\020\353\007\022\017\n\nLOGIN_RESP\020\354\007\022\020\n\013KICK_NOTI"
     "FY\020\355\007\022\017\n\nLOGOUT_REQ\020\356\007\022\020\n\013LOGOUT_RESP\020\357\007"
@@ -248,14 +248,31 @@ const char descriptor_table_protodef_proto_2fgateway_2eproto[] ABSL_ATTRIBUTE_SE
     "_TOKEN_RESP\020\366.\022\031\n\024GET_USER_DEVICES_REQ\020\367"
     ".\022\032\n\025GET_USER_DEVICES_RESP\020\370.\022\032\n\025PUSH_NO"
     "TIFICATION_REQ\020\371.\022\033\n\026PUSH_NOTIFICATION_R"
-    "ESP\020\372.B$Z\"github.com/cui/chirp/proto/gat"
-    "ewayb\006proto3"
+    "ESP\020\372.\022\025\n\020CREATE_PARTY_REQ\020\3316\022\026\n\021CREATE_"
+    "PARTY_RESP\020\3326\022\026\n\021DISBAND_PARTY_REQ\020\3336\022\027\n"
+    "\022DISBAND_PARTY_RESP\020\3346\022\030\n\023INVITE_TO_PART"
+    "Y_REQ\020\3356\022\031\n\024INVITE_TO_PARTY_RESP\020\3366\022\022\n\rI"
+    "NVITE_NOTIFY\020\3376\022\026\n\021ACCEPT_INVITE_REQ\020\3406\022"
+    "\027\n\022ACCEPT_INVITE_RESP\020\3416\022\027\n\022DECLINE_INVI"
+    "TE_REQ\020\3426\022\030\n\023DECLINE_INVITE_RESP\020\3436\022\031\n\024I"
+    "NVITE_RESULT_NOTIFY\020\3446\022\024\n\017LEAVE_PARTY_RE"
+    "Q\020\3456\022\025\n\020LEAVE_PARTY_RESP\020\3466\022\032\n\025KICK_PART"
+    "Y_MEMBER_REQ\020\3476\022\033\n\026KICK_PARTY_MEMBER_RES"
+    "P\020\3506\022\030\n\023TRANSFER_LEADER_REQ\020\3516\022\031\n\024TRANSF"
+    "ER_LEADER_RESP\020\3526\022\022\n\rSET_READY_REQ\020\3536\022\023\n"
+    "\016SET_READY_RESP\020\3546\022\030\n\023PARTY_JOINED_NOTIF"
+    "Y\020\3556\022\026\n\021PARTY_LEFT_NOTIFY\020\3566\022\030\n\023PARTY_KI"
+    "CKED_NOTIFY\020\3576\022\037\n\032PARTY_STATE_CHANGED_NO"
+    "TIFY\020\3606\022\033\n\026PARTY_DISBANDED_NOTIFY\020\3616\022\025\n\020"
+    "GET_MY_PARTY_REQ\020\3626\022\026\n\021GET_MY_PARTY_RESP"
+    "\020\3636B$Z\"github.com/cui/chirp/proto/gatewa"
+    "yb\006proto3"
 };
 static ::absl::once_flag descriptor_table_proto_2fgateway_2eproto_once;
 PROTOBUF_CONSTINIT const ::_pbi::DescriptorTable descriptor_table_proto_2fgateway_2eproto = {
     false,
     false,
-    3932,
+    4609,
     descriptor_table_protodef_proto_2fgateway_2eproto,
     "proto/gateway.proto",
     &descriptor_table_proto_2fgateway_2eproto_once,
@@ -275,7 +292,7 @@ const ::google::protobuf::EnumDescriptor* PROTOBUF_NONNULL MsgID_descriptor() {
   return file_level_enum_descriptors_proto_2fgateway_2eproto[0];
 }
 PROTOBUF_CONSTINIT const uint32_t MsgID_internal_data_[] = {
-    65536u, 4393152u, 0u, 0u, 0u, 0u, 0u, 0u, 0u, 0u, 0u, 0u, 0u, 0u, 0u, 0u, 0u, 0u, 0u, 0u, 0u, 0u, 0u, 0u, 0u, 0u, 0u, 0u, 0u, 0u, 0u, 0u, 0u, 134217472u, 0u, 0u, 0u, 0u, 0u, 0u, 0u, 0u, 0u, 0u, 0u, 0u, 0u, 0u, 0u, 0u, 0u, 0u, 0u, 0u, 0u, 0u, 0u, 0u, 0u, 0u, 0u, 0u, 0u, 0u, 2031616u, 0u, 0u, 4293918720u, 511u, 0u, 4278190080u, 67108863u, 4012u, 3020u, 5007u, 3012u, 4004u, 4020u, 6003u, 3008u, 3016u, 3024u, 4008u, 4016u, 5003u, 5011u, 6007u, 3004u, 3010u, 3014u, 3018u, 3022u, 4002u, 4006u, 4010u, 4014u, 4018u, 5001u, 5005u, 5009u, 6001u, 6005u, 6009u, 3002u, 3006u, 3009u, 3011u, 3013u, 3015u, 3017u, 3019u, 3021u, 3023u, 4001u, 4003u, 4005u, 4007u, 4009u, 4011u, 4013u, 4015u, 4017u, 4019u, 4021u, 5002u, 5004u, 5006u, 5008u, 5010u, 5012u, 6002u, 6004u, 6006u, 6008u, 6010u, 3001u, 3003u, 3005u, 3007u, };
+    65536u, 6162624u, 0u, 0u, 0u, 0u, 0u, 0u, 0u, 0u, 0u, 0u, 0u, 0u, 0u, 0u, 0u, 0u, 0u, 0u, 0u, 0u, 0u, 0u, 0u, 0u, 0u, 0u, 0u, 0u, 0u, 0u, 0u, 134217472u, 0u, 0u, 0u, 0u, 0u, 0u, 0u, 0u, 0u, 0u, 0u, 0u, 0u, 0u, 0u, 0u, 0u, 0u, 0u, 0u, 0u, 0u, 0u, 0u, 0u, 0u, 0u, 0u, 0u, 0u, 2031616u, 0u, 0u, 4293918720u, 511u, 0u, 4278190080u, 67108863u, 6006u, 4008u, 7012u, 3016u, 5003u, 7004u, 7020u, 3008u, 3024u, 4016u, 5011u, 6010u, 7008u, 7016u, 7024u, 3004u, 3012u, 3020u, 4004u, 4012u, 4020u, 5007u, 6003u, 6008u, 7002u, 7006u, 7010u, 7014u, 7018u, 7022u, 7026u, 3002u, 3006u, 3010u, 3014u, 3018u, 3022u, 4002u, 4006u, 4010u, 4014u, 4018u, 5001u, 5005u, 5009u, 6001u, 6005u, 6007u, 6009u, 7001u, 7003u, 7005u, 7007u, 7009u, 7011u, 7013u, 7015u, 7017u, 7019u, 7021u, 7023u, 7025u, 7027u, 3001u, 3003u, 3005u, 3007u, 3009u, 3011u, 3013u, 3015u, 3017u, 3019u, 3021u, 3023u, 4001u, 4003u, 4005u, 4007u, 4009u, 4011u, 4013u, 4015u, 4017u, 4019u, 4021u, 5002u, 5004u, 5006u, 5008u, 5010u, 5012u, 6002u, 6004u, };
 // ===================================================================
 
 class Packet::_Internal {

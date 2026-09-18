@@ -35,6 +35,7 @@ fi
        proto/chat.proto \
        proto/social.proto \
        proto/voice.proto \
+       proto/party.proto \
        proto/notification.proto \
        proto/server_gateway.proto
 
@@ -50,6 +51,7 @@ if command -v protoc-gen-go >/dev/null 2>&1; then
          proto/chat.proto \
          proto/social.proto \
          proto/voice.proto \
+         proto/party.proto \
          proto/notification.proto \
          proto/server_gateway.proto
 else
@@ -77,6 +79,7 @@ if [ -x "${PROTOC_BIN}" ] && [ -x "$TS_PROTO_PLUGIN" ]; then
          proto/chat.proto \
          proto/social.proto \
          proto/voice.proto \
+         proto/party.proto \
          proto/notification.proto \
          proto/server_gateway.proto
 else

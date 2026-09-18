@@ -229,6 +229,33 @@ enum MsgID : int {
   GET_USER_DEVICES_RESP = 6008,
   PUSH_NOTIFICATION_REQ = 6009,
   PUSH_NOTIFICATION_RESP = 6010,
+  CREATE_PARTY_REQ = 7001,
+  CREATE_PARTY_RESP = 7002,
+  DISBAND_PARTY_REQ = 7003,
+  DISBAND_PARTY_RESP = 7004,
+  INVITE_TO_PARTY_REQ = 7005,
+  INVITE_TO_PARTY_RESP = 7006,
+  INVITE_NOTIFY = 7007,
+  ACCEPT_INVITE_REQ = 7008,
+  ACCEPT_INVITE_RESP = 7009,
+  DECLINE_INVITE_REQ = 7010,
+  DECLINE_INVITE_RESP = 7011,
+  INVITE_RESULT_NOTIFY = 7012,
+  LEAVE_PARTY_REQ = 7013,
+  LEAVE_PARTY_RESP = 7014,
+  KICK_PARTY_MEMBER_REQ = 7015,
+  KICK_PARTY_MEMBER_RESP = 7016,
+  TRANSFER_LEADER_REQ = 7017,
+  TRANSFER_LEADER_RESP = 7018,
+  SET_READY_REQ = 7019,
+  SET_READY_RESP = 7020,
+  PARTY_JOINED_NOTIFY = 7021,
+  PARTY_LEFT_NOTIFY = 7022,
+  PARTY_KICKED_NOTIFY = 7023,
+  PARTY_STATE_CHANGED_NOTIFY = 7024,
+  PARTY_DISBANDED_NOTIFY = 7025,
+  GET_MY_PARTY_REQ = 7026,
+  GET_MY_PARTY_RESP = 7027,
   MsgID_INT_MIN_SENTINEL_DO_NOT_USE_ =
       ::std::numeric_limits<::int32_t>::min(),
   MsgID_INT_MAX_SENTINEL_DO_NOT_USE_ =
@@ -239,11 +266,11 @@ extern const uint32_t MsgID_internal_data_[];
 inline constexpr MsgID MsgID_MIN =
     static_cast<MsgID>(0);
 inline constexpr MsgID MsgID_MAX =
-    static_cast<MsgID>(6010);
+    static_cast<MsgID>(7027);
 inline bool MsgID_IsValid(int value) {
   return ::google::protobuf::internal::ValidateEnum(value, MsgID_internal_data_);
 }
-inline constexpr int MsgID_ARRAYSIZE = 6010 + 1;
+inline constexpr int MsgID_ARRAYSIZE = 7027 + 1;
 const ::google::protobuf::EnumDescriptor* PROTOBUF_NONNULL MsgID_descriptor();
 template <typename T>
 const ::std::string& MsgID_Name(T value) {
