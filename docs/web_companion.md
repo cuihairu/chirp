@@ -54,7 +54,7 @@ src/
 └── components/  # ConversationList、ChatWindow、MessageBubble、FriendsDialog、GroupDialogs…
 ```
 
-`protocol/` 刻意保持零 React 依赖——它是将来 Flutter 三端用 Dart 重写的蓝本。proto 生成物提交在 `proto/ts/`(ts-proto,`gen_proto.sh` 生成),运行时零工具链依赖;CI 有 proto-sync job 防 `.proto` 与生成物漂移。
+`protocol/` 刻意保持零 React 依赖——它是将来 Flutter 五端(Android/iOS/macOS/Windows/Linux)用 Dart 重写的蓝本。proto 生成物提交在 `proto/ts/`(ts-proto,`gen_proto.sh` 生成),运行时零工具链依赖;CI 有 proto-sync job 防 `.proto` 与生成物漂移。
 
 ## 必须知道的协议语义(代码注释里也有)
 
@@ -88,7 +88,9 @@ src/
    │    Redis 持久化、ACCEPTED 双向 notify、presence 断线广播、JWT 对齐
    ├─→ [后端补齐 B:voice 媒体面] SDP 定向中继、TURN、mute/deafen、信令认证
    ├─→ [后端补齐 C:party 协议] proto 7xxx 段从零定义(当前组队完全没有协议)
-   ├─→ [二期·Flutter 三端] Android/iOS/Windows,协议层以 src/protocol/ 为蓝本纯 Dart 重写
+   ├─→ [二期·Flutter 五端] Android/iOS/macOS/Windows/Linux,协议层以 src/protocol/ 为蓝本
+   │    纯 Dart 重写;五端共享同一套界面代码,每端的增量只在构建矩阵与签名发布。
+   │    Flutter 版不接管 Web(React 版已交付,两套 Web 客户端无收益)
    └─→ [三期] 语音 + 组队客户端(Web 与 Flutter 同步)
 ```
 
