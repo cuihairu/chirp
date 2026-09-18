@@ -24,6 +24,9 @@ private:
   void DoAccept();
 
   asio::io_context& io_;
+  // Serializes every acceptor_ access: Start()/Stop() run on the caller's
+  // thread while DoAccept handlers run on the io thread.
+  asio::strand<asio::io_context::executor_type> strand_;
   asio::ip::tcp::acceptor acceptor_;
   FrameCallback on_frame_;
   CloseCallback on_close_;

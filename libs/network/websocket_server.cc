@@ -4,6 +4,7 @@ namespace chirp::network {
 
 WebSocketServer::WebSocketServer(asio::io_context& io, uint16_t port, FrameCallback on_frame, CloseCallback on_close)
     : io_(io),
+      strand_(io.get_executor()),
       acceptor_(io_, asio::ip::tcp::endpoint(asio::ip::tcp::v4(), port)),
       on_frame_(std::move(on_frame)),
       on_close_(std::move(on_close)) {}
@@ -11,20 +12,26 @@ WebSocketServer::WebSocketServer(asio::io_context& io, uint16_t port, FrameCallb
 void WebSocketServer::Start() { DoAccept(); }
 
 void WebSocketServer::Stop() {
-  asio::error_code ec;
-  acceptor_.close(ec);
+  // close() from the caller's thread would race with DoAccept handlers
+  // touching acceptor_ on the io thread; post it through the same strand
+  // instead. If the io_context already stopped, the destructor closes it.
+  asio::post(strand_, [this] {
+    asio::error_code ec;
+    acceptor_.close(ec);
+  });
 }
 
 void WebSocketServer::DoAccept() {
-  acceptor_.async_accept([this](std::error_code ec, asio::ip::tcp::socket socket) {
-    if (!ec) {
-      auto session = std::make_shared<WebSocketSession>(std::move(socket), on_frame_, on_close_);
-      session->Start();
-    }
-    if (acceptor_.is_open()) {
-      DoAccept();
-    }
-  });
+  acceptor_.async_accept(
+      asio::bind_executor(strand_, [this](std::error_code ec, asio::ip::tcp::socket socket) {
+        if (!ec) {
+          auto session = std::make_shared<WebSocketSession>(std::move(socket), on_frame_, on_close_);
+          session->Start();
+        }
+        if (acceptor_.is_open()) {
+          DoAccept();
+        }
+      }));
 }
 
 } // namespace chirp::network
