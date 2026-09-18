@@ -1,5 +1,5 @@
 import { describe, expect, it, vi } from 'vitest';
-import { ChannelType, ChatMessage, MsgType } from '@chirp/proto/chat';
+import { ChannelType, ChatMessage, MessageAck, MsgType } from '@chirp/proto/chat';
 import { MsgID } from '@chirp/proto/gateway';
 import { ChatApi, channelRefOf, type ChannelRef } from './chat_api';
 import { createStore } from '../state/store';
@@ -170,6 +170,13 @@ describe('ChatApi incoming notifies', () => {
     const h = makeHarness();
     await login(h);
     h.conn.emit(MsgID.CHAT_MESSAGE_NOTIFY, chatBody({ messageId: 'm1' }));
+    // supportsMessageAck=true: every live push is acked fire-and-forget.
+    const ack = h.conn.requests.find((r) => r.msgId === MsgID.MESSAGE_ACK);
+    expect(ack).toBeTruthy();
+    expect(MessageAck.decode(ack!.req as Uint8Array)).toMatchObject({
+      messageId: 'm1',
+      userId: SELF,
+    });
     const conv = h.conversations.get().conversations;
     expect(conv.length).toBe(1);
     expect(conv[0]).toMatchObject({

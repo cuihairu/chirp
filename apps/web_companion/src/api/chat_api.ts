@@ -2,6 +2,7 @@ import {
   ChannelType,
   ChatMessage,
   GroupInfo,
+  MessageAck,
   MsgType,
 } from '@chirp/proto/chat';
 import { ErrorCode } from '@chirp/proto/common';
@@ -296,6 +297,19 @@ export class ChatApi {
       msg.channelType === ChannelType.PRIVATE
         ? privateKey(msg.senderId, this.auth.get().userId ?? '')
         : groupKey(msg.channelId);
+    // We logged in with supportsMessageAck=true, so every live push must be
+    // acked or the server rolls the delivery back into the offline queue
+    // after 10s. Fire-and-forget (2209 has no response frame).
+    this.conn.send(
+      MsgID.MESSAGE_ACK,
+      MessageAck.encode(
+        MessageAck.fromPartial({
+          messageId: msg.messageId,
+          userId: this.auth.get().userId ?? '',
+          receivedAt: Date.now(),
+        }),
+      ).finish(),
+    );
     const channel: ChannelRef = {
       key,
       kind: msg.channelType === ChannelType.PRIVATE ? 'private' : 'group',

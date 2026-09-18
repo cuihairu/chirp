@@ -20,7 +20,7 @@ describe('LoginPage', () => {
     });
     fireEvent.click(screen.getByRole('button', { name: zh.login.submit }));
 
-    await waitFor(() => expect(screen.getByText(zh.chat.welcome('user_1'))).toBeTruthy());
+    await waitFor(() => expect(screen.getByText('user_1')).toBeTruthy()); // chat shell header shows the user id
     expect(conn.requests.some((r) => r.msgId === MsgID.LOGIN_REQ)).toBe(true);
   });
 
