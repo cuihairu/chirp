@@ -285,6 +285,28 @@ target_include_directories(social_tests
 
 add_test(NAME social_tests COMMAND social_tests)
 
+# Party service packet-handler tests (main.cc included with renamed main,
+# same pattern as social_tests; main.cc is NOT listed as a source)
+add_executable(party_tests
+  party_service_test.cc
+)
+
+chirp_unit_test_common_links(party_tests)
+target_link_libraries(party_tests PRIVATE chirp_network chirp_common chirp_protos)
+
+target_include_directories(party_tests
+  PRIVATE
+  ${CMAKE_SOURCE_DIR}/services/party/src
+  ${CMAKE_SOURCE_DIR}/libs
+  ${CMAKE_SOURCE_DIR}/libs/common
+  ${CMAKE_SOURCE_DIR}/libs/common/include
+  ${CMAKE_SOURCE_DIR}/libs/network
+  ${CMAKE_SOURCE_DIR}/proto/cpp
+  ${CMAKE_SOURCE_DIR}/proto/cpp/proto
+)
+
+add_test(NAME party_tests COMMAND party_tests)
+
 # App gateway edge tests: scaffold login/logout, device-message forwarding
 # through a real NotificationClient against a loopback server
 add_executable(app_gateway_tests

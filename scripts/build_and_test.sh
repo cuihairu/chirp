@@ -177,7 +177,7 @@ if [ -n "$PROTOC" ]; then
     rm -f proto/cpp/proto/*.pb.cc proto/cpp/proto/*.pb.h 2>/dev/null || true
     "$PROTOC" --proto_path=. --cpp_out=proto/cpp \
         proto/common.proto proto/gateway.proto proto/auth.proto \
-        proto/chat.proto proto/social.proto proto/voice.proto proto/notification.proto
+        proto/chat.proto proto/social.proto proto/voice.proto proto/party.proto proto/notification.proto
     echo -e "${GREEN}✓ Protobuf files generated${NC}"
 fi
 
@@ -211,7 +211,7 @@ echo -e "${GREEN}✓ Build completed${NC}"
 echo -e "${BLUE}[5/6] Starting services...${NC}"
 
 if [ "$START_SERVICES" = "true" ] && command -v docker >/dev/null 2>&1; then
-    docker compose up -d redis auth gateway chat social
+    docker compose up -d redis auth gateway chat social party
     echo "Waiting for services to be ready..."
     sleep 5
     echo -e "${GREEN}✓ Services started${NC}"

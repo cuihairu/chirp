@@ -84,6 +84,19 @@ services:
     depends_on:
       - redis
 
+  party:
+    build:
+      context: .
+      dockerfile: docker/Dockerfile.service
+      args:
+        SERVICE: party
+    command: ["--port", "7500", "--ws_port", "7501", "--redis_host", "redis", "--redis_port", "6379"]
+    ports:
+      - "7500:7500"
+      - "7501:7501"
+    depends_on:
+      - redis
+
   voice:
     build:
       context: .
