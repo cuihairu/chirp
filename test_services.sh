@@ -104,6 +104,26 @@ wait_log() {
   return 1
 }
 
+# 等待 redis 中出现 claim key（仅 --smoke-redis 使用，依赖 REDIS_CONTAINER）。
+# 这是 hold 型客户端唯一可信的「已登录且存活」信号：客户端进程的 stdout 在
+# 重定向到文件时是全缓冲，`pong` 那行要等进程退出才落盘，wait_log 因此只在
+# hold 超时退出后才命中——此时断连已把 claim 释放（DEL），第二个登录 GET
+# miss，互踢永远不触发（本机真进程链路用 redis MONITOR 抓到过完整证据）。
+# claim key 的 SETEX 完成于 LOGIN_RESP 发出之前，key 出现即 hold 就绪。
+wait_key() {
+  local key="$1" timeout_s="${2:-15}"
+  local deadline=$((SECONDS + timeout_s))
+  while (( SECONDS < deadline )); do
+    if [[ "$(docker exec "${REDIS_CONTAINER}" redis-cli --raw EXISTS "${key}")" == "1" ]]; then
+      return 0
+    fi
+    sleep 0.1
+  done
+  echo "错误: redis claim key '${key}' 在 ${timeout_s}s 内未出现"
+  docker exec "${REDIS_CONTAINER}" redis-cli --raw KEYS 'chirp:sess:*' || true
+  return 1
+}
+
 # TERM a process, give it a fixed grace period, then KILL. Never blocks:
 # a bare `wait` on a process stuck outside its signal handler's reach is
 # how a smoke turns into a hung CI job. KILL on an already-exited pid is
@@ -182,6 +202,9 @@ elif [[ "${1:-}" == "--smoke-redis" ]]; then
 
   REDIS_CONTAINER="${REDIS_CONTAINER:-chirp_redis_smoke_$$}"
 
+  # 与 redis_session_manager.cc 的 kIdSep 一致：claim key 用 \x1F 连接 user 与 device。
+  DEV_SEP=$'\x1f'
+
   # Bounded: an image pull (or a wedged daemon) must fail the smoke with a
   # message instead of hanging the job.
   if ! timeout 180 docker run --rm -d --name "${REDIS_CONTAINER}" -p "127.0.0.1:${REDIS_PORT}:6379" redis:7-alpine >/dev/null; then
@@ -229,9 +252,12 @@ elif [[ "${1:-}" == "--smoke-redis" ]]; then
     --token user_1 --device dev_a --platform pc --wait_kick_ms 15000 > "${CLIENT1_LOG}" 2>&1 &
   CLIENT1_PID=$!
 
-  # The kick window starts when the hold client finishes logging in; wait
-  # for its pong instead of a bare sleep so slow CI runners keep headroom.
-  wait_log "${CLIENT1_LOG}" "pong msg_id" 10
+  # The kick window starts when the hold client finishes logging in; the
+  # reliable "logged in and alive" signal is its claim key in redis (see
+  # wait_key - client stdout is fully buffered when redirected, so waiting
+  # for the pong log line only fires after the hold process has exited and
+  # released its own claim, which would make the kick below impossible).
+  wait_key "chirp:sess:user_1${DEV_SEP}dev_a" 15
 
   echo ""
   echo "[tcp] login on gw_b same device (should kick gw_a)"
@@ -254,7 +280,7 @@ elif [[ "${1:-}" == "--smoke-redis" ]]; then
   timeout 60 ./build/tools/benchmark/chirp_login_client --host 127.0.0.1 --port "${GW1_PORT}" \
     --token user_3 --device dev_a --platform pc --wait_kick_ms 15000 > "${CLIENT3_LOG}" 2>&1 &
   CLIENT3_PID=$!
-  wait_log "${CLIENT3_LOG}" "pong msg_id" 10
+  wait_key "chirp:sess:user_3${DEV_SEP}dev_a" 15
 
   # Same user, different device on the other instance: rc must be 0 (login
   # OK, the tool prints `code=0`) and the hold client must survive its whole
@@ -287,7 +313,7 @@ elif [[ "${1:-}" == "--smoke-redis" ]]; then
     --token user_2 --device dev_a --platform web --wait_kick_ms 15000 > "${WS_CLIENT1_LOG}" 2>&1 &
   WS_CLIENT1_PID=$!
 
-  wait_log "${WS_CLIENT1_LOG}" "pong msg_id" 10
+  wait_key "chirp:sess:user_2${DEV_SEP}dev_a" 15
 
   echo ""
   echo "[ws] login on gw_b same device (should kick gw_a)"
