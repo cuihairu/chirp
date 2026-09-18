@@ -90,10 +90,22 @@ services:
       dockerfile: docker/Dockerfile.service
       args:
         SERVICE: voice
-    command: ["--port", "9000", "--ws_port", "9001"]
+    # turn URIs resolve inside the compose network only ("coturn" is the
+    # service name below); the static secret must equal coturn's
+    # --static-auth-secret (REST short-term credentials).
+    command:
+      [
+        "--port", "9000",
+        "--ws_port", "9001",
+        "--turn_uri", "turn:coturn:3478?transport=udp,turn:coturn:3478?transport=tcp,stun:coturn:3478",
+        "--turn_static_secret", "dev_turn_secret",
+        "--heartbeat_timeout_ms", "75000"
+      ]
     ports:
       - "9000:9000"
       - "9001:9001"
+    depends_on:
+      - coturn
 
   notification:
     build:
@@ -195,6 +207,30 @@ services:
       - archive_data:/var/lib/chirp/archive
     depends_on:
       - redis
+
+  # TURN/STUN relay for the voice service (WebRTC media fallback behind
+  # symmetric NAT). use-auth-secret mode: the voice service mints
+  # username/credential pairs from --turn_static_secret, which must equal
+  # this --static-auth-secret. Dev only — the secret lives in this file.
+  coturn:
+    image: coturn/coturn:4.6.2
+    command:
+      [
+        "--use-auth-secret",
+        "--static-auth-secret", "dev_turn_secret",
+        "--realm", "chirp.dev",
+        "--listening-port", "3478",
+        "--no-tls",
+        "--no-dtls",
+        "--min-port", "49160",
+        "--max-port", "49200",
+        "--no-cli",
+        "--no-multicast-peers"
+      ]
+    ports:
+      - "3478:3478/udp"
+      - "3478:3478/tcp"
+      - "49160-49200:49160-49200/udp"
 
 volumes:
   mysql_data:

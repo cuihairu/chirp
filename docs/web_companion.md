@@ -13,7 +13,7 @@ Status: **Experimental** —— 一期已交付:登录、私聊、群组、好�
 | 群组 | ✅ | 建群、添加成员、踢人、退群、群成员名单、群聊(全部经 notify 同步) |
 | 好友 | ✅ | pending 制加好友、接受/拒绝、删除、拉黑;好友列表**服务端权威**(登录拉取 + notify 同步) |
 | 在线状态 | ✅ | 上下线徽标(绿点)、状态广播、批量拉取;服务端断线即广播 OFFLINE |
-| 语音/组队 | ❌ | 二期,依赖后端补齐(见 roadmap) |
+| 语音/组队 | ◐ | 后端信令面已就绪(认证门/TURN 凭据/mute-deafen/超时清理,见 roadmap B);客户端 WebRTC 媒体面与组队属二/三期 |
 
 两条连接彼此独立、可降级:social 断开时聊天完全可用,好友入口隐藏。
 
@@ -67,7 +67,7 @@ src/
 7. **pendingOut(我发出的请求)刷新即丢**:服务端只有进件查询(GET_PENDING_REQUESTS 只回 to_user_id==me),outgoing 靠 ADD_RESP 本地记,属已知局限。
 8. **未读数无服务端递增路径**(直连 chat 无 GET_UNREAD_COUNT 的维护面):未读角标为本地计数。
 9. **后台标签心跳被节流**:监听 `visibilitychange`,回前台立即补心跳;心跳死链判定 2×(25s+10s)。
-10. **scaffold token=user_id 仅限开发**;生产起 chat **与 social** 时加 `--token_secret`(同一 secret),登录页选 JWT 模式。
+10. **scaffold token=user_id 仅限开发**;生产起 chat **与 social、voice** 时加 `--token_secret`(同一 secret,voice 的该开关同时是信令认证门),登录页选 JWT 模式。
 11. **social 按单实例部署使用**:roster/pending/黑名单经 Redis write-through 持久化(`--redis_host` 启用,重启自动恢复;不带则纯内存),但 presence 与会话表在实例内存,多实例间无 fan-out——好友落在两台实例上时在线广播与进件推送不通。
 7. **未读数无服务端递增路径**(直连 chat 无 GET_UNREAD_COUNT 的维护面):未读角标为本地计数。
 8. **后台标签心跳被节流**:监听 `visibilitychange`,回前台立即补心跳;心跳死链判定 2×(25s+10s)。
@@ -86,7 +86,9 @@ src/
 [一期·已完成] 本文档:Web 伴侣 App(登录/私聊/群组/好友/在线状态)
    ├─→ [后端补齐 A:social 可用化·已完成] GET_FRIEND_LIST/REMOVE_FRIEND/BLOCK 系实现、
    │    Redis 持久化、ACCEPTED 双向 notify、presence 断线广播、JWT 对齐
-   ├─→ [后端补齐 B:voice 媒体面] SDP 定向中继、TURN、mute/deafen、信令认证
+   ├─→ [后端补齐 B:voice 媒体面·已完成] SDP 定向中继(offer/answer/candidate)、TURN(coturn REST
+   │    短期凭据,join 应答带 ice_servers)、mute/deafen 独立双布尔、LOGIN 信令认证、心跳超时踢人;
+   │    客户端媒体面(WebRTC 接入)仍属三期
    ├─→ [后端补齐 C:party 协议] proto 7xxx 段从零定义(当前组队完全没有协议)
    ├─→ [二期·Flutter 五端] Android/iOS/macOS/Windows/Linux,协议层以 src/protocol/ 为蓝本
    │    纯 Dart 重写;五端共享同一套界面代码,每端的增量只在构建矩阵与签名发布。

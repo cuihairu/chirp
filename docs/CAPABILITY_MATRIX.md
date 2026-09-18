@@ -1,6 +1,6 @@
 # Chirp Capability Matrix
 
-Last reviewed: 2026-09-14
+Last reviewed: 2026-09-18
 
 This document describes the repository's current implementation status by runtime target, not by roadmap intent.
 
@@ -25,7 +25,7 @@ This document describes the repository's current implementation status by runtim
 | NPC dialog (keyword rule engine) | `chirp_npc_dialog` | Experimental | Pure server-plane client (no player-facing listener): chat turns `npc:`-prefixed private messages into `npc.player_message` events, the service answers with keyword-table replies injected back as `SENDER_NPC` (at-least-once; a hub redelivery can duplicate a reply). Process-level smoke: `./test_services.sh --smoke-npc` |
 | Offline-message push trigger | `chirp_chat` (default + distributed builds) | Experimental | Offline private/group messages and server-plane injections enqueue a push through `PushBridge` -> notification (fire-and-forget, logged failures). Wired into the default build and `chirp_chat_distributed` (which also stores offline only when no instance delivered the message, using the router's PUBLISH receiver count); `main_enhanced` (MySQL build) still lacks the wiring pending a build environment that can compile the enhanced branch |
 | Social / presence | `services/social` | Experimental | Present as service code, but not validated as a core path |
-| Voice signaling / WebRTC integration | `services/voice`, `sdks/core/modules/voice` | Experimental | Broad surface area, environment-heavy, not part of the minimal verified path |
+| Voice signaling / WebRTC integration | `services/voice`, `sdks/core/modules/voice` | Experimental | Signal plane complete (61 unit tests, TSan-clean): targeted SDP offer/answer/candidate relay, LOGIN auth gate (`--token_secret`; scaffold self-report default), coturn REST short-term credentials in join responses, mute/deafen with derived participant state, idle-connection sweep. Environment-heavy and not part of the minimal verified path — no real browser/media E2E yet, so the WebRTC media plane remains unvalidated end to end |
 | Notification delivery | `services/notification` | Experimental | Protocol face live on TCP 5006 / WS 5016 (6xxx device + push messages, 100% unit coverage); in-process device registry, per-user cooldown and payload builders are real. `--push_transport http` switches on a real HTTP/1.1 provider POST client (`HttpPushTransport`, TCP connection factory behind an injectable seam, deadline/size caps, loopback-tested); the TLS handshake and APNs HTTP/2 remain out until the build carries OpenSSL/nghttp2, and the default stays the logging transport |
 | App gateway edge (companion apps) | `chirp_app_gateway` | Experimental | TCP 5200 / WS 5201: login/heartbeat/session binding like the game gateway plus 6xxx device-message forwarding to notification (requires an authenticated session, `user_id` pinned server-side); chat business packets are not accepted. The player-aggregation target model (player identity linked to N games, cross-game subscriptions / voice / chat fan-in) is documented in architecture.md but not implemented |
 | Search service | `services/search` | Experimental | Present in tree, not established as a verified path |
@@ -45,7 +45,7 @@ This document describes the repository's current implementation status by runtim
 
 | Concern | Current State | Status |
 | --- | --- | --- |
-| Unit tests | 25 suites in `tests/unit`; every backend package that is linked into a test binary is at 100% line coverage per `scripts/run_coverage.sh` (documented `KNOWN_UNCOVERABLE` exclusions only). `app_gateway` and `voice` are not yet linked into any suite | Supported |
+| Unit tests | 29 suites in `tests/unit`; every backend package that is linked into a test binary is at 100% line coverage per `scripts/run_coverage.sh` (documented `KNOWN_UNCOVERABLE` exclusions only). `app_gateway` and `voice` have suites (`app_gateway_tests`, `voice_tests`) but their `main.cc` files sit outside the coverage measurement | Supported |
 | Standard local build runs tests via `ctest` | `ctest --preset dev` (and `--preset coverage` with the gcov build); a fresh tree builds and passes | Supported |
 | CI treats test failure as hard failure | `ci.yml` runs Debug + Release builds with `ctest`, plus a coverage job that fails when any package drops below 98% line coverage | Supported |
 | Process-level smoke coverage | `test_services.sh --smoke / --smoke-chat / --smoke-sdk / --smoke-npc / --smoke-redis` exist and pass locally; none are wired into CI yet (tracked in TODO.md Current Focus) | Experimental |
