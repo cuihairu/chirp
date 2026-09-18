@@ -1,9 +1,16 @@
 {
   "name": "chirp-docs-root",
   "private": true,
+  "workspaces": [
+    "apps/web_companion"
+  ],
   "scripts": {
     "docs:dev": "npm --prefix docs run dev",
     "docs:build": "npm --prefix docs run build",
     "docs:serve": "npm --prefix docs run serve"
+  },
+  "allowScripts": {
+    "esbuild@0.28.2": true,
+    "protobufjs@7.6.6": true
   }
 }

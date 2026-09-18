@@ -8,7 +8,7 @@ export default defineConfig({
     alias: {
       // Generated protobuf code lives outside the app directory; the commit
       // keeps CI free of any protobuf toolchain.
-      '@chirp/proto': resolve(__dirname, '../../proto/ts'),
+      '@chirp/proto': resolve(import.meta.dirname, '../../proto/ts/proto'),
     },
   },
   test: {
