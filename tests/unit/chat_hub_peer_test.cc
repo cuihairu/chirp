@@ -764,6 +764,9 @@ TEST(ChatHubPeerTest, RpcWithoutConnectionFailsFast) {
   peer->SendEventPublish(publish_req,
                          [&](chirp::common::ErrorCode c) { codes.push_back(c); });
   peer->SendEventAck(ack_req, [&](chirp::common::ErrorCode c) { codes.push_back(c); });
+  // Entry points post onto the strand, so drain the posted fail-fasts here;
+  // nothing else is ever queued (io was never run).
+  io.poll();
   ASSERT_EQ(codes.size(), 3u);
   for (auto code : codes) {
     EXPECT_EQ(code, chirp::common::SERVER_UNAVAILABLE);

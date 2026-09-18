@@ -8,6 +8,7 @@
 #include <chrono>
 #include <cstring>
 #include <memory>
+#include <mutex>
 #include <string>
 #include <vector>
 
@@ -753,21 +754,46 @@ uint16_t FreePort() {
   return static_cast<uint16_t>(acc.local_endpoint().port());
 }
 
+// TSan-clean frame sink for loopback tests: callbacks fire on the io thread
+// while the test thread polls, so every access takes the same mutex.
+struct LockedFrames {
+  std::mutex mu;
+  std::vector<std::string> frames;
+
+  void Push(std::string s) {
+    std::lock_guard<std::mutex> lock(mu);
+    frames.push_back(std::move(s));
+  }
+  bool Empty() {
+    std::lock_guard<std::mutex> lock(mu);
+    return frames.empty();
+  }
+  bool SizeIs(size_t n) {
+    std::lock_guard<std::mutex> lock(mu);
+    return frames.size() == n;
+  }
+  std::string At(size_t i) {
+    std::lock_guard<std::mutex> lock(mu);
+    return frames.at(i);
+  }
+};
+
 class LoopbackLinkTest : public ::testing::Test {};
 
 TEST_F(LoopbackLinkTest, TcpServerAcceptsClientAndDeliversFrames) {
   asio::io_context io;
-  std::vector<std::string> got;
-  bool closed = false;
+  LockedFrames got;
+  LockedFrames echoed;
+  std::atomic<bool> closed{false};
 
   uint16_t port = FreePort();
   chirp::network::TcpServer server(
       io, port,
       [&](std::shared_ptr<Session> s, std::string&& payload) {
-        got.push_back(std::move(payload));
+        got.Push(std::move(payload));
         s->Send(FrameBytes("pong"));
       },
-      [&](std::shared_ptr<Session>) { closed = true; });
+      [&](std::shared_ptr<Session>) { closed.store(true); });
   server.Start();
 
   // Run the server io on a helper thread while the client connects
@@ -775,34 +801,33 @@ TEST_F(LoopbackLinkTest, TcpServerAcceptsClientAndDeliversFrames) {
   std::thread server_thread([&io] { io.run(); });
 
   chirp::network::TcpClient client(io);
-  std::vector<std::string> echoed;
   client.SetCallbacks(
       [&](std::shared_ptr<Session>, std::string&& payload) {
-        echoed.push_back(std::move(payload));
+        echoed.Push(std::move(payload));
       },
       [](std::shared_ptr<Session>) {});
   ASSERT_TRUE(client.Connect("127.0.0.1", port));
 
   client.GetSession()->Send(FrameBytes("ping"));
   // Wait for the frame to reach the server
-  for (int i = 0; i < 300 && got.empty(); ++i) {
+  for (int i = 0; i < 300 && got.Empty(); ++i) {
     std::this_thread::sleep_for(std::chrono::milliseconds(2));
   }
-  EXPECT_EQ(got.size(), 1u);
-  EXPECT_EQ(got[0], "ping");
+  EXPECT_TRUE(got.SizeIs(1));
+  EXPECT_EQ(got.At(0), "ping");
 
   // Server echo reaches the client again
-  for (int i = 0; i < 300 && echoed.empty(); ++i) {
+  for (int i = 0; i < 300 && echoed.Empty(); ++i) {
     std::this_thread::sleep_for(std::chrono::milliseconds(2));
   }
-  EXPECT_EQ(echoed.size(), 1u);
-  EXPECT_EQ(echoed[0], "pong");
+  EXPECT_TRUE(echoed.SizeIs(1));
+  EXPECT_EQ(echoed.At(0), "pong");
 
   client.Disconnect();
-  for (int i = 0; i < 300 && !closed; ++i) {
+  for (int i = 0; i < 300 && !closed.load(); ++i) {
     std::this_thread::sleep_for(std::chrono::milliseconds(2));
   }
-  EXPECT_TRUE(closed);
+  EXPECT_TRUE(closed.load());
 
   server.Stop();
   io.stop();
@@ -811,26 +836,26 @@ TEST_F(LoopbackLinkTest, TcpServerAcceptsClientAndDeliversFrames) {
 
 TEST_F(LoopbackLinkTest, WebSocketServerCompletesClientHandshake) {
   asio::io_context io;
-  std::vector<std::string> got;
-  bool closed = false;
+  LockedFrames got;
+  LockedFrames echoed;
+  std::atomic<bool> closed{false};
 
   uint16_t port = FreePort();
   chirp::network::WebSocketServer server(
       io, port,
       [&](std::shared_ptr<Session> s, std::string&& payload) {
-        got.push_back(std::move(payload));
+        got.Push(std::move(payload));
         s->Send(FrameBytes("pong"));
       },
-      [&](std::shared_ptr<Session>) { closed = true; });
+      [&](std::shared_ptr<Session>) { closed.store(true); });
   server.Start();
 
   std::thread server_thread([&io] { io.run(); });
 
   chirp::network::WebSocketClient client(io);
-  std::vector<std::string> echoed;
   client.SetCallbacks(
       [&](std::shared_ptr<Session>, std::string&& payload) {
-        echoed.push_back(std::move(payload));
+        echoed.Push(std::move(payload));
       },
       [](std::shared_ptr<Session>) {});
 
@@ -838,17 +863,17 @@ TEST_F(LoopbackLinkTest, WebSocketServerCompletesClientHandshake) {
   EXPECT_TRUE(client.Connect("127.0.0.1", port, "/ws"));
 
   client.GetSession()->Send(FrameBytes("ping"));
-  for (int i = 0; i < 300 && got.empty(); ++i) {
+  for (int i = 0; i < 300 && got.Empty(); ++i) {
     std::this_thread::sleep_for(std::chrono::milliseconds(2));
   }
-  EXPECT_EQ(got.size(), 1u);
-  if (!got.empty()) { EXPECT_EQ(got[0], "ping"); }
+  EXPECT_TRUE(got.SizeIs(1));
+  if (got.SizeIs(1)) { EXPECT_EQ(got.At(0), "ping"); }
 
-  for (int i = 0; i < 300 && echoed.empty(); ++i) {
+  for (int i = 0; i < 300 && echoed.Empty(); ++i) {
     std::this_thread::sleep_for(std::chrono::milliseconds(2));
   }
-  EXPECT_EQ(echoed.size(), 1u);
-  if (!echoed.empty()) { EXPECT_EQ(echoed[0], "pong"); }
+  EXPECT_TRUE(echoed.SizeIs(1));
+  if (echoed.SizeIs(1)) { EXPECT_EQ(echoed.At(0), "pong"); }
 
   client.Disconnect();
   server.Stop();

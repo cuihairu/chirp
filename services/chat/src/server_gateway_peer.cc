@@ -36,6 +36,7 @@ ServerGatewayPeer::ServerGatewayPeer(asio::io_context& io, Options options,
       options_(std::move(options)),
       on_inject_(std::move(on_inject)),
       on_event_(std::move(on_event)),
+      strand_(asio::make_strand(io)),
       socket_(io),
       timer_(io) {}
 
@@ -49,18 +50,22 @@ ServerGatewayPeer::~ServerGatewayPeer() {
 }
 
 void ServerGatewayPeer::Start() {
-  if (stopping_) {
-    return;
-  }
-  DoConnect();
+  auto self = shared_from_this();
+  asio::post(strand_, [self] {
+    if (self->stopping_) {
+      return;
+    }
+    self->DoConnect();
+  });
 }
 
 void ServerGatewayPeer::Stop() {
-  if (stopping_) {
-    return;
-  }
-  stopping_ = true;
-  asio::post(io_, [self = shared_from_this()] {
+  auto self = shared_from_this();
+  asio::post(strand_, [self] {
+    if (self->stopping_) {
+      return;
+    }
+    self->stopping_ = true;
     self->timer_.cancel();
     self->FailPending();
     asio::error_code ec;
@@ -101,15 +106,31 @@ void ServerGatewayPeer::SendEventAck(const chirp::server_gateway::EventAckReques
 void ServerGatewayPeer::SendRpc(chirp::gateway::MsgID req_id, chirp::gateway::MsgID resp_id,
                                 const google::protobuf::Message& body, BodyParser parse,
                                 RpcCallback cb) {
-  if (stopping_ || !connected_) {
-    // Fail fast without queueing: this request raced with (or predates) a
-    // live connection, so the caller retries on its own schedule.
-    cb(chirp::common::SERVER_UNAVAILABLE);
-    return;
-  }
-  const int64_t seq = ++rpc_seq_;
-  pending_[seq] = {resp_id, std::move(parse), std::move(cb)};
-  SendPacket(req_id, seq, body);
+  auto self = shared_from_this();
+  // Serialize before posting: body may be a stack temporary that dies before
+  // the strand lambda runs.
+  const std::string body_str = body.SerializeAsString();
+  asio::post(strand_, [self, req_id, resp_id, parse = std::move(parse),
+                       cb = std::move(cb), body_str = std::move(body_str)]() mutable {
+    if (self->stopping_ || !self->connected_) {
+      // Fail fast without queueing: this request raced with (or predates) a
+      // live connection, so the caller retries on its own schedule.
+      cb(chirp::common::SERVER_UNAVAILABLE);
+      return;
+    }
+    const int64_t seq = ++self->rpc_seq_;
+    self->pending_[seq] = {resp_id, std::move(parse), std::move(cb)};
+    chirp::gateway::Packet pkt;
+    pkt.set_msg_id(req_id);
+    pkt.set_sequence(seq);
+    pkt.set_body(body_str);
+    const auto framed = chirp::network::ProtobufFraming::Encode(pkt);
+    asio::error_code ec;
+    // Best-effort write: control frames are tiny, and the async read loop is
+    // the liveness detector - a dead connection fails its next read and
+    // funnels into OnConnectionLost from there.
+    asio::write(self->socket_, asio::buffer(framed), ec);
+  });
 }
 
 void ServerGatewayPeer::DispatchRpcResponse(const chirp::gateway::Packet& pkt) {
@@ -146,8 +167,8 @@ void ServerGatewayPeer::DoConnect() {
   auto resolver = std::make_shared<asio::ip::tcp::resolver>(io_);
   resolver->async_resolve(
       options_.host, std::to_string(options_.port),
-      [self, resolver](const std::error_code& ec,
-                       asio::ip::tcp::resolver::results_type results) {
+      asio::bind_executor(strand_, [self, resolver](const std::error_code& ec,
+                                                    asio::ip::tcp::resolver::results_type results) {
         // No stopping_ guard here: if stopped, the connect below completes on
         // a closed socket with an error and its handler returns early.
         if (ec) {
@@ -157,7 +178,8 @@ void ServerGatewayPeer::DoConnect() {
         }
         asio::async_connect(
             self->socket_, results,
-            [self](const std::error_code& ec, const asio::ip::tcp::endpoint&) {
+            asio::bind_executor(self->strand_, [self](const std::error_code& ec,
+                                                      const asio::ip::tcp::endpoint&) {
               if (self->stopping_) return;
               if (ec) {
                 chirp::common::Logger::Instance().Warn(
@@ -167,8 +189,8 @@ void ServerGatewayPeer::DoConnect() {
               }
               self->SendAuth();
               self->ReadHeader();
-            });
-      });
+            }));
+      }));
 }
 
 void ServerGatewayPeer::SendAuth() {
@@ -183,7 +205,7 @@ void ServerGatewayPeer::ReadHeader() {
   auto self = shared_from_this();
   asio::async_read(
       socket_, asio::buffer(header_),
-      [self](const std::error_code& ec, std::size_t) {
+      asio::bind_executor(strand_, [self](const std::error_code& ec, std::size_t) {
         if (self->stopping_ || ec) {
           self->OnConnectionLost();
           return;
@@ -195,7 +217,7 @@ void ServerGatewayPeer::ReadHeader() {
           return;
         }
         self->ReadBody(size);
-      });
+      }));
 }
 
 void ServerGatewayPeer::ReadBody(uint32_t size) {
@@ -203,7 +225,7 @@ void ServerGatewayPeer::ReadBody(uint32_t size) {
   body_.resize(size);
   asio::async_read(
       socket_, asio::buffer(body_.data(), body_.size()),
-      [self](const std::error_code& ec, std::size_t) {
+      asio::bind_executor(strand_, [self](const std::error_code& ec, std::size_t) {
         if (self->stopping_ || ec) {
           self->OnConnectionLost();
           return;
@@ -218,7 +240,7 @@ void ServerGatewayPeer::ReadBody(uint32_t size) {
         if (!self->stopping_) {
           self->ReadHeader();
         }
-      });
+      }));
 }
 
 void ServerGatewayPeer::HandlePacket(const chirp::gateway::Packet& pkt) {
@@ -314,11 +336,12 @@ void ServerGatewayPeer::ArmHeartbeat() {
   auto self = shared_from_this();
   timer_.cancel();
   timer_.expires_after(std::chrono::seconds(heartbeat_interval_seconds_));
-  timer_.async_wait([self](const std::error_code& ec) {
-    if (ec || self->stopping_ || !self->connected_) return;  // re-armed or shutting down
-    self->SendHeartbeat();
-    self->ArmHeartbeat();
-  });
+  timer_.async_wait(
+      asio::bind_executor(strand_, [self](const std::error_code& ec) {
+        if (ec || self->stopping_ || !self->connected_) return;  // re-armed or shutting down
+        self->SendHeartbeat();
+        self->ArmHeartbeat();
+      }));
 }
 
 void ServerGatewayPeer::OnConnectionLost() {

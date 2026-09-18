@@ -22,9 +22,11 @@ namespace chirp::chat {
 // and runs request/response RPCs (inject / event publish / event ack) over
 // the same connection. Reconnects with a fixed delay until stopped.
 //
-// All handlers run on the io_context given at construction (chat's single io
-// thread); nothing here needs locking. The class keeps itself alive through
-// enable_shared_from_this, so async handlers never dangle.
+// Entry points (Start/Stop/SendInject/SendEventPublish/SendEventAck) may be
+// called from any thread: each hops onto the peer's strand, and every socket
+// and timer handler runs on that strand too, so no member needs extra
+// locking. The class keeps itself alive through enable_shared_from_this, so
+// async handlers never dangle.
 class ServerGatewayPeer : public std::enable_shared_from_this<ServerGatewayPeer> {
  public:
   using InjectHandler =
@@ -58,10 +60,10 @@ class ServerGatewayPeer : public std::enable_shared_from_this<ServerGatewayPeer>
   void Start();
   void Stop();
 
-  // Uplink RPCs. Must be called on the peer's io_context thread (the same
-  // thread that runs the handlers below). Sending while disconnected (or
-  // stopped) fails fast with SERVER_UNAVAILABLE - nothing is queued for a
-  // later connection.
+  // Uplink RPCs. Callable from any thread; each posts onto the peer's strand.
+  // Sending while disconnected (or stopped) fails fast with
+  // SERVER_UNAVAILABLE - nothing is queued for a later connection. The
+  // callback may fire on the strand thread, so it must not block.
   void SendInject(const chirp::server_gateway::MessageInjectRequest& req, RpcCallback cb);
   void SendEventPublish(const chirp::server_gateway::EventPublishRequest& req,
                         RpcCallback cb);
@@ -101,6 +103,9 @@ class ServerGatewayPeer : public std::enable_shared_from_this<ServerGatewayPeer>
   Options options_;
   InjectHandler on_inject_;
   EventHandler on_event_;
+  // Serializes every entry point and every socket/timer handler; also keeps
+  // the implicit is_open() checks inside async ops from racing a close().
+  asio::strand<asio::any_io_executor> strand_;
   asio::ip::tcp::socket socket_;
   asio::steady_timer timer_;  // reconnect delay and heartbeat, one at a time
   std::array<uint8_t, 4> header_{};

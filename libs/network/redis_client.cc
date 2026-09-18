@@ -288,10 +288,10 @@ void RedisSubscriber::Stop() {
     std::lock_guard<std::mutex> lock(sock_mu_);
     if (socket_ && socket_->is_open()) {
       asio::error_code ec;
-      // shutdown() first: a plain close() does not wake a blocking read_some
-      // on Linux, which would deadlock the join() below.
+      // shutdown() only, and under sock_mu_ so it cannot race the reader
+      // thread's connect: it wakes a blocking read_some on Linux (a plain
+      // close() does not), letting Run() exit and the join() below finish.
       socket_->shutdown(asio::ip::tcp::socket::shutdown_both, ec);
-      socket_->close(ec);
     }
   }
   if (io_) {
@@ -299,6 +299,14 @@ void RedisSubscriber::Stop() {
   }
   if (th_.joinable()) {
     th_.join();
+  }
+  // Only close after join(): the reader thread is gone, so closing here can
+  // never race an in-flight read or reconnect, and the fd cannot be reused
+  // under a still-blocked syscall.
+  std::lock_guard<std::mutex> lock(sock_mu_);
+  if (socket_ && socket_->is_open()) {
+    asio::error_code ec;
+    socket_->close(ec);
   }
 }
 
@@ -308,7 +316,17 @@ void RedisSubscriber::Run() {
   try {
     asio::ip::tcp::resolver resolver(*io_);
     auto endpoints = resolver.resolve(host_, std::to_string(port_));
-    asio::connect(*socket_, endpoints);
+    {
+      // The open-state transition must hold sock_mu_ or it races Stop()'s
+      // shutdown/close on the same implementation. Trade-off: a hung connect
+      // delays Stop() until the kernel gives up; the read loop below stays
+      // unlocked so Stop() can still wake it instantly via shutdown().
+      std::lock_guard<std::mutex> lock(sock_mu_);
+      if (stop_.load()) {
+        return;
+      }
+      asio::connect(*socket_, endpoints);
+    }
 
     connected_.store(true);
     if (connect_cb_) {
