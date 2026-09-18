@@ -11,8 +11,8 @@ Status: **Experimental** —— 一期已交付:登录、私聊、群组、好�
 | 登录/互踢 | ✅ | scaffold 模式(token 即 user_id);`--token_secret` JWT 模式同样可登;同账号新设备登录踢旧会话(KICK 弹回登录页) |
 | 私聊 | ✅ | 实时收发、历史分页、已读回执、typing、emoji reaction、编辑/删除、未读角标、离线回放 |
 | 群组 | ✅ | 建群、添加成员、踢人、退群、群成员名单、群聊(全部经 notify 同步) |
-| 好友 | ✅ | pending 制加好友、接受/拒绝、好友列表(localStorage 补位,服务端无列表 API) |
-| 在线状态 | ✅ | 上下线徽标(绿点)、状态广播、批量拉取 |
+| 好友 | ✅ | pending 制加好友、接受/拒绝、删除、拉黑;好友列表**服务端权威**(登录拉取 + notify 同步) |
+| 在线状态 | ✅ | 上下线徽标(绿点)、状态广播、批量拉取;服务端断线即广播 OFFLINE |
 | 语音/组队 | ❌ | 二期,依赖后端补齐(见 roadmap) |
 
 两条连接彼此独立、可降级:social 断开时聊天完全可用,好友入口隐藏。
@@ -36,10 +36,10 @@ cd apps/web_companion && npm run dev    # http://localhost:3001
 ```bash
 cd apps/web_companion
 npm run typecheck && npm run lint
-npm test -- --coverage        # 180 例;门槛:全局 ≥70%,src/protocol ≥90%
+npm test -- --coverage        # 182 例;门槛:全局 ≥70%,src/protocol ≥90%
 npm run build
 
-# E2E:脚本起真实 chirp_chat + chirp_social 再跑集成套件(9 例)
+# E2E:脚本起真实 chirp_chat + chirp_social 再跑集成套件(11 例)
 bash scripts/web_smoke.sh
 ```
 
@@ -61,9 +61,14 @@ src/
 1. **发送方无自回声**:自己的消息以 SEND_RESP 上屏,按 message_id 与实时推送去重合并。
 2. **TARGET_OFFLINE ≠ 发送失败**:消息已入对端离线队列并触发推送,UI 按"已送达(对方离线)"渲染。
 3. **KICK 后必须停自动重连**,否则双端互踢乒乓;客户端置 `kicked` 弹回登录页。
-4. **服务端断线不广播 OFFLINE**(social `main.cc` 只更新内存表):presence 靠客户端 70s TTL 过期兜底渲染离线。
-5. **FRIEND_ACCEPTED_NOTIFY 只发请求发起者,且 user_id 填发起者自己**:客户端忽略 self echo(否则会"加自己为好友"),接受方的好友记账由 ACTION_RESP 驱动本地完成;**发起者的 roster 缺口**(接受成功但发起者好友列表不更新)是服务端缺陷,列入 social 后端补齐。
-6. **GET_FRIEND_LIST(3007)/ REMOVE_FRIEND(3005) 服务端无 handler**:好友列表用 localStorage 按 user_id 持久化补位,权威版等后端补齐。
+4. **roster 服务端权威**:social 登录后拉 GET_FRIEND_LIST + GET_PENDING_REQUESTS 灌本地镜像;之后完全靠 notify 同步(3022 进件、3023 ACCEPTED 双向、3024 REMOVED)。本地不再持久化好友(localStorage 已退役),刷新即从服务端重建。
+5. **ACCEPTED notify 发给双方、user_id 填对端**:两边各自把对端记入 roster;客户端忽略 self echo(纯防御,现服务端不可能发)。
+6. **REMOVE_FRIEND/BLOCK 对称且幂等**:服务端删双向关系并推 3024 给对端;BLOCK 额外绝交并清 pending。重复 REMOVE/BLOCK 仍回 OK。
+7. **pendingOut(我发出的请求)刷新即丢**:服务端只有进件查询(GET_PENDING_REQUESTS 只回 to_user_id==me),outgoing 靠 ADD_RESP 本地记,属已知局限。
+8. **未读数无服务端递增路径**(直连 chat 无 GET_UNREAD_COUNT 的维护面):未读角标为本地计数。
+9. **后台标签心跳被节流**:监听 `visibilitychange`,回前台立即补心跳;心跳死链判定 2×(25s+10s)。
+10. **scaffold token=user_id 仅限开发**;生产起 chat **与 social** 时加 `--token_secret`(同一 secret),登录页选 JWT 模式。
+11. **social 按单实例部署使用**:roster/pending/黑名单经 Redis write-through 持久化(`--redis_host` 启用,重启自动恢复;不带则纯内存),但 presence 与会话表在实例内存,多实例间无 fan-out——好友落在两台实例上时在线广播与进件推送不通。
 7. **未读数无服务端递增路径**(直连 chat 无 GET_UNREAD_COUNT 的维护面):未读角标为本地计数。
 8. **后台标签心跳被节流**:监听 `visibilitychange`,回前台立即补心跳;心跳死链判定 2×(25s+10s)。
 9. **scaffold token=user_id 仅限开发**;生产起 chat 时加 `--token_secret`,登录页选 JWT 模式。
@@ -79,8 +84,8 @@ src/
 
 ```
 [一期·已完成] 本文档:Web 伴侣 App(登录/私聊/群组/好友/在线状态)
-   ├─→ [后端补齐 A:social 可用化] GET_FRIEND_LIST/REMOVE_FRIEND/BLOCK 系实现、好友落库、
-   │    ACCEPTED notify 字段语义修复、presence 断线广播、JWT 对齐
+   ├─→ [后端补齐 A:social 可用化·已完成] GET_FRIEND_LIST/REMOVE_FRIEND/BLOCK 系实现、
+   │    Redis 持久化、ACCEPTED 双向 notify、presence 断线广播、JWT 对齐
    ├─→ [后端补齐 B:voice 媒体面] SDP 定向中继、TURN、mute/deafen、信令认证
    ├─→ [后端补齐 C:party 协议] proto 7xxx 段从零定义(当前组队完全没有协议)
    ├─→ [二期·Flutter 三端] Android/iOS/Windows,协议层以 src/protocol/ 为蓝本纯 Dart 重写

@@ -1,15 +1,25 @@
 import { PresenceStatus } from '@chirp/proto/social';
 import { MsgID } from '@chirp/proto/gateway';
-import { ADD_FRIEND, FRIEND_REQUEST_ACTION, GET_PRESENCE, LOGIN, SET_PRESENCE } from '../protocol/msg_map';
+import {
+  ADD_FRIEND,
+  BLOCK_USER,
+  FRIEND_REQUEST_ACTION,
+  GET_FRIEND_LIST,
+  GET_PENDING_REQUESTS,
+  GET_PRESENCE,
+  LOGIN,
+  REMOVE_FRIEND,
+  SET_PRESENCE,
+  UNBLOCK_USER,
+} from '../protocol/msg_map';
 import { setPresence } from '../state/presence_store';
 import {
   addFriend,
   addPendingIn,
   addPendingOut,
-  fromUserIdOf,
-  loadFriendState,
-  persistFriendStore,
   removeFriend,
+  replaceFriends,
+  replacePendingIn,
   resolvePending,
   type FriendState,
 } from '../state/friend_store';
@@ -29,7 +39,9 @@ export interface SocialApiDeps {
 /**
  * Social plane api (second websocket, port 8001): friends and presence.
  * Degradable by design — when the social socket is unavailable the chat
- * keeps working and the UI simply hides friend features.
+ * keeps working and the UI simply hides friend features. The backend owns
+ * the roster: login pulls friends and pending requests, notifications keep
+ * this mirror in sync.
  */
 export class SocialApi {
   private readonly conn: ChatConnection;
@@ -37,7 +49,6 @@ export class SocialApi {
   private readonly presence: Store<PresenceState>;
   private readonly friends: Store<FriendState>;
   private unsubs: Array<() => void> = [];
-  private persistOff: (() => void) | null = null;
 
   constructor(deps: SocialApiDeps) {
     this.conn = deps.conn;
@@ -50,8 +61,8 @@ export class SocialApi {
     if (this.conn.status !== 'connected') {
       await this.conn.connect();
     }
-    // Same LOGIN pair as chat (scaffold token = user id); the social
-    // service keeps no device registry, so no device_id is needed.
+    // Same LOGIN pair as chat (scaffold token = user id); device_id stays
+    // unset and lands on the service's "default" device.
     const resp = await this.conn.request(LOGIN, { token: userId, platform: 'web' });
     if (resp.code !== 0) {
       // Degrade quietly: no friend features, chat unaffected.
@@ -59,9 +70,13 @@ export class SocialApi {
       return false;
     }
     this.conn.resetBackoff();
-    this.friends.set(() => loadFriendState(userId));
-    this.persistOff = persistFriendStore(this.friends, userId);
+    // Reset the local mirror (a previous account's roster must not leak),
+    // bring notify handlers up first so nothing racing the pull is lost,
+    // then load the authoritative roster.
+    this.friends.set(() => ({ friends: [], pendingIn: [], pendingOut: [] }));
     this.start();
+    await this.fetchFriends();
+    await this.fetchPending();
     return true;
   }
 
@@ -73,8 +88,29 @@ export class SocialApi {
   stop(): void {
     for (const off of this.unsubs) off();
     this.unsubs = [];
-    this.persistOff?.();
-    this.persistOff = null;
+  }
+
+  /** Re-pull the authoritative friend list (e.g. after a reconnect). */
+  async fetchFriends(): Promise<number> {
+    const userId = this.auth.get().userId;
+    if (!userId) return -1;
+    const resp = await this.conn.request(GET_FRIEND_LIST, { userId, limit: 0, offset: 0 });
+    if (resp.code !== 0) return resp.code;
+    replaceFriends(this.friends, (resp.friends ?? []).map((f) => f.userId));
+    return resp.code;
+  }
+
+  /** Re-pull the incoming request queue. */
+  async fetchPending(): Promise<number> {
+    const userId = this.auth.get().userId;
+    if (!userId) return -1;
+    const resp = await this.conn.request(GET_PENDING_REQUESTS, { userId });
+    if (resp.code !== 0) return resp.code;
+    replacePendingIn(
+      this.friends,
+      (resp.requests ?? []).map((r) => ({ requestId: r.requestId, fromUserId: r.fromUserId })),
+    );
+    return resp.code;
   }
 
   /** Advertise our presence; the service broadcasts it to our friends. */
@@ -111,12 +147,36 @@ export class SocialApi {
   async respondRequest(requestId: string, accept: boolean): Promise<number> {
     const userId = this.auth.get().userId;
     if (!userId) return -1;
-    const from = fromUserIdOf(this.friends.get(), requestId);
     const resp = await this.conn.request(FRIEND_REQUEST_ACTION, { userId, requestId, accept });
     if (resp.code !== 0) return resp.code;
     resolvePending(this.friends, requestId);
-    // The ACCEPTED notify excludes the actor, so accept-side bookkeeping is local.
-    if (accept && from) addFriend(this.friends, from);
+    // Roster sync arrives via the ACCEPTED notify, which the server sends to
+    // both sides carrying the OTHER party's id.
+    return resp.code;
+  }
+
+  /** Symmetric, idempotent delete on the server; the peer learns via notify. */
+  async removeFriend(targetUserId: string): Promise<number> {
+    const userId = this.auth.get().userId;
+    if (!userId) return -1;
+    const resp = await this.conn.request(REMOVE_FRIEND, { userId, friendUserId: targetUserId });
+    if (resp.code === 0) removeFriend(this.friends, targetUserId);
+    return resp.code;
+  }
+
+  /** Blocking severs the friendship on the server (both ways). */
+  async blockUser(targetUserId: string): Promise<number> {
+    const userId = this.auth.get().userId;
+    if (!userId) return -1;
+    const resp = await this.conn.request(BLOCK_USER, { userId, targetUserId });
+    if (resp.code === 0) removeFriend(this.friends, targetUserId);
+    return resp.code;
+  }
+
+  async unblockUser(targetUserId: string): Promise<number> {
+    const userId = this.auth.get().userId;
+    if (!userId) return -1;
+    const resp = await this.conn.request(UNBLOCK_USER, { userId, targetUserId });
     return resp.code;
   }
 
@@ -157,10 +217,9 @@ export class SocialApi {
     } catch {
       return;
     }
-    // Server quirk: the ACCEPTED notify goes to the requester with user_id
-    // set to the requester themselves, so the accepting peer's id is not
-    // carried. Ignore self echoes (never friend ourselves); the requester's
-    // roster gap is closed by the social backend work (P1 backlog).
+    // user_id is always the OTHER party of the new friendship. A self echo
+    // would mean "friend ourselves" — impossible from the current server,
+    // but the guard is cheap and keeps a broken peer from poisoning us.
     if (notify.userId === this.auth.get().userId) return;
     addFriend(this.friends, notify.userId);
   }

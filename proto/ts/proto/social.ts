@@ -132,6 +132,11 @@ export interface FriendRequest {
   /** Optional message with request */
   message: string;
   timestamp: number;
+  /**
+   * Filled by GET_PENDING_REQUESTS so the receiver can answer with
+   * FRIEND_REQUEST_ACTION; the notify (3022) carries the same id.
+   */
+  requestId: string;
 }
 
 /** Friend information */
@@ -343,7 +348,7 @@ export interface StoredBlockedList {
 }
 
 function createBaseFriendRequest(): FriendRequest {
-  return { fromUserId: "", toUserId: "", message: "", timestamp: 0 };
+  return { fromUserId: "", toUserId: "", message: "", timestamp: 0, requestId: "" };
 }
 
 export const FriendRequest = {
@@ -359,6 +364,9 @@ export const FriendRequest = {
     }
     if (message.timestamp !== 0) {
       writer.uint32(32).int64(message.timestamp);
+    }
+    if (message.requestId !== "") {
+      writer.uint32(42).string(message.requestId);
     }
     return writer;
   },
@@ -398,6 +406,13 @@ export const FriendRequest = {
 
           message.timestamp = longToNumber(reader.int64() as Long);
           continue;
+        case 5:
+          if (tag !== 42) {
+            break;
+          }
+
+          message.requestId = reader.string();
+          continue;
       }
       if ((tag & 7) === 4 || tag === 0) {
         break;
@@ -413,6 +428,7 @@ export const FriendRequest = {
       toUserId: isSet(object.toUserId) ? globalThis.String(object.toUserId) : "",
       message: isSet(object.message) ? globalThis.String(object.message) : "",
       timestamp: isSet(object.timestamp) ? globalThis.Number(object.timestamp) : 0,
+      requestId: isSet(object.requestId) ? globalThis.String(object.requestId) : "",
     };
   },
 
@@ -430,6 +446,9 @@ export const FriendRequest = {
     if (message.timestamp !== 0) {
       obj.timestamp = Math.round(message.timestamp);
     }
+    if (message.requestId !== "") {
+      obj.requestId = message.requestId;
+    }
     return obj;
   },
 
@@ -442,6 +461,7 @@ export const FriendRequest = {
     message.toUserId = object.toUserId ?? "";
     message.message = object.message ?? "";
     message.timestamp = object.timestamp ?? 0;
+    message.requestId = object.requestId ?? "";
     return message;
   },
 };

@@ -30,6 +30,9 @@ message FriendRequest {
   string to_user_id = 2;
   string message = 3;      // Optional message with request
   int64 timestamp = 4;
+  // Filled by GET_PENDING_REQUESTS so the receiver can answer with
+  // FRIEND_REQUEST_ACTION; the notify (3022) carries the same id.
+  string request_id = 5;
 }
 
 // Friend information

@@ -509,6 +509,9 @@ inline constexpr FriendRequest::Impl_::Impl_(
         message_(
             &::google::protobuf::internal::fixed_address_empty_string,
             ::_pbi::ConstantInitialized()),
+        request_id_(
+            &::google::protobuf::internal::fixed_address_empty_string,
+            ::_pbi::ConstantInitialized()),
         timestamp_{::int64_t{0}} {}
 
 template <typename>
@@ -973,14 +976,16 @@ const ::uint32_t
         protodesc_cold) = {
         0x081, // bitmap
         PROTOBUF_FIELD_OFFSET(::chirp::social::FriendRequest, _impl_._has_bits_),
-        7, // hasbit index offset
+        8, // hasbit index offset
         PROTOBUF_FIELD_OFFSET(::chirp::social::FriendRequest, _impl_.from_user_id_),
         PROTOBUF_FIELD_OFFSET(::chirp::social::FriendRequest, _impl_.to_user_id_),
         PROTOBUF_FIELD_OFFSET(::chirp::social::FriendRequest, _impl_.message_),
         PROTOBUF_FIELD_OFFSET(::chirp::social::FriendRequest, _impl_.timestamp_),
+        PROTOBUF_FIELD_OFFSET(::chirp::social::FriendRequest, _impl_.request_id_),
         0,
         1,
         2,
+        4,
         3,
         0x081, // bitmap
         PROTOBUF_FIELD_OFFSET(::chirp::social::FriendInfo, _impl_._has_bits_),
@@ -1246,39 +1251,39 @@ const ::uint32_t
 static const ::_pbi::MigrationSchema
     schemas[] ABSL_ATTRIBUTE_SECTION_VARIABLE(protodesc_cold) = {
         {0, sizeof(::chirp::social::FriendRequest)},
-        {11, sizeof(::chirp::social::FriendInfo)},
-        {24, sizeof(::chirp::social::AddFriendRequest)},
-        {33, sizeof(::chirp::social::AddFriendResponse)},
-        {42, sizeof(::chirp::social::FriendRequestAction)},
-        {51, sizeof(::chirp::social::FriendRequestActionResponse)},
-        {58, sizeof(::chirp::social::RemoveFriendRequest)},
-        {65, sizeof(::chirp::social::RemoveFriendResponse)},
-        {72, sizeof(::chirp::social::GetFriendListRequest)},
-        {81, sizeof(::chirp::social::GetFriendListResponse)},
-        {90, sizeof(::chirp::social::GetPendingRequestsRequest)},
-        {95, sizeof(::chirp::social::GetPendingRequestsResponse)},
-        {102, sizeof(::chirp::social::BlockUserRequest)},
-        {109, sizeof(::chirp::social::BlockUserResponse)},
-        {116, sizeof(::chirp::social::UnblockUserRequest)},
-        {123, sizeof(::chirp::social::UnblockUserResponse)},
-        {130, sizeof(::chirp::social::GetBlockedListRequest)},
-        {135, sizeof(::chirp::social::GetBlockedListResponse)},
-        {142, sizeof(::chirp::social::SetPresenceRequest_MetadataEntry_DoNotUse)},
-        {149, sizeof(::chirp::social::SetPresenceRequest)},
-        {160, sizeof(::chirp::social::SetPresenceResponse)},
-        {167, sizeof(::chirp::social::PresenceInfo_MetadataEntry_DoNotUse)},
-        {174, sizeof(::chirp::social::PresenceInfo)},
-        {187, sizeof(::chirp::social::GetPresenceRequest)},
-        {192, sizeof(::chirp::social::GetPresenceResponse)},
-        {199, sizeof(::chirp::social::PresenceNotify_MetadataEntry_DoNotUse)},
-        {206, sizeof(::chirp::social::PresenceNotify)},
-        {219, sizeof(::chirp::social::FriendRequestNotify)},
-        {232, sizeof(::chirp::social::FriendAcceptedNotify)},
-        {241, sizeof(::chirp::social::FriendRemovedNotify)},
-        {248, sizeof(::chirp::social::StoredFriendList)},
-        {253, sizeof(::chirp::social::StoredPendingRequests_RequestsEntry_DoNotUse)},
-        {260, sizeof(::chirp::social::StoredPendingRequests)},
-        {265, sizeof(::chirp::social::StoredBlockedList)},
+        {13, sizeof(::chirp::social::FriendInfo)},
+        {26, sizeof(::chirp::social::AddFriendRequest)},
+        {35, sizeof(::chirp::social::AddFriendResponse)},
+        {44, sizeof(::chirp::social::FriendRequestAction)},
+        {53, sizeof(::chirp::social::FriendRequestActionResponse)},
+        {60, sizeof(::chirp::social::RemoveFriendRequest)},
+        {67, sizeof(::chirp::social::RemoveFriendResponse)},
+        {74, sizeof(::chirp::social::GetFriendListRequest)},
+        {83, sizeof(::chirp::social::GetFriendListResponse)},
+        {92, sizeof(::chirp::social::GetPendingRequestsRequest)},
+        {97, sizeof(::chirp::social::GetPendingRequestsResponse)},
+        {104, sizeof(::chirp::social::BlockUserRequest)},
+        {111, sizeof(::chirp::social::BlockUserResponse)},
+        {118, sizeof(::chirp::social::UnblockUserRequest)},
+        {125, sizeof(::chirp::social::UnblockUserResponse)},
+        {132, sizeof(::chirp::social::GetBlockedListRequest)},
+        {137, sizeof(::chirp::social::GetBlockedListResponse)},
+        {144, sizeof(::chirp::social::SetPresenceRequest_MetadataEntry_DoNotUse)},
+        {151, sizeof(::chirp::social::SetPresenceRequest)},
+        {162, sizeof(::chirp::social::SetPresenceResponse)},
+        {169, sizeof(::chirp::social::PresenceInfo_MetadataEntry_DoNotUse)},
+        {176, sizeof(::chirp::social::PresenceInfo)},
+        {189, sizeof(::chirp::social::GetPresenceRequest)},
+        {194, sizeof(::chirp::social::GetPresenceResponse)},
+        {201, sizeof(::chirp::social::PresenceNotify_MetadataEntry_DoNotUse)},
+        {208, sizeof(::chirp::social::PresenceNotify)},
+        {221, sizeof(::chirp::social::FriendRequestNotify)},
+        {234, sizeof(::chirp::social::FriendAcceptedNotify)},
+        {243, sizeof(::chirp::social::FriendRemovedNotify)},
+        {250, sizeof(::chirp::social::StoredFriendList)},
+        {255, sizeof(::chirp::social::StoredPendingRequests_RequestsEntry_DoNotUse)},
+        {262, sizeof(::chirp::social::StoredPendingRequests)},
+        {267, sizeof(::chirp::social::StoredBlockedList)},
 };
 static const ::_pb::Message* PROTOBUF_NONNULL const file_default_instances[] = {
     &::chirp::social::_FriendRequest_default_instance_._instance,
@@ -1319,86 +1324,86 @@ static const ::_pb::Message* PROTOBUF_NONNULL const file_default_instances[] = {
 const char descriptor_table_protodef_proto_2fsocial_2eproto[] ABSL_ATTRIBUTE_SECTION_VARIABLE(
     protodesc_cold) = {
     "\n\022proto/social.proto\022\014chirp.social\032\022prot"
-    "o/common.proto\"]\n\rFriendRequest\022\024\n\014from_"
+    "o/common.proto\"q\n\rFriendRequest\022\024\n\014from_"
     "user_id\030\001 \001(\t\022\022\n\nto_user_id\030\002 \001(\t\022\017\n\007mes"
-    "sage\030\003 \001(\t\022\021\n\ttimestamp\030\004 \001(\003\"\201\001\n\nFriend"
-    "Info\022\017\n\007user_id\030\001 \001(\t\022\020\n\010username\030\002 \001(\t\022"
-    "\022\n\navatar_url\030\003 \001(\t\022*\n\006status\030\004 \001(\0162\032.ch"
-    "irp.social.FriendStatus\022\020\n\010added_at\030\005 \001("
-    "\003\"L\n\020AddFriendRequest\022\017\n\007user_id\030\001 \001(\t\022\026"
-    "\n\016target_user_id\030\002 \001(\t\022\017\n\007message\030\003 \001(\t\""
-    "c\n\021AddFriendResponse\022%\n\004code\030\001 \001(\0162\027.chi"
-    "rp.common.ErrorCode\022\022\n\nrequest_id\030\002 \001(\t\022"
-    "\023\n\013server_time\030\003 \001(\003\"J\n\023FriendRequestAct"
-    "ion\022\017\n\007user_id\030\001 \001(\t\022\022\n\nrequest_id\030\002 \001(\t"
-    "\022\016\n\006accept\030\003 \001(\010\"Y\n\033FriendRequestActionR"
-    "esponse\022%\n\004code\030\001 \001(\0162\027.chirp.common.Err"
-    "orCode\022\023\n\013server_time\030\002 \001(\003\">\n\023RemoveFri"
-    "endRequest\022\017\n\007user_id\030\001 \001(\t\022\026\n\016friend_us"
-    "er_id\030\002 \001(\t\"R\n\024RemoveFriendResponse\022%\n\004c"
-    "ode\030\001 \001(\0162\027.chirp.common.ErrorCode\022\023\n\013se"
-    "rver_time\030\002 \001(\003\"F\n\024GetFriendListRequest\022"
-    "\017\n\007user_id\030\001 \001(\t\022\r\n\005limit\030\002 \001(\005\022\016\n\006offse"
-    "t\030\003 \001(\005\"~\n\025GetFriendListResponse\022%\n\004code"
-    "\030\001 \001(\0162\027.chirp.common.ErrorCode\022)\n\007frien"
-    "ds\030\002 \003(\0132\030.chirp.social.FriendInfo\022\023\n\013to"
-    "tal_count\030\003 \001(\005\",\n\031GetPendingRequestsReq"
-    "uest\022\017\n\007user_id\030\001 \001(\t\"r\n\032GetPendingReque"
-    "stsResponse\022%\n\004code\030\001 \001(\0162\027.chirp.common"
-    ".ErrorCode\022-\n\010requests\030\002 \003(\0132\033.chirp.soc"
-    "ial.FriendRequest\";\n\020BlockUserRequest\022\017\n"
-    "\007user_id\030\001 \001(\t\022\026\n\016target_user_id\030\002 \001(\t\"O"
-    "\n\021BlockUserResponse\022%\n\004code\030\001 \001(\0162\027.chir"
-    "p.common.ErrorCode\022\023\n\013server_time\030\002 \001(\003\""
-    "=\n\022UnblockUserRequest\022\017\n\007user_id\030\001 \001(\t\022\026"
-    "\n\016target_user_id\030\002 \001(\t\"Q\n\023UnblockUserRes"
-    "ponse\022%\n\004code\030\001 \001(\0162\027.chirp.common.Error"
-    "Code\022\023\n\013server_time\030\002 \001(\003\"(\n\025GetBlockedL"
-    "istRequest\022\017\n\007user_id\030\001 \001(\t\"Y\n\026GetBlocke"
-    "dListResponse\022%\n\004code\030\001 \001(\0162\027.chirp.comm"
-    "on.ErrorCode\022\030\n\020blocked_user_ids\030\002 \003(\t\"\336"
-    "\001\n\022SetPresenceRequest\022\017\n\007user_id\030\001 \001(\t\022,"
-    "\n\006status\030\002 \001(\0162\034.chirp.social.PresenceSt"
-    "atus\022\026\n\016status_message\030\003 \001(\t\022@\n\010metadata"
-    "\030\004 \003(\0132..chirp.social.SetPresenceRequest"
-    ".MetadataEntry\032/\n\rMetadataEntry\022\013\n\003key\030\001"
-    " \001(\t\022\r\n\005value\030\002 \001(\t:\0028\001\"Q\n\023SetPresenceRe"
-    "sponse\022%\n\004code\030\001 \001(\0162\027.chirp.common.Erro"
-    "rCode\022\023\n\013server_time\030\002 \001(\003\"\345\001\n\014PresenceI"
-    "nfo\022\017\n\007user_id\030\001 \001(\t\022,\n\006status\030\002 \001(\0162\034.c"
-    "hirp.social.PresenceStatus\022\026\n\016status_mes"
-    "sage\030\003 \001(\t\022\021\n\tlast_seen\030\004 \001(\003\022:\n\010metadat"
-    "a\030\005 \003(\0132(.chirp.social.PresenceInfo.Meta"
-    "dataEntry\032/\n\rMetadataEntry\022\013\n\003key\030\001 \001(\t\022"
-    "\r\n\005value\030\002 \001(\t:\0028\001\"&\n\022GetPresenceRequest"
-    "\022\020\n\010user_ids\030\001 \003(\t\"k\n\023GetPresenceRespons"
-    "e\022%\n\004code\030\001 \001(\0162\027.chirp.common.ErrorCode"
-    "\022-\n\tpresences\030\002 \003(\0132\032.chirp.social.Prese"
-    "nceInfo\"\351\001\n\016PresenceNotify\022\017\n\007user_id\030\001 "
-    "\001(\t\022,\n\006status\030\002 \001(\0162\034.chirp.social.Prese"
-    "nceStatus\022\026\n\016status_message\030\003 \001(\t\022\021\n\ttim"
-    "estamp\030\004 \001(\003\022<\n\010metadata\030\005 \003(\0132*.chirp.s"
-    "ocial.PresenceNotify.MetadataEntry\032/\n\rMe"
+    "sage\030\003 \001(\t\022\021\n\ttimestamp\030\004 \001(\003\022\022\n\nrequest"
+    "_id\030\005 \001(\t\"\201\001\n\nFriendInfo\022\017\n\007user_id\030\001 \001("
+    "\t\022\020\n\010username\030\002 \001(\t\022\022\n\navatar_url\030\003 \001(\t\022"
+    "*\n\006status\030\004 \001(\0162\032.chirp.social.FriendSta"
+    "tus\022\020\n\010added_at\030\005 \001(\003\"L\n\020AddFriendReques"
+    "t\022\017\n\007user_id\030\001 \001(\t\022\026\n\016target_user_id\030\002 \001"
+    "(\t\022\017\n\007message\030\003 \001(\t\"c\n\021AddFriendResponse"
+    "\022%\n\004code\030\001 \001(\0162\027.chirp.common.ErrorCode\022"
+    "\022\n\nrequest_id\030\002 \001(\t\022\023\n\013server_time\030\003 \001(\003"
+    "\"J\n\023FriendRequestAction\022\017\n\007user_id\030\001 \001(\t"
+    "\022\022\n\nrequest_id\030\002 \001(\t\022\016\n\006accept\030\003 \001(\010\"Y\n\033"
+    "FriendRequestActionResponse\022%\n\004code\030\001 \001("
+    "\0162\027.chirp.common.ErrorCode\022\023\n\013server_tim"
+    "e\030\002 \001(\003\">\n\023RemoveFriendRequest\022\017\n\007user_i"
+    "d\030\001 \001(\t\022\026\n\016friend_user_id\030\002 \001(\t\"R\n\024Remov"
+    "eFriendResponse\022%\n\004code\030\001 \001(\0162\027.chirp.co"
+    "mmon.ErrorCode\022\023\n\013server_time\030\002 \001(\003\"F\n\024G"
+    "etFriendListRequest\022\017\n\007user_id\030\001 \001(\t\022\r\n\005"
+    "limit\030\002 \001(\005\022\016\n\006offset\030\003 \001(\005\"~\n\025GetFriend"
+    "ListResponse\022%\n\004code\030\001 \001(\0162\027.chirp.commo"
+    "n.ErrorCode\022)\n\007friends\030\002 \003(\0132\030.chirp.soc"
+    "ial.FriendInfo\022\023\n\013total_count\030\003 \001(\005\",\n\031G"
+    "etPendingRequestsRequest\022\017\n\007user_id\030\001 \001("
+    "\t\"r\n\032GetPendingRequestsResponse\022%\n\004code\030"
+    "\001 \001(\0162\027.chirp.common.ErrorCode\022-\n\010reques"
+    "ts\030\002 \003(\0132\033.chirp.social.FriendRequest\";\n"
+    "\020BlockUserRequest\022\017\n\007user_id\030\001 \001(\t\022\026\n\016ta"
+    "rget_user_id\030\002 \001(\t\"O\n\021BlockUserResponse\022"
+    "%\n\004code\030\001 \001(\0162\027.chirp.common.ErrorCode\022\023"
+    "\n\013server_time\030\002 \001(\003\"=\n\022UnblockUserReques"
+    "t\022\017\n\007user_id\030\001 \001(\t\022\026\n\016target_user_id\030\002 \001"
+    "(\t\"Q\n\023UnblockUserResponse\022%\n\004code\030\001 \001(\0162"
+    "\027.chirp.common.ErrorCode\022\023\n\013server_time\030"
+    "\002 \001(\003\"(\n\025GetBlockedListRequest\022\017\n\007user_i"
+    "d\030\001 \001(\t\"Y\n\026GetBlockedListResponse\022%\n\004cod"
+    "e\030\001 \001(\0162\027.chirp.common.ErrorCode\022\030\n\020bloc"
+    "ked_user_ids\030\002 \003(\t\"\336\001\n\022SetPresenceReques"
+    "t\022\017\n\007user_id\030\001 \001(\t\022,\n\006status\030\002 \001(\0162\034.chi"
+    "rp.social.PresenceStatus\022\026\n\016status_messa"
+    "ge\030\003 \001(\t\022@\n\010metadata\030\004 \003(\0132..chirp.socia"
+    "l.SetPresenceRequest.MetadataEntry\032/\n\rMe"
     "tadataEntry\022\013\n\003key\030\001 \001(\t\022\r\n\005value\030\002 \001(\t:"
-    "\0028\001\"z\n\023FriendRequestNotify\022\022\n\nrequest_id"
-    "\030\001 \001(\t\022\024\n\014from_user_id\030\002 \001(\t\022\025\n\rfrom_use"
-    "rname\030\003 \001(\t\022\017\n\007message\030\004 \001(\t\022\021\n\ttimestam"
-    "p\030\005 \001(\003\"L\n\024FriendAcceptedNotify\022\017\n\007user_"
-    "id\030\001 \001(\t\022\020\n\010username\030\002 \001(\t\022\021\n\ttimestamp\030"
-    "\003 \001(\003\"9\n\023FriendRemovedNotify\022\017\n\007user_id\030"
-    "\001 \001(\t\022\021\n\ttimestamp\030\002 \001(\003\"+\n\020StoredFriend"
-    "List\022\027\n\017friend_user_ids\030\001 \003(\t\"\252\001\n\025Stored"
-    "PendingRequests\022C\n\010requests\030\001 \003(\01321.chir"
-    "p.social.StoredPendingRequests.RequestsE"
-    "ntry\032L\n\rRequestsEntry\022\013\n\003key\030\001 \001(\t\022*\n\005va"
-    "lue\030\002 \001(\0132\033.chirp.social.FriendRequest:\002"
-    "8\001\"-\n\021StoredBlockedList\022\030\n\020blocked_user_"
-    "ids\030\001 \003(\t*X\n\016PresenceStatus\022\013\n\007OFFLINE\020\000"
-    "\022\n\n\006ONLINE\020\001\022\010\n\004AWAY\020\002\022\007\n\003DND\020\003\022\013\n\007IN_GA"
-    "ME\020\004\022\r\n\tIN_BATTLE\020\005*@\n\014FriendStatus\022\010\n\004N"
-    "ONE\020\000\022\013\n\007PENDING\020\001\022\014\n\010ACCEPTED\020\002\022\013\n\007BLOC"
-    "KED\020\003B#Z!github.com/cui/chirp/proto/soci"
-    "alb\006proto3"
+    "\0028\001\"Q\n\023SetPresenceResponse\022%\n\004code\030\001 \001(\016"
+    "2\027.chirp.common.ErrorCode\022\023\n\013server_time"
+    "\030\002 \001(\003\"\345\001\n\014PresenceInfo\022\017\n\007user_id\030\001 \001(\t"
+    "\022,\n\006status\030\002 \001(\0162\034.chirp.social.Presence"
+    "Status\022\026\n\016status_message\030\003 \001(\t\022\021\n\tlast_s"
+    "een\030\004 \001(\003\022:\n\010metadata\030\005 \003(\0132(.chirp.soci"
+    "al.PresenceInfo.MetadataEntry\032/\n\rMetadat"
+    "aEntry\022\013\n\003key\030\001 \001(\t\022\r\n\005value\030\002 \001(\t:\0028\001\"&"
+    "\n\022GetPresenceRequest\022\020\n\010user_ids\030\001 \003(\t\"k"
+    "\n\023GetPresenceResponse\022%\n\004code\030\001 \001(\0162\027.ch"
+    "irp.common.ErrorCode\022-\n\tpresences\030\002 \003(\0132"
+    "\032.chirp.social.PresenceInfo\"\351\001\n\016Presence"
+    "Notify\022\017\n\007user_id\030\001 \001(\t\022,\n\006status\030\002 \001(\0162"
+    "\034.chirp.social.PresenceStatus\022\026\n\016status_"
+    "message\030\003 \001(\t\022\021\n\ttimestamp\030\004 \001(\003\022<\n\010meta"
+    "data\030\005 \003(\0132*.chirp.social.PresenceNotify"
+    ".MetadataEntry\032/\n\rMetadataEntry\022\013\n\003key\030\001"
+    " \001(\t\022\r\n\005value\030\002 \001(\t:\0028\001\"z\n\023FriendRequest"
+    "Notify\022\022\n\nrequest_id\030\001 \001(\t\022\024\n\014from_user_"
+    "id\030\002 \001(\t\022\025\n\rfrom_username\030\003 \001(\t\022\017\n\007messa"
+    "ge\030\004 \001(\t\022\021\n\ttimestamp\030\005 \001(\003\"L\n\024FriendAcc"
+    "eptedNotify\022\017\n\007user_id\030\001 \001(\t\022\020\n\010username"
+    "\030\002 \001(\t\022\021\n\ttimestamp\030\003 \001(\003\"9\n\023FriendRemov"
+    "edNotify\022\017\n\007user_id\030\001 \001(\t\022\021\n\ttimestamp\030\002"
+    " \001(\003\"+\n\020StoredFriendList\022\027\n\017friend_user_"
+    "ids\030\001 \003(\t\"\252\001\n\025StoredPendingRequests\022C\n\010r"
+    "equests\030\001 \003(\01321.chirp.social.StoredPendi"
+    "ngRequests.RequestsEntry\032L\n\rRequestsEntr"
+    "y\022\013\n\003key\030\001 \001(\t\022*\n\005value\030\002 \001(\0132\033.chirp.so"
+    "cial.FriendRequest:\0028\001\"-\n\021StoredBlockedL"
+    "ist\022\030\n\020blocked_user_ids\030\001 \003(\t*X\n\016Presenc"
+    "eStatus\022\013\n\007OFFLINE\020\000\022\n\n\006ONLINE\020\001\022\010\n\004AWAY"
+    "\020\002\022\007\n\003DND\020\003\022\013\n\007IN_GAME\020\004\022\r\n\tIN_BATTLE\020\005*"
+    "@\n\014FriendStatus\022\010\n\004NONE\020\000\022\013\n\007PENDING\020\001\022\014"
+    "\n\010ACCEPTED\020\002\022\013\n\007BLOCKED\020\003B#Z!github.com/"
+    "cui/chirp/proto/socialb\006proto3"
 };
 static const ::_pbi::DescriptorTable* PROTOBUF_NONNULL const
     descriptor_table_proto_2fsocial_2eproto_deps[1] = {
@@ -1408,7 +1413,7 @@ static ::absl::once_flag descriptor_table_proto_2fsocial_2eproto_once;
 PROTOBUF_CONSTINIT const ::_pbi::DescriptorTable descriptor_table_proto_2fsocial_2eproto = {
     false,
     false,
-    3210,
+    3230,
     descriptor_table_protodef_proto_2fsocial_2eproto,
     "proto/social.proto",
     &descriptor_table_proto_2fsocial_2eproto_once,
@@ -1462,7 +1467,8 @@ PROTOBUF_NDEBUG_INLINE FriendRequest::Impl_::Impl_(
         _cached_size_{0},
         from_user_id_(arena, from.from_user_id_),
         to_user_id_(arena, from.to_user_id_),
-        message_(arena, from.message_) {}
+        message_(arena, from.message_),
+        request_id_(arena, from.request_id_) {}
 
 FriendRequest::FriendRequest(
     ::google::protobuf::Arena* PROTOBUF_NULLABLE arena,
@@ -1487,7 +1493,8 @@ PROTOBUF_NDEBUG_INLINE FriendRequest::Impl_::Impl_(
       : _cached_size_{0},
         from_user_id_(arena),
         to_user_id_(arena),
-        message_(arena) {}
+        message_(arena),
+        request_id_(arena) {}
 
 inline void FriendRequest::SharedCtor(::_pb::Arena* PROTOBUF_NULLABLE arena) {
   new (&_impl_) Impl_(internal_visibility(), arena);
@@ -1507,6 +1514,7 @@ inline void FriendRequest::SharedDtor(MessageLite& self) {
   this_._impl_.from_user_id_.Destroy();
   this_._impl_.to_user_id_.Destroy();
   this_._impl_.message_.Destroy();
+  this_._impl_.request_id_.Destroy();
   this_._impl_.~Impl_();
 }
 
@@ -1553,16 +1561,16 @@ FriendRequest::GetClassData() const {
   return FriendRequest_class_data_.base();
 }
 PROTOBUF_CONSTINIT PROTOBUF_ATTRIBUTE_INIT_PRIORITY1
-const ::_pbi::TcParseTable<2, 4, 0, 64, 2>
+const ::_pbi::TcParseTable<3, 5, 0, 74, 2>
 FriendRequest::_table_ = {
   {
     PROTOBUF_FIELD_OFFSET(FriendRequest, _impl_._has_bits_),
     0, // no _extensions_
-    4, 24,  // max_field_number, fast_idx_mask
+    5, 56,  // max_field_number, fast_idx_mask
     offsetof(decltype(_table_), field_lookup_table),
-    4294967280,  // skipmap
+    4294967264,  // skipmap
     offsetof(decltype(_table_), field_entries),
-    4,  // num_field_entries
+    5,  // num_field_entries
     0,  // num_aux_entries
     offsetof(decltype(_table_), field_names),  // no aux_entries
     FriendRequest_class_data_.base(),
@@ -1572,10 +1580,7 @@ FriendRequest::_table_ = {
     ::_pbi::TcParser::GetTable<::chirp::social::FriendRequest>(),  // to_prefetch
     #endif  // PROTOBUF_PREFETCH_PARSE_TABLE
   }, {{
-    // int64 timestamp = 4;
-    {::_pbi::TcParser::SingularVarintNoZag1<::uint64_t, offsetof(FriendRequest, _impl_.timestamp_), 3>(),
-     {32, 3, 0,
-      PROTOBUF_FIELD_OFFSET(FriendRequest, _impl_.timestamp_)}},
+    {::_pbi::TcParser::MiniParse, {}},
     // string from_user_id = 1;
     {::_pbi::TcParser::FastUS1,
      {10, 0, 0,
@@ -1588,6 +1593,16 @@ FriendRequest::_table_ = {
     {::_pbi::TcParser::FastUS1,
      {26, 2, 0,
       PROTOBUF_FIELD_OFFSET(FriendRequest, _impl_.message_)}},
+    // int64 timestamp = 4;
+    {::_pbi::TcParser::SingularVarintNoZag1<::uint64_t, offsetof(FriendRequest, _impl_.timestamp_), 4>(),
+     {32, 4, 0,
+      PROTOBUF_FIELD_OFFSET(FriendRequest, _impl_.timestamp_)}},
+    // string request_id = 5;
+    {::_pbi::TcParser::FastUS1,
+     {42, 3, 0,
+      PROTOBUF_FIELD_OFFSET(FriendRequest, _impl_.request_id_)}},
+    {::_pbi::TcParser::MiniParse, {}},
+    {::_pbi::TcParser::MiniParse, {}},
   }}, {{
     65535, 65535
   }}, {{
@@ -1598,15 +1613,18 @@ FriendRequest::_table_ = {
     // string message = 3;
     {PROTOBUF_FIELD_OFFSET(FriendRequest, _impl_.message_), _Internal::kHasBitsOffset + 2, 0, (0 | ::_fl::kFcOptional | ::_fl::kUtf8String | ::_fl::kRepAString)},
     // int64 timestamp = 4;
-    {PROTOBUF_FIELD_OFFSET(FriendRequest, _impl_.timestamp_), _Internal::kHasBitsOffset + 3, 0, (0 | ::_fl::kFcOptional | ::_fl::kInt64)},
+    {PROTOBUF_FIELD_OFFSET(FriendRequest, _impl_.timestamp_), _Internal::kHasBitsOffset + 4, 0, (0 | ::_fl::kFcOptional | ::_fl::kInt64)},
+    // string request_id = 5;
+    {PROTOBUF_FIELD_OFFSET(FriendRequest, _impl_.request_id_), _Internal::kHasBitsOffset + 3, 0, (0 | ::_fl::kFcOptional | ::_fl::kUtf8String | ::_fl::kRepAString)},
   }},
   // no aux_entries
   {{
-    "\32\14\12\7\0\0\0\0"
+    "\32\14\12\7\0\12\0\0"
     "chirp.social.FriendRequest"
     "from_user_id"
     "to_user_id"
     "message"
+    "request_id"
   }},
 };
 PROTOBUF_NOINLINE void FriendRequest::Clear() {
@@ -1617,7 +1635,7 @@ PROTOBUF_NOINLINE void FriendRequest::Clear() {
   (void) cached_has_bits;
 
   cached_has_bits = _impl_._has_bits_[0];
-  if (BatchCheckHasBit(cached_has_bits, 0x00000007U)) {
+  if (BatchCheckHasBit(cached_has_bits, 0x0000000fU)) {
     if (CheckHasBit(cached_has_bits, 0x00000001U)) {
       _impl_.from_user_id_.ClearNonDefaultToEmpty();
     }
@@ -1626,6 +1644,9 @@ PROTOBUF_NOINLINE void FriendRequest::Clear() {
     }
     if (CheckHasBit(cached_has_bits, 0x00000004U)) {
       _impl_.message_.ClearNonDefaultToEmpty();
+    }
+    if (CheckHasBit(cached_has_bits, 0x00000008U)) {
+      _impl_.request_id_.ClearNonDefaultToEmpty();
     }
   }
   _impl_.timestamp_ = ::int64_t{0};
@@ -1683,11 +1704,21 @@ PROTOBUF_NOINLINE void FriendRequest::Clear() {
   }
 
   // int64 timestamp = 4;
-  if (CheckHasBit(cached_has_bits, 0x00000008U)) {
+  if (CheckHasBit(cached_has_bits, 0x00000010U)) {
     if (this_._internal_timestamp() != 0) {
       target =
           ::google::protobuf::internal::WireFormatLite::WriteInt64ToArrayWithField<4>(
               stream, this_._internal_timestamp(), target);
+    }
+  }
+
+  // string request_id = 5;
+  if (CheckHasBit(cached_has_bits, 0x00000008U)) {
+    if (!this_._internal_request_id().empty()) {
+      const ::std::string& _s = this_._internal_request_id();
+      ::google::protobuf::internal::WireFormatLite::VerifyUtf8String(
+          _s.data(), static_cast<int>(_s.length()), ::google::protobuf::internal::WireFormatLite::SERIALIZE, "chirp.social.FriendRequest.request_id");
+      target = stream->WriteStringMaybeAliased(5, _s, target);
     }
   }
 
@@ -1716,7 +1747,7 @@ PROTOBUF_NOINLINE void FriendRequest::Clear() {
 
   ::_pbi::Prefetch5LinesFrom7Lines(&this_);
   cached_has_bits = this_._impl_._has_bits_[0];
-  if (BatchCheckHasBit(cached_has_bits, 0x0000000fU)) {
+  if (BatchCheckHasBit(cached_has_bits, 0x0000001fU)) {
     // string from_user_id = 1;
     if (CheckHasBit(cached_has_bits, 0x00000001U)) {
       if (!this_._internal_from_user_id().empty()) {
@@ -1738,8 +1769,15 @@ PROTOBUF_NOINLINE void FriendRequest::Clear() {
                                         this_._internal_message());
       }
     }
-    // int64 timestamp = 4;
+    // string request_id = 5;
     if (CheckHasBit(cached_has_bits, 0x00000008U)) {
+      if (!this_._internal_request_id().empty()) {
+        total_size += 1 + ::google::protobuf::internal::WireFormatLite::StringSize(
+                                        this_._internal_request_id());
+      }
+    }
+    // int64 timestamp = 4;
+    if (CheckHasBit(cached_has_bits, 0x00000010U)) {
       if (this_._internal_timestamp() != 0) {
         total_size += ::_pbi::WireFormatLite::Int64SizePlusOne(
             this_._internal_timestamp());
@@ -1764,7 +1802,7 @@ void FriendRequest::MergeImpl(::google::protobuf::MessageLite& to_msg,
   (void)cached_has_bits;
 
   cached_has_bits = from._impl_._has_bits_[0];
-  if (BatchCheckHasBit(cached_has_bits, 0x0000000fU)) {
+  if (BatchCheckHasBit(cached_has_bits, 0x0000001fU)) {
     if (CheckHasBit(cached_has_bits, 0x00000001U)) {
       if (!from._internal_from_user_id().empty()) {
         _this->_internal_set_from_user_id(from._internal_from_user_id());
@@ -1793,6 +1831,15 @@ void FriendRequest::MergeImpl(::google::protobuf::MessageLite& to_msg,
       }
     }
     if (CheckHasBit(cached_has_bits, 0x00000008U)) {
+      if (!from._internal_request_id().empty()) {
+        _this->_internal_set_request_id(from._internal_request_id());
+      } else {
+        if (_this->_impl_.request_id_.IsDefault()) {
+          _this->_internal_set_request_id("");
+        }
+      }
+    }
+    if (CheckHasBit(cached_has_bits, 0x00000010U)) {
       if (from._internal_timestamp() != 0) {
         _this->_impl_.timestamp_ = from._impl_.timestamp_;
       }
@@ -1820,6 +1867,7 @@ void FriendRequest::InternalSwap(FriendRequest* PROTOBUF_RESTRICT PROTOBUF_NONNU
   ::_pbi::ArenaStringPtr::InternalSwap(&_impl_.from_user_id_, &other->_impl_.from_user_id_, arena);
   ::_pbi::ArenaStringPtr::InternalSwap(&_impl_.to_user_id_, &other->_impl_.to_user_id_, arena);
   ::_pbi::ArenaStringPtr::InternalSwap(&_impl_.message_, &other->_impl_.message_, arena);
+  ::_pbi::ArenaStringPtr::InternalSwap(&_impl_.request_id_, &other->_impl_.request_id_, arena);
   swap(_impl_.timestamp_, other->_impl_.timestamp_);
 }
 

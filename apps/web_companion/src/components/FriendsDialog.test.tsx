@@ -1,7 +1,7 @@
 import { describe, expect, it, vi } from 'vitest';
 import { fireEvent, screen, waitFor } from '@testing-library/react';
 import { MsgID } from '@chirp/proto/gateway';
-import { PresenceStatus } from '@chirp/proto/social';
+import { FriendAcceptedNotify, PresenceStatus } from '@chirp/proto/social';
 import { renderLoggedIn } from '../test-utils';
 import { addFriend, addPendingIn } from '../state/friend_store';
 import { FakeChatConnection } from '../state/test_helpers';
@@ -91,7 +91,10 @@ describe('FriendsDialog', () => {
     social.setResponder(async () => ({ code: 0 }));
     await renderLoggedIn(<FriendsDialog open onClose={vi.fn()} onOpenChannel={vi.fn()} />, {
       socialConn: social,
-      prepare: ({ services }) => {
+      prepare: async ({ services }) => {
+        // Bring the notify handlers up (only socialApi.login does that); the
+        // seeded request must survive the login roster pull, so seed after.
+        await services.socialApi?.login('user_a');
         addPendingIn(services.friends, 'req-1', 'user_b');
       },
     });
@@ -100,6 +103,14 @@ describe('FriendsDialog', () => {
     fireEvent.click(screen.getByTestId('accept-user_b'));
     await waitFor(() =>
       expect(social.requests.some((r) => r.msgId === MsgID.FRIEND_REQUEST_ACTION_REQ)).toBe(true),
+    );
+    // The server books the friendship via the ACCEPTED notify (user_id =
+    // the other party); the client no longer keeps local accept-side books.
+    social.emit(
+      MsgID.FRIEND_ACCEPTED_NOTIFY,
+      FriendAcceptedNotify.encode(
+        FriendAcceptedNotify.fromPartial({ userId: 'user_b' }),
+      ).finish(),
     );
     // The request row is gone and user_b joined the friend list.
     await waitFor(() =>

@@ -15,9 +15,6 @@ import type { AuthState } from '../state/auth_store';
 import { FakeChatConnection } from '../state/test_helpers';
 
 const makeHarness = () => {
-  // Roster persistence keys off the user id, so leftovers from a previous
-  // case would leak into login()'s loadFriendState.
-  window.localStorage.clear();
   const conn = new FakeChatConnection();
   const auth = createStore<AuthState>({
     userId: 'user_a',
@@ -38,12 +35,36 @@ describe('SocialApi.login', () => {
     const h = makeHarness();
     let sawPlatform: unknown;
     h.conn.setResponder(async (msgId, req) => {
-      expect(msgId).toBe(MsgID.LOGIN_REQ);
-      sawPlatform = (req as { platform?: string }).platform;
+      if (msgId === MsgID.LOGIN_REQ) {
+        sawPlatform = (req as { platform?: string }).platform;
+      }
       return { code: 0 };
     });
     expect(await h.api.login('user_a')).toBe(true);
     expect(sawPlatform).toBe('web');
+  });
+
+  it('pulls the authoritative roster and pending queue on login', async () => {
+    const h = makeHarness();
+    h.conn.setResponder(async (msgId) => {
+      if (msgId === MsgID.GET_FRIEND_LIST_REQ) {
+        return {
+          code: 0,
+          friends: [
+            { userId: 'user_b', status: 2 },
+            { userId: 'user_c', status: 2 },
+          ],
+          totalCount: 2,
+        };
+      }
+      if (msgId === MsgID.GET_PENDING_REQUESTS_REQ) {
+        return { code: 0, requests: [{ requestId: 'req-7', fromUserId: 'user_d' }] };
+      }
+      return { code: 0 };
+    });
+    await h.api.login('user_a');
+    expect(h.friends.get().friends).toEqual(['user_b', 'user_c']);
+    expect(h.friends.get().pendingIn).toEqual([{ requestId: 'req-7', fromUserId: 'user_d' }]);
   });
 
   it('degrades quietly on a social failure', async () => {
@@ -123,7 +144,7 @@ describe('SocialApi friends', () => {
     expect(h.friends.get().pendingOut).toEqual(['user_b']);
   });
 
-  it('accepting a request books the sender locally (notify excludes the actor)', async () => {
+  it('accepting clears the request; the roster lands via the ACCEPTED notify', async () => {
     const h = makeHarness();
     await h.api.login('user_a');
     h.conn.emit(
@@ -141,6 +162,15 @@ describe('SocialApi friends', () => {
     });
     expect(await h.api.respondRequest('req-1', true)).toBe(0);
     expect(h.friends.get().pendingIn).toEqual([]);
+    // No local bookkeeping anymore: the friendship is booked when the
+    // server's ACCEPTED notify (user_id = the other party) arrives.
+    expect(h.friends.get().friends).toEqual([]);
+    h.conn.emit(
+      MsgID.FRIEND_ACCEPTED_NOTIFY,
+      FriendAcceptedNotify.encode(
+        FriendAcceptedNotify.fromPartial({ userId: 'user_b' }),
+      ).finish(),
+    );
     expect(h.friends.get().friends).toEqual(['user_b']);
   });
 
@@ -177,6 +207,37 @@ describe('SocialApi friends', () => {
       ).finish(),
     );
     expect(h.friends.get().friends).toEqual(['user_d']);
+  });
+
+  it('removes a friend through the server and mirrors it locally', async () => {
+    const h = makeHarness();
+    h.friends.set((prev) => ({ ...prev, friends: ['user_b'] }));
+    h.conn.setResponder(async (msgId, req) => {
+      expect(msgId).toBe(MsgID.REMOVE_FRIEND_REQ);
+      expect(req).toMatchObject({ userId: 'user_a', friendUserId: 'user_b' });
+      return { code: 0 };
+    });
+    expect(await h.api.removeFriend('user_b')).toBe(0);
+    expect(h.friends.get().friends).toEqual([]);
+  });
+
+  it('blocks through the server (severing the friendship) and unblocks', async () => {
+    const h = makeHarness();
+    h.friends.set((prev) => ({ ...prev, friends: ['user_b'] }));
+    h.conn.setResponder(async (msgId, req) => {
+      if (msgId === MsgID.BLOCK_USER_REQ) {
+        expect(req).toMatchObject({ userId: 'user_a', targetUserId: 'user_b' });
+        return { code: 0 };
+      }
+      if (msgId === MsgID.UNBLOCK_USER_REQ) {
+        expect(req).toMatchObject({ userId: 'user_a', targetUserId: 'user_c' });
+        return { code: 0 };
+      }
+      return { code: 0 };
+    });
+    expect(await h.api.blockUser('user_b')).toBe(0);
+    expect(h.friends.get().friends).toEqual([]);
+    expect(await h.api.unblockUser('user_c')).toBe(0);
   });
 
   it('drops a friend on FRIEND_REMOVED_NOTIFY', async () => {

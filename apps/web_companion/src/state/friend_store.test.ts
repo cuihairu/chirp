@@ -1,15 +1,14 @@
-import { describe, expect, it, vi } from 'vitest';
+import { describe, expect, it } from 'vitest';
 import {
   addFriend,
   addPendingIn,
   addPendingOut,
   createFriendStore,
   fromUserIdOf,
-  loadFriendState,
-  persistFriendStore,
   removeFriend,
+  replaceFriends,
+  replacePendingIn,
   resolvePending,
-  saveFriendState,
 } from './friend_store';
 
 describe('friend_store', () => {
@@ -46,29 +45,22 @@ describe('friend_store', () => {
     expect(fromUserIdOf(store.get(), 'missing')).toBeUndefined();
   });
 
-  it('persists to localStorage and loads back', () => {
-    saveFriendState('user_a', { friends: ['user_b'], pendingIn: [], pendingOut: ['user_c'] });
-    expect(loadFriendState('user_a').friends).toEqual(['user_b']);
-
-    // Mutating a persisted store writes through.
-    const store = createFriendStore(loadFriendState('user_a'));
-    const off = persistFriendStore(store, 'user_a');
-    addFriend(store, 'user_d');
-    expect(loadFriendState('user_a').friends).toEqual(['user_b', 'user_d']);
-    off();
-
-    // Corrupt or missing storage falls back to an empty roster.
-    window.localStorage.setItem('chirp.friends.user_e', 'not json');
-    expect(loadFriendState('user_e')).toEqual({ friends: [], pendingIn: [], pendingOut: [] });
-    expect(loadFriendState('nobody')).toEqual({ friends: [], pendingIn: [], pendingOut: [] });
-  });
-
-  it('silently ignores persistence failures', () => {
+  it('replaces friends and pending requests wholesale (server pulls)', () => {
     const store = createFriendStore();
-    const setItem = vi.spyOn(Storage.prototype, 'setItem').mockImplementation(() => {
-      throw new Error('quota');
-    });
-    expect(() => persistFriendStore(store, 'user_a')).not.toThrow();
-    setItem.mockRestore();
+    replaceFriends(store, ['user_z', 'user_a']);
+    expect(store.get().friends).toEqual(['user_a', 'user_z']);
+    replacePendingIn(store, [
+      { requestId: 'r1', fromUserId: 'user_b' },
+      { requestId: 'r2', fromUserId: 'user_c' },
+    ]);
+    expect(store.get().pendingIn).toEqual([
+      { requestId: 'r1', fromUserId: 'user_b' },
+      { requestId: 'r2', fromUserId: 'user_c' },
+    ]);
+
+    // An identical pull keeps the state reference (no republish).
+    const before = store.get();
+    replaceFriends(store, ['user_a', 'user_z']);
+    expect(store.get()).toBe(before);
   });
 });

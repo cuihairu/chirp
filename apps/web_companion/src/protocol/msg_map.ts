@@ -139,8 +139,9 @@ export const DELETE_MESSAGE = defineSpec(
   Chat.DeleteMessageResponse,
 );
 
-// Social plane (WS 8001): friends are pending-request based, presence is a
-// broadcast snapshot. GET_FRIEND_LIST (3007) is unimplemented server-side.
+// Social plane (WS 8001): the backend serves the full roster surface
+// (friends, pending requests, blocked list); friends stay pending-request
+// based and presence is a broadcast snapshot.
 export const ADD_FRIEND = defineSpec(
   MsgID.ADD_FRIEND_REQ,
   MsgID.ADD_FRIEND_RESP,
@@ -152,6 +153,42 @@ export const FRIEND_REQUEST_ACTION = defineSpec(
   MsgID.FRIEND_REQUEST_ACTION_RESP,
   Social.FriendRequestAction,
   Social.FriendRequestActionResponse,
+);
+export const REMOVE_FRIEND = defineSpec(
+  MsgID.REMOVE_FRIEND_REQ,
+  MsgID.REMOVE_FRIEND_RESP,
+  Social.RemoveFriendRequest,
+  Social.RemoveFriendResponse,
+);
+export const GET_FRIEND_LIST = defineSpec(
+  MsgID.GET_FRIEND_LIST_REQ,
+  MsgID.GET_FRIEND_LIST_RESP,
+  Social.GetFriendListRequest,
+  Social.GetFriendListResponse,
+);
+export const GET_PENDING_REQUESTS = defineSpec(
+  MsgID.GET_PENDING_REQUESTS_REQ,
+  MsgID.GET_PENDING_REQUESTS_RESP,
+  Social.GetPendingRequestsRequest,
+  Social.GetPendingRequestsResponse,
+);
+export const BLOCK_USER = defineSpec(
+  MsgID.BLOCK_USER_REQ,
+  MsgID.BLOCK_USER_RESP,
+  Social.BlockUserRequest,
+  Social.BlockUserResponse,
+);
+export const UNBLOCK_USER = defineSpec(
+  MsgID.UNBLOCK_USER_REQ,
+  MsgID.UNBLOCK_USER_RESP,
+  Social.UnblockUserRequest,
+  Social.UnblockUserResponse,
+);
+export const GET_BLOCKED_LIST = defineSpec(
+  MsgID.GET_BLOCKED_LIST_REQ,
+  MsgID.GET_BLOCKED_LIST_RESP,
+  Social.GetBlockedListRequest,
+  Social.GetBlockedListResponse,
 );
 export const SET_PRESENCE = defineSpec(
   MsgID.SET_PRESENCE_REQ,

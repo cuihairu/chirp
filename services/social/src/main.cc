@@ -706,9 +706,12 @@ void HandleGetPendingRequests(const std::shared_ptr<SocialState>& state,
   {
     std::lock_guard<std::mutex> lock(state->mu);
     // Incoming side only; the outgoing mirror is the requester's record.
+    // Each entry carries its request id so the receiver can act on it.
     for (const auto& [request_id, pending] : state->pending_requests) {
       if (pending.to_user_id() == user_id) {
-        *resp.add_requests() = pending;
+        auto* entry = resp.add_requests();
+        *entry = pending;
+        entry->set_request_id(request_id);
       }
     }
   }
