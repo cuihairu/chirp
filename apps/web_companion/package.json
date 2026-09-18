@@ -11,6 +11,7 @@
     "lint": "eslint src",
     "test": "vitest run",
     "test:watch": "vitest",
+    "test:integration": "vitest run -c vitest.integration.config.ts",
     "gen:proto": "bash scripts/gen-proto.sh"
   },
   "dependencies": {

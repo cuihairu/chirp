@@ -14,6 +14,9 @@ export default defineConfig({
   test: {
     environment: 'jsdom',
     include: ['src/**/*.test.ts', 'src/**/*.test.tsx'],
+    // The real-backend suite lives in its own config (vitest.integration.config.ts)
+    // so skipped-by-default cases never dilute coverage here.
+    exclude: ['**/node_modules/**', 'src/integration/**'],
     coverage: {
       provider: 'v8',
       reporter: ['text', 'lcov'],

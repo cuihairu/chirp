@@ -2,6 +2,7 @@ import { LoginResponse } from '@chirp/proto/auth';
 import { HeartbeatPong, MsgID, Packet } from '@chirp/proto/gateway';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { ChirpClient, WebSocketLike } from './chirp_client';
+import { RequestError } from './errors';
 import { encodeFrame } from './frame';
 import { LOGIN } from './msg_map';
 
@@ -244,6 +245,22 @@ describe('request/response', () => {
     };
     await expect(client.request(LOGIN, { token: 't' })).rejects.toMatchObject({ kind: 'closed' });
     client.disconnect();
+  });
+
+  it('sends fire-and-forget frames without expecting a response', async () => {
+    const { client, ws } = await connectedClient();
+    expect(() => client.send(MsgID.MESSAGE_ACK, new Uint8Array([1, 2]))).not.toThrow();
+    const sent = ws.lastSentPacket();
+    expect(sent.msgId).toBe(MsgID.MESSAGE_ACK);
+    expect(sent.sequence).toBeGreaterThan(0);
+    // Nothing resolves or times out for it: the pending table stays empty.
+    expect(() => client.send(MsgID.TYPING_INDICATOR_NOTIFY, new Uint8Array())).not.toThrow();
+    client.disconnect();
+  });
+
+  it('throws on fire-and-forget while not connected', async () => {
+    const client = makeClient();
+    expect(() => client.send(MsgID.MESSAGE_ACK, new Uint8Array())).toThrow(RequestError);
   });
 });
 

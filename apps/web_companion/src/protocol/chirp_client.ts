@@ -238,6 +238,18 @@ export class ChirpClient {
     }
   }
 
+  /**
+   * Fire-and-forget send for messages that never get a response frame
+   * (MESSAGE_ACK 2209, TYPING 2208). Throws RequestError('closed') when not
+   * connected.
+   */
+  send(msgId: MsgID, body: Uint8Array): void {
+    if (this._status !== 'connected' || this.ws === null) {
+      throw new RequestError('closed');
+    }
+    this.rawSend(msgId, body, ++this.seqCounter);
+  }
+
   private setStatus(status: ConnStatus): void {
     if (this._status === status) return;
     this._status = status;

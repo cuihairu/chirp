@@ -81,3 +81,27 @@ export const GET_USER_GROUPS = defineSpec(
   Chat.GetUserGroupsRequest,
   Chat.GetUserGroupsResponse,
 );
+export const CREATE_GROUP = defineSpec(
+  MsgID.CREATE_GROUP_REQ,
+  MsgID.CREATE_GROUP_RESP,
+  Chat.CreateGroupRequest,
+  Chat.CreateGroupResponse,
+);
+export const INVITE_TO_GROUP = defineSpec(
+  MsgID.INVITE_TO_GROUP_REQ,
+  MsgID.INVITE_TO_GROUP_RESP,
+  Chat.InviteToGroupRequest,
+  Chat.InviteToGroupResponse,
+);
+export const LEAVE_GROUP = defineSpec(
+  MsgID.LEAVE_GROUP_REQ,
+  MsgID.LEAVE_GROUP_RESP,
+  Chat.LeaveGroupRequest,
+  Chat.LeaveGroupResponse,
+);
+export const GET_GROUP_MEMBERS = defineSpec(
+  MsgID.GET_GROUP_MEMBERS_REQ,
+  MsgID.GET_GROUP_MEMBERS_RESP,
+  Chat.GetGroupMembersRequest,
+  Chat.GetGroupMembersResponse,
+);
