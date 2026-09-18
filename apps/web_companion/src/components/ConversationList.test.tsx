@@ -1,5 +1,6 @@
 import { describe, expect, it, vi } from 'vitest';
 import { fireEvent, screen, waitFor } from '@testing-library/react';
+import { MsgID } from '@chirp/proto/gateway';
 import { renderLoggedIn } from '../test-utils';
 import ConversationList from './ConversationList';
 import { zh } from '../i18n/zh';
@@ -84,5 +85,27 @@ describe('ConversationList', () => {
 
     expect(screen.getByText(zh.chat.startChatSelf)).toBeTruthy();
     expect(onOpen).not.toHaveBeenCalled();
+  });
+
+  it('creates a group and opens its channel', async () => {
+    const onOpen = vi.fn();
+    const mounted = await renderLoggedIn(<ConversationList onOpen={onOpen} />, {
+      responder: async (msgId) =>
+        msgId === MsgID.CREATE_GROUP_REQ ? { code: 0, groupId: 'guild-7' } : { code: 0, groups: [{ groupId: 'guild-7', groupName: 'Party', ownerId: 'user_a' }] },
+    });
+
+    fireEvent.click(screen.getByRole('button', { name: zh.chat.newGroup }));
+    fireEvent.change(screen.getByTestId('group-name-input').querySelector('input')!, {
+      target: { value: 'Party' },
+    });
+    fireEvent.click(screen.getByTestId('group-create-confirm'));
+
+    await waitFor(() => expect(onOpen).toHaveBeenCalledWith('g:guild-7'));
+    const list = mounted.services.conversations.get().conversations;
+    expect(list.find((c) => c.key === 'g:guild-7')).toMatchObject({
+      kind: 'group',
+      title: 'Party',
+      ownerId: 'user_a',
+    });
   });
 });

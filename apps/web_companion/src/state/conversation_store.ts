@@ -54,6 +54,14 @@ export function clearUnread(store: Store<ConversationState>, key: string): void 
   }));
 }
 
+/** Drop a conversation entirely (left the group, or kicked from it). */
+export function removeConversation(store: Store<ConversationState>, key: string): void {
+  store.set((prev) => {
+    if (!prev.conversations.some((c) => c.key === key)) return prev;
+    return { conversations: prev.conversations.filter((c) => c.key !== key) };
+  });
+}
+
 function sortConversations(conversations: Conversation[]): Conversation[] {
   return [...conversations].sort(
     (a, b) => (b.lastMessageAt ?? 0) - (a.lastMessageAt ?? 0) || a.key.localeCompare(b.key),

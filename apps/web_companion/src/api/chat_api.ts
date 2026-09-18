@@ -2,6 +2,7 @@ import {
   ChannelType,
   ChatMessage,
   GroupInfo,
+  GroupMemberKickedNotify,
   MessageAck,
   MessageDeletedNotify,
   MessageEditedNotify,
@@ -24,6 +25,9 @@ import {
   GET_GROUP_MEMBERS,
   GET_HISTORY,
   GET_USER_GROUPS,
+  INVITE_TO_GROUP,
+  KICK_MEMBER,
+  LEAVE_GROUP,
   LOGIN,
   LOGOUT,
   MARK_READ,
@@ -46,6 +50,7 @@ import {
   applyDeleteById,
   applyEditById,
   applyReaction,
+  clearChannel,
   failPendingMessage,
   prependHistory,
   setReadCursor,
@@ -56,7 +61,7 @@ import {
 } from '../state/message_store';
 import type { Store } from '../state/store';
 import { patch } from '../state/store';
-import { bumpUnread, touchConversation, upsertConversation, type ConversationState } from '../state/conversation_store';
+import { bumpUnread, removeConversation, touchConversation, upsertConversation, type ConversationState } from '../state/conversation_store';
 import { clearTyping, setTyping, type TypingState } from '../state/typing_store';
 import type { AuthState } from '../state/auth_store';
 
@@ -125,8 +130,10 @@ export class ChatApi {
     if (this.unsubs.length > 0) return;
     this.unsubs = [
       this.conn.onNotify(MsgID.CHAT_MESSAGE_NOTIFY, (body) => this.onChatMessage(body)),
-      this.conn.onNotify(MsgID.GROUP_MEMBER_JOINED_NOTIFY, () => this.refreshGroups()),
-      this.conn.onNotify(MsgID.GROUP_MEMBER_LEFT_NOTIFY, () => this.refreshGroups()),
+      this.conn.onNotify(MsgID.GROUP_MEMBER_JOINED_NOTIFY, () => void this.refreshGroups()),
+      this.conn.onNotify(MsgID.GROUP_MEMBER_LEFT_NOTIFY, () => void this.refreshGroups()),
+      this.conn.onNotify(MsgID.GROUP_MEMBER_KICKED_NOTIFY, (body) => this.onKickedNotify(body)),
+      this.conn.onNotify(MsgID.GROUP_UPDATED_NOTIFY, () => void this.refreshGroups()),
       this.conn.onNotify(MsgID.MESSAGE_READ_NOTIFY, (body) => this.onReadNotify(body)),
       this.conn.onNotify(MsgID.TYPING_INDICATOR_NOTIFY, (body) => this.onTypingNotify(body)),
       this.conn.onNotify(MsgID.REACTION_ADDED_NOTIFY, (body) => this.onReactionNotify(body, true)),
@@ -344,7 +351,7 @@ export class ChatApi {
     const resp = await this.conn.request(GET_USER_GROUPS, { userId });
     if (resp.code !== 0) return [];
     const existing = this.conversations.get().conversations;
-    const conversations = resp.groups.map((group: GroupInfo) => {
+    const conversations = (resp.groups ?? []).map((group: GroupInfo) => {
       const key = groupKey(group.groupId);
       const prev = existing.find((c) => c.key === key);
       return (
@@ -354,6 +361,7 @@ export class ChatApi {
           channelId: group.groupId,
           peerId: group.groupId,
           title: group.groupName,
+          ownerId: group.ownerId,
           unreadLocal: 0,
         }
       );
@@ -367,6 +375,63 @@ export class ChatApi {
   async loadGroupMembers(groupId: string) {
     const resp = await this.conn.request(GET_GROUP_MEMBERS, { groupId });
     return resp.code === 0 ? resp.members : [];
+  }
+
+  /** INVITE adds directly server-side (no pending state) — "添加成员". */
+  async inviteToGroup(groupId: string, targetUserId: string): Promise<ErrorCode> {
+    const userId = this.auth.get().userId;
+    if (!userId) return ErrorCode.SESSION_EXPIRED;
+    const resp = await this.conn.request(INVITE_TO_GROUP, {
+      inviterId: userId,
+      groupId,
+      targetUserId,
+    });
+    if (resp.code === 0) await this.refreshGroups();
+    return resp.code;
+  }
+
+  async kickMember(groupId: string, targetUserId: string): Promise<ErrorCode> {
+    const userId = this.auth.get().userId;
+    if (!userId) return ErrorCode.SESSION_EXPIRED;
+    const resp = await this.conn.request(KICK_MEMBER, {
+      requesterId: userId,
+      groupId,
+      targetUserId,
+    });
+    if (resp.code === 0) await this.refreshGroups();
+    return resp.code;
+  }
+
+  /** Leave and drop the local cache: the MEMBER_LEFT notify excludes the actor. */
+  async leaveGroup(groupId: string): Promise<ErrorCode> {
+    const userId = this.auth.get().userId;
+    if (!userId) return ErrorCode.SESSION_EXPIRED;
+    const resp = await this.conn.request(LEAVE_GROUP, { userId, groupId });
+    if (resp.code === 0) {
+      const key = groupKey(groupId);
+      removeConversation(this.conversations, key);
+      clearChannel(this.messages, key);
+      if (this.activeChannelKey === key) this.activeChannelKey = null;
+    }
+    return resp.code;
+  }
+
+  /** 2120: someone was kicked. If it was me, forget the group locally. */
+  private onKickedNotify(body: Uint8Array): void {
+    let notify: GroupMemberKickedNotify;
+    try {
+      notify = GroupMemberKickedNotify.decode(body);
+    } catch {
+      return;
+    }
+    const key = groupKey(notify.groupId);
+    if (notify.userId === this.auth.get().userId) {
+      removeConversation(this.conversations, key);
+      clearChannel(this.messages, key);
+      if (this.activeChannelKey === key) this.activeChannelKey = null;
+    } else {
+      void this.refreshGroups();
+    }
   }
 
   async createGroup(name: string, description = ''): Promise<string | null> {

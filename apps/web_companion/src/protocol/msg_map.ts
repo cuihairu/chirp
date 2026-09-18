@@ -99,6 +99,12 @@ export const LEAVE_GROUP = defineSpec(
   Chat.LeaveGroupRequest,
   Chat.LeaveGroupResponse,
 );
+export const KICK_MEMBER = defineSpec(
+  MsgID.KICK_MEMBER_REQ,
+  MsgID.KICK_MEMBER_RESP,
+  Chat.KickMemberRequest,
+  Chat.KickMemberResponse,
+);
 export const GET_GROUP_MEMBERS = defineSpec(
   MsgID.GET_GROUP_MEMBERS_REQ,
   MsgID.GET_GROUP_MEMBERS_RESP,

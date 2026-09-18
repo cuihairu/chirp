@@ -1,5 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
-import { Box, Button, CircularProgress, Dialog, DialogActions, DialogContent, DialogTitle, TextField, Typography } from '@mui/material';
+import { useNavigate } from 'react-router-dom';
+import { Box, Button, CircularProgress, Dialog, DialogActions, DialogContent, DialogTitle, IconButton, TextField, Typography } from '@mui/material';
+import SettingsIcon from '@mui/icons-material/Settings';
 import { useServices } from '../api/services';
 import { channelRefOf } from '../api/chat_api';
 import { useStoreValue } from '../state/store';
@@ -9,6 +11,7 @@ import { typingUsersOf } from '../state/typing_store';
 import type { ChatMessageView } from '../state/models';
 import MessageBubble from './MessageBubble';
 import MessageInput from './MessageInput';
+import GroupSettingsDialog from './GroupDialogs';
 import { zh } from '../i18n/zh';
 
 const TYPING_START_INTERVAL_MS = 3000;
@@ -33,6 +36,8 @@ export default function ChatWindow({ channelKey }: { channelKey: string }) {
   const [now, setNow] = useState(Date.now());
   const [editing, setEditing] = useState<ChatMessageView | null>(null);
   const [editText, setEditText] = useState('');
+  const [settingsOpen, setSettingsOpen] = useState(false);
+  const navigate = useNavigate();
 
   const selfId = userId ?? '';
   const channel = channelRefOf(channelKey, selfId);
@@ -130,14 +135,26 @@ export default function ChatWindow({ channelKey }: { channelKey: string }) {
 
   return (
     <Box sx={{ display: 'flex', flexDirection: 'column', flex: 1, minWidth: 0, height: '100%' }}>
-      <Box sx={{ px: 2, py: 1.5, borderBottom: 1, borderColor: 'divider' }}>
-        <Typography variant="subtitle1" noWrap>
-          {title}
-        </Typography>
-        {typists.length > 0 && (
-          <Typography variant="caption" color="text.secondary" data-testid="typing-row">
-            {zh.chat.typing(typists.join(', '))}
+      <Box sx={{ px: 2, py: 1.5, borderBottom: 1, borderColor: 'divider', display: 'flex', alignItems: 'center' }}>
+        <Box sx={{ flex: 1, minWidth: 0 }}>
+          <Typography variant="subtitle1" noWrap>
+            {title}
           </Typography>
+          {typists.length > 0 && (
+            <Typography variant="caption" color="text.secondary" data-testid="typing-row">
+              {zh.chat.typing(typists.join(', '))}
+            </Typography>
+          )}
+        </Box>
+        {channel.kind === 'group' && (
+          <IconButton
+            size="small"
+            aria-label={zh.chat.groupSettingsButton}
+            data-testid="group-settings"
+            onClick={() => setSettingsOpen(true)}
+          >
+            <SettingsIcon sx={{ fontSize: 18 }} />
+          </IconButton>
         )}
       </Box>
       <Box sx={{ flex: 1, overflowY: 'auto', px: 2, py: 1 }} data-testid="message-list">
@@ -193,6 +210,20 @@ export default function ChatWindow({ channelKey }: { channelKey: string }) {
           </Button>
         </DialogActions>
       </Dialog>
+
+      {channel.kind === 'group' && (
+        <GroupSettingsDialog
+          groupId={channel.channelId}
+          title={title}
+          ownerId={conversation?.ownerId}
+          open={settingsOpen}
+          onClose={() => setSettingsOpen(false)}
+          onLeft={() => {
+            setSettingsOpen(false);
+            navigate('/chat');
+          }}
+        />
+      )}
     </Box>
   );
 }

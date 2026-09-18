@@ -3,6 +3,7 @@ import {
   bumpUnread,
   clearUnread,
   createConversationStore,
+  removeConversation,
   touchConversation,
   upsertConversation,
 } from './conversation_store';
@@ -12,9 +13,12 @@ import {
   appendMessage,
   applyDeleteById,
   applyEditById,
+  clearChannel,
   createMessageStore,
   failPendingMessage,
   prependHistory,
+  setHasMore,
+  setLoadingHistory,
 } from './message_store';
 import { createStore, patch } from './store';
 import type { ChatMessageView, Conversation } from './models';
@@ -114,6 +118,18 @@ describe('conversation_store', () => {
     clearUnread(store, 'p:a|b');
     expect(store.get().conversations[0].unreadLocal).toBe(0);
   });
+
+  it('removeConversation drops only the target key', () => {
+    const store = createConversationStore();
+    upsertConversation(store, conversation({ key: 'p:a|b' }));
+    upsertConversation(store, conversation({ key: 'g:g1' }));
+    removeConversation(store, 'g:g1');
+    expect(store.get().conversations.map((c) => c.key)).toEqual(['p:a|b']);
+    // Removing an unknown key keeps the state reference (no spurious publish).
+    const before = store.get();
+    removeConversation(store, 'g:missing');
+    expect(store.get()).toBe(before);
+  });
 });
 
 describe('message_store', () => {
@@ -165,5 +181,16 @@ describe('message_store', () => {
     applyDeleteById(store, 'm1');
     expect(store.get().byChannel['p:a|b'][0].deleted).toBe(true);
     expect(store.get().byChannel['p:a|b'][0].content).toBe('');
+  });
+
+  it('clearChannel forgets the channel cache entirely', () => {
+    const store = createMessageStore();
+    appendMessage(store, message({}));
+    setLoadingHistory(store, 'p:a|b', true);
+    setHasMore(store, 'p:a|b', true);
+    clearChannel(store, 'p:a|b');
+    expect(store.get().byChannel['p:a|b']).toBeUndefined();
+    expect(store.get().hasMore['p:a|b']).toBeUndefined();
+    expect(store.get().loadingHistory['p:a|b']).toBeUndefined();
   });
 });

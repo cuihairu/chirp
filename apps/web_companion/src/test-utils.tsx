@@ -1,5 +1,6 @@
 import type { ReactElement } from 'react';
 import { render } from '@testing-library/react';
+import { MemoryRouter } from 'react-router-dom';
 import { MsgID } from '@chirp/proto/gateway';
 import { createServices, ServicesProvider, type Services } from './api/services';
 import { FakeChatConnection } from './state/test_helpers';
@@ -27,6 +28,10 @@ export async function renderLoggedIn(
   await services.api.login('user_a');
   const mounted = { services, conn };
   await options.prepare?.(mounted);
-  render(<ServicesProvider value={services}>{ui}</ServicesProvider>);
+  render(
+    <ServicesProvider value={services}>
+      <MemoryRouter>{ui}</MemoryRouter>
+    </ServicesProvider>,
+  );
   return mounted;
 }

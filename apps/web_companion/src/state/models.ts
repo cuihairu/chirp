@@ -17,6 +17,8 @@ export interface Conversation {
   /** Peer user id (private) or group id (group). */
   peerId: string;
   title: string;
+  /** Group owner (groups only) — gates the kick affordance in the UI. */
+  ownerId?: string;
   /** Tail of the conversation, kept in sync by message_store. */
   lastMessagePreview?: string;
   lastMessageAt?: number;

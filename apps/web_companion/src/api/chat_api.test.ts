@@ -2,6 +2,7 @@ import { describe, expect, it, vi } from 'vitest';
 import {
   ChannelType,
   ChatMessage,
+  GroupMemberKickedNotify,
   MessageAck,
   MessageDeletedNotify,
   MessageEditedNotify,
@@ -618,6 +619,150 @@ describe('ChatApi C8 notifies', () => {
     expect(kept.edited).toBeFalsy();
     expect(kept.deleted).toBeFalsy();
     expect(h.typing.get().byChannel).toEqual({});
+  });
+});
+
+describe('ChatApi.groups C9', () => {
+  const seedGroup = (h: Harness, ownerId = SELF): void => {
+    h.conversations.set((prev) => ({
+      conversations: [
+        ...prev.conversations,
+        {
+          kind: 'group',
+          key: 'g:guild-1',
+          channelId: 'guild-1',
+          peerId: 'guild-1',
+          title: 'Raiders',
+          ownerId,
+          unreadLocal: 0,
+        },
+      ],
+    }));
+    h.messages.set((prev) => ({
+      ...prev,
+      byChannel: {
+        ...prev.byChannel,
+        'g:guild-1': [
+          {
+            messageId: 'gm1',
+            senderId: PEER,
+            channelKey: 'g:guild-1',
+            channelType: ChannelType.GUILD,
+            channelId: 'guild-1',
+            content: 'hello guild',
+            timestamp: 100,
+            pending: false,
+          },
+        ],
+      },
+    }));
+  };
+
+  it('inviteToGroup adds directly and refreshes the roster on success', async () => {
+    const h = makeHarness();
+    await login(h);
+    h.conn.setResponder(async (msgId, req) => {
+      if (msgId === MsgID.INVITE_TO_GROUP_REQ) {
+        expect(req).toMatchObject({ inviterId: SELF, groupId: 'guild-1', targetUserId: PEER });
+        return { code: 0 };
+      }
+      return { code: 0, groups: [] };
+    });
+    expect(await h.api.inviteToGroup('guild-1', PEER)).toBe(0);
+    // The roster pull after a successful invite.
+    expect(h.conn.requests.some((r) => r.msgId === MsgID.GET_USER_GROUPS_REQ)).toBe(true);
+  });
+
+  it('inviteToGroup surfaces the error code without a roster refresh', async () => {
+    const h = makeHarness();
+    await login(h);
+    h.conn.setResponder(async () => ({ code: 3 }));
+    expect(await h.api.inviteToGroup('guild-1', PEER)).toBe(3);
+    expect(h.conn.requests.some((r) => r.msgId === MsgID.GET_USER_GROUPS_REQ)).toBe(false);
+  });
+
+  it('kickMember refreshes the roster on success', async () => {
+    const h = makeHarness();
+    await login(h);
+    h.conn.setResponder(async (msgId, req) => {
+      if (msgId === MsgID.KICK_MEMBER_REQ) {
+        expect(req).toMatchObject({ requesterId: SELF, groupId: 'guild-1', targetUserId: PEER });
+        return { code: 0 };
+      }
+      return { code: 0, groups: [] };
+    });
+    expect(await h.api.kickMember('guild-1', PEER)).toBe(0);
+    expect(h.conn.requests.some((r) => r.msgId === MsgID.GET_USER_GROUPS_REQ)).toBe(true);
+  });
+
+  it('leaveGroup drops the conversation and cached messages on success', async () => {
+    const h = makeHarness();
+    await login(h);
+    seedGroup(h);
+    h.conn.setResponder(async (msgId, req) => {
+      expect(msgId).toBe(MsgID.LEAVE_GROUP_REQ);
+      expect(req).toMatchObject({ userId: SELF, groupId: 'guild-1' });
+      return { code: 0 };
+    });
+    h.api.setActiveChannel('g:guild-1');
+    expect(await h.api.leaveGroup('guild-1')).toBe(0);
+    // The MEMBER_LEFT notify excludes the actor, so the drop is local.
+    expect(h.conversations.get().conversations.some((c) => c.key === 'g:guild-1')).toBe(false);
+    expect(h.messages.get().byChannel['g:guild-1']).toBeUndefined();
+  });
+
+  it('leaveGroup keeps everything on an error code', async () => {
+    const h = makeHarness();
+    await login(h);
+    seedGroup(h);
+    h.conn.setResponder(async () => ({ code: 5 }));
+    expect(await h.api.leaveGroup('guild-1')).toBe(5);
+    expect(h.conversations.get().conversations.some((c) => c.key === 'g:guild-1')).toBe(true);
+    expect(h.messages.get().byChannel['g:guild-1']).toHaveLength(1);
+  });
+
+  it('forgets the group locally when kicked (2120), refreshes for others', async () => {
+    const h = makeHarness();
+    await login(h);
+    seedGroup(h);
+    const kickedBody = (userId: string): Uint8Array =>
+      GroupMemberKickedNotify.encode(
+        GroupMemberKickedNotify.fromPartial({ groupId: 'guild-1', userId, kickedBy: SELF }),
+      ).finish();
+    h.conn.emit(MsgID.GROUP_MEMBER_KICKED_NOTIFY, kickedBody(PEER));
+    await vi.waitFor(() =>
+      expect(h.conn.requests.some((r) => r.msgId === MsgID.GET_USER_GROUPS_REQ)).toBe(true),
+    );
+    // Someone else was kicked: my membership stays.
+    expect(h.conversations.get().conversations.some((c) => c.key === 'g:guild-1')).toBe(true);
+
+    h.conn.emit(MsgID.GROUP_MEMBER_KICKED_NOTIFY, kickedBody(SELF));
+    expect(h.conversations.get().conversations.some((c) => c.key === 'g:guild-1')).toBe(false);
+    expect(h.messages.get().byChannel['g:guild-1']).toBeUndefined();
+  });
+
+  it('refreshes the roster on GROUP_UPDATED (2121)', async () => {
+    const h = makeHarness();
+    await login(h);
+    h.conn.emit(MsgID.GROUP_UPDATED_NOTIFY, new Uint8Array());
+    await vi.waitFor(() =>
+      expect(h.conn.requests.some((r) => r.msgId === MsgID.GET_USER_GROUPS_REQ)).toBe(true),
+    );
+  });
+
+  it('refreshGroups keeps group ownerId for the UI', async () => {
+    const h = makeHarness();
+    await login(h, {
+      [MsgID.GET_USER_GROUPS_REQ]: {
+        code: 0,
+        groups: [{ groupId: 'guild-1', groupName: 'Raiders', ownerId: SELF }],
+      },
+    });
+    await h.api.refreshGroups();
+    expect(h.conversations.get().conversations[0]).toMatchObject({
+      key: 'g:guild-1',
+      ownerId: SELF,
+    });
   });
 });
 

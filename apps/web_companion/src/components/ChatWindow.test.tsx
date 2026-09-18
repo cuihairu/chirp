@@ -168,6 +168,48 @@ describe('ChatWindow C8', () => {
     );
     expect(starts).toHaveLength(1);
   });
+
+  it('opens group settings from the header for group channels only', async () => {
+    const groupKey = 'g:guild-1';
+    await renderLoggedIn(<ChatWindow channelKey={groupKey} />, {
+      responder: async (msgId) =>
+        msgId === MsgID.GET_HISTORY_REQ
+          ? {
+              code: 0,
+              hasMore: false,
+              messages: [
+                {
+                  messageId: 'm1',
+                  senderId: 'user_b',
+                  channelType: ChannelType.GUILD,
+                  channelId: 'guild-1',
+                  content: enc('hi guild'),
+                  timestamp: 100,
+                },
+              ],
+            }
+          : msgId === MsgID.GET_GROUP_MEMBERS_REQ
+            ? { code: 0, members: [{ userId: 'user_a' }, { userId: 'user_b' }] }
+            : { code: 0, groups: [{ groupId: 'guild-1', groupName: 'Raiders', ownerId: 'user_a' }] },
+      prepare: ({ services: s }) =>
+        upsertConversation(s.conversations, {
+          kind: 'group',
+          key: groupKey,
+          channelId: 'guild-1',
+          peerId: 'guild-1',
+          title: 'Raiders',
+          ownerId: 'user_a',
+          unreadLocal: 0,
+        }),
+    });
+    await waitFor(() => expect(screen.getByText('hi guild')).toBeTruthy());
+
+    // Group channels carry the settings entry; private ones do not.
+    expect(screen.getByTestId('group-settings')).toBeTruthy();
+    fireEvent.click(screen.getByTestId('group-settings'));
+    await waitFor(() => expect(screen.getByText(zh.chat.groupSettings('Raiders'))).toBeTruthy());
+    await waitFor(() => expect(screen.getByTestId('kick-user_b')).toBeTruthy());
+  });
 });
 
 describe('ChatWindow', () => {

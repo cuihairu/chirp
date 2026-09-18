@@ -15,7 +15,7 @@ import {
 } from '@mui/material';
 import { useServices } from '../api/services';
 import { useStoreValue } from '../state/store';
-import { privateKey, type Conversation } from '../state/models';
+import { privateKey, groupKey, type Conversation } from '../state/models';
 import { upsertConversation } from '../state/conversation_store';
 import { zh } from '../i18n/zh';
 
@@ -27,12 +27,14 @@ export default function ConversationList({
   activeKey?: string;
   onOpen: (key: string) => void;
 }) {
-  const { auth, conversations } = useServices();
+  const { api, auth, conversations } = useServices();
   const selfId = useStoreValue(auth).userId ?? '';
   const { conversations: list } = useStoreValue(conversations);
   const [dialogOpen, setDialogOpen] = useState(false);
   const [peerId, setPeerId] = useState('');
   const [error, setError] = useState<string | null>(null);
+  const [groupOpen, setGroupOpen] = useState(false);
+  const [groupName, setGroupName] = useState('');
 
   const startChat = (): void => {
     const peer = peerId.trim();
@@ -56,6 +58,15 @@ export default function ConversationList({
     onOpen(privateKey(selfId, peer));
   };
 
+  const createGroup = async (): Promise<void> => {
+    const name = groupName.trim();
+    if (!name) return;
+    const groupId = await api.createGroup(name);
+    setGroupOpen(false);
+    setGroupName('');
+    if (groupId) onOpen(groupKey(groupId));
+  };
+
   return (
     <Box
       sx={{
@@ -66,9 +77,12 @@ export default function ConversationList({
         borderColor: 'divider',
       }}
     >
-      <Box sx={{ p: 1.5 }}>
+      <Box sx={{ p: 1.5, display: 'flex', flexDirection: 'column', gap: 1 }}>
         <Button variant="contained" fullWidth onClick={() => setDialogOpen(true)}>
           {zh.chat.newChat}
+        </Button>
+        <Button variant="outlined" fullWidth onClick={() => setGroupOpen(true)}>
+          {zh.chat.newGroup}
         </Button>
       </Box>
       <List dense sx={{ overflowY: 'auto', flex: 1 }}>
@@ -121,6 +135,32 @@ export default function ConversationList({
         <DialogActions>
           <Button onClick={() => setDialogOpen(false)}>{zh.chat.cancel}</Button>
           <Button variant="contained" onClick={startChat} disabled={peerId.trim() === ''}>
+            {zh.chat.confirm}
+          </Button>
+        </DialogActions>
+      </Dialog>
+      <Dialog open={groupOpen} onClose={() => setGroupOpen(false)} maxWidth="xs" fullWidth>
+        <DialogTitle>{zh.chat.newGroupTitle}</DialogTitle>
+        <DialogContent>
+          <TextField
+            autoFocus
+            fullWidth
+            margin="dense"
+            label={zh.chat.newGroupLabel}
+            value={groupName}
+            onChange={(e) => setGroupName(e.target.value)}
+            onKeyDown={(e) => e.key === 'Enter' && void createGroup()}
+            data-testid="group-name-input"
+          />
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={() => setGroupOpen(false)}>{zh.chat.cancel}</Button>
+          <Button
+            variant="contained"
+            onClick={() => void createGroup()}
+            disabled={groupName.trim() === ''}
+            data-testid="group-create-confirm"
+          >
             {zh.chat.confirm}
           </Button>
         </DialogActions>

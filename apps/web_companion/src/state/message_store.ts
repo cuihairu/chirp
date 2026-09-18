@@ -127,6 +127,20 @@ export const readCursorOf = (
   readerUserId: string,
 ): string | undefined => state.readCursors[channelKey]?.[readerUserId];
 
+/** Forget a channel's local cache (left the group, kicked from it). */
+export function clearChannel(store: Store<MessageState>, channelKey: string): void {
+  store.set((prev) => {
+    if (!(channelKey in prev.byChannel)) return prev;
+    const byChannel = { ...prev.byChannel };
+    const hasMore = { ...prev.hasMore };
+    const loadingHistory = { ...prev.loadingHistory };
+    delete byChannel[channelKey];
+    delete hasMore[channelKey];
+    delete loadingHistory[channelKey];
+    return { ...prev, byChannel, hasMore, loadingHistory };
+  });
+}
+
 /**
  * Apply a reaction RESP/notify by locating the message id across channels
  * (message ids are globally unique; the notify carries no channel type, so
