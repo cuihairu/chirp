@@ -17,6 +17,9 @@ import { useServices } from '../api/services';
 import { useStoreValue } from '../state/store';
 import { privateKey, groupKey, type Conversation } from '../state/models';
 import { upsertConversation } from '../state/conversation_store';
+import { presenceFresh, presenceOf } from '../state/presence_store';
+import { PresenceStatus } from '@chirp/proto/social';
+import FriendsDialog from './FriendsDialog';
 import { zh } from '../i18n/zh';
 
 /** Left pane: conversations, newest first, plus the start-private-chat entry. */
@@ -27,14 +30,16 @@ export default function ConversationList({
   activeKey?: string;
   onOpen: (key: string) => void;
 }) {
-  const { api, auth, conversations } = useServices();
+  const { api, socialApi, auth, conversations, presence } = useServices();
   const selfId = useStoreValue(auth).userId ?? '';
   const { conversations: list } = useStoreValue(conversations);
+  const presenceState = useStoreValue(presence);
   const [dialogOpen, setDialogOpen] = useState(false);
   const [peerId, setPeerId] = useState('');
   const [error, setError] = useState<string | null>(null);
   const [groupOpen, setGroupOpen] = useState(false);
   const [groupName, setGroupName] = useState('');
+  const [friendsOpen, setFriendsOpen] = useState(false);
 
   const startChat = (): void => {
     const peer = peerId.trim();
@@ -84,30 +89,51 @@ export default function ConversationList({
         <Button variant="outlined" fullWidth onClick={() => setGroupOpen(true)}>
           {zh.chat.newGroup}
         </Button>
+        {socialApi && (
+          <Button variant="text" fullWidth onClick={() => setFriendsOpen(true)}>
+            {zh.social.title}
+          </Button>
+        )}
       </Box>
       <List dense sx={{ overflowY: 'auto', flex: 1 }}>
-        {list.map((conversation: Conversation) => (
-          <ListItemButton
-            key={conversation.key}
-            selected={conversation.key === activeKey}
-            onClick={() => onOpen(conversation.key)}
-          >
-            <ListItemText
-              primary={
-                <Badge badgeContent={conversation.unreadLocal} color="error">
-                  <Typography variant="body2" noWrap sx={{ maxWidth: 160 }}>
-                    {conversation.title}
-                  </Typography>
-                </Badge>
-              }
-              secondary={
-                <Typography variant="caption" noWrap sx={{ maxWidth: 160 }} display="block">
-                  {conversation.lastMessagePreview ?? ''}
-                </Typography>
-              }
-            />
-          </ListItemButton>
-        ))}
+        {list.map((conversation: Conversation) => {
+          const online =
+            conversation.kind === 'private' &&
+            presenceFresh(presenceState, conversation.peerId, Date.now()) &&
+            presenceOf(presenceState, conversation.peerId)?.status === PresenceStatus.ONLINE;
+          return (
+            <ListItemButton
+              key={conversation.key}
+              selected={conversation.key === activeKey}
+              onClick={() => onOpen(conversation.key)}
+            >
+              <Badge
+                variant="dot"
+                color="success"
+                sx={{ mr: 1 }}
+                data-testid={
+                  conversation.kind === 'private' ? `presence-${conversation.peerId}` : undefined
+                }
+                invisible={!online}
+              >
+                <ListItemText
+                  primary={
+                    <Badge badgeContent={conversation.unreadLocal} color="error">
+                      <Typography variant="body2" noWrap sx={{ maxWidth: 160 }}>
+                        {conversation.title}
+                      </Typography>
+                    </Badge>
+                  }
+                  secondary={
+                    <Typography variant="caption" noWrap sx={{ maxWidth: 160 }} display="block">
+                      {conversation.lastMessagePreview ?? ''}
+                    </Typography>
+                  }
+                />
+              </Badge>
+            </ListItemButton>
+          );
+        })}
         {list.length === 0 && (
           <Typography variant="caption" sx={{ px: 2, py: 1 }} color="text.secondary">
             {zh.chat.emptyChannel}
@@ -165,6 +191,13 @@ export default function ConversationList({
           </Button>
         </DialogActions>
       </Dialog>
+      {socialApi && (
+        <FriendsDialog
+          open={friendsOpen}
+          onClose={() => setFriendsOpen(false)}
+          onOpenChannel={onOpen}
+        />
+      )}
     </Box>
   );
 }

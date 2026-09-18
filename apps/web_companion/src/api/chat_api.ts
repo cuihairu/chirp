@@ -153,6 +153,12 @@ export class ChatApi {
   }
 
   async login(userId: string): Promise<ErrorCode> {
+    // First entry (or a dead socket) must open the connection; already-open
+    // sockets are left alone. The fake resolves instantly, the real client
+    // goes idle → connecting → connected.
+    if (this.conn.status !== 'connected') {
+      await this.conn.connect();
+    }
     const resp = await this.conn.request(LOGIN, {
       token: userId,
       deviceId: this.auth.get().deviceId,

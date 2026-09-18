@@ -1,16 +1,22 @@
 #!/bin/bash
 
-# Web companion E2E smoke: start a real chirp_chat (in-memory mode) on free
-# ports, then run the vitest integration suite against its websocket entry.
-# Mirrors the orchestration conventions of the repo-root test_services.sh.
+# Web companion E2E smoke: start a real chirp_chat and chirp_social (both
+# in-memory mode) on free ports, then run the vitest integration suites
+# against their websocket entries. Mirrors the orchestration conventions of
+# the repo-root test_services.sh.
 
 set -euo pipefail
 
 cd "$(dirname "$0")/../../.."
 
 CHAT_BIN="./build/services/chat/chirp_chat"
+SOCIAL_BIN="./build/services/social/chirp_social"
 if [ ! -f "${CHAT_BIN}" ]; then
   echo "错误: chirp_chat 未构建 (先 cmake --build build)"
+  exit 1
+fi
+if [ ! -f "${SOCIAL_BIN}" ]; then
+  echo "错误: chirp_social 未构建 (先 cmake --build build)"
   exit 1
 fi
 
@@ -55,24 +61,40 @@ stop_proc() {
 CHAT_PORT="${CHAT_PORT:-$(pick_port)}"
 CHAT_WS_PORT="${CHAT_WS_PORT:-$(pick_port)}"
 CHAT_LOG="${CHAT_LOG:-/tmp/chirp_web_smoke_chat.log}"
+SOCIAL_PORT="${SOCIAL_PORT:-$(pick_port)}"
+SOCIAL_WS_PORT="${SOCIAL_WS_PORT:-$(pick_port)}"
+SOCIAL_LOG="${SOCIAL_LOG:-/tmp/chirp_web_smoke_social.log}"
 
 ./build/services/chat/chirp_chat --port "${CHAT_PORT}" --ws_port "${CHAT_WS_PORT}" \
   > "${CHAT_LOG}" 2>&1 &
 CHAT_PID=$!
 
+# Defaults its tcp port to ws-1; pass both explicitly to keep them off the
+# chat service's picked ports.
+./build/services/social/chirp_social --port "${SOCIAL_PORT}" --ws_port "${SOCIAL_WS_PORT}" \
+  > "${SOCIAL_LOG}" 2>&1 &
+SOCIAL_PID=$!
+
 cleanup() {
-  stop_proc "${CHAT_PID}"
+  stop_proc "${CHAT_PID}" "${SOCIAL_PID}"
 }
 trap cleanup EXIT
 
 wait_port "${CHAT_PORT}" chirp_chat "${CHAT_LOG}"
 wait_port "${CHAT_WS_PORT}" chirp_chat_ws "${CHAT_LOG}"
+wait_port "${SOCIAL_PORT}" chirp_social "${SOCIAL_LOG}"
+wait_port "${SOCIAL_WS_PORT}" chirp_social_ws "${SOCIAL_LOG}"
 
-echo "[web] vitest integration against ws://127.0.0.1:${CHAT_WS_PORT}"
-CHIRP_WS_URL="ws://127.0.0.1:${CHAT_WS_PORT}" npm --prefix apps/web_companion run test:integration
+echo "[web] vitest integration against ws://127.0.0.1:${CHAT_WS_PORT} + ws://127.0.0.1:${SOCIAL_WS_PORT}"
+CHIRP_WS_URL="ws://127.0.0.1:${CHAT_WS_PORT}" \
+CHIRP_SOCIAL_WS_URL="ws://127.0.0.1:${SOCIAL_WS_PORT}" \
+npm --prefix apps/web_companion run test:integration
 
 echo ""
 echo "--- chat log tail (${CHAT_LOG}) ---"
 tail -n 12 "${CHAT_LOG}" || true
+echo ""
+echo "--- social log tail (${SOCIAL_LOG}) ---"
+tail -n 12 "${SOCIAL_LOG}" || true
 echo ""
 echo "=== Web Smoke Done ==="

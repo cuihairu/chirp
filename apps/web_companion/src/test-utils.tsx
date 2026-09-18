@@ -3,6 +3,7 @@ import { render } from '@testing-library/react';
 import { MemoryRouter } from 'react-router-dom';
 import { MsgID } from '@chirp/proto/gateway';
 import { createServices, ServicesProvider, type Services } from './api/services';
+import type { ChatConnection } from './api/chat_api';
 import { FakeChatConnection } from './state/test_helpers';
 
 export interface MountedServices {
@@ -20,10 +21,11 @@ export async function renderLoggedIn(
   options: {
     prepare?: (mounted: MountedServices) => void | Promise<void>;
     responder?: (msgId: MsgID, req: unknown) => Promise<unknown>;
+    socialConn?: ChatConnection;
   } = {},
 ): Promise<MountedServices> {
   const conn = new FakeChatConnection();
-  const services = createServices({ conn });
+  const services = createServices({ conn, socialConn: options.socialConn });
   conn.setResponder(async (msgId, req) => options.responder?.(msgId, req) ?? { code: 0 });
   await services.api.login('user_a');
   const mounted = { services, conn };

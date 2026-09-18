@@ -6,6 +6,7 @@ import GroupSettingsDialog from './GroupDialogs';
 import { zh } from '../i18n/zh';
 
 const membersResponder = async (msgId: MsgID, _req?: unknown): Promise<unknown> => {
+  void _req;
   if (msgId === MsgID.GET_GROUP_MEMBERS_REQ) {
     return {
       code: 0,

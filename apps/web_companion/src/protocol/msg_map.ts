@@ -1,5 +1,6 @@
 import * as Auth from '@chirp/proto/auth';
 import * as Chat from '@chirp/proto/chat';
+import * as Social from '@chirp/proto/social';
 import { MsgID } from '@chirp/proto/gateway';
 
 /**
@@ -136,4 +137,31 @@ export const DELETE_MESSAGE = defineSpec(
   MsgID.DELETE_MESSAGE_RESP,
   Chat.DeleteMessageRequest,
   Chat.DeleteMessageResponse,
+);
+
+// Social plane (WS 8001): friends are pending-request based, presence is a
+// broadcast snapshot. GET_FRIEND_LIST (3007) is unimplemented server-side.
+export const ADD_FRIEND = defineSpec(
+  MsgID.ADD_FRIEND_REQ,
+  MsgID.ADD_FRIEND_RESP,
+  Social.AddFriendRequest,
+  Social.AddFriendResponse,
+);
+export const FRIEND_REQUEST_ACTION = defineSpec(
+  MsgID.FRIEND_REQUEST_ACTION_REQ,
+  MsgID.FRIEND_REQUEST_ACTION_RESP,
+  Social.FriendRequestAction,
+  Social.FriendRequestActionResponse,
+);
+export const SET_PRESENCE = defineSpec(
+  MsgID.SET_PRESENCE_REQ,
+  MsgID.SET_PRESENCE_RESP,
+  Social.SetPresenceRequest,
+  Social.SetPresenceResponse,
+);
+export const GET_PRESENCE = defineSpec(
+  MsgID.GET_PRESENCE_REQ,
+  MsgID.GET_PRESENCE_RESP,
+  Social.GetPresenceRequest,
+  Social.GetPresenceResponse,
 );
