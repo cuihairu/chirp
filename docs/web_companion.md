@@ -13,7 +13,7 @@ Status: **Experimental** —— 一期已交付:登录、私聊、群组、好�
 | 群组 | ✅ | 建群、添加成员、踢人、退群、群成员名单、群聊(全部经 notify 同步) |
 | 好友 | ✅ | pending 制加好友、接受/拒绝、删除、拉黑;好友列表**服务端权威**(登录拉取 + notify 同步) |
 | 在线状态 | ✅ | 上下线徽标(绿点)、状态广播、批量拉取;服务端断线即广播 OFFLINE |
-| 语音/组队 | ◐ | 后端信令面已就绪(认证门/TURN 凭据/mute-deafen/超时清理,见 roadmap B);客户端 WebRTC 媒体面与组队属二/三期 |
+| 语音/组队 | ◐ | 后端信令面已就绪(认证门/TURN 凭据/mute-deafen/超时清理,见 roadmap B;组队 invite-accept/ready check,见 roadmap C);客户端 WebRTC 媒体面与组队 UI 属二/三期 |
 
 两条连接彼此独立、可降级:social 断开时聊天完全可用,好友入口隐藏。
 
@@ -89,7 +89,10 @@ src/
    ├─→ [后端补齐 B:voice 媒体面·已完成] SDP 定向中继(offer/answer/candidate)、TURN(coturn REST
    │    短期凭据,join 应答带 ice_servers)、mute/deafen 独立双布尔、LOGIN 信令认证、心跳超时踢人;
    │    客户端媒体面(WebRTC 接入)仍属三期
-   ├─→ [后端补齐 C:party 协议] proto 7xxx 段从零定义(当前组队完全没有协议)
+   ├─→ [后端补齐 C:party 协议·已完成] 7xxx 段 + services/party(TCP 7500/WS 7501):邀请-接受制入队
+   │    (无邀请码、重复邀幂等)、ready check、leader 离开/断线继位、最后一人静默解散;成员快照 Redis
+   │    write-through,邀请纯内存(10min 懒过期);断线即离队(reason="offline"),通知达目标全设备;
+   │    客户端组队 UI 仍属三期
    ├─→ [二期·Flutter 五端] Android/iOS/macOS/Windows/Linux,协议层以 src/protocol/ 为蓝本
    │    纯 Dart 重写;五端共享同一套界面代码,每端的增量只在构建矩阵与签名发布。
    │    Flutter 版不接管 Web(React 版已交付,两套 Web 客户端无收益)
