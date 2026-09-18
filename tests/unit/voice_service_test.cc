@@ -9,6 +9,8 @@
 #include <string>
 #include <vector>
 
+#include "common/jwt.h"
+#include "proto/auth.pb.h"
 #include "proto/common.pb.h"
 #include "proto/gateway.pb.h"
 #include "proto/voice.pb.h"
@@ -523,6 +525,720 @@ TEST_F(VoiceServiceTest, DisconnectUnboundSessionIsNoop) {
   auto s = std::make_shared<MockSession>();
   HandleDisconnect(state_, s);  // must not crash or touch state
   EXPECT_TRUE(s->sent.empty());
+}
+
+// ===========================================================================
+// Authentication: LOGIN_REQ + the AuthorizeActor gate
+// ===========================================================================
+
+// Drives a LOGIN on `s` against `state` and parses the LoginResponse.
+chirp::auth::LoginResponse DoLogin(const std::shared_ptr<VoiceState>& state,
+                                   const std::shared_ptr<MockSession>& s,
+                                   const std::string& token) {
+  chirp::auth::LoginRequest req;
+  req.set_token(token);
+  HandlePacket(state, s, MakePacket(chirp::gateway::LOGIN_REQ, 20, req.SerializeAsString()).SerializeAsString());
+  chirp::auth::LoginResponse resp;
+  EXPECT_TRUE(LastBody(*s, &resp));
+  return resp;
+}
+
+// ---------------------------------------------------------------------------
+// Auth group
+// ---------------------------------------------------------------------------
+
+TEST_F(VoiceServiceTest, ScaffoldLoginTreatsTokenAsUserId) {
+  const auto resp = DoLogin(state_, session_, "u9");
+
+  EXPECT_EQ(resp.code(), chirp::common::OK);
+  EXPECT_EQ(resp.user_id(), "u9");
+  std::lock_guard<std::mutex> lock(state_->mu);
+  EXPECT_EQ(state_->session_to_user[session_.get()], "u9");
+  EXPECT_EQ(state_->user_to_session["u9"].lock().get(), session_.get());
+  EXPECT_EQ(state_->authenticated_sessions.count(session_.get()), 1u);
+}
+
+TEST_F(VoiceServiceTest, ScaffoldLoginEmptyTokenRejected) {
+  const auto resp = DoLogin(state_, session_, "");
+
+  EXPECT_EQ(resp.code(), chirp::common::INVALID_PARAM);
+  std::lock_guard<std::mutex> lock(state_->mu);
+  EXPECT_TRUE(state_->session_to_user.empty());
+  EXPECT_TRUE(state_->authenticated_sessions.empty());
+}
+
+TEST_F(VoiceServiceTest, JwtModeRejectsBadToken) {
+  chirp::common::LoginTokenVerifier verifier("s3cret");
+  state_->cfg.verifier = &verifier;
+
+  const auto resp = DoLogin(state_, session_, "not-a-jwt");
+
+  EXPECT_EQ(resp.code(), chirp::common::AUTH_FAILED);
+  std::lock_guard<std::mutex> lock(state_->mu);
+  EXPECT_TRUE(state_->session_to_user.empty());
+}
+
+TEST_F(VoiceServiceTest, JwtModeAcceptsValidTokenAndPinsIdentity) {
+  chirp::common::LoginTokenVerifier verifier("s3cret");
+  state_->cfg.verifier = &verifier;
+  const int64_t now = NowMs() / 1000;
+
+  const auto resp = DoLogin(state_, session_, chirp::common::JwtSignHS256("u1", now, "s3cret", now + 600));
+  ASSERT_EQ(resp.code(), chirp::common::OK);
+  EXPECT_EQ(resp.user_id(), "u1");
+
+  // The pinned identity is accepted for business packets sent on the same
+  // session (a fresh session would be unauthenticated).
+  const std::string room = CreateRoom(0);
+  chirp::voice::JoinRoomRequest req;
+  req.set_user_id("u1");
+  req.set_room_id(room);
+  SendPacketBody(chirp::gateway::JOIN_ROOM_REQ, 3, req.SerializeAsString());
+
+  chirp::voice::JoinRoomResponse join_resp;
+  ASSERT_TRUE(LastBody(*session_, &join_resp));
+  EXPECT_EQ(join_resp.code(), chirp::common::OK);
+  std::lock_guard<std::mutex> lock(state_->mu);
+  EXPECT_EQ(state_->user_to_room["u1"], room);
+}
+
+TEST_F(VoiceServiceTest, JwtModeRejectsUnauthenticatedBusinessPacket) {
+  chirp::common::LoginTokenVerifier verifier("s3cret");
+  state_->cfg.verifier = &verifier;
+  const std::string room = CreateRoom(0);  // create itself passes: no user_id to gate
+
+  chirp::voice::JoinRoomRequest req;
+  req.set_user_id("u1");
+  req.set_room_id(room);
+  SendPacketBody(chirp::gateway::JOIN_ROOM_REQ, 3, req.SerializeAsString());
+
+  chirp::voice::JoinRoomResponse resp;
+  ASSERT_TRUE(LastBody(*session_, &resp));
+  EXPECT_EQ(resp.code(), chirp::common::AUTH_FAILED);
+  std::lock_guard<std::mutex> lock(state_->mu);
+  EXPECT_EQ(state_->user_to_room.count("u1"), 0u);
+}
+
+TEST_F(VoiceServiceTest, JwtModeRejectsIdentityMismatch) {
+  chirp::common::LoginTokenVerifier verifier("s3cret");
+  state_->cfg.verifier = &verifier;
+  const int64_t now = NowMs() / 1000;
+  ASSERT_EQ(DoLogin(state_, session_, chirp::common::JwtSignHS256("u1", now, "s3cret", now + 600)).code(),
+            chirp::common::OK);
+
+  const std::string room = CreateRoom(0);
+  chirp::voice::JoinRoomRequest req;
+  req.set_user_id("u2");  // forging someone else's identity
+  req.set_room_id(room);
+  SendPacketBody(chirp::gateway::JOIN_ROOM_REQ, 3, req.SerializeAsString());
+
+  chirp::voice::JoinRoomResponse resp;
+  ASSERT_TRUE(LastBody(*session_, &resp));
+  EXPECT_EQ(resp.code(), chirp::common::INVALID_PARAM);
+  std::lock_guard<std::mutex> lock(state_->mu);
+  EXPECT_EQ(state_->user_to_room.count("u2"), 0u);
+}
+
+TEST_F(VoiceServiceTest, ScaffoldBoundSessionRejectsMismatchedIdentity) {
+  ASSERT_EQ(DoLogin(state_, session_, "u1").code(), chirp::common::OK);
+
+  const std::string room = CreateRoom(0);
+  chirp::voice::JoinRoomRequest req;
+  req.set_user_id("u2");
+  req.set_room_id(room);
+  SendPacketBody(chirp::gateway::JOIN_ROOM_REQ, 3, req.SerializeAsString());
+
+  chirp::voice::JoinRoomResponse resp;
+  ASSERT_TRUE(LastBody(*session_, &resp));
+  EXPECT_EQ(resp.code(), chirp::common::INVALID_PARAM);
+}
+
+TEST_F(VoiceServiceTest, ScaffoldModeKeepsLegacySelfReportedJoin) {
+  // No verifier configured, no LOGIN: the self-reported user_id keeps working
+  // (the moat every pre-existing test in this file relies on).
+  const std::string room = CreateRoom(0);
+  Join("u1", room);
+
+  std::lock_guard<std::mutex> lock(state_->mu);
+  EXPECT_EQ(state_->user_to_room["u1"], room);
+}
+
+TEST_F(VoiceServiceTest, LoginKicksPreviousSession) {
+  const std::string room = CreateRoom(0);
+  auto s1 = std::make_shared<MockSession>();
+  ASSERT_EQ(DoLogin(state_, s1, "u1").code(), chirp::common::OK);
+  // Join from s1 itself: the Join helper would open a third session and
+  // silently re-bind u1 before the kick even happens.
+  chirp::voice::JoinRoomRequest jreq;
+  jreq.set_user_id("u1");
+  jreq.set_room_id(room);
+  HandlePacket(state_, s1, MakePacket(chirp::gateway::JOIN_ROOM_REQ, 5, jreq.SerializeAsString()).SerializeAsString());
+
+  auto s2 = std::make_shared<MockSession>();
+  const auto resp = DoLogin(state_, s2, "u1");
+  EXPECT_EQ(resp.code(), chirp::common::OK);
+  EXPECT_TRUE(resp.kick_previous());
+
+  // The old session was kicked, removed from the room and closed.
+  bool s1_kicked = false;
+  for (const auto& pkt : ReceivedPackets(*s1)) {
+    if (pkt.msg_id() == chirp::gateway::KICK_NOTIFY) {
+      s1_kicked = true;
+    }
+  }
+  EXPECT_TRUE(s1_kicked);
+  EXPECT_TRUE(s1->closed);
+  std::lock_guard<std::mutex> lock(state_->mu);
+  std::lock_guard<std::mutex> room_lock(state_->rooms[room]->mu);
+  EXPECT_EQ(state_->rooms[room]->participants.count("u1"), 0u);
+  EXPECT_EQ(state_->session_to_user[s2.get()], "u1");
+}
+
+TEST_F(VoiceServiceTest, LoginTwiceOnSameSessionIsIdempotent) {
+  ASSERT_EQ(DoLogin(state_, session_, "u1").code(), chirp::common::OK);
+  const auto resp = DoLogin(state_, session_, "u1");
+
+  EXPECT_EQ(resp.code(), chirp::common::OK);
+  EXPECT_FALSE(session_->closed);  // no self-kick
+}
+
+// ===========================================================================
+// SDP answer relay (mirrors the SDP offer tests)
+// ===========================================================================
+
+TEST_F(VoiceServiceTest, SdpAnswerTargetedReachesOnlyDestination) {
+  const std::string room = CreateRoom(0);
+  auto u1 = Join("u1", room);
+  auto u2 = Join("u2", room);
+
+  chirp::voice::SdpAnswerMessage msg;
+  msg.set_room_id(room);
+  msg.set_from_user_id("u1");
+  msg.set_to_user_id("u2");
+  msg.set_sdp_answer("v=0 answer");
+  HandlePacket(state_, u1, MakePacket(chirp::gateway::SDP_ANSWER_MSG, 13, msg.SerializeAsString()).SerializeAsString());
+
+  bool u2_got = false;
+  for (const auto& pkt : ReceivedPackets(*u2)) {
+    if (pkt.msg_id() == chirp::gateway::SDP_ANSWER_MSG) {
+      chirp::voice::SdpAnswerMessage got;
+      ASSERT_TRUE(got.ParseFromString(pkt.body()));
+      EXPECT_EQ(got.sdp_answer(), "v=0 answer");
+      u2_got = true;
+    }
+  }
+  EXPECT_TRUE(u2_got);
+  for (const auto& pkt : ReceivedPackets(*u1)) {
+    EXPECT_NE(pkt.msg_id(), chirp::gateway::SDP_ANSWER_MSG);
+  }
+}
+
+TEST_F(VoiceServiceTest, SdpAnswerWithoutTargetBroadcasts) {
+  const std::string room = CreateRoom(0);
+  auto u1 = Join("u1", room);
+  auto u2 = Join("u2", room);
+
+  chirp::voice::SdpAnswerMessage msg;
+  msg.set_room_id(room);
+  msg.set_from_user_id("u2");
+  msg.set_sdp_answer("v=0 answer");
+  HandlePacket(state_, u2, MakePacket(chirp::gateway::SDP_ANSWER_MSG, 14, msg.SerializeAsString()).SerializeAsString());
+
+  auto count_answer = [](const MockSession& s) {
+    size_t n = 0;
+    for (const auto& pkt : ReceivedPackets(s)) {
+      if (pkt.msg_id() == chirp::gateway::SDP_ANSWER_MSG) {
+        n++;
+      }
+    }
+    return n;
+  };
+  EXPECT_EQ(count_answer(*u1), 1u);
+  EXPECT_EQ(count_answer(*u2), 1u);  // broadcast reaches everyone, sender included
+}
+
+TEST_F(VoiceServiceTest, SdpAnswerDroppedForNonParticipantTarget) {
+  const std::string room = CreateRoom(0);
+  auto u1 = Join("u1", room);
+
+  chirp::voice::SdpAnswerMessage msg;
+  msg.set_room_id(room);
+  msg.set_from_user_id("u1");
+  msg.set_to_user_id("outsider");
+  msg.set_sdp_answer("v=0 answer");
+  HandlePacket(state_, u1, MakePacket(chirp::gateway::SDP_ANSWER_MSG, 15, msg.SerializeAsString()).SerializeAsString());
+
+  for (const auto& pkt : ReceivedPackets(*u1)) {
+    EXPECT_NE(pkt.msg_id(), chirp::gateway::SDP_ANSWER_MSG);
+  }
+}
+
+TEST_F(VoiceServiceTest, SdpAnswerDroppedForUnknownRoom) {
+  chirp::voice::SdpAnswerMessage msg;
+  msg.set_room_id("room_nope");
+  msg.set_sdp_answer("v=0 answer");
+  SendPacketBody(chirp::gateway::SDP_ANSWER_MSG, 15, msg.SerializeAsString());
+  EXPECT_TRUE(session_->sent.empty());
+}
+
+// ===========================================================================
+// mute / deafen
+// ===========================================================================
+
+TEST_F(VoiceServiceTest, SetMuteUpdatesStateAndNotifiesOthers) {
+  const std::string room = CreateRoom(0);
+  auto u1 = Join("u1", room);
+  auto u2 = Join("u2", room);
+
+  chirp::voice::SetMuteRequest req;
+  req.set_user_id("u1");
+  req.set_room_id(room);
+  req.set_muted(true);
+  HandlePacket(state_, u1, MakePacket(chirp::gateway::SET_MUTE_REQ, 30, req.SerializeAsString()).SerializeAsString());
+
+  chirp::voice::SetMuteResponse resp;
+  ASSERT_TRUE(LastBody(*u1, &resp));
+  EXPECT_EQ(resp.code(), chirp::common::OK);
+
+  // u2 sees the state change; u1's own confirmation is the RESP only.
+  bool u2_notified = false;
+  for (const auto& pkt : ReceivedPackets(*u2)) {
+    if (pkt.msg_id() == chirp::gateway::PARTICIPANT_STATE_CHANGED_NOTIFY) {
+      chirp::voice::ParticipantStateChangedNotify notify;
+      ASSERT_TRUE(notify.ParseFromString(pkt.body()));
+      EXPECT_EQ(notify.user_id(), "u1");
+      EXPECT_EQ(notify.state(), chirp::voice::MUTED);
+      u2_notified = true;
+    }
+  }
+  EXPECT_TRUE(u2_notified);
+  for (const auto& pkt : ReceivedPackets(*u1)) {
+    EXPECT_NE(pkt.msg_id(), chirp::gateway::PARTICIPANT_STATE_CHANGED_NOTIFY);
+  }
+
+  std::lock_guard<std::mutex> room_lock(state_->rooms[room]->mu);
+  EXPECT_EQ(state_->rooms[room]->participants["u1"].state(), chirp::voice::MUTED);
+  EXPECT_TRUE(state_->rooms[room]->participants["u1"].muted());
+}
+
+TEST_F(VoiceServiceTest, SetUnmuteRestoresConnected) {
+  const std::string room = CreateRoom(0);
+  auto u1 = Join("u1", room);
+
+  chirp::voice::SetMuteRequest mute;
+  mute.set_user_id("u1");
+  mute.set_room_id(room);
+  mute.set_muted(true);
+  HandlePacket(state_, u1, MakePacket(chirp::gateway::SET_MUTE_REQ, 30, mute.SerializeAsString()).SerializeAsString());
+
+  chirp::voice::SetMuteRequest unmute;
+  unmute.set_user_id("u1");
+  unmute.set_room_id(room);
+  unmute.set_muted(false);
+  HandlePacket(state_, u1, MakePacket(chirp::gateway::SET_MUTE_REQ, 31, unmute.SerializeAsString()).SerializeAsString());
+
+  std::lock_guard<std::mutex> room_lock(state_->rooms[room]->mu);
+  EXPECT_EQ(state_->rooms[room]->participants["u1"].state(), chirp::voice::CONNECTED);
+  EXPECT_FALSE(state_->rooms[room]->participants["u1"].muted());
+}
+
+TEST_F(VoiceServiceTest, SetDeafenSetsDeafenedState) {
+  const std::string room = CreateRoom(0);
+  auto u1 = Join("u1", room);
+
+  chirp::voice::SetDeafenRequest req;
+  req.set_user_id("u1");
+  req.set_room_id(room);
+  req.set_deafened(true);
+  HandlePacket(state_, u1, MakePacket(chirp::gateway::SET_DEAFEN_REQ, 32, req.SerializeAsString()).SerializeAsString());
+
+  chirp::voice::SetDeafenResponse resp;
+  ASSERT_TRUE(LastBody(*u1, &resp));
+  EXPECT_EQ(resp.code(), chirp::common::OK);
+  std::lock_guard<std::mutex> room_lock(state_->rooms[room]->mu);
+  EXPECT_EQ(state_->rooms[room]->participants["u1"].state(), chirp::voice::DEAFENED);
+  EXPECT_TRUE(state_->rooms[room]->participants["u1"].deafened());
+}
+
+TEST_F(VoiceServiceTest, UnmuteKeepsDeafened) {
+  const std::string room = CreateRoom(0);
+  auto u1 = Join("u1", room);
+
+  // mute + deafen, then unmute the mic: the participant stays DEAFENED while
+  // the deafen flag is set, no matter what the mic does.
+  chirp::voice::SetMuteRequest mute;
+  mute.set_user_id("u1");
+  mute.set_room_id(room);
+  mute.set_muted(true);
+  HandlePacket(state_, u1, MakePacket(chirp::gateway::SET_MUTE_REQ, 30, mute.SerializeAsString()).SerializeAsString());
+
+  chirp::voice::SetDeafenRequest deafen;
+  deafen.set_user_id("u1");
+  deafen.set_room_id(room);
+  deafen.set_deafened(true);
+  HandlePacket(state_, u1, MakePacket(chirp::gateway::SET_DEAFEN_REQ, 31, deafen.SerializeAsString()).SerializeAsString());
+
+  chirp::voice::SetMuteRequest unmute;
+  unmute.set_user_id("u1");
+  unmute.set_room_id(room);
+  unmute.set_muted(false);
+  HandlePacket(state_, u1, MakePacket(chirp::gateway::SET_MUTE_REQ, 32, unmute.SerializeAsString()).SerializeAsString());
+
+  {
+    std::lock_guard<std::mutex> room_lock(state_->rooms[room]->mu);
+    EXPECT_EQ(state_->rooms[room]->participants["u1"].state(), chirp::voice::DEAFENED);
+    EXPECT_FALSE(state_->rooms[room]->participants["u1"].muted());
+    EXPECT_TRUE(state_->rooms[room]->participants["u1"].deafened());
+  }
+
+  chirp::voice::SetDeafenRequest undeafen;
+  undeafen.set_user_id("u1");
+  undeafen.set_room_id(room);
+  undeafen.set_deafened(false);
+  HandlePacket(state_, u1, MakePacket(chirp::gateway::SET_DEAFEN_REQ, 33, undeafen.SerializeAsString()).SerializeAsString());
+
+  // The mic is still unmuted from the step above, so clearing deafen lands
+  // on plain CONNECTED (the flags are independent, no hidden memory).
+  {
+    std::lock_guard<std::mutex> room_lock(state_->rooms[room]->mu);
+    EXPECT_EQ(state_->rooms[room]->participants["u1"].state(), chirp::voice::CONNECTED);
+    EXPECT_FALSE(state_->rooms[room]->participants["u1"].muted());
+    EXPECT_FALSE(state_->rooms[room]->participants["u1"].deafened());
+  }
+
+  // The mirror order: mute, deafen, undeafen — the mic flag survives, so the
+  // participant lands on MUTED, not CONNECTED.
+  chirp::voice::SetMuteRequest mute2;
+  mute2.set_user_id("u1");
+  mute2.set_room_id(room);
+  mute2.set_muted(true);
+  HandlePacket(state_, u1, MakePacket(chirp::gateway::SET_MUTE_REQ, 34, mute2.SerializeAsString()).SerializeAsString());
+
+  chirp::voice::SetDeafenRequest deafen2;
+  deafen2.set_user_id("u1");
+  deafen2.set_room_id(room);
+  deafen2.set_deafened(true);
+  HandlePacket(state_, u1, MakePacket(chirp::gateway::SET_DEAFEN_REQ, 35, deafen2.SerializeAsString()).SerializeAsString());
+
+  HandlePacket(state_, u1, MakePacket(chirp::gateway::SET_DEAFEN_REQ, 36, undeafen.SerializeAsString()).SerializeAsString());
+
+  std::lock_guard<std::mutex> room_lock(state_->rooms[room]->mu);
+  EXPECT_EQ(state_->rooms[room]->participants["u1"].state(), chirp::voice::MUTED);
+  EXPECT_TRUE(state_->rooms[room]->participants["u1"].muted());
+  EXPECT_FALSE(state_->rooms[room]->participants["u1"].deafened());
+}
+
+TEST_F(VoiceServiceTest, SetMuteUnknownRoomRejected) {
+  chirp::voice::SetMuteRequest req;
+  req.set_user_id("u1");
+  req.set_room_id("room_nope");
+  req.set_muted(true);
+  SendPacketBody(chirp::gateway::SET_MUTE_REQ, 30, req.SerializeAsString());
+
+  chirp::voice::SetMuteResponse resp;
+  ASSERT_TRUE(LastBody(*session_, &resp));
+  EXPECT_EQ(resp.code(), chirp::common::USER_NOT_FOUND);
+}
+
+TEST_F(VoiceServiceTest, SetMuteNonParticipantRejected) {
+  const std::string room = CreateRoom(0);
+  auto u1 = Join("u1", room);
+
+  chirp::voice::SetMuteRequest req;
+  req.set_user_id("outsider");
+  req.set_room_id(room);
+  req.set_muted(true);
+  HandlePacket(state_, u1, MakePacket(chirp::gateway::SET_MUTE_REQ, 30, req.SerializeAsString()).SerializeAsString());
+
+  chirp::voice::SetMuteResponse resp;
+  ASSERT_TRUE(LastBody(*u1, &resp));
+  EXPECT_EQ(resp.code(), chirp::common::USER_NOT_FOUND);
+  std::lock_guard<std::mutex> room_lock(state_->rooms[room]->mu);
+  EXPECT_EQ(state_->rooms[room]->participants.count("outsider"), 0u);
+}
+
+TEST_F(VoiceServiceTest, SetMuteGarbageBodyRejected) {
+  SendPacketBody(chirp::gateway::SET_MUTE_REQ, 30, "\xff\xfe");
+  chirp::voice::SetMuteResponse resp;
+  ASSERT_TRUE(LastBody(*session_, &resp));
+  EXPECT_EQ(resp.code(), chirp::common::INVALID_PARAM);
+}
+
+// ===========================================================================
+// Room queries
+// ===========================================================================
+
+TEST_F(VoiceServiceTest, GetRoomInfoReturnsParticipantsAndRoomMeta) {
+  const std::string room = CreateRoom(0);
+  Join("u1", room);
+  Join("u2", room);
+
+  chirp::voice::GetRoomInfoRequest req;
+  req.set_room_id(room);
+  SendPacketBody(chirp::gateway::GET_ROOM_INFO_REQ, 40, req.SerializeAsString());
+
+  chirp::voice::GetRoomInfoResponse resp;
+  ASSERT_TRUE(LastBody(*session_, &resp));
+  EXPECT_EQ(resp.code(), chirp::common::OK);
+  EXPECT_EQ(resp.room_id(), room);
+  EXPECT_EQ(resp.room_name(), "test room");
+  EXPECT_EQ(resp.room_type(), chirp::voice::GROUP);
+  ASSERT_EQ(resp.participants_size(), 2);
+  EXPECT_EQ(resp.max_participants(), 0);
+}
+
+TEST_F(VoiceServiceTest, GetRoomInfoUnknownRoomRejected) {
+  chirp::voice::GetRoomInfoRequest req;
+  req.set_room_id("room_nope");
+  SendPacketBody(chirp::gateway::GET_ROOM_INFO_REQ, 40, req.SerializeAsString());
+
+  chirp::voice::GetRoomInfoResponse resp;
+  ASSERT_TRUE(LastBody(*session_, &resp));
+  EXPECT_EQ(resp.code(), chirp::common::USER_NOT_FOUND);
+}
+
+TEST_F(VoiceServiceTest, GetUserRoomReturnsCurrentRoom) {
+  const std::string room = CreateRoom(0);
+  Join("u1", room);
+
+  chirp::voice::GetUserRoomRequest req;
+  req.set_user_id("u1");
+  SendPacketBody(chirp::gateway::GET_USER_ROOM_REQ, 41, req.SerializeAsString());
+
+  chirp::voice::GetUserRoomResponse resp;
+  ASSERT_TRUE(LastBody(*session_, &resp));
+  EXPECT_EQ(resp.code(), chirp::common::OK);
+  EXPECT_EQ(resp.room_id(), room);
+  EXPECT_EQ(resp.participant().user_id(), "u1");
+}
+
+TEST_F(VoiceServiceTest, GetUserRoomForUserNotInRoomRejected) {
+  chirp::voice::GetUserRoomRequest req;
+  req.set_user_id("u1");
+  SendPacketBody(chirp::gateway::GET_USER_ROOM_REQ, 41, req.SerializeAsString());
+
+  chirp::voice::GetUserRoomResponse resp;
+  ASSERT_TRUE(LastBody(*session_, &resp));
+  EXPECT_EQ(resp.code(), chirp::common::USER_NOT_FOUND);
+  EXPECT_EQ(resp.room_id(), "");
+}
+
+// ===========================================================================
+// TURN credentials (coturn REST short-term credentials)
+// ===========================================================================
+
+// Renders a digest as lowercase hex for known-answer assertions.
+std::string ToHex(const std::array<uint8_t, 20>& digest) {
+  static const char* kHex = "0123456789abcdef";
+  std::string hex;
+  for (const uint8_t b : digest) {
+    hex.push_back(kHex[b >> 4]);
+    hex.push_back(kHex[b & 0xF]);
+  }
+  return hex;
+}
+
+TEST_F(VoiceServiceTest, Sha1KnownAnswerVectors) {
+  EXPECT_EQ(ToHex(Sha1("abc")), "a9993e364706816aba3e25717850c26c9cd0d89d");
+}
+
+TEST_F(VoiceServiceTest, HmacSha1KnownAnswer) {
+  EXPECT_EQ(ToHex(HmacSha1("key", "The quick brown fox jumps over the lazy dog")),
+            "de7c9b85b8b78aa6bc8a7a36f70a90701c9db4d9");
+}
+
+TEST_F(VoiceServiceTest, Base64EncodeStandardPadded) {
+  const auto mac = HmacSha1("frozen_secret", "1790000000:u42");
+  const std::string encoded = Base64Encode(mac.data(), mac.size());
+  EXPECT_EQ(encoded.size(), 28u);  // 20 bytes -> 28 chars with '=' padding
+  EXPECT_EQ(encoded.back(), '=');
+  // Frozen vector cross-checked against python hmac/hashlib.
+  EXPECT_EQ(encoded, "RAgTHvgkOVCaHl77yUqvFymQ4VU=");
+}
+
+TEST_F(VoiceServiceTest, TurnCredentialFormatMatchesFrozenVector) {
+  const std::string username = MakeTurnUsername(1790000000, "u42");
+  EXPECT_EQ(username, "1790000000:u42");
+  EXPECT_EQ(MakeTurnCredential("frozen_secret", username), "RAgTHvgkOVCaHl77yUqvFymQ4VU=");
+}
+
+TEST_F(VoiceServiceTest, TurnCredentialUsernameCarriesExpiryAndUser) {
+  const std::string username = MakeTurnUsername(1234567890, "alice");
+  EXPECT_EQ(username, "1234567890:alice");
+  EXPECT_EQ(username.find(':'), 10u);  // leading unix-timestamp integer
+}
+
+TEST_F(VoiceServiceTest, JoinResponseCarriesIceServersWhenConfigured) {
+  state_->cfg.turn_uri =
+      "turn:coturn:3478?transport=udp, turn:coturn:3478?transport=tcp, stun:coturn:3478";
+  state_->cfg.turn_secret = "dev_turn_secret";
+  state_->cfg.turn_credential_ttl_seconds = 3600;
+
+  const std::string room = CreateRoom(0);
+  auto s = Join("u1", room);
+
+  chirp::voice::JoinRoomResponse resp;
+  ASSERT_TRUE(LastBody(*s, &resp));
+  ASSERT_EQ(resp.ice_servers_size(), 1);
+  const auto& ice = resp.ice_servers(0);
+  ASSERT_EQ(ice.urls_size(), 3);
+  EXPECT_EQ(ice.urls(0), "turn:coturn:3478?transport=udp");
+  EXPECT_EQ(ice.urls(1), "turn:coturn:3478?transport=tcp");
+  EXPECT_EQ(ice.urls(2), "stun:coturn:3478");
+
+  // username = "{expiry}:{user_id}" with expiry == now_s + ttl.
+  ASSERT_FALSE(ice.username().empty());
+  const size_t colon = ice.username().find(':');
+  ASSERT_NE(colon, std::string::npos);
+  const int64_t expiry = std::atoll(ice.username().substr(0, colon).c_str());
+  EXPECT_EQ(expiry, NowMs() / 1000 + 3600);
+  EXPECT_EQ(ice.username().substr(colon + 1), "u1");
+  EXPECT_FALSE(ice.credential().empty());
+}
+
+TEST_F(VoiceServiceTest, JoinResponseHasNoIceServersByDefault) {
+  const std::string room = CreateRoom(0);
+  auto s = Join("u1", room);
+
+  chirp::voice::JoinRoomResponse resp;
+  ASSERT_TRUE(LastBody(*s, &resp));
+  EXPECT_EQ(resp.ice_servers_size(), 0);  // backward-compat pin
+}
+
+// ===========================================================================
+// Idle-connection sweep (heartbeat timeout)
+// ===========================================================================
+
+TEST_F(VoiceServiceTest, SweepIdleSessionRemovesFromRoomAndCloses) {
+  const std::string room = CreateRoom(0);
+  auto u1 = Join("u1", room);
+  auto u2 = Join("u2", room);
+
+  // Backdate u1's last_seen past the timeout and sweep.
+  {
+    std::lock_guard<std::mutex> lock(state_->mu);
+    state_->cfg.heartbeat_timeout_ms = 75000;
+    state_->session_to_last_seen_ms[u1.get()] = NowMs() - 100000;
+  }
+  SweepHeartbeatTimeout(state_, NowMs());
+
+  EXPECT_TRUE(u1->closed);
+  {
+    std::lock_guard<std::mutex> lock(state_->mu);
+    EXPECT_EQ(state_->user_to_room.count("u1"), 0u);
+    EXPECT_EQ(state_->user_to_session.count("u1"), 0u);
+    EXPECT_EQ(state_->session_to_user.count(u1.get()), 0u);
+    EXPECT_EQ(state_->session_to_last_seen_ms.count(u1.get()), 0u);
+  }
+  bool u2_notified = false;
+  for (const auto& pkt : ReceivedPackets(*u2)) {
+    if (pkt.msg_id() == chirp::gateway::PARTICIPANT_LEFT_NOTIFY) {
+      chirp::voice::ParticipantLeftNotify notify;
+      ASSERT_TRUE(notify.ParseFromString(pkt.body()));
+      EXPECT_EQ(notify.user_id(), "u1");
+      u2_notified = true;
+    }
+  }
+  EXPECT_TRUE(u2_notified);
+}
+
+TEST_F(VoiceServiceTest, SweepKeepsFreshSession) {
+  const std::string room = CreateRoom(0);
+  auto u1 = Join("u1", room);
+
+  {
+    std::lock_guard<std::mutex> lock(state_->mu);
+    state_->cfg.heartbeat_timeout_ms = 75000;
+    state_->session_to_last_seen_ms[u1.get()] = NowMs();  // fresh
+  }
+  SweepHeartbeatTimeout(state_, NowMs());
+
+  EXPECT_FALSE(u1->closed);
+  std::lock_guard<std::mutex> lock(state_->mu);
+  EXPECT_EQ(state_->user_to_room["u1"], room);
+}
+
+TEST_F(VoiceServiceTest, HeartbeatRefreshesLastSeen) {
+  const std::string room = CreateRoom(0);
+  auto u1 = Join("u1", room);
+
+  // Backdate past the timeout, then let a heartbeat arrive: the sweep must
+  // keep the session alive.
+  {
+    std::lock_guard<std::mutex> lock(state_->mu);
+    state_->cfg.heartbeat_timeout_ms = 75000;
+    state_->session_to_last_seen_ms[u1.get()] = NowMs() - 100000;
+  }
+  chirp::gateway::HeartbeatPing ping;
+  ping.set_timestamp(1);
+  HandlePacket(state_, u1, MakePacket(chirp::gateway::HEARTBEAT_PING, 50, ping.SerializeAsString()).SerializeAsString());
+  SweepHeartbeatTimeout(state_, NowMs());
+
+  EXPECT_FALSE(u1->closed);
+}
+
+TEST_F(VoiceServiceTest, SweepSkipsSessionsWithoutLastSeenEntry) {
+  const std::string room = CreateRoom(0);
+  auto u1 = Join("u1", room);
+
+  {
+    std::lock_guard<std::mutex> lock(state_->mu);
+    state_->cfg.heartbeat_timeout_ms = 75000;
+    state_->session_to_last_seen_ms.clear();  // simulate never-seen sessions
+  }
+  SweepHeartbeatTimeout(state_, NowMs());
+
+  EXPECT_FALSE(u1->closed);
+}
+
+TEST_F(VoiceServiceTest, SweepExpiredSessionNotInRoomJustCloses) {
+  auto s = std::make_shared<MockSession>();
+  ASSERT_EQ(DoLogin(state_, s, "u1").code(), chirp::common::OK);  // bound, no room
+
+  {
+    std::lock_guard<std::mutex> lock(state_->mu);
+    state_->cfg.heartbeat_timeout_ms = 75000;
+    state_->session_to_last_seen_ms[s.get()] = NowMs() - 100000;
+  }
+  SweepHeartbeatTimeout(state_, NowMs());
+
+  EXPECT_TRUE(s->closed);
+  std::lock_guard<std::mutex> lock(state_->mu);
+  EXPECT_EQ(state_->session_to_user.count(s.get()), 0u);
+}
+
+TEST_F(VoiceServiceTest, HeartbeatTimeoutZeroDisablesSweep) {
+  const std::string room = CreateRoom(0);
+  auto u1 = Join("u1", room);
+
+  {
+    std::lock_guard<std::mutex> lock(state_->mu);
+    state_->cfg.heartbeat_timeout_ms = 0;
+    state_->session_to_last_seen_ms[u1.get()] = NowMs() - 1000000;
+  }
+  SweepHeartbeatTimeout(state_, NowMs());
+
+  EXPECT_FALSE(u1->closed);
+  std::lock_guard<std::mutex> lock(state_->mu);
+  EXPECT_EQ(state_->user_to_room["u1"], room);
+}
+
+TEST_F(VoiceServiceTest, SweepUnboundExpiredSessionCleansAuthState) {
+  auto s = std::make_shared<MockSession>();
+  ASSERT_EQ(DoLogin(state_, s, "u1").code(), chirp::common::OK);
+
+  // The disconnect path must clear the auth and last_seen rows along with the
+  // room bookkeeping, so a kicked session leaves no stale state behind.
+  {
+    std::lock_guard<std::mutex> lock(state_->mu);
+    state_->cfg.heartbeat_timeout_ms = 75000;
+    state_->session_to_last_seen_ms[s.get()] = NowMs() - 100000;
+  }
+  HandleDisconnect(state_, s);
+
+  std::lock_guard<std::mutex> lock(state_->mu);
+  EXPECT_EQ(state_->authenticated_sessions.count(s.get()), 0u);
+  EXPECT_EQ(state_->session_to_last_seen_ms.count(s.get()), 0u);
 }
 
 }  // namespace

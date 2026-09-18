@@ -37,6 +37,14 @@ message CreateRoomResponse {
   int64 server_time = 3;
 }
 
+// TURN/STUN access for WebRTC gathering, handed out with the join response
+// (coturn REST short-term credentials; empty username/credential = STUN only).
+message IceServer {
+  repeated string urls = 1;      // e.g. "turn:host:3478?transport=udp"
+  string username = 2;           // "{unix_expiry}:{user_id}"
+  string credential = 3;         // base64(HMAC-SHA1(secret, username))
+}
+
 // Join voice room
 message JoinRoomRequest {
   string user_id = 1;
@@ -50,6 +58,7 @@ message JoinRoomResponse {
   string sdp_answer = 3;        // WebRTC SDP answer from server/peer
   repeated string participant_ids = 4;
   int64 server_time = 5;
+  repeated IceServer ice_servers = 6;
 }
 
 // Leave voice room
@@ -98,6 +107,11 @@ message ParticipantInfo {
   ParticipantState state = 3;
   int64 joined_at = 4;
   bool is_speaking = 5;
+  // Independent mute flags; `state` is derived from them
+  // (DEAFENED > MUTED > CONNECTED) so unmuting the mic while deafened
+  // keeps the participant DEAFENED.
+  bool muted = 6;
+  bool deafened = 7;
 }
 
 // Get room info

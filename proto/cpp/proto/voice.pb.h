@@ -100,6 +100,10 @@ class IceCandidateMessage;
 struct IceCandidateMessageDefaultTypeInternal;
 extern IceCandidateMessageDefaultTypeInternal _IceCandidateMessage_default_instance_;
 extern const ::google::protobuf::internal::ClassDataFull IceCandidateMessage_class_data_;
+class IceServer;
+struct IceServerDefaultTypeInternal;
+extern IceServerDefaultTypeInternal _IceServer_default_instance_;
+extern const ::google::protobuf::internal::ClassDataFull IceServer_class_data_;
 class JoinRoomRequest;
 struct JoinRoomRequestDefaultTypeInternal;
 extern JoinRoomRequestDefaultTypeInternal _JoinRoomRequest_default_instance_;
@@ -312,7 +316,7 @@ class SpeakingNotify final : public ::google::protobuf::Message
     return *reinterpret_cast<const SpeakingNotify*>(
         &_SpeakingNotify_default_instance_);
   }
-  static constexpr int kIndexInFileMessages = 23;
+  static constexpr int kIndexInFileMessages = 24;
   friend void swap(SpeakingNotify& a, SpeakingNotify& b) { a.Swap(&b); }
   inline void Swap(SpeakingNotify* PROTOBUF_NONNULL other) {
     if (other == this) return;
@@ -548,7 +552,7 @@ class SetMuteResponse final : public ::google::protobuf::Message
     return *reinterpret_cast<const SetMuteResponse*>(
         &_SetMuteResponse_default_instance_);
   }
-  static constexpr int kIndexInFileMessages = 17;
+  static constexpr int kIndexInFileMessages = 18;
   friend void swap(SetMuteResponse& a, SetMuteResponse& b) { a.Swap(&b); }
   inline void Swap(SetMuteResponse* PROTOBUF_NONNULL other) {
     if (other == this) return;
@@ -750,7 +754,7 @@ class SetMuteRequest final : public ::google::protobuf::Message
     return *reinterpret_cast<const SetMuteRequest*>(
         &_SetMuteRequest_default_instance_);
   }
-  static constexpr int kIndexInFileMessages = 16;
+  static constexpr int kIndexInFileMessages = 17;
   friend void swap(SetMuteRequest& a, SetMuteRequest& b) { a.Swap(&b); }
   inline void Swap(SetMuteRequest* PROTOBUF_NONNULL other) {
     if (other == this) return;
@@ -974,7 +978,7 @@ class SetDeafenResponse final : public ::google::protobuf::Message
     return *reinterpret_cast<const SetDeafenResponse*>(
         &_SetDeafenResponse_default_instance_);
   }
-  static constexpr int kIndexInFileMessages = 19;
+  static constexpr int kIndexInFileMessages = 20;
   friend void swap(SetDeafenResponse& a, SetDeafenResponse& b) { a.Swap(&b); }
   inline void Swap(SetDeafenResponse* PROTOBUF_NONNULL other) {
     if (other == this) return;
@@ -1176,7 +1180,7 @@ class SetDeafenRequest final : public ::google::protobuf::Message
     return *reinterpret_cast<const SetDeafenRequest*>(
         &_SetDeafenRequest_default_instance_);
   }
-  static constexpr int kIndexInFileMessages = 18;
+  static constexpr int kIndexInFileMessages = 19;
   friend void swap(SetDeafenRequest& a, SetDeafenRequest& b) { a.Swap(&b); }
   inline void Swap(SetDeafenRequest* PROTOBUF_NONNULL other) {
     if (other == this) return;
@@ -1400,7 +1404,7 @@ class SdpOfferMessage final : public ::google::protobuf::Message
     return *reinterpret_cast<const SdpOfferMessage*>(
         &_SdpOfferMessage_default_instance_);
   }
-  static constexpr int kIndexInFileMessages = 9;
+  static constexpr int kIndexInFileMessages = 10;
   friend void swap(SdpOfferMessage& a, SdpOfferMessage& b) { a.Swap(&b); }
   inline void Swap(SdpOfferMessage* PROTOBUF_NONNULL other) {
     if (other == this) return;
@@ -1646,7 +1650,7 @@ class SdpAnswerMessage final : public ::google::protobuf::Message
     return *reinterpret_cast<const SdpAnswerMessage*>(
         &_SdpAnswerMessage_default_instance_);
   }
-  static constexpr int kIndexInFileMessages = 10;
+  static constexpr int kIndexInFileMessages = 11;
   friend void swap(SdpAnswerMessage& a, SdpAnswerMessage& b) { a.Swap(&b); }
   inline void Swap(SdpAnswerMessage* PROTOBUF_NONNULL other) {
     if (other == this) return;
@@ -1892,7 +1896,7 @@ class ParticipantStateChangedNotify final : public ::google::protobuf::Message
     return *reinterpret_cast<const ParticipantStateChangedNotify*>(
         &_ParticipantStateChangedNotify_default_instance_);
   }
-  static constexpr int kIndexInFileMessages = 22;
+  static constexpr int kIndexInFileMessages = 23;
   friend void swap(ParticipantStateChangedNotify& a, ParticipantStateChangedNotify& b) { a.Swap(&b); }
   inline void Swap(ParticipantStateChangedNotify* PROTOBUF_NONNULL other) {
     if (other == this) return;
@@ -2128,7 +2132,7 @@ class ParticipantLeftNotify final : public ::google::protobuf::Message
     return *reinterpret_cast<const ParticipantLeftNotify*>(
         &_ParticipantLeftNotify_default_instance_);
   }
-  static constexpr int kIndexInFileMessages = 21;
+  static constexpr int kIndexInFileMessages = 22;
   friend void swap(ParticipantLeftNotify& a, ParticipantLeftNotify& b) { a.Swap(&b); }
   inline void Swap(ParticipantLeftNotify* PROTOBUF_NONNULL other) {
     if (other == this) return;
@@ -2352,7 +2356,7 @@ class ParticipantInfo final : public ::google::protobuf::Message
     return *reinterpret_cast<const ParticipantInfo*>(
         &_ParticipantInfo_default_instance_);
   }
-  static constexpr int kIndexInFileMessages = 11;
+  static constexpr int kIndexInFileMessages = 12;
   friend void swap(ParticipantInfo& a, ParticipantInfo& b) { a.Swap(&b); }
   inline void Swap(ParticipantInfo* PROTOBUF_NONNULL other) {
     if (other == this) return;
@@ -2444,6 +2448,8 @@ class ParticipantInfo final : public ::google::protobuf::Message
     kJoinedAtFieldNumber = 4,
     kStateFieldNumber = 3,
     kIsSpeakingFieldNumber = 5,
+    kMutedFieldNumber = 6,
+    kDeafenedFieldNumber = 7,
   };
   // string user_id = 1;
   void clear_user_id() ;
@@ -2505,11 +2511,31 @@ class ParticipantInfo final : public ::google::protobuf::Message
   void _internal_set_is_speaking(bool value);
 
   public:
+  // bool muted = 6;
+  void clear_muted() ;
+  bool muted() const;
+  void set_muted(bool value);
+
+  private:
+  bool _internal_muted() const;
+  void _internal_set_muted(bool value);
+
+  public:
+  // bool deafened = 7;
+  void clear_deafened() ;
+  bool deafened() const;
+  void set_deafened(bool value);
+
+  private:
+  bool _internal_deafened() const;
+  void _internal_set_deafened(bool value);
+
+  public:
   // @@protoc_insertion_point(class_scope:chirp.voice.ParticipantInfo)
  private:
   class _Internal;
   friend class ::google::protobuf::internal::TcParser;
-  static const ::google::protobuf::internal::TcParseTable<3, 5,
+  static const ::google::protobuf::internal::TcParseTable<3, 7,
                                    0, 51,
                                    2>
       _table_;
@@ -2536,6 +2562,8 @@ class ParticipantInfo final : public ::google::protobuf::Message
     ::int64_t joined_at_;
     int state_;
     bool is_speaking_;
+    bool muted_;
+    bool deafened_;
     PROTOBUF_TSAN_DECLARE_MEMBER
   };
   union { Impl_ _impl_; };
@@ -2600,7 +2628,7 @@ class LeaveRoomResponse final : public ::google::protobuf::Message
     return *reinterpret_cast<const LeaveRoomResponse*>(
         &_LeaveRoomResponse_default_instance_);
   }
-  static constexpr int kIndexInFileMessages = 6;
+  static constexpr int kIndexInFileMessages = 7;
   friend void swap(LeaveRoomResponse& a, LeaveRoomResponse& b) { a.Swap(&b); }
   inline void Swap(LeaveRoomResponse* PROTOBUF_NONNULL other) {
     if (other == this) return;
@@ -2802,7 +2830,7 @@ class LeaveRoomRequest final : public ::google::protobuf::Message
     return *reinterpret_cast<const LeaveRoomRequest*>(
         &_LeaveRoomRequest_default_instance_);
   }
-  static constexpr int kIndexInFileMessages = 5;
+  static constexpr int kIndexInFileMessages = 6;
   friend void swap(LeaveRoomRequest& a, LeaveRoomRequest& b) { a.Swap(&b); }
   inline void Swap(LeaveRoomRequest* PROTOBUF_NONNULL other) {
     if (other == this) return;
@@ -2959,266 +2987,6 @@ class LeaveRoomRequest final : public ::google::protobuf::Message
 extern const ::google::protobuf::internal::ClassDataFull LeaveRoomRequest_class_data_;
 // -------------------------------------------------------------------
 
-class JoinRoomResponse final : public ::google::protobuf::Message
-/* @@protoc_insertion_point(class_definition:chirp.voice.JoinRoomResponse) */ {
- public:
-  inline JoinRoomResponse() : JoinRoomResponse(nullptr) {}
-  ~JoinRoomResponse() PROTOBUF_FINAL;
-
-#if defined(PROTOBUF_CUSTOM_VTABLE)
-  void operator delete(JoinRoomResponse* PROTOBUF_NONNULL msg, ::std::destroying_delete_t) {
-    SharedDtor(*msg);
-    ::google::protobuf::internal::SizedDelete(msg, sizeof(JoinRoomResponse));
-  }
-#endif
-
-  template <typename = void>
-  explicit PROTOBUF_CONSTEXPR JoinRoomResponse(::google::protobuf::internal::ConstantInitialized);
-
-  inline JoinRoomResponse(const JoinRoomResponse& from) : JoinRoomResponse(nullptr, from) {}
-  inline JoinRoomResponse(JoinRoomResponse&& from) noexcept
-      : JoinRoomResponse(nullptr, ::std::move(from)) {}
-  inline JoinRoomResponse& operator=(const JoinRoomResponse& from) {
-    CopyFrom(from);
-    return *this;
-  }
-  inline JoinRoomResponse& operator=(JoinRoomResponse&& from) noexcept {
-    if (this == &from) return *this;
-    if (::google::protobuf::internal::CanMoveWithInternalSwap(GetArena(), from.GetArena())) {
-      InternalSwap(&from);
-    } else {
-      CopyFrom(from);
-    }
-    return *this;
-  }
-
-  inline const ::google::protobuf::UnknownFieldSet& unknown_fields() const
-      ABSL_ATTRIBUTE_LIFETIME_BOUND {
-    return _internal_metadata_.unknown_fields<::google::protobuf::UnknownFieldSet>(::google::protobuf::UnknownFieldSet::default_instance);
-  }
-  inline ::google::protobuf::UnknownFieldSet* PROTOBUF_NONNULL mutable_unknown_fields()
-      ABSL_ATTRIBUTE_LIFETIME_BOUND {
-    return _internal_metadata_.mutable_unknown_fields<::google::protobuf::UnknownFieldSet>();
-  }
-
-  static const ::google::protobuf::Descriptor* PROTOBUF_NONNULL descriptor() {
-    return GetDescriptor();
-  }
-  static const ::google::protobuf::Descriptor* PROTOBUF_NONNULL GetDescriptor() {
-    return default_instance().GetMetadata().descriptor;
-  }
-  static const ::google::protobuf::Reflection* PROTOBUF_NONNULL GetReflection() {
-    return default_instance().GetMetadata().reflection;
-  }
-  static const JoinRoomResponse& default_instance() {
-    return *reinterpret_cast<const JoinRoomResponse*>(
-        &_JoinRoomResponse_default_instance_);
-  }
-  static constexpr int kIndexInFileMessages = 4;
-  friend void swap(JoinRoomResponse& a, JoinRoomResponse& b) { a.Swap(&b); }
-  inline void Swap(JoinRoomResponse* PROTOBUF_NONNULL other) {
-    if (other == this) return;
-    if (::google::protobuf::internal::CanUseInternalSwap(GetArena(), other->GetArena())) {
-      InternalSwap(other);
-    } else {
-      ::google::protobuf::internal::GenericSwap(this, other);
-    }
-  }
-  void UnsafeArenaSwap(JoinRoomResponse* PROTOBUF_NONNULL other) {
-    if (other == this) return;
-    ABSL_DCHECK(GetArena() == other->GetArena());
-    InternalSwap(other);
-  }
-
-  // implements Message ----------------------------------------------
-
-  JoinRoomResponse* PROTOBUF_NONNULL New(::google::protobuf::Arena* PROTOBUF_NULLABLE arena = nullptr) const {
-    return ::google::protobuf::Message::DefaultConstruct<JoinRoomResponse>(arena);
-  }
-  using ::google::protobuf::Message::CopyFrom;
-  void CopyFrom(const JoinRoomResponse& from);
-  using ::google::protobuf::Message::MergeFrom;
-  void MergeFrom(const JoinRoomResponse& from) { JoinRoomResponse::MergeImpl(*this, from); }
-
-  private:
-  static void MergeImpl(::google::protobuf::MessageLite& to_msg,
-                        const ::google::protobuf::MessageLite& from_msg);
-
-  public:
-  bool IsInitialized() const {
-    return true;
-  }
-  ABSL_ATTRIBUTE_REINITIALIZES void Clear() PROTOBUF_FINAL;
-  #if defined(PROTOBUF_CUSTOM_VTABLE)
-  private:
-  static ::size_t ByteSizeLong(const ::google::protobuf::MessageLite& msg);
-  static ::uint8_t* PROTOBUF_NONNULL _InternalSerialize(
-      const ::google::protobuf::MessageLite& msg, ::uint8_t* PROTOBUF_NONNULL target,
-      ::google::protobuf::io::EpsCopyOutputStream* PROTOBUF_NONNULL stream);
-
-  public:
-  ::size_t ByteSizeLong() const { return ByteSizeLong(*this); }
-  ::uint8_t* PROTOBUF_NONNULL _InternalSerialize(
-      ::uint8_t* PROTOBUF_NONNULL target,
-      ::google::protobuf::io::EpsCopyOutputStream* PROTOBUF_NONNULL stream) const {
-    return _InternalSerialize(*this, target, stream);
-  }
-  #else   // PROTOBUF_CUSTOM_VTABLE
-  ::size_t ByteSizeLong() const final;
-  ::uint8_t* PROTOBUF_NONNULL _InternalSerialize(
-      ::uint8_t* PROTOBUF_NONNULL target,
-      ::google::protobuf::io::EpsCopyOutputStream* PROTOBUF_NONNULL stream) const final;
-  #endif  // PROTOBUF_CUSTOM_VTABLE
-  int GetCachedSize() const { return _impl_._cached_size_.Get(); }
-
-  private:
-  void SharedCtor(::google::protobuf::Arena* PROTOBUF_NULLABLE arena);
-  static void SharedDtor(MessageLite& self);
-  void InternalSwap(JoinRoomResponse* PROTOBUF_NONNULL other);
- private:
-  template <typename T>
-  friend ::absl::string_view(::google::protobuf::internal::GetAnyMessageName)();
-  static ::absl::string_view FullMessageName() { return "chirp.voice.JoinRoomResponse"; }
-
-  explicit JoinRoomResponse(::google::protobuf::Arena* PROTOBUF_NULLABLE arena);
-  JoinRoomResponse(::google::protobuf::Arena* PROTOBUF_NULLABLE arena, const JoinRoomResponse& from);
-  JoinRoomResponse(
-      ::google::protobuf::Arena* PROTOBUF_NULLABLE arena, JoinRoomResponse&& from) noexcept
-      : JoinRoomResponse(arena) {
-    *this = ::std::move(from);
-  }
-  const ::google::protobuf::internal::ClassData* PROTOBUF_NONNULL GetClassData() const PROTOBUF_FINAL;
-  static void* PROTOBUF_NONNULL PlacementNew_(
-      const void* PROTOBUF_NONNULL, void* PROTOBUF_NONNULL mem,
-      ::google::protobuf::Arena* PROTOBUF_NULLABLE arena);
-  static constexpr auto InternalNewImpl_();
-
- public:
-  static constexpr auto InternalGenerateClassData_();
-
-  ::google::protobuf::Metadata GetMetadata() const;
-  // nested types ----------------------------------------------------
-
-  // accessors -------------------------------------------------------
-  enum : int {
-    kParticipantIdsFieldNumber = 4,
-    kRoomIdFieldNumber = 2,
-    kSdpAnswerFieldNumber = 3,
-    kServerTimeFieldNumber = 5,
-    kCodeFieldNumber = 1,
-  };
-  // repeated string participant_ids = 4;
-  int participant_ids_size() const;
-  private:
-  int _internal_participant_ids_size() const;
-
-  public:
-  void clear_participant_ids() ;
-  const ::std::string& participant_ids(int index) const;
-  ::std::string* PROTOBUF_NONNULL mutable_participant_ids(int index);
-  template <typename Arg_ = const ::std::string&, typename... Args_>
-  void set_participant_ids(int index, Arg_&& value, Args_... args);
-  ::std::string* PROTOBUF_NONNULL add_participant_ids();
-  template <typename Arg_ = const ::std::string&, typename... Args_>
-  void add_participant_ids(Arg_&& value, Args_... args);
-  const ::google::protobuf::RepeatedPtrField<::std::string>& participant_ids() const;
-  ::google::protobuf::RepeatedPtrField<::std::string>* PROTOBUF_NONNULL mutable_participant_ids();
-
-  private:
-  const ::google::protobuf::RepeatedPtrField<::std::string>& _internal_participant_ids() const;
-  ::google::protobuf::RepeatedPtrField<::std::string>* PROTOBUF_NONNULL _internal_mutable_participant_ids();
-
-  public:
-  // string room_id = 2;
-  void clear_room_id() ;
-  const ::std::string& room_id() const;
-  template <typename Arg_ = const ::std::string&, typename... Args_>
-  void set_room_id(Arg_&& arg, Args_... args);
-  ::std::string* PROTOBUF_NONNULL mutable_room_id();
-  [[nodiscard]] ::std::string* PROTOBUF_NULLABLE release_room_id();
-  void set_allocated_room_id(::std::string* PROTOBUF_NULLABLE value);
-
-  private:
-  const ::std::string& _internal_room_id() const;
-  PROTOBUF_ALWAYS_INLINE void _internal_set_room_id(const ::std::string& value);
-  ::std::string* PROTOBUF_NONNULL _internal_mutable_room_id();
-
-  public:
-  // string sdp_answer = 3;
-  void clear_sdp_answer() ;
-  const ::std::string& sdp_answer() const;
-  template <typename Arg_ = const ::std::string&, typename... Args_>
-  void set_sdp_answer(Arg_&& arg, Args_... args);
-  ::std::string* PROTOBUF_NONNULL mutable_sdp_answer();
-  [[nodiscard]] ::std::string* PROTOBUF_NULLABLE release_sdp_answer();
-  void set_allocated_sdp_answer(::std::string* PROTOBUF_NULLABLE value);
-
-  private:
-  const ::std::string& _internal_sdp_answer() const;
-  PROTOBUF_ALWAYS_INLINE void _internal_set_sdp_answer(const ::std::string& value);
-  ::std::string* PROTOBUF_NONNULL _internal_mutable_sdp_answer();
-
-  public:
-  // int64 server_time = 5;
-  void clear_server_time() ;
-  ::int64_t server_time() const;
-  void set_server_time(::int64_t value);
-
-  private:
-  ::int64_t _internal_server_time() const;
-  void _internal_set_server_time(::int64_t value);
-
-  public:
-  // .chirp.common.ErrorCode code = 1;
-  void clear_code() ;
-  ::chirp::common::ErrorCode code() const;
-  void set_code(::chirp::common::ErrorCode value);
-
-  private:
-  ::chirp::common::ErrorCode _internal_code() const;
-  void _internal_set_code(::chirp::common::ErrorCode value);
-
-  public:
-  // @@protoc_insertion_point(class_scope:chirp.voice.JoinRoomResponse)
- private:
-  class _Internal;
-  friend class ::google::protobuf::internal::TcParser;
-  static const ::google::protobuf::internal::TcParseTable<3, 5,
-                                   0, 69,
-                                   2>
-      _table_;
-
-  friend class ::google::protobuf::MessageLite;
-  friend class ::google::protobuf::Arena;
-  template <typename T>
-  friend class ::google::protobuf::Arena::InternalHelper;
-  using InternalArenaConstructable_ = void;
-  using DestructorSkippable_ = void;
-  struct Impl_ {
-    inline explicit constexpr Impl_(::google::protobuf::internal::ConstantInitialized) noexcept;
-    inline explicit Impl_(
-        ::google::protobuf::internal::InternalVisibility visibility,
-        ::google::protobuf::Arena* PROTOBUF_NULLABLE arena);
-    inline explicit Impl_(
-        ::google::protobuf::internal::InternalVisibility visibility,
-        ::google::protobuf::Arena* PROTOBUF_NULLABLE arena, const Impl_& from,
-        const JoinRoomResponse& from_msg);
-    ::google::protobuf::internal::HasBits<1> _has_bits_;
-    ::google::protobuf::internal::CachedSize _cached_size_;
-    ::google::protobuf::RepeatedPtrField<::std::string> participant_ids_;
-    ::google::protobuf::internal::ArenaStringPtr room_id_;
-    ::google::protobuf::internal::ArenaStringPtr sdp_answer_;
-    ::int64_t server_time_;
-    int code_;
-    PROTOBUF_TSAN_DECLARE_MEMBER
-  };
-  union { Impl_ _impl_; };
-  friend struct ::TableStruct_proto_2fvoice_2eproto;
-};
-
-extern const ::google::protobuf::internal::ClassDataFull JoinRoomResponse_class_data_;
-// -------------------------------------------------------------------
-
 class JoinRoomRequest final : public ::google::protobuf::Message
 /* @@protoc_insertion_point(class_definition:chirp.voice.JoinRoomRequest) */ {
  public:
@@ -3274,7 +3042,7 @@ class JoinRoomRequest final : public ::google::protobuf::Message
     return *reinterpret_cast<const JoinRoomRequest*>(
         &_JoinRoomRequest_default_instance_);
   }
-  static constexpr int kIndexInFileMessages = 3;
+  static constexpr int kIndexInFileMessages = 4;
   friend void swap(JoinRoomRequest& a, JoinRoomRequest& b) { a.Swap(&b); }
   inline void Swap(JoinRoomRequest* PROTOBUF_NONNULL other) {
     if (other == this) return;
@@ -3448,6 +3216,242 @@ class JoinRoomRequest final : public ::google::protobuf::Message
 extern const ::google::protobuf::internal::ClassDataFull JoinRoomRequest_class_data_;
 // -------------------------------------------------------------------
 
+class IceServer final : public ::google::protobuf::Message
+/* @@protoc_insertion_point(class_definition:chirp.voice.IceServer) */ {
+ public:
+  inline IceServer() : IceServer(nullptr) {}
+  ~IceServer() PROTOBUF_FINAL;
+
+#if defined(PROTOBUF_CUSTOM_VTABLE)
+  void operator delete(IceServer* PROTOBUF_NONNULL msg, ::std::destroying_delete_t) {
+    SharedDtor(*msg);
+    ::google::protobuf::internal::SizedDelete(msg, sizeof(IceServer));
+  }
+#endif
+
+  template <typename = void>
+  explicit PROTOBUF_CONSTEXPR IceServer(::google::protobuf::internal::ConstantInitialized);
+
+  inline IceServer(const IceServer& from) : IceServer(nullptr, from) {}
+  inline IceServer(IceServer&& from) noexcept
+      : IceServer(nullptr, ::std::move(from)) {}
+  inline IceServer& operator=(const IceServer& from) {
+    CopyFrom(from);
+    return *this;
+  }
+  inline IceServer& operator=(IceServer&& from) noexcept {
+    if (this == &from) return *this;
+    if (::google::protobuf::internal::CanMoveWithInternalSwap(GetArena(), from.GetArena())) {
+      InternalSwap(&from);
+    } else {
+      CopyFrom(from);
+    }
+    return *this;
+  }
+
+  inline const ::google::protobuf::UnknownFieldSet& unknown_fields() const
+      ABSL_ATTRIBUTE_LIFETIME_BOUND {
+    return _internal_metadata_.unknown_fields<::google::protobuf::UnknownFieldSet>(::google::protobuf::UnknownFieldSet::default_instance);
+  }
+  inline ::google::protobuf::UnknownFieldSet* PROTOBUF_NONNULL mutable_unknown_fields()
+      ABSL_ATTRIBUTE_LIFETIME_BOUND {
+    return _internal_metadata_.mutable_unknown_fields<::google::protobuf::UnknownFieldSet>();
+  }
+
+  static const ::google::protobuf::Descriptor* PROTOBUF_NONNULL descriptor() {
+    return GetDescriptor();
+  }
+  static const ::google::protobuf::Descriptor* PROTOBUF_NONNULL GetDescriptor() {
+    return default_instance().GetMetadata().descriptor;
+  }
+  static const ::google::protobuf::Reflection* PROTOBUF_NONNULL GetReflection() {
+    return default_instance().GetMetadata().reflection;
+  }
+  static const IceServer& default_instance() {
+    return *reinterpret_cast<const IceServer*>(
+        &_IceServer_default_instance_);
+  }
+  static constexpr int kIndexInFileMessages = 3;
+  friend void swap(IceServer& a, IceServer& b) { a.Swap(&b); }
+  inline void Swap(IceServer* PROTOBUF_NONNULL other) {
+    if (other == this) return;
+    if (::google::protobuf::internal::CanUseInternalSwap(GetArena(), other->GetArena())) {
+      InternalSwap(other);
+    } else {
+      ::google::protobuf::internal::GenericSwap(this, other);
+    }
+  }
+  void UnsafeArenaSwap(IceServer* PROTOBUF_NONNULL other) {
+    if (other == this) return;
+    ABSL_DCHECK(GetArena() == other->GetArena());
+    InternalSwap(other);
+  }
+
+  // implements Message ----------------------------------------------
+
+  IceServer* PROTOBUF_NONNULL New(::google::protobuf::Arena* PROTOBUF_NULLABLE arena = nullptr) const {
+    return ::google::protobuf::Message::DefaultConstruct<IceServer>(arena);
+  }
+  using ::google::protobuf::Message::CopyFrom;
+  void CopyFrom(const IceServer& from);
+  using ::google::protobuf::Message::MergeFrom;
+  void MergeFrom(const IceServer& from) { IceServer::MergeImpl(*this, from); }
+
+  private:
+  static void MergeImpl(::google::protobuf::MessageLite& to_msg,
+                        const ::google::protobuf::MessageLite& from_msg);
+
+  public:
+  bool IsInitialized() const {
+    return true;
+  }
+  ABSL_ATTRIBUTE_REINITIALIZES void Clear() PROTOBUF_FINAL;
+  #if defined(PROTOBUF_CUSTOM_VTABLE)
+  private:
+  static ::size_t ByteSizeLong(const ::google::protobuf::MessageLite& msg);
+  static ::uint8_t* PROTOBUF_NONNULL _InternalSerialize(
+      const ::google::protobuf::MessageLite& msg, ::uint8_t* PROTOBUF_NONNULL target,
+      ::google::protobuf::io::EpsCopyOutputStream* PROTOBUF_NONNULL stream);
+
+  public:
+  ::size_t ByteSizeLong() const { return ByteSizeLong(*this); }
+  ::uint8_t* PROTOBUF_NONNULL _InternalSerialize(
+      ::uint8_t* PROTOBUF_NONNULL target,
+      ::google::protobuf::io::EpsCopyOutputStream* PROTOBUF_NONNULL stream) const {
+    return _InternalSerialize(*this, target, stream);
+  }
+  #else   // PROTOBUF_CUSTOM_VTABLE
+  ::size_t ByteSizeLong() const final;
+  ::uint8_t* PROTOBUF_NONNULL _InternalSerialize(
+      ::uint8_t* PROTOBUF_NONNULL target,
+      ::google::protobuf::io::EpsCopyOutputStream* PROTOBUF_NONNULL stream) const final;
+  #endif  // PROTOBUF_CUSTOM_VTABLE
+  int GetCachedSize() const { return _impl_._cached_size_.Get(); }
+
+  private:
+  void SharedCtor(::google::protobuf::Arena* PROTOBUF_NULLABLE arena);
+  static void SharedDtor(MessageLite& self);
+  void InternalSwap(IceServer* PROTOBUF_NONNULL other);
+ private:
+  template <typename T>
+  friend ::absl::string_view(::google::protobuf::internal::GetAnyMessageName)();
+  static ::absl::string_view FullMessageName() { return "chirp.voice.IceServer"; }
+
+  explicit IceServer(::google::protobuf::Arena* PROTOBUF_NULLABLE arena);
+  IceServer(::google::protobuf::Arena* PROTOBUF_NULLABLE arena, const IceServer& from);
+  IceServer(
+      ::google::protobuf::Arena* PROTOBUF_NULLABLE arena, IceServer&& from) noexcept
+      : IceServer(arena) {
+    *this = ::std::move(from);
+  }
+  const ::google::protobuf::internal::ClassData* PROTOBUF_NONNULL GetClassData() const PROTOBUF_FINAL;
+  static void* PROTOBUF_NONNULL PlacementNew_(
+      const void* PROTOBUF_NONNULL, void* PROTOBUF_NONNULL mem,
+      ::google::protobuf::Arena* PROTOBUF_NULLABLE arena);
+  static constexpr auto InternalNewImpl_();
+
+ public:
+  static constexpr auto InternalGenerateClassData_();
+
+  ::google::protobuf::Metadata GetMetadata() const;
+  // nested types ----------------------------------------------------
+
+  // accessors -------------------------------------------------------
+  enum : int {
+    kUrlsFieldNumber = 1,
+    kUsernameFieldNumber = 2,
+    kCredentialFieldNumber = 3,
+  };
+  // repeated string urls = 1;
+  int urls_size() const;
+  private:
+  int _internal_urls_size() const;
+
+  public:
+  void clear_urls() ;
+  const ::std::string& urls(int index) const;
+  ::std::string* PROTOBUF_NONNULL mutable_urls(int index);
+  template <typename Arg_ = const ::std::string&, typename... Args_>
+  void set_urls(int index, Arg_&& value, Args_... args);
+  ::std::string* PROTOBUF_NONNULL add_urls();
+  template <typename Arg_ = const ::std::string&, typename... Args_>
+  void add_urls(Arg_&& value, Args_... args);
+  const ::google::protobuf::RepeatedPtrField<::std::string>& urls() const;
+  ::google::protobuf::RepeatedPtrField<::std::string>* PROTOBUF_NONNULL mutable_urls();
+
+  private:
+  const ::google::protobuf::RepeatedPtrField<::std::string>& _internal_urls() const;
+  ::google::protobuf::RepeatedPtrField<::std::string>* PROTOBUF_NONNULL _internal_mutable_urls();
+
+  public:
+  // string username = 2;
+  void clear_username() ;
+  const ::std::string& username() const;
+  template <typename Arg_ = const ::std::string&, typename... Args_>
+  void set_username(Arg_&& arg, Args_... args);
+  ::std::string* PROTOBUF_NONNULL mutable_username();
+  [[nodiscard]] ::std::string* PROTOBUF_NULLABLE release_username();
+  void set_allocated_username(::std::string* PROTOBUF_NULLABLE value);
+
+  private:
+  const ::std::string& _internal_username() const;
+  PROTOBUF_ALWAYS_INLINE void _internal_set_username(const ::std::string& value);
+  ::std::string* PROTOBUF_NONNULL _internal_mutable_username();
+
+  public:
+  // string credential = 3;
+  void clear_credential() ;
+  const ::std::string& credential() const;
+  template <typename Arg_ = const ::std::string&, typename... Args_>
+  void set_credential(Arg_&& arg, Args_... args);
+  ::std::string* PROTOBUF_NONNULL mutable_credential();
+  [[nodiscard]] ::std::string* PROTOBUF_NULLABLE release_credential();
+  void set_allocated_credential(::std::string* PROTOBUF_NULLABLE value);
+
+  private:
+  const ::std::string& _internal_credential() const;
+  PROTOBUF_ALWAYS_INLINE void _internal_set_credential(const ::std::string& value);
+  ::std::string* PROTOBUF_NONNULL _internal_mutable_credential();
+
+  public:
+  // @@protoc_insertion_point(class_scope:chirp.voice.IceServer)
+ private:
+  class _Internal;
+  friend class ::google::protobuf::internal::TcParser;
+  static const ::google::protobuf::internal::TcParseTable<2, 3,
+                                   0, 52,
+                                   2>
+      _table_;
+
+  friend class ::google::protobuf::MessageLite;
+  friend class ::google::protobuf::Arena;
+  template <typename T>
+  friend class ::google::protobuf::Arena::InternalHelper;
+  using InternalArenaConstructable_ = void;
+  using DestructorSkippable_ = void;
+  struct Impl_ {
+    inline explicit constexpr Impl_(::google::protobuf::internal::ConstantInitialized) noexcept;
+    inline explicit Impl_(
+        ::google::protobuf::internal::InternalVisibility visibility,
+        ::google::protobuf::Arena* PROTOBUF_NULLABLE arena);
+    inline explicit Impl_(
+        ::google::protobuf::internal::InternalVisibility visibility,
+        ::google::protobuf::Arena* PROTOBUF_NULLABLE arena, const Impl_& from,
+        const IceServer& from_msg);
+    ::google::protobuf::internal::HasBits<1> _has_bits_;
+    ::google::protobuf::internal::CachedSize _cached_size_;
+    ::google::protobuf::RepeatedPtrField<::std::string> urls_;
+    ::google::protobuf::internal::ArenaStringPtr username_;
+    ::google::protobuf::internal::ArenaStringPtr credential_;
+    PROTOBUF_TSAN_DECLARE_MEMBER
+  };
+  union { Impl_ _impl_; };
+  friend struct ::TableStruct_proto_2fvoice_2eproto;
+};
+
+extern const ::google::protobuf::internal::ClassDataFull IceServer_class_data_;
+// -------------------------------------------------------------------
+
 class IceCandidate final : public ::google::protobuf::Message
 /* @@protoc_insertion_point(class_definition:chirp.voice.IceCandidate) */ {
  public:
@@ -3503,7 +3507,7 @@ class IceCandidate final : public ::google::protobuf::Message
     return *reinterpret_cast<const IceCandidate*>(
         &_IceCandidate_default_instance_);
   }
-  static constexpr int kIndexInFileMessages = 7;
+  static constexpr int kIndexInFileMessages = 8;
   friend void swap(IceCandidate& a, IceCandidate& b) { a.Swap(&b); }
   inline void Swap(IceCandidate* PROTOBUF_NONNULL other) {
     if (other == this) return;
@@ -3727,7 +3731,7 @@ class GetUserRoomRequest final : public ::google::protobuf::Message
     return *reinterpret_cast<const GetUserRoomRequest*>(
         &_GetUserRoomRequest_default_instance_);
   }
-  static constexpr int kIndexInFileMessages = 14;
+  static constexpr int kIndexInFileMessages = 15;
   friend void swap(GetUserRoomRequest& a, GetUserRoomRequest& b) { a.Swap(&b); }
   inline void Swap(GetUserRoomRequest* PROTOBUF_NONNULL other) {
     if (other == this) return;
@@ -3922,7 +3926,7 @@ class GetRoomInfoRequest final : public ::google::protobuf::Message
     return *reinterpret_cast<const GetRoomInfoRequest*>(
         &_GetRoomInfoRequest_default_instance_);
   }
-  static constexpr int kIndexInFileMessages = 12;
+  static constexpr int kIndexInFileMessages = 13;
   friend void swap(GetRoomInfoRequest& a, GetRoomInfoRequest& b) { a.Swap(&b); }
   inline void Swap(GetRoomInfoRequest* PROTOBUF_NONNULL other) {
     if (other == this) return;
@@ -4375,7 +4379,7 @@ class ParticipantJoinedNotify final : public ::google::protobuf::Message
     return *reinterpret_cast<const ParticipantJoinedNotify*>(
         &_ParticipantJoinedNotify_default_instance_);
   }
-  static constexpr int kIndexInFileMessages = 20;
+  static constexpr int kIndexInFileMessages = 21;
   friend void swap(ParticipantJoinedNotify& a, ParticipantJoinedNotify& b) { a.Swap(&b); }
   inline void Swap(ParticipantJoinedNotify* PROTOBUF_NONNULL other) {
     if (other == this) return;
@@ -4544,6 +4548,285 @@ class ParticipantJoinedNotify final : public ::google::protobuf::Message
 extern const ::google::protobuf::internal::ClassDataFull ParticipantJoinedNotify_class_data_;
 // -------------------------------------------------------------------
 
+class JoinRoomResponse final : public ::google::protobuf::Message
+/* @@protoc_insertion_point(class_definition:chirp.voice.JoinRoomResponse) */ {
+ public:
+  inline JoinRoomResponse() : JoinRoomResponse(nullptr) {}
+  ~JoinRoomResponse() PROTOBUF_FINAL;
+
+#if defined(PROTOBUF_CUSTOM_VTABLE)
+  void operator delete(JoinRoomResponse* PROTOBUF_NONNULL msg, ::std::destroying_delete_t) {
+    SharedDtor(*msg);
+    ::google::protobuf::internal::SizedDelete(msg, sizeof(JoinRoomResponse));
+  }
+#endif
+
+  template <typename = void>
+  explicit PROTOBUF_CONSTEXPR JoinRoomResponse(::google::protobuf::internal::ConstantInitialized);
+
+  inline JoinRoomResponse(const JoinRoomResponse& from) : JoinRoomResponse(nullptr, from) {}
+  inline JoinRoomResponse(JoinRoomResponse&& from) noexcept
+      : JoinRoomResponse(nullptr, ::std::move(from)) {}
+  inline JoinRoomResponse& operator=(const JoinRoomResponse& from) {
+    CopyFrom(from);
+    return *this;
+  }
+  inline JoinRoomResponse& operator=(JoinRoomResponse&& from) noexcept {
+    if (this == &from) return *this;
+    if (::google::protobuf::internal::CanMoveWithInternalSwap(GetArena(), from.GetArena())) {
+      InternalSwap(&from);
+    } else {
+      CopyFrom(from);
+    }
+    return *this;
+  }
+
+  inline const ::google::protobuf::UnknownFieldSet& unknown_fields() const
+      ABSL_ATTRIBUTE_LIFETIME_BOUND {
+    return _internal_metadata_.unknown_fields<::google::protobuf::UnknownFieldSet>(::google::protobuf::UnknownFieldSet::default_instance);
+  }
+  inline ::google::protobuf::UnknownFieldSet* PROTOBUF_NONNULL mutable_unknown_fields()
+      ABSL_ATTRIBUTE_LIFETIME_BOUND {
+    return _internal_metadata_.mutable_unknown_fields<::google::protobuf::UnknownFieldSet>();
+  }
+
+  static const ::google::protobuf::Descriptor* PROTOBUF_NONNULL descriptor() {
+    return GetDescriptor();
+  }
+  static const ::google::protobuf::Descriptor* PROTOBUF_NONNULL GetDescriptor() {
+    return default_instance().GetMetadata().descriptor;
+  }
+  static const ::google::protobuf::Reflection* PROTOBUF_NONNULL GetReflection() {
+    return default_instance().GetMetadata().reflection;
+  }
+  static const JoinRoomResponse& default_instance() {
+    return *reinterpret_cast<const JoinRoomResponse*>(
+        &_JoinRoomResponse_default_instance_);
+  }
+  static constexpr int kIndexInFileMessages = 5;
+  friend void swap(JoinRoomResponse& a, JoinRoomResponse& b) { a.Swap(&b); }
+  inline void Swap(JoinRoomResponse* PROTOBUF_NONNULL other) {
+    if (other == this) return;
+    if (::google::protobuf::internal::CanUseInternalSwap(GetArena(), other->GetArena())) {
+      InternalSwap(other);
+    } else {
+      ::google::protobuf::internal::GenericSwap(this, other);
+    }
+  }
+  void UnsafeArenaSwap(JoinRoomResponse* PROTOBUF_NONNULL other) {
+    if (other == this) return;
+    ABSL_DCHECK(GetArena() == other->GetArena());
+    InternalSwap(other);
+  }
+
+  // implements Message ----------------------------------------------
+
+  JoinRoomResponse* PROTOBUF_NONNULL New(::google::protobuf::Arena* PROTOBUF_NULLABLE arena = nullptr) const {
+    return ::google::protobuf::Message::DefaultConstruct<JoinRoomResponse>(arena);
+  }
+  using ::google::protobuf::Message::CopyFrom;
+  void CopyFrom(const JoinRoomResponse& from);
+  using ::google::protobuf::Message::MergeFrom;
+  void MergeFrom(const JoinRoomResponse& from) { JoinRoomResponse::MergeImpl(*this, from); }
+
+  private:
+  static void MergeImpl(::google::protobuf::MessageLite& to_msg,
+                        const ::google::protobuf::MessageLite& from_msg);
+
+  public:
+  bool IsInitialized() const {
+    return true;
+  }
+  ABSL_ATTRIBUTE_REINITIALIZES void Clear() PROTOBUF_FINAL;
+  #if defined(PROTOBUF_CUSTOM_VTABLE)
+  private:
+  static ::size_t ByteSizeLong(const ::google::protobuf::MessageLite& msg);
+  static ::uint8_t* PROTOBUF_NONNULL _InternalSerialize(
+      const ::google::protobuf::MessageLite& msg, ::uint8_t* PROTOBUF_NONNULL target,
+      ::google::protobuf::io::EpsCopyOutputStream* PROTOBUF_NONNULL stream);
+
+  public:
+  ::size_t ByteSizeLong() const { return ByteSizeLong(*this); }
+  ::uint8_t* PROTOBUF_NONNULL _InternalSerialize(
+      ::uint8_t* PROTOBUF_NONNULL target,
+      ::google::protobuf::io::EpsCopyOutputStream* PROTOBUF_NONNULL stream) const {
+    return _InternalSerialize(*this, target, stream);
+  }
+  #else   // PROTOBUF_CUSTOM_VTABLE
+  ::size_t ByteSizeLong() const final;
+  ::uint8_t* PROTOBUF_NONNULL _InternalSerialize(
+      ::uint8_t* PROTOBUF_NONNULL target,
+      ::google::protobuf::io::EpsCopyOutputStream* PROTOBUF_NONNULL stream) const final;
+  #endif  // PROTOBUF_CUSTOM_VTABLE
+  int GetCachedSize() const { return _impl_._cached_size_.Get(); }
+
+  private:
+  void SharedCtor(::google::protobuf::Arena* PROTOBUF_NULLABLE arena);
+  static void SharedDtor(MessageLite& self);
+  void InternalSwap(JoinRoomResponse* PROTOBUF_NONNULL other);
+ private:
+  template <typename T>
+  friend ::absl::string_view(::google::protobuf::internal::GetAnyMessageName)();
+  static ::absl::string_view FullMessageName() { return "chirp.voice.JoinRoomResponse"; }
+
+  explicit JoinRoomResponse(::google::protobuf::Arena* PROTOBUF_NULLABLE arena);
+  JoinRoomResponse(::google::protobuf::Arena* PROTOBUF_NULLABLE arena, const JoinRoomResponse& from);
+  JoinRoomResponse(
+      ::google::protobuf::Arena* PROTOBUF_NULLABLE arena, JoinRoomResponse&& from) noexcept
+      : JoinRoomResponse(arena) {
+    *this = ::std::move(from);
+  }
+  const ::google::protobuf::internal::ClassData* PROTOBUF_NONNULL GetClassData() const PROTOBUF_FINAL;
+  static void* PROTOBUF_NONNULL PlacementNew_(
+      const void* PROTOBUF_NONNULL, void* PROTOBUF_NONNULL mem,
+      ::google::protobuf::Arena* PROTOBUF_NULLABLE arena);
+  static constexpr auto InternalNewImpl_();
+
+ public:
+  static constexpr auto InternalGenerateClassData_();
+
+  ::google::protobuf::Metadata GetMetadata() const;
+  // nested types ----------------------------------------------------
+
+  // accessors -------------------------------------------------------
+  enum : int {
+    kParticipantIdsFieldNumber = 4,
+    kIceServersFieldNumber = 6,
+    kRoomIdFieldNumber = 2,
+    kSdpAnswerFieldNumber = 3,
+    kServerTimeFieldNumber = 5,
+    kCodeFieldNumber = 1,
+  };
+  // repeated string participant_ids = 4;
+  int participant_ids_size() const;
+  private:
+  int _internal_participant_ids_size() const;
+
+  public:
+  void clear_participant_ids() ;
+  const ::std::string& participant_ids(int index) const;
+  ::std::string* PROTOBUF_NONNULL mutable_participant_ids(int index);
+  template <typename Arg_ = const ::std::string&, typename... Args_>
+  void set_participant_ids(int index, Arg_&& value, Args_... args);
+  ::std::string* PROTOBUF_NONNULL add_participant_ids();
+  template <typename Arg_ = const ::std::string&, typename... Args_>
+  void add_participant_ids(Arg_&& value, Args_... args);
+  const ::google::protobuf::RepeatedPtrField<::std::string>& participant_ids() const;
+  ::google::protobuf::RepeatedPtrField<::std::string>* PROTOBUF_NONNULL mutable_participant_ids();
+
+  private:
+  const ::google::protobuf::RepeatedPtrField<::std::string>& _internal_participant_ids() const;
+  ::google::protobuf::RepeatedPtrField<::std::string>* PROTOBUF_NONNULL _internal_mutable_participant_ids();
+
+  public:
+  // repeated .chirp.voice.IceServer ice_servers = 6;
+  int ice_servers_size() const;
+  private:
+  int _internal_ice_servers_size() const;
+
+  public:
+  void clear_ice_servers() ;
+  ::chirp::voice::IceServer* PROTOBUF_NONNULL mutable_ice_servers(int index);
+  ::google::protobuf::RepeatedPtrField<::chirp::voice::IceServer>* PROTOBUF_NONNULL mutable_ice_servers();
+
+  private:
+  const ::google::protobuf::RepeatedPtrField<::chirp::voice::IceServer>& _internal_ice_servers() const;
+  ::google::protobuf::RepeatedPtrField<::chirp::voice::IceServer>* PROTOBUF_NONNULL _internal_mutable_ice_servers();
+  public:
+  const ::chirp::voice::IceServer& ice_servers(int index) const;
+  ::chirp::voice::IceServer* PROTOBUF_NONNULL add_ice_servers();
+  const ::google::protobuf::RepeatedPtrField<::chirp::voice::IceServer>& ice_servers() const;
+  // string room_id = 2;
+  void clear_room_id() ;
+  const ::std::string& room_id() const;
+  template <typename Arg_ = const ::std::string&, typename... Args_>
+  void set_room_id(Arg_&& arg, Args_... args);
+  ::std::string* PROTOBUF_NONNULL mutable_room_id();
+  [[nodiscard]] ::std::string* PROTOBUF_NULLABLE release_room_id();
+  void set_allocated_room_id(::std::string* PROTOBUF_NULLABLE value);
+
+  private:
+  const ::std::string& _internal_room_id() const;
+  PROTOBUF_ALWAYS_INLINE void _internal_set_room_id(const ::std::string& value);
+  ::std::string* PROTOBUF_NONNULL _internal_mutable_room_id();
+
+  public:
+  // string sdp_answer = 3;
+  void clear_sdp_answer() ;
+  const ::std::string& sdp_answer() const;
+  template <typename Arg_ = const ::std::string&, typename... Args_>
+  void set_sdp_answer(Arg_&& arg, Args_... args);
+  ::std::string* PROTOBUF_NONNULL mutable_sdp_answer();
+  [[nodiscard]] ::std::string* PROTOBUF_NULLABLE release_sdp_answer();
+  void set_allocated_sdp_answer(::std::string* PROTOBUF_NULLABLE value);
+
+  private:
+  const ::std::string& _internal_sdp_answer() const;
+  PROTOBUF_ALWAYS_INLINE void _internal_set_sdp_answer(const ::std::string& value);
+  ::std::string* PROTOBUF_NONNULL _internal_mutable_sdp_answer();
+
+  public:
+  // int64 server_time = 5;
+  void clear_server_time() ;
+  ::int64_t server_time() const;
+  void set_server_time(::int64_t value);
+
+  private:
+  ::int64_t _internal_server_time() const;
+  void _internal_set_server_time(::int64_t value);
+
+  public:
+  // .chirp.common.ErrorCode code = 1;
+  void clear_code() ;
+  ::chirp::common::ErrorCode code() const;
+  void set_code(::chirp::common::ErrorCode value);
+
+  private:
+  ::chirp::common::ErrorCode _internal_code() const;
+  void _internal_set_code(::chirp::common::ErrorCode value);
+
+  public:
+  // @@protoc_insertion_point(class_scope:chirp.voice.JoinRoomResponse)
+ private:
+  class _Internal;
+  friend class ::google::protobuf::internal::TcParser;
+  static const ::google::protobuf::internal::TcParseTable<3, 6,
+                                   1, 69,
+                                   2>
+      _table_;
+
+  friend class ::google::protobuf::MessageLite;
+  friend class ::google::protobuf::Arena;
+  template <typename T>
+  friend class ::google::protobuf::Arena::InternalHelper;
+  using InternalArenaConstructable_ = void;
+  using DestructorSkippable_ = void;
+  struct Impl_ {
+    inline explicit constexpr Impl_(::google::protobuf::internal::ConstantInitialized) noexcept;
+    inline explicit Impl_(
+        ::google::protobuf::internal::InternalVisibility visibility,
+        ::google::protobuf::Arena* PROTOBUF_NULLABLE arena);
+    inline explicit Impl_(
+        ::google::protobuf::internal::InternalVisibility visibility,
+        ::google::protobuf::Arena* PROTOBUF_NULLABLE arena, const Impl_& from,
+        const JoinRoomResponse& from_msg);
+    ::google::protobuf::internal::HasBits<1> _has_bits_;
+    ::google::protobuf::internal::CachedSize _cached_size_;
+    ::google::protobuf::RepeatedPtrField<::std::string> participant_ids_;
+    ::google::protobuf::RepeatedPtrField< ::chirp::voice::IceServer > ice_servers_;
+    ::google::protobuf::internal::ArenaStringPtr room_id_;
+    ::google::protobuf::internal::ArenaStringPtr sdp_answer_;
+    ::int64_t server_time_;
+    int code_;
+    PROTOBUF_TSAN_DECLARE_MEMBER
+  };
+  union { Impl_ _impl_; };
+  friend struct ::TableStruct_proto_2fvoice_2eproto;
+};
+
+extern const ::google::protobuf::internal::ClassDataFull JoinRoomResponse_class_data_;
+// -------------------------------------------------------------------
+
 class IceCandidateMessage final : public ::google::protobuf::Message
 /* @@protoc_insertion_point(class_definition:chirp.voice.IceCandidateMessage) */ {
  public:
@@ -4599,7 +4882,7 @@ class IceCandidateMessage final : public ::google::protobuf::Message
     return *reinterpret_cast<const IceCandidateMessage*>(
         &_IceCandidateMessage_default_instance_);
   }
-  static constexpr int kIndexInFileMessages = 8;
+  static constexpr int kIndexInFileMessages = 9;
   friend void swap(IceCandidateMessage& a, IceCandidateMessage& b) { a.Swap(&b); }
   inline void Swap(IceCandidateMessage* PROTOBUF_NONNULL other) {
     if (other == this) return;
@@ -4845,7 +5128,7 @@ class GetUserRoomResponse final : public ::google::protobuf::Message
     return *reinterpret_cast<const GetUserRoomResponse*>(
         &_GetUserRoomResponse_default_instance_);
   }
-  static constexpr int kIndexInFileMessages = 15;
+  static constexpr int kIndexInFileMessages = 16;
   friend void swap(GetUserRoomResponse& a, GetUserRoomResponse& b) { a.Swap(&b); }
   inline void Swap(GetUserRoomResponse* PROTOBUF_NONNULL other) {
     if (other == this) return;
@@ -5069,7 +5352,7 @@ class GetRoomInfoResponse final : public ::google::protobuf::Message
     return *reinterpret_cast<const GetRoomInfoResponse*>(
         &_GetRoomInfoResponse_default_instance_);
   }
-  static constexpr int kIndexInFileMessages = 13;
+  static constexpr int kIndexInFileMessages = 14;
   friend void swap(GetRoomInfoResponse& a, GetRoomInfoResponse& b) { a.Swap(&b); }
   inline void Swap(GetRoomInfoResponse* PROTOBUF_NONNULL other) {
     if (other == this) return;
@@ -5887,6 +6170,212 @@ inline void CreateRoomResponse::_internal_set_server_time(::int64_t value) {
 
 // -------------------------------------------------------------------
 
+// IceServer
+
+// repeated string urls = 1;
+inline int IceServer::_internal_urls_size() const {
+  return _internal_urls().size();
+}
+inline int IceServer::urls_size() const {
+  return _internal_urls_size();
+}
+inline void IceServer::clear_urls() {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_.urls_.Clear();
+  ClearHasBitForRepeated(_impl_._has_bits_[0],
+                  0x00000001U);
+}
+inline ::std::string* PROTOBUF_NONNULL IceServer::add_urls()
+    ABSL_ATTRIBUTE_LIFETIME_BOUND {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  ::std::string* _s =
+      _internal_mutable_urls()->InternalAddWithArena(
+          ::google::protobuf::MessageLite::internal_visibility(), GetArena());
+  SetHasBitForRepeated(_impl_._has_bits_[0], 0x00000001U);
+  // @@protoc_insertion_point(field_add_mutable:chirp.voice.IceServer.urls)
+  return _s;
+}
+inline const ::std::string& IceServer::urls(int index) const
+    ABSL_ATTRIBUTE_LIFETIME_BOUND {
+  // @@protoc_insertion_point(field_get:chirp.voice.IceServer.urls)
+  return _internal_urls().Get(index);
+}
+inline ::std::string* PROTOBUF_NONNULL IceServer::mutable_urls(int index)
+    ABSL_ATTRIBUTE_LIFETIME_BOUND {
+  // @@protoc_insertion_point(field_mutable:chirp.voice.IceServer.urls)
+  return _internal_mutable_urls()->Mutable(index);
+}
+template <typename Arg_, typename... Args_>
+inline void IceServer::set_urls(int index, Arg_&& value, Args_... args) {
+  ::google::protobuf::internal::AssignToString(*_internal_mutable_urls()->Mutable(index), ::std::forward<Arg_>(value),
+                        args... );
+  // @@protoc_insertion_point(field_set:chirp.voice.IceServer.urls)
+}
+template <typename Arg_, typename... Args_>
+inline void IceServer::add_urls(Arg_&& value, Args_... args) {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  ::google::protobuf::internal::AddToRepeatedPtrField(
+      ::google::protobuf::MessageLite::internal_visibility(), GetArena(),
+      *_internal_mutable_urls(), ::std::forward<Arg_>(value),
+      args... );
+  SetHasBitForRepeated(_impl_._has_bits_[0], 0x00000001U);
+  // @@protoc_insertion_point(field_add:chirp.voice.IceServer.urls)
+}
+inline const ::google::protobuf::RepeatedPtrField<::std::string>& IceServer::urls()
+    const ABSL_ATTRIBUTE_LIFETIME_BOUND {
+  // @@protoc_insertion_point(field_list:chirp.voice.IceServer.urls)
+  return _internal_urls();
+}
+inline ::google::protobuf::RepeatedPtrField<::std::string>* PROTOBUF_NONNULL
+IceServer::mutable_urls() ABSL_ATTRIBUTE_LIFETIME_BOUND {
+  SetHasBitForRepeated(_impl_._has_bits_[0], 0x00000001U);
+  // @@protoc_insertion_point(field_mutable_list:chirp.voice.IceServer.urls)
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  return _internal_mutable_urls();
+}
+inline const ::google::protobuf::RepeatedPtrField<::std::string>&
+IceServer::_internal_urls() const {
+  ::google::protobuf::internal::TSanRead(&_impl_);
+  return _impl_.urls_;
+}
+inline ::google::protobuf::RepeatedPtrField<::std::string>* PROTOBUF_NONNULL
+IceServer::_internal_mutable_urls() {
+  ::google::protobuf::internal::TSanRead(&_impl_);
+  return &_impl_.urls_;
+}
+
+// string username = 2;
+inline void IceServer::clear_username() {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_.username_.ClearToEmpty();
+  ClearHasBit(_impl_._has_bits_[0],
+                  0x00000002U);
+}
+inline const ::std::string& IceServer::username() const
+    ABSL_ATTRIBUTE_LIFETIME_BOUND {
+  // @@protoc_insertion_point(field_get:chirp.voice.IceServer.username)
+  return _internal_username();
+}
+template <typename Arg_, typename... Args_>
+PROTOBUF_ALWAYS_INLINE void IceServer::set_username(Arg_&& arg, Args_... args) {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  SetHasBit(_impl_._has_bits_[0], 0x00000002U);
+  _impl_.username_.Set(static_cast<Arg_&&>(arg), args..., GetArena());
+  // @@protoc_insertion_point(field_set:chirp.voice.IceServer.username)
+}
+inline ::std::string* PROTOBUF_NONNULL IceServer::mutable_username()
+    ABSL_ATTRIBUTE_LIFETIME_BOUND {
+  SetHasBit(_impl_._has_bits_[0], 0x00000002U);
+  ::std::string* _s = _internal_mutable_username();
+  // @@protoc_insertion_point(field_mutable:chirp.voice.IceServer.username)
+  return _s;
+}
+inline const ::std::string& IceServer::_internal_username() const {
+  ::google::protobuf::internal::TSanRead(&_impl_);
+  return _impl_.username_.Get();
+}
+inline void IceServer::_internal_set_username(const ::std::string& value) {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_.username_.Set(value, GetArena());
+}
+inline ::std::string* PROTOBUF_NONNULL IceServer::_internal_mutable_username() {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  return _impl_.username_.Mutable( GetArena());
+}
+inline ::std::string* PROTOBUF_NULLABLE IceServer::release_username() {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  // @@protoc_insertion_point(field_release:chirp.voice.IceServer.username)
+  if (!CheckHasBit(_impl_._has_bits_[0], 0x00000002U)) {
+    return nullptr;
+  }
+  ClearHasBit(_impl_._has_bits_[0], 0x00000002U);
+  auto* released = _impl_.username_.Release();
+  if (::google::protobuf::internal::DebugHardenForceCopyDefaultString()) {
+    _impl_.username_.Set("", GetArena());
+  }
+  return released;
+}
+inline void IceServer::set_allocated_username(::std::string* PROTOBUF_NULLABLE value) {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  if (value != nullptr) {
+    SetHasBit(_impl_._has_bits_[0], 0x00000002U);
+  } else {
+    ClearHasBit(_impl_._has_bits_[0], 0x00000002U);
+  }
+  _impl_.username_.SetAllocated(value, GetArena());
+  if (::google::protobuf::internal::DebugHardenForceCopyDefaultString() && _impl_.username_.IsDefault()) {
+    _impl_.username_.Set("", GetArena());
+  }
+  // @@protoc_insertion_point(field_set_allocated:chirp.voice.IceServer.username)
+}
+
+// string credential = 3;
+inline void IceServer::clear_credential() {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_.credential_.ClearToEmpty();
+  ClearHasBit(_impl_._has_bits_[0],
+                  0x00000004U);
+}
+inline const ::std::string& IceServer::credential() const
+    ABSL_ATTRIBUTE_LIFETIME_BOUND {
+  // @@protoc_insertion_point(field_get:chirp.voice.IceServer.credential)
+  return _internal_credential();
+}
+template <typename Arg_, typename... Args_>
+PROTOBUF_ALWAYS_INLINE void IceServer::set_credential(Arg_&& arg, Args_... args) {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  SetHasBit(_impl_._has_bits_[0], 0x00000004U);
+  _impl_.credential_.Set(static_cast<Arg_&&>(arg), args..., GetArena());
+  // @@protoc_insertion_point(field_set:chirp.voice.IceServer.credential)
+}
+inline ::std::string* PROTOBUF_NONNULL IceServer::mutable_credential()
+    ABSL_ATTRIBUTE_LIFETIME_BOUND {
+  SetHasBit(_impl_._has_bits_[0], 0x00000004U);
+  ::std::string* _s = _internal_mutable_credential();
+  // @@protoc_insertion_point(field_mutable:chirp.voice.IceServer.credential)
+  return _s;
+}
+inline const ::std::string& IceServer::_internal_credential() const {
+  ::google::protobuf::internal::TSanRead(&_impl_);
+  return _impl_.credential_.Get();
+}
+inline void IceServer::_internal_set_credential(const ::std::string& value) {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_.credential_.Set(value, GetArena());
+}
+inline ::std::string* PROTOBUF_NONNULL IceServer::_internal_mutable_credential() {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  return _impl_.credential_.Mutable( GetArena());
+}
+inline ::std::string* PROTOBUF_NULLABLE IceServer::release_credential() {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  // @@protoc_insertion_point(field_release:chirp.voice.IceServer.credential)
+  if (!CheckHasBit(_impl_._has_bits_[0], 0x00000004U)) {
+    return nullptr;
+  }
+  ClearHasBit(_impl_._has_bits_[0], 0x00000004U);
+  auto* released = _impl_.credential_.Release();
+  if (::google::protobuf::internal::DebugHardenForceCopyDefaultString()) {
+    _impl_.credential_.Set("", GetArena());
+  }
+  return released;
+}
+inline void IceServer::set_allocated_credential(::std::string* PROTOBUF_NULLABLE value) {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  if (value != nullptr) {
+    SetHasBit(_impl_._has_bits_[0], 0x00000004U);
+  } else {
+    ClearHasBit(_impl_._has_bits_[0], 0x00000004U);
+  }
+  _impl_.credential_.SetAllocated(value, GetArena());
+  if (::google::protobuf::internal::DebugHardenForceCopyDefaultString() && _impl_.credential_.IsDefault()) {
+    _impl_.credential_.Set("", GetArena());
+  }
+  // @@protoc_insertion_point(field_set_allocated:chirp.voice.IceServer.credential)
+}
+
+// -------------------------------------------------------------------
+
 // JoinRoomRequest
 
 // string user_id = 1;
@@ -6093,7 +6582,7 @@ inline void JoinRoomResponse::clear_code() {
   ::google::protobuf::internal::TSanWrite(&_impl_);
   _impl_.code_ = 0;
   ClearHasBit(_impl_._has_bits_[0],
-                  0x00000010U);
+                  0x00000020U);
 }
 inline ::chirp::common::ErrorCode JoinRoomResponse::code() const {
   // @@protoc_insertion_point(field_get:chirp.voice.JoinRoomResponse.code)
@@ -6101,7 +6590,7 @@ inline ::chirp::common::ErrorCode JoinRoomResponse::code() const {
 }
 inline void JoinRoomResponse::set_code(::chirp::common::ErrorCode value) {
   _internal_set_code(value);
-  SetHasBit(_impl_._has_bits_[0], 0x00000010U);
+  SetHasBit(_impl_._has_bits_[0], 0x00000020U);
   // @@protoc_insertion_point(field_set:chirp.voice.JoinRoomResponse.code)
 }
 inline ::chirp::common::ErrorCode JoinRoomResponse::_internal_code() const {
@@ -6118,7 +6607,7 @@ inline void JoinRoomResponse::clear_room_id() {
   ::google::protobuf::internal::TSanWrite(&_impl_);
   _impl_.room_id_.ClearToEmpty();
   ClearHasBit(_impl_._has_bits_[0],
-                  0x00000002U);
+                  0x00000004U);
 }
 inline const ::std::string& JoinRoomResponse::room_id() const
     ABSL_ATTRIBUTE_LIFETIME_BOUND {
@@ -6128,13 +6617,13 @@ inline const ::std::string& JoinRoomResponse::room_id() const
 template <typename Arg_, typename... Args_>
 PROTOBUF_ALWAYS_INLINE void JoinRoomResponse::set_room_id(Arg_&& arg, Args_... args) {
   ::google::protobuf::internal::TSanWrite(&_impl_);
-  SetHasBit(_impl_._has_bits_[0], 0x00000002U);
+  SetHasBit(_impl_._has_bits_[0], 0x00000004U);
   _impl_.room_id_.Set(static_cast<Arg_&&>(arg), args..., GetArena());
   // @@protoc_insertion_point(field_set:chirp.voice.JoinRoomResponse.room_id)
 }
 inline ::std::string* PROTOBUF_NONNULL JoinRoomResponse::mutable_room_id()
     ABSL_ATTRIBUTE_LIFETIME_BOUND {
-  SetHasBit(_impl_._has_bits_[0], 0x00000002U);
+  SetHasBit(_impl_._has_bits_[0], 0x00000004U);
   ::std::string* _s = _internal_mutable_room_id();
   // @@protoc_insertion_point(field_mutable:chirp.voice.JoinRoomResponse.room_id)
   return _s;
@@ -6154,10 +6643,10 @@ inline ::std::string* PROTOBUF_NONNULL JoinRoomResponse::_internal_mutable_room_
 inline ::std::string* PROTOBUF_NULLABLE JoinRoomResponse::release_room_id() {
   ::google::protobuf::internal::TSanWrite(&_impl_);
   // @@protoc_insertion_point(field_release:chirp.voice.JoinRoomResponse.room_id)
-  if (!CheckHasBit(_impl_._has_bits_[0], 0x00000002U)) {
+  if (!CheckHasBit(_impl_._has_bits_[0], 0x00000004U)) {
     return nullptr;
   }
-  ClearHasBit(_impl_._has_bits_[0], 0x00000002U);
+  ClearHasBit(_impl_._has_bits_[0], 0x00000004U);
   auto* released = _impl_.room_id_.Release();
   if (::google::protobuf::internal::DebugHardenForceCopyDefaultString()) {
     _impl_.room_id_.Set("", GetArena());
@@ -6167,9 +6656,9 @@ inline ::std::string* PROTOBUF_NULLABLE JoinRoomResponse::release_room_id() {
 inline void JoinRoomResponse::set_allocated_room_id(::std::string* PROTOBUF_NULLABLE value) {
   ::google::protobuf::internal::TSanWrite(&_impl_);
   if (value != nullptr) {
-    SetHasBit(_impl_._has_bits_[0], 0x00000002U);
+    SetHasBit(_impl_._has_bits_[0], 0x00000004U);
   } else {
-    ClearHasBit(_impl_._has_bits_[0], 0x00000002U);
+    ClearHasBit(_impl_._has_bits_[0], 0x00000004U);
   }
   _impl_.room_id_.SetAllocated(value, GetArena());
   if (::google::protobuf::internal::DebugHardenForceCopyDefaultString() && _impl_.room_id_.IsDefault()) {
@@ -6183,7 +6672,7 @@ inline void JoinRoomResponse::clear_sdp_answer() {
   ::google::protobuf::internal::TSanWrite(&_impl_);
   _impl_.sdp_answer_.ClearToEmpty();
   ClearHasBit(_impl_._has_bits_[0],
-                  0x00000004U);
+                  0x00000008U);
 }
 inline const ::std::string& JoinRoomResponse::sdp_answer() const
     ABSL_ATTRIBUTE_LIFETIME_BOUND {
@@ -6193,13 +6682,13 @@ inline const ::std::string& JoinRoomResponse::sdp_answer() const
 template <typename Arg_, typename... Args_>
 PROTOBUF_ALWAYS_INLINE void JoinRoomResponse::set_sdp_answer(Arg_&& arg, Args_... args) {
   ::google::protobuf::internal::TSanWrite(&_impl_);
-  SetHasBit(_impl_._has_bits_[0], 0x00000004U);
+  SetHasBit(_impl_._has_bits_[0], 0x00000008U);
   _impl_.sdp_answer_.Set(static_cast<Arg_&&>(arg), args..., GetArena());
   // @@protoc_insertion_point(field_set:chirp.voice.JoinRoomResponse.sdp_answer)
 }
 inline ::std::string* PROTOBUF_NONNULL JoinRoomResponse::mutable_sdp_answer()
     ABSL_ATTRIBUTE_LIFETIME_BOUND {
-  SetHasBit(_impl_._has_bits_[0], 0x00000004U);
+  SetHasBit(_impl_._has_bits_[0], 0x00000008U);
   ::std::string* _s = _internal_mutable_sdp_answer();
   // @@protoc_insertion_point(field_mutable:chirp.voice.JoinRoomResponse.sdp_answer)
   return _s;
@@ -6219,10 +6708,10 @@ inline ::std::string* PROTOBUF_NONNULL JoinRoomResponse::_internal_mutable_sdp_a
 inline ::std::string* PROTOBUF_NULLABLE JoinRoomResponse::release_sdp_answer() {
   ::google::protobuf::internal::TSanWrite(&_impl_);
   // @@protoc_insertion_point(field_release:chirp.voice.JoinRoomResponse.sdp_answer)
-  if (!CheckHasBit(_impl_._has_bits_[0], 0x00000004U)) {
+  if (!CheckHasBit(_impl_._has_bits_[0], 0x00000008U)) {
     return nullptr;
   }
-  ClearHasBit(_impl_._has_bits_[0], 0x00000004U);
+  ClearHasBit(_impl_._has_bits_[0], 0x00000008U);
   auto* released = _impl_.sdp_answer_.Release();
   if (::google::protobuf::internal::DebugHardenForceCopyDefaultString()) {
     _impl_.sdp_answer_.Set("", GetArena());
@@ -6232,9 +6721,9 @@ inline ::std::string* PROTOBUF_NULLABLE JoinRoomResponse::release_sdp_answer() {
 inline void JoinRoomResponse::set_allocated_sdp_answer(::std::string* PROTOBUF_NULLABLE value) {
   ::google::protobuf::internal::TSanWrite(&_impl_);
   if (value != nullptr) {
-    SetHasBit(_impl_._has_bits_[0], 0x00000004U);
+    SetHasBit(_impl_._has_bits_[0], 0x00000008U);
   } else {
-    ClearHasBit(_impl_._has_bits_[0], 0x00000004U);
+    ClearHasBit(_impl_._has_bits_[0], 0x00000008U);
   }
   _impl_.sdp_answer_.SetAllocated(value, GetArena());
   if (::google::protobuf::internal::DebugHardenForceCopyDefaultString() && _impl_.sdp_answer_.IsDefault()) {
@@ -6320,7 +6809,7 @@ inline void JoinRoomResponse::clear_server_time() {
   ::google::protobuf::internal::TSanWrite(&_impl_);
   _impl_.server_time_ = ::int64_t{0};
   ClearHasBit(_impl_._has_bits_[0],
-                  0x00000008U);
+                  0x00000010U);
 }
 inline ::int64_t JoinRoomResponse::server_time() const {
   // @@protoc_insertion_point(field_get:chirp.voice.JoinRoomResponse.server_time)
@@ -6328,7 +6817,7 @@ inline ::int64_t JoinRoomResponse::server_time() const {
 }
 inline void JoinRoomResponse::set_server_time(::int64_t value) {
   _internal_set_server_time(value);
-  SetHasBit(_impl_._has_bits_[0], 0x00000008U);
+  SetHasBit(_impl_._has_bits_[0], 0x00000010U);
   // @@protoc_insertion_point(field_set:chirp.voice.JoinRoomResponse.server_time)
 }
 inline ::int64_t JoinRoomResponse::_internal_server_time() const {
@@ -6338,6 +6827,62 @@ inline ::int64_t JoinRoomResponse::_internal_server_time() const {
 inline void JoinRoomResponse::_internal_set_server_time(::int64_t value) {
   ::google::protobuf::internal::TSanWrite(&_impl_);
   _impl_.server_time_ = value;
+}
+
+// repeated .chirp.voice.IceServer ice_servers = 6;
+inline int JoinRoomResponse::_internal_ice_servers_size() const {
+  return _internal_ice_servers().size();
+}
+inline int JoinRoomResponse::ice_servers_size() const {
+  return _internal_ice_servers_size();
+}
+inline void JoinRoomResponse::clear_ice_servers() {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_.ice_servers_.Clear();
+  ClearHasBitForRepeated(_impl_._has_bits_[0],
+                  0x00000002U);
+}
+inline ::chirp::voice::IceServer* PROTOBUF_NONNULL JoinRoomResponse::mutable_ice_servers(int index)
+    ABSL_ATTRIBUTE_LIFETIME_BOUND {
+  // @@protoc_insertion_point(field_mutable:chirp.voice.JoinRoomResponse.ice_servers)
+  return _internal_mutable_ice_servers()->Mutable(index);
+}
+inline ::google::protobuf::RepeatedPtrField<::chirp::voice::IceServer>* PROTOBUF_NONNULL JoinRoomResponse::mutable_ice_servers()
+    ABSL_ATTRIBUTE_LIFETIME_BOUND {
+  SetHasBitForRepeated(_impl_._has_bits_[0], 0x00000002U);
+  // @@protoc_insertion_point(field_mutable_list:chirp.voice.JoinRoomResponse.ice_servers)
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  return _internal_mutable_ice_servers();
+}
+inline const ::chirp::voice::IceServer& JoinRoomResponse::ice_servers(int index) const
+    ABSL_ATTRIBUTE_LIFETIME_BOUND {
+  // @@protoc_insertion_point(field_get:chirp.voice.JoinRoomResponse.ice_servers)
+  return _internal_ice_servers().Get(index);
+}
+inline ::chirp::voice::IceServer* PROTOBUF_NONNULL JoinRoomResponse::add_ice_servers()
+    ABSL_ATTRIBUTE_LIFETIME_BOUND {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  ::chirp::voice::IceServer* _add =
+      _internal_mutable_ice_servers()->InternalAddWithArena(
+          ::google::protobuf::MessageLite::internal_visibility(), GetArena());
+  SetHasBitForRepeated(_impl_._has_bits_[0], 0x00000002U);
+  // @@protoc_insertion_point(field_add:chirp.voice.JoinRoomResponse.ice_servers)
+  return _add;
+}
+inline const ::google::protobuf::RepeatedPtrField<::chirp::voice::IceServer>& JoinRoomResponse::ice_servers() const
+    ABSL_ATTRIBUTE_LIFETIME_BOUND {
+  // @@protoc_insertion_point(field_list:chirp.voice.JoinRoomResponse.ice_servers)
+  return _internal_ice_servers();
+}
+inline const ::google::protobuf::RepeatedPtrField<::chirp::voice::IceServer>&
+JoinRoomResponse::_internal_ice_servers() const {
+  ::google::protobuf::internal::TSanRead(&_impl_);
+  return _impl_.ice_servers_;
+}
+inline ::google::protobuf::RepeatedPtrField<::chirp::voice::IceServer>* PROTOBUF_NONNULL
+JoinRoomResponse::_internal_mutable_ice_servers() {
+  ::google::protobuf::internal::TSanRead(&_impl_);
+  return &_impl_.ice_servers_;
 }
 
 // -------------------------------------------------------------------
@@ -7720,6 +8265,56 @@ inline bool ParticipantInfo::_internal_is_speaking() const {
 inline void ParticipantInfo::_internal_set_is_speaking(bool value) {
   ::google::protobuf::internal::TSanWrite(&_impl_);
   _impl_.is_speaking_ = value;
+}
+
+// bool muted = 6;
+inline void ParticipantInfo::clear_muted() {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_.muted_ = false;
+  ClearHasBit(_impl_._has_bits_[0],
+                  0x00000020U);
+}
+inline bool ParticipantInfo::muted() const {
+  // @@protoc_insertion_point(field_get:chirp.voice.ParticipantInfo.muted)
+  return _internal_muted();
+}
+inline void ParticipantInfo::set_muted(bool value) {
+  _internal_set_muted(value);
+  SetHasBit(_impl_._has_bits_[0], 0x00000020U);
+  // @@protoc_insertion_point(field_set:chirp.voice.ParticipantInfo.muted)
+}
+inline bool ParticipantInfo::_internal_muted() const {
+  ::google::protobuf::internal::TSanRead(&_impl_);
+  return _impl_.muted_;
+}
+inline void ParticipantInfo::_internal_set_muted(bool value) {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_.muted_ = value;
+}
+
+// bool deafened = 7;
+inline void ParticipantInfo::clear_deafened() {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_.deafened_ = false;
+  ClearHasBit(_impl_._has_bits_[0],
+                  0x00000040U);
+}
+inline bool ParticipantInfo::deafened() const {
+  // @@protoc_insertion_point(field_get:chirp.voice.ParticipantInfo.deafened)
+  return _internal_deafened();
+}
+inline void ParticipantInfo::set_deafened(bool value) {
+  _internal_set_deafened(value);
+  SetHasBit(_impl_._has_bits_[0], 0x00000040U);
+  // @@protoc_insertion_point(field_set:chirp.voice.ParticipantInfo.deafened)
+}
+inline bool ParticipantInfo::_internal_deafened() const {
+  ::google::protobuf::internal::TSanRead(&_impl_);
+  return _impl_.deafened_;
+}
+inline void ParticipantInfo::_internal_set_deafened(bool value) {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_.deafened_ = value;
 }
 
 // -------------------------------------------------------------------
