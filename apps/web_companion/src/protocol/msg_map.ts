@@ -105,3 +105,29 @@ export const GET_GROUP_MEMBERS = defineSpec(
   Chat.GetGroupMembersRequest,
   Chat.GetGroupMembersResponse,
 );
+
+// Reactions, edit/delete (typing has no REQ: it is fire-and-forget 2208).
+export const ADD_REACTION = defineSpec(
+  MsgID.ADD_REACTION_REQ,
+  MsgID.ADD_REACTION_RESP,
+  Chat.AddReactionRequest,
+  Chat.AddReactionResponse,
+);
+export const REMOVE_REACTION = defineSpec(
+  MsgID.REMOVE_REACTION_REQ,
+  MsgID.REMOVE_REACTION_RESP,
+  Chat.RemoveReactionRequest,
+  Chat.RemoveReactionResponse,
+);
+export const EDIT_MESSAGE = defineSpec(
+  MsgID.EDIT_MESSAGE_REQ,
+  MsgID.EDIT_MESSAGE_RESP,
+  Chat.EditMessageRequest,
+  Chat.EditMessageResponse,
+);
+export const DELETE_MESSAGE = defineSpec(
+  MsgID.DELETE_MESSAGE_REQ,
+  MsgID.DELETE_MESSAGE_RESP,
+  Chat.DeleteMessageRequest,
+  Chat.DeleteMessageResponse,
+);

@@ -1,9 +1,10 @@
-import { describe, expect, it } from 'vitest';
+import { describe, expect, it, vi } from 'vitest';
 import { fireEvent, screen, waitFor } from '@testing-library/react';
 import { MsgID } from '@chirp/proto/gateway';
-import { ChannelType, ChatMessage, MsgType } from '@chirp/proto/chat';
+import { ChannelType, ChatMessage, MsgType, TypingIndicator } from '@chirp/proto/chat';
 import { renderLoggedIn } from '../test-utils';
 import ChatWindow from './ChatWindow';
+import { zh } from '../i18n/zh';
 import { upsertConversation } from '../state/conversation_store';
 
 const KEY = 'p:user_a|user_b';
@@ -43,6 +44,36 @@ const historyResponder = async (msgId: MsgID): Promise<unknown> => {
   return { code: 0 };
 };
 
+// History legitimately contains own messages (they are paged back from the
+// server); live notifies never carry them (no self-echo).
+const historyWithOwnResponder = async (msgId: MsgID): Promise<unknown> => {
+  if (msgId === MsgID.GET_HISTORY_REQ) {
+    return {
+      code: 0,
+      hasMore: false,
+      messages: [
+        {
+          messageId: 'm1',
+          senderId: 'user_b',
+          channelType: ChannelType.PRIVATE,
+          channelId: 'user_a|user_b',
+          content: enc('hello from b'),
+          timestamp: 100,
+        },
+        {
+          messageId: 'm2',
+          senderId: 'user_a',
+          channelType: ChannelType.PRIVATE,
+          channelId: 'user_a|user_b',
+          content: enc('mine'),
+          timestamp: 300,
+        },
+      ],
+    };
+  }
+  return { code: 0 };
+};
+
 const seededConversation = {
   kind: 'private' as const,
   key: KEY,
@@ -51,6 +82,93 @@ const seededConversation = {
   title: 'user_b',
   unreadLocal: 5,
 };
+
+describe('ChatWindow C8', () => {
+  const typingBody = (isTyping: boolean): Uint8Array =>
+    TypingIndicator.encode(
+      TypingIndicator.fromPartial({
+        channelType: ChannelType.PRIVATE,
+        channelId: 'user_a|user_b',
+        userId: 'user_b',
+        username: 'user_b',
+        isTyping,
+      }),
+    ).finish();
+
+  it('shows and clears the typing row from indicators', async () => {
+    const { conn } = await renderLoggedIn(<ChatWindow channelKey={KEY} />, {
+      responder: historyResponder,
+    });
+    await waitFor(() => expect(screen.getByTestId('message-input')).toBeTruthy());
+
+    conn.emit(MsgID.TYPING_INDICATOR_NOTIFY, typingBody(true));
+    await waitFor(() => expect(screen.getByTestId('typing-row').textContent).toContain('user_b'));
+    conn.emit(MsgID.TYPING_INDICATOR_NOTIFY, typingBody(false));
+    await waitFor(() => expect(screen.queryByTestId('typing-row')).toBeNull());
+  });
+
+  it('edits an own message through the dialog', async () => {
+    const { conn } = await renderLoggedIn(<ChatWindow channelKey={KEY} />, {
+      responder: async (msgId) =>
+        msgId === MsgID.EDIT_MESSAGE_REQ ? { code: 0 } : await historyWithOwnResponder(msgId),
+    });
+    await waitFor(() => expect(screen.getByTestId('edit-m2')).toBeTruthy());
+
+    fireEvent.click(screen.getByTestId('edit-m2'));
+    const dialogInput = await waitFor(() => {
+      const box = screen.getByRole('dialog').querySelector('textarea');
+      expect(box).toBeTruthy();
+      return box as HTMLTextAreaElement;
+    });
+    expect(dialogInput.value).toBe('mine');
+    fireEvent.change(dialogInput, { target: { value: 'mine, fixed' } });
+    fireEvent.click(screen.getByText(zh.chat.save).closest('button')!);
+
+    await waitFor(() => {
+      const edit = conn.requests.find((r) => r.msgId === MsgID.EDIT_MESSAGE_REQ);
+      expect(edit).toBeTruthy();
+      expect(new TextDecoder().decode((edit!.req as { newContent: Uint8Array }).newContent)).toBe(
+        'mine, fixed',
+      );
+    });
+    await waitFor(() => expect(screen.getByText('mine, fixed')).toBeTruthy());
+  });
+
+  it('deletes an own message after confirmation', async () => {
+    const confirmSpy = vi.spyOn(window, 'confirm').mockReturnValue(true);
+    const { conn } = await renderLoggedIn(<ChatWindow channelKey={KEY} />, {
+      responder: historyWithOwnResponder,
+    });
+    await waitFor(() => expect(screen.getByTestId('delete-m2')).toBeTruthy());
+
+    fireEvent.click(screen.getByTestId('delete-m2'));
+    expect(confirmSpy).toHaveBeenCalled();
+    await waitFor(() => {
+      const del = conn.requests.find((r) => r.msgId === MsgID.DELETE_MESSAGE_REQ);
+      expect((del!.req as { messageId: string }).messageId).toBe('m2');
+    });
+    await waitFor(() => expect(screen.getByText(zh.chat.deleted)).toBeTruthy());
+    confirmSpy.mockRestore();
+  });
+
+  it('fires throttled typing starts while composing', async () => {
+    const { conn } = await renderLoggedIn(<ChatWindow channelKey={KEY} />, {
+      responder: historyResponder,
+    });
+    const input = await waitFor(() => {
+      const box = screen.getByTestId('message-input').querySelector('textarea');
+      expect(box).toBeTruthy();
+      return box as HTMLTextAreaElement;
+    });
+    fireEvent.change(input, { target: { value: 't' } });
+    fireEvent.change(input, { target: { value: 'ty' } });
+    // One start for the burst (3s throttle), encoded as a 2208 frame.
+    const starts = conn.requests.filter(
+      (r) => r.msgId === MsgID.TYPING_INDICATOR_NOTIFY && TypingIndicator.decode(r.req as Uint8Array).isTyping,
+    );
+    expect(starts).toHaveLength(1);
+  });
+});
 
 describe('ChatWindow', () => {
   it('pages history, marks it read and clears the local badge on open', async () => {

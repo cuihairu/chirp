@@ -24,6 +24,14 @@ export interface Conversation {
   unreadLocal: number;
 }
 
+export interface MessageReactionView {
+  /** Unicode emoji. */
+  emoji: string;
+  count: number;
+  /** Whether the logged-in user is among the reactors. */
+  mine: boolean;
+}
+
 export interface ChatMessageView {
   /** Server message id; optimistic sends carry a local id until confirmed. */
   messageId: string;
@@ -44,6 +52,8 @@ export interface ChatMessageView {
   queuedOffline?: boolean;
   edited?: boolean;
   deleted?: boolean;
+  /** Emoji → aggregate, updated by reaction RESP/notify. */
+  reactions?: Record<string, MessageReactionView>;
 }
 
 export const PRIVATE_PREFIX = 'p:';

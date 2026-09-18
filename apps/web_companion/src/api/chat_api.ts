@@ -3,20 +3,31 @@ import {
   ChatMessage,
   GroupInfo,
   MessageAck,
+  MessageDeletedNotify,
+  MessageEditedNotify,
+  MessageReadNotify,
+  MessageReaction,
   MsgType,
+  ReactionAddedNotify,
+  ReactionRemovedNotify,
+  TypingIndicator,
 } from '@chirp/proto/chat';
 import { ErrorCode } from '@chirp/proto/common';
 import { MsgID } from '@chirp/proto/gateway';
 import type { ConnStatus } from '../protocol/chirp_client';
 import { RequestError } from '../protocol/errors';
 import {
+  ADD_REACTION,
   CREATE_GROUP,
+  DELETE_MESSAGE,
+  EDIT_MESSAGE,
   GET_GROUP_MEMBERS,
   GET_HISTORY,
   GET_USER_GROUPS,
   LOGIN,
   LOGOUT,
   MARK_READ,
+  REMOVE_REACTION,
   SEND_MESSAGE,
   type MessageSpec,
 } from '../protocol/msg_map';
@@ -27,19 +38,26 @@ import {
   privateKey,
   type ChatMessageView,
   type Conversation,
+  type MessageReactionView,
 } from '../state/models';
 import {
   addPendingMessage,
   appendMessage,
+  applyDeleteById,
+  applyEditById,
+  applyReaction,
   failPendingMessage,
   prependHistory,
+  setReadCursor,
   setLoadingHistory,
   setHasMore,
+  setReaction,
   type MessageState,
 } from '../state/message_store';
 import type { Store } from '../state/store';
 import { patch } from '../state/store';
 import { bumpUnread, touchConversation, upsertConversation, type ConversationState } from '../state/conversation_store';
+import { clearTyping, setTyping, type TypingState } from '../state/typing_store';
 import type { AuthState } from '../state/auth_store';
 
 /**
@@ -68,6 +86,7 @@ export interface ChatApiDeps {
   auth: Store<AuthState>;
   conversations: Store<ConversationState>;
   messages: Store<MessageState>;
+  typing: Store<TypingState>;
 }
 
 export interface ChannelRef {
@@ -88,6 +107,7 @@ export class ChatApi {
   private readonly auth: Store<AuthState>;
   private readonly conversations: Store<ConversationState>;
   private readonly messages: Store<MessageState>;
+  private readonly typing: Store<TypingState>;
   /** The channel currently open on screen; it never accumulates local unread. */
   private activeChannelKey: string | null = null;
   private unsubs: Array<() => void> = [];
@@ -97,6 +117,7 @@ export class ChatApi {
     this.auth = deps.auth;
     this.conversations = deps.conversations;
     this.messages = deps.messages;
+    this.typing = deps.typing;
   }
 
   /** Subscribe to server pushes. Idempotent; call again after stop(). */
@@ -106,6 +127,12 @@ export class ChatApi {
       this.conn.onNotify(MsgID.CHAT_MESSAGE_NOTIFY, (body) => this.onChatMessage(body)),
       this.conn.onNotify(MsgID.GROUP_MEMBER_JOINED_NOTIFY, () => this.refreshGroups()),
       this.conn.onNotify(MsgID.GROUP_MEMBER_LEFT_NOTIFY, () => this.refreshGroups()),
+      this.conn.onNotify(MsgID.MESSAGE_READ_NOTIFY, (body) => this.onReadNotify(body)),
+      this.conn.onNotify(MsgID.TYPING_INDICATOR_NOTIFY, (body) => this.onTypingNotify(body)),
+      this.conn.onNotify(MsgID.REACTION_ADDED_NOTIFY, (body) => this.onReactionNotify(body, true)),
+      this.conn.onNotify(MsgID.REACTION_REMOVED_NOTIFY, (body) => this.onReactionNotify(body, false)),
+      this.conn.onNotify(MsgID.MESSAGE_EDITED_NOTIFY, (body) => this.onEditedNotify(body)),
+      this.conn.onNotify(MsgID.MESSAGE_DELETED_NOTIFY, (body) => this.onDeletedNotify(body)),
     ];
   }
 
@@ -245,6 +272,71 @@ export class ChatApi {
     }
   }
 
+  /** Typing is fire-and-forget (2208, no RESP); the UI does the throttling. */
+  sendTyping(channel: ChannelRef, isTyping: boolean): void {
+    const userId = this.auth.get().userId;
+    if (!userId) return;
+    this.conn.send(
+      MsgID.TYPING_INDICATOR_NOTIFY,
+      TypingIndicator.encode(
+        TypingIndicator.fromPartial({
+          channelId: channel.channelId,
+          channelType: channelTypeOf(channel.kind),
+          userId,
+          username: userId,
+          isTyping,
+          timestamp: Date.now(),
+        }),
+      ).finish(),
+    );
+  }
+
+  /** Toggle own emoji on a message; the RESP aggregate is the truth. */
+  async addReaction(messageId: string, emoji: string): Promise<void> {
+    const userId = this.auth.get().userId;
+    if (!userId) return;
+    const resp = await this.conn.request(ADD_REACTION, { messageId, userId, emoji });
+    if (resp.code !== 0 || !resp.reaction) return;
+    setReaction(this.messages, messageId, toReactionView(resp.reaction, userId));
+  }
+
+  async removeReaction(messageId: string, emoji: string): Promise<void> {
+    const userId = this.auth.get().userId;
+    if (!userId) return;
+    const resp = await this.conn.request(REMOVE_REACTION, { messageId, userId, emoji });
+    if (resp.code !== 0) return;
+    // REMOVE_REACTION_RESP carries no aggregate; the notify is excluded for
+    // the actor, so decrement locally.
+    applyReaction(this.messages, messageId, emoji, true, false);
+  }
+
+  /** Edits apply locally from the RESP: the notify excludes the editor. */
+  async editMessage(messageId: string, text: string): Promise<void> {
+    const userId = this.auth.get().userId;
+    if (!userId) return;
+    const resp = await this.conn.request(EDIT_MESSAGE, {
+      messageId,
+      userId,
+      newContent: new TextEncoder().encode(text),
+      editTimestamp: Date.now(),
+    });
+    if (resp.code !== 0) return;
+    applyEditById(this.messages, messageId, text);
+  }
+
+  /** Soft delete (is_hard_delete is admin-only server-side). */
+  async deleteMessage(messageId: string): Promise<void> {
+    const userId = this.auth.get().userId;
+    if (!userId) return;
+    const resp = await this.conn.request(DELETE_MESSAGE, {
+      messageId,
+      userId,
+      isHardDelete: false,
+    });
+    if (resp.code !== 0) return;
+    applyDeleteById(this.messages, messageId);
+  }
+
   /** Group roster for the conversation list (title side-info and badges). */
   async refreshGroups(): Promise<Conversation[]> {
     const userId = this.auth.get().userId;
@@ -345,6 +437,71 @@ export class ChatApi {
       });
     }
   }
+
+  private onReadNotify(body: Uint8Array): void {
+    let notify: MessageReadNotify;
+    try {
+      notify = MessageReadNotify.decode(body);
+    } catch {
+      return;
+    }
+    const selfId = this.auth.get().userId ?? '';
+    if (notify.readerUserId === selfId) return; // own echoes are meaningless
+    const key =
+      notify.channelType === ChannelType.PRIVATE
+        ? privateKey(notify.readerUserId, selfId)
+        : groupKey(notify.channelId);
+    setReadCursor(this.messages, key, notify.readerUserId, notify.messageId);
+  }
+
+  private onTypingNotify(body: Uint8Array): void {
+    let indicator: TypingIndicator;
+    try {
+      indicator = TypingIndicator.decode(body);
+    } catch {
+      return;
+    }
+    const selfId = this.auth.get().userId ?? '';
+    if (indicator.userId === selfId) return;
+    const key =
+      indicator.channelType === ChannelType.PRIVATE
+        ? privateKey(indicator.userId, selfId)
+        : groupKey(indicator.channelId);
+    if (indicator.isTyping) setTyping(this.typing, key, indicator.userId, Date.now());
+    else clearTyping(this.typing, key, indicator.userId);
+  }
+
+  private onReactionNotify(body: Uint8Array, added: boolean): void {
+    let notify: ReactionAddedNotify | ReactionRemovedNotify;
+    try {
+      notify = added
+        ? ReactionAddedNotify.decode(body)
+        : ReactionRemovedNotify.decode(body);
+    } catch {
+      return;
+    }
+    applyReaction(this.messages, notify.messageId, notify.emoji, notify.userId === this.auth.get().userId, added);
+  }
+
+  private onEditedNotify(body: Uint8Array): void {
+    let notify: MessageEditedNotify;
+    try {
+      notify = MessageEditedNotify.decode(body);
+    } catch {
+      return;
+    }
+    applyEditById(this.messages, notify.messageId, decodeText(notify.newContent));
+  }
+
+  private onDeletedNotify(body: Uint8Array): void {
+    let notify: MessageDeletedNotify;
+    try {
+      notify = MessageDeletedNotify.decode(body);
+    } catch {
+      return;
+    }
+    applyDeleteById(this.messages, notify.messageId);
+  }
 }
 
 const decodeText = (bytes: Uint8Array): string => new TextDecoder().decode(bytes);
@@ -358,6 +515,12 @@ const toView = (msg: ChatMessage, channel: ChannelRef): ChatMessageView => ({
   content: decodeText(msg.content),
   timestamp: msg.timestamp,
   pending: false,
+});
+
+const toReactionView = (reaction: MessageReaction, selfId: string): MessageReactionView => ({
+  emoji: reaction.emoji,
+  count: reaction.count,
+  mine: reaction.reactedByMe || reaction.userIds.includes(selfId),
 });
 
 /** Build a ChatConnection from a real client (marker for the wiring site). */

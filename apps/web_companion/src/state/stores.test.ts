@@ -10,8 +10,8 @@ import { ensureDeviceId } from './auth_store';
 import {
   addPendingMessage,
   appendMessage,
-  applyDelete,
-  applyEdit,
+  applyDeleteById,
+  applyEditById,
   createMessageStore,
   failPendingMessage,
   prependHistory,
@@ -156,13 +156,13 @@ describe('message_store', () => {
     expect(store.get().hasMore['p:a|b']).toBe(true);
   });
 
-  it('applies edits and deletes in place', () => {
+  it('applies edits and deletes in place by message id', () => {
     const store = createMessageStore();
     appendMessage(store, message({ messageId: 'm1', content: 'before' }));
-    applyEdit(store, 'p:a|b', 'm1', 'after');
+    applyEditById(store, 'm1', 'after');
     expect(store.get().byChannel['p:a|b'][0].content).toBe('after');
     expect(store.get().byChannel['p:a|b'][0].edited).toBe(true);
-    applyDelete(store, 'p:a|b', 'm1');
+    applyDeleteById(store, 'm1');
     expect(store.get().byChannel['p:a|b'][0].deleted).toBe(true);
     expect(store.get().byChannel['p:a|b'][0].content).toBe('');
   });

@@ -36,5 +36,13 @@ export const zh = {
     edited: '(已编辑)',
     deleted: '消息已撤回',
     startChatSelf: '不能和自己私聊',
+    read: '已读',
+    typing: (user: string) => `${user} 正在输入…`,
+    addReaction: '添加表情',
+    edit: '编辑',
+    delete: '删除',
+    editTitle: '编辑消息',
+    save: '保存',
+    deleteConfirm: '撤回这条消息?',
   },
 } as const;

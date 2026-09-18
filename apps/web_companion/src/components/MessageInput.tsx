@@ -7,9 +7,12 @@ import { zh } from '../i18n/zh';
 /** Message composer: Enter sends, Shift+Enter breaks a line. */
 export default function MessageInput({
   onSend,
+  onTyping,
   disabled = false,
 }: {
   onSend: (text: string) => void;
+  /** Fired on every keystroke; the parent owns the typing throttle. */
+  onTyping?: () => void;
   disabled?: boolean;
 }) {
   const [text, setText] = useState('');
@@ -31,7 +34,10 @@ export default function MessageInput({
   return (
     <TextField
       value={text}
-      onChange={(e) => setText(e.target.value)}
+      onChange={(e) => {
+        setText(e.target.value);
+        onTyping?.();
+      }}
       onKeyDown={onKeyDown}
       placeholder={zh.chat.sendHint}
       fullWidth

@@ -4,12 +4,13 @@ import { asConnection, ChatApi, type ChatConnection } from './chat_api';
 import { createAuthStore, type AuthState } from '../state/auth_store';
 import { createConversationStore, type ConversationState } from '../state/conversation_store';
 import { createMessageStore, type MessageState } from '../state/message_store';
+import { createTypingStore, type TypingState } from '../state/typing_store';
 import type { Store } from '../state/store';
 
 /**
- * One object graph per browser tab: a websocket client, the three stores and
- * the ChatApi that wires them together. Created once in App; tests inject a
- * fake connection via `createServices({ conn })`.
+ * One object graph per browser tab: a websocket client, the stores and the
+ * ChatApi that wires them together. Created once in App; tests inject a fake
+ * connection via `createServices({ conn })`.
  */
 export interface Services {
   client: ChatConnection;
@@ -17,6 +18,7 @@ export interface Services {
   auth: Store<AuthState>;
   conversations: Store<ConversationState>;
   messages: Store<MessageState>;
+  typing: Store<TypingState>;
 }
 
 /**
@@ -36,8 +38,9 @@ export function createServices(options: { url?: string; conn?: ChatConnection } 
   const auth = createAuthStore();
   const conversations = createConversationStore();
   const messages = createMessageStore();
-  const api = new ChatApi({ conn: asConnection(client), auth, conversations, messages });
-  return { client, api, auth, conversations, messages };
+  const typing = createTypingStore();
+  const api = new ChatApi({ conn: asConnection(client), auth, conversations, messages, typing });
+  return { client, api, auth, conversations, messages, typing };
 }
 
 const ServicesContext = createContext<Services | null>(null);

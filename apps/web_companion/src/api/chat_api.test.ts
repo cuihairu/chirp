@@ -1,13 +1,28 @@
 import { describe, expect, it, vi } from 'vitest';
-import { ChannelType, ChatMessage, MessageAck, MsgType } from '@chirp/proto/chat';
+import {
+  ChannelType,
+  ChatMessage,
+  MessageAck,
+  MessageDeletedNotify,
+  MessageEditedNotify,
+  MessageReadNotify,
+  MessageReaction,
+  MsgType,
+  ReactionAddedNotify,
+  ReactionRemovedNotify,
+  TypingIndicator,
+} from '@chirp/proto/chat';
 import { MsgID } from '@chirp/proto/gateway';
 import { ChatApi, channelRefOf, type ChannelRef } from './chat_api';
 import { createStore } from '../state/store';
 import { createConversationStore } from '../state/conversation_store';
-import { createMessageStore } from '../state/message_store';
+import { createMessageStore, readCursorOf } from '../state/message_store';
+import { typingUsersOf } from '../state/typing_store';
+import type { ChatMessageView } from '../state/models';
 import type { AuthState } from '../state/auth_store';
 import type { ConversationState } from '../state/conversation_store';
 import type { MessageState } from '../state/message_store';
+import { createTypingStore } from '../state/typing_store';
 import { FakeChatConnection } from '../state/test_helpers';
 
 const SELF = 'user_a';
@@ -40,6 +55,7 @@ interface Harness {
   auth: ReturnType<typeof createStore<AuthState>>;
   conversations: ReturnType<typeof createConversationStore>;
   messages: ReturnType<typeof createMessageStore>;
+  typing: ReturnType<typeof createTypingStore>;
 }
 
 const makeHarness = (): Harness => {
@@ -52,8 +68,9 @@ const makeHarness = (): Harness => {
   });
   const conversations = createConversationStore();
   const messages = createMessageStore();
-  const api = new ChatApi({ conn, auth, conversations, messages });
-  return { conn, api, auth, conversations, messages };
+  const typing = createTypingStore();
+  const api = new ChatApi({ conn, auth, conversations, messages, typing });
+  return { conn, api, auth, conversations, messages, typing };
 };
 
 /** Login through the api so notify handlers are wired, like the UI would. */
@@ -352,6 +369,255 @@ describe('ChatApi.logout', () => {
     // Live messages after logout are ignored (handlers removed).
     h.conn.emit(MsgID.CHAT_MESSAGE_NOTIFY, chatBody({ messageId: 'late' }));
     expect(h.messages.get().byChannel['p:user_a|user_b']).toBeUndefined();
+  });
+});
+
+/** Seed one decoded message straight into the store (skip the wire format). */
+const seedMessage = (h: Harness, over: Partial<ChatMessageView> = {}): void => {
+  h.messages.set((prev) => ({
+    ...prev,
+    byChannel: {
+      ...prev.byChannel,
+      'p:user_a|user_b': [
+        {
+          messageId: 'm1',
+          senderId: PEER,
+          channelKey: 'p:user_a|user_b',
+          channelType: ChannelType.PRIVATE,
+          channelId: 'user_a|user_b',
+          content: 'hello',
+          timestamp: 100,
+          pending: false,
+          ...over,
+        },
+      ],
+    },
+  }));
+};
+
+describe('ChatApi.typing', () => {
+  it('sends the indicator fire-and-forget without a request frame', async () => {
+    const h = makeHarness();
+    await login(h);
+    h.api.sendTyping(privateChannel(), true);
+    const sent = h.conn.requests.find((r) => r.msgId === MsgID.TYPING_INDICATOR_NOTIFY);
+    expect(sent).toBeTruthy();
+    expect(TypingIndicator.decode(sent!.req as Uint8Array)).toMatchObject({
+      channelId: 'user_a|user_b',
+      channelType: ChannelType.PRIVATE,
+      userId: SELF,
+      username: SELF,
+      isTyping: true,
+    });
+  });
+
+  it('stays silent when logged out', async () => {
+    const h = makeHarness();
+    h.api.sendTyping(privateChannel(), true);
+    expect(h.conn.requests).toHaveLength(0);
+  });
+});
+
+describe('ChatApi.reactions', () => {
+  it('applies the ADD_REACTION_RESP aggregate as the truth', async () => {
+    const h = makeHarness();
+    await login(h);
+    seedMessage(h);
+    h.conn.setResponder(async (msgId) => {
+      expect(msgId).toBe(MsgID.ADD_REACTION_REQ);
+      const aggregate: MessageReaction = {
+        messageId: 'm1',
+        emoji: '👍',
+        count: 2,
+        userIds: [PEER, SELF],
+        reactedByMe: true,
+      };
+      return { code: 0, reaction: aggregate };
+    });
+    await h.api.addReaction('m1', '👍');
+    expect(h.messages.get().byChannel['p:user_a|user_b'][0].reactions?.['👍']).toEqual({
+      emoji: '👍',
+      count: 2,
+      mine: true,
+    });
+  });
+
+  it('decrements locally on remove (RESP carries no aggregate, notify excludes the actor)', async () => {
+    const h = makeHarness();
+    await login(h);
+    seedMessage(h, { reactions: { '👍': { emoji: '👍', count: 1, mine: true } } });
+    h.conn.setResponder(async () => ({ code: 0 }));
+    await h.api.removeReaction('m1', '👍');
+    expect(h.messages.get().byChannel['p:user_a|user_b'][0].reactions?.['👍']).toBeUndefined();
+  });
+
+  it('leaves state untouched on an error code', async () => {
+    const h = makeHarness();
+    await login(h);
+    seedMessage(h);
+    h.conn.setResponder(async () => ({ code: 5 }));
+    await h.api.addReaction('m1', '👍');
+    await h.api.removeReaction('m1', '👍');
+    expect(h.messages.get().byChannel['p:user_a|user_b'][0].reactions).toBeUndefined();
+  });
+});
+
+describe('ChatApi.edit and delete', () => {
+  it('applies the edit locally from the RESP (the notify excludes the editor)', async () => {
+    const h = makeHarness();
+    await login(h);
+    seedMessage(h);
+    h.conn.setResponder(async (msgId, req) => {
+      expect(msgId).toBe(MsgID.EDIT_MESSAGE_REQ);
+      expect(new TextDecoder().decode((req as { newContent: Uint8Array }).newContent)).toBe(
+        'fixed',
+      );
+      return { code: 0 };
+    });
+    await h.api.editMessage('m1', 'fixed');
+    const edited = h.messages.get().byChannel['p:user_a|user_b'][0];
+    expect(edited).toMatchObject({ content: 'fixed', edited: true });
+  });
+
+  it('soft-deletes locally from the RESP', async () => {
+    const h = makeHarness();
+    await login(h);
+    seedMessage(h);
+    h.conn.setResponder(async (msgId, req) => {
+      expect(msgId).toBe(MsgID.DELETE_MESSAGE_REQ);
+      expect((req as { isHardDelete: boolean }).isHardDelete).toBe(false);
+      return { code: 0 };
+    });
+    await h.api.deleteMessage('m1');
+    expect(h.messages.get().byChannel['p:user_a|user_b'][0]).toMatchObject({
+      deleted: true,
+      content: '',
+    });
+  });
+
+  it('leaves the message untouched on an error code', async () => {
+    const h = makeHarness();
+    await login(h);
+    seedMessage(h);
+    h.conn.setResponder(async () => ({ code: 3 }));
+    await h.api.editMessage('m1', 'nope');
+    await h.api.deleteMessage('m1');
+    const kept = h.messages.get().byChannel['p:user_a|user_b'][0];
+    expect(kept.content).toBe('hello');
+    expect(kept.edited).toBeFalsy();
+    expect(kept.deleted).toBeFalsy();
+  });
+});
+
+describe('ChatApi C8 notifies', () => {
+  it('records the peer read cursor and ignores own echoes', async () => {
+    const h = makeHarness();
+    await login(h);
+    const body = (reader: string): Uint8Array =>
+      MessageReadNotify.encode(
+        MessageReadNotify.fromPartial({
+          channelType: ChannelType.PRIVATE,
+          channelId: 'user_a|user_b',
+          messageId: 'm9',
+          readerUserId: reader,
+          readAt: 5,
+        }),
+      ).finish();
+    h.conn.emit(MsgID.MESSAGE_READ_NOTIFY, body(PEER));
+    expect(readCursorOf(h.messages.get(), 'p:user_a|user_b', PEER)).toBe('m9');
+    h.conn.emit(MsgID.MESSAGE_READ_NOTIFY, body(SELF));
+    expect(readCursorOf(h.messages.get(), 'p:user_a|user_b', SELF)).toBeUndefined();
+  });
+
+  it('starts and stops typing on indicators, ignoring own echoes', async () => {
+    const h = makeHarness();
+    await login(h);
+    const body = (userId: string, isTyping: boolean): Uint8Array =>
+      TypingIndicator.encode(
+        TypingIndicator.fromPartial({
+          channelType: ChannelType.PRIVATE,
+          channelId: 'user_a|user_b',
+          userId,
+          isTyping,
+        }),
+      ).finish();
+    h.conn.emit(MsgID.TYPING_INDICATOR_NOTIFY, body(PEER, true));
+    expect(typingUsersOf(h.typing.get(), 'p:user_a|user_b', Date.now())).toEqual([PEER]);
+    h.conn.emit(MsgID.TYPING_INDICATOR_NOTIFY, body(PEER, false));
+    expect(typingUsersOf(h.typing.get(), 'p:user_a|user_b', Date.now())).toEqual([]);
+    h.conn.emit(MsgID.TYPING_INDICATOR_NOTIFY, body(SELF, true));
+    expect(typingUsersOf(h.typing.get(), 'p:user_a|user_b', Date.now())).toEqual([]);
+  });
+
+  it('applies reaction notifies by message id', async () => {
+    const h = makeHarness();
+    await login(h);
+    seedMessage(h);
+    h.conn.emit(
+      MsgID.REACTION_ADDED_NOTIFY,
+      ReactionAddedNotify.encode(
+        ReactionAddedNotify.fromPartial({ messageId: 'm1', emoji: '🎉', userId: PEER }),
+      ).finish(),
+    );
+    expect(h.messages.get().byChannel['p:user_a|user_b'][0].reactions?.['🎉']).toEqual({
+      emoji: '🎉',
+      count: 1,
+      mine: false,
+    });
+    h.conn.emit(
+      MsgID.REACTION_REMOVED_NOTIFY,
+      ReactionRemovedNotify.encode(
+        ReactionRemovedNotify.fromPartial({ messageId: 'm1', emoji: '🎉', userId: PEER }),
+      ).finish(),
+    );
+    expect(h.messages.get().byChannel['p:user_a|user_b'][0].reactions?.['🎉']).toBeUndefined();
+  });
+
+  it('applies edit and delete notifies by message id', async () => {
+    const h = makeHarness();
+    await login(h);
+    seedMessage(h);
+    h.conn.emit(
+      MsgID.MESSAGE_EDITED_NOTIFY,
+      MessageEditedNotify.encode(
+        MessageEditedNotify.fromPartial({
+          messageId: 'm1',
+          newContent: new TextEncoder().encode('edited'),
+        }),
+      ).finish(),
+    );
+    expect(h.messages.get().byChannel['p:user_a|user_b'][0]).toMatchObject({
+      content: 'edited',
+      edited: true,
+    });
+    h.conn.emit(
+      MsgID.MESSAGE_DELETED_NOTIFY,
+      MessageDeletedNotify.encode(
+        MessageDeletedNotify.fromPartial({ messageId: 'm1' }),
+      ).finish(),
+    );
+    expect(h.messages.get().byChannel['p:user_a|user_b'][0]).toMatchObject({
+      deleted: true,
+      content: '',
+    });
+  });
+
+  it('ignores undecodable C8 frames', async () => {
+    const h = makeHarness();
+    await login(h);
+    seedMessage(h);
+    const garbage = new Uint8Array([9, 9, 9]);
+    h.conn.emit(MsgID.MESSAGE_READ_NOTIFY, garbage);
+    h.conn.emit(MsgID.TYPING_INDICATOR_NOTIFY, garbage);
+    h.conn.emit(MsgID.REACTION_ADDED_NOTIFY, garbage);
+    h.conn.emit(MsgID.REACTION_REMOVED_NOTIFY, garbage);
+    h.conn.emit(MsgID.MESSAGE_EDITED_NOTIFY, garbage);
+    h.conn.emit(MsgID.MESSAGE_DELETED_NOTIFY, garbage);
+    const kept = h.messages.get().byChannel['p:user_a|user_b'][0];
+    expect(kept.content).toBe('hello');
+    expect(kept.edited).toBeFalsy();
+    expect(kept.deleted).toBeFalsy();
+    expect(h.typing.get().byChannel).toEqual({});
   });
 });
 
