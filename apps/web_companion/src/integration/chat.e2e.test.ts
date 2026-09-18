@@ -1,6 +1,6 @@
 import { ChannelType, GroupMemberJoinedNotify, MessageAck, MessageReadNotify, MsgType } from '@chirp/proto/chat';
 import { MsgID } from '@chirp/proto/gateway';
-import { afterAll, beforeAll, describe, expect, it } from 'vitest';
+import { afterAll, beforeAll, describe, expect, it, vi } from 'vitest';
 import { ChirpClient } from '../protocol/chirp_client';
 import {
   CREATE_GROUP,
@@ -216,5 +216,30 @@ suite('chat integration (CHIRP_WS_URL)', () => {
     // The server must answer with a decoded response (any non-OK code),
     // never drop the request into a timeout.
     expect(resp.code).not.toBe(0);
+  });
+
+  it('kicks the previous session when the same user+device logs in again', async () => {
+    // Same (user, device) pair is single-session: the old connection gets
+    // KICK_NOTIFY and the client must stop reconnecting (ConnectionBanner's
+    // trigger — see chirp_client markKicked).
+    const device = `dev-kick-${RUN}`;
+    const first = await loginClient(`web_e2e_k_${RUN}`, device);
+    try {
+      const second = await loginClient(`web_e2e_k_${RUN}`, device);
+      try {
+        await vi.waitFor(
+          () => {
+            expect(first.kicked).toBe(true);
+          },
+          { timeout: 8000, interval: 50 },
+        );
+        expect(second.kicked).toBe(false);
+        expect(second.status).toBe('connected');
+      } finally {
+        second.disconnect();
+      }
+    } finally {
+      first.disconnect();
+    }
   });
 });

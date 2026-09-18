@@ -13,6 +13,9 @@ export default defineConfig({
   },
   test: {
     environment: 'jsdom',
+    // globals:true lets @testing-library/react register its auto-cleanup,
+    // otherwise DOM from one test leaks into the next.
+    globals: true,
     include: ['src/**/*.test.ts', 'src/**/*.test.tsx'],
     // The real-backend suite lives in its own config (vitest.integration.config.ts)
     // so skipped-by-default cases never dilute coverage here.

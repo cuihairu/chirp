@@ -7,7 +7,6 @@ import {
 import { ErrorCode } from '@chirp/proto/common';
 import { MsgID } from '@chirp/proto/gateway';
 import type { ConnStatus } from '../protocol/chirp_client';
-import { ChirpClient } from '../protocol/chirp_client';
 import { RequestError } from '../protocol/errors';
 import {
   CREATE_GROUP,
@@ -57,6 +56,7 @@ export interface ChatConnection {
   ): Promise<Resp>;
   send(msgId: MsgID, body: Uint8Array): void;
   onNotify(msgId: MsgID, handler: (body: Uint8Array) => void): () => void;
+  onStatus(listener: (status: ConnStatus) => void): () => void;
   heartbeatNow(): void;
   readonly status: ConnStatus;
   readonly kicked: boolean;
@@ -346,8 +346,8 @@ const toView = (msg: ChatMessage, channel: ChannelRef): ChatMessageView => ({
   pending: false,
 });
 
-/** Build a ChatConnection from a real ChirpClient. */
-export const asConnection = (client: ChirpClient): ChatConnection => client;
+/** Build a ChatConnection from a real client (marker for the wiring site). */
+export const asConnection = (client: ChatConnection): ChatConnection => client;
 
 /** ChannelRef for a stored conversation key; private peers resolve via privatePeerId. */
 export const channelRefOf = (key: string, selfId: string): ChannelRef => {
