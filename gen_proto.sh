@@ -4,14 +4,30 @@
 mkdir -p proto/cpp
 mkdir -p proto/go
 
-# Ensure protoc exists.
-if ! command -v protoc >/dev/null 2>&1; then
+# Pick the protoc binary. The committed proto/cpp gencode must stay compatible
+# with the protobuf runtime the C++ build actually links (vcpkg installs its
+# own); a PATH protoc of a different generation produces gencode the compiler
+# rejects ("built with an incompatible version"). Resolution order:
+#   1. $CHIRP_PROTOC, when set
+#   2. the protoc recorded in build/CMakeCache.txt (what the build uses)
+#   3. whatever `protoc` is on PATH (CI installs it before configuring cmake)
+PROTOC_BIN="${CHIRP_PROTOC:-}"
+if [ -z "${PROTOC_BIN}" ] && [ -f build/CMakeCache.txt ]; then
+  CACHED="$(sed -n 's/^Protobuf_PROTOC_EXECUTABLE:FILEPATH=//p' build/CMakeCache.txt | head -1)"
+  if [ -n "${CACHED}" ] && [ -x "${CACHED}" ]; then
+    PROTOC_BIN="${CACHED}"
+  fi
+fi
+if [ -z "${PROTOC_BIN}" ]; then
+  PROTOC_BIN="$(command -v protoc || true)"
+fi
+if [ -z "${PROTOC_BIN}" ]; then
   echo "error: protoc not found (install protobuf compiler first)" >&2
   exit 1
 fi
 
 # Generate C++ Code
-protoc --proto_path=. \
+"${PROTOC_BIN}" --proto_path=. \
        --cpp_out=proto/cpp \
        proto/common.proto \
        proto/auth.proto \
@@ -26,7 +42,7 @@ protoc --proto_path=. \
 # We simply output to proto/go. The go_package in .proto files will handle the subdirectories usually,
 # but here we force it to be relative to proto/go if needed, or just standard.
 if command -v protoc-gen-go >/dev/null 2>&1; then
-  protoc --proto_path=. \
+  "${PROTOC_BIN}" --proto_path=. \
          --go_out=proto/go --go_opt=paths=source_relative \
          proto/common.proto \
          proto/auth.proto \
@@ -44,10 +60,14 @@ fi
 # ships with the app's devDependencies; the generated files are committed so
 # that neither CI nor other consumers need the protobuf toolchain. int64 fields
 # become number (sequence counters and millisecond timestamps fit in 2^53).
+# Under npm workspaces the plugin may be hoisted to the repo-root node_modules.
 TS_PROTO_PLUGIN="apps/web_companion/node_modules/.bin/protoc-gen-ts_proto"
-if command -v protoc >/dev/null 2>&1 && [ -x "$TS_PROTO_PLUGIN" ]; then
+if [ ! -x "$TS_PROTO_PLUGIN" ] && [ -x "node_modules/.bin/protoc-gen-ts_proto" ]; then
+  TS_PROTO_PLUGIN="node_modules/.bin/protoc-gen-ts_proto"
+fi
+if [ -x "${PROTOC_BIN}" ] && [ -x "$TS_PROTO_PLUGIN" ]; then
   mkdir -p proto/ts
-  protoc --proto_path=. \
+  "${PROTOC_BIN}" --proto_path=. \
          --plugin=protoc-gen-ts_proto="$TS_PROTO_PLUGIN" \
          --ts_proto_out=proto/ts \
          --ts_proto_opt=forceLong=number,esModuleInterop=true \

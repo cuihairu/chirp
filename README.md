@@ -137,6 +137,7 @@ TCP 和 WebSocket 使用同一套二进制 payload：
 - `gateway` 登录不会自动授权一个独立的 `chat` 连接。
 - `server_gateway` 的注入链路已在回环级打通（chat 作为内部节点消费 `InjectMessageNotify`，走与玩家发消息相同的存储/投递尾巴），并支持 Redis Streams 上行回退（游戏服无法长连接时 `XADD` 注入，ack + PEL 重放，需 Redis >= 6.2），但 `OK` 仍只表示"服务平面已受理"，未确认玩家侧送达；NPC 对话环路的进程级 E2E 见 `./test_services.sh --smoke-npc`。
 - `social`、`voice`、`notification`、`search`、SDK、移动端、管理后台不应默认视为生产稳定能力。
+- Web 伴侣 App(`apps/web_companion`)一期已可用,但走的是**过渡路径**——浏览器直连 chat(7001)与 social(8001)的 WS 边缘 + scaffold 登录;social 平面的好友列表/移除等 API 服务端尚未实现,web 端以 localStorage 补位。详见 [docs/web_companion.md](docs/web_companion.md)。
 - `app_gateway` 与推送链路已可用但边界明确：chat 离线消息会经 `PushBridge` → notification 触发设备推送；notification 的 provider HTTP 投递是日志 stub（无 TLS，真实 APNs HTTP/2 / FCM HTTP 待接），推送桥仅接入默认构建的 `chirp_chat`（`main_enhanced`/`main_distributed` 未接）。
 - NPC 对话已落地为关键词规则引擎（`services/npc_dialog`）：玩家私聊 `npc:` 前缀的接收者会转为 `npc.player_message` 事件发给 NPC 服务，NPC 的回复经注入通道回到 chat（at-least-once，hub 重投窗口内可能重复回复）；对话质量是规则表（`*` 为默认台词），LLM 引擎留作接口替换。设计文档（[docs/design-notes/](docs/design-notes/)）描述的完整 NPC 系统仍不是现状。
 
@@ -162,6 +163,7 @@ TCP 和 WebSocket 使用同一套二进制 payload：
 - `services/server_gateway`：服务器平面枢纽
 - `services/npc_dialog`：NPC 对话服务（关键词规则引擎，纯服务器平面客户端）
 - `sdks/core`：C++ 客户端集成实验
+- `apps/web_companion`：Web 伴侣 App(浏览器端,登录/私聊/群组/好友/在线状态;[docs/web_companion.md](docs/web_companion.md))
 - `tools/benchmark`：本地验证工具
 - `tests`：单元和集成 smoke 测试
 

@@ -1,0 +1,91 @@
+name: Web
+
+# The web companion lives in its own workflow: its node toolchain has nothing
+# to do with the C++ jobs, and paths filtering keeps C++ pushes from spinning
+# node runners (and vice versa — CI/CMake/Mobile do not watch web sources).
+# The package-lock.json sits at the repo root (npm workspaces), so installs
+# run there; scripts run inside apps/web_companion.
+on:
+  push:
+    branches: [ main, develop ]
+    paths:
+      - 'apps/web_companion/**'
+      - 'proto/**'
+      - 'package.json'
+      - 'package-lock.json'
+      - '.github/workflows/web.yml'
+  pull_request:
+    branches: [ main, develop ]
+    paths:
+      - 'apps/web_companion/**'
+      - 'proto/**'
+      - 'package.json'
+      - 'package-lock.json'
+      - '.github/workflows/web.yml'
+
+jobs:
+  test:
+    runs-on: ubuntu-24.04
+    defaults:
+      run:
+        working-directory: apps/web_companion
+    steps:
+    - uses: actions/checkout@v7
+
+    - uses: actions/setup-node@v6
+      with:
+        # Pinned to the version development actually runs (vite 8 needs
+        # >=22.12; 24 is the current dev node, CI verifies what devs use).
+        node-version: 24
+        cache: npm
+        cache-dependency-path: package-lock.json
+
+    - name: Install dependencies
+      working-directory: .
+      run: npm ci
+
+    - name: Typecheck
+      run: npm run typecheck
+
+    - name: Lint
+      run: npm run lint
+
+    - name: Test with coverage
+      run: npm run test -- --coverage
+
+    - name: Build
+      run: npm run build
+
+  proto-sync:
+    # The generated TS is committed; regenerate and fail on drift so the
+    # checked-in files never silently diverge from the .proto sources.
+    runs-on: ubuntu-24.04
+    steps:
+    - uses: actions/checkout@v7
+
+    - name: Install protobuf compiler
+      run: sudo apt-get update && sudo apt-get install -y protobuf-compiler
+
+    - uses: actions/setup-node@v6
+      with:
+        # Pinned to the version development actually runs (vite 8 needs
+        # >=22.12; 24 is the current dev node, CI verifies what devs use).
+        node-version: 24
+        cache: npm
+        cache-dependency-path: package-lock.json
+
+    # Root install: the workspaces layout hoists the ts-proto plugin to
+    # node_modules/.bin, where gen_proto.sh looks for it.
+    - name: Install dependencies
+      run: npm ci
+
+    - name: Regenerate TypeScript protos
+      run: bash gen_proto.sh
+
+    # -I ignores hunks that only touch the protoc version banner: the CI
+    # compiler's version differs from whatever generated the committed files,
+    # and that banner is not a real drift signal.
+    - name: Check for drift
+      run: |
+        git diff -I'^//   protoc ' --exit-code -- proto/ts \
+          || (echo "::error::proto/ts is stale — run gen_proto.sh and commit" && exit 1)
