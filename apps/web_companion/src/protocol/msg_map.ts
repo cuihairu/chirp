@@ -1,5 +1,6 @@
 import * as Auth from '@chirp/proto/auth';
 import * as Chat from '@chirp/proto/chat';
+import * as Party from '@chirp/proto/party';
 import * as Social from '@chirp/proto/social';
 import { MsgID } from '@chirp/proto/gateway';
 
@@ -201,4 +202,67 @@ export const GET_PRESENCE = defineSpec(
   MsgID.GET_PRESENCE_RESP,
   Social.GetPresenceRequest,
   Social.GetPresenceResponse,
+);
+
+// Party plane (WS 7501): cross-game team-up. Invite-accept only, snapshot
+// sync (PARTY_STATE_CHANGED carries the full PartyInfo to every member).
+export const CREATE_PARTY = defineSpec(
+  MsgID.CREATE_PARTY_REQ,
+  MsgID.CREATE_PARTY_RESP,
+  Party.CreatePartyRequest,
+  Party.CreatePartyResponse,
+);
+export const DISBAND_PARTY = defineSpec(
+  MsgID.DISBAND_PARTY_REQ,
+  MsgID.DISBAND_PARTY_RESP,
+  Party.DisbandPartyRequest,
+  Party.DisbandPartyResponse,
+);
+export const INVITE_TO_PARTY = defineSpec(
+  MsgID.INVITE_TO_PARTY_REQ,
+  MsgID.INVITE_TO_PARTY_RESP,
+  Party.InviteToPartyRequest,
+  Party.InviteToPartyResponse,
+);
+export const ACCEPT_PARTY_INVITE = defineSpec(
+  MsgID.ACCEPT_INVITE_REQ,
+  MsgID.ACCEPT_INVITE_RESP,
+  Party.AcceptInviteRequest,
+  Party.AcceptInviteResponse,
+);
+export const DECLINE_PARTY_INVITE = defineSpec(
+  MsgID.DECLINE_INVITE_REQ,
+  MsgID.DECLINE_INVITE_RESP,
+  Party.DeclineInviteRequest,
+  Party.DeclineInviteResponse,
+);
+export const LEAVE_PARTY = defineSpec(
+  MsgID.LEAVE_PARTY_REQ,
+  MsgID.LEAVE_PARTY_RESP,
+  Party.LeavePartyRequest,
+  Party.LeavePartyResponse,
+);
+export const KICK_PARTY_MEMBER = defineSpec(
+  MsgID.KICK_PARTY_MEMBER_REQ,
+  MsgID.KICK_PARTY_MEMBER_RESP,
+  Party.KickMemberRequest,
+  Party.KickMemberResponse,
+);
+export const TRANSFER_PARTY_LEADER = defineSpec(
+  MsgID.TRANSFER_LEADER_REQ,
+  MsgID.TRANSFER_LEADER_RESP,
+  Party.TransferLeaderRequest,
+  Party.TransferLeaderResponse,
+);
+export const SET_PARTY_READY = defineSpec(
+  MsgID.SET_READY_REQ,
+  MsgID.SET_READY_RESP,
+  Party.SetReadyRequest,
+  Party.SetReadyResponse,
+);
+export const GET_MY_PARTY = defineSpec(
+  MsgID.GET_MY_PARTY_REQ,
+  MsgID.GET_MY_PARTY_RESP,
+  Party.GetMyPartyRequest,
+  Party.GetMyPartyResponse,
 );

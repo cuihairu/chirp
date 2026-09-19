@@ -20,6 +20,7 @@ import { upsertConversation } from '../state/conversation_store';
 import { presenceFresh, presenceOf } from '../state/presence_store';
 import { PresenceStatus } from '@chirp/proto/social';
 import FriendsDialog from './FriendsDialog';
+import PartyDialog, { PartyButton } from './PartyDialog';
 import { zh } from '../i18n/zh';
 
 /** Left pane: conversations, newest first, plus the start-private-chat entry. */
@@ -30,7 +31,7 @@ export default function ConversationList({
   activeKey?: string;
   onOpen: (key: string) => void;
 }) {
-  const { api, socialApi, auth, conversations, presence } = useServices();
+  const { api, socialApi, partyApi, auth, conversations, presence } = useServices();
   const selfId = useStoreValue(auth).userId ?? '';
   const { conversations: list } = useStoreValue(conversations);
   const presenceState = useStoreValue(presence);
@@ -40,6 +41,7 @@ export default function ConversationList({
   const [groupOpen, setGroupOpen] = useState(false);
   const [groupName, setGroupName] = useState('');
   const [friendsOpen, setFriendsOpen] = useState(false);
+  const [partyOpen, setPartyOpen] = useState(false);
 
   const startChat = (): void => {
     const peer = peerId.trim();
@@ -94,6 +96,7 @@ export default function ConversationList({
             {zh.social.title}
           </Button>
         )}
+        {partyApi && <PartyButton onClick={() => setPartyOpen(true)} />}
       </Box>
       <List dense sx={{ overflowY: 'auto', flex: 1 }}>
         {list.map((conversation: Conversation) => {
@@ -198,6 +201,7 @@ export default function ConversationList({
           onOpenChannel={onOpen}
         />
       )}
+      {partyApi && <PartyDialog open={partyOpen} onClose={() => setPartyOpen(false)} />}
     </Box>
   );
 }

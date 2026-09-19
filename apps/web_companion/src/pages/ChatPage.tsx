@@ -10,7 +10,7 @@ import { zh } from '../i18n/zh';
 
 /** Two-pane chat shell: conversation list on the left, open channel right. */
 export default function ChatPage() {
-  const { api, socialApi, auth, social } = useServices();
+  const { api, socialApi, partyApi, auth, social, party } = useServices();
   const navigate = useNavigate();
   const { channelKey } = useParams();
   const { userId } = useStoreValue(auth);
@@ -32,6 +32,16 @@ export default function ChatPage() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [socialApi]);
 
+  // Party plane login, same degradeable contract as social.
+  useEffect(() => {
+    const id = auth.get().userId;
+    if (!partyApi || !id) return;
+    void partyApi.login(id).catch(() => {
+      // Party unreachable: chat keeps working, party features hide.
+    });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [partyApi]);
+
   const openChannel = useCallback(
     (key: string) => navigate(`/chat/${encodeURIComponent(key)}`),
     [navigate],
@@ -40,7 +50,9 @@ export default function ChatPage() {
   const signOut = async (): Promise<void> => {
     await api.logout();
     socialApi?.logout();
+    partyApi?.logout();
     void social?.disconnect();
+    void party?.disconnect();
     navigate('/login', { replace: true });
   };
 

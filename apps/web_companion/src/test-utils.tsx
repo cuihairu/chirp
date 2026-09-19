@@ -22,10 +22,15 @@ export async function renderLoggedIn(
     prepare?: (mounted: MountedServices) => void | Promise<void>;
     responder?: (msgId: MsgID, req: unknown) => Promise<unknown>;
     socialConn?: ChatConnection;
+    partyConn?: ChatConnection;
   } = {},
 ): Promise<MountedServices> {
   const conn = new FakeChatConnection();
-  const services = createServices({ conn, socialConn: options.socialConn });
+  const services = createServices({
+    conn,
+    socialConn: options.socialConn,
+    partyConn: options.partyConn,
+  });
   conn.setResponder(async (msgId, req) => options.responder?.(msgId, req) ?? { code: 0 });
   await services.api.login('user_a');
   const mounted = { services, conn };
