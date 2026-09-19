@@ -7,7 +7,7 @@
     "protobuf",
     "abseil",
     "libsodium",
-    "libmysql",
+    "libmariadb",
     "pkgconf",
     "asio"
   ],

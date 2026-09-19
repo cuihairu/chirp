@@ -35,7 +35,7 @@ sudo apt-get install -y \
     libssl-dev \
     redis-server \
     mysql-server \
-    libmysqlclient-dev \
+    libmariadb-dev \
     pkg-config
 ```
 
@@ -71,7 +71,7 @@ git clone https://github.com/Microsoft/vcpkg.git C:\vcpkg
 .\vcpkg\integrate install
 
 # Install dependencies
-vcpkg install protobuf absl openssl libmysql redis-plus asio
+vcpkg install protobuf absl openssl libmariadb redis-plus asio
 ```
 
 ## Building from Source
@@ -254,12 +254,12 @@ cmake ..
 
 ### MySQL Linker Errors
 
-**Problem**: libmysqlclient not found
+**Problem**: the MySQL client library (libmariadb) not found
 ```bash
 # Linux
 export MYSQL_DIR=/usr
 cmake -DMYSQL_INCLUDE_DIR=/usr/include/mysql \
-      -DMYSQL_LIBRARY=/usr/lib/x86_64-linux-gnu/libmysqlclient.so ..
+      -DMYSQL_LIBRARY=/usr/lib/x86_64-linux-gnu/libmariadb.so ..
 
 # macOS
 cmake -DMYSQL_DIR=$(brew --prefix mysql) ..

@@ -1,9 +1,25 @@
 # FindMySQL.cmake
 # Find MySQL client library
 
-# Prefer vcpkg's libmysql target when available
+# Prefer vcpkg's MariaDB Connector/C: the manifest driver since the swap.
+# The port installs the mysql/ compat header layout, so sources keep
+# `#include <mysql/mysql.h>` unchanged, and the imported target already
+# carries the static-lib link requirements (zlib/TLS/dl) itself.
+find_package(unofficial-libmariadb CONFIG QUIET)
+if(TARGET unofficial::libmariadb)
+  set(MYSQL_FOUND TRUE)
+  set(MYSQL_LIBRARIES unofficial::libmariadb)
+  set(MYSQL_CLIENT_LIBRARIES unofficial::libmariadb)
+  get_target_property(_mysql_target_includes unofficial::libmariadb
+    INTERFACE_INCLUDE_DIRECTORIES)
+  if(_mysql_target_includes)
+    set(MYSQL_INCLUDE_DIRS "${_mysql_target_includes}")
+  endif()
+endif()
+
+# Legacy fallback: trees that still provide Oracle libmysql only.
 find_package(unofficial-libmysql CONFIG QUIET)
-if(TARGET unofficial::libmysql::libmysql)
+if(NOT MYSQL_FOUND AND TARGET unofficial::libmysql::libmysql)
   set(MYSQL_FOUND TRUE)
   set(MYSQL_LIBRARIES unofficial::libmysql::libmysql)
   set(MYSQL_CLIENT_LIBRARIES unofficial::libmysql::libmysql)

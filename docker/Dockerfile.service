@@ -4,13 +4,15 @@ FROM ubuntu:${UBUNTU_VERSION} AS build
 
 ARG SERVICE=gateway
 
+# libmariadb-dev (MariaDB Connector/C): same mysql_* C API and mysql/mysql.h
+# layout as libmysqlclient, with a much lighter dependency footprint.
 RUN apt-get update && apt-get install -y --no-install-recommends \
     build-essential \
     ca-certificates \
     cmake \
     libasio-dev \
     git \
-    default-libmysqlclient-dev \
+    libmariadb-dev \
     pkg-config \
     protobuf-compiler \
     libprotobuf-dev \
@@ -36,9 +38,11 @@ FROM ubuntu:${UBUNTU_VERSION} AS runtime
 
 ARG SERVICE=gateway
 
+# Runtime only: the mariadb client .so (default-mysql-client is the MariaDB
+# CLI on Ubuntu/Debian, kept for manual database inspection).
 RUN apt-get update && apt-get install -y --no-install-recommends \
     ca-certificates \
-    default-libmysqlclient-dev \
+    libmariadb3 \
     libprotobuf23 \
     default-mysql-client \
     redis-tools \
