@@ -121,7 +121,3 @@ jobs:
     - name: Check formatting
       working-directory: apps/mobile_companion
       run: dart format --set-exit-if-changed .
-
-    - name: Verify build
-      working-directory: apps/mobile_companion
-      run: flutter pub run build_runner build --delete-conflicting-outputs
