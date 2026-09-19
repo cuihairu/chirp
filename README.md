@@ -37,7 +37,7 @@ flowchart TB
     GS["游戏服务端<br/>service_id + secret<br/>内网常驻 · 永不冒充用户"]
 
     GG["game_gateway<br/>TCP 5000 / WS 5001<br/><i>services/gateway 演进目标</i>"]
-    AG["app_gateway<br/>TCP 5200 / WS 5201<br/>TLS 规划中"]
+    AG["app_gateway<br/>TCP 5200 / WS 5201<br/>可选 TLS/wss"]
     SG["server_gateway<br/>TCP 8100 · 出站长连接<br/>Redis Streams 回退"]
 
     subgraph core["共享核心（共享数据模型与库，不是单进程）"]

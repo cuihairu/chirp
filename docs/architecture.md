@@ -32,7 +32,7 @@ Chirp has three access points with different trust models, transports, and lifec
 | Access point | Edge | Transport | Identity | Network reality |
 | --- | --- | --- | --- | --- |
 | Game client | `game_gateway` (evolved from `services/gateway`) | TCP + Packet | **game-scoped** user token (issued by that game's backend) | lives and dies with the game process |
-| Companion app | `app_gateway` (experimental) | WebSocket/TCP (TLS planned) | **player identity** (platform-scoped), linked to N game identities | mobile network: reconnects, NAT timeouts, backgrounding |
+| Companion app | `app_gateway` (experimental) | WebSocket/TCP + optional TLS/wss (`--tls_port`/`--ws_tls_port`, `--tls_cert`/`--tls_key`) | **player identity** (platform-scoped), linked to N game identities | mobile network: reconnects, NAT timeouts, backgrounding |
 | Game backend | `server_gateway` | outbound long connection; broker fallback | `service_id` + service secret | always-on trusted service, usually in a private subnet |
 
 ### Game-facing plane vs player aggregation plane

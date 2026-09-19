@@ -28,6 +28,8 @@ target_link_libraries(chirp_network PUBLIC
     chirp_common
     chirp_asio
     chirp_protos
+    OpenSSL::SSL
+    OpenSSL::Crypto
     Threads::Threads
 )
 

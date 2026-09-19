@@ -7,7 +7,10 @@ TcpServer::TcpServer(asio::io_context& io, uint16_t port, FrameCallback on_frame
       strand_(io.get_executor()),
       acceptor_(io_, asio::ip::tcp::endpoint(asio::ip::tcp::v4(), port)),
       on_frame_(std::move(on_frame)),
-      on_close_(std::move(on_close)) {}
+      on_close_(std::move(on_close)) {
+  asio::error_code ec;
+  port_ = acceptor_.local_endpoint(ec).port();
+}
 
 void TcpServer::Start() { DoAccept(); }
 
@@ -21,12 +24,18 @@ void TcpServer::Stop() {
   });
 }
 
+std::shared_ptr<Session> TcpServer::MakeSession(asio::ip::tcp::socket socket) {
+  return std::make_shared<TcpSession>(std::move(socket), on_frame_, on_close_);
+}
+
 void TcpServer::DoAccept() {
   acceptor_.async_accept(
       asio::bind_executor(strand_, [this](std::error_code ec, asio::ip::tcp::socket socket) {
         if (!ec) {
-          auto session = std::make_shared<TcpSession>(std::move(socket), on_frame_, on_close_);
-          session->Start();
+          auto session = MakeSession(std::move(socket));
+          if (session) {
+            session->Start();
+          }
         }
         if (acceptor_.is_open()) {
           DoAccept();

@@ -14,12 +14,18 @@
 
 namespace chirp::network {
 
-class TcpSession : public Session, public std::enable_shared_from_this<TcpSession> {
+// Stream-generic session core: Stream is asio::ip::tcp::socket (plain) or
+// asio::ssl::stream<asio::ip::tcp::socket> (TLS). All byte/queue/strand logic
+// lives in tcp_session.cc; both stream types are explicitly instantiated
+// there, so consumers never see template bodies or OpenSSL headers.
+template <typename Stream>
+class TcpSessionT : public Session,
+                    public std::enable_shared_from_this<TcpSessionT<Stream>> {
 public:
   using FrameCallback = std::function<void(std::shared_ptr<Session>, std::string&& payload)>;
   using CloseCallback = std::function<void(std::shared_ptr<Session>)>;
 
-  TcpSession(asio::ip::tcp::socket socket, FrameCallback on_frame, CloseCallback on_close = nullptr);
+  TcpSessionT(Stream socket, FrameCallback on_frame, CloseCallback on_close = nullptr);
 
   void Start();
   void Close() override;
@@ -41,7 +47,7 @@ private:
   void DoWrite();
   void DoClose();
 
-  asio::ip::tcp::socket socket_;
+  Stream socket_;
   asio::strand<asio::any_io_executor> strand_;
   FrameCallback on_frame_;
   CloseCallback on_close_;
@@ -53,6 +59,12 @@ private:
   bool write_in_flight_{false};
   bool close_after_write_{false};
   bool closed_{false};
+  bool stream_established_{false};
 };
+
+// Plain-TCP alias: every existing consumer (servers, TcpClient, tests) keeps
+// using this name; the TLS instantiation is declared in tls_session.h.
+using TcpSession = TcpSessionT<asio::ip::tcp::socket>;
+extern template class TcpSessionT<asio::ip::tcp::socket>;
 
 } // namespace chirp::network

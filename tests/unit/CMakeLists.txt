@@ -515,6 +515,26 @@ target_include_directories(network_session_tests
 
 add_test(NAME network_session_tests COMMAND network_session_tests)
 
+# TLS edge sessions/servers driven over real 127.0.0.1 loopback (wss + TLS-TCP)
+add_executable(network_tls_tests
+  network_tls_test.cc
+)
+
+chirp_unit_test_common_links(network_tls_tests)
+target_link_libraries(network_tls_tests PRIVATE chirp_network chirp_common chirp_protos)
+
+target_include_directories(network_tls_tests
+  PRIVATE
+  ${CMAKE_SOURCE_DIR}/libs
+  ${CMAKE_SOURCE_DIR}/libs/common
+  ${CMAKE_SOURCE_DIR}/libs/common/include
+  ${CMAKE_SOURCE_DIR}/libs/network
+  ${CMAKE_SOURCE_DIR}/proto/cpp
+  ${CMAKE_SOURCE_DIR}/proto/cpp/proto
+)
+
+add_test(NAME network_tls_tests COMMAND network_tls_tests)
+
 # Chat extension managers (mentions / edits / channels / store config)
 add_executable(chat_extensions_tests
   chat_extensions_test.cc

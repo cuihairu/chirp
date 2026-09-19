@@ -14,7 +14,14 @@
 
 namespace chirp::network {
 
-class WebSocketSession : public Session, public std::enable_shared_from_this<WebSocketSession> {
+// Stream-generic WebSocket session core: Stream is asio::ip::tcp::socket
+// (plain) or asio::ssl::stream<asio::ip::tcp::socket> (wss). The upgrade
+// handshake and all frame logic operate on decrypted plaintext buffers, so
+// the byte-level code is shared verbatim across both stream types; the
+// bodies live in websocket_session.cc with explicit instantiations there.
+template <typename Stream>
+class WebSocketSessionT : public Session,
+                          public std::enable_shared_from_this<WebSocketSessionT<Stream>> {
 public:
   using FrameCallback = std::function<void(std::shared_ptr<Session>, std::string&& payload)>;
   using CloseCallback = std::function<void(std::shared_ptr<Session>)>;
@@ -22,9 +29,9 @@ public:
   // `handshake_done` must be true for client-side sessions whose upgrade
   // handshake was already completed elsewhere (e.g. WebSocketClient::Connect);
   // such sessions parse incoming bytes as WebSocket frames right away.
-  WebSocketSession(asio::ip::tcp::socket socket, FrameCallback on_frame,
-                   CloseCallback on_close = nullptr,
-                   bool handshake_done = false);
+  WebSocketSessionT(Stream socket, FrameCallback on_frame,
+                    CloseCallback on_close = nullptr,
+                    bool handshake_done = false);
 
   void Start();
   void Close() override;
@@ -45,7 +52,7 @@ private:
   bool TryConsumeHandshake();
   void ConsumeWebSocketFrames();
 
-  asio::ip::tcp::socket socket_;
+  Stream socket_;
   asio::strand<asio::any_io_executor> strand_;
   FrameCallback on_frame_;
   CloseCallback on_close_;
@@ -60,7 +67,12 @@ private:
   bool close_after_write_{false};
   bool closed_{false};
   bool handshake_done_{false};
+  bool stream_established_{false};
 };
 
-} // namespace chirp::network
+// Plain-TCP alias: every existing consumer (servers, WebSocketClient, tests)
+// keeps using this name; the TLS instantiation is declared in tls_session.h.
+using WebSocketSession = WebSocketSessionT<asio::ip::tcp::socket>;
+extern template class WebSocketSessionT<asio::ip::tcp::socket>;
 
+} // namespace chirp::network

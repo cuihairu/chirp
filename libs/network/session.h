@@ -8,6 +8,11 @@ class Session {
 public:
   virtual ~Session() = default;
 
+  // Begins serving the connection. Only the accept loop calls this, right
+  // after MakeSession hands a session over; default is a no-op so mock or
+  // pre-started sessions need no override.
+  virtual void Start() {}
+
   // Sends bytes as-is (caller decides framing). Thread-safe.
   virtual void Send(std::string bytes) = 0;
 

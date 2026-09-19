@@ -2,6 +2,7 @@
 
 #include <sstream>
 
+#include "network/stream_ops.h"
 #include "network/websocket_util.h"
 
 namespace chirp::network {
@@ -24,31 +25,53 @@ std::string FindHeaderValue(const std::string& headers, const std::string& key) 
 
 } // namespace
 
-WebSocketSession::WebSocketSession(asio::ip::tcp::socket socket, FrameCallback on_frame,
-                                   CloseCallback on_close, bool handshake_done)
+template <typename Stream>
+WebSocketSessionT<Stream>::WebSocketSessionT(Stream socket, FrameCallback on_frame,
+                                             CloseCallback on_close, bool handshake_done)
     : socket_(std::move(socket)),
       strand_(socket_.get_executor()),
       on_frame_(std::move(on_frame)),
       on_close_(std::move(on_close)),
       handshake_done_(handshake_done) {}
 
-void WebSocketSession::Start() { DoRead(); }
-
-asio::ip::tcp::endpoint WebSocketSession::RemoteEndpoint() const {
-  asio::error_code ec;
-  return socket_.remote_endpoint(ec);
+template <typename Stream>
+void WebSocketSessionT<Stream>::Start() {
+  // Plain sessions: StartHandshake invokes the handler synchronously with a
+  // cleared error code, which lands on DoRead() exactly like the old
+  // `Start() { DoRead(); }`. TLS (wss) sessions: async_handshake on the
+  // server side; a failed handshake closes the session and the server keeps
+  // accepting. `self` must be captured here — the accept loop drops its
+  // reference right after Start(), so a pending TLS handshake is the only
+  // thing keeping the session alive.
+  auto self = this->shared_from_this();
+  StreamOps<Stream>::StartHandshake(socket_, strand_, [self](std::error_code ec) {
+    if (ec) {
+      self->DoClose();
+      return;
+    }
+    self->stream_established_ = true;
+    self->DoRead();
+  });
 }
 
-std::string WebSocketSession::RemoteAddress() const {
+template <typename Stream>
+asio::ip::tcp::endpoint WebSocketSessionT<Stream>::RemoteEndpoint() const {
+  return StreamOps<Stream>::RemoteEndpoint(socket_);
+}
+
+template <typename Stream>
+std::string WebSocketSessionT<Stream>::RemoteAddress() const {
   return RemoteEndpoint().address().to_string();
 }
 
-void WebSocketSession::Close() {
-  asio::post(strand_, [self = shared_from_this()] { self->DoClose(); });
+template <typename Stream>
+void WebSocketSessionT<Stream>::Close() {
+  asio::post(strand_, [self = this->shared_from_this()] { self->DoClose(); });
 }
 
-void WebSocketSession::Send(std::string bytes) {
-  asio::post(strand_, [self = shared_from_this(), bytes = std::move(bytes)]() mutable {
+template <typename Stream>
+void WebSocketSessionT<Stream>::Send(std::string bytes) {
+  asio::post(strand_, [self = this->shared_from_this(), bytes = std::move(bytes)]() mutable {
     if (self->closed_) {
       return;
     }
@@ -60,8 +83,9 @@ void WebSocketSession::Send(std::string bytes) {
   });
 }
 
-void WebSocketSession::SendAndClose(std::string bytes) {
-  asio::post(strand_, [self = shared_from_this(), bytes = std::move(bytes)]() mutable {
+template <typename Stream>
+void WebSocketSessionT<Stream>::SendAndClose(std::string bytes) {
+  asio::post(strand_, [self = this->shared_from_this(), bytes = std::move(bytes)]() mutable {
     if (self->closed_) {
       return;
     }
@@ -74,8 +98,9 @@ void WebSocketSession::SendAndClose(std::string bytes) {
   });
 }
 
-void WebSocketSession::DoRead() {
-  auto self = shared_from_this();
+template <typename Stream>
+void WebSocketSessionT<Stream>::DoRead() {
+  auto self = this->shared_from_this();
   socket_.async_read_some(asio::buffer(read_buf_),
                           asio::bind_executor(strand_, [self](std::error_code ec, std::size_t n) {
                             if (ec) {
@@ -98,7 +123,8 @@ void WebSocketSession::DoRead() {
                           }));
 }
 
-bool WebSocketSession::TryConsumeHandshake() {
+template <typename Stream>
+bool WebSocketSessionT<Stream>::TryConsumeHandshake() {
   const size_t end = handshake_buf_.find("\r\n\r\n");
   if (end == std::string::npos) {
     return false;
@@ -130,7 +156,8 @@ bool WebSocketSession::TryConsumeHandshake() {
   return true;
 }
 
-void WebSocketSession::ConsumeWebSocketFrames() {
+template <typename Stream>
+void WebSocketSessionT<Stream>::ConsumeWebSocketFrames() {
   while (true) {
     auto f = ws_parser_.PopFrame();
     if (!f) {
@@ -151,7 +178,7 @@ void WebSocketSession::ConsumeWebSocketFrames() {
           break;
         }
         if (on_frame_) {
-          on_frame_(std::static_pointer_cast<Session>(shared_from_this()), std::move(*frame));
+          on_frame_(std::static_pointer_cast<Session>(this->shared_from_this()), std::move(*frame));
         }
       }
       break;
@@ -180,8 +207,9 @@ void WebSocketSession::ConsumeWebSocketFrames() {
   }
 }
 
-void WebSocketSession::DoWrite() {
-  auto self = shared_from_this();
+template <typename Stream>
+void WebSocketSessionT<Stream>::DoWrite() {
+  auto self = this->shared_from_this();
   if (write_q_.empty()) {
     write_in_flight_ = false;
     if (close_after_write_) {
@@ -201,20 +229,26 @@ void WebSocketSession::DoWrite() {
                     }));
 }
 
-void WebSocketSession::DoClose() {
+template <typename Stream>
+void WebSocketSessionT<Stream>::DoClose() {
   if (closed_) {
     return;
   }
   closed_ = true;
 
-  asio::error_code ec;
-  socket_.shutdown(asio::ip::tcp::socket::shutdown_both, ec);
-  socket_.close(ec);
+  StreamOps<Stream>::Close(socket_, stream_established_);
 
   if (on_close_) {
-    on_close_(std::static_pointer_cast<Session>(shared_from_this()));
+    on_close_(std::static_pointer_cast<Session>(this->shared_from_this()));
   }
 }
 
-} // namespace chirp::network
+// Explicit instantiations: the template bodies live only in this TU, so all
+// consumers (servers, clients, tests) link against these and the coverage
+// report attributes every line here. stream_ops.h must be included above
+// this point so the StreamOps specializations are declared at the
+// instantiation points.
+template class WebSocketSessionT<asio::ip::tcp::socket>;
+template class WebSocketSessionT<asio::ssl::stream<asio::ip::tcp::socket>>;
 
+} // namespace chirp::network

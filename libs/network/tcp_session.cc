@@ -1,45 +1,62 @@
 #include "network/tcp_session.h"
 
-#include <sys/socket.h>
+#include "network/stream_ops.h"
 
 namespace chirp::network {
 
-TcpSession::TcpSession(asio::ip::tcp::socket socket, FrameCallback on_frame, CloseCallback on_close)
+template <typename Stream>
+TcpSessionT<Stream>::TcpSessionT(Stream socket, FrameCallback on_frame, CloseCallback on_close)
     : socket_(std::move(socket)),
       strand_(socket_.get_executor()),
       on_frame_(std::move(on_frame)),
       on_close_(std::move(on_close)) {}
 
-void TcpSession::Start() { DoRead(); }
-
-void TcpSession::Close() {
-  asio::post(strand_, [self = shared_from_this()] { self->DoClose(); });
+template <typename Stream>
+void TcpSessionT<Stream>::Start() {
+  // Plain sessions: StartHandshake invokes the handler synchronously with a
+  // cleared error code, which lands on DoRead() exactly like the old
+  // `Start() { DoRead(); }`. TLS sessions: async_handshake on the server
+  // side; a failed handshake closes the session and the server keeps
+  // accepting. `self` must be captured here — the accept loop drops its
+  // reference right after Start(), so a pending TLS handshake is the only
+  // thing keeping the session alive.
+  auto self = this->shared_from_this();
+  StreamOps<Stream>::StartHandshake(socket_, strand_, [self](std::error_code ec) {
+    if (ec) {
+      self->DoClose();
+      return;
+    }
+    self->stream_established_ = true;
+    self->DoRead();
+  });
 }
 
-asio::ip::tcp::endpoint TcpSession::RemoteEndpoint() const {
-  asio::error_code ec;
-  return socket_.remote_endpoint(ec);
+template <typename Stream>
+void TcpSessionT<Stream>::Close() {
+  asio::post(strand_, [self = this->shared_from_this()] { self->DoClose(); });
 }
 
-std::string TcpSession::RemoteAddress() const {
+template <typename Stream>
+asio::ip::tcp::endpoint TcpSessionT<Stream>::RemoteEndpoint() const {
+  return StreamOps<Stream>::RemoteEndpoint(socket_);
+}
+
+template <typename Stream>
+std::string TcpSessionT<Stream>::RemoteAddress() const {
   return RemoteEndpoint().address().to_string();
 }
 
-bool TcpSession::PeerHalfClosed() {
+template <typename Stream>
+bool TcpSessionT<Stream>::PeerHalfClosed() {
   if (closed_) {
     return true;
   }
-  // Non-blocking MSG_PEEK: 0 bytes means the peer's FIN is sitting in the
-  // kernel buffer while the read loop has not processed it yet - writes to
-  // this session would vanish. EAGAIN (nothing pending) or pending data
-  // both mean still alive as far as we can tell.
-  char peek;
-  const ssize_t n = ::recv(socket_.native_handle(), &peek, 1, MSG_PEEK | MSG_DONTWAIT);
-  return n == 0;
+  return StreamOps<Stream>::PeerHalfClosed(socket_);
 }
 
-void TcpSession::Send(std::string bytes) {
-  asio::post(strand_, [self = shared_from_this(), bytes = std::move(bytes)]() mutable {
+template <typename Stream>
+void TcpSessionT<Stream>::Send(std::string bytes) {
+  asio::post(strand_, [self = this->shared_from_this(), bytes = std::move(bytes)]() mutable {
     self->write_q_.push_back(std::move(bytes));
     if (!self->write_in_flight_) {
       self->write_in_flight_ = true;
@@ -48,8 +65,9 @@ void TcpSession::Send(std::string bytes) {
   });
 }
 
-void TcpSession::SendAndClose(std::string bytes) {
-  asio::post(strand_, [self = shared_from_this(), bytes = std::move(bytes)]() mutable {
+template <typename Stream>
+void TcpSessionT<Stream>::SendAndClose(std::string bytes) {
+  asio::post(strand_, [self = this->shared_from_this(), bytes = std::move(bytes)]() mutable {
     self->close_after_write_ = true;
     self->write_q_.push_back(std::move(bytes));
     if (!self->write_in_flight_) {
@@ -59,8 +77,9 @@ void TcpSession::SendAndClose(std::string bytes) {
   });
 }
 
-void TcpSession::DoRead() {
-  auto self = shared_from_this();
+template <typename Stream>
+void TcpSessionT<Stream>::DoRead() {
+  auto self = this->shared_from_this();
   socket_.async_read_some(asio::buffer(read_buf_),
                           asio::bind_executor(strand_, [self](std::error_code ec, std::size_t n) {
                             if (ec) {
@@ -81,8 +100,9 @@ void TcpSession::DoRead() {
                           }));
 }
 
-void TcpSession::DoWrite() {
-  auto self = shared_from_this();
+template <typename Stream>
+void TcpSessionT<Stream>::DoWrite() {
+  auto self = this->shared_from_this();
   if (write_q_.empty()) {
     write_in_flight_ = false;
     if (close_after_write_) {
@@ -102,19 +122,26 @@ void TcpSession::DoWrite() {
                     }));
 }
 
-void TcpSession::DoClose() {
+template <typename Stream>
+void TcpSessionT<Stream>::DoClose() {
   if (closed_) {
     return;
   }
   closed_ = true;
 
-  asio::error_code ec;
-  socket_.shutdown(asio::ip::tcp::socket::shutdown_both, ec);
-  socket_.close(ec);
+  StreamOps<Stream>::Close(socket_, stream_established_);
 
   if (on_close_) {
-    on_close_(std::static_pointer_cast<Session>(shared_from_this()));
+    on_close_(std::static_pointer_cast<Session>(this->shared_from_this()));
   }
 }
+
+// Explicit instantiations: the template bodies live only in this TU, so all
+// consumers (servers, clients, tests) link against these and the coverage
+// report attributes every line here. stream_ops.h must be included above
+// this point so the StreamOps specializations are declared at the
+// instantiation points.
+template class TcpSessionT<asio::ip::tcp::socket>;
+template class TcpSessionT<asio::ssl::stream<asio::ip::tcp::socket>>;
 
 } // namespace chirp::network

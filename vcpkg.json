@@ -8,6 +8,7 @@
     "abseil",
     "libsodium",
     "libmariadb",
+    "openssl",
     "pkgconf",
     "asio"
   ],

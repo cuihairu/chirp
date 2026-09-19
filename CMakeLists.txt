@@ -143,6 +143,10 @@ if(NOT TARGET chirp_asio)
   endif()
 endif()
 
+# TLS transport: asio::ssl in libs/network compiles against OpenSSL and the
+# network headers expose ssl types, so this is a hard, PUBLIC dependency.
+find_package(OpenSSL REQUIRED)
+
 # ------------------------------------------------------------------------------
 # Global Include Paths
 # ------------------------------------------------------------------------------

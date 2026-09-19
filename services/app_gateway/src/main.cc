@@ -21,7 +21,9 @@
 #include "logger.h"
 #include "network/protobuf_framing.h"
 #include "network/session.h"
+#include "network/ssl_context.h"
 #include "network/tcp_server.h"
+#include "network/tls_server.h"
 #include "network/websocket_server.h"
 #include "network/notification_client.h"
 #include "proto/auth.pb.h"
@@ -390,6 +392,11 @@ int main(int argc, char** argv) {
   Logger::Instance().SetLevel(Logger::Level::kInfo);
   const uint16_t port = ParseU16Arg(argc, argv, "--port", 5200);
   const uint16_t ws_port = ParseU16Arg(argc, argv, "--ws_port", 5201);
+  // Optional TLS/wss edges: 0 = off. Enabling either requires the PEM pair.
+  const uint16_t tls_port = ParseU16Arg(argc, argv, "--tls_port", 0);
+  const uint16_t ws_tls_port = ParseU16Arg(argc, argv, "--ws_tls_port", 0);
+  const std::string tls_cert = GetArg(argc, argv, "--tls_cert", "");
+  const std::string tls_key = GetArg(argc, argv, "--tls_key", "");
   const std::string auth_host = GetArg(argc, argv, "--auth_host", "");
   const uint16_t auth_port = ParseU16Arg(argc, argv, "--auth_port", 6000);
 
@@ -406,12 +413,30 @@ int main(int argc, char** argv) {
 
   Logger::Instance().Info("chirp_app_gateway starting tcp=" + std::to_string(port) +
                           " ws=" + std::to_string(ws_port) +
+                          (tls_port != 0 ? (" tls=" + std::to_string(tls_port)) : "") +
+                          (ws_tls_port != 0 ? (" wss=" + std::to_string(ws_tls_port)) : "") +
                           (auth_host.empty() ? "" : (" auth=" + auth_host + ":" + std::to_string(auth_port))) +
                           (redis_host.empty() ? "" : (" redis=" + redis_host + ":" + std::to_string(redis_port) +
                                                       " instance=" + instance_id)) +
                           (notification_host.empty()
                                ? " device-forward=disabled"
                                : (" notification=" + notification_host + ":" + std::to_string(notification_port))));
+
+  // TLS edges: load the shared context before anything is bound, so a bad
+  // cert/key pair is a clean fatal startup error.
+  std::shared_ptr<asio::ssl::context> ssl;
+  if (tls_port != 0 || ws_tls_port != 0) {
+    if (tls_cert.empty() || tls_key.empty()) {
+      Logger::Instance().Error("TLS port requested but --tls_cert/--tls_key missing");
+      return 1;
+    }
+    std::string error;
+    ssl = chirp::network::MakeServerSslContext(tls_cert, tls_key, &error);
+    if (!ssl) {
+      Logger::Instance().Error("failed to load TLS cert/key: " + error);
+      return 1;
+    }
+  }
 
   asio::io_context io;
 
@@ -453,11 +478,33 @@ int main(int argc, char** argv) {
   server.Start();
   ws_server.Start();
 
+  // TLS twins of the same edge: the registry/auth/forwarding paths are
+  // stream-agnostic, so the callbacks are shared verbatim.
+  std::unique_ptr<chirp::network::TlsTcpServer> tls_server;
+  std::unique_ptr<chirp::network::TlsWebSocketServer> wss_server;
+  if (ssl) {
+    if (tls_port != 0) {
+      tls_server = std::make_unique<chirp::network::TlsTcpServer>(io, tls_port, ssl, on_frame, on_close);
+      tls_server->Start();
+    }
+    if (ws_tls_port != 0) {
+      wss_server =
+          std::make_unique<chirp::network::TlsWebSocketServer>(io, ws_tls_port, ssl, on_frame, on_close);
+      wss_server->Start();
+    }
+  }
+
   asio::signal_set signals(io, SIGINT, SIGTERM);
   signals.async_wait([&](const std::error_code& /*ec*/, int /*sig*/) {
     Logger::Instance().Info("shutdown requested");
     server.Stop();
     ws_server.Stop();
+    if (tls_server) {
+      tls_server->Stop();
+    }
+    if (wss_server) {
+      wss_server->Stop();
+    }
     io.stop();
   });
 
