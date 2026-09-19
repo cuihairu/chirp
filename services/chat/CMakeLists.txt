@@ -10,6 +10,7 @@ file(GLOB_RECURSE CHAT_BASE_SRCS "src/*.cc")
 list(FILTER CHAT_BASE_SRCS EXCLUDE REGEX ".*main_distributed\\.cc")
 list(FILTER CHAT_BASE_SRCS EXCLUDE REGEX ".*main_enhanced\\.cc")
 list(FILTER CHAT_BASE_SRCS EXCLUDE REGEX ".*mysql_message_store\\.cc")
+list(FILTER CHAT_BASE_SRCS EXCLUDE REGEX ".*message_store_factory\\.cc")
 list(FILTER CHAT_BASE_SRCS EXCLUDE REGEX ".*message_store_config\\.cc")
 list(FILTER CHAT_BASE_SRCS EXCLUDE REGEX ".*hybrid_message_store\\.cc")
 list(FILTER CHAT_BASE_SRCS EXCLUDE REGEX ".*message_delivery_tracker\\.cc")
@@ -55,6 +56,7 @@ if(MYSQL_FOUND)
         src/message_edit_manager.cc
         src/mention_manager.cc
         src/mysql_message_store.cc
+        src/message_store_factory.cc
         src/message_store_config.cc
         src/hybrid_message_store.cc
         src/message_delivery_tracker.cc

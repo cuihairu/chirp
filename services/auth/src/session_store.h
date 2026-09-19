@@ -1,7 +1,6 @@
 #pragma once
 
 #include <cstdint>
-#include <memory>
 #include <optional>
 #include <string>
 #include <vector>
@@ -51,10 +50,13 @@ struct CreateRefreshTokenRequest {
   int64_t ttl_seconds;  // Refresh token TTL (typically longer than session)
 };
 
-/// @brief MySQL-based session and refresh token storage
+/// @brief Backend-neutral session and refresh token storage interface. The
+/// concrete backend (MySQL today, PostgreSQL later) is picked by
+/// store_factory.cc; consumers only ever see this header.
 class SessionStore {
 public:
-  /// @brief Connection configuration
+  /// @brief Connection configuration (backend-neutral: host/port/database/
+  /// user/password/pool_size hold for every SQL backend)
   struct Config {
     std::string host = "127.0.0.1";
     uint16_t port = 3306;
@@ -64,64 +66,60 @@ public:
     size_t pool_size = 10;
   };
 
-  explicit SessionStore(const Config& config);
-  ~SessionStore();
+  virtual ~SessionStore() = default;
 
   /// @brief Initialize the store
-  bool Initialize();
+  virtual bool Initialize() = 0;
 
   /// @brief Create a new session
-  std::optional<SessionData> CreateSession(const CreateSessionRequest& req);
+  virtual std::optional<SessionData> CreateSession(const CreateSessionRequest& req) = 0;
 
   /// @brief Get session by session_id
-  std::optional<SessionData> GetSession(const std::string& session_id);
+  virtual std::optional<SessionData> GetSession(const std::string& session_id) = 0;
 
   /// @brief Get all active sessions for a user
-  std::vector<SessionData> GetUserSessions(const std::string& user_id);
+  virtual std::vector<SessionData> GetUserSessions(const std::string& user_id) = 0;
 
   /// @brief Update session activity timestamp
-  bool UpdateSessionActivity(const std::string& session_id, int64_t activity_time);
+  virtual bool UpdateSessionActivity(const std::string& session_id, int64_t activity_time) = 0;
 
   /// @brief Revoke a session
-  bool RevokeSession(const std::string& session_id);
+  virtual bool RevokeSession(const std::string& session_id) = 0;
 
   /// @brief Revoke all sessions for a user except one
-  int RevokeOtherSessions(const std::string& user_id, const std::string& keep_session_id);
+  virtual int RevokeOtherSessions(const std::string& user_id,
+                                  const std::string& keep_session_id) = 0;
 
   /// @brief Revoke all sessions for a user
-  int RevokeAllUserSessions(const std::string& user_id);
+  virtual int RevokeAllUserSessions(const std::string& user_id) = 0;
 
   /// @brief Clean up expired sessions
-  int CleanupExpiredSessions();
+  virtual int CleanupExpiredSessions() = 0;
 
   /// @brief Create a refresh token
-  std::optional<RefreshTokenData> CreateRefreshToken(const CreateRefreshTokenRequest& req,
-                                                     const std::string& token_hash);
+  virtual std::optional<RefreshTokenData> CreateRefreshToken(
+      const CreateRefreshTokenRequest& req, const std::string& token_hash) = 0;
 
   /// @brief Get refresh token by token_id
-  std::optional<RefreshTokenData> GetRefreshToken(const std::string& token_id);
+  virtual std::optional<RefreshTokenData> GetRefreshToken(const std::string& token_id) = 0;
 
   /// @brief Verify refresh token by hash
-  std::optional<RefreshTokenData> VerifyRefreshToken(const std::string& token_hash);
+  virtual std::optional<RefreshTokenData> VerifyRefreshToken(const std::string& token_hash) = 0;
 
   /// @brief Revoke a refresh token
-  bool RevokeRefreshToken(const std::string& token_id);
+  virtual bool RevokeRefreshToken(const std::string& token_id) = 0;
 
   /// @brief Revoke all refresh tokens for a user
-  int RevokeAllUserRefreshTokens(const std::string& user_id);
+  virtual int RevokeAllUserRefreshTokens(const std::string& user_id) = 0;
 
   /// @brief Revoke all refresh tokens for a session
-  int RevokeSessionRefreshTokens(const std::string& session_id);
+  virtual int RevokeSessionRefreshTokens(const std::string& session_id) = 0;
 
   /// @brief Clean up expired refresh tokens
-  int CleanupExpiredRefreshTokens();
+  virtual int CleanupExpiredRefreshTokens() = 0;
 
   /// @brief Check session rate limit (max sessions per user)
-  bool CheckSessionLimit(const std::string& user_id, int max_sessions);
-
-private:
-  struct Impl;
-  std::unique_ptr<Impl> impl_;
+  virtual bool CheckSessionLimit(const std::string& user_id, int max_sessions) = 0;
 };
 
 } // namespace chirp::auth

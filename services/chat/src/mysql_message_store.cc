@@ -227,7 +227,7 @@ bool MySQLMessageStore::Initialize() {
   return result;
 }
 
-bool MySQLMessageStore::StoreMessage(const MySQLMessageData& message) {
+bool MySQLMessageStore::StoreMessage(const StoredMessage& message) {
   auto conn = pool_->GetConnection();
   if (!conn) {
     return false;
@@ -250,7 +250,7 @@ bool MySQLMessageStore::StoreMessage(const MySQLMessageData& message) {
   return result;
 }
 
-std::vector<MySQLMessageData> MySQLMessageStore::GetHistory(const std::string& channel_id,
+std::vector<StoredMessage> MySQLMessageStore::GetHistory(const std::string& channel_id,
                                                            int channel_type,
                                                            int64_t before_timestamp,
                                                            int32_t limit) {
@@ -278,9 +278,9 @@ std::vector<MySQLMessageData> MySQLMessageStore::GetHistory(const std::string& c
   auto rows = conn->FetchResults();
   pool_->ReturnConnection(std::move(conn));
 
-  std::vector<MySQLMessageData> messages;
+  std::vector<StoredMessage> messages;
   for (auto& row : rows) {
-    MySQLMessageData msg;
+    StoredMessage msg;
     msg.message_id = row[0];
     msg.sender_id = row[1];
     msg.receiver_id = row[2];
@@ -297,7 +297,7 @@ std::vector<MySQLMessageData> MySQLMessageStore::GetHistory(const std::string& c
   return messages;
 }
 
-std::vector<MySQLMessageData> MySQLMessageStore::GetOfflineMessages(const std::string& user_id) {
+std::vector<StoredMessage> MySQLMessageStore::GetOfflineMessages(const std::string& user_id) {
   auto conn = pool_->GetConnection();
   if (!conn) {
     return {};
@@ -316,9 +316,9 @@ std::vector<MySQLMessageData> MySQLMessageStore::GetOfflineMessages(const std::s
   auto rows = conn->FetchResults();
   pool_->ReturnConnection(std::move(conn));
 
-  std::vector<MySQLMessageData> messages;
+  std::vector<StoredMessage> messages;
   for (auto& row : rows) {
-    MySQLMessageData msg;
+    StoredMessage msg;
     msg.message_id = row[0];
     msg.sender_id = row[1];
     msg.receiver_id = row[2];

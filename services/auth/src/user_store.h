@@ -1,11 +1,9 @@
 #pragma once
 
 #include <cstdint>
-#include <memory>
 #include <optional>
 #include <string>
 #include <string_view>
-#include <vector>
 
 #include "proto/common.pb.h"
 
@@ -40,10 +38,13 @@ struct UserRegisterResult {
   chirp::common::ErrorCode error_code{chirp::common::OK};
 };
 
-/// @brief MySQL-based user storage interface
+/// @brief Backend-neutral user storage interface. The concrete backend
+/// (MySQL today, PostgreSQL later) is picked by store_factory.cc; consumers
+/// only ever see this header.
 class UserStore {
 public:
-  /// @brief Connection configuration
+  /// @brief Connection configuration (backend-neutral: host/port/database/
+  /// user/password/pool_size hold for every SQL backend)
   struct Config {
     std::string host = "127.0.0.1";
     uint16_t port = 3306;
@@ -53,54 +54,49 @@ public:
     size_t pool_size = 10;
   };
 
-  explicit UserStore(const Config& config);
-  ~UserStore();
+  virtual ~UserStore() = default;
 
   /// @brief Initialize the store and create tables if needed
-  bool Initialize();
+  virtual bool Initialize() = 0;
 
   /// @brief Register a new user
   /// @param req Registration request
   /// @return Registration result with user_id or error
-  UserRegisterResult Register(const UserRegisterRequest& req);
+  virtual UserRegisterResult Register(const UserRegisterRequest& req) = 0;
 
   /// @brief Find user by user_id
-  std::optional<UserData> FindByUserId(const std::string& user_id);
+  virtual std::optional<UserData> FindByUserId(const std::string& user_id) = 0;
 
   /// @brief Find user by username
-  std::optional<UserData> FindByUsername(const std::string& username);
+  virtual std::optional<UserData> FindByUsername(const std::string& username) = 0;
 
   /// @brief Find user by email
-  std::optional<UserData> FindByEmail(const std::string& email);
+  virtual std::optional<UserData> FindByEmail(const std::string& email) = 0;
 
   /// @brief Verify user credentials
   /// @param identifier Username or email
   /// @param password Plain text password
   /// @return User data if credentials valid, nullopt otherwise
-  std::optional<UserData> VerifyCredentials(std::string_view identifier,
-                                            std::string_view password);
+  virtual std::optional<UserData> VerifyCredentials(std::string_view identifier,
+                                                    std::string_view password) = 0;
 
   /// @brief Update last login time
-  bool UpdateLastLogin(const std::string& user_id, int64_t login_time);
+  virtual bool UpdateLastLogin(const std::string& user_id, int64_t login_time) = 0;
 
   /// @brief Change user password
-  bool ChangePassword(const std::string& user_id, std::string_view new_password_hash);
+  virtual bool ChangePassword(const std::string& user_id, std::string_view new_password_hash) = 0;
 
   /// @brief Set user active status
-  bool SetActiveStatus(const std::string& user_id, bool is_active);
+  virtual bool SetActiveStatus(const std::string& user_id, bool is_active) = 0;
 
   /// @brief Check if username exists
-  bool UsernameExists(const std::string& username);
+  virtual bool UsernameExists(const std::string& username) = 0;
 
   /// @brief Check if email exists
-  bool EmailExists(const std::string& email);
+  virtual bool EmailExists(const std::string& email) = 0;
 
   /// @brief Get all active sessions count for a user
-  int GetActiveSessionCount(const std::string& user_id);
-
-private:
-  struct Impl;
-  std::unique_ptr<Impl> impl_;
+  virtual int GetActiveSessionCount(const std::string& user_id) = 0;
 };
 
 } // namespace chirp::auth

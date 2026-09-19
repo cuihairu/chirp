@@ -629,11 +629,11 @@ add_executable(auth_stores_tests
   auth_stores_test.cc
   fake_mysql.cc
   fake_sodium.cc
+  ${CMAKE_SOURCE_DIR}/services/auth/src/mysql_session_store.cc
+  ${CMAKE_SOURCE_DIR}/services/auth/src/mysql_user_store.cc
   ${CMAKE_SOURCE_DIR}/services/auth/src/password_hasher.cc
   ${CMAKE_SOURCE_DIR}/services/auth/src/redis_auth_store.cc
-  ${CMAKE_SOURCE_DIR}/services/auth/src/session_store.cc
   ${CMAKE_SOURCE_DIR}/services/auth/src/token_generator.cc
-  ${CMAKE_SOURCE_DIR}/services/auth/src/user_store.cc
 )
 
 chirp_unit_test_common_links(auth_stores_tests)
@@ -663,9 +663,10 @@ add_executable(auth_service_tests
   ${CMAKE_SOURCE_DIR}/services/auth/src/password_hasher.cc
   ${CMAKE_SOURCE_DIR}/services/auth/src/rate_limiter.cc
   ${CMAKE_SOURCE_DIR}/services/auth/src/redis_auth_store.cc
-  ${CMAKE_SOURCE_DIR}/services/auth/src/session_store.cc
+  ${CMAKE_SOURCE_DIR}/services/auth/src/store_factory.cc
   ${CMAKE_SOURCE_DIR}/services/auth/src/token_generator.cc
-  ${CMAKE_SOURCE_DIR}/services/auth/src/user_store.cc
+  ${CMAKE_SOURCE_DIR}/services/auth/src/mysql_session_store.cc
+  ${CMAKE_SOURCE_DIR}/services/auth/src/mysql_user_store.cc
 )
 
 chirp_unit_test_common_links(auth_service_tests)
@@ -694,6 +695,7 @@ add_executable(chat_mysql_tests
   ${CMAKE_SOURCE_DIR}/services/chat/src/message_delivery_tracker.cc
   ${CMAKE_SOURCE_DIR}/services/chat/src/message_migration_worker.cc
   ${CMAKE_SOURCE_DIR}/services/chat/src/message_store_config.cc
+  ${CMAKE_SOURCE_DIR}/services/chat/src/message_store_factory.cc
   ${CMAKE_SOURCE_DIR}/services/chat/src/mysql_message_store.cc
   ${CMAKE_SOURCE_DIR}/services/chat/src/paginated_history_retriever.cc
 )

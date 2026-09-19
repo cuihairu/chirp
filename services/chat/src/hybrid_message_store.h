@@ -12,11 +12,14 @@
 
 #include <asio.hpp>
 
+#include "message_store.h"
 #include "message_store_config.h"
-#include "mysql_message_store.h"
 #include "network/redis_client.h"
 
 namespace chirp::chat {
+
+class MySQLConnectionPool;
+class MySQLMessageStore;
 
 /// @brief Message data structure for storage
 struct MessageData {
@@ -137,8 +140,8 @@ public:
   /// @brief Get Redis client (for migration worker)
   std::shared_ptr<network::RedisClient> GetRedisClient() { return redis_; }
 
-  /// @brief Get MySQL store (for migration worker)
-  std::shared_ptr<MySQLMessageStore> GetMySQLStore() { return mysql_store_; }
+  /// @brief Get the archive store (for migration worker)
+  std::shared_ptr<MessageStore> GetMySQLStore() { return mysql_store_; }
 
   /// @brief Get configuration
   const MessageStoreConfig& GetConfig() const { return config_; }
@@ -162,7 +165,7 @@ private:
   std::map<std::string, std::deque<std::string>> offline_fallback_;
   std::shared_ptr<network::RedisClient> redis_;
   std::shared_ptr<MySQLConnectionPool> mysql_pool_;
-  std::shared_ptr<MySQLMessageStore> mysql_store_;
+  std::shared_ptr<MessageStore> mysql_store_;
 };
 
 } // namespace chirp::chat

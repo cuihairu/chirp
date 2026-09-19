@@ -1,6 +1,6 @@
 // Minimal MySQL C API subset for unit tests.
 //
-// The production sources (user_store.cc / session_store.cc /
+// The production sources (mysql_user_store.cc / mysql_session_store.cc /
 // mysql_message_store.cc) include <mysql/mysql.h> and call a handful of
 // libmysqlclient functions. Shipping libmysqlclient into the unit-test
 // environment is heavyweight, so tests compile against this drop-in header

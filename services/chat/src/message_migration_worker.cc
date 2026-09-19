@@ -3,6 +3,7 @@
 #include <mutex>
 
 #include "logger.h"
+#include "message_store.h"
 
 namespace chirp::chat {
 namespace {
@@ -125,7 +126,7 @@ void MessageMigrationWorker::RunMigration() {
       MessageData msg;
       if (msg.ParseFromArray(msg_data.data(), static_cast<int>(msg_data.size()))) {
         // Store in MySQL
-        MySQLMessageData mysql_msg;
+        StoredMessage mysql_msg;
         mysql_msg.message_id = msg.message_id;
         mysql_msg.sender_id = msg.sender_id;
         mysql_msg.receiver_id = msg.receiver_id;
@@ -157,7 +158,7 @@ void MessageMigrationWorker::RunMigration() {
     for (const auto& msg_data : messages) {
       MessageData msg;
       if (msg.ParseFromArray(msg_data.data(), static_cast<int>(msg_data.size()))) {
-        MySQLMessageData mysql_msg;
+        StoredMessage mysql_msg;
         mysql_msg.message_id = msg.message_id;
         mysql_msg.sender_id = msg.sender_id;
         mysql_msg.receiver_id = msg.receiver_id;

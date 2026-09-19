@@ -11,8 +11,8 @@
 #include "in_memory_redis.h"
 #include "password_hasher.h"
 #include "redis_auth_store.h"
-#include "session_store.h"
-#include "user_store.h"
+#include "mysql_session_store.h"
+#include "mysql_user_store.h"
 
 namespace chirp_test {
 // Provided by fake_sodium.cc (linked into this test target).
@@ -25,7 +25,9 @@ void SetPwhashShouldFail(bool);
 namespace {
 
 using chirp::auth::RedisAuthStore;
+using chirp::auth::MySQLSessionStore;
 using chirp::auth::SessionStore;
+using chirp::auth::MySQLUserStore;
 using chirp::auth::UserStore;
 namespace fake_mysql = chirp_test::fake_mysql;
 namespace fake_sodium = chirp_test::fake_sodium;
@@ -60,31 +62,31 @@ class UserStoreTest : public ::testing::Test {
 
 TEST_F(UserStoreTest, InitializeFailsWithoutConnection) {
   fake_mysql::SetConnectShouldFail(true);
-  UserStore store(DefaultUserConfig());
+  MySQLUserStore store(DefaultUserConfig());
   EXPECT_FALSE(store.Initialize());
   EXPECT_EQ(fake_mysql::LiveHandles(), 0);
 }
 
 TEST_F(UserStoreTest, InitializeFailsOnQueryError) {
   fake_mysql::PushQueryError("boom");
-  UserStore store(DefaultUserConfig());
+  MySQLUserStore store(DefaultUserConfig());
   EXPECT_FALSE(store.Initialize());
 }
 
 TEST_F(UserStoreTest, InitializeWarnsWhenTableMissingButSucceeds) {
   fake_mysql::PushRows({});  // SHOW TABLES returns no rows
-  UserStore store(DefaultUserConfig());
+  MySQLUserStore store(DefaultUserConfig());
   EXPECT_TRUE(store.Initialize());
 }
 
 TEST_F(UserStoreTest, InitializeSucceedsWhenTablePresent) {
   fake_mysql::PushRows({{"users"}});
-  UserStore store(DefaultUserConfig());
+  MySQLUserStore store(DefaultUserConfig());
   EXPECT_TRUE(store.Initialize());
 }
 
 TEST_F(UserStoreTest, RegisterRejectsWeakPasswordBeforeTouchingDb) {
-  UserStore store(DefaultUserConfig());
+  MySQLUserStore store(DefaultUserConfig());
   chirp::auth::UserRegisterRequest req;
   req.username = "alice";
   req.password = "short";
@@ -96,7 +98,7 @@ TEST_F(UserStoreTest, RegisterRejectsWeakPasswordBeforeTouchingDb) {
 
 TEST_F(UserStoreTest, RegisterRejectsExistingUsername) {
   fake_mysql::PushRows({{"1"}});  // COUNT(*) -> username exists
-  UserStore store(DefaultUserConfig());
+  MySQLUserStore store(DefaultUserConfig());
   chirp::auth::UserRegisterRequest req;
   req.username = "alice";
   req.password = "Str0ng!pass";
@@ -108,7 +110,7 @@ TEST_F(UserStoreTest, RegisterRejectsExistingUsername) {
 TEST_F(UserStoreTest, RegisterRejectsExistingEmail) {
   fake_mysql::PushRows({{"0"}});  // username free
   fake_mysql::PushRows({{"1"}});  // email exists
-  UserStore store(DefaultUserConfig());
+  MySQLUserStore store(DefaultUserConfig());
   chirp::auth::UserRegisterRequest req;
   req.username = "alice";
   req.email = "a@b.c";
@@ -121,7 +123,7 @@ TEST_F(UserStoreTest, RegisterRejectsExistingEmail) {
 TEST_F(UserStoreTest, RegisterSucceedsAndWritesEscapedInsert) {
   fake_mysql::PushRows({{"0"}});  // username free
   fake_mysql::PushRows({{"0"}});  // email free
-  UserStore store(DefaultUserConfig());
+  MySQLUserStore store(DefaultUserConfig());
   chirp::auth::UserRegisterRequest req;
   req.username = "ali'ce";
   req.email = "a@b.c";
@@ -141,7 +143,7 @@ TEST_F(UserStoreTest, RegisterFailsWhenInsertErrors) {
   fake_mysql::PushRows({{"0"}});
   fake_mysql::PushRows({{"0"}});
   fake_mysql::FailQueriesMatching("INSERT INTO users");
-  UserStore store(DefaultUserConfig());
+  MySQLUserStore store(DefaultUserConfig());
   chirp::auth::UserRegisterRequest req;
   req.username = "alice";
   req.password = "Str0ng!pass";
@@ -152,7 +154,7 @@ TEST_F(UserStoreTest, RegisterFailsWhenInsertErrors) {
 
 TEST_F(UserStoreTest, RegisterFailsWithoutConnection) {
   fake_mysql::SetConnectShouldFail(true);
-  UserStore store(DefaultUserConfig());
+  MySQLUserStore store(DefaultUserConfig());
   chirp::auth::UserRegisterRequest req;
   req.username = "alice";
   req.password = "Str0ng!pass";
@@ -165,7 +167,7 @@ TEST_F(UserStoreTest, RegisterFailsWhenPasswordHashingFails) {
   fake_mysql::PushRows({{"0"}});
   fake_mysql::PushRows({{"0"}});
   chirp_test::fake_sodium::SetPwhashShouldFail(true);
-  UserStore store(DefaultUserConfig());
+  MySQLUserStore store(DefaultUserConfig());
   chirp::auth::UserRegisterRequest req;
   req.username = "alice";
   req.password = "Str0ng!pass";
@@ -178,7 +180,7 @@ TEST_F(UserStoreTest, RegisterFailsWhenPasswordHashingFails) {
 TEST_F(UserStoreTest, FindByUserIdParsesRowAndHandlesNullColumns) {
   auto row = UserRow("user_1", "alice", std::nullopt, "$fake$00$");
   fake_mysql::PushRows({row});
-  UserStore store(DefaultUserConfig());
+  MySQLUserStore store(DefaultUserConfig());
   auto user = store.FindByUserId("user_1");
   ASSERT_TRUE(user.has_value());
   EXPECT_EQ(user->id, 7);
@@ -191,25 +193,25 @@ TEST_F(UserStoreTest, FindByUserIdParsesRowAndHandlesNullColumns) {
 
 TEST_F(UserStoreTest, FindByUserIdFailsOnQueryError) {
   fake_mysql::PushQueryError("bad sql");
-  UserStore store(DefaultUserConfig());
+  MySQLUserStore store(DefaultUserConfig());
   EXPECT_FALSE(store.FindByUserId("user_1").has_value());
 }
 
 TEST_F(UserStoreTest, FindByUserIdFailsWithoutResult) {
   fake_mysql::SetStoreResultShouldFail(true);
-  UserStore store(DefaultUserConfig());
+  MySQLUserStore store(DefaultUserConfig());
   EXPECT_FALSE(store.FindByUserId("user_1").has_value());
 }
 
 TEST_F(UserStoreTest, FindByUserIdFailsWithoutConnection) {
   fake_mysql::SetConnectShouldFail(true);
-  UserStore store(DefaultUserConfig());
+  MySQLUserStore store(DefaultUserConfig());
   EXPECT_FALSE(store.FindByUserId("user_1").has_value());
 }
 
 TEST_F(UserStoreTest, FindByUsernameInactiveRowAndEmptyResult) {
   fake_mysql::PushRows({UserRow("user_1", "alice", "a@b.c", "h", "0")});
-  UserStore store(DefaultUserConfig());
+  MySQLUserStore store(DefaultUserConfig());
   auto user = store.FindByUsername("alice");
   ASSERT_TRUE(user.has_value());
   EXPECT_FALSE(user->is_active);
@@ -220,7 +222,7 @@ TEST_F(UserStoreTest, FindByUsernameInactiveRowAndEmptyResult) {
 
 TEST_F(UserStoreTest, FindByEmailSucceedsAndHandlesFailures) {
   fake_mysql::PushRows({UserRow("user_1", "alice", "a@b.c", "h")});
-  UserStore store(DefaultUserConfig());
+  MySQLUserStore store(DefaultUserConfig());
   EXPECT_TRUE(store.FindByEmail("a@b.c").has_value());
 
   fake_mysql::PushQueryError("x");
@@ -232,7 +234,7 @@ TEST_F(UserStoreTest, VerifyCredentialsPrefersUsernameThenEmailThenFails) {
 
   // Found by username with matching password.
   fake_mysql::PushRows({UserRow("u1", "alice", "a@b.c", hash)});
-  UserStore store(DefaultUserConfig());
+  MySQLUserStore store(DefaultUserConfig());
   auto user = store.VerifyCredentials("alice", "Str0ng!pass");
   ASSERT_TRUE(user.has_value());
   EXPECT_EQ(user->username, "alice");
@@ -259,7 +261,7 @@ TEST_F(UserStoreTest, VerifyCredentialsPrefersUsernameThenEmailThenFails) {
 }
 
 TEST_F(UserStoreTest, UpdateWriteOperationsCoverFailureAndSuccess) {
-  UserStore store(DefaultUserConfig());
+  MySQLUserStore store(DefaultUserConfig());
   EXPECT_TRUE(store.UpdateLastLogin("u1", 123));
   EXPECT_TRUE(store.ChangePassword("u1", "newhash"));
   EXPECT_TRUE(store.SetActiveStatus("u1", false));
@@ -270,14 +272,14 @@ TEST_F(UserStoreTest, UpdateWriteOperationsCoverFailureAndSuccess) {
 
 TEST_F(UserStoreTest, UpdateWriteOperationsFailWithoutConnection) {
   fake_mysql::SetConnectShouldFail(true);
-  UserStore store(DefaultUserConfig());
+  MySQLUserStore store(DefaultUserConfig());
   EXPECT_FALSE(store.UpdateLastLogin("u1", 1));
   EXPECT_FALSE(store.ChangePassword("u1", "h"));
   EXPECT_FALSE(store.SetActiveStatus("u1", true));
 }
 
 TEST_F(UserStoreTest, ExistenceChecksCoverAllBranches) {
-  UserStore store(DefaultUserConfig());
+  MySQLUserStore store(DefaultUserConfig());
 
   fake_mysql::PushRows({{"1"}});
   EXPECT_TRUE(store.UsernameExists("alice"));
@@ -298,13 +300,13 @@ TEST_F(UserStoreTest, ExistenceChecksCoverAllBranches) {
 
 TEST_F(UserStoreTest, ExistenceChecksFailWithoutConnection) {
   fake_mysql::SetConnectShouldFail(true);
-  UserStore store(DefaultUserConfig());
+  MySQLUserStore store(DefaultUserConfig());
   EXPECT_FALSE(store.UsernameExists("alice"));
   EXPECT_FALSE(store.EmailExists("a@b.c"));
 }
 
 TEST_F(UserStoreTest, GetActiveSessionCountBranches) {
-  UserStore store(DefaultUserConfig());
+  MySQLUserStore store(DefaultUserConfig());
 
   fake_mysql::PushRows({{"3"}});
   EXPECT_EQ(store.GetActiveSessionCount("u1"), 3);
@@ -323,7 +325,7 @@ TEST_F(UserStoreTest, GetActiveSessionCountBranches) {
 }
 
 TEST_F(UserStoreTest, PooledConnectionReusesLiveHandleAndDropsStaleOne) {
-  UserStore store(DefaultUserConfig());
+  MySQLUserStore store(DefaultUserConfig());
   // First call opens a fresh handle; returning it puts it in the pool.
   fake_mysql::PushRows({{"1"}});
   EXPECT_TRUE(store.Initialize());
@@ -346,17 +348,17 @@ class SessionStoreTest : public ::testing::Test {
 
 TEST_F(SessionStoreTest, InitializeRequiresConnection) {
   fake_mysql::SetConnectShouldFail(true);
-  SessionStore store(DefaultSessionConfig());
+  MySQLSessionStore store(DefaultSessionConfig());
   EXPECT_FALSE(store.Initialize());
 }
 
 TEST_F(SessionStoreTest, InitializeSucceedsWithConnection) {
-  SessionStore store(DefaultSessionConfig());
+  MySQLSessionStore store(DefaultSessionConfig());
   EXPECT_TRUE(store.Initialize());
 }
 
 TEST_F(SessionStoreTest, CreateSessionRoundTripAndFailures) {
-  SessionStore store(DefaultSessionConfig());
+  MySQLSessionStore store(DefaultSessionConfig());
 
   chirp::auth::CreateSessionRequest req;
   req.user_id = "u1";
@@ -382,7 +384,7 @@ TEST_F(SessionStoreTest, GetSessionParsesRow) {
   std::vector<std::optional<std::string>> row = {
       "9", "sess_1", "u1", "d1", "pc", "10", "99999999999", "20", "1"};
   fake_mysql::PushRows({row});
-  SessionStore store(DefaultSessionConfig());
+  MySQLSessionStore store(DefaultSessionConfig());
   auto session = store.GetSession("sess_1");
   ASSERT_TRUE(session.has_value());
   EXPECT_EQ(session->id, 9);
@@ -403,7 +405,7 @@ TEST_F(SessionStoreTest, GetSessionParsesRow) {
 
 TEST_F(SessionStoreTest, GetSessionFailsWithoutConnection) {
   fake_mysql::SetConnectShouldFail(true);
-  SessionStore store(DefaultSessionConfig());
+  MySQLSessionStore store(DefaultSessionConfig());
   EXPECT_FALSE(store.GetSession("s").has_value());
 }
 
@@ -413,7 +415,7 @@ TEST_F(SessionStoreTest, GetUserSessionsParsesMultipleRows) {
   std::vector<std::optional<std::string>> r2 = {"2", "s2", "u1", std::nullopt, "web",
                                                 "1", "2", "3", "0"};
   fake_mysql::PushRows({r1, r2});
-  SessionStore store(DefaultSessionConfig());
+  MySQLSessionStore store(DefaultSessionConfig());
   auto sessions = store.GetUserSessions("u1");
   ASSERT_EQ(sessions.size(), 2u);
   EXPECT_EQ(sessions[0].session_id, "s1");
@@ -425,7 +427,7 @@ TEST_F(SessionStoreTest, GetUserSessionsParsesMultipleRows) {
 }
 
 TEST_F(SessionStoreTest, UpdateActivityAndRevokeBranches) {
-  SessionStore store(DefaultSessionConfig());
+  MySQLSessionStore store(DefaultSessionConfig());
   EXPECT_TRUE(store.UpdateSessionActivity("s1", 5));
   EXPECT_TRUE(store.RevokeSession("s1"));
 
@@ -437,13 +439,13 @@ TEST_F(SessionStoreTest, UpdateActivityAndRevokeBranches) {
 
 TEST_F(SessionStoreTest, UpdateActivityAndRevokeFailWithoutConnection) {
   fake_mysql::SetConnectShouldFail(true);
-  SessionStore store(DefaultSessionConfig());
+  MySQLSessionStore store(DefaultSessionConfig());
   EXPECT_FALSE(store.UpdateSessionActivity("s1", 5));
   EXPECT_FALSE(store.RevokeSession("s1"));
 }
 
 TEST_F(SessionStoreTest, RevokeFamilyUsesAffectedRows) {
-  SessionStore store(DefaultSessionConfig());
+  MySQLSessionStore store(DefaultSessionConfig());
 
   fake_mysql::SetAffectedRows(2);
   EXPECT_EQ(store.RevokeOtherSessions("u1", "keep"), 2);
@@ -463,14 +465,14 @@ TEST_F(SessionStoreTest, RevokeFamilyUsesAffectedRows) {
 
 TEST_F(SessionStoreTest, RevokeFamilyFailsWithoutConnection) {
   fake_mysql::SetConnectShouldFail(true);
-  SessionStore store(DefaultSessionConfig());
+  MySQLSessionStore store(DefaultSessionConfig());
   EXPECT_EQ(store.RevokeOtherSessions("u1", "keep"), 0);
   EXPECT_EQ(store.RevokeAllUserSessions("u1"), 0);
   EXPECT_EQ(store.CleanupExpiredSessions(), 0);
 }
 
 TEST_F(SessionStoreTest, RefreshTokenLifecycle) {
-  SessionStore store(DefaultSessionConfig());
+  MySQLSessionStore store(DefaultSessionConfig());
 
   chirp::auth::CreateRefreshTokenRequest req;
   req.user_id = "u1";
@@ -495,7 +497,7 @@ TEST_F(SessionStoreTest, GetRefreshTokenParsesRow) {
   std::vector<std::optional<std::string>> row = {
       "1", "tok_1", "u1", "s1", "d1", "storedhash", "10", "99999999999", "0", "0"};
   fake_mysql::PushRows({row});
-  SessionStore store(DefaultSessionConfig());
+  MySQLSessionStore store(DefaultSessionConfig());
   auto token = store.GetRefreshToken("tok_1");
   ASSERT_TRUE(token.has_value());
   EXPECT_EQ(token->token_hash, "storedhash");
@@ -512,7 +514,7 @@ TEST_F(SessionStoreTest, VerifyRefreshTokenParsesRowAndHandlesMisses) {
   const std::vector<std::optional<std::string>> row = {
       "1", "t1", "u1", "s1", "d1", "myhash", "10", "99999999999", "0", "0"};
 
-  SessionStore store(DefaultSessionConfig());
+  MySQLSessionStore store(DefaultSessionConfig());
   fake_mysql::PushRows({row});
   auto token = store.VerifyRefreshToken("myhash");
   ASSERT_TRUE(token.has_value());
@@ -527,7 +529,7 @@ TEST_F(SessionStoreTest, VerifyRefreshTokenParsesRowAndHandlesMisses) {
 }
 
 TEST_F(SessionStoreTest, RefreshTokenRevocationAndCleanup) {
-  SessionStore store(DefaultSessionConfig());
+  MySQLSessionStore store(DefaultSessionConfig());
 
   EXPECT_TRUE(store.RevokeRefreshToken("tok_1"));
   fake_mysql::PushQueryError("x");
@@ -548,7 +550,7 @@ TEST_F(SessionStoreTest, RefreshTokenRevocationAndCleanup) {
 
 TEST_F(SessionStoreTest, RefreshTokenOpsFailWithoutConnection) {
   fake_mysql::SetConnectShouldFail(true);
-  SessionStore store(DefaultSessionConfig());
+  MySQLSessionStore store(DefaultSessionConfig());
   EXPECT_FALSE(store.RevokeRefreshToken("t"));
   EXPECT_EQ(store.RevokeAllUserRefreshTokens("u1"), 0);
   EXPECT_EQ(store.RevokeSessionRefreshTokens("s1"), 0);
@@ -559,7 +561,7 @@ TEST_F(SessionStoreTest, RefreshTokenOpsFailWithoutConnection) {
 }
 
 TEST_F(SessionStoreTest, CheckSessionLimitComparesAgainstCount) {
-  SessionStore store(DefaultSessionConfig());
+  MySQLSessionStore store(DefaultSessionConfig());
 
   fake_mysql::PushRows({{"1"}});
   EXPECT_TRUE(store.CheckSessionLimit("u1", 5));   // under limit
@@ -730,7 +732,7 @@ TEST_F(RedisAuthStoreTest, ConnectedEdgeCases) {
 
 TEST_F(UserStoreTest, InitFailureGuardsReturnDefaults) {
   fake_mysql::SetInitShouldFail(true);
-  UserStore store(DefaultUserConfig());
+  MySQLUserStore store(DefaultUserConfig());
   EXPECT_FALSE(store.Initialize());
   EXPECT_FALSE(store.FindByUsername("alice").has_value());
   EXPECT_FALSE(store.FindByEmail("a@b.c").has_value());
@@ -738,7 +740,7 @@ TEST_F(UserStoreTest, InitFailureGuardsReturnDefaults) {
 }
 
 TEST_F(UserStoreTest, QueryErrorPathsReturnDefaults) {
-  UserStore store(DefaultUserConfig());
+  MySQLUserStore store(DefaultUserConfig());
   fake_mysql::PushQueryError("x");
   EXPECT_FALSE(store.FindByUsername("alice").has_value());
   fake_mysql::PushQueryError("x");
@@ -750,7 +752,7 @@ TEST_F(UserStoreTest, QueryErrorPathsReturnDefaults) {
 }
 
 TEST_F(UserStoreTest, StoreResultFailurePathsReturnDefaults) {
-  UserStore store(DefaultUserConfig());
+  MySQLUserStore store(DefaultUserConfig());
   fake_mysql::SetStoreResultShouldFail(true);
   EXPECT_FALSE(store.FindByUsername("alice").has_value());
   EXPECT_FALSE(store.FindByEmail("a@b.c").has_value());
@@ -761,7 +763,7 @@ TEST_F(UserStoreTest, StoreResultFailurePathsReturnDefaults) {
 TEST_F(UserStoreTest, SurplusConnectionsAreClosedNotPooled) {
   UserStore::Config cfg;
   cfg.pool_size = 0;  // nothing ever parks in the pool
-  UserStore store(cfg);
+  MySQLUserStore store(cfg);
   fake_mysql::PushRows({{"1"}});
   EXPECT_TRUE(store.UsernameExists("alice"));
   EXPECT_EQ(fake_mysql::LiveHandles(), 0);
@@ -769,7 +771,7 @@ TEST_F(UserStoreTest, SurplusConnectionsAreClosedNotPooled) {
 
 TEST_F(SessionStoreTest, InitFailureGuardsReturnDefaults) {
   fake_mysql::SetInitShouldFail(true);
-  SessionStore store(DefaultSessionConfig());
+  MySQLSessionStore store(DefaultSessionConfig());
   EXPECT_FALSE(store.Initialize());
 
   chirp::auth::CreateSessionRequest req;
@@ -785,7 +787,7 @@ TEST_F(SessionStoreTest, InitFailureGuardsReturnDefaults) {
 }
 
 TEST_F(SessionStoreTest, QueryAndStoreResultFailuresReturnDefaults) {
-  SessionStore store(DefaultSessionConfig());
+  MySQLSessionStore store(DefaultSessionConfig());
 
   fake_mysql::PushQueryError("x");
   EXPECT_EQ(store.RevokeOtherSessions("u1", "keep"), 0);
@@ -802,7 +804,7 @@ TEST_F(SessionStoreTest, QueryAndStoreResultFailuresReturnDefaults) {
 }
 
 TEST_F(SessionStoreTest, PooledConnectionPingFailureReopens) {
-  SessionStore store(DefaultSessionConfig());
+  MySQLSessionStore store(DefaultSessionConfig());
   ASSERT_TRUE(store.GetUserSessions("u1").empty());  // parks a connection
   EXPECT_EQ(fake_mysql::LiveHandles(), 1);
 
@@ -814,7 +816,7 @@ TEST_F(SessionStoreTest, PooledConnectionPingFailureReopens) {
 TEST_F(SessionStoreTest, SurplusConnectionsAreClosedNotPooled) {
   SessionStore::Config cfg;
   cfg.pool_size = 0;
-  SessionStore store(cfg);
+  MySQLSessionStore store(cfg);
   ASSERT_TRUE(store.GetUserSessions("u1").empty());
   EXPECT_EQ(fake_mysql::LiveHandles(), 0);
 }

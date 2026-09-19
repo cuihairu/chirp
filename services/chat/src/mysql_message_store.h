@@ -9,30 +9,11 @@
 
 #include <mysql/mysql.h>
 
+#include "message_store.h"
 #include "proto/chat.pb.h"
 
 namespace chirp {
 namespace chat {
-
-// Message data for database storage
-struct MySQLMessageData {
-  std::string message_id;
-  std::string sender_id;
-  std::string receiver_id;
-  std::string channel_id;
-  int channel_type;
-  int msg_type;
-  std::string content;
-  int64_t timestamp;
-  int64_t created_at;
-};
-
-// Read receipt data
-struct ReadReceiptData {
-  std::string message_id;
-  std::string user_id;
-  int64_t read_at;
-};
 
 // MySQL connection wrapper
 class MySQLConnection {
@@ -106,45 +87,46 @@ private:
   std::mutex mu_;
 };
 
-// MySQL message store
-class MySQLMessageStore {
+// MySQL message store (the archive backend behind the MessageStore interface;
+// MySQL dialect SQL lives here)
+class MySQLMessageStore final : public MessageStore {
 public:
   MySQLMessageStore(std::shared_ptr<MySQLConnectionPool> pool);
-  ~MySQLMessageStore() = default;
+  ~MySQLMessageStore() override = default;
 
   // Initialize database schema
-  bool Initialize();
+  bool Initialize() override;
 
   // Store message
-  bool StoreMessage(const MySQLMessageData& message);
+  bool StoreMessage(const StoredMessage& message) override;
 
   // Get message history
-  std::vector<MySQLMessageData> GetHistory(const std::string& channel_id,
-                                          int channel_type,
-                                          int64_t before_timestamp,
-                                          int32_t limit);
+  std::vector<StoredMessage> GetHistory(const std::string& channel_id,
+                                        int channel_type,
+                                        int64_t before_timestamp,
+                                        int32_t limit) override;
 
   // Get offline messages for a user
-  std::vector<MySQLMessageData> GetOfflineMessages(const std::string& user_id);
+  std::vector<StoredMessage> GetOfflineMessages(const std::string& user_id) override;
 
   // Delete offline messages for a user
-  bool ClearOfflineMessages(const std::string& user_id);
+  bool ClearOfflineMessages(const std::string& user_id) override;
 
   // Store read receipt
-  bool StoreReadReceipt(const std::string& message_id, const std::string& user_id, int64_t read_at);
+  bool StoreReadReceipt(const std::string& message_id, const std::string& user_id, int64_t read_at) override;
 
   // Get read receipts for a message
-  std::vector<ReadReceiptData> GetReadReceipts(const std::string& message_id);
+  std::vector<ReadReceiptData> GetReadReceipts(const std::string& message_id) override;
 
   // Mark messages as read
   bool MarkAsRead(const std::string& user_id, const std::string& channel_id,
-                 int channel_type, const std::string& message_id, int64_t read_at);
+                 int channel_type, const std::string& message_id, int64_t read_at) override;
 
   // Get unread count
-  int32_t GetUnreadCount(const std::string& user_id);
+  int32_t GetUnreadCount(const std::string& user_id) override;
 
   // Get all unread counts per channel
-  std::vector<std::pair<std::string, int32_t>> GetAllUnread(const std::string& user_id);
+  std::vector<std::pair<std::string, int32_t>> GetAllUnread(const std::string& user_id) override;
 
 private:
   std::shared_ptr<MySQLConnectionPool> pool_;

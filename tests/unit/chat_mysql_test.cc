@@ -27,7 +27,7 @@ using chirp::chat::MessageStoreConfig;
 using chirp::chat::MySQLConnection;
 using chirp::chat::MySQLConnectionPool;
 using chirp::chat::MySQLMessageStore;
-using chirp::chat::MySQLMessageData;
+using chirp::chat::StoredMessage;
 using chirp::chat::PaginatedHistoryRetriever;
 namespace fake_mysql = chirp_test::fake_mysql;
 
@@ -48,8 +48,8 @@ MessageData MakeMessage(const std::string& id,
   return msg;
 }
 
-MySQLMessageData ToMySql(const MessageData& msg) {
-  MySQLMessageData out;
+StoredMessage ToMySql(const MessageData& msg) {
+  StoredMessage out;
   out.message_id = msg.message_id;
   out.sender_id = msg.sender_id;
   out.receiver_id = msg.receiver_id;
@@ -216,7 +216,7 @@ TEST_F(MySqlStoreTest, StoreMessageRoundTrip) {
   auto pool = std::make_shared<MySQLConnectionPool>(1, "h", 3306, "db", "u", "p");
   MySQLMessageStore store(pool);
 
-  MySQLMessageData msg;
+  StoredMessage msg;
   msg.message_id = "m1";
   msg.sender_id = "s";
   msg.receiver_id = "r";

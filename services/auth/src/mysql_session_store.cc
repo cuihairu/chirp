@@ -1,4 +1,4 @@
-#include "session_store.h"
+#include "mysql_session_store.h"
 
 #include <chrono>
 #include <cstring>
@@ -27,7 +27,7 @@ std::string EscapeString(MYSQL* mysql, const std::string& str) {
 
 } // namespace
 
-struct SessionStore::Impl {
+struct MySQLSessionStore::Impl {
   Config config;
   std::mutex mutex;
   std::vector<MYSQL*> connections;
@@ -86,12 +86,12 @@ struct SessionStore::Impl {
   }
 };
 
-SessionStore::SessionStore(const Config& config)
+MySQLSessionStore::MySQLSessionStore(const Config& config)
     : impl_(std::make_unique<Impl>(config)) {}
 
-SessionStore::~SessionStore() = default;
+MySQLSessionStore::~MySQLSessionStore() = default;
 
-bool SessionStore::Initialize() {
+bool MySQLSessionStore::Initialize() {
   auto* conn = impl_->GetConnection();
   if (!conn) {
     return false;
@@ -102,7 +102,7 @@ bool SessionStore::Initialize() {
   return true;
 }
 
-std::optional<SessionData> SessionStore::CreateSession(const CreateSessionRequest& req) {
+std::optional<SessionData> MySQLSessionStore::CreateSession(const CreateSessionRequest& req) {
   auto* conn = impl_->GetConnection();
   if (!conn) {
     return std::nullopt;
@@ -142,7 +142,7 @@ std::optional<SessionData> SessionStore::CreateSession(const CreateSessionReques
   return session;
 }
 
-std::optional<SessionData> SessionStore::GetSession(const std::string& session_id) {
+std::optional<SessionData> MySQLSessionStore::GetSession(const std::string& session_id) {
   auto* conn = impl_->GetConnection();
   if (!conn) {
     return std::nullopt;
@@ -186,7 +186,7 @@ std::optional<SessionData> SessionStore::GetSession(const std::string& session_i
   return data;
 }
 
-std::vector<SessionData> SessionStore::GetUserSessions(const std::string& user_id) {
+std::vector<SessionData> MySQLSessionStore::GetUserSessions(const std::string& user_id) {
   auto* conn = impl_->GetConnection();
   if (!conn) {
     return {};
@@ -231,7 +231,7 @@ std::vector<SessionData> SessionStore::GetUserSessions(const std::string& user_i
   return sessions;
 }
 
-bool SessionStore::UpdateSessionActivity(const std::string& session_id, int64_t activity_time) {
+bool MySQLSessionStore::UpdateSessionActivity(const std::string& session_id, int64_t activity_time) {
   auto* conn = impl_->GetConnection();
   if (!conn) {
     return false;
@@ -246,7 +246,7 @@ bool SessionStore::UpdateSessionActivity(const std::string& session_id, int64_t 
   return result;
 }
 
-bool SessionStore::RevokeSession(const std::string& session_id) {
+bool MySQLSessionStore::RevokeSession(const std::string& session_id) {
   auto* conn = impl_->GetConnection();
   if (!conn) {
     return false;
@@ -260,7 +260,7 @@ bool SessionStore::RevokeSession(const std::string& session_id) {
   return result;
 }
 
-int SessionStore::RevokeOtherSessions(const std::string& user_id, const std::string& keep_session_id) {
+int MySQLSessionStore::RevokeOtherSessions(const std::string& user_id, const std::string& keep_session_id) {
   auto* conn = impl_->GetConnection();
   if (!conn) {
     return 0;
@@ -281,7 +281,7 @@ int SessionStore::RevokeOtherSessions(const std::string& user_id, const std::str
   return affected;
 }
 
-int SessionStore::RevokeAllUserSessions(const std::string& user_id) {
+int MySQLSessionStore::RevokeAllUserSessions(const std::string& user_id) {
   auto* conn = impl_->GetConnection();
   if (!conn) {
     return 0;
@@ -300,7 +300,7 @@ int SessionStore::RevokeAllUserSessions(const std::string& user_id) {
   return affected;
 }
 
-int SessionStore::CleanupExpiredSessions() {
+int MySQLSessionStore::CleanupExpiredSessions() {
   auto* conn = impl_->GetConnection();
   if (!conn) {
     return 0;
@@ -319,7 +319,7 @@ int SessionStore::CleanupExpiredSessions() {
   return affected;
 }
 
-std::optional<RefreshTokenData> SessionStore::CreateRefreshToken(const CreateRefreshTokenRequest& req,
+std::optional<RefreshTokenData> MySQLSessionStore::CreateRefreshToken(const CreateRefreshTokenRequest& req,
                                                                  const std::string& token_hash) {
   auto* conn = impl_->GetConnection();
   if (!conn) {
@@ -360,7 +360,7 @@ std::optional<RefreshTokenData> SessionStore::CreateRefreshToken(const CreateRef
   return token;
 }
 
-std::optional<RefreshTokenData> SessionStore::GetRefreshToken(const std::string& token_id) {
+std::optional<RefreshTokenData> MySQLSessionStore::GetRefreshToken(const std::string& token_id) {
   auto* conn = impl_->GetConnection();
   if (!conn) {
     return std::nullopt;
@@ -405,7 +405,7 @@ std::optional<RefreshTokenData> SessionStore::GetRefreshToken(const std::string&
   return data;
 }
 
-std::optional<RefreshTokenData> SessionStore::VerifyRefreshToken(const std::string& token_hash) {
+std::optional<RefreshTokenData> MySQLSessionStore::VerifyRefreshToken(const std::string& token_hash) {
   auto* conn = impl_->GetConnection();
   if (!conn) {
     return std::nullopt;
@@ -452,7 +452,7 @@ std::optional<RefreshTokenData> SessionStore::VerifyRefreshToken(const std::stri
   return data;
 }
 
-bool SessionStore::RevokeRefreshToken(const std::string& token_id) {
+bool MySQLSessionStore::RevokeRefreshToken(const std::string& token_id) {
   auto* conn = impl_->GetConnection();
   if (!conn) {
     return false;
@@ -468,7 +468,7 @@ bool SessionStore::RevokeRefreshToken(const std::string& token_id) {
   return result;
 }
 
-int SessionStore::RevokeAllUserRefreshTokens(const std::string& user_id) {
+int MySQLSessionStore::RevokeAllUserRefreshTokens(const std::string& user_id) {
   auto* conn = impl_->GetConnection();
   if (!conn) {
     return 0;
@@ -489,7 +489,7 @@ int SessionStore::RevokeAllUserRefreshTokens(const std::string& user_id) {
   return affected;
 }
 
-int SessionStore::RevokeSessionRefreshTokens(const std::string& session_id) {
+int MySQLSessionStore::RevokeSessionRefreshTokens(const std::string& session_id) {
   auto* conn = impl_->GetConnection();
   if (!conn) {
     return 0;
@@ -510,7 +510,7 @@ int SessionStore::RevokeSessionRefreshTokens(const std::string& session_id) {
   return affected;
 }
 
-int SessionStore::CleanupExpiredRefreshTokens() {
+int MySQLSessionStore::CleanupExpiredRefreshTokens() {
   auto* conn = impl_->GetConnection();
   if (!conn) {
     return 0;
@@ -529,7 +529,7 @@ int SessionStore::CleanupExpiredRefreshTokens() {
   return affected;
 }
 
-bool SessionStore::CheckSessionLimit(const std::string& user_id, int max_sessions) {
+bool MySQLSessionStore::CheckSessionLimit(const std::string& user_id, int max_sessions) {
   auto* conn = impl_->GetConnection();
   if (!conn) {
     return false;

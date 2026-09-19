@@ -18,8 +18,10 @@
 #include "password_hasher.h"
 #include "rate_limiter.h"
 #include "redis_auth_store.h"
+#include "mysql_session_store.h"
 #include "session_store.h"
 #include "token_generator.h"
+#include "mysql_user_store.h"
 #include "user_store.h"
 
 namespace chirp_test {
@@ -253,7 +255,7 @@ TEST_F(AuthGuardsTest, RecordFailureAndResetLimitManipulateCounters) {
 }
 
 TEST_F(AuthGuardsTest, BruteForceLocksAccountAfterMaxFailures) {
-  auto user_store = std::make_shared<chirp::auth::UserStore>(chirp::auth::UserStore::Config{});
+  auto user_store = std::make_shared<chirp::auth::MySQLUserStore>(chirp::auth::UserStore::Config{});
   BruteForceProtector::Config cfg;
   cfg.max_failed_attempts = 3;
   cfg.permanent_lock_threshold = 0;  // disabled
@@ -286,7 +288,7 @@ TEST_F(AuthGuardsTest, BruteForceLocksAccountAfterMaxFailures) {
 }
 
 TEST_F(AuthGuardsTest, BruteForceIpLockAndPermanentLock) {
-  auto user_store = std::make_shared<chirp::auth::UserStore>(chirp::auth::UserStore::Config{});
+  auto user_store = std::make_shared<chirp::auth::MySQLUserStore>(chirp::auth::UserStore::Config{});
   BruteForceProtector::Config cfg;
   cfg.max_failed_attempts = 2;
   cfg.lock_by_ip = true;
@@ -310,7 +312,7 @@ TEST_F(AuthGuardsTest, BruteForceIpLockAndPermanentLock) {
 }
 
 TEST_F(AuthGuardsTest, BruteForceManualLockUnlockAndDurations) {
-  auto user_store = std::make_shared<chirp::auth::UserStore>(chirp::auth::UserStore::Config{});
+  auto user_store = std::make_shared<chirp::auth::MySQLUserStore>(chirp::auth::UserStore::Config{});
   BruteForceProtector::Config cfg;
   cfg.max_failed_attempts = 3;
   cfg.base_lock_duration_seconds = 100;
@@ -338,7 +340,7 @@ TEST_F(AuthGuardsTest, BruteForceManualLockUnlockAndDurations) {
 }
 
 TEST_F(AuthGuardsTest, LockDurationBackoffIsCapped) {
-  auto user_store = std::make_shared<chirp::auth::UserStore>(chirp::auth::UserStore::Config{});
+  auto user_store = std::make_shared<chirp::auth::MySQLUserStore>(chirp::auth::UserStore::Config{});
   BruteForceProtector::Config cfg;
   cfg.max_failed_attempts = 3;
   cfg.base_lock_duration_seconds = 100;
@@ -365,7 +367,7 @@ TEST_F(AuthGuardsTest, LockDurationBackoffIsCapped) {
 }
 
 TEST_F(AuthGuardsTest, NormalizeIdentifierResolvesUserRows) {
-  auto user_store = std::make_shared<chirp::auth::UserStore>(chirp::auth::UserStore::Config{});
+  auto user_store = std::make_shared<chirp::auth::MySQLUserStore>(chirp::auth::UserStore::Config{});
   BruteForceProtector protector(redis_store_, user_store,
                                 BruteForceProtector::Config{});
 
@@ -929,7 +931,7 @@ TEST_F(AuthServiceTest, ChangePasswordFailsWhenHashingFails) {
 }
 
 TEST_F(AuthGuardsTest, GetFailedAttemptCountResolvesEmailToUserId) {
-  auto user_store = std::make_shared<chirp::auth::UserStore>(chirp::auth::UserStore::Config{});
+  auto user_store = std::make_shared<chirp::auth::MySQLUserStore>(chirp::auth::UserStore::Config{});
   BruteForceProtector protector(redis_store_, user_store, BruteForceProtector::Config{});
 
   fake_mysql::PushRows({});  // FindByUsername("a@b.c") misses

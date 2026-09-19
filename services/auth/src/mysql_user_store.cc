@@ -1,4 +1,4 @@
-#include "user_store.h"
+#include "mysql_user_store.h"
 
 #include <chrono>
 #include <cstring>
@@ -30,7 +30,7 @@ std::string EscapeString(MYSQL* mysql, const std::string& str) {
 
 } // namespace
 
-struct UserStore::Impl {
+struct MySQLUserStore::Impl {
   Config config;
   std::mutex mutex;
   std::vector<MYSQL*> connections;
@@ -91,12 +91,12 @@ struct UserStore::Impl {
   }
 };
 
-UserStore::UserStore(const Config& config)
+MySQLUserStore::MySQLUserStore(const Config& config)
     : impl_(std::make_unique<Impl>(config)) {}
 
-UserStore::~UserStore() = default;
+MySQLUserStore::~MySQLUserStore() = default;
 
-bool UserStore::Initialize() {
+bool MySQLUserStore::Initialize() {
   auto* conn = impl_->GetConnection();
   if (!conn) {
     Logger::Instance().Error("Failed to get MySQL connection for UserStore initialization");
@@ -125,7 +125,7 @@ bool UserStore::Initialize() {
   return true;
 }
 
-UserRegisterResult UserStore::Register(const UserRegisterRequest& req) {
+UserRegisterResult MySQLUserStore::Register(const UserRegisterRequest& req) {
   UserRegisterResult result;
 
   // Validate password strength
@@ -199,7 +199,7 @@ UserRegisterResult UserStore::Register(const UserRegisterRequest& req) {
   return result;
 }
 
-std::optional<UserData> UserStore::FindByUserId(const std::string& user_id) {
+std::optional<UserData> MySQLUserStore::FindByUserId(const std::string& user_id) {
   auto* conn = impl_->GetConnection();
   if (!conn) {
     return std::nullopt;
@@ -243,7 +243,7 @@ std::optional<UserData> UserStore::FindByUserId(const std::string& user_id) {
   return data;
 }
 
-std::optional<UserData> UserStore::FindByUsername(const std::string& username) {
+std::optional<UserData> MySQLUserStore::FindByUsername(const std::string& username) {
   auto* conn = impl_->GetConnection();
   if (!conn) {
     return std::nullopt;
@@ -287,7 +287,7 @@ std::optional<UserData> UserStore::FindByUsername(const std::string& username) {
   return data;
 }
 
-std::optional<UserData> UserStore::FindByEmail(const std::string& email) {
+std::optional<UserData> MySQLUserStore::FindByEmail(const std::string& email) {
   auto* conn = impl_->GetConnection();
   if (!conn) {
     return std::nullopt;
@@ -331,7 +331,7 @@ std::optional<UserData> UserStore::FindByEmail(const std::string& email) {
   return data;
 }
 
-std::optional<UserData> UserStore::VerifyCredentials(std::string_view identifier,
+std::optional<UserData> MySQLUserStore::VerifyCredentials(std::string_view identifier,
                                                       std::string_view password) {
   // Try username first, then email
   auto user_data = FindByUsername(std::string(identifier));
@@ -358,7 +358,7 @@ std::optional<UserData> UserStore::VerifyCredentials(std::string_view identifier
   return user_data;
 }
 
-bool UserStore::UpdateLastLogin(const std::string& user_id, int64_t login_time) {
+bool MySQLUserStore::UpdateLastLogin(const std::string& user_id, int64_t login_time) {
   auto* conn = impl_->GetConnection();
   if (!conn) {
     return false;
@@ -374,7 +374,7 @@ bool UserStore::UpdateLastLogin(const std::string& user_id, int64_t login_time) 
   return result;
 }
 
-bool UserStore::ChangePassword(const std::string& user_id, std::string_view new_password_hash) {
+bool MySQLUserStore::ChangePassword(const std::string& user_id, std::string_view new_password_hash) {
   auto* conn = impl_->GetConnection();
   if (!conn) {
     return false;
@@ -391,7 +391,7 @@ bool UserStore::ChangePassword(const std::string& user_id, std::string_view new_
   return result;
 }
 
-bool UserStore::SetActiveStatus(const std::string& user_id, bool is_active) {
+bool MySQLUserStore::SetActiveStatus(const std::string& user_id, bool is_active) {
   auto* conn = impl_->GetConnection();
   if (!conn) {
     return false;
@@ -407,7 +407,7 @@ bool UserStore::SetActiveStatus(const std::string& user_id, bool is_active) {
   return result;
 }
 
-bool UserStore::UsernameExists(const std::string& username) {
+bool MySQLUserStore::UsernameExists(const std::string& username) {
   auto* conn = impl_->GetConnection();
   if (!conn) {
     return false;
@@ -435,7 +435,7 @@ bool UserStore::UsernameExists(const std::string& username) {
   return exists;
 }
 
-bool UserStore::EmailExists(const std::string& email) {
+bool MySQLUserStore::EmailExists(const std::string& email) {
   auto* conn = impl_->GetConnection();
   if (!conn) {
     return false;
@@ -463,7 +463,7 @@ bool UserStore::EmailExists(const std::string& email) {
   return exists;
 }
 
-int UserStore::GetActiveSessionCount(const std::string& user_id) {
+int MySQLUserStore::GetActiveSessionCount(const std::string& user_id) {
   auto* conn = impl_->GetConnection();
   if (!conn) {
     return 0;

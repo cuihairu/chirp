@@ -5,6 +5,7 @@
 #include "jwt.h"
 #include "logger.h"
 #include "password_hasher.h"
+#include "store_factory.h"
 #include "token_generator.h"
 
 using chirp::common::Logger;
@@ -27,8 +28,8 @@ int64_t NowSeconds() {
 AuthService::AuthService(asio::io_context& io, const Config& config)
     : io_(io), config_(config) {
 
-  user_store_ = std::make_shared<UserStore>(config_.user_store_config);
-  session_store_ = std::make_shared<SessionStore>(config_.session_store_config);
+  user_store_ = MakeUserStore(config_.user_store_config);
+  session_store_ = MakeSessionStore(config_.session_store_config);
   redis_store_ = std::make_shared<RedisAuthStore>(io_, config_.redis_config);
   rate_limiter_ = std::make_shared<RateLimiter>(redis_store_, config_.rate_limiter_config);
   brute_force_protector_ = std::make_shared<BruteForceProtector>(

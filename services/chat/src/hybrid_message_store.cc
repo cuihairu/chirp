@@ -5,6 +5,8 @@
 #include <sstream>
 
 #include "logger.h"
+#include "message_store_factory.h"
+#include "proto/chat.pb.h"
 
 namespace chirp::chat {
 namespace {
@@ -56,17 +58,10 @@ HybridMessageStore::HybridMessageStore(asio::io_context& io,
   // Create Redis client
   redis_ = std::make_shared<network::RedisClient>(config_.redis_host, config_.redis_port);
 
-  // Create MySQL connection pool
-  mysql_pool_ = std::make_shared<MySQLConnectionPool>(
-      config_.mysql_pool_size,
-      config_.mysql_host,
-      config_.mysql_port,
-      config_.mysql_database,
-      config_.mysql_user,
-      config_.mysql_password);
-
-  // Create MySQL message store
-  mysql_store_ = std::make_shared<MySQLMessageStore>(mysql_pool_);
+  // Create MySQL connection pool and archive store (backend chosen by the
+  // factory; hybrid code only sees the MessageStore interface)
+  mysql_pool_ = MakeConnectionPool(config_);
+  mysql_store_ = MakeMessageStore(mysql_pool_);
 }
 
 HybridMessageStore::~HybridMessageStore() {
@@ -104,7 +99,7 @@ bool HybridMessageStore::StoreMessage(const MessageData& message) {
   redis_->RPush(history_key, msg_data);
 
   // 2. Store in MySQL for persistence
-  MySQLMessageData mysql_msg;
+  StoredMessage mysql_msg;
   mysql_msg.message_id = message.message_id;
   mysql_msg.sender_id = message.sender_id;
   mysql_msg.receiver_id = message.receiver_id;
@@ -134,7 +129,7 @@ void HybridMessageStore::StoreMessageAsync(const MessageData& message,
 
   // Post MySQL write to background thread
   asio::post(io_, [this, message, callback]() {
-    MySQLMessageData mysql_msg;
+    StoredMessage mysql_msg;
     mysql_msg.message_id = message.message_id;
     mysql_msg.sender_id = message.sender_id;
     mysql_msg.receiver_id = message.receiver_id;
