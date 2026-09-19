@@ -116,6 +116,10 @@ export class ChatApi {
   /** The channel currently open on screen; it never accumulates local unread. */
   private activeChannelKey: string | null = null;
   private unsubs: Array<() => void> = [];
+  /** UI hooks for live incoming messages (desktop notifications). */
+  private messageListeners = new Set<
+    (message: { channel: ChannelRef; fromUserId: string; content: string; messageId: string }) => void
+  >();
 
   constructor(deps: ChatApiDeps) {
     this.conn = deps.conn;
@@ -146,6 +150,22 @@ export class ChatApi {
   stop(): void {
     for (const off of this.unsubs) off();
     this.unsubs = [];
+  }
+
+  /**
+   * Fires for every live CHAT_MESSAGE_NOTIFY after it lands in the stores —
+   * used by the desktop-notification surface. Returns the unsubscribe fn.
+   */
+  onMessage(
+    listener: (message: {
+      channel: ChannelRef;
+      fromUserId: string;
+      content: string;
+      messageId: string;
+    }) => void,
+  ): () => void {
+    this.messageListeners.add(listener);
+    return () => this.messageListeners.delete(listener);
   }
 
   setActiveChannel(key: string | null): void {
@@ -487,6 +507,15 @@ export class ChatApi {
     touchConversation(this.conversations, key, decodeText(msg.content), msg.timestamp);
     if (key !== this.activeChannelKey) {
       bumpUnread(this.conversations, key);
+    }
+    const content = decodeText(msg.content);
+    for (const listener of this.messageListeners) {
+      listener({
+        channel,
+        fromUserId: msg.senderId,
+        content,
+        messageId: msg.messageId,
+      });
     }
   }
 

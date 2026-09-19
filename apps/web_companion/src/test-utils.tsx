@@ -23,6 +23,7 @@ export async function renderLoggedIn(
     responder?: (msgId: MsgID, req: unknown) => Promise<unknown>;
     socialConn?: ChatConnection;
     partyConn?: ChatConnection;
+    deviceConn?: ChatConnection;
   } = {},
 ): Promise<MountedServices> {
   const conn = new FakeChatConnection();
@@ -30,6 +31,7 @@ export async function renderLoggedIn(
     conn,
     socialConn: options.socialConn,
     partyConn: options.partyConn,
+    deviceConn: options.deviceConn,
   });
   conn.setResponder(async (msgId, req) => options.responder?.(msgId, req) ?? { code: 0 });
   await services.api.login('user_a');

@@ -1,5 +1,6 @@
 import * as Auth from '@chirp/proto/auth';
 import * as Chat from '@chirp/proto/chat';
+import * as Notification from '@chirp/proto/notification';
 import * as Party from '@chirp/proto/party';
 import * as Social from '@chirp/proto/social';
 import { MsgID } from '@chirp/proto/gateway';
@@ -265,4 +266,27 @@ export const GET_MY_PARTY = defineSpec(
   MsgID.GET_MY_PARTY_RESP,
   Party.GetMyPartyRequest,
   Party.GetMyPartyResponse,
+);
+
+// Device plane (app_gateway WS 5201): registration / listing of the push
+// targets for our account. app_gateway authenticates the session and pins
+// user_id server-side; 6009 PUSH_NOTIFICATION is deliberately absent — the
+// edge refuses it from clients.
+export const REGISTER_DEVICE = defineSpec(
+  MsgID.REGISTER_DEVICE_REQ,
+  MsgID.REGISTER_DEVICE_RESP,
+  Notification.RegisterDeviceRequest,
+  Notification.RegisterDeviceResponse,
+);
+export const UNREGISTER_DEVICE = defineSpec(
+  MsgID.UNREGISTER_DEVICE_REQ,
+  MsgID.UNREGISTER_DEVICE_RESP,
+  Notification.UnregisterDeviceRequest,
+  Notification.UnregisterDeviceResponse,
+);
+export const GET_USER_DEVICES = defineSpec(
+  MsgID.GET_USER_DEVICES_REQ,
+  MsgID.GET_USER_DEVICES_RESP,
+  Notification.GetUserDevicesRequest,
+  Notification.GetUserDevicesResponse,
 );
