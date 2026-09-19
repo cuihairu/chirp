@@ -7,6 +7,7 @@
 #include <mutex>
 #include <string>
 #include <unordered_map>
+#include <unordered_set>
 #include <vector>
 
 #include <asio.hpp>
@@ -31,6 +32,7 @@
 #include "proto/auth.pb.h"
 #include "proto/chat.pb.h"
 #include "proto/common.pb.h"
+#include "proto/server_gateway.pb.h"
 #include "runtime_utils.h"
 #include "server_gateway_peer.h"
 
@@ -317,9 +319,15 @@ void TrackAckIfCapable(chirp::chat::DeliveryAckManager* acks,
 
 void HandleDisconnect(const std::shared_ptr<chirp::network::SessionRegistry>& state,
                       chirp::chat::DeliveryAckManager* acks,
+                      const std::shared_ptr<std::unordered_set<const chirp::network::Session*>>& trusted_conns,
                       const std::shared_ptr<chirp::network::Session>& session) {
   if (acks) {
     acks->ForgetSession(session.get());
+  }
+  // Drop any trust-grant bound to this connection so a reused pointer cannot
+  // inherit the previous connection's limiter bypass.
+  if (trusted_conns) {
+    trusted_conns->erase(session.get());
   }
   std::string user_id;
   if (chirp::network::RemoveAuthenticatedSession(state, session, &user_id) &&
@@ -351,6 +359,12 @@ struct FeatureHandlers {
   // Client delivery-ack bookkeeping; null (or a disabled manager) keeps the
   // send-and-forget delivery for every session.
   chirp::chat::DeliveryAckManager* acks = nullptr;
+  // Trust gate for internal-plane dials (the gateway's per-client pipes).
+  // Empty secret keeps SERVER_AUTH_REQ ignored — direct entry only, exactly
+  // the historical behavior. Trusted connections skip the per-IP login
+  // limiter only; token verification still applies.
+  std::string gateway_secret;
+  std::shared_ptr<std::unordered_set<const chirp::network::Session*>> trusted_conns;
 };
 
 void HandlePacket(const std::shared_ptr<MessageStore>& store,
@@ -371,10 +385,43 @@ void HandlePacket(const std::shared_ptr<MessageStore>& store,
   const std::string& authenticated_session_id = authenticated.session_id;
 
   switch (pkt.msg_id()) {
+  case chirp::gateway::SERVER_AUTH_REQ: {
+    // Internal-plane trust gate: an edge gateway dials chat with the shared
+    // service secret so its per-client pipes skip the per-IP login limiter
+    // (a gateway fans many users out of one source address). Token
+    // verification on the LOGIN_REQ that follows is untouched. With no
+    // secret configured the frame is ignored - no response, exactly the
+    // historical direct-entry-only behavior.
+    if (features.gateway_secret.empty()) {
+      break;
+    }
+    chirp::server_gateway::ServerAuthRequest auth_req;
+    chirp::server_gateway::ServerAuthResponse auth_resp;
+    auth_resp.set_server_time_ms(chirp::chat::runtime::NowMs());
+    if (!auth_req.ParseFromArray(pkt.body().data(), static_cast<int>(pkt.body().size())) ||
+        auth_req.secret() != features.gateway_secret) {
+      auth_resp.set_code(chirp::common::AUTH_FAILED);
+      SendPacketAndClose(session, chirp::gateway::SERVER_AUTH_RESP, pkt.sequence(),
+                         auth_resp.SerializeAsString());
+      break;
+    }
+    if (features.trusted_conns) {
+      features.trusted_conns->insert(session.get());
+    }
+    auth_resp.set_code(chirp::common::OK);
+    chirp::chat::runtime::SendPacket(session, chirp::gateway::SERVER_AUTH_RESP, pkt.sequence(),
+                                     auth_resp.SerializeAsString());
+    break;
+  }
   case chirp::gateway::LOGIN_REQ: {
     // Direct-entry abuse gate: every LOGIN_REQ consumes budget before any
-    // parsing, so malformed-packet floods are throttled too.
-    if (features.rate_limiter) {
+    // parsing, so malformed-packet floods are throttled too. Connections
+    // that passed SERVER_AUTH_REQ (gateway pipes) are exempt: they came in
+    // over the trusted internal plane, and fanning many users through one
+    // gateway would otherwise exhaust this per-IP budget instantly.
+    const bool trusted_conn =
+        features.trusted_conns && features.trusted_conns->count(session.get()) > 0;
+    if (features.rate_limiter && !trusted_conn) {
       const auto gate = features.rate_limiter->CheckLogin(session->RemoteAddress());
       if (!gate.allowed) {
         chirp::auth::LoginResponse deny;
@@ -468,7 +515,7 @@ void HandlePacket(const std::shared_ptr<MessageStore>& store,
     resp.set_code(chirp::chat::ValidateLogoutRequest(req, authenticated_user_id, authenticated_session_id));
     resp.set_server_time(chirp::chat::runtime::NowMs());
     if (resp.code() == chirp::common::OK) {
-      HandleDisconnect(state, features.acks, session);
+      HandleDisconnect(state, features.acks, features.trusted_conns, session);
       SendPacketAndClose(session, chirp::gateway::LOGOUT_RESP, pkt.sequence(), resp.SerializeAsString());
       break;
     }
@@ -929,6 +976,11 @@ int main(int argc, char** argv) {
   // Empty keeps the scaffold "token is user_id" login; set to an HS256 secret
   // shared with the token issuer to require verifiable, unexpired JWTs.
   const std::string token_secret = chirp::chat::runtime::GetArg(argc, argv, "--token_secret", "");
+  // Internal-plane trust gate: when set, edge gateways that dial in with this
+  // secret (SERVER_AUTH_REQ) get per-client pipes that skip the per-IP login
+  // limiter. Empty keeps SERVER_AUTH_REQ ignored (direct entry only).
+  const std::string gateway_service_secret =
+      chirp::chat::runtime::GetArg(argc, argv, "--gateway_service_secret", "");
   Logger::Instance().Info("chirp_chat starting tcp=" + std::to_string(port) + " ws=" + std::to_string(ws_port) +
                           (redis_host.empty()
                                ? ""
@@ -937,6 +989,7 @@ int main(int argc, char** argv) {
                                   " rate_limit(login/ip/min)=" + std::to_string(login_rate_limit_per_min) +
                                   " rate_limit(send/user/min)=" + std::to_string(send_rate_limit_per_min))) +
                           " auth=" + (token_secret.empty() ? "scaffold" : "hmac-sha256") +
+                          (gateway_service_secret.empty() ? "" : " internal-trust=on") +
                           (notification_host.empty()
                                ? ""
                                : (" notification=" + notification_host + ":" + std::to_string(notification_port))));
@@ -1059,10 +1112,14 @@ int main(int argc, char** argv) {
   FeatureHandlers features{.groups = group_handlers, .receipts = receipt_handlers,
                            .typing = typing_handlers, .reactions = reaction_handlers,
                            .edits = edit_handlers, .mentions = mention_handlers,
-                           .push = push, .npc_service_id = {}};
+                           .push = push, .npc_service_id = {},
+                           .gateway_secret = {}, .trusted_conns = nullptr};
   features.rate_limiter = rate_limiter.get();
   features.token_verifier = &token_verifier;
   features.acks = acks.get();
+  features.gateway_secret = gateway_service_secret;
+  features.trusted_conns =
+      std::make_shared<std::unordered_set<const chirp::network::Session*>>();
 
   // Server-plane injection: when --server_gateway_host is set, chat dials the
   // hub as an internal service and delivers forwarded injections through the
@@ -1158,7 +1215,7 @@ int main(int argc, char** argv) {
         HandlePacket(store, state, features, session, std::move(payload));
       },
       [state, &features](std::shared_ptr<chirp::network::Session> session) {
-        HandleDisconnect(state, features.acks, session);
+        HandleDisconnect(state, features.acks, features.trusted_conns, session);
       });
 
   chirp::network::WebSocketServer ws_server(
@@ -1167,7 +1224,7 @@ int main(int argc, char** argv) {
         HandlePacket(store, state, features, session, std::move(payload));
       },
       [state, &features](std::shared_ptr<chirp::network::Session> session) {
-        HandleDisconnect(state, features.acks, session);
+        HandleDisconnect(state, features.acks, features.trusted_conns, session);
       });
 
   server.Start();

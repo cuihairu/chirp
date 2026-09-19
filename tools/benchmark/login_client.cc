@@ -10,6 +10,7 @@
 #include "network/length_prefixed_framer.h"
 #include "network/protobuf_framing.h"
 #include "proto/auth.pb.h"
+#include "proto/chat.pb.h"
 #include "proto/gateway.pb.h"
 
 namespace {
@@ -89,6 +90,12 @@ int main(int argc, char** argv) {
   const std::string device_id = GetArg(argc, argv, "--device", "dev_1");
   const std::string platform = GetArg(argc, argv, "--platform", "pc");
   const int wait_kick_ms = std::atoi(GetArg(argc, argv, "--wait_kick_ms", "0").c_str());
+  // Optional smoke hooks: after login, send one private message to
+  // --peer_user and/or wait for the first CHAT_MESSAGE_NOTIFY. Omitted
+  // arguments keep the historical login+ping behavior (exit 0/1/2/3).
+  const std::string send_text = GetArg(argc, argv, "--send_text", "");
+  const std::string peer_user = GetArg(argc, argv, "--peer_user", "");
+  const int expect_notify_ms = std::atoi(GetArg(argc, argv, "--expect_notify_ms", "0").c_str());
 
   asio::io_context io;
   asio::ip::tcp::resolver resolver(io);
@@ -149,6 +156,65 @@ int main(int argc, char** argv) {
     return 1;
   }
   std::cout << "pong msg_id=" << pong_pkt.msg_id() << " seq=" << pong_pkt.sequence() << "\n";
+
+  // Optional: send one private message after login (chat smoke paths).
+  if (!send_text.empty()) {
+    chirp::chat::SendMessageRequest send;
+    send.set_sender_id(token);
+    send.set_receiver_id(peer_user);
+    send.set_channel_type(chirp::chat::PRIVATE);
+    send.set_msg_type(chirp::chat::TEXT);
+    send.set_content(send_text);
+
+    chirp::gateway::Packet send_pkt;
+    send_pkt.set_msg_id(chirp::gateway::SEND_MESSAGE_REQ);
+    send_pkt.set_sequence(3);
+    send_pkt.set_body(send.SerializeAsString());
+
+    auto send_out = chirp::network::ProtobufFraming::Encode(send_pkt);
+    asio::write(sock, asio::buffer(send_out));
+
+    chirp::gateway::Packet send_resp;
+    if (!ReadOnePacket(sock, &framer, &send_resp)) {
+      std::cerr << "failed to read send response frame\n";
+      return 1;
+    }
+    if (send_resp.msg_id() == chirp::gateway::SEND_MESSAGE_RESP) {
+      chirp::chat::SendMessageResponse sr;
+      if (sr.ParseFromArray(send_resp.body().data(), static_cast<int>(send_resp.body().size()))) {
+        std::cout << "send code=" << sr.code() << " message_id=" << sr.message_id() << "\n";
+      }
+    } else {
+      std::cout << "send resp msg_id=" << send_resp.msg_id() << "\n";
+    }
+  }
+
+  // Optional: wait for the first CHAT_MESSAGE_NOTIFY (private or refill).
+  if (expect_notify_ms > 0) {
+    while (true) {
+      chirp::gateway::Packet maybe_notify;
+      const ReadResult r = ReadOnePacketWithTimeout(sock, &framer, &maybe_notify, expect_notify_ms);
+      if (r == ReadResult::kOk) {
+        if (maybe_notify.msg_id() == chirp::gateway::CHAT_MESSAGE_NOTIFY) {
+          chirp::chat::ChatMessage msg;
+          if (msg.ParseFromArray(maybe_notify.body().data(),
+                                 static_cast<int>(maybe_notify.body().size()))) {
+            std::cout << "notify from=" << msg.sender_id() << " content=" << msg.content() << "\n";
+          } else {
+            std::cout << "notify\n";
+          }
+          return 0;
+        }
+        continue;  // unrelated frame; keep waiting within the same budget
+      }
+      if (r == ReadResult::kTimeout) {
+        std::cerr << "no notify within " << expect_notify_ms << "ms\n";
+        return 4;
+      }
+      std::cerr << "connection closed before notify\n";
+      return 3;
+    }
+  }
 
   if (wait_kick_ms > 0) {
     chirp::gateway::Packet maybe_kick;

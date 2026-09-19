@@ -8,6 +8,7 @@
 #include <mutex>
 #include <string>
 #include <unordered_map>
+#include <unordered_set>
 #include <atomic>
 #include <functional>
 #include <random>
@@ -15,6 +16,7 @@
 #include <asio.hpp>
 
 #include "hybrid_message_store.h"
+#include "chat_rate_limiter.h"
 #include "delivery_ack_manager.h"
 #include "inject_consumer.h"
 #include "login_token_verifier.h"
@@ -29,6 +31,7 @@
 #include "logger.h"
 #include "network/message_router.h"
 #include "network/notification_client.h"
+#include "network/protobuf_framing.h"
 #include "network/redis_client.h"
 #include "network/session.h"
 #include "network/tcp_server.h"
@@ -36,6 +39,7 @@
 #include "proto/auth.pb.h"
 #include "proto/chat.pb.h"
 #include "proto/common.pb.h"
+#include "proto/server_gateway.pb.h"
 #include "runtime_utils.h"
 
 namespace {
@@ -237,6 +241,48 @@ void HandleSendMessage(const chirp::chat::SendMessageRequest& req,
   } else {
     router->BroadcastToGroup(channel_id, msg.SerializeAsString());
   }
+}
+
+/// @brief Internal-plane trust gate (parity with the basic build's main.cc):
+/// an edge gateway dials in with SERVER_AUTH_REQ carrying the shared service
+/// secret, and its per-client pipes then skip the per-IP login limiter (a
+/// gateway fans many users out of one source address). Token verification on
+/// the LOGIN_REQ that follows is untouched. With no secret configured the
+/// frame is ignored - direct entry only, the historical enhanced behavior.
+/// Returns true when the frame was consumed (response sent).
+bool HandleServerAuth(const chirp::gateway::Packet& pkt,
+                      const std::shared_ptr<chirp::network::Session>& session,
+                      const std::string& secret,
+                      std::unordered_set<const chirp::network::Session*>* trusted) {
+  if (secret.empty()) {
+    return false;
+  }
+  chirp::server_gateway::ServerAuthRequest auth_req;
+  chirp::server_gateway::ServerAuthResponse auth_resp;
+  auth_resp.set_server_time_ms(chirp::chat::runtime::NowMs());
+  if (!auth_req.ParseFromArray(pkt.body().data(), static_cast<int>(pkt.body().size())) ||
+      auth_req.secret() != secret) {
+    auth_resp.set_code(chirp::common::AUTH_FAILED);
+    // Reply-then-close: the gateway pipe must not linger after a rejected
+    // secret (the basic build's SendPacketAndClose semantics).
+    const auto framed = chirp::network::ProtobufFraming::Encode(
+        [&] {
+          chirp::gateway::Packet p;
+          p.set_msg_id(chirp::gateway::SERVER_AUTH_RESP);
+          p.set_sequence(pkt.sequence());
+          p.set_body(auth_resp.SerializeAsString());
+          return p;
+        }());
+    session->SendAndClose(std::string(reinterpret_cast<const char*>(framed.data()), framed.size()));
+    return true;
+  }
+  if (trusted != nullptr) {
+    trusted->insert(session.get());
+  }
+  auth_resp.set_code(chirp::common::OK);
+  chirp::chat::runtime::SendPacket(session, chirp::gateway::SERVER_AUTH_RESP, pkt.sequence(),
+                                   auth_resp.SerializeAsString());
+  return true;
 }
 
 /// @brief Handle user login
@@ -570,6 +616,25 @@ int main(int argc, char** argv) {
   const std::string token_secret = chirp::chat::runtime::GetArg(argc, argv, "--token_secret", "");
   chirp::common::LoginTokenVerifier token_verifier(token_secret);
 
+  // Internal-plane trust gate + per-IP login limiter (parity with the basic
+  // build's main.cc). The limiter defaults OFF here so the historical
+  // enhanced behavior is unchanged unless explicitly enabled; the trust gate
+  // matters even without a limiter once a gateway fronts the direct entry.
+  const std::string gateway_service_secret =
+      chirp::chat::runtime::GetArg(argc, argv, "--gateway_service_secret", "");
+  const int login_rate_limit_per_min =
+      chirp::chat::runtime::ParseIntArg(argc, argv, "--login_rate_limit_per_min", 0);
+
+  chirp::chat::ChatRateLimiter::Config edge_rate_config;
+  edge_rate_config.max_logins_per_minute_per_ip = login_rate_limit_per_min;
+  std::shared_ptr<chirp::network::RedisClient> edge_limiter_redis;
+  if (login_rate_limit_per_min > 0) {
+    edge_limiter_redis = std::make_shared<chirp::network::RedisClient>(redis_host, redis_port);
+  }
+  chirp::chat::ChatRateLimiter edge_rate_limiter(edge_limiter_redis, edge_rate_config);
+  auto trusted_conns =
+      std::make_shared<std::unordered_set<const chirp::network::Session*>>();
+
   chirp::chat::runtime::DistributedDispatchHandlers handlers;
   handlers.on_login = [state, store, router, &token_verifier, acks](
                           const std::shared_ptr<chirp::network::Session>& session,
@@ -621,22 +686,45 @@ int main(int argc, char** argv) {
     }
   };
 
-  auto on_packet = [handlers](const std::shared_ptr<chirp::network::Session>& session,
-                              const chirp::gateway::Packet& pkt) {
+  auto on_packet = [handlers, gateway_service_secret, trusted_conns, &edge_rate_limiter](
+                       const std::shared_ptr<chirp::network::Session>& session,
+                       const chirp::gateway::Packet& pkt) {
+    if (pkt.msg_id() == chirp::gateway::SERVER_AUTH_REQ) {
+      HandleServerAuth(pkt, session, gateway_service_secret, trusted_conns.get());
+      return;
+    }
+    if (pkt.msg_id() == chirp::gateway::LOGIN_REQ &&
+        trusted_conns->count(session.get()) == 0) {
+      // Direct-entry abuse gate, mirroring the basic build: trusted gateway
+      // pipes are exempt, every direct LOGIN_REQ consumes budget first.
+      const auto gate = edge_rate_limiter.CheckLogin(session->RemoteAddress());
+      if (!gate.allowed) {
+        chirp::auth::LoginResponse deny;
+        deny.set_code(chirp::common::RATE_LIMITED);
+        deny.set_server_time(chirp::chat::runtime::NowMs());
+        chirp::chat::runtime::SendPacket(session, chirp::gateway::LOGIN_RESP, pkt.sequence(),
+                                         deny.SerializeAsString());
+        return;
+      }
+    }
     chirp::chat::runtime::DispatchDistributedPacket(session, pkt, handlers);
   };
 
-  auto tcp_disconnect = [state, acks](const std::shared_ptr<chirp::network::Session>& session) {
+  auto tcp_disconnect = [state, acks, trusted_conns](const std::shared_ptr<chirp::network::Session>& session) {
     std::string user_id = state->GetUserId(session.get());
     if (!user_id.empty()) {
       Logger::Instance().Info("User disconnected: " + user_id);
     }
     acks->ForgetSession(session.get());
+    // Drop any trust-grant bound to this connection so a reused pointer
+    // cannot inherit the previous connection's limiter bypass.
+    trusted_conns->erase(session.get());
     state->RemoveSession(session.get());
   };
 
-  auto ws_disconnect = [state, acks](const std::shared_ptr<chirp::network::Session>& session) {
+  auto ws_disconnect = [state, acks, trusted_conns](const std::shared_ptr<chirp::network::Session>& session) {
     acks->ForgetSession(session.get());
+    trusted_conns->erase(session.get());
     state->RemoveSession(session.get());
   };
 

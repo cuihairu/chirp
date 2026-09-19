@@ -328,6 +328,29 @@ target_include_directories(app_gateway_tests
 
 add_test(NAME app_gateway_tests COMMAND app_gateway_tests)
 
+# Gateway chat-bridge loopback tests: chat_bridge.cc is compiled into the
+# test binary exactly once, against a scripted in-process fake chat server.
+add_executable(chat_bridge_tests
+  chat_bridge_test.cc
+  ${CMAKE_SOURCE_DIR}/services/gateway/src/chat_bridge.cc
+)
+
+chirp_unit_test_common_links(chat_bridge_tests)
+target_link_libraries(chat_bridge_tests PRIVATE chirp_network chirp_common chirp_protos)
+
+target_include_directories(chat_bridge_tests
+  PRIVATE
+  ${CMAKE_SOURCE_DIR}/libs
+  ${CMAKE_SOURCE_DIR}/libs/common
+  ${CMAKE_SOURCE_DIR}/libs/common/include
+  ${CMAKE_SOURCE_DIR}/libs/network
+  ${CMAKE_SOURCE_DIR}/proto/cpp
+  ${CMAKE_SOURCE_DIR}/proto/cpp/proto
+  ${CMAKE_SOURCE_DIR}/services/gateway/src
+)
+
+add_test(NAME chat_bridge_tests COMMAND chat_bridge_tests)
+
 # Notification service coverage tests (internal access tests are compiled
 # into the same binary: the implementation is compiled exactly once).
 add_executable(notification_tests

@@ -11,6 +11,7 @@
 
 #include "network/auth_client.h"
 #include "network/session_registry.h"
+#include "chat_bridge.h"
 #include "logger.h"
 #include "network/protobuf_framing.h"
 #include "network/redis_session_manager.h"
@@ -98,7 +99,8 @@ void HandleLogin(const std::shared_ptr<chirp::network::Session>& session,
                  const chirp::auth::LoginRequest& req,
                  const std::shared_ptr<chirp::network::SessionRegistry>& state,
                  const std::shared_ptr<chirp::gateway::AuthClient>& auth,
-                 const std::shared_ptr<chirp::gateway::RedisSessionManager>& redis_mgr) {
+                 const std::shared_ptr<chirp::gateway::RedisSessionManager>& redis_mgr,
+                 chirp::gateway::ChatBridge* bridge) {
   const int64_t seq = pkt.sequence();
   auto send_err = [session, seq](chirp::common::ErrorCode code) {
     chirp::auth::LoginResponse resp;
@@ -116,11 +118,14 @@ void HandleLogin(const std::shared_ptr<chirp::network::Session>& session,
     resp.set_kick_previous(true);
     resp.mutable_kick()->set_reason("login from another device");
     SendPacket(session, chirp::gateway::LOGIN_RESP, seq, resp.SerializeAsString());
+    if (bridge) {
+      bridge->Attach(session, req.token(), req.device_id());
+    }
     return;
   }
 
   auth->AsyncLogin(req, seq,
-                   [session, seq, req, state, redis_mgr, send_err](const chirp::auth::LoginResponse& auth_resp) {
+                   [session, seq, req, state, redis_mgr, bridge, send_err](const chirp::auth::LoginResponse& auth_resp) {
     chirp::auth::LoginResponse resp = auth_resp;
     if (resp.code() != chirp::common::OK) {
       SendPacket(session, chirp::gateway::LOGIN_RESP, seq, resp.SerializeAsString());
@@ -144,11 +149,17 @@ void HandleLogin(const std::shared_ptr<chirp::network::Session>& session,
 
     if (redis_mgr) {
       redis_mgr->AsyncClaim(user_id, req.device_id(),
-                            [session, seq, resp](std::optional<std::string> /*prev_owner*/) mutable {
-        SendPacket(session, chirp::gateway::LOGIN_RESP, seq, resp.SerializeAsString());
-      });
+                            [session, seq, resp, bridge, req](std::optional<std::string> /*prev_owner*/) mutable {
+          SendPacket(session, chirp::gateway::LOGIN_RESP, seq, resp.SerializeAsString());
+          if (bridge) {
+            bridge->Attach(session, req.token(), req.device_id());
+          }
+        });
     } else {
       SendPacket(session, chirp::gateway::LOGIN_RESP, seq, resp.SerializeAsString());
+      if (bridge) {
+        bridge->Attach(session, req.token(), req.device_id());
+      }
     }
   });
 }
@@ -217,6 +228,69 @@ void HandleLogout(const std::shared_ptr<chirp::network::Session>& session,
   }
 }
 
+// Single dispatch shared by the TCP and WS entry points (they used to be two
+// copy-pasted switches). Chat business packets (2xxx) are piped to chat
+// through the bridge when one is configured; unauthenticated 2xxx and every
+// other unknown msg_id keep the historical silent-drop behavior.
+void HandleClientPacket(const std::shared_ptr<chirp::network::SessionRegistry>& state,
+                        const std::shared_ptr<chirp::gateway::AuthClient>& auth,
+                        const std::shared_ptr<chirp::gateway::RedisSessionManager>& redis_mgr,
+                        chirp::gateway::ChatBridge* bridge,
+                        const std::shared_ptr<chirp::network::Session>& session,
+                        const chirp::gateway::Packet& pkt) {
+  switch (pkt.msg_id()) {
+  case chirp::gateway::LOGIN_REQ: {
+    chirp::auth::LoginRequest req;
+    if (!req.ParseFromArray(pkt.body().data(), static_cast<int>(pkt.body().size()))) {
+      chirp::auth::LoginResponse resp;
+      resp.set_code(chirp::common::INVALID_PARAM);
+      resp.set_server_time(NowMs());
+      SendPacket(session, chirp::gateway::LOGIN_RESP, pkt.sequence(), resp.SerializeAsString());
+      return;
+    }
+    HandleLogin(session, pkt, req, state, auth, redis_mgr, bridge);
+    break;
+  }
+  case chirp::gateway::LOGOUT_REQ: {
+    chirp::auth::LogoutRequest req;
+    if (!req.ParseFromArray(pkt.body().data(), static_cast<int>(pkt.body().size()))) {
+      chirp::auth::LogoutResponse resp;
+      resp.set_code(chirp::common::INVALID_PARAM);
+      resp.set_server_time(NowMs());
+      SendPacket(session, chirp::gateway::LOGOUT_RESP, pkt.sequence(), resp.SerializeAsString());
+      return;
+    }
+    HandleLogout(session, pkt, req, state, auth, redis_mgr);
+    break;
+  }
+  case chirp::gateway::HEARTBEAT_PING: {
+    chirp::gateway::HeartbeatPing ping;
+    if (!ping.ParseFromArray(pkt.body().data(), static_cast<int>(pkt.body().size()))) {
+      chirp::common::Logger::Instance().Warn("failed to parse HeartbeatPing body");
+      return;
+    }
+
+    chirp::gateway::HeartbeatPong pong;
+    pong.set_timestamp(ping.timestamp());
+    pong.set_server_time(NowMs());
+
+    SendPacket(session, chirp::gateway::HEARTBEAT_PONG, pkt.sequence(), pong.SerializeAsString());
+    break;
+  }
+  default: {
+    const auto id = static_cast<int>(pkt.msg_id());
+    if (bridge != nullptr && id >= 2001 && id <= 2999) {
+      if (!chirp::network::GetAuthenticatedSession(state, session).user_id.empty()) {
+        bridge->ForwardToChat(session.get(), pkt);
+      }
+      break;
+    }
+    // For scaffolding: ignore unknown/unimplemented messages.
+    break;
+  }
+  }
+}
+
 } // namespace
 
 int main(int argc, char** argv) {
@@ -236,10 +310,16 @@ int main(int argc, char** argv) {
     instance_id = RandomHex(8);
   }
 
+  const std::string chat_host = GetArg(argc, argv, "--chat_host", "");
+  const uint16_t chat_port = ParseU16Arg(argc, argv, "--chat_port", 7000);
+  const std::string chat_service_id = GetArg(argc, argv, "--chat_service_id", "gateway");
+  const std::string chat_service_secret = GetArg(argc, argv, "--chat_service_secret", "");
+
   Logger::Instance().Info("chirp_gateway starting tcp=" + std::to_string(port) + " ws=" + std::to_string(ws_port) +
                           (auth_host.empty() ? "" : (" auth=" + auth_host + ":" + std::to_string(auth_port))) +
                           (redis_host.empty() ? "" : (" redis=" + redis_host + ":" + std::to_string(redis_port) +
-                                                      " instance=" + instance_id)));
+                                                      " instance=" + instance_id)) +
+                          (chat_host.empty() ? "" : (" chat=" + chat_host + ":" + std::to_string(chat_port))));
 
   asio::io_context io;
 
@@ -247,6 +327,12 @@ int main(int argc, char** argv) {
   std::shared_ptr<chirp::gateway::AuthClient> auth;
   if (!auth_host.empty()) {
     auth = std::make_shared<chirp::gateway::AuthClient>(io, auth_host, auth_port);
+  }
+
+  std::unique_ptr<chirp::gateway::ChatBridge> bridge;
+  if (!chat_host.empty()) {
+    bridge = std::make_unique<chirp::gateway::ChatBridge>(io, chat_host, chat_port,
+                                                          chat_service_id, chat_service_secret);
   }
 
   std::shared_ptr<chirp::gateway::RedisSessionManager> redis_mgr;
@@ -262,142 +348,35 @@ int main(int argc, char** argv) {
         });
   }
 
-  chirp::network::TcpServer server(
-      io, port,
-      [state, auth, redis_mgr](std::shared_ptr<chirp::network::Session> session, std::string&& payload) {
-        chirp::gateway::Packet pkt;
-        if (!pkt.ParseFromArray(payload.data(), static_cast<int>(payload.size()))) {
-          Logger::Instance().Warn("failed to parse Packet from client");
-          return;
-        }
+  // One dispatch pair shared by TCP and WS (the two on_frame switches used
+  // to be copy-pasted copies of each other).
+  auto on_frame = [state, auth, redis_mgr,
+                   bridge_raw = bridge.get()](std::shared_ptr<chirp::network::Session> session,
+                                              std::string&& payload) {
+    chirp::gateway::Packet pkt;
+    if (!pkt.ParseFromArray(payload.data(), static_cast<int>(payload.size()))) {
+      Logger::Instance().Warn("failed to parse Packet from client");
+      return;
+    }
+    HandleClientPacket(state, auth, redis_mgr, bridge_raw, session, pkt);
+  };
+  auto on_close = [state, redis_mgr,
+                   bridge_raw = bridge.get()](std::shared_ptr<chirp::network::Session> session) {
+    std::string user_id;
+    std::string device_id;
+    const bool should_release =
+        chirp::network::RemoveAuthenticatedSession(state, session, &user_id, &device_id);
+    if (should_release && redis_mgr) {
+      redis_mgr->AsyncRelease(user_id, device_id);
+    }
+    if (bridge_raw) {
+      bridge_raw->Detach(session.get());
+    }
+  };
 
-        switch (pkt.msg_id()) {
-        case chirp::gateway::LOGIN_REQ: {
-          chirp::auth::LoginRequest req;
-          if (!req.ParseFromArray(pkt.body().data(), static_cast<int>(pkt.body().size()))) {
-            chirp::auth::LoginResponse resp;
-            resp.set_code(chirp::common::INVALID_PARAM);
-            resp.set_server_time(NowMs());
-            SendPacket(session, chirp::gateway::LOGIN_RESP, pkt.sequence(), resp.SerializeAsString());
-            return;
-          }
-          HandleLogin(session, pkt, req, state, auth, redis_mgr);
-          break;
-        }
-        case chirp::gateway::LOGOUT_REQ: {
-          chirp::auth::LogoutRequest req;
-          if (!req.ParseFromArray(pkt.body().data(), static_cast<int>(pkt.body().size()))) {
-            chirp::auth::LogoutResponse resp;
-            resp.set_code(chirp::common::INVALID_PARAM);
-            resp.set_server_time(NowMs());
-            SendPacket(session, chirp::gateway::LOGOUT_RESP, pkt.sequence(), resp.SerializeAsString());
-            return;
-          }
-          HandleLogout(session, pkt, req, state, auth, redis_mgr);
-          break;
-        }
-        case chirp::gateway::HEARTBEAT_PING: {
-          chirp::gateway::HeartbeatPing ping;
-          if (!ping.ParseFromArray(pkt.body().data(), static_cast<int>(pkt.body().size()))) {
-            Logger::Instance().Warn("failed to parse HeartbeatPing body");
-            return;
-          }
+  chirp::network::TcpServer server(io, port, on_frame, on_close);
 
-          chirp::gateway::HeartbeatPong pong;
-          pong.set_timestamp(ping.timestamp());
-          pong.set_server_time(NowMs());
-
-          chirp::gateway::Packet resp;
-          resp.set_msg_id(chirp::gateway::HEARTBEAT_PONG);
-          resp.set_sequence(pkt.sequence());
-          resp.set_body(pong.SerializeAsString());
-
-          auto framed = chirp::network::ProtobufFraming::Encode(resp);
-          session->Send(std::string(reinterpret_cast<const char*>(framed.data()), framed.size()));
-          break;
-        }
-        default:
-          // For scaffolding: ignore unknown/unimplemented messages.
-          break;
-        }
-      },
-      [state, redis_mgr](std::shared_ptr<chirp::network::Session> session) {
-        std::string user_id;
-        std::string device_id;
-        const bool should_release =
-            chirp::network::RemoveAuthenticatedSession(state, session, &user_id, &device_id);
-        if (should_release && redis_mgr) {
-          redis_mgr->AsyncRelease(user_id, device_id);
-        }
-      });
-
-  chirp::network::WebSocketServer ws_server(
-      io, ws_port,
-      [state, auth, redis_mgr](std::shared_ptr<chirp::network::Session> session, std::string&& payload) {
-        chirp::gateway::Packet pkt;
-        if (!pkt.ParseFromArray(payload.data(), static_cast<int>(payload.size()))) {
-          Logger::Instance().Warn("failed to parse Packet from ws client");
-          return;
-        }
-
-        switch (pkt.msg_id()) {
-        case chirp::gateway::LOGIN_REQ: {
-          chirp::auth::LoginRequest req;
-          if (!req.ParseFromArray(pkt.body().data(), static_cast<int>(pkt.body().size()))) {
-            chirp::auth::LoginResponse resp;
-            resp.set_code(chirp::common::INVALID_PARAM);
-            resp.set_server_time(NowMs());
-            SendPacket(session, chirp::gateway::LOGIN_RESP, pkt.sequence(), resp.SerializeAsString());
-            return;
-          }
-          HandleLogin(session, pkt, req, state, auth, redis_mgr);
-          break;
-        }
-        case chirp::gateway::LOGOUT_REQ: {
-          chirp::auth::LogoutRequest req;
-          if (!req.ParseFromArray(pkt.body().data(), static_cast<int>(pkt.body().size()))) {
-            chirp::auth::LogoutResponse resp;
-            resp.set_code(chirp::common::INVALID_PARAM);
-            resp.set_server_time(NowMs());
-            SendPacket(session, chirp::gateway::LOGOUT_RESP, pkt.sequence(), resp.SerializeAsString());
-            return;
-          }
-          HandleLogout(session, pkt, req, state, auth, redis_mgr);
-          break;
-        }
-        case chirp::gateway::HEARTBEAT_PING: {
-          chirp::gateway::HeartbeatPing ping;
-          if (!ping.ParseFromArray(pkt.body().data(), static_cast<int>(pkt.body().size()))) {
-            Logger::Instance().Warn("failed to parse HeartbeatPing body");
-            return;
-          }
-
-          chirp::gateway::HeartbeatPong pong;
-          pong.set_timestamp(ping.timestamp());
-          pong.set_server_time(NowMs());
-
-          chirp::gateway::Packet resp;
-          resp.set_msg_id(chirp::gateway::HEARTBEAT_PONG);
-          resp.set_sequence(pkt.sequence());
-          resp.set_body(pong.SerializeAsString());
-
-          auto framed = chirp::network::ProtobufFraming::Encode(resp);
-          session->Send(std::string(reinterpret_cast<const char*>(framed.data()), framed.size()));
-          break;
-        }
-        default:
-          break;
-        }
-      },
-      [state, redis_mgr](std::shared_ptr<chirp::network::Session> session) {
-        std::string user_id;
-        std::string device_id;
-        const bool should_release =
-            chirp::network::RemoveAuthenticatedSession(state, session, &user_id, &device_id);
-        if (should_release && redis_mgr) {
-          redis_mgr->AsyncRelease(user_id, device_id);
-        }
-      });
+  chirp::network::WebSocketServer ws_server(io, ws_port, on_frame, on_close);
 
   server.Start();
   ws_server.Start();
