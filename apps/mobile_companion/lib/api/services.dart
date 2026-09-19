@@ -1,3 +1,5 @@
+import 'package:flutter/foundation.dart';
+
 import '../protocol/chirp_client.dart';
 import '../protocol/chat_connection.dart';
 import '../state/auth_store.dart';
@@ -89,17 +91,31 @@ class Services {
   }
 }
 
-/// Dev defaults target the host machine from the Android emulator
-/// (10.0.2.2); override per build with
+/// Dev defaults. The Android emulator reaches the host machine via 10.0.2.2;
+/// iOS simulators and the desktop builds run on the host itself, so they use
+/// the loopback. Override per build with
 /// --dart-define=CHIRP_CHAT_WS_URL=ws://... (same for the other planes).
-const _chatUrl = String.fromEnvironment('CHIRP_CHAT_WS_URL',
-    defaultValue: 'ws://10.0.2.2:7001');
-const _socialUrl = String.fromEnvironment('CHIRP_SOCIAL_WS_URL',
-    defaultValue: 'ws://10.0.2.2:8001');
-const _partyUrl = String.fromEnvironment('CHIRP_PARTY_WS_URL',
-    defaultValue: 'ws://10.0.2.2:7501');
-const _deviceUrl = String.fromEnvironment('CHIRP_DEVICE_WS_URL',
-    defaultValue: 'ws://10.0.2.2:5201');
+const _chatUrlOverride = String.fromEnvironment('CHIRP_CHAT_WS_URL');
+const _socialUrlOverride = String.fromEnvironment('CHIRP_SOCIAL_WS_URL');
+const _partyUrlOverride = String.fromEnvironment('CHIRP_PARTY_WS_URL');
+const _deviceUrlOverride = String.fromEnvironment('CHIRP_DEVICE_WS_URL');
+
+// String.fromEnvironment needs a const defaultValue, so the platform pick
+// happens here instead: emulator host alias vs plain loopback.
+String get _defaultHost =>
+    defaultTargetPlatform == TargetPlatform.android ? '10.0.2.2' : '127.0.0.1';
+
+String get defaultChatUrl =>
+    _chatUrlOverride.isNotEmpty ? _chatUrlOverride : 'ws://$_defaultHost:7001';
+String get defaultSocialUrl => _socialUrlOverride.isNotEmpty
+    ? _socialUrlOverride
+    : 'ws://$_defaultHost:8001';
+String get defaultPartyUrl => _partyUrlOverride.isNotEmpty
+    ? _partyUrlOverride
+    : 'ws://$_defaultHost:7501';
+String get defaultDeviceUrl => _deviceUrlOverride.isNotEmpty
+    ? _deviceUrlOverride
+    : 'ws://$_defaultHost:5201';
 
 Services createServices({
   String? url,
@@ -114,7 +130,7 @@ Services createServices({
   String deviceSummary = '移动端',
   LocalNotifications? notifications,
 }) {
-  final client = conn ?? ChirpClient(url: url ?? _chatUrl);
+  final client = conn ?? ChirpClient(url: url ?? defaultChatUrl);
   final auth = createAuthStore(ensureDeviceId);
   final conversations = createConversationStore();
   final messages = createMessageStore();
@@ -134,18 +150,18 @@ Services createServices({
   // The social/party/device planes default ON for real ChirpClients; tests
   // that inject a chat fake get chat-only unless they also inject the plane.
   final socialConn2 = socialConn ??
-      (conn != null ? null : ChirpClient(url: socialUrl ?? _socialUrl));
+      (conn != null ? null : ChirpClient(url: socialUrl ?? defaultSocialUrl));
   final socialApi = socialConn2 == null
       ? null
       : SocialApi(
           conn: socialConn2, auth: auth, presence: presence, friends: friends);
   final partyConn2 = partyConn ??
-      (conn != null ? null : ChirpClient(url: partyUrl ?? _partyUrl));
+      (conn != null ? null : ChirpClient(url: partyUrl ?? defaultPartyUrl));
   final partyApi = partyConn2 == null
       ? null
       : PartyApi(conn: partyConn2, auth: auth, party: partyState);
   final deviceConn2 = deviceConn ??
-      (conn != null ? null : ChirpClient(url: deviceUrl ?? _deviceUrl));
+      (conn != null ? null : ChirpClient(url: deviceUrl ?? defaultDeviceUrl));
   final deviceApi = deviceConn2 == null
       ? null
       : DeviceApi(

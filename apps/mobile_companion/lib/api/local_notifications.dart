@@ -2,7 +2,9 @@ import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 
 /// Thin wrapper over flutter_local_notifications. Everything degrades: when
 /// init or show fails the app keeps working with in-app delivery only, and
-/// real background push awaits the backend push transport anyway.
+/// real background push awaits the backend push transport anyway. Windows is
+/// not covered by the plugin — initialize throws, the app falls back to
+/// in-app delivery.
 class LocalNotifications {
   LocalNotifications({FlutterLocalNotificationsPlugin? plugin})
       : _plugin = plugin ?? FlutterLocalNotificationsPlugin();
@@ -14,8 +16,21 @@ class LocalNotifications {
     if (_ready) return;
     try {
       const android = AndroidInitializationSettings('@mipmap/ic_launcher');
+      // macOS asks for its permissions up front (mobile asks on demand via
+      // requestPermission below); iOS keeps the on-demand flow.
+      const darwin = DarwinInitializationSettings(
+        requestAlertPermission: true,
+        requestBadgePermission: true,
+        requestSoundPermission: true,
+      );
+      const linux = LinuxInitializationSettings(defaultActionName: '打开');
       await _plugin.initialize(
-        const InitializationSettings(android: android),
+        const InitializationSettings(
+          android: android,
+          iOS: darwin,
+          macOS: darwin,
+          linux: linux,
+        ),
       );
       _ready = true;
     } catch (_) {
@@ -23,14 +38,37 @@ class LocalNotifications {
     }
   }
 
-  /// Android 13+ runtime gate; safe no-op on older versions. Returns the
-  /// permission state best-effort.
+  /// Android 13+ runtime gate (safe no-op on older versions) and the macOS
+  /// on-demand grant. Linux needs no permission; platforms without plugin
+  /// support report false. Returns the permission state best-effort.
   Future<bool> requestPermission() async {
     try {
       final android = _plugin.resolvePlatformSpecificImplementation<
           AndroidFlutterLocalNotificationsPlugin>();
-      if (android == null) return false;
-      return await android.requestNotificationsPermission() ?? false;
+      if (android != null) {
+        return await android.requestNotificationsPermission() ?? false;
+      }
+      final mac = _plugin.resolvePlatformSpecificImplementation<
+          MacOSFlutterLocalNotificationsPlugin>();
+      if (mac != null) {
+        final granted = await mac.requestPermissions(
+          alert: true,
+          badge: true,
+          sound: true,
+        );
+        return granted ?? false;
+      }
+      final ios = _plugin.resolvePlatformSpecificImplementation<
+          IOSFlutterLocalNotificationsPlugin>();
+      if (ios != null) {
+        return await ios.requestPermissions(
+              alert: true,
+              badge: true,
+              sound: true,
+            ) ??
+            false;
+      }
+      return false;
     } catch (_) {
       return false;
     }
@@ -57,6 +95,8 @@ class LocalNotifications {
             priority: Priority.defaultPriority,
             tag: 'chirp',
           ),
+          macOS: DarwinNotificationDetails(),
+          linux: LinuxNotificationDetails(),
         ),
       );
     } catch (_) {

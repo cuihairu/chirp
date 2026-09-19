@@ -121,3 +121,38 @@ jobs:
     - name: Check formatting
       working-directory: apps/mobile_companion
       run: dart format --set-exit-if-changed .
+
+  # Desktop builds of the same codebase (WP-5): one debug bundle per OS so
+  # the platform directories stay compiling. Release signing/packaging is a
+  # later distribution step.
+  desktop:
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - os: ubuntu-22.04
+            target: linux
+          - os: windows-2022
+            target: windows
+          - os: macos-14
+            target: macos
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 60
+
+    steps:
+    - uses: actions/checkout@v7
+
+    - name: Set up Flutter
+      uses: subosito/flutter-action@v2
+      with:
+        flutter-version: '3.24.0'
+        channel: 'stable'
+        cache: true
+
+    - name: Install Flutter dependencies
+      working-directory: apps/mobile_companion
+      run: flutter pub get
+
+    - name: Build desktop app (debug)
+      working-directory: apps/mobile_companion
+      run: flutter build ${{ matrix.target }} --debug

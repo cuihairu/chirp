@@ -15,3 +15,12 @@ android/.gradle/
 
 # iOS local artifacts
 ios/Flutter/
+
+# IDE artifacts
+.idea/
+*.iml
+
+# Desktop local artifacts (generated headers live in-tree; bundles don't)
+linux/flutter/ephemeral/
+macos/Flutter/ephemeral/
+windows/flutter/ephemeral/
