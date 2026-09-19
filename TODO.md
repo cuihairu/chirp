@@ -40,8 +40,8 @@
 - [x] **server plane 进程级 E2E**:已由 `--smoke-npc` 覆盖(注入 + 事件回环 + 离线 refill)。如需通用注入(非 NPC)场景的 smoke,再单独立项。
 - [x] **chat 直连入口的限流/安全模型**:(2026-09 完成)`ChatRateLimiter` 固定窗口计数——登录按客户端 IP(30/分钟)、消息发送按用户(120/分钟),Redis 计数、任何故障一律 fail-open;超限回 `RATE_LIMITED`(common.proto 新增错误码)。阈值可配(`--login_rate_limit_per_min` / `--send_rate_limit_per_min`),无 `--redis_host` 时不生效。多级窗口/封禁列表等留给统一登录(P1)之后。
 - [x] **NPC 回复去重**:(2026-09 完成)`NpcResponder` 按事件 id(= `inject_id`)去重——回复注入成功才记入 1024 条的近期窗口;已答事件重投只补 ack 不再回复,注入失败的事件不记录(重投必须重试),窗口满驱逐最旧。见 `docs/server_plane.md` NPC dialog 一节。
-- [ ] **app 边缘 TLS**:`app_gateway` 的 WS/TCP 监听尚无 TLS(docs 多处标注 "TLS planned")。
-- [ ] **真实推送传输**:(2026-09 推进)`HttpPushTransport` 落地——真实 HTTP/1.1 客户端(URL 解析/请求构建/状态与响应解析/整请求 deadline/响应体上限),`--push_transport http` 启用,默认仍为 logging stub;TCP 连接工厂在 `HttpConnectionFactory` 接缝后,单测以脚本化连接全覆盖 + loopback 真连回环。**剩余**:TLS 握手与 APNs HTTP/2(需 OpenSSL/nghttp2;本机 vcpkg 的 ncurses 端口在 gcc 15 下构建失败,阻塞 openssl 安装),FCM HTTP v1 的 OAuth2(RS256)同因缺 OpenSSL 未做;三者都是接缝替换点,协议代码无需再动。
+- [ ] **app 边缘 TLS**:`app_gateway` 的 WS/TCP 监听尚无 TLS(docs 多处标注 "TLS planned")。(2026-09-19 OpenSSL 依赖已就绪,见下条。)
+- [ ] **真实推送传输**:(2026-09 推进)`HttpPushTransport` 落地——真实 HTTP/1.1 客户端(URL 解析/请求构建/状态与响应解析/整请求 deadline/响应体上限),`--push_transport http` 启用,默认仍为 logging stub;TCP 连接工厂在 `HttpConnectionFactory` 接缝后,单测以脚本化连接全覆盖 + loopback 真连回环。**剩余**:TLS 握手与 APNs HTTP/2、FCM HTTP v1 的 OAuth2(RS256);三者都是接缝替换点,协议代码无需再动。(2026-09-19 依赖解锁:classic 树 openssl 3.6.1 + nghttp2 1.69.0 已装好并通过 toolchain 探针(asio::ssl 内存证书/RSA 签名/nghttp2 会话),ncurses-gcc15 阻塞不复现;落地首个用到的特性时把 openssl/nghttp2 加进 `vcpkg.json` manifest 同步 CI。)
 - [x] **app_gateway / voice 单测**:(2026-09 完成)social 已由 `social_presence_tests` 覆盖;本批补齐剩余两个——`voice_tests`(房间创建/加入/满员/换房/离开/心跳/断连 + ICE/SDP 定向中继,22 例)、`app_gateway_tests`(scaffold 登录/登出/踢下线/心跳 + 设备消息经真实 NotificationClient 转发到 loopback 服务,17 例)。顺带修 voice 三个缺陷:满员 join 先拒后改状态(原会污染前房映射)、ICE/SDP 按 `to_user_id` 定向(原永远广播)、join 成功时绑定会话(原广播与断连清理永远找不到会话)。两服务均为 Experimental,main.cc 不在覆盖率测量范围。
 
 ### P3 — 暂缓项与杂项
