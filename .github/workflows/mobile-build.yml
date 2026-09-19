@@ -153,6 +153,12 @@ jobs:
       working-directory: apps/mobile_companion
       run: flutter pub get
 
+    # The ubuntu runner image lacks the GTK3 headers the Flutter Linux
+    # embedder's CMake requires (ninja/clang are preinstalled).
+    - name: Install GTK3 dev headers
+      if: matrix.target == 'linux'
+      run: sudo apt-get update && sudo apt-get install -y libgtk-3-dev
+
     - name: Build desktop app (debug)
       working-directory: apps/mobile_companion
       run: flutter build ${{ matrix.target }} --debug
