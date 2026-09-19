@@ -9,8 +9,12 @@ set -euo pipefail
 
 cd "$(dirname "$0")/../../.."
 
-CHAT_BIN="./build/services/chat/chirp_chat"
-SOCIAL_BIN="./build/services/social/chirp_social"
+CHAT_BIN="${CHAT_BIN:-./build/services/chat/chirp_chat}"
+SOCIAL_BIN="${SOCIAL_BIN:-./build/services/social/chirp_social}"
+# CHAT_BIN/SOCIAL_BIN are overridable: in a tree where vcpkg provided MySQL the
+# default chirp_chat is the enhanced build and dies without a real MySQL
+# server. Point them at a basic-form build (configure another tree with
+# -DCMAKE_DISABLE_FIND_PACKAGE_MySQL=TRUE) to run fully in-memory.
 if [ ! -f "${CHAT_BIN}" ]; then
   echo "错误: chirp_chat 未构建 (先 cmake --build build)"
   exit 1
@@ -65,13 +69,13 @@ SOCIAL_PORT="${SOCIAL_PORT:-$(pick_port)}"
 SOCIAL_WS_PORT="${SOCIAL_WS_PORT:-$(pick_port)}"
 SOCIAL_LOG="${SOCIAL_LOG:-/tmp/chirp_web_smoke_social.log}"
 
-./build/services/chat/chirp_chat --port "${CHAT_PORT}" --ws_port "${CHAT_WS_PORT}" \
+"${CHAT_BIN}" --port "${CHAT_PORT}" --ws_port "${CHAT_WS_PORT}" \
   > "${CHAT_LOG}" 2>&1 &
 CHAT_PID=$!
 
 # Defaults its tcp port to ws-1; pass both explicitly to keep them off the
 # chat service's picked ports.
-./build/services/social/chirp_social --port "${SOCIAL_PORT}" --ws_port "${SOCIAL_WS_PORT}" \
+"${SOCIAL_BIN}" --port "${SOCIAL_PORT}" --ws_port "${SOCIAL_WS_PORT}" \
   > "${SOCIAL_LOG}" 2>&1 &
 SOCIAL_PID=$!
 
