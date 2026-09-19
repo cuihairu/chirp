@@ -86,4 +86,27 @@ else
   echo "warning: protoc or ts-proto plugin not found; skipping TS code generation (npm install in apps/web_companion to enable)"
 fi
 
+# Generate Dart code (protobuf pub plugin), used by apps/mobile_companion.
+# Same committed-gencode convention as proto/ts: neither CI nor other
+# consumers need the toolchain. The plugin ships from
+# `dart pub global activate protoc_plugin` (bin shim in ~/.pub-cache/bin).
+DART_PLUGIN="$HOME/.pub-cache/bin/protoc-gen-dart"
+if [ -x "${PROTOC_BIN}" ] && command -v dart >/dev/null 2>&1 && [ -x "${DART_PLUGIN}" ]; then
+  mkdir -p proto/dart/lib
+  "${PROTOC_BIN}" --proto_path=. \
+         --plugin=protoc-gen-dart="${DART_PLUGIN}" \
+         --dart_out=proto/dart/lib \
+         proto/common.proto \
+         proto/auth.proto \
+         proto/gateway.proto \
+         proto/chat.proto \
+         proto/social.proto \
+         proto/voice.proto \
+         proto/party.proto \
+         proto/notification.proto \
+         proto/server_gateway.proto
+else
+  echo "warning: dart or protoc-gen-dart not found; skipping Dart code generation (dart pub global activate protoc_plugin to enable)"
+fi
+
 echo "Protobuf generation complete."

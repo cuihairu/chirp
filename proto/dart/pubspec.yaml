@@ -1,0 +1,10 @@
+name: chirp_proto
+description: >-
+  Generated protobuf classes for the Chirp wire protocol (protoc dart plugin
+  output). Committed like proto/ts — regenerate with the repo-root
+  gen_proto.sh, never edit by hand.
+publish_to: 'none'
+environment:
+  sdk: '>=3.0.0 <4.0.0'
+dependencies:
+  protobuf: ^3.1.0

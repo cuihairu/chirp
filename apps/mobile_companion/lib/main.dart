@@ -1,86 +1,40 @@
+import 'dart:io';
+
 import 'package:flutter/material.dart';
-import 'package:chirp_mobile/core/sdk/chirp_client.dart';
-import 'package:chirp_mobile/ui/screens/home_screen.dart';
-import 'package:chirp_mobile/ui/screens/login_screen.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
-void main() {
-  runApp(const ChirpApp());
+import 'api/device_id.dart';
+import 'api/local_notifications.dart';
+import 'api/services.dart';
+import 'ui/app_root.dart';
+
+Future<void> main() async {
+  WidgetsFlutterBinding.ensureInitialized();
+  final prefs = await SharedPreferences.getInstance();
+  final deviceId = await ensureDeviceId(prefs);
+  final notifications = LocalNotifications();
+  await notifications.init();
+  final services = createServices(
+    ensureDeviceId: () => deviceId,
+    deviceSummary: deviceSummaryOf(prefs),
+    notifications: notifications,
+  );
+  runApp(ChirpApp(services: services, notifications: notifications));
 }
 
-class ChirpApp extends StatelessWidget {
-  const ChirpApp({super.key});
-
-  @override
-  Widget build(BuildContext context) {
-    return MaterialApp(
-      title: 'Chirp - Real-time Communication',
-      theme: ThemeData(
-        colorScheme: ColorScheme.fromSeed(
-          seedColor: Colors.deepPurple,
-          brightness: Brightness.light,
-        ),
-        useMaterial3: true,
-      ),
-      darkTheme: ThemeData(
-        colorScheme: ColorScheme.fromSeed(
-          seedColor: Colors.deepPurple,
-          brightness: Brightness.dark,
-        ),
-        useMaterial3: true,
-      ),
-      home: const _AppInitializer(),
-    );
-  }
+/// The registered device display name (mirrors the web's ua_summary):
+/// platform plus a stored model string captured at first login.
+String deviceSummaryOf(SharedPreferences prefs) {
+  final platform = platformName();
+  final stored = prefs.getString('chirp.device_model');
+  return stored == null ? platform : '$platform · $stored';
 }
 
-/// Initializes the app and handles login flow
-class _AppInitializer extends StatefulWidget {
-  const _AppInitializer();
-
-  @override
-  State<_AppInitializer> createState() => _AppInitializerState();
-}
-
-class _AppInitializerState extends State<_AppInitializer> {
-  bool _isInitialized = false;
-  bool _isLoggedIn = false;
-
-  @override
-  void initState() {
-    super.initState();
-    _initialize();
-  }
-
-  Future<void> _initialize() async {
-    // Initialize the Chirp SDK
-    final success = await ChirpClient.instance.initialize();
-    setState(() {
-      _isInitialized = true;
-      _isLoggedIn = success && ChirpClient.instance.isConnected;
-    });
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    if (!_isInitialized) {
-      return const Scaffold(
-        body: Center(
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              CircularProgressIndicator(),
-              SizedBox(height: 16),
-              Text('Connecting to Chirp...'),
-            ],
-          ),
-        ),
-      );
-    }
-
-    if (!_isLoggedIn) {
-      return const LoginScreen();
-    }
-
-    return const HomeScreen();
-  }
+String platformName() {
+  if (Platform.isIOS) return 'iOS';
+  if (Platform.isAndroid) return 'Android';
+  if (Platform.isMacOS) return 'macOS';
+  if (Platform.isWindows) return 'Windows';
+  if (Platform.isLinux) return 'Linux';
+  return '移动端';
 }

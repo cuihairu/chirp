@@ -45,7 +45,8 @@ npm run typecheck && npm run lint
 npm test -- --coverage        # 226 例;门槛:全局 ≥70%,src/protocol ≥90%
 npm run build
 
-# E2E:脚本起真实 chirp_chat + chirp_social 再跑集成套件(11 例)
+# E2E:脚本起真实 chirp_chat + chirp_social(有 app_gateway+notification 二进制时一并起,
+#    设备面 3 例才跑,否则自动跳过)再跑集成套件(14 例)
 bash scripts/web_smoke.sh
 ```
 
@@ -60,7 +61,7 @@ src/
 └── components/  # ConversationList、ChatWindow、MessageBubble、FriendsDialog、GroupDialogs…
 ```
 
-`protocol/` 刻意保持零 React 依赖——它是将来 Flutter 五端(Android/iOS/macOS/Windows/Linux)用 Dart 重写的蓝本。proto 生成物提交在 `proto/ts/`(ts-proto,`gen_proto.sh` 生成),运行时零工具链依赖;CI 有 proto-sync job 防 `.proto` 与生成物漂移。
+`protocol/` 刻意保持零 React 依赖——Flutter 端已按此蓝本用 Dart 重写落地(`apps/mobile_companion/lib/protocol/`,2026-09-19;桌面五端属二期)。proto 生成物提交在 `proto/ts/`(ts-proto,`gen_proto.sh` 生成),运行时零工具链依赖;CI 有 proto-sync job 防 `.proto` 与生成物漂移。
 
 ## 必须知道的协议语义(代码注释里也有)
 
@@ -104,6 +105,8 @@ src/
    │    为推送目标、设备列表/移除 UI、桌面通知(Notification API 喂 chat 实时流);真实 Web-Push 待
    │    后端传输(TODO:真实推送传输)
    │    语音客户端仍属三期
+   ├─→ [手机 app·已完成 2026-09-19(WP-4)] Android/iOS 共享一套 Flutter 界面;协议/状态/api 层是
+   │    src/protocol/ 的 Dart 移植,四条可降级 WS 同构;见 apps/mobile_companion
    ├─→ [二期·Flutter 五端] Android/iOS/macOS/Windows/Linux,协议层以 src/protocol/ 为蓝本
    │    纯 Dart 重写;五端共享同一套界面代码,每端的增量只在构建矩阵与签名发布。
    │    Flutter 版不接管 Web(React 版已交付,两套 Web 客户端无收益)

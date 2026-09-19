@@ -1,0 +1,3 @@
+# CI runs `flutter analyze --fatal-infos`, so infos count. Keep this file
+# minimal: the flutter_lints default set plus nothing app-specific.
+include: package:flutter_lints/flutter.yaml

@@ -10,17 +10,25 @@ dependencies:
   flutter:
     sdk: flutter
 
-  # FFI for native SDK integration
-  ffi: ^2.1.0
+  # Committed generated wire protocol (proto/dart, same bytes as the web
+  # companion's @chirp/proto); fixnum comes with the protobuf runtime's
+  # Int64 fields (Packet.sequence, timestamps).
+  chirp_proto:
+    path: ../../proto/dart
+  protobuf: ^3.1.0
+  fixnum: ^1.1.0
 
-  # WebRTC for voice calls
-  flutter_webrtc: ^0.9.47+2
+  # Per-install device_id persistence (web-parity with localStorage).
+  shared_preferences: ^2.2.3
+
+  # Foreground local notifications (web-parity with the Notification API
+  # surface; real push transport is a backend item).
+  flutter_local_notifications: ^17.2.2
 
 dev_dependencies:
   flutter_test:
     sdk: flutter
   flutter_lints: ^3.0.0
-  build_runner: ^2.4.6
 
 flutter:
   uses-material-design: true
