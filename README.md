@@ -108,6 +108,8 @@ smoke test：
 ./test_services.sh --smoke-chat  # chat + chat clients
 ./test_services.sh --smoke-sdk   # 游戏客户端 SDK(sdks/core)+ chat:登录/双向收发/离线队列
 ./test_services.sh --smoke-npc   # 服务器平面 + NPC 对话回环
+./test_services.sh --smoke-edge  # gateway 吸收 chat 直连入口(trusted bridge + 管道转发)
+./test_services.sh --smoke-jwt   # 统一登录:JWT 全链路,scaffold 被拒
 ./test_services.sh --smoke-redis # Redis session/kick path
 ```
 

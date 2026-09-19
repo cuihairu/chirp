@@ -130,9 +130,15 @@ taken as the user id). With a shared
 secret set, the token must be an HS256 JWT signed with that secret carrying
 a mandatory `exp` claim and the login user in `sub`; verification is local
 to chat (`libs/common` JWT helpers), and expired/badly-signed/claim-less
-tokens are rejected with `AUTH_FAILED`. Revocation is TTL-bounded for now —
-the opaque-token or hybrid variants are part of the unified login work
-(P1); the gateway path (via `AuthClient` RPC) is unchanged.
+tokens are rejected with `AUTH_FAILED`. Unified login semantics are closed
+(2026-09): auth-enhanced enforces the same HS256 contract on `LOGIN_REQ`
+under `--jwt_secret` — the deployment convention is to give auth and the
+edge services the same secret, and the client's original token rides the
+gateway → chat pipe verbatim (`--smoke-jwt` covers it end to end). The
+auth scaffold fallback needs `--allow_scaffold_login 1` (default off).
+Revocation remains TTL-bounded for now — the hybrid (Redis revocation)
+variant is deferred to P3 (TODO.md); the gateway login path (via
+`AuthClient` RPC) is unchanged.
 
 ### Server plane (5xxx)
 
@@ -200,6 +206,8 @@ Smoke tests:
 ./test_services.sh --smoke-chat
 ./test_services.sh --smoke-sdk
 ./test_services.sh --smoke-npc
+./test_services.sh --smoke-edge
+./test_services.sh --smoke-jwt
 ./test_services.sh --smoke-redis
 ```
 

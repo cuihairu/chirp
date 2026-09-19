@@ -200,6 +200,9 @@ services:
     command:
       - "--port=7000"
       - "--ws_port=7001"
+      # Signed-token login: must equal the auth nodes' --jwt_secret
+      # (unified login semantics, docs/architecture.md).
+      - "--token_secret=production_jwt_secret_change_me"
       - "--redis_host=redis"
       - "--redis_port=6379"
       - "--offline_ttl=604800"
@@ -227,6 +230,9 @@ services:
     command:
       - "--port=7000"
       - "--ws_port=7001"
+      # Signed-token login: must equal the auth nodes' --jwt_secret
+      # (unified login semantics, docs/architecture.md).
+      - "--token_secret=production_jwt_secret_change_me"
       - "--redis_host=redis"
       - "--redis_port=6379"
       - "--offline_ttl=604800"
@@ -254,6 +260,9 @@ services:
     command:
       - "--port=7000"
       - "--ws_port=7001"
+      # Signed-token login: must equal the auth nodes' --jwt_secret
+      # (unified login semantics, docs/architecture.md).
+      - "--token_secret=production_jwt_secret_change_me"
       - "--redis_host=redis"
       - "--redis_port=6379"
       - "--offline_ttl=604800"
