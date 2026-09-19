@@ -1,0 +1,31 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <!--
+    CI/headless build of the Unity runtime library. The Unity editor compiles
+    Runtime/Chirp/*.cs directly; this project exists so `dotnet test` can run
+    the suite in CI without Unity. The committed protobuf gencode
+    (proto/csharp) is compiled in from the repo root, exactly as Unity
+    projects would include it alongside Google.Protobuf.
+  -->
+  <PropertyGroup>
+    <TargetFramework>netstandard2.1</TargetFramework>
+    <LangVersion>9.0</LangVersion>
+    <Nullable>enable</Nullable>
+    <RootNamespace>Chirp.Sdk</RootNamespace>
+    <AssemblyName>ChirpSdk</AssemblyName>
+    <IsPackable>false</IsPackable>
+    <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Google.Protobuf" Version="3.27.4" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <!-- The Unity runtime sources and the committed proto gencode both sit
+         outside this directory (the default glob would miss them). -->
+    <Compile Include="../../Runtime/Chirp/**/*.cs" />
+    <Compile Include="../../../../proto/csharp/**/*.cs" />
+  </ItemGroup>
+
+</Project>

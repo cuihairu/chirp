@@ -1,0 +1,54 @@
+name: Unity SDK
+
+# The Unity C# SDK is testable without Unity: the pure protocol library
+# (Runtime/Chirp) compiles under plain .NET, and the xunit suite runs there.
+# Like the web workflow this lives on its own paths filter, so C++ pushes do
+# not pay for dotnet runners and vice versa.
+on:
+  push:
+    branches: [ main, develop ]
+    paths:
+      - 'sdks/unity/**'
+      - 'proto/**'
+      - 'gen_proto.sh'
+      - '.github/workflows/unity-sdk.yml'
+  pull_request:
+    branches: [ main, develop ]
+    paths:
+      - 'sdks/unity/**'
+      - 'proto/**'
+      - 'gen_proto.sh'
+      - '.github/workflows/unity-sdk.yml'
+
+jobs:
+  test:
+    runs-on: ubuntu-24.04
+    steps:
+    - uses: actions/checkout@v7
+
+    # The committed proto/csharp gencode was produced by protoc 33.4 (the
+    # vcpkg toolchain); the runner's older apt protoc emits different C#
+    # gencode, which would fail the drift check below for the wrong reason.
+    - name: Install protoc 33.4
+      run: |
+        curl -fsSL -o /tmp/protoc.zip \
+          https://github.com/protocolbuffers/protobuf/releases/download/v33.4/protoc-33.4-linux-x86_64.zip
+        unzip -q -o /tmp/protoc.zip -d /usr/local
+        protoc --version
+
+    - name: Regenerate protos
+      run: CHIRP_PROTOC=/usr/local/bin/protoc bash gen_proto.sh
+
+    # The generated C# is committed; regenerate and fail on drift so the
+    # checked-in files never silently diverge from the .proto sources.
+    - name: Check proto/csharp drift
+      run: |
+        git diff --exit-code -- proto/csharp \
+          || (echo "::error::proto/csharp is stale — run gen_proto.sh and commit" && exit 1)
+
+    - uses: actions/setup-dotnet@v4
+      with:
+        dotnet-version: 10.x
+
+    - name: Run the SDK test suite
+      run: dotnet test sdks/unity/dotnet/ChirpSdkTests -c Release

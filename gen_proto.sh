@@ -109,4 +109,21 @@ else
   echo "warning: dart or protoc-gen-dart not found; skipping Dart code generation (dart pub global activate protoc_plugin to enable)"
 fi
 
+# Generate C# code (protoc built-in csharp_out), used by sdks/unity: the
+# dotnet test project compiles it in CI, Unity projects import it together
+# with the Google.Protobuf runtime. Same committed-gencode convention as
+# proto/ts and proto/dart — consumers never need the toolchain.
+mkdir -p proto/csharp
+"${PROTOC_BIN}" --proto_path=. \
+       --csharp_out=proto/csharp \
+       proto/common.proto \
+       proto/auth.proto \
+       proto/gateway.proto \
+       proto/chat.proto \
+       proto/social.proto \
+       proto/voice.proto \
+       proto/party.proto \
+       proto/notification.proto \
+       proto/server_gateway.proto
+
 echo "Protobuf generation complete."
