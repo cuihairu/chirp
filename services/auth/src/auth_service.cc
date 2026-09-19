@@ -328,8 +328,18 @@ std::optional<std::string> AuthService::ValidateAccessToken(const std::string& t
     return std::nullopt;
   }
 
-  // Note: Our current JWT implementation doesn't support expiration
-  // In production, add exp claim support
+  // Same expiry contract as LoginTokenVerifier (libs/common): a login token
+  // must carry an exp claim and must not have expired. Tokens issued by
+  // TokenGenerator always carry exp; rejecting missing-exp tokens keeps this
+  // service aligned with the edge services verifying the same token.
+  if (claims.expires_at <= 0) {
+    Logger::Instance().Debug("JWT validation failed: missing exp claim");
+    return std::nullopt;
+  }
+  if (NowSeconds() >= claims.expires_at) {
+    Logger::Instance().Debug("JWT validation failed: token expired");
+    return std::nullopt;
+  }
 
   return claims.subject;
 }

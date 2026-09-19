@@ -5,6 +5,8 @@
 
 #include <gtest/gtest.h>
 
+#include <ctime>
+
 #include <asio.hpp>
 
 #include "auth_service.h"
@@ -395,6 +397,7 @@ class AuthServiceTest : public ::testing::Test {
         [this](const std::vector<std::string>& args) { return redis_->Handle(args); });
 
     AuthService::Config cfg;
+    cfg.jwt_secret = jwt_secret_;
     cfg.redis_config.port = fake_->port();
     cfg.rate_limiter_config.max_login_attempts_per_minute = 100;
     cfg.rate_limiter_config.max_login_attempts_per_hour = 100;
@@ -480,6 +483,9 @@ class AuthServiceTest : public ::testing::Test {
   std::unique_ptr<chirp_test::InMemoryRedis> redis_;
   std::unique_ptr<chirp_test::FakeRedisServer> fake_;
   std::unique_ptr<AuthService> service_;
+  // Explicit secret so the JWT tests below do not depend on the default
+  // constant in AuthService::Config.
+  std::string jwt_secret_ = "test_jwt_secret";
 };
 
 TEST_F(AuthServiceTest, InitializeAndShutdownLifecycle) {
@@ -562,6 +568,38 @@ TEST_F(AuthServiceTest, LoginHappyPathIssuesTokensAndSession) {
   EXPECT_EQ(service_->ValidateAccessToken(result.access_token).value_or(""), "user_1");
   // The session resolves through Redis.
   EXPECT_EQ(service_->ValidateSession(result.session_id).value_or(""), "user_1");
+}
+
+// ValidateAccessToken enforces the same expiry contract as the edge services
+// (LoginTokenVerifier): exp is mandatory and must still be in the future.
+
+TEST_F(AuthServiceTest, ValidateAccessTokenRejectsExpiredToken) {
+  ScriptSuccessfulInitialize();
+  ASSERT_TRUE(service_->Initialize());
+
+  const int64_t now = static_cast<int64_t>(::time(nullptr));
+  const std::string token =
+      chirp::common::JwtSignHS256("user_1", now, jwt_secret_, now - 3600);
+  EXPECT_FALSE(service_->ValidateAccessToken(token).has_value());
+}
+
+TEST_F(AuthServiceTest, ValidateAccessTokenRejectsMissingExpiryClaim) {
+  ScriptSuccessfulInitialize();
+  ASSERT_TRUE(service_->Initialize());
+
+  const int64_t now = static_cast<int64_t>(::time(nullptr));
+  const std::string token = chirp::common::JwtSignHS256("user_1", now, jwt_secret_, 0);
+  EXPECT_FALSE(service_->ValidateAccessToken(token).has_value());
+}
+
+TEST_F(AuthServiceTest, ValidateAccessTokenRejectsWrongSecret) {
+  ScriptSuccessfulInitialize();
+  ASSERT_TRUE(service_->Initialize());
+
+  const int64_t now = static_cast<int64_t>(::time(nullptr));
+  const std::string token =
+      chirp::common::JwtSignHS256("user_1", now, "some_other_secret", now + 3600);
+  EXPECT_FALSE(service_->ValidateAccessToken(token).has_value());
 }
 
 TEST_F(AuthServiceTest, LoginWithWrongPasswordRecordsFailure) {

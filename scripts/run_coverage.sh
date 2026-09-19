@@ -170,9 +170,9 @@ KNOWN_UNCOVERABLE = {
     ("libs/common/src/metrics_http_server.cc", 145),
     # AuthService ConfirmPasswordReset expired-token branch: tokens live 1h
     # and there is no injectable clock to age one past its expiry.
-    ("services/auth/src/auth_service.cc", 413),
-    ("services/auth/src/auth_service.cc", 414),
-    ("services/auth/src/auth_service.cc", 415),
+    ("services/auth/src/auth_service.cc", 423),
+    ("services/auth/src/auth_service.cc", 424),
+    ("services/auth/src/auth_service.cc", 425),
     # PresenceManager CleanupOfflineUsers erase: last_seen is written only
     # from the internal clock, so no test can age an entry past the 24h cutoff.
     ("services/social/src/presence_manager.cc", 408),

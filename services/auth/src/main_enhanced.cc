@@ -90,6 +90,13 @@ int main(int argc, char** argv) {
   config.max_sessions_per_user = ParseIntArg(argc, argv, "--max_sessions", 5);
   config.kick_previous_session = ParseIntArg(argc, argv, "--kick_previous", 1) != 0;
 
+  // Development escape hatch for the LOGIN_REQ scaffold fallback (treating an
+  // unrecognized token as a user_id). Off by default: a deployment that wants
+  // the old permissive behavior must opt in explicitly. Value form (1/0), like
+  // --kick_previous.
+  const bool allow_scaffold_login =
+      ParseIntArg(argc, argv, "--allow_scaffold_login", 0) != 0;
+
   // MySQL configuration
   config.user_store_config.host = GetArg(argc, argv, "--mysql_host", "127.0.0.1");
   config.user_store_config.port = static_cast<uint16_t>(
@@ -261,19 +268,30 @@ int main(int argc, char** argv) {
             auto session_user = auth_service->ValidateSession(req.token());
             if (session_user) {
               user_id = *session_user;
+            } else if (!allow_scaffold_login) {
+              // The token is neither a valid access token nor an active
+              // session, and the development scaffold fallback is disabled:
+              // reject instead of trusting an arbitrary token as a user_id.
+              code = chirp::common::AUTH_FAILED;
+              Logger::Instance().Warn(
+                  "LOGIN_REQ rejected: token is neither a valid access token "
+                  "nor an active session (scaffold login disabled)");
             } else {
-              // Fall back to treating token as user_id (for development)
+              // Fall back to treating token as user_id (for development,
+              // opt-in via --allow_scaffold_login)
               user_id = req.token();
             }
           }
 
           chirp::auth::LoginResponse resp;
           resp.set_code(code);
-          resp.set_user_id(user_id);
-          resp.set_session_id(user_id + "_sess");
+          if (code == chirp::common::OK) {
+            resp.set_user_id(user_id);
+            resp.set_session_id(user_id + "_sess");
+            resp.set_kick_previous(true);
+            resp.mutable_kick()->set_reason("session validated");
+          }
           resp.set_server_time(NowMs());
-          resp.set_kick_previous(true);
-          resp.mutable_kick()->set_reason("session validated");
           SendPacket(session, chirp::gateway::LOGIN_RESP, pkt.sequence(),
                     resp.SerializeAsString());
           break;

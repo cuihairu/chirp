@@ -149,7 +149,7 @@ if [[ "${1:-}" == "--smoke" ]]; then
   AUTH_LOG="${AUTH_LOG:-/tmp/chirp_auth_smoke.log}"
   GW_LOG="${GW_LOG:-/tmp/chirp_gateway_smoke.log}"
 
-  ./build/services/auth/chirp_auth --port "${AUTH_PORT}" --jwt_secret dev_secret > "${AUTH_LOG}" 2>&1 &
+  ./build/services/auth/chirp_auth --port "${AUTH_PORT}" --jwt_secret dev_secret --allow_scaffold_login 1 > "${AUTH_LOG}" 2>&1 &
   AUTH_PID=$!
 
   ./build/services/gateway/chirp_gateway --port "${GW_PORT}" --ws_port "${WS_PORT}" \
@@ -227,7 +227,7 @@ elif [[ "${1:-}" == "--smoke-redis" ]]; then
     sleep 0.1
   done
 
-  ./build/services/auth/chirp_auth --port "${AUTH_PORT}" --jwt_secret dev_secret > "${AUTH_LOG}" 2>&1 &
+  ./build/services/auth/chirp_auth --port "${AUTH_PORT}" --jwt_secret dev_secret --allow_scaffold_login 1 > "${AUTH_LOG}" 2>&1 &
   AUTH_PID=$!
 
   ./build/services/gateway/chirp_gateway --port "${GW1_PORT}" --ws_port "${WS1_PORT}" \
@@ -602,7 +602,7 @@ elif [[ "${1:-}" == "--smoke-edge" ]]; then
   "${REDIS_SERVER_BIN}" --port "${REDIS_PORT}" --save '' --appendonly no --dir "${REDIS_DIR}" > "${REDIS_LOG}" 2>&1 &
   REDIS_PID=$!
 
-  ./build/services/auth/chirp_auth --port "${AUTH_PORT}" --jwt_secret dev_secret > "${AUTH_LOG}" 2>&1 &
+  ./build/services/auth/chirp_auth --port "${AUTH_PORT}" --jwt_secret dev_secret --allow_scaffold_login 1 > "${AUTH_LOG}" 2>&1 &
   AUTH_PID=$!
 
   ./build/services/chat/chirp_chat --port "${CHAT_PORT}" --ws_port "${CHAT_WS_PORT}" \

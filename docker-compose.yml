@@ -28,7 +28,10 @@ services:
       dockerfile: docker/Dockerfile.service
       args:
         SERVICE: auth
-    command: ["--port", "6000", "--jwt_secret", "dev_secret"]
+    # --allow_scaffold_login keeps the dev demo working: the scaffold logins
+    # (token == user_id) used by the demo clients are rejected once the auth
+    # service enforces real credentials. Production setups drop this flag.
+    command: ["--port", "6000", "--jwt_secret", "dev_secret", "--allow_scaffold_login", "1"]
     ports:
       - "6000:6000"
 
