@@ -15,9 +15,9 @@ This document describes the repository's current implementation status by runtim
 
 | Area | Runtime Target | Status | Notes |
 | --- | --- | --- | --- |
-| Gateway core login/session routing | `chirp_gateway` | Supported | Main edge entry for TCP/WS login, heartbeat, kick flow; cross-instance kick is device-scoped (same user+device displaces, other devices coexist) |
+| Gateway core login/session routing | `chirp_gateway` | Supported | Main edge entry for TCP/WS login, heartbeat, kick flow; cross-instance kick is device-scoped (same user+device displaces, other devices coexist). With `--chat_host` set, forwards chat business packets (2xxx) to chat over one per-client internal connection (SERVER_AUTH_REQ trust gate + login replay, verbatim relay both ways; a dropped pipe kicks the client so it reattaches) |
 | Auth basic token flow | `chirp_auth` | Supported | Default auth binary exists; without MySQL/libsodium it falls back to the simpler token validation path |
-| Chat basic messaging | `chirp_chat` | Supported | Private messaging, history, offline queue, group management (create/join/leave/kick/invite/members), read receipts, typing indicators, message reactions, message edit/delete (with moderator support and bulk delete), @mention parsing/autocomplete, and direct-entry rate limiting (per-IP login / per-user send fixed windows, Redis-backed, fail-open) wired into the default binary |
+| Chat basic messaging | `chirp_chat` | Supported | Private messaging, history, offline queue, group management (create/join/leave/kick/invite/members), read receipts, typing indicators, message reactions, message edit/delete (with moderator support and bulk delete), @mention parsing/autocomplete, and direct-entry rate limiting (per-IP login / per-user send fixed windows, Redis-backed, fail-open) wired into the default binary. The direct client entry (7000/7001) stays open during the edge transition; with `--gateway_service_secret` set, connections that pass the SERVER_AUTH_REQ trust gate (gateway pipes) skip the per-IP login limiter |
 | Chat distributed routing | `chirp_chat_distributed` | Experimental | Separate target; not the default documented service binary |
 | Chat hybrid Redis + MySQL storage | `chirp_chat` / `chirp_chat_enhanced` | Experimental | With MySQL available, the default `chirp_chat` target builds the enhanced implementation; `chirp_chat_enhanced` is now a compatibility alias |
 | Auth registration / refresh / brute-force / rate-limit stack | `chirp_auth` / `chirp_auth_enhanced` | Experimental | With MySQL and libsodium available, the default `chirp_auth` target builds the enhanced implementation; `chirp_auth_enhanced` is now a compatibility alias |
@@ -46,10 +46,10 @@ This document describes the repository's current implementation status by runtim
 
 | Concern | Current State | Status |
 | --- | --- | --- |
-| Unit tests | 30 suites in `tests/unit`; every backend package that is linked into a test binary is at 100% line coverage per `scripts/run_coverage.sh` (documented `KNOWN_UNCOVERABLE` exclusions only). `app_gateway`, `voice` and `party` have suites (`app_gateway_tests`, `voice_tests`, `party_tests`) but their `main.cc` files sit outside the coverage measurement | Supported |
+| Unit tests | 31 suites in `tests/unit`; every backend package that is linked into a test binary is at 100% line coverage per `scripts/run_coverage.sh` (documented `KNOWN_UNCOVERABLE` exclusions only). `app_gateway`, `voice` and `party` have suites (`app_gateway_tests`, `voice_tests`, `party_tests`) but their `main.cc` files sit outside the coverage measurement | Supported |
 | Standard local build runs tests via `ctest` | `ctest --preset dev` (and `--preset coverage` with the gcov build); a fresh tree builds and passes | Supported |
 | CI treats test failure as hard failure | `ci.yml` runs Debug + Release builds with `ctest`, plus a coverage job that fails when any package drops below 98% line coverage | Supported |
-| Process-level smoke coverage | `test_services.sh --smoke / --smoke-chat / --smoke-sdk / --smoke-npc / --smoke-redis` exist and pass locally; none are wired into CI yet (tracked in TODO.md Current Focus) | Experimental |
+| Process-level smoke coverage | `test_services.sh --smoke / --smoke-chat / --smoke-sdk / --smoke-npc / --smoke-edge / --smoke-redis` all run in the CI smoke job (`--smoke-redis` uses docker redis for the cross-instance kick) | Supported |
 | Docker Compose path for core services | Present | Supported |
 | Roadmap matches default build outputs | Yes — TODO.md is the live roadmap (rewritten 2026-09); completed items are struck through in README.md | Supported |
 
