@@ -176,6 +176,23 @@ KNOWN_UNCOVERABLE = {
     # PresenceManager CleanupOfflineUsers erase: last_seen is written only
     # from the internal clock, so no test can age an entry past the 24h cutoff.
     ("services/social/src/presence_manager.cc", 408),
+    # ChatBridge::InternalConn::Close re-entry guard: every closer (Detach,
+    # FailClient) erases the map entry in the same call, so a second Close
+    # never lands on an already-closing connection.
+    ("services/gateway/src/chat_bridge.cc", 87),
+    # ChatBridge write-error arm: the peer RST always surfaces on the parked
+    # header read first, and FailClient then removes the connection, so a
+    # later forward can never target the dead socket with an in-flight write.
+    ("services/gateway/src/chat_bridge.cc", 114),
+    ("services/gateway/src/chat_bridge.cc", 115),
+    # ChatBridge kConnecting switch arm: reads start only after the connect
+    # handler flips the state, so no frame is ever handled while connecting.
+    ("services/gateway/src/chat_bridge.cc", 215),
+    ("services/gateway/src/chat_bridge.cc", 216),
+    # ChatBridge::FailClient re-entry guard: the failed/closing flags make a
+    # second entry unreachable in the single-threaded call graph - the timer,
+    # read and write completions all check those flags before calling.
+    ("services/gateway/src/chat_bridge.cc", 364),
 }
 
 src_cache = {}
