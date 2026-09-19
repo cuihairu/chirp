@@ -38,7 +38,7 @@ echo "  ./build/services/gateway/chirp_gateway --port 5000 --ws_port 5001"
 echo "  ./build/services/auth/chirp_auth --port 6000"
 echo "  ./build/services/chat/chirp_chat --port 7000 --ws_port 7001"
 
-if [[ "${1:-}" != "--smoke" && "${1:-}" != "--smoke-chat" && "${1:-}" != "--smoke-redis" && "${1:-}" != "--smoke-npc" && "${1:-}" != "--smoke-sdk" && "${1:-}" != "--smoke-edge" ]]; then
+if [[ "${1:-}" != "--smoke" && "${1:-}" != "--smoke-chat" && "${1:-}" != "--smoke-redis" && "${1:-}" != "--smoke-npc" && "${1:-}" != "--smoke-sdk" && "${1:-}" != "--smoke-edge" && "${1:-}" != "--smoke-jwt" ]]; then
   exit 0
 fi
 
@@ -53,6 +53,8 @@ elif [[ "${1:-}" == "--smoke-sdk" ]]; then
   echo "=== Smoke Test (game client SDK + chat) ==="
 elif [[ "${1:-}" == "--smoke-edge" ]]; then
   echo "=== Smoke Test (gateway absorbs the chat entry: trusted bridge + relay) ==="
+elif [[ "${1:-}" == "--smoke-jwt" ]]; then
+  echo "=== Smoke Test (unified login: signed JWT end to end, scaffold rejected) ==="
 else
   echo "=== Smoke Test (chat + clients) ==="
 fi
@@ -703,6 +705,152 @@ elif [[ "${1:-}" == "--smoke-edge" ]]; then
   echo ""
   echo "B2 client log: ${B2_LOG}"
   cat "${B2_LOG}" || true
+elif [[ "${1:-}" == "--smoke-jwt" ]]; then
+  # 统一登录/会话语义(P1 收尾)进程级 E2E:auth-enhanced 校验 HS256 JWT
+  # (--jwt_secret,含强制 exp),chat 用同一个 secret 本地验签(--token_secret),
+  # 客户端原始 token 经 gateway -> ChatBridge -> chat 全链路逐字透传。
+  # auth 不带 --allow_scaffold_login:scaffold token 必须被拒(AUTH_FAILED=3)。
+  #
+  # 不需要 redis-server:chat 不配限流器/redis 走内存兜底,auth 的 Redis
+  # fail-open 且 LOGIN_REQ 路径不碰限流。唯一硬依赖是 MySQL(auth-enhanced
+  # 启动即连库),与 --smoke 现状一致。
+  AUTH_PORT="${AUTH_PORT:-$(pick_port)}"
+  CHAT_PORT="${CHAT_PORT:-$(pick_port)}"
+  CHAT_WS_PORT="${CHAT_WS_PORT:-$(pick_port)}"
+  GW_PORT="${GW_PORT:-$(pick_port)}"
+  GW_WS_PORT="${GW_WS_PORT:-$(pick_port)}"
+  JWT_SECRET="${JWT_SECRET:-jwt_smoke_secret}"
+
+  AUTH_LOG="${AUTH_LOG:-/tmp/chirp_auth_smoke_jwt.log}"
+  CHAT_LOG="${CHAT_LOG:-/tmp/chirp_chat_smoke_jwt.log}"
+  GW_LOG="${GW_LOG:-/tmp/chirp_gateway_smoke_jwt.log}"
+  C1_LOG="${C1_LOG:-/tmp/chirp_jwt_c1_chat_scaffold.log}"
+  C2_LOG="${C2_LOG:-/tmp/chirp_jwt_c2_gw_scaffold.log}"
+  C3_LOG="${C3_LOG:-/tmp/chirp_jwt_c3_wrong_secret.log}"
+  C4_LOG="${C4_LOG:-/tmp/chirp_jwt_c4_chat_jwt.log}"
+  A_LOG="${A_LOG:-/tmp/chirp_jwt_a_send.log}"
+  B_LOG="${B_LOG:-/tmp/chirp_jwt_b_refill.log}"
+
+  ./build/services/auth/chirp_auth --port "${AUTH_PORT}" --jwt_secret "${JWT_SECRET}" > "${AUTH_LOG}" 2>&1 &
+  AUTH_PID=$!
+
+  ./build/services/chat/chirp_chat --port "${CHAT_PORT}" --ws_port "${CHAT_WS_PORT}" \
+    --token_secret "${JWT_SECRET}" --gateway_service_secret edge-jwt-secret > "${CHAT_LOG}" 2>&1 &
+  CHAT_PID=$!
+
+  ./build/services/gateway/chirp_gateway --port "${GW_PORT}" --ws_port "${GW_WS_PORT}" \
+    --auth_host 127.0.0.1 --auth_port "${AUTH_PORT}" \
+    --chat_host 127.0.0.1 --chat_port "${CHAT_PORT}" --chat_service_secret edge-jwt-secret > "${GW_LOG}" 2>&1 &
+  GW_PID=$!
+
+  cleanup() {
+    stop_proc "${GW_PID:-}" "${CHAT_PID:-}" "${AUTH_PID:-}"
+  }
+  trap cleanup EXIT
+
+  wait_port "${AUTH_PORT}" chirp_auth "${AUTH_LOG}"
+  wait_port "${CHAT_PORT}" chirp_chat "${CHAT_LOG}"
+  wait_port "${GW_PORT}" chirp_gateway "${GW_LOG}"
+
+  # 1) 直连 chat:--token_secret 生效,scaffold token 被拒(不再有兜底放行)
+  echo ""
+  echo "[jwt] direct chat rejects a scaffold token"
+  set +e
+  timeout 30 ./build/tools/benchmark/chirp_login_client --host 127.0.0.1 --port "${CHAT_PORT}" \
+    --token user_junk --device dev_junk > "${C1_LOG}" 2>&1
+  C1_RC=$?
+  set -e
+  if [[ "${C1_RC}" != "0" ]]; then
+    echo "错误: C1 直连进程异常退出 (rc=${C1_RC})"
+    cat "${C1_LOG}" || true
+    exit 1
+  fi
+  if ! grep -q "code=3" "${C1_LOG}"; then
+    echo "错误: chat 未拒绝 scaffold token(预期 code=3/AUTH_FAILED)"
+    cat "${C1_LOG}" || true
+    exit 1
+  fi
+
+  # 2) 经 gateway 打收紧后的 auth:scaffold token 同样被拒
+  echo ""
+  echo "[jwt] tightened auth rejects a scaffold token (via gateway)"
+  set +e
+  timeout 30 ./build/tools/benchmark/chirp_login_client --host 127.0.0.1 --port "${GW_PORT}" \
+    --token user_junk --device dev_junk > "${C2_LOG}" 2>&1
+  C2_RC=$?
+  set -e
+  if [[ "${C2_RC}" != "0" ]]; then
+    echo "错误: C2 进程异常退出 (rc=${C2_RC})"
+    cat "${C2_LOG}" || true
+    exit 1
+  fi
+  if ! grep -q "code=3" "${C2_LOG}"; then
+    echo "错误: auth 未拒绝 scaffold token(预期 code=3/AUTH_FAILED,scaffold login 默认关闭)"
+    cat "${C2_LOG}" || true
+    exit 1
+  fi
+
+  # 3) 错 secret 签的 JWT 被拒:证明是真验签,不是「长得像 JWT 就放行」
+  echo ""
+  echo "[jwt] wrong-secret JWT rejected by auth"
+  set +e
+  timeout 30 ./build/tools/benchmark/chirp_login_client --host 127.0.0.1 --port "${GW_PORT}" \
+    --jwt_user user_x --jwt_secret totally_wrong_secret --device dev_x > "${C3_LOG}" 2>&1
+  C3_RC=$?
+  set -e
+  if [[ "${C3_RC}" != "0" ]]; then
+    echo "错误: C3 进程异常退出 (rc=${C3_RC})"
+    cat "${C3_LOG}" || true
+    exit 1
+  fi
+  if ! grep -q "code=3" "${C3_LOG}"; then
+    echo "错误: auth 未拒绝错误 secret 的 JWT(预期 code=3/AUTH_FAILED)"
+    cat "${C3_LOG}" || true
+    exit 1
+  fi
+
+  # 4) 直连 chat 接受同一 secret 自签的 JWT:两端验签格式同构的独立证明
+  echo ""
+  echo "[jwt] direct chat accepts the self-signed JWT"
+  timeout 30 ./build/tools/benchmark/chirp_login_client --host 127.0.0.1 --port "${CHAT_PORT}" \
+    --jwt_user user_a --jwt_secret "${JWT_SECRET}" --device dev_probe > "${C4_LOG}" 2>&1
+  grep -q "code=0" "${C4_LOG}"
+
+  # 5) A 以 JWT 经 gateway 登录并发私聊给离线的 B。send code=0 只有在
+  # bridge 的服务认证 + 登录重放(透传原始 JWT)被 chat 接受后才可能出现,
+  # 这一步同时钉死「auth 验过 + chat 用同一 secret 验过 + token 逐字透传」。
+  echo ""
+  echo "[jwt] A login via gateway with JWT + send to offline B"
+  timeout 30 ./build/tools/benchmark/chirp_login_client --host 127.0.0.1 --port "${GW_PORT}" \
+    --jwt_user user_a --jwt_secret "${JWT_SECRET}" --device dev_a \
+    --send_text "jwt-offline-hello" --peer_user user_b --sender user_a > "${A_LOG}" 2>&1
+  grep -q "code=0" "${A_LOG}"
+  grep -q "send code=0" "${A_LOG}"
+
+  # 6) B 以 JWT 经 gateway 登录,离线补投递经管道回到客户端
+  echo ""
+  echo "[jwt] B login via gateway (offline refill rides the pipe back)"
+  set +e
+  timeout 30 ./build/tools/benchmark/chirp_login_client --host 127.0.0.1 --port "${GW_PORT}" \
+    --jwt_user user_b --jwt_secret "${JWT_SECRET}" --device dev_b --expect_notify_ms 15000 > "${B_LOG}" 2>&1
+  B_RC=$?
+  set -e
+  if [[ "${B_RC}" != "0" ]] || ! grep -q "notify from=user_a" "${B_LOG}" \
+     || ! grep -q "content=jwt-offline-hello" "${B_LOG}"; then
+    echo "错误: B 经 gateway 登录后未收到离线补投递 (rc=${B_RC})"
+    cat "${B_LOG}" || true
+    exit 1
+  fi
+
+  echo ""
+  echo "gateway log: ${GW_LOG}"
+  tail -n 20 "${GW_LOG}" || true
+  echo ""
+  echo "chat log: ${CHAT_LOG}"
+  tail -n 20 "${CHAT_LOG}" || true
+  echo ""
+  echo "auth log: ${AUTH_LOG}"
+  tail -n 20 "${AUTH_LOG}" || true
 else
   CHAT_PORT="${CHAT_PORT:-$(pick_port)}"
   CHAT_WS_PORT="${CHAT_WS_PORT:-$(pick_port)}"

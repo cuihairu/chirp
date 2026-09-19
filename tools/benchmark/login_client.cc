@@ -9,6 +9,7 @@
 
 #include "network/length_prefixed_framer.h"
 #include "network/protobuf_framing.h"
+#include "common/jwt.h"
 #include "proto/auth.pb.h"
 #include "proto/chat.pb.h"
 #include "proto/gateway.pb.h"
@@ -97,6 +98,31 @@ int main(int argc, char** argv) {
   const std::string peer_user = GetArg(argc, argv, "--peer_user", "");
   const int expect_notify_ms = std::atoi(GetArg(argc, argv, "--expect_notify_ms", "0").c_str());
 
+  // Optional self-signed JWT: instead of a literal scaffold token, sign an
+  // HS256 token locally (same JwtSignHS256 the auth service uses) and send
+  // that. Requires --jwt_secret.
+  std::string effective_token = token;
+  const std::string jwt_user = GetArg(argc, argv, "--jwt_user", "");
+  if (!jwt_user.empty()) {
+    const std::string jwt_secret = GetArg(argc, argv, "--jwt_secret", "");
+    if (jwt_secret.empty()) {
+      std::cerr << "--jwt_user requires --jwt_secret\n";
+      return 64;
+    }
+    const int64_t ttl =
+        std::atoll(GetArg(argc, argv, "--jwt_ttl_seconds", "600").c_str());
+    const int64_t now = NowMs() / 1000;
+    effective_token = chirp::common::JwtSignHS256(jwt_user, now, jwt_secret, now + ttl);
+  }
+  // Sender identity for --send_text: JWT mode must not use the raw token as
+  // sender_id, so it can be overridden explicitly.
+  const std::string sender = [&]() {
+    const std::string explicit_sender = GetArg(argc, argv, "--sender", "");
+    if (!explicit_sender.empty()) return explicit_sender;
+    if (!jwt_user.empty()) return jwt_user;
+    return token;
+  }();
+
   asio::io_context io;
   asio::ip::tcp::resolver resolver(io);
   asio::ip::tcp::socket sock(io);
@@ -105,7 +131,7 @@ int main(int argc, char** argv) {
   asio::connect(sock, endpoints);
 
   chirp::auth::LoginRequest req;
-  req.set_token(token);
+  req.set_token(effective_token);
   req.set_device_id(device_id);
   req.set_platform(platform);
 
@@ -160,7 +186,7 @@ int main(int argc, char** argv) {
   // Optional: send one private message after login (chat smoke paths).
   if (!send_text.empty()) {
     chirp::chat::SendMessageRequest send;
-    send.set_sender_id(token);
+    send.set_sender_id(sender);
     send.set_receiver_id(peer_user);
     send.set_channel_type(chirp::chat::PRIVATE);
     send.set_msg_type(chirp::chat::TEXT);
