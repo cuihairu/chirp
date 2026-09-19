@@ -1,116 +1,50 @@
+// ChirpSDK Unreal module: links the native chirp::sdk protocol core built
+// from the chirp repo (sdks/core). This file is compiled by UnrealBuildTool
+// inside an Unreal project — the chirp repo's own CI cannot compile it; what
+// CI does compile and unit-test is the native core itself (sdk_core_tests).
+using System;
+using System.IO;
 using UnrealBuildTool;
 
 public class ChirpSDK : ModuleRules
 {
-	public ChirpSDK(ReadOnlyTargetRules Target) : base(Target)
-	{
-		PCHUsage = ModuleRules.PCHUsageMode.UseExplicitOrSharedPCHs;
+    public ChirpSDK(ReadOnlyTargetRules Target) : base(Target)
+    {
+        PCHUsage = PCHUsageMode.UseExplicitOrSharedPCHs;
 
-		// Enable C++23
-		CppStandard = CppStandardVersion.Cpp23;
+        PublicDependencyModuleNames.AddRange(new[] { "Core", "CoreUObject", "Engine" });
 
-		// Include directories
-		string ChirpRootPath = System.IO.Path.GetFullPath(
-			System.IO.Path.Combine(ModuleDirectory, "..", "..", "..", "..", "..")
-		);
+        // CHIRP_SDK_NATIVE_DIR points at the chirp repo checkout. The native
+        // core must be built first, e.g.:
+        //   cd <chirp> && cmake -B build <toolchain flags> && \
+        //   cmake --build build --target chirp_core_sdk_static
+        // The resulting static lib (libchirp_core_sdk.a / chirp_core_sdk.lib)
+        // and the sdks/core/include headers are all this module needs.
+        string ChirpRoot = Environment.GetEnvironmentVariable("CHIRP_SDK_NATIVE_DIR");
+        if (string.IsNullOrEmpty(ChirpRoot))
+        {
+            throw new BuildException(
+                "CHIRP_SDK_NATIVE_DIR is not set: point it at the chirp repo checkout " +
+                "containing sdks/core (built) before compiling the ChirpSDK module.");
+        }
 
-		PrivateIncludePaths.Add(System.IO.Path.Combine(ChirpRootPath, "sdks", "core", "include"));
-		PrivateIncludePaths.Add(System.IO.Path.Combine(ChirpRootPath, "libs", "common", "include"));
-		PrivateIncludePaths.Add(System.IO.Path.Combine(ChirpRootPath, "libs", "network", "include"));
+        string Includes = Path.Combine(ChirpRoot, "sdks", "core", "include");
+        string Libs = Path.Combine(ChirpRoot, "build", "sdks", "core");
+        if (!Directory.Exists(Includes) || !File.Exists(Path.Combine(Libs, "libchirp_core_sdk.a")))
+        {
+            throw new BuildException(
+                "Native chirp SDK not found under " + ChirpRoot +
+                " (expected sdks/core/include and build/sdks/core/libchirp_core_sdk.a). " +
+                "Build chirp first: cmake -B build && cmake --build build --target chirp_core_sdk_static");
+        }
 
-		// Add source files
-		PublicIncludePaths.Add(ModuleDirectory);
+        PublicIncludePaths.Add(Includes);
+        PublicAdditionalLibraries.Add(Path.Combine(Libs, "libchirp_core_sdk.a"));
 
-		// Public dependency modules
-		PublicDependencyModuleNames.AddRange(new string[] {
-			"Core",
-			"CoreUObject",
-			"Engine",
-			"HTTP",
-			"Json",
-			"JsonUtilities"
-		});
-
-		// Private dependency modules
-		PrivateDependencyModuleNames.AddRange(new string[] {
-			"Slate",
-			"SlateCore",
-			"InputCore",
-			"UMG"
-		});
-
-		// Add Chirp library sources
-		string ChirpCoreSrc = System.IO.Path.Combine(ChirpRootPath, "sdks", "core", "src");
-		string CommonSrc = System.IO.Path.Combine(ChirpRootPath, "libs", "common", "src");
-		string NetworkSrc = System.IO.Path.Combine(ChirpRootPath, "libs", "network", "src");
-
-		// Chirp Core SDK sources
-		if (System.IO.Directory.Exists(ChirpCoreSrc))
-		{
-			foreach (string file in System.IO.Directory.GetFiles(ChirpCoreSrc, "*.cpp", System.IO.SearchOption.AllDirectories))
-			{
-				if (!file.Contains("/tests/") && !file.Contains("/test/"))
-				{
-					PrivateSourceFiles.Add(file);
-				}
-			}
-		}
-
-		// Common library sources
-		if (System.IO.Directory.Exists(CommonSrc))
-		{
-			foreach (string file in System.IO.Directory.GetFiles(CommonSrc, "*.cc", System.IO.SearchOption.AllDirectories))
-			{
-				if (!file.Contains("/test/") && !file.Contains("/tests/"))
-				{
-					PrivateSourceFiles.Add(file);
-				}
-			}
-		}
-
-		// Network library sources
-		if (System.IO.Directory.Exists(NetworkSrc))
-		{
-			foreach (string file in System.IO.Directory.GetFiles(NetworkSrc, "*.cc", System.IO.SearchOption.AllDirectories))
-			{
-				if (!file.Contains("/test/") && !file.Contains("/tests/"))
-				{
-					PrivateSourceFiles.Add(file);
-				}
-			}
-		}
-
-		// Platform-specific settings
-		if (Target.Platform == UnrealTargetPlatform.Win64)
-		{
-			// Windows
-			PublicDefinitions.Add("CHIRP_PLATFORM_WINDOWS=1");
-			PublicDefinitions.Add("WIN32_LEAN_AND_MEAN");
-			PublicDefinitions.Add("NOMINMAX");
-		}
-		else if (Target.Platform == UnrealTargetPlatform.Mac)
-		{
-			// macOS
-			PublicDefinitions.Add("CHIRP_PLATFORM_MAC=1");
-		}
-		else if (Target.Platform == UnrealTargetPlatform.Linux)
-		{
-			// Linux
-			PublicDefinitions.Add("CHIRP_PLATFORM_LINUX=1");
-		}
-		else if (Target.Platform == UnrealTargetPlatform.Android)
-		{
-			// Android
-			PublicDefinitions.Add("CHIRP_PLATFORM_ANDROID=1");
-		}
-		else if (Target.Platform == UnrealTargetPlatform.IOS)
-		{
-			// iOS
-			PublicDefinitions.Add("CHIRP_PLATFORM_IOS=1");
-		}
-
-		// Disable warnings for third-party code
-		bEnableExceptions = true;
-		bEnableUndefinedIdentifierWarnings = false;
-	}
+        // The static core depends on asio/protobuf transitively; those symbols
+        // are already inside libchirp_core_sdk.a except protobuf/abseil, which
+        // the chirp build links statically into it on Linux/macOS. Windows
+        // builds need chirp_core_sdk.lib plus its protobuf import libs — see
+        // sdks/unreal/README.md for the per-platform link checklist.
+    }
 }

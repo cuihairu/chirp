@@ -33,11 +33,11 @@ jobs:
       run: |
         curl -fsSL -o /tmp/protoc.zip \
           https://github.com/protocolbuffers/protobuf/releases/download/v33.4/protoc-33.4-linux-x86_64.zip
-        unzip -q -o /tmp/protoc.zip -d /usr/local
-        protoc --version
+        unzip -q -o /tmp/protoc.zip -d "$RUNNER_TEMP/protoc33"
+        "$RUNNER_TEMP/protoc33/bin/protoc" --version
 
     - name: Regenerate protos
-      run: CHIRP_PROTOC=/usr/local/bin/protoc bash gen_proto.sh
+      run: CHIRP_PROTOC="$RUNNER_TEMP/protoc33/bin/protoc" bash gen_proto.sh
 
     # The generated C# is committed; regenerate and fail on drift so the
     # checked-in files never silently diverge from the .proto sources.

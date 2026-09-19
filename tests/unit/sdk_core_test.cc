@@ -41,9 +41,12 @@ TEST(ChatConfigTest, Defaults) {
   EXPECT_EQ(config.gateway_port, 5000u);
   EXPECT_EQ(config.gateway_ws_port, 5001u);
   EXPECT_FALSE(config.enable_websocket);
-  EXPECT_EQ(config.heartbeat_interval_seconds, 30);
-  EXPECT_EQ(config.reconnect_interval_seconds, 5);
+  EXPECT_EQ(config.heartbeat_interval_seconds, 25);
+  EXPECT_EQ(config.max_missed_pongs, 2);
   EXPECT_EQ(config.max_reconnect_attempts, -1);
+  EXPECT_EQ(config.request_timeout_ms, 10000);
+  // Deprecated (fixed backoff schedule instead) but still defaults to 5.
+  EXPECT_EQ(config.reconnect_interval_seconds, 5);
 }
 
 TEST(ChatErrorTest, ErrorCodeMessages) {
@@ -268,6 +271,18 @@ class FakeGateway {
       asio::error_code ec;
       if (socket_) {
         socket_->close(ec);
+      }
+    });
+  }
+
+  // Server-side push into the accepted connection (notify shape).
+  void Push(const chirp::gateway::Packet& pkt) {
+    asio::post(io_, [this, pkt] {
+      auto sock = socket_;
+      if (sock && sock->is_open()) {
+        auto framed = chirp::network::ProtobufFraming::Encode(pkt);
+        asio::error_code ec;
+        asio::write(*sock, asio::buffer(framed), ec);
       }
     });
   }
@@ -974,12 +989,18 @@ TEST_F(ChatClientLoopbackTest, SendAfterServerCloseIsDropped) {
   gateway.DropConnections();
   std::this_thread::sleep_for(std::chrono::milliseconds(200));
 
-  // State stays LoggedIn after the transport died; the send must be dropped
-  // inside SendPacket because no socket is attached anymore.
+  // The send after the transport died must be dropped harmlessly; meanwhile
+  // the client has noticed the loss and scheduled the backoff reconnect.
   client.SendMessage("peer", "after-close");
   std::this_thread::sleep_for(std::chrono::milliseconds(200));
-  EXPECT_EQ(client.GetState(), ConnectionState::LoggedIn);
+  EXPECT_EQ(client.GetState(), ConnectionState::WaitingReconnect);
+
+  // The gateway keeps listening, so the backoff reconnect lands back at
+  // Connected (without a login: re-auth is the caller's job).
+  WaitState(client, ConnectionState::Connected);
   client.Disconnect();
+  WaitState(client, ConnectionState::Disconnected);
+  EXPECT_EQ(client.GetState(), ConnectionState::Disconnected);
 }
 
 TEST_F(ChatClientLoopbackTest, LargeWriteAgainstResetPeerSurfacesError) {
@@ -1022,6 +1043,268 @@ TEST_F(ChatClientLoopbackTest, LargeWriteAgainstResetPeerSurfacesError) {
     std::this_thread::sleep_for(std::chrono::milliseconds(2));
   }
   EXPECT_GE(disconnects.load(), 1);
+  client.Disconnect();
+}
+
+// ---------------------------------------------------------------------------
+// WP-6b: generic request/response, notify subscriptions, pong validation,
+// terminal kick — the same connection semantics the web/mobile/unity clients
+// implement.
+// ---------------------------------------------------------------------------
+
+// Login round-trip that blocks on the callback (test-side convenience).
+static void LoginSync(ChatClient& client, const std::string& token) {
+  std::promise<std::error_code> done;
+  client.Login(token, [&done](const std::error_code& ec, const std::string&) {
+    done.set_value(ec);
+  });
+  auto future = done.get_future();
+  ASSERT_EQ(future.wait_for(std::chrono::milliseconds(5000)), std::future_status::ready);
+  ASSERT_FALSE(future.get());
+}
+
+TEST_F(ChatClientLoopbackTest, RequestResponseCorrelatesBySequenceAndMsgId) {
+  FakeGateway gateway([](const chirp::gateway::Packet& pkt, auto send) {
+    if (pkt.msg_id() == chirp::gateway::LOGIN_REQ) {
+      chirp::auth::LoginResponse resp;
+      resp.set_code(chirp::common::OK);
+      resp.set_user_id("u");
+      chirp::gateway::Packet out;
+      out.set_msg_id(chirp::gateway::LOGIN_RESP);
+      out.set_sequence(pkt.sequence());
+      out.set_body(resp.SerializeAsString());
+      send(out);
+    }
+    if (pkt.msg_id() == chirp::gateway::GET_HISTORY_REQ) {
+      chirp::chat::GetHistoryResponse resp;
+      resp.set_code(chirp::common::OK);
+      chirp::gateway::Packet out;
+      out.set_msg_id(chirp::gateway::GET_HISTORY_RESP);
+      out.set_sequence(pkt.sequence());
+      out.set_body(resp.SerializeAsString());
+      send(out);
+    }
+  });
+
+  ChatClient client(LoopbackConfig(gateway.port()));
+  client.Connect();
+  WaitState(client, ConnectionState::Connected);
+  LoginSync(client, "t");
+
+  std::promise<std::error_code> done;
+  client.Request(chirp::gateway::GET_HISTORY_REQ, chirp::gateway::GET_HISTORY_RESP,
+                 chirp::chat::GetHistoryRequest().SerializeAsString(),
+                 [&](const std::error_code& ec, const std::string& body) {
+                   if (!ec) {
+                     chirp::chat::GetHistoryResponse resp;
+                     EXPECT_TRUE(resp.ParseFromString(body));
+                   }
+                   done.set_value(ec);
+                 });
+  auto future = done.get_future();
+  ASSERT_EQ(future.wait_for(std::chrono::milliseconds(kWaitMs)),
+            std::future_status::ready);
+  EXPECT_FALSE(future.get());
+  client.Disconnect();
+}
+
+TEST_F(ChatClientLoopbackTest, RequestWithMismatchedRespMsgIdTimesOut) {
+  FakeGateway gateway([](const chirp::gateway::Packet& pkt, auto send) {
+    if (pkt.msg_id() == chirp::gateway::LOGIN_REQ) {
+      chirp::auth::LoginResponse resp;
+      resp.set_code(chirp::common::OK);
+      resp.set_user_id("u");
+      chirp::gateway::Packet out;
+      out.set_msg_id(chirp::gateway::LOGIN_RESP);
+      out.set_sequence(pkt.sequence());
+      out.set_body(resp.SerializeAsString());
+      send(out);
+    }
+    if (pkt.msg_id() == chirp::gateway::GET_HISTORY_REQ) {
+      // Wrong resp msg id on the right sequence: the client must ignore it
+      // (stray-response guard) instead of completing the waiter.
+      chirp::gateway::Packet out;
+      out.set_msg_id(chirp::gateway::GET_USER_GROUPS_RESP);
+      out.set_sequence(pkt.sequence());
+      out.set_body("");
+      send(out);
+    }
+  });
+
+  ChatConfig config = LoopbackConfig(gateway.port());
+  config.request_timeout_ms = 400;
+  ChatClient client(config);
+  client.Connect();
+  WaitState(client, ConnectionState::Connected);
+  LoginSync(client, "t");
+
+  std::promise<std::error_code> done;
+  client.Request(chirp::gateway::GET_HISTORY_REQ, chirp::gateway::GET_HISTORY_RESP,
+                 "", [&done](const std::error_code& ec, const std::string&) {
+                   done.set_value(ec);
+                 });
+  auto future = done.get_future();
+  ASSERT_EQ(future.wait_for(std::chrono::milliseconds(kWaitMs)),
+            std::future_status::ready);
+  EXPECT_EQ(future.get(), make_error_code(ChatError::Timeout));
+  client.Disconnect();
+}
+
+TEST_F(ChatClientLoopbackTest, NotifySubscribeReceivesBodyAndUnsubscribeStops) {
+  FakeGateway gateway([](const chirp::gateway::Packet& pkt, auto send) {
+    if (pkt.msg_id() == chirp::gateway::LOGIN_REQ) {
+      chirp::auth::LoginResponse resp;
+      resp.set_code(chirp::common::OK);
+      resp.set_user_id("u");
+      chirp::gateway::Packet out;
+      out.set_msg_id(chirp::gateway::LOGIN_RESP);
+      out.set_sequence(pkt.sequence());
+      out.set_body(resp.SerializeAsString());
+      send(out);
+    }
+  });
+
+  ChatClient client(LoopbackConfig(gateway.port()));
+  client.Connect();
+  WaitState(client, ConnectionState::Connected);
+
+  std::promise<std::string> first_body;
+  auto handle = client.OnNotify(chirp::gateway::CHAT_MESSAGE_NOTIFY,
+                                [&](const std::string& body) {
+                                  first_body.set_value(body);
+                                });
+
+  // Server pushes a live message with no sequence (notify shape).
+  chirp::gateway::Packet notify;
+  notify.set_msg_id(chirp::gateway::CHAT_MESSAGE_NOTIFY);
+  chirp::chat::ChatMessage msg;
+  msg.set_message_id("m1");
+  notify.set_body(msg.SerializeAsString());
+  gateway.Push(notify);
+
+  auto future = first_body.get_future();
+  ASSERT_EQ(future.wait_for(std::chrono::milliseconds(kWaitMs)),
+            std::future_status::ready);
+  chirp::chat::ChatMessage parsed;
+  ASSERT_TRUE(parsed.ParseFromString(future.get()));
+  EXPECT_EQ(parsed.message_id(), "m1");
+
+  client.OffNotify(handle);
+  gateway.Push(notify);
+  std::this_thread::sleep_for(std::chrono::milliseconds(200));
+  client.Disconnect();
+}
+
+TEST_F(ChatClientLoopbackTest, KickIsTerminalFlushesKickedAndNeverReconnects) {
+  FakeGateway gateway([](const chirp::gateway::Packet& pkt, auto send) {
+    if (pkt.msg_id() == chirp::gateway::LOGIN_REQ) {
+      chirp::auth::LoginResponse resp;
+      resp.set_code(chirp::common::OK);
+      resp.set_user_id("u");
+      chirp::gateway::Packet out;
+      out.set_msg_id(chirp::gateway::LOGIN_RESP);
+      out.set_sequence(pkt.sequence());
+      out.set_body(resp.SerializeAsString());
+      send(out);
+    }
+    if (pkt.msg_id() == chirp::gateway::GET_HISTORY_REQ) {
+      // Kick in reply to the request: the client must flush the in-flight
+      // request with Kicked, enter the terminal state, and stop there.
+      chirp::auth::KickNotify kick;
+      kick.set_reason("device takeover");
+      chirp::gateway::Packet kn;
+      kn.set_msg_id(chirp::gateway::KICK_NOTIFY);
+      kn.set_body(kick.SerializeAsString());
+      send(kn);
+    }
+  });
+
+  ChatClient client(LoopbackConfig(gateway.port()));
+  std::promise<std::string> kicked;
+  auto kick_future = kicked.get_future();
+  client.SetKickCallback([&kicked](const std::string& reason) { kicked.set_value(reason); });
+  client.Connect();
+  WaitState(client, ConnectionState::Connected);
+  LoginSync(client, "t");
+
+  std::promise<std::error_code> flushed;
+  auto flush_future = flushed.get_future();
+  client.Request(chirp::gateway::GET_HISTORY_REQ, chirp::gateway::GET_HISTORY_RESP, "",
+                 [&flushed](const std::error_code& ec, const std::string&) {
+                   flushed.set_value(ec);
+                 });
+
+  ASSERT_EQ(kick_future.wait_for(std::chrono::milliseconds(kWaitMs)),
+            std::future_status::ready);
+  EXPECT_EQ(kick_future.get(), "device takeover");
+  EXPECT_EQ(client.GetState(), ConnectionState::Kicked);
+  ASSERT_EQ(flush_future.wait_for(std::chrono::milliseconds(kWaitMs)),
+            std::future_status::ready);
+  EXPECT_EQ(flush_future.get(), make_error_code(ChatError::Kicked));
+
+  // Terminal: the backoff loop never reschedules out of Kicked.
+  std::this_thread::sleep_for(std::chrono::milliseconds(1200));
+  EXPECT_EQ(client.GetState(), ConnectionState::Kicked);
+}
+
+TEST_F(ChatClientLoopbackTest, AnsweredHeartbeatsKeepTheConnectionAlive) {
+  FakeGateway gateway([](const chirp::gateway::Packet& pkt, auto send) {
+    if (pkt.msg_id() == chirp::gateway::LOGIN_REQ) {
+      chirp::auth::LoginResponse resp;
+      resp.set_code(chirp::common::OK);
+      resp.set_user_id("u");
+      chirp::gateway::Packet out;
+      out.set_msg_id(chirp::gateway::LOGIN_RESP);
+      out.set_sequence(pkt.sequence());
+      out.set_body(resp.SerializeAsString());
+      send(out);
+    }
+    if (pkt.msg_id() == chirp::gateway::HEARTBEAT_PING) {
+      // Pong must echo the ping's non-zero sequence to be credited.
+      chirp::gateway::HeartbeatPong pong;
+      chirp::gateway::Packet out;
+      out.set_msg_id(chirp::gateway::HEARTBEAT_PONG);
+      out.set_sequence(pkt.sequence());
+      out.set_body(pong.SerializeAsString());
+      send(out);
+    }
+  });
+
+  ChatClient client(LoopbackConfig(gateway.port(), /*heartbeat_s=*/1));
+  client.Connect();
+  WaitState(client, ConnectionState::Connected);
+  LoginSync(client, "t");
+
+  // Three heartbeat periods with answered pongs: must never trip the
+  // missed-pong death detection.
+  std::this_thread::sleep_for(std::chrono::milliseconds(3500));
+  EXPECT_EQ(client.GetState(), ConnectionState::LoggedIn);
+  client.Disconnect();
+}
+
+TEST_F(ChatClientLoopbackTest, UnansweredHeartbeatsKillTheConnectionAndReconnect) {
+  FakeGateway gateway([](const chirp::gateway::Packet& pkt, auto send) {
+    if (pkt.msg_id() == chirp::gateway::LOGIN_REQ) {
+      chirp::auth::LoginResponse resp;
+      resp.set_code(chirp::common::OK);
+      resp.set_user_id("u");
+      chirp::gateway::Packet out;
+      out.set_msg_id(chirp::gateway::LOGIN_RESP);
+      out.set_sequence(pkt.sequence());
+      out.set_body(resp.SerializeAsString());
+      send(out);
+    }
+    // Pings never answered: the second missed pong ends the connection.
+  });
+
+  ChatClient client(LoopbackConfig(gateway.port(), /*heartbeat_s=*/1));
+  client.Connect();
+  WaitState(client, ConnectionState::Connected);
+
+  // t=1 ping1; t=2 miss 1 + ping2; t=3 miss 2 -> reconnect. Wait for the
+  // loss and the first backoff attempt to land back at Connected.
+  WaitState(client, ConnectionState::WaitingReconnect);
+  WaitState(client, ConnectionState::Connected);
   client.Disconnect();
 }
 

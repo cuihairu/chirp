@@ -38,6 +38,12 @@ set(SDK_PUBLIC_HEADERS
   include/chirp/sdk_client.h
 )
 
+# The shared chirp_core_sdk links the static chirp_network/chirp_common, so
+# those objects must be position-independent wherever they were created (the
+# in-tree root build or the standalone build below); otherwise the .so link
+# fails with R_X86_64_PC32 against non-PIC objects.
+set(SDK_PIC_LIBS chirp_network chirp_common)
+
 set(SDK_SOURCES
   src/sdk.cc
   src/sdk_client.cc
@@ -127,6 +133,12 @@ if(NOT TARGET chirp_common)
 endif()
 
 # Static library
+foreach(pilib IN LISTS SDK_PIC_LIBS)
+  if(TARGET ${pilib})
+    set_target_properties(${pilib} PROPERTIES POSITION_INDEPENDENT_CODE ON)
+  endif()
+endforeach()
+
 add_library(chirp_core_sdk_static STATIC
   ${SDK_SOURCES}
   ${SDK_PROTO_SRCS}

@@ -120,7 +120,7 @@ KNOWN_UNCOVERABLE = {
     ("libs/network/protobuf_framing.cc", 20),
     # ChatClient::Impl::DoRead socket guard: DoRead is only scheduled after
     # socket_ is assigned in the connect handler.
-    ("sdks/core/src/sdk_client.cc", 205),
+    ("sdks/core/src/sdk_client.cc", 365),
     # Logger::LevelToString fallthrough: every enumerator has a case; the
     # trailing return only exists to satisfy the compiler.
     ("libs/common/logger.cc", 40),
