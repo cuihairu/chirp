@@ -114,6 +114,9 @@ jobs:
     - name: "Smoke: NPC server-plane loop"
       run: timeout 600 bash test_services.sh --smoke-npc
 
+    - name: "Smoke: gateway chat entry (trusted bridge)"
+      run: timeout 600 bash test_services.sh --smoke-edge
+
     - name: "Smoke: cross-instance kick (docker redis)"
       run: timeout 900 bash test_services.sh --smoke-redis
 

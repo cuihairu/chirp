@@ -38,7 +38,7 @@ echo "  ./build/services/gateway/chirp_gateway --port 5000 --ws_port 5001"
 echo "  ./build/services/auth/chirp_auth --port 6000"
 echo "  ./build/services/chat/chirp_chat --port 7000 --ws_port 7001"
 
-if [[ "${1:-}" != "--smoke" && "${1:-}" != "--smoke-chat" && "${1:-}" != "--smoke-redis" && "${1:-}" != "--smoke-npc" && "${1:-}" != "--smoke-sdk" ]]; then
+if [[ "${1:-}" != "--smoke" && "${1:-}" != "--smoke-chat" && "${1:-}" != "--smoke-redis" && "${1:-}" != "--smoke-npc" && "${1:-}" != "--smoke-sdk" && "${1:-}" != "--smoke-edge" ]]; then
   exit 0
 fi
 
@@ -51,6 +51,8 @@ elif [[ "${1:-}" == "--smoke-npc" ]]; then
   echo "=== Smoke Test (server plane + NPC dialog loop) ==="
 elif [[ "${1:-}" == "--smoke-sdk" ]]; then
   echo "=== Smoke Test (game client SDK + chat) ==="
+elif [[ "${1:-}" == "--smoke-edge" ]]; then
+  echo "=== Smoke Test (gateway absorbs the chat entry: trusted bridge + relay) ==="
 else
   echo "=== Smoke Test (chat + clients) ==="
 fi
@@ -564,6 +566,143 @@ elif [[ "${1:-}" == "--smoke-sdk" ]]; then
   echo ""
   echo "chat log: ${CHAT_LOG}"
   tail -n 12 "${CHAT_LOG}" || true
+elif [[ "${1:-}" == "--smoke-edge" ]]; then
+  # 网关吸收 chat 直连入口的进程级 E2E(migration path 第 4 步):客户端只
+  # 连 gateway,chat 业务包(2xxx)经 bridge 内部连接转发。chat 开
+  # --gateway_service_secret(5001 信任门)+ --login_rate_limit_per_min 1,
+  # 直连登录吃限流而 gateway 管道豁免(trusted),一次 smoke 同时验证
+  # 「直连路径仍工作」(收尾约束)与「经 gateway 全管道」。
+  #
+  # 限流是 Redis-backed(无 redis 时 inert),本段硬依赖本地 redis-server。
+  REDIS_SERVER_BIN="${REDIS_SERVER_BIN:-$(command -v redis-server || true)}"
+  if [[ -z "${REDIS_SERVER_BIN}" ]]; then
+    echo "错误: --smoke-edge 需要本地 redis-server(登录限流依赖 Redis)"
+    exit 1
+  fi
+
+  AUTH_PORT="${AUTH_PORT:-$(pick_port)}"
+  CHAT_PORT="${CHAT_PORT:-$(pick_port)}"
+  CHAT_WS_PORT="${CHAT_WS_PORT:-$(pick_port)}"
+  GW_PORT="${GW_PORT:-$(pick_port)}"
+  GW_WS_PORT="${GW_WS_PORT:-$(pick_port)}"
+  REDIS_PORT="${REDIS_PORT:-$(pick_port)}"
+  REDIS_DIR="${REDIS_DIR:-$(mktemp -d /tmp/chirp_edge_smoke_redis.XXXXXX)}"
+  REDIS_LOG="${REDIS_LOG:-/tmp/chirp_edge_smoke_redis.log}"
+
+  AUTH_LOG="${AUTH_LOG:-/tmp/chirp_auth_smoke_edge.log}"
+  CHAT_LOG="${CHAT_LOG:-/tmp/chirp_chat_smoke_edge.log}"
+  GW_LOG="${GW_LOG:-/tmp/chirp_gateway_smoke_edge.log}"
+  C1_LOG="${C1_LOG:-/tmp/chirp_edge_c1_direct.log}"
+  C2_LOG="${C2_LOG:-/tmp/chirp_edge_c2_direct.log}"
+  A_LOG="${A_LOG:-/tmp/chirp_edge_a_gateway.log}"
+  B_LOG="${B_LOG:-/tmp/chirp_edge_b_refill.log}"
+  B2_LOG="${B2_LOG:-/tmp/chirp_edge_b2_live.log}"
+  A2_LOG="${A2_LOG:-/tmp/chirp_edge_a2_live.log}"
+
+  "${REDIS_SERVER_BIN}" --port "${REDIS_PORT}" --save '' --appendonly no --dir "${REDIS_DIR}" > "${REDIS_LOG}" 2>&1 &
+  REDIS_PID=$!
+
+  ./build/services/auth/chirp_auth --port "${AUTH_PORT}" --jwt_secret dev_secret > "${AUTH_LOG}" 2>&1 &
+  AUTH_PID=$!
+
+  ./build/services/chat/chirp_chat --port "${CHAT_PORT}" --ws_port "${CHAT_WS_PORT}" \
+    --redis_host 127.0.0.1 --redis_port "${REDIS_PORT}" \
+    --login_rate_limit_per_min 1 --gateway_service_secret edge-secret > "${CHAT_LOG}" 2>&1 &
+  CHAT_PID=$!
+
+  ./build/services/gateway/chirp_gateway --port "${GW_PORT}" --ws_port "${GW_WS_PORT}" \
+    --auth_host 127.0.0.1 --auth_port "${AUTH_PORT}" \
+    --chat_host 127.0.0.1 --chat_port "${CHAT_PORT}" --chat_service_secret edge-secret > "${GW_LOG}" 2>&1 &
+  GW_PID=$!
+
+  cleanup() {
+    stop_proc "${GW_PID:-}" "${CHAT_PID:-}" "${AUTH_PID:-}" "${REDIS_PID:-}"
+    rm -rf "${REDIS_DIR}"
+  }
+  trap cleanup EXIT
+
+  wait_port "${AUTH_PORT}" chirp_auth "${AUTH_LOG}"
+  wait_port "${CHAT_PORT}" chirp_chat "${CHAT_LOG}"
+  wait_port "${GW_PORT}" chirp_gateway "${GW_LOG}"
+
+  echo ""
+  echo "[edge] C1 direct chat login (consumes the only per-IP budget; proves direct entry still works)"
+  timeout 30 ./build/tools/benchmark/chirp_login_client --host 127.0.0.1 --port "${CHAT_PORT}" \
+    --token user_c1 --device dev_c1 --platform pc > "${C1_LOG}" 2>&1
+  grep -q "code=0" "${C1_LOG}"
+
+  echo ""
+  echo "[edge] C2 direct chat login (rate limited: RATE_LIMITED=8)"
+  set +e
+  timeout 30 ./build/tools/benchmark/chirp_login_client --host 127.0.0.1 --port "${CHAT_PORT}" \
+    --token user_c2 --device dev_c2 --platform pc > "${C2_LOG}" 2>&1
+  C2_RC=$?
+  set -e
+  if [[ "${C2_RC}" != "0" ]]; then
+    echo "错误: C2 直连进程异常退出 (rc=${C2_RC})"
+    cat "${C2_LOG}" || true
+    exit 1
+  fi
+  if ! grep -q "code=8" "${C2_LOG}"; then
+    echo "错误: C2 直连登录未被限流(预期 code=8/RATE_LIMITED,说明 trusted 豁免之外的直连限流没有生效)"
+    cat "${C2_LOG}" || true
+    exit 1
+  fi
+
+  echo ""
+  echo "[edge] A login via gateway (trusted pipe skips the exhausted per-IP budget) + send to offline B"
+  timeout 30 ./build/tools/benchmark/chirp_login_client --host 127.0.0.1 --port "${GW_PORT}" \
+    --token user_a --device dev_a --platform pc \
+    --send_text "edge-offline-hello" --peer_user user_b > "${A_LOG}" 2>&1
+  grep -q "code=0" "${A_LOG}"
+  grep -q "send code=0" "${A_LOG}"
+
+  echo ""
+  echo "[edge] B login via gateway (offline refill rides the pipe back as CHAT_MESSAGE_NOTIFY)"
+  set +e
+  timeout 30 ./build/tools/benchmark/chirp_login_client --host 127.0.0.1 --port "${GW_PORT}" \
+    --token user_b --device dev_b --platform pc --expect_notify_ms 15000 > "${B_LOG}" 2>&1
+  B_RC=$?
+  set -e
+  if [[ "${B_RC}" != "0" ]] || ! grep -q "notify from=user_a" "${B_LOG}"; then
+    echo "错误: B 经 gateway 登录后未收到离线补投递 (rc=${B_RC})"
+    cat "${B_LOG}" || true
+    exit 1
+  fi
+
+  echo ""
+  echo "[edge] live push: B2 holds on gateway, A2 sends through gateway, B2 observes CHAT_MESSAGE_NOTIFY"
+  timeout 60 ./build/tools/benchmark/chirp_login_client --host 127.0.0.1 --port "${GW_PORT}" \
+    --token user_b --device dev_b2 --platform pc --expect_notify_ms 15000 > "${B2_LOG}" 2>&1 &
+  B2_PID=$!
+  # 给 B2 的 bridge 握手一点时间;即使它还没就绪,A2 的消息会转入离线队列
+  # 由 B2 登录补投递兜底,断言两条路径都成立(收到的内容区分实时/补投)。
+  sleep 1
+  timeout 30 ./build/tools/benchmark/chirp_login_client --host 127.0.0.1 --port "${GW_PORT}" \
+    --token user_a --device dev_a2 --platform pc \
+    --send_text "edge-live-hello" --peer_user user_b > "${A2_LOG}" 2>&1
+  grep -q "code=0" "${A2_LOG}"
+  grep -q "send code=0" "${A2_LOG}"
+
+  set +e
+  wait "${B2_PID}"
+  B2_RC=$?
+  set -e
+  if [[ "${B2_RC}" != "0" ]] || ! grep -q "content=edge-live-hello" "${B2_LOG}"; then
+    echo "错误: B2 未观察到 A2 经 gateway 的实时/补投通知 (rc=${B2_RC})"
+    cat "${B2_LOG}" || true
+    exit 1
+  fi
+
+  echo ""
+  echo "gateway log: ${GW_LOG}"
+  tail -n 20 "${GW_LOG}" || true
+  echo ""
+  echo "chat log: ${CHAT_LOG}"
+  tail -n 20 "${CHAT_LOG}" || true
+  echo ""
+  echo "B2 client log: ${B2_LOG}"
+  cat "${B2_LOG}" || true
 else
   CHAT_PORT="${CHAT_PORT:-$(pick_port)}"
   CHAT_WS_PORT="${CHAT_WS_PORT:-$(pick_port)}"
