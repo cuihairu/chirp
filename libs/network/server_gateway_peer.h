@@ -1,5 +1,5 @@
-#ifndef CHIRP_CHAT_SERVER_GATEWAY_PEER_H_
-#define CHIRP_CHAT_SERVER_GATEWAY_PEER_H_
+#ifndef CHIRP_NETWORK_SERVER_GATEWAY_PEER_H_
+#define CHIRP_NETWORK_SERVER_GATEWAY_PEER_H_
 
 #include <array>
 #include <cstdint>
@@ -14,13 +14,13 @@
 #include "proto/gateway.pb.h"
 #include "proto/server_gateway.pb.h"
 
-namespace chirp::chat {
+namespace chirp::network {
 
-// Long-lived client connection from chat to the server-plane hub
-// (chirp_server_gateway). Chat dials out, authenticates with a service_id +
-// secret, answers the hub's keepalive cadence, receives forwarded injections,
-// and runs request/response RPCs (inject / event publish / event ack) over
-// the same connection. Reconnects with a fixed delay until stopped.
+// Long-lived client connection to the server-plane hub (chirp_server_gateway).
+// Any trusted internal service (chat, app_gateway, npc_dialog, ...) dials out,
+// authenticates with a service_id + secret, answers the hub's keepalive
+// cadence, receives forwarded notifications, and runs request/response RPCs
+// over the same connection. Reconnects with a fixed delay until stopped.
 //
 // Entry points (Start/Stop/SendInject/SendEventPublish/SendEventAck) may be
 // called from any thread: each hops onto the peer's strand, and every socket
@@ -69,14 +69,23 @@ class ServerGatewayPeer : public std::enable_shared_from_this<ServerGatewayPeer>
                         RpcCallback cb);
   void SendEventAck(const chirp::server_gateway::EventAckRequest& req, RpcCallback cb);
 
+  // Turns a response body into its error code; an unparseable body maps to
+  // INTERNAL_ERROR.
+  using BodyParser = std::function<chirp::common::ErrorCode(const std::string& body)>;
+
+  // Generic request/response RPC over the hub connection, for message pairs
+  // the typed helpers above do not cover (e.g. the WP-8 subscription calls).
+  // Same threading and failure semantics as the typed RPCs: callable from any
+  // thread, fails fast with SERVER_UNAVAILABLE while disconnected, callback
+  // fires on the strand thread and must not block.
+  void SendRpc(chirp::gateway::MsgID req_id, chirp::gateway::MsgID resp_id,
+               const google::protobuf::Message& body, BodyParser parse, RpcCallback cb);
+
  private:
   struct PrivateTag { explicit PrivateTag() = default; };
   ServerGatewayPeer(asio::io_context& io, Options options, InjectHandler on_inject,
                     EventHandler on_event, PrivateTag);
 
-  // Turns a response body into its error code; an unparseable body maps to
-  // INTERNAL_ERROR.
-  using BodyParser = std::function<chirp::common::ErrorCode(const std::string& body)>;
   struct PendingRpc {
     chirp::gateway::MsgID resp_id;
     BodyParser parse;
@@ -89,8 +98,6 @@ class ServerGatewayPeer : public std::enable_shared_from_this<ServerGatewayPeer>
   void ReadBody(uint32_t size);
   void HandlePacket(const chirp::gateway::Packet& pkt);
   void DispatchRpcResponse(const chirp::gateway::Packet& pkt);
-  void SendRpc(chirp::gateway::MsgID req_id, chirp::gateway::MsgID resp_id,
-               const google::protobuf::Message& body, BodyParser parse, RpcCallback cb);
   void FailPending();
   void SendPacket(chirp::gateway::MsgID msg_id, int64_t seq,
                   const google::protobuf::Message& body);
@@ -118,6 +125,6 @@ class ServerGatewayPeer : public std::enable_shared_from_this<ServerGatewayPeer>
   int heartbeat_interval_seconds_ = 30;  // reassigned by the hub on auth
 };
 
-}  // namespace chirp::chat
+}  // namespace chirp::network
 
-#endif  // CHIRP_CHAT_SERVER_GATEWAY_PEER_H_
+#endif  // CHIRP_NETWORK_SERVER_GATEWAY_PEER_H_

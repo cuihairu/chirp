@@ -3,12 +3,12 @@
 #include <chrono>
 #include <utility>
 
-#include "logger.h"
+#include "common/logger.h"
 #include "network/byte_order.h"
 #include "network/protobuf_framing.h"
 #include "proto/common.pb.h"
 
-namespace chirp::chat {
+namespace chirp::network {
 
 namespace {
 
@@ -300,15 +300,15 @@ void ServerGatewayPeer::HandlePacket(const chirp::gateway::Packet& pkt) {
     on_event_(notify);
     break;
   }
-  case chirp::gateway::INJECT_MESSAGE_RESP:
-  case chirp::gateway::EVENT_PUBLISH_RESP:
-  case chirp::gateway::EVENT_ACK_RESP:
-    DispatchRpcResponse(pkt);
-    break;
   case chirp::gateway::SERVER_HEARTBEAT_PONG:
     break;  // liveness is enforced by the hub; nothing to do
   default:
-    break;  // unknown frames are ignored
+    // Every other frame is a potential RPC response: notify handlers route
+    // through their own cases above, and an unmatched (sequence, msg id)
+    // pair just warns inside DispatchRpcResponse. Generic SendRpc callers
+    // (WP-8 subscriptions, future pairs) need no per-id case here.
+    DispatchRpcResponse(pkt);
+    break;
   }
 }
 
@@ -364,4 +364,4 @@ void ServerGatewayPeer::ScheduleReconnect() {
   });
 }
 
-}  // namespace chirp::chat
+}  // namespace chirp::network

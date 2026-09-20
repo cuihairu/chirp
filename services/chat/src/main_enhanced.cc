@@ -25,7 +25,7 @@
 #include "npc_uplink.h"
 #include "paginated_history_retriever.h"
 #include "push_bridge.h"
-#include "server_gateway_peer.h"
+#include "network/server_gateway_peer.h"
 #include "distributed_dispatch.h"
 #include "distributed_runtime.h"
 #include "logger.h"
@@ -131,7 +131,7 @@ void HandleSendMessage(const chirp::chat::SendMessageRequest& req,
                       const std::shared_ptr<MessageDeliveryTracker>& delivery_tracker,
                       chirp::chat::DeliveryAckManager* acks,
                       const std::shared_ptr<chirp::network::MessageRouter>& router,
-                      chirp::chat::ServerGatewayPeer* hub_peer,
+                      chirp::network::ServerGatewayPeer* hub_peer,
                       const std::string& npc_service_id,
                       const std::string& npc_prefix,
                       int64_t seq) {
@@ -533,7 +533,7 @@ int main(int argc, char** argv) {
         "--npc_service_id is set but --server_gateway_host is not; the NPC "
         "uplink stays disabled");
   }
-  std::shared_ptr<chirp::chat::ServerGatewayPeer> hub_peer;
+  std::shared_ptr<chirp::network::ServerGatewayPeer> hub_peer;
   if (!hub_host.empty()) {
     const uint16_t hub_port = chirp::chat::runtime::ParseU16Arg(
         argc, argv, "--server_gateway_port", 8100);
@@ -587,7 +587,7 @@ int main(int argc, char** argv) {
       return {};
     };
 
-    chirp::chat::ServerGatewayPeer::Options hub_options;
+    chirp::network::ServerGatewayPeer::Options hub_options;
     hub_options.host = hub_host;
     hub_options.port = hub_port;
     hub_options.service_id =
@@ -598,7 +598,7 @@ int main(int argc, char** argv) {
 
     const std::string hub_service = hub_options.service_id;
     auto consumer = std::make_shared<chirp::chat::InjectConsumer>(std::move(hooks));
-    hub_peer = chirp::chat::ServerGatewayPeer::Create(
+    hub_peer = chirp::network::ServerGatewayPeer::Create(
         io, std::move(hub_options),
         [consumer](const chirp::server_gateway::InjectMessageNotify& notify) {
           consumer->HandleInject(notify);

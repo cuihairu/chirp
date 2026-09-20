@@ -34,7 +34,7 @@
 #include "proto/common.pb.h"
 #include "proto/server_gateway.pb.h"
 #include "runtime_utils.h"
-#include "server_gateway_peer.h"
+#include "network/server_gateway_peer.h"
 
 namespace {
 
@@ -347,7 +347,7 @@ struct FeatureHandlers {
   chirp::chat::PushBridge& push;
   // NPC uplink: peer is null unless --server_gateway_host is set; an empty
   // npc_service_id keeps the feature off even with a live peer.
-  chirp::chat::ServerGatewayPeer* hub_peer = nullptr;
+  chirp::network::ServerGatewayPeer* hub_peer = nullptr;
   std::string npc_service_id;
   std::string npc_prefix = "npc:";
   // Direct-entry abuse gate: null keeps the legacy unthrottled behavior (not
@@ -1138,7 +1138,7 @@ int main(int argc, char** argv) {
         "--npc_service_id is set but --server_gateway_host is not; the NPC "
         "uplink stays disabled");
   }
-  std::shared_ptr<chirp::chat::ServerGatewayPeer> hub_peer;
+  std::shared_ptr<chirp::network::ServerGatewayPeer> hub_peer;
   if (!hub_host.empty()) {
     const uint16_t hub_port = chirp::chat::runtime::ParseU16Arg(
         argc, argv, "--server_gateway_port", 8100);
@@ -1182,7 +1182,7 @@ int main(int argc, char** argv) {
           return features.groups.BroadcastGroupMessage(channel_id, msg.sender_id(), msg);
         };
 
-    chirp::chat::ServerGatewayPeer::Options hub_options;
+    chirp::network::ServerGatewayPeer::Options hub_options;
     hub_options.host = hub_host;
     hub_options.port = hub_port;
     hub_options.service_id =
@@ -1193,7 +1193,7 @@ int main(int argc, char** argv) {
 
     const std::string hub_service = hub_options.service_id;
     auto consumer = std::make_shared<chirp::chat::InjectConsumer>(std::move(hooks));
-    hub_peer = chirp::chat::ServerGatewayPeer::Create(
+    hub_peer = chirp::network::ServerGatewayPeer::Create(
         io, std::move(hub_options),
         [consumer](const chirp::server_gateway::InjectMessageNotify& notify) {
           consumer->HandleInject(notify);

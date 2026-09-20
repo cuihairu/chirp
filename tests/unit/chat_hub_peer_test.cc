@@ -22,7 +22,7 @@
 #include "proto/common.pb.h"
 #include "proto/gateway.pb.h"
 #include "proto/server_gateway.pb.h"
-#include "server_gateway_peer.h"
+#include "network/server_gateway_peer.h"
 
 namespace {
 
@@ -320,9 +320,9 @@ class PeerIoRunner {
   std::thread thread_;
 };
 
-chirp::chat::ServerGatewayPeer::Options HubOptions(const FakeHubServer& hub,
+chirp::network::ServerGatewayPeer::Options HubOptions(const FakeHubServer& hub,
                                                    const std::string& secret = "s3cret") {
-  chirp::chat::ServerGatewayPeer::Options opts;
+  chirp::network::ServerGatewayPeer::Options opts;
   opts.host = "127.0.0.1";
   opts.port = hub.port();
   opts.service_id = "chat";
@@ -346,7 +346,7 @@ TEST(ChatHubPeerTest, AuthenticatesSendsHeartbeatAndDeliversInjections) {
 
   std::mutex mu;
   std::vector<chirp::server_gateway::InjectMessageNotify> injected;
-  auto peer = chirp::chat::ServerGatewayPeer::Create(
+  auto peer = chirp::network::ServerGatewayPeer::Create(
       io, HubOptions(hub),
       [&](const chirp::server_gateway::InjectMessageNotify& n) {
         std::lock_guard<std::mutex> lock(mu);
@@ -411,7 +411,7 @@ TEST(ChatHubPeerTest, ReconnectsAfterConnectionLoss) {
   asio::io_context io;
   PeerIoRunner runner(io);
 
-  auto peer = chirp::chat::ServerGatewayPeer::Create(
+  auto peer = chirp::network::ServerGatewayPeer::Create(
       io, HubOptions(hub), [](const chirp::server_gateway::InjectMessageNotify&) {});
   peer->Start();
 
@@ -432,7 +432,7 @@ TEST(ChatHubPeerTest, RejectedAuthRetries) {
   asio::io_context io;
   PeerIoRunner runner(io);
 
-  auto peer = chirp::chat::ServerGatewayPeer::Create(
+  auto peer = chirp::network::ServerGatewayPeer::Create(
       io, HubOptions(hub, "wrong"), [](const chirp::server_gateway::InjectMessageNotify&) {});
   peer->Start();
 
@@ -451,7 +451,7 @@ TEST(ChatHubPeerTest, MalformedAuthResponseTriggersReconnect) {
   asio::io_context io;
   PeerIoRunner runner(io);
 
-  auto peer = chirp::chat::ServerGatewayPeer::Create(
+  auto peer = chirp::network::ServerGatewayPeer::Create(
       io, HubOptions(hub), [](const chirp::server_gateway::InjectMessageNotify&) {});
   peer->Start();
 
@@ -472,7 +472,7 @@ TEST(ChatHubPeerTest, InvalidFrameSizeTriggersReconnect) {
   asio::io_context io;
   PeerIoRunner runner(io);
 
-  auto peer = chirp::chat::ServerGatewayPeer::Create(
+  auto peer = chirp::network::ServerGatewayPeer::Create(
       io, HubOptions(hub), [](const chirp::server_gateway::InjectMessageNotify&) {});
   peer->Start();
 
@@ -503,7 +503,7 @@ TEST(ChatHubPeerTest, GarbageBodyTriggersReconnect) {
   asio::io_context io;
   PeerIoRunner runner(io);
 
-  auto peer = chirp::chat::ServerGatewayPeer::Create(
+  auto peer = chirp::network::ServerGatewayPeer::Create(
       io, HubOptions(hub), [](const chirp::server_gateway::InjectMessageNotify&) {});
   peer->Start();
 
@@ -528,7 +528,7 @@ TEST(ChatHubPeerTest, MalformedInjectBodyIsIgnored) {
 
   std::mutex mu;
   size_t injected = 0;
-  auto peer = chirp::chat::ServerGatewayPeer::Create(
+  auto peer = chirp::network::ServerGatewayPeer::Create(
       io, HubOptions(hub), [&](const chirp::server_gateway::InjectMessageNotify&) {
         std::lock_guard<std::mutex> lock(mu);
         injected++;
@@ -555,7 +555,7 @@ TEST(ChatHubPeerTest, MidBodyDisconnectTriggersReconnect) {
   asio::io_context io;
   PeerIoRunner runner(io);
 
-  auto peer = chirp::chat::ServerGatewayPeer::Create(
+  auto peer = chirp::network::ServerGatewayPeer::Create(
       io, HubOptions(hub), [](const chirp::server_gateway::InjectMessageNotify&) {});
   peer->Start();
 
@@ -580,13 +580,13 @@ TEST(ChatHubPeerTest, ConnectFailureRetries) {
 
   // Port 1 on loopback refuses connections; the peer must keep retrying
   // (reconnect scheduling) without hanging or crashing.
-  chirp::chat::ServerGatewayPeer::Options opts;
+  chirp::network::ServerGatewayPeer::Options opts;
   opts.host = "127.0.0.1";
   opts.port = 1;
   opts.service_id = "chat";
   opts.secret = "s3cret";
   opts.reconnect_delay_seconds = 1;
-  auto peer = chirp::chat::ServerGatewayPeer::Create(
+  auto peer = chirp::network::ServerGatewayPeer::Create(
       io, opts, [](const chirp::server_gateway::InjectMessageNotify&) {});
   peer->Start();
 
@@ -605,11 +605,11 @@ TEST(ChatHubPeerTest, ResolveFailureRetries) {
 
   // A host whose label exceeds the 63-byte DNS limit is rejected by
   // getaddrinfo locally, without any DNS round-trip.
-  chirp::chat::ServerGatewayPeer::Options opts;
+  chirp::network::ServerGatewayPeer::Options opts;
   opts.host = std::string(300, 'a');
   opts.port = 8100;
   opts.reconnect_delay_seconds = 1;
-  auto peer = chirp::chat::ServerGatewayPeer::Create(
+  auto peer = chirp::network::ServerGatewayPeer::Create(
       io, opts, [](const chirp::server_gateway::InjectMessageNotify&) {});
   peer->Start();
 
@@ -626,11 +626,11 @@ TEST(ChatHubPeerTest, StopDuringConnectAttemptIsClean) {
   asio::io_context io;
   PeerIoRunner runner(io);
 
-  chirp::chat::ServerGatewayPeer::Options opts;
+  chirp::network::ServerGatewayPeer::Options opts;
   opts.host = "10.255.255.1";  // blackhole: connect stays pending
   opts.port = 81;
   opts.reconnect_delay_seconds = 1;
-  auto peer = chirp::chat::ServerGatewayPeer::Create(
+  auto peer = chirp::network::ServerGatewayPeer::Create(
       io, opts, [](const chirp::server_gateway::InjectMessageNotify&) {});
   peer->Start();
 
@@ -644,8 +644,8 @@ TEST(ChatHubPeerTest, StopDuringConnectAttemptIsClean) {
 TEST(ChatHubPeerTest, StartAfterStopDoesNothing) {
   chirp::common::Logger::Instance().SetLevel(chirp::common::Logger::Level::kError);
   asio::io_context io;
-  auto peer = chirp::chat::ServerGatewayPeer::Create(
-      io, chirp::chat::ServerGatewayPeer::Options{},
+  auto peer = chirp::network::ServerGatewayPeer::Create(
+      io, chirp::network::ServerGatewayPeer::Options{},
       [](const chirp::server_gateway::InjectMessageNotify&) {});
   peer->Stop();   // stopped before ever starting
   peer->Start();  // must be a no-op
@@ -657,8 +657,8 @@ TEST(ChatHubPeerTest, StartAfterStopDoesNothing) {
 TEST(ChatHubPeerTest, StopIsIdempotent) {
   chirp::common::Logger::Instance().SetLevel(chirp::common::Logger::Level::kError);
   asio::io_context io;
-  auto peer = chirp::chat::ServerGatewayPeer::Create(
-      io, chirp::chat::ServerGatewayPeer::Options{},
+  auto peer = chirp::network::ServerGatewayPeer::Create(
+      io, chirp::network::ServerGatewayPeer::Options{},
       [](const chirp::server_gateway::InjectMessageNotify&) {});
   peer->Stop();
   peer->Stop();  // second call (e.g. SIGINT then SIGTERM) must be a no-op
@@ -675,7 +675,7 @@ TEST(ChatHubPeerTest, RpcRoundTripsWithEchoedIds) {
   asio::io_context io;
   PeerIoRunner runner(io);
 
-  auto peer = chirp::chat::ServerGatewayPeer::Create(
+  auto peer = chirp::network::ServerGatewayPeer::Create(
       io, HubOptions(hub), [](const chirp::server_gateway::InjectMessageNotify&) {});
   peer->Start();
   ASSERT_TRUE(WaitFor([&] { return hub.Count(chirp::gateway::SERVER_AUTH_REQ) >= 1; },
@@ -743,12 +743,78 @@ TEST(ChatHubPeerTest, RpcRoundTripsWithEchoedIds) {
   runner.Finish();
 }
 
+// The generic SendRpc path serves message pairs the typed helpers do not
+// cover (WP-8 player channel subscriptions are the first such caller). The
+// fake hub does not know 5021, so the test answers the request by hand —
+// exactly what the hub does for any well-formed RPC, typed or not.
+TEST(ChatHubPeerTest, GenericSendRpcRoundTrip) {
+  chirp::common::Logger::Instance().SetLevel(chirp::common::Logger::Level::kError);
+  FakeHubServer hub;
+  asio::io_context io;
+  PeerIoRunner runner(io);
+
+  auto peer = chirp::network::ServerGatewayPeer::Create(
+      io, HubOptions(hub), [](const chirp::server_gateway::InjectMessageNotify&) {});
+  peer->Start();
+  ASSERT_TRUE(WaitFor([&] { return hub.Count(chirp::gateway::SERVER_AUTH_REQ) >= 1; },
+                      std::chrono::seconds(5)));
+
+  chirp::server_gateway::SubscribePlayerChannelRequest sub_req;
+  sub_req.set_player_id("player_1");
+  sub_req.set_game_id("game_a");
+  sub_req.set_channel_id("world");
+
+  std::mutex mu;
+  bool done = false;
+  chirp::common::ErrorCode code = chirp::common::AUTH_FAILED;
+  peer->SendRpc(chirp::gateway::SUBSCRIBE_PLAYER_CHANNEL_REQ,
+                chirp::gateway::SUBSCRIBE_PLAYER_CHANNEL_RESP, sub_req,
+                [](const std::string& body) {
+                  chirp::server_gateway::SubscribePlayerChannelResponse resp;
+                  return resp.ParseFromString(body) ? resp.code()
+                                                    : chirp::common::INTERNAL_ERROR;
+                },
+                [&](chirp::common::ErrorCode c) {
+                  std::lock_guard<std::mutex> lock(mu);
+                  code = c;
+                  done = true;
+                });
+
+  // The request reaches the wire with its payload intact.
+  ASSERT_TRUE(WaitFor([&] { return hub.Count(chirp::gateway::SUBSCRIBE_PLAYER_CHANNEL_REQ) >= 1; },
+                      std::chrono::seconds(5)));
+  const auto sent = hub.All(chirp::gateway::SUBSCRIBE_PLAYER_CHANNEL_REQ);
+  ASSERT_EQ(sent.size(), 1u);
+  chirp::server_gateway::SubscribePlayerChannelRequest seen;
+  ASSERT_TRUE(seen.ParseFromString(sent[0].body()));
+  EXPECT_EQ(seen.player_id(), "player_1");
+  EXPECT_EQ(seen.game_id(), "game_a");
+  EXPECT_EQ(seen.channel_id(), "world");
+
+  // Echoing the response under the request's sequence completes the call.
+  chirp::server_gateway::SubscribePlayerChannelResponse resp;
+  resp.set_code(chirp::common::OK);
+  resp.set_subscription_id("sub-1");
+  hub.SendToLatest(MakeRawPacket(chirp::gateway::SUBSCRIBE_PLAYER_CHANNEL_RESP,
+                                 sent[0].sequence(), resp.SerializeAsString()));
+
+  EXPECT_TRUE(WaitFor([&] {
+    std::lock_guard<std::mutex> lock(mu);
+    return done;
+  }, std::chrono::seconds(5)));
+  EXPECT_EQ(code, chirp::common::OK);
+
+  peer->Stop();
+  runner.Drain();
+  runner.Finish();
+}
+
 // Sending before (or without) a connection fails fast instead of queueing.
 TEST(ChatHubPeerTest, RpcWithoutConnectionFailsFast) {
   chirp::common::Logger::Instance().SetLevel(chirp::common::Logger::Level::kError);
   asio::io_context io;
-  auto peer = chirp::chat::ServerGatewayPeer::Create(
-      io, chirp::chat::ServerGatewayPeer::Options{},
+  auto peer = chirp::network::ServerGatewayPeer::Create(
+      io, chirp::network::ServerGatewayPeer::Options{},
       [](const chirp::server_gateway::InjectMessageNotify&) {});
   // Never started: not connected, so every send fails immediately.
 
@@ -781,7 +847,7 @@ TEST(ChatHubPeerTest, RpcErrorResponsePropagates) {
   asio::io_context io;
   PeerIoRunner runner(io);
 
-  auto peer = chirp::chat::ServerGatewayPeer::Create(
+  auto peer = chirp::network::ServerGatewayPeer::Create(
       io, HubOptions(hub), [](const chirp::server_gateway::InjectMessageNotify&) {});
   peer->Start();
   ASSERT_TRUE(WaitFor([&] { return hub.Count(chirp::gateway::SERVER_AUTH_REQ) >= 1; },
@@ -816,7 +882,7 @@ TEST(ChatHubPeerTest, ConnectionLossFailsPendingRpc) {
   asio::io_context io;
   PeerIoRunner runner(io);
 
-  auto peer = chirp::chat::ServerGatewayPeer::Create(
+  auto peer = chirp::network::ServerGatewayPeer::Create(
       io, HubOptions(hub), [](const chirp::server_gateway::InjectMessageNotify&) {});
   peer->Start();
   ASSERT_TRUE(WaitFor([&] { return hub.Count(chirp::gateway::SERVER_AUTH_REQ) >= 1; },
@@ -874,7 +940,7 @@ TEST(ChatHubPeerTest, GarbageRpcBodyMapsToInternalError) {
   asio::io_context io;
   PeerIoRunner runner(io);
 
-  auto peer = chirp::chat::ServerGatewayPeer::Create(
+  auto peer = chirp::network::ServerGatewayPeer::Create(
       io, HubOptions(hub), [](const chirp::server_gateway::InjectMessageNotify&) {});
   peer->Start();
   ASSERT_TRUE(WaitFor([&] { return hub.Count(chirp::gateway::SERVER_AUTH_REQ) >= 1; },
@@ -918,7 +984,7 @@ TEST(ChatHubPeerTest, MismatchedResponseIdIsIgnored) {
   asio::io_context io;
   PeerIoRunner runner(io);
 
-  auto peer = chirp::chat::ServerGatewayPeer::Create(
+  auto peer = chirp::network::ServerGatewayPeer::Create(
       io, HubOptions(hub), [](const chirp::server_gateway::InjectMessageNotify&) {});
   peer->Start();
   ASSERT_TRUE(WaitFor([&] { return hub.Count(chirp::gateway::SERVER_AUTH_REQ) >= 1; },
@@ -969,7 +1035,7 @@ TEST(ChatHubPeerTest, UnknownResponseSequenceIsIgnored) {
   asio::io_context io;
   PeerIoRunner runner(io);
 
-  auto peer = chirp::chat::ServerGatewayPeer::Create(
+  auto peer = chirp::network::ServerGatewayPeer::Create(
       io, HubOptions(hub), [](const chirp::server_gateway::InjectMessageNotify&) {});
   peer->Start();
   ASSERT_TRUE(WaitFor([&] { return hub.Count(chirp::gateway::SERVER_AUTH_REQ) >= 1; },
@@ -997,7 +1063,7 @@ TEST(ChatHubPeerTest, EventDeliverNotifyReachesHandler) {
 
   std::mutex mu;
   std::vector<chirp::server_gateway::EventDeliverNotify> events;
-  auto peer = chirp::chat::ServerGatewayPeer::Create(
+  auto peer = chirp::network::ServerGatewayPeer::Create(
       io, HubOptions(hub), [](const chirp::server_gateway::InjectMessageNotify&) {},
       [&](const chirp::server_gateway::EventDeliverNotify& n) {
         std::lock_guard<std::mutex> lock(mu);
@@ -1046,7 +1112,7 @@ TEST(ChatHubPeerTest, StopFailsPendingRpc) {
   asio::io_context io;
   PeerIoRunner runner(io);
 
-  auto peer = chirp::chat::ServerGatewayPeer::Create(
+  auto peer = chirp::network::ServerGatewayPeer::Create(
       io, HubOptions(hub), [](const chirp::server_gateway::InjectMessageNotify&) {});
   peer->Start();
   ASSERT_TRUE(WaitFor([&] { return hub.Count(chirp::gateway::SERVER_AUTH_REQ) >= 1; },

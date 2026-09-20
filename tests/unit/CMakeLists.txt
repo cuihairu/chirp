@@ -786,7 +786,6 @@ add_test(NAME chat_rate_limiter_tests COMMAND chat_rate_limiter_tests)
 # reconnect/auth/heartbeat state machine).
 add_executable(chat_hub_peer_tests
   chat_hub_peer_test.cc
-  ${CMAKE_SOURCE_DIR}/services/chat/src/server_gateway_peer.cc
 )
 
 chirp_unit_test_common_links(chat_hub_peer_tests)

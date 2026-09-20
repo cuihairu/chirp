@@ -15,7 +15,7 @@
 #include "npc_responder.h"
 #include "proto/server_gateway.pb.h"
 #include "runtime_utils.h"
-#include "server_gateway_peer.h"
+#include "network/server_gateway_peer.h"
 
 namespace {
 
@@ -56,7 +56,7 @@ int main(int argc, char** argv) {
 
   asio::io_context io;
 
-  chirp::chat::ServerGatewayPeer::Options options;
+  chirp::network::ServerGatewayPeer::Options options;
   options.host = hub_host;
   options.port = hub_port;
   options.service_id =
@@ -69,7 +69,7 @@ int main(int argc, char** argv) {
   // The responder needs the peer (to inject replies and ack) and the peer's
   // event handler needs the responder; break the cycle through the peer
   // variable, which outlives the io loop below.
-  std::shared_ptr<chirp::chat::ServerGatewayPeer> peer;
+  std::shared_ptr<chirp::network::ServerGatewayPeer> peer;
   auto responder = std::make_shared<chirp::npc::NpcResponder>(
       *engine,
       [&peer](const chirp::server_gateway::MessageInjectRequest& req,
@@ -80,7 +80,7 @@ int main(int argc, char** argv) {
               std::function<void(chirp::common::ErrorCode)> cb) {
         peer->SendEventAck(req, std::move(cb));
       });
-  peer = chirp::chat::ServerGatewayPeer::Create(
+  peer = chirp::network::ServerGatewayPeer::Create(
       io, std::move(options),
       [](const chirp::server_gateway::InjectMessageNotify&) {},  // consumes events only
       [responder](const chirp::server_gateway::EventDeliverNotify& event) {

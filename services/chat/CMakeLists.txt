@@ -67,7 +67,6 @@ if(MYSQL_FOUND)
         # (inject_consumer turns forwarded injections into deliveries, and
         # npc_uplink publishes player->NPC utterances).
         src/inject_consumer.cc
-        src/server_gateway_peer.cc
         src/npc_uplink.cc
         src/push_bridge.cc
     )
