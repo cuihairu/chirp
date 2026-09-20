@@ -2,7 +2,7 @@
 
 游戏后端服务(trade、matchmaking、NPC 引擎等)接入 chirp **服务器平面**的 Go 参考客户端。dial-out 连接 `chirp_server_gateway`(默认 TCP 8100),以 `service_id` + 共享 secret 过信任门,然后向 chat 平面注入非玩家消息、向其他服务发布可靠事件。
 
-语义逐项对齐 C++ 参考实现 `services/chat/src/server_gateway_peer.cc`(wire 契约见 `proto/server_gateway.proto`)。
+语义逐项对齐 C++ 参考实现 `libs/network/server_gateway_peer.cc`(wire 契约见 `proto/server_gateway.proto`)。
 
 ## 能力面
 
@@ -13,6 +13,7 @@
   - `PublishEvent` — 发布可靠事件(目标离线则入队,重连重投直到 ack)
   - `AckEvents` — 批量确认已处理的 `EVENT_DELIVER_NOTIFY`(at-least-once)
   - `BindPlayerIdentity` / `UnbindPlayerIdentity` / `GetPlayerIdentities` / `ResolveGameUser` — 玩家身份绑定(`binding_id` 幂等键;详见 `docs/server_plane.md`「Player identity bindings」)
+  - `SubscribePlayerChannel` / `UnsubscribePlayerChannel` / `GetPlayerSubscriptions` — 玩家频道订阅(`subscription_id` 幂等键,留空由服务端铸造;详见 `docs/server_plane.md`「Player channel subscriptions」)
 - **推送 handler**:`SetInjectHandler` / `SetEventHandler` / `SetDisconnectHandler`,在内部读 goroutine 触发,**不得阻塞**。
 - **断线**:在途调用收到 `ErrConnectionLost`,客户端自动重连;已认证连接断开才触发 disconnect handler(认证拒绝/拨号失败只记日志)。
 

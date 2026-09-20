@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/binary"
 	"errors"
+	"fmt"
 	"io"
 	"net"
 	"sync"
@@ -604,5 +605,141 @@ func TestPlayerIdentityBindingRoundTrip(t *testing.T) {
 	list, err := c.GetPlayerIdentities(ctx, &pbsg.GetPlayerIdentitiesRequest{PlayerId: "player-1"})
 	if err != nil || len(list.GetBindings()) != 1 || list.GetBindings()[0].GetGameUserId() != "u-1" {
 		t.Fatalf("list bindings: resp=%v err=%v", list, err)
+	}
+}
+
+func TestPlayerChannelSubscriptionRoundTrip(t *testing.T) {
+	var mu sync.Mutex
+	subs := map[string]*pbsg.StoredChannelSubscription{} // tuple key -> record
+	minted := 0
+	tupleKey := func(player, game, channel string) string {
+		return player + ":" + game + ":" + channel
+	}
+	h := startFakeHub(t, func(sc *syncConn, pkt *pbgw.Packet) {
+		switch pkt.GetMsgId() {
+		case pbgw.MsgID_SERVER_AUTH_REQ:
+			authOK(sc, pkt)
+		case pbgw.MsgID_SUBSCRIBE_PLAYER_CHANNEL_REQ:
+			req := &pbsg.SubscribePlayerChannelRequest{}
+			if err := proto.Unmarshal(pkt.GetBody(), req); err != nil {
+				t.Errorf("bad subscribe body: %v", err)
+				return
+			}
+			key := tupleKey(req.GetPlayerId(), req.GetGameId(), req.GetChannelId())
+			mu.Lock()
+			existing := subs[key]
+			wasNew := existing == nil
+			if wasNew {
+				minted++
+				existing = &pbsg.StoredChannelSubscription{
+					SubscriptionId: fmt.Sprintf("sub-%d", minted),
+					PlayerId:       req.GetPlayerId(),
+					GameId:         req.GetGameId(),
+					ChannelId:      req.GetChannelId(),
+					SubscribedAtMs: nowMs(),
+				}
+				subs[key] = existing
+			}
+			stored := existing
+			mu.Unlock()
+			// Mirror the real registry: a fresh tuple is never "existed"; an
+			// existing tuple stays put only for an exact replay or an
+			// id-less (self-service) subscribe — a different id replaces.
+			existed := !wasNew &&
+				(req.GetSubscriptionId() == "" || req.GetSubscriptionId() == stored.GetSubscriptionId())
+			sc.write(&pbgw.Packet{
+				MsgId:    pbgw.MsgID_SUBSCRIBE_PLAYER_CHANNEL_RESP,
+				Sequence: pkt.GetSequence(),
+				Body: mustMarshal(&pbsg.SubscribePlayerChannelResponse{
+					Code:           pbcommon.ErrorCode_OK,
+					SubscriptionId: stored.GetSubscriptionId(),
+					Existed:        existed,
+				}),
+			})
+		case pbgw.MsgID_UNSUBSCRIBE_PLAYER_CHANNEL_REQ:
+			req := &pbsg.UnsubscribePlayerChannelRequest{}
+			if err := proto.Unmarshal(pkt.GetBody(), req); err != nil {
+				t.Errorf("bad unsubscribe body: %v", err)
+				return
+			}
+			mu.Lock()
+			if req.GetSubscriptionId() != "" {
+				for key, sub := range subs {
+					if sub.GetSubscriptionId() == req.GetSubscriptionId() {
+						delete(subs, key)
+					}
+				}
+			} else {
+				delete(subs, tupleKey(req.GetPlayerId(), req.GetGameId(), req.GetChannelId()))
+			}
+			mu.Unlock()
+			sc.write(&pbgw.Packet{
+				MsgId:    pbgw.MsgID_UNSUBSCRIBE_PLAYER_CHANNEL_RESP,
+				Sequence: pkt.GetSequence(),
+				Body:     mustMarshal(&pbsg.UnsubscribePlayerChannelResponse{Code: pbcommon.ErrorCode_OK}),
+			})
+		case pbgw.MsgID_GET_PLAYER_SUBSCRIPTIONS_REQ:
+			req := &pbsg.GetPlayerSubscriptionsRequest{}
+			if err := proto.Unmarshal(pkt.GetBody(), req); err != nil {
+				t.Errorf("bad get body: %v", err)
+				return
+			}
+			resp := &pbsg.GetPlayerSubscriptionsResponse{Code: pbcommon.ErrorCode_OK}
+			mu.Lock()
+			for _, sub := range subs {
+				if sub.GetPlayerId() == req.GetPlayerId() &&
+					(req.GetGameId() == "" || sub.GetGameId() == req.GetGameId()) {
+					resp.Subscriptions = append(resp.Subscriptions, sub)
+				}
+			}
+			mu.Unlock()
+			sc.write(&pbgw.Packet{
+				MsgId:    pbgw.MsgID_GET_PLAYER_SUBSCRIPTIONS_RESP,
+				Sequence: pkt.GetSequence(),
+				Body:     mustMarshal(resp),
+			})
+		}
+	})
+
+	c := NewClient(testConfig(h))
+	c.Start()
+	defer c.Stop()
+	waitFor(t, 3*time.Second, "connect", c.Connected)
+
+	// Bounded so a lost response fails the test instead of hanging it.
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	defer cancel()
+	first, err := c.SubscribePlayerChannel(ctx, &pbsg.SubscribePlayerChannelRequest{
+		PlayerId: "player-1", GameId: "game-a", ChannelId: "world-1",
+	})
+	if err != nil || first.GetExisted() || first.GetSubscriptionId() == "" {
+		t.Fatalf("first subscribe: resp=%v err=%v (want fresh, minted id)", first, err)
+	}
+	again, err := c.SubscribePlayerChannel(ctx, &pbsg.SubscribePlayerChannelRequest{
+		PlayerId: "player-1", GameId: "game-a", ChannelId: "world-1",
+	})
+	if err != nil || !again.GetExisted() || again.GetSubscriptionId() != first.GetSubscriptionId() {
+		t.Fatalf("re-subscribe: resp=%v err=%v (want existed=true, stable id)", again, err)
+	}
+
+	list, err := c.GetPlayerSubscriptions(ctx, &pbsg.GetPlayerSubscriptionsRequest{PlayerId: "player-1"})
+	if err != nil || len(list.GetSubscriptions()) != 1 {
+		t.Fatalf("list subscriptions: resp=%v err=%v", list, err)
+	}
+	filtered, err := c.GetPlayerSubscriptions(ctx, &pbsg.GetPlayerSubscriptionsRequest{
+		PlayerId: "player-1", GameId: "game-b",
+	})
+	if err != nil || len(filtered.GetSubscriptions()) != 0 {
+		t.Fatalf("filtered list: resp=%v err=%v (want empty)", filtered, err)
+	}
+
+	if _, err := c.UnsubscribePlayerChannel(ctx, &pbsg.UnsubscribePlayerChannelRequest{
+		PlayerId: "player-1", GameId: "game-a", ChannelId: "world-1",
+	}); err != nil {
+		t.Fatalf("unsubscribe: %v", err)
+	}
+	empty, err := c.GetPlayerSubscriptions(ctx, &pbsg.GetPlayerSubscriptionsRequest{PlayerId: "player-1"})
+	if err != nil || len(empty.GetSubscriptions()) != 0 {
+		t.Fatalf("post-unsubscribe list: resp=%v err=%v (want empty)", empty, err)
 	}
 }

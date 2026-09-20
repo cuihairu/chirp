@@ -26,10 +26,12 @@
 #include "network/tls_server.h"
 #include "network/websocket_server.h"
 #include "network/notification_client.h"
+#include "network/server_gateway_peer.h"
 #include "proto/auth.pb.h"
 #include "proto/common.pb.h"
 #include "proto/gateway.pb.h"
 #include "proto/notification.pb.h"
+#include "proto/server_gateway.pb.h"
 #include "network/redis_session_manager.h"
 
 namespace {
@@ -284,12 +286,76 @@ void ForwardDevicePacket(const std::shared_ptr<chirp::network::Session>& session
   });
 }
 
+// Shared subscription-message path: parse, require an authenticated
+// session, pin player_id to the authenticated user, then forward the RPC to
+// the server-plane hub. The same message ids serve game backends directly;
+// the app edge only overwrites the player identity. The hub's response body
+// is relayed verbatim (it carries the minted subscription_id), so the parser
+// does the relaying and the SendRpc callback only reports transport
+// failures.
+template <typename Req, typename Resp>
+void ForwardSubscriptionPacket(const std::shared_ptr<chirp::network::Session>& session,
+                               const chirp::gateway::Packet& pkt,
+                               chirp::gateway::MsgID req_id,
+                               chirp::gateway::MsgID resp_id,
+                               const std::string& authenticated_user,
+                               chirp::network::ServerGatewayPeer* sg) {
+  const int64_t seq = pkt.sequence();
+  auto send_code = [session, seq, resp_id](chirp::common::ErrorCode code) {
+    Resp resp;
+    resp.set_code(code);
+    SendPacket(session, resp_id, seq, resp.SerializeAsString());
+  };
+
+  Req req;
+  if (!req.ParseFromArray(pkt.body().data(), static_cast<int>(pkt.body().size()))) {
+    send_code(chirp::common::INVALID_PARAM);
+    return;
+  }
+  if (authenticated_user.empty()) {
+    send_code(chirp::common::AUTH_FAILED);
+    return;
+  }
+  if (!sg) {
+    send_code(chirp::common::SERVER_UNAVAILABLE);
+    return;
+  }
+
+  req.set_player_id(authenticated_user);  // clients may only act as themselves
+  sg->SendRpc(req_id, resp_id, req,
+              // Success path: relay the hub's body verbatim, then return OK
+              // so the callback below stays silent - the real code travelled
+              // inside the relayed body.
+              [session, seq, resp_id](const std::string& body) {
+                Resp check;
+                if (!check.ParseFromString(body)) {
+                  return chirp::common::INTERNAL_ERROR;
+                }
+                SendPacket(session, resp_id, seq, body);
+                return chirp::common::OK;
+              },
+              // Failure path only: an OK means the parser already relayed
+              // the hub's own response verbatim. SERVER_UNAVAILABLE (sent
+              // while disconnected, or lost to a connection drop) and
+              // INTERNAL_ERROR (unparseable hub reply) reach the client as
+              // a bare code - nothing was relayed yet.
+              [session, seq, resp_id](chirp::common::ErrorCode code) {
+                if (code == chirp::common::OK) {
+                  return;
+                }
+                Resp resp;
+                resp.set_code(code);
+                SendPacket(session, resp_id, seq, resp.SerializeAsString());
+              });
+}
+
 void HandleClientPacket(const std::shared_ptr<chirp::network::Session>& session,
                         std::string&& payload,
                         const std::shared_ptr<chirp::network::SessionRegistry>& state,
                         const std::shared_ptr<chirp::gateway::AuthClient>& auth,
                         const std::shared_ptr<chirp::gateway::RedisSessionManager>& redis_mgr,
-                        chirp::notification::NotificationClient* notification) {
+                        chirp::notification::NotificationClient* notification,
+                        chirp::network::ServerGatewayPeer* sg) {
   chirp::gateway::Packet pkt;
   if (!pkt.ParseFromArray(payload.data(), static_cast<int>(payload.size()))) {
     chirp::common::Logger::Instance().Warn("failed to parse Packet from app client");
@@ -366,6 +432,30 @@ void HandleClientPacket(const std::shared_ptr<chirp::network::Session>& session,
         &chirp::notification::NotificationClient::AsyncGetUserDevices);
     break;
   }
+  case chirp::gateway::SUBSCRIBE_PLAYER_CHANNEL_REQ: {
+    ForwardSubscriptionPacket<chirp::server_gateway::SubscribePlayerChannelRequest,
+                              chirp::server_gateway::SubscribePlayerChannelResponse>(
+        session, pkt, chirp::gateway::SUBSCRIBE_PLAYER_CHANNEL_REQ,
+        chirp::gateway::SUBSCRIBE_PLAYER_CHANNEL_RESP,
+        chirp::network::GetAuthenticatedSession(state, session).user_id, sg);
+    break;
+  }
+  case chirp::gateway::UNSUBSCRIBE_PLAYER_CHANNEL_REQ: {
+    ForwardSubscriptionPacket<chirp::server_gateway::UnsubscribePlayerChannelRequest,
+                              chirp::server_gateway::UnsubscribePlayerChannelResponse>(
+        session, pkt, chirp::gateway::UNSUBSCRIBE_PLAYER_CHANNEL_REQ,
+        chirp::gateway::UNSUBSCRIBE_PLAYER_CHANNEL_RESP,
+        chirp::network::GetAuthenticatedSession(state, session).user_id, sg);
+    break;
+  }
+  case chirp::gateway::GET_PLAYER_SUBSCRIPTIONS_REQ: {
+    ForwardSubscriptionPacket<chirp::server_gateway::GetPlayerSubscriptionsRequest,
+                              chirp::server_gateway::GetPlayerSubscriptionsResponse>(
+        session, pkt, chirp::gateway::GET_PLAYER_SUBSCRIPTIONS_REQ,
+        chirp::gateway::GET_PLAYER_SUBSCRIPTIONS_RESP,
+        chirp::network::GetAuthenticatedSession(state, session).user_id, sg);
+    break;
+  }
   default:
     // Companion-app edge: chat/business packets belong to their own services.
     break;
@@ -411,6 +501,13 @@ int main(int argc, char** argv) {
   const std::string notification_host = GetArg(argc, argv, "--notification_host", "");
   const uint16_t notification_port = ParseU16Arg(argc, argv, "--notification_port", 5006);
 
+  // Server-plane hub (WP-8 player channel subscriptions): empty --sg_host
+  // leaves the subscription self-service path disabled.
+  const std::string sg_host = GetArg(argc, argv, "--sg_host", "");
+  const uint16_t sg_port = ParseU16Arg(argc, argv, "--sg_port", 8100);
+  const std::string sg_service_id = GetArg(argc, argv, "--sg_service_id", "app_gateway");
+  const std::string sg_secret = GetArg(argc, argv, "--sg_secret", "");
+
   Logger::Instance().Info("chirp_app_gateway starting tcp=" + std::to_string(port) +
                           " ws=" + std::to_string(ws_port) +
                           (tls_port != 0 ? (" tls=" + std::to_string(tls_port)) : "") +
@@ -420,7 +517,11 @@ int main(int argc, char** argv) {
                                                       " instance=" + instance_id)) +
                           (notification_host.empty()
                                ? " device-forward=disabled"
-                               : (" notification=" + notification_host + ":" + std::to_string(notification_port))));
+                               : (" notification=" + notification_host + ":" + std::to_string(notification_port))) +
+                          (sg_host.empty()
+                               ? " server-plane=disabled"
+                               : (" sg=" + sg_host + ":" + std::to_string(sg_port) +
+                                  " service=" + sg_service_id)));
 
   // TLS edges: load the shared context before anything is bound, so a bad
   // cert/key pair is a clean fatal startup error.
@@ -465,9 +566,25 @@ int main(int argc, char** argv) {
         std::make_shared<chirp::notification::NotificationClient>(io, notification_host, notification_port);
   }
 
-  auto on_frame = [state, auth, redis_mgr, notification](std::shared_ptr<chirp::network::Session> session,
-                                                         std::string&& payload) {
-    HandleClientPacket(session, std::move(payload), state, auth, redis_mgr, notification.get());
+  // One long-lived authenticated connection: the hub allows exactly one live
+  // connection per service id, so per-request dials would displace each
+  // other. Runs on the same single io thread as the edge sessions, so RPC
+  // callbacks can write back to a session directly.
+  std::shared_ptr<chirp::network::ServerGatewayPeer> sg;
+  if (!sg_host.empty()) {
+    chirp::network::ServerGatewayPeer::Options sg_opts;
+    sg_opts.host = sg_host;
+    sg_opts.port = sg_port;
+    sg_opts.service_id = sg_service_id;
+    sg_opts.secret = sg_secret;
+    sg = chirp::network::ServerGatewayPeer::Create(io, sg_opts, nullptr, nullptr);
+    sg->Start();
+  }
+
+  auto on_frame = [state, auth, redis_mgr, notification, sg](std::shared_ptr<chirp::network::Session> session,
+                                                             std::string&& payload) {
+    HandleClientPacket(session, std::move(payload), state, auth, redis_mgr, notification.get(),
+                       sg.get());
   };
   auto on_close = [state, redis_mgr](std::shared_ptr<chirp::network::Session> session) {
     HandleDisconnect(session, state, redis_mgr);
@@ -497,6 +614,9 @@ int main(int argc, char** argv) {
   asio::signal_set signals(io, SIGINT, SIGTERM);
   signals.async_wait([&](const std::error_code& /*ec*/, int /*sig*/) {
     Logger::Instance().Info("shutdown requested");
+    if (sg) {
+      sg->Stop();
+    }
     server.Stop();
     ws_server.Stop();
     if (tls_server) {

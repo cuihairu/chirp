@@ -396,7 +396,10 @@ func (c *Client) dispatch(pkt *pbgw.Packet) bool {
 		pbgw.MsgID_BIND_PLAYER_IDENTITY_RESP,
 		pbgw.MsgID_UNBIND_PLAYER_IDENTITY_RESP,
 		pbgw.MsgID_GET_PLAYER_IDENTITIES_RESP,
-		pbgw.MsgID_RESOLVE_GAME_USER_RESP:
+		pbgw.MsgID_RESOLVE_GAME_USER_RESP,
+		pbgw.MsgID_SUBSCRIBE_PLAYER_CHANNEL_RESP,
+		pbgw.MsgID_UNSUBSCRIBE_PLAYER_CHANNEL_RESP,
+		pbgw.MsgID_GET_PLAYER_SUBSCRIPTIONS_RESP:
 		c.completePending(pkt)
 	case pbgw.MsgID_INJECT_MESSAGE_NOTIFY:
 		notify := &pbsg.InjectMessageNotify{}
@@ -608,6 +611,45 @@ func (c *Client) GetPlayerIdentities(ctx context.Context, req *pbsg.GetPlayerIde
 func (c *Client) ResolveGameUser(ctx context.Context, req *pbsg.ResolveGameUserRequest) (*pbsg.ResolveGameUserResponse, error) {
 	resp := &pbsg.ResolveGameUserResponse{}
 	err := c.rpc(ctx, pbgw.MsgID_RESOLVE_GAME_USER_REQ, pbgw.MsgID_RESOLVE_GAME_USER_RESP, req, resp,
+		func() error { return serverErr(resp.GetCode()) })
+	if err != nil {
+		return nil, err
+	}
+	return resp, nil
+}
+
+// SubscribePlayerChannel records "player P follows channel C of game G"
+// (WP-8 slice 2). An empty SubscriptionId lets the server mint one (the
+// returned response always carries the effective id). Re-subscribing an
+// existing tuple answers existed=true and keeps the stored id.
+func (c *Client) SubscribePlayerChannel(ctx context.Context, req *pbsg.SubscribePlayerChannelRequest) (*pbsg.SubscribePlayerChannelResponse, error) {
+	resp := &pbsg.SubscribePlayerChannelResponse{}
+	err := c.rpc(ctx, pbgw.MsgID_SUBSCRIBE_PLAYER_CHANNEL_REQ, pbgw.MsgID_SUBSCRIBE_PLAYER_CHANNEL_RESP, req, resp,
+		func() error { return serverErr(resp.GetCode()) })
+	if err != nil {
+		return nil, err
+	}
+	return resp, nil
+}
+
+// UnsubscribePlayerChannel removes a subscription by subscription_id or by
+// the full (player_id, game_id, channel_id) triple; unknown targets answer
+// OK (idempotent).
+func (c *Client) UnsubscribePlayerChannel(ctx context.Context, req *pbsg.UnsubscribePlayerChannelRequest) (*pbsg.UnsubscribePlayerChannelResponse, error) {
+	resp := &pbsg.UnsubscribePlayerChannelResponse{}
+	err := c.rpc(ctx, pbgw.MsgID_UNSUBSCRIBE_PLAYER_CHANNEL_REQ, pbgw.MsgID_UNSUBSCRIBE_PLAYER_CHANNEL_RESP, req, resp,
+		func() error { return serverErr(resp.GetCode()) })
+	if err != nil {
+		return nil, err
+	}
+	return resp, nil
+}
+
+// GetPlayerSubscriptions lists a player's channel subscriptions, optionally
+// restricted to one game with GameId.
+func (c *Client) GetPlayerSubscriptions(ctx context.Context, req *pbsg.GetPlayerSubscriptionsRequest) (*pbsg.GetPlayerSubscriptionsResponse, error) {
+	resp := &pbsg.GetPlayerSubscriptionsResponse{}
+	err := c.rpc(ctx, pbgw.MsgID_GET_PLAYER_SUBSCRIPTIONS_REQ, pbgw.MsgID_GET_PLAYER_SUBSCRIPTIONS_RESP, req, resp,
 		func() error { return serverErr(resp.GetCode()) })
 	if err != nil {
 		return nil, err
