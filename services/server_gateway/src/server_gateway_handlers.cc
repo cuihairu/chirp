@@ -20,12 +20,14 @@ int64_t NowMs() {
 
 ServerGatewayHandlers::ServerGatewayHandlers(ServerGatewayConfig config, ServiceRegistry& registry,
                                              EventQueue& queue, IdentityRegistry& identities,
-                                             SubscriptionRegistry& subscriptions)
+                                             SubscriptionRegistry& subscriptions,
+                                             UnreadLedger& unread)
     : config_(std::move(config)),
       registry_(registry),
       queue_(queue),
       identities_(identities),
-      subscriptions_(subscriptions) {}
+      subscriptions_(subscriptions),
+      unread_(unread) {}
 
 AuthOutcome ServerGatewayHandlers::HandleAuth(const ServerAuthRequest& req,
                                               std::shared_ptr<PeerSender> peer) {
@@ -147,6 +149,10 @@ MessageInjectResponse ServerGatewayHandlers::FanoutInject(const MessageInjectReq
       chirp::common::Logger::Instance().Warn(
           "inject " + req.inject_id() + ": fan-out copy for " + sub.player_id() +
           " could not be handed to " + config_.chat_service_id);
+    } else {
+      // A copy accepted by the plane is one unhandled notification for the
+      // recipient; only delivered copies count (WP-8 slice 4).
+      unread_.Increment(sub.player_id(), req.game_id(), req.channel_id());
     }
   }
   if (failed == subscribers.size()) {
@@ -355,6 +361,44 @@ GetPlayerSubscriptionsResponse ServerGatewayHandlers::HandleGetPlayerSubscriptio
     *resp.add_subscriptions() = entry;
   }
   resp.set_code(chirp::common::OK);
+  return resp;
+}
+
+MarkChannelsReadResponse ServerGatewayHandlers::HandleMarkChannelsRead(
+    const MarkChannelsReadRequest& req) {
+  MarkChannelsReadResponse resp;
+  // Layered selector: channel_id needs game_id; game_id alone or both empty
+  // are valid (clear the game / clear everything). The app edge pins
+  // player_id, but backend callers go through this path directly too.
+  if (req.player_id().empty() || (!req.channel_id().empty() && req.game_id().empty())) {
+    resp.set_code(chirp::common::INVALID_PARAM);
+    return resp;
+  }
+  const size_t cleared = unread_.MarkRead(req.player_id(), req.game_id(), req.channel_id());
+  resp.set_code(chirp::common::OK);
+  resp.set_cleared(static_cast<int32_t>(cleared));
+  if (cleared > 0) {
+    chirp::common::Logger::Instance().Info(
+        "marked read for player " + req.player_id() + ": cleared " + std::to_string(cleared) +
+        " unread entries");
+  }
+  return resp;
+}
+
+GetUnreadSummaryResponse ServerGatewayHandlers::HandleGetUnreadSummary(
+    const GetUnreadSummaryRequest& req) const {
+  GetUnreadSummaryResponse resp;
+  if (req.player_id().empty()) {
+    resp.set_code(chirp::common::INVALID_PARAM);
+    return resp;
+  }
+  int32_t total = 0;
+  for (const auto& entry : unread_.GetSummary(req.player_id(), req.game_id())) {
+    total += entry.unread_count();
+    *resp.add_entries() = entry;
+  }
+  resp.set_code(chirp::common::OK);
+  resp.set_total_unread(total);
   return resp;
 }
 

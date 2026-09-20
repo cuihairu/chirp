@@ -12,6 +12,7 @@
 #include "proto/server_gateway.pb.h"
 #include "service_registry.h"
 #include "subscription_registry.h"
+#include "unread_ledger.h"
 
 namespace chirp::server_gateway {
 
@@ -43,7 +44,8 @@ struct AuthOutcome {
 class ServerGatewayHandlers {
  public:
   ServerGatewayHandlers(ServerGatewayConfig config, ServiceRegistry& registry, EventQueue& queue,
-                        IdentityRegistry& identities, SubscriptionRegistry& subscriptions);
+                        IdentityRegistry& identities, SubscriptionRegistry& subscriptions,
+                        UnreadLedger& unread);
 
   // Validates credentials and binds the peer to its service id. A returning
   // service immediately receives every event it has not acknowledged yet.
@@ -75,6 +77,13 @@ class ServerGatewayHandlers {
   UnsubscribePlayerChannelResponse HandleUnsubscribePlayerChannel(const UnsubscribePlayerChannelRequest& req);
   GetPlayerSubscriptionsResponse HandleGetPlayerSubscriptions(const GetPlayerSubscriptionsRequest& req) const;
 
+  // WP-8 slice 4: the unified unread badge ledger. Marking read clears
+  // badge counters (layered selector, idempotent); the summary reports the
+  // player's nonzero (game, channel) counters. Independent of the chat
+  // service's read cursors.
+  MarkChannelsReadResponse HandleMarkChannelsRead(const MarkChannelsReadRequest& req);
+  GetUnreadSummaryResponse HandleGetUnreadSummary(const GetUnreadSummaryRequest& req) const;
+
   // Cleans up after a connection drops. `peer` must be the connection that
   // owned `service_id`; a displaced (replaced) connection closing late is a
   // no-op so it cannot reset the live connection's in-flight tracking.
@@ -93,6 +102,7 @@ class ServerGatewayHandlers {
   EventQueue& queue_;
   IdentityRegistry& identities_;
   SubscriptionRegistry& subscriptions_;
+  UnreadLedger& unread_;
   uint64_t event_id_counter_ = 0;
 };
 

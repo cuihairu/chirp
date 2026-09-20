@@ -189,6 +189,15 @@ enum MsgID {
   UNSUBSCRIBE_PLAYER_CHANNEL_RESP = 5024;
   GET_PLAYER_SUBSCRIPTIONS_REQ = 5025;
   GET_PLAYER_SUBSCRIPTIONS_RESP = 5026;
+  // Unified unread (WP-8 slice 4): the hub's fan-in badge ledger, backed by
+  // the fan-out copies injected with a game_id. Independent of the chat
+  // read cursors (2201-2207); app_gateway forwards these for self-served
+  // players (player_id pinned to the authenticated user). Bodies are
+  // chirp.server_gateway.* messages; see proto/server_gateway.proto.
+  MARK_CHANNELS_READ_REQ = 5027;
+  MARK_CHANNELS_READ_RESP = 5028;
+  GET_UNREAD_SUMMARY_REQ = 5029;
+  GET_UNREAD_SUMMARY_RESP = 5030;
 
   // Notification plane: device registration forwarded by app_gateway and
   // push requests from internal services (chat). Bodies are

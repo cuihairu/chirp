@@ -28,6 +28,7 @@
 #include "server_gateway_handlers.h"
 #include "service_registry.h"
 #include "stream_broker.h"
+#include "unread_ledger.h"
 
 namespace {
 
@@ -168,9 +169,22 @@ int main(int argc, char** argv) {
   sg::SubscriptionRegistry subscriptions(subscription_redis_factory);
   subscriptions.Load();
 
+  // Unified unread ledger (WP-8 slice 4): same optional write-through shape
+  // as the registries above; an empty --unread_redis_host stays memory-only.
+  const std::string unread_redis_host = GetArg(argc, argv, "--unread_redis_host", "");
+  const uint16_t unread_redis_port = ParseU16Arg(argc, argv, "--unread_redis_port", 6379);
+  sg::UnreadLedger::RedisFactory unread_redis_factory;
+  if (!unread_redis_host.empty()) {
+    unread_redis_factory = [host = unread_redis_host, port = unread_redis_port] {
+      return std::make_unique<chirp::network::RedisClient>(host, port);
+    };
+  }
+  sg::UnreadLedger unread(unread_redis_factory);
+  unread.Load();
+
   sg::ServiceRegistry registry;
   sg::EventQueue queue(config.max_pending_events_per_service);
-  sg::ServerGatewayHandlers handlers(config, registry, queue, identities, subscriptions);
+  sg::ServerGatewayHandlers handlers(config, registry, queue, identities, subscriptions, unread);
 
   // Optional Redis Streams intake for game backends that cannot host a
   // long-connection client (empty --broker_redis_host disables it).
@@ -441,6 +455,28 @@ int main(int argc, char** argv) {
           resp = handlers.HandleGetPlayerSubscriptions(req);
         }
         SendPacket(session, chirp::gateway::GET_PLAYER_SUBSCRIPTIONS_RESP, pkt.sequence(), resp);
+        break;
+      }
+      case chirp::gateway::MARK_CHANNELS_READ_REQ: {
+        sg::MarkChannelsReadRequest req;
+        sg::MarkChannelsReadResponse resp;
+        if (!ParseBody(pkt, &req)) {
+          resp.set_code(chirp::common::INVALID_PARAM);
+        } else {
+          resp = handlers.HandleMarkChannelsRead(req);
+        }
+        SendPacket(session, chirp::gateway::MARK_CHANNELS_READ_RESP, pkt.sequence(), resp);
+        break;
+      }
+      case chirp::gateway::GET_UNREAD_SUMMARY_REQ: {
+        sg::GetUnreadSummaryRequest req;
+        sg::GetUnreadSummaryResponse resp;
+        if (!ParseBody(pkt, &req)) {
+          resp.set_code(chirp::common::INVALID_PARAM);
+        } else {
+          resp = handlers.HandleGetUnreadSummary(req);
+        }
+        SendPacket(session, chirp::gateway::GET_UNREAD_SUMMARY_RESP, pkt.sequence(), resp);
         break;
       }
       default:

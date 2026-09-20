@@ -1732,6 +1732,368 @@ func (x *GetPlayerSubscriptionsResponse) GetSubscriptions() []*StoredChannelSubs
 	return nil
 }
 
+// Persistence record (Redis, not a wire message).
+type StoredUnreadEntry struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	PlayerId      string                 `protobuf:"bytes,1,opt,name=player_id,json=playerId,proto3" json:"player_id,omitempty"`
+	GameId        string                 `protobuf:"bytes,2,opt,name=game_id,json=gameId,proto3" json:"game_id,omitempty"`
+	ChannelId     string                 `protobuf:"bytes,3,opt,name=channel_id,json=channelId,proto3" json:"channel_id,omitempty"`
+	UnreadCount   int32                  `protobuf:"varint,4,opt,name=unread_count,json=unreadCount,proto3" json:"unread_count,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *StoredUnreadEntry) Reset() {
+	*x = StoredUnreadEntry{}
+	mi := &file_proto_server_gateway_proto_msgTypes[28]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *StoredUnreadEntry) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*StoredUnreadEntry) ProtoMessage() {}
+
+func (x *StoredUnreadEntry) ProtoReflect() protoreflect.Message {
+	mi := &file_proto_server_gateway_proto_msgTypes[28]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use StoredUnreadEntry.ProtoReflect.Descriptor instead.
+func (*StoredUnreadEntry) Descriptor() ([]byte, []int) {
+	return file_proto_server_gateway_proto_rawDescGZIP(), []int{28}
+}
+
+func (x *StoredUnreadEntry) GetPlayerId() string {
+	if x != nil {
+		return x.PlayerId
+	}
+	return ""
+}
+
+func (x *StoredUnreadEntry) GetGameId() string {
+	if x != nil {
+		return x.GameId
+	}
+	return ""
+}
+
+func (x *StoredUnreadEntry) GetChannelId() string {
+	if x != nil {
+		return x.ChannelId
+	}
+	return ""
+}
+
+func (x *StoredUnreadEntry) GetUnreadCount() int32 {
+	if x != nil {
+		return x.UnreadCount
+	}
+	return 0
+}
+
+type MarkChannelsReadRequest struct {
+	state    protoimpl.MessageState `protogen:"open.v1"`
+	PlayerId string                 `protobuf:"bytes,1,opt,name=player_id,json=playerId,proto3" json:"player_id,omitempty"`
+	// Layered selector: channel_id set (game_id required) clears that one
+	// channel; only game_id clears every channel of that game; both empty
+	// clears everything the player has.
+	GameId        string `protobuf:"bytes,2,opt,name=game_id,json=gameId,proto3" json:"game_id,omitempty"`
+	ChannelId     string `protobuf:"bytes,3,opt,name=channel_id,json=channelId,proto3" json:"channel_id,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *MarkChannelsReadRequest) Reset() {
+	*x = MarkChannelsReadRequest{}
+	mi := &file_proto_server_gateway_proto_msgTypes[29]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *MarkChannelsReadRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*MarkChannelsReadRequest) ProtoMessage() {}
+
+func (x *MarkChannelsReadRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_proto_server_gateway_proto_msgTypes[29]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use MarkChannelsReadRequest.ProtoReflect.Descriptor instead.
+func (*MarkChannelsReadRequest) Descriptor() ([]byte, []int) {
+	return file_proto_server_gateway_proto_rawDescGZIP(), []int{29}
+}
+
+func (x *MarkChannelsReadRequest) GetPlayerId() string {
+	if x != nil {
+		return x.PlayerId
+	}
+	return ""
+}
+
+func (x *MarkChannelsReadRequest) GetGameId() string {
+	if x != nil {
+		return x.GameId
+	}
+	return ""
+}
+
+func (x *MarkChannelsReadRequest) GetChannelId() string {
+	if x != nil {
+		return x.ChannelId
+	}
+	return ""
+}
+
+type MarkChannelsReadResponse struct {
+	state protoimpl.MessageState `protogen:"open.v1"`
+	Code  common.ErrorCode       `protobuf:"varint,1,opt,name=code,proto3,enum=chirp.common.ErrorCode" json:"code,omitempty"`
+	// Number of ledger entries removed (0 for an unknown target — marking
+	// read is idempotent).
+	Cleared       int32 `protobuf:"varint,2,opt,name=cleared,proto3" json:"cleared,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *MarkChannelsReadResponse) Reset() {
+	*x = MarkChannelsReadResponse{}
+	mi := &file_proto_server_gateway_proto_msgTypes[30]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *MarkChannelsReadResponse) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*MarkChannelsReadResponse) ProtoMessage() {}
+
+func (x *MarkChannelsReadResponse) ProtoReflect() protoreflect.Message {
+	mi := &file_proto_server_gateway_proto_msgTypes[30]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use MarkChannelsReadResponse.ProtoReflect.Descriptor instead.
+func (*MarkChannelsReadResponse) Descriptor() ([]byte, []int) {
+	return file_proto_server_gateway_proto_rawDescGZIP(), []int{30}
+}
+
+func (x *MarkChannelsReadResponse) GetCode() common.ErrorCode {
+	if x != nil {
+		return x.Code
+	}
+	return common.ErrorCode(0)
+}
+
+func (x *MarkChannelsReadResponse) GetCleared() int32 {
+	if x != nil {
+		return x.Cleared
+	}
+	return 0
+}
+
+type UnreadSummaryEntry struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	GameId        string                 `protobuf:"bytes,1,opt,name=game_id,json=gameId,proto3" json:"game_id,omitempty"`
+	ChannelId     string                 `protobuf:"bytes,2,opt,name=channel_id,json=channelId,proto3" json:"channel_id,omitempty"`
+	UnreadCount   int32                  `protobuf:"varint,3,opt,name=unread_count,json=unreadCount,proto3" json:"unread_count,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *UnreadSummaryEntry) Reset() {
+	*x = UnreadSummaryEntry{}
+	mi := &file_proto_server_gateway_proto_msgTypes[31]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *UnreadSummaryEntry) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*UnreadSummaryEntry) ProtoMessage() {}
+
+func (x *UnreadSummaryEntry) ProtoReflect() protoreflect.Message {
+	mi := &file_proto_server_gateway_proto_msgTypes[31]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use UnreadSummaryEntry.ProtoReflect.Descriptor instead.
+func (*UnreadSummaryEntry) Descriptor() ([]byte, []int) {
+	return file_proto_server_gateway_proto_rawDescGZIP(), []int{31}
+}
+
+func (x *UnreadSummaryEntry) GetGameId() string {
+	if x != nil {
+		return x.GameId
+	}
+	return ""
+}
+
+func (x *UnreadSummaryEntry) GetChannelId() string {
+	if x != nil {
+		return x.ChannelId
+	}
+	return ""
+}
+
+func (x *UnreadSummaryEntry) GetUnreadCount() int32 {
+	if x != nil {
+		return x.UnreadCount
+	}
+	return 0
+}
+
+type GetUnreadSummaryRequest struct {
+	state    protoimpl.MessageState `protogen:"open.v1"`
+	PlayerId string                 `protobuf:"bytes,1,opt,name=player_id,json=playerId,proto3" json:"player_id,omitempty"`
+	// Optional filter: only entries of this game when set.
+	GameId        string `protobuf:"bytes,2,opt,name=game_id,json=gameId,proto3" json:"game_id,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *GetUnreadSummaryRequest) Reset() {
+	*x = GetUnreadSummaryRequest{}
+	mi := &file_proto_server_gateway_proto_msgTypes[32]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *GetUnreadSummaryRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*GetUnreadSummaryRequest) ProtoMessage() {}
+
+func (x *GetUnreadSummaryRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_proto_server_gateway_proto_msgTypes[32]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use GetUnreadSummaryRequest.ProtoReflect.Descriptor instead.
+func (*GetUnreadSummaryRequest) Descriptor() ([]byte, []int) {
+	return file_proto_server_gateway_proto_rawDescGZIP(), []int{32}
+}
+
+func (x *GetUnreadSummaryRequest) GetPlayerId() string {
+	if x != nil {
+		return x.PlayerId
+	}
+	return ""
+}
+
+func (x *GetUnreadSummaryRequest) GetGameId() string {
+	if x != nil {
+		return x.GameId
+	}
+	return ""
+}
+
+type GetUnreadSummaryResponse struct {
+	state protoimpl.MessageState `protogen:"open.v1"`
+	Code  common.ErrorCode       `protobuf:"varint,1,opt,name=code,proto3,enum=chirp.common.ErrorCode" json:"code,omitempty"`
+	// One entry per (game, channel) with a nonzero counter, ordered by
+	// (game_id, channel_id).
+	Entries []*UnreadSummaryEntry `protobuf:"bytes,2,rep,name=entries,proto3" json:"entries,omitempty"`
+	// Sum of the returned entries' counters (after the filter).
+	TotalUnread   int32 `protobuf:"varint,3,opt,name=total_unread,json=totalUnread,proto3" json:"total_unread,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *GetUnreadSummaryResponse) Reset() {
+	*x = GetUnreadSummaryResponse{}
+	mi := &file_proto_server_gateway_proto_msgTypes[33]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *GetUnreadSummaryResponse) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*GetUnreadSummaryResponse) ProtoMessage() {}
+
+func (x *GetUnreadSummaryResponse) ProtoReflect() protoreflect.Message {
+	mi := &file_proto_server_gateway_proto_msgTypes[33]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use GetUnreadSummaryResponse.ProtoReflect.Descriptor instead.
+func (*GetUnreadSummaryResponse) Descriptor() ([]byte, []int) {
+	return file_proto_server_gateway_proto_rawDescGZIP(), []int{33}
+}
+
+func (x *GetUnreadSummaryResponse) GetCode() common.ErrorCode {
+	if x != nil {
+		return x.Code
+	}
+	return common.ErrorCode(0)
+}
+
+func (x *GetUnreadSummaryResponse) GetEntries() []*UnreadSummaryEntry {
+	if x != nil {
+		return x.Entries
+	}
+	return nil
+}
+
+func (x *GetUnreadSummaryResponse) GetTotalUnread() int32 {
+	if x != nil {
+		return x.TotalUnread
+	}
+	return 0
+}
+
 var File_proto_server_gateway_proto protoreflect.FileDescriptor
 
 const file_proto_server_gateway_proto_rawDesc = "" +
@@ -1858,7 +2220,33 @@ const file_proto_server_gateway_proto_rawDesc = "" +
 	"\agame_id\x18\x02 \x01(\tR\x06gameId\"\xa4\x01\n" +
 	"\x1eGetPlayerSubscriptionsResponse\x12+\n" +
 	"\x04code\x18\x01 \x01(\x0e2\x17.chirp.common.ErrorCodeR\x04code\x12U\n" +
-	"\rsubscriptions\x18\x02 \x03(\v2/.chirp.server_gateway.StoredChannelSubscriptionR\rsubscriptions*W\n" +
+	"\rsubscriptions\x18\x02 \x03(\v2/.chirp.server_gateway.StoredChannelSubscriptionR\rsubscriptions\"\x8b\x01\n" +
+	"\x11StoredUnreadEntry\x12\x1b\n" +
+	"\tplayer_id\x18\x01 \x01(\tR\bplayerId\x12\x17\n" +
+	"\agame_id\x18\x02 \x01(\tR\x06gameId\x12\x1d\n" +
+	"\n" +
+	"channel_id\x18\x03 \x01(\tR\tchannelId\x12!\n" +
+	"\funread_count\x18\x04 \x01(\x05R\vunreadCount\"n\n" +
+	"\x17MarkChannelsReadRequest\x12\x1b\n" +
+	"\tplayer_id\x18\x01 \x01(\tR\bplayerId\x12\x17\n" +
+	"\agame_id\x18\x02 \x01(\tR\x06gameId\x12\x1d\n" +
+	"\n" +
+	"channel_id\x18\x03 \x01(\tR\tchannelId\"a\n" +
+	"\x18MarkChannelsReadResponse\x12+\n" +
+	"\x04code\x18\x01 \x01(\x0e2\x17.chirp.common.ErrorCodeR\x04code\x12\x18\n" +
+	"\acleared\x18\x02 \x01(\x05R\acleared\"o\n" +
+	"\x12UnreadSummaryEntry\x12\x17\n" +
+	"\agame_id\x18\x01 \x01(\tR\x06gameId\x12\x1d\n" +
+	"\n" +
+	"channel_id\x18\x02 \x01(\tR\tchannelId\x12!\n" +
+	"\funread_count\x18\x03 \x01(\x05R\vunreadCount\"O\n" +
+	"\x17GetUnreadSummaryRequest\x12\x1b\n" +
+	"\tplayer_id\x18\x01 \x01(\tR\bplayerId\x12\x17\n" +
+	"\agame_id\x18\x02 \x01(\tR\x06gameId\"\xae\x01\n" +
+	"\x18GetUnreadSummaryResponse\x12+\n" +
+	"\x04code\x18\x01 \x01(\x0e2\x17.chirp.common.ErrorCodeR\x04code\x12B\n" +
+	"\aentries\x18\x02 \x03(\v2(.chirp.server_gateway.UnreadSummaryEntryR\aentries\x12!\n" +
+	"\ftotal_unread\x18\x03 \x01(\x05R\vtotalUnread*W\n" +
 	"\n" +
 	"SenderKind\x12\x12\n" +
 	"\x0eSENDER_UNKNOWN\x10\x00\x12\x11\n" +
@@ -1880,7 +2268,7 @@ func file_proto_server_gateway_proto_rawDescGZIP() []byte {
 }
 
 var file_proto_server_gateway_proto_enumTypes = make([]protoimpl.EnumInfo, 1)
-var file_proto_server_gateway_proto_msgTypes = make([]protoimpl.MessageInfo, 28)
+var file_proto_server_gateway_proto_msgTypes = make([]protoimpl.MessageInfo, 34)
 var file_proto_server_gateway_proto_goTypes = []any{
 	(SenderKind)(0),                          // 0: chirp.server_gateway.SenderKind
 	(*ServerAuthRequest)(nil),                // 1: chirp.server_gateway.ServerAuthRequest
@@ -1911,29 +2299,38 @@ var file_proto_server_gateway_proto_goTypes = []any{
 	(*UnsubscribePlayerChannelResponse)(nil), // 26: chirp.server_gateway.UnsubscribePlayerChannelResponse
 	(*GetPlayerSubscriptionsRequest)(nil),    // 27: chirp.server_gateway.GetPlayerSubscriptionsRequest
 	(*GetPlayerSubscriptionsResponse)(nil),   // 28: chirp.server_gateway.GetPlayerSubscriptionsResponse
-	(common.ErrorCode)(0),                    // 29: chirp.common.ErrorCode
+	(*StoredUnreadEntry)(nil),                // 29: chirp.server_gateway.StoredUnreadEntry
+	(*MarkChannelsReadRequest)(nil),          // 30: chirp.server_gateway.MarkChannelsReadRequest
+	(*MarkChannelsReadResponse)(nil),         // 31: chirp.server_gateway.MarkChannelsReadResponse
+	(*UnreadSummaryEntry)(nil),               // 32: chirp.server_gateway.UnreadSummaryEntry
+	(*GetUnreadSummaryRequest)(nil),          // 33: chirp.server_gateway.GetUnreadSummaryRequest
+	(*GetUnreadSummaryResponse)(nil),         // 34: chirp.server_gateway.GetUnreadSummaryResponse
+	(common.ErrorCode)(0),                    // 35: chirp.common.ErrorCode
 }
 var file_proto_server_gateway_proto_depIdxs = []int32{
-	29, // 0: chirp.server_gateway.ServerAuthResponse.code:type_name -> chirp.common.ErrorCode
+	35, // 0: chirp.server_gateway.ServerAuthResponse.code:type_name -> chirp.common.ErrorCode
 	0,  // 1: chirp.server_gateway.MessageInjectRequest.sender_kind:type_name -> chirp.server_gateway.SenderKind
-	29, // 2: chirp.server_gateway.MessageInjectResponse.code:type_name -> chirp.common.ErrorCode
+	35, // 2: chirp.server_gateway.MessageInjectResponse.code:type_name -> chirp.common.ErrorCode
 	5,  // 3: chirp.server_gateway.InjectMessageNotify.message:type_name -> chirp.server_gateway.MessageInjectRequest
-	29, // 4: chirp.server_gateway.EventPublishResponse.code:type_name -> chirp.common.ErrorCode
-	29, // 5: chirp.server_gateway.EventAckResponse.code:type_name -> chirp.common.ErrorCode
-	29, // 6: chirp.server_gateway.BindPlayerIdentityResponse.code:type_name -> chirp.common.ErrorCode
-	29, // 7: chirp.server_gateway.UnbindPlayerIdentityResponse.code:type_name -> chirp.common.ErrorCode
-	29, // 8: chirp.server_gateway.GetPlayerIdentitiesResponse.code:type_name -> chirp.common.ErrorCode
+	35, // 4: chirp.server_gateway.EventPublishResponse.code:type_name -> chirp.common.ErrorCode
+	35, // 5: chirp.server_gateway.EventAckResponse.code:type_name -> chirp.common.ErrorCode
+	35, // 6: chirp.server_gateway.BindPlayerIdentityResponse.code:type_name -> chirp.common.ErrorCode
+	35, // 7: chirp.server_gateway.UnbindPlayerIdentityResponse.code:type_name -> chirp.common.ErrorCode
+	35, // 8: chirp.server_gateway.GetPlayerIdentitiesResponse.code:type_name -> chirp.common.ErrorCode
 	13, // 9: chirp.server_gateway.GetPlayerIdentitiesResponse.bindings:type_name -> chirp.server_gateway.StoredIdentityBinding
-	29, // 10: chirp.server_gateway.ResolveGameUserResponse.code:type_name -> chirp.common.ErrorCode
-	29, // 11: chirp.server_gateway.SubscribePlayerChannelResponse.code:type_name -> chirp.common.ErrorCode
-	29, // 12: chirp.server_gateway.UnsubscribePlayerChannelResponse.code:type_name -> chirp.common.ErrorCode
-	29, // 13: chirp.server_gateway.GetPlayerSubscriptionsResponse.code:type_name -> chirp.common.ErrorCode
+	35, // 10: chirp.server_gateway.ResolveGameUserResponse.code:type_name -> chirp.common.ErrorCode
+	35, // 11: chirp.server_gateway.SubscribePlayerChannelResponse.code:type_name -> chirp.common.ErrorCode
+	35, // 12: chirp.server_gateway.UnsubscribePlayerChannelResponse.code:type_name -> chirp.common.ErrorCode
+	35, // 13: chirp.server_gateway.GetPlayerSubscriptionsResponse.code:type_name -> chirp.common.ErrorCode
 	22, // 14: chirp.server_gateway.GetPlayerSubscriptionsResponse.subscriptions:type_name -> chirp.server_gateway.StoredChannelSubscription
-	15, // [15:15] is the sub-list for method output_type
-	15, // [15:15] is the sub-list for method input_type
-	15, // [15:15] is the sub-list for extension type_name
-	15, // [15:15] is the sub-list for extension extendee
-	0,  // [0:15] is the sub-list for field type_name
+	35, // 15: chirp.server_gateway.MarkChannelsReadResponse.code:type_name -> chirp.common.ErrorCode
+	35, // 16: chirp.server_gateway.GetUnreadSummaryResponse.code:type_name -> chirp.common.ErrorCode
+	32, // 17: chirp.server_gateway.GetUnreadSummaryResponse.entries:type_name -> chirp.server_gateway.UnreadSummaryEntry
+	18, // [18:18] is the sub-list for method output_type
+	18, // [18:18] is the sub-list for method input_type
+	18, // [18:18] is the sub-list for extension type_name
+	18, // [18:18] is the sub-list for extension extendee
+	0,  // [0:18] is the sub-list for field type_name
 }
 
 func init() { file_proto_server_gateway_proto_init() }
@@ -1947,7 +2344,7 @@ func file_proto_server_gateway_proto_init() {
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_proto_server_gateway_proto_rawDesc), len(file_proto_server_gateway_proto_rawDesc)),
 			NumEnums:      1,
-			NumMessages:   28,
+			NumMessages:   34,
 			NumExtensions: 0,
 			NumServices:   0,
 		},

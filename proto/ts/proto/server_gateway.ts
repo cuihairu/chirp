@@ -282,6 +282,57 @@ export interface GetPlayerSubscriptionsResponse {
   subscriptions: StoredChannelSubscription[];
 }
 
+/** Persistence record (Redis, not a wire message). */
+export interface StoredUnreadEntry {
+  playerId: string;
+  gameId: string;
+  channelId: string;
+  unreadCount: number;
+}
+
+export interface MarkChannelsReadRequest {
+  playerId: string;
+  /**
+   * Layered selector: channel_id set (game_id required) clears that one
+   * channel; only game_id clears every channel of that game; both empty
+   * clears everything the player has.
+   */
+  gameId: string;
+  channelId: string;
+}
+
+export interface MarkChannelsReadResponse {
+  code: ErrorCode;
+  /**
+   * Number of ledger entries removed (0 for an unknown target — marking
+   * read is idempotent).
+   */
+  cleared: number;
+}
+
+export interface UnreadSummaryEntry {
+  gameId: string;
+  channelId: string;
+  unreadCount: number;
+}
+
+export interface GetUnreadSummaryRequest {
+  playerId: string;
+  /** Optional filter: only entries of this game when set. */
+  gameId: string;
+}
+
+export interface GetUnreadSummaryResponse {
+  code: ErrorCode;
+  /**
+   * One entry per (game, channel) with a nonzero counter, ordered by
+   * (game_id, channel_id).
+   */
+  entries: UnreadSummaryEntry[];
+  /** Sum of the returned entries' counters (after the filter). */
+  totalUnread: number;
+}
+
 function createBaseServerAuthRequest(): ServerAuthRequest {
   return { serviceId: "", secret: "", protocolVersion: 0 };
 }
@@ -2682,6 +2733,527 @@ export const GetPlayerSubscriptionsResponse = {
     const message = createBaseGetPlayerSubscriptionsResponse();
     message.code = object.code ?? 0;
     message.subscriptions = object.subscriptions?.map((e) => StoredChannelSubscription.fromPartial(e)) || [];
+    return message;
+  },
+};
+
+function createBaseStoredUnreadEntry(): StoredUnreadEntry {
+  return { playerId: "", gameId: "", channelId: "", unreadCount: 0 };
+}
+
+export const StoredUnreadEntry = {
+  encode(message: StoredUnreadEntry, writer: _m0.Writer = _m0.Writer.create()): _m0.Writer {
+    if (message.playerId !== "") {
+      writer.uint32(10).string(message.playerId);
+    }
+    if (message.gameId !== "") {
+      writer.uint32(18).string(message.gameId);
+    }
+    if (message.channelId !== "") {
+      writer.uint32(26).string(message.channelId);
+    }
+    if (message.unreadCount !== 0) {
+      writer.uint32(32).int32(message.unreadCount);
+    }
+    return writer;
+  },
+
+  decode(input: _m0.Reader | Uint8Array, length?: number): StoredUnreadEntry {
+    const reader = input instanceof _m0.Reader ? input : _m0.Reader.create(input);
+    let end = length === undefined ? reader.len : reader.pos + length;
+    const message = createBaseStoredUnreadEntry();
+    while (reader.pos < end) {
+      const tag = reader.uint32();
+      switch (tag >>> 3) {
+        case 1:
+          if (tag !== 10) {
+            break;
+          }
+
+          message.playerId = reader.string();
+          continue;
+        case 2:
+          if (tag !== 18) {
+            break;
+          }
+
+          message.gameId = reader.string();
+          continue;
+        case 3:
+          if (tag !== 26) {
+            break;
+          }
+
+          message.channelId = reader.string();
+          continue;
+        case 4:
+          if (tag !== 32) {
+            break;
+          }
+
+          message.unreadCount = reader.int32();
+          continue;
+      }
+      if ((tag & 7) === 4 || tag === 0) {
+        break;
+      }
+      reader.skipType(tag & 7);
+    }
+    return message;
+  },
+
+  fromJSON(object: any): StoredUnreadEntry {
+    return {
+      playerId: isSet(object.playerId) ? globalThis.String(object.playerId) : "",
+      gameId: isSet(object.gameId) ? globalThis.String(object.gameId) : "",
+      channelId: isSet(object.channelId) ? globalThis.String(object.channelId) : "",
+      unreadCount: isSet(object.unreadCount) ? globalThis.Number(object.unreadCount) : 0,
+    };
+  },
+
+  toJSON(message: StoredUnreadEntry): unknown {
+    const obj: any = {};
+    if (message.playerId !== "") {
+      obj.playerId = message.playerId;
+    }
+    if (message.gameId !== "") {
+      obj.gameId = message.gameId;
+    }
+    if (message.channelId !== "") {
+      obj.channelId = message.channelId;
+    }
+    if (message.unreadCount !== 0) {
+      obj.unreadCount = Math.round(message.unreadCount);
+    }
+    return obj;
+  },
+
+  create<I extends Exact<DeepPartial<StoredUnreadEntry>, I>>(base?: I): StoredUnreadEntry {
+    return StoredUnreadEntry.fromPartial(base ?? ({} as any));
+  },
+  fromPartial<I extends Exact<DeepPartial<StoredUnreadEntry>, I>>(object: I): StoredUnreadEntry {
+    const message = createBaseStoredUnreadEntry();
+    message.playerId = object.playerId ?? "";
+    message.gameId = object.gameId ?? "";
+    message.channelId = object.channelId ?? "";
+    message.unreadCount = object.unreadCount ?? 0;
+    return message;
+  },
+};
+
+function createBaseMarkChannelsReadRequest(): MarkChannelsReadRequest {
+  return { playerId: "", gameId: "", channelId: "" };
+}
+
+export const MarkChannelsReadRequest = {
+  encode(message: MarkChannelsReadRequest, writer: _m0.Writer = _m0.Writer.create()): _m0.Writer {
+    if (message.playerId !== "") {
+      writer.uint32(10).string(message.playerId);
+    }
+    if (message.gameId !== "") {
+      writer.uint32(18).string(message.gameId);
+    }
+    if (message.channelId !== "") {
+      writer.uint32(26).string(message.channelId);
+    }
+    return writer;
+  },
+
+  decode(input: _m0.Reader | Uint8Array, length?: number): MarkChannelsReadRequest {
+    const reader = input instanceof _m0.Reader ? input : _m0.Reader.create(input);
+    let end = length === undefined ? reader.len : reader.pos + length;
+    const message = createBaseMarkChannelsReadRequest();
+    while (reader.pos < end) {
+      const tag = reader.uint32();
+      switch (tag >>> 3) {
+        case 1:
+          if (tag !== 10) {
+            break;
+          }
+
+          message.playerId = reader.string();
+          continue;
+        case 2:
+          if (tag !== 18) {
+            break;
+          }
+
+          message.gameId = reader.string();
+          continue;
+        case 3:
+          if (tag !== 26) {
+            break;
+          }
+
+          message.channelId = reader.string();
+          continue;
+      }
+      if ((tag & 7) === 4 || tag === 0) {
+        break;
+      }
+      reader.skipType(tag & 7);
+    }
+    return message;
+  },
+
+  fromJSON(object: any): MarkChannelsReadRequest {
+    return {
+      playerId: isSet(object.playerId) ? globalThis.String(object.playerId) : "",
+      gameId: isSet(object.gameId) ? globalThis.String(object.gameId) : "",
+      channelId: isSet(object.channelId) ? globalThis.String(object.channelId) : "",
+    };
+  },
+
+  toJSON(message: MarkChannelsReadRequest): unknown {
+    const obj: any = {};
+    if (message.playerId !== "") {
+      obj.playerId = message.playerId;
+    }
+    if (message.gameId !== "") {
+      obj.gameId = message.gameId;
+    }
+    if (message.channelId !== "") {
+      obj.channelId = message.channelId;
+    }
+    return obj;
+  },
+
+  create<I extends Exact<DeepPartial<MarkChannelsReadRequest>, I>>(base?: I): MarkChannelsReadRequest {
+    return MarkChannelsReadRequest.fromPartial(base ?? ({} as any));
+  },
+  fromPartial<I extends Exact<DeepPartial<MarkChannelsReadRequest>, I>>(object: I): MarkChannelsReadRequest {
+    const message = createBaseMarkChannelsReadRequest();
+    message.playerId = object.playerId ?? "";
+    message.gameId = object.gameId ?? "";
+    message.channelId = object.channelId ?? "";
+    return message;
+  },
+};
+
+function createBaseMarkChannelsReadResponse(): MarkChannelsReadResponse {
+  return { code: 0, cleared: 0 };
+}
+
+export const MarkChannelsReadResponse = {
+  encode(message: MarkChannelsReadResponse, writer: _m0.Writer = _m0.Writer.create()): _m0.Writer {
+    if (message.code !== 0) {
+      writer.uint32(8).int32(message.code);
+    }
+    if (message.cleared !== 0) {
+      writer.uint32(16).int32(message.cleared);
+    }
+    return writer;
+  },
+
+  decode(input: _m0.Reader | Uint8Array, length?: number): MarkChannelsReadResponse {
+    const reader = input instanceof _m0.Reader ? input : _m0.Reader.create(input);
+    let end = length === undefined ? reader.len : reader.pos + length;
+    const message = createBaseMarkChannelsReadResponse();
+    while (reader.pos < end) {
+      const tag = reader.uint32();
+      switch (tag >>> 3) {
+        case 1:
+          if (tag !== 8) {
+            break;
+          }
+
+          message.code = reader.int32() as any;
+          continue;
+        case 2:
+          if (tag !== 16) {
+            break;
+          }
+
+          message.cleared = reader.int32();
+          continue;
+      }
+      if ((tag & 7) === 4 || tag === 0) {
+        break;
+      }
+      reader.skipType(tag & 7);
+    }
+    return message;
+  },
+
+  fromJSON(object: any): MarkChannelsReadResponse {
+    return {
+      code: isSet(object.code) ? errorCodeFromJSON(object.code) : 0,
+      cleared: isSet(object.cleared) ? globalThis.Number(object.cleared) : 0,
+    };
+  },
+
+  toJSON(message: MarkChannelsReadResponse): unknown {
+    const obj: any = {};
+    if (message.code !== 0) {
+      obj.code = errorCodeToJSON(message.code);
+    }
+    if (message.cleared !== 0) {
+      obj.cleared = Math.round(message.cleared);
+    }
+    return obj;
+  },
+
+  create<I extends Exact<DeepPartial<MarkChannelsReadResponse>, I>>(base?: I): MarkChannelsReadResponse {
+    return MarkChannelsReadResponse.fromPartial(base ?? ({} as any));
+  },
+  fromPartial<I extends Exact<DeepPartial<MarkChannelsReadResponse>, I>>(object: I): MarkChannelsReadResponse {
+    const message = createBaseMarkChannelsReadResponse();
+    message.code = object.code ?? 0;
+    message.cleared = object.cleared ?? 0;
+    return message;
+  },
+};
+
+function createBaseUnreadSummaryEntry(): UnreadSummaryEntry {
+  return { gameId: "", channelId: "", unreadCount: 0 };
+}
+
+export const UnreadSummaryEntry = {
+  encode(message: UnreadSummaryEntry, writer: _m0.Writer = _m0.Writer.create()): _m0.Writer {
+    if (message.gameId !== "") {
+      writer.uint32(10).string(message.gameId);
+    }
+    if (message.channelId !== "") {
+      writer.uint32(18).string(message.channelId);
+    }
+    if (message.unreadCount !== 0) {
+      writer.uint32(24).int32(message.unreadCount);
+    }
+    return writer;
+  },
+
+  decode(input: _m0.Reader | Uint8Array, length?: number): UnreadSummaryEntry {
+    const reader = input instanceof _m0.Reader ? input : _m0.Reader.create(input);
+    let end = length === undefined ? reader.len : reader.pos + length;
+    const message = createBaseUnreadSummaryEntry();
+    while (reader.pos < end) {
+      const tag = reader.uint32();
+      switch (tag >>> 3) {
+        case 1:
+          if (tag !== 10) {
+            break;
+          }
+
+          message.gameId = reader.string();
+          continue;
+        case 2:
+          if (tag !== 18) {
+            break;
+          }
+
+          message.channelId = reader.string();
+          continue;
+        case 3:
+          if (tag !== 24) {
+            break;
+          }
+
+          message.unreadCount = reader.int32();
+          continue;
+      }
+      if ((tag & 7) === 4 || tag === 0) {
+        break;
+      }
+      reader.skipType(tag & 7);
+    }
+    return message;
+  },
+
+  fromJSON(object: any): UnreadSummaryEntry {
+    return {
+      gameId: isSet(object.gameId) ? globalThis.String(object.gameId) : "",
+      channelId: isSet(object.channelId) ? globalThis.String(object.channelId) : "",
+      unreadCount: isSet(object.unreadCount) ? globalThis.Number(object.unreadCount) : 0,
+    };
+  },
+
+  toJSON(message: UnreadSummaryEntry): unknown {
+    const obj: any = {};
+    if (message.gameId !== "") {
+      obj.gameId = message.gameId;
+    }
+    if (message.channelId !== "") {
+      obj.channelId = message.channelId;
+    }
+    if (message.unreadCount !== 0) {
+      obj.unreadCount = Math.round(message.unreadCount);
+    }
+    return obj;
+  },
+
+  create<I extends Exact<DeepPartial<UnreadSummaryEntry>, I>>(base?: I): UnreadSummaryEntry {
+    return UnreadSummaryEntry.fromPartial(base ?? ({} as any));
+  },
+  fromPartial<I extends Exact<DeepPartial<UnreadSummaryEntry>, I>>(object: I): UnreadSummaryEntry {
+    const message = createBaseUnreadSummaryEntry();
+    message.gameId = object.gameId ?? "";
+    message.channelId = object.channelId ?? "";
+    message.unreadCount = object.unreadCount ?? 0;
+    return message;
+  },
+};
+
+function createBaseGetUnreadSummaryRequest(): GetUnreadSummaryRequest {
+  return { playerId: "", gameId: "" };
+}
+
+export const GetUnreadSummaryRequest = {
+  encode(message: GetUnreadSummaryRequest, writer: _m0.Writer = _m0.Writer.create()): _m0.Writer {
+    if (message.playerId !== "") {
+      writer.uint32(10).string(message.playerId);
+    }
+    if (message.gameId !== "") {
+      writer.uint32(18).string(message.gameId);
+    }
+    return writer;
+  },
+
+  decode(input: _m0.Reader | Uint8Array, length?: number): GetUnreadSummaryRequest {
+    const reader = input instanceof _m0.Reader ? input : _m0.Reader.create(input);
+    let end = length === undefined ? reader.len : reader.pos + length;
+    const message = createBaseGetUnreadSummaryRequest();
+    while (reader.pos < end) {
+      const tag = reader.uint32();
+      switch (tag >>> 3) {
+        case 1:
+          if (tag !== 10) {
+            break;
+          }
+
+          message.playerId = reader.string();
+          continue;
+        case 2:
+          if (tag !== 18) {
+            break;
+          }
+
+          message.gameId = reader.string();
+          continue;
+      }
+      if ((tag & 7) === 4 || tag === 0) {
+        break;
+      }
+      reader.skipType(tag & 7);
+    }
+    return message;
+  },
+
+  fromJSON(object: any): GetUnreadSummaryRequest {
+    return {
+      playerId: isSet(object.playerId) ? globalThis.String(object.playerId) : "",
+      gameId: isSet(object.gameId) ? globalThis.String(object.gameId) : "",
+    };
+  },
+
+  toJSON(message: GetUnreadSummaryRequest): unknown {
+    const obj: any = {};
+    if (message.playerId !== "") {
+      obj.playerId = message.playerId;
+    }
+    if (message.gameId !== "") {
+      obj.gameId = message.gameId;
+    }
+    return obj;
+  },
+
+  create<I extends Exact<DeepPartial<GetUnreadSummaryRequest>, I>>(base?: I): GetUnreadSummaryRequest {
+    return GetUnreadSummaryRequest.fromPartial(base ?? ({} as any));
+  },
+  fromPartial<I extends Exact<DeepPartial<GetUnreadSummaryRequest>, I>>(object: I): GetUnreadSummaryRequest {
+    const message = createBaseGetUnreadSummaryRequest();
+    message.playerId = object.playerId ?? "";
+    message.gameId = object.gameId ?? "";
+    return message;
+  },
+};
+
+function createBaseGetUnreadSummaryResponse(): GetUnreadSummaryResponse {
+  return { code: 0, entries: [], totalUnread: 0 };
+}
+
+export const GetUnreadSummaryResponse = {
+  encode(message: GetUnreadSummaryResponse, writer: _m0.Writer = _m0.Writer.create()): _m0.Writer {
+    if (message.code !== 0) {
+      writer.uint32(8).int32(message.code);
+    }
+    for (const v of message.entries) {
+      UnreadSummaryEntry.encode(v!, writer.uint32(18).fork()).ldelim();
+    }
+    if (message.totalUnread !== 0) {
+      writer.uint32(24).int32(message.totalUnread);
+    }
+    return writer;
+  },
+
+  decode(input: _m0.Reader | Uint8Array, length?: number): GetUnreadSummaryResponse {
+    const reader = input instanceof _m0.Reader ? input : _m0.Reader.create(input);
+    let end = length === undefined ? reader.len : reader.pos + length;
+    const message = createBaseGetUnreadSummaryResponse();
+    while (reader.pos < end) {
+      const tag = reader.uint32();
+      switch (tag >>> 3) {
+        case 1:
+          if (tag !== 8) {
+            break;
+          }
+
+          message.code = reader.int32() as any;
+          continue;
+        case 2:
+          if (tag !== 18) {
+            break;
+          }
+
+          message.entries.push(UnreadSummaryEntry.decode(reader, reader.uint32()));
+          continue;
+        case 3:
+          if (tag !== 24) {
+            break;
+          }
+
+          message.totalUnread = reader.int32();
+          continue;
+      }
+      if ((tag & 7) === 4 || tag === 0) {
+        break;
+      }
+      reader.skipType(tag & 7);
+    }
+    return message;
+  },
+
+  fromJSON(object: any): GetUnreadSummaryResponse {
+    return {
+      code: isSet(object.code) ? errorCodeFromJSON(object.code) : 0,
+      entries: globalThis.Array.isArray(object?.entries)
+        ? object.entries.map((e: any) => UnreadSummaryEntry.fromJSON(e))
+        : [],
+      totalUnread: isSet(object.totalUnread) ? globalThis.Number(object.totalUnread) : 0,
+    };
+  },
+
+  toJSON(message: GetUnreadSummaryResponse): unknown {
+    const obj: any = {};
+    if (message.code !== 0) {
+      obj.code = errorCodeToJSON(message.code);
+    }
+    if (message.entries?.length) {
+      obj.entries = message.entries.map((e) => UnreadSummaryEntry.toJSON(e));
+    }
+    if (message.totalUnread !== 0) {
+      obj.totalUnread = Math.round(message.totalUnread);
+    }
+    return obj;
+  },
+
+  create<I extends Exact<DeepPartial<GetUnreadSummaryResponse>, I>>(base?: I): GetUnreadSummaryResponse {
+    return GetUnreadSummaryResponse.fromPartial(base ?? ({} as any));
+  },
+  fromPartial<I extends Exact<DeepPartial<GetUnreadSummaryResponse>, I>>(object: I): GetUnreadSummaryResponse {
+    const message = createBaseGetUnreadSummaryResponse();
+    message.code = object.code ?? 0;
+    message.entries = object.entries?.map((e) => UnreadSummaryEntry.fromPartial(e)) || [];
+    message.totalUnread = object.totalUnread ?? 0;
     return message;
   },
 };

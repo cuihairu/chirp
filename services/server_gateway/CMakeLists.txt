@@ -10,6 +10,7 @@ set(SG_SRCS
     src/server_gateway_handlers.cc
     src/service_registry.cc
     src/stream_broker.cc
+    src/unread_ledger.cc
 )
 
 add_executable(chirp_server_gateway

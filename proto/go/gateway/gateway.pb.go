@@ -194,6 +194,15 @@ const (
 	MsgID_UNSUBSCRIBE_PLAYER_CHANNEL_RESP MsgID = 5024
 	MsgID_GET_PLAYER_SUBSCRIPTIONS_REQ    MsgID = 5025
 	MsgID_GET_PLAYER_SUBSCRIPTIONS_RESP   MsgID = 5026
+	// Unified unread (WP-8 slice 4): the hub's fan-in badge ledger, backed by
+	// the fan-out copies injected with a game_id. Independent of the chat
+	// read cursors (2201-2207); app_gateway forwards these for self-served
+	// players (player_id pinned to the authenticated user). Bodies are
+	// chirp.server_gateway.* messages; see proto/server_gateway.proto.
+	MsgID_MARK_CHANNELS_READ_REQ  MsgID = 5027
+	MsgID_MARK_CHANNELS_READ_RESP MsgID = 5028
+	MsgID_GET_UNREAD_SUMMARY_REQ  MsgID = 5029
+	MsgID_GET_UNREAD_SUMMARY_RESP MsgID = 5030
 	// Notification plane: device registration forwarded by app_gateway and
 	// push requests from internal services (chat). Bodies are
 	// chirp.notification.* messages; see proto/notification.proto.
@@ -394,6 +403,10 @@ var (
 		5024: "UNSUBSCRIBE_PLAYER_CHANNEL_RESP",
 		5025: "GET_PLAYER_SUBSCRIPTIONS_REQ",
 		5026: "GET_PLAYER_SUBSCRIPTIONS_RESP",
+		5027: "MARK_CHANNELS_READ_REQ",
+		5028: "MARK_CHANNELS_READ_RESP",
+		5029: "GET_UNREAD_SUMMARY_REQ",
+		5030: "GET_UNREAD_SUMMARY_RESP",
 		6001: "REGISTER_DEVICE_REQ",
 		6002: "REGISTER_DEVICE_RESP",
 		6003: "UNREGISTER_DEVICE_REQ",
@@ -584,6 +597,10 @@ var (
 		"UNSUBSCRIBE_PLAYER_CHANNEL_RESP":  5024,
 		"GET_PLAYER_SUBSCRIPTIONS_REQ":     5025,
 		"GET_PLAYER_SUBSCRIPTIONS_RESP":    5026,
+		"MARK_CHANNELS_READ_REQ":           5027,
+		"MARK_CHANNELS_READ_RESP":          5028,
+		"GET_UNREAD_SUMMARY_REQ":           5029,
+		"GET_UNREAD_SUMMARY_RESP":          5030,
 		"REGISTER_DEVICE_REQ":              6001,
 		"REGISTER_DEVICE_RESP":             6002,
 		"UNREGISTER_DEVICE_REQ":            6003,
@@ -824,7 +841,7 @@ const file_proto_gateway_proto_rawDesc = "" +
 	"\rHeartbeatPong\x12\x1c\n" +
 	"\ttimestamp\x18\x01 \x01(\x03R\ttimestamp\x12\x1f\n" +
 	"\vserver_time\x18\x02 \x01(\x03R\n" +
-	"serverTime*\xd4%\n" +
+	"serverTime*\xca&\n" +
 	"\x05MsgID\x12\v\n" +
 	"\aUNKNOWN\x10\x00\x12\x13\n" +
 	"\x0eHEARTBEAT_PING\x10\xe9\a\x12\x13\n" +
@@ -978,7 +995,11 @@ const file_proto_gateway_proto_rawDesc = "" +
 	"\x1eUNSUBSCRIBE_PLAYER_CHANNEL_REQ\x10\x9f'\x12$\n" +
 	"\x1fUNSUBSCRIBE_PLAYER_CHANNEL_RESP\x10\xa0'\x12!\n" +
 	"\x1cGET_PLAYER_SUBSCRIPTIONS_REQ\x10\xa1'\x12\"\n" +
-	"\x1dGET_PLAYER_SUBSCRIPTIONS_RESP\x10\xa2'\x12\x18\n" +
+	"\x1dGET_PLAYER_SUBSCRIPTIONS_RESP\x10\xa2'\x12\x1b\n" +
+	"\x16MARK_CHANNELS_READ_REQ\x10\xa3'\x12\x1c\n" +
+	"\x17MARK_CHANNELS_READ_RESP\x10\xa4'\x12\x1b\n" +
+	"\x16GET_UNREAD_SUMMARY_REQ\x10\xa5'\x12\x1c\n" +
+	"\x17GET_UNREAD_SUMMARY_RESP\x10\xa6'\x12\x18\n" +
 	"\x13REGISTER_DEVICE_REQ\x10\xf1.\x12\x19\n" +
 	"\x14REGISTER_DEVICE_RESP\x10\xf2.\x12\x1a\n" +
 	"\x15UNREGISTER_DEVICE_REQ\x10\xf3.\x12\x1b\n" +

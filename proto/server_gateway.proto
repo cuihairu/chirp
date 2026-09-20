@@ -233,3 +233,58 @@ message GetPlayerSubscriptionsResponse {
   chirp.common.ErrorCode code = 1;
   repeated StoredChannelSubscription subscriptions = 2;
 }
+
+// ---- WP-8 slice 4: unified unread (fan-in badge ledger) ----
+//
+// Every fan-in copy successfully handed to the chat service increments the
+// recipient's counter for (game_id, channel_id); these RPCs let the player
+// clear and read those counters back. The ledger counts *unhandled
+// subscription notifications* (a badge), which is independent of the chat
+// service's read cursors (gateway 2201-2207) — neither feeds the other.
+// Unsubscribing does not clear a badge; MarkChannelsRead is the only
+// decrementing path.
+
+// Persistence record (Redis, not a wire message).
+message StoredUnreadEntry {
+  string player_id = 1;
+  string game_id = 2;
+  string channel_id = 3;
+  int32 unread_count = 4;
+}
+
+message MarkChannelsReadRequest {
+  string player_id = 1;
+  // Layered selector: channel_id set (game_id required) clears that one
+  // channel; only game_id clears every channel of that game; both empty
+  // clears everything the player has.
+  string game_id = 2;
+  string channel_id = 3;
+}
+
+message MarkChannelsReadResponse {
+  chirp.common.ErrorCode code = 1;
+  // Number of ledger entries removed (0 for an unknown target — marking
+  // read is idempotent).
+  int32 cleared = 2;
+}
+
+message UnreadSummaryEntry {
+  string game_id = 1;
+  string channel_id = 2;
+  int32 unread_count = 3;
+}
+
+message GetUnreadSummaryRequest {
+  string player_id = 1;
+  // Optional filter: only entries of this game when set.
+  string game_id = 2;
+}
+
+message GetUnreadSummaryResponse {
+  chirp.common.ErrorCode code = 1;
+  // One entry per (game, channel) with a nonzero counter, ordered by
+  // (game_id, channel_id).
+  repeated UnreadSummaryEntry entries = 2;
+  // Sum of the returned entries' counters (after the filter).
+  int32 total_unread = 3;
+}

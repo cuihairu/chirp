@@ -570,6 +570,7 @@ add_executable(server_gateway_tests
   ${CMAKE_SOURCE_DIR}/services/server_gateway/src/server_gateway_handlers.cc
   ${CMAKE_SOURCE_DIR}/services/server_gateway/src/service_registry.cc
   ${CMAKE_SOURCE_DIR}/services/server_gateway/src/stream_broker.cc
+  ${CMAKE_SOURCE_DIR}/services/server_gateway/src/unread_ledger.cc
 )
 
 chirp_unit_test_common_links(server_gateway_tests)

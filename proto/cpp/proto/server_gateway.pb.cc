@@ -88,6 +88,37 @@ struct UnsubscribePlayerChannelRequestDefaultTypeInternal {
 PROTOBUF_ATTRIBUTE_NO_DESTROY PROTOBUF_CONSTINIT
     PROTOBUF_ATTRIBUTE_INIT_PRIORITY1 UnsubscribePlayerChannelRequestDefaultTypeInternal _UnsubscribePlayerChannelRequest_default_instance_;
 
+inline constexpr UnreadSummaryEntry::Impl_::Impl_(
+    ::_pbi::ConstantInitialized) noexcept
+      : _cached_size_{0},
+        game_id_(
+            &::google::protobuf::internal::fixed_address_empty_string,
+            ::_pbi::ConstantInitialized()),
+        channel_id_(
+            &::google::protobuf::internal::fixed_address_empty_string,
+            ::_pbi::ConstantInitialized()),
+        unread_count_{0} {}
+
+template <typename>
+PROTOBUF_CONSTEXPR UnreadSummaryEntry::UnreadSummaryEntry(::_pbi::ConstantInitialized)
+#if defined(PROTOBUF_CUSTOM_VTABLE)
+    : ::google::protobuf::Message(UnreadSummaryEntry_class_data_.base()),
+#else   // PROTOBUF_CUSTOM_VTABLE
+    : ::google::protobuf::Message(),
+#endif  // PROTOBUF_CUSTOM_VTABLE
+      _impl_(::_pbi::ConstantInitialized()) {
+}
+struct UnreadSummaryEntryDefaultTypeInternal {
+  PROTOBUF_CONSTEXPR UnreadSummaryEntryDefaultTypeInternal() : _instance(::_pbi::ConstantInitialized{}) {}
+  ~UnreadSummaryEntryDefaultTypeInternal() {}
+  union {
+    UnreadSummaryEntry _instance;
+  };
+};
+
+PROTOBUF_ATTRIBUTE_NO_DESTROY PROTOBUF_CONSTINIT
+    PROTOBUF_ATTRIBUTE_INIT_PRIORITY1 UnreadSummaryEntryDefaultTypeInternal _UnreadSummaryEntry_default_instance_;
+
 inline constexpr UnbindPlayerIdentityResponse::Impl_::Impl_(
     ::_pbi::ConstantInitialized) noexcept
       : _cached_size_{0},
@@ -210,6 +241,40 @@ struct SubscribePlayerChannelRequestDefaultTypeInternal {
 
 PROTOBUF_ATTRIBUTE_NO_DESTROY PROTOBUF_CONSTINIT
     PROTOBUF_ATTRIBUTE_INIT_PRIORITY1 SubscribePlayerChannelRequestDefaultTypeInternal _SubscribePlayerChannelRequest_default_instance_;
+
+inline constexpr StoredUnreadEntry::Impl_::Impl_(
+    ::_pbi::ConstantInitialized) noexcept
+      : _cached_size_{0},
+        player_id_(
+            &::google::protobuf::internal::fixed_address_empty_string,
+            ::_pbi::ConstantInitialized()),
+        game_id_(
+            &::google::protobuf::internal::fixed_address_empty_string,
+            ::_pbi::ConstantInitialized()),
+        channel_id_(
+            &::google::protobuf::internal::fixed_address_empty_string,
+            ::_pbi::ConstantInitialized()),
+        unread_count_{0} {}
+
+template <typename>
+PROTOBUF_CONSTEXPR StoredUnreadEntry::StoredUnreadEntry(::_pbi::ConstantInitialized)
+#if defined(PROTOBUF_CUSTOM_VTABLE)
+    : ::google::protobuf::Message(StoredUnreadEntry_class_data_.base()),
+#else   // PROTOBUF_CUSTOM_VTABLE
+    : ::google::protobuf::Message(),
+#endif  // PROTOBUF_CUSTOM_VTABLE
+      _impl_(::_pbi::ConstantInitialized()) {
+}
+struct StoredUnreadEntryDefaultTypeInternal {
+  PROTOBUF_CONSTEXPR StoredUnreadEntryDefaultTypeInternal() : _instance(::_pbi::ConstantInitialized{}) {}
+  ~StoredUnreadEntryDefaultTypeInternal() {}
+  union {
+    StoredUnreadEntry _instance;
+  };
+};
+
+PROTOBUF_ATTRIBUTE_NO_DESTROY PROTOBUF_CONSTINIT
+    PROTOBUF_ATTRIBUTE_INIT_PRIORITY1 StoredUnreadEntryDefaultTypeInternal _StoredUnreadEntry_default_instance_;
 
 inline constexpr StoredIdentityBinding::Impl_::Impl_(
     ::_pbi::ConstantInitialized) noexcept
@@ -523,6 +588,95 @@ struct MessageInjectRequestDefaultTypeInternal {
 PROTOBUF_ATTRIBUTE_NO_DESTROY PROTOBUF_CONSTINIT
     PROTOBUF_ATTRIBUTE_INIT_PRIORITY1 MessageInjectRequestDefaultTypeInternal _MessageInjectRequest_default_instance_;
 
+inline constexpr MarkChannelsReadResponse::Impl_::Impl_(
+    ::_pbi::ConstantInitialized) noexcept
+      : _cached_size_{0},
+        code_{static_cast< ::chirp::common::ErrorCode >(0)},
+        cleared_{0} {}
+
+template <typename>
+PROTOBUF_CONSTEXPR MarkChannelsReadResponse::MarkChannelsReadResponse(::_pbi::ConstantInitialized)
+#if defined(PROTOBUF_CUSTOM_VTABLE)
+    : ::google::protobuf::Message(MarkChannelsReadResponse_class_data_.base()),
+#else   // PROTOBUF_CUSTOM_VTABLE
+    : ::google::protobuf::Message(),
+#endif  // PROTOBUF_CUSTOM_VTABLE
+      _impl_(::_pbi::ConstantInitialized()) {
+}
+struct MarkChannelsReadResponseDefaultTypeInternal {
+  PROTOBUF_CONSTEXPR MarkChannelsReadResponseDefaultTypeInternal() : _instance(::_pbi::ConstantInitialized{}) {}
+  ~MarkChannelsReadResponseDefaultTypeInternal() {}
+  union {
+    MarkChannelsReadResponse _instance;
+  };
+};
+
+PROTOBUF_ATTRIBUTE_NO_DESTROY PROTOBUF_CONSTINIT
+    PROTOBUF_ATTRIBUTE_INIT_PRIORITY1 MarkChannelsReadResponseDefaultTypeInternal _MarkChannelsReadResponse_default_instance_;
+
+inline constexpr MarkChannelsReadRequest::Impl_::Impl_(
+    ::_pbi::ConstantInitialized) noexcept
+      : _cached_size_{0},
+        player_id_(
+            &::google::protobuf::internal::fixed_address_empty_string,
+            ::_pbi::ConstantInitialized()),
+        game_id_(
+            &::google::protobuf::internal::fixed_address_empty_string,
+            ::_pbi::ConstantInitialized()),
+        channel_id_(
+            &::google::protobuf::internal::fixed_address_empty_string,
+            ::_pbi::ConstantInitialized()) {}
+
+template <typename>
+PROTOBUF_CONSTEXPR MarkChannelsReadRequest::MarkChannelsReadRequest(::_pbi::ConstantInitialized)
+#if defined(PROTOBUF_CUSTOM_VTABLE)
+    : ::google::protobuf::Message(MarkChannelsReadRequest_class_data_.base()),
+#else   // PROTOBUF_CUSTOM_VTABLE
+    : ::google::protobuf::Message(),
+#endif  // PROTOBUF_CUSTOM_VTABLE
+      _impl_(::_pbi::ConstantInitialized()) {
+}
+struct MarkChannelsReadRequestDefaultTypeInternal {
+  PROTOBUF_CONSTEXPR MarkChannelsReadRequestDefaultTypeInternal() : _instance(::_pbi::ConstantInitialized{}) {}
+  ~MarkChannelsReadRequestDefaultTypeInternal() {}
+  union {
+    MarkChannelsReadRequest _instance;
+  };
+};
+
+PROTOBUF_ATTRIBUTE_NO_DESTROY PROTOBUF_CONSTINIT
+    PROTOBUF_ATTRIBUTE_INIT_PRIORITY1 MarkChannelsReadRequestDefaultTypeInternal _MarkChannelsReadRequest_default_instance_;
+
+inline constexpr GetUnreadSummaryRequest::Impl_::Impl_(
+    ::_pbi::ConstantInitialized) noexcept
+      : _cached_size_{0},
+        player_id_(
+            &::google::protobuf::internal::fixed_address_empty_string,
+            ::_pbi::ConstantInitialized()),
+        game_id_(
+            &::google::protobuf::internal::fixed_address_empty_string,
+            ::_pbi::ConstantInitialized()) {}
+
+template <typename>
+PROTOBUF_CONSTEXPR GetUnreadSummaryRequest::GetUnreadSummaryRequest(::_pbi::ConstantInitialized)
+#if defined(PROTOBUF_CUSTOM_VTABLE)
+    : ::google::protobuf::Message(GetUnreadSummaryRequest_class_data_.base()),
+#else   // PROTOBUF_CUSTOM_VTABLE
+    : ::google::protobuf::Message(),
+#endif  // PROTOBUF_CUSTOM_VTABLE
+      _impl_(::_pbi::ConstantInitialized()) {
+}
+struct GetUnreadSummaryRequestDefaultTypeInternal {
+  PROTOBUF_CONSTEXPR GetUnreadSummaryRequestDefaultTypeInternal() : _instance(::_pbi::ConstantInitialized{}) {}
+  ~GetUnreadSummaryRequestDefaultTypeInternal() {}
+  union {
+    GetUnreadSummaryRequest _instance;
+  };
+};
+
+PROTOBUF_ATTRIBUTE_NO_DESTROY PROTOBUF_CONSTINIT
+    PROTOBUF_ATTRIBUTE_INIT_PRIORITY1 GetUnreadSummaryRequestDefaultTypeInternal _GetUnreadSummaryRequest_default_instance_;
+
 inline constexpr GetPlayerSubscriptionsRequest::Impl_::Impl_(
     ::_pbi::ConstantInitialized) noexcept
       : _cached_size_{0},
@@ -819,6 +973,33 @@ struct InjectMessageNotifyDefaultTypeInternal {
 
 PROTOBUF_ATTRIBUTE_NO_DESTROY PROTOBUF_CONSTINIT
     PROTOBUF_ATTRIBUTE_INIT_PRIORITY1 InjectMessageNotifyDefaultTypeInternal _InjectMessageNotify_default_instance_;
+
+inline constexpr GetUnreadSummaryResponse::Impl_::Impl_(
+    ::_pbi::ConstantInitialized) noexcept
+      : _cached_size_{0},
+        entries_{},
+        code_{static_cast< ::chirp::common::ErrorCode >(0)},
+        total_unread_{0} {}
+
+template <typename>
+PROTOBUF_CONSTEXPR GetUnreadSummaryResponse::GetUnreadSummaryResponse(::_pbi::ConstantInitialized)
+#if defined(PROTOBUF_CUSTOM_VTABLE)
+    : ::google::protobuf::Message(GetUnreadSummaryResponse_class_data_.base()),
+#else   // PROTOBUF_CUSTOM_VTABLE
+    : ::google::protobuf::Message(),
+#endif  // PROTOBUF_CUSTOM_VTABLE
+      _impl_(::_pbi::ConstantInitialized()) {
+}
+struct GetUnreadSummaryResponseDefaultTypeInternal {
+  PROTOBUF_CONSTEXPR GetUnreadSummaryResponseDefaultTypeInternal() : _instance(::_pbi::ConstantInitialized{}) {}
+  ~GetUnreadSummaryResponseDefaultTypeInternal() {}
+  union {
+    GetUnreadSummaryResponse _instance;
+  };
+};
+
+PROTOBUF_ATTRIBUTE_NO_DESTROY PROTOBUF_CONSTINIT
+    PROTOBUF_ATTRIBUTE_INIT_PRIORITY1 GetUnreadSummaryResponseDefaultTypeInternal _GetUnreadSummaryResponse_default_instance_;
 
 inline constexpr GetPlayerSubscriptionsResponse::Impl_::Impl_(
     ::_pbi::ConstantInitialized) noexcept
@@ -1118,6 +1299,58 @@ const ::uint32_t
         PROTOBUF_FIELD_OFFSET(::chirp::server_gateway::GetPlayerSubscriptionsResponse, _impl_.subscriptions_),
         1,
         0,
+        0x081, // bitmap
+        PROTOBUF_FIELD_OFFSET(::chirp::server_gateway::StoredUnreadEntry, _impl_._has_bits_),
+        7, // hasbit index offset
+        PROTOBUF_FIELD_OFFSET(::chirp::server_gateway::StoredUnreadEntry, _impl_.player_id_),
+        PROTOBUF_FIELD_OFFSET(::chirp::server_gateway::StoredUnreadEntry, _impl_.game_id_),
+        PROTOBUF_FIELD_OFFSET(::chirp::server_gateway::StoredUnreadEntry, _impl_.channel_id_),
+        PROTOBUF_FIELD_OFFSET(::chirp::server_gateway::StoredUnreadEntry, _impl_.unread_count_),
+        0,
+        1,
+        2,
+        3,
+        0x081, // bitmap
+        PROTOBUF_FIELD_OFFSET(::chirp::server_gateway::MarkChannelsReadRequest, _impl_._has_bits_),
+        6, // hasbit index offset
+        PROTOBUF_FIELD_OFFSET(::chirp::server_gateway::MarkChannelsReadRequest, _impl_.player_id_),
+        PROTOBUF_FIELD_OFFSET(::chirp::server_gateway::MarkChannelsReadRequest, _impl_.game_id_),
+        PROTOBUF_FIELD_OFFSET(::chirp::server_gateway::MarkChannelsReadRequest, _impl_.channel_id_),
+        0,
+        1,
+        2,
+        0x081, // bitmap
+        PROTOBUF_FIELD_OFFSET(::chirp::server_gateway::MarkChannelsReadResponse, _impl_._has_bits_),
+        5, // hasbit index offset
+        PROTOBUF_FIELD_OFFSET(::chirp::server_gateway::MarkChannelsReadResponse, _impl_.code_),
+        PROTOBUF_FIELD_OFFSET(::chirp::server_gateway::MarkChannelsReadResponse, _impl_.cleared_),
+        0,
+        1,
+        0x081, // bitmap
+        PROTOBUF_FIELD_OFFSET(::chirp::server_gateway::UnreadSummaryEntry, _impl_._has_bits_),
+        6, // hasbit index offset
+        PROTOBUF_FIELD_OFFSET(::chirp::server_gateway::UnreadSummaryEntry, _impl_.game_id_),
+        PROTOBUF_FIELD_OFFSET(::chirp::server_gateway::UnreadSummaryEntry, _impl_.channel_id_),
+        PROTOBUF_FIELD_OFFSET(::chirp::server_gateway::UnreadSummaryEntry, _impl_.unread_count_),
+        0,
+        1,
+        2,
+        0x081, // bitmap
+        PROTOBUF_FIELD_OFFSET(::chirp::server_gateway::GetUnreadSummaryRequest, _impl_._has_bits_),
+        5, // hasbit index offset
+        PROTOBUF_FIELD_OFFSET(::chirp::server_gateway::GetUnreadSummaryRequest, _impl_.player_id_),
+        PROTOBUF_FIELD_OFFSET(::chirp::server_gateway::GetUnreadSummaryRequest, _impl_.game_id_),
+        0,
+        1,
+        0x081, // bitmap
+        PROTOBUF_FIELD_OFFSET(::chirp::server_gateway::GetUnreadSummaryResponse, _impl_._has_bits_),
+        6, // hasbit index offset
+        PROTOBUF_FIELD_OFFSET(::chirp::server_gateway::GetUnreadSummaryResponse, _impl_.code_),
+        PROTOBUF_FIELD_OFFSET(::chirp::server_gateway::GetUnreadSummaryResponse, _impl_.entries_),
+        PROTOBUF_FIELD_OFFSET(::chirp::server_gateway::GetUnreadSummaryResponse, _impl_.total_unread_),
+        1,
+        0,
+        2,
 };
 
 static const ::_pbi::MigrationSchema
@@ -1150,6 +1383,12 @@ static const ::_pbi::MigrationSchema
         {219, sizeof(::chirp::server_gateway::UnsubscribePlayerChannelResponse)},
         {224, sizeof(::chirp::server_gateway::GetPlayerSubscriptionsRequest)},
         {231, sizeof(::chirp::server_gateway::GetPlayerSubscriptionsResponse)},
+        {238, sizeof(::chirp::server_gateway::StoredUnreadEntry)},
+        {249, sizeof(::chirp::server_gateway::MarkChannelsReadRequest)},
+        {258, sizeof(::chirp::server_gateway::MarkChannelsReadResponse)},
+        {265, sizeof(::chirp::server_gateway::UnreadSummaryEntry)},
+        {274, sizeof(::chirp::server_gateway::GetUnreadSummaryRequest)},
+        {281, sizeof(::chirp::server_gateway::GetUnreadSummaryResponse)},
 };
 static const ::_pb::Message* PROTOBUF_NONNULL const file_default_instances[] = {
     &::chirp::server_gateway::_ServerAuthRequest_default_instance_._instance,
@@ -1180,6 +1419,12 @@ static const ::_pb::Message* PROTOBUF_NONNULL const file_default_instances[] = {
     &::chirp::server_gateway::_UnsubscribePlayerChannelResponse_default_instance_._instance,
     &::chirp::server_gateway::_GetPlayerSubscriptionsRequest_default_instance_._instance,
     &::chirp::server_gateway::_GetPlayerSubscriptionsResponse_default_instance_._instance,
+    &::chirp::server_gateway::_StoredUnreadEntry_default_instance_._instance,
+    &::chirp::server_gateway::_MarkChannelsReadRequest_default_instance_._instance,
+    &::chirp::server_gateway::_MarkChannelsReadResponse_default_instance_._instance,
+    &::chirp::server_gateway::_UnreadSummaryEntry_default_instance_._instance,
+    &::chirp::server_gateway::_GetUnreadSummaryRequest_default_instance_._instance,
+    &::chirp::server_gateway::_GetUnreadSummaryResponse_default_instance_._instance,
 };
 const char descriptor_table_protodef_proto_2fserver_5fgateway_2eproto[] ABSL_ATTRIBUTE_SECTION_VARIABLE(
     protodesc_cold) = {
@@ -1252,10 +1497,24 @@ const char descriptor_table_protodef_proto_2fserver_5fgateway_2eproto[] ABSL_ATT
     "ubscriptionsResponse\022%\n\004code\030\001 \001(\0162\027.chi"
     "rp.common.ErrorCode\022F\n\rsubscriptions\030\002 \003"
     "(\0132/.chirp.server_gateway.StoredChannelS"
-    "ubscription*W\n\nSenderKind\022\022\n\016SENDER_UNKN"
-    "OWN\020\000\022\021\n\rSENDER_SYSTEM\020\001\022\016\n\nSENDER_NPC\020\002"
-    "\022\022\n\016SENDER_SERVICE\020\003B.Z,github.com/cui/c"
-    "hirp/proto/go/server_gatewayb\006proto3"
+    "ubscription\"a\n\021StoredUnreadEntry\022\021\n\tplay"
+    "er_id\030\001 \001(\t\022\017\n\007game_id\030\002 \001(\t\022\022\n\nchannel_"
+    "id\030\003 \001(\t\022\024\n\014unread_count\030\004 \001(\005\"Q\n\027MarkCh"
+    "annelsReadRequest\022\021\n\tplayer_id\030\001 \001(\t\022\017\n\007"
+    "game_id\030\002 \001(\t\022\022\n\nchannel_id\030\003 \001(\t\"R\n\030Mar"
+    "kChannelsReadResponse\022%\n\004code\030\001 \001(\0162\027.ch"
+    "irp.common.ErrorCode\022\017\n\007cleared\030\002 \001(\005\"O\n"
+    "\022UnreadSummaryEntry\022\017\n\007game_id\030\001 \001(\t\022\022\n\n"
+    "channel_id\030\002 \001(\t\022\024\n\014unread_count\030\003 \001(\005\"="
+    "\n\027GetUnreadSummaryRequest\022\021\n\tplayer_id\030\001"
+    " \001(\t\022\017\n\007game_id\030\002 \001(\t\"\222\001\n\030GetUnreadSumma"
+    "ryResponse\022%\n\004code\030\001 \001(\0162\027.chirp.common."
+    "ErrorCode\0229\n\007entries\030\002 \003(\0132(.chirp.serve"
+    "r_gateway.UnreadSummaryEntry\022\024\n\014total_un"
+    "read\030\003 \001(\005*W\n\nSenderKind\022\022\n\016SENDER_UNKNO"
+    "WN\020\000\022\021\n\rSENDER_SYSTEM\020\001\022\016\n\nSENDER_NPC\020\002\022"
+    "\022\n\016SENDER_SERVICE\020\003B.Z,github.com/cui/ch"
+    "irp/proto/go/server_gatewayb\006proto3"
 };
 static const ::_pbi::DescriptorTable* PROTOBUF_NONNULL const
     descriptor_table_proto_2fserver_5fgateway_2eproto_deps[1] = {
@@ -1265,13 +1524,13 @@ static ::absl::once_flag descriptor_table_proto_2fserver_5fgateway_2eproto_once;
 PROTOBUF_CONSTINIT const ::_pbi::DescriptorTable descriptor_table_proto_2fserver_5fgateway_2eproto = {
     false,
     false,
-    2916,
+    3475,
     descriptor_table_protodef_proto_2fserver_5fgateway_2eproto,
     "proto/server_gateway.proto",
     &descriptor_table_proto_2fserver_5fgateway_2eproto_once,
     descriptor_table_proto_2fserver_5fgateway_2eproto_deps,
     1,
-    28,
+    34,
     schemas,
     file_default_instances,
     TableStruct_proto_2fserver_5fgateway_2eproto::offsets,
@@ -10806,6 +11065,2088 @@ void GetPlayerSubscriptionsResponse::InternalSwap(GetPlayerSubscriptionsResponse
 }
 
 ::google::protobuf::Metadata GetPlayerSubscriptionsResponse::GetMetadata() const {
+  return ::google::protobuf::Message::GetMetadataImpl(GetClassData()->full());
+}
+// ===================================================================
+
+class StoredUnreadEntry::_Internal {
+ public:
+  using HasBits =
+      decltype(::std::declval<StoredUnreadEntry>()._impl_._has_bits_);
+  static constexpr ::int32_t kHasBitsOffset =
+      8 * PROTOBUF_FIELD_OFFSET(StoredUnreadEntry, _impl_._has_bits_);
+};
+
+StoredUnreadEntry::StoredUnreadEntry(::google::protobuf::Arena* PROTOBUF_NULLABLE arena)
+#if defined(PROTOBUF_CUSTOM_VTABLE)
+    : ::google::protobuf::Message(arena, StoredUnreadEntry_class_data_.base()) {
+#else   // PROTOBUF_CUSTOM_VTABLE
+    : ::google::protobuf::Message(arena) {
+#endif  // PROTOBUF_CUSTOM_VTABLE
+  SharedCtor(arena);
+  // @@protoc_insertion_point(arena_constructor:chirp.server_gateway.StoredUnreadEntry)
+}
+PROTOBUF_NDEBUG_INLINE StoredUnreadEntry::Impl_::Impl_(
+    [[maybe_unused]] ::google::protobuf::internal::InternalVisibility visibility,
+    [[maybe_unused]] ::google::protobuf::Arena* PROTOBUF_NULLABLE arena, const Impl_& from,
+    [[maybe_unused]] const ::chirp::server_gateway::StoredUnreadEntry& from_msg)
+      : _has_bits_{from._has_bits_},
+        _cached_size_{0},
+        player_id_(arena, from.player_id_),
+        game_id_(arena, from.game_id_),
+        channel_id_(arena, from.channel_id_) {}
+
+StoredUnreadEntry::StoredUnreadEntry(
+    ::google::protobuf::Arena* PROTOBUF_NULLABLE arena,
+    const StoredUnreadEntry& from)
+#if defined(PROTOBUF_CUSTOM_VTABLE)
+    : ::google::protobuf::Message(arena, StoredUnreadEntry_class_data_.base()) {
+#else   // PROTOBUF_CUSTOM_VTABLE
+    : ::google::protobuf::Message(arena) {
+#endif  // PROTOBUF_CUSTOM_VTABLE
+  StoredUnreadEntry* const _this = this;
+  (void)_this;
+  _internal_metadata_.MergeFrom<::google::protobuf::UnknownFieldSet>(
+      from._internal_metadata_);
+  new (&_impl_) Impl_(internal_visibility(), arena, from._impl_, from);
+  _impl_.unread_count_ = from._impl_.unread_count_;
+
+  // @@protoc_insertion_point(copy_constructor:chirp.server_gateway.StoredUnreadEntry)
+}
+PROTOBUF_NDEBUG_INLINE StoredUnreadEntry::Impl_::Impl_(
+    [[maybe_unused]] ::google::protobuf::internal::InternalVisibility visibility,
+    [[maybe_unused]] ::google::protobuf::Arena* PROTOBUF_NULLABLE arena)
+      : _cached_size_{0},
+        player_id_(arena),
+        game_id_(arena),
+        channel_id_(arena) {}
+
+inline void StoredUnreadEntry::SharedCtor(::_pb::Arena* PROTOBUF_NULLABLE arena) {
+  new (&_impl_) Impl_(internal_visibility(), arena);
+  _impl_.unread_count_ = {};
+}
+StoredUnreadEntry::~StoredUnreadEntry() {
+  // @@protoc_insertion_point(destructor:chirp.server_gateway.StoredUnreadEntry)
+  SharedDtor(*this);
+}
+inline void StoredUnreadEntry::SharedDtor(MessageLite& self) {
+  StoredUnreadEntry& this_ = static_cast<StoredUnreadEntry&>(self);
+  if constexpr (::_pbi::DebugHardenCheckHasBitConsistency()) {
+    this_.CheckHasBitConsistency();
+  }
+  this_._internal_metadata_.Delete<::google::protobuf::UnknownFieldSet>();
+  ABSL_DCHECK(this_.GetArena() == nullptr);
+  this_._impl_.player_id_.Destroy();
+  this_._impl_.game_id_.Destroy();
+  this_._impl_.channel_id_.Destroy();
+  this_._impl_.~Impl_();
+}
+
+inline void* PROTOBUF_NONNULL StoredUnreadEntry::PlacementNew_(
+    const void* PROTOBUF_NONNULL, void* PROTOBUF_NONNULL mem,
+    ::google::protobuf::Arena* PROTOBUF_NULLABLE arena) {
+  return ::new (mem) StoredUnreadEntry(arena);
+}
+constexpr auto StoredUnreadEntry::InternalNewImpl_() {
+  return ::google::protobuf::internal::MessageCreator::CopyInit(sizeof(StoredUnreadEntry),
+                                            alignof(StoredUnreadEntry));
+}
+constexpr auto StoredUnreadEntry::InternalGenerateClassData_() {
+  return ::google::protobuf::internal::ClassDataFull{
+      ::google::protobuf::internal::ClassData{
+          &_StoredUnreadEntry_default_instance_._instance,
+          &_table_.header,
+          nullptr,  // OnDemandRegisterArenaDtor
+          nullptr,  // IsInitialized
+          &StoredUnreadEntry::MergeImpl,
+          ::google::protobuf::Message::GetNewImpl<StoredUnreadEntry>(),
+#if defined(PROTOBUF_CUSTOM_VTABLE)
+          &StoredUnreadEntry::SharedDtor,
+          ::google::protobuf::Message::GetClearImpl<StoredUnreadEntry>(), &StoredUnreadEntry::ByteSizeLong,
+              &StoredUnreadEntry::_InternalSerialize,
+#endif  // PROTOBUF_CUSTOM_VTABLE
+          PROTOBUF_FIELD_OFFSET(StoredUnreadEntry, _impl_._cached_size_),
+          false,
+      },
+      &StoredUnreadEntry::kDescriptorMethods,
+      &descriptor_table_proto_2fserver_5fgateway_2eproto,
+      nullptr,  // tracker
+  };
+}
+
+PROTOBUF_CONSTINIT PROTOBUF_ATTRIBUTE_INIT_PRIORITY1 const
+    ::google::protobuf::internal::ClassDataFull StoredUnreadEntry_class_data_ =
+        StoredUnreadEntry::InternalGenerateClassData_();
+
+PROTOBUF_ATTRIBUTE_WEAK const ::google::protobuf::internal::ClassData* PROTOBUF_NONNULL
+StoredUnreadEntry::GetClassData() const {
+  ::google::protobuf::internal::PrefetchToLocalCache(&StoredUnreadEntry_class_data_);
+  ::google::protobuf::internal::PrefetchToLocalCache(StoredUnreadEntry_class_data_.tc_table);
+  return StoredUnreadEntry_class_data_.base();
+}
+PROTOBUF_CONSTINIT PROTOBUF_ATTRIBUTE_INIT_PRIORITY1
+const ::_pbi::TcParseTable<2, 4, 0, 73, 2>
+StoredUnreadEntry::_table_ = {
+  {
+    PROTOBUF_FIELD_OFFSET(StoredUnreadEntry, _impl_._has_bits_),
+    0, // no _extensions_
+    4, 24,  // max_field_number, fast_idx_mask
+    offsetof(decltype(_table_), field_lookup_table),
+    4294967280,  // skipmap
+    offsetof(decltype(_table_), field_entries),
+    4,  // num_field_entries
+    0,  // num_aux_entries
+    offsetof(decltype(_table_), field_names),  // no aux_entries
+    StoredUnreadEntry_class_data_.base(),
+    nullptr,  // post_loop_handler
+    ::_pbi::TcParser::GenericFallback,  // fallback
+    #ifdef PROTOBUF_PREFETCH_PARSE_TABLE
+    ::_pbi::TcParser::GetTable<::chirp::server_gateway::StoredUnreadEntry>(),  // to_prefetch
+    #endif  // PROTOBUF_PREFETCH_PARSE_TABLE
+  }, {{
+    // int32 unread_count = 4;
+    {::_pbi::TcParser::SingularVarintNoZag1<::uint32_t, offsetof(StoredUnreadEntry, _impl_.unread_count_), 3>(),
+     {32, 3, 0,
+      PROTOBUF_FIELD_OFFSET(StoredUnreadEntry, _impl_.unread_count_)}},
+    // string player_id = 1;
+    {::_pbi::TcParser::FastUS1,
+     {10, 0, 0,
+      PROTOBUF_FIELD_OFFSET(StoredUnreadEntry, _impl_.player_id_)}},
+    // string game_id = 2;
+    {::_pbi::TcParser::FastUS1,
+     {18, 1, 0,
+      PROTOBUF_FIELD_OFFSET(StoredUnreadEntry, _impl_.game_id_)}},
+    // string channel_id = 3;
+    {::_pbi::TcParser::FastUS1,
+     {26, 2, 0,
+      PROTOBUF_FIELD_OFFSET(StoredUnreadEntry, _impl_.channel_id_)}},
+  }}, {{
+    65535, 65535
+  }}, {{
+    // string player_id = 1;
+    {PROTOBUF_FIELD_OFFSET(StoredUnreadEntry, _impl_.player_id_), _Internal::kHasBitsOffset + 0, 0, (0 | ::_fl::kFcOptional | ::_fl::kUtf8String | ::_fl::kRepAString)},
+    // string game_id = 2;
+    {PROTOBUF_FIELD_OFFSET(StoredUnreadEntry, _impl_.game_id_), _Internal::kHasBitsOffset + 1, 0, (0 | ::_fl::kFcOptional | ::_fl::kUtf8String | ::_fl::kRepAString)},
+    // string channel_id = 3;
+    {PROTOBUF_FIELD_OFFSET(StoredUnreadEntry, _impl_.channel_id_), _Internal::kHasBitsOffset + 2, 0, (0 | ::_fl::kFcOptional | ::_fl::kUtf8String | ::_fl::kRepAString)},
+    // int32 unread_count = 4;
+    {PROTOBUF_FIELD_OFFSET(StoredUnreadEntry, _impl_.unread_count_), _Internal::kHasBitsOffset + 3, 0, (0 | ::_fl::kFcOptional | ::_fl::kInt32)},
+  }},
+  // no aux_entries
+  {{
+    "\46\11\7\12\0\0\0\0"
+    "chirp.server_gateway.StoredUnreadEntry"
+    "player_id"
+    "game_id"
+    "channel_id"
+  }},
+};
+PROTOBUF_NOINLINE void StoredUnreadEntry::Clear() {
+// @@protoc_insertion_point(message_clear_start:chirp.server_gateway.StoredUnreadEntry)
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  ::uint32_t cached_has_bits = 0;
+  // Prevent compiler warnings about cached_has_bits being unused
+  (void) cached_has_bits;
+
+  cached_has_bits = _impl_._has_bits_[0];
+  if (BatchCheckHasBit(cached_has_bits, 0x00000007U)) {
+    if (CheckHasBit(cached_has_bits, 0x00000001U)) {
+      _impl_.player_id_.ClearNonDefaultToEmpty();
+    }
+    if (CheckHasBit(cached_has_bits, 0x00000002U)) {
+      _impl_.game_id_.ClearNonDefaultToEmpty();
+    }
+    if (CheckHasBit(cached_has_bits, 0x00000004U)) {
+      _impl_.channel_id_.ClearNonDefaultToEmpty();
+    }
+  }
+  _impl_.unread_count_ = 0;
+  _impl_._has_bits_.Clear();
+  _internal_metadata_.Clear<::google::protobuf::UnknownFieldSet>();
+}
+
+#if defined(PROTOBUF_CUSTOM_VTABLE)
+::uint8_t* PROTOBUF_NONNULL StoredUnreadEntry::_InternalSerialize(
+    const ::google::protobuf::MessageLite& base, ::uint8_t* PROTOBUF_NONNULL target,
+    ::google::protobuf::io::EpsCopyOutputStream* PROTOBUF_NONNULL stream) {
+  const StoredUnreadEntry& this_ = static_cast<const StoredUnreadEntry&>(base);
+#else   // PROTOBUF_CUSTOM_VTABLE
+::uint8_t* PROTOBUF_NONNULL StoredUnreadEntry::_InternalSerialize(
+    ::uint8_t* PROTOBUF_NONNULL target,
+    ::google::protobuf::io::EpsCopyOutputStream* PROTOBUF_NONNULL stream) const {
+  const StoredUnreadEntry& this_ = *this;
+#endif  // PROTOBUF_CUSTOM_VTABLE
+  if constexpr (::_pbi::DebugHardenCheckHasBitConsistency()) {
+    this_.CheckHasBitConsistency();
+  }
+  // @@protoc_insertion_point(serialize_to_array_start:chirp.server_gateway.StoredUnreadEntry)
+  ::uint32_t cached_has_bits = 0;
+  (void)cached_has_bits;
+
+  cached_has_bits = this_._impl_._has_bits_[0];
+  // string player_id = 1;
+  if (CheckHasBit(cached_has_bits, 0x00000001U)) {
+    if (!this_._internal_player_id().empty()) {
+      const ::std::string& _s = this_._internal_player_id();
+      ::google::protobuf::internal::WireFormatLite::VerifyUtf8String(
+          _s.data(), static_cast<int>(_s.length()), ::google::protobuf::internal::WireFormatLite::SERIALIZE, "chirp.server_gateway.StoredUnreadEntry.player_id");
+      target = stream->WriteStringMaybeAliased(1, _s, target);
+    }
+  }
+
+  // string game_id = 2;
+  if (CheckHasBit(cached_has_bits, 0x00000002U)) {
+    if (!this_._internal_game_id().empty()) {
+      const ::std::string& _s = this_._internal_game_id();
+      ::google::protobuf::internal::WireFormatLite::VerifyUtf8String(
+          _s.data(), static_cast<int>(_s.length()), ::google::protobuf::internal::WireFormatLite::SERIALIZE, "chirp.server_gateway.StoredUnreadEntry.game_id");
+      target = stream->WriteStringMaybeAliased(2, _s, target);
+    }
+  }
+
+  // string channel_id = 3;
+  if (CheckHasBit(cached_has_bits, 0x00000004U)) {
+    if (!this_._internal_channel_id().empty()) {
+      const ::std::string& _s = this_._internal_channel_id();
+      ::google::protobuf::internal::WireFormatLite::VerifyUtf8String(
+          _s.data(), static_cast<int>(_s.length()), ::google::protobuf::internal::WireFormatLite::SERIALIZE, "chirp.server_gateway.StoredUnreadEntry.channel_id");
+      target = stream->WriteStringMaybeAliased(3, _s, target);
+    }
+  }
+
+  // int32 unread_count = 4;
+  if (CheckHasBit(cached_has_bits, 0x00000008U)) {
+    if (this_._internal_unread_count() != 0) {
+      target =
+          ::google::protobuf::internal::WireFormatLite::WriteInt32ToArrayWithField<4>(
+              stream, this_._internal_unread_count(), target);
+    }
+  }
+
+  if (ABSL_PREDICT_FALSE(this_._internal_metadata_.have_unknown_fields())) {
+    target =
+        ::_pbi::WireFormat::InternalSerializeUnknownFieldsToArray(
+            this_._internal_metadata_.unknown_fields<::google::protobuf::UnknownFieldSet>(::google::protobuf::UnknownFieldSet::default_instance), target, stream);
+  }
+  // @@protoc_insertion_point(serialize_to_array_end:chirp.server_gateway.StoredUnreadEntry)
+  return target;
+}
+
+#if defined(PROTOBUF_CUSTOM_VTABLE)
+::size_t StoredUnreadEntry::ByteSizeLong(const MessageLite& base) {
+  const StoredUnreadEntry& this_ = static_cast<const StoredUnreadEntry&>(base);
+#else   // PROTOBUF_CUSTOM_VTABLE
+::size_t StoredUnreadEntry::ByteSizeLong() const {
+  const StoredUnreadEntry& this_ = *this;
+#endif  // PROTOBUF_CUSTOM_VTABLE
+  // @@protoc_insertion_point(message_byte_size_start:chirp.server_gateway.StoredUnreadEntry)
+  ::size_t total_size = 0;
+
+  ::uint32_t cached_has_bits = 0;
+  // Prevent compiler warnings about cached_has_bits being unused
+  (void)cached_has_bits;
+
+  ::_pbi::Prefetch5LinesFrom7Lines(&this_);
+  cached_has_bits = this_._impl_._has_bits_[0];
+  if (BatchCheckHasBit(cached_has_bits, 0x0000000fU)) {
+    // string player_id = 1;
+    if (CheckHasBit(cached_has_bits, 0x00000001U)) {
+      if (!this_._internal_player_id().empty()) {
+        total_size += 1 + ::google::protobuf::internal::WireFormatLite::StringSize(
+                                        this_._internal_player_id());
+      }
+    }
+    // string game_id = 2;
+    if (CheckHasBit(cached_has_bits, 0x00000002U)) {
+      if (!this_._internal_game_id().empty()) {
+        total_size += 1 + ::google::protobuf::internal::WireFormatLite::StringSize(
+                                        this_._internal_game_id());
+      }
+    }
+    // string channel_id = 3;
+    if (CheckHasBit(cached_has_bits, 0x00000004U)) {
+      if (!this_._internal_channel_id().empty()) {
+        total_size += 1 + ::google::protobuf::internal::WireFormatLite::StringSize(
+                                        this_._internal_channel_id());
+      }
+    }
+    // int32 unread_count = 4;
+    if (CheckHasBit(cached_has_bits, 0x00000008U)) {
+      if (this_._internal_unread_count() != 0) {
+        total_size += ::_pbi::WireFormatLite::Int32SizePlusOne(
+            this_._internal_unread_count());
+      }
+    }
+  }
+  return this_.MaybeComputeUnknownFieldsSize(total_size,
+                                             &this_._impl_._cached_size_);
+}
+
+void StoredUnreadEntry::MergeImpl(::google::protobuf::MessageLite& to_msg,
+                            const ::google::protobuf::MessageLite& from_msg) {
+   auto* const _this =
+      static_cast<StoredUnreadEntry*>(&to_msg);
+  auto& from = static_cast<const StoredUnreadEntry&>(from_msg);
+  if constexpr (::_pbi::DebugHardenCheckHasBitConsistency()) {
+    from.CheckHasBitConsistency();
+  }
+  // @@protoc_insertion_point(class_specific_merge_from_start:chirp.server_gateway.StoredUnreadEntry)
+  ABSL_DCHECK_NE(&from, _this);
+  ::uint32_t cached_has_bits = 0;
+  (void)cached_has_bits;
+
+  cached_has_bits = from._impl_._has_bits_[0];
+  if (BatchCheckHasBit(cached_has_bits, 0x0000000fU)) {
+    if (CheckHasBit(cached_has_bits, 0x00000001U)) {
+      if (!from._internal_player_id().empty()) {
+        _this->_internal_set_player_id(from._internal_player_id());
+      } else {
+        if (_this->_impl_.player_id_.IsDefault()) {
+          _this->_internal_set_player_id("");
+        }
+      }
+    }
+    if (CheckHasBit(cached_has_bits, 0x00000002U)) {
+      if (!from._internal_game_id().empty()) {
+        _this->_internal_set_game_id(from._internal_game_id());
+      } else {
+        if (_this->_impl_.game_id_.IsDefault()) {
+          _this->_internal_set_game_id("");
+        }
+      }
+    }
+    if (CheckHasBit(cached_has_bits, 0x00000004U)) {
+      if (!from._internal_channel_id().empty()) {
+        _this->_internal_set_channel_id(from._internal_channel_id());
+      } else {
+        if (_this->_impl_.channel_id_.IsDefault()) {
+          _this->_internal_set_channel_id("");
+        }
+      }
+    }
+    if (CheckHasBit(cached_has_bits, 0x00000008U)) {
+      if (from._internal_unread_count() != 0) {
+        _this->_impl_.unread_count_ = from._impl_.unread_count_;
+      }
+    }
+  }
+  _this->_impl_._has_bits_[0] |= cached_has_bits;
+  _this->_internal_metadata_.MergeFrom<::google::protobuf::UnknownFieldSet>(
+      from._internal_metadata_);
+}
+
+void StoredUnreadEntry::CopyFrom(const StoredUnreadEntry& from) {
+  // @@protoc_insertion_point(class_specific_copy_from_start:chirp.server_gateway.StoredUnreadEntry)
+  if (&from == this) return;
+  Clear();
+  MergeFrom(from);
+}
+
+
+void StoredUnreadEntry::InternalSwap(StoredUnreadEntry* PROTOBUF_RESTRICT PROTOBUF_NONNULL other) {
+  using ::std::swap;
+  auto* arena = GetArena();
+  ABSL_DCHECK_EQ(arena, other->GetArena());
+  _internal_metadata_.InternalSwap(&other->_internal_metadata_);
+  swap(_impl_._has_bits_[0], other->_impl_._has_bits_[0]);
+  ::_pbi::ArenaStringPtr::InternalSwap(&_impl_.player_id_, &other->_impl_.player_id_, arena);
+  ::_pbi::ArenaStringPtr::InternalSwap(&_impl_.game_id_, &other->_impl_.game_id_, arena);
+  ::_pbi::ArenaStringPtr::InternalSwap(&_impl_.channel_id_, &other->_impl_.channel_id_, arena);
+  swap(_impl_.unread_count_, other->_impl_.unread_count_);
+}
+
+::google::protobuf::Metadata StoredUnreadEntry::GetMetadata() const {
+  return ::google::protobuf::Message::GetMetadataImpl(GetClassData()->full());
+}
+// ===================================================================
+
+class MarkChannelsReadRequest::_Internal {
+ public:
+  using HasBits =
+      decltype(::std::declval<MarkChannelsReadRequest>()._impl_._has_bits_);
+  static constexpr ::int32_t kHasBitsOffset =
+      8 * PROTOBUF_FIELD_OFFSET(MarkChannelsReadRequest, _impl_._has_bits_);
+};
+
+MarkChannelsReadRequest::MarkChannelsReadRequest(::google::protobuf::Arena* PROTOBUF_NULLABLE arena)
+#if defined(PROTOBUF_CUSTOM_VTABLE)
+    : ::google::protobuf::Message(arena, MarkChannelsReadRequest_class_data_.base()) {
+#else   // PROTOBUF_CUSTOM_VTABLE
+    : ::google::protobuf::Message(arena) {
+#endif  // PROTOBUF_CUSTOM_VTABLE
+  SharedCtor(arena);
+  // @@protoc_insertion_point(arena_constructor:chirp.server_gateway.MarkChannelsReadRequest)
+}
+PROTOBUF_NDEBUG_INLINE MarkChannelsReadRequest::Impl_::Impl_(
+    [[maybe_unused]] ::google::protobuf::internal::InternalVisibility visibility,
+    [[maybe_unused]] ::google::protobuf::Arena* PROTOBUF_NULLABLE arena, const Impl_& from,
+    [[maybe_unused]] const ::chirp::server_gateway::MarkChannelsReadRequest& from_msg)
+      : _has_bits_{from._has_bits_},
+        _cached_size_{0},
+        player_id_(arena, from.player_id_),
+        game_id_(arena, from.game_id_),
+        channel_id_(arena, from.channel_id_) {}
+
+MarkChannelsReadRequest::MarkChannelsReadRequest(
+    ::google::protobuf::Arena* PROTOBUF_NULLABLE arena,
+    const MarkChannelsReadRequest& from)
+#if defined(PROTOBUF_CUSTOM_VTABLE)
+    : ::google::protobuf::Message(arena, MarkChannelsReadRequest_class_data_.base()) {
+#else   // PROTOBUF_CUSTOM_VTABLE
+    : ::google::protobuf::Message(arena) {
+#endif  // PROTOBUF_CUSTOM_VTABLE
+  MarkChannelsReadRequest* const _this = this;
+  (void)_this;
+  _internal_metadata_.MergeFrom<::google::protobuf::UnknownFieldSet>(
+      from._internal_metadata_);
+  new (&_impl_) Impl_(internal_visibility(), arena, from._impl_, from);
+
+  // @@protoc_insertion_point(copy_constructor:chirp.server_gateway.MarkChannelsReadRequest)
+}
+PROTOBUF_NDEBUG_INLINE MarkChannelsReadRequest::Impl_::Impl_(
+    [[maybe_unused]] ::google::protobuf::internal::InternalVisibility visibility,
+    [[maybe_unused]] ::google::protobuf::Arena* PROTOBUF_NULLABLE arena)
+      : _cached_size_{0},
+        player_id_(arena),
+        game_id_(arena),
+        channel_id_(arena) {}
+
+inline void MarkChannelsReadRequest::SharedCtor(::_pb::Arena* PROTOBUF_NULLABLE arena) {
+  new (&_impl_) Impl_(internal_visibility(), arena);
+}
+MarkChannelsReadRequest::~MarkChannelsReadRequest() {
+  // @@protoc_insertion_point(destructor:chirp.server_gateway.MarkChannelsReadRequest)
+  SharedDtor(*this);
+}
+inline void MarkChannelsReadRequest::SharedDtor(MessageLite& self) {
+  MarkChannelsReadRequest& this_ = static_cast<MarkChannelsReadRequest&>(self);
+  if constexpr (::_pbi::DebugHardenCheckHasBitConsistency()) {
+    this_.CheckHasBitConsistency();
+  }
+  this_._internal_metadata_.Delete<::google::protobuf::UnknownFieldSet>();
+  ABSL_DCHECK(this_.GetArena() == nullptr);
+  this_._impl_.player_id_.Destroy();
+  this_._impl_.game_id_.Destroy();
+  this_._impl_.channel_id_.Destroy();
+  this_._impl_.~Impl_();
+}
+
+inline void* PROTOBUF_NONNULL MarkChannelsReadRequest::PlacementNew_(
+    const void* PROTOBUF_NONNULL, void* PROTOBUF_NONNULL mem,
+    ::google::protobuf::Arena* PROTOBUF_NULLABLE arena) {
+  return ::new (mem) MarkChannelsReadRequest(arena);
+}
+constexpr auto MarkChannelsReadRequest::InternalNewImpl_() {
+  return ::google::protobuf::internal::MessageCreator::CopyInit(sizeof(MarkChannelsReadRequest),
+                                            alignof(MarkChannelsReadRequest));
+}
+constexpr auto MarkChannelsReadRequest::InternalGenerateClassData_() {
+  return ::google::protobuf::internal::ClassDataFull{
+      ::google::protobuf::internal::ClassData{
+          &_MarkChannelsReadRequest_default_instance_._instance,
+          &_table_.header,
+          nullptr,  // OnDemandRegisterArenaDtor
+          nullptr,  // IsInitialized
+          &MarkChannelsReadRequest::MergeImpl,
+          ::google::protobuf::Message::GetNewImpl<MarkChannelsReadRequest>(),
+#if defined(PROTOBUF_CUSTOM_VTABLE)
+          &MarkChannelsReadRequest::SharedDtor,
+          ::google::protobuf::Message::GetClearImpl<MarkChannelsReadRequest>(), &MarkChannelsReadRequest::ByteSizeLong,
+              &MarkChannelsReadRequest::_InternalSerialize,
+#endif  // PROTOBUF_CUSTOM_VTABLE
+          PROTOBUF_FIELD_OFFSET(MarkChannelsReadRequest, _impl_._cached_size_),
+          false,
+      },
+      &MarkChannelsReadRequest::kDescriptorMethods,
+      &descriptor_table_proto_2fserver_5fgateway_2eproto,
+      nullptr,  // tracker
+  };
+}
+
+PROTOBUF_CONSTINIT PROTOBUF_ATTRIBUTE_INIT_PRIORITY1 const
+    ::google::protobuf::internal::ClassDataFull MarkChannelsReadRequest_class_data_ =
+        MarkChannelsReadRequest::InternalGenerateClassData_();
+
+PROTOBUF_ATTRIBUTE_WEAK const ::google::protobuf::internal::ClassData* PROTOBUF_NONNULL
+MarkChannelsReadRequest::GetClassData() const {
+  ::google::protobuf::internal::PrefetchToLocalCache(&MarkChannelsReadRequest_class_data_);
+  ::google::protobuf::internal::PrefetchToLocalCache(MarkChannelsReadRequest_class_data_.tc_table);
+  return MarkChannelsReadRequest_class_data_.base();
+}
+PROTOBUF_CONSTINIT PROTOBUF_ATTRIBUTE_INIT_PRIORITY1
+const ::_pbi::TcParseTable<2, 3, 0, 79, 2>
+MarkChannelsReadRequest::_table_ = {
+  {
+    PROTOBUF_FIELD_OFFSET(MarkChannelsReadRequest, _impl_._has_bits_),
+    0, // no _extensions_
+    3, 24,  // max_field_number, fast_idx_mask
+    offsetof(decltype(_table_), field_lookup_table),
+    4294967288,  // skipmap
+    offsetof(decltype(_table_), field_entries),
+    3,  // num_field_entries
+    0,  // num_aux_entries
+    offsetof(decltype(_table_), field_names),  // no aux_entries
+    MarkChannelsReadRequest_class_data_.base(),
+    nullptr,  // post_loop_handler
+    ::_pbi::TcParser::GenericFallback,  // fallback
+    #ifdef PROTOBUF_PREFETCH_PARSE_TABLE
+    ::_pbi::TcParser::GetTable<::chirp::server_gateway::MarkChannelsReadRequest>(),  // to_prefetch
+    #endif  // PROTOBUF_PREFETCH_PARSE_TABLE
+  }, {{
+    {::_pbi::TcParser::MiniParse, {}},
+    // string player_id = 1;
+    {::_pbi::TcParser::FastUS1,
+     {10, 0, 0,
+      PROTOBUF_FIELD_OFFSET(MarkChannelsReadRequest, _impl_.player_id_)}},
+    // string game_id = 2;
+    {::_pbi::TcParser::FastUS1,
+     {18, 1, 0,
+      PROTOBUF_FIELD_OFFSET(MarkChannelsReadRequest, _impl_.game_id_)}},
+    // string channel_id = 3;
+    {::_pbi::TcParser::FastUS1,
+     {26, 2, 0,
+      PROTOBUF_FIELD_OFFSET(MarkChannelsReadRequest, _impl_.channel_id_)}},
+  }}, {{
+    65535, 65535
+  }}, {{
+    // string player_id = 1;
+    {PROTOBUF_FIELD_OFFSET(MarkChannelsReadRequest, _impl_.player_id_), _Internal::kHasBitsOffset + 0, 0, (0 | ::_fl::kFcOptional | ::_fl::kUtf8String | ::_fl::kRepAString)},
+    // string game_id = 2;
+    {PROTOBUF_FIELD_OFFSET(MarkChannelsReadRequest, _impl_.game_id_), _Internal::kHasBitsOffset + 1, 0, (0 | ::_fl::kFcOptional | ::_fl::kUtf8String | ::_fl::kRepAString)},
+    // string channel_id = 3;
+    {PROTOBUF_FIELD_OFFSET(MarkChannelsReadRequest, _impl_.channel_id_), _Internal::kHasBitsOffset + 2, 0, (0 | ::_fl::kFcOptional | ::_fl::kUtf8String | ::_fl::kRepAString)},
+  }},
+  // no aux_entries
+  {{
+    "\54\11\7\12\0\0\0\0"
+    "chirp.server_gateway.MarkChannelsReadRequest"
+    "player_id"
+    "game_id"
+    "channel_id"
+  }},
+};
+PROTOBUF_NOINLINE void MarkChannelsReadRequest::Clear() {
+// @@protoc_insertion_point(message_clear_start:chirp.server_gateway.MarkChannelsReadRequest)
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  ::uint32_t cached_has_bits = 0;
+  // Prevent compiler warnings about cached_has_bits being unused
+  (void) cached_has_bits;
+
+  cached_has_bits = _impl_._has_bits_[0];
+  if (BatchCheckHasBit(cached_has_bits, 0x00000007U)) {
+    if (CheckHasBit(cached_has_bits, 0x00000001U)) {
+      _impl_.player_id_.ClearNonDefaultToEmpty();
+    }
+    if (CheckHasBit(cached_has_bits, 0x00000002U)) {
+      _impl_.game_id_.ClearNonDefaultToEmpty();
+    }
+    if (CheckHasBit(cached_has_bits, 0x00000004U)) {
+      _impl_.channel_id_.ClearNonDefaultToEmpty();
+    }
+  }
+  _impl_._has_bits_.Clear();
+  _internal_metadata_.Clear<::google::protobuf::UnknownFieldSet>();
+}
+
+#if defined(PROTOBUF_CUSTOM_VTABLE)
+::uint8_t* PROTOBUF_NONNULL MarkChannelsReadRequest::_InternalSerialize(
+    const ::google::protobuf::MessageLite& base, ::uint8_t* PROTOBUF_NONNULL target,
+    ::google::protobuf::io::EpsCopyOutputStream* PROTOBUF_NONNULL stream) {
+  const MarkChannelsReadRequest& this_ = static_cast<const MarkChannelsReadRequest&>(base);
+#else   // PROTOBUF_CUSTOM_VTABLE
+::uint8_t* PROTOBUF_NONNULL MarkChannelsReadRequest::_InternalSerialize(
+    ::uint8_t* PROTOBUF_NONNULL target,
+    ::google::protobuf::io::EpsCopyOutputStream* PROTOBUF_NONNULL stream) const {
+  const MarkChannelsReadRequest& this_ = *this;
+#endif  // PROTOBUF_CUSTOM_VTABLE
+  if constexpr (::_pbi::DebugHardenCheckHasBitConsistency()) {
+    this_.CheckHasBitConsistency();
+  }
+  // @@protoc_insertion_point(serialize_to_array_start:chirp.server_gateway.MarkChannelsReadRequest)
+  ::uint32_t cached_has_bits = 0;
+  (void)cached_has_bits;
+
+  cached_has_bits = this_._impl_._has_bits_[0];
+  // string player_id = 1;
+  if (CheckHasBit(cached_has_bits, 0x00000001U)) {
+    if (!this_._internal_player_id().empty()) {
+      const ::std::string& _s = this_._internal_player_id();
+      ::google::protobuf::internal::WireFormatLite::VerifyUtf8String(
+          _s.data(), static_cast<int>(_s.length()), ::google::protobuf::internal::WireFormatLite::SERIALIZE, "chirp.server_gateway.MarkChannelsReadRequest.player_id");
+      target = stream->WriteStringMaybeAliased(1, _s, target);
+    }
+  }
+
+  // string game_id = 2;
+  if (CheckHasBit(cached_has_bits, 0x00000002U)) {
+    if (!this_._internal_game_id().empty()) {
+      const ::std::string& _s = this_._internal_game_id();
+      ::google::protobuf::internal::WireFormatLite::VerifyUtf8String(
+          _s.data(), static_cast<int>(_s.length()), ::google::protobuf::internal::WireFormatLite::SERIALIZE, "chirp.server_gateway.MarkChannelsReadRequest.game_id");
+      target = stream->WriteStringMaybeAliased(2, _s, target);
+    }
+  }
+
+  // string channel_id = 3;
+  if (CheckHasBit(cached_has_bits, 0x00000004U)) {
+    if (!this_._internal_channel_id().empty()) {
+      const ::std::string& _s = this_._internal_channel_id();
+      ::google::protobuf::internal::WireFormatLite::VerifyUtf8String(
+          _s.data(), static_cast<int>(_s.length()), ::google::protobuf::internal::WireFormatLite::SERIALIZE, "chirp.server_gateway.MarkChannelsReadRequest.channel_id");
+      target = stream->WriteStringMaybeAliased(3, _s, target);
+    }
+  }
+
+  if (ABSL_PREDICT_FALSE(this_._internal_metadata_.have_unknown_fields())) {
+    target =
+        ::_pbi::WireFormat::InternalSerializeUnknownFieldsToArray(
+            this_._internal_metadata_.unknown_fields<::google::protobuf::UnknownFieldSet>(::google::protobuf::UnknownFieldSet::default_instance), target, stream);
+  }
+  // @@protoc_insertion_point(serialize_to_array_end:chirp.server_gateway.MarkChannelsReadRequest)
+  return target;
+}
+
+#if defined(PROTOBUF_CUSTOM_VTABLE)
+::size_t MarkChannelsReadRequest::ByteSizeLong(const MessageLite& base) {
+  const MarkChannelsReadRequest& this_ = static_cast<const MarkChannelsReadRequest&>(base);
+#else   // PROTOBUF_CUSTOM_VTABLE
+::size_t MarkChannelsReadRequest::ByteSizeLong() const {
+  const MarkChannelsReadRequest& this_ = *this;
+#endif  // PROTOBUF_CUSTOM_VTABLE
+  // @@protoc_insertion_point(message_byte_size_start:chirp.server_gateway.MarkChannelsReadRequest)
+  ::size_t total_size = 0;
+
+  ::uint32_t cached_has_bits = 0;
+  // Prevent compiler warnings about cached_has_bits being unused
+  (void)cached_has_bits;
+
+  ::_pbi::Prefetch5LinesFrom7Lines(&this_);
+  cached_has_bits = this_._impl_._has_bits_[0];
+  if (BatchCheckHasBit(cached_has_bits, 0x00000007U)) {
+    // string player_id = 1;
+    if (CheckHasBit(cached_has_bits, 0x00000001U)) {
+      if (!this_._internal_player_id().empty()) {
+        total_size += 1 + ::google::protobuf::internal::WireFormatLite::StringSize(
+                                        this_._internal_player_id());
+      }
+    }
+    // string game_id = 2;
+    if (CheckHasBit(cached_has_bits, 0x00000002U)) {
+      if (!this_._internal_game_id().empty()) {
+        total_size += 1 + ::google::protobuf::internal::WireFormatLite::StringSize(
+                                        this_._internal_game_id());
+      }
+    }
+    // string channel_id = 3;
+    if (CheckHasBit(cached_has_bits, 0x00000004U)) {
+      if (!this_._internal_channel_id().empty()) {
+        total_size += 1 + ::google::protobuf::internal::WireFormatLite::StringSize(
+                                        this_._internal_channel_id());
+      }
+    }
+  }
+  return this_.MaybeComputeUnknownFieldsSize(total_size,
+                                             &this_._impl_._cached_size_);
+}
+
+void MarkChannelsReadRequest::MergeImpl(::google::protobuf::MessageLite& to_msg,
+                            const ::google::protobuf::MessageLite& from_msg) {
+   auto* const _this =
+      static_cast<MarkChannelsReadRequest*>(&to_msg);
+  auto& from = static_cast<const MarkChannelsReadRequest&>(from_msg);
+  if constexpr (::_pbi::DebugHardenCheckHasBitConsistency()) {
+    from.CheckHasBitConsistency();
+  }
+  // @@protoc_insertion_point(class_specific_merge_from_start:chirp.server_gateway.MarkChannelsReadRequest)
+  ABSL_DCHECK_NE(&from, _this);
+  ::uint32_t cached_has_bits = 0;
+  (void)cached_has_bits;
+
+  cached_has_bits = from._impl_._has_bits_[0];
+  if (BatchCheckHasBit(cached_has_bits, 0x00000007U)) {
+    if (CheckHasBit(cached_has_bits, 0x00000001U)) {
+      if (!from._internal_player_id().empty()) {
+        _this->_internal_set_player_id(from._internal_player_id());
+      } else {
+        if (_this->_impl_.player_id_.IsDefault()) {
+          _this->_internal_set_player_id("");
+        }
+      }
+    }
+    if (CheckHasBit(cached_has_bits, 0x00000002U)) {
+      if (!from._internal_game_id().empty()) {
+        _this->_internal_set_game_id(from._internal_game_id());
+      } else {
+        if (_this->_impl_.game_id_.IsDefault()) {
+          _this->_internal_set_game_id("");
+        }
+      }
+    }
+    if (CheckHasBit(cached_has_bits, 0x00000004U)) {
+      if (!from._internal_channel_id().empty()) {
+        _this->_internal_set_channel_id(from._internal_channel_id());
+      } else {
+        if (_this->_impl_.channel_id_.IsDefault()) {
+          _this->_internal_set_channel_id("");
+        }
+      }
+    }
+  }
+  _this->_impl_._has_bits_[0] |= cached_has_bits;
+  _this->_internal_metadata_.MergeFrom<::google::protobuf::UnknownFieldSet>(
+      from._internal_metadata_);
+}
+
+void MarkChannelsReadRequest::CopyFrom(const MarkChannelsReadRequest& from) {
+  // @@protoc_insertion_point(class_specific_copy_from_start:chirp.server_gateway.MarkChannelsReadRequest)
+  if (&from == this) return;
+  Clear();
+  MergeFrom(from);
+}
+
+
+void MarkChannelsReadRequest::InternalSwap(MarkChannelsReadRequest* PROTOBUF_RESTRICT PROTOBUF_NONNULL other) {
+  using ::std::swap;
+  auto* arena = GetArena();
+  ABSL_DCHECK_EQ(arena, other->GetArena());
+  _internal_metadata_.InternalSwap(&other->_internal_metadata_);
+  swap(_impl_._has_bits_[0], other->_impl_._has_bits_[0]);
+  ::_pbi::ArenaStringPtr::InternalSwap(&_impl_.player_id_, &other->_impl_.player_id_, arena);
+  ::_pbi::ArenaStringPtr::InternalSwap(&_impl_.game_id_, &other->_impl_.game_id_, arena);
+  ::_pbi::ArenaStringPtr::InternalSwap(&_impl_.channel_id_, &other->_impl_.channel_id_, arena);
+}
+
+::google::protobuf::Metadata MarkChannelsReadRequest::GetMetadata() const {
+  return ::google::protobuf::Message::GetMetadataImpl(GetClassData()->full());
+}
+// ===================================================================
+
+class MarkChannelsReadResponse::_Internal {
+ public:
+  using HasBits =
+      decltype(::std::declval<MarkChannelsReadResponse>()._impl_._has_bits_);
+  static constexpr ::int32_t kHasBitsOffset =
+      8 * PROTOBUF_FIELD_OFFSET(MarkChannelsReadResponse, _impl_._has_bits_);
+};
+
+MarkChannelsReadResponse::MarkChannelsReadResponse(::google::protobuf::Arena* PROTOBUF_NULLABLE arena)
+#if defined(PROTOBUF_CUSTOM_VTABLE)
+    : ::google::protobuf::Message(arena, MarkChannelsReadResponse_class_data_.base()) {
+#else   // PROTOBUF_CUSTOM_VTABLE
+    : ::google::protobuf::Message(arena) {
+#endif  // PROTOBUF_CUSTOM_VTABLE
+  SharedCtor(arena);
+  // @@protoc_insertion_point(arena_constructor:chirp.server_gateway.MarkChannelsReadResponse)
+}
+MarkChannelsReadResponse::MarkChannelsReadResponse(
+    ::google::protobuf::Arena* PROTOBUF_NULLABLE arena, const MarkChannelsReadResponse& from)
+#if defined(PROTOBUF_CUSTOM_VTABLE)
+    : ::google::protobuf::Message(arena, MarkChannelsReadResponse_class_data_.base()),
+#else   // PROTOBUF_CUSTOM_VTABLE
+    : ::google::protobuf::Message(arena),
+#endif  // PROTOBUF_CUSTOM_VTABLE
+      _impl_(from._impl_) {
+  _internal_metadata_.MergeFrom<::google::protobuf::UnknownFieldSet>(
+      from._internal_metadata_);
+}
+PROTOBUF_NDEBUG_INLINE MarkChannelsReadResponse::Impl_::Impl_(
+    [[maybe_unused]] ::google::protobuf::internal::InternalVisibility visibility,
+    [[maybe_unused]] ::google::protobuf::Arena* PROTOBUF_NULLABLE arena)
+      : _cached_size_{0} {}
+
+inline void MarkChannelsReadResponse::SharedCtor(::_pb::Arena* PROTOBUF_NULLABLE arena) {
+  new (&_impl_) Impl_(internal_visibility(), arena);
+  ::memset(reinterpret_cast<char*>(&_impl_) +
+               offsetof(Impl_, code_),
+           0,
+           offsetof(Impl_, cleared_) -
+               offsetof(Impl_, code_) +
+               sizeof(Impl_::cleared_));
+}
+MarkChannelsReadResponse::~MarkChannelsReadResponse() {
+  // @@protoc_insertion_point(destructor:chirp.server_gateway.MarkChannelsReadResponse)
+  SharedDtor(*this);
+}
+inline void MarkChannelsReadResponse::SharedDtor(MessageLite& self) {
+  MarkChannelsReadResponse& this_ = static_cast<MarkChannelsReadResponse&>(self);
+  if constexpr (::_pbi::DebugHardenCheckHasBitConsistency()) {
+    this_.CheckHasBitConsistency();
+  }
+  this_._internal_metadata_.Delete<::google::protobuf::UnknownFieldSet>();
+  ABSL_DCHECK(this_.GetArena() == nullptr);
+  this_._impl_.~Impl_();
+}
+
+inline void* PROTOBUF_NONNULL MarkChannelsReadResponse::PlacementNew_(
+    const void* PROTOBUF_NONNULL, void* PROTOBUF_NONNULL mem,
+    ::google::protobuf::Arena* PROTOBUF_NULLABLE arena) {
+  return ::new (mem) MarkChannelsReadResponse(arena);
+}
+constexpr auto MarkChannelsReadResponse::InternalNewImpl_() {
+  return ::google::protobuf::internal::MessageCreator::ZeroInit(sizeof(MarkChannelsReadResponse),
+                                            alignof(MarkChannelsReadResponse));
+}
+constexpr auto MarkChannelsReadResponse::InternalGenerateClassData_() {
+  return ::google::protobuf::internal::ClassDataFull{
+      ::google::protobuf::internal::ClassData{
+          &_MarkChannelsReadResponse_default_instance_._instance,
+          &_table_.header,
+          nullptr,  // OnDemandRegisterArenaDtor
+          nullptr,  // IsInitialized
+          &MarkChannelsReadResponse::MergeImpl,
+          ::google::protobuf::Message::GetNewImpl<MarkChannelsReadResponse>(),
+#if defined(PROTOBUF_CUSTOM_VTABLE)
+          &MarkChannelsReadResponse::SharedDtor,
+          ::google::protobuf::Message::GetClearImpl<MarkChannelsReadResponse>(), &MarkChannelsReadResponse::ByteSizeLong,
+              &MarkChannelsReadResponse::_InternalSerialize,
+#endif  // PROTOBUF_CUSTOM_VTABLE
+          PROTOBUF_FIELD_OFFSET(MarkChannelsReadResponse, _impl_._cached_size_),
+          false,
+      },
+      &MarkChannelsReadResponse::kDescriptorMethods,
+      &descriptor_table_proto_2fserver_5fgateway_2eproto,
+      nullptr,  // tracker
+  };
+}
+
+PROTOBUF_CONSTINIT PROTOBUF_ATTRIBUTE_INIT_PRIORITY1 const
+    ::google::protobuf::internal::ClassDataFull MarkChannelsReadResponse_class_data_ =
+        MarkChannelsReadResponse::InternalGenerateClassData_();
+
+PROTOBUF_ATTRIBUTE_WEAK const ::google::protobuf::internal::ClassData* PROTOBUF_NONNULL
+MarkChannelsReadResponse::GetClassData() const {
+  ::google::protobuf::internal::PrefetchToLocalCache(&MarkChannelsReadResponse_class_data_);
+  ::google::protobuf::internal::PrefetchToLocalCache(MarkChannelsReadResponse_class_data_.tc_table);
+  return MarkChannelsReadResponse_class_data_.base();
+}
+PROTOBUF_CONSTINIT PROTOBUF_ATTRIBUTE_INIT_PRIORITY1
+const ::_pbi::TcParseTable<1, 2, 0, 0, 2>
+MarkChannelsReadResponse::_table_ = {
+  {
+    PROTOBUF_FIELD_OFFSET(MarkChannelsReadResponse, _impl_._has_bits_),
+    0, // no _extensions_
+    2, 8,  // max_field_number, fast_idx_mask
+    offsetof(decltype(_table_), field_lookup_table),
+    4294967292,  // skipmap
+    offsetof(decltype(_table_), field_entries),
+    2,  // num_field_entries
+    0,  // num_aux_entries
+    offsetof(decltype(_table_), field_names),  // no aux_entries
+    MarkChannelsReadResponse_class_data_.base(),
+    nullptr,  // post_loop_handler
+    ::_pbi::TcParser::GenericFallback,  // fallback
+    #ifdef PROTOBUF_PREFETCH_PARSE_TABLE
+    ::_pbi::TcParser::GetTable<::chirp::server_gateway::MarkChannelsReadResponse>(),  // to_prefetch
+    #endif  // PROTOBUF_PREFETCH_PARSE_TABLE
+  }, {{
+    // int32 cleared = 2;
+    {::_pbi::TcParser::SingularVarintNoZag1<::uint32_t, offsetof(MarkChannelsReadResponse, _impl_.cleared_), 1>(),
+     {16, 1, 0,
+      PROTOBUF_FIELD_OFFSET(MarkChannelsReadResponse, _impl_.cleared_)}},
+    // .chirp.common.ErrorCode code = 1;
+    {::_pbi::TcParser::SingularVarintNoZag1<::uint32_t, offsetof(MarkChannelsReadResponse, _impl_.code_), 0>(),
+     {8, 0, 0,
+      PROTOBUF_FIELD_OFFSET(MarkChannelsReadResponse, _impl_.code_)}},
+  }}, {{
+    65535, 65535
+  }}, {{
+    // .chirp.common.ErrorCode code = 1;
+    {PROTOBUF_FIELD_OFFSET(MarkChannelsReadResponse, _impl_.code_), _Internal::kHasBitsOffset + 0, 0, (0 | ::_fl::kFcOptional | ::_fl::kOpenEnum)},
+    // int32 cleared = 2;
+    {PROTOBUF_FIELD_OFFSET(MarkChannelsReadResponse, _impl_.cleared_), _Internal::kHasBitsOffset + 1, 0, (0 | ::_fl::kFcOptional | ::_fl::kInt32)},
+  }},
+  // no aux_entries
+  {{
+  }},
+};
+PROTOBUF_NOINLINE void MarkChannelsReadResponse::Clear() {
+// @@protoc_insertion_point(message_clear_start:chirp.server_gateway.MarkChannelsReadResponse)
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  ::uint32_t cached_has_bits = 0;
+  // Prevent compiler warnings about cached_has_bits being unused
+  (void) cached_has_bits;
+
+  cached_has_bits = _impl_._has_bits_[0];
+  if (BatchCheckHasBit(cached_has_bits, 0x00000003U)) {
+    ::memset(&_impl_.code_, 0, static_cast<::size_t>(
+        reinterpret_cast<char*>(&_impl_.cleared_) -
+        reinterpret_cast<char*>(&_impl_.code_)) + sizeof(_impl_.cleared_));
+  }
+  _impl_._has_bits_.Clear();
+  _internal_metadata_.Clear<::google::protobuf::UnknownFieldSet>();
+}
+
+#if defined(PROTOBUF_CUSTOM_VTABLE)
+::uint8_t* PROTOBUF_NONNULL MarkChannelsReadResponse::_InternalSerialize(
+    const ::google::protobuf::MessageLite& base, ::uint8_t* PROTOBUF_NONNULL target,
+    ::google::protobuf::io::EpsCopyOutputStream* PROTOBUF_NONNULL stream) {
+  const MarkChannelsReadResponse& this_ = static_cast<const MarkChannelsReadResponse&>(base);
+#else   // PROTOBUF_CUSTOM_VTABLE
+::uint8_t* PROTOBUF_NONNULL MarkChannelsReadResponse::_InternalSerialize(
+    ::uint8_t* PROTOBUF_NONNULL target,
+    ::google::protobuf::io::EpsCopyOutputStream* PROTOBUF_NONNULL stream) const {
+  const MarkChannelsReadResponse& this_ = *this;
+#endif  // PROTOBUF_CUSTOM_VTABLE
+  if constexpr (::_pbi::DebugHardenCheckHasBitConsistency()) {
+    this_.CheckHasBitConsistency();
+  }
+  // @@protoc_insertion_point(serialize_to_array_start:chirp.server_gateway.MarkChannelsReadResponse)
+  ::uint32_t cached_has_bits = 0;
+  (void)cached_has_bits;
+
+  cached_has_bits = this_._impl_._has_bits_[0];
+  // .chirp.common.ErrorCode code = 1;
+  if (CheckHasBit(cached_has_bits, 0x00000001U)) {
+    if (this_._internal_code() != 0) {
+      target = stream->EnsureSpace(target);
+      target = ::_pbi::WireFormatLite::WriteEnumToArray(
+          1, this_._internal_code(), target);
+    }
+  }
+
+  // int32 cleared = 2;
+  if (CheckHasBit(cached_has_bits, 0x00000002U)) {
+    if (this_._internal_cleared() != 0) {
+      target =
+          ::google::protobuf::internal::WireFormatLite::WriteInt32ToArrayWithField<2>(
+              stream, this_._internal_cleared(), target);
+    }
+  }
+
+  if (ABSL_PREDICT_FALSE(this_._internal_metadata_.have_unknown_fields())) {
+    target =
+        ::_pbi::WireFormat::InternalSerializeUnknownFieldsToArray(
+            this_._internal_metadata_.unknown_fields<::google::protobuf::UnknownFieldSet>(::google::protobuf::UnknownFieldSet::default_instance), target, stream);
+  }
+  // @@protoc_insertion_point(serialize_to_array_end:chirp.server_gateway.MarkChannelsReadResponse)
+  return target;
+}
+
+#if defined(PROTOBUF_CUSTOM_VTABLE)
+::size_t MarkChannelsReadResponse::ByteSizeLong(const MessageLite& base) {
+  const MarkChannelsReadResponse& this_ = static_cast<const MarkChannelsReadResponse&>(base);
+#else   // PROTOBUF_CUSTOM_VTABLE
+::size_t MarkChannelsReadResponse::ByteSizeLong() const {
+  const MarkChannelsReadResponse& this_ = *this;
+#endif  // PROTOBUF_CUSTOM_VTABLE
+  // @@protoc_insertion_point(message_byte_size_start:chirp.server_gateway.MarkChannelsReadResponse)
+  ::size_t total_size = 0;
+
+  ::uint32_t cached_has_bits = 0;
+  // Prevent compiler warnings about cached_has_bits being unused
+  (void)cached_has_bits;
+
+  ::_pbi::Prefetch5LinesFrom7Lines(&this_);
+  cached_has_bits = this_._impl_._has_bits_[0];
+  if (BatchCheckHasBit(cached_has_bits, 0x00000003U)) {
+    // .chirp.common.ErrorCode code = 1;
+    if (CheckHasBit(cached_has_bits, 0x00000001U)) {
+      if (this_._internal_code() != 0) {
+        total_size += 1 +
+                      ::_pbi::WireFormatLite::EnumSize(this_._internal_code());
+      }
+    }
+    // int32 cleared = 2;
+    if (CheckHasBit(cached_has_bits, 0x00000002U)) {
+      if (this_._internal_cleared() != 0) {
+        total_size += ::_pbi::WireFormatLite::Int32SizePlusOne(
+            this_._internal_cleared());
+      }
+    }
+  }
+  return this_.MaybeComputeUnknownFieldsSize(total_size,
+                                             &this_._impl_._cached_size_);
+}
+
+void MarkChannelsReadResponse::MergeImpl(::google::protobuf::MessageLite& to_msg,
+                            const ::google::protobuf::MessageLite& from_msg) {
+   auto* const _this =
+      static_cast<MarkChannelsReadResponse*>(&to_msg);
+  auto& from = static_cast<const MarkChannelsReadResponse&>(from_msg);
+  if constexpr (::_pbi::DebugHardenCheckHasBitConsistency()) {
+    from.CheckHasBitConsistency();
+  }
+  // @@protoc_insertion_point(class_specific_merge_from_start:chirp.server_gateway.MarkChannelsReadResponse)
+  ABSL_DCHECK_NE(&from, _this);
+  ::uint32_t cached_has_bits = 0;
+  (void)cached_has_bits;
+
+  cached_has_bits = from._impl_._has_bits_[0];
+  if (BatchCheckHasBit(cached_has_bits, 0x00000003U)) {
+    if (CheckHasBit(cached_has_bits, 0x00000001U)) {
+      if (from._internal_code() != 0) {
+        _this->_impl_.code_ = from._impl_.code_;
+      }
+    }
+    if (CheckHasBit(cached_has_bits, 0x00000002U)) {
+      if (from._internal_cleared() != 0) {
+        _this->_impl_.cleared_ = from._impl_.cleared_;
+      }
+    }
+  }
+  _this->_impl_._has_bits_[0] |= cached_has_bits;
+  _this->_internal_metadata_.MergeFrom<::google::protobuf::UnknownFieldSet>(
+      from._internal_metadata_);
+}
+
+void MarkChannelsReadResponse::CopyFrom(const MarkChannelsReadResponse& from) {
+  // @@protoc_insertion_point(class_specific_copy_from_start:chirp.server_gateway.MarkChannelsReadResponse)
+  if (&from == this) return;
+  Clear();
+  MergeFrom(from);
+}
+
+
+void MarkChannelsReadResponse::InternalSwap(MarkChannelsReadResponse* PROTOBUF_RESTRICT PROTOBUF_NONNULL other) {
+  using ::std::swap;
+  _internal_metadata_.InternalSwap(&other->_internal_metadata_);
+  swap(_impl_._has_bits_[0], other->_impl_._has_bits_[0]);
+  ::google::protobuf::internal::memswap<
+      PROTOBUF_FIELD_OFFSET(MarkChannelsReadResponse, _impl_.cleared_)
+      + sizeof(MarkChannelsReadResponse::_impl_.cleared_)
+      - PROTOBUF_FIELD_OFFSET(MarkChannelsReadResponse, _impl_.code_)>(
+          reinterpret_cast<char*>(&_impl_.code_),
+          reinterpret_cast<char*>(&other->_impl_.code_));
+}
+
+::google::protobuf::Metadata MarkChannelsReadResponse::GetMetadata() const {
+  return ::google::protobuf::Message::GetMetadataImpl(GetClassData()->full());
+}
+// ===================================================================
+
+class UnreadSummaryEntry::_Internal {
+ public:
+  using HasBits =
+      decltype(::std::declval<UnreadSummaryEntry>()._impl_._has_bits_);
+  static constexpr ::int32_t kHasBitsOffset =
+      8 * PROTOBUF_FIELD_OFFSET(UnreadSummaryEntry, _impl_._has_bits_);
+};
+
+UnreadSummaryEntry::UnreadSummaryEntry(::google::protobuf::Arena* PROTOBUF_NULLABLE arena)
+#if defined(PROTOBUF_CUSTOM_VTABLE)
+    : ::google::protobuf::Message(arena, UnreadSummaryEntry_class_data_.base()) {
+#else   // PROTOBUF_CUSTOM_VTABLE
+    : ::google::protobuf::Message(arena) {
+#endif  // PROTOBUF_CUSTOM_VTABLE
+  SharedCtor(arena);
+  // @@protoc_insertion_point(arena_constructor:chirp.server_gateway.UnreadSummaryEntry)
+}
+PROTOBUF_NDEBUG_INLINE UnreadSummaryEntry::Impl_::Impl_(
+    [[maybe_unused]] ::google::protobuf::internal::InternalVisibility visibility,
+    [[maybe_unused]] ::google::protobuf::Arena* PROTOBUF_NULLABLE arena, const Impl_& from,
+    [[maybe_unused]] const ::chirp::server_gateway::UnreadSummaryEntry& from_msg)
+      : _has_bits_{from._has_bits_},
+        _cached_size_{0},
+        game_id_(arena, from.game_id_),
+        channel_id_(arena, from.channel_id_) {}
+
+UnreadSummaryEntry::UnreadSummaryEntry(
+    ::google::protobuf::Arena* PROTOBUF_NULLABLE arena,
+    const UnreadSummaryEntry& from)
+#if defined(PROTOBUF_CUSTOM_VTABLE)
+    : ::google::protobuf::Message(arena, UnreadSummaryEntry_class_data_.base()) {
+#else   // PROTOBUF_CUSTOM_VTABLE
+    : ::google::protobuf::Message(arena) {
+#endif  // PROTOBUF_CUSTOM_VTABLE
+  UnreadSummaryEntry* const _this = this;
+  (void)_this;
+  _internal_metadata_.MergeFrom<::google::protobuf::UnknownFieldSet>(
+      from._internal_metadata_);
+  new (&_impl_) Impl_(internal_visibility(), arena, from._impl_, from);
+  _impl_.unread_count_ = from._impl_.unread_count_;
+
+  // @@protoc_insertion_point(copy_constructor:chirp.server_gateway.UnreadSummaryEntry)
+}
+PROTOBUF_NDEBUG_INLINE UnreadSummaryEntry::Impl_::Impl_(
+    [[maybe_unused]] ::google::protobuf::internal::InternalVisibility visibility,
+    [[maybe_unused]] ::google::protobuf::Arena* PROTOBUF_NULLABLE arena)
+      : _cached_size_{0},
+        game_id_(arena),
+        channel_id_(arena) {}
+
+inline void UnreadSummaryEntry::SharedCtor(::_pb::Arena* PROTOBUF_NULLABLE arena) {
+  new (&_impl_) Impl_(internal_visibility(), arena);
+  _impl_.unread_count_ = {};
+}
+UnreadSummaryEntry::~UnreadSummaryEntry() {
+  // @@protoc_insertion_point(destructor:chirp.server_gateway.UnreadSummaryEntry)
+  SharedDtor(*this);
+}
+inline void UnreadSummaryEntry::SharedDtor(MessageLite& self) {
+  UnreadSummaryEntry& this_ = static_cast<UnreadSummaryEntry&>(self);
+  if constexpr (::_pbi::DebugHardenCheckHasBitConsistency()) {
+    this_.CheckHasBitConsistency();
+  }
+  this_._internal_metadata_.Delete<::google::protobuf::UnknownFieldSet>();
+  ABSL_DCHECK(this_.GetArena() == nullptr);
+  this_._impl_.game_id_.Destroy();
+  this_._impl_.channel_id_.Destroy();
+  this_._impl_.~Impl_();
+}
+
+inline void* PROTOBUF_NONNULL UnreadSummaryEntry::PlacementNew_(
+    const void* PROTOBUF_NONNULL, void* PROTOBUF_NONNULL mem,
+    ::google::protobuf::Arena* PROTOBUF_NULLABLE arena) {
+  return ::new (mem) UnreadSummaryEntry(arena);
+}
+constexpr auto UnreadSummaryEntry::InternalNewImpl_() {
+  return ::google::protobuf::internal::MessageCreator::CopyInit(sizeof(UnreadSummaryEntry),
+                                            alignof(UnreadSummaryEntry));
+}
+constexpr auto UnreadSummaryEntry::InternalGenerateClassData_() {
+  return ::google::protobuf::internal::ClassDataFull{
+      ::google::protobuf::internal::ClassData{
+          &_UnreadSummaryEntry_default_instance_._instance,
+          &_table_.header,
+          nullptr,  // OnDemandRegisterArenaDtor
+          nullptr,  // IsInitialized
+          &UnreadSummaryEntry::MergeImpl,
+          ::google::protobuf::Message::GetNewImpl<UnreadSummaryEntry>(),
+#if defined(PROTOBUF_CUSTOM_VTABLE)
+          &UnreadSummaryEntry::SharedDtor,
+          ::google::protobuf::Message::GetClearImpl<UnreadSummaryEntry>(), &UnreadSummaryEntry::ByteSizeLong,
+              &UnreadSummaryEntry::_InternalSerialize,
+#endif  // PROTOBUF_CUSTOM_VTABLE
+          PROTOBUF_FIELD_OFFSET(UnreadSummaryEntry, _impl_._cached_size_),
+          false,
+      },
+      &UnreadSummaryEntry::kDescriptorMethods,
+      &descriptor_table_proto_2fserver_5fgateway_2eproto,
+      nullptr,  // tracker
+  };
+}
+
+PROTOBUF_CONSTINIT PROTOBUF_ATTRIBUTE_INIT_PRIORITY1 const
+    ::google::protobuf::internal::ClassDataFull UnreadSummaryEntry_class_data_ =
+        UnreadSummaryEntry::InternalGenerateClassData_();
+
+PROTOBUF_ATTRIBUTE_WEAK const ::google::protobuf::internal::ClassData* PROTOBUF_NONNULL
+UnreadSummaryEntry::GetClassData() const {
+  ::google::protobuf::internal::PrefetchToLocalCache(&UnreadSummaryEntry_class_data_);
+  ::google::protobuf::internal::PrefetchToLocalCache(UnreadSummaryEntry_class_data_.tc_table);
+  return UnreadSummaryEntry_class_data_.base();
+}
+PROTOBUF_CONSTINIT PROTOBUF_ATTRIBUTE_INIT_PRIORITY1
+const ::_pbi::TcParseTable<2, 3, 0, 65, 2>
+UnreadSummaryEntry::_table_ = {
+  {
+    PROTOBUF_FIELD_OFFSET(UnreadSummaryEntry, _impl_._has_bits_),
+    0, // no _extensions_
+    3, 24,  // max_field_number, fast_idx_mask
+    offsetof(decltype(_table_), field_lookup_table),
+    4294967288,  // skipmap
+    offsetof(decltype(_table_), field_entries),
+    3,  // num_field_entries
+    0,  // num_aux_entries
+    offsetof(decltype(_table_), field_names),  // no aux_entries
+    UnreadSummaryEntry_class_data_.base(),
+    nullptr,  // post_loop_handler
+    ::_pbi::TcParser::GenericFallback,  // fallback
+    #ifdef PROTOBUF_PREFETCH_PARSE_TABLE
+    ::_pbi::TcParser::GetTable<::chirp::server_gateway::UnreadSummaryEntry>(),  // to_prefetch
+    #endif  // PROTOBUF_PREFETCH_PARSE_TABLE
+  }, {{
+    {::_pbi::TcParser::MiniParse, {}},
+    // string game_id = 1;
+    {::_pbi::TcParser::FastUS1,
+     {10, 0, 0,
+      PROTOBUF_FIELD_OFFSET(UnreadSummaryEntry, _impl_.game_id_)}},
+    // string channel_id = 2;
+    {::_pbi::TcParser::FastUS1,
+     {18, 1, 0,
+      PROTOBUF_FIELD_OFFSET(UnreadSummaryEntry, _impl_.channel_id_)}},
+    // int32 unread_count = 3;
+    {::_pbi::TcParser::SingularVarintNoZag1<::uint32_t, offsetof(UnreadSummaryEntry, _impl_.unread_count_), 2>(),
+     {24, 2, 0,
+      PROTOBUF_FIELD_OFFSET(UnreadSummaryEntry, _impl_.unread_count_)}},
+  }}, {{
+    65535, 65535
+  }}, {{
+    // string game_id = 1;
+    {PROTOBUF_FIELD_OFFSET(UnreadSummaryEntry, _impl_.game_id_), _Internal::kHasBitsOffset + 0, 0, (0 | ::_fl::kFcOptional | ::_fl::kUtf8String | ::_fl::kRepAString)},
+    // string channel_id = 2;
+    {PROTOBUF_FIELD_OFFSET(UnreadSummaryEntry, _impl_.channel_id_), _Internal::kHasBitsOffset + 1, 0, (0 | ::_fl::kFcOptional | ::_fl::kUtf8String | ::_fl::kRepAString)},
+    // int32 unread_count = 3;
+    {PROTOBUF_FIELD_OFFSET(UnreadSummaryEntry, _impl_.unread_count_), _Internal::kHasBitsOffset + 2, 0, (0 | ::_fl::kFcOptional | ::_fl::kInt32)},
+  }},
+  // no aux_entries
+  {{
+    "\47\7\12\0\0\0\0\0"
+    "chirp.server_gateway.UnreadSummaryEntry"
+    "game_id"
+    "channel_id"
+  }},
+};
+PROTOBUF_NOINLINE void UnreadSummaryEntry::Clear() {
+// @@protoc_insertion_point(message_clear_start:chirp.server_gateway.UnreadSummaryEntry)
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  ::uint32_t cached_has_bits = 0;
+  // Prevent compiler warnings about cached_has_bits being unused
+  (void) cached_has_bits;
+
+  cached_has_bits = _impl_._has_bits_[0];
+  if (BatchCheckHasBit(cached_has_bits, 0x00000003U)) {
+    if (CheckHasBit(cached_has_bits, 0x00000001U)) {
+      _impl_.game_id_.ClearNonDefaultToEmpty();
+    }
+    if (CheckHasBit(cached_has_bits, 0x00000002U)) {
+      _impl_.channel_id_.ClearNonDefaultToEmpty();
+    }
+  }
+  _impl_.unread_count_ = 0;
+  _impl_._has_bits_.Clear();
+  _internal_metadata_.Clear<::google::protobuf::UnknownFieldSet>();
+}
+
+#if defined(PROTOBUF_CUSTOM_VTABLE)
+::uint8_t* PROTOBUF_NONNULL UnreadSummaryEntry::_InternalSerialize(
+    const ::google::protobuf::MessageLite& base, ::uint8_t* PROTOBUF_NONNULL target,
+    ::google::protobuf::io::EpsCopyOutputStream* PROTOBUF_NONNULL stream) {
+  const UnreadSummaryEntry& this_ = static_cast<const UnreadSummaryEntry&>(base);
+#else   // PROTOBUF_CUSTOM_VTABLE
+::uint8_t* PROTOBUF_NONNULL UnreadSummaryEntry::_InternalSerialize(
+    ::uint8_t* PROTOBUF_NONNULL target,
+    ::google::protobuf::io::EpsCopyOutputStream* PROTOBUF_NONNULL stream) const {
+  const UnreadSummaryEntry& this_ = *this;
+#endif  // PROTOBUF_CUSTOM_VTABLE
+  if constexpr (::_pbi::DebugHardenCheckHasBitConsistency()) {
+    this_.CheckHasBitConsistency();
+  }
+  // @@protoc_insertion_point(serialize_to_array_start:chirp.server_gateway.UnreadSummaryEntry)
+  ::uint32_t cached_has_bits = 0;
+  (void)cached_has_bits;
+
+  cached_has_bits = this_._impl_._has_bits_[0];
+  // string game_id = 1;
+  if (CheckHasBit(cached_has_bits, 0x00000001U)) {
+    if (!this_._internal_game_id().empty()) {
+      const ::std::string& _s = this_._internal_game_id();
+      ::google::protobuf::internal::WireFormatLite::VerifyUtf8String(
+          _s.data(), static_cast<int>(_s.length()), ::google::protobuf::internal::WireFormatLite::SERIALIZE, "chirp.server_gateway.UnreadSummaryEntry.game_id");
+      target = stream->WriteStringMaybeAliased(1, _s, target);
+    }
+  }
+
+  // string channel_id = 2;
+  if (CheckHasBit(cached_has_bits, 0x00000002U)) {
+    if (!this_._internal_channel_id().empty()) {
+      const ::std::string& _s = this_._internal_channel_id();
+      ::google::protobuf::internal::WireFormatLite::VerifyUtf8String(
+          _s.data(), static_cast<int>(_s.length()), ::google::protobuf::internal::WireFormatLite::SERIALIZE, "chirp.server_gateway.UnreadSummaryEntry.channel_id");
+      target = stream->WriteStringMaybeAliased(2, _s, target);
+    }
+  }
+
+  // int32 unread_count = 3;
+  if (CheckHasBit(cached_has_bits, 0x00000004U)) {
+    if (this_._internal_unread_count() != 0) {
+      target =
+          ::google::protobuf::internal::WireFormatLite::WriteInt32ToArrayWithField<3>(
+              stream, this_._internal_unread_count(), target);
+    }
+  }
+
+  if (ABSL_PREDICT_FALSE(this_._internal_metadata_.have_unknown_fields())) {
+    target =
+        ::_pbi::WireFormat::InternalSerializeUnknownFieldsToArray(
+            this_._internal_metadata_.unknown_fields<::google::protobuf::UnknownFieldSet>(::google::protobuf::UnknownFieldSet::default_instance), target, stream);
+  }
+  // @@protoc_insertion_point(serialize_to_array_end:chirp.server_gateway.UnreadSummaryEntry)
+  return target;
+}
+
+#if defined(PROTOBUF_CUSTOM_VTABLE)
+::size_t UnreadSummaryEntry::ByteSizeLong(const MessageLite& base) {
+  const UnreadSummaryEntry& this_ = static_cast<const UnreadSummaryEntry&>(base);
+#else   // PROTOBUF_CUSTOM_VTABLE
+::size_t UnreadSummaryEntry::ByteSizeLong() const {
+  const UnreadSummaryEntry& this_ = *this;
+#endif  // PROTOBUF_CUSTOM_VTABLE
+  // @@protoc_insertion_point(message_byte_size_start:chirp.server_gateway.UnreadSummaryEntry)
+  ::size_t total_size = 0;
+
+  ::uint32_t cached_has_bits = 0;
+  // Prevent compiler warnings about cached_has_bits being unused
+  (void)cached_has_bits;
+
+  ::_pbi::Prefetch5LinesFrom7Lines(&this_);
+  cached_has_bits = this_._impl_._has_bits_[0];
+  if (BatchCheckHasBit(cached_has_bits, 0x00000007U)) {
+    // string game_id = 1;
+    if (CheckHasBit(cached_has_bits, 0x00000001U)) {
+      if (!this_._internal_game_id().empty()) {
+        total_size += 1 + ::google::protobuf::internal::WireFormatLite::StringSize(
+                                        this_._internal_game_id());
+      }
+    }
+    // string channel_id = 2;
+    if (CheckHasBit(cached_has_bits, 0x00000002U)) {
+      if (!this_._internal_channel_id().empty()) {
+        total_size += 1 + ::google::protobuf::internal::WireFormatLite::StringSize(
+                                        this_._internal_channel_id());
+      }
+    }
+    // int32 unread_count = 3;
+    if (CheckHasBit(cached_has_bits, 0x00000004U)) {
+      if (this_._internal_unread_count() != 0) {
+        total_size += ::_pbi::WireFormatLite::Int32SizePlusOne(
+            this_._internal_unread_count());
+      }
+    }
+  }
+  return this_.MaybeComputeUnknownFieldsSize(total_size,
+                                             &this_._impl_._cached_size_);
+}
+
+void UnreadSummaryEntry::MergeImpl(::google::protobuf::MessageLite& to_msg,
+                            const ::google::protobuf::MessageLite& from_msg) {
+   auto* const _this =
+      static_cast<UnreadSummaryEntry*>(&to_msg);
+  auto& from = static_cast<const UnreadSummaryEntry&>(from_msg);
+  if constexpr (::_pbi::DebugHardenCheckHasBitConsistency()) {
+    from.CheckHasBitConsistency();
+  }
+  // @@protoc_insertion_point(class_specific_merge_from_start:chirp.server_gateway.UnreadSummaryEntry)
+  ABSL_DCHECK_NE(&from, _this);
+  ::uint32_t cached_has_bits = 0;
+  (void)cached_has_bits;
+
+  cached_has_bits = from._impl_._has_bits_[0];
+  if (BatchCheckHasBit(cached_has_bits, 0x00000007U)) {
+    if (CheckHasBit(cached_has_bits, 0x00000001U)) {
+      if (!from._internal_game_id().empty()) {
+        _this->_internal_set_game_id(from._internal_game_id());
+      } else {
+        if (_this->_impl_.game_id_.IsDefault()) {
+          _this->_internal_set_game_id("");
+        }
+      }
+    }
+    if (CheckHasBit(cached_has_bits, 0x00000002U)) {
+      if (!from._internal_channel_id().empty()) {
+        _this->_internal_set_channel_id(from._internal_channel_id());
+      } else {
+        if (_this->_impl_.channel_id_.IsDefault()) {
+          _this->_internal_set_channel_id("");
+        }
+      }
+    }
+    if (CheckHasBit(cached_has_bits, 0x00000004U)) {
+      if (from._internal_unread_count() != 0) {
+        _this->_impl_.unread_count_ = from._impl_.unread_count_;
+      }
+    }
+  }
+  _this->_impl_._has_bits_[0] |= cached_has_bits;
+  _this->_internal_metadata_.MergeFrom<::google::protobuf::UnknownFieldSet>(
+      from._internal_metadata_);
+}
+
+void UnreadSummaryEntry::CopyFrom(const UnreadSummaryEntry& from) {
+  // @@protoc_insertion_point(class_specific_copy_from_start:chirp.server_gateway.UnreadSummaryEntry)
+  if (&from == this) return;
+  Clear();
+  MergeFrom(from);
+}
+
+
+void UnreadSummaryEntry::InternalSwap(UnreadSummaryEntry* PROTOBUF_RESTRICT PROTOBUF_NONNULL other) {
+  using ::std::swap;
+  auto* arena = GetArena();
+  ABSL_DCHECK_EQ(arena, other->GetArena());
+  _internal_metadata_.InternalSwap(&other->_internal_metadata_);
+  swap(_impl_._has_bits_[0], other->_impl_._has_bits_[0]);
+  ::_pbi::ArenaStringPtr::InternalSwap(&_impl_.game_id_, &other->_impl_.game_id_, arena);
+  ::_pbi::ArenaStringPtr::InternalSwap(&_impl_.channel_id_, &other->_impl_.channel_id_, arena);
+  swap(_impl_.unread_count_, other->_impl_.unread_count_);
+}
+
+::google::protobuf::Metadata UnreadSummaryEntry::GetMetadata() const {
+  return ::google::protobuf::Message::GetMetadataImpl(GetClassData()->full());
+}
+// ===================================================================
+
+class GetUnreadSummaryRequest::_Internal {
+ public:
+  using HasBits =
+      decltype(::std::declval<GetUnreadSummaryRequest>()._impl_._has_bits_);
+  static constexpr ::int32_t kHasBitsOffset =
+      8 * PROTOBUF_FIELD_OFFSET(GetUnreadSummaryRequest, _impl_._has_bits_);
+};
+
+GetUnreadSummaryRequest::GetUnreadSummaryRequest(::google::protobuf::Arena* PROTOBUF_NULLABLE arena)
+#if defined(PROTOBUF_CUSTOM_VTABLE)
+    : ::google::protobuf::Message(arena, GetUnreadSummaryRequest_class_data_.base()) {
+#else   // PROTOBUF_CUSTOM_VTABLE
+    : ::google::protobuf::Message(arena) {
+#endif  // PROTOBUF_CUSTOM_VTABLE
+  SharedCtor(arena);
+  // @@protoc_insertion_point(arena_constructor:chirp.server_gateway.GetUnreadSummaryRequest)
+}
+PROTOBUF_NDEBUG_INLINE GetUnreadSummaryRequest::Impl_::Impl_(
+    [[maybe_unused]] ::google::protobuf::internal::InternalVisibility visibility,
+    [[maybe_unused]] ::google::protobuf::Arena* PROTOBUF_NULLABLE arena, const Impl_& from,
+    [[maybe_unused]] const ::chirp::server_gateway::GetUnreadSummaryRequest& from_msg)
+      : _has_bits_{from._has_bits_},
+        _cached_size_{0},
+        player_id_(arena, from.player_id_),
+        game_id_(arena, from.game_id_) {}
+
+GetUnreadSummaryRequest::GetUnreadSummaryRequest(
+    ::google::protobuf::Arena* PROTOBUF_NULLABLE arena,
+    const GetUnreadSummaryRequest& from)
+#if defined(PROTOBUF_CUSTOM_VTABLE)
+    : ::google::protobuf::Message(arena, GetUnreadSummaryRequest_class_data_.base()) {
+#else   // PROTOBUF_CUSTOM_VTABLE
+    : ::google::protobuf::Message(arena) {
+#endif  // PROTOBUF_CUSTOM_VTABLE
+  GetUnreadSummaryRequest* const _this = this;
+  (void)_this;
+  _internal_metadata_.MergeFrom<::google::protobuf::UnknownFieldSet>(
+      from._internal_metadata_);
+  new (&_impl_) Impl_(internal_visibility(), arena, from._impl_, from);
+
+  // @@protoc_insertion_point(copy_constructor:chirp.server_gateway.GetUnreadSummaryRequest)
+}
+PROTOBUF_NDEBUG_INLINE GetUnreadSummaryRequest::Impl_::Impl_(
+    [[maybe_unused]] ::google::protobuf::internal::InternalVisibility visibility,
+    [[maybe_unused]] ::google::protobuf::Arena* PROTOBUF_NULLABLE arena)
+      : _cached_size_{0},
+        player_id_(arena),
+        game_id_(arena) {}
+
+inline void GetUnreadSummaryRequest::SharedCtor(::_pb::Arena* PROTOBUF_NULLABLE arena) {
+  new (&_impl_) Impl_(internal_visibility(), arena);
+}
+GetUnreadSummaryRequest::~GetUnreadSummaryRequest() {
+  // @@protoc_insertion_point(destructor:chirp.server_gateway.GetUnreadSummaryRequest)
+  SharedDtor(*this);
+}
+inline void GetUnreadSummaryRequest::SharedDtor(MessageLite& self) {
+  GetUnreadSummaryRequest& this_ = static_cast<GetUnreadSummaryRequest&>(self);
+  if constexpr (::_pbi::DebugHardenCheckHasBitConsistency()) {
+    this_.CheckHasBitConsistency();
+  }
+  this_._internal_metadata_.Delete<::google::protobuf::UnknownFieldSet>();
+  ABSL_DCHECK(this_.GetArena() == nullptr);
+  this_._impl_.player_id_.Destroy();
+  this_._impl_.game_id_.Destroy();
+  this_._impl_.~Impl_();
+}
+
+inline void* PROTOBUF_NONNULL GetUnreadSummaryRequest::PlacementNew_(
+    const void* PROTOBUF_NONNULL, void* PROTOBUF_NONNULL mem,
+    ::google::protobuf::Arena* PROTOBUF_NULLABLE arena) {
+  return ::new (mem) GetUnreadSummaryRequest(arena);
+}
+constexpr auto GetUnreadSummaryRequest::InternalNewImpl_() {
+  return ::google::protobuf::internal::MessageCreator::CopyInit(sizeof(GetUnreadSummaryRequest),
+                                            alignof(GetUnreadSummaryRequest));
+}
+constexpr auto GetUnreadSummaryRequest::InternalGenerateClassData_() {
+  return ::google::protobuf::internal::ClassDataFull{
+      ::google::protobuf::internal::ClassData{
+          &_GetUnreadSummaryRequest_default_instance_._instance,
+          &_table_.header,
+          nullptr,  // OnDemandRegisterArenaDtor
+          nullptr,  // IsInitialized
+          &GetUnreadSummaryRequest::MergeImpl,
+          ::google::protobuf::Message::GetNewImpl<GetUnreadSummaryRequest>(),
+#if defined(PROTOBUF_CUSTOM_VTABLE)
+          &GetUnreadSummaryRequest::SharedDtor,
+          ::google::protobuf::Message::GetClearImpl<GetUnreadSummaryRequest>(), &GetUnreadSummaryRequest::ByteSizeLong,
+              &GetUnreadSummaryRequest::_InternalSerialize,
+#endif  // PROTOBUF_CUSTOM_VTABLE
+          PROTOBUF_FIELD_OFFSET(GetUnreadSummaryRequest, _impl_._cached_size_),
+          false,
+      },
+      &GetUnreadSummaryRequest::kDescriptorMethods,
+      &descriptor_table_proto_2fserver_5fgateway_2eproto,
+      nullptr,  // tracker
+  };
+}
+
+PROTOBUF_CONSTINIT PROTOBUF_ATTRIBUTE_INIT_PRIORITY1 const
+    ::google::protobuf::internal::ClassDataFull GetUnreadSummaryRequest_class_data_ =
+        GetUnreadSummaryRequest::InternalGenerateClassData_();
+
+PROTOBUF_ATTRIBUTE_WEAK const ::google::protobuf::internal::ClassData* PROTOBUF_NONNULL
+GetUnreadSummaryRequest::GetClassData() const {
+  ::google::protobuf::internal::PrefetchToLocalCache(&GetUnreadSummaryRequest_class_data_);
+  ::google::protobuf::internal::PrefetchToLocalCache(GetUnreadSummaryRequest_class_data_.tc_table);
+  return GetUnreadSummaryRequest_class_data_.base();
+}
+PROTOBUF_CONSTINIT PROTOBUF_ATTRIBUTE_INIT_PRIORITY1
+const ::_pbi::TcParseTable<1, 2, 0, 69, 2>
+GetUnreadSummaryRequest::_table_ = {
+  {
+    PROTOBUF_FIELD_OFFSET(GetUnreadSummaryRequest, _impl_._has_bits_),
+    0, // no _extensions_
+    2, 8,  // max_field_number, fast_idx_mask
+    offsetof(decltype(_table_), field_lookup_table),
+    4294967292,  // skipmap
+    offsetof(decltype(_table_), field_entries),
+    2,  // num_field_entries
+    0,  // num_aux_entries
+    offsetof(decltype(_table_), field_names),  // no aux_entries
+    GetUnreadSummaryRequest_class_data_.base(),
+    nullptr,  // post_loop_handler
+    ::_pbi::TcParser::GenericFallback,  // fallback
+    #ifdef PROTOBUF_PREFETCH_PARSE_TABLE
+    ::_pbi::TcParser::GetTable<::chirp::server_gateway::GetUnreadSummaryRequest>(),  // to_prefetch
+    #endif  // PROTOBUF_PREFETCH_PARSE_TABLE
+  }, {{
+    // string game_id = 2;
+    {::_pbi::TcParser::FastUS1,
+     {18, 1, 0,
+      PROTOBUF_FIELD_OFFSET(GetUnreadSummaryRequest, _impl_.game_id_)}},
+    // string player_id = 1;
+    {::_pbi::TcParser::FastUS1,
+     {10, 0, 0,
+      PROTOBUF_FIELD_OFFSET(GetUnreadSummaryRequest, _impl_.player_id_)}},
+  }}, {{
+    65535, 65535
+  }}, {{
+    // string player_id = 1;
+    {PROTOBUF_FIELD_OFFSET(GetUnreadSummaryRequest, _impl_.player_id_), _Internal::kHasBitsOffset + 0, 0, (0 | ::_fl::kFcOptional | ::_fl::kUtf8String | ::_fl::kRepAString)},
+    // string game_id = 2;
+    {PROTOBUF_FIELD_OFFSET(GetUnreadSummaryRequest, _impl_.game_id_), _Internal::kHasBitsOffset + 1, 0, (0 | ::_fl::kFcOptional | ::_fl::kUtf8String | ::_fl::kRepAString)},
+  }},
+  // no aux_entries
+  {{
+    "\54\11\7\0\0\0\0\0"
+    "chirp.server_gateway.GetUnreadSummaryRequest"
+    "player_id"
+    "game_id"
+  }},
+};
+PROTOBUF_NOINLINE void GetUnreadSummaryRequest::Clear() {
+// @@protoc_insertion_point(message_clear_start:chirp.server_gateway.GetUnreadSummaryRequest)
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  ::uint32_t cached_has_bits = 0;
+  // Prevent compiler warnings about cached_has_bits being unused
+  (void) cached_has_bits;
+
+  cached_has_bits = _impl_._has_bits_[0];
+  if (BatchCheckHasBit(cached_has_bits, 0x00000003U)) {
+    if (CheckHasBit(cached_has_bits, 0x00000001U)) {
+      _impl_.player_id_.ClearNonDefaultToEmpty();
+    }
+    if (CheckHasBit(cached_has_bits, 0x00000002U)) {
+      _impl_.game_id_.ClearNonDefaultToEmpty();
+    }
+  }
+  _impl_._has_bits_.Clear();
+  _internal_metadata_.Clear<::google::protobuf::UnknownFieldSet>();
+}
+
+#if defined(PROTOBUF_CUSTOM_VTABLE)
+::uint8_t* PROTOBUF_NONNULL GetUnreadSummaryRequest::_InternalSerialize(
+    const ::google::protobuf::MessageLite& base, ::uint8_t* PROTOBUF_NONNULL target,
+    ::google::protobuf::io::EpsCopyOutputStream* PROTOBUF_NONNULL stream) {
+  const GetUnreadSummaryRequest& this_ = static_cast<const GetUnreadSummaryRequest&>(base);
+#else   // PROTOBUF_CUSTOM_VTABLE
+::uint8_t* PROTOBUF_NONNULL GetUnreadSummaryRequest::_InternalSerialize(
+    ::uint8_t* PROTOBUF_NONNULL target,
+    ::google::protobuf::io::EpsCopyOutputStream* PROTOBUF_NONNULL stream) const {
+  const GetUnreadSummaryRequest& this_ = *this;
+#endif  // PROTOBUF_CUSTOM_VTABLE
+  if constexpr (::_pbi::DebugHardenCheckHasBitConsistency()) {
+    this_.CheckHasBitConsistency();
+  }
+  // @@protoc_insertion_point(serialize_to_array_start:chirp.server_gateway.GetUnreadSummaryRequest)
+  ::uint32_t cached_has_bits = 0;
+  (void)cached_has_bits;
+
+  cached_has_bits = this_._impl_._has_bits_[0];
+  // string player_id = 1;
+  if (CheckHasBit(cached_has_bits, 0x00000001U)) {
+    if (!this_._internal_player_id().empty()) {
+      const ::std::string& _s = this_._internal_player_id();
+      ::google::protobuf::internal::WireFormatLite::VerifyUtf8String(
+          _s.data(), static_cast<int>(_s.length()), ::google::protobuf::internal::WireFormatLite::SERIALIZE, "chirp.server_gateway.GetUnreadSummaryRequest.player_id");
+      target = stream->WriteStringMaybeAliased(1, _s, target);
+    }
+  }
+
+  // string game_id = 2;
+  if (CheckHasBit(cached_has_bits, 0x00000002U)) {
+    if (!this_._internal_game_id().empty()) {
+      const ::std::string& _s = this_._internal_game_id();
+      ::google::protobuf::internal::WireFormatLite::VerifyUtf8String(
+          _s.data(), static_cast<int>(_s.length()), ::google::protobuf::internal::WireFormatLite::SERIALIZE, "chirp.server_gateway.GetUnreadSummaryRequest.game_id");
+      target = stream->WriteStringMaybeAliased(2, _s, target);
+    }
+  }
+
+  if (ABSL_PREDICT_FALSE(this_._internal_metadata_.have_unknown_fields())) {
+    target =
+        ::_pbi::WireFormat::InternalSerializeUnknownFieldsToArray(
+            this_._internal_metadata_.unknown_fields<::google::protobuf::UnknownFieldSet>(::google::protobuf::UnknownFieldSet::default_instance), target, stream);
+  }
+  // @@protoc_insertion_point(serialize_to_array_end:chirp.server_gateway.GetUnreadSummaryRequest)
+  return target;
+}
+
+#if defined(PROTOBUF_CUSTOM_VTABLE)
+::size_t GetUnreadSummaryRequest::ByteSizeLong(const MessageLite& base) {
+  const GetUnreadSummaryRequest& this_ = static_cast<const GetUnreadSummaryRequest&>(base);
+#else   // PROTOBUF_CUSTOM_VTABLE
+::size_t GetUnreadSummaryRequest::ByteSizeLong() const {
+  const GetUnreadSummaryRequest& this_ = *this;
+#endif  // PROTOBUF_CUSTOM_VTABLE
+  // @@protoc_insertion_point(message_byte_size_start:chirp.server_gateway.GetUnreadSummaryRequest)
+  ::size_t total_size = 0;
+
+  ::uint32_t cached_has_bits = 0;
+  // Prevent compiler warnings about cached_has_bits being unused
+  (void)cached_has_bits;
+
+  ::_pbi::Prefetch5LinesFrom7Lines(&this_);
+  cached_has_bits = this_._impl_._has_bits_[0];
+  if (BatchCheckHasBit(cached_has_bits, 0x00000003U)) {
+    // string player_id = 1;
+    if (CheckHasBit(cached_has_bits, 0x00000001U)) {
+      if (!this_._internal_player_id().empty()) {
+        total_size += 1 + ::google::protobuf::internal::WireFormatLite::StringSize(
+                                        this_._internal_player_id());
+      }
+    }
+    // string game_id = 2;
+    if (CheckHasBit(cached_has_bits, 0x00000002U)) {
+      if (!this_._internal_game_id().empty()) {
+        total_size += 1 + ::google::protobuf::internal::WireFormatLite::StringSize(
+                                        this_._internal_game_id());
+      }
+    }
+  }
+  return this_.MaybeComputeUnknownFieldsSize(total_size,
+                                             &this_._impl_._cached_size_);
+}
+
+void GetUnreadSummaryRequest::MergeImpl(::google::protobuf::MessageLite& to_msg,
+                            const ::google::protobuf::MessageLite& from_msg) {
+   auto* const _this =
+      static_cast<GetUnreadSummaryRequest*>(&to_msg);
+  auto& from = static_cast<const GetUnreadSummaryRequest&>(from_msg);
+  if constexpr (::_pbi::DebugHardenCheckHasBitConsistency()) {
+    from.CheckHasBitConsistency();
+  }
+  // @@protoc_insertion_point(class_specific_merge_from_start:chirp.server_gateway.GetUnreadSummaryRequest)
+  ABSL_DCHECK_NE(&from, _this);
+  ::uint32_t cached_has_bits = 0;
+  (void)cached_has_bits;
+
+  cached_has_bits = from._impl_._has_bits_[0];
+  if (BatchCheckHasBit(cached_has_bits, 0x00000003U)) {
+    if (CheckHasBit(cached_has_bits, 0x00000001U)) {
+      if (!from._internal_player_id().empty()) {
+        _this->_internal_set_player_id(from._internal_player_id());
+      } else {
+        if (_this->_impl_.player_id_.IsDefault()) {
+          _this->_internal_set_player_id("");
+        }
+      }
+    }
+    if (CheckHasBit(cached_has_bits, 0x00000002U)) {
+      if (!from._internal_game_id().empty()) {
+        _this->_internal_set_game_id(from._internal_game_id());
+      } else {
+        if (_this->_impl_.game_id_.IsDefault()) {
+          _this->_internal_set_game_id("");
+        }
+      }
+    }
+  }
+  _this->_impl_._has_bits_[0] |= cached_has_bits;
+  _this->_internal_metadata_.MergeFrom<::google::protobuf::UnknownFieldSet>(
+      from._internal_metadata_);
+}
+
+void GetUnreadSummaryRequest::CopyFrom(const GetUnreadSummaryRequest& from) {
+  // @@protoc_insertion_point(class_specific_copy_from_start:chirp.server_gateway.GetUnreadSummaryRequest)
+  if (&from == this) return;
+  Clear();
+  MergeFrom(from);
+}
+
+
+void GetUnreadSummaryRequest::InternalSwap(GetUnreadSummaryRequest* PROTOBUF_RESTRICT PROTOBUF_NONNULL other) {
+  using ::std::swap;
+  auto* arena = GetArena();
+  ABSL_DCHECK_EQ(arena, other->GetArena());
+  _internal_metadata_.InternalSwap(&other->_internal_metadata_);
+  swap(_impl_._has_bits_[0], other->_impl_._has_bits_[0]);
+  ::_pbi::ArenaStringPtr::InternalSwap(&_impl_.player_id_, &other->_impl_.player_id_, arena);
+  ::_pbi::ArenaStringPtr::InternalSwap(&_impl_.game_id_, &other->_impl_.game_id_, arena);
+}
+
+::google::protobuf::Metadata GetUnreadSummaryRequest::GetMetadata() const {
+  return ::google::protobuf::Message::GetMetadataImpl(GetClassData()->full());
+}
+// ===================================================================
+
+class GetUnreadSummaryResponse::_Internal {
+ public:
+  using HasBits =
+      decltype(::std::declval<GetUnreadSummaryResponse>()._impl_._has_bits_);
+  static constexpr ::int32_t kHasBitsOffset =
+      8 * PROTOBUF_FIELD_OFFSET(GetUnreadSummaryResponse, _impl_._has_bits_);
+};
+
+GetUnreadSummaryResponse::GetUnreadSummaryResponse(::google::protobuf::Arena* PROTOBUF_NULLABLE arena)
+#if defined(PROTOBUF_CUSTOM_VTABLE)
+    : ::google::protobuf::Message(arena, GetUnreadSummaryResponse_class_data_.base()) {
+#else   // PROTOBUF_CUSTOM_VTABLE
+    : ::google::protobuf::Message(arena) {
+#endif  // PROTOBUF_CUSTOM_VTABLE
+  SharedCtor(arena);
+  // @@protoc_insertion_point(arena_constructor:chirp.server_gateway.GetUnreadSummaryResponse)
+}
+PROTOBUF_NDEBUG_INLINE GetUnreadSummaryResponse::Impl_::Impl_(
+    [[maybe_unused]] ::google::protobuf::internal::InternalVisibility visibility,
+    [[maybe_unused]] ::google::protobuf::Arena* PROTOBUF_NULLABLE arena, const Impl_& from,
+    [[maybe_unused]] const ::chirp::server_gateway::GetUnreadSummaryResponse& from_msg)
+      : _has_bits_{from._has_bits_},
+        _cached_size_{0},
+        entries_{visibility, arena, from.entries_} {}
+
+GetUnreadSummaryResponse::GetUnreadSummaryResponse(
+    ::google::protobuf::Arena* PROTOBUF_NULLABLE arena,
+    const GetUnreadSummaryResponse& from)
+#if defined(PROTOBUF_CUSTOM_VTABLE)
+    : ::google::protobuf::Message(arena, GetUnreadSummaryResponse_class_data_.base()) {
+#else   // PROTOBUF_CUSTOM_VTABLE
+    : ::google::protobuf::Message(arena) {
+#endif  // PROTOBUF_CUSTOM_VTABLE
+  GetUnreadSummaryResponse* const _this = this;
+  (void)_this;
+  _internal_metadata_.MergeFrom<::google::protobuf::UnknownFieldSet>(
+      from._internal_metadata_);
+  new (&_impl_) Impl_(internal_visibility(), arena, from._impl_, from);
+  ::memcpy(reinterpret_cast<char*>(&_impl_) +
+               offsetof(Impl_, code_),
+           reinterpret_cast<const char*>(&from._impl_) +
+               offsetof(Impl_, code_),
+           offsetof(Impl_, total_unread_) -
+               offsetof(Impl_, code_) +
+               sizeof(Impl_::total_unread_));
+
+  // @@protoc_insertion_point(copy_constructor:chirp.server_gateway.GetUnreadSummaryResponse)
+}
+PROTOBUF_NDEBUG_INLINE GetUnreadSummaryResponse::Impl_::Impl_(
+    [[maybe_unused]] ::google::protobuf::internal::InternalVisibility visibility,
+    [[maybe_unused]] ::google::protobuf::Arena* PROTOBUF_NULLABLE arena)
+      : _cached_size_{0},
+        entries_{visibility, arena} {}
+
+inline void GetUnreadSummaryResponse::SharedCtor(::_pb::Arena* PROTOBUF_NULLABLE arena) {
+  new (&_impl_) Impl_(internal_visibility(), arena);
+  ::memset(reinterpret_cast<char*>(&_impl_) +
+               offsetof(Impl_, code_),
+           0,
+           offsetof(Impl_, total_unread_) -
+               offsetof(Impl_, code_) +
+               sizeof(Impl_::total_unread_));
+}
+GetUnreadSummaryResponse::~GetUnreadSummaryResponse() {
+  // @@protoc_insertion_point(destructor:chirp.server_gateway.GetUnreadSummaryResponse)
+  SharedDtor(*this);
+}
+inline void GetUnreadSummaryResponse::SharedDtor(MessageLite& self) {
+  GetUnreadSummaryResponse& this_ = static_cast<GetUnreadSummaryResponse&>(self);
+  if constexpr (::_pbi::DebugHardenCheckHasBitConsistency()) {
+    this_.CheckHasBitConsistency();
+  }
+  this_._internal_metadata_.Delete<::google::protobuf::UnknownFieldSet>();
+  ABSL_DCHECK(this_.GetArena() == nullptr);
+  this_._impl_.~Impl_();
+}
+
+inline void* PROTOBUF_NONNULL GetUnreadSummaryResponse::PlacementNew_(
+    const void* PROTOBUF_NONNULL, void* PROTOBUF_NONNULL mem,
+    ::google::protobuf::Arena* PROTOBUF_NULLABLE arena) {
+  return ::new (mem) GetUnreadSummaryResponse(arena);
+}
+constexpr auto GetUnreadSummaryResponse::InternalNewImpl_() {
+  constexpr auto arena_bits = ::google::protobuf::internal::EncodePlacementArenaOffsets({
+      PROTOBUF_FIELD_OFFSET(GetUnreadSummaryResponse, _impl_.entries_) +
+          decltype(GetUnreadSummaryResponse::_impl_.entries_)::
+              InternalGetArenaOffset(
+                  ::google::protobuf::Message::internal_visibility()),
+  });
+  if (arena_bits.has_value()) {
+    return ::google::protobuf::internal::MessageCreator::ZeroInit(
+        sizeof(GetUnreadSummaryResponse), alignof(GetUnreadSummaryResponse), *arena_bits);
+  } else {
+    return ::google::protobuf::internal::MessageCreator(&GetUnreadSummaryResponse::PlacementNew_,
+                                 sizeof(GetUnreadSummaryResponse),
+                                 alignof(GetUnreadSummaryResponse));
+  }
+}
+constexpr auto GetUnreadSummaryResponse::InternalGenerateClassData_() {
+  return ::google::protobuf::internal::ClassDataFull{
+      ::google::protobuf::internal::ClassData{
+          &_GetUnreadSummaryResponse_default_instance_._instance,
+          &_table_.header,
+          nullptr,  // OnDemandRegisterArenaDtor
+          nullptr,  // IsInitialized
+          &GetUnreadSummaryResponse::MergeImpl,
+          ::google::protobuf::Message::GetNewImpl<GetUnreadSummaryResponse>(),
+#if defined(PROTOBUF_CUSTOM_VTABLE)
+          &GetUnreadSummaryResponse::SharedDtor,
+          ::google::protobuf::Message::GetClearImpl<GetUnreadSummaryResponse>(), &GetUnreadSummaryResponse::ByteSizeLong,
+              &GetUnreadSummaryResponse::_InternalSerialize,
+#endif  // PROTOBUF_CUSTOM_VTABLE
+          PROTOBUF_FIELD_OFFSET(GetUnreadSummaryResponse, _impl_._cached_size_),
+          false,
+      },
+      &GetUnreadSummaryResponse::kDescriptorMethods,
+      &descriptor_table_proto_2fserver_5fgateway_2eproto,
+      nullptr,  // tracker
+  };
+}
+
+PROTOBUF_CONSTINIT PROTOBUF_ATTRIBUTE_INIT_PRIORITY1 const
+    ::google::protobuf::internal::ClassDataFull GetUnreadSummaryResponse_class_data_ =
+        GetUnreadSummaryResponse::InternalGenerateClassData_();
+
+PROTOBUF_ATTRIBUTE_WEAK const ::google::protobuf::internal::ClassData* PROTOBUF_NONNULL
+GetUnreadSummaryResponse::GetClassData() const {
+  ::google::protobuf::internal::PrefetchToLocalCache(&GetUnreadSummaryResponse_class_data_);
+  ::google::protobuf::internal::PrefetchToLocalCache(GetUnreadSummaryResponse_class_data_.tc_table);
+  return GetUnreadSummaryResponse_class_data_.base();
+}
+PROTOBUF_CONSTINIT PROTOBUF_ATTRIBUTE_INIT_PRIORITY1
+const ::_pbi::TcParseTable<2, 3, 1, 0, 2>
+GetUnreadSummaryResponse::_table_ = {
+  {
+    PROTOBUF_FIELD_OFFSET(GetUnreadSummaryResponse, _impl_._has_bits_),
+    0, // no _extensions_
+    3, 24,  // max_field_number, fast_idx_mask
+    offsetof(decltype(_table_), field_lookup_table),
+    4294967288,  // skipmap
+    offsetof(decltype(_table_), field_entries),
+    3,  // num_field_entries
+    1,  // num_aux_entries
+    offsetof(decltype(_table_), aux_entries),
+    GetUnreadSummaryResponse_class_data_.base(),
+    nullptr,  // post_loop_handler
+    ::_pbi::TcParser::GenericFallback,  // fallback
+    #ifdef PROTOBUF_PREFETCH_PARSE_TABLE
+    ::_pbi::TcParser::GetTable<::chirp::server_gateway::GetUnreadSummaryResponse>(),  // to_prefetch
+    #endif  // PROTOBUF_PREFETCH_PARSE_TABLE
+  }, {{
+    {::_pbi::TcParser::MiniParse, {}},
+    // .chirp.common.ErrorCode code = 1;
+    {::_pbi::TcParser::SingularVarintNoZag1<::uint32_t, offsetof(GetUnreadSummaryResponse, _impl_.code_), 1>(),
+     {8, 1, 0,
+      PROTOBUF_FIELD_OFFSET(GetUnreadSummaryResponse, _impl_.code_)}},
+    // repeated .chirp.server_gateway.UnreadSummaryEntry entries = 2;
+    {::_pbi::TcParser::FastMtR1,
+     {18, 0, 0,
+      PROTOBUF_FIELD_OFFSET(GetUnreadSummaryResponse, _impl_.entries_)}},
+    // int32 total_unread = 3;
+    {::_pbi::TcParser::SingularVarintNoZag1<::uint32_t, offsetof(GetUnreadSummaryResponse, _impl_.total_unread_), 2>(),
+     {24, 2, 0,
+      PROTOBUF_FIELD_OFFSET(GetUnreadSummaryResponse, _impl_.total_unread_)}},
+  }}, {{
+    65535, 65535
+  }}, {{
+    // .chirp.common.ErrorCode code = 1;
+    {PROTOBUF_FIELD_OFFSET(GetUnreadSummaryResponse, _impl_.code_), _Internal::kHasBitsOffset + 1, 0, (0 | ::_fl::kFcOptional | ::_fl::kOpenEnum)},
+    // repeated .chirp.server_gateway.UnreadSummaryEntry entries = 2;
+    {PROTOBUF_FIELD_OFFSET(GetUnreadSummaryResponse, _impl_.entries_), _Internal::kHasBitsOffset + 0, 0, (0 | ::_fl::kFcRepeated | ::_fl::kMessage | ::_fl::kTvTable)},
+    // int32 total_unread = 3;
+    {PROTOBUF_FIELD_OFFSET(GetUnreadSummaryResponse, _impl_.total_unread_), _Internal::kHasBitsOffset + 2, 0, (0 | ::_fl::kFcOptional | ::_fl::kInt32)},
+  }},
+  {{
+      {::_pbi::TcParser::GetTable<::chirp::server_gateway::UnreadSummaryEntry>()},
+  }},
+  {{
+  }},
+};
+PROTOBUF_NOINLINE void GetUnreadSummaryResponse::Clear() {
+// @@protoc_insertion_point(message_clear_start:chirp.server_gateway.GetUnreadSummaryResponse)
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  ::uint32_t cached_has_bits = 0;
+  // Prevent compiler warnings about cached_has_bits being unused
+  (void) cached_has_bits;
+
+  cached_has_bits = _impl_._has_bits_[0];
+  if (CheckHasBitForRepeated(cached_has_bits, 0x00000001U)) {
+    _impl_.entries_.Clear();
+  }
+  if (BatchCheckHasBit(cached_has_bits, 0x00000006U)) {
+    ::memset(&_impl_.code_, 0, static_cast<::size_t>(
+        reinterpret_cast<char*>(&_impl_.total_unread_) -
+        reinterpret_cast<char*>(&_impl_.code_)) + sizeof(_impl_.total_unread_));
+  }
+  _impl_._has_bits_.Clear();
+  _internal_metadata_.Clear<::google::protobuf::UnknownFieldSet>();
+}
+
+#if defined(PROTOBUF_CUSTOM_VTABLE)
+::uint8_t* PROTOBUF_NONNULL GetUnreadSummaryResponse::_InternalSerialize(
+    const ::google::protobuf::MessageLite& base, ::uint8_t* PROTOBUF_NONNULL target,
+    ::google::protobuf::io::EpsCopyOutputStream* PROTOBUF_NONNULL stream) {
+  const GetUnreadSummaryResponse& this_ = static_cast<const GetUnreadSummaryResponse&>(base);
+#else   // PROTOBUF_CUSTOM_VTABLE
+::uint8_t* PROTOBUF_NONNULL GetUnreadSummaryResponse::_InternalSerialize(
+    ::uint8_t* PROTOBUF_NONNULL target,
+    ::google::protobuf::io::EpsCopyOutputStream* PROTOBUF_NONNULL stream) const {
+  const GetUnreadSummaryResponse& this_ = *this;
+#endif  // PROTOBUF_CUSTOM_VTABLE
+  if constexpr (::_pbi::DebugHardenCheckHasBitConsistency()) {
+    this_.CheckHasBitConsistency();
+  }
+  // @@protoc_insertion_point(serialize_to_array_start:chirp.server_gateway.GetUnreadSummaryResponse)
+  ::uint32_t cached_has_bits = 0;
+  (void)cached_has_bits;
+
+  cached_has_bits = this_._impl_._has_bits_[0];
+  // .chirp.common.ErrorCode code = 1;
+  if (CheckHasBit(cached_has_bits, 0x00000002U)) {
+    if (this_._internal_code() != 0) {
+      target = stream->EnsureSpace(target);
+      target = ::_pbi::WireFormatLite::WriteEnumToArray(
+          1, this_._internal_code(), target);
+    }
+  }
+
+  // repeated .chirp.server_gateway.UnreadSummaryEntry entries = 2;
+  if (CheckHasBitForRepeated(cached_has_bits, 0x00000001U)) {
+    for (unsigned i = 0, n = static_cast<unsigned>(
+                             this_._internal_entries_size());
+         i < n; i++) {
+      const auto& repfield = this_._internal_entries().Get(i);
+      target =
+          ::google::protobuf::internal::WireFormatLite::InternalWriteMessage(
+              2, repfield, repfield.GetCachedSize(),
+              target, stream);
+    }
+  }
+
+  // int32 total_unread = 3;
+  if (CheckHasBit(cached_has_bits, 0x00000004U)) {
+    if (this_._internal_total_unread() != 0) {
+      target =
+          ::google::protobuf::internal::WireFormatLite::WriteInt32ToArrayWithField<3>(
+              stream, this_._internal_total_unread(), target);
+    }
+  }
+
+  if (ABSL_PREDICT_FALSE(this_._internal_metadata_.have_unknown_fields())) {
+    target =
+        ::_pbi::WireFormat::InternalSerializeUnknownFieldsToArray(
+            this_._internal_metadata_.unknown_fields<::google::protobuf::UnknownFieldSet>(::google::protobuf::UnknownFieldSet::default_instance), target, stream);
+  }
+  // @@protoc_insertion_point(serialize_to_array_end:chirp.server_gateway.GetUnreadSummaryResponse)
+  return target;
+}
+
+#if defined(PROTOBUF_CUSTOM_VTABLE)
+::size_t GetUnreadSummaryResponse::ByteSizeLong(const MessageLite& base) {
+  const GetUnreadSummaryResponse& this_ = static_cast<const GetUnreadSummaryResponse&>(base);
+#else   // PROTOBUF_CUSTOM_VTABLE
+::size_t GetUnreadSummaryResponse::ByteSizeLong() const {
+  const GetUnreadSummaryResponse& this_ = *this;
+#endif  // PROTOBUF_CUSTOM_VTABLE
+  // @@protoc_insertion_point(message_byte_size_start:chirp.server_gateway.GetUnreadSummaryResponse)
+  ::size_t total_size = 0;
+
+  ::uint32_t cached_has_bits = 0;
+  // Prevent compiler warnings about cached_has_bits being unused
+  (void)cached_has_bits;
+
+  ::_pbi::Prefetch5LinesFrom7Lines(&this_);
+  cached_has_bits = this_._impl_._has_bits_[0];
+  if (BatchCheckHasBit(cached_has_bits, 0x00000007U)) {
+    // repeated .chirp.server_gateway.UnreadSummaryEntry entries = 2;
+    if (CheckHasBitForRepeated(cached_has_bits, 0x00000001U)) {
+      total_size += 1UL * this_._internal_entries_size();
+      for (const auto& msg : this_._internal_entries()) {
+        total_size += ::google::protobuf::internal::WireFormatLite::MessageSize(msg);
+      }
+    }
+    // .chirp.common.ErrorCode code = 1;
+    if (CheckHasBit(cached_has_bits, 0x00000002U)) {
+      if (this_._internal_code() != 0) {
+        total_size += 1 +
+                      ::_pbi::WireFormatLite::EnumSize(this_._internal_code());
+      }
+    }
+    // int32 total_unread = 3;
+    if (CheckHasBit(cached_has_bits, 0x00000004U)) {
+      if (this_._internal_total_unread() != 0) {
+        total_size += ::_pbi::WireFormatLite::Int32SizePlusOne(
+            this_._internal_total_unread());
+      }
+    }
+  }
+  return this_.MaybeComputeUnknownFieldsSize(total_size,
+                                             &this_._impl_._cached_size_);
+}
+
+void GetUnreadSummaryResponse::MergeImpl(::google::protobuf::MessageLite& to_msg,
+                            const ::google::protobuf::MessageLite& from_msg) {
+   auto* const _this =
+      static_cast<GetUnreadSummaryResponse*>(&to_msg);
+  auto& from = static_cast<const GetUnreadSummaryResponse&>(from_msg);
+  if constexpr (::_pbi::DebugHardenCheckHasBitConsistency()) {
+    from.CheckHasBitConsistency();
+  }
+  ::google::protobuf::Arena* arena = _this->GetArena();
+  // @@protoc_insertion_point(class_specific_merge_from_start:chirp.server_gateway.GetUnreadSummaryResponse)
+  ABSL_DCHECK_NE(&from, _this);
+  ::uint32_t cached_has_bits = 0;
+  (void)cached_has_bits;
+
+  cached_has_bits = from._impl_._has_bits_[0];
+  if (BatchCheckHasBit(cached_has_bits, 0x00000007U)) {
+    if (CheckHasBitForRepeated(cached_has_bits, 0x00000001U)) {
+      _this->_internal_mutable_entries()->InternalMergeFromWithArena(
+          ::google::protobuf::MessageLite::internal_visibility(), arena,
+          from._internal_entries());
+    }
+    if (CheckHasBit(cached_has_bits, 0x00000002U)) {
+      if (from._internal_code() != 0) {
+        _this->_impl_.code_ = from._impl_.code_;
+      }
+    }
+    if (CheckHasBit(cached_has_bits, 0x00000004U)) {
+      if (from._internal_total_unread() != 0) {
+        _this->_impl_.total_unread_ = from._impl_.total_unread_;
+      }
+    }
+  }
+  _this->_impl_._has_bits_[0] |= cached_has_bits;
+  _this->_internal_metadata_.MergeFrom<::google::protobuf::UnknownFieldSet>(
+      from._internal_metadata_);
+}
+
+void GetUnreadSummaryResponse::CopyFrom(const GetUnreadSummaryResponse& from) {
+  // @@protoc_insertion_point(class_specific_copy_from_start:chirp.server_gateway.GetUnreadSummaryResponse)
+  if (&from == this) return;
+  Clear();
+  MergeFrom(from);
+}
+
+
+void GetUnreadSummaryResponse::InternalSwap(GetUnreadSummaryResponse* PROTOBUF_RESTRICT PROTOBUF_NONNULL other) {
+  using ::std::swap;
+  _internal_metadata_.InternalSwap(&other->_internal_metadata_);
+  swap(_impl_._has_bits_[0], other->_impl_._has_bits_[0]);
+  _impl_.entries_.InternalSwap(&other->_impl_.entries_);
+  ::google::protobuf::internal::memswap<
+      PROTOBUF_FIELD_OFFSET(GetUnreadSummaryResponse, _impl_.total_unread_)
+      + sizeof(GetUnreadSummaryResponse::_impl_.total_unread_)
+      - PROTOBUF_FIELD_OFFSET(GetUnreadSummaryResponse, _impl_.code_)>(
+          reinterpret_cast<char*>(&_impl_.code_),
+          reinterpret_cast<char*>(&other->_impl_.code_));
+}
+
+::google::protobuf::Metadata GetUnreadSummaryResponse::GetMetadata() const {
   return ::google::protobuf::Message::GetMetadataImpl(GetClassData()->full());
 }
 // @@protoc_insertion_point(namespace_scope)

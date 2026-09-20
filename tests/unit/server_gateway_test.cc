@@ -16,6 +16,7 @@
 #include "proto/server_gateway.pb.h"
 #include "server_gateway_handlers.h"
 #include "service_registry.h"
+#include "unread_ledger.h"
 
 namespace {
 
@@ -91,7 +92,7 @@ class ServerGatewayTest : public ::testing::Test {
                                {"game", "game-secret"},
                                {"trade", "trade-secret"}};
     handlers_ = std::make_unique<sg::ServerGatewayHandlers>(config_, registry_, queue_, identities_,
-                                                            subscriptions_);
+                                                            subscriptions_, unread_);
   }
 
   std::shared_ptr<RecordingPeer> AuthAs(const std::string& service_id) {
@@ -145,6 +146,7 @@ class ServerGatewayTest : public ::testing::Test {
   sg::EventQueue queue_{1000};
   sg::IdentityRegistry identities_;
   sg::SubscriptionRegistry subscriptions_;
+  sg::UnreadLedger unread_;
   std::unique_ptr<sg::ServerGatewayHandlers> handlers_;
 };
 
@@ -534,7 +536,7 @@ TEST_F(ServerGatewayTest, InjectFanoutOverCapIsRateLimited) {
   const auto chat = AuthAs("chat");
   config_.max_fanout_per_inject = 1;
   handlers_ = std::make_unique<sg::ServerGatewayHandlers>(config_, registry_, queue_, identities_,
-                                                          subscriptions_);
+                                                          subscriptions_, unread_);
   // Re-authenticate: the fresh handlers instance starts with no peers.
   AuthAs("chat");
 
@@ -619,7 +621,7 @@ TEST_F(ServerGatewayTest, PublishFailsWhenQueueFull) {
   small.max_pending_events_per_service = 1;
   sg::EventQueue small_queue(1);
   sg::ServerGatewayHandlers small_handlers(small, registry_, small_queue, identities_,
-                                           subscriptions_);
+                                           subscriptions_, unread_);
   small_handlers.HandleEventPublish(MakePublishRequest("game", "first"));
   const auto resp = small_handlers.HandleEventPublish(MakePublishRequest("game", "second"));
   EXPECT_EQ(resp.code(), SERVER_UNAVAILABLE);
@@ -1407,6 +1409,331 @@ TEST_F(ServerGatewayTest, GetHandlerReturnsSubscriptionsForPlayer) {
   resp = handlers_->HandleGetPlayerSubscriptions(all);
   ASSERT_EQ(resp.subscriptions_size(), 1);
   EXPECT_EQ(resp.subscriptions(0).subscription_id(), "s2");
+}
+
+// ---------------------------------------------------------------------------
+// UnreadLedger (WP-8 slice 4: unified unread badge ledger)
+// ---------------------------------------------------------------------------
+
+TEST(UnreadLedgerTest, IncrementAccumulatesPerChannel) {
+  sg::UnreadLedger ledger;
+  ledger.Increment("player-1", "game-a", "world-1");
+  ledger.Increment("player-1", "game-a", "world-1");
+  ledger.Increment("player-1", "game-a", "world-2");
+  ledger.Increment("player-1", "game-b", "dungeon-1");
+  ledger.Increment("player-2", "game-a", "world-1");
+
+  EXPECT_EQ(ledger.Size(), 4u);
+  const auto summary = ledger.GetSummary("player-1", "");
+  ASSERT_EQ(summary.size(), 3u);
+  // The inner map keeps (game, channel) sorted: summaries are stable.
+  EXPECT_EQ(summary[0].game_id(), "game-a");
+  EXPECT_EQ(summary[0].channel_id(), "world-1");
+  EXPECT_EQ(summary[0].unread_count(), 2);
+  EXPECT_EQ(summary[1].game_id(), "game-a");
+  EXPECT_EQ(summary[1].channel_id(), "world-2");
+  EXPECT_EQ(summary[1].unread_count(), 1);
+  EXPECT_EQ(summary[2].game_id(), "game-b");
+  EXPECT_EQ(summary[2].unread_count(), 1);
+
+  const auto other = ledger.GetSummary("player-2", "");
+  ASSERT_EQ(other.size(), 1u);
+  EXPECT_EQ(other[0].unread_count(), 1);
+}
+
+TEST(UnreadLedgerTest, MarkSingleChannelIsIdempotent) {
+  sg::UnreadLedger ledger;
+  ledger.Increment("player-1", "game-a", "world-1");
+  ledger.Increment("player-1", "game-a", "world-2");
+
+  // Unknown targets are idempotent no-ops.
+  EXPECT_EQ(ledger.MarkRead("player-1", "game-a", "unfollowed"), 0u);
+  EXPECT_EQ(ledger.MarkRead("player-1", "game-x", "world-1"), 0u);
+  EXPECT_EQ(ledger.MarkRead("player-unknown", "game-a", "world-1"), 0u);
+
+  EXPECT_EQ(ledger.MarkRead("player-1", "game-a", "world-1"), 1u);
+  // Already cleared: clearing again finds nothing.
+  EXPECT_EQ(ledger.MarkRead("player-1", "game-a", "world-1"), 0u);
+
+  const auto summary = ledger.GetSummary("player-1", "");
+  ASSERT_EQ(summary.size(), 1u);
+  EXPECT_EQ(summary[0].channel_id(), "world-2");  // the neighbor survives
+}
+
+TEST(UnreadLedgerTest, MarkWholeGameClearsOnlyThatGame) {
+  sg::UnreadLedger ledger;
+  ledger.Increment("player-1", "game-a", "world-1");
+  ledger.Increment("player-1", "game-a", "world-2");
+  ledger.Increment("player-1", "game-b", "dungeon-1");
+  ledger.Increment("player-2", "game-a", "world-1");
+
+  EXPECT_EQ(ledger.MarkRead("player-1", "game-a", ""), 2u);
+  const auto summary = ledger.GetSummary("player-1", "");
+  ASSERT_EQ(summary.size(), 1u);
+  EXPECT_EQ(summary[0].game_id(), "game-b");
+  EXPECT_EQ(ledger.GetSummary("player-2", "").size(), 1u);  // other players untouched
+}
+
+TEST(UnreadLedgerTest, MarkAllClearsEverything) {
+  sg::UnreadLedger ledger;
+  ledger.Increment("player-1", "game-a", "world-1");
+  ledger.Increment("player-1", "game-b", "dungeon-1");
+  ledger.Increment("player-2", "game-a", "world-1");
+
+  EXPECT_EQ(ledger.MarkRead("player-1", "", ""), 2u);
+  EXPECT_TRUE(ledger.GetSummary("player-1", "").empty());
+  EXPECT_EQ(ledger.Size(), 1u);  // player-2 keeps their entry
+  EXPECT_EQ(ledger.MarkRead("player-1", "", ""), 0u);  // idempotent
+}
+
+TEST(UnreadLedgerTest, SummaryWithGameFilter) {
+  sg::UnreadLedger ledger;
+  ledger.Increment("player-1", "game-a", "world-1");
+  ledger.Increment("player-1", "game-a", "world-2");
+  ledger.Increment("player-1", "game-b", "dungeon-1");
+
+  const auto filtered = ledger.GetSummary("player-1", "game-a");
+  ASSERT_EQ(filtered.size(), 2u);
+  int32_t total = 0;
+  for (const auto& entry : filtered) {
+    total += entry.unread_count();
+  }
+  EXPECT_EQ(total, 2);
+}
+
+TEST(UnreadLedgerTest, MalformedSelectorClearsNothing) {
+  sg::UnreadLedger ledger;
+  ledger.Increment("player-1", "game-a", "world-1");
+
+  // channel_id without game_id clears nothing (the handler rejects the
+  // request outright; the ledger answers 0 defensively).
+  EXPECT_EQ(ledger.MarkRead("player-1", "", "world-1"), 0u);
+  EXPECT_EQ(ledger.Size(), 1u);
+  // Empty player: defensive no-op.
+  EXPECT_EQ(ledger.MarkRead("", "game-a", "world-1"), 0u);
+  // Empty increment components: defensive no-ops (the fan-in path validates
+  // before calling, but the ledger must not store garbage anyway).
+  ledger.Increment("", "game-a", "world-1");
+  ledger.Increment("player-1", "", "world-1");
+  ledger.Increment("player-1", "game-a", "");
+  EXPECT_EQ(ledger.Size(), 1u);
+}
+
+TEST(UnreadLedgerTest, RedisWriteThroughAndLoadRestore) {
+  const auto store = std::make_shared<std::map<std::string, std::string>>();
+  sg::UnreadLedger writer([store]() mutable {
+    return std::make_unique<FakeRedisClient>(store);
+  });
+  writer.Load();  // loading an empty store is a clean no-op
+
+  writer.Increment("player-1", "game-a", "world-1");
+  writer.Increment("player-1", "game-a", "world-1");
+  writer.Increment("player-1", "game-a", "world-2");
+  EXPECT_EQ(store->size(), 2u);
+
+  // A fresh hub process restores every counter through Load.
+  sg::UnreadLedger reader([store]() mutable {
+    return std::make_unique<FakeRedisClient>(store);
+  });
+  reader.Load();
+  EXPECT_EQ(reader.Size(), 2u);
+  const auto summary = reader.GetSummary("player-1", "game-a");
+  ASSERT_EQ(summary.size(), 2u);
+  EXPECT_EQ(summary[0].channel_id(), "world-1");
+  EXPECT_EQ(summary[0].unread_count(), 2);
+
+  // Marking read deletes the persisted record, so a reload must not
+  // resurrect the counter.
+  EXPECT_EQ(writer.MarkRead("player-1", "game-a", "world-1"), 1u);
+  EXPECT_EQ(store->size(), 1u);
+  sg::UnreadLedger reloaded([store]() mutable {
+    return std::make_unique<FakeRedisClient>(store);
+  });
+  reloaded.Load();
+  const auto after = reloaded.GetSummary("player-1", "");
+  ASSERT_EQ(after.size(), 1u);
+  EXPECT_EQ(after[0].channel_id(), "world-2");
+}
+
+TEST(UnreadLedgerTest, LoadSkipsUnreadableRecords) {
+  // Keys() lists a record but Get() cannot read it back (e.g. a flaky
+  // replica): Load must skip the entry, not treat the store as empty.
+  const auto store = std::make_shared<std::map<std::string, std::string>>();
+  sg::UnreadLedger writer([store]() mutable {
+    return std::make_unique<FakeRedisClient>(store);
+  });
+  writer.Increment("player-1", "game-a", "world-1");
+  ASSERT_EQ(store->size(), 1u);
+
+  sg::UnreadLedger reader([store]() mutable {
+    auto client = std::make_unique<FakeRedisClient>(store);
+    client->fail_get = true;
+    return client;
+  });
+  reader.Load();
+  EXPECT_EQ(reader.Size(), 0u);
+}
+
+TEST(UnreadLedgerTest, LoadSkipsCorruptAndZeroRecords) {
+  // A corrupted record and a zero-count record (cleared entries are
+  // deleted, never written as zero — anything hand-written is legacy
+  // state) are both skipped instead of confusing the summary.
+  const auto store = std::make_shared<std::map<std::string, std::string>>();
+  (*store)["chirp:unread:entry:junk"] = "\x01\x02not-a-proto";
+  sg::StoredUnreadEntry zero;
+  zero.set_player_id("player-1");
+  zero.set_game_id("game-a");
+  zero.set_channel_id("world-1");
+  zero.set_unread_count(0);
+  (*store)["chirp:unread:entry:player-1:game-a:world-1"] = zero.SerializeAsString();
+
+  sg::UnreadLedger ledger([store]() mutable {
+    return std::make_unique<FakeRedisClient>(store);
+  });
+  ledger.Load();
+  EXPECT_EQ(ledger.Size(), 0u);
+}
+
+TEST(UnreadLedgerTest, RedisFailureDegradesToMemoryOnly) {
+  const auto store = std::make_shared<std::map<std::string, std::string>>();
+  sg::UnreadLedger ledger([store]() mutable {
+    auto client = std::make_unique<FakeRedisClient>(store);
+    client->fail = true;
+    return client;
+  });
+  ledger.Load();  // reads fail; must not crash or block
+
+  ledger.Increment("player-1", "game-a", "world-1");
+  EXPECT_EQ(ledger.GetSummary("player-1", "").size(), 1u);
+  EXPECT_EQ(ledger.MarkRead("player-1", "game-a", "world-1"), 1u);
+  EXPECT_EQ(store->size(), 0u);  // nothing ever reached Redis
+}
+
+TEST(UnreadLedgerTest, MemoryOnlyByDefault) {
+  sg::UnreadLedger ledger;
+  ledger.Load();  // no factory: nothing to load
+  ledger.Increment("player-1", "game-a", "world-1");
+  EXPECT_EQ(ledger.GetSummary("player-1", "").size(), 1u);
+}
+
+// ---------------------------------------------------------------------------
+// Unread handlers (wire-facing validation) + fan-in ledger integration
+// ---------------------------------------------------------------------------
+
+TEST_F(ServerGatewayTest, MarkHandlerValidatesPlayerAndSelector) {
+  sg::MarkChannelsReadRequest req;
+  EXPECT_EQ(handlers_->HandleMarkChannelsRead(req).code(), INVALID_PARAM);  // no player
+
+  req.set_player_id("player-1");
+  req.set_channel_id("world-1");
+  EXPECT_EQ(handlers_->HandleMarkChannelsRead(req).code(), INVALID_PARAM);  // channel w/o game
+
+  unread_.Increment("player-1", "game-a", "world-1");
+  unread_.Increment("player-1", "game-a", "world-2");
+
+  req.set_game_id("game-a");
+  req.set_channel_id("world-1");
+  auto resp = handlers_->HandleMarkChannelsRead(req);
+  EXPECT_EQ(resp.code(), OK);
+  EXPECT_EQ(resp.cleared(), 1);
+
+  req.set_channel_id("");  // whole game
+  resp = handlers_->HandleMarkChannelsRead(req);
+  EXPECT_EQ(resp.cleared(), 1);  // world-2 was left
+
+  req.set_game_id("game-a");
+  resp = handlers_->HandleMarkChannelsRead(req);  // repeating the game clear
+  EXPECT_EQ(resp.cleared(), 0);                   // is an idempotent no-op
+}
+
+TEST_F(ServerGatewayTest, SummaryHandlerValidatesPlayerAndFilters) {
+  sg::GetUnreadSummaryRequest req;
+  EXPECT_EQ(handlers_->HandleGetUnreadSummary(req).code(), INVALID_PARAM);  // no player
+
+  req.set_player_id("player-1");
+  auto resp = handlers_->HandleGetUnreadSummary(req);
+  EXPECT_EQ(resp.code(), OK);
+  EXPECT_EQ(resp.entries_size(), 0);
+  EXPECT_EQ(resp.total_unread(), 0);
+
+  unread_.Increment("player-1", "game-a", "world-1");
+  unread_.Increment("player-1", "game-a", "world-1");
+  unread_.Increment("player-1", "game-b", "dungeon-1");
+
+  resp = handlers_->HandleGetUnreadSummary(req);
+  ASSERT_EQ(resp.entries_size(), 2);
+  EXPECT_EQ(resp.total_unread(), 3);
+
+  req.set_game_id("game-b");
+  resp = handlers_->HandleGetUnreadSummary(req);
+  ASSERT_EQ(resp.entries_size(), 1);
+  EXPECT_EQ(resp.entries(0).game_id(), "game-b");
+  EXPECT_EQ(resp.total_unread(), 1);
+}
+
+TEST_F(ServerGatewayTest, InjectFanoutIncrementsUnreadPerSubscriber) {
+  SubscribeAs("s1", "player-1", "game-a", "world-1");
+  SubscribeAs("s2", "player-2", "game-a", "world-1");
+  AuthAs("chat");
+
+  EXPECT_EQ(handlers_->HandleInject(FanoutInject("game-a", "world-1")).code(), OK);
+
+  // Each delivered copy is one unhandled notification for its recipient.
+  for (const char* player : {"player-1", "player-2"}) {
+    const auto summary = unread_.GetSummary(player, "");
+    ASSERT_EQ(summary.size(), 1u);
+    EXPECT_EQ(summary[0].game_id(), "game-a");
+    EXPECT_EQ(summary[0].channel_id(), "world-1");
+    EXPECT_EQ(summary[0].unread_count(), 1);
+  }
+}
+
+TEST_F(ServerGatewayTest, InjectFanoutPartialFailureCountsOnlyDelivered) {
+  SubscribeAs("s1", "player-1", "game-a", "world-1");
+  SubscribeAs("s2", "player-2", "game-a", "world-1");
+  SubscribeAs("s3", "player-3", "game-a", "world-1");
+  const auto chat = AuthAs("chat");
+  chat->fail_after = 1;  // only the first copy lands
+
+  EXPECT_EQ(handlers_->HandleInject(FanoutInject("game-a", "world-1")).code(), OK);
+  EXPECT_EQ(chat->Count(chirp::gateway::INJECT_MESSAGE_NOTIFY), 1);
+
+  // Exactly one subscriber got counted (subscriber order is unspecified, so
+  // count totals instead of naming the winner).
+  size_t counted = 0;
+  for (const char* player : {"player-1", "player-2", "player-3"}) {
+    counted += unread_.GetSummary(player, "").size();
+  }
+  EXPECT_EQ(counted, 1u);
+}
+
+TEST_F(ServerGatewayTest, InjectFanoutRejectionsLeaveLedgerUntouched) {
+  // Nobody follows the channel: nothing to count.
+  AuthAs("chat");
+  EXPECT_EQ(handlers_->HandleInject(FanoutInject("game-a", "unfollowed")).code(), OK);
+
+  // A rejected fan-out (over cap) must not count either.
+  SubscribeAs("s1", "player-1", "game-a", "world-1");
+  SubscribeAs("s2", "player-2", "game-a", "world-1");
+  config_.max_fanout_per_inject = 1;
+  handlers_ = std::make_unique<sg::ServerGatewayHandlers>(config_, registry_, queue_, identities_,
+                                                          subscriptions_, unread_);
+  AuthAs("chat");
+  EXPECT_EQ(handlers_->HandleInject(FanoutInject("game-a", "world-1")).code(),
+            chirp::common::RATE_LIMITED);
+  EXPECT_TRUE(unread_.GetSummary("player-1", "").empty());
+  EXPECT_TRUE(unread_.GetSummary("player-2", "").empty());
+
+  // chat writes failing must not count either.
+  config_.max_fanout_per_inject = 10000;
+  handlers_ = std::make_unique<sg::ServerGatewayHandlers>(config_, registry_, queue_, identities_,
+                                                          subscriptions_, unread_);
+  const auto chat = AuthAs("chat");
+  chat->send_ok = false;
+  EXPECT_EQ(handlers_->HandleInject(FanoutInject("game-a", "world-1")).code(),
+            SERVER_UNAVAILABLE);
+  EXPECT_TRUE(unread_.GetSummary("player-1", "").empty());
+  EXPECT_TRUE(unread_.GetSummary("player-2", "").empty());
 }
 
 }  // namespace

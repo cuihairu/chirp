@@ -186,6 +186,17 @@ export enum MsgID {
   GET_PLAYER_SUBSCRIPTIONS_REQ = 5025,
   GET_PLAYER_SUBSCRIPTIONS_RESP = 5026,
   /**
+   * MARK_CHANNELS_READ_REQ - Unified unread (WP-8 slice 4): the hub's fan-in badge ledger, backed by
+   * the fan-out copies injected with a game_id. Independent of the chat
+   * read cursors (2201-2207); app_gateway forwards these for self-served
+   * players (player_id pinned to the authenticated user). Bodies are
+   * chirp.server_gateway.* messages; see proto/server_gateway.proto.
+   */
+  MARK_CHANNELS_READ_REQ = 5027,
+  MARK_CHANNELS_READ_RESP = 5028,
+  GET_UNREAD_SUMMARY_REQ = 5029,
+  GET_UNREAD_SUMMARY_RESP = 5030,
+  /**
    * REGISTER_DEVICE_REQ - Notification plane: device registration forwarded by app_gateway and
    * push requests from internal services (chat). Bodies are
    * chirp.notification.* messages; see proto/notification.proto.
@@ -706,6 +717,18 @@ export function msgIDFromJSON(object: any): MsgID {
     case 5026:
     case "GET_PLAYER_SUBSCRIPTIONS_RESP":
       return MsgID.GET_PLAYER_SUBSCRIPTIONS_RESP;
+    case 5027:
+    case "MARK_CHANNELS_READ_REQ":
+      return MsgID.MARK_CHANNELS_READ_REQ;
+    case 5028:
+    case "MARK_CHANNELS_READ_RESP":
+      return MsgID.MARK_CHANNELS_READ_RESP;
+    case 5029:
+    case "GET_UNREAD_SUMMARY_REQ":
+      return MsgID.GET_UNREAD_SUMMARY_REQ;
+    case 5030:
+    case "GET_UNREAD_SUMMARY_RESP":
+      return MsgID.GET_UNREAD_SUMMARY_RESP;
     case 6001:
     case "REGISTER_DEVICE_REQ":
       return MsgID.REGISTER_DEVICE_REQ;
@@ -1128,6 +1151,14 @@ export function msgIDToJSON(object: MsgID): string {
       return "GET_PLAYER_SUBSCRIPTIONS_REQ";
     case MsgID.GET_PLAYER_SUBSCRIPTIONS_RESP:
       return "GET_PLAYER_SUBSCRIPTIONS_RESP";
+    case MsgID.MARK_CHANNELS_READ_REQ:
+      return "MARK_CHANNELS_READ_REQ";
+    case MsgID.MARK_CHANNELS_READ_RESP:
+      return "MARK_CHANNELS_READ_RESP";
+    case MsgID.GET_UNREAD_SUMMARY_REQ:
+      return "GET_UNREAD_SUMMARY_REQ";
+    case MsgID.GET_UNREAD_SUMMARY_RESP:
+      return "GET_UNREAD_SUMMARY_RESP";
     case MsgID.REGISTER_DEVICE_REQ:
       return "REGISTER_DEVICE_REQ";
     case MsgID.REGISTER_DEVICE_RESP:
