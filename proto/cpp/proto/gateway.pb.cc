@@ -265,14 +265,14 @@ const char descriptor_table_protodef_proto_2fgateway_2eproto[] ABSL_ATTRIBUTE_SE
     "CKED_NOTIFY\020\3576\022\037\n\032PARTY_STATE_CHANGED_NO"
     "TIFY\020\3606\022\033\n\026PARTY_DISBANDED_NOTIFY\020\3616\022\025\n\020"
     "GET_MY_PARTY_REQ\020\3626\022\026\n\021GET_MY_PARTY_RESP"
-    "\020\3636B$Z\"github.com/cui/chirp/proto/gatewa"
-    "yb\006proto3"
+    "\020\3636B\'Z%github.com/cui/chirp/proto/go/gat"
+    "ewayb\006proto3"
 };
 static ::absl::once_flag descriptor_table_proto_2fgateway_2eproto_once;
 PROTOBUF_CONSTINIT const ::_pbi::DescriptorTable descriptor_table_proto_2fgateway_2eproto = {
     false,
     false,
-    4609,
+    4612,
     descriptor_table_protodef_proto_2fgateway_2eproto,
     "proto/gateway.proto",
     &descriptor_table_proto_2fgateway_2eproto_once,

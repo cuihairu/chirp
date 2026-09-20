@@ -94,8 +94,8 @@ namespace Chirp.Social {
             "dXNlcl9pZHMYASADKAkqWAoOUHJlc2VuY2VTdGF0dXMSCwoHT0ZGTElORRAA",
             "EgoKBk9OTElORRABEggKBEFXQVkQAhIHCgNETkQQAxILCgdJTl9HQU1FEAQS",
             "DQoJSU5fQkFUVExFEAUqQAoMRnJpZW5kU3RhdHVzEggKBE5PTkUQABILCgdQ",
-            "RU5ESU5HEAESDAoIQUNDRVBURUQQAhILCgdCTE9DS0VEEANCI1ohZ2l0aHVi",
-            "LmNvbS9jdWkvY2hpcnAvcHJvdG8vc29jaWFsYgZwcm90bzM="));
+            "RU5ESU5HEAESDAoIQUNDRVBURUQQAhILCgdCTE9DS0VEEANCJlokZ2l0aHVi",
+            "LmNvbS9jdWkvY2hpcnAvcHJvdG8vZ28vc29jaWFsYgZwcm90bzM="));
       descriptor = pbr::FileDescriptor.FromGeneratedCode(descriptorData,
           new pbr::FileDescriptor[] { global::Chirp.Common.CommonReflection.Descriptor, },
           new pbr::GeneratedClrTypeInfo(new[] {typeof(global::Chirp.Social.PresenceStatus), typeof(global::Chirp.Social.FriendStatus), }, null, new pbr::GeneratedClrTypeInfo[] {

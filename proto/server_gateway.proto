@@ -2,7 +2,7 @@ syntax = "proto3";
 
 package chirp.server_gateway;
 
-option go_package = "github.com/cui/chirp/proto/server_gateway";
+option go_package = "github.com/cui/chirp/proto/go/server_gateway";
 
 import "proto/common.proto";
 

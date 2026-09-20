@@ -10,6 +10,8 @@ The server plane is how a game backend talks to chirp. It is deliberately separa
 - **Service identity, not user identity**: peers authenticate with `service_id` + shared secret. They are never user accounts, never appear in session/kick/presence, and injected messages carry non-user sender kinds (`SYSTEM` / `NPC` / `SERVICE`).
 - **Same framing**: TCP + `[uint32_be size][chirp.gateway.Packet]`, with the `5xxx` msg-id block.
 
+Game backends do not reimplement this wire contract from scratch: `sdks/go` (package `chirp`, see its README) is the reference Go client — auth handshake, server-assigned heartbeat, sequence-correlated inject/event RPCs, at-least-once event ack, fail-pending reconnect — mirroring the in-tree C++ peer (`services/chat/src/server_gateway_peer.cc`).
+
 ### Credential boundary
 
 The `service_id` + secret pair is an appkey/appSecret-style credential: it identifies the integrating backend and is long-lived. Two rules follow:

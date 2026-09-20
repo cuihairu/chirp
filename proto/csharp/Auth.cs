@@ -67,8 +67,8 @@ namespace Chirp.Auth {
             "DG9sZF9wYXNzd29yZBgCIAEoCRIUCgxuZXdfcGFzc3dvcmQYAyABKAkiawoW",
             "Q2hhbmdlUGFzc3dvcmRSZXNwb25zZRIlCgRjb2RlGAEgASgOMhcuY2hpcnAu",
             "Y29tbW9uLkVycm9yQ29kZRITCgtzZXJ2ZXJfdGltZRgCIAEoAxIVCg1lcnJv",
-            "cl9tZXNzYWdlGAMgASgJQiFaH2dpdGh1Yi5jb20vY3VpL2NoaXJwL3Byb3Rv",
-            "L2F1dGhiBnByb3RvMw=="));
+            "cl9tZXNzYWdlGAMgASgJQiRaImdpdGh1Yi5jb20vY3VpL2NoaXJwL3Byb3Rv",
+            "L2dvL2F1dGhiBnByb3RvMw=="));
       descriptor = pbr::FileDescriptor.FromGeneratedCode(descriptorData,
           new pbr::FileDescriptor[] { global::Chirp.Common.CommonReflection.Descriptor, },
           new pbr::GeneratedClrTypeInfo(null, null, new pbr::GeneratedClrTypeInfo[] {

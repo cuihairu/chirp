@@ -316,8 +316,8 @@ namespace Chirp.Chat {
             "SU5IRVJJVBAAEgkKBUFMTE9XEAESCAoEREVOWRACKocBCgtNZW50aW9uVHlw",
             "ZRIVChFNRU5USU9OX1RZUEVfVVNFUhAAEhUKEU1FTlRJT05fVFlQRV9ST0xF",
             "EAESGAoUTUVOVElPTl9UWVBFX0NIQU5ORUwQAhIZChVNRU5USU9OX1RZUEVf",
-            "RVZFUllPTkUQAxIVChFNRU5USU9OX1RZUEVfSEVSRRAEQiFaH2dpdGh1Yi5j",
-            "b20vY3VpL2NoaXJwL3Byb3RvL2NoYXRiBnByb3RvMw=="));
+            "RVZFUllPTkUQAxIVChFNRU5USU9OX1RZUEVfSEVSRRAEQiRaImdpdGh1Yi5j",
+            "b20vY3VpL2NoaXJwL3Byb3RvL2dvL2NoYXRiBnByb3RvMw=="));
       descriptor = pbr::FileDescriptor.FromGeneratedCode(descriptorData,
           new pbr::FileDescriptor[] { global::Chirp.Common.CommonReflection.Descriptor, },
           new pbr::GeneratedClrTypeInfo(new[] {typeof(global::Chirp.Chat.MsgType), typeof(global::Chirp.Chat.ChannelType), typeof(global::Chirp.Chat.GroupMemberRole), typeof(global::Chirp.Chat.ChannelKind), typeof(global::Chirp.Chat.PermissionType), typeof(global::Chirp.Chat.PermissionOverride), typeof(global::Chirp.Chat.MentionType), }, null, new pbr::GeneratedClrTypeInfo[] {

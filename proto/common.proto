@@ -2,7 +2,7 @@ syntax = "proto3";
 
 package chirp.common;
 
-option go_package = "github.com/cui/chirp/proto/common";
+option go_package = "github.com/cui/chirp/proto/go/common";
 
 enum ErrorCode {
   OK = 0;

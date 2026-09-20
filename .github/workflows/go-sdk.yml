@@ -1,0 +1,68 @@
+name: Go SDK
+
+# The Go server-plane SDK (sdks/go) is a pure protocol client over the
+# committed proto/go gencode, so it tests with plain `go test` against an
+# in-process fake hub — no chirp services needed. Like the Unity workflow
+# this lives on its own paths filter, and it re-generates the committed
+# gencode with the pinned protoc to fail on drift.
+on:
+  push:
+    branches: [ main, develop ]
+    paths:
+      - 'sdks/go/**'
+      - 'proto/**'
+      - 'gen_proto.sh'
+      - 'go.mod'
+      - 'go.sum'
+      - '.github/workflows/go-sdk.yml'
+  pull_request:
+    branches: [ main, develop ]
+    paths:
+      - 'sdks/go/**'
+      - 'proto/**'
+      - 'gen_proto.sh'
+      - 'go.mod'
+      - 'go.sum'
+      - '.github/workflows/go-sdk.yml'
+
+jobs:
+  test:
+    runs-on: ubuntu-24.04
+    steps:
+    - uses: actions/checkout@v7
+
+    # The committed proto/go gencode was produced by protoc 33.4 (the vcpkg
+    # toolchain) + protoc-gen-go v1.36.12; a different pairing emits
+    # different gencode and would fail the drift check for the wrong reason.
+    - name: Install protoc 33.4
+      run: |
+        curl -fsSL -o /tmp/protoc.zip \
+          https://github.com/protocolbuffers/protobuf/releases/download/v33.4/protoc-33.4-linux-x86_64.zip
+        unzip -q -o /tmp/protoc.zip -d "$RUNNER_TEMP/protoc33"
+        "$RUNNER_TEMP/protoc33/bin/protoc" --version
+
+    - uses: actions/setup-go@v5
+      with:
+        go-version: 'stable'
+
+    - name: Install protoc-gen-go
+      run: go install google.golang.org/protobuf/cmd/protoc-gen-go@v1.36.12
+
+    - name: Regenerate protos
+      run: |
+        export PATH="$RUNNER_TEMP/protoc33/bin:$HOME/go/bin:$PATH"
+        CHIRP_PROTOC="$RUNNER_TEMP/protoc33/bin/protoc" bash gen_proto.sh
+
+    # The generated Go code is committed; regenerate and fail on drift so
+    # the checked-in files never silently diverge from the .proto sources
+    # (go_package lives in the .proto files, so they are covered too).
+    - name: Check proto/go drift
+      run: |
+        git diff --exit-code -- proto/go proto/*.proto \
+          || (echo "::error::proto/go is stale — run gen_proto.sh and commit" && exit 1)
+
+    - name: Vet
+      run: go vet ./sdks/go/... ./proto/go/...
+
+    - name: Run the SDK test suite
+      run: go test -race ./sdks/go/...

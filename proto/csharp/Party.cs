@@ -86,8 +86,8 @@ namespace Chirp.Party {
             "AiABKAkSEwoLbWF4X21lbWJlcnMYAyABKAUSEgoKY3JlYXRlZF9hdBgEIAEo",
             "AxIqCgdtZW1iZXJzGAUgAygLMhkuY2hpcnAucGFydHkuU3RvcmVkTWVtYmVy",
             "IkEKDFN0b3JlZE1lbWJlchIPCgd1c2VyX2lkGAEgASgJEg0KBXJlYWR5GAIg",
-            "ASgIEhEKCWpvaW5lZF9hdBgDIAEoA0IiWiBnaXRodWIuY29tL2N1aS9jaGly",
-            "cC9wcm90by9wYXJ0eWIGcHJvdG8z"));
+            "ASgIEhEKCWpvaW5lZF9hdBgDIAEoA0IlWiNnaXRodWIuY29tL2N1aS9jaGly",
+            "cC9wcm90by9nby9wYXJ0eWIGcHJvdG8z"));
       descriptor = pbr::FileDescriptor.FromGeneratedCode(descriptorData,
           new pbr::FileDescriptor[] { global::Chirp.Common.CommonReflection.Descriptor, },
           new pbr::GeneratedClrTypeInfo(null, null, new pbr::GeneratedClrTypeInfo[] {

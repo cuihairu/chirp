@@ -880,8 +880,8 @@ const char descriptor_table_protodef_proto_2fauth_2eproto[] ABSL_ATTRIBUTE_SECTI
     "\014old_password\030\002 \001(\t\022\024\n\014new_password\030\003 \001("
     "\t\"k\n\026ChangePasswordResponse\022%\n\004code\030\001 \001("
     "\0162\027.chirp.common.ErrorCode\022\023\n\013server_tim"
-    "e\030\002 \001(\003\022\025\n\rerror_message\030\003 \001(\tB!Z\037github"
-    ".com/cui/chirp/proto/authb\006proto3"
+    "e\030\002 \001(\003\022\025\n\rerror_message\030\003 \001(\tB$Z\"github"
+    ".com/cui/chirp/proto/go/authb\006proto3"
 };
 static const ::_pbi::DescriptorTable* PROTOBUF_NONNULL const
     descriptor_table_proto_2fauth_2eproto_deps[1] = {
@@ -891,7 +891,7 @@ static ::absl::once_flag descriptor_table_proto_2fauth_2eproto_once;
 PROTOBUF_CONSTINIT const ::_pbi::DescriptorTable descriptor_table_proto_2fauth_2eproto = {
     false,
     false,
-    1993,
+    1996,
     descriptor_table_protodef_proto_2fauth_2eproto,
     "proto/auth.proto",
     &descriptor_table_proto_2fauth_2eproto_once,

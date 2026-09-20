@@ -2,7 +2,7 @@ syntax = "proto3";
 
 package chirp.social;
 
-option go_package = "github.com/cui/chirp/proto/social";
+option go_package = "github.com/cui/chirp/proto/go/social";
 
 import "proto/common.proto";
 

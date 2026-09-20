@@ -2,7 +2,7 @@ syntax = "proto3";
 
 package chirp.gateway;
 
-option go_package = "github.com/cui/chirp/proto/gateway";
+option go_package = "github.com/cui/chirp/proto/go/gateway";
 
 // Message ID definition for dispatching
 enum MsgID {

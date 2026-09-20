@@ -51,8 +51,8 @@ namespace Chirp.ServerGateway {
             "bnRfaWRzGAEgAygJIjkKEEV2ZW50QWNrUmVzcG9uc2USJQoEY29kZRgBIAEo",
             "DjIXLmNoaXJwLmNvbW1vbi5FcnJvckNvZGUqVwoKU2VuZGVyS2luZBISCg5T",
             "RU5ERVJfVU5LTk9XThAAEhEKDVNFTkRFUl9TWVNURU0QARIOCgpTRU5ERVJf",
-            "TlBDEAISEgoOU0VOREVSX1NFUlZJQ0UQA0IrWilnaXRodWIuY29tL2N1aS9j",
-            "aGlycC9wcm90by9zZXJ2ZXJfZ2F0ZXdheWIGcHJvdG8z"));
+            "TlBDEAISEgoOU0VOREVSX1NFUlZJQ0UQA0IuWixnaXRodWIuY29tL2N1aS9j",
+            "aGlycC9wcm90by9nby9zZXJ2ZXJfZ2F0ZXdheWIGcHJvdG8z"));
       descriptor = pbr::FileDescriptor.FromGeneratedCode(descriptorData,
           new pbr::FileDescriptor[] { global::Chirp.Common.CommonReflection.Descriptor, },
           new pbr::GeneratedClrTypeInfo(new[] {typeof(global::Chirp.ServerGateway.SenderKind), }, null, new pbr::GeneratedClrTypeInfo[] {

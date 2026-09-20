@@ -84,8 +84,8 @@ namespace Chirp.Voice {
             "Ayo0CghSb29tVHlwZRIQCgxQRUVSX1RPX1BFRVIQABIJCgVHUk9VUBABEgsK",
             "B0NIQU5ORUwQAipZChBQYXJ0aWNpcGFudFN0YXRlEgsKB0pPSU5JTkcQABIN",
             "CglDT05ORUNURUQQARIJCgVNVVRFRBACEgwKCERFQUZFTkVEEAMSEAoMRElT",
-            "Q09OTkVDVEVEEARCIlogZ2l0aHViLmNvbS9jdWkvY2hpcnAvcHJvdG8vdm9p",
-            "Y2ViBnByb3RvMw=="));
+            "Q09OTkVDVEVEEARCJVojZ2l0aHViLmNvbS9jdWkvY2hpcnAvcHJvdG8vZ28v",
+            "dm9pY2ViBnByb3RvMw=="));
       descriptor = pbr::FileDescriptor.FromGeneratedCode(descriptorData,
           new pbr::FileDescriptor[] { global::Chirp.Common.CommonReflection.Descriptor, },
           new pbr::GeneratedClrTypeInfo(new[] {typeof(global::Chirp.Voice.RoomType), typeof(global::Chirp.Voice.ParticipantState), }, null, new pbr::GeneratedClrTypeInfo[] {

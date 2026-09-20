@@ -125,8 +125,8 @@ namespace Chirp.Gateway {
             "UlRZX0xFRlRfTk9USUZZEO42EhgKE1BBUlRZX0tJQ0tFRF9OT1RJRlkQ7zYS",
             "HwoaUEFSVFlfU1RBVEVfQ0hBTkdFRF9OT1RJRlkQ8DYSGwoWUEFSVFlfRElT",
             "QkFOREVEX05PVElGWRDxNhIVChBHRVRfTVlfUEFSVFlfUkVREPI2EhYKEUdF",
-            "VF9NWV9QQVJUWV9SRVNQEPM2QiRaImdpdGh1Yi5jb20vY3VpL2NoaXJwL3By",
-            "b3RvL2dhdGV3YXliBnByb3RvMw=="));
+            "VF9NWV9QQVJUWV9SRVNQEPM2QidaJWdpdGh1Yi5jb20vY3VpL2NoaXJwL3By",
+            "b3RvL2dvL2dhdGV3YXliBnByb3RvMw=="));
       descriptor = pbr::FileDescriptor.FromGeneratedCode(descriptorData,
           new pbr::FileDescriptor[] { },
           new pbr::GeneratedClrTypeInfo(new[] {typeof(global::Chirp.Gateway.MsgID), }, null, new pbr::GeneratedClrTypeInfo[] {

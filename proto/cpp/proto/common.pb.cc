@@ -70,14 +70,14 @@ const char descriptor_table_protodef_proto_2fcommon_2eproto[] ABSL_ATTRIBUTE_SEC
     "ROR\020\001\022\021\n\rINVALID_PARAM\020\002\022\017\n\013AUTH_FAILED\020"
     "\003\022\023\n\017SESSION_EXPIRED\020\004\022\022\n\016USER_NOT_FOUND"
     "\020\005\022\022\n\016TARGET_OFFLINE\020\006\022\026\n\022SERVER_UNAVAIL"
-    "ABLE\020\007\022\020\n\014RATE_LIMITED\020\010B#Z!github.com/c"
-    "ui/chirp/proto/commonb\006proto3"
+    "ABLE\020\007\022\020\n\014RATE_LIMITED\020\010B&Z$github.com/c"
+    "ui/chirp/proto/go/commonb\006proto3"
 };
 static ::absl::once_flag descriptor_table_proto_2fcommon_2eproto_once;
 PROTOBUF_CONSTINIT const ::_pbi::DescriptorTable descriptor_table_proto_2fcommon_2eproto = {
     false,
     false,
-    269,
+    272,
     descriptor_table_protodef_proto_2fcommon_2eproto,
     "proto/common.proto",
     &descriptor_table_proto_2fcommon_2eproto_once,

@@ -4873,8 +4873,8 @@ const char descriptor_table_protodef_proto_2fchat_2eproto[] ABSL_ATTRIBUTE_SECTI
     "MentionType\022\025\n\021MENTION_TYPE_USER\020\000\022\025\n\021ME"
     "NTION_TYPE_ROLE\020\001\022\030\n\024MENTION_TYPE_CHANNE"
     "L\020\002\022\031\n\025MENTION_TYPE_EVERYONE\020\003\022\025\n\021MENTIO"
-    "N_TYPE_HERE\020\004B!Z\037github.com/cui/chirp/pr"
-    "oto/chatb\006proto3"
+    "N_TYPE_HERE\020\004B$Z\"github.com/cui/chirp/pr"
+    "oto/go/chatb\006proto3"
 };
 static const ::_pbi::DescriptorTable* PROTOBUF_NONNULL const
     descriptor_table_proto_2fchat_2eproto_deps[1] = {
@@ -4884,7 +4884,7 @@ static ::absl::once_flag descriptor_table_proto_2fchat_2eproto_once;
 PROTOBUF_CONSTINIT const ::_pbi::DescriptorTable descriptor_table_proto_2fchat_2eproto = {
     false,
     false,
-    13216,
+    13219,
     descriptor_table_protodef_proto_2fchat_2eproto,
     "proto/chat.proto",
     &descriptor_table_proto_2fchat_2eproto_once,

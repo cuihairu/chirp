@@ -1163,8 +1163,8 @@ const char descriptor_table_protodef_proto_2fvoice_2eproto[] ABSL_ATTRIBUTE_SECT
     "\030\004 \001(\003*4\n\010RoomType\022\020\n\014PEER_TO_PEER\020\000\022\t\n\005"
     "GROUP\020\001\022\013\n\007CHANNEL\020\002*Y\n\020ParticipantState"
     "\022\013\n\007JOINING\020\000\022\r\n\tCONNECTED\020\001\022\t\n\005MUTED\020\002\022"
-    "\014\n\010DEAFENED\020\003\022\020\n\014DISCONNECTED\020\004B\"Z githu"
-    "b.com/cui/chirp/proto/voiceb\006proto3"
+    "\014\n\010DEAFENED\020\003\022\020\n\014DISCONNECTED\020\004B%Z#githu"
+    "b.com/cui/chirp/proto/go/voiceb\006proto3"
 };
 static const ::_pbi::DescriptorTable* PROTOBUF_NONNULL const
     descriptor_table_proto_2fvoice_2eproto_deps[1] = {
@@ -1174,7 +1174,7 @@ static ::absl::once_flag descriptor_table_proto_2fvoice_2eproto_once;
 PROTOBUF_CONSTINIT const ::_pbi::DescriptorTable descriptor_table_proto_2fvoice_2eproto = {
     false,
     false,
-    2755,
+    2758,
     descriptor_table_protodef_proto_2fvoice_2eproto,
     "proto/voice.proto",
     &descriptor_table_proto_2fvoice_2eproto_once,

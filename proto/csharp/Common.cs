@@ -29,7 +29,8 @@ namespace Chirp.Common {
             "TlZBTElEX1BBUkFNEAISDwoLQVVUSF9GQUlMRUQQAxITCg9TRVNTSU9OX0VY",
             "UElSRUQQBBISCg5VU0VSX05PVF9GT1VORBAFEhIKDlRBUkdFVF9PRkZMSU5F",
             "EAYSFgoSU0VSVkVSX1VOQVZBSUxBQkxFEAcSEAoMUkFURV9MSU1JVEVEEAhC",
-            "I1ohZ2l0aHViLmNvbS9jdWkvY2hpcnAvcHJvdG8vY29tbW9uYgZwcm90bzM="));
+            "JlokZ2l0aHViLmNvbS9jdWkvY2hpcnAvcHJvdG8vZ28vY29tbW9uYgZwcm90",
+            "bzM="));
       descriptor = pbr::FileDescriptor.FromGeneratedCode(descriptorData,
           new pbr::FileDescriptor[] { },
           new pbr::GeneratedClrTypeInfo(new[] {typeof(global::Chirp.Common.ErrorCode), }, null, new pbr::GeneratedClrTypeInfo[] {

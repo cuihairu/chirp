@@ -2,7 +2,7 @@ syntax = "proto3";
 
 package chirp.notification;
 
-option go_package = "github.com/cui/chirp/proto/notification";
+option go_package = "github.com/cui/chirp/proto/go/notification";
 
 import "proto/common.proto";
 

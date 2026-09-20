@@ -551,8 +551,8 @@ const char descriptor_table_protodef_proto_2fserver_5fgateway_2eproto[] ABSL_ATT
     "\030\001 \001(\0162\027.chirp.common.ErrorCode*W\n\nSende"
     "rKind\022\022\n\016SENDER_UNKNOWN\020\000\022\021\n\rSENDER_SYST"
     "EM\020\001\022\016\n\nSENDER_NPC\020\002\022\022\n\016SENDER_SERVICE\020\003"
-    "B+Z)github.com/cui/chirp/proto/server_ga"
-    "tewayb\006proto3"
+    "B.Z,github.com/cui/chirp/proto/go/server"
+    "_gatewayb\006proto3"
 };
 static const ::_pbi::DescriptorTable* PROTOBUF_NONNULL const
     descriptor_table_proto_2fserver_5fgateway_2eproto_deps[1] = {
@@ -562,7 +562,7 @@ static ::absl::once_flag descriptor_table_proto_2fserver_5fgateway_2eproto_once;
 PROTOBUF_CONSTINIT const ::_pbi::DescriptorTable descriptor_table_proto_2fserver_5fgateway_2eproto = {
     false,
     false,
-    1293,
+    1296,
     descriptor_table_protodef_proto_2fserver_5fgateway_2eproto,
     "proto/server_gateway.proto",
     &descriptor_table_proto_2fserver_5fgateway_2eproto_once,

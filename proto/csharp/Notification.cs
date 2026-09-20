@@ -92,8 +92,8 @@ namespace Chirp.Notification {
             "AhIKCgZVUkdFTlQQAyqRAQoQTm90aWZpY2F0aW9uVHlwZRILCgdNRVNTQUdF",
             "EAASCwoHTUVOVElPThABEgwKCFJFQUNUSU9OEAISEgoORlJJRU5EX1JFUVVF",
             "U1QQAxITCg9GUklFTkRfQUNDRVBURUQQBBIOCgpWT0lDRV9DQUxMEAUSEAoM",
-            "Vk9JQ0VfSU5WSVRFEAYSCgoGU1lTVEVNEGNCKVonZ2l0aHViLmNvbS9jdWkv",
-            "Y2hpcnAvcHJvdG8vbm90aWZpY2F0aW9uYgZwcm90bzM="));
+            "Vk9JQ0VfSU5WSVRFEAYSCgoGU1lTVEVNEGNCLFoqZ2l0aHViLmNvbS9jdWkv",
+            "Y2hpcnAvcHJvdG8vZ28vbm90aWZpY2F0aW9uYgZwcm90bzM="));
       descriptor = pbr::FileDescriptor.FromGeneratedCode(descriptorData,
           new pbr::FileDescriptor[] { global::Chirp.Common.CommonReflection.Descriptor, },
           new pbr::GeneratedClrTypeInfo(new[] {typeof(global::Chirp.Notification.NotificationPriority), typeof(global::Chirp.Notification.NotificationType), }, null, new pbr::GeneratedClrTypeInfo[] {

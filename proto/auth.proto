@@ -2,7 +2,7 @@ syntax = "proto3";
 
 package chirp.auth;
 
-option go_package = "github.com/cui/chirp/proto/auth";
+option go_package = "github.com/cui/chirp/proto/go/auth";
 
 import "proto/common.proto";
 

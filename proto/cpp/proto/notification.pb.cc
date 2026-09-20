@@ -1090,8 +1090,8 @@ const char descriptor_table_protodef_proto_2fnotification_2eproto[] ABSL_ATTRIBU
     "\013\n\007MESSAGE\020\000\022\013\n\007MENTION\020\001\022\014\n\010REACTION\020\002\022"
     "\022\n\016FRIEND_REQUEST\020\003\022\023\n\017FRIEND_ACCEPTED\020\004"
     "\022\016\n\nVOICE_CALL\020\005\022\020\n\014VOICE_INVITE\020\006\022\n\n\006SY"
-    "STEM\020cB)Z\'github.com/cui/chirp/proto/not"
-    "ificationb\006proto3"
+    "STEM\020cB,Z*github.com/cui/chirp/proto/go/"
+    "notificationb\006proto3"
 };
 static const ::_pbi::DescriptorTable* PROTOBUF_NONNULL const
     descriptor_table_proto_2fnotification_2eproto_deps[1] = {
@@ -1101,7 +1101,7 @@ static ::absl::once_flag descriptor_table_proto_2fnotification_2eproto_once;
 PROTOBUF_CONSTINIT const ::_pbi::DescriptorTable descriptor_table_proto_2fnotification_2eproto = {
     false,
     false,
-    3137,
+    3140,
     descriptor_table_protodef_proto_2fnotification_2eproto,
     "proto/notification.proto",
     &descriptor_table_proto_2fnotification_2eproto_once,

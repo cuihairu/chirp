@@ -1402,8 +1402,8 @@ const char descriptor_table_protodef_proto_2fsocial_2eproto[] ABSL_ATTRIBUTE_SEC
     "eStatus\022\013\n\007OFFLINE\020\000\022\n\n\006ONLINE\020\001\022\010\n\004AWAY"
     "\020\002\022\007\n\003DND\020\003\022\013\n\007IN_GAME\020\004\022\r\n\tIN_BATTLE\020\005*"
     "@\n\014FriendStatus\022\010\n\004NONE\020\000\022\013\n\007PENDING\020\001\022\014"
-    "\n\010ACCEPTED\020\002\022\013\n\007BLOCKED\020\003B#Z!github.com/"
-    "cui/chirp/proto/socialb\006proto3"
+    "\n\010ACCEPTED\020\002\022\013\n\007BLOCKED\020\003B&Z$github.com/"
+    "cui/chirp/proto/go/socialb\006proto3"
 };
 static const ::_pbi::DescriptorTable* PROTOBUF_NONNULL const
     descriptor_table_proto_2fsocial_2eproto_deps[1] = {
@@ -1413,7 +1413,7 @@ static ::absl::once_flag descriptor_table_proto_2fsocial_2eproto_once;
 PROTOBUF_CONSTINIT const ::_pbi::DescriptorTable descriptor_table_proto_2fsocial_2eproto = {
     false,
     false,
-    3230,
+    3233,
     descriptor_table_protodef_proto_2fsocial_2eproto,
     "proto/social.proto",
     &descriptor_table_proto_2fsocial_2eproto_once,

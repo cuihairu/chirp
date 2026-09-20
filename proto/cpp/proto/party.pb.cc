@@ -1365,8 +1365,8 @@ const char descriptor_table_protodef_proto_2fparty_2eproto[] ABSL_ATTRIBUTE_SECT
     "\005\022\022\n\ncreated_at\030\004 \001(\003\022*\n\007members\030\005 \003(\0132\031"
     ".chirp.party.StoredMember\"A\n\014StoredMembe"
     "r\022\017\n\007user_id\030\001 \001(\t\022\r\n\005ready\030\002 \001(\010\022\021\n\tjoi"
-    "ned_at\030\003 \001(\003B\"Z github.com/cui/chirp/pro"
-    "to/partyb\006proto3"
+    "ned_at\030\003 \001(\003B%Z#github.com/cui/chirp/pro"
+    "to/go/partyb\006proto3"
 };
 static const ::_pbi::DescriptorTable* PROTOBUF_NONNULL const
     descriptor_table_proto_2fparty_2eproto_deps[1] = {
@@ -1376,7 +1376,7 @@ static ::absl::once_flag descriptor_table_proto_2fparty_2eproto_once;
 PROTOBUF_CONSTINIT const ::_pbi::DescriptorTable descriptor_table_proto_2fparty_2eproto = {
     false,
     false,
-    2856,
+    2859,
     descriptor_table_protodef_proto_2fparty_2eproto,
     "proto/party.proto",
     &descriptor_table_proto_2fparty_2eproto_once,

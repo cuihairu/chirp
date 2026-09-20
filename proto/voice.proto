@@ -2,7 +2,7 @@ syntax = "proto3";
 
 package chirp.voice;
 
-option go_package = "github.com/cui/chirp/proto/voice";
+option go_package = "github.com/cui/chirp/proto/go/voice";
 
 import "proto/common.proto";
 
