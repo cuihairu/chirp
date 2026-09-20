@@ -59,16 +59,31 @@ A trusted service asks chirp to deliver a message whose sender is not a user (an
 - `sender_id`: e.g. `npc:blacksmith_01`, `trade`
 - `channel_type` + `channel_id`, or `receiver_id` for 1:1
 - `content`
+- `game_id` (optional): switches the injection into fan-in delivery — see the next section
 
 Response codes:
 
 | Code | Meaning |
 | --- | --- |
-| `OK` | Validated and forwarded to the chat service (`InjectMessageNotify`) |
-| `INVALID_PARAM` | Empty content / `SENDER_UNKNOWN` / empty `sender_id` / no channel or receiver |
+| `OK` | Validated and handed to the chat service (`InjectMessageNotify`); for fan-in, to at least one subscriber (see below) |
+| `INVALID_PARAM` | Empty content / `SENDER_UNKNOWN` / empty `sender_id` / no channel or receiver / `game_id` combined with a `PRIVATE` channel or an empty `channel_id` |
+| `RATE_LIMITED` | Fan-in only: the channel has more subscribers than `--max_fanout` (default 10000); rejected before any copy is sent |
 | `SERVER_UNAVAILABLE` | Chat service not connected, or the write failed |
 
 `OK` still means "accepted by the plane": the chat side consumes the injection asynchronously, so the response does not confirm delivery to players.
+
+### Fan-in delivery (WP-8 slice 3)
+
+An injection carrying a `game_id` is not forwarded as-is. The hub looks up every subscription for `(game_id, channel_id)` in the subscription registry (see below) and delivers **one private copy per subscriber**: `channel_type` becomes `PRIVATE` with `receiver_id` = the subscriber's `player_id`, `sender_kind` becomes `SENDER_SERVICE`, and the original `sender_id` and `content` are preserved — the backend stays the authority for how copies group into chat history threads (pick one stable system identity per source to keep a channel's copies in one thread). Each copy's `inject_id` is derived as `<original>#<player_id>` for log correlation only; the hub does not deduplicate on it. Subscriber iteration order is unspecified.
+
+The chat service owns delivery from there — online push, offline queue, ack-based redelivery — so fan-in adds no chat-side logic. Outcomes:
+
+- **No subscribers**: `OK` without contacting chat. A channel nobody follows is a semantic no-op; answering `SERVER_UNAVAILABLE` would make the stream broker replay the entry forever.
+- **Chat offline, or every copy fails**: `SERVER_UNAVAILABLE` with nothing stored — a replay is safe. Stream-broker entries in this state stay pending and are redelivered (see "Broker fallback").
+- **Partial success**: `OK`. Retrying would duplicate the copies already handed over.
+- **Over `--max_fanout` subscribers**: `RATE_LIMITED`, rejected before any copy is sent. The broker treats any non-`SERVER_UNAVAILABLE` answer as terminal and acks the entry; a long-connection caller should split the channel or raise the limit.
+
+Mixed deployments (new hub, older chat) are safe: copies carry `game_id` through, which an old chat binary drops as an unknown proto3 field.
 
 ### Chat-side consumption
 
@@ -102,6 +117,7 @@ Requires Redis >= 6.2 (`XAUTOCLAIM`). A producer writes one entry per message wi
 | `channel_type` | yes | `PRIVATE` / `TEAM` / `GUILD` / `WORLD`, or `0`–`3` |
 | `sender_id` | yes* | Validated downstream like the proto path |
 | `channel_id` / `receiver_id` | — | Channel target, or receiver for 1:1 |
+| `game_id` | no | Fan-in delivery: set to fan the entry out to every `(game_id, channel_id)` subscriber as a private copy |
 | `content` | yes* | Message body |
 | `inject_id` | no | Idempotency key; `<consumer>-<seq>` is generated when absent |
 | `reply_to` | no | Stream name to receive the `{inject_id, code}` result entry |
@@ -155,7 +171,7 @@ This registry is the foundation both aggregation-plane designs need (shared mult
 
 ## Player channel subscriptions (WP-8 slice 2)
 
-Where bindings answer "which platform player is this game user", subscriptions answer "which game channels does a player want". `chirp_server_gateway` keeps a `SubscriptionRegistry` (`subscription_registry.{h,cc}`) behind three RPCs. The registry stores intent only — no delivery happens here (fan-in routing is the next slice).
+Where bindings answer "which platform player is this game user", subscriptions answer "which game channels does a player want". `chirp_server_gateway` keeps a `SubscriptionRegistry` (`subscription_registry.{h,cc}`) behind three RPCs. Since WP-8 slice 3 the registry also powers fan-in delivery: the inject handler reads its `(game_id, channel_id)` reverse index (see "Fan-in delivery" above) — the registry itself still only stores intent, and delivery decisions live in the inject path.
 
 - `SUBSCRIBE_PLAYER_CHANNEL_REQ` (5021) — `player_id`, `game_id`, `channel_id`, plus an optional `subscription_id`. With an id, it is the caller's idempotency key: same id + same tuple again → `OK` with `existed=true`; same id + a different tuple → `INVALID_PARAM` (reusing keys would silently break duplicate detection). The `(player_id, game_id, channel_id)` tuple is globally unique: subscribing the same tuple under a new id replaces the old record — the asserting caller is the authority (e.g. a game rewriting its channel layout). With an **empty** `subscription_id` the hub mints one (`sub-...`): this is the player self-service path, where app_gateway pins `player_id` to the authenticated user before forwarding, and re-subscribing the same tuple converges on the stored record (stable id, `existed=true`) instead of accumulating rows.
 - `UNSUBSCRIBE_PLAYER_CHANNEL_REQ` (5023) — by `subscription_id` **or** by the full `(player_id, game_id, channel_id)` triple, never both, never neither (`INVALID_PARAM` otherwise). Unknown target → `OK` (idempotent).
@@ -165,7 +181,7 @@ The same six message ids serve both callers: game backends hit the server plane 
 
 Storage mirrors the bindings: in-memory authoritative with a write-through Redis mirror (`chirp:subscription:entry:<subscription_id>` = serialized `StoredChannelSubscription`, `--subscription_redis_host`/`--subscription_redis_port`, off by default), startup replay with corrupted-record skipping, and best-effort writes that degrade to memory-only under a Redis outage.
 
-Open question (deliberately deferred): subscriptions are not validated against existing identity bindings — via self-service a player may subscribe to channels of a game they have never played. Backend assertions are trusted; whether the self-service path should require a binding first is a product decision, to settle together with fan-in delivery.
+Open question (revisited when fan-in shipped, kept open): subscriptions are not validated against existing identity bindings — via self-service a player may subscribe to channels of a game they have never played. Fan-in delivery shipped with the permissive choice (no binding required anywhere; backend assertions stay trusted), so the hub's fan-out has no cross-registry dependency. Whether the self-service path should require a binding after all remains a product decision for the unified-unread slice.
 
 ## Roadmap
 

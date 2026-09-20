@@ -49,6 +49,17 @@ c.InjectMessage(ctx, &pbsg.MessageInjectRequest{
     ReceiverId: "player-7",
     Content:    []byte("订单已发货"),
 })
+// fan-in(WP-8 分片 3):设置 GameId + 非 PRIVATE 频道,
+// 消息会扇出给 (GameId, ChannelId) 的每个订阅者一份私聊副本。
+c.InjectMessage(ctx, &pbsg.MessageInjectRequest{
+    InjectId:    "raid-5678",
+    SenderKind:  pbsg.SenderKind_SENDER_SERVICE,
+    SenderId:    "raid-boss",
+    ChannelType: 3, // WORLD
+    ChannelId:   "world-boss",
+    GameId:      "game-a",
+    Content:     []byte("世界 Boss 已刷新"),
+})
 ```
 
 ## 模块与代码生成
