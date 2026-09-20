@@ -83,7 +83,8 @@ class ServerGatewayTest : public ::testing::Test {
     config_.service_secrets = {{"chat", "chat-secret"},
                                {"game", "game-secret"},
                                {"trade", "trade-secret"}};
-    handlers_ = std::make_unique<sg::ServerGatewayHandlers>(config_, registry_, queue_, identities_);
+    handlers_ = std::make_unique<sg::ServerGatewayHandlers>(config_, registry_, queue_, identities_,
+                                                            subscriptions_);
   }
 
   std::shared_ptr<RecordingPeer> AuthAs(const std::string& service_id) {
@@ -128,6 +129,7 @@ class ServerGatewayTest : public ::testing::Test {
   sg::ServiceRegistry registry_;
   sg::EventQueue queue_{1000};
   sg::IdentityRegistry identities_;
+  sg::SubscriptionRegistry subscriptions_;
   std::unique_ptr<sg::ServerGatewayHandlers> handlers_;
 };
 
@@ -478,7 +480,8 @@ TEST_F(ServerGatewayTest, PublishFailsWhenQueueFull) {
   sg::ServerGatewayConfig small = config_;
   small.max_pending_events_per_service = 1;
   sg::EventQueue small_queue(1);
-  sg::ServerGatewayHandlers small_handlers(small, registry_, small_queue, identities_);
+  sg::ServerGatewayHandlers small_handlers(small, registry_, small_queue, identities_,
+                                           subscriptions_);
   small_handlers.HandleEventPublish(MakePublishRequest("game", "first"));
   const auto resp = small_handlers.HandleEventPublish(MakePublishRequest("game", "second"));
   EXPECT_EQ(resp.code(), SERVER_UNAVAILABLE);
@@ -704,6 +707,214 @@ TEST(IdentityRegistryTest, MemoryOnlyByDefault) {
 }
 
 // ---------------------------------------------------------------------------
+// Player channel subscriptions (WP-8 slice 2)
+// ---------------------------------------------------------------------------
+
+sg::SubscribePlayerChannelRequest MakeSubscribeRequest(const std::string& subscription_id,
+                                                       const std::string& player_id,
+                                                       const std::string& game_id,
+                                                       const std::string& channel_id) {
+  sg::SubscribePlayerChannelRequest req;
+  req.set_subscription_id(subscription_id);
+  req.set_player_id(player_id);
+  req.set_game_id(game_id);
+  req.set_channel_id(channel_id);
+  return req;
+}
+
+TEST(SubscriptionRegistryTest, SubscribeLifecycleAndIdempotency) {
+  sg::SubscriptionRegistry registry;
+  EXPECT_EQ(registry.Size(), 0u);
+
+  std::string id = "s1";
+  EXPECT_EQ(registry.Subscribe(&id, "player-1", "game-a", "world-1", 1000),
+            sg::SubscriptionRegistry::SubscribeOutcome::kSubscribed);
+  // The exact same tuple under the same idempotency key is a no-op.
+  EXPECT_EQ(registry.Subscribe(&id, "player-1", "game-a", "world-1", 2000),
+            sg::SubscriptionRegistry::SubscribeOutcome::kExisted);
+  // The same key asserting a different tuple would silently break duplicate
+  // detection and is rejected.
+  std::string reused = "s1";
+  EXPECT_EQ(registry.Subscribe(&reused, "player-2", "game-a", "world-1", 3000),
+            sg::SubscriptionRegistry::SubscribeOutcome::kInvalid);
+  // Empty tuple fields are rejected (the handler validates first, the store
+  // enforces the same contract).
+  std::string keep = "s2";
+  EXPECT_EQ(registry.Subscribe(&keep, "", "game-a", "world-2", 1000),
+            sg::SubscriptionRegistry::SubscribeOutcome::kInvalid);
+  EXPECT_EQ(registry.Subscribe(&keep, "player-1", "", "world-2", 1000),
+            sg::SubscriptionRegistry::SubscribeOutcome::kInvalid);
+  EXPECT_EQ(registry.Subscribe(&keep, "player-1", "game-a", "", 1000),
+            sg::SubscriptionRegistry::SubscribeOutcome::kInvalid);
+  EXPECT_EQ(registry.Size(), 1u);
+}
+
+TEST(SubscriptionRegistryTest, ReSubscribingTupleUnderNewIdReplaces) {
+  sg::SubscriptionRegistry registry;
+  std::string id = "s1";
+  EXPECT_EQ(registry.Subscribe(&id, "player-1", "game-a", "world-1", 1000),
+            sg::SubscriptionRegistry::SubscribeOutcome::kSubscribed);
+  // The same tuple re-asserted under a new id replaces the old record.
+  std::string reid = "s2";
+  EXPECT_EQ(registry.Subscribe(&reid, "player-1", "game-a", "world-1", 2000),
+            sg::SubscriptionRegistry::SubscribeOutcome::kSubscribed);
+
+  ASSERT_EQ(registry.GetForPlayer("player-1", "").size(), 1u);
+  EXPECT_EQ(registry.GetForPlayer("player-1", "")[0].subscription_id(), "s2");
+  EXPECT_EQ(registry.GetForPlayer("player-1", "")[0].subscribed_at_ms(), 2000);
+  EXPECT_FALSE(registry.UnsubscribeById("s1"));  // replaced away
+  EXPECT_EQ(registry.Size(), 1u);
+}
+
+TEST(SubscriptionRegistryTest, SelfSubscribeMintsAStableId) {
+  sg::SubscriptionRegistry registry;
+  std::string minted;
+  EXPECT_EQ(registry.Subscribe(&minted, "player-1", "game-a", "world-1", 1000),
+            sg::SubscriptionRegistry::SubscribeOutcome::kSubscribed);
+  EXPECT_TRUE(minted.rfind("sub-", 0) == 0);
+
+  // An id-less re-subscribe (the self-service path) keeps the record — and
+  // its id — stable instead of churning ids.
+  std::string again;
+  EXPECT_EQ(registry.Subscribe(&again, "player-1", "game-a", "world-1", 2000),
+            sg::SubscriptionRegistry::SubscribeOutcome::kExisted);
+  EXPECT_EQ(again, minted);
+  EXPECT_EQ(registry.Size(), 1u);
+}
+
+TEST(SubscriptionRegistryTest, UnsubscribeByIdAndByTupleAreIdempotent) {
+  sg::SubscriptionRegistry registry;
+  std::string id = "s1";
+  ASSERT_EQ(registry.Subscribe(&id, "player-1", "game-a", "world-1", 1000),
+            sg::SubscriptionRegistry::SubscribeOutcome::kSubscribed);
+
+  // Half a triple is not a selector; only the full triple (or the id) is.
+  EXPECT_FALSE(registry.UnsubscribeByTuple("player-1", "game-a", ""));
+  EXPECT_FALSE(registry.UnsubscribeByTuple("", "game-a", "world-1"));
+
+  EXPECT_TRUE(registry.UnsubscribeByTuple("player-1", "game-a", "world-1"));
+  EXPECT_FALSE(registry.UnsubscribeByTuple("player-1", "game-a", "world-1"));
+  EXPECT_FALSE(registry.UnsubscribeById("s1"));
+
+  ASSERT_EQ(registry.Subscribe(&id, "player-1", "game-a", "world-1", 2000),
+            sg::SubscriptionRegistry::SubscribeOutcome::kSubscribed);
+  EXPECT_TRUE(registry.UnsubscribeById("s1"));
+  EXPECT_FALSE(registry.UnsubscribeById("s1"));
+  EXPECT_EQ(registry.Size(), 0u);
+}
+
+TEST(SubscriptionRegistryTest, GetForPlayerWithGameFilter) {
+  sg::SubscriptionRegistry registry;
+  std::string id = "s1";
+  ASSERT_EQ(registry.Subscribe(&id, "player-1", "game-a", "world-1", 1000),
+            sg::SubscriptionRegistry::SubscribeOutcome::kSubscribed);
+  id = "s2";
+  ASSERT_EQ(registry.Subscribe(&id, "player-1", "game-b", "ranked-1", 2000),
+            sg::SubscriptionRegistry::SubscribeOutcome::kSubscribed);
+  id = "s3";
+  ASSERT_EQ(registry.Subscribe(&id, "player-2", "game-a", "world-1", 3000),
+            sg::SubscriptionRegistry::SubscribeOutcome::kSubscribed);
+
+  EXPECT_EQ(registry.GetForPlayer("player-1", "").size(), 2u);
+  const auto filtered = registry.GetForPlayer("player-1", "game-a");
+  ASSERT_EQ(filtered.size(), 1u);
+  EXPECT_EQ(filtered[0].subscription_id(), "s1");
+  EXPECT_EQ(registry.GetForPlayer("player-1", "game-c").size(), 0u);
+  EXPECT_EQ(registry.GetForPlayer("nobody", "").size(), 0u);
+}
+
+TEST(SubscriptionRegistryTest, RedisWriteThroughAndLoadRestore) {
+  const auto store = std::make_shared<std::map<std::string, std::string>>();
+
+  sg::SubscriptionRegistry writer([store]() mutable {
+    return std::make_unique<FakeRedisClient>(store);
+  });
+  writer.Load();  // loading an empty store is a clean no-op
+
+  std::string id = "s1";
+  EXPECT_EQ(writer.Subscribe(&id, "player-1", "game-a", "world-1", 1000),
+            sg::SubscriptionRegistry::SubscribeOutcome::kSubscribed);
+  id = "s2";
+  EXPECT_EQ(writer.Subscribe(&id, "player-2", "game-b", "ranked-1", 2000),
+            sg::SubscriptionRegistry::SubscribeOutcome::kSubscribed);
+  EXPECT_EQ(store->size(), 2u);
+
+  // A fresh hub process restores every subscription through Load.
+  sg::SubscriptionRegistry reader([store]() mutable {
+    return std::make_unique<FakeRedisClient>(store);
+  });
+  reader.Load();
+  EXPECT_EQ(reader.Size(), 2u);
+  ASSERT_EQ(reader.GetForPlayer("player-2", "").size(), 1u);
+  EXPECT_EQ(reader.GetForPlayer("player-2", "")[0].game_id(), "game-b");
+
+  // Unsubscribe removes the persisted record.
+  EXPECT_TRUE(writer.UnsubscribeById("s1"));
+  EXPECT_EQ(store->size(), 1u);
+
+  // A corrupted record is skipped, not fatal.
+  (*store)["chirp:subscription:entry:junk"] = "\x01\x02not-a-proto";
+  sg::SubscriptionRegistry tolerant([store]() mutable {
+    return std::make_unique<FakeRedisClient>(store);
+  });
+  tolerant.Load();
+  EXPECT_EQ(tolerant.Size(), 1u);
+}
+
+TEST(SubscriptionRegistryTest, LoadedTupleClashAppliesReplaceRule) {
+  // Two hub instances persisted the same tuple under different ids (their
+  // write-throughs never saw each other). Load order applies the same
+  // replace rule a Subscribe would: the later record wins.
+  const auto store = std::make_shared<std::map<std::string, std::string>>();
+  sg::SubscriptionRegistry first([store]() mutable {
+    return std::make_unique<FakeRedisClient>(store);
+  });
+  std::string id = "s1";
+  ASSERT_EQ(first.Subscribe(&id, "player-1", "game-a", "world-1", 1000),
+            sg::SubscriptionRegistry::SubscribeOutcome::kSubscribed);
+  sg::SubscriptionRegistry second([store]() mutable {
+    return std::make_unique<FakeRedisClient>(store);
+  });
+  id = "s2";
+  ASSERT_EQ(second.Subscribe(&id, "player-1", "game-a", "world-1", 2000),
+            sg::SubscriptionRegistry::SubscribeOutcome::kSubscribed);
+  ASSERT_EQ(store->size(), 2u);
+
+  sg::SubscriptionRegistry loader([store]() mutable {
+    return std::make_unique<FakeRedisClient>(store);
+  });
+  loader.Load();
+  ASSERT_EQ(loader.Size(), 1u);
+  EXPECT_EQ(loader.GetForPlayer("player-1", "")[0].subscription_id(), "s2");
+}
+
+TEST(SubscriptionRegistryTest, RedisFailureDegradesToMemoryOnly) {
+  const auto store = std::make_shared<std::map<std::string, std::string>>();
+  sg::SubscriptionRegistry registry([store]() mutable {
+    auto client = std::make_unique<FakeRedisClient>(store);
+    client->fail = true;
+    return client;
+  });
+  registry.Load();  // reads fail; must not crash or block
+
+  std::string id = "s1";
+  EXPECT_EQ(registry.Subscribe(&id, "player-1", "game-a", "world-1", 1000),
+            sg::SubscriptionRegistry::SubscribeOutcome::kSubscribed);
+  EXPECT_EQ(registry.GetForPlayer("player-1", "").size(), 1u);
+  EXPECT_TRUE(registry.UnsubscribeById("s1"));
+  EXPECT_EQ(store->size(), 0u);  // nothing ever reached Redis
+}
+
+TEST(SubscriptionRegistryTest, MemoryOnlyByDefault) {
+  sg::SubscriptionRegistry registry;
+  registry.Load();  // no factory: nothing to load
+  std::string id = "s1";
+  EXPECT_EQ(registry.Subscribe(&id, "player-1", "game-a", "world-1", 1000),
+            sg::SubscriptionRegistry::SubscribeOutcome::kSubscribed);
+  EXPECT_EQ(registry.GetForPlayer("player-1", "").size(), 1u);
+}
+
+// ---------------------------------------------------------------------------
 // Binding handlers (wire-facing validation)
 // ---------------------------------------------------------------------------
 
@@ -799,6 +1010,90 @@ TEST_F(ServerGatewayTest, ResolveHandlerValidatesAndReportsUnbound) {
   resp = handlers_->HandleResolveGameUser(unbound);
   EXPECT_EQ(resp.code(), OK);
   EXPECT_EQ(resp.player_id(), "player-1");
+}
+
+// ---------------------------------------------------------------------------
+// Subscription handlers (wire-facing validation)
+// ---------------------------------------------------------------------------
+
+TEST_F(ServerGatewayTest, SubscribeHandlerValidatesMintsAndReportsExisted) {
+  // Missing tuple fields are a bad request.
+  sg::SubscribePlayerChannelRequest missing;
+  missing.set_player_id("player-1");
+  missing.set_game_id("game-a");
+  EXPECT_EQ(handlers_->HandleSubscribePlayerChannel(missing).code(), INVALID_PARAM);
+
+  // A backend-asserted id is echoed; the same request replays as existed.
+  auto resp = handlers_->HandleSubscribePlayerChannel(
+      MakeSubscribeRequest("s1", "player-1", "game-a", "world-1"));
+  EXPECT_EQ(resp.code(), OK);
+  EXPECT_EQ(resp.subscription_id(), "s1");
+  EXPECT_FALSE(resp.existed());
+  resp = handlers_->HandleSubscribePlayerChannel(
+      MakeSubscribeRequest("s1", "player-1", "game-a", "world-1"));
+  EXPECT_EQ(resp.code(), OK);
+  EXPECT_TRUE(resp.existed());
+
+  // An empty id (the app edge's self-service path) gets a minted one.
+  resp = handlers_->HandleSubscribePlayerChannel(
+      MakeSubscribeRequest("", "player-2", "game-b", "ranked-1"));
+  EXPECT_EQ(resp.code(), OK);
+  EXPECT_FALSE(resp.existed());
+  EXPECT_TRUE(resp.subscription_id().rfind("sub-", 0) == 0);
+}
+
+TEST_F(ServerGatewayTest, UnsubscribeHandlerRequiresExactlyOneSelector) {
+  sg::UnsubscribePlayerChannelRequest req;
+  EXPECT_EQ(handlers_->HandleUnsubscribePlayerChannel(req).code(), INVALID_PARAM);
+
+  req.set_subscription_id("s1");
+  req.set_player_id("player-1");
+  req.set_game_id("game-a");
+  req.set_channel_id("world-1");
+  EXPECT_EQ(handlers_->HandleUnsubscribePlayerChannel(req).code(), INVALID_PARAM);  // both
+
+  req.clear_subscription_id();
+  req.clear_channel_id();  // half a triple
+  EXPECT_EQ(handlers_->HandleUnsubscribePlayerChannel(req).code(), INVALID_PARAM);
+
+  req.set_channel_id("world-1");  // full triple, unknown target: idempotent OK
+  EXPECT_EQ(handlers_->HandleUnsubscribePlayerChannel(req).code(), OK);
+
+  // By id, on an existing subscription.
+  ASSERT_EQ(handlers_->HandleSubscribePlayerChannel(
+                MakeSubscribeRequest("s9", "player-1", "game-a", "world-1"))
+                .code(),
+            OK);
+  req.set_subscription_id("s9");
+  req.clear_player_id();
+  req.clear_game_id();
+  req.clear_channel_id();
+  EXPECT_EQ(handlers_->HandleUnsubscribePlayerChannel(req).code(), OK);
+}
+
+TEST_F(ServerGatewayTest, GetHandlerReturnsSubscriptionsForPlayer) {
+  sg::GetPlayerSubscriptionsRequest empty;
+  EXPECT_EQ(handlers_->HandleGetPlayerSubscriptions(empty).code(), INVALID_PARAM);
+
+  ASSERT_EQ(handlers_->HandleSubscribePlayerChannel(
+                MakeSubscribeRequest("s1", "player-1", "game-a", "world-1"))
+                .code(),
+            OK);
+  ASSERT_EQ(handlers_->HandleSubscribePlayerChannel(
+                MakeSubscribeRequest("s2", "player-1", "game-b", "ranked-1"))
+                .code(),
+            OK);
+
+  sg::GetPlayerSubscriptionsRequest all;
+  all.set_player_id("player-1");
+  auto resp = handlers_->HandleGetPlayerSubscriptions(all);
+  EXPECT_EQ(resp.code(), OK);
+  ASSERT_EQ(resp.subscriptions_size(), 2);
+
+  all.set_game_id("game-b");
+  resp = handlers_->HandleGetPlayerSubscriptions(all);
+  ASSERT_EQ(resp.subscriptions_size(), 1);
+  EXPECT_EQ(resp.subscriptions(0).subscription_id(), "s2");
 }
 
 }  // namespace

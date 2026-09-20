@@ -151,7 +151,21 @@ The aggregation plane needs a platform-level `player_id` that spans many games; 
 
 Storage is in-memory with a write-through Redis mirror (`chirp:binding:entry:<binding_id>` = serialized `StoredIdentityBinding`, `--binding_redis_host`/`--binding_redis_port`, off by default). Startup replays all stored entries; corrupted records are skipped with a warning. Redis write failures are best-effort — memory stays authoritative and the next mutation of the same record retries the write — so a Redis outage degrades to memory-only semantics, not errors.
 
-This registry is the foundation both aggregation-plane designs need (shared multi-tenant core with game namespaces, or a federation bridge); subscriptions/fan-in and unified unread are the next slices.
+This registry is the foundation both aggregation-plane designs need (shared multi-tenant core with game namespaces, or a federation bridge); fan-in delivery and unified unread are the next slices.
+
+## Player channel subscriptions (WP-8 slice 2)
+
+Where bindings answer "which platform player is this game user", subscriptions answer "which game channels does a player want". `chirp_server_gateway` keeps a `SubscriptionRegistry` (`subscription_registry.{h,cc}`) behind three RPCs. The registry stores intent only — no delivery happens here (fan-in routing is the next slice).
+
+- `SUBSCRIBE_PLAYER_CHANNEL_REQ` (5021) — `player_id`, `game_id`, `channel_id`, plus an optional `subscription_id`. With an id, it is the caller's idempotency key: same id + same tuple again → `OK` with `existed=true`; same id + a different tuple → `INVALID_PARAM` (reusing keys would silently break duplicate detection). The `(player_id, game_id, channel_id)` tuple is globally unique: subscribing the same tuple under a new id replaces the old record — the asserting caller is the authority (e.g. a game rewriting its channel layout). With an **empty** `subscription_id` the hub mints one (`sub-...`): this is the player self-service path, where app_gateway pins `player_id` to the authenticated user before forwarding, and re-subscribing the same tuple converges on the stored record (stable id, `existed=true`) instead of accumulating rows.
+- `UNSUBSCRIBE_PLAYER_CHANNEL_REQ` (5023) — by `subscription_id` **or** by the full `(player_id, game_id, channel_id)` triple, never both, never neither (`INVALID_PARAM` otherwise). Unknown target → `OK` (idempotent).
+- `GET_PLAYER_SUBSCRIPTIONS_REQ` (5025) — all subscriptions for a `player_id`, with an optional `game_id` filter ("my subscriptions in game X").
+
+The same six message ids serve both callers: game backends hit the server plane directly, and players reach the same handlers through app_gateway's forwarding — the app edge pins `player_id`, so a client can only ever create, list, or remove subscriptions for itself.
+
+Storage mirrors the bindings: in-memory authoritative with a write-through Redis mirror (`chirp:subscription:entry:<subscription_id>` = serialized `StoredChannelSubscription`, `--subscription_redis_host`/`--subscription_redis_port`, off by default), startup replay with corrupted-record skipping, and best-effort writes that degrade to memory-only under a Redis outage.
+
+Open question (deliberately deferred): subscriptions are not validated against existing identity bindings — via self-service a player may subscribe to channels of a game they have never played. Backend assertions are trusted; whether the self-service path should require a binding first is a product decision, to settle together with fan-in delivery.
 
 ## Roadmap
 

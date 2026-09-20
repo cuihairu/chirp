@@ -175,6 +175,17 @@ export enum MsgID {
   RESOLVE_GAME_USER_REQ = 5019,
   RESOLVE_GAME_USER_RESP = 5020,
   /**
+   * SUBSCRIBE_PLAYER_CHANNEL_REQ - Player channel subscriptions: asserted by game backends on this plane,
+   * and forwarded by app_gateway for self-served players (player_id pinned
+   * to the authenticated user). See proto/server_gateway.proto.
+   */
+  SUBSCRIBE_PLAYER_CHANNEL_REQ = 5021,
+  SUBSCRIBE_PLAYER_CHANNEL_RESP = 5022,
+  UNSUBSCRIBE_PLAYER_CHANNEL_REQ = 5023,
+  UNSUBSCRIBE_PLAYER_CHANNEL_RESP = 5024,
+  GET_PLAYER_SUBSCRIPTIONS_REQ = 5025,
+  GET_PLAYER_SUBSCRIPTIONS_RESP = 5026,
+  /**
    * REGISTER_DEVICE_REQ - Notification plane: device registration forwarded by app_gateway and
    * push requests from internal services (chat). Bodies are
    * chirp.notification.* messages; see proto/notification.proto.
@@ -677,6 +688,24 @@ export function msgIDFromJSON(object: any): MsgID {
     case 5020:
     case "RESOLVE_GAME_USER_RESP":
       return MsgID.RESOLVE_GAME_USER_RESP;
+    case 5021:
+    case "SUBSCRIBE_PLAYER_CHANNEL_REQ":
+      return MsgID.SUBSCRIBE_PLAYER_CHANNEL_REQ;
+    case 5022:
+    case "SUBSCRIBE_PLAYER_CHANNEL_RESP":
+      return MsgID.SUBSCRIBE_PLAYER_CHANNEL_RESP;
+    case 5023:
+    case "UNSUBSCRIBE_PLAYER_CHANNEL_REQ":
+      return MsgID.UNSUBSCRIBE_PLAYER_CHANNEL_REQ;
+    case 5024:
+    case "UNSUBSCRIBE_PLAYER_CHANNEL_RESP":
+      return MsgID.UNSUBSCRIBE_PLAYER_CHANNEL_RESP;
+    case 5025:
+    case "GET_PLAYER_SUBSCRIPTIONS_REQ":
+      return MsgID.GET_PLAYER_SUBSCRIPTIONS_REQ;
+    case 5026:
+    case "GET_PLAYER_SUBSCRIPTIONS_RESP":
+      return MsgID.GET_PLAYER_SUBSCRIPTIONS_RESP;
     case 6001:
     case "REGISTER_DEVICE_REQ":
       return MsgID.REGISTER_DEVICE_REQ;
@@ -1087,6 +1116,18 @@ export function msgIDToJSON(object: MsgID): string {
       return "RESOLVE_GAME_USER_REQ";
     case MsgID.RESOLVE_GAME_USER_RESP:
       return "RESOLVE_GAME_USER_RESP";
+    case MsgID.SUBSCRIBE_PLAYER_CHANNEL_REQ:
+      return "SUBSCRIBE_PLAYER_CHANNEL_REQ";
+    case MsgID.SUBSCRIBE_PLAYER_CHANNEL_RESP:
+      return "SUBSCRIBE_PLAYER_CHANNEL_RESP";
+    case MsgID.UNSUBSCRIBE_PLAYER_CHANNEL_REQ:
+      return "UNSUBSCRIBE_PLAYER_CHANNEL_REQ";
+    case MsgID.UNSUBSCRIBE_PLAYER_CHANNEL_RESP:
+      return "UNSUBSCRIBE_PLAYER_CHANNEL_RESP";
+    case MsgID.GET_PLAYER_SUBSCRIPTIONS_REQ:
+      return "GET_PLAYER_SUBSCRIPTIONS_REQ";
+    case MsgID.GET_PLAYER_SUBSCRIPTIONS_RESP:
+      return "GET_PLAYER_SUBSCRIPTIONS_RESP";
     case MsgID.REGISTER_DEVICE_REQ:
       return "REGISTER_DEVICE_REQ";
     case MsgID.REGISTER_DEVICE_RESP:

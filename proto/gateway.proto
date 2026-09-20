@@ -180,6 +180,15 @@ enum MsgID {
   GET_PLAYER_IDENTITIES_RESP = 5018;
   RESOLVE_GAME_USER_REQ = 5019;
   RESOLVE_GAME_USER_RESP = 5020;
+  // Player channel subscriptions: asserted by game backends on this plane,
+  // and forwarded by app_gateway for self-served players (player_id pinned
+  // to the authenticated user). See proto/server_gateway.proto.
+  SUBSCRIBE_PLAYER_CHANNEL_REQ = 5021;
+  SUBSCRIBE_PLAYER_CHANNEL_RESP = 5022;
+  UNSUBSCRIBE_PLAYER_CHANNEL_REQ = 5023;
+  UNSUBSCRIBE_PLAYER_CHANNEL_RESP = 5024;
+  GET_PLAYER_SUBSCRIPTIONS_REQ = 5025;
+  GET_PLAYER_SUBSCRIPTIONS_RESP = 5026;
 
   // Notification plane: device registration forwarded by app_gateway and
   // push requests from internal services (chat). Bodies are

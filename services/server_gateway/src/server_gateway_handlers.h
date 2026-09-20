@@ -11,6 +11,7 @@
 #include "proto/gateway.pb.h"
 #include "proto/server_gateway.pb.h"
 #include "service_registry.h"
+#include "subscription_registry.h"
 
 namespace chirp::server_gateway {
 
@@ -39,7 +40,7 @@ struct AuthOutcome {
 class ServerGatewayHandlers {
  public:
   ServerGatewayHandlers(ServerGatewayConfig config, ServiceRegistry& registry, EventQueue& queue,
-                        IdentityRegistry& identities);
+                        IdentityRegistry& identities, SubscriptionRegistry& subscriptions);
 
   // Validates credentials and binds the peer to its service id. A returning
   // service immediately receives every event it has not acknowledged yet.
@@ -63,6 +64,14 @@ class ServerGatewayHandlers {
   GetPlayerIdentitiesResponse HandleGetPlayerIdentities(const GetPlayerIdentitiesRequest& req) const;
   ResolveGameUserResponse HandleResolveGameUser(const ResolveGameUserRequest& req) const;
 
+  // WP-8 slice 2: player channel subscriptions. The same messages serve the
+  // backend-asserted path (with a subscription_id idempotency key) and the
+  // app edge's self-service path (empty id — the registry mints one after
+  // app_gateway pinned player_id to the authenticated user).
+  SubscribePlayerChannelResponse HandleSubscribePlayerChannel(const SubscribePlayerChannelRequest& req);
+  UnsubscribePlayerChannelResponse HandleUnsubscribePlayerChannel(const UnsubscribePlayerChannelRequest& req);
+  GetPlayerSubscriptionsResponse HandleGetPlayerSubscriptions(const GetPlayerSubscriptionsRequest& req) const;
+
   // Cleans up after a connection drops. `peer` must be the connection that
   // owned `service_id`; a displaced (replaced) connection closing late is a
   // no-op so it cannot reset the live connection's in-flight tracking.
@@ -76,6 +85,7 @@ class ServerGatewayHandlers {
   ServiceRegistry& registry_;
   EventQueue& queue_;
   IdentityRegistry& identities_;
+  SubscriptionRegistry& subscriptions_;
   uint64_t event_id_counter_ = 0;
 };
 

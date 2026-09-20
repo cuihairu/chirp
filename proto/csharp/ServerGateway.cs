@@ -68,10 +68,27 @@ namespace Chirp.ServerGateway {
             "bWVVc2VyUmVxdWVzdBIPCgdnYW1lX2lkGAEgASgJEhQKDGdhbWVfdXNlcl9p",
             "ZBgCIAEoCSJTChdSZXNvbHZlR2FtZVVzZXJSZXNwb25zZRIlCgRjb2RlGAEg",
             "ASgOMhcuY2hpcnAuY29tbW9uLkVycm9yQ29kZRIRCglwbGF5ZXJfaWQYAiAB",
-            "KAkqVwoKU2VuZGVyS2luZBISCg5TRU5ERVJfVU5LTk9XThAAEhEKDVNFTkRF",
-            "Ul9TWVNURU0QARIOCgpTRU5ERVJfTlBDEAISEgoOU0VOREVSX1NFUlZJQ0UQ",
-            "A0IuWixnaXRodWIuY29tL2N1aS9jaGlycC9wcm90by9nby9zZXJ2ZXJfZ2F0",
-            "ZXdheWIGcHJvdG8z"));
+            "KAkihgEKGVN0b3JlZENoYW5uZWxTdWJzY3JpcHRpb24SFwoPc3Vic2NyaXB0",
+            "aW9uX2lkGAEgASgJEhEKCXBsYXllcl9pZBgCIAEoCRIPCgdnYW1lX2lkGAMg",
+            "ASgJEhIKCmNoYW5uZWxfaWQYBCABKAkSGAoQc3Vic2NyaWJlZF9hdF9tcxgF",
+            "IAEoAyJwCh1TdWJzY3JpYmVQbGF5ZXJDaGFubmVsUmVxdWVzdBIXCg9zdWJz",
+            "Y3JpcHRpb25faWQYASABKAkSEQoJcGxheWVyX2lkGAIgASgJEg8KB2dhbWVf",
+            "aWQYAyABKAkSEgoKY2hhbm5lbF9pZBgEIAEoCSJxCh5TdWJzY3JpYmVQbGF5",
+            "ZXJDaGFubmVsUmVzcG9uc2USJQoEY29kZRgBIAEoDjIXLmNoaXJwLmNvbW1v",
+            "bi5FcnJvckNvZGUSFwoPc3Vic2NyaXB0aW9uX2lkGAIgASgJEg8KB2V4aXN0",
+            "ZWQYAyABKAgicgofVW5zdWJzY3JpYmVQbGF5ZXJDaGFubmVsUmVxdWVzdBIX",
+            "Cg9zdWJzY3JpcHRpb25faWQYASABKAkSEQoJcGxheWVyX2lkGAIgASgJEg8K",
+            "B2dhbWVfaWQYAyABKAkSEgoKY2hhbm5lbF9pZBgEIAEoCSJJCiBVbnN1YnNj",
+            "cmliZVBsYXllckNoYW5uZWxSZXNwb25zZRIlCgRjb2RlGAEgASgOMhcuY2hp",
+            "cnAuY29tbW9uLkVycm9yQ29kZSJDCh1HZXRQbGF5ZXJTdWJzY3JpcHRpb25z",
+            "UmVxdWVzdBIRCglwbGF5ZXJfaWQYASABKAkSDwoHZ2FtZV9pZBgCIAEoCSKP",
+            "AQoeR2V0UGxheWVyU3Vic2NyaXB0aW9uc1Jlc3BvbnNlEiUKBGNvZGUYASAB",
+            "KA4yFy5jaGlycC5jb21tb24uRXJyb3JDb2RlEkYKDXN1YnNjcmlwdGlvbnMY",
+            "AiADKAsyLy5jaGlycC5zZXJ2ZXJfZ2F0ZXdheS5TdG9yZWRDaGFubmVsU3Vi",
+            "c2NyaXB0aW9uKlcKClNlbmRlcktpbmQSEgoOU0VOREVSX1VOS05PV04QABIR",
+            "Cg1TRU5ERVJfU1lTVEVNEAESDgoKU0VOREVSX05QQxACEhIKDlNFTkRFUl9T",
+            "RVJWSUNFEANCLlosZ2l0aHViLmNvbS9jdWkvY2hpcnAvcHJvdG8vZ28vc2Vy",
+            "dmVyX2dhdGV3YXliBnByb3RvMw=="));
       descriptor = pbr::FileDescriptor.FromGeneratedCode(descriptorData,
           new pbr::FileDescriptor[] { global::Chirp.Common.CommonReflection.Descriptor, },
           new pbr::GeneratedClrTypeInfo(new[] {typeof(global::Chirp.ServerGateway.SenderKind), }, null, new pbr::GeneratedClrTypeInfo[] {
@@ -95,7 +112,14 @@ namespace Chirp.ServerGateway {
             new pbr::GeneratedClrTypeInfo(typeof(global::Chirp.ServerGateway.GetPlayerIdentitiesRequest), global::Chirp.ServerGateway.GetPlayerIdentitiesRequest.Parser, new[]{ "PlayerId" }, null, null, null, null),
             new pbr::GeneratedClrTypeInfo(typeof(global::Chirp.ServerGateway.GetPlayerIdentitiesResponse), global::Chirp.ServerGateway.GetPlayerIdentitiesResponse.Parser, new[]{ "Code", "Bindings" }, null, null, null, null),
             new pbr::GeneratedClrTypeInfo(typeof(global::Chirp.ServerGateway.ResolveGameUserRequest), global::Chirp.ServerGateway.ResolveGameUserRequest.Parser, new[]{ "GameId", "GameUserId" }, null, null, null, null),
-            new pbr::GeneratedClrTypeInfo(typeof(global::Chirp.ServerGateway.ResolveGameUserResponse), global::Chirp.ServerGateway.ResolveGameUserResponse.Parser, new[]{ "Code", "PlayerId" }, null, null, null, null)
+            new pbr::GeneratedClrTypeInfo(typeof(global::Chirp.ServerGateway.ResolveGameUserResponse), global::Chirp.ServerGateway.ResolveGameUserResponse.Parser, new[]{ "Code", "PlayerId" }, null, null, null, null),
+            new pbr::GeneratedClrTypeInfo(typeof(global::Chirp.ServerGateway.StoredChannelSubscription), global::Chirp.ServerGateway.StoredChannelSubscription.Parser, new[]{ "SubscriptionId", "PlayerId", "GameId", "ChannelId", "SubscribedAtMs" }, null, null, null, null),
+            new pbr::GeneratedClrTypeInfo(typeof(global::Chirp.ServerGateway.SubscribePlayerChannelRequest), global::Chirp.ServerGateway.SubscribePlayerChannelRequest.Parser, new[]{ "SubscriptionId", "PlayerId", "GameId", "ChannelId" }, null, null, null, null),
+            new pbr::GeneratedClrTypeInfo(typeof(global::Chirp.ServerGateway.SubscribePlayerChannelResponse), global::Chirp.ServerGateway.SubscribePlayerChannelResponse.Parser, new[]{ "Code", "SubscriptionId", "Existed" }, null, null, null, null),
+            new pbr::GeneratedClrTypeInfo(typeof(global::Chirp.ServerGateway.UnsubscribePlayerChannelRequest), global::Chirp.ServerGateway.UnsubscribePlayerChannelRequest.Parser, new[]{ "SubscriptionId", "PlayerId", "GameId", "ChannelId" }, null, null, null, null),
+            new pbr::GeneratedClrTypeInfo(typeof(global::Chirp.ServerGateway.UnsubscribePlayerChannelResponse), global::Chirp.ServerGateway.UnsubscribePlayerChannelResponse.Parser, new[]{ "Code" }, null, null, null, null),
+            new pbr::GeneratedClrTypeInfo(typeof(global::Chirp.ServerGateway.GetPlayerSubscriptionsRequest), global::Chirp.ServerGateway.GetPlayerSubscriptionsRequest.Parser, new[]{ "PlayerId", "GameId" }, null, null, null, null),
+            new pbr::GeneratedClrTypeInfo(typeof(global::Chirp.ServerGateway.GetPlayerSubscriptionsResponse), global::Chirp.ServerGateway.GetPlayerSubscriptionsResponse.Parser, new[]{ "Code", "Subscriptions" }, null, null, null, null)
           }));
     }
     #endregion
@@ -5587,6 +5611,1919 @@ namespace Chirp.ServerGateway {
           }
           case 18: {
             PlayerId = input.ReadString();
+            break;
+          }
+        }
+      }
+    }
+    #endif
+
+  }
+
+  /// <summary>
+  /// Persistence record (Redis, not a wire message).
+  /// </summary>
+  [global::System.Diagnostics.DebuggerDisplayAttribute("{ToString(),nq}")]
+  public sealed partial class StoredChannelSubscription : pb::IMessage<StoredChannelSubscription>
+  #if !GOOGLE_PROTOBUF_REFSTRUCT_COMPATIBILITY_MODE
+      , pb::IBufferMessage
+  #endif
+  {
+    private static readonly pb::MessageParser<StoredChannelSubscription> _parser = new pb::MessageParser<StoredChannelSubscription>(() => new StoredChannelSubscription());
+    private pb::UnknownFieldSet _unknownFields;
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    public static pb::MessageParser<StoredChannelSubscription> Parser { get { return _parser; } }
+
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    public static pbr::MessageDescriptor Descriptor {
+      get { return global::Chirp.ServerGateway.ServerGatewayReflection.Descriptor.MessageTypes[21]; }
+    }
+
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    pbr::MessageDescriptor pb::IMessage.Descriptor {
+      get { return Descriptor; }
+    }
+
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    public StoredChannelSubscription() {
+      OnConstruction();
+    }
+
+    partial void OnConstruction();
+
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    public StoredChannelSubscription(StoredChannelSubscription other) : this() {
+      subscriptionId_ = other.subscriptionId_;
+      playerId_ = other.playerId_;
+      gameId_ = other.gameId_;
+      channelId_ = other.channelId_;
+      subscribedAtMs_ = other.subscribedAtMs_;
+      _unknownFields = pb::UnknownFieldSet.Clone(other._unknownFields);
+    }
+
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    public StoredChannelSubscription Clone() {
+      return new StoredChannelSubscription(this);
+    }
+
+    /// <summary>Field number for the "subscription_id" field.</summary>
+    public const int SubscriptionIdFieldNumber = 1;
+    private string subscriptionId_ = "";
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    public string SubscriptionId {
+      get { return subscriptionId_; }
+      set {
+        subscriptionId_ = pb::ProtoPreconditions.CheckNotNull(value, "value");
+      }
+    }
+
+    /// <summary>Field number for the "player_id" field.</summary>
+    public const int PlayerIdFieldNumber = 2;
+    private string playerId_ = "";
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    public string PlayerId {
+      get { return playerId_; }
+      set {
+        playerId_ = pb::ProtoPreconditions.CheckNotNull(value, "value");
+      }
+    }
+
+    /// <summary>Field number for the "game_id" field.</summary>
+    public const int GameIdFieldNumber = 3;
+    private string gameId_ = "";
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    public string GameId {
+      get { return gameId_; }
+      set {
+        gameId_ = pb::ProtoPreconditions.CheckNotNull(value, "value");
+      }
+    }
+
+    /// <summary>Field number for the "channel_id" field.</summary>
+    public const int ChannelIdFieldNumber = 4;
+    private string channelId_ = "";
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    public string ChannelId {
+      get { return channelId_; }
+      set {
+        channelId_ = pb::ProtoPreconditions.CheckNotNull(value, "value");
+      }
+    }
+
+    /// <summary>Field number for the "subscribed_at_ms" field.</summary>
+    public const int SubscribedAtMsFieldNumber = 5;
+    private long subscribedAtMs_;
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    public long SubscribedAtMs {
+      get { return subscribedAtMs_; }
+      set {
+        subscribedAtMs_ = value;
+      }
+    }
+
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    public override bool Equals(object other) {
+      return Equals(other as StoredChannelSubscription);
+    }
+
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    public bool Equals(StoredChannelSubscription other) {
+      if (ReferenceEquals(other, null)) {
+        return false;
+      }
+      if (ReferenceEquals(other, this)) {
+        return true;
+      }
+      if (SubscriptionId != other.SubscriptionId) return false;
+      if (PlayerId != other.PlayerId) return false;
+      if (GameId != other.GameId) return false;
+      if (ChannelId != other.ChannelId) return false;
+      if (SubscribedAtMs != other.SubscribedAtMs) return false;
+      return Equals(_unknownFields, other._unknownFields);
+    }
+
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    public override int GetHashCode() {
+      int hash = 1;
+      if (SubscriptionId.Length != 0) hash ^= SubscriptionId.GetHashCode();
+      if (PlayerId.Length != 0) hash ^= PlayerId.GetHashCode();
+      if (GameId.Length != 0) hash ^= GameId.GetHashCode();
+      if (ChannelId.Length != 0) hash ^= ChannelId.GetHashCode();
+      if (SubscribedAtMs != 0L) hash ^= SubscribedAtMs.GetHashCode();
+      if (_unknownFields != null) {
+        hash ^= _unknownFields.GetHashCode();
+      }
+      return hash;
+    }
+
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    public override string ToString() {
+      return pb::JsonFormatter.ToDiagnosticString(this);
+    }
+
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    public void WriteTo(pb::CodedOutputStream output) {
+    #if !GOOGLE_PROTOBUF_REFSTRUCT_COMPATIBILITY_MODE
+      output.WriteRawMessage(this);
+    #else
+      if (SubscriptionId.Length != 0) {
+        output.WriteRawTag(10);
+        output.WriteString(SubscriptionId);
+      }
+      if (PlayerId.Length != 0) {
+        output.WriteRawTag(18);
+        output.WriteString(PlayerId);
+      }
+      if (GameId.Length != 0) {
+        output.WriteRawTag(26);
+        output.WriteString(GameId);
+      }
+      if (ChannelId.Length != 0) {
+        output.WriteRawTag(34);
+        output.WriteString(ChannelId);
+      }
+      if (SubscribedAtMs != 0L) {
+        output.WriteRawTag(40);
+        output.WriteInt64(SubscribedAtMs);
+      }
+      if (_unknownFields != null) {
+        _unknownFields.WriteTo(output);
+      }
+    #endif
+    }
+
+    #if !GOOGLE_PROTOBUF_REFSTRUCT_COMPATIBILITY_MODE
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    void pb::IBufferMessage.InternalWriteTo(ref pb::WriteContext output) {
+      if (SubscriptionId.Length != 0) {
+        output.WriteRawTag(10);
+        output.WriteString(SubscriptionId);
+      }
+      if (PlayerId.Length != 0) {
+        output.WriteRawTag(18);
+        output.WriteString(PlayerId);
+      }
+      if (GameId.Length != 0) {
+        output.WriteRawTag(26);
+        output.WriteString(GameId);
+      }
+      if (ChannelId.Length != 0) {
+        output.WriteRawTag(34);
+        output.WriteString(ChannelId);
+      }
+      if (SubscribedAtMs != 0L) {
+        output.WriteRawTag(40);
+        output.WriteInt64(SubscribedAtMs);
+      }
+      if (_unknownFields != null) {
+        _unknownFields.WriteTo(ref output);
+      }
+    }
+    #endif
+
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    public int CalculateSize() {
+      int size = 0;
+      if (SubscriptionId.Length != 0) {
+        size += 1 + pb::CodedOutputStream.ComputeStringSize(SubscriptionId);
+      }
+      if (PlayerId.Length != 0) {
+        size += 1 + pb::CodedOutputStream.ComputeStringSize(PlayerId);
+      }
+      if (GameId.Length != 0) {
+        size += 1 + pb::CodedOutputStream.ComputeStringSize(GameId);
+      }
+      if (ChannelId.Length != 0) {
+        size += 1 + pb::CodedOutputStream.ComputeStringSize(ChannelId);
+      }
+      if (SubscribedAtMs != 0L) {
+        size += 1 + pb::CodedOutputStream.ComputeInt64Size(SubscribedAtMs);
+      }
+      if (_unknownFields != null) {
+        size += _unknownFields.CalculateSize();
+      }
+      return size;
+    }
+
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    public void MergeFrom(StoredChannelSubscription other) {
+      if (other == null) {
+        return;
+      }
+      if (other.SubscriptionId.Length != 0) {
+        SubscriptionId = other.SubscriptionId;
+      }
+      if (other.PlayerId.Length != 0) {
+        PlayerId = other.PlayerId;
+      }
+      if (other.GameId.Length != 0) {
+        GameId = other.GameId;
+      }
+      if (other.ChannelId.Length != 0) {
+        ChannelId = other.ChannelId;
+      }
+      if (other.SubscribedAtMs != 0L) {
+        SubscribedAtMs = other.SubscribedAtMs;
+      }
+      _unknownFields = pb::UnknownFieldSet.MergeFrom(_unknownFields, other._unknownFields);
+    }
+
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    public void MergeFrom(pb::CodedInputStream input) {
+    #if !GOOGLE_PROTOBUF_REFSTRUCT_COMPATIBILITY_MODE
+      input.ReadRawMessage(this);
+    #else
+      uint tag;
+      while ((tag = input.ReadTag()) != 0) {
+      if ((tag & 7) == 4) {
+        // Abort on any end group tag.
+        return;
+      }
+      switch(tag) {
+          default:
+            _unknownFields = pb::UnknownFieldSet.MergeFieldFrom(_unknownFields, input);
+            break;
+          case 10: {
+            SubscriptionId = input.ReadString();
+            break;
+          }
+          case 18: {
+            PlayerId = input.ReadString();
+            break;
+          }
+          case 26: {
+            GameId = input.ReadString();
+            break;
+          }
+          case 34: {
+            ChannelId = input.ReadString();
+            break;
+          }
+          case 40: {
+            SubscribedAtMs = input.ReadInt64();
+            break;
+          }
+        }
+      }
+    #endif
+    }
+
+    #if !GOOGLE_PROTOBUF_REFSTRUCT_COMPATIBILITY_MODE
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    void pb::IBufferMessage.InternalMergeFrom(ref pb::ParseContext input) {
+      uint tag;
+      while ((tag = input.ReadTag()) != 0) {
+      if ((tag & 7) == 4) {
+        // Abort on any end group tag.
+        return;
+      }
+      switch(tag) {
+          default:
+            _unknownFields = pb::UnknownFieldSet.MergeFieldFrom(_unknownFields, ref input);
+            break;
+          case 10: {
+            SubscriptionId = input.ReadString();
+            break;
+          }
+          case 18: {
+            PlayerId = input.ReadString();
+            break;
+          }
+          case 26: {
+            GameId = input.ReadString();
+            break;
+          }
+          case 34: {
+            ChannelId = input.ReadString();
+            break;
+          }
+          case 40: {
+            SubscribedAtMs = input.ReadInt64();
+            break;
+          }
+        }
+      }
+    }
+    #endif
+
+  }
+
+  [global::System.Diagnostics.DebuggerDisplayAttribute("{ToString(),nq}")]
+  public sealed partial class SubscribePlayerChannelRequest : pb::IMessage<SubscribePlayerChannelRequest>
+  #if !GOOGLE_PROTOBUF_REFSTRUCT_COMPATIBILITY_MODE
+      , pb::IBufferMessage
+  #endif
+  {
+    private static readonly pb::MessageParser<SubscribePlayerChannelRequest> _parser = new pb::MessageParser<SubscribePlayerChannelRequest>(() => new SubscribePlayerChannelRequest());
+    private pb::UnknownFieldSet _unknownFields;
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    public static pb::MessageParser<SubscribePlayerChannelRequest> Parser { get { return _parser; } }
+
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    public static pbr::MessageDescriptor Descriptor {
+      get { return global::Chirp.ServerGateway.ServerGatewayReflection.Descriptor.MessageTypes[22]; }
+    }
+
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    pbr::MessageDescriptor pb::IMessage.Descriptor {
+      get { return Descriptor; }
+    }
+
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    public SubscribePlayerChannelRequest() {
+      OnConstruction();
+    }
+
+    partial void OnConstruction();
+
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    public SubscribePlayerChannelRequest(SubscribePlayerChannelRequest other) : this() {
+      subscriptionId_ = other.subscriptionId_;
+      playerId_ = other.playerId_;
+      gameId_ = other.gameId_;
+      channelId_ = other.channelId_;
+      _unknownFields = pb::UnknownFieldSet.Clone(other._unknownFields);
+    }
+
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    public SubscribePlayerChannelRequest Clone() {
+      return new SubscribePlayerChannelRequest(this);
+    }
+
+    /// <summary>Field number for the "subscription_id" field.</summary>
+    public const int SubscriptionIdFieldNumber = 1;
+    private string subscriptionId_ = "";
+    /// <summary>
+    /// Caller-supplied idempotency key; empty means the server mints one
+    /// (the player self-service path through app_gateway always mints).
+    /// </summary>
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    public string SubscriptionId {
+      get { return subscriptionId_; }
+      set {
+        subscriptionId_ = pb::ProtoPreconditions.CheckNotNull(value, "value");
+      }
+    }
+
+    /// <summary>Field number for the "player_id" field.</summary>
+    public const int PlayerIdFieldNumber = 2;
+    private string playerId_ = "";
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    public string PlayerId {
+      get { return playerId_; }
+      set {
+        playerId_ = pb::ProtoPreconditions.CheckNotNull(value, "value");
+      }
+    }
+
+    /// <summary>Field number for the "game_id" field.</summary>
+    public const int GameIdFieldNumber = 3;
+    private string gameId_ = "";
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    public string GameId {
+      get { return gameId_; }
+      set {
+        gameId_ = pb::ProtoPreconditions.CheckNotNull(value, "value");
+      }
+    }
+
+    /// <summary>Field number for the "channel_id" field.</summary>
+    public const int ChannelIdFieldNumber = 4;
+    private string channelId_ = "";
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    public string ChannelId {
+      get { return channelId_; }
+      set {
+        channelId_ = pb::ProtoPreconditions.CheckNotNull(value, "value");
+      }
+    }
+
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    public override bool Equals(object other) {
+      return Equals(other as SubscribePlayerChannelRequest);
+    }
+
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    public bool Equals(SubscribePlayerChannelRequest other) {
+      if (ReferenceEquals(other, null)) {
+        return false;
+      }
+      if (ReferenceEquals(other, this)) {
+        return true;
+      }
+      if (SubscriptionId != other.SubscriptionId) return false;
+      if (PlayerId != other.PlayerId) return false;
+      if (GameId != other.GameId) return false;
+      if (ChannelId != other.ChannelId) return false;
+      return Equals(_unknownFields, other._unknownFields);
+    }
+
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    public override int GetHashCode() {
+      int hash = 1;
+      if (SubscriptionId.Length != 0) hash ^= SubscriptionId.GetHashCode();
+      if (PlayerId.Length != 0) hash ^= PlayerId.GetHashCode();
+      if (GameId.Length != 0) hash ^= GameId.GetHashCode();
+      if (ChannelId.Length != 0) hash ^= ChannelId.GetHashCode();
+      if (_unknownFields != null) {
+        hash ^= _unknownFields.GetHashCode();
+      }
+      return hash;
+    }
+
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    public override string ToString() {
+      return pb::JsonFormatter.ToDiagnosticString(this);
+    }
+
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    public void WriteTo(pb::CodedOutputStream output) {
+    #if !GOOGLE_PROTOBUF_REFSTRUCT_COMPATIBILITY_MODE
+      output.WriteRawMessage(this);
+    #else
+      if (SubscriptionId.Length != 0) {
+        output.WriteRawTag(10);
+        output.WriteString(SubscriptionId);
+      }
+      if (PlayerId.Length != 0) {
+        output.WriteRawTag(18);
+        output.WriteString(PlayerId);
+      }
+      if (GameId.Length != 0) {
+        output.WriteRawTag(26);
+        output.WriteString(GameId);
+      }
+      if (ChannelId.Length != 0) {
+        output.WriteRawTag(34);
+        output.WriteString(ChannelId);
+      }
+      if (_unknownFields != null) {
+        _unknownFields.WriteTo(output);
+      }
+    #endif
+    }
+
+    #if !GOOGLE_PROTOBUF_REFSTRUCT_COMPATIBILITY_MODE
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    void pb::IBufferMessage.InternalWriteTo(ref pb::WriteContext output) {
+      if (SubscriptionId.Length != 0) {
+        output.WriteRawTag(10);
+        output.WriteString(SubscriptionId);
+      }
+      if (PlayerId.Length != 0) {
+        output.WriteRawTag(18);
+        output.WriteString(PlayerId);
+      }
+      if (GameId.Length != 0) {
+        output.WriteRawTag(26);
+        output.WriteString(GameId);
+      }
+      if (ChannelId.Length != 0) {
+        output.WriteRawTag(34);
+        output.WriteString(ChannelId);
+      }
+      if (_unknownFields != null) {
+        _unknownFields.WriteTo(ref output);
+      }
+    }
+    #endif
+
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    public int CalculateSize() {
+      int size = 0;
+      if (SubscriptionId.Length != 0) {
+        size += 1 + pb::CodedOutputStream.ComputeStringSize(SubscriptionId);
+      }
+      if (PlayerId.Length != 0) {
+        size += 1 + pb::CodedOutputStream.ComputeStringSize(PlayerId);
+      }
+      if (GameId.Length != 0) {
+        size += 1 + pb::CodedOutputStream.ComputeStringSize(GameId);
+      }
+      if (ChannelId.Length != 0) {
+        size += 1 + pb::CodedOutputStream.ComputeStringSize(ChannelId);
+      }
+      if (_unknownFields != null) {
+        size += _unknownFields.CalculateSize();
+      }
+      return size;
+    }
+
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    public void MergeFrom(SubscribePlayerChannelRequest other) {
+      if (other == null) {
+        return;
+      }
+      if (other.SubscriptionId.Length != 0) {
+        SubscriptionId = other.SubscriptionId;
+      }
+      if (other.PlayerId.Length != 0) {
+        PlayerId = other.PlayerId;
+      }
+      if (other.GameId.Length != 0) {
+        GameId = other.GameId;
+      }
+      if (other.ChannelId.Length != 0) {
+        ChannelId = other.ChannelId;
+      }
+      _unknownFields = pb::UnknownFieldSet.MergeFrom(_unknownFields, other._unknownFields);
+    }
+
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    public void MergeFrom(pb::CodedInputStream input) {
+    #if !GOOGLE_PROTOBUF_REFSTRUCT_COMPATIBILITY_MODE
+      input.ReadRawMessage(this);
+    #else
+      uint tag;
+      while ((tag = input.ReadTag()) != 0) {
+      if ((tag & 7) == 4) {
+        // Abort on any end group tag.
+        return;
+      }
+      switch(tag) {
+          default:
+            _unknownFields = pb::UnknownFieldSet.MergeFieldFrom(_unknownFields, input);
+            break;
+          case 10: {
+            SubscriptionId = input.ReadString();
+            break;
+          }
+          case 18: {
+            PlayerId = input.ReadString();
+            break;
+          }
+          case 26: {
+            GameId = input.ReadString();
+            break;
+          }
+          case 34: {
+            ChannelId = input.ReadString();
+            break;
+          }
+        }
+      }
+    #endif
+    }
+
+    #if !GOOGLE_PROTOBUF_REFSTRUCT_COMPATIBILITY_MODE
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    void pb::IBufferMessage.InternalMergeFrom(ref pb::ParseContext input) {
+      uint tag;
+      while ((tag = input.ReadTag()) != 0) {
+      if ((tag & 7) == 4) {
+        // Abort on any end group tag.
+        return;
+      }
+      switch(tag) {
+          default:
+            _unknownFields = pb::UnknownFieldSet.MergeFieldFrom(_unknownFields, ref input);
+            break;
+          case 10: {
+            SubscriptionId = input.ReadString();
+            break;
+          }
+          case 18: {
+            PlayerId = input.ReadString();
+            break;
+          }
+          case 26: {
+            GameId = input.ReadString();
+            break;
+          }
+          case 34: {
+            ChannelId = input.ReadString();
+            break;
+          }
+        }
+      }
+    }
+    #endif
+
+  }
+
+  [global::System.Diagnostics.DebuggerDisplayAttribute("{ToString(),nq}")]
+  public sealed partial class SubscribePlayerChannelResponse : pb::IMessage<SubscribePlayerChannelResponse>
+  #if !GOOGLE_PROTOBUF_REFSTRUCT_COMPATIBILITY_MODE
+      , pb::IBufferMessage
+  #endif
+  {
+    private static readonly pb::MessageParser<SubscribePlayerChannelResponse> _parser = new pb::MessageParser<SubscribePlayerChannelResponse>(() => new SubscribePlayerChannelResponse());
+    private pb::UnknownFieldSet _unknownFields;
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    public static pb::MessageParser<SubscribePlayerChannelResponse> Parser { get { return _parser; } }
+
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    public static pbr::MessageDescriptor Descriptor {
+      get { return global::Chirp.ServerGateway.ServerGatewayReflection.Descriptor.MessageTypes[23]; }
+    }
+
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    pbr::MessageDescriptor pb::IMessage.Descriptor {
+      get { return Descriptor; }
+    }
+
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    public SubscribePlayerChannelResponse() {
+      OnConstruction();
+    }
+
+    partial void OnConstruction();
+
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    public SubscribePlayerChannelResponse(SubscribePlayerChannelResponse other) : this() {
+      code_ = other.code_;
+      subscriptionId_ = other.subscriptionId_;
+      existed_ = other.existed_;
+      _unknownFields = pb::UnknownFieldSet.Clone(other._unknownFields);
+    }
+
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    public SubscribePlayerChannelResponse Clone() {
+      return new SubscribePlayerChannelResponse(this);
+    }
+
+    /// <summary>Field number for the "code" field.</summary>
+    public const int CodeFieldNumber = 1;
+    private global::Chirp.Common.ErrorCode code_ = global::Chirp.Common.ErrorCode.Ok;
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    public global::Chirp.Common.ErrorCode Code {
+      get { return code_; }
+      set {
+        code_ = value;
+      }
+    }
+
+    /// <summary>Field number for the "subscription_id" field.</summary>
+    public const int SubscriptionIdFieldNumber = 2;
+    private string subscriptionId_ = "";
+    /// <summary>
+    /// Echoed or minted id of the subscription now holding the tuple.
+    /// </summary>
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    public string SubscriptionId {
+      get { return subscriptionId_; }
+      set {
+        subscriptionId_ = pb::ProtoPreconditions.CheckNotNull(value, "value");
+      }
+    }
+
+    /// <summary>Field number for the "existed" field.</summary>
+    public const int ExistedFieldNumber = 3;
+    private bool existed_;
+    /// <summary>
+    /// True when the tuple was already subscribed (idempotent no-op).
+    /// </summary>
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    public bool Existed {
+      get { return existed_; }
+      set {
+        existed_ = value;
+      }
+    }
+
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    public override bool Equals(object other) {
+      return Equals(other as SubscribePlayerChannelResponse);
+    }
+
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    public bool Equals(SubscribePlayerChannelResponse other) {
+      if (ReferenceEquals(other, null)) {
+        return false;
+      }
+      if (ReferenceEquals(other, this)) {
+        return true;
+      }
+      if (Code != other.Code) return false;
+      if (SubscriptionId != other.SubscriptionId) return false;
+      if (Existed != other.Existed) return false;
+      return Equals(_unknownFields, other._unknownFields);
+    }
+
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    public override int GetHashCode() {
+      int hash = 1;
+      if (Code != global::Chirp.Common.ErrorCode.Ok) hash ^= Code.GetHashCode();
+      if (SubscriptionId.Length != 0) hash ^= SubscriptionId.GetHashCode();
+      if (Existed != false) hash ^= Existed.GetHashCode();
+      if (_unknownFields != null) {
+        hash ^= _unknownFields.GetHashCode();
+      }
+      return hash;
+    }
+
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    public override string ToString() {
+      return pb::JsonFormatter.ToDiagnosticString(this);
+    }
+
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    public void WriteTo(pb::CodedOutputStream output) {
+    #if !GOOGLE_PROTOBUF_REFSTRUCT_COMPATIBILITY_MODE
+      output.WriteRawMessage(this);
+    #else
+      if (Code != global::Chirp.Common.ErrorCode.Ok) {
+        output.WriteRawTag(8);
+        output.WriteEnum((int) Code);
+      }
+      if (SubscriptionId.Length != 0) {
+        output.WriteRawTag(18);
+        output.WriteString(SubscriptionId);
+      }
+      if (Existed != false) {
+        output.WriteRawTag(24);
+        output.WriteBool(Existed);
+      }
+      if (_unknownFields != null) {
+        _unknownFields.WriteTo(output);
+      }
+    #endif
+    }
+
+    #if !GOOGLE_PROTOBUF_REFSTRUCT_COMPATIBILITY_MODE
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    void pb::IBufferMessage.InternalWriteTo(ref pb::WriteContext output) {
+      if (Code != global::Chirp.Common.ErrorCode.Ok) {
+        output.WriteRawTag(8);
+        output.WriteEnum((int) Code);
+      }
+      if (SubscriptionId.Length != 0) {
+        output.WriteRawTag(18);
+        output.WriteString(SubscriptionId);
+      }
+      if (Existed != false) {
+        output.WriteRawTag(24);
+        output.WriteBool(Existed);
+      }
+      if (_unknownFields != null) {
+        _unknownFields.WriteTo(ref output);
+      }
+    }
+    #endif
+
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    public int CalculateSize() {
+      int size = 0;
+      if (Code != global::Chirp.Common.ErrorCode.Ok) {
+        size += 1 + pb::CodedOutputStream.ComputeEnumSize((int) Code);
+      }
+      if (SubscriptionId.Length != 0) {
+        size += 1 + pb::CodedOutputStream.ComputeStringSize(SubscriptionId);
+      }
+      if (Existed != false) {
+        size += 1 + 1;
+      }
+      if (_unknownFields != null) {
+        size += _unknownFields.CalculateSize();
+      }
+      return size;
+    }
+
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    public void MergeFrom(SubscribePlayerChannelResponse other) {
+      if (other == null) {
+        return;
+      }
+      if (other.Code != global::Chirp.Common.ErrorCode.Ok) {
+        Code = other.Code;
+      }
+      if (other.SubscriptionId.Length != 0) {
+        SubscriptionId = other.SubscriptionId;
+      }
+      if (other.Existed != false) {
+        Existed = other.Existed;
+      }
+      _unknownFields = pb::UnknownFieldSet.MergeFrom(_unknownFields, other._unknownFields);
+    }
+
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    public void MergeFrom(pb::CodedInputStream input) {
+    #if !GOOGLE_PROTOBUF_REFSTRUCT_COMPATIBILITY_MODE
+      input.ReadRawMessage(this);
+    #else
+      uint tag;
+      while ((tag = input.ReadTag()) != 0) {
+      if ((tag & 7) == 4) {
+        // Abort on any end group tag.
+        return;
+      }
+      switch(tag) {
+          default:
+            _unknownFields = pb::UnknownFieldSet.MergeFieldFrom(_unknownFields, input);
+            break;
+          case 8: {
+            Code = (global::Chirp.Common.ErrorCode) input.ReadEnum();
+            break;
+          }
+          case 18: {
+            SubscriptionId = input.ReadString();
+            break;
+          }
+          case 24: {
+            Existed = input.ReadBool();
+            break;
+          }
+        }
+      }
+    #endif
+    }
+
+    #if !GOOGLE_PROTOBUF_REFSTRUCT_COMPATIBILITY_MODE
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    void pb::IBufferMessage.InternalMergeFrom(ref pb::ParseContext input) {
+      uint tag;
+      while ((tag = input.ReadTag()) != 0) {
+      if ((tag & 7) == 4) {
+        // Abort on any end group tag.
+        return;
+      }
+      switch(tag) {
+          default:
+            _unknownFields = pb::UnknownFieldSet.MergeFieldFrom(_unknownFields, ref input);
+            break;
+          case 8: {
+            Code = (global::Chirp.Common.ErrorCode) input.ReadEnum();
+            break;
+          }
+          case 18: {
+            SubscriptionId = input.ReadString();
+            break;
+          }
+          case 24: {
+            Existed = input.ReadBool();
+            break;
+          }
+        }
+      }
+    }
+    #endif
+
+  }
+
+  [global::System.Diagnostics.DebuggerDisplayAttribute("{ToString(),nq}")]
+  public sealed partial class UnsubscribePlayerChannelRequest : pb::IMessage<UnsubscribePlayerChannelRequest>
+  #if !GOOGLE_PROTOBUF_REFSTRUCT_COMPATIBILITY_MODE
+      , pb::IBufferMessage
+  #endif
+  {
+    private static readonly pb::MessageParser<UnsubscribePlayerChannelRequest> _parser = new pb::MessageParser<UnsubscribePlayerChannelRequest>(() => new UnsubscribePlayerChannelRequest());
+    private pb::UnknownFieldSet _unknownFields;
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    public static pb::MessageParser<UnsubscribePlayerChannelRequest> Parser { get { return _parser; } }
+
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    public static pbr::MessageDescriptor Descriptor {
+      get { return global::Chirp.ServerGateway.ServerGatewayReflection.Descriptor.MessageTypes[24]; }
+    }
+
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    pbr::MessageDescriptor pb::IMessage.Descriptor {
+      get { return Descriptor; }
+    }
+
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    public UnsubscribePlayerChannelRequest() {
+      OnConstruction();
+    }
+
+    partial void OnConstruction();
+
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    public UnsubscribePlayerChannelRequest(UnsubscribePlayerChannelRequest other) : this() {
+      subscriptionId_ = other.subscriptionId_;
+      playerId_ = other.playerId_;
+      gameId_ = other.gameId_;
+      channelId_ = other.channelId_;
+      _unknownFields = pb::UnknownFieldSet.Clone(other._unknownFields);
+    }
+
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    public UnsubscribePlayerChannelRequest Clone() {
+      return new UnsubscribePlayerChannelRequest(this);
+    }
+
+    /// <summary>Field number for the "subscription_id" field.</summary>
+    public const int SubscriptionIdFieldNumber = 1;
+    private string subscriptionId_ = "";
+    /// <summary>
+    /// Select exactly one: subscription_id, or the full triple
+    /// (player_id, game_id, channel_id).
+    /// </summary>
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    public string SubscriptionId {
+      get { return subscriptionId_; }
+      set {
+        subscriptionId_ = pb::ProtoPreconditions.CheckNotNull(value, "value");
+      }
+    }
+
+    /// <summary>Field number for the "player_id" field.</summary>
+    public const int PlayerIdFieldNumber = 2;
+    private string playerId_ = "";
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    public string PlayerId {
+      get { return playerId_; }
+      set {
+        playerId_ = pb::ProtoPreconditions.CheckNotNull(value, "value");
+      }
+    }
+
+    /// <summary>Field number for the "game_id" field.</summary>
+    public const int GameIdFieldNumber = 3;
+    private string gameId_ = "";
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    public string GameId {
+      get { return gameId_; }
+      set {
+        gameId_ = pb::ProtoPreconditions.CheckNotNull(value, "value");
+      }
+    }
+
+    /// <summary>Field number for the "channel_id" field.</summary>
+    public const int ChannelIdFieldNumber = 4;
+    private string channelId_ = "";
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    public string ChannelId {
+      get { return channelId_; }
+      set {
+        channelId_ = pb::ProtoPreconditions.CheckNotNull(value, "value");
+      }
+    }
+
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    public override bool Equals(object other) {
+      return Equals(other as UnsubscribePlayerChannelRequest);
+    }
+
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    public bool Equals(UnsubscribePlayerChannelRequest other) {
+      if (ReferenceEquals(other, null)) {
+        return false;
+      }
+      if (ReferenceEquals(other, this)) {
+        return true;
+      }
+      if (SubscriptionId != other.SubscriptionId) return false;
+      if (PlayerId != other.PlayerId) return false;
+      if (GameId != other.GameId) return false;
+      if (ChannelId != other.ChannelId) return false;
+      return Equals(_unknownFields, other._unknownFields);
+    }
+
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    public override int GetHashCode() {
+      int hash = 1;
+      if (SubscriptionId.Length != 0) hash ^= SubscriptionId.GetHashCode();
+      if (PlayerId.Length != 0) hash ^= PlayerId.GetHashCode();
+      if (GameId.Length != 0) hash ^= GameId.GetHashCode();
+      if (ChannelId.Length != 0) hash ^= ChannelId.GetHashCode();
+      if (_unknownFields != null) {
+        hash ^= _unknownFields.GetHashCode();
+      }
+      return hash;
+    }
+
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    public override string ToString() {
+      return pb::JsonFormatter.ToDiagnosticString(this);
+    }
+
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    public void WriteTo(pb::CodedOutputStream output) {
+    #if !GOOGLE_PROTOBUF_REFSTRUCT_COMPATIBILITY_MODE
+      output.WriteRawMessage(this);
+    #else
+      if (SubscriptionId.Length != 0) {
+        output.WriteRawTag(10);
+        output.WriteString(SubscriptionId);
+      }
+      if (PlayerId.Length != 0) {
+        output.WriteRawTag(18);
+        output.WriteString(PlayerId);
+      }
+      if (GameId.Length != 0) {
+        output.WriteRawTag(26);
+        output.WriteString(GameId);
+      }
+      if (ChannelId.Length != 0) {
+        output.WriteRawTag(34);
+        output.WriteString(ChannelId);
+      }
+      if (_unknownFields != null) {
+        _unknownFields.WriteTo(output);
+      }
+    #endif
+    }
+
+    #if !GOOGLE_PROTOBUF_REFSTRUCT_COMPATIBILITY_MODE
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    void pb::IBufferMessage.InternalWriteTo(ref pb::WriteContext output) {
+      if (SubscriptionId.Length != 0) {
+        output.WriteRawTag(10);
+        output.WriteString(SubscriptionId);
+      }
+      if (PlayerId.Length != 0) {
+        output.WriteRawTag(18);
+        output.WriteString(PlayerId);
+      }
+      if (GameId.Length != 0) {
+        output.WriteRawTag(26);
+        output.WriteString(GameId);
+      }
+      if (ChannelId.Length != 0) {
+        output.WriteRawTag(34);
+        output.WriteString(ChannelId);
+      }
+      if (_unknownFields != null) {
+        _unknownFields.WriteTo(ref output);
+      }
+    }
+    #endif
+
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    public int CalculateSize() {
+      int size = 0;
+      if (SubscriptionId.Length != 0) {
+        size += 1 + pb::CodedOutputStream.ComputeStringSize(SubscriptionId);
+      }
+      if (PlayerId.Length != 0) {
+        size += 1 + pb::CodedOutputStream.ComputeStringSize(PlayerId);
+      }
+      if (GameId.Length != 0) {
+        size += 1 + pb::CodedOutputStream.ComputeStringSize(GameId);
+      }
+      if (ChannelId.Length != 0) {
+        size += 1 + pb::CodedOutputStream.ComputeStringSize(ChannelId);
+      }
+      if (_unknownFields != null) {
+        size += _unknownFields.CalculateSize();
+      }
+      return size;
+    }
+
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    public void MergeFrom(UnsubscribePlayerChannelRequest other) {
+      if (other == null) {
+        return;
+      }
+      if (other.SubscriptionId.Length != 0) {
+        SubscriptionId = other.SubscriptionId;
+      }
+      if (other.PlayerId.Length != 0) {
+        PlayerId = other.PlayerId;
+      }
+      if (other.GameId.Length != 0) {
+        GameId = other.GameId;
+      }
+      if (other.ChannelId.Length != 0) {
+        ChannelId = other.ChannelId;
+      }
+      _unknownFields = pb::UnknownFieldSet.MergeFrom(_unknownFields, other._unknownFields);
+    }
+
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    public void MergeFrom(pb::CodedInputStream input) {
+    #if !GOOGLE_PROTOBUF_REFSTRUCT_COMPATIBILITY_MODE
+      input.ReadRawMessage(this);
+    #else
+      uint tag;
+      while ((tag = input.ReadTag()) != 0) {
+      if ((tag & 7) == 4) {
+        // Abort on any end group tag.
+        return;
+      }
+      switch(tag) {
+          default:
+            _unknownFields = pb::UnknownFieldSet.MergeFieldFrom(_unknownFields, input);
+            break;
+          case 10: {
+            SubscriptionId = input.ReadString();
+            break;
+          }
+          case 18: {
+            PlayerId = input.ReadString();
+            break;
+          }
+          case 26: {
+            GameId = input.ReadString();
+            break;
+          }
+          case 34: {
+            ChannelId = input.ReadString();
+            break;
+          }
+        }
+      }
+    #endif
+    }
+
+    #if !GOOGLE_PROTOBUF_REFSTRUCT_COMPATIBILITY_MODE
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    void pb::IBufferMessage.InternalMergeFrom(ref pb::ParseContext input) {
+      uint tag;
+      while ((tag = input.ReadTag()) != 0) {
+      if ((tag & 7) == 4) {
+        // Abort on any end group tag.
+        return;
+      }
+      switch(tag) {
+          default:
+            _unknownFields = pb::UnknownFieldSet.MergeFieldFrom(_unknownFields, ref input);
+            break;
+          case 10: {
+            SubscriptionId = input.ReadString();
+            break;
+          }
+          case 18: {
+            PlayerId = input.ReadString();
+            break;
+          }
+          case 26: {
+            GameId = input.ReadString();
+            break;
+          }
+          case 34: {
+            ChannelId = input.ReadString();
+            break;
+          }
+        }
+      }
+    }
+    #endif
+
+  }
+
+  [global::System.Diagnostics.DebuggerDisplayAttribute("{ToString(),nq}")]
+  public sealed partial class UnsubscribePlayerChannelResponse : pb::IMessage<UnsubscribePlayerChannelResponse>
+  #if !GOOGLE_PROTOBUF_REFSTRUCT_COMPATIBILITY_MODE
+      , pb::IBufferMessage
+  #endif
+  {
+    private static readonly pb::MessageParser<UnsubscribePlayerChannelResponse> _parser = new pb::MessageParser<UnsubscribePlayerChannelResponse>(() => new UnsubscribePlayerChannelResponse());
+    private pb::UnknownFieldSet _unknownFields;
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    public static pb::MessageParser<UnsubscribePlayerChannelResponse> Parser { get { return _parser; } }
+
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    public static pbr::MessageDescriptor Descriptor {
+      get { return global::Chirp.ServerGateway.ServerGatewayReflection.Descriptor.MessageTypes[25]; }
+    }
+
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    pbr::MessageDescriptor pb::IMessage.Descriptor {
+      get { return Descriptor; }
+    }
+
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    public UnsubscribePlayerChannelResponse() {
+      OnConstruction();
+    }
+
+    partial void OnConstruction();
+
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    public UnsubscribePlayerChannelResponse(UnsubscribePlayerChannelResponse other) : this() {
+      code_ = other.code_;
+      _unknownFields = pb::UnknownFieldSet.Clone(other._unknownFields);
+    }
+
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    public UnsubscribePlayerChannelResponse Clone() {
+      return new UnsubscribePlayerChannelResponse(this);
+    }
+
+    /// <summary>Field number for the "code" field.</summary>
+    public const int CodeFieldNumber = 1;
+    private global::Chirp.Common.ErrorCode code_ = global::Chirp.Common.ErrorCode.Ok;
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    public global::Chirp.Common.ErrorCode Code {
+      get { return code_; }
+      set {
+        code_ = value;
+      }
+    }
+
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    public override bool Equals(object other) {
+      return Equals(other as UnsubscribePlayerChannelResponse);
+    }
+
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    public bool Equals(UnsubscribePlayerChannelResponse other) {
+      if (ReferenceEquals(other, null)) {
+        return false;
+      }
+      if (ReferenceEquals(other, this)) {
+        return true;
+      }
+      if (Code != other.Code) return false;
+      return Equals(_unknownFields, other._unknownFields);
+    }
+
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    public override int GetHashCode() {
+      int hash = 1;
+      if (Code != global::Chirp.Common.ErrorCode.Ok) hash ^= Code.GetHashCode();
+      if (_unknownFields != null) {
+        hash ^= _unknownFields.GetHashCode();
+      }
+      return hash;
+    }
+
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    public override string ToString() {
+      return pb::JsonFormatter.ToDiagnosticString(this);
+    }
+
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    public void WriteTo(pb::CodedOutputStream output) {
+    #if !GOOGLE_PROTOBUF_REFSTRUCT_COMPATIBILITY_MODE
+      output.WriteRawMessage(this);
+    #else
+      if (Code != global::Chirp.Common.ErrorCode.Ok) {
+        output.WriteRawTag(8);
+        output.WriteEnum((int) Code);
+      }
+      if (_unknownFields != null) {
+        _unknownFields.WriteTo(output);
+      }
+    #endif
+    }
+
+    #if !GOOGLE_PROTOBUF_REFSTRUCT_COMPATIBILITY_MODE
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    void pb::IBufferMessage.InternalWriteTo(ref pb::WriteContext output) {
+      if (Code != global::Chirp.Common.ErrorCode.Ok) {
+        output.WriteRawTag(8);
+        output.WriteEnum((int) Code);
+      }
+      if (_unknownFields != null) {
+        _unknownFields.WriteTo(ref output);
+      }
+    }
+    #endif
+
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    public int CalculateSize() {
+      int size = 0;
+      if (Code != global::Chirp.Common.ErrorCode.Ok) {
+        size += 1 + pb::CodedOutputStream.ComputeEnumSize((int) Code);
+      }
+      if (_unknownFields != null) {
+        size += _unknownFields.CalculateSize();
+      }
+      return size;
+    }
+
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    public void MergeFrom(UnsubscribePlayerChannelResponse other) {
+      if (other == null) {
+        return;
+      }
+      if (other.Code != global::Chirp.Common.ErrorCode.Ok) {
+        Code = other.Code;
+      }
+      _unknownFields = pb::UnknownFieldSet.MergeFrom(_unknownFields, other._unknownFields);
+    }
+
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    public void MergeFrom(pb::CodedInputStream input) {
+    #if !GOOGLE_PROTOBUF_REFSTRUCT_COMPATIBILITY_MODE
+      input.ReadRawMessage(this);
+    #else
+      uint tag;
+      while ((tag = input.ReadTag()) != 0) {
+      if ((tag & 7) == 4) {
+        // Abort on any end group tag.
+        return;
+      }
+      switch(tag) {
+          default:
+            _unknownFields = pb::UnknownFieldSet.MergeFieldFrom(_unknownFields, input);
+            break;
+          case 8: {
+            Code = (global::Chirp.Common.ErrorCode) input.ReadEnum();
+            break;
+          }
+        }
+      }
+    #endif
+    }
+
+    #if !GOOGLE_PROTOBUF_REFSTRUCT_COMPATIBILITY_MODE
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    void pb::IBufferMessage.InternalMergeFrom(ref pb::ParseContext input) {
+      uint tag;
+      while ((tag = input.ReadTag()) != 0) {
+      if ((tag & 7) == 4) {
+        // Abort on any end group tag.
+        return;
+      }
+      switch(tag) {
+          default:
+            _unknownFields = pb::UnknownFieldSet.MergeFieldFrom(_unknownFields, ref input);
+            break;
+          case 8: {
+            Code = (global::Chirp.Common.ErrorCode) input.ReadEnum();
+            break;
+          }
+        }
+      }
+    }
+    #endif
+
+  }
+
+  [global::System.Diagnostics.DebuggerDisplayAttribute("{ToString(),nq}")]
+  public sealed partial class GetPlayerSubscriptionsRequest : pb::IMessage<GetPlayerSubscriptionsRequest>
+  #if !GOOGLE_PROTOBUF_REFSTRUCT_COMPATIBILITY_MODE
+      , pb::IBufferMessage
+  #endif
+  {
+    private static readonly pb::MessageParser<GetPlayerSubscriptionsRequest> _parser = new pb::MessageParser<GetPlayerSubscriptionsRequest>(() => new GetPlayerSubscriptionsRequest());
+    private pb::UnknownFieldSet _unknownFields;
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    public static pb::MessageParser<GetPlayerSubscriptionsRequest> Parser { get { return _parser; } }
+
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    public static pbr::MessageDescriptor Descriptor {
+      get { return global::Chirp.ServerGateway.ServerGatewayReflection.Descriptor.MessageTypes[26]; }
+    }
+
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    pbr::MessageDescriptor pb::IMessage.Descriptor {
+      get { return Descriptor; }
+    }
+
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    public GetPlayerSubscriptionsRequest() {
+      OnConstruction();
+    }
+
+    partial void OnConstruction();
+
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    public GetPlayerSubscriptionsRequest(GetPlayerSubscriptionsRequest other) : this() {
+      playerId_ = other.playerId_;
+      gameId_ = other.gameId_;
+      _unknownFields = pb::UnknownFieldSet.Clone(other._unknownFields);
+    }
+
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    public GetPlayerSubscriptionsRequest Clone() {
+      return new GetPlayerSubscriptionsRequest(this);
+    }
+
+    /// <summary>Field number for the "player_id" field.</summary>
+    public const int PlayerIdFieldNumber = 1;
+    private string playerId_ = "";
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    public string PlayerId {
+      get { return playerId_; }
+      set {
+        playerId_ = pb::ProtoPreconditions.CheckNotNull(value, "value");
+      }
+    }
+
+    /// <summary>Field number for the "game_id" field.</summary>
+    public const int GameIdFieldNumber = 2;
+    private string gameId_ = "";
+    /// <summary>
+    /// Optional filter: only subscriptions of this game when set.
+    /// </summary>
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    public string GameId {
+      get { return gameId_; }
+      set {
+        gameId_ = pb::ProtoPreconditions.CheckNotNull(value, "value");
+      }
+    }
+
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    public override bool Equals(object other) {
+      return Equals(other as GetPlayerSubscriptionsRequest);
+    }
+
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    public bool Equals(GetPlayerSubscriptionsRequest other) {
+      if (ReferenceEquals(other, null)) {
+        return false;
+      }
+      if (ReferenceEquals(other, this)) {
+        return true;
+      }
+      if (PlayerId != other.PlayerId) return false;
+      if (GameId != other.GameId) return false;
+      return Equals(_unknownFields, other._unknownFields);
+    }
+
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    public override int GetHashCode() {
+      int hash = 1;
+      if (PlayerId.Length != 0) hash ^= PlayerId.GetHashCode();
+      if (GameId.Length != 0) hash ^= GameId.GetHashCode();
+      if (_unknownFields != null) {
+        hash ^= _unknownFields.GetHashCode();
+      }
+      return hash;
+    }
+
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    public override string ToString() {
+      return pb::JsonFormatter.ToDiagnosticString(this);
+    }
+
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    public void WriteTo(pb::CodedOutputStream output) {
+    #if !GOOGLE_PROTOBUF_REFSTRUCT_COMPATIBILITY_MODE
+      output.WriteRawMessage(this);
+    #else
+      if (PlayerId.Length != 0) {
+        output.WriteRawTag(10);
+        output.WriteString(PlayerId);
+      }
+      if (GameId.Length != 0) {
+        output.WriteRawTag(18);
+        output.WriteString(GameId);
+      }
+      if (_unknownFields != null) {
+        _unknownFields.WriteTo(output);
+      }
+    #endif
+    }
+
+    #if !GOOGLE_PROTOBUF_REFSTRUCT_COMPATIBILITY_MODE
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    void pb::IBufferMessage.InternalWriteTo(ref pb::WriteContext output) {
+      if (PlayerId.Length != 0) {
+        output.WriteRawTag(10);
+        output.WriteString(PlayerId);
+      }
+      if (GameId.Length != 0) {
+        output.WriteRawTag(18);
+        output.WriteString(GameId);
+      }
+      if (_unknownFields != null) {
+        _unknownFields.WriteTo(ref output);
+      }
+    }
+    #endif
+
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    public int CalculateSize() {
+      int size = 0;
+      if (PlayerId.Length != 0) {
+        size += 1 + pb::CodedOutputStream.ComputeStringSize(PlayerId);
+      }
+      if (GameId.Length != 0) {
+        size += 1 + pb::CodedOutputStream.ComputeStringSize(GameId);
+      }
+      if (_unknownFields != null) {
+        size += _unknownFields.CalculateSize();
+      }
+      return size;
+    }
+
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    public void MergeFrom(GetPlayerSubscriptionsRequest other) {
+      if (other == null) {
+        return;
+      }
+      if (other.PlayerId.Length != 0) {
+        PlayerId = other.PlayerId;
+      }
+      if (other.GameId.Length != 0) {
+        GameId = other.GameId;
+      }
+      _unknownFields = pb::UnknownFieldSet.MergeFrom(_unknownFields, other._unknownFields);
+    }
+
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    public void MergeFrom(pb::CodedInputStream input) {
+    #if !GOOGLE_PROTOBUF_REFSTRUCT_COMPATIBILITY_MODE
+      input.ReadRawMessage(this);
+    #else
+      uint tag;
+      while ((tag = input.ReadTag()) != 0) {
+      if ((tag & 7) == 4) {
+        // Abort on any end group tag.
+        return;
+      }
+      switch(tag) {
+          default:
+            _unknownFields = pb::UnknownFieldSet.MergeFieldFrom(_unknownFields, input);
+            break;
+          case 10: {
+            PlayerId = input.ReadString();
+            break;
+          }
+          case 18: {
+            GameId = input.ReadString();
+            break;
+          }
+        }
+      }
+    #endif
+    }
+
+    #if !GOOGLE_PROTOBUF_REFSTRUCT_COMPATIBILITY_MODE
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    void pb::IBufferMessage.InternalMergeFrom(ref pb::ParseContext input) {
+      uint tag;
+      while ((tag = input.ReadTag()) != 0) {
+      if ((tag & 7) == 4) {
+        // Abort on any end group tag.
+        return;
+      }
+      switch(tag) {
+          default:
+            _unknownFields = pb::UnknownFieldSet.MergeFieldFrom(_unknownFields, ref input);
+            break;
+          case 10: {
+            PlayerId = input.ReadString();
+            break;
+          }
+          case 18: {
+            GameId = input.ReadString();
+            break;
+          }
+        }
+      }
+    }
+    #endif
+
+  }
+
+  [global::System.Diagnostics.DebuggerDisplayAttribute("{ToString(),nq}")]
+  public sealed partial class GetPlayerSubscriptionsResponse : pb::IMessage<GetPlayerSubscriptionsResponse>
+  #if !GOOGLE_PROTOBUF_REFSTRUCT_COMPATIBILITY_MODE
+      , pb::IBufferMessage
+  #endif
+  {
+    private static readonly pb::MessageParser<GetPlayerSubscriptionsResponse> _parser = new pb::MessageParser<GetPlayerSubscriptionsResponse>(() => new GetPlayerSubscriptionsResponse());
+    private pb::UnknownFieldSet _unknownFields;
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    public static pb::MessageParser<GetPlayerSubscriptionsResponse> Parser { get { return _parser; } }
+
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    public static pbr::MessageDescriptor Descriptor {
+      get { return global::Chirp.ServerGateway.ServerGatewayReflection.Descriptor.MessageTypes[27]; }
+    }
+
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    pbr::MessageDescriptor pb::IMessage.Descriptor {
+      get { return Descriptor; }
+    }
+
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    public GetPlayerSubscriptionsResponse() {
+      OnConstruction();
+    }
+
+    partial void OnConstruction();
+
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    public GetPlayerSubscriptionsResponse(GetPlayerSubscriptionsResponse other) : this() {
+      code_ = other.code_;
+      subscriptions_ = other.subscriptions_.Clone();
+      _unknownFields = pb::UnknownFieldSet.Clone(other._unknownFields);
+    }
+
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    public GetPlayerSubscriptionsResponse Clone() {
+      return new GetPlayerSubscriptionsResponse(this);
+    }
+
+    /// <summary>Field number for the "code" field.</summary>
+    public const int CodeFieldNumber = 1;
+    private global::Chirp.Common.ErrorCode code_ = global::Chirp.Common.ErrorCode.Ok;
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    public global::Chirp.Common.ErrorCode Code {
+      get { return code_; }
+      set {
+        code_ = value;
+      }
+    }
+
+    /// <summary>Field number for the "subscriptions" field.</summary>
+    public const int SubscriptionsFieldNumber = 2;
+    private static readonly pb::FieldCodec<global::Chirp.ServerGateway.StoredChannelSubscription> _repeated_subscriptions_codec
+        = pb::FieldCodec.ForMessage(18, global::Chirp.ServerGateway.StoredChannelSubscription.Parser);
+    private readonly pbc::RepeatedField<global::Chirp.ServerGateway.StoredChannelSubscription> subscriptions_ = new pbc::RepeatedField<global::Chirp.ServerGateway.StoredChannelSubscription>();
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    public pbc::RepeatedField<global::Chirp.ServerGateway.StoredChannelSubscription> Subscriptions {
+      get { return subscriptions_; }
+    }
+
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    public override bool Equals(object other) {
+      return Equals(other as GetPlayerSubscriptionsResponse);
+    }
+
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    public bool Equals(GetPlayerSubscriptionsResponse other) {
+      if (ReferenceEquals(other, null)) {
+        return false;
+      }
+      if (ReferenceEquals(other, this)) {
+        return true;
+      }
+      if (Code != other.Code) return false;
+      if(!subscriptions_.Equals(other.subscriptions_)) return false;
+      return Equals(_unknownFields, other._unknownFields);
+    }
+
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    public override int GetHashCode() {
+      int hash = 1;
+      if (Code != global::Chirp.Common.ErrorCode.Ok) hash ^= Code.GetHashCode();
+      hash ^= subscriptions_.GetHashCode();
+      if (_unknownFields != null) {
+        hash ^= _unknownFields.GetHashCode();
+      }
+      return hash;
+    }
+
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    public override string ToString() {
+      return pb::JsonFormatter.ToDiagnosticString(this);
+    }
+
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    public void WriteTo(pb::CodedOutputStream output) {
+    #if !GOOGLE_PROTOBUF_REFSTRUCT_COMPATIBILITY_MODE
+      output.WriteRawMessage(this);
+    #else
+      if (Code != global::Chirp.Common.ErrorCode.Ok) {
+        output.WriteRawTag(8);
+        output.WriteEnum((int) Code);
+      }
+      subscriptions_.WriteTo(output, _repeated_subscriptions_codec);
+      if (_unknownFields != null) {
+        _unknownFields.WriteTo(output);
+      }
+    #endif
+    }
+
+    #if !GOOGLE_PROTOBUF_REFSTRUCT_COMPATIBILITY_MODE
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    void pb::IBufferMessage.InternalWriteTo(ref pb::WriteContext output) {
+      if (Code != global::Chirp.Common.ErrorCode.Ok) {
+        output.WriteRawTag(8);
+        output.WriteEnum((int) Code);
+      }
+      subscriptions_.WriteTo(ref output, _repeated_subscriptions_codec);
+      if (_unknownFields != null) {
+        _unknownFields.WriteTo(ref output);
+      }
+    }
+    #endif
+
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    public int CalculateSize() {
+      int size = 0;
+      if (Code != global::Chirp.Common.ErrorCode.Ok) {
+        size += 1 + pb::CodedOutputStream.ComputeEnumSize((int) Code);
+      }
+      size += subscriptions_.CalculateSize(_repeated_subscriptions_codec);
+      if (_unknownFields != null) {
+        size += _unknownFields.CalculateSize();
+      }
+      return size;
+    }
+
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    public void MergeFrom(GetPlayerSubscriptionsResponse other) {
+      if (other == null) {
+        return;
+      }
+      if (other.Code != global::Chirp.Common.ErrorCode.Ok) {
+        Code = other.Code;
+      }
+      subscriptions_.Add(other.subscriptions_);
+      _unknownFields = pb::UnknownFieldSet.MergeFrom(_unknownFields, other._unknownFields);
+    }
+
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    public void MergeFrom(pb::CodedInputStream input) {
+    #if !GOOGLE_PROTOBUF_REFSTRUCT_COMPATIBILITY_MODE
+      input.ReadRawMessage(this);
+    #else
+      uint tag;
+      while ((tag = input.ReadTag()) != 0) {
+      if ((tag & 7) == 4) {
+        // Abort on any end group tag.
+        return;
+      }
+      switch(tag) {
+          default:
+            _unknownFields = pb::UnknownFieldSet.MergeFieldFrom(_unknownFields, input);
+            break;
+          case 8: {
+            Code = (global::Chirp.Common.ErrorCode) input.ReadEnum();
+            break;
+          }
+          case 18: {
+            subscriptions_.AddEntriesFrom(input, _repeated_subscriptions_codec);
+            break;
+          }
+        }
+      }
+    #endif
+    }
+
+    #if !GOOGLE_PROTOBUF_REFSTRUCT_COMPATIBILITY_MODE
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    void pb::IBufferMessage.InternalMergeFrom(ref pb::ParseContext input) {
+      uint tag;
+      while ((tag = input.ReadTag()) != 0) {
+      if ((tag & 7) == 4) {
+        // Abort on any end group tag.
+        return;
+      }
+      switch(tag) {
+          default:
+            _unknownFields = pb::UnknownFieldSet.MergeFieldFrom(_unknownFields, ref input);
+            break;
+          case 8: {
+            Code = (global::Chirp.Common.ErrorCode) input.ReadEnum();
+            break;
+          }
+          case 18: {
+            subscriptions_.AddEntriesFrom(ref input, _repeated_subscriptions_codec);
             break;
           }
         }

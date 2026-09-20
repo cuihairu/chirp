@@ -165,3 +165,64 @@ message ResolveGameUserResponse {
   // Empty when code=OK but the game user is unbound.
   string player_id = 2;
 }
+
+// ---- WP-8 slice 2: player channel subscriptions ----
+//
+// A subscription records "platform player P follows channel C of game G".
+// Game backends assert subscriptions over this trusted plane (carrying a
+// caller-supplied subscription_id as the idempotency key); the app edge
+// forwards the same messages for self-served players with player_id pinned
+// to the authenticated user and no subscription_id (the server mints one).
+// The (player_id, game_id, channel_id) tuple is unique: re-subscribing it
+// under any id converges to a single record. This registry stores intent
+// only — no delivery happens here (fan-in routing is a later slice).
+
+// Persistence record (Redis, not a wire message).
+message StoredChannelSubscription {
+  string subscription_id = 1;
+  string player_id = 2;
+  string game_id = 3;
+  string channel_id = 4;
+  int64 subscribed_at_ms = 5;
+}
+
+message SubscribePlayerChannelRequest {
+  // Caller-supplied idempotency key; empty means the server mints one
+  // (the player self-service path through app_gateway always mints).
+  string subscription_id = 1;
+  string player_id = 2;
+  string game_id = 3;
+  string channel_id = 4;
+}
+
+message SubscribePlayerChannelResponse {
+  chirp.common.ErrorCode code = 1;
+  // Echoed or minted id of the subscription now holding the tuple.
+  string subscription_id = 2;
+  // True when the tuple was already subscribed (idempotent no-op).
+  bool existed = 3;
+}
+
+message UnsubscribePlayerChannelRequest {
+  // Select exactly one: subscription_id, or the full triple
+  // (player_id, game_id, channel_id).
+  string subscription_id = 1;
+  string player_id = 2;
+  string game_id = 3;
+  string channel_id = 4;
+}
+
+message UnsubscribePlayerChannelResponse {
+  chirp.common.ErrorCode code = 1;
+}
+
+message GetPlayerSubscriptionsRequest {
+  string player_id = 1;
+  // Optional filter: only subscriptions of this game when set.
+  string game_id = 2;
+}
+
+message GetPlayerSubscriptionsResponse {
+  chirp.common.ErrorCode code = 1;
+  repeated StoredChannelSubscription subscriptions = 2;
+}

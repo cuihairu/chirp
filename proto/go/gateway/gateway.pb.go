@@ -185,6 +185,15 @@ const (
 	MsgID_GET_PLAYER_IDENTITIES_RESP  MsgID = 5018
 	MsgID_RESOLVE_GAME_USER_REQ       MsgID = 5019
 	MsgID_RESOLVE_GAME_USER_RESP      MsgID = 5020
+	// Player channel subscriptions: asserted by game backends on this plane,
+	// and forwarded by app_gateway for self-served players (player_id pinned
+	// to the authenticated user). See proto/server_gateway.proto.
+	MsgID_SUBSCRIBE_PLAYER_CHANNEL_REQ    MsgID = 5021
+	MsgID_SUBSCRIBE_PLAYER_CHANNEL_RESP   MsgID = 5022
+	MsgID_UNSUBSCRIBE_PLAYER_CHANNEL_REQ  MsgID = 5023
+	MsgID_UNSUBSCRIBE_PLAYER_CHANNEL_RESP MsgID = 5024
+	MsgID_GET_PLAYER_SUBSCRIPTIONS_REQ    MsgID = 5025
+	MsgID_GET_PLAYER_SUBSCRIPTIONS_RESP   MsgID = 5026
 	// Notification plane: device registration forwarded by app_gateway and
 	// push requests from internal services (chat). Bodies are
 	// chirp.notification.* messages; see proto/notification.proto.
@@ -379,6 +388,12 @@ var (
 		5018: "GET_PLAYER_IDENTITIES_RESP",
 		5019: "RESOLVE_GAME_USER_REQ",
 		5020: "RESOLVE_GAME_USER_RESP",
+		5021: "SUBSCRIBE_PLAYER_CHANNEL_REQ",
+		5022: "SUBSCRIBE_PLAYER_CHANNEL_RESP",
+		5023: "UNSUBSCRIBE_PLAYER_CHANNEL_REQ",
+		5024: "UNSUBSCRIBE_PLAYER_CHANNEL_RESP",
+		5025: "GET_PLAYER_SUBSCRIPTIONS_REQ",
+		5026: "GET_PLAYER_SUBSCRIPTIONS_RESP",
 		6001: "REGISTER_DEVICE_REQ",
 		6002: "REGISTER_DEVICE_RESP",
 		6003: "UNREGISTER_DEVICE_REQ",
@@ -563,6 +578,12 @@ var (
 		"GET_PLAYER_IDENTITIES_RESP":       5018,
 		"RESOLVE_GAME_USER_REQ":            5019,
 		"RESOLVE_GAME_USER_RESP":           5020,
+		"SUBSCRIBE_PLAYER_CHANNEL_REQ":     5021,
+		"SUBSCRIBE_PLAYER_CHANNEL_RESP":    5022,
+		"UNSUBSCRIBE_PLAYER_CHANNEL_REQ":   5023,
+		"UNSUBSCRIBE_PLAYER_CHANNEL_RESP":  5024,
+		"GET_PLAYER_SUBSCRIPTIONS_REQ":     5025,
+		"GET_PLAYER_SUBSCRIPTIONS_RESP":    5026,
 		"REGISTER_DEVICE_REQ":              6001,
 		"REGISTER_DEVICE_RESP":             6002,
 		"UNREGISTER_DEVICE_REQ":            6003,
@@ -803,7 +824,7 @@ const file_proto_gateway_proto_rawDesc = "" +
 	"\rHeartbeatPong\x12\x1c\n" +
 	"\ttimestamp\x18\x01 \x01(\x03R\ttimestamp\x12\x1f\n" +
 	"\vserver_time\x18\x02 \x01(\x03R\n" +
-	"serverTime*\xfb#\n" +
+	"serverTime*\xd4%\n" +
 	"\x05MsgID\x12\v\n" +
 	"\aUNKNOWN\x10\x00\x12\x13\n" +
 	"\x0eHEARTBEAT_PING\x10\xe9\a\x12\x13\n" +
@@ -951,7 +972,13 @@ const file_proto_gateway_proto_rawDesc = "" +
 	"\x19GET_PLAYER_IDENTITIES_REQ\x10\x99'\x12\x1f\n" +
 	"\x1aGET_PLAYER_IDENTITIES_RESP\x10\x9a'\x12\x1a\n" +
 	"\x15RESOLVE_GAME_USER_REQ\x10\x9b'\x12\x1b\n" +
-	"\x16RESOLVE_GAME_USER_RESP\x10\x9c'\x12\x18\n" +
+	"\x16RESOLVE_GAME_USER_RESP\x10\x9c'\x12!\n" +
+	"\x1cSUBSCRIBE_PLAYER_CHANNEL_REQ\x10\x9d'\x12\"\n" +
+	"\x1dSUBSCRIBE_PLAYER_CHANNEL_RESP\x10\x9e'\x12#\n" +
+	"\x1eUNSUBSCRIBE_PLAYER_CHANNEL_REQ\x10\x9f'\x12$\n" +
+	"\x1fUNSUBSCRIBE_PLAYER_CHANNEL_RESP\x10\xa0'\x12!\n" +
+	"\x1cGET_PLAYER_SUBSCRIPTIONS_REQ\x10\xa1'\x12\"\n" +
+	"\x1dGET_PLAYER_SUBSCRIPTIONS_RESP\x10\xa2'\x12\x18\n" +
 	"\x13REGISTER_DEVICE_REQ\x10\xf1.\x12\x19\n" +
 	"\x14REGISTER_DEVICE_RESP\x10\xf2.\x12\x1a\n" +
 	"\x15UNREGISTER_DEVICE_REQ\x10\xf3.\x12\x1b\n" +

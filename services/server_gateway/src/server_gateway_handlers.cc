@@ -18,8 +18,13 @@ int64_t NowMs() {
 }  // namespace
 
 ServerGatewayHandlers::ServerGatewayHandlers(ServerGatewayConfig config, ServiceRegistry& registry,
-                                             EventQueue& queue, IdentityRegistry& identities)
-    : config_(std::move(config)), registry_(registry), queue_(queue), identities_(identities) {}
+                                             EventQueue& queue, IdentityRegistry& identities,
+                                             SubscriptionRegistry& subscriptions)
+    : config_(std::move(config)),
+      registry_(registry),
+      queue_(queue),
+      identities_(identities),
+      subscriptions_(subscriptions) {}
 
 AuthOutcome ServerGatewayHandlers::HandleAuth(const ServerAuthRequest& req,
                                               std::shared_ptr<PeerSender> peer) {
@@ -196,6 +201,80 @@ ResolveGameUserResponse ServerGatewayHandlers::HandleResolveGameUser(
   const auto player = identities_.Resolve(req.game_id(), req.game_user_id());
   if (player) {
     resp.set_player_id(*player);
+  }
+  resp.set_code(chirp::common::OK);
+  return resp;
+}
+
+SubscribePlayerChannelResponse ServerGatewayHandlers::HandleSubscribePlayerChannel(
+    const SubscribePlayerChannelRequest& req) {
+  SubscribePlayerChannelResponse resp;
+  // The registry mints an id when the caller supplied none (the app edge's
+  // self-service path), so only the tuple fields must be present here.
+  if (req.player_id().empty() || req.game_id().empty() || req.channel_id().empty()) {
+    resp.set_code(chirp::common::INVALID_PARAM);
+    return resp;
+  }
+  std::string subscription_id = req.subscription_id();
+  const auto outcome =
+      subscriptions_.Subscribe(&subscription_id, req.player_id(), req.game_id(), req.channel_id(),
+                               /*subscribed_at_ms=*/NowMs());
+  switch (outcome) {
+  case SubscriptionRegistry::SubscribeOutcome::kSubscribed:
+    chirp::common::Logger::Instance().Info(
+        "subscribed " + subscription_id + ": player " + req.player_id() + " -> " + req.game_id() +
+        ":" + req.channel_id());
+    resp.set_code(chirp::common::OK);
+    break;
+  case SubscriptionRegistry::SubscribeOutcome::kExisted:
+    resp.set_code(chirp::common::OK);
+    resp.set_existed(true);
+    break;
+  case SubscriptionRegistry::SubscribeOutcome::kInvalid:
+    resp.set_code(chirp::common::INVALID_PARAM);
+    break;
+  }
+  resp.set_subscription_id(subscription_id);
+  return resp;
+}
+
+UnsubscribePlayerChannelResponse ServerGatewayHandlers::HandleUnsubscribePlayerChannel(
+    const UnsubscribePlayerChannelRequest& req) {
+  UnsubscribePlayerChannelResponse resp;
+  // Exactly one selector: subscription_id, or the complete (player_id,
+  // game_id, channel_id) triple — anything else is a bad request, not a
+  // no-op.
+  const bool by_id = !req.subscription_id().empty();
+  const bool by_tuple =
+      !req.player_id().empty() && !req.game_id().empty() && !req.channel_id().empty();
+  const bool malformed_tuple =
+      !(req.player_id().empty() && req.game_id().empty() && req.channel_id().empty()) && !by_tuple;
+  if (by_id == by_tuple || malformed_tuple) {
+    resp.set_code(chirp::common::INVALID_PARAM);
+    return resp;
+  }
+  const bool removed =
+      by_id ? subscriptions_.UnsubscribeById(req.subscription_id())
+            : subscriptions_.UnsubscribeByTuple(req.player_id(), req.game_id(), req.channel_id());
+  resp.set_code(chirp::common::OK);
+  if (removed) {
+    chirp::common::Logger::Instance().Info(
+        "unsubscribed " +
+        (by_id ? req.subscription_id()
+               : req.player_id() + ":" + req.game_id() + ":" + req.channel_id()));
+  }
+  return resp;
+}
+
+GetPlayerSubscriptionsResponse ServerGatewayHandlers::HandleGetPlayerSubscriptions(
+    const GetPlayerSubscriptionsRequest& req) const {
+  GetPlayerSubscriptionsResponse resp;
+  if (req.player_id().empty()) {
+    resp.set_code(chirp::common::INVALID_PARAM);
+    return resp;
+  }
+  for (const auto& entry : subscriptions_.GetForPlayer(req.player_id(), req.game_id())) {
+    *resp.add_subscriptions() = entry;
   }
   resp.set_code(chirp::common::OK);
   return resp;

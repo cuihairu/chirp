@@ -219,6 +219,60 @@ export interface ResolveGameUserResponse {
   playerId: string;
 }
 
+/** Persistence record (Redis, not a wire message). */
+export interface StoredChannelSubscription {
+  subscriptionId: string;
+  playerId: string;
+  gameId: string;
+  channelId: string;
+  subscribedAtMs: number;
+}
+
+export interface SubscribePlayerChannelRequest {
+  /**
+   * Caller-supplied idempotency key; empty means the server mints one
+   * (the player self-service path through app_gateway always mints).
+   */
+  subscriptionId: string;
+  playerId: string;
+  gameId: string;
+  channelId: string;
+}
+
+export interface SubscribePlayerChannelResponse {
+  code: ErrorCode;
+  /** Echoed or minted id of the subscription now holding the tuple. */
+  subscriptionId: string;
+  /** True when the tuple was already subscribed (idempotent no-op). */
+  existed: boolean;
+}
+
+export interface UnsubscribePlayerChannelRequest {
+  /**
+   * Select exactly one: subscription_id, or the full triple
+   * (player_id, game_id, channel_id).
+   */
+  subscriptionId: string;
+  playerId: string;
+  gameId: string;
+  channelId: string;
+}
+
+export interface UnsubscribePlayerChannelResponse {
+  code: ErrorCode;
+}
+
+export interface GetPlayerSubscriptionsRequest {
+  playerId: string;
+  /** Optional filter: only subscriptions of this game when set. */
+  gameId: string;
+}
+
+export interface GetPlayerSubscriptionsResponse {
+  code: ErrorCode;
+  subscriptions: StoredChannelSubscription[];
+}
+
 function createBaseServerAuthRequest(): ServerAuthRequest {
   return { serviceId: "", secret: "", protocolVersion: 0 };
 }
@@ -1966,6 +2020,643 @@ export const ResolveGameUserResponse = {
     const message = createBaseResolveGameUserResponse();
     message.code = object.code ?? 0;
     message.playerId = object.playerId ?? "";
+    return message;
+  },
+};
+
+function createBaseStoredChannelSubscription(): StoredChannelSubscription {
+  return { subscriptionId: "", playerId: "", gameId: "", channelId: "", subscribedAtMs: 0 };
+}
+
+export const StoredChannelSubscription = {
+  encode(message: StoredChannelSubscription, writer: _m0.Writer = _m0.Writer.create()): _m0.Writer {
+    if (message.subscriptionId !== "") {
+      writer.uint32(10).string(message.subscriptionId);
+    }
+    if (message.playerId !== "") {
+      writer.uint32(18).string(message.playerId);
+    }
+    if (message.gameId !== "") {
+      writer.uint32(26).string(message.gameId);
+    }
+    if (message.channelId !== "") {
+      writer.uint32(34).string(message.channelId);
+    }
+    if (message.subscribedAtMs !== 0) {
+      writer.uint32(40).int64(message.subscribedAtMs);
+    }
+    return writer;
+  },
+
+  decode(input: _m0.Reader | Uint8Array, length?: number): StoredChannelSubscription {
+    const reader = input instanceof _m0.Reader ? input : _m0.Reader.create(input);
+    let end = length === undefined ? reader.len : reader.pos + length;
+    const message = createBaseStoredChannelSubscription();
+    while (reader.pos < end) {
+      const tag = reader.uint32();
+      switch (tag >>> 3) {
+        case 1:
+          if (tag !== 10) {
+            break;
+          }
+
+          message.subscriptionId = reader.string();
+          continue;
+        case 2:
+          if (tag !== 18) {
+            break;
+          }
+
+          message.playerId = reader.string();
+          continue;
+        case 3:
+          if (tag !== 26) {
+            break;
+          }
+
+          message.gameId = reader.string();
+          continue;
+        case 4:
+          if (tag !== 34) {
+            break;
+          }
+
+          message.channelId = reader.string();
+          continue;
+        case 5:
+          if (tag !== 40) {
+            break;
+          }
+
+          message.subscribedAtMs = longToNumber(reader.int64() as Long);
+          continue;
+      }
+      if ((tag & 7) === 4 || tag === 0) {
+        break;
+      }
+      reader.skipType(tag & 7);
+    }
+    return message;
+  },
+
+  fromJSON(object: any): StoredChannelSubscription {
+    return {
+      subscriptionId: isSet(object.subscriptionId) ? globalThis.String(object.subscriptionId) : "",
+      playerId: isSet(object.playerId) ? globalThis.String(object.playerId) : "",
+      gameId: isSet(object.gameId) ? globalThis.String(object.gameId) : "",
+      channelId: isSet(object.channelId) ? globalThis.String(object.channelId) : "",
+      subscribedAtMs: isSet(object.subscribedAtMs) ? globalThis.Number(object.subscribedAtMs) : 0,
+    };
+  },
+
+  toJSON(message: StoredChannelSubscription): unknown {
+    const obj: any = {};
+    if (message.subscriptionId !== "") {
+      obj.subscriptionId = message.subscriptionId;
+    }
+    if (message.playerId !== "") {
+      obj.playerId = message.playerId;
+    }
+    if (message.gameId !== "") {
+      obj.gameId = message.gameId;
+    }
+    if (message.channelId !== "") {
+      obj.channelId = message.channelId;
+    }
+    if (message.subscribedAtMs !== 0) {
+      obj.subscribedAtMs = Math.round(message.subscribedAtMs);
+    }
+    return obj;
+  },
+
+  create<I extends Exact<DeepPartial<StoredChannelSubscription>, I>>(base?: I): StoredChannelSubscription {
+    return StoredChannelSubscription.fromPartial(base ?? ({} as any));
+  },
+  fromPartial<I extends Exact<DeepPartial<StoredChannelSubscription>, I>>(object: I): StoredChannelSubscription {
+    const message = createBaseStoredChannelSubscription();
+    message.subscriptionId = object.subscriptionId ?? "";
+    message.playerId = object.playerId ?? "";
+    message.gameId = object.gameId ?? "";
+    message.channelId = object.channelId ?? "";
+    message.subscribedAtMs = object.subscribedAtMs ?? 0;
+    return message;
+  },
+};
+
+function createBaseSubscribePlayerChannelRequest(): SubscribePlayerChannelRequest {
+  return { subscriptionId: "", playerId: "", gameId: "", channelId: "" };
+}
+
+export const SubscribePlayerChannelRequest = {
+  encode(message: SubscribePlayerChannelRequest, writer: _m0.Writer = _m0.Writer.create()): _m0.Writer {
+    if (message.subscriptionId !== "") {
+      writer.uint32(10).string(message.subscriptionId);
+    }
+    if (message.playerId !== "") {
+      writer.uint32(18).string(message.playerId);
+    }
+    if (message.gameId !== "") {
+      writer.uint32(26).string(message.gameId);
+    }
+    if (message.channelId !== "") {
+      writer.uint32(34).string(message.channelId);
+    }
+    return writer;
+  },
+
+  decode(input: _m0.Reader | Uint8Array, length?: number): SubscribePlayerChannelRequest {
+    const reader = input instanceof _m0.Reader ? input : _m0.Reader.create(input);
+    let end = length === undefined ? reader.len : reader.pos + length;
+    const message = createBaseSubscribePlayerChannelRequest();
+    while (reader.pos < end) {
+      const tag = reader.uint32();
+      switch (tag >>> 3) {
+        case 1:
+          if (tag !== 10) {
+            break;
+          }
+
+          message.subscriptionId = reader.string();
+          continue;
+        case 2:
+          if (tag !== 18) {
+            break;
+          }
+
+          message.playerId = reader.string();
+          continue;
+        case 3:
+          if (tag !== 26) {
+            break;
+          }
+
+          message.gameId = reader.string();
+          continue;
+        case 4:
+          if (tag !== 34) {
+            break;
+          }
+
+          message.channelId = reader.string();
+          continue;
+      }
+      if ((tag & 7) === 4 || tag === 0) {
+        break;
+      }
+      reader.skipType(tag & 7);
+    }
+    return message;
+  },
+
+  fromJSON(object: any): SubscribePlayerChannelRequest {
+    return {
+      subscriptionId: isSet(object.subscriptionId) ? globalThis.String(object.subscriptionId) : "",
+      playerId: isSet(object.playerId) ? globalThis.String(object.playerId) : "",
+      gameId: isSet(object.gameId) ? globalThis.String(object.gameId) : "",
+      channelId: isSet(object.channelId) ? globalThis.String(object.channelId) : "",
+    };
+  },
+
+  toJSON(message: SubscribePlayerChannelRequest): unknown {
+    const obj: any = {};
+    if (message.subscriptionId !== "") {
+      obj.subscriptionId = message.subscriptionId;
+    }
+    if (message.playerId !== "") {
+      obj.playerId = message.playerId;
+    }
+    if (message.gameId !== "") {
+      obj.gameId = message.gameId;
+    }
+    if (message.channelId !== "") {
+      obj.channelId = message.channelId;
+    }
+    return obj;
+  },
+
+  create<I extends Exact<DeepPartial<SubscribePlayerChannelRequest>, I>>(base?: I): SubscribePlayerChannelRequest {
+    return SubscribePlayerChannelRequest.fromPartial(base ?? ({} as any));
+  },
+  fromPartial<I extends Exact<DeepPartial<SubscribePlayerChannelRequest>, I>>(
+    object: I,
+  ): SubscribePlayerChannelRequest {
+    const message = createBaseSubscribePlayerChannelRequest();
+    message.subscriptionId = object.subscriptionId ?? "";
+    message.playerId = object.playerId ?? "";
+    message.gameId = object.gameId ?? "";
+    message.channelId = object.channelId ?? "";
+    return message;
+  },
+};
+
+function createBaseSubscribePlayerChannelResponse(): SubscribePlayerChannelResponse {
+  return { code: 0, subscriptionId: "", existed: false };
+}
+
+export const SubscribePlayerChannelResponse = {
+  encode(message: SubscribePlayerChannelResponse, writer: _m0.Writer = _m0.Writer.create()): _m0.Writer {
+    if (message.code !== 0) {
+      writer.uint32(8).int32(message.code);
+    }
+    if (message.subscriptionId !== "") {
+      writer.uint32(18).string(message.subscriptionId);
+    }
+    if (message.existed !== false) {
+      writer.uint32(24).bool(message.existed);
+    }
+    return writer;
+  },
+
+  decode(input: _m0.Reader | Uint8Array, length?: number): SubscribePlayerChannelResponse {
+    const reader = input instanceof _m0.Reader ? input : _m0.Reader.create(input);
+    let end = length === undefined ? reader.len : reader.pos + length;
+    const message = createBaseSubscribePlayerChannelResponse();
+    while (reader.pos < end) {
+      const tag = reader.uint32();
+      switch (tag >>> 3) {
+        case 1:
+          if (tag !== 8) {
+            break;
+          }
+
+          message.code = reader.int32() as any;
+          continue;
+        case 2:
+          if (tag !== 18) {
+            break;
+          }
+
+          message.subscriptionId = reader.string();
+          continue;
+        case 3:
+          if (tag !== 24) {
+            break;
+          }
+
+          message.existed = reader.bool();
+          continue;
+      }
+      if ((tag & 7) === 4 || tag === 0) {
+        break;
+      }
+      reader.skipType(tag & 7);
+    }
+    return message;
+  },
+
+  fromJSON(object: any): SubscribePlayerChannelResponse {
+    return {
+      code: isSet(object.code) ? errorCodeFromJSON(object.code) : 0,
+      subscriptionId: isSet(object.subscriptionId) ? globalThis.String(object.subscriptionId) : "",
+      existed: isSet(object.existed) ? globalThis.Boolean(object.existed) : false,
+    };
+  },
+
+  toJSON(message: SubscribePlayerChannelResponse): unknown {
+    const obj: any = {};
+    if (message.code !== 0) {
+      obj.code = errorCodeToJSON(message.code);
+    }
+    if (message.subscriptionId !== "") {
+      obj.subscriptionId = message.subscriptionId;
+    }
+    if (message.existed !== false) {
+      obj.existed = message.existed;
+    }
+    return obj;
+  },
+
+  create<I extends Exact<DeepPartial<SubscribePlayerChannelResponse>, I>>(base?: I): SubscribePlayerChannelResponse {
+    return SubscribePlayerChannelResponse.fromPartial(base ?? ({} as any));
+  },
+  fromPartial<I extends Exact<DeepPartial<SubscribePlayerChannelResponse>, I>>(
+    object: I,
+  ): SubscribePlayerChannelResponse {
+    const message = createBaseSubscribePlayerChannelResponse();
+    message.code = object.code ?? 0;
+    message.subscriptionId = object.subscriptionId ?? "";
+    message.existed = object.existed ?? false;
+    return message;
+  },
+};
+
+function createBaseUnsubscribePlayerChannelRequest(): UnsubscribePlayerChannelRequest {
+  return { subscriptionId: "", playerId: "", gameId: "", channelId: "" };
+}
+
+export const UnsubscribePlayerChannelRequest = {
+  encode(message: UnsubscribePlayerChannelRequest, writer: _m0.Writer = _m0.Writer.create()): _m0.Writer {
+    if (message.subscriptionId !== "") {
+      writer.uint32(10).string(message.subscriptionId);
+    }
+    if (message.playerId !== "") {
+      writer.uint32(18).string(message.playerId);
+    }
+    if (message.gameId !== "") {
+      writer.uint32(26).string(message.gameId);
+    }
+    if (message.channelId !== "") {
+      writer.uint32(34).string(message.channelId);
+    }
+    return writer;
+  },
+
+  decode(input: _m0.Reader | Uint8Array, length?: number): UnsubscribePlayerChannelRequest {
+    const reader = input instanceof _m0.Reader ? input : _m0.Reader.create(input);
+    let end = length === undefined ? reader.len : reader.pos + length;
+    const message = createBaseUnsubscribePlayerChannelRequest();
+    while (reader.pos < end) {
+      const tag = reader.uint32();
+      switch (tag >>> 3) {
+        case 1:
+          if (tag !== 10) {
+            break;
+          }
+
+          message.subscriptionId = reader.string();
+          continue;
+        case 2:
+          if (tag !== 18) {
+            break;
+          }
+
+          message.playerId = reader.string();
+          continue;
+        case 3:
+          if (tag !== 26) {
+            break;
+          }
+
+          message.gameId = reader.string();
+          continue;
+        case 4:
+          if (tag !== 34) {
+            break;
+          }
+
+          message.channelId = reader.string();
+          continue;
+      }
+      if ((tag & 7) === 4 || tag === 0) {
+        break;
+      }
+      reader.skipType(tag & 7);
+    }
+    return message;
+  },
+
+  fromJSON(object: any): UnsubscribePlayerChannelRequest {
+    return {
+      subscriptionId: isSet(object.subscriptionId) ? globalThis.String(object.subscriptionId) : "",
+      playerId: isSet(object.playerId) ? globalThis.String(object.playerId) : "",
+      gameId: isSet(object.gameId) ? globalThis.String(object.gameId) : "",
+      channelId: isSet(object.channelId) ? globalThis.String(object.channelId) : "",
+    };
+  },
+
+  toJSON(message: UnsubscribePlayerChannelRequest): unknown {
+    const obj: any = {};
+    if (message.subscriptionId !== "") {
+      obj.subscriptionId = message.subscriptionId;
+    }
+    if (message.playerId !== "") {
+      obj.playerId = message.playerId;
+    }
+    if (message.gameId !== "") {
+      obj.gameId = message.gameId;
+    }
+    if (message.channelId !== "") {
+      obj.channelId = message.channelId;
+    }
+    return obj;
+  },
+
+  create<I extends Exact<DeepPartial<UnsubscribePlayerChannelRequest>, I>>(base?: I): UnsubscribePlayerChannelRequest {
+    return UnsubscribePlayerChannelRequest.fromPartial(base ?? ({} as any));
+  },
+  fromPartial<I extends Exact<DeepPartial<UnsubscribePlayerChannelRequest>, I>>(
+    object: I,
+  ): UnsubscribePlayerChannelRequest {
+    const message = createBaseUnsubscribePlayerChannelRequest();
+    message.subscriptionId = object.subscriptionId ?? "";
+    message.playerId = object.playerId ?? "";
+    message.gameId = object.gameId ?? "";
+    message.channelId = object.channelId ?? "";
+    return message;
+  },
+};
+
+function createBaseUnsubscribePlayerChannelResponse(): UnsubscribePlayerChannelResponse {
+  return { code: 0 };
+}
+
+export const UnsubscribePlayerChannelResponse = {
+  encode(message: UnsubscribePlayerChannelResponse, writer: _m0.Writer = _m0.Writer.create()): _m0.Writer {
+    if (message.code !== 0) {
+      writer.uint32(8).int32(message.code);
+    }
+    return writer;
+  },
+
+  decode(input: _m0.Reader | Uint8Array, length?: number): UnsubscribePlayerChannelResponse {
+    const reader = input instanceof _m0.Reader ? input : _m0.Reader.create(input);
+    let end = length === undefined ? reader.len : reader.pos + length;
+    const message = createBaseUnsubscribePlayerChannelResponse();
+    while (reader.pos < end) {
+      const tag = reader.uint32();
+      switch (tag >>> 3) {
+        case 1:
+          if (tag !== 8) {
+            break;
+          }
+
+          message.code = reader.int32() as any;
+          continue;
+      }
+      if ((tag & 7) === 4 || tag === 0) {
+        break;
+      }
+      reader.skipType(tag & 7);
+    }
+    return message;
+  },
+
+  fromJSON(object: any): UnsubscribePlayerChannelResponse {
+    return { code: isSet(object.code) ? errorCodeFromJSON(object.code) : 0 };
+  },
+
+  toJSON(message: UnsubscribePlayerChannelResponse): unknown {
+    const obj: any = {};
+    if (message.code !== 0) {
+      obj.code = errorCodeToJSON(message.code);
+    }
+    return obj;
+  },
+
+  create<I extends Exact<DeepPartial<UnsubscribePlayerChannelResponse>, I>>(
+    base?: I,
+  ): UnsubscribePlayerChannelResponse {
+    return UnsubscribePlayerChannelResponse.fromPartial(base ?? ({} as any));
+  },
+  fromPartial<I extends Exact<DeepPartial<UnsubscribePlayerChannelResponse>, I>>(
+    object: I,
+  ): UnsubscribePlayerChannelResponse {
+    const message = createBaseUnsubscribePlayerChannelResponse();
+    message.code = object.code ?? 0;
+    return message;
+  },
+};
+
+function createBaseGetPlayerSubscriptionsRequest(): GetPlayerSubscriptionsRequest {
+  return { playerId: "", gameId: "" };
+}
+
+export const GetPlayerSubscriptionsRequest = {
+  encode(message: GetPlayerSubscriptionsRequest, writer: _m0.Writer = _m0.Writer.create()): _m0.Writer {
+    if (message.playerId !== "") {
+      writer.uint32(10).string(message.playerId);
+    }
+    if (message.gameId !== "") {
+      writer.uint32(18).string(message.gameId);
+    }
+    return writer;
+  },
+
+  decode(input: _m0.Reader | Uint8Array, length?: number): GetPlayerSubscriptionsRequest {
+    const reader = input instanceof _m0.Reader ? input : _m0.Reader.create(input);
+    let end = length === undefined ? reader.len : reader.pos + length;
+    const message = createBaseGetPlayerSubscriptionsRequest();
+    while (reader.pos < end) {
+      const tag = reader.uint32();
+      switch (tag >>> 3) {
+        case 1:
+          if (tag !== 10) {
+            break;
+          }
+
+          message.playerId = reader.string();
+          continue;
+        case 2:
+          if (tag !== 18) {
+            break;
+          }
+
+          message.gameId = reader.string();
+          continue;
+      }
+      if ((tag & 7) === 4 || tag === 0) {
+        break;
+      }
+      reader.skipType(tag & 7);
+    }
+    return message;
+  },
+
+  fromJSON(object: any): GetPlayerSubscriptionsRequest {
+    return {
+      playerId: isSet(object.playerId) ? globalThis.String(object.playerId) : "",
+      gameId: isSet(object.gameId) ? globalThis.String(object.gameId) : "",
+    };
+  },
+
+  toJSON(message: GetPlayerSubscriptionsRequest): unknown {
+    const obj: any = {};
+    if (message.playerId !== "") {
+      obj.playerId = message.playerId;
+    }
+    if (message.gameId !== "") {
+      obj.gameId = message.gameId;
+    }
+    return obj;
+  },
+
+  create<I extends Exact<DeepPartial<GetPlayerSubscriptionsRequest>, I>>(base?: I): GetPlayerSubscriptionsRequest {
+    return GetPlayerSubscriptionsRequest.fromPartial(base ?? ({} as any));
+  },
+  fromPartial<I extends Exact<DeepPartial<GetPlayerSubscriptionsRequest>, I>>(
+    object: I,
+  ): GetPlayerSubscriptionsRequest {
+    const message = createBaseGetPlayerSubscriptionsRequest();
+    message.playerId = object.playerId ?? "";
+    message.gameId = object.gameId ?? "";
+    return message;
+  },
+};
+
+function createBaseGetPlayerSubscriptionsResponse(): GetPlayerSubscriptionsResponse {
+  return { code: 0, subscriptions: [] };
+}
+
+export const GetPlayerSubscriptionsResponse = {
+  encode(message: GetPlayerSubscriptionsResponse, writer: _m0.Writer = _m0.Writer.create()): _m0.Writer {
+    if (message.code !== 0) {
+      writer.uint32(8).int32(message.code);
+    }
+    for (const v of message.subscriptions) {
+      StoredChannelSubscription.encode(v!, writer.uint32(18).fork()).ldelim();
+    }
+    return writer;
+  },
+
+  decode(input: _m0.Reader | Uint8Array, length?: number): GetPlayerSubscriptionsResponse {
+    const reader = input instanceof _m0.Reader ? input : _m0.Reader.create(input);
+    let end = length === undefined ? reader.len : reader.pos + length;
+    const message = createBaseGetPlayerSubscriptionsResponse();
+    while (reader.pos < end) {
+      const tag = reader.uint32();
+      switch (tag >>> 3) {
+        case 1:
+          if (tag !== 8) {
+            break;
+          }
+
+          message.code = reader.int32() as any;
+          continue;
+        case 2:
+          if (tag !== 18) {
+            break;
+          }
+
+          message.subscriptions.push(StoredChannelSubscription.decode(reader, reader.uint32()));
+          continue;
+      }
+      if ((tag & 7) === 4 || tag === 0) {
+        break;
+      }
+      reader.skipType(tag & 7);
+    }
+    return message;
+  },
+
+  fromJSON(object: any): GetPlayerSubscriptionsResponse {
+    return {
+      code: isSet(object.code) ? errorCodeFromJSON(object.code) : 0,
+      subscriptions: globalThis.Array.isArray(object?.subscriptions)
+        ? object.subscriptions.map((e: any) => StoredChannelSubscription.fromJSON(e))
+        : [],
+    };
+  },
+
+  toJSON(message: GetPlayerSubscriptionsResponse): unknown {
+    const obj: any = {};
+    if (message.code !== 0) {
+      obj.code = errorCodeToJSON(message.code);
+    }
+    if (message.subscriptions?.length) {
+      obj.subscriptions = message.subscriptions.map((e) => StoredChannelSubscription.toJSON(e));
+    }
+    return obj;
+  },
+
+  create<I extends Exact<DeepPartial<GetPlayerSubscriptionsResponse>, I>>(base?: I): GetPlayerSubscriptionsResponse {
+    return GetPlayerSubscriptionsResponse.fromPartial(base ?? ({} as any));
+  },
+  fromPartial<I extends Exact<DeepPartial<GetPlayerSubscriptionsResponse>, I>>(
+    object: I,
+  ): GetPlayerSubscriptionsResponse {
+    const message = createBaseGetPlayerSubscriptionsResponse();
+    message.code = object.code ?? 0;
+    message.subscriptions = object.subscriptions?.map((e) => StoredChannelSubscription.fromPartial(e)) || [];
     return message;
   },
 };

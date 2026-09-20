@@ -151,9 +151,24 @@ int main(int argc, char** argv) {
   sg::IdentityRegistry identities(binding_redis_factory);
   identities.Load();
 
+  // Player channel subscriptions (WP-8): same optional write-through shape
+  // as the bindings; an empty --subscription_redis_host stays memory-only.
+  const std::string subscription_redis_host = GetArg(argc, argv, "--subscription_redis_host", "");
+  const uint16_t subscription_redis_port =
+      ParseU16Arg(argc, argv, "--subscription_redis_port", 6379);
+  sg::SubscriptionRegistry::RedisFactory subscription_redis_factory;
+  if (!subscription_redis_host.empty()) {
+    subscription_redis_factory = [host = subscription_redis_host,
+                                  port = subscription_redis_port] {
+      return std::make_unique<chirp::network::RedisClient>(host, port);
+    };
+  }
+  sg::SubscriptionRegistry subscriptions(subscription_redis_factory);
+  subscriptions.Load();
+
   sg::ServiceRegistry registry;
   sg::EventQueue queue(config.max_pending_events_per_service);
-  sg::ServerGatewayHandlers handlers(config, registry, queue, identities);
+  sg::ServerGatewayHandlers handlers(config, registry, queue, identities, subscriptions);
 
   // Optional Redis Streams intake for game backends that cannot host a
   // long-connection client (empty --broker_redis_host disables it).
@@ -391,6 +406,39 @@ int main(int argc, char** argv) {
           resp = handlers.HandleResolveGameUser(req);
         }
         SendPacket(session, chirp::gateway::RESOLVE_GAME_USER_RESP, pkt.sequence(), resp);
+        break;
+      }
+      case chirp::gateway::SUBSCRIBE_PLAYER_CHANNEL_REQ: {
+        sg::SubscribePlayerChannelRequest req;
+        sg::SubscribePlayerChannelResponse resp;
+        if (!ParseBody(pkt, &req)) {
+          resp.set_code(chirp::common::INVALID_PARAM);
+        } else {
+          resp = handlers.HandleSubscribePlayerChannel(req);
+        }
+        SendPacket(session, chirp::gateway::SUBSCRIBE_PLAYER_CHANNEL_RESP, pkt.sequence(), resp);
+        break;
+      }
+      case chirp::gateway::UNSUBSCRIBE_PLAYER_CHANNEL_REQ: {
+        sg::UnsubscribePlayerChannelRequest req;
+        sg::UnsubscribePlayerChannelResponse resp;
+        if (!ParseBody(pkt, &req)) {
+          resp.set_code(chirp::common::INVALID_PARAM);
+        } else {
+          resp = handlers.HandleUnsubscribePlayerChannel(req);
+        }
+        SendPacket(session, chirp::gateway::UNSUBSCRIBE_PLAYER_CHANNEL_RESP, pkt.sequence(), resp);
+        break;
+      }
+      case chirp::gateway::GET_PLAYER_SUBSCRIPTIONS_REQ: {
+        sg::GetPlayerSubscriptionsRequest req;
+        sg::GetPlayerSubscriptionsResponse resp;
+        if (!ParseBody(pkt, &req)) {
+          resp.set_code(chirp::common::INVALID_PARAM);
+        } else {
+          resp = handlers.HandleGetPlayerSubscriptions(req);
+        }
+        SendPacket(session, chirp::gateway::GET_PLAYER_SUBSCRIPTIONS_RESP, pkt.sequence(), resp);
         break;
       }
       default:

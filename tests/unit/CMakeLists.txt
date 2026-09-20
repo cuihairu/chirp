@@ -566,6 +566,7 @@ add_executable(server_gateway_tests
   server_gateway_stream_broker_test.cc
   ${CMAKE_SOURCE_DIR}/services/server_gateway/src/event_queue.cc
   ${CMAKE_SOURCE_DIR}/services/server_gateway/src/identity_registry.cc
+  ${CMAKE_SOURCE_DIR}/services/server_gateway/src/subscription_registry.cc
   ${CMAKE_SOURCE_DIR}/services/server_gateway/src/server_gateway_handlers.cc
   ${CMAKE_SOURCE_DIR}/services/server_gateway/src/service_registry.cc
   ${CMAKE_SOURCE_DIR}/services/server_gateway/src/stream_broker.cc
