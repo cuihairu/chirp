@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"io"
 	"net"
+	"sort"
 	"sync"
 	"testing"
 	"time"
@@ -742,4 +743,191 @@ func TestPlayerChannelSubscriptionRoundTrip(t *testing.T) {
 	if err != nil || len(empty.GetSubscriptions()) != 0 {
 		t.Fatalf("post-unsubscribe list: resp=%v err=%v (want empty)", empty, err)
 	}
+}
+
+func TestUnreadLedgerRoundTrip(t *testing.T) {
+	var mu sync.Mutex
+	// The fake hub plays the hub itself: an in-memory badge ledger keyed by
+	// (player, game, channel). Fan-in is a hub-side detail — the SDK only
+	// marks read and reads summaries back.
+	counters := map[string]int32{}
+	tupleKey := func(player, game, channel string) string {
+		return player + ":" + game + ":" + channel
+	}
+	h := startFakeHub(t, func(sc *syncConn, pkt *pbgw.Packet) {
+		switch pkt.GetMsgId() {
+		case pbgw.MsgID_SERVER_AUTH_REQ:
+			authOK(sc, pkt)
+		case pbgw.MsgID_GET_UNREAD_SUMMARY_REQ:
+			req := &pbsg.GetUnreadSummaryRequest{}
+			if err := proto.Unmarshal(pkt.GetBody(), req); err != nil {
+				t.Errorf("bad summary body: %v", err)
+				return
+			}
+			resp := &pbsg.GetUnreadSummaryResponse{Code: pbcommon.ErrorCode_OK}
+			mu.Lock()
+			for key, count := range counters {
+				parts := splitTuple(key)
+				if parts[0] != req.GetPlayerId() ||
+					(req.GetGameId() != "" && parts[1] != req.GetGameId()) {
+					continue
+				}
+				resp.Entries = append(resp.Entries, &pbsg.UnreadSummaryEntry{
+					GameId: parts[1], ChannelId: parts[2], UnreadCount: count,
+				})
+			}
+			mu.Unlock()
+			// Mirror the hub's stable (game, channel) ordering.
+			sort.Slice(resp.Entries, func(i, j int) bool {
+				a, b := resp.Entries[i], resp.Entries[j]
+				if a.GetGameId() != b.GetGameId() {
+					return a.GetGameId() < b.GetGameId()
+				}
+				return a.GetChannelId() < b.GetChannelId()
+			})
+			for _, entry := range resp.Entries {
+				resp.TotalUnread += entry.GetUnreadCount()
+			}
+			sc.write(&pbgw.Packet{
+				MsgId:    pbgw.MsgID_GET_UNREAD_SUMMARY_RESP,
+				Sequence: pkt.GetSequence(),
+				Body:     mustMarshal(resp),
+			})
+		case pbgw.MsgID_MARK_CHANNELS_READ_REQ:
+			req := &pbsg.MarkChannelsReadRequest{}
+			if err := proto.Unmarshal(pkt.GetBody(), req); err != nil {
+				t.Errorf("bad mark body: %v", err)
+				return
+			}
+			cleared := int32(0)
+			mu.Lock()
+			if req.GetPlayerId() == "" || (req.GetChannelId() != "" && req.GetGameId() == "") {
+				mu.Unlock()
+				sc.write(&pbgw.Packet{
+					MsgId:    pbgw.MsgID_MARK_CHANNELS_READ_RESP,
+					Sequence: pkt.GetSequence(),
+					Body: mustMarshal(&pbsg.MarkChannelsReadResponse{
+						Code: pbcommon.ErrorCode_INVALID_PARAM}),
+				})
+				return
+			}
+			for key := range counters {
+				parts := splitTuple(key)
+				if parts[0] != req.GetPlayerId() {
+					continue
+				}
+				if req.GetChannelId() != "" &&
+					(parts[1] != req.GetGameId() || parts[2] != req.GetChannelId()) {
+					continue
+				}
+				if req.GetChannelId() == "" && req.GetGameId() != "" && parts[1] != req.GetGameId() {
+					continue
+				}
+				delete(counters, key)
+				cleared++
+			}
+			mu.Unlock()
+			sc.write(&pbgw.Packet{
+				MsgId:    pbgw.MsgID_MARK_CHANNELS_READ_RESP,
+				Sequence: pkt.GetSequence(),
+				Body: mustMarshal(&pbsg.MarkChannelsReadResponse{
+					Code: pbcommon.ErrorCode_OK, Cleared: cleared}),
+			})
+		}
+	})
+
+	c := NewClient(testConfig(h))
+	c.Start()
+	defer c.Stop()
+	waitFor(t, 3*time.Second, "connect", c.Connected)
+
+	// Bounded so a lost response fails the test instead of hanging it.
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	defer cancel()
+
+	// Two entries for player-1 (world-1 x2, world-2 x1) and one for
+	// player-2; the hub-side increments themselves are not an SDK call.
+	mu.Lock()
+	counters[tupleKey("player-1", "game-a", "world-1")] = 2
+	counters[tupleKey("player-1", "game-a", "world-2")] = 1
+	counters[tupleKey("player-1", "game-b", "dungeon-1")] = 1
+	counters[tupleKey("player-2", "game-a", "world-1")] = 5
+	mu.Unlock()
+
+	summary, err := c.GetUnreadSummary(ctx, &pbsg.GetUnreadSummaryRequest{PlayerId: "player-1"})
+	if err != nil || len(summary.GetEntries()) != 3 || summary.GetTotalUnread() != 4 {
+		t.Fatalf("summary: resp=%v err=%v (want 3 entries, total 4)", summary, err)
+	}
+	if summary.GetEntries()[0].GetChannelId() != "world-1" ||
+		summary.GetEntries()[0].GetUnreadCount() != 2 {
+		t.Fatalf("summary order: first=%v (want game-a:world-1 x2)", summary.GetEntries()[0])
+	}
+	filtered, err := c.GetUnreadSummary(ctx, &pbsg.GetUnreadSummaryRequest{
+		PlayerId: "player-1", GameId: "game-b",
+	})
+	if err != nil || len(filtered.GetEntries()) != 1 || filtered.GetTotalUnread() != 1 {
+		t.Fatalf("filtered summary: resp=%v err=%v (want 1 entry, total 1)", filtered, err)
+	}
+
+	mark, err := c.MarkChannelsRead(ctx, &pbsg.MarkChannelsReadRequest{
+		PlayerId: "player-1", GameId: "game-a", ChannelId: "world-1",
+	})
+	if err != nil || mark.GetCleared() != 1 {
+		t.Fatalf("mark one channel: resp=%v err=%v (want cleared=1)", mark, err)
+	}
+	after, err := c.GetUnreadSummary(ctx, &pbsg.GetUnreadSummaryRequest{PlayerId: "player-1"})
+	if err != nil || len(after.GetEntries()) != 2 || after.GetTotalUnread() != 2 {
+		t.Fatalf("post-mark summary: resp=%v err=%v (want 2 entries, total 2)", after, err)
+	}
+
+	markGame, err := c.MarkChannelsRead(ctx, &pbsg.MarkChannelsReadRequest{
+		PlayerId: "player-1", GameId: "game-a",
+	})
+	if err != nil || markGame.GetCleared() != 1 {
+		t.Fatalf("mark whole game: resp=%v err=%v (want cleared=1)", markGame, err)
+	}
+	markAll, err := c.MarkChannelsRead(ctx, &pbsg.MarkChannelsReadRequest{PlayerId: "player-1"})
+	if err != nil || markAll.GetCleared() != 1 {
+		t.Fatalf("mark everything: resp=%v err=%v (want cleared=1)", markAll, err)
+	}
+	empty, err := c.GetUnreadSummary(ctx, &pbsg.GetUnreadSummaryRequest{PlayerId: "player-1"})
+	if err != nil || len(empty.GetEntries()) != 0 {
+		t.Fatalf("post-clear summary: resp=%v err=%v (want empty)", empty, err)
+	}
+
+	// Unknown targets are idempotent: OK with cleared=0.
+	miss, err := c.MarkChannelsRead(ctx, &pbsg.MarkChannelsReadRequest{
+		PlayerId: "player-1", GameId: "game-z", ChannelId: "nowhere",
+	})
+	if err != nil || miss.GetCleared() != 0 {
+		t.Fatalf("mark unknown: resp=%v err=%v (want cleared=0)", miss, err)
+	}
+
+	// Other players are untouched by player-1's clears.
+	other, err := c.GetUnreadSummary(ctx, &pbsg.GetUnreadSummaryRequest{PlayerId: "player-2"})
+	if err != nil || len(other.GetEntries()) != 1 || other.GetTotalUnread() != 5 {
+		t.Fatalf("other player summary: resp=%v err=%v (want 1 entry, total 5)", other, err)
+	}
+}
+
+// splitTuple splits "player:game:channel" — the fake ledger's map key.
+func splitTuple(key string) [3]string {
+	var out [3]string
+	for i := 0; i < 2; i++ {
+		if idx := indexByte(key, ':'); idx >= 0 {
+			out[i] = key[:idx]
+			key = key[idx+1:]
+		}
+	}
+	out[2] = key
+	return out
+}
+
+func indexByte(s string, b byte) int {
+	for i := 0; i < len(s); i++ {
+		if s[i] == b {
+			return i
+		}
+	}
+	return -1
 }

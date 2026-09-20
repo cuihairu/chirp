@@ -456,6 +456,22 @@ void HandleClientPacket(const std::shared_ptr<chirp::network::Session>& session,
         chirp::network::GetAuthenticatedSession(state, session).user_id, sg);
     break;
   }
+  case chirp::gateway::MARK_CHANNELS_READ_REQ: {
+    ForwardSubscriptionPacket<chirp::server_gateway::MarkChannelsReadRequest,
+                              chirp::server_gateway::MarkChannelsReadResponse>(
+        session, pkt, chirp::gateway::MARK_CHANNELS_READ_REQ,
+        chirp::gateway::MARK_CHANNELS_READ_RESP,
+        chirp::network::GetAuthenticatedSession(state, session).user_id, sg);
+    break;
+  }
+  case chirp::gateway::GET_UNREAD_SUMMARY_REQ: {
+    ForwardSubscriptionPacket<chirp::server_gateway::GetUnreadSummaryRequest,
+                              chirp::server_gateway::GetUnreadSummaryResponse>(
+        session, pkt, chirp::gateway::GET_UNREAD_SUMMARY_REQ,
+        chirp::gateway::GET_UNREAD_SUMMARY_RESP,
+        chirp::network::GetAuthenticatedSession(state, session).user_id, sg);
+    break;
+  }
   default:
     // Companion-app edge: chat/business packets belong to their own services.
     break;

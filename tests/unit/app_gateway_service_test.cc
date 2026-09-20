@@ -370,6 +370,26 @@ class FakeServerGatewayServer {
           resp.set_body(r.SerializeAsString());
           break;
         }
+        case chirp::gateway::MARK_CHANNELS_READ_REQ: {
+          chirp::server_gateway::MarkChannelsReadResponse r;
+          r.set_code(chirp::common::OK);
+          r.set_cleared(1);
+          resp.set_msg_id(chirp::gateway::MARK_CHANNELS_READ_RESP);
+          resp.set_body(r.SerializeAsString());
+          break;
+        }
+        case chirp::gateway::GET_UNREAD_SUMMARY_REQ: {
+          chirp::server_gateway::GetUnreadSummaryResponse r;
+          r.set_code(chirp::common::OK);
+          auto* entry = r.add_entries();
+          entry->set_game_id("game_a");
+          entry->set_channel_id("world");
+          entry->set_unread_count(2);
+          r.set_total_unread(2);
+          resp.set_msg_id(chirp::gateway::GET_UNREAD_SUMMARY_RESP);
+          resp.set_body(r.SerializeAsString());
+          break;
+        }
         default:
           answered = false;  // nothing else is answered
           break;
@@ -794,6 +814,129 @@ TEST_F(AppGatewayServiceTest, SubscriptionForwardedWithPinnedPlayerId) {
   ASSERT_TRUE(LastBody(*session_, &resp));
   EXPECT_EQ(resp.code(), chirp::common::OK);
   EXPECT_EQ(resp.subscription_id(), "sub-fake-1");
+}
+
+TEST_F(AppGatewayServiceTest, UnreadMarkForwardedWithPinnedPlayerId) {
+  FakeServerGatewayServer fake;
+  asio::io_context io;
+  chirp::network::ServerGatewayPeer::Options opts;
+  opts.host = "127.0.0.1";
+  opts.port = fake.port();
+  opts.service_id = "app_gateway";
+  opts.secret = "edge-secret";
+  opts.reconnect_delay_seconds = 1;
+  auto sg = chirp::network::ServerGatewayPeer::Create(io, opts, nullptr, nullptr);
+  sg->Start();
+
+  Login(session_, "alice");
+  ASSERT_TRUE(WaitForIo(io, [&] { return fake.CountAuth() >= 1; }, std::chrono::seconds(5)));
+  WaitForIo(io, [] { return false; }, std::chrono::milliseconds(100));
+
+  chirp::server_gateway::MarkChannelsReadRequest req;
+  req.set_player_id("mallory");  // must be overwritten with the authenticated user
+  req.set_game_id("game_a");
+  req.set_channel_id("world");
+  HandleClientPacket(session_,
+                     MakePacket(chirp::gateway::MARK_CHANNELS_READ_REQ, 12,
+                                req.SerializeAsString()).SerializeAsString(),
+                     state_, nullptr, nullptr, nullptr, sg.get());
+
+  const auto got_mark_resp = [&] {
+    for (const auto& framed : session_->sent) {
+      Packet p;
+      if (DecodeFramed(framed, &p) &&
+          p.msg_id() == chirp::gateway::MARK_CHANNELS_READ_RESP && p.sequence() == 12) {
+        return true;
+      }
+    }
+    return false;
+  };
+  ASSERT_TRUE(WaitForIo(io, got_mark_resp, std::chrono::seconds(5)));
+
+  sg->Stop();
+  WaitForIo(io, [&] { return true; }, std::chrono::milliseconds(50));
+
+  // The hub saw the authenticated user, not the spoofed one. The game_id
+  // filter keeps a heartbeat ping's wire bytes (which share field 1) from
+  // parsing into a match.
+  bool found = false;
+  chirp::server_gateway::MarkChannelsReadRequest forwarded;
+  for (const auto& body : fake.Received()) {
+    chirp::server_gateway::MarkChannelsReadRequest candidate;
+    if (candidate.ParseFromString(body) && candidate.game_id() == "game_a") {
+      forwarded = candidate;
+      found = true;
+    }
+  }
+  ASSERT_TRUE(found);
+  EXPECT_EQ(forwarded.player_id(), "alice");
+  EXPECT_EQ(forwarded.channel_id(), "world");
+
+  chirp::server_gateway::MarkChannelsReadResponse resp;
+  ASSERT_TRUE(LastBody(*session_, &resp));
+  EXPECT_EQ(resp.code(), chirp::common::OK);
+  EXPECT_EQ(resp.cleared(), 1);
+}
+
+TEST_F(AppGatewayServiceTest, UnreadSummaryForwardedAndRelayed) {
+  FakeServerGatewayServer fake;
+  asio::io_context io;
+  chirp::network::ServerGatewayPeer::Options opts;
+  opts.host = "127.0.0.1";
+  opts.port = fake.port();
+  opts.service_id = "app_gateway";
+  opts.secret = "edge-secret";
+  opts.reconnect_delay_seconds = 1;
+  auto sg = chirp::network::ServerGatewayPeer::Create(io, opts, nullptr, nullptr);
+  sg->Start();
+
+  Login(session_, "alice");
+  ASSERT_TRUE(WaitForIo(io, [&] { return fake.CountAuth() >= 1; }, std::chrono::seconds(5)));
+  WaitForIo(io, [] { return false; }, std::chrono::milliseconds(100));
+
+  chirp::server_gateway::GetUnreadSummaryRequest req;
+  req.set_player_id("mallory");  // must be overwritten with the authenticated user
+  req.set_game_id("game_a");
+  HandleClientPacket(session_,
+                     MakePacket(chirp::gateway::GET_UNREAD_SUMMARY_REQ, 13,
+                                req.SerializeAsString()).SerializeAsString(),
+                     state_, nullptr, nullptr, nullptr, sg.get());
+
+  const auto got_summary_resp = [&] {
+    for (const auto& framed : session_->sent) {
+      Packet p;
+      if (DecodeFramed(framed, &p) &&
+          p.msg_id() == chirp::gateway::GET_UNREAD_SUMMARY_RESP && p.sequence() == 13) {
+        return true;
+      }
+    }
+    return false;
+  };
+  ASSERT_TRUE(WaitForIo(io, got_summary_resp, std::chrono::seconds(5)));
+
+  sg->Stop();
+  WaitForIo(io, [&] { return true; }, std::chrono::milliseconds(50));
+
+  bool found = false;
+  chirp::server_gateway::GetUnreadSummaryRequest forwarded;
+  for (const auto& body : fake.Received()) {
+    chirp::server_gateway::GetUnreadSummaryRequest candidate;
+    if (candidate.ParseFromString(body) && candidate.game_id() == "game_a") {
+      forwarded = candidate;
+      found = true;
+    }
+  }
+  ASSERT_TRUE(found);
+  EXPECT_EQ(forwarded.player_id(), "alice");
+
+  // The hub's body (entries + total) is relayed verbatim.
+  chirp::server_gateway::GetUnreadSummaryResponse resp;
+  ASSERT_TRUE(LastBody(*session_, &resp));
+  EXPECT_EQ(resp.code(), chirp::common::OK);
+  ASSERT_EQ(resp.entries_size(), 1);
+  EXPECT_EQ(resp.entries(0).channel_id(), "world");
+  EXPECT_EQ(resp.entries(0).unread_count(), 2);
+  EXPECT_EQ(resp.total_unread(), 2);
 }
 
 TEST_F(AppGatewayServiceTest, DisconnectUnbindsSession) {

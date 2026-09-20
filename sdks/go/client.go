@@ -399,7 +399,9 @@ func (c *Client) dispatch(pkt *pbgw.Packet) bool {
 		pbgw.MsgID_RESOLVE_GAME_USER_RESP,
 		pbgw.MsgID_SUBSCRIBE_PLAYER_CHANNEL_RESP,
 		pbgw.MsgID_UNSUBSCRIBE_PLAYER_CHANNEL_RESP,
-		pbgw.MsgID_GET_PLAYER_SUBSCRIPTIONS_RESP:
+		pbgw.MsgID_GET_PLAYER_SUBSCRIPTIONS_RESP,
+		pbgw.MsgID_MARK_CHANNELS_READ_RESP,
+		pbgw.MsgID_GET_UNREAD_SUMMARY_RESP:
 		c.completePending(pkt)
 	case pbgw.MsgID_INJECT_MESSAGE_NOTIFY:
 		notify := &pbsg.InjectMessageNotify{}
@@ -650,6 +652,35 @@ func (c *Client) UnsubscribePlayerChannel(ctx context.Context, req *pbsg.Unsubsc
 func (c *Client) GetPlayerSubscriptions(ctx context.Context, req *pbsg.GetPlayerSubscriptionsRequest) (*pbsg.GetPlayerSubscriptionsResponse, error) {
 	resp := &pbsg.GetPlayerSubscriptionsResponse{}
 	err := c.rpc(ctx, pbgw.MsgID_GET_PLAYER_SUBSCRIPTIONS_REQ, pbgw.MsgID_GET_PLAYER_SUBSCRIPTIONS_RESP, req, resp,
+		func() error { return serverErr(resp.GetCode()) })
+	if err != nil {
+		return nil, err
+	}
+	return resp, nil
+}
+
+// MarkChannelsRead clears the hub's unread badge ledger (WP-8 slice 4) for
+// PlayerId: the layered selector clears one channel (ChannelId set, GameId
+// required), one game (only GameId), or everything (both empty). Unknown
+// targets answer OK with Cleared=0 (idempotent).
+func (c *Client) MarkChannelsRead(ctx context.Context, req *pbsg.MarkChannelsReadRequest) (*pbsg.MarkChannelsReadResponse, error) {
+	resp := &pbsg.MarkChannelsReadResponse{}
+	err := c.rpc(ctx, pbgw.MsgID_MARK_CHANNELS_READ_REQ, pbgw.MsgID_MARK_CHANNELS_READ_RESP, req, resp,
+		func() error { return serverErr(resp.GetCode()) })
+	if err != nil {
+		return nil, err
+	}
+	return resp, nil
+}
+
+// GetUnreadSummary reports the player's unread badge counters: one entry
+// per (game, channel) with a nonzero count, ordered by (game_id,
+// channel_id), plus TotalUnread — the sum after the optional GameId filter.
+// The badge counts unhandled fan-in notifications; it is independent of the
+// chat service's read cursors.
+func (c *Client) GetUnreadSummary(ctx context.Context, req *pbsg.GetUnreadSummaryRequest) (*pbsg.GetUnreadSummaryResponse, error) {
+	resp := &pbsg.GetUnreadSummaryResponse{}
+	err := c.rpc(ctx, pbgw.MsgID_GET_UNREAD_SUMMARY_REQ, pbgw.MsgID_GET_UNREAD_SUMMARY_RESP, req, resp,
 		func() error { return serverErr(resp.GetCode()) })
 	if err != nil {
 		return nil, err
