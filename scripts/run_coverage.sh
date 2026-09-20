@@ -207,7 +207,7 @@ KNOWN_UNCOVERABLE = {
     # so a tuple hit whose by-id record is missing cannot happen.
     ("services/server_gateway/src/identity_registry.cc", 143),
     ("services/server_gateway/src/identity_registry.cc", 177),
-    ("services/server_gateway/src/subscription_registry.cc", 178),
+    ("services/server_gateway/src/subscription_registry.cc", 180),
 }
 
 src_cache = {}
