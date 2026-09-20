@@ -55,7 +55,7 @@ public:
   bool Expire(const std::string& key, int ttl_seconds);
 
   // Keys command
-  std::vector<std::string> Keys(const std::string& pattern);
+  virtual std::vector<std::string> Keys(const std::string& pattern);
 
 private:
   std::string host_;

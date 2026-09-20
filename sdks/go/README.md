@@ -12,6 +12,7 @@
   - `InjectMessage` — 注入 SYSTEM/NPC/SERVICE 发送者的消息(`inject_id` 幂等键)
   - `PublishEvent` — 发布可靠事件(目标离线则入队,重连重投直到 ack)
   - `AckEvents` — 批量确认已处理的 `EVENT_DELIVER_NOTIFY`(at-least-once)
+  - `BindPlayerIdentity` / `UnbindPlayerIdentity` / `GetPlayerIdentities` / `ResolveGameUser` — 玩家身份绑定(`binding_id` 幂等键;详见 `docs/server_plane.md`「Player identity bindings」)
 - **推送 handler**:`SetInjectHandler` / `SetEventHandler` / `SetDisconnectHandler`,在内部读 goroutine 触发,**不得阻塞**。
 - **断线**:在途调用收到 `ErrConnectionLost`,客户端自动重连;已认证连接断开才触发 disconnect handler(认证拒绝/拨号失败只记日志)。
 
@@ -51,7 +52,7 @@ c.InjectMessage(ctx, &pbsg.MessageInjectRequest{
 
 ## 模块与代码生成
 
-仓库根是单一 Go module(`github.com/cui/chirp`):`sdks/go` 是 SDK 包,`proto/go/<name>/` 是入库的 protobuf 生成物(每 `.proto` 一个包,protoc-gen-go;`go_package` 在 `.proto` 文件里)。CI(`go-sdk.yml`)用固定 protoc 33.4 + protoc-gen-go v1.36.12 重生成并漂移校验,`go vet` + `go test -race` 跑 9 例环回单测(fake hub 进程内回环,无需任何服务)。
+仓库根是单一 Go module(`github.com/cui/chirp`):`sdks/go` 是 SDK 包,`proto/go/<name>/` 是入库的 protobuf 生成物(每 `.proto` 一个包,protoc-gen-go;`go_package` 在 `.proto` 文件里)。CI(`go-sdk.yml`)用固定 protoc 33.4 + protoc-gen-go v1.36.12 重生成并漂移校验,`go vet` + `go test -race` 跑 10 例环回单测(fake hub 进程内回环,无需任何服务)。
 
 本地重新生成:`PATH="$HOME/go/bin:$PATH" bash gen_proto.sh`(需 `go install google.golang.org/protobuf/cmd/protoc-gen-go@v1.36.12`)。
 

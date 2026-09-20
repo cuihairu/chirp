@@ -27,6 +27,101 @@ namespace _fl = ::google::protobuf::internal::field_layout;
 namespace chirp {
 namespace server_gateway {
 
+inline constexpr UnbindPlayerIdentityResponse::Impl_::Impl_(
+    ::_pbi::ConstantInitialized) noexcept
+      : _cached_size_{0},
+        code_{static_cast< ::chirp::common::ErrorCode >(0)} {}
+
+template <typename>
+PROTOBUF_CONSTEXPR UnbindPlayerIdentityResponse::UnbindPlayerIdentityResponse(::_pbi::ConstantInitialized)
+#if defined(PROTOBUF_CUSTOM_VTABLE)
+    : ::google::protobuf::Message(UnbindPlayerIdentityResponse_class_data_.base()),
+#else   // PROTOBUF_CUSTOM_VTABLE
+    : ::google::protobuf::Message(),
+#endif  // PROTOBUF_CUSTOM_VTABLE
+      _impl_(::_pbi::ConstantInitialized()) {
+}
+struct UnbindPlayerIdentityResponseDefaultTypeInternal {
+  PROTOBUF_CONSTEXPR UnbindPlayerIdentityResponseDefaultTypeInternal() : _instance(::_pbi::ConstantInitialized{}) {}
+  ~UnbindPlayerIdentityResponseDefaultTypeInternal() {}
+  union {
+    UnbindPlayerIdentityResponse _instance;
+  };
+};
+
+PROTOBUF_ATTRIBUTE_NO_DESTROY PROTOBUF_CONSTINIT
+    PROTOBUF_ATTRIBUTE_INIT_PRIORITY1 UnbindPlayerIdentityResponseDefaultTypeInternal _UnbindPlayerIdentityResponse_default_instance_;
+
+inline constexpr UnbindPlayerIdentityRequest::Impl_::Impl_(
+    ::_pbi::ConstantInitialized) noexcept
+      : _cached_size_{0},
+        binding_id_(
+            &::google::protobuf::internal::fixed_address_empty_string,
+            ::_pbi::ConstantInitialized()),
+        game_id_(
+            &::google::protobuf::internal::fixed_address_empty_string,
+            ::_pbi::ConstantInitialized()),
+        game_user_id_(
+            &::google::protobuf::internal::fixed_address_empty_string,
+            ::_pbi::ConstantInitialized()) {}
+
+template <typename>
+PROTOBUF_CONSTEXPR UnbindPlayerIdentityRequest::UnbindPlayerIdentityRequest(::_pbi::ConstantInitialized)
+#if defined(PROTOBUF_CUSTOM_VTABLE)
+    : ::google::protobuf::Message(UnbindPlayerIdentityRequest_class_data_.base()),
+#else   // PROTOBUF_CUSTOM_VTABLE
+    : ::google::protobuf::Message(),
+#endif  // PROTOBUF_CUSTOM_VTABLE
+      _impl_(::_pbi::ConstantInitialized()) {
+}
+struct UnbindPlayerIdentityRequestDefaultTypeInternal {
+  PROTOBUF_CONSTEXPR UnbindPlayerIdentityRequestDefaultTypeInternal() : _instance(::_pbi::ConstantInitialized{}) {}
+  ~UnbindPlayerIdentityRequestDefaultTypeInternal() {}
+  union {
+    UnbindPlayerIdentityRequest _instance;
+  };
+};
+
+PROTOBUF_ATTRIBUTE_NO_DESTROY PROTOBUF_CONSTINIT
+    PROTOBUF_ATTRIBUTE_INIT_PRIORITY1 UnbindPlayerIdentityRequestDefaultTypeInternal _UnbindPlayerIdentityRequest_default_instance_;
+
+inline constexpr StoredIdentityBinding::Impl_::Impl_(
+    ::_pbi::ConstantInitialized) noexcept
+      : _cached_size_{0},
+        binding_id_(
+            &::google::protobuf::internal::fixed_address_empty_string,
+            ::_pbi::ConstantInitialized()),
+        player_id_(
+            &::google::protobuf::internal::fixed_address_empty_string,
+            ::_pbi::ConstantInitialized()),
+        game_id_(
+            &::google::protobuf::internal::fixed_address_empty_string,
+            ::_pbi::ConstantInitialized()),
+        game_user_id_(
+            &::google::protobuf::internal::fixed_address_empty_string,
+            ::_pbi::ConstantInitialized()),
+        bound_at_ms_{::int64_t{0}} {}
+
+template <typename>
+PROTOBUF_CONSTEXPR StoredIdentityBinding::StoredIdentityBinding(::_pbi::ConstantInitialized)
+#if defined(PROTOBUF_CUSTOM_VTABLE)
+    : ::google::protobuf::Message(StoredIdentityBinding_class_data_.base()),
+#else   // PROTOBUF_CUSTOM_VTABLE
+    : ::google::protobuf::Message(),
+#endif  // PROTOBUF_CUSTOM_VTABLE
+      _impl_(::_pbi::ConstantInitialized()) {
+}
+struct StoredIdentityBindingDefaultTypeInternal {
+  PROTOBUF_CONSTEXPR StoredIdentityBindingDefaultTypeInternal() : _instance(::_pbi::ConstantInitialized{}) {}
+  ~StoredIdentityBindingDefaultTypeInternal() {}
+  union {
+    StoredIdentityBinding _instance;
+  };
+};
+
+PROTOBUF_ATTRIBUTE_NO_DESTROY PROTOBUF_CONSTINIT
+    PROTOBUF_ATTRIBUTE_INIT_PRIORITY1 StoredIdentityBindingDefaultTypeInternal _StoredIdentityBinding_default_instance_;
+
 inline constexpr ServerHeartbeatPong::Impl_::Impl_(
     ::_pbi::ConstantInitialized) noexcept
       : _cached_size_{0},
@@ -135,6 +230,64 @@ struct ServerAuthRequestDefaultTypeInternal {
 PROTOBUF_ATTRIBUTE_NO_DESTROY PROTOBUF_CONSTINIT
     PROTOBUF_ATTRIBUTE_INIT_PRIORITY1 ServerAuthRequestDefaultTypeInternal _ServerAuthRequest_default_instance_;
 
+inline constexpr ResolveGameUserResponse::Impl_::Impl_(
+    ::_pbi::ConstantInitialized) noexcept
+      : _cached_size_{0},
+        player_id_(
+            &::google::protobuf::internal::fixed_address_empty_string,
+            ::_pbi::ConstantInitialized()),
+        code_{static_cast< ::chirp::common::ErrorCode >(0)} {}
+
+template <typename>
+PROTOBUF_CONSTEXPR ResolveGameUserResponse::ResolveGameUserResponse(::_pbi::ConstantInitialized)
+#if defined(PROTOBUF_CUSTOM_VTABLE)
+    : ::google::protobuf::Message(ResolveGameUserResponse_class_data_.base()),
+#else   // PROTOBUF_CUSTOM_VTABLE
+    : ::google::protobuf::Message(),
+#endif  // PROTOBUF_CUSTOM_VTABLE
+      _impl_(::_pbi::ConstantInitialized()) {
+}
+struct ResolveGameUserResponseDefaultTypeInternal {
+  PROTOBUF_CONSTEXPR ResolveGameUserResponseDefaultTypeInternal() : _instance(::_pbi::ConstantInitialized{}) {}
+  ~ResolveGameUserResponseDefaultTypeInternal() {}
+  union {
+    ResolveGameUserResponse _instance;
+  };
+};
+
+PROTOBUF_ATTRIBUTE_NO_DESTROY PROTOBUF_CONSTINIT
+    PROTOBUF_ATTRIBUTE_INIT_PRIORITY1 ResolveGameUserResponseDefaultTypeInternal _ResolveGameUserResponse_default_instance_;
+
+inline constexpr ResolveGameUserRequest::Impl_::Impl_(
+    ::_pbi::ConstantInitialized) noexcept
+      : _cached_size_{0},
+        game_id_(
+            &::google::protobuf::internal::fixed_address_empty_string,
+            ::_pbi::ConstantInitialized()),
+        game_user_id_(
+            &::google::protobuf::internal::fixed_address_empty_string,
+            ::_pbi::ConstantInitialized()) {}
+
+template <typename>
+PROTOBUF_CONSTEXPR ResolveGameUserRequest::ResolveGameUserRequest(::_pbi::ConstantInitialized)
+#if defined(PROTOBUF_CUSTOM_VTABLE)
+    : ::google::protobuf::Message(ResolveGameUserRequest_class_data_.base()),
+#else   // PROTOBUF_CUSTOM_VTABLE
+    : ::google::protobuf::Message(),
+#endif  // PROTOBUF_CUSTOM_VTABLE
+      _impl_(::_pbi::ConstantInitialized()) {
+}
+struct ResolveGameUserRequestDefaultTypeInternal {
+  PROTOBUF_CONSTEXPR ResolveGameUserRequestDefaultTypeInternal() : _instance(::_pbi::ConstantInitialized{}) {}
+  ~ResolveGameUserRequestDefaultTypeInternal() {}
+  union {
+    ResolveGameUserRequest _instance;
+  };
+};
+
+PROTOBUF_ATTRIBUTE_NO_DESTROY PROTOBUF_CONSTINIT
+    PROTOBUF_ATTRIBUTE_INIT_PRIORITY1 ResolveGameUserRequestDefaultTypeInternal _ResolveGameUserRequest_default_instance_;
+
 inline constexpr MessageInjectResponse::Impl_::Impl_(
     ::_pbi::ConstantInitialized) noexcept
       : _cached_size_{0},
@@ -203,6 +356,33 @@ struct MessageInjectRequestDefaultTypeInternal {
 
 PROTOBUF_ATTRIBUTE_NO_DESTROY PROTOBUF_CONSTINIT
     PROTOBUF_ATTRIBUTE_INIT_PRIORITY1 MessageInjectRequestDefaultTypeInternal _MessageInjectRequest_default_instance_;
+
+inline constexpr GetPlayerIdentitiesRequest::Impl_::Impl_(
+    ::_pbi::ConstantInitialized) noexcept
+      : _cached_size_{0},
+        player_id_(
+            &::google::protobuf::internal::fixed_address_empty_string,
+            ::_pbi::ConstantInitialized()) {}
+
+template <typename>
+PROTOBUF_CONSTEXPR GetPlayerIdentitiesRequest::GetPlayerIdentitiesRequest(::_pbi::ConstantInitialized)
+#if defined(PROTOBUF_CUSTOM_VTABLE)
+    : ::google::protobuf::Message(GetPlayerIdentitiesRequest_class_data_.base()),
+#else   // PROTOBUF_CUSTOM_VTABLE
+    : ::google::protobuf::Message(),
+#endif  // PROTOBUF_CUSTOM_VTABLE
+      _impl_(::_pbi::ConstantInitialized()) {
+}
+struct GetPlayerIdentitiesRequestDefaultTypeInternal {
+  PROTOBUF_CONSTEXPR GetPlayerIdentitiesRequestDefaultTypeInternal() : _instance(::_pbi::ConstantInitialized{}) {}
+  ~GetPlayerIdentitiesRequestDefaultTypeInternal() {}
+  union {
+    GetPlayerIdentitiesRequest _instance;
+  };
+};
+
+PROTOBUF_ATTRIBUTE_NO_DESTROY PROTOBUF_CONSTINIT
+    PROTOBUF_ATTRIBUTE_INIT_PRIORITY1 GetPlayerIdentitiesRequestDefaultTypeInternal _GetPlayerIdentitiesRequest_default_instance_;
 
 inline constexpr EventPublishResponse::Impl_::Impl_(
     ::_pbi::ConstantInitialized) noexcept
@@ -354,6 +534,71 @@ struct EventAckRequestDefaultTypeInternal {
 PROTOBUF_ATTRIBUTE_NO_DESTROY PROTOBUF_CONSTINIT
     PROTOBUF_ATTRIBUTE_INIT_PRIORITY1 EventAckRequestDefaultTypeInternal _EventAckRequest_default_instance_;
 
+inline constexpr BindPlayerIdentityResponse::Impl_::Impl_(
+    ::_pbi::ConstantInitialized) noexcept
+      : _cached_size_{0},
+        binding_id_(
+            &::google::protobuf::internal::fixed_address_empty_string,
+            ::_pbi::ConstantInitialized()),
+        code_{static_cast< ::chirp::common::ErrorCode >(0)},
+        existed_{false} {}
+
+template <typename>
+PROTOBUF_CONSTEXPR BindPlayerIdentityResponse::BindPlayerIdentityResponse(::_pbi::ConstantInitialized)
+#if defined(PROTOBUF_CUSTOM_VTABLE)
+    : ::google::protobuf::Message(BindPlayerIdentityResponse_class_data_.base()),
+#else   // PROTOBUF_CUSTOM_VTABLE
+    : ::google::protobuf::Message(),
+#endif  // PROTOBUF_CUSTOM_VTABLE
+      _impl_(::_pbi::ConstantInitialized()) {
+}
+struct BindPlayerIdentityResponseDefaultTypeInternal {
+  PROTOBUF_CONSTEXPR BindPlayerIdentityResponseDefaultTypeInternal() : _instance(::_pbi::ConstantInitialized{}) {}
+  ~BindPlayerIdentityResponseDefaultTypeInternal() {}
+  union {
+    BindPlayerIdentityResponse _instance;
+  };
+};
+
+PROTOBUF_ATTRIBUTE_NO_DESTROY PROTOBUF_CONSTINIT
+    PROTOBUF_ATTRIBUTE_INIT_PRIORITY1 BindPlayerIdentityResponseDefaultTypeInternal _BindPlayerIdentityResponse_default_instance_;
+
+inline constexpr BindPlayerIdentityRequest::Impl_::Impl_(
+    ::_pbi::ConstantInitialized) noexcept
+      : _cached_size_{0},
+        binding_id_(
+            &::google::protobuf::internal::fixed_address_empty_string,
+            ::_pbi::ConstantInitialized()),
+        player_id_(
+            &::google::protobuf::internal::fixed_address_empty_string,
+            ::_pbi::ConstantInitialized()),
+        game_id_(
+            &::google::protobuf::internal::fixed_address_empty_string,
+            ::_pbi::ConstantInitialized()),
+        game_user_id_(
+            &::google::protobuf::internal::fixed_address_empty_string,
+            ::_pbi::ConstantInitialized()) {}
+
+template <typename>
+PROTOBUF_CONSTEXPR BindPlayerIdentityRequest::BindPlayerIdentityRequest(::_pbi::ConstantInitialized)
+#if defined(PROTOBUF_CUSTOM_VTABLE)
+    : ::google::protobuf::Message(BindPlayerIdentityRequest_class_data_.base()),
+#else   // PROTOBUF_CUSTOM_VTABLE
+    : ::google::protobuf::Message(),
+#endif  // PROTOBUF_CUSTOM_VTABLE
+      _impl_(::_pbi::ConstantInitialized()) {
+}
+struct BindPlayerIdentityRequestDefaultTypeInternal {
+  PROTOBUF_CONSTEXPR BindPlayerIdentityRequestDefaultTypeInternal() : _instance(::_pbi::ConstantInitialized{}) {}
+  ~BindPlayerIdentityRequestDefaultTypeInternal() {}
+  union {
+    BindPlayerIdentityRequest _instance;
+  };
+};
+
+PROTOBUF_ATTRIBUTE_NO_DESTROY PROTOBUF_CONSTINIT
+    PROTOBUF_ATTRIBUTE_INIT_PRIORITY1 BindPlayerIdentityRequestDefaultTypeInternal _BindPlayerIdentityRequest_default_instance_;
+
 inline constexpr InjectMessageNotify::Impl_::Impl_(
     ::_pbi::ConstantInitialized) noexcept
       : _cached_size_{0},
@@ -378,6 +623,32 @@ struct InjectMessageNotifyDefaultTypeInternal {
 
 PROTOBUF_ATTRIBUTE_NO_DESTROY PROTOBUF_CONSTINIT
     PROTOBUF_ATTRIBUTE_INIT_PRIORITY1 InjectMessageNotifyDefaultTypeInternal _InjectMessageNotify_default_instance_;
+
+inline constexpr GetPlayerIdentitiesResponse::Impl_::Impl_(
+    ::_pbi::ConstantInitialized) noexcept
+      : _cached_size_{0},
+        bindings_{},
+        code_{static_cast< ::chirp::common::ErrorCode >(0)} {}
+
+template <typename>
+PROTOBUF_CONSTEXPR GetPlayerIdentitiesResponse::GetPlayerIdentitiesResponse(::_pbi::ConstantInitialized)
+#if defined(PROTOBUF_CUSTOM_VTABLE)
+    : ::google::protobuf::Message(GetPlayerIdentitiesResponse_class_data_.base()),
+#else   // PROTOBUF_CUSTOM_VTABLE
+    : ::google::protobuf::Message(),
+#endif  // PROTOBUF_CUSTOM_VTABLE
+      _impl_(::_pbi::ConstantInitialized()) {
+}
+struct GetPlayerIdentitiesResponseDefaultTypeInternal {
+  PROTOBUF_CONSTEXPR GetPlayerIdentitiesResponseDefaultTypeInternal() : _instance(::_pbi::ConstantInitialized{}) {}
+  ~GetPlayerIdentitiesResponseDefaultTypeInternal() {}
+  union {
+    GetPlayerIdentitiesResponse _instance;
+  };
+};
+
+PROTOBUF_ATTRIBUTE_NO_DESTROY PROTOBUF_CONSTINIT
+    PROTOBUF_ATTRIBUTE_INIT_PRIORITY1 GetPlayerIdentitiesResponseDefaultTypeInternal _GetPlayerIdentitiesResponse_default_instance_;
 }  // namespace server_gateway
 }  // namespace chirp
 static const ::_pb::EnumDescriptor* PROTOBUF_NONNULL
@@ -487,6 +758,79 @@ const ::uint32_t
         4, // hasbit index offset
         PROTOBUF_FIELD_OFFSET(::chirp::server_gateway::EventAckResponse, _impl_.code_),
         0,
+        0x081, // bitmap
+        PROTOBUF_FIELD_OFFSET(::chirp::server_gateway::StoredIdentityBinding, _impl_._has_bits_),
+        8, // hasbit index offset
+        PROTOBUF_FIELD_OFFSET(::chirp::server_gateway::StoredIdentityBinding, _impl_.binding_id_),
+        PROTOBUF_FIELD_OFFSET(::chirp::server_gateway::StoredIdentityBinding, _impl_.player_id_),
+        PROTOBUF_FIELD_OFFSET(::chirp::server_gateway::StoredIdentityBinding, _impl_.game_id_),
+        PROTOBUF_FIELD_OFFSET(::chirp::server_gateway::StoredIdentityBinding, _impl_.game_user_id_),
+        PROTOBUF_FIELD_OFFSET(::chirp::server_gateway::StoredIdentityBinding, _impl_.bound_at_ms_),
+        0,
+        1,
+        2,
+        3,
+        4,
+        0x081, // bitmap
+        PROTOBUF_FIELD_OFFSET(::chirp::server_gateway::BindPlayerIdentityRequest, _impl_._has_bits_),
+        7, // hasbit index offset
+        PROTOBUF_FIELD_OFFSET(::chirp::server_gateway::BindPlayerIdentityRequest, _impl_.binding_id_),
+        PROTOBUF_FIELD_OFFSET(::chirp::server_gateway::BindPlayerIdentityRequest, _impl_.player_id_),
+        PROTOBUF_FIELD_OFFSET(::chirp::server_gateway::BindPlayerIdentityRequest, _impl_.game_id_),
+        PROTOBUF_FIELD_OFFSET(::chirp::server_gateway::BindPlayerIdentityRequest, _impl_.game_user_id_),
+        0,
+        1,
+        2,
+        3,
+        0x081, // bitmap
+        PROTOBUF_FIELD_OFFSET(::chirp::server_gateway::BindPlayerIdentityResponse, _impl_._has_bits_),
+        6, // hasbit index offset
+        PROTOBUF_FIELD_OFFSET(::chirp::server_gateway::BindPlayerIdentityResponse, _impl_.code_),
+        PROTOBUF_FIELD_OFFSET(::chirp::server_gateway::BindPlayerIdentityResponse, _impl_.binding_id_),
+        PROTOBUF_FIELD_OFFSET(::chirp::server_gateway::BindPlayerIdentityResponse, _impl_.existed_),
+        1,
+        0,
+        2,
+        0x081, // bitmap
+        PROTOBUF_FIELD_OFFSET(::chirp::server_gateway::UnbindPlayerIdentityRequest, _impl_._has_bits_),
+        6, // hasbit index offset
+        PROTOBUF_FIELD_OFFSET(::chirp::server_gateway::UnbindPlayerIdentityRequest, _impl_.binding_id_),
+        PROTOBUF_FIELD_OFFSET(::chirp::server_gateway::UnbindPlayerIdentityRequest, _impl_.game_id_),
+        PROTOBUF_FIELD_OFFSET(::chirp::server_gateway::UnbindPlayerIdentityRequest, _impl_.game_user_id_),
+        0,
+        1,
+        2,
+        0x081, // bitmap
+        PROTOBUF_FIELD_OFFSET(::chirp::server_gateway::UnbindPlayerIdentityResponse, _impl_._has_bits_),
+        4, // hasbit index offset
+        PROTOBUF_FIELD_OFFSET(::chirp::server_gateway::UnbindPlayerIdentityResponse, _impl_.code_),
+        0,
+        0x081, // bitmap
+        PROTOBUF_FIELD_OFFSET(::chirp::server_gateway::GetPlayerIdentitiesRequest, _impl_._has_bits_),
+        4, // hasbit index offset
+        PROTOBUF_FIELD_OFFSET(::chirp::server_gateway::GetPlayerIdentitiesRequest, _impl_.player_id_),
+        0,
+        0x081, // bitmap
+        PROTOBUF_FIELD_OFFSET(::chirp::server_gateway::GetPlayerIdentitiesResponse, _impl_._has_bits_),
+        5, // hasbit index offset
+        PROTOBUF_FIELD_OFFSET(::chirp::server_gateway::GetPlayerIdentitiesResponse, _impl_.code_),
+        PROTOBUF_FIELD_OFFSET(::chirp::server_gateway::GetPlayerIdentitiesResponse, _impl_.bindings_),
+        1,
+        0,
+        0x081, // bitmap
+        PROTOBUF_FIELD_OFFSET(::chirp::server_gateway::ResolveGameUserRequest, _impl_._has_bits_),
+        5, // hasbit index offset
+        PROTOBUF_FIELD_OFFSET(::chirp::server_gateway::ResolveGameUserRequest, _impl_.game_id_),
+        PROTOBUF_FIELD_OFFSET(::chirp::server_gateway::ResolveGameUserRequest, _impl_.game_user_id_),
+        0,
+        1,
+        0x081, // bitmap
+        PROTOBUF_FIELD_OFFSET(::chirp::server_gateway::ResolveGameUserResponse, _impl_._has_bits_),
+        5, // hasbit index offset
+        PROTOBUF_FIELD_OFFSET(::chirp::server_gateway::ResolveGameUserResponse, _impl_.code_),
+        PROTOBUF_FIELD_OFFSET(::chirp::server_gateway::ResolveGameUserResponse, _impl_.player_id_),
+        1,
+        0,
 };
 
 static const ::_pbi::MigrationSchema
@@ -503,6 +847,15 @@ static const ::_pbi::MigrationSchema
         {77, sizeof(::chirp::server_gateway::EventDeliverNotify)},
         {90, sizeof(::chirp::server_gateway::EventAckRequest)},
         {95, sizeof(::chirp::server_gateway::EventAckResponse)},
+        {100, sizeof(::chirp::server_gateway::StoredIdentityBinding)},
+        {113, sizeof(::chirp::server_gateway::BindPlayerIdentityRequest)},
+        {124, sizeof(::chirp::server_gateway::BindPlayerIdentityResponse)},
+        {133, sizeof(::chirp::server_gateway::UnbindPlayerIdentityRequest)},
+        {142, sizeof(::chirp::server_gateway::UnbindPlayerIdentityResponse)},
+        {147, sizeof(::chirp::server_gateway::GetPlayerIdentitiesRequest)},
+        {152, sizeof(::chirp::server_gateway::GetPlayerIdentitiesResponse)},
+        {159, sizeof(::chirp::server_gateway::ResolveGameUserRequest)},
+        {166, sizeof(::chirp::server_gateway::ResolveGameUserResponse)},
 };
 static const ::_pb::Message* PROTOBUF_NONNULL const file_default_instances[] = {
     &::chirp::server_gateway::_ServerAuthRequest_default_instance_._instance,
@@ -517,6 +870,15 @@ static const ::_pb::Message* PROTOBUF_NONNULL const file_default_instances[] = {
     &::chirp::server_gateway::_EventDeliverNotify_default_instance_._instance,
     &::chirp::server_gateway::_EventAckRequest_default_instance_._instance,
     &::chirp::server_gateway::_EventAckResponse_default_instance_._instance,
+    &::chirp::server_gateway::_StoredIdentityBinding_default_instance_._instance,
+    &::chirp::server_gateway::_BindPlayerIdentityRequest_default_instance_._instance,
+    &::chirp::server_gateway::_BindPlayerIdentityResponse_default_instance_._instance,
+    &::chirp::server_gateway::_UnbindPlayerIdentityRequest_default_instance_._instance,
+    &::chirp::server_gateway::_UnbindPlayerIdentityResponse_default_instance_._instance,
+    &::chirp::server_gateway::_GetPlayerIdentitiesRequest_default_instance_._instance,
+    &::chirp::server_gateway::_GetPlayerIdentitiesResponse_default_instance_._instance,
+    &::chirp::server_gateway::_ResolveGameUserRequest_default_instance_._instance,
+    &::chirp::server_gateway::_ResolveGameUserResponse_default_instance_._instance,
 };
 const char descriptor_table_protodef_proto_2fserver_5fgateway_2eproto[] ABSL_ATTRIBUTE_SECTION_VARIABLE(
     protodesc_cold) = {
@@ -548,11 +910,32 @@ const char descriptor_table_protodef_proto_2fserver_5fgateway_2eproto[] ABSL_ATT
     "ayload\030\003 \001(\014\022\027\n\017published_at_ms\030\004 \001(\003\022\017\n"
     "\007attempt\030\005 \001(\005\"$\n\017EventAckRequest\022\021\n\teve"
     "nt_ids\030\001 \003(\t\"9\n\020EventAckResponse\022%\n\004code"
-    "\030\001 \001(\0162\027.chirp.common.ErrorCode*W\n\nSende"
-    "rKind\022\022\n\016SENDER_UNKNOWN\020\000\022\021\n\rSENDER_SYST"
-    "EM\020\001\022\016\n\nSENDER_NPC\020\002\022\022\n\016SENDER_SERVICE\020\003"
-    "B.Z,github.com/cui/chirp/proto/go/server"
-    "_gatewayb\006proto3"
+    "\030\001 \001(\0162\027.chirp.common.ErrorCode\"z\n\025Store"
+    "dIdentityBinding\022\022\n\nbinding_id\030\001 \001(\t\022\021\n\t"
+    "player_id\030\002 \001(\t\022\017\n\007game_id\030\003 \001(\t\022\024\n\014game"
+    "_user_id\030\004 \001(\t\022\023\n\013bound_at_ms\030\005 \001(\003\"i\n\031B"
+    "indPlayerIdentityRequest\022\022\n\nbinding_id\030\001"
+    " \001(\t\022\021\n\tplayer_id\030\002 \001(\t\022\017\n\007game_id\030\003 \001(\t"
+    "\022\024\n\014game_user_id\030\004 \001(\t\"h\n\032BindPlayerIden"
+    "tityResponse\022%\n\004code\030\001 \001(\0162\027.chirp.commo"
+    "n.ErrorCode\022\022\n\nbinding_id\030\002 \001(\t\022\017\n\007exist"
+    "ed\030\003 \001(\010\"X\n\033UnbindPlayerIdentityRequest\022"
+    "\022\n\nbinding_id\030\001 \001(\t\022\017\n\007game_id\030\002 \001(\t\022\024\n\014"
+    "game_user_id\030\003 \001(\t\"E\n\034UnbindPlayerIdenti"
+    "tyResponse\022%\n\004code\030\001 \001(\0162\027.chirp.common."
+    "ErrorCode\"/\n\032GetPlayerIdentitiesRequest\022"
+    "\021\n\tplayer_id\030\001 \001(\t\"\203\001\n\033GetPlayerIdentiti"
+    "esResponse\022%\n\004code\030\001 \001(\0162\027.chirp.common."
+    "ErrorCode\022=\n\010bindings\030\002 \003(\0132+.chirp.serv"
+    "er_gateway.StoredIdentityBinding\"\?\n\026Reso"
+    "lveGameUserRequest\022\017\n\007game_id\030\001 \001(\t\022\024\n\014g"
+    "ame_user_id\030\002 \001(\t\"S\n\027ResolveGameUserResp"
+    "onse\022%\n\004code\030\001 \001(\0162\027.chirp.common.ErrorC"
+    "ode\022\021\n\tplayer_id\030\002 \001(\t*W\n\nSenderKind\022\022\n\016"
+    "SENDER_UNKNOWN\020\000\022\021\n\rSENDER_SYSTEM\020\001\022\016\n\nS"
+    "ENDER_NPC\020\002\022\022\n\016SENDER_SERVICE\020\003B.Z,githu"
+    "b.com/cui/chirp/proto/go/server_gatewayb"
+    "\006proto3"
 };
 static const ::_pbi::DescriptorTable* PROTOBUF_NONNULL const
     descriptor_table_proto_2fserver_5fgateway_2eproto_deps[1] = {
@@ -562,13 +945,13 @@ static ::absl::once_flag descriptor_table_proto_2fserver_5fgateway_2eproto_once;
 PROTOBUF_CONSTINIT const ::_pbi::DescriptorTable descriptor_table_proto_2fserver_5fgateway_2eproto = {
     false,
     false,
-    1296,
+    2127,
     descriptor_table_protodef_proto_2fserver_5fgateway_2eproto,
     "proto/server_gateway.proto",
     &descriptor_table_proto_2fserver_5fgateway_2eproto_once,
     descriptor_table_proto_2fserver_5fgateway_2eproto_deps,
     1,
-    12,
+    21,
     schemas,
     file_default_instances,
     TableStruct_proto_2fserver_5fgateway_2eproto::offsets,
@@ -4569,6 +4952,3026 @@ void EventAckResponse::InternalSwap(EventAckResponse* PROTOBUF_RESTRICT PROTOBUF
 }
 
 ::google::protobuf::Metadata EventAckResponse::GetMetadata() const {
+  return ::google::protobuf::Message::GetMetadataImpl(GetClassData()->full());
+}
+// ===================================================================
+
+class StoredIdentityBinding::_Internal {
+ public:
+  using HasBits =
+      decltype(::std::declval<StoredIdentityBinding>()._impl_._has_bits_);
+  static constexpr ::int32_t kHasBitsOffset =
+      8 * PROTOBUF_FIELD_OFFSET(StoredIdentityBinding, _impl_._has_bits_);
+};
+
+StoredIdentityBinding::StoredIdentityBinding(::google::protobuf::Arena* PROTOBUF_NULLABLE arena)
+#if defined(PROTOBUF_CUSTOM_VTABLE)
+    : ::google::protobuf::Message(arena, StoredIdentityBinding_class_data_.base()) {
+#else   // PROTOBUF_CUSTOM_VTABLE
+    : ::google::protobuf::Message(arena) {
+#endif  // PROTOBUF_CUSTOM_VTABLE
+  SharedCtor(arena);
+  // @@protoc_insertion_point(arena_constructor:chirp.server_gateway.StoredIdentityBinding)
+}
+PROTOBUF_NDEBUG_INLINE StoredIdentityBinding::Impl_::Impl_(
+    [[maybe_unused]] ::google::protobuf::internal::InternalVisibility visibility,
+    [[maybe_unused]] ::google::protobuf::Arena* PROTOBUF_NULLABLE arena, const Impl_& from,
+    [[maybe_unused]] const ::chirp::server_gateway::StoredIdentityBinding& from_msg)
+      : _has_bits_{from._has_bits_},
+        _cached_size_{0},
+        binding_id_(arena, from.binding_id_),
+        player_id_(arena, from.player_id_),
+        game_id_(arena, from.game_id_),
+        game_user_id_(arena, from.game_user_id_) {}
+
+StoredIdentityBinding::StoredIdentityBinding(
+    ::google::protobuf::Arena* PROTOBUF_NULLABLE arena,
+    const StoredIdentityBinding& from)
+#if defined(PROTOBUF_CUSTOM_VTABLE)
+    : ::google::protobuf::Message(arena, StoredIdentityBinding_class_data_.base()) {
+#else   // PROTOBUF_CUSTOM_VTABLE
+    : ::google::protobuf::Message(arena) {
+#endif  // PROTOBUF_CUSTOM_VTABLE
+  StoredIdentityBinding* const _this = this;
+  (void)_this;
+  _internal_metadata_.MergeFrom<::google::protobuf::UnknownFieldSet>(
+      from._internal_metadata_);
+  new (&_impl_) Impl_(internal_visibility(), arena, from._impl_, from);
+  _impl_.bound_at_ms_ = from._impl_.bound_at_ms_;
+
+  // @@protoc_insertion_point(copy_constructor:chirp.server_gateway.StoredIdentityBinding)
+}
+PROTOBUF_NDEBUG_INLINE StoredIdentityBinding::Impl_::Impl_(
+    [[maybe_unused]] ::google::protobuf::internal::InternalVisibility visibility,
+    [[maybe_unused]] ::google::protobuf::Arena* PROTOBUF_NULLABLE arena)
+      : _cached_size_{0},
+        binding_id_(arena),
+        player_id_(arena),
+        game_id_(arena),
+        game_user_id_(arena) {}
+
+inline void StoredIdentityBinding::SharedCtor(::_pb::Arena* PROTOBUF_NULLABLE arena) {
+  new (&_impl_) Impl_(internal_visibility(), arena);
+  _impl_.bound_at_ms_ = {};
+}
+StoredIdentityBinding::~StoredIdentityBinding() {
+  // @@protoc_insertion_point(destructor:chirp.server_gateway.StoredIdentityBinding)
+  SharedDtor(*this);
+}
+inline void StoredIdentityBinding::SharedDtor(MessageLite& self) {
+  StoredIdentityBinding& this_ = static_cast<StoredIdentityBinding&>(self);
+  if constexpr (::_pbi::DebugHardenCheckHasBitConsistency()) {
+    this_.CheckHasBitConsistency();
+  }
+  this_._internal_metadata_.Delete<::google::protobuf::UnknownFieldSet>();
+  ABSL_DCHECK(this_.GetArena() == nullptr);
+  this_._impl_.binding_id_.Destroy();
+  this_._impl_.player_id_.Destroy();
+  this_._impl_.game_id_.Destroy();
+  this_._impl_.game_user_id_.Destroy();
+  this_._impl_.~Impl_();
+}
+
+inline void* PROTOBUF_NONNULL StoredIdentityBinding::PlacementNew_(
+    const void* PROTOBUF_NONNULL, void* PROTOBUF_NONNULL mem,
+    ::google::protobuf::Arena* PROTOBUF_NULLABLE arena) {
+  return ::new (mem) StoredIdentityBinding(arena);
+}
+constexpr auto StoredIdentityBinding::InternalNewImpl_() {
+  return ::google::protobuf::internal::MessageCreator::CopyInit(sizeof(StoredIdentityBinding),
+                                            alignof(StoredIdentityBinding));
+}
+constexpr auto StoredIdentityBinding::InternalGenerateClassData_() {
+  return ::google::protobuf::internal::ClassDataFull{
+      ::google::protobuf::internal::ClassData{
+          &_StoredIdentityBinding_default_instance_._instance,
+          &_table_.header,
+          nullptr,  // OnDemandRegisterArenaDtor
+          nullptr,  // IsInitialized
+          &StoredIdentityBinding::MergeImpl,
+          ::google::protobuf::Message::GetNewImpl<StoredIdentityBinding>(),
+#if defined(PROTOBUF_CUSTOM_VTABLE)
+          &StoredIdentityBinding::SharedDtor,
+          ::google::protobuf::Message::GetClearImpl<StoredIdentityBinding>(), &StoredIdentityBinding::ByteSizeLong,
+              &StoredIdentityBinding::_InternalSerialize,
+#endif  // PROTOBUF_CUSTOM_VTABLE
+          PROTOBUF_FIELD_OFFSET(StoredIdentityBinding, _impl_._cached_size_),
+          false,
+      },
+      &StoredIdentityBinding::kDescriptorMethods,
+      &descriptor_table_proto_2fserver_5fgateway_2eproto,
+      nullptr,  // tracker
+  };
+}
+
+PROTOBUF_CONSTINIT PROTOBUF_ATTRIBUTE_INIT_PRIORITY1 const
+    ::google::protobuf::internal::ClassDataFull StoredIdentityBinding_class_data_ =
+        StoredIdentityBinding::InternalGenerateClassData_();
+
+PROTOBUF_ATTRIBUTE_WEAK const ::google::protobuf::internal::ClassData* PROTOBUF_NONNULL
+StoredIdentityBinding::GetClassData() const {
+  ::google::protobuf::internal::PrefetchToLocalCache(&StoredIdentityBinding_class_data_);
+  ::google::protobuf::internal::PrefetchToLocalCache(StoredIdentityBinding_class_data_.tc_table);
+  return StoredIdentityBinding_class_data_.base();
+}
+PROTOBUF_CONSTINIT PROTOBUF_ATTRIBUTE_INIT_PRIORITY1
+const ::_pbi::TcParseTable<3, 5, 0, 89, 2>
+StoredIdentityBinding::_table_ = {
+  {
+    PROTOBUF_FIELD_OFFSET(StoredIdentityBinding, _impl_._has_bits_),
+    0, // no _extensions_
+    5, 56,  // max_field_number, fast_idx_mask
+    offsetof(decltype(_table_), field_lookup_table),
+    4294967264,  // skipmap
+    offsetof(decltype(_table_), field_entries),
+    5,  // num_field_entries
+    0,  // num_aux_entries
+    offsetof(decltype(_table_), field_names),  // no aux_entries
+    StoredIdentityBinding_class_data_.base(),
+    nullptr,  // post_loop_handler
+    ::_pbi::TcParser::GenericFallback,  // fallback
+    #ifdef PROTOBUF_PREFETCH_PARSE_TABLE
+    ::_pbi::TcParser::GetTable<::chirp::server_gateway::StoredIdentityBinding>(),  // to_prefetch
+    #endif  // PROTOBUF_PREFETCH_PARSE_TABLE
+  }, {{
+    {::_pbi::TcParser::MiniParse, {}},
+    // string binding_id = 1;
+    {::_pbi::TcParser::FastUS1,
+     {10, 0, 0,
+      PROTOBUF_FIELD_OFFSET(StoredIdentityBinding, _impl_.binding_id_)}},
+    // string player_id = 2;
+    {::_pbi::TcParser::FastUS1,
+     {18, 1, 0,
+      PROTOBUF_FIELD_OFFSET(StoredIdentityBinding, _impl_.player_id_)}},
+    // string game_id = 3;
+    {::_pbi::TcParser::FastUS1,
+     {26, 2, 0,
+      PROTOBUF_FIELD_OFFSET(StoredIdentityBinding, _impl_.game_id_)}},
+    // string game_user_id = 4;
+    {::_pbi::TcParser::FastUS1,
+     {34, 3, 0,
+      PROTOBUF_FIELD_OFFSET(StoredIdentityBinding, _impl_.game_user_id_)}},
+    // int64 bound_at_ms = 5;
+    {::_pbi::TcParser::SingularVarintNoZag1<::uint64_t, offsetof(StoredIdentityBinding, _impl_.bound_at_ms_), 4>(),
+     {40, 4, 0,
+      PROTOBUF_FIELD_OFFSET(StoredIdentityBinding, _impl_.bound_at_ms_)}},
+    {::_pbi::TcParser::MiniParse, {}},
+    {::_pbi::TcParser::MiniParse, {}},
+  }}, {{
+    65535, 65535
+  }}, {{
+    // string binding_id = 1;
+    {PROTOBUF_FIELD_OFFSET(StoredIdentityBinding, _impl_.binding_id_), _Internal::kHasBitsOffset + 0, 0, (0 | ::_fl::kFcOptional | ::_fl::kUtf8String | ::_fl::kRepAString)},
+    // string player_id = 2;
+    {PROTOBUF_FIELD_OFFSET(StoredIdentityBinding, _impl_.player_id_), _Internal::kHasBitsOffset + 1, 0, (0 | ::_fl::kFcOptional | ::_fl::kUtf8String | ::_fl::kRepAString)},
+    // string game_id = 3;
+    {PROTOBUF_FIELD_OFFSET(StoredIdentityBinding, _impl_.game_id_), _Internal::kHasBitsOffset + 2, 0, (0 | ::_fl::kFcOptional | ::_fl::kUtf8String | ::_fl::kRepAString)},
+    // string game_user_id = 4;
+    {PROTOBUF_FIELD_OFFSET(StoredIdentityBinding, _impl_.game_user_id_), _Internal::kHasBitsOffset + 3, 0, (0 | ::_fl::kFcOptional | ::_fl::kUtf8String | ::_fl::kRepAString)},
+    // int64 bound_at_ms = 5;
+    {PROTOBUF_FIELD_OFFSET(StoredIdentityBinding, _impl_.bound_at_ms_), _Internal::kHasBitsOffset + 4, 0, (0 | ::_fl::kFcOptional | ::_fl::kInt64)},
+  }},
+  // no aux_entries
+  {{
+    "\52\12\11\7\14\0\0\0"
+    "chirp.server_gateway.StoredIdentityBinding"
+    "binding_id"
+    "player_id"
+    "game_id"
+    "game_user_id"
+  }},
+};
+PROTOBUF_NOINLINE void StoredIdentityBinding::Clear() {
+// @@protoc_insertion_point(message_clear_start:chirp.server_gateway.StoredIdentityBinding)
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  ::uint32_t cached_has_bits = 0;
+  // Prevent compiler warnings about cached_has_bits being unused
+  (void) cached_has_bits;
+
+  cached_has_bits = _impl_._has_bits_[0];
+  if (BatchCheckHasBit(cached_has_bits, 0x0000000fU)) {
+    if (CheckHasBit(cached_has_bits, 0x00000001U)) {
+      _impl_.binding_id_.ClearNonDefaultToEmpty();
+    }
+    if (CheckHasBit(cached_has_bits, 0x00000002U)) {
+      _impl_.player_id_.ClearNonDefaultToEmpty();
+    }
+    if (CheckHasBit(cached_has_bits, 0x00000004U)) {
+      _impl_.game_id_.ClearNonDefaultToEmpty();
+    }
+    if (CheckHasBit(cached_has_bits, 0x00000008U)) {
+      _impl_.game_user_id_.ClearNonDefaultToEmpty();
+    }
+  }
+  _impl_.bound_at_ms_ = ::int64_t{0};
+  _impl_._has_bits_.Clear();
+  _internal_metadata_.Clear<::google::protobuf::UnknownFieldSet>();
+}
+
+#if defined(PROTOBUF_CUSTOM_VTABLE)
+::uint8_t* PROTOBUF_NONNULL StoredIdentityBinding::_InternalSerialize(
+    const ::google::protobuf::MessageLite& base, ::uint8_t* PROTOBUF_NONNULL target,
+    ::google::protobuf::io::EpsCopyOutputStream* PROTOBUF_NONNULL stream) {
+  const StoredIdentityBinding& this_ = static_cast<const StoredIdentityBinding&>(base);
+#else   // PROTOBUF_CUSTOM_VTABLE
+::uint8_t* PROTOBUF_NONNULL StoredIdentityBinding::_InternalSerialize(
+    ::uint8_t* PROTOBUF_NONNULL target,
+    ::google::protobuf::io::EpsCopyOutputStream* PROTOBUF_NONNULL stream) const {
+  const StoredIdentityBinding& this_ = *this;
+#endif  // PROTOBUF_CUSTOM_VTABLE
+  if constexpr (::_pbi::DebugHardenCheckHasBitConsistency()) {
+    this_.CheckHasBitConsistency();
+  }
+  // @@protoc_insertion_point(serialize_to_array_start:chirp.server_gateway.StoredIdentityBinding)
+  ::uint32_t cached_has_bits = 0;
+  (void)cached_has_bits;
+
+  cached_has_bits = this_._impl_._has_bits_[0];
+  // string binding_id = 1;
+  if (CheckHasBit(cached_has_bits, 0x00000001U)) {
+    if (!this_._internal_binding_id().empty()) {
+      const ::std::string& _s = this_._internal_binding_id();
+      ::google::protobuf::internal::WireFormatLite::VerifyUtf8String(
+          _s.data(), static_cast<int>(_s.length()), ::google::protobuf::internal::WireFormatLite::SERIALIZE, "chirp.server_gateway.StoredIdentityBinding.binding_id");
+      target = stream->WriteStringMaybeAliased(1, _s, target);
+    }
+  }
+
+  // string player_id = 2;
+  if (CheckHasBit(cached_has_bits, 0x00000002U)) {
+    if (!this_._internal_player_id().empty()) {
+      const ::std::string& _s = this_._internal_player_id();
+      ::google::protobuf::internal::WireFormatLite::VerifyUtf8String(
+          _s.data(), static_cast<int>(_s.length()), ::google::protobuf::internal::WireFormatLite::SERIALIZE, "chirp.server_gateway.StoredIdentityBinding.player_id");
+      target = stream->WriteStringMaybeAliased(2, _s, target);
+    }
+  }
+
+  // string game_id = 3;
+  if (CheckHasBit(cached_has_bits, 0x00000004U)) {
+    if (!this_._internal_game_id().empty()) {
+      const ::std::string& _s = this_._internal_game_id();
+      ::google::protobuf::internal::WireFormatLite::VerifyUtf8String(
+          _s.data(), static_cast<int>(_s.length()), ::google::protobuf::internal::WireFormatLite::SERIALIZE, "chirp.server_gateway.StoredIdentityBinding.game_id");
+      target = stream->WriteStringMaybeAliased(3, _s, target);
+    }
+  }
+
+  // string game_user_id = 4;
+  if (CheckHasBit(cached_has_bits, 0x00000008U)) {
+    if (!this_._internal_game_user_id().empty()) {
+      const ::std::string& _s = this_._internal_game_user_id();
+      ::google::protobuf::internal::WireFormatLite::VerifyUtf8String(
+          _s.data(), static_cast<int>(_s.length()), ::google::protobuf::internal::WireFormatLite::SERIALIZE, "chirp.server_gateway.StoredIdentityBinding.game_user_id");
+      target = stream->WriteStringMaybeAliased(4, _s, target);
+    }
+  }
+
+  // int64 bound_at_ms = 5;
+  if (CheckHasBit(cached_has_bits, 0x00000010U)) {
+    if (this_._internal_bound_at_ms() != 0) {
+      target =
+          ::google::protobuf::internal::WireFormatLite::WriteInt64ToArrayWithField<5>(
+              stream, this_._internal_bound_at_ms(), target);
+    }
+  }
+
+  if (ABSL_PREDICT_FALSE(this_._internal_metadata_.have_unknown_fields())) {
+    target =
+        ::_pbi::WireFormat::InternalSerializeUnknownFieldsToArray(
+            this_._internal_metadata_.unknown_fields<::google::protobuf::UnknownFieldSet>(::google::protobuf::UnknownFieldSet::default_instance), target, stream);
+  }
+  // @@protoc_insertion_point(serialize_to_array_end:chirp.server_gateway.StoredIdentityBinding)
+  return target;
+}
+
+#if defined(PROTOBUF_CUSTOM_VTABLE)
+::size_t StoredIdentityBinding::ByteSizeLong(const MessageLite& base) {
+  const StoredIdentityBinding& this_ = static_cast<const StoredIdentityBinding&>(base);
+#else   // PROTOBUF_CUSTOM_VTABLE
+::size_t StoredIdentityBinding::ByteSizeLong() const {
+  const StoredIdentityBinding& this_ = *this;
+#endif  // PROTOBUF_CUSTOM_VTABLE
+  // @@protoc_insertion_point(message_byte_size_start:chirp.server_gateway.StoredIdentityBinding)
+  ::size_t total_size = 0;
+
+  ::uint32_t cached_has_bits = 0;
+  // Prevent compiler warnings about cached_has_bits being unused
+  (void)cached_has_bits;
+
+  ::_pbi::Prefetch5LinesFrom7Lines(&this_);
+  cached_has_bits = this_._impl_._has_bits_[0];
+  if (BatchCheckHasBit(cached_has_bits, 0x0000001fU)) {
+    // string binding_id = 1;
+    if (CheckHasBit(cached_has_bits, 0x00000001U)) {
+      if (!this_._internal_binding_id().empty()) {
+        total_size += 1 + ::google::protobuf::internal::WireFormatLite::StringSize(
+                                        this_._internal_binding_id());
+      }
+    }
+    // string player_id = 2;
+    if (CheckHasBit(cached_has_bits, 0x00000002U)) {
+      if (!this_._internal_player_id().empty()) {
+        total_size += 1 + ::google::protobuf::internal::WireFormatLite::StringSize(
+                                        this_._internal_player_id());
+      }
+    }
+    // string game_id = 3;
+    if (CheckHasBit(cached_has_bits, 0x00000004U)) {
+      if (!this_._internal_game_id().empty()) {
+        total_size += 1 + ::google::protobuf::internal::WireFormatLite::StringSize(
+                                        this_._internal_game_id());
+      }
+    }
+    // string game_user_id = 4;
+    if (CheckHasBit(cached_has_bits, 0x00000008U)) {
+      if (!this_._internal_game_user_id().empty()) {
+        total_size += 1 + ::google::protobuf::internal::WireFormatLite::StringSize(
+                                        this_._internal_game_user_id());
+      }
+    }
+    // int64 bound_at_ms = 5;
+    if (CheckHasBit(cached_has_bits, 0x00000010U)) {
+      if (this_._internal_bound_at_ms() != 0) {
+        total_size += ::_pbi::WireFormatLite::Int64SizePlusOne(
+            this_._internal_bound_at_ms());
+      }
+    }
+  }
+  return this_.MaybeComputeUnknownFieldsSize(total_size,
+                                             &this_._impl_._cached_size_);
+}
+
+void StoredIdentityBinding::MergeImpl(::google::protobuf::MessageLite& to_msg,
+                            const ::google::protobuf::MessageLite& from_msg) {
+   auto* const _this =
+      static_cast<StoredIdentityBinding*>(&to_msg);
+  auto& from = static_cast<const StoredIdentityBinding&>(from_msg);
+  if constexpr (::_pbi::DebugHardenCheckHasBitConsistency()) {
+    from.CheckHasBitConsistency();
+  }
+  // @@protoc_insertion_point(class_specific_merge_from_start:chirp.server_gateway.StoredIdentityBinding)
+  ABSL_DCHECK_NE(&from, _this);
+  ::uint32_t cached_has_bits = 0;
+  (void)cached_has_bits;
+
+  cached_has_bits = from._impl_._has_bits_[0];
+  if (BatchCheckHasBit(cached_has_bits, 0x0000001fU)) {
+    if (CheckHasBit(cached_has_bits, 0x00000001U)) {
+      if (!from._internal_binding_id().empty()) {
+        _this->_internal_set_binding_id(from._internal_binding_id());
+      } else {
+        if (_this->_impl_.binding_id_.IsDefault()) {
+          _this->_internal_set_binding_id("");
+        }
+      }
+    }
+    if (CheckHasBit(cached_has_bits, 0x00000002U)) {
+      if (!from._internal_player_id().empty()) {
+        _this->_internal_set_player_id(from._internal_player_id());
+      } else {
+        if (_this->_impl_.player_id_.IsDefault()) {
+          _this->_internal_set_player_id("");
+        }
+      }
+    }
+    if (CheckHasBit(cached_has_bits, 0x00000004U)) {
+      if (!from._internal_game_id().empty()) {
+        _this->_internal_set_game_id(from._internal_game_id());
+      } else {
+        if (_this->_impl_.game_id_.IsDefault()) {
+          _this->_internal_set_game_id("");
+        }
+      }
+    }
+    if (CheckHasBit(cached_has_bits, 0x00000008U)) {
+      if (!from._internal_game_user_id().empty()) {
+        _this->_internal_set_game_user_id(from._internal_game_user_id());
+      } else {
+        if (_this->_impl_.game_user_id_.IsDefault()) {
+          _this->_internal_set_game_user_id("");
+        }
+      }
+    }
+    if (CheckHasBit(cached_has_bits, 0x00000010U)) {
+      if (from._internal_bound_at_ms() != 0) {
+        _this->_impl_.bound_at_ms_ = from._impl_.bound_at_ms_;
+      }
+    }
+  }
+  _this->_impl_._has_bits_[0] |= cached_has_bits;
+  _this->_internal_metadata_.MergeFrom<::google::protobuf::UnknownFieldSet>(
+      from._internal_metadata_);
+}
+
+void StoredIdentityBinding::CopyFrom(const StoredIdentityBinding& from) {
+  // @@protoc_insertion_point(class_specific_copy_from_start:chirp.server_gateway.StoredIdentityBinding)
+  if (&from == this) return;
+  Clear();
+  MergeFrom(from);
+}
+
+
+void StoredIdentityBinding::InternalSwap(StoredIdentityBinding* PROTOBUF_RESTRICT PROTOBUF_NONNULL other) {
+  using ::std::swap;
+  auto* arena = GetArena();
+  ABSL_DCHECK_EQ(arena, other->GetArena());
+  _internal_metadata_.InternalSwap(&other->_internal_metadata_);
+  swap(_impl_._has_bits_[0], other->_impl_._has_bits_[0]);
+  ::_pbi::ArenaStringPtr::InternalSwap(&_impl_.binding_id_, &other->_impl_.binding_id_, arena);
+  ::_pbi::ArenaStringPtr::InternalSwap(&_impl_.player_id_, &other->_impl_.player_id_, arena);
+  ::_pbi::ArenaStringPtr::InternalSwap(&_impl_.game_id_, &other->_impl_.game_id_, arena);
+  ::_pbi::ArenaStringPtr::InternalSwap(&_impl_.game_user_id_, &other->_impl_.game_user_id_, arena);
+  swap(_impl_.bound_at_ms_, other->_impl_.bound_at_ms_);
+}
+
+::google::protobuf::Metadata StoredIdentityBinding::GetMetadata() const {
+  return ::google::protobuf::Message::GetMetadataImpl(GetClassData()->full());
+}
+// ===================================================================
+
+class BindPlayerIdentityRequest::_Internal {
+ public:
+  using HasBits =
+      decltype(::std::declval<BindPlayerIdentityRequest>()._impl_._has_bits_);
+  static constexpr ::int32_t kHasBitsOffset =
+      8 * PROTOBUF_FIELD_OFFSET(BindPlayerIdentityRequest, _impl_._has_bits_);
+};
+
+BindPlayerIdentityRequest::BindPlayerIdentityRequest(::google::protobuf::Arena* PROTOBUF_NULLABLE arena)
+#if defined(PROTOBUF_CUSTOM_VTABLE)
+    : ::google::protobuf::Message(arena, BindPlayerIdentityRequest_class_data_.base()) {
+#else   // PROTOBUF_CUSTOM_VTABLE
+    : ::google::protobuf::Message(arena) {
+#endif  // PROTOBUF_CUSTOM_VTABLE
+  SharedCtor(arena);
+  // @@protoc_insertion_point(arena_constructor:chirp.server_gateway.BindPlayerIdentityRequest)
+}
+PROTOBUF_NDEBUG_INLINE BindPlayerIdentityRequest::Impl_::Impl_(
+    [[maybe_unused]] ::google::protobuf::internal::InternalVisibility visibility,
+    [[maybe_unused]] ::google::protobuf::Arena* PROTOBUF_NULLABLE arena, const Impl_& from,
+    [[maybe_unused]] const ::chirp::server_gateway::BindPlayerIdentityRequest& from_msg)
+      : _has_bits_{from._has_bits_},
+        _cached_size_{0},
+        binding_id_(arena, from.binding_id_),
+        player_id_(arena, from.player_id_),
+        game_id_(arena, from.game_id_),
+        game_user_id_(arena, from.game_user_id_) {}
+
+BindPlayerIdentityRequest::BindPlayerIdentityRequest(
+    ::google::protobuf::Arena* PROTOBUF_NULLABLE arena,
+    const BindPlayerIdentityRequest& from)
+#if defined(PROTOBUF_CUSTOM_VTABLE)
+    : ::google::protobuf::Message(arena, BindPlayerIdentityRequest_class_data_.base()) {
+#else   // PROTOBUF_CUSTOM_VTABLE
+    : ::google::protobuf::Message(arena) {
+#endif  // PROTOBUF_CUSTOM_VTABLE
+  BindPlayerIdentityRequest* const _this = this;
+  (void)_this;
+  _internal_metadata_.MergeFrom<::google::protobuf::UnknownFieldSet>(
+      from._internal_metadata_);
+  new (&_impl_) Impl_(internal_visibility(), arena, from._impl_, from);
+
+  // @@protoc_insertion_point(copy_constructor:chirp.server_gateway.BindPlayerIdentityRequest)
+}
+PROTOBUF_NDEBUG_INLINE BindPlayerIdentityRequest::Impl_::Impl_(
+    [[maybe_unused]] ::google::protobuf::internal::InternalVisibility visibility,
+    [[maybe_unused]] ::google::protobuf::Arena* PROTOBUF_NULLABLE arena)
+      : _cached_size_{0},
+        binding_id_(arena),
+        player_id_(arena),
+        game_id_(arena),
+        game_user_id_(arena) {}
+
+inline void BindPlayerIdentityRequest::SharedCtor(::_pb::Arena* PROTOBUF_NULLABLE arena) {
+  new (&_impl_) Impl_(internal_visibility(), arena);
+}
+BindPlayerIdentityRequest::~BindPlayerIdentityRequest() {
+  // @@protoc_insertion_point(destructor:chirp.server_gateway.BindPlayerIdentityRequest)
+  SharedDtor(*this);
+}
+inline void BindPlayerIdentityRequest::SharedDtor(MessageLite& self) {
+  BindPlayerIdentityRequest& this_ = static_cast<BindPlayerIdentityRequest&>(self);
+  if constexpr (::_pbi::DebugHardenCheckHasBitConsistency()) {
+    this_.CheckHasBitConsistency();
+  }
+  this_._internal_metadata_.Delete<::google::protobuf::UnknownFieldSet>();
+  ABSL_DCHECK(this_.GetArena() == nullptr);
+  this_._impl_.binding_id_.Destroy();
+  this_._impl_.player_id_.Destroy();
+  this_._impl_.game_id_.Destroy();
+  this_._impl_.game_user_id_.Destroy();
+  this_._impl_.~Impl_();
+}
+
+inline void* PROTOBUF_NONNULL BindPlayerIdentityRequest::PlacementNew_(
+    const void* PROTOBUF_NONNULL, void* PROTOBUF_NONNULL mem,
+    ::google::protobuf::Arena* PROTOBUF_NULLABLE arena) {
+  return ::new (mem) BindPlayerIdentityRequest(arena);
+}
+constexpr auto BindPlayerIdentityRequest::InternalNewImpl_() {
+  return ::google::protobuf::internal::MessageCreator::CopyInit(sizeof(BindPlayerIdentityRequest),
+                                            alignof(BindPlayerIdentityRequest));
+}
+constexpr auto BindPlayerIdentityRequest::InternalGenerateClassData_() {
+  return ::google::protobuf::internal::ClassDataFull{
+      ::google::protobuf::internal::ClassData{
+          &_BindPlayerIdentityRequest_default_instance_._instance,
+          &_table_.header,
+          nullptr,  // OnDemandRegisterArenaDtor
+          nullptr,  // IsInitialized
+          &BindPlayerIdentityRequest::MergeImpl,
+          ::google::protobuf::Message::GetNewImpl<BindPlayerIdentityRequest>(),
+#if defined(PROTOBUF_CUSTOM_VTABLE)
+          &BindPlayerIdentityRequest::SharedDtor,
+          ::google::protobuf::Message::GetClearImpl<BindPlayerIdentityRequest>(), &BindPlayerIdentityRequest::ByteSizeLong,
+              &BindPlayerIdentityRequest::_InternalSerialize,
+#endif  // PROTOBUF_CUSTOM_VTABLE
+          PROTOBUF_FIELD_OFFSET(BindPlayerIdentityRequest, _impl_._cached_size_),
+          false,
+      },
+      &BindPlayerIdentityRequest::kDescriptorMethods,
+      &descriptor_table_proto_2fserver_5fgateway_2eproto,
+      nullptr,  // tracker
+  };
+}
+
+PROTOBUF_CONSTINIT PROTOBUF_ATTRIBUTE_INIT_PRIORITY1 const
+    ::google::protobuf::internal::ClassDataFull BindPlayerIdentityRequest_class_data_ =
+        BindPlayerIdentityRequest::InternalGenerateClassData_();
+
+PROTOBUF_ATTRIBUTE_WEAK const ::google::protobuf::internal::ClassData* PROTOBUF_NONNULL
+BindPlayerIdentityRequest::GetClassData() const {
+  ::google::protobuf::internal::PrefetchToLocalCache(&BindPlayerIdentityRequest_class_data_);
+  ::google::protobuf::internal::PrefetchToLocalCache(BindPlayerIdentityRequest_class_data_.tc_table);
+  return BindPlayerIdentityRequest_class_data_.base();
+}
+PROTOBUF_CONSTINIT PROTOBUF_ATTRIBUTE_INIT_PRIORITY1
+const ::_pbi::TcParseTable<2, 4, 0, 93, 2>
+BindPlayerIdentityRequest::_table_ = {
+  {
+    PROTOBUF_FIELD_OFFSET(BindPlayerIdentityRequest, _impl_._has_bits_),
+    0, // no _extensions_
+    4, 24,  // max_field_number, fast_idx_mask
+    offsetof(decltype(_table_), field_lookup_table),
+    4294967280,  // skipmap
+    offsetof(decltype(_table_), field_entries),
+    4,  // num_field_entries
+    0,  // num_aux_entries
+    offsetof(decltype(_table_), field_names),  // no aux_entries
+    BindPlayerIdentityRequest_class_data_.base(),
+    nullptr,  // post_loop_handler
+    ::_pbi::TcParser::GenericFallback,  // fallback
+    #ifdef PROTOBUF_PREFETCH_PARSE_TABLE
+    ::_pbi::TcParser::GetTable<::chirp::server_gateway::BindPlayerIdentityRequest>(),  // to_prefetch
+    #endif  // PROTOBUF_PREFETCH_PARSE_TABLE
+  }, {{
+    // string game_user_id = 4;
+    {::_pbi::TcParser::FastUS1,
+     {34, 3, 0,
+      PROTOBUF_FIELD_OFFSET(BindPlayerIdentityRequest, _impl_.game_user_id_)}},
+    // string binding_id = 1;
+    {::_pbi::TcParser::FastUS1,
+     {10, 0, 0,
+      PROTOBUF_FIELD_OFFSET(BindPlayerIdentityRequest, _impl_.binding_id_)}},
+    // string player_id = 2;
+    {::_pbi::TcParser::FastUS1,
+     {18, 1, 0,
+      PROTOBUF_FIELD_OFFSET(BindPlayerIdentityRequest, _impl_.player_id_)}},
+    // string game_id = 3;
+    {::_pbi::TcParser::FastUS1,
+     {26, 2, 0,
+      PROTOBUF_FIELD_OFFSET(BindPlayerIdentityRequest, _impl_.game_id_)}},
+  }}, {{
+    65535, 65535
+  }}, {{
+    // string binding_id = 1;
+    {PROTOBUF_FIELD_OFFSET(BindPlayerIdentityRequest, _impl_.binding_id_), _Internal::kHasBitsOffset + 0, 0, (0 | ::_fl::kFcOptional | ::_fl::kUtf8String | ::_fl::kRepAString)},
+    // string player_id = 2;
+    {PROTOBUF_FIELD_OFFSET(BindPlayerIdentityRequest, _impl_.player_id_), _Internal::kHasBitsOffset + 1, 0, (0 | ::_fl::kFcOptional | ::_fl::kUtf8String | ::_fl::kRepAString)},
+    // string game_id = 3;
+    {PROTOBUF_FIELD_OFFSET(BindPlayerIdentityRequest, _impl_.game_id_), _Internal::kHasBitsOffset + 2, 0, (0 | ::_fl::kFcOptional | ::_fl::kUtf8String | ::_fl::kRepAString)},
+    // string game_user_id = 4;
+    {PROTOBUF_FIELD_OFFSET(BindPlayerIdentityRequest, _impl_.game_user_id_), _Internal::kHasBitsOffset + 3, 0, (0 | ::_fl::kFcOptional | ::_fl::kUtf8String | ::_fl::kRepAString)},
+  }},
+  // no aux_entries
+  {{
+    "\56\12\11\7\14\0\0\0"
+    "chirp.server_gateway.BindPlayerIdentityRequest"
+    "binding_id"
+    "player_id"
+    "game_id"
+    "game_user_id"
+  }},
+};
+PROTOBUF_NOINLINE void BindPlayerIdentityRequest::Clear() {
+// @@protoc_insertion_point(message_clear_start:chirp.server_gateway.BindPlayerIdentityRequest)
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  ::uint32_t cached_has_bits = 0;
+  // Prevent compiler warnings about cached_has_bits being unused
+  (void) cached_has_bits;
+
+  cached_has_bits = _impl_._has_bits_[0];
+  if (BatchCheckHasBit(cached_has_bits, 0x0000000fU)) {
+    if (CheckHasBit(cached_has_bits, 0x00000001U)) {
+      _impl_.binding_id_.ClearNonDefaultToEmpty();
+    }
+    if (CheckHasBit(cached_has_bits, 0x00000002U)) {
+      _impl_.player_id_.ClearNonDefaultToEmpty();
+    }
+    if (CheckHasBit(cached_has_bits, 0x00000004U)) {
+      _impl_.game_id_.ClearNonDefaultToEmpty();
+    }
+    if (CheckHasBit(cached_has_bits, 0x00000008U)) {
+      _impl_.game_user_id_.ClearNonDefaultToEmpty();
+    }
+  }
+  _impl_._has_bits_.Clear();
+  _internal_metadata_.Clear<::google::protobuf::UnknownFieldSet>();
+}
+
+#if defined(PROTOBUF_CUSTOM_VTABLE)
+::uint8_t* PROTOBUF_NONNULL BindPlayerIdentityRequest::_InternalSerialize(
+    const ::google::protobuf::MessageLite& base, ::uint8_t* PROTOBUF_NONNULL target,
+    ::google::protobuf::io::EpsCopyOutputStream* PROTOBUF_NONNULL stream) {
+  const BindPlayerIdentityRequest& this_ = static_cast<const BindPlayerIdentityRequest&>(base);
+#else   // PROTOBUF_CUSTOM_VTABLE
+::uint8_t* PROTOBUF_NONNULL BindPlayerIdentityRequest::_InternalSerialize(
+    ::uint8_t* PROTOBUF_NONNULL target,
+    ::google::protobuf::io::EpsCopyOutputStream* PROTOBUF_NONNULL stream) const {
+  const BindPlayerIdentityRequest& this_ = *this;
+#endif  // PROTOBUF_CUSTOM_VTABLE
+  if constexpr (::_pbi::DebugHardenCheckHasBitConsistency()) {
+    this_.CheckHasBitConsistency();
+  }
+  // @@protoc_insertion_point(serialize_to_array_start:chirp.server_gateway.BindPlayerIdentityRequest)
+  ::uint32_t cached_has_bits = 0;
+  (void)cached_has_bits;
+
+  cached_has_bits = this_._impl_._has_bits_[0];
+  // string binding_id = 1;
+  if (CheckHasBit(cached_has_bits, 0x00000001U)) {
+    if (!this_._internal_binding_id().empty()) {
+      const ::std::string& _s = this_._internal_binding_id();
+      ::google::protobuf::internal::WireFormatLite::VerifyUtf8String(
+          _s.data(), static_cast<int>(_s.length()), ::google::protobuf::internal::WireFormatLite::SERIALIZE, "chirp.server_gateway.BindPlayerIdentityRequest.binding_id");
+      target = stream->WriteStringMaybeAliased(1, _s, target);
+    }
+  }
+
+  // string player_id = 2;
+  if (CheckHasBit(cached_has_bits, 0x00000002U)) {
+    if (!this_._internal_player_id().empty()) {
+      const ::std::string& _s = this_._internal_player_id();
+      ::google::protobuf::internal::WireFormatLite::VerifyUtf8String(
+          _s.data(), static_cast<int>(_s.length()), ::google::protobuf::internal::WireFormatLite::SERIALIZE, "chirp.server_gateway.BindPlayerIdentityRequest.player_id");
+      target = stream->WriteStringMaybeAliased(2, _s, target);
+    }
+  }
+
+  // string game_id = 3;
+  if (CheckHasBit(cached_has_bits, 0x00000004U)) {
+    if (!this_._internal_game_id().empty()) {
+      const ::std::string& _s = this_._internal_game_id();
+      ::google::protobuf::internal::WireFormatLite::VerifyUtf8String(
+          _s.data(), static_cast<int>(_s.length()), ::google::protobuf::internal::WireFormatLite::SERIALIZE, "chirp.server_gateway.BindPlayerIdentityRequest.game_id");
+      target = stream->WriteStringMaybeAliased(3, _s, target);
+    }
+  }
+
+  // string game_user_id = 4;
+  if (CheckHasBit(cached_has_bits, 0x00000008U)) {
+    if (!this_._internal_game_user_id().empty()) {
+      const ::std::string& _s = this_._internal_game_user_id();
+      ::google::protobuf::internal::WireFormatLite::VerifyUtf8String(
+          _s.data(), static_cast<int>(_s.length()), ::google::protobuf::internal::WireFormatLite::SERIALIZE, "chirp.server_gateway.BindPlayerIdentityRequest.game_user_id");
+      target = stream->WriteStringMaybeAliased(4, _s, target);
+    }
+  }
+
+  if (ABSL_PREDICT_FALSE(this_._internal_metadata_.have_unknown_fields())) {
+    target =
+        ::_pbi::WireFormat::InternalSerializeUnknownFieldsToArray(
+            this_._internal_metadata_.unknown_fields<::google::protobuf::UnknownFieldSet>(::google::protobuf::UnknownFieldSet::default_instance), target, stream);
+  }
+  // @@protoc_insertion_point(serialize_to_array_end:chirp.server_gateway.BindPlayerIdentityRequest)
+  return target;
+}
+
+#if defined(PROTOBUF_CUSTOM_VTABLE)
+::size_t BindPlayerIdentityRequest::ByteSizeLong(const MessageLite& base) {
+  const BindPlayerIdentityRequest& this_ = static_cast<const BindPlayerIdentityRequest&>(base);
+#else   // PROTOBUF_CUSTOM_VTABLE
+::size_t BindPlayerIdentityRequest::ByteSizeLong() const {
+  const BindPlayerIdentityRequest& this_ = *this;
+#endif  // PROTOBUF_CUSTOM_VTABLE
+  // @@protoc_insertion_point(message_byte_size_start:chirp.server_gateway.BindPlayerIdentityRequest)
+  ::size_t total_size = 0;
+
+  ::uint32_t cached_has_bits = 0;
+  // Prevent compiler warnings about cached_has_bits being unused
+  (void)cached_has_bits;
+
+  ::_pbi::Prefetch5LinesFrom7Lines(&this_);
+  cached_has_bits = this_._impl_._has_bits_[0];
+  if (BatchCheckHasBit(cached_has_bits, 0x0000000fU)) {
+    // string binding_id = 1;
+    if (CheckHasBit(cached_has_bits, 0x00000001U)) {
+      if (!this_._internal_binding_id().empty()) {
+        total_size += 1 + ::google::protobuf::internal::WireFormatLite::StringSize(
+                                        this_._internal_binding_id());
+      }
+    }
+    // string player_id = 2;
+    if (CheckHasBit(cached_has_bits, 0x00000002U)) {
+      if (!this_._internal_player_id().empty()) {
+        total_size += 1 + ::google::protobuf::internal::WireFormatLite::StringSize(
+                                        this_._internal_player_id());
+      }
+    }
+    // string game_id = 3;
+    if (CheckHasBit(cached_has_bits, 0x00000004U)) {
+      if (!this_._internal_game_id().empty()) {
+        total_size += 1 + ::google::protobuf::internal::WireFormatLite::StringSize(
+                                        this_._internal_game_id());
+      }
+    }
+    // string game_user_id = 4;
+    if (CheckHasBit(cached_has_bits, 0x00000008U)) {
+      if (!this_._internal_game_user_id().empty()) {
+        total_size += 1 + ::google::protobuf::internal::WireFormatLite::StringSize(
+                                        this_._internal_game_user_id());
+      }
+    }
+  }
+  return this_.MaybeComputeUnknownFieldsSize(total_size,
+                                             &this_._impl_._cached_size_);
+}
+
+void BindPlayerIdentityRequest::MergeImpl(::google::protobuf::MessageLite& to_msg,
+                            const ::google::protobuf::MessageLite& from_msg) {
+   auto* const _this =
+      static_cast<BindPlayerIdentityRequest*>(&to_msg);
+  auto& from = static_cast<const BindPlayerIdentityRequest&>(from_msg);
+  if constexpr (::_pbi::DebugHardenCheckHasBitConsistency()) {
+    from.CheckHasBitConsistency();
+  }
+  // @@protoc_insertion_point(class_specific_merge_from_start:chirp.server_gateway.BindPlayerIdentityRequest)
+  ABSL_DCHECK_NE(&from, _this);
+  ::uint32_t cached_has_bits = 0;
+  (void)cached_has_bits;
+
+  cached_has_bits = from._impl_._has_bits_[0];
+  if (BatchCheckHasBit(cached_has_bits, 0x0000000fU)) {
+    if (CheckHasBit(cached_has_bits, 0x00000001U)) {
+      if (!from._internal_binding_id().empty()) {
+        _this->_internal_set_binding_id(from._internal_binding_id());
+      } else {
+        if (_this->_impl_.binding_id_.IsDefault()) {
+          _this->_internal_set_binding_id("");
+        }
+      }
+    }
+    if (CheckHasBit(cached_has_bits, 0x00000002U)) {
+      if (!from._internal_player_id().empty()) {
+        _this->_internal_set_player_id(from._internal_player_id());
+      } else {
+        if (_this->_impl_.player_id_.IsDefault()) {
+          _this->_internal_set_player_id("");
+        }
+      }
+    }
+    if (CheckHasBit(cached_has_bits, 0x00000004U)) {
+      if (!from._internal_game_id().empty()) {
+        _this->_internal_set_game_id(from._internal_game_id());
+      } else {
+        if (_this->_impl_.game_id_.IsDefault()) {
+          _this->_internal_set_game_id("");
+        }
+      }
+    }
+    if (CheckHasBit(cached_has_bits, 0x00000008U)) {
+      if (!from._internal_game_user_id().empty()) {
+        _this->_internal_set_game_user_id(from._internal_game_user_id());
+      } else {
+        if (_this->_impl_.game_user_id_.IsDefault()) {
+          _this->_internal_set_game_user_id("");
+        }
+      }
+    }
+  }
+  _this->_impl_._has_bits_[0] |= cached_has_bits;
+  _this->_internal_metadata_.MergeFrom<::google::protobuf::UnknownFieldSet>(
+      from._internal_metadata_);
+}
+
+void BindPlayerIdentityRequest::CopyFrom(const BindPlayerIdentityRequest& from) {
+  // @@protoc_insertion_point(class_specific_copy_from_start:chirp.server_gateway.BindPlayerIdentityRequest)
+  if (&from == this) return;
+  Clear();
+  MergeFrom(from);
+}
+
+
+void BindPlayerIdentityRequest::InternalSwap(BindPlayerIdentityRequest* PROTOBUF_RESTRICT PROTOBUF_NONNULL other) {
+  using ::std::swap;
+  auto* arena = GetArena();
+  ABSL_DCHECK_EQ(arena, other->GetArena());
+  _internal_metadata_.InternalSwap(&other->_internal_metadata_);
+  swap(_impl_._has_bits_[0], other->_impl_._has_bits_[0]);
+  ::_pbi::ArenaStringPtr::InternalSwap(&_impl_.binding_id_, &other->_impl_.binding_id_, arena);
+  ::_pbi::ArenaStringPtr::InternalSwap(&_impl_.player_id_, &other->_impl_.player_id_, arena);
+  ::_pbi::ArenaStringPtr::InternalSwap(&_impl_.game_id_, &other->_impl_.game_id_, arena);
+  ::_pbi::ArenaStringPtr::InternalSwap(&_impl_.game_user_id_, &other->_impl_.game_user_id_, arena);
+}
+
+::google::protobuf::Metadata BindPlayerIdentityRequest::GetMetadata() const {
+  return ::google::protobuf::Message::GetMetadataImpl(GetClassData()->full());
+}
+// ===================================================================
+
+class BindPlayerIdentityResponse::_Internal {
+ public:
+  using HasBits =
+      decltype(::std::declval<BindPlayerIdentityResponse>()._impl_._has_bits_);
+  static constexpr ::int32_t kHasBitsOffset =
+      8 * PROTOBUF_FIELD_OFFSET(BindPlayerIdentityResponse, _impl_._has_bits_);
+};
+
+BindPlayerIdentityResponse::BindPlayerIdentityResponse(::google::protobuf::Arena* PROTOBUF_NULLABLE arena)
+#if defined(PROTOBUF_CUSTOM_VTABLE)
+    : ::google::protobuf::Message(arena, BindPlayerIdentityResponse_class_data_.base()) {
+#else   // PROTOBUF_CUSTOM_VTABLE
+    : ::google::protobuf::Message(arena) {
+#endif  // PROTOBUF_CUSTOM_VTABLE
+  SharedCtor(arena);
+  // @@protoc_insertion_point(arena_constructor:chirp.server_gateway.BindPlayerIdentityResponse)
+}
+PROTOBUF_NDEBUG_INLINE BindPlayerIdentityResponse::Impl_::Impl_(
+    [[maybe_unused]] ::google::protobuf::internal::InternalVisibility visibility,
+    [[maybe_unused]] ::google::protobuf::Arena* PROTOBUF_NULLABLE arena, const Impl_& from,
+    [[maybe_unused]] const ::chirp::server_gateway::BindPlayerIdentityResponse& from_msg)
+      : _has_bits_{from._has_bits_},
+        _cached_size_{0},
+        binding_id_(arena, from.binding_id_) {}
+
+BindPlayerIdentityResponse::BindPlayerIdentityResponse(
+    ::google::protobuf::Arena* PROTOBUF_NULLABLE arena,
+    const BindPlayerIdentityResponse& from)
+#if defined(PROTOBUF_CUSTOM_VTABLE)
+    : ::google::protobuf::Message(arena, BindPlayerIdentityResponse_class_data_.base()) {
+#else   // PROTOBUF_CUSTOM_VTABLE
+    : ::google::protobuf::Message(arena) {
+#endif  // PROTOBUF_CUSTOM_VTABLE
+  BindPlayerIdentityResponse* const _this = this;
+  (void)_this;
+  _internal_metadata_.MergeFrom<::google::protobuf::UnknownFieldSet>(
+      from._internal_metadata_);
+  new (&_impl_) Impl_(internal_visibility(), arena, from._impl_, from);
+  ::memcpy(reinterpret_cast<char*>(&_impl_) +
+               offsetof(Impl_, code_),
+           reinterpret_cast<const char*>(&from._impl_) +
+               offsetof(Impl_, code_),
+           offsetof(Impl_, existed_) -
+               offsetof(Impl_, code_) +
+               sizeof(Impl_::existed_));
+
+  // @@protoc_insertion_point(copy_constructor:chirp.server_gateway.BindPlayerIdentityResponse)
+}
+PROTOBUF_NDEBUG_INLINE BindPlayerIdentityResponse::Impl_::Impl_(
+    [[maybe_unused]] ::google::protobuf::internal::InternalVisibility visibility,
+    [[maybe_unused]] ::google::protobuf::Arena* PROTOBUF_NULLABLE arena)
+      : _cached_size_{0},
+        binding_id_(arena) {}
+
+inline void BindPlayerIdentityResponse::SharedCtor(::_pb::Arena* PROTOBUF_NULLABLE arena) {
+  new (&_impl_) Impl_(internal_visibility(), arena);
+  ::memset(reinterpret_cast<char*>(&_impl_) +
+               offsetof(Impl_, code_),
+           0,
+           offsetof(Impl_, existed_) -
+               offsetof(Impl_, code_) +
+               sizeof(Impl_::existed_));
+}
+BindPlayerIdentityResponse::~BindPlayerIdentityResponse() {
+  // @@protoc_insertion_point(destructor:chirp.server_gateway.BindPlayerIdentityResponse)
+  SharedDtor(*this);
+}
+inline void BindPlayerIdentityResponse::SharedDtor(MessageLite& self) {
+  BindPlayerIdentityResponse& this_ = static_cast<BindPlayerIdentityResponse&>(self);
+  if constexpr (::_pbi::DebugHardenCheckHasBitConsistency()) {
+    this_.CheckHasBitConsistency();
+  }
+  this_._internal_metadata_.Delete<::google::protobuf::UnknownFieldSet>();
+  ABSL_DCHECK(this_.GetArena() == nullptr);
+  this_._impl_.binding_id_.Destroy();
+  this_._impl_.~Impl_();
+}
+
+inline void* PROTOBUF_NONNULL BindPlayerIdentityResponse::PlacementNew_(
+    const void* PROTOBUF_NONNULL, void* PROTOBUF_NONNULL mem,
+    ::google::protobuf::Arena* PROTOBUF_NULLABLE arena) {
+  return ::new (mem) BindPlayerIdentityResponse(arena);
+}
+constexpr auto BindPlayerIdentityResponse::InternalNewImpl_() {
+  return ::google::protobuf::internal::MessageCreator::CopyInit(sizeof(BindPlayerIdentityResponse),
+                                            alignof(BindPlayerIdentityResponse));
+}
+constexpr auto BindPlayerIdentityResponse::InternalGenerateClassData_() {
+  return ::google::protobuf::internal::ClassDataFull{
+      ::google::protobuf::internal::ClassData{
+          &_BindPlayerIdentityResponse_default_instance_._instance,
+          &_table_.header,
+          nullptr,  // OnDemandRegisterArenaDtor
+          nullptr,  // IsInitialized
+          &BindPlayerIdentityResponse::MergeImpl,
+          ::google::protobuf::Message::GetNewImpl<BindPlayerIdentityResponse>(),
+#if defined(PROTOBUF_CUSTOM_VTABLE)
+          &BindPlayerIdentityResponse::SharedDtor,
+          ::google::protobuf::Message::GetClearImpl<BindPlayerIdentityResponse>(), &BindPlayerIdentityResponse::ByteSizeLong,
+              &BindPlayerIdentityResponse::_InternalSerialize,
+#endif  // PROTOBUF_CUSTOM_VTABLE
+          PROTOBUF_FIELD_OFFSET(BindPlayerIdentityResponse, _impl_._cached_size_),
+          false,
+      },
+      &BindPlayerIdentityResponse::kDescriptorMethods,
+      &descriptor_table_proto_2fserver_5fgateway_2eproto,
+      nullptr,  // tracker
+  };
+}
+
+PROTOBUF_CONSTINIT PROTOBUF_ATTRIBUTE_INIT_PRIORITY1 const
+    ::google::protobuf::internal::ClassDataFull BindPlayerIdentityResponse_class_data_ =
+        BindPlayerIdentityResponse::InternalGenerateClassData_();
+
+PROTOBUF_ATTRIBUTE_WEAK const ::google::protobuf::internal::ClassData* PROTOBUF_NONNULL
+BindPlayerIdentityResponse::GetClassData() const {
+  ::google::protobuf::internal::PrefetchToLocalCache(&BindPlayerIdentityResponse_class_data_);
+  ::google::protobuf::internal::PrefetchToLocalCache(BindPlayerIdentityResponse_class_data_.tc_table);
+  return BindPlayerIdentityResponse_class_data_.base();
+}
+PROTOBUF_CONSTINIT PROTOBUF_ATTRIBUTE_INIT_PRIORITY1
+const ::_pbi::TcParseTable<2, 3, 0, 66, 2>
+BindPlayerIdentityResponse::_table_ = {
+  {
+    PROTOBUF_FIELD_OFFSET(BindPlayerIdentityResponse, _impl_._has_bits_),
+    0, // no _extensions_
+    3, 24,  // max_field_number, fast_idx_mask
+    offsetof(decltype(_table_), field_lookup_table),
+    4294967288,  // skipmap
+    offsetof(decltype(_table_), field_entries),
+    3,  // num_field_entries
+    0,  // num_aux_entries
+    offsetof(decltype(_table_), field_names),  // no aux_entries
+    BindPlayerIdentityResponse_class_data_.base(),
+    nullptr,  // post_loop_handler
+    ::_pbi::TcParser::GenericFallback,  // fallback
+    #ifdef PROTOBUF_PREFETCH_PARSE_TABLE
+    ::_pbi::TcParser::GetTable<::chirp::server_gateway::BindPlayerIdentityResponse>(),  // to_prefetch
+    #endif  // PROTOBUF_PREFETCH_PARSE_TABLE
+  }, {{
+    {::_pbi::TcParser::MiniParse, {}},
+    // .chirp.common.ErrorCode code = 1;
+    {::_pbi::TcParser::SingularVarintNoZag1<::uint32_t, offsetof(BindPlayerIdentityResponse, _impl_.code_), 1>(),
+     {8, 1, 0,
+      PROTOBUF_FIELD_OFFSET(BindPlayerIdentityResponse, _impl_.code_)}},
+    // string binding_id = 2;
+    {::_pbi::TcParser::FastUS1,
+     {18, 0, 0,
+      PROTOBUF_FIELD_OFFSET(BindPlayerIdentityResponse, _impl_.binding_id_)}},
+    // bool existed = 3;
+    {::_pbi::TcParser::SingularVarintNoZag1<bool, offsetof(BindPlayerIdentityResponse, _impl_.existed_), 2>(),
+     {24, 2, 0,
+      PROTOBUF_FIELD_OFFSET(BindPlayerIdentityResponse, _impl_.existed_)}},
+  }}, {{
+    65535, 65535
+  }}, {{
+    // .chirp.common.ErrorCode code = 1;
+    {PROTOBUF_FIELD_OFFSET(BindPlayerIdentityResponse, _impl_.code_), _Internal::kHasBitsOffset + 1, 0, (0 | ::_fl::kFcOptional | ::_fl::kOpenEnum)},
+    // string binding_id = 2;
+    {PROTOBUF_FIELD_OFFSET(BindPlayerIdentityResponse, _impl_.binding_id_), _Internal::kHasBitsOffset + 0, 0, (0 | ::_fl::kFcOptional | ::_fl::kUtf8String | ::_fl::kRepAString)},
+    // bool existed = 3;
+    {PROTOBUF_FIELD_OFFSET(BindPlayerIdentityResponse, _impl_.existed_), _Internal::kHasBitsOffset + 2, 0, (0 | ::_fl::kFcOptional | ::_fl::kBool)},
+  }},
+  // no aux_entries
+  {{
+    "\57\0\12\0\0\0\0\0"
+    "chirp.server_gateway.BindPlayerIdentityResponse"
+    "binding_id"
+  }},
+};
+PROTOBUF_NOINLINE void BindPlayerIdentityResponse::Clear() {
+// @@protoc_insertion_point(message_clear_start:chirp.server_gateway.BindPlayerIdentityResponse)
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  ::uint32_t cached_has_bits = 0;
+  // Prevent compiler warnings about cached_has_bits being unused
+  (void) cached_has_bits;
+
+  cached_has_bits = _impl_._has_bits_[0];
+  if (CheckHasBit(cached_has_bits, 0x00000001U)) {
+    _impl_.binding_id_.ClearNonDefaultToEmpty();
+  }
+  if (BatchCheckHasBit(cached_has_bits, 0x00000006U)) {
+    ::memset(&_impl_.code_, 0, static_cast<::size_t>(
+        reinterpret_cast<char*>(&_impl_.existed_) -
+        reinterpret_cast<char*>(&_impl_.code_)) + sizeof(_impl_.existed_));
+  }
+  _impl_._has_bits_.Clear();
+  _internal_metadata_.Clear<::google::protobuf::UnknownFieldSet>();
+}
+
+#if defined(PROTOBUF_CUSTOM_VTABLE)
+::uint8_t* PROTOBUF_NONNULL BindPlayerIdentityResponse::_InternalSerialize(
+    const ::google::protobuf::MessageLite& base, ::uint8_t* PROTOBUF_NONNULL target,
+    ::google::protobuf::io::EpsCopyOutputStream* PROTOBUF_NONNULL stream) {
+  const BindPlayerIdentityResponse& this_ = static_cast<const BindPlayerIdentityResponse&>(base);
+#else   // PROTOBUF_CUSTOM_VTABLE
+::uint8_t* PROTOBUF_NONNULL BindPlayerIdentityResponse::_InternalSerialize(
+    ::uint8_t* PROTOBUF_NONNULL target,
+    ::google::protobuf::io::EpsCopyOutputStream* PROTOBUF_NONNULL stream) const {
+  const BindPlayerIdentityResponse& this_ = *this;
+#endif  // PROTOBUF_CUSTOM_VTABLE
+  if constexpr (::_pbi::DebugHardenCheckHasBitConsistency()) {
+    this_.CheckHasBitConsistency();
+  }
+  // @@protoc_insertion_point(serialize_to_array_start:chirp.server_gateway.BindPlayerIdentityResponse)
+  ::uint32_t cached_has_bits = 0;
+  (void)cached_has_bits;
+
+  cached_has_bits = this_._impl_._has_bits_[0];
+  // .chirp.common.ErrorCode code = 1;
+  if (CheckHasBit(cached_has_bits, 0x00000002U)) {
+    if (this_._internal_code() != 0) {
+      target = stream->EnsureSpace(target);
+      target = ::_pbi::WireFormatLite::WriteEnumToArray(
+          1, this_._internal_code(), target);
+    }
+  }
+
+  // string binding_id = 2;
+  if (CheckHasBit(cached_has_bits, 0x00000001U)) {
+    if (!this_._internal_binding_id().empty()) {
+      const ::std::string& _s = this_._internal_binding_id();
+      ::google::protobuf::internal::WireFormatLite::VerifyUtf8String(
+          _s.data(), static_cast<int>(_s.length()), ::google::protobuf::internal::WireFormatLite::SERIALIZE, "chirp.server_gateway.BindPlayerIdentityResponse.binding_id");
+      target = stream->WriteStringMaybeAliased(2, _s, target);
+    }
+  }
+
+  // bool existed = 3;
+  if (CheckHasBit(cached_has_bits, 0x00000004U)) {
+    if (this_._internal_existed() != 0) {
+      target = stream->EnsureSpace(target);
+      target = ::_pbi::WireFormatLite::WriteBoolToArray(
+          3, this_._internal_existed(), target);
+    }
+  }
+
+  if (ABSL_PREDICT_FALSE(this_._internal_metadata_.have_unknown_fields())) {
+    target =
+        ::_pbi::WireFormat::InternalSerializeUnknownFieldsToArray(
+            this_._internal_metadata_.unknown_fields<::google::protobuf::UnknownFieldSet>(::google::protobuf::UnknownFieldSet::default_instance), target, stream);
+  }
+  // @@protoc_insertion_point(serialize_to_array_end:chirp.server_gateway.BindPlayerIdentityResponse)
+  return target;
+}
+
+#if defined(PROTOBUF_CUSTOM_VTABLE)
+::size_t BindPlayerIdentityResponse::ByteSizeLong(const MessageLite& base) {
+  const BindPlayerIdentityResponse& this_ = static_cast<const BindPlayerIdentityResponse&>(base);
+#else   // PROTOBUF_CUSTOM_VTABLE
+::size_t BindPlayerIdentityResponse::ByteSizeLong() const {
+  const BindPlayerIdentityResponse& this_ = *this;
+#endif  // PROTOBUF_CUSTOM_VTABLE
+  // @@protoc_insertion_point(message_byte_size_start:chirp.server_gateway.BindPlayerIdentityResponse)
+  ::size_t total_size = 0;
+
+  ::uint32_t cached_has_bits = 0;
+  // Prevent compiler warnings about cached_has_bits being unused
+  (void)cached_has_bits;
+
+  ::_pbi::Prefetch5LinesFrom7Lines(&this_);
+  cached_has_bits = this_._impl_._has_bits_[0];
+  if (BatchCheckHasBit(cached_has_bits, 0x00000007U)) {
+    // string binding_id = 2;
+    if (CheckHasBit(cached_has_bits, 0x00000001U)) {
+      if (!this_._internal_binding_id().empty()) {
+        total_size += 1 + ::google::protobuf::internal::WireFormatLite::StringSize(
+                                        this_._internal_binding_id());
+      }
+    }
+    // .chirp.common.ErrorCode code = 1;
+    if (CheckHasBit(cached_has_bits, 0x00000002U)) {
+      if (this_._internal_code() != 0) {
+        total_size += 1 +
+                      ::_pbi::WireFormatLite::EnumSize(this_._internal_code());
+      }
+    }
+    // bool existed = 3;
+    if (CheckHasBit(cached_has_bits, 0x00000004U)) {
+      if (this_._internal_existed() != 0) {
+        total_size += 2;
+      }
+    }
+  }
+  return this_.MaybeComputeUnknownFieldsSize(total_size,
+                                             &this_._impl_._cached_size_);
+}
+
+void BindPlayerIdentityResponse::MergeImpl(::google::protobuf::MessageLite& to_msg,
+                            const ::google::protobuf::MessageLite& from_msg) {
+   auto* const _this =
+      static_cast<BindPlayerIdentityResponse*>(&to_msg);
+  auto& from = static_cast<const BindPlayerIdentityResponse&>(from_msg);
+  if constexpr (::_pbi::DebugHardenCheckHasBitConsistency()) {
+    from.CheckHasBitConsistency();
+  }
+  // @@protoc_insertion_point(class_specific_merge_from_start:chirp.server_gateway.BindPlayerIdentityResponse)
+  ABSL_DCHECK_NE(&from, _this);
+  ::uint32_t cached_has_bits = 0;
+  (void)cached_has_bits;
+
+  cached_has_bits = from._impl_._has_bits_[0];
+  if (BatchCheckHasBit(cached_has_bits, 0x00000007U)) {
+    if (CheckHasBit(cached_has_bits, 0x00000001U)) {
+      if (!from._internal_binding_id().empty()) {
+        _this->_internal_set_binding_id(from._internal_binding_id());
+      } else {
+        if (_this->_impl_.binding_id_.IsDefault()) {
+          _this->_internal_set_binding_id("");
+        }
+      }
+    }
+    if (CheckHasBit(cached_has_bits, 0x00000002U)) {
+      if (from._internal_code() != 0) {
+        _this->_impl_.code_ = from._impl_.code_;
+      }
+    }
+    if (CheckHasBit(cached_has_bits, 0x00000004U)) {
+      if (from._internal_existed() != 0) {
+        _this->_impl_.existed_ = from._impl_.existed_;
+      }
+    }
+  }
+  _this->_impl_._has_bits_[0] |= cached_has_bits;
+  _this->_internal_metadata_.MergeFrom<::google::protobuf::UnknownFieldSet>(
+      from._internal_metadata_);
+}
+
+void BindPlayerIdentityResponse::CopyFrom(const BindPlayerIdentityResponse& from) {
+  // @@protoc_insertion_point(class_specific_copy_from_start:chirp.server_gateway.BindPlayerIdentityResponse)
+  if (&from == this) return;
+  Clear();
+  MergeFrom(from);
+}
+
+
+void BindPlayerIdentityResponse::InternalSwap(BindPlayerIdentityResponse* PROTOBUF_RESTRICT PROTOBUF_NONNULL other) {
+  using ::std::swap;
+  auto* arena = GetArena();
+  ABSL_DCHECK_EQ(arena, other->GetArena());
+  _internal_metadata_.InternalSwap(&other->_internal_metadata_);
+  swap(_impl_._has_bits_[0], other->_impl_._has_bits_[0]);
+  ::_pbi::ArenaStringPtr::InternalSwap(&_impl_.binding_id_, &other->_impl_.binding_id_, arena);
+  ::google::protobuf::internal::memswap<
+      PROTOBUF_FIELD_OFFSET(BindPlayerIdentityResponse, _impl_.existed_)
+      + sizeof(BindPlayerIdentityResponse::_impl_.existed_)
+      - PROTOBUF_FIELD_OFFSET(BindPlayerIdentityResponse, _impl_.code_)>(
+          reinterpret_cast<char*>(&_impl_.code_),
+          reinterpret_cast<char*>(&other->_impl_.code_));
+}
+
+::google::protobuf::Metadata BindPlayerIdentityResponse::GetMetadata() const {
+  return ::google::protobuf::Message::GetMetadataImpl(GetClassData()->full());
+}
+// ===================================================================
+
+class UnbindPlayerIdentityRequest::_Internal {
+ public:
+  using HasBits =
+      decltype(::std::declval<UnbindPlayerIdentityRequest>()._impl_._has_bits_);
+  static constexpr ::int32_t kHasBitsOffset =
+      8 * PROTOBUF_FIELD_OFFSET(UnbindPlayerIdentityRequest, _impl_._has_bits_);
+};
+
+UnbindPlayerIdentityRequest::UnbindPlayerIdentityRequest(::google::protobuf::Arena* PROTOBUF_NULLABLE arena)
+#if defined(PROTOBUF_CUSTOM_VTABLE)
+    : ::google::protobuf::Message(arena, UnbindPlayerIdentityRequest_class_data_.base()) {
+#else   // PROTOBUF_CUSTOM_VTABLE
+    : ::google::protobuf::Message(arena) {
+#endif  // PROTOBUF_CUSTOM_VTABLE
+  SharedCtor(arena);
+  // @@protoc_insertion_point(arena_constructor:chirp.server_gateway.UnbindPlayerIdentityRequest)
+}
+PROTOBUF_NDEBUG_INLINE UnbindPlayerIdentityRequest::Impl_::Impl_(
+    [[maybe_unused]] ::google::protobuf::internal::InternalVisibility visibility,
+    [[maybe_unused]] ::google::protobuf::Arena* PROTOBUF_NULLABLE arena, const Impl_& from,
+    [[maybe_unused]] const ::chirp::server_gateway::UnbindPlayerIdentityRequest& from_msg)
+      : _has_bits_{from._has_bits_},
+        _cached_size_{0},
+        binding_id_(arena, from.binding_id_),
+        game_id_(arena, from.game_id_),
+        game_user_id_(arena, from.game_user_id_) {}
+
+UnbindPlayerIdentityRequest::UnbindPlayerIdentityRequest(
+    ::google::protobuf::Arena* PROTOBUF_NULLABLE arena,
+    const UnbindPlayerIdentityRequest& from)
+#if defined(PROTOBUF_CUSTOM_VTABLE)
+    : ::google::protobuf::Message(arena, UnbindPlayerIdentityRequest_class_data_.base()) {
+#else   // PROTOBUF_CUSTOM_VTABLE
+    : ::google::protobuf::Message(arena) {
+#endif  // PROTOBUF_CUSTOM_VTABLE
+  UnbindPlayerIdentityRequest* const _this = this;
+  (void)_this;
+  _internal_metadata_.MergeFrom<::google::protobuf::UnknownFieldSet>(
+      from._internal_metadata_);
+  new (&_impl_) Impl_(internal_visibility(), arena, from._impl_, from);
+
+  // @@protoc_insertion_point(copy_constructor:chirp.server_gateway.UnbindPlayerIdentityRequest)
+}
+PROTOBUF_NDEBUG_INLINE UnbindPlayerIdentityRequest::Impl_::Impl_(
+    [[maybe_unused]] ::google::protobuf::internal::InternalVisibility visibility,
+    [[maybe_unused]] ::google::protobuf::Arena* PROTOBUF_NULLABLE arena)
+      : _cached_size_{0},
+        binding_id_(arena),
+        game_id_(arena),
+        game_user_id_(arena) {}
+
+inline void UnbindPlayerIdentityRequest::SharedCtor(::_pb::Arena* PROTOBUF_NULLABLE arena) {
+  new (&_impl_) Impl_(internal_visibility(), arena);
+}
+UnbindPlayerIdentityRequest::~UnbindPlayerIdentityRequest() {
+  // @@protoc_insertion_point(destructor:chirp.server_gateway.UnbindPlayerIdentityRequest)
+  SharedDtor(*this);
+}
+inline void UnbindPlayerIdentityRequest::SharedDtor(MessageLite& self) {
+  UnbindPlayerIdentityRequest& this_ = static_cast<UnbindPlayerIdentityRequest&>(self);
+  if constexpr (::_pbi::DebugHardenCheckHasBitConsistency()) {
+    this_.CheckHasBitConsistency();
+  }
+  this_._internal_metadata_.Delete<::google::protobuf::UnknownFieldSet>();
+  ABSL_DCHECK(this_.GetArena() == nullptr);
+  this_._impl_.binding_id_.Destroy();
+  this_._impl_.game_id_.Destroy();
+  this_._impl_.game_user_id_.Destroy();
+  this_._impl_.~Impl_();
+}
+
+inline void* PROTOBUF_NONNULL UnbindPlayerIdentityRequest::PlacementNew_(
+    const void* PROTOBUF_NONNULL, void* PROTOBUF_NONNULL mem,
+    ::google::protobuf::Arena* PROTOBUF_NULLABLE arena) {
+  return ::new (mem) UnbindPlayerIdentityRequest(arena);
+}
+constexpr auto UnbindPlayerIdentityRequest::InternalNewImpl_() {
+  return ::google::protobuf::internal::MessageCreator::CopyInit(sizeof(UnbindPlayerIdentityRequest),
+                                            alignof(UnbindPlayerIdentityRequest));
+}
+constexpr auto UnbindPlayerIdentityRequest::InternalGenerateClassData_() {
+  return ::google::protobuf::internal::ClassDataFull{
+      ::google::protobuf::internal::ClassData{
+          &_UnbindPlayerIdentityRequest_default_instance_._instance,
+          &_table_.header,
+          nullptr,  // OnDemandRegisterArenaDtor
+          nullptr,  // IsInitialized
+          &UnbindPlayerIdentityRequest::MergeImpl,
+          ::google::protobuf::Message::GetNewImpl<UnbindPlayerIdentityRequest>(),
+#if defined(PROTOBUF_CUSTOM_VTABLE)
+          &UnbindPlayerIdentityRequest::SharedDtor,
+          ::google::protobuf::Message::GetClearImpl<UnbindPlayerIdentityRequest>(), &UnbindPlayerIdentityRequest::ByteSizeLong,
+              &UnbindPlayerIdentityRequest::_InternalSerialize,
+#endif  // PROTOBUF_CUSTOM_VTABLE
+          PROTOBUF_FIELD_OFFSET(UnbindPlayerIdentityRequest, _impl_._cached_size_),
+          false,
+      },
+      &UnbindPlayerIdentityRequest::kDescriptorMethods,
+      &descriptor_table_proto_2fserver_5fgateway_2eproto,
+      nullptr,  // tracker
+  };
+}
+
+PROTOBUF_CONSTINIT PROTOBUF_ATTRIBUTE_INIT_PRIORITY1 const
+    ::google::protobuf::internal::ClassDataFull UnbindPlayerIdentityRequest_class_data_ =
+        UnbindPlayerIdentityRequest::InternalGenerateClassData_();
+
+PROTOBUF_ATTRIBUTE_WEAK const ::google::protobuf::internal::ClassData* PROTOBUF_NONNULL
+UnbindPlayerIdentityRequest::GetClassData() const {
+  ::google::protobuf::internal::PrefetchToLocalCache(&UnbindPlayerIdentityRequest_class_data_);
+  ::google::protobuf::internal::PrefetchToLocalCache(UnbindPlayerIdentityRequest_class_data_.tc_table);
+  return UnbindPlayerIdentityRequest_class_data_.base();
+}
+PROTOBUF_CONSTINIT PROTOBUF_ATTRIBUTE_INIT_PRIORITY1
+const ::_pbi::TcParseTable<2, 3, 0, 86, 2>
+UnbindPlayerIdentityRequest::_table_ = {
+  {
+    PROTOBUF_FIELD_OFFSET(UnbindPlayerIdentityRequest, _impl_._has_bits_),
+    0, // no _extensions_
+    3, 24,  // max_field_number, fast_idx_mask
+    offsetof(decltype(_table_), field_lookup_table),
+    4294967288,  // skipmap
+    offsetof(decltype(_table_), field_entries),
+    3,  // num_field_entries
+    0,  // num_aux_entries
+    offsetof(decltype(_table_), field_names),  // no aux_entries
+    UnbindPlayerIdentityRequest_class_data_.base(),
+    nullptr,  // post_loop_handler
+    ::_pbi::TcParser::GenericFallback,  // fallback
+    #ifdef PROTOBUF_PREFETCH_PARSE_TABLE
+    ::_pbi::TcParser::GetTable<::chirp::server_gateway::UnbindPlayerIdentityRequest>(),  // to_prefetch
+    #endif  // PROTOBUF_PREFETCH_PARSE_TABLE
+  }, {{
+    {::_pbi::TcParser::MiniParse, {}},
+    // string binding_id = 1;
+    {::_pbi::TcParser::FastUS1,
+     {10, 0, 0,
+      PROTOBUF_FIELD_OFFSET(UnbindPlayerIdentityRequest, _impl_.binding_id_)}},
+    // string game_id = 2;
+    {::_pbi::TcParser::FastUS1,
+     {18, 1, 0,
+      PROTOBUF_FIELD_OFFSET(UnbindPlayerIdentityRequest, _impl_.game_id_)}},
+    // string game_user_id = 3;
+    {::_pbi::TcParser::FastUS1,
+     {26, 2, 0,
+      PROTOBUF_FIELD_OFFSET(UnbindPlayerIdentityRequest, _impl_.game_user_id_)}},
+  }}, {{
+    65535, 65535
+  }}, {{
+    // string binding_id = 1;
+    {PROTOBUF_FIELD_OFFSET(UnbindPlayerIdentityRequest, _impl_.binding_id_), _Internal::kHasBitsOffset + 0, 0, (0 | ::_fl::kFcOptional | ::_fl::kUtf8String | ::_fl::kRepAString)},
+    // string game_id = 2;
+    {PROTOBUF_FIELD_OFFSET(UnbindPlayerIdentityRequest, _impl_.game_id_), _Internal::kHasBitsOffset + 1, 0, (0 | ::_fl::kFcOptional | ::_fl::kUtf8String | ::_fl::kRepAString)},
+    // string game_user_id = 3;
+    {PROTOBUF_FIELD_OFFSET(UnbindPlayerIdentityRequest, _impl_.game_user_id_), _Internal::kHasBitsOffset + 2, 0, (0 | ::_fl::kFcOptional | ::_fl::kUtf8String | ::_fl::kRepAString)},
+  }},
+  // no aux_entries
+  {{
+    "\60\12\7\14\0\0\0\0"
+    "chirp.server_gateway.UnbindPlayerIdentityRequest"
+    "binding_id"
+    "game_id"
+    "game_user_id"
+  }},
+};
+PROTOBUF_NOINLINE void UnbindPlayerIdentityRequest::Clear() {
+// @@protoc_insertion_point(message_clear_start:chirp.server_gateway.UnbindPlayerIdentityRequest)
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  ::uint32_t cached_has_bits = 0;
+  // Prevent compiler warnings about cached_has_bits being unused
+  (void) cached_has_bits;
+
+  cached_has_bits = _impl_._has_bits_[0];
+  if (BatchCheckHasBit(cached_has_bits, 0x00000007U)) {
+    if (CheckHasBit(cached_has_bits, 0x00000001U)) {
+      _impl_.binding_id_.ClearNonDefaultToEmpty();
+    }
+    if (CheckHasBit(cached_has_bits, 0x00000002U)) {
+      _impl_.game_id_.ClearNonDefaultToEmpty();
+    }
+    if (CheckHasBit(cached_has_bits, 0x00000004U)) {
+      _impl_.game_user_id_.ClearNonDefaultToEmpty();
+    }
+  }
+  _impl_._has_bits_.Clear();
+  _internal_metadata_.Clear<::google::protobuf::UnknownFieldSet>();
+}
+
+#if defined(PROTOBUF_CUSTOM_VTABLE)
+::uint8_t* PROTOBUF_NONNULL UnbindPlayerIdentityRequest::_InternalSerialize(
+    const ::google::protobuf::MessageLite& base, ::uint8_t* PROTOBUF_NONNULL target,
+    ::google::protobuf::io::EpsCopyOutputStream* PROTOBUF_NONNULL stream) {
+  const UnbindPlayerIdentityRequest& this_ = static_cast<const UnbindPlayerIdentityRequest&>(base);
+#else   // PROTOBUF_CUSTOM_VTABLE
+::uint8_t* PROTOBUF_NONNULL UnbindPlayerIdentityRequest::_InternalSerialize(
+    ::uint8_t* PROTOBUF_NONNULL target,
+    ::google::protobuf::io::EpsCopyOutputStream* PROTOBUF_NONNULL stream) const {
+  const UnbindPlayerIdentityRequest& this_ = *this;
+#endif  // PROTOBUF_CUSTOM_VTABLE
+  if constexpr (::_pbi::DebugHardenCheckHasBitConsistency()) {
+    this_.CheckHasBitConsistency();
+  }
+  // @@protoc_insertion_point(serialize_to_array_start:chirp.server_gateway.UnbindPlayerIdentityRequest)
+  ::uint32_t cached_has_bits = 0;
+  (void)cached_has_bits;
+
+  cached_has_bits = this_._impl_._has_bits_[0];
+  // string binding_id = 1;
+  if (CheckHasBit(cached_has_bits, 0x00000001U)) {
+    if (!this_._internal_binding_id().empty()) {
+      const ::std::string& _s = this_._internal_binding_id();
+      ::google::protobuf::internal::WireFormatLite::VerifyUtf8String(
+          _s.data(), static_cast<int>(_s.length()), ::google::protobuf::internal::WireFormatLite::SERIALIZE, "chirp.server_gateway.UnbindPlayerIdentityRequest.binding_id");
+      target = stream->WriteStringMaybeAliased(1, _s, target);
+    }
+  }
+
+  // string game_id = 2;
+  if (CheckHasBit(cached_has_bits, 0x00000002U)) {
+    if (!this_._internal_game_id().empty()) {
+      const ::std::string& _s = this_._internal_game_id();
+      ::google::protobuf::internal::WireFormatLite::VerifyUtf8String(
+          _s.data(), static_cast<int>(_s.length()), ::google::protobuf::internal::WireFormatLite::SERIALIZE, "chirp.server_gateway.UnbindPlayerIdentityRequest.game_id");
+      target = stream->WriteStringMaybeAliased(2, _s, target);
+    }
+  }
+
+  // string game_user_id = 3;
+  if (CheckHasBit(cached_has_bits, 0x00000004U)) {
+    if (!this_._internal_game_user_id().empty()) {
+      const ::std::string& _s = this_._internal_game_user_id();
+      ::google::protobuf::internal::WireFormatLite::VerifyUtf8String(
+          _s.data(), static_cast<int>(_s.length()), ::google::protobuf::internal::WireFormatLite::SERIALIZE, "chirp.server_gateway.UnbindPlayerIdentityRequest.game_user_id");
+      target = stream->WriteStringMaybeAliased(3, _s, target);
+    }
+  }
+
+  if (ABSL_PREDICT_FALSE(this_._internal_metadata_.have_unknown_fields())) {
+    target =
+        ::_pbi::WireFormat::InternalSerializeUnknownFieldsToArray(
+            this_._internal_metadata_.unknown_fields<::google::protobuf::UnknownFieldSet>(::google::protobuf::UnknownFieldSet::default_instance), target, stream);
+  }
+  // @@protoc_insertion_point(serialize_to_array_end:chirp.server_gateway.UnbindPlayerIdentityRequest)
+  return target;
+}
+
+#if defined(PROTOBUF_CUSTOM_VTABLE)
+::size_t UnbindPlayerIdentityRequest::ByteSizeLong(const MessageLite& base) {
+  const UnbindPlayerIdentityRequest& this_ = static_cast<const UnbindPlayerIdentityRequest&>(base);
+#else   // PROTOBUF_CUSTOM_VTABLE
+::size_t UnbindPlayerIdentityRequest::ByteSizeLong() const {
+  const UnbindPlayerIdentityRequest& this_ = *this;
+#endif  // PROTOBUF_CUSTOM_VTABLE
+  // @@protoc_insertion_point(message_byte_size_start:chirp.server_gateway.UnbindPlayerIdentityRequest)
+  ::size_t total_size = 0;
+
+  ::uint32_t cached_has_bits = 0;
+  // Prevent compiler warnings about cached_has_bits being unused
+  (void)cached_has_bits;
+
+  ::_pbi::Prefetch5LinesFrom7Lines(&this_);
+  cached_has_bits = this_._impl_._has_bits_[0];
+  if (BatchCheckHasBit(cached_has_bits, 0x00000007U)) {
+    // string binding_id = 1;
+    if (CheckHasBit(cached_has_bits, 0x00000001U)) {
+      if (!this_._internal_binding_id().empty()) {
+        total_size += 1 + ::google::protobuf::internal::WireFormatLite::StringSize(
+                                        this_._internal_binding_id());
+      }
+    }
+    // string game_id = 2;
+    if (CheckHasBit(cached_has_bits, 0x00000002U)) {
+      if (!this_._internal_game_id().empty()) {
+        total_size += 1 + ::google::protobuf::internal::WireFormatLite::StringSize(
+                                        this_._internal_game_id());
+      }
+    }
+    // string game_user_id = 3;
+    if (CheckHasBit(cached_has_bits, 0x00000004U)) {
+      if (!this_._internal_game_user_id().empty()) {
+        total_size += 1 + ::google::protobuf::internal::WireFormatLite::StringSize(
+                                        this_._internal_game_user_id());
+      }
+    }
+  }
+  return this_.MaybeComputeUnknownFieldsSize(total_size,
+                                             &this_._impl_._cached_size_);
+}
+
+void UnbindPlayerIdentityRequest::MergeImpl(::google::protobuf::MessageLite& to_msg,
+                            const ::google::protobuf::MessageLite& from_msg) {
+   auto* const _this =
+      static_cast<UnbindPlayerIdentityRequest*>(&to_msg);
+  auto& from = static_cast<const UnbindPlayerIdentityRequest&>(from_msg);
+  if constexpr (::_pbi::DebugHardenCheckHasBitConsistency()) {
+    from.CheckHasBitConsistency();
+  }
+  // @@protoc_insertion_point(class_specific_merge_from_start:chirp.server_gateway.UnbindPlayerIdentityRequest)
+  ABSL_DCHECK_NE(&from, _this);
+  ::uint32_t cached_has_bits = 0;
+  (void)cached_has_bits;
+
+  cached_has_bits = from._impl_._has_bits_[0];
+  if (BatchCheckHasBit(cached_has_bits, 0x00000007U)) {
+    if (CheckHasBit(cached_has_bits, 0x00000001U)) {
+      if (!from._internal_binding_id().empty()) {
+        _this->_internal_set_binding_id(from._internal_binding_id());
+      } else {
+        if (_this->_impl_.binding_id_.IsDefault()) {
+          _this->_internal_set_binding_id("");
+        }
+      }
+    }
+    if (CheckHasBit(cached_has_bits, 0x00000002U)) {
+      if (!from._internal_game_id().empty()) {
+        _this->_internal_set_game_id(from._internal_game_id());
+      } else {
+        if (_this->_impl_.game_id_.IsDefault()) {
+          _this->_internal_set_game_id("");
+        }
+      }
+    }
+    if (CheckHasBit(cached_has_bits, 0x00000004U)) {
+      if (!from._internal_game_user_id().empty()) {
+        _this->_internal_set_game_user_id(from._internal_game_user_id());
+      } else {
+        if (_this->_impl_.game_user_id_.IsDefault()) {
+          _this->_internal_set_game_user_id("");
+        }
+      }
+    }
+  }
+  _this->_impl_._has_bits_[0] |= cached_has_bits;
+  _this->_internal_metadata_.MergeFrom<::google::protobuf::UnknownFieldSet>(
+      from._internal_metadata_);
+}
+
+void UnbindPlayerIdentityRequest::CopyFrom(const UnbindPlayerIdentityRequest& from) {
+  // @@protoc_insertion_point(class_specific_copy_from_start:chirp.server_gateway.UnbindPlayerIdentityRequest)
+  if (&from == this) return;
+  Clear();
+  MergeFrom(from);
+}
+
+
+void UnbindPlayerIdentityRequest::InternalSwap(UnbindPlayerIdentityRequest* PROTOBUF_RESTRICT PROTOBUF_NONNULL other) {
+  using ::std::swap;
+  auto* arena = GetArena();
+  ABSL_DCHECK_EQ(arena, other->GetArena());
+  _internal_metadata_.InternalSwap(&other->_internal_metadata_);
+  swap(_impl_._has_bits_[0], other->_impl_._has_bits_[0]);
+  ::_pbi::ArenaStringPtr::InternalSwap(&_impl_.binding_id_, &other->_impl_.binding_id_, arena);
+  ::_pbi::ArenaStringPtr::InternalSwap(&_impl_.game_id_, &other->_impl_.game_id_, arena);
+  ::_pbi::ArenaStringPtr::InternalSwap(&_impl_.game_user_id_, &other->_impl_.game_user_id_, arena);
+}
+
+::google::protobuf::Metadata UnbindPlayerIdentityRequest::GetMetadata() const {
+  return ::google::protobuf::Message::GetMetadataImpl(GetClassData()->full());
+}
+// ===================================================================
+
+class UnbindPlayerIdentityResponse::_Internal {
+ public:
+  using HasBits =
+      decltype(::std::declval<UnbindPlayerIdentityResponse>()._impl_._has_bits_);
+  static constexpr ::int32_t kHasBitsOffset =
+      8 * PROTOBUF_FIELD_OFFSET(UnbindPlayerIdentityResponse, _impl_._has_bits_);
+};
+
+UnbindPlayerIdentityResponse::UnbindPlayerIdentityResponse(::google::protobuf::Arena* PROTOBUF_NULLABLE arena)
+#if defined(PROTOBUF_CUSTOM_VTABLE)
+    : ::google::protobuf::Message(arena, UnbindPlayerIdentityResponse_class_data_.base()) {
+#else   // PROTOBUF_CUSTOM_VTABLE
+    : ::google::protobuf::Message(arena) {
+#endif  // PROTOBUF_CUSTOM_VTABLE
+  SharedCtor(arena);
+  // @@protoc_insertion_point(arena_constructor:chirp.server_gateway.UnbindPlayerIdentityResponse)
+}
+UnbindPlayerIdentityResponse::UnbindPlayerIdentityResponse(
+    ::google::protobuf::Arena* PROTOBUF_NULLABLE arena, const UnbindPlayerIdentityResponse& from)
+#if defined(PROTOBUF_CUSTOM_VTABLE)
+    : ::google::protobuf::Message(arena, UnbindPlayerIdentityResponse_class_data_.base()),
+#else   // PROTOBUF_CUSTOM_VTABLE
+    : ::google::protobuf::Message(arena),
+#endif  // PROTOBUF_CUSTOM_VTABLE
+      _impl_(from._impl_) {
+  _internal_metadata_.MergeFrom<::google::protobuf::UnknownFieldSet>(
+      from._internal_metadata_);
+}
+PROTOBUF_NDEBUG_INLINE UnbindPlayerIdentityResponse::Impl_::Impl_(
+    [[maybe_unused]] ::google::protobuf::internal::InternalVisibility visibility,
+    [[maybe_unused]] ::google::protobuf::Arena* PROTOBUF_NULLABLE arena)
+      : _cached_size_{0} {}
+
+inline void UnbindPlayerIdentityResponse::SharedCtor(::_pb::Arena* PROTOBUF_NULLABLE arena) {
+  new (&_impl_) Impl_(internal_visibility(), arena);
+  _impl_.code_ = {};
+}
+UnbindPlayerIdentityResponse::~UnbindPlayerIdentityResponse() {
+  // @@protoc_insertion_point(destructor:chirp.server_gateway.UnbindPlayerIdentityResponse)
+  SharedDtor(*this);
+}
+inline void UnbindPlayerIdentityResponse::SharedDtor(MessageLite& self) {
+  UnbindPlayerIdentityResponse& this_ = static_cast<UnbindPlayerIdentityResponse&>(self);
+  if constexpr (::_pbi::DebugHardenCheckHasBitConsistency()) {
+    this_.CheckHasBitConsistency();
+  }
+  this_._internal_metadata_.Delete<::google::protobuf::UnknownFieldSet>();
+  ABSL_DCHECK(this_.GetArena() == nullptr);
+  this_._impl_.~Impl_();
+}
+
+inline void* PROTOBUF_NONNULL UnbindPlayerIdentityResponse::PlacementNew_(
+    const void* PROTOBUF_NONNULL, void* PROTOBUF_NONNULL mem,
+    ::google::protobuf::Arena* PROTOBUF_NULLABLE arena) {
+  return ::new (mem) UnbindPlayerIdentityResponse(arena);
+}
+constexpr auto UnbindPlayerIdentityResponse::InternalNewImpl_() {
+  return ::google::protobuf::internal::MessageCreator::ZeroInit(sizeof(UnbindPlayerIdentityResponse),
+                                            alignof(UnbindPlayerIdentityResponse));
+}
+constexpr auto UnbindPlayerIdentityResponse::InternalGenerateClassData_() {
+  return ::google::protobuf::internal::ClassDataFull{
+      ::google::protobuf::internal::ClassData{
+          &_UnbindPlayerIdentityResponse_default_instance_._instance,
+          &_table_.header,
+          nullptr,  // OnDemandRegisterArenaDtor
+          nullptr,  // IsInitialized
+          &UnbindPlayerIdentityResponse::MergeImpl,
+          ::google::protobuf::Message::GetNewImpl<UnbindPlayerIdentityResponse>(),
+#if defined(PROTOBUF_CUSTOM_VTABLE)
+          &UnbindPlayerIdentityResponse::SharedDtor,
+          ::google::protobuf::Message::GetClearImpl<UnbindPlayerIdentityResponse>(), &UnbindPlayerIdentityResponse::ByteSizeLong,
+              &UnbindPlayerIdentityResponse::_InternalSerialize,
+#endif  // PROTOBUF_CUSTOM_VTABLE
+          PROTOBUF_FIELD_OFFSET(UnbindPlayerIdentityResponse, _impl_._cached_size_),
+          false,
+      },
+      &UnbindPlayerIdentityResponse::kDescriptorMethods,
+      &descriptor_table_proto_2fserver_5fgateway_2eproto,
+      nullptr,  // tracker
+  };
+}
+
+PROTOBUF_CONSTINIT PROTOBUF_ATTRIBUTE_INIT_PRIORITY1 const
+    ::google::protobuf::internal::ClassDataFull UnbindPlayerIdentityResponse_class_data_ =
+        UnbindPlayerIdentityResponse::InternalGenerateClassData_();
+
+PROTOBUF_ATTRIBUTE_WEAK const ::google::protobuf::internal::ClassData* PROTOBUF_NONNULL
+UnbindPlayerIdentityResponse::GetClassData() const {
+  ::google::protobuf::internal::PrefetchToLocalCache(&UnbindPlayerIdentityResponse_class_data_);
+  ::google::protobuf::internal::PrefetchToLocalCache(UnbindPlayerIdentityResponse_class_data_.tc_table);
+  return UnbindPlayerIdentityResponse_class_data_.base();
+}
+PROTOBUF_CONSTINIT PROTOBUF_ATTRIBUTE_INIT_PRIORITY1
+const ::_pbi::TcParseTable<0, 1, 0, 0, 2>
+UnbindPlayerIdentityResponse::_table_ = {
+  {
+    PROTOBUF_FIELD_OFFSET(UnbindPlayerIdentityResponse, _impl_._has_bits_),
+    0, // no _extensions_
+    1, 0,  // max_field_number, fast_idx_mask
+    offsetof(decltype(_table_), field_lookup_table),
+    4294967294,  // skipmap
+    offsetof(decltype(_table_), field_entries),
+    1,  // num_field_entries
+    0,  // num_aux_entries
+    offsetof(decltype(_table_), field_names),  // no aux_entries
+    UnbindPlayerIdentityResponse_class_data_.base(),
+    nullptr,  // post_loop_handler
+    ::_pbi::TcParser::GenericFallback,  // fallback
+    #ifdef PROTOBUF_PREFETCH_PARSE_TABLE
+    ::_pbi::TcParser::GetTable<::chirp::server_gateway::UnbindPlayerIdentityResponse>(),  // to_prefetch
+    #endif  // PROTOBUF_PREFETCH_PARSE_TABLE
+  }, {{
+    // .chirp.common.ErrorCode code = 1;
+    {::_pbi::TcParser::SingularVarintNoZag1<::uint32_t, offsetof(UnbindPlayerIdentityResponse, _impl_.code_), 0>(),
+     {8, 0, 0,
+      PROTOBUF_FIELD_OFFSET(UnbindPlayerIdentityResponse, _impl_.code_)}},
+  }}, {{
+    65535, 65535
+  }}, {{
+    // .chirp.common.ErrorCode code = 1;
+    {PROTOBUF_FIELD_OFFSET(UnbindPlayerIdentityResponse, _impl_.code_), _Internal::kHasBitsOffset + 0, 0, (0 | ::_fl::kFcOptional | ::_fl::kOpenEnum)},
+  }},
+  // no aux_entries
+  {{
+  }},
+};
+PROTOBUF_NOINLINE void UnbindPlayerIdentityResponse::Clear() {
+// @@protoc_insertion_point(message_clear_start:chirp.server_gateway.UnbindPlayerIdentityResponse)
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  ::uint32_t cached_has_bits = 0;
+  // Prevent compiler warnings about cached_has_bits being unused
+  (void) cached_has_bits;
+
+  _impl_.code_ = 0;
+  _impl_._has_bits_.Clear();
+  _internal_metadata_.Clear<::google::protobuf::UnknownFieldSet>();
+}
+
+#if defined(PROTOBUF_CUSTOM_VTABLE)
+::uint8_t* PROTOBUF_NONNULL UnbindPlayerIdentityResponse::_InternalSerialize(
+    const ::google::protobuf::MessageLite& base, ::uint8_t* PROTOBUF_NONNULL target,
+    ::google::protobuf::io::EpsCopyOutputStream* PROTOBUF_NONNULL stream) {
+  const UnbindPlayerIdentityResponse& this_ = static_cast<const UnbindPlayerIdentityResponse&>(base);
+#else   // PROTOBUF_CUSTOM_VTABLE
+::uint8_t* PROTOBUF_NONNULL UnbindPlayerIdentityResponse::_InternalSerialize(
+    ::uint8_t* PROTOBUF_NONNULL target,
+    ::google::protobuf::io::EpsCopyOutputStream* PROTOBUF_NONNULL stream) const {
+  const UnbindPlayerIdentityResponse& this_ = *this;
+#endif  // PROTOBUF_CUSTOM_VTABLE
+  if constexpr (::_pbi::DebugHardenCheckHasBitConsistency()) {
+    this_.CheckHasBitConsistency();
+  }
+  // @@protoc_insertion_point(serialize_to_array_start:chirp.server_gateway.UnbindPlayerIdentityResponse)
+  ::uint32_t cached_has_bits = 0;
+  (void)cached_has_bits;
+
+  cached_has_bits = this_._impl_._has_bits_[0];
+  // .chirp.common.ErrorCode code = 1;
+  if (CheckHasBit(cached_has_bits, 0x00000001U)) {
+    if (this_._internal_code() != 0) {
+      target = stream->EnsureSpace(target);
+      target = ::_pbi::WireFormatLite::WriteEnumToArray(
+          1, this_._internal_code(), target);
+    }
+  }
+
+  if (ABSL_PREDICT_FALSE(this_._internal_metadata_.have_unknown_fields())) {
+    target =
+        ::_pbi::WireFormat::InternalSerializeUnknownFieldsToArray(
+            this_._internal_metadata_.unknown_fields<::google::protobuf::UnknownFieldSet>(::google::protobuf::UnknownFieldSet::default_instance), target, stream);
+  }
+  // @@protoc_insertion_point(serialize_to_array_end:chirp.server_gateway.UnbindPlayerIdentityResponse)
+  return target;
+}
+
+#if defined(PROTOBUF_CUSTOM_VTABLE)
+::size_t UnbindPlayerIdentityResponse::ByteSizeLong(const MessageLite& base) {
+  const UnbindPlayerIdentityResponse& this_ = static_cast<const UnbindPlayerIdentityResponse&>(base);
+#else   // PROTOBUF_CUSTOM_VTABLE
+::size_t UnbindPlayerIdentityResponse::ByteSizeLong() const {
+  const UnbindPlayerIdentityResponse& this_ = *this;
+#endif  // PROTOBUF_CUSTOM_VTABLE
+  // @@protoc_insertion_point(message_byte_size_start:chirp.server_gateway.UnbindPlayerIdentityResponse)
+  ::size_t total_size = 0;
+
+  ::uint32_t cached_has_bits = 0;
+  // Prevent compiler warnings about cached_has_bits being unused
+  (void)cached_has_bits;
+
+   {
+    // .chirp.common.ErrorCode code = 1;
+    cached_has_bits = this_._impl_._has_bits_[0];
+    if (CheckHasBit(cached_has_bits, 0x00000001U)) {
+      if (this_._internal_code() != 0) {
+        total_size += 1 +
+                      ::_pbi::WireFormatLite::EnumSize(this_._internal_code());
+      }
+    }
+  }
+  return this_.MaybeComputeUnknownFieldsSize(total_size,
+                                             &this_._impl_._cached_size_);
+}
+
+void UnbindPlayerIdentityResponse::MergeImpl(::google::protobuf::MessageLite& to_msg,
+                            const ::google::protobuf::MessageLite& from_msg) {
+   auto* const _this =
+      static_cast<UnbindPlayerIdentityResponse*>(&to_msg);
+  auto& from = static_cast<const UnbindPlayerIdentityResponse&>(from_msg);
+  if constexpr (::_pbi::DebugHardenCheckHasBitConsistency()) {
+    from.CheckHasBitConsistency();
+  }
+  // @@protoc_insertion_point(class_specific_merge_from_start:chirp.server_gateway.UnbindPlayerIdentityResponse)
+  ABSL_DCHECK_NE(&from, _this);
+  ::uint32_t cached_has_bits = 0;
+  (void)cached_has_bits;
+
+  cached_has_bits = from._impl_._has_bits_[0];
+  if (CheckHasBit(cached_has_bits, 0x00000001U)) {
+    if (from._internal_code() != 0) {
+      _this->_impl_.code_ = from._impl_.code_;
+    }
+  }
+  _this->_impl_._has_bits_[0] |= cached_has_bits;
+  _this->_internal_metadata_.MergeFrom<::google::protobuf::UnknownFieldSet>(
+      from._internal_metadata_);
+}
+
+void UnbindPlayerIdentityResponse::CopyFrom(const UnbindPlayerIdentityResponse& from) {
+  // @@protoc_insertion_point(class_specific_copy_from_start:chirp.server_gateway.UnbindPlayerIdentityResponse)
+  if (&from == this) return;
+  Clear();
+  MergeFrom(from);
+}
+
+
+void UnbindPlayerIdentityResponse::InternalSwap(UnbindPlayerIdentityResponse* PROTOBUF_RESTRICT PROTOBUF_NONNULL other) {
+  using ::std::swap;
+  _internal_metadata_.InternalSwap(&other->_internal_metadata_);
+  swap(_impl_._has_bits_[0], other->_impl_._has_bits_[0]);
+  swap(_impl_.code_, other->_impl_.code_);
+}
+
+::google::protobuf::Metadata UnbindPlayerIdentityResponse::GetMetadata() const {
+  return ::google::protobuf::Message::GetMetadataImpl(GetClassData()->full());
+}
+// ===================================================================
+
+class GetPlayerIdentitiesRequest::_Internal {
+ public:
+  using HasBits =
+      decltype(::std::declval<GetPlayerIdentitiesRequest>()._impl_._has_bits_);
+  static constexpr ::int32_t kHasBitsOffset =
+      8 * PROTOBUF_FIELD_OFFSET(GetPlayerIdentitiesRequest, _impl_._has_bits_);
+};
+
+GetPlayerIdentitiesRequest::GetPlayerIdentitiesRequest(::google::protobuf::Arena* PROTOBUF_NULLABLE arena)
+#if defined(PROTOBUF_CUSTOM_VTABLE)
+    : ::google::protobuf::Message(arena, GetPlayerIdentitiesRequest_class_data_.base()) {
+#else   // PROTOBUF_CUSTOM_VTABLE
+    : ::google::protobuf::Message(arena) {
+#endif  // PROTOBUF_CUSTOM_VTABLE
+  SharedCtor(arena);
+  // @@protoc_insertion_point(arena_constructor:chirp.server_gateway.GetPlayerIdentitiesRequest)
+}
+PROTOBUF_NDEBUG_INLINE GetPlayerIdentitiesRequest::Impl_::Impl_(
+    [[maybe_unused]] ::google::protobuf::internal::InternalVisibility visibility,
+    [[maybe_unused]] ::google::protobuf::Arena* PROTOBUF_NULLABLE arena, const Impl_& from,
+    [[maybe_unused]] const ::chirp::server_gateway::GetPlayerIdentitiesRequest& from_msg)
+      : _has_bits_{from._has_bits_},
+        _cached_size_{0},
+        player_id_(arena, from.player_id_) {}
+
+GetPlayerIdentitiesRequest::GetPlayerIdentitiesRequest(
+    ::google::protobuf::Arena* PROTOBUF_NULLABLE arena,
+    const GetPlayerIdentitiesRequest& from)
+#if defined(PROTOBUF_CUSTOM_VTABLE)
+    : ::google::protobuf::Message(arena, GetPlayerIdentitiesRequest_class_data_.base()) {
+#else   // PROTOBUF_CUSTOM_VTABLE
+    : ::google::protobuf::Message(arena) {
+#endif  // PROTOBUF_CUSTOM_VTABLE
+  GetPlayerIdentitiesRequest* const _this = this;
+  (void)_this;
+  _internal_metadata_.MergeFrom<::google::protobuf::UnknownFieldSet>(
+      from._internal_metadata_);
+  new (&_impl_) Impl_(internal_visibility(), arena, from._impl_, from);
+
+  // @@protoc_insertion_point(copy_constructor:chirp.server_gateway.GetPlayerIdentitiesRequest)
+}
+PROTOBUF_NDEBUG_INLINE GetPlayerIdentitiesRequest::Impl_::Impl_(
+    [[maybe_unused]] ::google::protobuf::internal::InternalVisibility visibility,
+    [[maybe_unused]] ::google::protobuf::Arena* PROTOBUF_NULLABLE arena)
+      : _cached_size_{0},
+        player_id_(arena) {}
+
+inline void GetPlayerIdentitiesRequest::SharedCtor(::_pb::Arena* PROTOBUF_NULLABLE arena) {
+  new (&_impl_) Impl_(internal_visibility(), arena);
+}
+GetPlayerIdentitiesRequest::~GetPlayerIdentitiesRequest() {
+  // @@protoc_insertion_point(destructor:chirp.server_gateway.GetPlayerIdentitiesRequest)
+  SharedDtor(*this);
+}
+inline void GetPlayerIdentitiesRequest::SharedDtor(MessageLite& self) {
+  GetPlayerIdentitiesRequest& this_ = static_cast<GetPlayerIdentitiesRequest&>(self);
+  if constexpr (::_pbi::DebugHardenCheckHasBitConsistency()) {
+    this_.CheckHasBitConsistency();
+  }
+  this_._internal_metadata_.Delete<::google::protobuf::UnknownFieldSet>();
+  ABSL_DCHECK(this_.GetArena() == nullptr);
+  this_._impl_.player_id_.Destroy();
+  this_._impl_.~Impl_();
+}
+
+inline void* PROTOBUF_NONNULL GetPlayerIdentitiesRequest::PlacementNew_(
+    const void* PROTOBUF_NONNULL, void* PROTOBUF_NONNULL mem,
+    ::google::protobuf::Arena* PROTOBUF_NULLABLE arena) {
+  return ::new (mem) GetPlayerIdentitiesRequest(arena);
+}
+constexpr auto GetPlayerIdentitiesRequest::InternalNewImpl_() {
+  return ::google::protobuf::internal::MessageCreator::CopyInit(sizeof(GetPlayerIdentitiesRequest),
+                                            alignof(GetPlayerIdentitiesRequest));
+}
+constexpr auto GetPlayerIdentitiesRequest::InternalGenerateClassData_() {
+  return ::google::protobuf::internal::ClassDataFull{
+      ::google::protobuf::internal::ClassData{
+          &_GetPlayerIdentitiesRequest_default_instance_._instance,
+          &_table_.header,
+          nullptr,  // OnDemandRegisterArenaDtor
+          nullptr,  // IsInitialized
+          &GetPlayerIdentitiesRequest::MergeImpl,
+          ::google::protobuf::Message::GetNewImpl<GetPlayerIdentitiesRequest>(),
+#if defined(PROTOBUF_CUSTOM_VTABLE)
+          &GetPlayerIdentitiesRequest::SharedDtor,
+          ::google::protobuf::Message::GetClearImpl<GetPlayerIdentitiesRequest>(), &GetPlayerIdentitiesRequest::ByteSizeLong,
+              &GetPlayerIdentitiesRequest::_InternalSerialize,
+#endif  // PROTOBUF_CUSTOM_VTABLE
+          PROTOBUF_FIELD_OFFSET(GetPlayerIdentitiesRequest, _impl_._cached_size_),
+          false,
+      },
+      &GetPlayerIdentitiesRequest::kDescriptorMethods,
+      &descriptor_table_proto_2fserver_5fgateway_2eproto,
+      nullptr,  // tracker
+  };
+}
+
+PROTOBUF_CONSTINIT PROTOBUF_ATTRIBUTE_INIT_PRIORITY1 const
+    ::google::protobuf::internal::ClassDataFull GetPlayerIdentitiesRequest_class_data_ =
+        GetPlayerIdentitiesRequest::InternalGenerateClassData_();
+
+PROTOBUF_ATTRIBUTE_WEAK const ::google::protobuf::internal::ClassData* PROTOBUF_NONNULL
+GetPlayerIdentitiesRequest::GetClassData() const {
+  ::google::protobuf::internal::PrefetchToLocalCache(&GetPlayerIdentitiesRequest_class_data_);
+  ::google::protobuf::internal::PrefetchToLocalCache(GetPlayerIdentitiesRequest_class_data_.tc_table);
+  return GetPlayerIdentitiesRequest_class_data_.base();
+}
+PROTOBUF_CONSTINIT PROTOBUF_ATTRIBUTE_INIT_PRIORITY1
+const ::_pbi::TcParseTable<0, 1, 0, 65, 2>
+GetPlayerIdentitiesRequest::_table_ = {
+  {
+    PROTOBUF_FIELD_OFFSET(GetPlayerIdentitiesRequest, _impl_._has_bits_),
+    0, // no _extensions_
+    1, 0,  // max_field_number, fast_idx_mask
+    offsetof(decltype(_table_), field_lookup_table),
+    4294967294,  // skipmap
+    offsetof(decltype(_table_), field_entries),
+    1,  // num_field_entries
+    0,  // num_aux_entries
+    offsetof(decltype(_table_), field_names),  // no aux_entries
+    GetPlayerIdentitiesRequest_class_data_.base(),
+    nullptr,  // post_loop_handler
+    ::_pbi::TcParser::GenericFallback,  // fallback
+    #ifdef PROTOBUF_PREFETCH_PARSE_TABLE
+    ::_pbi::TcParser::GetTable<::chirp::server_gateway::GetPlayerIdentitiesRequest>(),  // to_prefetch
+    #endif  // PROTOBUF_PREFETCH_PARSE_TABLE
+  }, {{
+    // string player_id = 1;
+    {::_pbi::TcParser::FastUS1,
+     {10, 0, 0,
+      PROTOBUF_FIELD_OFFSET(GetPlayerIdentitiesRequest, _impl_.player_id_)}},
+  }}, {{
+    65535, 65535
+  }}, {{
+    // string player_id = 1;
+    {PROTOBUF_FIELD_OFFSET(GetPlayerIdentitiesRequest, _impl_.player_id_), _Internal::kHasBitsOffset + 0, 0, (0 | ::_fl::kFcOptional | ::_fl::kUtf8String | ::_fl::kRepAString)},
+  }},
+  // no aux_entries
+  {{
+    "\57\11\0\0\0\0\0\0"
+    "chirp.server_gateway.GetPlayerIdentitiesRequest"
+    "player_id"
+  }},
+};
+PROTOBUF_NOINLINE void GetPlayerIdentitiesRequest::Clear() {
+// @@protoc_insertion_point(message_clear_start:chirp.server_gateway.GetPlayerIdentitiesRequest)
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  ::uint32_t cached_has_bits = 0;
+  // Prevent compiler warnings about cached_has_bits being unused
+  (void) cached_has_bits;
+
+  cached_has_bits = _impl_._has_bits_[0];
+  if (CheckHasBit(cached_has_bits, 0x00000001U)) {
+    _impl_.player_id_.ClearNonDefaultToEmpty();
+  }
+  _impl_._has_bits_.Clear();
+  _internal_metadata_.Clear<::google::protobuf::UnknownFieldSet>();
+}
+
+#if defined(PROTOBUF_CUSTOM_VTABLE)
+::uint8_t* PROTOBUF_NONNULL GetPlayerIdentitiesRequest::_InternalSerialize(
+    const ::google::protobuf::MessageLite& base, ::uint8_t* PROTOBUF_NONNULL target,
+    ::google::protobuf::io::EpsCopyOutputStream* PROTOBUF_NONNULL stream) {
+  const GetPlayerIdentitiesRequest& this_ = static_cast<const GetPlayerIdentitiesRequest&>(base);
+#else   // PROTOBUF_CUSTOM_VTABLE
+::uint8_t* PROTOBUF_NONNULL GetPlayerIdentitiesRequest::_InternalSerialize(
+    ::uint8_t* PROTOBUF_NONNULL target,
+    ::google::protobuf::io::EpsCopyOutputStream* PROTOBUF_NONNULL stream) const {
+  const GetPlayerIdentitiesRequest& this_ = *this;
+#endif  // PROTOBUF_CUSTOM_VTABLE
+  if constexpr (::_pbi::DebugHardenCheckHasBitConsistency()) {
+    this_.CheckHasBitConsistency();
+  }
+  // @@protoc_insertion_point(serialize_to_array_start:chirp.server_gateway.GetPlayerIdentitiesRequest)
+  ::uint32_t cached_has_bits = 0;
+  (void)cached_has_bits;
+
+  cached_has_bits = this_._impl_._has_bits_[0];
+  // string player_id = 1;
+  if (CheckHasBit(cached_has_bits, 0x00000001U)) {
+    if (!this_._internal_player_id().empty()) {
+      const ::std::string& _s = this_._internal_player_id();
+      ::google::protobuf::internal::WireFormatLite::VerifyUtf8String(
+          _s.data(), static_cast<int>(_s.length()), ::google::protobuf::internal::WireFormatLite::SERIALIZE, "chirp.server_gateway.GetPlayerIdentitiesRequest.player_id");
+      target = stream->WriteStringMaybeAliased(1, _s, target);
+    }
+  }
+
+  if (ABSL_PREDICT_FALSE(this_._internal_metadata_.have_unknown_fields())) {
+    target =
+        ::_pbi::WireFormat::InternalSerializeUnknownFieldsToArray(
+            this_._internal_metadata_.unknown_fields<::google::protobuf::UnknownFieldSet>(::google::protobuf::UnknownFieldSet::default_instance), target, stream);
+  }
+  // @@protoc_insertion_point(serialize_to_array_end:chirp.server_gateway.GetPlayerIdentitiesRequest)
+  return target;
+}
+
+#if defined(PROTOBUF_CUSTOM_VTABLE)
+::size_t GetPlayerIdentitiesRequest::ByteSizeLong(const MessageLite& base) {
+  const GetPlayerIdentitiesRequest& this_ = static_cast<const GetPlayerIdentitiesRequest&>(base);
+#else   // PROTOBUF_CUSTOM_VTABLE
+::size_t GetPlayerIdentitiesRequest::ByteSizeLong() const {
+  const GetPlayerIdentitiesRequest& this_ = *this;
+#endif  // PROTOBUF_CUSTOM_VTABLE
+  // @@protoc_insertion_point(message_byte_size_start:chirp.server_gateway.GetPlayerIdentitiesRequest)
+  ::size_t total_size = 0;
+
+  ::uint32_t cached_has_bits = 0;
+  // Prevent compiler warnings about cached_has_bits being unused
+  (void)cached_has_bits;
+
+   {
+    // string player_id = 1;
+    cached_has_bits = this_._impl_._has_bits_[0];
+    if (CheckHasBit(cached_has_bits, 0x00000001U)) {
+      if (!this_._internal_player_id().empty()) {
+        total_size += 1 + ::google::protobuf::internal::WireFormatLite::StringSize(
+                                        this_._internal_player_id());
+      }
+    }
+  }
+  return this_.MaybeComputeUnknownFieldsSize(total_size,
+                                             &this_._impl_._cached_size_);
+}
+
+void GetPlayerIdentitiesRequest::MergeImpl(::google::protobuf::MessageLite& to_msg,
+                            const ::google::protobuf::MessageLite& from_msg) {
+   auto* const _this =
+      static_cast<GetPlayerIdentitiesRequest*>(&to_msg);
+  auto& from = static_cast<const GetPlayerIdentitiesRequest&>(from_msg);
+  if constexpr (::_pbi::DebugHardenCheckHasBitConsistency()) {
+    from.CheckHasBitConsistency();
+  }
+  // @@protoc_insertion_point(class_specific_merge_from_start:chirp.server_gateway.GetPlayerIdentitiesRequest)
+  ABSL_DCHECK_NE(&from, _this);
+  ::uint32_t cached_has_bits = 0;
+  (void)cached_has_bits;
+
+  cached_has_bits = from._impl_._has_bits_[0];
+  if (CheckHasBit(cached_has_bits, 0x00000001U)) {
+    if (!from._internal_player_id().empty()) {
+      _this->_internal_set_player_id(from._internal_player_id());
+    } else {
+      if (_this->_impl_.player_id_.IsDefault()) {
+        _this->_internal_set_player_id("");
+      }
+    }
+  }
+  _this->_impl_._has_bits_[0] |= cached_has_bits;
+  _this->_internal_metadata_.MergeFrom<::google::protobuf::UnknownFieldSet>(
+      from._internal_metadata_);
+}
+
+void GetPlayerIdentitiesRequest::CopyFrom(const GetPlayerIdentitiesRequest& from) {
+  // @@protoc_insertion_point(class_specific_copy_from_start:chirp.server_gateway.GetPlayerIdentitiesRequest)
+  if (&from == this) return;
+  Clear();
+  MergeFrom(from);
+}
+
+
+void GetPlayerIdentitiesRequest::InternalSwap(GetPlayerIdentitiesRequest* PROTOBUF_RESTRICT PROTOBUF_NONNULL other) {
+  using ::std::swap;
+  auto* arena = GetArena();
+  ABSL_DCHECK_EQ(arena, other->GetArena());
+  _internal_metadata_.InternalSwap(&other->_internal_metadata_);
+  swap(_impl_._has_bits_[0], other->_impl_._has_bits_[0]);
+  ::_pbi::ArenaStringPtr::InternalSwap(&_impl_.player_id_, &other->_impl_.player_id_, arena);
+}
+
+::google::protobuf::Metadata GetPlayerIdentitiesRequest::GetMetadata() const {
+  return ::google::protobuf::Message::GetMetadataImpl(GetClassData()->full());
+}
+// ===================================================================
+
+class GetPlayerIdentitiesResponse::_Internal {
+ public:
+  using HasBits =
+      decltype(::std::declval<GetPlayerIdentitiesResponse>()._impl_._has_bits_);
+  static constexpr ::int32_t kHasBitsOffset =
+      8 * PROTOBUF_FIELD_OFFSET(GetPlayerIdentitiesResponse, _impl_._has_bits_);
+};
+
+GetPlayerIdentitiesResponse::GetPlayerIdentitiesResponse(::google::protobuf::Arena* PROTOBUF_NULLABLE arena)
+#if defined(PROTOBUF_CUSTOM_VTABLE)
+    : ::google::protobuf::Message(arena, GetPlayerIdentitiesResponse_class_data_.base()) {
+#else   // PROTOBUF_CUSTOM_VTABLE
+    : ::google::protobuf::Message(arena) {
+#endif  // PROTOBUF_CUSTOM_VTABLE
+  SharedCtor(arena);
+  // @@protoc_insertion_point(arena_constructor:chirp.server_gateway.GetPlayerIdentitiesResponse)
+}
+PROTOBUF_NDEBUG_INLINE GetPlayerIdentitiesResponse::Impl_::Impl_(
+    [[maybe_unused]] ::google::protobuf::internal::InternalVisibility visibility,
+    [[maybe_unused]] ::google::protobuf::Arena* PROTOBUF_NULLABLE arena, const Impl_& from,
+    [[maybe_unused]] const ::chirp::server_gateway::GetPlayerIdentitiesResponse& from_msg)
+      : _has_bits_{from._has_bits_},
+        _cached_size_{0},
+        bindings_{visibility, arena, from.bindings_} {}
+
+GetPlayerIdentitiesResponse::GetPlayerIdentitiesResponse(
+    ::google::protobuf::Arena* PROTOBUF_NULLABLE arena,
+    const GetPlayerIdentitiesResponse& from)
+#if defined(PROTOBUF_CUSTOM_VTABLE)
+    : ::google::protobuf::Message(arena, GetPlayerIdentitiesResponse_class_data_.base()) {
+#else   // PROTOBUF_CUSTOM_VTABLE
+    : ::google::protobuf::Message(arena) {
+#endif  // PROTOBUF_CUSTOM_VTABLE
+  GetPlayerIdentitiesResponse* const _this = this;
+  (void)_this;
+  _internal_metadata_.MergeFrom<::google::protobuf::UnknownFieldSet>(
+      from._internal_metadata_);
+  new (&_impl_) Impl_(internal_visibility(), arena, from._impl_, from);
+  _impl_.code_ = from._impl_.code_;
+
+  // @@protoc_insertion_point(copy_constructor:chirp.server_gateway.GetPlayerIdentitiesResponse)
+}
+PROTOBUF_NDEBUG_INLINE GetPlayerIdentitiesResponse::Impl_::Impl_(
+    [[maybe_unused]] ::google::protobuf::internal::InternalVisibility visibility,
+    [[maybe_unused]] ::google::protobuf::Arena* PROTOBUF_NULLABLE arena)
+      : _cached_size_{0},
+        bindings_{visibility, arena} {}
+
+inline void GetPlayerIdentitiesResponse::SharedCtor(::_pb::Arena* PROTOBUF_NULLABLE arena) {
+  new (&_impl_) Impl_(internal_visibility(), arena);
+  _impl_.code_ = {};
+}
+GetPlayerIdentitiesResponse::~GetPlayerIdentitiesResponse() {
+  // @@protoc_insertion_point(destructor:chirp.server_gateway.GetPlayerIdentitiesResponse)
+  SharedDtor(*this);
+}
+inline void GetPlayerIdentitiesResponse::SharedDtor(MessageLite& self) {
+  GetPlayerIdentitiesResponse& this_ = static_cast<GetPlayerIdentitiesResponse&>(self);
+  if constexpr (::_pbi::DebugHardenCheckHasBitConsistency()) {
+    this_.CheckHasBitConsistency();
+  }
+  this_._internal_metadata_.Delete<::google::protobuf::UnknownFieldSet>();
+  ABSL_DCHECK(this_.GetArena() == nullptr);
+  this_._impl_.~Impl_();
+}
+
+inline void* PROTOBUF_NONNULL GetPlayerIdentitiesResponse::PlacementNew_(
+    const void* PROTOBUF_NONNULL, void* PROTOBUF_NONNULL mem,
+    ::google::protobuf::Arena* PROTOBUF_NULLABLE arena) {
+  return ::new (mem) GetPlayerIdentitiesResponse(arena);
+}
+constexpr auto GetPlayerIdentitiesResponse::InternalNewImpl_() {
+  constexpr auto arena_bits = ::google::protobuf::internal::EncodePlacementArenaOffsets({
+      PROTOBUF_FIELD_OFFSET(GetPlayerIdentitiesResponse, _impl_.bindings_) +
+          decltype(GetPlayerIdentitiesResponse::_impl_.bindings_)::
+              InternalGetArenaOffset(
+                  ::google::protobuf::Message::internal_visibility()),
+  });
+  if (arena_bits.has_value()) {
+    return ::google::protobuf::internal::MessageCreator::ZeroInit(
+        sizeof(GetPlayerIdentitiesResponse), alignof(GetPlayerIdentitiesResponse), *arena_bits);
+  } else {
+    return ::google::protobuf::internal::MessageCreator(&GetPlayerIdentitiesResponse::PlacementNew_,
+                                 sizeof(GetPlayerIdentitiesResponse),
+                                 alignof(GetPlayerIdentitiesResponse));
+  }
+}
+constexpr auto GetPlayerIdentitiesResponse::InternalGenerateClassData_() {
+  return ::google::protobuf::internal::ClassDataFull{
+      ::google::protobuf::internal::ClassData{
+          &_GetPlayerIdentitiesResponse_default_instance_._instance,
+          &_table_.header,
+          nullptr,  // OnDemandRegisterArenaDtor
+          nullptr,  // IsInitialized
+          &GetPlayerIdentitiesResponse::MergeImpl,
+          ::google::protobuf::Message::GetNewImpl<GetPlayerIdentitiesResponse>(),
+#if defined(PROTOBUF_CUSTOM_VTABLE)
+          &GetPlayerIdentitiesResponse::SharedDtor,
+          ::google::protobuf::Message::GetClearImpl<GetPlayerIdentitiesResponse>(), &GetPlayerIdentitiesResponse::ByteSizeLong,
+              &GetPlayerIdentitiesResponse::_InternalSerialize,
+#endif  // PROTOBUF_CUSTOM_VTABLE
+          PROTOBUF_FIELD_OFFSET(GetPlayerIdentitiesResponse, _impl_._cached_size_),
+          false,
+      },
+      &GetPlayerIdentitiesResponse::kDescriptorMethods,
+      &descriptor_table_proto_2fserver_5fgateway_2eproto,
+      nullptr,  // tracker
+  };
+}
+
+PROTOBUF_CONSTINIT PROTOBUF_ATTRIBUTE_INIT_PRIORITY1 const
+    ::google::protobuf::internal::ClassDataFull GetPlayerIdentitiesResponse_class_data_ =
+        GetPlayerIdentitiesResponse::InternalGenerateClassData_();
+
+PROTOBUF_ATTRIBUTE_WEAK const ::google::protobuf::internal::ClassData* PROTOBUF_NONNULL
+GetPlayerIdentitiesResponse::GetClassData() const {
+  ::google::protobuf::internal::PrefetchToLocalCache(&GetPlayerIdentitiesResponse_class_data_);
+  ::google::protobuf::internal::PrefetchToLocalCache(GetPlayerIdentitiesResponse_class_data_.tc_table);
+  return GetPlayerIdentitiesResponse_class_data_.base();
+}
+PROTOBUF_CONSTINIT PROTOBUF_ATTRIBUTE_INIT_PRIORITY1
+const ::_pbi::TcParseTable<1, 2, 1, 0, 2>
+GetPlayerIdentitiesResponse::_table_ = {
+  {
+    PROTOBUF_FIELD_OFFSET(GetPlayerIdentitiesResponse, _impl_._has_bits_),
+    0, // no _extensions_
+    2, 8,  // max_field_number, fast_idx_mask
+    offsetof(decltype(_table_), field_lookup_table),
+    4294967292,  // skipmap
+    offsetof(decltype(_table_), field_entries),
+    2,  // num_field_entries
+    1,  // num_aux_entries
+    offsetof(decltype(_table_), aux_entries),
+    GetPlayerIdentitiesResponse_class_data_.base(),
+    nullptr,  // post_loop_handler
+    ::_pbi::TcParser::GenericFallback,  // fallback
+    #ifdef PROTOBUF_PREFETCH_PARSE_TABLE
+    ::_pbi::TcParser::GetTable<::chirp::server_gateway::GetPlayerIdentitiesResponse>(),  // to_prefetch
+    #endif  // PROTOBUF_PREFETCH_PARSE_TABLE
+  }, {{
+    // repeated .chirp.server_gateway.StoredIdentityBinding bindings = 2;
+    {::_pbi::TcParser::FastMtR1,
+     {18, 0, 0,
+      PROTOBUF_FIELD_OFFSET(GetPlayerIdentitiesResponse, _impl_.bindings_)}},
+    // .chirp.common.ErrorCode code = 1;
+    {::_pbi::TcParser::SingularVarintNoZag1<::uint32_t, offsetof(GetPlayerIdentitiesResponse, _impl_.code_), 1>(),
+     {8, 1, 0,
+      PROTOBUF_FIELD_OFFSET(GetPlayerIdentitiesResponse, _impl_.code_)}},
+  }}, {{
+    65535, 65535
+  }}, {{
+    // .chirp.common.ErrorCode code = 1;
+    {PROTOBUF_FIELD_OFFSET(GetPlayerIdentitiesResponse, _impl_.code_), _Internal::kHasBitsOffset + 1, 0, (0 | ::_fl::kFcOptional | ::_fl::kOpenEnum)},
+    // repeated .chirp.server_gateway.StoredIdentityBinding bindings = 2;
+    {PROTOBUF_FIELD_OFFSET(GetPlayerIdentitiesResponse, _impl_.bindings_), _Internal::kHasBitsOffset + 0, 0, (0 | ::_fl::kFcRepeated | ::_fl::kMessage | ::_fl::kTvTable)},
+  }},
+  {{
+      {::_pbi::TcParser::GetTable<::chirp::server_gateway::StoredIdentityBinding>()},
+  }},
+  {{
+  }},
+};
+PROTOBUF_NOINLINE void GetPlayerIdentitiesResponse::Clear() {
+// @@protoc_insertion_point(message_clear_start:chirp.server_gateway.GetPlayerIdentitiesResponse)
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  ::uint32_t cached_has_bits = 0;
+  // Prevent compiler warnings about cached_has_bits being unused
+  (void) cached_has_bits;
+
+  cached_has_bits = _impl_._has_bits_[0];
+  if (CheckHasBitForRepeated(cached_has_bits, 0x00000001U)) {
+    _impl_.bindings_.Clear();
+  }
+  _impl_.code_ = 0;
+  _impl_._has_bits_.Clear();
+  _internal_metadata_.Clear<::google::protobuf::UnknownFieldSet>();
+}
+
+#if defined(PROTOBUF_CUSTOM_VTABLE)
+::uint8_t* PROTOBUF_NONNULL GetPlayerIdentitiesResponse::_InternalSerialize(
+    const ::google::protobuf::MessageLite& base, ::uint8_t* PROTOBUF_NONNULL target,
+    ::google::protobuf::io::EpsCopyOutputStream* PROTOBUF_NONNULL stream) {
+  const GetPlayerIdentitiesResponse& this_ = static_cast<const GetPlayerIdentitiesResponse&>(base);
+#else   // PROTOBUF_CUSTOM_VTABLE
+::uint8_t* PROTOBUF_NONNULL GetPlayerIdentitiesResponse::_InternalSerialize(
+    ::uint8_t* PROTOBUF_NONNULL target,
+    ::google::protobuf::io::EpsCopyOutputStream* PROTOBUF_NONNULL stream) const {
+  const GetPlayerIdentitiesResponse& this_ = *this;
+#endif  // PROTOBUF_CUSTOM_VTABLE
+  if constexpr (::_pbi::DebugHardenCheckHasBitConsistency()) {
+    this_.CheckHasBitConsistency();
+  }
+  // @@protoc_insertion_point(serialize_to_array_start:chirp.server_gateway.GetPlayerIdentitiesResponse)
+  ::uint32_t cached_has_bits = 0;
+  (void)cached_has_bits;
+
+  cached_has_bits = this_._impl_._has_bits_[0];
+  // .chirp.common.ErrorCode code = 1;
+  if (CheckHasBit(cached_has_bits, 0x00000002U)) {
+    if (this_._internal_code() != 0) {
+      target = stream->EnsureSpace(target);
+      target = ::_pbi::WireFormatLite::WriteEnumToArray(
+          1, this_._internal_code(), target);
+    }
+  }
+
+  // repeated .chirp.server_gateway.StoredIdentityBinding bindings = 2;
+  if (CheckHasBitForRepeated(cached_has_bits, 0x00000001U)) {
+    for (unsigned i = 0, n = static_cast<unsigned>(
+                             this_._internal_bindings_size());
+         i < n; i++) {
+      const auto& repfield = this_._internal_bindings().Get(i);
+      target =
+          ::google::protobuf::internal::WireFormatLite::InternalWriteMessage(
+              2, repfield, repfield.GetCachedSize(),
+              target, stream);
+    }
+  }
+
+  if (ABSL_PREDICT_FALSE(this_._internal_metadata_.have_unknown_fields())) {
+    target =
+        ::_pbi::WireFormat::InternalSerializeUnknownFieldsToArray(
+            this_._internal_metadata_.unknown_fields<::google::protobuf::UnknownFieldSet>(::google::protobuf::UnknownFieldSet::default_instance), target, stream);
+  }
+  // @@protoc_insertion_point(serialize_to_array_end:chirp.server_gateway.GetPlayerIdentitiesResponse)
+  return target;
+}
+
+#if defined(PROTOBUF_CUSTOM_VTABLE)
+::size_t GetPlayerIdentitiesResponse::ByteSizeLong(const MessageLite& base) {
+  const GetPlayerIdentitiesResponse& this_ = static_cast<const GetPlayerIdentitiesResponse&>(base);
+#else   // PROTOBUF_CUSTOM_VTABLE
+::size_t GetPlayerIdentitiesResponse::ByteSizeLong() const {
+  const GetPlayerIdentitiesResponse& this_ = *this;
+#endif  // PROTOBUF_CUSTOM_VTABLE
+  // @@protoc_insertion_point(message_byte_size_start:chirp.server_gateway.GetPlayerIdentitiesResponse)
+  ::size_t total_size = 0;
+
+  ::uint32_t cached_has_bits = 0;
+  // Prevent compiler warnings about cached_has_bits being unused
+  (void)cached_has_bits;
+
+  ::_pbi::Prefetch5LinesFrom7Lines(&this_);
+  cached_has_bits = this_._impl_._has_bits_[0];
+  if (BatchCheckHasBit(cached_has_bits, 0x00000003U)) {
+    // repeated .chirp.server_gateway.StoredIdentityBinding bindings = 2;
+    if (CheckHasBitForRepeated(cached_has_bits, 0x00000001U)) {
+      total_size += 1UL * this_._internal_bindings_size();
+      for (const auto& msg : this_._internal_bindings()) {
+        total_size += ::google::protobuf::internal::WireFormatLite::MessageSize(msg);
+      }
+    }
+    // .chirp.common.ErrorCode code = 1;
+    if (CheckHasBit(cached_has_bits, 0x00000002U)) {
+      if (this_._internal_code() != 0) {
+        total_size += 1 +
+                      ::_pbi::WireFormatLite::EnumSize(this_._internal_code());
+      }
+    }
+  }
+  return this_.MaybeComputeUnknownFieldsSize(total_size,
+                                             &this_._impl_._cached_size_);
+}
+
+void GetPlayerIdentitiesResponse::MergeImpl(::google::protobuf::MessageLite& to_msg,
+                            const ::google::protobuf::MessageLite& from_msg) {
+   auto* const _this =
+      static_cast<GetPlayerIdentitiesResponse*>(&to_msg);
+  auto& from = static_cast<const GetPlayerIdentitiesResponse&>(from_msg);
+  if constexpr (::_pbi::DebugHardenCheckHasBitConsistency()) {
+    from.CheckHasBitConsistency();
+  }
+  ::google::protobuf::Arena* arena = _this->GetArena();
+  // @@protoc_insertion_point(class_specific_merge_from_start:chirp.server_gateway.GetPlayerIdentitiesResponse)
+  ABSL_DCHECK_NE(&from, _this);
+  ::uint32_t cached_has_bits = 0;
+  (void)cached_has_bits;
+
+  cached_has_bits = from._impl_._has_bits_[0];
+  if (BatchCheckHasBit(cached_has_bits, 0x00000003U)) {
+    if (CheckHasBitForRepeated(cached_has_bits, 0x00000001U)) {
+      _this->_internal_mutable_bindings()->InternalMergeFromWithArena(
+          ::google::protobuf::MessageLite::internal_visibility(), arena,
+          from._internal_bindings());
+    }
+    if (CheckHasBit(cached_has_bits, 0x00000002U)) {
+      if (from._internal_code() != 0) {
+        _this->_impl_.code_ = from._impl_.code_;
+      }
+    }
+  }
+  _this->_impl_._has_bits_[0] |= cached_has_bits;
+  _this->_internal_metadata_.MergeFrom<::google::protobuf::UnknownFieldSet>(
+      from._internal_metadata_);
+}
+
+void GetPlayerIdentitiesResponse::CopyFrom(const GetPlayerIdentitiesResponse& from) {
+  // @@protoc_insertion_point(class_specific_copy_from_start:chirp.server_gateway.GetPlayerIdentitiesResponse)
+  if (&from == this) return;
+  Clear();
+  MergeFrom(from);
+}
+
+
+void GetPlayerIdentitiesResponse::InternalSwap(GetPlayerIdentitiesResponse* PROTOBUF_RESTRICT PROTOBUF_NONNULL other) {
+  using ::std::swap;
+  _internal_metadata_.InternalSwap(&other->_internal_metadata_);
+  swap(_impl_._has_bits_[0], other->_impl_._has_bits_[0]);
+  _impl_.bindings_.InternalSwap(&other->_impl_.bindings_);
+  swap(_impl_.code_, other->_impl_.code_);
+}
+
+::google::protobuf::Metadata GetPlayerIdentitiesResponse::GetMetadata() const {
+  return ::google::protobuf::Message::GetMetadataImpl(GetClassData()->full());
+}
+// ===================================================================
+
+class ResolveGameUserRequest::_Internal {
+ public:
+  using HasBits =
+      decltype(::std::declval<ResolveGameUserRequest>()._impl_._has_bits_);
+  static constexpr ::int32_t kHasBitsOffset =
+      8 * PROTOBUF_FIELD_OFFSET(ResolveGameUserRequest, _impl_._has_bits_);
+};
+
+ResolveGameUserRequest::ResolveGameUserRequest(::google::protobuf::Arena* PROTOBUF_NULLABLE arena)
+#if defined(PROTOBUF_CUSTOM_VTABLE)
+    : ::google::protobuf::Message(arena, ResolveGameUserRequest_class_data_.base()) {
+#else   // PROTOBUF_CUSTOM_VTABLE
+    : ::google::protobuf::Message(arena) {
+#endif  // PROTOBUF_CUSTOM_VTABLE
+  SharedCtor(arena);
+  // @@protoc_insertion_point(arena_constructor:chirp.server_gateway.ResolveGameUserRequest)
+}
+PROTOBUF_NDEBUG_INLINE ResolveGameUserRequest::Impl_::Impl_(
+    [[maybe_unused]] ::google::protobuf::internal::InternalVisibility visibility,
+    [[maybe_unused]] ::google::protobuf::Arena* PROTOBUF_NULLABLE arena, const Impl_& from,
+    [[maybe_unused]] const ::chirp::server_gateway::ResolveGameUserRequest& from_msg)
+      : _has_bits_{from._has_bits_},
+        _cached_size_{0},
+        game_id_(arena, from.game_id_),
+        game_user_id_(arena, from.game_user_id_) {}
+
+ResolveGameUserRequest::ResolveGameUserRequest(
+    ::google::protobuf::Arena* PROTOBUF_NULLABLE arena,
+    const ResolveGameUserRequest& from)
+#if defined(PROTOBUF_CUSTOM_VTABLE)
+    : ::google::protobuf::Message(arena, ResolveGameUserRequest_class_data_.base()) {
+#else   // PROTOBUF_CUSTOM_VTABLE
+    : ::google::protobuf::Message(arena) {
+#endif  // PROTOBUF_CUSTOM_VTABLE
+  ResolveGameUserRequest* const _this = this;
+  (void)_this;
+  _internal_metadata_.MergeFrom<::google::protobuf::UnknownFieldSet>(
+      from._internal_metadata_);
+  new (&_impl_) Impl_(internal_visibility(), arena, from._impl_, from);
+
+  // @@protoc_insertion_point(copy_constructor:chirp.server_gateway.ResolveGameUserRequest)
+}
+PROTOBUF_NDEBUG_INLINE ResolveGameUserRequest::Impl_::Impl_(
+    [[maybe_unused]] ::google::protobuf::internal::InternalVisibility visibility,
+    [[maybe_unused]] ::google::protobuf::Arena* PROTOBUF_NULLABLE arena)
+      : _cached_size_{0},
+        game_id_(arena),
+        game_user_id_(arena) {}
+
+inline void ResolveGameUserRequest::SharedCtor(::_pb::Arena* PROTOBUF_NULLABLE arena) {
+  new (&_impl_) Impl_(internal_visibility(), arena);
+}
+ResolveGameUserRequest::~ResolveGameUserRequest() {
+  // @@protoc_insertion_point(destructor:chirp.server_gateway.ResolveGameUserRequest)
+  SharedDtor(*this);
+}
+inline void ResolveGameUserRequest::SharedDtor(MessageLite& self) {
+  ResolveGameUserRequest& this_ = static_cast<ResolveGameUserRequest&>(self);
+  if constexpr (::_pbi::DebugHardenCheckHasBitConsistency()) {
+    this_.CheckHasBitConsistency();
+  }
+  this_._internal_metadata_.Delete<::google::protobuf::UnknownFieldSet>();
+  ABSL_DCHECK(this_.GetArena() == nullptr);
+  this_._impl_.game_id_.Destroy();
+  this_._impl_.game_user_id_.Destroy();
+  this_._impl_.~Impl_();
+}
+
+inline void* PROTOBUF_NONNULL ResolveGameUserRequest::PlacementNew_(
+    const void* PROTOBUF_NONNULL, void* PROTOBUF_NONNULL mem,
+    ::google::protobuf::Arena* PROTOBUF_NULLABLE arena) {
+  return ::new (mem) ResolveGameUserRequest(arena);
+}
+constexpr auto ResolveGameUserRequest::InternalNewImpl_() {
+  return ::google::protobuf::internal::MessageCreator::CopyInit(sizeof(ResolveGameUserRequest),
+                                            alignof(ResolveGameUserRequest));
+}
+constexpr auto ResolveGameUserRequest::InternalGenerateClassData_() {
+  return ::google::protobuf::internal::ClassDataFull{
+      ::google::protobuf::internal::ClassData{
+          &_ResolveGameUserRequest_default_instance_._instance,
+          &_table_.header,
+          nullptr,  // OnDemandRegisterArenaDtor
+          nullptr,  // IsInitialized
+          &ResolveGameUserRequest::MergeImpl,
+          ::google::protobuf::Message::GetNewImpl<ResolveGameUserRequest>(),
+#if defined(PROTOBUF_CUSTOM_VTABLE)
+          &ResolveGameUserRequest::SharedDtor,
+          ::google::protobuf::Message::GetClearImpl<ResolveGameUserRequest>(), &ResolveGameUserRequest::ByteSizeLong,
+              &ResolveGameUserRequest::_InternalSerialize,
+#endif  // PROTOBUF_CUSTOM_VTABLE
+          PROTOBUF_FIELD_OFFSET(ResolveGameUserRequest, _impl_._cached_size_),
+          false,
+      },
+      &ResolveGameUserRequest::kDescriptorMethods,
+      &descriptor_table_proto_2fserver_5fgateway_2eproto,
+      nullptr,  // tracker
+  };
+}
+
+PROTOBUF_CONSTINIT PROTOBUF_ATTRIBUTE_INIT_PRIORITY1 const
+    ::google::protobuf::internal::ClassDataFull ResolveGameUserRequest_class_data_ =
+        ResolveGameUserRequest::InternalGenerateClassData_();
+
+PROTOBUF_ATTRIBUTE_WEAK const ::google::protobuf::internal::ClassData* PROTOBUF_NONNULL
+ResolveGameUserRequest::GetClassData() const {
+  ::google::protobuf::internal::PrefetchToLocalCache(&ResolveGameUserRequest_class_data_);
+  ::google::protobuf::internal::PrefetchToLocalCache(ResolveGameUserRequest_class_data_.tc_table);
+  return ResolveGameUserRequest_class_data_.base();
+}
+PROTOBUF_CONSTINIT PROTOBUF_ATTRIBUTE_INIT_PRIORITY1
+const ::_pbi::TcParseTable<1, 2, 0, 71, 2>
+ResolveGameUserRequest::_table_ = {
+  {
+    PROTOBUF_FIELD_OFFSET(ResolveGameUserRequest, _impl_._has_bits_),
+    0, // no _extensions_
+    2, 8,  // max_field_number, fast_idx_mask
+    offsetof(decltype(_table_), field_lookup_table),
+    4294967292,  // skipmap
+    offsetof(decltype(_table_), field_entries),
+    2,  // num_field_entries
+    0,  // num_aux_entries
+    offsetof(decltype(_table_), field_names),  // no aux_entries
+    ResolveGameUserRequest_class_data_.base(),
+    nullptr,  // post_loop_handler
+    ::_pbi::TcParser::GenericFallback,  // fallback
+    #ifdef PROTOBUF_PREFETCH_PARSE_TABLE
+    ::_pbi::TcParser::GetTable<::chirp::server_gateway::ResolveGameUserRequest>(),  // to_prefetch
+    #endif  // PROTOBUF_PREFETCH_PARSE_TABLE
+  }, {{
+    // string game_user_id = 2;
+    {::_pbi::TcParser::FastUS1,
+     {18, 1, 0,
+      PROTOBUF_FIELD_OFFSET(ResolveGameUserRequest, _impl_.game_user_id_)}},
+    // string game_id = 1;
+    {::_pbi::TcParser::FastUS1,
+     {10, 0, 0,
+      PROTOBUF_FIELD_OFFSET(ResolveGameUserRequest, _impl_.game_id_)}},
+  }}, {{
+    65535, 65535
+  }}, {{
+    // string game_id = 1;
+    {PROTOBUF_FIELD_OFFSET(ResolveGameUserRequest, _impl_.game_id_), _Internal::kHasBitsOffset + 0, 0, (0 | ::_fl::kFcOptional | ::_fl::kUtf8String | ::_fl::kRepAString)},
+    // string game_user_id = 2;
+    {PROTOBUF_FIELD_OFFSET(ResolveGameUserRequest, _impl_.game_user_id_), _Internal::kHasBitsOffset + 1, 0, (0 | ::_fl::kFcOptional | ::_fl::kUtf8String | ::_fl::kRepAString)},
+  }},
+  // no aux_entries
+  {{
+    "\53\7\14\0\0\0\0\0"
+    "chirp.server_gateway.ResolveGameUserRequest"
+    "game_id"
+    "game_user_id"
+  }},
+};
+PROTOBUF_NOINLINE void ResolveGameUserRequest::Clear() {
+// @@protoc_insertion_point(message_clear_start:chirp.server_gateway.ResolveGameUserRequest)
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  ::uint32_t cached_has_bits = 0;
+  // Prevent compiler warnings about cached_has_bits being unused
+  (void) cached_has_bits;
+
+  cached_has_bits = _impl_._has_bits_[0];
+  if (BatchCheckHasBit(cached_has_bits, 0x00000003U)) {
+    if (CheckHasBit(cached_has_bits, 0x00000001U)) {
+      _impl_.game_id_.ClearNonDefaultToEmpty();
+    }
+    if (CheckHasBit(cached_has_bits, 0x00000002U)) {
+      _impl_.game_user_id_.ClearNonDefaultToEmpty();
+    }
+  }
+  _impl_._has_bits_.Clear();
+  _internal_metadata_.Clear<::google::protobuf::UnknownFieldSet>();
+}
+
+#if defined(PROTOBUF_CUSTOM_VTABLE)
+::uint8_t* PROTOBUF_NONNULL ResolveGameUserRequest::_InternalSerialize(
+    const ::google::protobuf::MessageLite& base, ::uint8_t* PROTOBUF_NONNULL target,
+    ::google::protobuf::io::EpsCopyOutputStream* PROTOBUF_NONNULL stream) {
+  const ResolveGameUserRequest& this_ = static_cast<const ResolveGameUserRequest&>(base);
+#else   // PROTOBUF_CUSTOM_VTABLE
+::uint8_t* PROTOBUF_NONNULL ResolveGameUserRequest::_InternalSerialize(
+    ::uint8_t* PROTOBUF_NONNULL target,
+    ::google::protobuf::io::EpsCopyOutputStream* PROTOBUF_NONNULL stream) const {
+  const ResolveGameUserRequest& this_ = *this;
+#endif  // PROTOBUF_CUSTOM_VTABLE
+  if constexpr (::_pbi::DebugHardenCheckHasBitConsistency()) {
+    this_.CheckHasBitConsistency();
+  }
+  // @@protoc_insertion_point(serialize_to_array_start:chirp.server_gateway.ResolveGameUserRequest)
+  ::uint32_t cached_has_bits = 0;
+  (void)cached_has_bits;
+
+  cached_has_bits = this_._impl_._has_bits_[0];
+  // string game_id = 1;
+  if (CheckHasBit(cached_has_bits, 0x00000001U)) {
+    if (!this_._internal_game_id().empty()) {
+      const ::std::string& _s = this_._internal_game_id();
+      ::google::protobuf::internal::WireFormatLite::VerifyUtf8String(
+          _s.data(), static_cast<int>(_s.length()), ::google::protobuf::internal::WireFormatLite::SERIALIZE, "chirp.server_gateway.ResolveGameUserRequest.game_id");
+      target = stream->WriteStringMaybeAliased(1, _s, target);
+    }
+  }
+
+  // string game_user_id = 2;
+  if (CheckHasBit(cached_has_bits, 0x00000002U)) {
+    if (!this_._internal_game_user_id().empty()) {
+      const ::std::string& _s = this_._internal_game_user_id();
+      ::google::protobuf::internal::WireFormatLite::VerifyUtf8String(
+          _s.data(), static_cast<int>(_s.length()), ::google::protobuf::internal::WireFormatLite::SERIALIZE, "chirp.server_gateway.ResolveGameUserRequest.game_user_id");
+      target = stream->WriteStringMaybeAliased(2, _s, target);
+    }
+  }
+
+  if (ABSL_PREDICT_FALSE(this_._internal_metadata_.have_unknown_fields())) {
+    target =
+        ::_pbi::WireFormat::InternalSerializeUnknownFieldsToArray(
+            this_._internal_metadata_.unknown_fields<::google::protobuf::UnknownFieldSet>(::google::protobuf::UnknownFieldSet::default_instance), target, stream);
+  }
+  // @@protoc_insertion_point(serialize_to_array_end:chirp.server_gateway.ResolveGameUserRequest)
+  return target;
+}
+
+#if defined(PROTOBUF_CUSTOM_VTABLE)
+::size_t ResolveGameUserRequest::ByteSizeLong(const MessageLite& base) {
+  const ResolveGameUserRequest& this_ = static_cast<const ResolveGameUserRequest&>(base);
+#else   // PROTOBUF_CUSTOM_VTABLE
+::size_t ResolveGameUserRequest::ByteSizeLong() const {
+  const ResolveGameUserRequest& this_ = *this;
+#endif  // PROTOBUF_CUSTOM_VTABLE
+  // @@protoc_insertion_point(message_byte_size_start:chirp.server_gateway.ResolveGameUserRequest)
+  ::size_t total_size = 0;
+
+  ::uint32_t cached_has_bits = 0;
+  // Prevent compiler warnings about cached_has_bits being unused
+  (void)cached_has_bits;
+
+  ::_pbi::Prefetch5LinesFrom7Lines(&this_);
+  cached_has_bits = this_._impl_._has_bits_[0];
+  if (BatchCheckHasBit(cached_has_bits, 0x00000003U)) {
+    // string game_id = 1;
+    if (CheckHasBit(cached_has_bits, 0x00000001U)) {
+      if (!this_._internal_game_id().empty()) {
+        total_size += 1 + ::google::protobuf::internal::WireFormatLite::StringSize(
+                                        this_._internal_game_id());
+      }
+    }
+    // string game_user_id = 2;
+    if (CheckHasBit(cached_has_bits, 0x00000002U)) {
+      if (!this_._internal_game_user_id().empty()) {
+        total_size += 1 + ::google::protobuf::internal::WireFormatLite::StringSize(
+                                        this_._internal_game_user_id());
+      }
+    }
+  }
+  return this_.MaybeComputeUnknownFieldsSize(total_size,
+                                             &this_._impl_._cached_size_);
+}
+
+void ResolveGameUserRequest::MergeImpl(::google::protobuf::MessageLite& to_msg,
+                            const ::google::protobuf::MessageLite& from_msg) {
+   auto* const _this =
+      static_cast<ResolveGameUserRequest*>(&to_msg);
+  auto& from = static_cast<const ResolveGameUserRequest&>(from_msg);
+  if constexpr (::_pbi::DebugHardenCheckHasBitConsistency()) {
+    from.CheckHasBitConsistency();
+  }
+  // @@protoc_insertion_point(class_specific_merge_from_start:chirp.server_gateway.ResolveGameUserRequest)
+  ABSL_DCHECK_NE(&from, _this);
+  ::uint32_t cached_has_bits = 0;
+  (void)cached_has_bits;
+
+  cached_has_bits = from._impl_._has_bits_[0];
+  if (BatchCheckHasBit(cached_has_bits, 0x00000003U)) {
+    if (CheckHasBit(cached_has_bits, 0x00000001U)) {
+      if (!from._internal_game_id().empty()) {
+        _this->_internal_set_game_id(from._internal_game_id());
+      } else {
+        if (_this->_impl_.game_id_.IsDefault()) {
+          _this->_internal_set_game_id("");
+        }
+      }
+    }
+    if (CheckHasBit(cached_has_bits, 0x00000002U)) {
+      if (!from._internal_game_user_id().empty()) {
+        _this->_internal_set_game_user_id(from._internal_game_user_id());
+      } else {
+        if (_this->_impl_.game_user_id_.IsDefault()) {
+          _this->_internal_set_game_user_id("");
+        }
+      }
+    }
+  }
+  _this->_impl_._has_bits_[0] |= cached_has_bits;
+  _this->_internal_metadata_.MergeFrom<::google::protobuf::UnknownFieldSet>(
+      from._internal_metadata_);
+}
+
+void ResolveGameUserRequest::CopyFrom(const ResolveGameUserRequest& from) {
+  // @@protoc_insertion_point(class_specific_copy_from_start:chirp.server_gateway.ResolveGameUserRequest)
+  if (&from == this) return;
+  Clear();
+  MergeFrom(from);
+}
+
+
+void ResolveGameUserRequest::InternalSwap(ResolveGameUserRequest* PROTOBUF_RESTRICT PROTOBUF_NONNULL other) {
+  using ::std::swap;
+  auto* arena = GetArena();
+  ABSL_DCHECK_EQ(arena, other->GetArena());
+  _internal_metadata_.InternalSwap(&other->_internal_metadata_);
+  swap(_impl_._has_bits_[0], other->_impl_._has_bits_[0]);
+  ::_pbi::ArenaStringPtr::InternalSwap(&_impl_.game_id_, &other->_impl_.game_id_, arena);
+  ::_pbi::ArenaStringPtr::InternalSwap(&_impl_.game_user_id_, &other->_impl_.game_user_id_, arena);
+}
+
+::google::protobuf::Metadata ResolveGameUserRequest::GetMetadata() const {
+  return ::google::protobuf::Message::GetMetadataImpl(GetClassData()->full());
+}
+// ===================================================================
+
+class ResolveGameUserResponse::_Internal {
+ public:
+  using HasBits =
+      decltype(::std::declval<ResolveGameUserResponse>()._impl_._has_bits_);
+  static constexpr ::int32_t kHasBitsOffset =
+      8 * PROTOBUF_FIELD_OFFSET(ResolveGameUserResponse, _impl_._has_bits_);
+};
+
+ResolveGameUserResponse::ResolveGameUserResponse(::google::protobuf::Arena* PROTOBUF_NULLABLE arena)
+#if defined(PROTOBUF_CUSTOM_VTABLE)
+    : ::google::protobuf::Message(arena, ResolveGameUserResponse_class_data_.base()) {
+#else   // PROTOBUF_CUSTOM_VTABLE
+    : ::google::protobuf::Message(arena) {
+#endif  // PROTOBUF_CUSTOM_VTABLE
+  SharedCtor(arena);
+  // @@protoc_insertion_point(arena_constructor:chirp.server_gateway.ResolveGameUserResponse)
+}
+PROTOBUF_NDEBUG_INLINE ResolveGameUserResponse::Impl_::Impl_(
+    [[maybe_unused]] ::google::protobuf::internal::InternalVisibility visibility,
+    [[maybe_unused]] ::google::protobuf::Arena* PROTOBUF_NULLABLE arena, const Impl_& from,
+    [[maybe_unused]] const ::chirp::server_gateway::ResolveGameUserResponse& from_msg)
+      : _has_bits_{from._has_bits_},
+        _cached_size_{0},
+        player_id_(arena, from.player_id_) {}
+
+ResolveGameUserResponse::ResolveGameUserResponse(
+    ::google::protobuf::Arena* PROTOBUF_NULLABLE arena,
+    const ResolveGameUserResponse& from)
+#if defined(PROTOBUF_CUSTOM_VTABLE)
+    : ::google::protobuf::Message(arena, ResolveGameUserResponse_class_data_.base()) {
+#else   // PROTOBUF_CUSTOM_VTABLE
+    : ::google::protobuf::Message(arena) {
+#endif  // PROTOBUF_CUSTOM_VTABLE
+  ResolveGameUserResponse* const _this = this;
+  (void)_this;
+  _internal_metadata_.MergeFrom<::google::protobuf::UnknownFieldSet>(
+      from._internal_metadata_);
+  new (&_impl_) Impl_(internal_visibility(), arena, from._impl_, from);
+  _impl_.code_ = from._impl_.code_;
+
+  // @@protoc_insertion_point(copy_constructor:chirp.server_gateway.ResolveGameUserResponse)
+}
+PROTOBUF_NDEBUG_INLINE ResolveGameUserResponse::Impl_::Impl_(
+    [[maybe_unused]] ::google::protobuf::internal::InternalVisibility visibility,
+    [[maybe_unused]] ::google::protobuf::Arena* PROTOBUF_NULLABLE arena)
+      : _cached_size_{0},
+        player_id_(arena) {}
+
+inline void ResolveGameUserResponse::SharedCtor(::_pb::Arena* PROTOBUF_NULLABLE arena) {
+  new (&_impl_) Impl_(internal_visibility(), arena);
+  _impl_.code_ = {};
+}
+ResolveGameUserResponse::~ResolveGameUserResponse() {
+  // @@protoc_insertion_point(destructor:chirp.server_gateway.ResolveGameUserResponse)
+  SharedDtor(*this);
+}
+inline void ResolveGameUserResponse::SharedDtor(MessageLite& self) {
+  ResolveGameUserResponse& this_ = static_cast<ResolveGameUserResponse&>(self);
+  if constexpr (::_pbi::DebugHardenCheckHasBitConsistency()) {
+    this_.CheckHasBitConsistency();
+  }
+  this_._internal_metadata_.Delete<::google::protobuf::UnknownFieldSet>();
+  ABSL_DCHECK(this_.GetArena() == nullptr);
+  this_._impl_.player_id_.Destroy();
+  this_._impl_.~Impl_();
+}
+
+inline void* PROTOBUF_NONNULL ResolveGameUserResponse::PlacementNew_(
+    const void* PROTOBUF_NONNULL, void* PROTOBUF_NONNULL mem,
+    ::google::protobuf::Arena* PROTOBUF_NULLABLE arena) {
+  return ::new (mem) ResolveGameUserResponse(arena);
+}
+constexpr auto ResolveGameUserResponse::InternalNewImpl_() {
+  return ::google::protobuf::internal::MessageCreator::CopyInit(sizeof(ResolveGameUserResponse),
+                                            alignof(ResolveGameUserResponse));
+}
+constexpr auto ResolveGameUserResponse::InternalGenerateClassData_() {
+  return ::google::protobuf::internal::ClassDataFull{
+      ::google::protobuf::internal::ClassData{
+          &_ResolveGameUserResponse_default_instance_._instance,
+          &_table_.header,
+          nullptr,  // OnDemandRegisterArenaDtor
+          nullptr,  // IsInitialized
+          &ResolveGameUserResponse::MergeImpl,
+          ::google::protobuf::Message::GetNewImpl<ResolveGameUserResponse>(),
+#if defined(PROTOBUF_CUSTOM_VTABLE)
+          &ResolveGameUserResponse::SharedDtor,
+          ::google::protobuf::Message::GetClearImpl<ResolveGameUserResponse>(), &ResolveGameUserResponse::ByteSizeLong,
+              &ResolveGameUserResponse::_InternalSerialize,
+#endif  // PROTOBUF_CUSTOM_VTABLE
+          PROTOBUF_FIELD_OFFSET(ResolveGameUserResponse, _impl_._cached_size_),
+          false,
+      },
+      &ResolveGameUserResponse::kDescriptorMethods,
+      &descriptor_table_proto_2fserver_5fgateway_2eproto,
+      nullptr,  // tracker
+  };
+}
+
+PROTOBUF_CONSTINIT PROTOBUF_ATTRIBUTE_INIT_PRIORITY1 const
+    ::google::protobuf::internal::ClassDataFull ResolveGameUserResponse_class_data_ =
+        ResolveGameUserResponse::InternalGenerateClassData_();
+
+PROTOBUF_ATTRIBUTE_WEAK const ::google::protobuf::internal::ClassData* PROTOBUF_NONNULL
+ResolveGameUserResponse::GetClassData() const {
+  ::google::protobuf::internal::PrefetchToLocalCache(&ResolveGameUserResponse_class_data_);
+  ::google::protobuf::internal::PrefetchToLocalCache(ResolveGameUserResponse_class_data_.tc_table);
+  return ResolveGameUserResponse_class_data_.base();
+}
+PROTOBUF_CONSTINIT PROTOBUF_ATTRIBUTE_INIT_PRIORITY1
+const ::_pbi::TcParseTable<1, 2, 0, 62, 2>
+ResolveGameUserResponse::_table_ = {
+  {
+    PROTOBUF_FIELD_OFFSET(ResolveGameUserResponse, _impl_._has_bits_),
+    0, // no _extensions_
+    2, 8,  // max_field_number, fast_idx_mask
+    offsetof(decltype(_table_), field_lookup_table),
+    4294967292,  // skipmap
+    offsetof(decltype(_table_), field_entries),
+    2,  // num_field_entries
+    0,  // num_aux_entries
+    offsetof(decltype(_table_), field_names),  // no aux_entries
+    ResolveGameUserResponse_class_data_.base(),
+    nullptr,  // post_loop_handler
+    ::_pbi::TcParser::GenericFallback,  // fallback
+    #ifdef PROTOBUF_PREFETCH_PARSE_TABLE
+    ::_pbi::TcParser::GetTable<::chirp::server_gateway::ResolveGameUserResponse>(),  // to_prefetch
+    #endif  // PROTOBUF_PREFETCH_PARSE_TABLE
+  }, {{
+    // string player_id = 2;
+    {::_pbi::TcParser::FastUS1,
+     {18, 0, 0,
+      PROTOBUF_FIELD_OFFSET(ResolveGameUserResponse, _impl_.player_id_)}},
+    // .chirp.common.ErrorCode code = 1;
+    {::_pbi::TcParser::SingularVarintNoZag1<::uint32_t, offsetof(ResolveGameUserResponse, _impl_.code_), 1>(),
+     {8, 1, 0,
+      PROTOBUF_FIELD_OFFSET(ResolveGameUserResponse, _impl_.code_)}},
+  }}, {{
+    65535, 65535
+  }}, {{
+    // .chirp.common.ErrorCode code = 1;
+    {PROTOBUF_FIELD_OFFSET(ResolveGameUserResponse, _impl_.code_), _Internal::kHasBitsOffset + 1, 0, (0 | ::_fl::kFcOptional | ::_fl::kOpenEnum)},
+    // string player_id = 2;
+    {PROTOBUF_FIELD_OFFSET(ResolveGameUserResponse, _impl_.player_id_), _Internal::kHasBitsOffset + 0, 0, (0 | ::_fl::kFcOptional | ::_fl::kUtf8String | ::_fl::kRepAString)},
+  }},
+  // no aux_entries
+  {{
+    "\54\0\11\0\0\0\0\0"
+    "chirp.server_gateway.ResolveGameUserResponse"
+    "player_id"
+  }},
+};
+PROTOBUF_NOINLINE void ResolveGameUserResponse::Clear() {
+// @@protoc_insertion_point(message_clear_start:chirp.server_gateway.ResolveGameUserResponse)
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  ::uint32_t cached_has_bits = 0;
+  // Prevent compiler warnings about cached_has_bits being unused
+  (void) cached_has_bits;
+
+  cached_has_bits = _impl_._has_bits_[0];
+  if (CheckHasBit(cached_has_bits, 0x00000001U)) {
+    _impl_.player_id_.ClearNonDefaultToEmpty();
+  }
+  _impl_.code_ = 0;
+  _impl_._has_bits_.Clear();
+  _internal_metadata_.Clear<::google::protobuf::UnknownFieldSet>();
+}
+
+#if defined(PROTOBUF_CUSTOM_VTABLE)
+::uint8_t* PROTOBUF_NONNULL ResolveGameUserResponse::_InternalSerialize(
+    const ::google::protobuf::MessageLite& base, ::uint8_t* PROTOBUF_NONNULL target,
+    ::google::protobuf::io::EpsCopyOutputStream* PROTOBUF_NONNULL stream) {
+  const ResolveGameUserResponse& this_ = static_cast<const ResolveGameUserResponse&>(base);
+#else   // PROTOBUF_CUSTOM_VTABLE
+::uint8_t* PROTOBUF_NONNULL ResolveGameUserResponse::_InternalSerialize(
+    ::uint8_t* PROTOBUF_NONNULL target,
+    ::google::protobuf::io::EpsCopyOutputStream* PROTOBUF_NONNULL stream) const {
+  const ResolveGameUserResponse& this_ = *this;
+#endif  // PROTOBUF_CUSTOM_VTABLE
+  if constexpr (::_pbi::DebugHardenCheckHasBitConsistency()) {
+    this_.CheckHasBitConsistency();
+  }
+  // @@protoc_insertion_point(serialize_to_array_start:chirp.server_gateway.ResolveGameUserResponse)
+  ::uint32_t cached_has_bits = 0;
+  (void)cached_has_bits;
+
+  cached_has_bits = this_._impl_._has_bits_[0];
+  // .chirp.common.ErrorCode code = 1;
+  if (CheckHasBit(cached_has_bits, 0x00000002U)) {
+    if (this_._internal_code() != 0) {
+      target = stream->EnsureSpace(target);
+      target = ::_pbi::WireFormatLite::WriteEnumToArray(
+          1, this_._internal_code(), target);
+    }
+  }
+
+  // string player_id = 2;
+  if (CheckHasBit(cached_has_bits, 0x00000001U)) {
+    if (!this_._internal_player_id().empty()) {
+      const ::std::string& _s = this_._internal_player_id();
+      ::google::protobuf::internal::WireFormatLite::VerifyUtf8String(
+          _s.data(), static_cast<int>(_s.length()), ::google::protobuf::internal::WireFormatLite::SERIALIZE, "chirp.server_gateway.ResolveGameUserResponse.player_id");
+      target = stream->WriteStringMaybeAliased(2, _s, target);
+    }
+  }
+
+  if (ABSL_PREDICT_FALSE(this_._internal_metadata_.have_unknown_fields())) {
+    target =
+        ::_pbi::WireFormat::InternalSerializeUnknownFieldsToArray(
+            this_._internal_metadata_.unknown_fields<::google::protobuf::UnknownFieldSet>(::google::protobuf::UnknownFieldSet::default_instance), target, stream);
+  }
+  // @@protoc_insertion_point(serialize_to_array_end:chirp.server_gateway.ResolveGameUserResponse)
+  return target;
+}
+
+#if defined(PROTOBUF_CUSTOM_VTABLE)
+::size_t ResolveGameUserResponse::ByteSizeLong(const MessageLite& base) {
+  const ResolveGameUserResponse& this_ = static_cast<const ResolveGameUserResponse&>(base);
+#else   // PROTOBUF_CUSTOM_VTABLE
+::size_t ResolveGameUserResponse::ByteSizeLong() const {
+  const ResolveGameUserResponse& this_ = *this;
+#endif  // PROTOBUF_CUSTOM_VTABLE
+  // @@protoc_insertion_point(message_byte_size_start:chirp.server_gateway.ResolveGameUserResponse)
+  ::size_t total_size = 0;
+
+  ::uint32_t cached_has_bits = 0;
+  // Prevent compiler warnings about cached_has_bits being unused
+  (void)cached_has_bits;
+
+  ::_pbi::Prefetch5LinesFrom7Lines(&this_);
+  cached_has_bits = this_._impl_._has_bits_[0];
+  if (BatchCheckHasBit(cached_has_bits, 0x00000003U)) {
+    // string player_id = 2;
+    if (CheckHasBit(cached_has_bits, 0x00000001U)) {
+      if (!this_._internal_player_id().empty()) {
+        total_size += 1 + ::google::protobuf::internal::WireFormatLite::StringSize(
+                                        this_._internal_player_id());
+      }
+    }
+    // .chirp.common.ErrorCode code = 1;
+    if (CheckHasBit(cached_has_bits, 0x00000002U)) {
+      if (this_._internal_code() != 0) {
+        total_size += 1 +
+                      ::_pbi::WireFormatLite::EnumSize(this_._internal_code());
+      }
+    }
+  }
+  return this_.MaybeComputeUnknownFieldsSize(total_size,
+                                             &this_._impl_._cached_size_);
+}
+
+void ResolveGameUserResponse::MergeImpl(::google::protobuf::MessageLite& to_msg,
+                            const ::google::protobuf::MessageLite& from_msg) {
+   auto* const _this =
+      static_cast<ResolveGameUserResponse*>(&to_msg);
+  auto& from = static_cast<const ResolveGameUserResponse&>(from_msg);
+  if constexpr (::_pbi::DebugHardenCheckHasBitConsistency()) {
+    from.CheckHasBitConsistency();
+  }
+  // @@protoc_insertion_point(class_specific_merge_from_start:chirp.server_gateway.ResolveGameUserResponse)
+  ABSL_DCHECK_NE(&from, _this);
+  ::uint32_t cached_has_bits = 0;
+  (void)cached_has_bits;
+
+  cached_has_bits = from._impl_._has_bits_[0];
+  if (BatchCheckHasBit(cached_has_bits, 0x00000003U)) {
+    if (CheckHasBit(cached_has_bits, 0x00000001U)) {
+      if (!from._internal_player_id().empty()) {
+        _this->_internal_set_player_id(from._internal_player_id());
+      } else {
+        if (_this->_impl_.player_id_.IsDefault()) {
+          _this->_internal_set_player_id("");
+        }
+      }
+    }
+    if (CheckHasBit(cached_has_bits, 0x00000002U)) {
+      if (from._internal_code() != 0) {
+        _this->_impl_.code_ = from._impl_.code_;
+      }
+    }
+  }
+  _this->_impl_._has_bits_[0] |= cached_has_bits;
+  _this->_internal_metadata_.MergeFrom<::google::protobuf::UnknownFieldSet>(
+      from._internal_metadata_);
+}
+
+void ResolveGameUserResponse::CopyFrom(const ResolveGameUserResponse& from) {
+  // @@protoc_insertion_point(class_specific_copy_from_start:chirp.server_gateway.ResolveGameUserResponse)
+  if (&from == this) return;
+  Clear();
+  MergeFrom(from);
+}
+
+
+void ResolveGameUserResponse::InternalSwap(ResolveGameUserResponse* PROTOBUF_RESTRICT PROTOBUF_NONNULL other) {
+  using ::std::swap;
+  auto* arena = GetArena();
+  ABSL_DCHECK_EQ(arena, other->GetArena());
+  _internal_metadata_.InternalSwap(&other->_internal_metadata_);
+  swap(_impl_._has_bits_[0], other->_impl_._has_bits_[0]);
+  ::_pbi::ArenaStringPtr::InternalSwap(&_impl_.player_id_, &other->_impl_.player_id_, arena);
+  swap(_impl_.code_, other->_impl_.code_);
+}
+
+::google::protobuf::Metadata ResolveGameUserResponse::GetMetadata() const {
   return ::google::protobuf::Message::GetMetadataImpl(GetClassData()->full());
 }
 // @@protoc_insertion_point(namespace_scope)

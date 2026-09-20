@@ -5,6 +5,7 @@ find_package(Threads REQUIRED)
 
 set(SG_SRCS
     src/event_queue.cc
+    src/identity_registry.cc
     src/server_gateway_handlers.cc
     src/service_registry.cc
     src/stream_broker.cc

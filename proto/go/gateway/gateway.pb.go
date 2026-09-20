@@ -165,18 +165,26 @@ const (
 	MsgID_SPEAKING_NOTIFY                  MsgID = 4021
 	// Server plane: game backend <-> chirp (authenticated services, not users).
 	// See proto/server_gateway.proto for the payloads.
-	MsgID_SERVER_AUTH_REQ       MsgID = 5001
-	MsgID_SERVER_AUTH_RESP      MsgID = 5002
-	MsgID_SERVER_HEARTBEAT_PING MsgID = 5003
-	MsgID_SERVER_HEARTBEAT_PONG MsgID = 5004
-	MsgID_INJECT_MESSAGE_REQ    MsgID = 5005
-	MsgID_INJECT_MESSAGE_RESP   MsgID = 5006
-	MsgID_INJECT_MESSAGE_NOTIFY MsgID = 5007
-	MsgID_EVENT_PUBLISH_REQ     MsgID = 5008
-	MsgID_EVENT_PUBLISH_RESP    MsgID = 5009
-	MsgID_EVENT_DELIVER_NOTIFY  MsgID = 5010
-	MsgID_EVENT_ACK_REQ         MsgID = 5011
-	MsgID_EVENT_ACK_RESP        MsgID = 5012
+	MsgID_SERVER_AUTH_REQ             MsgID = 5001
+	MsgID_SERVER_AUTH_RESP            MsgID = 5002
+	MsgID_SERVER_HEARTBEAT_PING       MsgID = 5003
+	MsgID_SERVER_HEARTBEAT_PONG       MsgID = 5004
+	MsgID_INJECT_MESSAGE_REQ          MsgID = 5005
+	MsgID_INJECT_MESSAGE_RESP         MsgID = 5006
+	MsgID_INJECT_MESSAGE_NOTIFY       MsgID = 5007
+	MsgID_EVENT_PUBLISH_REQ           MsgID = 5008
+	MsgID_EVENT_PUBLISH_RESP          MsgID = 5009
+	MsgID_EVENT_DELIVER_NOTIFY        MsgID = 5010
+	MsgID_EVENT_ACK_REQ               MsgID = 5011
+	MsgID_EVENT_ACK_RESP              MsgID = 5012
+	MsgID_BIND_PLAYER_IDENTITY_REQ    MsgID = 5013
+	MsgID_BIND_PLAYER_IDENTITY_RESP   MsgID = 5014
+	MsgID_UNBIND_PLAYER_IDENTITY_REQ  MsgID = 5015
+	MsgID_UNBIND_PLAYER_IDENTITY_RESP MsgID = 5016
+	MsgID_GET_PLAYER_IDENTITIES_REQ   MsgID = 5017
+	MsgID_GET_PLAYER_IDENTITIES_RESP  MsgID = 5018
+	MsgID_RESOLVE_GAME_USER_REQ       MsgID = 5019
+	MsgID_RESOLVE_GAME_USER_RESP      MsgID = 5020
 	// Notification plane: device registration forwarded by app_gateway and
 	// push requests from internal services (chat). Bodies are
 	// chirp.notification.* messages; see proto/notification.proto.
@@ -363,6 +371,14 @@ var (
 		5010: "EVENT_DELIVER_NOTIFY",
 		5011: "EVENT_ACK_REQ",
 		5012: "EVENT_ACK_RESP",
+		5013: "BIND_PLAYER_IDENTITY_REQ",
+		5014: "BIND_PLAYER_IDENTITY_RESP",
+		5015: "UNBIND_PLAYER_IDENTITY_REQ",
+		5016: "UNBIND_PLAYER_IDENTITY_RESP",
+		5017: "GET_PLAYER_IDENTITIES_REQ",
+		5018: "GET_PLAYER_IDENTITIES_RESP",
+		5019: "RESOLVE_GAME_USER_REQ",
+		5020: "RESOLVE_GAME_USER_RESP",
 		6001: "REGISTER_DEVICE_REQ",
 		6002: "REGISTER_DEVICE_RESP",
 		6003: "UNREGISTER_DEVICE_REQ",
@@ -539,6 +555,14 @@ var (
 		"EVENT_DELIVER_NOTIFY":             5010,
 		"EVENT_ACK_REQ":                    5011,
 		"EVENT_ACK_RESP":                   5012,
+		"BIND_PLAYER_IDENTITY_REQ":         5013,
+		"BIND_PLAYER_IDENTITY_RESP":        5014,
+		"UNBIND_PLAYER_IDENTITY_REQ":       5015,
+		"UNBIND_PLAYER_IDENTITY_RESP":      5016,
+		"GET_PLAYER_IDENTITIES_REQ":        5017,
+		"GET_PLAYER_IDENTITIES_RESP":       5018,
+		"RESOLVE_GAME_USER_REQ":            5019,
+		"RESOLVE_GAME_USER_RESP":           5020,
 		"REGISTER_DEVICE_REQ":              6001,
 		"REGISTER_DEVICE_RESP":             6002,
 		"UNREGISTER_DEVICE_REQ":            6003,
@@ -779,7 +803,7 @@ const file_proto_gateway_proto_rawDesc = "" +
 	"\rHeartbeatPong\x12\x1c\n" +
 	"\ttimestamp\x18\x01 \x01(\x03R\ttimestamp\x12\x1f\n" +
 	"\vserver_time\x18\x02 \x01(\x03R\n" +
-	"serverTime*\xff!\n" +
+	"serverTime*\xfb#\n" +
 	"\x05MsgID\x12\v\n" +
 	"\aUNKNOWN\x10\x00\x12\x13\n" +
 	"\x0eHEARTBEAT_PING\x10\xe9\a\x12\x13\n" +
@@ -919,7 +943,15 @@ const file_proto_gateway_proto_rawDesc = "" +
 	"\x12EVENT_PUBLISH_RESP\x10\x91'\x12\x19\n" +
 	"\x14EVENT_DELIVER_NOTIFY\x10\x92'\x12\x12\n" +
 	"\rEVENT_ACK_REQ\x10\x93'\x12\x13\n" +
-	"\x0eEVENT_ACK_RESP\x10\x94'\x12\x18\n" +
+	"\x0eEVENT_ACK_RESP\x10\x94'\x12\x1d\n" +
+	"\x18BIND_PLAYER_IDENTITY_REQ\x10\x95'\x12\x1e\n" +
+	"\x19BIND_PLAYER_IDENTITY_RESP\x10\x96'\x12\x1f\n" +
+	"\x1aUNBIND_PLAYER_IDENTITY_REQ\x10\x97'\x12 \n" +
+	"\x1bUNBIND_PLAYER_IDENTITY_RESP\x10\x98'\x12\x1e\n" +
+	"\x19GET_PLAYER_IDENTITIES_REQ\x10\x99'\x12\x1f\n" +
+	"\x1aGET_PLAYER_IDENTITIES_RESP\x10\x9a'\x12\x1a\n" +
+	"\x15RESOLVE_GAME_USER_REQ\x10\x9b'\x12\x1b\n" +
+	"\x16RESOLVE_GAME_USER_RESP\x10\x9c'\x12\x18\n" +
 	"\x13REGISTER_DEVICE_REQ\x10\xf1.\x12\x19\n" +
 	"\x14REGISTER_DEVICE_RESP\x10\xf2.\x12\x1a\n" +
 	"\x15UNREGISTER_DEVICE_REQ\x10\xf3.\x12\x1b\n" +

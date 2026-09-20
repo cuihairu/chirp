@@ -19,6 +19,7 @@
 #include "event_queue.h"
 #include "logger.h"
 #include "network/protobuf_framing.h"
+#include "network/redis_client.h"
 #include "network/session.h"
 #include "network/tcp_server.h"
 #include "proto/common.pb.h"
@@ -136,9 +137,23 @@ int main(int argc, char** argv) {
 
   asio::io_context io;
 
+  // Player identity bindings (WP-8): optional Redis write-through keeps
+  // bindings across restarts; an empty --binding_redis_host stays
+  // memory-only.
+  const std::string binding_redis_host = GetArg(argc, argv, "--binding_redis_host", "");
+  const uint16_t binding_redis_port = ParseU16Arg(argc, argv, "--binding_redis_port", 6379);
+  sg::IdentityRegistry::RedisFactory binding_redis_factory;
+  if (!binding_redis_host.empty()) {
+    binding_redis_factory = [host = binding_redis_host, port = binding_redis_port] {
+      return std::make_unique<chirp::network::RedisClient>(host, port);
+    };
+  }
+  sg::IdentityRegistry identities(binding_redis_factory);
+  identities.Load();
+
   sg::ServiceRegistry registry;
   sg::EventQueue queue(config.max_pending_events_per_service);
-  sg::ServerGatewayHandlers handlers(config, registry, queue);
+  sg::ServerGatewayHandlers handlers(config, registry, queue, identities);
 
   // Optional Redis Streams intake for game backends that cannot host a
   // long-connection client (empty --broker_redis_host disables it).
@@ -332,6 +347,50 @@ int main(int argc, char** argv) {
           resp = handlers.HandleEventAck(req, ctx.service_id);
         }
         SendPacket(session, chirp::gateway::EVENT_ACK_RESP, pkt.sequence(), resp);
+        break;
+      }
+      case chirp::gateway::BIND_PLAYER_IDENTITY_REQ: {
+        sg::BindPlayerIdentityRequest req;
+        sg::BindPlayerIdentityResponse resp;
+        if (!ParseBody(pkt, &req)) {
+          resp.set_code(chirp::common::INVALID_PARAM);
+        } else {
+          resp = handlers.HandleBindPlayerIdentity(req);
+        }
+        SendPacket(session, chirp::gateway::BIND_PLAYER_IDENTITY_RESP, pkt.sequence(), resp);
+        break;
+      }
+      case chirp::gateway::UNBIND_PLAYER_IDENTITY_REQ: {
+        sg::UnbindPlayerIdentityRequest req;
+        sg::UnbindPlayerIdentityResponse resp;
+        if (!ParseBody(pkt, &req)) {
+          resp.set_code(chirp::common::INVALID_PARAM);
+        } else {
+          resp = handlers.HandleUnbindPlayerIdentity(req);
+        }
+        SendPacket(session, chirp::gateway::UNBIND_PLAYER_IDENTITY_RESP, pkt.sequence(), resp);
+        break;
+      }
+      case chirp::gateway::GET_PLAYER_IDENTITIES_REQ: {
+        sg::GetPlayerIdentitiesRequest req;
+        sg::GetPlayerIdentitiesResponse resp;
+        if (!ParseBody(pkt, &req)) {
+          resp.set_code(chirp::common::INVALID_PARAM);
+        } else {
+          resp = handlers.HandleGetPlayerIdentities(req);
+        }
+        SendPacket(session, chirp::gateway::GET_PLAYER_IDENTITIES_RESP, pkt.sequence(), resp);
+        break;
+      }
+      case chirp::gateway::RESOLVE_GAME_USER_REQ: {
+        sg::ResolveGameUserRequest req;
+        sg::ResolveGameUserResponse resp;
+        if (!ParseBody(pkt, &req)) {
+          resp.set_code(chirp::common::INVALID_PARAM);
+        } else {
+          resp = handlers.HandleResolveGameUser(req);
+        }
+        SendPacket(session, chirp::gateway::RESOLVE_GAME_USER_RESP, pkt.sequence(), resp);
         break;
       }
       default:

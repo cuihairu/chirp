@@ -533,3 +533,76 @@ func TestRPCTimeoutViaContext(t *testing.T) {
 		t.Fatal("ctx timeout must not tear down the connection")
 	}
 }
+
+func TestPlayerIdentityBindingRoundTrip(t *testing.T) {
+	var mu sync.Mutex
+	bound := map[string]string{} // game_user key -> player_id
+	h := startFakeHub(t, func(sc *syncConn, pkt *pbgw.Packet) {
+		switch pkt.GetMsgId() {
+		case pbgw.MsgID_SERVER_AUTH_REQ:
+			authOK(sc, pkt)
+		case pbgw.MsgID_BIND_PLAYER_IDENTITY_REQ:
+			req := &pbsg.BindPlayerIdentityRequest{}
+			if err := proto.Unmarshal(pkt.GetBody(), req); err != nil {
+				t.Errorf("bad bind body: %v", err)
+				return
+			}
+			key := req.GetGameId() + ":" + req.GetGameUserId()
+			mu.Lock()
+			_, seen := bound[key]
+			bound[key] = req.GetPlayerId()
+			mu.Unlock()
+			sc.write(&pbgw.Packet{
+				MsgId:    pbgw.MsgID_BIND_PLAYER_IDENTITY_RESP,
+				Sequence: pkt.GetSequence(),
+				Body: mustMarshal(&pbsg.BindPlayerIdentityResponse{
+					Code: pbcommon.ErrorCode_OK, BindingId: req.GetBindingId(), Existed: seen,
+				}),
+			})
+		case pbgw.MsgID_GET_PLAYER_IDENTITIES_REQ:
+			req := &pbsg.GetPlayerIdentitiesRequest{}
+			if err := proto.Unmarshal(pkt.GetBody(), req); err != nil {
+				t.Errorf("bad get body: %v", err)
+				return
+			}
+			resp := &pbsg.GetPlayerIdentitiesResponse{Code: pbcommon.ErrorCode_OK}
+			if req.GetPlayerId() == "player-1" {
+				resp.Bindings = []*pbsg.StoredIdentityBinding{{
+					BindingId: "b-1", PlayerId: "player-1",
+					GameId: "game-a", GameUserId: "u-1", BoundAtMs: nowMs(),
+				}}
+			}
+			sc.write(&pbgw.Packet{
+				MsgId:    pbgw.MsgID_GET_PLAYER_IDENTITIES_RESP,
+				Sequence: pkt.GetSequence(),
+				Body:     mustMarshal(resp),
+			})
+		}
+	})
+
+	c := NewClient(testConfig(h))
+	c.Start()
+	defer c.Stop()
+	waitFor(t, 3*time.Second, "connect", c.Connected)
+
+	// Bounded so a lost response fails the test instead of hanging it.
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	defer cancel()
+	first, err := c.BindPlayerIdentity(ctx, &pbsg.BindPlayerIdentityRequest{
+		BindingId: "b-1", PlayerId: "player-1", GameId: "game-a", GameUserId: "u-1",
+	})
+	if err != nil || first.GetExisted() {
+		t.Fatalf("first bind: resp=%v err=%v (want fresh bind)", first, err)
+	}
+	second, err := c.BindPlayerIdentity(ctx, &pbsg.BindPlayerIdentityRequest{
+		BindingId: "b-1", PlayerId: "player-1", GameId: "game-a", GameUserId: "u-1",
+	})
+	if err != nil || !second.GetExisted() {
+		t.Fatalf("idempotent rebind: resp=%v err=%v (want existed=true)", second, err)
+	}
+
+	list, err := c.GetPlayerIdentities(ctx, &pbsg.GetPlayerIdentitiesRequest{PlayerId: "player-1"})
+	if err != nil || len(list.GetBindings()) != 1 || list.GetBindings()[0].GetGameUserId() != "u-1" {
+		t.Fatalf("list bindings: resp=%v err=%v", list, err)
+	}
+}

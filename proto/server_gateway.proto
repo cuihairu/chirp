@@ -100,3 +100,68 @@ message EventAckRequest {
 message EventAckResponse {
   chirp.common.ErrorCode code = 1;
 }
+
+// ---- WP-8 slice 1: player identity bindings ----
+//
+// A game backend asserts "platform player P is game user U of game G" over
+// this trusted plane (it is the natural assertion point: it performed the
+// player's login). Chirp stores the binding; every player-plane consumer
+// resolves through it and never guesses. The binding registry keeps no
+// session state — unbinding is the backend's job (account switch, unlink).
+
+// Persistence record (Redis, not a wire message).
+message StoredIdentityBinding {
+  string binding_id = 1;
+  string player_id = 2;
+  string game_id = 3;
+  string game_user_id = 4;
+  int64 bound_at_ms = 5;
+}
+
+message BindPlayerIdentityRequest {
+  string binding_id = 1;  // caller-supplied idempotency key
+  string player_id = 2;   // platform-scoped player identity
+  string game_id = 3;
+  string game_user_id = 4;
+}
+
+message BindPlayerIdentityResponse {
+  chirp.common.ErrorCode code = 1;
+  string binding_id = 2;
+  // True when this exact binding was already stored (idempotent no-op).
+  // False with code=OK means newly bound; re-binding a game user to a
+  // different player under a new binding_id overwrites (the backend is
+  // the authority) and also reports OK.
+  bool existed = 3;
+}
+
+message UnbindPlayerIdentityRequest {
+  // Select exactly one: binding_id, or the pair (game_id, game_user_id).
+  string binding_id = 1;
+  string game_id = 2;
+  string game_user_id = 3;
+}
+
+message UnbindPlayerIdentityResponse {
+  chirp.common.ErrorCode code = 1;
+}
+
+message GetPlayerIdentitiesRequest {
+  string player_id = 1;
+}
+
+message GetPlayerIdentitiesResponse {
+  chirp.common.ErrorCode code = 1;
+  repeated StoredIdentityBinding bindings = 2;
+}
+
+message ResolveGameUserRequest {
+  string game_id = 1;
+  string game_user_id = 2;
+}
+
+message ResolveGameUserResponse {
+  chirp.common.ErrorCode code = 1;
+  // Empty when code=OK but the game user is unbound.
+  string player_id = 2;
+}

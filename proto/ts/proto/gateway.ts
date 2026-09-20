@@ -166,6 +166,14 @@ export enum MsgID {
   EVENT_DELIVER_NOTIFY = 5010,
   EVENT_ACK_REQ = 5011,
   EVENT_ACK_RESP = 5012,
+  BIND_PLAYER_IDENTITY_REQ = 5013,
+  BIND_PLAYER_IDENTITY_RESP = 5014,
+  UNBIND_PLAYER_IDENTITY_REQ = 5015,
+  UNBIND_PLAYER_IDENTITY_RESP = 5016,
+  GET_PLAYER_IDENTITIES_REQ = 5017,
+  GET_PLAYER_IDENTITIES_RESP = 5018,
+  RESOLVE_GAME_USER_REQ = 5019,
+  RESOLVE_GAME_USER_RESP = 5020,
   /**
    * REGISTER_DEVICE_REQ - Notification plane: device registration forwarded by app_gateway and
    * push requests from internal services (chat). Bodies are
@@ -645,6 +653,30 @@ export function msgIDFromJSON(object: any): MsgID {
     case 5012:
     case "EVENT_ACK_RESP":
       return MsgID.EVENT_ACK_RESP;
+    case 5013:
+    case "BIND_PLAYER_IDENTITY_REQ":
+      return MsgID.BIND_PLAYER_IDENTITY_REQ;
+    case 5014:
+    case "BIND_PLAYER_IDENTITY_RESP":
+      return MsgID.BIND_PLAYER_IDENTITY_RESP;
+    case 5015:
+    case "UNBIND_PLAYER_IDENTITY_REQ":
+      return MsgID.UNBIND_PLAYER_IDENTITY_REQ;
+    case 5016:
+    case "UNBIND_PLAYER_IDENTITY_RESP":
+      return MsgID.UNBIND_PLAYER_IDENTITY_RESP;
+    case 5017:
+    case "GET_PLAYER_IDENTITIES_REQ":
+      return MsgID.GET_PLAYER_IDENTITIES_REQ;
+    case 5018:
+    case "GET_PLAYER_IDENTITIES_RESP":
+      return MsgID.GET_PLAYER_IDENTITIES_RESP;
+    case 5019:
+    case "RESOLVE_GAME_USER_REQ":
+      return MsgID.RESOLVE_GAME_USER_REQ;
+    case 5020:
+    case "RESOLVE_GAME_USER_RESP":
+      return MsgID.RESOLVE_GAME_USER_RESP;
     case 6001:
     case "REGISTER_DEVICE_REQ":
       return MsgID.REGISTER_DEVICE_REQ;
@@ -1039,6 +1071,22 @@ export function msgIDToJSON(object: MsgID): string {
       return "EVENT_ACK_REQ";
     case MsgID.EVENT_ACK_RESP:
       return "EVENT_ACK_RESP";
+    case MsgID.BIND_PLAYER_IDENTITY_REQ:
+      return "BIND_PLAYER_IDENTITY_REQ";
+    case MsgID.BIND_PLAYER_IDENTITY_RESP:
+      return "BIND_PLAYER_IDENTITY_RESP";
+    case MsgID.UNBIND_PLAYER_IDENTITY_REQ:
+      return "UNBIND_PLAYER_IDENTITY_REQ";
+    case MsgID.UNBIND_PLAYER_IDENTITY_RESP:
+      return "UNBIND_PLAYER_IDENTITY_RESP";
+    case MsgID.GET_PLAYER_IDENTITIES_REQ:
+      return "GET_PLAYER_IDENTITIES_REQ";
+    case MsgID.GET_PLAYER_IDENTITIES_RESP:
+      return "GET_PLAYER_IDENTITIES_RESP";
+    case MsgID.RESOLVE_GAME_USER_REQ:
+      return "RESOLVE_GAME_USER_REQ";
+    case MsgID.RESOLVE_GAME_USER_RESP:
+      return "RESOLVE_GAME_USER_RESP";
     case MsgID.REGISTER_DEVICE_REQ:
       return "REGISTER_DEVICE_REQ";
     case MsgID.REGISTER_DEVICE_RESP:

@@ -775,6 +775,521 @@ func (x *EventAckResponse) GetCode() common.ErrorCode {
 	return common.ErrorCode(0)
 }
 
+// Persistence record (Redis, not a wire message).
+type StoredIdentityBinding struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	BindingId     string                 `protobuf:"bytes,1,opt,name=binding_id,json=bindingId,proto3" json:"binding_id,omitempty"`
+	PlayerId      string                 `protobuf:"bytes,2,opt,name=player_id,json=playerId,proto3" json:"player_id,omitempty"`
+	GameId        string                 `protobuf:"bytes,3,opt,name=game_id,json=gameId,proto3" json:"game_id,omitempty"`
+	GameUserId    string                 `protobuf:"bytes,4,opt,name=game_user_id,json=gameUserId,proto3" json:"game_user_id,omitempty"`
+	BoundAtMs     int64                  `protobuf:"varint,5,opt,name=bound_at_ms,json=boundAtMs,proto3" json:"bound_at_ms,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *StoredIdentityBinding) Reset() {
+	*x = StoredIdentityBinding{}
+	mi := &file_proto_server_gateway_proto_msgTypes[12]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *StoredIdentityBinding) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*StoredIdentityBinding) ProtoMessage() {}
+
+func (x *StoredIdentityBinding) ProtoReflect() protoreflect.Message {
+	mi := &file_proto_server_gateway_proto_msgTypes[12]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use StoredIdentityBinding.ProtoReflect.Descriptor instead.
+func (*StoredIdentityBinding) Descriptor() ([]byte, []int) {
+	return file_proto_server_gateway_proto_rawDescGZIP(), []int{12}
+}
+
+func (x *StoredIdentityBinding) GetBindingId() string {
+	if x != nil {
+		return x.BindingId
+	}
+	return ""
+}
+
+func (x *StoredIdentityBinding) GetPlayerId() string {
+	if x != nil {
+		return x.PlayerId
+	}
+	return ""
+}
+
+func (x *StoredIdentityBinding) GetGameId() string {
+	if x != nil {
+		return x.GameId
+	}
+	return ""
+}
+
+func (x *StoredIdentityBinding) GetGameUserId() string {
+	if x != nil {
+		return x.GameUserId
+	}
+	return ""
+}
+
+func (x *StoredIdentityBinding) GetBoundAtMs() int64 {
+	if x != nil {
+		return x.BoundAtMs
+	}
+	return 0
+}
+
+type BindPlayerIdentityRequest struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	BindingId     string                 `protobuf:"bytes,1,opt,name=binding_id,json=bindingId,proto3" json:"binding_id,omitempty"` // caller-supplied idempotency key
+	PlayerId      string                 `protobuf:"bytes,2,opt,name=player_id,json=playerId,proto3" json:"player_id,omitempty"`    // platform-scoped player identity
+	GameId        string                 `protobuf:"bytes,3,opt,name=game_id,json=gameId,proto3" json:"game_id,omitempty"`
+	GameUserId    string                 `protobuf:"bytes,4,opt,name=game_user_id,json=gameUserId,proto3" json:"game_user_id,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *BindPlayerIdentityRequest) Reset() {
+	*x = BindPlayerIdentityRequest{}
+	mi := &file_proto_server_gateway_proto_msgTypes[13]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *BindPlayerIdentityRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*BindPlayerIdentityRequest) ProtoMessage() {}
+
+func (x *BindPlayerIdentityRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_proto_server_gateway_proto_msgTypes[13]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use BindPlayerIdentityRequest.ProtoReflect.Descriptor instead.
+func (*BindPlayerIdentityRequest) Descriptor() ([]byte, []int) {
+	return file_proto_server_gateway_proto_rawDescGZIP(), []int{13}
+}
+
+func (x *BindPlayerIdentityRequest) GetBindingId() string {
+	if x != nil {
+		return x.BindingId
+	}
+	return ""
+}
+
+func (x *BindPlayerIdentityRequest) GetPlayerId() string {
+	if x != nil {
+		return x.PlayerId
+	}
+	return ""
+}
+
+func (x *BindPlayerIdentityRequest) GetGameId() string {
+	if x != nil {
+		return x.GameId
+	}
+	return ""
+}
+
+func (x *BindPlayerIdentityRequest) GetGameUserId() string {
+	if x != nil {
+		return x.GameUserId
+	}
+	return ""
+}
+
+type BindPlayerIdentityResponse struct {
+	state     protoimpl.MessageState `protogen:"open.v1"`
+	Code      common.ErrorCode       `protobuf:"varint,1,opt,name=code,proto3,enum=chirp.common.ErrorCode" json:"code,omitempty"`
+	BindingId string                 `protobuf:"bytes,2,opt,name=binding_id,json=bindingId,proto3" json:"binding_id,omitempty"`
+	// True when this exact binding was already stored (idempotent no-op).
+	// False with code=OK means newly bound; re-binding a game user to a
+	// different player under a new binding_id overwrites (the backend is
+	// the authority) and also reports OK.
+	Existed       bool `protobuf:"varint,3,opt,name=existed,proto3" json:"existed,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *BindPlayerIdentityResponse) Reset() {
+	*x = BindPlayerIdentityResponse{}
+	mi := &file_proto_server_gateway_proto_msgTypes[14]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *BindPlayerIdentityResponse) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*BindPlayerIdentityResponse) ProtoMessage() {}
+
+func (x *BindPlayerIdentityResponse) ProtoReflect() protoreflect.Message {
+	mi := &file_proto_server_gateway_proto_msgTypes[14]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use BindPlayerIdentityResponse.ProtoReflect.Descriptor instead.
+func (*BindPlayerIdentityResponse) Descriptor() ([]byte, []int) {
+	return file_proto_server_gateway_proto_rawDescGZIP(), []int{14}
+}
+
+func (x *BindPlayerIdentityResponse) GetCode() common.ErrorCode {
+	if x != nil {
+		return x.Code
+	}
+	return common.ErrorCode(0)
+}
+
+func (x *BindPlayerIdentityResponse) GetBindingId() string {
+	if x != nil {
+		return x.BindingId
+	}
+	return ""
+}
+
+func (x *BindPlayerIdentityResponse) GetExisted() bool {
+	if x != nil {
+		return x.Existed
+	}
+	return false
+}
+
+type UnbindPlayerIdentityRequest struct {
+	state protoimpl.MessageState `protogen:"open.v1"`
+	// Select exactly one: binding_id, or the pair (game_id, game_user_id).
+	BindingId     string `protobuf:"bytes,1,opt,name=binding_id,json=bindingId,proto3" json:"binding_id,omitempty"`
+	GameId        string `protobuf:"bytes,2,opt,name=game_id,json=gameId,proto3" json:"game_id,omitempty"`
+	GameUserId    string `protobuf:"bytes,3,opt,name=game_user_id,json=gameUserId,proto3" json:"game_user_id,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *UnbindPlayerIdentityRequest) Reset() {
+	*x = UnbindPlayerIdentityRequest{}
+	mi := &file_proto_server_gateway_proto_msgTypes[15]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *UnbindPlayerIdentityRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*UnbindPlayerIdentityRequest) ProtoMessage() {}
+
+func (x *UnbindPlayerIdentityRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_proto_server_gateway_proto_msgTypes[15]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use UnbindPlayerIdentityRequest.ProtoReflect.Descriptor instead.
+func (*UnbindPlayerIdentityRequest) Descriptor() ([]byte, []int) {
+	return file_proto_server_gateway_proto_rawDescGZIP(), []int{15}
+}
+
+func (x *UnbindPlayerIdentityRequest) GetBindingId() string {
+	if x != nil {
+		return x.BindingId
+	}
+	return ""
+}
+
+func (x *UnbindPlayerIdentityRequest) GetGameId() string {
+	if x != nil {
+		return x.GameId
+	}
+	return ""
+}
+
+func (x *UnbindPlayerIdentityRequest) GetGameUserId() string {
+	if x != nil {
+		return x.GameUserId
+	}
+	return ""
+}
+
+type UnbindPlayerIdentityResponse struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Code          common.ErrorCode       `protobuf:"varint,1,opt,name=code,proto3,enum=chirp.common.ErrorCode" json:"code,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *UnbindPlayerIdentityResponse) Reset() {
+	*x = UnbindPlayerIdentityResponse{}
+	mi := &file_proto_server_gateway_proto_msgTypes[16]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *UnbindPlayerIdentityResponse) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*UnbindPlayerIdentityResponse) ProtoMessage() {}
+
+func (x *UnbindPlayerIdentityResponse) ProtoReflect() protoreflect.Message {
+	mi := &file_proto_server_gateway_proto_msgTypes[16]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use UnbindPlayerIdentityResponse.ProtoReflect.Descriptor instead.
+func (*UnbindPlayerIdentityResponse) Descriptor() ([]byte, []int) {
+	return file_proto_server_gateway_proto_rawDescGZIP(), []int{16}
+}
+
+func (x *UnbindPlayerIdentityResponse) GetCode() common.ErrorCode {
+	if x != nil {
+		return x.Code
+	}
+	return common.ErrorCode(0)
+}
+
+type GetPlayerIdentitiesRequest struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	PlayerId      string                 `protobuf:"bytes,1,opt,name=player_id,json=playerId,proto3" json:"player_id,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *GetPlayerIdentitiesRequest) Reset() {
+	*x = GetPlayerIdentitiesRequest{}
+	mi := &file_proto_server_gateway_proto_msgTypes[17]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *GetPlayerIdentitiesRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*GetPlayerIdentitiesRequest) ProtoMessage() {}
+
+func (x *GetPlayerIdentitiesRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_proto_server_gateway_proto_msgTypes[17]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use GetPlayerIdentitiesRequest.ProtoReflect.Descriptor instead.
+func (*GetPlayerIdentitiesRequest) Descriptor() ([]byte, []int) {
+	return file_proto_server_gateway_proto_rawDescGZIP(), []int{17}
+}
+
+func (x *GetPlayerIdentitiesRequest) GetPlayerId() string {
+	if x != nil {
+		return x.PlayerId
+	}
+	return ""
+}
+
+type GetPlayerIdentitiesResponse struct {
+	state         protoimpl.MessageState   `protogen:"open.v1"`
+	Code          common.ErrorCode         `protobuf:"varint,1,opt,name=code,proto3,enum=chirp.common.ErrorCode" json:"code,omitempty"`
+	Bindings      []*StoredIdentityBinding `protobuf:"bytes,2,rep,name=bindings,proto3" json:"bindings,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *GetPlayerIdentitiesResponse) Reset() {
+	*x = GetPlayerIdentitiesResponse{}
+	mi := &file_proto_server_gateway_proto_msgTypes[18]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *GetPlayerIdentitiesResponse) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*GetPlayerIdentitiesResponse) ProtoMessage() {}
+
+func (x *GetPlayerIdentitiesResponse) ProtoReflect() protoreflect.Message {
+	mi := &file_proto_server_gateway_proto_msgTypes[18]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use GetPlayerIdentitiesResponse.ProtoReflect.Descriptor instead.
+func (*GetPlayerIdentitiesResponse) Descriptor() ([]byte, []int) {
+	return file_proto_server_gateway_proto_rawDescGZIP(), []int{18}
+}
+
+func (x *GetPlayerIdentitiesResponse) GetCode() common.ErrorCode {
+	if x != nil {
+		return x.Code
+	}
+	return common.ErrorCode(0)
+}
+
+func (x *GetPlayerIdentitiesResponse) GetBindings() []*StoredIdentityBinding {
+	if x != nil {
+		return x.Bindings
+	}
+	return nil
+}
+
+type ResolveGameUserRequest struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	GameId        string                 `protobuf:"bytes,1,opt,name=game_id,json=gameId,proto3" json:"game_id,omitempty"`
+	GameUserId    string                 `protobuf:"bytes,2,opt,name=game_user_id,json=gameUserId,proto3" json:"game_user_id,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *ResolveGameUserRequest) Reset() {
+	*x = ResolveGameUserRequest{}
+	mi := &file_proto_server_gateway_proto_msgTypes[19]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *ResolveGameUserRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*ResolveGameUserRequest) ProtoMessage() {}
+
+func (x *ResolveGameUserRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_proto_server_gateway_proto_msgTypes[19]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use ResolveGameUserRequest.ProtoReflect.Descriptor instead.
+func (*ResolveGameUserRequest) Descriptor() ([]byte, []int) {
+	return file_proto_server_gateway_proto_rawDescGZIP(), []int{19}
+}
+
+func (x *ResolveGameUserRequest) GetGameId() string {
+	if x != nil {
+		return x.GameId
+	}
+	return ""
+}
+
+func (x *ResolveGameUserRequest) GetGameUserId() string {
+	if x != nil {
+		return x.GameUserId
+	}
+	return ""
+}
+
+type ResolveGameUserResponse struct {
+	state protoimpl.MessageState `protogen:"open.v1"`
+	Code  common.ErrorCode       `protobuf:"varint,1,opt,name=code,proto3,enum=chirp.common.ErrorCode" json:"code,omitempty"`
+	// Empty when code=OK but the game user is unbound.
+	PlayerId      string `protobuf:"bytes,2,opt,name=player_id,json=playerId,proto3" json:"player_id,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *ResolveGameUserResponse) Reset() {
+	*x = ResolveGameUserResponse{}
+	mi := &file_proto_server_gateway_proto_msgTypes[20]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *ResolveGameUserResponse) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*ResolveGameUserResponse) ProtoMessage() {}
+
+func (x *ResolveGameUserResponse) ProtoReflect() protoreflect.Message {
+	mi := &file_proto_server_gateway_proto_msgTypes[20]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use ResolveGameUserResponse.ProtoReflect.Descriptor instead.
+func (*ResolveGameUserResponse) Descriptor() ([]byte, []int) {
+	return file_proto_server_gateway_proto_rawDescGZIP(), []int{20}
+}
+
+func (x *ResolveGameUserResponse) GetCode() common.ErrorCode {
+	if x != nil {
+		return x.Code
+	}
+	return common.ErrorCode(0)
+}
+
+func (x *ResolveGameUserResponse) GetPlayerId() string {
+	if x != nil {
+		return x.PlayerId
+	}
+	return ""
+}
+
 var File_proto_server_gateway_proto protoreflect.FileDescriptor
 
 const file_proto_server_gateway_proto_rawDesc = "" +
@@ -829,7 +1344,47 @@ const file_proto_server_gateway_proto_rawDesc = "" +
 	"\x0fEventAckRequest\x12\x1b\n" +
 	"\tevent_ids\x18\x01 \x03(\tR\beventIds\"?\n" +
 	"\x10EventAckResponse\x12+\n" +
-	"\x04code\x18\x01 \x01(\x0e2\x17.chirp.common.ErrorCodeR\x04code*W\n" +
+	"\x04code\x18\x01 \x01(\x0e2\x17.chirp.common.ErrorCodeR\x04code\"\xae\x01\n" +
+	"\x15StoredIdentityBinding\x12\x1d\n" +
+	"\n" +
+	"binding_id\x18\x01 \x01(\tR\tbindingId\x12\x1b\n" +
+	"\tplayer_id\x18\x02 \x01(\tR\bplayerId\x12\x17\n" +
+	"\agame_id\x18\x03 \x01(\tR\x06gameId\x12 \n" +
+	"\fgame_user_id\x18\x04 \x01(\tR\n" +
+	"gameUserId\x12\x1e\n" +
+	"\vbound_at_ms\x18\x05 \x01(\x03R\tboundAtMs\"\x92\x01\n" +
+	"\x19BindPlayerIdentityRequest\x12\x1d\n" +
+	"\n" +
+	"binding_id\x18\x01 \x01(\tR\tbindingId\x12\x1b\n" +
+	"\tplayer_id\x18\x02 \x01(\tR\bplayerId\x12\x17\n" +
+	"\agame_id\x18\x03 \x01(\tR\x06gameId\x12 \n" +
+	"\fgame_user_id\x18\x04 \x01(\tR\n" +
+	"gameUserId\"\x82\x01\n" +
+	"\x1aBindPlayerIdentityResponse\x12+\n" +
+	"\x04code\x18\x01 \x01(\x0e2\x17.chirp.common.ErrorCodeR\x04code\x12\x1d\n" +
+	"\n" +
+	"binding_id\x18\x02 \x01(\tR\tbindingId\x12\x18\n" +
+	"\aexisted\x18\x03 \x01(\bR\aexisted\"w\n" +
+	"\x1bUnbindPlayerIdentityRequest\x12\x1d\n" +
+	"\n" +
+	"binding_id\x18\x01 \x01(\tR\tbindingId\x12\x17\n" +
+	"\agame_id\x18\x02 \x01(\tR\x06gameId\x12 \n" +
+	"\fgame_user_id\x18\x03 \x01(\tR\n" +
+	"gameUserId\"K\n" +
+	"\x1cUnbindPlayerIdentityResponse\x12+\n" +
+	"\x04code\x18\x01 \x01(\x0e2\x17.chirp.common.ErrorCodeR\x04code\"9\n" +
+	"\x1aGetPlayerIdentitiesRequest\x12\x1b\n" +
+	"\tplayer_id\x18\x01 \x01(\tR\bplayerId\"\x93\x01\n" +
+	"\x1bGetPlayerIdentitiesResponse\x12+\n" +
+	"\x04code\x18\x01 \x01(\x0e2\x17.chirp.common.ErrorCodeR\x04code\x12G\n" +
+	"\bbindings\x18\x02 \x03(\v2+.chirp.server_gateway.StoredIdentityBindingR\bbindings\"S\n" +
+	"\x16ResolveGameUserRequest\x12\x17\n" +
+	"\agame_id\x18\x01 \x01(\tR\x06gameId\x12 \n" +
+	"\fgame_user_id\x18\x02 \x01(\tR\n" +
+	"gameUserId\"c\n" +
+	"\x17ResolveGameUserResponse\x12+\n" +
+	"\x04code\x18\x01 \x01(\x0e2\x17.chirp.common.ErrorCodeR\x04code\x12\x1b\n" +
+	"\tplayer_id\x18\x02 \x01(\tR\bplayerId*W\n" +
 	"\n" +
 	"SenderKind\x12\x12\n" +
 	"\x0eSENDER_UNKNOWN\x10\x00\x12\x11\n" +
@@ -851,35 +1406,49 @@ func file_proto_server_gateway_proto_rawDescGZIP() []byte {
 }
 
 var file_proto_server_gateway_proto_enumTypes = make([]protoimpl.EnumInfo, 1)
-var file_proto_server_gateway_proto_msgTypes = make([]protoimpl.MessageInfo, 12)
+var file_proto_server_gateway_proto_msgTypes = make([]protoimpl.MessageInfo, 21)
 var file_proto_server_gateway_proto_goTypes = []any{
-	(SenderKind)(0),               // 0: chirp.server_gateway.SenderKind
-	(*ServerAuthRequest)(nil),     // 1: chirp.server_gateway.ServerAuthRequest
-	(*ServerAuthResponse)(nil),    // 2: chirp.server_gateway.ServerAuthResponse
-	(*ServerHeartbeatPing)(nil),   // 3: chirp.server_gateway.ServerHeartbeatPing
-	(*ServerHeartbeatPong)(nil),   // 4: chirp.server_gateway.ServerHeartbeatPong
-	(*MessageInjectRequest)(nil),  // 5: chirp.server_gateway.MessageInjectRequest
-	(*MessageInjectResponse)(nil), // 6: chirp.server_gateway.MessageInjectResponse
-	(*InjectMessageNotify)(nil),   // 7: chirp.server_gateway.InjectMessageNotify
-	(*EventPublishRequest)(nil),   // 8: chirp.server_gateway.EventPublishRequest
-	(*EventPublishResponse)(nil),  // 9: chirp.server_gateway.EventPublishResponse
-	(*EventDeliverNotify)(nil),    // 10: chirp.server_gateway.EventDeliverNotify
-	(*EventAckRequest)(nil),       // 11: chirp.server_gateway.EventAckRequest
-	(*EventAckResponse)(nil),      // 12: chirp.server_gateway.EventAckResponse
-	(common.ErrorCode)(0),         // 13: chirp.common.ErrorCode
+	(SenderKind)(0),                      // 0: chirp.server_gateway.SenderKind
+	(*ServerAuthRequest)(nil),            // 1: chirp.server_gateway.ServerAuthRequest
+	(*ServerAuthResponse)(nil),           // 2: chirp.server_gateway.ServerAuthResponse
+	(*ServerHeartbeatPing)(nil),          // 3: chirp.server_gateway.ServerHeartbeatPing
+	(*ServerHeartbeatPong)(nil),          // 4: chirp.server_gateway.ServerHeartbeatPong
+	(*MessageInjectRequest)(nil),         // 5: chirp.server_gateway.MessageInjectRequest
+	(*MessageInjectResponse)(nil),        // 6: chirp.server_gateway.MessageInjectResponse
+	(*InjectMessageNotify)(nil),          // 7: chirp.server_gateway.InjectMessageNotify
+	(*EventPublishRequest)(nil),          // 8: chirp.server_gateway.EventPublishRequest
+	(*EventPublishResponse)(nil),         // 9: chirp.server_gateway.EventPublishResponse
+	(*EventDeliverNotify)(nil),           // 10: chirp.server_gateway.EventDeliverNotify
+	(*EventAckRequest)(nil),              // 11: chirp.server_gateway.EventAckRequest
+	(*EventAckResponse)(nil),             // 12: chirp.server_gateway.EventAckResponse
+	(*StoredIdentityBinding)(nil),        // 13: chirp.server_gateway.StoredIdentityBinding
+	(*BindPlayerIdentityRequest)(nil),    // 14: chirp.server_gateway.BindPlayerIdentityRequest
+	(*BindPlayerIdentityResponse)(nil),   // 15: chirp.server_gateway.BindPlayerIdentityResponse
+	(*UnbindPlayerIdentityRequest)(nil),  // 16: chirp.server_gateway.UnbindPlayerIdentityRequest
+	(*UnbindPlayerIdentityResponse)(nil), // 17: chirp.server_gateway.UnbindPlayerIdentityResponse
+	(*GetPlayerIdentitiesRequest)(nil),   // 18: chirp.server_gateway.GetPlayerIdentitiesRequest
+	(*GetPlayerIdentitiesResponse)(nil),  // 19: chirp.server_gateway.GetPlayerIdentitiesResponse
+	(*ResolveGameUserRequest)(nil),       // 20: chirp.server_gateway.ResolveGameUserRequest
+	(*ResolveGameUserResponse)(nil),      // 21: chirp.server_gateway.ResolveGameUserResponse
+	(common.ErrorCode)(0),                // 22: chirp.common.ErrorCode
 }
 var file_proto_server_gateway_proto_depIdxs = []int32{
-	13, // 0: chirp.server_gateway.ServerAuthResponse.code:type_name -> chirp.common.ErrorCode
+	22, // 0: chirp.server_gateway.ServerAuthResponse.code:type_name -> chirp.common.ErrorCode
 	0,  // 1: chirp.server_gateway.MessageInjectRequest.sender_kind:type_name -> chirp.server_gateway.SenderKind
-	13, // 2: chirp.server_gateway.MessageInjectResponse.code:type_name -> chirp.common.ErrorCode
+	22, // 2: chirp.server_gateway.MessageInjectResponse.code:type_name -> chirp.common.ErrorCode
 	5,  // 3: chirp.server_gateway.InjectMessageNotify.message:type_name -> chirp.server_gateway.MessageInjectRequest
-	13, // 4: chirp.server_gateway.EventPublishResponse.code:type_name -> chirp.common.ErrorCode
-	13, // 5: chirp.server_gateway.EventAckResponse.code:type_name -> chirp.common.ErrorCode
-	6,  // [6:6] is the sub-list for method output_type
-	6,  // [6:6] is the sub-list for method input_type
-	6,  // [6:6] is the sub-list for extension type_name
-	6,  // [6:6] is the sub-list for extension extendee
-	0,  // [0:6] is the sub-list for field type_name
+	22, // 4: chirp.server_gateway.EventPublishResponse.code:type_name -> chirp.common.ErrorCode
+	22, // 5: chirp.server_gateway.EventAckResponse.code:type_name -> chirp.common.ErrorCode
+	22, // 6: chirp.server_gateway.BindPlayerIdentityResponse.code:type_name -> chirp.common.ErrorCode
+	22, // 7: chirp.server_gateway.UnbindPlayerIdentityResponse.code:type_name -> chirp.common.ErrorCode
+	22, // 8: chirp.server_gateway.GetPlayerIdentitiesResponse.code:type_name -> chirp.common.ErrorCode
+	13, // 9: chirp.server_gateway.GetPlayerIdentitiesResponse.bindings:type_name -> chirp.server_gateway.StoredIdentityBinding
+	22, // 10: chirp.server_gateway.ResolveGameUserResponse.code:type_name -> chirp.common.ErrorCode
+	11, // [11:11] is the sub-list for method output_type
+	11, // [11:11] is the sub-list for method input_type
+	11, // [11:11] is the sub-list for extension type_name
+	11, // [11:11] is the sub-list for extension extendee
+	0,  // [0:11] is the sub-list for field type_name
 }
 
 func init() { file_proto_server_gateway_proto_init() }
@@ -893,7 +1462,7 @@ func file_proto_server_gateway_proto_init() {
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_proto_server_gateway_proto_rawDesc), len(file_proto_server_gateway_proto_rawDesc)),
 			NumEnums:      1,
-			NumMessages:   12,
+			NumMessages:   21,
 			NumExtensions: 0,
 			NumServices:   0,
 		},

@@ -158,6 +158,67 @@ export interface EventAckResponse {
   code: ErrorCode;
 }
 
+/** Persistence record (Redis, not a wire message). */
+export interface StoredIdentityBinding {
+  bindingId: string;
+  playerId: string;
+  gameId: string;
+  gameUserId: string;
+  boundAtMs: number;
+}
+
+export interface BindPlayerIdentityRequest {
+  /** caller-supplied idempotency key */
+  bindingId: string;
+  /** platform-scoped player identity */
+  playerId: string;
+  gameId: string;
+  gameUserId: string;
+}
+
+export interface BindPlayerIdentityResponse {
+  code: ErrorCode;
+  bindingId: string;
+  /**
+   * True when this exact binding was already stored (idempotent no-op).
+   * False with code=OK means newly bound; re-binding a game user to a
+   * different player under a new binding_id overwrites (the backend is
+   * the authority) and also reports OK.
+   */
+  existed: boolean;
+}
+
+export interface UnbindPlayerIdentityRequest {
+  /** Select exactly one: binding_id, or the pair (game_id, game_user_id). */
+  bindingId: string;
+  gameId: string;
+  gameUserId: string;
+}
+
+export interface UnbindPlayerIdentityResponse {
+  code: ErrorCode;
+}
+
+export interface GetPlayerIdentitiesRequest {
+  playerId: string;
+}
+
+export interface GetPlayerIdentitiesResponse {
+  code: ErrorCode;
+  bindings: StoredIdentityBinding[];
+}
+
+export interface ResolveGameUserRequest {
+  gameId: string;
+  gameUserId: string;
+}
+
+export interface ResolveGameUserResponse {
+  code: ErrorCode;
+  /** Empty when code=OK but the game user is unbound. */
+  playerId: string;
+}
+
 function createBaseServerAuthRequest(): ServerAuthRequest {
   return { serviceId: "", secret: "", protocolVersion: 0 };
 }
@@ -1166,6 +1227,745 @@ export const EventAckResponse = {
   fromPartial<I extends Exact<DeepPartial<EventAckResponse>, I>>(object: I): EventAckResponse {
     const message = createBaseEventAckResponse();
     message.code = object.code ?? 0;
+    return message;
+  },
+};
+
+function createBaseStoredIdentityBinding(): StoredIdentityBinding {
+  return { bindingId: "", playerId: "", gameId: "", gameUserId: "", boundAtMs: 0 };
+}
+
+export const StoredIdentityBinding = {
+  encode(message: StoredIdentityBinding, writer: _m0.Writer = _m0.Writer.create()): _m0.Writer {
+    if (message.bindingId !== "") {
+      writer.uint32(10).string(message.bindingId);
+    }
+    if (message.playerId !== "") {
+      writer.uint32(18).string(message.playerId);
+    }
+    if (message.gameId !== "") {
+      writer.uint32(26).string(message.gameId);
+    }
+    if (message.gameUserId !== "") {
+      writer.uint32(34).string(message.gameUserId);
+    }
+    if (message.boundAtMs !== 0) {
+      writer.uint32(40).int64(message.boundAtMs);
+    }
+    return writer;
+  },
+
+  decode(input: _m0.Reader | Uint8Array, length?: number): StoredIdentityBinding {
+    const reader = input instanceof _m0.Reader ? input : _m0.Reader.create(input);
+    let end = length === undefined ? reader.len : reader.pos + length;
+    const message = createBaseStoredIdentityBinding();
+    while (reader.pos < end) {
+      const tag = reader.uint32();
+      switch (tag >>> 3) {
+        case 1:
+          if (tag !== 10) {
+            break;
+          }
+
+          message.bindingId = reader.string();
+          continue;
+        case 2:
+          if (tag !== 18) {
+            break;
+          }
+
+          message.playerId = reader.string();
+          continue;
+        case 3:
+          if (tag !== 26) {
+            break;
+          }
+
+          message.gameId = reader.string();
+          continue;
+        case 4:
+          if (tag !== 34) {
+            break;
+          }
+
+          message.gameUserId = reader.string();
+          continue;
+        case 5:
+          if (tag !== 40) {
+            break;
+          }
+
+          message.boundAtMs = longToNumber(reader.int64() as Long);
+          continue;
+      }
+      if ((tag & 7) === 4 || tag === 0) {
+        break;
+      }
+      reader.skipType(tag & 7);
+    }
+    return message;
+  },
+
+  fromJSON(object: any): StoredIdentityBinding {
+    return {
+      bindingId: isSet(object.bindingId) ? globalThis.String(object.bindingId) : "",
+      playerId: isSet(object.playerId) ? globalThis.String(object.playerId) : "",
+      gameId: isSet(object.gameId) ? globalThis.String(object.gameId) : "",
+      gameUserId: isSet(object.gameUserId) ? globalThis.String(object.gameUserId) : "",
+      boundAtMs: isSet(object.boundAtMs) ? globalThis.Number(object.boundAtMs) : 0,
+    };
+  },
+
+  toJSON(message: StoredIdentityBinding): unknown {
+    const obj: any = {};
+    if (message.bindingId !== "") {
+      obj.bindingId = message.bindingId;
+    }
+    if (message.playerId !== "") {
+      obj.playerId = message.playerId;
+    }
+    if (message.gameId !== "") {
+      obj.gameId = message.gameId;
+    }
+    if (message.gameUserId !== "") {
+      obj.gameUserId = message.gameUserId;
+    }
+    if (message.boundAtMs !== 0) {
+      obj.boundAtMs = Math.round(message.boundAtMs);
+    }
+    return obj;
+  },
+
+  create<I extends Exact<DeepPartial<StoredIdentityBinding>, I>>(base?: I): StoredIdentityBinding {
+    return StoredIdentityBinding.fromPartial(base ?? ({} as any));
+  },
+  fromPartial<I extends Exact<DeepPartial<StoredIdentityBinding>, I>>(object: I): StoredIdentityBinding {
+    const message = createBaseStoredIdentityBinding();
+    message.bindingId = object.bindingId ?? "";
+    message.playerId = object.playerId ?? "";
+    message.gameId = object.gameId ?? "";
+    message.gameUserId = object.gameUserId ?? "";
+    message.boundAtMs = object.boundAtMs ?? 0;
+    return message;
+  },
+};
+
+function createBaseBindPlayerIdentityRequest(): BindPlayerIdentityRequest {
+  return { bindingId: "", playerId: "", gameId: "", gameUserId: "" };
+}
+
+export const BindPlayerIdentityRequest = {
+  encode(message: BindPlayerIdentityRequest, writer: _m0.Writer = _m0.Writer.create()): _m0.Writer {
+    if (message.bindingId !== "") {
+      writer.uint32(10).string(message.bindingId);
+    }
+    if (message.playerId !== "") {
+      writer.uint32(18).string(message.playerId);
+    }
+    if (message.gameId !== "") {
+      writer.uint32(26).string(message.gameId);
+    }
+    if (message.gameUserId !== "") {
+      writer.uint32(34).string(message.gameUserId);
+    }
+    return writer;
+  },
+
+  decode(input: _m0.Reader | Uint8Array, length?: number): BindPlayerIdentityRequest {
+    const reader = input instanceof _m0.Reader ? input : _m0.Reader.create(input);
+    let end = length === undefined ? reader.len : reader.pos + length;
+    const message = createBaseBindPlayerIdentityRequest();
+    while (reader.pos < end) {
+      const tag = reader.uint32();
+      switch (tag >>> 3) {
+        case 1:
+          if (tag !== 10) {
+            break;
+          }
+
+          message.bindingId = reader.string();
+          continue;
+        case 2:
+          if (tag !== 18) {
+            break;
+          }
+
+          message.playerId = reader.string();
+          continue;
+        case 3:
+          if (tag !== 26) {
+            break;
+          }
+
+          message.gameId = reader.string();
+          continue;
+        case 4:
+          if (tag !== 34) {
+            break;
+          }
+
+          message.gameUserId = reader.string();
+          continue;
+      }
+      if ((tag & 7) === 4 || tag === 0) {
+        break;
+      }
+      reader.skipType(tag & 7);
+    }
+    return message;
+  },
+
+  fromJSON(object: any): BindPlayerIdentityRequest {
+    return {
+      bindingId: isSet(object.bindingId) ? globalThis.String(object.bindingId) : "",
+      playerId: isSet(object.playerId) ? globalThis.String(object.playerId) : "",
+      gameId: isSet(object.gameId) ? globalThis.String(object.gameId) : "",
+      gameUserId: isSet(object.gameUserId) ? globalThis.String(object.gameUserId) : "",
+    };
+  },
+
+  toJSON(message: BindPlayerIdentityRequest): unknown {
+    const obj: any = {};
+    if (message.bindingId !== "") {
+      obj.bindingId = message.bindingId;
+    }
+    if (message.playerId !== "") {
+      obj.playerId = message.playerId;
+    }
+    if (message.gameId !== "") {
+      obj.gameId = message.gameId;
+    }
+    if (message.gameUserId !== "") {
+      obj.gameUserId = message.gameUserId;
+    }
+    return obj;
+  },
+
+  create<I extends Exact<DeepPartial<BindPlayerIdentityRequest>, I>>(base?: I): BindPlayerIdentityRequest {
+    return BindPlayerIdentityRequest.fromPartial(base ?? ({} as any));
+  },
+  fromPartial<I extends Exact<DeepPartial<BindPlayerIdentityRequest>, I>>(object: I): BindPlayerIdentityRequest {
+    const message = createBaseBindPlayerIdentityRequest();
+    message.bindingId = object.bindingId ?? "";
+    message.playerId = object.playerId ?? "";
+    message.gameId = object.gameId ?? "";
+    message.gameUserId = object.gameUserId ?? "";
+    return message;
+  },
+};
+
+function createBaseBindPlayerIdentityResponse(): BindPlayerIdentityResponse {
+  return { code: 0, bindingId: "", existed: false };
+}
+
+export const BindPlayerIdentityResponse = {
+  encode(message: BindPlayerIdentityResponse, writer: _m0.Writer = _m0.Writer.create()): _m0.Writer {
+    if (message.code !== 0) {
+      writer.uint32(8).int32(message.code);
+    }
+    if (message.bindingId !== "") {
+      writer.uint32(18).string(message.bindingId);
+    }
+    if (message.existed !== false) {
+      writer.uint32(24).bool(message.existed);
+    }
+    return writer;
+  },
+
+  decode(input: _m0.Reader | Uint8Array, length?: number): BindPlayerIdentityResponse {
+    const reader = input instanceof _m0.Reader ? input : _m0.Reader.create(input);
+    let end = length === undefined ? reader.len : reader.pos + length;
+    const message = createBaseBindPlayerIdentityResponse();
+    while (reader.pos < end) {
+      const tag = reader.uint32();
+      switch (tag >>> 3) {
+        case 1:
+          if (tag !== 8) {
+            break;
+          }
+
+          message.code = reader.int32() as any;
+          continue;
+        case 2:
+          if (tag !== 18) {
+            break;
+          }
+
+          message.bindingId = reader.string();
+          continue;
+        case 3:
+          if (tag !== 24) {
+            break;
+          }
+
+          message.existed = reader.bool();
+          continue;
+      }
+      if ((tag & 7) === 4 || tag === 0) {
+        break;
+      }
+      reader.skipType(tag & 7);
+    }
+    return message;
+  },
+
+  fromJSON(object: any): BindPlayerIdentityResponse {
+    return {
+      code: isSet(object.code) ? errorCodeFromJSON(object.code) : 0,
+      bindingId: isSet(object.bindingId) ? globalThis.String(object.bindingId) : "",
+      existed: isSet(object.existed) ? globalThis.Boolean(object.existed) : false,
+    };
+  },
+
+  toJSON(message: BindPlayerIdentityResponse): unknown {
+    const obj: any = {};
+    if (message.code !== 0) {
+      obj.code = errorCodeToJSON(message.code);
+    }
+    if (message.bindingId !== "") {
+      obj.bindingId = message.bindingId;
+    }
+    if (message.existed !== false) {
+      obj.existed = message.existed;
+    }
+    return obj;
+  },
+
+  create<I extends Exact<DeepPartial<BindPlayerIdentityResponse>, I>>(base?: I): BindPlayerIdentityResponse {
+    return BindPlayerIdentityResponse.fromPartial(base ?? ({} as any));
+  },
+  fromPartial<I extends Exact<DeepPartial<BindPlayerIdentityResponse>, I>>(object: I): BindPlayerIdentityResponse {
+    const message = createBaseBindPlayerIdentityResponse();
+    message.code = object.code ?? 0;
+    message.bindingId = object.bindingId ?? "";
+    message.existed = object.existed ?? false;
+    return message;
+  },
+};
+
+function createBaseUnbindPlayerIdentityRequest(): UnbindPlayerIdentityRequest {
+  return { bindingId: "", gameId: "", gameUserId: "" };
+}
+
+export const UnbindPlayerIdentityRequest = {
+  encode(message: UnbindPlayerIdentityRequest, writer: _m0.Writer = _m0.Writer.create()): _m0.Writer {
+    if (message.bindingId !== "") {
+      writer.uint32(10).string(message.bindingId);
+    }
+    if (message.gameId !== "") {
+      writer.uint32(18).string(message.gameId);
+    }
+    if (message.gameUserId !== "") {
+      writer.uint32(26).string(message.gameUserId);
+    }
+    return writer;
+  },
+
+  decode(input: _m0.Reader | Uint8Array, length?: number): UnbindPlayerIdentityRequest {
+    const reader = input instanceof _m0.Reader ? input : _m0.Reader.create(input);
+    let end = length === undefined ? reader.len : reader.pos + length;
+    const message = createBaseUnbindPlayerIdentityRequest();
+    while (reader.pos < end) {
+      const tag = reader.uint32();
+      switch (tag >>> 3) {
+        case 1:
+          if (tag !== 10) {
+            break;
+          }
+
+          message.bindingId = reader.string();
+          continue;
+        case 2:
+          if (tag !== 18) {
+            break;
+          }
+
+          message.gameId = reader.string();
+          continue;
+        case 3:
+          if (tag !== 26) {
+            break;
+          }
+
+          message.gameUserId = reader.string();
+          continue;
+      }
+      if ((tag & 7) === 4 || tag === 0) {
+        break;
+      }
+      reader.skipType(tag & 7);
+    }
+    return message;
+  },
+
+  fromJSON(object: any): UnbindPlayerIdentityRequest {
+    return {
+      bindingId: isSet(object.bindingId) ? globalThis.String(object.bindingId) : "",
+      gameId: isSet(object.gameId) ? globalThis.String(object.gameId) : "",
+      gameUserId: isSet(object.gameUserId) ? globalThis.String(object.gameUserId) : "",
+    };
+  },
+
+  toJSON(message: UnbindPlayerIdentityRequest): unknown {
+    const obj: any = {};
+    if (message.bindingId !== "") {
+      obj.bindingId = message.bindingId;
+    }
+    if (message.gameId !== "") {
+      obj.gameId = message.gameId;
+    }
+    if (message.gameUserId !== "") {
+      obj.gameUserId = message.gameUserId;
+    }
+    return obj;
+  },
+
+  create<I extends Exact<DeepPartial<UnbindPlayerIdentityRequest>, I>>(base?: I): UnbindPlayerIdentityRequest {
+    return UnbindPlayerIdentityRequest.fromPartial(base ?? ({} as any));
+  },
+  fromPartial<I extends Exact<DeepPartial<UnbindPlayerIdentityRequest>, I>>(object: I): UnbindPlayerIdentityRequest {
+    const message = createBaseUnbindPlayerIdentityRequest();
+    message.bindingId = object.bindingId ?? "";
+    message.gameId = object.gameId ?? "";
+    message.gameUserId = object.gameUserId ?? "";
+    return message;
+  },
+};
+
+function createBaseUnbindPlayerIdentityResponse(): UnbindPlayerIdentityResponse {
+  return { code: 0 };
+}
+
+export const UnbindPlayerIdentityResponse = {
+  encode(message: UnbindPlayerIdentityResponse, writer: _m0.Writer = _m0.Writer.create()): _m0.Writer {
+    if (message.code !== 0) {
+      writer.uint32(8).int32(message.code);
+    }
+    return writer;
+  },
+
+  decode(input: _m0.Reader | Uint8Array, length?: number): UnbindPlayerIdentityResponse {
+    const reader = input instanceof _m0.Reader ? input : _m0.Reader.create(input);
+    let end = length === undefined ? reader.len : reader.pos + length;
+    const message = createBaseUnbindPlayerIdentityResponse();
+    while (reader.pos < end) {
+      const tag = reader.uint32();
+      switch (tag >>> 3) {
+        case 1:
+          if (tag !== 8) {
+            break;
+          }
+
+          message.code = reader.int32() as any;
+          continue;
+      }
+      if ((tag & 7) === 4 || tag === 0) {
+        break;
+      }
+      reader.skipType(tag & 7);
+    }
+    return message;
+  },
+
+  fromJSON(object: any): UnbindPlayerIdentityResponse {
+    return { code: isSet(object.code) ? errorCodeFromJSON(object.code) : 0 };
+  },
+
+  toJSON(message: UnbindPlayerIdentityResponse): unknown {
+    const obj: any = {};
+    if (message.code !== 0) {
+      obj.code = errorCodeToJSON(message.code);
+    }
+    return obj;
+  },
+
+  create<I extends Exact<DeepPartial<UnbindPlayerIdentityResponse>, I>>(base?: I): UnbindPlayerIdentityResponse {
+    return UnbindPlayerIdentityResponse.fromPartial(base ?? ({} as any));
+  },
+  fromPartial<I extends Exact<DeepPartial<UnbindPlayerIdentityResponse>, I>>(object: I): UnbindPlayerIdentityResponse {
+    const message = createBaseUnbindPlayerIdentityResponse();
+    message.code = object.code ?? 0;
+    return message;
+  },
+};
+
+function createBaseGetPlayerIdentitiesRequest(): GetPlayerIdentitiesRequest {
+  return { playerId: "" };
+}
+
+export const GetPlayerIdentitiesRequest = {
+  encode(message: GetPlayerIdentitiesRequest, writer: _m0.Writer = _m0.Writer.create()): _m0.Writer {
+    if (message.playerId !== "") {
+      writer.uint32(10).string(message.playerId);
+    }
+    return writer;
+  },
+
+  decode(input: _m0.Reader | Uint8Array, length?: number): GetPlayerIdentitiesRequest {
+    const reader = input instanceof _m0.Reader ? input : _m0.Reader.create(input);
+    let end = length === undefined ? reader.len : reader.pos + length;
+    const message = createBaseGetPlayerIdentitiesRequest();
+    while (reader.pos < end) {
+      const tag = reader.uint32();
+      switch (tag >>> 3) {
+        case 1:
+          if (tag !== 10) {
+            break;
+          }
+
+          message.playerId = reader.string();
+          continue;
+      }
+      if ((tag & 7) === 4 || tag === 0) {
+        break;
+      }
+      reader.skipType(tag & 7);
+    }
+    return message;
+  },
+
+  fromJSON(object: any): GetPlayerIdentitiesRequest {
+    return { playerId: isSet(object.playerId) ? globalThis.String(object.playerId) : "" };
+  },
+
+  toJSON(message: GetPlayerIdentitiesRequest): unknown {
+    const obj: any = {};
+    if (message.playerId !== "") {
+      obj.playerId = message.playerId;
+    }
+    return obj;
+  },
+
+  create<I extends Exact<DeepPartial<GetPlayerIdentitiesRequest>, I>>(base?: I): GetPlayerIdentitiesRequest {
+    return GetPlayerIdentitiesRequest.fromPartial(base ?? ({} as any));
+  },
+  fromPartial<I extends Exact<DeepPartial<GetPlayerIdentitiesRequest>, I>>(object: I): GetPlayerIdentitiesRequest {
+    const message = createBaseGetPlayerIdentitiesRequest();
+    message.playerId = object.playerId ?? "";
+    return message;
+  },
+};
+
+function createBaseGetPlayerIdentitiesResponse(): GetPlayerIdentitiesResponse {
+  return { code: 0, bindings: [] };
+}
+
+export const GetPlayerIdentitiesResponse = {
+  encode(message: GetPlayerIdentitiesResponse, writer: _m0.Writer = _m0.Writer.create()): _m0.Writer {
+    if (message.code !== 0) {
+      writer.uint32(8).int32(message.code);
+    }
+    for (const v of message.bindings) {
+      StoredIdentityBinding.encode(v!, writer.uint32(18).fork()).ldelim();
+    }
+    return writer;
+  },
+
+  decode(input: _m0.Reader | Uint8Array, length?: number): GetPlayerIdentitiesResponse {
+    const reader = input instanceof _m0.Reader ? input : _m0.Reader.create(input);
+    let end = length === undefined ? reader.len : reader.pos + length;
+    const message = createBaseGetPlayerIdentitiesResponse();
+    while (reader.pos < end) {
+      const tag = reader.uint32();
+      switch (tag >>> 3) {
+        case 1:
+          if (tag !== 8) {
+            break;
+          }
+
+          message.code = reader.int32() as any;
+          continue;
+        case 2:
+          if (tag !== 18) {
+            break;
+          }
+
+          message.bindings.push(StoredIdentityBinding.decode(reader, reader.uint32()));
+          continue;
+      }
+      if ((tag & 7) === 4 || tag === 0) {
+        break;
+      }
+      reader.skipType(tag & 7);
+    }
+    return message;
+  },
+
+  fromJSON(object: any): GetPlayerIdentitiesResponse {
+    return {
+      code: isSet(object.code) ? errorCodeFromJSON(object.code) : 0,
+      bindings: globalThis.Array.isArray(object?.bindings)
+        ? object.bindings.map((e: any) => StoredIdentityBinding.fromJSON(e))
+        : [],
+    };
+  },
+
+  toJSON(message: GetPlayerIdentitiesResponse): unknown {
+    const obj: any = {};
+    if (message.code !== 0) {
+      obj.code = errorCodeToJSON(message.code);
+    }
+    if (message.bindings?.length) {
+      obj.bindings = message.bindings.map((e) => StoredIdentityBinding.toJSON(e));
+    }
+    return obj;
+  },
+
+  create<I extends Exact<DeepPartial<GetPlayerIdentitiesResponse>, I>>(base?: I): GetPlayerIdentitiesResponse {
+    return GetPlayerIdentitiesResponse.fromPartial(base ?? ({} as any));
+  },
+  fromPartial<I extends Exact<DeepPartial<GetPlayerIdentitiesResponse>, I>>(object: I): GetPlayerIdentitiesResponse {
+    const message = createBaseGetPlayerIdentitiesResponse();
+    message.code = object.code ?? 0;
+    message.bindings = object.bindings?.map((e) => StoredIdentityBinding.fromPartial(e)) || [];
+    return message;
+  },
+};
+
+function createBaseResolveGameUserRequest(): ResolveGameUserRequest {
+  return { gameId: "", gameUserId: "" };
+}
+
+export const ResolveGameUserRequest = {
+  encode(message: ResolveGameUserRequest, writer: _m0.Writer = _m0.Writer.create()): _m0.Writer {
+    if (message.gameId !== "") {
+      writer.uint32(10).string(message.gameId);
+    }
+    if (message.gameUserId !== "") {
+      writer.uint32(18).string(message.gameUserId);
+    }
+    return writer;
+  },
+
+  decode(input: _m0.Reader | Uint8Array, length?: number): ResolveGameUserRequest {
+    const reader = input instanceof _m0.Reader ? input : _m0.Reader.create(input);
+    let end = length === undefined ? reader.len : reader.pos + length;
+    const message = createBaseResolveGameUserRequest();
+    while (reader.pos < end) {
+      const tag = reader.uint32();
+      switch (tag >>> 3) {
+        case 1:
+          if (tag !== 10) {
+            break;
+          }
+
+          message.gameId = reader.string();
+          continue;
+        case 2:
+          if (tag !== 18) {
+            break;
+          }
+
+          message.gameUserId = reader.string();
+          continue;
+      }
+      if ((tag & 7) === 4 || tag === 0) {
+        break;
+      }
+      reader.skipType(tag & 7);
+    }
+    return message;
+  },
+
+  fromJSON(object: any): ResolveGameUserRequest {
+    return {
+      gameId: isSet(object.gameId) ? globalThis.String(object.gameId) : "",
+      gameUserId: isSet(object.gameUserId) ? globalThis.String(object.gameUserId) : "",
+    };
+  },
+
+  toJSON(message: ResolveGameUserRequest): unknown {
+    const obj: any = {};
+    if (message.gameId !== "") {
+      obj.gameId = message.gameId;
+    }
+    if (message.gameUserId !== "") {
+      obj.gameUserId = message.gameUserId;
+    }
+    return obj;
+  },
+
+  create<I extends Exact<DeepPartial<ResolveGameUserRequest>, I>>(base?: I): ResolveGameUserRequest {
+    return ResolveGameUserRequest.fromPartial(base ?? ({} as any));
+  },
+  fromPartial<I extends Exact<DeepPartial<ResolveGameUserRequest>, I>>(object: I): ResolveGameUserRequest {
+    const message = createBaseResolveGameUserRequest();
+    message.gameId = object.gameId ?? "";
+    message.gameUserId = object.gameUserId ?? "";
+    return message;
+  },
+};
+
+function createBaseResolveGameUserResponse(): ResolveGameUserResponse {
+  return { code: 0, playerId: "" };
+}
+
+export const ResolveGameUserResponse = {
+  encode(message: ResolveGameUserResponse, writer: _m0.Writer = _m0.Writer.create()): _m0.Writer {
+    if (message.code !== 0) {
+      writer.uint32(8).int32(message.code);
+    }
+    if (message.playerId !== "") {
+      writer.uint32(18).string(message.playerId);
+    }
+    return writer;
+  },
+
+  decode(input: _m0.Reader | Uint8Array, length?: number): ResolveGameUserResponse {
+    const reader = input instanceof _m0.Reader ? input : _m0.Reader.create(input);
+    let end = length === undefined ? reader.len : reader.pos + length;
+    const message = createBaseResolveGameUserResponse();
+    while (reader.pos < end) {
+      const tag = reader.uint32();
+      switch (tag >>> 3) {
+        case 1:
+          if (tag !== 8) {
+            break;
+          }
+
+          message.code = reader.int32() as any;
+          continue;
+        case 2:
+          if (tag !== 18) {
+            break;
+          }
+
+          message.playerId = reader.string();
+          continue;
+      }
+      if ((tag & 7) === 4 || tag === 0) {
+        break;
+      }
+      reader.skipType(tag & 7);
+    }
+    return message;
+  },
+
+  fromJSON(object: any): ResolveGameUserResponse {
+    return {
+      code: isSet(object.code) ? errorCodeFromJSON(object.code) : 0,
+      playerId: isSet(object.playerId) ? globalThis.String(object.playerId) : "",
+    };
+  },
+
+  toJSON(message: ResolveGameUserResponse): unknown {
+    const obj: any = {};
+    if (message.code !== 0) {
+      obj.code = errorCodeToJSON(message.code);
+    }
+    if (message.playerId !== "") {
+      obj.playerId = message.playerId;
+    }
+    return obj;
+  },
+
+  create<I extends Exact<DeepPartial<ResolveGameUserResponse>, I>>(base?: I): ResolveGameUserResponse {
+    return ResolveGameUserResponse.fromPartial(base ?? ({} as any));
+  },
+  fromPartial<I extends Exact<DeepPartial<ResolveGameUserResponse>, I>>(object: I): ResolveGameUserResponse {
+    const message = createBaseResolveGameUserResponse();
+    message.code = object.code ?? 0;
+    message.playerId = object.playerId ?? "";
     return message;
   },
 };

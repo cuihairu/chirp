@@ -172,6 +172,14 @@ enum MsgID {
   EVENT_DELIVER_NOTIFY = 5010;
   EVENT_ACK_REQ = 5011;
   EVENT_ACK_RESP = 5012;
+  BIND_PLAYER_IDENTITY_REQ = 5013;
+  BIND_PLAYER_IDENTITY_RESP = 5014;
+  UNBIND_PLAYER_IDENTITY_REQ = 5015;
+  UNBIND_PLAYER_IDENTITY_RESP = 5016;
+  GET_PLAYER_IDENTITIES_REQ = 5017;
+  GET_PLAYER_IDENTITIES_RESP = 5018;
+  RESOLVE_GAME_USER_REQ = 5019;
+  RESOLVE_GAME_USER_RESP = 5020;
 
   // Notification plane: device registration forwarded by app_gateway and
   // push requests from internal services (chat). Bodies are

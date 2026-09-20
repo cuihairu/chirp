@@ -6,6 +6,7 @@
 #include <string>
 
 #include "event_queue.h"
+#include "identity_registry.h"
 #include "proto/common.pb.h"
 #include "proto/gateway.pb.h"
 #include "proto/server_gateway.pb.h"
@@ -37,7 +38,8 @@ struct AuthOutcome {
 // registry and the queue guard their own state for cross-thread readers.
 class ServerGatewayHandlers {
  public:
-  ServerGatewayHandlers(ServerGatewayConfig config, ServiceRegistry& registry, EventQueue& queue);
+  ServerGatewayHandlers(ServerGatewayConfig config, ServiceRegistry& registry, EventQueue& queue,
+                        IdentityRegistry& identities);
 
   // Validates credentials and binds the peer to its service id. A returning
   // service immediately receives every event it has not acknowledged yet.
@@ -55,6 +57,12 @@ class ServerGatewayHandlers {
   // Acknowledges delivered events; unknown ids are ignored.
   EventAckResponse HandleEventAck(const EventAckRequest& req, const std::string& service_id) const;
 
+  // WP-8 slice 1: player identity bindings asserted by the game backend.
+  BindPlayerIdentityResponse HandleBindPlayerIdentity(const BindPlayerIdentityRequest& req);
+  UnbindPlayerIdentityResponse HandleUnbindPlayerIdentity(const UnbindPlayerIdentityRequest& req);
+  GetPlayerIdentitiesResponse HandleGetPlayerIdentities(const GetPlayerIdentitiesRequest& req) const;
+  ResolveGameUserResponse HandleResolveGameUser(const ResolveGameUserRequest& req) const;
+
   // Cleans up after a connection drops. `peer` must be the connection that
   // owned `service_id`; a displaced (replaced) connection closing late is a
   // no-op so it cannot reset the live connection's in-flight tracking.
@@ -67,6 +75,7 @@ class ServerGatewayHandlers {
   ServerGatewayConfig config_;
   ServiceRegistry& registry_;
   EventQueue& queue_;
+  IdentityRegistry& identities_;
   uint64_t event_id_counter_ = 0;
 };
 

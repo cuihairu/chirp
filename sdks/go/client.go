@@ -392,7 +392,11 @@ func (c *Client) dispatch(pkt *pbgw.Packet) bool {
 		ch <- nil
 	case pbgw.MsgID_INJECT_MESSAGE_RESP,
 		pbgw.MsgID_EVENT_PUBLISH_RESP,
-		pbgw.MsgID_EVENT_ACK_RESP:
+		pbgw.MsgID_EVENT_ACK_RESP,
+		pbgw.MsgID_BIND_PLAYER_IDENTITY_RESP,
+		pbgw.MsgID_UNBIND_PLAYER_IDENTITY_RESP,
+		pbgw.MsgID_GET_PLAYER_IDENTITIES_RESP,
+		pbgw.MsgID_RESOLVE_GAME_USER_RESP:
 		c.completePending(pkt)
 	case pbgw.MsgID_INJECT_MESSAGE_NOTIFY:
 		notify := &pbsg.InjectMessageNotify{}
@@ -555,6 +559,55 @@ func (c *Client) AckEvents(ctx context.Context, eventIDs ...string) (*pbsg.Event
 	req := &pbsg.EventAckRequest{EventIds: eventIDs}
 	resp := &pbsg.EventAckResponse{}
 	err := c.rpc(ctx, pbgw.MsgID_EVENT_ACK_REQ, pbgw.MsgID_EVENT_ACK_RESP, req, resp,
+		func() error { return serverErr(resp.GetCode()) })
+	if err != nil {
+		return nil, err
+	}
+	return resp, nil
+}
+
+// BindPlayerIdentity asserts "platform player P is game user U of game G"
+// (WP-8 slice 1). binding_id is the idempotency key: the same tuple under
+// the same key answers existed=true; re-asserting a game user to a
+// different player under a new key overwrites.
+func (c *Client) BindPlayerIdentity(ctx context.Context, req *pbsg.BindPlayerIdentityRequest) (*pbsg.BindPlayerIdentityResponse, error) {
+	resp := &pbsg.BindPlayerIdentityResponse{}
+	err := c.rpc(ctx, pbgw.MsgID_BIND_PLAYER_IDENTITY_REQ, pbgw.MsgID_BIND_PLAYER_IDENTITY_RESP, req, resp,
+		func() error { return serverErr(resp.GetCode()) })
+	if err != nil {
+		return nil, err
+	}
+	return resp, nil
+}
+
+// UnbindPlayerIdentity removes a binding by binding_id or by the
+// (game_id, game_user_id) pair; unknown targets answer OK (idempotent).
+func (c *Client) UnbindPlayerIdentity(ctx context.Context, req *pbsg.UnbindPlayerIdentityRequest) (*pbsg.UnbindPlayerIdentityResponse, error) {
+	resp := &pbsg.UnbindPlayerIdentityResponse{}
+	err := c.rpc(ctx, pbgw.MsgID_UNBIND_PLAYER_IDENTITY_REQ, pbgw.MsgID_UNBIND_PLAYER_IDENTITY_RESP, req, resp,
+		func() error { return serverErr(resp.GetCode()) })
+	if err != nil {
+		return nil, err
+	}
+	return resp, nil
+}
+
+// GetPlayerIdentities lists every game identity bound to one player.
+func (c *Client) GetPlayerIdentities(ctx context.Context, req *pbsg.GetPlayerIdentitiesRequest) (*pbsg.GetPlayerIdentitiesResponse, error) {
+	resp := &pbsg.GetPlayerIdentitiesResponse{}
+	err := c.rpc(ctx, pbgw.MsgID_GET_PLAYER_IDENTITIES_REQ, pbgw.MsgID_GET_PLAYER_IDENTITIES_RESP, req, resp,
+		func() error { return serverErr(resp.GetCode()) })
+	if err != nil {
+		return nil, err
+	}
+	return resp, nil
+}
+
+// ResolveGameUser maps a game user to its platform player; unbound game
+// users answer OK with an empty PlayerId.
+func (c *Client) ResolveGameUser(ctx context.Context, req *pbsg.ResolveGameUserRequest) (*pbsg.ResolveGameUserResponse, error) {
+	resp := &pbsg.ResolveGameUserResponse{}
+	err := c.rpc(ctx, pbgw.MsgID_RESOLVE_GAME_USER_REQ, pbgw.MsgID_RESOLVE_GAME_USER_RESP, req, resp,
 		func() error { return serverErr(resp.GetCode()) })
 	if err != nil {
 		return nil, err

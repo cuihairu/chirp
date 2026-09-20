@@ -3,7 +3,9 @@
 // involved and every routing branch is exercised directly.
 #include <gtest/gtest.h>
 
+#include <map>
 #include <memory>
+#include <optional>
 #include <string>
 #include <vector>
 
@@ -81,7 +83,7 @@ class ServerGatewayTest : public ::testing::Test {
     config_.service_secrets = {{"chat", "chat-secret"},
                                {"game", "game-secret"},
                                {"trade", "trade-secret"}};
-    handlers_ = std::make_unique<sg::ServerGatewayHandlers>(config_, registry_, queue_);
+    handlers_ = std::make_unique<sg::ServerGatewayHandlers>(config_, registry_, queue_, identities_);
   }
 
   std::shared_ptr<RecordingPeer> AuthAs(const std::string& service_id) {
@@ -125,6 +127,7 @@ class ServerGatewayTest : public ::testing::Test {
   sg::ServerGatewayConfig config_;
   sg::ServiceRegistry registry_;
   sg::EventQueue queue_{1000};
+  sg::IdentityRegistry identities_;
   std::unique_ptr<sg::ServerGatewayHandlers> handlers_;
 };
 
@@ -475,7 +478,7 @@ TEST_F(ServerGatewayTest, PublishFailsWhenQueueFull) {
   sg::ServerGatewayConfig small = config_;
   small.max_pending_events_per_service = 1;
   sg::EventQueue small_queue(1);
-  sg::ServerGatewayHandlers small_handlers(small, registry_, small_queue);
+  sg::ServerGatewayHandlers small_handlers(small, registry_, small_queue, identities_);
   small_handlers.HandleEventPublish(MakePublishRequest("game", "first"));
   const auto resp = small_handlers.HandleEventPublish(MakePublishRequest("game", "second"));
   EXPECT_EQ(resp.code(), SERVER_UNAVAILABLE);
@@ -490,6 +493,312 @@ TEST_F(ServerGatewayTest, AckRemovesPendingEvents) {
 TEST_F(ServerGatewayTest, AckUnknownIdsAreIdempotent) {
   EXPECT_EQ(AckAs("game", {"never-published"}).code(), OK);
   EXPECT_EQ(queue_.UnackedCount("game"), 0u);
+}
+
+// ---------------------------------------------------------------------------
+// IdentityRegistry (WP-8 slice 1: player identity bindings)
+// ---------------------------------------------------------------------------
+
+// In-memory stand-in for the write-through client: the registry only needs
+// Get/Set/Del/Keys. `fail` simulates a dead Redis (writes/reads no-op).
+class FakeRedisClient : public chirp::network::RedisClient {
+ public:
+  explicit FakeRedisClient(std::shared_ptr<std::map<std::string, std::string>> store)
+      : RedisClient("127.0.0.1", 1), store_(std::move(store)) {}
+
+  std::optional<std::string> Get(const std::string& key) override {
+    if (fail) {
+      return std::nullopt;
+    }
+    const auto it = store_->find(key);
+    return it == store_->end() ? std::nullopt : std::optional<std::string>(it->second);
+  }
+  bool Set(const std::string& key, const std::string& value) override {
+    if (fail) {
+      return false;
+    }
+    (*store_)[key] = value;
+    return true;
+  }
+  bool Del(const std::string& key) override {
+    if (fail) {
+      return false;
+    }
+    // The real DEL answers 0 for a missing key and the client reports true:
+    // the delete itself succeeded.
+    store_->erase(key);
+    return true;
+  }
+  std::vector<std::string> Keys(const std::string& pattern) override {
+    std::vector<std::string> out;
+    if (fail) {
+      return out;
+    }
+    const std::string prefix = pattern.substr(0, pattern.size() - 1);
+    for (const auto& [key, value] : *store_) {
+      if (key.rfind(prefix, 0) == 0) {
+        out.push_back(key);
+      }
+    }
+    return out;
+  }
+
+  bool fail = false;
+
+ private:
+  std::shared_ptr<std::map<std::string, std::string>> store_;
+};
+
+sg::BindPlayerIdentityRequest MakeBindRequest(const std::string& binding_id,
+                                              const std::string& player_id,
+                                              const std::string& game_id,
+                                              const std::string& game_user_id) {
+  sg::BindPlayerIdentityRequest req;
+  req.set_binding_id(binding_id);
+  req.set_player_id(player_id);
+  req.set_game_id(game_id);
+  req.set_game_user_id(game_user_id);
+  return req;
+}
+
+TEST(IdentityRegistryTest, BindLifecycleAndIdempotency) {
+  sg::IdentityRegistry registry;
+  EXPECT_EQ(registry.Size(), 0u);
+
+  EXPECT_EQ(registry.Bind("b1", "player-1", "game-a", "u-1", 1000),
+            sg::IdentityRegistry::BindOutcome::kBound);
+  // The exact same tuple under the same idempotency key is a no-op.
+  EXPECT_EQ(registry.Bind("b1", "player-1", "game-a", "u-1", 2000),
+            sg::IdentityRegistry::BindOutcome::kExisted);
+  // The same key asserting a different tuple would silently break duplicate
+  // detection and is rejected.
+  EXPECT_EQ(registry.Bind("b1", "player-2", "game-a", "u-1", 3000),
+            sg::IdentityRegistry::BindOutcome::kInvalid);
+  // Empty fields are rejected (the handler validates first, the store
+  // enforces the same contract).
+  EXPECT_EQ(registry.Bind("", "player-1", "game-a", "u-2", 1000),
+            sg::IdentityRegistry::BindOutcome::kInvalid);
+  EXPECT_EQ(registry.Bind("b2", "", "game-a", "u-2", 1000),
+            sg::IdentityRegistry::BindOutcome::kInvalid);
+  EXPECT_EQ(registry.Bind("b2", "player-1", "", "u-2", 1000),
+            sg::IdentityRegistry::BindOutcome::kInvalid);
+  EXPECT_EQ(registry.Bind("b2", "player-1", "game-a", "", 1000),
+            sg::IdentityRegistry::BindOutcome::kInvalid);
+  EXPECT_EQ(registry.Size(), 1u);
+}
+
+TEST(IdentityRegistryTest, RebindingGameUserReplacesTheOldBinding) {
+  sg::IdentityRegistry registry;
+  EXPECT_EQ(registry.Bind("b1", "player-1", "game-a", "u-1", 1000),
+            sg::IdentityRegistry::BindOutcome::kBound);
+  // The backend re-asserts: game user u-1 actually belongs to player-2 now.
+  EXPECT_EQ(registry.Bind("b2", "player-2", "game-a", "u-1", 2000),
+            sg::IdentityRegistry::BindOutcome::kBound);
+
+  const auto player = registry.Resolve("game-a", "u-1");
+  ASSERT_NE(player, nullptr);
+  EXPECT_EQ(*player, "player-2");
+  EXPECT_EQ(registry.GetByPlayer("player-1").size(), 0u);
+  ASSERT_EQ(registry.GetByPlayer("player-2").size(), 1u);
+  EXPECT_EQ(registry.GetByPlayer("player-2")[0].binding_id(), "b2");
+  EXPECT_EQ(registry.GetByPlayer("player-2")[0].bound_at_ms(), 2000);
+  EXPECT_EQ(registry.Size(), 1u);
+}
+
+TEST(IdentityRegistryTest, OnePlayerHoldsManyGameIdentities) {
+  sg::IdentityRegistry registry;
+  EXPECT_EQ(registry.Bind("b1", "player-1", "game-a", "u-1", 1000),
+            sg::IdentityRegistry::BindOutcome::kBound);
+  EXPECT_EQ(registry.Bind("b2", "player-1", "game-b", "char-9", 2000),
+            sg::IdentityRegistry::BindOutcome::kBound);
+  ASSERT_EQ(registry.GetByPlayer("player-1").size(), 2u);
+  EXPECT_EQ(*registry.Resolve("game-a", "u-1"), "player-1");
+  EXPECT_EQ(*registry.Resolve("game-b", "char-9"), "player-1");
+}
+
+TEST(IdentityRegistryTest, UnbindByIdAndByPairAreIdempotent) {
+  sg::IdentityRegistry registry;
+  EXPECT_EQ(registry.Bind("b1", "player-1", "game-a", "u-1", 1000),
+            sg::IdentityRegistry::BindOutcome::kBound);
+  EXPECT_EQ(registry.Bind("b2", "player-1", "game-b", "char-9", 2000),
+            sg::IdentityRegistry::BindOutcome::kBound);
+
+  EXPECT_TRUE(registry.UnbindById("b1"));
+  EXPECT_FALSE(registry.UnbindById("b1"));  // already gone
+  EXPECT_FALSE(registry.UnbindById("never-bound"));
+  EXPECT_FALSE(registry.UnbindById(""));
+  EXPECT_EQ(registry.Resolve("game-a", "u-1"), nullptr);
+
+  EXPECT_TRUE(registry.UnbindByGameUser("game-b", "char-9"));
+  EXPECT_FALSE(registry.UnbindByGameUser("game-b", "char-9"));
+  EXPECT_FALSE(registry.UnbindByGameUser("game-b", ""));
+  EXPECT_FALSE(registry.UnbindByGameUser("", "char-9"));
+  EXPECT_EQ(registry.Size(), 0u);
+}
+
+TEST(IdentityRegistryTest, ResolveUnboundReturnsNull) {
+  sg::IdentityRegistry registry;
+  EXPECT_EQ(registry.Resolve("game-a", "u-1"), nullptr);
+}
+
+TEST(IdentityRegistryTest, RedisWriteThroughAndLoadRestore) {
+  const auto store = std::make_shared<std::map<std::string, std::string>>();
+
+  sg::IdentityRegistry writer([store]() mutable {
+    return std::make_unique<FakeRedisClient>(store);
+  });
+  // Loading an empty store is a clean no-op.
+  writer.Load();
+
+  EXPECT_EQ(writer.Bind("b1", "player-1", "game-a", "u-1", 1000),
+            sg::IdentityRegistry::BindOutcome::kBound);
+  EXPECT_EQ(writer.Bind("b2", "player-2", "game-b", "char-9", 2000),
+            sg::IdentityRegistry::BindOutcome::kBound);
+  EXPECT_EQ(store->size(), 2u);
+
+  // A fresh hub process restores every binding through Load.
+  sg::IdentityRegistry reader([store]() mutable {
+    return std::make_unique<FakeRedisClient>(store);
+  });
+  reader.Load();
+  EXPECT_EQ(reader.Size(), 2u);
+  EXPECT_EQ(*reader.Resolve("game-a", "u-1"), "player-1");
+  ASSERT_EQ(reader.GetByPlayer("player-2").size(), 1u);
+  EXPECT_EQ(reader.GetByPlayer("player-2")[0].game_id(), "game-b");
+
+  // Unbind removes the persisted record.
+  EXPECT_TRUE(writer.UnbindById("b1"));
+  EXPECT_EQ(store->size(), 1u);
+
+  // A corrupted record is skipped, not fatal.
+  (*store)["chirp:binding:entry:junk"] = "\x01\x02not-a-proto";
+  sg::IdentityRegistry tolerant([store]() mutable {
+    return std::make_unique<FakeRedisClient>(store);
+  });
+  tolerant.Load();
+  EXPECT_EQ(tolerant.Size(), 1u);
+}
+
+TEST(IdentityRegistryTest, RedisFailureDegradesToMemoryOnly) {
+  const auto store = std::make_shared<std::map<std::string, std::string>>();
+  sg::IdentityRegistry registry([store]() mutable {
+    auto client = std::make_unique<FakeRedisClient>(store);
+    client->fail = true;
+    return client;
+  });
+  registry.Load();  // reads fail; must not crash or block
+
+  EXPECT_EQ(registry.Bind("b1", "player-1", "game-a", "u-1", 1000),
+            sg::IdentityRegistry::BindOutcome::kBound);
+  EXPECT_EQ(*registry.Resolve("game-a", "u-1"), "player-1");
+  EXPECT_TRUE(registry.UnbindById("b1"));
+  EXPECT_EQ(store->size(), 0u);  // nothing ever reached Redis
+}
+
+TEST(IdentityRegistryTest, MemoryOnlyByDefault) {
+  sg::IdentityRegistry registry;
+  registry.Load();  // no factory: nothing to load
+  EXPECT_EQ(registry.Bind("b1", "player-1", "game-a", "u-1", 1000),
+            sg::IdentityRegistry::BindOutcome::kBound);
+  EXPECT_EQ(*registry.Resolve("game-a", "u-1"), "player-1");
+}
+
+// ---------------------------------------------------------------------------
+// Binding handlers (wire-facing validation)
+// ---------------------------------------------------------------------------
+
+TEST_F(ServerGatewayTest, BindHandlerValidatesAndReportsExisted) {
+  auto resp = handlers_->HandleBindPlayerIdentity(MakeBindRequest("b1", "player-1", "game-a", "u-1"));
+  EXPECT_EQ(resp.code(), OK);
+  EXPECT_FALSE(resp.existed());
+  EXPECT_EQ(resp.binding_id(), "b1");
+
+  resp = handlers_->HandleBindPlayerIdentity(MakeBindRequest("b1", "player-1", "game-a", "u-1"));
+  EXPECT_EQ(resp.code(), OK);
+  EXPECT_TRUE(resp.existed());
+
+  resp = handlers_->HandleBindPlayerIdentity(MakeBindRequest("b2", "", "game-a", "u-2"));
+  EXPECT_EQ(resp.code(), INVALID_PARAM);
+}
+
+TEST_F(ServerGatewayTest, UnbindHandlerRequiresExactlyOneSelector) {
+  EXPECT_EQ(handlers_->HandleUnbindPlayerIdentity([] {
+              sg::UnbindPlayerIdentityRequest req;
+              req.set_binding_id("b1");
+              req.set_game_id("game-a");  // both selectors: ambiguous
+              req.set_game_user_id("u-1");
+              return req;
+            }()).code(), INVALID_PARAM);
+
+  EXPECT_EQ(handlers_->HandleUnbindPlayerIdentity([] {
+              sg::UnbindPlayerIdentityRequest req;  // no selector at all
+              return req;
+            }()).code(), INVALID_PARAM);
+
+  EXPECT_EQ(handlers_->HandleUnbindPlayerIdentity([] {
+              sg::UnbindPlayerIdentityRequest req;
+              req.set_game_id("game-a");  // half a pair
+              return req;
+            }()).code(), INVALID_PARAM);
+
+  EXPECT_EQ(handlers_->HandleUnbindPlayerIdentity([] {
+              sg::UnbindPlayerIdentityRequest req;
+              req.set_game_user_id("u-1");  // the other half
+              return req;
+            }()).code(), INVALID_PARAM);
+
+  // A complete pair unbinds; unknown targets still answer OK (idempotent).
+  EXPECT_EQ(handlers_->HandleBindPlayerIdentity(MakeBindRequest("b1", "player-1", "game-a", "u-1")).code(), OK);
+  EXPECT_EQ(handlers_->HandleUnbindPlayerIdentity([] {
+              sg::UnbindPlayerIdentityRequest req;
+              req.set_game_id("game-a");
+              req.set_game_user_id("u-1");
+              return req;
+            }()).code(), OK);
+  EXPECT_EQ(identities_.Size(), 0u);
+}
+
+TEST_F(ServerGatewayTest, GetHandlerReturnsBindingsForPlayer) {
+  EXPECT_EQ(handlers_->HandleGetPlayerIdentities([] {
+              sg::GetPlayerIdentitiesRequest req;  // empty player_id
+              return req;
+            }()).code(), INVALID_PARAM);
+
+  EXPECT_EQ(handlers_->HandleBindPlayerIdentity(MakeBindRequest("b1", "player-1", "game-a", "u-1")).code(), OK);
+  EXPECT_EQ(handlers_->HandleBindPlayerIdentity(MakeBindRequest("b2", "player-1", "game-b", "char-9")).code(), OK);
+
+  sg::GetPlayerIdentitiesRequest req;
+  req.set_player_id("player-1");
+  const auto resp = handlers_->HandleGetPlayerIdentities(req);
+  EXPECT_EQ(resp.code(), OK);
+  EXPECT_EQ(resp.bindings_size(), 2);
+
+  // Unknown players answer OK with an empty list.
+  sg::GetPlayerIdentitiesRequest unknown;
+  unknown.set_player_id("nobody");
+  const auto empty = handlers_->HandleGetPlayerIdentities(unknown);
+  EXPECT_EQ(empty.code(), OK);
+  EXPECT_EQ(empty.bindings_size(), 0);
+}
+
+TEST_F(ServerGatewayTest, ResolveHandlerValidatesAndReportsUnbound) {
+  EXPECT_EQ(handlers_->HandleResolveGameUser([] {
+              sg::ResolveGameUserRequest req;
+              req.set_game_id("game-a");  // game_user_id missing
+              return req;
+            }()).code(), INVALID_PARAM);
+
+  sg::ResolveGameUserRequest unbound;
+  unbound.set_game_id("game-a");
+  unbound.set_game_user_id("u-1");
+  auto resp = handlers_->HandleResolveGameUser(unbound);
+  EXPECT_EQ(resp.code(), OK);
+  EXPECT_EQ(resp.player_id(), "");
+
+  EXPECT_EQ(handlers_->HandleBindPlayerIdentity(MakeBindRequest("b1", "player-1", "game-a", "u-1")).code(), OK);
+  resp = handlers_->HandleResolveGameUser(unbound);
+  EXPECT_EQ(resp.code(), OK);
+  EXPECT_EQ(resp.player_id(), "player-1");
 }
 
 }  // namespace

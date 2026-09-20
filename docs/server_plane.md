@@ -140,6 +140,19 @@ Delivery semantics:
 
 Process-level verification: `./test_services.sh --smoke-npc` runs hub + chat + npc_dialog as real processes and checks the keyword reply, the fallback reply, history (player line + reply), and the offline-queue refill path.
 
+## Player identity bindings (WP-8 slice 1)
+
+The aggregation plane needs a platform-level `player_id` that spans many games; the server plane is where game backends assert those bindings. `chirp_server_gateway` keeps an `IdentityRegistry` (`identity_registry.{h,cc}`) behind four RPCs:
+
+- `BIND_PLAYER_IDENTITY_REQ` (5013) — `binding_id` (caller-chosen idempotency key), `player_id`, `game_id`, `game_user_id`. Same id + same tuple again → `OK` with `existed=true`; same id + a different tuple → `INVALID_PARAM` (reusing keys would silently break duplicate detection). A `(game_id, game_user_id)` pair may be bound to only one player: re-asserting it under a new `binding_id` replaces the old binding (account switch / unlink+relink — the game backend is the authority).
+- `UNBIND_PLAYER_IDENTITY_REQ` (5015) — by `binding_id` **or** by the full `(game_id, game_user_id)` pair, never both, never neither (`INVALID_PARAM` otherwise). Unknown target → `OK` (idempotent).
+- `GET_PLAYER_IDENTITIES_REQ` (5017) — all bindings for a `player_id`.
+- `RESOLVE_GAME_USER_REQ` (5019) — `(game_id, game_user_id)` → `player_id` (`OK` with an empty `player_id` when unbound).
+
+Storage is in-memory with a write-through Redis mirror (`chirp:binding:entry:<binding_id>` = serialized `StoredIdentityBinding`, `--binding_redis_host`/`--binding_redis_port`, off by default). Startup replays all stored entries; corrupted records are skipped with a warning. Redis write failures are best-effort — memory stays authoritative and the next mutation of the same record retries the write — so a Redis outage degrades to memory-only semantics, not errors.
+
+This registry is the foundation both aggregation-plane designs need (shared multi-tenant core with game namespaces, or a federation bridge); subscriptions/fan-in and unified unread are the next slices.
+
 ## Roadmap
 
 1. ~~Chat service connects as an internal peer and consumes `InjectMessageNotify`~~ — done (loopback-verified end to end); a process-level E2E smoke is still an option for later.

@@ -18,8 +18,8 @@ int64_t NowMs() {
 }  // namespace
 
 ServerGatewayHandlers::ServerGatewayHandlers(ServerGatewayConfig config, ServiceRegistry& registry,
-                                             EventQueue& queue)
-    : config_(std::move(config)), registry_(registry), queue_(queue) {}
+                                             EventQueue& queue, IdentityRegistry& identities)
+    : config_(std::move(config)), registry_(registry), queue_(queue), identities_(identities) {}
 
 AuthOutcome ServerGatewayHandlers::HandleAuth(const ServerAuthRequest& req,
                                               std::shared_ptr<PeerSender> peer) {
@@ -122,6 +122,83 @@ EventAckResponse ServerGatewayHandlers::HandleEventAck(const EventAckRequest& re
   resp.set_code(chirp::common::OK);
   return resp;
 // GCOVR_EXCL_LINE -- unreachable exit-block line (gcc/NRVO artifact); body is covered
+}
+
+BindPlayerIdentityResponse ServerGatewayHandlers::HandleBindPlayerIdentity(
+    const BindPlayerIdentityRequest& req) {
+  BindPlayerIdentityResponse resp;
+  resp.set_binding_id(req.binding_id());
+  const auto outcome =
+      identities_.Bind(req.binding_id(), req.player_id(), req.game_id(), req.game_user_id(),
+                       /*bound_at_ms=*/NowMs());
+  switch (outcome) {
+  case IdentityRegistry::BindOutcome::kBound:
+    chirp::common::Logger::Instance().Info(
+        "binding " + req.binding_id() + ": player " + req.player_id() + " <- " + req.game_id() +
+        ":" + req.game_user_id());
+    resp.set_code(chirp::common::OK);
+    break;
+  case IdentityRegistry::BindOutcome::kExisted:
+    resp.set_code(chirp::common::OK);
+    resp.set_existed(true);
+    break;
+  case IdentityRegistry::BindOutcome::kInvalid:
+    resp.set_code(chirp::common::INVALID_PARAM);
+    break;
+  }
+  return resp;
+}
+
+UnbindPlayerIdentityResponse ServerGatewayHandlers::HandleUnbindPlayerIdentity(
+    const UnbindPlayerIdentityRequest& req) {
+  UnbindPlayerIdentityResponse resp;
+  // Exactly one selector: binding_id, or the complete (game_id,
+  // game_user_id) pair — anything else is a bad request, not a no-op.
+  const bool by_id = !req.binding_id().empty();
+  const bool by_pair = !req.game_id().empty() && !req.game_user_id().empty();
+  const bool malformed_pair = req.game_id().empty() != req.game_user_id().empty();
+  if (by_id == by_pair || malformed_pair) {
+    resp.set_code(chirp::common::INVALID_PARAM);
+    return resp;
+  }
+  const bool removed =
+      by_id ? identities_.UnbindById(req.binding_id())
+            : identities_.UnbindByGameUser(req.game_id(), req.game_user_id());
+  resp.set_code(chirp::common::OK);
+  if (removed) {
+    chirp::common::Logger::Instance().Info(
+        "unbound " + (by_id ? req.binding_id() : req.game_id() + ":" + req.game_user_id()));
+  }
+  return resp;
+}
+
+GetPlayerIdentitiesResponse ServerGatewayHandlers::HandleGetPlayerIdentities(
+    const GetPlayerIdentitiesRequest& req) const {
+  GetPlayerIdentitiesResponse resp;
+  if (req.player_id().empty()) {
+    resp.set_code(chirp::common::INVALID_PARAM);
+    return resp;
+  }
+  for (const auto& entry : identities_.GetByPlayer(req.player_id())) {
+    *resp.add_bindings() = entry;
+  }
+  resp.set_code(chirp::common::OK);
+  return resp;
+}
+
+ResolveGameUserResponse ServerGatewayHandlers::HandleResolveGameUser(
+    const ResolveGameUserRequest& req) const {
+  ResolveGameUserResponse resp;
+  if (req.game_id().empty() || req.game_user_id().empty()) {
+    resp.set_code(chirp::common::INVALID_PARAM);
+    return resp;
+  }
+  const auto player = identities_.Resolve(req.game_id(), req.game_user_id());
+  if (player) {
+    resp.set_player_id(*player);
+  }
+  resp.set_code(chirp::common::OK);
+  return resp;
 }
 
 void ServerGatewayHandlers::OnPeerDisconnected(const std::string& service_id,
