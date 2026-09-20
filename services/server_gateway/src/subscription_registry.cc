@@ -81,6 +81,7 @@ void SubscriptionRegistry::Load() {
     }
     tuple_index_[key] = entry.subscription_id();
     player_index_[entry.player_id()].insert(entry.subscription_id());
+    channel_index_[{entry.game_id(), entry.channel_id()}].insert(entry.subscription_id());
     by_id_[entry.subscription_id()] = entry;
   }
   chirp::common::Logger::Instance().Info(
@@ -143,6 +144,7 @@ SubscriptionRegistry::SubscribeOutcome SubscriptionRegistry::Subscribe(
 
   tuple_index_[key] = *subscription_id;
   player_index_[player_id].insert(*subscription_id);
+  channel_index_[{game_id, channel_id}].insert(*subscription_id);
   by_id_[*subscription_id] = std::move(entry);
   PersistLocked(by_id_[*subscription_id]);
   return SubscribeOutcome::kSubscribed;
@@ -200,6 +202,27 @@ std::vector<StoredChannelSubscription> SubscriptionRegistry::GetForPlayer(
   return out;
 }
 
+std::vector<StoredChannelSubscription> SubscriptionRegistry::GetForChannel(
+    const std::string& game_id, const std::string& channel_id) const {
+  std::vector<StoredChannelSubscription> out;
+  if (game_id.empty() || channel_id.empty()) {
+    return out;  // defensive: the handler validates before calling
+  }
+  std::lock_guard<std::mutex> lock(mu_);
+  const auto it = channel_index_.find({game_id, channel_id});
+  if (it == channel_index_.end()) {
+    return out;
+  }
+  out.reserve(it->second.size());
+  for (const auto& subscription_id : it->second) {
+    const auto entry = by_id_.find(subscription_id);
+    if (entry != by_id_.end()) {
+      out.push_back(entry->second);
+    }
+  }
+  return out;
+}
+
 size_t SubscriptionRegistry::Size() const {
   std::lock_guard<std::mutex> lock(mu_);
   return by_id_.size();
@@ -214,6 +237,13 @@ void SubscriptionRegistry::EraseEntryLocked(const StoredChannelSubscription& ent
     pit->second.erase(entry.subscription_id());
     if (pit->second.empty()) {
       player_index_.erase(pit);
+    }
+  }
+  const auto cit = channel_index_.find({entry.game_id(), entry.channel_id()});
+  if (cit != channel_index_.end()) {
+    cit->second.erase(entry.subscription_id());
+    if (cit->second.empty()) {
+      channel_index_.erase(cit);
     }
   }
   by_id_.erase(entry.subscription_id());

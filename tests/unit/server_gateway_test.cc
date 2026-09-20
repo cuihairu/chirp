@@ -6,6 +6,7 @@
 #include <map>
 #include <memory>
 #include <optional>
+#include <set>
 #include <string>
 #include <vector>
 
@@ -870,6 +871,106 @@ TEST(SubscriptionRegistryTest, GetForPlayerWithGameFilter) {
   EXPECT_EQ(filtered[0].subscription_id(), "s1");
   EXPECT_EQ(registry.GetForPlayer("player-1", "game-c").size(), 0u);
   EXPECT_EQ(registry.GetForPlayer("nobody", "").size(), 0u);
+}
+
+// --- reverse (game, channel) index: the fan-in source list (slice 3) ---
+
+namespace {
+
+std::set<std::string> SubscriberIds(const std::vector<sg::StoredChannelSubscription>& subs) {
+  std::set<std::string> out;
+  for (const auto& sub : subs) {
+    out.insert(sub.player_id());
+  }
+  return out;
+}
+
+}  // namespace
+
+TEST(SubscriptionRegistryTest, ChannelIndexReturnsSubscribersAcrossPlayers) {
+  sg::SubscriptionRegistry registry;
+  std::string id = "s1";
+  ASSERT_EQ(registry.Subscribe(&id, "player-1", "game-a", "world-1", 1000),
+            sg::SubscriptionRegistry::SubscribeOutcome::kSubscribed);
+  id = "s2";
+  ASSERT_EQ(registry.Subscribe(&id, "player-2", "game-a", "world-1", 2000),
+            sg::SubscriptionRegistry::SubscribeOutcome::kSubscribed);
+  id = "s3";
+  ASSERT_EQ(registry.Subscribe(&id, "player-1", "game-a", "world-2", 3000),
+            sg::SubscriptionRegistry::SubscribeOutcome::kSubscribed);
+  id = "s4";
+  ASSERT_EQ(registry.Subscribe(&id, "player-3", "game-b", "world-1", 4000),
+            sg::SubscriptionRegistry::SubscribeOutcome::kSubscribed);
+
+  const auto subscribers = registry.GetForChannel("game-a", "world-1");
+  ASSERT_EQ(subscribers.size(), 2u);
+  EXPECT_EQ(SubscriberIds(subscribers), (std::set<std::string>{"player-1", "player-2"}));
+
+  EXPECT_EQ(registry.GetForChannel("game-a", "world-2").size(), 1u);
+  EXPECT_EQ(registry.GetForChannel("game-b", "world-1").size(), 1u);
+}
+
+TEST(SubscriptionRegistryTest, ChannelIndexUnknownTupleIsEmpty) {
+  sg::SubscriptionRegistry registry;
+  EXPECT_TRUE(registry.GetForChannel("game-a", "world-1").empty());
+  EXPECT_TRUE(registry.GetForChannel("", "world-1").empty());
+  EXPECT_TRUE(registry.GetForChannel("game-a", "").empty());
+}
+
+TEST(SubscriptionRegistryTest, ChannelIndexClearedByBothUnsubscribePaths) {
+  sg::SubscriptionRegistry registry;
+  std::string id = "s1";
+  ASSERT_EQ(registry.Subscribe(&id, "player-1", "game-a", "world-1", 1000),
+            sg::SubscriptionRegistry::SubscribeOutcome::kSubscribed);
+
+  EXPECT_TRUE(registry.UnsubscribeByTuple("player-1", "game-a", "world-1"));
+  EXPECT_TRUE(registry.GetForChannel("game-a", "world-1").empty());
+
+  id = "s2";
+  ASSERT_EQ(registry.Subscribe(&id, "player-1", "game-a", "world-1", 2000),
+            sg::SubscriptionRegistry::SubscribeOutcome::kSubscribed);
+  EXPECT_EQ(registry.GetForChannel("game-a", "world-1").size(), 1u);
+
+  EXPECT_TRUE(registry.UnsubscribeById("s2"));
+  EXPECT_TRUE(registry.GetForChannel("game-a", "world-1").empty());
+}
+
+TEST(SubscriptionRegistryTest, ChannelIndexSurvivesTupleReplace) {
+  sg::SubscriptionRegistry registry;
+  std::string id = "s1";
+  ASSERT_EQ(registry.Subscribe(&id, "player-1", "game-a", "world-1", 1000),
+            sg::SubscriptionRegistry::SubscribeOutcome::kSubscribed);
+  // The same tuple re-asserted under a new id: the replaced-away record must
+  // leave the channel index together with the by-id map.
+  id = "s2";
+  ASSERT_EQ(registry.Subscribe(&id, "player-1", "game-a", "world-1", 2000),
+            sg::SubscriptionRegistry::SubscribeOutcome::kSubscribed);
+
+  const auto subscribers = registry.GetForChannel("game-a", "world-1");
+  ASSERT_EQ(subscribers.size(), 1u);
+  EXPECT_EQ(subscribers[0].subscription_id(), "s2");
+  EXPECT_FALSE(registry.UnsubscribeById("s1"));  // replaced away
+}
+
+TEST(SubscriptionRegistryTest, ChannelIndexRestoredByLoad) {
+  const auto store = std::make_shared<std::map<std::string, std::string>>();
+  sg::SubscriptionRegistry writer([store]() mutable {
+    return std::make_unique<FakeRedisClient>(store);
+  });
+  std::string id = "s1";
+  ASSERT_EQ(writer.Subscribe(&id, "player-1", "game-a", "world-1", 1000),
+            sg::SubscriptionRegistry::SubscribeOutcome::kSubscribed);
+  id = "s2";
+  ASSERT_EQ(writer.Subscribe(&id, "player-2", "game-a", "world-1", 2000),
+            sg::SubscriptionRegistry::SubscribeOutcome::kSubscribed);
+
+  sg::SubscriptionRegistry reader([store]() mutable {
+    return std::make_unique<FakeRedisClient>(store);
+  });
+  reader.Load();
+  const auto subscribers = reader.GetForChannel("game-a", "world-1");
+  ASSERT_EQ(subscribers.size(), 2u);
+  EXPECT_EQ(SubscriberIds(subscribers), (std::set<std::string>{"player-1", "player-2"}));
 }
 
 TEST(SubscriptionRegistryTest, RedisWriteThroughAndLoadRestore) {

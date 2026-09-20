@@ -21,8 +21,9 @@ namespace chirp::server_gateway {
 // over the trusted server plane carrying a caller-supplied subscription_id
 // (the idempotency key); the app edge forwards self-served players with an
 // empty id and the server mints one. The (player_id, game_id, channel_id)
-// tuple is the unique index. This registry stores intent only — no delivery
-// happens here (fan-in routing is a later slice).
+// tuple is the unique index. The registry itself still only stores intent —
+// delivery happens in the inject handler (WP-8 slice 3), which reads the
+// reverse index via GetForChannel.
 //
 // In-memory maps are authoritative; an optional Redis client write-through
 // (one serialized StoredChannelSubscription per subscription under
@@ -70,6 +71,13 @@ class SubscriptionRegistry {
   std::vector<StoredChannelSubscription> GetForPlayer(const std::string& player_id,
                                                       const std::string& game_id) const;
 
+  // All subscriptions following one (game, channel) — the fan-in source
+  // list (WP-8 slice 3). Snapshot copies taken under the lock; iteration
+  // order is unspecified. Records (not bare player ids) so later slices can
+  // compute per-subscription unread state without another index.
+  std::vector<StoredChannelSubscription> GetForChannel(const std::string& game_id,
+                                                       const std::string& channel_id) const;
+
   size_t Size() const;
 
  private:
@@ -88,6 +96,8 @@ class SubscriptionRegistry {
   std::map<std::tuple<std::string, std::string, std::string>, std::string> tuple_index_;
   // Forward index: player -> subscription ids.
   std::unordered_map<std::string, std::unordered_set<std::string>> player_index_;
+  // Reverse index: (game, channel) -> subscription ids (fan-in lookup).
+  std::map<std::pair<std::string, std::string>, std::unordered_set<std::string>> channel_index_;
 };
 
 }  // namespace chirp::server_gateway
