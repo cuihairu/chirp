@@ -14,6 +14,7 @@
   - `AckEvents` — 批量确认已处理的 `EVENT_DELIVER_NOTIFY`(at-least-once)
   - `BindPlayerIdentity` / `UnbindPlayerIdentity` / `GetPlayerIdentities` / `ResolveGameUser` — 玩家身份绑定(`binding_id` 幂等键;详见 `docs/server_plane.md`「Player identity bindings」)
   - `SubscribePlayerChannel` / `UnsubscribePlayerChannel` / `GetPlayerSubscriptions` — 玩家频道订阅(`subscription_id` 幂等键,留空由服务端铸造;详见 `docs/server_plane.md`「Player channel subscriptions」)
+  - `MarkChannelsRead` / `GetUnreadSummary` — 统一未读 badge 账本(分层标记选择器:单频道/整游戏/全部,幂等;summary 按 (game, channel) 稳定排序 + 过滤后总数;详见 `docs/server_plane.md`「Unified unread」)
 - **推送 handler**:`SetInjectHandler` / `SetEventHandler` / `SetDisconnectHandler`,在内部读 goroutine 触发,**不得阻塞**。
 - **断线**:在途调用收到 `ErrConnectionLost`,客户端自动重连;已认证连接断开才触发 disconnect handler(认证拒绝/拨号失败只记日志)。
 

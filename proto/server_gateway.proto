@@ -182,7 +182,8 @@ message ResolveGameUserResponse {
 // to the authenticated user and no subscription_id (the server mints one).
 // The (player_id, game_id, channel_id) tuple is unique: re-subscribing it
 // under any id converges to a single record. This registry stores intent
-// only — no delivery happens here (fan-in routing is a later slice).
+// only — fan-in delivery reads its reverse index from the inject path
+// (WP-8 slice 3), the registry itself never delivers.
 
 // Persistence record (Redis, not a wire message).
 message StoredChannelSubscription {

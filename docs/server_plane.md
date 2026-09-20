@@ -85,6 +85,8 @@ The chat service owns delivery from there — online push, offline queue, ack-ba
 
 Mixed deployments (new hub, older chat) are safe: copies carry `game_id` through, which an old chat binary drops as an unknown proto3 field.
 
+Every copy successfully handed to the chat service also increments the recipient's unread badge for `(game_id, channel_id)` in the hub's unread ledger (see "Unified unread" below). Partial failures count only delivered copies; rejected and unavailable fan-outs count nothing.
+
 ### Chat-side consumption
 
 The chat service connects to the hub as an internal peer (`--server_gateway_host`, default disabled when empty) and answers auth + heartbeats. A forwarded `InjectMessageNotify` follows the same tail as `SEND_MESSAGE`:
@@ -167,7 +169,7 @@ The aggregation plane needs a platform-level `player_id` that spans many games; 
 
 Storage is in-memory with a write-through Redis mirror (`chirp:binding:entry:<binding_id>` = serialized `StoredIdentityBinding`, `--binding_redis_host`/`--binding_redis_port`, off by default). Startup replays all stored entries; corrupted records are skipped with a warning. Redis write failures are best-effort — memory stays authoritative and the next mutation of the same record retries the write — so a Redis outage degrades to memory-only semantics, not errors.
 
-This registry is the foundation both aggregation-plane designs need (shared multi-tenant core with game namespaces, or a federation bridge); fan-in delivery and unified unread are the next slices.
+This registry is the foundation both aggregation-plane designs need (shared multi-tenant core with game namespaces, or a federation bridge); fan-in delivery and unified unread (both live, see above/below) were built on it.
 
 ## Player channel subscriptions (WP-8 slice 2)
 
@@ -181,7 +183,18 @@ The same six message ids serve both callers: game backends hit the server plane 
 
 Storage mirrors the bindings: in-memory authoritative with a write-through Redis mirror (`chirp:subscription:entry:<subscription_id>` = serialized `StoredChannelSubscription`, `--subscription_redis_host`/`--subscription_redis_port`, off by default), startup replay with corrupted-record skipping, and best-effort writes that degrade to memory-only under a Redis outage.
 
-Open question (revisited when fan-in shipped, kept open): subscriptions are not validated against existing identity bindings — via self-service a player may subscribe to channels of a game they have never played. Fan-in delivery shipped with the permissive choice (no binding required anywhere; backend assertions stay trusted), so the hub's fan-out has no cross-registry dependency. Whether the self-service path should require a binding after all remains a product decision for the unified-unread slice.
+Open question (revisited when fan-in shipped, kept open): subscriptions are not validated against existing identity bindings — via self-service a player may subscribe to channels of a game they have never played. Fan-in delivery shipped with the permissive choice (no binding required anywhere; backend assertions stay trusted), so the hub's fan-out has no cross-registry dependency. Whether the self-service path should require a binding after all remains an open product decision.
+
+## Unified unread (WP-8 slice 4)
+
+The hub keeps an `UnreadLedger` (`unread_ledger.{h,cc}`): a per-player badge counter per `(game_id, channel_id)` counting **unhandled fan-in notifications** — every fan-out copy successfully handed to the chat service increments it (see "Fan-in delivery" above). This is a badge, not a read cursor: it never sees the chat service's read state (gateway 2201-2207), and neither feeds the other. Unsubscribing does not clear a badge either — marking read is the only decrementing path, and a failed delivery is never rolled back. Counters are `int32`.
+
+Two RPCs (game backends directly; players reach them through app_gateway's forwarding, which pins `player_id` to the authenticated user):
+
+- `MARK_CHANNELS_READ_REQ` (5027) — layered selector: `channel_id` set (requires `game_id`) clears that one channel; only `game_id` clears every channel of that game; both empty clears everything the player has. Idempotent: unknown targets answer `OK` with `cleared = 0`.
+- `GET_UNREAD_SUMMARY_REQ` (5029) — one `UnreadSummaryEntry` (`game_id`, `channel_id`, `unread_count`) per nonzero counter, ordered by `(game_id, channel_id)`, plus `total_unread` — the sum after the optional `game_id` filter ("my unread in game X").
+
+Storage mirrors the registries: in-memory authoritative with a write-through Redis mirror (`chirp:unread:entry:<player_id>:<game_id>:<channel_id>` = serialized `StoredUnreadEntry`, `--unread_redis_host`/`--unread_redis_port`, off by default), startup replay with corrupted-record and zero-count skipping, and best-effort writes that degrade to memory-only under a Redis outage. Cleared entries are deleted from the mirror rather than stored as zero, so counters cannot resurrect or accumulate. Key components are concatenated raw: ids containing `:` can alias another entry's key on disk — the in-memory map keeps the exact tuple, so this only limits restart fidelity for exotic ids.
 
 ## Roadmap
 
