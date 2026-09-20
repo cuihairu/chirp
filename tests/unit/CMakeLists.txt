@@ -465,6 +465,7 @@ target_link_libraries(sdk_core_tests PRIVATE chirp_network chirp_common chirp_pr
 target_include_directories(sdk_core_tests
   PRIVATE
   ${CMAKE_SOURCE_DIR}/sdks/core/include
+  ${CMAKE_SOURCE_DIR}/sdks/core/src
   ${CMAKE_SOURCE_DIR}/libs
   ${CMAKE_SOURCE_DIR}/libs/common
   ${CMAKE_SOURCE_DIR}/libs/common/include

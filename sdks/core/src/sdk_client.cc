@@ -16,6 +16,8 @@
 #include "proto/common.pb.h"
 #include "proto/gateway.pb.h"
 
+#include "backoff.h"
+
 namespace chirp {
 namespace sdk {
 
@@ -29,28 +31,6 @@ int64_t NowMs() {
 }
 
 std::error_code MakeEc(ChatError e) { return make_error_code(e); }
-
-// 与 web/mobile/unity 客户端一致的退避参数:500ms 起步、翻倍、15s 封顶、
-// ±20% 抖动。
-constexpr int64_t kReconnectBaseMs = 500;
-constexpr int64_t kReconnectMaxMs = 15000;
-
-int64_t BackoffDelayMs(int attempt) {
-  int64_t delay = kReconnectBaseMs;
-  for (int i = 0; i < attempt && delay < kReconnectMaxMs; ++i) {
-    delay *= 2;
-  }
-  if (delay > kReconnectMaxMs) {
-    delay = kReconnectMaxMs;
-  }
-  // ±20% jitter:抖动幅度随延迟缩放,重连风暴不会整点对齐。
-  const auto mod = static_cast<int64_t>(delay / 5);
-  if (mod > 0) {
-    const auto jitter = static_cast<int64_t>(std::rand() % (2 * mod + 1)) - mod;
-    delay += jitter;
-  }
-  return delay;
-}
 
 // 一个 sequence 关联的待完成请求。
 struct PendingRequest {
@@ -130,7 +110,6 @@ public:
       req.set_token(token);
       req.set_device_id("sdk_device");
       req.set_platform("pc");
-      // 前置的 state 检查保证 SendRequest 不会返回 0。
       SendRequest(MsgID::LOGIN_REQ, MsgID::LOGIN_RESP, req.SerializeAsString(),
           [this, cb = std::move(cb)](const std::error_code& ec, const std::string& body) mutable {
             if (ec) {
@@ -203,7 +182,7 @@ public:
         return;
       }
       // 状态已确认,SendRequest 必然发出。
-      (void)SendRequest(msg_id_req, msg_id_resp, body, std::move(cb));
+      SendRequest(msg_id_req, msg_id_resp, body, std::move(cb));
     });
   }
 
@@ -247,13 +226,10 @@ private:
     return pkt;
   }
 
-  // 注册 pending 并发送;返回 sequence(0 = 当前不能发送:未连接)。
-  int64_t SendRequest(uint32_t msg_id_req, uint32_t msg_id_resp, const std::string& body,
-                      ResponseCallback cb) {
-    if (state_ != ConnectionState::Connected && state_ != ConnectionState::LoggedIn) {
-      return 0;
-    }
-
+  // 注册 pending 并发送。调用方必须已确认状态为 Connected/LoggedIn(三个
+  // 调用点都先做了 state 检查);这里不再重复检查,保持写路径无死分支。
+  void SendRequest(uint32_t msg_id_req, uint32_t msg_id_resp, const std::string& body,
+                   ResponseCallback cb) {
     auto pkt = MakePacket(static_cast<MsgID>(msg_id_req), body);
     pkt.set_sequence(next_seq_++);
 
@@ -277,7 +253,6 @@ private:
 
     pending_.emplace(seq, PendingRequest{msg_id_resp, std::move(cb), timer});
     SendPacket(pkt);
-    return seq;
   }
 
   void StartConnect() {
@@ -350,7 +325,7 @@ private:
       return;
     }
     state_ = ConnectionState::WaitingReconnect;
-    const auto delay = BackoffDelayMs(reconnect_attempts_);
+    const auto delay = internal::BackoffDelayMs(reconnect_attempts_);
     ++reconnect_attempts_;
     reconnect_timer_.expires_after(std::chrono::milliseconds(delay));
     reconnect_timer_.async_wait([this](const std::error_code& timer_ec) {

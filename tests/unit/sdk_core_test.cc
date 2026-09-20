@@ -1,10 +1,12 @@
 #include <gtest/gtest.h>
 
+#include <atomic>
 #include <chrono>
 #include <future>
 #include <string>
 #include <vector>
 
+#include "backoff.h"
 #include "chirp/sdk.h"
 #include "chirp/sdk_client.h"
 
@@ -806,6 +808,7 @@ class RawGateway {
       if (ec) {
         return;
       }
+      socket_ = sock;  // keep the accepted socket alive past this handler
       on_connect_(*sock);
       DoAccept();
     });
@@ -813,6 +816,7 @@ class RawGateway {
   asio::io_context io_;
   asio::ip::tcp::acceptor acceptor_;
   uint16_t port_;
+  std::shared_ptr<asio::ip::tcp::socket> socket_;
   std::function<void(asio::ip::tcp::socket&)> on_connect_;
   std::thread thread_;
 };
@@ -1305,6 +1309,192 @@ TEST_F(ChatClientLoopbackTest, UnansweredHeartbeatsKillTheConnectionAndReconnect
   // loss and the first backoff attempt to land back at Connected.
   WaitState(client, ConnectionState::WaitingReconnect);
   WaitState(client, ConnectionState::Connected);
+  client.Disconnect();
+}
+
+// ---------------------------------------------------------------------------
+// Reconnect schedule and give-up paths.
+// ---------------------------------------------------------------------------
+
+// The backoff helper lives in an internal header precisely so this schedule
+// walk does not need tens of seconds of live reconnect time.
+TEST(BackoffScheduleTest, DoublesThenCapsWithJitter) {
+  // attempt 0: the 500ms base with ±20% jitter.
+  for (int i = 0; i < 50; ++i) {
+    const auto d = chirp::sdk::internal::BackoffDelayMs(0);
+    EXPECT_GE(d, 400);
+    EXPECT_LE(d, 600);
+  }
+  // Doubling: attempt 3 is 8x base within the jitter band.
+  for (int i = 0; i < 50; ++i) {
+    const auto d = chirp::sdk::internal::BackoffDelayMs(3);
+    EXPECT_GE(d, 3200);
+    EXPECT_LE(d, 4800);
+  }
+  // The cap: every attempt past the doubling horizon clamps to 15s (jittered).
+  for (const int attempt : {6, 20, 1000}) {
+    const auto d = chirp::sdk::internal::BackoffDelayMs(attempt);
+    EXPECT_GE(d, 12000);
+    EXPECT_LE(d, 18000);
+  }
+}
+
+TEST_F(ChatClientLoopbackTest, ReconnectGivesUpAfterMaxAttempts) {
+  auto gateway = std::make_unique<FakeGateway>(
+      [](const chirp::gateway::Packet& pkt, auto send) {
+        if (pkt.msg_id() == chirp::gateway::LOGIN_REQ) {
+          chirp::auth::LoginResponse resp;
+          resp.set_code(chirp::common::OK);
+          resp.set_user_id("u");
+          chirp::gateway::Packet out;
+          out.set_msg_id(chirp::gateway::LOGIN_RESP);
+          out.set_sequence(pkt.sequence());
+          out.set_body(resp.SerializeAsString());
+          send(out);
+        }
+      });
+  ChatConfig config = LoopbackConfig(gateway->port(), /*heartbeat_s=*/30);
+  config.max_reconnect_attempts = 1;  // one automatic reconnect, then give up
+  ChatClient client(config);
+  client.Connect();
+  WaitState(client, ConnectionState::Connected);
+  LoginSync(client, "t");
+
+  // Destroying the gateway closes both the live connection and the listener,
+  // so the automatic reconnect dials a dead port.
+  gateway.reset();
+
+  // Loss -> WaitingReconnect (~0.5s backoff) -> failed dial -> attempt cap ->
+  // Disconnected, and it must stay down instead of dialing forever.
+  const auto deadline = std::chrono::steady_clock::now() + std::chrono::seconds(5);
+  while (std::chrono::steady_clock::now() < deadline &&
+         client.GetState() != ConnectionState::Disconnected) {
+    std::this_thread::sleep_for(std::chrono::milliseconds(5));
+  }
+  EXPECT_EQ(client.GetState(), ConnectionState::Disconnected);
+  std::this_thread::sleep_for(std::chrono::milliseconds(1200));
+  EXPECT_EQ(client.GetState(), ConnectionState::Disconnected);
+  client.Disconnect();
+}
+
+TEST_F(ChatClientLoopbackTest, DisconnectDuringWaitingReconnectStaysDown) {
+  FakeGateway gateway([](const chirp::gateway::Packet& pkt, auto send) {
+    if (pkt.msg_id() == chirp::gateway::LOGIN_REQ) {
+      chirp::auth::LoginResponse resp;
+      resp.set_code(chirp::common::OK);
+      resp.set_user_id("u");
+      chirp::gateway::Packet out;
+      out.set_msg_id(chirp::gateway::LOGIN_RESP);
+      out.set_sequence(pkt.sequence());
+      out.set_body(resp.SerializeAsString());
+      send(out);
+    }
+  });
+
+  ChatClient client(LoopbackConfig(gateway.port(), /*heartbeat_s=*/30));
+  client.Connect();
+  WaitState(client, ConnectionState::Connected);
+  LoginSync(client, "t");
+  gateway.DropConnections();
+  WaitState(client, ConnectionState::WaitingReconnect);
+  client.Disconnect();  // cancels the pending reconnect timer
+
+  // The gateway is still listening: had the reconnect timer fired, the client
+  // would come back. A user-driven disconnect means it stays down.
+  std::this_thread::sleep_for(std::chrono::milliseconds(1200));
+  EXPECT_EQ(client.GetState(), ConnectionState::Disconnected);
+}
+
+TEST_F(ChatClientLoopbackTest, PongWithoutSequenceIsIgnored) {
+  FakeGateway gateway([](const chirp::gateway::Packet& pkt, auto send) {
+    if (pkt.msg_id() == chirp::gateway::LOGIN_REQ) {
+      chirp::auth::LoginResponse resp;
+      resp.set_code(chirp::common::OK);
+      resp.set_user_id("u");
+      chirp::gateway::Packet out;
+      out.set_msg_id(chirp::gateway::LOGIN_RESP);
+      out.set_sequence(pkt.sequence());
+      out.set_body(resp.SerializeAsString());
+      send(out);
+    }
+  });
+
+  ChatClient client(LoopbackConfig(gateway.port(), /*heartbeat_s=*/30));
+  client.Connect();
+  WaitState(client, ConnectionState::Connected);
+  LoginSync(client, "t");
+
+  // A pong without the echoed sequence is protocol noise: warned about and
+  // dropped, never taken as heartbeat credit nor as a stray response.
+  chirp::gateway::HeartbeatPong pong;
+  chirp::gateway::Packet out;
+  out.set_msg_id(chirp::gateway::HEARTBEAT_PONG);  // sequence stays 0
+  out.set_body(pong.SerializeAsString());
+  gateway.Push(out);
+
+  std::this_thread::sleep_for(std::chrono::milliseconds(200));
+  EXPECT_EQ(client.GetState(), ConnectionState::LoggedIn);
+  client.Disconnect();
+}
+
+TEST_F(ChatClientLoopbackTest, SendMessageWithEmptyReceiverIsDropped) {
+  std::atomic<int> sends{0};
+  FakeGateway gateway([&sends](const chirp::gateway::Packet& pkt, auto send) {
+    if (pkt.msg_id() == chirp::gateway::LOGIN_REQ) {
+      chirp::auth::LoginResponse resp;
+      resp.set_code(chirp::common::OK);
+      resp.set_user_id("u");
+      chirp::gateway::Packet out;
+      out.set_msg_id(chirp::gateway::LOGIN_RESP);
+      out.set_sequence(pkt.sequence());
+      out.set_body(resp.SerializeAsString());
+      send(out);
+    }
+    if (pkt.msg_id() == chirp::gateway::SEND_MESSAGE_REQ) {
+      ++sends;
+    }
+  });
+
+  ChatClient client(LoopbackConfig(gateway.port()));
+  client.Connect();
+  WaitState(client, ConnectionState::Connected);
+  LoginSync(client, "t");
+  client.SendMessage("", "ghost");  // empty receiver: dropped client-side
+  std::this_thread::sleep_for(std::chrono::milliseconds(300));
+  EXPECT_EQ(sends.load(), 0);
+  EXPECT_EQ(client.GetState(), ConnectionState::LoggedIn);
+  client.Disconnect();
+}
+
+TEST_F(SdkClientTest, RequestWhenNotConnectedReportsNotConnected) {
+  ChatClient client(TcpConfig());
+  std::promise<std::error_code> done;
+  client.Request(chirp::gateway::GET_HISTORY_REQ, chirp::gateway::GET_HISTORY_RESP, "{}",
+                 [&done](const std::error_code& ec, const std::string&) {
+                   done.set_value(ec);
+                 });
+  auto future = done.get_future();
+  ASSERT_EQ(future.wait_for(std::chrono::milliseconds(5000)), std::future_status::ready);
+  EXPECT_EQ(future.get(), chirp::sdk::make_error_code(ChatError::NotConnected));
+}
+
+TEST_F(ChatClientLoopbackTest, UnknownNotifyIsDispatchedAndIgnored) {
+  FakeGateway gateway([](const chirp::gateway::Packet&, auto) {});
+
+  ChatClient client(LoopbackConfig(gateway.port()));
+  client.Connect();
+  WaitState(client, ConnectionState::Connected);
+
+  // A sequence-less frame with a msg id nobody handles reaches the generic
+  // notify dispatch; with no subscriber it is dropped and the connection
+  // stays up.
+  chirp::gateway::Packet out;
+  out.set_msg_id(static_cast<chirp::gateway::MsgID>(9999));  // sequence stays 0
+  out.set_body("\x01\x02");
+  gateway.Push(out);
+
+  std::this_thread::sleep_for(std::chrono::milliseconds(200));
+  EXPECT_EQ(client.GetState(), ConnectionState::Connected);
   client.Disconnect();
 }
 
