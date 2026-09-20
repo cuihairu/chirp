@@ -202,6 +202,12 @@ KNOWN_UNCOVERABLE = {
     # second entry unreachable in the single-threaded call graph - the timer,
     # read and write completions all check those flags before calling.
     ("services/gateway/src/chat_bridge.cc", 364),
+    # Server-plane registry defensive arms: the by-id map and the
+    # tuple/game-user index are only ever mutated together under one lock,
+    # so a tuple hit whose by-id record is missing cannot happen.
+    ("services/server_gateway/src/identity_registry.cc", 143),
+    ("services/server_gateway/src/identity_registry.cc", 177),
+    ("services/server_gateway/src/subscription_registry.cc", 178),
 }
 
 src_cache = {}

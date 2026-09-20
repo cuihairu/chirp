@@ -510,7 +510,7 @@ class FakeRedisClient : public chirp::network::RedisClient {
       : RedisClient("127.0.0.1", 1), store_(std::move(store)) {}
 
   std::optional<std::string> Get(const std::string& key) override {
-    if (fail) {
+    if (fail || fail_get) {
       return std::nullopt;
     }
     const auto it = store_->find(key);
@@ -547,6 +547,9 @@ class FakeRedisClient : public chirp::network::RedisClient {
   }
 
   bool fail = false;
+  // Keys() still works when only reads fail: Load must skip what it cannot
+  // read instead of treating the whole store as empty.
+  bool fail_get = false;
 
  private:
   std::shared_ptr<std::map<std::string, std::string>> store_;
@@ -682,6 +685,51 @@ TEST(IdentityRegistryTest, RedisWriteThroughAndLoadRestore) {
   EXPECT_EQ(tolerant.Size(), 1u);
 }
 
+TEST(IdentityRegistryTest, LoadedPairClashAppliesReplaceRule) {
+  // Two hub instances persisted the same game user under different binding
+  // ids (their write-throughs never saw each other). Load order applies the
+  // same replace rule a Bind would: the later record wins.
+  const auto store = std::make_shared<std::map<std::string, std::string>>();
+  sg::IdentityRegistry first([store]() mutable {
+    return std::make_unique<FakeRedisClient>(store);
+  });
+  EXPECT_EQ(first.Bind("b1", "player-1", "game-a", "u-1", 1000),
+            sg::IdentityRegistry::BindOutcome::kBound);
+  sg::IdentityRegistry second([store]() mutable {
+    return std::make_unique<FakeRedisClient>(store);
+  });
+  EXPECT_EQ(second.Bind("b2", "player-2", "game-a", "u-1", 2000),
+            sg::IdentityRegistry::BindOutcome::kBound);
+  ASSERT_EQ(store->size(), 2u);
+
+  sg::IdentityRegistry loader([store]() mutable {
+    return std::make_unique<FakeRedisClient>(store);
+  });
+  loader.Load();
+  ASSERT_EQ(loader.Size(), 1u);
+  EXPECT_EQ(*loader.Resolve("game-a", "u-1"), "player-2");
+}
+
+TEST(IdentityRegistryTest, LoadSkipsUnreadableRecords) {
+  // Keys() lists a record but Get() cannot read it back (e.g. a flaky
+  // replica): Load must skip the entry, not treat the store as empty.
+  const auto store = std::make_shared<std::map<std::string, std::string>>();
+  sg::IdentityRegistry writer([store]() mutable {
+    return std::make_unique<FakeRedisClient>(store);
+  });
+  EXPECT_EQ(writer.Bind("b1", "player-1", "game-a", "u-1", 1000),
+            sg::IdentityRegistry::BindOutcome::kBound);
+  ASSERT_EQ(store->size(), 1u);
+
+  sg::IdentityRegistry reader([store]() mutable {
+    auto client = std::make_unique<FakeRedisClient>(store);
+    client->fail_get = true;
+    return client;
+  });
+  reader.Load();
+  EXPECT_EQ(reader.Size(), 0u);
+}
+
 TEST(IdentityRegistryTest, RedisFailureDegradesToMemoryOnly) {
   const auto store = std::make_shared<std::map<std::string, std::string>>();
   sg::IdentityRegistry registry([store]() mutable {
@@ -800,6 +848,7 @@ TEST(SubscriptionRegistryTest, UnsubscribeByIdAndByTupleAreIdempotent) {
             sg::SubscriptionRegistry::SubscribeOutcome::kSubscribed);
   EXPECT_TRUE(registry.UnsubscribeById("s1"));
   EXPECT_FALSE(registry.UnsubscribeById("s1"));
+  EXPECT_FALSE(registry.UnsubscribeById(""));  // empty id is never a selector
   EXPECT_EQ(registry.Size(), 0u);
 }
 
@@ -886,6 +935,27 @@ TEST(SubscriptionRegistryTest, LoadedTupleClashAppliesReplaceRule) {
   loader.Load();
   ASSERT_EQ(loader.Size(), 1u);
   EXPECT_EQ(loader.GetForPlayer("player-1", "")[0].subscription_id(), "s2");
+}
+
+TEST(SubscriptionRegistryTest, LoadSkipsUnreadableRecords) {
+  // Keys() lists a record but Get() cannot read it back (e.g. a flaky
+  // replica): Load must skip the entry, not treat the store as empty.
+  const auto store = std::make_shared<std::map<std::string, std::string>>();
+  sg::SubscriptionRegistry writer([store]() mutable {
+    return std::make_unique<FakeRedisClient>(store);
+  });
+  std::string id = "s1";
+  ASSERT_EQ(writer.Subscribe(&id, "player-1", "game-a", "world-1", 1000),
+            sg::SubscriptionRegistry::SubscribeOutcome::kSubscribed);
+  ASSERT_EQ(store->size(), 1u);
+
+  sg::SubscriptionRegistry reader([store]() mutable {
+    auto client = std::make_unique<FakeRedisClient>(store);
+    client->fail_get = true;
+    return client;
+  });
+  reader.Load();
+  EXPECT_EQ(reader.Size(), 0u);
 }
 
 TEST(SubscriptionRegistryTest, RedisFailureDegradesToMemoryOnly) {
@@ -1033,6 +1103,11 @@ TEST_F(ServerGatewayTest, SubscribeHandlerValidatesMintsAndReportsExisted) {
       MakeSubscribeRequest("s1", "player-1", "game-a", "world-1"));
   EXPECT_EQ(resp.code(), OK);
   EXPECT_TRUE(resp.existed());
+
+  // The same id asserting a different tuple is a key-reuse: rejected.
+  resp = handlers_->HandleSubscribePlayerChannel(
+      MakeSubscribeRequest("s1", "player-2", "game-a", "world-1"));
+  EXPECT_EQ(resp.code(), INVALID_PARAM);
 
   // An empty id (the app edge's self-service path) gets a minted one.
   resp = handlers_->HandleSubscribePlayerChannel(
