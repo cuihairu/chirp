@@ -115,6 +115,8 @@ int main(int argc, char** argv) {
       std::atoi(GetArg(argc, argv, "--heartbeat_interval", "30").c_str());
   config.max_pending_events_per_service =
       static_cast<size_t>(std::atoi(GetArg(argc, argv, "--max_pending", "1000").c_str()));
+  config.max_fanout_per_inject =
+      static_cast<size_t>(std::atoi(GetArg(argc, argv, "--max_fanout", "10000").c_str()));
   // Repeatable: --service <service_id>=<secret>
   for (int i = 1; i < argc; i++) {
     if (argv[i] == std::string("--service") && i + 1 < argc) {

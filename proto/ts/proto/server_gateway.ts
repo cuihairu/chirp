@@ -104,6 +104,15 @@ export interface MessageInjectRequest {
   /** set for 1:1 injections */
   receiverId: string;
   content: Uint8Array;
+  /**
+   * WP-8 slice 3 (fan-in): set together with a non-PRIVATE channel_type to
+   * fan the message out to every subscriber of (game_id, channel_id) as one
+   * SENDER_SERVICE private copy per subscriber (receiver_id = player_id).
+   * Empty keeps the direct injection semantics. Carrying game_id with
+   * channel_type PRIVATE is rejected (INVALID_PARAM): either a channel
+   * fan-out or a 1:1 inject, never an ambiguous both.
+   */
+  gameId: string;
 }
 
 export interface MessageInjectResponse {
@@ -576,6 +585,7 @@ function createBaseMessageInjectRequest(): MessageInjectRequest {
     channelId: "",
     receiverId: "",
     content: new Uint8Array(0),
+    gameId: "",
   };
 }
 
@@ -601,6 +611,9 @@ export const MessageInjectRequest = {
     }
     if (message.content.length !== 0) {
       writer.uint32(58).bytes(message.content);
+    }
+    if (message.gameId !== "") {
+      writer.uint32(66).string(message.gameId);
     }
     return writer;
   },
@@ -661,6 +674,13 @@ export const MessageInjectRequest = {
 
           message.content = reader.bytes();
           continue;
+        case 8:
+          if (tag !== 66) {
+            break;
+          }
+
+          message.gameId = reader.string();
+          continue;
       }
       if ((tag & 7) === 4 || tag === 0) {
         break;
@@ -679,6 +699,7 @@ export const MessageInjectRequest = {
       channelId: isSet(object.channelId) ? globalThis.String(object.channelId) : "",
       receiverId: isSet(object.receiverId) ? globalThis.String(object.receiverId) : "",
       content: isSet(object.content) ? bytesFromBase64(object.content) : new Uint8Array(0),
+      gameId: isSet(object.gameId) ? globalThis.String(object.gameId) : "",
     };
   },
 
@@ -705,6 +726,9 @@ export const MessageInjectRequest = {
     if (message.content.length !== 0) {
       obj.content = base64FromBytes(message.content);
     }
+    if (message.gameId !== "") {
+      obj.gameId = message.gameId;
+    }
     return obj;
   },
 
@@ -720,6 +744,7 @@ export const MessageInjectRequest = {
     message.channelId = object.channelId ?? "";
     message.receiverId = object.receiverId ?? "";
     message.content = object.content ?? new Uint8Array(0);
+    message.gameId = object.gameId ?? "";
     return message;
   },
 };

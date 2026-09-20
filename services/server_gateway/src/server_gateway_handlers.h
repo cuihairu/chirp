@@ -23,6 +23,9 @@ struct ServerGatewayConfig {
   int protocol_version = 1;
   int heartbeat_interval_seconds = 30;
   size_t max_pending_events_per_service = 1000;
+  // Per-inject bound on fan-out copies (WP-8 slice 3). A channel with more
+  // subscribers than this rejects the injection instead of fanning out.
+  size_t max_fanout_per_inject = 10000;
 };
 
 struct AuthOutcome {
@@ -78,6 +81,10 @@ class ServerGatewayHandlers {
   void OnPeerDisconnected(const std::string& service_id, const PeerSender* peer);
 
  private:
+  // WP-8 slice 3: fan a channel injection out to every subscriber of
+  // (game_id, channel_id) as one private copy per subscriber.
+  MessageInjectResponse FanoutInject(const MessageInjectRequest& req) const;
+
   void DeliverPending(const std::string& service_id, PeerSender& peer);
   std::string GenerateEventId();
 

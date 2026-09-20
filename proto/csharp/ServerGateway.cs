@@ -32,63 +32,63 @@ namespace Chirp.ServerGateway {
             "dGltZV9tcxgCIAEoAxIiChpoZWFydGJlYXRfaW50ZXJ2YWxfc2Vjb25kcxgD",
             "IAEoBSItChNTZXJ2ZXJIZWFydGJlYXRQaW5nEhYKDmNsaWVudF90aW1lX21z",
             "GAEgASgDIi0KE1NlcnZlckhlYXJ0YmVhdFBvbmcSFgoOc2VydmVyX3RpbWVf",
-            "bXMYASABKAMiwwEKFE1lc3NhZ2VJbmplY3RSZXF1ZXN0EhEKCWluamVjdF9p",
+            "bXMYASABKAMi1AEKFE1lc3NhZ2VJbmplY3RSZXF1ZXN0EhEKCWluamVjdF9p",
             "ZBgBIAEoCRI1CgtzZW5kZXJfa2luZBgCIAEoDjIgLmNoaXJwLnNlcnZlcl9n",
             "YXRld2F5LlNlbmRlcktpbmQSEQoJc2VuZGVyX2lkGAMgASgJEhQKDGNoYW5u",
             "ZWxfdHlwZRgEIAEoBRISCgpjaGFubmVsX2lkGAUgASgJEhMKC3JlY2VpdmVy",
-            "X2lkGAYgASgJEg8KB2NvbnRlbnQYByABKAwiUQoVTWVzc2FnZUluamVjdFJl",
-            "c3BvbnNlEiUKBGNvZGUYASABKA4yFy5jaGlycC5jb21tb24uRXJyb3JDb2Rl",
-            "EhEKCWluamVjdF9pZBgCIAEoCSJSChNJbmplY3RNZXNzYWdlTm90aWZ5EjsK",
-            "B21lc3NhZ2UYASABKAsyKi5jaGlycC5zZXJ2ZXJfZ2F0ZXdheS5NZXNzYWdl",
-            "SW5qZWN0UmVxdWVzdCJnChNFdmVudFB1Ymxpc2hSZXF1ZXN0EhAKCGV2ZW50",
-            "X2lkGAEgASgJEhkKEXRhcmdldF9zZXJ2aWNlX2lkGAIgASgJEhIKCmV2ZW50",
-            "X3R5cGUYAyABKAkSDwoHcGF5bG9hZBgEIAEoDCJfChRFdmVudFB1Ymxpc2hS",
+            "X2lkGAYgASgJEg8KB2NvbnRlbnQYByABKAwSDwoHZ2FtZV9pZBgIIAEoCSJR",
+            "ChVNZXNzYWdlSW5qZWN0UmVzcG9uc2USJQoEY29kZRgBIAEoDjIXLmNoaXJw",
+            "LmNvbW1vbi5FcnJvckNvZGUSEQoJaW5qZWN0X2lkGAIgASgJIlIKE0luamVj",
+            "dE1lc3NhZ2VOb3RpZnkSOwoHbWVzc2FnZRgBIAEoCzIqLmNoaXJwLnNlcnZl",
+            "cl9nYXRld2F5Lk1lc3NhZ2VJbmplY3RSZXF1ZXN0ImcKE0V2ZW50UHVibGlz",
+            "aFJlcXVlc3QSEAoIZXZlbnRfaWQYASABKAkSGQoRdGFyZ2V0X3NlcnZpY2Vf",
+            "aWQYAiABKAkSEgoKZXZlbnRfdHlwZRgDIAEoCRIPCgdwYXlsb2FkGAQgASgM",
+            "Il8KFEV2ZW50UHVibGlzaFJlc3BvbnNlEiUKBGNvZGUYASABKA4yFy5jaGly",
+            "cC5jb21tb24uRXJyb3JDb2RlEhAKCGV2ZW50X2lkGAIgASgJEg4KBnF1ZXVl",
+            "ZBgDIAEoCCJ1ChJFdmVudERlbGl2ZXJOb3RpZnkSEAoIZXZlbnRfaWQYASAB",
+            "KAkSEgoKZXZlbnRfdHlwZRgCIAEoCRIPCgdwYXlsb2FkGAMgASgMEhcKD3B1",
+            "Ymxpc2hlZF9hdF9tcxgEIAEoAxIPCgdhdHRlbXB0GAUgASgFIiQKD0V2ZW50",
+            "QWNrUmVxdWVzdBIRCglldmVudF9pZHMYASADKAkiOQoQRXZlbnRBY2tSZXNw",
+            "b25zZRIlCgRjb2RlGAEgASgOMhcuY2hpcnAuY29tbW9uLkVycm9yQ29kZSJ6",
+            "ChVTdG9yZWRJZGVudGl0eUJpbmRpbmcSEgoKYmluZGluZ19pZBgBIAEoCRIR",
+            "CglwbGF5ZXJfaWQYAiABKAkSDwoHZ2FtZV9pZBgDIAEoCRIUCgxnYW1lX3Vz",
+            "ZXJfaWQYBCABKAkSEwoLYm91bmRfYXRfbXMYBSABKAMiaQoZQmluZFBsYXll",
+            "cklkZW50aXR5UmVxdWVzdBISCgpiaW5kaW5nX2lkGAEgASgJEhEKCXBsYXll",
+            "cl9pZBgCIAEoCRIPCgdnYW1lX2lkGAMgASgJEhQKDGdhbWVfdXNlcl9pZBgE",
+            "IAEoCSJoChpCaW5kUGxheWVySWRlbnRpdHlSZXNwb25zZRIlCgRjb2RlGAEg",
+            "ASgOMhcuY2hpcnAuY29tbW9uLkVycm9yQ29kZRISCgpiaW5kaW5nX2lkGAIg",
+            "ASgJEg8KB2V4aXN0ZWQYAyABKAgiWAobVW5iaW5kUGxheWVySWRlbnRpdHlS",
+            "ZXF1ZXN0EhIKCmJpbmRpbmdfaWQYASABKAkSDwoHZ2FtZV9pZBgCIAEoCRIU",
+            "CgxnYW1lX3VzZXJfaWQYAyABKAkiRQocVW5iaW5kUGxheWVySWRlbnRpdHlS",
             "ZXNwb25zZRIlCgRjb2RlGAEgASgOMhcuY2hpcnAuY29tbW9uLkVycm9yQ29k",
-            "ZRIQCghldmVudF9pZBgCIAEoCRIOCgZxdWV1ZWQYAyABKAgidQoSRXZlbnRE",
-            "ZWxpdmVyTm90aWZ5EhAKCGV2ZW50X2lkGAEgASgJEhIKCmV2ZW50X3R5cGUY",
-            "AiABKAkSDwoHcGF5bG9hZBgDIAEoDBIXCg9wdWJsaXNoZWRfYXRfbXMYBCAB",
-            "KAMSDwoHYXR0ZW1wdBgFIAEoBSIkCg9FdmVudEFja1JlcXVlc3QSEQoJZXZl",
-            "bnRfaWRzGAEgAygJIjkKEEV2ZW50QWNrUmVzcG9uc2USJQoEY29kZRgBIAEo",
-            "DjIXLmNoaXJwLmNvbW1vbi5FcnJvckNvZGUiegoVU3RvcmVkSWRlbnRpdHlC",
-            "aW5kaW5nEhIKCmJpbmRpbmdfaWQYASABKAkSEQoJcGxheWVyX2lkGAIgASgJ",
-            "Eg8KB2dhbWVfaWQYAyABKAkSFAoMZ2FtZV91c2VyX2lkGAQgASgJEhMKC2Jv",
-            "dW5kX2F0X21zGAUgASgDImkKGUJpbmRQbGF5ZXJJZGVudGl0eVJlcXVlc3QS",
-            "EgoKYmluZGluZ19pZBgBIAEoCRIRCglwbGF5ZXJfaWQYAiABKAkSDwoHZ2Ft",
-            "ZV9pZBgDIAEoCRIUCgxnYW1lX3VzZXJfaWQYBCABKAkiaAoaQmluZFBsYXll",
-            "cklkZW50aXR5UmVzcG9uc2USJQoEY29kZRgBIAEoDjIXLmNoaXJwLmNvbW1v",
-            "bi5FcnJvckNvZGUSEgoKYmluZGluZ19pZBgCIAEoCRIPCgdleGlzdGVkGAMg",
-            "ASgIIlgKG1VuYmluZFBsYXllcklkZW50aXR5UmVxdWVzdBISCgpiaW5kaW5n",
-            "X2lkGAEgASgJEg8KB2dhbWVfaWQYAiABKAkSFAoMZ2FtZV91c2VyX2lkGAMg",
-            "ASgJIkUKHFVuYmluZFBsYXllcklkZW50aXR5UmVzcG9uc2USJQoEY29kZRgB",
-            "IAEoDjIXLmNoaXJwLmNvbW1vbi5FcnJvckNvZGUiLwoaR2V0UGxheWVySWRl",
-            "bnRpdGllc1JlcXVlc3QSEQoJcGxheWVyX2lkGAEgASgJIoMBChtHZXRQbGF5",
-            "ZXJJZGVudGl0aWVzUmVzcG9uc2USJQoEY29kZRgBIAEoDjIXLmNoaXJwLmNv",
-            "bW1vbi5FcnJvckNvZGUSPQoIYmluZGluZ3MYAiADKAsyKy5jaGlycC5zZXJ2",
-            "ZXJfZ2F0ZXdheS5TdG9yZWRJZGVudGl0eUJpbmRpbmciPwoWUmVzb2x2ZUdh",
-            "bWVVc2VyUmVxdWVzdBIPCgdnYW1lX2lkGAEgASgJEhQKDGdhbWVfdXNlcl9p",
-            "ZBgCIAEoCSJTChdSZXNvbHZlR2FtZVVzZXJSZXNwb25zZRIlCgRjb2RlGAEg",
-            "ASgOMhcuY2hpcnAuY29tbW9uLkVycm9yQ29kZRIRCglwbGF5ZXJfaWQYAiAB",
-            "KAkihgEKGVN0b3JlZENoYW5uZWxTdWJzY3JpcHRpb24SFwoPc3Vic2NyaXB0",
-            "aW9uX2lkGAEgASgJEhEKCXBsYXllcl9pZBgCIAEoCRIPCgdnYW1lX2lkGAMg",
-            "ASgJEhIKCmNoYW5uZWxfaWQYBCABKAkSGAoQc3Vic2NyaWJlZF9hdF9tcxgF",
-            "IAEoAyJwCh1TdWJzY3JpYmVQbGF5ZXJDaGFubmVsUmVxdWVzdBIXCg9zdWJz",
-            "Y3JpcHRpb25faWQYASABKAkSEQoJcGxheWVyX2lkGAIgASgJEg8KB2dhbWVf",
-            "aWQYAyABKAkSEgoKY2hhbm5lbF9pZBgEIAEoCSJxCh5TdWJzY3JpYmVQbGF5",
-            "ZXJDaGFubmVsUmVzcG9uc2USJQoEY29kZRgBIAEoDjIXLmNoaXJwLmNvbW1v",
-            "bi5FcnJvckNvZGUSFwoPc3Vic2NyaXB0aW9uX2lkGAIgASgJEg8KB2V4aXN0",
-            "ZWQYAyABKAgicgofVW5zdWJzY3JpYmVQbGF5ZXJDaGFubmVsUmVxdWVzdBIX",
-            "Cg9zdWJzY3JpcHRpb25faWQYASABKAkSEQoJcGxheWVyX2lkGAIgASgJEg8K",
-            "B2dhbWVfaWQYAyABKAkSEgoKY2hhbm5lbF9pZBgEIAEoCSJJCiBVbnN1YnNj",
-            "cmliZVBsYXllckNoYW5uZWxSZXNwb25zZRIlCgRjb2RlGAEgASgOMhcuY2hp",
-            "cnAuY29tbW9uLkVycm9yQ29kZSJDCh1HZXRQbGF5ZXJTdWJzY3JpcHRpb25z",
-            "UmVxdWVzdBIRCglwbGF5ZXJfaWQYASABKAkSDwoHZ2FtZV9pZBgCIAEoCSKP",
-            "AQoeR2V0UGxheWVyU3Vic2NyaXB0aW9uc1Jlc3BvbnNlEiUKBGNvZGUYASAB",
-            "KA4yFy5jaGlycC5jb21tb24uRXJyb3JDb2RlEkYKDXN1YnNjcmlwdGlvbnMY",
-            "AiADKAsyLy5jaGlycC5zZXJ2ZXJfZ2F0ZXdheS5TdG9yZWRDaGFubmVsU3Vi",
-            "c2NyaXB0aW9uKlcKClNlbmRlcktpbmQSEgoOU0VOREVSX1VOS05PV04QABIR",
-            "Cg1TRU5ERVJfU1lTVEVNEAESDgoKU0VOREVSX05QQxACEhIKDlNFTkRFUl9T",
-            "RVJWSUNFEANCLlosZ2l0aHViLmNvbS9jdWkvY2hpcnAvcHJvdG8vZ28vc2Vy",
-            "dmVyX2dhdGV3YXliBnByb3RvMw=="));
+            "ZSIvChpHZXRQbGF5ZXJJZGVudGl0aWVzUmVxdWVzdBIRCglwbGF5ZXJfaWQY",
+            "ASABKAkigwEKG0dldFBsYXllcklkZW50aXRpZXNSZXNwb25zZRIlCgRjb2Rl",
+            "GAEgASgOMhcuY2hpcnAuY29tbW9uLkVycm9yQ29kZRI9CghiaW5kaW5ncxgC",
+            "IAMoCzIrLmNoaXJwLnNlcnZlcl9nYXRld2F5LlN0b3JlZElkZW50aXR5Qmlu",
+            "ZGluZyI/ChZSZXNvbHZlR2FtZVVzZXJSZXF1ZXN0Eg8KB2dhbWVfaWQYASAB",
+            "KAkSFAoMZ2FtZV91c2VyX2lkGAIgASgJIlMKF1Jlc29sdmVHYW1lVXNlclJl",
+            "c3BvbnNlEiUKBGNvZGUYASABKA4yFy5jaGlycC5jb21tb24uRXJyb3JDb2Rl",
+            "EhEKCXBsYXllcl9pZBgCIAEoCSKGAQoZU3RvcmVkQ2hhbm5lbFN1YnNjcmlw",
+            "dGlvbhIXCg9zdWJzY3JpcHRpb25faWQYASABKAkSEQoJcGxheWVyX2lkGAIg",
+            "ASgJEg8KB2dhbWVfaWQYAyABKAkSEgoKY2hhbm5lbF9pZBgEIAEoCRIYChBz",
+            "dWJzY3JpYmVkX2F0X21zGAUgASgDInAKHVN1YnNjcmliZVBsYXllckNoYW5u",
+            "ZWxSZXF1ZXN0EhcKD3N1YnNjcmlwdGlvbl9pZBgBIAEoCRIRCglwbGF5ZXJf",
+            "aWQYAiABKAkSDwoHZ2FtZV9pZBgDIAEoCRISCgpjaGFubmVsX2lkGAQgASgJ",
+            "InEKHlN1YnNjcmliZVBsYXllckNoYW5uZWxSZXNwb25zZRIlCgRjb2RlGAEg",
+            "ASgOMhcuY2hpcnAuY29tbW9uLkVycm9yQ29kZRIXCg9zdWJzY3JpcHRpb25f",
+            "aWQYAiABKAkSDwoHZXhpc3RlZBgDIAEoCCJyCh9VbnN1YnNjcmliZVBsYXll",
+            "ckNoYW5uZWxSZXF1ZXN0EhcKD3N1YnNjcmlwdGlvbl9pZBgBIAEoCRIRCglw",
+            "bGF5ZXJfaWQYAiABKAkSDwoHZ2FtZV9pZBgDIAEoCRISCgpjaGFubmVsX2lk",
+            "GAQgASgJIkkKIFVuc3Vic2NyaWJlUGxheWVyQ2hhbm5lbFJlc3BvbnNlEiUK",
+            "BGNvZGUYASABKA4yFy5jaGlycC5jb21tb24uRXJyb3JDb2RlIkMKHUdldFBs",
+            "YXllclN1YnNjcmlwdGlvbnNSZXF1ZXN0EhEKCXBsYXllcl9pZBgBIAEoCRIP",
+            "CgdnYW1lX2lkGAIgASgJIo8BCh5HZXRQbGF5ZXJTdWJzY3JpcHRpb25zUmVz",
+            "cG9uc2USJQoEY29kZRgBIAEoDjIXLmNoaXJwLmNvbW1vbi5FcnJvckNvZGUS",
+            "RgoNc3Vic2NyaXB0aW9ucxgCIAMoCzIvLmNoaXJwLnNlcnZlcl9nYXRld2F5",
+            "LlN0b3JlZENoYW5uZWxTdWJzY3JpcHRpb24qVwoKU2VuZGVyS2luZBISCg5T",
+            "RU5ERVJfVU5LTk9XThAAEhEKDVNFTkRFUl9TWVNURU0QARIOCgpTRU5ERVJf",
+            "TlBDEAISEgoOU0VOREVSX1NFUlZJQ0UQA0IuWixnaXRodWIuY29tL2N1aS9j",
+            "aGlycC9wcm90by9nby9zZXJ2ZXJfZ2F0ZXdheWIGcHJvdG8z"));
       descriptor = pbr::FileDescriptor.FromGeneratedCode(descriptorData,
           new pbr::FileDescriptor[] { global::Chirp.Common.CommonReflection.Descriptor, },
           new pbr::GeneratedClrTypeInfo(new[] {typeof(global::Chirp.ServerGateway.SenderKind), }, null, new pbr::GeneratedClrTypeInfo[] {
@@ -96,7 +96,7 @@ namespace Chirp.ServerGateway {
             new pbr::GeneratedClrTypeInfo(typeof(global::Chirp.ServerGateway.ServerAuthResponse), global::Chirp.ServerGateway.ServerAuthResponse.Parser, new[]{ "Code", "ServerTimeMs", "HeartbeatIntervalSeconds" }, null, null, null, null),
             new pbr::GeneratedClrTypeInfo(typeof(global::Chirp.ServerGateway.ServerHeartbeatPing), global::Chirp.ServerGateway.ServerHeartbeatPing.Parser, new[]{ "ClientTimeMs" }, null, null, null, null),
             new pbr::GeneratedClrTypeInfo(typeof(global::Chirp.ServerGateway.ServerHeartbeatPong), global::Chirp.ServerGateway.ServerHeartbeatPong.Parser, new[]{ "ServerTimeMs" }, null, null, null, null),
-            new pbr::GeneratedClrTypeInfo(typeof(global::Chirp.ServerGateway.MessageInjectRequest), global::Chirp.ServerGateway.MessageInjectRequest.Parser, new[]{ "InjectId", "SenderKind", "SenderId", "ChannelType", "ChannelId", "ReceiverId", "Content" }, null, null, null, null),
+            new pbr::GeneratedClrTypeInfo(typeof(global::Chirp.ServerGateway.MessageInjectRequest), global::Chirp.ServerGateway.MessageInjectRequest.Parser, new[]{ "InjectId", "SenderKind", "SenderId", "ChannelType", "ChannelId", "ReceiverId", "Content", "GameId" }, null, null, null, null),
             new pbr::GeneratedClrTypeInfo(typeof(global::Chirp.ServerGateway.MessageInjectResponse), global::Chirp.ServerGateway.MessageInjectResponse.Parser, new[]{ "Code", "InjectId" }, null, null, null, null),
             new pbr::GeneratedClrTypeInfo(typeof(global::Chirp.ServerGateway.InjectMessageNotify), global::Chirp.ServerGateway.InjectMessageNotify.Parser, new[]{ "Message" }, null, null, null, null),
             new pbr::GeneratedClrTypeInfo(typeof(global::Chirp.ServerGateway.EventPublishRequest), global::Chirp.ServerGateway.EventPublishRequest.Parser, new[]{ "EventId", "TargetServiceId", "EventType", "Payload" }, null, null, null, null),
@@ -1142,6 +1142,7 @@ namespace Chirp.ServerGateway {
       channelId_ = other.channelId_;
       receiverId_ = other.receiverId_;
       content_ = other.content_;
+      gameId_ = other.gameId_;
       _unknownFields = pb::UnknownFieldSet.Clone(other._unknownFields);
     }
 
@@ -1247,6 +1248,26 @@ namespace Chirp.ServerGateway {
       }
     }
 
+    /// <summary>Field number for the "game_id" field.</summary>
+    public const int GameIdFieldNumber = 8;
+    private string gameId_ = "";
+    /// <summary>
+    /// WP-8 slice 3 (fan-in): set together with a non-PRIVATE channel_type to
+    /// fan the message out to every subscriber of (game_id, channel_id) as one
+    /// SENDER_SERVICE private copy per subscriber (receiver_id = player_id).
+    /// Empty keeps the direct injection semantics. Carrying game_id with
+    /// channel_type PRIVATE is rejected (INVALID_PARAM): either a channel
+    /// fan-out or a 1:1 inject, never an ambiguous both.
+    /// </summary>
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    public string GameId {
+      get { return gameId_; }
+      set {
+        gameId_ = pb::ProtoPreconditions.CheckNotNull(value, "value");
+      }
+    }
+
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
     public override bool Equals(object other) {
@@ -1269,6 +1290,7 @@ namespace Chirp.ServerGateway {
       if (ChannelId != other.ChannelId) return false;
       if (ReceiverId != other.ReceiverId) return false;
       if (Content != other.Content) return false;
+      if (GameId != other.GameId) return false;
       return Equals(_unknownFields, other._unknownFields);
     }
 
@@ -1283,6 +1305,7 @@ namespace Chirp.ServerGateway {
       if (ChannelId.Length != 0) hash ^= ChannelId.GetHashCode();
       if (ReceiverId.Length != 0) hash ^= ReceiverId.GetHashCode();
       if (Content.Length != 0) hash ^= Content.GetHashCode();
+      if (GameId.Length != 0) hash ^= GameId.GetHashCode();
       if (_unknownFields != null) {
         hash ^= _unknownFields.GetHashCode();
       }
@@ -1329,6 +1352,10 @@ namespace Chirp.ServerGateway {
         output.WriteRawTag(58);
         output.WriteBytes(Content);
       }
+      if (GameId.Length != 0) {
+        output.WriteRawTag(66);
+        output.WriteString(GameId);
+      }
       if (_unknownFields != null) {
         _unknownFields.WriteTo(output);
       }
@@ -1367,6 +1394,10 @@ namespace Chirp.ServerGateway {
         output.WriteRawTag(58);
         output.WriteBytes(Content);
       }
+      if (GameId.Length != 0) {
+        output.WriteRawTag(66);
+        output.WriteString(GameId);
+      }
       if (_unknownFields != null) {
         _unknownFields.WriteTo(ref output);
       }
@@ -1397,6 +1428,9 @@ namespace Chirp.ServerGateway {
       }
       if (Content.Length != 0) {
         size += 1 + pb::CodedOutputStream.ComputeBytesSize(Content);
+      }
+      if (GameId.Length != 0) {
+        size += 1 + pb::CodedOutputStream.ComputeStringSize(GameId);
       }
       if (_unknownFields != null) {
         size += _unknownFields.CalculateSize();
@@ -1430,6 +1464,9 @@ namespace Chirp.ServerGateway {
       }
       if (other.Content.Length != 0) {
         Content = other.Content;
+      }
+      if (other.GameId.Length != 0) {
+        GameId = other.GameId;
       }
       _unknownFields = pb::UnknownFieldSet.MergeFrom(_unknownFields, other._unknownFields);
     }
@@ -1478,6 +1515,10 @@ namespace Chirp.ServerGateway {
             Content = input.ReadBytes();
             break;
           }
+          case 66: {
+            GameId = input.ReadString();
+            break;
+          }
         }
       }
     #endif
@@ -1523,6 +1564,10 @@ namespace Chirp.ServerGateway {
           }
           case 58: {
             Content = input.ReadBytes();
+            break;
+          }
+          case 66: {
+            GameId = input.ReadString();
             break;
           }
         }

@@ -294,6 +294,20 @@ TEST(StreamBrokerParseTest, ParsesEnvelopeWithPrefixAndNumericChannel) {
   EXPECT_TRUE(env.reply_to.empty());
 }
 
+TEST(StreamBrokerParseTest, ParsesGameIdAndLeavesItAbsentOnLegacyEntries) {
+  StreamInjectEnvelope env;
+  ASSERT_TRUE(chirp::server_gateway::ParseInjectEnvelope(
+      {"sender_kind", "SERVICE", "channel_type", "WORLD", "game_id", "game-a", "channel_id", "c1"},
+      &env));
+  EXPECT_EQ(env.req.game_id(), "game-a");
+
+  // Legacy entries (no game_id field) keep the direct-injection semantics.
+  StreamInjectEnvelope legacy;
+  ASSERT_TRUE(chirp::server_gateway::ParseInjectEnvelope(
+      {"sender_kind", "SYSTEM", "channel_type", "WORLD", "channel_id", "c1"}, &legacy));
+  EXPECT_TRUE(legacy.req.game_id().empty());
+}
+
 TEST(StreamBrokerParseTest, ParsesEveryKindAndChannelName) {
   StreamInjectEnvelope env;
   ASSERT_TRUE(chirp::server_gateway::ParseInjectEnvelope(

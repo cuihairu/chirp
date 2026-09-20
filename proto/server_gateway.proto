@@ -54,6 +54,13 @@ message MessageInjectRequest {
   string channel_id = 5;    // set for channel injections
   string receiver_id = 6;   // set for 1:1 injections
   bytes content = 7;
+  // WP-8 slice 3 (fan-in): set together with a non-PRIVATE channel_type to
+  // fan the message out to every subscriber of (game_id, channel_id) as one
+  // SENDER_SERVICE private copy per subscriber (receiver_id = player_id).
+  // Empty keeps the direct injection semantics. Carrying game_id with
+  // channel_type PRIVATE is rejected (INVALID_PARAM): either a channel
+  // fan-out or a 1:1 inject, never an ambiguous both.
+  string game_id = 8;
 }
 
 message MessageInjectResponse {

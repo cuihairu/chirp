@@ -3653,6 +3653,7 @@ class MessageInjectRequest final : public ::google::protobuf::Message
     kChannelIdFieldNumber = 5,
     kReceiverIdFieldNumber = 6,
     kContentFieldNumber = 7,
+    kGameIdFieldNumber = 8,
     kSenderKindFieldNumber = 2,
     kChannelTypeFieldNumber = 4,
   };
@@ -3731,6 +3732,21 @@ class MessageInjectRequest final : public ::google::protobuf::Message
   ::std::string* PROTOBUF_NONNULL _internal_mutable_content();
 
   public:
+  // string game_id = 8;
+  void clear_game_id() ;
+  const ::std::string& game_id() const;
+  template <typename Arg_ = const ::std::string&, typename... Args_>
+  void set_game_id(Arg_&& arg, Args_... args);
+  ::std::string* PROTOBUF_NONNULL mutable_game_id();
+  [[nodiscard]] ::std::string* PROTOBUF_NULLABLE release_game_id();
+  void set_allocated_game_id(::std::string* PROTOBUF_NULLABLE value);
+
+  private:
+  const ::std::string& _internal_game_id() const;
+  PROTOBUF_ALWAYS_INLINE void _internal_set_game_id(const ::std::string& value);
+  ::std::string* PROTOBUF_NONNULL _internal_mutable_game_id();
+
+  public:
   // .chirp.server_gateway.SenderKind sender_kind = 2;
   void clear_sender_kind() ;
   ::chirp::server_gateway::SenderKind sender_kind() const;
@@ -3755,8 +3771,8 @@ class MessageInjectRequest final : public ::google::protobuf::Message
  private:
   class _Internal;
   friend class ::google::protobuf::internal::TcParser;
-  static const ::google::protobuf::internal::TcParseTable<3, 7,
-                                   0, 89,
+  static const ::google::protobuf::internal::TcParseTable<3, 8,
+                                   0, 104,
                                    2>
       _table_;
 
@@ -3782,6 +3798,7 @@ class MessageInjectRequest final : public ::google::protobuf::Message
     ::google::protobuf::internal::ArenaStringPtr channel_id_;
     ::google::protobuf::internal::ArenaStringPtr receiver_id_;
     ::google::protobuf::internal::ArenaStringPtr content_;
+    ::google::protobuf::internal::ArenaStringPtr game_id_;
     int sender_kind_;
     ::int32_t channel_type_;
     PROTOBUF_TSAN_DECLARE_MEMBER
@@ -6769,7 +6786,7 @@ inline void MessageInjectRequest::clear_sender_kind() {
   ::google::protobuf::internal::TSanWrite(&_impl_);
   _impl_.sender_kind_ = 0;
   ClearHasBit(_impl_._has_bits_[0],
-                  0x00000020U);
+                  0x00000040U);
 }
 inline ::chirp::server_gateway::SenderKind MessageInjectRequest::sender_kind() const {
   // @@protoc_insertion_point(field_get:chirp.server_gateway.MessageInjectRequest.sender_kind)
@@ -6777,7 +6794,7 @@ inline ::chirp::server_gateway::SenderKind MessageInjectRequest::sender_kind() c
 }
 inline void MessageInjectRequest::set_sender_kind(::chirp::server_gateway::SenderKind value) {
   _internal_set_sender_kind(value);
-  SetHasBit(_impl_._has_bits_[0], 0x00000020U);
+  SetHasBit(_impl_._has_bits_[0], 0x00000040U);
   // @@protoc_insertion_point(field_set:chirp.server_gateway.MessageInjectRequest.sender_kind)
 }
 inline ::chirp::server_gateway::SenderKind MessageInjectRequest::_internal_sender_kind() const {
@@ -6859,7 +6876,7 @@ inline void MessageInjectRequest::clear_channel_type() {
   ::google::protobuf::internal::TSanWrite(&_impl_);
   _impl_.channel_type_ = 0;
   ClearHasBit(_impl_._has_bits_[0],
-                  0x00000040U);
+                  0x00000080U);
 }
 inline ::int32_t MessageInjectRequest::channel_type() const {
   // @@protoc_insertion_point(field_get:chirp.server_gateway.MessageInjectRequest.channel_type)
@@ -6867,7 +6884,7 @@ inline ::int32_t MessageInjectRequest::channel_type() const {
 }
 inline void MessageInjectRequest::set_channel_type(::int32_t value) {
   _internal_set_channel_type(value);
-  SetHasBit(_impl_._has_bits_[0], 0x00000040U);
+  SetHasBit(_impl_._has_bits_[0], 0x00000080U);
   // @@protoc_insertion_point(field_set:chirp.server_gateway.MessageInjectRequest.channel_type)
 }
 inline ::int32_t MessageInjectRequest::_internal_channel_type() const {
@@ -7072,6 +7089,71 @@ inline void MessageInjectRequest::set_allocated_content(::std::string* PROTOBUF_
     _impl_.content_.Set("", GetArena());
   }
   // @@protoc_insertion_point(field_set_allocated:chirp.server_gateway.MessageInjectRequest.content)
+}
+
+// string game_id = 8;
+inline void MessageInjectRequest::clear_game_id() {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_.game_id_.ClearToEmpty();
+  ClearHasBit(_impl_._has_bits_[0],
+                  0x00000020U);
+}
+inline const ::std::string& MessageInjectRequest::game_id() const
+    ABSL_ATTRIBUTE_LIFETIME_BOUND {
+  // @@protoc_insertion_point(field_get:chirp.server_gateway.MessageInjectRequest.game_id)
+  return _internal_game_id();
+}
+template <typename Arg_, typename... Args_>
+PROTOBUF_ALWAYS_INLINE void MessageInjectRequest::set_game_id(Arg_&& arg, Args_... args) {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  SetHasBit(_impl_._has_bits_[0], 0x00000020U);
+  _impl_.game_id_.Set(static_cast<Arg_&&>(arg), args..., GetArena());
+  // @@protoc_insertion_point(field_set:chirp.server_gateway.MessageInjectRequest.game_id)
+}
+inline ::std::string* PROTOBUF_NONNULL MessageInjectRequest::mutable_game_id()
+    ABSL_ATTRIBUTE_LIFETIME_BOUND {
+  SetHasBit(_impl_._has_bits_[0], 0x00000020U);
+  ::std::string* _s = _internal_mutable_game_id();
+  // @@protoc_insertion_point(field_mutable:chirp.server_gateway.MessageInjectRequest.game_id)
+  return _s;
+}
+inline const ::std::string& MessageInjectRequest::_internal_game_id() const {
+  ::google::protobuf::internal::TSanRead(&_impl_);
+  return _impl_.game_id_.Get();
+}
+inline void MessageInjectRequest::_internal_set_game_id(const ::std::string& value) {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_.game_id_.Set(value, GetArena());
+}
+inline ::std::string* PROTOBUF_NONNULL MessageInjectRequest::_internal_mutable_game_id() {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  return _impl_.game_id_.Mutable( GetArena());
+}
+inline ::std::string* PROTOBUF_NULLABLE MessageInjectRequest::release_game_id() {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  // @@protoc_insertion_point(field_release:chirp.server_gateway.MessageInjectRequest.game_id)
+  if (!CheckHasBit(_impl_._has_bits_[0], 0x00000020U)) {
+    return nullptr;
+  }
+  ClearHasBit(_impl_._has_bits_[0], 0x00000020U);
+  auto* released = _impl_.game_id_.Release();
+  if (::google::protobuf::internal::DebugHardenForceCopyDefaultString()) {
+    _impl_.game_id_.Set("", GetArena());
+  }
+  return released;
+}
+inline void MessageInjectRequest::set_allocated_game_id(::std::string* PROTOBUF_NULLABLE value) {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  if (value != nullptr) {
+    SetHasBit(_impl_._has_bits_[0], 0x00000020U);
+  } else {
+    ClearHasBit(_impl_._has_bits_[0], 0x00000020U);
+  }
+  _impl_.game_id_.SetAllocated(value, GetArena());
+  if (::google::protobuf::internal::DebugHardenForceCopyDefaultString() && _impl_.game_id_.IsDefault()) {
+    _impl_.game_id_.Set("", GetArena());
+  }
+  // @@protoc_insertion_point(field_set_allocated:chirp.server_gateway.MessageInjectRequest.game_id)
 }
 
 // -------------------------------------------------------------------

@@ -5,6 +5,7 @@
 #include <vector>
 
 #include "logger.h"
+#include "proto/chat.pb.h"
 
 namespace chirp::server_gateway {
 
@@ -68,6 +69,20 @@ MessageInjectResponse ServerGatewayHandlers::HandleInject(const MessageInjectReq
     resp.set_code(chirp::common::INVALID_PARAM);
     return resp;
   }
+  // WP-8 slice 3: a game-tagged injection fans out to the channel's
+  // subscribers instead of being forwarded as-is. The selector must be
+  // unambiguous — a channel fan-out or a 1:1 inject, never a mixture.
+  if (!req.game_id().empty()) {
+    if (req.channel_type() == static_cast<int32_t>(chirp::chat::PRIVATE)) {
+      resp.set_code(chirp::common::INVALID_PARAM);
+      return resp;
+    }
+    if (req.channel_id().empty()) {
+      resp.set_code(chirp::common::INVALID_PARAM);
+      return resp;
+    }
+    return FanoutInject(req);
+  }
 
   auto chat = registry_.Get(config_.chat_service_id);
   InjectMessageNotify notify;
@@ -82,6 +97,69 @@ MessageInjectResponse ServerGatewayHandlers::HandleInject(const MessageInjectReq
   chirp::common::Logger::Instance().Info(
       "inject " + req.inject_id() + " from=" + req.sender_id() + " to=" +
       req.receiver_id() + " delivered to " + config_.chat_service_id);
+  resp.set_code(chirp::common::OK);
+  return resp;
+}
+
+MessageInjectResponse ServerGatewayHandlers::FanoutInject(const MessageInjectRequest& req) const {
+  MessageInjectResponse resp;
+  resp.set_inject_id(req.inject_id());
+
+  // Snapshot under the registry lock; the chat writes below must not hold it.
+  const auto subscribers = subscriptions_.GetForChannel(req.game_id(), req.channel_id());
+  if (subscribers.empty()) {
+    // Nobody follows the channel: a semantic no-op. Answering SERVER_UNAVAILABLE
+    // here would make the stream broker replay a message no one wants forever.
+    resp.set_code(chirp::common::OK);
+    return resp;
+  }
+  if (subscribers.size() > config_.max_fanout_per_inject) {
+    chirp::common::Logger::Instance().Warn(
+        "inject " + req.inject_id() + ": fan-out to " +
+        std::to_string(subscribers.size()) + " subscribers of " + req.game_id() + ":" +
+        req.channel_id() + " exceeds --max_fanout, rejected");
+    resp.set_code(chirp::common::RATE_LIMITED);
+    return resp;
+  }
+
+  auto chat = registry_.Get(config_.chat_service_id);
+  if (!chat) {
+    resp.set_code(chirp::common::SERVER_UNAVAILABLE);
+    return resp;
+  }
+
+  // One private copy per subscriber; the chat service owns delivery from
+  // here (online push, offline queue, ack tracking). The original sender
+  // identity is preserved so the backend controls how copies group into
+  // history threads; the original channel_id is dropped because chat keys
+  // private history by the canonical sender|receiver pair anyway.
+  size_t failed = 0;
+  for (const auto& sub : subscribers) {
+    MessageInjectRequest copy = req;
+    copy.set_channel_type(static_cast<int32_t>(chirp::chat::PRIVATE));
+    copy.set_receiver_id(sub.player_id());
+    copy.set_channel_id("");
+    copy.set_inject_id(req.inject_id() + "#" + sub.player_id());
+    InjectMessageNotify notify;
+    *notify.mutable_message() = copy;
+    if (!chat->Send(chirp::gateway::INJECT_MESSAGE_NOTIFY, notify)) {
+      ++failed;
+      chirp::common::Logger::Instance().Warn(
+          "inject " + req.inject_id() + ": fan-out copy for " + sub.player_id() +
+          " could not be handed to " + config_.chat_service_id);
+    }
+  }
+  if (failed == subscribers.size()) {
+    // Nothing was stored anywhere, so a replay (stream broker) is safe.
+    resp.set_code(chirp::common::SERVER_UNAVAILABLE);
+    return resp;
+  }
+  // Partial success answers OK: retrying would re-deliver to the players
+  // already served. "OK = accepted by the plane", not delivered-to-player.
+  chirp::common::Logger::Instance().Info(
+      "inject " + req.inject_id() + ": fanned out to " +
+      std::to_string(subscribers.size() - failed) + "/" + std::to_string(subscribers.size()) +
+      " subscribers of " + req.game_id() + ":" + req.channel_id());
   resp.set_code(chirp::common::OK);
   return resp;
 }

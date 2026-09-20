@@ -70,6 +70,9 @@ bool ParseInjectEnvelope(const std::vector<std::string>& flat, StreamInjectEnvel
   out->req.set_channel_id(get("channel_id"));
   out->req.set_receiver_id(get("receiver_id"));
   out->req.set_content(get("content"));
+  // Fan-in game context (WP-8 slice 3); absent on legacy entries, which
+  // keeps their direct-injection semantics.
+  out->req.set_game_id(get("game_id"));
   out->service_id = get("service_id");
   out->reply_to = get("reply_to");
   return true;

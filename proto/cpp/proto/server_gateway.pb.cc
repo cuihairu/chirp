@@ -497,6 +497,9 @@ inline constexpr MessageInjectRequest::Impl_::Impl_(
         content_(
             &::google::protobuf::internal::fixed_address_empty_string,
             ::_pbi::ConstantInitialized()),
+        game_id_(
+            &::google::protobuf::internal::fixed_address_empty_string,
+            ::_pbi::ConstantInitialized()),
         sender_kind_{static_cast< ::chirp::server_gateway::SenderKind >(0)},
         channel_type_{0} {}
 
@@ -907,7 +910,7 @@ const ::uint32_t
         0,
         0x081, // bitmap
         PROTOBUF_FIELD_OFFSET(::chirp::server_gateway::MessageInjectRequest, _impl_._has_bits_),
-        10, // hasbit index offset
+        11, // hasbit index offset
         PROTOBUF_FIELD_OFFSET(::chirp::server_gateway::MessageInjectRequest, _impl_.inject_id_),
         PROTOBUF_FIELD_OFFSET(::chirp::server_gateway::MessageInjectRequest, _impl_.sender_kind_),
         PROTOBUF_FIELD_OFFSET(::chirp::server_gateway::MessageInjectRequest, _impl_.sender_id_),
@@ -915,13 +918,15 @@ const ::uint32_t
         PROTOBUF_FIELD_OFFSET(::chirp::server_gateway::MessageInjectRequest, _impl_.channel_id_),
         PROTOBUF_FIELD_OFFSET(::chirp::server_gateway::MessageInjectRequest, _impl_.receiver_id_),
         PROTOBUF_FIELD_OFFSET(::chirp::server_gateway::MessageInjectRequest, _impl_.content_),
+        PROTOBUF_FIELD_OFFSET(::chirp::server_gateway::MessageInjectRequest, _impl_.game_id_),
         0,
-        5,
-        1,
         6,
+        1,
+        7,
         2,
         3,
         4,
+        5,
         0x081, // bitmap
         PROTOBUF_FIELD_OFFSET(::chirp::server_gateway::MessageInjectResponse, _impl_._has_bits_),
         5, // hasbit index offset
@@ -1122,29 +1127,29 @@ static const ::_pbi::MigrationSchema
         {18, sizeof(::chirp::server_gateway::ServerHeartbeatPing)},
         {23, sizeof(::chirp::server_gateway::ServerHeartbeatPong)},
         {28, sizeof(::chirp::server_gateway::MessageInjectRequest)},
-        {45, sizeof(::chirp::server_gateway::MessageInjectResponse)},
-        {52, sizeof(::chirp::server_gateway::InjectMessageNotify)},
-        {57, sizeof(::chirp::server_gateway::EventPublishRequest)},
-        {68, sizeof(::chirp::server_gateway::EventPublishResponse)},
-        {77, sizeof(::chirp::server_gateway::EventDeliverNotify)},
-        {90, sizeof(::chirp::server_gateway::EventAckRequest)},
-        {95, sizeof(::chirp::server_gateway::EventAckResponse)},
-        {100, sizeof(::chirp::server_gateway::StoredIdentityBinding)},
-        {113, sizeof(::chirp::server_gateway::BindPlayerIdentityRequest)},
-        {124, sizeof(::chirp::server_gateway::BindPlayerIdentityResponse)},
-        {133, sizeof(::chirp::server_gateway::UnbindPlayerIdentityRequest)},
-        {142, sizeof(::chirp::server_gateway::UnbindPlayerIdentityResponse)},
-        {147, sizeof(::chirp::server_gateway::GetPlayerIdentitiesRequest)},
-        {152, sizeof(::chirp::server_gateway::GetPlayerIdentitiesResponse)},
-        {159, sizeof(::chirp::server_gateway::ResolveGameUserRequest)},
-        {166, sizeof(::chirp::server_gateway::ResolveGameUserResponse)},
-        {173, sizeof(::chirp::server_gateway::StoredChannelSubscription)},
-        {186, sizeof(::chirp::server_gateway::SubscribePlayerChannelRequest)},
-        {197, sizeof(::chirp::server_gateway::SubscribePlayerChannelResponse)},
-        {206, sizeof(::chirp::server_gateway::UnsubscribePlayerChannelRequest)},
-        {217, sizeof(::chirp::server_gateway::UnsubscribePlayerChannelResponse)},
-        {222, sizeof(::chirp::server_gateway::GetPlayerSubscriptionsRequest)},
-        {229, sizeof(::chirp::server_gateway::GetPlayerSubscriptionsResponse)},
+        {47, sizeof(::chirp::server_gateway::MessageInjectResponse)},
+        {54, sizeof(::chirp::server_gateway::InjectMessageNotify)},
+        {59, sizeof(::chirp::server_gateway::EventPublishRequest)},
+        {70, sizeof(::chirp::server_gateway::EventPublishResponse)},
+        {79, sizeof(::chirp::server_gateway::EventDeliverNotify)},
+        {92, sizeof(::chirp::server_gateway::EventAckRequest)},
+        {97, sizeof(::chirp::server_gateway::EventAckResponse)},
+        {102, sizeof(::chirp::server_gateway::StoredIdentityBinding)},
+        {115, sizeof(::chirp::server_gateway::BindPlayerIdentityRequest)},
+        {126, sizeof(::chirp::server_gateway::BindPlayerIdentityResponse)},
+        {135, sizeof(::chirp::server_gateway::UnbindPlayerIdentityRequest)},
+        {144, sizeof(::chirp::server_gateway::UnbindPlayerIdentityResponse)},
+        {149, sizeof(::chirp::server_gateway::GetPlayerIdentitiesRequest)},
+        {154, sizeof(::chirp::server_gateway::GetPlayerIdentitiesResponse)},
+        {161, sizeof(::chirp::server_gateway::ResolveGameUserRequest)},
+        {168, sizeof(::chirp::server_gateway::ResolveGameUserResponse)},
+        {175, sizeof(::chirp::server_gateway::StoredChannelSubscription)},
+        {188, sizeof(::chirp::server_gateway::SubscribePlayerChannelRequest)},
+        {199, sizeof(::chirp::server_gateway::SubscribePlayerChannelResponse)},
+        {208, sizeof(::chirp::server_gateway::UnsubscribePlayerChannelRequest)},
+        {219, sizeof(::chirp::server_gateway::UnsubscribePlayerChannelResponse)},
+        {224, sizeof(::chirp::server_gateway::GetPlayerSubscriptionsRequest)},
+        {231, sizeof(::chirp::server_gateway::GetPlayerSubscriptionsResponse)},
 };
 static const ::_pb::Message* PROTOBUF_NONNULL const file_default_instances[] = {
     &::chirp::server_gateway::_ServerAuthRequest_default_instance_._instance,
@@ -1187,70 +1192,70 @@ const char descriptor_table_protodef_proto_2fserver_5fgateway_2eproto[] ABSL_ATT
     "\n\032heartbeat_interval_seconds\030\003 \001(\005\"-\n\023Se"
     "rverHeartbeatPing\022\026\n\016client_time_ms\030\001 \001("
     "\003\"-\n\023ServerHeartbeatPong\022\026\n\016server_time_"
-    "ms\030\001 \001(\003\"\303\001\n\024MessageInjectRequest\022\021\n\tinj"
+    "ms\030\001 \001(\003\"\324\001\n\024MessageInjectRequest\022\021\n\tinj"
     "ect_id\030\001 \001(\t\0225\n\013sender_kind\030\002 \001(\0162 .chir"
     "p.server_gateway.SenderKind\022\021\n\tsender_id"
     "\030\003 \001(\t\022\024\n\014channel_type\030\004 \001(\005\022\022\n\nchannel_"
     "id\030\005 \001(\t\022\023\n\013receiver_id\030\006 \001(\t\022\017\n\007content"
-    "\030\007 \001(\014\"Q\n\025MessageInjectResponse\022%\n\004code\030"
-    "\001 \001(\0162\027.chirp.common.ErrorCode\022\021\n\tinject"
-    "_id\030\002 \001(\t\"R\n\023InjectMessageNotify\022;\n\007mess"
-    "age\030\001 \001(\0132*.chirp.server_gateway.Message"
-    "InjectRequest\"g\n\023EventPublishRequest\022\020\n\010"
-    "event_id\030\001 \001(\t\022\031\n\021target_service_id\030\002 \001("
-    "\t\022\022\n\nevent_type\030\003 \001(\t\022\017\n\007payload\030\004 \001(\014\"_"
-    "\n\024EventPublishResponse\022%\n\004code\030\001 \001(\0162\027.c"
-    "hirp.common.ErrorCode\022\020\n\010event_id\030\002 \001(\t\022"
-    "\016\n\006queued\030\003 \001(\010\"u\n\022EventDeliverNotify\022\020\n"
-    "\010event_id\030\001 \001(\t\022\022\n\nevent_type\030\002 \001(\t\022\017\n\007p"
-    "ayload\030\003 \001(\014\022\027\n\017published_at_ms\030\004 \001(\003\022\017\n"
-    "\007attempt\030\005 \001(\005\"$\n\017EventAckRequest\022\021\n\teve"
-    "nt_ids\030\001 \003(\t\"9\n\020EventAckResponse\022%\n\004code"
-    "\030\001 \001(\0162\027.chirp.common.ErrorCode\"z\n\025Store"
-    "dIdentityBinding\022\022\n\nbinding_id\030\001 \001(\t\022\021\n\t"
-    "player_id\030\002 \001(\t\022\017\n\007game_id\030\003 \001(\t\022\024\n\014game"
-    "_user_id\030\004 \001(\t\022\023\n\013bound_at_ms\030\005 \001(\003\"i\n\031B"
-    "indPlayerIdentityRequest\022\022\n\nbinding_id\030\001"
-    " \001(\t\022\021\n\tplayer_id\030\002 \001(\t\022\017\n\007game_id\030\003 \001(\t"
-    "\022\024\n\014game_user_id\030\004 \001(\t\"h\n\032BindPlayerIden"
-    "tityResponse\022%\n\004code\030\001 \001(\0162\027.chirp.commo"
-    "n.ErrorCode\022\022\n\nbinding_id\030\002 \001(\t\022\017\n\007exist"
-    "ed\030\003 \001(\010\"X\n\033UnbindPlayerIdentityRequest\022"
-    "\022\n\nbinding_id\030\001 \001(\t\022\017\n\007game_id\030\002 \001(\t\022\024\n\014"
-    "game_user_id\030\003 \001(\t\"E\n\034UnbindPlayerIdenti"
-    "tyResponse\022%\n\004code\030\001 \001(\0162\027.chirp.common."
-    "ErrorCode\"/\n\032GetPlayerIdentitiesRequest\022"
-    "\021\n\tplayer_id\030\001 \001(\t\"\203\001\n\033GetPlayerIdentiti"
-    "esResponse\022%\n\004code\030\001 \001(\0162\027.chirp.common."
-    "ErrorCode\022=\n\010bindings\030\002 \003(\0132+.chirp.serv"
-    "er_gateway.StoredIdentityBinding\"\?\n\026Reso"
-    "lveGameUserRequest\022\017\n\007game_id\030\001 \001(\t\022\024\n\014g"
-    "ame_user_id\030\002 \001(\t\"S\n\027ResolveGameUserResp"
+    "\030\007 \001(\014\022\017\n\007game_id\030\010 \001(\t\"Q\n\025MessageInject"
+    "Response\022%\n\004code\030\001 \001(\0162\027.chirp.common.Er"
+    "rorCode\022\021\n\tinject_id\030\002 \001(\t\"R\n\023InjectMess"
+    "ageNotify\022;\n\007message\030\001 \001(\0132*.chirp.serve"
+    "r_gateway.MessageInjectRequest\"g\n\023EventP"
+    "ublishRequest\022\020\n\010event_id\030\001 \001(\t\022\031\n\021targe"
+    "t_service_id\030\002 \001(\t\022\022\n\nevent_type\030\003 \001(\t\022\017"
+    "\n\007payload\030\004 \001(\014\"_\n\024EventPublishResponse\022"
+    "%\n\004code\030\001 \001(\0162\027.chirp.common.ErrorCode\022\020"
+    "\n\010event_id\030\002 \001(\t\022\016\n\006queued\030\003 \001(\010\"u\n\022Even"
+    "tDeliverNotify\022\020\n\010event_id\030\001 \001(\t\022\022\n\neven"
+    "t_type\030\002 \001(\t\022\017\n\007payload\030\003 \001(\014\022\027\n\017publish"
+    "ed_at_ms\030\004 \001(\003\022\017\n\007attempt\030\005 \001(\005\"$\n\017Event"
+    "AckRequest\022\021\n\tevent_ids\030\001 \003(\t\"9\n\020EventAc"
+    "kResponse\022%\n\004code\030\001 \001(\0162\027.chirp.common.E"
+    "rrorCode\"z\n\025StoredIdentityBinding\022\022\n\nbin"
+    "ding_id\030\001 \001(\t\022\021\n\tplayer_id\030\002 \001(\t\022\017\n\007game"
+    "_id\030\003 \001(\t\022\024\n\014game_user_id\030\004 \001(\t\022\023\n\013bound"
+    "_at_ms\030\005 \001(\003\"i\n\031BindPlayerIdentityReques"
+    "t\022\022\n\nbinding_id\030\001 \001(\t\022\021\n\tplayer_id\030\002 \001(\t"
+    "\022\017\n\007game_id\030\003 \001(\t\022\024\n\014game_user_id\030\004 \001(\t\""
+    "h\n\032BindPlayerIdentityResponse\022%\n\004code\030\001 "
+    "\001(\0162\027.chirp.common.ErrorCode\022\022\n\nbinding_"
+    "id\030\002 \001(\t\022\017\n\007existed\030\003 \001(\010\"X\n\033UnbindPlaye"
+    "rIdentityRequest\022\022\n\nbinding_id\030\001 \001(\t\022\017\n\007"
+    "game_id\030\002 \001(\t\022\024\n\014game_user_id\030\003 \001(\t\"E\n\034U"
+    "nbindPlayerIdentityResponse\022%\n\004code\030\001 \001("
+    "\0162\027.chirp.common.ErrorCode\"/\n\032GetPlayerI"
+    "dentitiesRequest\022\021\n\tplayer_id\030\001 \001(\t\"\203\001\n\033"
+    "GetPlayerIdentitiesResponse\022%\n\004code\030\001 \001("
+    "\0162\027.chirp.common.ErrorCode\022=\n\010bindings\030\002"
+    " \003(\0132+.chirp.server_gateway.StoredIdenti"
+    "tyBinding\"\?\n\026ResolveGameUserRequest\022\017\n\007g"
+    "ame_id\030\001 \001(\t\022\024\n\014game_user_id\030\002 \001(\t\"S\n\027Re"
+    "solveGameUserResponse\022%\n\004code\030\001 \001(\0162\027.ch"
+    "irp.common.ErrorCode\022\021\n\tplayer_id\030\002 \001(\t\""
+    "\206\001\n\031StoredChannelSubscription\022\027\n\017subscri"
+    "ption_id\030\001 \001(\t\022\021\n\tplayer_id\030\002 \001(\t\022\017\n\007gam"
+    "e_id\030\003 \001(\t\022\022\n\nchannel_id\030\004 \001(\t\022\030\n\020subscr"
+    "ibed_at_ms\030\005 \001(\003\"p\n\035SubscribePlayerChann"
+    "elRequest\022\027\n\017subscription_id\030\001 \001(\t\022\021\n\tpl"
+    "ayer_id\030\002 \001(\t\022\017\n\007game_id\030\003 \001(\t\022\022\n\nchanne"
+    "l_id\030\004 \001(\t\"q\n\036SubscribePlayerChannelResp"
     "onse\022%\n\004code\030\001 \001(\0162\027.chirp.common.ErrorC"
-    "ode\022\021\n\tplayer_id\030\002 \001(\t\"\206\001\n\031StoredChannel"
-    "Subscription\022\027\n\017subscription_id\030\001 \001(\t\022\021\n"
-    "\tplayer_id\030\002 \001(\t\022\017\n\007game_id\030\003 \001(\t\022\022\n\ncha"
-    "nnel_id\030\004 \001(\t\022\030\n\020subscribed_at_ms\030\005 \001(\003\""
-    "p\n\035SubscribePlayerChannelRequest\022\027\n\017subs"
-    "cription_id\030\001 \001(\t\022\021\n\tplayer_id\030\002 \001(\t\022\017\n\007"
-    "game_id\030\003 \001(\t\022\022\n\nchannel_id\030\004 \001(\t\"q\n\036Sub"
-    "scribePlayerChannelResponse\022%\n\004code\030\001 \001("
-    "\0162\027.chirp.common.ErrorCode\022\027\n\017subscripti"
-    "on_id\030\002 \001(\t\022\017\n\007existed\030\003 \001(\010\"r\n\037Unsubscr"
-    "ibePlayerChannelRequest\022\027\n\017subscription_"
-    "id\030\001 \001(\t\022\021\n\tplayer_id\030\002 \001(\t\022\017\n\007game_id\030\003"
-    " \001(\t\022\022\n\nchannel_id\030\004 \001(\t\"I\n UnsubscribeP"
-    "layerChannelResponse\022%\n\004code\030\001 \001(\0162\027.chi"
-    "rp.common.ErrorCode\"C\n\035GetPlayerSubscrip"
-    "tionsRequest\022\021\n\tplayer_id\030\001 \001(\t\022\017\n\007game_"
-    "id\030\002 \001(\t\"\217\001\n\036GetPlayerSubscriptionsRespo"
-    "nse\022%\n\004code\030\001 \001(\0162\027.chirp.common.ErrorCo"
-    "de\022F\n\rsubscriptions\030\002 \003(\0132/.chirp.server"
-    "_gateway.StoredChannelSubscription*W\n\nSe"
-    "nderKind\022\022\n\016SENDER_UNKNOWN\020\000\022\021\n\rSENDER_S"
-    "YSTEM\020\001\022\016\n\nSENDER_NPC\020\002\022\022\n\016SENDER_SERVIC"
-    "E\020\003B.Z,github.com/cui/chirp/proto/go/ser"
-    "ver_gatewayb\006proto3"
+    "ode\022\027\n\017subscription_id\030\002 \001(\t\022\017\n\007existed\030"
+    "\003 \001(\010\"r\n\037UnsubscribePlayerChannelRequest"
+    "\022\027\n\017subscription_id\030\001 \001(\t\022\021\n\tplayer_id\030\002"
+    " \001(\t\022\017\n\007game_id\030\003 \001(\t\022\022\n\nchannel_id\030\004 \001("
+    "\t\"I\n UnsubscribePlayerChannelResponse\022%\n"
+    "\004code\030\001 \001(\0162\027.chirp.common.ErrorCode\"C\n\035"
+    "GetPlayerSubscriptionsRequest\022\021\n\tplayer_"
+    "id\030\001 \001(\t\022\017\n\007game_id\030\002 \001(\t\"\217\001\n\036GetPlayerS"
+    "ubscriptionsResponse\022%\n\004code\030\001 \001(\0162\027.chi"
+    "rp.common.ErrorCode\022F\n\rsubscriptions\030\002 \003"
+    "(\0132/.chirp.server_gateway.StoredChannelS"
+    "ubscription*W\n\nSenderKind\022\022\n\016SENDER_UNKN"
+    "OWN\020\000\022\021\n\rSENDER_SYSTEM\020\001\022\016\n\nSENDER_NPC\020\002"
+    "\022\022\n\016SENDER_SERVICE\020\003B.Z,github.com/cui/c"
+    "hirp/proto/go/server_gatewayb\006proto3"
 };
 static const ::_pbi::DescriptorTable* PROTOBUF_NONNULL const
     descriptor_table_proto_2fserver_5fgateway_2eproto_deps[1] = {
@@ -1260,7 +1265,7 @@ static ::absl::once_flag descriptor_table_proto_2fserver_5fgateway_2eproto_once;
 PROTOBUF_CONSTINIT const ::_pbi::DescriptorTable descriptor_table_proto_2fserver_5fgateway_2eproto = {
     false,
     false,
-    2899,
+    2916,
     descriptor_table_protodef_proto_2fserver_5fgateway_2eproto,
     "proto/server_gateway.proto",
     &descriptor_table_proto_2fserver_5fgateway_2eproto_once,
@@ -2479,7 +2484,8 @@ PROTOBUF_NDEBUG_INLINE MessageInjectRequest::Impl_::Impl_(
         sender_id_(arena, from.sender_id_),
         channel_id_(arena, from.channel_id_),
         receiver_id_(arena, from.receiver_id_),
-        content_(arena, from.content_) {}
+        content_(arena, from.content_),
+        game_id_(arena, from.game_id_) {}
 
 MessageInjectRequest::MessageInjectRequest(
     ::google::protobuf::Arena* PROTOBUF_NULLABLE arena,
@@ -2512,7 +2518,8 @@ PROTOBUF_NDEBUG_INLINE MessageInjectRequest::Impl_::Impl_(
         sender_id_(arena),
         channel_id_(arena),
         receiver_id_(arena),
-        content_(arena) {}
+        content_(arena),
+        game_id_(arena) {}
 
 inline void MessageInjectRequest::SharedCtor(::_pb::Arena* PROTOBUF_NULLABLE arena) {
   new (&_impl_) Impl_(internal_visibility(), arena);
@@ -2539,6 +2546,7 @@ inline void MessageInjectRequest::SharedDtor(MessageLite& self) {
   this_._impl_.channel_id_.Destroy();
   this_._impl_.receiver_id_.Destroy();
   this_._impl_.content_.Destroy();
+  this_._impl_.game_id_.Destroy();
   this_._impl_.~Impl_();
 }
 
@@ -2585,16 +2593,16 @@ MessageInjectRequest::GetClassData() const {
   return MessageInjectRequest_class_data_.base();
 }
 PROTOBUF_CONSTINIT PROTOBUF_ATTRIBUTE_INIT_PRIORITY1
-const ::_pbi::TcParseTable<3, 7, 0, 89, 2>
+const ::_pbi::TcParseTable<3, 8, 0, 104, 2>
 MessageInjectRequest::_table_ = {
   {
     PROTOBUF_FIELD_OFFSET(MessageInjectRequest, _impl_._has_bits_),
     0, // no _extensions_
-    7, 56,  // max_field_number, fast_idx_mask
+    8, 56,  // max_field_number, fast_idx_mask
     offsetof(decltype(_table_), field_lookup_table),
-    4294967168,  // skipmap
+    4294967040,  // skipmap
     offsetof(decltype(_table_), field_entries),
-    7,  // num_field_entries
+    8,  // num_field_entries
     0,  // num_aux_entries
     offsetof(decltype(_table_), field_names),  // no aux_entries
     MessageInjectRequest_class_data_.base(),
@@ -2604,22 +2612,25 @@ MessageInjectRequest::_table_ = {
     ::_pbi::TcParser::GetTable<::chirp::server_gateway::MessageInjectRequest>(),  // to_prefetch
     #endif  // PROTOBUF_PREFETCH_PARSE_TABLE
   }, {{
-    {::_pbi::TcParser::MiniParse, {}},
+    // string game_id = 8;
+    {::_pbi::TcParser::FastUS1,
+     {66, 5, 0,
+      PROTOBUF_FIELD_OFFSET(MessageInjectRequest, _impl_.game_id_)}},
     // string inject_id = 1;
     {::_pbi::TcParser::FastUS1,
      {10, 0, 0,
       PROTOBUF_FIELD_OFFSET(MessageInjectRequest, _impl_.inject_id_)}},
     // .chirp.server_gateway.SenderKind sender_kind = 2;
-    {::_pbi::TcParser::SingularVarintNoZag1<::uint32_t, offsetof(MessageInjectRequest, _impl_.sender_kind_), 5>(),
-     {16, 5, 0,
+    {::_pbi::TcParser::SingularVarintNoZag1<::uint32_t, offsetof(MessageInjectRequest, _impl_.sender_kind_), 6>(),
+     {16, 6, 0,
       PROTOBUF_FIELD_OFFSET(MessageInjectRequest, _impl_.sender_kind_)}},
     // string sender_id = 3;
     {::_pbi::TcParser::FastUS1,
      {26, 1, 0,
       PROTOBUF_FIELD_OFFSET(MessageInjectRequest, _impl_.sender_id_)}},
     // int32 channel_type = 4;
-    {::_pbi::TcParser::SingularVarintNoZag1<::uint32_t, offsetof(MessageInjectRequest, _impl_.channel_type_), 6>(),
-     {32, 6, 0,
+    {::_pbi::TcParser::SingularVarintNoZag1<::uint32_t, offsetof(MessageInjectRequest, _impl_.channel_type_), 7>(),
+     {32, 7, 0,
       PROTOBUF_FIELD_OFFSET(MessageInjectRequest, _impl_.channel_type_)}},
     // string channel_id = 5;
     {::_pbi::TcParser::FastUS1,
@@ -2639,26 +2650,29 @@ MessageInjectRequest::_table_ = {
     // string inject_id = 1;
     {PROTOBUF_FIELD_OFFSET(MessageInjectRequest, _impl_.inject_id_), _Internal::kHasBitsOffset + 0, 0, (0 | ::_fl::kFcOptional | ::_fl::kUtf8String | ::_fl::kRepAString)},
     // .chirp.server_gateway.SenderKind sender_kind = 2;
-    {PROTOBUF_FIELD_OFFSET(MessageInjectRequest, _impl_.sender_kind_), _Internal::kHasBitsOffset + 5, 0, (0 | ::_fl::kFcOptional | ::_fl::kOpenEnum)},
+    {PROTOBUF_FIELD_OFFSET(MessageInjectRequest, _impl_.sender_kind_), _Internal::kHasBitsOffset + 6, 0, (0 | ::_fl::kFcOptional | ::_fl::kOpenEnum)},
     // string sender_id = 3;
     {PROTOBUF_FIELD_OFFSET(MessageInjectRequest, _impl_.sender_id_), _Internal::kHasBitsOffset + 1, 0, (0 | ::_fl::kFcOptional | ::_fl::kUtf8String | ::_fl::kRepAString)},
     // int32 channel_type = 4;
-    {PROTOBUF_FIELD_OFFSET(MessageInjectRequest, _impl_.channel_type_), _Internal::kHasBitsOffset + 6, 0, (0 | ::_fl::kFcOptional | ::_fl::kInt32)},
+    {PROTOBUF_FIELD_OFFSET(MessageInjectRequest, _impl_.channel_type_), _Internal::kHasBitsOffset + 7, 0, (0 | ::_fl::kFcOptional | ::_fl::kInt32)},
     // string channel_id = 5;
     {PROTOBUF_FIELD_OFFSET(MessageInjectRequest, _impl_.channel_id_), _Internal::kHasBitsOffset + 2, 0, (0 | ::_fl::kFcOptional | ::_fl::kUtf8String | ::_fl::kRepAString)},
     // string receiver_id = 6;
     {PROTOBUF_FIELD_OFFSET(MessageInjectRequest, _impl_.receiver_id_), _Internal::kHasBitsOffset + 3, 0, (0 | ::_fl::kFcOptional | ::_fl::kUtf8String | ::_fl::kRepAString)},
     // bytes content = 7;
     {PROTOBUF_FIELD_OFFSET(MessageInjectRequest, _impl_.content_), _Internal::kHasBitsOffset + 4, 0, (0 | ::_fl::kFcOptional | ::_fl::kBytes | ::_fl::kRepAString)},
+    // string game_id = 8;
+    {PROTOBUF_FIELD_OFFSET(MessageInjectRequest, _impl_.game_id_), _Internal::kHasBitsOffset + 5, 0, (0 | ::_fl::kFcOptional | ::_fl::kUtf8String | ::_fl::kRepAString)},
   }},
   // no aux_entries
   {{
-    "\51\11\0\11\0\12\13\0"
+    "\51\11\0\11\0\12\13\0\7\0\0\0\0\0\0\0"
     "chirp.server_gateway.MessageInjectRequest"
     "inject_id"
     "sender_id"
     "channel_id"
     "receiver_id"
+    "game_id"
   }},
 };
 PROTOBUF_NOINLINE void MessageInjectRequest::Clear() {
@@ -2669,7 +2683,7 @@ PROTOBUF_NOINLINE void MessageInjectRequest::Clear() {
   (void) cached_has_bits;
 
   cached_has_bits = _impl_._has_bits_[0];
-  if (BatchCheckHasBit(cached_has_bits, 0x0000001fU)) {
+  if (BatchCheckHasBit(cached_has_bits, 0x0000003fU)) {
     if (CheckHasBit(cached_has_bits, 0x00000001U)) {
       _impl_.inject_id_.ClearNonDefaultToEmpty();
     }
@@ -2685,8 +2699,11 @@ PROTOBUF_NOINLINE void MessageInjectRequest::Clear() {
     if (CheckHasBit(cached_has_bits, 0x00000010U)) {
       _impl_.content_.ClearNonDefaultToEmpty();
     }
+    if (CheckHasBit(cached_has_bits, 0x00000020U)) {
+      _impl_.game_id_.ClearNonDefaultToEmpty();
+    }
   }
-  if (BatchCheckHasBit(cached_has_bits, 0x00000060U)) {
+  if (BatchCheckHasBit(cached_has_bits, 0x000000c0U)) {
     ::memset(&_impl_.sender_kind_, 0, static_cast<::size_t>(
         reinterpret_cast<char*>(&_impl_.channel_type_) -
         reinterpret_cast<char*>(&_impl_.sender_kind_)) + sizeof(_impl_.channel_type_));
@@ -2725,7 +2742,7 @@ PROTOBUF_NOINLINE void MessageInjectRequest::Clear() {
   }
 
   // .chirp.server_gateway.SenderKind sender_kind = 2;
-  if (CheckHasBit(cached_has_bits, 0x00000020U)) {
+  if (CheckHasBit(cached_has_bits, 0x00000040U)) {
     if (this_._internal_sender_kind() != 0) {
       target = stream->EnsureSpace(target);
       target = ::_pbi::WireFormatLite::WriteEnumToArray(
@@ -2744,7 +2761,7 @@ PROTOBUF_NOINLINE void MessageInjectRequest::Clear() {
   }
 
   // int32 channel_type = 4;
-  if (CheckHasBit(cached_has_bits, 0x00000040U)) {
+  if (CheckHasBit(cached_has_bits, 0x00000080U)) {
     if (this_._internal_channel_type() != 0) {
       target =
           ::google::protobuf::internal::WireFormatLite::WriteInt32ToArrayWithField<4>(
@@ -2780,6 +2797,16 @@ PROTOBUF_NOINLINE void MessageInjectRequest::Clear() {
     }
   }
 
+  // string game_id = 8;
+  if (CheckHasBit(cached_has_bits, 0x00000020U)) {
+    if (!this_._internal_game_id().empty()) {
+      const ::std::string& _s = this_._internal_game_id();
+      ::google::protobuf::internal::WireFormatLite::VerifyUtf8String(
+          _s.data(), static_cast<int>(_s.length()), ::google::protobuf::internal::WireFormatLite::SERIALIZE, "chirp.server_gateway.MessageInjectRequest.game_id");
+      target = stream->WriteStringMaybeAliased(8, _s, target);
+    }
+  }
+
   if (ABSL_PREDICT_FALSE(this_._internal_metadata_.have_unknown_fields())) {
     target =
         ::_pbi::WireFormat::InternalSerializeUnknownFieldsToArray(
@@ -2805,7 +2832,7 @@ PROTOBUF_NOINLINE void MessageInjectRequest::Clear() {
 
   ::_pbi::Prefetch5LinesFrom7Lines(&this_);
   cached_has_bits = this_._impl_._has_bits_[0];
-  if (BatchCheckHasBit(cached_has_bits, 0x0000007fU)) {
+  if (BatchCheckHasBit(cached_has_bits, 0x000000ffU)) {
     // string inject_id = 1;
     if (CheckHasBit(cached_has_bits, 0x00000001U)) {
       if (!this_._internal_inject_id().empty()) {
@@ -2841,15 +2868,22 @@ PROTOBUF_NOINLINE void MessageInjectRequest::Clear() {
                                         this_._internal_content());
       }
     }
-    // .chirp.server_gateway.SenderKind sender_kind = 2;
+    // string game_id = 8;
     if (CheckHasBit(cached_has_bits, 0x00000020U)) {
+      if (!this_._internal_game_id().empty()) {
+        total_size += 1 + ::google::protobuf::internal::WireFormatLite::StringSize(
+                                        this_._internal_game_id());
+      }
+    }
+    // .chirp.server_gateway.SenderKind sender_kind = 2;
+    if (CheckHasBit(cached_has_bits, 0x00000040U)) {
       if (this_._internal_sender_kind() != 0) {
         total_size += 1 +
                       ::_pbi::WireFormatLite::EnumSize(this_._internal_sender_kind());
       }
     }
     // int32 channel_type = 4;
-    if (CheckHasBit(cached_has_bits, 0x00000040U)) {
+    if (CheckHasBit(cached_has_bits, 0x00000080U)) {
       if (this_._internal_channel_type() != 0) {
         total_size += ::_pbi::WireFormatLite::Int32SizePlusOne(
             this_._internal_channel_type());
@@ -2874,7 +2908,7 @@ void MessageInjectRequest::MergeImpl(::google::protobuf::MessageLite& to_msg,
   (void)cached_has_bits;
 
   cached_has_bits = from._impl_._has_bits_[0];
-  if (BatchCheckHasBit(cached_has_bits, 0x0000007fU)) {
+  if (BatchCheckHasBit(cached_has_bits, 0x000000ffU)) {
     if (CheckHasBit(cached_has_bits, 0x00000001U)) {
       if (!from._internal_inject_id().empty()) {
         _this->_internal_set_inject_id(from._internal_inject_id());
@@ -2921,11 +2955,20 @@ void MessageInjectRequest::MergeImpl(::google::protobuf::MessageLite& to_msg,
       }
     }
     if (CheckHasBit(cached_has_bits, 0x00000020U)) {
+      if (!from._internal_game_id().empty()) {
+        _this->_internal_set_game_id(from._internal_game_id());
+      } else {
+        if (_this->_impl_.game_id_.IsDefault()) {
+          _this->_internal_set_game_id("");
+        }
+      }
+    }
+    if (CheckHasBit(cached_has_bits, 0x00000040U)) {
       if (from._internal_sender_kind() != 0) {
         _this->_impl_.sender_kind_ = from._impl_.sender_kind_;
       }
     }
-    if (CheckHasBit(cached_has_bits, 0x00000040U)) {
+    if (CheckHasBit(cached_has_bits, 0x00000080U)) {
       if (from._internal_channel_type() != 0) {
         _this->_impl_.channel_type_ = from._impl_.channel_type_;
       }
@@ -2955,6 +2998,7 @@ void MessageInjectRequest::InternalSwap(MessageInjectRequest* PROTOBUF_RESTRICT 
   ::_pbi::ArenaStringPtr::InternalSwap(&_impl_.channel_id_, &other->_impl_.channel_id_, arena);
   ::_pbi::ArenaStringPtr::InternalSwap(&_impl_.receiver_id_, &other->_impl_.receiver_id_, arena);
   ::_pbi::ArenaStringPtr::InternalSwap(&_impl_.content_, &other->_impl_.content_, arena);
+  ::_pbi::ArenaStringPtr::InternalSwap(&_impl_.game_id_, &other->_impl_.game_id_, arena);
   ::google::protobuf::internal::memswap<
       PROTOBUF_FIELD_OFFSET(MessageInjectRequest, _impl_.channel_type_)
       + sizeof(MessageInjectRequest::_impl_.channel_type_)

@@ -289,14 +289,21 @@ func (x *ServerHeartbeatPong) GetServerTimeMs() int64 {
 // Uplink: a trusted service asks chirp to deliver a message whose sender is
 // not a user. Routed to the chat service, which owns storage and delivery.
 type MessageInjectRequest struct {
-	state         protoimpl.MessageState `protogen:"open.v1"`
-	InjectId      string                 `protobuf:"bytes,1,opt,name=inject_id,json=injectId,proto3" json:"inject_id,omitempty"` // caller-supplied idempotency key
-	SenderKind    SenderKind             `protobuf:"varint,2,opt,name=sender_kind,json=senderKind,proto3,enum=chirp.server_gateway.SenderKind" json:"sender_kind,omitempty"`
-	SenderId      string                 `protobuf:"bytes,3,opt,name=sender_id,json=senderId,proto3" json:"sender_id,omitempty"` // e.g. "npc:blacksmith_01", "system", "trade"
-	ChannelType   int32                  `protobuf:"varint,4,opt,name=channel_type,json=channelType,proto3" json:"channel_type,omitempty"`
-	ChannelId     string                 `protobuf:"bytes,5,opt,name=channel_id,json=channelId,proto3" json:"channel_id,omitempty"`    // set for channel injections
-	ReceiverId    string                 `protobuf:"bytes,6,opt,name=receiver_id,json=receiverId,proto3" json:"receiver_id,omitempty"` // set for 1:1 injections
-	Content       []byte                 `protobuf:"bytes,7,opt,name=content,proto3" json:"content,omitempty"`
+	state       protoimpl.MessageState `protogen:"open.v1"`
+	InjectId    string                 `protobuf:"bytes,1,opt,name=inject_id,json=injectId,proto3" json:"inject_id,omitempty"` // caller-supplied idempotency key
+	SenderKind  SenderKind             `protobuf:"varint,2,opt,name=sender_kind,json=senderKind,proto3,enum=chirp.server_gateway.SenderKind" json:"sender_kind,omitempty"`
+	SenderId    string                 `protobuf:"bytes,3,opt,name=sender_id,json=senderId,proto3" json:"sender_id,omitempty"` // e.g. "npc:blacksmith_01", "system", "trade"
+	ChannelType int32                  `protobuf:"varint,4,opt,name=channel_type,json=channelType,proto3" json:"channel_type,omitempty"`
+	ChannelId   string                 `protobuf:"bytes,5,opt,name=channel_id,json=channelId,proto3" json:"channel_id,omitempty"`    // set for channel injections
+	ReceiverId  string                 `protobuf:"bytes,6,opt,name=receiver_id,json=receiverId,proto3" json:"receiver_id,omitempty"` // set for 1:1 injections
+	Content     []byte                 `protobuf:"bytes,7,opt,name=content,proto3" json:"content,omitempty"`
+	// WP-8 slice 3 (fan-in): set together with a non-PRIVATE channel_type to
+	// fan the message out to every subscriber of (game_id, channel_id) as one
+	// SENDER_SERVICE private copy per subscriber (receiver_id = player_id).
+	// Empty keeps the direct injection semantics. Carrying game_id with
+	// channel_type PRIVATE is rejected (INVALID_PARAM): either a channel
+	// fan-out or a 1:1 inject, never an ambiguous both.
+	GameId        string `protobuf:"bytes,8,opt,name=game_id,json=gameId,proto3" json:"game_id,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -378,6 +385,13 @@ func (x *MessageInjectRequest) GetContent() []byte {
 		return x.Content
 	}
 	return nil
+}
+
+func (x *MessageInjectRequest) GetGameId() string {
+	if x != nil {
+		return x.GameId
+	}
+	return ""
 }
 
 type MessageInjectResponse struct {
@@ -1735,7 +1749,7 @@ const file_proto_server_gateway_proto_rawDesc = "" +
 	"\x13ServerHeartbeatPing\x12$\n" +
 	"\x0eclient_time_ms\x18\x01 \x01(\x03R\fclientTimeMs\";\n" +
 	"\x13ServerHeartbeatPong\x12$\n" +
-	"\x0eserver_time_ms\x18\x01 \x01(\x03R\fserverTimeMs\"\x90\x02\n" +
+	"\x0eserver_time_ms\x18\x01 \x01(\x03R\fserverTimeMs\"\xa9\x02\n" +
 	"\x14MessageInjectRequest\x12\x1b\n" +
 	"\tinject_id\x18\x01 \x01(\tR\binjectId\x12A\n" +
 	"\vsender_kind\x18\x02 \x01(\x0e2 .chirp.server_gateway.SenderKindR\n" +
@@ -1746,7 +1760,8 @@ const file_proto_server_gateway_proto_rawDesc = "" +
 	"channel_id\x18\x05 \x01(\tR\tchannelId\x12\x1f\n" +
 	"\vreceiver_id\x18\x06 \x01(\tR\n" +
 	"receiverId\x12\x18\n" +
-	"\acontent\x18\a \x01(\fR\acontent\"a\n" +
+	"\acontent\x18\a \x01(\fR\acontent\x12\x17\n" +
+	"\agame_id\x18\b \x01(\tR\x06gameId\"a\n" +
 	"\x15MessageInjectResponse\x12+\n" +
 	"\x04code\x18\x01 \x01(\x0e2\x17.chirp.common.ErrorCodeR\x04code\x12\x1b\n" +
 	"\tinject_id\x18\x02 \x01(\tR\binjectId\"[\n" +

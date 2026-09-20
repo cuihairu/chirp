@@ -37,6 +37,11 @@ class RecordingPeer : public sg::PeerSender {
     if (!send_ok) {
       return false;
     }
+    // Partial-failure switch for fan-out tests: after this many successful
+    // sends, every further send fails. Negative = never trips.
+    if (fail_after >= 0 && static_cast<int>(sent.size()) >= fail_after) {
+      return false;
+    }
     sent.push_back({msg_id, body.SerializeAsString()});
     return true;
   }
@@ -67,6 +72,7 @@ class RecordingPeer : public sg::PeerSender {
 
   std::vector<SentFrame> sent;
   bool send_ok = true;
+  int fail_after = -1;
 };
 
 sg::EventPublishRequest MakePublishRequest(const std::string& target,
@@ -103,6 +109,14 @@ class ServerGatewayTest : public ::testing::Test {
     req.set_secret(service_id + "-secret");
     req.set_protocol_version(1);
     return handlers_->HandleAuth(req, peer);
+  }
+
+  // Records a subscription directly in the fixture registry (fan-out tests).
+  void SubscribeAs(const std::string& id, const std::string& player, const std::string& game,
+                   const std::string& channel) {
+    std::string subscription_id = id;
+    ASSERT_EQ(subscriptions_.Subscribe(&subscription_id, player, game, channel, 1000),
+              sg::SubscriptionRegistry::SubscribeOutcome::kSubscribed);
   }
 
   sg::EventPublishResponse Publish(const std::string& target, const std::string& event_type,
@@ -419,6 +433,129 @@ TEST_F(ServerGatewayTest, InjectFailsWhenChatWriteFails) {
   const auto chat = AuthAs("chat");
   chat->send_ok = false;
   EXPECT_EQ(handlers_->HandleInject(ValidInject()).code(), SERVER_UNAVAILABLE);
+}
+
+// --- fan-in fan-out (WP-8 slice 3) ---
+
+sg::MessageInjectRequest FanoutInject(const std::string& game_id, const std::string& channel_id) {
+  auto req = ValidInject();
+  req.set_sender_kind(chirp::server_gateway::SENDER_SERVICE);
+  req.set_game_id(game_id);
+  req.set_channel_id(channel_id);
+  return req;
+}
+
+TEST_F(ServerGatewayTest, InjectFanoutSendsPrivateCopyPerSubscriber) {
+  SubscribeAs("s1", "player-1", "game-a", "world-1");
+  SubscribeAs("s2", "player-2", "game-a", "world-1");
+  const auto chat = AuthAs("chat");
+
+  const auto resp = handlers_->HandleInject(FanoutInject("game-a", "world-1"));
+  EXPECT_EQ(resp.code(), OK);
+  EXPECT_EQ(resp.inject_id(), "inj-1");  // echo stays the caller's id
+
+  const auto copies = chat->Decode<chirp::server_gateway::InjectMessageNotify>(
+      chirp::gateway::INJECT_MESSAGE_NOTIFY);
+  ASSERT_EQ(copies.size(), 2u);
+  std::set<std::string> receivers;
+  for (const auto& notify : copies) {
+    const auto& msg = notify.message();
+    EXPECT_EQ(msg.channel_type(), 0);  // PRIVATE
+    EXPECT_EQ(msg.sender_kind(), chirp::server_gateway::SENDER_SERVICE);
+    EXPECT_EQ(msg.sender_id(), "npc:blacksmith_01");  // backend identity preserved
+    EXPECT_EQ(msg.channel_id(), "");                  // chat keys private history by the pair
+    EXPECT_EQ(msg.content(), "hello travelers");
+    EXPECT_EQ(msg.game_id(), "game-a");
+    EXPECT_EQ(msg.inject_id(), "inj-1#" + msg.receiver_id());
+    receivers.insert(msg.receiver_id());
+  }
+  EXPECT_EQ(receivers, (std::set<std::string>{"player-1", "player-2"}));
+}
+
+TEST_F(ServerGatewayTest, InjectFanoutWithoutSubscribersIsOkAndSilent) {
+  const auto chat = AuthAs("chat");
+  const auto resp = handlers_->HandleInject(FanoutInject("game-a", "unfollowed"));
+  EXPECT_EQ(resp.code(), OK);
+  EXPECT_EQ(chat->Count(chirp::gateway::INJECT_MESSAGE_NOTIFY), 0);
+}
+
+TEST_F(ServerGatewayTest, InjectFanoutChatOfflineIsUnavailable) {
+  SubscribeAs("s1", "player-1", "game-a", "world-1");
+  EXPECT_EQ(handlers_->HandleInject(FanoutInject("game-a", "world-1")).code(),
+            SERVER_UNAVAILABLE);
+  // The subscriptions themselves are untouched by a failed delivery.
+  EXPECT_EQ(subscriptions_.GetForChannel("game-a", "world-1").size(), 1u);
+}
+
+TEST_F(ServerGatewayTest, InjectFanoutAllWritesFailIsUnavailable) {
+  SubscribeAs("s1", "player-1", "game-a", "world-1");
+  SubscribeAs("s2", "player-2", "game-a", "world-1");
+  const auto chat = AuthAs("chat");
+  chat->send_ok = false;
+  EXPECT_EQ(handlers_->HandleInject(FanoutInject("game-a", "world-1")).code(),
+            SERVER_UNAVAILABLE);
+  EXPECT_EQ(chat->Count(chirp::gateway::INJECT_MESSAGE_NOTIFY), 0);
+}
+
+TEST_F(ServerGatewayTest, InjectFanoutPartialFailureStillOk) {
+  SubscribeAs("s1", "player-1", "game-a", "world-1");
+  SubscribeAs("s2", "player-2", "game-a", "world-1");
+  SubscribeAs("s3", "player-3", "game-a", "world-1");
+  const auto chat = AuthAs("chat");
+  chat->fail_after = 1;  // first copy lands, the rest fail
+
+  // Partial success must answer OK: a retry would duplicate the copies
+  // already handed to chat (and the broker replays on UNAVAILABLE).
+  const auto resp = handlers_->HandleInject(FanoutInject("game-a", "world-1"));
+  EXPECT_EQ(resp.code(), OK);
+  EXPECT_EQ(chat->Count(chirp::gateway::INJECT_MESSAGE_NOTIFY), 1);
+}
+
+TEST_F(ServerGatewayTest, InjectFanoutRejectsPrivateWithGameId) {
+  const auto chat = AuthAs("chat");
+  auto req = FanoutInject("game-a", "world-1");
+  req.set_channel_type(0);  // PRIVATE
+  req.set_receiver_id("player-1");
+  EXPECT_EQ(handlers_->HandleInject(req).code(), INVALID_PARAM);
+  EXPECT_EQ(chat->Count(chirp::gateway::INJECT_MESSAGE_NOTIFY), 0);
+}
+
+TEST_F(ServerGatewayTest, InjectFanoutRejectsFanoutWithoutChannelId) {
+  const auto chat = AuthAs("chat");
+  auto req = FanoutInject("game-a", "");
+  req.set_receiver_id("player-1");  // a receiver does not rescue a fan-out
+  EXPECT_EQ(handlers_->HandleInject(req).code(), INVALID_PARAM);
+  EXPECT_EQ(chat->Count(chirp::gateway::INJECT_MESSAGE_NOTIFY), 0);
+}
+
+TEST_F(ServerGatewayTest, InjectFanoutOverCapIsRateLimited) {
+  SubscribeAs("s1", "player-1", "game-a", "world-1");
+  SubscribeAs("s2", "player-2", "game-a", "world-1");
+  const auto chat = AuthAs("chat");
+  config_.max_fanout_per_inject = 1;
+  handlers_ = std::make_unique<sg::ServerGatewayHandlers>(config_, registry_, queue_, identities_,
+                                                          subscriptions_);
+  // Re-authenticate: the fresh handlers instance starts with no peers.
+  AuthAs("chat");
+
+  const auto resp = handlers_->HandleInject(FanoutInject("game-a", "world-1"));
+  EXPECT_EQ(resp.code(), chirp::common::RATE_LIMITED);
+  EXPECT_EQ(chat->Count(chirp::gateway::INJECT_MESSAGE_NOTIFY), 0);
+}
+
+TEST_F(ServerGatewayTest, InjectLegacyChannelForwardUnchanged) {
+  // A game-less channel injection keeps its direct-forward semantics and
+  // shape exactly (the fan-out branch must not trigger without game_id).
+  const auto chat = AuthAs("chat");
+  const auto resp = handlers_->HandleInject(ValidInject());
+  EXPECT_EQ(resp.code(), OK);
+
+  const auto forwarded = chat->Decode<chirp::server_gateway::InjectMessageNotify>(
+      chirp::gateway::INJECT_MESSAGE_NOTIFY);
+  ASSERT_EQ(forwarded.size(), 1u);
+  EXPECT_EQ(forwarded[0].message().channel_type(), 3);  // WORLD, untouched
+  EXPECT_EQ(forwarded[0].message().channel_id(), "world");
+  EXPECT_EQ(forwarded[0].message().game_id(), "");
 }
 
 // ---------------------------------------------------------------------------
