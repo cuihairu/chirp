@@ -8,10 +8,6 @@ namespace {
 
 constexpr const char* kEntryPrefix = "chirp:binding:entry:";
 
-std::string GameUserKey(const std::string& game_id, const std::string& game_user_id) {
-  return game_id + "|" + game_user_id;
-}
-
 }  // namespace
 
 IdentityRegistry::IdentityRegistry(RedisFactory factory)
