@@ -5,7 +5,7 @@
 // publishes reliable events toward other services.
 //
 // The wire contract mirrors the C++ reference peer
-// (services/chat/src/server_gateway_peer.cc): length-prefixed Packet frames
+// (libs/network/server_gateway_peer.cc): length-prefixed Packet frames
 // ([u32 BE len][Packet protobuf], 4MB cap), SERVER_AUTH_REQ as the first
 // frame, a server-assigned heartbeat cadence, sequence-correlated
 // request/response RPCs, and at-least-once event delivery that the consumer

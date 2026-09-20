@@ -51,7 +51,7 @@ chirp 用 asio standalone,自然的路线是 **C++20 无栈协程**。照搬 lib
 
 - **边缘/会话层回调嵌套浅**:`libs/network/tcp_session.cc` 的 `DoRead`→`on_frame`→`DoWrite` 是"读到帧→回调→写回"的简单链,状态量少,strand 保护清晰。这类代码改协程**收益接近零**,还要动 100% 覆盖的基线。
 - **fire-and-forget 已经是现状**:chat 的 NPC 上行(`SendEventPublish(..., lambda)`)就是"发出去,失败打个日志"。协程不会让它更快,只会让它更好读一点。
-- **真正嵌套深、状态机重的地方**:`services/chat/src/server_gateway_peer.cc`(重连/认证/心跳状态机)、`message_migration_worker`(多步迁移流程)。这些是协程化的**高收益区**,但它们目前工作正常且有覆盖。
+- **真正嵌套深、状态机重的地方**:`libs/network/server_gateway_peer.cc`(重连/认证/心跳状态机)、`message_migration_worker`(多步迁移流程)。这些是协程化的**高收益区**,但它们目前工作正常且有覆盖。
 - **一个比"回调 vs 协程"更大的事实**:`libs/network/redis_client.cc` 的每条命令都是**同步阻塞实现**(resolve → connect → read,`SendCmd` 每次新建连接)。它跑在 io 线程上时,一次 Redis 往返会**卡住该线程上所有连接的调度**。这是当前架构里最实际的延迟放大器——比任何代码风格问题都大。它的正确解法是真异步 Redis 客户端,而**协程正是让异步 Redis 客户端的使用代码保持可读的手段**。换而言之:如果哪天做 Redis 异步化,协程化的收益会自动兑现;单独做"回调改协程"则不会。
 
 ### 4.2 前后对比(以"取历史→逐页回填"类流程为例)
