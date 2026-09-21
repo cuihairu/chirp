@@ -706,21 +706,34 @@ elif [[ "${1:-}" == "--smoke-edge" ]]; then
     cat "${B2_LOG}" || true
     exit 1
   fi
+  # B2 断开后的 session 移除是异步链(客户端 close -> gateway on_close ->
+  # bridge Detach -> 内部连接关 -> chat 移除 user_b)。不等它走完,A3 的消息
+  # 可能实时投给残留 session 而不入离线队列,B3 就拉不到补投。
+  sleep 1
 
   echo ""
   echo "[edge] A3 login via app_gateway (chat pipe absorbed; 2xxx uplink relays to chat) + send to offline B"
+  set +e
   timeout 30 ./build/tools/benchmark/chirp_login_client --host 127.0.0.1 --port "${APP_PORT}" \
     --token user_a --device dev_a3 --platform pc \
     --send_text "app-edge-offline-hello" --peer_user user_b > "${A3_LOG}" 2>&1
-  grep -q "code=0" "${A3_LOG}"
-  grep -q "send code=0" "${A3_LOG}"
+  A3_RC=$?
+  set -e
+  if [[ "${A3_RC}" != "0" ]] || ! grep -q "code=0" "${A3_LOG}" || ! grep -q "send code=0" "${A3_LOG}"; then
+    echo "错误: A3 经 app_gateway 登录/发送失败 (rc=${A3_RC},2xxx 上行应达 chat)"
+    cat "${A3_LOG}" || true
+    exit 1
+  fi
 
   echo ""
   echo "[edge] B3 login via app_gateway (offline refill rides the app-edge pipe back as CHAT_MESSAGE_NOTIFY)"
+  set +e
   timeout 30 ./build/tools/benchmark/chirp_login_client --host 127.0.0.1 --port "${APP_PORT}" \
     --token user_b --device dev_b3 --platform pc --expect_notify_ms 15000 > "${B3_LOG}" 2>&1
-  if ! grep -q "notify from=user_a" "${B3_LOG}" || ! grep -q "content=app-edge-offline-hello" "${B3_LOG}"; then
-    echo "错误: B 经 app_gateway 登录后未收到离线补投递 (chat 管道未生效)"
+  B3_RC=$?
+  set -e
+  if [[ "${B3_RC}" != "0" ]] || ! grep -q "notify from=user_a" "${B3_LOG}" || ! grep -q "content=app-edge-offline-hello" "${B3_LOG}"; then
+    echo "错误: B 经 app_gateway 登录后未收到离线补投递 (rc=${B3_RC},chat 管道未生效或 A3 消息未入队)"
     cat "${B3_LOG}" || true
     exit 1
   fi
