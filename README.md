@@ -28,58 +28,57 @@ chirp 想解决的就是这件事，设计目标按优先级排列：
 
 ## 两条平面，一套协议
 
-游戏平面和 App 平面是两套独立部署的系统，各自有独立的边缘和独立的 chat；跨平面通信是 chat 的原生能力——两个 `chirp_chat` 实例直连，通过内置的注册协议、版本协商和白名单机制完成接入，不需要外部桥接进程。游戏平面可完全脱离 App 平面单独部署。
+游戏平面和 App 平面是两套独立部署的系统，各自有独立的边缘和独立的 chat；跨平面通信是 chat 的原生能力——两个 `chirp_chat` 实例直连，通过内置的注册协议、版本协商和白名单机制完成接入，不需要外部桥接进程。游戏平面完全自足，不依赖 App 平面的任何组件。
 
 ```mermaid
 flowchart TB
-    Game["游戏客户端<br/>用户 token"]
-    App["伴侣 App<br/>用户 token + 设备推送"]
+    Game["游戏客户端"]
+    App["伴侣 App"]
     GS["游戏服务端<br/>service_id + secret"]
 
-    subgraph gp["游戏平面(独立部署单元)"]
+    subgraph gp["游戏平面（完全自足）"]
         GG["game_gateway<br/>TCP 5000 / WS 5001"]
-        GCHAT["game_chat"]
-        SG["server_gateway<br/>TCP 8100 · 仅注入/事件"]
-        AUTH["auth"]
+        GCHAT["game_chat<br/>本地验证 token"]
+        SG["server_gateway<br/>TCP 8100 · 仅注入/事件 · 可选"]
         GG -->|per-client pipe| GCHAT
         SG -->|inject| GCHAT
-        GG --> AUTH
+        Game -- "TCP/WS" --> GG
+        GS -- "出站长连接" --> SG
     end
 
-    subgraph ap["App 平面(hub)"]
+    subgraph ap["App 平面（可选附加）"]
         AG["app_gateway<br/>TCP 5200 / WS 5201"]
-        ACHAT["app_chat (hub)"]
-        AREG["app_registry<br/>无状态 + Redis"]
+        ACHAT["app_chat（hub）"]
+        APPAUTH["app_auth"]
         NOTIF["notification"]
         AG -->|per-client pipe| ACHAT
-        AG -->|无状态 RPC| AREG
+        AG -->|LOGIN_REQ| APPAUTH
         ACHAT --> NOTIF
+        App -- "WS/TLS" --> AG
     end
 
-    Game -- "TCP/WS" --> GG
-    App -- "WS/TLS" --> AG
-    GS -- "出站长连接" --> SG
     GCHAT -->|"注册 + 白名单 + 版本协商"| ACHAT
     GCHAT -->|"频道消息"| ACHAT
     ACHAT -->|"玩家回复"| GCHAT
 ```
 
-要点:**平面分离、同协议直连**。`game_chat` 和 `app_chat` 是同一个 `chirp_chat` 二进制的不同部署；跨平面通信使用 chat 原生的 trusted-peer 协议，`app_chat` 作为 hub 通过白名单和版本协商控制接入。游戏平面故障不影响 App 平面，反之亦然。游戏服务端平面只认服务凭证、只做出站连接，与玩家边缘彻底隔离。详见[整体架构](docs/architecture.md)。
+要点:**平面分离、零依赖**。游戏平面由游戏后端签发 token，game_chat 本地验证，不依赖外部认证服务；App 平面的认证由 `app_auth` 独立负责。跨平面通信使用 chat 原生的 trusted-peer 协议，`app_chat` 作为 hub 通过白名单和版本协商控制接入。详见[整体架构](docs/architecture.md)。
 
 | 服务 | 默认端口 | 状态 | 作用 |
 | --- | --- | --- | --- |
-| Gateway | TCP 5000 / WS 5001 | Supported | 游戏客户端边缘：登录、登出、心跳、会话绑定、可选 Redis 跨实例 kick |
-| Auth | TCP 6000 | Supported | token 校验；依赖满足时可构建增强认证 |
-| Chat | TCP 7000 / WS 7001 | Supported | 私聊、群组、已读回执、正在输入、表情回应、消息编辑/删除、@提及、历史、离线队列 |
-| Server Gateway | TCP 8100 | Experimental | 服务平面枢纽：游戏服出站长连接 + 凭证接入，注入系统/NPC 消息，事件离线排队、重连重投直到 ack；支持 Redis Streams 上行注入回退（`--broker_redis_host`），见 [docs/server_plane.md](docs/server_plane.md) |
-| Notification | TCP 5006 / WS 5016 | Experimental | 推送平面：设备注册/注销/token 更新/查询（6xxx）、按用户推送；APNs/FCM 的 HTTP 投递目前是日志 stub（`PushTransport` 可注入真实实现） |
-| App Gateway | TCP 5200 / WS 5201 | Experimental | App 接入边缘：登录/心跳/会话绑定 + 设备消息转发到 notification（要求已认证会话，user_id 以服务端认证结果为准） |
+| game_gateway | TCP 5000 / WS 5001 | Supported | 游戏客户端边缘：登录、登出、心跳、会话绑定、可选 Redis 跨实例 kick |
+| game_chat | TCP 7000 / WS 7001 | Supported | 游戏内聊天：私聊、群组、已读回执、正在输入、表情回应、消息编辑/删除、@提及、历史、离线队列。本地验证 token（--token_secret），不依赖外部认证 |
+| server_gateway | TCP 8100 | Experimental | 游戏后端注入枢纽：出站长连接 + 凭证接入，注入系统/NPC 消息，事件离线排队、重连重投直到 ack。可选 |
+| app_auth | TCP 6000 | Supported | App 平面认证：签发/验证平台用户令牌（player_id JWT），只服务 App 平面 |
+| app_gateway | TCP 5200 / WS 5201 | Experimental | App 接入边缘：登录/心跳/会话绑定 + 设备消息转发到 notification |
+| app_chat | — | Experimental | App 平面 hub：接受 game_chat 注册，聚合跨游戏频道，身份绑定、频道订阅、未读计数 |
+| notification | TCP 5006 / WS 5016 | Experimental | 后台推送：设备注册/注销/token 更新/查询（6xxx）、APNs/FCM 离线推送 |
 
 ## 先读什么
 
 - [核心说明](docs/CORE.md)：当前可用链路、服务边界、协议和本地验证命令
 - [能力矩阵](docs/CAPABILITY_MATRIX.md)：各服务、SDK、应用的真实完成度
-- [整体架构](docs/architecture.md)：两平面分离、hub-spoke 接入模型、注册协议与白名单
+- [整体架构](docs/architecture.md)：两平面分离、零依赖、hub-spoke 接入模型、注册协议与白名单
 - [服务器平面](docs/server_plane.md)：游戏服务端接入契约
 - [API 概述](docs/api/overview.md)：Packet 协议、消息 ID 和核心流程
 - [快速开始](docs/guide/getting-started.md)：构建、Docker Compose、smoke test

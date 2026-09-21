@@ -12,10 +12,10 @@ Chirp 是面向游戏的实时通信后端。游戏平面和 App 平面是两套
 
 - 两个平面，两个 chat 实例。`game_chat` 服务游戏客户端；`app_chat` 服务伴侣 App。同一个二进制，不同部署。
 - `app_chat` 是 hub。`game_chat` 实例通过内置的对等注册协议接入，支持白名单和版本协商。
-- `app_registry` 是无状态 RPC 服务，持有玩家身份绑定、频道订阅和统一未读计数。数据存 Redis。
-- `server_gateway` 是轻量的游戏后端注入枢纽，不承载玩家聚合状态。
+- `server_gateway` 是轻量的游戏后端注入枢纽。
 - 边缘（`game_gateway`、`app_gateway`）是无状态连接管理器。
-- 单独部署"只做游戏聊天"是一等公民：`game_gateway + game_chat + auth` 是自足闭环，不依赖 App 平面。
+- 游戏平面完全自足，不依赖 App 平面的任何组件。单独部署"只做游戏聊天"是一等公民。
+- 两个平面的认证完全隔离：游戏平面由游戏后端签发 token，game_chat 本地验证；App 平面由 `app_auth` 签发/验证平台用户令牌。
 
 ## 设计原则
 
@@ -23,7 +23,7 @@ Chirp 是面向游戏的实时通信后端。游戏平面和 App 平面是两套
 2. **同协议，同二进制。** `game_chat` 和 `app_chat` 是同一个 `chirp_chat` 二进制。跨平面通信使用 chat 原生的 trusted-peer 协议——没有翻译层，没有外部桥接进程。
 3. **Hub-spoke 接入模型。** `app_chat` 是 hub。每个 `game_chat` 注册接入。hub 通过白名单和凭证验证控制谁能连接。
 4. **边缘薄。** 连接管理、协议适配、认证转发、心跳。边缘不持有业务状态。
-5. **状态只存一处。** 会话在 Redis（per 边缘），订阅和身份在 Redis（通过 `app_registry`），消息在所属 chat。
+5. **平面之间零依赖。** 游戏平面不依赖 App 平面的任何组件（包括认证）。App 平面通过注册协议接入游戏平面，不是反过来。
 6. **可信平面用服务凭证，不可信边缘用用户令牌。** 不混用。
 
 ## 拓扑
@@ -38,20 +38,19 @@ flowchart TB
       GB["游戏后端"] -->|出站连接，服务凭证| SG["server_gateway"]
       SG -->|注入| GCHAT
       GCHAT -->|事件| SG
-      GG1 & GG2 -->|LOGIN_REQ| AUTH["auth"]
-      GG1 & GG2 -->|会话 claim| R1[("Redis")]
+      GG1 & GG2 -->|LOGIN_REQ| GCHAT
+      Note right of GCHAT: 本地验证 token（--token_secret）<br/>不依赖外部认证服务
     end
 
-    subgraph app_plane["App 平面（hub）"]
+    subgraph app_plane["App 平面（可选附加）"]
       APP1["伴侣 App"] -->|WS/TLS| AG1["app_gateway #1"]
       APP2["伴侣 App"] -->|WS/TLS| AG2["app_gateway #2"]
       AG1 -->|per-client pipe| ACHAT["app_chat（hub）"]
       AG2 -->|per-client pipe| ACHAT
-      AG1 & AG2 -->|LOGIN_REQ| AUTH
-      AG1 & AG2 -->|会话 claim| R1
-      AG1 & AG2 -->|无状态 RPC| AREG["app_registry"]
+      AG1 & AG2 -->|LOGIN_REQ| APPAUTH["app_auth"]
+      AG1 & AG2 -->|会话 claim| R1[("Redis")]
       ACHAT -->|推送触发| NT["notification"]
-      AREG --> R2[("Redis")]
+      APPAUTH --> R1
     end
 
     GCHAT -->|"PEER_REGISTER_REQ + 白名单"| ACHAT
@@ -61,38 +60,36 @@ flowchart TB
 
 图示说明：
 
-- **游戏平面是自足闭环。** `game_gateway + game_chat + auth` 是完整的游戏聊天部署，不依赖 App 平面。
-- **App 平面是 hub。** `app_chat` 接受 `game_chat` 实例的注册，聚合跨游戏消息，投递给伴侣 App。
-- **跨平面是 chat 原生能力，不是外部组件。** 两个 chirp_chat 实例直连，使用同一套 trusted-peer 协议。注册、版本协商、白名单都内建在 chat 服务中。
+- **游戏平面是自足闭环。** `game_gateway + game_chat` 是完整的游戏聊天部署。游戏后端签发 token，game_chat 本地验证，不依赖 `app_auth` 或任何 App 平面组件。
+- **App 平面是可选附加。** 需要伴侣 App 时才部署。`app_auth` 只服务 App 平面。
+- **跨平面是 chat 原生能力。** 两个 chirp_chat 实例直连，使用同一套 trusted-peer 协议。注册、版本协商、白名单都内建在 chat 服务中。
 
-## 两个平面
-
-### 游戏平面
+## 游戏平面
 
 | 职责 | 归属 | 说明 |
 | --- | --- | --- |
 | 边缘 | `game_gateway` | TCP + WS 监听，登录/登出/心跳、踢出。无状态。 |
-| Chat | `game_chat` | 部署为游戏平面的 `chirp_chat`。持有游戏内频道、历史、离线队列。作为 spoke 注册到 `app_chat`。 |
-| 认证 | `auth` | 签发/验证 HS256 JWT 用户令牌。两个平面共享。 |
+| Chat | `game_chat` | 部署为游戏平面的 `chirp_chat`。持有游戏内频道、历史、离线队列。本地验证 token。作为 spoke 注册到 `app_chat`。 |
+| 认证 | game_chat 本地 | 游戏后端签发 HS256 JWT（`--token_secret`），game_chat 本地校验。不需要外部认证服务。 |
 | 会话 claim | Redis | `chirp:sess:<user>\x1F<device>` per 边缘实例。 |
-| 后端注入 | `server_gateway` | 可信枢纽；游戏后端以 `service_id` + secret 出站连接。只负责消息注入 + 事件下发。 |
+| 后端注入 | `server_gateway` | 可信枢纽；游戏后端以 `service_id` + secret 出站连接。只负责消息注入 + 事件下发。可选。 |
 
-部署形态：任意数量 `game_gateway` 实例 + 一个 `game_chat`。chat 本身需要扩展时，换成分布式 chat 构建。
+部署形态：`game_gateway + game_chat` 即为完整部署。需要游戏后端注入时加 `server_gateway`。chat 本身需要扩展时，换成分布式 chat 构建。
 
-### App 平面
+## App 平面
 
 | 职责 | 归属 | 说明 |
 | --- | --- | --- |
 | 边缘 | `app_gateway` | WS 优先，可选 TLS，移动网络调优心跳。无状态。 |
-| Chat | `app_chat` | 部署为 hub 的 `chirp_chat`。接受 `game_chat` 注册，聚合跨游戏频道，投递给伴侣 App。 |
-| 玩家注册表 | `app_registry` | 无状态 RPC 前端，数据在 Redis。持有身份绑定、频道订阅、统一未读计数。 |
-| 推送 | `notification` | APNs/FCM 桥。 |
+| Chat | `app_chat` | 部署为 hub 的 `chirp_chat`。接受 `game_chat` 注册，聚合跨游戏频道，投递给伴侣 App。持有身份绑定、频道订阅、未读计数。 |
+| 认证 | `app_auth` | 签发/验证平台用户令牌（player_id）。只服务 App 平面，与游戏平面无关。 |
+| 推送 | `notification` | 玩家离线时推送到手机（APNs/FCM）。独立服务，因为推送有厂商限制、合并、限流等特殊运行时特征。 |
 
-部署形态：任意数量 `app_gateway` 实例、任意数量 `app_registry` 实例、一个 `app_chat`。
+部署形态：`app_gateway + app_chat + app_auth + notification`。任意数量 `app_gateway` 实例，一个 `app_chat`。
 
 ## 对等注册协议
 
-`game_chat` 启动时，通过内置的对等注册握手接入 `app_chat`。注册、访问控制、版本协商都是 chat 的原生能力，不是外部胶水代码。
+`game_chat` 启动时，通过内置的对等注册握手接入 `app_chat`。注册、访问控制、版本协商都是 chat 的原生能力。
 
 ### 握手
 
@@ -136,9 +133,9 @@ sequenceDiagram
 
 规则：
 - 不在 `--allowed_peers` 中（且 `--allow_unknown_peers` 关闭）的对等方被拒绝，返回 `AUTH_FAILED`。
-- `protocol_version` 低于 `--min_peer_version` 的对等方被拒绝，返回 `VERSION_MISMATCH`；响应中携带 hub 的最低版本，以便对等方知道需要升级到什么版本。
+- `protocol_version` 低于 `--min_peer_version` 的对等方被拒绝，返回 `VERSION_MISMATCH`；响应中携带 hub 的最低版本。
 - 注册成功后，对等连接在连接生命周期内有效。断线重连需重新注册。
-- 同一 `service_id` 的第二次注册挤掉第一次（与 `server_gateway` 的服务注册语义相同）。
+- 同一 `service_id` 的第二次注册挤掉第一次。
 
 ### 版本协商
 
@@ -163,7 +160,6 @@ sequenceDiagram
     participant G as game_gateway
     participant GC as game_chat
     participant AC as app_chat
-    participant AR as app_registry
     participant AG as app_gateway
     participant A as 伴侣 App
 
@@ -172,8 +168,7 @@ sequenceDiagram
     GC->>GC: 持久化，广播给游戏侧成员
     GC->>AC: CHANNEL_MESSAGE_NOTIFY（trusted peer）
     Note right of GC: game_id="game42", channel_id="guild_123",<br/>sender_id="game_user_7", content=...
-    AC->>AR: 查询订阅者("game42", "guild_123")<br/>+ 解析 game_user_7 → player_id
-    AR-->>AC: player_ids + 映射后的 sender_id
+    AC->>AC: 查询订阅者，解析 game_user_7 → player_id
     AC->>AC: 为每个订阅者注入一条私信副本
     AC->>AG: CHAT_MESSAGE_NOTIFY
     AG->>A: 推送
@@ -181,7 +176,7 @@ sequenceDiagram
 
 `game_chat` 把每条频道消息发给已注册的 hub peer。hub（`app_chat`）负责扇出：
 
-1. 向 `app_registry` 查询哪些玩家订阅了 `(game_id, channel_id)`。
+1. 查询哪些玩家订阅了 `(game_id, channel_id)`。
 2. 解析发送者的 `game_user_id → player_id`。
 3. 为每个订阅者注入一条私信副本到 app chat，频道自动加 `{game_id}:{channel_id}` 前缀。
 
@@ -194,7 +189,6 @@ sequenceDiagram
     participant A as 伴侣 App
     participant AG as app_gateway
     participant AC as app_chat
-    participant AR as app_registry
     participant GC as game_chat
     participant G as game_gateway
     participant C as 游戏客户端
@@ -202,8 +196,7 @@ sequenceDiagram
     A->>AG: SEND_MESSAGE_REQ（channel="game42:guild_123"）
     AG->>AC: per-client pipe 转发
     AC->>AC: 检测 {game_id}: 前缀 → 跨平面
-    AC->>AR: 解析 player_id → (game42, game_user_7)
-    AR-->>AC: game_user_id
+    AC->>AC: 解析 player_id → (game42, game_user_7)
     AC->>GC: INJECT_MESSAGE_NOTIFY（trusted peer）
     Note right of AC: sender_id="game_user_7",<br/>channel_id="guild_123"
     GC->>GC: 持久化，广播给游戏侧成员
@@ -214,7 +207,7 @@ sequenceDiagram
 玩家向带 `{game_id}:` 前缀的频道发消息时，`app_chat`：
 
 1. 检测跨平面前缀。
-2. 通过 `app_registry` 解析 `player_id → game_user_id`。
+2. 解析 `player_id → game_user_id`。
 3. 将消息注入到该 `game_id` 对应的已注册 `game_chat` peer。
 
 游戏侧收到的是普通注入——它不知道消息来自 App 玩家。
@@ -235,15 +228,13 @@ sequenceDiagram
     GC->>AC: CHANNEL_MESSAGE_NOTIFY（如果 hub 订阅了该频道）
 ```
 
-`server_gateway` 按原有方式注入 `game_chat`。如果频道有 App 平面订阅者，消息自动流向 hub。
-
 ## 身份与命名空间
 
 两个身份空间，一个映射点：
 
-- **游戏平面** 使用 `game_user_id`。游戏后端签发游戏作用域的短期用户令牌。`game_chat` 和 `game_gateway` 不接触任何其他身份形式。
-- **App 平面** 使用 `player_id`。平台签发用户令牌。`app_chat` 和 `app_gateway` 不接触 `game_user_id`。
-- **`app_registry` 持有绑定关系。** 游戏后端在玩家通过游戏自己的登录服务器认证后，断言 `player_id ↔ (game_id, game_user_id)`。
+- **游戏平面** 使用 `game_user_id`。游戏后端签发游戏作用域的短期用户令牌，game_chat 本地验证。游戏平面完全不知道 `player_id` 的存在。
+- **App 平面** 使用 `player_id`。`app_auth` 签发平台用户令牌。
+- **映射在 `app_chat` 内部。** 游戏后端在玩家通过游戏自己的登录服务器认证后，调 `app_chat` 的 `BIND_PLAYER_IDENTITY` RPC 断言 `player_id ↔ (game_id, game_user_id)`。映射存在 `app_chat` 内部（Redis 后端）。
 
 频道命名空间：
 
@@ -257,15 +248,15 @@ sequenceDiagram
 
 | 种类 | 标识 | 生命周期 | 使用位置 |
 | --- | --- | --- | --- |
-| 服务凭证（`service_id` + secret） | 后端组件 | 长期 | `server_gateway` peer、`game_chat → app_chat` 注册、gateway → chat trusted pipe |
-| 用户令牌（HS256 JWT） | 单个用户会话 | 短期 | 游戏客户端 → `game_gateway`、App → `app_gateway` |
+| 服务凭证（`service_id` + secret） | 后端组件 | 长期 | `server_gateway` peer、`game_chat → app_chat` 注册、gateway → chat trusted pipes |
+| 用户令牌（HS256 JWT） | 单个用户会话 | 短期 | 游戏客户端 → `game_gateway`（游戏后端签发，game_chat 本地验证）、App → `app_gateway`（`app_auth` 签发） |
 
 规则：
 
 - 服务凭证永远不会出现在客户端二进制中。
 - 用户令牌永远不会出现在可信平面上。
-- 每个平面有自己的服务密钥。`game_chat` 只信任游戏平面的 gateway secret；`app_chat` 有自己的白名单控制接入的 `game_chat`。
-- `auth` 为两个平面签发用户令牌；每个 chat 用共享的 HS256 secret 本地验证。
+- 两个平面的用户令牌完全隔离：游戏平面的 token 由游戏后端签发，App 平面的 token 由 `app_auth` 签发，两者的 secret 互不相关。
+- game_chat 用 `--token_secret` 本地验证游戏用户令牌，不依赖任何外部服务。
 
 ## 故障与降级
 
@@ -273,22 +264,23 @@ sequenceDiagram
 | --- | --- |
 | 一个 `game_gateway` 实例 | 其当前连接断开；客户端重连到其他实例。 |
 | `game_chat` | 游戏平面消息停止。App 平面继续运行（跨游戏消息停止，但 App 本地消息正常）。 |
-| 一个 `app_gateway` 实例 | 同上，针对 App 客户端。 |
+| `server_gateway` | 游戏后端无法注入消息。玩家聊天不受影响。 |
+| 一个 `app_gateway` 实例 | 其当前连接断开；客户端重连到其他实例。 |
 | `app_chat` | App 平面消息停止。游戏平面不受影响。`game_chat` peer 检测到连接断开，带退避重试注册。 |
-| `app_registry` | App 平面的订阅/未读/身份查询失败；`app_chat` 继续使用缓存数据直到 TTL 过期。游戏平面不受影响。 |
-| `auth` | 两个平面的新登录被阻断。已有会话不受影响（JWT 本地验证）。 |
-| Redis（游戏平面） | 会话 claim 降级为单实例（无跨实例踢出）。Chat 存储不受影响（除非启用了可选 Redis 历史）。 |
-| Redis（App 平面） | `app_registry` 不可用。会话 claim 降级。App 本地 chat 不受影响（除非启用了可选 Redis 历史）。 |
+| `app_auth` | App 平面新登录被阻断。已有会话不受影响（JWT 本地验证）。游戏平面完全不受影响。 |
+| `notification` | 离线推送停止。在线消息不受影响。 |
+| Redis（游戏平面） | 会话 claim 降级为单实例（无跨实例踢出）。 |
+| Redis（App 平面） | `app_chat` 的身份绑定/订阅/未读数据不可用。会话 claim 降级。 |
 
-App 平面的任何故障都不会影响游戏平面。这就是平面分离的意义。
+游戏平面的任何故障都不会影响 App 平面，反之亦然（`app_chat` 故障只影响跨平面消息，不影响游戏平面本地运行）。
 
 ## 水平扩展
 
 - **边缘**（`game_gateway`、`app_gateway`）：无状态；在负载均衡器后扩展。跨实例踢出通过 Redis claim。
-- **`app_registry`**：无状态；在负载均衡器后扩展。
-- **`server_gateway`**：每个游戏后端集成一个。多个游戏后端各自用自己的 `service_id` 连接。
-- **Chat**：单写入者设计。需要扩展 chat 本身时，换成分布式 chat 构建，边缘协议不变。
-- **`game_chat` 到 `app_chat` 连接**：每个 `game_chat` 实例维持一条到 `app_chat` 的持久连接。多个 `game_chat` 实例（不同游戏或分布式 chat）各自用 `service_id` 注册；hub 同时接受所有连接。
+- **`app_auth`**：无状态；在负载均衡器后扩展。
+- **`server_gateway`**：每个游戏后端集成一个。
+- **Chat**：单写入者设计。需要扩展 chat 本身时，换成分布式 chat 构建。
+- **`game_chat` 到 `app_chat` 连接**：每个 `game_chat` 实例维持一条到 `app_chat` 的持久连接。多个 `game_chat` 实例各自用 `service_id` 注册；hub 同时接受所有连接。
 
 ## 仓库分层
 
@@ -297,8 +289,8 @@ App 平面的任何故障都不会影响游戏平面。这就是平面分离的�
 | 协议 | `proto/*.proto` | 共享信封和 msg-id 块 |
 | 公共库 | `libs/common` | 日志、JWT、base64、指标 |
 | 网络库 | `libs/network` | ASIO TCP/WS 会话、帧协议、Redis 客户端、trusted-peer 辅助 |
-| 游戏平面 | `services/gateway`、`services/chat`（部署为 `game_chat`）、`services/auth`、`services/server_gateway` | 独立游戏聊天部署 |
-| App 平面 | `services/app_gateway`、`services/chat`（部署为 `app_chat`）、`services/app_registry`、`services/notification` | 玩家聚合平面 |
+| 游戏平面 | `services/gateway`、`services/chat`（部署为 `game_chat`）、`services/server_gateway` | 独立游戏聊天部署 |
+| App 平面 | `services/app_gateway`、`services/chat`（部署为 `app_chat`）、`services/auth`（部署为 `app_auth`）、`services/notification` | 玩家聚合平面 |
 | SDK | `sdks/*` | 客户端集成 |
 | 应用/工具 | `apps/*`、`tools/*` | 演示、smoke 客户端、基准测试 |
 | 交付 | `docker-compose.yml`、`deploy/`、`scripts/` | 编排与验证 |
@@ -332,12 +324,11 @@ WebSocket: binary frame payload = [uint32_be payload_size][chirp.gateway.Packet 
 | 5052 | `CHANNEL_MESSAGE_NOTIFY` | hub ↔ spoke |
 | 5053 | `INJECT_MESSAGE_NOTIFY` | spoke → hub（玩家回复） |
 
-扩展已有的 5xxx 可信 peer 块。配置为 spoke 的 `chirp_chat` 使用 5050/5052/5053；配置为 hub 的使用 5051/5052。同一个二进制，不同配置。
-
 ## 架构承诺
 
-- 游戏平面和 App 平面是独立部署单元。任何一方可以独立存在。
-- 跨平面通信是 chat 的原生能力，不是外部桥接进程。两个 chirp_chat 实例直连，使用同一套协议。
-- Hub（`app_chat`）通过白名单和版本协商控制接入。游戏提供商注册到平台；平台决定谁被允许。
-- 玩家身份和游戏身份永远不会混淆。绑定关系存在 `app_registry`；每条跨平面消息都经过它。
-- 边缘不持有业务状态。Chat 不持有跨平面状态。注册表不持有会话状态。
+- 游戏平面和 App 平面是独立部署单元。游戏平面可以完全独立运行，不依赖 App 平面的任何组件。
+- 跨平面通信是 chat 的原生能力，不是外部桥接进程。
+- Hub（`app_chat`）通过白名单和版本协商控制接入。
+- 两个平面的认证完全隔离：游戏平面由游戏后端负责，App 平面由 `app_auth` 负责。
+- 玩家身份和游戏身份永远不会混淆。映射存在 `app_chat` 内部。
+- 边缘不持有业务状态。Chat 不持有跨平面状态。
