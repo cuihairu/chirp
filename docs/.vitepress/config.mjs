@@ -64,6 +64,8 @@ const config = defineConfig({
           { text: 'Chat 改造实现', link: '/design-notes/SCALABILITY_CHAT_IMPLEMENTATION' },
           { text: '游戏聊天设计', link: '/design-notes/game_chat_architecture' },
           { text: '游戏聊天功能', link: '/design-notes/game_chat_features' },
+          { text: 'SDK 钩子接口', link: '/design-notes/sdk_hooks' },
+          { text: 'SDK 引擎兼容性', link: '/design-notes/sdk_compatibility' },
           { text: '战斗最佳实践', link: '/design-notes/game_combat_best_practices' },
           { text: 'NPC 对话系统', link: '/design-notes/npc_dialog_system' },
           { text: '集成测试修复', link: '/design-notes/INTEGRATION_TEST_FIXES' },
