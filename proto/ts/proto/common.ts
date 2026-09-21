@@ -27,6 +27,11 @@ export enum ErrorCode {
    * windows) and should back off before retrying.
    */
   RATE_LIMITED = 8,
+  /**
+   * VERSION_MISMATCH - Trusted-peer plane: the peer's protocol_version is below the hub's
+   * minimum (PEER_REGISTER_RESP carries min_version so the peer can upgrade).
+   */
+  VERSION_MISMATCH = 9,
   UNRECOGNIZED = -1,
 }
 
@@ -59,6 +64,9 @@ export function errorCodeFromJSON(object: any): ErrorCode {
     case 8:
     case "RATE_LIMITED":
       return ErrorCode.RATE_LIMITED;
+    case 9:
+    case "VERSION_MISMATCH":
+      return ErrorCode.VERSION_MISMATCH;
     case -1:
     case "UNRECOGNIZED":
     default:
@@ -86,6 +94,8 @@ export function errorCodeToJSON(object: ErrorCode): string {
       return "SERVER_UNAVAILABLE";
     case ErrorCode.RATE_LIMITED:
       return "RATE_LIMITED";
+    case ErrorCode.VERSION_MISMATCH:
+      return "VERSION_MISMATCH";
     case ErrorCode.UNRECOGNIZED:
     default:
       return "UNRECOGNIZED";

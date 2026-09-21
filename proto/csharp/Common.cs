@@ -24,13 +24,13 @@ namespace Chirp.Common {
     static CommonReflection() {
       byte[] descriptorData = global::System.Convert.FromBase64String(
           string.Concat(
-            "ChJwcm90by9jb21tb24ucHJvdG8SDGNoaXJwLmNvbW1vbiIHCgVFbXB0eSqy",
+            "ChJwcm90by9jb21tb24ucHJvdG8SDGNoaXJwLmNvbW1vbiIHCgVFbXB0eSrI",
             "AQoJRXJyb3JDb2RlEgYKAk9LEAASEgoOSU5URVJOQUxfRVJST1IQARIRCg1J",
             "TlZBTElEX1BBUkFNEAISDwoLQVVUSF9GQUlMRUQQAxITCg9TRVNTSU9OX0VY",
             "UElSRUQQBBISCg5VU0VSX05PVF9GT1VORBAFEhIKDlRBUkdFVF9PRkZMSU5F",
-            "EAYSFgoSU0VSVkVSX1VOQVZBSUxBQkxFEAcSEAoMUkFURV9MSU1JVEVEEAhC",
-            "JlokZ2l0aHViLmNvbS9jdWkvY2hpcnAvcHJvdG8vZ28vY29tbW9uYgZwcm90",
-            "bzM="));
+            "EAYSFgoSU0VSVkVSX1VOQVZBSUxBQkxFEAcSEAoMUkFURV9MSU1JVEVEEAgS",
+            "FAoQVkVSU0lPTl9NSVNNQVRDSBAJQiZaJGdpdGh1Yi5jb20vY3VpL2NoaXJw",
+            "L3Byb3RvL2dvL2NvbW1vbmIGcHJvdG8z"));
       descriptor = pbr::FileDescriptor.FromGeneratedCode(descriptorData,
           new pbr::FileDescriptor[] { },
           new pbr::GeneratedClrTypeInfo(new[] {typeof(global::Chirp.Common.ErrorCode), }, null, new pbr::GeneratedClrTypeInfo[] {
@@ -59,6 +59,11 @@ namespace Chirp.Common {
     /// windows) and should back off before retrying.
     /// </summary>
     [pbr::OriginalName("RATE_LIMITED")] RateLimited = 8,
+    /// <summary>
+    /// Trusted-peer plane: the peer's protocol_version is below the hub's
+    /// minimum (PEER_REGISTER_RESP carries min_version so the peer can upgrade).
+    /// </summary>
+    [pbr::OriginalName("VERSION_MISMATCH")] VersionMismatch = 9,
   }
 
   #endregion

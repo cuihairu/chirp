@@ -37,6 +37,9 @@ const (
 	// The client exceeded a rate limit (e.g. chat direct-entry login/send
 	// windows) and should back off before retrying.
 	ErrorCode_RATE_LIMITED ErrorCode = 8
+	// Trusted-peer plane: the peer's protocol_version is below the hub's
+	// minimum (PEER_REGISTER_RESP carries min_version so the peer can upgrade).
+	ErrorCode_VERSION_MISMATCH ErrorCode = 9
 )
 
 // Enum value maps for ErrorCode.
@@ -51,6 +54,7 @@ var (
 		6: "TARGET_OFFLINE",
 		7: "SERVER_UNAVAILABLE",
 		8: "RATE_LIMITED",
+		9: "VERSION_MISMATCH",
 	}
 	ErrorCode_value = map[string]int32{
 		"OK":                 0,
@@ -62,6 +66,7 @@ var (
 		"TARGET_OFFLINE":     6,
 		"SERVER_UNAVAILABLE": 7,
 		"RATE_LIMITED":       8,
+		"VERSION_MISMATCH":   9,
 	}
 )
 
@@ -133,7 +138,7 @@ var File_proto_common_proto protoreflect.FileDescriptor
 const file_proto_common_proto_rawDesc = "" +
 	"\n" +
 	"\x12proto/common.proto\x12\fchirp.common\"\a\n" +
-	"\x05Empty*\xb2\x01\n" +
+	"\x05Empty*\xc8\x01\n" +
 	"\tErrorCode\x12\x06\n" +
 	"\x02OK\x10\x00\x12\x12\n" +
 	"\x0eINTERNAL_ERROR\x10\x01\x12\x11\n" +
@@ -143,7 +148,8 @@ const file_proto_common_proto_rawDesc = "" +
 	"\x0eUSER_NOT_FOUND\x10\x05\x12\x12\n" +
 	"\x0eTARGET_OFFLINE\x10\x06\x12\x16\n" +
 	"\x12SERVER_UNAVAILABLE\x10\a\x12\x10\n" +
-	"\fRATE_LIMITED\x10\bB&Z$github.com/cui/chirp/proto/go/commonb\x06proto3"
+	"\fRATE_LIMITED\x10\b\x12\x14\n" +
+	"\x10VERSION_MISMATCH\x10\tB&Z$github.com/cui/chirp/proto/go/commonb\x06proto3"
 
 var (
 	file_proto_common_proto_rawDescOnce sync.Once

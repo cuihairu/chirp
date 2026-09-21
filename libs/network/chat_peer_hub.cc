@@ -21,7 +21,7 @@ std::shared_ptr<ChatPeerHub> ChatPeerHub::Create(asio::io_context& io, Options o
                                                  PeerDroppedHandler on_dropped,
                                                  ChannelMessageHandler on_channel_message) {
   return std::shared_ptr<ChatPeerHub>(new ChatPeerHub(
-      std::move(options), std::move(on_registered), std::move(on_dropped),
+      io, std::move(options), std::move(on_registered), std::move(on_dropped),
       std::move(on_channel_message), PrivateTag{}));
 }
 
@@ -29,6 +29,7 @@ ChatPeerHub::ChatPeerHub(asio::io_context& io, Options options,
                          PeerRegisteredHandler on_registered, PeerDroppedHandler on_dropped,
                          ChannelMessageHandler on_channel_message, PrivateTag)
     : options_(std::move(options)),
+      io_(io),
       on_registered_(std::move(on_registered)),
       on_dropped_(std::move(on_dropped)),
       on_channel_message_(std::move(on_channel_message)),
@@ -39,13 +40,39 @@ ChatPeerHub::~ChatPeerHub() {
   // holds a shared_ptr anymore (every conn handler captures the hub's
   // shared_ptr, which keeps it - and itself - alive), so members simply tear
   // themselves down.
-  stopping_ = true;
 }
 
 uint16_t ChatPeerHub::port() const {
   asio::error_code ec;
   const auto endpoint = acceptor_.local_endpoint(ec);
   return ec ? 0 : endpoint.port();
+}
+
+void ChatPeerHub::Stop() {
+  // Everything this touches (acceptor, peer tables, stopping_) lives on the
+  // hub's io thread, so the teardown must run there. Posting also keeps the
+  // hub object alive until the cleanup handler itself completes.
+  auto self = shared_from_this();
+  asio::post(io_, [self] { self->DoStop(); });
+}
+
+void ChatPeerHub::DoStop() {
+  stopping_ = true;
+  asio::error_code ec;
+  acceptor_.close(ec);
+  // Copy first: Close() erases from peers_ while we iterate.
+  std::vector<std::shared_ptr<PeerConn>> dropped;
+  for (auto& [id, conn] : peers_) {
+    dropped.push_back(conn);
+  }
+  for (auto& conn : peers_unregistered_) {
+    dropped.push_back(conn);
+  }
+  for (auto& conn : dropped) {
+    conn->Close(shared_from_this(), "hub stopped");
+  }
+  peers_.clear();
+  peers_unregistered_.clear();
 }
 
 void ChatPeerHub::Start() {
@@ -69,25 +96,6 @@ void ChatPeerHub::Start() {
       std::to_string(options_.allowed_peers.size()) +
       (options_.allow_unknown_peers ? " open-registration" : " whitelist-only"));
   DoAccept();
-}
-
-void ChatPeerHub::Stop() {
-  stopping_ = true;
-  asio::error_code ec;
-  acceptor_.close(ec);
-  // Copy first: Close() erases from peers_ while we iterate.
-  std::vector<std::shared_ptr<PeerConn>> dropped;
-  for (auto& [id, conn] : peers_) {
-    dropped.push_back(conn);
-  }
-  for (auto& [id, conn] : peers_unregistered_) {
-    dropped.push_back(conn);
-  }
-  for (auto& conn : dropped) {
-    conn->Close(shared_from_this(), "hub stopped");
-  }
-  peers_.clear();
-  peers_unregistered_.clear();
 }
 
 bool ChatPeerHub::SendInject(const std::string& service_id,
@@ -192,7 +200,12 @@ void ChatPeerHub::HandleRegister(const std::shared_ptr<PeerConn>& conn,
   const int32_t negotiated = std::min(kPeerProtocolVersion, req.protocol_version());
   conn->service_id = req.service_id();
   conn->game_id = req.game_id();
-  conn->features.assign(req.supported_features().begin(), req.supported_features().end());
+  // RepeatedField stores proto enums as int: convert explicitly, the range
+  // constructor would need a narrowing no compiler will do for us.
+  conn->features.reserve(req.supported_features_size());
+  for (auto feature : req.supported_features()) {
+    conn->features.push_back(static_cast<chirp::gateway::PeerCapability>(feature));
+  }
   conn->registered = true;
   peers_[conn->service_id] = conn;
 
@@ -214,7 +227,8 @@ void ChatPeerHub::HandleRegister(const std::shared_ptr<PeerConn>& conn,
   }
 }
 
-ChatPeerHub::PeerConn::PeerConn(asio::ip::tcp::socket s) : socket(std::move(s)) {}
+ChatPeerHub::PeerConn::PeerConn(asio::ip::tcp::socket s)
+    : socket(std::move(s)), idle_timer(socket.get_executor()) {}
 
 ChatPeerHub::PeerConn::~PeerConn() {
   asio::error_code ec;
@@ -326,8 +340,7 @@ void ChatPeerHub::PeerConn::HandlePacket(const chirp::gateway::Packet& pkt,
 
 void ChatPeerHub::PeerConn::ArmIdleTimer(const std::shared_ptr<ChatPeerHub>& hub) {
   auto self = shared_from_this();
-  asio::error_code ec;
-  idle_timer.cancel(ec);
+  idle_timer.cancel();
   const int timeout = std::max(2, hub->options_.heartbeat_interval_seconds * 2);
   idle_timer.expires_after(std::chrono::seconds(timeout));
   idle_timer.async_wait([self, hub](const std::error_code& ec) {
@@ -362,8 +375,8 @@ void ChatPeerHub::PeerConn::Close(const std::shared_ptr<ChatPeerHub>& hub,
     return;
   }
   closing = true;
+  idle_timer.cancel();
   asio::error_code ec;
-  idle_timer.cancel(ec);
   socket.close(ec);
 
   // Deregister: erase ourselves from the peer table (unless displaced - the

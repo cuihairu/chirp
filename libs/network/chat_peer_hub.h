@@ -67,6 +67,11 @@ class ChatPeerHub : public std::enable_shared_from_this<ChatPeerHub> {
   ~ChatPeerHub();
 
   void Start();
+  // Asynchronous: closes the acceptor and every connection. Safe from any
+  // thread - the teardown is posted onto the hub's io_context, the only
+  // thread its state belongs to. To make the teardown actually run, the
+  // caller must keep the io_context alive afterwards (drain or run until the
+  // work drains, e.g. before stopping the loop).
   void Stop();
 
   // Bound port once Start() has opened the acceptor (0 before that, and on
@@ -123,8 +128,10 @@ class ChatPeerHub : public std::enable_shared_from_this<ChatPeerHub> {
   void DoAccept();
   void HandleRegister(const std::shared_ptr<PeerConn>& conn,
                       const chirp::gateway::PeerRegisterReq& req);
+  void DoStop();
 
   Options options_;
+  asio::io_context& io_;
   PeerRegisteredHandler on_registered_;
   PeerDroppedHandler on_dropped_;
   ChannelMessageHandler on_channel_message_;

@@ -53,13 +53,6 @@ Packet MakeRawPacket(MsgID msg_id, int64_t seq, const std::string& body) {
   return pkt;
 }
 
-// Writes a big-endian length prefix matching the wire format.
-std::string FrameHeader(uint32_t size) {
-  std::string out(4, '\0');
-  chirp::network::WriteU32BE(reinterpret_cast<uint8_t*>(out.data()), size);
-  return out;
-}
-
 template <typename Pred>
 bool WaitFor(Pred pred, std::chrono::milliseconds timeout) {
   const auto deadline = std::chrono::steady_clock::now() + timeout;
@@ -476,6 +469,8 @@ TEST(ChatPeerLinkTest, UplinkDeliversAfterRegistrationOnly) {
   chirp::gateway::ChannelMessageNotify notify;
   notify.set_game_id("game42");
   notify.set_channel_id("world");
+  notify.mutable_message()->set_sender_id("u1");
+  notify.mutable_message()->set_content("hello across planes");
   EXPECT_FALSE(link->SendChannelMessage(notify));
   runner.Drain();
   EXPECT_EQ(hub.Count(chirp::gateway::CHANNEL_MESSAGE_NOTIFY), 0u);
@@ -496,6 +491,7 @@ TEST(ChatPeerLinkTest, UplinkDeliversAfterRegistrationOnly) {
   EXPECT_EQ(seen.game_id(), "game42");
   EXPECT_EQ(seen.channel_id(), "world");
   EXPECT_EQ(seen.message().sender_id(), "u1");
+  EXPECT_EQ(seen.message().content(), "hello across planes");
 
   link->Stop();
   runner.Drain();
@@ -605,6 +601,12 @@ class TestPeerClient {
     ASSERT_FALSE(ec) << "client send failed: " << ec.message();
   }
 
+  // Same, when only liveness matters: true = some frame arrived.
+  bool Read(std::chrono::milliseconds timeout = std::chrono::seconds(3)) {
+    Packet pkt;
+    return Read(pkt, timeout);
+  }
+
   // Reads one framed packet with a hard timeout. False = closed, timeout, or
   // a malformed frame.
   bool Read(Packet& out, std::chrono::milliseconds timeout = std::chrono::seconds(3)) {
@@ -663,6 +665,14 @@ class HubIoRunner {
     watchdog_->expires_after(std::chrono::seconds(30));
     watchdog_->async_wait([&](const std::error_code&) { io_.stop(); });
     thread_ = std::thread([this] { io_.run(); });
+  }
+
+  // Drains already-posted work (e.g. Stop's teardown) without waiting on
+  // timers, so no conn-carrying handler is left dangling when the io_context
+  // is destroyed on this thread.
+  void Drain() {
+    while (io_.poll() > 0) {
+    }
   }
 
   void Finish() {
@@ -766,6 +776,7 @@ TEST(ChatPeerHubTest, RegistersPeerAndReports) {
   EXPECT_EQ(game_id.get_future().get(), "game42");
 
   hub->Stop();
+  runner.Drain();
   runner.Finish();
 }
 
@@ -791,6 +802,7 @@ TEST(ChatPeerHubTest, RejectsUnknownPeer) {
   EXPECT_TRUE(events.registered.empty());
 
   hub->Stop();
+  runner.Drain();
   runner.Finish();
 }
 
@@ -813,6 +825,7 @@ TEST(ChatPeerHubTest, RejectsBadSecret) {
   EXPECT_FALSE(client.Read(std::chrono::seconds(1)));
 
   hub->Stop();
+  runner.Drain();
   runner.Finish();
 }
 
@@ -844,6 +857,7 @@ TEST(ChatPeerHubTest, AllowsUnknownPeersInOpenMode) {
   }, std::chrono::seconds(3)));
 
   hub->Stop();
+  runner.Drain();
   runner.Finish();
 }
 
@@ -870,6 +884,7 @@ TEST(ChatPeerHubTest, RejectsVersionBelowMinimum) {
   EXPECT_FALSE(client.Read(std::chrono::seconds(1)));
 
   hub->Stop();
+  runner.Drain();
   runner.Finish();
 }
 
@@ -901,6 +916,7 @@ TEST(ChatPeerHubTest, RejectsBadGameId) {
   EXPECT_EQ(resp.code(), chirp::common::INVALID_PARAM);
 
   hub->Stop();
+  runner.Drain();
   runner.Finish();
 }
 
@@ -953,6 +969,7 @@ TEST(ChatPeerHubTest, DisplacesPreviousRegistration) {
   EXPECT_EQ(game_id.get_future().get(), "game_two");
 
   hub->Stop();
+  runner.Drain();
   runner.Finish();
 }
 
@@ -997,6 +1014,7 @@ TEST(ChatPeerHubTest, RelaysChannelMessageToHandler) {
   }
 
   hub->Stop();
+  runner.Drain();
   runner.Finish();
 }
 
@@ -1046,6 +1064,7 @@ TEST(ChatPeerHubTest, SendInjectReachesRegisteredPeerOnly) {
   EXPECT_EQ(seen.client_msg_id(), "cmid-9");
 
   hub->Stop();
+  runner.Drain();
   runner.Finish();
 }
 
@@ -1074,6 +1093,7 @@ TEST(ChatPeerHubTest, HeartbeatPingGetsPong) {
   EXPECT_EQ(pkt.sequence(), 41);  // echoed for diagnostics
 
   hub->Stop();
+  runner.Drain();
   runner.Finish();
 }
 
@@ -1111,6 +1131,7 @@ TEST(ChatPeerHubTest, SilenceTimeoutDropsPeer) {
   }, std::chrono::seconds(3)));
 
   hub->Stop();
+  runner.Drain();
   runner.Finish();
 }
 
@@ -1149,6 +1170,7 @@ TEST(ChatPeerHubTest, ReRegisterOnLiveConnectionClosesIt) {
   }, std::chrono::seconds(3)));
 
   hub->Stop();
+  runner.Drain();
   runner.Finish();
 }
 
@@ -1181,6 +1203,7 @@ TEST(ChatPeerHubTest, TrafficBeforeRegistrationClosesConnection) {
   EXPECT_TRUE(events.uplinks.empty());
 
   hub->Stop();
+  runner.Drain();
   runner.Finish();
 }
 
@@ -1221,6 +1244,7 @@ TEST(ChatPeerHubTest, HeartbeatKeepsIdlePeerAlive) {
   }
 
   hub->Stop();
+  runner.Drain();
   runner.Finish();
 }
 

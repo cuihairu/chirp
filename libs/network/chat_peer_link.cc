@@ -63,6 +63,7 @@ void ChatPeerLink::Stop() {
       return;
     }
     self->stopping_ = true;
+    self->registered_ = false;  // sends after Stop must refuse
     self->timer_.cancel();
     asio::error_code ec;
     self->socket_.close(ec);
@@ -198,8 +199,12 @@ void ChatPeerLink::HandlePacket(const chirp::gateway::Packet& pkt) {
     heartbeat_interval_seconds_ =
         resp.heartbeat_interval_seconds() > 0 ? resp.heartbeat_interval_seconds()
                                               : options_.heartbeat_interval_seconds;
-    std::vector<chirp::gateway::PeerCapability> features(
-        resp.supported_features().begin(), resp.supported_features().end());
+    // RepeatedField stores proto enums as int: convert explicitly.
+    std::vector<chirp::gateway::PeerCapability> features;
+    features.reserve(resp.supported_features_size());
+    for (auto feature : resp.supported_features()) {
+      features.push_back(static_cast<chirp::gateway::PeerCapability>(feature));
+    }
     chirp::common::Logger::Instance().Info(
         "registered with chat peer hub as service " + options_.service_id + " game=" +
         options_.game_id + " version=" + std::to_string(resp.protocol_version()) +

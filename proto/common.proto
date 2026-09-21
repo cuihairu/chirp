@@ -18,6 +18,9 @@ enum ErrorCode {
   // The client exceeded a rate limit (e.g. chat direct-entry login/send
   // windows) and should back off before retrying.
   RATE_LIMITED = 8;
+  // Trusted-peer plane: the peer's protocol_version is below the hub's
+  // minimum (PEER_REGISTER_RESP carries min_version so the peer can upgrade).
+  VERSION_MISMATCH = 9;
 }
 
 message Empty {}
