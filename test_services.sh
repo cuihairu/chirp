@@ -706,9 +706,10 @@ elif [[ "${1:-}" == "--smoke-edge" ]]; then
     cat "${B2_LOG}" || true
     exit 1
   fi
-  # B2 断开后的 session 移除是异步链(客户端 close -> gateway on_close ->
-  # bridge Detach -> 内部连接关 -> chat 移除 user_b)。不等它走完,A3 的消息
-  # 可能实时投给残留 session 而不入离线队列,B3 就拉不到补投。
+  # B2 断开后的清理是异步链(客户端 close -> gateway on_close -> bridge
+  # Detach -> 内部连接关 -> chat 移除 session;enhanced 形态还叠加 Redis
+  # 路由注销)。A3/B3 因此用从未登录过的全新用户:离线判定不依赖任何
+  # teardown 时序,A3 的消息必然入离线队列,B3 登录必然拉到补投。
   sleep 1
 
   echo ""
@@ -716,7 +717,7 @@ elif [[ "${1:-}" == "--smoke-edge" ]]; then
   set +e
   timeout 30 ./build/tools/benchmark/chirp_login_client --host 127.0.0.1 --port "${APP_PORT}" \
     --token user_a --device dev_a3 --platform pc \
-    --send_text "app-edge-offline-hello" --peer_user user_b > "${A3_LOG}" 2>&1
+    --send_text "app-edge-offline-hello" --peer_user user_b_app > "${A3_LOG}" 2>&1
   A3_RC=$?
   set -e
   if [[ "${A3_RC}" != "0" ]] || ! grep -q "code=0" "${A3_LOG}" || ! grep -q "send code=0" "${A3_LOG}"; then
@@ -729,7 +730,7 @@ elif [[ "${1:-}" == "--smoke-edge" ]]; then
   echo "[edge] B3 login via app_gateway (offline refill rides the app-edge pipe back as CHAT_MESSAGE_NOTIFY)"
   set +e
   timeout 30 ./build/tools/benchmark/chirp_login_client --host 127.0.0.1 --port "${APP_PORT}" \
-    --token user_b --device dev_b3 --platform pc --expect_notify_ms 15000 > "${B3_LOG}" 2>&1
+    --token user_b_app --device dev_b_app --platform pc --expect_notify_ms 15000 > "${B3_LOG}" 2>&1
   B3_RC=$?
   set -e
   if [[ "${B3_RC}" != "0" ]] || ! grep -q "notify from=user_a" "${B3_LOG}" || ! grep -q "content=app-edge-offline-hello" "${B3_LOG}"; then
