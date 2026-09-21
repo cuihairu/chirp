@@ -1,45 +1,38 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
   <defs>
     <linearGradient id="bg" x1="0%" y1="0%" x2="100%" y2="100%">
-      <stop offset="0%" style="stop-color:#4f46e5"/>
-      <stop offset="100%" style="stop-color:#7c3aed"/>
+      <stop offset="0%" style="stop-color:#6366f1"/>
+      <stop offset="100%" style="stop-color:#8b5cf6"/>
     </linearGradient>
-    <linearGradient id="beak" x1="0%" y1="0%" x2="100%" y2="0%">
+    <linearGradient id="beakGrad" x1="0%" y1="0%" x2="100%" y2="100%">
       <stop offset="0%" style="stop-color:#fb923c"/>
       <stop offset="100%" style="stop-color:#f97316"/>
     </linearGradient>
-    <linearGradient id="wave" x1="0%" y1="0%" x2="100%" y2="0%">
-      <stop offset="0%" style="stop-color:#a78bfa;stop-opacity:0.8"/>
-      <stop offset="100%" style="stop-color:#c4b5fd;stop-opacity:0.2"/>
-    </linearGradient>
   </defs>
-  <!-- Rounded square background -->
-  <rect x="16" y="16" width="480" height="480" rx="96" ry="96" fill="url(#bg)"/>
-  <!-- Bird body - clean geometric shape -->
-  <path d="M140 290 C140 240 180 180 240 170 C280 163 310 175 330 195 C350 215 355 245 345 270 C335 295 310 315 280 320 C240 328 195 320 165 300 C148 293 140 290 140 290Z" fill="white"/>
-  <!-- Bird head -->
-  <circle cx="330" cy="200" r="48" fill="white"/>
-  <!-- Eye -->
-  <circle cx="342" cy="192" r="10" fill="#4f46e5"/>
-  <circle cx="345" cy="189" r="4" fill="white"/>
-  <!-- Beak - open, chirping -->
-  <path d="M370 200 L410 188 L378 212Z" fill="url(#beak)"/>
-  <!-- Lower beak -->
-  <path d="M370 210 L395 218 L378 212Z" fill="#ea580c" opacity="0.8"/>
-  <!-- Sound wave 1 -->
-  <path d="M415 178 C425 178 430 185 430 195 C430 205 425 212 415 212" fill="none" stroke="white" stroke-width="5" stroke-linecap="round" opacity="0.85"/>
-  <!-- Sound wave 2 -->
-  <path d="M430 168 C448 168 456 180 456 195 C456 210 448 222 430 222" fill="none" stroke="white" stroke-width="5" stroke-linecap="round" opacity="0.55"/>
-  <!-- Sound wave 3 -->
-  <path d="M445 158 C472 158 482 175 482 195 C482 215 472 232 445 232" fill="none" stroke="white" stroke-width="5" stroke-linecap="round" opacity="0.3"/>
-  <!-- Wing detail -->
-  <path d="M180 260 C155 240 130 260 135 285 C140 310 170 320 195 305 C210 295 195 270 180 260Z" fill="white" opacity="0.6"/>
-  <!-- Tail feathers -->
-  <path d="M140 290 C120 285 100 300 110 320 C115 330 130 325 140 315Z" fill="white" opacity="0.5"/>
-  <!-- Connection symbol at bottom - two nodes linked -->
-  <circle cx="200" cy="390" r="14" fill="#fb923c"/>
-  <circle cx="256" cy="400" r="14" fill="white" opacity="0.9"/>
-  <circle cx="312" cy="390" r="14" fill="#fb923c"/>
-  <line x1="214" y1="390" x2="242" y2="400" stroke="white" stroke-width="3" opacity="0.5" stroke-linecap="round"/>
-  <line x1="270" y1="400" x2="298" y2="390" stroke="white" stroke-width="3" opacity="0.5" stroke-linecap="round"/>
+  <!-- 圆形背景 -->
+  <circle cx="256" cy="256" r="240" fill="url(#bg)"/>
+  <!-- 鸟嘴 - 卡通风格，张开的嘴 -->
+  <!-- 上喙 -->
+  <path d="M200 230 Q220 200 260 195 Q300 190 320 210 L360 220 Q370 225 365 235 L325 240 Q310 245 290 245 Q250 248 220 245 Q200 242 200 230Z" fill="white"/>
+  <!-- 下喙 -->
+  <path d="M200 250 Q220 260 260 265 Q300 268 320 255 L360 245 Q370 242 365 235 L325 240 Q310 245 290 245 Q250 248 220 250 Q200 252 200 250Z" fill="#e0e0ff" opacity="0.9"/>
+  <!-- 嘴巴张开的缝隙 -->
+  <path d="M210 245 Q250 250 310 242 Q340 238 360 235" fill="none" stroke="#4338ca" stroke-width="2.5" stroke-linecap="round"/>
+  <!-- 鼻孔 -->
+  <circle cx="280" cy="215" r="4" fill="#4338ca" opacity="0.4"/>
+  <!-- 眼睛 - 大而圆，卡通风格 -->
+  <circle cx="240" cy="200" r="22" fill="white"/>
+  <circle cx="240" cy="200" r="14" fill="#1e1b4b"/>
+  <circle cx="246" cy="194" r="6" fill="white"/>
+  <!-- 眉毛 -->
+  <path d="M218 175 Q240 165 262 172" fill="none" stroke="white" stroke-width="4" stroke-linecap="round" opacity="0.8"/>
+  <!-- 腮红 -->
+  <ellipse cx="215" cy="230" rx="15" ry="10" fill="#f472b6" opacity="0.3"/>
+  <!-- 头顶羽毛 -->
+  <path d="M230 175 Q225 140 240 120 Q250 145 255 170" fill="white" opacity="0.9"/>
+  <path d="M245 170 Q248 135 265 118 Q268 142 262 168" fill="white" opacity="0.7"/>
+  <!-- 声波 - 从嘴巴发出 -->
+  <path d="M370 215 Q385 215 385 230 Q385 245 370 245" fill="none" stroke="white" stroke-width="4" stroke-linecap="round" opacity="0.8"/>
+  <path d="M388 205 Q410 205 410 230 Q410 255 388 255" fill="none" stroke="white" stroke-width="4" stroke-linecap="round" opacity="0.5"/>
+  <path d="M405 195 Q435 195 435 230 Q435 265 405 265" fill="none" stroke="white" stroke-width="4" stroke-linecap="round" opacity="0.25"/>
 </svg>

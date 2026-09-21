@@ -12,6 +12,13 @@ enum MsgType {
   EMOJI = 1;          // 表情
   VOICE = 2;          // 语音片段
   IMAGE = 3;          // 图片
+
+  ITEM_LINK = 10;     // 物品链接
+  SKILL_LINK = 11;    // 技能链接
+  ACHIEVEMENT = 12;   // 成就分享
+  NPC_DIALOG = 13;    // NPC 对话
+  TRADE_STATUS = 14;  // 交易状态
+
   SYSTEM = 99;        // 系统消息
 }
 
@@ -21,6 +28,24 @@ enum ChannelType {
   TEAM = 1;           // 队伍频道
   GUILD = 2;          // 公会频道
   WORLD = 3;          // 世界频道
+  SYSTEM_CHANNEL = 4; // 系统公告频道
+  MARQUEE = 5;        // 走马灯（滚动展示）
+}
+
+// 消息优先级
+enum Priority {
+  PRIORITY_LOW = 0;   // 普通聊天
+  PRIORITY_NORMAL = 1; // 默认
+  PRIORITY_HIGH = 2;  // 重要通知（系统弹窗）
+  PRIORITY_URGENT = 3; // 走马灯/强制弹窗
+}
+
+// 消息发送者类型
+enum SenderKind {
+  SENDER_USER = 0;    // 普通玩家
+  SENDER_SYSTEM = 1;  // 系统
+  SENDER_NPC = 2;     // NPC
+  SENDER_SERVICE = 3; // 后端服务
 }
 
 // 发送消息请求
@@ -32,6 +57,9 @@ message SendMessageRequest {
   MsgType msg_type = 5;
   bytes content = 6;           // 消息内容 (根据 MsgType 解析)
   int64 client_timestamp = 7;
+  Priority priority = 8;       // 消息优先级
+  bytes metadata = 9;          // 扩展数据（物品/技能/成就的序列化）
+  int32 ttl_seconds = 10;      // 走马灯/公告的显示时长（秒）
 }
 
 // 发送消息响应
@@ -51,6 +79,10 @@ message ChatMessage {
   MsgType msg_type = 6;
   bytes content = 7;
   int64 timestamp = 8;
+  Priority priority = 9;       // 消息优先级
+  bytes metadata = 10;         // 扩展数据（物品/技能/成就的序列化）
+  int32 ttl_seconds = 11;      // 走马灯/公告的显示时长
+  SenderKind sender_kind = 12; // 发送者类型
 }
 
 // Player -> NPC utterance, published as an event payload to the NPC dialog
@@ -855,4 +887,53 @@ message FileAttachment {
 message FileMessage {
   ChatMessage base_message = 1;
   repeated FileAttachment attachments = 2;
+}
+
+// ============================================================
+// 消息扩展数据（metadata 字段的结构化内容）
+// ============================================================
+
+// 物品链接（msg_type = ITEM_LINK 时，metadata 序列化为此消息）
+message ItemMetadata {
+  string item_id = 1;
+  string item_name = 2;
+  int32 quality = 3;             // 品质（决定颜色：白/绿/蓝/紫/橙）
+  string icon_url = 4;
+  int32 count = 5;               // 数量
+  map<string, string> attrs = 6; // 额外属性（攻击力、防御力等）
+}
+
+// 技能链接（msg_type = SKILL_LINK 时）
+message SkillMetadata {
+  string skill_id = 1;
+  string skill_name = 2;
+  int32 level = 3;
+  string icon_url = 4;
+  string description = 5;
+}
+
+// 成就分享（msg_type = ACHIEVEMENT 时）
+message AchievementMetadata {
+  string achievement_id = 1;
+  string achievement_name = 2;
+  string description = 3;
+  string icon_url = 4;
+  int32 rarity = 5;              // 稀有度
+}
+
+// 交易状态（msg_type = TRADE_STATUS 时）
+message TradeMetadata {
+  string trade_id = 1;
+  string status = 2;             // CREATED / ACCEPTED / COMPLETED / CANCELLED
+  int64 amount = 3;              // 交易金额
+  string item_name = 4;
+  int32 item_count = 5;
+}
+
+// NPC 对话（msg_type = NPC_DIALOG 时）
+message NpcDialogMetadata {
+  string npc_id = 1;
+  string npc_name = 2;
+  string dialog_id = 3;          // 对话树节点 ID
+  repeated string options = 4;   // 玩家可选的回复选项
 }

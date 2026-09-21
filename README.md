@@ -1,5 +1,9 @@
 # chirp
 
+<p align="center">
+  <img src="docs/public/logo.svg" width="128" height="128" alt="Chirp Logo">
+</p>
+
 [![CI](https://github.com/cuihairu/chirp/actions/workflows/ci.yml/badge.svg)](https://github.com/cuihairu/chirp/actions/workflows/ci.yml)
 [![codecov](https://codecov.io/gh/cuihairu/chirp/branch/main/graph/badge.svg)](https://codecov.io/gh/cuihairu/chirp)
 ![C++](https://img.shields.io/badge/C%2B%2B-23-00599C?logo=cplusplus&logoColor=white)

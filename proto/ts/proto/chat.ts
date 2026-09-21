@@ -21,6 +21,16 @@ export enum MsgType {
   VOICE = 2,
   /** IMAGE - 图片 */
   IMAGE = 3,
+  /** ITEM_LINK - 物品链接 */
+  ITEM_LINK = 10,
+  /** SKILL_LINK - 技能链接 */
+  SKILL_LINK = 11,
+  /** ACHIEVEMENT - 成就分享 */
+  ACHIEVEMENT = 12,
+  /** NPC_DIALOG - NPC 对话 */
+  NPC_DIALOG = 13,
+  /** TRADE_STATUS - 交易状态 */
+  TRADE_STATUS = 14,
   /** SYSTEM - 系统消息 */
   SYSTEM = 99,
   UNRECOGNIZED = -1,
@@ -40,6 +50,21 @@ export function msgTypeFromJSON(object: any): MsgType {
     case 3:
     case "IMAGE":
       return MsgType.IMAGE;
+    case 10:
+    case "ITEM_LINK":
+      return MsgType.ITEM_LINK;
+    case 11:
+    case "SKILL_LINK":
+      return MsgType.SKILL_LINK;
+    case 12:
+    case "ACHIEVEMENT":
+      return MsgType.ACHIEVEMENT;
+    case 13:
+    case "NPC_DIALOG":
+      return MsgType.NPC_DIALOG;
+    case 14:
+    case "TRADE_STATUS":
+      return MsgType.TRADE_STATUS;
     case 99:
     case "SYSTEM":
       return MsgType.SYSTEM;
@@ -60,6 +85,16 @@ export function msgTypeToJSON(object: MsgType): string {
       return "VOICE";
     case MsgType.IMAGE:
       return "IMAGE";
+    case MsgType.ITEM_LINK:
+      return "ITEM_LINK";
+    case MsgType.SKILL_LINK:
+      return "SKILL_LINK";
+    case MsgType.ACHIEVEMENT:
+      return "ACHIEVEMENT";
+    case MsgType.NPC_DIALOG:
+      return "NPC_DIALOG";
+    case MsgType.TRADE_STATUS:
+      return "TRADE_STATUS";
     case MsgType.SYSTEM:
       return "SYSTEM";
     case MsgType.UNRECOGNIZED:
@@ -78,6 +113,10 @@ export enum ChannelType {
   GUILD = 2,
   /** WORLD - 世界频道 */
   WORLD = 3,
+  /** SYSTEM_CHANNEL - 系统公告频道 */
+  SYSTEM_CHANNEL = 4,
+  /** MARQUEE - 走马灯（滚动展示） */
+  MARQUEE = 5,
   UNRECOGNIZED = -1,
 }
 
@@ -95,6 +134,12 @@ export function channelTypeFromJSON(object: any): ChannelType {
     case 3:
     case "WORLD":
       return ChannelType.WORLD;
+    case 4:
+    case "SYSTEM_CHANNEL":
+      return ChannelType.SYSTEM_CHANNEL;
+    case 5:
+    case "MARQUEE":
+      return ChannelType.MARQUEE;
     case -1:
     case "UNRECOGNIZED":
     default:
@@ -112,7 +157,111 @@ export function channelTypeToJSON(object: ChannelType): string {
       return "GUILD";
     case ChannelType.WORLD:
       return "WORLD";
+    case ChannelType.SYSTEM_CHANNEL:
+      return "SYSTEM_CHANNEL";
+    case ChannelType.MARQUEE:
+      return "MARQUEE";
     case ChannelType.UNRECOGNIZED:
+    default:
+      return "UNRECOGNIZED";
+  }
+}
+
+/** 消息优先级 */
+export enum Priority {
+  /** PRIORITY_LOW - 普通聊天 */
+  PRIORITY_LOW = 0,
+  /** PRIORITY_NORMAL - 默认 */
+  PRIORITY_NORMAL = 1,
+  /** PRIORITY_HIGH - 重要通知（系统弹窗） */
+  PRIORITY_HIGH = 2,
+  /** PRIORITY_URGENT - 走马灯/强制弹窗 */
+  PRIORITY_URGENT = 3,
+  UNRECOGNIZED = -1,
+}
+
+export function priorityFromJSON(object: any): Priority {
+  switch (object) {
+    case 0:
+    case "PRIORITY_LOW":
+      return Priority.PRIORITY_LOW;
+    case 1:
+    case "PRIORITY_NORMAL":
+      return Priority.PRIORITY_NORMAL;
+    case 2:
+    case "PRIORITY_HIGH":
+      return Priority.PRIORITY_HIGH;
+    case 3:
+    case "PRIORITY_URGENT":
+      return Priority.PRIORITY_URGENT;
+    case -1:
+    case "UNRECOGNIZED":
+    default:
+      return Priority.UNRECOGNIZED;
+  }
+}
+
+export function priorityToJSON(object: Priority): string {
+  switch (object) {
+    case Priority.PRIORITY_LOW:
+      return "PRIORITY_LOW";
+    case Priority.PRIORITY_NORMAL:
+      return "PRIORITY_NORMAL";
+    case Priority.PRIORITY_HIGH:
+      return "PRIORITY_HIGH";
+    case Priority.PRIORITY_URGENT:
+      return "PRIORITY_URGENT";
+    case Priority.UNRECOGNIZED:
+    default:
+      return "UNRECOGNIZED";
+  }
+}
+
+/** 消息发送者类型 */
+export enum SenderKind {
+  /** SENDER_USER - 普通玩家 */
+  SENDER_USER = 0,
+  /** SENDER_SYSTEM - 系统 */
+  SENDER_SYSTEM = 1,
+  /** SENDER_NPC - NPC */
+  SENDER_NPC = 2,
+  /** SENDER_SERVICE - 后端服务 */
+  SENDER_SERVICE = 3,
+  UNRECOGNIZED = -1,
+}
+
+export function senderKindFromJSON(object: any): SenderKind {
+  switch (object) {
+    case 0:
+    case "SENDER_USER":
+      return SenderKind.SENDER_USER;
+    case 1:
+    case "SENDER_SYSTEM":
+      return SenderKind.SENDER_SYSTEM;
+    case 2:
+    case "SENDER_NPC":
+      return SenderKind.SENDER_NPC;
+    case 3:
+    case "SENDER_SERVICE":
+      return SenderKind.SENDER_SERVICE;
+    case -1:
+    case "UNRECOGNIZED":
+    default:
+      return SenderKind.UNRECOGNIZED;
+  }
+}
+
+export function senderKindToJSON(object: SenderKind): string {
+  switch (object) {
+    case SenderKind.SENDER_USER:
+      return "SENDER_USER";
+    case SenderKind.SENDER_SYSTEM:
+      return "SENDER_SYSTEM";
+    case SenderKind.SENDER_NPC:
+      return "SENDER_NPC";
+    case SenderKind.SENDER_SERVICE:
+      return "SENDER_SERVICE";
+    case SenderKind.UNRECOGNIZED:
     default:
       return "UNRECOGNIZED";
   }
@@ -372,6 +521,12 @@ export interface SendMessageRequest {
   /** 消息内容 (根据 MsgType 解析) */
   content: Uint8Array;
   clientTimestamp: number;
+  /** 消息优先级 */
+  priority: Priority;
+  /** 扩展数据（物品/技能/成就的序列化） */
+  metadata: Uint8Array;
+  /** 走马灯/公告的显示时长（秒） */
+  ttlSeconds: number;
 }
 
 /** 发送消息响应 */
@@ -393,6 +548,14 @@ export interface ChatMessage {
   msgType: MsgType;
   content: Uint8Array;
   timestamp: number;
+  /** 消息优先级 */
+  priority: Priority;
+  /** 扩展数据（物品/技能/成就的序列化） */
+  metadata: Uint8Array;
+  /** 走马灯/公告的显示时长 */
+  ttlSeconds: number;
+  /** 发送者类型 */
+  senderKind: SenderKind;
 }
 
 /**
@@ -1271,6 +1434,64 @@ export interface FileMessage {
   attachments: FileAttachment[];
 }
 
+/** 物品链接（msg_type = ITEM_LINK 时，metadata 序列化为此消息） */
+export interface ItemMetadata {
+  itemId: string;
+  itemName: string;
+  /** 品质（决定颜色：白/绿/蓝/紫/橙） */
+  quality: number;
+  iconUrl: string;
+  /** 数量 */
+  count: number;
+  /** 额外属性（攻击力、防御力等） */
+  attrs: { [key: string]: string };
+}
+
+export interface ItemMetadata_AttrsEntry {
+  key: string;
+  value: string;
+}
+
+/** 技能链接（msg_type = SKILL_LINK 时） */
+export interface SkillMetadata {
+  skillId: string;
+  skillName: string;
+  level: number;
+  iconUrl: string;
+  description: string;
+}
+
+/** 成就分享（msg_type = ACHIEVEMENT 时） */
+export interface AchievementMetadata {
+  achievementId: string;
+  achievementName: string;
+  description: string;
+  iconUrl: string;
+  /** 稀有度 */
+  rarity: number;
+}
+
+/** 交易状态（msg_type = TRADE_STATUS 时） */
+export interface TradeMetadata {
+  tradeId: string;
+  /** CREATED / ACCEPTED / COMPLETED / CANCELLED */
+  status: string;
+  /** 交易金额 */
+  amount: number;
+  itemName: string;
+  itemCount: number;
+}
+
+/** NPC 对话（msg_type = NPC_DIALOG 时） */
+export interface NpcDialogMetadata {
+  npcId: string;
+  npcName: string;
+  /** 对话树节点 ID */
+  dialogId: string;
+  /** 玩家可选的回复选项 */
+  options: string[];
+}
+
 function createBaseSendMessageRequest(): SendMessageRequest {
   return {
     senderId: "",
@@ -1280,6 +1501,9 @@ function createBaseSendMessageRequest(): SendMessageRequest {
     msgType: 0,
     content: new Uint8Array(0),
     clientTimestamp: 0,
+    priority: 0,
+    metadata: new Uint8Array(0),
+    ttlSeconds: 0,
   };
 }
 
@@ -1305,6 +1529,15 @@ export const SendMessageRequest = {
     }
     if (message.clientTimestamp !== 0) {
       writer.uint32(56).int64(message.clientTimestamp);
+    }
+    if (message.priority !== 0) {
+      writer.uint32(64).int32(message.priority);
+    }
+    if (message.metadata.length !== 0) {
+      writer.uint32(74).bytes(message.metadata);
+    }
+    if (message.ttlSeconds !== 0) {
+      writer.uint32(80).int32(message.ttlSeconds);
     }
     return writer;
   },
@@ -1365,6 +1598,27 @@ export const SendMessageRequest = {
 
           message.clientTimestamp = longToNumber(reader.int64() as Long);
           continue;
+        case 8:
+          if (tag !== 64) {
+            break;
+          }
+
+          message.priority = reader.int32() as any;
+          continue;
+        case 9:
+          if (tag !== 74) {
+            break;
+          }
+
+          message.metadata = reader.bytes();
+          continue;
+        case 10:
+          if (tag !== 80) {
+            break;
+          }
+
+          message.ttlSeconds = reader.int32();
+          continue;
       }
       if ((tag & 7) === 4 || tag === 0) {
         break;
@@ -1383,6 +1637,9 @@ export const SendMessageRequest = {
       msgType: isSet(object.msgType) ? msgTypeFromJSON(object.msgType) : 0,
       content: isSet(object.content) ? bytesFromBase64(object.content) : new Uint8Array(0),
       clientTimestamp: isSet(object.clientTimestamp) ? globalThis.Number(object.clientTimestamp) : 0,
+      priority: isSet(object.priority) ? priorityFromJSON(object.priority) : 0,
+      metadata: isSet(object.metadata) ? bytesFromBase64(object.metadata) : new Uint8Array(0),
+      ttlSeconds: isSet(object.ttlSeconds) ? globalThis.Number(object.ttlSeconds) : 0,
     };
   },
 
@@ -1409,6 +1666,15 @@ export const SendMessageRequest = {
     if (message.clientTimestamp !== 0) {
       obj.clientTimestamp = Math.round(message.clientTimestamp);
     }
+    if (message.priority !== 0) {
+      obj.priority = priorityToJSON(message.priority);
+    }
+    if (message.metadata.length !== 0) {
+      obj.metadata = base64FromBytes(message.metadata);
+    }
+    if (message.ttlSeconds !== 0) {
+      obj.ttlSeconds = Math.round(message.ttlSeconds);
+    }
     return obj;
   },
 
@@ -1424,6 +1690,9 @@ export const SendMessageRequest = {
     message.msgType = object.msgType ?? 0;
     message.content = object.content ?? new Uint8Array(0);
     message.clientTimestamp = object.clientTimestamp ?? 0;
+    message.priority = object.priority ?? 0;
+    message.metadata = object.metadata ?? new Uint8Array(0);
+    message.ttlSeconds = object.ttlSeconds ?? 0;
     return message;
   },
 };
@@ -1527,6 +1796,10 @@ function createBaseChatMessage(): ChatMessage {
     msgType: 0,
     content: new Uint8Array(0),
     timestamp: 0,
+    priority: 0,
+    metadata: new Uint8Array(0),
+    ttlSeconds: 0,
+    senderKind: 0,
   };
 }
 
@@ -1555,6 +1828,18 @@ export const ChatMessage = {
     }
     if (message.timestamp !== 0) {
       writer.uint32(64).int64(message.timestamp);
+    }
+    if (message.priority !== 0) {
+      writer.uint32(72).int32(message.priority);
+    }
+    if (message.metadata.length !== 0) {
+      writer.uint32(82).bytes(message.metadata);
+    }
+    if (message.ttlSeconds !== 0) {
+      writer.uint32(88).int32(message.ttlSeconds);
+    }
+    if (message.senderKind !== 0) {
+      writer.uint32(96).int32(message.senderKind);
     }
     return writer;
   },
@@ -1622,6 +1907,34 @@ export const ChatMessage = {
 
           message.timestamp = longToNumber(reader.int64() as Long);
           continue;
+        case 9:
+          if (tag !== 72) {
+            break;
+          }
+
+          message.priority = reader.int32() as any;
+          continue;
+        case 10:
+          if (tag !== 82) {
+            break;
+          }
+
+          message.metadata = reader.bytes();
+          continue;
+        case 11:
+          if (tag !== 88) {
+            break;
+          }
+
+          message.ttlSeconds = reader.int32();
+          continue;
+        case 12:
+          if (tag !== 96) {
+            break;
+          }
+
+          message.senderKind = reader.int32() as any;
+          continue;
       }
       if ((tag & 7) === 4 || tag === 0) {
         break;
@@ -1641,6 +1954,10 @@ export const ChatMessage = {
       msgType: isSet(object.msgType) ? msgTypeFromJSON(object.msgType) : 0,
       content: isSet(object.content) ? bytesFromBase64(object.content) : new Uint8Array(0),
       timestamp: isSet(object.timestamp) ? globalThis.Number(object.timestamp) : 0,
+      priority: isSet(object.priority) ? priorityFromJSON(object.priority) : 0,
+      metadata: isSet(object.metadata) ? bytesFromBase64(object.metadata) : new Uint8Array(0),
+      ttlSeconds: isSet(object.ttlSeconds) ? globalThis.Number(object.ttlSeconds) : 0,
+      senderKind: isSet(object.senderKind) ? senderKindFromJSON(object.senderKind) : 0,
     };
   },
 
@@ -1670,6 +1987,18 @@ export const ChatMessage = {
     if (message.timestamp !== 0) {
       obj.timestamp = Math.round(message.timestamp);
     }
+    if (message.priority !== 0) {
+      obj.priority = priorityToJSON(message.priority);
+    }
+    if (message.metadata.length !== 0) {
+      obj.metadata = base64FromBytes(message.metadata);
+    }
+    if (message.ttlSeconds !== 0) {
+      obj.ttlSeconds = Math.round(message.ttlSeconds);
+    }
+    if (message.senderKind !== 0) {
+      obj.senderKind = senderKindToJSON(message.senderKind);
+    }
     return obj;
   },
 
@@ -1686,6 +2015,10 @@ export const ChatMessage = {
     message.msgType = object.msgType ?? 0;
     message.content = object.content ?? new Uint8Array(0);
     message.timestamp = object.timestamp ?? 0;
+    message.priority = object.priority ?? 0;
+    message.metadata = object.metadata ?? new Uint8Array(0);
+    message.ttlSeconds = object.ttlSeconds ?? 0;
+    message.senderKind = object.senderKind ?? 0;
     return message;
   },
 };
@@ -11974,6 +12307,694 @@ export const FileMessage = {
       ? ChatMessage.fromPartial(object.baseMessage)
       : undefined;
     message.attachments = object.attachments?.map((e) => FileAttachment.fromPartial(e)) || [];
+    return message;
+  },
+};
+
+function createBaseItemMetadata(): ItemMetadata {
+  return { itemId: "", itemName: "", quality: 0, iconUrl: "", count: 0, attrs: {} };
+}
+
+export const ItemMetadata = {
+  encode(message: ItemMetadata, writer: _m0.Writer = _m0.Writer.create()): _m0.Writer {
+    if (message.itemId !== "") {
+      writer.uint32(10).string(message.itemId);
+    }
+    if (message.itemName !== "") {
+      writer.uint32(18).string(message.itemName);
+    }
+    if (message.quality !== 0) {
+      writer.uint32(24).int32(message.quality);
+    }
+    if (message.iconUrl !== "") {
+      writer.uint32(34).string(message.iconUrl);
+    }
+    if (message.count !== 0) {
+      writer.uint32(40).int32(message.count);
+    }
+    Object.entries(message.attrs).forEach(([key, value]) => {
+      ItemMetadata_AttrsEntry.encode({ key: key as any, value }, writer.uint32(50).fork()).ldelim();
+    });
+    return writer;
+  },
+
+  decode(input: _m0.Reader | Uint8Array, length?: number): ItemMetadata {
+    const reader = input instanceof _m0.Reader ? input : _m0.Reader.create(input);
+    let end = length === undefined ? reader.len : reader.pos + length;
+    const message = createBaseItemMetadata();
+    while (reader.pos < end) {
+      const tag = reader.uint32();
+      switch (tag >>> 3) {
+        case 1:
+          if (tag !== 10) {
+            break;
+          }
+
+          message.itemId = reader.string();
+          continue;
+        case 2:
+          if (tag !== 18) {
+            break;
+          }
+
+          message.itemName = reader.string();
+          continue;
+        case 3:
+          if (tag !== 24) {
+            break;
+          }
+
+          message.quality = reader.int32();
+          continue;
+        case 4:
+          if (tag !== 34) {
+            break;
+          }
+
+          message.iconUrl = reader.string();
+          continue;
+        case 5:
+          if (tag !== 40) {
+            break;
+          }
+
+          message.count = reader.int32();
+          continue;
+        case 6:
+          if (tag !== 50) {
+            break;
+          }
+
+          const entry6 = ItemMetadata_AttrsEntry.decode(reader, reader.uint32());
+          if (entry6.value !== undefined) {
+            message.attrs[entry6.key] = entry6.value;
+          }
+          continue;
+      }
+      if ((tag & 7) === 4 || tag === 0) {
+        break;
+      }
+      reader.skipType(tag & 7);
+    }
+    return message;
+  },
+
+  fromJSON(object: any): ItemMetadata {
+    return {
+      itemId: isSet(object.itemId) ? globalThis.String(object.itemId) : "",
+      itemName: isSet(object.itemName) ? globalThis.String(object.itemName) : "",
+      quality: isSet(object.quality) ? globalThis.Number(object.quality) : 0,
+      iconUrl: isSet(object.iconUrl) ? globalThis.String(object.iconUrl) : "",
+      count: isSet(object.count) ? globalThis.Number(object.count) : 0,
+      attrs: isObject(object.attrs)
+        ? Object.entries(object.attrs).reduce<{ [key: string]: string }>((acc, [key, value]) => {
+          acc[key] = String(value);
+          return acc;
+        }, {})
+        : {},
+    };
+  },
+
+  toJSON(message: ItemMetadata): unknown {
+    const obj: any = {};
+    if (message.itemId !== "") {
+      obj.itemId = message.itemId;
+    }
+    if (message.itemName !== "") {
+      obj.itemName = message.itemName;
+    }
+    if (message.quality !== 0) {
+      obj.quality = Math.round(message.quality);
+    }
+    if (message.iconUrl !== "") {
+      obj.iconUrl = message.iconUrl;
+    }
+    if (message.count !== 0) {
+      obj.count = Math.round(message.count);
+    }
+    if (message.attrs) {
+      const entries = Object.entries(message.attrs);
+      if (entries.length > 0) {
+        obj.attrs = {};
+        entries.forEach(([k, v]) => {
+          obj.attrs[k] = v;
+        });
+      }
+    }
+    return obj;
+  },
+
+  create<I extends Exact<DeepPartial<ItemMetadata>, I>>(base?: I): ItemMetadata {
+    return ItemMetadata.fromPartial(base ?? ({} as any));
+  },
+  fromPartial<I extends Exact<DeepPartial<ItemMetadata>, I>>(object: I): ItemMetadata {
+    const message = createBaseItemMetadata();
+    message.itemId = object.itemId ?? "";
+    message.itemName = object.itemName ?? "";
+    message.quality = object.quality ?? 0;
+    message.iconUrl = object.iconUrl ?? "";
+    message.count = object.count ?? 0;
+    message.attrs = Object.entries(object.attrs ?? {}).reduce<{ [key: string]: string }>((acc, [key, value]) => {
+      if (value !== undefined) {
+        acc[key] = globalThis.String(value);
+      }
+      return acc;
+    }, {});
+    return message;
+  },
+};
+
+function createBaseItemMetadata_AttrsEntry(): ItemMetadata_AttrsEntry {
+  return { key: "", value: "" };
+}
+
+export const ItemMetadata_AttrsEntry = {
+  encode(message: ItemMetadata_AttrsEntry, writer: _m0.Writer = _m0.Writer.create()): _m0.Writer {
+    if (message.key !== "") {
+      writer.uint32(10).string(message.key);
+    }
+    if (message.value !== "") {
+      writer.uint32(18).string(message.value);
+    }
+    return writer;
+  },
+
+  decode(input: _m0.Reader | Uint8Array, length?: number): ItemMetadata_AttrsEntry {
+    const reader = input instanceof _m0.Reader ? input : _m0.Reader.create(input);
+    let end = length === undefined ? reader.len : reader.pos + length;
+    const message = createBaseItemMetadata_AttrsEntry();
+    while (reader.pos < end) {
+      const tag = reader.uint32();
+      switch (tag >>> 3) {
+        case 1:
+          if (tag !== 10) {
+            break;
+          }
+
+          message.key = reader.string();
+          continue;
+        case 2:
+          if (tag !== 18) {
+            break;
+          }
+
+          message.value = reader.string();
+          continue;
+      }
+      if ((tag & 7) === 4 || tag === 0) {
+        break;
+      }
+      reader.skipType(tag & 7);
+    }
+    return message;
+  },
+
+  fromJSON(object: any): ItemMetadata_AttrsEntry {
+    return {
+      key: isSet(object.key) ? globalThis.String(object.key) : "",
+      value: isSet(object.value) ? globalThis.String(object.value) : "",
+    };
+  },
+
+  toJSON(message: ItemMetadata_AttrsEntry): unknown {
+    const obj: any = {};
+    if (message.key !== "") {
+      obj.key = message.key;
+    }
+    if (message.value !== "") {
+      obj.value = message.value;
+    }
+    return obj;
+  },
+
+  create<I extends Exact<DeepPartial<ItemMetadata_AttrsEntry>, I>>(base?: I): ItemMetadata_AttrsEntry {
+    return ItemMetadata_AttrsEntry.fromPartial(base ?? ({} as any));
+  },
+  fromPartial<I extends Exact<DeepPartial<ItemMetadata_AttrsEntry>, I>>(object: I): ItemMetadata_AttrsEntry {
+    const message = createBaseItemMetadata_AttrsEntry();
+    message.key = object.key ?? "";
+    message.value = object.value ?? "";
+    return message;
+  },
+};
+
+function createBaseSkillMetadata(): SkillMetadata {
+  return { skillId: "", skillName: "", level: 0, iconUrl: "", description: "" };
+}
+
+export const SkillMetadata = {
+  encode(message: SkillMetadata, writer: _m0.Writer = _m0.Writer.create()): _m0.Writer {
+    if (message.skillId !== "") {
+      writer.uint32(10).string(message.skillId);
+    }
+    if (message.skillName !== "") {
+      writer.uint32(18).string(message.skillName);
+    }
+    if (message.level !== 0) {
+      writer.uint32(24).int32(message.level);
+    }
+    if (message.iconUrl !== "") {
+      writer.uint32(34).string(message.iconUrl);
+    }
+    if (message.description !== "") {
+      writer.uint32(42).string(message.description);
+    }
+    return writer;
+  },
+
+  decode(input: _m0.Reader | Uint8Array, length?: number): SkillMetadata {
+    const reader = input instanceof _m0.Reader ? input : _m0.Reader.create(input);
+    let end = length === undefined ? reader.len : reader.pos + length;
+    const message = createBaseSkillMetadata();
+    while (reader.pos < end) {
+      const tag = reader.uint32();
+      switch (tag >>> 3) {
+        case 1:
+          if (tag !== 10) {
+            break;
+          }
+
+          message.skillId = reader.string();
+          continue;
+        case 2:
+          if (tag !== 18) {
+            break;
+          }
+
+          message.skillName = reader.string();
+          continue;
+        case 3:
+          if (tag !== 24) {
+            break;
+          }
+
+          message.level = reader.int32();
+          continue;
+        case 4:
+          if (tag !== 34) {
+            break;
+          }
+
+          message.iconUrl = reader.string();
+          continue;
+        case 5:
+          if (tag !== 42) {
+            break;
+          }
+
+          message.description = reader.string();
+          continue;
+      }
+      if ((tag & 7) === 4 || tag === 0) {
+        break;
+      }
+      reader.skipType(tag & 7);
+    }
+    return message;
+  },
+
+  fromJSON(object: any): SkillMetadata {
+    return {
+      skillId: isSet(object.skillId) ? globalThis.String(object.skillId) : "",
+      skillName: isSet(object.skillName) ? globalThis.String(object.skillName) : "",
+      level: isSet(object.level) ? globalThis.Number(object.level) : 0,
+      iconUrl: isSet(object.iconUrl) ? globalThis.String(object.iconUrl) : "",
+      description: isSet(object.description) ? globalThis.String(object.description) : "",
+    };
+  },
+
+  toJSON(message: SkillMetadata): unknown {
+    const obj: any = {};
+    if (message.skillId !== "") {
+      obj.skillId = message.skillId;
+    }
+    if (message.skillName !== "") {
+      obj.skillName = message.skillName;
+    }
+    if (message.level !== 0) {
+      obj.level = Math.round(message.level);
+    }
+    if (message.iconUrl !== "") {
+      obj.iconUrl = message.iconUrl;
+    }
+    if (message.description !== "") {
+      obj.description = message.description;
+    }
+    return obj;
+  },
+
+  create<I extends Exact<DeepPartial<SkillMetadata>, I>>(base?: I): SkillMetadata {
+    return SkillMetadata.fromPartial(base ?? ({} as any));
+  },
+  fromPartial<I extends Exact<DeepPartial<SkillMetadata>, I>>(object: I): SkillMetadata {
+    const message = createBaseSkillMetadata();
+    message.skillId = object.skillId ?? "";
+    message.skillName = object.skillName ?? "";
+    message.level = object.level ?? 0;
+    message.iconUrl = object.iconUrl ?? "";
+    message.description = object.description ?? "";
+    return message;
+  },
+};
+
+function createBaseAchievementMetadata(): AchievementMetadata {
+  return { achievementId: "", achievementName: "", description: "", iconUrl: "", rarity: 0 };
+}
+
+export const AchievementMetadata = {
+  encode(message: AchievementMetadata, writer: _m0.Writer = _m0.Writer.create()): _m0.Writer {
+    if (message.achievementId !== "") {
+      writer.uint32(10).string(message.achievementId);
+    }
+    if (message.achievementName !== "") {
+      writer.uint32(18).string(message.achievementName);
+    }
+    if (message.description !== "") {
+      writer.uint32(26).string(message.description);
+    }
+    if (message.iconUrl !== "") {
+      writer.uint32(34).string(message.iconUrl);
+    }
+    if (message.rarity !== 0) {
+      writer.uint32(40).int32(message.rarity);
+    }
+    return writer;
+  },
+
+  decode(input: _m0.Reader | Uint8Array, length?: number): AchievementMetadata {
+    const reader = input instanceof _m0.Reader ? input : _m0.Reader.create(input);
+    let end = length === undefined ? reader.len : reader.pos + length;
+    const message = createBaseAchievementMetadata();
+    while (reader.pos < end) {
+      const tag = reader.uint32();
+      switch (tag >>> 3) {
+        case 1:
+          if (tag !== 10) {
+            break;
+          }
+
+          message.achievementId = reader.string();
+          continue;
+        case 2:
+          if (tag !== 18) {
+            break;
+          }
+
+          message.achievementName = reader.string();
+          continue;
+        case 3:
+          if (tag !== 26) {
+            break;
+          }
+
+          message.description = reader.string();
+          continue;
+        case 4:
+          if (tag !== 34) {
+            break;
+          }
+
+          message.iconUrl = reader.string();
+          continue;
+        case 5:
+          if (tag !== 40) {
+            break;
+          }
+
+          message.rarity = reader.int32();
+          continue;
+      }
+      if ((tag & 7) === 4 || tag === 0) {
+        break;
+      }
+      reader.skipType(tag & 7);
+    }
+    return message;
+  },
+
+  fromJSON(object: any): AchievementMetadata {
+    return {
+      achievementId: isSet(object.achievementId) ? globalThis.String(object.achievementId) : "",
+      achievementName: isSet(object.achievementName) ? globalThis.String(object.achievementName) : "",
+      description: isSet(object.description) ? globalThis.String(object.description) : "",
+      iconUrl: isSet(object.iconUrl) ? globalThis.String(object.iconUrl) : "",
+      rarity: isSet(object.rarity) ? globalThis.Number(object.rarity) : 0,
+    };
+  },
+
+  toJSON(message: AchievementMetadata): unknown {
+    const obj: any = {};
+    if (message.achievementId !== "") {
+      obj.achievementId = message.achievementId;
+    }
+    if (message.achievementName !== "") {
+      obj.achievementName = message.achievementName;
+    }
+    if (message.description !== "") {
+      obj.description = message.description;
+    }
+    if (message.iconUrl !== "") {
+      obj.iconUrl = message.iconUrl;
+    }
+    if (message.rarity !== 0) {
+      obj.rarity = Math.round(message.rarity);
+    }
+    return obj;
+  },
+
+  create<I extends Exact<DeepPartial<AchievementMetadata>, I>>(base?: I): AchievementMetadata {
+    return AchievementMetadata.fromPartial(base ?? ({} as any));
+  },
+  fromPartial<I extends Exact<DeepPartial<AchievementMetadata>, I>>(object: I): AchievementMetadata {
+    const message = createBaseAchievementMetadata();
+    message.achievementId = object.achievementId ?? "";
+    message.achievementName = object.achievementName ?? "";
+    message.description = object.description ?? "";
+    message.iconUrl = object.iconUrl ?? "";
+    message.rarity = object.rarity ?? 0;
+    return message;
+  },
+};
+
+function createBaseTradeMetadata(): TradeMetadata {
+  return { tradeId: "", status: "", amount: 0, itemName: "", itemCount: 0 };
+}
+
+export const TradeMetadata = {
+  encode(message: TradeMetadata, writer: _m0.Writer = _m0.Writer.create()): _m0.Writer {
+    if (message.tradeId !== "") {
+      writer.uint32(10).string(message.tradeId);
+    }
+    if (message.status !== "") {
+      writer.uint32(18).string(message.status);
+    }
+    if (message.amount !== 0) {
+      writer.uint32(24).int64(message.amount);
+    }
+    if (message.itemName !== "") {
+      writer.uint32(34).string(message.itemName);
+    }
+    if (message.itemCount !== 0) {
+      writer.uint32(40).int32(message.itemCount);
+    }
+    return writer;
+  },
+
+  decode(input: _m0.Reader | Uint8Array, length?: number): TradeMetadata {
+    const reader = input instanceof _m0.Reader ? input : _m0.Reader.create(input);
+    let end = length === undefined ? reader.len : reader.pos + length;
+    const message = createBaseTradeMetadata();
+    while (reader.pos < end) {
+      const tag = reader.uint32();
+      switch (tag >>> 3) {
+        case 1:
+          if (tag !== 10) {
+            break;
+          }
+
+          message.tradeId = reader.string();
+          continue;
+        case 2:
+          if (tag !== 18) {
+            break;
+          }
+
+          message.status = reader.string();
+          continue;
+        case 3:
+          if (tag !== 24) {
+            break;
+          }
+
+          message.amount = longToNumber(reader.int64() as Long);
+          continue;
+        case 4:
+          if (tag !== 34) {
+            break;
+          }
+
+          message.itemName = reader.string();
+          continue;
+        case 5:
+          if (tag !== 40) {
+            break;
+          }
+
+          message.itemCount = reader.int32();
+          continue;
+      }
+      if ((tag & 7) === 4 || tag === 0) {
+        break;
+      }
+      reader.skipType(tag & 7);
+    }
+    return message;
+  },
+
+  fromJSON(object: any): TradeMetadata {
+    return {
+      tradeId: isSet(object.tradeId) ? globalThis.String(object.tradeId) : "",
+      status: isSet(object.status) ? globalThis.String(object.status) : "",
+      amount: isSet(object.amount) ? globalThis.Number(object.amount) : 0,
+      itemName: isSet(object.itemName) ? globalThis.String(object.itemName) : "",
+      itemCount: isSet(object.itemCount) ? globalThis.Number(object.itemCount) : 0,
+    };
+  },
+
+  toJSON(message: TradeMetadata): unknown {
+    const obj: any = {};
+    if (message.tradeId !== "") {
+      obj.tradeId = message.tradeId;
+    }
+    if (message.status !== "") {
+      obj.status = message.status;
+    }
+    if (message.amount !== 0) {
+      obj.amount = Math.round(message.amount);
+    }
+    if (message.itemName !== "") {
+      obj.itemName = message.itemName;
+    }
+    if (message.itemCount !== 0) {
+      obj.itemCount = Math.round(message.itemCount);
+    }
+    return obj;
+  },
+
+  create<I extends Exact<DeepPartial<TradeMetadata>, I>>(base?: I): TradeMetadata {
+    return TradeMetadata.fromPartial(base ?? ({} as any));
+  },
+  fromPartial<I extends Exact<DeepPartial<TradeMetadata>, I>>(object: I): TradeMetadata {
+    const message = createBaseTradeMetadata();
+    message.tradeId = object.tradeId ?? "";
+    message.status = object.status ?? "";
+    message.amount = object.amount ?? 0;
+    message.itemName = object.itemName ?? "";
+    message.itemCount = object.itemCount ?? 0;
+    return message;
+  },
+};
+
+function createBaseNpcDialogMetadata(): NpcDialogMetadata {
+  return { npcId: "", npcName: "", dialogId: "", options: [] };
+}
+
+export const NpcDialogMetadata = {
+  encode(message: NpcDialogMetadata, writer: _m0.Writer = _m0.Writer.create()): _m0.Writer {
+    if (message.npcId !== "") {
+      writer.uint32(10).string(message.npcId);
+    }
+    if (message.npcName !== "") {
+      writer.uint32(18).string(message.npcName);
+    }
+    if (message.dialogId !== "") {
+      writer.uint32(26).string(message.dialogId);
+    }
+    for (const v of message.options) {
+      writer.uint32(34).string(v!);
+    }
+    return writer;
+  },
+
+  decode(input: _m0.Reader | Uint8Array, length?: number): NpcDialogMetadata {
+    const reader = input instanceof _m0.Reader ? input : _m0.Reader.create(input);
+    let end = length === undefined ? reader.len : reader.pos + length;
+    const message = createBaseNpcDialogMetadata();
+    while (reader.pos < end) {
+      const tag = reader.uint32();
+      switch (tag >>> 3) {
+        case 1:
+          if (tag !== 10) {
+            break;
+          }
+
+          message.npcId = reader.string();
+          continue;
+        case 2:
+          if (tag !== 18) {
+            break;
+          }
+
+          message.npcName = reader.string();
+          continue;
+        case 3:
+          if (tag !== 26) {
+            break;
+          }
+
+          message.dialogId = reader.string();
+          continue;
+        case 4:
+          if (tag !== 34) {
+            break;
+          }
+
+          message.options.push(reader.string());
+          continue;
+      }
+      if ((tag & 7) === 4 || tag === 0) {
+        break;
+      }
+      reader.skipType(tag & 7);
+    }
+    return message;
+  },
+
+  fromJSON(object: any): NpcDialogMetadata {
+    return {
+      npcId: isSet(object.npcId) ? globalThis.String(object.npcId) : "",
+      npcName: isSet(object.npcName) ? globalThis.String(object.npcName) : "",
+      dialogId: isSet(object.dialogId) ? globalThis.String(object.dialogId) : "",
+      options: globalThis.Array.isArray(object?.options) ? object.options.map((e: any) => globalThis.String(e)) : [],
+    };
+  },
+
+  toJSON(message: NpcDialogMetadata): unknown {
+    const obj: any = {};
+    if (message.npcId !== "") {
+      obj.npcId = message.npcId;
+    }
+    if (message.npcName !== "") {
+      obj.npcName = message.npcName;
+    }
+    if (message.dialogId !== "") {
+      obj.dialogId = message.dialogId;
+    }
+    if (message.options?.length) {
+      obj.options = message.options;
+    }
+    return obj;
+  },
+
+  create<I extends Exact<DeepPartial<NpcDialogMetadata>, I>>(base?: I): NpcDialogMetadata {
+    return NpcDialogMetadata.fromPartial(base ?? ({} as any));
+  },
+  fromPartial<I extends Exact<DeepPartial<NpcDialogMetadata>, I>>(object: I): NpcDialogMetadata {
+    const message = createBaseNpcDialogMetadata();
+    message.npcId = object.npcId ?? "";
+    message.npcName = object.npcName ?? "";
+    message.dialogId = object.dialogId ?? "";
+    message.options = object.options?.map((e) => e) || [];
     return message;
   },
 };
