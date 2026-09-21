@@ -46,7 +46,10 @@ const (
 	MsgID_REVOKE_SESSION_RESP  MsgID = 1017
 	MsgID_CHANGE_PASSWORD_REQ  MsgID = 1018
 	MsgID_CHANGE_PASSWORD_RESP MsgID = 1019
-	// Chat service
+	// Chat service. Both gateways relay these verbatim through the per-client
+	// ChatBridge pipeline (gateway and app_gateway, each with --chat_host);
+	// chat answers on the same internal connection, so no edge synthesizes
+	// these responses.
 	MsgID_SEND_MESSAGE_REQ    MsgID = 2001
 	MsgID_SEND_MESSAGE_RESP   MsgID = 2002
 	MsgID_GET_HISTORY_REQ     MsgID = 2003

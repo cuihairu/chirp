@@ -180,7 +180,10 @@ namespace Chirp.Gateway {
     [pbr::OriginalName("CHANGE_PASSWORD_REQ")] ChangePasswordReq = 1018,
     [pbr::OriginalName("CHANGE_PASSWORD_RESP")] ChangePasswordResp = 1019,
     /// <summary>
-    /// Chat service
+    /// Chat service. Both gateways relay these verbatim through the per-client
+    /// ChatBridge pipeline (gateway and app_gateway, each with --chat_host);
+    /// chat answers on the same internal connection, so no edge synthesizes
+    /// these responses.
     /// </summary>
     [pbr::OriginalName("SEND_MESSAGE_REQ")] SendMessageReq = 2001,
     [pbr::OriginalName("SEND_MESSAGE_RESP")] SendMessageResp = 2002,

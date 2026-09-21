@@ -33,7 +33,12 @@ export enum MsgID {
   REVOKE_SESSION_RESP = 1017,
   CHANGE_PASSWORD_REQ = 1018,
   CHANGE_PASSWORD_RESP = 1019,
-  /** SEND_MESSAGE_REQ - Chat service */
+  /**
+   * SEND_MESSAGE_REQ - Chat service. Both gateways relay these verbatim through the per-client
+   * ChatBridge pipeline (gateway and app_gateway, each with --chat_host);
+   * chat answers on the same internal connection, so no edge synthesizes
+   * these responses.
+   */
   SEND_MESSAGE_REQ = 2001,
   SEND_MESSAGE_RESP = 2002,
   GET_HISTORY_REQ = 2003,

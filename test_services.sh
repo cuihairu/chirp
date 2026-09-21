@@ -600,6 +600,10 @@ elif [[ "${1:-}" == "--smoke-edge" ]]; then
   B_LOG="${B_LOG:-/tmp/chirp_edge_b_refill.log}"
   B2_LOG="${B2_LOG:-/tmp/chirp_edge_b2_live.log}"
   A2_LOG="${A2_LOG:-/tmp/chirp_edge_a2_live.log}"
+  APP_PORT="${APP_PORT:-$(pick_port)}"
+  APP_LOG="${APP_LOG:-/tmp/chirp_app_gateway_smoke_edge.log}"
+  A3_LOG="${A3_LOG:-/tmp/chirp_edge_a3_appgw.log}"
+  B3_LOG="${B3_LOG:-/tmp/chirp_edge_b3_appgw.log}"
 
   "${REDIS_SERVER_BIN}" --port "${REDIS_PORT}" --save '' --appendonly no --dir "${REDIS_DIR}" > "${REDIS_LOG}" 2>&1 &
   REDIS_PID=$!
@@ -617,8 +621,14 @@ elif [[ "${1:-}" == "--smoke-edge" ]]; then
     --chat_host 127.0.0.1 --chat_port "${CHAT_PORT}" --chat_service_secret edge-secret > "${GW_LOG}" 2>&1 &
   GW_PID=$!
 
+  # app_gateway 吸收同一 chat 管道(WP-8 聚合边):scaffold 登录(token 即
+  # user_id,零 auth 依赖),bridge 以独立 service_id 过同一个 secret 信任门。
+  ./build/services/app_gateway/chirp_app_gateway --port "${APP_PORT}" \
+    --chat_host 127.0.0.1 --chat_port "${CHAT_PORT}" --chat_service_secret edge-secret > "${APP_LOG}" 2>&1 &
+  APP_PID=$!
+
   cleanup() {
-    stop_proc "${GW_PID:-}" "${CHAT_PID:-}" "${AUTH_PID:-}" "${REDIS_PID:-}"
+    stop_proc "${APP_PID:-}" "${GW_PID:-}" "${CHAT_PID:-}" "${AUTH_PID:-}" "${REDIS_PID:-}"
     rm -rf "${REDIS_DIR}"
   }
   trap cleanup EXIT
@@ -626,6 +636,7 @@ elif [[ "${1:-}" == "--smoke-edge" ]]; then
   wait_port "${AUTH_PORT}" chirp_auth "${AUTH_LOG}"
   wait_port "${CHAT_PORT}" chirp_chat "${CHAT_LOG}"
   wait_port "${GW_PORT}" chirp_gateway "${GW_LOG}"
+  wait_port "${APP_PORT}" chirp_app_gateway "${APP_LOG}"
 
   echo ""
   echo "[edge] C1 direct chat login (consumes the only per-IP budget; proves direct entry still works)"
@@ -693,6 +704,24 @@ elif [[ "${1:-}" == "--smoke-edge" ]]; then
   if [[ "${B2_RC}" != "0" ]] || ! grep -q "content=edge-live-hello" "${B2_LOG}"; then
     echo "错误: B2 未观察到 A2 经 gateway 的实时/补投通知 (rc=${B2_RC})"
     cat "${B2_LOG}" || true
+    exit 1
+  fi
+
+  echo ""
+  echo "[edge] A3 login via app_gateway (chat pipe absorbed; 2xxx uplink relays to chat) + send to offline B"
+  timeout 30 ./build/tools/benchmark/chirp_login_client --host 127.0.0.1 --port "${APP_PORT}" \
+    --token user_a --device dev_a3 --platform pc \
+    --send_text "app-edge-offline-hello" --peer_user user_b > "${A3_LOG}" 2>&1
+  grep -q "code=0" "${A3_LOG}"
+  grep -q "send code=0" "${A3_LOG}"
+
+  echo ""
+  echo "[edge] B3 login via app_gateway (offline refill rides the app-edge pipe back as CHAT_MESSAGE_NOTIFY)"
+  timeout 30 ./build/tools/benchmark/chirp_login_client --host 127.0.0.1 --port "${APP_PORT}" \
+    --token user_b --device dev_b3 --platform pc --expect_notify_ms 15000 > "${B3_LOG}" 2>&1
+  if ! grep -q "notify from=user_a" "${B3_LOG}" || ! grep -q "content=app-edge-offline-hello" "${B3_LOG}"; then
+    echo "错误: B 经 app_gateway 登录后未收到离线补投递 (chat 管道未生效)"
+    cat "${B3_LOG}" || true
     exit 1
   fi
 
