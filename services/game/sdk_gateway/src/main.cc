@@ -117,6 +117,18 @@ void HandleLogin(const std::shared_ptr<chirp::network::Session>& session,
     resp.set_session_id(RandomHex(16));
     resp.set_kick_previous(true);
     resp.mutable_kick()->set_reason("login from another device");
+    // Same as the auth-backed path below: bind the session registry even in
+    // the scaffolding fallback, or the 2xxx forwarding gate would silently
+    // drop every chat packet for token-authenticated deployments (the
+    // game-plane shape, where game_chat verifies tokens locally).
+    if (!resp.user_id().empty()) {
+      auto old = chirp::network::BindAuthenticatedSession(state, resp.user_id(), resp.session_id(),
+                                                          chirp::network::NormalizeDeviceId(req.device_id()),
+                                                          session);
+      if (old && old.get() != session.get()) {
+        KickSession(old, "login from another device");
+      }
+    }
     SendPacket(session, chirp::gateway::LOGIN_RESP, seq, resp.SerializeAsString());
     if (bridge) {
       bridge->Attach(session, req.token(), req.device_id());

@@ -132,8 +132,9 @@ void HandleLogin(const std::shared_ptr<chirp::network::Session>& session,
     resp.set_session_id(RandomHex(16));
     resp.set_kick_previous(true);
     resp.mutable_kick()->set_reason("login from another device");
-    // Unlike the game gateway's scaffolding fallback, the app edge must bind
-    // the session: device messages below require an authenticated session.
+    // Both edges bind the session in the scaffolding fallback: device
+    // messages (here) and chat forwarding (game gateway) below require an
+    // authenticated session.
     if (!resp.user_id().empty()) {
       auto old = chirp::network::BindAuthenticatedSession(state, resp.user_id(), resp.session_id(),
                                                           chirp::network::NormalizeDeviceId(req.device_id()),
