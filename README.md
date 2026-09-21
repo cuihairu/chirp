@@ -26,44 +26,45 @@ chirp 想解决的就是这件事，设计目标按优先级排列：
 - 服务器平面 `server_gateway`（游戏服务端接入）枢纽与 chat 侧注入消费均已实现并全覆盖（进程级端到端验证 `./test_services.sh --smoke-npc`），标记为实验中。
 - 其余（`social`、`voice`、`notification`、`search`、多端 SDK、移动端、管理后台）完成度不一致，不要对外当作稳定能力介绍。真实状态见[能力矩阵](docs/CAPABILITY_MATRIX.md)。
 
-## 三条接入边缘
+## 两条平面,一套桥接
 
-三个接入点相互独立，不共用 gateway；共享的是核心能力（认证、设备级会话/在线状态、聊天、通知）：
+游戏平面和 App 平面是两套独立部署的系统,各自有独立的边缘和独立的 chat;跨平面消息只经过一个专用 `chat_bridge` 进程双向翻译。玩家身份绑定、频道订阅、统一未读都放在无状态的 `app_registry`(Redis 存储)。游戏平面可完全脱离 App 平面单独部署。
 
 ```mermaid
 flowchart TB
-    Game["游戏客户端<br/>用户 token<br/>随游戏进程存亡"]
-    App["伴侣 App<br/>用户 token + 设备推送<br/>移动网络 · 后台可被杀"]
-    GS["游戏服务端<br/>service_id + secret<br/>内网常驻 · 永不冒充用户"]
+    Game["游戏客户端<br/>用户 token"]
+    App["伴侣 App<br/>用户 token + 设备推送"]
+    GS["游戏服务端<br/>service_id + secret"]
 
-    GG["game_gateway<br/>TCP 5000 / WS 5001<br/><i>services/gateway 演进目标</i>"]
-    AG["app_gateway<br/>TCP 5200 / WS 5201<br/>可选 TLS/wss"]
-    SG["server_gateway<br/>TCP 8100 · 出站长连接<br/>Redis Streams 回退"]
-
-    subgraph core["共享核心（共享数据模型与库，不是单进程）"]
-        Auth["auth"]
-        Session["会话 / 在线状态<br/><i>user → device → edge</i>"]
-        Chat["chat"]
-        Notif["notification<br/><i>推送桥</i>"]
+    subgraph gp["游戏平面(独立部署单元)"]
+        GG["game_gateway<br/>TCP 5000 / WS 5001"]
+        GCHAT["game_chat"]
+        SG["server_gateway<br/>TCP 8100 · 仅注入/事件"]
+        AUTH["auth"]
+        GG -->|per-client pipe| GCHAT
+        SG -->|inject| GCHAT
+        GG --> AUTH
     end
 
-    Redis[("Redis<br/>会话 / 历史 / 队列（可选增强）")]
-    MySQL[("MySQL<br/>持久化增强（可选）")]
+    subgraph ap["App 平面(可选附加)"]
+        AG["app_gateway<br/>TCP 5200 / WS 5201"]
+        ACHAT["app_chat"]
+        AREG["app_registry<br/>无状态 + Redis"]
+        NOTIF["notification"]
+        AG -->|per-client pipe| ACHAT
+        AG -->|无状态 RPC| AREG
+        ACHAT --> NOTIF
+    end
 
-    Game -- "TCP/WS + 用户 token" --> GG
-    App -- "WS/TCP + 用户 token" --> AG
-    GS -- "出站长连接 + 服务凭证" --> SG
-
-    GG --> Auth & Session & Chat
-    AG --> Auth & Session & Notif
-    SG --> Chat
-
-    Session -.-> Redis
-    Chat -.-> Redis
-    Chat -.-> MySQL
+    Game -- "TCP/WS" --> GG
+    App -- "WS/TLS" --> AG
+    GS -- "出站长连接" --> SG
+    GCHAT <-->|"trusted peer"| CB["chat_bridge<br/>身份/命名空间翻译"]
+    CB <-->|"trusted peer"| ACHAT
+    CB --> AREG
 ```
 
-要点：**边缘薄、核心共享**。边缘只做连接管理、协议适配、认证转发和心跳；同一玩家在游戏内和 App 上同时在线是核心场景，跨设备投递、kick 策略、统一未读数都在核心解决，不落在任何边缘。游戏服务端平面只认服务凭证、只做出站连接，与玩家边缘彻底隔离。详见[整体架构](docs/architecture.md)。
+要点:**平面分离、桥接直连**。`game_chat` 与 `app_chat` 互不感知;`chat_bridge` 同时作为两侧 chat 的 trusted peer,双向直连转发并做身份/命名空间翻译,不走消息队列。游戏平面故障不影响 App 平面,反之亦然;`chat_bridge` 故障只切断跨平面消息。游戏服务端平面只认服务凭证、只做出站连接,与玩家边缘彻底隔离。详见[整体架构](docs/architecture.md)。
 
 | 服务 | 默认端口 | 状态 | 作用 |
 | --- | --- | --- | --- |
@@ -78,7 +79,7 @@ flowchart TB
 
 - [核心说明](docs/CORE.md)：当前可用链路、服务边界、协议和本地验证命令
 - [能力矩阵](docs/CAPABILITY_MATRIX.md)：各服务、SDK、应用的真实完成度
-- [整体架构](docs/architecture.md)：三边缘拓扑、服务器平面设计
+- [整体架构](docs/architecture.md)：两平面分离、chat_bridge 双向桥接、app_registry 设计
 - [服务器平面](docs/server_plane.md)：游戏服务端接入契约
 - [API 概述](docs/api/overview.md)：Packet 协议、消息 ID 和核心流程
 - [快速开始](docs/guide/getting-started.md)：构建、Docker Compose、smoke test
