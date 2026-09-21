@@ -56,10 +56,15 @@ jobs:
     # The generated Go code is committed; regenerate and fail on drift so
     # the checked-in files never silently diverge from the .proto sources
     # (go_package lives in the .proto files, so they are covered too).
+    # The status check also catches brand-new packages the regeneration
+    # created but were never added - git diff alone cannot see untracked
+    # files (this is how proto/go/game_server_gateway went missing once).
     - name: Check proto/go drift
       run: |
         git diff --exit-code -- proto/go proto/*.proto \
           || (echo "::error::proto/go is stale — run gen_proto.sh and commit" && exit 1)
+        git status --porcelain -- proto/go | grep -q . \
+          && (echo "::error::proto/go has untracked generated files — run gen_proto.sh and commit" && exit 1) || true
 
     - name: Vet
       run: go vet ./sdks/go/... ./proto/go/...

@@ -27,6 +27,108 @@ namespace _fl = ::google::protobuf::internal::field_layout;
 namespace chirp {
 namespace gateway {
 
+inline constexpr PeerRegisterResp::Impl_::Impl_(
+    ::_pbi::ConstantInitialized) noexcept
+      : _cached_size_{0},
+        supported_features_{},
+        _supported_features_cached_byte_size_{0},
+        code_{static_cast< ::chirp::common::ErrorCode >(0)},
+        protocol_version_{0},
+        min_version_{0},
+        heartbeat_interval_seconds_{0} {}
+
+template <typename>
+PROTOBUF_CONSTEXPR PeerRegisterResp::PeerRegisterResp(::_pbi::ConstantInitialized)
+#if defined(PROTOBUF_CUSTOM_VTABLE)
+    : ::google::protobuf::Message(PeerRegisterResp_class_data_.base()),
+#else   // PROTOBUF_CUSTOM_VTABLE
+    : ::google::protobuf::Message(),
+#endif  // PROTOBUF_CUSTOM_VTABLE
+      _impl_(::_pbi::ConstantInitialized()) {
+}
+struct PeerRegisterRespDefaultTypeInternal {
+  PROTOBUF_CONSTEXPR PeerRegisterRespDefaultTypeInternal() : _instance(::_pbi::ConstantInitialized{}) {}
+  ~PeerRegisterRespDefaultTypeInternal() {}
+  union {
+    PeerRegisterResp _instance;
+  };
+};
+
+PROTOBUF_ATTRIBUTE_NO_DESTROY PROTOBUF_CONSTINIT
+    PROTOBUF_ATTRIBUTE_INIT_PRIORITY1 PeerRegisterRespDefaultTypeInternal _PeerRegisterResp_default_instance_;
+
+inline constexpr PeerRegisterReq::Impl_::Impl_(
+    ::_pbi::ConstantInitialized) noexcept
+      : _cached_size_{0},
+        supported_features_{},
+        _supported_features_cached_byte_size_{0},
+        service_id_(
+            &::google::protobuf::internal::fixed_address_empty_string,
+            ::_pbi::ConstantInitialized()),
+        service_secret_(
+            &::google::protobuf::internal::fixed_address_empty_string,
+            ::_pbi::ConstantInitialized()),
+        game_id_(
+            &::google::protobuf::internal::fixed_address_empty_string,
+            ::_pbi::ConstantInitialized()),
+        protocol_version_{0} {}
+
+template <typename>
+PROTOBUF_CONSTEXPR PeerRegisterReq::PeerRegisterReq(::_pbi::ConstantInitialized)
+#if defined(PROTOBUF_CUSTOM_VTABLE)
+    : ::google::protobuf::Message(PeerRegisterReq_class_data_.base()),
+#else   // PROTOBUF_CUSTOM_VTABLE
+    : ::google::protobuf::Message(),
+#endif  // PROTOBUF_CUSTOM_VTABLE
+      _impl_(::_pbi::ConstantInitialized()) {
+}
+struct PeerRegisterReqDefaultTypeInternal {
+  PROTOBUF_CONSTEXPR PeerRegisterReqDefaultTypeInternal() : _instance(::_pbi::ConstantInitialized{}) {}
+  ~PeerRegisterReqDefaultTypeInternal() {}
+  union {
+    PeerRegisterReq _instance;
+  };
+};
+
+PROTOBUF_ATTRIBUTE_NO_DESTROY PROTOBUF_CONSTINIT
+    PROTOBUF_ATTRIBUTE_INIT_PRIORITY1 PeerRegisterReqDefaultTypeInternal _PeerRegisterReq_default_instance_;
+
+inline constexpr PeerInjectMessageNotify::Impl_::Impl_(
+    ::_pbi::ConstantInitialized) noexcept
+      : _cached_size_{0},
+        channel_id_(
+            &::google::protobuf::internal::fixed_address_empty_string,
+            ::_pbi::ConstantInitialized()),
+        sender_id_(
+            &::google::protobuf::internal::fixed_address_empty_string,
+            ::_pbi::ConstantInitialized()),
+        content_(
+            &::google::protobuf::internal::fixed_address_empty_string,
+            ::_pbi::ConstantInitialized()),
+        client_msg_id_(
+            &::google::protobuf::internal::fixed_address_empty_string,
+            ::_pbi::ConstantInitialized()) {}
+
+template <typename>
+PROTOBUF_CONSTEXPR PeerInjectMessageNotify::PeerInjectMessageNotify(::_pbi::ConstantInitialized)
+#if defined(PROTOBUF_CUSTOM_VTABLE)
+    : ::google::protobuf::Message(PeerInjectMessageNotify_class_data_.base()),
+#else   // PROTOBUF_CUSTOM_VTABLE
+    : ::google::protobuf::Message(),
+#endif  // PROTOBUF_CUSTOM_VTABLE
+      _impl_(::_pbi::ConstantInitialized()) {
+}
+struct PeerInjectMessageNotifyDefaultTypeInternal {
+  PROTOBUF_CONSTEXPR PeerInjectMessageNotifyDefaultTypeInternal() : _instance(::_pbi::ConstantInitialized{}) {}
+  ~PeerInjectMessageNotifyDefaultTypeInternal() {}
+  union {
+    PeerInjectMessageNotify _instance;
+  };
+};
+
+PROTOBUF_ATTRIBUTE_NO_DESTROY PROTOBUF_CONSTINIT
+    PROTOBUF_ATTRIBUTE_INIT_PRIORITY1 PeerInjectMessageNotifyDefaultTypeInternal _PeerInjectMessageNotify_default_instance_;
+
 inline constexpr Packet::Impl_::Impl_(
     ::_pbi::ConstantInitialized) noexcept
       : _cached_size_{0},
@@ -106,10 +208,41 @@ struct HeartbeatPingDefaultTypeInternal {
 
 PROTOBUF_ATTRIBUTE_NO_DESTROY PROTOBUF_CONSTINIT
     PROTOBUF_ATTRIBUTE_INIT_PRIORITY1 HeartbeatPingDefaultTypeInternal _HeartbeatPing_default_instance_;
+
+inline constexpr ChannelMessageNotify::Impl_::Impl_(
+    ::_pbi::ConstantInitialized) noexcept
+      : _cached_size_{0},
+        game_id_(
+            &::google::protobuf::internal::fixed_address_empty_string,
+            ::_pbi::ConstantInitialized()),
+        channel_id_(
+            &::google::protobuf::internal::fixed_address_empty_string,
+            ::_pbi::ConstantInitialized()),
+        message_{nullptr} {}
+
+template <typename>
+PROTOBUF_CONSTEXPR ChannelMessageNotify::ChannelMessageNotify(::_pbi::ConstantInitialized)
+#if defined(PROTOBUF_CUSTOM_VTABLE)
+    : ::google::protobuf::Message(ChannelMessageNotify_class_data_.base()),
+#else   // PROTOBUF_CUSTOM_VTABLE
+    : ::google::protobuf::Message(),
+#endif  // PROTOBUF_CUSTOM_VTABLE
+      _impl_(::_pbi::ConstantInitialized()) {
+}
+struct ChannelMessageNotifyDefaultTypeInternal {
+  PROTOBUF_CONSTEXPR ChannelMessageNotifyDefaultTypeInternal() : _instance(::_pbi::ConstantInitialized{}) {}
+  ~ChannelMessageNotifyDefaultTypeInternal() {}
+  union {
+    ChannelMessageNotify _instance;
+  };
+};
+
+PROTOBUF_ATTRIBUTE_NO_DESTROY PROTOBUF_CONSTINIT
+    PROTOBUF_ATTRIBUTE_INIT_PRIORITY1 ChannelMessageNotifyDefaultTypeInternal _ChannelMessageNotify_default_instance_;
 }  // namespace gateway
 }  // namespace chirp
 static const ::_pb::EnumDescriptor* PROTOBUF_NONNULL
-    file_level_enum_descriptors_proto_2fgateway_2eproto[1];
+    file_level_enum_descriptors_proto_2fgateway_2eproto[2];
 static constexpr const ::_pb::ServiceDescriptor* PROTOBUF_NONNULL* PROTOBUF_NULLABLE
     file_level_service_descriptors_proto_2fgateway_2eproto = nullptr;
 const ::uint32_t
@@ -136,6 +269,52 @@ const ::uint32_t
         PROTOBUF_FIELD_OFFSET(::chirp::gateway::HeartbeatPong, _impl_.server_time_),
         0,
         1,
+        0x081, // bitmap
+        PROTOBUF_FIELD_OFFSET(::chirp::gateway::PeerRegisterReq, _impl_._has_bits_),
+        8, // hasbit index offset
+        PROTOBUF_FIELD_OFFSET(::chirp::gateway::PeerRegisterReq, _impl_.service_id_),
+        PROTOBUF_FIELD_OFFSET(::chirp::gateway::PeerRegisterReq, _impl_.service_secret_),
+        PROTOBUF_FIELD_OFFSET(::chirp::gateway::PeerRegisterReq, _impl_.protocol_version_),
+        PROTOBUF_FIELD_OFFSET(::chirp::gateway::PeerRegisterReq, _impl_.game_id_),
+        PROTOBUF_FIELD_OFFSET(::chirp::gateway::PeerRegisterReq, _impl_.supported_features_),
+        1,
+        2,
+        4,
+        3,
+        0,
+        0x081, // bitmap
+        PROTOBUF_FIELD_OFFSET(::chirp::gateway::PeerRegisterResp, _impl_._has_bits_),
+        8, // hasbit index offset
+        PROTOBUF_FIELD_OFFSET(::chirp::gateway::PeerRegisterResp, _impl_.code_),
+        PROTOBUF_FIELD_OFFSET(::chirp::gateway::PeerRegisterResp, _impl_.protocol_version_),
+        PROTOBUF_FIELD_OFFSET(::chirp::gateway::PeerRegisterResp, _impl_.min_version_),
+        PROTOBUF_FIELD_OFFSET(::chirp::gateway::PeerRegisterResp, _impl_.heartbeat_interval_seconds_),
+        PROTOBUF_FIELD_OFFSET(::chirp::gateway::PeerRegisterResp, _impl_.supported_features_),
+        1,
+        2,
+        3,
+        4,
+        0,
+        0x081, // bitmap
+        PROTOBUF_FIELD_OFFSET(::chirp::gateway::ChannelMessageNotify, _impl_._has_bits_),
+        6, // hasbit index offset
+        PROTOBUF_FIELD_OFFSET(::chirp::gateway::ChannelMessageNotify, _impl_.game_id_),
+        PROTOBUF_FIELD_OFFSET(::chirp::gateway::ChannelMessageNotify, _impl_.channel_id_),
+        PROTOBUF_FIELD_OFFSET(::chirp::gateway::ChannelMessageNotify, _impl_.message_),
+        0,
+        1,
+        2,
+        0x081, // bitmap
+        PROTOBUF_FIELD_OFFSET(::chirp::gateway::PeerInjectMessageNotify, _impl_._has_bits_),
+        7, // hasbit index offset
+        PROTOBUF_FIELD_OFFSET(::chirp::gateway::PeerInjectMessageNotify, _impl_.channel_id_),
+        PROTOBUF_FIELD_OFFSET(::chirp::gateway::PeerInjectMessageNotify, _impl_.sender_id_),
+        PROTOBUF_FIELD_OFFSET(::chirp::gateway::PeerInjectMessageNotify, _impl_.content_),
+        PROTOBUF_FIELD_OFFSET(::chirp::gateway::PeerInjectMessageNotify, _impl_.client_msg_id_),
+        0,
+        1,
+        2,
+        3,
 };
 
 static const ::_pbi::MigrationSchema
@@ -143,156 +322,190 @@ static const ::_pbi::MigrationSchema
         {0, sizeof(::chirp::gateway::Packet)},
         {9, sizeof(::chirp::gateway::HeartbeatPing)},
         {14, sizeof(::chirp::gateway::HeartbeatPong)},
+        {21, sizeof(::chirp::gateway::PeerRegisterReq)},
+        {34, sizeof(::chirp::gateway::PeerRegisterResp)},
+        {47, sizeof(::chirp::gateway::ChannelMessageNotify)},
+        {56, sizeof(::chirp::gateway::PeerInjectMessageNotify)},
 };
 static const ::_pb::Message* PROTOBUF_NONNULL const file_default_instances[] = {
     &::chirp::gateway::_Packet_default_instance_._instance,
     &::chirp::gateway::_HeartbeatPing_default_instance_._instance,
     &::chirp::gateway::_HeartbeatPong_default_instance_._instance,
+    &::chirp::gateway::_PeerRegisterReq_default_instance_._instance,
+    &::chirp::gateway::_PeerRegisterResp_default_instance_._instance,
+    &::chirp::gateway::_ChannelMessageNotify_default_instance_._instance,
+    &::chirp::gateway::_PeerInjectMessageNotify_default_instance_._instance,
 };
 const char descriptor_table_protodef_proto_2fgateway_2eproto[] ABSL_ATTRIBUTE_SECTION_VARIABLE(
     protodesc_cold) = {
-    "\n\023proto/gateway.proto\022\rchirp.gateway\"N\n\006"
-    "Packet\022$\n\006msg_id\030\001 \001(\0162\024.chirp.gateway.M"
-    "sgID\022\020\n\010sequence\030\002 \001(\003\022\014\n\004body\030\003 \001(\014\"\"\n\r"
-    "HeartbeatPing\022\021\n\ttimestamp\030\001 \001(\003\"7\n\rHear"
-    "tbeatPong\022\021\n\ttimestamp\030\001 \001(\003\022\023\n\013server_t"
-    "ime\030\002 \001(\003*\312&\n\005MsgID\022\013\n\007UNKNOWN\020\000\022\023\n\016HEAR"
-    "TBEAT_PING\020\351\007\022\023\n\016HEARTBEAT_PONG\020\352\007\022\016\n\tLO"
-    "GIN_REQ\020\353\007\022\017\n\nLOGIN_RESP\020\354\007\022\020\n\013KICK_NOTI"
-    "FY\020\355\007\022\017\n\nLOGOUT_REQ\020\356\007\022\020\n\013LOGOUT_RESP\020\357\007"
-    "\022\021\n\014REGISTER_REQ\020\360\007\022\022\n\rREGISTER_RESP\020\361\007\022"
-    "\027\n\022PASSWORD_LOGIN_REQ\020\362\007\022\030\n\023PASSWORD_LOG"
-    "IN_RESP\020\363\007\022\026\n\021REFRESH_TOKEN_REQ\020\364\007\022\027\n\022RE"
-    "FRESH_TOKEN_RESP\020\365\007\022\025\n\020GET_SESSIONS_REQ\020"
-    "\366\007\022\026\n\021GET_SESSIONS_RESP\020\367\007\022\027\n\022REVOKE_SES"
-    "SION_REQ\020\370\007\022\030\n\023REVOKE_SESSION_RESP\020\371\007\022\030\n"
-    "\023CHANGE_PASSWORD_REQ\020\372\007\022\031\n\024CHANGE_PASSWO"
-    "RD_RESP\020\373\007\022\025\n\020SEND_MESSAGE_REQ\020\321\017\022\026\n\021SEN"
-    "D_MESSAGE_RESP\020\322\017\022\024\n\017GET_HISTORY_REQ\020\323\017\022"
-    "\025\n\020GET_HISTORY_RESP\020\324\017\022\030\n\023CHAT_MESSAGE_N"
-    "OTIFY\020\325\017\022\025\n\020CREATE_GROUP_REQ\020\265\020\022\026\n\021CREAT"
-    "E_GROUP_RESP\020\266\020\022\023\n\016JOIN_GROUP_REQ\020\267\020\022\024\n\017"
-    "JOIN_GROUP_RESP\020\270\020\022\024\n\017LEAVE_GROUP_REQ\020\271\020"
-    "\022\025\n\020LEAVE_GROUP_RESP\020\272\020\022\024\n\017KICK_MEMBER_R"
-    "EQ\020\273\020\022\025\n\020KICK_MEMBER_RESP\020\274\020\022\027\n\022GET_GROU"
-    "P_INFO_REQ\020\275\020\022\030\n\023GET_GROUP_INFO_RESP\020\276\020\022"
-    "\032\n\025GET_GROUP_MEMBERS_REQ\020\277\020\022\033\n\026GET_GROUP"
-    "_MEMBERS_RESP\020\300\020\022\030\n\023GET_USER_GROUPS_REQ\020"
-    "\301\020\022\031\n\024GET_USER_GROUPS_RESP\020\302\020\022\030\n\023INVITE_"
-    "TO_GROUP_REQ\020\303\020\022\031\n\024INVITE_TO_GROUP_RESP\020"
-    "\304\020\022\031\n\024GROUP_CREATED_NOTIFY\020\305\020\022\037\n\032GROUP_M"
-    "EMBER_JOINED_NOTIFY\020\306\020\022\035\n\030GROUP_MEMBER_L"
-    "EFT_NOTIFY\020\307\020\022\037\n\032GROUP_MEMBER_KICKED_NOT"
-    "IFY\020\310\020\022\031\n\024GROUP_UPDATED_NOTIFY\020\311\020\022\022\n\rMAR"
-    "K_READ_REQ\020\231\021\022\023\n\016MARK_READ_RESP\020\232\021\022\032\n\025GE"
-    "T_READ_RECEIPTS_REQ\020\233\021\022\033\n\026GET_READ_RECEI"
-    "PTS_RESP\020\234\021\022\031\n\024GET_UNREAD_COUNT_REQ\020\235\021\022\032"
-    "\n\025GET_UNREAD_COUNT_RESP\020\236\021\022\030\n\023MESSAGE_RE"
-    "AD_NOTIFY\020\237\021\022\034\n\027TYPING_INDICATOR_NOTIFY\020"
-    "\240\021\022\020\n\013MESSAGE_ACK\020\241\021\022\021\n\014MESSAGE_NACK\020\242\021\022"
-    "\026\n\021TRACK_MESSAGE_REQ\020\243\021\022\027\n\022TRACK_MESSAGE"
-    "_RESP\020\244\021\022\027\n\022GET_HISTORY_V2_REQ\020\245\021\022\030\n\023GET"
-    "_HISTORY_V2_RESP\020\246\021\022\025\n\020ADD_REACTION_REQ\020"
-    "\247\021\022\026\n\021ADD_REACTION_RESP\020\250\021\022\030\n\023REMOVE_REA"
-    "CTION_REQ\020\251\021\022\031\n\024REMOVE_REACTION_RESP\020\252\021\022"
-    "\026\n\021GET_REACTIONS_REQ\020\253\021\022\027\n\022GET_REACTIONS"
-    "_RESP\020\254\021\022\032\n\025REACTION_ADDED_NOTIFY\020\255\021\022\034\n\027"
-    "REACTION_REMOVED_NOTIFY\020\256\021\022\031\n\024GET_TYPING"
-    "_USERS_REQ\020\257\021\022\032\n\025GET_TYPING_USERS_RESP\020\260"
-    "\021\022\025\n\020EDIT_MESSAGE_REQ\020\261\021\022\026\n\021EDIT_MESSAGE"
-    "_RESP\020\262\021\022\027\n\022DELETE_MESSAGE_REQ\020\263\021\022\030\n\023DEL"
-    "ETE_MESSAGE_RESP\020\264\021\022\024\n\017BULK_DELETE_REQ\020\265"
-    "\021\022\025\n\020BULK_DELETE_RESP\020\266\021\022\032\n\025MESSAGE_EDIT"
-    "ED_NOTIFY\020\267\021\022\033\n\026MESSAGE_DELETED_NOTIFY\020\270"
-    "\021\022 \n\033GET_MENTION_SUGGESTIONS_REQ\020\271\021\022!\n\034G"
-    "ET_MENTION_SUGGESTIONS_RESP\020\272\021\022\023\n\016ADD_FR"
-    "IEND_REQ\020\271\027\022\024\n\017ADD_FRIEND_RESP\020\272\027\022\036\n\031FRI"
-    "END_REQUEST_ACTION_REQ\020\273\027\022\037\n\032FRIEND_REQU"
-    "EST_ACTION_RESP\020\274\027\022\026\n\021REMOVE_FRIEND_REQ\020"
-    "\275\027\022\027\n\022REMOVE_FRIEND_RESP\020\276\027\022\030\n\023GET_FRIEN"
-    "D_LIST_REQ\020\277\027\022\031\n\024GET_FRIEND_LIST_RESP\020\300\027"
-    "\022\035\n\030GET_PENDING_REQUESTS_REQ\020\301\027\022\036\n\031GET_P"
-    "ENDING_REQUESTS_RESP\020\302\027\022\023\n\016BLOCK_USER_RE"
-    "Q\020\303\027\022\024\n\017BLOCK_USER_RESP\020\304\027\022\025\n\020UNBLOCK_US"
-    "ER_REQ\020\305\027\022\026\n\021UNBLOCK_USER_RESP\020\306\027\022\031\n\024GET"
-    "_BLOCKED_LIST_REQ\020\307\027\022\032\n\025GET_BLOCKED_LIST"
-    "_RESP\020\310\027\022\025\n\020SET_PRESENCE_REQ\020\311\027\022\026\n\021SET_P"
-    "RESENCE_RESP\020\312\027\022\025\n\020GET_PRESENCE_REQ\020\313\027\022\026"
-    "\n\021GET_PRESENCE_RESP\020\314\027\022\024\n\017PRESENCE_NOTIF"
-    "Y\020\315\027\022\032\n\025FRIEND_REQUEST_NOTIFY\020\316\027\022\033\n\026FRIE"
-    "ND_ACCEPTED_NOTIFY\020\317\027\022\032\n\025FRIEND_REMOVED_"
-    "NOTIFY\020\320\027\022\024\n\017CREATE_ROOM_REQ\020\241\037\022\025\n\020CREAT"
-    "E_ROOM_RESP\020\242\037\022\022\n\rJOIN_ROOM_REQ\020\243\037\022\023\n\016JO"
-    "IN_ROOM_RESP\020\244\037\022\023\n\016LEAVE_ROOM_REQ\020\245\037\022\024\n\017"
-    "LEAVE_ROOM_RESP\020\246\037\022\026\n\021ICE_CANDIDATE_MSG\020"
-    "\247\037\022\022\n\rSDP_OFFER_MSG\020\250\037\022\023\n\016SDP_ANSWER_MSG"
-    "\020\251\037\022\026\n\021GET_ROOM_INFO_REQ\020\252\037\022\027\n\022GET_ROOM_"
-    "INFO_RESP\020\253\037\022\026\n\021GET_USER_ROOM_REQ\020\254\037\022\027\n\022"
-    "GET_USER_ROOM_RESP\020\255\037\022\021\n\014SET_MUTE_REQ\020\256\037"
-    "\022\022\n\rSET_MUTE_RESP\020\257\037\022\023\n\016SET_DEAFEN_REQ\020\260"
-    "\037\022\024\n\017SET_DEAFEN_RESP\020\261\037\022\036\n\031PARTICIPANT_J"
-    "OINED_NOTIFY\020\262\037\022\034\n\027PARTICIPANT_LEFT_NOTI"
-    "FY\020\263\037\022%\n PARTICIPANT_STATE_CHANGED_NOTIF"
-    "Y\020\264\037\022\024\n\017SPEAKING_NOTIFY\020\265\037\022\024\n\017SERVER_AUT"
-    "H_REQ\020\211\'\022\025\n\020SERVER_AUTH_RESP\020\212\'\022\032\n\025SERVE"
-    "R_HEARTBEAT_PING\020\213\'\022\032\n\025SERVER_HEARTBEAT_"
-    "PONG\020\214\'\022\027\n\022INJECT_MESSAGE_REQ\020\215\'\022\030\n\023INJE"
-    "CT_MESSAGE_RESP\020\216\'\022\032\n\025INJECT_MESSAGE_NOT"
-    "IFY\020\217\'\022\026\n\021EVENT_PUBLISH_REQ\020\220\'\022\027\n\022EVENT_"
-    "PUBLISH_RESP\020\221\'\022\031\n\024EVENT_DELIVER_NOTIFY\020"
-    "\222\'\022\022\n\rEVENT_ACK_REQ\020\223\'\022\023\n\016EVENT_ACK_RESP"
-    "\020\224\'\022\035\n\030BIND_PLAYER_IDENTITY_REQ\020\225\'\022\036\n\031BI"
-    "ND_PLAYER_IDENTITY_RESP\020\226\'\022\037\n\032UNBIND_PLA"
-    "YER_IDENTITY_REQ\020\227\'\022 \n\033UNBIND_PLAYER_IDE"
-    "NTITY_RESP\020\230\'\022\036\n\031GET_PLAYER_IDENTITIES_R"
-    "EQ\020\231\'\022\037\n\032GET_PLAYER_IDENTITIES_RESP\020\232\'\022\032"
-    "\n\025RESOLVE_GAME_USER_REQ\020\233\'\022\033\n\026RESOLVE_GA"
-    "ME_USER_RESP\020\234\'\022!\n\034SUBSCRIBE_PLAYER_CHAN"
-    "NEL_REQ\020\235\'\022\"\n\035SUBSCRIBE_PLAYER_CHANNEL_R"
-    "ESP\020\236\'\022#\n\036UNSUBSCRIBE_PLAYER_CHANNEL_REQ"
-    "\020\237\'\022$\n\037UNSUBSCRIBE_PLAYER_CHANNEL_RESP\020\240"
-    "\'\022!\n\034GET_PLAYER_SUBSCRIPTIONS_REQ\020\241\'\022\"\n\035"
-    "GET_PLAYER_SUBSCRIPTIONS_RESP\020\242\'\022\033\n\026MARK"
-    "_CHANNELS_READ_REQ\020\243\'\022\034\n\027MARK_CHANNELS_R"
-    "EAD_RESP\020\244\'\022\033\n\026GET_UNREAD_SUMMARY_REQ\020\245\'"
-    "\022\034\n\027GET_UNREAD_SUMMARY_RESP\020\246\'\022\030\n\023REGIST"
-    "ER_DEVICE_REQ\020\361.\022\031\n\024REGISTER_DEVICE_RESP"
-    "\020\362.\022\032\n\025UNREGISTER_DEVICE_REQ\020\363.\022\033\n\026UNREG"
-    "ISTER_DEVICE_RESP\020\364.\022\034\n\027UPDATE_DEVICE_TO"
-    "KEN_REQ\020\365.\022\035\n\030UPDATE_DEVICE_TOKEN_RESP\020\366"
-    ".\022\031\n\024GET_USER_DEVICES_REQ\020\367.\022\032\n\025GET_USER"
-    "_DEVICES_RESP\020\370.\022\032\n\025PUSH_NOTIFICATION_RE"
-    "Q\020\371.\022\033\n\026PUSH_NOTIFICATION_RESP\020\372.\022\025\n\020CRE"
-    "ATE_PARTY_REQ\020\3316\022\026\n\021CREATE_PARTY_RESP\020\3326"
-    "\022\026\n\021DISBAND_PARTY_REQ\020\3336\022\027\n\022DISBAND_PART"
-    "Y_RESP\020\3346\022\030\n\023INVITE_TO_PARTY_REQ\020\3356\022\031\n\024I"
-    "NVITE_TO_PARTY_RESP\020\3366\022\022\n\rINVITE_NOTIFY\020"
-    "\3376\022\026\n\021ACCEPT_INVITE_REQ\020\3406\022\027\n\022ACCEPT_INV"
-    "ITE_RESP\020\3416\022\027\n\022DECLINE_INVITE_REQ\020\3426\022\030\n\023"
-    "DECLINE_INVITE_RESP\020\3436\022\031\n\024INVITE_RESULT_"
-    "NOTIFY\020\3446\022\024\n\017LEAVE_PARTY_REQ\020\3456\022\025\n\020LEAVE"
-    "_PARTY_RESP\020\3466\022\032\n\025KICK_PARTY_MEMBER_REQ\020"
-    "\3476\022\033\n\026KICK_PARTY_MEMBER_RESP\020\3506\022\030\n\023TRANS"
-    "FER_LEADER_REQ\020\3516\022\031\n\024TRANSFER_LEADER_RES"
-    "P\020\3526\022\022\n\rSET_READY_REQ\020\3536\022\023\n\016SET_READY_RE"
-    "SP\020\3546\022\030\n\023PARTY_JOINED_NOTIFY\020\3556\022\026\n\021PARTY"
-    "_LEFT_NOTIFY\020\3566\022\030\n\023PARTY_KICKED_NOTIFY\020\357"
-    "6\022\037\n\032PARTY_STATE_CHANGED_NOTIFY\020\3606\022\033\n\026PA"
-    "RTY_DISBANDED_NOTIFY\020\3616\022\025\n\020GET_MY_PARTY_"
-    "REQ\020\3626\022\026\n\021GET_MY_PARTY_RESP\020\3636B\'Z%github"
-    ".com/cui/chirp/proto/go/gatewayb\006proto3"
+    "\n\023proto/gateway.proto\022\rchirp.gateway\032\022pr"
+    "oto/common.proto\032\020proto/chat.proto\"N\n\006Pa"
+    "cket\022$\n\006msg_id\030\001 \001(\0162\024.chirp.gateway.Msg"
+    "ID\022\020\n\010sequence\030\002 \001(\003\022\014\n\004body\030\003 \001(\014\"\"\n\rHe"
+    "artbeatPing\022\021\n\ttimestamp\030\001 \001(\003\"7\n\rHeartb"
+    "eatPong\022\021\n\ttimestamp\030\001 \001(\003\022\023\n\013server_tim"
+    "e\030\002 \001(\003\"\243\001\n\017PeerRegisterReq\022\022\n\nservice_i"
+    "d\030\001 \001(\t\022\026\n\016service_secret\030\002 \001(\t\022\030\n\020proto"
+    "col_version\030\003 \001(\005\022\017\n\007game_id\030\004 \001(\t\0229\n\022su"
+    "pported_features\030\005 \003(\0162\035.chirp.gateway.P"
+    "eerCapability\"\307\001\n\020PeerRegisterResp\022%\n\004co"
+    "de\030\001 \001(\0162\027.chirp.common.ErrorCode\022\030\n\020pro"
+    "tocol_version\030\002 \001(\005\022\023\n\013min_version\030\003 \001(\005"
+    "\022\"\n\032heartbeat_interval_seconds\030\004 \001(\005\0229\n\022"
+    "supported_features\030\005 \003(\0162\035.chirp.gateway"
+    ".PeerCapability\"e\n\024ChannelMessageNotify\022"
+    "\017\n\007game_id\030\001 \001(\t\022\022\n\nchannel_id\030\002 \001(\t\022(\n\007"
+    "message\030\003 \001(\0132\027.chirp.chat.ChatMessage\"h"
+    "\n\027PeerInjectMessageNotify\022\022\n\nchannel_id\030"
+    "\001 \001(\t\022\021\n\tsender_id\030\002 \001(\t\022\017\n\007content\030\003 \001("
+    "\014\022\025\n\rclient_msg_id\030\004 \001(\t*\271\'\n\005MsgID\022\013\n\007UN"
+    "KNOWN\020\000\022\023\n\016HEARTBEAT_PING\020\351\007\022\023\n\016HEARTBEA"
+    "T_PONG\020\352\007\022\016\n\tLOGIN_REQ\020\353\007\022\017\n\nLOGIN_RESP\020"
+    "\354\007\022\020\n\013KICK_NOTIFY\020\355\007\022\017\n\nLOGOUT_REQ\020\356\007\022\020\n"
+    "\013LOGOUT_RESP\020\357\007\022\021\n\014REGISTER_REQ\020\360\007\022\022\n\rRE"
+    "GISTER_RESP\020\361\007\022\027\n\022PASSWORD_LOGIN_REQ\020\362\007\022"
+    "\030\n\023PASSWORD_LOGIN_RESP\020\363\007\022\026\n\021REFRESH_TOK"
+    "EN_REQ\020\364\007\022\027\n\022REFRESH_TOKEN_RESP\020\365\007\022\025\n\020GE"
+    "T_SESSIONS_REQ\020\366\007\022\026\n\021GET_SESSIONS_RESP\020\367"
+    "\007\022\027\n\022REVOKE_SESSION_REQ\020\370\007\022\030\n\023REVOKE_SES"
+    "SION_RESP\020\371\007\022\030\n\023CHANGE_PASSWORD_REQ\020\372\007\022\031"
+    "\n\024CHANGE_PASSWORD_RESP\020\373\007\022\025\n\020SEND_MESSAG"
+    "E_REQ\020\321\017\022\026\n\021SEND_MESSAGE_RESP\020\322\017\022\024\n\017GET_"
+    "HISTORY_REQ\020\323\017\022\025\n\020GET_HISTORY_RESP\020\324\017\022\030\n"
+    "\023CHAT_MESSAGE_NOTIFY\020\325\017\022\025\n\020CREATE_GROUP_"
+    "REQ\020\265\020\022\026\n\021CREATE_GROUP_RESP\020\266\020\022\023\n\016JOIN_G"
+    "ROUP_REQ\020\267\020\022\024\n\017JOIN_GROUP_RESP\020\270\020\022\024\n\017LEA"
+    "VE_GROUP_REQ\020\271\020\022\025\n\020LEAVE_GROUP_RESP\020\272\020\022\024"
+    "\n\017KICK_MEMBER_REQ\020\273\020\022\025\n\020KICK_MEMBER_RESP"
+    "\020\274\020\022\027\n\022GET_GROUP_INFO_REQ\020\275\020\022\030\n\023GET_GROU"
+    "P_INFO_RESP\020\276\020\022\032\n\025GET_GROUP_MEMBERS_REQ\020"
+    "\277\020\022\033\n\026GET_GROUP_MEMBERS_RESP\020\300\020\022\030\n\023GET_U"
+    "SER_GROUPS_REQ\020\301\020\022\031\n\024GET_USER_GROUPS_RES"
+    "P\020\302\020\022\030\n\023INVITE_TO_GROUP_REQ\020\303\020\022\031\n\024INVITE"
+    "_TO_GROUP_RESP\020\304\020\022\031\n\024GROUP_CREATED_NOTIF"
+    "Y\020\305\020\022\037\n\032GROUP_MEMBER_JOINED_NOTIFY\020\306\020\022\035\n"
+    "\030GROUP_MEMBER_LEFT_NOTIFY\020\307\020\022\037\n\032GROUP_ME"
+    "MBER_KICKED_NOTIFY\020\310\020\022\031\n\024GROUP_UPDATED_N"
+    "OTIFY\020\311\020\022\022\n\rMARK_READ_REQ\020\231\021\022\023\n\016MARK_REA"
+    "D_RESP\020\232\021\022\032\n\025GET_READ_RECEIPTS_REQ\020\233\021\022\033\n"
+    "\026GET_READ_RECEIPTS_RESP\020\234\021\022\031\n\024GET_UNREAD"
+    "_COUNT_REQ\020\235\021\022\032\n\025GET_UNREAD_COUNT_RESP\020\236"
+    "\021\022\030\n\023MESSAGE_READ_NOTIFY\020\237\021\022\034\n\027TYPING_IN"
+    "DICATOR_NOTIFY\020\240\021\022\020\n\013MESSAGE_ACK\020\241\021\022\021\n\014M"
+    "ESSAGE_NACK\020\242\021\022\026\n\021TRACK_MESSAGE_REQ\020\243\021\022\027"
+    "\n\022TRACK_MESSAGE_RESP\020\244\021\022\027\n\022GET_HISTORY_V"
+    "2_REQ\020\245\021\022\030\n\023GET_HISTORY_V2_RESP\020\246\021\022\025\n\020AD"
+    "D_REACTION_REQ\020\247\021\022\026\n\021ADD_REACTION_RESP\020\250"
+    "\021\022\030\n\023REMOVE_REACTION_REQ\020\251\021\022\031\n\024REMOVE_RE"
+    "ACTION_RESP\020\252\021\022\026\n\021GET_REACTIONS_REQ\020\253\021\022\027"
+    "\n\022GET_REACTIONS_RESP\020\254\021\022\032\n\025REACTION_ADDE"
+    "D_NOTIFY\020\255\021\022\034\n\027REACTION_REMOVED_NOTIFY\020\256"
+    "\021\022\031\n\024GET_TYPING_USERS_REQ\020\257\021\022\032\n\025GET_TYPI"
+    "NG_USERS_RESP\020\260\021\022\025\n\020EDIT_MESSAGE_REQ\020\261\021\022"
+    "\026\n\021EDIT_MESSAGE_RESP\020\262\021\022\027\n\022DELETE_MESSAG"
+    "E_REQ\020\263\021\022\030\n\023DELETE_MESSAGE_RESP\020\264\021\022\024\n\017BU"
+    "LK_DELETE_REQ\020\265\021\022\025\n\020BULK_DELETE_RESP\020\266\021\022"
+    "\032\n\025MESSAGE_EDITED_NOTIFY\020\267\021\022\033\n\026MESSAGE_D"
+    "ELETED_NOTIFY\020\270\021\022 \n\033GET_MENTION_SUGGESTI"
+    "ONS_REQ\020\271\021\022!\n\034GET_MENTION_SUGGESTIONS_RE"
+    "SP\020\272\021\022\023\n\016ADD_FRIEND_REQ\020\271\027\022\024\n\017ADD_FRIEND"
+    "_RESP\020\272\027\022\036\n\031FRIEND_REQUEST_ACTION_REQ\020\273\027"
+    "\022\037\n\032FRIEND_REQUEST_ACTION_RESP\020\274\027\022\026\n\021REM"
+    "OVE_FRIEND_REQ\020\275\027\022\027\n\022REMOVE_FRIEND_RESP\020"
+    "\276\027\022\030\n\023GET_FRIEND_LIST_REQ\020\277\027\022\031\n\024GET_FRIE"
+    "ND_LIST_RESP\020\300\027\022\035\n\030GET_PENDING_REQUESTS_"
+    "REQ\020\301\027\022\036\n\031GET_PENDING_REQUESTS_RESP\020\302\027\022\023"
+    "\n\016BLOCK_USER_REQ\020\303\027\022\024\n\017BLOCK_USER_RESP\020\304"
+    "\027\022\025\n\020UNBLOCK_USER_REQ\020\305\027\022\026\n\021UNBLOCK_USER"
+    "_RESP\020\306\027\022\031\n\024GET_BLOCKED_LIST_REQ\020\307\027\022\032\n\025G"
+    "ET_BLOCKED_LIST_RESP\020\310\027\022\025\n\020SET_PRESENCE_"
+    "REQ\020\311\027\022\026\n\021SET_PRESENCE_RESP\020\312\027\022\025\n\020GET_PR"
+    "ESENCE_REQ\020\313\027\022\026\n\021GET_PRESENCE_RESP\020\314\027\022\024\n"
+    "\017PRESENCE_NOTIFY\020\315\027\022\032\n\025FRIEND_REQUEST_NO"
+    "TIFY\020\316\027\022\033\n\026FRIEND_ACCEPTED_NOTIFY\020\317\027\022\032\n\025"
+    "FRIEND_REMOVED_NOTIFY\020\320\027\022\024\n\017CREATE_ROOM_"
+    "REQ\020\241\037\022\025\n\020CREATE_ROOM_RESP\020\242\037\022\022\n\rJOIN_RO"
+    "OM_REQ\020\243\037\022\023\n\016JOIN_ROOM_RESP\020\244\037\022\023\n\016LEAVE_"
+    "ROOM_REQ\020\245\037\022\024\n\017LEAVE_ROOM_RESP\020\246\037\022\026\n\021ICE"
+    "_CANDIDATE_MSG\020\247\037\022\022\n\rSDP_OFFER_MSG\020\250\037\022\023\n"
+    "\016SDP_ANSWER_MSG\020\251\037\022\026\n\021GET_ROOM_INFO_REQ\020"
+    "\252\037\022\027\n\022GET_ROOM_INFO_RESP\020\253\037\022\026\n\021GET_USER_"
+    "ROOM_REQ\020\254\037\022\027\n\022GET_USER_ROOM_RESP\020\255\037\022\021\n\014"
+    "SET_MUTE_REQ\020\256\037\022\022\n\rSET_MUTE_RESP\020\257\037\022\023\n\016S"
+    "ET_DEAFEN_REQ\020\260\037\022\024\n\017SET_DEAFEN_RESP\020\261\037\022\036"
+    "\n\031PARTICIPANT_JOINED_NOTIFY\020\262\037\022\034\n\027PARTIC"
+    "IPANT_LEFT_NOTIFY\020\263\037\022%\n PARTICIPANT_STAT"
+    "E_CHANGED_NOTIFY\020\264\037\022\024\n\017SPEAKING_NOTIFY\020\265"
+    "\037\022\024\n\017SERVER_AUTH_REQ\020\211\'\022\025\n\020SERVER_AUTH_R"
+    "ESP\020\212\'\022\032\n\025SERVER_HEARTBEAT_PING\020\213\'\022\032\n\025SE"
+    "RVER_HEARTBEAT_PONG\020\214\'\022\027\n\022INJECT_MESSAGE"
+    "_REQ\020\215\'\022\030\n\023INJECT_MESSAGE_RESP\020\216\'\022\032\n\025INJ"
+    "ECT_MESSAGE_NOTIFY\020\217\'\022\026\n\021EVENT_PUBLISH_R"
+    "EQ\020\220\'\022\027\n\022EVENT_PUBLISH_RESP\020\221\'\022\031\n\024EVENT_"
+    "DELIVER_NOTIFY\020\222\'\022\022\n\rEVENT_ACK_REQ\020\223\'\022\023\n"
+    "\016EVENT_ACK_RESP\020\224\'\022\035\n\030BIND_PLAYER_IDENTI"
+    "TY_REQ\020\225\'\022\036\n\031BIND_PLAYER_IDENTITY_RESP\020\226"
+    "\'\022\037\n\032UNBIND_PLAYER_IDENTITY_REQ\020\227\'\022 \n\033UN"
+    "BIND_PLAYER_IDENTITY_RESP\020\230\'\022\036\n\031GET_PLAY"
+    "ER_IDENTITIES_REQ\020\231\'\022\037\n\032GET_PLAYER_IDENT"
+    "ITIES_RESP\020\232\'\022\032\n\025RESOLVE_GAME_USER_REQ\020\233"
+    "\'\022\033\n\026RESOLVE_GAME_USER_RESP\020\234\'\022!\n\034SUBSCR"
+    "IBE_PLAYER_CHANNEL_REQ\020\235\'\022\"\n\035SUBSCRIBE_P"
+    "LAYER_CHANNEL_RESP\020\236\'\022#\n\036UNSUBSCRIBE_PLA"
+    "YER_CHANNEL_REQ\020\237\'\022$\n\037UNSUBSCRIBE_PLAYER"
+    "_CHANNEL_RESP\020\240\'\022!\n\034GET_PLAYER_SUBSCRIPT"
+    "IONS_REQ\020\241\'\022\"\n\035GET_PLAYER_SUBSCRIPTIONS_"
+    "RESP\020\242\'\022\033\n\026MARK_CHANNELS_READ_REQ\020\243\'\022\034\n\027"
+    "MARK_CHANNELS_READ_RESP\020\244\'\022\033\n\026GET_UNREAD"
+    "_SUMMARY_REQ\020\245\'\022\034\n\027GET_UNREAD_SUMMARY_RE"
+    "SP\020\246\'\022\026\n\021PEER_REGISTER_REQ\020\272\'\022\027\n\022PEER_RE"
+    "GISTER_RESP\020\273\'\022\033\n\026CHANNEL_MESSAGE_NOTIFY"
+    "\020\274\'\022\037\n\032PEER_INJECT_MESSAGE_NOTIFY\020\275\'\022\030\n\023"
+    "REGISTER_DEVICE_REQ\020\361.\022\031\n\024REGISTER_DEVIC"
+    "E_RESP\020\362.\022\032\n\025UNREGISTER_DEVICE_REQ\020\363.\022\033\n"
+    "\026UNREGISTER_DEVICE_RESP\020\364.\022\034\n\027UPDATE_DEV"
+    "ICE_TOKEN_REQ\020\365.\022\035\n\030UPDATE_DEVICE_TOKEN_"
+    "RESP\020\366.\022\031\n\024GET_USER_DEVICES_REQ\020\367.\022\032\n\025GE"
+    "T_USER_DEVICES_RESP\020\370.\022\032\n\025PUSH_NOTIFICAT"
+    "ION_REQ\020\371.\022\033\n\026PUSH_NOTIFICATION_RESP\020\372.\022"
+    "\025\n\020CREATE_PARTY_REQ\020\3316\022\026\n\021CREATE_PARTY_R"
+    "ESP\020\3326\022\026\n\021DISBAND_PARTY_REQ\020\3336\022\027\n\022DISBAN"
+    "D_PARTY_RESP\020\3346\022\030\n\023INVITE_TO_PARTY_REQ\020\335"
+    "6\022\031\n\024INVITE_TO_PARTY_RESP\020\3366\022\022\n\rINVITE_N"
+    "OTIFY\020\3376\022\026\n\021ACCEPT_INVITE_REQ\020\3406\022\027\n\022ACCE"
+    "PT_INVITE_RESP\020\3416\022\027\n\022DECLINE_INVITE_REQ\020"
+    "\3426\022\030\n\023DECLINE_INVITE_RESP\020\3436\022\031\n\024INVITE_R"
+    "ESULT_NOTIFY\020\3446\022\024\n\017LEAVE_PARTY_REQ\020\3456\022\025\n"
+    "\020LEAVE_PARTY_RESP\020\3466\022\032\n\025KICK_PARTY_MEMBE"
+    "R_REQ\020\3476\022\033\n\026KICK_PARTY_MEMBER_RESP\020\3506\022\030\n"
+    "\023TRANSFER_LEADER_REQ\020\3516\022\031\n\024TRANSFER_LEAD"
+    "ER_RESP\020\3526\022\022\n\rSET_READY_REQ\020\3536\022\023\n\016SET_RE"
+    "ADY_RESP\020\3546\022\030\n\023PARTY_JOINED_NOTIFY\020\3556\022\026\n"
+    "\021PARTY_LEFT_NOTIFY\020\3566\022\030\n\023PARTY_KICKED_NO"
+    "TIFY\020\3576\022\037\n\032PARTY_STATE_CHANGED_NOTIFY\020\3606"
+    "\022\033\n\026PARTY_DISBANDED_NOTIFY\020\3616\022\025\n\020GET_MY_"
+    "PARTY_REQ\020\3626\022\026\n\021GET_MY_PARTY_RESP\020\3636*k\n\016"
+    "PeerCapability\022\027\n\023RELAY_READ_RECEIPTS\020\000\022"
+    "\020\n\014RELAY_TYPING\020\001\022\022\n\016RELAY_PRESENCE\020\002\022\032\n"
+    "\026RELAY_OFFLINE_MESSAGES\020\003B\'Z%github.com/"
+    "cui/chirp/proto/go/gatewayb\006proto3"
+};
+static const ::_pbi::DescriptorTable* PROTOBUF_NONNULL const
+    descriptor_table_proto_2fgateway_2eproto_deps[2] = {
+        &::descriptor_table_proto_2fchat_2eproto,
+        &::descriptor_table_proto_2fcommon_2eproto,
 };
 static ::absl::once_flag descriptor_table_proto_2fgateway_2eproto_once;
 PROTOBUF_CONSTINIT const ::_pbi::DescriptorTable descriptor_table_proto_2fgateway_2eproto = {
     false,
     false,
-    5199,
+    6034,
     descriptor_table_protodef_proto_2fgateway_2eproto,
     "proto/gateway.proto",
     &descriptor_table_proto_2fgateway_2eproto_once,
-    nullptr,
-    0,
-    3,
+    descriptor_table_proto_2fgateway_2eproto_deps,
+    2,
+    7,
     schemas,
     file_default_instances,
     TableStruct_proto_2fgateway_2eproto::offsets,
@@ -306,7 +519,13 @@ const ::google::protobuf::EnumDescriptor* PROTOBUF_NONNULL MsgID_descriptor() {
   return file_level_enum_descriptors_proto_2fgateway_2eproto[0];
 }
 PROTOBUF_CONSTINIT const uint32_t MsgID_internal_data_[] = {
-    65536u, 7342272u, 0u, 0u, 0u, 0u, 0u, 0u, 0u, 0u, 0u, 0u, 0u, 0u, 0u, 0u, 0u, 0u, 0u, 0u, 0u, 0u, 0u, 0u, 0u, 0u, 0u, 0u, 0u, 0u, 0u, 0u, 0u, 134217472u, 0u, 0u, 0u, 0u, 0u, 0u, 0u, 0u, 0u, 0u, 0u, 0u, 0u, 0u, 0u, 0u, 0u, 0u, 0u, 0u, 0u, 0u, 0u, 0u, 0u, 0u, 0u, 0u, 0u, 0u, 2031616u, 0u, 0u, 4293918720u, 511u, 0u, 4278190080u, 67108863u, 5019u, 4008u, 7011u, 3016u, 5003u, 6005u, 7020u, 3008u, 3024u, 4016u, 5011u, 5027u, 7003u, 7016u, 7024u, 3004u, 3012u, 3020u, 4004u, 4012u, 4020u, 5007u, 5015u, 5023u, 6001u, 6009u, 7007u, 7014u, 7018u, 7022u, 7026u, 3002u, 3006u, 3010u, 3014u, 3018u, 3022u, 4002u, 4006u, 4010u, 4014u, 4018u, 5001u, 5005u, 5009u, 5013u, 5017u, 5021u, 5025u, 5029u, 6003u, 6007u, 7001u, 7005u, 7009u, 7013u, 7015u, 7017u, 7019u, 7021u, 7023u, 7025u, 7027u, 3001u, 3003u, 3005u, 3007u, 3009u, 3011u, 3013u, 3015u, 3017u, 3019u, 3021u, 3023u, 4001u, 4003u, 4005u, 4007u, 4009u, 4011u, 4013u, 4015u, 4017u, 4019u, 4021u, 5002u, 5004u, 5006u, 5008u, 5010u, 5012u, 5014u, 5016u, 5018u, 5020u, 5022u, 5024u, 5026u, 5028u, 5030u, 6002u, 6004u, 6006u, 6008u, 6010u, 7002u, 7004u, 7006u, 7008u, 7010u, 7012u, };
+    65536u, 7604416u, 0u, 0u, 0u, 0u, 0u, 0u, 0u, 0u, 0u, 0u, 0u, 0u, 0u, 0u, 0u, 0u, 0u, 0u, 0u, 0u, 0u, 0u, 0u, 0u, 0u, 0u, 0u, 0u, 0u, 0u, 0u, 134217472u, 0u, 0u, 0u, 0u, 0u, 0u, 0u, 0u, 0u, 0u, 0u, 0u, 0u, 0u, 0u, 0u, 0u, 0u, 0u, 0u, 0u, 0u, 0u, 0u, 0u, 0u, 0u, 0u, 0u, 0u, 2031616u, 0u, 0u, 4293918720u, 511u, 0u, 4278190080u, 67108863u, 5019u, 4008u, 7007u, 3016u, 5003u, 6001u, 7020u, 3008u, 3024u, 4016u, 5011u, 5027u, 6009u, 7015u, 7024u, 3004u, 3012u, 3020u, 4004u, 4012u, 4020u, 5007u, 5015u, 5023u, 5050u, 6005u, 7003u, 7011u, 7018u, 7022u, 7026u, 3002u, 3006u, 3010u, 3014u, 3018u, 3022u, 4002u, 4006u, 4010u, 4014u, 4018u, 5001u, 5005u, 5009u, 5013u, 5017u, 5021u, 5025u, 5029u, 5052u, 6003u, 6007u, 7001u, 7005u, 7009u, 7013u, 7017u, 7019u, 7021u, 7023u, 7025u, 7027u, 3001u, 3003u, 3005u, 3007u, 3009u, 3011u, 3013u, 3015u, 3017u, 3019u, 3021u, 3023u, 4001u, 4003u, 4005u, 4007u, 4009u, 4011u, 4013u, 4015u, 4017u, 4019u, 4021u, 5002u, 5004u, 5006u, 5008u, 5010u, 5012u, 5014u, 5016u, 5018u, 5020u, 5022u, 5024u, 5026u, 5028u, 5030u, 5051u, 5053u, 6002u, 6004u, 6006u, 6008u, 6010u, 7002u, 7004u, 7006u, 7008u, 7010u, 7012u, 7014u, 7016u, };
+const ::google::protobuf::EnumDescriptor* PROTOBUF_NONNULL PeerCapability_descriptor() {
+  ::google::protobuf::internal::AssignDescriptors(&descriptor_table_proto_2fgateway_2eproto);
+  return file_level_enum_descriptors_proto_2fgateway_2eproto[1];
+}
+PROTOBUF_CONSTINIT const uint32_t PeerCapability_internal_data_[] = {
+    262144u, 0u, };
 // ===================================================================
 
 class Packet::_Internal {
@@ -1198,6 +1417,1623 @@ void HeartbeatPong::InternalSwap(HeartbeatPong* PROTOBUF_RESTRICT PROTOBUF_NONNU
 }
 
 ::google::protobuf::Metadata HeartbeatPong::GetMetadata() const {
+  return ::google::protobuf::Message::GetMetadataImpl(GetClassData()->full());
+}
+// ===================================================================
+
+class PeerRegisterReq::_Internal {
+ public:
+  using HasBits =
+      decltype(::std::declval<PeerRegisterReq>()._impl_._has_bits_);
+  static constexpr ::int32_t kHasBitsOffset =
+      8 * PROTOBUF_FIELD_OFFSET(PeerRegisterReq, _impl_._has_bits_);
+};
+
+PeerRegisterReq::PeerRegisterReq(::google::protobuf::Arena* PROTOBUF_NULLABLE arena)
+#if defined(PROTOBUF_CUSTOM_VTABLE)
+    : ::google::protobuf::Message(arena, PeerRegisterReq_class_data_.base()) {
+#else   // PROTOBUF_CUSTOM_VTABLE
+    : ::google::protobuf::Message(arena) {
+#endif  // PROTOBUF_CUSTOM_VTABLE
+  SharedCtor(arena);
+  // @@protoc_insertion_point(arena_constructor:chirp.gateway.PeerRegisterReq)
+}
+PROTOBUF_NDEBUG_INLINE PeerRegisterReq::Impl_::Impl_(
+    [[maybe_unused]] ::google::protobuf::internal::InternalVisibility visibility,
+    [[maybe_unused]] ::google::protobuf::Arena* PROTOBUF_NULLABLE arena, const Impl_& from,
+    [[maybe_unused]] const ::chirp::gateway::PeerRegisterReq& from_msg)
+      : _has_bits_{from._has_bits_},
+        _cached_size_{0},
+        supported_features_{visibility, arena, from.supported_features_},
+        _supported_features_cached_byte_size_{0},
+        service_id_(arena, from.service_id_),
+        service_secret_(arena, from.service_secret_),
+        game_id_(arena, from.game_id_) {}
+
+PeerRegisterReq::PeerRegisterReq(
+    ::google::protobuf::Arena* PROTOBUF_NULLABLE arena,
+    const PeerRegisterReq& from)
+#if defined(PROTOBUF_CUSTOM_VTABLE)
+    : ::google::protobuf::Message(arena, PeerRegisterReq_class_data_.base()) {
+#else   // PROTOBUF_CUSTOM_VTABLE
+    : ::google::protobuf::Message(arena) {
+#endif  // PROTOBUF_CUSTOM_VTABLE
+  PeerRegisterReq* const _this = this;
+  (void)_this;
+  _internal_metadata_.MergeFrom<::google::protobuf::UnknownFieldSet>(
+      from._internal_metadata_);
+  new (&_impl_) Impl_(internal_visibility(), arena, from._impl_, from);
+  _impl_.protocol_version_ = from._impl_.protocol_version_;
+
+  // @@protoc_insertion_point(copy_constructor:chirp.gateway.PeerRegisterReq)
+}
+PROTOBUF_NDEBUG_INLINE PeerRegisterReq::Impl_::Impl_(
+    [[maybe_unused]] ::google::protobuf::internal::InternalVisibility visibility,
+    [[maybe_unused]] ::google::protobuf::Arena* PROTOBUF_NULLABLE arena)
+      : _cached_size_{0},
+        supported_features_{visibility, arena},
+        _supported_features_cached_byte_size_{0},
+        service_id_(arena),
+        service_secret_(arena),
+        game_id_(arena) {}
+
+inline void PeerRegisterReq::SharedCtor(::_pb::Arena* PROTOBUF_NULLABLE arena) {
+  new (&_impl_) Impl_(internal_visibility(), arena);
+  _impl_.protocol_version_ = {};
+}
+PeerRegisterReq::~PeerRegisterReq() {
+  // @@protoc_insertion_point(destructor:chirp.gateway.PeerRegisterReq)
+  SharedDtor(*this);
+}
+inline void PeerRegisterReq::SharedDtor(MessageLite& self) {
+  PeerRegisterReq& this_ = static_cast<PeerRegisterReq&>(self);
+  if constexpr (::_pbi::DebugHardenCheckHasBitConsistency()) {
+    this_.CheckHasBitConsistency();
+  }
+  this_._internal_metadata_.Delete<::google::protobuf::UnknownFieldSet>();
+  ABSL_DCHECK(this_.GetArena() == nullptr);
+  this_._impl_.service_id_.Destroy();
+  this_._impl_.service_secret_.Destroy();
+  this_._impl_.game_id_.Destroy();
+  this_._impl_.~Impl_();
+}
+
+inline void* PROTOBUF_NONNULL PeerRegisterReq::PlacementNew_(
+    const void* PROTOBUF_NONNULL, void* PROTOBUF_NONNULL mem,
+    ::google::protobuf::Arena* PROTOBUF_NULLABLE arena) {
+  return ::new (mem) PeerRegisterReq(arena);
+}
+constexpr auto PeerRegisterReq::InternalNewImpl_() {
+  constexpr auto arena_bits = ::google::protobuf::internal::EncodePlacementArenaOffsets({
+      PROTOBUF_FIELD_OFFSET(PeerRegisterReq, _impl_.supported_features_) +
+          decltype(PeerRegisterReq::_impl_.supported_features_)::
+              InternalGetArenaOffset(
+                  ::google::protobuf::Message::internal_visibility()),
+  });
+  if (arena_bits.has_value()) {
+    return ::google::protobuf::internal::MessageCreator::CopyInit(
+        sizeof(PeerRegisterReq), alignof(PeerRegisterReq), *arena_bits);
+  } else {
+    return ::google::protobuf::internal::MessageCreator(&PeerRegisterReq::PlacementNew_,
+                                 sizeof(PeerRegisterReq),
+                                 alignof(PeerRegisterReq));
+  }
+}
+constexpr auto PeerRegisterReq::InternalGenerateClassData_() {
+  return ::google::protobuf::internal::ClassDataFull{
+      ::google::protobuf::internal::ClassData{
+          &_PeerRegisterReq_default_instance_._instance,
+          &_table_.header,
+          nullptr,  // OnDemandRegisterArenaDtor
+          nullptr,  // IsInitialized
+          &PeerRegisterReq::MergeImpl,
+          ::google::protobuf::Message::GetNewImpl<PeerRegisterReq>(),
+#if defined(PROTOBUF_CUSTOM_VTABLE)
+          &PeerRegisterReq::SharedDtor,
+          ::google::protobuf::Message::GetClearImpl<PeerRegisterReq>(), &PeerRegisterReq::ByteSizeLong,
+              &PeerRegisterReq::_InternalSerialize,
+#endif  // PROTOBUF_CUSTOM_VTABLE
+          PROTOBUF_FIELD_OFFSET(PeerRegisterReq, _impl_._cached_size_),
+          false,
+      },
+      &PeerRegisterReq::kDescriptorMethods,
+      &descriptor_table_proto_2fgateway_2eproto,
+      nullptr,  // tracker
+  };
+}
+
+PROTOBUF_CONSTINIT PROTOBUF_ATTRIBUTE_INIT_PRIORITY1 const
+    ::google::protobuf::internal::ClassDataFull PeerRegisterReq_class_data_ =
+        PeerRegisterReq::InternalGenerateClassData_();
+
+PROTOBUF_ATTRIBUTE_WEAK const ::google::protobuf::internal::ClassData* PROTOBUF_NONNULL
+PeerRegisterReq::GetClassData() const {
+  ::google::protobuf::internal::PrefetchToLocalCache(&PeerRegisterReq_class_data_);
+  ::google::protobuf::internal::PrefetchToLocalCache(PeerRegisterReq_class_data_.tc_table);
+  return PeerRegisterReq_class_data_.base();
+}
+PROTOBUF_CONSTINIT PROTOBUF_ATTRIBUTE_INIT_PRIORITY1
+const ::_pbi::TcParseTable<3, 5, 0, 69, 2>
+PeerRegisterReq::_table_ = {
+  {
+    PROTOBUF_FIELD_OFFSET(PeerRegisterReq, _impl_._has_bits_),
+    0, // no _extensions_
+    5, 56,  // max_field_number, fast_idx_mask
+    offsetof(decltype(_table_), field_lookup_table),
+    4294967264,  // skipmap
+    offsetof(decltype(_table_), field_entries),
+    5,  // num_field_entries
+    0,  // num_aux_entries
+    offsetof(decltype(_table_), field_names),  // no aux_entries
+    PeerRegisterReq_class_data_.base(),
+    nullptr,  // post_loop_handler
+    ::_pbi::TcParser::GenericFallback,  // fallback
+    #ifdef PROTOBUF_PREFETCH_PARSE_TABLE
+    ::_pbi::TcParser::GetTable<::chirp::gateway::PeerRegisterReq>(),  // to_prefetch
+    #endif  // PROTOBUF_PREFETCH_PARSE_TABLE
+  }, {{
+    {::_pbi::TcParser::MiniParse, {}},
+    // string service_id = 1;
+    {::_pbi::TcParser::FastUS1,
+     {10, 1, 0,
+      PROTOBUF_FIELD_OFFSET(PeerRegisterReq, _impl_.service_id_)}},
+    // string service_secret = 2;
+    {::_pbi::TcParser::FastUS1,
+     {18, 2, 0,
+      PROTOBUF_FIELD_OFFSET(PeerRegisterReq, _impl_.service_secret_)}},
+    // int32 protocol_version = 3;
+    {::_pbi::TcParser::SingularVarintNoZag1<::uint32_t, offsetof(PeerRegisterReq, _impl_.protocol_version_), 4>(),
+     {24, 4, 0,
+      PROTOBUF_FIELD_OFFSET(PeerRegisterReq, _impl_.protocol_version_)}},
+    // string game_id = 4;
+    {::_pbi::TcParser::FastUS1,
+     {34, 3, 0,
+      PROTOBUF_FIELD_OFFSET(PeerRegisterReq, _impl_.game_id_)}},
+    // repeated .chirp.gateway.PeerCapability supported_features = 5;
+    {::_pbi::TcParser::FastV32P1,
+     {42, 0, 0,
+      PROTOBUF_FIELD_OFFSET(PeerRegisterReq, _impl_.supported_features_)}},
+    {::_pbi::TcParser::MiniParse, {}},
+    {::_pbi::TcParser::MiniParse, {}},
+  }}, {{
+    65535, 65535
+  }}, {{
+    // string service_id = 1;
+    {PROTOBUF_FIELD_OFFSET(PeerRegisterReq, _impl_.service_id_), _Internal::kHasBitsOffset + 1, 0, (0 | ::_fl::kFcOptional | ::_fl::kUtf8String | ::_fl::kRepAString)},
+    // string service_secret = 2;
+    {PROTOBUF_FIELD_OFFSET(PeerRegisterReq, _impl_.service_secret_), _Internal::kHasBitsOffset + 2, 0, (0 | ::_fl::kFcOptional | ::_fl::kUtf8String | ::_fl::kRepAString)},
+    // int32 protocol_version = 3;
+    {PROTOBUF_FIELD_OFFSET(PeerRegisterReq, _impl_.protocol_version_), _Internal::kHasBitsOffset + 4, 0, (0 | ::_fl::kFcOptional | ::_fl::kInt32)},
+    // string game_id = 4;
+    {PROTOBUF_FIELD_OFFSET(PeerRegisterReq, _impl_.game_id_), _Internal::kHasBitsOffset + 3, 0, (0 | ::_fl::kFcOptional | ::_fl::kUtf8String | ::_fl::kRepAString)},
+    // repeated .chirp.gateway.PeerCapability supported_features = 5;
+    {PROTOBUF_FIELD_OFFSET(PeerRegisterReq, _impl_.supported_features_), _Internal::kHasBitsOffset + 0, 0, (0 | ::_fl::kFcRepeated | ::_fl::kPackedOpenEnum)},
+  }},
+  // no aux_entries
+  {{
+    "\35\12\16\0\7\0\0\0"
+    "chirp.gateway.PeerRegisterReq"
+    "service_id"
+    "service_secret"
+    "game_id"
+  }},
+};
+PROTOBUF_NOINLINE void PeerRegisterReq::Clear() {
+// @@protoc_insertion_point(message_clear_start:chirp.gateway.PeerRegisterReq)
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  ::uint32_t cached_has_bits = 0;
+  // Prevent compiler warnings about cached_has_bits being unused
+  (void) cached_has_bits;
+
+  cached_has_bits = _impl_._has_bits_[0];
+  if (BatchCheckHasBit(cached_has_bits, 0x0000000fU)) {
+    if (CheckHasBitForRepeated(cached_has_bits, 0x00000001U)) {
+      _impl_.supported_features_.Clear();
+    }
+    if (CheckHasBit(cached_has_bits, 0x00000002U)) {
+      _impl_.service_id_.ClearNonDefaultToEmpty();
+    }
+    if (CheckHasBit(cached_has_bits, 0x00000004U)) {
+      _impl_.service_secret_.ClearNonDefaultToEmpty();
+    }
+    if (CheckHasBit(cached_has_bits, 0x00000008U)) {
+      _impl_.game_id_.ClearNonDefaultToEmpty();
+    }
+  }
+  _impl_.protocol_version_ = 0;
+  _impl_._has_bits_.Clear();
+  _internal_metadata_.Clear<::google::protobuf::UnknownFieldSet>();
+}
+
+#if defined(PROTOBUF_CUSTOM_VTABLE)
+::uint8_t* PROTOBUF_NONNULL PeerRegisterReq::_InternalSerialize(
+    const ::google::protobuf::MessageLite& base, ::uint8_t* PROTOBUF_NONNULL target,
+    ::google::protobuf::io::EpsCopyOutputStream* PROTOBUF_NONNULL stream) {
+  const PeerRegisterReq& this_ = static_cast<const PeerRegisterReq&>(base);
+#else   // PROTOBUF_CUSTOM_VTABLE
+::uint8_t* PROTOBUF_NONNULL PeerRegisterReq::_InternalSerialize(
+    ::uint8_t* PROTOBUF_NONNULL target,
+    ::google::protobuf::io::EpsCopyOutputStream* PROTOBUF_NONNULL stream) const {
+  const PeerRegisterReq& this_ = *this;
+#endif  // PROTOBUF_CUSTOM_VTABLE
+  if constexpr (::_pbi::DebugHardenCheckHasBitConsistency()) {
+    this_.CheckHasBitConsistency();
+  }
+  // @@protoc_insertion_point(serialize_to_array_start:chirp.gateway.PeerRegisterReq)
+  ::uint32_t cached_has_bits = 0;
+  (void)cached_has_bits;
+
+  cached_has_bits = this_._impl_._has_bits_[0];
+  // string service_id = 1;
+  if (CheckHasBit(cached_has_bits, 0x00000002U)) {
+    if (!this_._internal_service_id().empty()) {
+      const ::std::string& _s = this_._internal_service_id();
+      ::google::protobuf::internal::WireFormatLite::VerifyUtf8String(
+          _s.data(), static_cast<int>(_s.length()), ::google::protobuf::internal::WireFormatLite::SERIALIZE, "chirp.gateway.PeerRegisterReq.service_id");
+      target = stream->WriteStringMaybeAliased(1, _s, target);
+    }
+  }
+
+  // string service_secret = 2;
+  if (CheckHasBit(cached_has_bits, 0x00000004U)) {
+    if (!this_._internal_service_secret().empty()) {
+      const ::std::string& _s = this_._internal_service_secret();
+      ::google::protobuf::internal::WireFormatLite::VerifyUtf8String(
+          _s.data(), static_cast<int>(_s.length()), ::google::protobuf::internal::WireFormatLite::SERIALIZE, "chirp.gateway.PeerRegisterReq.service_secret");
+      target = stream->WriteStringMaybeAliased(2, _s, target);
+    }
+  }
+
+  // int32 protocol_version = 3;
+  if (CheckHasBit(cached_has_bits, 0x00000010U)) {
+    if (this_._internal_protocol_version() != 0) {
+      target =
+          ::google::protobuf::internal::WireFormatLite::WriteInt32ToArrayWithField<3>(
+              stream, this_._internal_protocol_version(), target);
+    }
+  }
+
+  // string game_id = 4;
+  if (CheckHasBit(cached_has_bits, 0x00000008U)) {
+    if (!this_._internal_game_id().empty()) {
+      const ::std::string& _s = this_._internal_game_id();
+      ::google::protobuf::internal::WireFormatLite::VerifyUtf8String(
+          _s.data(), static_cast<int>(_s.length()), ::google::protobuf::internal::WireFormatLite::SERIALIZE, "chirp.gateway.PeerRegisterReq.game_id");
+      target = stream->WriteStringMaybeAliased(4, _s, target);
+    }
+  }
+
+  // repeated .chirp.gateway.PeerCapability supported_features = 5;
+  if (CheckHasBitForRepeated(cached_has_bits, 0x00000001U)) {
+    {
+      ::size_t byte_size = this_._impl_._supported_features_cached_byte_size_.Get();
+      if (byte_size > 0) {
+        target = stream->WriteEnumPacked(
+            5, this_._internal_supported_features(), byte_size, target);
+      }
+    }
+  }
+
+  if (ABSL_PREDICT_FALSE(this_._internal_metadata_.have_unknown_fields())) {
+    target =
+        ::_pbi::WireFormat::InternalSerializeUnknownFieldsToArray(
+            this_._internal_metadata_.unknown_fields<::google::protobuf::UnknownFieldSet>(::google::protobuf::UnknownFieldSet::default_instance), target, stream);
+  }
+  // @@protoc_insertion_point(serialize_to_array_end:chirp.gateway.PeerRegisterReq)
+  return target;
+}
+
+#if defined(PROTOBUF_CUSTOM_VTABLE)
+::size_t PeerRegisterReq::ByteSizeLong(const MessageLite& base) {
+  const PeerRegisterReq& this_ = static_cast<const PeerRegisterReq&>(base);
+#else   // PROTOBUF_CUSTOM_VTABLE
+::size_t PeerRegisterReq::ByteSizeLong() const {
+  const PeerRegisterReq& this_ = *this;
+#endif  // PROTOBUF_CUSTOM_VTABLE
+  // @@protoc_insertion_point(message_byte_size_start:chirp.gateway.PeerRegisterReq)
+  ::size_t total_size = 0;
+
+  ::uint32_t cached_has_bits = 0;
+  // Prevent compiler warnings about cached_has_bits being unused
+  (void)cached_has_bits;
+
+  ::_pbi::Prefetch5LinesFrom7Lines(&this_);
+  cached_has_bits = this_._impl_._has_bits_[0];
+  if (BatchCheckHasBit(cached_has_bits, 0x0000001fU)) {
+    // repeated .chirp.gateway.PeerCapability supported_features = 5;
+    if (CheckHasBitForRepeated(cached_has_bits, 0x00000001U)) {
+      total_size += ::_pbi::WireFormatLite::EnumSizeWithPackedTagSize(
+          this_._internal_supported_features(), 1, this_._impl_._supported_features_cached_byte_size_);
+    }
+    // string service_id = 1;
+    if (CheckHasBit(cached_has_bits, 0x00000002U)) {
+      if (!this_._internal_service_id().empty()) {
+        total_size += 1 + ::google::protobuf::internal::WireFormatLite::StringSize(
+                                        this_._internal_service_id());
+      }
+    }
+    // string service_secret = 2;
+    if (CheckHasBit(cached_has_bits, 0x00000004U)) {
+      if (!this_._internal_service_secret().empty()) {
+        total_size += 1 + ::google::protobuf::internal::WireFormatLite::StringSize(
+                                        this_._internal_service_secret());
+      }
+    }
+    // string game_id = 4;
+    if (CheckHasBit(cached_has_bits, 0x00000008U)) {
+      if (!this_._internal_game_id().empty()) {
+        total_size += 1 + ::google::protobuf::internal::WireFormatLite::StringSize(
+                                        this_._internal_game_id());
+      }
+    }
+    // int32 protocol_version = 3;
+    if (CheckHasBit(cached_has_bits, 0x00000010U)) {
+      if (this_._internal_protocol_version() != 0) {
+        total_size += ::_pbi::WireFormatLite::Int32SizePlusOne(
+            this_._internal_protocol_version());
+      }
+    }
+  }
+  return this_.MaybeComputeUnknownFieldsSize(total_size,
+                                             &this_._impl_._cached_size_);
+}
+
+void PeerRegisterReq::MergeImpl(::google::protobuf::MessageLite& to_msg,
+                            const ::google::protobuf::MessageLite& from_msg) {
+   auto* const _this =
+      static_cast<PeerRegisterReq*>(&to_msg);
+  auto& from = static_cast<const PeerRegisterReq&>(from_msg);
+  if constexpr (::_pbi::DebugHardenCheckHasBitConsistency()) {
+    from.CheckHasBitConsistency();
+  }
+  // @@protoc_insertion_point(class_specific_merge_from_start:chirp.gateway.PeerRegisterReq)
+  ABSL_DCHECK_NE(&from, _this);
+  ::uint32_t cached_has_bits = 0;
+  (void)cached_has_bits;
+
+  cached_has_bits = from._impl_._has_bits_[0];
+  if (BatchCheckHasBit(cached_has_bits, 0x0000001fU)) {
+    if (CheckHasBitForRepeated(cached_has_bits, 0x00000001U)) {
+      _this->_internal_mutable_supported_features()->MergeFrom(from._internal_supported_features());
+    }
+    if (CheckHasBit(cached_has_bits, 0x00000002U)) {
+      if (!from._internal_service_id().empty()) {
+        _this->_internal_set_service_id(from._internal_service_id());
+      } else {
+        if (_this->_impl_.service_id_.IsDefault()) {
+          _this->_internal_set_service_id("");
+        }
+      }
+    }
+    if (CheckHasBit(cached_has_bits, 0x00000004U)) {
+      if (!from._internal_service_secret().empty()) {
+        _this->_internal_set_service_secret(from._internal_service_secret());
+      } else {
+        if (_this->_impl_.service_secret_.IsDefault()) {
+          _this->_internal_set_service_secret("");
+        }
+      }
+    }
+    if (CheckHasBit(cached_has_bits, 0x00000008U)) {
+      if (!from._internal_game_id().empty()) {
+        _this->_internal_set_game_id(from._internal_game_id());
+      } else {
+        if (_this->_impl_.game_id_.IsDefault()) {
+          _this->_internal_set_game_id("");
+        }
+      }
+    }
+    if (CheckHasBit(cached_has_bits, 0x00000010U)) {
+      if (from._internal_protocol_version() != 0) {
+        _this->_impl_.protocol_version_ = from._impl_.protocol_version_;
+      }
+    }
+  }
+  _this->_impl_._has_bits_[0] |= cached_has_bits;
+  _this->_internal_metadata_.MergeFrom<::google::protobuf::UnknownFieldSet>(
+      from._internal_metadata_);
+}
+
+void PeerRegisterReq::CopyFrom(const PeerRegisterReq& from) {
+  // @@protoc_insertion_point(class_specific_copy_from_start:chirp.gateway.PeerRegisterReq)
+  if (&from == this) return;
+  Clear();
+  MergeFrom(from);
+}
+
+
+void PeerRegisterReq::InternalSwap(PeerRegisterReq* PROTOBUF_RESTRICT PROTOBUF_NONNULL other) {
+  using ::std::swap;
+  auto* arena = GetArena();
+  ABSL_DCHECK_EQ(arena, other->GetArena());
+  _internal_metadata_.InternalSwap(&other->_internal_metadata_);
+  swap(_impl_._has_bits_[0], other->_impl_._has_bits_[0]);
+  _impl_.supported_features_.InternalSwap(&other->_impl_.supported_features_);
+  ::_pbi::ArenaStringPtr::InternalSwap(&_impl_.service_id_, &other->_impl_.service_id_, arena);
+  ::_pbi::ArenaStringPtr::InternalSwap(&_impl_.service_secret_, &other->_impl_.service_secret_, arena);
+  ::_pbi::ArenaStringPtr::InternalSwap(&_impl_.game_id_, &other->_impl_.game_id_, arena);
+  swap(_impl_.protocol_version_, other->_impl_.protocol_version_);
+}
+
+::google::protobuf::Metadata PeerRegisterReq::GetMetadata() const {
+  return ::google::protobuf::Message::GetMetadataImpl(GetClassData()->full());
+}
+// ===================================================================
+
+class PeerRegisterResp::_Internal {
+ public:
+  using HasBits =
+      decltype(::std::declval<PeerRegisterResp>()._impl_._has_bits_);
+  static constexpr ::int32_t kHasBitsOffset =
+      8 * PROTOBUF_FIELD_OFFSET(PeerRegisterResp, _impl_._has_bits_);
+};
+
+PeerRegisterResp::PeerRegisterResp(::google::protobuf::Arena* PROTOBUF_NULLABLE arena)
+#if defined(PROTOBUF_CUSTOM_VTABLE)
+    : ::google::protobuf::Message(arena, PeerRegisterResp_class_data_.base()) {
+#else   // PROTOBUF_CUSTOM_VTABLE
+    : ::google::protobuf::Message(arena) {
+#endif  // PROTOBUF_CUSTOM_VTABLE
+  SharedCtor(arena);
+  // @@protoc_insertion_point(arena_constructor:chirp.gateway.PeerRegisterResp)
+}
+PROTOBUF_NDEBUG_INLINE PeerRegisterResp::Impl_::Impl_(
+    [[maybe_unused]] ::google::protobuf::internal::InternalVisibility visibility,
+    [[maybe_unused]] ::google::protobuf::Arena* PROTOBUF_NULLABLE arena, const Impl_& from,
+    [[maybe_unused]] const ::chirp::gateway::PeerRegisterResp& from_msg)
+      : _has_bits_{from._has_bits_},
+        _cached_size_{0},
+        supported_features_{visibility, arena, from.supported_features_},
+        _supported_features_cached_byte_size_{0} {}
+
+PeerRegisterResp::PeerRegisterResp(
+    ::google::protobuf::Arena* PROTOBUF_NULLABLE arena,
+    const PeerRegisterResp& from)
+#if defined(PROTOBUF_CUSTOM_VTABLE)
+    : ::google::protobuf::Message(arena, PeerRegisterResp_class_data_.base()) {
+#else   // PROTOBUF_CUSTOM_VTABLE
+    : ::google::protobuf::Message(arena) {
+#endif  // PROTOBUF_CUSTOM_VTABLE
+  PeerRegisterResp* const _this = this;
+  (void)_this;
+  _internal_metadata_.MergeFrom<::google::protobuf::UnknownFieldSet>(
+      from._internal_metadata_);
+  new (&_impl_) Impl_(internal_visibility(), arena, from._impl_, from);
+  ::memcpy(reinterpret_cast<char*>(&_impl_) +
+               offsetof(Impl_, code_),
+           reinterpret_cast<const char*>(&from._impl_) +
+               offsetof(Impl_, code_),
+           offsetof(Impl_, heartbeat_interval_seconds_) -
+               offsetof(Impl_, code_) +
+               sizeof(Impl_::heartbeat_interval_seconds_));
+
+  // @@protoc_insertion_point(copy_constructor:chirp.gateway.PeerRegisterResp)
+}
+PROTOBUF_NDEBUG_INLINE PeerRegisterResp::Impl_::Impl_(
+    [[maybe_unused]] ::google::protobuf::internal::InternalVisibility visibility,
+    [[maybe_unused]] ::google::protobuf::Arena* PROTOBUF_NULLABLE arena)
+      : _cached_size_{0},
+        supported_features_{visibility, arena},
+        _supported_features_cached_byte_size_{0} {}
+
+inline void PeerRegisterResp::SharedCtor(::_pb::Arena* PROTOBUF_NULLABLE arena) {
+  new (&_impl_) Impl_(internal_visibility(), arena);
+  ::memset(reinterpret_cast<char*>(&_impl_) +
+               offsetof(Impl_, code_),
+           0,
+           offsetof(Impl_, heartbeat_interval_seconds_) -
+               offsetof(Impl_, code_) +
+               sizeof(Impl_::heartbeat_interval_seconds_));
+}
+PeerRegisterResp::~PeerRegisterResp() {
+  // @@protoc_insertion_point(destructor:chirp.gateway.PeerRegisterResp)
+  SharedDtor(*this);
+}
+inline void PeerRegisterResp::SharedDtor(MessageLite& self) {
+  PeerRegisterResp& this_ = static_cast<PeerRegisterResp&>(self);
+  if constexpr (::_pbi::DebugHardenCheckHasBitConsistency()) {
+    this_.CheckHasBitConsistency();
+  }
+  this_._internal_metadata_.Delete<::google::protobuf::UnknownFieldSet>();
+  ABSL_DCHECK(this_.GetArena() == nullptr);
+  this_._impl_.~Impl_();
+}
+
+inline void* PROTOBUF_NONNULL PeerRegisterResp::PlacementNew_(
+    const void* PROTOBUF_NONNULL, void* PROTOBUF_NONNULL mem,
+    ::google::protobuf::Arena* PROTOBUF_NULLABLE arena) {
+  return ::new (mem) PeerRegisterResp(arena);
+}
+constexpr auto PeerRegisterResp::InternalNewImpl_() {
+  constexpr auto arena_bits = ::google::protobuf::internal::EncodePlacementArenaOffsets({
+      PROTOBUF_FIELD_OFFSET(PeerRegisterResp, _impl_.supported_features_) +
+          decltype(PeerRegisterResp::_impl_.supported_features_)::
+              InternalGetArenaOffset(
+                  ::google::protobuf::Message::internal_visibility()),
+  });
+  if (arena_bits.has_value()) {
+    return ::google::protobuf::internal::MessageCreator::ZeroInit(
+        sizeof(PeerRegisterResp), alignof(PeerRegisterResp), *arena_bits);
+  } else {
+    return ::google::protobuf::internal::MessageCreator(&PeerRegisterResp::PlacementNew_,
+                                 sizeof(PeerRegisterResp),
+                                 alignof(PeerRegisterResp));
+  }
+}
+constexpr auto PeerRegisterResp::InternalGenerateClassData_() {
+  return ::google::protobuf::internal::ClassDataFull{
+      ::google::protobuf::internal::ClassData{
+          &_PeerRegisterResp_default_instance_._instance,
+          &_table_.header,
+          nullptr,  // OnDemandRegisterArenaDtor
+          nullptr,  // IsInitialized
+          &PeerRegisterResp::MergeImpl,
+          ::google::protobuf::Message::GetNewImpl<PeerRegisterResp>(),
+#if defined(PROTOBUF_CUSTOM_VTABLE)
+          &PeerRegisterResp::SharedDtor,
+          ::google::protobuf::Message::GetClearImpl<PeerRegisterResp>(), &PeerRegisterResp::ByteSizeLong,
+              &PeerRegisterResp::_InternalSerialize,
+#endif  // PROTOBUF_CUSTOM_VTABLE
+          PROTOBUF_FIELD_OFFSET(PeerRegisterResp, _impl_._cached_size_),
+          false,
+      },
+      &PeerRegisterResp::kDescriptorMethods,
+      &descriptor_table_proto_2fgateway_2eproto,
+      nullptr,  // tracker
+  };
+}
+
+PROTOBUF_CONSTINIT PROTOBUF_ATTRIBUTE_INIT_PRIORITY1 const
+    ::google::protobuf::internal::ClassDataFull PeerRegisterResp_class_data_ =
+        PeerRegisterResp::InternalGenerateClassData_();
+
+PROTOBUF_ATTRIBUTE_WEAK const ::google::protobuf::internal::ClassData* PROTOBUF_NONNULL
+PeerRegisterResp::GetClassData() const {
+  ::google::protobuf::internal::PrefetchToLocalCache(&PeerRegisterResp_class_data_);
+  ::google::protobuf::internal::PrefetchToLocalCache(PeerRegisterResp_class_data_.tc_table);
+  return PeerRegisterResp_class_data_.base();
+}
+PROTOBUF_CONSTINIT PROTOBUF_ATTRIBUTE_INIT_PRIORITY1
+const ::_pbi::TcParseTable<3, 5, 0, 0, 2>
+PeerRegisterResp::_table_ = {
+  {
+    PROTOBUF_FIELD_OFFSET(PeerRegisterResp, _impl_._has_bits_),
+    0, // no _extensions_
+    5, 56,  // max_field_number, fast_idx_mask
+    offsetof(decltype(_table_), field_lookup_table),
+    4294967264,  // skipmap
+    offsetof(decltype(_table_), field_entries),
+    5,  // num_field_entries
+    0,  // num_aux_entries
+    offsetof(decltype(_table_), field_names),  // no aux_entries
+    PeerRegisterResp_class_data_.base(),
+    nullptr,  // post_loop_handler
+    ::_pbi::TcParser::GenericFallback,  // fallback
+    #ifdef PROTOBUF_PREFETCH_PARSE_TABLE
+    ::_pbi::TcParser::GetTable<::chirp::gateway::PeerRegisterResp>(),  // to_prefetch
+    #endif  // PROTOBUF_PREFETCH_PARSE_TABLE
+  }, {{
+    {::_pbi::TcParser::MiniParse, {}},
+    // .chirp.common.ErrorCode code = 1;
+    {::_pbi::TcParser::SingularVarintNoZag1<::uint32_t, offsetof(PeerRegisterResp, _impl_.code_), 1>(),
+     {8, 1, 0,
+      PROTOBUF_FIELD_OFFSET(PeerRegisterResp, _impl_.code_)}},
+    // int32 protocol_version = 2;
+    {::_pbi::TcParser::SingularVarintNoZag1<::uint32_t, offsetof(PeerRegisterResp, _impl_.protocol_version_), 2>(),
+     {16, 2, 0,
+      PROTOBUF_FIELD_OFFSET(PeerRegisterResp, _impl_.protocol_version_)}},
+    // int32 min_version = 3;
+    {::_pbi::TcParser::SingularVarintNoZag1<::uint32_t, offsetof(PeerRegisterResp, _impl_.min_version_), 3>(),
+     {24, 3, 0,
+      PROTOBUF_FIELD_OFFSET(PeerRegisterResp, _impl_.min_version_)}},
+    // int32 heartbeat_interval_seconds = 4;
+    {::_pbi::TcParser::SingularVarintNoZag1<::uint32_t, offsetof(PeerRegisterResp, _impl_.heartbeat_interval_seconds_), 4>(),
+     {32, 4, 0,
+      PROTOBUF_FIELD_OFFSET(PeerRegisterResp, _impl_.heartbeat_interval_seconds_)}},
+    // repeated .chirp.gateway.PeerCapability supported_features = 5;
+    {::_pbi::TcParser::FastV32P1,
+     {42, 0, 0,
+      PROTOBUF_FIELD_OFFSET(PeerRegisterResp, _impl_.supported_features_)}},
+    {::_pbi::TcParser::MiniParse, {}},
+    {::_pbi::TcParser::MiniParse, {}},
+  }}, {{
+    65535, 65535
+  }}, {{
+    // .chirp.common.ErrorCode code = 1;
+    {PROTOBUF_FIELD_OFFSET(PeerRegisterResp, _impl_.code_), _Internal::kHasBitsOffset + 1, 0, (0 | ::_fl::kFcOptional | ::_fl::kOpenEnum)},
+    // int32 protocol_version = 2;
+    {PROTOBUF_FIELD_OFFSET(PeerRegisterResp, _impl_.protocol_version_), _Internal::kHasBitsOffset + 2, 0, (0 | ::_fl::kFcOptional | ::_fl::kInt32)},
+    // int32 min_version = 3;
+    {PROTOBUF_FIELD_OFFSET(PeerRegisterResp, _impl_.min_version_), _Internal::kHasBitsOffset + 3, 0, (0 | ::_fl::kFcOptional | ::_fl::kInt32)},
+    // int32 heartbeat_interval_seconds = 4;
+    {PROTOBUF_FIELD_OFFSET(PeerRegisterResp, _impl_.heartbeat_interval_seconds_), _Internal::kHasBitsOffset + 4, 0, (0 | ::_fl::kFcOptional | ::_fl::kInt32)},
+    // repeated .chirp.gateway.PeerCapability supported_features = 5;
+    {PROTOBUF_FIELD_OFFSET(PeerRegisterResp, _impl_.supported_features_), _Internal::kHasBitsOffset + 0, 0, (0 | ::_fl::kFcRepeated | ::_fl::kPackedOpenEnum)},
+  }},
+  // no aux_entries
+  {{
+  }},
+};
+PROTOBUF_NOINLINE void PeerRegisterResp::Clear() {
+// @@protoc_insertion_point(message_clear_start:chirp.gateway.PeerRegisterResp)
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  ::uint32_t cached_has_bits = 0;
+  // Prevent compiler warnings about cached_has_bits being unused
+  (void) cached_has_bits;
+
+  cached_has_bits = _impl_._has_bits_[0];
+  if (CheckHasBitForRepeated(cached_has_bits, 0x00000001U)) {
+    _impl_.supported_features_.Clear();
+  }
+  if (BatchCheckHasBit(cached_has_bits, 0x0000001eU)) {
+    ::memset(&_impl_.code_, 0, static_cast<::size_t>(
+        reinterpret_cast<char*>(&_impl_.heartbeat_interval_seconds_) -
+        reinterpret_cast<char*>(&_impl_.code_)) + sizeof(_impl_.heartbeat_interval_seconds_));
+  }
+  _impl_._has_bits_.Clear();
+  _internal_metadata_.Clear<::google::protobuf::UnknownFieldSet>();
+}
+
+#if defined(PROTOBUF_CUSTOM_VTABLE)
+::uint8_t* PROTOBUF_NONNULL PeerRegisterResp::_InternalSerialize(
+    const ::google::protobuf::MessageLite& base, ::uint8_t* PROTOBUF_NONNULL target,
+    ::google::protobuf::io::EpsCopyOutputStream* PROTOBUF_NONNULL stream) {
+  const PeerRegisterResp& this_ = static_cast<const PeerRegisterResp&>(base);
+#else   // PROTOBUF_CUSTOM_VTABLE
+::uint8_t* PROTOBUF_NONNULL PeerRegisterResp::_InternalSerialize(
+    ::uint8_t* PROTOBUF_NONNULL target,
+    ::google::protobuf::io::EpsCopyOutputStream* PROTOBUF_NONNULL stream) const {
+  const PeerRegisterResp& this_ = *this;
+#endif  // PROTOBUF_CUSTOM_VTABLE
+  if constexpr (::_pbi::DebugHardenCheckHasBitConsistency()) {
+    this_.CheckHasBitConsistency();
+  }
+  // @@protoc_insertion_point(serialize_to_array_start:chirp.gateway.PeerRegisterResp)
+  ::uint32_t cached_has_bits = 0;
+  (void)cached_has_bits;
+
+  cached_has_bits = this_._impl_._has_bits_[0];
+  // .chirp.common.ErrorCode code = 1;
+  if (CheckHasBit(cached_has_bits, 0x00000002U)) {
+    if (this_._internal_code() != 0) {
+      target = stream->EnsureSpace(target);
+      target = ::_pbi::WireFormatLite::WriteEnumToArray(
+          1, this_._internal_code(), target);
+    }
+  }
+
+  // int32 protocol_version = 2;
+  if (CheckHasBit(cached_has_bits, 0x00000004U)) {
+    if (this_._internal_protocol_version() != 0) {
+      target =
+          ::google::protobuf::internal::WireFormatLite::WriteInt32ToArrayWithField<2>(
+              stream, this_._internal_protocol_version(), target);
+    }
+  }
+
+  // int32 min_version = 3;
+  if (CheckHasBit(cached_has_bits, 0x00000008U)) {
+    if (this_._internal_min_version() != 0) {
+      target =
+          ::google::protobuf::internal::WireFormatLite::WriteInt32ToArrayWithField<3>(
+              stream, this_._internal_min_version(), target);
+    }
+  }
+
+  // int32 heartbeat_interval_seconds = 4;
+  if (CheckHasBit(cached_has_bits, 0x00000010U)) {
+    if (this_._internal_heartbeat_interval_seconds() != 0) {
+      target =
+          ::google::protobuf::internal::WireFormatLite::WriteInt32ToArrayWithField<4>(
+              stream, this_._internal_heartbeat_interval_seconds(), target);
+    }
+  }
+
+  // repeated .chirp.gateway.PeerCapability supported_features = 5;
+  if (CheckHasBitForRepeated(cached_has_bits, 0x00000001U)) {
+    {
+      ::size_t byte_size = this_._impl_._supported_features_cached_byte_size_.Get();
+      if (byte_size > 0) {
+        target = stream->WriteEnumPacked(
+            5, this_._internal_supported_features(), byte_size, target);
+      }
+    }
+  }
+
+  if (ABSL_PREDICT_FALSE(this_._internal_metadata_.have_unknown_fields())) {
+    target =
+        ::_pbi::WireFormat::InternalSerializeUnknownFieldsToArray(
+            this_._internal_metadata_.unknown_fields<::google::protobuf::UnknownFieldSet>(::google::protobuf::UnknownFieldSet::default_instance), target, stream);
+  }
+  // @@protoc_insertion_point(serialize_to_array_end:chirp.gateway.PeerRegisterResp)
+  return target;
+}
+
+#if defined(PROTOBUF_CUSTOM_VTABLE)
+::size_t PeerRegisterResp::ByteSizeLong(const MessageLite& base) {
+  const PeerRegisterResp& this_ = static_cast<const PeerRegisterResp&>(base);
+#else   // PROTOBUF_CUSTOM_VTABLE
+::size_t PeerRegisterResp::ByteSizeLong() const {
+  const PeerRegisterResp& this_ = *this;
+#endif  // PROTOBUF_CUSTOM_VTABLE
+  // @@protoc_insertion_point(message_byte_size_start:chirp.gateway.PeerRegisterResp)
+  ::size_t total_size = 0;
+
+  ::uint32_t cached_has_bits = 0;
+  // Prevent compiler warnings about cached_has_bits being unused
+  (void)cached_has_bits;
+
+  ::_pbi::Prefetch5LinesFrom7Lines(&this_);
+  cached_has_bits = this_._impl_._has_bits_[0];
+  if (BatchCheckHasBit(cached_has_bits, 0x0000001fU)) {
+    // repeated .chirp.gateway.PeerCapability supported_features = 5;
+    if (CheckHasBitForRepeated(cached_has_bits, 0x00000001U)) {
+      total_size += ::_pbi::WireFormatLite::EnumSizeWithPackedTagSize(
+          this_._internal_supported_features(), 1, this_._impl_._supported_features_cached_byte_size_);
+    }
+    // .chirp.common.ErrorCode code = 1;
+    if (CheckHasBit(cached_has_bits, 0x00000002U)) {
+      if (this_._internal_code() != 0) {
+        total_size += 1 +
+                      ::_pbi::WireFormatLite::EnumSize(this_._internal_code());
+      }
+    }
+    // int32 protocol_version = 2;
+    if (CheckHasBit(cached_has_bits, 0x00000004U)) {
+      if (this_._internal_protocol_version() != 0) {
+        total_size += ::_pbi::WireFormatLite::Int32SizePlusOne(
+            this_._internal_protocol_version());
+      }
+    }
+    // int32 min_version = 3;
+    if (CheckHasBit(cached_has_bits, 0x00000008U)) {
+      if (this_._internal_min_version() != 0) {
+        total_size += ::_pbi::WireFormatLite::Int32SizePlusOne(
+            this_._internal_min_version());
+      }
+    }
+    // int32 heartbeat_interval_seconds = 4;
+    if (CheckHasBit(cached_has_bits, 0x00000010U)) {
+      if (this_._internal_heartbeat_interval_seconds() != 0) {
+        total_size += ::_pbi::WireFormatLite::Int32SizePlusOne(
+            this_._internal_heartbeat_interval_seconds());
+      }
+    }
+  }
+  return this_.MaybeComputeUnknownFieldsSize(total_size,
+                                             &this_._impl_._cached_size_);
+}
+
+void PeerRegisterResp::MergeImpl(::google::protobuf::MessageLite& to_msg,
+                            const ::google::protobuf::MessageLite& from_msg) {
+   auto* const _this =
+      static_cast<PeerRegisterResp*>(&to_msg);
+  auto& from = static_cast<const PeerRegisterResp&>(from_msg);
+  if constexpr (::_pbi::DebugHardenCheckHasBitConsistency()) {
+    from.CheckHasBitConsistency();
+  }
+  // @@protoc_insertion_point(class_specific_merge_from_start:chirp.gateway.PeerRegisterResp)
+  ABSL_DCHECK_NE(&from, _this);
+  ::uint32_t cached_has_bits = 0;
+  (void)cached_has_bits;
+
+  cached_has_bits = from._impl_._has_bits_[0];
+  if (BatchCheckHasBit(cached_has_bits, 0x0000001fU)) {
+    if (CheckHasBitForRepeated(cached_has_bits, 0x00000001U)) {
+      _this->_internal_mutable_supported_features()->MergeFrom(from._internal_supported_features());
+    }
+    if (CheckHasBit(cached_has_bits, 0x00000002U)) {
+      if (from._internal_code() != 0) {
+        _this->_impl_.code_ = from._impl_.code_;
+      }
+    }
+    if (CheckHasBit(cached_has_bits, 0x00000004U)) {
+      if (from._internal_protocol_version() != 0) {
+        _this->_impl_.protocol_version_ = from._impl_.protocol_version_;
+      }
+    }
+    if (CheckHasBit(cached_has_bits, 0x00000008U)) {
+      if (from._internal_min_version() != 0) {
+        _this->_impl_.min_version_ = from._impl_.min_version_;
+      }
+    }
+    if (CheckHasBit(cached_has_bits, 0x00000010U)) {
+      if (from._internal_heartbeat_interval_seconds() != 0) {
+        _this->_impl_.heartbeat_interval_seconds_ = from._impl_.heartbeat_interval_seconds_;
+      }
+    }
+  }
+  _this->_impl_._has_bits_[0] |= cached_has_bits;
+  _this->_internal_metadata_.MergeFrom<::google::protobuf::UnknownFieldSet>(
+      from._internal_metadata_);
+}
+
+void PeerRegisterResp::CopyFrom(const PeerRegisterResp& from) {
+  // @@protoc_insertion_point(class_specific_copy_from_start:chirp.gateway.PeerRegisterResp)
+  if (&from == this) return;
+  Clear();
+  MergeFrom(from);
+}
+
+
+void PeerRegisterResp::InternalSwap(PeerRegisterResp* PROTOBUF_RESTRICT PROTOBUF_NONNULL other) {
+  using ::std::swap;
+  _internal_metadata_.InternalSwap(&other->_internal_metadata_);
+  swap(_impl_._has_bits_[0], other->_impl_._has_bits_[0]);
+  _impl_.supported_features_.InternalSwap(&other->_impl_.supported_features_);
+  ::google::protobuf::internal::memswap<
+      PROTOBUF_FIELD_OFFSET(PeerRegisterResp, _impl_.heartbeat_interval_seconds_)
+      + sizeof(PeerRegisterResp::_impl_.heartbeat_interval_seconds_)
+      - PROTOBUF_FIELD_OFFSET(PeerRegisterResp, _impl_.code_)>(
+          reinterpret_cast<char*>(&_impl_.code_),
+          reinterpret_cast<char*>(&other->_impl_.code_));
+}
+
+::google::protobuf::Metadata PeerRegisterResp::GetMetadata() const {
+  return ::google::protobuf::Message::GetMetadataImpl(GetClassData()->full());
+}
+// ===================================================================
+
+class ChannelMessageNotify::_Internal {
+ public:
+  using HasBits =
+      decltype(::std::declval<ChannelMessageNotify>()._impl_._has_bits_);
+  static constexpr ::int32_t kHasBitsOffset =
+      8 * PROTOBUF_FIELD_OFFSET(ChannelMessageNotify, _impl_._has_bits_);
+};
+
+void ChannelMessageNotify::clear_message() {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  if (_impl_.message_ != nullptr) _impl_.message_->Clear();
+  ClearHasBit(_impl_._has_bits_[0],
+                  0x00000004U);
+}
+ChannelMessageNotify::ChannelMessageNotify(::google::protobuf::Arena* PROTOBUF_NULLABLE arena)
+#if defined(PROTOBUF_CUSTOM_VTABLE)
+    : ::google::protobuf::Message(arena, ChannelMessageNotify_class_data_.base()) {
+#else   // PROTOBUF_CUSTOM_VTABLE
+    : ::google::protobuf::Message(arena) {
+#endif  // PROTOBUF_CUSTOM_VTABLE
+  SharedCtor(arena);
+  // @@protoc_insertion_point(arena_constructor:chirp.gateway.ChannelMessageNotify)
+}
+PROTOBUF_NDEBUG_INLINE ChannelMessageNotify::Impl_::Impl_(
+    [[maybe_unused]] ::google::protobuf::internal::InternalVisibility visibility,
+    [[maybe_unused]] ::google::protobuf::Arena* PROTOBUF_NULLABLE arena, const Impl_& from,
+    [[maybe_unused]] const ::chirp::gateway::ChannelMessageNotify& from_msg)
+      : _has_bits_{from._has_bits_},
+        _cached_size_{0},
+        game_id_(arena, from.game_id_),
+        channel_id_(arena, from.channel_id_) {}
+
+ChannelMessageNotify::ChannelMessageNotify(
+    ::google::protobuf::Arena* PROTOBUF_NULLABLE arena,
+    const ChannelMessageNotify& from)
+#if defined(PROTOBUF_CUSTOM_VTABLE)
+    : ::google::protobuf::Message(arena, ChannelMessageNotify_class_data_.base()) {
+#else   // PROTOBUF_CUSTOM_VTABLE
+    : ::google::protobuf::Message(arena) {
+#endif  // PROTOBUF_CUSTOM_VTABLE
+  ChannelMessageNotify* const _this = this;
+  (void)_this;
+  _internal_metadata_.MergeFrom<::google::protobuf::UnknownFieldSet>(
+      from._internal_metadata_);
+  new (&_impl_) Impl_(internal_visibility(), arena, from._impl_, from);
+  ::uint32_t cached_has_bits = _impl_._has_bits_[0];
+  _impl_.message_ = (CheckHasBit(cached_has_bits, 0x00000004U))
+                ? ::google::protobuf::Message::CopyConstruct(arena, *from._impl_.message_)
+                : nullptr;
+
+  // @@protoc_insertion_point(copy_constructor:chirp.gateway.ChannelMessageNotify)
+}
+PROTOBUF_NDEBUG_INLINE ChannelMessageNotify::Impl_::Impl_(
+    [[maybe_unused]] ::google::protobuf::internal::InternalVisibility visibility,
+    [[maybe_unused]] ::google::protobuf::Arena* PROTOBUF_NULLABLE arena)
+      : _cached_size_{0},
+        game_id_(arena),
+        channel_id_(arena) {}
+
+inline void ChannelMessageNotify::SharedCtor(::_pb::Arena* PROTOBUF_NULLABLE arena) {
+  new (&_impl_) Impl_(internal_visibility(), arena);
+  _impl_.message_ = {};
+}
+ChannelMessageNotify::~ChannelMessageNotify() {
+  // @@protoc_insertion_point(destructor:chirp.gateway.ChannelMessageNotify)
+  SharedDtor(*this);
+}
+inline void ChannelMessageNotify::SharedDtor(MessageLite& self) {
+  ChannelMessageNotify& this_ = static_cast<ChannelMessageNotify&>(self);
+  if constexpr (::_pbi::DebugHardenCheckHasBitConsistency()) {
+    this_.CheckHasBitConsistency();
+  }
+  this_._internal_metadata_.Delete<::google::protobuf::UnknownFieldSet>();
+  ABSL_DCHECK(this_.GetArena() == nullptr);
+  this_._impl_.game_id_.Destroy();
+  this_._impl_.channel_id_.Destroy();
+  delete this_._impl_.message_;
+  this_._impl_.~Impl_();
+}
+
+inline void* PROTOBUF_NONNULL ChannelMessageNotify::PlacementNew_(
+    const void* PROTOBUF_NONNULL, void* PROTOBUF_NONNULL mem,
+    ::google::protobuf::Arena* PROTOBUF_NULLABLE arena) {
+  return ::new (mem) ChannelMessageNotify(arena);
+}
+constexpr auto ChannelMessageNotify::InternalNewImpl_() {
+  return ::google::protobuf::internal::MessageCreator::CopyInit(sizeof(ChannelMessageNotify),
+                                            alignof(ChannelMessageNotify));
+}
+constexpr auto ChannelMessageNotify::InternalGenerateClassData_() {
+  return ::google::protobuf::internal::ClassDataFull{
+      ::google::protobuf::internal::ClassData{
+          &_ChannelMessageNotify_default_instance_._instance,
+          &_table_.header,
+          nullptr,  // OnDemandRegisterArenaDtor
+          nullptr,  // IsInitialized
+          &ChannelMessageNotify::MergeImpl,
+          ::google::protobuf::Message::GetNewImpl<ChannelMessageNotify>(),
+#if defined(PROTOBUF_CUSTOM_VTABLE)
+          &ChannelMessageNotify::SharedDtor,
+          ::google::protobuf::Message::GetClearImpl<ChannelMessageNotify>(), &ChannelMessageNotify::ByteSizeLong,
+              &ChannelMessageNotify::_InternalSerialize,
+#endif  // PROTOBUF_CUSTOM_VTABLE
+          PROTOBUF_FIELD_OFFSET(ChannelMessageNotify, _impl_._cached_size_),
+          false,
+      },
+      &ChannelMessageNotify::kDescriptorMethods,
+      &descriptor_table_proto_2fgateway_2eproto,
+      nullptr,  // tracker
+  };
+}
+
+PROTOBUF_CONSTINIT PROTOBUF_ATTRIBUTE_INIT_PRIORITY1 const
+    ::google::protobuf::internal::ClassDataFull ChannelMessageNotify_class_data_ =
+        ChannelMessageNotify::InternalGenerateClassData_();
+
+PROTOBUF_ATTRIBUTE_WEAK const ::google::protobuf::internal::ClassData* PROTOBUF_NONNULL
+ChannelMessageNotify::GetClassData() const {
+  ::google::protobuf::internal::PrefetchToLocalCache(&ChannelMessageNotify_class_data_);
+  ::google::protobuf::internal::PrefetchToLocalCache(ChannelMessageNotify_class_data_.tc_table);
+  return ChannelMessageNotify_class_data_.base();
+}
+PROTOBUF_CONSTINIT PROTOBUF_ATTRIBUTE_INIT_PRIORITY1
+const ::_pbi::TcParseTable<2, 3, 1, 60, 2>
+ChannelMessageNotify::_table_ = {
+  {
+    PROTOBUF_FIELD_OFFSET(ChannelMessageNotify, _impl_._has_bits_),
+    0, // no _extensions_
+    3, 24,  // max_field_number, fast_idx_mask
+    offsetof(decltype(_table_), field_lookup_table),
+    4294967288,  // skipmap
+    offsetof(decltype(_table_), field_entries),
+    3,  // num_field_entries
+    1,  // num_aux_entries
+    offsetof(decltype(_table_), aux_entries),
+    ChannelMessageNotify_class_data_.base(),
+    nullptr,  // post_loop_handler
+    ::_pbi::TcParser::GenericFallback,  // fallback
+    #ifdef PROTOBUF_PREFETCH_PARSE_TABLE
+    ::_pbi::TcParser::GetTable<::chirp::gateway::ChannelMessageNotify>(),  // to_prefetch
+    #endif  // PROTOBUF_PREFETCH_PARSE_TABLE
+  }, {{
+    {::_pbi::TcParser::MiniParse, {}},
+    // string game_id = 1;
+    {::_pbi::TcParser::FastUS1,
+     {10, 0, 0,
+      PROTOBUF_FIELD_OFFSET(ChannelMessageNotify, _impl_.game_id_)}},
+    // string channel_id = 2;
+    {::_pbi::TcParser::FastUS1,
+     {18, 1, 0,
+      PROTOBUF_FIELD_OFFSET(ChannelMessageNotify, _impl_.channel_id_)}},
+    // .chirp.chat.ChatMessage message = 3;
+    {::_pbi::TcParser::FastMtS1,
+     {26, 2, 0,
+      PROTOBUF_FIELD_OFFSET(ChannelMessageNotify, _impl_.message_)}},
+  }}, {{
+    65535, 65535
+  }}, {{
+    // string game_id = 1;
+    {PROTOBUF_FIELD_OFFSET(ChannelMessageNotify, _impl_.game_id_), _Internal::kHasBitsOffset + 0, 0, (0 | ::_fl::kFcOptional | ::_fl::kUtf8String | ::_fl::kRepAString)},
+    // string channel_id = 2;
+    {PROTOBUF_FIELD_OFFSET(ChannelMessageNotify, _impl_.channel_id_), _Internal::kHasBitsOffset + 1, 0, (0 | ::_fl::kFcOptional | ::_fl::kUtf8String | ::_fl::kRepAString)},
+    // .chirp.chat.ChatMessage message = 3;
+    {PROTOBUF_FIELD_OFFSET(ChannelMessageNotify, _impl_.message_), _Internal::kHasBitsOffset + 2, 0, (0 | ::_fl::kFcOptional | ::_fl::kMessage | ::_fl::kTvTable)},
+  }},
+  {{
+      {::_pbi::TcParser::GetTable<::chirp::chat::ChatMessage>()},
+  }},
+  {{
+    "\42\7\12\0\0\0\0\0"
+    "chirp.gateway.ChannelMessageNotify"
+    "game_id"
+    "channel_id"
+  }},
+};
+PROTOBUF_NOINLINE void ChannelMessageNotify::Clear() {
+// @@protoc_insertion_point(message_clear_start:chirp.gateway.ChannelMessageNotify)
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  ::uint32_t cached_has_bits = 0;
+  // Prevent compiler warnings about cached_has_bits being unused
+  (void) cached_has_bits;
+
+  cached_has_bits = _impl_._has_bits_[0];
+  if (BatchCheckHasBit(cached_has_bits, 0x00000007U)) {
+    if (CheckHasBit(cached_has_bits, 0x00000001U)) {
+      _impl_.game_id_.ClearNonDefaultToEmpty();
+    }
+    if (CheckHasBit(cached_has_bits, 0x00000002U)) {
+      _impl_.channel_id_.ClearNonDefaultToEmpty();
+    }
+    if (CheckHasBit(cached_has_bits, 0x00000004U)) {
+      ABSL_DCHECK(_impl_.message_ != nullptr);
+      _impl_.message_->Clear();
+    }
+  }
+  _impl_._has_bits_.Clear();
+  _internal_metadata_.Clear<::google::protobuf::UnknownFieldSet>();
+}
+
+#if defined(PROTOBUF_CUSTOM_VTABLE)
+::uint8_t* PROTOBUF_NONNULL ChannelMessageNotify::_InternalSerialize(
+    const ::google::protobuf::MessageLite& base, ::uint8_t* PROTOBUF_NONNULL target,
+    ::google::protobuf::io::EpsCopyOutputStream* PROTOBUF_NONNULL stream) {
+  const ChannelMessageNotify& this_ = static_cast<const ChannelMessageNotify&>(base);
+#else   // PROTOBUF_CUSTOM_VTABLE
+::uint8_t* PROTOBUF_NONNULL ChannelMessageNotify::_InternalSerialize(
+    ::uint8_t* PROTOBUF_NONNULL target,
+    ::google::protobuf::io::EpsCopyOutputStream* PROTOBUF_NONNULL stream) const {
+  const ChannelMessageNotify& this_ = *this;
+#endif  // PROTOBUF_CUSTOM_VTABLE
+  if constexpr (::_pbi::DebugHardenCheckHasBitConsistency()) {
+    this_.CheckHasBitConsistency();
+  }
+  // @@protoc_insertion_point(serialize_to_array_start:chirp.gateway.ChannelMessageNotify)
+  ::uint32_t cached_has_bits = 0;
+  (void)cached_has_bits;
+
+  cached_has_bits = this_._impl_._has_bits_[0];
+  // string game_id = 1;
+  if (CheckHasBit(cached_has_bits, 0x00000001U)) {
+    if (!this_._internal_game_id().empty()) {
+      const ::std::string& _s = this_._internal_game_id();
+      ::google::protobuf::internal::WireFormatLite::VerifyUtf8String(
+          _s.data(), static_cast<int>(_s.length()), ::google::protobuf::internal::WireFormatLite::SERIALIZE, "chirp.gateway.ChannelMessageNotify.game_id");
+      target = stream->WriteStringMaybeAliased(1, _s, target);
+    }
+  }
+
+  // string channel_id = 2;
+  if (CheckHasBit(cached_has_bits, 0x00000002U)) {
+    if (!this_._internal_channel_id().empty()) {
+      const ::std::string& _s = this_._internal_channel_id();
+      ::google::protobuf::internal::WireFormatLite::VerifyUtf8String(
+          _s.data(), static_cast<int>(_s.length()), ::google::protobuf::internal::WireFormatLite::SERIALIZE, "chirp.gateway.ChannelMessageNotify.channel_id");
+      target = stream->WriteStringMaybeAliased(2, _s, target);
+    }
+  }
+
+  // .chirp.chat.ChatMessage message = 3;
+  if (CheckHasBit(cached_has_bits, 0x00000004U)) {
+    target = ::google::protobuf::internal::WireFormatLite::InternalWriteMessage(
+        3, *this_._impl_.message_, this_._impl_.message_->GetCachedSize(), target,
+        stream);
+  }
+
+  if (ABSL_PREDICT_FALSE(this_._internal_metadata_.have_unknown_fields())) {
+    target =
+        ::_pbi::WireFormat::InternalSerializeUnknownFieldsToArray(
+            this_._internal_metadata_.unknown_fields<::google::protobuf::UnknownFieldSet>(::google::protobuf::UnknownFieldSet::default_instance), target, stream);
+  }
+  // @@protoc_insertion_point(serialize_to_array_end:chirp.gateway.ChannelMessageNotify)
+  return target;
+}
+
+#if defined(PROTOBUF_CUSTOM_VTABLE)
+::size_t ChannelMessageNotify::ByteSizeLong(const MessageLite& base) {
+  const ChannelMessageNotify& this_ = static_cast<const ChannelMessageNotify&>(base);
+#else   // PROTOBUF_CUSTOM_VTABLE
+::size_t ChannelMessageNotify::ByteSizeLong() const {
+  const ChannelMessageNotify& this_ = *this;
+#endif  // PROTOBUF_CUSTOM_VTABLE
+  // @@protoc_insertion_point(message_byte_size_start:chirp.gateway.ChannelMessageNotify)
+  ::size_t total_size = 0;
+
+  ::uint32_t cached_has_bits = 0;
+  // Prevent compiler warnings about cached_has_bits being unused
+  (void)cached_has_bits;
+
+  ::_pbi::Prefetch5LinesFrom7Lines(&this_);
+  cached_has_bits = this_._impl_._has_bits_[0];
+  if (BatchCheckHasBit(cached_has_bits, 0x00000007U)) {
+    // string game_id = 1;
+    if (CheckHasBit(cached_has_bits, 0x00000001U)) {
+      if (!this_._internal_game_id().empty()) {
+        total_size += 1 + ::google::protobuf::internal::WireFormatLite::StringSize(
+                                        this_._internal_game_id());
+      }
+    }
+    // string channel_id = 2;
+    if (CheckHasBit(cached_has_bits, 0x00000002U)) {
+      if (!this_._internal_channel_id().empty()) {
+        total_size += 1 + ::google::protobuf::internal::WireFormatLite::StringSize(
+                                        this_._internal_channel_id());
+      }
+    }
+    // .chirp.chat.ChatMessage message = 3;
+    if (CheckHasBit(cached_has_bits, 0x00000004U)) {
+      total_size += 1 +
+                    ::google::protobuf::internal::WireFormatLite::MessageSize(*this_._impl_.message_);
+    }
+  }
+  return this_.MaybeComputeUnknownFieldsSize(total_size,
+                                             &this_._impl_._cached_size_);
+}
+
+void ChannelMessageNotify::MergeImpl(::google::protobuf::MessageLite& to_msg,
+                            const ::google::protobuf::MessageLite& from_msg) {
+   auto* const _this =
+      static_cast<ChannelMessageNotify*>(&to_msg);
+  auto& from = static_cast<const ChannelMessageNotify&>(from_msg);
+  if constexpr (::_pbi::DebugHardenCheckHasBitConsistency()) {
+    from.CheckHasBitConsistency();
+  }
+  ::google::protobuf::Arena* arena = _this->GetArena();
+  // @@protoc_insertion_point(class_specific_merge_from_start:chirp.gateway.ChannelMessageNotify)
+  ABSL_DCHECK_NE(&from, _this);
+  ::uint32_t cached_has_bits = 0;
+  (void)cached_has_bits;
+
+  cached_has_bits = from._impl_._has_bits_[0];
+  if (BatchCheckHasBit(cached_has_bits, 0x00000007U)) {
+    if (CheckHasBit(cached_has_bits, 0x00000001U)) {
+      if (!from._internal_game_id().empty()) {
+        _this->_internal_set_game_id(from._internal_game_id());
+      } else {
+        if (_this->_impl_.game_id_.IsDefault()) {
+          _this->_internal_set_game_id("");
+        }
+      }
+    }
+    if (CheckHasBit(cached_has_bits, 0x00000002U)) {
+      if (!from._internal_channel_id().empty()) {
+        _this->_internal_set_channel_id(from._internal_channel_id());
+      } else {
+        if (_this->_impl_.channel_id_.IsDefault()) {
+          _this->_internal_set_channel_id("");
+        }
+      }
+    }
+    if (CheckHasBit(cached_has_bits, 0x00000004U)) {
+      ABSL_DCHECK(from._impl_.message_ != nullptr);
+      if (_this->_impl_.message_ == nullptr) {
+        _this->_impl_.message_ = ::google::protobuf::Message::CopyConstruct(arena, *from._impl_.message_);
+      } else {
+        _this->_impl_.message_->MergeFrom(*from._impl_.message_);
+      }
+    }
+  }
+  _this->_impl_._has_bits_[0] |= cached_has_bits;
+  _this->_internal_metadata_.MergeFrom<::google::protobuf::UnknownFieldSet>(
+      from._internal_metadata_);
+}
+
+void ChannelMessageNotify::CopyFrom(const ChannelMessageNotify& from) {
+  // @@protoc_insertion_point(class_specific_copy_from_start:chirp.gateway.ChannelMessageNotify)
+  if (&from == this) return;
+  Clear();
+  MergeFrom(from);
+}
+
+
+void ChannelMessageNotify::InternalSwap(ChannelMessageNotify* PROTOBUF_RESTRICT PROTOBUF_NONNULL other) {
+  using ::std::swap;
+  auto* arena = GetArena();
+  ABSL_DCHECK_EQ(arena, other->GetArena());
+  _internal_metadata_.InternalSwap(&other->_internal_metadata_);
+  swap(_impl_._has_bits_[0], other->_impl_._has_bits_[0]);
+  ::_pbi::ArenaStringPtr::InternalSwap(&_impl_.game_id_, &other->_impl_.game_id_, arena);
+  ::_pbi::ArenaStringPtr::InternalSwap(&_impl_.channel_id_, &other->_impl_.channel_id_, arena);
+  swap(_impl_.message_, other->_impl_.message_);
+}
+
+::google::protobuf::Metadata ChannelMessageNotify::GetMetadata() const {
+  return ::google::protobuf::Message::GetMetadataImpl(GetClassData()->full());
+}
+// ===================================================================
+
+class PeerInjectMessageNotify::_Internal {
+ public:
+  using HasBits =
+      decltype(::std::declval<PeerInjectMessageNotify>()._impl_._has_bits_);
+  static constexpr ::int32_t kHasBitsOffset =
+      8 * PROTOBUF_FIELD_OFFSET(PeerInjectMessageNotify, _impl_._has_bits_);
+};
+
+PeerInjectMessageNotify::PeerInjectMessageNotify(::google::protobuf::Arena* PROTOBUF_NULLABLE arena)
+#if defined(PROTOBUF_CUSTOM_VTABLE)
+    : ::google::protobuf::Message(arena, PeerInjectMessageNotify_class_data_.base()) {
+#else   // PROTOBUF_CUSTOM_VTABLE
+    : ::google::protobuf::Message(arena) {
+#endif  // PROTOBUF_CUSTOM_VTABLE
+  SharedCtor(arena);
+  // @@protoc_insertion_point(arena_constructor:chirp.gateway.PeerInjectMessageNotify)
+}
+PROTOBUF_NDEBUG_INLINE PeerInjectMessageNotify::Impl_::Impl_(
+    [[maybe_unused]] ::google::protobuf::internal::InternalVisibility visibility,
+    [[maybe_unused]] ::google::protobuf::Arena* PROTOBUF_NULLABLE arena, const Impl_& from,
+    [[maybe_unused]] const ::chirp::gateway::PeerInjectMessageNotify& from_msg)
+      : _has_bits_{from._has_bits_},
+        _cached_size_{0},
+        channel_id_(arena, from.channel_id_),
+        sender_id_(arena, from.sender_id_),
+        content_(arena, from.content_),
+        client_msg_id_(arena, from.client_msg_id_) {}
+
+PeerInjectMessageNotify::PeerInjectMessageNotify(
+    ::google::protobuf::Arena* PROTOBUF_NULLABLE arena,
+    const PeerInjectMessageNotify& from)
+#if defined(PROTOBUF_CUSTOM_VTABLE)
+    : ::google::protobuf::Message(arena, PeerInjectMessageNotify_class_data_.base()) {
+#else   // PROTOBUF_CUSTOM_VTABLE
+    : ::google::protobuf::Message(arena) {
+#endif  // PROTOBUF_CUSTOM_VTABLE
+  PeerInjectMessageNotify* const _this = this;
+  (void)_this;
+  _internal_metadata_.MergeFrom<::google::protobuf::UnknownFieldSet>(
+      from._internal_metadata_);
+  new (&_impl_) Impl_(internal_visibility(), arena, from._impl_, from);
+
+  // @@protoc_insertion_point(copy_constructor:chirp.gateway.PeerInjectMessageNotify)
+}
+PROTOBUF_NDEBUG_INLINE PeerInjectMessageNotify::Impl_::Impl_(
+    [[maybe_unused]] ::google::protobuf::internal::InternalVisibility visibility,
+    [[maybe_unused]] ::google::protobuf::Arena* PROTOBUF_NULLABLE arena)
+      : _cached_size_{0},
+        channel_id_(arena),
+        sender_id_(arena),
+        content_(arena),
+        client_msg_id_(arena) {}
+
+inline void PeerInjectMessageNotify::SharedCtor(::_pb::Arena* PROTOBUF_NULLABLE arena) {
+  new (&_impl_) Impl_(internal_visibility(), arena);
+}
+PeerInjectMessageNotify::~PeerInjectMessageNotify() {
+  // @@protoc_insertion_point(destructor:chirp.gateway.PeerInjectMessageNotify)
+  SharedDtor(*this);
+}
+inline void PeerInjectMessageNotify::SharedDtor(MessageLite& self) {
+  PeerInjectMessageNotify& this_ = static_cast<PeerInjectMessageNotify&>(self);
+  if constexpr (::_pbi::DebugHardenCheckHasBitConsistency()) {
+    this_.CheckHasBitConsistency();
+  }
+  this_._internal_metadata_.Delete<::google::protobuf::UnknownFieldSet>();
+  ABSL_DCHECK(this_.GetArena() == nullptr);
+  this_._impl_.channel_id_.Destroy();
+  this_._impl_.sender_id_.Destroy();
+  this_._impl_.content_.Destroy();
+  this_._impl_.client_msg_id_.Destroy();
+  this_._impl_.~Impl_();
+}
+
+inline void* PROTOBUF_NONNULL PeerInjectMessageNotify::PlacementNew_(
+    const void* PROTOBUF_NONNULL, void* PROTOBUF_NONNULL mem,
+    ::google::protobuf::Arena* PROTOBUF_NULLABLE arena) {
+  return ::new (mem) PeerInjectMessageNotify(arena);
+}
+constexpr auto PeerInjectMessageNotify::InternalNewImpl_() {
+  return ::google::protobuf::internal::MessageCreator::CopyInit(sizeof(PeerInjectMessageNotify),
+                                            alignof(PeerInjectMessageNotify));
+}
+constexpr auto PeerInjectMessageNotify::InternalGenerateClassData_() {
+  return ::google::protobuf::internal::ClassDataFull{
+      ::google::protobuf::internal::ClassData{
+          &_PeerInjectMessageNotify_default_instance_._instance,
+          &_table_.header,
+          nullptr,  // OnDemandRegisterArenaDtor
+          nullptr,  // IsInitialized
+          &PeerInjectMessageNotify::MergeImpl,
+          ::google::protobuf::Message::GetNewImpl<PeerInjectMessageNotify>(),
+#if defined(PROTOBUF_CUSTOM_VTABLE)
+          &PeerInjectMessageNotify::SharedDtor,
+          ::google::protobuf::Message::GetClearImpl<PeerInjectMessageNotify>(), &PeerInjectMessageNotify::ByteSizeLong,
+              &PeerInjectMessageNotify::_InternalSerialize,
+#endif  // PROTOBUF_CUSTOM_VTABLE
+          PROTOBUF_FIELD_OFFSET(PeerInjectMessageNotify, _impl_._cached_size_),
+          false,
+      },
+      &PeerInjectMessageNotify::kDescriptorMethods,
+      &descriptor_table_proto_2fgateway_2eproto,
+      nullptr,  // tracker
+  };
+}
+
+PROTOBUF_CONSTINIT PROTOBUF_ATTRIBUTE_INIT_PRIORITY1 const
+    ::google::protobuf::internal::ClassDataFull PeerInjectMessageNotify_class_data_ =
+        PeerInjectMessageNotify::InternalGenerateClassData_();
+
+PROTOBUF_ATTRIBUTE_WEAK const ::google::protobuf::internal::ClassData* PROTOBUF_NONNULL
+PeerInjectMessageNotify::GetClassData() const {
+  ::google::protobuf::internal::PrefetchToLocalCache(&PeerInjectMessageNotify_class_data_);
+  ::google::protobuf::internal::PrefetchToLocalCache(PeerInjectMessageNotify_class_data_.tc_table);
+  return PeerInjectMessageNotify_class_data_.base();
+}
+PROTOBUF_CONSTINIT PROTOBUF_ATTRIBUTE_INIT_PRIORITY1
+const ::_pbi::TcParseTable<2, 4, 0, 78, 2>
+PeerInjectMessageNotify::_table_ = {
+  {
+    PROTOBUF_FIELD_OFFSET(PeerInjectMessageNotify, _impl_._has_bits_),
+    0, // no _extensions_
+    4, 24,  // max_field_number, fast_idx_mask
+    offsetof(decltype(_table_), field_lookup_table),
+    4294967280,  // skipmap
+    offsetof(decltype(_table_), field_entries),
+    4,  // num_field_entries
+    0,  // num_aux_entries
+    offsetof(decltype(_table_), field_names),  // no aux_entries
+    PeerInjectMessageNotify_class_data_.base(),
+    nullptr,  // post_loop_handler
+    ::_pbi::TcParser::GenericFallback,  // fallback
+    #ifdef PROTOBUF_PREFETCH_PARSE_TABLE
+    ::_pbi::TcParser::GetTable<::chirp::gateway::PeerInjectMessageNotify>(),  // to_prefetch
+    #endif  // PROTOBUF_PREFETCH_PARSE_TABLE
+  }, {{
+    // string client_msg_id = 4;
+    {::_pbi::TcParser::FastUS1,
+     {34, 3, 0,
+      PROTOBUF_FIELD_OFFSET(PeerInjectMessageNotify, _impl_.client_msg_id_)}},
+    // string channel_id = 1;
+    {::_pbi::TcParser::FastUS1,
+     {10, 0, 0,
+      PROTOBUF_FIELD_OFFSET(PeerInjectMessageNotify, _impl_.channel_id_)}},
+    // string sender_id = 2;
+    {::_pbi::TcParser::FastUS1,
+     {18, 1, 0,
+      PROTOBUF_FIELD_OFFSET(PeerInjectMessageNotify, _impl_.sender_id_)}},
+    // bytes content = 3;
+    {::_pbi::TcParser::FastBS1,
+     {26, 2, 0,
+      PROTOBUF_FIELD_OFFSET(PeerInjectMessageNotify, _impl_.content_)}},
+  }}, {{
+    65535, 65535
+  }}, {{
+    // string channel_id = 1;
+    {PROTOBUF_FIELD_OFFSET(PeerInjectMessageNotify, _impl_.channel_id_), _Internal::kHasBitsOffset + 0, 0, (0 | ::_fl::kFcOptional | ::_fl::kUtf8String | ::_fl::kRepAString)},
+    // string sender_id = 2;
+    {PROTOBUF_FIELD_OFFSET(PeerInjectMessageNotify, _impl_.sender_id_), _Internal::kHasBitsOffset + 1, 0, (0 | ::_fl::kFcOptional | ::_fl::kUtf8String | ::_fl::kRepAString)},
+    // bytes content = 3;
+    {PROTOBUF_FIELD_OFFSET(PeerInjectMessageNotify, _impl_.content_), _Internal::kHasBitsOffset + 2, 0, (0 | ::_fl::kFcOptional | ::_fl::kBytes | ::_fl::kRepAString)},
+    // string client_msg_id = 4;
+    {PROTOBUF_FIELD_OFFSET(PeerInjectMessageNotify, _impl_.client_msg_id_), _Internal::kHasBitsOffset + 3, 0, (0 | ::_fl::kFcOptional | ::_fl::kUtf8String | ::_fl::kRepAString)},
+  }},
+  // no aux_entries
+  {{
+    "\45\12\11\0\15\0\0\0"
+    "chirp.gateway.PeerInjectMessageNotify"
+    "channel_id"
+    "sender_id"
+    "client_msg_id"
+  }},
+};
+PROTOBUF_NOINLINE void PeerInjectMessageNotify::Clear() {
+// @@protoc_insertion_point(message_clear_start:chirp.gateway.PeerInjectMessageNotify)
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  ::uint32_t cached_has_bits = 0;
+  // Prevent compiler warnings about cached_has_bits being unused
+  (void) cached_has_bits;
+
+  cached_has_bits = _impl_._has_bits_[0];
+  if (BatchCheckHasBit(cached_has_bits, 0x0000000fU)) {
+    if (CheckHasBit(cached_has_bits, 0x00000001U)) {
+      _impl_.channel_id_.ClearNonDefaultToEmpty();
+    }
+    if (CheckHasBit(cached_has_bits, 0x00000002U)) {
+      _impl_.sender_id_.ClearNonDefaultToEmpty();
+    }
+    if (CheckHasBit(cached_has_bits, 0x00000004U)) {
+      _impl_.content_.ClearNonDefaultToEmpty();
+    }
+    if (CheckHasBit(cached_has_bits, 0x00000008U)) {
+      _impl_.client_msg_id_.ClearNonDefaultToEmpty();
+    }
+  }
+  _impl_._has_bits_.Clear();
+  _internal_metadata_.Clear<::google::protobuf::UnknownFieldSet>();
+}
+
+#if defined(PROTOBUF_CUSTOM_VTABLE)
+::uint8_t* PROTOBUF_NONNULL PeerInjectMessageNotify::_InternalSerialize(
+    const ::google::protobuf::MessageLite& base, ::uint8_t* PROTOBUF_NONNULL target,
+    ::google::protobuf::io::EpsCopyOutputStream* PROTOBUF_NONNULL stream) {
+  const PeerInjectMessageNotify& this_ = static_cast<const PeerInjectMessageNotify&>(base);
+#else   // PROTOBUF_CUSTOM_VTABLE
+::uint8_t* PROTOBUF_NONNULL PeerInjectMessageNotify::_InternalSerialize(
+    ::uint8_t* PROTOBUF_NONNULL target,
+    ::google::protobuf::io::EpsCopyOutputStream* PROTOBUF_NONNULL stream) const {
+  const PeerInjectMessageNotify& this_ = *this;
+#endif  // PROTOBUF_CUSTOM_VTABLE
+  if constexpr (::_pbi::DebugHardenCheckHasBitConsistency()) {
+    this_.CheckHasBitConsistency();
+  }
+  // @@protoc_insertion_point(serialize_to_array_start:chirp.gateway.PeerInjectMessageNotify)
+  ::uint32_t cached_has_bits = 0;
+  (void)cached_has_bits;
+
+  cached_has_bits = this_._impl_._has_bits_[0];
+  // string channel_id = 1;
+  if (CheckHasBit(cached_has_bits, 0x00000001U)) {
+    if (!this_._internal_channel_id().empty()) {
+      const ::std::string& _s = this_._internal_channel_id();
+      ::google::protobuf::internal::WireFormatLite::VerifyUtf8String(
+          _s.data(), static_cast<int>(_s.length()), ::google::protobuf::internal::WireFormatLite::SERIALIZE, "chirp.gateway.PeerInjectMessageNotify.channel_id");
+      target = stream->WriteStringMaybeAliased(1, _s, target);
+    }
+  }
+
+  // string sender_id = 2;
+  if (CheckHasBit(cached_has_bits, 0x00000002U)) {
+    if (!this_._internal_sender_id().empty()) {
+      const ::std::string& _s = this_._internal_sender_id();
+      ::google::protobuf::internal::WireFormatLite::VerifyUtf8String(
+          _s.data(), static_cast<int>(_s.length()), ::google::protobuf::internal::WireFormatLite::SERIALIZE, "chirp.gateway.PeerInjectMessageNotify.sender_id");
+      target = stream->WriteStringMaybeAliased(2, _s, target);
+    }
+  }
+
+  // bytes content = 3;
+  if (CheckHasBit(cached_has_bits, 0x00000004U)) {
+    if (!this_._internal_content().empty()) {
+      const ::std::string& _s = this_._internal_content();
+      target = stream->WriteBytesMaybeAliased(3, _s, target);
+    }
+  }
+
+  // string client_msg_id = 4;
+  if (CheckHasBit(cached_has_bits, 0x00000008U)) {
+    if (!this_._internal_client_msg_id().empty()) {
+      const ::std::string& _s = this_._internal_client_msg_id();
+      ::google::protobuf::internal::WireFormatLite::VerifyUtf8String(
+          _s.data(), static_cast<int>(_s.length()), ::google::protobuf::internal::WireFormatLite::SERIALIZE, "chirp.gateway.PeerInjectMessageNotify.client_msg_id");
+      target = stream->WriteStringMaybeAliased(4, _s, target);
+    }
+  }
+
+  if (ABSL_PREDICT_FALSE(this_._internal_metadata_.have_unknown_fields())) {
+    target =
+        ::_pbi::WireFormat::InternalSerializeUnknownFieldsToArray(
+            this_._internal_metadata_.unknown_fields<::google::protobuf::UnknownFieldSet>(::google::protobuf::UnknownFieldSet::default_instance), target, stream);
+  }
+  // @@protoc_insertion_point(serialize_to_array_end:chirp.gateway.PeerInjectMessageNotify)
+  return target;
+}
+
+#if defined(PROTOBUF_CUSTOM_VTABLE)
+::size_t PeerInjectMessageNotify::ByteSizeLong(const MessageLite& base) {
+  const PeerInjectMessageNotify& this_ = static_cast<const PeerInjectMessageNotify&>(base);
+#else   // PROTOBUF_CUSTOM_VTABLE
+::size_t PeerInjectMessageNotify::ByteSizeLong() const {
+  const PeerInjectMessageNotify& this_ = *this;
+#endif  // PROTOBUF_CUSTOM_VTABLE
+  // @@protoc_insertion_point(message_byte_size_start:chirp.gateway.PeerInjectMessageNotify)
+  ::size_t total_size = 0;
+
+  ::uint32_t cached_has_bits = 0;
+  // Prevent compiler warnings about cached_has_bits being unused
+  (void)cached_has_bits;
+
+  ::_pbi::Prefetch5LinesFrom7Lines(&this_);
+  cached_has_bits = this_._impl_._has_bits_[0];
+  if (BatchCheckHasBit(cached_has_bits, 0x0000000fU)) {
+    // string channel_id = 1;
+    if (CheckHasBit(cached_has_bits, 0x00000001U)) {
+      if (!this_._internal_channel_id().empty()) {
+        total_size += 1 + ::google::protobuf::internal::WireFormatLite::StringSize(
+                                        this_._internal_channel_id());
+      }
+    }
+    // string sender_id = 2;
+    if (CheckHasBit(cached_has_bits, 0x00000002U)) {
+      if (!this_._internal_sender_id().empty()) {
+        total_size += 1 + ::google::protobuf::internal::WireFormatLite::StringSize(
+                                        this_._internal_sender_id());
+      }
+    }
+    // bytes content = 3;
+    if (CheckHasBit(cached_has_bits, 0x00000004U)) {
+      if (!this_._internal_content().empty()) {
+        total_size += 1 + ::google::protobuf::internal::WireFormatLite::BytesSize(
+                                        this_._internal_content());
+      }
+    }
+    // string client_msg_id = 4;
+    if (CheckHasBit(cached_has_bits, 0x00000008U)) {
+      if (!this_._internal_client_msg_id().empty()) {
+        total_size += 1 + ::google::protobuf::internal::WireFormatLite::StringSize(
+                                        this_._internal_client_msg_id());
+      }
+    }
+  }
+  return this_.MaybeComputeUnknownFieldsSize(total_size,
+                                             &this_._impl_._cached_size_);
+}
+
+void PeerInjectMessageNotify::MergeImpl(::google::protobuf::MessageLite& to_msg,
+                            const ::google::protobuf::MessageLite& from_msg) {
+   auto* const _this =
+      static_cast<PeerInjectMessageNotify*>(&to_msg);
+  auto& from = static_cast<const PeerInjectMessageNotify&>(from_msg);
+  if constexpr (::_pbi::DebugHardenCheckHasBitConsistency()) {
+    from.CheckHasBitConsistency();
+  }
+  // @@protoc_insertion_point(class_specific_merge_from_start:chirp.gateway.PeerInjectMessageNotify)
+  ABSL_DCHECK_NE(&from, _this);
+  ::uint32_t cached_has_bits = 0;
+  (void)cached_has_bits;
+
+  cached_has_bits = from._impl_._has_bits_[0];
+  if (BatchCheckHasBit(cached_has_bits, 0x0000000fU)) {
+    if (CheckHasBit(cached_has_bits, 0x00000001U)) {
+      if (!from._internal_channel_id().empty()) {
+        _this->_internal_set_channel_id(from._internal_channel_id());
+      } else {
+        if (_this->_impl_.channel_id_.IsDefault()) {
+          _this->_internal_set_channel_id("");
+        }
+      }
+    }
+    if (CheckHasBit(cached_has_bits, 0x00000002U)) {
+      if (!from._internal_sender_id().empty()) {
+        _this->_internal_set_sender_id(from._internal_sender_id());
+      } else {
+        if (_this->_impl_.sender_id_.IsDefault()) {
+          _this->_internal_set_sender_id("");
+        }
+      }
+    }
+    if (CheckHasBit(cached_has_bits, 0x00000004U)) {
+      if (!from._internal_content().empty()) {
+        _this->_internal_set_content(from._internal_content());
+      } else {
+        if (_this->_impl_.content_.IsDefault()) {
+          _this->_internal_set_content("");
+        }
+      }
+    }
+    if (CheckHasBit(cached_has_bits, 0x00000008U)) {
+      if (!from._internal_client_msg_id().empty()) {
+        _this->_internal_set_client_msg_id(from._internal_client_msg_id());
+      } else {
+        if (_this->_impl_.client_msg_id_.IsDefault()) {
+          _this->_internal_set_client_msg_id("");
+        }
+      }
+    }
+  }
+  _this->_impl_._has_bits_[0] |= cached_has_bits;
+  _this->_internal_metadata_.MergeFrom<::google::protobuf::UnknownFieldSet>(
+      from._internal_metadata_);
+}
+
+void PeerInjectMessageNotify::CopyFrom(const PeerInjectMessageNotify& from) {
+  // @@protoc_insertion_point(class_specific_copy_from_start:chirp.gateway.PeerInjectMessageNotify)
+  if (&from == this) return;
+  Clear();
+  MergeFrom(from);
+}
+
+
+void PeerInjectMessageNotify::InternalSwap(PeerInjectMessageNotify* PROTOBUF_RESTRICT PROTOBUF_NONNULL other) {
+  using ::std::swap;
+  auto* arena = GetArena();
+  ABSL_DCHECK_EQ(arena, other->GetArena());
+  _internal_metadata_.InternalSwap(&other->_internal_metadata_);
+  swap(_impl_._has_bits_[0], other->_impl_._has_bits_[0]);
+  ::_pbi::ArenaStringPtr::InternalSwap(&_impl_.channel_id_, &other->_impl_.channel_id_, arena);
+  ::_pbi::ArenaStringPtr::InternalSwap(&_impl_.sender_id_, &other->_impl_.sender_id_, arena);
+  ::_pbi::ArenaStringPtr::InternalSwap(&_impl_.content_, &other->_impl_.content_, arena);
+  ::_pbi::ArenaStringPtr::InternalSwap(&_impl_.client_msg_id_, &other->_impl_.client_msg_id_, arena);
+}
+
+::google::protobuf::Metadata PeerInjectMessageNotify::GetMetadata() const {
   return ::google::protobuf::Message::GetMetadataImpl(GetClassData()->full());
 }
 // @@protoc_insertion_point(namespace_scope)

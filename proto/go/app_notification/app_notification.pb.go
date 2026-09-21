@@ -2,9 +2,9 @@
 // versions:
 // 	protoc-gen-go v1.36.12
 // 	protoc        v6.33.4
-// source: proto/notification.proto
+// source: proto/app_notification.proto
 
-package notification
+package app_notification
 
 import (
 	common "github.com/cui/chirp/proto/go/common"
@@ -59,11 +59,11 @@ func (x NotificationPriority) String() string {
 }
 
 func (NotificationPriority) Descriptor() protoreflect.EnumDescriptor {
-	return file_proto_notification_proto_enumTypes[0].Descriptor()
+	return file_proto_app_notification_proto_enumTypes[0].Descriptor()
 }
 
 func (NotificationPriority) Type() protoreflect.EnumType {
-	return &file_proto_notification_proto_enumTypes[0]
+	return &file_proto_app_notification_proto_enumTypes[0]
 }
 
 func (x NotificationPriority) Number() protoreflect.EnumNumber {
@@ -72,7 +72,7 @@ func (x NotificationPriority) Number() protoreflect.EnumNumber {
 
 // Deprecated: Use NotificationPriority.Descriptor instead.
 func (NotificationPriority) EnumDescriptor() ([]byte, []int) {
-	return file_proto_notification_proto_rawDescGZIP(), []int{0}
+	return file_proto_app_notification_proto_rawDescGZIP(), []int{0}
 }
 
 // Notification type
@@ -124,11 +124,11 @@ func (x NotificationType) String() string {
 }
 
 func (NotificationType) Descriptor() protoreflect.EnumDescriptor {
-	return file_proto_notification_proto_enumTypes[1].Descriptor()
+	return file_proto_app_notification_proto_enumTypes[1].Descriptor()
 }
 
 func (NotificationType) Type() protoreflect.EnumType {
-	return &file_proto_notification_proto_enumTypes[1]
+	return &file_proto_app_notification_proto_enumTypes[1]
 }
 
 func (x NotificationType) Number() protoreflect.EnumNumber {
@@ -137,15 +137,15 @@ func (x NotificationType) Number() protoreflect.EnumNumber {
 
 // Deprecated: Use NotificationType.Descriptor instead.
 func (NotificationType) EnumDescriptor() ([]byte, []int) {
-	return file_proto_notification_proto_rawDescGZIP(), []int{1}
+	return file_proto_app_notification_proto_rawDescGZIP(), []int{1}
 }
 
 // Push notification request
 type PushNotificationRequest struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	UserId        string                 `protobuf:"bytes,1,opt,name=user_id,json=userId,proto3" json:"user_id,omitempty"`
-	Type          NotificationType       `protobuf:"varint,2,opt,name=type,proto3,enum=chirp.notification.NotificationType" json:"type,omitempty"`
-	Priority      NotificationPriority   `protobuf:"varint,3,opt,name=priority,proto3,enum=chirp.notification.NotificationPriority" json:"priority,omitempty"`
+	Type          NotificationType       `protobuf:"varint,2,opt,name=type,proto3,enum=chirp.app_notification.NotificationType" json:"type,omitempty"`
+	Priority      NotificationPriority   `protobuf:"varint,3,opt,name=priority,proto3,enum=chirp.app_notification.NotificationPriority" json:"priority,omitempty"`
 	Title         string                 `protobuf:"bytes,4,opt,name=title,proto3" json:"title,omitempty"`
 	Body          string                 `protobuf:"bytes,5,opt,name=body,proto3" json:"body,omitempty"`
 	Icon          string                 `protobuf:"bytes,6,opt,name=icon,proto3" json:"icon,omitempty"`
@@ -163,7 +163,7 @@ type PushNotificationRequest struct {
 
 func (x *PushNotificationRequest) Reset() {
 	*x = PushNotificationRequest{}
-	mi := &file_proto_notification_proto_msgTypes[0]
+	mi := &file_proto_app_notification_proto_msgTypes[0]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -175,7 +175,7 @@ func (x *PushNotificationRequest) String() string {
 func (*PushNotificationRequest) ProtoMessage() {}
 
 func (x *PushNotificationRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_proto_notification_proto_msgTypes[0]
+	mi := &file_proto_app_notification_proto_msgTypes[0]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -188,7 +188,7 @@ func (x *PushNotificationRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use PushNotificationRequest.ProtoReflect.Descriptor instead.
 func (*PushNotificationRequest) Descriptor() ([]byte, []int) {
-	return file_proto_notification_proto_rawDescGZIP(), []int{0}
+	return file_proto_app_notification_proto_rawDescGZIP(), []int{0}
 }
 
 func (x *PushNotificationRequest) GetUserId() string {
@@ -301,7 +301,7 @@ type PushNotificationResponse struct {
 
 func (x *PushNotificationResponse) Reset() {
 	*x = PushNotificationResponse{}
-	mi := &file_proto_notification_proto_msgTypes[1]
+	mi := &file_proto_app_notification_proto_msgTypes[1]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -313,7 +313,7 @@ func (x *PushNotificationResponse) String() string {
 func (*PushNotificationResponse) ProtoMessage() {}
 
 func (x *PushNotificationResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_proto_notification_proto_msgTypes[1]
+	mi := &file_proto_app_notification_proto_msgTypes[1]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -326,7 +326,7 @@ func (x *PushNotificationResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use PushNotificationResponse.ProtoReflect.Descriptor instead.
 func (*PushNotificationResponse) Descriptor() ([]byte, []int) {
-	return file_proto_notification_proto_rawDescGZIP(), []int{1}
+	return file_proto_app_notification_proto_rawDescGZIP(), []int{1}
 }
 
 func (x *PushNotificationResponse) GetCode() common.ErrorCode {
@@ -369,7 +369,7 @@ type RegisterDeviceRequest struct {
 
 func (x *RegisterDeviceRequest) Reset() {
 	*x = RegisterDeviceRequest{}
-	mi := &file_proto_notification_proto_msgTypes[2]
+	mi := &file_proto_app_notification_proto_msgTypes[2]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -381,7 +381,7 @@ func (x *RegisterDeviceRequest) String() string {
 func (*RegisterDeviceRequest) ProtoMessage() {}
 
 func (x *RegisterDeviceRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_proto_notification_proto_msgTypes[2]
+	mi := &file_proto_app_notification_proto_msgTypes[2]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -394,7 +394,7 @@ func (x *RegisterDeviceRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use RegisterDeviceRequest.ProtoReflect.Descriptor instead.
 func (*RegisterDeviceRequest) Descriptor() ([]byte, []int) {
-	return file_proto_notification_proto_rawDescGZIP(), []int{2}
+	return file_proto_app_notification_proto_rawDescGZIP(), []int{2}
 }
 
 func (x *RegisterDeviceRequest) GetUserId() string {
@@ -470,7 +470,7 @@ type RegisterDeviceResponse struct {
 
 func (x *RegisterDeviceResponse) Reset() {
 	*x = RegisterDeviceResponse{}
-	mi := &file_proto_notification_proto_msgTypes[3]
+	mi := &file_proto_app_notification_proto_msgTypes[3]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -482,7 +482,7 @@ func (x *RegisterDeviceResponse) String() string {
 func (*RegisterDeviceResponse) ProtoMessage() {}
 
 func (x *RegisterDeviceResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_proto_notification_proto_msgTypes[3]
+	mi := &file_proto_app_notification_proto_msgTypes[3]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -495,7 +495,7 @@ func (x *RegisterDeviceResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use RegisterDeviceResponse.ProtoReflect.Descriptor instead.
 func (*RegisterDeviceResponse) Descriptor() ([]byte, []int) {
-	return file_proto_notification_proto_rawDescGZIP(), []int{3}
+	return file_proto_app_notification_proto_rawDescGZIP(), []int{3}
 }
 
 func (x *RegisterDeviceResponse) GetCode() common.ErrorCode {
@@ -523,7 +523,7 @@ type UnregisterDeviceRequest struct {
 
 func (x *UnregisterDeviceRequest) Reset() {
 	*x = UnregisterDeviceRequest{}
-	mi := &file_proto_notification_proto_msgTypes[4]
+	mi := &file_proto_app_notification_proto_msgTypes[4]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -535,7 +535,7 @@ func (x *UnregisterDeviceRequest) String() string {
 func (*UnregisterDeviceRequest) ProtoMessage() {}
 
 func (x *UnregisterDeviceRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_proto_notification_proto_msgTypes[4]
+	mi := &file_proto_app_notification_proto_msgTypes[4]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -548,7 +548,7 @@ func (x *UnregisterDeviceRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use UnregisterDeviceRequest.ProtoReflect.Descriptor instead.
 func (*UnregisterDeviceRequest) Descriptor() ([]byte, []int) {
-	return file_proto_notification_proto_rawDescGZIP(), []int{4}
+	return file_proto_app_notification_proto_rawDescGZIP(), []int{4}
 }
 
 func (x *UnregisterDeviceRequest) GetUserId() string {
@@ -575,7 +575,7 @@ type UnregisterDeviceResponse struct {
 
 func (x *UnregisterDeviceResponse) Reset() {
 	*x = UnregisterDeviceResponse{}
-	mi := &file_proto_notification_proto_msgTypes[5]
+	mi := &file_proto_app_notification_proto_msgTypes[5]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -587,7 +587,7 @@ func (x *UnregisterDeviceResponse) String() string {
 func (*UnregisterDeviceResponse) ProtoMessage() {}
 
 func (x *UnregisterDeviceResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_proto_notification_proto_msgTypes[5]
+	mi := &file_proto_app_notification_proto_msgTypes[5]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -600,7 +600,7 @@ func (x *UnregisterDeviceResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use UnregisterDeviceResponse.ProtoReflect.Descriptor instead.
 func (*UnregisterDeviceResponse) Descriptor() ([]byte, []int) {
-	return file_proto_notification_proto_rawDescGZIP(), []int{5}
+	return file_proto_app_notification_proto_rawDescGZIP(), []int{5}
 }
 
 func (x *UnregisterDeviceResponse) GetCode() common.ErrorCode {
@@ -630,7 +630,7 @@ type UpdateDeviceTokenRequest struct {
 
 func (x *UpdateDeviceTokenRequest) Reset() {
 	*x = UpdateDeviceTokenRequest{}
-	mi := &file_proto_notification_proto_msgTypes[6]
+	mi := &file_proto_app_notification_proto_msgTypes[6]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -642,7 +642,7 @@ func (x *UpdateDeviceTokenRequest) String() string {
 func (*UpdateDeviceTokenRequest) ProtoMessage() {}
 
 func (x *UpdateDeviceTokenRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_proto_notification_proto_msgTypes[6]
+	mi := &file_proto_app_notification_proto_msgTypes[6]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -655,7 +655,7 @@ func (x *UpdateDeviceTokenRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use UpdateDeviceTokenRequest.ProtoReflect.Descriptor instead.
 func (*UpdateDeviceTokenRequest) Descriptor() ([]byte, []int) {
-	return file_proto_notification_proto_rawDescGZIP(), []int{6}
+	return file_proto_app_notification_proto_rawDescGZIP(), []int{6}
 }
 
 func (x *UpdateDeviceTokenRequest) GetDeviceId() string {
@@ -696,7 +696,7 @@ type UpdateDeviceTokenResponse struct {
 
 func (x *UpdateDeviceTokenResponse) Reset() {
 	*x = UpdateDeviceTokenResponse{}
-	mi := &file_proto_notification_proto_msgTypes[7]
+	mi := &file_proto_app_notification_proto_msgTypes[7]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -708,7 +708,7 @@ func (x *UpdateDeviceTokenResponse) String() string {
 func (*UpdateDeviceTokenResponse) ProtoMessage() {}
 
 func (x *UpdateDeviceTokenResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_proto_notification_proto_msgTypes[7]
+	mi := &file_proto_app_notification_proto_msgTypes[7]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -721,7 +721,7 @@ func (x *UpdateDeviceTokenResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use UpdateDeviceTokenResponse.ProtoReflect.Descriptor instead.
 func (*UpdateDeviceTokenResponse) Descriptor() ([]byte, []int) {
-	return file_proto_notification_proto_rawDescGZIP(), []int{7}
+	return file_proto_app_notification_proto_rawDescGZIP(), []int{7}
 }
 
 func (x *UpdateDeviceTokenResponse) GetCode() common.ErrorCode {
@@ -748,7 +748,7 @@ type GetUserDevicesRequest struct {
 
 func (x *GetUserDevicesRequest) Reset() {
 	*x = GetUserDevicesRequest{}
-	mi := &file_proto_notification_proto_msgTypes[8]
+	mi := &file_proto_app_notification_proto_msgTypes[8]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -760,7 +760,7 @@ func (x *GetUserDevicesRequest) String() string {
 func (*GetUserDevicesRequest) ProtoMessage() {}
 
 func (x *GetUserDevicesRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_proto_notification_proto_msgTypes[8]
+	mi := &file_proto_app_notification_proto_msgTypes[8]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -773,7 +773,7 @@ func (x *GetUserDevicesRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use GetUserDevicesRequest.ProtoReflect.Descriptor instead.
 func (*GetUserDevicesRequest) Descriptor() ([]byte, []int) {
-	return file_proto_notification_proto_rawDescGZIP(), []int{8}
+	return file_proto_app_notification_proto_rawDescGZIP(), []int{8}
 }
 
 func (x *GetUserDevicesRequest) GetUserId() string {
@@ -793,7 +793,7 @@ type GetUserDevicesResponse struct {
 
 func (x *GetUserDevicesResponse) Reset() {
 	*x = GetUserDevicesResponse{}
-	mi := &file_proto_notification_proto_msgTypes[9]
+	mi := &file_proto_app_notification_proto_msgTypes[9]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -805,7 +805,7 @@ func (x *GetUserDevicesResponse) String() string {
 func (*GetUserDevicesResponse) ProtoMessage() {}
 
 func (x *GetUserDevicesResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_proto_notification_proto_msgTypes[9]
+	mi := &file_proto_app_notification_proto_msgTypes[9]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -818,7 +818,7 @@ func (x *GetUserDevicesResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use GetUserDevicesResponse.ProtoReflect.Descriptor instead.
 func (*GetUserDevicesResponse) Descriptor() ([]byte, []int) {
-	return file_proto_notification_proto_rawDescGZIP(), []int{9}
+	return file_proto_app_notification_proto_rawDescGZIP(), []int{9}
 }
 
 func (x *GetUserDevicesResponse) GetCode() common.ErrorCode {
@@ -852,7 +852,7 @@ type DeviceInfo struct {
 
 func (x *DeviceInfo) Reset() {
 	*x = DeviceInfo{}
-	mi := &file_proto_notification_proto_msgTypes[10]
+	mi := &file_proto_app_notification_proto_msgTypes[10]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -864,7 +864,7 @@ func (x *DeviceInfo) String() string {
 func (*DeviceInfo) ProtoMessage() {}
 
 func (x *DeviceInfo) ProtoReflect() protoreflect.Message {
-	mi := &file_proto_notification_proto_msgTypes[10]
+	mi := &file_proto_app_notification_proto_msgTypes[10]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -877,7 +877,7 @@ func (x *DeviceInfo) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use DeviceInfo.ProtoReflect.Descriptor instead.
 func (*DeviceInfo) Descriptor() ([]byte, []int) {
-	return file_proto_notification_proto_rawDescGZIP(), []int{10}
+	return file_proto_app_notification_proto_rawDescGZIP(), []int{10}
 }
 
 func (x *DeviceInfo) GetDeviceId() string {
@@ -947,7 +947,7 @@ type SetBadgeCountRequest struct {
 
 func (x *SetBadgeCountRequest) Reset() {
 	*x = SetBadgeCountRequest{}
-	mi := &file_proto_notification_proto_msgTypes[11]
+	mi := &file_proto_app_notification_proto_msgTypes[11]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -959,7 +959,7 @@ func (x *SetBadgeCountRequest) String() string {
 func (*SetBadgeCountRequest) ProtoMessage() {}
 
 func (x *SetBadgeCountRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_proto_notification_proto_msgTypes[11]
+	mi := &file_proto_app_notification_proto_msgTypes[11]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -972,7 +972,7 @@ func (x *SetBadgeCountRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use SetBadgeCountRequest.ProtoReflect.Descriptor instead.
 func (*SetBadgeCountRequest) Descriptor() ([]byte, []int) {
-	return file_proto_notification_proto_rawDescGZIP(), []int{11}
+	return file_proto_app_notification_proto_rawDescGZIP(), []int{11}
 }
 
 func (x *SetBadgeCountRequest) GetUserId() string {
@@ -999,7 +999,7 @@ type SetBadgeCountResponse struct {
 
 func (x *SetBadgeCountResponse) Reset() {
 	*x = SetBadgeCountResponse{}
-	mi := &file_proto_notification_proto_msgTypes[12]
+	mi := &file_proto_app_notification_proto_msgTypes[12]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1011,7 +1011,7 @@ func (x *SetBadgeCountResponse) String() string {
 func (*SetBadgeCountResponse) ProtoMessage() {}
 
 func (x *SetBadgeCountResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_proto_notification_proto_msgTypes[12]
+	mi := &file_proto_app_notification_proto_msgTypes[12]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1024,7 +1024,7 @@ func (x *SetBadgeCountResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use SetBadgeCountResponse.ProtoReflect.Descriptor instead.
 func (*SetBadgeCountResponse) Descriptor() ([]byte, []int) {
-	return file_proto_notification_proto_rawDescGZIP(), []int{12}
+	return file_proto_app_notification_proto_rawDescGZIP(), []int{12}
 }
 
 func (x *SetBadgeCountResponse) GetCode() common.ErrorCode {
@@ -1053,7 +1053,7 @@ type SilentNotificationRequest struct {
 
 func (x *SilentNotificationRequest) Reset() {
 	*x = SilentNotificationRequest{}
-	mi := &file_proto_notification_proto_msgTypes[13]
+	mi := &file_proto_app_notification_proto_msgTypes[13]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1065,7 +1065,7 @@ func (x *SilentNotificationRequest) String() string {
 func (*SilentNotificationRequest) ProtoMessage() {}
 
 func (x *SilentNotificationRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_proto_notification_proto_msgTypes[13]
+	mi := &file_proto_app_notification_proto_msgTypes[13]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1078,7 +1078,7 @@ func (x *SilentNotificationRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use SilentNotificationRequest.ProtoReflect.Descriptor instead.
 func (*SilentNotificationRequest) Descriptor() ([]byte, []int) {
-	return file_proto_notification_proto_rawDescGZIP(), []int{13}
+	return file_proto_app_notification_proto_rawDescGZIP(), []int{13}
 }
 
 func (x *SilentNotificationRequest) GetUserId() string {
@@ -1126,7 +1126,7 @@ type NotificationPreferences struct {
 
 func (x *NotificationPreferences) Reset() {
 	*x = NotificationPreferences{}
-	mi := &file_proto_notification_proto_msgTypes[14]
+	mi := &file_proto_app_notification_proto_msgTypes[14]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1138,7 +1138,7 @@ func (x *NotificationPreferences) String() string {
 func (*NotificationPreferences) ProtoMessage() {}
 
 func (x *NotificationPreferences) ProtoReflect() protoreflect.Message {
-	mi := &file_proto_notification_proto_msgTypes[14]
+	mi := &file_proto_app_notification_proto_msgTypes[14]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1151,7 +1151,7 @@ func (x *NotificationPreferences) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use NotificationPreferences.ProtoReflect.Descriptor instead.
 func (*NotificationPreferences) Descriptor() ([]byte, []int) {
-	return file_proto_notification_proto_rawDescGZIP(), []int{14}
+	return file_proto_app_notification_proto_rawDescGZIP(), []int{14}
 }
 
 func (x *NotificationPreferences) GetEnabled() bool {
@@ -1257,7 +1257,7 @@ type ChannelNotificationSettings struct {
 
 func (x *ChannelNotificationSettings) Reset() {
 	*x = ChannelNotificationSettings{}
-	mi := &file_proto_notification_proto_msgTypes[15]
+	mi := &file_proto_app_notification_proto_msgTypes[15]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1269,7 +1269,7 @@ func (x *ChannelNotificationSettings) String() string {
 func (*ChannelNotificationSettings) ProtoMessage() {}
 
 func (x *ChannelNotificationSettings) ProtoReflect() protoreflect.Message {
-	mi := &file_proto_notification_proto_msgTypes[15]
+	mi := &file_proto_app_notification_proto_msgTypes[15]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1282,7 +1282,7 @@ func (x *ChannelNotificationSettings) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ChannelNotificationSettings.ProtoReflect.Descriptor instead.
 func (*ChannelNotificationSettings) Descriptor() ([]byte, []int) {
-	return file_proto_notification_proto_rawDescGZIP(), []int{15}
+	return file_proto_app_notification_proto_rawDescGZIP(), []int{15}
 }
 
 func (x *ChannelNotificationSettings) GetMuted() bool {
@@ -1317,7 +1317,7 @@ type SetPreferencesRequest struct {
 
 func (x *SetPreferencesRequest) Reset() {
 	*x = SetPreferencesRequest{}
-	mi := &file_proto_notification_proto_msgTypes[16]
+	mi := &file_proto_app_notification_proto_msgTypes[16]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1329,7 +1329,7 @@ func (x *SetPreferencesRequest) String() string {
 func (*SetPreferencesRequest) ProtoMessage() {}
 
 func (x *SetPreferencesRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_proto_notification_proto_msgTypes[16]
+	mi := &file_proto_app_notification_proto_msgTypes[16]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1342,7 +1342,7 @@ func (x *SetPreferencesRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use SetPreferencesRequest.ProtoReflect.Descriptor instead.
 func (*SetPreferencesRequest) Descriptor() ([]byte, []int) {
-	return file_proto_notification_proto_rawDescGZIP(), []int{16}
+	return file_proto_app_notification_proto_rawDescGZIP(), []int{16}
 }
 
 func (x *SetPreferencesRequest) GetUserId() string {
@@ -1369,7 +1369,7 @@ type SetPreferencesResponse struct {
 
 func (x *SetPreferencesResponse) Reset() {
 	*x = SetPreferencesResponse{}
-	mi := &file_proto_notification_proto_msgTypes[17]
+	mi := &file_proto_app_notification_proto_msgTypes[17]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1381,7 +1381,7 @@ func (x *SetPreferencesResponse) String() string {
 func (*SetPreferencesResponse) ProtoMessage() {}
 
 func (x *SetPreferencesResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_proto_notification_proto_msgTypes[17]
+	mi := &file_proto_app_notification_proto_msgTypes[17]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1394,7 +1394,7 @@ func (x *SetPreferencesResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use SetPreferencesResponse.ProtoReflect.Descriptor instead.
 func (*SetPreferencesResponse) Descriptor() ([]byte, []int) {
-	return file_proto_notification_proto_rawDescGZIP(), []int{17}
+	return file_proto_app_notification_proto_rawDescGZIP(), []int{17}
 }
 
 func (x *SetPreferencesResponse) GetCode() common.ErrorCode {
@@ -1421,7 +1421,7 @@ type GetPreferencesRequest struct {
 
 func (x *GetPreferencesRequest) Reset() {
 	*x = GetPreferencesRequest{}
-	mi := &file_proto_notification_proto_msgTypes[18]
+	mi := &file_proto_app_notification_proto_msgTypes[18]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1433,7 +1433,7 @@ func (x *GetPreferencesRequest) String() string {
 func (*GetPreferencesRequest) ProtoMessage() {}
 
 func (x *GetPreferencesRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_proto_notification_proto_msgTypes[18]
+	mi := &file_proto_app_notification_proto_msgTypes[18]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1446,7 +1446,7 @@ func (x *GetPreferencesRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use GetPreferencesRequest.ProtoReflect.Descriptor instead.
 func (*GetPreferencesRequest) Descriptor() ([]byte, []int) {
-	return file_proto_notification_proto_rawDescGZIP(), []int{18}
+	return file_proto_app_notification_proto_rawDescGZIP(), []int{18}
 }
 
 func (x *GetPreferencesRequest) GetUserId() string {
@@ -1466,7 +1466,7 @@ type GetPreferencesResponse struct {
 
 func (x *GetPreferencesResponse) Reset() {
 	*x = GetPreferencesResponse{}
-	mi := &file_proto_notification_proto_msgTypes[19]
+	mi := &file_proto_app_notification_proto_msgTypes[19]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1478,7 +1478,7 @@ func (x *GetPreferencesResponse) String() string {
 func (*GetPreferencesResponse) ProtoMessage() {}
 
 func (x *GetPreferencesResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_proto_notification_proto_msgTypes[19]
+	mi := &file_proto_app_notification_proto_msgTypes[19]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1491,7 +1491,7 @@ func (x *GetPreferencesResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use GetPreferencesResponse.ProtoReflect.Descriptor instead.
 func (*GetPreferencesResponse) Descriptor() ([]byte, []int) {
-	return file_proto_notification_proto_rawDescGZIP(), []int{19}
+	return file_proto_app_notification_proto_rawDescGZIP(), []int{19}
 }
 
 func (x *GetPreferencesResponse) GetCode() common.ErrorCode {
@@ -1508,23 +1508,23 @@ func (x *GetPreferencesResponse) GetPreferences() *NotificationPreferences {
 	return nil
 }
 
-var File_proto_notification_proto protoreflect.FileDescriptor
+var File_proto_app_notification_proto protoreflect.FileDescriptor
 
-const file_proto_notification_proto_rawDesc = "" +
+const file_proto_app_notification_proto_rawDesc = "" +
 	"\n" +
-	"\x18proto/notification.proto\x12\x12chirp.notification\x1a\x12proto/common.proto\"\xa5\x04\n" +
+	"\x1cproto/app_notification.proto\x12\x16chirp.app_notification\x1a\x12proto/common.proto\"\xb1\x04\n" +
 	"\x17PushNotificationRequest\x12\x17\n" +
-	"\auser_id\x18\x01 \x01(\tR\x06userId\x128\n" +
-	"\x04type\x18\x02 \x01(\x0e2$.chirp.notification.NotificationTypeR\x04type\x12D\n" +
-	"\bpriority\x18\x03 \x01(\x0e2(.chirp.notification.NotificationPriorityR\bpriority\x12\x14\n" +
+	"\auser_id\x18\x01 \x01(\tR\x06userId\x12<\n" +
+	"\x04type\x18\x02 \x01(\x0e2(.chirp.app_notification.NotificationTypeR\x04type\x12H\n" +
+	"\bpriority\x18\x03 \x01(\x0e2,.chirp.app_notification.NotificationPriorityR\bpriority\x12\x14\n" +
 	"\x05title\x18\x04 \x01(\tR\x05title\x12\x12\n" +
 	"\x04body\x18\x05 \x01(\tR\x04body\x12\x12\n" +
 	"\x04icon\x18\x06 \x01(\tR\x04icon\x12\x14\n" +
 	"\x05image\x18\a \x01(\tR\x05image\x12\x14\n" +
 	"\x05sound\x18\b \x01(\tR\x05sound\x12\x10\n" +
-	"\x03tag\x18\t \x01(\tR\x03tag\x12I\n" +
+	"\x03tag\x18\t \x01(\tR\x03tag\x12M\n" +
 	"\x04data\x18\n" +
-	" \x03(\v25.chirp.notification.PushNotificationRequest.DataEntryR\x04data\x12\x14\n" +
+	" \x03(\v29.chirp.app_notification.PushNotificationRequest.DataEntryR\x04data\x12\x14\n" +
 	"\x05badge\x18\v \x01(\x05R\x05badge\x12!\n" +
 	"\fclick_action\x18\f \x01(\tR\vclickAction\x12\x15\n" +
 	"\x06ttl_ms\x18\r \x01(\x03R\x05ttlMs\x12!\n" +
@@ -1573,10 +1573,10 @@ const file_proto_notification_proto_rawDesc = "" +
 	"\vserver_time\x18\x02 \x01(\x03R\n" +
 	"serverTime\"0\n" +
 	"\x15GetUserDevicesRequest\x12\x17\n" +
-	"\auser_id\x18\x01 \x01(\tR\x06userId\"\x7f\n" +
+	"\auser_id\x18\x01 \x01(\tR\x06userId\"\x83\x01\n" +
 	"\x16GetUserDevicesResponse\x12+\n" +
-	"\x04code\x18\x01 \x01(\x0e2\x17.chirp.common.ErrorCodeR\x04code\x128\n" +
-	"\adevices\x18\x02 \x03(\v2\x1e.chirp.notification.DeviceInfoR\adevices\"\x81\x02\n" +
+	"\x04code\x18\x01 \x01(\x0e2\x17.chirp.common.ErrorCodeR\x04code\x12<\n" +
+	"\adevices\x18\x02 \x03(\v2\".chirp.app_notification.DeviceInfoR\adevices\"\x81\x02\n" +
 	"\n" +
 	"DeviceInfo\x12\x1b\n" +
 	"\tdevice_id\x18\x01 \x01(\tR\bdeviceId\x12\x17\n" +
@@ -1596,14 +1596,14 @@ const file_proto_notification_proto_rawDesc = "" +
 	"\x15SetBadgeCountResponse\x12+\n" +
 	"\x04code\x18\x01 \x01(\x0e2\x17.chirp.common.ErrorCodeR\x04code\x12\x1f\n" +
 	"\vserver_time\x18\x02 \x01(\x03R\n" +
-	"serverTime\"\xd1\x01\n" +
+	"serverTime\"\xd5\x01\n" +
 	"\x19SilentNotificationRequest\x12\x17\n" +
-	"\auser_id\x18\x01 \x01(\tR\x06userId\x12K\n" +
-	"\x04data\x18\x02 \x03(\v27.chirp.notification.SilentNotificationRequest.DataEntryR\x04data\x12\x15\n" +
+	"\auser_id\x18\x01 \x01(\tR\x06userId\x12O\n" +
+	"\x04data\x18\x02 \x03(\v2;.chirp.app_notification.SilentNotificationRequest.DataEntryR\x04data\x12\x15\n" +
 	"\x06ttl_ms\x18\x03 \x01(\x03R\x05ttlMs\x1a7\n" +
 	"\tDataEntry\x12\x10\n" +
 	"\x03key\x18\x01 \x01(\tR\x03key\x12\x14\n" +
-	"\x05value\x18\x02 \x01(\tR\x05value:\x028\x01\"\xbc\x05\n" +
+	"\x05value\x18\x02 \x01(\tR\x05value:\x028\x01\"\xc4\x05\n" +
 	"\x17NotificationPreferences\x12\x18\n" +
 	"\aenabled\x18\x01 \x01(\bR\aenabled\x12#\n" +
 	"\rsound_enabled\x18\x02 \x01(\bR\fsoundEnabled\x12+\n" +
@@ -1619,27 +1619,27 @@ const file_proto_notification_proto_rawDesc = "" +
 	" \x01(\x05R\fdndStartHour\x12 \n" +
 	"\fdnd_end_hour\x18\v \x01(\x05R\n" +
 	"dndEndHour\x12\x19\n" +
-	"\bdnd_days\x18\f \x03(\x05R\adndDays\x12k\n" +
-	"\x10channel_settings\x18\r \x03(\v2@.chirp.notification.NotificationPreferences.ChannelSettingsEntryR\x0fchannelSettings\x1as\n" +
+	"\bdnd_days\x18\f \x03(\x05R\adndDays\x12o\n" +
+	"\x10channel_settings\x18\r \x03(\v2D.chirp.app_notification.NotificationPreferences.ChannelSettingsEntryR\x0fchannelSettings\x1aw\n" +
 	"\x14ChannelSettingsEntry\x12\x10\n" +
-	"\x03key\x18\x01 \x01(\tR\x03key\x12E\n" +
-	"\x05value\x18\x02 \x01(\v2/.chirp.notification.ChannelNotificationSettingsR\x05value:\x028\x01\"\x86\x01\n" +
+	"\x03key\x18\x01 \x01(\tR\x03key\x12I\n" +
+	"\x05value\x18\x02 \x01(\v23.chirp.app_notification.ChannelNotificationSettingsR\x05value:\x028\x01\"\x86\x01\n" +
 	"\x1bChannelNotificationSettings\x12\x14\n" +
 	"\x05muted\x18\x01 \x01(\bR\x05muted\x12#\n" +
 	"\ronly_mentions\x18\x02 \x01(\bR\fonlyMentions\x12,\n" +
-	"\x12notify_on_mentions\x18\x03 \x01(\bR\x10notifyOnMentions\"\x7f\n" +
+	"\x12notify_on_mentions\x18\x03 \x01(\bR\x10notifyOnMentions\"\x83\x01\n" +
 	"\x15SetPreferencesRequest\x12\x17\n" +
-	"\auser_id\x18\x01 \x01(\tR\x06userId\x12M\n" +
-	"\vpreferences\x18\x02 \x01(\v2+.chirp.notification.NotificationPreferencesR\vpreferences\"f\n" +
+	"\auser_id\x18\x01 \x01(\tR\x06userId\x12Q\n" +
+	"\vpreferences\x18\x02 \x01(\v2/.chirp.app_notification.NotificationPreferencesR\vpreferences\"f\n" +
 	"\x16SetPreferencesResponse\x12+\n" +
 	"\x04code\x18\x01 \x01(\x0e2\x17.chirp.common.ErrorCodeR\x04code\x12\x1f\n" +
 	"\vserver_time\x18\x02 \x01(\x03R\n" +
 	"serverTime\"0\n" +
 	"\x15GetPreferencesRequest\x12\x17\n" +
-	"\auser_id\x18\x01 \x01(\tR\x06userId\"\x94\x01\n" +
+	"\auser_id\x18\x01 \x01(\tR\x06userId\"\x98\x01\n" +
 	"\x16GetPreferencesResponse\x12+\n" +
-	"\x04code\x18\x01 \x01(\x0e2\x17.chirp.common.ErrorCodeR\x04code\x12M\n" +
-	"\vpreferences\x18\x02 \x01(\v2+.chirp.notification.NotificationPreferencesR\vpreferences*A\n" +
+	"\x04code\x18\x01 \x01(\x0e2\x17.chirp.common.ErrorCodeR\x04code\x12Q\n" +
+	"\vpreferences\x18\x02 \x01(\v2/.chirp.app_notification.NotificationPreferencesR\vpreferences*A\n" +
 	"\x14NotificationPriority\x12\a\n" +
 	"\x03LOW\x10\x00\x12\n" +
 	"\n" +
@@ -1657,68 +1657,68 @@ const file_proto_notification_proto_rawDesc = "" +
 	"VOICE_CALL\x10\x05\x12\x10\n" +
 	"\fVOICE_INVITE\x10\x06\x12\n" +
 	"\n" +
-	"\x06SYSTEM\x10cB,Z*github.com/cui/chirp/proto/go/notificationb\x06proto3"
+	"\x06SYSTEM\x10cB0Z.github.com/cui/chirp/proto/go/app_notificationb\x06proto3"
 
 var (
-	file_proto_notification_proto_rawDescOnce sync.Once
-	file_proto_notification_proto_rawDescData []byte
+	file_proto_app_notification_proto_rawDescOnce sync.Once
+	file_proto_app_notification_proto_rawDescData []byte
 )
 
-func file_proto_notification_proto_rawDescGZIP() []byte {
-	file_proto_notification_proto_rawDescOnce.Do(func() {
-		file_proto_notification_proto_rawDescData = protoimpl.X.CompressGZIP(unsafe.Slice(unsafe.StringData(file_proto_notification_proto_rawDesc), len(file_proto_notification_proto_rawDesc)))
+func file_proto_app_notification_proto_rawDescGZIP() []byte {
+	file_proto_app_notification_proto_rawDescOnce.Do(func() {
+		file_proto_app_notification_proto_rawDescData = protoimpl.X.CompressGZIP(unsafe.Slice(unsafe.StringData(file_proto_app_notification_proto_rawDesc), len(file_proto_app_notification_proto_rawDesc)))
 	})
-	return file_proto_notification_proto_rawDescData
+	return file_proto_app_notification_proto_rawDescData
 }
 
-var file_proto_notification_proto_enumTypes = make([]protoimpl.EnumInfo, 2)
-var file_proto_notification_proto_msgTypes = make([]protoimpl.MessageInfo, 23)
-var file_proto_notification_proto_goTypes = []any{
-	(NotificationPriority)(0),           // 0: chirp.notification.NotificationPriority
-	(NotificationType)(0),               // 1: chirp.notification.NotificationType
-	(*PushNotificationRequest)(nil),     // 2: chirp.notification.PushNotificationRequest
-	(*PushNotificationResponse)(nil),    // 3: chirp.notification.PushNotificationResponse
-	(*RegisterDeviceRequest)(nil),       // 4: chirp.notification.RegisterDeviceRequest
-	(*RegisterDeviceResponse)(nil),      // 5: chirp.notification.RegisterDeviceResponse
-	(*UnregisterDeviceRequest)(nil),     // 6: chirp.notification.UnregisterDeviceRequest
-	(*UnregisterDeviceResponse)(nil),    // 7: chirp.notification.UnregisterDeviceResponse
-	(*UpdateDeviceTokenRequest)(nil),    // 8: chirp.notification.UpdateDeviceTokenRequest
-	(*UpdateDeviceTokenResponse)(nil),   // 9: chirp.notification.UpdateDeviceTokenResponse
-	(*GetUserDevicesRequest)(nil),       // 10: chirp.notification.GetUserDevicesRequest
-	(*GetUserDevicesResponse)(nil),      // 11: chirp.notification.GetUserDevicesResponse
-	(*DeviceInfo)(nil),                  // 12: chirp.notification.DeviceInfo
-	(*SetBadgeCountRequest)(nil),        // 13: chirp.notification.SetBadgeCountRequest
-	(*SetBadgeCountResponse)(nil),       // 14: chirp.notification.SetBadgeCountResponse
-	(*SilentNotificationRequest)(nil),   // 15: chirp.notification.SilentNotificationRequest
-	(*NotificationPreferences)(nil),     // 16: chirp.notification.NotificationPreferences
-	(*ChannelNotificationSettings)(nil), // 17: chirp.notification.ChannelNotificationSettings
-	(*SetPreferencesRequest)(nil),       // 18: chirp.notification.SetPreferencesRequest
-	(*SetPreferencesResponse)(nil),      // 19: chirp.notification.SetPreferencesResponse
-	(*GetPreferencesRequest)(nil),       // 20: chirp.notification.GetPreferencesRequest
-	(*GetPreferencesResponse)(nil),      // 21: chirp.notification.GetPreferencesResponse
-	nil,                                 // 22: chirp.notification.PushNotificationRequest.DataEntry
-	nil,                                 // 23: chirp.notification.SilentNotificationRequest.DataEntry
-	nil,                                 // 24: chirp.notification.NotificationPreferences.ChannelSettingsEntry
+var file_proto_app_notification_proto_enumTypes = make([]protoimpl.EnumInfo, 2)
+var file_proto_app_notification_proto_msgTypes = make([]protoimpl.MessageInfo, 23)
+var file_proto_app_notification_proto_goTypes = []any{
+	(NotificationPriority)(0),           // 0: chirp.app_notification.NotificationPriority
+	(NotificationType)(0),               // 1: chirp.app_notification.NotificationType
+	(*PushNotificationRequest)(nil),     // 2: chirp.app_notification.PushNotificationRequest
+	(*PushNotificationResponse)(nil),    // 3: chirp.app_notification.PushNotificationResponse
+	(*RegisterDeviceRequest)(nil),       // 4: chirp.app_notification.RegisterDeviceRequest
+	(*RegisterDeviceResponse)(nil),      // 5: chirp.app_notification.RegisterDeviceResponse
+	(*UnregisterDeviceRequest)(nil),     // 6: chirp.app_notification.UnregisterDeviceRequest
+	(*UnregisterDeviceResponse)(nil),    // 7: chirp.app_notification.UnregisterDeviceResponse
+	(*UpdateDeviceTokenRequest)(nil),    // 8: chirp.app_notification.UpdateDeviceTokenRequest
+	(*UpdateDeviceTokenResponse)(nil),   // 9: chirp.app_notification.UpdateDeviceTokenResponse
+	(*GetUserDevicesRequest)(nil),       // 10: chirp.app_notification.GetUserDevicesRequest
+	(*GetUserDevicesResponse)(nil),      // 11: chirp.app_notification.GetUserDevicesResponse
+	(*DeviceInfo)(nil),                  // 12: chirp.app_notification.DeviceInfo
+	(*SetBadgeCountRequest)(nil),        // 13: chirp.app_notification.SetBadgeCountRequest
+	(*SetBadgeCountResponse)(nil),       // 14: chirp.app_notification.SetBadgeCountResponse
+	(*SilentNotificationRequest)(nil),   // 15: chirp.app_notification.SilentNotificationRequest
+	(*NotificationPreferences)(nil),     // 16: chirp.app_notification.NotificationPreferences
+	(*ChannelNotificationSettings)(nil), // 17: chirp.app_notification.ChannelNotificationSettings
+	(*SetPreferencesRequest)(nil),       // 18: chirp.app_notification.SetPreferencesRequest
+	(*SetPreferencesResponse)(nil),      // 19: chirp.app_notification.SetPreferencesResponse
+	(*GetPreferencesRequest)(nil),       // 20: chirp.app_notification.GetPreferencesRequest
+	(*GetPreferencesResponse)(nil),      // 21: chirp.app_notification.GetPreferencesResponse
+	nil,                                 // 22: chirp.app_notification.PushNotificationRequest.DataEntry
+	nil,                                 // 23: chirp.app_notification.SilentNotificationRequest.DataEntry
+	nil,                                 // 24: chirp.app_notification.NotificationPreferences.ChannelSettingsEntry
 	(common.ErrorCode)(0),               // 25: chirp.common.ErrorCode
 }
-var file_proto_notification_proto_depIdxs = []int32{
-	1,  // 0: chirp.notification.PushNotificationRequest.type:type_name -> chirp.notification.NotificationType
-	0,  // 1: chirp.notification.PushNotificationRequest.priority:type_name -> chirp.notification.NotificationPriority
-	22, // 2: chirp.notification.PushNotificationRequest.data:type_name -> chirp.notification.PushNotificationRequest.DataEntry
-	25, // 3: chirp.notification.PushNotificationResponse.code:type_name -> chirp.common.ErrorCode
-	25, // 4: chirp.notification.RegisterDeviceResponse.code:type_name -> chirp.common.ErrorCode
-	25, // 5: chirp.notification.UnregisterDeviceResponse.code:type_name -> chirp.common.ErrorCode
-	25, // 6: chirp.notification.UpdateDeviceTokenResponse.code:type_name -> chirp.common.ErrorCode
-	25, // 7: chirp.notification.GetUserDevicesResponse.code:type_name -> chirp.common.ErrorCode
-	12, // 8: chirp.notification.GetUserDevicesResponse.devices:type_name -> chirp.notification.DeviceInfo
-	25, // 9: chirp.notification.SetBadgeCountResponse.code:type_name -> chirp.common.ErrorCode
-	23, // 10: chirp.notification.SilentNotificationRequest.data:type_name -> chirp.notification.SilentNotificationRequest.DataEntry
-	24, // 11: chirp.notification.NotificationPreferences.channel_settings:type_name -> chirp.notification.NotificationPreferences.ChannelSettingsEntry
-	16, // 12: chirp.notification.SetPreferencesRequest.preferences:type_name -> chirp.notification.NotificationPreferences
-	25, // 13: chirp.notification.SetPreferencesResponse.code:type_name -> chirp.common.ErrorCode
-	25, // 14: chirp.notification.GetPreferencesResponse.code:type_name -> chirp.common.ErrorCode
-	16, // 15: chirp.notification.GetPreferencesResponse.preferences:type_name -> chirp.notification.NotificationPreferences
-	17, // 16: chirp.notification.NotificationPreferences.ChannelSettingsEntry.value:type_name -> chirp.notification.ChannelNotificationSettings
+var file_proto_app_notification_proto_depIdxs = []int32{
+	1,  // 0: chirp.app_notification.PushNotificationRequest.type:type_name -> chirp.app_notification.NotificationType
+	0,  // 1: chirp.app_notification.PushNotificationRequest.priority:type_name -> chirp.app_notification.NotificationPriority
+	22, // 2: chirp.app_notification.PushNotificationRequest.data:type_name -> chirp.app_notification.PushNotificationRequest.DataEntry
+	25, // 3: chirp.app_notification.PushNotificationResponse.code:type_name -> chirp.common.ErrorCode
+	25, // 4: chirp.app_notification.RegisterDeviceResponse.code:type_name -> chirp.common.ErrorCode
+	25, // 5: chirp.app_notification.UnregisterDeviceResponse.code:type_name -> chirp.common.ErrorCode
+	25, // 6: chirp.app_notification.UpdateDeviceTokenResponse.code:type_name -> chirp.common.ErrorCode
+	25, // 7: chirp.app_notification.GetUserDevicesResponse.code:type_name -> chirp.common.ErrorCode
+	12, // 8: chirp.app_notification.GetUserDevicesResponse.devices:type_name -> chirp.app_notification.DeviceInfo
+	25, // 9: chirp.app_notification.SetBadgeCountResponse.code:type_name -> chirp.common.ErrorCode
+	23, // 10: chirp.app_notification.SilentNotificationRequest.data:type_name -> chirp.app_notification.SilentNotificationRequest.DataEntry
+	24, // 11: chirp.app_notification.NotificationPreferences.channel_settings:type_name -> chirp.app_notification.NotificationPreferences.ChannelSettingsEntry
+	16, // 12: chirp.app_notification.SetPreferencesRequest.preferences:type_name -> chirp.app_notification.NotificationPreferences
+	25, // 13: chirp.app_notification.SetPreferencesResponse.code:type_name -> chirp.common.ErrorCode
+	25, // 14: chirp.app_notification.GetPreferencesResponse.code:type_name -> chirp.common.ErrorCode
+	16, // 15: chirp.app_notification.GetPreferencesResponse.preferences:type_name -> chirp.app_notification.NotificationPreferences
+	17, // 16: chirp.app_notification.NotificationPreferences.ChannelSettingsEntry.value:type_name -> chirp.app_notification.ChannelNotificationSettings
 	17, // [17:17] is the sub-list for method output_type
 	17, // [17:17] is the sub-list for method input_type
 	17, // [17:17] is the sub-list for extension type_name
@@ -1726,27 +1726,27 @@ var file_proto_notification_proto_depIdxs = []int32{
 	0,  // [0:17] is the sub-list for field type_name
 }
 
-func init() { file_proto_notification_proto_init() }
-func file_proto_notification_proto_init() {
-	if File_proto_notification_proto != nil {
+func init() { file_proto_app_notification_proto_init() }
+func file_proto_app_notification_proto_init() {
+	if File_proto_app_notification_proto != nil {
 		return
 	}
 	type x struct{}
 	out := protoimpl.TypeBuilder{
 		File: protoimpl.DescBuilder{
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
-			RawDescriptor: unsafe.Slice(unsafe.StringData(file_proto_notification_proto_rawDesc), len(file_proto_notification_proto_rawDesc)),
+			RawDescriptor: unsafe.Slice(unsafe.StringData(file_proto_app_notification_proto_rawDesc), len(file_proto_app_notification_proto_rawDesc)),
 			NumEnums:      2,
 			NumMessages:   23,
 			NumExtensions: 0,
 			NumServices:   0,
 		},
-		GoTypes:           file_proto_notification_proto_goTypes,
-		DependencyIndexes: file_proto_notification_proto_depIdxs,
-		EnumInfos:         file_proto_notification_proto_enumTypes,
-		MessageInfos:      file_proto_notification_proto_msgTypes,
+		GoTypes:           file_proto_app_notification_proto_goTypes,
+		DependencyIndexes: file_proto_app_notification_proto_depIdxs,
+		EnumInfos:         file_proto_app_notification_proto_enumTypes,
+		MessageInfos:      file_proto_app_notification_proto_msgTypes,
 	}.Build()
-	File_proto_notification_proto = out.File
-	file_proto_notification_proto_goTypes = nil
-	file_proto_notification_proto_depIdxs = nil
+	File_proto_app_notification_proto = out.File
+	file_proto_app_notification_proto_goTypes = nil
+	file_proto_app_notification_proto_depIdxs = nil
 }

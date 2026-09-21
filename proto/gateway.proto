@@ -4,6 +4,9 @@ package chirp.gateway;
 
 option go_package = "github.com/cui/chirp/proto/go/gateway";
 
+import "proto/common.proto";
+import "proto/chat.proto";
+
 // Message ID definition for dispatching
 enum MsgID {
   UNKNOWN = 0;
@@ -162,7 +165,7 @@ enum MsgID {
   SPEAKING_NOTIFY = 4021;
 
   // Server plane: game backend <-> chirp (authenticated services, not users).
-  // See proto/server_gateway.proto for the payloads.
+  // See proto/game_server_gateway.proto for the payloads.
   SERVER_AUTH_REQ = 5001;
   SERVER_AUTH_RESP = 5002;
   SERVER_HEARTBEAT_PING = 5003;
@@ -185,7 +188,7 @@ enum MsgID {
   RESOLVE_GAME_USER_RESP = 5020;
   // Player channel subscriptions: asserted by game backends on this plane,
   // and forwarded by app_gateway for self-served players (player_id pinned
-  // to the authenticated user). See proto/server_gateway.proto.
+  // to the authenticated user). See proto/game_server_gateway.proto.
   SUBSCRIBE_PLAYER_CHANNEL_REQ = 5021;
   SUBSCRIBE_PLAYER_CHANNEL_RESP = 5022;
   UNSUBSCRIBE_PLAYER_CHANNEL_REQ = 5023;
@@ -196,15 +199,23 @@ enum MsgID {
   // the fan-out copies injected with a game_id. Independent of the chat
   // read cursors (2201-2207); app_gateway forwards these for self-served
   // players (player_id pinned to the authenticated user). Bodies are
-  // chirp.server_gateway.* messages; see proto/server_gateway.proto.
+  // chirp.game_server_gateway.* messages; see proto/game_server_gateway.proto.
   MARK_CHANNELS_READ_REQ = 5027;
   MARK_CHANNELS_READ_RESP = 5028;
   GET_UNREAD_SUMMARY_REQ = 5029;
   GET_UNREAD_SUMMARY_RESP = 5030;
 
+  // Chat peer registration: game_chat (spoke) registers with app_chat (hub)
+  // so channel messages bridge between the two planes natively - no external
+  // bridge process. See docs/architecture.md (对等注册协议).
+  PEER_REGISTER_REQ = 5050;
+  PEER_REGISTER_RESP = 5051;
+  CHANNEL_MESSAGE_NOTIFY = 5052;
+  PEER_INJECT_MESSAGE_NOTIFY = 5053;
+
   // Notification plane: device registration forwarded by app_gateway and
   // push requests from internal services (chat). Bodies are
-  // chirp.notification.* messages; see proto/notification.proto.
+  // chirp.app_notification.* messages; see proto/app_notification.proto.
   REGISTER_DEVICE_REQ = 6001;
   REGISTER_DEVICE_RESP = 6002;
   UNREGISTER_DEVICE_REQ = 6003;
@@ -269,4 +280,65 @@ message HeartbeatPing {
 message HeartbeatPong {
   int64 timestamp = 1;
   int64 server_time = 2;
+}
+
+// ---------------------------------------------------------------------------
+// Chat peer registration (docs/architecture.md 对等注册协议). game_chat is the
+// spoke, app_chat the hub; registration happens once per connection, and a
+// dropped peer connection must re-register.
+// ---------------------------------------------------------------------------
+
+// Capability bits exchanged during the handshake. The negotiated set is the
+// intersection of both sides; anything outside it stays disabled for the
+// session. New capabilities bump protocol_version and add a bit - old peers
+// that do not know the bit simply never use it.
+enum PeerCapability {
+  RELAY_READ_RECEIPTS = 0;
+  RELAY_TYPING = 1;
+  RELAY_PRESENCE = 2;
+  RELAY_OFFLINE_MESSAGES = 3;
+}
+
+message PeerRegisterReq {
+  string service_id = 1;       // e.g. "game_42"; second registration with the
+                               // same id displaces the first connection
+  string service_secret = 2;   // shared secret for this peer (checked against
+                               // the hub's --allowed_peers list)
+  int32 protocol_version = 3;  // negotiated down to min(hub, spoke)
+  string game_id = 4;          // namespace for this peer's channels; must not
+                               // contain ':' (it prefixes "<game_id>:" on the
+                               // hub side)
+  repeated PeerCapability supported_features = 5;
+}
+
+message PeerRegisterResp {
+  chirp.common.ErrorCode code = 1;  // OK / AUTH_FAILED (not whitelisted) /
+                                    // VERSION_MISMATCH (below min version)
+  int32 protocol_version = 2;       // negotiated version (OK) or hub's
+                                    // current version (mismatch)
+  int32 min_version = 3;            // hub's minimum accepted version
+  int32 heartbeat_interval_seconds = 4;  // hub-assigned cadence; a peer that
+                                         // stays silent for ~2x is dropped
+  repeated PeerCapability supported_features = 5;  // negotiated intersection
+}
+
+// Spoke -> hub: one game-side channel message, fanned out by the hub to every
+// subscribed App player as an injected private copy named
+// "<game_id>:<channel_id>". The message body is the game-side ChatMessage
+// verbatim; channel_id stays bare (the hub adds the prefix).
+message ChannelMessageNotify {
+  string game_id = 1;  // redundant with the registration for validation
+  string channel_id = 2;
+  chirp.chat.ChatMessage message = 3;
+}
+
+// Hub -> spoke: an App player's reply to a "<game_id>:<channel_id>" channel,
+// injected into the game-side channel as a normal message. The spoke never
+// sees the App player's player_id - the hub resolves it to a game_user_id
+// before sending.
+message PeerInjectMessageNotify {
+  string channel_id = 1;       // bare game-side channel id
+  string sender_id = 2;        // game_user_id resolved from the App player
+  bytes content = 3;
+  string client_msg_id = 4;    // optional idempotency key from the App client
 }

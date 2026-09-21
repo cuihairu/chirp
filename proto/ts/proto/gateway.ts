@@ -7,6 +7,8 @@
 /* eslint-disable */
 import Long from "long";
 import _m0 from "protobufjs/minimal";
+import { ChatMessage } from "./chat";
+import { ErrorCode, errorCodeFromJSON, errorCodeToJSON } from "./common";
 
 export const protobufPackage = "chirp.gateway";
 
@@ -157,7 +159,7 @@ export enum MsgID {
   SPEAKING_NOTIFY = 4021,
   /**
    * SERVER_AUTH_REQ - Server plane: game backend <-> chirp (authenticated services, not users).
-   * See proto/server_gateway.proto for the payloads.
+   * See proto/game_server_gateway.proto for the payloads.
    */
   SERVER_AUTH_REQ = 5001,
   SERVER_AUTH_RESP = 5002,
@@ -182,7 +184,7 @@ export enum MsgID {
   /**
    * SUBSCRIBE_PLAYER_CHANNEL_REQ - Player channel subscriptions: asserted by game backends on this plane,
    * and forwarded by app_gateway for self-served players (player_id pinned
-   * to the authenticated user). See proto/server_gateway.proto.
+   * to the authenticated user). See proto/game_server_gateway.proto.
    */
   SUBSCRIBE_PLAYER_CHANNEL_REQ = 5021,
   SUBSCRIBE_PLAYER_CHANNEL_RESP = 5022,
@@ -195,16 +197,25 @@ export enum MsgID {
    * the fan-out copies injected with a game_id. Independent of the chat
    * read cursors (2201-2207); app_gateway forwards these for self-served
    * players (player_id pinned to the authenticated user). Bodies are
-   * chirp.server_gateway.* messages; see proto/server_gateway.proto.
+   * chirp.game_server_gateway.* messages; see proto/game_server_gateway.proto.
    */
   MARK_CHANNELS_READ_REQ = 5027,
   MARK_CHANNELS_READ_RESP = 5028,
   GET_UNREAD_SUMMARY_REQ = 5029,
   GET_UNREAD_SUMMARY_RESP = 5030,
   /**
+   * PEER_REGISTER_REQ - Chat peer registration: game_chat (spoke) registers with app_chat (hub)
+   * so channel messages bridge between the two planes natively - no external
+   * bridge process. See docs/architecture.md (对等注册协议).
+   */
+  PEER_REGISTER_REQ = 5050,
+  PEER_REGISTER_RESP = 5051,
+  CHANNEL_MESSAGE_NOTIFY = 5052,
+  PEER_INJECT_MESSAGE_NOTIFY = 5053,
+  /**
    * REGISTER_DEVICE_REQ - Notification plane: device registration forwarded by app_gateway and
    * push requests from internal services (chat). Bodies are
-   * chirp.notification.* messages; see proto/notification.proto.
+   * chirp.app_notification.* messages; see proto/app_notification.proto.
    */
   REGISTER_DEVICE_REQ = 6001,
   REGISTER_DEVICE_RESP = 6002,
@@ -734,6 +745,18 @@ export function msgIDFromJSON(object: any): MsgID {
     case 5030:
     case "GET_UNREAD_SUMMARY_RESP":
       return MsgID.GET_UNREAD_SUMMARY_RESP;
+    case 5050:
+    case "PEER_REGISTER_REQ":
+      return MsgID.PEER_REGISTER_REQ;
+    case 5051:
+    case "PEER_REGISTER_RESP":
+      return MsgID.PEER_REGISTER_RESP;
+    case 5052:
+    case "CHANNEL_MESSAGE_NOTIFY":
+      return MsgID.CHANNEL_MESSAGE_NOTIFY;
+    case 5053:
+    case "PEER_INJECT_MESSAGE_NOTIFY":
+      return MsgID.PEER_INJECT_MESSAGE_NOTIFY;
     case 6001:
     case "REGISTER_DEVICE_REQ":
       return MsgID.REGISTER_DEVICE_REQ;
@@ -1164,6 +1187,14 @@ export function msgIDToJSON(object: MsgID): string {
       return "GET_UNREAD_SUMMARY_REQ";
     case MsgID.GET_UNREAD_SUMMARY_RESP:
       return "GET_UNREAD_SUMMARY_RESP";
+    case MsgID.PEER_REGISTER_REQ:
+      return "PEER_REGISTER_REQ";
+    case MsgID.PEER_REGISTER_RESP:
+      return "PEER_REGISTER_RESP";
+    case MsgID.CHANNEL_MESSAGE_NOTIFY:
+      return "CHANNEL_MESSAGE_NOTIFY";
+    case MsgID.PEER_INJECT_MESSAGE_NOTIFY:
+      return "PEER_INJECT_MESSAGE_NOTIFY";
     case MsgID.REGISTER_DEVICE_REQ:
       return "REGISTER_DEVICE_REQ";
     case MsgID.REGISTER_DEVICE_RESP:
@@ -1245,6 +1276,57 @@ export function msgIDToJSON(object: MsgID): string {
 }
 
 /**
+ * Capability bits exchanged during the handshake. The negotiated set is the
+ * intersection of both sides; anything outside it stays disabled for the
+ * session. New capabilities bump protocol_version and add a bit - old peers
+ * that do not know the bit simply never use it.
+ */
+export enum PeerCapability {
+  RELAY_READ_RECEIPTS = 0,
+  RELAY_TYPING = 1,
+  RELAY_PRESENCE = 2,
+  RELAY_OFFLINE_MESSAGES = 3,
+  UNRECOGNIZED = -1,
+}
+
+export function peerCapabilityFromJSON(object: any): PeerCapability {
+  switch (object) {
+    case 0:
+    case "RELAY_READ_RECEIPTS":
+      return PeerCapability.RELAY_READ_RECEIPTS;
+    case 1:
+    case "RELAY_TYPING":
+      return PeerCapability.RELAY_TYPING;
+    case 2:
+    case "RELAY_PRESENCE":
+      return PeerCapability.RELAY_PRESENCE;
+    case 3:
+    case "RELAY_OFFLINE_MESSAGES":
+      return PeerCapability.RELAY_OFFLINE_MESSAGES;
+    case -1:
+    case "UNRECOGNIZED":
+    default:
+      return PeerCapability.UNRECOGNIZED;
+  }
+}
+
+export function peerCapabilityToJSON(object: PeerCapability): string {
+  switch (object) {
+    case PeerCapability.RELAY_READ_RECEIPTS:
+      return "RELAY_READ_RECEIPTS";
+    case PeerCapability.RELAY_TYPING:
+      return "RELAY_TYPING";
+    case PeerCapability.RELAY_PRESENCE:
+      return "RELAY_PRESENCE";
+    case PeerCapability.RELAY_OFFLINE_MESSAGES:
+      return "RELAY_OFFLINE_MESSAGES";
+    case PeerCapability.UNRECOGNIZED:
+    default:
+      return "UNRECOGNIZED";
+  }
+}
+
+/**
  * Universal Packet Envelope (Optional, if we want full protobuf wrap)
  * Usually we use Length-Prefixed + Raw Bytes for Body,
  * but for simplicity in some SDKs, a full envelope is used.
@@ -1262,6 +1344,64 @@ export interface HeartbeatPing {
 export interface HeartbeatPong {
   timestamp: number;
   serverTime: number;
+}
+
+export interface PeerRegisterReq {
+  /** e.g. "game_42"; second registration with the */
+  serviceId: string;
+  /** same id displaces the first connection */
+  serviceSecret: string;
+  /** the hub's --allowed_peers list) */
+  protocolVersion: number;
+  /** namespace for this peer's channels; must not */
+  gameId: string;
+  /**
+   * contain ':' (it prefixes "<game_id>:" on the
+   * hub side)
+   */
+  supportedFeatures: PeerCapability[];
+}
+
+export interface PeerRegisterResp {
+  /** OK / AUTH_FAILED (not whitelisted) / */
+  code: ErrorCode;
+  /** VERSION_MISMATCH (below min version) */
+  protocolVersion: number;
+  /** current version (mismatch) */
+  minVersion: number;
+  /** hub-assigned cadence; a peer that */
+  heartbeatIntervalSeconds: number;
+  /** stays silent for ~2x is dropped */
+  supportedFeatures: PeerCapability[];
+}
+
+/**
+ * Spoke -> hub: one game-side channel message, fanned out by the hub to every
+ * subscribed App player as an injected private copy named
+ * "<game_id>:<channel_id>". The message body is the game-side ChatMessage
+ * verbatim; channel_id stays bare (the hub adds the prefix).
+ */
+export interface ChannelMessageNotify {
+  /** redundant with the registration for validation */
+  gameId: string;
+  channelId: string;
+  message: ChatMessage | undefined;
+}
+
+/**
+ * Hub -> spoke: an App player's reply to a "<game_id>:<channel_id>" channel,
+ * injected into the game-side channel as a normal message. The spoke never
+ * sees the App player's player_id - the hub resolves it to a game_user_id
+ * before sending.
+ */
+export interface PeerInjectMessageNotify {
+  /** bare game-side channel id */
+  channelId: string;
+  /** game_user_id resolved from the App player */
+  senderId: string;
+  content: Uint8Array;
+  /** optional idempotency key from the App client */
+  clientMsgId: string;
 }
 
 function createBasePacket(): Packet {
@@ -1480,6 +1620,469 @@ export const HeartbeatPong = {
     const message = createBaseHeartbeatPong();
     message.timestamp = object.timestamp ?? 0;
     message.serverTime = object.serverTime ?? 0;
+    return message;
+  },
+};
+
+function createBasePeerRegisterReq(): PeerRegisterReq {
+  return { serviceId: "", serviceSecret: "", protocolVersion: 0, gameId: "", supportedFeatures: [] };
+}
+
+export const PeerRegisterReq = {
+  encode(message: PeerRegisterReq, writer: _m0.Writer = _m0.Writer.create()): _m0.Writer {
+    if (message.serviceId !== "") {
+      writer.uint32(10).string(message.serviceId);
+    }
+    if (message.serviceSecret !== "") {
+      writer.uint32(18).string(message.serviceSecret);
+    }
+    if (message.protocolVersion !== 0) {
+      writer.uint32(24).int32(message.protocolVersion);
+    }
+    if (message.gameId !== "") {
+      writer.uint32(34).string(message.gameId);
+    }
+    writer.uint32(42).fork();
+    for (const v of message.supportedFeatures) {
+      writer.int32(v);
+    }
+    writer.ldelim();
+    return writer;
+  },
+
+  decode(input: _m0.Reader | Uint8Array, length?: number): PeerRegisterReq {
+    const reader = input instanceof _m0.Reader ? input : _m0.Reader.create(input);
+    let end = length === undefined ? reader.len : reader.pos + length;
+    const message = createBasePeerRegisterReq();
+    while (reader.pos < end) {
+      const tag = reader.uint32();
+      switch (tag >>> 3) {
+        case 1:
+          if (tag !== 10) {
+            break;
+          }
+
+          message.serviceId = reader.string();
+          continue;
+        case 2:
+          if (tag !== 18) {
+            break;
+          }
+
+          message.serviceSecret = reader.string();
+          continue;
+        case 3:
+          if (tag !== 24) {
+            break;
+          }
+
+          message.protocolVersion = reader.int32();
+          continue;
+        case 4:
+          if (tag !== 34) {
+            break;
+          }
+
+          message.gameId = reader.string();
+          continue;
+        case 5:
+          if (tag === 40) {
+            message.supportedFeatures.push(reader.int32() as any);
+
+            continue;
+          }
+
+          if (tag === 42) {
+            const end2 = reader.uint32() + reader.pos;
+            while (reader.pos < end2) {
+              message.supportedFeatures.push(reader.int32() as any);
+            }
+
+            continue;
+          }
+
+          break;
+      }
+      if ((tag & 7) === 4 || tag === 0) {
+        break;
+      }
+      reader.skipType(tag & 7);
+    }
+    return message;
+  },
+
+  fromJSON(object: any): PeerRegisterReq {
+    return {
+      serviceId: isSet(object.serviceId) ? globalThis.String(object.serviceId) : "",
+      serviceSecret: isSet(object.serviceSecret) ? globalThis.String(object.serviceSecret) : "",
+      protocolVersion: isSet(object.protocolVersion) ? globalThis.Number(object.protocolVersion) : 0,
+      gameId: isSet(object.gameId) ? globalThis.String(object.gameId) : "",
+      supportedFeatures: globalThis.Array.isArray(object?.supportedFeatures)
+        ? object.supportedFeatures.map((e: any) => peerCapabilityFromJSON(e))
+        : [],
+    };
+  },
+
+  toJSON(message: PeerRegisterReq): unknown {
+    const obj: any = {};
+    if (message.serviceId !== "") {
+      obj.serviceId = message.serviceId;
+    }
+    if (message.serviceSecret !== "") {
+      obj.serviceSecret = message.serviceSecret;
+    }
+    if (message.protocolVersion !== 0) {
+      obj.protocolVersion = Math.round(message.protocolVersion);
+    }
+    if (message.gameId !== "") {
+      obj.gameId = message.gameId;
+    }
+    if (message.supportedFeatures?.length) {
+      obj.supportedFeatures = message.supportedFeatures.map((e) => peerCapabilityToJSON(e));
+    }
+    return obj;
+  },
+
+  create<I extends Exact<DeepPartial<PeerRegisterReq>, I>>(base?: I): PeerRegisterReq {
+    return PeerRegisterReq.fromPartial(base ?? ({} as any));
+  },
+  fromPartial<I extends Exact<DeepPartial<PeerRegisterReq>, I>>(object: I): PeerRegisterReq {
+    const message = createBasePeerRegisterReq();
+    message.serviceId = object.serviceId ?? "";
+    message.serviceSecret = object.serviceSecret ?? "";
+    message.protocolVersion = object.protocolVersion ?? 0;
+    message.gameId = object.gameId ?? "";
+    message.supportedFeatures = object.supportedFeatures?.map((e) => e) || [];
+    return message;
+  },
+};
+
+function createBasePeerRegisterResp(): PeerRegisterResp {
+  return { code: 0, protocolVersion: 0, minVersion: 0, heartbeatIntervalSeconds: 0, supportedFeatures: [] };
+}
+
+export const PeerRegisterResp = {
+  encode(message: PeerRegisterResp, writer: _m0.Writer = _m0.Writer.create()): _m0.Writer {
+    if (message.code !== 0) {
+      writer.uint32(8).int32(message.code);
+    }
+    if (message.protocolVersion !== 0) {
+      writer.uint32(16).int32(message.protocolVersion);
+    }
+    if (message.minVersion !== 0) {
+      writer.uint32(24).int32(message.minVersion);
+    }
+    if (message.heartbeatIntervalSeconds !== 0) {
+      writer.uint32(32).int32(message.heartbeatIntervalSeconds);
+    }
+    writer.uint32(42).fork();
+    for (const v of message.supportedFeatures) {
+      writer.int32(v);
+    }
+    writer.ldelim();
+    return writer;
+  },
+
+  decode(input: _m0.Reader | Uint8Array, length?: number): PeerRegisterResp {
+    const reader = input instanceof _m0.Reader ? input : _m0.Reader.create(input);
+    let end = length === undefined ? reader.len : reader.pos + length;
+    const message = createBasePeerRegisterResp();
+    while (reader.pos < end) {
+      const tag = reader.uint32();
+      switch (tag >>> 3) {
+        case 1:
+          if (tag !== 8) {
+            break;
+          }
+
+          message.code = reader.int32() as any;
+          continue;
+        case 2:
+          if (tag !== 16) {
+            break;
+          }
+
+          message.protocolVersion = reader.int32();
+          continue;
+        case 3:
+          if (tag !== 24) {
+            break;
+          }
+
+          message.minVersion = reader.int32();
+          continue;
+        case 4:
+          if (tag !== 32) {
+            break;
+          }
+
+          message.heartbeatIntervalSeconds = reader.int32();
+          continue;
+        case 5:
+          if (tag === 40) {
+            message.supportedFeatures.push(reader.int32() as any);
+
+            continue;
+          }
+
+          if (tag === 42) {
+            const end2 = reader.uint32() + reader.pos;
+            while (reader.pos < end2) {
+              message.supportedFeatures.push(reader.int32() as any);
+            }
+
+            continue;
+          }
+
+          break;
+      }
+      if ((tag & 7) === 4 || tag === 0) {
+        break;
+      }
+      reader.skipType(tag & 7);
+    }
+    return message;
+  },
+
+  fromJSON(object: any): PeerRegisterResp {
+    return {
+      code: isSet(object.code) ? errorCodeFromJSON(object.code) : 0,
+      protocolVersion: isSet(object.protocolVersion) ? globalThis.Number(object.protocolVersion) : 0,
+      minVersion: isSet(object.minVersion) ? globalThis.Number(object.minVersion) : 0,
+      heartbeatIntervalSeconds: isSet(object.heartbeatIntervalSeconds)
+        ? globalThis.Number(object.heartbeatIntervalSeconds)
+        : 0,
+      supportedFeatures: globalThis.Array.isArray(object?.supportedFeatures)
+        ? object.supportedFeatures.map((e: any) => peerCapabilityFromJSON(e))
+        : [],
+    };
+  },
+
+  toJSON(message: PeerRegisterResp): unknown {
+    const obj: any = {};
+    if (message.code !== 0) {
+      obj.code = errorCodeToJSON(message.code);
+    }
+    if (message.protocolVersion !== 0) {
+      obj.protocolVersion = Math.round(message.protocolVersion);
+    }
+    if (message.minVersion !== 0) {
+      obj.minVersion = Math.round(message.minVersion);
+    }
+    if (message.heartbeatIntervalSeconds !== 0) {
+      obj.heartbeatIntervalSeconds = Math.round(message.heartbeatIntervalSeconds);
+    }
+    if (message.supportedFeatures?.length) {
+      obj.supportedFeatures = message.supportedFeatures.map((e) => peerCapabilityToJSON(e));
+    }
+    return obj;
+  },
+
+  create<I extends Exact<DeepPartial<PeerRegisterResp>, I>>(base?: I): PeerRegisterResp {
+    return PeerRegisterResp.fromPartial(base ?? ({} as any));
+  },
+  fromPartial<I extends Exact<DeepPartial<PeerRegisterResp>, I>>(object: I): PeerRegisterResp {
+    const message = createBasePeerRegisterResp();
+    message.code = object.code ?? 0;
+    message.protocolVersion = object.protocolVersion ?? 0;
+    message.minVersion = object.minVersion ?? 0;
+    message.heartbeatIntervalSeconds = object.heartbeatIntervalSeconds ?? 0;
+    message.supportedFeatures = object.supportedFeatures?.map((e) => e) || [];
+    return message;
+  },
+};
+
+function createBaseChannelMessageNotify(): ChannelMessageNotify {
+  return { gameId: "", channelId: "", message: undefined };
+}
+
+export const ChannelMessageNotify = {
+  encode(message: ChannelMessageNotify, writer: _m0.Writer = _m0.Writer.create()): _m0.Writer {
+    if (message.gameId !== "") {
+      writer.uint32(10).string(message.gameId);
+    }
+    if (message.channelId !== "") {
+      writer.uint32(18).string(message.channelId);
+    }
+    if (message.message !== undefined) {
+      ChatMessage.encode(message.message, writer.uint32(26).fork()).ldelim();
+    }
+    return writer;
+  },
+
+  decode(input: _m0.Reader | Uint8Array, length?: number): ChannelMessageNotify {
+    const reader = input instanceof _m0.Reader ? input : _m0.Reader.create(input);
+    let end = length === undefined ? reader.len : reader.pos + length;
+    const message = createBaseChannelMessageNotify();
+    while (reader.pos < end) {
+      const tag = reader.uint32();
+      switch (tag >>> 3) {
+        case 1:
+          if (tag !== 10) {
+            break;
+          }
+
+          message.gameId = reader.string();
+          continue;
+        case 2:
+          if (tag !== 18) {
+            break;
+          }
+
+          message.channelId = reader.string();
+          continue;
+        case 3:
+          if (tag !== 26) {
+            break;
+          }
+
+          message.message = ChatMessage.decode(reader, reader.uint32());
+          continue;
+      }
+      if ((tag & 7) === 4 || tag === 0) {
+        break;
+      }
+      reader.skipType(tag & 7);
+    }
+    return message;
+  },
+
+  fromJSON(object: any): ChannelMessageNotify {
+    return {
+      gameId: isSet(object.gameId) ? globalThis.String(object.gameId) : "",
+      channelId: isSet(object.channelId) ? globalThis.String(object.channelId) : "",
+      message: isSet(object.message) ? ChatMessage.fromJSON(object.message) : undefined,
+    };
+  },
+
+  toJSON(message: ChannelMessageNotify): unknown {
+    const obj: any = {};
+    if (message.gameId !== "") {
+      obj.gameId = message.gameId;
+    }
+    if (message.channelId !== "") {
+      obj.channelId = message.channelId;
+    }
+    if (message.message !== undefined) {
+      obj.message = ChatMessage.toJSON(message.message);
+    }
+    return obj;
+  },
+
+  create<I extends Exact<DeepPartial<ChannelMessageNotify>, I>>(base?: I): ChannelMessageNotify {
+    return ChannelMessageNotify.fromPartial(base ?? ({} as any));
+  },
+  fromPartial<I extends Exact<DeepPartial<ChannelMessageNotify>, I>>(object: I): ChannelMessageNotify {
+    const message = createBaseChannelMessageNotify();
+    message.gameId = object.gameId ?? "";
+    message.channelId = object.channelId ?? "";
+    message.message = (object.message !== undefined && object.message !== null)
+      ? ChatMessage.fromPartial(object.message)
+      : undefined;
+    return message;
+  },
+};
+
+function createBasePeerInjectMessageNotify(): PeerInjectMessageNotify {
+  return { channelId: "", senderId: "", content: new Uint8Array(0), clientMsgId: "" };
+}
+
+export const PeerInjectMessageNotify = {
+  encode(message: PeerInjectMessageNotify, writer: _m0.Writer = _m0.Writer.create()): _m0.Writer {
+    if (message.channelId !== "") {
+      writer.uint32(10).string(message.channelId);
+    }
+    if (message.senderId !== "") {
+      writer.uint32(18).string(message.senderId);
+    }
+    if (message.content.length !== 0) {
+      writer.uint32(26).bytes(message.content);
+    }
+    if (message.clientMsgId !== "") {
+      writer.uint32(34).string(message.clientMsgId);
+    }
+    return writer;
+  },
+
+  decode(input: _m0.Reader | Uint8Array, length?: number): PeerInjectMessageNotify {
+    const reader = input instanceof _m0.Reader ? input : _m0.Reader.create(input);
+    let end = length === undefined ? reader.len : reader.pos + length;
+    const message = createBasePeerInjectMessageNotify();
+    while (reader.pos < end) {
+      const tag = reader.uint32();
+      switch (tag >>> 3) {
+        case 1:
+          if (tag !== 10) {
+            break;
+          }
+
+          message.channelId = reader.string();
+          continue;
+        case 2:
+          if (tag !== 18) {
+            break;
+          }
+
+          message.senderId = reader.string();
+          continue;
+        case 3:
+          if (tag !== 26) {
+            break;
+          }
+
+          message.content = reader.bytes();
+          continue;
+        case 4:
+          if (tag !== 34) {
+            break;
+          }
+
+          message.clientMsgId = reader.string();
+          continue;
+      }
+      if ((tag & 7) === 4 || tag === 0) {
+        break;
+      }
+      reader.skipType(tag & 7);
+    }
+    return message;
+  },
+
+  fromJSON(object: any): PeerInjectMessageNotify {
+    return {
+      channelId: isSet(object.channelId) ? globalThis.String(object.channelId) : "",
+      senderId: isSet(object.senderId) ? globalThis.String(object.senderId) : "",
+      content: isSet(object.content) ? bytesFromBase64(object.content) : new Uint8Array(0),
+      clientMsgId: isSet(object.clientMsgId) ? globalThis.String(object.clientMsgId) : "",
+    };
+  },
+
+  toJSON(message: PeerInjectMessageNotify): unknown {
+    const obj: any = {};
+    if (message.channelId !== "") {
+      obj.channelId = message.channelId;
+    }
+    if (message.senderId !== "") {
+      obj.senderId = message.senderId;
+    }
+    if (message.content.length !== 0) {
+      obj.content = base64FromBytes(message.content);
+    }
+    if (message.clientMsgId !== "") {
+      obj.clientMsgId = message.clientMsgId;
+    }
+    return obj;
+  },
+
+  create<I extends Exact<DeepPartial<PeerInjectMessageNotify>, I>>(base?: I): PeerInjectMessageNotify {
+    return PeerInjectMessageNotify.fromPartial(base ?? ({} as any));
+  },
+  fromPartial<I extends Exact<DeepPartial<PeerInjectMessageNotify>, I>>(object: I): PeerInjectMessageNotify {
+    const message = createBasePeerInjectMessageNotify();
+    message.channelId = object.channelId ?? "";
+    message.senderId = object.senderId ?? "";
+    message.content = object.content ?? new Uint8Array(0);
+    message.clientMsgId = object.clientMsgId ?? "";
     return message;
   },
 };

@@ -30,6 +30,8 @@
 #include "google/protobuf/extension_set.h"  // IWYU pragma: export
 #include "google/protobuf/generated_enum_reflection.h"
 #include "google/protobuf/unknown_field_set.h"
+#include "proto/common.pb.h"
+#include "proto/chat.pb.h"
 // @@protoc_insertion_point(includes)
 
 // Must be included last.
@@ -57,6 +59,12 @@ namespace chirp {
 namespace gateway {
 enum MsgID : int;
 extern const uint32_t MsgID_internal_data_[];
+enum PeerCapability : int;
+extern const uint32_t PeerCapability_internal_data_[];
+class ChannelMessageNotify;
+struct ChannelMessageNotifyDefaultTypeInternal;
+extern ChannelMessageNotifyDefaultTypeInternal _ChannelMessageNotify_default_instance_;
+extern const ::google::protobuf::internal::ClassDataFull ChannelMessageNotify_class_data_;
 class HeartbeatPing;
 struct HeartbeatPingDefaultTypeInternal;
 extern HeartbeatPingDefaultTypeInternal _HeartbeatPing_default_instance_;
@@ -69,6 +77,18 @@ class Packet;
 struct PacketDefaultTypeInternal;
 extern PacketDefaultTypeInternal _Packet_default_instance_;
 extern const ::google::protobuf::internal::ClassDataFull Packet_class_data_;
+class PeerInjectMessageNotify;
+struct PeerInjectMessageNotifyDefaultTypeInternal;
+extern PeerInjectMessageNotifyDefaultTypeInternal _PeerInjectMessageNotify_default_instance_;
+extern const ::google::protobuf::internal::ClassDataFull PeerInjectMessageNotify_class_data_;
+class PeerRegisterReq;
+struct PeerRegisterReqDefaultTypeInternal;
+extern PeerRegisterReqDefaultTypeInternal _PeerRegisterReq_default_instance_;
+extern const ::google::protobuf::internal::ClassDataFull PeerRegisterReq_class_data_;
+class PeerRegisterResp;
+struct PeerRegisterRespDefaultTypeInternal;
+extern PeerRegisterRespDefaultTypeInternal _PeerRegisterResp_default_instance_;
+extern const ::google::protobuf::internal::ClassDataFull PeerRegisterResp_class_data_;
 }  // namespace gateway
 }  // namespace chirp
 namespace google {
@@ -76,6 +96,9 @@ namespace protobuf {
 template <>
 internal::EnumTraitsT<::chirp::gateway::MsgID_internal_data_>
     internal::EnumTraitsImpl::value<::chirp::gateway::MsgID>;
+template <>
+internal::EnumTraitsT<::chirp::gateway::PeerCapability_internal_data_>
+    internal::EnumTraitsImpl::value<::chirp::gateway::PeerCapability>;
 }  // namespace protobuf
 }  // namespace google
 
@@ -237,6 +260,10 @@ enum MsgID : int {
   MARK_CHANNELS_READ_RESP = 5028,
   GET_UNREAD_SUMMARY_REQ = 5029,
   GET_UNREAD_SUMMARY_RESP = 5030,
+  PEER_REGISTER_REQ = 5050,
+  PEER_REGISTER_RESP = 5051,
+  CHANNEL_MESSAGE_NOTIFY = 5052,
+  PEER_INJECT_MESSAGE_NOTIFY = 5053,
   REGISTER_DEVICE_REQ = 6001,
   REGISTER_DEVICE_RESP = 6002,
   UNREGISTER_DEVICE_REQ = 6003,
@@ -302,10 +329,805 @@ inline bool MsgID_Parse(
   return ::google::protobuf::internal::ParseNamedEnum<MsgID>(MsgID_descriptor(), name,
                                            value);
 }
+enum PeerCapability : int {
+  RELAY_READ_RECEIPTS = 0,
+  RELAY_TYPING = 1,
+  RELAY_PRESENCE = 2,
+  RELAY_OFFLINE_MESSAGES = 3,
+  PeerCapability_INT_MIN_SENTINEL_DO_NOT_USE_ =
+      ::std::numeric_limits<::int32_t>::min(),
+  PeerCapability_INT_MAX_SENTINEL_DO_NOT_USE_ =
+      ::std::numeric_limits<::int32_t>::max(),
+};
+
+extern const uint32_t PeerCapability_internal_data_[];
+inline constexpr PeerCapability PeerCapability_MIN =
+    static_cast<PeerCapability>(0);
+inline constexpr PeerCapability PeerCapability_MAX =
+    static_cast<PeerCapability>(3);
+inline bool PeerCapability_IsValid(int value) {
+  return 0 <= value && value <= 3;
+}
+inline constexpr int PeerCapability_ARRAYSIZE = 3 + 1;
+const ::google::protobuf::EnumDescriptor* PROTOBUF_NONNULL PeerCapability_descriptor();
+template <typename T>
+const ::std::string& PeerCapability_Name(T value) {
+  static_assert(::std::is_same<T, PeerCapability>::value ||
+                    ::std::is_integral<T>::value,
+                "Incorrect type passed to PeerCapability_Name().");
+  return PeerCapability_Name(static_cast<PeerCapability>(value));
+}
+template <>
+inline const ::std::string& PeerCapability_Name(PeerCapability value) {
+  return ::google::protobuf::internal::NameOfDenseEnum<PeerCapability_descriptor, 0, 3>(
+      static_cast<int>(value));
+}
+inline bool PeerCapability_Parse(
+    ::absl::string_view name, PeerCapability* PROTOBUF_NONNULL value) {
+  return ::google::protobuf::internal::ParseNamedEnum<PeerCapability>(PeerCapability_descriptor(), name,
+                                           value);
+}
 
 // ===================================================================
 
 
+// -------------------------------------------------------------------
+
+class PeerRegisterResp final : public ::google::protobuf::Message
+/* @@protoc_insertion_point(class_definition:chirp.gateway.PeerRegisterResp) */ {
+ public:
+  inline PeerRegisterResp() : PeerRegisterResp(nullptr) {}
+  ~PeerRegisterResp() PROTOBUF_FINAL;
+
+#if defined(PROTOBUF_CUSTOM_VTABLE)
+  void operator delete(PeerRegisterResp* PROTOBUF_NONNULL msg, ::std::destroying_delete_t) {
+    SharedDtor(*msg);
+    ::google::protobuf::internal::SizedDelete(msg, sizeof(PeerRegisterResp));
+  }
+#endif
+
+  template <typename = void>
+  explicit PROTOBUF_CONSTEXPR PeerRegisterResp(::google::protobuf::internal::ConstantInitialized);
+
+  inline PeerRegisterResp(const PeerRegisterResp& from) : PeerRegisterResp(nullptr, from) {}
+  inline PeerRegisterResp(PeerRegisterResp&& from) noexcept
+      : PeerRegisterResp(nullptr, ::std::move(from)) {}
+  inline PeerRegisterResp& operator=(const PeerRegisterResp& from) {
+    CopyFrom(from);
+    return *this;
+  }
+  inline PeerRegisterResp& operator=(PeerRegisterResp&& from) noexcept {
+    if (this == &from) return *this;
+    if (::google::protobuf::internal::CanMoveWithInternalSwap(GetArena(), from.GetArena())) {
+      InternalSwap(&from);
+    } else {
+      CopyFrom(from);
+    }
+    return *this;
+  }
+
+  inline const ::google::protobuf::UnknownFieldSet& unknown_fields() const
+      ABSL_ATTRIBUTE_LIFETIME_BOUND {
+    return _internal_metadata_.unknown_fields<::google::protobuf::UnknownFieldSet>(::google::protobuf::UnknownFieldSet::default_instance);
+  }
+  inline ::google::protobuf::UnknownFieldSet* PROTOBUF_NONNULL mutable_unknown_fields()
+      ABSL_ATTRIBUTE_LIFETIME_BOUND {
+    return _internal_metadata_.mutable_unknown_fields<::google::protobuf::UnknownFieldSet>();
+  }
+
+  static const ::google::protobuf::Descriptor* PROTOBUF_NONNULL descriptor() {
+    return GetDescriptor();
+  }
+  static const ::google::protobuf::Descriptor* PROTOBUF_NONNULL GetDescriptor() {
+    return default_instance().GetMetadata().descriptor;
+  }
+  static const ::google::protobuf::Reflection* PROTOBUF_NONNULL GetReflection() {
+    return default_instance().GetMetadata().reflection;
+  }
+  static const PeerRegisterResp& default_instance() {
+    return *reinterpret_cast<const PeerRegisterResp*>(
+        &_PeerRegisterResp_default_instance_);
+  }
+  static constexpr int kIndexInFileMessages = 4;
+  friend void swap(PeerRegisterResp& a, PeerRegisterResp& b) { a.Swap(&b); }
+  inline void Swap(PeerRegisterResp* PROTOBUF_NONNULL other) {
+    if (other == this) return;
+    if (::google::protobuf::internal::CanUseInternalSwap(GetArena(), other->GetArena())) {
+      InternalSwap(other);
+    } else {
+      ::google::protobuf::internal::GenericSwap(this, other);
+    }
+  }
+  void UnsafeArenaSwap(PeerRegisterResp* PROTOBUF_NONNULL other) {
+    if (other == this) return;
+    ABSL_DCHECK(GetArena() == other->GetArena());
+    InternalSwap(other);
+  }
+
+  // implements Message ----------------------------------------------
+
+  PeerRegisterResp* PROTOBUF_NONNULL New(::google::protobuf::Arena* PROTOBUF_NULLABLE arena = nullptr) const {
+    return ::google::protobuf::Message::DefaultConstruct<PeerRegisterResp>(arena);
+  }
+  using ::google::protobuf::Message::CopyFrom;
+  void CopyFrom(const PeerRegisterResp& from);
+  using ::google::protobuf::Message::MergeFrom;
+  void MergeFrom(const PeerRegisterResp& from) { PeerRegisterResp::MergeImpl(*this, from); }
+
+  private:
+  static void MergeImpl(::google::protobuf::MessageLite& to_msg,
+                        const ::google::protobuf::MessageLite& from_msg);
+
+  public:
+  bool IsInitialized() const {
+    return true;
+  }
+  ABSL_ATTRIBUTE_REINITIALIZES void Clear() PROTOBUF_FINAL;
+  #if defined(PROTOBUF_CUSTOM_VTABLE)
+  private:
+  static ::size_t ByteSizeLong(const ::google::protobuf::MessageLite& msg);
+  static ::uint8_t* PROTOBUF_NONNULL _InternalSerialize(
+      const ::google::protobuf::MessageLite& msg, ::uint8_t* PROTOBUF_NONNULL target,
+      ::google::protobuf::io::EpsCopyOutputStream* PROTOBUF_NONNULL stream);
+
+  public:
+  ::size_t ByteSizeLong() const { return ByteSizeLong(*this); }
+  ::uint8_t* PROTOBUF_NONNULL _InternalSerialize(
+      ::uint8_t* PROTOBUF_NONNULL target,
+      ::google::protobuf::io::EpsCopyOutputStream* PROTOBUF_NONNULL stream) const {
+    return _InternalSerialize(*this, target, stream);
+  }
+  #else   // PROTOBUF_CUSTOM_VTABLE
+  ::size_t ByteSizeLong() const final;
+  ::uint8_t* PROTOBUF_NONNULL _InternalSerialize(
+      ::uint8_t* PROTOBUF_NONNULL target,
+      ::google::protobuf::io::EpsCopyOutputStream* PROTOBUF_NONNULL stream) const final;
+  #endif  // PROTOBUF_CUSTOM_VTABLE
+  int GetCachedSize() const { return _impl_._cached_size_.Get(); }
+
+  private:
+  void SharedCtor(::google::protobuf::Arena* PROTOBUF_NULLABLE arena);
+  static void SharedDtor(MessageLite& self);
+  void InternalSwap(PeerRegisterResp* PROTOBUF_NONNULL other);
+ private:
+  template <typename T>
+  friend ::absl::string_view(::google::protobuf::internal::GetAnyMessageName)();
+  static ::absl::string_view FullMessageName() { return "chirp.gateway.PeerRegisterResp"; }
+
+  explicit PeerRegisterResp(::google::protobuf::Arena* PROTOBUF_NULLABLE arena);
+  PeerRegisterResp(::google::protobuf::Arena* PROTOBUF_NULLABLE arena, const PeerRegisterResp& from);
+  PeerRegisterResp(
+      ::google::protobuf::Arena* PROTOBUF_NULLABLE arena, PeerRegisterResp&& from) noexcept
+      : PeerRegisterResp(arena) {
+    *this = ::std::move(from);
+  }
+  const ::google::protobuf::internal::ClassData* PROTOBUF_NONNULL GetClassData() const PROTOBUF_FINAL;
+  static void* PROTOBUF_NONNULL PlacementNew_(
+      const void* PROTOBUF_NONNULL, void* PROTOBUF_NONNULL mem,
+      ::google::protobuf::Arena* PROTOBUF_NULLABLE arena);
+  static constexpr auto InternalNewImpl_();
+
+ public:
+  static constexpr auto InternalGenerateClassData_();
+
+  ::google::protobuf::Metadata GetMetadata() const;
+  // nested types ----------------------------------------------------
+
+  // accessors -------------------------------------------------------
+  enum : int {
+    kSupportedFeaturesFieldNumber = 5,
+    kCodeFieldNumber = 1,
+    kProtocolVersionFieldNumber = 2,
+    kMinVersionFieldNumber = 3,
+    kHeartbeatIntervalSecondsFieldNumber = 4,
+  };
+  // repeated .chirp.gateway.PeerCapability supported_features = 5;
+  int supported_features_size() const;
+  private:
+  int _internal_supported_features_size() const;
+
+  public:
+  void clear_supported_features() ;
+  public:
+  ::chirp::gateway::PeerCapability supported_features(int index) const;
+  void set_supported_features(int index, ::chirp::gateway::PeerCapability value);
+  void add_supported_features(::chirp::gateway::PeerCapability value);
+  const ::google::protobuf::RepeatedField<int>& supported_features() const;
+  ::google::protobuf::RepeatedField<int>* PROTOBUF_NONNULL mutable_supported_features();
+
+  private:
+  const ::google::protobuf::RepeatedField<int>& _internal_supported_features() const;
+  ::google::protobuf::RepeatedField<int>* PROTOBUF_NONNULL _internal_mutable_supported_features();
+
+  public:
+  // .chirp.common.ErrorCode code = 1;
+  void clear_code() ;
+  ::chirp::common::ErrorCode code() const;
+  void set_code(::chirp::common::ErrorCode value);
+
+  private:
+  ::chirp::common::ErrorCode _internal_code() const;
+  void _internal_set_code(::chirp::common::ErrorCode value);
+
+  public:
+  // int32 protocol_version = 2;
+  void clear_protocol_version() ;
+  ::int32_t protocol_version() const;
+  void set_protocol_version(::int32_t value);
+
+  private:
+  ::int32_t _internal_protocol_version() const;
+  void _internal_set_protocol_version(::int32_t value);
+
+  public:
+  // int32 min_version = 3;
+  void clear_min_version() ;
+  ::int32_t min_version() const;
+  void set_min_version(::int32_t value);
+
+  private:
+  ::int32_t _internal_min_version() const;
+  void _internal_set_min_version(::int32_t value);
+
+  public:
+  // int32 heartbeat_interval_seconds = 4;
+  void clear_heartbeat_interval_seconds() ;
+  ::int32_t heartbeat_interval_seconds() const;
+  void set_heartbeat_interval_seconds(::int32_t value);
+
+  private:
+  ::int32_t _internal_heartbeat_interval_seconds() const;
+  void _internal_set_heartbeat_interval_seconds(::int32_t value);
+
+  public:
+  // @@protoc_insertion_point(class_scope:chirp.gateway.PeerRegisterResp)
+ private:
+  class _Internal;
+  friend class ::google::protobuf::internal::TcParser;
+  static const ::google::protobuf::internal::TcParseTable<3, 5,
+                                   0, 0,
+                                   2>
+      _table_;
+
+  friend class ::google::protobuf::MessageLite;
+  friend class ::google::protobuf::Arena;
+  template <typename T>
+  friend class ::google::protobuf::Arena::InternalHelper;
+  using InternalArenaConstructable_ = void;
+  using DestructorSkippable_ = void;
+  struct Impl_ {
+    inline explicit constexpr Impl_(::google::protobuf::internal::ConstantInitialized) noexcept;
+    inline explicit Impl_(
+        ::google::protobuf::internal::InternalVisibility visibility,
+        ::google::protobuf::Arena* PROTOBUF_NULLABLE arena);
+    inline explicit Impl_(
+        ::google::protobuf::internal::InternalVisibility visibility,
+        ::google::protobuf::Arena* PROTOBUF_NULLABLE arena, const Impl_& from,
+        const PeerRegisterResp& from_msg);
+    ::google::protobuf::internal::HasBits<1> _has_bits_;
+    ::google::protobuf::internal::CachedSize _cached_size_;
+    ::google::protobuf::RepeatedField<int> supported_features_;
+    ::google::protobuf::internal::CachedSize _supported_features_cached_byte_size_;
+    int code_;
+    ::int32_t protocol_version_;
+    ::int32_t min_version_;
+    ::int32_t heartbeat_interval_seconds_;
+    PROTOBUF_TSAN_DECLARE_MEMBER
+  };
+  union { Impl_ _impl_; };
+  friend struct ::TableStruct_proto_2fgateway_2eproto;
+};
+
+extern const ::google::protobuf::internal::ClassDataFull PeerRegisterResp_class_data_;
+// -------------------------------------------------------------------
+
+class PeerRegisterReq final : public ::google::protobuf::Message
+/* @@protoc_insertion_point(class_definition:chirp.gateway.PeerRegisterReq) */ {
+ public:
+  inline PeerRegisterReq() : PeerRegisterReq(nullptr) {}
+  ~PeerRegisterReq() PROTOBUF_FINAL;
+
+#if defined(PROTOBUF_CUSTOM_VTABLE)
+  void operator delete(PeerRegisterReq* PROTOBUF_NONNULL msg, ::std::destroying_delete_t) {
+    SharedDtor(*msg);
+    ::google::protobuf::internal::SizedDelete(msg, sizeof(PeerRegisterReq));
+  }
+#endif
+
+  template <typename = void>
+  explicit PROTOBUF_CONSTEXPR PeerRegisterReq(::google::protobuf::internal::ConstantInitialized);
+
+  inline PeerRegisterReq(const PeerRegisterReq& from) : PeerRegisterReq(nullptr, from) {}
+  inline PeerRegisterReq(PeerRegisterReq&& from) noexcept
+      : PeerRegisterReq(nullptr, ::std::move(from)) {}
+  inline PeerRegisterReq& operator=(const PeerRegisterReq& from) {
+    CopyFrom(from);
+    return *this;
+  }
+  inline PeerRegisterReq& operator=(PeerRegisterReq&& from) noexcept {
+    if (this == &from) return *this;
+    if (::google::protobuf::internal::CanMoveWithInternalSwap(GetArena(), from.GetArena())) {
+      InternalSwap(&from);
+    } else {
+      CopyFrom(from);
+    }
+    return *this;
+  }
+
+  inline const ::google::protobuf::UnknownFieldSet& unknown_fields() const
+      ABSL_ATTRIBUTE_LIFETIME_BOUND {
+    return _internal_metadata_.unknown_fields<::google::protobuf::UnknownFieldSet>(::google::protobuf::UnknownFieldSet::default_instance);
+  }
+  inline ::google::protobuf::UnknownFieldSet* PROTOBUF_NONNULL mutable_unknown_fields()
+      ABSL_ATTRIBUTE_LIFETIME_BOUND {
+    return _internal_metadata_.mutable_unknown_fields<::google::protobuf::UnknownFieldSet>();
+  }
+
+  static const ::google::protobuf::Descriptor* PROTOBUF_NONNULL descriptor() {
+    return GetDescriptor();
+  }
+  static const ::google::protobuf::Descriptor* PROTOBUF_NONNULL GetDescriptor() {
+    return default_instance().GetMetadata().descriptor;
+  }
+  static const ::google::protobuf::Reflection* PROTOBUF_NONNULL GetReflection() {
+    return default_instance().GetMetadata().reflection;
+  }
+  static const PeerRegisterReq& default_instance() {
+    return *reinterpret_cast<const PeerRegisterReq*>(
+        &_PeerRegisterReq_default_instance_);
+  }
+  static constexpr int kIndexInFileMessages = 3;
+  friend void swap(PeerRegisterReq& a, PeerRegisterReq& b) { a.Swap(&b); }
+  inline void Swap(PeerRegisterReq* PROTOBUF_NONNULL other) {
+    if (other == this) return;
+    if (::google::protobuf::internal::CanUseInternalSwap(GetArena(), other->GetArena())) {
+      InternalSwap(other);
+    } else {
+      ::google::protobuf::internal::GenericSwap(this, other);
+    }
+  }
+  void UnsafeArenaSwap(PeerRegisterReq* PROTOBUF_NONNULL other) {
+    if (other == this) return;
+    ABSL_DCHECK(GetArena() == other->GetArena());
+    InternalSwap(other);
+  }
+
+  // implements Message ----------------------------------------------
+
+  PeerRegisterReq* PROTOBUF_NONNULL New(::google::protobuf::Arena* PROTOBUF_NULLABLE arena = nullptr) const {
+    return ::google::protobuf::Message::DefaultConstruct<PeerRegisterReq>(arena);
+  }
+  using ::google::protobuf::Message::CopyFrom;
+  void CopyFrom(const PeerRegisterReq& from);
+  using ::google::protobuf::Message::MergeFrom;
+  void MergeFrom(const PeerRegisterReq& from) { PeerRegisterReq::MergeImpl(*this, from); }
+
+  private:
+  static void MergeImpl(::google::protobuf::MessageLite& to_msg,
+                        const ::google::protobuf::MessageLite& from_msg);
+
+  public:
+  bool IsInitialized() const {
+    return true;
+  }
+  ABSL_ATTRIBUTE_REINITIALIZES void Clear() PROTOBUF_FINAL;
+  #if defined(PROTOBUF_CUSTOM_VTABLE)
+  private:
+  static ::size_t ByteSizeLong(const ::google::protobuf::MessageLite& msg);
+  static ::uint8_t* PROTOBUF_NONNULL _InternalSerialize(
+      const ::google::protobuf::MessageLite& msg, ::uint8_t* PROTOBUF_NONNULL target,
+      ::google::protobuf::io::EpsCopyOutputStream* PROTOBUF_NONNULL stream);
+
+  public:
+  ::size_t ByteSizeLong() const { return ByteSizeLong(*this); }
+  ::uint8_t* PROTOBUF_NONNULL _InternalSerialize(
+      ::uint8_t* PROTOBUF_NONNULL target,
+      ::google::protobuf::io::EpsCopyOutputStream* PROTOBUF_NONNULL stream) const {
+    return _InternalSerialize(*this, target, stream);
+  }
+  #else   // PROTOBUF_CUSTOM_VTABLE
+  ::size_t ByteSizeLong() const final;
+  ::uint8_t* PROTOBUF_NONNULL _InternalSerialize(
+      ::uint8_t* PROTOBUF_NONNULL target,
+      ::google::protobuf::io::EpsCopyOutputStream* PROTOBUF_NONNULL stream) const final;
+  #endif  // PROTOBUF_CUSTOM_VTABLE
+  int GetCachedSize() const { return _impl_._cached_size_.Get(); }
+
+  private:
+  void SharedCtor(::google::protobuf::Arena* PROTOBUF_NULLABLE arena);
+  static void SharedDtor(MessageLite& self);
+  void InternalSwap(PeerRegisterReq* PROTOBUF_NONNULL other);
+ private:
+  template <typename T>
+  friend ::absl::string_view(::google::protobuf::internal::GetAnyMessageName)();
+  static ::absl::string_view FullMessageName() { return "chirp.gateway.PeerRegisterReq"; }
+
+  explicit PeerRegisterReq(::google::protobuf::Arena* PROTOBUF_NULLABLE arena);
+  PeerRegisterReq(::google::protobuf::Arena* PROTOBUF_NULLABLE arena, const PeerRegisterReq& from);
+  PeerRegisterReq(
+      ::google::protobuf::Arena* PROTOBUF_NULLABLE arena, PeerRegisterReq&& from) noexcept
+      : PeerRegisterReq(arena) {
+    *this = ::std::move(from);
+  }
+  const ::google::protobuf::internal::ClassData* PROTOBUF_NONNULL GetClassData() const PROTOBUF_FINAL;
+  static void* PROTOBUF_NONNULL PlacementNew_(
+      const void* PROTOBUF_NONNULL, void* PROTOBUF_NONNULL mem,
+      ::google::protobuf::Arena* PROTOBUF_NULLABLE arena);
+  static constexpr auto InternalNewImpl_();
+
+ public:
+  static constexpr auto InternalGenerateClassData_();
+
+  ::google::protobuf::Metadata GetMetadata() const;
+  // nested types ----------------------------------------------------
+
+  // accessors -------------------------------------------------------
+  enum : int {
+    kSupportedFeaturesFieldNumber = 5,
+    kServiceIdFieldNumber = 1,
+    kServiceSecretFieldNumber = 2,
+    kGameIdFieldNumber = 4,
+    kProtocolVersionFieldNumber = 3,
+  };
+  // repeated .chirp.gateway.PeerCapability supported_features = 5;
+  int supported_features_size() const;
+  private:
+  int _internal_supported_features_size() const;
+
+  public:
+  void clear_supported_features() ;
+  public:
+  ::chirp::gateway::PeerCapability supported_features(int index) const;
+  void set_supported_features(int index, ::chirp::gateway::PeerCapability value);
+  void add_supported_features(::chirp::gateway::PeerCapability value);
+  const ::google::protobuf::RepeatedField<int>& supported_features() const;
+  ::google::protobuf::RepeatedField<int>* PROTOBUF_NONNULL mutable_supported_features();
+
+  private:
+  const ::google::protobuf::RepeatedField<int>& _internal_supported_features() const;
+  ::google::protobuf::RepeatedField<int>* PROTOBUF_NONNULL _internal_mutable_supported_features();
+
+  public:
+  // string service_id = 1;
+  void clear_service_id() ;
+  const ::std::string& service_id() const;
+  template <typename Arg_ = const ::std::string&, typename... Args_>
+  void set_service_id(Arg_&& arg, Args_... args);
+  ::std::string* PROTOBUF_NONNULL mutable_service_id();
+  [[nodiscard]] ::std::string* PROTOBUF_NULLABLE release_service_id();
+  void set_allocated_service_id(::std::string* PROTOBUF_NULLABLE value);
+
+  private:
+  const ::std::string& _internal_service_id() const;
+  PROTOBUF_ALWAYS_INLINE void _internal_set_service_id(const ::std::string& value);
+  ::std::string* PROTOBUF_NONNULL _internal_mutable_service_id();
+
+  public:
+  // string service_secret = 2;
+  void clear_service_secret() ;
+  const ::std::string& service_secret() const;
+  template <typename Arg_ = const ::std::string&, typename... Args_>
+  void set_service_secret(Arg_&& arg, Args_... args);
+  ::std::string* PROTOBUF_NONNULL mutable_service_secret();
+  [[nodiscard]] ::std::string* PROTOBUF_NULLABLE release_service_secret();
+  void set_allocated_service_secret(::std::string* PROTOBUF_NULLABLE value);
+
+  private:
+  const ::std::string& _internal_service_secret() const;
+  PROTOBUF_ALWAYS_INLINE void _internal_set_service_secret(const ::std::string& value);
+  ::std::string* PROTOBUF_NONNULL _internal_mutable_service_secret();
+
+  public:
+  // string game_id = 4;
+  void clear_game_id() ;
+  const ::std::string& game_id() const;
+  template <typename Arg_ = const ::std::string&, typename... Args_>
+  void set_game_id(Arg_&& arg, Args_... args);
+  ::std::string* PROTOBUF_NONNULL mutable_game_id();
+  [[nodiscard]] ::std::string* PROTOBUF_NULLABLE release_game_id();
+  void set_allocated_game_id(::std::string* PROTOBUF_NULLABLE value);
+
+  private:
+  const ::std::string& _internal_game_id() const;
+  PROTOBUF_ALWAYS_INLINE void _internal_set_game_id(const ::std::string& value);
+  ::std::string* PROTOBUF_NONNULL _internal_mutable_game_id();
+
+  public:
+  // int32 protocol_version = 3;
+  void clear_protocol_version() ;
+  ::int32_t protocol_version() const;
+  void set_protocol_version(::int32_t value);
+
+  private:
+  ::int32_t _internal_protocol_version() const;
+  void _internal_set_protocol_version(::int32_t value);
+
+  public:
+  // @@protoc_insertion_point(class_scope:chirp.gateway.PeerRegisterReq)
+ private:
+  class _Internal;
+  friend class ::google::protobuf::internal::TcParser;
+  static const ::google::protobuf::internal::TcParseTable<3, 5,
+                                   0, 69,
+                                   2>
+      _table_;
+
+  friend class ::google::protobuf::MessageLite;
+  friend class ::google::protobuf::Arena;
+  template <typename T>
+  friend class ::google::protobuf::Arena::InternalHelper;
+  using InternalArenaConstructable_ = void;
+  using DestructorSkippable_ = void;
+  struct Impl_ {
+    inline explicit constexpr Impl_(::google::protobuf::internal::ConstantInitialized) noexcept;
+    inline explicit Impl_(
+        ::google::protobuf::internal::InternalVisibility visibility,
+        ::google::protobuf::Arena* PROTOBUF_NULLABLE arena);
+    inline explicit Impl_(
+        ::google::protobuf::internal::InternalVisibility visibility,
+        ::google::protobuf::Arena* PROTOBUF_NULLABLE arena, const Impl_& from,
+        const PeerRegisterReq& from_msg);
+    ::google::protobuf::internal::HasBits<1> _has_bits_;
+    ::google::protobuf::internal::CachedSize _cached_size_;
+    ::google::protobuf::RepeatedField<int> supported_features_;
+    ::google::protobuf::internal::CachedSize _supported_features_cached_byte_size_;
+    ::google::protobuf::internal::ArenaStringPtr service_id_;
+    ::google::protobuf::internal::ArenaStringPtr service_secret_;
+    ::google::protobuf::internal::ArenaStringPtr game_id_;
+    ::int32_t protocol_version_;
+    PROTOBUF_TSAN_DECLARE_MEMBER
+  };
+  union { Impl_ _impl_; };
+  friend struct ::TableStruct_proto_2fgateway_2eproto;
+};
+
+extern const ::google::protobuf::internal::ClassDataFull PeerRegisterReq_class_data_;
+// -------------------------------------------------------------------
+
+class PeerInjectMessageNotify final : public ::google::protobuf::Message
+/* @@protoc_insertion_point(class_definition:chirp.gateway.PeerInjectMessageNotify) */ {
+ public:
+  inline PeerInjectMessageNotify() : PeerInjectMessageNotify(nullptr) {}
+  ~PeerInjectMessageNotify() PROTOBUF_FINAL;
+
+#if defined(PROTOBUF_CUSTOM_VTABLE)
+  void operator delete(PeerInjectMessageNotify* PROTOBUF_NONNULL msg, ::std::destroying_delete_t) {
+    SharedDtor(*msg);
+    ::google::protobuf::internal::SizedDelete(msg, sizeof(PeerInjectMessageNotify));
+  }
+#endif
+
+  template <typename = void>
+  explicit PROTOBUF_CONSTEXPR PeerInjectMessageNotify(::google::protobuf::internal::ConstantInitialized);
+
+  inline PeerInjectMessageNotify(const PeerInjectMessageNotify& from) : PeerInjectMessageNotify(nullptr, from) {}
+  inline PeerInjectMessageNotify(PeerInjectMessageNotify&& from) noexcept
+      : PeerInjectMessageNotify(nullptr, ::std::move(from)) {}
+  inline PeerInjectMessageNotify& operator=(const PeerInjectMessageNotify& from) {
+    CopyFrom(from);
+    return *this;
+  }
+  inline PeerInjectMessageNotify& operator=(PeerInjectMessageNotify&& from) noexcept {
+    if (this == &from) return *this;
+    if (::google::protobuf::internal::CanMoveWithInternalSwap(GetArena(), from.GetArena())) {
+      InternalSwap(&from);
+    } else {
+      CopyFrom(from);
+    }
+    return *this;
+  }
+
+  inline const ::google::protobuf::UnknownFieldSet& unknown_fields() const
+      ABSL_ATTRIBUTE_LIFETIME_BOUND {
+    return _internal_metadata_.unknown_fields<::google::protobuf::UnknownFieldSet>(::google::protobuf::UnknownFieldSet::default_instance);
+  }
+  inline ::google::protobuf::UnknownFieldSet* PROTOBUF_NONNULL mutable_unknown_fields()
+      ABSL_ATTRIBUTE_LIFETIME_BOUND {
+    return _internal_metadata_.mutable_unknown_fields<::google::protobuf::UnknownFieldSet>();
+  }
+
+  static const ::google::protobuf::Descriptor* PROTOBUF_NONNULL descriptor() {
+    return GetDescriptor();
+  }
+  static const ::google::protobuf::Descriptor* PROTOBUF_NONNULL GetDescriptor() {
+    return default_instance().GetMetadata().descriptor;
+  }
+  static const ::google::protobuf::Reflection* PROTOBUF_NONNULL GetReflection() {
+    return default_instance().GetMetadata().reflection;
+  }
+  static const PeerInjectMessageNotify& default_instance() {
+    return *reinterpret_cast<const PeerInjectMessageNotify*>(
+        &_PeerInjectMessageNotify_default_instance_);
+  }
+  static constexpr int kIndexInFileMessages = 6;
+  friend void swap(PeerInjectMessageNotify& a, PeerInjectMessageNotify& b) { a.Swap(&b); }
+  inline void Swap(PeerInjectMessageNotify* PROTOBUF_NONNULL other) {
+    if (other == this) return;
+    if (::google::protobuf::internal::CanUseInternalSwap(GetArena(), other->GetArena())) {
+      InternalSwap(other);
+    } else {
+      ::google::protobuf::internal::GenericSwap(this, other);
+    }
+  }
+  void UnsafeArenaSwap(PeerInjectMessageNotify* PROTOBUF_NONNULL other) {
+    if (other == this) return;
+    ABSL_DCHECK(GetArena() == other->GetArena());
+    InternalSwap(other);
+  }
+
+  // implements Message ----------------------------------------------
+
+  PeerInjectMessageNotify* PROTOBUF_NONNULL New(::google::protobuf::Arena* PROTOBUF_NULLABLE arena = nullptr) const {
+    return ::google::protobuf::Message::DefaultConstruct<PeerInjectMessageNotify>(arena);
+  }
+  using ::google::protobuf::Message::CopyFrom;
+  void CopyFrom(const PeerInjectMessageNotify& from);
+  using ::google::protobuf::Message::MergeFrom;
+  void MergeFrom(const PeerInjectMessageNotify& from) { PeerInjectMessageNotify::MergeImpl(*this, from); }
+
+  private:
+  static void MergeImpl(::google::protobuf::MessageLite& to_msg,
+                        const ::google::protobuf::MessageLite& from_msg);
+
+  public:
+  bool IsInitialized() const {
+    return true;
+  }
+  ABSL_ATTRIBUTE_REINITIALIZES void Clear() PROTOBUF_FINAL;
+  #if defined(PROTOBUF_CUSTOM_VTABLE)
+  private:
+  static ::size_t ByteSizeLong(const ::google::protobuf::MessageLite& msg);
+  static ::uint8_t* PROTOBUF_NONNULL _InternalSerialize(
+      const ::google::protobuf::MessageLite& msg, ::uint8_t* PROTOBUF_NONNULL target,
+      ::google::protobuf::io::EpsCopyOutputStream* PROTOBUF_NONNULL stream);
+
+  public:
+  ::size_t ByteSizeLong() const { return ByteSizeLong(*this); }
+  ::uint8_t* PROTOBUF_NONNULL _InternalSerialize(
+      ::uint8_t* PROTOBUF_NONNULL target,
+      ::google::protobuf::io::EpsCopyOutputStream* PROTOBUF_NONNULL stream) const {
+    return _InternalSerialize(*this, target, stream);
+  }
+  #else   // PROTOBUF_CUSTOM_VTABLE
+  ::size_t ByteSizeLong() const final;
+  ::uint8_t* PROTOBUF_NONNULL _InternalSerialize(
+      ::uint8_t* PROTOBUF_NONNULL target,
+      ::google::protobuf::io::EpsCopyOutputStream* PROTOBUF_NONNULL stream) const final;
+  #endif  // PROTOBUF_CUSTOM_VTABLE
+  int GetCachedSize() const { return _impl_._cached_size_.Get(); }
+
+  private:
+  void SharedCtor(::google::protobuf::Arena* PROTOBUF_NULLABLE arena);
+  static void SharedDtor(MessageLite& self);
+  void InternalSwap(PeerInjectMessageNotify* PROTOBUF_NONNULL other);
+ private:
+  template <typename T>
+  friend ::absl::string_view(::google::protobuf::internal::GetAnyMessageName)();
+  static ::absl::string_view FullMessageName() { return "chirp.gateway.PeerInjectMessageNotify"; }
+
+  explicit PeerInjectMessageNotify(::google::protobuf::Arena* PROTOBUF_NULLABLE arena);
+  PeerInjectMessageNotify(::google::protobuf::Arena* PROTOBUF_NULLABLE arena, const PeerInjectMessageNotify& from);
+  PeerInjectMessageNotify(
+      ::google::protobuf::Arena* PROTOBUF_NULLABLE arena, PeerInjectMessageNotify&& from) noexcept
+      : PeerInjectMessageNotify(arena) {
+    *this = ::std::move(from);
+  }
+  const ::google::protobuf::internal::ClassData* PROTOBUF_NONNULL GetClassData() const PROTOBUF_FINAL;
+  static void* PROTOBUF_NONNULL PlacementNew_(
+      const void* PROTOBUF_NONNULL, void* PROTOBUF_NONNULL mem,
+      ::google::protobuf::Arena* PROTOBUF_NULLABLE arena);
+  static constexpr auto InternalNewImpl_();
+
+ public:
+  static constexpr auto InternalGenerateClassData_();
+
+  ::google::protobuf::Metadata GetMetadata() const;
+  // nested types ----------------------------------------------------
+
+  // accessors -------------------------------------------------------
+  enum : int {
+    kChannelIdFieldNumber = 1,
+    kSenderIdFieldNumber = 2,
+    kContentFieldNumber = 3,
+    kClientMsgIdFieldNumber = 4,
+  };
+  // string channel_id = 1;
+  void clear_channel_id() ;
+  const ::std::string& channel_id() const;
+  template <typename Arg_ = const ::std::string&, typename... Args_>
+  void set_channel_id(Arg_&& arg, Args_... args);
+  ::std::string* PROTOBUF_NONNULL mutable_channel_id();
+  [[nodiscard]] ::std::string* PROTOBUF_NULLABLE release_channel_id();
+  void set_allocated_channel_id(::std::string* PROTOBUF_NULLABLE value);
+
+  private:
+  const ::std::string& _internal_channel_id() const;
+  PROTOBUF_ALWAYS_INLINE void _internal_set_channel_id(const ::std::string& value);
+  ::std::string* PROTOBUF_NONNULL _internal_mutable_channel_id();
+
+  public:
+  // string sender_id = 2;
+  void clear_sender_id() ;
+  const ::std::string& sender_id() const;
+  template <typename Arg_ = const ::std::string&, typename... Args_>
+  void set_sender_id(Arg_&& arg, Args_... args);
+  ::std::string* PROTOBUF_NONNULL mutable_sender_id();
+  [[nodiscard]] ::std::string* PROTOBUF_NULLABLE release_sender_id();
+  void set_allocated_sender_id(::std::string* PROTOBUF_NULLABLE value);
+
+  private:
+  const ::std::string& _internal_sender_id() const;
+  PROTOBUF_ALWAYS_INLINE void _internal_set_sender_id(const ::std::string& value);
+  ::std::string* PROTOBUF_NONNULL _internal_mutable_sender_id();
+
+  public:
+  // bytes content = 3;
+  void clear_content() ;
+  const ::std::string& content() const;
+  template <typename Arg_ = const ::std::string&, typename... Args_>
+  void set_content(Arg_&& arg, Args_... args);
+  ::std::string* PROTOBUF_NONNULL mutable_content();
+  [[nodiscard]] ::std::string* PROTOBUF_NULLABLE release_content();
+  void set_allocated_content(::std::string* PROTOBUF_NULLABLE value);
+
+  private:
+  const ::std::string& _internal_content() const;
+  PROTOBUF_ALWAYS_INLINE void _internal_set_content(const ::std::string& value);
+  ::std::string* PROTOBUF_NONNULL _internal_mutable_content();
+
+  public:
+  // string client_msg_id = 4;
+  void clear_client_msg_id() ;
+  const ::std::string& client_msg_id() const;
+  template <typename Arg_ = const ::std::string&, typename... Args_>
+  void set_client_msg_id(Arg_&& arg, Args_... args);
+  ::std::string* PROTOBUF_NONNULL mutable_client_msg_id();
+  [[nodiscard]] ::std::string* PROTOBUF_NULLABLE release_client_msg_id();
+  void set_allocated_client_msg_id(::std::string* PROTOBUF_NULLABLE value);
+
+  private:
+  const ::std::string& _internal_client_msg_id() const;
+  PROTOBUF_ALWAYS_INLINE void _internal_set_client_msg_id(const ::std::string& value);
+  ::std::string* PROTOBUF_NONNULL _internal_mutable_client_msg_id();
+
+  public:
+  // @@protoc_insertion_point(class_scope:chirp.gateway.PeerInjectMessageNotify)
+ private:
+  class _Internal;
+  friend class ::google::protobuf::internal::TcParser;
+  static const ::google::protobuf::internal::TcParseTable<2, 4,
+                                   0, 78,
+                                   2>
+      _table_;
+
+  friend class ::google::protobuf::MessageLite;
+  friend class ::google::protobuf::Arena;
+  template <typename T>
+  friend class ::google::protobuf::Arena::InternalHelper;
+  using InternalArenaConstructable_ = void;
+  using DestructorSkippable_ = void;
+  struct Impl_ {
+    inline explicit constexpr Impl_(::google::protobuf::internal::ConstantInitialized) noexcept;
+    inline explicit Impl_(
+        ::google::protobuf::internal::InternalVisibility visibility,
+        ::google::protobuf::Arena* PROTOBUF_NULLABLE arena);
+    inline explicit Impl_(
+        ::google::protobuf::internal::InternalVisibility visibility,
+        ::google::protobuf::Arena* PROTOBUF_NULLABLE arena, const Impl_& from,
+        const PeerInjectMessageNotify& from_msg);
+    ::google::protobuf::internal::HasBits<1> _has_bits_;
+    ::google::protobuf::internal::CachedSize _cached_size_;
+    ::google::protobuf::internal::ArenaStringPtr channel_id_;
+    ::google::protobuf::internal::ArenaStringPtr sender_id_;
+    ::google::protobuf::internal::ArenaStringPtr content_;
+    ::google::protobuf::internal::ArenaStringPtr client_msg_id_;
+    PROTOBUF_TSAN_DECLARE_MEMBER
+  };
+  union { Impl_ _impl_; };
+  friend struct ::TableStruct_proto_2fgateway_2eproto;
+};
+
+extern const ::google::protobuf::internal::ClassDataFull PeerInjectMessageNotify_class_data_;
 // -------------------------------------------------------------------
 
 class Packet final : public ::google::protobuf::Message
@@ -917,6 +1739,235 @@ class HeartbeatPing final : public ::google::protobuf::Message
 };
 
 extern const ::google::protobuf::internal::ClassDataFull HeartbeatPing_class_data_;
+// -------------------------------------------------------------------
+
+class ChannelMessageNotify final : public ::google::protobuf::Message
+/* @@protoc_insertion_point(class_definition:chirp.gateway.ChannelMessageNotify) */ {
+ public:
+  inline ChannelMessageNotify() : ChannelMessageNotify(nullptr) {}
+  ~ChannelMessageNotify() PROTOBUF_FINAL;
+
+#if defined(PROTOBUF_CUSTOM_VTABLE)
+  void operator delete(ChannelMessageNotify* PROTOBUF_NONNULL msg, ::std::destroying_delete_t) {
+    SharedDtor(*msg);
+    ::google::protobuf::internal::SizedDelete(msg, sizeof(ChannelMessageNotify));
+  }
+#endif
+
+  template <typename = void>
+  explicit PROTOBUF_CONSTEXPR ChannelMessageNotify(::google::protobuf::internal::ConstantInitialized);
+
+  inline ChannelMessageNotify(const ChannelMessageNotify& from) : ChannelMessageNotify(nullptr, from) {}
+  inline ChannelMessageNotify(ChannelMessageNotify&& from) noexcept
+      : ChannelMessageNotify(nullptr, ::std::move(from)) {}
+  inline ChannelMessageNotify& operator=(const ChannelMessageNotify& from) {
+    CopyFrom(from);
+    return *this;
+  }
+  inline ChannelMessageNotify& operator=(ChannelMessageNotify&& from) noexcept {
+    if (this == &from) return *this;
+    if (::google::protobuf::internal::CanMoveWithInternalSwap(GetArena(), from.GetArena())) {
+      InternalSwap(&from);
+    } else {
+      CopyFrom(from);
+    }
+    return *this;
+  }
+
+  inline const ::google::protobuf::UnknownFieldSet& unknown_fields() const
+      ABSL_ATTRIBUTE_LIFETIME_BOUND {
+    return _internal_metadata_.unknown_fields<::google::protobuf::UnknownFieldSet>(::google::protobuf::UnknownFieldSet::default_instance);
+  }
+  inline ::google::protobuf::UnknownFieldSet* PROTOBUF_NONNULL mutable_unknown_fields()
+      ABSL_ATTRIBUTE_LIFETIME_BOUND {
+    return _internal_metadata_.mutable_unknown_fields<::google::protobuf::UnknownFieldSet>();
+  }
+
+  static const ::google::protobuf::Descriptor* PROTOBUF_NONNULL descriptor() {
+    return GetDescriptor();
+  }
+  static const ::google::protobuf::Descriptor* PROTOBUF_NONNULL GetDescriptor() {
+    return default_instance().GetMetadata().descriptor;
+  }
+  static const ::google::protobuf::Reflection* PROTOBUF_NONNULL GetReflection() {
+    return default_instance().GetMetadata().reflection;
+  }
+  static const ChannelMessageNotify& default_instance() {
+    return *reinterpret_cast<const ChannelMessageNotify*>(
+        &_ChannelMessageNotify_default_instance_);
+  }
+  static constexpr int kIndexInFileMessages = 5;
+  friend void swap(ChannelMessageNotify& a, ChannelMessageNotify& b) { a.Swap(&b); }
+  inline void Swap(ChannelMessageNotify* PROTOBUF_NONNULL other) {
+    if (other == this) return;
+    if (::google::protobuf::internal::CanUseInternalSwap(GetArena(), other->GetArena())) {
+      InternalSwap(other);
+    } else {
+      ::google::protobuf::internal::GenericSwap(this, other);
+    }
+  }
+  void UnsafeArenaSwap(ChannelMessageNotify* PROTOBUF_NONNULL other) {
+    if (other == this) return;
+    ABSL_DCHECK(GetArena() == other->GetArena());
+    InternalSwap(other);
+  }
+
+  // implements Message ----------------------------------------------
+
+  ChannelMessageNotify* PROTOBUF_NONNULL New(::google::protobuf::Arena* PROTOBUF_NULLABLE arena = nullptr) const {
+    return ::google::protobuf::Message::DefaultConstruct<ChannelMessageNotify>(arena);
+  }
+  using ::google::protobuf::Message::CopyFrom;
+  void CopyFrom(const ChannelMessageNotify& from);
+  using ::google::protobuf::Message::MergeFrom;
+  void MergeFrom(const ChannelMessageNotify& from) { ChannelMessageNotify::MergeImpl(*this, from); }
+
+  private:
+  static void MergeImpl(::google::protobuf::MessageLite& to_msg,
+                        const ::google::protobuf::MessageLite& from_msg);
+
+  public:
+  bool IsInitialized() const {
+    return true;
+  }
+  ABSL_ATTRIBUTE_REINITIALIZES void Clear() PROTOBUF_FINAL;
+  #if defined(PROTOBUF_CUSTOM_VTABLE)
+  private:
+  static ::size_t ByteSizeLong(const ::google::protobuf::MessageLite& msg);
+  static ::uint8_t* PROTOBUF_NONNULL _InternalSerialize(
+      const ::google::protobuf::MessageLite& msg, ::uint8_t* PROTOBUF_NONNULL target,
+      ::google::protobuf::io::EpsCopyOutputStream* PROTOBUF_NONNULL stream);
+
+  public:
+  ::size_t ByteSizeLong() const { return ByteSizeLong(*this); }
+  ::uint8_t* PROTOBUF_NONNULL _InternalSerialize(
+      ::uint8_t* PROTOBUF_NONNULL target,
+      ::google::protobuf::io::EpsCopyOutputStream* PROTOBUF_NONNULL stream) const {
+    return _InternalSerialize(*this, target, stream);
+  }
+  #else   // PROTOBUF_CUSTOM_VTABLE
+  ::size_t ByteSizeLong() const final;
+  ::uint8_t* PROTOBUF_NONNULL _InternalSerialize(
+      ::uint8_t* PROTOBUF_NONNULL target,
+      ::google::protobuf::io::EpsCopyOutputStream* PROTOBUF_NONNULL stream) const final;
+  #endif  // PROTOBUF_CUSTOM_VTABLE
+  int GetCachedSize() const { return _impl_._cached_size_.Get(); }
+
+  private:
+  void SharedCtor(::google::protobuf::Arena* PROTOBUF_NULLABLE arena);
+  static void SharedDtor(MessageLite& self);
+  void InternalSwap(ChannelMessageNotify* PROTOBUF_NONNULL other);
+ private:
+  template <typename T>
+  friend ::absl::string_view(::google::protobuf::internal::GetAnyMessageName)();
+  static ::absl::string_view FullMessageName() { return "chirp.gateway.ChannelMessageNotify"; }
+
+  explicit ChannelMessageNotify(::google::protobuf::Arena* PROTOBUF_NULLABLE arena);
+  ChannelMessageNotify(::google::protobuf::Arena* PROTOBUF_NULLABLE arena, const ChannelMessageNotify& from);
+  ChannelMessageNotify(
+      ::google::protobuf::Arena* PROTOBUF_NULLABLE arena, ChannelMessageNotify&& from) noexcept
+      : ChannelMessageNotify(arena) {
+    *this = ::std::move(from);
+  }
+  const ::google::protobuf::internal::ClassData* PROTOBUF_NONNULL GetClassData() const PROTOBUF_FINAL;
+  static void* PROTOBUF_NONNULL PlacementNew_(
+      const void* PROTOBUF_NONNULL, void* PROTOBUF_NONNULL mem,
+      ::google::protobuf::Arena* PROTOBUF_NULLABLE arena);
+  static constexpr auto InternalNewImpl_();
+
+ public:
+  static constexpr auto InternalGenerateClassData_();
+
+  ::google::protobuf::Metadata GetMetadata() const;
+  // nested types ----------------------------------------------------
+
+  // accessors -------------------------------------------------------
+  enum : int {
+    kGameIdFieldNumber = 1,
+    kChannelIdFieldNumber = 2,
+    kMessageFieldNumber = 3,
+  };
+  // string game_id = 1;
+  void clear_game_id() ;
+  const ::std::string& game_id() const;
+  template <typename Arg_ = const ::std::string&, typename... Args_>
+  void set_game_id(Arg_&& arg, Args_... args);
+  ::std::string* PROTOBUF_NONNULL mutable_game_id();
+  [[nodiscard]] ::std::string* PROTOBUF_NULLABLE release_game_id();
+  void set_allocated_game_id(::std::string* PROTOBUF_NULLABLE value);
+
+  private:
+  const ::std::string& _internal_game_id() const;
+  PROTOBUF_ALWAYS_INLINE void _internal_set_game_id(const ::std::string& value);
+  ::std::string* PROTOBUF_NONNULL _internal_mutable_game_id();
+
+  public:
+  // string channel_id = 2;
+  void clear_channel_id() ;
+  const ::std::string& channel_id() const;
+  template <typename Arg_ = const ::std::string&, typename... Args_>
+  void set_channel_id(Arg_&& arg, Args_... args);
+  ::std::string* PROTOBUF_NONNULL mutable_channel_id();
+  [[nodiscard]] ::std::string* PROTOBUF_NULLABLE release_channel_id();
+  void set_allocated_channel_id(::std::string* PROTOBUF_NULLABLE value);
+
+  private:
+  const ::std::string& _internal_channel_id() const;
+  PROTOBUF_ALWAYS_INLINE void _internal_set_channel_id(const ::std::string& value);
+  ::std::string* PROTOBUF_NONNULL _internal_mutable_channel_id();
+
+  public:
+  // .chirp.chat.ChatMessage message = 3;
+  bool has_message() const;
+  void clear_message() ;
+  const ::chirp::chat::ChatMessage& message() const;
+  [[nodiscard]] ::chirp::chat::ChatMessage* PROTOBUF_NULLABLE release_message();
+  ::chirp::chat::ChatMessage* PROTOBUF_NONNULL mutable_message();
+  void set_allocated_message(::chirp::chat::ChatMessage* PROTOBUF_NULLABLE value);
+  void unsafe_arena_set_allocated_message(::chirp::chat::ChatMessage* PROTOBUF_NULLABLE value);
+  ::chirp::chat::ChatMessage* PROTOBUF_NULLABLE unsafe_arena_release_message();
+
+  private:
+  const ::chirp::chat::ChatMessage& _internal_message() const;
+  ::chirp::chat::ChatMessage* PROTOBUF_NONNULL _internal_mutable_message();
+
+  public:
+  // @@protoc_insertion_point(class_scope:chirp.gateway.ChannelMessageNotify)
+ private:
+  class _Internal;
+  friend class ::google::protobuf::internal::TcParser;
+  static const ::google::protobuf::internal::TcParseTable<2, 3,
+                                   1, 60,
+                                   2>
+      _table_;
+
+  friend class ::google::protobuf::MessageLite;
+  friend class ::google::protobuf::Arena;
+  template <typename T>
+  friend class ::google::protobuf::Arena::InternalHelper;
+  using InternalArenaConstructable_ = void;
+  using DestructorSkippable_ = void;
+  struct Impl_ {
+    inline explicit constexpr Impl_(::google::protobuf::internal::ConstantInitialized) noexcept;
+    inline explicit Impl_(
+        ::google::protobuf::internal::InternalVisibility visibility,
+        ::google::protobuf::Arena* PROTOBUF_NULLABLE arena);
+    inline explicit Impl_(
+        ::google::protobuf::internal::InternalVisibility visibility,
+        ::google::protobuf::Arena* PROTOBUF_NULLABLE arena, const Impl_& from,
+        const ChannelMessageNotify& from_msg);
+    ::google::protobuf::internal::HasBits<1> _has_bits_;
+    ::google::protobuf::internal::CachedSize _cached_size_;
+    ::google::protobuf::internal::ArenaStringPtr game_id_;
+    ::google::protobuf::internal::ArenaStringPtr channel_id_;
+    ::chirp::chat::ChatMessage* PROTOBUF_NULLABLE message_;
+    PROTOBUF_TSAN_DECLARE_MEMBER
+  };
+  union { Impl_ _impl_; };
+  friend struct ::TableStruct_proto_2fgateway_2eproto;
+};
+
+extern const ::google::protobuf::internal::ClassDataFull ChannelMessageNotify_class_data_;
 
 // ===================================================================
 
@@ -1132,6 +2183,925 @@ inline void HeartbeatPong::_internal_set_server_time(::int64_t value) {
   _impl_.server_time_ = value;
 }
 
+// -------------------------------------------------------------------
+
+// PeerRegisterReq
+
+// string service_id = 1;
+inline void PeerRegisterReq::clear_service_id() {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_.service_id_.ClearToEmpty();
+  ClearHasBit(_impl_._has_bits_[0],
+                  0x00000002U);
+}
+inline const ::std::string& PeerRegisterReq::service_id() const
+    ABSL_ATTRIBUTE_LIFETIME_BOUND {
+  // @@protoc_insertion_point(field_get:chirp.gateway.PeerRegisterReq.service_id)
+  return _internal_service_id();
+}
+template <typename Arg_, typename... Args_>
+PROTOBUF_ALWAYS_INLINE void PeerRegisterReq::set_service_id(Arg_&& arg, Args_... args) {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  SetHasBit(_impl_._has_bits_[0], 0x00000002U);
+  _impl_.service_id_.Set(static_cast<Arg_&&>(arg), args..., GetArena());
+  // @@protoc_insertion_point(field_set:chirp.gateway.PeerRegisterReq.service_id)
+}
+inline ::std::string* PROTOBUF_NONNULL PeerRegisterReq::mutable_service_id()
+    ABSL_ATTRIBUTE_LIFETIME_BOUND {
+  SetHasBit(_impl_._has_bits_[0], 0x00000002U);
+  ::std::string* _s = _internal_mutable_service_id();
+  // @@protoc_insertion_point(field_mutable:chirp.gateway.PeerRegisterReq.service_id)
+  return _s;
+}
+inline const ::std::string& PeerRegisterReq::_internal_service_id() const {
+  ::google::protobuf::internal::TSanRead(&_impl_);
+  return _impl_.service_id_.Get();
+}
+inline void PeerRegisterReq::_internal_set_service_id(const ::std::string& value) {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_.service_id_.Set(value, GetArena());
+}
+inline ::std::string* PROTOBUF_NONNULL PeerRegisterReq::_internal_mutable_service_id() {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  return _impl_.service_id_.Mutable( GetArena());
+}
+inline ::std::string* PROTOBUF_NULLABLE PeerRegisterReq::release_service_id() {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  // @@protoc_insertion_point(field_release:chirp.gateway.PeerRegisterReq.service_id)
+  if (!CheckHasBit(_impl_._has_bits_[0], 0x00000002U)) {
+    return nullptr;
+  }
+  ClearHasBit(_impl_._has_bits_[0], 0x00000002U);
+  auto* released = _impl_.service_id_.Release();
+  if (::google::protobuf::internal::DebugHardenForceCopyDefaultString()) {
+    _impl_.service_id_.Set("", GetArena());
+  }
+  return released;
+}
+inline void PeerRegisterReq::set_allocated_service_id(::std::string* PROTOBUF_NULLABLE value) {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  if (value != nullptr) {
+    SetHasBit(_impl_._has_bits_[0], 0x00000002U);
+  } else {
+    ClearHasBit(_impl_._has_bits_[0], 0x00000002U);
+  }
+  _impl_.service_id_.SetAllocated(value, GetArena());
+  if (::google::protobuf::internal::DebugHardenForceCopyDefaultString() && _impl_.service_id_.IsDefault()) {
+    _impl_.service_id_.Set("", GetArena());
+  }
+  // @@protoc_insertion_point(field_set_allocated:chirp.gateway.PeerRegisterReq.service_id)
+}
+
+// string service_secret = 2;
+inline void PeerRegisterReq::clear_service_secret() {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_.service_secret_.ClearToEmpty();
+  ClearHasBit(_impl_._has_bits_[0],
+                  0x00000004U);
+}
+inline const ::std::string& PeerRegisterReq::service_secret() const
+    ABSL_ATTRIBUTE_LIFETIME_BOUND {
+  // @@protoc_insertion_point(field_get:chirp.gateway.PeerRegisterReq.service_secret)
+  return _internal_service_secret();
+}
+template <typename Arg_, typename... Args_>
+PROTOBUF_ALWAYS_INLINE void PeerRegisterReq::set_service_secret(Arg_&& arg, Args_... args) {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  SetHasBit(_impl_._has_bits_[0], 0x00000004U);
+  _impl_.service_secret_.Set(static_cast<Arg_&&>(arg), args..., GetArena());
+  // @@protoc_insertion_point(field_set:chirp.gateway.PeerRegisterReq.service_secret)
+}
+inline ::std::string* PROTOBUF_NONNULL PeerRegisterReq::mutable_service_secret()
+    ABSL_ATTRIBUTE_LIFETIME_BOUND {
+  SetHasBit(_impl_._has_bits_[0], 0x00000004U);
+  ::std::string* _s = _internal_mutable_service_secret();
+  // @@protoc_insertion_point(field_mutable:chirp.gateway.PeerRegisterReq.service_secret)
+  return _s;
+}
+inline const ::std::string& PeerRegisterReq::_internal_service_secret() const {
+  ::google::protobuf::internal::TSanRead(&_impl_);
+  return _impl_.service_secret_.Get();
+}
+inline void PeerRegisterReq::_internal_set_service_secret(const ::std::string& value) {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_.service_secret_.Set(value, GetArena());
+}
+inline ::std::string* PROTOBUF_NONNULL PeerRegisterReq::_internal_mutable_service_secret() {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  return _impl_.service_secret_.Mutable( GetArena());
+}
+inline ::std::string* PROTOBUF_NULLABLE PeerRegisterReq::release_service_secret() {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  // @@protoc_insertion_point(field_release:chirp.gateway.PeerRegisterReq.service_secret)
+  if (!CheckHasBit(_impl_._has_bits_[0], 0x00000004U)) {
+    return nullptr;
+  }
+  ClearHasBit(_impl_._has_bits_[0], 0x00000004U);
+  auto* released = _impl_.service_secret_.Release();
+  if (::google::protobuf::internal::DebugHardenForceCopyDefaultString()) {
+    _impl_.service_secret_.Set("", GetArena());
+  }
+  return released;
+}
+inline void PeerRegisterReq::set_allocated_service_secret(::std::string* PROTOBUF_NULLABLE value) {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  if (value != nullptr) {
+    SetHasBit(_impl_._has_bits_[0], 0x00000004U);
+  } else {
+    ClearHasBit(_impl_._has_bits_[0], 0x00000004U);
+  }
+  _impl_.service_secret_.SetAllocated(value, GetArena());
+  if (::google::protobuf::internal::DebugHardenForceCopyDefaultString() && _impl_.service_secret_.IsDefault()) {
+    _impl_.service_secret_.Set("", GetArena());
+  }
+  // @@protoc_insertion_point(field_set_allocated:chirp.gateway.PeerRegisterReq.service_secret)
+}
+
+// int32 protocol_version = 3;
+inline void PeerRegisterReq::clear_protocol_version() {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_.protocol_version_ = 0;
+  ClearHasBit(_impl_._has_bits_[0],
+                  0x00000010U);
+}
+inline ::int32_t PeerRegisterReq::protocol_version() const {
+  // @@protoc_insertion_point(field_get:chirp.gateway.PeerRegisterReq.protocol_version)
+  return _internal_protocol_version();
+}
+inline void PeerRegisterReq::set_protocol_version(::int32_t value) {
+  _internal_set_protocol_version(value);
+  SetHasBit(_impl_._has_bits_[0], 0x00000010U);
+  // @@protoc_insertion_point(field_set:chirp.gateway.PeerRegisterReq.protocol_version)
+}
+inline ::int32_t PeerRegisterReq::_internal_protocol_version() const {
+  ::google::protobuf::internal::TSanRead(&_impl_);
+  return _impl_.protocol_version_;
+}
+inline void PeerRegisterReq::_internal_set_protocol_version(::int32_t value) {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_.protocol_version_ = value;
+}
+
+// string game_id = 4;
+inline void PeerRegisterReq::clear_game_id() {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_.game_id_.ClearToEmpty();
+  ClearHasBit(_impl_._has_bits_[0],
+                  0x00000008U);
+}
+inline const ::std::string& PeerRegisterReq::game_id() const
+    ABSL_ATTRIBUTE_LIFETIME_BOUND {
+  // @@protoc_insertion_point(field_get:chirp.gateway.PeerRegisterReq.game_id)
+  return _internal_game_id();
+}
+template <typename Arg_, typename... Args_>
+PROTOBUF_ALWAYS_INLINE void PeerRegisterReq::set_game_id(Arg_&& arg, Args_... args) {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  SetHasBit(_impl_._has_bits_[0], 0x00000008U);
+  _impl_.game_id_.Set(static_cast<Arg_&&>(arg), args..., GetArena());
+  // @@protoc_insertion_point(field_set:chirp.gateway.PeerRegisterReq.game_id)
+}
+inline ::std::string* PROTOBUF_NONNULL PeerRegisterReq::mutable_game_id()
+    ABSL_ATTRIBUTE_LIFETIME_BOUND {
+  SetHasBit(_impl_._has_bits_[0], 0x00000008U);
+  ::std::string* _s = _internal_mutable_game_id();
+  // @@protoc_insertion_point(field_mutable:chirp.gateway.PeerRegisterReq.game_id)
+  return _s;
+}
+inline const ::std::string& PeerRegisterReq::_internal_game_id() const {
+  ::google::protobuf::internal::TSanRead(&_impl_);
+  return _impl_.game_id_.Get();
+}
+inline void PeerRegisterReq::_internal_set_game_id(const ::std::string& value) {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_.game_id_.Set(value, GetArena());
+}
+inline ::std::string* PROTOBUF_NONNULL PeerRegisterReq::_internal_mutable_game_id() {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  return _impl_.game_id_.Mutable( GetArena());
+}
+inline ::std::string* PROTOBUF_NULLABLE PeerRegisterReq::release_game_id() {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  // @@protoc_insertion_point(field_release:chirp.gateway.PeerRegisterReq.game_id)
+  if (!CheckHasBit(_impl_._has_bits_[0], 0x00000008U)) {
+    return nullptr;
+  }
+  ClearHasBit(_impl_._has_bits_[0], 0x00000008U);
+  auto* released = _impl_.game_id_.Release();
+  if (::google::protobuf::internal::DebugHardenForceCopyDefaultString()) {
+    _impl_.game_id_.Set("", GetArena());
+  }
+  return released;
+}
+inline void PeerRegisterReq::set_allocated_game_id(::std::string* PROTOBUF_NULLABLE value) {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  if (value != nullptr) {
+    SetHasBit(_impl_._has_bits_[0], 0x00000008U);
+  } else {
+    ClearHasBit(_impl_._has_bits_[0], 0x00000008U);
+  }
+  _impl_.game_id_.SetAllocated(value, GetArena());
+  if (::google::protobuf::internal::DebugHardenForceCopyDefaultString() && _impl_.game_id_.IsDefault()) {
+    _impl_.game_id_.Set("", GetArena());
+  }
+  // @@protoc_insertion_point(field_set_allocated:chirp.gateway.PeerRegisterReq.game_id)
+}
+
+// repeated .chirp.gateway.PeerCapability supported_features = 5;
+inline int PeerRegisterReq::_internal_supported_features_size() const {
+  return _internal_supported_features().size();
+}
+inline int PeerRegisterReq::supported_features_size() const {
+  return _internal_supported_features_size();
+}
+inline void PeerRegisterReq::clear_supported_features() {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_.supported_features_.Clear();
+  ClearHasBitForRepeated(_impl_._has_bits_[0],
+                  0x00000001U);
+}
+inline ::chirp::gateway::PeerCapability PeerRegisterReq::supported_features(int index) const {
+  // @@protoc_insertion_point(field_get:chirp.gateway.PeerRegisterReq.supported_features)
+  return static_cast<::chirp::gateway::PeerCapability>(_internal_supported_features().Get(index));
+}
+inline void PeerRegisterReq::set_supported_features(int index, ::chirp::gateway::PeerCapability value) {
+  _internal_mutable_supported_features()->Set(index, value);
+  // @@protoc_insertion_point(field_set:chirp.gateway.PeerRegisterReq.supported_features)
+}
+inline void PeerRegisterReq::add_supported_features(::chirp::gateway::PeerCapability value) {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _internal_mutable_supported_features()->Add(value);
+  SetHasBitForRepeated(_impl_._has_bits_[0], 0x00000001U);
+  // @@protoc_insertion_point(field_add:chirp.gateway.PeerRegisterReq.supported_features)
+}
+inline const ::google::protobuf::RepeatedField<int>& PeerRegisterReq::supported_features() const
+    ABSL_ATTRIBUTE_LIFETIME_BOUND {
+  // @@protoc_insertion_point(field_list:chirp.gateway.PeerRegisterReq.supported_features)
+  return _internal_supported_features();
+}
+inline ::google::protobuf::RepeatedField<int>* PROTOBUF_NONNULL PeerRegisterReq::mutable_supported_features()
+    ABSL_ATTRIBUTE_LIFETIME_BOUND {
+  SetHasBitForRepeated(_impl_._has_bits_[0], 0x00000001U);
+  // @@protoc_insertion_point(field_mutable_list:chirp.gateway.PeerRegisterReq.supported_features)
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  return _internal_mutable_supported_features();
+}
+inline const ::google::protobuf::RepeatedField<int>& PeerRegisterReq::_internal_supported_features()
+    const {
+  ::google::protobuf::internal::TSanRead(&_impl_);
+  return _impl_.supported_features_;
+}
+inline ::google::protobuf::RepeatedField<int>* PROTOBUF_NONNULL
+PeerRegisterReq::_internal_mutable_supported_features() {
+  ::google::protobuf::internal::TSanRead(&_impl_);
+  return &_impl_.supported_features_;
+}
+
+// -------------------------------------------------------------------
+
+// PeerRegisterResp
+
+// .chirp.common.ErrorCode code = 1;
+inline void PeerRegisterResp::clear_code() {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_.code_ = 0;
+  ClearHasBit(_impl_._has_bits_[0],
+                  0x00000002U);
+}
+inline ::chirp::common::ErrorCode PeerRegisterResp::code() const {
+  // @@protoc_insertion_point(field_get:chirp.gateway.PeerRegisterResp.code)
+  return _internal_code();
+}
+inline void PeerRegisterResp::set_code(::chirp::common::ErrorCode value) {
+  _internal_set_code(value);
+  SetHasBit(_impl_._has_bits_[0], 0x00000002U);
+  // @@protoc_insertion_point(field_set:chirp.gateway.PeerRegisterResp.code)
+}
+inline ::chirp::common::ErrorCode PeerRegisterResp::_internal_code() const {
+  ::google::protobuf::internal::TSanRead(&_impl_);
+  return static_cast<::chirp::common::ErrorCode>(_impl_.code_);
+}
+inline void PeerRegisterResp::_internal_set_code(::chirp::common::ErrorCode value) {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_.code_ = value;
+}
+
+// int32 protocol_version = 2;
+inline void PeerRegisterResp::clear_protocol_version() {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_.protocol_version_ = 0;
+  ClearHasBit(_impl_._has_bits_[0],
+                  0x00000004U);
+}
+inline ::int32_t PeerRegisterResp::protocol_version() const {
+  // @@protoc_insertion_point(field_get:chirp.gateway.PeerRegisterResp.protocol_version)
+  return _internal_protocol_version();
+}
+inline void PeerRegisterResp::set_protocol_version(::int32_t value) {
+  _internal_set_protocol_version(value);
+  SetHasBit(_impl_._has_bits_[0], 0x00000004U);
+  // @@protoc_insertion_point(field_set:chirp.gateway.PeerRegisterResp.protocol_version)
+}
+inline ::int32_t PeerRegisterResp::_internal_protocol_version() const {
+  ::google::protobuf::internal::TSanRead(&_impl_);
+  return _impl_.protocol_version_;
+}
+inline void PeerRegisterResp::_internal_set_protocol_version(::int32_t value) {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_.protocol_version_ = value;
+}
+
+// int32 min_version = 3;
+inline void PeerRegisterResp::clear_min_version() {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_.min_version_ = 0;
+  ClearHasBit(_impl_._has_bits_[0],
+                  0x00000008U);
+}
+inline ::int32_t PeerRegisterResp::min_version() const {
+  // @@protoc_insertion_point(field_get:chirp.gateway.PeerRegisterResp.min_version)
+  return _internal_min_version();
+}
+inline void PeerRegisterResp::set_min_version(::int32_t value) {
+  _internal_set_min_version(value);
+  SetHasBit(_impl_._has_bits_[0], 0x00000008U);
+  // @@protoc_insertion_point(field_set:chirp.gateway.PeerRegisterResp.min_version)
+}
+inline ::int32_t PeerRegisterResp::_internal_min_version() const {
+  ::google::protobuf::internal::TSanRead(&_impl_);
+  return _impl_.min_version_;
+}
+inline void PeerRegisterResp::_internal_set_min_version(::int32_t value) {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_.min_version_ = value;
+}
+
+// int32 heartbeat_interval_seconds = 4;
+inline void PeerRegisterResp::clear_heartbeat_interval_seconds() {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_.heartbeat_interval_seconds_ = 0;
+  ClearHasBit(_impl_._has_bits_[0],
+                  0x00000010U);
+}
+inline ::int32_t PeerRegisterResp::heartbeat_interval_seconds() const {
+  // @@protoc_insertion_point(field_get:chirp.gateway.PeerRegisterResp.heartbeat_interval_seconds)
+  return _internal_heartbeat_interval_seconds();
+}
+inline void PeerRegisterResp::set_heartbeat_interval_seconds(::int32_t value) {
+  _internal_set_heartbeat_interval_seconds(value);
+  SetHasBit(_impl_._has_bits_[0], 0x00000010U);
+  // @@protoc_insertion_point(field_set:chirp.gateway.PeerRegisterResp.heartbeat_interval_seconds)
+}
+inline ::int32_t PeerRegisterResp::_internal_heartbeat_interval_seconds() const {
+  ::google::protobuf::internal::TSanRead(&_impl_);
+  return _impl_.heartbeat_interval_seconds_;
+}
+inline void PeerRegisterResp::_internal_set_heartbeat_interval_seconds(::int32_t value) {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_.heartbeat_interval_seconds_ = value;
+}
+
+// repeated .chirp.gateway.PeerCapability supported_features = 5;
+inline int PeerRegisterResp::_internal_supported_features_size() const {
+  return _internal_supported_features().size();
+}
+inline int PeerRegisterResp::supported_features_size() const {
+  return _internal_supported_features_size();
+}
+inline void PeerRegisterResp::clear_supported_features() {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_.supported_features_.Clear();
+  ClearHasBitForRepeated(_impl_._has_bits_[0],
+                  0x00000001U);
+}
+inline ::chirp::gateway::PeerCapability PeerRegisterResp::supported_features(int index) const {
+  // @@protoc_insertion_point(field_get:chirp.gateway.PeerRegisterResp.supported_features)
+  return static_cast<::chirp::gateway::PeerCapability>(_internal_supported_features().Get(index));
+}
+inline void PeerRegisterResp::set_supported_features(int index, ::chirp::gateway::PeerCapability value) {
+  _internal_mutable_supported_features()->Set(index, value);
+  // @@protoc_insertion_point(field_set:chirp.gateway.PeerRegisterResp.supported_features)
+}
+inline void PeerRegisterResp::add_supported_features(::chirp::gateway::PeerCapability value) {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _internal_mutable_supported_features()->Add(value);
+  SetHasBitForRepeated(_impl_._has_bits_[0], 0x00000001U);
+  // @@protoc_insertion_point(field_add:chirp.gateway.PeerRegisterResp.supported_features)
+}
+inline const ::google::protobuf::RepeatedField<int>& PeerRegisterResp::supported_features() const
+    ABSL_ATTRIBUTE_LIFETIME_BOUND {
+  // @@protoc_insertion_point(field_list:chirp.gateway.PeerRegisterResp.supported_features)
+  return _internal_supported_features();
+}
+inline ::google::protobuf::RepeatedField<int>* PROTOBUF_NONNULL PeerRegisterResp::mutable_supported_features()
+    ABSL_ATTRIBUTE_LIFETIME_BOUND {
+  SetHasBitForRepeated(_impl_._has_bits_[0], 0x00000001U);
+  // @@protoc_insertion_point(field_mutable_list:chirp.gateway.PeerRegisterResp.supported_features)
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  return _internal_mutable_supported_features();
+}
+inline const ::google::protobuf::RepeatedField<int>& PeerRegisterResp::_internal_supported_features()
+    const {
+  ::google::protobuf::internal::TSanRead(&_impl_);
+  return _impl_.supported_features_;
+}
+inline ::google::protobuf::RepeatedField<int>* PROTOBUF_NONNULL
+PeerRegisterResp::_internal_mutable_supported_features() {
+  ::google::protobuf::internal::TSanRead(&_impl_);
+  return &_impl_.supported_features_;
+}
+
+// -------------------------------------------------------------------
+
+// ChannelMessageNotify
+
+// string game_id = 1;
+inline void ChannelMessageNotify::clear_game_id() {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_.game_id_.ClearToEmpty();
+  ClearHasBit(_impl_._has_bits_[0],
+                  0x00000001U);
+}
+inline const ::std::string& ChannelMessageNotify::game_id() const
+    ABSL_ATTRIBUTE_LIFETIME_BOUND {
+  // @@protoc_insertion_point(field_get:chirp.gateway.ChannelMessageNotify.game_id)
+  return _internal_game_id();
+}
+template <typename Arg_, typename... Args_>
+PROTOBUF_ALWAYS_INLINE void ChannelMessageNotify::set_game_id(Arg_&& arg, Args_... args) {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  SetHasBit(_impl_._has_bits_[0], 0x00000001U);
+  _impl_.game_id_.Set(static_cast<Arg_&&>(arg), args..., GetArena());
+  // @@protoc_insertion_point(field_set:chirp.gateway.ChannelMessageNotify.game_id)
+}
+inline ::std::string* PROTOBUF_NONNULL ChannelMessageNotify::mutable_game_id()
+    ABSL_ATTRIBUTE_LIFETIME_BOUND {
+  SetHasBit(_impl_._has_bits_[0], 0x00000001U);
+  ::std::string* _s = _internal_mutable_game_id();
+  // @@protoc_insertion_point(field_mutable:chirp.gateway.ChannelMessageNotify.game_id)
+  return _s;
+}
+inline const ::std::string& ChannelMessageNotify::_internal_game_id() const {
+  ::google::protobuf::internal::TSanRead(&_impl_);
+  return _impl_.game_id_.Get();
+}
+inline void ChannelMessageNotify::_internal_set_game_id(const ::std::string& value) {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_.game_id_.Set(value, GetArena());
+}
+inline ::std::string* PROTOBUF_NONNULL ChannelMessageNotify::_internal_mutable_game_id() {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  return _impl_.game_id_.Mutable( GetArena());
+}
+inline ::std::string* PROTOBUF_NULLABLE ChannelMessageNotify::release_game_id() {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  // @@protoc_insertion_point(field_release:chirp.gateway.ChannelMessageNotify.game_id)
+  if (!CheckHasBit(_impl_._has_bits_[0], 0x00000001U)) {
+    return nullptr;
+  }
+  ClearHasBit(_impl_._has_bits_[0], 0x00000001U);
+  auto* released = _impl_.game_id_.Release();
+  if (::google::protobuf::internal::DebugHardenForceCopyDefaultString()) {
+    _impl_.game_id_.Set("", GetArena());
+  }
+  return released;
+}
+inline void ChannelMessageNotify::set_allocated_game_id(::std::string* PROTOBUF_NULLABLE value) {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  if (value != nullptr) {
+    SetHasBit(_impl_._has_bits_[0], 0x00000001U);
+  } else {
+    ClearHasBit(_impl_._has_bits_[0], 0x00000001U);
+  }
+  _impl_.game_id_.SetAllocated(value, GetArena());
+  if (::google::protobuf::internal::DebugHardenForceCopyDefaultString() && _impl_.game_id_.IsDefault()) {
+    _impl_.game_id_.Set("", GetArena());
+  }
+  // @@protoc_insertion_point(field_set_allocated:chirp.gateway.ChannelMessageNotify.game_id)
+}
+
+// string channel_id = 2;
+inline void ChannelMessageNotify::clear_channel_id() {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_.channel_id_.ClearToEmpty();
+  ClearHasBit(_impl_._has_bits_[0],
+                  0x00000002U);
+}
+inline const ::std::string& ChannelMessageNotify::channel_id() const
+    ABSL_ATTRIBUTE_LIFETIME_BOUND {
+  // @@protoc_insertion_point(field_get:chirp.gateway.ChannelMessageNotify.channel_id)
+  return _internal_channel_id();
+}
+template <typename Arg_, typename... Args_>
+PROTOBUF_ALWAYS_INLINE void ChannelMessageNotify::set_channel_id(Arg_&& arg, Args_... args) {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  SetHasBit(_impl_._has_bits_[0], 0x00000002U);
+  _impl_.channel_id_.Set(static_cast<Arg_&&>(arg), args..., GetArena());
+  // @@protoc_insertion_point(field_set:chirp.gateway.ChannelMessageNotify.channel_id)
+}
+inline ::std::string* PROTOBUF_NONNULL ChannelMessageNotify::mutable_channel_id()
+    ABSL_ATTRIBUTE_LIFETIME_BOUND {
+  SetHasBit(_impl_._has_bits_[0], 0x00000002U);
+  ::std::string* _s = _internal_mutable_channel_id();
+  // @@protoc_insertion_point(field_mutable:chirp.gateway.ChannelMessageNotify.channel_id)
+  return _s;
+}
+inline const ::std::string& ChannelMessageNotify::_internal_channel_id() const {
+  ::google::protobuf::internal::TSanRead(&_impl_);
+  return _impl_.channel_id_.Get();
+}
+inline void ChannelMessageNotify::_internal_set_channel_id(const ::std::string& value) {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_.channel_id_.Set(value, GetArena());
+}
+inline ::std::string* PROTOBUF_NONNULL ChannelMessageNotify::_internal_mutable_channel_id() {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  return _impl_.channel_id_.Mutable( GetArena());
+}
+inline ::std::string* PROTOBUF_NULLABLE ChannelMessageNotify::release_channel_id() {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  // @@protoc_insertion_point(field_release:chirp.gateway.ChannelMessageNotify.channel_id)
+  if (!CheckHasBit(_impl_._has_bits_[0], 0x00000002U)) {
+    return nullptr;
+  }
+  ClearHasBit(_impl_._has_bits_[0], 0x00000002U);
+  auto* released = _impl_.channel_id_.Release();
+  if (::google::protobuf::internal::DebugHardenForceCopyDefaultString()) {
+    _impl_.channel_id_.Set("", GetArena());
+  }
+  return released;
+}
+inline void ChannelMessageNotify::set_allocated_channel_id(::std::string* PROTOBUF_NULLABLE value) {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  if (value != nullptr) {
+    SetHasBit(_impl_._has_bits_[0], 0x00000002U);
+  } else {
+    ClearHasBit(_impl_._has_bits_[0], 0x00000002U);
+  }
+  _impl_.channel_id_.SetAllocated(value, GetArena());
+  if (::google::protobuf::internal::DebugHardenForceCopyDefaultString() && _impl_.channel_id_.IsDefault()) {
+    _impl_.channel_id_.Set("", GetArena());
+  }
+  // @@protoc_insertion_point(field_set_allocated:chirp.gateway.ChannelMessageNotify.channel_id)
+}
+
+// .chirp.chat.ChatMessage message = 3;
+inline bool ChannelMessageNotify::has_message() const {
+  bool value = CheckHasBit(_impl_._has_bits_[0], 0x00000004U);
+  PROTOBUF_ASSUME(!value || _impl_.message_ != nullptr);
+  return value;
+}
+inline const ::chirp::chat::ChatMessage& ChannelMessageNotify::_internal_message() const {
+  ::google::protobuf::internal::TSanRead(&_impl_);
+  const ::chirp::chat::ChatMessage* p = _impl_.message_;
+  return p != nullptr ? *p : reinterpret_cast<const ::chirp::chat::ChatMessage&>(::chirp::chat::_ChatMessage_default_instance_);
+}
+inline const ::chirp::chat::ChatMessage& ChannelMessageNotify::message() const ABSL_ATTRIBUTE_LIFETIME_BOUND {
+  // @@protoc_insertion_point(field_get:chirp.gateway.ChannelMessageNotify.message)
+  return _internal_message();
+}
+inline void ChannelMessageNotify::unsafe_arena_set_allocated_message(
+    ::chirp::chat::ChatMessage* PROTOBUF_NULLABLE value) {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  if (GetArena() == nullptr) {
+    delete reinterpret_cast<::google::protobuf::MessageLite*>(_impl_.message_);
+  }
+  _impl_.message_ = reinterpret_cast<::chirp::chat::ChatMessage*>(value);
+  if (value != nullptr) {
+    SetHasBit(_impl_._has_bits_[0], 0x00000004U);
+  } else {
+    ClearHasBit(_impl_._has_bits_[0], 0x00000004U);
+  }
+  // @@protoc_insertion_point(field_unsafe_arena_set_allocated:chirp.gateway.ChannelMessageNotify.message)
+}
+inline ::chirp::chat::ChatMessage* PROTOBUF_NULLABLE ChannelMessageNotify::release_message() {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+
+  ClearHasBit(_impl_._has_bits_[0], 0x00000004U);
+  ::chirp::chat::ChatMessage* released = _impl_.message_;
+  _impl_.message_ = nullptr;
+  if (::google::protobuf::internal::DebugHardenForceCopyInRelease()) {
+    auto* old = reinterpret_cast<::google::protobuf::MessageLite*>(released);
+    released = ::google::protobuf::internal::DuplicateIfNonNull(released);
+    if (GetArena() == nullptr) {
+      delete old;
+    }
+  } else {
+    if (GetArena() != nullptr) {
+      released = ::google::protobuf::internal::DuplicateIfNonNull(released);
+    }
+  }
+  return released;
+}
+inline ::chirp::chat::ChatMessage* PROTOBUF_NULLABLE ChannelMessageNotify::unsafe_arena_release_message() {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  // @@protoc_insertion_point(field_release:chirp.gateway.ChannelMessageNotify.message)
+
+  ClearHasBit(_impl_._has_bits_[0], 0x00000004U);
+  ::chirp::chat::ChatMessage* temp = _impl_.message_;
+  _impl_.message_ = nullptr;
+  return temp;
+}
+inline ::chirp::chat::ChatMessage* PROTOBUF_NONNULL ChannelMessageNotify::_internal_mutable_message() {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  if (_impl_.message_ == nullptr) {
+    auto* p = ::google::protobuf::Message::DefaultConstruct<::chirp::chat::ChatMessage>(GetArena());
+    _impl_.message_ = reinterpret_cast<::chirp::chat::ChatMessage*>(p);
+  }
+  return _impl_.message_;
+}
+inline ::chirp::chat::ChatMessage* PROTOBUF_NONNULL ChannelMessageNotify::mutable_message()
+    ABSL_ATTRIBUTE_LIFETIME_BOUND {
+  SetHasBit(_impl_._has_bits_[0], 0x00000004U);
+  ::chirp::chat::ChatMessage* _msg = _internal_mutable_message();
+  // @@protoc_insertion_point(field_mutable:chirp.gateway.ChannelMessageNotify.message)
+  return _msg;
+}
+inline void ChannelMessageNotify::set_allocated_message(::chirp::chat::ChatMessage* PROTOBUF_NULLABLE value) {
+  ::google::protobuf::Arena* message_arena = GetArena();
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  if (message_arena == nullptr) {
+    delete reinterpret_cast<::google::protobuf::MessageLite*>(_impl_.message_);
+  }
+
+  if (value != nullptr) {
+    ::google::protobuf::Arena* submessage_arena = reinterpret_cast<::google::protobuf::Message*>(value)->GetArena();
+    if (message_arena != submessage_arena) {
+      value = ::google::protobuf::internal::GetOwnedMessage(message_arena, value, submessage_arena);
+    }
+    SetHasBit(_impl_._has_bits_[0], 0x00000004U);
+  } else {
+    ClearHasBit(_impl_._has_bits_[0], 0x00000004U);
+  }
+
+  _impl_.message_ = reinterpret_cast<::chirp::chat::ChatMessage*>(value);
+  // @@protoc_insertion_point(field_set_allocated:chirp.gateway.ChannelMessageNotify.message)
+}
+
+// -------------------------------------------------------------------
+
+// PeerInjectMessageNotify
+
+// string channel_id = 1;
+inline void PeerInjectMessageNotify::clear_channel_id() {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_.channel_id_.ClearToEmpty();
+  ClearHasBit(_impl_._has_bits_[0],
+                  0x00000001U);
+}
+inline const ::std::string& PeerInjectMessageNotify::channel_id() const
+    ABSL_ATTRIBUTE_LIFETIME_BOUND {
+  // @@protoc_insertion_point(field_get:chirp.gateway.PeerInjectMessageNotify.channel_id)
+  return _internal_channel_id();
+}
+template <typename Arg_, typename... Args_>
+PROTOBUF_ALWAYS_INLINE void PeerInjectMessageNotify::set_channel_id(Arg_&& arg, Args_... args) {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  SetHasBit(_impl_._has_bits_[0], 0x00000001U);
+  _impl_.channel_id_.Set(static_cast<Arg_&&>(arg), args..., GetArena());
+  // @@protoc_insertion_point(field_set:chirp.gateway.PeerInjectMessageNotify.channel_id)
+}
+inline ::std::string* PROTOBUF_NONNULL PeerInjectMessageNotify::mutable_channel_id()
+    ABSL_ATTRIBUTE_LIFETIME_BOUND {
+  SetHasBit(_impl_._has_bits_[0], 0x00000001U);
+  ::std::string* _s = _internal_mutable_channel_id();
+  // @@protoc_insertion_point(field_mutable:chirp.gateway.PeerInjectMessageNotify.channel_id)
+  return _s;
+}
+inline const ::std::string& PeerInjectMessageNotify::_internal_channel_id() const {
+  ::google::protobuf::internal::TSanRead(&_impl_);
+  return _impl_.channel_id_.Get();
+}
+inline void PeerInjectMessageNotify::_internal_set_channel_id(const ::std::string& value) {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_.channel_id_.Set(value, GetArena());
+}
+inline ::std::string* PROTOBUF_NONNULL PeerInjectMessageNotify::_internal_mutable_channel_id() {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  return _impl_.channel_id_.Mutable( GetArena());
+}
+inline ::std::string* PROTOBUF_NULLABLE PeerInjectMessageNotify::release_channel_id() {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  // @@protoc_insertion_point(field_release:chirp.gateway.PeerInjectMessageNotify.channel_id)
+  if (!CheckHasBit(_impl_._has_bits_[0], 0x00000001U)) {
+    return nullptr;
+  }
+  ClearHasBit(_impl_._has_bits_[0], 0x00000001U);
+  auto* released = _impl_.channel_id_.Release();
+  if (::google::protobuf::internal::DebugHardenForceCopyDefaultString()) {
+    _impl_.channel_id_.Set("", GetArena());
+  }
+  return released;
+}
+inline void PeerInjectMessageNotify::set_allocated_channel_id(::std::string* PROTOBUF_NULLABLE value) {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  if (value != nullptr) {
+    SetHasBit(_impl_._has_bits_[0], 0x00000001U);
+  } else {
+    ClearHasBit(_impl_._has_bits_[0], 0x00000001U);
+  }
+  _impl_.channel_id_.SetAllocated(value, GetArena());
+  if (::google::protobuf::internal::DebugHardenForceCopyDefaultString() && _impl_.channel_id_.IsDefault()) {
+    _impl_.channel_id_.Set("", GetArena());
+  }
+  // @@protoc_insertion_point(field_set_allocated:chirp.gateway.PeerInjectMessageNotify.channel_id)
+}
+
+// string sender_id = 2;
+inline void PeerInjectMessageNotify::clear_sender_id() {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_.sender_id_.ClearToEmpty();
+  ClearHasBit(_impl_._has_bits_[0],
+                  0x00000002U);
+}
+inline const ::std::string& PeerInjectMessageNotify::sender_id() const
+    ABSL_ATTRIBUTE_LIFETIME_BOUND {
+  // @@protoc_insertion_point(field_get:chirp.gateway.PeerInjectMessageNotify.sender_id)
+  return _internal_sender_id();
+}
+template <typename Arg_, typename... Args_>
+PROTOBUF_ALWAYS_INLINE void PeerInjectMessageNotify::set_sender_id(Arg_&& arg, Args_... args) {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  SetHasBit(_impl_._has_bits_[0], 0x00000002U);
+  _impl_.sender_id_.Set(static_cast<Arg_&&>(arg), args..., GetArena());
+  // @@protoc_insertion_point(field_set:chirp.gateway.PeerInjectMessageNotify.sender_id)
+}
+inline ::std::string* PROTOBUF_NONNULL PeerInjectMessageNotify::mutable_sender_id()
+    ABSL_ATTRIBUTE_LIFETIME_BOUND {
+  SetHasBit(_impl_._has_bits_[0], 0x00000002U);
+  ::std::string* _s = _internal_mutable_sender_id();
+  // @@protoc_insertion_point(field_mutable:chirp.gateway.PeerInjectMessageNotify.sender_id)
+  return _s;
+}
+inline const ::std::string& PeerInjectMessageNotify::_internal_sender_id() const {
+  ::google::protobuf::internal::TSanRead(&_impl_);
+  return _impl_.sender_id_.Get();
+}
+inline void PeerInjectMessageNotify::_internal_set_sender_id(const ::std::string& value) {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_.sender_id_.Set(value, GetArena());
+}
+inline ::std::string* PROTOBUF_NONNULL PeerInjectMessageNotify::_internal_mutable_sender_id() {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  return _impl_.sender_id_.Mutable( GetArena());
+}
+inline ::std::string* PROTOBUF_NULLABLE PeerInjectMessageNotify::release_sender_id() {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  // @@protoc_insertion_point(field_release:chirp.gateway.PeerInjectMessageNotify.sender_id)
+  if (!CheckHasBit(_impl_._has_bits_[0], 0x00000002U)) {
+    return nullptr;
+  }
+  ClearHasBit(_impl_._has_bits_[0], 0x00000002U);
+  auto* released = _impl_.sender_id_.Release();
+  if (::google::protobuf::internal::DebugHardenForceCopyDefaultString()) {
+    _impl_.sender_id_.Set("", GetArena());
+  }
+  return released;
+}
+inline void PeerInjectMessageNotify::set_allocated_sender_id(::std::string* PROTOBUF_NULLABLE value) {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  if (value != nullptr) {
+    SetHasBit(_impl_._has_bits_[0], 0x00000002U);
+  } else {
+    ClearHasBit(_impl_._has_bits_[0], 0x00000002U);
+  }
+  _impl_.sender_id_.SetAllocated(value, GetArena());
+  if (::google::protobuf::internal::DebugHardenForceCopyDefaultString() && _impl_.sender_id_.IsDefault()) {
+    _impl_.sender_id_.Set("", GetArena());
+  }
+  // @@protoc_insertion_point(field_set_allocated:chirp.gateway.PeerInjectMessageNotify.sender_id)
+}
+
+// bytes content = 3;
+inline void PeerInjectMessageNotify::clear_content() {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_.content_.ClearToEmpty();
+  ClearHasBit(_impl_._has_bits_[0],
+                  0x00000004U);
+}
+inline const ::std::string& PeerInjectMessageNotify::content() const
+    ABSL_ATTRIBUTE_LIFETIME_BOUND {
+  // @@protoc_insertion_point(field_get:chirp.gateway.PeerInjectMessageNotify.content)
+  return _internal_content();
+}
+template <typename Arg_, typename... Args_>
+PROTOBUF_ALWAYS_INLINE void PeerInjectMessageNotify::set_content(Arg_&& arg, Args_... args) {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  SetHasBit(_impl_._has_bits_[0], 0x00000004U);
+  _impl_.content_.SetBytes(static_cast<Arg_&&>(arg), args..., GetArena());
+  // @@protoc_insertion_point(field_set:chirp.gateway.PeerInjectMessageNotify.content)
+}
+inline ::std::string* PROTOBUF_NONNULL PeerInjectMessageNotify::mutable_content()
+    ABSL_ATTRIBUTE_LIFETIME_BOUND {
+  SetHasBit(_impl_._has_bits_[0], 0x00000004U);
+  ::std::string* _s = _internal_mutable_content();
+  // @@protoc_insertion_point(field_mutable:chirp.gateway.PeerInjectMessageNotify.content)
+  return _s;
+}
+inline const ::std::string& PeerInjectMessageNotify::_internal_content() const {
+  ::google::protobuf::internal::TSanRead(&_impl_);
+  return _impl_.content_.Get();
+}
+inline void PeerInjectMessageNotify::_internal_set_content(const ::std::string& value) {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_.content_.Set(value, GetArena());
+}
+inline ::std::string* PROTOBUF_NONNULL PeerInjectMessageNotify::_internal_mutable_content() {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  return _impl_.content_.Mutable( GetArena());
+}
+inline ::std::string* PROTOBUF_NULLABLE PeerInjectMessageNotify::release_content() {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  // @@protoc_insertion_point(field_release:chirp.gateway.PeerInjectMessageNotify.content)
+  if (!CheckHasBit(_impl_._has_bits_[0], 0x00000004U)) {
+    return nullptr;
+  }
+  ClearHasBit(_impl_._has_bits_[0], 0x00000004U);
+  auto* released = _impl_.content_.Release();
+  if (::google::protobuf::internal::DebugHardenForceCopyDefaultString()) {
+    _impl_.content_.Set("", GetArena());
+  }
+  return released;
+}
+inline void PeerInjectMessageNotify::set_allocated_content(::std::string* PROTOBUF_NULLABLE value) {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  if (value != nullptr) {
+    SetHasBit(_impl_._has_bits_[0], 0x00000004U);
+  } else {
+    ClearHasBit(_impl_._has_bits_[0], 0x00000004U);
+  }
+  _impl_.content_.SetAllocated(value, GetArena());
+  if (::google::protobuf::internal::DebugHardenForceCopyDefaultString() && _impl_.content_.IsDefault()) {
+    _impl_.content_.Set("", GetArena());
+  }
+  // @@protoc_insertion_point(field_set_allocated:chirp.gateway.PeerInjectMessageNotify.content)
+}
+
+// string client_msg_id = 4;
+inline void PeerInjectMessageNotify::clear_client_msg_id() {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_.client_msg_id_.ClearToEmpty();
+  ClearHasBit(_impl_._has_bits_[0],
+                  0x00000008U);
+}
+inline const ::std::string& PeerInjectMessageNotify::client_msg_id() const
+    ABSL_ATTRIBUTE_LIFETIME_BOUND {
+  // @@protoc_insertion_point(field_get:chirp.gateway.PeerInjectMessageNotify.client_msg_id)
+  return _internal_client_msg_id();
+}
+template <typename Arg_, typename... Args_>
+PROTOBUF_ALWAYS_INLINE void PeerInjectMessageNotify::set_client_msg_id(Arg_&& arg, Args_... args) {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  SetHasBit(_impl_._has_bits_[0], 0x00000008U);
+  _impl_.client_msg_id_.Set(static_cast<Arg_&&>(arg), args..., GetArena());
+  // @@protoc_insertion_point(field_set:chirp.gateway.PeerInjectMessageNotify.client_msg_id)
+}
+inline ::std::string* PROTOBUF_NONNULL PeerInjectMessageNotify::mutable_client_msg_id()
+    ABSL_ATTRIBUTE_LIFETIME_BOUND {
+  SetHasBit(_impl_._has_bits_[0], 0x00000008U);
+  ::std::string* _s = _internal_mutable_client_msg_id();
+  // @@protoc_insertion_point(field_mutable:chirp.gateway.PeerInjectMessageNotify.client_msg_id)
+  return _s;
+}
+inline const ::std::string& PeerInjectMessageNotify::_internal_client_msg_id() const {
+  ::google::protobuf::internal::TSanRead(&_impl_);
+  return _impl_.client_msg_id_.Get();
+}
+inline void PeerInjectMessageNotify::_internal_set_client_msg_id(const ::std::string& value) {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_.client_msg_id_.Set(value, GetArena());
+}
+inline ::std::string* PROTOBUF_NONNULL PeerInjectMessageNotify::_internal_mutable_client_msg_id() {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  return _impl_.client_msg_id_.Mutable( GetArena());
+}
+inline ::std::string* PROTOBUF_NULLABLE PeerInjectMessageNotify::release_client_msg_id() {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  // @@protoc_insertion_point(field_release:chirp.gateway.PeerInjectMessageNotify.client_msg_id)
+  if (!CheckHasBit(_impl_._has_bits_[0], 0x00000008U)) {
+    return nullptr;
+  }
+  ClearHasBit(_impl_._has_bits_[0], 0x00000008U);
+  auto* released = _impl_.client_msg_id_.Release();
+  if (::google::protobuf::internal::DebugHardenForceCopyDefaultString()) {
+    _impl_.client_msg_id_.Set("", GetArena());
+  }
+  return released;
+}
+inline void PeerInjectMessageNotify::set_allocated_client_msg_id(::std::string* PROTOBUF_NULLABLE value) {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  if (value != nullptr) {
+    SetHasBit(_impl_._has_bits_[0], 0x00000008U);
+  } else {
+    ClearHasBit(_impl_._has_bits_[0], 0x00000008U);
+  }
+  _impl_.client_msg_id_.SetAllocated(value, GetArena());
+  if (::google::protobuf::internal::DebugHardenForceCopyDefaultString() && _impl_.client_msg_id_.IsDefault()) {
+    _impl_.client_msg_id_.Set("", GetArena());
+  }
+  // @@protoc_insertion_point(field_set_allocated:chirp.gateway.PeerInjectMessageNotify.client_msg_id)
+}
+
 #ifdef __GNUC__
 #pragma GCC diagnostic pop
 #endif  // __GNUC__
@@ -1149,6 +3119,12 @@ struct is_proto_enum<::chirp::gateway::MsgID> : std::true_type {};
 template <>
 inline const EnumDescriptor* PROTOBUF_NONNULL GetEnumDescriptor<::chirp::gateway::MsgID>() {
   return ::chirp::gateway::MsgID_descriptor();
+}
+template <>
+struct is_proto_enum<::chirp::gateway::PeerCapability> : std::true_type {};
+template <>
+inline const EnumDescriptor* PROTOBUF_NONNULL GetEnumDescriptor<::chirp::gateway::PeerCapability>() {
+  return ::chirp::gateway::PeerCapability_descriptor();
 }
 
 }  // namespace protobuf

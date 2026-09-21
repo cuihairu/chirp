@@ -2,9 +2,9 @@
 // versions:
 // 	protoc-gen-go v1.36.12
 // 	protoc        v6.33.4
-// source: proto/server_gateway.proto
+// source: proto/game_server_gateway.proto
 
-package server_gateway
+package game_server_gateway
 
 import (
 	common "github.com/cui/chirp/proto/go/common"
@@ -60,11 +60,11 @@ func (x SenderKind) String() string {
 }
 
 func (SenderKind) Descriptor() protoreflect.EnumDescriptor {
-	return file_proto_server_gateway_proto_enumTypes[0].Descriptor()
+	return file_proto_game_server_gateway_proto_enumTypes[0].Descriptor()
 }
 
 func (SenderKind) Type() protoreflect.EnumType {
-	return &file_proto_server_gateway_proto_enumTypes[0]
+	return &file_proto_game_server_gateway_proto_enumTypes[0]
 }
 
 func (x SenderKind) Number() protoreflect.EnumNumber {
@@ -73,7 +73,7 @@ func (x SenderKind) Number() protoreflect.EnumNumber {
 
 // Deprecated: Use SenderKind.Descriptor instead.
 func (SenderKind) EnumDescriptor() ([]byte, []int) {
-	return file_proto_server_gateway_proto_rawDescGZIP(), []int{0}
+	return file_proto_game_server_gateway_proto_rawDescGZIP(), []int{0}
 }
 
 type ServerAuthRequest struct {
@@ -87,7 +87,7 @@ type ServerAuthRequest struct {
 
 func (x *ServerAuthRequest) Reset() {
 	*x = ServerAuthRequest{}
-	mi := &file_proto_server_gateway_proto_msgTypes[0]
+	mi := &file_proto_game_server_gateway_proto_msgTypes[0]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -99,7 +99,7 @@ func (x *ServerAuthRequest) String() string {
 func (*ServerAuthRequest) ProtoMessage() {}
 
 func (x *ServerAuthRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_proto_server_gateway_proto_msgTypes[0]
+	mi := &file_proto_game_server_gateway_proto_msgTypes[0]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -112,7 +112,7 @@ func (x *ServerAuthRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ServerAuthRequest.ProtoReflect.Descriptor instead.
 func (*ServerAuthRequest) Descriptor() ([]byte, []int) {
-	return file_proto_server_gateway_proto_rawDescGZIP(), []int{0}
+	return file_proto_game_server_gateway_proto_rawDescGZIP(), []int{0}
 }
 
 func (x *ServerAuthRequest) GetServiceId() string {
@@ -149,7 +149,7 @@ type ServerAuthResponse struct {
 
 func (x *ServerAuthResponse) Reset() {
 	*x = ServerAuthResponse{}
-	mi := &file_proto_server_gateway_proto_msgTypes[1]
+	mi := &file_proto_game_server_gateway_proto_msgTypes[1]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -161,7 +161,7 @@ func (x *ServerAuthResponse) String() string {
 func (*ServerAuthResponse) ProtoMessage() {}
 
 func (x *ServerAuthResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_proto_server_gateway_proto_msgTypes[1]
+	mi := &file_proto_game_server_gateway_proto_msgTypes[1]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -174,7 +174,7 @@ func (x *ServerAuthResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ServerAuthResponse.ProtoReflect.Descriptor instead.
 func (*ServerAuthResponse) Descriptor() ([]byte, []int) {
-	return file_proto_server_gateway_proto_rawDescGZIP(), []int{1}
+	return file_proto_game_server_gateway_proto_rawDescGZIP(), []int{1}
 }
 
 func (x *ServerAuthResponse) GetCode() common.ErrorCode {
@@ -207,7 +207,7 @@ type ServerHeartbeatPing struct {
 
 func (x *ServerHeartbeatPing) Reset() {
 	*x = ServerHeartbeatPing{}
-	mi := &file_proto_server_gateway_proto_msgTypes[2]
+	mi := &file_proto_game_server_gateway_proto_msgTypes[2]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -219,7 +219,7 @@ func (x *ServerHeartbeatPing) String() string {
 func (*ServerHeartbeatPing) ProtoMessage() {}
 
 func (x *ServerHeartbeatPing) ProtoReflect() protoreflect.Message {
-	mi := &file_proto_server_gateway_proto_msgTypes[2]
+	mi := &file_proto_game_server_gateway_proto_msgTypes[2]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -232,7 +232,7 @@ func (x *ServerHeartbeatPing) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ServerHeartbeatPing.ProtoReflect.Descriptor instead.
 func (*ServerHeartbeatPing) Descriptor() ([]byte, []int) {
-	return file_proto_server_gateway_proto_rawDescGZIP(), []int{2}
+	return file_proto_game_server_gateway_proto_rawDescGZIP(), []int{2}
 }
 
 func (x *ServerHeartbeatPing) GetClientTimeMs() int64 {
@@ -251,7 +251,7 @@ type ServerHeartbeatPong struct {
 
 func (x *ServerHeartbeatPong) Reset() {
 	*x = ServerHeartbeatPong{}
-	mi := &file_proto_server_gateway_proto_msgTypes[3]
+	mi := &file_proto_game_server_gateway_proto_msgTypes[3]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -263,7 +263,7 @@ func (x *ServerHeartbeatPong) String() string {
 func (*ServerHeartbeatPong) ProtoMessage() {}
 
 func (x *ServerHeartbeatPong) ProtoReflect() protoreflect.Message {
-	mi := &file_proto_server_gateway_proto_msgTypes[3]
+	mi := &file_proto_game_server_gateway_proto_msgTypes[3]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -276,7 +276,7 @@ func (x *ServerHeartbeatPong) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ServerHeartbeatPong.ProtoReflect.Descriptor instead.
 func (*ServerHeartbeatPong) Descriptor() ([]byte, []int) {
-	return file_proto_server_gateway_proto_rawDescGZIP(), []int{3}
+	return file_proto_game_server_gateway_proto_rawDescGZIP(), []int{3}
 }
 
 func (x *ServerHeartbeatPong) GetServerTimeMs() int64 {
@@ -291,7 +291,7 @@ func (x *ServerHeartbeatPong) GetServerTimeMs() int64 {
 type MessageInjectRequest struct {
 	state       protoimpl.MessageState `protogen:"open.v1"`
 	InjectId    string                 `protobuf:"bytes,1,opt,name=inject_id,json=injectId,proto3" json:"inject_id,omitempty"` // caller-supplied idempotency key
-	SenderKind  SenderKind             `protobuf:"varint,2,opt,name=sender_kind,json=senderKind,proto3,enum=chirp.server_gateway.SenderKind" json:"sender_kind,omitempty"`
+	SenderKind  SenderKind             `protobuf:"varint,2,opt,name=sender_kind,json=senderKind,proto3,enum=chirp.game_server_gateway.SenderKind" json:"sender_kind,omitempty"`
 	SenderId    string                 `protobuf:"bytes,3,opt,name=sender_id,json=senderId,proto3" json:"sender_id,omitempty"` // e.g. "npc:blacksmith_01", "system", "trade"
 	ChannelType int32                  `protobuf:"varint,4,opt,name=channel_type,json=channelType,proto3" json:"channel_type,omitempty"`
 	ChannelId   string                 `protobuf:"bytes,5,opt,name=channel_id,json=channelId,proto3" json:"channel_id,omitempty"`    // set for channel injections
@@ -310,7 +310,7 @@ type MessageInjectRequest struct {
 
 func (x *MessageInjectRequest) Reset() {
 	*x = MessageInjectRequest{}
-	mi := &file_proto_server_gateway_proto_msgTypes[4]
+	mi := &file_proto_game_server_gateway_proto_msgTypes[4]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -322,7 +322,7 @@ func (x *MessageInjectRequest) String() string {
 func (*MessageInjectRequest) ProtoMessage() {}
 
 func (x *MessageInjectRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_proto_server_gateway_proto_msgTypes[4]
+	mi := &file_proto_game_server_gateway_proto_msgTypes[4]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -335,7 +335,7 @@ func (x *MessageInjectRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use MessageInjectRequest.ProtoReflect.Descriptor instead.
 func (*MessageInjectRequest) Descriptor() ([]byte, []int) {
-	return file_proto_server_gateway_proto_rawDescGZIP(), []int{4}
+	return file_proto_game_server_gateway_proto_rawDescGZIP(), []int{4}
 }
 
 func (x *MessageInjectRequest) GetInjectId() string {
@@ -404,7 +404,7 @@ type MessageInjectResponse struct {
 
 func (x *MessageInjectResponse) Reset() {
 	*x = MessageInjectResponse{}
-	mi := &file_proto_server_gateway_proto_msgTypes[5]
+	mi := &file_proto_game_server_gateway_proto_msgTypes[5]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -416,7 +416,7 @@ func (x *MessageInjectResponse) String() string {
 func (*MessageInjectResponse) ProtoMessage() {}
 
 func (x *MessageInjectResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_proto_server_gateway_proto_msgTypes[5]
+	mi := &file_proto_game_server_gateway_proto_msgTypes[5]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -429,7 +429,7 @@ func (x *MessageInjectResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use MessageInjectResponse.ProtoReflect.Descriptor instead.
 func (*MessageInjectResponse) Descriptor() ([]byte, []int) {
-	return file_proto_server_gateway_proto_rawDescGZIP(), []int{5}
+	return file_proto_game_server_gateway_proto_rawDescGZIP(), []int{5}
 }
 
 func (x *MessageInjectResponse) GetCode() common.ErrorCode {
@@ -456,7 +456,7 @@ type InjectMessageNotify struct {
 
 func (x *InjectMessageNotify) Reset() {
 	*x = InjectMessageNotify{}
-	mi := &file_proto_server_gateway_proto_msgTypes[6]
+	mi := &file_proto_game_server_gateway_proto_msgTypes[6]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -468,7 +468,7 @@ func (x *InjectMessageNotify) String() string {
 func (*InjectMessageNotify) ProtoMessage() {}
 
 func (x *InjectMessageNotify) ProtoReflect() protoreflect.Message {
-	mi := &file_proto_server_gateway_proto_msgTypes[6]
+	mi := &file_proto_game_server_gateway_proto_msgTypes[6]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -481,7 +481,7 @@ func (x *InjectMessageNotify) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use InjectMessageNotify.ProtoReflect.Descriptor instead.
 func (*InjectMessageNotify) Descriptor() ([]byte, []int) {
-	return file_proto_server_gateway_proto_rawDescGZIP(), []int{6}
+	return file_proto_game_server_gateway_proto_rawDescGZIP(), []int{6}
 }
 
 func (x *InjectMessageNotify) GetMessage() *MessageInjectRequest {
@@ -506,7 +506,7 @@ type EventPublishRequest struct {
 
 func (x *EventPublishRequest) Reset() {
 	*x = EventPublishRequest{}
-	mi := &file_proto_server_gateway_proto_msgTypes[7]
+	mi := &file_proto_game_server_gateway_proto_msgTypes[7]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -518,7 +518,7 @@ func (x *EventPublishRequest) String() string {
 func (*EventPublishRequest) ProtoMessage() {}
 
 func (x *EventPublishRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_proto_server_gateway_proto_msgTypes[7]
+	mi := &file_proto_game_server_gateway_proto_msgTypes[7]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -531,7 +531,7 @@ func (x *EventPublishRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use EventPublishRequest.ProtoReflect.Descriptor instead.
 func (*EventPublishRequest) Descriptor() ([]byte, []int) {
-	return file_proto_server_gateway_proto_rawDescGZIP(), []int{7}
+	return file_proto_game_server_gateway_proto_rawDescGZIP(), []int{7}
 }
 
 func (x *EventPublishRequest) GetEventId() string {
@@ -575,7 +575,7 @@ type EventPublishResponse struct {
 
 func (x *EventPublishResponse) Reset() {
 	*x = EventPublishResponse{}
-	mi := &file_proto_server_gateway_proto_msgTypes[8]
+	mi := &file_proto_game_server_gateway_proto_msgTypes[8]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -587,7 +587,7 @@ func (x *EventPublishResponse) String() string {
 func (*EventPublishResponse) ProtoMessage() {}
 
 func (x *EventPublishResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_proto_server_gateway_proto_msgTypes[8]
+	mi := &file_proto_game_server_gateway_proto_msgTypes[8]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -600,7 +600,7 @@ func (x *EventPublishResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use EventPublishResponse.ProtoReflect.Descriptor instead.
 func (*EventPublishResponse) Descriptor() ([]byte, []int) {
-	return file_proto_server_gateway_proto_rawDescGZIP(), []int{8}
+	return file_proto_game_server_gateway_proto_rawDescGZIP(), []int{8}
 }
 
 func (x *EventPublishResponse) GetCode() common.ErrorCode {
@@ -638,7 +638,7 @@ type EventDeliverNotify struct {
 
 func (x *EventDeliverNotify) Reset() {
 	*x = EventDeliverNotify{}
-	mi := &file_proto_server_gateway_proto_msgTypes[9]
+	mi := &file_proto_game_server_gateway_proto_msgTypes[9]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -650,7 +650,7 @@ func (x *EventDeliverNotify) String() string {
 func (*EventDeliverNotify) ProtoMessage() {}
 
 func (x *EventDeliverNotify) ProtoReflect() protoreflect.Message {
-	mi := &file_proto_server_gateway_proto_msgTypes[9]
+	mi := &file_proto_game_server_gateway_proto_msgTypes[9]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -663,7 +663,7 @@ func (x *EventDeliverNotify) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use EventDeliverNotify.ProtoReflect.Descriptor instead.
 func (*EventDeliverNotify) Descriptor() ([]byte, []int) {
-	return file_proto_server_gateway_proto_rawDescGZIP(), []int{9}
+	return file_proto_game_server_gateway_proto_rawDescGZIP(), []int{9}
 }
 
 func (x *EventDeliverNotify) GetEventId() string {
@@ -710,7 +710,7 @@ type EventAckRequest struct {
 
 func (x *EventAckRequest) Reset() {
 	*x = EventAckRequest{}
-	mi := &file_proto_server_gateway_proto_msgTypes[10]
+	mi := &file_proto_game_server_gateway_proto_msgTypes[10]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -722,7 +722,7 @@ func (x *EventAckRequest) String() string {
 func (*EventAckRequest) ProtoMessage() {}
 
 func (x *EventAckRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_proto_server_gateway_proto_msgTypes[10]
+	mi := &file_proto_game_server_gateway_proto_msgTypes[10]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -735,7 +735,7 @@ func (x *EventAckRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use EventAckRequest.ProtoReflect.Descriptor instead.
 func (*EventAckRequest) Descriptor() ([]byte, []int) {
-	return file_proto_server_gateway_proto_rawDescGZIP(), []int{10}
+	return file_proto_game_server_gateway_proto_rawDescGZIP(), []int{10}
 }
 
 func (x *EventAckRequest) GetEventIds() []string {
@@ -754,7 +754,7 @@ type EventAckResponse struct {
 
 func (x *EventAckResponse) Reset() {
 	*x = EventAckResponse{}
-	mi := &file_proto_server_gateway_proto_msgTypes[11]
+	mi := &file_proto_game_server_gateway_proto_msgTypes[11]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -766,7 +766,7 @@ func (x *EventAckResponse) String() string {
 func (*EventAckResponse) ProtoMessage() {}
 
 func (x *EventAckResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_proto_server_gateway_proto_msgTypes[11]
+	mi := &file_proto_game_server_gateway_proto_msgTypes[11]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -779,7 +779,7 @@ func (x *EventAckResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use EventAckResponse.ProtoReflect.Descriptor instead.
 func (*EventAckResponse) Descriptor() ([]byte, []int) {
-	return file_proto_server_gateway_proto_rawDescGZIP(), []int{11}
+	return file_proto_game_server_gateway_proto_rawDescGZIP(), []int{11}
 }
 
 func (x *EventAckResponse) GetCode() common.ErrorCode {
@@ -803,7 +803,7 @@ type StoredIdentityBinding struct {
 
 func (x *StoredIdentityBinding) Reset() {
 	*x = StoredIdentityBinding{}
-	mi := &file_proto_server_gateway_proto_msgTypes[12]
+	mi := &file_proto_game_server_gateway_proto_msgTypes[12]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -815,7 +815,7 @@ func (x *StoredIdentityBinding) String() string {
 func (*StoredIdentityBinding) ProtoMessage() {}
 
 func (x *StoredIdentityBinding) ProtoReflect() protoreflect.Message {
-	mi := &file_proto_server_gateway_proto_msgTypes[12]
+	mi := &file_proto_game_server_gateway_proto_msgTypes[12]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -828,7 +828,7 @@ func (x *StoredIdentityBinding) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use StoredIdentityBinding.ProtoReflect.Descriptor instead.
 func (*StoredIdentityBinding) Descriptor() ([]byte, []int) {
-	return file_proto_server_gateway_proto_rawDescGZIP(), []int{12}
+	return file_proto_game_server_gateway_proto_rawDescGZIP(), []int{12}
 }
 
 func (x *StoredIdentityBinding) GetBindingId() string {
@@ -878,7 +878,7 @@ type BindPlayerIdentityRequest struct {
 
 func (x *BindPlayerIdentityRequest) Reset() {
 	*x = BindPlayerIdentityRequest{}
-	mi := &file_proto_server_gateway_proto_msgTypes[13]
+	mi := &file_proto_game_server_gateway_proto_msgTypes[13]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -890,7 +890,7 @@ func (x *BindPlayerIdentityRequest) String() string {
 func (*BindPlayerIdentityRequest) ProtoMessage() {}
 
 func (x *BindPlayerIdentityRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_proto_server_gateway_proto_msgTypes[13]
+	mi := &file_proto_game_server_gateway_proto_msgTypes[13]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -903,7 +903,7 @@ func (x *BindPlayerIdentityRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use BindPlayerIdentityRequest.ProtoReflect.Descriptor instead.
 func (*BindPlayerIdentityRequest) Descriptor() ([]byte, []int) {
-	return file_proto_server_gateway_proto_rawDescGZIP(), []int{13}
+	return file_proto_game_server_gateway_proto_rawDescGZIP(), []int{13}
 }
 
 func (x *BindPlayerIdentityRequest) GetBindingId() string {
@@ -949,7 +949,7 @@ type BindPlayerIdentityResponse struct {
 
 func (x *BindPlayerIdentityResponse) Reset() {
 	*x = BindPlayerIdentityResponse{}
-	mi := &file_proto_server_gateway_proto_msgTypes[14]
+	mi := &file_proto_game_server_gateway_proto_msgTypes[14]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -961,7 +961,7 @@ func (x *BindPlayerIdentityResponse) String() string {
 func (*BindPlayerIdentityResponse) ProtoMessage() {}
 
 func (x *BindPlayerIdentityResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_proto_server_gateway_proto_msgTypes[14]
+	mi := &file_proto_game_server_gateway_proto_msgTypes[14]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -974,7 +974,7 @@ func (x *BindPlayerIdentityResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use BindPlayerIdentityResponse.ProtoReflect.Descriptor instead.
 func (*BindPlayerIdentityResponse) Descriptor() ([]byte, []int) {
-	return file_proto_server_gateway_proto_rawDescGZIP(), []int{14}
+	return file_proto_game_server_gateway_proto_rawDescGZIP(), []int{14}
 }
 
 func (x *BindPlayerIdentityResponse) GetCode() common.ErrorCode {
@@ -1010,7 +1010,7 @@ type UnbindPlayerIdentityRequest struct {
 
 func (x *UnbindPlayerIdentityRequest) Reset() {
 	*x = UnbindPlayerIdentityRequest{}
-	mi := &file_proto_server_gateway_proto_msgTypes[15]
+	mi := &file_proto_game_server_gateway_proto_msgTypes[15]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1022,7 +1022,7 @@ func (x *UnbindPlayerIdentityRequest) String() string {
 func (*UnbindPlayerIdentityRequest) ProtoMessage() {}
 
 func (x *UnbindPlayerIdentityRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_proto_server_gateway_proto_msgTypes[15]
+	mi := &file_proto_game_server_gateway_proto_msgTypes[15]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1035,7 +1035,7 @@ func (x *UnbindPlayerIdentityRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use UnbindPlayerIdentityRequest.ProtoReflect.Descriptor instead.
 func (*UnbindPlayerIdentityRequest) Descriptor() ([]byte, []int) {
-	return file_proto_server_gateway_proto_rawDescGZIP(), []int{15}
+	return file_proto_game_server_gateway_proto_rawDescGZIP(), []int{15}
 }
 
 func (x *UnbindPlayerIdentityRequest) GetBindingId() string {
@@ -1068,7 +1068,7 @@ type UnbindPlayerIdentityResponse struct {
 
 func (x *UnbindPlayerIdentityResponse) Reset() {
 	*x = UnbindPlayerIdentityResponse{}
-	mi := &file_proto_server_gateway_proto_msgTypes[16]
+	mi := &file_proto_game_server_gateway_proto_msgTypes[16]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1080,7 +1080,7 @@ func (x *UnbindPlayerIdentityResponse) String() string {
 func (*UnbindPlayerIdentityResponse) ProtoMessage() {}
 
 func (x *UnbindPlayerIdentityResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_proto_server_gateway_proto_msgTypes[16]
+	mi := &file_proto_game_server_gateway_proto_msgTypes[16]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1093,7 +1093,7 @@ func (x *UnbindPlayerIdentityResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use UnbindPlayerIdentityResponse.ProtoReflect.Descriptor instead.
 func (*UnbindPlayerIdentityResponse) Descriptor() ([]byte, []int) {
-	return file_proto_server_gateway_proto_rawDescGZIP(), []int{16}
+	return file_proto_game_server_gateway_proto_rawDescGZIP(), []int{16}
 }
 
 func (x *UnbindPlayerIdentityResponse) GetCode() common.ErrorCode {
@@ -1112,7 +1112,7 @@ type GetPlayerIdentitiesRequest struct {
 
 func (x *GetPlayerIdentitiesRequest) Reset() {
 	*x = GetPlayerIdentitiesRequest{}
-	mi := &file_proto_server_gateway_proto_msgTypes[17]
+	mi := &file_proto_game_server_gateway_proto_msgTypes[17]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1124,7 +1124,7 @@ func (x *GetPlayerIdentitiesRequest) String() string {
 func (*GetPlayerIdentitiesRequest) ProtoMessage() {}
 
 func (x *GetPlayerIdentitiesRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_proto_server_gateway_proto_msgTypes[17]
+	mi := &file_proto_game_server_gateway_proto_msgTypes[17]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1137,7 +1137,7 @@ func (x *GetPlayerIdentitiesRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use GetPlayerIdentitiesRequest.ProtoReflect.Descriptor instead.
 func (*GetPlayerIdentitiesRequest) Descriptor() ([]byte, []int) {
-	return file_proto_server_gateway_proto_rawDescGZIP(), []int{17}
+	return file_proto_game_server_gateway_proto_rawDescGZIP(), []int{17}
 }
 
 func (x *GetPlayerIdentitiesRequest) GetPlayerId() string {
@@ -1157,7 +1157,7 @@ type GetPlayerIdentitiesResponse struct {
 
 func (x *GetPlayerIdentitiesResponse) Reset() {
 	*x = GetPlayerIdentitiesResponse{}
-	mi := &file_proto_server_gateway_proto_msgTypes[18]
+	mi := &file_proto_game_server_gateway_proto_msgTypes[18]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1169,7 +1169,7 @@ func (x *GetPlayerIdentitiesResponse) String() string {
 func (*GetPlayerIdentitiesResponse) ProtoMessage() {}
 
 func (x *GetPlayerIdentitiesResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_proto_server_gateway_proto_msgTypes[18]
+	mi := &file_proto_game_server_gateway_proto_msgTypes[18]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1182,7 +1182,7 @@ func (x *GetPlayerIdentitiesResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use GetPlayerIdentitiesResponse.ProtoReflect.Descriptor instead.
 func (*GetPlayerIdentitiesResponse) Descriptor() ([]byte, []int) {
-	return file_proto_server_gateway_proto_rawDescGZIP(), []int{18}
+	return file_proto_game_server_gateway_proto_rawDescGZIP(), []int{18}
 }
 
 func (x *GetPlayerIdentitiesResponse) GetCode() common.ErrorCode {
@@ -1209,7 +1209,7 @@ type ResolveGameUserRequest struct {
 
 func (x *ResolveGameUserRequest) Reset() {
 	*x = ResolveGameUserRequest{}
-	mi := &file_proto_server_gateway_proto_msgTypes[19]
+	mi := &file_proto_game_server_gateway_proto_msgTypes[19]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1221,7 +1221,7 @@ func (x *ResolveGameUserRequest) String() string {
 func (*ResolveGameUserRequest) ProtoMessage() {}
 
 func (x *ResolveGameUserRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_proto_server_gateway_proto_msgTypes[19]
+	mi := &file_proto_game_server_gateway_proto_msgTypes[19]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1234,7 +1234,7 @@ func (x *ResolveGameUserRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ResolveGameUserRequest.ProtoReflect.Descriptor instead.
 func (*ResolveGameUserRequest) Descriptor() ([]byte, []int) {
-	return file_proto_server_gateway_proto_rawDescGZIP(), []int{19}
+	return file_proto_game_server_gateway_proto_rawDescGZIP(), []int{19}
 }
 
 func (x *ResolveGameUserRequest) GetGameId() string {
@@ -1262,7 +1262,7 @@ type ResolveGameUserResponse struct {
 
 func (x *ResolveGameUserResponse) Reset() {
 	*x = ResolveGameUserResponse{}
-	mi := &file_proto_server_gateway_proto_msgTypes[20]
+	mi := &file_proto_game_server_gateway_proto_msgTypes[20]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1274,7 +1274,7 @@ func (x *ResolveGameUserResponse) String() string {
 func (*ResolveGameUserResponse) ProtoMessage() {}
 
 func (x *ResolveGameUserResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_proto_server_gateway_proto_msgTypes[20]
+	mi := &file_proto_game_server_gateway_proto_msgTypes[20]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1287,7 +1287,7 @@ func (x *ResolveGameUserResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ResolveGameUserResponse.ProtoReflect.Descriptor instead.
 func (*ResolveGameUserResponse) Descriptor() ([]byte, []int) {
-	return file_proto_server_gateway_proto_rawDescGZIP(), []int{20}
+	return file_proto_game_server_gateway_proto_rawDescGZIP(), []int{20}
 }
 
 func (x *ResolveGameUserResponse) GetCode() common.ErrorCode {
@@ -1318,7 +1318,7 @@ type StoredChannelSubscription struct {
 
 func (x *StoredChannelSubscription) Reset() {
 	*x = StoredChannelSubscription{}
-	mi := &file_proto_server_gateway_proto_msgTypes[21]
+	mi := &file_proto_game_server_gateway_proto_msgTypes[21]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1330,7 +1330,7 @@ func (x *StoredChannelSubscription) String() string {
 func (*StoredChannelSubscription) ProtoMessage() {}
 
 func (x *StoredChannelSubscription) ProtoReflect() protoreflect.Message {
-	mi := &file_proto_server_gateway_proto_msgTypes[21]
+	mi := &file_proto_game_server_gateway_proto_msgTypes[21]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1343,7 +1343,7 @@ func (x *StoredChannelSubscription) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use StoredChannelSubscription.ProtoReflect.Descriptor instead.
 func (*StoredChannelSubscription) Descriptor() ([]byte, []int) {
-	return file_proto_server_gateway_proto_rawDescGZIP(), []int{21}
+	return file_proto_game_server_gateway_proto_rawDescGZIP(), []int{21}
 }
 
 func (x *StoredChannelSubscription) GetSubscriptionId() string {
@@ -1395,7 +1395,7 @@ type SubscribePlayerChannelRequest struct {
 
 func (x *SubscribePlayerChannelRequest) Reset() {
 	*x = SubscribePlayerChannelRequest{}
-	mi := &file_proto_server_gateway_proto_msgTypes[22]
+	mi := &file_proto_game_server_gateway_proto_msgTypes[22]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1407,7 +1407,7 @@ func (x *SubscribePlayerChannelRequest) String() string {
 func (*SubscribePlayerChannelRequest) ProtoMessage() {}
 
 func (x *SubscribePlayerChannelRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_proto_server_gateway_proto_msgTypes[22]
+	mi := &file_proto_game_server_gateway_proto_msgTypes[22]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1420,7 +1420,7 @@ func (x *SubscribePlayerChannelRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use SubscribePlayerChannelRequest.ProtoReflect.Descriptor instead.
 func (*SubscribePlayerChannelRequest) Descriptor() ([]byte, []int) {
-	return file_proto_server_gateway_proto_rawDescGZIP(), []int{22}
+	return file_proto_game_server_gateway_proto_rawDescGZIP(), []int{22}
 }
 
 func (x *SubscribePlayerChannelRequest) GetSubscriptionId() string {
@@ -1464,7 +1464,7 @@ type SubscribePlayerChannelResponse struct {
 
 func (x *SubscribePlayerChannelResponse) Reset() {
 	*x = SubscribePlayerChannelResponse{}
-	mi := &file_proto_server_gateway_proto_msgTypes[23]
+	mi := &file_proto_game_server_gateway_proto_msgTypes[23]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1476,7 +1476,7 @@ func (x *SubscribePlayerChannelResponse) String() string {
 func (*SubscribePlayerChannelResponse) ProtoMessage() {}
 
 func (x *SubscribePlayerChannelResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_proto_server_gateway_proto_msgTypes[23]
+	mi := &file_proto_game_server_gateway_proto_msgTypes[23]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1489,7 +1489,7 @@ func (x *SubscribePlayerChannelResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use SubscribePlayerChannelResponse.ProtoReflect.Descriptor instead.
 func (*SubscribePlayerChannelResponse) Descriptor() ([]byte, []int) {
-	return file_proto_server_gateway_proto_rawDescGZIP(), []int{23}
+	return file_proto_game_server_gateway_proto_rawDescGZIP(), []int{23}
 }
 
 func (x *SubscribePlayerChannelResponse) GetCode() common.ErrorCode {
@@ -1527,7 +1527,7 @@ type UnsubscribePlayerChannelRequest struct {
 
 func (x *UnsubscribePlayerChannelRequest) Reset() {
 	*x = UnsubscribePlayerChannelRequest{}
-	mi := &file_proto_server_gateway_proto_msgTypes[24]
+	mi := &file_proto_game_server_gateway_proto_msgTypes[24]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1539,7 +1539,7 @@ func (x *UnsubscribePlayerChannelRequest) String() string {
 func (*UnsubscribePlayerChannelRequest) ProtoMessage() {}
 
 func (x *UnsubscribePlayerChannelRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_proto_server_gateway_proto_msgTypes[24]
+	mi := &file_proto_game_server_gateway_proto_msgTypes[24]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1552,7 +1552,7 @@ func (x *UnsubscribePlayerChannelRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use UnsubscribePlayerChannelRequest.ProtoReflect.Descriptor instead.
 func (*UnsubscribePlayerChannelRequest) Descriptor() ([]byte, []int) {
-	return file_proto_server_gateway_proto_rawDescGZIP(), []int{24}
+	return file_proto_game_server_gateway_proto_rawDescGZIP(), []int{24}
 }
 
 func (x *UnsubscribePlayerChannelRequest) GetSubscriptionId() string {
@@ -1592,7 +1592,7 @@ type UnsubscribePlayerChannelResponse struct {
 
 func (x *UnsubscribePlayerChannelResponse) Reset() {
 	*x = UnsubscribePlayerChannelResponse{}
-	mi := &file_proto_server_gateway_proto_msgTypes[25]
+	mi := &file_proto_game_server_gateway_proto_msgTypes[25]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1604,7 +1604,7 @@ func (x *UnsubscribePlayerChannelResponse) String() string {
 func (*UnsubscribePlayerChannelResponse) ProtoMessage() {}
 
 func (x *UnsubscribePlayerChannelResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_proto_server_gateway_proto_msgTypes[25]
+	mi := &file_proto_game_server_gateway_proto_msgTypes[25]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1617,7 +1617,7 @@ func (x *UnsubscribePlayerChannelResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use UnsubscribePlayerChannelResponse.ProtoReflect.Descriptor instead.
 func (*UnsubscribePlayerChannelResponse) Descriptor() ([]byte, []int) {
-	return file_proto_server_gateway_proto_rawDescGZIP(), []int{25}
+	return file_proto_game_server_gateway_proto_rawDescGZIP(), []int{25}
 }
 
 func (x *UnsubscribePlayerChannelResponse) GetCode() common.ErrorCode {
@@ -1638,7 +1638,7 @@ type GetPlayerSubscriptionsRequest struct {
 
 func (x *GetPlayerSubscriptionsRequest) Reset() {
 	*x = GetPlayerSubscriptionsRequest{}
-	mi := &file_proto_server_gateway_proto_msgTypes[26]
+	mi := &file_proto_game_server_gateway_proto_msgTypes[26]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1650,7 +1650,7 @@ func (x *GetPlayerSubscriptionsRequest) String() string {
 func (*GetPlayerSubscriptionsRequest) ProtoMessage() {}
 
 func (x *GetPlayerSubscriptionsRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_proto_server_gateway_proto_msgTypes[26]
+	mi := &file_proto_game_server_gateway_proto_msgTypes[26]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1663,7 +1663,7 @@ func (x *GetPlayerSubscriptionsRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use GetPlayerSubscriptionsRequest.ProtoReflect.Descriptor instead.
 func (*GetPlayerSubscriptionsRequest) Descriptor() ([]byte, []int) {
-	return file_proto_server_gateway_proto_rawDescGZIP(), []int{26}
+	return file_proto_game_server_gateway_proto_rawDescGZIP(), []int{26}
 }
 
 func (x *GetPlayerSubscriptionsRequest) GetPlayerId() string {
@@ -1690,7 +1690,7 @@ type GetPlayerSubscriptionsResponse struct {
 
 func (x *GetPlayerSubscriptionsResponse) Reset() {
 	*x = GetPlayerSubscriptionsResponse{}
-	mi := &file_proto_server_gateway_proto_msgTypes[27]
+	mi := &file_proto_game_server_gateway_proto_msgTypes[27]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1702,7 +1702,7 @@ func (x *GetPlayerSubscriptionsResponse) String() string {
 func (*GetPlayerSubscriptionsResponse) ProtoMessage() {}
 
 func (x *GetPlayerSubscriptionsResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_proto_server_gateway_proto_msgTypes[27]
+	mi := &file_proto_game_server_gateway_proto_msgTypes[27]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1715,7 +1715,7 @@ func (x *GetPlayerSubscriptionsResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use GetPlayerSubscriptionsResponse.ProtoReflect.Descriptor instead.
 func (*GetPlayerSubscriptionsResponse) Descriptor() ([]byte, []int) {
-	return file_proto_server_gateway_proto_rawDescGZIP(), []int{27}
+	return file_proto_game_server_gateway_proto_rawDescGZIP(), []int{27}
 }
 
 func (x *GetPlayerSubscriptionsResponse) GetCode() common.ErrorCode {
@@ -1745,7 +1745,7 @@ type StoredUnreadEntry struct {
 
 func (x *StoredUnreadEntry) Reset() {
 	*x = StoredUnreadEntry{}
-	mi := &file_proto_server_gateway_proto_msgTypes[28]
+	mi := &file_proto_game_server_gateway_proto_msgTypes[28]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1757,7 +1757,7 @@ func (x *StoredUnreadEntry) String() string {
 func (*StoredUnreadEntry) ProtoMessage() {}
 
 func (x *StoredUnreadEntry) ProtoReflect() protoreflect.Message {
-	mi := &file_proto_server_gateway_proto_msgTypes[28]
+	mi := &file_proto_game_server_gateway_proto_msgTypes[28]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1770,7 +1770,7 @@ func (x *StoredUnreadEntry) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use StoredUnreadEntry.ProtoReflect.Descriptor instead.
 func (*StoredUnreadEntry) Descriptor() ([]byte, []int) {
-	return file_proto_server_gateway_proto_rawDescGZIP(), []int{28}
+	return file_proto_game_server_gateway_proto_rawDescGZIP(), []int{28}
 }
 
 func (x *StoredUnreadEntry) GetPlayerId() string {
@@ -1815,7 +1815,7 @@ type MarkChannelsReadRequest struct {
 
 func (x *MarkChannelsReadRequest) Reset() {
 	*x = MarkChannelsReadRequest{}
-	mi := &file_proto_server_gateway_proto_msgTypes[29]
+	mi := &file_proto_game_server_gateway_proto_msgTypes[29]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1827,7 +1827,7 @@ func (x *MarkChannelsReadRequest) String() string {
 func (*MarkChannelsReadRequest) ProtoMessage() {}
 
 func (x *MarkChannelsReadRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_proto_server_gateway_proto_msgTypes[29]
+	mi := &file_proto_game_server_gateway_proto_msgTypes[29]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1840,7 +1840,7 @@ func (x *MarkChannelsReadRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use MarkChannelsReadRequest.ProtoReflect.Descriptor instead.
 func (*MarkChannelsReadRequest) Descriptor() ([]byte, []int) {
-	return file_proto_server_gateway_proto_rawDescGZIP(), []int{29}
+	return file_proto_game_server_gateway_proto_rawDescGZIP(), []int{29}
 }
 
 func (x *MarkChannelsReadRequest) GetPlayerId() string {
@@ -1876,7 +1876,7 @@ type MarkChannelsReadResponse struct {
 
 func (x *MarkChannelsReadResponse) Reset() {
 	*x = MarkChannelsReadResponse{}
-	mi := &file_proto_server_gateway_proto_msgTypes[30]
+	mi := &file_proto_game_server_gateway_proto_msgTypes[30]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1888,7 +1888,7 @@ func (x *MarkChannelsReadResponse) String() string {
 func (*MarkChannelsReadResponse) ProtoMessage() {}
 
 func (x *MarkChannelsReadResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_proto_server_gateway_proto_msgTypes[30]
+	mi := &file_proto_game_server_gateway_proto_msgTypes[30]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1901,7 +1901,7 @@ func (x *MarkChannelsReadResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use MarkChannelsReadResponse.ProtoReflect.Descriptor instead.
 func (*MarkChannelsReadResponse) Descriptor() ([]byte, []int) {
-	return file_proto_server_gateway_proto_rawDescGZIP(), []int{30}
+	return file_proto_game_server_gateway_proto_rawDescGZIP(), []int{30}
 }
 
 func (x *MarkChannelsReadResponse) GetCode() common.ErrorCode {
@@ -1929,7 +1929,7 @@ type UnreadSummaryEntry struct {
 
 func (x *UnreadSummaryEntry) Reset() {
 	*x = UnreadSummaryEntry{}
-	mi := &file_proto_server_gateway_proto_msgTypes[31]
+	mi := &file_proto_game_server_gateway_proto_msgTypes[31]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1941,7 +1941,7 @@ func (x *UnreadSummaryEntry) String() string {
 func (*UnreadSummaryEntry) ProtoMessage() {}
 
 func (x *UnreadSummaryEntry) ProtoReflect() protoreflect.Message {
-	mi := &file_proto_server_gateway_proto_msgTypes[31]
+	mi := &file_proto_game_server_gateway_proto_msgTypes[31]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1954,7 +1954,7 @@ func (x *UnreadSummaryEntry) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use UnreadSummaryEntry.ProtoReflect.Descriptor instead.
 func (*UnreadSummaryEntry) Descriptor() ([]byte, []int) {
-	return file_proto_server_gateway_proto_rawDescGZIP(), []int{31}
+	return file_proto_game_server_gateway_proto_rawDescGZIP(), []int{31}
 }
 
 func (x *UnreadSummaryEntry) GetGameId() string {
@@ -1989,7 +1989,7 @@ type GetUnreadSummaryRequest struct {
 
 func (x *GetUnreadSummaryRequest) Reset() {
 	*x = GetUnreadSummaryRequest{}
-	mi := &file_proto_server_gateway_proto_msgTypes[32]
+	mi := &file_proto_game_server_gateway_proto_msgTypes[32]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -2001,7 +2001,7 @@ func (x *GetUnreadSummaryRequest) String() string {
 func (*GetUnreadSummaryRequest) ProtoMessage() {}
 
 func (x *GetUnreadSummaryRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_proto_server_gateway_proto_msgTypes[32]
+	mi := &file_proto_game_server_gateway_proto_msgTypes[32]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -2014,7 +2014,7 @@ func (x *GetUnreadSummaryRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use GetUnreadSummaryRequest.ProtoReflect.Descriptor instead.
 func (*GetUnreadSummaryRequest) Descriptor() ([]byte, []int) {
-	return file_proto_server_gateway_proto_rawDescGZIP(), []int{32}
+	return file_proto_game_server_gateway_proto_rawDescGZIP(), []int{32}
 }
 
 func (x *GetUnreadSummaryRequest) GetPlayerId() string {
@@ -2045,7 +2045,7 @@ type GetUnreadSummaryResponse struct {
 
 func (x *GetUnreadSummaryResponse) Reset() {
 	*x = GetUnreadSummaryResponse{}
-	mi := &file_proto_server_gateway_proto_msgTypes[33]
+	mi := &file_proto_game_server_gateway_proto_msgTypes[33]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -2057,7 +2057,7 @@ func (x *GetUnreadSummaryResponse) String() string {
 func (*GetUnreadSummaryResponse) ProtoMessage() {}
 
 func (x *GetUnreadSummaryResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_proto_server_gateway_proto_msgTypes[33]
+	mi := &file_proto_game_server_gateway_proto_msgTypes[33]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -2070,7 +2070,7 @@ func (x *GetUnreadSummaryResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use GetUnreadSummaryResponse.ProtoReflect.Descriptor instead.
 func (*GetUnreadSummaryResponse) Descriptor() ([]byte, []int) {
-	return file_proto_server_gateway_proto_rawDescGZIP(), []int{33}
+	return file_proto_game_server_gateway_proto_rawDescGZIP(), []int{33}
 }
 
 func (x *GetUnreadSummaryResponse) GetCode() common.ErrorCode {
@@ -2094,11 +2094,11 @@ func (x *GetUnreadSummaryResponse) GetTotalUnread() int32 {
 	return 0
 }
 
-var File_proto_server_gateway_proto protoreflect.FileDescriptor
+var File_proto_game_server_gateway_proto protoreflect.FileDescriptor
 
-const file_proto_server_gateway_proto_rawDesc = "" +
+const file_proto_game_server_gateway_proto_rawDesc = "" +
 	"\n" +
-	"\x1aproto/server_gateway.proto\x12\x14chirp.server_gateway\x1a\x12proto/common.proto\"u\n" +
+	"\x1fproto/game_server_gateway.proto\x12\x19chirp.game_server_gateway\x1a\x12proto/common.proto\"u\n" +
 	"\x11ServerAuthRequest\x12\x1d\n" +
 	"\n" +
 	"service_id\x18\x01 \x01(\tR\tserviceId\x12\x16\n" +
@@ -2111,10 +2111,10 @@ const file_proto_server_gateway_proto_rawDesc = "" +
 	"\x13ServerHeartbeatPing\x12$\n" +
 	"\x0eclient_time_ms\x18\x01 \x01(\x03R\fclientTimeMs\";\n" +
 	"\x13ServerHeartbeatPong\x12$\n" +
-	"\x0eserver_time_ms\x18\x01 \x01(\x03R\fserverTimeMs\"\xa9\x02\n" +
+	"\x0eserver_time_ms\x18\x01 \x01(\x03R\fserverTimeMs\"\xae\x02\n" +
 	"\x14MessageInjectRequest\x12\x1b\n" +
-	"\tinject_id\x18\x01 \x01(\tR\binjectId\x12A\n" +
-	"\vsender_kind\x18\x02 \x01(\x0e2 .chirp.server_gateway.SenderKindR\n" +
+	"\tinject_id\x18\x01 \x01(\tR\binjectId\x12F\n" +
+	"\vsender_kind\x18\x02 \x01(\x0e2%.chirp.game_server_gateway.SenderKindR\n" +
 	"senderKind\x12\x1b\n" +
 	"\tsender_id\x18\x03 \x01(\tR\bsenderId\x12!\n" +
 	"\fchannel_type\x18\x04 \x01(\x05R\vchannelType\x12\x1d\n" +
@@ -2126,9 +2126,9 @@ const file_proto_server_gateway_proto_rawDesc = "" +
 	"\agame_id\x18\b \x01(\tR\x06gameId\"a\n" +
 	"\x15MessageInjectResponse\x12+\n" +
 	"\x04code\x18\x01 \x01(\x0e2\x17.chirp.common.ErrorCodeR\x04code\x12\x1b\n" +
-	"\tinject_id\x18\x02 \x01(\tR\binjectId\"[\n" +
-	"\x13InjectMessageNotify\x12D\n" +
-	"\amessage\x18\x01 \x01(\v2*.chirp.server_gateway.MessageInjectRequestR\amessage\"\x95\x01\n" +
+	"\tinject_id\x18\x02 \x01(\tR\binjectId\"`\n" +
+	"\x13InjectMessageNotify\x12I\n" +
+	"\amessage\x18\x01 \x01(\v2/.chirp.game_server_gateway.MessageInjectRequestR\amessage\"\x95\x01\n" +
 	"\x13EventPublishRequest\x12\x19\n" +
 	"\bevent_id\x18\x01 \x01(\tR\aeventId\x12*\n" +
 	"\x11target_service_id\x18\x02 \x01(\tR\x0ftargetServiceId\x12\x1d\n" +
@@ -2179,10 +2179,10 @@ const file_proto_server_gateway_proto_rawDesc = "" +
 	"\x1cUnbindPlayerIdentityResponse\x12+\n" +
 	"\x04code\x18\x01 \x01(\x0e2\x17.chirp.common.ErrorCodeR\x04code\"9\n" +
 	"\x1aGetPlayerIdentitiesRequest\x12\x1b\n" +
-	"\tplayer_id\x18\x01 \x01(\tR\bplayerId\"\x93\x01\n" +
+	"\tplayer_id\x18\x01 \x01(\tR\bplayerId\"\x98\x01\n" +
 	"\x1bGetPlayerIdentitiesResponse\x12+\n" +
-	"\x04code\x18\x01 \x01(\x0e2\x17.chirp.common.ErrorCodeR\x04code\x12G\n" +
-	"\bbindings\x18\x02 \x03(\v2+.chirp.server_gateway.StoredIdentityBindingR\bbindings\"S\n" +
+	"\x04code\x18\x01 \x01(\x0e2\x17.chirp.common.ErrorCodeR\x04code\x12L\n" +
+	"\bbindings\x18\x02 \x03(\v20.chirp.game_server_gateway.StoredIdentityBindingR\bbindings\"S\n" +
 	"\x16ResolveGameUserRequest\x12\x17\n" +
 	"\agame_id\x18\x01 \x01(\tR\x06gameId\x12 \n" +
 	"\fgame_user_id\x18\x02 \x01(\tR\n" +
@@ -2217,10 +2217,10 @@ const file_proto_server_gateway_proto_rawDesc = "" +
 	"\x04code\x18\x01 \x01(\x0e2\x17.chirp.common.ErrorCodeR\x04code\"U\n" +
 	"\x1dGetPlayerSubscriptionsRequest\x12\x1b\n" +
 	"\tplayer_id\x18\x01 \x01(\tR\bplayerId\x12\x17\n" +
-	"\agame_id\x18\x02 \x01(\tR\x06gameId\"\xa4\x01\n" +
+	"\agame_id\x18\x02 \x01(\tR\x06gameId\"\xa9\x01\n" +
 	"\x1eGetPlayerSubscriptionsResponse\x12+\n" +
-	"\x04code\x18\x01 \x01(\x0e2\x17.chirp.common.ErrorCodeR\x04code\x12U\n" +
-	"\rsubscriptions\x18\x02 \x03(\v2/.chirp.server_gateway.StoredChannelSubscriptionR\rsubscriptions\"\x8b\x01\n" +
+	"\x04code\x18\x01 \x01(\x0e2\x17.chirp.common.ErrorCodeR\x04code\x12Z\n" +
+	"\rsubscriptions\x18\x02 \x03(\v24.chirp.game_server_gateway.StoredChannelSubscriptionR\rsubscriptions\"\x8b\x01\n" +
 	"\x11StoredUnreadEntry\x12\x1b\n" +
 	"\tplayer_id\x18\x01 \x01(\tR\bplayerId\x12\x17\n" +
 	"\agame_id\x18\x02 \x01(\tR\x06gameId\x12\x1d\n" +
@@ -2242,10 +2242,10 @@ const file_proto_server_gateway_proto_rawDesc = "" +
 	"\funread_count\x18\x03 \x01(\x05R\vunreadCount\"O\n" +
 	"\x17GetUnreadSummaryRequest\x12\x1b\n" +
 	"\tplayer_id\x18\x01 \x01(\tR\bplayerId\x12\x17\n" +
-	"\agame_id\x18\x02 \x01(\tR\x06gameId\"\xae\x01\n" +
+	"\agame_id\x18\x02 \x01(\tR\x06gameId\"\xb3\x01\n" +
 	"\x18GetUnreadSummaryResponse\x12+\n" +
-	"\x04code\x18\x01 \x01(\x0e2\x17.chirp.common.ErrorCodeR\x04code\x12B\n" +
-	"\aentries\x18\x02 \x03(\v2(.chirp.server_gateway.UnreadSummaryEntryR\aentries\x12!\n" +
+	"\x04code\x18\x01 \x01(\x0e2\x17.chirp.common.ErrorCodeR\x04code\x12G\n" +
+	"\aentries\x18\x02 \x03(\v2-.chirp.game_server_gateway.UnreadSummaryEntryR\aentries\x12!\n" +
 	"\ftotal_unread\x18\x03 \x01(\x05R\vtotalUnread*W\n" +
 	"\n" +
 	"SenderKind\x12\x12\n" +
@@ -2253,79 +2253,79 @@ const file_proto_server_gateway_proto_rawDesc = "" +
 	"\rSENDER_SYSTEM\x10\x01\x12\x0e\n" +
 	"\n" +
 	"SENDER_NPC\x10\x02\x12\x12\n" +
-	"\x0eSENDER_SERVICE\x10\x03B.Z,github.com/cui/chirp/proto/go/server_gatewayb\x06proto3"
+	"\x0eSENDER_SERVICE\x10\x03B3Z1github.com/cui/chirp/proto/go/game_server_gatewayb\x06proto3"
 
 var (
-	file_proto_server_gateway_proto_rawDescOnce sync.Once
-	file_proto_server_gateway_proto_rawDescData []byte
+	file_proto_game_server_gateway_proto_rawDescOnce sync.Once
+	file_proto_game_server_gateway_proto_rawDescData []byte
 )
 
-func file_proto_server_gateway_proto_rawDescGZIP() []byte {
-	file_proto_server_gateway_proto_rawDescOnce.Do(func() {
-		file_proto_server_gateway_proto_rawDescData = protoimpl.X.CompressGZIP(unsafe.Slice(unsafe.StringData(file_proto_server_gateway_proto_rawDesc), len(file_proto_server_gateway_proto_rawDesc)))
+func file_proto_game_server_gateway_proto_rawDescGZIP() []byte {
+	file_proto_game_server_gateway_proto_rawDescOnce.Do(func() {
+		file_proto_game_server_gateway_proto_rawDescData = protoimpl.X.CompressGZIP(unsafe.Slice(unsafe.StringData(file_proto_game_server_gateway_proto_rawDesc), len(file_proto_game_server_gateway_proto_rawDesc)))
 	})
-	return file_proto_server_gateway_proto_rawDescData
+	return file_proto_game_server_gateway_proto_rawDescData
 }
 
-var file_proto_server_gateway_proto_enumTypes = make([]protoimpl.EnumInfo, 1)
-var file_proto_server_gateway_proto_msgTypes = make([]protoimpl.MessageInfo, 34)
-var file_proto_server_gateway_proto_goTypes = []any{
-	(SenderKind)(0),                          // 0: chirp.server_gateway.SenderKind
-	(*ServerAuthRequest)(nil),                // 1: chirp.server_gateway.ServerAuthRequest
-	(*ServerAuthResponse)(nil),               // 2: chirp.server_gateway.ServerAuthResponse
-	(*ServerHeartbeatPing)(nil),              // 3: chirp.server_gateway.ServerHeartbeatPing
-	(*ServerHeartbeatPong)(nil),              // 4: chirp.server_gateway.ServerHeartbeatPong
-	(*MessageInjectRequest)(nil),             // 5: chirp.server_gateway.MessageInjectRequest
-	(*MessageInjectResponse)(nil),            // 6: chirp.server_gateway.MessageInjectResponse
-	(*InjectMessageNotify)(nil),              // 7: chirp.server_gateway.InjectMessageNotify
-	(*EventPublishRequest)(nil),              // 8: chirp.server_gateway.EventPublishRequest
-	(*EventPublishResponse)(nil),             // 9: chirp.server_gateway.EventPublishResponse
-	(*EventDeliverNotify)(nil),               // 10: chirp.server_gateway.EventDeliverNotify
-	(*EventAckRequest)(nil),                  // 11: chirp.server_gateway.EventAckRequest
-	(*EventAckResponse)(nil),                 // 12: chirp.server_gateway.EventAckResponse
-	(*StoredIdentityBinding)(nil),            // 13: chirp.server_gateway.StoredIdentityBinding
-	(*BindPlayerIdentityRequest)(nil),        // 14: chirp.server_gateway.BindPlayerIdentityRequest
-	(*BindPlayerIdentityResponse)(nil),       // 15: chirp.server_gateway.BindPlayerIdentityResponse
-	(*UnbindPlayerIdentityRequest)(nil),      // 16: chirp.server_gateway.UnbindPlayerIdentityRequest
-	(*UnbindPlayerIdentityResponse)(nil),     // 17: chirp.server_gateway.UnbindPlayerIdentityResponse
-	(*GetPlayerIdentitiesRequest)(nil),       // 18: chirp.server_gateway.GetPlayerIdentitiesRequest
-	(*GetPlayerIdentitiesResponse)(nil),      // 19: chirp.server_gateway.GetPlayerIdentitiesResponse
-	(*ResolveGameUserRequest)(nil),           // 20: chirp.server_gateway.ResolveGameUserRequest
-	(*ResolveGameUserResponse)(nil),          // 21: chirp.server_gateway.ResolveGameUserResponse
-	(*StoredChannelSubscription)(nil),        // 22: chirp.server_gateway.StoredChannelSubscription
-	(*SubscribePlayerChannelRequest)(nil),    // 23: chirp.server_gateway.SubscribePlayerChannelRequest
-	(*SubscribePlayerChannelResponse)(nil),   // 24: chirp.server_gateway.SubscribePlayerChannelResponse
-	(*UnsubscribePlayerChannelRequest)(nil),  // 25: chirp.server_gateway.UnsubscribePlayerChannelRequest
-	(*UnsubscribePlayerChannelResponse)(nil), // 26: chirp.server_gateway.UnsubscribePlayerChannelResponse
-	(*GetPlayerSubscriptionsRequest)(nil),    // 27: chirp.server_gateway.GetPlayerSubscriptionsRequest
-	(*GetPlayerSubscriptionsResponse)(nil),   // 28: chirp.server_gateway.GetPlayerSubscriptionsResponse
-	(*StoredUnreadEntry)(nil),                // 29: chirp.server_gateway.StoredUnreadEntry
-	(*MarkChannelsReadRequest)(nil),          // 30: chirp.server_gateway.MarkChannelsReadRequest
-	(*MarkChannelsReadResponse)(nil),         // 31: chirp.server_gateway.MarkChannelsReadResponse
-	(*UnreadSummaryEntry)(nil),               // 32: chirp.server_gateway.UnreadSummaryEntry
-	(*GetUnreadSummaryRequest)(nil),          // 33: chirp.server_gateway.GetUnreadSummaryRequest
-	(*GetUnreadSummaryResponse)(nil),         // 34: chirp.server_gateway.GetUnreadSummaryResponse
+var file_proto_game_server_gateway_proto_enumTypes = make([]protoimpl.EnumInfo, 1)
+var file_proto_game_server_gateway_proto_msgTypes = make([]protoimpl.MessageInfo, 34)
+var file_proto_game_server_gateway_proto_goTypes = []any{
+	(SenderKind)(0),                          // 0: chirp.game_server_gateway.SenderKind
+	(*ServerAuthRequest)(nil),                // 1: chirp.game_server_gateway.ServerAuthRequest
+	(*ServerAuthResponse)(nil),               // 2: chirp.game_server_gateway.ServerAuthResponse
+	(*ServerHeartbeatPing)(nil),              // 3: chirp.game_server_gateway.ServerHeartbeatPing
+	(*ServerHeartbeatPong)(nil),              // 4: chirp.game_server_gateway.ServerHeartbeatPong
+	(*MessageInjectRequest)(nil),             // 5: chirp.game_server_gateway.MessageInjectRequest
+	(*MessageInjectResponse)(nil),            // 6: chirp.game_server_gateway.MessageInjectResponse
+	(*InjectMessageNotify)(nil),              // 7: chirp.game_server_gateway.InjectMessageNotify
+	(*EventPublishRequest)(nil),              // 8: chirp.game_server_gateway.EventPublishRequest
+	(*EventPublishResponse)(nil),             // 9: chirp.game_server_gateway.EventPublishResponse
+	(*EventDeliverNotify)(nil),               // 10: chirp.game_server_gateway.EventDeliverNotify
+	(*EventAckRequest)(nil),                  // 11: chirp.game_server_gateway.EventAckRequest
+	(*EventAckResponse)(nil),                 // 12: chirp.game_server_gateway.EventAckResponse
+	(*StoredIdentityBinding)(nil),            // 13: chirp.game_server_gateway.StoredIdentityBinding
+	(*BindPlayerIdentityRequest)(nil),        // 14: chirp.game_server_gateway.BindPlayerIdentityRequest
+	(*BindPlayerIdentityResponse)(nil),       // 15: chirp.game_server_gateway.BindPlayerIdentityResponse
+	(*UnbindPlayerIdentityRequest)(nil),      // 16: chirp.game_server_gateway.UnbindPlayerIdentityRequest
+	(*UnbindPlayerIdentityResponse)(nil),     // 17: chirp.game_server_gateway.UnbindPlayerIdentityResponse
+	(*GetPlayerIdentitiesRequest)(nil),       // 18: chirp.game_server_gateway.GetPlayerIdentitiesRequest
+	(*GetPlayerIdentitiesResponse)(nil),      // 19: chirp.game_server_gateway.GetPlayerIdentitiesResponse
+	(*ResolveGameUserRequest)(nil),           // 20: chirp.game_server_gateway.ResolveGameUserRequest
+	(*ResolveGameUserResponse)(nil),          // 21: chirp.game_server_gateway.ResolveGameUserResponse
+	(*StoredChannelSubscription)(nil),        // 22: chirp.game_server_gateway.StoredChannelSubscription
+	(*SubscribePlayerChannelRequest)(nil),    // 23: chirp.game_server_gateway.SubscribePlayerChannelRequest
+	(*SubscribePlayerChannelResponse)(nil),   // 24: chirp.game_server_gateway.SubscribePlayerChannelResponse
+	(*UnsubscribePlayerChannelRequest)(nil),  // 25: chirp.game_server_gateway.UnsubscribePlayerChannelRequest
+	(*UnsubscribePlayerChannelResponse)(nil), // 26: chirp.game_server_gateway.UnsubscribePlayerChannelResponse
+	(*GetPlayerSubscriptionsRequest)(nil),    // 27: chirp.game_server_gateway.GetPlayerSubscriptionsRequest
+	(*GetPlayerSubscriptionsResponse)(nil),   // 28: chirp.game_server_gateway.GetPlayerSubscriptionsResponse
+	(*StoredUnreadEntry)(nil),                // 29: chirp.game_server_gateway.StoredUnreadEntry
+	(*MarkChannelsReadRequest)(nil),          // 30: chirp.game_server_gateway.MarkChannelsReadRequest
+	(*MarkChannelsReadResponse)(nil),         // 31: chirp.game_server_gateway.MarkChannelsReadResponse
+	(*UnreadSummaryEntry)(nil),               // 32: chirp.game_server_gateway.UnreadSummaryEntry
+	(*GetUnreadSummaryRequest)(nil),          // 33: chirp.game_server_gateway.GetUnreadSummaryRequest
+	(*GetUnreadSummaryResponse)(nil),         // 34: chirp.game_server_gateway.GetUnreadSummaryResponse
 	(common.ErrorCode)(0),                    // 35: chirp.common.ErrorCode
 }
-var file_proto_server_gateway_proto_depIdxs = []int32{
-	35, // 0: chirp.server_gateway.ServerAuthResponse.code:type_name -> chirp.common.ErrorCode
-	0,  // 1: chirp.server_gateway.MessageInjectRequest.sender_kind:type_name -> chirp.server_gateway.SenderKind
-	35, // 2: chirp.server_gateway.MessageInjectResponse.code:type_name -> chirp.common.ErrorCode
-	5,  // 3: chirp.server_gateway.InjectMessageNotify.message:type_name -> chirp.server_gateway.MessageInjectRequest
-	35, // 4: chirp.server_gateway.EventPublishResponse.code:type_name -> chirp.common.ErrorCode
-	35, // 5: chirp.server_gateway.EventAckResponse.code:type_name -> chirp.common.ErrorCode
-	35, // 6: chirp.server_gateway.BindPlayerIdentityResponse.code:type_name -> chirp.common.ErrorCode
-	35, // 7: chirp.server_gateway.UnbindPlayerIdentityResponse.code:type_name -> chirp.common.ErrorCode
-	35, // 8: chirp.server_gateway.GetPlayerIdentitiesResponse.code:type_name -> chirp.common.ErrorCode
-	13, // 9: chirp.server_gateway.GetPlayerIdentitiesResponse.bindings:type_name -> chirp.server_gateway.StoredIdentityBinding
-	35, // 10: chirp.server_gateway.ResolveGameUserResponse.code:type_name -> chirp.common.ErrorCode
-	35, // 11: chirp.server_gateway.SubscribePlayerChannelResponse.code:type_name -> chirp.common.ErrorCode
-	35, // 12: chirp.server_gateway.UnsubscribePlayerChannelResponse.code:type_name -> chirp.common.ErrorCode
-	35, // 13: chirp.server_gateway.GetPlayerSubscriptionsResponse.code:type_name -> chirp.common.ErrorCode
-	22, // 14: chirp.server_gateway.GetPlayerSubscriptionsResponse.subscriptions:type_name -> chirp.server_gateway.StoredChannelSubscription
-	35, // 15: chirp.server_gateway.MarkChannelsReadResponse.code:type_name -> chirp.common.ErrorCode
-	35, // 16: chirp.server_gateway.GetUnreadSummaryResponse.code:type_name -> chirp.common.ErrorCode
-	32, // 17: chirp.server_gateway.GetUnreadSummaryResponse.entries:type_name -> chirp.server_gateway.UnreadSummaryEntry
+var file_proto_game_server_gateway_proto_depIdxs = []int32{
+	35, // 0: chirp.game_server_gateway.ServerAuthResponse.code:type_name -> chirp.common.ErrorCode
+	0,  // 1: chirp.game_server_gateway.MessageInjectRequest.sender_kind:type_name -> chirp.game_server_gateway.SenderKind
+	35, // 2: chirp.game_server_gateway.MessageInjectResponse.code:type_name -> chirp.common.ErrorCode
+	5,  // 3: chirp.game_server_gateway.InjectMessageNotify.message:type_name -> chirp.game_server_gateway.MessageInjectRequest
+	35, // 4: chirp.game_server_gateway.EventPublishResponse.code:type_name -> chirp.common.ErrorCode
+	35, // 5: chirp.game_server_gateway.EventAckResponse.code:type_name -> chirp.common.ErrorCode
+	35, // 6: chirp.game_server_gateway.BindPlayerIdentityResponse.code:type_name -> chirp.common.ErrorCode
+	35, // 7: chirp.game_server_gateway.UnbindPlayerIdentityResponse.code:type_name -> chirp.common.ErrorCode
+	35, // 8: chirp.game_server_gateway.GetPlayerIdentitiesResponse.code:type_name -> chirp.common.ErrorCode
+	13, // 9: chirp.game_server_gateway.GetPlayerIdentitiesResponse.bindings:type_name -> chirp.game_server_gateway.StoredIdentityBinding
+	35, // 10: chirp.game_server_gateway.ResolveGameUserResponse.code:type_name -> chirp.common.ErrorCode
+	35, // 11: chirp.game_server_gateway.SubscribePlayerChannelResponse.code:type_name -> chirp.common.ErrorCode
+	35, // 12: chirp.game_server_gateway.UnsubscribePlayerChannelResponse.code:type_name -> chirp.common.ErrorCode
+	35, // 13: chirp.game_server_gateway.GetPlayerSubscriptionsResponse.code:type_name -> chirp.common.ErrorCode
+	22, // 14: chirp.game_server_gateway.GetPlayerSubscriptionsResponse.subscriptions:type_name -> chirp.game_server_gateway.StoredChannelSubscription
+	35, // 15: chirp.game_server_gateway.MarkChannelsReadResponse.code:type_name -> chirp.common.ErrorCode
+	35, // 16: chirp.game_server_gateway.GetUnreadSummaryResponse.code:type_name -> chirp.common.ErrorCode
+	32, // 17: chirp.game_server_gateway.GetUnreadSummaryResponse.entries:type_name -> chirp.game_server_gateway.UnreadSummaryEntry
 	18, // [18:18] is the sub-list for method output_type
 	18, // [18:18] is the sub-list for method input_type
 	18, // [18:18] is the sub-list for extension type_name
@@ -2333,27 +2333,27 @@ var file_proto_server_gateway_proto_depIdxs = []int32{
 	0,  // [0:18] is the sub-list for field type_name
 }
 
-func init() { file_proto_server_gateway_proto_init() }
-func file_proto_server_gateway_proto_init() {
-	if File_proto_server_gateway_proto != nil {
+func init() { file_proto_game_server_gateway_proto_init() }
+func file_proto_game_server_gateway_proto_init() {
+	if File_proto_game_server_gateway_proto != nil {
 		return
 	}
 	type x struct{}
 	out := protoimpl.TypeBuilder{
 		File: protoimpl.DescBuilder{
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
-			RawDescriptor: unsafe.Slice(unsafe.StringData(file_proto_server_gateway_proto_rawDesc), len(file_proto_server_gateway_proto_rawDesc)),
+			RawDescriptor: unsafe.Slice(unsafe.StringData(file_proto_game_server_gateway_proto_rawDesc), len(file_proto_game_server_gateway_proto_rawDesc)),
 			NumEnums:      1,
 			NumMessages:   34,
 			NumExtensions: 0,
 			NumServices:   0,
 		},
-		GoTypes:           file_proto_server_gateway_proto_goTypes,
-		DependencyIndexes: file_proto_server_gateway_proto_depIdxs,
-		EnumInfos:         file_proto_server_gateway_proto_enumTypes,
-		MessageInfos:      file_proto_server_gateway_proto_msgTypes,
+		GoTypes:           file_proto_game_server_gateway_proto_goTypes,
+		DependencyIndexes: file_proto_game_server_gateway_proto_depIdxs,
+		EnumInfos:         file_proto_game_server_gateway_proto_enumTypes,
+		MessageInfos:      file_proto_game_server_gateway_proto_msgTypes,
 	}.Build()
-	File_proto_server_gateway_proto = out.File
-	file_proto_server_gateway_proto_goTypes = nil
-	file_proto_server_gateway_proto_depIdxs = nil
+	File_proto_game_server_gateway_proto = out.File
+	file_proto_game_server_gateway_proto_goTypes = nil
+	file_proto_game_server_gateway_proto_depIdxs = nil
 }

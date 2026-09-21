@@ -34,7 +34,7 @@ import (
 
 	pbcommon "github.com/cui/chirp/proto/go/common"
 	pbgw "github.com/cui/chirp/proto/go/gateway"
-	pbsg "github.com/cui/chirp/proto/go/server_gateway"
+	pbsg "github.com/cui/chirp/proto/go/game_server_gateway"
 )
 
 // Errors returned by the client. Use errors.Is to test for them.

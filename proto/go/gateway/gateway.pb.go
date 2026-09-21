@@ -7,6 +7,8 @@
 package gateway
 
 import (
+	chat "github.com/cui/chirp/proto/go/chat"
+	common "github.com/cui/chirp/proto/go/common"
 	protoreflect "google.golang.org/protobuf/reflect/protoreflect"
 	protoimpl "google.golang.org/protobuf/runtime/protoimpl"
 	reflect "reflect"
@@ -167,7 +169,7 @@ const (
 	MsgID_PARTICIPANT_STATE_CHANGED_NOTIFY MsgID = 4020
 	MsgID_SPEAKING_NOTIFY                  MsgID = 4021
 	// Server plane: game backend <-> chirp (authenticated services, not users).
-	// See proto/server_gateway.proto for the payloads.
+	// See proto/game_server_gateway.proto for the payloads.
 	MsgID_SERVER_AUTH_REQ             MsgID = 5001
 	MsgID_SERVER_AUTH_RESP            MsgID = 5002
 	MsgID_SERVER_HEARTBEAT_PING       MsgID = 5003
@@ -190,7 +192,7 @@ const (
 	MsgID_RESOLVE_GAME_USER_RESP      MsgID = 5020
 	// Player channel subscriptions: asserted by game backends on this plane,
 	// and forwarded by app_gateway for self-served players (player_id pinned
-	// to the authenticated user). See proto/server_gateway.proto.
+	// to the authenticated user). See proto/game_server_gateway.proto.
 	MsgID_SUBSCRIBE_PLAYER_CHANNEL_REQ    MsgID = 5021
 	MsgID_SUBSCRIBE_PLAYER_CHANNEL_RESP   MsgID = 5022
 	MsgID_UNSUBSCRIBE_PLAYER_CHANNEL_REQ  MsgID = 5023
@@ -201,14 +203,21 @@ const (
 	// the fan-out copies injected with a game_id. Independent of the chat
 	// read cursors (2201-2207); app_gateway forwards these for self-served
 	// players (player_id pinned to the authenticated user). Bodies are
-	// chirp.server_gateway.* messages; see proto/server_gateway.proto.
+	// chirp.game_server_gateway.* messages; see proto/game_server_gateway.proto.
 	MsgID_MARK_CHANNELS_READ_REQ  MsgID = 5027
 	MsgID_MARK_CHANNELS_READ_RESP MsgID = 5028
 	MsgID_GET_UNREAD_SUMMARY_REQ  MsgID = 5029
 	MsgID_GET_UNREAD_SUMMARY_RESP MsgID = 5030
+	// Chat peer registration: game_chat (spoke) registers with app_chat (hub)
+	// so channel messages bridge between the two planes natively - no external
+	// bridge process. See docs/architecture.md (对等注册协议).
+	MsgID_PEER_REGISTER_REQ          MsgID = 5050
+	MsgID_PEER_REGISTER_RESP         MsgID = 5051
+	MsgID_CHANNEL_MESSAGE_NOTIFY     MsgID = 5052
+	MsgID_PEER_INJECT_MESSAGE_NOTIFY MsgID = 5053
 	// Notification plane: device registration forwarded by app_gateway and
 	// push requests from internal services (chat). Bodies are
-	// chirp.notification.* messages; see proto/notification.proto.
+	// chirp.app_notification.* messages; see proto/app_notification.proto.
 	MsgID_REGISTER_DEVICE_REQ      MsgID = 6001
 	MsgID_REGISTER_DEVICE_RESP     MsgID = 6002
 	MsgID_UNREGISTER_DEVICE_REQ    MsgID = 6003
@@ -410,6 +419,10 @@ var (
 		5028: "MARK_CHANNELS_READ_RESP",
 		5029: "GET_UNREAD_SUMMARY_REQ",
 		5030: "GET_UNREAD_SUMMARY_RESP",
+		5050: "PEER_REGISTER_REQ",
+		5051: "PEER_REGISTER_RESP",
+		5052: "CHANNEL_MESSAGE_NOTIFY",
+		5053: "PEER_INJECT_MESSAGE_NOTIFY",
 		6001: "REGISTER_DEVICE_REQ",
 		6002: "REGISTER_DEVICE_RESP",
 		6003: "UNREGISTER_DEVICE_REQ",
@@ -604,6 +617,10 @@ var (
 		"MARK_CHANNELS_READ_RESP":          5028,
 		"GET_UNREAD_SUMMARY_REQ":           5029,
 		"GET_UNREAD_SUMMARY_RESP":          5030,
+		"PEER_REGISTER_REQ":                5050,
+		"PEER_REGISTER_RESP":               5051,
+		"CHANNEL_MESSAGE_NOTIFY":           5052,
+		"PEER_INJECT_MESSAGE_NOTIFY":       5053,
 		"REGISTER_DEVICE_REQ":              6001,
 		"REGISTER_DEVICE_RESP":             6002,
 		"UNREGISTER_DEVICE_REQ":            6003,
@@ -669,6 +686,62 @@ func (x MsgID) Number() protoreflect.EnumNumber {
 // Deprecated: Use MsgID.Descriptor instead.
 func (MsgID) EnumDescriptor() ([]byte, []int) {
 	return file_proto_gateway_proto_rawDescGZIP(), []int{0}
+}
+
+// Capability bits exchanged during the handshake. The negotiated set is the
+// intersection of both sides; anything outside it stays disabled for the
+// session. New capabilities bump protocol_version and add a bit - old peers
+// that do not know the bit simply never use it.
+type PeerCapability int32
+
+const (
+	PeerCapability_RELAY_READ_RECEIPTS    PeerCapability = 0
+	PeerCapability_RELAY_TYPING           PeerCapability = 1
+	PeerCapability_RELAY_PRESENCE         PeerCapability = 2
+	PeerCapability_RELAY_OFFLINE_MESSAGES PeerCapability = 3
+)
+
+// Enum value maps for PeerCapability.
+var (
+	PeerCapability_name = map[int32]string{
+		0: "RELAY_READ_RECEIPTS",
+		1: "RELAY_TYPING",
+		2: "RELAY_PRESENCE",
+		3: "RELAY_OFFLINE_MESSAGES",
+	}
+	PeerCapability_value = map[string]int32{
+		"RELAY_READ_RECEIPTS":    0,
+		"RELAY_TYPING":           1,
+		"RELAY_PRESENCE":         2,
+		"RELAY_OFFLINE_MESSAGES": 3,
+	}
+)
+
+func (x PeerCapability) Enum() *PeerCapability {
+	p := new(PeerCapability)
+	*p = x
+	return p
+}
+
+func (x PeerCapability) String() string {
+	return protoimpl.X.EnumStringOf(x.Descriptor(), protoreflect.EnumNumber(x))
+}
+
+func (PeerCapability) Descriptor() protoreflect.EnumDescriptor {
+	return file_proto_gateway_proto_enumTypes[1].Descriptor()
+}
+
+func (PeerCapability) Type() protoreflect.EnumType {
+	return &file_proto_gateway_proto_enumTypes[1]
+}
+
+func (x PeerCapability) Number() protoreflect.EnumNumber {
+	return protoreflect.EnumNumber(x)
+}
+
+// Deprecated: Use PeerCapability.Descriptor instead.
+func (PeerCapability) EnumDescriptor() ([]byte, []int) {
+	return file_proto_gateway_proto_rawDescGZIP(), []int{1}
 }
 
 // Universal Packet Envelope (Optional, if we want full protobuf wrap)
@@ -830,11 +903,306 @@ func (x *HeartbeatPong) GetServerTime() int64 {
 	return 0
 }
 
+type PeerRegisterReq struct {
+	state     protoimpl.MessageState `protogen:"open.v1"`
+	ServiceId string                 `protobuf:"bytes,1,opt,name=service_id,json=serviceId,proto3" json:"service_id,omitempty"` // e.g. "game_42"; second registration with the
+	// same id displaces the first connection
+	ServiceSecret string `protobuf:"bytes,2,opt,name=service_secret,json=serviceSecret,proto3" json:"service_secret,omitempty"` // shared secret for this peer (checked against
+	// the hub's --allowed_peers list)
+	ProtocolVersion int32  `protobuf:"varint,3,opt,name=protocol_version,json=protocolVersion,proto3" json:"protocol_version,omitempty"` // negotiated down to min(hub, spoke)
+	GameId          string `protobuf:"bytes,4,opt,name=game_id,json=gameId,proto3" json:"game_id,omitempty"`                             // namespace for this peer's channels; must not
+	// contain ':' (it prefixes "<game_id>:" on the
+	// hub side)
+	SupportedFeatures []PeerCapability `protobuf:"varint,5,rep,packed,name=supported_features,json=supportedFeatures,proto3,enum=chirp.gateway.PeerCapability" json:"supported_features,omitempty"`
+	unknownFields     protoimpl.UnknownFields
+	sizeCache         protoimpl.SizeCache
+}
+
+func (x *PeerRegisterReq) Reset() {
+	*x = PeerRegisterReq{}
+	mi := &file_proto_gateway_proto_msgTypes[3]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *PeerRegisterReq) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*PeerRegisterReq) ProtoMessage() {}
+
+func (x *PeerRegisterReq) ProtoReflect() protoreflect.Message {
+	mi := &file_proto_gateway_proto_msgTypes[3]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use PeerRegisterReq.ProtoReflect.Descriptor instead.
+func (*PeerRegisterReq) Descriptor() ([]byte, []int) {
+	return file_proto_gateway_proto_rawDescGZIP(), []int{3}
+}
+
+func (x *PeerRegisterReq) GetServiceId() string {
+	if x != nil {
+		return x.ServiceId
+	}
+	return ""
+}
+
+func (x *PeerRegisterReq) GetServiceSecret() string {
+	if x != nil {
+		return x.ServiceSecret
+	}
+	return ""
+}
+
+func (x *PeerRegisterReq) GetProtocolVersion() int32 {
+	if x != nil {
+		return x.ProtocolVersion
+	}
+	return 0
+}
+
+func (x *PeerRegisterReq) GetGameId() string {
+	if x != nil {
+		return x.GameId
+	}
+	return ""
+}
+
+func (x *PeerRegisterReq) GetSupportedFeatures() []PeerCapability {
+	if x != nil {
+		return x.SupportedFeatures
+	}
+	return nil
+}
+
+type PeerRegisterResp struct {
+	state protoimpl.MessageState `protogen:"open.v1"`
+	Code  common.ErrorCode       `protobuf:"varint,1,opt,name=code,proto3,enum=chirp.common.ErrorCode" json:"code,omitempty"` // OK / AUTH_FAILED (not whitelisted) /
+	// VERSION_MISMATCH (below min version)
+	ProtocolVersion int32 `protobuf:"varint,2,opt,name=protocol_version,json=protocolVersion,proto3" json:"protocol_version,omitempty"` // negotiated version (OK) or hub's
+	// current version (mismatch)
+	MinVersion               int32 `protobuf:"varint,3,opt,name=min_version,json=minVersion,proto3" json:"min_version,omitempty"`                                             // hub's minimum accepted version
+	HeartbeatIntervalSeconds int32 `protobuf:"varint,4,opt,name=heartbeat_interval_seconds,json=heartbeatIntervalSeconds,proto3" json:"heartbeat_interval_seconds,omitempty"` // hub-assigned cadence; a peer that
+	// stays silent for ~2x is dropped
+	SupportedFeatures []PeerCapability `protobuf:"varint,5,rep,packed,name=supported_features,json=supportedFeatures,proto3,enum=chirp.gateway.PeerCapability" json:"supported_features,omitempty"` // negotiated intersection
+	unknownFields     protoimpl.UnknownFields
+	sizeCache         protoimpl.SizeCache
+}
+
+func (x *PeerRegisterResp) Reset() {
+	*x = PeerRegisterResp{}
+	mi := &file_proto_gateway_proto_msgTypes[4]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *PeerRegisterResp) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*PeerRegisterResp) ProtoMessage() {}
+
+func (x *PeerRegisterResp) ProtoReflect() protoreflect.Message {
+	mi := &file_proto_gateway_proto_msgTypes[4]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use PeerRegisterResp.ProtoReflect.Descriptor instead.
+func (*PeerRegisterResp) Descriptor() ([]byte, []int) {
+	return file_proto_gateway_proto_rawDescGZIP(), []int{4}
+}
+
+func (x *PeerRegisterResp) GetCode() common.ErrorCode {
+	if x != nil {
+		return x.Code
+	}
+	return common.ErrorCode(0)
+}
+
+func (x *PeerRegisterResp) GetProtocolVersion() int32 {
+	if x != nil {
+		return x.ProtocolVersion
+	}
+	return 0
+}
+
+func (x *PeerRegisterResp) GetMinVersion() int32 {
+	if x != nil {
+		return x.MinVersion
+	}
+	return 0
+}
+
+func (x *PeerRegisterResp) GetHeartbeatIntervalSeconds() int32 {
+	if x != nil {
+		return x.HeartbeatIntervalSeconds
+	}
+	return 0
+}
+
+func (x *PeerRegisterResp) GetSupportedFeatures() []PeerCapability {
+	if x != nil {
+		return x.SupportedFeatures
+	}
+	return nil
+}
+
+// Spoke -> hub: one game-side channel message, fanned out by the hub to every
+// subscribed App player as an injected private copy named
+// "<game_id>:<channel_id>". The message body is the game-side ChatMessage
+// verbatim; channel_id stays bare (the hub adds the prefix).
+type ChannelMessageNotify struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	GameId        string                 `protobuf:"bytes,1,opt,name=game_id,json=gameId,proto3" json:"game_id,omitempty"` // redundant with the registration for validation
+	ChannelId     string                 `protobuf:"bytes,2,opt,name=channel_id,json=channelId,proto3" json:"channel_id,omitempty"`
+	Message       *chat.ChatMessage      `protobuf:"bytes,3,opt,name=message,proto3" json:"message,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *ChannelMessageNotify) Reset() {
+	*x = ChannelMessageNotify{}
+	mi := &file_proto_gateway_proto_msgTypes[5]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *ChannelMessageNotify) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*ChannelMessageNotify) ProtoMessage() {}
+
+func (x *ChannelMessageNotify) ProtoReflect() protoreflect.Message {
+	mi := &file_proto_gateway_proto_msgTypes[5]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use ChannelMessageNotify.ProtoReflect.Descriptor instead.
+func (*ChannelMessageNotify) Descriptor() ([]byte, []int) {
+	return file_proto_gateway_proto_rawDescGZIP(), []int{5}
+}
+
+func (x *ChannelMessageNotify) GetGameId() string {
+	if x != nil {
+		return x.GameId
+	}
+	return ""
+}
+
+func (x *ChannelMessageNotify) GetChannelId() string {
+	if x != nil {
+		return x.ChannelId
+	}
+	return ""
+}
+
+func (x *ChannelMessageNotify) GetMessage() *chat.ChatMessage {
+	if x != nil {
+		return x.Message
+	}
+	return nil
+}
+
+// Hub -> spoke: an App player's reply to a "<game_id>:<channel_id>" channel,
+// injected into the game-side channel as a normal message. The spoke never
+// sees the App player's player_id - the hub resolves it to a game_user_id
+// before sending.
+type PeerInjectMessageNotify struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	ChannelId     string                 `protobuf:"bytes,1,opt,name=channel_id,json=channelId,proto3" json:"channel_id,omitempty"` // bare game-side channel id
+	SenderId      string                 `protobuf:"bytes,2,opt,name=sender_id,json=senderId,proto3" json:"sender_id,omitempty"`    // game_user_id resolved from the App player
+	Content       []byte                 `protobuf:"bytes,3,opt,name=content,proto3" json:"content,omitempty"`
+	ClientMsgId   string                 `protobuf:"bytes,4,opt,name=client_msg_id,json=clientMsgId,proto3" json:"client_msg_id,omitempty"` // optional idempotency key from the App client
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *PeerInjectMessageNotify) Reset() {
+	*x = PeerInjectMessageNotify{}
+	mi := &file_proto_gateway_proto_msgTypes[6]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *PeerInjectMessageNotify) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*PeerInjectMessageNotify) ProtoMessage() {}
+
+func (x *PeerInjectMessageNotify) ProtoReflect() protoreflect.Message {
+	mi := &file_proto_gateway_proto_msgTypes[6]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use PeerInjectMessageNotify.ProtoReflect.Descriptor instead.
+func (*PeerInjectMessageNotify) Descriptor() ([]byte, []int) {
+	return file_proto_gateway_proto_rawDescGZIP(), []int{6}
+}
+
+func (x *PeerInjectMessageNotify) GetChannelId() string {
+	if x != nil {
+		return x.ChannelId
+	}
+	return ""
+}
+
+func (x *PeerInjectMessageNotify) GetSenderId() string {
+	if x != nil {
+		return x.SenderId
+	}
+	return ""
+}
+
+func (x *PeerInjectMessageNotify) GetContent() []byte {
+	if x != nil {
+		return x.Content
+	}
+	return nil
+}
+
+func (x *PeerInjectMessageNotify) GetClientMsgId() string {
+	if x != nil {
+		return x.ClientMsgId
+	}
+	return ""
+}
+
 var File_proto_gateway_proto protoreflect.FileDescriptor
 
 const file_proto_gateway_proto_rawDesc = "" +
 	"\n" +
-	"\x13proto/gateway.proto\x12\rchirp.gateway\"e\n" +
+	"\x13proto/gateway.proto\x12\rchirp.gateway\x1a\x12proto/common.proto\x1a\x10proto/chat.proto\"e\n" +
 	"\x06Packet\x12+\n" +
 	"\x06msg_id\x18\x01 \x01(\x0e2\x14.chirp.gateway.MsgIDR\x05msgId\x12\x1a\n" +
 	"\bsequence\x18\x02 \x01(\x03R\bsequence\x12\x12\n" +
@@ -844,7 +1212,32 @@ const file_proto_gateway_proto_rawDesc = "" +
 	"\rHeartbeatPong\x12\x1c\n" +
 	"\ttimestamp\x18\x01 \x01(\x03R\ttimestamp\x12\x1f\n" +
 	"\vserver_time\x18\x02 \x01(\x03R\n" +
-	"serverTime*\xca&\n" +
+	"serverTime\"\xe9\x01\n" +
+	"\x0fPeerRegisterReq\x12\x1d\n" +
+	"\n" +
+	"service_id\x18\x01 \x01(\tR\tserviceId\x12%\n" +
+	"\x0eservice_secret\x18\x02 \x01(\tR\rserviceSecret\x12)\n" +
+	"\x10protocol_version\x18\x03 \x01(\x05R\x0fprotocolVersion\x12\x17\n" +
+	"\agame_id\x18\x04 \x01(\tR\x06gameId\x12L\n" +
+	"\x12supported_features\x18\x05 \x03(\x0e2\x1d.chirp.gateway.PeerCapabilityR\x11supportedFeatures\"\x97\x02\n" +
+	"\x10PeerRegisterResp\x12+\n" +
+	"\x04code\x18\x01 \x01(\x0e2\x17.chirp.common.ErrorCodeR\x04code\x12)\n" +
+	"\x10protocol_version\x18\x02 \x01(\x05R\x0fprotocolVersion\x12\x1f\n" +
+	"\vmin_version\x18\x03 \x01(\x05R\n" +
+	"minVersion\x12<\n" +
+	"\x1aheartbeat_interval_seconds\x18\x04 \x01(\x05R\x18heartbeatIntervalSeconds\x12L\n" +
+	"\x12supported_features\x18\x05 \x03(\x0e2\x1d.chirp.gateway.PeerCapabilityR\x11supportedFeatures\"\x81\x01\n" +
+	"\x14ChannelMessageNotify\x12\x17\n" +
+	"\agame_id\x18\x01 \x01(\tR\x06gameId\x12\x1d\n" +
+	"\n" +
+	"channel_id\x18\x02 \x01(\tR\tchannelId\x121\n" +
+	"\amessage\x18\x03 \x01(\v2\x17.chirp.chat.ChatMessageR\amessage\"\x93\x01\n" +
+	"\x17PeerInjectMessageNotify\x12\x1d\n" +
+	"\n" +
+	"channel_id\x18\x01 \x01(\tR\tchannelId\x12\x1b\n" +
+	"\tsender_id\x18\x02 \x01(\tR\bsenderId\x12\x18\n" +
+	"\acontent\x18\x03 \x01(\fR\acontent\x12\"\n" +
+	"\rclient_msg_id\x18\x04 \x01(\tR\vclientMsgId*\xb9'\n" +
 	"\x05MsgID\x12\v\n" +
 	"\aUNKNOWN\x10\x00\x12\x13\n" +
 	"\x0eHEARTBEAT_PING\x10\xe9\a\x12\x13\n" +
@@ -1002,7 +1395,11 @@ const file_proto_gateway_proto_rawDesc = "" +
 	"\x16MARK_CHANNELS_READ_REQ\x10\xa3'\x12\x1c\n" +
 	"\x17MARK_CHANNELS_READ_RESP\x10\xa4'\x12\x1b\n" +
 	"\x16GET_UNREAD_SUMMARY_REQ\x10\xa5'\x12\x1c\n" +
-	"\x17GET_UNREAD_SUMMARY_RESP\x10\xa6'\x12\x18\n" +
+	"\x17GET_UNREAD_SUMMARY_RESP\x10\xa6'\x12\x16\n" +
+	"\x11PEER_REGISTER_REQ\x10\xba'\x12\x17\n" +
+	"\x12PEER_REGISTER_RESP\x10\xbb'\x12\x1b\n" +
+	"\x16CHANNEL_MESSAGE_NOTIFY\x10\xbc'\x12\x1f\n" +
+	"\x1aPEER_INJECT_MESSAGE_NOTIFY\x10\xbd'\x12\x18\n" +
 	"\x13REGISTER_DEVICE_REQ\x10\xf1.\x12\x19\n" +
 	"\x14REGISTER_DEVICE_RESP\x10\xf2.\x12\x1a\n" +
 	"\x15UNREGISTER_DEVICE_REQ\x10\xf3.\x12\x1b\n" +
@@ -1039,7 +1436,12 @@ const file_proto_gateway_proto_rawDesc = "" +
 	"\x1aPARTY_STATE_CHANGED_NOTIFY\x10\xf06\x12\x1b\n" +
 	"\x16PARTY_DISBANDED_NOTIFY\x10\xf16\x12\x15\n" +
 	"\x10GET_MY_PARTY_REQ\x10\xf26\x12\x16\n" +
-	"\x11GET_MY_PARTY_RESP\x10\xf36B'Z%github.com/cui/chirp/proto/go/gatewayb\x06proto3"
+	"\x11GET_MY_PARTY_RESP\x10\xf36*k\n" +
+	"\x0ePeerCapability\x12\x17\n" +
+	"\x13RELAY_READ_RECEIPTS\x10\x00\x12\x10\n" +
+	"\fRELAY_TYPING\x10\x01\x12\x12\n" +
+	"\x0eRELAY_PRESENCE\x10\x02\x12\x1a\n" +
+	"\x16RELAY_OFFLINE_MESSAGES\x10\x03B'Z%github.com/cui/chirp/proto/go/gatewayb\x06proto3"
 
 var (
 	file_proto_gateway_proto_rawDescOnce sync.Once
@@ -1053,21 +1455,32 @@ func file_proto_gateway_proto_rawDescGZIP() []byte {
 	return file_proto_gateway_proto_rawDescData
 }
 
-var file_proto_gateway_proto_enumTypes = make([]protoimpl.EnumInfo, 1)
-var file_proto_gateway_proto_msgTypes = make([]protoimpl.MessageInfo, 3)
+var file_proto_gateway_proto_enumTypes = make([]protoimpl.EnumInfo, 2)
+var file_proto_gateway_proto_msgTypes = make([]protoimpl.MessageInfo, 7)
 var file_proto_gateway_proto_goTypes = []any{
-	(MsgID)(0),            // 0: chirp.gateway.MsgID
-	(*Packet)(nil),        // 1: chirp.gateway.Packet
-	(*HeartbeatPing)(nil), // 2: chirp.gateway.HeartbeatPing
-	(*HeartbeatPong)(nil), // 3: chirp.gateway.HeartbeatPong
+	(MsgID)(0),                      // 0: chirp.gateway.MsgID
+	(PeerCapability)(0),             // 1: chirp.gateway.PeerCapability
+	(*Packet)(nil),                  // 2: chirp.gateway.Packet
+	(*HeartbeatPing)(nil),           // 3: chirp.gateway.HeartbeatPing
+	(*HeartbeatPong)(nil),           // 4: chirp.gateway.HeartbeatPong
+	(*PeerRegisterReq)(nil),         // 5: chirp.gateway.PeerRegisterReq
+	(*PeerRegisterResp)(nil),        // 6: chirp.gateway.PeerRegisterResp
+	(*ChannelMessageNotify)(nil),    // 7: chirp.gateway.ChannelMessageNotify
+	(*PeerInjectMessageNotify)(nil), // 8: chirp.gateway.PeerInjectMessageNotify
+	(common.ErrorCode)(0),           // 9: chirp.common.ErrorCode
+	(*chat.ChatMessage)(nil),        // 10: chirp.chat.ChatMessage
 }
 var file_proto_gateway_proto_depIdxs = []int32{
-	0, // 0: chirp.gateway.Packet.msg_id:type_name -> chirp.gateway.MsgID
-	1, // [1:1] is the sub-list for method output_type
-	1, // [1:1] is the sub-list for method input_type
-	1, // [1:1] is the sub-list for extension type_name
-	1, // [1:1] is the sub-list for extension extendee
-	0, // [0:1] is the sub-list for field type_name
+	0,  // 0: chirp.gateway.Packet.msg_id:type_name -> chirp.gateway.MsgID
+	1,  // 1: chirp.gateway.PeerRegisterReq.supported_features:type_name -> chirp.gateway.PeerCapability
+	9,  // 2: chirp.gateway.PeerRegisterResp.code:type_name -> chirp.common.ErrorCode
+	1,  // 3: chirp.gateway.PeerRegisterResp.supported_features:type_name -> chirp.gateway.PeerCapability
+	10, // 4: chirp.gateway.ChannelMessageNotify.message:type_name -> chirp.chat.ChatMessage
+	5,  // [5:5] is the sub-list for method output_type
+	5,  // [5:5] is the sub-list for method input_type
+	5,  // [5:5] is the sub-list for extension type_name
+	5,  // [5:5] is the sub-list for extension extendee
+	0,  // [0:5] is the sub-list for field type_name
 }
 
 func init() { file_proto_gateway_proto_init() }
@@ -1080,8 +1493,8 @@ func file_proto_gateway_proto_init() {
 		File: protoimpl.DescBuilder{
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_proto_gateway_proto_rawDesc), len(file_proto_gateway_proto_rawDesc)),
-			NumEnums:      1,
-			NumMessages:   3,
+			NumEnums:      2,
+			NumMessages:   7,
 			NumExtensions: 0,
 			NumServices:   0,
 		},

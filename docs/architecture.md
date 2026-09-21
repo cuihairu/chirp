@@ -327,9 +327,9 @@ WebSocket: binary frame payload = [uint32_be payload_size][chirp.gateway.Packet 
 | ID | 消息 | 方向 |
 | --- | --- | --- |
 | 5050 | `PEER_REGISTER_REQ` | spoke → hub |
-| 5051 | `PEER_REGISTER_RESP` | hub → spoke |
-| 5052 | `CHANNEL_MESSAGE_NOTIFY` | hub ↔ spoke |
-| 5053 | `INJECT_MESSAGE_NOTIFY` | spoke → hub（玩家回复） |
+| 5051 | `PEER_REGISTER_RESP` | hub → spoke（含 hub 分配的心跳周期 `heartbeat_interval_seconds`，spoke 静默约 2× 周期即被剔除） |
+| 5052 | `CHANNEL_MESSAGE_NOTIFY` | spoke → hub（频道消息上行，hub 扇出） |
+| 5053 | `PEER_INJECT_MESSAGE_NOTIFY` | hub → spoke（玩家回复注入；命名带 `PEER_` 前缀，与 server_gateway 链路的 5007 `INJECT_MESSAGE_NOTIFY` 区分） |
 
 ## 架构承诺
 
