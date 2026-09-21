@@ -805,6 +805,28 @@ target_include_directories(chat_hub_peer_tests
 
 add_test(NAME chat_hub_peer_tests COMMAND chat_hub_peer_tests)
 
+# Chat peer registration protocol loopback tests: the spoke-side link against
+# a scripted fake hub, and the real hub against raw client sockets.
+add_executable(chat_peer_tests
+  chat_peer_test.cc
+)
+
+chirp_unit_test_common_links(chat_peer_tests)
+target_link_libraries(chat_peer_tests PRIVATE chirp_network chirp_common chirp_protos)
+
+target_include_directories(chat_peer_tests
+  PRIVATE
+  ${CMAKE_SOURCE_DIR}/services/shared/chat/src
+  ${CMAKE_SOURCE_DIR}/libs
+  ${CMAKE_SOURCE_DIR}/libs/common
+  ${CMAKE_SOURCE_DIR}/libs/common/include
+  ${CMAKE_SOURCE_DIR}/libs/network
+  ${CMAKE_SOURCE_DIR}/proto/cpp
+  ${CMAKE_SOURCE_DIR}/proto/cpp/proto
+)
+
+add_test(NAME chat_peer_tests COMMAND chat_peer_tests)
+
 # NPC dialog service tests (rule engine + event responder with fake senders)
 add_executable(npc_dialog_tests
   npc_engine_test.cc

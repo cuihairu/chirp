@@ -27,6 +27,8 @@
 #include "network/tcp_server.h"
 #include "network/websocket_server.h"
 #include "npc_uplink.h"
+#include "peer_hub.h"
+#include "peer_spoke.h"
 #include "push_bridge.h"
 #include "network/notification_client.h"
 #include "proto/auth.pb.h"
@@ -365,6 +367,8 @@ struct FeatureHandlers {
   // limiter only; token verification still applies.
   std::string gateway_secret;
   std::shared_ptr<std::unordered_set<const chirp::network::Session*>> trusted_conns;
+  // Hub mode: accept game_chat peer registrations. Null = hub disabled.
+  std::shared_ptr<PeerHub> peer_hub;
 };
 
 void HandlePacket(const std::shared_ptr<MessageStore>& store,
@@ -410,7 +414,64 @@ void HandlePacket(const std::shared_ptr<MessageStore>& store,
     }
     auth_resp.set_code(chirp::common::OK);
     chirp::chat::runtime::SendPacket(session, chirp::gateway::SERVER_AUTH_RESP, pkt.sequence(),
-                                     auth_resp.SerializeAsString());
+                                      auth_resp.SerializeAsString());
+    break;
+  }
+  case chirp::gateway::PEER_REGISTER_REQ: {
+    // Hub mode: accept game_chat peer registrations.
+    // Only process if hub is configured (--hub_mode).
+    if (!features.peer_hub) {
+      chirp::common::Logger::Instance().Warn(
+          "PEER_REGISTER_REQ received but hub mode is not enabled");
+      break;
+    }
+    chirp::gateway::PeerRegisterReq peer_req;
+    if (!peer_req.ParseFromArray(pkt.body().data(),
+                                  static_cast<int>(pkt.body().size()))) {
+      chirp::gateway::PeerRegisterResp resp;
+      resp.set_code(chirp::common::INVALID_PARAM);
+      chirp::chat::runtime::SendPacket(
+          session, chirp::gateway::PEER_REGISTER_RESP, pkt.sequence(),
+          resp.SerializeAsString());
+      break;
+    }
+    auto resp = features.peer_hub->HandleRegister(peer_req, session);
+    chirp::chat::runtime::SendPacket(
+        session, chirp::gateway::PEER_REGISTER_RESP, pkt.sequence(),
+        resp.SerializeAsString());
+    break;
+  }
+  case chirp::gateway::PEER_INJECT_MESSAGE_NOTIFY: {
+    // Hub mode: app player reply injected into game_chat by the hub.
+    // The hub has already resolved player_id -> game_user_id.
+    if (!features.peer_hub) {
+      break;
+    }
+    chirp::gateway::PeerInjectMessageNotify inject;
+    if (!inject.ParseFromArray(pkt.body().data(),
+                                static_cast<int>(pkt.body().size()))) {
+      break;
+    }
+    // Convert to a ChatMessage (private message from app player)
+    chirp::chat::ChatMessage msg;
+    msg.set_message_id(chirp::chat::runtime::GenerateMsgId());
+    msg.set_sender_id(inject.sender_id());
+    msg.set_receiver_id(inject.channel_id());  // channel_id is the target user
+    msg.set_channel_type(chirp::chat::PRIVATE);
+    msg.set_channel_id(inject.channel_id());
+    msg.set_msg_type(chirp::chat::TEXT);
+    msg.set_content(inject.content());
+    msg.set_timestamp(chirp::chat::runtime::NowMs());
+    msg.set_sender_kind(chirp::chat::SENDER_USER);
+    store->AddMessage(msg);
+    // Deliver to the receiver
+    auto receivers = HealthyUserSessions(state, inject.channel_id());
+    for (auto& s : receivers) {
+      chirp::chat::runtime::SendPacket(s, chirp::gateway::CHAT_MESSAGE_NOTIFY, 0, msg.SerializeAsString());
+    }
+    if (receivers.empty()) {
+      store->AddOffline(inject.channel_id(), msg.SerializeAsString());
+    }
     break;
   }
   case chirp::gateway::LOGIN_REQ: {
@@ -647,6 +708,11 @@ void HandlePacket(const std::shared_ptr<MessageStore>& store,
       } else {
         resp.set_code(chirp::common::AUTH_FAILED);
       }
+    }
+    // Spoke mode: forward channel messages to the hub for app-plane delivery
+    if (spoke && spoke->IsConnected() && resp.code() == chirp::common::OK &&
+        req.channel_type() != chirp::chat::PRIVATE) {
+      spoke->SendChannelMessage(req.channel_id(), msg);
     }
     chirp::chat::runtime::SendPacket(session, chirp::gateway::SEND_MESSAGE_RESP, pkt.sequence(), resp.SerializeAsString());
     break;
@@ -981,6 +1047,25 @@ int main(int argc, char** argv) {
   // limiter. Empty keeps SERVER_AUTH_REQ ignored (direct entry only).
   const std::string gateway_service_secret =
       chirp::chat::runtime::GetArg(argc, argv, "--gateway_service_secret", "");
+  // Hub mode: accept game_chat peer registrations (app_chat deployment).
+  const bool hub_mode = chirp::chat::runtime::ParseIntArg(argc, argv, "--hub_mode", 0) != 0;
+  const std::string allowed_peers_str =
+      chirp::chat::runtime::GetArg(argc, argv, "--allowed_peers", "");
+  const int min_peer_version =
+      chirp::chat::runtime::ParseIntArg(argc, argv, "--min_peer_version", 1);
+  const bool allow_unknown_peers =
+      chirp::chat::runtime::ParseIntArg(argc, argv, "--allow_unknown_peers", 0) != 0;
+  // Spoke mode: register into an app_chat hub (game_chat deployment).
+  const std::string app_chat_host =
+      chirp::chat::runtime::GetArg(argc, argv, "--app_chat_host", "");
+  const uint16_t app_chat_port =
+      chirp::chat::runtime::ParseU16Arg(argc, argv, "--app_chat_port", 7000);
+  const std::string game_service_id =
+      chirp::chat::runtime::GetArg(argc, argv, "--game_service_id", "");
+  const std::string game_service_secret =
+      chirp::chat::runtime::GetArg(argc, argv, "--game_service_secret", "");
+  const std::string game_id =
+      chirp::chat::runtime::GetArg(argc, argv, "--game_id", "");
   Logger::Instance().Info("chirp_chat starting tcp=" + std::to_string(port) + " ws=" + std::to_string(ws_port) +
                           (redis_host.empty()
                                ? ""
@@ -1120,6 +1205,77 @@ int main(int argc, char** argv) {
   features.gateway_secret = gateway_service_secret;
   features.trusted_conns =
       std::make_shared<std::unordered_set<const chirp::network::Session*>>();
+
+  // Hub mode: accept game_chat peer registrations (app_chat deployment).
+  std::shared_ptr<chirp::chat::PeerHub> peer_hub;
+  if (hub_mode) {
+    chirp::chat::PeerHubConfig hub_config;
+    hub_config.min_peer_version = min_peer_version;
+    hub_config.allow_unknown_peers = allow_unknown_peers;
+    // Parse allowed_peers: "id1:secret1,id2:secret2"
+    if (!allowed_peers_str.empty()) {
+      std::string s = allowed_peers_str;
+      while (!s.empty()) {
+        auto comma = s.find(',');
+        std::string pair = s.substr(0, comma);
+        auto colon = pair.find(':');
+        if (colon != std::string::npos) {
+          hub_config.allowed_peers[pair.substr(0, colon)] = pair.substr(colon + 1);
+        }
+        if (comma == std::string::npos) break;
+        s = s.substr(comma + 1);
+      }
+    }
+    peer_hub = std::make_shared<chirp::chat::PeerHub>(std::move(hub_config));
+    features.peer_hub = peer_hub;
+    Logger::Instance().Info("hub mode enabled: " +
+                            std::to_string(peer_hub->PeerCount()) + " peers, " +
+                            "min_version=" + std::to_string(min_peer_version));
+  }
+
+  // Spoke mode: register into an app_chat hub (game_chat deployment).
+  std::shared_ptr<chirp::chat::PeerSpoke> spoke;
+  if (!app_chat_host.empty() && !game_service_id.empty() && !game_id.empty()) {
+    chirp::chat::PeerSpokeConfig spoke_config;
+    spoke_config.hub_host = app_chat_host;
+    spoke_config.hub_port = app_chat_port;
+    spoke_config.service_id = game_service_id;
+    spoke_config.service_secret = game_service_secret;
+    spoke_config.game_id = game_id;
+    spoke = std::make_shared<chirp::chat::PeerSpoke>(io, std::move(spoke_config));
+    spoke->SetConnectedCallback([game_id]() {
+      Logger::Instance().Info("spoke registered to hub, game_id=" + game_id);
+    });
+    spoke->SetDisconnectedCallback([]() {
+      Logger::Instance().Warn("spoke disconnected from hub, will retry");
+    });
+    // Handle app player replies from the hub
+    spoke->SetInjectCallback(
+        [&store, &state](const chirp::gateway::PeerInjectMessageNotify& inject) {
+          chirp::chat::ChatMessage msg;
+          msg.set_message_id(chirp::chat::runtime::GenerateMsgId());
+          msg.set_sender_id(inject.sender_id());
+          msg.set_receiver_id(inject.channel_id());
+          msg.set_channel_type(chirp::chat::PRIVATE);
+          msg.set_channel_id(inject.channel_id());
+          msg.set_msg_type(chirp::chat::TEXT);
+          msg.set_content(inject.content());
+          msg.set_timestamp(chirp::chat::runtime::NowMs());
+          msg.set_sender_kind(chirp::chat::SENDER_USER);
+          store->AddMessage(msg);
+          auto sessions = chirp::network::GetUserSessions(state, inject.channel_id());
+          for (auto& s : sessions) {
+            if (!s->IsClosed()) {
+              chirp::chat::runtime::SendPacket(
+                  s, chirp::gateway::CHAT_MESSAGE_NOTIFY, 0, msg.SerializeAsString());
+            }
+          }
+        });
+    spoke->Connect();
+    Logger::Instance().Info("spoke mode enabled: game_id=" + game_id +
+                            " -> hub=" + app_chat_host + ":" +
+                            std::to_string(app_chat_port));
+  }
 
   // Server-plane injection: when --server_gateway_host is set, chat dials the
   // hub as an internal service and delivers forwarded injections through the
