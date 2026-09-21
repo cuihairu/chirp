@@ -112,8 +112,8 @@ KNOWN_UNCOVERABLE = {
     # against a packet-blackhole address. Sandboxes whose gateway SYN-proxies
     # every destination complete the handshake instead, so no
     # environment-independent unit test can hit this arm deterministically.
-    ("services/notification/src/http_push_transport.cc", 267),
-    ("services/notification/src/http_push_transport.cc", 268),
+    ("services/app/notification/src/http_push_transport.cc", 267),
+    ("services/app/notification/src/http_push_transport.cc", 268),
     # Frame encoder guards: needs a >4GiB message / a Message whose
     # SerializeToArray disagrees with ByteSizeLong.
     ("libs/network/protobuf_framing.cc", 14),
@@ -135,15 +135,15 @@ KNOWN_UNCOVERABLE = {
     ("libs/common/logger.cc", 40),
     # ChannelPermissionChecker::HasPermission: the Field enum is exhaustive;
     # the trailing return only satisfies the compiler.
-    ("services/chat/src/channel_manager.cc", 44),
+    ("services/shared/chat/src/channel_manager.cc", 44),
     # GetChannels skips ids missing from channels_: both maps are updated
     # together under the same lock, so the skip cannot trigger.
-    ("services/chat/src/channel_manager.cc", 365),
+    ("services/shared/chat/src/channel_manager.cc", 365),
     # Voice user_limit enforcement: no public API sets a nonzero user_limit
     # on a channel, so the "channel full" branch is unreachable today.
-    ("services/chat/src/channel_manager.cc", 535),
-    ("services/chat/src/channel_manager.cc", 536),
-    ("services/chat/src/channel_manager.cc", 537),
+    ("services/shared/chat/src/channel_manager.cc", 535),
+    ("services/shared/chat/src/channel_manager.cc", 536),
+    ("services/shared/chat/src/channel_manager.cc", 537),
     # WebSocketClient handshake write-error branch: reaching it requires the
     # peer's TCP reset to land between connect() returning and the handshake
     # write (a sub-millisecond kernel race). The dedicated test hits it only
@@ -152,22 +152,22 @@ KNOWN_UNCOVERABLE = {
     ("libs/network/websocket_client.cc", 39),
     # ReactionHandlers::HandleAddReaction guard: ReactionManager::AddReaction
     # has set semantics (re-adding is idempotent) and never returns false.
-    ("services/chat/src/message_handlers.cc", 231),
-    ("services/chat/src/message_handlers.cc", 232),
+    ("services/shared/chat/src/message_handlers.cc", 231),
+    ("services/shared/chat/src/message_handlers.cc", 232),
     # MessageMigrationWorker migrating_ guards: reaching the "already
     # migrating" arms requires RunMigrationNow to race an in-flight migration
     # on the io thread, which the single-threaded test io context cannot do.
-    ("services/chat/src/message_migration_worker.cc", 58),
-    ("services/chat/src/message_migration_worker.cc", 59),
-    ("services/chat/src/message_migration_worker.cc", 89),
-    ("services/chat/src/message_migration_worker.cc", 90),
+    ("services/shared/chat/src/message_migration_worker.cc", 58),
+    ("services/shared/chat/src/message_migration_worker.cc", 59),
+    ("services/shared/chat/src/message_migration_worker.cc", 89),
+    ("services/shared/chat/src/message_migration_worker.cc", 90),
     # MessageDeliveryTracker::RunCheck stop guard: firing depends on a timer
     # tick landing after Stop(), a race the deterministic test loop avoids.
-    ("services/chat/src/message_delivery_tracker.cc", 106),
+    ("services/shared/chat/src/message_delivery_tracker.cc", 106),
     # DeliveryAckManager::RunCheck stop guard: same shape as the tracker
     # above - RunCheck is private and only timer-driven, and cancel() wins
     # the race against a pending tick in every deterministic test loop.
-    ("services/chat/src/delivery_ack_manager.cc", 145),
+    ("services/shared/chat/src/delivery_ack_manager.cc", 145),
     # MetricsHttpServer::Start catch arm: async_accept(ec form) does not
     # throw, so the arm is purely defensive.
     ("libs/common/src/metrics_http_server.cc", 35),
@@ -179,9 +179,9 @@ KNOWN_UNCOVERABLE = {
     ("libs/common/src/metrics_http_server.cc", 145),
     # AuthService ConfirmPasswordReset expired-token branch: tokens live 1h
     # and there is no injectable clock to age one past its expiry.
-    ("services/auth/src/auth_service.cc", 424),
-    ("services/auth/src/auth_service.cc", 425),
-    ("services/auth/src/auth_service.cc", 426),
+    ("services/app/auth/src/auth_service.cc", 424),
+    ("services/app/auth/src/auth_service.cc", 425),
+    ("services/app/auth/src/auth_service.cc", 426),
     # PresenceManager CleanupOfflineUsers erase: last_seen is written only
     # from the internal clock, so no test can age an entry past the 24h cutoff.
     ("services/social/src/presence_manager.cc", 408),
@@ -205,9 +205,9 @@ KNOWN_UNCOVERABLE = {
     # Server-plane registry defensive arms: the by-id map and the
     # tuple/game-user index are only ever mutated together under one lock,
     # so a tuple hit whose by-id record is missing cannot happen.
-    ("services/server_gateway/src/identity_registry.cc", 143),
-    ("services/server_gateway/src/identity_registry.cc", 177),
-    ("services/server_gateway/src/subscription_registry.cc", 180),
+    ("services/game/server_gateway/src/identity_registry.cc", 143),
+    ("services/game/server_gateway/src/identity_registry.cc", 177),
+    ("services/game/server_gateway/src/subscription_registry.cc", 180),
 }
 
 src_cache = {}

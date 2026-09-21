@@ -66,16 +66,16 @@ check_item "voice.proto" "[ -f proto/voice.proto ]"
 echo ""
 echo -e "${BLUE}[3/7] Service Implementations${NC}"
 
-check_item "Gateway service" "[ -f services/gateway/src/main.cc ]"
-check_item "Auth service" "[ -f services/auth/src/main.cc ]"
-check_item "Chat service" "[ -f services/chat/src/main.cc ]"
+check_item "Gateway service" "[ -f services/game/sdk_gateway/src/main.cc ]"
+check_item "Auth service" "[ -f services/app/auth/src/main.cc ]"
+check_item "Chat service" "[ -f services/shared/chat/src/main.cc ]"
 check_item "Social service" "[ -f services/social/src/main.cc ]"
 check_item "Voice service" "[ -f services/voice/src/main.cc ]"
 
 # Check service CMakeLists
-check_item "Gateway CMakeLists" "[ -f services/gateway/CMakeLists.txt ]"
-check_item "Auth CMakeLists" "[ -f services/auth/CMakeLists.txt ]"
-check_item "Chat CMakeLists" "[ -f services/chat/CMakeLists.txt ]"
+check_item "Gateway CMakeLists" "[ -f services/game/sdk_gateway/CMakeLists.txt ]"
+check_item "Auth CMakeLists" "[ -f services/app/auth/CMakeLists.txt ]"
+check_item "Chat CMakeLists" "[ -f services/shared/chat/CMakeLists.txt ]"
 check_item "Social CMakeLists" "[ -f services/social/CMakeLists.txt ]"
 check_item "Voice CMakeLists" "[ -f services/voice/CMakeLists.txt ]"
 

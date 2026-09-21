@@ -381,7 +381,7 @@ elif [[ "${1:-}" == "--smoke-npc" ]]; then
     --server_gateway_secret chat-secret --npc_service_id npc_dialog \
     > "${CHAT_LOG}" 2>&1 &
   CHAT_PID=$!
-  ./build/services/npc_dialog/chirp_npc_dialog \
+  ./build/services/game/npc_dialog/chirp_npc_dialog \
     --server_gateway_host 127.0.0.1 --server_gateway_port "${HUB_PORT}" \
     --server_gateway_secret npc-secret \
     > "${NPC_LOG}" 2>&1 &
@@ -601,7 +601,7 @@ elif [[ "${1:-}" == "--smoke-edge" ]]; then
   B2_LOG="${B2_LOG:-/tmp/chirp_edge_b2_live.log}"
   A2_LOG="${A2_LOG:-/tmp/chirp_edge_a2_live.log}"
   APP_PORT="${APP_PORT:-$(pick_port)}"
-  APP_LOG="${APP_LOG:-/tmp/chirp_app_gateway_smoke_edge.log}"
+  APP_LOG="${APP_LOG:-/tmp/chirp_app_sdk_gateway_smoke_edge.log}"
   A3_LOG="${A3_LOG:-/tmp/chirp_edge_a3_appgw.log}"
   B3_LOG="${B3_LOG:-/tmp/chirp_edge_b3_appgw.log}"
 
@@ -623,7 +623,7 @@ elif [[ "${1:-}" == "--smoke-edge" ]]; then
 
   # app_gateway 吸收同一 chat 管道(WP-8 聚合边):scaffold 登录(token 即
   # user_id,零 auth 依赖),bridge 以独立 service_id 过同一个 secret 信任门。
-  ./build/services/app_gateway/chirp_app_gateway --port "${APP_PORT}" \
+  ./build/services/app/sdk_gateway/chirp_app_sdk_gateway --port "${APP_PORT}" \
     --chat_host 127.0.0.1 --chat_port "${CHAT_PORT}" --chat_service_secret edge-secret > "${APP_LOG}" 2>&1 &
   APP_PID=$!
 
@@ -636,7 +636,7 @@ elif [[ "${1:-}" == "--smoke-edge" ]]; then
   wait_port "${AUTH_PORT}" chirp_app_auth "${AUTH_LOG}"
   wait_port "${CHAT_PORT}" chirp_chat "${CHAT_LOG}"
   wait_port "${GW_PORT}" chirp_game_sdk_gateway "${GW_LOG}"
-  wait_port "${APP_PORT}" chirp_app_gateway "${APP_LOG}"
+  wait_port "${APP_PORT}" chirp_app_sdk_gateway "${APP_LOG}"
 
   echo ""
   echo "[edge] C1 direct chat login (consumes the only per-IP budget; proves direct entry still works)"

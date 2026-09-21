@@ -1,4 +1,4 @@
-// chirp_server_gateway: the trusted service-plane hub. Game backends (and
+// chirp_game_server_gateway: the trusted service-plane hub. Game backends (and
 // internal services such as chat) dial out to this listener, authenticate
 // with a service_id + secret, and exchange injections and events. There are
 // no user-session semantics here; see docs/architecture.md (server plane).
@@ -134,7 +134,7 @@ int main(int argc, char** argv) {
     Logger::Instance().Warn("no --service id=secret configured; every auth attempt will be rejected");
   }
 
-  Logger::Instance().Info("chirp_server_gateway starting port=" + std::to_string(port) +
+  Logger::Instance().Info("chirp_game_server_gateway starting port=" + std::to_string(port) +
                           " services=" + std::to_string(config.service_secrets.size()) +
                           " chat_service=" + config.chat_service_id);
 
@@ -504,6 +504,6 @@ int main(int argc, char** argv) {
   });
 
   io.run();
-  Logger::Instance().Info("chirp_server_gateway exited");
+  Logger::Instance().Info("chirp_game_server_gateway exited");
   return 0;
 }

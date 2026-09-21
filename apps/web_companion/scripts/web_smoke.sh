@@ -11,12 +11,12 @@ set -euo pipefail
 
 cd "$(dirname "$0")/../../.."
 
-CHAT_BIN="${CHAT_BIN:-./build/services/chat/chirp_chat}"
+CHAT_BIN="${CHAT_BIN:-./build/services/shared/chat/chirp_chat}"
 SOCIAL_BIN="${SOCIAL_BIN:-./build/services/social/chirp_social}"
 # Device plane is optional: the suite needs both the auth-gated forward edge
 # and its notification backend. Miss one and the device cases self-skip.
-EDGE_BIN="${EDGE_BIN:-./build/services/app_gateway/chirp_app_gateway}"
-NOTIF_BIN="${NOTIF_BIN:-./build/services/notification/chirp_notification}"
+EDGE_BIN="${EDGE_BIN:-./build/services/app/sdk_gateway/chirp_app_sdk_gateway}"
+NOTIF_BIN="${NOTIF_BIN:-./build/services/app/notification/chirp_app_notification}"
 # CHAT_BIN/SOCIAL_BIN are overridable: in a tree where vcpkg provided MySQL the
 # default chirp_chat is the enhanced build and dies without a real MySQL
 # server. Point them at a basic-form build (configure another tree with
@@ -118,10 +118,10 @@ wait_port "${CHAT_WS_PORT}" chirp_chat_ws "${CHAT_LOG}"
 wait_port "${SOCIAL_PORT}" chirp_social "${SOCIAL_LOG}"
 wait_port "${SOCIAL_WS_PORT}" chirp_social_ws "${SOCIAL_LOG}"
 if [ -n "${EDGE_PID}" ]; then
-  wait_port "${NOTIF_PORT}" chirp_notification "${NOTIF_LOG}"
-  wait_port "${NOTIF_WS_PORT}" chirp_notification_ws "${NOTIF_LOG}"
-  wait_port "${EDGE_PORT}" chirp_app_gateway "${EDGE_LOG}"
-  wait_port "${EDGE_WS_PORT}" chirp_app_gateway_ws "${EDGE_LOG}"
+  wait_port "${NOTIF_PORT}" chirp_app_notification "${NOTIF_LOG}"
+  wait_port "${NOTIF_WS_PORT}" chirp_app_notification_ws "${NOTIF_LOG}"
+  wait_port "${EDGE_PORT}" chirp_app_sdk_gateway "${EDGE_LOG}"
+  wait_port "${EDGE_WS_PORT}" chirp_app_sdk_gateway_ws "${EDGE_LOG}"
 fi
 
 echo "[web] vitest integration against ws://127.0.0.1:${CHAT_WS_PORT} + ws://127.0.0.1:${SOCIAL_WS_PORT}"

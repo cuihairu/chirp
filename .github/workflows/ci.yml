@@ -46,10 +46,10 @@ jobs:
     runs-on: ubuntu-22.04
     # The vcpkg toolchain links libmariadb (MariaDB Connector/C), so the smoke
     # job builds the ENHANCED
-    # chirp_auth (main_enhanced.cc), which exits at startup when it cannot
+    # chirp_app_auth (main_enhanced.cc), which exits at startup when it cannot
     # reach MySQL (UserStore::Initialize is fatal; Redis is fail-open). The
     # credentials match the service's defaults (chirp / chirp_password /
-    # chirp database), so the smoke's plain `chirp_auth --port` launch
+    # chirp database), so the smoke's plain `chirp_app_auth --port` launch
     # connects without extra flags. Tables are not required for the smoke:
     # UserStore::Initialize only verifies the connection.
     services:

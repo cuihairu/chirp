@@ -566,7 +566,7 @@ int main(int argc, char** argv) {
   const std::string chat_service_id = GetArg(argc, argv, "--chat_service_id", "app_gateway");
   const std::string chat_service_secret = GetArg(argc, argv, "--chat_service_secret", "");
 
-  Logger::Instance().Info("chirp_app_gateway starting tcp=" + std::to_string(port) +
+  Logger::Instance().Info("chirp_app_sdk_gateway starting tcp=" + std::to_string(port) +
                           " ws=" + std::to_string(ws_port) +
                           (tls_port != 0 ? (" tls=" + std::to_string(tls_port)) : "") +
                           (ws_tls_port != 0 ? (" wss=" + std::to_string(ws_tls_port)) : "") +
@@ -702,6 +702,6 @@ int main(int argc, char** argv) {
   });
 
   io.run();
-  Logger::Instance().Info("chirp_app_gateway exited");
+  Logger::Instance().Info("chirp_app_sdk_gateway exited");
   return 0;
 }

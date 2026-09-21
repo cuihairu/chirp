@@ -1,4 +1,4 @@
-// Unit tests for the app gateway edge (services/app_gateway/src/main.cc).
+// Unit tests for the app gateway edge (services/app/sdk_gateway/src/main.cc).
 // main.cc is included with main() renamed; handlers are driven directly with
 // in-memory MockSessions. Device-message forwarding runs through a real
 // NotificationClient against a loopback FakeNotificationServer, pinning the
@@ -29,9 +29,9 @@
 #include "proto/game_server_gateway.pb.h"
 
 // Relative path on purpose: a bare "main.cc" would resolve through the -I
-// path to services/gateway/src/main.cc (the game gateway) instead.
+// path to services/game/sdk_gateway/src/main.cc (the game gateway) instead.
 #define main chirp_app_gateway_main
-#include "../../services/app_gateway/src/main.cc"
+#include "../../services/app/sdk_gateway/src/main.cc"
 #undef main
 
 namespace {

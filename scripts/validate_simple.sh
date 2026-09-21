@@ -38,9 +38,9 @@ check_file "proto/voice.proto"
 
 echo ""
 echo "[2/6] Services"
-check_file "services/gateway/src/main.cc"
-check_file "services/auth/src/main.cc"
-check_file "services/chat/src/main.cc"
+check_file "services/game/sdk_gateway/src/main.cc"
+check_file "services/app/auth/src/main.cc"
+check_file "services/shared/chat/src/main.cc"
 check_file "services/social/src/main.cc"
 check_file "services/voice/src/main.cc"
 

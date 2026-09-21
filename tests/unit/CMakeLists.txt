@@ -309,14 +309,14 @@ add_test(NAME party_tests COMMAND party_tests)
 
 # App gateway edge tests: scaffold login/logout, device-message forwarding
 # through a real NotificationClient against a loopback server
-add_executable(app_gateway_tests
+add_executable(app_sdk_gateway_tests
   app_gateway_service_test.cc
 )
 
-chirp_unit_test_common_links(app_gateway_tests)
-target_link_libraries(app_gateway_tests PRIVATE chirp_network chirp_common chirp_protos)
+chirp_unit_test_common_links(app_sdk_gateway_tests)
+target_link_libraries(app_sdk_gateway_tests PRIVATE chirp_network chirp_common chirp_protos)
 
-target_include_directories(app_gateway_tests
+target_include_directories(app_sdk_gateway_tests
   PRIVATE
   ${CMAKE_SOURCE_DIR}/libs
   ${CMAKE_SOURCE_DIR}/libs/common
@@ -326,10 +326,10 @@ target_include_directories(app_gateway_tests
   ${CMAKE_SOURCE_DIR}/proto/cpp/proto
 )
 
-add_test(NAME app_gateway_tests COMMAND app_gateway_tests)
+add_test(NAME app_sdk_gateway_tests COMMAND app_sdk_gateway_tests)
 
 # Gateway chat-bridge loopback tests against a scripted in-process fake chat
-# server (shared with the app_gateway tests via fake_chat_server.h). The
+# server (shared with the app_sdk_gateway tests via fake_chat_server.h). The
 # bridge itself comes from chirp_network.
 add_executable(chat_bridge_tests
   chat_bridge_test.cc

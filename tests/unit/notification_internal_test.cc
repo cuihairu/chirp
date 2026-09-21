@@ -9,7 +9,7 @@
 #include "notification_service.h"
 
 namespace chirp {
-namespace notification {
+namespace app_notification {
 
 // Befriended in notification_service.h: provides test-only accessors.
 struct NotificationServiceInternalAccess {
@@ -24,7 +24,7 @@ struct NotificationServiceInternalAccess {
   }
 };
 
-}  // namespace notification
+}  // namespace app_notification
 }  // namespace chirp
 
 namespace {

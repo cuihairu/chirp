@@ -315,7 +315,7 @@ int main(int argc, char** argv) {
   const std::string chat_service_id = GetArg(argc, argv, "--chat_service_id", "gateway");
   const std::string chat_service_secret = GetArg(argc, argv, "--chat_service_secret", "");
 
-  Logger::Instance().Info("chirp_gateway starting tcp=" + std::to_string(port) + " ws=" + std::to_string(ws_port) +
+  Logger::Instance().Info("chirp_game_sdk_gateway starting tcp=" + std::to_string(port) + " ws=" + std::to_string(ws_port) +
                           (auth_host.empty() ? "" : (" auth=" + auth_host + ":" + std::to_string(auth_port))) +
                           (redis_host.empty() ? "" : (" redis=" + redis_host + ":" + std::to_string(redis_port) +
                                                       " instance=" + instance_id)) +
@@ -390,6 +390,6 @@ int main(int argc, char** argv) {
   });
 
   io.run();
-  Logger::Instance().Info("chirp_gateway exited");
+  Logger::Instance().Info("chirp_game_sdk_gateway exited");
   return 0;
 }

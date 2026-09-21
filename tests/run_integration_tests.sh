@@ -137,8 +137,8 @@ else
   TEST_BIN="./chirp_integration_test"
 fi
 
-AUTH_BIN="$CHIRP_ROOT/build/services/auth/chirp_auth"
-GATEWAY_BIN="$CHIRP_ROOT/build/services/gateway/chirp_gateway"
+AUTH_BIN="$CHIRP_ROOT/build/services/app/auth/chirp_app_auth"
+GATEWAY_BIN="$CHIRP_ROOT/build/services/game/sdk_gateway/chirp_game_sdk_gateway"
 
 is_port_listening() {
   local port="$1"

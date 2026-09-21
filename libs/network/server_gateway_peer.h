@@ -16,7 +16,7 @@
 
 namespace chirp::network {
 
-// Long-lived client connection to the server-plane hub (chirp_server_gateway).
+// Long-lived client connection to the server-plane hub (chirp_game_server_gateway).
 // Any trusted internal service (chat, app_gateway, npc_dialog, ...) dials out,
 // authenticates with a service_id + secret, answers the hub's keepalive
 // cadence, receives forwarded notifications, and runs request/response RPCs

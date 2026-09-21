@@ -10,7 +10,7 @@ namespace chirp::chat {
 // Abuse controls for the direct client entry: while chat still accepts SDK
 // connections itself (scaffolding login, SEND_MESSAGE_REQ), every login
 // attempt is counted per client IP and every validated send per user, in
-// fixed 60s windows stored in Redis. The shape mirrors services/auth rate
+// fixed 60s windows stored in Redis. The shape mirrors services/app/auth rate
 // limiting (GET counter -> SETEX increment), with the same availability
 // contract: every failure mode fails OPEN. This is a blunt abuse gate, never
 // a self-inflicted outage — when Redis is absent or unreachable the limiter

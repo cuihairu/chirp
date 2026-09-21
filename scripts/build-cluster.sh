@@ -60,8 +60,8 @@ build_project() {
     # 构建所有服务
     log_info "编译服务..."
     cmake --build "$build_dir" --target \
-        chirp_gateway \
-        chirp_auth \
+        chirp_game_sdk_gateway \
+        chirp_app_auth \
         chirp_chat_distributed \
         chirp_social \
         chirp_voice \
@@ -79,7 +79,7 @@ build_docker() {
     docker build \
         -f docker/Dockerfile.service \
         --target runtime \
-        --build-arg SERVICE=gateway \
+        --build-arg SERVICE=game_sdk_gateway \
         -t chirp/gateway:latest \
         .
 
@@ -88,7 +88,7 @@ build_docker() {
     docker build \
         -f docker/Dockerfile.service \
         --target runtime \
-        --build-arg SERVICE=auth \
+        --build-arg SERVICE=app_auth \
         -t chirp/auth:latest \
         .
 
