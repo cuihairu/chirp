@@ -37,9 +37,9 @@ flowchart TB
     GS["游戏服务端<br/>service_id + secret"]
 
     subgraph gp["游戏平面（完全自足）"]
-        GG["game_gateway<br/>TCP 5000 / WS 5001"]
+        GG["game_sdk_gateway<br/>TCP 5000 / WS 5001"]
         GCHAT["game_chat<br/>本地验证 token"]
-        SG["server_gateway<br/>TCP 8100 · 仅注入/事件 · 可选"]
+        SG["game_server_gateway<br/>TCP 8100 · 仅注入/事件 · 可选"]
         GG -->|per-client pipe| GCHAT
         SG -->|inject| GCHAT
         Game -- "TCP/WS" --> GG
@@ -47,10 +47,10 @@ flowchart TB
     end
 
     subgraph ap["App 平面（可选附加）"]
-        AG["app_gateway<br/>TCP 5200 / WS 5201"]
+        AG["app_sdk_gateway<br/>TCP 5200 / WS 5201"]
         ACHAT["app_chat（hub）"]
         APPAUTH["app_auth"]
-        NOTIF["notification"]
+        NOTIF["app_notification"]
         AG -->|per-client pipe| ACHAT
         AG -->|LOGIN_REQ| APPAUTH
         ACHAT --> NOTIF
@@ -66,13 +66,13 @@ flowchart TB
 
 | 服务 | 默认端口 | 状态 | 作用 |
 | --- | --- | --- | --- |
-| game_gateway | TCP 5000 / WS 5001 | Supported | 游戏客户端边缘：登录、登出、心跳、会话绑定、可选 Redis 跨实例 kick |
+| game_sdk_gateway | TCP 5000 / WS 5001 | Supported | 游戏客户端边缘：登录、登出、心跳、会话绑定、可选 Redis 跨实例 kick |
 | game_chat | TCP 7000 / WS 7001 | Supported | 游戏内聊天：私聊、群组、已读回执、正在输入、表情回应、消息编辑/删除、@提及、历史、离线队列。本地验证 token（--token_secret），不依赖外部认证 |
-| server_gateway | TCP 8100 | Experimental | 游戏后端注入枢纽：出站长连接 + 凭证接入，注入系统/NPC 消息，事件离线排队、重连重投直到 ack。可选 |
+| game_server_gateway | TCP 8100 | Experimental | 游戏后端注入枢纽：出站长连接 + 凭证接入，注入系统/NPC 消息，事件离线排队、重连重投直到 ack。可选 |
 | app_auth | TCP 6000 | Supported | App 平面认证：签发/验证平台用户令牌（player_id JWT），只服务 App 平面 |
-| app_gateway | TCP 5200 / WS 5201 | Experimental | App 接入边缘：登录/心跳/会话绑定 + 设备消息转发到 notification |
+| app_sdk_gateway | TCP 5200 / WS 5201 | Experimental | App 接入边缘：登录/心跳/会话绑定 + 设备消息转发到 app_notification |
 | app_chat | — | Experimental | App 平面 hub：接受 game_chat 注册，聚合跨游戏频道，身份绑定、频道订阅、未读计数 |
-| notification | TCP 5006 / WS 5016 | Experimental | 后台推送：设备注册/注销/token 更新/查询（6xxx）、APNs/FCM 离线推送 |
+| app_notification | TCP 5006 / WS 5016 | Experimental | 后台推送：设备注册/注销/token 更新/查询（6xxx）、APNs/FCM 离线推送 |
 
 ## 先读什么
 
@@ -140,7 +140,7 @@ TCP 和 WebSocket 使用同一套二进制 payload：
 - `server_gateway` 的注入链路已在回环级打通（chat 作为内部节点消费 `InjectMessageNotify`，走与玩家发消息相同的存储/投递尾巴），并支持 Redis Streams 上行回退（游戏服无法长连接时 `XADD` 注入，ack + PEL 重放，需 Redis >= 6.2），但 `OK` 仍只表示"服务平面已受理"，未确认玩家侧送达；NPC 对话环路的进程级 E2E 见 `./test_services.sh --smoke-npc`。
 - `social`、`voice`、`notification`、`search`、SDK、移动端、管理后台不应默认视为生产稳定能力。
 - Web 伴侣 App(`apps/web_companion`)一期已可用,但走的是**过渡路径**——浏览器直连 chat(7001)与 social(8001)的 WS 边缘 + scaffold 登录;social 平面的好友列表/移除等 API 服务端尚未实现,web 端以 localStorage 补位。详见 [docs/web_companion.md](docs/web_companion.md)。
-- `app_gateway` 与推送链路已可用但边界明确：chat 离线消息会经 `PushBridge` → notification 触发设备推送；notification 的 provider HTTP 投递是日志 stub（无 TLS，真实 APNs HTTP/2 / FCM HTTP 待接），推送桥仅接入默认构建的 `chirp_chat`（`main_enhanced`/`main_distributed` 未接）。
+- `app_sdk_gateway` 与推送链路已可用但边界明确：chat 离线消息会经 `PushBridge` → `app_notification` 触发设备推送；`app_notification` 的 provider HTTP 投递是日志 stub（无 TLS，真实 APNs HTTP/2 / FCM HTTP 待接），推送桥仅接入默认构建的 `chirp_chat`（`main_enhanced`/`main_distributed` 未接）。
 - NPC 对话已落地为关键词规则引擎（`services/npc_dialog`）：玩家私聊 `npc:` 前缀的接收者会转为 `npc.player_message` 事件发给 NPC 服务，NPC 的回复经注入通道回到 chat（at-least-once，hub 重投窗口内可能重复回复）；对话质量是规则表（`*` 为默认台词），LLM 引擎留作接口替换。设计文档（[docs/design-notes/](docs/design-notes/)）描述的完整 NPC 系统仍不是现状。
 
 ## Roadmap
@@ -159,13 +159,15 @@ TCP 和 WebSocket 使用同一套二进制 payload：
 - `proto/`：协议定义（`gateway.proto`、`server_gateway.proto` 等）
 - `libs/common`：日志、JWT/HS256、base64、sha256 等基础工具
 - `libs/network`：ASIO TCP/WS server/session、framing、Redis RESP（未来 I/O 后端封装在这里）
-- `services/gateway`：玩家边缘入口和会话能力
-- `services/auth`：认证服务
-- `services/chat`：私聊、群组、历史和离线队列
-- `services/server_gateway`：服务器平面枢纽
-- `services/npc_dialog`：NPC 对话服务（关键词规则引擎，纯服务器平面客户端）
+- `services/game/sdk_gateway/`：游戏客户端边缘入口和会话能力（`game_sdk_gateway`）
+- `services/game/chat/`：游戏内聊天（`game_chat`，本地验证 token）
+- `services/game/server_gateway/`：游戏后端注入枢纽（`game_server_gateway`，可选）
+- `services/app/sdk_gateway/`：App 客户端边缘入口（`app_sdk_gateway`）
+- `services/app/chat/`：App 平面 hub（`app_chat`，跨游戏聚合）
+- `services/app/auth/`：App 平面认证（`app_auth`）
+- `services/app/notification/`：后台推送（`app_notification`）
 - `sdks/core`：C++ 客户端集成实验
-- `apps/web_companion`：Web 伴侣 App(浏览器端,登录/私聊/群组/好友/在线状态;[docs/web_companion.md](docs/web_companion.md))
+- `apps/web_companion`：Web 伴侣 App（浏览器端，登录/私聊/群组/好友/在线状态）
 - `tools/benchmark`：本地验证工具
 - `tests`：单元和集成 smoke 测试
 

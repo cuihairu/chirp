@@ -142,7 +142,7 @@ variant is deferred to P3 (TODO.md); the gateway login path (via
 
 ### Server plane (5xxx)
 
-`chirp_server_gateway` (TCP 8100) speaks the same Packet framing on a separate
+`chirp_game_server_gateway` (TCP 8100) speaks the same Packet framing on a separate
 trust plane: peers are game backends and internal services authenticated by
 `service_id` + secret — never user accounts. See
 [Server Plane](./server_plane.md) for the full contract.
@@ -167,8 +167,8 @@ while the target is offline and redelivered on reconnect until acked.
 
 ### Notification / device plane (6xxx)
 
-`chirp_notification` (TCP 5006 / WS 5016) owns the device registry and push
-dispatch. `chirp_app_gateway` (TCP 5200 / WS 5201) forwards these messages
+`chirp_app_notification` (TCP 5006 / WS 5016) owns the device registry and push
+dispatch. `chirp_app_sdk_gateway` (TCP 5200 / WS 5201) forwards these messages
 for authenticated app sessions with `user_id` pinned to the session owner.
 
 | Packet `msg_id` | Packet `body` |
@@ -227,7 +227,7 @@ These areas exist in the repository but should not be presented as stable core c
 - `services/voice`
 - `services/notification`
 - `services/search`
-- `services/server_gateway` (unit-verified protocol incl. chat-side injection consumption; NPC dialog loop has a process-level smoke)
+- `services/game/server_gateway` (unit-verified protocol incl. chat-side injection consumption; NPC dialog loop has a process-level smoke)
 - `sdks/core`, `sdks/unity`, `sdks/unreal`
 - `apps/mobile_companion`
 - `apps/admin_dashboard`

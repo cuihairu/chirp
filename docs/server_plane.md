@@ -1,14 +1,14 @@
 # Server Plane: Game Backend Integration
 
-Status: **Experimental** — the hub (`chirp_server_gateway`), the chat-side consumer, and the Redis Streams broker fallback are implemented and unit-verified at 100% line coverage: chat dials in as an internal peer and injection messages flow through the same storage/delivery tail as player-sent messages. See [Architecture](./architecture.md) for the two-plane topology.
+Status: **Experimental** — the hub (`chirp_game_server_gateway`), the chat-side consumer, and the Redis Streams broker fallback are implemented and unit-verified at 100% line coverage: chat dials in as an internal peer and injection messages flow through the same storage/delivery tail as player-sent messages. See [Architecture](./architecture.md) for the two-plane topology.
 
-> **Architecture note (2026-09-21).** The target topology splits the player-aggregation state out of this hub: identity bindings, channel subscriptions, and the unread badge ledger move to a new stateless `app_registry` service. Cross-plane communication is a built-in chat capability — `game_chat` registers into `app_chat` using a native peer registration protocol with whitelist and version negotiation; no external bridge process. `chirp_server_gateway` remains, but scoped to its original role: game-backend injection + reliable event downlink. The WP-8 sections below describe the current implementation; they migrate to `app_registry` as the new topology lands.
+> **Architecture note (2026-09-21).** The target topology: `game_chat` registers into `app_chat` using a native peer registration protocol with whitelist and version negotiation; no external bridge process. Identity bindings, channel subscriptions, and the unread badge ledger are handled by `app_chat` internally. `chirp_game_server_gateway` remains scoped to its original role: game-backend injection + reliable event downlink.
 
 ## What it is
 
 The server plane is how a game backend talks to chirp. It is deliberately separate from the player edges:
 
-- **Dial-out**: the game server opens the connection to `chirp_server_gateway`. Chirp never needs to reach into game networks, and game servers in private subnets need no public callback endpoint.
+- **Dial-out**: the game server opens the connection to `chirp_game_server_gateway`. Chirp never needs to reach into game networks, and game servers in private subnets need no public callback endpoint.
 - **Service identity, not user identity**: peers authenticate with `service_id` + shared secret. They are never user accounts, never appear in session/kick/presence, and injected messages carry non-user sender kinds (`SYSTEM` / `NPC` / `SERVICE`).
 - **Same framing**: TCP + `[uint32_be size][chirp.gateway.Packet]`, with the `5xxx` msg-id block.
 
@@ -25,7 +25,7 @@ The `service_id` + secret pair is an appkey/appSecret-style credential: it ident
 
 ```bash
 cmake --preset dev && cmake --build --preset dev
-./build/services/server_gateway/chirp_server_gateway \
+./build/services/game/server_gateway/chirp_game_server_gateway \
   --port 8100 \
   --service game=game-secret \
   --service chat=chat-secret \
@@ -162,7 +162,7 @@ Process-level verification: `./test_services.sh --smoke-npc` runs hub + chat + n
 
 ## Player identity bindings (WP-8 slice 1)
 
-The aggregation plane needs a platform-level `player_id` that spans many games; the server plane is where game backends assert those bindings. `chirp_server_gateway` keeps an `IdentityRegistry` (`identity_registry.{h,cc}`) behind four RPCs:
+The aggregation plane needs a platform-level `player_id` that spans many games; the server plane is where game backends assert those bindings. `chirp_game_server_gateway` keeps an `IdentityRegistry` (`identity_registry.{h,cc}`) behind four RPCs:
 
 - `BIND_PLAYER_IDENTITY_REQ` (5013) — `binding_id` (caller-chosen idempotency key), `player_id`, `game_id`, `game_user_id`. Same id + same tuple again → `OK` with `existed=true`; same id + a different tuple → `INVALID_PARAM` (reusing keys would silently break duplicate detection). A `(game_id, game_user_id)` pair may be bound to only one player: re-asserting it under a new `binding_id` replaces the old binding (account switch / unlink+relink — the game backend is the authority).
 - `UNBIND_PLAYER_IDENTITY_REQ` (5015) — by `binding_id` **or** by the full `(game_id, game_user_id)` pair, never both, never neither (`INVALID_PARAM` otherwise). Unknown target → `OK` (idempotent).
@@ -175,7 +175,7 @@ This registry is the foundation both aggregation-plane designs need (shared mult
 
 ## Player channel subscriptions (WP-8 slice 2)
 
-Where bindings answer "which platform player is this game user", subscriptions answer "which game channels does a player want". `chirp_server_gateway` keeps a `SubscriptionRegistry` (`subscription_registry.{h,cc}`) behind three RPCs. Since WP-8 slice 3 the registry also powers fan-in delivery: the inject handler reads its `(game_id, channel_id)` reverse index (see "Fan-in delivery" above) — the registry itself still only stores intent, and delivery decisions live in the inject path.
+Where bindings answer "which platform player is this game user", subscriptions answer "which game channels does a player want". `chirp_game_server_gateway` keeps a `SubscriptionRegistry` (`subscription_registry.{h,cc}`) behind three RPCs. Since WP-8 slice 3 the registry also powers fan-in delivery: the inject handler reads its `(game_id, channel_id)` reverse index (see "Fan-in delivery" above) — the registry itself still only stores intent, and delivery decisions live in the inject path.
 
 - `SUBSCRIBE_PLAYER_CHANNEL_REQ` (5021) — `player_id`, `game_id`, `channel_id`, plus an optional `subscription_id`. With an id, it is the caller's idempotency key: same id + same tuple again → `OK` with `existed=true`; same id + a different tuple → `INVALID_PARAM` (reusing keys would silently break duplicate detection). The `(player_id, game_id, channel_id)` tuple is globally unique: subscribing the same tuple under a new id replaces the old record — the asserting caller is the authority (e.g. a game rewriting its channel layout). With an **empty** `subscription_id` the hub mints one (`sub-...`): this is the player self-service path, where app_gateway pins `player_id` to the authenticated user before forwarding, and re-subscribing the same tuple converges on the stored record (stable id, `existed=true`) instead of accumulating rows.
 - `UNSUBSCRIBE_PLAYER_CHANNEL_REQ` (5023) — by `subscription_id` **or** by the full `(player_id, game_id, channel_id)` triple, never both, never neither (`INVALID_PARAM` otherwise). Unknown target → `OK` (idempotent).
