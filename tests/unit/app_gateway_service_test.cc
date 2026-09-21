@@ -20,7 +20,9 @@
 #include "network/session_registry.h"
 #include "network/notification_client.h"
 #include "network/server_gateway_peer.h"
+#include "fake_chat_server.h"
 #include "proto/auth.pb.h"
+#include "proto/chat.pb.h"
 #include "proto/common.pb.h"
 #include "proto/gateway.pb.h"
 #include "proto/notification.pb.h"
@@ -440,20 +442,38 @@ class AppGatewayServiceTest : public ::testing::Test {
   std::shared_ptr<chirp::network::SessionRegistry> state_ =
       std::make_shared<chirp::network::SessionRegistry>();
   std::shared_ptr<MockSession> session_ = std::make_shared<MockSession>();
+  // Lives on the fixture so chat-bridge tests can pump it through WaitForIo;
+  // the bridge is created on demand via AttachChatBridge().
+  asio::io_context io_;
+  std::unique_ptr<chirp::gateway::ChatBridge> bridge_;
+
+  // Points the edge's chat pipeline at a loopback fake chat server. The
+  // handshake result codes are scriptable (default both OK); the returned
+  // server outlives the bridge (destructor order in the fixture).
+  chirp_test::FakeChatServer& AttachChatBridge(
+      chirp::common::ErrorCode auth_code = chirp::common::OK,
+      chirp::common::ErrorCode login_code = chirp::common::OK) {
+    chat_ = std::make_unique<chirp_test::FakeChatServer>(auth_code, login_code);
+    bridge_ = std::make_unique<chirp::gateway::ChatBridge>(io_, "127.0.0.1", chat_->port(),
+                                                           "app_gateway", "edge-secret");
+    return *chat_;
+  }
 
   // auth=null: the scaffold login path (no auth service configured).
   void SendFrame(chirp::gateway::MsgID id, int64_t seq, const std::string& body,
-                 chirp::network::ServerGatewayPeer* sg = nullptr) {
+                 chirp::network::ServerGatewayPeer* sg = nullptr,
+                 chirp::gateway::ChatBridge* bridge = nullptr) {
     HandleClientPacket(session_, MakePacket(id, seq, body).SerializeAsString(),
-                       state_, nullptr, nullptr, nullptr, sg);
+                       state_, nullptr, nullptr, nullptr, sg, bridge);
   }
 
   // Scaffold-login `user` on `session` and return the assigned session_id.
-  std::string Login(const std::shared_ptr<MockSession>& session, const std::string& user) {
+  std::string Login(const std::shared_ptr<MockSession>& session, const std::string& user,
+                    chirp::gateway::ChatBridge* bridge = nullptr) {
     chirp::auth::LoginRequest req;
     req.set_token(user);
     HandleClientPacket(session, MakePacket(chirp::gateway::LOGIN_REQ, 1, req.SerializeAsString()).SerializeAsString(),
-                       state_, nullptr, nullptr, nullptr, nullptr);
+                       state_, nullptr, nullptr, nullptr, nullptr, bridge);
     chirp::auth::LoginResponse resp;
     EXPECT_FALSE(session->sent.empty());
     if (!session->sent.empty()) {
@@ -462,6 +482,11 @@ class AppGatewayServiceTest : public ::testing::Test {
     }
     return resp.session_id();
   }
+
+  // Destruction order matters and is declaration-reverse: chat_ (the
+  // listener) dies first, closing the bridge's sockets while io_ is still
+  // alive; bridge_ then drops its pending handlers; io_ last.
+  std::unique_ptr<chirp_test::FakeChatServer> chat_;
 };
 
 TEST_F(AppGatewayServiceTest, ScaffoldLoginEmptyTokenRejected) {
@@ -518,7 +543,7 @@ TEST_F(AppGatewayServiceTest, ReLoginKicksPreviousSession) {
 
   // The kicked session keeps its registration until the connection actually
   // closes; disconnect is what releases it.
-  HandleDisconnect(s1, state_, nullptr);
+  HandleDisconnect(s1, state_, nullptr, nullptr);
   EXPECT_TRUE(chirp::network::GetAuthenticatedSession(state_, s1).user_id.empty());
   // s2 must be untouched by s1's disconnect.
   EXPECT_EQ(chirp::network::GetAuthenticatedSession(state_, s2).user_id, "alice");
@@ -603,9 +628,19 @@ TEST_F(AppGatewayServiceTest, HeartbeatPongEchoesTimestampAndSequence) {
   EXPECT_EQ(pong.timestamp(), 424242);
 }
 
-TEST_F(AppGatewayServiceTest, ChatBusinessPacketIgnored) {
+TEST_F(AppGatewayServiceTest, ChatBusinessPacketIgnoredWithoutBridge) {
+  // No --chat_host: the edge keeps the pre-bridge behavior, 2xxx ignored.
   SendFrame(chirp::gateway::SEND_MESSAGE_REQ, 5, "");
   EXPECT_TRUE(session_->sent.empty());
+}
+
+TEST_F(AppGatewayServiceTest, ChatBusinessPacketIgnoredWhenUnauthenticated) {
+  AttachChatBridge();
+  // Bridge configured but the client never logged in: still ignored, and
+  // nothing reaches chat (the pipeline only carries authenticated traffic).
+  SendFrame(chirp::gateway::SEND_MESSAGE_REQ, 5, "", nullptr, bridge_.get());
+  EXPECT_TRUE(session_->sent.empty());
+  EXPECT_EQ(chat_->Count(chirp::gateway::SEND_MESSAGE_REQ), 0u);
 }
 
 TEST_F(AppGatewayServiceTest, RegisterDeviceGarbageBodyRejected) {
@@ -654,7 +689,7 @@ TEST_F(AppGatewayServiceTest, RegisterDeviceForwardedWithPinnedUserId) {
 
   HandleClientPacket(session_,
                      MakePacket(chirp::gateway::REGISTER_DEVICE_REQ, 9, req.SerializeAsString()).SerializeAsString(),
-                     state_, nullptr, nullptr, notification.get(), nullptr);
+                     state_, nullptr, nullptr, notification.get(), nullptr, nullptr);
 
   // The response delivery is posted to the main io_context; pump until the
   // relay lands on the session.
@@ -695,7 +730,7 @@ TEST_F(AppGatewayServiceTest, UpdateDeviceTokenForwardedByDeviceIdOnly) {
 
   HandleClientPacket(session_,
                      MakePacket(chirp::gateway::UPDATE_DEVICE_TOKEN_REQ, 10, req.SerializeAsString()).SerializeAsString(),
-                     state_, nullptr, nullptr, notification.get(), nullptr);
+                     state_, nullptr, nullptr, notification.get(), nullptr, nullptr);
 
   for (int i = 0; i < 500 && session_->sent.empty(); i++) {
     io.poll();
@@ -772,7 +807,7 @@ TEST_F(AppGatewayServiceTest, SubscriptionForwardedWithPinnedPlayerId) {
   HandleClientPacket(session_,
                      MakePacket(chirp::gateway::SUBSCRIBE_PLAYER_CHANNEL_REQ, 11,
                                 req.SerializeAsString()).SerializeAsString(),
-                     state_, nullptr, nullptr, nullptr, sg.get());
+                     state_, nullptr, nullptr, nullptr, sg.get(), nullptr);
 
   // The hub's OK response (with the minted id) must reach the session. Wait
   // on the specific response frame, not on sent.empty(): the login response
@@ -839,7 +874,7 @@ TEST_F(AppGatewayServiceTest, UnreadMarkForwardedWithPinnedPlayerId) {
   HandleClientPacket(session_,
                      MakePacket(chirp::gateway::MARK_CHANNELS_READ_REQ, 12,
                                 req.SerializeAsString()).SerializeAsString(),
-                     state_, nullptr, nullptr, nullptr, sg.get());
+                     state_, nullptr, nullptr, nullptr, sg.get(), nullptr);
 
   const auto got_mark_resp = [&] {
     for (const auto& framed : session_->sent) {
@@ -900,7 +935,7 @@ TEST_F(AppGatewayServiceTest, UnreadSummaryForwardedAndRelayed) {
   HandleClientPacket(session_,
                      MakePacket(chirp::gateway::GET_UNREAD_SUMMARY_REQ, 13,
                                 req.SerializeAsString()).SerializeAsString(),
-                     state_, nullptr, nullptr, nullptr, sg.get());
+                     state_, nullptr, nullptr, nullptr, sg.get(), nullptr);
 
   const auto got_summary_resp = [&] {
     for (const auto& framed : session_->sent) {
@@ -942,19 +977,170 @@ TEST_F(AppGatewayServiceTest, UnreadSummaryForwardedAndRelayed) {
 TEST_F(AppGatewayServiceTest, DisconnectUnbindsSession) {
   Login(session_, "alice");
 
-  HandleDisconnect(session_, state_, nullptr);
+  HandleDisconnect(session_, state_, nullptr, nullptr);
 
   EXPECT_TRUE(chirp::network::GetAuthenticatedSession(state_, session_).user_id.empty());
 
   // A second disconnect is a no-op (no crash, no double release).
-  HandleDisconnect(session_, state_, nullptr);
+  HandleDisconnect(session_, state_, nullptr, nullptr);
   EXPECT_TRUE(chirp::network::GetAuthenticatedSession(state_, session_).user_id.empty());
 }
 
 TEST_F(AppGatewayServiceTest, DisconnectUnboundSessionIsNoop) {
   auto s = std::make_shared<MockSession>();
-  HandleDisconnect(s, state_, nullptr);
+  HandleDisconnect(s, state_, nullptr, nullptr);
   EXPECT_TRUE(s->sent.empty());
+}
+
+// ---- Chat pipeline (ChatBridge) ----
+//
+// The edge relays chat business packets (2xxx) through a per-client internal
+// connection to chirp_chat once the client is authenticated. The fake chat
+// runs on its own io thread; the bridge lives on the fixture's io_, pumped
+// by WaitForIo - the same loopback shape as chat_bridge_test.cc.
+
+TEST_F(AppGatewayServiceTest, ChatHandshakeReplaysLoginWithServiceAuth) {
+  auto& chat = AttachChatBridge();
+  Login(session_, "alice", bridge_.get());
+
+  // The pipeline authenticates itself as a trusted service first, then
+  // replays the client's login (token + device passthrough).
+  ASSERT_TRUE(WaitForIo(io_, [&] { return chat.Count(chirp::gateway::SERVER_AUTH_REQ) > 0; },
+                        std::chrono::seconds(5)));
+  const auto auths = chat.All(chirp::gateway::SERVER_AUTH_REQ);
+  ASSERT_FALSE(auths.empty());
+  chirp::server_gateway::ServerAuthRequest auth_req;
+  ASSERT_TRUE(auth_req.ParseFromString(auths.front().body()));
+  EXPECT_EQ(auth_req.service_id(), "app_gateway");
+  EXPECT_EQ(auth_req.secret(), "edge-secret");
+
+  ASSERT_TRUE(WaitForIo(io_, [&] { return chat.Count(chirp::gateway::LOGIN_REQ) > 0; },
+                        std::chrono::seconds(5)));
+  const auto logins = chat.All(chirp::gateway::LOGIN_REQ);
+  ASSERT_FALSE(logins.empty());
+  chirp::auth::LoginRequest login_req;
+  ASSERT_TRUE(login_req.ParseFromString(logins.front().body()));
+  EXPECT_EQ(login_req.token(), "alice");
+  // Verbatim passthrough: the raw device_id field, not the normalized one
+  // the edge uses for its own session binding.
+  EXPECT_EQ(login_req.device_id(), "");
+}
+
+TEST_F(AppGatewayServiceTest, ChatBusinessPacketForwardedVerbatimWhenReady) {
+  auto& chat = AttachChatBridge();
+  Login(session_, "alice", bridge_.get());
+  ASSERT_TRUE(WaitForIo(io_, [&] { return chat.Count(chirp::gateway::LOGIN_REQ) > 0; },
+                        std::chrono::seconds(5)));
+
+  // Identity intact: msg_id, sequence and body survive the relay untouched.
+  SendFrame(chirp::gateway::SEND_MESSAGE_REQ, 42, "body-bytes", nullptr, bridge_.get());
+  ASSERT_TRUE(WaitForIo(io_, [&] { return chat.Count(chirp::gateway::SEND_MESSAGE_REQ) > 0; },
+                        std::chrono::seconds(5)));
+  const auto sent = chat.All(chirp::gateway::SEND_MESSAGE_REQ);
+  ASSERT_FALSE(sent.empty());
+  EXPECT_EQ(sent.back().sequence(), 42);
+  EXPECT_EQ(sent.back().body(), "body-bytes");
+}
+
+TEST_F(AppGatewayServiceTest, ChatPushRelayedBackToClient) {
+  auto& chat = AttachChatBridge();
+  Login(session_, "alice", bridge_.get());
+  ASSERT_TRUE(WaitForIo(io_, [&] { return chat.Count(chirp::gateway::LOGIN_REQ) > 0; },
+                        std::chrono::seconds(5)));
+
+  // Downlink: chat pushes on the internal connection and the frame lands on
+  // the one client, untouched. Handshake replies are consumed by the bridge,
+  // never relayed.
+  chirp::chat::ChatMessage msg;
+  msg.set_sender_id("user_2");
+  msg.set_content("hello from chat");
+  chat.SendToLatest(chirp_test::MakePacket(chirp::gateway::CHAT_MESSAGE_NOTIFY, 99, msg));
+
+  const auto has_notify = [&] {
+    for (const auto& f : ReceivedPackets(*session_)) {
+      // The service-auth reply is consumed inside the bridge, never relayed
+      // (LOGIN_RESP here is the edge's own frame, so it shares msg_id 1004
+      // and is expected).
+      EXPECT_NE(f.msg_id(), chirp::gateway::SERVER_AUTH_RESP);
+      if (f.msg_id() == chirp::gateway::CHAT_MESSAGE_NOTIFY) {
+        return true;
+      }
+    }
+    return false;
+  };
+  ASSERT_TRUE(WaitForIo(io_, has_notify, std::chrono::seconds(5)));
+  const auto frames = ReceivedPackets(*session_);
+  ASSERT_FALSE(frames.empty());
+  EXPECT_EQ(frames.back().msg_id(), chirp::gateway::CHAT_MESSAGE_NOTIFY);
+  EXPECT_EQ(frames.back().sequence(), 99);
+  chirp::chat::ChatMessage got;
+  ASSERT_TRUE(got.ParseFromString(frames.back().body()));
+  EXPECT_EQ(got.content(), "hello from chat");
+}
+
+TEST_F(AppGatewayServiceTest, ChatHandshakeFailureKicksClient) {
+  auto& chat = AttachChatBridge(chirp::common::AUTH_FAILED);
+  Login(session_, "alice", bridge_.get());
+
+  // A rejected service-auth kicks the real client so it reconnects cleanly.
+  const auto has_kick = [&] {
+    for (const auto& f : ReceivedPackets(*session_)) {
+      if (f.msg_id() == chirp::gateway::KICK_NOTIFY) {
+        return true;
+      }
+    }
+    return false;
+  };
+  ASSERT_TRUE(WaitForIo(io_, has_kick, std::chrono::seconds(5)));
+  const auto frames = ReceivedPackets(*session_);
+  ASSERT_FALSE(frames.empty());
+  EXPECT_EQ(frames.back().msg_id(), chirp::gateway::KICK_NOTIFY);
+  chirp::auth::KickNotify kick;
+  ASSERT_TRUE(kick.ParseFromString(frames.back().body()));
+  EXPECT_EQ(kick.reason(), "chat unavailable");
+  EXPECT_TRUE(session_->close_after_send);
+  EXPECT_EQ(chat.Count(chirp::gateway::LOGIN_REQ), 0u);  // no login replay after auth failure
+}
+
+TEST_F(AppGatewayServiceTest, ChatPipeLostKicksClient) {
+  auto& chat = AttachChatBridge();
+  Login(session_, "alice", bridge_.get());
+  ASSERT_TRUE(WaitForIo(io_, [&] { return chat.Count(chirp::gateway::LOGIN_REQ) > 0; },
+                        std::chrono::seconds(5)));
+
+  chat.CloseLatest();
+  const auto has_kick = [&] {
+    for (const auto& f : ReceivedPackets(*session_)) {
+      if (f.msg_id() == chirp::gateway::KICK_NOTIFY) {
+        return true;
+      }
+    }
+    return false;
+  };
+  ASSERT_TRUE(WaitForIo(io_, has_kick, std::chrono::seconds(5)));
+  const auto frames = ReceivedPackets(*session_);
+  ASSERT_FALSE(frames.empty());
+  EXPECT_EQ(frames.back().msg_id(), chirp::gateway::KICK_NOTIFY);
+  chirp::auth::KickNotify kick;
+  ASSERT_TRUE(kick.ParseFromString(frames.back().body()));
+  EXPECT_EQ(kick.reason(), "chat session lost");
+}
+
+TEST_F(AppGatewayServiceTest, DisconnectDetachesInternalConnectionWithoutKick) {
+  auto& chat = AttachChatBridge();
+  Login(session_, "alice", bridge_.get());
+  ASSERT_TRUE(WaitForIo(io_, [&] { return chat.Count(chirp::gateway::LOGIN_REQ) > 0; },
+                        std::chrono::seconds(5)));
+
+  // Client gone: the internal side closes quietly - an EOF on chat, no kick
+  // to a session that is already going away.
+  HandleDisconnect(session_, state_, nullptr, bridge_.get());
+  ASSERT_TRUE(WaitForIo(io_, [&] { return chat.EofCount() >= 1; }, std::chrono::seconds(5)));
+  EXPECT_TRUE(chirp::network::GetAuthenticatedSession(state_, session_).user_id.empty());
+  const auto frames = ReceivedPackets(*session_);
+  for (const auto& f : frames) {
+    EXPECT_NE(f.msg_id(), chirp::gateway::KICK_NOTIFY);
+  }
 }
 
 }  // namespace

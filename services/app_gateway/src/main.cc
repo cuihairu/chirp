@@ -1,7 +1,9 @@
 // App gateway: the companion-app edge. Same scaffolding as the game gateway
 // (dual TCP/WS listeners, auth delegation, session registry) plus forwarding
 // of the notification-plane device messages (6xxx) to the notification
-// service. Chat business packets are NOT accepted here.
+// service. When --chat_host is configured, chat business packets (2xxx) are
+// relayed verbatim through a per-client ChatBridge pipeline to chirp_chat;
+// with it empty the edge ignores them, matching the pre-bridge behavior.
 
 #include <chrono>
 #include <cstdint>
@@ -17,6 +19,7 @@
 #include <asio.hpp>
 
 #include "network/auth_client.h"
+#include "network/chat_bridge.h"
 #include "network/session_registry.h"
 #include "logger.h"
 #include "network/protobuf_framing.h"
@@ -111,7 +114,8 @@ void HandleLogin(const std::shared_ptr<chirp::network::Session>& session,
                  const chirp::auth::LoginRequest& req,
                  const std::shared_ptr<chirp::network::SessionRegistry>& state,
                  const std::shared_ptr<chirp::gateway::AuthClient>& auth,
-                 const std::shared_ptr<chirp::gateway::RedisSessionManager>& redis_mgr) {
+                 const std::shared_ptr<chirp::gateway::RedisSessionManager>& redis_mgr,
+                 chirp::gateway::ChatBridge* bridge) {
   const int64_t seq = pkt.sequence();
   auto send_err = [session, seq](chirp::common::ErrorCode code) {
     chirp::auth::LoginResponse resp;
@@ -137,13 +141,18 @@ void HandleLogin(const std::shared_ptr<chirp::network::Session>& session,
       if (old && old.get() != session.get()) {
         KickSession(old, "login from another device");
       }
+      SendPacket(session, chirp::gateway::LOGIN_RESP, seq, resp.SerializeAsString());
+      if (bridge) {
+        bridge->Attach(session, req.token(), req.device_id());
+      }
+    } else {
+      SendPacket(session, chirp::gateway::LOGIN_RESP, seq, resp.SerializeAsString());
     }
-    SendPacket(session, chirp::gateway::LOGIN_RESP, seq, resp.SerializeAsString());
     return;
   }
 
   auth->AsyncLogin(req, seq,
-                   [session, seq, req, state, redis_mgr, send_err](const chirp::auth::LoginResponse& auth_resp) {
+                   [session, seq, req, state, redis_mgr, bridge, send_err](const chirp::auth::LoginResponse& auth_resp) {
     chirp::auth::LoginResponse resp = auth_resp;
     if (resp.code() != chirp::common::OK) {
       SendPacket(session, chirp::gateway::LOGIN_RESP, seq, resp.SerializeAsString());
@@ -167,11 +176,17 @@ void HandleLogin(const std::shared_ptr<chirp::network::Session>& session,
 
     if (redis_mgr) {
       redis_mgr->AsyncClaim(user_id, req.device_id(),
-                            [session, seq, resp](std::optional<std::string> /*prev_owner*/) mutable {
+                            [session, seq, resp, bridge, req](std::optional<std::string> /*prev_owner*/) mutable {
         SendPacket(session, chirp::gateway::LOGIN_RESP, seq, resp.SerializeAsString());
+        if (bridge) {
+          bridge->Attach(session, req.token(), req.device_id());
+        }
       });
     } else {
       SendPacket(session, chirp::gateway::LOGIN_RESP, seq, resp.SerializeAsString());
+      if (bridge) {
+        bridge->Attach(session, req.token(), req.device_id());
+      }
     }
   });
 }
@@ -355,7 +370,8 @@ void HandleClientPacket(const std::shared_ptr<chirp::network::Session>& session,
                         const std::shared_ptr<chirp::gateway::AuthClient>& auth,
                         const std::shared_ptr<chirp::gateway::RedisSessionManager>& redis_mgr,
                         chirp::notification::NotificationClient* notification,
-                        chirp::network::ServerGatewayPeer* sg) {
+                        chirp::network::ServerGatewayPeer* sg,
+                        chirp::gateway::ChatBridge* bridge) {
   chirp::gateway::Packet pkt;
   if (!pkt.ParseFromArray(payload.data(), static_cast<int>(payload.size()))) {
     chirp::common::Logger::Instance().Warn("failed to parse Packet from app client");
@@ -372,7 +388,7 @@ void HandleClientPacket(const std::shared_ptr<chirp::network::Session>& session,
       SendPacket(session, chirp::gateway::LOGIN_RESP, pkt.sequence(), resp.SerializeAsString());
       return;
     }
-    HandleLogin(session, pkt, req, state, auth, redis_mgr);
+    HandleLogin(session, pkt, req, state, auth, redis_mgr, bridge);
     break;
   }
   case chirp::gateway::LOGOUT_REQ: {
@@ -472,21 +488,38 @@ void HandleClientPacket(const std::shared_ptr<chirp::network::Session>& session,
         chirp::network::GetAuthenticatedSession(state, session).user_id, sg);
     break;
   }
-  default:
-    // Companion-app edge: chat/business packets belong to their own services.
+  default: {
+    // Chat business packets relay through the per-client pipeline once the
+    // client is authenticated; chat answers on the same connection, so the
+    // edge never synthesizes responses for them. Without a bridge (or before
+    // login) they stay ignored, matching the pre-bridge edge behavior.
+    const auto id = static_cast<int>(pkt.msg_id());
+    if (bridge != nullptr && id >= 2001 && id <= 2999) {
+      if (!chirp::network::GetAuthenticatedSession(state, session).user_id.empty()) {
+        bridge->ForwardToChat(session.get(), pkt);
+      }
+      break;
+    }
     break;
+  }
   }
 }
 
 void HandleDisconnect(const std::shared_ptr<chirp::network::Session>& session,
                       const std::shared_ptr<chirp::network::SessionRegistry>& state,
-                      const std::shared_ptr<chirp::gateway::RedisSessionManager>& redis_mgr) {
+                      const std::shared_ptr<chirp::gateway::RedisSessionManager>& redis_mgr,
+                      chirp::gateway::ChatBridge* bridge) {
   std::string user_id;
   std::string device_id;
   const bool should_release =
       chirp::network::RemoveAuthenticatedSession(state, session, &user_id, &device_id);
   if (should_release && redis_mgr) {
     redis_mgr->AsyncRelease(user_id, device_id);
+  }
+  // Single detach point, mirroring the game gateway's on_close: logout,
+  // kick and plain disconnects all close the socket, which funnels here.
+  if (bridge) {
+    bridge->Detach(session.get());
   }
 }
 
@@ -524,6 +557,15 @@ int main(int argc, char** argv) {
   const std::string sg_service_id = GetArg(argc, argv, "--sg_service_id", "app_gateway");
   const std::string sg_secret = GetArg(argc, argv, "--sg_secret", "");
 
+  // Chat pipeline: empty --chat_host keeps the edge byte-for-byte compatible
+  // with the pre-bridge behavior (2xxx ignored). The secret must match the
+  // chat service's --gateway_service_secret or every login is kicked by the
+  // 5s handshake timeout.
+  const std::string chat_host = GetArg(argc, argv, "--chat_host", "");
+  const uint16_t chat_port = ParseU16Arg(argc, argv, "--chat_port", 7000);
+  const std::string chat_service_id = GetArg(argc, argv, "--chat_service_id", "app_gateway");
+  const std::string chat_service_secret = GetArg(argc, argv, "--chat_service_secret", "");
+
   Logger::Instance().Info("chirp_app_gateway starting tcp=" + std::to_string(port) +
                           " ws=" + std::to_string(ws_port) +
                           (tls_port != 0 ? (" tls=" + std::to_string(tls_port)) : "") +
@@ -537,7 +579,11 @@ int main(int argc, char** argv) {
                           (sg_host.empty()
                                ? " server-plane=disabled"
                                : (" sg=" + sg_host + ":" + std::to_string(sg_port) +
-                                  " service=" + sg_service_id)));
+                                  " service=" + sg_service_id)) +
+                          (chat_host.empty()
+                               ? " chat-pipeline=disabled"
+                               : (" chat=" + chat_host + ":" + std::to_string(chat_port) +
+                                  " service=" + chat_service_id)));
 
   // TLS edges: load the shared context before anything is bound, so a bad
   // cert/key pair is a clean fatal startup error.
@@ -597,13 +643,24 @@ int main(int argc, char** argv) {
     sg->Start();
   }
 
-  auto on_frame = [state, auth, redis_mgr, notification, sg](std::shared_ptr<chirp::network::Session> session,
-                                                             std::string&& payload) {
+  // Per-client chat pipeline (game gateway's ChatBridge). Lives on the same
+  // single io thread as the edge sessions, so relay callbacks can write back
+  // to a session directly.
+  std::unique_ptr<chirp::gateway::ChatBridge> bridge;
+  if (!chat_host.empty()) {
+    bridge = std::make_unique<chirp::gateway::ChatBridge>(io, chat_host, chat_port,
+                                                          chat_service_id, chat_service_secret);
+  }
+
+  auto on_frame = [state, auth, redis_mgr, notification, sg,
+                   bridge_raw = bridge.get()](std::shared_ptr<chirp::network::Session> session,
+                                              std::string&& payload) {
     HandleClientPacket(session, std::move(payload), state, auth, redis_mgr, notification.get(),
-                       sg.get());
+                       sg.get(), bridge_raw);
   };
-  auto on_close = [state, redis_mgr](std::shared_ptr<chirp::network::Session> session) {
-    HandleDisconnect(session, state, redis_mgr);
+  auto on_close = [state, redis_mgr,
+                   bridge_raw = bridge.get()](std::shared_ptr<chirp::network::Session> session) {
+    HandleDisconnect(session, state, redis_mgr, bridge_raw);
   };
 
   chirp::network::TcpServer server(io, port, on_frame, on_close);
