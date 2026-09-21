@@ -26,9 +26,9 @@ chirp 想解决的就是这件事，设计目标按优先级排列：
 - 服务器平面 `server_gateway`（游戏服务端接入）枢纽与 chat 侧注入消费均已实现并全覆盖（进程级端到端验证 `./test_services.sh --smoke-npc`），标记为实验中。
 - 其余（`social`、`voice`、`notification`、`search`、多端 SDK、移动端、管理后台）完成度不一致，不要对外当作稳定能力介绍。真实状态见[能力矩阵](docs/CAPABILITY_MATRIX.md)。
 
-## 两条平面,一套桥接
+## 两条平面，一套协议
 
-游戏平面和 App 平面是两套独立部署的系统,各自有独立的边缘和独立的 chat;跨平面消息只经过一个专用 `chat_bridge` 进程双向翻译。玩家身份绑定、频道订阅、统一未读都放在无状态的 `app_registry`(Redis 存储)。游戏平面可完全脱离 App 平面单独部署。
+游戏平面和 App 平面是两套独立部署的系统，各自有独立的边缘和独立的 chat；跨平面通信是 chat 的原生能力——两个 `chirp_chat` 实例直连，通过内置的注册协议、版本协商和白名单机制完成接入，不需要外部桥接进程。游戏平面可完全脱离 App 平面单独部署。
 
 ```mermaid
 flowchart TB
@@ -46,9 +46,9 @@ flowchart TB
         GG --> AUTH
     end
 
-    subgraph ap["App 平面(可选附加)"]
+    subgraph ap["App 平面(hub)"]
         AG["app_gateway<br/>TCP 5200 / WS 5201"]
-        ACHAT["app_chat"]
+        ACHAT["app_chat (hub)"]
         AREG["app_registry<br/>无状态 + Redis"]
         NOTIF["notification"]
         AG -->|per-client pipe| ACHAT
@@ -59,12 +59,12 @@ flowchart TB
     Game -- "TCP/WS" --> GG
     App -- "WS/TLS" --> AG
     GS -- "出站长连接" --> SG
-    GCHAT <-->|"trusted peer"| CB["chat_bridge<br/>身份/命名空间翻译"]
-    CB <-->|"trusted peer"| ACHAT
-    CB --> AREG
+    GCHAT -->|"注册 + 白名单 + 版本协商"| ACHAT
+    GCHAT -->|"频道消息"| ACHAT
+    ACHAT -->|"玩家回复"| GCHAT
 ```
 
-要点:**平面分离、桥接直连**。`game_chat` 与 `app_chat` 互不感知;`chat_bridge` 同时作为两侧 chat 的 trusted peer,双向直连转发并做身份/命名空间翻译,不走消息队列。游戏平面故障不影响 App 平面,反之亦然;`chat_bridge` 故障只切断跨平面消息。游戏服务端平面只认服务凭证、只做出站连接,与玩家边缘彻底隔离。详见[整体架构](docs/architecture.md)。
+要点:**平面分离、同协议直连**。`game_chat` 和 `app_chat` 是同一个 `chirp_chat` 二进制的不同部署；跨平面通信使用 chat 原生的 trusted-peer 协议，`app_chat` 作为 hub 通过白名单和版本协商控制接入。游戏平面故障不影响 App 平面，反之亦然。游戏服务端平面只认服务凭证、只做出站连接，与玩家边缘彻底隔离。详见[整体架构](docs/architecture.md)。
 
 | 服务 | 默认端口 | 状态 | 作用 |
 | --- | --- | --- | --- |
@@ -79,7 +79,7 @@ flowchart TB
 
 - [核心说明](docs/CORE.md)：当前可用链路、服务边界、协议和本地验证命令
 - [能力矩阵](docs/CAPABILITY_MATRIX.md)：各服务、SDK、应用的真实完成度
-- [整体架构](docs/architecture.md)：两平面分离、chat_bridge 双向桥接、app_registry 设计
+- [整体架构](docs/architecture.md)：两平面分离、hub-spoke 接入模型、注册协议与白名单
 - [服务器平面](docs/server_plane.md)：游戏服务端接入契约
 - [API 概述](docs/api/overview.md)：Packet 协议、消息 ID 和核心流程
 - [快速开始](docs/guide/getting-started.md)：构建、Docker Compose、smoke test

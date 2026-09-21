@@ -46,7 +46,7 @@ graph TD
 - Use `chat` directly for private messages and history.
 - Do not assume `gateway` forwards arbitrary business packets yet.
 - Do not assume a successful Gateway login automatically authenticates an independent Chat connection.
-- The game plane and the app plane are two independent systems. Each has its own chat (`game_chat` / `app_chat`, same binary, separate deployments) and its own edge. Cross-plane traffic flows only through `chat_bridge`. Player identity bindings, channel subscriptions, and the unread badge ledger live in `app_registry` (stateless RPC + Redis), never in `server_gateway` — see [architecture.md](./architecture.md).
+- The game plane and the app plane are two independent systems. Each has its own chat (`game_chat` / `app_chat`, same binary, separate deployments) and its own edge. Cross-plane communication is a built-in chat capability: `game_chat` registers into `app_chat` using a native peer registration protocol with whitelist and version negotiation. Player identity bindings, channel subscriptions, and the unread badge ledger live in `app_registry` (stateless RPC + Redis), never in `server_gateway` — see [architecture.md](./architecture.md).
 - Treat Redis and MySQL paths as optional enhancements unless the deployment explicitly enables them.
 
 ## Protocol

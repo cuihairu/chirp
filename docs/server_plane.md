@@ -2,7 +2,7 @@
 
 Status: **Experimental** — the hub (`chirp_server_gateway`), the chat-side consumer, and the Redis Streams broker fallback are implemented and unit-verified at 100% line coverage: chat dials in as an internal peer and injection messages flow through the same storage/delivery tail as player-sent messages. See [Architecture](./architecture.md) for the two-plane topology.
 
-> **Architecture note (2026-09-21).** The target topology splits the player-aggregation state out of this hub: identity bindings, channel subscriptions, and the unread badge ledger move to a new stateless `app_registry` service, and a dedicated `chat_bridge` process (not this hub) owns cross-plane message flow between `game_chat` and `app_chat`. `chirp_server_gateway` remains, but scoped to its original role: game-backend injection + reliable event downlink. The WP-8 sections below describe the current implementation; they migrate to `app_registry` as the new topology lands.
+> **Architecture note (2026-09-21).** The target topology splits the player-aggregation state out of this hub: identity bindings, channel subscriptions, and the unread badge ledger move to a new stateless `app_registry` service. Cross-plane communication is a built-in chat capability — `game_chat` registers into `app_chat` using a native peer registration protocol with whitelist and version negotiation; no external bridge process. `chirp_server_gateway` remains, but scoped to its original role: game-backend injection + reliable event downlink. The WP-8 sections below describe the current implementation; they migrate to `app_registry` as the new topology lands.
 
 ## What it is
 

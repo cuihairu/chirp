@@ -15,8 +15,8 @@ actions:
 features:
   - title: 核心链路
     details: 当前建议优先验证 gateway + auth + chat。
-  - title: 三边缘接入
-    details: 游戏客户端、App、游戏服务端三条接入平面相互独立；服务器平面用出站长连接 + 服务凭证。
+  - title: 双平面架构
+    details: 游戏平面与 App 平面独立部署，跨平面通信是 chat 原生能力——同协议直连、注册白名单、版本协商。
   - title: 双协议接入
     details: TCP 和 WebSocket 使用同一套长度前缀 Protobuf Packet 协议。
   - title: 明确能力边界
