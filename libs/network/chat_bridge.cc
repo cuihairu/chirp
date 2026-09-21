@@ -1,4 +1,4 @@
-#include "chat_bridge.h"
+#include "network/chat_bridge.h"
 
 #include <array>
 #include <chrono>

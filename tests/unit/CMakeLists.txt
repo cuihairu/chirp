@@ -328,11 +328,11 @@ target_include_directories(app_gateway_tests
 
 add_test(NAME app_gateway_tests COMMAND app_gateway_tests)
 
-# Gateway chat-bridge loopback tests: chat_bridge.cc is compiled into the
-# test binary exactly once, against a scripted in-process fake chat server.
+# Gateway chat-bridge loopback tests against a scripted in-process fake chat
+# server (shared with the app_gateway tests via fake_chat_server.h). The
+# bridge itself comes from chirp_network.
 add_executable(chat_bridge_tests
   chat_bridge_test.cc
-  ${CMAKE_SOURCE_DIR}/services/gateway/src/chat_bridge.cc
 )
 
 chirp_unit_test_common_links(chat_bridge_tests)
@@ -346,7 +346,6 @@ target_include_directories(chat_bridge_tests
   ${CMAKE_SOURCE_DIR}/libs/network
   ${CMAKE_SOURCE_DIR}/proto/cpp
   ${CMAKE_SOURCE_DIR}/proto/cpp/proto
-  ${CMAKE_SOURCE_DIR}/services/gateway/src
 )
 
 add_test(NAME chat_bridge_tests COMMAND chat_bridge_tests)

@@ -11,7 +11,7 @@
 
 #include "network/auth_client.h"
 #include "network/session_registry.h"
-#include "chat_bridge.h"
+#include "network/chat_bridge.h"
 #include "logger.h"
 #include "network/protobuf_framing.h"
 #include "network/redis_session_manager.h"
