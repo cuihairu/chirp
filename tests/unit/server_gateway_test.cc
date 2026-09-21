@@ -13,14 +13,14 @@
 #include "event_queue.h"
 #include "proto/common.pb.h"
 #include "proto/gateway.pb.h"
-#include "proto/server_gateway.pb.h"
+#include "proto/game_server_gateway.pb.h"
 #include "server_gateway_handlers.h"
 #include "service_registry.h"
 #include "unread_ledger.h"
 
 namespace {
 
-namespace sg = chirp::server_gateway;
+namespace sg = chirp::game_server_gateway;
 
 using chirp::common::AUTH_FAILED;
 using chirp::common::INVALID_PARAM;
@@ -312,7 +312,7 @@ TEST_F(ServerGatewayTest, AuthRedeliversPendingEventsOnReconnect) {
   EXPECT_TRUE(published.queued());
 
   const auto peer = AuthAs("game");
-  const auto delivered = peer->Decode<chirp::server_gateway::EventDeliverNotify>(
+  const auto delivered = peer->Decode<chirp::game_server_gateway::EventDeliverNotify>(
       chirp::gateway::EVENT_DELIVER_NOTIFY);
   ASSERT_EQ(delivered.size(), 1u);
   EXPECT_EQ(delivered[0].event_id(), published.event_id());
@@ -354,7 +354,7 @@ TEST_F(ServerGatewayTest, DisconnectedPeerIsRequeuedForRedelivery) {
 
   // Reconnect: the unacknowledged event is redelivered with attempt 2.
   const auto returning = AuthAs("game");
-  const auto redelivered = returning->Decode<chirp::server_gateway::EventDeliverNotify>(
+  const auto redelivered = returning->Decode<chirp::game_server_gateway::EventDeliverNotify>(
       chirp::gateway::EVENT_DELIVER_NOTIFY);
   ASSERT_EQ(redelivered.size(), 1u);
   EXPECT_EQ(redelivered[0].attempt(), 2);
@@ -365,7 +365,7 @@ TEST_F(ServerGatewayTest, DisconnectedPeerIsRequeuedForRedelivery) {
 // ---------------------------------------------------------------------------
 
 TEST_F(ServerGatewayTest, HeartbeatAnswersWithServerTime) {
-  chirp::server_gateway::ServerHeartbeatPing ping;
+  chirp::game_server_gateway::ServerHeartbeatPing ping;
   ping.set_client_time_ms(1234);
   const auto pong = handlers_->HandleHeartbeat(ping);
   EXPECT_GT(pong.server_time_ms(), 0);
@@ -378,7 +378,7 @@ TEST_F(ServerGatewayTest, HeartbeatAnswersWithServerTime) {
 sg::MessageInjectRequest ValidInject() {
   sg::MessageInjectRequest req;
   req.set_inject_id("inj-1");
-  req.set_sender_kind(chirp::server_gateway::SENDER_NPC);
+  req.set_sender_kind(chirp::game_server_gateway::SENDER_NPC);
   req.set_sender_id("npc:blacksmith_01");
   req.set_channel_type(3);  // WORLD
   req.set_channel_id("world");
@@ -394,7 +394,7 @@ TEST_F(ServerGatewayTest, InjectRejectsEmptyContent) {
 
 TEST_F(ServerGatewayTest, InjectRejectsUnknownSenderKind) {
   auto req = ValidInject();
-  req.set_sender_kind(chirp::server_gateway::SENDER_UNKNOWN);
+  req.set_sender_kind(chirp::game_server_gateway::SENDER_UNKNOWN);
   EXPECT_EQ(handlers_->HandleInject(req).code(), INVALID_PARAM);
 }
 
@@ -417,13 +417,13 @@ TEST_F(ServerGatewayTest, InjectForwardsToChatWhenOnline) {
   EXPECT_EQ(resp.code(), OK);
   EXPECT_EQ(resp.inject_id(), "inj-1");
 
-  const auto forwarded = chat->Decode<chirp::server_gateway::InjectMessageNotify>(
+  const auto forwarded = chat->Decode<chirp::game_server_gateway::InjectMessageNotify>(
       chirp::gateway::INJECT_MESSAGE_NOTIFY);
   ASSERT_EQ(forwarded.size(), 1u);
   EXPECT_EQ(forwarded[0].message().inject_id(), "inj-1");
   EXPECT_EQ(forwarded[0].message().sender_id(), "npc:blacksmith_01");
   EXPECT_EQ(forwarded[0].message().sender_kind(),
-            chirp::server_gateway::SENDER_NPC);
+            chirp::game_server_gateway::SENDER_NPC);
   EXPECT_EQ(forwarded[0].message().content(), "hello travelers");
 }
 
@@ -441,7 +441,7 @@ TEST_F(ServerGatewayTest, InjectFailsWhenChatWriteFails) {
 
 sg::MessageInjectRequest FanoutInject(const std::string& game_id, const std::string& channel_id) {
   auto req = ValidInject();
-  req.set_sender_kind(chirp::server_gateway::SENDER_SERVICE);
+  req.set_sender_kind(chirp::game_server_gateway::SENDER_SERVICE);
   req.set_game_id(game_id);
   req.set_channel_id(channel_id);
   return req;
@@ -456,14 +456,14 @@ TEST_F(ServerGatewayTest, InjectFanoutSendsPrivateCopyPerSubscriber) {
   EXPECT_EQ(resp.code(), OK);
   EXPECT_EQ(resp.inject_id(), "inj-1");  // echo stays the caller's id
 
-  const auto copies = chat->Decode<chirp::server_gateway::InjectMessageNotify>(
+  const auto copies = chat->Decode<chirp::game_server_gateway::InjectMessageNotify>(
       chirp::gateway::INJECT_MESSAGE_NOTIFY);
   ASSERT_EQ(copies.size(), 2u);
   std::set<std::string> receivers;
   for (const auto& notify : copies) {
     const auto& msg = notify.message();
     EXPECT_EQ(msg.channel_type(), 0);  // PRIVATE
-    EXPECT_EQ(msg.sender_kind(), chirp::server_gateway::SENDER_SERVICE);
+    EXPECT_EQ(msg.sender_kind(), chirp::game_server_gateway::SENDER_SERVICE);
     EXPECT_EQ(msg.sender_id(), "npc:blacksmith_01");  // backend identity preserved
     EXPECT_EQ(msg.channel_id(), "");                  // chat keys private history by the pair
     EXPECT_EQ(msg.content(), "hello travelers");
@@ -552,7 +552,7 @@ TEST_F(ServerGatewayTest, InjectLegacyChannelForwardUnchanged) {
   const auto resp = handlers_->HandleInject(ValidInject());
   EXPECT_EQ(resp.code(), OK);
 
-  const auto forwarded = chat->Decode<chirp::server_gateway::InjectMessageNotify>(
+  const auto forwarded = chat->Decode<chirp::game_server_gateway::InjectMessageNotify>(
       chirp::gateway::INJECT_MESSAGE_NOTIFY);
   ASSERT_EQ(forwarded.size(), 1u);
   EXPECT_EQ(forwarded[0].message().channel_type(), 3);  // WORLD, untouched
@@ -600,7 +600,7 @@ TEST_F(ServerGatewayTest, PublishOnlineDeliversImmediately) {
   EXPECT_FALSE(resp.queued());
   EXPECT_EQ(resp.event_id(), "quest-42");
 
-  const auto delivered = game->Decode<chirp::server_gateway::EventDeliverNotify>(
+  const auto delivered = game->Decode<chirp::game_server_gateway::EventDeliverNotify>(
       chirp::gateway::EVENT_DELIVER_NOTIFY);
   ASSERT_EQ(delivered.size(), 1u);
   EXPECT_EQ(delivered[0].event_id(), "quest-42");

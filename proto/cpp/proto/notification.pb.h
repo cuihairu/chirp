@@ -161,11 +161,11 @@ extern const ::google::protobuf::internal::ClassDataFull UpdateDeviceTokenRespon
 namespace google {
 namespace protobuf {
 template <>
-internal::EnumTraitsT<::chirp::notification::NotificationPriority_internal_data_>
-    internal::EnumTraitsImpl::value<::chirp::notification::NotificationPriority>;
+internal::EnumTraitsT<::chirp::app_notification::NotificationPriority_internal_data_>
+    internal::EnumTraitsImpl::value<::chirp::app_notification::NotificationPriority>;
 template <>
-internal::EnumTraitsT<::chirp::notification::NotificationType_internal_data_>
-    internal::EnumTraitsImpl::value<::chirp::notification::NotificationType>;
+internal::EnumTraitsT<::chirp::app_notification::NotificationType_internal_data_>
+    internal::EnumTraitsImpl::value<::chirp::app_notification::NotificationType>;
 }  // namespace protobuf
 }  // namespace google
 
@@ -3969,22 +3969,22 @@ class PushNotificationRequest final : public ::google::protobuf::Message
   public:
   // .chirp.notification.NotificationType type = 2;
   void clear_type() ;
-  ::chirp::notification::NotificationType type() const;
-  void set_type(::chirp::notification::NotificationType value);
+  ::chirp::app_notification::NotificationType type() const;
+  void set_type(::chirp::app_notification::NotificationType value);
 
   private:
-  ::chirp::notification::NotificationType _internal_type() const;
-  void _internal_set_type(::chirp::notification::NotificationType value);
+  ::chirp::app_notification::NotificationType _internal_type() const;
+  void _internal_set_type(::chirp::app_notification::NotificationType value);
 
   public:
   // .chirp.notification.NotificationPriority priority = 3;
   void clear_priority() ;
-  ::chirp::notification::NotificationPriority priority() const;
-  void set_priority(::chirp::notification::NotificationPriority value);
+  ::chirp::app_notification::NotificationPriority priority() const;
+  void set_priority(::chirp::app_notification::NotificationPriority value);
 
   private:
-  ::chirp::notification::NotificationPriority _internal_priority() const;
-  void _internal_set_priority(::chirp::notification::NotificationPriority value);
+  ::chirp::app_notification::NotificationPriority _internal_priority() const;
+  void _internal_set_priority(::chirp::app_notification::NotificationPriority value);
 
   public:
   // int32 badge = 11;
@@ -4275,16 +4275,16 @@ class GetUserDevicesResponse final : public ::google::protobuf::Message
 
   public:
   void clear_devices() ;
-  ::chirp::notification::DeviceInfo* PROTOBUF_NONNULL mutable_devices(int index);
-  ::google::protobuf::RepeatedPtrField<::chirp::notification::DeviceInfo>* PROTOBUF_NONNULL mutable_devices();
+  ::chirp::app_notification::DeviceInfo* PROTOBUF_NONNULL mutable_devices(int index);
+  ::google::protobuf::RepeatedPtrField<::chirp::app_notification::DeviceInfo>* PROTOBUF_NONNULL mutable_devices();
 
   private:
-  const ::google::protobuf::RepeatedPtrField<::chirp::notification::DeviceInfo>& _internal_devices() const;
-  ::google::protobuf::RepeatedPtrField<::chirp::notification::DeviceInfo>* PROTOBUF_NONNULL _internal_mutable_devices();
+  const ::google::protobuf::RepeatedPtrField<::chirp::app_notification::DeviceInfo>& _internal_devices() const;
+  ::google::protobuf::RepeatedPtrField<::chirp::app_notification::DeviceInfo>* PROTOBUF_NONNULL _internal_mutable_devices();
   public:
-  const ::chirp::notification::DeviceInfo& devices(int index) const;
-  ::chirp::notification::DeviceInfo* PROTOBUF_NONNULL add_devices();
-  const ::google::protobuf::RepeatedPtrField<::chirp::notification::DeviceInfo>& devices() const;
+  const ::chirp::app_notification::DeviceInfo& devices(int index) const;
+  ::chirp::app_notification::DeviceInfo* PROTOBUF_NONNULL add_devices();
+  const ::google::protobuf::RepeatedPtrField<::chirp::app_notification::DeviceInfo>& devices() const;
   // .chirp.common.ErrorCode code = 1;
   void clear_code() ;
   ::chirp::common::ErrorCode code() const;
@@ -4321,7 +4321,7 @@ class GetUserDevicesResponse final : public ::google::protobuf::Message
         const GetUserDevicesResponse& from_msg);
     ::google::protobuf::internal::HasBits<1> _has_bits_;
     ::google::protobuf::internal::CachedSize _cached_size_;
-    ::google::protobuf::RepeatedPtrField< ::chirp::notification::DeviceInfo > devices_;
+    ::google::protobuf::RepeatedPtrField< ::chirp::app_notification::DeviceInfo > devices_;
     int code_;
     PROTOBUF_TSAN_DECLARE_MEMBER
   };
@@ -4623,12 +4623,12 @@ class NotificationPreferences final : public ::google::protobuf::Message
 
   public:
   void clear_channel_settings() ;
-  const ::google::protobuf::Map<::std::string, ::chirp::notification::ChannelNotificationSettings>& channel_settings() const;
-  ::google::protobuf::Map<::std::string, ::chirp::notification::ChannelNotificationSettings>* PROTOBUF_NONNULL mutable_channel_settings();
+  const ::google::protobuf::Map<::std::string, ::chirp::app_notification::ChannelNotificationSettings>& channel_settings() const;
+  ::google::protobuf::Map<::std::string, ::chirp::app_notification::ChannelNotificationSettings>* PROTOBUF_NONNULL mutable_channel_settings();
 
   private:
-  const ::google::protobuf::Map<::std::string, ::chirp::notification::ChannelNotificationSettings>& _internal_channel_settings() const;
-  ::google::protobuf::Map<::std::string, ::chirp::notification::ChannelNotificationSettings>* PROTOBUF_NONNULL _internal_mutable_channel_settings();
+  const ::google::protobuf::Map<::std::string, ::chirp::app_notification::ChannelNotificationSettings>& _internal_channel_settings() const;
+  ::google::protobuf::Map<::std::string, ::chirp::app_notification::ChannelNotificationSettings>* PROTOBUF_NONNULL _internal_mutable_channel_settings();
 
   public:
   // @@protoc_insertion_point(class_scope:chirp.notification.NotificationPreferences)
@@ -4670,7 +4670,7 @@ class NotificationPreferences final : public ::google::protobuf::Message
     bool dnd_enabled_;
     ::int32_t dnd_start_hour_;
     ::int32_t dnd_end_hour_;
-    ::google::protobuf::internal::MapField<NotificationPreferences_ChannelSettingsEntry_DoNotUse, ::std::string, ::chirp::notification::ChannelNotificationSettings,
+    ::google::protobuf::internal::MapField<NotificationPreferences_ChannelSettingsEntry_DoNotUse, ::std::string, ::chirp::app_notification::ChannelNotificationSettings,
                       ::google::protobuf::internal::WireFormatLite::TYPE_STRING,
                       ::google::protobuf::internal::WireFormatLite::TYPE_MESSAGE>
         channel_settings_;
@@ -4846,16 +4846,16 @@ class SetPreferencesRequest final : public ::google::protobuf::Message
   // .chirp.notification.NotificationPreferences preferences = 2;
   bool has_preferences() const;
   void clear_preferences() ;
-  const ::chirp::notification::NotificationPreferences& preferences() const;
-  [[nodiscard]] ::chirp::notification::NotificationPreferences* PROTOBUF_NULLABLE release_preferences();
-  ::chirp::notification::NotificationPreferences* PROTOBUF_NONNULL mutable_preferences();
-  void set_allocated_preferences(::chirp::notification::NotificationPreferences* PROTOBUF_NULLABLE value);
-  void unsafe_arena_set_allocated_preferences(::chirp::notification::NotificationPreferences* PROTOBUF_NULLABLE value);
-  ::chirp::notification::NotificationPreferences* PROTOBUF_NULLABLE unsafe_arena_release_preferences();
+  const ::chirp::app_notification::NotificationPreferences& preferences() const;
+  [[nodiscard]] ::chirp::app_notification::NotificationPreferences* PROTOBUF_NULLABLE release_preferences();
+  ::chirp::app_notification::NotificationPreferences* PROTOBUF_NONNULL mutable_preferences();
+  void set_allocated_preferences(::chirp::app_notification::NotificationPreferences* PROTOBUF_NULLABLE value);
+  void unsafe_arena_set_allocated_preferences(::chirp::app_notification::NotificationPreferences* PROTOBUF_NULLABLE value);
+  ::chirp::app_notification::NotificationPreferences* PROTOBUF_NULLABLE unsafe_arena_release_preferences();
 
   private:
-  const ::chirp::notification::NotificationPreferences& _internal_preferences() const;
-  ::chirp::notification::NotificationPreferences* PROTOBUF_NONNULL _internal_mutable_preferences();
+  const ::chirp::app_notification::NotificationPreferences& _internal_preferences() const;
+  ::chirp::app_notification::NotificationPreferences* PROTOBUF_NONNULL _internal_mutable_preferences();
 
   public:
   // @@protoc_insertion_point(class_scope:chirp.notification.SetPreferencesRequest)
@@ -4885,7 +4885,7 @@ class SetPreferencesRequest final : public ::google::protobuf::Message
     ::google::protobuf::internal::HasBits<1> _has_bits_;
     ::google::protobuf::internal::CachedSize _cached_size_;
     ::google::protobuf::internal::ArenaStringPtr user_id_;
-    ::chirp::notification::NotificationPreferences* PROTOBUF_NULLABLE preferences_;
+    ::chirp::app_notification::NotificationPreferences* PROTOBUF_NULLABLE preferences_;
     PROTOBUF_TSAN_DECLARE_MEMBER
   };
   union { Impl_ _impl_; };
@@ -5043,16 +5043,16 @@ class GetPreferencesResponse final : public ::google::protobuf::Message
   // .chirp.notification.NotificationPreferences preferences = 2;
   bool has_preferences() const;
   void clear_preferences() ;
-  const ::chirp::notification::NotificationPreferences& preferences() const;
-  [[nodiscard]] ::chirp::notification::NotificationPreferences* PROTOBUF_NULLABLE release_preferences();
-  ::chirp::notification::NotificationPreferences* PROTOBUF_NONNULL mutable_preferences();
-  void set_allocated_preferences(::chirp::notification::NotificationPreferences* PROTOBUF_NULLABLE value);
-  void unsafe_arena_set_allocated_preferences(::chirp::notification::NotificationPreferences* PROTOBUF_NULLABLE value);
-  ::chirp::notification::NotificationPreferences* PROTOBUF_NULLABLE unsafe_arena_release_preferences();
+  const ::chirp::app_notification::NotificationPreferences& preferences() const;
+  [[nodiscard]] ::chirp::app_notification::NotificationPreferences* PROTOBUF_NULLABLE release_preferences();
+  ::chirp::app_notification::NotificationPreferences* PROTOBUF_NONNULL mutable_preferences();
+  void set_allocated_preferences(::chirp::app_notification::NotificationPreferences* PROTOBUF_NULLABLE value);
+  void unsafe_arena_set_allocated_preferences(::chirp::app_notification::NotificationPreferences* PROTOBUF_NULLABLE value);
+  ::chirp::app_notification::NotificationPreferences* PROTOBUF_NULLABLE unsafe_arena_release_preferences();
 
   private:
-  const ::chirp::notification::NotificationPreferences& _internal_preferences() const;
-  ::chirp::notification::NotificationPreferences* PROTOBUF_NONNULL _internal_mutable_preferences();
+  const ::chirp::app_notification::NotificationPreferences& _internal_preferences() const;
+  ::chirp::app_notification::NotificationPreferences* PROTOBUF_NONNULL _internal_mutable_preferences();
 
   public:
   // .chirp.common.ErrorCode code = 1;
@@ -5091,7 +5091,7 @@ class GetPreferencesResponse final : public ::google::protobuf::Message
         const GetPreferencesResponse& from_msg);
     ::google::protobuf::internal::HasBits<1> _has_bits_;
     ::google::protobuf::internal::CachedSize _cached_size_;
-    ::chirp::notification::NotificationPreferences* PROTOBUF_NULLABLE preferences_;
+    ::chirp::app_notification::NotificationPreferences* PROTOBUF_NULLABLE preferences_;
     int code_;
     PROTOBUF_TSAN_DECLARE_MEMBER
   };
@@ -5191,20 +5191,20 @@ inline void PushNotificationRequest::clear_type() {
   ClearHasBit(_impl_._has_bits_[0],
                   0x00000100U);
 }
-inline ::chirp::notification::NotificationType PushNotificationRequest::type() const {
+inline ::chirp::app_notification::NotificationType PushNotificationRequest::type() const {
   // @@protoc_insertion_point(field_get:chirp.notification.PushNotificationRequest.type)
   return _internal_type();
 }
-inline void PushNotificationRequest::set_type(::chirp::notification::NotificationType value) {
+inline void PushNotificationRequest::set_type(::chirp::app_notification::NotificationType value) {
   _internal_set_type(value);
   SetHasBit(_impl_._has_bits_[0], 0x00000100U);
   // @@protoc_insertion_point(field_set:chirp.notification.PushNotificationRequest.type)
 }
-inline ::chirp::notification::NotificationType PushNotificationRequest::_internal_type() const {
+inline ::chirp::app_notification::NotificationType PushNotificationRequest::_internal_type() const {
   ::google::protobuf::internal::TSanRead(&_impl_);
-  return static_cast<::chirp::notification::NotificationType>(_impl_.type_);
+  return static_cast<::chirp::app_notification::NotificationType>(_impl_.type_);
 }
-inline void PushNotificationRequest::_internal_set_type(::chirp::notification::NotificationType value) {
+inline void PushNotificationRequest::_internal_set_type(::chirp::app_notification::NotificationType value) {
   ::google::protobuf::internal::TSanWrite(&_impl_);
   _impl_.type_ = value;
 }
@@ -5216,20 +5216,20 @@ inline void PushNotificationRequest::clear_priority() {
   ClearHasBit(_impl_._has_bits_[0],
                   0x00000200U);
 }
-inline ::chirp::notification::NotificationPriority PushNotificationRequest::priority() const {
+inline ::chirp::app_notification::NotificationPriority PushNotificationRequest::priority() const {
   // @@protoc_insertion_point(field_get:chirp.notification.PushNotificationRequest.priority)
   return _internal_priority();
 }
-inline void PushNotificationRequest::set_priority(::chirp::notification::NotificationPriority value) {
+inline void PushNotificationRequest::set_priority(::chirp::app_notification::NotificationPriority value) {
   _internal_set_priority(value);
   SetHasBit(_impl_._has_bits_[0], 0x00000200U);
   // @@protoc_insertion_point(field_set:chirp.notification.PushNotificationRequest.priority)
 }
-inline ::chirp::notification::NotificationPriority PushNotificationRequest::_internal_priority() const {
+inline ::chirp::app_notification::NotificationPriority PushNotificationRequest::_internal_priority() const {
   ::google::protobuf::internal::TSanRead(&_impl_);
-  return static_cast<::chirp::notification::NotificationPriority>(_impl_.priority_);
+  return static_cast<::chirp::app_notification::NotificationPriority>(_impl_.priority_);
 }
-inline void PushNotificationRequest::_internal_set_priority(::chirp::notification::NotificationPriority value) {
+inline void PushNotificationRequest::_internal_set_priority(::chirp::app_notification::NotificationPriority value) {
   ::google::protobuf::internal::TSanWrite(&_impl_);
   _impl_.priority_ = value;
 }
@@ -7175,44 +7175,44 @@ inline void GetUserDevicesResponse::clear_devices() {
   ClearHasBitForRepeated(_impl_._has_bits_[0],
                   0x00000001U);
 }
-inline ::chirp::notification::DeviceInfo* PROTOBUF_NONNULL GetUserDevicesResponse::mutable_devices(int index)
+inline ::chirp::app_notification::DeviceInfo* PROTOBUF_NONNULL GetUserDevicesResponse::mutable_devices(int index)
     ABSL_ATTRIBUTE_LIFETIME_BOUND {
   // @@protoc_insertion_point(field_mutable:chirp.notification.GetUserDevicesResponse.devices)
   return _internal_mutable_devices()->Mutable(index);
 }
-inline ::google::protobuf::RepeatedPtrField<::chirp::notification::DeviceInfo>* PROTOBUF_NONNULL GetUserDevicesResponse::mutable_devices()
+inline ::google::protobuf::RepeatedPtrField<::chirp::app_notification::DeviceInfo>* PROTOBUF_NONNULL GetUserDevicesResponse::mutable_devices()
     ABSL_ATTRIBUTE_LIFETIME_BOUND {
   SetHasBitForRepeated(_impl_._has_bits_[0], 0x00000001U);
   // @@protoc_insertion_point(field_mutable_list:chirp.notification.GetUserDevicesResponse.devices)
   ::google::protobuf::internal::TSanWrite(&_impl_);
   return _internal_mutable_devices();
 }
-inline const ::chirp::notification::DeviceInfo& GetUserDevicesResponse::devices(int index) const
+inline const ::chirp::app_notification::DeviceInfo& GetUserDevicesResponse::devices(int index) const
     ABSL_ATTRIBUTE_LIFETIME_BOUND {
   // @@protoc_insertion_point(field_get:chirp.notification.GetUserDevicesResponse.devices)
   return _internal_devices().Get(index);
 }
-inline ::chirp::notification::DeviceInfo* PROTOBUF_NONNULL GetUserDevicesResponse::add_devices()
+inline ::chirp::app_notification::DeviceInfo* PROTOBUF_NONNULL GetUserDevicesResponse::add_devices()
     ABSL_ATTRIBUTE_LIFETIME_BOUND {
   ::google::protobuf::internal::TSanWrite(&_impl_);
-  ::chirp::notification::DeviceInfo* _add =
+  ::chirp::app_notification::DeviceInfo* _add =
       _internal_mutable_devices()->InternalAddWithArena(
           ::google::protobuf::MessageLite::internal_visibility(), GetArena());
   SetHasBitForRepeated(_impl_._has_bits_[0], 0x00000001U);
   // @@protoc_insertion_point(field_add:chirp.notification.GetUserDevicesResponse.devices)
   return _add;
 }
-inline const ::google::protobuf::RepeatedPtrField<::chirp::notification::DeviceInfo>& GetUserDevicesResponse::devices() const
+inline const ::google::protobuf::RepeatedPtrField<::chirp::app_notification::DeviceInfo>& GetUserDevicesResponse::devices() const
     ABSL_ATTRIBUTE_LIFETIME_BOUND {
   // @@protoc_insertion_point(field_list:chirp.notification.GetUserDevicesResponse.devices)
   return _internal_devices();
 }
-inline const ::google::protobuf::RepeatedPtrField<::chirp::notification::DeviceInfo>&
+inline const ::google::protobuf::RepeatedPtrField<::chirp::app_notification::DeviceInfo>&
 GetUserDevicesResponse::_internal_devices() const {
   ::google::protobuf::internal::TSanRead(&_impl_);
   return _impl_.devices_;
 }
-inline ::google::protobuf::RepeatedPtrField<::chirp::notification::DeviceInfo>* PROTOBUF_NONNULL
+inline ::google::protobuf::RepeatedPtrField<::chirp::app_notification::DeviceInfo>* PROTOBUF_NONNULL
 GetUserDevicesResponse::_internal_mutable_devices() {
   ::google::protobuf::internal::TSanRead(&_impl_);
   return &_impl_.devices_;
@@ -8282,19 +8282,19 @@ inline void NotificationPreferences::clear_channel_settings() {
   ClearHasBitForRepeated(_impl_._has_bits_[0],
                   0x00001000U);
 }
-inline const ::google::protobuf::Map<::std::string, ::chirp::notification::ChannelNotificationSettings>& NotificationPreferences::_internal_channel_settings() const {
+inline const ::google::protobuf::Map<::std::string, ::chirp::app_notification::ChannelNotificationSettings>& NotificationPreferences::_internal_channel_settings() const {
   ::google::protobuf::internal::TSanRead(&_impl_);
   return _impl_.channel_settings_.GetMap();
 }
-inline const ::google::protobuf::Map<::std::string, ::chirp::notification::ChannelNotificationSettings>& NotificationPreferences::channel_settings() const ABSL_ATTRIBUTE_LIFETIME_BOUND {
+inline const ::google::protobuf::Map<::std::string, ::chirp::app_notification::ChannelNotificationSettings>& NotificationPreferences::channel_settings() const ABSL_ATTRIBUTE_LIFETIME_BOUND {
   // @@protoc_insertion_point(field_map:chirp.notification.NotificationPreferences.channel_settings)
   return _internal_channel_settings();
 }
-inline ::google::protobuf::Map<::std::string, ::chirp::notification::ChannelNotificationSettings>* PROTOBUF_NONNULL NotificationPreferences::_internal_mutable_channel_settings() {
+inline ::google::protobuf::Map<::std::string, ::chirp::app_notification::ChannelNotificationSettings>* PROTOBUF_NONNULL NotificationPreferences::_internal_mutable_channel_settings() {
   ::google::protobuf::internal::TSanWrite(&_impl_);
   return _impl_.channel_settings_.MutableMap();
 }
-inline ::google::protobuf::Map<::std::string, ::chirp::notification::ChannelNotificationSettings>* PROTOBUF_NONNULL NotificationPreferences::mutable_channel_settings()
+inline ::google::protobuf::Map<::std::string, ::chirp::app_notification::ChannelNotificationSettings>* PROTOBUF_NONNULL NotificationPreferences::mutable_channel_settings()
     ABSL_ATTRIBUTE_LIFETIME_BOUND {
   SetHasBitForRepeated(_impl_._has_bits_[0], 0x00001000U);
   // @@protoc_insertion_point(field_mutable_map:chirp.notification.NotificationPreferences.channel_settings)
@@ -8461,22 +8461,22 @@ inline void SetPreferencesRequest::clear_preferences() {
   ClearHasBit(_impl_._has_bits_[0],
                   0x00000002U);
 }
-inline const ::chirp::notification::NotificationPreferences& SetPreferencesRequest::_internal_preferences() const {
+inline const ::chirp::app_notification::NotificationPreferences& SetPreferencesRequest::_internal_preferences() const {
   ::google::protobuf::internal::TSanRead(&_impl_);
-  const ::chirp::notification::NotificationPreferences* p = _impl_.preferences_;
-  return p != nullptr ? *p : reinterpret_cast<const ::chirp::notification::NotificationPreferences&>(::chirp::notification::_NotificationPreferences_default_instance_);
+  const ::chirp::app_notification::NotificationPreferences* p = _impl_.preferences_;
+  return p != nullptr ? *p : reinterpret_cast<const ::chirp::app_notification::NotificationPreferences&>(::chirp::app_notification::_NotificationPreferences_default_instance_);
 }
-inline const ::chirp::notification::NotificationPreferences& SetPreferencesRequest::preferences() const ABSL_ATTRIBUTE_LIFETIME_BOUND {
+inline const ::chirp::app_notification::NotificationPreferences& SetPreferencesRequest::preferences() const ABSL_ATTRIBUTE_LIFETIME_BOUND {
   // @@protoc_insertion_point(field_get:chirp.notification.SetPreferencesRequest.preferences)
   return _internal_preferences();
 }
 inline void SetPreferencesRequest::unsafe_arena_set_allocated_preferences(
-    ::chirp::notification::NotificationPreferences* PROTOBUF_NULLABLE value) {
+    ::chirp::app_notification::NotificationPreferences* PROTOBUF_NULLABLE value) {
   ::google::protobuf::internal::TSanWrite(&_impl_);
   if (GetArena() == nullptr) {
     delete reinterpret_cast<::google::protobuf::MessageLite*>(_impl_.preferences_);
   }
-  _impl_.preferences_ = reinterpret_cast<::chirp::notification::NotificationPreferences*>(value);
+  _impl_.preferences_ = reinterpret_cast<::chirp::app_notification::NotificationPreferences*>(value);
   if (value != nullptr) {
     SetHasBit(_impl_._has_bits_[0], 0x00000002U);
   } else {
@@ -8484,11 +8484,11 @@ inline void SetPreferencesRequest::unsafe_arena_set_allocated_preferences(
   }
   // @@protoc_insertion_point(field_unsafe_arena_set_allocated:chirp.notification.SetPreferencesRequest.preferences)
 }
-inline ::chirp::notification::NotificationPreferences* PROTOBUF_NULLABLE SetPreferencesRequest::release_preferences() {
+inline ::chirp::app_notification::NotificationPreferences* PROTOBUF_NULLABLE SetPreferencesRequest::release_preferences() {
   ::google::protobuf::internal::TSanWrite(&_impl_);
 
   ClearHasBit(_impl_._has_bits_[0], 0x00000002U);
-  ::chirp::notification::NotificationPreferences* released = _impl_.preferences_;
+  ::chirp::app_notification::NotificationPreferences* released = _impl_.preferences_;
   _impl_.preferences_ = nullptr;
   if (::google::protobuf::internal::DebugHardenForceCopyInRelease()) {
     auto* old = reinterpret_cast<::google::protobuf::MessageLite*>(released);
@@ -8503,31 +8503,31 @@ inline ::chirp::notification::NotificationPreferences* PROTOBUF_NULLABLE SetPref
   }
   return released;
 }
-inline ::chirp::notification::NotificationPreferences* PROTOBUF_NULLABLE SetPreferencesRequest::unsafe_arena_release_preferences() {
+inline ::chirp::app_notification::NotificationPreferences* PROTOBUF_NULLABLE SetPreferencesRequest::unsafe_arena_release_preferences() {
   ::google::protobuf::internal::TSanWrite(&_impl_);
   // @@protoc_insertion_point(field_release:chirp.notification.SetPreferencesRequest.preferences)
 
   ClearHasBit(_impl_._has_bits_[0], 0x00000002U);
-  ::chirp::notification::NotificationPreferences* temp = _impl_.preferences_;
+  ::chirp::app_notification::NotificationPreferences* temp = _impl_.preferences_;
   _impl_.preferences_ = nullptr;
   return temp;
 }
-inline ::chirp::notification::NotificationPreferences* PROTOBUF_NONNULL SetPreferencesRequest::_internal_mutable_preferences() {
+inline ::chirp::app_notification::NotificationPreferences* PROTOBUF_NONNULL SetPreferencesRequest::_internal_mutable_preferences() {
   ::google::protobuf::internal::TSanWrite(&_impl_);
   if (_impl_.preferences_ == nullptr) {
-    auto* p = ::google::protobuf::Message::DefaultConstruct<::chirp::notification::NotificationPreferences>(GetArena());
-    _impl_.preferences_ = reinterpret_cast<::chirp::notification::NotificationPreferences*>(p);
+    auto* p = ::google::protobuf::Message::DefaultConstruct<::chirp::app_notification::NotificationPreferences>(GetArena());
+    _impl_.preferences_ = reinterpret_cast<::chirp::app_notification::NotificationPreferences*>(p);
   }
   return _impl_.preferences_;
 }
-inline ::chirp::notification::NotificationPreferences* PROTOBUF_NONNULL SetPreferencesRequest::mutable_preferences()
+inline ::chirp::app_notification::NotificationPreferences* PROTOBUF_NONNULL SetPreferencesRequest::mutable_preferences()
     ABSL_ATTRIBUTE_LIFETIME_BOUND {
   SetHasBit(_impl_._has_bits_[0], 0x00000002U);
-  ::chirp::notification::NotificationPreferences* _msg = _internal_mutable_preferences();
+  ::chirp::app_notification::NotificationPreferences* _msg = _internal_mutable_preferences();
   // @@protoc_insertion_point(field_mutable:chirp.notification.SetPreferencesRequest.preferences)
   return _msg;
 }
-inline void SetPreferencesRequest::set_allocated_preferences(::chirp::notification::NotificationPreferences* PROTOBUF_NULLABLE value) {
+inline void SetPreferencesRequest::set_allocated_preferences(::chirp::app_notification::NotificationPreferences* PROTOBUF_NULLABLE value) {
   ::google::protobuf::Arena* message_arena = GetArena();
   ::google::protobuf::internal::TSanWrite(&_impl_);
   if (message_arena == nullptr) {
@@ -8544,7 +8544,7 @@ inline void SetPreferencesRequest::set_allocated_preferences(::chirp::notificati
     ClearHasBit(_impl_._has_bits_[0], 0x00000002U);
   }
 
-  _impl_.preferences_ = reinterpret_cast<::chirp::notification::NotificationPreferences*>(value);
+  _impl_.preferences_ = reinterpret_cast<::chirp::app_notification::NotificationPreferences*>(value);
   // @@protoc_insertion_point(field_set_allocated:chirp.notification.SetPreferencesRequest.preferences)
 }
 
@@ -8712,22 +8712,22 @@ inline void GetPreferencesResponse::clear_preferences() {
   ClearHasBit(_impl_._has_bits_[0],
                   0x00000001U);
 }
-inline const ::chirp::notification::NotificationPreferences& GetPreferencesResponse::_internal_preferences() const {
+inline const ::chirp::app_notification::NotificationPreferences& GetPreferencesResponse::_internal_preferences() const {
   ::google::protobuf::internal::TSanRead(&_impl_);
-  const ::chirp::notification::NotificationPreferences* p = _impl_.preferences_;
-  return p != nullptr ? *p : reinterpret_cast<const ::chirp::notification::NotificationPreferences&>(::chirp::notification::_NotificationPreferences_default_instance_);
+  const ::chirp::app_notification::NotificationPreferences* p = _impl_.preferences_;
+  return p != nullptr ? *p : reinterpret_cast<const ::chirp::app_notification::NotificationPreferences&>(::chirp::app_notification::_NotificationPreferences_default_instance_);
 }
-inline const ::chirp::notification::NotificationPreferences& GetPreferencesResponse::preferences() const ABSL_ATTRIBUTE_LIFETIME_BOUND {
+inline const ::chirp::app_notification::NotificationPreferences& GetPreferencesResponse::preferences() const ABSL_ATTRIBUTE_LIFETIME_BOUND {
   // @@protoc_insertion_point(field_get:chirp.notification.GetPreferencesResponse.preferences)
   return _internal_preferences();
 }
 inline void GetPreferencesResponse::unsafe_arena_set_allocated_preferences(
-    ::chirp::notification::NotificationPreferences* PROTOBUF_NULLABLE value) {
+    ::chirp::app_notification::NotificationPreferences* PROTOBUF_NULLABLE value) {
   ::google::protobuf::internal::TSanWrite(&_impl_);
   if (GetArena() == nullptr) {
     delete reinterpret_cast<::google::protobuf::MessageLite*>(_impl_.preferences_);
   }
-  _impl_.preferences_ = reinterpret_cast<::chirp::notification::NotificationPreferences*>(value);
+  _impl_.preferences_ = reinterpret_cast<::chirp::app_notification::NotificationPreferences*>(value);
   if (value != nullptr) {
     SetHasBit(_impl_._has_bits_[0], 0x00000001U);
   } else {
@@ -8735,11 +8735,11 @@ inline void GetPreferencesResponse::unsafe_arena_set_allocated_preferences(
   }
   // @@protoc_insertion_point(field_unsafe_arena_set_allocated:chirp.notification.GetPreferencesResponse.preferences)
 }
-inline ::chirp::notification::NotificationPreferences* PROTOBUF_NULLABLE GetPreferencesResponse::release_preferences() {
+inline ::chirp::app_notification::NotificationPreferences* PROTOBUF_NULLABLE GetPreferencesResponse::release_preferences() {
   ::google::protobuf::internal::TSanWrite(&_impl_);
 
   ClearHasBit(_impl_._has_bits_[0], 0x00000001U);
-  ::chirp::notification::NotificationPreferences* released = _impl_.preferences_;
+  ::chirp::app_notification::NotificationPreferences* released = _impl_.preferences_;
   _impl_.preferences_ = nullptr;
   if (::google::protobuf::internal::DebugHardenForceCopyInRelease()) {
     auto* old = reinterpret_cast<::google::protobuf::MessageLite*>(released);
@@ -8754,31 +8754,31 @@ inline ::chirp::notification::NotificationPreferences* PROTOBUF_NULLABLE GetPref
   }
   return released;
 }
-inline ::chirp::notification::NotificationPreferences* PROTOBUF_NULLABLE GetPreferencesResponse::unsafe_arena_release_preferences() {
+inline ::chirp::app_notification::NotificationPreferences* PROTOBUF_NULLABLE GetPreferencesResponse::unsafe_arena_release_preferences() {
   ::google::protobuf::internal::TSanWrite(&_impl_);
   // @@protoc_insertion_point(field_release:chirp.notification.GetPreferencesResponse.preferences)
 
   ClearHasBit(_impl_._has_bits_[0], 0x00000001U);
-  ::chirp::notification::NotificationPreferences* temp = _impl_.preferences_;
+  ::chirp::app_notification::NotificationPreferences* temp = _impl_.preferences_;
   _impl_.preferences_ = nullptr;
   return temp;
 }
-inline ::chirp::notification::NotificationPreferences* PROTOBUF_NONNULL GetPreferencesResponse::_internal_mutable_preferences() {
+inline ::chirp::app_notification::NotificationPreferences* PROTOBUF_NONNULL GetPreferencesResponse::_internal_mutable_preferences() {
   ::google::protobuf::internal::TSanWrite(&_impl_);
   if (_impl_.preferences_ == nullptr) {
-    auto* p = ::google::protobuf::Message::DefaultConstruct<::chirp::notification::NotificationPreferences>(GetArena());
-    _impl_.preferences_ = reinterpret_cast<::chirp::notification::NotificationPreferences*>(p);
+    auto* p = ::google::protobuf::Message::DefaultConstruct<::chirp::app_notification::NotificationPreferences>(GetArena());
+    _impl_.preferences_ = reinterpret_cast<::chirp::app_notification::NotificationPreferences*>(p);
   }
   return _impl_.preferences_;
 }
-inline ::chirp::notification::NotificationPreferences* PROTOBUF_NONNULL GetPreferencesResponse::mutable_preferences()
+inline ::chirp::app_notification::NotificationPreferences* PROTOBUF_NONNULL GetPreferencesResponse::mutable_preferences()
     ABSL_ATTRIBUTE_LIFETIME_BOUND {
   SetHasBit(_impl_._has_bits_[0], 0x00000001U);
-  ::chirp::notification::NotificationPreferences* _msg = _internal_mutable_preferences();
+  ::chirp::app_notification::NotificationPreferences* _msg = _internal_mutable_preferences();
   // @@protoc_insertion_point(field_mutable:chirp.notification.GetPreferencesResponse.preferences)
   return _msg;
 }
-inline void GetPreferencesResponse::set_allocated_preferences(::chirp::notification::NotificationPreferences* PROTOBUF_NULLABLE value) {
+inline void GetPreferencesResponse::set_allocated_preferences(::chirp::app_notification::NotificationPreferences* PROTOBUF_NULLABLE value) {
   ::google::protobuf::Arena* message_arena = GetArena();
   ::google::protobuf::internal::TSanWrite(&_impl_);
   if (message_arena == nullptr) {
@@ -8795,7 +8795,7 @@ inline void GetPreferencesResponse::set_allocated_preferences(::chirp::notificat
     ClearHasBit(_impl_._has_bits_[0], 0x00000001U);
   }
 
-  _impl_.preferences_ = reinterpret_cast<::chirp::notification::NotificationPreferences*>(value);
+  _impl_.preferences_ = reinterpret_cast<::chirp::app_notification::NotificationPreferences*>(value);
   // @@protoc_insertion_point(field_set_allocated:chirp.notification.GetPreferencesResponse.preferences)
 }
 
@@ -8812,16 +8812,16 @@ namespace google {
 namespace protobuf {
 
 template <>
-struct is_proto_enum<::chirp::notification::NotificationPriority> : std::true_type {};
+struct is_proto_enum<::chirp::app_notification::NotificationPriority> : std::true_type {};
 template <>
-inline const EnumDescriptor* PROTOBUF_NONNULL GetEnumDescriptor<::chirp::notification::NotificationPriority>() {
-  return ::chirp::notification::NotificationPriority_descriptor();
+inline const EnumDescriptor* PROTOBUF_NONNULL GetEnumDescriptor<::chirp::app_notification::NotificationPriority>() {
+  return ::chirp::app_notification::NotificationPriority_descriptor();
 }
 template <>
-struct is_proto_enum<::chirp::notification::NotificationType> : std::true_type {};
+struct is_proto_enum<::chirp::app_notification::NotificationType> : std::true_type {};
 template <>
-inline const EnumDescriptor* PROTOBUF_NONNULL GetEnumDescriptor<::chirp::notification::NotificationType>() {
-  return ::chirp::notification::NotificationType_descriptor();
+inline const EnumDescriptor* PROTOBUF_NONNULL GetEnumDescriptor<::chirp::app_notification::NotificationType>() {
+  return ::chirp::app_notification::NotificationType_descriptor();
 }
 
 }  // namespace protobuf

@@ -6,11 +6,11 @@
 
 #include "notification_service.h"
 
-using chirp::notification::APNsConfig;
-using chirp::notification::DeviceRegistration;
-using chirp::notification::FCMConfig;
-using chirp::notification::NotificationPayload;
-using chirp::notification::NotificationService;
+using chirp::app_notification::APNsConfig;
+using chirp::app_notification::DeviceRegistration;
+using chirp::app_notification::FCMConfig;
+using chirp::app_notification::NotificationPayload;
+using chirp::app_notification::NotificationService;
 
 namespace {
 
@@ -372,16 +372,16 @@ TEST_F(NotificationServiceTest, PayloadsWithDataAndBadgeAreSerialized) {
 
 // Records provider requests; the canned body stands in for the provider's
 // HTTP response (empty = the historical stub semantics).
-class RecordingTransport : public chirp::notification::PushTransport {
+class RecordingTransport : public chirp::app_notification::PushTransport {
  public:
-  std::string Post(const chirp::notification::PushRequest& request) override {
+  std::string Post(const chirp::app_notification::PushRequest& request) override {
     std::lock_guard<std::mutex> lock(mu);
     requests.push_back(request);
     return canned;
   }
 
   std::mutex mu;
-  std::vector<chirp::notification::PushRequest> requests;
+  std::vector<chirp::app_notification::PushRequest> requests;
   std::string canned;
 };
 

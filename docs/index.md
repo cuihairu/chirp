@@ -1,7 +1,7 @@
 ---
 home: true
 title: 首页
-heroImage: /logo.png
+heroImage: /logo.svg
 heroText: Chirp
 tagline: 面向游戏开发的轻量实时通信后端骨架
 actions:

@@ -12,7 +12,7 @@
 
 #include "proto/common.pb.h"
 #include "proto/gateway.pb.h"
-#include "proto/server_gateway.pb.h"
+#include "proto/game_server_gateway.pb.h"
 
 namespace chirp::network {
 
@@ -30,9 +30,9 @@ namespace chirp::network {
 class ServerGatewayPeer : public std::enable_shared_from_this<ServerGatewayPeer> {
  public:
   using InjectHandler =
-      std::function<void(const chirp::server_gateway::InjectMessageNotify&)>;
+      std::function<void(const chirp::game_server_gateway::InjectMessageNotify&)>;
   using EventHandler =
-      std::function<void(const chirp::server_gateway::EventDeliverNotify&)>;
+      std::function<void(const chirp::game_server_gateway::EventDeliverNotify&)>;
   // Invoked exactly once per RPC: the hub's response code on a well-formed
   // reply, INTERNAL_ERROR on an unparseable reply body, SERVER_UNAVAILABLE
   // when the RPC was sent while disconnected or was lost to a connection
@@ -64,10 +64,10 @@ class ServerGatewayPeer : public std::enable_shared_from_this<ServerGatewayPeer>
   // Sending while disconnected (or stopped) fails fast with
   // SERVER_UNAVAILABLE - nothing is queued for a later connection. The
   // callback may fire on the strand thread, so it must not block.
-  void SendInject(const chirp::server_gateway::MessageInjectRequest& req, RpcCallback cb);
-  void SendEventPublish(const chirp::server_gateway::EventPublishRequest& req,
+  void SendInject(const chirp::game_server_gateway::MessageInjectRequest& req, RpcCallback cb);
+  void SendEventPublish(const chirp::game_server_gateway::EventPublishRequest& req,
                         RpcCallback cb);
-  void SendEventAck(const chirp::server_gateway::EventAckRequest& req, RpcCallback cb);
+  void SendEventAck(const chirp::game_server_gateway::EventAckRequest& req, RpcCallback cb);
 
   // Turns a response body into its error code; an unparseable body maps to
   // INTERNAL_ERROR.

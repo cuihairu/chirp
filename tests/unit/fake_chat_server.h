@@ -21,7 +21,7 @@
 #include "proto/auth.pb.h"
 #include "proto/common.pb.h"
 #include "proto/gateway.pb.h"
-#include "proto/server_gateway.pb.h"
+#include "proto/game_server_gateway.pb.h"
 
 namespace chirp_test {
 
@@ -224,9 +224,9 @@ class FakeChatServer {
       received_.push_back(pkt);
     }
     if (pkt.msg_id() == chirp::gateway::SERVER_AUTH_REQ) {
-      chirp::server_gateway::ServerAuthRequest req;
+      chirp::game_server_gateway::ServerAuthRequest req;
       req.ParseFromString(pkt.body());
-      chirp::server_gateway::ServerAuthResponse resp;
+      chirp::game_server_gateway::ServerAuthResponse resp;
       resp.set_code(auth_code_);
       resp.set_server_time_ms(0);
       MsgID reply_id;
@@ -295,7 +295,7 @@ class FakeChatServer {
   std::vector<std::pair<std::shared_ptr<asio::ip::tcp::socket>, Packet>> held_;
   std::vector<std::shared_ptr<asio::ip::tcp::socket>> sockets_;
   std::vector<Packet> received_;
-  std::vector<chirp::server_gateway::ServerAuthRequest> auth_requests_;
+  std::vector<chirp::game_server_gateway::ServerAuthRequest> auth_requests_;
   std::vector<chirp::auth::LoginRequest> login_requests_;
   MsgID auth_reply_id_{chirp::gateway::SERVER_AUTH_RESP};
   MsgID login_reply_id_{chirp::gateway::LOGIN_RESP};

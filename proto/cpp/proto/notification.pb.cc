@@ -3,7 +3,7 @@
 // source: proto/notification.proto
 // Protobuf C++ Version: 6.33.4
 
-#include "proto/notification.pb.h"
+#include "proto/app_notification.pb.h"
 
 #include <algorithm>
 #include <type_traits>
@@ -548,8 +548,8 @@ inline constexpr PushNotificationRequest::Impl_::Impl_(
         click_action_(
             &::google::protobuf::internal::fixed_address_empty_string,
             ::_pbi::ConstantInitialized()),
-        type_{static_cast< ::chirp::notification::NotificationType >(0)},
-        priority_{static_cast< ::chirp::notification::NotificationPriority >(0)},
+        type_{static_cast< ::chirp::app_notification::NotificationType >(0)},
+        priority_{static_cast< ::chirp::app_notification::NotificationPriority >(0)},
         badge_{0},
         collapse_key_{false},
         ttl_ms_{::int64_t{0}},
@@ -720,29 +720,29 @@ const ::uint32_t
     TableStruct_proto_2fnotification_2eproto::offsets[] ABSL_ATTRIBUTE_SECTION_VARIABLE(
         protodesc_cold) = {
         0x081, // bitmap
-        PROTOBUF_FIELD_OFFSET(::chirp::notification::PushNotificationRequest_DataEntry_DoNotUse, _impl_._has_bits_),
+        PROTOBUF_FIELD_OFFSET(::chirp::app_notification::PushNotificationRequest_DataEntry_DoNotUse, _impl_._has_bits_),
         5, // hasbit index offset
-        PROTOBUF_FIELD_OFFSET(::chirp::notification::PushNotificationRequest_DataEntry_DoNotUse, _impl_.key_),
-        PROTOBUF_FIELD_OFFSET(::chirp::notification::PushNotificationRequest_DataEntry_DoNotUse, _impl_.value_),
+        PROTOBUF_FIELD_OFFSET(::chirp::app_notification::PushNotificationRequest_DataEntry_DoNotUse, _impl_.key_),
+        PROTOBUF_FIELD_OFFSET(::chirp::app_notification::PushNotificationRequest_DataEntry_DoNotUse, _impl_.value_),
         0,
         1,
         0x081, // bitmap
-        PROTOBUF_FIELD_OFFSET(::chirp::notification::PushNotificationRequest, _impl_._has_bits_),
+        PROTOBUF_FIELD_OFFSET(::chirp::app_notification::PushNotificationRequest, _impl_._has_bits_),
         17, // hasbit index offset
-        PROTOBUF_FIELD_OFFSET(::chirp::notification::PushNotificationRequest, _impl_.user_id_),
-        PROTOBUF_FIELD_OFFSET(::chirp::notification::PushNotificationRequest, _impl_.type_),
-        PROTOBUF_FIELD_OFFSET(::chirp::notification::PushNotificationRequest, _impl_.priority_),
-        PROTOBUF_FIELD_OFFSET(::chirp::notification::PushNotificationRequest, _impl_.title_),
-        PROTOBUF_FIELD_OFFSET(::chirp::notification::PushNotificationRequest, _impl_.body_),
-        PROTOBUF_FIELD_OFFSET(::chirp::notification::PushNotificationRequest, _impl_.icon_),
-        PROTOBUF_FIELD_OFFSET(::chirp::notification::PushNotificationRequest, _impl_.image_),
-        PROTOBUF_FIELD_OFFSET(::chirp::notification::PushNotificationRequest, _impl_.sound_),
-        PROTOBUF_FIELD_OFFSET(::chirp::notification::PushNotificationRequest, _impl_.tag_),
-        PROTOBUF_FIELD_OFFSET(::chirp::notification::PushNotificationRequest, _impl_.data_),
-        PROTOBUF_FIELD_OFFSET(::chirp::notification::PushNotificationRequest, _impl_.badge_),
-        PROTOBUF_FIELD_OFFSET(::chirp::notification::PushNotificationRequest, _impl_.click_action_),
-        PROTOBUF_FIELD_OFFSET(::chirp::notification::PushNotificationRequest, _impl_.ttl_ms_),
-        PROTOBUF_FIELD_OFFSET(::chirp::notification::PushNotificationRequest, _impl_.collapse_key_),
+        PROTOBUF_FIELD_OFFSET(::chirp::app_notification::PushNotificationRequest, _impl_.user_id_),
+        PROTOBUF_FIELD_OFFSET(::chirp::app_notification::PushNotificationRequest, _impl_.type_),
+        PROTOBUF_FIELD_OFFSET(::chirp::app_notification::PushNotificationRequest, _impl_.priority_),
+        PROTOBUF_FIELD_OFFSET(::chirp::app_notification::PushNotificationRequest, _impl_.title_),
+        PROTOBUF_FIELD_OFFSET(::chirp::app_notification::PushNotificationRequest, _impl_.body_),
+        PROTOBUF_FIELD_OFFSET(::chirp::app_notification::PushNotificationRequest, _impl_.icon_),
+        PROTOBUF_FIELD_OFFSET(::chirp::app_notification::PushNotificationRequest, _impl_.image_),
+        PROTOBUF_FIELD_OFFSET(::chirp::app_notification::PushNotificationRequest, _impl_.sound_),
+        PROTOBUF_FIELD_OFFSET(::chirp::app_notification::PushNotificationRequest, _impl_.tag_),
+        PROTOBUF_FIELD_OFFSET(::chirp::app_notification::PushNotificationRequest, _impl_.data_),
+        PROTOBUF_FIELD_OFFSET(::chirp::app_notification::PushNotificationRequest, _impl_.badge_),
+        PROTOBUF_FIELD_OFFSET(::chirp::app_notification::PushNotificationRequest, _impl_.click_action_),
+        PROTOBUF_FIELD_OFFSET(::chirp::app_notification::PushNotificationRequest, _impl_.ttl_ms_),
+        PROTOBUF_FIELD_OFFSET(::chirp::app_notification::PushNotificationRequest, _impl_.collapse_key_),
         0,
         8,
         9,
@@ -758,26 +758,26 @@ const ::uint32_t
         12,
         11,
         0x081, // bitmap
-        PROTOBUF_FIELD_OFFSET(::chirp::notification::PushNotificationResponse, _impl_._has_bits_),
+        PROTOBUF_FIELD_OFFSET(::chirp::app_notification::PushNotificationResponse, _impl_._has_bits_),
         6, // hasbit index offset
-        PROTOBUF_FIELD_OFFSET(::chirp::notification::PushNotificationResponse, _impl_.code_),
-        PROTOBUF_FIELD_OFFSET(::chirp::notification::PushNotificationResponse, _impl_.notification_id_),
-        PROTOBUF_FIELD_OFFSET(::chirp::notification::PushNotificationResponse, _impl_.server_time_),
+        PROTOBUF_FIELD_OFFSET(::chirp::app_notification::PushNotificationResponse, _impl_.code_),
+        PROTOBUF_FIELD_OFFSET(::chirp::app_notification::PushNotificationResponse, _impl_.notification_id_),
+        PROTOBUF_FIELD_OFFSET(::chirp::app_notification::PushNotificationResponse, _impl_.server_time_),
         2,
         0,
         1,
         0x081, // bitmap
-        PROTOBUF_FIELD_OFFSET(::chirp::notification::RegisterDeviceRequest, _impl_._has_bits_),
+        PROTOBUF_FIELD_OFFSET(::chirp::app_notification::RegisterDeviceRequest, _impl_._has_bits_),
         12, // hasbit index offset
-        PROTOBUF_FIELD_OFFSET(::chirp::notification::RegisterDeviceRequest, _impl_.user_id_),
-        PROTOBUF_FIELD_OFFSET(::chirp::notification::RegisterDeviceRequest, _impl_.device_id_),
-        PROTOBUF_FIELD_OFFSET(::chirp::notification::RegisterDeviceRequest, _impl_.platform_),
-        PROTOBUF_FIELD_OFFSET(::chirp::notification::RegisterDeviceRequest, _impl_.fcm_token_),
-        PROTOBUF_FIELD_OFFSET(::chirp::notification::RegisterDeviceRequest, _impl_.apns_token_),
-        PROTOBUF_FIELD_OFFSET(::chirp::notification::RegisterDeviceRequest, _impl_.push_kit_token_),
-        PROTOBUF_FIELD_OFFSET(::chirp::notification::RegisterDeviceRequest, _impl_.app_version_),
-        PROTOBUF_FIELD_OFFSET(::chirp::notification::RegisterDeviceRequest, _impl_.os_version_),
-        PROTOBUF_FIELD_OFFSET(::chirp::notification::RegisterDeviceRequest, _impl_.device_name_),
+        PROTOBUF_FIELD_OFFSET(::chirp::app_notification::RegisterDeviceRequest, _impl_.user_id_),
+        PROTOBUF_FIELD_OFFSET(::chirp::app_notification::RegisterDeviceRequest, _impl_.device_id_),
+        PROTOBUF_FIELD_OFFSET(::chirp::app_notification::RegisterDeviceRequest, _impl_.platform_),
+        PROTOBUF_FIELD_OFFSET(::chirp::app_notification::RegisterDeviceRequest, _impl_.fcm_token_),
+        PROTOBUF_FIELD_OFFSET(::chirp::app_notification::RegisterDeviceRequest, _impl_.apns_token_),
+        PROTOBUF_FIELD_OFFSET(::chirp::app_notification::RegisterDeviceRequest, _impl_.push_kit_token_),
+        PROTOBUF_FIELD_OFFSET(::chirp::app_notification::RegisterDeviceRequest, _impl_.app_version_),
+        PROTOBUF_FIELD_OFFSET(::chirp::app_notification::RegisterDeviceRequest, _impl_.os_version_),
+        PROTOBUF_FIELD_OFFSET(::chirp::app_notification::RegisterDeviceRequest, _impl_.device_name_),
         0,
         1,
         2,
@@ -788,67 +788,67 @@ const ::uint32_t
         7,
         8,
         0x081, // bitmap
-        PROTOBUF_FIELD_OFFSET(::chirp::notification::RegisterDeviceResponse, _impl_._has_bits_),
+        PROTOBUF_FIELD_OFFSET(::chirp::app_notification::RegisterDeviceResponse, _impl_._has_bits_),
         5, // hasbit index offset
-        PROTOBUF_FIELD_OFFSET(::chirp::notification::RegisterDeviceResponse, _impl_.code_),
-        PROTOBUF_FIELD_OFFSET(::chirp::notification::RegisterDeviceResponse, _impl_.server_time_),
+        PROTOBUF_FIELD_OFFSET(::chirp::app_notification::RegisterDeviceResponse, _impl_.code_),
+        PROTOBUF_FIELD_OFFSET(::chirp::app_notification::RegisterDeviceResponse, _impl_.server_time_),
         1,
         0,
         0x081, // bitmap
-        PROTOBUF_FIELD_OFFSET(::chirp::notification::UnregisterDeviceRequest, _impl_._has_bits_),
+        PROTOBUF_FIELD_OFFSET(::chirp::app_notification::UnregisterDeviceRequest, _impl_._has_bits_),
         5, // hasbit index offset
-        PROTOBUF_FIELD_OFFSET(::chirp::notification::UnregisterDeviceRequest, _impl_.user_id_),
-        PROTOBUF_FIELD_OFFSET(::chirp::notification::UnregisterDeviceRequest, _impl_.device_id_),
+        PROTOBUF_FIELD_OFFSET(::chirp::app_notification::UnregisterDeviceRequest, _impl_.user_id_),
+        PROTOBUF_FIELD_OFFSET(::chirp::app_notification::UnregisterDeviceRequest, _impl_.device_id_),
         0,
         1,
         0x081, // bitmap
-        PROTOBUF_FIELD_OFFSET(::chirp::notification::UnregisterDeviceResponse, _impl_._has_bits_),
+        PROTOBUF_FIELD_OFFSET(::chirp::app_notification::UnregisterDeviceResponse, _impl_._has_bits_),
         5, // hasbit index offset
-        PROTOBUF_FIELD_OFFSET(::chirp::notification::UnregisterDeviceResponse, _impl_.code_),
-        PROTOBUF_FIELD_OFFSET(::chirp::notification::UnregisterDeviceResponse, _impl_.server_time_),
+        PROTOBUF_FIELD_OFFSET(::chirp::app_notification::UnregisterDeviceResponse, _impl_.code_),
+        PROTOBUF_FIELD_OFFSET(::chirp::app_notification::UnregisterDeviceResponse, _impl_.server_time_),
         1,
         0,
         0x081, // bitmap
-        PROTOBUF_FIELD_OFFSET(::chirp::notification::UpdateDeviceTokenRequest, _impl_._has_bits_),
+        PROTOBUF_FIELD_OFFSET(::chirp::app_notification::UpdateDeviceTokenRequest, _impl_._has_bits_),
         7, // hasbit index offset
-        PROTOBUF_FIELD_OFFSET(::chirp::notification::UpdateDeviceTokenRequest, _impl_.device_id_),
-        PROTOBUF_FIELD_OFFSET(::chirp::notification::UpdateDeviceTokenRequest, _impl_.fcm_token_),
-        PROTOBUF_FIELD_OFFSET(::chirp::notification::UpdateDeviceTokenRequest, _impl_.apns_token_),
-        PROTOBUF_FIELD_OFFSET(::chirp::notification::UpdateDeviceTokenRequest, _impl_.push_kit_token_),
+        PROTOBUF_FIELD_OFFSET(::chirp::app_notification::UpdateDeviceTokenRequest, _impl_.device_id_),
+        PROTOBUF_FIELD_OFFSET(::chirp::app_notification::UpdateDeviceTokenRequest, _impl_.fcm_token_),
+        PROTOBUF_FIELD_OFFSET(::chirp::app_notification::UpdateDeviceTokenRequest, _impl_.apns_token_),
+        PROTOBUF_FIELD_OFFSET(::chirp::app_notification::UpdateDeviceTokenRequest, _impl_.push_kit_token_),
         0,
         1,
         2,
         3,
         0x081, // bitmap
-        PROTOBUF_FIELD_OFFSET(::chirp::notification::UpdateDeviceTokenResponse, _impl_._has_bits_),
+        PROTOBUF_FIELD_OFFSET(::chirp::app_notification::UpdateDeviceTokenResponse, _impl_._has_bits_),
         5, // hasbit index offset
-        PROTOBUF_FIELD_OFFSET(::chirp::notification::UpdateDeviceTokenResponse, _impl_.code_),
-        PROTOBUF_FIELD_OFFSET(::chirp::notification::UpdateDeviceTokenResponse, _impl_.server_time_),
+        PROTOBUF_FIELD_OFFSET(::chirp::app_notification::UpdateDeviceTokenResponse, _impl_.code_),
+        PROTOBUF_FIELD_OFFSET(::chirp::app_notification::UpdateDeviceTokenResponse, _impl_.server_time_),
         1,
         0,
         0x081, // bitmap
-        PROTOBUF_FIELD_OFFSET(::chirp::notification::GetUserDevicesRequest, _impl_._has_bits_),
+        PROTOBUF_FIELD_OFFSET(::chirp::app_notification::GetUserDevicesRequest, _impl_._has_bits_),
         4, // hasbit index offset
-        PROTOBUF_FIELD_OFFSET(::chirp::notification::GetUserDevicesRequest, _impl_.user_id_),
+        PROTOBUF_FIELD_OFFSET(::chirp::app_notification::GetUserDevicesRequest, _impl_.user_id_),
         0,
         0x081, // bitmap
-        PROTOBUF_FIELD_OFFSET(::chirp::notification::GetUserDevicesResponse, _impl_._has_bits_),
+        PROTOBUF_FIELD_OFFSET(::chirp::app_notification::GetUserDevicesResponse, _impl_._has_bits_),
         5, // hasbit index offset
-        PROTOBUF_FIELD_OFFSET(::chirp::notification::GetUserDevicesResponse, _impl_.code_),
-        PROTOBUF_FIELD_OFFSET(::chirp::notification::GetUserDevicesResponse, _impl_.devices_),
+        PROTOBUF_FIELD_OFFSET(::chirp::app_notification::GetUserDevicesResponse, _impl_.code_),
+        PROTOBUF_FIELD_OFFSET(::chirp::app_notification::GetUserDevicesResponse, _impl_.devices_),
         1,
         0,
         0x081, // bitmap
-        PROTOBUF_FIELD_OFFSET(::chirp::notification::DeviceInfo, _impl_._has_bits_),
+        PROTOBUF_FIELD_OFFSET(::chirp::app_notification::DeviceInfo, _impl_._has_bits_),
         11, // hasbit index offset
-        PROTOBUF_FIELD_OFFSET(::chirp::notification::DeviceInfo, _impl_.device_id_),
-        PROTOBUF_FIELD_OFFSET(::chirp::notification::DeviceInfo, _impl_.user_id_),
-        PROTOBUF_FIELD_OFFSET(::chirp::notification::DeviceInfo, _impl_.platform_),
-        PROTOBUF_FIELD_OFFSET(::chirp::notification::DeviceInfo, _impl_.app_version_),
-        PROTOBUF_FIELD_OFFSET(::chirp::notification::DeviceInfo, _impl_.os_version_),
-        PROTOBUF_FIELD_OFFSET(::chirp::notification::DeviceInfo, _impl_.device_name_),
-        PROTOBUF_FIELD_OFFSET(::chirp::notification::DeviceInfo, _impl_.registered_at_),
-        PROTOBUF_FIELD_OFFSET(::chirp::notification::DeviceInfo, _impl_.is_active_),
+        PROTOBUF_FIELD_OFFSET(::chirp::app_notification::DeviceInfo, _impl_.device_id_),
+        PROTOBUF_FIELD_OFFSET(::chirp::app_notification::DeviceInfo, _impl_.user_id_),
+        PROTOBUF_FIELD_OFFSET(::chirp::app_notification::DeviceInfo, _impl_.platform_),
+        PROTOBUF_FIELD_OFFSET(::chirp::app_notification::DeviceInfo, _impl_.app_version_),
+        PROTOBUF_FIELD_OFFSET(::chirp::app_notification::DeviceInfo, _impl_.os_version_),
+        PROTOBUF_FIELD_OFFSET(::chirp::app_notification::DeviceInfo, _impl_.device_name_),
+        PROTOBUF_FIELD_OFFSET(::chirp::app_notification::DeviceInfo, _impl_.registered_at_),
+        PROTOBUF_FIELD_OFFSET(::chirp::app_notification::DeviceInfo, _impl_.is_active_),
         0,
         1,
         2,
@@ -858,58 +858,58 @@ const ::uint32_t
         6,
         7,
         0x081, // bitmap
-        PROTOBUF_FIELD_OFFSET(::chirp::notification::SetBadgeCountRequest, _impl_._has_bits_),
+        PROTOBUF_FIELD_OFFSET(::chirp::app_notification::SetBadgeCountRequest, _impl_._has_bits_),
         5, // hasbit index offset
-        PROTOBUF_FIELD_OFFSET(::chirp::notification::SetBadgeCountRequest, _impl_.user_id_),
-        PROTOBUF_FIELD_OFFSET(::chirp::notification::SetBadgeCountRequest, _impl_.count_),
+        PROTOBUF_FIELD_OFFSET(::chirp::app_notification::SetBadgeCountRequest, _impl_.user_id_),
+        PROTOBUF_FIELD_OFFSET(::chirp::app_notification::SetBadgeCountRequest, _impl_.count_),
         0,
         1,
         0x081, // bitmap
-        PROTOBUF_FIELD_OFFSET(::chirp::notification::SetBadgeCountResponse, _impl_._has_bits_),
+        PROTOBUF_FIELD_OFFSET(::chirp::app_notification::SetBadgeCountResponse, _impl_._has_bits_),
         5, // hasbit index offset
-        PROTOBUF_FIELD_OFFSET(::chirp::notification::SetBadgeCountResponse, _impl_.code_),
-        PROTOBUF_FIELD_OFFSET(::chirp::notification::SetBadgeCountResponse, _impl_.server_time_),
+        PROTOBUF_FIELD_OFFSET(::chirp::app_notification::SetBadgeCountResponse, _impl_.code_),
+        PROTOBUF_FIELD_OFFSET(::chirp::app_notification::SetBadgeCountResponse, _impl_.server_time_),
         1,
         0,
         0x081, // bitmap
-        PROTOBUF_FIELD_OFFSET(::chirp::notification::SilentNotificationRequest_DataEntry_DoNotUse, _impl_._has_bits_),
+        PROTOBUF_FIELD_OFFSET(::chirp::app_notification::SilentNotificationRequest_DataEntry_DoNotUse, _impl_._has_bits_),
         5, // hasbit index offset
-        PROTOBUF_FIELD_OFFSET(::chirp::notification::SilentNotificationRequest_DataEntry_DoNotUse, _impl_.key_),
-        PROTOBUF_FIELD_OFFSET(::chirp::notification::SilentNotificationRequest_DataEntry_DoNotUse, _impl_.value_),
+        PROTOBUF_FIELD_OFFSET(::chirp::app_notification::SilentNotificationRequest_DataEntry_DoNotUse, _impl_.key_),
+        PROTOBUF_FIELD_OFFSET(::chirp::app_notification::SilentNotificationRequest_DataEntry_DoNotUse, _impl_.value_),
         0,
         1,
         0x081, // bitmap
-        PROTOBUF_FIELD_OFFSET(::chirp::notification::SilentNotificationRequest, _impl_._has_bits_),
+        PROTOBUF_FIELD_OFFSET(::chirp::app_notification::SilentNotificationRequest, _impl_._has_bits_),
         6, // hasbit index offset
-        PROTOBUF_FIELD_OFFSET(::chirp::notification::SilentNotificationRequest, _impl_.user_id_),
-        PROTOBUF_FIELD_OFFSET(::chirp::notification::SilentNotificationRequest, _impl_.data_),
-        PROTOBUF_FIELD_OFFSET(::chirp::notification::SilentNotificationRequest, _impl_.ttl_ms_),
+        PROTOBUF_FIELD_OFFSET(::chirp::app_notification::SilentNotificationRequest, _impl_.user_id_),
+        PROTOBUF_FIELD_OFFSET(::chirp::app_notification::SilentNotificationRequest, _impl_.data_),
+        PROTOBUF_FIELD_OFFSET(::chirp::app_notification::SilentNotificationRequest, _impl_.ttl_ms_),
         0,
         2,
         1,
         0x081, // bitmap
-        PROTOBUF_FIELD_OFFSET(::chirp::notification::NotificationPreferences_ChannelSettingsEntry_DoNotUse, _impl_._has_bits_),
+        PROTOBUF_FIELD_OFFSET(::chirp::app_notification::NotificationPreferences_ChannelSettingsEntry_DoNotUse, _impl_._has_bits_),
         5, // hasbit index offset
-        PROTOBUF_FIELD_OFFSET(::chirp::notification::NotificationPreferences_ChannelSettingsEntry_DoNotUse, _impl_.key_),
-        PROTOBUF_FIELD_OFFSET(::chirp::notification::NotificationPreferences_ChannelSettingsEntry_DoNotUse, _impl_.value_),
+        PROTOBUF_FIELD_OFFSET(::chirp::app_notification::NotificationPreferences_ChannelSettingsEntry_DoNotUse, _impl_.key_),
+        PROTOBUF_FIELD_OFFSET(::chirp::app_notification::NotificationPreferences_ChannelSettingsEntry_DoNotUse, _impl_.value_),
         0,
         1,
         0x081, // bitmap
-        PROTOBUF_FIELD_OFFSET(::chirp::notification::NotificationPreferences, _impl_._has_bits_),
+        PROTOBUF_FIELD_OFFSET(::chirp::app_notification::NotificationPreferences, _impl_._has_bits_),
         16, // hasbit index offset
-        PROTOBUF_FIELD_OFFSET(::chirp::notification::NotificationPreferences, _impl_.enabled_),
-        PROTOBUF_FIELD_OFFSET(::chirp::notification::NotificationPreferences, _impl_.sound_enabled_),
-        PROTOBUF_FIELD_OFFSET(::chirp::notification::NotificationPreferences, _impl_.vibration_enabled_),
-        PROTOBUF_FIELD_OFFSET(::chirp::notification::NotificationPreferences, _impl_.show_preview_),
-        PROTOBUF_FIELD_OFFSET(::chirp::notification::NotificationPreferences, _impl_.allow_messages_),
-        PROTOBUF_FIELD_OFFSET(::chirp::notification::NotificationPreferences, _impl_.allow_mentions_),
-        PROTOBUF_FIELD_OFFSET(::chirp::notification::NotificationPreferences, _impl_.allow_friend_requests_),
-        PROTOBUF_FIELD_OFFSET(::chirp::notification::NotificationPreferences, _impl_.allow_voice_calls_),
-        PROTOBUF_FIELD_OFFSET(::chirp::notification::NotificationPreferences, _impl_.dnd_enabled_),
-        PROTOBUF_FIELD_OFFSET(::chirp::notification::NotificationPreferences, _impl_.dnd_start_hour_),
-        PROTOBUF_FIELD_OFFSET(::chirp::notification::NotificationPreferences, _impl_.dnd_end_hour_),
-        PROTOBUF_FIELD_OFFSET(::chirp::notification::NotificationPreferences, _impl_.dnd_days_),
-        PROTOBUF_FIELD_OFFSET(::chirp::notification::NotificationPreferences, _impl_.channel_settings_),
+        PROTOBUF_FIELD_OFFSET(::chirp::app_notification::NotificationPreferences, _impl_.enabled_),
+        PROTOBUF_FIELD_OFFSET(::chirp::app_notification::NotificationPreferences, _impl_.sound_enabled_),
+        PROTOBUF_FIELD_OFFSET(::chirp::app_notification::NotificationPreferences, _impl_.vibration_enabled_),
+        PROTOBUF_FIELD_OFFSET(::chirp::app_notification::NotificationPreferences, _impl_.show_preview_),
+        PROTOBUF_FIELD_OFFSET(::chirp::app_notification::NotificationPreferences, _impl_.allow_messages_),
+        PROTOBUF_FIELD_OFFSET(::chirp::app_notification::NotificationPreferences, _impl_.allow_mentions_),
+        PROTOBUF_FIELD_OFFSET(::chirp::app_notification::NotificationPreferences, _impl_.allow_friend_requests_),
+        PROTOBUF_FIELD_OFFSET(::chirp::app_notification::NotificationPreferences, _impl_.allow_voice_calls_),
+        PROTOBUF_FIELD_OFFSET(::chirp::app_notification::NotificationPreferences, _impl_.dnd_enabled_),
+        PROTOBUF_FIELD_OFFSET(::chirp::app_notification::NotificationPreferences, _impl_.dnd_start_hour_),
+        PROTOBUF_FIELD_OFFSET(::chirp::app_notification::NotificationPreferences, _impl_.dnd_end_hour_),
+        PROTOBUF_FIELD_OFFSET(::chirp::app_notification::NotificationPreferences, _impl_.dnd_days_),
+        PROTOBUF_FIELD_OFFSET(::chirp::app_notification::NotificationPreferences, _impl_.channel_settings_),
         1,
         2,
         3,
@@ -924,92 +924,92 @@ const ::uint32_t
         0,
         12,
         0x081, // bitmap
-        PROTOBUF_FIELD_OFFSET(::chirp::notification::ChannelNotificationSettings, _impl_._has_bits_),
+        PROTOBUF_FIELD_OFFSET(::chirp::app_notification::ChannelNotificationSettings, _impl_._has_bits_),
         6, // hasbit index offset
-        PROTOBUF_FIELD_OFFSET(::chirp::notification::ChannelNotificationSettings, _impl_.muted_),
-        PROTOBUF_FIELD_OFFSET(::chirp::notification::ChannelNotificationSettings, _impl_.only_mentions_),
-        PROTOBUF_FIELD_OFFSET(::chirp::notification::ChannelNotificationSettings, _impl_.notify_on_mentions_),
+        PROTOBUF_FIELD_OFFSET(::chirp::app_notification::ChannelNotificationSettings, _impl_.muted_),
+        PROTOBUF_FIELD_OFFSET(::chirp::app_notification::ChannelNotificationSettings, _impl_.only_mentions_),
+        PROTOBUF_FIELD_OFFSET(::chirp::app_notification::ChannelNotificationSettings, _impl_.notify_on_mentions_),
         0,
         1,
         2,
         0x081, // bitmap
-        PROTOBUF_FIELD_OFFSET(::chirp::notification::SetPreferencesRequest, _impl_._has_bits_),
+        PROTOBUF_FIELD_OFFSET(::chirp::app_notification::SetPreferencesRequest, _impl_._has_bits_),
         5, // hasbit index offset
-        PROTOBUF_FIELD_OFFSET(::chirp::notification::SetPreferencesRequest, _impl_.user_id_),
-        PROTOBUF_FIELD_OFFSET(::chirp::notification::SetPreferencesRequest, _impl_.preferences_),
+        PROTOBUF_FIELD_OFFSET(::chirp::app_notification::SetPreferencesRequest, _impl_.user_id_),
+        PROTOBUF_FIELD_OFFSET(::chirp::app_notification::SetPreferencesRequest, _impl_.preferences_),
         0,
         1,
         0x081, // bitmap
-        PROTOBUF_FIELD_OFFSET(::chirp::notification::SetPreferencesResponse, _impl_._has_bits_),
+        PROTOBUF_FIELD_OFFSET(::chirp::app_notification::SetPreferencesResponse, _impl_._has_bits_),
         5, // hasbit index offset
-        PROTOBUF_FIELD_OFFSET(::chirp::notification::SetPreferencesResponse, _impl_.code_),
-        PROTOBUF_FIELD_OFFSET(::chirp::notification::SetPreferencesResponse, _impl_.server_time_),
+        PROTOBUF_FIELD_OFFSET(::chirp::app_notification::SetPreferencesResponse, _impl_.code_),
+        PROTOBUF_FIELD_OFFSET(::chirp::app_notification::SetPreferencesResponse, _impl_.server_time_),
         1,
         0,
         0x081, // bitmap
-        PROTOBUF_FIELD_OFFSET(::chirp::notification::GetPreferencesRequest, _impl_._has_bits_),
+        PROTOBUF_FIELD_OFFSET(::chirp::app_notification::GetPreferencesRequest, _impl_._has_bits_),
         4, // hasbit index offset
-        PROTOBUF_FIELD_OFFSET(::chirp::notification::GetPreferencesRequest, _impl_.user_id_),
+        PROTOBUF_FIELD_OFFSET(::chirp::app_notification::GetPreferencesRequest, _impl_.user_id_),
         0,
         0x081, // bitmap
-        PROTOBUF_FIELD_OFFSET(::chirp::notification::GetPreferencesResponse, _impl_._has_bits_),
+        PROTOBUF_FIELD_OFFSET(::chirp::app_notification::GetPreferencesResponse, _impl_._has_bits_),
         5, // hasbit index offset
-        PROTOBUF_FIELD_OFFSET(::chirp::notification::GetPreferencesResponse, _impl_.code_),
-        PROTOBUF_FIELD_OFFSET(::chirp::notification::GetPreferencesResponse, _impl_.preferences_),
+        PROTOBUF_FIELD_OFFSET(::chirp::app_notification::GetPreferencesResponse, _impl_.code_),
+        PROTOBUF_FIELD_OFFSET(::chirp::app_notification::GetPreferencesResponse, _impl_.preferences_),
         1,
         0,
 };
 
 static const ::_pbi::MigrationSchema
     schemas[] ABSL_ATTRIBUTE_SECTION_VARIABLE(protodesc_cold) = {
-        {0, sizeof(::chirp::notification::PushNotificationRequest_DataEntry_DoNotUse)},
-        {7, sizeof(::chirp::notification::PushNotificationRequest)},
-        {38, sizeof(::chirp::notification::PushNotificationResponse)},
-        {47, sizeof(::chirp::notification::RegisterDeviceRequest)},
-        {68, sizeof(::chirp::notification::RegisterDeviceResponse)},
-        {75, sizeof(::chirp::notification::UnregisterDeviceRequest)},
-        {82, sizeof(::chirp::notification::UnregisterDeviceResponse)},
-        {89, sizeof(::chirp::notification::UpdateDeviceTokenRequest)},
-        {100, sizeof(::chirp::notification::UpdateDeviceTokenResponse)},
-        {107, sizeof(::chirp::notification::GetUserDevicesRequest)},
-        {112, sizeof(::chirp::notification::GetUserDevicesResponse)},
-        {119, sizeof(::chirp::notification::DeviceInfo)},
-        {138, sizeof(::chirp::notification::SetBadgeCountRequest)},
-        {145, sizeof(::chirp::notification::SetBadgeCountResponse)},
-        {152, sizeof(::chirp::notification::SilentNotificationRequest_DataEntry_DoNotUse)},
-        {159, sizeof(::chirp::notification::SilentNotificationRequest)},
-        {168, sizeof(::chirp::notification::NotificationPreferences_ChannelSettingsEntry_DoNotUse)},
-        {175, sizeof(::chirp::notification::NotificationPreferences)},
-        {204, sizeof(::chirp::notification::ChannelNotificationSettings)},
-        {213, sizeof(::chirp::notification::SetPreferencesRequest)},
-        {220, sizeof(::chirp::notification::SetPreferencesResponse)},
-        {227, sizeof(::chirp::notification::GetPreferencesRequest)},
-        {232, sizeof(::chirp::notification::GetPreferencesResponse)},
+        {0, sizeof(::chirp::app_notification::PushNotificationRequest_DataEntry_DoNotUse)},
+        {7, sizeof(::chirp::app_notification::PushNotificationRequest)},
+        {38, sizeof(::chirp::app_notification::PushNotificationResponse)},
+        {47, sizeof(::chirp::app_notification::RegisterDeviceRequest)},
+        {68, sizeof(::chirp::app_notification::RegisterDeviceResponse)},
+        {75, sizeof(::chirp::app_notification::UnregisterDeviceRequest)},
+        {82, sizeof(::chirp::app_notification::UnregisterDeviceResponse)},
+        {89, sizeof(::chirp::app_notification::UpdateDeviceTokenRequest)},
+        {100, sizeof(::chirp::app_notification::UpdateDeviceTokenResponse)},
+        {107, sizeof(::chirp::app_notification::GetUserDevicesRequest)},
+        {112, sizeof(::chirp::app_notification::GetUserDevicesResponse)},
+        {119, sizeof(::chirp::app_notification::DeviceInfo)},
+        {138, sizeof(::chirp::app_notification::SetBadgeCountRequest)},
+        {145, sizeof(::chirp::app_notification::SetBadgeCountResponse)},
+        {152, sizeof(::chirp::app_notification::SilentNotificationRequest_DataEntry_DoNotUse)},
+        {159, sizeof(::chirp::app_notification::SilentNotificationRequest)},
+        {168, sizeof(::chirp::app_notification::NotificationPreferences_ChannelSettingsEntry_DoNotUse)},
+        {175, sizeof(::chirp::app_notification::NotificationPreferences)},
+        {204, sizeof(::chirp::app_notification::ChannelNotificationSettings)},
+        {213, sizeof(::chirp::app_notification::SetPreferencesRequest)},
+        {220, sizeof(::chirp::app_notification::SetPreferencesResponse)},
+        {227, sizeof(::chirp::app_notification::GetPreferencesRequest)},
+        {232, sizeof(::chirp::app_notification::GetPreferencesResponse)},
 };
 static const ::_pb::Message* PROTOBUF_NONNULL const file_default_instances[] = {
-    &::chirp::notification::_PushNotificationRequest_DataEntry_DoNotUse_default_instance_._instance,
-    &::chirp::notification::_PushNotificationRequest_default_instance_._instance,
-    &::chirp::notification::_PushNotificationResponse_default_instance_._instance,
-    &::chirp::notification::_RegisterDeviceRequest_default_instance_._instance,
-    &::chirp::notification::_RegisterDeviceResponse_default_instance_._instance,
-    &::chirp::notification::_UnregisterDeviceRequest_default_instance_._instance,
-    &::chirp::notification::_UnregisterDeviceResponse_default_instance_._instance,
-    &::chirp::notification::_UpdateDeviceTokenRequest_default_instance_._instance,
-    &::chirp::notification::_UpdateDeviceTokenResponse_default_instance_._instance,
-    &::chirp::notification::_GetUserDevicesRequest_default_instance_._instance,
-    &::chirp::notification::_GetUserDevicesResponse_default_instance_._instance,
-    &::chirp::notification::_DeviceInfo_default_instance_._instance,
-    &::chirp::notification::_SetBadgeCountRequest_default_instance_._instance,
-    &::chirp::notification::_SetBadgeCountResponse_default_instance_._instance,
-    &::chirp::notification::_SilentNotificationRequest_DataEntry_DoNotUse_default_instance_._instance,
-    &::chirp::notification::_SilentNotificationRequest_default_instance_._instance,
-    &::chirp::notification::_NotificationPreferences_ChannelSettingsEntry_DoNotUse_default_instance_._instance,
-    &::chirp::notification::_NotificationPreferences_default_instance_._instance,
-    &::chirp::notification::_ChannelNotificationSettings_default_instance_._instance,
-    &::chirp::notification::_SetPreferencesRequest_default_instance_._instance,
-    &::chirp::notification::_SetPreferencesResponse_default_instance_._instance,
-    &::chirp::notification::_GetPreferencesRequest_default_instance_._instance,
-    &::chirp::notification::_GetPreferencesResponse_default_instance_._instance,
+    &::chirp::app_notification::_PushNotificationRequest_DataEntry_DoNotUse_default_instance_._instance,
+    &::chirp::app_notification::_PushNotificationRequest_default_instance_._instance,
+    &::chirp::app_notification::_PushNotificationResponse_default_instance_._instance,
+    &::chirp::app_notification::_RegisterDeviceRequest_default_instance_._instance,
+    &::chirp::app_notification::_RegisterDeviceResponse_default_instance_._instance,
+    &::chirp::app_notification::_UnregisterDeviceRequest_default_instance_._instance,
+    &::chirp::app_notification::_UnregisterDeviceResponse_default_instance_._instance,
+    &::chirp::app_notification::_UpdateDeviceTokenRequest_default_instance_._instance,
+    &::chirp::app_notification::_UpdateDeviceTokenResponse_default_instance_._instance,
+    &::chirp::app_notification::_GetUserDevicesRequest_default_instance_._instance,
+    &::chirp::app_notification::_GetUserDevicesResponse_default_instance_._instance,
+    &::chirp::app_notification::_DeviceInfo_default_instance_._instance,
+    &::chirp::app_notification::_SetBadgeCountRequest_default_instance_._instance,
+    &::chirp::app_notification::_SetBadgeCountResponse_default_instance_._instance,
+    &::chirp::app_notification::_SilentNotificationRequest_DataEntry_DoNotUse_default_instance_._instance,
+    &::chirp::app_notification::_SilentNotificationRequest_default_instance_._instance,
+    &::chirp::app_notification::_NotificationPreferences_ChannelSettingsEntry_DoNotUse_default_instance_._instance,
+    &::chirp::app_notification::_NotificationPreferences_default_instance_._instance,
+    &::chirp::app_notification::_ChannelNotificationSettings_default_instance_._instance,
+    &::chirp::app_notification::_SetPreferencesRequest_default_instance_._instance,
+    &::chirp::app_notification::_SetPreferencesResponse_default_instance_._instance,
+    &::chirp::app_notification::_GetPreferencesRequest_default_instance_._instance,
+    &::chirp::app_notification::_GetPreferencesResponse_default_instance_._instance,
 };
 const char descriptor_table_protodef_proto_2fnotification_2eproto[] ABSL_ATTRIBUTE_SECTION_VARIABLE(
     protodesc_cold) = {
@@ -1199,7 +1199,7 @@ PushNotificationRequest_DataEntry_DoNotUse::_table_ = {
     nullptr,  // post_loop_handler
     ::_pbi::TcParser::DiscardEverythingFallback,  // fallback
     #ifdef PROTOBUF_PREFETCH_PARSE_TABLE
-    ::_pbi::TcParser::GetTable<::chirp::notification::PushNotificationRequest_DataEntry_DoNotUse>(),  // to_prefetch
+    ::_pbi::TcParser::GetTable<::chirp::app_notification::PushNotificationRequest_DataEntry_DoNotUse>(),  // to_prefetch
     #endif  // PROTOBUF_PREFETCH_PARSE_TABLE
   }, {{
     // string value = 2;
@@ -1248,7 +1248,7 @@ PushNotificationRequest::PushNotificationRequest(::google::protobuf::Arena* PROT
 PROTOBUF_NDEBUG_INLINE PushNotificationRequest::Impl_::Impl_(
     [[maybe_unused]] ::google::protobuf::internal::InternalVisibility visibility,
     [[maybe_unused]] ::google::protobuf::Arena* PROTOBUF_NULLABLE arena, const Impl_& from,
-    [[maybe_unused]] const ::chirp::notification::PushNotificationRequest& from_msg)
+    [[maybe_unused]] const ::chirp::app_notification::PushNotificationRequest& from_msg)
       : _has_bits_{from._has_bits_},
         _cached_size_{0},
         user_id_(arena, from.user_id_),
@@ -1400,7 +1400,7 @@ PushNotificationRequest::_table_ = {
     nullptr,  // post_loop_handler
     ::_pbi::TcParser::GenericFallback,  // fallback
     #ifdef PROTOBUF_PREFETCH_PARSE_TABLE
-    ::_pbi::TcParser::GetTable<::chirp::notification::PushNotificationRequest>(),  // to_prefetch
+    ::_pbi::TcParser::GetTable<::chirp::app_notification::PushNotificationRequest>(),  // to_prefetch
     #endif  // PROTOBUF_PREFETCH_PARSE_TABLE
   }, {{
     {::_pbi::TcParser::MiniParse, {}},
@@ -2045,7 +2045,7 @@ PushNotificationResponse::PushNotificationResponse(::google::protobuf::Arena* PR
 PROTOBUF_NDEBUG_INLINE PushNotificationResponse::Impl_::Impl_(
     [[maybe_unused]] ::google::protobuf::internal::InternalVisibility visibility,
     [[maybe_unused]] ::google::protobuf::Arena* PROTOBUF_NULLABLE arena, const Impl_& from,
-    [[maybe_unused]] const ::chirp::notification::PushNotificationResponse& from_msg)
+    [[maybe_unused]] const ::chirp::app_notification::PushNotificationResponse& from_msg)
       : _has_bits_{from._has_bits_},
         _cached_size_{0},
         notification_id_(arena, from.notification_id_) {}
@@ -2162,7 +2162,7 @@ PushNotificationResponse::_table_ = {
     nullptr,  // post_loop_handler
     ::_pbi::TcParser::GenericFallback,  // fallback
     #ifdef PROTOBUF_PREFETCH_PARSE_TABLE
-    ::_pbi::TcParser::GetTable<::chirp::notification::PushNotificationResponse>(),  // to_prefetch
+    ::_pbi::TcParser::GetTable<::chirp::app_notification::PushNotificationResponse>(),  // to_prefetch
     #endif  // PROTOBUF_PREFETCH_PARSE_TABLE
   }, {{
     {::_pbi::TcParser::MiniParse, {}},
@@ -2402,7 +2402,7 @@ RegisterDeviceRequest::RegisterDeviceRequest(::google::protobuf::Arena* PROTOBUF
 PROTOBUF_NDEBUG_INLINE RegisterDeviceRequest::Impl_::Impl_(
     [[maybe_unused]] ::google::protobuf::internal::InternalVisibility visibility,
     [[maybe_unused]] ::google::protobuf::Arena* PROTOBUF_NULLABLE arena, const Impl_& from,
-    [[maybe_unused]] const ::chirp::notification::RegisterDeviceRequest& from_msg)
+    [[maybe_unused]] const ::chirp::app_notification::RegisterDeviceRequest& from_msg)
       : _has_bits_{from._has_bits_},
         _cached_size_{0},
         user_id_(arena, from.user_id_),
@@ -2530,7 +2530,7 @@ RegisterDeviceRequest::_table_ = {
     nullptr,  // post_loop_handler
     ::_pbi::TcParser::GenericFallback,  // fallback
     #ifdef PROTOBUF_PREFETCH_PARSE_TABLE
-    ::_pbi::TcParser::GetTable<::chirp::notification::RegisterDeviceRequest>(),  // to_prefetch
+    ::_pbi::TcParser::GetTable<::chirp::app_notification::RegisterDeviceRequest>(),  // to_prefetch
     #endif  // PROTOBUF_PREFETCH_PARSE_TABLE
   }, {{
     {::_pbi::TcParser::MiniParse, {}},
@@ -3106,7 +3106,7 @@ RegisterDeviceResponse::_table_ = {
     nullptr,  // post_loop_handler
     ::_pbi::TcParser::GenericFallback,  // fallback
     #ifdef PROTOBUF_PREFETCH_PARSE_TABLE
-    ::_pbi::TcParser::GetTable<::chirp::notification::RegisterDeviceResponse>(),  // to_prefetch
+    ::_pbi::TcParser::GetTable<::chirp::app_notification::RegisterDeviceResponse>(),  // to_prefetch
     #endif  // PROTOBUF_PREFETCH_PARSE_TABLE
   }, {{
     // int64 server_time = 2;
@@ -3304,7 +3304,7 @@ UnregisterDeviceRequest::UnregisterDeviceRequest(::google::protobuf::Arena* PROT
 PROTOBUF_NDEBUG_INLINE UnregisterDeviceRequest::Impl_::Impl_(
     [[maybe_unused]] ::google::protobuf::internal::InternalVisibility visibility,
     [[maybe_unused]] ::google::protobuf::Arena* PROTOBUF_NULLABLE arena, const Impl_& from,
-    [[maybe_unused]] const ::chirp::notification::UnregisterDeviceRequest& from_msg)
+    [[maybe_unused]] const ::chirp::app_notification::UnregisterDeviceRequest& from_msg)
       : _has_bits_{from._has_bits_},
         _cached_size_{0},
         user_id_(arena, from.user_id_),
@@ -3411,7 +3411,7 @@ UnregisterDeviceRequest::_table_ = {
     nullptr,  // post_loop_handler
     ::_pbi::TcParser::GenericFallback,  // fallback
     #ifdef PROTOBUF_PREFETCH_PARSE_TABLE
-    ::_pbi::TcParser::GetTable<::chirp::notification::UnregisterDeviceRequest>(),  // to_prefetch
+    ::_pbi::TcParser::GetTable<::chirp::app_notification::UnregisterDeviceRequest>(),  // to_prefetch
     #endif  // PROTOBUF_PREFETCH_PARSE_TABLE
   }, {{
     // string device_id = 2;
@@ -3719,7 +3719,7 @@ UnregisterDeviceResponse::_table_ = {
     nullptr,  // post_loop_handler
     ::_pbi::TcParser::GenericFallback,  // fallback
     #ifdef PROTOBUF_PREFETCH_PARSE_TABLE
-    ::_pbi::TcParser::GetTable<::chirp::notification::UnregisterDeviceResponse>(),  // to_prefetch
+    ::_pbi::TcParser::GetTable<::chirp::app_notification::UnregisterDeviceResponse>(),  // to_prefetch
     #endif  // PROTOBUF_PREFETCH_PARSE_TABLE
   }, {{
     // int64 server_time = 2;
@@ -3917,7 +3917,7 @@ UpdateDeviceTokenRequest::UpdateDeviceTokenRequest(::google::protobuf::Arena* PR
 PROTOBUF_NDEBUG_INLINE UpdateDeviceTokenRequest::Impl_::Impl_(
     [[maybe_unused]] ::google::protobuf::internal::InternalVisibility visibility,
     [[maybe_unused]] ::google::protobuf::Arena* PROTOBUF_NULLABLE arena, const Impl_& from,
-    [[maybe_unused]] const ::chirp::notification::UpdateDeviceTokenRequest& from_msg)
+    [[maybe_unused]] const ::chirp::app_notification::UpdateDeviceTokenRequest& from_msg)
       : _has_bits_{from._has_bits_},
         _cached_size_{0},
         device_id_(arena, from.device_id_),
@@ -4030,7 +4030,7 @@ UpdateDeviceTokenRequest::_table_ = {
     nullptr,  // post_loop_handler
     ::_pbi::TcParser::GenericFallback,  // fallback
     #ifdef PROTOBUF_PREFETCH_PARSE_TABLE
-    ::_pbi::TcParser::GetTable<::chirp::notification::UpdateDeviceTokenRequest>(),  // to_prefetch
+    ::_pbi::TcParser::GetTable<::chirp::app_notification::UpdateDeviceTokenRequest>(),  // to_prefetch
     #endif  // PROTOBUF_PREFETCH_PARSE_TABLE
   }, {{
     // string push_kit_token = 4;
@@ -4412,7 +4412,7 @@ UpdateDeviceTokenResponse::_table_ = {
     nullptr,  // post_loop_handler
     ::_pbi::TcParser::GenericFallback,  // fallback
     #ifdef PROTOBUF_PREFETCH_PARSE_TABLE
-    ::_pbi::TcParser::GetTable<::chirp::notification::UpdateDeviceTokenResponse>(),  // to_prefetch
+    ::_pbi::TcParser::GetTable<::chirp::app_notification::UpdateDeviceTokenResponse>(),  // to_prefetch
     #endif  // PROTOBUF_PREFETCH_PARSE_TABLE
   }, {{
     // int64 server_time = 2;
@@ -4610,7 +4610,7 @@ GetUserDevicesRequest::GetUserDevicesRequest(::google::protobuf::Arena* PROTOBUF
 PROTOBUF_NDEBUG_INLINE GetUserDevicesRequest::Impl_::Impl_(
     [[maybe_unused]] ::google::protobuf::internal::InternalVisibility visibility,
     [[maybe_unused]] ::google::protobuf::Arena* PROTOBUF_NULLABLE arena, const Impl_& from,
-    [[maybe_unused]] const ::chirp::notification::GetUserDevicesRequest& from_msg)
+    [[maybe_unused]] const ::chirp::app_notification::GetUserDevicesRequest& from_msg)
       : _has_bits_{from._has_bits_},
         _cached_size_{0},
         user_id_(arena, from.user_id_) {}
@@ -4714,7 +4714,7 @@ GetUserDevicesRequest::_table_ = {
     nullptr,  // post_loop_handler
     ::_pbi::TcParser::GenericFallback,  // fallback
     #ifdef PROTOBUF_PREFETCH_PARSE_TABLE
-    ::_pbi::TcParser::GetTable<::chirp::notification::GetUserDevicesRequest>(),  // to_prefetch
+    ::_pbi::TcParser::GetTable<::chirp::app_notification::GetUserDevicesRequest>(),  // to_prefetch
     #endif  // PROTOBUF_PREFETCH_PARSE_TABLE
   }, {{
     // string user_id = 1;
@@ -4885,7 +4885,7 @@ GetUserDevicesResponse::GetUserDevicesResponse(::google::protobuf::Arena* PROTOB
 PROTOBUF_NDEBUG_INLINE GetUserDevicesResponse::Impl_::Impl_(
     [[maybe_unused]] ::google::protobuf::internal::InternalVisibility visibility,
     [[maybe_unused]] ::google::protobuf::Arena* PROTOBUF_NULLABLE arena, const Impl_& from,
-    [[maybe_unused]] const ::chirp::notification::GetUserDevicesResponse& from_msg)
+    [[maybe_unused]] const ::chirp::app_notification::GetUserDevicesResponse& from_msg)
       : _has_bits_{from._has_bits_},
         _cached_size_{0},
         devices_{visibility, arena, from.devices_} {}
@@ -5002,7 +5002,7 @@ GetUserDevicesResponse::_table_ = {
     nullptr,  // post_loop_handler
     ::_pbi::TcParser::GenericFallback,  // fallback
     #ifdef PROTOBUF_PREFETCH_PARSE_TABLE
-    ::_pbi::TcParser::GetTable<::chirp::notification::GetUserDevicesResponse>(),  // to_prefetch
+    ::_pbi::TcParser::GetTable<::chirp::app_notification::GetUserDevicesResponse>(),  // to_prefetch
     #endif  // PROTOBUF_PREFETCH_PARSE_TABLE
   }, {{
     // repeated .chirp.notification.DeviceInfo devices = 2;
@@ -5022,7 +5022,7 @@ GetUserDevicesResponse::_table_ = {
     {PROTOBUF_FIELD_OFFSET(GetUserDevicesResponse, _impl_.devices_), _Internal::kHasBitsOffset + 0, 0, (0 | ::_fl::kFcRepeated | ::_fl::kMessage | ::_fl::kTvTable)},
   }},
   {{
-      {::_pbi::TcParser::GetTable<::chirp::notification::DeviceInfo>()},
+      {::_pbi::TcParser::GetTable<::chirp::app_notification::DeviceInfo>()},
   }},
   {{
   }},
@@ -5202,7 +5202,7 @@ DeviceInfo::DeviceInfo(::google::protobuf::Arena* PROTOBUF_NULLABLE arena)
 PROTOBUF_NDEBUG_INLINE DeviceInfo::Impl_::Impl_(
     [[maybe_unused]] ::google::protobuf::internal::InternalVisibility visibility,
     [[maybe_unused]] ::google::protobuf::Arena* PROTOBUF_NULLABLE arena, const Impl_& from,
-    [[maybe_unused]] const ::chirp::notification::DeviceInfo& from_msg)
+    [[maybe_unused]] const ::chirp::app_notification::DeviceInfo& from_msg)
       : _has_bits_{from._has_bits_},
         _cached_size_{0},
         device_id_(arena, from.device_id_),
@@ -5334,7 +5334,7 @@ DeviceInfo::_table_ = {
     nullptr,  // post_loop_handler
     ::_pbi::TcParser::GenericFallback,  // fallback
     #ifdef PROTOBUF_PREFETCH_PARSE_TABLE
-    ::_pbi::TcParser::GetTable<::chirp::notification::DeviceInfo>(),  // to_prefetch
+    ::_pbi::TcParser::GetTable<::chirp::app_notification::DeviceInfo>(),  // to_prefetch
     #endif  // PROTOBUF_PREFETCH_PARSE_TABLE
   }, {{
     // bool is_active = 8;
@@ -5759,7 +5759,7 @@ SetBadgeCountRequest::SetBadgeCountRequest(::google::protobuf::Arena* PROTOBUF_N
 PROTOBUF_NDEBUG_INLINE SetBadgeCountRequest::Impl_::Impl_(
     [[maybe_unused]] ::google::protobuf::internal::InternalVisibility visibility,
     [[maybe_unused]] ::google::protobuf::Arena* PROTOBUF_NULLABLE arena, const Impl_& from,
-    [[maybe_unused]] const ::chirp::notification::SetBadgeCountRequest& from_msg)
+    [[maybe_unused]] const ::chirp::app_notification::SetBadgeCountRequest& from_msg)
       : _has_bits_{from._has_bits_},
         _cached_size_{0},
         user_id_(arena, from.user_id_) {}
@@ -5865,7 +5865,7 @@ SetBadgeCountRequest::_table_ = {
     nullptr,  // post_loop_handler
     ::_pbi::TcParser::GenericFallback,  // fallback
     #ifdef PROTOBUF_PREFETCH_PARSE_TABLE
-    ::_pbi::TcParser::GetTable<::chirp::notification::SetBadgeCountRequest>(),  // to_prefetch
+    ::_pbi::TcParser::GetTable<::chirp::app_notification::SetBadgeCountRequest>(),  // to_prefetch
     #endif  // PROTOBUF_PREFETCH_PARSE_TABLE
   }, {{
     // int32 count = 2;
@@ -6163,7 +6163,7 @@ SetBadgeCountResponse::_table_ = {
     nullptr,  // post_loop_handler
     ::_pbi::TcParser::GenericFallback,  // fallback
     #ifdef PROTOBUF_PREFETCH_PARSE_TABLE
-    ::_pbi::TcParser::GetTable<::chirp::notification::SetBadgeCountResponse>(),  // to_prefetch
+    ::_pbi::TcParser::GetTable<::chirp::app_notification::SetBadgeCountResponse>(),  // to_prefetch
     #endif  // PROTOBUF_PREFETCH_PARSE_TABLE
   }, {{
     // int64 server_time = 2;
@@ -6410,7 +6410,7 @@ SilentNotificationRequest_DataEntry_DoNotUse::_table_ = {
     nullptr,  // post_loop_handler
     ::_pbi::TcParser::DiscardEverythingFallback,  // fallback
     #ifdef PROTOBUF_PREFETCH_PARSE_TABLE
-    ::_pbi::TcParser::GetTable<::chirp::notification::SilentNotificationRequest_DataEntry_DoNotUse>(),  // to_prefetch
+    ::_pbi::TcParser::GetTable<::chirp::app_notification::SilentNotificationRequest_DataEntry_DoNotUse>(),  // to_prefetch
     #endif  // PROTOBUF_PREFETCH_PARSE_TABLE
   }, {{
     // string value = 2;
@@ -6459,7 +6459,7 @@ SilentNotificationRequest::SilentNotificationRequest(::google::protobuf::Arena* 
 PROTOBUF_NDEBUG_INLINE SilentNotificationRequest::Impl_::Impl_(
     [[maybe_unused]] ::google::protobuf::internal::InternalVisibility visibility,
     [[maybe_unused]] ::google::protobuf::Arena* PROTOBUF_NULLABLE arena, const Impl_& from,
-    [[maybe_unused]] const ::chirp::notification::SilentNotificationRequest& from_msg)
+    [[maybe_unused]] const ::chirp::app_notification::SilentNotificationRequest& from_msg)
       : _has_bits_{from._has_bits_},
         _cached_size_{0},
         user_id_(arena, from.user_id_),
@@ -6579,7 +6579,7 @@ SilentNotificationRequest::_table_ = {
     nullptr,  // post_loop_handler
     ::_pbi::TcParser::GenericFallback,  // fallback
     #ifdef PROTOBUF_PREFETCH_PARSE_TABLE
-    ::_pbi::TcParser::GetTable<::chirp::notification::SilentNotificationRequest>(),  // to_prefetch
+    ::_pbi::TcParser::GetTable<::chirp::app_notification::SilentNotificationRequest>(),  // to_prefetch
     #endif  // PROTOBUF_PREFETCH_PARSE_TABLE
   }, {{
     {::_pbi::TcParser::MiniParse, {}},
@@ -6893,7 +6893,7 @@ NotificationPreferences_ChannelSettingsEntry_DoNotUse::_table_ = {
     nullptr,  // post_loop_handler
     ::_pbi::TcParser::DiscardEverythingFallback,  // fallback
     #ifdef PROTOBUF_PREFETCH_PARSE_TABLE
-    ::_pbi::TcParser::GetTable<::chirp::notification::NotificationPreferences_ChannelSettingsEntry_DoNotUse>(),  // to_prefetch
+    ::_pbi::TcParser::GetTable<::chirp::app_notification::NotificationPreferences_ChannelSettingsEntry_DoNotUse>(),  // to_prefetch
     #endif  // PROTOBUF_PREFETCH_PARSE_TABLE
   }, {{
     // .chirp.notification.ChannelNotificationSettings value = 2;
@@ -6913,7 +6913,7 @@ NotificationPreferences_ChannelSettingsEntry_DoNotUse::_table_ = {
     {PROTOBUF_FIELD_OFFSET(NotificationPreferences_ChannelSettingsEntry_DoNotUse, _impl_.value_), _Internal::kHasBitsOffset + 1, 0, (0 | ::_fl::kFcOptional | ::_fl::kMessage | ::_fl::kTvTable)},
   }},
   {{
-      {::_pbi::TcParser::GetTable<::chirp::notification::ChannelNotificationSettings>()},
+      {::_pbi::TcParser::GetTable<::chirp::app_notification::ChannelNotificationSettings>()},
   }},
   {{
     "\77\3\0\0\0\0\0\0"
@@ -6943,7 +6943,7 @@ NotificationPreferences::NotificationPreferences(::google::protobuf::Arena* PROT
 PROTOBUF_NDEBUG_INLINE NotificationPreferences::Impl_::Impl_(
     [[maybe_unused]] ::google::protobuf::internal::InternalVisibility visibility,
     [[maybe_unused]] ::google::protobuf::Arena* PROTOBUF_NULLABLE arena, const Impl_& from,
-    [[maybe_unused]] const ::chirp::notification::NotificationPreferences& from_msg)
+    [[maybe_unused]] const ::chirp::app_notification::NotificationPreferences& from_msg)
       : _has_bits_{from._has_bits_},
         _cached_size_{0},
         dnd_days_{visibility, arena, from.dnd_days_},
@@ -7079,7 +7079,7 @@ NotificationPreferences::_table_ = {
     nullptr,  // post_loop_handler
     ::_pbi::TcParser::GenericFallback,  // fallback
     #ifdef PROTOBUF_PREFETCH_PARSE_TABLE
-    ::_pbi::TcParser::GetTable<::chirp::notification::NotificationPreferences>(),  // to_prefetch
+    ::_pbi::TcParser::GetTable<::chirp::app_notification::NotificationPreferences>(),  // to_prefetch
     #endif  // PROTOBUF_PREFETCH_PARSE_TABLE
   }, {{
     {::_pbi::TcParser::MiniParse, {}},
@@ -7167,7 +7167,7 @@ NotificationPreferences::_table_ = {
   {{
       {::_pbi::TcParser::GetMapAuxInfo(
           1, 0, 9, 11, 0)},
-      {::_pbi::TcParser::GetTable<::chirp::notification::ChannelNotificationSettings>()},
+      {::_pbi::TcParser::GetTable<::chirp::app_notification::ChannelNotificationSettings>()},
   }},
   {{
     "\52\0\0\0\0\0\0\0\0\0\0\0\0\20\0\0"
@@ -7335,8 +7335,8 @@ PROTOBUF_NOINLINE void NotificationPreferences::Clear() {
   // map<string, .chirp.notification.ChannelNotificationSettings> channel_settings = 13;
   if (CheckHasBitForRepeated(cached_has_bits, 0x00001000U)) {
     if (!this_._internal_channel_settings().empty()) {
-      using MapType = ::google::protobuf::Map<::std::string, ::chirp::notification::ChannelNotificationSettings>;
-      using WireHelper = _pbi::MapEntryFuncs<::std::string, ::chirp::notification::ChannelNotificationSettings,
+      using MapType = ::google::protobuf::Map<::std::string, ::chirp::app_notification::ChannelNotificationSettings>;
+      using WireHelper = _pbi::MapEntryFuncs<::std::string, ::chirp::app_notification::ChannelNotificationSettings,
                                      _pbi::WireFormatLite::TYPE_STRING,
                                      _pbi::WireFormatLite::TYPE_MESSAGE>;
       const auto& field = this_._internal_channel_settings();
@@ -7469,7 +7469,7 @@ PROTOBUF_NOINLINE void NotificationPreferences::Clear() {
       total_size +=
           1 * ::google::protobuf::internal::FromIntSize(this_._internal_channel_settings_size());
       for (const auto& entry : this_._internal_channel_settings()) {
-        total_size += _pbi::MapEntryFuncs<::std::string, ::chirp::notification::ChannelNotificationSettings,
+        total_size += _pbi::MapEntryFuncs<::std::string, ::chirp::app_notification::ChannelNotificationSettings,
                                        _pbi::WireFormatLite::TYPE_STRING,
                                        _pbi::WireFormatLite::TYPE_MESSAGE>::ByteSizeLong(entry.first, entry.second);
       }
@@ -7705,7 +7705,7 @@ ChannelNotificationSettings::_table_ = {
     nullptr,  // post_loop_handler
     ::_pbi::TcParser::GenericFallback,  // fallback
     #ifdef PROTOBUF_PREFETCH_PARSE_TABLE
-    ::_pbi::TcParser::GetTable<::chirp::notification::ChannelNotificationSettings>(),  // to_prefetch
+    ::_pbi::TcParser::GetTable<::chirp::app_notification::ChannelNotificationSettings>(),  // to_prefetch
     #endif  // PROTOBUF_PREFETCH_PARSE_TABLE
   }, {{
     {::_pbi::TcParser::MiniParse, {}},
@@ -7925,7 +7925,7 @@ SetPreferencesRequest::SetPreferencesRequest(::google::protobuf::Arena* PROTOBUF
 PROTOBUF_NDEBUG_INLINE SetPreferencesRequest::Impl_::Impl_(
     [[maybe_unused]] ::google::protobuf::internal::InternalVisibility visibility,
     [[maybe_unused]] ::google::protobuf::Arena* PROTOBUF_NULLABLE arena, const Impl_& from,
-    [[maybe_unused]] const ::chirp::notification::SetPreferencesRequest& from_msg)
+    [[maybe_unused]] const ::chirp::app_notification::SetPreferencesRequest& from_msg)
       : _has_bits_{from._has_bits_},
         _cached_size_{0},
         user_id_(arena, from.user_id_) {}
@@ -8035,7 +8035,7 @@ SetPreferencesRequest::_table_ = {
     nullptr,  // post_loop_handler
     ::_pbi::TcParser::GenericFallback,  // fallback
     #ifdef PROTOBUF_PREFETCH_PARSE_TABLE
-    ::_pbi::TcParser::GetTable<::chirp::notification::SetPreferencesRequest>(),  // to_prefetch
+    ::_pbi::TcParser::GetTable<::chirp::app_notification::SetPreferencesRequest>(),  // to_prefetch
     #endif  // PROTOBUF_PREFETCH_PARSE_TABLE
   }, {{
     // .chirp.notification.NotificationPreferences preferences = 2;
@@ -8055,7 +8055,7 @@ SetPreferencesRequest::_table_ = {
     {PROTOBUF_FIELD_OFFSET(SetPreferencesRequest, _impl_.preferences_), _Internal::kHasBitsOffset + 1, 0, (0 | ::_fl::kFcOptional | ::_fl::kMessage | ::_fl::kTvTable)},
   }},
   {{
-      {::_pbi::TcParser::GetTable<::chirp::notification::NotificationPreferences>()},
+      {::_pbi::TcParser::GetTable<::chirp::app_notification::NotificationPreferences>()},
   }},
   {{
     "\50\7\0\0\0\0\0\0"
@@ -8340,7 +8340,7 @@ SetPreferencesResponse::_table_ = {
     nullptr,  // post_loop_handler
     ::_pbi::TcParser::GenericFallback,  // fallback
     #ifdef PROTOBUF_PREFETCH_PARSE_TABLE
-    ::_pbi::TcParser::GetTable<::chirp::notification::SetPreferencesResponse>(),  // to_prefetch
+    ::_pbi::TcParser::GetTable<::chirp::app_notification::SetPreferencesResponse>(),  // to_prefetch
     #endif  // PROTOBUF_PREFETCH_PARSE_TABLE
   }, {{
     // int64 server_time = 2;
@@ -8538,7 +8538,7 @@ GetPreferencesRequest::GetPreferencesRequest(::google::protobuf::Arena* PROTOBUF
 PROTOBUF_NDEBUG_INLINE GetPreferencesRequest::Impl_::Impl_(
     [[maybe_unused]] ::google::protobuf::internal::InternalVisibility visibility,
     [[maybe_unused]] ::google::protobuf::Arena* PROTOBUF_NULLABLE arena, const Impl_& from,
-    [[maybe_unused]] const ::chirp::notification::GetPreferencesRequest& from_msg)
+    [[maybe_unused]] const ::chirp::app_notification::GetPreferencesRequest& from_msg)
       : _has_bits_{from._has_bits_},
         _cached_size_{0},
         user_id_(arena, from.user_id_) {}
@@ -8642,7 +8642,7 @@ GetPreferencesRequest::_table_ = {
     nullptr,  // post_loop_handler
     ::_pbi::TcParser::GenericFallback,  // fallback
     #ifdef PROTOBUF_PREFETCH_PARSE_TABLE
-    ::_pbi::TcParser::GetTable<::chirp::notification::GetPreferencesRequest>(),  // to_prefetch
+    ::_pbi::TcParser::GetTable<::chirp::app_notification::GetPreferencesRequest>(),  // to_prefetch
     #endif  // PROTOBUF_PREFETCH_PARSE_TABLE
   }, {{
     // string user_id = 1;
@@ -8813,7 +8813,7 @@ GetPreferencesResponse::GetPreferencesResponse(::google::protobuf::Arena* PROTOB
 PROTOBUF_NDEBUG_INLINE GetPreferencesResponse::Impl_::Impl_(
     [[maybe_unused]] ::google::protobuf::internal::InternalVisibility visibility,
     [[maybe_unused]] ::google::protobuf::Arena* PROTOBUF_NULLABLE arena, const Impl_& from,
-    [[maybe_unused]] const ::chirp::notification::GetPreferencesResponse& from_msg)
+    [[maybe_unused]] const ::chirp::app_notification::GetPreferencesResponse& from_msg)
       : _has_bits_{from._has_bits_},
         _cached_size_{0} {}
 
@@ -8926,7 +8926,7 @@ GetPreferencesResponse::_table_ = {
     nullptr,  // post_loop_handler
     ::_pbi::TcParser::GenericFallback,  // fallback
     #ifdef PROTOBUF_PREFETCH_PARSE_TABLE
-    ::_pbi::TcParser::GetTable<::chirp::notification::GetPreferencesResponse>(),  // to_prefetch
+    ::_pbi::TcParser::GetTable<::chirp::app_notification::GetPreferencesResponse>(),  // to_prefetch
     #endif  // PROTOBUF_PREFETCH_PARSE_TABLE
   }, {{
     // .chirp.notification.NotificationPreferences preferences = 2;
@@ -8946,7 +8946,7 @@ GetPreferencesResponse::_table_ = {
     {PROTOBUF_FIELD_OFFSET(GetPreferencesResponse, _impl_.preferences_), _Internal::kHasBitsOffset + 0, 0, (0 | ::_fl::kFcOptional | ::_fl::kMessage | ::_fl::kTvTable)},
   }},
   {{
-      {::_pbi::TcParser::GetTable<::chirp::notification::NotificationPreferences>()},
+      {::_pbi::TcParser::GetTable<::chirp::app_notification::NotificationPreferences>()},
   }},
   {{
   }},

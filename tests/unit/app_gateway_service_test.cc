@@ -25,8 +25,8 @@
 #include "proto/chat.pb.h"
 #include "proto/common.pb.h"
 #include "proto/gateway.pb.h"
-#include "proto/notification.pb.h"
-#include "proto/server_gateway.pb.h"
+#include "proto/app_notification.pb.h"
+#include "proto/game_server_gateway.pb.h"
 
 // Relative path on purpose: a bare "main.cc" would resolve through the -I
 // path to services/gateway/src/main.cc (the game gateway) instead.
@@ -199,25 +199,25 @@ class FakeNotificationServer {
         std::string body;
         switch (pkt.msg_id()) {
         case chirp::gateway::UNREGISTER_DEVICE_REQ: {
-          chirp::notification::UnregisterDeviceResponse r;
+          chirp::app_notification::UnregisterDeviceResponse r;
           r.set_code(chirp::common::OK);
           body = r.SerializeAsString();
           break;
         }
         case chirp::gateway::UPDATE_DEVICE_TOKEN_REQ: {
-          chirp::notification::UpdateDeviceTokenResponse r;
+          chirp::app_notification::UpdateDeviceTokenResponse r;
           r.set_code(chirp::common::OK);
           body = r.SerializeAsString();
           break;
         }
         case chirp::gateway::GET_USER_DEVICES_REQ: {
-          chirp::notification::GetUserDevicesResponse r;
+          chirp::app_notification::GetUserDevicesResponse r;
           r.set_code(chirp::common::OK);
           body = r.SerializeAsString();
           break;
         }
         default: {
-          chirp::notification::RegisterDeviceResponse r;
+          chirp::app_notification::RegisterDeviceResponse r;
           r.set_code(chirp::common::OK);
           body = r.SerializeAsString();
           break;
@@ -336,7 +336,7 @@ class FakeServerGatewayServer {
         bool answered = true;
         switch (pkt.msg_id()) {
         case chirp::gateway::SERVER_AUTH_REQ: {
-          chirp::server_gateway::ServerAuthResponse r;
+          chirp::game_server_gateway::ServerAuthResponse r;
           r.set_code(chirp::common::OK);
           r.set_heartbeat_interval_seconds(1);
           resp.set_msg_id(chirp::gateway::SERVER_AUTH_RESP);
@@ -344,13 +344,13 @@ class FakeServerGatewayServer {
           break;
         }
         case chirp::gateway::SERVER_HEARTBEAT_PING: {
-          chirp::server_gateway::ServerHeartbeatPong r;
+          chirp::game_server_gateway::ServerHeartbeatPong r;
           resp.set_msg_id(chirp::gateway::SERVER_HEARTBEAT_PONG);
           resp.set_body(r.SerializeAsString());
           break;
         }
         case chirp::gateway::SUBSCRIBE_PLAYER_CHANNEL_REQ: {
-          chirp::server_gateway::SubscribePlayerChannelResponse r;
+          chirp::game_server_gateway::SubscribePlayerChannelResponse r;
           r.set_code(chirp::common::OK);
           r.set_subscription_id("sub-fake-1");
           resp.set_msg_id(chirp::gateway::SUBSCRIBE_PLAYER_CHANNEL_RESP);
@@ -358,14 +358,14 @@ class FakeServerGatewayServer {
           break;
         }
         case chirp::gateway::UNSUBSCRIBE_PLAYER_CHANNEL_REQ: {
-          chirp::server_gateway::UnsubscribePlayerChannelResponse r;
+          chirp::game_server_gateway::UnsubscribePlayerChannelResponse r;
           r.set_code(chirp::common::OK);
           resp.set_msg_id(chirp::gateway::UNSUBSCRIBE_PLAYER_CHANNEL_RESP);
           resp.set_body(r.SerializeAsString());
           break;
         }
         case chirp::gateway::GET_PLAYER_SUBSCRIPTIONS_REQ: {
-          chirp::server_gateway::GetPlayerSubscriptionsResponse r;
+          chirp::game_server_gateway::GetPlayerSubscriptionsResponse r;
           r.set_code(chirp::common::OK);
           r.add_subscriptions()->set_subscription_id("sub-fake-1");
           resp.set_msg_id(chirp::gateway::GET_PLAYER_SUBSCRIPTIONS_RESP);
@@ -373,7 +373,7 @@ class FakeServerGatewayServer {
           break;
         }
         case chirp::gateway::MARK_CHANNELS_READ_REQ: {
-          chirp::server_gateway::MarkChannelsReadResponse r;
+          chirp::game_server_gateway::MarkChannelsReadResponse r;
           r.set_code(chirp::common::OK);
           r.set_cleared(1);
           resp.set_msg_id(chirp::gateway::MARK_CHANNELS_READ_RESP);
@@ -381,7 +381,7 @@ class FakeServerGatewayServer {
           break;
         }
         case chirp::gateway::GET_UNREAD_SUMMARY_REQ: {
-          chirp::server_gateway::GetUnreadSummaryResponse r;
+          chirp::game_server_gateway::GetUnreadSummaryResponse r;
           r.set_code(chirp::common::OK);
           auto* entry = r.add_entries();
           entry->set_game_id("game_a");
@@ -647,17 +647,17 @@ TEST_F(AppGatewayServiceTest, RegisterDeviceGarbageBodyRejected) {
   SendFrame(chirp::gateway::REGISTER_DEVICE_REQ, 6, "\x01\x02\x03");
 
   ASSERT_EQ(session_->sent.size(), 1u);
-  chirp::notification::RegisterDeviceResponse resp;
+  chirp::app_notification::RegisterDeviceResponse resp;
   ASSERT_TRUE(LastBody(*session_, &resp));
   EXPECT_EQ(resp.code(), chirp::common::INVALID_PARAM);
 }
 
 TEST_F(AppGatewayServiceTest, RegisterDeviceUnauthenticatedDenied) {
-  chirp::notification::RegisterDeviceRequest req;
+  chirp::app_notification::RegisterDeviceRequest req;
   req.set_device_id("dev-1");
   SendFrame(chirp::gateway::REGISTER_DEVICE_REQ, 6, req.SerializeAsString());
 
-  chirp::notification::RegisterDeviceResponse resp;
+  chirp::app_notification::RegisterDeviceResponse resp;
   ASSERT_TRUE(LastBody(*session_, &resp));
   EXPECT_EQ(resp.code(), chirp::common::AUTH_FAILED);
 }
@@ -665,11 +665,11 @@ TEST_F(AppGatewayServiceTest, RegisterDeviceUnauthenticatedDenied) {
 TEST_F(AppGatewayServiceTest, RegisterDeviceWithoutNotificationPlaneUnavailable) {
   Login(session_, "alice");
 
-  chirp::notification::RegisterDeviceRequest req;
+  chirp::app_notification::RegisterDeviceRequest req;
   req.set_device_id("dev-1");
   SendFrame(chirp::gateway::REGISTER_DEVICE_REQ, 6, req.SerializeAsString());
 
-  chirp::notification::RegisterDeviceResponse resp;
+  chirp::app_notification::RegisterDeviceResponse resp;
   ASSERT_TRUE(LastBody(*session_, &resp));
   EXPECT_EQ(resp.code(), chirp::common::SERVER_UNAVAILABLE);
 }
@@ -677,12 +677,12 @@ TEST_F(AppGatewayServiceTest, RegisterDeviceWithoutNotificationPlaneUnavailable)
 TEST_F(AppGatewayServiceTest, RegisterDeviceForwardedWithPinnedUserId) {
   FakeNotificationServer fake;
   asio::io_context io;
-  auto notification = std::make_unique<chirp::notification::NotificationClient>(
+  auto notification = std::make_unique<chirp::app_notification::NotificationClient>(
       io, "127.0.0.1", fake.port());
 
   Login(session_, "alice");
 
-  chirp::notification::RegisterDeviceRequest req;
+  chirp::app_notification::RegisterDeviceRequest req;
   req.set_device_id("dev-1");
   req.set_user_id("spoofed-user");  // must be overwritten by the gateway
   req.set_platform("android");
@@ -704,14 +704,14 @@ TEST_F(AppGatewayServiceTest, RegisterDeviceForwardedWithPinnedUserId) {
   // The notification plane must have received the authenticated user.
   auto received = fake.Received();
   ASSERT_EQ(received.size(), 1u);
-  chirp::notification::RegisterDeviceRequest forwarded;
+  chirp::app_notification::RegisterDeviceRequest forwarded;
   ASSERT_TRUE(forwarded.ParseFromString(received[0]));
   EXPECT_EQ(forwarded.user_id(), "alice");
   EXPECT_EQ(forwarded.device_id(), "dev-1");
 
   // And the OK response must have been relayed to the session.
   ASSERT_FALSE(session_->sent.empty());
-  chirp::notification::RegisterDeviceResponse resp;
+  chirp::app_notification::RegisterDeviceResponse resp;
   ASSERT_TRUE(LastBody(*session_, &resp));
   EXPECT_EQ(resp.code(), chirp::common::OK);
 }
@@ -719,12 +719,12 @@ TEST_F(AppGatewayServiceTest, RegisterDeviceForwardedWithPinnedUserId) {
 TEST_F(AppGatewayServiceTest, UpdateDeviceTokenForwardedByDeviceIdOnly) {
   FakeNotificationServer fake;
   asio::io_context io;
-  auto notification = std::make_unique<chirp::notification::NotificationClient>(
+  auto notification = std::make_unique<chirp::app_notification::NotificationClient>(
       io, "127.0.0.1", fake.port());
 
   Login(session_, "alice");
 
-  chirp::notification::UpdateDeviceTokenRequest req;
+  chirp::app_notification::UpdateDeviceTokenRequest req;
   req.set_device_id("dev-9");
   req.set_fcm_token("fcm-token-xyz");
 
@@ -742,26 +742,26 @@ TEST_F(AppGatewayServiceTest, UpdateDeviceTokenForwardedByDeviceIdOnly) {
 
   auto received = fake.Received();
   ASSERT_EQ(received.size(), 1u);
-  chirp::notification::UpdateDeviceTokenRequest forwarded;
+  chirp::app_notification::UpdateDeviceTokenRequest forwarded;
   ASSERT_TRUE(forwarded.ParseFromString(received[0]));
   EXPECT_EQ(forwarded.device_id(), "dev-9");
   EXPECT_EQ(forwarded.fcm_token(), "fcm-token-xyz");
   // No user_id field at all: the update message addresses devices by id.
 
   ASSERT_FALSE(session_->sent.empty());
-  chirp::notification::UpdateDeviceTokenResponse resp;
+  chirp::app_notification::UpdateDeviceTokenResponse resp;
   ASSERT_TRUE(LastBody(*session_, &resp));
   EXPECT_EQ(resp.code(), chirp::common::OK);
 }
 
 TEST_F(AppGatewayServiceTest, SubscriptionUnauthenticatedDenied) {
-  chirp::server_gateway::SubscribePlayerChannelRequest req;
+  chirp::game_server_gateway::SubscribePlayerChannelRequest req;
   req.set_player_id("alice");
   req.set_game_id("game_a");
   req.set_channel_id("world");
   SendFrame(chirp::gateway::SUBSCRIBE_PLAYER_CHANNEL_REQ, 11, req.SerializeAsString());
 
-  chirp::server_gateway::SubscribePlayerChannelResponse resp;
+  chirp::game_server_gateway::SubscribePlayerChannelResponse resp;
   ASSERT_TRUE(LastBody(*session_, &resp));
   EXPECT_EQ(resp.code(), chirp::common::AUTH_FAILED);
 }
@@ -769,13 +769,13 @@ TEST_F(AppGatewayServiceTest, SubscriptionUnauthenticatedDenied) {
 TEST_F(AppGatewayServiceTest, SubscriptionWithoutServerPlaneUnavailable) {
   Login(session_, "alice");
 
-  chirp::server_gateway::SubscribePlayerChannelRequest req;
+  chirp::game_server_gateway::SubscribePlayerChannelRequest req;
   req.set_player_id("alice");
   req.set_game_id("game_a");
   req.set_channel_id("world");
   SendFrame(chirp::gateway::SUBSCRIBE_PLAYER_CHANNEL_REQ, 11, req.SerializeAsString());
 
-  chirp::server_gateway::SubscribePlayerChannelResponse resp;
+  chirp::game_server_gateway::SubscribePlayerChannelResponse resp;
   ASSERT_TRUE(LastBody(*session_, &resp));
   EXPECT_EQ(resp.code(), chirp::common::SERVER_UNAVAILABLE);
 }
@@ -800,7 +800,7 @@ TEST_F(AppGatewayServiceTest, SubscriptionForwardedWithPinnedPlayerId) {
   ASSERT_TRUE(WaitForIo(io, [&] { return fake.CountAuth() >= 1; }, std::chrono::seconds(5)));
   WaitForIo(io, [] { return false; }, std::chrono::milliseconds(100));
 
-  chirp::server_gateway::SubscribePlayerChannelRequest req;
+  chirp::game_server_gateway::SubscribePlayerChannelRequest req;
   req.set_player_id("mallory");  // must be overwritten with the authenticated user
   req.set_game_id("game_a");
   req.set_channel_id("world");
@@ -830,9 +830,9 @@ TEST_F(AppGatewayServiceTest, SubscriptionForwardedWithPinnedPlayerId) {
   // The hub saw the authenticated user, not the spoofed one. Scan rather
   // than take the last frame: heartbeats are recorded too.
   bool found = false;
-  chirp::server_gateway::SubscribePlayerChannelRequest forwarded;
+  chirp::game_server_gateway::SubscribePlayerChannelRequest forwarded;
   for (const auto& body : fake.Received()) {
-    chirp::server_gateway::SubscribePlayerChannelRequest candidate;
+    chirp::game_server_gateway::SubscribePlayerChannelRequest candidate;
     // The game_id filter keeps a heartbeat ping's wire bytes (which share
     // field 1) from parsing into a match.
     if (candidate.ParseFromString(body) && candidate.game_id() == "game_a") {
@@ -845,7 +845,7 @@ TEST_F(AppGatewayServiceTest, SubscriptionForwardedWithPinnedPlayerId) {
   EXPECT_EQ(forwarded.channel_id(), "world");
 
   ASSERT_FALSE(session_->sent.empty());
-  chirp::server_gateway::SubscribePlayerChannelResponse resp;
+  chirp::game_server_gateway::SubscribePlayerChannelResponse resp;
   ASSERT_TRUE(LastBody(*session_, &resp));
   EXPECT_EQ(resp.code(), chirp::common::OK);
   EXPECT_EQ(resp.subscription_id(), "sub-fake-1");
@@ -867,7 +867,7 @@ TEST_F(AppGatewayServiceTest, UnreadMarkForwardedWithPinnedPlayerId) {
   ASSERT_TRUE(WaitForIo(io, [&] { return fake.CountAuth() >= 1; }, std::chrono::seconds(5)));
   WaitForIo(io, [] { return false; }, std::chrono::milliseconds(100));
 
-  chirp::server_gateway::MarkChannelsReadRequest req;
+  chirp::game_server_gateway::MarkChannelsReadRequest req;
   req.set_player_id("mallory");  // must be overwritten with the authenticated user
   req.set_game_id("game_a");
   req.set_channel_id("world");
@@ -895,9 +895,9 @@ TEST_F(AppGatewayServiceTest, UnreadMarkForwardedWithPinnedPlayerId) {
   // filter keeps a heartbeat ping's wire bytes (which share field 1) from
   // parsing into a match.
   bool found = false;
-  chirp::server_gateway::MarkChannelsReadRequest forwarded;
+  chirp::game_server_gateway::MarkChannelsReadRequest forwarded;
   for (const auto& body : fake.Received()) {
-    chirp::server_gateway::MarkChannelsReadRequest candidate;
+    chirp::game_server_gateway::MarkChannelsReadRequest candidate;
     if (candidate.ParseFromString(body) && candidate.game_id() == "game_a") {
       forwarded = candidate;
       found = true;
@@ -907,7 +907,7 @@ TEST_F(AppGatewayServiceTest, UnreadMarkForwardedWithPinnedPlayerId) {
   EXPECT_EQ(forwarded.player_id(), "alice");
   EXPECT_EQ(forwarded.channel_id(), "world");
 
-  chirp::server_gateway::MarkChannelsReadResponse resp;
+  chirp::game_server_gateway::MarkChannelsReadResponse resp;
   ASSERT_TRUE(LastBody(*session_, &resp));
   EXPECT_EQ(resp.code(), chirp::common::OK);
   EXPECT_EQ(resp.cleared(), 1);
@@ -929,7 +929,7 @@ TEST_F(AppGatewayServiceTest, UnreadSummaryForwardedAndRelayed) {
   ASSERT_TRUE(WaitForIo(io, [&] { return fake.CountAuth() >= 1; }, std::chrono::seconds(5)));
   WaitForIo(io, [] { return false; }, std::chrono::milliseconds(100));
 
-  chirp::server_gateway::GetUnreadSummaryRequest req;
+  chirp::game_server_gateway::GetUnreadSummaryRequest req;
   req.set_player_id("mallory");  // must be overwritten with the authenticated user
   req.set_game_id("game_a");
   HandleClientPacket(session_,
@@ -953,9 +953,9 @@ TEST_F(AppGatewayServiceTest, UnreadSummaryForwardedAndRelayed) {
   WaitForIo(io, [&] { return true; }, std::chrono::milliseconds(50));
 
   bool found = false;
-  chirp::server_gateway::GetUnreadSummaryRequest forwarded;
+  chirp::game_server_gateway::GetUnreadSummaryRequest forwarded;
   for (const auto& body : fake.Received()) {
-    chirp::server_gateway::GetUnreadSummaryRequest candidate;
+    chirp::game_server_gateway::GetUnreadSummaryRequest candidate;
     if (candidate.ParseFromString(body) && candidate.game_id() == "game_a") {
       forwarded = candidate;
       found = true;
@@ -965,7 +965,7 @@ TEST_F(AppGatewayServiceTest, UnreadSummaryForwardedAndRelayed) {
   EXPECT_EQ(forwarded.player_id(), "alice");
 
   // The hub's body (entries + total) is relayed verbatim.
-  chirp::server_gateway::GetUnreadSummaryResponse resp;
+  chirp::game_server_gateway::GetUnreadSummaryResponse resp;
   ASSERT_TRUE(LastBody(*session_, &resp));
   EXPECT_EQ(resp.code(), chirp::common::OK);
   ASSERT_EQ(resp.entries_size(), 1);
@@ -1009,7 +1009,7 @@ TEST_F(AppGatewayServiceTest, ChatHandshakeReplaysLoginWithServiceAuth) {
                         std::chrono::seconds(5)));
   const auto auths = chat.All(chirp::gateway::SERVER_AUTH_REQ);
   ASSERT_FALSE(auths.empty());
-  chirp::server_gateway::ServerAuthRequest auth_req;
+  chirp::game_server_gateway::ServerAuthRequest auth_req;
   ASSERT_TRUE(auth_req.ParseFromString(auths.front().body()));
   EXPECT_EQ(auth_req.service_id(), "app_gateway");
   EXPECT_EQ(auth_req.secret(), "edge-secret");

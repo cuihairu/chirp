@@ -199,8 +199,8 @@ extern const ::google::protobuf::internal::ClassDataFull UnsubscribePlayerChanne
 namespace google {
 namespace protobuf {
 template <>
-internal::EnumTraitsT<::chirp::server_gateway::SenderKind_internal_data_>
-    internal::EnumTraitsImpl::value<::chirp::server_gateway::SenderKind>;
+internal::EnumTraitsT<::chirp::game_server_gateway::SenderKind_internal_data_>
+    internal::EnumTraitsImpl::value<::chirp::game_server_gateway::SenderKind>;
 }  // namespace protobuf
 }  // namespace google
 
@@ -4238,12 +4238,12 @@ class MessageInjectRequest final : public ::google::protobuf::Message
   public:
   // .chirp.server_gateway.SenderKind sender_kind = 2;
   void clear_sender_kind() ;
-  ::chirp::server_gateway::SenderKind sender_kind() const;
-  void set_sender_kind(::chirp::server_gateway::SenderKind value);
+  ::chirp::game_server_gateway::SenderKind sender_kind() const;
+  void set_sender_kind(::chirp::game_server_gateway::SenderKind value);
 
   private:
-  ::chirp::server_gateway::SenderKind _internal_sender_kind() const;
-  void _internal_set_sender_kind(::chirp::server_gateway::SenderKind value);
+  ::chirp::game_server_gateway::SenderKind _internal_sender_kind() const;
+  void _internal_set_sender_kind(::chirp::game_server_gateway::SenderKind value);
 
   public:
   // int32 channel_type = 4;
@@ -7071,16 +7071,16 @@ class InjectMessageNotify final : public ::google::protobuf::Message
   // .chirp.server_gateway.MessageInjectRequest message = 1;
   bool has_message() const;
   void clear_message() ;
-  const ::chirp::server_gateway::MessageInjectRequest& message() const;
-  [[nodiscard]] ::chirp::server_gateway::MessageInjectRequest* PROTOBUF_NULLABLE release_message();
-  ::chirp::server_gateway::MessageInjectRequest* PROTOBUF_NONNULL mutable_message();
-  void set_allocated_message(::chirp::server_gateway::MessageInjectRequest* PROTOBUF_NULLABLE value);
-  void unsafe_arena_set_allocated_message(::chirp::server_gateway::MessageInjectRequest* PROTOBUF_NULLABLE value);
-  ::chirp::server_gateway::MessageInjectRequest* PROTOBUF_NULLABLE unsafe_arena_release_message();
+  const ::chirp::game_server_gateway::MessageInjectRequest& message() const;
+  [[nodiscard]] ::chirp::game_server_gateway::MessageInjectRequest* PROTOBUF_NULLABLE release_message();
+  ::chirp::game_server_gateway::MessageInjectRequest* PROTOBUF_NONNULL mutable_message();
+  void set_allocated_message(::chirp::game_server_gateway::MessageInjectRequest* PROTOBUF_NULLABLE value);
+  void unsafe_arena_set_allocated_message(::chirp::game_server_gateway::MessageInjectRequest* PROTOBUF_NULLABLE value);
+  ::chirp::game_server_gateway::MessageInjectRequest* PROTOBUF_NULLABLE unsafe_arena_release_message();
 
   private:
-  const ::chirp::server_gateway::MessageInjectRequest& _internal_message() const;
-  ::chirp::server_gateway::MessageInjectRequest* PROTOBUF_NONNULL _internal_mutable_message();
+  const ::chirp::game_server_gateway::MessageInjectRequest& _internal_message() const;
+  ::chirp::game_server_gateway::MessageInjectRequest* PROTOBUF_NONNULL _internal_mutable_message();
 
   public:
   // @@protoc_insertion_point(class_scope:chirp.server_gateway.InjectMessageNotify)
@@ -7109,7 +7109,7 @@ class InjectMessageNotify final : public ::google::protobuf::Message
         const InjectMessageNotify& from_msg);
     ::google::protobuf::internal::HasBits<1> _has_bits_;
     ::google::protobuf::internal::CachedSize _cached_size_;
-    ::chirp::server_gateway::MessageInjectRequest* PROTOBUF_NULLABLE message_;
+    ::chirp::game_server_gateway::MessageInjectRequest* PROTOBUF_NULLABLE message_;
     PROTOBUF_TSAN_DECLARE_MEMBER
   };
   union { Impl_ _impl_; };
@@ -7272,16 +7272,16 @@ class GetUnreadSummaryResponse final : public ::google::protobuf::Message
 
   public:
   void clear_entries() ;
-  ::chirp::server_gateway::UnreadSummaryEntry* PROTOBUF_NONNULL mutable_entries(int index);
-  ::google::protobuf::RepeatedPtrField<::chirp::server_gateway::UnreadSummaryEntry>* PROTOBUF_NONNULL mutable_entries();
+  ::chirp::game_server_gateway::UnreadSummaryEntry* PROTOBUF_NONNULL mutable_entries(int index);
+  ::google::protobuf::RepeatedPtrField<::chirp::game_server_gateway::UnreadSummaryEntry>* PROTOBUF_NONNULL mutable_entries();
 
   private:
-  const ::google::protobuf::RepeatedPtrField<::chirp::server_gateway::UnreadSummaryEntry>& _internal_entries() const;
-  ::google::protobuf::RepeatedPtrField<::chirp::server_gateway::UnreadSummaryEntry>* PROTOBUF_NONNULL _internal_mutable_entries();
+  const ::google::protobuf::RepeatedPtrField<::chirp::game_server_gateway::UnreadSummaryEntry>& _internal_entries() const;
+  ::google::protobuf::RepeatedPtrField<::chirp::game_server_gateway::UnreadSummaryEntry>* PROTOBUF_NONNULL _internal_mutable_entries();
   public:
-  const ::chirp::server_gateway::UnreadSummaryEntry& entries(int index) const;
-  ::chirp::server_gateway::UnreadSummaryEntry* PROTOBUF_NONNULL add_entries();
-  const ::google::protobuf::RepeatedPtrField<::chirp::server_gateway::UnreadSummaryEntry>& entries() const;
+  const ::chirp::game_server_gateway::UnreadSummaryEntry& entries(int index) const;
+  ::chirp::game_server_gateway::UnreadSummaryEntry* PROTOBUF_NONNULL add_entries();
+  const ::google::protobuf::RepeatedPtrField<::chirp::game_server_gateway::UnreadSummaryEntry>& entries() const;
   // .chirp.common.ErrorCode code = 1;
   void clear_code() ;
   ::chirp::common::ErrorCode code() const;
@@ -7328,7 +7328,7 @@ class GetUnreadSummaryResponse final : public ::google::protobuf::Message
         const GetUnreadSummaryResponse& from_msg);
     ::google::protobuf::internal::HasBits<1> _has_bits_;
     ::google::protobuf::internal::CachedSize _cached_size_;
-    ::google::protobuf::RepeatedPtrField< ::chirp::server_gateway::UnreadSummaryEntry > entries_;
+    ::google::protobuf::RepeatedPtrField< ::chirp::game_server_gateway::UnreadSummaryEntry > entries_;
     int code_;
     ::int32_t total_unread_;
     PROTOBUF_TSAN_DECLARE_MEMBER
@@ -7492,16 +7492,16 @@ class GetPlayerSubscriptionsResponse final : public ::google::protobuf::Message
 
   public:
   void clear_subscriptions() ;
-  ::chirp::server_gateway::StoredChannelSubscription* PROTOBUF_NONNULL mutable_subscriptions(int index);
-  ::google::protobuf::RepeatedPtrField<::chirp::server_gateway::StoredChannelSubscription>* PROTOBUF_NONNULL mutable_subscriptions();
+  ::chirp::game_server_gateway::StoredChannelSubscription* PROTOBUF_NONNULL mutable_subscriptions(int index);
+  ::google::protobuf::RepeatedPtrField<::chirp::game_server_gateway::StoredChannelSubscription>* PROTOBUF_NONNULL mutable_subscriptions();
 
   private:
-  const ::google::protobuf::RepeatedPtrField<::chirp::server_gateway::StoredChannelSubscription>& _internal_subscriptions() const;
-  ::google::protobuf::RepeatedPtrField<::chirp::server_gateway::StoredChannelSubscription>* PROTOBUF_NONNULL _internal_mutable_subscriptions();
+  const ::google::protobuf::RepeatedPtrField<::chirp::game_server_gateway::StoredChannelSubscription>& _internal_subscriptions() const;
+  ::google::protobuf::RepeatedPtrField<::chirp::game_server_gateway::StoredChannelSubscription>* PROTOBUF_NONNULL _internal_mutable_subscriptions();
   public:
-  const ::chirp::server_gateway::StoredChannelSubscription& subscriptions(int index) const;
-  ::chirp::server_gateway::StoredChannelSubscription* PROTOBUF_NONNULL add_subscriptions();
-  const ::google::protobuf::RepeatedPtrField<::chirp::server_gateway::StoredChannelSubscription>& subscriptions() const;
+  const ::chirp::game_server_gateway::StoredChannelSubscription& subscriptions(int index) const;
+  ::chirp::game_server_gateway::StoredChannelSubscription* PROTOBUF_NONNULL add_subscriptions();
+  const ::google::protobuf::RepeatedPtrField<::chirp::game_server_gateway::StoredChannelSubscription>& subscriptions() const;
   // .chirp.common.ErrorCode code = 1;
   void clear_code() ;
   ::chirp::common::ErrorCode code() const;
@@ -7538,7 +7538,7 @@ class GetPlayerSubscriptionsResponse final : public ::google::protobuf::Message
         const GetPlayerSubscriptionsResponse& from_msg);
     ::google::protobuf::internal::HasBits<1> _has_bits_;
     ::google::protobuf::internal::CachedSize _cached_size_;
-    ::google::protobuf::RepeatedPtrField< ::chirp::server_gateway::StoredChannelSubscription > subscriptions_;
+    ::google::protobuf::RepeatedPtrField< ::chirp::game_server_gateway::StoredChannelSubscription > subscriptions_;
     int code_;
     PROTOBUF_TSAN_DECLARE_MEMBER
   };
@@ -7701,16 +7701,16 @@ class GetPlayerIdentitiesResponse final : public ::google::protobuf::Message
 
   public:
   void clear_bindings() ;
-  ::chirp::server_gateway::StoredIdentityBinding* PROTOBUF_NONNULL mutable_bindings(int index);
-  ::google::protobuf::RepeatedPtrField<::chirp::server_gateway::StoredIdentityBinding>* PROTOBUF_NONNULL mutable_bindings();
+  ::chirp::game_server_gateway::StoredIdentityBinding* PROTOBUF_NONNULL mutable_bindings(int index);
+  ::google::protobuf::RepeatedPtrField<::chirp::game_server_gateway::StoredIdentityBinding>* PROTOBUF_NONNULL mutable_bindings();
 
   private:
-  const ::google::protobuf::RepeatedPtrField<::chirp::server_gateway::StoredIdentityBinding>& _internal_bindings() const;
-  ::google::protobuf::RepeatedPtrField<::chirp::server_gateway::StoredIdentityBinding>* PROTOBUF_NONNULL _internal_mutable_bindings();
+  const ::google::protobuf::RepeatedPtrField<::chirp::game_server_gateway::StoredIdentityBinding>& _internal_bindings() const;
+  ::google::protobuf::RepeatedPtrField<::chirp::game_server_gateway::StoredIdentityBinding>* PROTOBUF_NONNULL _internal_mutable_bindings();
   public:
-  const ::chirp::server_gateway::StoredIdentityBinding& bindings(int index) const;
-  ::chirp::server_gateway::StoredIdentityBinding* PROTOBUF_NONNULL add_bindings();
-  const ::google::protobuf::RepeatedPtrField<::chirp::server_gateway::StoredIdentityBinding>& bindings() const;
+  const ::chirp::game_server_gateway::StoredIdentityBinding& bindings(int index) const;
+  ::chirp::game_server_gateway::StoredIdentityBinding* PROTOBUF_NONNULL add_bindings();
+  const ::google::protobuf::RepeatedPtrField<::chirp::game_server_gateway::StoredIdentityBinding>& bindings() const;
   // .chirp.common.ErrorCode code = 1;
   void clear_code() ;
   ::chirp::common::ErrorCode code() const;
@@ -7747,7 +7747,7 @@ class GetPlayerIdentitiesResponse final : public ::google::protobuf::Message
         const GetPlayerIdentitiesResponse& from_msg);
     ::google::protobuf::internal::HasBits<1> _has_bits_;
     ::google::protobuf::internal::CachedSize _cached_size_;
-    ::google::protobuf::RepeatedPtrField< ::chirp::server_gateway::StoredIdentityBinding > bindings_;
+    ::google::protobuf::RepeatedPtrField< ::chirp::game_server_gateway::StoredIdentityBinding > bindings_;
     int code_;
     PROTOBUF_TSAN_DECLARE_MEMBER
   };
@@ -8141,20 +8141,20 @@ inline void MessageInjectRequest::clear_sender_kind() {
   ClearHasBit(_impl_._has_bits_[0],
                   0x00000040U);
 }
-inline ::chirp::server_gateway::SenderKind MessageInjectRequest::sender_kind() const {
+inline ::chirp::game_server_gateway::SenderKind MessageInjectRequest::sender_kind() const {
   // @@protoc_insertion_point(field_get:chirp.server_gateway.MessageInjectRequest.sender_kind)
   return _internal_sender_kind();
 }
-inline void MessageInjectRequest::set_sender_kind(::chirp::server_gateway::SenderKind value) {
+inline void MessageInjectRequest::set_sender_kind(::chirp::game_server_gateway::SenderKind value) {
   _internal_set_sender_kind(value);
   SetHasBit(_impl_._has_bits_[0], 0x00000040U);
   // @@protoc_insertion_point(field_set:chirp.server_gateway.MessageInjectRequest.sender_kind)
 }
-inline ::chirp::server_gateway::SenderKind MessageInjectRequest::_internal_sender_kind() const {
+inline ::chirp::game_server_gateway::SenderKind MessageInjectRequest::_internal_sender_kind() const {
   ::google::protobuf::internal::TSanRead(&_impl_);
-  return static_cast<::chirp::server_gateway::SenderKind>(_impl_.sender_kind_);
+  return static_cast<::chirp::game_server_gateway::SenderKind>(_impl_.sender_kind_);
 }
-inline void MessageInjectRequest::_internal_set_sender_kind(::chirp::server_gateway::SenderKind value) {
+inline void MessageInjectRequest::_internal_set_sender_kind(::chirp::game_server_gateway::SenderKind value) {
   ::google::protobuf::internal::TSanWrite(&_impl_);
   _impl_.sender_kind_ = value;
 }
@@ -8619,22 +8619,22 @@ inline void InjectMessageNotify::clear_message() {
   ClearHasBit(_impl_._has_bits_[0],
                   0x00000001U);
 }
-inline const ::chirp::server_gateway::MessageInjectRequest& InjectMessageNotify::_internal_message() const {
+inline const ::chirp::game_server_gateway::MessageInjectRequest& InjectMessageNotify::_internal_message() const {
   ::google::protobuf::internal::TSanRead(&_impl_);
-  const ::chirp::server_gateway::MessageInjectRequest* p = _impl_.message_;
-  return p != nullptr ? *p : reinterpret_cast<const ::chirp::server_gateway::MessageInjectRequest&>(::chirp::server_gateway::_MessageInjectRequest_default_instance_);
+  const ::chirp::game_server_gateway::MessageInjectRequest* p = _impl_.message_;
+  return p != nullptr ? *p : reinterpret_cast<const ::chirp::game_server_gateway::MessageInjectRequest&>(::chirp::game_server_gateway::_MessageInjectRequest_default_instance_);
 }
-inline const ::chirp::server_gateway::MessageInjectRequest& InjectMessageNotify::message() const ABSL_ATTRIBUTE_LIFETIME_BOUND {
+inline const ::chirp::game_server_gateway::MessageInjectRequest& InjectMessageNotify::message() const ABSL_ATTRIBUTE_LIFETIME_BOUND {
   // @@protoc_insertion_point(field_get:chirp.server_gateway.InjectMessageNotify.message)
   return _internal_message();
 }
 inline void InjectMessageNotify::unsafe_arena_set_allocated_message(
-    ::chirp::server_gateway::MessageInjectRequest* PROTOBUF_NULLABLE value) {
+    ::chirp::game_server_gateway::MessageInjectRequest* PROTOBUF_NULLABLE value) {
   ::google::protobuf::internal::TSanWrite(&_impl_);
   if (GetArena() == nullptr) {
     delete reinterpret_cast<::google::protobuf::MessageLite*>(_impl_.message_);
   }
-  _impl_.message_ = reinterpret_cast<::chirp::server_gateway::MessageInjectRequest*>(value);
+  _impl_.message_ = reinterpret_cast<::chirp::game_server_gateway::MessageInjectRequest*>(value);
   if (value != nullptr) {
     SetHasBit(_impl_._has_bits_[0], 0x00000001U);
   } else {
@@ -8642,11 +8642,11 @@ inline void InjectMessageNotify::unsafe_arena_set_allocated_message(
   }
   // @@protoc_insertion_point(field_unsafe_arena_set_allocated:chirp.server_gateway.InjectMessageNotify.message)
 }
-inline ::chirp::server_gateway::MessageInjectRequest* PROTOBUF_NULLABLE InjectMessageNotify::release_message() {
+inline ::chirp::game_server_gateway::MessageInjectRequest* PROTOBUF_NULLABLE InjectMessageNotify::release_message() {
   ::google::protobuf::internal::TSanWrite(&_impl_);
 
   ClearHasBit(_impl_._has_bits_[0], 0x00000001U);
-  ::chirp::server_gateway::MessageInjectRequest* released = _impl_.message_;
+  ::chirp::game_server_gateway::MessageInjectRequest* released = _impl_.message_;
   _impl_.message_ = nullptr;
   if (::google::protobuf::internal::DebugHardenForceCopyInRelease()) {
     auto* old = reinterpret_cast<::google::protobuf::MessageLite*>(released);
@@ -8661,31 +8661,31 @@ inline ::chirp::server_gateway::MessageInjectRequest* PROTOBUF_NULLABLE InjectMe
   }
   return released;
 }
-inline ::chirp::server_gateway::MessageInjectRequest* PROTOBUF_NULLABLE InjectMessageNotify::unsafe_arena_release_message() {
+inline ::chirp::game_server_gateway::MessageInjectRequest* PROTOBUF_NULLABLE InjectMessageNotify::unsafe_arena_release_message() {
   ::google::protobuf::internal::TSanWrite(&_impl_);
   // @@protoc_insertion_point(field_release:chirp.server_gateway.InjectMessageNotify.message)
 
   ClearHasBit(_impl_._has_bits_[0], 0x00000001U);
-  ::chirp::server_gateway::MessageInjectRequest* temp = _impl_.message_;
+  ::chirp::game_server_gateway::MessageInjectRequest* temp = _impl_.message_;
   _impl_.message_ = nullptr;
   return temp;
 }
-inline ::chirp::server_gateway::MessageInjectRequest* PROTOBUF_NONNULL InjectMessageNotify::_internal_mutable_message() {
+inline ::chirp::game_server_gateway::MessageInjectRequest* PROTOBUF_NONNULL InjectMessageNotify::_internal_mutable_message() {
   ::google::protobuf::internal::TSanWrite(&_impl_);
   if (_impl_.message_ == nullptr) {
-    auto* p = ::google::protobuf::Message::DefaultConstruct<::chirp::server_gateway::MessageInjectRequest>(GetArena());
-    _impl_.message_ = reinterpret_cast<::chirp::server_gateway::MessageInjectRequest*>(p);
+    auto* p = ::google::protobuf::Message::DefaultConstruct<::chirp::game_server_gateway::MessageInjectRequest>(GetArena());
+    _impl_.message_ = reinterpret_cast<::chirp::game_server_gateway::MessageInjectRequest*>(p);
   }
   return _impl_.message_;
 }
-inline ::chirp::server_gateway::MessageInjectRequest* PROTOBUF_NONNULL InjectMessageNotify::mutable_message()
+inline ::chirp::game_server_gateway::MessageInjectRequest* PROTOBUF_NONNULL InjectMessageNotify::mutable_message()
     ABSL_ATTRIBUTE_LIFETIME_BOUND {
   SetHasBit(_impl_._has_bits_[0], 0x00000001U);
-  ::chirp::server_gateway::MessageInjectRequest* _msg = _internal_mutable_message();
+  ::chirp::game_server_gateway::MessageInjectRequest* _msg = _internal_mutable_message();
   // @@protoc_insertion_point(field_mutable:chirp.server_gateway.InjectMessageNotify.message)
   return _msg;
 }
-inline void InjectMessageNotify::set_allocated_message(::chirp::server_gateway::MessageInjectRequest* PROTOBUF_NULLABLE value) {
+inline void InjectMessageNotify::set_allocated_message(::chirp::game_server_gateway::MessageInjectRequest* PROTOBUF_NULLABLE value) {
   ::google::protobuf::Arena* message_arena = GetArena();
   ::google::protobuf::internal::TSanWrite(&_impl_);
   if (message_arena == nullptr) {
@@ -8702,7 +8702,7 @@ inline void InjectMessageNotify::set_allocated_message(::chirp::server_gateway::
     ClearHasBit(_impl_._has_bits_[0], 0x00000001U);
   }
 
-  _impl_.message_ = reinterpret_cast<::chirp::server_gateway::MessageInjectRequest*>(value);
+  _impl_.message_ = reinterpret_cast<::chirp::game_server_gateway::MessageInjectRequest*>(value);
   // @@protoc_insertion_point(field_set_allocated:chirp.server_gateway.InjectMessageNotify.message)
 }
 
@@ -10454,44 +10454,44 @@ inline void GetPlayerIdentitiesResponse::clear_bindings() {
   ClearHasBitForRepeated(_impl_._has_bits_[0],
                   0x00000001U);
 }
-inline ::chirp::server_gateway::StoredIdentityBinding* PROTOBUF_NONNULL GetPlayerIdentitiesResponse::mutable_bindings(int index)
+inline ::chirp::game_server_gateway::StoredIdentityBinding* PROTOBUF_NONNULL GetPlayerIdentitiesResponse::mutable_bindings(int index)
     ABSL_ATTRIBUTE_LIFETIME_BOUND {
   // @@protoc_insertion_point(field_mutable:chirp.server_gateway.GetPlayerIdentitiesResponse.bindings)
   return _internal_mutable_bindings()->Mutable(index);
 }
-inline ::google::protobuf::RepeatedPtrField<::chirp::server_gateway::StoredIdentityBinding>* PROTOBUF_NONNULL GetPlayerIdentitiesResponse::mutable_bindings()
+inline ::google::protobuf::RepeatedPtrField<::chirp::game_server_gateway::StoredIdentityBinding>* PROTOBUF_NONNULL GetPlayerIdentitiesResponse::mutable_bindings()
     ABSL_ATTRIBUTE_LIFETIME_BOUND {
   SetHasBitForRepeated(_impl_._has_bits_[0], 0x00000001U);
   // @@protoc_insertion_point(field_mutable_list:chirp.server_gateway.GetPlayerIdentitiesResponse.bindings)
   ::google::protobuf::internal::TSanWrite(&_impl_);
   return _internal_mutable_bindings();
 }
-inline const ::chirp::server_gateway::StoredIdentityBinding& GetPlayerIdentitiesResponse::bindings(int index) const
+inline const ::chirp::game_server_gateway::StoredIdentityBinding& GetPlayerIdentitiesResponse::bindings(int index) const
     ABSL_ATTRIBUTE_LIFETIME_BOUND {
   // @@protoc_insertion_point(field_get:chirp.server_gateway.GetPlayerIdentitiesResponse.bindings)
   return _internal_bindings().Get(index);
 }
-inline ::chirp::server_gateway::StoredIdentityBinding* PROTOBUF_NONNULL GetPlayerIdentitiesResponse::add_bindings()
+inline ::chirp::game_server_gateway::StoredIdentityBinding* PROTOBUF_NONNULL GetPlayerIdentitiesResponse::add_bindings()
     ABSL_ATTRIBUTE_LIFETIME_BOUND {
   ::google::protobuf::internal::TSanWrite(&_impl_);
-  ::chirp::server_gateway::StoredIdentityBinding* _add =
+  ::chirp::game_server_gateway::StoredIdentityBinding* _add =
       _internal_mutable_bindings()->InternalAddWithArena(
           ::google::protobuf::MessageLite::internal_visibility(), GetArena());
   SetHasBitForRepeated(_impl_._has_bits_[0], 0x00000001U);
   // @@protoc_insertion_point(field_add:chirp.server_gateway.GetPlayerIdentitiesResponse.bindings)
   return _add;
 }
-inline const ::google::protobuf::RepeatedPtrField<::chirp::server_gateway::StoredIdentityBinding>& GetPlayerIdentitiesResponse::bindings() const
+inline const ::google::protobuf::RepeatedPtrField<::chirp::game_server_gateway::StoredIdentityBinding>& GetPlayerIdentitiesResponse::bindings() const
     ABSL_ATTRIBUTE_LIFETIME_BOUND {
   // @@protoc_insertion_point(field_list:chirp.server_gateway.GetPlayerIdentitiesResponse.bindings)
   return _internal_bindings();
 }
-inline const ::google::protobuf::RepeatedPtrField<::chirp::server_gateway::StoredIdentityBinding>&
+inline const ::google::protobuf::RepeatedPtrField<::chirp::game_server_gateway::StoredIdentityBinding>&
 GetPlayerIdentitiesResponse::_internal_bindings() const {
   ::google::protobuf::internal::TSanRead(&_impl_);
   return _impl_.bindings_;
 }
-inline ::google::protobuf::RepeatedPtrField<::chirp::server_gateway::StoredIdentityBinding>* PROTOBUF_NONNULL
+inline ::google::protobuf::RepeatedPtrField<::chirp::game_server_gateway::StoredIdentityBinding>* PROTOBUF_NONNULL
 GetPlayerIdentitiesResponse::_internal_mutable_bindings() {
   ::google::protobuf::internal::TSanRead(&_impl_);
   return &_impl_.bindings_;
@@ -11866,44 +11866,44 @@ inline void GetPlayerSubscriptionsResponse::clear_subscriptions() {
   ClearHasBitForRepeated(_impl_._has_bits_[0],
                   0x00000001U);
 }
-inline ::chirp::server_gateway::StoredChannelSubscription* PROTOBUF_NONNULL GetPlayerSubscriptionsResponse::mutable_subscriptions(int index)
+inline ::chirp::game_server_gateway::StoredChannelSubscription* PROTOBUF_NONNULL GetPlayerSubscriptionsResponse::mutable_subscriptions(int index)
     ABSL_ATTRIBUTE_LIFETIME_BOUND {
   // @@protoc_insertion_point(field_mutable:chirp.server_gateway.GetPlayerSubscriptionsResponse.subscriptions)
   return _internal_mutable_subscriptions()->Mutable(index);
 }
-inline ::google::protobuf::RepeatedPtrField<::chirp::server_gateway::StoredChannelSubscription>* PROTOBUF_NONNULL GetPlayerSubscriptionsResponse::mutable_subscriptions()
+inline ::google::protobuf::RepeatedPtrField<::chirp::game_server_gateway::StoredChannelSubscription>* PROTOBUF_NONNULL GetPlayerSubscriptionsResponse::mutable_subscriptions()
     ABSL_ATTRIBUTE_LIFETIME_BOUND {
   SetHasBitForRepeated(_impl_._has_bits_[0], 0x00000001U);
   // @@protoc_insertion_point(field_mutable_list:chirp.server_gateway.GetPlayerSubscriptionsResponse.subscriptions)
   ::google::protobuf::internal::TSanWrite(&_impl_);
   return _internal_mutable_subscriptions();
 }
-inline const ::chirp::server_gateway::StoredChannelSubscription& GetPlayerSubscriptionsResponse::subscriptions(int index) const
+inline const ::chirp::game_server_gateway::StoredChannelSubscription& GetPlayerSubscriptionsResponse::subscriptions(int index) const
     ABSL_ATTRIBUTE_LIFETIME_BOUND {
   // @@protoc_insertion_point(field_get:chirp.server_gateway.GetPlayerSubscriptionsResponse.subscriptions)
   return _internal_subscriptions().Get(index);
 }
-inline ::chirp::server_gateway::StoredChannelSubscription* PROTOBUF_NONNULL GetPlayerSubscriptionsResponse::add_subscriptions()
+inline ::chirp::game_server_gateway::StoredChannelSubscription* PROTOBUF_NONNULL GetPlayerSubscriptionsResponse::add_subscriptions()
     ABSL_ATTRIBUTE_LIFETIME_BOUND {
   ::google::protobuf::internal::TSanWrite(&_impl_);
-  ::chirp::server_gateway::StoredChannelSubscription* _add =
+  ::chirp::game_server_gateway::StoredChannelSubscription* _add =
       _internal_mutable_subscriptions()->InternalAddWithArena(
           ::google::protobuf::MessageLite::internal_visibility(), GetArena());
   SetHasBitForRepeated(_impl_._has_bits_[0], 0x00000001U);
   // @@protoc_insertion_point(field_add:chirp.server_gateway.GetPlayerSubscriptionsResponse.subscriptions)
   return _add;
 }
-inline const ::google::protobuf::RepeatedPtrField<::chirp::server_gateway::StoredChannelSubscription>& GetPlayerSubscriptionsResponse::subscriptions() const
+inline const ::google::protobuf::RepeatedPtrField<::chirp::game_server_gateway::StoredChannelSubscription>& GetPlayerSubscriptionsResponse::subscriptions() const
     ABSL_ATTRIBUTE_LIFETIME_BOUND {
   // @@protoc_insertion_point(field_list:chirp.server_gateway.GetPlayerSubscriptionsResponse.subscriptions)
   return _internal_subscriptions();
 }
-inline const ::google::protobuf::RepeatedPtrField<::chirp::server_gateway::StoredChannelSubscription>&
+inline const ::google::protobuf::RepeatedPtrField<::chirp::game_server_gateway::StoredChannelSubscription>&
 GetPlayerSubscriptionsResponse::_internal_subscriptions() const {
   ::google::protobuf::internal::TSanRead(&_impl_);
   return _impl_.subscriptions_;
 }
-inline ::google::protobuf::RepeatedPtrField<::chirp::server_gateway::StoredChannelSubscription>* PROTOBUF_NONNULL
+inline ::google::protobuf::RepeatedPtrField<::chirp::game_server_gateway::StoredChannelSubscription>* PROTOBUF_NONNULL
 GetPlayerSubscriptionsResponse::_internal_mutable_subscriptions() {
   ::google::protobuf::internal::TSanRead(&_impl_);
   return &_impl_.subscriptions_;
@@ -12721,44 +12721,44 @@ inline void GetUnreadSummaryResponse::clear_entries() {
   ClearHasBitForRepeated(_impl_._has_bits_[0],
                   0x00000001U);
 }
-inline ::chirp::server_gateway::UnreadSummaryEntry* PROTOBUF_NONNULL GetUnreadSummaryResponse::mutable_entries(int index)
+inline ::chirp::game_server_gateway::UnreadSummaryEntry* PROTOBUF_NONNULL GetUnreadSummaryResponse::mutable_entries(int index)
     ABSL_ATTRIBUTE_LIFETIME_BOUND {
   // @@protoc_insertion_point(field_mutable:chirp.server_gateway.GetUnreadSummaryResponse.entries)
   return _internal_mutable_entries()->Mutable(index);
 }
-inline ::google::protobuf::RepeatedPtrField<::chirp::server_gateway::UnreadSummaryEntry>* PROTOBUF_NONNULL GetUnreadSummaryResponse::mutable_entries()
+inline ::google::protobuf::RepeatedPtrField<::chirp::game_server_gateway::UnreadSummaryEntry>* PROTOBUF_NONNULL GetUnreadSummaryResponse::mutable_entries()
     ABSL_ATTRIBUTE_LIFETIME_BOUND {
   SetHasBitForRepeated(_impl_._has_bits_[0], 0x00000001U);
   // @@protoc_insertion_point(field_mutable_list:chirp.server_gateway.GetUnreadSummaryResponse.entries)
   ::google::protobuf::internal::TSanWrite(&_impl_);
   return _internal_mutable_entries();
 }
-inline const ::chirp::server_gateway::UnreadSummaryEntry& GetUnreadSummaryResponse::entries(int index) const
+inline const ::chirp::game_server_gateway::UnreadSummaryEntry& GetUnreadSummaryResponse::entries(int index) const
     ABSL_ATTRIBUTE_LIFETIME_BOUND {
   // @@protoc_insertion_point(field_get:chirp.server_gateway.GetUnreadSummaryResponse.entries)
   return _internal_entries().Get(index);
 }
-inline ::chirp::server_gateway::UnreadSummaryEntry* PROTOBUF_NONNULL GetUnreadSummaryResponse::add_entries()
+inline ::chirp::game_server_gateway::UnreadSummaryEntry* PROTOBUF_NONNULL GetUnreadSummaryResponse::add_entries()
     ABSL_ATTRIBUTE_LIFETIME_BOUND {
   ::google::protobuf::internal::TSanWrite(&_impl_);
-  ::chirp::server_gateway::UnreadSummaryEntry* _add =
+  ::chirp::game_server_gateway::UnreadSummaryEntry* _add =
       _internal_mutable_entries()->InternalAddWithArena(
           ::google::protobuf::MessageLite::internal_visibility(), GetArena());
   SetHasBitForRepeated(_impl_._has_bits_[0], 0x00000001U);
   // @@protoc_insertion_point(field_add:chirp.server_gateway.GetUnreadSummaryResponse.entries)
   return _add;
 }
-inline const ::google::protobuf::RepeatedPtrField<::chirp::server_gateway::UnreadSummaryEntry>& GetUnreadSummaryResponse::entries() const
+inline const ::google::protobuf::RepeatedPtrField<::chirp::game_server_gateway::UnreadSummaryEntry>& GetUnreadSummaryResponse::entries() const
     ABSL_ATTRIBUTE_LIFETIME_BOUND {
   // @@protoc_insertion_point(field_list:chirp.server_gateway.GetUnreadSummaryResponse.entries)
   return _internal_entries();
 }
-inline const ::google::protobuf::RepeatedPtrField<::chirp::server_gateway::UnreadSummaryEntry>&
+inline const ::google::protobuf::RepeatedPtrField<::chirp::game_server_gateway::UnreadSummaryEntry>&
 GetUnreadSummaryResponse::_internal_entries() const {
   ::google::protobuf::internal::TSanRead(&_impl_);
   return _impl_.entries_;
 }
-inline ::google::protobuf::RepeatedPtrField<::chirp::server_gateway::UnreadSummaryEntry>* PROTOBUF_NONNULL
+inline ::google::protobuf::RepeatedPtrField<::chirp::game_server_gateway::UnreadSummaryEntry>* PROTOBUF_NONNULL
 GetUnreadSummaryResponse::_internal_mutable_entries() {
   ::google::protobuf::internal::TSanRead(&_impl_);
   return &_impl_.entries_;
@@ -12802,10 +12802,10 @@ namespace google {
 namespace protobuf {
 
 template <>
-struct is_proto_enum<::chirp::server_gateway::SenderKind> : std::true_type {};
+struct is_proto_enum<::chirp::game_server_gateway::SenderKind> : std::true_type {};
 template <>
-inline const EnumDescriptor* PROTOBUF_NONNULL GetEnumDescriptor<::chirp::server_gateway::SenderKind>() {
-  return ::chirp::server_gateway::SenderKind_descriptor();
+inline const EnumDescriptor* PROTOBUF_NONNULL GetEnumDescriptor<::chirp::game_server_gateway::SenderKind>() {
+  return ::chirp::game_server_gateway::SenderKind_descriptor();
 }
 
 }  // namespace protobuf

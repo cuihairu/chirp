@@ -17,7 +17,7 @@
 #include "proto/common.pb.h"
 
 namespace chirp {
-namespace notification {
+namespace app_notification {
 
 namespace {
 
@@ -239,5 +239,5 @@ void NotificationClient::AsyncGetUserDevices(const GetUserDevicesRequest& req, i
           });
 }
 
-}  // namespace notification
+}  // namespace app_notification
 }  // namespace chirp

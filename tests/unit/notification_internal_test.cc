@@ -29,12 +29,12 @@ struct NotificationServiceInternalAccess {
 
 namespace {
 
-using chirp::notification::APNsConfig;
-using chirp::notification::DeviceRegistration;
-using chirp::notification::FCMConfig;
-using chirp::notification::NotificationPayload;
-using chirp::notification::NotificationService;
-using chirp::notification::NotificationServiceInternalAccess;
+using chirp::app_notification::APNsConfig;
+using chirp::app_notification::DeviceRegistration;
+using chirp::app_notification::FCMConfig;
+using chirp::app_notification::NotificationPayload;
+using chirp::app_notification::NotificationService;
+using chirp::app_notification::NotificationServiceInternalAccess;
 
 NotificationPayload MakePayload() {
   NotificationPayload p;

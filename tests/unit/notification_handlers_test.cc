@@ -24,12 +24,12 @@ Packet MakePacket(chirp::gateway::MsgID msg_id, const std::string& body) {
 
 class NotificationHandlersTest : public ::testing::Test {
  protected:
-  chirp::notification::NotificationService svc_;
-  chirp::notification::NotificationHandlers handlers_{svc_};
+  chirp::app_notification::NotificationService svc_;
+  chirp::app_notification::NotificationHandlers handlers_{svc_};
 };
 
 TEST_F(NotificationHandlersTest, RegistersDeviceAndAnswersPairedResp) {
-  chirp::notification::RegisterDeviceRequest req;
+  chirp::app_notification::RegisterDeviceRequest req;
   req.set_user_id("u1");
   req.set_device_id("dev-1");
   req.set_platform("android");
@@ -41,7 +41,7 @@ TEST_F(NotificationHandlersTest, RegistersDeviceAndAnswersPairedResp) {
   EXPECT_EQ(resp.msg_id(), chirp::gateway::REGISTER_DEVICE_RESP);
   EXPECT_EQ(resp.sequence(), kSeq);
 
-  chirp::notification::RegisterDeviceResponse body;
+  chirp::app_notification::RegisterDeviceResponse body;
   ASSERT_TRUE(body.ParseFromString(resp.body()));
   EXPECT_EQ(body.code(), ErrorCode::OK);
   EXPECT_GT(body.server_time(), 0);
@@ -52,11 +52,11 @@ TEST_F(NotificationHandlersTest, RegisterRejectsGarbageAndMissingIds) {
   Packet resp;
   ASSERT_TRUE(handlers_.HandlePacket(
       MakePacket(chirp::gateway::REGISTER_DEVICE_REQ, "not-proto"), &resp));
-  chirp::notification::RegisterDeviceResponse bad;
+  chirp::app_notification::RegisterDeviceResponse bad;
   ASSERT_TRUE(bad.ParseFromString(resp.body()));
   EXPECT_EQ(bad.code(), ErrorCode::INVALID_PARAM);
 
-  chirp::notification::RegisterDeviceRequest no_ids;  // user_id/device_id empty
+  chirp::app_notification::RegisterDeviceRequest no_ids;  // user_id/device_id empty
   Packet resp2;
   ASSERT_TRUE(handlers_.HandlePacket(
       MakePacket(chirp::gateway::REGISTER_DEVICE_REQ, no_ids.SerializeAsString()), &resp2));
@@ -65,19 +65,19 @@ TEST_F(NotificationHandlersTest, RegisterRejectsGarbageAndMissingIds) {
 }
 
 TEST_F(NotificationHandlersTest, UnregistersDeviceOrReportsUnknown) {
-  chirp::notification::DeviceRegistration reg;
+  chirp::app_notification::DeviceRegistration reg;
   reg.device_id = "dev-2";
   reg.user_id = "u2";
   svc_.RegisterDevice(reg);
 
-  chirp::notification::UnregisterDeviceRequest req;
+  chirp::app_notification::UnregisterDeviceRequest req;
   req.set_user_id("u2");
   req.set_device_id("dev-2");
   Packet resp;
   ASSERT_TRUE(handlers_.HandlePacket(
       MakePacket(chirp::gateway::UNREGISTER_DEVICE_REQ, req.SerializeAsString()), &resp));
   EXPECT_EQ(resp.msg_id(), chirp::gateway::UNREGISTER_DEVICE_RESP);
-  chirp::notification::UnregisterDeviceResponse ok;
+  chirp::app_notification::UnregisterDeviceResponse ok;
   ASSERT_TRUE(ok.ParseFromString(resp.body()));
   EXPECT_EQ(ok.code(), ErrorCode::OK);
 
@@ -85,7 +85,7 @@ TEST_F(NotificationHandlersTest, UnregistersDeviceOrReportsUnknown) {
   Packet resp2;
   ASSERT_TRUE(handlers_.HandlePacket(
       MakePacket(chirp::gateway::UNREGISTER_DEVICE_REQ, req.SerializeAsString()), &resp2));
-  chirp::notification::UnregisterDeviceResponse missing;
+  chirp::app_notification::UnregisterDeviceResponse missing;
   ASSERT_TRUE(missing.ParseFromString(resp2.body()));
   EXPECT_EQ(missing.code(), ErrorCode::USER_NOT_FOUND);
 
@@ -93,32 +93,32 @@ TEST_F(NotificationHandlersTest, UnregistersDeviceOrReportsUnknown) {
   Packet resp3;
   ASSERT_TRUE(handlers_.HandlePacket(
       MakePacket(chirp::gateway::UNREGISTER_DEVICE_REQ, "garbage"), &resp3));
-  chirp::notification::UnregisterDeviceResponse bad;
+  chirp::app_notification::UnregisterDeviceResponse bad;
   ASSERT_TRUE(bad.ParseFromString(resp3.body()));
   EXPECT_EQ(bad.code(), ErrorCode::INVALID_PARAM);
 }
 
 TEST_F(NotificationHandlersTest, UpdatesFirstNonEmptyToken) {
-  chirp::notification::DeviceRegistration reg;
+  chirp::app_notification::DeviceRegistration reg;
   reg.device_id = "dev-3";
   reg.user_id = "u3";
   reg.platform = "ios";
   svc_.RegisterDevice(reg);
 
-  chirp::notification::UpdateDeviceTokenRequest req;
+  chirp::app_notification::UpdateDeviceTokenRequest req;
   req.set_device_id("dev-3");
   req.set_apns_token("apns-new");
   Packet resp;
   ASSERT_TRUE(handlers_.HandlePacket(
       MakePacket(chirp::gateway::UPDATE_DEVICE_TOKEN_REQ, req.SerializeAsString()), &resp));
   EXPECT_EQ(resp.msg_id(), chirp::gateway::UPDATE_DEVICE_TOKEN_RESP);
-  chirp::notification::UpdateDeviceTokenResponse ok;
+  chirp::app_notification::UpdateDeviceTokenResponse ok;
   ASSERT_TRUE(ok.ParseFromString(resp.body()));
   EXPECT_EQ(ok.code(), ErrorCode::OK);
   EXPECT_EQ(svc_.GetUserDevices("u3")[0].apns_token, "apns-new");
 
   // All token fields empty: INVALID_PARAM.
-  chirp::notification::UpdateDeviceTokenRequest empty;
+  chirp::app_notification::UpdateDeviceTokenRequest empty;
   empty.set_device_id("dev-3");
   Packet resp2;
   ASSERT_TRUE(handlers_.HandlePacket(
@@ -136,7 +136,7 @@ TEST_F(NotificationHandlersTest, UpdatesFirstNonEmptyToken) {
 }
 
 TEST_F(NotificationHandlersTest, ListsUserDevices) {
-  chirp::notification::DeviceRegistration reg;
+  chirp::app_notification::DeviceRegistration reg;
   reg.device_id = "dev-4";
   reg.user_id = "u4";
   reg.platform = "web";
@@ -144,13 +144,13 @@ TEST_F(NotificationHandlersTest, ListsUserDevices) {
   reg.os_version = "linux";
   svc_.RegisterDevice(reg);
 
-  chirp::notification::GetUserDevicesRequest req;
+  chirp::app_notification::GetUserDevicesRequest req;
   req.set_user_id("u4");
   Packet resp;
   ASSERT_TRUE(handlers_.HandlePacket(
       MakePacket(chirp::gateway::GET_USER_DEVICES_REQ, req.SerializeAsString()), &resp));
   EXPECT_EQ(resp.msg_id(), chirp::gateway::GET_USER_DEVICES_RESP);
-  chirp::notification::GetUserDevicesResponse body;
+  chirp::app_notification::GetUserDevicesResponse body;
   ASSERT_TRUE(body.ParseFromString(resp.body()));
   ASSERT_EQ(body.devices_size(), 1);
   EXPECT_EQ(body.devices(0).device_id(), "dev-4");
@@ -168,13 +168,13 @@ TEST_F(NotificationHandlersTest, ListsUserDevices) {
 }
 
 TEST_F(NotificationHandlersTest, PushesToRegisteredDevice) {
-  chirp::notification::DeviceRegistration reg;  // tokenless: stub succeeds
+  chirp::app_notification::DeviceRegistration reg;  // tokenless: stub succeeds
   reg.device_id = "dev-5";
   reg.user_id = "u5";
   reg.platform = "android";
   svc_.RegisterDevice(reg);
 
-  chirp::notification::PushNotificationRequest req;
+  chirp::app_notification::PushNotificationRequest req;
   req.set_user_id("u5");
   req.set_title("t");
   req.set_body("b");
@@ -184,7 +184,7 @@ TEST_F(NotificationHandlersTest, PushesToRegisteredDevice) {
       MakePacket(chirp::gateway::PUSH_NOTIFICATION_REQ, req.SerializeAsString()), &resp));
   EXPECT_EQ(resp.msg_id(), chirp::gateway::PUSH_NOTIFICATION_RESP);
   EXPECT_EQ(resp.sequence(), kSeq);
-  chirp::notification::PushNotificationResponse ok;
+  chirp::app_notification::PushNotificationResponse ok;
   ASSERT_TRUE(ok.ParseFromString(resp.body()));
   EXPECT_EQ(ok.code(), ErrorCode::OK);
 
@@ -193,7 +193,7 @@ TEST_F(NotificationHandlersTest, PushesToRegisteredDevice) {
   Packet resp2;
   ASSERT_TRUE(handlers_.HandlePacket(
       MakePacket(chirp::gateway::PUSH_NOTIFICATION_REQ, req.SerializeAsString()), &resp2));
-  chirp::notification::PushNotificationResponse missing;
+  chirp::app_notification::PushNotificationResponse missing;
   ASSERT_TRUE(missing.ParseFromString(resp2.body()));
   EXPECT_EQ(missing.code(), ErrorCode::USER_NOT_FOUND);
 
@@ -201,7 +201,7 @@ TEST_F(NotificationHandlersTest, PushesToRegisteredDevice) {
   Packet resp3;
   ASSERT_TRUE(handlers_.HandlePacket(
       MakePacket(chirp::gateway::PUSH_NOTIFICATION_REQ, "garbage"), &resp3));
-  chirp::notification::PushNotificationResponse bad;
+  chirp::app_notification::PushNotificationResponse bad;
   ASSERT_TRUE(bad.ParseFromString(resp3.body()));
   EXPECT_EQ(bad.code(), ErrorCode::INVALID_PARAM);
 }

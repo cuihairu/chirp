@@ -3,7 +3,7 @@
 // source: proto/server_gateway.proto
 // Protobuf C++ Version: 6.33.4
 
-#include "proto/server_gateway.pb.h"
+#include "proto/game_server_gateway.pb.h"
 
 #include <algorithm>
 #include <type_traits>
@@ -565,7 +565,7 @@ inline constexpr MessageInjectRequest::Impl_::Impl_(
         game_id_(
             &::google::protobuf::internal::fixed_address_empty_string,
             ::_pbi::ConstantInitialized()),
-        sender_kind_{static_cast< ::chirp::server_gateway::SenderKind >(0)},
+        sender_kind_{static_cast< ::chirp::game_server_gateway::SenderKind >(0)},
         channel_type_{0} {}
 
 template <typename>
@@ -1062,44 +1062,44 @@ const ::uint32_t
     TableStruct_proto_2fserver_5fgateway_2eproto::offsets[] ABSL_ATTRIBUTE_SECTION_VARIABLE(
         protodesc_cold) = {
         0x081, // bitmap
-        PROTOBUF_FIELD_OFFSET(::chirp::server_gateway::ServerAuthRequest, _impl_._has_bits_),
+        PROTOBUF_FIELD_OFFSET(::chirp::game_server_gateway::ServerAuthRequest, _impl_._has_bits_),
         6, // hasbit index offset
-        PROTOBUF_FIELD_OFFSET(::chirp::server_gateway::ServerAuthRequest, _impl_.service_id_),
-        PROTOBUF_FIELD_OFFSET(::chirp::server_gateway::ServerAuthRequest, _impl_.secret_),
-        PROTOBUF_FIELD_OFFSET(::chirp::server_gateway::ServerAuthRequest, _impl_.protocol_version_),
+        PROTOBUF_FIELD_OFFSET(::chirp::game_server_gateway::ServerAuthRequest, _impl_.service_id_),
+        PROTOBUF_FIELD_OFFSET(::chirp::game_server_gateway::ServerAuthRequest, _impl_.secret_),
+        PROTOBUF_FIELD_OFFSET(::chirp::game_server_gateway::ServerAuthRequest, _impl_.protocol_version_),
         0,
         1,
         2,
         0x081, // bitmap
-        PROTOBUF_FIELD_OFFSET(::chirp::server_gateway::ServerAuthResponse, _impl_._has_bits_),
+        PROTOBUF_FIELD_OFFSET(::chirp::game_server_gateway::ServerAuthResponse, _impl_._has_bits_),
         6, // hasbit index offset
-        PROTOBUF_FIELD_OFFSET(::chirp::server_gateway::ServerAuthResponse, _impl_.code_),
-        PROTOBUF_FIELD_OFFSET(::chirp::server_gateway::ServerAuthResponse, _impl_.server_time_ms_),
-        PROTOBUF_FIELD_OFFSET(::chirp::server_gateway::ServerAuthResponse, _impl_.heartbeat_interval_seconds_),
+        PROTOBUF_FIELD_OFFSET(::chirp::game_server_gateway::ServerAuthResponse, _impl_.code_),
+        PROTOBUF_FIELD_OFFSET(::chirp::game_server_gateway::ServerAuthResponse, _impl_.server_time_ms_),
+        PROTOBUF_FIELD_OFFSET(::chirp::game_server_gateway::ServerAuthResponse, _impl_.heartbeat_interval_seconds_),
         1,
         0,
         2,
         0x081, // bitmap
-        PROTOBUF_FIELD_OFFSET(::chirp::server_gateway::ServerHeartbeatPing, _impl_._has_bits_),
+        PROTOBUF_FIELD_OFFSET(::chirp::game_server_gateway::ServerHeartbeatPing, _impl_._has_bits_),
         4, // hasbit index offset
-        PROTOBUF_FIELD_OFFSET(::chirp::server_gateway::ServerHeartbeatPing, _impl_.client_time_ms_),
+        PROTOBUF_FIELD_OFFSET(::chirp::game_server_gateway::ServerHeartbeatPing, _impl_.client_time_ms_),
         0,
         0x081, // bitmap
-        PROTOBUF_FIELD_OFFSET(::chirp::server_gateway::ServerHeartbeatPong, _impl_._has_bits_),
+        PROTOBUF_FIELD_OFFSET(::chirp::game_server_gateway::ServerHeartbeatPong, _impl_._has_bits_),
         4, // hasbit index offset
-        PROTOBUF_FIELD_OFFSET(::chirp::server_gateway::ServerHeartbeatPong, _impl_.server_time_ms_),
+        PROTOBUF_FIELD_OFFSET(::chirp::game_server_gateway::ServerHeartbeatPong, _impl_.server_time_ms_),
         0,
         0x081, // bitmap
-        PROTOBUF_FIELD_OFFSET(::chirp::server_gateway::MessageInjectRequest, _impl_._has_bits_),
+        PROTOBUF_FIELD_OFFSET(::chirp::game_server_gateway::MessageInjectRequest, _impl_._has_bits_),
         11, // hasbit index offset
-        PROTOBUF_FIELD_OFFSET(::chirp::server_gateway::MessageInjectRequest, _impl_.inject_id_),
-        PROTOBUF_FIELD_OFFSET(::chirp::server_gateway::MessageInjectRequest, _impl_.sender_kind_),
-        PROTOBUF_FIELD_OFFSET(::chirp::server_gateway::MessageInjectRequest, _impl_.sender_id_),
-        PROTOBUF_FIELD_OFFSET(::chirp::server_gateway::MessageInjectRequest, _impl_.channel_type_),
-        PROTOBUF_FIELD_OFFSET(::chirp::server_gateway::MessageInjectRequest, _impl_.channel_id_),
-        PROTOBUF_FIELD_OFFSET(::chirp::server_gateway::MessageInjectRequest, _impl_.receiver_id_),
-        PROTOBUF_FIELD_OFFSET(::chirp::server_gateway::MessageInjectRequest, _impl_.content_),
-        PROTOBUF_FIELD_OFFSET(::chirp::server_gateway::MessageInjectRequest, _impl_.game_id_),
+        PROTOBUF_FIELD_OFFSET(::chirp::game_server_gateway::MessageInjectRequest, _impl_.inject_id_),
+        PROTOBUF_FIELD_OFFSET(::chirp::game_server_gateway::MessageInjectRequest, _impl_.sender_kind_),
+        PROTOBUF_FIELD_OFFSET(::chirp::game_server_gateway::MessageInjectRequest, _impl_.sender_id_),
+        PROTOBUF_FIELD_OFFSET(::chirp::game_server_gateway::MessageInjectRequest, _impl_.channel_type_),
+        PROTOBUF_FIELD_OFFSET(::chirp::game_server_gateway::MessageInjectRequest, _impl_.channel_id_),
+        PROTOBUF_FIELD_OFFSET(::chirp::game_server_gateway::MessageInjectRequest, _impl_.receiver_id_),
+        PROTOBUF_FIELD_OFFSET(::chirp::game_server_gateway::MessageInjectRequest, _impl_.content_),
+        PROTOBUF_FIELD_OFFSET(::chirp::game_server_gateway::MessageInjectRequest, _impl_.game_id_),
         0,
         6,
         1,
@@ -1109,245 +1109,245 @@ const ::uint32_t
         4,
         5,
         0x081, // bitmap
-        PROTOBUF_FIELD_OFFSET(::chirp::server_gateway::MessageInjectResponse, _impl_._has_bits_),
+        PROTOBUF_FIELD_OFFSET(::chirp::game_server_gateway::MessageInjectResponse, _impl_._has_bits_),
         5, // hasbit index offset
-        PROTOBUF_FIELD_OFFSET(::chirp::server_gateway::MessageInjectResponse, _impl_.code_),
-        PROTOBUF_FIELD_OFFSET(::chirp::server_gateway::MessageInjectResponse, _impl_.inject_id_),
+        PROTOBUF_FIELD_OFFSET(::chirp::game_server_gateway::MessageInjectResponse, _impl_.code_),
+        PROTOBUF_FIELD_OFFSET(::chirp::game_server_gateway::MessageInjectResponse, _impl_.inject_id_),
         1,
         0,
         0x081, // bitmap
-        PROTOBUF_FIELD_OFFSET(::chirp::server_gateway::InjectMessageNotify, _impl_._has_bits_),
+        PROTOBUF_FIELD_OFFSET(::chirp::game_server_gateway::InjectMessageNotify, _impl_._has_bits_),
         4, // hasbit index offset
-        PROTOBUF_FIELD_OFFSET(::chirp::server_gateway::InjectMessageNotify, _impl_.message_),
+        PROTOBUF_FIELD_OFFSET(::chirp::game_server_gateway::InjectMessageNotify, _impl_.message_),
         0,
         0x081, // bitmap
-        PROTOBUF_FIELD_OFFSET(::chirp::server_gateway::EventPublishRequest, _impl_._has_bits_),
+        PROTOBUF_FIELD_OFFSET(::chirp::game_server_gateway::EventPublishRequest, _impl_._has_bits_),
         7, // hasbit index offset
-        PROTOBUF_FIELD_OFFSET(::chirp::server_gateway::EventPublishRequest, _impl_.event_id_),
-        PROTOBUF_FIELD_OFFSET(::chirp::server_gateway::EventPublishRequest, _impl_.target_service_id_),
-        PROTOBUF_FIELD_OFFSET(::chirp::server_gateway::EventPublishRequest, _impl_.event_type_),
-        PROTOBUF_FIELD_OFFSET(::chirp::server_gateway::EventPublishRequest, _impl_.payload_),
+        PROTOBUF_FIELD_OFFSET(::chirp::game_server_gateway::EventPublishRequest, _impl_.event_id_),
+        PROTOBUF_FIELD_OFFSET(::chirp::game_server_gateway::EventPublishRequest, _impl_.target_service_id_),
+        PROTOBUF_FIELD_OFFSET(::chirp::game_server_gateway::EventPublishRequest, _impl_.event_type_),
+        PROTOBUF_FIELD_OFFSET(::chirp::game_server_gateway::EventPublishRequest, _impl_.payload_),
         0,
         1,
         2,
         3,
         0x081, // bitmap
-        PROTOBUF_FIELD_OFFSET(::chirp::server_gateway::EventPublishResponse, _impl_._has_bits_),
+        PROTOBUF_FIELD_OFFSET(::chirp::game_server_gateway::EventPublishResponse, _impl_._has_bits_),
         6, // hasbit index offset
-        PROTOBUF_FIELD_OFFSET(::chirp::server_gateway::EventPublishResponse, _impl_.code_),
-        PROTOBUF_FIELD_OFFSET(::chirp::server_gateway::EventPublishResponse, _impl_.event_id_),
-        PROTOBUF_FIELD_OFFSET(::chirp::server_gateway::EventPublishResponse, _impl_.queued_),
+        PROTOBUF_FIELD_OFFSET(::chirp::game_server_gateway::EventPublishResponse, _impl_.code_),
+        PROTOBUF_FIELD_OFFSET(::chirp::game_server_gateway::EventPublishResponse, _impl_.event_id_),
+        PROTOBUF_FIELD_OFFSET(::chirp::game_server_gateway::EventPublishResponse, _impl_.queued_),
         1,
         0,
         2,
         0x081, // bitmap
-        PROTOBUF_FIELD_OFFSET(::chirp::server_gateway::EventDeliverNotify, _impl_._has_bits_),
+        PROTOBUF_FIELD_OFFSET(::chirp::game_server_gateway::EventDeliverNotify, _impl_._has_bits_),
         8, // hasbit index offset
-        PROTOBUF_FIELD_OFFSET(::chirp::server_gateway::EventDeliverNotify, _impl_.event_id_),
-        PROTOBUF_FIELD_OFFSET(::chirp::server_gateway::EventDeliverNotify, _impl_.event_type_),
-        PROTOBUF_FIELD_OFFSET(::chirp::server_gateway::EventDeliverNotify, _impl_.payload_),
-        PROTOBUF_FIELD_OFFSET(::chirp::server_gateway::EventDeliverNotify, _impl_.published_at_ms_),
-        PROTOBUF_FIELD_OFFSET(::chirp::server_gateway::EventDeliverNotify, _impl_.attempt_),
+        PROTOBUF_FIELD_OFFSET(::chirp::game_server_gateway::EventDeliverNotify, _impl_.event_id_),
+        PROTOBUF_FIELD_OFFSET(::chirp::game_server_gateway::EventDeliverNotify, _impl_.event_type_),
+        PROTOBUF_FIELD_OFFSET(::chirp::game_server_gateway::EventDeliverNotify, _impl_.payload_),
+        PROTOBUF_FIELD_OFFSET(::chirp::game_server_gateway::EventDeliverNotify, _impl_.published_at_ms_),
+        PROTOBUF_FIELD_OFFSET(::chirp::game_server_gateway::EventDeliverNotify, _impl_.attempt_),
         0,
         1,
         2,
         3,
         4,
         0x081, // bitmap
-        PROTOBUF_FIELD_OFFSET(::chirp::server_gateway::EventAckRequest, _impl_._has_bits_),
+        PROTOBUF_FIELD_OFFSET(::chirp::game_server_gateway::EventAckRequest, _impl_._has_bits_),
         4, // hasbit index offset
-        PROTOBUF_FIELD_OFFSET(::chirp::server_gateway::EventAckRequest, _impl_.event_ids_),
+        PROTOBUF_FIELD_OFFSET(::chirp::game_server_gateway::EventAckRequest, _impl_.event_ids_),
         0,
         0x081, // bitmap
-        PROTOBUF_FIELD_OFFSET(::chirp::server_gateway::EventAckResponse, _impl_._has_bits_),
+        PROTOBUF_FIELD_OFFSET(::chirp::game_server_gateway::EventAckResponse, _impl_._has_bits_),
         4, // hasbit index offset
-        PROTOBUF_FIELD_OFFSET(::chirp::server_gateway::EventAckResponse, _impl_.code_),
+        PROTOBUF_FIELD_OFFSET(::chirp::game_server_gateway::EventAckResponse, _impl_.code_),
         0,
         0x081, // bitmap
-        PROTOBUF_FIELD_OFFSET(::chirp::server_gateway::StoredIdentityBinding, _impl_._has_bits_),
+        PROTOBUF_FIELD_OFFSET(::chirp::game_server_gateway::StoredIdentityBinding, _impl_._has_bits_),
         8, // hasbit index offset
-        PROTOBUF_FIELD_OFFSET(::chirp::server_gateway::StoredIdentityBinding, _impl_.binding_id_),
-        PROTOBUF_FIELD_OFFSET(::chirp::server_gateway::StoredIdentityBinding, _impl_.player_id_),
-        PROTOBUF_FIELD_OFFSET(::chirp::server_gateway::StoredIdentityBinding, _impl_.game_id_),
-        PROTOBUF_FIELD_OFFSET(::chirp::server_gateway::StoredIdentityBinding, _impl_.game_user_id_),
-        PROTOBUF_FIELD_OFFSET(::chirp::server_gateway::StoredIdentityBinding, _impl_.bound_at_ms_),
+        PROTOBUF_FIELD_OFFSET(::chirp::game_server_gateway::StoredIdentityBinding, _impl_.binding_id_),
+        PROTOBUF_FIELD_OFFSET(::chirp::game_server_gateway::StoredIdentityBinding, _impl_.player_id_),
+        PROTOBUF_FIELD_OFFSET(::chirp::game_server_gateway::StoredIdentityBinding, _impl_.game_id_),
+        PROTOBUF_FIELD_OFFSET(::chirp::game_server_gateway::StoredIdentityBinding, _impl_.game_user_id_),
+        PROTOBUF_FIELD_OFFSET(::chirp::game_server_gateway::StoredIdentityBinding, _impl_.bound_at_ms_),
         0,
         1,
         2,
         3,
         4,
         0x081, // bitmap
-        PROTOBUF_FIELD_OFFSET(::chirp::server_gateway::BindPlayerIdentityRequest, _impl_._has_bits_),
+        PROTOBUF_FIELD_OFFSET(::chirp::game_server_gateway::BindPlayerIdentityRequest, _impl_._has_bits_),
         7, // hasbit index offset
-        PROTOBUF_FIELD_OFFSET(::chirp::server_gateway::BindPlayerIdentityRequest, _impl_.binding_id_),
-        PROTOBUF_FIELD_OFFSET(::chirp::server_gateway::BindPlayerIdentityRequest, _impl_.player_id_),
-        PROTOBUF_FIELD_OFFSET(::chirp::server_gateway::BindPlayerIdentityRequest, _impl_.game_id_),
-        PROTOBUF_FIELD_OFFSET(::chirp::server_gateway::BindPlayerIdentityRequest, _impl_.game_user_id_),
+        PROTOBUF_FIELD_OFFSET(::chirp::game_server_gateway::BindPlayerIdentityRequest, _impl_.binding_id_),
+        PROTOBUF_FIELD_OFFSET(::chirp::game_server_gateway::BindPlayerIdentityRequest, _impl_.player_id_),
+        PROTOBUF_FIELD_OFFSET(::chirp::game_server_gateway::BindPlayerIdentityRequest, _impl_.game_id_),
+        PROTOBUF_FIELD_OFFSET(::chirp::game_server_gateway::BindPlayerIdentityRequest, _impl_.game_user_id_),
         0,
         1,
         2,
         3,
         0x081, // bitmap
-        PROTOBUF_FIELD_OFFSET(::chirp::server_gateway::BindPlayerIdentityResponse, _impl_._has_bits_),
+        PROTOBUF_FIELD_OFFSET(::chirp::game_server_gateway::BindPlayerIdentityResponse, _impl_._has_bits_),
         6, // hasbit index offset
-        PROTOBUF_FIELD_OFFSET(::chirp::server_gateway::BindPlayerIdentityResponse, _impl_.code_),
-        PROTOBUF_FIELD_OFFSET(::chirp::server_gateway::BindPlayerIdentityResponse, _impl_.binding_id_),
-        PROTOBUF_FIELD_OFFSET(::chirp::server_gateway::BindPlayerIdentityResponse, _impl_.existed_),
+        PROTOBUF_FIELD_OFFSET(::chirp::game_server_gateway::BindPlayerIdentityResponse, _impl_.code_),
+        PROTOBUF_FIELD_OFFSET(::chirp::game_server_gateway::BindPlayerIdentityResponse, _impl_.binding_id_),
+        PROTOBUF_FIELD_OFFSET(::chirp::game_server_gateway::BindPlayerIdentityResponse, _impl_.existed_),
         1,
         0,
         2,
         0x081, // bitmap
-        PROTOBUF_FIELD_OFFSET(::chirp::server_gateway::UnbindPlayerIdentityRequest, _impl_._has_bits_),
+        PROTOBUF_FIELD_OFFSET(::chirp::game_server_gateway::UnbindPlayerIdentityRequest, _impl_._has_bits_),
         6, // hasbit index offset
-        PROTOBUF_FIELD_OFFSET(::chirp::server_gateway::UnbindPlayerIdentityRequest, _impl_.binding_id_),
-        PROTOBUF_FIELD_OFFSET(::chirp::server_gateway::UnbindPlayerIdentityRequest, _impl_.game_id_),
-        PROTOBUF_FIELD_OFFSET(::chirp::server_gateway::UnbindPlayerIdentityRequest, _impl_.game_user_id_),
+        PROTOBUF_FIELD_OFFSET(::chirp::game_server_gateway::UnbindPlayerIdentityRequest, _impl_.binding_id_),
+        PROTOBUF_FIELD_OFFSET(::chirp::game_server_gateway::UnbindPlayerIdentityRequest, _impl_.game_id_),
+        PROTOBUF_FIELD_OFFSET(::chirp::game_server_gateway::UnbindPlayerIdentityRequest, _impl_.game_user_id_),
         0,
         1,
         2,
         0x081, // bitmap
-        PROTOBUF_FIELD_OFFSET(::chirp::server_gateway::UnbindPlayerIdentityResponse, _impl_._has_bits_),
+        PROTOBUF_FIELD_OFFSET(::chirp::game_server_gateway::UnbindPlayerIdentityResponse, _impl_._has_bits_),
         4, // hasbit index offset
-        PROTOBUF_FIELD_OFFSET(::chirp::server_gateway::UnbindPlayerIdentityResponse, _impl_.code_),
+        PROTOBUF_FIELD_OFFSET(::chirp::game_server_gateway::UnbindPlayerIdentityResponse, _impl_.code_),
         0,
         0x081, // bitmap
-        PROTOBUF_FIELD_OFFSET(::chirp::server_gateway::GetPlayerIdentitiesRequest, _impl_._has_bits_),
+        PROTOBUF_FIELD_OFFSET(::chirp::game_server_gateway::GetPlayerIdentitiesRequest, _impl_._has_bits_),
         4, // hasbit index offset
-        PROTOBUF_FIELD_OFFSET(::chirp::server_gateway::GetPlayerIdentitiesRequest, _impl_.player_id_),
+        PROTOBUF_FIELD_OFFSET(::chirp::game_server_gateway::GetPlayerIdentitiesRequest, _impl_.player_id_),
         0,
         0x081, // bitmap
-        PROTOBUF_FIELD_OFFSET(::chirp::server_gateway::GetPlayerIdentitiesResponse, _impl_._has_bits_),
+        PROTOBUF_FIELD_OFFSET(::chirp::game_server_gateway::GetPlayerIdentitiesResponse, _impl_._has_bits_),
         5, // hasbit index offset
-        PROTOBUF_FIELD_OFFSET(::chirp::server_gateway::GetPlayerIdentitiesResponse, _impl_.code_),
-        PROTOBUF_FIELD_OFFSET(::chirp::server_gateway::GetPlayerIdentitiesResponse, _impl_.bindings_),
+        PROTOBUF_FIELD_OFFSET(::chirp::game_server_gateway::GetPlayerIdentitiesResponse, _impl_.code_),
+        PROTOBUF_FIELD_OFFSET(::chirp::game_server_gateway::GetPlayerIdentitiesResponse, _impl_.bindings_),
         1,
         0,
         0x081, // bitmap
-        PROTOBUF_FIELD_OFFSET(::chirp::server_gateway::ResolveGameUserRequest, _impl_._has_bits_),
+        PROTOBUF_FIELD_OFFSET(::chirp::game_server_gateway::ResolveGameUserRequest, _impl_._has_bits_),
         5, // hasbit index offset
-        PROTOBUF_FIELD_OFFSET(::chirp::server_gateway::ResolveGameUserRequest, _impl_.game_id_),
-        PROTOBUF_FIELD_OFFSET(::chirp::server_gateway::ResolveGameUserRequest, _impl_.game_user_id_),
+        PROTOBUF_FIELD_OFFSET(::chirp::game_server_gateway::ResolveGameUserRequest, _impl_.game_id_),
+        PROTOBUF_FIELD_OFFSET(::chirp::game_server_gateway::ResolveGameUserRequest, _impl_.game_user_id_),
         0,
         1,
         0x081, // bitmap
-        PROTOBUF_FIELD_OFFSET(::chirp::server_gateway::ResolveGameUserResponse, _impl_._has_bits_),
+        PROTOBUF_FIELD_OFFSET(::chirp::game_server_gateway::ResolveGameUserResponse, _impl_._has_bits_),
         5, // hasbit index offset
-        PROTOBUF_FIELD_OFFSET(::chirp::server_gateway::ResolveGameUserResponse, _impl_.code_),
-        PROTOBUF_FIELD_OFFSET(::chirp::server_gateway::ResolveGameUserResponse, _impl_.player_id_),
+        PROTOBUF_FIELD_OFFSET(::chirp::game_server_gateway::ResolveGameUserResponse, _impl_.code_),
+        PROTOBUF_FIELD_OFFSET(::chirp::game_server_gateway::ResolveGameUserResponse, _impl_.player_id_),
         1,
         0,
         0x081, // bitmap
-        PROTOBUF_FIELD_OFFSET(::chirp::server_gateway::StoredChannelSubscription, _impl_._has_bits_),
+        PROTOBUF_FIELD_OFFSET(::chirp::game_server_gateway::StoredChannelSubscription, _impl_._has_bits_),
         8, // hasbit index offset
-        PROTOBUF_FIELD_OFFSET(::chirp::server_gateway::StoredChannelSubscription, _impl_.subscription_id_),
-        PROTOBUF_FIELD_OFFSET(::chirp::server_gateway::StoredChannelSubscription, _impl_.player_id_),
-        PROTOBUF_FIELD_OFFSET(::chirp::server_gateway::StoredChannelSubscription, _impl_.game_id_),
-        PROTOBUF_FIELD_OFFSET(::chirp::server_gateway::StoredChannelSubscription, _impl_.channel_id_),
-        PROTOBUF_FIELD_OFFSET(::chirp::server_gateway::StoredChannelSubscription, _impl_.subscribed_at_ms_),
+        PROTOBUF_FIELD_OFFSET(::chirp::game_server_gateway::StoredChannelSubscription, _impl_.subscription_id_),
+        PROTOBUF_FIELD_OFFSET(::chirp::game_server_gateway::StoredChannelSubscription, _impl_.player_id_),
+        PROTOBUF_FIELD_OFFSET(::chirp::game_server_gateway::StoredChannelSubscription, _impl_.game_id_),
+        PROTOBUF_FIELD_OFFSET(::chirp::game_server_gateway::StoredChannelSubscription, _impl_.channel_id_),
+        PROTOBUF_FIELD_OFFSET(::chirp::game_server_gateway::StoredChannelSubscription, _impl_.subscribed_at_ms_),
         0,
         1,
         2,
         3,
         4,
         0x081, // bitmap
-        PROTOBUF_FIELD_OFFSET(::chirp::server_gateway::SubscribePlayerChannelRequest, _impl_._has_bits_),
+        PROTOBUF_FIELD_OFFSET(::chirp::game_server_gateway::SubscribePlayerChannelRequest, _impl_._has_bits_),
         7, // hasbit index offset
-        PROTOBUF_FIELD_OFFSET(::chirp::server_gateway::SubscribePlayerChannelRequest, _impl_.subscription_id_),
-        PROTOBUF_FIELD_OFFSET(::chirp::server_gateway::SubscribePlayerChannelRequest, _impl_.player_id_),
-        PROTOBUF_FIELD_OFFSET(::chirp::server_gateway::SubscribePlayerChannelRequest, _impl_.game_id_),
-        PROTOBUF_FIELD_OFFSET(::chirp::server_gateway::SubscribePlayerChannelRequest, _impl_.channel_id_),
+        PROTOBUF_FIELD_OFFSET(::chirp::game_server_gateway::SubscribePlayerChannelRequest, _impl_.subscription_id_),
+        PROTOBUF_FIELD_OFFSET(::chirp::game_server_gateway::SubscribePlayerChannelRequest, _impl_.player_id_),
+        PROTOBUF_FIELD_OFFSET(::chirp::game_server_gateway::SubscribePlayerChannelRequest, _impl_.game_id_),
+        PROTOBUF_FIELD_OFFSET(::chirp::game_server_gateway::SubscribePlayerChannelRequest, _impl_.channel_id_),
         0,
         1,
         2,
         3,
         0x081, // bitmap
-        PROTOBUF_FIELD_OFFSET(::chirp::server_gateway::SubscribePlayerChannelResponse, _impl_._has_bits_),
+        PROTOBUF_FIELD_OFFSET(::chirp::game_server_gateway::SubscribePlayerChannelResponse, _impl_._has_bits_),
         6, // hasbit index offset
-        PROTOBUF_FIELD_OFFSET(::chirp::server_gateway::SubscribePlayerChannelResponse, _impl_.code_),
-        PROTOBUF_FIELD_OFFSET(::chirp::server_gateway::SubscribePlayerChannelResponse, _impl_.subscription_id_),
-        PROTOBUF_FIELD_OFFSET(::chirp::server_gateway::SubscribePlayerChannelResponse, _impl_.existed_),
+        PROTOBUF_FIELD_OFFSET(::chirp::game_server_gateway::SubscribePlayerChannelResponse, _impl_.code_),
+        PROTOBUF_FIELD_OFFSET(::chirp::game_server_gateway::SubscribePlayerChannelResponse, _impl_.subscription_id_),
+        PROTOBUF_FIELD_OFFSET(::chirp::game_server_gateway::SubscribePlayerChannelResponse, _impl_.existed_),
         1,
         0,
         2,
         0x081, // bitmap
-        PROTOBUF_FIELD_OFFSET(::chirp::server_gateway::UnsubscribePlayerChannelRequest, _impl_._has_bits_),
+        PROTOBUF_FIELD_OFFSET(::chirp::game_server_gateway::UnsubscribePlayerChannelRequest, _impl_._has_bits_),
         7, // hasbit index offset
-        PROTOBUF_FIELD_OFFSET(::chirp::server_gateway::UnsubscribePlayerChannelRequest, _impl_.subscription_id_),
-        PROTOBUF_FIELD_OFFSET(::chirp::server_gateway::UnsubscribePlayerChannelRequest, _impl_.player_id_),
-        PROTOBUF_FIELD_OFFSET(::chirp::server_gateway::UnsubscribePlayerChannelRequest, _impl_.game_id_),
-        PROTOBUF_FIELD_OFFSET(::chirp::server_gateway::UnsubscribePlayerChannelRequest, _impl_.channel_id_),
+        PROTOBUF_FIELD_OFFSET(::chirp::game_server_gateway::UnsubscribePlayerChannelRequest, _impl_.subscription_id_),
+        PROTOBUF_FIELD_OFFSET(::chirp::game_server_gateway::UnsubscribePlayerChannelRequest, _impl_.player_id_),
+        PROTOBUF_FIELD_OFFSET(::chirp::game_server_gateway::UnsubscribePlayerChannelRequest, _impl_.game_id_),
+        PROTOBUF_FIELD_OFFSET(::chirp::game_server_gateway::UnsubscribePlayerChannelRequest, _impl_.channel_id_),
         0,
         1,
         2,
         3,
         0x081, // bitmap
-        PROTOBUF_FIELD_OFFSET(::chirp::server_gateway::UnsubscribePlayerChannelResponse, _impl_._has_bits_),
+        PROTOBUF_FIELD_OFFSET(::chirp::game_server_gateway::UnsubscribePlayerChannelResponse, _impl_._has_bits_),
         4, // hasbit index offset
-        PROTOBUF_FIELD_OFFSET(::chirp::server_gateway::UnsubscribePlayerChannelResponse, _impl_.code_),
+        PROTOBUF_FIELD_OFFSET(::chirp::game_server_gateway::UnsubscribePlayerChannelResponse, _impl_.code_),
         0,
         0x081, // bitmap
-        PROTOBUF_FIELD_OFFSET(::chirp::server_gateway::GetPlayerSubscriptionsRequest, _impl_._has_bits_),
+        PROTOBUF_FIELD_OFFSET(::chirp::game_server_gateway::GetPlayerSubscriptionsRequest, _impl_._has_bits_),
         5, // hasbit index offset
-        PROTOBUF_FIELD_OFFSET(::chirp::server_gateway::GetPlayerSubscriptionsRequest, _impl_.player_id_),
-        PROTOBUF_FIELD_OFFSET(::chirp::server_gateway::GetPlayerSubscriptionsRequest, _impl_.game_id_),
+        PROTOBUF_FIELD_OFFSET(::chirp::game_server_gateway::GetPlayerSubscriptionsRequest, _impl_.player_id_),
+        PROTOBUF_FIELD_OFFSET(::chirp::game_server_gateway::GetPlayerSubscriptionsRequest, _impl_.game_id_),
         0,
         1,
         0x081, // bitmap
-        PROTOBUF_FIELD_OFFSET(::chirp::server_gateway::GetPlayerSubscriptionsResponse, _impl_._has_bits_),
+        PROTOBUF_FIELD_OFFSET(::chirp::game_server_gateway::GetPlayerSubscriptionsResponse, _impl_._has_bits_),
         5, // hasbit index offset
-        PROTOBUF_FIELD_OFFSET(::chirp::server_gateway::GetPlayerSubscriptionsResponse, _impl_.code_),
-        PROTOBUF_FIELD_OFFSET(::chirp::server_gateway::GetPlayerSubscriptionsResponse, _impl_.subscriptions_),
+        PROTOBUF_FIELD_OFFSET(::chirp::game_server_gateway::GetPlayerSubscriptionsResponse, _impl_.code_),
+        PROTOBUF_FIELD_OFFSET(::chirp::game_server_gateway::GetPlayerSubscriptionsResponse, _impl_.subscriptions_),
         1,
         0,
         0x081, // bitmap
-        PROTOBUF_FIELD_OFFSET(::chirp::server_gateway::StoredUnreadEntry, _impl_._has_bits_),
+        PROTOBUF_FIELD_OFFSET(::chirp::game_server_gateway::StoredUnreadEntry, _impl_._has_bits_),
         7, // hasbit index offset
-        PROTOBUF_FIELD_OFFSET(::chirp::server_gateway::StoredUnreadEntry, _impl_.player_id_),
-        PROTOBUF_FIELD_OFFSET(::chirp::server_gateway::StoredUnreadEntry, _impl_.game_id_),
-        PROTOBUF_FIELD_OFFSET(::chirp::server_gateway::StoredUnreadEntry, _impl_.channel_id_),
-        PROTOBUF_FIELD_OFFSET(::chirp::server_gateway::StoredUnreadEntry, _impl_.unread_count_),
+        PROTOBUF_FIELD_OFFSET(::chirp::game_server_gateway::StoredUnreadEntry, _impl_.player_id_),
+        PROTOBUF_FIELD_OFFSET(::chirp::game_server_gateway::StoredUnreadEntry, _impl_.game_id_),
+        PROTOBUF_FIELD_OFFSET(::chirp::game_server_gateway::StoredUnreadEntry, _impl_.channel_id_),
+        PROTOBUF_FIELD_OFFSET(::chirp::game_server_gateway::StoredUnreadEntry, _impl_.unread_count_),
         0,
         1,
         2,
         3,
         0x081, // bitmap
-        PROTOBUF_FIELD_OFFSET(::chirp::server_gateway::MarkChannelsReadRequest, _impl_._has_bits_),
+        PROTOBUF_FIELD_OFFSET(::chirp::game_server_gateway::MarkChannelsReadRequest, _impl_._has_bits_),
         6, // hasbit index offset
-        PROTOBUF_FIELD_OFFSET(::chirp::server_gateway::MarkChannelsReadRequest, _impl_.player_id_),
-        PROTOBUF_FIELD_OFFSET(::chirp::server_gateway::MarkChannelsReadRequest, _impl_.game_id_),
-        PROTOBUF_FIELD_OFFSET(::chirp::server_gateway::MarkChannelsReadRequest, _impl_.channel_id_),
+        PROTOBUF_FIELD_OFFSET(::chirp::game_server_gateway::MarkChannelsReadRequest, _impl_.player_id_),
+        PROTOBUF_FIELD_OFFSET(::chirp::game_server_gateway::MarkChannelsReadRequest, _impl_.game_id_),
+        PROTOBUF_FIELD_OFFSET(::chirp::game_server_gateway::MarkChannelsReadRequest, _impl_.channel_id_),
         0,
         1,
         2,
         0x081, // bitmap
-        PROTOBUF_FIELD_OFFSET(::chirp::server_gateway::MarkChannelsReadResponse, _impl_._has_bits_),
+        PROTOBUF_FIELD_OFFSET(::chirp::game_server_gateway::MarkChannelsReadResponse, _impl_._has_bits_),
         5, // hasbit index offset
-        PROTOBUF_FIELD_OFFSET(::chirp::server_gateway::MarkChannelsReadResponse, _impl_.code_),
-        PROTOBUF_FIELD_OFFSET(::chirp::server_gateway::MarkChannelsReadResponse, _impl_.cleared_),
+        PROTOBUF_FIELD_OFFSET(::chirp::game_server_gateway::MarkChannelsReadResponse, _impl_.code_),
+        PROTOBUF_FIELD_OFFSET(::chirp::game_server_gateway::MarkChannelsReadResponse, _impl_.cleared_),
         0,
         1,
         0x081, // bitmap
-        PROTOBUF_FIELD_OFFSET(::chirp::server_gateway::UnreadSummaryEntry, _impl_._has_bits_),
+        PROTOBUF_FIELD_OFFSET(::chirp::game_server_gateway::UnreadSummaryEntry, _impl_._has_bits_),
         6, // hasbit index offset
-        PROTOBUF_FIELD_OFFSET(::chirp::server_gateway::UnreadSummaryEntry, _impl_.game_id_),
-        PROTOBUF_FIELD_OFFSET(::chirp::server_gateway::UnreadSummaryEntry, _impl_.channel_id_),
-        PROTOBUF_FIELD_OFFSET(::chirp::server_gateway::UnreadSummaryEntry, _impl_.unread_count_),
+        PROTOBUF_FIELD_OFFSET(::chirp::game_server_gateway::UnreadSummaryEntry, _impl_.game_id_),
+        PROTOBUF_FIELD_OFFSET(::chirp::game_server_gateway::UnreadSummaryEntry, _impl_.channel_id_),
+        PROTOBUF_FIELD_OFFSET(::chirp::game_server_gateway::UnreadSummaryEntry, _impl_.unread_count_),
         0,
         1,
         2,
         0x081, // bitmap
-        PROTOBUF_FIELD_OFFSET(::chirp::server_gateway::GetUnreadSummaryRequest, _impl_._has_bits_),
+        PROTOBUF_FIELD_OFFSET(::chirp::game_server_gateway::GetUnreadSummaryRequest, _impl_._has_bits_),
         5, // hasbit index offset
-        PROTOBUF_FIELD_OFFSET(::chirp::server_gateway::GetUnreadSummaryRequest, _impl_.player_id_),
-        PROTOBUF_FIELD_OFFSET(::chirp::server_gateway::GetUnreadSummaryRequest, _impl_.game_id_),
+        PROTOBUF_FIELD_OFFSET(::chirp::game_server_gateway::GetUnreadSummaryRequest, _impl_.player_id_),
+        PROTOBUF_FIELD_OFFSET(::chirp::game_server_gateway::GetUnreadSummaryRequest, _impl_.game_id_),
         0,
         1,
         0x081, // bitmap
-        PROTOBUF_FIELD_OFFSET(::chirp::server_gateway::GetUnreadSummaryResponse, _impl_._has_bits_),
+        PROTOBUF_FIELD_OFFSET(::chirp::game_server_gateway::GetUnreadSummaryResponse, _impl_._has_bits_),
         6, // hasbit index offset
-        PROTOBUF_FIELD_OFFSET(::chirp::server_gateway::GetUnreadSummaryResponse, _impl_.code_),
-        PROTOBUF_FIELD_OFFSET(::chirp::server_gateway::GetUnreadSummaryResponse, _impl_.entries_),
-        PROTOBUF_FIELD_OFFSET(::chirp::server_gateway::GetUnreadSummaryResponse, _impl_.total_unread_),
+        PROTOBUF_FIELD_OFFSET(::chirp::game_server_gateway::GetUnreadSummaryResponse, _impl_.code_),
+        PROTOBUF_FIELD_OFFSET(::chirp::game_server_gateway::GetUnreadSummaryResponse, _impl_.entries_),
+        PROTOBUF_FIELD_OFFSET(::chirp::game_server_gateway::GetUnreadSummaryResponse, _impl_.total_unread_),
         1,
         0,
         2,
@@ -1355,76 +1355,76 @@ const ::uint32_t
 
 static const ::_pbi::MigrationSchema
     schemas[] ABSL_ATTRIBUTE_SECTION_VARIABLE(protodesc_cold) = {
-        {0, sizeof(::chirp::server_gateway::ServerAuthRequest)},
-        {9, sizeof(::chirp::server_gateway::ServerAuthResponse)},
-        {18, sizeof(::chirp::server_gateway::ServerHeartbeatPing)},
-        {23, sizeof(::chirp::server_gateway::ServerHeartbeatPong)},
-        {28, sizeof(::chirp::server_gateway::MessageInjectRequest)},
-        {47, sizeof(::chirp::server_gateway::MessageInjectResponse)},
-        {54, sizeof(::chirp::server_gateway::InjectMessageNotify)},
-        {59, sizeof(::chirp::server_gateway::EventPublishRequest)},
-        {70, sizeof(::chirp::server_gateway::EventPublishResponse)},
-        {79, sizeof(::chirp::server_gateway::EventDeliverNotify)},
-        {92, sizeof(::chirp::server_gateway::EventAckRequest)},
-        {97, sizeof(::chirp::server_gateway::EventAckResponse)},
-        {102, sizeof(::chirp::server_gateway::StoredIdentityBinding)},
-        {115, sizeof(::chirp::server_gateway::BindPlayerIdentityRequest)},
-        {126, sizeof(::chirp::server_gateway::BindPlayerIdentityResponse)},
-        {135, sizeof(::chirp::server_gateway::UnbindPlayerIdentityRequest)},
-        {144, sizeof(::chirp::server_gateway::UnbindPlayerIdentityResponse)},
-        {149, sizeof(::chirp::server_gateway::GetPlayerIdentitiesRequest)},
-        {154, sizeof(::chirp::server_gateway::GetPlayerIdentitiesResponse)},
-        {161, sizeof(::chirp::server_gateway::ResolveGameUserRequest)},
-        {168, sizeof(::chirp::server_gateway::ResolveGameUserResponse)},
-        {175, sizeof(::chirp::server_gateway::StoredChannelSubscription)},
-        {188, sizeof(::chirp::server_gateway::SubscribePlayerChannelRequest)},
-        {199, sizeof(::chirp::server_gateway::SubscribePlayerChannelResponse)},
-        {208, sizeof(::chirp::server_gateway::UnsubscribePlayerChannelRequest)},
-        {219, sizeof(::chirp::server_gateway::UnsubscribePlayerChannelResponse)},
-        {224, sizeof(::chirp::server_gateway::GetPlayerSubscriptionsRequest)},
-        {231, sizeof(::chirp::server_gateway::GetPlayerSubscriptionsResponse)},
-        {238, sizeof(::chirp::server_gateway::StoredUnreadEntry)},
-        {249, sizeof(::chirp::server_gateway::MarkChannelsReadRequest)},
-        {258, sizeof(::chirp::server_gateway::MarkChannelsReadResponse)},
-        {265, sizeof(::chirp::server_gateway::UnreadSummaryEntry)},
-        {274, sizeof(::chirp::server_gateway::GetUnreadSummaryRequest)},
-        {281, sizeof(::chirp::server_gateway::GetUnreadSummaryResponse)},
+        {0, sizeof(::chirp::game_server_gateway::ServerAuthRequest)},
+        {9, sizeof(::chirp::game_server_gateway::ServerAuthResponse)},
+        {18, sizeof(::chirp::game_server_gateway::ServerHeartbeatPing)},
+        {23, sizeof(::chirp::game_server_gateway::ServerHeartbeatPong)},
+        {28, sizeof(::chirp::game_server_gateway::MessageInjectRequest)},
+        {47, sizeof(::chirp::game_server_gateway::MessageInjectResponse)},
+        {54, sizeof(::chirp::game_server_gateway::InjectMessageNotify)},
+        {59, sizeof(::chirp::game_server_gateway::EventPublishRequest)},
+        {70, sizeof(::chirp::game_server_gateway::EventPublishResponse)},
+        {79, sizeof(::chirp::game_server_gateway::EventDeliverNotify)},
+        {92, sizeof(::chirp::game_server_gateway::EventAckRequest)},
+        {97, sizeof(::chirp::game_server_gateway::EventAckResponse)},
+        {102, sizeof(::chirp::game_server_gateway::StoredIdentityBinding)},
+        {115, sizeof(::chirp::game_server_gateway::BindPlayerIdentityRequest)},
+        {126, sizeof(::chirp::game_server_gateway::BindPlayerIdentityResponse)},
+        {135, sizeof(::chirp::game_server_gateway::UnbindPlayerIdentityRequest)},
+        {144, sizeof(::chirp::game_server_gateway::UnbindPlayerIdentityResponse)},
+        {149, sizeof(::chirp::game_server_gateway::GetPlayerIdentitiesRequest)},
+        {154, sizeof(::chirp::game_server_gateway::GetPlayerIdentitiesResponse)},
+        {161, sizeof(::chirp::game_server_gateway::ResolveGameUserRequest)},
+        {168, sizeof(::chirp::game_server_gateway::ResolveGameUserResponse)},
+        {175, sizeof(::chirp::game_server_gateway::StoredChannelSubscription)},
+        {188, sizeof(::chirp::game_server_gateway::SubscribePlayerChannelRequest)},
+        {199, sizeof(::chirp::game_server_gateway::SubscribePlayerChannelResponse)},
+        {208, sizeof(::chirp::game_server_gateway::UnsubscribePlayerChannelRequest)},
+        {219, sizeof(::chirp::game_server_gateway::UnsubscribePlayerChannelResponse)},
+        {224, sizeof(::chirp::game_server_gateway::GetPlayerSubscriptionsRequest)},
+        {231, sizeof(::chirp::game_server_gateway::GetPlayerSubscriptionsResponse)},
+        {238, sizeof(::chirp::game_server_gateway::StoredUnreadEntry)},
+        {249, sizeof(::chirp::game_server_gateway::MarkChannelsReadRequest)},
+        {258, sizeof(::chirp::game_server_gateway::MarkChannelsReadResponse)},
+        {265, sizeof(::chirp::game_server_gateway::UnreadSummaryEntry)},
+        {274, sizeof(::chirp::game_server_gateway::GetUnreadSummaryRequest)},
+        {281, sizeof(::chirp::game_server_gateway::GetUnreadSummaryResponse)},
 };
 static const ::_pb::Message* PROTOBUF_NONNULL const file_default_instances[] = {
-    &::chirp::server_gateway::_ServerAuthRequest_default_instance_._instance,
-    &::chirp::server_gateway::_ServerAuthResponse_default_instance_._instance,
-    &::chirp::server_gateway::_ServerHeartbeatPing_default_instance_._instance,
-    &::chirp::server_gateway::_ServerHeartbeatPong_default_instance_._instance,
-    &::chirp::server_gateway::_MessageInjectRequest_default_instance_._instance,
-    &::chirp::server_gateway::_MessageInjectResponse_default_instance_._instance,
-    &::chirp::server_gateway::_InjectMessageNotify_default_instance_._instance,
-    &::chirp::server_gateway::_EventPublishRequest_default_instance_._instance,
-    &::chirp::server_gateway::_EventPublishResponse_default_instance_._instance,
-    &::chirp::server_gateway::_EventDeliverNotify_default_instance_._instance,
-    &::chirp::server_gateway::_EventAckRequest_default_instance_._instance,
-    &::chirp::server_gateway::_EventAckResponse_default_instance_._instance,
-    &::chirp::server_gateway::_StoredIdentityBinding_default_instance_._instance,
-    &::chirp::server_gateway::_BindPlayerIdentityRequest_default_instance_._instance,
-    &::chirp::server_gateway::_BindPlayerIdentityResponse_default_instance_._instance,
-    &::chirp::server_gateway::_UnbindPlayerIdentityRequest_default_instance_._instance,
-    &::chirp::server_gateway::_UnbindPlayerIdentityResponse_default_instance_._instance,
-    &::chirp::server_gateway::_GetPlayerIdentitiesRequest_default_instance_._instance,
-    &::chirp::server_gateway::_GetPlayerIdentitiesResponse_default_instance_._instance,
-    &::chirp::server_gateway::_ResolveGameUserRequest_default_instance_._instance,
-    &::chirp::server_gateway::_ResolveGameUserResponse_default_instance_._instance,
-    &::chirp::server_gateway::_StoredChannelSubscription_default_instance_._instance,
-    &::chirp::server_gateway::_SubscribePlayerChannelRequest_default_instance_._instance,
-    &::chirp::server_gateway::_SubscribePlayerChannelResponse_default_instance_._instance,
-    &::chirp::server_gateway::_UnsubscribePlayerChannelRequest_default_instance_._instance,
-    &::chirp::server_gateway::_UnsubscribePlayerChannelResponse_default_instance_._instance,
-    &::chirp::server_gateway::_GetPlayerSubscriptionsRequest_default_instance_._instance,
-    &::chirp::server_gateway::_GetPlayerSubscriptionsResponse_default_instance_._instance,
-    &::chirp::server_gateway::_StoredUnreadEntry_default_instance_._instance,
-    &::chirp::server_gateway::_MarkChannelsReadRequest_default_instance_._instance,
-    &::chirp::server_gateway::_MarkChannelsReadResponse_default_instance_._instance,
-    &::chirp::server_gateway::_UnreadSummaryEntry_default_instance_._instance,
-    &::chirp::server_gateway::_GetUnreadSummaryRequest_default_instance_._instance,
-    &::chirp::server_gateway::_GetUnreadSummaryResponse_default_instance_._instance,
+    &::chirp::game_server_gateway::_ServerAuthRequest_default_instance_._instance,
+    &::chirp::game_server_gateway::_ServerAuthResponse_default_instance_._instance,
+    &::chirp::game_server_gateway::_ServerHeartbeatPing_default_instance_._instance,
+    &::chirp::game_server_gateway::_ServerHeartbeatPong_default_instance_._instance,
+    &::chirp::game_server_gateway::_MessageInjectRequest_default_instance_._instance,
+    &::chirp::game_server_gateway::_MessageInjectResponse_default_instance_._instance,
+    &::chirp::game_server_gateway::_InjectMessageNotify_default_instance_._instance,
+    &::chirp::game_server_gateway::_EventPublishRequest_default_instance_._instance,
+    &::chirp::game_server_gateway::_EventPublishResponse_default_instance_._instance,
+    &::chirp::game_server_gateway::_EventDeliverNotify_default_instance_._instance,
+    &::chirp::game_server_gateway::_EventAckRequest_default_instance_._instance,
+    &::chirp::game_server_gateway::_EventAckResponse_default_instance_._instance,
+    &::chirp::game_server_gateway::_StoredIdentityBinding_default_instance_._instance,
+    &::chirp::game_server_gateway::_BindPlayerIdentityRequest_default_instance_._instance,
+    &::chirp::game_server_gateway::_BindPlayerIdentityResponse_default_instance_._instance,
+    &::chirp::game_server_gateway::_UnbindPlayerIdentityRequest_default_instance_._instance,
+    &::chirp::game_server_gateway::_UnbindPlayerIdentityResponse_default_instance_._instance,
+    &::chirp::game_server_gateway::_GetPlayerIdentitiesRequest_default_instance_._instance,
+    &::chirp::game_server_gateway::_GetPlayerIdentitiesResponse_default_instance_._instance,
+    &::chirp::game_server_gateway::_ResolveGameUserRequest_default_instance_._instance,
+    &::chirp::game_server_gateway::_ResolveGameUserResponse_default_instance_._instance,
+    &::chirp::game_server_gateway::_StoredChannelSubscription_default_instance_._instance,
+    &::chirp::game_server_gateway::_SubscribePlayerChannelRequest_default_instance_._instance,
+    &::chirp::game_server_gateway::_SubscribePlayerChannelResponse_default_instance_._instance,
+    &::chirp::game_server_gateway::_UnsubscribePlayerChannelRequest_default_instance_._instance,
+    &::chirp::game_server_gateway::_UnsubscribePlayerChannelResponse_default_instance_._instance,
+    &::chirp::game_server_gateway::_GetPlayerSubscriptionsRequest_default_instance_._instance,
+    &::chirp::game_server_gateway::_GetPlayerSubscriptionsResponse_default_instance_._instance,
+    &::chirp::game_server_gateway::_StoredUnreadEntry_default_instance_._instance,
+    &::chirp::game_server_gateway::_MarkChannelsReadRequest_default_instance_._instance,
+    &::chirp::game_server_gateway::_MarkChannelsReadResponse_default_instance_._instance,
+    &::chirp::game_server_gateway::_UnreadSummaryEntry_default_instance_._instance,
+    &::chirp::game_server_gateway::_GetUnreadSummaryRequest_default_instance_._instance,
+    &::chirp::game_server_gateway::_GetUnreadSummaryResponse_default_instance_._instance,
 };
 const char descriptor_table_protodef_proto_2fserver_5fgateway_2eproto[] ABSL_ATTRIBUTE_SECTION_VARIABLE(
     protodesc_cold) = {
@@ -1567,7 +1567,7 @@ ServerAuthRequest::ServerAuthRequest(::google::protobuf::Arena* PROTOBUF_NULLABL
 PROTOBUF_NDEBUG_INLINE ServerAuthRequest::Impl_::Impl_(
     [[maybe_unused]] ::google::protobuf::internal::InternalVisibility visibility,
     [[maybe_unused]] ::google::protobuf::Arena* PROTOBUF_NULLABLE arena, const Impl_& from,
-    [[maybe_unused]] const ::chirp::server_gateway::ServerAuthRequest& from_msg)
+    [[maybe_unused]] const ::chirp::game_server_gateway::ServerAuthRequest& from_msg)
       : _has_bits_{from._has_bits_},
         _cached_size_{0},
         service_id_(arena, from.service_id_),
@@ -1676,7 +1676,7 @@ ServerAuthRequest::_table_ = {
     nullptr,  // post_loop_handler
     ::_pbi::TcParser::GenericFallback,  // fallback
     #ifdef PROTOBUF_PREFETCH_PARSE_TABLE
-    ::_pbi::TcParser::GetTable<::chirp::server_gateway::ServerAuthRequest>(),  // to_prefetch
+    ::_pbi::TcParser::GetTable<::chirp::game_server_gateway::ServerAuthRequest>(),  // to_prefetch
     #endif  // PROTOBUF_PREFETCH_PARSE_TABLE
   }, {{
     {::_pbi::TcParser::MiniParse, {}},
@@ -2014,7 +2014,7 @@ ServerAuthResponse::_table_ = {
     nullptr,  // post_loop_handler
     ::_pbi::TcParser::GenericFallback,  // fallback
     #ifdef PROTOBUF_PREFETCH_PARSE_TABLE
-    ::_pbi::TcParser::GetTable<::chirp::server_gateway::ServerAuthResponse>(),  // to_prefetch
+    ::_pbi::TcParser::GetTable<::chirp::game_server_gateway::ServerAuthResponse>(),  // to_prefetch
     #endif  // PROTOBUF_PREFETCH_PARSE_TABLE
   }, {{
     {::_pbi::TcParser::MiniParse, {}},
@@ -2330,7 +2330,7 @@ ServerHeartbeatPing::_table_ = {
     nullptr,  // post_loop_handler
     ::_pbi::TcParser::GenericFallback,  // fallback
     #ifdef PROTOBUF_PREFETCH_PARSE_TABLE
-    ::_pbi::TcParser::GetTable<::chirp::server_gateway::ServerHeartbeatPing>(),  // to_prefetch
+    ::_pbi::TcParser::GetTable<::chirp::game_server_gateway::ServerHeartbeatPing>(),  // to_prefetch
     #endif  // PROTOBUF_PREFETCH_PARSE_TABLE
   }, {{
     // int64 client_time_ms = 1;
@@ -2578,7 +2578,7 @@ ServerHeartbeatPong::_table_ = {
     nullptr,  // post_loop_handler
     ::_pbi::TcParser::GenericFallback,  // fallback
     #ifdef PROTOBUF_PREFETCH_PARSE_TABLE
-    ::_pbi::TcParser::GetTable<::chirp::server_gateway::ServerHeartbeatPong>(),  // to_prefetch
+    ::_pbi::TcParser::GetTable<::chirp::game_server_gateway::ServerHeartbeatPong>(),  // to_prefetch
     #endif  // PROTOBUF_PREFETCH_PARSE_TABLE
   }, {{
     // int64 server_time_ms = 1;
@@ -2736,7 +2736,7 @@ MessageInjectRequest::MessageInjectRequest(::google::protobuf::Arena* PROTOBUF_N
 PROTOBUF_NDEBUG_INLINE MessageInjectRequest::Impl_::Impl_(
     [[maybe_unused]] ::google::protobuf::internal::InternalVisibility visibility,
     [[maybe_unused]] ::google::protobuf::Arena* PROTOBUF_NULLABLE arena, const Impl_& from,
-    [[maybe_unused]] const ::chirp::server_gateway::MessageInjectRequest& from_msg)
+    [[maybe_unused]] const ::chirp::game_server_gateway::MessageInjectRequest& from_msg)
       : _has_bits_{from._has_bits_},
         _cached_size_{0},
         inject_id_(arena, from.inject_id_),
@@ -2868,7 +2868,7 @@ MessageInjectRequest::_table_ = {
     nullptr,  // post_loop_handler
     ::_pbi::TcParser::GenericFallback,  // fallback
     #ifdef PROTOBUF_PREFETCH_PARSE_TABLE
-    ::_pbi::TcParser::GetTable<::chirp::server_gateway::MessageInjectRequest>(),  // to_prefetch
+    ::_pbi::TcParser::GetTable<::chirp::game_server_gateway::MessageInjectRequest>(),  // to_prefetch
     #endif  // PROTOBUF_PREFETCH_PARSE_TABLE
   }, {{
     // string game_id = 8;
@@ -3291,7 +3291,7 @@ MessageInjectResponse::MessageInjectResponse(::google::protobuf::Arena* PROTOBUF
 PROTOBUF_NDEBUG_INLINE MessageInjectResponse::Impl_::Impl_(
     [[maybe_unused]] ::google::protobuf::internal::InternalVisibility visibility,
     [[maybe_unused]] ::google::protobuf::Arena* PROTOBUF_NULLABLE arena, const Impl_& from,
-    [[maybe_unused]] const ::chirp::server_gateway::MessageInjectResponse& from_msg)
+    [[maybe_unused]] const ::chirp::game_server_gateway::MessageInjectResponse& from_msg)
       : _has_bits_{from._has_bits_},
         _cached_size_{0},
         inject_id_(arena, from.inject_id_) {}
@@ -3397,7 +3397,7 @@ MessageInjectResponse::_table_ = {
     nullptr,  // post_loop_handler
     ::_pbi::TcParser::GenericFallback,  // fallback
     #ifdef PROTOBUF_PREFETCH_PARSE_TABLE
-    ::_pbi::TcParser::GetTable<::chirp::server_gateway::MessageInjectResponse>(),  // to_prefetch
+    ::_pbi::TcParser::GetTable<::chirp::game_server_gateway::MessageInjectResponse>(),  // to_prefetch
     #endif  // PROTOBUF_PREFETCH_PARSE_TABLE
   }, {{
     // string inject_id = 2;
@@ -3600,7 +3600,7 @@ InjectMessageNotify::InjectMessageNotify(::google::protobuf::Arena* PROTOBUF_NUL
 PROTOBUF_NDEBUG_INLINE InjectMessageNotify::Impl_::Impl_(
     [[maybe_unused]] ::google::protobuf::internal::InternalVisibility visibility,
     [[maybe_unused]] ::google::protobuf::Arena* PROTOBUF_NULLABLE arena, const Impl_& from,
-    [[maybe_unused]] const ::chirp::server_gateway::InjectMessageNotify& from_msg)
+    [[maybe_unused]] const ::chirp::game_server_gateway::InjectMessageNotify& from_msg)
       : _has_bits_{from._has_bits_},
         _cached_size_{0} {}
 
@@ -3707,7 +3707,7 @@ InjectMessageNotify::_table_ = {
     nullptr,  // post_loop_handler
     ::_pbi::TcParser::GenericFallback,  // fallback
     #ifdef PROTOBUF_PREFETCH_PARSE_TABLE
-    ::_pbi::TcParser::GetTable<::chirp::server_gateway::InjectMessageNotify>(),  // to_prefetch
+    ::_pbi::TcParser::GetTable<::chirp::game_server_gateway::InjectMessageNotify>(),  // to_prefetch
     #endif  // PROTOBUF_PREFETCH_PARSE_TABLE
   }, {{
     // .chirp.server_gateway.MessageInjectRequest message = 1;
@@ -3721,7 +3721,7 @@ InjectMessageNotify::_table_ = {
     {PROTOBUF_FIELD_OFFSET(InjectMessageNotify, _impl_.message_), _Internal::kHasBitsOffset + 0, 0, (0 | ::_fl::kFcOptional | ::_fl::kMessage | ::_fl::kTvTable)},
   }},
   {{
-      {::_pbi::TcParser::GetTable<::chirp::server_gateway::MessageInjectRequest>()},
+      {::_pbi::TcParser::GetTable<::chirp::game_server_gateway::MessageInjectRequest>()},
   }},
   {{
   }},
@@ -3871,7 +3871,7 @@ EventPublishRequest::EventPublishRequest(::google::protobuf::Arena* PROTOBUF_NUL
 PROTOBUF_NDEBUG_INLINE EventPublishRequest::Impl_::Impl_(
     [[maybe_unused]] ::google::protobuf::internal::InternalVisibility visibility,
     [[maybe_unused]] ::google::protobuf::Arena* PROTOBUF_NULLABLE arena, const Impl_& from,
-    [[maybe_unused]] const ::chirp::server_gateway::EventPublishRequest& from_msg)
+    [[maybe_unused]] const ::chirp::game_server_gateway::EventPublishRequest& from_msg)
       : _has_bits_{from._has_bits_},
         _cached_size_{0},
         event_id_(arena, from.event_id_),
@@ -3984,7 +3984,7 @@ EventPublishRequest::_table_ = {
     nullptr,  // post_loop_handler
     ::_pbi::TcParser::GenericFallback,  // fallback
     #ifdef PROTOBUF_PREFETCH_PARSE_TABLE
-    ::_pbi::TcParser::GetTable<::chirp::server_gateway::EventPublishRequest>(),  // to_prefetch
+    ::_pbi::TcParser::GetTable<::chirp::game_server_gateway::EventPublishRequest>(),  // to_prefetch
     #endif  // PROTOBUF_PREFETCH_PARSE_TABLE
   }, {{
     // bytes payload = 4;
@@ -4268,7 +4268,7 @@ EventPublishResponse::EventPublishResponse(::google::protobuf::Arena* PROTOBUF_N
 PROTOBUF_NDEBUG_INLINE EventPublishResponse::Impl_::Impl_(
     [[maybe_unused]] ::google::protobuf::internal::InternalVisibility visibility,
     [[maybe_unused]] ::google::protobuf::Arena* PROTOBUF_NULLABLE arena, const Impl_& from,
-    [[maybe_unused]] const ::chirp::server_gateway::EventPublishResponse& from_msg)
+    [[maybe_unused]] const ::chirp::game_server_gateway::EventPublishResponse& from_msg)
       : _has_bits_{from._has_bits_},
         _cached_size_{0},
         event_id_(arena, from.event_id_) {}
@@ -4385,7 +4385,7 @@ EventPublishResponse::_table_ = {
     nullptr,  // post_loop_handler
     ::_pbi::TcParser::GenericFallback,  // fallback
     #ifdef PROTOBUF_PREFETCH_PARSE_TABLE
-    ::_pbi::TcParser::GetTable<::chirp::server_gateway::EventPublishResponse>(),  // to_prefetch
+    ::_pbi::TcParser::GetTable<::chirp::game_server_gateway::EventPublishResponse>(),  // to_prefetch
     #endif  // PROTOBUF_PREFETCH_PARSE_TABLE
   }, {{
     {::_pbi::TcParser::MiniParse, {}},
@@ -4624,7 +4624,7 @@ EventDeliverNotify::EventDeliverNotify(::google::protobuf::Arena* PROTOBUF_NULLA
 PROTOBUF_NDEBUG_INLINE EventDeliverNotify::Impl_::Impl_(
     [[maybe_unused]] ::google::protobuf::internal::InternalVisibility visibility,
     [[maybe_unused]] ::google::protobuf::Arena* PROTOBUF_NULLABLE arena, const Impl_& from,
-    [[maybe_unused]] const ::chirp::server_gateway::EventDeliverNotify& from_msg)
+    [[maybe_unused]] const ::chirp::game_server_gateway::EventDeliverNotify& from_msg)
       : _has_bits_{from._has_bits_},
         _cached_size_{0},
         event_id_(arena, from.event_id_),
@@ -4747,7 +4747,7 @@ EventDeliverNotify::_table_ = {
     nullptr,  // post_loop_handler
     ::_pbi::TcParser::GenericFallback,  // fallback
     #ifdef PROTOBUF_PREFETCH_PARSE_TABLE
-    ::_pbi::TcParser::GetTable<::chirp::server_gateway::EventDeliverNotify>(),  // to_prefetch
+    ::_pbi::TcParser::GetTable<::chirp::game_server_gateway::EventDeliverNotify>(),  // to_prefetch
     #endif  // PROTOBUF_PREFETCH_PARSE_TABLE
   }, {{
     {::_pbi::TcParser::MiniParse, {}},
@@ -5062,7 +5062,7 @@ EventAckRequest::EventAckRequest(::google::protobuf::Arena* PROTOBUF_NULLABLE ar
 PROTOBUF_NDEBUG_INLINE EventAckRequest::Impl_::Impl_(
     [[maybe_unused]] ::google::protobuf::internal::InternalVisibility visibility,
     [[maybe_unused]] ::google::protobuf::Arena* PROTOBUF_NULLABLE arena, const Impl_& from,
-    [[maybe_unused]] const ::chirp::server_gateway::EventAckRequest& from_msg)
+    [[maybe_unused]] const ::chirp::game_server_gateway::EventAckRequest& from_msg)
       : _has_bits_{from._has_bits_},
         _cached_size_{0},
         event_ids_{visibility, arena, from.event_ids_} {}
@@ -5177,7 +5177,7 @@ EventAckRequest::_table_ = {
     nullptr,  // post_loop_handler
     ::_pbi::TcParser::GenericFallback,  // fallback
     #ifdef PROTOBUF_PREFETCH_PARSE_TABLE
-    ::_pbi::TcParser::GetTable<::chirp::server_gateway::EventAckRequest>(),  // to_prefetch
+    ::_pbi::TcParser::GetTable<::chirp::game_server_gateway::EventAckRequest>(),  // to_prefetch
     #endif  // PROTOBUF_PREFETCH_PARSE_TABLE
   }, {{
     // repeated string event_ids = 1;
@@ -5436,7 +5436,7 @@ EventAckResponse::_table_ = {
     nullptr,  // post_loop_handler
     ::_pbi::TcParser::GenericFallback,  // fallback
     #ifdef PROTOBUF_PREFETCH_PARSE_TABLE
-    ::_pbi::TcParser::GetTable<::chirp::server_gateway::EventAckResponse>(),  // to_prefetch
+    ::_pbi::TcParser::GetTable<::chirp::game_server_gateway::EventAckResponse>(),  // to_prefetch
     #endif  // PROTOBUF_PREFETCH_PARSE_TABLE
   }, {{
     // .chirp.common.ErrorCode code = 1;
@@ -5594,7 +5594,7 @@ StoredIdentityBinding::StoredIdentityBinding(::google::protobuf::Arena* PROTOBUF
 PROTOBUF_NDEBUG_INLINE StoredIdentityBinding::Impl_::Impl_(
     [[maybe_unused]] ::google::protobuf::internal::InternalVisibility visibility,
     [[maybe_unused]] ::google::protobuf::Arena* PROTOBUF_NULLABLE arena, const Impl_& from,
-    [[maybe_unused]] const ::chirp::server_gateway::StoredIdentityBinding& from_msg)
+    [[maybe_unused]] const ::chirp::game_server_gateway::StoredIdentityBinding& from_msg)
       : _has_bits_{from._has_bits_},
         _cached_size_{0},
         binding_id_(arena, from.binding_id_),
@@ -5709,7 +5709,7 @@ StoredIdentityBinding::_table_ = {
     nullptr,  // post_loop_handler
     ::_pbi::TcParser::GenericFallback,  // fallback
     #ifdef PROTOBUF_PREFETCH_PARSE_TABLE
-    ::_pbi::TcParser::GetTable<::chirp::server_gateway::StoredIdentityBinding>(),  // to_prefetch
+    ::_pbi::TcParser::GetTable<::chirp::game_server_gateway::StoredIdentityBinding>(),  // to_prefetch
     #endif  // PROTOBUF_PREFETCH_PARSE_TABLE
   }, {{
     {::_pbi::TcParser::MiniParse, {}},
@@ -6028,7 +6028,7 @@ BindPlayerIdentityRequest::BindPlayerIdentityRequest(::google::protobuf::Arena* 
 PROTOBUF_NDEBUG_INLINE BindPlayerIdentityRequest::Impl_::Impl_(
     [[maybe_unused]] ::google::protobuf::internal::InternalVisibility visibility,
     [[maybe_unused]] ::google::protobuf::Arena* PROTOBUF_NULLABLE arena, const Impl_& from,
-    [[maybe_unused]] const ::chirp::server_gateway::BindPlayerIdentityRequest& from_msg)
+    [[maybe_unused]] const ::chirp::game_server_gateway::BindPlayerIdentityRequest& from_msg)
       : _has_bits_{from._has_bits_},
         _cached_size_{0},
         binding_id_(arena, from.binding_id_),
@@ -6141,7 +6141,7 @@ BindPlayerIdentityRequest::_table_ = {
     nullptr,  // post_loop_handler
     ::_pbi::TcParser::GenericFallback,  // fallback
     #ifdef PROTOBUF_PREFETCH_PARSE_TABLE
-    ::_pbi::TcParser::GetTable<::chirp::server_gateway::BindPlayerIdentityRequest>(),  // to_prefetch
+    ::_pbi::TcParser::GetTable<::chirp::game_server_gateway::BindPlayerIdentityRequest>(),  // to_prefetch
     #endif  // PROTOBUF_PREFETCH_PARSE_TABLE
   }, {{
     // string game_user_id = 4;
@@ -6428,7 +6428,7 @@ BindPlayerIdentityResponse::BindPlayerIdentityResponse(::google::protobuf::Arena
 PROTOBUF_NDEBUG_INLINE BindPlayerIdentityResponse::Impl_::Impl_(
     [[maybe_unused]] ::google::protobuf::internal::InternalVisibility visibility,
     [[maybe_unused]] ::google::protobuf::Arena* PROTOBUF_NULLABLE arena, const Impl_& from,
-    [[maybe_unused]] const ::chirp::server_gateway::BindPlayerIdentityResponse& from_msg)
+    [[maybe_unused]] const ::chirp::game_server_gateway::BindPlayerIdentityResponse& from_msg)
       : _has_bits_{from._has_bits_},
         _cached_size_{0},
         binding_id_(arena, from.binding_id_) {}
@@ -6545,7 +6545,7 @@ BindPlayerIdentityResponse::_table_ = {
     nullptr,  // post_loop_handler
     ::_pbi::TcParser::GenericFallback,  // fallback
     #ifdef PROTOBUF_PREFETCH_PARSE_TABLE
-    ::_pbi::TcParser::GetTable<::chirp::server_gateway::BindPlayerIdentityResponse>(),  // to_prefetch
+    ::_pbi::TcParser::GetTable<::chirp::game_server_gateway::BindPlayerIdentityResponse>(),  // to_prefetch
     #endif  // PROTOBUF_PREFETCH_PARSE_TABLE
   }, {{
     {::_pbi::TcParser::MiniParse, {}},
@@ -6784,7 +6784,7 @@ UnbindPlayerIdentityRequest::UnbindPlayerIdentityRequest(::google::protobuf::Are
 PROTOBUF_NDEBUG_INLINE UnbindPlayerIdentityRequest::Impl_::Impl_(
     [[maybe_unused]] ::google::protobuf::internal::InternalVisibility visibility,
     [[maybe_unused]] ::google::protobuf::Arena* PROTOBUF_NULLABLE arena, const Impl_& from,
-    [[maybe_unused]] const ::chirp::server_gateway::UnbindPlayerIdentityRequest& from_msg)
+    [[maybe_unused]] const ::chirp::game_server_gateway::UnbindPlayerIdentityRequest& from_msg)
       : _has_bits_{from._has_bits_},
         _cached_size_{0},
         binding_id_(arena, from.binding_id_),
@@ -6894,7 +6894,7 @@ UnbindPlayerIdentityRequest::_table_ = {
     nullptr,  // post_loop_handler
     ::_pbi::TcParser::GenericFallback,  // fallback
     #ifdef PROTOBUF_PREFETCH_PARSE_TABLE
-    ::_pbi::TcParser::GetTable<::chirp::server_gateway::UnbindPlayerIdentityRequest>(),  // to_prefetch
+    ::_pbi::TcParser::GetTable<::chirp::game_server_gateway::UnbindPlayerIdentityRequest>(),  // to_prefetch
     #endif  // PROTOBUF_PREFETCH_PARSE_TABLE
   }, {{
     {::_pbi::TcParser::MiniParse, {}},
@@ -7235,7 +7235,7 @@ UnbindPlayerIdentityResponse::_table_ = {
     nullptr,  // post_loop_handler
     ::_pbi::TcParser::GenericFallback,  // fallback
     #ifdef PROTOBUF_PREFETCH_PARSE_TABLE
-    ::_pbi::TcParser::GetTable<::chirp::server_gateway::UnbindPlayerIdentityResponse>(),  // to_prefetch
+    ::_pbi::TcParser::GetTable<::chirp::game_server_gateway::UnbindPlayerIdentityResponse>(),  // to_prefetch
     #endif  // PROTOBUF_PREFETCH_PARSE_TABLE
   }, {{
     // .chirp.common.ErrorCode code = 1;
@@ -7393,7 +7393,7 @@ GetPlayerIdentitiesRequest::GetPlayerIdentitiesRequest(::google::protobuf::Arena
 PROTOBUF_NDEBUG_INLINE GetPlayerIdentitiesRequest::Impl_::Impl_(
     [[maybe_unused]] ::google::protobuf::internal::InternalVisibility visibility,
     [[maybe_unused]] ::google::protobuf::Arena* PROTOBUF_NULLABLE arena, const Impl_& from,
-    [[maybe_unused]] const ::chirp::server_gateway::GetPlayerIdentitiesRequest& from_msg)
+    [[maybe_unused]] const ::chirp::game_server_gateway::GetPlayerIdentitiesRequest& from_msg)
       : _has_bits_{from._has_bits_},
         _cached_size_{0},
         player_id_(arena, from.player_id_) {}
@@ -7497,7 +7497,7 @@ GetPlayerIdentitiesRequest::_table_ = {
     nullptr,  // post_loop_handler
     ::_pbi::TcParser::GenericFallback,  // fallback
     #ifdef PROTOBUF_PREFETCH_PARSE_TABLE
-    ::_pbi::TcParser::GetTable<::chirp::server_gateway::GetPlayerIdentitiesRequest>(),  // to_prefetch
+    ::_pbi::TcParser::GetTable<::chirp::game_server_gateway::GetPlayerIdentitiesRequest>(),  // to_prefetch
     #endif  // PROTOBUF_PREFETCH_PARSE_TABLE
   }, {{
     // string player_id = 1;
@@ -7668,7 +7668,7 @@ GetPlayerIdentitiesResponse::GetPlayerIdentitiesResponse(::google::protobuf::Are
 PROTOBUF_NDEBUG_INLINE GetPlayerIdentitiesResponse::Impl_::Impl_(
     [[maybe_unused]] ::google::protobuf::internal::InternalVisibility visibility,
     [[maybe_unused]] ::google::protobuf::Arena* PROTOBUF_NULLABLE arena, const Impl_& from,
-    [[maybe_unused]] const ::chirp::server_gateway::GetPlayerIdentitiesResponse& from_msg)
+    [[maybe_unused]] const ::chirp::game_server_gateway::GetPlayerIdentitiesResponse& from_msg)
       : _has_bits_{from._has_bits_},
         _cached_size_{0},
         bindings_{visibility, arena, from.bindings_} {}
@@ -7785,7 +7785,7 @@ GetPlayerIdentitiesResponse::_table_ = {
     nullptr,  // post_loop_handler
     ::_pbi::TcParser::GenericFallback,  // fallback
     #ifdef PROTOBUF_PREFETCH_PARSE_TABLE
-    ::_pbi::TcParser::GetTable<::chirp::server_gateway::GetPlayerIdentitiesResponse>(),  // to_prefetch
+    ::_pbi::TcParser::GetTable<::chirp::game_server_gateway::GetPlayerIdentitiesResponse>(),  // to_prefetch
     #endif  // PROTOBUF_PREFETCH_PARSE_TABLE
   }, {{
     // repeated .chirp.server_gateway.StoredIdentityBinding bindings = 2;
@@ -7805,7 +7805,7 @@ GetPlayerIdentitiesResponse::_table_ = {
     {PROTOBUF_FIELD_OFFSET(GetPlayerIdentitiesResponse, _impl_.bindings_), _Internal::kHasBitsOffset + 0, 0, (0 | ::_fl::kFcRepeated | ::_fl::kMessage | ::_fl::kTvTable)},
   }},
   {{
-      {::_pbi::TcParser::GetTable<::chirp::server_gateway::StoredIdentityBinding>()},
+      {::_pbi::TcParser::GetTable<::chirp::game_server_gateway::StoredIdentityBinding>()},
   }},
   {{
   }},
@@ -7985,7 +7985,7 @@ ResolveGameUserRequest::ResolveGameUserRequest(::google::protobuf::Arena* PROTOB
 PROTOBUF_NDEBUG_INLINE ResolveGameUserRequest::Impl_::Impl_(
     [[maybe_unused]] ::google::protobuf::internal::InternalVisibility visibility,
     [[maybe_unused]] ::google::protobuf::Arena* PROTOBUF_NULLABLE arena, const Impl_& from,
-    [[maybe_unused]] const ::chirp::server_gateway::ResolveGameUserRequest& from_msg)
+    [[maybe_unused]] const ::chirp::game_server_gateway::ResolveGameUserRequest& from_msg)
       : _has_bits_{from._has_bits_},
         _cached_size_{0},
         game_id_(arena, from.game_id_),
@@ -8092,7 +8092,7 @@ ResolveGameUserRequest::_table_ = {
     nullptr,  // post_loop_handler
     ::_pbi::TcParser::GenericFallback,  // fallback
     #ifdef PROTOBUF_PREFETCH_PARSE_TABLE
-    ::_pbi::TcParser::GetTable<::chirp::server_gateway::ResolveGameUserRequest>(),  // to_prefetch
+    ::_pbi::TcParser::GetTable<::chirp::game_server_gateway::ResolveGameUserRequest>(),  // to_prefetch
     #endif  // PROTOBUF_PREFETCH_PARSE_TABLE
   }, {{
     // string game_user_id = 2;
@@ -8305,7 +8305,7 @@ ResolveGameUserResponse::ResolveGameUserResponse(::google::protobuf::Arena* PROT
 PROTOBUF_NDEBUG_INLINE ResolveGameUserResponse::Impl_::Impl_(
     [[maybe_unused]] ::google::protobuf::internal::InternalVisibility visibility,
     [[maybe_unused]] ::google::protobuf::Arena* PROTOBUF_NULLABLE arena, const Impl_& from,
-    [[maybe_unused]] const ::chirp::server_gateway::ResolveGameUserResponse& from_msg)
+    [[maybe_unused]] const ::chirp::game_server_gateway::ResolveGameUserResponse& from_msg)
       : _has_bits_{from._has_bits_},
         _cached_size_{0},
         player_id_(arena, from.player_id_) {}
@@ -8411,7 +8411,7 @@ ResolveGameUserResponse::_table_ = {
     nullptr,  // post_loop_handler
     ::_pbi::TcParser::GenericFallback,  // fallback
     #ifdef PROTOBUF_PREFETCH_PARSE_TABLE
-    ::_pbi::TcParser::GetTable<::chirp::server_gateway::ResolveGameUserResponse>(),  // to_prefetch
+    ::_pbi::TcParser::GetTable<::chirp::game_server_gateway::ResolveGameUserResponse>(),  // to_prefetch
     #endif  // PROTOBUF_PREFETCH_PARSE_TABLE
   }, {{
     // string player_id = 2;
@@ -8614,7 +8614,7 @@ StoredChannelSubscription::StoredChannelSubscription(::google::protobuf::Arena* 
 PROTOBUF_NDEBUG_INLINE StoredChannelSubscription::Impl_::Impl_(
     [[maybe_unused]] ::google::protobuf::internal::InternalVisibility visibility,
     [[maybe_unused]] ::google::protobuf::Arena* PROTOBUF_NULLABLE arena, const Impl_& from,
-    [[maybe_unused]] const ::chirp::server_gateway::StoredChannelSubscription& from_msg)
+    [[maybe_unused]] const ::chirp::game_server_gateway::StoredChannelSubscription& from_msg)
       : _has_bits_{from._has_bits_},
         _cached_size_{0},
         subscription_id_(arena, from.subscription_id_),
@@ -8729,7 +8729,7 @@ StoredChannelSubscription::_table_ = {
     nullptr,  // post_loop_handler
     ::_pbi::TcParser::GenericFallback,  // fallback
     #ifdef PROTOBUF_PREFETCH_PARSE_TABLE
-    ::_pbi::TcParser::GetTable<::chirp::server_gateway::StoredChannelSubscription>(),  // to_prefetch
+    ::_pbi::TcParser::GetTable<::chirp::game_server_gateway::StoredChannelSubscription>(),  // to_prefetch
     #endif  // PROTOBUF_PREFETCH_PARSE_TABLE
   }, {{
     {::_pbi::TcParser::MiniParse, {}},
@@ -9048,7 +9048,7 @@ SubscribePlayerChannelRequest::SubscribePlayerChannelRequest(::google::protobuf:
 PROTOBUF_NDEBUG_INLINE SubscribePlayerChannelRequest::Impl_::Impl_(
     [[maybe_unused]] ::google::protobuf::internal::InternalVisibility visibility,
     [[maybe_unused]] ::google::protobuf::Arena* PROTOBUF_NULLABLE arena, const Impl_& from,
-    [[maybe_unused]] const ::chirp::server_gateway::SubscribePlayerChannelRequest& from_msg)
+    [[maybe_unused]] const ::chirp::game_server_gateway::SubscribePlayerChannelRequest& from_msg)
       : _has_bits_{from._has_bits_},
         _cached_size_{0},
         subscription_id_(arena, from.subscription_id_),
@@ -9161,7 +9161,7 @@ SubscribePlayerChannelRequest::_table_ = {
     nullptr,  // post_loop_handler
     ::_pbi::TcParser::GenericFallback,  // fallback
     #ifdef PROTOBUF_PREFETCH_PARSE_TABLE
-    ::_pbi::TcParser::GetTable<::chirp::server_gateway::SubscribePlayerChannelRequest>(),  // to_prefetch
+    ::_pbi::TcParser::GetTable<::chirp::game_server_gateway::SubscribePlayerChannelRequest>(),  // to_prefetch
     #endif  // PROTOBUF_PREFETCH_PARSE_TABLE
   }, {{
     // string channel_id = 4;
@@ -9448,7 +9448,7 @@ SubscribePlayerChannelResponse::SubscribePlayerChannelResponse(::google::protobu
 PROTOBUF_NDEBUG_INLINE SubscribePlayerChannelResponse::Impl_::Impl_(
     [[maybe_unused]] ::google::protobuf::internal::InternalVisibility visibility,
     [[maybe_unused]] ::google::protobuf::Arena* PROTOBUF_NULLABLE arena, const Impl_& from,
-    [[maybe_unused]] const ::chirp::server_gateway::SubscribePlayerChannelResponse& from_msg)
+    [[maybe_unused]] const ::chirp::game_server_gateway::SubscribePlayerChannelResponse& from_msg)
       : _has_bits_{from._has_bits_},
         _cached_size_{0},
         subscription_id_(arena, from.subscription_id_) {}
@@ -9565,7 +9565,7 @@ SubscribePlayerChannelResponse::_table_ = {
     nullptr,  // post_loop_handler
     ::_pbi::TcParser::GenericFallback,  // fallback
     #ifdef PROTOBUF_PREFETCH_PARSE_TABLE
-    ::_pbi::TcParser::GetTable<::chirp::server_gateway::SubscribePlayerChannelResponse>(),  // to_prefetch
+    ::_pbi::TcParser::GetTable<::chirp::game_server_gateway::SubscribePlayerChannelResponse>(),  // to_prefetch
     #endif  // PROTOBUF_PREFETCH_PARSE_TABLE
   }, {{
     {::_pbi::TcParser::MiniParse, {}},
@@ -9804,7 +9804,7 @@ UnsubscribePlayerChannelRequest::UnsubscribePlayerChannelRequest(::google::proto
 PROTOBUF_NDEBUG_INLINE UnsubscribePlayerChannelRequest::Impl_::Impl_(
     [[maybe_unused]] ::google::protobuf::internal::InternalVisibility visibility,
     [[maybe_unused]] ::google::protobuf::Arena* PROTOBUF_NULLABLE arena, const Impl_& from,
-    [[maybe_unused]] const ::chirp::server_gateway::UnsubscribePlayerChannelRequest& from_msg)
+    [[maybe_unused]] const ::chirp::game_server_gateway::UnsubscribePlayerChannelRequest& from_msg)
       : _has_bits_{from._has_bits_},
         _cached_size_{0},
         subscription_id_(arena, from.subscription_id_),
@@ -9917,7 +9917,7 @@ UnsubscribePlayerChannelRequest::_table_ = {
     nullptr,  // post_loop_handler
     ::_pbi::TcParser::GenericFallback,  // fallback
     #ifdef PROTOBUF_PREFETCH_PARSE_TABLE
-    ::_pbi::TcParser::GetTable<::chirp::server_gateway::UnsubscribePlayerChannelRequest>(),  // to_prefetch
+    ::_pbi::TcParser::GetTable<::chirp::game_server_gateway::UnsubscribePlayerChannelRequest>(),  // to_prefetch
     #endif  // PROTOBUF_PREFETCH_PARSE_TABLE
   }, {{
     // string channel_id = 4;
@@ -10294,7 +10294,7 @@ UnsubscribePlayerChannelResponse::_table_ = {
     nullptr,  // post_loop_handler
     ::_pbi::TcParser::GenericFallback,  // fallback
     #ifdef PROTOBUF_PREFETCH_PARSE_TABLE
-    ::_pbi::TcParser::GetTable<::chirp::server_gateway::UnsubscribePlayerChannelResponse>(),  // to_prefetch
+    ::_pbi::TcParser::GetTable<::chirp::game_server_gateway::UnsubscribePlayerChannelResponse>(),  // to_prefetch
     #endif  // PROTOBUF_PREFETCH_PARSE_TABLE
   }, {{
     // .chirp.common.ErrorCode code = 1;
@@ -10452,7 +10452,7 @@ GetPlayerSubscriptionsRequest::GetPlayerSubscriptionsRequest(::google::protobuf:
 PROTOBUF_NDEBUG_INLINE GetPlayerSubscriptionsRequest::Impl_::Impl_(
     [[maybe_unused]] ::google::protobuf::internal::InternalVisibility visibility,
     [[maybe_unused]] ::google::protobuf::Arena* PROTOBUF_NULLABLE arena, const Impl_& from,
-    [[maybe_unused]] const ::chirp::server_gateway::GetPlayerSubscriptionsRequest& from_msg)
+    [[maybe_unused]] const ::chirp::game_server_gateway::GetPlayerSubscriptionsRequest& from_msg)
       : _has_bits_{from._has_bits_},
         _cached_size_{0},
         player_id_(arena, from.player_id_),
@@ -10559,7 +10559,7 @@ GetPlayerSubscriptionsRequest::_table_ = {
     nullptr,  // post_loop_handler
     ::_pbi::TcParser::GenericFallback,  // fallback
     #ifdef PROTOBUF_PREFETCH_PARSE_TABLE
-    ::_pbi::TcParser::GetTable<::chirp::server_gateway::GetPlayerSubscriptionsRequest>(),  // to_prefetch
+    ::_pbi::TcParser::GetTable<::chirp::game_server_gateway::GetPlayerSubscriptionsRequest>(),  // to_prefetch
     #endif  // PROTOBUF_PREFETCH_PARSE_TABLE
   }, {{
     // string game_id = 2;
@@ -10772,7 +10772,7 @@ GetPlayerSubscriptionsResponse::GetPlayerSubscriptionsResponse(::google::protobu
 PROTOBUF_NDEBUG_INLINE GetPlayerSubscriptionsResponse::Impl_::Impl_(
     [[maybe_unused]] ::google::protobuf::internal::InternalVisibility visibility,
     [[maybe_unused]] ::google::protobuf::Arena* PROTOBUF_NULLABLE arena, const Impl_& from,
-    [[maybe_unused]] const ::chirp::server_gateway::GetPlayerSubscriptionsResponse& from_msg)
+    [[maybe_unused]] const ::chirp::game_server_gateway::GetPlayerSubscriptionsResponse& from_msg)
       : _has_bits_{from._has_bits_},
         _cached_size_{0},
         subscriptions_{visibility, arena, from.subscriptions_} {}
@@ -10889,7 +10889,7 @@ GetPlayerSubscriptionsResponse::_table_ = {
     nullptr,  // post_loop_handler
     ::_pbi::TcParser::GenericFallback,  // fallback
     #ifdef PROTOBUF_PREFETCH_PARSE_TABLE
-    ::_pbi::TcParser::GetTable<::chirp::server_gateway::GetPlayerSubscriptionsResponse>(),  // to_prefetch
+    ::_pbi::TcParser::GetTable<::chirp::game_server_gateway::GetPlayerSubscriptionsResponse>(),  // to_prefetch
     #endif  // PROTOBUF_PREFETCH_PARSE_TABLE
   }, {{
     // repeated .chirp.server_gateway.StoredChannelSubscription subscriptions = 2;
@@ -10909,7 +10909,7 @@ GetPlayerSubscriptionsResponse::_table_ = {
     {PROTOBUF_FIELD_OFFSET(GetPlayerSubscriptionsResponse, _impl_.subscriptions_), _Internal::kHasBitsOffset + 0, 0, (0 | ::_fl::kFcRepeated | ::_fl::kMessage | ::_fl::kTvTable)},
   }},
   {{
-      {::_pbi::TcParser::GetTable<::chirp::server_gateway::StoredChannelSubscription>()},
+      {::_pbi::TcParser::GetTable<::chirp::game_server_gateway::StoredChannelSubscription>()},
   }},
   {{
   }},
@@ -11089,7 +11089,7 @@ StoredUnreadEntry::StoredUnreadEntry(::google::protobuf::Arena* PROTOBUF_NULLABL
 PROTOBUF_NDEBUG_INLINE StoredUnreadEntry::Impl_::Impl_(
     [[maybe_unused]] ::google::protobuf::internal::InternalVisibility visibility,
     [[maybe_unused]] ::google::protobuf::Arena* PROTOBUF_NULLABLE arena, const Impl_& from,
-    [[maybe_unused]] const ::chirp::server_gateway::StoredUnreadEntry& from_msg)
+    [[maybe_unused]] const ::chirp::game_server_gateway::StoredUnreadEntry& from_msg)
       : _has_bits_{from._has_bits_},
         _cached_size_{0},
         player_id_(arena, from.player_id_),
@@ -11201,7 +11201,7 @@ StoredUnreadEntry::_table_ = {
     nullptr,  // post_loop_handler
     ::_pbi::TcParser::GenericFallback,  // fallback
     #ifdef PROTOBUF_PREFETCH_PARSE_TABLE
-    ::_pbi::TcParser::GetTable<::chirp::server_gateway::StoredUnreadEntry>(),  // to_prefetch
+    ::_pbi::TcParser::GetTable<::chirp::game_server_gateway::StoredUnreadEntry>(),  // to_prefetch
     #endif  // PROTOBUF_PREFETCH_PARSE_TABLE
   }, {{
     // int32 unread_count = 4;
@@ -11480,7 +11480,7 @@ MarkChannelsReadRequest::MarkChannelsReadRequest(::google::protobuf::Arena* PROT
 PROTOBUF_NDEBUG_INLINE MarkChannelsReadRequest::Impl_::Impl_(
     [[maybe_unused]] ::google::protobuf::internal::InternalVisibility visibility,
     [[maybe_unused]] ::google::protobuf::Arena* PROTOBUF_NULLABLE arena, const Impl_& from,
-    [[maybe_unused]] const ::chirp::server_gateway::MarkChannelsReadRequest& from_msg)
+    [[maybe_unused]] const ::chirp::game_server_gateway::MarkChannelsReadRequest& from_msg)
       : _has_bits_{from._has_bits_},
         _cached_size_{0},
         player_id_(arena, from.player_id_),
@@ -11590,7 +11590,7 @@ MarkChannelsReadRequest::_table_ = {
     nullptr,  // post_loop_handler
     ::_pbi::TcParser::GenericFallback,  // fallback
     #ifdef PROTOBUF_PREFETCH_PARSE_TABLE
-    ::_pbi::TcParser::GetTable<::chirp::server_gateway::MarkChannelsReadRequest>(),  // to_prefetch
+    ::_pbi::TcParser::GetTable<::chirp::game_server_gateway::MarkChannelsReadRequest>(),  // to_prefetch
     #endif  // PROTOBUF_PREFETCH_PARSE_TABLE
   }, {{
     {::_pbi::TcParser::MiniParse, {}},
@@ -11936,7 +11936,7 @@ MarkChannelsReadResponse::_table_ = {
     nullptr,  // post_loop_handler
     ::_pbi::TcParser::GenericFallback,  // fallback
     #ifdef PROTOBUF_PREFETCH_PARSE_TABLE
-    ::_pbi::TcParser::GetTable<::chirp::server_gateway::MarkChannelsReadResponse>(),  // to_prefetch
+    ::_pbi::TcParser::GetTable<::chirp::game_server_gateway::MarkChannelsReadResponse>(),  // to_prefetch
     #endif  // PROTOBUF_PREFETCH_PARSE_TABLE
   }, {{
     // int32 cleared = 2;
@@ -12134,7 +12134,7 @@ UnreadSummaryEntry::UnreadSummaryEntry(::google::protobuf::Arena* PROTOBUF_NULLA
 PROTOBUF_NDEBUG_INLINE UnreadSummaryEntry::Impl_::Impl_(
     [[maybe_unused]] ::google::protobuf::internal::InternalVisibility visibility,
     [[maybe_unused]] ::google::protobuf::Arena* PROTOBUF_NULLABLE arena, const Impl_& from,
-    [[maybe_unused]] const ::chirp::server_gateway::UnreadSummaryEntry& from_msg)
+    [[maybe_unused]] const ::chirp::game_server_gateway::UnreadSummaryEntry& from_msg)
       : _has_bits_{from._has_bits_},
         _cached_size_{0},
         game_id_(arena, from.game_id_),
@@ -12243,7 +12243,7 @@ UnreadSummaryEntry::_table_ = {
     nullptr,  // post_loop_handler
     ::_pbi::TcParser::GenericFallback,  // fallback
     #ifdef PROTOBUF_PREFETCH_PARSE_TABLE
-    ::_pbi::TcParser::GetTable<::chirp::server_gateway::UnreadSummaryEntry>(),  // to_prefetch
+    ::_pbi::TcParser::GetTable<::chirp::game_server_gateway::UnreadSummaryEntry>(),  // to_prefetch
     #endif  // PROTOBUF_PREFETCH_PARSE_TABLE
   }, {{
     {::_pbi::TcParser::MiniParse, {}},
@@ -12486,7 +12486,7 @@ GetUnreadSummaryRequest::GetUnreadSummaryRequest(::google::protobuf::Arena* PROT
 PROTOBUF_NDEBUG_INLINE GetUnreadSummaryRequest::Impl_::Impl_(
     [[maybe_unused]] ::google::protobuf::internal::InternalVisibility visibility,
     [[maybe_unused]] ::google::protobuf::Arena* PROTOBUF_NULLABLE arena, const Impl_& from,
-    [[maybe_unused]] const ::chirp::server_gateway::GetUnreadSummaryRequest& from_msg)
+    [[maybe_unused]] const ::chirp::game_server_gateway::GetUnreadSummaryRequest& from_msg)
       : _has_bits_{from._has_bits_},
         _cached_size_{0},
         player_id_(arena, from.player_id_),
@@ -12593,7 +12593,7 @@ GetUnreadSummaryRequest::_table_ = {
     nullptr,  // post_loop_handler
     ::_pbi::TcParser::GenericFallback,  // fallback
     #ifdef PROTOBUF_PREFETCH_PARSE_TABLE
-    ::_pbi::TcParser::GetTable<::chirp::server_gateway::GetUnreadSummaryRequest>(),  // to_prefetch
+    ::_pbi::TcParser::GetTable<::chirp::game_server_gateway::GetUnreadSummaryRequest>(),  // to_prefetch
     #endif  // PROTOBUF_PREFETCH_PARSE_TABLE
   }, {{
     // string game_id = 2;
@@ -12806,7 +12806,7 @@ GetUnreadSummaryResponse::GetUnreadSummaryResponse(::google::protobuf::Arena* PR
 PROTOBUF_NDEBUG_INLINE GetUnreadSummaryResponse::Impl_::Impl_(
     [[maybe_unused]] ::google::protobuf::internal::InternalVisibility visibility,
     [[maybe_unused]] ::google::protobuf::Arena* PROTOBUF_NULLABLE arena, const Impl_& from,
-    [[maybe_unused]] const ::chirp::server_gateway::GetUnreadSummaryResponse& from_msg)
+    [[maybe_unused]] const ::chirp::game_server_gateway::GetUnreadSummaryResponse& from_msg)
       : _has_bits_{from._has_bits_},
         _cached_size_{0},
         entries_{visibility, arena, from.entries_} {}
@@ -12934,7 +12934,7 @@ GetUnreadSummaryResponse::_table_ = {
     nullptr,  // post_loop_handler
     ::_pbi::TcParser::GenericFallback,  // fallback
     #ifdef PROTOBUF_PREFETCH_PARSE_TABLE
-    ::_pbi::TcParser::GetTable<::chirp::server_gateway::GetUnreadSummaryResponse>(),  // to_prefetch
+    ::_pbi::TcParser::GetTable<::chirp::game_server_gateway::GetUnreadSummaryResponse>(),  // to_prefetch
     #endif  // PROTOBUF_PREFETCH_PARSE_TABLE
   }, {{
     {::_pbi::TcParser::MiniParse, {}},
@@ -12961,7 +12961,7 @@ GetUnreadSummaryResponse::_table_ = {
     {PROTOBUF_FIELD_OFFSET(GetUnreadSummaryResponse, _impl_.total_unread_), _Internal::kHasBitsOffset + 2, 0, (0 | ::_fl::kFcOptional | ::_fl::kInt32)},
   }},
   {{
-      {::_pbi::TcParser::GetTable<::chirp::server_gateway::UnreadSummaryEntry>()},
+      {::_pbi::TcParser::GetTable<::chirp::game_server_gateway::UnreadSummaryEntry>()},
   }},
   {{
   }},

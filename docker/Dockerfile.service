@@ -2,7 +2,7 @@ ARG UBUNTU_VERSION=22.04
 
 FROM ubuntu:${UBUNTU_VERSION} AS build
 
-ARG SERVICE=gateway
+ARG SERVICE=game_sdk_gateway
 
 # libmariadb-dev (MariaDB Connector/C): same mysql_* C API and mysql/mysql.h
 # layout as libmysqlclient, with a much lighter dependency footprint.
@@ -26,17 +26,21 @@ RUN ./gen_proto.sh
 RUN cmake -S . -B build -DCMAKE_BUILD_TYPE=Release -DENABLE_TESTS=OFF
 RUN cmake --build build --target chirp_${SERVICE} chirp_chat_mysql_exporter -j"$(nproc)"
 RUN case "${SERVICE}" in \
-      chat|chat_distributed) cp "/src/build/services/chat/chirp_${SERVICE}" /tmp/chirp_bin ;; \
-      chat_enhanced) cp "/src/build/services/chat/chirp_chat" /tmp/chirp_bin ;; \
-      auth_enhanced) cp "/src/build/services/auth/chirp_auth" /tmp/chirp_bin ;; \
-      npc_dialog) cp "/src/build/services/npc_dialog/chirp_npc_dialog" /tmp/chirp_bin ;; \
-      gateway|auth|social|voice|party|notification|search|app_gateway) cp "/src/build/services/${SERVICE}/chirp_${SERVICE}" /tmp/chirp_bin ;; \
+      chat|chat_distributed) cp "/src/build/services/shared/chat/chirp_${SERVICE}" /tmp/chirp_bin ;; \
+      chat_enhanced) cp "/src/build/services/shared/chat/chirp_chat" /tmp/chirp_bin ;; \
+      app_auth|app_auth_enhanced) cp "/src/build/services/app/auth/chirp_app_auth" /tmp/chirp_bin ;; \
+      npc_dialog) cp "/src/build/services/game/npc_dialog/chirp_npc_dialog" /tmp/chirp_bin ;; \
+      game_sdk_gateway) cp "/src/build/services/game/sdk_gateway/chirp_game_sdk_gateway" /tmp/chirp_bin ;; \
+      game_server_gateway) cp "/src/build/services/game/server_gateway/chirp_game_server_gateway" /tmp/chirp_bin ;; \
+      app_sdk_gateway) cp "/src/build/services/app/sdk_gateway/chirp_app_sdk_gateway" /tmp/chirp_bin ;; \
+      app_notification) cp "/src/build/services/app/notification/chirp_app_notification" /tmp/chirp_bin ;; \
+      social|voice|party|search) cp "/src/build/services/${SERVICE}/chirp_${SERVICE}" /tmp/chirp_bin ;; \
       *) echo "Unsupported service target: ${SERVICE}" >&2; exit 1 ;; \
     esac
 
 FROM ubuntu:${UBUNTU_VERSION} AS runtime
 
-ARG SERVICE=gateway
+ARG SERVICE=game_sdk_gateway
 
 # Runtime only: the mariadb client .so (default-mysql-client is the MariaDB
 # CLI on Ubuntu/Debian, kept for manual database inspection).

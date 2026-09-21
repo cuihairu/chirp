@@ -16,7 +16,7 @@ using chirp::chat::InjectConsumer;
 using chirp::chat::InjectHooks;
 using chirp::chat::InjectOutcome;
 using chirp::common::ErrorCode;
-using chirp::server_gateway::InjectMessageNotify;
+using chirp::game_server_gateway::InjectMessageNotify;
 
 // Records every hook invocation so tests can assert the delivery tail.
 struct RecordingHooks {
@@ -60,7 +60,7 @@ InjectMessageNotify MakeNotify(const std::string& sender_id, const std::string& 
   InjectMessageNotify notify;
   auto* req = notify.mutable_message();
   req->set_inject_id("inj-1");
-  req->set_sender_kind(chirp::server_gateway::SENDER_NPC);
+  req->set_sender_kind(chirp::game_server_gateway::SENDER_NPC);
   req->set_sender_id(sender_id);
   req->set_channel_type(static_cast<int32_t>(chirp::chat::PRIVATE));
   req->set_receiver_id("player_1");
@@ -113,7 +113,7 @@ TEST(InjectConsumerTest, BroadcastsChannelAndQueuesOfflineMembers) {
 
   InjectMessageNotify notify = MakeNotify("trade", "auction open");
   auto* req = notify.mutable_message();
-  req->set_sender_kind(chirp::server_gateway::SENDER_SERVICE);
+  req->set_sender_kind(chirp::game_server_gateway::SENDER_SERVICE);
   req->set_channel_type(static_cast<int32_t>(chirp::chat::GUILD));
   req->clear_receiver_id();
   req->set_channel_id("guild_7");
@@ -167,7 +167,7 @@ TEST(InjectConsumerTest, RejectsUnknownSenderKind) {
   InjectConsumer consumer(rec.MakeHooks());
 
   InjectMessageNotify notify = MakeNotify("npc", "hello");
-  notify.mutable_message()->set_sender_kind(chirp::server_gateway::SENDER_UNKNOWN);
+  notify.mutable_message()->set_sender_kind(chirp::game_server_gateway::SENDER_UNKNOWN);
 
   const InjectOutcome out = consumer.HandleInject(notify);
 

@@ -8,17 +8,17 @@ echo "=== Chirp 服务启动测试 ==="
 echo ""
 
 # 检查构建产物是否存在
-if [ ! -f "./build/services/gateway/chirp_gateway" ]; then
-  echo "错误: chirp_gateway 未构建"
+if [ ! -f "./build/services/game/sdk_gateway/chirp_game_sdk_gateway" ]; then
+  echo "错误: chirp_game_sdk_gateway 未构建"
   exit 1
 fi
 
-if [ ! -f "./build/services/auth/chirp_auth" ]; then
-  echo "错误: chirp_auth 未构建"
+if [ ! -f "./build/services/app/auth/chirp_app_auth" ]; then
+  echo "错误: chirp_app_auth 未构建"
   exit 1
 fi
 
-if [ ! -f "./build/services/chat/chirp_chat" ]; then
+if [ ! -f "./build/services/shared/chat/chirp_chat" ]; then
   echo "错误: chirp_chat 未构建"
   exit 1
 fi
@@ -34,9 +34,9 @@ echo ""
 echo "=== 测试完成 ==="
 echo ""
 echo "要运行服务，执行:"
-echo "  ./build/services/gateway/chirp_gateway --port 5000 --ws_port 5001"
-echo "  ./build/services/auth/chirp_auth --port 6000"
-echo "  ./build/services/chat/chirp_chat --port 7000 --ws_port 7001"
+echo "  ./build/services/game/sdk_gateway/chirp_game_sdk_gateway --port 5000 --ws_port 5001"
+echo "  ./build/services/app/auth/chirp_app_auth --port 6000"
+echo "  ./build/services/shared/chat/chirp_chat --port 7000 --ws_port 7001"
 
 if [[ "${1:-}" != "--smoke" && "${1:-}" != "--smoke-chat" && "${1:-}" != "--smoke-redis" && "${1:-}" != "--smoke-npc" && "${1:-}" != "--smoke-sdk" && "${1:-}" != "--smoke-edge" && "${1:-}" != "--smoke-jwt" ]]; then
   exit 0
@@ -148,13 +148,13 @@ if [[ "${1:-}" == "--smoke" ]]; then
   GW_PORT="${GW_PORT:-$(pick_port)}"
   WS_PORT="${WS_PORT:-$(pick_port)}"
 
-  AUTH_LOG="${AUTH_LOG:-/tmp/chirp_auth_smoke.log}"
-  GW_LOG="${GW_LOG:-/tmp/chirp_gateway_smoke.log}"
+  AUTH_LOG="${AUTH_LOG:-/tmp/chirp_app_auth_smoke.log}"
+  GW_LOG="${GW_LOG:-/tmp/chirp_game_sdk_gateway_smoke.log}"
 
-  ./build/services/auth/chirp_auth --port "${AUTH_PORT}" --jwt_secret dev_secret --allow_scaffold_login 1 > "${AUTH_LOG}" 2>&1 &
+  ./build/services/app/auth/chirp_app_auth --port "${AUTH_PORT}" --jwt_secret dev_secret --allow_scaffold_login 1 > "${AUTH_LOG}" 2>&1 &
   AUTH_PID=$!
 
-  ./build/services/gateway/chirp_gateway --port "${GW_PORT}" --ws_port "${WS_PORT}" \
+  ./build/services/game/sdk_gateway/chirp_game_sdk_gateway --port "${GW_PORT}" --ws_port "${WS_PORT}" \
     --auth_host 127.0.0.1 --auth_port "${AUTH_PORT}" > "${GW_LOG}" 2>&1 &
   GW_PID=$!
 
@@ -163,8 +163,8 @@ if [[ "${1:-}" == "--smoke" ]]; then
   }
   trap cleanup EXIT
 
-  wait_port "${AUTH_PORT}" chirp_auth "${AUTH_LOG}"
-  wait_port "${GW_PORT}" chirp_gateway "${GW_LOG}"
+  wait_port "${AUTH_PORT}" chirp_app_auth "${AUTH_LOG}"
+  wait_port "${GW_PORT}" chirp_game_sdk_gateway "${GW_LOG}"
 
   echo ""
   echo "[tcp] login -> ping"
@@ -197,9 +197,9 @@ elif [[ "${1:-}" == "--smoke-redis" ]]; then
   WS1_PORT="${WS1_PORT:-$(pick_port)}"
   WS2_PORT="${WS2_PORT:-$(pick_port)}"
 
-  AUTH_LOG="${AUTH_LOG:-/tmp/chirp_auth_smoke_redis.log}"
-  GW1_LOG="${GW1_LOG:-/tmp/chirp_gateway1_smoke_redis.log}"
-  GW2_LOG="${GW2_LOG:-/tmp/chirp_gateway2_smoke_redis.log}"
+  AUTH_LOG="${AUTH_LOG:-/tmp/chirp_app_auth_smoke_redis.log}"
+  GW1_LOG="${GW1_LOG:-/tmp/chirp_game_sdk_gateway1_smoke_redis.log}"
+  GW2_LOG="${GW2_LOG:-/tmp/chirp_game_sdk_gateway2_smoke_redis.log}"
   CLIENT1_LOG="${CLIENT1_LOG:-/tmp/chirp_client_hold_smoke_redis.log}"
   CLIENT3_LOG="${CLIENT3_LOG:-/tmp/chirp_client_cohold_smoke_redis.log}"
   WS_CLIENT1_LOG="${WS_CLIENT1_LOG:-/tmp/chirp_ws_client_hold_smoke_redis.log}"
@@ -229,22 +229,22 @@ elif [[ "${1:-}" == "--smoke-redis" ]]; then
     sleep 0.1
   done
 
-  ./build/services/auth/chirp_auth --port "${AUTH_PORT}" --jwt_secret dev_secret --allow_scaffold_login 1 > "${AUTH_LOG}" 2>&1 &
+  ./build/services/app/auth/chirp_app_auth --port "${AUTH_PORT}" --jwt_secret dev_secret --allow_scaffold_login 1 > "${AUTH_LOG}" 2>&1 &
   AUTH_PID=$!
 
-  ./build/services/gateway/chirp_gateway --port "${GW1_PORT}" --ws_port "${WS1_PORT}" \
+  ./build/services/game/sdk_gateway/chirp_game_sdk_gateway --port "${GW1_PORT}" --ws_port "${WS1_PORT}" \
     --auth_host 127.0.0.1 --auth_port "${AUTH_PORT}" \
     --redis_host 127.0.0.1 --redis_port "${REDIS_PORT}" --redis_ttl 3600 --instance_id gw_a > "${GW1_LOG}" 2>&1 &
   GW1_PID=$!
 
-  ./build/services/gateway/chirp_gateway --port "${GW2_PORT}" --ws_port "${WS2_PORT}" \
+  ./build/services/game/sdk_gateway/chirp_game_sdk_gateway --port "${GW2_PORT}" --ws_port "${WS2_PORT}" \
     --auth_host 127.0.0.1 --auth_port "${AUTH_PORT}" \
     --redis_host 127.0.0.1 --redis_port "${REDIS_PORT}" --redis_ttl 3600 --instance_id gw_b > "${GW2_LOG}" 2>&1 &
   GW2_PID=$!
 
-  wait_port "${AUTH_PORT}" chirp_auth "${AUTH_LOG}"
-  wait_port "${GW1_PORT}" chirp_gateway-a "${GW1_LOG}"
-  wait_port "${GW2_PORT}" chirp_gateway-b "${GW2_LOG}"
+  wait_port "${AUTH_PORT}" chirp_app_auth "${AUTH_LOG}"
+  wait_port "${GW1_PORT}" chirp_game_sdk_gateway-a "${GW1_LOG}"
+  wait_port "${GW2_PORT}" chirp_game_sdk_gateway-b "${GW2_LOG}"
 
   echo ""
   echo "[tcp] hold login on gw_a (expect kick: same user+device via redis claim)"
@@ -369,14 +369,14 @@ elif [[ "${1:-}" == "--smoke-npc" ]]; then
   NPC_LISTEN_LOG="${NPC_LISTEN_LOG:-/tmp/chirp_npc_listen_smoke.log}"
   NPC_OFFLINE_LISTEN_LOG="${NPC_OFFLINE_LISTEN_LOG:-/tmp/chirp_npc_offline_listen_smoke.log}"
 
-  ./build/services/server_gateway/chirp_server_gateway --port "${HUB_PORT}" \
+  ./build/services/game/server_gateway/chirp_game_server_gateway --port "${HUB_PORT}" \
     --service chat=chat-secret --service npc_dialog=npc-secret --chat_service_id chat \
     > "${HUB_LOG}" 2>&1 &
   HUB_PID=$!
 
-  wait_port "${HUB_PORT}" chirp_server_gateway "${HUB_LOG}"
+  wait_port "${HUB_PORT}" chirp_game_server_gateway "${HUB_LOG}"
 
-  ./build/services/chat/chirp_chat --port "${CHAT_PORT}" --ws_port "${CHAT_WS_PORT}" \
+  ./build/services/shared/chat/chirp_chat --port "${CHAT_PORT}" --ws_port "${CHAT_WS_PORT}" \
     --server_gateway_host 127.0.0.1 --server_gateway_port "${HUB_PORT}" \
     --server_gateway_secret chat-secret --npc_service_id npc_dialog \
     > "${CHAT_LOG}" 2>&1 &
@@ -507,7 +507,7 @@ elif [[ "${1:-}" == "--smoke-sdk" ]]; then
   SDK_B_LOG="${SDK_B_LOG:-/tmp/chirp_sdk_b_smoke.log}"
   SDK_D_LOG="${SDK_D_LOG:-/tmp/chirp_sdk_d_smoke.log}"
 
-  ./build/services/chat/chirp_chat --port "${CHAT_PORT}" --ws_port "${CHAT_WS_PORT}" > "${CHAT_LOG}" 2>&1 &
+  ./build/services/shared/chat/chirp_chat --port "${CHAT_PORT}" --ws_port "${CHAT_WS_PORT}" > "${CHAT_LOG}" 2>&1 &
   CHAT_PID=$!
 
   cleanup() {
@@ -591,9 +591,9 @@ elif [[ "${1:-}" == "--smoke-edge" ]]; then
   REDIS_DIR="${REDIS_DIR:-$(mktemp -d /tmp/chirp_edge_smoke_redis.XXXXXX)}"
   REDIS_LOG="${REDIS_LOG:-/tmp/chirp_edge_smoke_redis.log}"
 
-  AUTH_LOG="${AUTH_LOG:-/tmp/chirp_auth_smoke_edge.log}"
+  AUTH_LOG="${AUTH_LOG:-/tmp/chirp_app_auth_smoke_edge.log}"
   CHAT_LOG="${CHAT_LOG:-/tmp/chirp_chat_smoke_edge.log}"
-  GW_LOG="${GW_LOG:-/tmp/chirp_gateway_smoke_edge.log}"
+  GW_LOG="${GW_LOG:-/tmp/chirp_game_sdk_gateway_smoke_edge.log}"
   C1_LOG="${C1_LOG:-/tmp/chirp_edge_c1_direct.log}"
   C2_LOG="${C2_LOG:-/tmp/chirp_edge_c2_direct.log}"
   A_LOG="${A_LOG:-/tmp/chirp_edge_a_gateway.log}"
@@ -608,15 +608,15 @@ elif [[ "${1:-}" == "--smoke-edge" ]]; then
   "${REDIS_SERVER_BIN}" --port "${REDIS_PORT}" --save '' --appendonly no --dir "${REDIS_DIR}" > "${REDIS_LOG}" 2>&1 &
   REDIS_PID=$!
 
-  ./build/services/auth/chirp_auth --port "${AUTH_PORT}" --jwt_secret dev_secret --allow_scaffold_login 1 > "${AUTH_LOG}" 2>&1 &
+  ./build/services/app/auth/chirp_app_auth --port "${AUTH_PORT}" --jwt_secret dev_secret --allow_scaffold_login 1 > "${AUTH_LOG}" 2>&1 &
   AUTH_PID=$!
 
-  ./build/services/chat/chirp_chat --port "${CHAT_PORT}" --ws_port "${CHAT_WS_PORT}" \
+  ./build/services/shared/chat/chirp_chat --port "${CHAT_PORT}" --ws_port "${CHAT_WS_PORT}" \
     --redis_host 127.0.0.1 --redis_port "${REDIS_PORT}" \
     --login_rate_limit_per_min 1 --gateway_service_secret edge-secret > "${CHAT_LOG}" 2>&1 &
   CHAT_PID=$!
 
-  ./build/services/gateway/chirp_gateway --port "${GW_PORT}" --ws_port "${GW_WS_PORT}" \
+  ./build/services/game/sdk_gateway/chirp_game_sdk_gateway --port "${GW_PORT}" --ws_port "${GW_WS_PORT}" \
     --auth_host 127.0.0.1 --auth_port "${AUTH_PORT}" \
     --chat_host 127.0.0.1 --chat_port "${CHAT_PORT}" --chat_service_secret edge-secret > "${GW_LOG}" 2>&1 &
   GW_PID=$!
@@ -633,9 +633,9 @@ elif [[ "${1:-}" == "--smoke-edge" ]]; then
   }
   trap cleanup EXIT
 
-  wait_port "${AUTH_PORT}" chirp_auth "${AUTH_LOG}"
+  wait_port "${AUTH_PORT}" chirp_app_auth "${AUTH_LOG}"
   wait_port "${CHAT_PORT}" chirp_chat "${CHAT_LOG}"
-  wait_port "${GW_PORT}" chirp_gateway "${GW_LOG}"
+  wait_port "${GW_PORT}" chirp_game_sdk_gateway "${GW_LOG}"
   wait_port "${APP_PORT}" chirp_app_gateway "${APP_LOG}"
 
   echo ""
@@ -764,9 +764,9 @@ elif [[ "${1:-}" == "--smoke-jwt" ]]; then
   GW_WS_PORT="${GW_WS_PORT:-$(pick_port)}"
   JWT_SECRET="${JWT_SECRET:-jwt_smoke_secret}"
 
-  AUTH_LOG="${AUTH_LOG:-/tmp/chirp_auth_smoke_jwt.log}"
+  AUTH_LOG="${AUTH_LOG:-/tmp/chirp_app_auth_smoke_jwt.log}"
   CHAT_LOG="${CHAT_LOG:-/tmp/chirp_chat_smoke_jwt.log}"
-  GW_LOG="${GW_LOG:-/tmp/chirp_gateway_smoke_jwt.log}"
+  GW_LOG="${GW_LOG:-/tmp/chirp_game_sdk_gateway_smoke_jwt.log}"
   C1_LOG="${C1_LOG:-/tmp/chirp_jwt_c1_chat_scaffold.log}"
   C2_LOG="${C2_LOG:-/tmp/chirp_jwt_c2_gw_scaffold.log}"
   C3_LOG="${C3_LOG:-/tmp/chirp_jwt_c3_wrong_secret.log}"
@@ -774,14 +774,14 @@ elif [[ "${1:-}" == "--smoke-jwt" ]]; then
   A_LOG="${A_LOG:-/tmp/chirp_jwt_a_send.log}"
   B_LOG="${B_LOG:-/tmp/chirp_jwt_b_refill.log}"
 
-  ./build/services/auth/chirp_auth --port "${AUTH_PORT}" --jwt_secret "${JWT_SECRET}" > "${AUTH_LOG}" 2>&1 &
+  ./build/services/app/auth/chirp_app_auth --port "${AUTH_PORT}" --jwt_secret "${JWT_SECRET}" > "${AUTH_LOG}" 2>&1 &
   AUTH_PID=$!
 
-  ./build/services/chat/chirp_chat --port "${CHAT_PORT}" --ws_port "${CHAT_WS_PORT}" \
+  ./build/services/shared/chat/chirp_chat --port "${CHAT_PORT}" --ws_port "${CHAT_WS_PORT}" \
     --token_secret "${JWT_SECRET}" --gateway_service_secret edge-jwt-secret > "${CHAT_LOG}" 2>&1 &
   CHAT_PID=$!
 
-  ./build/services/gateway/chirp_gateway --port "${GW_PORT}" --ws_port "${GW_WS_PORT}" \
+  ./build/services/game/sdk_gateway/chirp_game_sdk_gateway --port "${GW_PORT}" --ws_port "${GW_WS_PORT}" \
     --auth_host 127.0.0.1 --auth_port "${AUTH_PORT}" \
     --chat_host 127.0.0.1 --chat_port "${CHAT_PORT}" --chat_service_secret edge-jwt-secret > "${GW_LOG}" 2>&1 &
   GW_PID=$!
@@ -791,9 +791,9 @@ elif [[ "${1:-}" == "--smoke-jwt" ]]; then
   }
   trap cleanup EXIT
 
-  wait_port "${AUTH_PORT}" chirp_auth "${AUTH_LOG}"
+  wait_port "${AUTH_PORT}" chirp_app_auth "${AUTH_LOG}"
   wait_port "${CHAT_PORT}" chirp_chat "${CHAT_LOG}"
-  wait_port "${GW_PORT}" chirp_gateway "${GW_LOG}"
+  wait_port "${GW_PORT}" chirp_game_sdk_gateway "${GW_LOG}"
 
   # 1) 直连 chat:--token_secret 生效,scaffold token 被拒(不再有兜底放行)
   echo ""
@@ -930,7 +930,7 @@ else
 
   # --ack_timeout_ms 1000: 投递 ACK 链路的超时窗口压到 1s,让"静默客户端
   # 转离线"的 smoke 段不用等默认 10s。
-  ./build/services/chat/chirp_chat --port "${CHAT_PORT}" --ws_port "${CHAT_WS_PORT}" --redis_host 127.0.0.1 --redis_port "${REDIS_PORT}" --ack_timeout_ms 1000 > "${CHAT_LOG}" 2>&1 &
+  ./build/services/shared/chat/chirp_chat --port "${CHAT_PORT}" --ws_port "${CHAT_WS_PORT}" --redis_host 127.0.0.1 --redis_port "${REDIS_PORT}" --ack_timeout_ms 1000 > "${CHAT_LOG}" 2>&1 &
   CHAT_PID=$!
 
   cleanup() {

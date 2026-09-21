@@ -20,11 +20,11 @@
 
 namespace {
 
-using chirp::notification::HttpConnectionFactory;
-using chirp::notification::HttpConnection;
-using chirp::notification::HttpPushTransport;
-using chirp::notification::PushRequest;
-using chirp::notification::TcpHttpConnectionFactory;
+using chirp::app_notification::HttpConnectionFactory;
+using chirp::app_notification::HttpConnection;
+using chirp::app_notification::HttpPushTransport;
+using chirp::app_notification::PushRequest;
+using chirp::app_notification::TcpHttpConnectionFactory;
 
 // ---------------------------------------------------------------------------
 // Scripted connection: records the wire bytes and replays canned reads.

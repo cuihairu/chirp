@@ -169,17 +169,21 @@ add_subdirectory(proto)
 add_subdirectory(libs/common)
 add_subdirectory(libs/network)
 
-# 2. Services (Microservices)
-add_subdirectory(services/gateway)
-add_subdirectory(services/auth)
-add_subdirectory(services/chat)
-add_subdirectory(services/server_gateway)
+# 2. Services
+# Game plane
+add_subdirectory(services/game/sdk_gateway)
+add_subdirectory(services/game/server_gateway)
+add_subdirectory(services/game/npc_dialog)
+# App plane
+add_subdirectory(services/app/auth)
+add_subdirectory(services/app/notification)
+add_subdirectory(services/app/sdk_gateway)
+# Shared (used by both planes)
+add_subdirectory(services/shared/chat)
+# Experimental
 add_subdirectory(services/social)
 add_subdirectory(services/voice)
 add_subdirectory(services/party)
-add_subdirectory(services/notification)
-add_subdirectory(services/app_gateway)
-add_subdirectory(services/npc_dialog)
 add_subdirectory(services/search)
 
 

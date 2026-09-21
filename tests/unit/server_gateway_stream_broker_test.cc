@@ -19,16 +19,16 @@
 #include "network/redis_client.h"
 #include "proto/chat.pb.h"
 #include "proto/common.pb.h"
-#include "proto/server_gateway.pb.h"
+#include "proto/game_server_gateway.pb.h"
 #include "stream_broker.h"
 
 namespace {
 
-using chirp::server_gateway::MessageInjectRequest;
-using chirp::server_gateway::MessageInjectResponse;
-using chirp::server_gateway::StreamBrokerConfig;
-using chirp::server_gateway::StreamBrokerConsumer;
-using chirp::server_gateway::StreamInjectEnvelope;
+using chirp::game_server_gateway::MessageInjectRequest;
+using chirp::game_server_gateway::MessageInjectResponse;
+using chirp::game_server_gateway::StreamBrokerConfig;
+using chirp::game_server_gateway::StreamBrokerConsumer;
+using chirp::game_server_gateway::StreamInjectEnvelope;
 using chirp::network::RedisClient;
 using chirp::network::RedisResp;
 
@@ -284,56 +284,56 @@ std::vector<std::string> ValidFields() {
 
 TEST(StreamBrokerParseTest, ParsesEnvelopeWithPrefixAndNumericChannel) {
   StreamInjectEnvelope env;
-  ASSERT_TRUE(chirp::server_gateway::ParseInjectEnvelope(
+  ASSERT_TRUE(chirp::game_server_gateway::ParseInjectEnvelope(
       {"service_id", "chat", "sender_kind", "SENDER_NPC", "channel_type", "2", "sender_id", "n",
        "content", "hi"},
       &env));
   EXPECT_EQ(env.service_id, "chat");
-  EXPECT_EQ(env.req.sender_kind(), chirp::server_gateway::SENDER_NPC);
+  EXPECT_EQ(env.req.sender_kind(), chirp::game_server_gateway::SENDER_NPC);
   EXPECT_EQ(env.req.channel_type(), static_cast<int32_t>(chirp::chat::GUILD));
   EXPECT_TRUE(env.reply_to.empty());
 }
 
 TEST(StreamBrokerParseTest, ParsesGameIdAndLeavesItAbsentOnLegacyEntries) {
   StreamInjectEnvelope env;
-  ASSERT_TRUE(chirp::server_gateway::ParseInjectEnvelope(
+  ASSERT_TRUE(chirp::game_server_gateway::ParseInjectEnvelope(
       {"sender_kind", "SERVICE", "channel_type", "WORLD", "game_id", "game-a", "channel_id", "c1"},
       &env));
   EXPECT_EQ(env.req.game_id(), "game-a");
 
   // Legacy entries (no game_id field) keep the direct-injection semantics.
   StreamInjectEnvelope legacy;
-  ASSERT_TRUE(chirp::server_gateway::ParseInjectEnvelope(
+  ASSERT_TRUE(chirp::game_server_gateway::ParseInjectEnvelope(
       {"sender_kind", "SYSTEM", "channel_type", "WORLD", "channel_id", "c1"}, &legacy));
   EXPECT_TRUE(legacy.req.game_id().empty());
 }
 
 TEST(StreamBrokerParseTest, ParsesEveryKindAndChannelName) {
   StreamInjectEnvelope env;
-  ASSERT_TRUE(chirp::server_gateway::ParseInjectEnvelope(
+  ASSERT_TRUE(chirp::game_server_gateway::ParseInjectEnvelope(
       {"sender_kind", "SYSTEM", "channel_type", "TEAM"}, &env));
-  EXPECT_EQ(env.req.sender_kind(), chirp::server_gateway::SENDER_SYSTEM);
+  EXPECT_EQ(env.req.sender_kind(), chirp::game_server_gateway::SENDER_SYSTEM);
   EXPECT_EQ(env.req.channel_type(), static_cast<int32_t>(chirp::chat::TEAM));
 
-  ASSERT_TRUE(chirp::server_gateway::ParseInjectEnvelope(
+  ASSERT_TRUE(chirp::game_server_gateway::ParseInjectEnvelope(
       {"sender_kind", "SERVICE", "channel_type", "GUILD"}, &env));
-  EXPECT_EQ(env.req.sender_kind(), chirp::server_gateway::SENDER_SERVICE);
+  EXPECT_EQ(env.req.sender_kind(), chirp::game_server_gateway::SENDER_SERVICE);
   EXPECT_EQ(env.req.channel_type(), static_cast<int32_t>(chirp::chat::GUILD));
 
-  ASSERT_TRUE(chirp::server_gateway::ParseInjectEnvelope(
+  ASSERT_TRUE(chirp::game_server_gateway::ParseInjectEnvelope(
       {"sender_kind", "NPC", "channel_type", "0"}, &env));
   EXPECT_EQ(env.req.channel_type(), static_cast<int32_t>(chirp::chat::PRIVATE));
 }
 
 TEST(StreamBrokerParseTest, RejectsUnmappableEnvelopes) {
   StreamInjectEnvelope env;
-  EXPECT_FALSE(chirp::server_gateway::ParseInjectEnvelope({"odd"}, &env));
-  EXPECT_FALSE(chirp::server_gateway::ParseInjectEnvelope({"sender_kind", "WEIRD"}, &env));
-  EXPECT_FALSE(chirp::server_gateway::ParseInjectEnvelope(
+  EXPECT_FALSE(chirp::game_server_gateway::ParseInjectEnvelope({"odd"}, &env));
+  EXPECT_FALSE(chirp::game_server_gateway::ParseInjectEnvelope({"sender_kind", "WEIRD"}, &env));
+  EXPECT_FALSE(chirp::game_server_gateway::ParseInjectEnvelope(
       {"sender_kind", "NPC", "channel_type", "BAD"}, &env));
-  EXPECT_FALSE(chirp::server_gateway::ParseInjectEnvelope(
+  EXPECT_FALSE(chirp::game_server_gateway::ParseInjectEnvelope(
       {"sender_kind", "NPC", "channel_type", "9"}, &env));
-  EXPECT_FALSE(chirp::server_gateway::ParseInjectEnvelope(
+  EXPECT_FALSE(chirp::game_server_gateway::ParseInjectEnvelope(
       {"sender_kind", "NPC", "channel_type", "abc"}, &env));
 }
 
@@ -357,10 +357,10 @@ chirp::network::RedisResp MakeEntryList() {
 }
 
 TEST(StreamBrokerParseTest, ParsesStreamReplies) {
-  std::vector<chirp::server_gateway::StreamEntry> entries;
+  std::vector<chirp::game_server_gateway::StreamEntry> entries;
 
   chirp::network::RedisResp null_reply;
-  EXPECT_TRUE(chirp::server_gateway::ParseXReadGroupResp(null_reply, &entries));
+  EXPECT_TRUE(chirp::game_server_gateway::ParseXReadGroupResp(null_reply, &entries));
   EXPECT_TRUE(entries.empty());
 
   // XREADGROUP: [[stream_name, entries]]
@@ -373,7 +373,7 @@ TEST(StreamBrokerParseTest, ParsesStreamReplies) {
   name.str = "inject";
   stream.array.push_back(MakeEntryList());
 
-  ASSERT_TRUE(chirp::server_gateway::ParseXReadGroupResp(read_group, &entries));
+  ASSERT_TRUE(chirp::game_server_gateway::ParseXReadGroupResp(read_group, &entries));
   ASSERT_EQ(entries.size(), 1u);
   EXPECT_EQ(entries[0].id, "5-1");
   ASSERT_EQ(entries[0].fields.size(), 4u);
@@ -390,7 +390,7 @@ TEST(StreamBrokerParseTest, ParsesStreamReplies) {
       claim.array.emplace_back();  // trailing deleted-ids element
     }
     entries.clear();
-    ASSERT_TRUE(chirp::server_gateway::ParseXAutoClaimResp(claim, &entries));
+    ASSERT_TRUE(chirp::game_server_gateway::ParseXAutoClaimResp(claim, &entries));
     ASSERT_EQ(entries.size(), 1u);
     EXPECT_EQ(entries[0].id, "5-1");
   }
@@ -398,12 +398,12 @@ TEST(StreamBrokerParseTest, ParsesStreamReplies) {
   // Structural failures.
   chirp::network::RedisResp scalar;
   scalar.type = RedisResp::Type::kBulkString;
-  EXPECT_FALSE(chirp::server_gateway::ParseXReadGroupResp(scalar, &entries));
-  EXPECT_FALSE(chirp::server_gateway::ParseXAutoClaimResp(scalar, &entries));
+  EXPECT_FALSE(chirp::game_server_gateway::ParseXReadGroupResp(scalar, &entries));
+  EXPECT_FALSE(chirp::game_server_gateway::ParseXAutoClaimResp(scalar, &entries));
   chirp::network::RedisResp short_array;
   short_array.type = RedisResp::Type::kArray;
-  EXPECT_FALSE(chirp::server_gateway::ParseXReadGroupResp(short_array, &entries));
-  EXPECT_FALSE(chirp::server_gateway::ParseXAutoClaimResp(short_array, &entries));
+  EXPECT_FALSE(chirp::game_server_gateway::ParseXReadGroupResp(short_array, &entries));
+  EXPECT_FALSE(chirp::game_server_gateway::ParseXAutoClaimResp(short_array, &entries));
 
   auto bad_entry_list = MakeEntryList();
   bad_entry_list.array.clear();
@@ -412,8 +412,8 @@ TEST(StreamBrokerParseTest, ParsesStreamReplies) {
   chirp::network::RedisResp bad_entry;
   bad_entry.type = RedisResp::Type::kArray;
   bad_entry.array.push_back(bad_entry_list);
-  EXPECT_FALSE(chirp::server_gateway::ParseXReadGroupResp(bad_entry, &entries));
-  EXPECT_FALSE(chirp::server_gateway::ParseXAutoClaimResp(bad_entry, &entries));
+  EXPECT_FALSE(chirp::game_server_gateway::ParseXReadGroupResp(bad_entry, &entries));
+  EXPECT_FALSE(chirp::game_server_gateway::ParseXAutoClaimResp(bad_entry, &entries));
 
   // Entry with a single element instead of the [id, fields] pair.
   auto short_entry_list = MakeEntryList();
@@ -421,13 +421,13 @@ TEST(StreamBrokerParseTest, ParsesStreamReplies) {
   chirp::network::RedisResp short_entry;
   short_entry.type = RedisResp::Type::kArray;
   short_entry.array.push_back(short_entry_list);
-  EXPECT_FALSE(chirp::server_gateway::ParseXReadGroupResp(short_entry, &entries));
+  EXPECT_FALSE(chirp::game_server_gateway::ParseXReadGroupResp(short_entry, &entries));
   short_entry.array.clear();
   auto& next = short_entry.array.emplace_back();
   next.type = RedisResp::Type::kBulkString;
   next.str = "0-0";
   short_entry.array.push_back(short_entry_list);
-  EXPECT_FALSE(chirp::server_gateway::ParseXAutoClaimResp(short_entry, &entries));
+  EXPECT_FALSE(chirp::game_server_gateway::ParseXAutoClaimResp(short_entry, &entries));
 
   // Fields payload that is not an array.
   auto bad_fields_list = MakeEntryList();
@@ -435,13 +435,13 @@ TEST(StreamBrokerParseTest, ParsesStreamReplies) {
   chirp::network::RedisResp bad_fields;
   bad_fields.type = RedisResp::Type::kArray;
   bad_fields.array.push_back(bad_fields_list);
-  EXPECT_FALSE(chirp::server_gateway::ParseXReadGroupResp(bad_fields, &entries));
+  EXPECT_FALSE(chirp::game_server_gateway::ParseXReadGroupResp(bad_fields, &entries));
   bad_fields.array.clear();
   auto& next2 = bad_fields.array.emplace_back();
   next2.type = RedisResp::Type::kBulkString;
   next2.str = "0-0";
   bad_fields.array.push_back(bad_fields_list);
-  EXPECT_FALSE(chirp::server_gateway::ParseXAutoClaimResp(bad_fields, &entries));
+  EXPECT_FALSE(chirp::game_server_gateway::ParseXAutoClaimResp(bad_fields, &entries));
 
   // XAUTOCLAIM element 2 that is not an entry array.
   chirp::network::RedisResp claim_scalar;
@@ -451,7 +451,7 @@ TEST(StreamBrokerParseTest, ParsesStreamReplies) {
   claim_next.str = "0-0";
   auto& claim_list = claim_scalar.array.emplace_back();
   claim_list.type = RedisResp::Type::kBulkString;
-  EXPECT_FALSE(chirp::server_gateway::ParseXAutoClaimResp(claim_scalar, &entries));
+  EXPECT_FALSE(chirp::game_server_gateway::ParseXAutoClaimResp(claim_scalar, &entries));
 }
 
 TEST(StreamBrokerLifecycleTest, StopWithoutStartIsANoOp) {
@@ -493,7 +493,7 @@ TEST(StreamBrokerTest, ConsumesValidInjectionAndAcks) {
     std::lock_guard<std::mutex> lock(handler.mu);
     const auto& req = handler.calls[0];
     EXPECT_EQ(req.inject_id(), "inj-9");
-    EXPECT_EQ(req.sender_kind(), chirp::server_gateway::SENDER_NPC);
+    EXPECT_EQ(req.sender_kind(), chirp::game_server_gateway::SENDER_NPC);
     EXPECT_EQ(req.sender_id(), "npc:1");
     EXPECT_EQ(req.channel_type(), static_cast<int32_t>(chirp::chat::PRIVATE));
     EXPECT_EQ(req.receiver_id(), "player_1");

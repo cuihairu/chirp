@@ -4,7 +4,7 @@
 #include <gtest/gtest.h>
 
 #include "proto/chat.pb.h"
-#include "proto/server_gateway.pb.h"
+#include "proto/game_server_gateway.pb.h"
 #include "npc_uplink.h"
 
 namespace {

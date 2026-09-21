@@ -16,7 +16,7 @@ const config = defineConfig({
   base: '/chirp/',
 
   themeConfig: {
-    logo: '/logo.png',
+    logo: '/logo.svg',
 
     nav: [
       { text: '核心说明', link: '/CORE' },

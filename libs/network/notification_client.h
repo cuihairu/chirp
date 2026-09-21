@@ -9,10 +9,10 @@
 #include <asio.hpp>
 
 #include "proto/gateway.pb.h"
-#include "proto/notification.pb.h"
+#include "proto/app_notification.pb.h"
 
 namespace chirp {
-namespace notification {
+namespace app_notification {
 
 // Async RPC client for the notification plane (6xxx). Same architecture as
 // the gateway's AuthClient: one worker thread runs blocking per-job
@@ -59,7 +59,7 @@ class NotificationClient {
 // destructor exercises its null-impl guard.
 void DrainAndDropNotificationClientForTest(NotificationClient& client);
 
-}  // namespace notification
+}  // namespace app_notification
 }  // namespace chirp
 
 #endif  // CHIRP_SERVICES_NOTIFICATION_NOTIFICATION_CLIENT_H_

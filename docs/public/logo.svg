@@ -1,0 +1,45 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
+  <defs>
+    <linearGradient id="bg" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#4f46e5"/>
+      <stop offset="100%" style="stop-color:#7c3aed"/>
+    </linearGradient>
+    <linearGradient id="beak" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" style="stop-color:#fb923c"/>
+      <stop offset="100%" style="stop-color:#f97316"/>
+    </linearGradient>
+    <linearGradient id="wave" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" style="stop-color:#a78bfa;stop-opacity:0.8"/>
+      <stop offset="100%" style="stop-color:#c4b5fd;stop-opacity:0.2"/>
+    </linearGradient>
+  </defs>
+  <!-- Rounded square background -->
+  <rect x="16" y="16" width="480" height="480" rx="96" ry="96" fill="url(#bg)"/>
+  <!-- Bird body - clean geometric shape -->
+  <path d="M140 290 C140 240 180 180 240 170 C280 163 310 175 330 195 C350 215 355 245 345 270 C335 295 310 315 280 320 C240 328 195 320 165 300 C148 293 140 290 140 290Z" fill="white"/>
+  <!-- Bird head -->
+  <circle cx="330" cy="200" r="48" fill="white"/>
+  <!-- Eye -->
+  <circle cx="342" cy="192" r="10" fill="#4f46e5"/>
+  <circle cx="345" cy="189" r="4" fill="white"/>
+  <!-- Beak - open, chirping -->
+  <path d="M370 200 L410 188 L378 212Z" fill="url(#beak)"/>
+  <!-- Lower beak -->
+  <path d="M370 210 L395 218 L378 212Z" fill="#ea580c" opacity="0.8"/>
+  <!-- Sound wave 1 -->
+  <path d="M415 178 C425 178 430 185 430 195 C430 205 425 212 415 212" fill="none" stroke="white" stroke-width="5" stroke-linecap="round" opacity="0.85"/>
+  <!-- Sound wave 2 -->
+  <path d="M430 168 C448 168 456 180 456 195 C456 210 448 222 430 222" fill="none" stroke="white" stroke-width="5" stroke-linecap="round" opacity="0.55"/>
+  <!-- Sound wave 3 -->
+  <path d="M445 158 C472 158 482 175 482 195 C482 215 472 232 445 232" fill="none" stroke="white" stroke-width="5" stroke-linecap="round" opacity="0.3"/>
+  <!-- Wing detail -->
+  <path d="M180 260 C155 240 130 260 135 285 C140 310 170 320 195 305 C210 295 195 270 180 260Z" fill="white" opacity="0.6"/>
+  <!-- Tail feathers -->
+  <path d="M140 290 C120 285 100 300 110 320 C115 330 130 325 140 315Z" fill="white" opacity="0.5"/>
+  <!-- Connection symbol at bottom - two nodes linked -->
+  <circle cx="200" cy="390" r="14" fill="#fb923c"/>
+  <circle cx="256" cy="400" r="14" fill="white" opacity="0.9"/>
+  <circle cx="312" cy="390" r="14" fill="#fb923c"/>
+  <line x1="214" y1="390" x2="242" y2="400" stroke="white" stroke-width="3" opacity="0.5" stroke-linecap="round"/>
+  <line x1="270" y1="400" x2="298" y2="390" stroke="white" stroke-width="3" opacity="0.5" stroke-linecap="round"/>
+</svg>

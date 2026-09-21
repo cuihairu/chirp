@@ -1,0 +1,291 @@
+syntax = "proto3";
+
+package chirp.game_server_gateway;
+
+option go_package = "github.com/cui/chirp/proto/go/game_server_gateway";
+
+import "proto/common.proto";
+
+// Server plane wire contract (game backend <-> chirp).
+//
+// Peers are trusted services (game backends, internal services such as chat),
+// authenticated with a service_id + shared secret - never user accounts.
+// Connections dial out from the game backend to chirp_server_gateway; the
+// first frame must be SERVER_AUTH_REQ or the connection is closed.
+
+// Identity of an injected message's sender. Server-plane senders are not user
+// accounts; chat applies permission rules distinct from user accounts to them.
+enum SenderKind {
+  SENDER_UNKNOWN = 0;
+  SENDER_SYSTEM = 1;   // platform announcements
+  SENDER_NPC = 2;      // in-game NPC dialogue
+  SENDER_SERVICE = 3;  // game service logic (trade state, matchmaking, ...)
+}
+
+message ServerAuthRequest {
+  string service_id = 1;
+  string secret = 2;
+  int32 protocol_version = 3;  // must match the server's supported version
+}
+
+message ServerAuthResponse {
+  chirp.common.ErrorCode code = 1;
+  int64 server_time_ms = 2;
+  // Keepalive cadence the server assigns; connections silent for more than
+  // twice this interval are closed.
+  int32 heartbeat_interval_seconds = 3;
+}
+
+message ServerHeartbeatPing {
+  int64 client_time_ms = 1;
+}
+
+message ServerHeartbeatPong {
+  int64 server_time_ms = 1;
+}
+
+// Uplink: a trusted service asks chirp to deliver a message whose sender is
+// not a user. Routed to the chat service, which owns storage and delivery.
+message MessageInjectRequest {
+  string inject_id = 1;  // caller-supplied idempotency key
+  SenderKind sender_kind = 2;
+  string sender_id = 3;  // e.g. "npc:blacksmith_01", "system", "trade"
+  int32 channel_type = 4;
+  string channel_id = 5;    // set for channel injections
+  string receiver_id = 6;   // set for 1:1 injections
+  bytes content = 7;
+  // WP-8 slice 3 (fan-in): set together with a non-PRIVATE channel_type to
+  // fan the message out to every subscriber of (game_id, channel_id) as one
+  // SENDER_SERVICE private copy per subscriber (receiver_id = player_id).
+  // Empty keeps the direct injection semantics. Carrying game_id with
+  // channel_type PRIVATE is rejected (INVALID_PARAM): either a channel
+  // fan-out or a 1:1 inject, never an ambiguous both.
+  string game_id = 8;
+}
+
+message MessageInjectResponse {
+  chirp.common.ErrorCode code = 1;
+  string inject_id = 2;
+}
+
+// server_gateway -> chat (internal peer): the forwarded injection.
+message InjectMessageNotify {
+  MessageInjectRequest message = 1;
+}
+
+// Uplink: publish an event that must reach the target service reliably.
+// Events are queued per target while it is offline and redelivered on
+// reconnect until acknowledged (at-least-once).
+message EventPublishRequest {
+  string event_id = 1;  // optional caller-supplied idempotency key
+  string target_service_id = 2;
+  string event_type = 3;  // e.g. "quest.trigger", "trade.state"
+  bytes payload = 4;
+}
+
+message EventPublishResponse {
+  chirp.common.ErrorCode code = 1;
+  string event_id = 2;
+  // True when the target service was offline and the event was queued for
+  // later delivery.
+  bool queued = 3;
+}
+
+// Downlink: an event delivered (or redelivered) to its target service.
+message EventDeliverNotify {
+  string event_id = 1;
+  string event_type = 2;
+  bytes payload = 3;
+  int64 published_at_ms = 4;
+  int32 attempt = 5;  // 1 on first delivery, incremented per redelivery
+}
+
+message EventAckRequest {
+  repeated string event_ids = 1;
+}
+
+message EventAckResponse {
+  chirp.common.ErrorCode code = 1;
+}
+
+// ---- WP-8 slice 1: player identity bindings ----
+//
+// A game backend asserts "platform player P is game user U of game G" over
+// this trusted plane (it is the natural assertion point: it performed the
+// player's login). Chirp stores the binding; every player-plane consumer
+// resolves through it and never guesses. The binding registry keeps no
+// session state — unbinding is the backend's job (account switch, unlink).
+
+// Persistence record (Redis, not a wire message).
+message StoredIdentityBinding {
+  string binding_id = 1;
+  string player_id = 2;
+  string game_id = 3;
+  string game_user_id = 4;
+  int64 bound_at_ms = 5;
+}
+
+message BindPlayerIdentityRequest {
+  string binding_id = 1;  // caller-supplied idempotency key
+  string player_id = 2;   // platform-scoped player identity
+  string game_id = 3;
+  string game_user_id = 4;
+}
+
+message BindPlayerIdentityResponse {
+  chirp.common.ErrorCode code = 1;
+  string binding_id = 2;
+  // True when this exact binding was already stored (idempotent no-op).
+  // False with code=OK means newly bound; re-binding a game user to a
+  // different player under a new binding_id overwrites (the backend is
+  // the authority) and also reports OK.
+  bool existed = 3;
+}
+
+message UnbindPlayerIdentityRequest {
+  // Select exactly one: binding_id, or the pair (game_id, game_user_id).
+  string binding_id = 1;
+  string game_id = 2;
+  string game_user_id = 3;
+}
+
+message UnbindPlayerIdentityResponse {
+  chirp.common.ErrorCode code = 1;
+}
+
+message GetPlayerIdentitiesRequest {
+  string player_id = 1;
+}
+
+message GetPlayerIdentitiesResponse {
+  chirp.common.ErrorCode code = 1;
+  repeated StoredIdentityBinding bindings = 2;
+}
+
+message ResolveGameUserRequest {
+  string game_id = 1;
+  string game_user_id = 2;
+}
+
+message ResolveGameUserResponse {
+  chirp.common.ErrorCode code = 1;
+  // Empty when code=OK but the game user is unbound.
+  string player_id = 2;
+}
+
+// ---- WP-8 slice 2: player channel subscriptions ----
+//
+// A subscription records "platform player P follows channel C of game G".
+// Game backends assert subscriptions over this trusted plane (carrying a
+// caller-supplied subscription_id as the idempotency key); the app edge
+// forwards the same messages for self-served players with player_id pinned
+// to the authenticated user and no subscription_id (the server mints one).
+// The (player_id, game_id, channel_id) tuple is unique: re-subscribing it
+// under any id converges to a single record. This registry stores intent
+// only — fan-in delivery reads its reverse index from the inject path
+// (WP-8 slice 3), the registry itself never delivers.
+
+// Persistence record (Redis, not a wire message).
+message StoredChannelSubscription {
+  string subscription_id = 1;
+  string player_id = 2;
+  string game_id = 3;
+  string channel_id = 4;
+  int64 subscribed_at_ms = 5;
+}
+
+message SubscribePlayerChannelRequest {
+  // Caller-supplied idempotency key; empty means the server mints one
+  // (the player self-service path through app_gateway always mints).
+  string subscription_id = 1;
+  string player_id = 2;
+  string game_id = 3;
+  string channel_id = 4;
+}
+
+message SubscribePlayerChannelResponse {
+  chirp.common.ErrorCode code = 1;
+  // Echoed or minted id of the subscription now holding the tuple.
+  string subscription_id = 2;
+  // True when the tuple was already subscribed (idempotent no-op).
+  bool existed = 3;
+}
+
+message UnsubscribePlayerChannelRequest {
+  // Select exactly one: subscription_id, or the full triple
+  // (player_id, game_id, channel_id).
+  string subscription_id = 1;
+  string player_id = 2;
+  string game_id = 3;
+  string channel_id = 4;
+}
+
+message UnsubscribePlayerChannelResponse {
+  chirp.common.ErrorCode code = 1;
+}
+
+message GetPlayerSubscriptionsRequest {
+  string player_id = 1;
+  // Optional filter: only subscriptions of this game when set.
+  string game_id = 2;
+}
+
+message GetPlayerSubscriptionsResponse {
+  chirp.common.ErrorCode code = 1;
+  repeated StoredChannelSubscription subscriptions = 2;
+}
+
+// ---- WP-8 slice 4: unified unread (fan-in badge ledger) ----
+//
+// Every fan-in copy successfully handed to the chat service increments the
+// recipient's counter for (game_id, channel_id); these RPCs let the player
+// clear and read those counters back. The ledger counts *unhandled
+// subscription notifications* (a badge), which is independent of the chat
+// service's read cursors (gateway 2201-2207) — neither feeds the other.
+// Unsubscribing does not clear a badge; MarkChannelsRead is the only
+// decrementing path.
+
+// Persistence record (Redis, not a wire message).
+message StoredUnreadEntry {
+  string player_id = 1;
+  string game_id = 2;
+  string channel_id = 3;
+  int32 unread_count = 4;
+}
+
+message MarkChannelsReadRequest {
+  string player_id = 1;
+  // Layered selector: channel_id set (game_id required) clears that one
+  // channel; only game_id clears every channel of that game; both empty
+  // clears everything the player has.
+  string game_id = 2;
+  string channel_id = 3;
+}
+
+message MarkChannelsReadResponse {
+  chirp.common.ErrorCode code = 1;
+  // Number of ledger entries removed (0 for an unknown target — marking
+  // read is idempotent).
+  int32 cleared = 2;
+}
+
+message UnreadSummaryEntry {
+  string game_id = 1;
+  string channel_id = 2;
+  int32 unread_count = 3;
+}
+
+message GetUnreadSummaryRequest {
+  string player_id = 1;
+  // Optional filter: only entries of this game when set.
+  string game_id = 2;
+}
+
+message GetUnreadSummaryResponse {
+  chirp.common.ErrorCode code = 1;
+  // One entry per (game, channel) with a nonzero counter, ordered by
+  // (game_id, channel_id).
+  repeated UnreadSummaryEntry entries = 2;
+  // Sum of the returned entries' counters (after the filter).
+  int32 total_unread = 3;
+}

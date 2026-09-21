@@ -73,31 +73,31 @@ void ServerGatewayPeer::Stop() {
   });
 }
 
-void ServerGatewayPeer::SendInject(const chirp::server_gateway::MessageInjectRequest& req,
+void ServerGatewayPeer::SendInject(const chirp::game_server_gateway::MessageInjectRequest& req,
                                    RpcCallback cb) {
   SendRpc(chirp::gateway::INJECT_MESSAGE_REQ, chirp::gateway::INJECT_MESSAGE_RESP, req,
           [](const std::string& body) {
-            chirp::server_gateway::MessageInjectResponse resp;
+            chirp::game_server_gateway::MessageInjectResponse resp;
             return resp.ParseFromString(body) ? resp.code() : chirp::common::INTERNAL_ERROR;
           },
           std::move(cb));
 }
 
 void ServerGatewayPeer::SendEventPublish(
-    const chirp::server_gateway::EventPublishRequest& req, RpcCallback cb) {
+    const chirp::game_server_gateway::EventPublishRequest& req, RpcCallback cb) {
   SendRpc(chirp::gateway::EVENT_PUBLISH_REQ, chirp::gateway::EVENT_PUBLISH_RESP, req,
           [](const std::string& body) {
-            chirp::server_gateway::EventPublishResponse resp;
+            chirp::game_server_gateway::EventPublishResponse resp;
             return resp.ParseFromString(body) ? resp.code() : chirp::common::INTERNAL_ERROR;
           },
           std::move(cb));
 }
 
-void ServerGatewayPeer::SendEventAck(const chirp::server_gateway::EventAckRequest& req,
+void ServerGatewayPeer::SendEventAck(const chirp::game_server_gateway::EventAckRequest& req,
                                      RpcCallback cb) {
   SendRpc(chirp::gateway::EVENT_ACK_REQ, chirp::gateway::EVENT_ACK_RESP, req,
           [](const std::string& body) {
-            chirp::server_gateway::EventAckResponse resp;
+            chirp::game_server_gateway::EventAckResponse resp;
             return resp.ParseFromString(body) ? resp.code() : chirp::common::INTERNAL_ERROR;
           },
           std::move(cb));
@@ -194,7 +194,7 @@ void ServerGatewayPeer::DoConnect() {
 }
 
 void ServerGatewayPeer::SendAuth() {
-  chirp::server_gateway::ServerAuthRequest req;
+  chirp::game_server_gateway::ServerAuthRequest req;
   req.set_service_id(options_.service_id);
   req.set_secret(options_.secret);
   req.set_protocol_version(1);
@@ -246,7 +246,7 @@ void ServerGatewayPeer::ReadBody(uint32_t size) {
 void ServerGatewayPeer::HandlePacket(const chirp::gateway::Packet& pkt) {
   switch (pkt.msg_id()) {
   case chirp::gateway::SERVER_AUTH_RESP: {
-    chirp::server_gateway::ServerAuthResponse resp;
+    chirp::game_server_gateway::ServerAuthResponse resp;
     if (!resp.ParseFromArray(pkt.body().data(), static_cast<int>(pkt.body().size()))) {
       chirp::common::Logger::Instance().Warn("failed to parse ServerAuthResponse");
       OnConnectionLost();
@@ -270,7 +270,7 @@ void ServerGatewayPeer::HandlePacket(const chirp::gateway::Packet& pkt) {
     break;
   }
   case chirp::gateway::INJECT_MESSAGE_NOTIFY: {
-    chirp::server_gateway::InjectMessageNotify notify;
+    chirp::game_server_gateway::InjectMessageNotify notify;
     if (!notify.ParseFromArray(pkt.body().data(), static_cast<int>(pkt.body().size()))) {
       chirp::common::Logger::Instance().Warn("failed to parse InjectMessageNotify");
       break;
@@ -285,7 +285,7 @@ void ServerGatewayPeer::HandlePacket(const chirp::gateway::Packet& pkt) {
     break;
   }
   case chirp::gateway::EVENT_DELIVER_NOTIFY: {
-    chirp::server_gateway::EventDeliverNotify notify;
+    chirp::game_server_gateway::EventDeliverNotify notify;
     if (!notify.ParseFromArray(pkt.body().data(), static_cast<int>(pkt.body().size()))) {
       chirp::common::Logger::Instance().Warn("failed to parse EventDeliverNotify");
       break;
@@ -327,7 +327,7 @@ void ServerGatewayPeer::SendPacket(chirp::gateway::MsgID msg_id, int64_t seq,
 }
 
 void ServerGatewayPeer::SendHeartbeat() {
-  chirp::server_gateway::ServerHeartbeatPing ping;
+  chirp::game_server_gateway::ServerHeartbeatPing ping;
   ping.set_client_time_ms(NowMs());
   SendPacket(chirp::gateway::SERVER_HEARTBEAT_PING, ++heartbeat_seq_, ping);
 }

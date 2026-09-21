@@ -22,12 +22,12 @@ services:
       timeout: 5s
       retries: 5
 
-  auth:
+  app_auth:
     build:
       context: .
       dockerfile: docker/Dockerfile.service
       args:
-        SERVICE: auth
+        SERVICE: app_auth
     # --allow_scaffold_login keeps the dev demo working: the scaffold logins
     # (token == user_id) used by the demo clients are rejected once the auth
     # service enforces real credentials. Production setups drop this flag.
@@ -35,17 +35,17 @@ services:
     ports:
       - "6000:6000"
 
-  gateway:
+  game_sdk_gateway:
     build:
       context: .
       dockerfile: docker/Dockerfile.service
       args:
-        SERVICE: gateway
+        SERVICE: game_sdk_gateway
     command:
       [
         "--port", "5000",
         "--ws_port", "5001",
-        "--auth_host", "auth",
+        "--auth_host", "app_auth",
         "--auth_port", "6000",
         "--redis_host", "redis",
         "--redis_port", "6379",
@@ -56,7 +56,7 @@ services:
       - "5000:5000"
       - "5001:5001"
     depends_on:
-      - auth
+      - app_auth
       - redis
 
   chat:
@@ -65,14 +65,14 @@ services:
       dockerfile: docker/Dockerfile.service
       args:
         SERVICE: chat_enhanced
-    command: ["--port", "7000", "--ws_port", "7001", "--redis_host", "redis", "--redis_port", "6379", "--mysql_host", "mysql", "--mysql_port", "3306", "--mysql_database", "chirp", "--mysql_user", "chirp", "--mysql_password", "chirp_pass", "--server_gateway_host", "server_gateway", "--server_gateway_secret", "chat-secret", "--gateway_service_secret", "edge-secret", "--npc_service_id", "npc_dialog"]
+    command: ["--port", "7000", "--ws_port", "7001", "--redis_host", "redis", "--redis_port", "6379", "--mysql_host", "mysql", "--mysql_port", "3306", "--mysql_database", "chirp", "--mysql_user", "chirp", "--mysql_password", "chirp_pass", "--server_gateway_host", "game_server_gateway", "--server_gateway_secret", "chat-secret", "--gateway_service_secret", "edge-secret", "--npc_service_id", "npc_dialog"]
     ports:
       - "7000:7000"
       - "7001:7001"
     depends_on:
       - redis
       - mysql
-      - server_gateway
+      - game_server_gateway
 
   social:
     build:
@@ -123,34 +123,34 @@ services:
     depends_on:
       - coturn
 
-  notification:
+  app_notification:
     build:
       context: .
       dockerfile: docker/Dockerfile.service
       args:
-        SERVICE: notification
+        SERVICE: app_notification
     command: ["--port", "5006", "--ws_port", "5016"]
     ports:
       - "5006:5006"
       - "5016:5016"
 
-  app_gateway:
+  app_sdk_gateway:
     build:
       context: .
       dockerfile: docker/Dockerfile.service
       args:
-        SERVICE: app_gateway
+        SERVICE: app_sdk_gateway
     command:
       [
         "--port", "5200",
         "--ws_port", "5201",
-        "--auth_host", "auth",
+        "--auth_host", "app_auth",
         "--auth_port", "6000",
         "--redis_host", "redis",
         "--redis_port", "6379",
         "--redis_ttl", "3600",
         "--instance_id", "app_gw_1",
-        "--notification_host", "notification",
+        "--notification_host", "app_notification",
         "--notification_port", "5006",
         "--chat_host", "chat",
         "--chat_port", "7000",
@@ -160,9 +160,9 @@ services:
       - "5200:5200"
       - "5201:5201"
     depends_on:
-      - auth
+      - app_auth
       - redis
-      - notification
+      - app_notification
       - chat
 
   search:
@@ -175,12 +175,12 @@ services:
     ports:
       - "5007:5007"
 
-  server_gateway:
+  game_server_gateway:
     build:
       context: .
       dockerfile: docker/Dockerfile.service
       args:
-        SERVICE: server_gateway
+        SERVICE: game_server_gateway
     command:
       [
         "--port", "8100",
@@ -199,13 +199,13 @@ services:
         SERVICE: npc_dialog
     command:
       [
-        "--server_gateway_host", "server_gateway",
+        "--server_gateway_host", "game_server_gateway",
         "--server_gateway_port", "8100",
         "--server_gateway_service", "npc_dialog",
         "--server_gateway_secret", "npc-secret"
       ]
     depends_on:
-      - server_gateway
+      - game_server_gateway
 
   chat_archive:
     build:

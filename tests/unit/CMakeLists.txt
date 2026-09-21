@@ -105,7 +105,7 @@ add_test(NAME network_tests COMMAND network_tests)
 add_executable(chat_validation_tests
   chat_validation_test.cc
   chat_login_verifier_test.cc
-  ${CMAKE_SOURCE_DIR}/services/chat/src/chat_validation.cc
+  ${CMAKE_SOURCE_DIR}/services/shared/chat/src/chat_validation.cc
   ${CMAKE_SOURCE_DIR}/libs/common/login_token_verifier.cc
   ${CMAKE_SOURCE_DIR}/libs/network/protobuf_framing.cc
 )
@@ -121,7 +121,7 @@ target_link_libraries(chat_validation_tests
 
 target_include_directories(chat_validation_tests
   PRIVATE
-  ${CMAKE_SOURCE_DIR}/services/chat/src
+  ${CMAKE_SOURCE_DIR}/services/shared/chat/src
   ${CMAKE_SOURCE_DIR}/libs
   ${CMAKE_SOURCE_DIR}/libs/common
   ${CMAKE_SOURCE_DIR}/libs/common/include
@@ -182,22 +182,22 @@ add_executable(chat_managers_tests
   chat_edit_mention_test.cc
   chat_inject_consumer_test.cc
   chat_npc_uplink_test.cc
-  ${CMAKE_SOURCE_DIR}/services/chat/src/distributed_dispatch.cc
-  ${CMAKE_SOURCE_DIR}/services/chat/src/distributed_runtime.cc
-  ${CMAKE_SOURCE_DIR}/services/chat/src/delivery_ack_manager.cc
-  ${CMAKE_SOURCE_DIR}/services/chat/src/group_manager.cc
-  ${CMAKE_SOURCE_DIR}/services/chat/src/group_handlers.cc
-  ${CMAKE_SOURCE_DIR}/services/chat/src/message_handlers.cc
-  ${CMAKE_SOURCE_DIR}/services/chat/src/reaction_manager.cc
-  ${CMAKE_SOURCE_DIR}/services/chat/src/read_receipt_manager.cc
-  ${CMAKE_SOURCE_DIR}/services/chat/src/message_edit_manager.cc
-  ${CMAKE_SOURCE_DIR}/services/chat/src/mention_manager.cc
-  ${CMAKE_SOURCE_DIR}/services/chat/src/inject_consumer.cc
-  ${CMAKE_SOURCE_DIR}/services/chat/src/npc_uplink.cc
-  ${CMAKE_SOURCE_DIR}/services/chat/src/runtime_utils.cc
-  ${CMAKE_SOURCE_DIR}/services/chat/src/typing_manager.cc
+  ${CMAKE_SOURCE_DIR}/services/shared/chat/src/distributed_dispatch.cc
+  ${CMAKE_SOURCE_DIR}/services/shared/chat/src/distributed_runtime.cc
+  ${CMAKE_SOURCE_DIR}/services/shared/chat/src/delivery_ack_manager.cc
+  ${CMAKE_SOURCE_DIR}/services/shared/chat/src/group_manager.cc
+  ${CMAKE_SOURCE_DIR}/services/shared/chat/src/group_handlers.cc
+  ${CMAKE_SOURCE_DIR}/services/shared/chat/src/message_handlers.cc
+  ${CMAKE_SOURCE_DIR}/services/shared/chat/src/reaction_manager.cc
+  ${CMAKE_SOURCE_DIR}/services/shared/chat/src/read_receipt_manager.cc
+  ${CMAKE_SOURCE_DIR}/services/shared/chat/src/message_edit_manager.cc
+  ${CMAKE_SOURCE_DIR}/services/shared/chat/src/mention_manager.cc
+  ${CMAKE_SOURCE_DIR}/services/shared/chat/src/inject_consumer.cc
+  ${CMAKE_SOURCE_DIR}/services/shared/chat/src/npc_uplink.cc
+  ${CMAKE_SOURCE_DIR}/services/shared/chat/src/runtime_utils.cc
+  ${CMAKE_SOURCE_DIR}/services/shared/chat/src/typing_manager.cc
   ${CMAKE_SOURCE_DIR}/libs/common/login_token_verifier.cc
-  ${CMAKE_SOURCE_DIR}/services/chat/src/push_bridge.cc
+  ${CMAKE_SOURCE_DIR}/services/shared/chat/src/push_bridge.cc
 )
 # main_distributed.cc is pulled in via #include with main() renamed in
 # chat_managers_test.cc; compiling it separately would hijack the test entry
@@ -208,8 +208,8 @@ target_link_libraries(chat_managers_tests PRIVATE chirp_network chirp_common chi
 
 target_include_directories(chat_managers_tests
   PRIVATE
-  ${CMAKE_SOURCE_DIR}/services/chat/src
-  ${CMAKE_SOURCE_DIR}/services/notification/src
+  ${CMAKE_SOURCE_DIR}/services/shared/chat/src
+  ${CMAKE_SOURCE_DIR}/services/app/notification/src
   ${CMAKE_SOURCE_DIR}/libs
   ${CMAKE_SOURCE_DIR}/libs/common
   ${CMAKE_SOURCE_DIR}/libs/common/include
@@ -356,9 +356,9 @@ add_executable(notification_tests
   notification_test.cc
   notification_internal_test.cc
   push_transport_http_test.cc
-  ${CMAKE_SOURCE_DIR}/services/notification/src/notification_service.cc
-  ${CMAKE_SOURCE_DIR}/services/notification/src/push_transport.cc
-  ${CMAKE_SOURCE_DIR}/services/notification/src/http_push_transport.cc
+  ${CMAKE_SOURCE_DIR}/services/app/notification/src/notification_service.cc
+  ${CMAKE_SOURCE_DIR}/services/app/notification/src/push_transport.cc
+  ${CMAKE_SOURCE_DIR}/services/app/notification/src/http_push_transport.cc
 )
 
 chirp_unit_test_common_links(notification_tests)
@@ -366,7 +366,7 @@ target_link_libraries(notification_tests PRIVATE chirp_network chirp_common chir
 
 target_include_directories(notification_tests
   PRIVATE
-  ${CMAKE_SOURCE_DIR}/services/notification/src
+  ${CMAKE_SOURCE_DIR}/services/app/notification/src
   ${CMAKE_SOURCE_DIR}/libs
   ${CMAKE_SOURCE_DIR}/libs/common
   ${CMAKE_SOURCE_DIR}/libs/common/include
@@ -379,9 +379,9 @@ add_test(NAME notification_tests COMMAND notification_tests)
 # Notification plane packet handlers (6xxx dispatch over NotificationService)
 add_executable(notification_handlers_tests
   notification_handlers_test.cc
-  ${CMAKE_SOURCE_DIR}/services/notification/src/notification_handlers.cc
-  ${CMAKE_SOURCE_DIR}/services/notification/src/notification_service.cc
-  ${CMAKE_SOURCE_DIR}/services/notification/src/push_transport.cc
+  ${CMAKE_SOURCE_DIR}/services/app/notification/src/notification_handlers.cc
+  ${CMAKE_SOURCE_DIR}/services/app/notification/src/notification_service.cc
+  ${CMAKE_SOURCE_DIR}/services/app/notification/src/push_transport.cc
 )
 
 chirp_unit_test_common_links(notification_handlers_tests)
@@ -389,7 +389,7 @@ target_link_libraries(notification_handlers_tests PRIVATE chirp_network chirp_co
 
 target_include_directories(notification_handlers_tests
   PRIVATE
-  ${CMAKE_SOURCE_DIR}/services/notification/src
+  ${CMAKE_SOURCE_DIR}/services/app/notification/src
   ${CMAKE_SOURCE_DIR}/libs
   ${CMAKE_SOURCE_DIR}/libs/common
   ${CMAKE_SOURCE_DIR}/libs/common/include
@@ -403,10 +403,10 @@ add_test(NAME notification_handlers_tests COMMAND notification_handlers_tests)
 # push bridge that produces through it
 add_executable(notification_client_tests
   notification_client_test.cc
-  ${CMAKE_SOURCE_DIR}/services/notification/src/notification_handlers.cc
-  ${CMAKE_SOURCE_DIR}/services/notification/src/notification_service.cc
-  ${CMAKE_SOURCE_DIR}/services/notification/src/push_transport.cc
-  ${CMAKE_SOURCE_DIR}/services/chat/src/push_bridge.cc
+  ${CMAKE_SOURCE_DIR}/services/app/notification/src/notification_handlers.cc
+  ${CMAKE_SOURCE_DIR}/services/app/notification/src/notification_service.cc
+  ${CMAKE_SOURCE_DIR}/services/app/notification/src/push_transport.cc
+  ${CMAKE_SOURCE_DIR}/services/shared/chat/src/push_bridge.cc
 )
 
 chirp_unit_test_common_links(notification_client_tests)
@@ -414,8 +414,8 @@ target_link_libraries(notification_client_tests PRIVATE chirp_network chirp_comm
 
 target_include_directories(notification_client_tests
   PRIVATE
-  ${CMAKE_SOURCE_DIR}/services/notification/src
-  ${CMAKE_SOURCE_DIR}/services/chat/src
+  ${CMAKE_SOURCE_DIR}/services/app/notification/src
+  ${CMAKE_SOURCE_DIR}/services/shared/chat/src
   ${CMAKE_SOURCE_DIR}/libs
   ${CMAKE_SOURCE_DIR}/libs/common
   ${CMAKE_SOURCE_DIR}/libs/common/include
@@ -538,10 +538,10 @@ add_test(NAME network_tls_tests COMMAND network_tls_tests)
 # Chat extension managers (mentions / edits / channels / store config)
 add_executable(chat_extensions_tests
   chat_extensions_test.cc
-  ${CMAKE_SOURCE_DIR}/services/chat/src/channel_manager.cc
-  ${CMAKE_SOURCE_DIR}/services/chat/src/mention_manager.cc
-  ${CMAKE_SOURCE_DIR}/services/chat/src/message_edit_manager.cc
-  ${CMAKE_SOURCE_DIR}/services/chat/src/message_store_config.cc
+  ${CMAKE_SOURCE_DIR}/services/shared/chat/src/channel_manager.cc
+  ${CMAKE_SOURCE_DIR}/services/shared/chat/src/mention_manager.cc
+  ${CMAKE_SOURCE_DIR}/services/shared/chat/src/message_edit_manager.cc
+  ${CMAKE_SOURCE_DIR}/services/shared/chat/src/message_store_config.cc
 )
 
 chirp_unit_test_common_links(chat_extensions_tests)
@@ -549,7 +549,7 @@ target_link_libraries(chat_extensions_tests PRIVATE chirp_network chirp_common c
 
 target_include_directories(chat_extensions_tests
   PRIVATE
-  ${CMAKE_SOURCE_DIR}/services/chat/src
+  ${CMAKE_SOURCE_DIR}/services/shared/chat/src
   ${CMAKE_SOURCE_DIR}/libs
   ${CMAKE_SOURCE_DIR}/libs/common
   ${CMAKE_SOURCE_DIR}/libs/common/include
@@ -563,13 +563,13 @@ add_test(NAME chat_extensions_tests COMMAND chat_extensions_tests)
 add_executable(server_gateway_tests
   server_gateway_test.cc
   server_gateway_stream_broker_test.cc
-  ${CMAKE_SOURCE_DIR}/services/server_gateway/src/event_queue.cc
-  ${CMAKE_SOURCE_DIR}/services/server_gateway/src/identity_registry.cc
-  ${CMAKE_SOURCE_DIR}/services/server_gateway/src/subscription_registry.cc
-  ${CMAKE_SOURCE_DIR}/services/server_gateway/src/server_gateway_handlers.cc
-  ${CMAKE_SOURCE_DIR}/services/server_gateway/src/service_registry.cc
-  ${CMAKE_SOURCE_DIR}/services/server_gateway/src/stream_broker.cc
-  ${CMAKE_SOURCE_DIR}/services/server_gateway/src/unread_ledger.cc
+  ${CMAKE_SOURCE_DIR}/services/game/server_gateway/src/event_queue.cc
+  ${CMAKE_SOURCE_DIR}/services/game/server_gateway/src/identity_registry.cc
+  ${CMAKE_SOURCE_DIR}/services/game/server_gateway/src/subscription_registry.cc
+  ${CMAKE_SOURCE_DIR}/services/game/server_gateway/src/server_gateway_handlers.cc
+  ${CMAKE_SOURCE_DIR}/services/game/server_gateway/src/service_registry.cc
+  ${CMAKE_SOURCE_DIR}/services/game/server_gateway/src/stream_broker.cc
+  ${CMAKE_SOURCE_DIR}/services/game/server_gateway/src/unread_ledger.cc
 )
 
 chirp_unit_test_common_links(server_gateway_tests)
@@ -577,7 +577,7 @@ target_link_libraries(server_gateway_tests PRIVATE chirp_network chirp_common ch
 
 target_include_directories(server_gateway_tests
   PRIVATE
-  ${CMAKE_SOURCE_DIR}/services/server_gateway/src
+  ${CMAKE_SOURCE_DIR}/services/game/server_gateway/src
   ${CMAKE_SOURCE_DIR}/libs
   ${CMAKE_SOURCE_DIR}/libs/common
   ${CMAKE_SOURCE_DIR}/libs/common/include
@@ -652,11 +652,11 @@ add_executable(auth_stores_tests
   auth_stores_test.cc
   fake_mysql.cc
   fake_sodium.cc
-  ${CMAKE_SOURCE_DIR}/services/auth/src/mysql_session_store.cc
-  ${CMAKE_SOURCE_DIR}/services/auth/src/mysql_user_store.cc
-  ${CMAKE_SOURCE_DIR}/services/auth/src/password_hasher.cc
-  ${CMAKE_SOURCE_DIR}/services/auth/src/redis_auth_store.cc
-  ${CMAKE_SOURCE_DIR}/services/auth/src/token_generator.cc
+  ${CMAKE_SOURCE_DIR}/services/app/auth/src/mysql_session_store.cc
+  ${CMAKE_SOURCE_DIR}/services/app/auth/src/mysql_user_store.cc
+  ${CMAKE_SOURCE_DIR}/services/app/auth/src/password_hasher.cc
+  ${CMAKE_SOURCE_DIR}/services/app/auth/src/redis_auth_store.cc
+  ${CMAKE_SOURCE_DIR}/services/app/auth/src/token_generator.cc
 )
 
 chirp_unit_test_common_links(auth_stores_tests)
@@ -664,7 +664,7 @@ target_link_libraries(auth_stores_tests PRIVATE chirp_network chirp_common chirp
 
 target_include_directories(auth_stores_tests
   PRIVATE
-  ${CMAKE_SOURCE_DIR}/services/auth/src
+  ${CMAKE_SOURCE_DIR}/services/app/auth/src
   ${CMAKE_SOURCE_DIR}/libs
   ${CMAKE_SOURCE_DIR}/libs/common
   ${CMAKE_SOURCE_DIR}/libs/common/include
@@ -681,15 +681,15 @@ add_executable(auth_service_tests
   auth_service_test.cc
   fake_mysql.cc
   fake_sodium.cc
-  ${CMAKE_SOURCE_DIR}/services/auth/src/auth_service.cc
-  ${CMAKE_SOURCE_DIR}/services/auth/src/brute_force_protector.cc
-  ${CMAKE_SOURCE_DIR}/services/auth/src/password_hasher.cc
-  ${CMAKE_SOURCE_DIR}/services/auth/src/rate_limiter.cc
-  ${CMAKE_SOURCE_DIR}/services/auth/src/redis_auth_store.cc
-  ${CMAKE_SOURCE_DIR}/services/auth/src/store_factory.cc
-  ${CMAKE_SOURCE_DIR}/services/auth/src/token_generator.cc
-  ${CMAKE_SOURCE_DIR}/services/auth/src/mysql_session_store.cc
-  ${CMAKE_SOURCE_DIR}/services/auth/src/mysql_user_store.cc
+  ${CMAKE_SOURCE_DIR}/services/app/auth/src/auth_service.cc
+  ${CMAKE_SOURCE_DIR}/services/app/auth/src/brute_force_protector.cc
+  ${CMAKE_SOURCE_DIR}/services/app/auth/src/password_hasher.cc
+  ${CMAKE_SOURCE_DIR}/services/app/auth/src/rate_limiter.cc
+  ${CMAKE_SOURCE_DIR}/services/app/auth/src/redis_auth_store.cc
+  ${CMAKE_SOURCE_DIR}/services/app/auth/src/store_factory.cc
+  ${CMAKE_SOURCE_DIR}/services/app/auth/src/token_generator.cc
+  ${CMAKE_SOURCE_DIR}/services/app/auth/src/mysql_session_store.cc
+  ${CMAKE_SOURCE_DIR}/services/app/auth/src/mysql_user_store.cc
 )
 
 chirp_unit_test_common_links(auth_service_tests)
@@ -697,7 +697,7 @@ target_link_libraries(auth_service_tests PRIVATE chirp_network chirp_common chir
 
 target_include_directories(auth_service_tests
   PRIVATE
-  ${CMAKE_SOURCE_DIR}/services/auth/src
+  ${CMAKE_SOURCE_DIR}/services/app/auth/src
   ${CMAKE_SOURCE_DIR}/libs
   ${CMAKE_SOURCE_DIR}/libs/common
   ${CMAKE_SOURCE_DIR}/libs/common/include
@@ -714,13 +714,13 @@ add_test(NAME auth_service_tests COMMAND auth_service_tests)
 add_executable(chat_mysql_tests
   chat_mysql_test.cc
   fake_mysql.cc
-  ${CMAKE_SOURCE_DIR}/services/chat/src/hybrid_message_store.cc
-  ${CMAKE_SOURCE_DIR}/services/chat/src/message_delivery_tracker.cc
-  ${CMAKE_SOURCE_DIR}/services/chat/src/message_migration_worker.cc
-  ${CMAKE_SOURCE_DIR}/services/chat/src/message_store_config.cc
-  ${CMAKE_SOURCE_DIR}/services/chat/src/message_store_factory.cc
-  ${CMAKE_SOURCE_DIR}/services/chat/src/mysql_message_store.cc
-  ${CMAKE_SOURCE_DIR}/services/chat/src/paginated_history_retriever.cc
+  ${CMAKE_SOURCE_DIR}/services/shared/chat/src/hybrid_message_store.cc
+  ${CMAKE_SOURCE_DIR}/services/shared/chat/src/message_delivery_tracker.cc
+  ${CMAKE_SOURCE_DIR}/services/shared/chat/src/message_migration_worker.cc
+  ${CMAKE_SOURCE_DIR}/services/shared/chat/src/message_store_config.cc
+  ${CMAKE_SOURCE_DIR}/services/shared/chat/src/message_store_factory.cc
+  ${CMAKE_SOURCE_DIR}/services/shared/chat/src/mysql_message_store.cc
+  ${CMAKE_SOURCE_DIR}/services/shared/chat/src/paginated_history_retriever.cc
 )
 
 chirp_unit_test_common_links(chat_mysql_tests)
@@ -728,7 +728,7 @@ target_link_libraries(chat_mysql_tests PRIVATE chirp_network chirp_common chirp_
 
 target_include_directories(chat_mysql_tests
   PRIVATE
-  ${CMAKE_SOURCE_DIR}/services/chat/src
+  ${CMAKE_SOURCE_DIR}/services/shared/chat/src
   ${CMAKE_SOURCE_DIR}/libs
   ${CMAKE_SOURCE_DIR}/libs/common
   ${CMAKE_SOURCE_DIR}/libs/common/include
@@ -744,7 +744,7 @@ add_test(NAME chat_mysql_tests COMMAND chat_mysql_tests)
 # cleanup and the ack-capable session lifecycle.
 add_executable(chat_delivery_ack_tests
   chat_delivery_ack_test.cc
-  ${CMAKE_SOURCE_DIR}/services/chat/src/delivery_ack_manager.cc
+  ${CMAKE_SOURCE_DIR}/services/shared/chat/src/delivery_ack_manager.cc
 )
 
 chirp_unit_test_common_links(chat_delivery_ack_tests)
@@ -752,7 +752,7 @@ target_link_libraries(chat_delivery_ack_tests PRIVATE chirp_network chirp_common
 
 target_include_directories(chat_delivery_ack_tests
   PRIVATE
-  ${CMAKE_SOURCE_DIR}/services/chat/src
+  ${CMAKE_SOURCE_DIR}/services/shared/chat/src
   ${CMAKE_SOURCE_DIR}/libs
   ${CMAKE_SOURCE_DIR}/libs/common
   ${CMAKE_SOURCE_DIR}/libs/common/include
@@ -765,7 +765,7 @@ add_test(NAME chat_delivery_ack_tests COMMAND chat_delivery_ack_tests)
 # against the real RedisClient through the loopback fake server.
 add_executable(chat_rate_limiter_tests
   chat_rate_limiter_test.cc
-  ${CMAKE_SOURCE_DIR}/services/chat/src/chat_rate_limiter.cc
+  ${CMAKE_SOURCE_DIR}/services/shared/chat/src/chat_rate_limiter.cc
 )
 
 chirp_unit_test_common_links(chat_rate_limiter_tests)
@@ -773,7 +773,7 @@ target_link_libraries(chat_rate_limiter_tests PRIVATE chirp_network chirp_common
 
 target_include_directories(chat_rate_limiter_tests
   PRIVATE
-  ${CMAKE_SOURCE_DIR}/services/chat/src
+  ${CMAKE_SOURCE_DIR}/services/shared/chat/src
   ${CMAKE_SOURCE_DIR}/libs
   ${CMAKE_SOURCE_DIR}/libs/common
   ${CMAKE_SOURCE_DIR}/libs/common/include
@@ -794,7 +794,7 @@ target_link_libraries(chat_hub_peer_tests PRIVATE chirp_network chirp_common chi
 
 target_include_directories(chat_hub_peer_tests
   PRIVATE
-  ${CMAKE_SOURCE_DIR}/services/chat/src
+  ${CMAKE_SOURCE_DIR}/services/shared/chat/src
   ${CMAKE_SOURCE_DIR}/libs
   ${CMAKE_SOURCE_DIR}/libs/common
   ${CMAKE_SOURCE_DIR}/libs/common/include
@@ -809,8 +809,8 @@ add_test(NAME chat_hub_peer_tests COMMAND chat_hub_peer_tests)
 add_executable(npc_dialog_tests
   npc_engine_test.cc
   npc_responder_test.cc
-  ${CMAKE_SOURCE_DIR}/services/npc_dialog/src/npc_engine.cc
-  ${CMAKE_SOURCE_DIR}/services/npc_dialog/src/npc_responder.cc
+  ${CMAKE_SOURCE_DIR}/services/game/npc_dialog/src/npc_engine.cc
+  ${CMAKE_SOURCE_DIR}/services/game/npc_dialog/src/npc_responder.cc
 )
 
 chirp_unit_test_common_links(npc_dialog_tests)
@@ -818,8 +818,8 @@ target_link_libraries(npc_dialog_tests PRIVATE chirp_network chirp_common chirp_
 
 target_include_directories(npc_dialog_tests
   PRIVATE
-  ${CMAKE_SOURCE_DIR}/services/npc_dialog/src
-  ${CMAKE_SOURCE_DIR}/services/chat/src
+  ${CMAKE_SOURCE_DIR}/services/game/npc_dialog/src
+  ${CMAKE_SOURCE_DIR}/services/shared/chat/src
   ${CMAKE_SOURCE_DIR}/libs
   ${CMAKE_SOURCE_DIR}/libs/common
   ${CMAKE_SOURCE_DIR}/libs/common/include

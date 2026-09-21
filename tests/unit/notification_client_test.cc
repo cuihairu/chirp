@@ -21,7 +21,7 @@
 #include "proto/gateway.pb.h"
 #include "push_bridge.h"
 
-using chirp::notification::NotificationClient;
+using chirp::app_notification::NotificationClient;
 
 namespace {
 
@@ -176,7 +176,7 @@ struct Loopback {
           handlers.HandlePacket(pkt, &resp);
           return resp;
         }) {
-    chirp::notification::DeviceRegistration reg;
+    chirp::app_notification::DeviceRegistration reg;
     reg.device_id = "dev";
     reg.user_id = "u";
     reg.platform = "android";
@@ -185,8 +185,8 @@ struct Loopback {
 
   uint16_t port() const { return server.port(); }
 
-  chirp::notification::NotificationService service;
-  chirp::notification::NotificationHandlers handlers{service};
+  chirp::app_notification::NotificationService service;
+  chirp::app_notification::NotificationHandlers handlers{service};
   FakeNotificationServer server;
 };
 
@@ -195,13 +195,13 @@ struct Loopback {
 struct RecordingPushServer {
   RecordingPushServer() : server([this](const chirp::gateway::Packet& pkt) {
     if (pkt.msg_id() == chirp::gateway::PUSH_NOTIFICATION_REQ) {
-      chirp::notification::PushNotificationRequest req;
+      chirp::app_notification::PushNotificationRequest req;
       if (req.ParseFromString(pkt.body())) {
         std::lock_guard<std::mutex> lock(mu);
         pushes.push_back(std::move(req));
       }
     }
-    chirp::notification::PushNotificationResponse body;
+    chirp::app_notification::PushNotificationResponse body;
     body.set_code(chirp::common::OK);
     body.set_server_time(1);
     chirp::gateway::Packet out;
@@ -214,7 +214,7 @@ struct RecordingPushServer {
   uint16_t port() const { return server.port(); }
 
   std::mutex mu;
-  std::vector<chirp::notification::PushNotificationRequest> pushes;
+  std::vector<chirp::app_notification::PushNotificationRequest> pushes;
   FakeNotificationServer server;
 };
 
@@ -366,15 +366,15 @@ TEST_F(NotificationClientTest, PushRoundTripDeliversResponse) {
   asio::io_context io;
   NotificationClient client(io, "127.0.0.1", loop.port());
 
-  chirp::notification::PushNotificationRequest req;
+  chirp::app_notification::PushNotificationRequest req;
   req.set_user_id("u");
   req.set_title("t");
   req.set_body("b");
 
-  std::promise<chirp::notification::PushNotificationResponse> promise;
+  std::promise<chirp::app_notification::PushNotificationResponse> promise;
   auto future = promise.get_future();
   client.AsyncPush(req, /*seq=*/9,
-                   [&promise](const chirp::notification::PushNotificationResponse& resp) {
+                   [&promise](const chirp::app_notification::PushNotificationResponse& resp) {
                      promise.set_value(resp);
                    });
 
@@ -390,29 +390,29 @@ TEST_F(NotificationClientTest, DeviceRpcRoundTrips) {
   NotificationClient client(io, "127.0.0.1", loop.port());
 
   // Register a second device, update its token, list, then unregister.
-  chirp::notification::RegisterDeviceRequest reg;
+  chirp::app_notification::RegisterDeviceRequest reg;
   reg.set_user_id("u");
   reg.set_device_id("dev-2");
   reg.set_platform("ios");
   reg.set_apns_token("tok-1");
   {
-    std::promise<chirp::notification::RegisterDeviceResponse> p;
+    std::promise<chirp::app_notification::RegisterDeviceResponse> p;
     auto f = p.get_future();
-    client.AsyncRegisterDevice(reg, 1, [&p](const chirp::notification::RegisterDeviceResponse& r) {
+    client.AsyncRegisterDevice(reg, 1, [&p](const chirp::app_notification::RegisterDeviceResponse& r) {
       p.set_value(r);
     });
     ASSERT_TRUE(SpinIoFor(io, f));
     EXPECT_EQ(f.get().code(), chirp::common::OK);
   }
 
-  chirp::notification::UpdateDeviceTokenRequest tok;
+  chirp::app_notification::UpdateDeviceTokenRequest tok;
   tok.set_device_id("dev-2");
   tok.set_apns_token("tok-2");
   {
-    std::promise<chirp::notification::UpdateDeviceTokenResponse> p;
+    std::promise<chirp::app_notification::UpdateDeviceTokenResponse> p;
     auto f = p.get_future();
     client.AsyncUpdateDeviceToken(tok, 2,
-                                  [&p](const chirp::notification::UpdateDeviceTokenResponse& r) {
+                                  [&p](const chirp::app_notification::UpdateDeviceTokenResponse& r) {
                                     p.set_value(r);
                                   });
     ASSERT_TRUE(SpinIoFor(io, f));
@@ -420,13 +420,13 @@ TEST_F(NotificationClientTest, DeviceRpcRoundTrips) {
   }
   EXPECT_EQ(loop.service.GetUserDevices("u").size(), 2u);
 
-  chirp::notification::GetUserDevicesRequest list;
+  chirp::app_notification::GetUserDevicesRequest list;
   list.set_user_id("u");
   {
-    std::promise<chirp::notification::GetUserDevicesResponse> p;
+    std::promise<chirp::app_notification::GetUserDevicesResponse> p;
     auto f = p.get_future();
     client.AsyncGetUserDevices(list, 3,
-                               [&p](const chirp::notification::GetUserDevicesResponse& r) {
+                               [&p](const chirp::app_notification::GetUserDevicesResponse& r) {
                                  p.set_value(r);
                                });
     ASSERT_TRUE(SpinIoFor(io, f));
@@ -435,14 +435,14 @@ TEST_F(NotificationClientTest, DeviceRpcRoundTrips) {
     EXPECT_EQ(resp.devices_size(), 2);
   }
 
-  chirp::notification::UnregisterDeviceRequest un;
+  chirp::app_notification::UnregisterDeviceRequest un;
   un.set_user_id("u");
   un.set_device_id("dev-2");
   {
-    std::promise<chirp::notification::UnregisterDeviceResponse> p;
+    std::promise<chirp::app_notification::UnregisterDeviceResponse> p;
     auto f = p.get_future();
     client.AsyncUnregisterDevice(un, 4,
-                                 [&p](const chirp::notification::UnregisterDeviceResponse& r) {
+                                 [&p](const chirp::app_notification::UnregisterDeviceResponse& r) {
                                    p.set_value(r);
                                  });
     ASSERT_TRUE(SpinIoFor(io, f));
@@ -455,59 +455,59 @@ TEST_F(NotificationClientTest, RefusedEndpointReportsInternalError) {
   asio::io_context io;
   NotificationClient client(io, kRefusedHost, kRefusedPort);
 
-  chirp::notification::PushNotificationRequest push;
+  chirp::app_notification::PushNotificationRequest push;
   push.set_user_id("u");
-  chirp::notification::RegisterDeviceRequest reg;
+  chirp::app_notification::RegisterDeviceRequest reg;
   reg.set_user_id("u");
   reg.set_device_id("d");
-  chirp::notification::UnregisterDeviceRequest un;
+  chirp::app_notification::UnregisterDeviceRequest un;
   un.set_device_id("d");
-  chirp::notification::UpdateDeviceTokenRequest tok;
+  chirp::app_notification::UpdateDeviceTokenRequest tok;
   tok.set_device_id("d");
   tok.set_fcm_token("t");
-  chirp::notification::GetUserDevicesRequest list;
+  chirp::app_notification::GetUserDevicesRequest list;
   list.set_user_id("u");
 
   {
-    std::promise<chirp::notification::PushNotificationResponse> p1;
+    std::promise<chirp::app_notification::PushNotificationResponse> p1;
     auto f1 = p1.get_future();
-    client.AsyncPush(push, 1, [&p1](const chirp::notification::PushNotificationResponse& r) {
+    client.AsyncPush(push, 1, [&p1](const chirp::app_notification::PushNotificationResponse& r) {
       p1.set_value(r);
     });
     ASSERT_TRUE(SpinIoFor(io, f1));
     EXPECT_EQ(f1.get().code(), chirp::common::INTERNAL_ERROR);
 
-    std::promise<chirp::notification::RegisterDeviceResponse> p2;
+    std::promise<chirp::app_notification::RegisterDeviceResponse> p2;
     auto f2 = p2.get_future();
     client.AsyncRegisterDevice(reg, 2,
-                               [&p2](const chirp::notification::RegisterDeviceResponse& r) {
+                               [&p2](const chirp::app_notification::RegisterDeviceResponse& r) {
                                  p2.set_value(r);
                                });
     ASSERT_TRUE(SpinIoFor(io, f2));
     EXPECT_EQ(f2.get().code(), chirp::common::INTERNAL_ERROR);
 
-    std::promise<chirp::notification::UnregisterDeviceResponse> p3;
+    std::promise<chirp::app_notification::UnregisterDeviceResponse> p3;
     auto f3 = p3.get_future();
     client.AsyncUnregisterDevice(un, 3,
-                                 [&p3](const chirp::notification::UnregisterDeviceResponse& r) {
+                                 [&p3](const chirp::app_notification::UnregisterDeviceResponse& r) {
                                    p3.set_value(r);
                                  });
     ASSERT_TRUE(SpinIoFor(io, f3));
     EXPECT_EQ(f3.get().code(), chirp::common::INTERNAL_ERROR);
 
-    std::promise<chirp::notification::UpdateDeviceTokenResponse> p4;
+    std::promise<chirp::app_notification::UpdateDeviceTokenResponse> p4;
     auto f4 = p4.get_future();
     client.AsyncUpdateDeviceToken(tok, 4,
-                                  [&p4](const chirp::notification::UpdateDeviceTokenResponse& r) {
+                                  [&p4](const chirp::app_notification::UpdateDeviceTokenResponse& r) {
                                     p4.set_value(r);
                                   });
     ASSERT_TRUE(SpinIoFor(io, f4));
     EXPECT_EQ(f4.get().code(), chirp::common::INTERNAL_ERROR);
 
-    std::promise<chirp::notification::GetUserDevicesResponse> p5;
+    std::promise<chirp::app_notification::GetUserDevicesResponse> p5;
     auto f5 = p5.get_future();
     client.AsyncGetUserDevices(list, 5,
-                               [&p5](const chirp::notification::GetUserDevicesResponse& r) {
+                               [&p5](const chirp::app_notification::GetUserDevicesResponse& r) {
                                  p5.set_value(r);
                                });
     ASSERT_TRUE(SpinIoFor(io, f5));
@@ -527,11 +527,11 @@ TEST_F(NotificationClientTest, GarbageResponseBodyReportsInternalError) {
   asio::io_context io;
   NotificationClient client(io, "127.0.0.1", fake.port());
 
-  chirp::notification::PushNotificationRequest req;
+  chirp::app_notification::PushNotificationRequest req;
   req.set_user_id("u");
-  std::promise<chirp::notification::PushNotificationResponse> promise;
+  std::promise<chirp::app_notification::PushNotificationResponse> promise;
   auto future = promise.get_future();
-  client.AsyncPush(req, 1, [&promise](const chirp::notification::PushNotificationResponse& r) {
+  client.AsyncPush(req, 1, [&promise](const chirp::app_notification::PushNotificationResponse& r) {
     promise.set_value(r);
   });
   ASSERT_TRUE(SpinIoFor(io, future));
@@ -543,11 +543,11 @@ TEST_F(NotificationClientTest, DroppedConnectionReportsInternalError) {
   asio::io_context io;
   NotificationClient client(io, "127.0.0.1", drop.port());
 
-  chirp::notification::PushNotificationRequest req;
+  chirp::app_notification::PushNotificationRequest req;
   req.set_user_id("u");
-  std::promise<chirp::notification::PushNotificationResponse> promise;
+  std::promise<chirp::app_notification::PushNotificationResponse> promise;
   auto future = promise.get_future();
-  client.AsyncPush(req, 1, [&promise](const chirp::notification::PushNotificationResponse& r) {
+  client.AsyncPush(req, 1, [&promise](const chirp::app_notification::PushNotificationResponse& r) {
     promise.set_value(r);
   });
   ASSERT_TRUE(SpinIoFor(io, future));
@@ -559,17 +559,17 @@ TEST_F(NotificationClientTest, WrongResponseMsgIdReportsInternalError) {
     chirp::gateway::Packet out;
     out.set_msg_id(chirp::gateway::GET_USER_DEVICES_RESP);  // wrong pairing
     out.set_sequence(pkt.sequence());
-    out.set_body(chirp::notification::PushNotificationResponse().SerializeAsString());
+    out.set_body(chirp::app_notification::PushNotificationResponse().SerializeAsString());
     return out;
   });
   asio::io_context io;
   NotificationClient client(io, "127.0.0.1", fake.port());
 
-  chirp::notification::PushNotificationRequest req;
+  chirp::app_notification::PushNotificationRequest req;
   req.set_user_id("u");
-  std::promise<chirp::notification::PushNotificationResponse> promise;
+  std::promise<chirp::app_notification::PushNotificationResponse> promise;
   auto future = promise.get_future();
-  client.AsyncPush(req, 1, [&promise](const chirp::notification::PushNotificationResponse& r) {
+  client.AsyncPush(req, 1, [&promise](const chirp::app_notification::PushNotificationResponse& r) {
     promise.set_value(r);
   });
   ASSERT_TRUE(SpinIoFor(io, future));
@@ -579,9 +579,9 @@ TEST_F(NotificationClientTest, WrongResponseMsgIdReportsInternalError) {
 TEST_F(NotificationClientTest, DrainedThenDroppedClientIsSafe) {
   asio::io_context io;
   NotificationClient client(io, kRefusedHost, kRefusedPort);
-  chirp::notification::DrainAndDropNotificationClientForTest(client);
+  chirp::app_notification::DrainAndDropNotificationClientForTest(client);
   // The helper is idempotent, and the destructor hits its null-impl guard.
-  chirp::notification::DrainAndDropNotificationClientForTest(client);
+  chirp::app_notification::DrainAndDropNotificationClientForTest(client);
 }
 
 TEST_F(NotificationClientTest, NullCallbackIsTolerated) {
@@ -589,7 +589,7 @@ TEST_F(NotificationClientTest, NullCallbackIsTolerated) {
   asio::io_context io;
   NotificationClient client(io, "127.0.0.1", loop.port());
 
-  chirp::notification::PushNotificationRequest req;
+  chirp::app_notification::PushNotificationRequest req;
   req.set_user_id("u");
   client.AsyncPush(req, 1, nullptr);
 
@@ -606,13 +606,13 @@ TEST_F(NotificationClientTest, DestructorDrainsQueuedJobs) {
   asio::io_context io;
   NotificationClient client(io, kRefusedHost, kRefusedPort);
 
-  chirp::notification::PushNotificationRequest req;
+  chirp::app_notification::PushNotificationRequest req;
   req.set_user_id("u");
-  std::array<std::promise<chirp::notification::PushNotificationResponse>, 3> promises;
+  std::array<std::promise<chirp::app_notification::PushNotificationResponse>, 3> promises;
   for (int i = 0; i < 3; i++) {
     auto& p = promises[i];
     client.AsyncPush(req, i,
-                     [&p](const chirp::notification::PushNotificationResponse& r) {
+                     [&p](const chirp::app_notification::PushNotificationResponse& r) {
                        p.set_value(r);
                      });
   }
@@ -621,7 +621,7 @@ TEST_F(NotificationClientTest, DestructorDrainsQueuedJobs) {
   // join, and each callback lands on the io with INTERNAL_ERROR.
   {
     NotificationClient drained(io, kRefusedHost, kRefusedPort);
-    drained.AsyncPush(req, 99, [](const chirp::notification::PushNotificationResponse&) {});
+    drained.AsyncPush(req, 99, [](const chirp::app_notification::PushNotificationResponse&) {});
   }
 
   for (auto& p : promises) {

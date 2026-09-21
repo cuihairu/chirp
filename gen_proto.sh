@@ -36,8 +36,8 @@ fi
        proto/social.proto \
        proto/voice.proto \
        proto/party.proto \
-       proto/notification.proto \
-       proto/server_gateway.proto
+       proto/app_notification.proto \
+       proto/game_server_gateway.proto
 
 # Generate Go code (protoc-gen-go), part of the repo-root Go module
 # (github.com/cui/chirp). go_package = github.com/cui/chirp/proto/go/<name>;
@@ -55,8 +55,8 @@ if command -v protoc-gen-go >/dev/null 2>&1; then
          proto/social.proto \
          proto/voice.proto \
          proto/party.proto \
-         proto/notification.proto \
-         proto/server_gateway.proto
+         proto/app_notification.proto \
+         proto/game_server_gateway.proto
 else
   echo "warning: protoc-gen-go not found; skipping Go code generation (install Go + protoc-gen-go to enable)"
 fi
@@ -83,8 +83,8 @@ if [ -x "${PROTOC_BIN}" ] && [ -x "$TS_PROTO_PLUGIN" ]; then
          proto/social.proto \
          proto/voice.proto \
          proto/party.proto \
-         proto/notification.proto \
-         proto/server_gateway.proto
+         proto/app_notification.proto \
+         proto/game_server_gateway.proto
 else
   echo "warning: protoc or ts-proto plugin not found; skipping TS code generation (npm install in apps/web_companion to enable)"
 fi
@@ -106,8 +106,8 @@ if [ -x "${PROTOC_BIN}" ] && command -v dart >/dev/null 2>&1 && [ -x "${DART_PLU
          proto/social.proto \
          proto/voice.proto \
          proto/party.proto \
-         proto/notification.proto \
-         proto/server_gateway.proto
+         proto/app_notification.proto \
+         proto/game_server_gateway.proto
 else
   echo "warning: dart or protoc-gen-dart not found; skipping Dart code generation (dart pub global activate protoc_plugin to enable)"
 fi
@@ -126,7 +126,7 @@ mkdir -p proto/csharp
        proto/social.proto \
        proto/voice.proto \
        proto/party.proto \
-       proto/notification.proto \
-       proto/server_gateway.proto
+       proto/app_notification.proto \
+       proto/game_server_gateway.proto
 
 echo "Protobuf generation complete."

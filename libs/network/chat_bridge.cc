@@ -12,7 +12,7 @@
 #include "proto/auth.pb.h"
 #include "proto/common.pb.h"
 #include "proto/gateway.pb.h"
-#include "proto/server_gateway.pb.h"
+#include "proto/game_server_gateway.pb.h"
 
 namespace chirp::gateway {
 namespace {
@@ -170,7 +170,7 @@ struct ChatBridge::InternalConn : std::enable_shared_from_this<InternalConn> {
         owner->FailClient(*this, "chat unavailable");
         return;
       }
-      chirp::server_gateway::ServerAuthResponse resp;
+      chirp::game_server_gateway::ServerAuthResponse resp;
       if (!resp.ParseFromString(pkt.body()) || resp.code() != chirp::common::OK) {
         chirp::common::Logger::Instance().Warn("chat bridge: chat rejected the service auth");
         owner->FailClient(*this, "chat unavailable");
@@ -294,7 +294,7 @@ ChatBridge::InternalConn& ChatBridge::StartConn(
                                     return;
                                   }
                                   conn->state = InternalConn::State::kAuthenticating;
-                                  chirp::server_gateway::ServerAuthRequest auth;
+                                  chirp::game_server_gateway::ServerAuthRequest auth;
                                   auth.set_service_id(service_id_);
                                   auth.set_secret(service_secret_);
                                   auth.set_protocol_version(1);

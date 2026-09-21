@@ -1,68 +1,100 @@
-# Project Chirp Roadmap
+# Chirp 任务清单
 
-> 早期 roadmap(基础设施、各服务初版、SDK/应用初版)与 2026-03 更新日志已归档至 [docs/design-notes/roadmap_history.md](docs/design-notes/roadmap_history.md)。本文件只保留当前要做的事。
+> 最后更新：2026-09-21，基于两平面 + hub-spoke 架构重构后重新拆分。
 
-## Current Focus(2026-09,最高优先级)
+## 当前焦点
 
-> 决策:**优先把"游戏客户端 SDK 接入 + 游戏服务端接入"端到端跑通,其余(含下方架构债)等基础功能完成后再做。**
->
-> 注意:当前 smoke 验证的是**过渡路径**——SDK 直连 chat + 脚手架登录(token 即 user_id)。最终拓扑(game_gateway 吸收 chat 直连入口、统一登录语义)依赖 P1,不要把脚手架当成终点。
+游戏平面优先，先把 game_sdk_gateway + game_chat + game_server_gateway 端到端跑通。
 
-- [x] **游戏客户端 SDK 进程级 E2E**:`sdks/core`(`chirp::sdk::ChatClient`)直连 chat 的登录/双向收发/离线队列链路,`test_services.sh --smoke-sdk`
-- [x] **游戏服务端接入 E2E**:`test_services.sh --smoke-npc`(server_gateway 注入 + NPC 事件回环 + 离线队列 refill)
-- [x] **smoke 纳入 CI**:(2026-09 完成)`ci.yml` 新增 `smoke` job——ci preset(Debug)构建后依次跑 `test_services.sh` 的六项进程级 smoke(`--smoke` auth+gateway、`--smoke-chat`、`--smoke-sdk`、`--smoke-npc`、`--smoke-edge` gateway 吸收 chat 入口、`--smoke-redis` docker 版跨实例 kick)。
+## 游戏平面（P0）
 
-## Architecture Debt(2026-09 架构评审)
+### game_sdk_gateway（原 gateway）
 
-> 来源:架构评审(见 `docs/architecture.md`)。按风险排序,完成一项勾掉一项。本节整体让位于 Current Focus。
+- [x] 基础登录/心跳/踢出/会话 claim
+- [x] ChatBridge 转发 2xxx 到 game_chat
+- [ ] **修复 scaffold 分支不 bind session 的 bug**：无 `--auth_host` 时登录成功但 2xxx 被静默丢弃，需要对齐 app_sdk_gateway 的 scaffold 行为（补 `BindAuthenticatedSession`）
+- [ ] 统一 TCP/WS 两份 switch 为 `HandleClientPacket`（已做，确认无残留）
 
-### P0 — 公共代码沉淀(消除跨服务私有耦合)
+### game_chat（原 chat，部署为游戏平面实例）
 
-- [x] **抽取公共 session registry**:(2026-09 完成)两份逐行重复的实现合并为 `libs/network/session_registry.{h,cc}`(`chirp::network::SessionRegistry` + Bind/Get/Remove 自由函数),gateway / chat / app_gateway 共用;`RemoveAuthenticatedSession` 统一为富签名(bool + 可选 user_id 出参,chat 的 void 版调用点兼容)。专用测试合并为 `session_registry_tests`,chat_validation_tests 里 4 个重复用例删除。覆盖率保持 100%。
-- [x] **消除跨服务直接编译对方源码**:(2026-09 完成)session registry、`auth_client`、`redis_session_manager`、`notification_client` 全部沉淀进 `libs/network`(chirp_network 并 PUBLIC 链接 chirp_protos,保住 .pb.h 的构建顺序依赖);gateway / chat / app_gateway / notification 四个服务的 CMake 不再编译对方的 .cc,全部只链接 chirp_network。namespace 保留原样(`chirp::gateway` / `chirp::notification`,反映对话平面)。附带:`run_coverage.sh` 新增 `--fresh`(源文件移动/删除后必须用,否则孤儿 gcda 混入统计),并在用法注释中写明 CI 同款 `CMAKE_ARGS` toolchain 约定。
+- [x] 基础聊天：私聊、群组、已读回执、正在输入、表情回应、消息编辑/删除、@提及
+- [x] 历史、离线队列、可选 Redis/MySQL 存储
+- [x] 本地验证 token（`--token_secret`，HS256 JWT）
+- [x] trusted peer 信任门（`--gateway_service_secret`，gateway 管道免限流）
+- [ ] **注册协议**：作为 spoke 连接 app_chat，发送 `PEER_REGISTER_REQ`，支持白名单 + 版本协商
+- [ ] **频道消息推送**：登录后向已注册的 hub peer 推送频道消息（`CHANNEL_MESSAGE_NOTIFY`）
+- [ ] **接收玩家回复**：从 hub peer 收到 `INJECT_MESSAGE_NOTIFY`，注入本地频道
 
-### P1 — 登录语义统一(对应 migration path 第 2/4 步)
+### game_server_gateway（原 server_gateway，瘦身版）
 
-- [x] **统一登录/会话语义**:(2026-09 完成)最终方案是「统一 secret + JWT 直通」——调研确认 token 转换不必要:auth-enhanced 签发的 HS256 JWT(`sub`+`exp`)与 chat 的 `LoginTokenVerifier` 用同一套 `libs/common` JWT 代码,格式同构;差距只是 secret 配置管道与 auth 侧的 scaffold 兜底。落地三件事:① auth-enhanced `LOGIN_REQ` 收紧为 JWT → 活跃 session → scaffold 三级,scaffold 兜底(token 即 user_id)需显式 `--allow_scaffold_login 1`(默认 OFF,拒绝回 `AUTH_FAILED` 并打 Warn;`docker-compose.yml` 演示拓扑加开关保旧行为);② `ValidateAccessToken` 强制与 `LoginTokenVerifier` 相同的过期契约(`exp` 必填 + 过期即拒,auth 自签 token 恒带 `exp`,无兼容面);③ 部署约定 secret 对齐:`chirp_auth --jwt_secret` ≡ 边缘服务 `--token_secret`,客户端原始 token 经 gateway→ChatBridge→chat 逐字透传、两端本地验签,零转换。验证:`auth_service_tests` +3 例(过期/缺 exp/错 secret 拒绝),`--smoke-jwt` 入 CI(直连 chat 与经 gateway 双路径拒 scaffold、错 secret 拒绝、自签 JWT 双端接受、A→离线 B 经管道全链路)。gateway/chat/social/voice/party/app_gateway/basic auth 全未动。剩余:Hybrid 吊销降 P3(见下);`LoginResponse.session_id` 仍是占位符(`<user>_sess`,LOGOUT/REVOKE 对它返回 INTERNAL_ERROR 是既有行为,归 session-core 后续);chat 不校验 `sender_id` 与登录身份的归属(信任客户端自报,单独立项)。
-- [x] **gateway 吸收 chat 直连入口**:(2026-09 完成,migration path 第 4 步)`ChatBridge`(services/gateway)按客户端管道式转发:gateway 登录成功即拨一条内部 TCP 连接到 chat,先 `SERVER_AUTH_REQ`(与服务器平面同款信任门,`--chat_service_secret`)再透传客户端原始 LOGIN(token+device),之后双向逐帧转发(chat 的推送全部发在目标用户自己的会话上,无需 seq 关联);内部连接断开/被拒对真实客户端发 `KICK_NOTIFY` 重连自愈,`Detach` 幂等。chat 侧(基础 main.cc 与 enhanced main_enhanced.cc 同步加)`--gateway_service_secret` 信任门 + trusted 连接豁免 per-IP 登录限流(token 验签不动),断连擦除 trusted 防指针复用。gateway 的 TCP/WS 两份复制粘贴 switch 合并为 `HandleClientPacket`;`--chat_host` 空(默认)= 行为不变。已知代价/局限:内部连接无应用层心跳(与直连等价)、每客户端一条 chat 连接(fd 代价,聚合复用留后续);auth-enhanced token 不被 chat 认的局限已由统一登录语义收尾消除(上一条)。验证:`chat_bridge_tests` 8 例(loopback 假 chat,TSan 三连跑零竞争)、`--smoke-edge`(trusted 豁免 vs 直连限流、离线 refill 经管道、在线实时全断言)入 CI。
-- [x] **设备级会话核心**:(2026-09 完成,migration path 第 2 步)Redis session registry 从 "user → instance" 升级为 "user → device → edge instance"——claim key `chirp:sess:<uid>\x1F<device>`(device 过 `NormalizeDeviceId`,归一化在 lib 入口,调用点传原始 `req.device_id()`)、kick payload 携带 user+device,`KickCallback(user, device)` 经 `GetSession(user, device)` 精确踢同设备会话;同玩家异设备跨实例共存(与内存 registry 三层语义对齐),同设备重登仍互踢。gateway 与 app_gateway 共用;`gateway_extra_tests` 24→29 例(SETEX 走 `SET key value EX ttl`、`\x1F` 分隔、旧格式 payload 丢弃、异 device 独立 key、他实例 claim 不 DEL);`--smoke-redis` 语义翻转为同 device 跨实例互踢 + 新增异 device 共存断言(hold rc==2),`wait_log` 同步取代裸 sleep。局限:claim 为 GET/PUBLISH/SETEX 三条独立命令非原子(并发 claim 可能双 kick);新旧实例混部署窗口互不感知,旧格式 key 随 TTL(≤3600s)自然过期自愈;uid 含 `\x1F` 不支持。支撑 app 边缘与跨端语义(跨设备投递、kick 策略、统一未读数)。
-- [ ] **玩家聚合平面模型(app_gateway 的目标形态)**:两类玩家边缘定位不同——游戏边缘(SDK/game_gateway/server 平面)**面向游戏接入、不做聚合**(一个接入可覆盖同一运营方的多款游戏,身份是游戏级);app 边缘是**玩家聚合平面**:player 身份(平台级)↔ 多个 game 身份的绑定注册(由游戏后端经服务器平面主张绑定)、跨游戏频道订阅与聊天 fan-in(统一未读)、跨游戏语音组队(语音身份=玩家)。当前 `app_gateway` 已具备连接骨架、6xxx 转发、订阅/未读自服务与 chat 管道(2026-09-21:吸收 game_gateway 同款 `ChatBridge`,`--chat_host` 配置后 2xxx 双向逐帧转发,登录一条连接同时拿设备/订阅/未读/chat 业务;`--smoke-edge` 断言经 app 边缘的补投往返)。剩余开放项:多租户 vs 联邦决策("app 平面如何触达各游戏 chat 数据",见 `docs/architecture.md`「Game-facing plane vs player aggregation plane」)、web/mobile 客户端从四条 websocket 收敛到 app 边缘单连接(服务端前提已就绪)、跨游戏语音。
-- [x] **玩家频道订阅注册表 + 双端订阅面(WP-8 分片 2)**:(2026-09-20 完成)订阅模型落地:**谁想在哪个游戏的哪个频道**。`chirp_server_gateway` 新增 `SubscriptionRegistry`(`subscription_registry.{h,cc}`,逐镜像 IdentityRegistry:内存权威 + 透写 Redis 镜像 `chirp:subscription:entry:<subscription_id>` + `--subscription_redis_host` 启动回放,默认纯内存)。语义:`(player_id, game_id, channel_id)` 全局唯一;`subscription_id` 为调用方幂等键(同键同元组 → `OK`+`existed=true`,同键异元组 → `INVALID_PARAM`);同元组换新 id 重新主张即替换旧记录(调用方是权威);**空 id = 玩家自服务路径,服务端铸造 `sub-...` id,重复自订阅收敛到已存记录(id 稳定不 churn)**;退订按 id **或**完整三元组二选一(半选 → `INVALID_PARAM`,未知幂等 `OK`);查询按 player_id + 可选 game_id 过滤。双端订阅面:游戏后端直连 hub 断言;玩家经 `app_gateway` 自服务——新增 `--sg_host/--sg_port/--sg_service_id "app_gateway"/--sg_secret`(空 host = 关闭),以长连接 `ServerGatewayPeer`(从 services/chat 迁入 `libs/network/`,`chirp::network` 命名空间,`SendRpc` 提为 public;hub 侧一服务一活连接,不能每请求拨号)转发 5021-5026,pin `player_id` = 认证用户,响应体原样透传(带铸造的 subscription_id);未认证 `AUTH_FAILED`、平面关闭 `SERVER_UNAVAILABLE`。部署注意:hub 侧需加 `--service app_gateway=<secret>` 信任 app 边缘。开放问题(fan-in 分片已复核,维持宽容):自服务订阅不校验身份绑定(玩家可订阅从未玩过的游戏的频道),是否收紧仍是产品决策。测试:`server_gateway_tests` 62→**74 例**(注册表生命周期/幂等/替换/铸造稳定 id/双退订/过滤/Redis 写透回放/损坏记录/元组冲突替换/故障降级/纯内存 + handler 校验),`chat_hub_peer_tests` 22→**23 例**(+ 泛化 `SendRpc` 往返,5021/5022 走公开接口),`app_gateway_tests` 17→**20 例**(未认证拒绝/平面关闭/转发 + pin 断言,fake hub 完整服务认证握手);Go 套件 10→**11 例**(订阅往返:铸造→幂等 existed→列表→过滤→退订)。文档:`docs/server_plane.md` 新增「Player channel subscriptions」一节,architecture/CAPABILITY_MATRIX/Go README 同步。
-- [x] **fan-in 实时投递:私聊副本扇出(WP-8 分片 3)**:(2026-09-20 完成)订阅从"只存意向"到"真实到达":`MessageInjectRequest` 新增可选 `game_id`——带 `game_id` + 非 `PRIVATE` 频道的注入不再原样转发,而是 hub 查 `SubscriptionRegistry` 新增的 `(game_id, channel_id)` 反向索引(`channel_index_` + `GetForChannel`,锁内快照;Subscribe/EraseEntryLocked/Load 三处同步维护),**对每个订阅者复制一份 `SENDER_SERVICE` 私聊副本**(receiver=player_id、原 sender_id 保留=后端掌控历史线程聚合粒度、channel_id 清空=chat 按规范化私聊对分线程、`inject_id` 派生 `<原id>#<player_id>` 仅供日志关联)经既有 `INJECT_MESSAGE_NOTIFY` 交 chat 正常投递(在线直送/离线队列/ack 补投免费复用)——**chat 进程零改动**,镜像 npc_dialog 先例。语义裁决:`game_id`+`PRIVATE` 或 `game_id`+空 `channel_id` → `INVALID_PARAM`(扇频道与点对点不得含糊);无订阅者 → `OK` 零接触(`SERVER_UNAVAILABLE` 会让 broker 永久重放无人要的消息);chat 离线或全败 → `SERVER_UNAVAILABLE` 零存储(重放安全);**部分成功 → `OK`**(重试会对已送达玩家重复);超 `--max_fanout`(默认 10000,新 flag)→ 副本发出前整体 `RATE_LIMITED`(broker 自动 poison-ack,零 broker 改动);订阅者快照在注册表锁内、chat 写在锁外(io 线程与 broker 消费线程并发)。`stream_broker` envelope 解析补 `game_id` 一行,Redis Streams 兜底路径同语义;混部署安全(旧 chat 按未知字段丢弃 `game_id`)。决策记录:自服务订阅**不强制**身份绑定(扇出零跨表依赖,与"后端断言可信"一致;开放问题保留)。测试:`server_gateway_tests` 74→**88 例**(反向索引 5 例:跨玩家/未知元组/双退订路径清理/元组替换一致性/Load 回放;扇出 9 例:逐订阅者副本形状与派生 id/空集静默/chat 离线/全败/部分成功/两类 INVALID 拒绝/超限 RATE_LIMITED/无 game_id 回归锚;broker 解析 1 例),`RecordingPeer` 加 `fail_after` 部分失败开关。文档:`docs/server_plane.md` 注入节 game_id 行 + 「Fan-in delivery」小节 + broker 字段表,architecture/CAPABILITY_MATRIX/TODO 同步。
-- [x] **统一未读:badge 账本 + 自服务 RPC(WP-8 分片 4)**:(2026-09-20 完成)fan-in 之后"玩家收到多少条未处理的订阅通知"有了答案:hub 侧新 `UnreadLedger`(`unread_ledger.{h,cc}`,逐镜像 SubscriptionRegistry:内存权威 + 透写 Redis 镜像 `chirp:unread:entry:<player>:<game>:<channel>` + `--unread_redis_host` 启动回放,默认纯内存),**语义是 badge(通知未处理数)而非已读游标**——与 chat 的 ReadReceiptManager(2201-2207)互相独立互不喂给;退订不清 badge,标记已读是唯一递减路径,投递失败不回滚;计数 int32。递增点:`FanoutInject` 循环内每份副本成功交 chat 后 `Increment(player, game, channel)`——部分成功只计成功份,空集/超限/chat 离线/全败四条早退臂零递增;N 个副本必是 N 个不同玩家(注册表元组唯一),每 (player, game, channel) 每次 inject +1;broker 路径经 HandleInject 自动同语义。清零即从 Redis **删除**(0 值不落盘,Load 跳 0 值/坏记录,计数器不复活也不无限涨);键成分裸拼接(ids 含 `:` 可能在镜像上别名碰撞,内存权威按精确元组,仅奇异 id 重启保真度受限,头注释注明)。线协议:`MARK_CHANNELS_READ`(5027/5028,分层选择器——channel_id 非空须带 game_id 清单条 / 仅 game_id 清整游戏 / 双空全清;幂等,未知目标 `OK`+`cleared=0`)+ `GET_UNREAD_SUMMARY`(5029/5030,per (game, channel) 条目按字典序稳定输出 + `total_unread` 为过滤后之和,game_id 可选过滤);app_gateway 复用 `ForwardSubscriptionPacket` 零改动转发(pin player_id,响应体原样中继)。Go SDK 补 `MarkChannelsRead`/`GetUnreadSummary` 两方法,RESP dispatch 列表补 5028/5030(漏 case = 永久悬挂)。测试:`server_gateway_tests` 88→**108 例**(账本 11 例:递增聚合/单频道幂等/整游戏/全清/过滤/畸形选择器/写透回放清零不复活/坏记录与 0 值跳过/故障降级/纯内存;handler 2 例;fan-out 集成 3 例:逐订阅者递增/部分失败只计送达/四类拒绝零递增),`app_gateway_tests` 20→**22 例**(MARK/GET 转发 + pin 断言 + cleared/entries 往返),Go 套件 11→**12 例**(fake hub 自演账本:三层标记选择器/game 过滤/幂等 cleared=0/他人计数不受影响)。文档:`docs/server_plane.md` 新增「Unified unread」一节 + fan-in 节递增语义,CAPABILITY_MATRIX/architecture/TODO/Go README 同步。
-- [x] **玩家身份绑定注册表(WP-8 分片 1)**:(2026-09-20 完成)`chirp_server_gateway` 新增 `IdentityRegistry`(`identity_registry.{h,cc}`,platform `player_id` ↔ 多个 `(game_id, game_user_id)` 游戏身份)——两种聚合平面方案(共享多租户核心 / 联邦桥接)共同的地基,先行落地不受开放决策牵制。语义:`binding_id` 为调用方幂等键(同键同元组 → `OK`+`existed=true`,同键异元组 → `INVALID_PARAM`,防键复用悄悄破坏去重);`(game_id, game_user_id)` 唯一,换 `binding_id` 重新主张即改绑(游戏后端是权威,账号切换/解绑重绑场景,旧记录从全部索引消失);解绑按 `binding_id` **或**完整二元组二选一(半边/双选 → `INVALID_PARAM`,未知目标幂等 `OK`);`RESOLVE_GAME_USER` 未绑回 `OK` + 空 `player_id`。存储:内存注册表 + 透写 Redis 镜像(`chirp:binding:entry:<binding_id>` = 序列化 `StoredIdentityBinding`,`--binding_redis_host/--binding_redis_port` 默认关;启动回放全部条目、坏记录警告跳过、同游戏用户冲突按 Bind 语义替换;Redis 写失败尽力而为——内存始终权威,下次变更同记录自然重试,Redis 故障降级为纯内存语义而非报错)。线协议:`gateway.proto` MsgID 5013-5020 + `server_gateway.proto` 新增 `StoredIdentityBinding`(仅 Redis 记录非线上格式)与 4 对 Req/Resp;hub 侧 4 个 handler + dispatch 分支,Go SDK 补 `BindPlayerIdentity`/`UnbindPlayerIdentity`/`GetPlayerIdentities`/`ResolveGameUser`。测试:`server_gateway_tests` 49→**62 例**(`FakeRedisClient` 覆盖写透/跨注册表回放/解绑 DEL/坏记录跳过/故障降级/默认纯内存 + handler 校验臂);Go 套件 9→**10 例**(绑定往返:首绑→幂等重绑 `existed=true`→按玩家列举)。往返测试顺带抓到并修掉一个真实客户端缺陷:`dispatch` 的 RESP 分支没路由四个新 RESP(落到 default 被忽略),`context.Background()` 调用会永久挂起——分支补全,测试改带 5s 超时(缺失响应从此 fail 而非 hang)。文档:`docs/server_plane.md` 新增「Player identity bindings」一节,CAPABILITY_MATRIX 更新 hub/Go SDK/app_gateway 三行。
+- [x] 服务凭证认证（`SERVER_AUTH_REQ`）
+- [x] 消息注入（`INJECT_MESSAGE_REQ` → `InjectMessageNotify`）
+- [x] 事件下发（`EVENT_PUBLISH_REQ` / `EVENT_DELIVER_NOTIFY` / `EVENT_ACK_REQ`）
+- [x] Redis Streams broker 回退
+- [ ] **搬走 WP-8 功能**：身份绑定/频道订阅/未读计数迁移到 app_chat 内部，game_server_gateway 只保留注入 + 事件
+- [ ] **瘦身后验证**：smoke test 确认注入链路正常
 
-### P1 — 测试与构建一致性
+## App 平面（P1，游戏平面稳定后开始）
 
-- [x] **auth 单测**(从 P2 上调:auth 是 Supported 服务且在登录关键路径上,零单测风险高于构建洁癖):(2026-09 完成)`auth_stores_tests` / `auth_service_tests` 覆盖 user_store / session_store / rate_limiter / brute_force 等全部 enhanced 路径,auth 包行覆盖 100%。
-- [x] **修复 chat 增强构建功能缺失**:(2026-09-15 完成)MySQL 增强分支(main_enhanced)与 basic/distributed 的能力差异全部补齐——① 服务器平面集成:`inject_consumer.cc` + `server_gateway_peer.cc` + `npc_uplink.cc` 编入增强构建,`--server_gateway_host` 拨号 hub,注入经 `InjectHooks` 适配到 hybrid store(在线 `SendChatNotify`+Acknowledge,离线 `AddOfflineMessage`+推送,群组走 router 广播),`--npc_service_id` 玩家→NPC 私聊发布事件;② 推送桥:`--notification_host` 接 `PushBridge`,离线入队即触发;③ 登录验签:`--token_secret` 的 HS256 JWT 本地验签与 distributed 同款;④ 离线链路:`SendChatMessageCount` 按投递计数入队,Redis 不可用落内存兜底(单测 `OfflineQueueFallsBackToMemoryWhenRedisDown`)。背景:该缺失曾让 CI 的 `--smoke-npc` 挂死(注入无人消费,listen 无超时),探测修复见 `test_services.sh` 的 hub 认证探测。
-- [x] **推送桥覆盖全部 chat 构建**:(2026-09-15 完成)basic 与 distributed 之外,`main_enhanced` 也已接入(离线私聊与注入离线入队触发 `NotifyOffline`,`--notification_host` 配置通知服务,未配置时为 no-op)。
-- [x] **proto 改为链接 `chirp_protos` 静态库**:(2026-09 完成)10 个服务、benchmark 工具与单测目标全部改为链接 `chirp_protos`(PIC 静态库,可链入 SDK 动态库);`sdks/core` 保留 TARGET 守卫——树外独立构建仍编译自带 gencode。
+### app_sdk_gateway（原 app_gateway）
 
-### P2 — 功能缺口与边缘硬化
+- [x] 基础登录/心跳/踢出/会话 claim
+- [x] 6xxx 设备消息转发到 app_notification
+- [x] ChatBridge 转发 2xxx 到 app_chat
+- [ ] 对接 app_auth（替代原来的共享 auth）
 
-- [x] **server plane 进程级 E2E**:已由 `--smoke-npc` 覆盖(注入 + 事件回环 + 离线 refill)。如需通用注入(非 NPC)场景的 smoke,再单独立项。
-- [x] **chat 直连入口的限流/安全模型**:(2026-09 完成)`ChatRateLimiter` 固定窗口计数——登录按客户端 IP(30/分钟)、消息发送按用户(120/分钟),Redis 计数、任何故障一律 fail-open;超限回 `RATE_LIMITED`(common.proto 新增错误码)。阈值可配(`--login_rate_limit_per_min` / `--send_rate_limit_per_min`),无 `--redis_host` 时不生效。多级窗口/封禁列表等留给统一登录(P1)之后。
-- [x] **NPC 回复去重**:(2026-09 完成)`NpcResponder` 按事件 id(= `inject_id`)去重——回复注入成功才记入 1024 条的近期窗口;已答事件重投只补 ack 不再回复,注入失败的事件不记录(重投必须重试),窗口满驱逐最旧。见 `docs/server_plane.md` NPC dialog 一节。
-- [x] **app 边缘 TLS**:(2026-09-19 完成)`app_gateway` 新增 `--tls_port`/`--ws_tls_port`(默认 0=关)+ `--tls_cert`/`--tls_key`(任一 TLS 端口开启则必填,缺失或加载失败启动即退出 1)。libs/network 会话核心模板化(`TcpSessionT<Stream>`/`WebSocketSessionT<Stream>`,明文别名 `TcpSession`/`WebSocketSession` 保名),`TlsTcpServer`/`TlsWebSocketServer` 经 `MakeSession` 接缝复用同一 accept 循环,TLS 会话以 `shared_ptr<Session>` 进 registry/auth 零改动;TLS 1.2 起、禁 SSLv2/3/压缩(`ssl_context.cc` 为全仓唯一裸 OpenSSL 调用点;`vcpkg.json` 已加 openssl)。新增 `network_tls_tests`(7 例真回环:TLS-TCP 回显、明文进 TLS 口被干净拒绝、SendAndClose/registry/wss 握手、context 失败臂、停机纪律)。明文端口默认行为零变化。
-- [ ] **真实推送传输**:(2026-09 推进)`HttpPushTransport` 落地——真实 HTTP/1.1 客户端(URL 解析/请求构建/状态与响应解析/整请求 deadline/响应体上限),`--push_transport http` 启用,默认仍为 logging stub;TCP 连接工厂在 `HttpConnectionFactory` 接缝后,单测以脚本化连接全覆盖 + loopback 真连回环。**剩余**:TLS 握手与 APNs HTTP/2、FCM HTTP v1 的 OAuth2(RS256);三者都是接缝替换点,协议代码无需再动。(2026-09-19 依赖解锁:classic 树 openssl 3.6.1 + nghttp2 1.69.0 已装好并通过 toolchain 探针(asio::ssl 内存证书/RSA 签名/nghttp2 会话),ncurses-gcc15 阻塞不复现;落地首个用到的特性时把 openssl/nghttp2 加进 `vcpkg.json` manifest 同步 CI。)
-- [x] **app_gateway / voice 单测**:(2026-09 完成)social 已由 `social_presence_tests` 覆盖;本批补齐剩余两个——`voice_tests`(房间创建/加入/满员/换房/离开/心跳/断连 + ICE/SDP 定向中继,22 例)、`app_gateway_tests`(scaffold 登录/登出/踢下线/心跳 + 设备消息经真实 NotificationClient 转发到 loopback 服务,17 例)。顺带修 voice 三个缺陷:满员 join 先拒后改状态(原会污染前房映射)、ICE/SDP 按 `to_user_id` 定向(原永远广播)、join 成功时绑定会话(原广播与断连清理永远找不到会话)。两服务均为 Experimental,main.cc 不在覆盖率测量范围。
+### app_chat（原 chat，部署为 App 平面 hub）
 
-### P3 — 暂缓项与杂项
+- [x] 基础聊天能力（与 game_chat 同一二进制）
+- [ ] **hub 模式**：接受 game_chat 的 `PEER_REGISTER_REQ`，白名单 + 版本协商
+- [ ] **身份映射**：持有 `player_id ↔ (game_id, game_user_id)` 绑定，game 后端调 `BIND_PLAYER_IDENTITY` RPC
+- [ ] **频道订阅**：持有玩家订阅的 `(game_id, channel_id)` 列表
+- [ ] **跨平面 fan-out**：收到 `CHANNEL_MESSAGE_NOTIFY` 后查询订阅者，注入私信副本
+- [ ] **跨平面回复**：收到带 `{game_id}:` 前缀的消息后，解析 player_id → game_user_id，注入 game_chat
+- [ ] **未读计数**：fan-out 时自增 badge，提供 `MARK_CHANNELS_READ` / `GET_UNREAD_SUMMARY`
+- [ ] **离线推送触发**：消息投递时调 app_notification
+- [ ] **enhanced 会话语义修复**：AddSession 改为 (user, device) 维度互踢，对齐 basic 的 session_registry 行为
 
-- [x] **服务端 Go SDK(WP-7)**:(2026-09-20 完成)`sdks/go`(package `chirp`,根 `go.mod` module `github.com/cui/chirp`):游戏后端 dial-out 接入 `chirp_server_gateway` 的参考客户端——`SERVER_AUTH_REQ` 首帧握手(service_id+secret 信任门)、服务端指派心跳节奏(缺省回落 30s;hub 2×interval 判死)、sequence 关联 RPC(`InjectMessage`/`PublishEvent`/`AckEvents`:context 超时、resp msg_id 校验、非 OK 码转 `*ServerError`)、`INJECT_MESSAGE_NOTIFY`/`EVENT_DELIVER_NOTIFY` handler、断线 fail-pending(`ErrConnectionLost`)+ 固定延迟重连——语义逐项对齐 C++ 参考实现 `server_gateway_peer.cc`。proto/go 重建为真 Go 代码:旧 `proto/go/proto/*.pb.go`(单目录多 package,从未编译过)删除,go_package 改 `github.com/cui/chirp/proto/go/<name>`,`gen_proto.sh` 走 `paths=import` + module 剥离(每 proto 一个包);go_package 会内嵌进**所有语言**的描述符表,proto/cpp 与 proto/csharp 随之再生成(纯元数据字节,API/线格式零变化,全量 C++ 构建已验证)。CI `go-sdk.yml`:固定 protoc 33.4 + protoc-gen-go v1.36.12 重生成 + proto/go 漂移校验 + `go vet` + `go test -race`(9 例:握手与心跳递增序列/认证拒绝后恢复/乱序响应按 sequence 关联/事件推送+ack 往返/断线 fail-pending 重连/inject notify 派发/超限帧断连/Stop 幂等与 fail-fast/ctx 超时不断连)。局限:Go 客户端对真 hub 的进程级 E2E 未建(同一 wire 契约由 `--smoke-npc` 的 C++ 链路覆盖);auth 拒绝后无限重试(与 C++ 参考一致,无退避上限)。
-- [x] **游戏引擎 SDK(6b:Unreal + core 清理)**:(2026-09-19 完成)与 6a 同日落地——(1)删除从未编译的 `sdks/core` 模块层(`include/chirp/core/*` + `src/client_impl.*` + `src/core_sdk.cc` + `src/modules/`,约 2000 行,头文件自带编译错误,被旧 Unity/Unreal 桥各自错误引用);smoke 验证过的 `sdk.cc`/`sdk_client.cc` 链保留。(2)`chirp::sdk::ChatClient` 重写增强,补齐与 web/mobile/unity 四端一致的连接语义:通用 `Request(req_id, resp_id, body, cb)`(sequence 关联 + 响应 msg_id 校验 + 10s 超时,迟到响应无害丢弃)、`OnNotify/OffNotify` 订阅、25s 心跳 **pong 回声校验**(pong 不回显 ping sequence 不记答;连续 2 次未答判死)、断线指数退避自动重连(500ms→15s ±20% 抖动,KICK/主动断开不重连)、`ConnectionState::WaitingReconnect/Kicked`、KICK 终态 + pending flush 错误码 `Kicked`。新增 `ChatConfig::max_missed_pongs/request_timeout_ms`。单测 29→**37 例**(loopback FakeGateway:请求关联/msg_id 不匹配超时/订阅退订/KICK 终态 flush/心跳存活/心跳死亡重连/断线自动重连)。chirp_network/chirp_common 因被 `chirp_core_sdk`(SHARED)链接强制 PIC。(3)`sdks/unreal` 重写为 UE 插件壳:`UChirpClientSubsystem`(GameInstance subsystem)把 native 回调经 `AsyncTask(GameThread)` 派发回游戏线程(旧桥零 marshalling 的死穴),Blueprint 事件(登录结果/聊天/踢线/断线/原始 notify)+ `WatchNotify` 懒订阅;Build.cs 经 `CHIRP_SDK_NATIVE_DIR` 链接 native 静态库。**局限**:UE 层(UCLASS/Build.cs)无法进 chirp CI(需 UBT/引擎头),正确性契约 = native 核心 37 例单测 + smoke;TCP 直连(chat 5000),WS 外壳等聚合边缘定案。
-- [x] **游戏引擎 SDK(6a:Unity)**:(2026-09-19 完成)引擎 SDK 架构评审后走「独立协议实现」路线并删除从未编译过的旧桥——`sdks/unity` 整树重写:纯 C# 协议库 `Runtime/Chirp/`(FrameCodec `[u32_be len][Packet]` 16MB 上限、IChirpTransport + ClientWebSocketTransport、ChirpClient 状态机(25s 心跳/pong 回声校验/±20% 抖动指数退避重连/KICK 终态/10s 请求超时/sequence 关联)、MessageSpec + `Specs` 全消息表(38 对 Req/Resp)),无 UnityEngine 依赖;`ChirpManager` MonoBehaviour 薄壳补上旧 Unreal 版完全缺失的主线程派发(回调经 ConcurrentQueue 在 Update() 排空)+ 登录/登出/发消息/ack 便捷方法。协议生成物 `proto/csharp`(protoc 内建 --csharp_out,Google.Protobuf 3.27 运行时)入库并由 `gen_proto.sh` 生成。CI `unity-sdk.yml`:固定 protoc 33.4(与 vcpkg 工具链一致,否则漂移校验会因 protoc 版本差异误报)+ gen_proto.sh 重生成 diff 校验 + `dotnet test` 真单测 11 例(帧编解码/序列号关联/超时孤儿/通知订阅退订/踢线终态/心跳回声/重连生命周期;dotnet 工程只覆盖纯协议库,Unity 层靠人工)。
-- [x] **手机伴侣 app(WP-4)**:(2026-09-19 完成)`apps/mobile_companion` 重写,FFI 通道退役删除——纯 Dart 协议栈:`proto/dart`(protobuf dart 生成物,package `chirp_proto`)+ `lib/protocol/`(FrameDecoder `[u32_be len][Packet]`、ChirpClient:sequence 关联/25s 心跳/±20% 抖动指数退避重连/KICK 终态不再重连、MessageSpec 请求表)+ `lib/state/`(Store\<T\> extends ChangeNotifier)+ `lib/api/`(Chat/Social/Party/Device 四个 api,notify→store 接线,web companion 的 Dart 移植)。UI:登录(互踢横幅)、四 Tab 主页(会话/好友/组队/我的)、聊天页(历史分页/已读回执/typing/表情回应/编辑删除/乐观发送+TARGET_OFFLINE 离线暂存)、本地通知(flutter_local_notifications,后台消息)。四条可降级 WS 与 web 同构(chat 7001/social 8001/party 7501/app_gateway 5201;URL 由 `--dart-define` 覆盖,模拟器默认 `ws://10.0.2.2:{port}`)。测试 40 例(protocol/state/api/widget);CI `mobile-build.yml`(android APK/AAB + analyze --fatal-infos + format + test;FFI 的 native-sdk job 随退役一并删除)。局限:仍是直连过渡拓扑(与 web 同批迁 app_gateway 聚合边缘);party 之外的组队 E2E 未做。
-- [x] **桌面端(WP-5)**:(2026-09-19 完成)WP-4 的代码库直接启用三桌面平台——`flutter create --platforms=linux,windows,macos` 补齐 Runner(窗口标题 "Chirp"),`lib/` 界面零分叉共享。平台差异仅两处:URL 默认值按 `defaultTargetPlatform` 分流(Android 模拟器 10.0.2.2,iOS 模拟器/桌面 127.0.0.1,`--dart-define` 覆盖优先;顺带修了 iOS 模拟器默认值原本指向 10.0.2.2 的问题),本地通知初始化扩到 macOS(Darwin 启动授权)与 Linux(`LinuxInitializationSettings`),Windows 无插件实现走既有降级(in-app 送达)。CI `mobile-build.yml` 新增 desktop job(linux/windows/macos debug 构建矩阵,fail-fast 关);本机验证 `flutter build linux --debug` 通过,40 例测试全绿。**未做**:release 签名与分发打包(msix/dmg/deb/rpm)、桌面通知点击聚焦窗口、Windows 系统通知(待插件支持)。
-- [x] **Web 版伴侣 app 一期**:(2026-09 完成)`apps/web_companion`——Vite+React+TS strict+MUI,登录(scaffold/JWT 双模式、互踢)、私聊(实时/历史分页/已读/typing/reaction/编辑删除/未读)、群组全套(建群/成员/踢人/退群+notify 同步)、好友(pending 制)+ 在线状态徽标(social WS,可降级);**组队 UI 已补齐(2026-09-19)**:第三条 WS(/ws/party,party 断开聊天照常、入口隐藏),`party_api.ts` 快照驱动(STATE_CHANGED 全量 PartyInfo 单源重建,客户端零事件合并),PartyDialog 全操作(创建/邀请-接受/准备/踢人/转让队长/退出/解散)+ 入口受邀数徽标 + 登录恢复(GET_MY_PARTY);**设备管理 + 桌面通知已补齐(2026-09-19)**:第四条 WS(/ws/device → app_gateway 5201,可降级),登录自动 REGISTER_DEVICE(platform=web,经鉴权转发、user_id 服务端钉死),GET_USER_DEVICES/UNREGISTER 设备管理 UI,Notification API 桌面通知(隐藏/非当前频道弹系统通知、点击聚焦跳转、权限手动开启)。proto 生成物(ts-proto)入库,协议层 `src/protocol/` 与框架无关(留作 Flutter 蓝本);CI `web.yml`(paths 过滤 + proto 生成物漂移校验),E2E `apps/web_companion/scripts/web_smoke.sh`(真后端 chat+social,11 例),文档见 [docs/web_companion.md](docs/web_companion.md)。**仍是过渡路径**(直连 chat 7001/social 8001/party 7501/app_gateway 5201):迁移 app_gateway 聚合边缘、Flutter 五端(Android/iOS/macOS/Windows/Linux;二期范围,五端共享一套界面,增量在构建矩阵与签名发布)、语音均未开始;组队 E2E 未进 web_smoke(单测+组件测试已覆盖协议契约;设备面 3 例已进,E2E 共 14 例);真实 Web-Push 待后端传输(P2 真实推送传输)。
-- [x] **后端补齐 A:social 可用化**:(2026-09 完成)一期核实的 social 后端缺口全部补齐——6 个缺失 handler(GET_FRIEND_LIST/REMOVE_FRIEND/GET_PENDING_REQUESTS/BLOCK 系)落地、roster/pending/黑名单 Redis write-through 持久化(启动 load,`--redis_host` 可选)、ACCEPTED 双向 notify(user_id=对端)、REMOVE/BLOCK 对称幂等、登录广播 ONLINE/断线广播 OFFLINE(多设备:最后一台才 OFFLINE)、SessionRegistry 多设备互踢、`--token_secret` JWT(验证器上移 `libs/common`,与 chat 共用)。服务端权威 roster 落地后 web 端 localStorage 补位退役;E2E 9→11 例(断言翻转 + 删除/拒绝往返);`social_tests` 26 例单测。局限仍在:presence/会话在实例内存,多实例无 fan-out(单实例部署),pendingOut 刷新即丢(无 outgoing 查询),见 web_companion.md 协议语义一节。
-- [x] **后端补齐 B:voice 媒体面**:(2026-09 完成)roadmap B 四项全部落地——SDP answer 定向中继(与 offer/candidate 同约定:`to_user_id` 定向、无 target 广播、跨房防泄漏)、TURN(coturn REST 短期凭据:`JoinRoomResponse.ice_servers`,username="{unix_expiry}:{user_id}"、credential=base64(HMAC-SHA1(secret,username)),SHA-1/HMAC-SHA1/标准 base64 手写进 main.cc 匿名命名空间——coturn 上游只支持 HMAC-SHA1,已知向量+冻结常量双压;`--turn_uri`/`--turn_static_secret`/`--turn_credential_ttl_seconds`;compose 加 coturn 4.6.2 use-auth-secret)、mute/deafen(`ParticipantInfo` 独立双布尔,state 按 DEAFENED>MUTED>CONNECTED 派生(deafened 下 unmute 保持 DEAFENED),4020 广播给其余参与者;GET_ROOM_INFO/GET_USER_ROOM 查询面补齐)、信令认证(`--token_secret` LOGIN_REQ 门,语义对齐 chat/social:scaffold 放行自报 user_id、有 secret 未 LOGIN 回 AUTH_FAILED、冒用他人身份 INVALID_PARAM;同账号重复登录踢旧会话)。顺带心跳超时踢人:`--heartbeat_timeout_ms`(默认 75000=3 个 25s 心跳窗,0 关闭),任何活流量刷新 last_seen,超时走断连同路径(清映射+广播 LEFT+关闭)。`voice_tests` 22→61 例,TSan 四轮零竞争。局限:凭据不中期刷新(TTL 过期需重新 join 换发)、空房不 GC、TURN 未进 deploy/cluster 与 k8s 拓扑、凭据 expiry 依赖 voice 与 coturn 宿主机时钟一致。
-- [x] **后端补齐 C:party 协议**:(2026-09 完成)7xxx 段 MsgID(7001-7027;KICK_PARTY_MEMBER 避让群聊 2107 占用的裸名 KICK_MEMBER)+ `proto/party.proto`(chirp.party,StoredParty 存储面与 wire 分离)+ `services/party` 从零建(TCP 7500/WS 7501,结构蓝本 social):邀请-接受制入队(任意成员可邀、无邀请码;重复邀幂等复用 invite_id 并重发 INVITE_NOTIFY;自邀/目标已在任意队/队满 INVALID_PARAM)、ready check、leader 离开/断线继位(joined_at 最小者,tie 按 user_id 字典序)、最后一人离开静默解散(resp.party_disbanded 标记,零 notify)、踢人/转让队长(leader-only 单临界区);STATE_CHANGED 携全量 PartyInfo 快照且**含 actor**(有意偏离 voice 排除惯例,客户端单源重建,proto 注释+测试双向钉死);二台设备重放已 accept 的 invite 幂等 OK(per-user consumed-invites 集合;入队/解散失效的 invite 不可重放);成员快照 Redis write-through(`chirp:party:party:<id>` 无 TTL,解散/最后离开 Del;坏 key/空成员 key load 时跳过,leader 缺席改立最早成员);断线=最后一台设备下线才离队(reason="offline");`--token_secret` JWT 门、同设备互踢、多设备共存全对齐 social 锁纪律(持 state->mu 零 registry 调用)。`party_tests` 46 例(登录门禁 6/生命周期 7/邀请流 12/成员操作 9/多设备断线 6/Redis 恢复 6),全量 ctest 29→30 套,TSan 四轮零竞争。局限:邀请不持久化(重启失效;10min 懒过期在长驻实例缓慢累积)、无 GET_MY_INVITES 补拉(离线受邀者错过邀请,保留 7028+)、断线即离队无宽限重连、单实例无跨实例 fan-out。
-- [ ] **Hybrid 吊销表**(暂缓,自 P1 统一登录降级):当前 signed token(HS256 JWT)的吊销靠短 TTL(access 1h);需要即时吊销/设备级失效时,叠加 Redis 吊销表(签名验证通过后再查 Redis 的 revocation/device state)——凭证模型三选项中的 Hybrid(`docs/architecture.md` 凭证模型一节)。协议与验签代码不变,可无缝叠加;引入前提是出现真实的即时吊销需求(被盗 token、强制下线 SLA)。
-- [ ] **PostgreSQL 存储后端**(暂缓,等真实需求;2026-09 驱动与接缝就绪):MySQL 客户端驱动已从 libmysqlclient 换为 libmariadb(MariaDB Connector/C,`mysql_*` C API 与 `mysql/mysql.h` 头布局兼容,源码零改动;vcpkg/CMake/Docker 三条构建路径同步);auth 的 `UserStore`/`SessionStore` 与 chat 的 `MessageStore` 已抽为后端中立纯虚接口——`services/auth/src/store_factory.cc` 与 `services/chat/src/message_store_factory.cc` 是唯一换装点,未来 PG = 新增 `postgres_*_store` 实现类 + 工厂各加一分支,调用方零改动。chat 的 MySQL 方言 SQL(ON DUPLICATE KEY / ENGINE=InnoDB 等)留在 MySQL 实现内,PG 实现自行写方言。不引入 ORM,维持手写 SQL。
-- [ ] **MsgID 去中心化**(暂缓):单一全局枚举意味着任何服务加消息都要改 `proto/gateway.proto`,但当前规模下中心化枚举天然防号段冲突,是优点;多团队并行开发时再评估按平面拆分。
-- [ ] **容量基准实测**:旧 roadmap 的 "10k+ 并发" 宣称需实测证据后方可对外使用(见 `docs/architecture.md`)。
-- [x] **命名冗余/历史包袱**:(2026-09-16 完成)`websocket_utils.h`(客户端 inline 函数)并入 `websocket_util.{h,cc}`,双名消除;`presence_manager_v2` 改名 `presence_manager`/`PresenceManager`(v1 从未存在,KNOWN_UNCOVERABLE 条目同步);sha256 "双实现"经核实不成立——全项目唯一实现是 `libs/common/sha256.{cc,h}`(JWT HS256、token 摘要),libsodium 只负责 auth 的 Argon2id 密码哈希与随机 token 字节,边界已写入 `libs/common/sha256.h` 头注释。`presence_manager_v2` 之外的文档(roadmap_history.md)为历史归档,保持原样。
-- [x] **清理覆盖率产物**(2026-09 完成):`.gitignore` 早已覆盖,但 `coverage_html/` 与 `coverage-packages.csv` 曾被提交入库,本次连同根目录未跟踪的 `*.gcov` / `*.gcov.json.gz` / `build-cov/` 一并删除(入库部分以 git 删除提交)。
-- [x] **移除死代码**(2026-09 完成):`services/router/` 空目录及顶层 CMakeLists 中被注释的 `add_subdirectory(services/router)`。
+### app_auth（原 auth）
+
+- [x] 基础 token 验证
+- [x] enhanced 模式（MySQL + libsodium）
+- [ ] 确认只服务 App 平面，game 平面不依赖
+
+### app_notification（原 notification）
+
+- [x] 设备注册/注销/token 更新/查询
+- [x] 推送协议面（6xxx）
+- [ ] 修复 namespace 重命名后的构建问题
+- [ ] 真实 APNs/FCM 投递（当前是日志 stub）
+
+## 跨平面协议（P1）
+
+- [ ] **定义 peer 注册协议**：`PEER_REGISTER_REQ`（5050）/ `PEER_REGISTER_RESP`（5051）proto 定义
+- [ ] **定义频道消息协议**：`CHANNEL_MESSAGE_NOTIFY`（5052）/ `INJECT_MESSAGE_NOTIFY`（5053）proto 定义
+- [ ] **能力位定义**：`RELAY_READ_RECEIPTS`、`RELAY_TYPING`、`RELAY_PRESENCE`、`RELAY_OFFLINE_MESSAGES`
+- [ ] **版本协商实现**：握手时交换 protocol_version + supported_features
+
+## 构建与验证（P0）
+
+- [x] 目录重构：`services/game/`、`services/app/`、`services/shared/`
+- [x] 二进制重命名：`chirp_game_sdk_gateway`、`chirp_game_server_gateway`、`chirp_app_sdk_gateway`、`chirp_app_auth`、`chirp_app_notification`
+- [x] proto 包重命名：`chirp.game_server_gateway`、`chirp.app_notification`
+- [ ] **更新 smoke test**：`test_services.sh` 适配新路径和二进制名，验证游戏平面端到端
+- [ ] **更新 CI**：`ci.yml` 适配新路径
+- [ ] **更新单元测试**：路径和 namespace 重命名后的测试修复
+- [ ] **全量构建验证**：所有目标构建通过（当前只验证了主要 6 个）
+
+## 文档（P2）
+
+- [x] architecture.md 全文中文，反映新架构
+- [x] README.md 更新拓扑图和服务表
+- [x] CORE.md 更新架构说明
+- [x] server_plane.md 更新二进制名
+- [x] 设计并集成 logo
+- [ ] CAPABILITY_MATRIX.md 更新服务名和路径
+- [ ] 补充 peer 注册协议的详细文档
+
+## 实验性服务（暂不动）
+
+`services/social`、`services/voice`、`services/party`、`services/search` 保持原样，后续按需迁移到对应平面目录。

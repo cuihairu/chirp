@@ -22,7 +22,7 @@
 #include "proto/chat.pb.h"
 #include "proto/common.pb.h"
 #include "proto/gateway.pb.h"
-#include "proto/server_gateway.pb.h"
+#include "proto/game_server_gateway.pb.h"
 
 namespace {
 
@@ -143,7 +143,7 @@ TEST(ChatBridgeTest, AttachAuthenticatesThenLoginWithTokenAndDevice) {
                       std::chrono::seconds(5)));
   const auto auths = chat.All(chirp::gateway::SERVER_AUTH_REQ);
   ASSERT_FALSE(auths.empty());
-  chirp::server_gateway::ServerAuthRequest auth_req;
+  chirp::game_server_gateway::ServerAuthRequest auth_req;
   ASSERT_TRUE(auth_req.ParseFromString(auths.front().body()));
   EXPECT_EQ(auth_req.service_id(), "edge-1");
   EXPECT_EQ(auth_req.secret(), "s3cret");

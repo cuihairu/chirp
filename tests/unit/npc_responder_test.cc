@@ -17,9 +17,9 @@ using chirp::common::OK;
 using chirp::common::SERVER_UNAVAILABLE;
 using chirp::npc::NpcResponder;
 using chirp::npc::RuleBasedNpcEngine;
-using chirp::server_gateway::EventAckRequest;
-using chirp::server_gateway::EventDeliverNotify;
-using chirp::server_gateway::MessageInjectRequest;
+using chirp::game_server_gateway::EventAckRequest;
+using chirp::game_server_gateway::EventDeliverNotify;
+using chirp::game_server_gateway::MessageInjectRequest;
 
 // Records every inject/ack the responder sends and hands the test the
 // pending completion callbacks, so each outcome can be driven explicitly.
@@ -116,7 +116,7 @@ TEST_F(NpcResponderTest, ValidEventProducesNpcInjectionReply) {
   ASSERT_EQ(senders_.injects.size(), 1u);
   const auto& reply = senders_.injects[0];
   EXPECT_EQ(reply.inject_id(), "evt-1");  // event id as the idempotency key
-  EXPECT_EQ(reply.sender_kind(), chirp::server_gateway::SENDER_NPC);
+  EXPECT_EQ(reply.sender_kind(), chirp::game_server_gateway::SENDER_NPC);
   EXPECT_EQ(reply.sender_id(), "npc:blacksmith_01");
   EXPECT_EQ(reply.channel_type(), chirp::chat::PRIVATE);
   EXPECT_EQ(reply.receiver_id(), "user_5");
