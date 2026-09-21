@@ -1,141 +1,136 @@
-# 游戏聊天服务组件化架构 (Modular Game Chat Architecture)
-
-> 状态说明：本文是游戏聊天功能拆解的设计笔记，不代表 Chirp 当前已支持这些完整能力。当前可验证路径请以 [Core](../CORE.md) 和 [Capability Matrix](../CAPABILITY_MATRIX.md) 为准。
-
-## 1. 设计理念 (Design Philosophy)
-
-为了适应不同终端（PC/Mobile/Web/Watch）和不同场景（激烈战斗/休闲大厅/独立 App）的需求，聊天服务不再是一个单体功能块，而是 **可配置、可组合的组件集合 (Composable Feature Modules)**。
-
-客户端通过 **Feature Flags (特性开关)** 或 **Module Loader (模块加载器)** 按需初始化功能。
-
+---
+title: 游戏聊天特征
 ---
 
-## 2. 功能组件拆解 (Feature Modules)
+# 游戏聊天特征
 
-### 2.1 核心通信组件 (Core Network Module) - **[REQUIRED]**
+最后更新：2026-09-21
 
-_基础连接与消息收发，所有场景必须包含。_
+本文档列出游戏聊天系统需要支持的特征，按优先级分阶段实现。
 
-- **Connection Manager**: 长连接维护 (TCP/WS/KCP)，断线重连，心跳保活。
-- **Protocol Encoder**: Protobuf 序列化/反序列化。
-- **Auth Service**: 登录鉴权，Token 刷新。
-- **Basic Messaging**: 文本发送、接收，频道订阅 (Join/Leave)。
+## P0 — 核心（游戏上线必须）
 
-### 2.2 基础聊天组件 (Basic Chat Module) - **[RECOMMENDED]**
+### 消息处理
 
-_标准的聊天室功能。_
+- **敏感词过滤**：三级策略（替换为 `**`、直接拒绝、记录待审核）。本地词库加载，支持热更新。覆盖脏话、政治敏感、外挂/私服/代练广告。
+- **消息长度限制**：不同频道不同上限。私聊 200 字、世界 100 字、公告 500 字。超长截断或拒绝。
+- **发送频率限制**：按用户 + 频道限流。世界频道 5 秒一条、公会 2 秒一条、私聊 1 秒一条。超频返回 `RATE_LIMITED`。
+- **重复消息检测**：连续 3 条相同内容自动禁言 5 分钟。防刷屏。
+- **消息撤回**：发送后 2 分钟内可撤回（私聊/公会）。撤回后对方看到"消息已撤回"。
+- **@提及**：`@某人`、`@全体成员`。被 @ 的玩家收到高亮提示。
 
-- **Channel Manager**: 频道切换 (World, Guild, Team)。
-- **Message History**: 历史消息拉取 (Local DB / Server Fetch)。
-- **Local Storage**: 离线消息缓存 (SQLite/Realm)。
-- **System Notice**: 跑马灯，系统公告展示。
+### 频道管理
 
-### 2.3 社交关系组件 (Social Relation Module)
+- **世界频道**：全服广播。发言有等级门槛（默认 10 级）。每人每 5 秒一条。
+- **公会频道**：公会成员自动加入，退出/被踢自动移除。公会管理者可设置发言权限。
+- **队伍频道**：组队自动创建，解散/离队自动销毁。仅队长可解散。
+- **私聊**：1v1 对话。支持离线消息（离线期间存队列，上线推送）。
+- **系统公告频道**：全服推送，只读（玩家不能发言）。管理后台发布。
+- **频道屏蔽**：玩家可屏蔽特定频道（如关闭世界频道）。屏蔽后不接收该频道消息。
 
-_好友与玩家关系管理。_
+### 消息展示
 
-- **Friend List**: 好友增删查。
-- **Presence Sync**:
-  - _Lite_: 仅在线/离线 (适合战斗界面)。
-  - _Full_: 详细状态 (地图/模式/英雄)，支持独立 App 订阅。
-- **Blocklist**: 黑名单管理。
-- **UserProfile**: 查看玩家卡片信息。
+- **走马灯**：`priority = URGENT` + `ttl_seconds > 0` 的消息在屏幕顶部滚动。同时只显示一条，新的替换旧的。
+- **系统弹窗**：`priority = HIGH` 的系统消息弹窗显示（维护通知、全服奖励）。
+- **消息气泡**：按 `sender_kind` 区分样式——普通玩家白色、系统黄色、NPC 绿色、交易橙色。
+- **物品链接**：`msg_type = ITEM_LINK`，可点击查看详情弹窗。品质颜色：白(普通)/绿(优秀)/蓝(精良)/紫(史诗)/橙(传说)。
+- **历史消息**：离线期间的消息，上线时拉取。支持分页加载（`GetHistoryRequest`）。
+- **消息已读**：私聊消息标记已读/未读。未读数 badge。
 
-### 2.4 互动与增强组件 (Interaction Module)
+### 用户行为
 
-_增强社交互动的可选功能。_
+- **黑名单**：屏蔽特定玩家。屏蔽后不接收该玩家的私聊和频道消息（在频道中显示为"已屏蔽用户的消息"）。
+- **在线状态**：在线/忙碌/离开/隐身。好友可见。
+- **正在输入**：私聊时显示"对方正在输入..."。
 
-- **Typing Status**: "对方正在输入..." (仅 1v1 私聊需要，战斗不需要)。
-- **Read Receipts**: 已读/送达回执 (消耗流量，适合独立社交 App)。
-- **Gifting**: 礼物赠送逻辑与特效触发。
-- **Red Packet**: 红包逻辑。
+## P1 — 增强（上线后迭代）
 
-### 2.5 富媒体组件 (Rich Media Module)
+### 消息处理
 
-_复杂的展示层功能，通常依赖较大的 UI 库。_
+- **消息编辑**：已发送消息可编辑一次。编辑后显示"已编辑"标记。编辑历史不保留。
+- **表情/贴图**：系统表情包（内置 N 个）。消息中插入表情码 `[emoji:xxx]`。
+- **消息引用**：回复特定消息。显示被引用消息的摘要。
+- **富文本**：支持粗体、斜体、颜色（VIP 特权）。
 
-- **Rich Text Parser**: 解析颜色、超链接、图文混排。
-- **Emoji/Sticker**: 表情包管理与渲染。
-- **Voice Service**: 语音录制 (PTT)、实时语音 (WebRTC RTC)、语音转文字 (STT)。
-- **Translation**: 实时多语言翻译。
+### 频道管理
 
----
+- **临时频道**：活动/副本临时频道。活动结束自动清理。参与者自动加入。
+- **跨服频道**：合服后的跨服聊天。按 server_id 路由。
+- **自定义频道**：玩家创建的频道（如"交易频道"、"组队频道"）。创建者为管理员。
 
-## 3. 场景化组合策略 (Scenario Composition)
+### 用户行为
 
-通过组合上述组件，满足特定场景需求，优化性能与体验。
+- **禁言**：管理员禁言（按分钟/小时/天）。禁言期间所有频道不能发言。
+- **举报**：玩家举报消息。管理后台审核队列。审核结果：无事/警告/禁言/封号。
+- **聊天等级门槛**：世界频道需要达到 N 级才能发言。可在管理后台配置。
+- **VIP 特权**：VIP 玩家消息带颜色、喇叭效果、专属表情。
 
-### 场景 A：战斗局内 (In-Game Combat)
+### 消息展示
 
-_目标：极简，低延迟，不遮挡视线，零干扰。_
+- **坐标链接**：`msg_type = COORD_LINK`，可点击自动寻路到指定坐标。
+- **成就分享**：卡片式展示（图标 + 名称 + 稀有度 + 获得时间）。
+- **公会招募**：公会招募信息卡片（公会名 + 等级 + 人数 + 一键加入按钮）。
+- **组队招募**：队伍招募信息卡片（副本名 + 人数需求 + 一键申请按钮）。
+- **消息搜索**：搜索聊天历史。按关键词、时间范围、频道过滤。
 
-- **包含组件**:
-  - `Core Network`
-  - `Basic Chat` (仅 Team 频道, 限制历史消息数量)
-  - `Voice Service` (仅 RTC 实时语音, 无转文字)
-- **剔除组件**:
-  - `Social Relation` (战斗中一般不加好友)
-  - `Interaction` (无需输入状态/回执)
-  - `Rich Media` (仅基础文本，无大图/超链)
+### 游戏特色
 
-### 场景 B：游戏大厅 / 休闲区 (Lobby / Social Zone)
+- **NPC 对话**：玩家与 NPC 聊天。NPC 回复走关键词规则引擎（当前已实现），未来可替换为 LLM。
+- **系统播报**：全服播报（BOSS 刷新、首杀、稀有掉落、玩家成就）。走世界频道 + 走马灯。
+- **交易消息**：拍卖行/交易行状态变更（上架、出价、成交、过期）。走系统频道。
+- **好友上线通知**：好友上线时推送通知（可关闭）。
+- **邮件通知**：新邮件到达时推送通知。
 
-_目标：社交最大化，展示丰富。_
+## P2 — 运营（长期维护）
 
-- **包含组件**:
-  - `All Modules` (全功能开启)
-- **特性配置**:
-  - 开启 `Presence Sync (Full)`
-  - 开启 `Gifting`, `Red Packet`
-  - 开启 `Rich Text`, `Sticker`
+### 安全与合规
 
-### 场景 C：独立伴侣 App (Companion App / Standalone)
+- **反广告**：检测重复刷屏的广告内容（相同内容发 N 次）。自动禁言 + 标记审核。
+- **消息审计**：所有消息留存 N 天（可配置）。管理后台可回溯查询。
+- **实名关联**：消息可追溯到实名账号。配合举报/投诉处理。
+- **防骚扰**：陌生人私聊限制（需加好友或同公会）。可在设置中开关。
 
-_目标：信息同步，轻量级，节能。_
+### 性能与运维
 
-- **包含组件**:
-  - `Core Network` (使用 WebSocket, 适应弱网)
-  - `Basic Chat` (全频道同步)
-  - `Social Relation` (重点功能)
-  - `Interaction` (支持输入状态/回执，体验接近 IM 软件)
-- **剔除组件**:
-  - `Voice Service` (通常不需要实时语音，或者仅保留 PTT)
-  - `Red Packet` (视平台合规性而定)
+- **消息持久化**：离线消息、历史记录存储（Redis 热数据 + MySQL 冷数据）。
+- **消息过期**：自动清理 N 天前的消息（可配置）。私聊保留更久。
+- **消息压缩**：大量消息传输时启用 gzip 压缩。
+- **多设备同步**：同账号多设备消息同步。已读状态同步。
+- **消息去重**：重连后不重复显示已收到的消息（靠 `message_id` 去重）。
+- **连接保活**：心跳检测、断线重连、消息补发。
 
----
+## 客户端渲染决策矩阵
 
-## 4. 客户端架构示意 (Client Architecture Idea)
+客户端收到消息后，按 `(channel_type, msg_type, priority)` 三维度决策渲染方式：
 
-```cpp
-// 伪代码示例：基于组合的初始化
+```
+优先级判断：
+  priority == URGENT && ttl_seconds > 0 → 屏幕顶部走马灯
+  priority == HIGH && channel_type == SYSTEM → 系统弹窗
 
-struct ChatConfig {
-    bool enableVoice = false;
-    bool enableRichText = false;
-    bool enableSocialPresence = false;
-    // ...
-};
+频道路由：
+  channel_type → 对应 tab/窗口（私聊 tab、公会 tab、世界 tab、...）
 
-class GameChatClient {
-public:
-    void Init(ChatConfig config) {
-        // 核心模块总是加载
-        loadModule(new CoreNetworkModule());
-
-        // 按需加载
-        if (config.enableSocialPresence) {
-            loadModule(new SocialModule(SocialLevel::Full));
-        }
-
-        if (config.enableVoice) {
-            loadModule(new VoiceModule()); // 可能会加载庞大的音频库
-        }
-
-        // ...
-    }
-};
+消息渲染：
+  msg_type == TEXT → 文本气泡
+  msg_type == ITEM_LINK → 可点击物品卡片
+  msg_type == SKILL_LINK → 可点击技能卡片
+  msg_type == ACHIEVEMENT → 成就分享卡片
+  msg_type == NPC_DIALOG → NPC 对话气泡（绿色）
+  msg_type == TRADE_STATUS → 交易状态卡片（橙色）
+  msg_type == SYSTEM → 系统消息（黄色，居中）
 ```
 
-## 5. 整体架构设计 (Overall System Architecture)
+## Proto 对应关系
 
-详情请见独立文档：[game_chat_architecture.md](./game_chat_architecture.md)
+| 文档概念 | Proto 字段 |
+|---|---|
+| 频道类型 | `ChannelType`（PRIVATE/TEAM/GUILD/WORLD/SYSTEM_CHANNEL/MARQUEE） |
+| 消息类型 | `MsgType`（TEXT/ITEM_LINK/SKILL_LINK/ACHIEVEMENT/NPC_DIALOG/TRADE_STATUS/...） |
+| 优先级 | `Priority`（PRIORITY_LOW/NORMAL/HIGH/URGENT） |
+| 发送者类型 | `SenderKind`（SENDER_USER/SYSTEM/NPC/SERVICE） |
+| 物品数据 | `ItemMetadata`（item_id/item_name/quality/icon_url/count/attrs） |
+| 技能数据 | `SkillMetadata`（skill_id/skill_name/level/icon_url/description） |
+| 成就数据 | `AchievementMetadata`（achievement_id/achievement_name/description/icon_url/rarity） |
+| 交易数据 | `TradeMetadata`（trade_id/status/amount/item_name/item_count） |
+| NPC 对话数据 | `NpcDialogMetadata`（npc_id/npc_name/dialog_id/options） |

@@ -6,6 +6,8 @@
 
 游戏平面优先，先把 game_sdk_gateway + game_chat + game_server_gateway 端到端跑通。
 
+详细特征清单见 [游戏聊天特征](docs/design-notes/game_chat_features.md)。
+
 ## 游戏平面（P0）
 
 ### game_sdk_gateway（原 gateway）
