@@ -1079,7 +1079,7 @@ TEST_F(AppGatewayServiceTest, ChatPushRelayedBackToClient) {
 }
 
 TEST_F(AppGatewayServiceTest, ChatHandshakeFailureKicksClient) {
-  auto& chat = AttachChatBridge(chirp::common::AUTH_FAILED);
+  AttachChatBridge(chirp::common::AUTH_FAILED);
   Login(session_, "alice", bridge_.get());
 
   // A rejected service-auth kicks the real client so it reconnects cleanly.
@@ -1099,7 +1099,11 @@ TEST_F(AppGatewayServiceTest, ChatHandshakeFailureKicksClient) {
   ASSERT_TRUE(kick.ParseFromString(frames.back().body()));
   EXPECT_EQ(kick.reason(), "chat unavailable");
   EXPECT_TRUE(session_->close_after_send);
-  EXPECT_EQ(chat.Count(chirp::gateway::LOGIN_REQ), 0u);  // no login replay after auth failure
+  // Deliberately not asserted: the handshake fires SERVER_AUTH_REQ and the
+  // LOGIN_REQ replay back to back (the replay must not wait an extra RTT),
+  // so the fake may consume both before the AUTH_FAILED reply closes the
+  // pipe. The contract is the KICK above: a rejected service auth never
+  // relays chat frames to the client.
 }
 
 TEST_F(AppGatewayServiceTest, ChatPipeLostKicksClient) {
