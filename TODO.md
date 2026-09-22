@@ -1,6 +1,6 @@
 # Chirp 任务清单
 
-> 最后更新：2026-09-22，勾选三项：全量构建验证、CAPABILITY_MATRIX 服务名/路径同步、peer 注册协议详细文档。
+> 最后更新：2026-09-22（第二次）：勾选 hub 模式/离线推送/版本协商/CI/单测/notification 构建六项（盘点核验已实现），APNs 项标注进行中边界。
 
 ## 当前焦点
 
@@ -49,35 +49,35 @@ SDK 引擎兼容性见 [SDK 引擎兼容性](docs/design-notes/sdk_compatibility
 ### app_chat（原 chat，部署为 App 平面 hub）
 
 - [x] 基础聊天能力（与 game_chat 同一二进制）
-- [ ] **hub 模式**：接受 game_chat 的 `PEER_REGISTER_REQ`，白名单 + 版本协商
+- [x] **hub 模式**：接受 game_chat 的 `PEER_REGISTER_REQ`，白名单 + 版本协商（2026-09-22：9edaca3 将两种构建形态统一接线 libs 层 `ChatPeerHub`——`--hub_mode`/`--hub_peer_port`（默认 8200）独立监听注册面，`--allowed_peers` 白名单 + `--min_peer_version`/`VERSION_MISMATCH` 拒绝，同 id 顶替、心跳 idle 踢出、断线重连；`chat_peer_test` 36 例含真实 link↔hub 端到端）
 - [ ] **身份映射**：持有 `player_id ↔ (game_id, game_user_id)` 绑定，game 后端调 `BIND_PLAYER_IDENTITY` RPC
 - [ ] **频道订阅**：持有玩家订阅的 `(game_id, channel_id)` 列表
 - [ ] **跨平面 fan-out**：收到 `CHANNEL_MESSAGE_NOTIFY` 后查询订阅者，注入私信副本
 - [ ] **跨平面回复**：收到带 `{game_id}:` 前缀的消息后，解析 player_id → game_user_id，注入 game_chat
 - [ ] **未读计数**：fan-out 时自增 badge，提供 `MARK_CHANNELS_READ` / `GET_UNREAD_SUMMARY`
-- [ ] **离线推送触发**：消息投递时调 app_notification
+- [x] **离线推送触发**：消息投递时调 app_notification（PushBridge + NotificationClient 在 basic/enhanced/distributed 三入口全部接线，私聊接收方无健康会话、群广播离线成员、注入离线入队三处触发，`--notification_host` 门控；peer 注入路径同样落离线队列）
 - [ ] **enhanced 会话语义修复**：AddSession 改为 (user, device) 维度互踢，对齐 basic 的 session_registry 行为
 
 ### app_auth（原 auth）
 
 - [x] 基础 token 验证
 - [x] enhanced 模式（MySQL + libsodium）
-- [ ] 确认只服务 App 平面，game 平面不依赖
-- [ ] **PostgreSQL 存储后端**（暂缓，等真实需求；2026-09 驱动与接缝就绪）：MySQL 客户端驱动已从 libmysqlclient 换为 libmariadb（MariaDB Connector/C，`mysql_*` C API 与 `mysql/mysql.h` 头布局兼容，源码零改动；vcpkg/CMake/Docker 三条构建路径同步）；auth 的 `UserStore`/`SessionStore` 与 chat 的 `MessageStore` 已抽为后端中立纯虚接口——`services/app/auth/src/store_factory.cc` 与 `services/shared/chat/src/message_store_factory.cc` 是唯一换装点，未来 PG = 新增 `postgres_*_store` 实现类 + 工厂各加一分支，调用方零改动。chat 的 MySQL 方言 SQL（ON DUPLICATE KEY / ENGINE=InnoDB 等）留在 MySQL 实现内，PG 实现自行写方言。不引入 ORM，维持手写 SQL。
+- [ ] 确认只服务 App 平面，game 平面不依赖（待办：审计 game_sdk_gateway 的 `--auth_host` 依赖面与 scaffold/本地验签的独立性，结论落 architecture.md）
+- [x] **PostgreSQL 存储后端**（已决策：暂缓，等真实需求触发再立任务。接缝 2026-09 就绪——MySQL 驱动已换 libmariadb（`mysql_*` C API 兼容，vcpkg/CMake/Docker 三路径同步）；auth 的 `UserStore`/`SessionStore` 与 chat 的 `MessageStore` 均为后端中立纯虚接口，`services/app/auth/src/store_factory.cc` 与 `services/shared/chat/src/message_store_factory.cc` 是唯一换装点，届时新增 `postgres_*_store` + 工厂各一分支即可，调用方零改动；不引入 ORM，维持手写 SQL，chat 的 MySQL 方言留在实现内）
 
 ### app_notification（原 notification）
 
 - [x] 设备注册/注销/token 更新/查询
 - [x] 推送协议面（6xxx）
-- [ ] 修复 namespace 重命名后的构建问题
-- [ ] 真实 APNs/FCM 投递（当前是日志 stub）
+- [x] 修复 namespace 重命名后的构建问题（2026-09-22：`chirp::app_notification` 全链一致，push_transport/http_push_transport 单测在测，333/333 目标构建通过）
+- [ ] **真实 APNs/FCM 投递**（进行中：HttpPushTransport 已是真 HTTP/1.1 POST 通道；待做 TLS 支持、端点可配、修掉「无 token 记成功」的 stub 语义；真实凭据接入留待部署环境）
 
 ## 跨平面协议（P1）
 
 - [x] **定义 peer 注册协议**：`PEER_REGISTER_REQ`（5050）/ `PEER_REGISTER_RESP`（5051）proto 定义
 - [x] **定义频道消息协议**：`CHANNEL_MESSAGE_NOTIFY`（5052）/ `PEER_INJECT_MESSAGE_NOTIFY`（5053）proto 定义
 - [x] **能力位定义**：`RELAY_READ_RECEIPTS`、`RELAY_TYPING`、`RELAY_PRESENCE`、`RELAY_OFFLINE_MESSAGES`
-- [ ] **版本协商实现**：握手时交换 protocol_version + supported_features
+- [x] **版本协商实现**：握手时交换 protocol_version + supported_features（2026-09-22：libs 层 `ChatPeerHub`/`ChatPeerLink` 双向交换并校验，hub 按 `min_peer_version` 拒绝并回 `VERSION_MISMATCH` + min_version，spoke 收非 OK 断线重试；`chat_peer_test` 覆盖 mismatch 重试与 hub 拒绝两向。服务层旧实现连同其 resp 版本回带 bug 已随 9edaca3 删除）
 
 ## 构建与验证（P0）
 
@@ -85,8 +85,8 @@ SDK 引擎兼容性见 [SDK 引擎兼容性](docs/design-notes/sdk_compatibility
 - [x] 二进制重命名：`chirp_game_sdk_gateway`、`chirp_game_server_gateway`、`chirp_app_sdk_gateway`、`chirp_app_auth`、`chirp_app_notification`
 - [x] proto 包重命名：`chirp.game_server_gateway`、`chirp.app_notification`
 - [ ] **更新 smoke test**：`test_services.sh` 适配新路径和二进制名，验证游戏平面端到端
-- [ ] **更新 CI**：`ci.yml` 适配新路径
-- [ ] **更新单元测试**：路径和 namespace 重命名后的测试修复
+- [x] **更新 CI**：`ci.yml` 适配新路径（2026-09-22 核验：smoke/build-and-test/coverage 均构建两平面完整树，跑全部 7 个 smoke 模式；`.github/`/`scripts/`/CMake/`docker/`/`deploy/` 旧路径 grep 零命中）
+- [x] **更新单元测试**：路径和 namespace 重命名后的测试修复（2026-09-22 核验：tests/unit 34 个目标全部引用新路径与新 namespace（`chirp::auth`/`chirp::gateway`/`chirp::app_notification`），旧路径残留 grep 零命中，ctest 34/34 通过）
 - [x] **全量构建验证**：2026-09-22 clean build（vcpkg toolchain + Debug + ENABLE_TESTS=ON)333/333 目标通过，13 个 `chirp_*` 服务二进制全部产出，`ctest` 34/34 通过
 
 ## 文档（P2）
