@@ -121,3 +121,18 @@ target_link_libraries(chirp_chat_mysql_exporter
 )
 
 target_include_directories(chirp_chat_mysql_exporter PRIVATE ${CMAKE_SOURCE_DIR}/libs ${CMAKE_SOURCE_DIR}/proto/cpp)
+
+add_executable(chirp_wp8_client
+    wp8_client.cc
+)
+
+target_link_libraries(chirp_wp8_client
+    PRIVATE
+    chirp_network
+    chirp_common
+    chirp_protos
+    ${absl_pkg_LIBRARIES}
+    Threads::Threads
+)
+
+target_include_directories(chirp_wp8_client PRIVATE ${CMAKE_SOURCE_DIR}/libs ${CMAKE_SOURCE_DIR}/proto/cpp)

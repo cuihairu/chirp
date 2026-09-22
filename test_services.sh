@@ -64,6 +64,7 @@ case "${1}" in
     ;;
   --smoke-edge)
     require_bin "./build/tools/benchmark/chirp_login_client"
+    require_bin "./build/tools/benchmark/chirp_wp8_client"
     require_bin "./build/services/app/sdk_gateway/chirp_app_sdk_gateway"
     ;;
   --smoke-npc)
@@ -740,14 +741,20 @@ elif [[ "${1:-}" == "--smoke-edge" ]]; then
   APP_LOG="${APP_LOG:-/tmp/chirp_app_sdk_gateway_smoke_edge.log}"
   A3_LOG="${A3_LOG:-/tmp/chirp_edge_a3_appgw.log}"
   B3_LOG="${B3_LOG:-/tmp/chirp_edge_b3_appgw.log}"
+  WP8_LOG="${WP8_LOG:-/tmp/chirp_edge_wp8.log}"
 
   "${REDIS_SERVER_BIN}" --port "${REDIS_PORT}" --save '' --appendonly no --dir "${REDIS_DIR}" > "${REDIS_LOG}" 2>&1 &
   REDIS_PID=$!
 
-  ./build/services/app/auth/chirp_app_auth --port "${AUTH_PORT}" --jwt_secret dev_secret --allow_scaffold_login 1 "${MYSQL_ARGS[@]+"${MYSQL_ARGS[@]}"}" > "${AUTH_LOG}" 2>&1 &
+  # AUTH_BIN/CHAT_BIN are overridable: the enhanced (MySQL) builds refuse to
+  # start without a reachable database, so MySQL-less trees point both at
+  # their own basic-form binaries (same CHAT_BIN precedent as --smoke-npc).
+  AUTH_BIN="${AUTH_BIN:-./build/services/app/auth/chirp_app_auth}"
+  CHAT_BIN="${CHAT_BIN:-./build/services/shared/chat/chirp_chat}"
+  "${AUTH_BIN}" --port "${AUTH_PORT}" --jwt_secret dev_secret --allow_scaffold_login 1 "${MYSQL_ARGS[@]+"${MYSQL_ARGS[@]}"}" > "${AUTH_LOG}" 2>&1 &
   AUTH_PID=$!
 
-  ./build/services/shared/chat/chirp_chat --port "${CHAT_PORT}" --ws_port "${CHAT_WS_PORT}" \
+  "${CHAT_BIN}" --port "${CHAT_PORT}" --ws_port "${CHAT_WS_PORT}" \
     --redis_host 127.0.0.1 --redis_port "${REDIS_PORT}" \
     --login_rate_limit_per_min 1 --gateway_service_secret edge-secret \
     "${MYSQL_ARGS[@]+"${MYSQL_ARGS[@]}"}" > "${CHAT_LOG}" 2>&1 &
@@ -758,10 +765,14 @@ elif [[ "${1:-}" == "--smoke-edge" ]]; then
     --chat_host 127.0.0.1 --chat_port "${CHAT_PORT}" --chat_service_secret edge-secret > "${GW_LOG}" 2>&1 &
   GW_PID=$!
 
-  # app_gateway 吸收同一 chat 管道(WP-8 聚合边):scaffold 登录(token 即
-  # user_id,零 auth 依赖),bridge 以独立 service_id 过同一个 secret 信任门。
+  # app_gateway 吸收同一 chat 管道(WP-8 聚合边):登录经 app_auth(scaffold
+  # 接受任意 token),bridge 以独立 service_id 过同一个 secret 信任门;
+  # --sg_host 指向 app_chat(WP-8 目录 RPC 的信任门在 hub 上),订阅/未读
+  # 自服务经 ServerGatewayPeer 转发进 hub。
   ./build/services/app/sdk_gateway/chirp_app_sdk_gateway --port "${APP_PORT}" \
-    --chat_host 127.0.0.1 --chat_port "${CHAT_PORT}" --chat_service_secret edge-secret > "${APP_LOG}" 2>&1 &
+    --auth_host 127.0.0.1 --auth_port "${AUTH_PORT}" \
+    --chat_host 127.0.0.1 --chat_port "${CHAT_PORT}" --chat_service_secret edge-secret \
+    --sg_host 127.0.0.1 --sg_port "${CHAT_PORT}" --sg_secret edge-secret > "${APP_LOG}" 2>&1 &
   APP_PID=$!
 
   cleanup() {
@@ -805,7 +816,9 @@ elif [[ "${1:-}" == "--smoke-edge" ]]; then
     --token user_a --device dev_a --platform pc \
     --send_text "edge-offline-hello" --peer_user user_b > "${A_LOG}" 2>&1
   grep -q "code=0" "${A_LOG}"
-  grep -q "send code=0" "${A_LOG}"
+  # 形态语义分歧:basic 离线发送回 code=6(消息照入离线队列),enhanced 回
+  # code=0(CI 走 enhanced)。两形态是否真的入队,由下一步 B 的补投到达证明。
+  grep -Eq "send code=(0|6)" "${A_LOG}"
 
   echo ""
   echo "[edge] B login via gateway (offline refill rides the pipe back as CHAT_MESSAGE_NOTIFY)"
@@ -857,7 +870,8 @@ elif [[ "${1:-}" == "--smoke-edge" ]]; then
     --send_text "app-edge-offline-hello" --peer_user user_b_app > "${A3_LOG}" 2>&1
   A3_RC=$?
   set -e
-  if [[ "${A3_RC}" != "0" ]] || ! grep -q "code=0" "${A3_LOG}" || ! grep -q "send code=0" "${A3_LOG}"; then
+  # 同上:basic 离线发送回 code=6、enhanced 回 code=0;入队由 B3 补投证明。
+  if [[ "${A3_RC}" != "0" ]] || ! grep -q "code=0" "${A3_LOG}" || ! grep -Eq "send code=(0|6)" "${A3_LOG}"; then
     echo "错误: A3 经 app_gateway 登录/发送失败 (rc=${A3_RC},2xxx 上行应达 chat)"
     cat "${A3_LOG}" || true
     exit 1
@@ -873,6 +887,19 @@ elif [[ "${1:-}" == "--smoke-edge" ]]; then
   if [[ "${B3_RC}" != "0" ]] || ! grep -q "notify from=user_a" "${B3_LOG}" || ! grep -q "content=app-edge-offline-hello" "${B3_LOG}"; then
     echo "错误: B 经 app_gateway 登录后未收到离线补投递 (rc=${B3_RC},chat 管道未生效或 A3 消息未入队)"
     cat "${B3_LOG}" || true
+    exit 1
+  fi
+
+  echo ""
+  echo "[edge] WP-8 self-service via app_gateway (login through app_auth; subscribe/unread relayed by the sg peer into app_chat)"
+  set +e
+  timeout 30 ./build/tools/benchmark/chirp_wp8_client --host 127.0.0.1 --port "${APP_PORT}" \
+    --user wp8_user --game game_alpha --channel world > "${WP8_LOG}" 2>&1
+  WP8_RC=$?
+  set -e
+  if [[ "${WP8_RC}" != "0" ]] || ! grep -q "wp8 self-service chain ok" "${WP8_LOG}"; then
+    echo "错误: WP-8 自服务链失败 (rc=${WP8_RC},sg peer → app_chat 信任门 → 目录 RPC 应全绿)"
+    cat "${WP8_LOG}" || true
     exit 1
   fi
 

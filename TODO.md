@@ -49,7 +49,7 @@ SDK 引擎兼容性见 [SDK 引擎兼容性](docs/design-notes/sdk_compatibility
 - [x] 基础登录/心跳/踢出/会话 claim
 - [x] 6xxx 设备消息转发到 app_notification
 - [x] ChatBridge 转发 2xxx 到 app_chat
-- [ ] 对接 app_auth（替代原来的共享 auth；2026-09-22 注记：WP-8 迁入 app_chat 后 `--sg_host` 自服务链（5021-5029 转发 server_gateway）已断——hub 不再承载这些 RPC，对接时需把转发目标一并切到 `app_chat`，详见 CAPABILITY_MATRIX「App 边缘」行）
+- [x] **对接 app_auth + 自服务链切到 app_chat**(2026-09-22:app 边缘 `--auth_host` 指 app_auth(scaffold 同链可用);WP-8 迁入 app_chat 后转发目标随之切换——`--sg_host/--sg_port` 指 app_chat 主端口、`--sg_secret` 用其 `--gateway_service_secret`,零代码改动纯配置;`--smoke-edge` 端到端证明:新增 `chirp_wp8_client` 以空 `player_id` 登录后走订阅(幂等重订回同 id)/未读摘要/标读/退订/列表五 RPC,空 `player_id` 拿到 OK 即证明边缘把身份钉死为登录用户;`AUTH_BIN`/`CHAT_BIN` 覆盖让无 MySQL 树本地可跑 edge smoke,离线发送断言放宽为 `code=0|6` 对齐两形态语义分歧)
 
 ### app_chat（原 chat，部署为 App 平面 hub）
 
