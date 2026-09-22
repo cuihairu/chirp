@@ -900,11 +900,17 @@ int main(int argc, char** argv) {
       chirp::chat::runtime::GetArg(argc, argv, "--gateway_service_secret", "");
   const int login_rate_limit_per_min =
       chirp::chat::runtime::ParseIntArg(argc, argv, "--login_rate_limit_per_min", 0);
+  // Basic-build parity: the per-user send window exists here too, but keeps
+  // the enhanced form's default-off stance — set --send_rate_limit_per_min
+  // to enable it explicitly.
+  const int send_rate_limit_per_min =
+      chirp::chat::runtime::ParseIntArg(argc, argv, "--send_rate_limit_per_min", 0);
 
   chirp::chat::ChatRateLimiter::Config edge_rate_config;
   edge_rate_config.max_logins_per_minute_per_ip = login_rate_limit_per_min;
+  edge_rate_config.max_sends_per_minute_per_user = send_rate_limit_per_min;
   std::shared_ptr<chirp::network::RedisClient> edge_limiter_redis;
-  if (login_rate_limit_per_min > 0) {
+  if (login_rate_limit_per_min > 0 || send_rate_limit_per_min > 0) {
     edge_limiter_redis = std::make_shared<chirp::network::RedisClient>(redis_host, redis_port);
   }
   chirp::chat::ChatRateLimiter edge_rate_limiter(edge_limiter_redis, edge_rate_config);
@@ -928,7 +934,7 @@ int main(int argc, char** argv) {
                               peer = hub_peer.get(), npc_service_id, npc_prefix,
                               link = spoke_link.get(), spoke_game_id,
                               hub = chat_hub.get(), &directory, &word_filter,
-                              &channel_pacer](
+                              &channel_pacer, send_gate = &edge_rate_limiter](
                                  const std::shared_ptr<chirp::network::Session>& session,
                                  const chirp::chat::SendMessageRequest& req,
                                  int64_t seq) {
@@ -943,12 +949,26 @@ int main(int argc, char** argv) {
                                        resp.SerializeAsString());
       return;
     }
+    const std::string authenticated_user = state->GetUserId(session);
+    // Direct-entry abuse gate (basic-build parity): the per-user send window
+    // counts only authenticated sends. Inert without --send_rate_limit_per_min
+    // (or without Redis), mirroring the basic build's fail-open contract.
+    if (!authenticated_user.empty() && send_gate != nullptr) {
+      const auto gate = send_gate->CheckSend(authenticated_user);
+      if (!gate.allowed) {
+        chirp::chat::SendMessageResponse resp;
+        resp.set_code(chirp::common::RATE_LIMITED);
+        resp.set_server_timestamp(chirp::chat::runtime::NowMs());
+        chirp::chat::runtime::SendPacket(session, chirp::gateway::SEND_MESSAGE_RESP, seq,
+                                         resp.SerializeAsString());
+        return;
+      }
+    }
     // Per-channel pacing (game_chat_features P0 发送频率限制): world 5s,
     // guild 2s, private 1s between sends by the same user, keyed by the
     // authenticated identity and anchored to the last allowed send.
-    const std::string pacing_user = state->GetUserId(session);
-    if (!pacing_user.empty() &&
-        !channel_pacer.Allow(pacing_user, req.channel_type(), chirp::chat::runtime::NowMs())) {
+    if (!authenticated_user.empty() &&
+        !channel_pacer.Allow(authenticated_user, req.channel_type(), chirp::chat::runtime::NowMs())) {
       chirp::chat::SendMessageResponse resp;
       resp.set_code(chirp::common::RATE_LIMITED);
       resp.set_server_timestamp(chirp::chat::runtime::NowMs());

@@ -1100,6 +1100,9 @@ else
 
   echo ""
   echo "[tcp] send user_1 -> offline user_3"
+  # user_1 私聊节奏限流是 1s 一条(game_chat_features P0),同用户连发需要
+  # 拉开间隔,否则第二条回 code=8(RATE_LIMITED)。
+  sleep 1.1
   OFFLINE_SEND_OUTPUT=$(timeout 30 ./build/tools/benchmark/chirp_chat_send_client --host 127.0.0.1 --port "${CHAT_PORT}" --sender user_1 --receiver user_3 --text "offline hello")
   echo "${OFFLINE_SEND_OUTPUT}"
   # 离线语义:所有 chat 构建都承诺登录补投递。basic main 对离线接收方回
@@ -1142,6 +1145,8 @@ else
 
   sleep 0.2
 
+  # 同上:user_1 私聊 1s 节奏,与上一条发送拉开间隔。
+  sleep 1.1
   timeout 30 ./build/tools/benchmark/chirp_chat_send_client --host 127.0.0.1 --port "${CHAT_PORT}" --sender user_1 --receiver user_5 --text "ack hello"
 
   wait "${ACK_LISTEN_PID}" || true
@@ -1165,6 +1170,8 @@ else
 
   sleep 0.2
 
+  # 同上:user_1 私聊 1s 节奏,与上一条发送拉开间隔。
+  sleep 1.1
   timeout 30 ./build/tools/benchmark/chirp_chat_send_client --host 127.0.0.1 --port "${CHAT_PORT}" --sender user_1 --receiver user_6 --text "ack timeout hello"
 
   for _ in {1..50}; do
