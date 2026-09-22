@@ -87,6 +87,13 @@ class ChatPeerHub : public std::enable_shared_from_this<ChatPeerHub> {
   // "<game_id>:" when routing App-side sends back to a game plane.
   std::string game_id_for(const std::string& service_id) const;
 
+  // The inverse of game_id_for: the live service_id registered under a
+  // game_id ("" when no spoke for that game is currently connected). The
+  // cross-plane reply path resolves a channel's "<game_id>:" prefix to the
+  // spoke the reply must be injected into. io-context-thread entry point,
+  // like every other reader here.
+  std::string service_id_for_game(const std::string& game_id) const;
+
  private:
   struct PrivateTag { explicit PrivateTag() = default; };
 

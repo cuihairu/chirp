@@ -114,6 +114,16 @@ std::string ChatPeerHub::game_id_for(const std::string& service_id) const {
   return it == peers_.end() ? std::string() : it->second->game_id;
 }
 
+std::string ChatPeerHub::service_id_for_game(const std::string& game_id) const {
+  // The peer table is service-count sized; a linear scan is fine.
+  for (const auto& [service_id, conn] : peers_) {
+    if (conn && conn->registered && conn->game_id == game_id) {
+      return service_id;
+    }
+  }
+  return "";
+}
+
 void ChatPeerHub::DoAccept() {
   auto self = shared_from_this();
   acceptor_.async_accept([self](const std::error_code& ec, asio::ip::tcp::socket socket) {

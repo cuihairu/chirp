@@ -55,8 +55,10 @@ c.InjectMessage(ctx, &pbsg.MessageInjectRequest{
 // 频道注入(不带 GameId):消息经 server_gateway 送达 game_chat,
 // 注入其本地频道;spoke 再经 CHANNEL_MESSAGE_NOTIFY 上行 hub,
 // 由 app_chat 扇出给订阅了 (game_id, channel) 的每个 App 玩家一份私聊副本。
-// 注意:自 2026-09-22 起,带 GameId 的注入会被 server_gateway 以
-// INVALID_PARAM 拒绝——直注 hub 频道的前缀解析(跨平面回复)尚未实现。
+// 注意:带 GameId 的注入会被 server_gateway 以 INVALID_PARAM 拒绝——
+// 带 game 命名空间的频道消息只从 spoke 上行扇出这一条路;App 玩家的
+// 反向回复走 app_chat 的 SEND_MESSAGE + "<game_id>:<channel>" 前缀,
+// 由 hub 解析后注入 spoke(见 docs/server_plane.md「跨平面回复」)。
 c.InjectMessage(ctx, &pbsg.MessageInjectRequest{
     InjectId:    "raid-5678",
     SenderKind:  pbsg.SenderKind_SENDER_SERVICE,

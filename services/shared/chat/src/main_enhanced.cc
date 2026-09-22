@@ -863,10 +863,49 @@ int main(int argc, char** argv) {
   };
   handlers.on_send_message = [state, store, delivery_tracker, acks, router,
                               peer = hub_peer.get(), npc_service_id, npc_prefix,
-                              link = spoke_link.get(), spoke_game_id](
+                              link = spoke_link.get(), spoke_game_id,
+                              hub = chat_hub.get(), &directory](
                                  const std::shared_ptr<chirp::network::Session>& session,
                                  const chirp::chat::SendMessageRequest& req,
                                  int64_t seq) {
+    // Cross-plane reply (TODO 56): a channel_id prefixed
+    // "<game_id>:<bare>" is a reply into the game plane — resolve the
+    // sender's game_user_id and inject it into the game_chat spoke that
+    // registered the game. Only hub mode has spokes; anything else falls
+    // through to the ordinary send path below.
+    if (hub) {
+      const auto outcome = directory.RelayGameReply(
+          req.sender_id(), req.channel_id(), req.content(),
+          /*client_msg_id=*/"",
+          [hub](const std::string& game_id) { return hub->service_id_for_game(game_id); },
+          [hub](const std::string& service_id,
+                const chirp::gateway::PeerInjectMessageNotify& notify) {
+            return hub->SendInject(service_id, notify);
+          });
+      if (outcome != chirp::chat::PlayerDirectory::GameReplyOutcome::kNoGamePrefix) {
+        chirp::chat::SendMessageResponse resp;
+        switch (outcome) {
+          case chirp::chat::PlayerDirectory::GameReplyOutcome::kSent:
+            // The game plane mints its own message id; the App client gets
+            // the acceptance only.
+            resp.set_code(chirp::common::OK);
+            break;
+          case chirp::chat::PlayerDirectory::GameReplyOutcome::kUnboundPlayer:
+            resp.set_code(chirp::common::INVALID_PARAM);
+            break;
+          case chirp::chat::PlayerDirectory::GameReplyOutcome::kUnknownGame:
+          case chirp::chat::PlayerDirectory::GameReplyOutcome::kSendFailed:
+            resp.set_code(chirp::common::SERVER_UNAVAILABLE);
+            break;
+          case chirp::chat::PlayerDirectory::GameReplyOutcome::kNoGamePrefix:
+            break;  // handled above; unreachable
+        }
+        resp.set_server_timestamp(chirp::chat::runtime::NowMs());
+        chirp::chat::runtime::SendPacket(session, chirp::gateway::SEND_MESSAGE_RESP, seq,
+                                         resp.SerializeAsString());
+        return;
+      }
+    }
     HandleSendMessage(req, session, state, store, delivery_tracker, acks.get(), router,
                       peer, npc_service_id, npc_prefix, link, spoke_game_id, seq);
   };

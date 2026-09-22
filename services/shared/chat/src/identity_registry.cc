@@ -184,6 +184,33 @@ size_t IdentityRegistry::Size() const {
   return by_id_.size();
 }
 
+std::unique_ptr<std::string> IdentityRegistry::ResolveGameUser(const std::string& game_id,
+                                                               const std::string& player_id) const {
+  std::lock_guard<std::mutex> lock(mu_);
+  const auto pit = player_index_.find(player_id);
+  if (pit == player_index_.end()) {
+    return nullptr;
+  }
+  // A player normally holds one binding per game, but the forward index is
+  // an unordered_set with no stable iteration order: collect the smallest
+  // game_user_id so multiple bindings still resolve deterministically.
+  std::string best;
+  for (const auto& binding_id : pit->second) {
+    const auto it = by_id_.find(binding_id);
+    if (it == by_id_.end() || it->second.game_id() != game_id) {
+      continue;
+    }
+    const std::string& game_user_id = it->second.game_user_id();
+    if (!game_user_id.empty() && (best.empty() || game_user_id < best)) {
+      best = game_user_id;
+    }
+  }
+  if (best.empty()) {
+    return nullptr;
+  }
+  return std::make_unique<std::string>(best);
+}
+
 void IdentityRegistry::EraseEntryLocked(const game_server_gateway::StoredIdentityBinding& entry) {
   // `entry` usually aliases a node inside by_id_, so the by_id_ erase must
   // come last: after it the reference is dangling.

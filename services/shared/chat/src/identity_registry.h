@@ -65,6 +65,14 @@ class IdentityRegistry {
   std::unique_ptr<std::string> Resolve(const std::string& game_id,
                                        const std::string& game_user_id) const;
 
+  // The inverse of Resolve: the game user a platform player is bound to
+  // within one game, or nullptr when the player has no binding for it. The
+  // cross-plane reply path (TODO 56) needs this direction: an App-side send
+  // to "<game_id>:<channel>" must be re-sendered as the player's
+  // game_user_id before the message is injected into the game spoke.
+  std::unique_ptr<std::string> ResolveGameUser(const std::string& game_id,
+                                               const std::string& player_id) const;
+
   size_t Size() const;
 
  private:

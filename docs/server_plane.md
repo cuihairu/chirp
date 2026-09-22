@@ -190,6 +190,18 @@ chat 服务以内部 peer 身份连到枢纽(`--server_gateway_host`,默认空�
 
 存储与各注册表镜像:内存权威 + 直写 Redis 镜像(`chirp:unread:entry:<player_id>:<game_id>:<channel_id>` = 序列化的 `StoredUnreadEntry`,在 `chirp_chat` 上经 `--unread_redis_host`/`--unread_redis_port` 启用,默认关),启动重放并跳过损坏记录与零计数,尽力而为写、Redis 故障降级纯内存。清掉的条目从镜像里删除而不是存零,计数器因此不会复活或累加。键的组成部分是原样拼接:含 `:` 的 id 在磁盘上可能别名成另一条目的键——内存 map 保存精确元组,所以只影响奇异 id 的重启保真度。
 
+## 跨平面回复(App 玩家 → 游戏频道,2026-09-22)
+
+扇入投递的反方向:App 玩家往游戏频道说话。App 玩家经 `app_chat` 主端口的普通 `SEND_MESSAGE_REQ` 发送,`channel_type` 非 `PRIVATE` 且 `channel_id` 形如 `<game_id>:<bare>`(取第一个 `:`;`game_id` 本身不含 `:`,注册表在绑定时就拒绝)。hub 模式的 `app_chat` 把它拦截在发送限流之后(跨平面发送照常消耗发送预算),编排三步(`PlayerDirectory::RelayGameReply`):
+
+1. `ChatPeerHub::service_id_for_game(game_id)` 反查为该 `game_id` 注册的在线 spoke;
+2. `IdentityRegistry::ResolveGameUser(game_id, player_id)` 反查发送者的游戏身份(一个玩家在同一游戏有多条绑定时取字典序最小的 `game_user_id`,保证确定性);
+3. 组装 `PEER_INJECT_MESSAGE_NOTIFY`(`channel_id` 是**裸**频道 ID、`sender_id` 是 `game_user_id`、`client_msg_id` 透传)经 hub 下发给该 spoke。spoke 侧按普通注入消费:消息 ID 由服务端铸造、走与 injected 私聊同一套存储/投递尾段(在线推送、离线队列)。
+
+回码:`OK` 表示已交接到游戏平面(游戏侧铸自己的 `message_id`,响应里不带);`SERVER_UNAVAILABLE` 表示该游戏没有在线 spoke 或下行失败;`INVALID_PARAM` 表示发送者在该游戏没有身份绑定。拒绝一律显式回码,绝不降级投进本地 `<game_id>:<bare>` 频道——客户端不能把没送达的回复误当成功。
+
+约定与边界:App 侧频道 ID 含 `:` 即保留给游戏平面,部署上不得用冒号命名 App 自有频道;不带前缀的发送照走本地频道,行为不变。无回环:注入消息经 spoke 上行扇回 App 玩家时是**无前缀的私聊副本**(见"扇入投递"),不会再触发本路径。mention 处理跳过(内容原样透传游戏侧)。非 hub 模式(hub 未启用)没有 spoke 可解析,整段拦截不生效。
+
 ## 路线图
 
 1. ~~chat 服务以内部 peer 连入并消费 `InjectMessageNotify`~~——完成(回环端到端验证);进程级 E2E 冒烟留作后续选项。

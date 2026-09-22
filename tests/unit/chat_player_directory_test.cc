@@ -182,6 +182,40 @@ TEST(IdentityRegistryTest, ResolveUnboundReturnsNull) {
   EXPECT_EQ(registry.Resolve("game-a", "u-1"), nullptr);
 }
 
+TEST(IdentityRegistryTest, ResolveGameUserReverseLookup) {
+  chat::IdentityRegistry registry;
+  ASSERT_EQ(registry.Bind("b1", "player-1", "game-a", "u-1", 1000),
+            chat::IdentityRegistry::BindOutcome::kBound);
+  ASSERT_EQ(registry.Bind("b2", "player-1", "game-b", "char-9", 1000),
+            chat::IdentityRegistry::BindOutcome::kBound);
+
+  auto user = registry.ResolveGameUser("game-a", "player-1");
+  ASSERT_NE(user, nullptr);
+  EXPECT_EQ(*user, "u-1");
+  user = registry.ResolveGameUser("game-b", "player-1");
+  ASSERT_NE(user, nullptr);
+  EXPECT_EQ(*user, "char-9");
+
+  // Unbound directions: the player holds no identity in that game, and a
+  // stranger holds none anywhere.
+  EXPECT_EQ(registry.ResolveGameUser("game-c", "player-1"), nullptr);
+  EXPECT_EQ(registry.ResolveGameUser("game-a", "stranger"), nullptr);
+}
+
+TEST(IdentityRegistryTest, ResolveGameUserIsDeterministicWithMultipleBindings) {
+  chat::IdentityRegistry registry;
+  // One player, two game users in the same game (distinct tuples, so both
+  // stand). The forward index is an unordered_set with no stable order, so
+  // the smallest game_user_id must win on every call.
+  ASSERT_EQ(registry.Bind("b1", "player-1", "game-a", "u-2", 1000),
+            chat::IdentityRegistry::BindOutcome::kBound);
+  ASSERT_EQ(registry.Bind("b2", "player-1", "game-a", "u-10", 1001),
+            chat::IdentityRegistry::BindOutcome::kBound);
+  const auto user = registry.ResolveGameUser("game-a", "player-1");
+  ASSERT_NE(user, nullptr);
+  EXPECT_EQ(*user, "u-10");  // "u-10" < "u-2"
+}
+
 TEST(IdentityRegistryTest, RedisWriteThroughAndLoadRestore) {
   const auto store = std::make_shared<std::map<std::string, std::string>>();
 
@@ -1197,6 +1231,102 @@ TEST_F(FanoutTest, NullDelivererStillCountsUnread) {
   const auto resp = directory.HandleGetUnreadSummary(req);
   ASSERT_EQ(resp.entries_size(), 1);
   EXPECT_EQ(resp.entries(0).unread_count(), 1);
+}
+
+// ---------------------------------------------------------------------------
+// PlayerDirectory::RelayGameReply (TODO 56: cross-plane reply)
+// ---------------------------------------------------------------------------
+
+constexpr auto kNoPrefix = chat::PlayerDirectory::GameReplyOutcome::kNoGamePrefix;
+constexpr auto kUnknownGame = chat::PlayerDirectory::GameReplyOutcome::kUnknownGame;
+constexpr auto kUnboundPlayer = chat::PlayerDirectory::GameReplyOutcome::kUnboundPlayer;
+constexpr auto kSent = chat::PlayerDirectory::GameReplyOutcome::kSent;
+constexpr auto kSendFailed = chat::PlayerDirectory::GameReplyOutcome::kSendFailed;
+
+TEST(PlayerDirectoryRelayTest, ChannelWithoutGamePrefixFallsThrough) {
+  chat::PlayerDirectory directory{chat::PlayerDirectory::Options()};
+  const auto resolve = [](const std::string&) { return std::string("svc-a"); };
+  const auto inject = [](const std::string&,
+                         const chirp::gateway::PeerInjectMessageNotify&) { return true; };
+
+  // A bare channel, an empty prefix, and an empty bare channel are all
+  // ordinary App-side sends (or malformed) — never cross-plane.
+  EXPECT_EQ(directory.RelayGameReply("player-1", "world-1", "hi", "", resolve, inject),
+            kNoPrefix);
+  EXPECT_EQ(directory.RelayGameReply("player-1", ":world", "hi", "", resolve, inject),
+            kNoPrefix);
+  EXPECT_EQ(directory.RelayGameReply("player-1", "game-a:", "hi", "", resolve, inject),
+            kNoPrefix);
+}
+
+TEST(PlayerDirectoryRelayTest, UnknownGameRefusesInsteadOfFallingBack) {
+  chat::PlayerDirectory directory{chat::PlayerDirectory::Options()};
+  // No live spoke for the game: refuse rather than deliver into a local
+  // "<game>:<bare>" channel the client would mistake for success.
+  EXPECT_EQ(directory.RelayGameReply(
+                "player-1", "game-a:world", "hi", "",
+                [](const std::string&) { return std::string(); },
+                [](const std::string&, const chirp::gateway::PeerInjectMessageNotify&) {
+                  return true;
+                }),
+            kUnknownGame);
+}
+
+TEST(PlayerDirectoryRelayTest, PlayerWithoutBindingForThatGameRefuses) {
+  chat::PlayerDirectory directory{chat::PlayerDirectory::Options()};
+  ASSERT_EQ(
+      directory.HandleBindPlayerIdentity(MakeBindRequest("b1", "player-1", "game-a", "u-1")).code(),
+      OK);
+  // game-b has a live spoke, but the player only holds a game-a identity.
+  EXPECT_EQ(directory.RelayGameReply(
+                "player-1", "game-b:world", "hi", "",
+                [](const std::string&) { return std::string("svc-b"); },
+                [](const std::string&, const chirp::gateway::PeerInjectMessageNotify&) {
+                  return true;
+                }),
+            kUnboundPlayer);
+}
+
+TEST(PlayerDirectoryRelayTest, SentReplyCarriesGameUserAndBareChannel) {
+  chat::PlayerDirectory directory{chat::PlayerDirectory::Options()};
+  ASSERT_EQ(
+      directory.HandleBindPlayerIdentity(MakeBindRequest("b1", "player-1", "game-a", "u-1")).code(),
+      OK);
+
+  std::string sent_service;
+  chirp::gateway::PeerInjectMessageNotify sent;
+  EXPECT_EQ(directory.RelayGameReply(
+                "player-1", "game-a:world-1", "hello", "cm-1",
+                [](const std::string& game) {
+                  return game == "game-a" ? std::string("svc-a") : std::string();
+                },
+                [&](const std::string& service_id,
+                    const chirp::gateway::PeerInjectMessageNotify& notify) {
+                  sent_service = service_id;
+                  sent = notify;
+                  return true;
+                }),
+            kSent);
+  EXPECT_EQ(sent_service, "svc-a");
+  EXPECT_EQ(sent.channel_id(), "world-1");  // bare — the prefix is hub-side naming
+  EXPECT_EQ(sent.sender_id(), "u-1");       // the game identity, not the App player
+  EXPECT_EQ(sent.content(), "hello");
+  EXPECT_EQ(sent.client_msg_id(), "cm-1");
+}
+
+TEST(PlayerDirectoryRelayTest, DownlinkRefusalMapsToSendFailed) {
+  chat::PlayerDirectory directory{chat::PlayerDirectory::Options()};
+  ASSERT_EQ(
+      directory.HandleBindPlayerIdentity(MakeBindRequest("b1", "player-1", "game-a", "u-1")).code(),
+      OK);
+  // The spoke dropped between the resolve and the downlink.
+  EXPECT_EQ(directory.RelayGameReply(
+                "player-1", "game-a:world", "hi", "",
+                [](const std::string&) { return std::string("svc-a"); },
+                [](const std::string&, const chirp::gateway::PeerInjectMessageNotify&) {
+                  return false;
+                }),
+            kSendFailed);
 }
 
 // ---------------------------------------------------------------------------

@@ -245,6 +245,47 @@ size_t PlayerDirectory::FanoutChannelMessage(const gateway::ChannelMessageNotify
   return delivered;
 }
 
+PlayerDirectory::GameReplyOutcome PlayerDirectory::RelayGameReply(
+    const std::string& sender_player_id, const std::string& channel_id,
+    const std::string& content, const std::string& client_msg_id,
+    const GameServiceResolver& resolve, const GameReplySender& inject) const {
+  // Game ids cannot contain ':' (the registries reject them at bind time),
+  // so the first colon separates a game prefix from the bare game-side
+  // channel. Anything else is an ordinary App-side send.
+  const size_t sep = channel_id.find(':');
+  if (sep == std::string::npos || sep == 0 || sep + 1 >= channel_id.size()) {
+    return GameReplyOutcome::kNoGamePrefix;
+  }
+  const std::string game_id = channel_id.substr(0, sep);
+  const std::string bare = channel_id.substr(sep + 1);
+
+  // No live spoke for the game: refuse instead of falling back to a local
+  // "<game_id>:<bare>" channel, so the client never mistakes an undelivered
+  // reply for a delivered one.
+  const std::string service_id = resolve(game_id);
+  if (service_id.empty()) {
+    return GameReplyOutcome::kUnknownGame;
+  }
+
+  const auto game_user = identities_.ResolveGameUser(game_id, sender_player_id);
+  if (!game_user) {
+    return GameReplyOutcome::kUnboundPlayer;
+  }
+
+  gateway::PeerInjectMessageNotify notify;
+  notify.set_channel_id(bare);
+  notify.set_sender_id(*game_user);
+  notify.set_content(content);
+  notify.set_client_msg_id(client_msg_id);
+  if (!inject(service_id, notify)) {
+    return GameReplyOutcome::kSendFailed;
+  }
+  chirp::common::Logger::Instance().Info(
+      "cross-plane reply: player=" + sender_player_id + " game_user=" + *game_user + " game=" +
+      game_id + " channel=" + bare + " spoke=" + service_id);
+  return GameReplyOutcome::kSent;
+}
+
 namespace {
 
 // The callers of the WP-8 block are backend services over the trusted

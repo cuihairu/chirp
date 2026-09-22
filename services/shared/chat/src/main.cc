@@ -379,6 +379,10 @@ struct FeatureHandlers {
   // unread ledger and the hub fan-out tail. Main always installs one; the
   // RPC block on this port answers only trusted (SERVER_AUTH_REQ) dials.
   chirp::chat::PlayerDirectory* directory = nullptr;
+  // The hub side of the peer protocol (app_chat deployment, --hub_mode);
+  // null when hub mode is off. The cross-plane reply path resolves the
+  // channel's "<game_id>:" prefix against its registrations.
+  chirp::network::ChatPeerHub* hub = nullptr;
 };
 
 void HandlePacket(const std::shared_ptr<MessageStore>& store,
@@ -570,6 +574,48 @@ void HandlePacket(const std::shared_ptr<MessageStore>& store,
       if (!gate.allowed) {
         chirp::chat::SendMessageResponse resp;
         resp.set_code(chirp::common::RATE_LIMITED);
+        resp.set_server_timestamp(chirp::chat::runtime::NowMs());
+        chirp::chat::runtime::SendPacket(session, chirp::gateway::SEND_MESSAGE_RESP,
+                                         pkt.sequence(), resp.SerializeAsString());
+        return;
+      }
+    }
+
+    // Cross-plane reply (TODO 56): a channel_id prefixed "<game_id>:<bare>"
+    // is a reply into the game plane — resolve the sender's game_user_id and
+    // inject the message into the game_chat spoke that registered the game.
+    // Sits after the rate limiter on purpose: a cross-plane send consumes
+    // send budget like any other. Only hub mode has spokes to resolve
+    // against; otherwise there is nothing to intercept.
+    if (features.directory && features.hub) {
+      const auto outcome = features.directory->RelayGameReply(
+          authenticated_user_id, req.channel_id(), req.content(),
+          /*client_msg_id=*/"",
+          [hub = features.hub](const std::string& game_id) {
+            return hub->service_id_for_game(game_id);
+          },
+          [hub = features.hub](const std::string& service_id,
+                               const chirp::gateway::PeerInjectMessageNotify& notify) {
+            return hub->SendInject(service_id, notify);
+          });
+      if (outcome != chirp::chat::PlayerDirectory::GameReplyOutcome::kNoGamePrefix) {
+        chirp::chat::SendMessageResponse resp;
+        switch (outcome) {
+          case chirp::chat::PlayerDirectory::GameReplyOutcome::kSent:
+            // The game plane mints its own message id; the App client gets
+            // the acceptance only.
+            resp.set_code(chirp::common::OK);
+            break;
+          case chirp::chat::PlayerDirectory::GameReplyOutcome::kUnboundPlayer:
+            resp.set_code(chirp::common::INVALID_PARAM);
+            break;
+          case chirp::chat::PlayerDirectory::GameReplyOutcome::kUnknownGame:
+          case chirp::chat::PlayerDirectory::GameReplyOutcome::kSendFailed:
+            resp.set_code(chirp::common::SERVER_UNAVAILABLE);
+            break;
+          case chirp::chat::PlayerDirectory::GameReplyOutcome::kNoGamePrefix:
+            break;  // handled above; unreachable
+        }
         resp.set_server_timestamp(chirp::chat::runtime::NowMs());
         chirp::chat::runtime::SendPacket(session, chirp::gateway::SEND_MESSAGE_RESP,
                                          pkt.sequence(), resp.SerializeAsString());
@@ -1298,6 +1344,7 @@ int main(int argc, char** argv) {
               " copies=" + std::to_string(copies));
         });
     chat_hub->Start();
+    features.hub = chat_hub.get();
     Logger::Instance().Info("hub mode enabled: peer_port=" +
                             std::to_string(chat_hub->port()) +
                             " min_version=" + std::to_string(min_peer_version));

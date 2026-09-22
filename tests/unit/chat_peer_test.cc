@@ -1038,6 +1038,43 @@ TEST(ChatPeerHubTest, RegistersPeerAndReports) {
   runner.Finish();
 }
 
+TEST(ChatPeerHubTest, ServiceIdForGameResolvesTheLiveSpoke) {
+  chirp::common::Logger::Instance().SetLevel(chirp::common::Logger::Level::kError);
+  asio::io_context io;
+  HubEvents events;
+  auto hub = chirp::network::ChatPeerHub::Create(
+      io, HubTestOptions(), [](const std::string&, const std::string&, int32_t,
+                               const std::vector<chirp::gateway::PeerCapability>&) {},
+      [](const std::string&, const std::string&) {},
+      [](const std::string&, const chirp::gateway::ChannelMessageNotify&) {});
+  hub->Start();
+  HubIoRunner runner(io);
+
+  // No spoke yet: any game resolves to nothing.
+  std::promise<std::string> before;
+  asio::post(io, [&] { before.set_value(hub->service_id_for_game("game42")); });
+  EXPECT_EQ(before.get_future().get(), "");
+
+  TestPeerClient client(hub->port());
+  chirp::gateway::PeerRegisterResp resp;
+  ASSERT_TRUE(RegisterAndGetResp(client, MakeRegisterReq(), resp));
+  ASSERT_EQ(resp.code(), chirp::common::OK);
+
+  // The routing helper resolves the live registration on the hub's own
+  // thread; an unregistered game still resolves to nothing.
+  std::promise<std::string> live;
+  asio::post(io, [&] { live.set_value(hub->service_id_for_game("game42")); });
+  EXPECT_EQ(live.get_future().get(), "game_chat");
+
+  std::promise<std::string> other;
+  asio::post(io, [&] { other.set_value(hub->service_id_for_game("other-game")); });
+  EXPECT_EQ(other.get_future().get(), "");
+
+  hub->Stop();
+  runner.Drain();
+  runner.Finish();
+}
+
 TEST(ChatPeerHubTest, RejectsUnknownPeer) {
   chirp::common::Logger::Instance().SetLevel(chirp::common::Logger::Level::kError);
   asio::io_context io;

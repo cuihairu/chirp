@@ -99,6 +99,38 @@ class PlayerDirectory {
   // bound — both are semantic no-ops, the uplink is best-effort).
   size_t FanoutChannelMessage(const gateway::ChannelMessageNotify& notify);
 
+  // Cross-plane reply (TODO 56): an App player's send whose channel_id is
+  // "<game_id>:<bare>" is a reply into the game plane. The directory parses
+  // the prefix (game ids cannot contain ':', so the first colon separates
+  // them), resolves the sender's game_user_id, and hands a
+  // PeerInjectMessageNotify to the game_chat spoke that registered the
+  // game_id. The two plane edges are injected by the caller: resolve asks
+  // the hub which live spoke serves a game_id ("" = none), inject hands the
+  // built notify to that spoke (false = refused).
+  //
+  // kNoGamePrefix means "not a cross-plane send" — the caller falls through
+  // to the ordinary local-channel path. Every other outcome answers the
+  // client with its mapped error code, so a refused reply never masquerades
+  // as a delivered one. A channel id containing ':' is therefore reserved
+  // for the game plane on this port (deployments must not name App-side
+  // channels with a colon).
+  enum class GameReplyOutcome {
+    kNoGamePrefix,   // no usable "<game_id>:<bare>" prefix — not ours
+    kUnknownGame,    // prefix parses, but no live spoke registered that game
+    kUnboundPlayer,  // the sender holds no binding for that game
+    kSent,           // handed to the spoke (the spoke owns delivery from here)
+    kSendFailed,     // the hub refused the downlink (peer dropped mid-flight)
+  };
+  using GameServiceResolver = std::function<std::string(const std::string& game_id)>;
+  using GameReplySender = std::function<bool(
+      const std::string& service_id, const gateway::PeerInjectMessageNotify& notify)>;
+
+  GameReplyOutcome RelayGameReply(const std::string& sender_player_id,
+                                  const std::string& channel_id, const std::string& content,
+                                  const std::string& client_msg_id,
+                                  const GameServiceResolver& resolve,
+                                  const GameReplySender& inject) const;
+
  private:
   Options options_;
   IdentityRegistry identities_;
