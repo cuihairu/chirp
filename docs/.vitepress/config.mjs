@@ -41,6 +41,7 @@ const config = defineConfig({
       '/api/': [
         { text: 'API 参考', collapsed: false, items: [
           { text: '概述', link: '/api/overview' },
+          { text: 'Chat Peer 注册协议', link: '/api/peer_protocol' },
         ]},
       ],
       '/': [

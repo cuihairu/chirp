@@ -1,6 +1,6 @@
 # Chirp 任务清单
 
-> 最后更新：2026-09-21，基于两平面 + hub-spoke 架构重构后重新拆分。
+> 最后更新：2026-09-22，勾选三项：全量构建验证、CAPABILITY_MATRIX 服务名/路径同步、peer 注册协议详细文档。
 
 ## 当前焦点
 
@@ -87,7 +87,7 @@ SDK 引擎兼容性见 [SDK 引擎兼容性](docs/design-notes/sdk_compatibility
 - [ ] **更新 smoke test**：`test_services.sh` 适配新路径和二进制名，验证游戏平面端到端
 - [ ] **更新 CI**：`ci.yml` 适配新路径
 - [ ] **更新单元测试**：路径和 namespace 重命名后的测试修复
-- [ ] **全量构建验证**：所有目标构建通过（当前只验证了主要 6 个）
+- [x] **全量构建验证**：2026-09-22 clean build（vcpkg toolchain + Debug + ENABLE_TESTS=ON)333/333 目标通过，13 个 `chirp_*` 服务二进制全部产出，`ctest` 34/34 通过
 
 ## 文档（P2）
 
@@ -96,8 +96,8 @@ SDK 引擎兼容性见 [SDK 引擎兼容性](docs/design-notes/sdk_compatibility
 - [x] CORE.md 更新架构说明
 - [x] server_plane.md 更新二进制名
 - [x] 设计并集成 logo
-- [ ] CAPABILITY_MATRIX.md 更新服务名和路径
-- [ ] 补充 peer 注册协议的详细文档
+- [x] CAPABILITY_MATRIX.md 更新服务名和路径（2026-09-22：`chirp_game_sdk_gateway` / `chirp_app_auth` / `chirp_app_sdk_gateway` / `chirp_app_notification` / `chirp_game_server_gateway` 全部对齐，补充二进制命名约定段）
+- [x] 补充 peer 注册协议的详细文档（2026-09-22：新增 `docs/api/peer_protocol.md`，覆盖握手、字段、错误码、能力位、白名单、CLI、部署示例与实现状态；vitepress sidebar 与 architecture.md 已交叉引用）
 
 ## 实验性服务（暂不动）
 
