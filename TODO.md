@@ -28,6 +28,7 @@ SDK 引擎兼容性见 [SDK 引擎兼容性](docs/design-notes/sdk_compatibility
 - [x] **频道消息推送**：登录后向已注册的 hub peer 推送频道消息（`CHANNEL_MESSAGE_NOTIFY`）
 - [x] **接收玩家回复**：从 hub peer 收到 `INJECT_MESSAGE_NOTIFY`，注入本地频道
 - [x] **敏感词过滤**（2026-09-22：game_chat_features P0 第一项落地——`WordFilter` 三级策略 `--word_filter_policy replace|reject|record`（replace=命中区段合并折叠为 `**`、reject=拒收回 `INVALID_PARAM`（暂无专码，等 proto 批次）、record=放行留 Warn 痕），词库 `--word_filter_file` 每行一词、`#` 注释、大小写归一去重，mtime 惰性热更新（默认 5s 节流），词库缺失/不可读 fail-open 空转不挡聊天；basic/enhanced 两形态接线，位置在发送限流之后（拒绝仍耗预算）、跨平面拦截之前（过滤后内容不进游戏平面）；NPC/服务端注入不过滤（服务端可信）；`word_filter_tests` 11 例）
+- [x] **消息长度限制**（2026-09-22：game_chat_features P0 第二项——按频道码点上限：私聊 200 字、世界 100 字、系统公告 500 字，TEAM/GUILD/MARQUEE 不限；`chat_validation` 新增公开 `MaxContentChars`/`ValidateContentLength`，按 UTF-8 非续字节计码点（CJK 3 字节/字不误伤），超限拒收回 `INVALID_PARAM`（不做截断）；basic 经 `ValidateSendMessageRequest` 自动获得，enhanced 在 `on_send_message` 词过滤之前调用（超长不耗词库工作；MySQL 构建列表补链 `chat_validation.cc`）；`chat_validation_tests` 新增 8 例达 35/35）
 
 ### game_server_gateway（原 server_gateway，瘦身版）
 

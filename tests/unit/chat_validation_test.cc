@@ -187,6 +187,106 @@ TEST(ChatValidationTest, AcceptsLogoutWhenSessionMatches) {
   EXPECT_EQ(ValidateLogoutRequest(req, "alice", "chat_session_alice"), chirp::common::OK);
 }
 
+// --- content length limits (game_chat_features P0 消息长度限制) ---
+
+namespace {
+
+// Repeats a 3-byte CJK character n times.
+std::string CjkChars(int n) {
+  std::string out;
+  out.reserve(static_cast<size_t>(n) * 3);
+  for (int i = 0; i < n; ++i) {
+    out += "你";
+  }
+  return out;
+}
+
+} // namespace
+
+TEST(ChatValidationTest, MaxContentCharsCoversTheCappedChannels) {
+  EXPECT_EQ(MaxContentChars(PRIVATE), 200u);
+  EXPECT_EQ(MaxContentChars(WORLD), 100u);
+  EXPECT_EQ(MaxContentChars(SYSTEM_CHANNEL), 500u);
+  // Coordination surfaces are uncapped.
+  EXPECT_EQ(MaxContentChars(TEAM), 0u);
+  EXPECT_EQ(MaxContentChars(GUILD), 0u);
+  EXPECT_EQ(MaxContentChars(MARQUEE), 0u);
+}
+
+TEST(ChatValidationTest, PrivateContentAtTheLimitIsAccepted) {
+  SendMessageRequest req;
+  req.set_channel_type(PRIVATE);
+  req.set_content(std::string(200, 'a'));
+  EXPECT_EQ(ValidateContentLength(req), chirp::common::OK);
+
+  // 200 CJK chars = 600 UTF-8 bytes but exactly 200 code points.
+  req.set_content(CjkChars(200));
+  EXPECT_EQ(ValidateContentLength(req), chirp::common::OK);
+}
+
+TEST(ChatValidationTest, PrivateContentOverTheLimitIsRejected) {
+  SendMessageRequest req;
+  req.set_channel_type(PRIVATE);
+  req.set_content(std::string(201, 'a'));
+  EXPECT_EQ(ValidateContentLength(req), chirp::common::INVALID_PARAM);
+
+  req.set_content(CjkChars(201));
+  EXPECT_EQ(ValidateContentLength(req), chirp::common::INVALID_PARAM);
+}
+
+TEST(ChatValidationTest, MixedScriptIsCountedInCodePoints) {
+  SendMessageRequest req;
+  req.set_channel_type(PRIVATE);
+  // 100 ASCII + 100 CJK = 200 code points in 500 bytes: accepted, which a
+  // byte-counting limit would have rejected long before.
+  req.set_content(std::string(100, 'a') + CjkChars(100));
+  EXPECT_EQ(ValidateContentLength(req), chirp::common::OK);
+}
+
+TEST(ChatValidationTest, WorldContentLimitIsEnforced) {
+  SendMessageRequest req;
+  req.set_channel_type(WORLD);
+  req.set_content(std::string(100, 'a'));
+  EXPECT_EQ(ValidateContentLength(req), chirp::common::OK);
+
+  req.set_content(std::string(101, 'a'));
+  EXPECT_EQ(ValidateContentLength(req), chirp::common::INVALID_PARAM);
+}
+
+TEST(ChatValidationTest, SystemChannelContentLimitIsEnforced) {
+  SendMessageRequest req;
+  req.set_channel_type(SYSTEM_CHANNEL);
+  req.set_content(std::string(500, 'a'));
+  EXPECT_EQ(ValidateContentLength(req), chirp::common::OK);
+
+  req.set_content(std::string(501, 'a'));
+  EXPECT_EQ(ValidateContentLength(req), chirp::common::INVALID_PARAM);
+}
+
+TEST(ChatValidationTest, TeamGuildAndMarqueeAreUnlimited) {
+  SendMessageRequest req;
+  req.set_content(std::string(10'000, 'a'));
+  for (const ChannelType type : {TEAM, GUILD, MARQUEE}) {
+    req.set_channel_type(type);
+    EXPECT_EQ(ValidateContentLength(req), chirp::common::OK) << "channel " << static_cast<int>(type);
+  }
+}
+
+TEST(ChatValidationTest, SendValidationAppliesTheWorldLengthLimit) {
+  // The cap is wired into ValidateSendMessageRequest, so the basic form gets
+  // it from the shared validation path without any extra wiring.
+  SendMessageRequest req;
+  req.set_sender_id("alice");
+  req.set_channel_type(WORLD);
+  req.set_channel_id("world");
+
+  req.set_content(std::string(100, 'a'));
+  EXPECT_EQ(ValidateSendMessageRequest(req, "alice"), chirp::common::OK);
+
+  req.set_content(std::string(101, 'a'));
+  EXPECT_EQ(ValidateSendMessageRequest(req, "alice"), chirp::common::INVALID_PARAM);
+}
+
 TEST(SessionCloseBehaviorTest, LogoutSuccessWouldCloseSessionAfterResponse) {
   auto session = std::make_shared<FakeSession>();
 

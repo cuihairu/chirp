@@ -1,6 +1,7 @@
 #include "chat_validation.h"
 
 #include <string>
+#include <string_view>
 
 namespace chirp::chat {
 namespace {
@@ -10,6 +11,39 @@ bool IsAuthenticated(std::string_view authenticated_user_id) {
 }
 
 } // namespace
+
+size_t MaxContentChars(ChannelType type) {
+  switch (type) {
+    case PRIVATE:
+      return 200;
+    case WORLD:
+      return 100;
+    case SYSTEM_CHANNEL:
+      return 500;
+    default:
+      // TEAM / GUILD / MARQUEE are coordination surfaces with no cap.
+      return 0;
+  }
+}
+
+chirp::common::ErrorCode ValidateContentLength(const SendMessageRequest& req) {
+  const size_t max_chars = MaxContentChars(req.channel_type());
+  if (max_chars == 0) {
+    return chirp::common::OK;
+  }
+  // Count code points: every byte that is not a 0b10xxxxxx UTF-8 continuation
+  // byte starts a new character.
+  size_t chars = 0;
+  for (char c : req.content()) {
+    if ((static_cast<unsigned char>(c) & 0xC0) != 0x80) {
+      ++chars;
+    }
+  }
+  if (chars > max_chars) {
+    return chirp::common::INVALID_PARAM;
+  }
+  return chirp::common::OK;
+}
 
 bool PrivateChannelContainsUser(std::string_view channel_id, std::string_view user_id) {
   if (channel_id.empty() || user_id.empty()) {
@@ -33,6 +67,9 @@ chirp::common::ErrorCode ValidateSendMessageRequest(const SendMessageRequest& re
   }
   if (req.sender_id().empty() || req.sender_id() != authenticated_user_id) {
     return chirp::common::AUTH_FAILED;
+  }
+  if (ValidateContentLength(req) != chirp::common::OK) {
+    return chirp::common::INVALID_PARAM;
   }
 
   if (req.channel_type() == PRIVATE) {

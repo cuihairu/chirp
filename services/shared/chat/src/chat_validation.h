@@ -1,5 +1,6 @@
 #pragma once
 
+#include <cstddef>
 #include <string_view>
 
 #include "proto/auth.pb.h"
@@ -9,6 +10,14 @@
 namespace chirp::chat {
 
 bool PrivateChannelContainsUser(std::string_view channel_id, std::string_view user_id);
+
+// Per-channel content cap in Unicode code points (what a player perceives as
+// "characters"), not UTF-8 bytes: CJK text is 3 bytes per char. 0 = uncapped.
+size_t MaxContentChars(ChannelType type);
+
+// Rejects over-long content with INVALID_PARAM. Called inside
+// ValidateSendMessageRequest, so both binary forms enforce it.
+chirp::common::ErrorCode ValidateContentLength(const SendMessageRequest& req);
 
 chirp::common::ErrorCode ValidateSendMessageRequest(const SendMessageRequest& req,
                                                     std::string_view authenticated_user_id);

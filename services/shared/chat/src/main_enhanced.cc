@@ -17,6 +17,7 @@
 
 #include "hybrid_message_store.h"
 #include "chat_rate_limiter.h"
+#include "chat_validation.h"
 #include "delivery_ack_manager.h"
 #include "inject_consumer.h"
 #include "login_token_verifier.h"
@@ -27,6 +28,7 @@
 #include "player_directory.h"
 #include "push_bridge.h"
 #include "word_filter.h"
+
 #include "network/chat_peer_hub.h"
 #include "network/chat_peer_link.h"
 #include "network/server_gateway_peer.h"
@@ -927,6 +929,17 @@ int main(int argc, char** argv) {
                                  const std::shared_ptr<chirp::network::Session>& session,
                                  const chirp::chat::SendMessageRequest& req,
                                  int64_t seq) {
+    // Per-channel content cap (game_chat_features P0 长度限制) — checked
+    // before the filter so over-long messages are refused without spending
+    // lexicon work. Same shared validation the basic form gets for free.
+    if (chirp::chat::ValidateContentLength(req) != chirp::common::OK) {
+      chirp::chat::SendMessageResponse resp;
+      resp.set_code(chirp::common::INVALID_PARAM);
+      resp.set_server_timestamp(chirp::chat::runtime::NowMs());
+      chirp::chat::runtime::SendPacket(session, chirp::gateway::SEND_MESSAGE_RESP, seq,
+                                       resp.SerializeAsString());
+      return;
+    }
     // Lexicon content filter before every delivery path — the cross-plane
     // intercept below included, so filtered content never reaches the game
     // plane either. kReplace filters the content in place; kReject refuses

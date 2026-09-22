@@ -79,6 +79,9 @@ if(MYSQL_FOUND)
         # Lexicon-based content filter (game_chat_features P0 敏感词过滤):
         # three-level policy over a hot-reloadable term file.
         src/word_filter.cc
+        # Shared send validation (auth/spoofing/channel shape/content length):
+        # the enhanced form calls ValidateContentLength in on_send_message.
+        src/chat_validation.cc
     )
 
     chirp_configure_chat_target(chirp_chat)
