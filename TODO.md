@@ -27,6 +27,7 @@ SDK 引擎兼容性见 [SDK 引擎兼容性](docs/design-notes/sdk_compatibility
 - [x] **注册协议**：作为 spoke 连接 app_chat，发送 `PEER_REGISTER_REQ`，支持白名单 + 版本协商
 - [x] **频道消息推送**：登录后向已注册的 hub peer 推送频道消息（`CHANNEL_MESSAGE_NOTIFY`）
 - [x] **接收玩家回复**：从 hub peer 收到 `INJECT_MESSAGE_NOTIFY`，注入本地频道
+- [x] **敏感词过滤**（2026-09-22：game_chat_features P0 第一项落地——`WordFilter` 三级策略 `--word_filter_policy replace|reject|record`（replace=命中区段合并折叠为 `**`、reject=拒收回 `INVALID_PARAM`（暂无专码，等 proto 批次）、record=放行留 Warn 痕），词库 `--word_filter_file` 每行一词、`#` 注释、大小写归一去重，mtime 惰性热更新（默认 5s 节流），词库缺失/不可读 fail-open 空转不挡聊天；basic/enhanced 两形态接线，位置在发送限流之后（拒绝仍耗预算）、跨平面拦截之前（过滤后内容不进游戏平面）；NPC/服务端注入不过滤（服务端可信）；`word_filter_tests` 11 例）
 
 ### game_server_gateway（原 server_gateway，瘦身版）
 

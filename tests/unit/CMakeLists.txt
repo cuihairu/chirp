@@ -638,6 +638,26 @@ target_include_directories(chat_player_directory_tests
 
 add_test(NAME chat_player_directory_tests COMMAND chat_player_directory_tests)
 
+# Lexicon-based content filter (game_chat_features P0 敏感词过滤): lexicon
+# parsing, the three-level policy and the hot-reload throttle.
+add_executable(word_filter_tests
+  word_filter_test.cc
+  ${CMAKE_SOURCE_DIR}/services/shared/chat/src/word_filter.cc
+)
+
+chirp_unit_test_common_links(word_filter_tests)
+target_link_libraries(word_filter_tests PRIVATE chirp_common)
+
+target_include_directories(word_filter_tests
+  PRIVATE
+  ${CMAKE_SOURCE_DIR}/services/shared/chat/src
+  ${CMAKE_SOURCE_DIR}/libs
+  ${CMAKE_SOURCE_DIR}/libs/common
+  ${CMAKE_SOURCE_DIR}/libs/common/include
+)
+
+add_test(NAME word_filter_tests COMMAND word_filter_tests)
+
 # NOTE: presence_manager.cc used to be excluded from the social build
 # because it did not compile (a proto enum name clash plus a copyable-mutex
 # member); it is fixed and covered by social_presence_tests below. The

@@ -76,6 +76,9 @@ if(MYSQL_FOUND)
         src/subscription_registry.cc
         src/unread_ledger.cc
         src/player_directory.cc
+        # Lexicon-based content filter (game_chat_features P0 敏感词过滤):
+        # three-level policy over a hot-reloadable term file.
+        src/word_filter.cc
     )
 
     chirp_configure_chat_target(chirp_chat)

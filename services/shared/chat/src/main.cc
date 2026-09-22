@@ -28,6 +28,7 @@
 #include "network/websocket_server.h"
 #include "npc_uplink.h"
 #include "player_directory.h"
+#include "word_filter.h"
 #include "push_bridge.h"
 #include "network/chat_peer_hub.h"
 #include "network/chat_peer_link.h"
@@ -357,6 +358,8 @@ struct FeatureHandlers {
   // expected in practice — main always installs one; it fails open without
   // Redis).
   chirp::chat::ChatRateLimiter* rate_limiter = nullptr;
+  // Lexicon content filter; a null/empty-lexicon filter is a pass-through.
+  chirp::chat::WordFilter* word_filter = nullptr;
   // Null or disabled() keeps the scaffold "token is user_id" login.
   const chirp::common::LoginTokenVerifier* token_verifier = nullptr;
   // Client delivery-ack bookkeeping; null (or a disabled manager) keeps the
@@ -579,6 +582,24 @@ void HandlePacket(const std::shared_ptr<MessageStore>& store,
                                          pkt.sequence(), resp.SerializeAsString());
         return;
       }
+    }
+
+    // Lexicon content filter: sits after the rate limiter (a rejected send
+    // still consumed budget) and before every delivery path — the cross-plane
+    // intercept below included, so filtered content never reaches the game
+    // plane either. kReplace filters the content in place; kReject refuses
+    // with INVALID_PARAM (no dedicated result code exists yet).
+    if (features.word_filter != nullptr && features.word_filter->enabled()) {
+      std::string filtered = req.content();
+      if (!features.word_filter->Filter(authenticated_user_id, &filtered)) {
+        chirp::chat::SendMessageResponse resp;
+        resp.set_code(chirp::common::INVALID_PARAM);
+        resp.set_server_timestamp(chirp::chat::runtime::NowMs());
+        chirp::chat::runtime::SendPacket(session, chirp::gateway::SEND_MESSAGE_RESP,
+                                         pkt.sequence(), resp.SerializeAsString());
+        return;
+      }
+      req.set_content(filtered);
     }
 
     // Cross-plane reply (TODO 56): a channel_id prefixed "<game_id>:<bare>"
@@ -1056,6 +1077,12 @@ int main(int argc, char** argv) {
       chirp::chat::runtime::ParseIntArg(argc, argv, "--send_rate_limit_per_min", 120);
   // Empty keeps the scaffold "token is user_id" login; set to an HS256 secret
   // shared with the token issuer to require verifiable, unexpired JWTs.
+  // Lexicon content filter (game_chat_features P0 敏感词过滤). Empty path
+  // keeps it off entirely.
+  const std::string word_filter_file =
+      chirp::chat::runtime::GetArg(argc, argv, "--word_filter_file", "");
+  const std::string word_filter_policy =
+      chirp::chat::runtime::GetArg(argc, argv, "--word_filter_policy", "replace");
   const std::string token_secret = chirp::chat::runtime::GetArg(argc, argv, "--token_secret", "");
   // Internal-plane trust gate: when set, edge gateways that dial in with this
   // secret (SERVER_AUTH_REQ) get per-client pipes that skip the per-IP login
@@ -1213,12 +1240,18 @@ int main(int argc, char** argv) {
   chirp::chat::MessageEditHandlers edit_handlers(edits, resolve_members, is_moderator, notify_member);
   chirp::chat::MentionHandlers mention_handlers(mentions, is_moderator);
 
+  chirp::chat::WordFilterOptions word_filter_options;
+  word_filter_options.lexicon_path = word_filter_file;
+  word_filter_options.policy = chirp::chat::WordFilterPolicyFromString(word_filter_policy);
+  chirp::chat::WordFilter word_filter(word_filter_options);
+
   FeatureHandlers features{.groups = group_handlers, .receipts = receipt_handlers,
                            .typing = typing_handlers, .reactions = reaction_handlers,
                            .edits = edit_handlers, .mentions = mention_handlers,
                            .push = push, .npc_service_id = {},
                            .gateway_secret = {}, .trusted_conns = nullptr};
   features.rate_limiter = rate_limiter.get();
+  features.word_filter = &word_filter;
   features.token_verifier = &token_verifier;
   features.acks = acks.get();
   features.gateway_secret = gateway_service_secret;

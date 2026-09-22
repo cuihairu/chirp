@@ -26,6 +26,7 @@
 #include "paginated_history_retriever.h"
 #include "player_directory.h"
 #include "push_bridge.h"
+#include "word_filter.h"
 #include "network/chat_peer_hub.h"
 #include "network/chat_peer_link.h"
 #include "network/server_gateway_peer.h"
@@ -502,6 +503,13 @@ int main(int argc, char** argv) {
   // 0 disables client delivery-ack tracking entirely (kill switch).
   const int64_t ack_timeout_ms = chirp::chat::runtime::ParseIntArg(argc, argv, "--ack_timeout_ms", 10000);
 
+  // Lexicon content filter (game_chat_features P0 敏感词过滤). Empty path
+  // keeps it off entirely.
+  const std::string word_filter_file =
+      chirp::chat::runtime::GetArg(argc, argv, "--word_filter_file", "");
+  const std::string word_filter_policy =
+      chirp::chat::runtime::GetArg(argc, argv, "--word_filter_policy", "replace");
+
   std::string instance_id = chirp::chat::runtime::GetArg(argc, argv, "--instance_id", "");
   if (instance_id.empty()) {
     instance_id = "chat_" + chirp::chat::runtime::RandomHex(8);
@@ -900,6 +908,11 @@ int main(int argc, char** argv) {
   auto trusted_conns =
       std::make_shared<std::unordered_set<const chirp::network::Session*>>();
 
+  chirp::chat::WordFilterOptions word_filter_options;
+  word_filter_options.lexicon_path = word_filter_file;
+  word_filter_options.policy = chirp::chat::WordFilterPolicyFromString(word_filter_policy);
+  chirp::chat::WordFilter word_filter(word_filter_options);
+
   chirp::chat::runtime::DistributedDispatchHandlers handlers;
   handlers.on_login = [state, store, router, &token_verifier, acks](
                           const std::shared_ptr<chirp::network::Session>& session,
@@ -910,10 +923,27 @@ int main(int argc, char** argv) {
   handlers.on_send_message = [state, store, delivery_tracker, acks, router,
                               peer = hub_peer.get(), npc_service_id, npc_prefix,
                               link = spoke_link.get(), spoke_game_id,
-                              hub = chat_hub.get(), &directory](
+                              hub = chat_hub.get(), &directory, &word_filter](
                                  const std::shared_ptr<chirp::network::Session>& session,
                                  const chirp::chat::SendMessageRequest& req,
                                  int64_t seq) {
+    // Lexicon content filter before every delivery path — the cross-plane
+    // intercept below included, so filtered content never reaches the game
+    // plane either. kReplace filters the content in place; kReject refuses
+    // with INVALID_PARAM (no dedicated result code exists yet).
+    chirp::chat::SendMessageRequest working = req;
+    if (word_filter.enabled()) {
+      std::string filtered = working.content();
+      if (!word_filter.Filter(working.sender_id(), &filtered)) {
+        chirp::chat::SendMessageResponse resp;
+        resp.set_code(chirp::common::INVALID_PARAM);
+        resp.set_server_timestamp(chirp::chat::runtime::NowMs());
+        chirp::chat::runtime::SendPacket(session, chirp::gateway::SEND_MESSAGE_RESP, seq,
+                                         resp.SerializeAsString());
+        return;
+      }
+      working.set_content(filtered);
+    }
     // Cross-plane reply (TODO 56): a channel_id prefixed
     // "<game_id>:<bare>" is a reply into the game plane — resolve the
     // sender's game_user_id and inject it into the game_chat spoke that
@@ -921,7 +951,7 @@ int main(int argc, char** argv) {
     // through to the ordinary send path below.
     if (hub) {
       const auto outcome = directory.RelayGameReply(
-          req.sender_id(), req.channel_id(), req.content(),
+          working.sender_id(), working.channel_id(), working.content(),
           /*client_msg_id=*/"",
           [hub](const std::string& game_id) { return hub->service_id_for_game(game_id); },
           [hub](const std::string& service_id,
@@ -952,7 +982,7 @@ int main(int argc, char** argv) {
         return;
       }
     }
-    HandleSendMessage(req, session, state, store, delivery_tracker, acks.get(), router,
+    HandleSendMessage(working, session, state, store, delivery_tracker, acks.get(), router,
                       peer, npc_service_id, npc_prefix, link, spoke_game_id, seq);
   };
   handlers.on_get_history = [retriever](const std::shared_ptr<chirp::network::Session>& session,
