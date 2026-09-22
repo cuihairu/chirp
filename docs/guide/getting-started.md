@@ -88,7 +88,7 @@ Compose 会启动 Redis、MySQL、Auth、Gateway、Chat 和实验性服务。第
 
 ```bash
 ./build/services/auth/chirp_auth --port 6000 --jwt_secret dev_secret
-./build/services/gateway/chirp_gateway --port 5000 --ws_port 5001 --auth_host 127.0.0.1 --auth_port 6000
+./build/services/game/sdk_gateway/chirp_game_sdk_gateway --port 5000 --ws_port 5001 --auth_host 127.0.0.1 --auth_port 6000
 ./build/services/chat/chirp_chat --port 7000 --ws_port 7001 --redis_host 127.0.0.1 --redis_port 6379 --offline_ttl 604800
 ```
 

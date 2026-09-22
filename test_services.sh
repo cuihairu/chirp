@@ -8,25 +8,24 @@ echo "=== Chirp 服务启动测试 ==="
 echo ""
 
 # 检查构建产物是否存在
-if [ ! -f "./build/services/game/sdk_gateway/chirp_game_sdk_gateway" ]; then
-  echo "错误: chirp_game_sdk_gateway 未构建"
-  exit 1
-fi
+require_bin() {
+  if [ ! -f "$1" ]; then
+    echo "错误: $1 未构建"
+    exit 1
+  fi
+}
 
-if [ ! -f "./build/services/app/auth/chirp_app_auth" ]; then
-  echo "错误: chirp_app_auth 未构建"
-  exit 1
-fi
+require_bin "./build/services/game/sdk_gateway/chirp_game_sdk_gateway"
+require_bin "./build/services/app/auth/chirp_app_auth"
+require_bin "./build/services/shared/chat/chirp_chat"
 
-if [ ! -f "./build/services/shared/chat/chirp_chat" ]; then
-  echo "错误: chirp_chat 未构建"
-  exit 1
-fi
-
-echo "✓ 所有服务已构建"
+echo "✓ 核心服务已构建"
 echo ""
 echo "构建产物:"
-ls -lh ./build/services/*/chirp_*
+# services/ 下是多级嵌套新路径（game/sdk_gateway 等）；单层 glob 只会命中
+# 重构前的旧扁平产物，漏掉全部当前目标。find 全深度扫描并跳过 CMakeFiles。
+find ./build/services -type f -name 'chirp_*' -executable ! -path '*/CMakeFiles/*' \
+  | sort | xargs -r ls -lh
 echo ""
 echo "测试工具:"
 ls -lh ./build/tools/benchmark/chirp_*
@@ -38,9 +37,55 @@ echo "  ./build/services/game/sdk_gateway/chirp_game_sdk_gateway --port 5000 --w
 echo "  ./build/services/app/auth/chirp_app_auth --port 6000"
 echo "  ./build/services/shared/chat/chirp_chat --port 7000 --ws_port 7001"
 
-if [[ "${1:-}" != "--smoke" && "${1:-}" != "--smoke-chat" && "${1:-}" != "--smoke-redis" && "${1:-}" != "--smoke-npc" && "${1:-}" != "--smoke-sdk" && "${1:-}" != "--smoke-edge" && "${1:-}" != "--smoke-jwt" ]]; then
+SMOKE_ARGS="--smoke --smoke-chat --smoke-redis --smoke-npc --smoke-sdk --smoke-edge --smoke-jwt --smoke-game"
+is_smoke=0
+for a in ${SMOKE_ARGS}; do
+  if [[ "${1:-}" == "${a}" ]]; then
+    is_smoke=1
+    break
+  fi
+done
+if [[ "${is_smoke}" != "1" ]]; then
   exit 0
 fi
+
+# smoke 模式各自的硬依赖预检：缺二进制在启动前就失败，而不是半路挂掉。
+case "${1}" in
+  --smoke)
+    require_bin "./build/tools/benchmark/chirp_login_client"
+    require_bin "./build/tools/benchmark/chirp_ws_login_client"
+    ;;
+  --smoke-redis)
+    require_bin "./build/tools/benchmark/chirp_login_client"
+    require_bin "./build/tools/benchmark/chirp_ws_login_client"
+    ;;
+  --smoke-jwt)
+    require_bin "./build/tools/benchmark/chirp_login_client"
+    ;;
+  --smoke-edge)
+    require_bin "./build/tools/benchmark/chirp_login_client"
+    require_bin "./build/services/app/sdk_gateway/chirp_app_sdk_gateway"
+    ;;
+  --smoke-npc)
+    require_bin "./build/services/game/server_gateway/chirp_game_server_gateway"
+    require_bin "./build/services/game/npc_dialog/chirp_npc_dialog"
+    require_bin "./build/tools/benchmark/chirp_chat_send_client"
+    require_bin "./build/tools/benchmark/chirp_chat_listen_client"
+    require_bin "./build/tools/benchmark/chirp_chat_history_client"
+    ;;
+  --smoke-sdk)
+    require_bin "./build/sdks/core/sdk_example"
+    ;;
+  --smoke-game)
+    require_bin "./build/tools/benchmark/chirp_login_client"
+    ;;
+  --smoke-chat)
+    require_bin "./build/tools/benchmark/chirp_chat_send_client"
+    require_bin "./build/tools/benchmark/chirp_chat_listen_client"
+    require_bin "./build/tools/benchmark/chirp_chat_history_client"
+    require_bin "./build/tools/benchmark/chirp_ws_login_client"
+    ;;
+esac
 
 echo ""
 if [[ "${1:-}" == "--smoke" ]]; then
@@ -55,6 +100,8 @@ elif [[ "${1:-}" == "--smoke-edge" ]]; then
   echo "=== Smoke Test (gateway absorbs the chat entry: trusted bridge + relay) ==="
 elif [[ "${1:-}" == "--smoke-jwt" ]]; then
   echo "=== Smoke Test (unified login: signed JWT end to end, scaffold rejected) ==="
+elif [[ "${1:-}" == "--smoke-game" ]]; then
+  echo "=== Smoke Test (pure game plane: no app_auth, gateway scaffold + chat bridge) ==="
 else
   echo "=== Smoke Test (chat + clients) ==="
 fi
@@ -143,7 +190,80 @@ stop_proc() {
   done
 }
 
-if [[ "${1:-}" == "--smoke" ]]; then
+# 可选：enhanced auth/chat 默认连 127.0.0.1:3306（chirp/chirp_password）。
+# CI 用 GitHub service 提供该实例；本地若把 MySQL 放在别的端口，设
+# MYSQL_HOST/MYSQL_PORT/MYSQL_USER/MYSQL_PASSWORD/MYSQL_DATABASE 再跑 smoke。
+# 全部未设时数组为空，命令行与二进制默认完全一致，零行为变化。
+MYSQL_ARGS=()
+if [[ -n "${MYSQL_HOST:-}" ]]; then MYSQL_ARGS+=(--mysql_host "${MYSQL_HOST}"); fi
+if [[ -n "${MYSQL_PORT:-}" ]]; then MYSQL_ARGS+=(--mysql_port "${MYSQL_PORT}"); fi
+if [[ -n "${MYSQL_USER:-}" ]]; then MYSQL_ARGS+=(--mysql_user "${MYSQL_USER}"); fi
+if [[ -n "${MYSQL_PASSWORD:-}" ]]; then MYSQL_ARGS+=(--mysql_password "${MYSQL_PASSWORD}"); fi
+if [[ -n "${MYSQL_DATABASE:-}" ]]; then MYSQL_ARGS+=(--mysql_database "${MYSQL_DATABASE}"); fi
+
+if [[ "${1:-}" == "--smoke-game" ]]; then
+  # 纯游戏平面端到端（无 app_auth）：game_sdk_gateway 不配 --auth_host
+  # 走 scaffold（token 即 user_id + BindAuthenticatedSession），ChatBridge
+  # 把 2xxx 转给 game_chat；chat 开 --gateway_service_secret 信任管道，
+  # 不配 --token_secret 走本地 scaffold。离线补投递证明全管道双向。
+  CHAT_PORT="${CHAT_PORT:-$(pick_port)}"
+  CHAT_WS_PORT="${CHAT_WS_PORT:-$(pick_port)}"
+  GW_PORT="${GW_PORT:-$(pick_port)}"
+  GW_WS_PORT="${GW_WS_PORT:-$(pick_port)}"
+
+  CHAT_LOG="${CHAT_LOG:-/tmp/chirp_chat_smoke_game.log}"
+  GW_LOG="${GW_LOG:-/tmp/chirp_game_sdk_gateway_smoke_game.log}"
+  A_LOG="${A_LOG:-/tmp/chirp_game_a_send.log}"
+  B_LOG="${B_LOG:-/tmp/chirp_game_b_refill.log}"
+
+  ./build/services/shared/chat/chirp_chat --port "${CHAT_PORT}" --ws_port "${CHAT_WS_PORT}" \
+    --gateway_service_secret game-secret "${MYSQL_ARGS[@]+"${MYSQL_ARGS[@]}"}" > "${CHAT_LOG}" 2>&1 &
+  CHAT_PID=$!
+
+  ./build/services/game/sdk_gateway/chirp_game_sdk_gateway --port "${GW_PORT}" --ws_port "${GW_WS_PORT}" \
+    --chat_host 127.0.0.1 --chat_port "${CHAT_PORT}" --chat_service_secret game-secret > "${GW_LOG}" 2>&1 &
+  GW_PID=$!
+
+  cleanup() {
+    stop_proc "${GW_PID}" "${CHAT_PID}"
+  }
+  trap cleanup EXIT
+
+  wait_port "${CHAT_PORT}" chirp_chat "${CHAT_LOG}"
+  wait_port "${GW_PORT}" chirp_game_sdk_gateway "${GW_LOG}"
+
+  echo ""
+  echo "[game] A login via gateway (scaffold, no auth_host) + send to offline B"
+  timeout 30 ./build/tools/benchmark/chirp_login_client --host 127.0.0.1 --port "${GW_PORT}" \
+    --token user_a --device dev_a --platform pc \
+    --send_text "game-offline-hello" --peer_user user_b > "${A_LOG}" 2>&1
+  grep -q "code=0" "${A_LOG}"
+  grep -q "send code=0" "${A_LOG}"
+
+  echo ""
+  echo "[game] B login via gateway (offline refill via ChatBridge)"
+  set +e
+  timeout 30 ./build/tools/benchmark/chirp_login_client --host 127.0.0.1 --port "${GW_PORT}" \
+    --token user_b --device dev_b --platform pc --expect_notify_ms 15000 > "${B_LOG}" 2>&1
+  B_RC=$?
+  set -e
+  if [[ "${B_RC}" != "0" ]] || ! grep -q "notify from=user_a" "${B_LOG}" || ! grep -q "content=game-offline-hello" "${B_LOG}"; then
+    echo "错误: B 经 gateway 登录后未收到离线补投递 (rc=${B_RC},纯游戏平面管道未生效)"
+    cat "${B_LOG}" || true
+    echo "gateway log: ${GW_LOG}"
+    tail -n 30 "${GW_LOG}" || true
+    echo "chat log: ${CHAT_LOG}"
+    tail -n 30 "${CHAT_LOG}" || true
+    exit 1
+  fi
+
+  echo ""
+  echo "gateway log: ${GW_LOG}"
+  tail -n 20 "${GW_LOG}" || true
+  echo ""
+  echo "chat log: ${CHAT_LOG}"
+  tail -n 20 "${CHAT_LOG}" || true
+elif [[ "${1:-}" == "--smoke" ]]; then
   AUTH_PORT="${AUTH_PORT:-$(pick_port)}"
   GW_PORT="${GW_PORT:-$(pick_port)}"
   WS_PORT="${WS_PORT:-$(pick_port)}"
@@ -151,7 +271,7 @@ if [[ "${1:-}" == "--smoke" ]]; then
   AUTH_LOG="${AUTH_LOG:-/tmp/chirp_app_auth_smoke.log}"
   GW_LOG="${GW_LOG:-/tmp/chirp_game_sdk_gateway_smoke.log}"
 
-  ./build/services/app/auth/chirp_app_auth --port "${AUTH_PORT}" --jwt_secret dev_secret --allow_scaffold_login 1 > "${AUTH_LOG}" 2>&1 &
+  ./build/services/app/auth/chirp_app_auth --port "${AUTH_PORT}" --jwt_secret dev_secret --allow_scaffold_login 1 "${MYSQL_ARGS[@]+"${MYSQL_ARGS[@]}"}" > "${AUTH_LOG}" 2>&1 &
   AUTH_PID=$!
 
   ./build/services/game/sdk_gateway/chirp_game_sdk_gateway --port "${GW_PORT}" --ws_port "${WS_PORT}" \
@@ -229,7 +349,7 @@ elif [[ "${1:-}" == "--smoke-redis" ]]; then
     sleep 0.1
   done
 
-  ./build/services/app/auth/chirp_app_auth --port "${AUTH_PORT}" --jwt_secret dev_secret --allow_scaffold_login 1 > "${AUTH_LOG}" 2>&1 &
+  ./build/services/app/auth/chirp_app_auth --port "${AUTH_PORT}" --jwt_secret dev_secret --allow_scaffold_login 1 "${MYSQL_ARGS[@]+"${MYSQL_ARGS[@]}"}" > "${AUTH_LOG}" 2>&1 &
   AUTH_PID=$!
 
   ./build/services/game/sdk_gateway/chirp_game_sdk_gateway --port "${GW1_PORT}" --ws_port "${WS1_PORT}" \
@@ -379,7 +499,7 @@ elif [[ "${1:-}" == "--smoke-npc" ]]; then
   ./build/services/shared/chat/chirp_chat --port "${CHAT_PORT}" --ws_port "${CHAT_WS_PORT}" \
     --server_gateway_host 127.0.0.1 --server_gateway_port "${HUB_PORT}" \
     --server_gateway_secret chat-secret --npc_service_id npc_dialog \
-    > "${CHAT_LOG}" 2>&1 &
+    "${MYSQL_ARGS[@]+"${MYSQL_ARGS[@]}"}" > "${CHAT_LOG}" 2>&1 &
   CHAT_PID=$!
   ./build/services/game/npc_dialog/chirp_npc_dialog \
     --server_gateway_host 127.0.0.1 --server_gateway_port "${HUB_PORT}" \
@@ -507,7 +627,8 @@ elif [[ "${1:-}" == "--smoke-sdk" ]]; then
   SDK_B_LOG="${SDK_B_LOG:-/tmp/chirp_sdk_b_smoke.log}"
   SDK_D_LOG="${SDK_D_LOG:-/tmp/chirp_sdk_d_smoke.log}"
 
-  ./build/services/shared/chat/chirp_chat --port "${CHAT_PORT}" --ws_port "${CHAT_WS_PORT}" > "${CHAT_LOG}" 2>&1 &
+  ./build/services/shared/chat/chirp_chat --port "${CHAT_PORT}" --ws_port "${CHAT_WS_PORT}" \
+    "${MYSQL_ARGS[@]+"${MYSQL_ARGS[@]}"}" > "${CHAT_LOG}" 2>&1 &
   CHAT_PID=$!
 
   cleanup() {
@@ -608,12 +729,13 @@ elif [[ "${1:-}" == "--smoke-edge" ]]; then
   "${REDIS_SERVER_BIN}" --port "${REDIS_PORT}" --save '' --appendonly no --dir "${REDIS_DIR}" > "${REDIS_LOG}" 2>&1 &
   REDIS_PID=$!
 
-  ./build/services/app/auth/chirp_app_auth --port "${AUTH_PORT}" --jwt_secret dev_secret --allow_scaffold_login 1 > "${AUTH_LOG}" 2>&1 &
+  ./build/services/app/auth/chirp_app_auth --port "${AUTH_PORT}" --jwt_secret dev_secret --allow_scaffold_login 1 "${MYSQL_ARGS[@]+"${MYSQL_ARGS[@]}"}" > "${AUTH_LOG}" 2>&1 &
   AUTH_PID=$!
 
   ./build/services/shared/chat/chirp_chat --port "${CHAT_PORT}" --ws_port "${CHAT_WS_PORT}" \
     --redis_host 127.0.0.1 --redis_port "${REDIS_PORT}" \
-    --login_rate_limit_per_min 1 --gateway_service_secret edge-secret > "${CHAT_LOG}" 2>&1 &
+    --login_rate_limit_per_min 1 --gateway_service_secret edge-secret \
+    "${MYSQL_ARGS[@]+"${MYSQL_ARGS[@]}"}" > "${CHAT_LOG}" 2>&1 &
   CHAT_PID=$!
 
   ./build/services/game/sdk_gateway/chirp_game_sdk_gateway --port "${GW_PORT}" --ws_port "${GW_WS_PORT}" \
@@ -774,11 +896,12 @@ elif [[ "${1:-}" == "--smoke-jwt" ]]; then
   A_LOG="${A_LOG:-/tmp/chirp_jwt_a_send.log}"
   B_LOG="${B_LOG:-/tmp/chirp_jwt_b_refill.log}"
 
-  ./build/services/app/auth/chirp_app_auth --port "${AUTH_PORT}" --jwt_secret "${JWT_SECRET}" > "${AUTH_LOG}" 2>&1 &
+  ./build/services/app/auth/chirp_app_auth --port "${AUTH_PORT}" --jwt_secret "${JWT_SECRET}" "${MYSQL_ARGS[@]+"${MYSQL_ARGS[@]}"}" > "${AUTH_LOG}" 2>&1 &
   AUTH_PID=$!
 
   ./build/services/shared/chat/chirp_chat --port "${CHAT_PORT}" --ws_port "${CHAT_WS_PORT}" \
-    --token_secret "${JWT_SECRET}" --gateway_service_secret edge-jwt-secret > "${CHAT_LOG}" 2>&1 &
+    --token_secret "${JWT_SECRET}" --gateway_service_secret edge-jwt-secret \
+    "${MYSQL_ARGS[@]+"${MYSQL_ARGS[@]}"}" > "${CHAT_LOG}" 2>&1 &
   CHAT_PID=$!
 
   ./build/services/game/sdk_gateway/chirp_game_sdk_gateway --port "${GW_PORT}" --ws_port "${GW_WS_PORT}" \
@@ -930,7 +1053,7 @@ else
 
   # --ack_timeout_ms 1000: 投递 ACK 链路的超时窗口压到 1s,让"静默客户端
   # 转离线"的 smoke 段不用等默认 10s。
-  ./build/services/shared/chat/chirp_chat --port "${CHAT_PORT}" --ws_port "${CHAT_WS_PORT}" --redis_host 127.0.0.1 --redis_port "${REDIS_PORT}" --ack_timeout_ms 1000 > "${CHAT_LOG}" 2>&1 &
+  ./build/services/shared/chat/chirp_chat --port "${CHAT_PORT}" --ws_port "${CHAT_WS_PORT}" --redis_host 127.0.0.1 --redis_port "${REDIS_PORT}" --ack_timeout_ms 1000 "${MYSQL_ARGS[@]+"${MYSQL_ARGS[@]}"}" > "${CHAT_LOG}" 2>&1 &
   CHAT_PID=$!
 
   cleanup() {

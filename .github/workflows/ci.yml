@@ -109,6 +109,9 @@ jobs:
     - name: "Smoke: auth + gateway"
       run: timeout 600 bash test_services.sh --smoke
 
+    - name: "Smoke: pure game plane (no app_auth)"
+      run: timeout 600 bash test_services.sh --smoke-game
+
     - name: "Smoke: chat offline/history"
       run: timeout 600 bash test_services.sh --smoke-chat
 

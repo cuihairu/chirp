@@ -257,6 +257,7 @@ sequenceDiagram
 - 用户令牌永远不会出现在可信平面上。
 - 两个平面的用户令牌完全隔离：游戏平面的 token 由游戏后端签发，App 平面的 token 由 `app_auth` 签发，两者的 secret 互不相关。
 - game_chat 用 `--token_secret` 本地验证游戏用户令牌，不依赖任何外部服务。
+- **`--auth_host` 可选，且只服务 App 边缘。** `game_sdk_gateway`/`app_sdk_gateway` 的 `--auth_host` 仅在非空时创建 `AuthClient`（`services/game/sdk_gateway/src/main.cc`、`services/app/sdk_gateway/src/main.cc`）。未配置时 `HandleLogin` 走 scaffold：token 即 user_id，`BindAuthenticatedSession` 后经 ChatBridge 转给 chat——游戏平面自足闭环，零 `app_auth` 依赖。chat 侧与 `app_auth` 的关系同理：配了 `--token_secret` 就本地 HS256 验签，不回调任何认证服务；`app_auth` 的 scaffold 回退还额外要求 `--allow_scaffold_login 1`（默认关）。纯游戏平面端到端由 `test_services.sh --smoke-game` 覆盖（gateway 不配 `--auth_host` + chat 不配 `--token_secret` 的 scaffold 路径，以及生产同构的 `--token_secret` 本地验签路径由 `--smoke-jwt` 覆盖）。
 
 ## 故障与降级
 

@@ -62,7 +62,7 @@ SDK 引擎兼容性见 [SDK 引擎兼容性](docs/design-notes/sdk_compatibility
 
 - [x] 基础 token 验证
 - [x] enhanced 模式（MySQL + libsodium）
-- [ ] 确认只服务 App 平面，game 平面不依赖（待办：审计 game_sdk_gateway 的 `--auth_host` 依赖面与 scaffold/本地验签的独立性，结论落 architecture.md）
+- [x] 确认只服务 App 平面，game 平面不依赖（2026-09-22 审计：`--auth_host` 仅非空时才建 `AuthClient`；游戏平面 scaffold + chat `--token_secret` 本地验签自足闭环，`app_auth` 只服务 App 平面；结论已落 architecture.md「凭证模型」）
 - [x] **PostgreSQL 存储后端**（已决策：暂缓，等真实需求触发再立任务。接缝 2026-09 就绪——MySQL 驱动已换 libmariadb（`mysql_*` C API 兼容，vcpkg/CMake/Docker 三路径同步）；auth 的 `UserStore`/`SessionStore` 与 chat 的 `MessageStore` 均为后端中立纯虚接口，`services/app/auth/src/store_factory.cc` 与 `services/shared/chat/src/message_store_factory.cc` 是唯一换装点，届时新增 `postgres_*_store` + 工厂各一分支即可，调用方零改动；不引入 ORM，维持手写 SQL，chat 的 MySQL 方言留在实现内）
 
 ### app_notification（原 notification）
@@ -84,7 +84,7 @@ SDK 引擎兼容性见 [SDK 引擎兼容性](docs/design-notes/sdk_compatibility
 - [x] 目录重构：`services/game/`、`services/app/`、`services/shared/`
 - [x] 二进制重命名：`chirp_game_sdk_gateway`、`chirp_game_server_gateway`、`chirp_app_sdk_gateway`、`chirp_app_auth`、`chirp_app_notification`
 - [x] proto 包重命名：`chirp.game_server_gateway`、`chirp.app_notification`
-- [ ] **更新 smoke test**：`test_services.sh` 适配新路径和二进制名，验证游戏平面端到端
+- [x] **更新 smoke test**：`test_services.sh` 适配新路径和二进制名，验证游戏平面端到端（2026-09-22：require_bin 预检 + find 全深度产物列举 + 新增 `--smoke-game` 纯游戏平面 E2E（无 `app_auth`）；可选 `MYSQL_*` 环境变量透传给 enhanced auth/chat；`--smoke-game` 本地通过，CI 已挂 smoke job）
 - [x] **更新 CI**：`ci.yml` 适配新路径（2026-09-22 核验：smoke/build-and-test/coverage 均构建两平面完整树，跑全部 7 个 smoke 模式；`.github/`/`scripts/`/CMake/`docker/`/`deploy/` 旧路径 grep 零命中）
 - [x] **更新单元测试**：路径和 namespace 重命名后的测试修复（2026-09-22 核验：tests/unit 34 个目标全部引用新路径与新 namespace（`chirp::auth`/`chirp::gateway`/`chirp::app_notification`），旧路径残留 grep 零命中，ctest 34/34 通过）
 - [x] **全量构建验证**：2026-09-22 clean build（vcpkg toolchain + Debug + ENABLE_TESTS=ON)333/333 目标通过，13 个 `chirp_*` 服务二进制全部产出，`ctest` 34/34 通过
