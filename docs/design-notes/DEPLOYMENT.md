@@ -1,28 +1,28 @@
-# Chirp Deployment Guide
+# Chirp 部署指南
 
-> Status note: this guide mixes current local deployment notes with production-oriented templates. Verify every command and endpoint against the current service flags before using it as an operations runbook. The supported core path is `gateway + auth + chat`; other services are experimental unless documented in [CAPABILITY_MATRIX.md](../CAPABILITY_MATRIX.md).
+> 状态说明:本指南混合了当前的本地部署笔记和生产导向的模板。当运维手册用之前,请对照当前服务参数逐一核实每条命令和端点。受支持的核心路径是 `gateway + auth + chat`;其余服务除 [CAPABILITY_MATRIX.md](../CAPABILITY_MATRIX.md) 中注明外均为实验性。
 
-## Table of Contents
+## 目录
 
-- [Deployment Overview](#deployment-overview)
-- [Development Environment](#development-environment)
-- [Production Deployment](#production-deployment)
-- [Docker Deployment](#docker-deployment)
-- [Configuration](#configuration)
-- [Monitoring](#monitoring)
-- [Scaling](#scaling)
+- [部署概览](#部署概览)
+- [开发环境](#开发环境)
+- [生产部署](#生产部署)
+- [Docker 部署](#docker-部署)
+- [配置](#配置)
+- [监控](#监控)
+- [扩容](#扩容)
 
 ---
 
-## Deployment Overview
+## 部署概览
 
-Chirp services can be deployed in several ways:
+Chirp 服务有几种部署方式:
 
-1. **Docker Compose** (recommended for development/testing)
-2. **Kubernetes** (recommended for production)
-3. **Manual deployment** (traditional servers)
+1. **Docker Compose**(开发/测试推荐)
+2. **Kubernetes**(生产推荐)
+3. **手动部署**(传统服务器)
 
-### Service Dependencies
+### 服务依赖
 
 ```
 ┌─────────────┐     ┌─────────────┐
@@ -47,33 +47,33 @@ Chirp services can be deployed in several ways:
 
 ---
 
-## Development Environment
+## 开发环境
 
-### Quick Start with Docker Compose
+### 用 Docker Compose 快速起步
 
-1. **Clone repository:**
+1. **克隆仓库:**
    ```bash
    git clone <repository-url>
    cd chirp
    ```
 
-2. **Start services:**
+2. **启动服务:**
    ```bash
    docker compose up -d
    ```
 
-3. **View logs:**
+3. **看日志:**
    ```bash
    docker compose logs -f
    docker compose logs -f gateway
    ```
 
-4. **Stop services:**
+4. **停止服务:**
    ```bash
    docker compose down
    ```
 
-### Build from Source
+### 从源码构建
 
 ```bash
 # Generate protobuf files
@@ -94,37 +94,37 @@ cmake --build . --config Debug
 
 ---
 
-## Production Deployment
+## 生产部署
 
-### Requirements
+### 要求
 
-**Hardware (per service instance):**
-- CPU: 2 cores minimum, 4 cores recommended
-- Memory: 2GB minimum, 4GB recommended
-- Network: 1 Gbps recommended
+**硬件(每服务实例):**
+- CPU:至少 2 核,建议 4 核
+- 内存:至少 2GB,建议 4GB
+- 网络:建议 1 Gbps
 
-**Software:**
-- OS: Linux (Ubuntu 20.04+, CentOS 8+)
-- Docker: 20.10+
-- Docker Compose: 2.0+ (for local testing)
+**软件:**
+- OS:Linux(Ubuntu 20.04+、CentOS 8+)
+- Docker:20.10+
+- Docker Compose:2.0+(本地测试用)
 
-### Port Requirements
+### 端口要求
 
-| Service | Port | Protocol | Notes |
+| 服务 | 端口 | 协议 | 说明 |
 |---------|------|----------|-------|
-| Gateway | 5000, 5001 | TCP, WS | External |
-| Auth | 6000 | TCP | Internal |
-| Chat | 7000, 7001 | TCP, WS | Internal |
-| Social | 8000, 8001 | TCP, WS | Internal |
-| Voice | 9000, 9001 | TCP, WS | Internal |
-| Redis | 6379 | TCP | Internal |
-| MySQL | 3306 | TCP | Internal |
+| Gateway | 5000, 5001 | TCP, WS | 对外 |
+| Auth | 6000 | TCP | 内部 |
+| Chat | 7000, 7001 | TCP, WS | 内部 |
+| Social | 8000, 8001 | TCP, WS | 内部 |
+| Voice | 9000, 9001 | TCP, WS | 内部 |
+| Redis | 6379 | TCP | 内部 |
+| MySQL | 3306 | TCP | 内部 |
 
 ---
 
-## Docker Deployment
+## Docker 部署
 
-### Production Dockerfile
+### 生产 Dockerfile
 
 ```dockerfile
 FROM ubuntu:22.04 AS base
@@ -165,7 +165,7 @@ EXPOSE 5000 5001
 CMD ["/services/gateway/chirp_gateway"]
 ```
 
-### Docker Compose (Production)
+### Docker Compose(生产)
 
 ```yaml
 version: '3.8'
@@ -292,9 +292,9 @@ volumes:
 
 ---
 
-## Kubernetes Deployment
+## Kubernetes 部署
 
-### Namespace and ConfigMap
+### 命名空间与 ConfigMap
 
 ```yaml
 # namespace.yaml
@@ -395,38 +395,38 @@ spec:
 
 ---
 
-## Configuration
+## 配置
 
-### Environment Variables
+### 环境变量
 
 **Gateway:**
-| Variable | Description | Default |
+| 变量 | 说明 | 默认 |
 |----------|-------------|---------|
-| `AUTH_HOST` | Auth service host | `localhost` |
-| `AUTH_PORT` | Auth service port | `6000` |
-| `REDIS_HOST` | Redis host | empty |
-| `REDIS_PORT` | Redis port | `6379` |
-| `REDIS_TTL` | Session TTL (sec) | `3600` |
-| `INSTANCE_ID` | Instance ID | random |
+| `AUTH_HOST` | Auth 服务主机 | `localhost` |
+| `AUTH_PORT` | Auth 服务端口 | `6000` |
+| `REDIS_HOST` | Redis 主机 | 空 |
+| `REDIS_PORT` | Redis 端口 | `6379` |
+| `REDIS_TTL` | 会话 TTL(秒) | `3600` |
+| `INSTANCE_ID` | 实例 ID | 随机 |
 
 **Chat:**
-| Variable | Description | Default |
+| 变量 | 说明 | 默认 |
 |----------|-------------|---------|
-| `REDIS_HOST` | Redis host | empty |
-| `REDIS_PORT` | Redis port | `6379` |
-| `OFFLINE_TTL` | Offline message TTL | `604800` |
-| `MYSQL_HOST` | MySQL host | empty |
-| `MYSQL_PORT` | MySQL port | `3306` |
-| `MYSQL_DB` | Database name | `chirp` |
+| `REDIS_HOST` | Redis 主机 | 空 |
+| `REDIS_PORT` | Redis 端口 | `6379` |
+| `OFFLINE_TTL` | 离线消息 TTL | `604800` |
+| `MYSQL_HOST` | MySQL 主机 | 空 |
+| `MYSQL_PORT` | MySQL 端口 | `3306` |
+| `MYSQL_DB` | 数据库名 | `chirp` |
 
 **Auth:**
-| Variable | Description | Default |
+| 变量 | 说明 | 默认 |
 |----------|-------------|---------|
-| `JWT_SECRET` | JWT signing secret | required |
+| `JWT_SECRET` | JWT 签名密钥 | 必填 |
 
-### Configuration Files
+### 配置文件
 
-Services can be configured via command-line arguments or environment variables:
+服务可以用命令行参数或环境变量配置:
 
 ```bash
 ./services/gateway/chirp_gateway \
@@ -440,13 +440,13 @@ Services can be configured via command-line arguments or environment variables:
 
 ---
 
-## Monitoring
+## 监控
 
-### Health Checks
+### 健康检查
 
-The examples below describe a target operational shape. The current repository does not expose a uniform HTTP health endpoint across all services by default.
+下面的示例描述的是目标运维形态。当前仓库默认没有在所有服务上暴露统一的 HTTP 健康端点。
 
-Examples:
+示例:
 
 ```bash
 # Gateway
@@ -459,11 +459,11 @@ curl http://localhost:7000/health
 curl http://localhost:8000/health
 ```
 
-### Metrics Export (Prometheus format)
+### 指标导出(Prometheus 格式)
 
-This is a target-state example, not a guarantee that every current service exposes `/metrics` without additional wiring.
+这是目标状态的示例,并不保证当前每个服务无需额外接线就能暴露 `/metrics`。
 
-Services expose metrics at `/metrics`:
+服务在 `/metrics` 暴露指标:
 
 ```
 # HELP chirp_messages_total Total messages sent
@@ -473,9 +473,9 @@ chirp_messages_total{service="chat"} 15234
 chirp_connections_total{service="gateway"} 423
 ```
 
-### Logging
+### 日志
 
-Logs are structured JSON format:
+日志是结构化 JSON 格式:
 
 ```json
 {
@@ -490,31 +490,31 @@ Logs are structured JSON format:
 
 ---
 
-## Scaling
+## 扩容
 
-### Horizontal Scaling
+### 水平扩容
 
 **Gateway:**
-- Stateless design allows unlimited scaling
-- Use load balancer (HAProxy, nginx, ALB)
-- Session state in Redis
+- 无状态设计,可无限扩容
+- 前置负载均衡(HAProxy、nginx、ALB)
+- 会话状态放 Redis
 
 **Chat/Social/Voice:**
-- Can scale independently
-- Shared state in Redis/MySQL
-- Connection affinity via Redis
+- 可各自独立扩容
+- 共享状态放 Redis/MySQL
+- 经 Redis 做连接亲和
 
-### Vertical Scaling
+### 垂直扩容
 
-**Resource allocation:**
-- Gateway: 4 cores, 4GB RAM per 10K connections
-- Chat: 2 cores, 2GB RAM per 1K concurrent rooms
-- Social: 1 core, 1GB RAM per 5K online users
-- Voice: 2 cores, 2GB RAM per 100 concurrent rooms
+**资源配比:**
+- Gateway:每 10K 连接 4 核 4GB 内存
+- Chat:每 1K 并发房间 2 核 2GB 内存
+- Social:每 5K 在线用户 1 核 1GB 内存
+- Voice:每 100 并发房间 2 核 2GB 内存
 
-### Capacity Planning
+### 容量规划
 
-| Service | Concurrent Users | Instances (4C/4G) |
+| 服务 | 并发用户 | 实例数(4C/4G) |
 |---------|-----------------|---------------------|
 | Gateway | 10,000 | 3 |
 | Chat | 5,000 | 2 |
@@ -523,9 +523,9 @@ Logs are structured JSON format:
 
 ---
 
-## Security
+## 安全
 
-### Network Security
+### 网络安全
 
 1. **TLS/SSL:**
    ```nginx
@@ -536,7 +536,7 @@ Logs are structured JSON format:
    }
    ```
 
-2. **Firewall rules:**
+2. **防火墙规则:**
    ```bash
    # Allow only Gateway ports externally
    ufw allow 5000/tcp
@@ -546,9 +546,9 @@ Logs are structured JSON format:
    ufw deny 8000/tcp
    ```
 
-### Secrets Management
+### 密钥管理
 
-Use environment variables or secret managers:
+用环境变量或 secret 管理器:
 
 ```yaml
 # docker-compose.yml
@@ -559,9 +559,9 @@ environment:
 
 ---
 
-## High Availability
+## 高可用
 
-### Redis Setup
+### Redis 部署
 
 ```bash
 # Redis Sentinel for high availability
@@ -570,7 +570,7 @@ redis-server --port 6380 --sentinel
 redis-server --port 6381 --sentinel
 ```
 
-### MySQL Replication
+### MySQL 复制
 
 ```
 Master (write)     Slave1 (read)    Slave2 (read)
@@ -579,7 +579,7 @@ Master (write)     Slave1 (read)    Slave2 (read)
          Asynchronous replication
 ```
 
-### Service Health Checks
+### 服务健康检查
 
 ```yaml
 livenessProbe:
@@ -599,9 +599,9 @@ readinessProbe:
 
 ---
 
-## Backup and Recovery
+## 备份与恢复
 
-### MySQL Backup
+### MySQL 备份
 
 ```bash
 # Daily backup
@@ -611,7 +611,7 @@ mysqldump -u chirp -p chirp > backup_$(date +%Y%m%d).sql
 mysql -u chirp -p chirp < backup_20240301.sql
 ```
 
-### Redis Backup
+### Redis 备份
 
 ```bash
 # RDB snapshot
@@ -623,11 +623,11 @@ cp appendonly.aof appendonly.aof.backup
 
 ---
 
-## Troubleshooting
+## 故障排查
 
-### Common Issues
+### 常见问题
 
-**Service won't start:**
+**服务起不来:**
 ```bash
 # Check logs
 docker compose logs gateway
@@ -636,7 +636,7 @@ docker compose logs gateway
 netstat -tlnp | grep 5000
 ```
 
-**Can't connect:**
+**连不上:**
 ```bash
 # Verify service process and logs
 docker compose logs gateway
@@ -645,7 +645,7 @@ docker compose logs gateway
 sudo ufw status
 ```
 
-**High memory usage:**
+**内存占用高:**
 ```bash
 # Check Redis memory
 redis-cli INFO memory
@@ -656,17 +656,17 @@ netstat -an | grep ESTABLISHED | wc -l
 
 ---
 
-## Deployment Checklist
+## 部署检查清单
 
-- [ ] Generate protobuf files
-- [ ] Build all services
-- [ ] Configure environment variables
-- [ ] Set up Redis cluster
-- [ ] Configure MySQL replication
-- [ ] Set up load balancer
-- [ ] Configure TLS certificates
-- [ ] Set up monitoring
-- [ ] Configure backups
-- [ ] Run smoke tests
-- [ ] Configure autoscaling
-- [ ] Set up alerting
+- [ ] 生成 protobuf 文件
+- [ ] 构建全部服务
+- [ ] 配置环境变量
+- [ ] 搭建 Redis 集群
+- [ ] 配置 MySQL 复制
+- [ ] 前置负载均衡
+- [ ] 配置 TLS 证书
+- [ ] 搭好监控
+- [ ] 配置备份
+- [ ] 跑冒烟测试
+- [ ] 配置自动扩缩容
+- [ ] 配置告警

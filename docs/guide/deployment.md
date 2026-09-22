@@ -1,18 +1,18 @@
 ---
-title: Deployment
+title: 部署指南
 ---
 
-# Deployment Guide
+# 部署指南
 
-> Status note: this page is a deployment guide draft. The current supported path is `gateway + auth + chat`; social, voice, notification, and search services are experimental. Verify commands and endpoint assumptions against [Overall Architecture](../architecture.md) and [Capability Matrix](../CAPABILITY_MATRIX.md).
+> 状态说明:本页是部署指南草稿。当前受支持的路径是 `gateway + auth + chat`;social、voice、notification、search 服务仍是实验性的。命令和端点假设请对照 [Overall Architecture](../architecture.md) 与 [Capability Matrix](../CAPABILITY_MATRIX.md) 核实。
 
-This guide covers deploying Chirp to production environments.
+本指南覆盖把 Chirp 部署到生产环境。
 
-## Deployment Options
+## 部署方式
 
-### 1. Docker Deployment (Recommended)
+### 1. Docker 部署(推荐)
 
-Using Docker Compose for multi-service deployment:
+用 Docker Compose 做多服务部署:
 
 ```bash
 # Build and start all services
@@ -25,9 +25,9 @@ docker-compose logs -f
 docker-compose down
 ```
 
-### 2. Kubernetes Deployment
+### 2. Kubernetes 部署
 
-For large-scale deployments:
+面向大规模部署:
 
 ```bash
 # Apply Kubernetes manifests
@@ -40,9 +40,9 @@ kubectl get pods -l app=chirp
 kubectl scale deployment chirp-gateway --replicas=3
 ```
 
-### 3. Manual Deployment
+### 3. 手动部署
 
-Deploy individual services:
+逐个部署服务:
 
 ```bash
 # Start each service
@@ -54,37 +54,37 @@ Deploy individual services:
 ./services/notification/chirp_notification &
 ```
 
-## Production Checklist
+## 生产检查清单
 
-### Security
+### 安全
 
-- [ ] Use strong passwords for MySQL and Redis
-- [ ] Enable TLS/SSL for all services
-- [ ] Configure firewall rules
-- [ ] Enable rate limiting
-- [ ] Set up proper CORS policies
+- [ ] MySQL 和 Redis 使用强密码
+- [ ] 所有服务启用 TLS/SSL
+- [ ] 配置防火墙规则
+- [ ] 启用限流
+- [ ] 设置正确的 CORS 策略
 
-### Monitoring
+### 监控
 
-- [ ] Enable Prometheus metrics endpoint
-- [ ] Configure logging with appropriate levels
-- [ ] Set up alerts for critical failures
-- [ ] Monitor Redis memory usage
-- [ ] Monitor MySQL connections
+- [ ] 启用 Prometheus 指标端点
+- [ ] 配置合适级别的日志
+- [ ] 为关键故障设置告警
+- [ ] 监控 Redis 内存用量
+- [ ] 监控 MySQL 连接数
 
-### Scalability
+### 可扩展性
 
-- [ ] Configure Redis clustering for high availability
-- [ ] Enable MySQL master-slave replication
-- [ ] Use HAProxy/nginx for load balancing
-- [ ] Configure auto-scaling for pods/containers
-- [ ] Enable CDN for static assets
+- [ ] 配置 Redis 集群实现高可用
+- [ ] 启用 MySQL 主从复制
+- [ ] 用 HAProxy/nginx 做负载均衡
+- [ ] 为 pod/容器配置自动扩缩容
+- [ ] 静态资源启用 CDN
 
-## Service Configuration
+## 服务配置
 
-### Gateway Service
+### Gateway 服务
 
-**Environment Variables:**
+**环境变量:**
 ```bash
 GATEWAY_HOST=0.0.0.0
 GATEWAY_PORT=5000
@@ -108,9 +108,9 @@ gateway:
     - redis
 ```
 
-### Chat Service
+### Chat 服务
 
-**Environment Variables:**
+**环境变量:**
 ```bash
 CHAT_HOST=0.0.0.0
 CHAT_PORT=7000
@@ -123,9 +123,9 @@ MYSQL_PASSWORD=chirp123
 REDIS_HOST=redis
 ```
 
-### Auth Service
+### Auth 服务
 
-**Environment Variables:**
+**环境变量:**
 ```bash
 AUTH_HOST=0.0.0.0
 AUTH_PORT=6000
@@ -135,9 +135,9 @@ REDIS_HOST=redis
 MYSQL_HOST=mysql
 ```
 
-## Load Balancer Configuration
+## 负载均衡配置
 
-### HAProxy Example
+### HAProxy 示例
 
 ```
 frontend chirp_gateway
@@ -153,7 +153,7 @@ backend gateway_servers
     server gateway3 10.0.1.12:5000 check
 ```
 
-### nginx Example
+### nginx 示例
 
 ```nginx
 upstream gateway {
@@ -170,9 +170,9 @@ server {
 }
 ```
 
-## Monitoring Setup
+## 监控设置
 
-### Prometheus Configuration
+### Prometheus 配置
 
 ```yaml
 scrape_configs:
@@ -187,38 +187,38 @@ scrape_configs:
       - targets: ['localhost:9092']
 ```
 
-### Grafana Dashboards
+### Grafana 仪表盘
 
-Import the provided dashboard for monitoring:
-- Message throughput
-- Connection count
-- API latency
-- Error rates
-- Resource usage
+导入提供的仪表盘,监控:
+- 消息吞吐
+- 连接数
+- API 延迟
+- 错误率
+- 资源用量
 
-## Scaling Guidelines
+## 扩容参考
 
-### Gateway Service
+### Gateway 服务
 
-- **Single Instance**: ~10K concurrent connections
-- **Recommended**: 3-5 instances behind load balancer
-- **Scaling**: Scale based on connection count
+- **单实例**:约 10K 并发连接
+- **建议**:负载均衡后面挂 3-5 个实例
+- **扩容依据**:连接数
 
-### Chat Service
+### Chat 服务
 
-- **Single Instance**: ~5K messages/sec
-- **Recommended**: 2-3 instances with Redis pub/sub
-- **Scaling**: Scale based on message queue size
+- **单实例**:约 5K 消息/秒
+- **建议**:2-3 个实例 + Redis pub/sub
+- **扩容依据**:消息队列长度
 
-### Social Service
+### Social 服务
 
-- **Single Instance**: ~10K presence updates/sec
-- **Recommended**: 2 instances for HA
-- **Scaling**: Scale based on friend list size
+- **单实例**:约 10K 在线状态更新/秒
+- **建议**:2 个实例做高可用
+- **扩容依据**:好友列表规模
 
-## Backup Strategy
+## 备份策略
 
-### MySQL Backup
+### MySQL 备份
 
 ```bash
 # Daily backup
@@ -228,7 +228,7 @@ mysqldump -u chirp -pchirp123 chirp > backup_$(date +%Y%m%d).sql
 mysql -u chirp -pchirp123 chirp < backup_20240318.sql
 ```
 
-### Redis Backup
+### Redis 备份
 
 ```bash
 # Snapshot
@@ -238,9 +238,9 @@ redis-cli BGSAVE
 cp /var/lib/redis/dump.rdb backup/
 ```
 
-## Rollback Procedure
+## 回滚流程
 
-### Service Rollback
+### 服务回滚
 
 ```bash
 # Stop current version
@@ -253,7 +253,7 @@ docker-compose -f docker-compose.v1.yml up -d
 docker-compose logs --tail=50
 ```
 
-### Database Rollback
+### 数据库回滚
 
 ```bash
 # Stop MySQL
@@ -266,31 +266,31 @@ mysql -u chirp -pchirp123 chirp < backup.sql
 sudo systemctl start mysql
 ```
 
-## Troubleshooting
+## 故障排查
 
-### High CPU Usage
+### CPU 过高
 
-1. Check connection count per service
-2. Review Redis memory usage
-3. Enable query logging in MySQL
-4. Profile with perf/FlameGraph
+1. 检查各服务连接数
+2. 查看 Redis 内存占用
+3. 在 MySQL 打开查询日志
+4. 用 perf/FlameGraph 采样
 
-### High Memory Usage
+### 内存过高
 
-1. Check Redis maxmemory setting
-2. Review MySQL buffer pool size
-3. Enable heap profiling
-4. Check for memory leaks
+1. 检查 Redis maxmemory 设置
+2. 查看 MySQL buffer pool 大小
+3. 打开堆采样
+4. 排查内存泄漏
 
-### Connection Drops
+### 连接掉线
 
-1. Verify load balancer health checks
-2. Check service logs for errors
-3. Monitor network latency
-4. Review rate limiting settings
+1. 核对负载均衡健康检查
+2. 看服务日志里的错误
+3. 监控网络延迟
+4. 复查限流配置
 
-## Next Steps
+## 下一步
 
-- [Overall Architecture](../architecture.md)
-- [Scalability Notes](../design-notes/SCALABILITY.md)
-- [API Reference](../api/overview.md)
+- [Overall Architecture(总体架构)](../architecture.md)
+- [Scalability Notes(可扩展性笔记)](../design-notes/SCALABILITY.md)
+- [API Reference(API 参考)](../api/overview.md)
