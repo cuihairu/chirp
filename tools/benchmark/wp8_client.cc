@@ -14,6 +14,7 @@
 #include <cstdlib>
 #include <iostream>
 #include <string>
+#include <thread>
 
 #include <asio.hpp>
 
@@ -80,6 +81,38 @@ bool SendAndRead(asio::ip::tcp::socket& sock,
   std::exit(1);
 }
 
+// The edge answers SERVER_UNAVAILABLE while the sg peer connection is still
+// coming up: ServerGatewayPeer dials at startup and fails fast whenever the
+// connection is down ("the caller retries on its own schedule"). A fast
+// machine can reach the first WP-8 request inside the peer's reconnect
+// backoff, so the probe retries exactly that code, bounded — a persistently
+// broken chain still fails the run.
+constexpr int kMaxUnavailableRetries = 20; // 20 * 500ms = 10s cap
+
+template <typename Resp>
+Resp RpcWithRetry(asio::ip::tcp::socket& sock,
+                  chirp::gateway::MsgID req_id,
+                  const std::string& body,
+                  int64_t* seq,
+                  const char* step) {
+  for (int attempt = 0;; attempt++) {
+    chirp::gateway::Packet pkt;
+    if (!SendAndRead(sock, req_id, (*seq)++, body, &pkt)) {
+      Fail(step, "no response");
+    }
+    Resp resp;
+    if (!resp.ParseFromString(pkt.body())) {
+      Fail(step, "unparseable response");
+    }
+    if (resp.code() == chirp::common::SERVER_UNAVAILABLE &&
+        attempt < kMaxUnavailableRetries) {
+      std::this_thread::sleep_for(std::chrono::milliseconds(500));
+      continue;
+    }
+    return resp;
+  }
+}
+
 } // namespace
 
 int main(int argc, char** argv) {
@@ -122,14 +155,9 @@ int main(int argc, char** argv) {
     chirp::game_server_gateway::SubscribePlayerChannelRequest req;
     req.set_game_id(game);
     req.set_channel_id(channel);
-    if (!SendAndRead(sock, chirp::gateway::SUBSCRIBE_PLAYER_CHANNEL_REQ, seq++,
-                     req.SerializeAsString(), &pkt)) {
-      Fail("subscribe", "no SUBSCRIBE_PLAYER_CHANNEL_RESP");
-    }
-    chirp::game_server_gateway::SubscribePlayerChannelResponse resp;
-    if (!resp.ParseFromString(pkt.body())) {
-      Fail("subscribe", "unparseable response");
-    }
+    const auto resp = RpcWithRetry<chirp::game_server_gateway::SubscribePlayerChannelResponse>(
+        sock, chirp::gateway::SUBSCRIBE_PLAYER_CHANNEL_REQ, req.SerializeAsString(), &seq,
+        "subscribe");
     if (resp.code() != chirp::common::OK) {
       Fail("subscribe", "code=" + std::to_string(resp.code()) +
                             " (empty player_id must be pinned by the edge)");
@@ -146,14 +174,9 @@ int main(int argc, char** argv) {
     chirp::game_server_gateway::SubscribePlayerChannelRequest req;
     req.set_game_id(game);
     req.set_channel_id(channel);
-    if (!SendAndRead(sock, chirp::gateway::SUBSCRIBE_PLAYER_CHANNEL_REQ, seq++,
-                     req.SerializeAsString(), &pkt)) {
-      Fail("resubscribe", "no SUBSCRIBE_PLAYER_CHANNEL_RESP");
-    }
-    chirp::game_server_gateway::SubscribePlayerChannelResponse resp;
-    if (!resp.ParseFromString(pkt.body())) {
-      Fail("resubscribe", "unparseable response");
-    }
+    const auto resp = RpcWithRetry<chirp::game_server_gateway::SubscribePlayerChannelResponse>(
+        sock, chirp::gateway::SUBSCRIBE_PLAYER_CHANNEL_REQ, req.SerializeAsString(), &seq,
+        "resubscribe");
     if (resp.code() != chirp::common::OK || !resp.existed() || resp.subscription_id() != sub_id) {
       Fail("resubscribe", "code=" + std::to_string(resp.code()) +
                               " existed=" + std::to_string(resp.existed()) +
@@ -165,14 +188,9 @@ int main(int argc, char** argv) {
   // 4. Unread summary (empty ledger is fine — the point is the round trip).
   {
     chirp::game_server_gateway::GetUnreadSummaryRequest req;
-    if (!SendAndRead(sock, chirp::gateway::GET_UNREAD_SUMMARY_REQ, seq++,
-                     req.SerializeAsString(), &pkt)) {
-      Fail("unread_summary", "no GET_UNREAD_SUMMARY_RESP");
-    }
-    chirp::game_server_gateway::GetUnreadSummaryResponse resp;
-    if (!resp.ParseFromString(pkt.body())) {
-      Fail("unread_summary", "unparseable response");
-    }
+    const auto resp = RpcWithRetry<chirp::game_server_gateway::GetUnreadSummaryResponse>(
+        sock, chirp::gateway::GET_UNREAD_SUMMARY_REQ, req.SerializeAsString(), &seq,
+        "unread_summary");
     if (resp.code() != chirp::common::OK) {
       Fail("unread_summary", "code=" + std::to_string(resp.code()));
     }
@@ -182,14 +200,9 @@ int main(int argc, char** argv) {
   // 5. Mark everything read (idempotent; 0 cleared for an empty ledger).
   {
     chirp::game_server_gateway::MarkChannelsReadRequest req;
-    if (!SendAndRead(sock, chirp::gateway::MARK_CHANNELS_READ_REQ, seq++,
-                     req.SerializeAsString(), &pkt)) {
-      Fail("mark_read", "no MARK_CHANNELS_READ_RESP");
-    }
-    chirp::game_server_gateway::MarkChannelsReadResponse resp;
-    if (!resp.ParseFromString(pkt.body())) {
-      Fail("mark_read", "unparseable response");
-    }
+    const auto resp = RpcWithRetry<chirp::game_server_gateway::MarkChannelsReadResponse>(
+        sock, chirp::gateway::MARK_CHANNELS_READ_REQ, req.SerializeAsString(), &seq,
+        "mark_read");
     if (resp.code() != chirp::common::OK) {
       Fail("mark_read", "code=" + std::to_string(resp.code()));
     }
@@ -199,14 +212,9 @@ int main(int argc, char** argv) {
   // 6. Summary returns to zero after the clear.
   {
     chirp::game_server_gateway::GetUnreadSummaryRequest req;
-    if (!SendAndRead(sock, chirp::gateway::GET_UNREAD_SUMMARY_REQ, seq++,
-                     req.SerializeAsString(), &pkt)) {
-      Fail("unread_summary_after", "no GET_UNREAD_SUMMARY_RESP");
-    }
-    chirp::game_server_gateway::GetUnreadSummaryResponse resp;
-    if (!resp.ParseFromString(pkt.body())) {
-      Fail("unread_summary_after", "unparseable response");
-    }
+    const auto resp = RpcWithRetry<chirp::game_server_gateway::GetUnreadSummaryResponse>(
+        sock, chirp::gateway::GET_UNREAD_SUMMARY_REQ, req.SerializeAsString(), &seq,
+        "unread_summary_after");
     if (resp.code() != chirp::common::OK || resp.total_unread() != 0) {
       Fail("unread_summary_after", "code=" + std::to_string(resp.code()) +
                                        " total=" + std::to_string(resp.total_unread()));
@@ -219,14 +227,9 @@ int main(int argc, char** argv) {
     chirp::game_server_gateway::UnsubscribePlayerChannelRequest req;
     req.set_game_id(game);
     req.set_channel_id(channel);
-    if (!SendAndRead(sock, chirp::gateway::UNSUBSCRIBE_PLAYER_CHANNEL_REQ, seq++,
-                     req.SerializeAsString(), &pkt)) {
-      Fail("unsubscribe", "no UNSUBSCRIBE_PLAYER_CHANNEL_RESP");
-    }
-    chirp::game_server_gateway::UnsubscribePlayerChannelResponse resp;
-    if (!resp.ParseFromString(pkt.body())) {
-      Fail("unsubscribe", "unparseable response");
-    }
+    const auto resp = RpcWithRetry<chirp::game_server_gateway::UnsubscribePlayerChannelResponse>(
+        sock, chirp::gateway::UNSUBSCRIBE_PLAYER_CHANNEL_REQ, req.SerializeAsString(), &seq,
+        "unsubscribe");
     if (resp.code() != chirp::common::OK) {
       Fail("unsubscribe", "code=" + std::to_string(resp.code()));
     }
@@ -237,14 +240,9 @@ int main(int argc, char** argv) {
   {
     chirp::game_server_gateway::GetPlayerSubscriptionsRequest req;
     req.set_game_id(game);
-    if (!SendAndRead(sock, chirp::gateway::GET_PLAYER_SUBSCRIPTIONS_REQ, seq++,
-                     req.SerializeAsString(), &pkt)) {
-      Fail("list", "no GET_PLAYER_SUBSCRIPTIONS_RESP");
-    }
-    chirp::game_server_gateway::GetPlayerSubscriptionsResponse resp;
-    if (!resp.ParseFromString(pkt.body())) {
-      Fail("list", "unparseable response");
-    }
+    const auto resp = RpcWithRetry<chirp::game_server_gateway::GetPlayerSubscriptionsResponse>(
+        sock, chirp::gateway::GET_PLAYER_SUBSCRIPTIONS_REQ, req.SerializeAsString(), &seq,
+        "list");
     if (resp.code() != chirp::common::OK) {
       Fail("list", "code=" + std::to_string(resp.code()));
     }
