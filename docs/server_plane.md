@@ -1,27 +1,27 @@
-# Server Plane: Game Backend Integration
+# Server Plane:游戏后端集成
 
-Status: **Experimental** — the hub (`chirp_game_server_gateway`), the chat-side consumer, and the Redis Streams broker fallback are implemented and unit-verified at 100% line coverage: chat dials in as an internal peer and injection messages flow through the same storage/delivery tail as player-sent messages. See [Architecture](./architecture.md) for the two-plane topology.
+状态:**Experimental**——枢纽(`chirp_game_server_gateway`)、chat 侧消费者、Redis Streams broker 回退都已实现并经单测验证(行覆盖 100%):chat 以内部 peer 身份拨入,注入消息走与玩家消息相同的存储/投递尾段。两平面拓扑见 [Architecture](./architecture.md)。
 
-> **Architecture note (2026-09-21).** The target topology: `game_chat` registers into `app_chat` using a native peer registration protocol with whitelist and version negotiation; no external bridge process. Identity bindings, channel subscriptions, and the unread badge ledger are handled by `app_chat` internally. `chirp_game_server_gateway` remains scoped to its original role: game-backend injection + reliable event downlink.
+> **架构注记(2026-09-21)。** 目标拓扑:`game_chat` 用原生 peer 注册协议(带白名单与版本协商)注册进 `app_chat`,没有外部桥接进程。身份绑定、频道订阅和未读红点账本都由 `app_chat` 内部处理。`chirp_game_server_gateway` 保持其原有职责:游戏后端注入 + 可靠事件下行。
 
-## What it is
+## 这是什么
 
-The server plane is how a game backend talks to chirp. It is deliberately separate from the player edges:
+server plane 是游戏后端与 chirp 通话的方式。它刻意与玩家边缘分开:
 
-- **Dial-out**: the game server opens the connection to `chirp_game_server_gateway`. Chirp never needs to reach into game networks, and game servers in private subnets need no public callback endpoint.
-- **Service identity, not user identity**: peers authenticate with `service_id` + shared secret. They are never user accounts, never appear in session/kick/presence, and injected messages carry non-user sender kinds (`SYSTEM` / `NPC` / `SERVICE`).
-- **Same framing**: TCP + `[uint32_be size][chirp.gateway.Packet]`, with the `5xxx` msg-id block.
+- **拨出(dial-out)**:游戏服务器主动开到 `chirp_game_server_gateway` 的连接。chirp 永远不需要够到游戏网络,私有子网里的游戏服务器也不需要公网回调端点。
+- **服务身份,不是用户身份**:peer 用 `service_id` + 共享 secret 认证。它们从来不是用户账号,不出现在会话/踢线/在线状态里,注入消息携带非用户发送者类型(`SYSTEM` / `NPC` / `SERVICE`)。
+- **同一套帧**:TCP + `[uint32_be size][chirp.gateway.Packet]`,使用 `5xxx` msg-id 段。
 
-Game backends do not reimplement this wire contract from scratch: `sdks/go` (package `chirp`, see its README) is the reference Go client — auth handshake, server-assigned heartbeat, sequence-correlated inject/event RPCs, at-least-once event ack, fail-pending reconnect — mirroring the in-tree C++ peer (`libs/network/server_gateway_peer.cc`).
+游戏后端不必从零复刻这份线上契约:`sdks/go`(包 `chirp`,见其 README)是参考 Go 客户端——认证握手、服务端指定心跳、sequence 关联的 inject/event RPC、至少一次事件 ack、失败挂起重连——与仓内 C++ peer(`libs/network/server_gateway_peer.cc`)语义一致。
 
-### Credential boundary
+### 凭证边界
 
-The `service_id` + secret pair is an appkey/appSecret-style credential: it identifies the integrating backend and is long-lived. Two rules follow:
+`service_id` + secret 这一对是 appkey/appSecret 式凭证:它标识接入的后端,长期有效。由此有两条铁律:
 
-- **Never ship it in a client.** Anything bundled into a game client or app binary is effectively public. Clients hold short-lived user tokens instead; the game backend exchanges/derives those after the player's own login. See [Credential model](./architecture.md#credential-model-service-credentials-vs-user-tokens).
-- **Never use it to impersonate a user.** Injections carry `sender_kind` (`SYSTEM` / `NPC` / `SERVICE`) precisely so the server plane can act without pretending to be a player account.
+- **永远不要带进客户端。** 凡打进游戏客户端或应用二进制的东西,等同于公开。客户端持有的是短时效用户 token;游戏后端在玩家自身登录之后兑换/派生这些 token。见 [Credential model](./architecture.md#credential-model-service-credentials-vs-user-tokens)。
+- **永远不要用它冒充用户。** 注入携带 `sender_kind`(`SYSTEM` / `NPC` / `SERVICE`)正是为了 server plane 可以行动而不假装成某个玩家账号。
 
-## Running
+## 运行
 
 ```bash
 cmake --preset dev && cmake --build --preset dev
@@ -35,171 +35,171 @@ cmake --preset dev && cmake --build --preset dev
   --max_pending 1000
 ```
 
-| Flag | Default | Meaning |
+| 参数 | 默认 | 含义 |
 | --- | --- | --- |
-| `--port` | 8100 | TCP listener for service connections |
-| `--service` | (none) | Repeatable `service_id=secret` credential entry |
-| `--chat_service_id` | `chat` | The service that receives message injections |
-| `--heartbeat_interval` | 30 | Assigned keepalive cadence (seconds) |
-| `--auth_timeout` | 10 | Seconds allowed to authenticate before disconnect |
-| `--max_pending` | 1000 | Per-service bound on queued (unacked) events |
+| `--port` | 8100 | 服务连接的 TCP 监听 |
+| `--service` | (无) | 可重复的 `service_id=secret` 凭证条目 |
+| `--chat_service_id` | `chat` | 接收消息注入的服务 |
+| `--heartbeat_interval` | 30 | 下发的保活节奏(秒) |
+| `--auth_timeout` | 10 | 认证时限,超时断开 |
+| `--max_pending` | 1000 | 每服务排队(未 ack)事件上限 |
 
-With no `--service` entries the hub starts but rejects every login (fail closed).
+没有 `--service` 条目时枢纽照常启动但拒绝一切登录(fail closed)。
 
-## Connection lifecycle
+## 连接生命周期
 
-1. Game server dials TCP and must send `SERVER_AUTH_REQ` within `--auth_timeout` seconds, or the connection is closed.
-2. `SERVER_AUTH_RESP` returns the result, the server time, and the assigned `heartbeat_interval_seconds`. The connection must show traffic at least every `2 × heartbeat_interval` seconds or it is closed.
-3. Logging in again with the same `service_id` from another connection displaces the older one; the displaced connection is closed.
+1. 游戏服务器拨 TCP,必须在 `--auth_timeout` 秒内发出 `SERVER_AUTH_REQ`,否则连接被关闭。
+2. `SERVER_AUTH_RESP` 返回结果、服务器时间和下发的 `heartbeat_interval_seconds`。连接每 `2 × heartbeat_interval` 秒内至少要有一次流量,否则被关闭。
+3. 同一 `service_id` 从另一条连接再次登录会顶掉旧连接;被顶的连接被关闭。
 
-## Uplink: message injection
+## 上行:消息注入
 
-A trusted service asks chirp to deliver a message whose sender is not a user (announcement, NPC line, trade state). `INJECT_MESSAGE_REQ` carries `chirp.server_gateway.MessageInjectRequest`:
+可信服务请求 chirp 投递一条发送者不是用户的消息(公告、NPC 台词、交易状态)。`INJECT_MESSAGE_REQ` 携带 `chirp.server_gateway.MessageInjectRequest`:
 
-- `inject_id`: caller-supplied idempotency key (echoed in the response)
-- `sender_kind`: `SENDER_SYSTEM` / `SENDER_NPC` / `SENDER_SERVICE`
-- `sender_id`: e.g. `npc:blacksmith_01`, `trade`
-- `channel_type` + `channel_id`, or `receiver_id` for 1:1
+- `inject_id`:调用方提供的幂等键(响应中原样回显)
+- `sender_kind`:`SENDER_SYSTEM` / `SENDER_NPC` / `SENDER_SERVICE`
+- `sender_id`:如 `npc:blacksmith_01`、`trade`
+- `channel_type` + `channel_id`,或一对一场景的 `receiver_id`
 - `content`
-- `game_id` (optional): switches the injection into fan-in delivery — see the next section
+- `game_id`(可选):把注入切到扇入投递——见下一节
 
-Response codes:
+响应码:
 
-| Code | Meaning |
+| 码 | 含义 |
 | --- | --- |
-| `OK` | Validated and handed to the chat service (`InjectMessageNotify`); for fan-in, to at least one subscriber (see below) |
-| `INVALID_PARAM` | Empty content / `SENDER_UNKNOWN` / empty `sender_id` / no channel or receiver / `game_id` combined with a `PRIVATE` channel or an empty `channel_id` |
-| `RATE_LIMITED` | Fan-in only: the channel has more subscribers than `--max_fanout` (default 10000); rejected before any copy is sent |
-| `SERVER_UNAVAILABLE` | Chat service not connected, or the write failed |
+| `OK` | 校验通过并已交给 chat 服务(`InjectMessageNotify`);扇入场景指至少交付给一个订阅者(见下) |
+| `INVALID_PARAM` | 空 content / `SENDER_UNKNOWN` / 空 `sender_id` / 无频道也无接收者 / `game_id` 与 `PRIVATE` 频道或空 `channel_id` 组合 |
+| `RATE_LIMITED` | 仅扇入:频道订阅者数超过 `--max_fanout`(默认 10000);在发出任何副本之前整体拒绝 |
+| `SERVER_UNAVAILABLE` | chat 服务未连接,或写失败 |
 
-`OK` still means "accepted by the plane": the chat side consumes the injection asynchronously, so the response does not confirm delivery to players.
+`OK` 的含义仍是"被本平面接受":chat 侧异步消费注入,响应不确认玩家已收到。
 
-### Fan-in delivery (WP-8 slice 3)
+### 扇入投递(WP-8 切片 3)
 
-An injection carrying a `game_id` is not forwarded as-is. The hub looks up every subscription for `(game_id, channel_id)` in the subscription registry (see below) and delivers **one private copy per subscriber**: `channel_type` becomes `PRIVATE` with `receiver_id` = the subscriber's `player_id`, `sender_kind` becomes `SENDER_SERVICE`, and the original `sender_id` and `content` are preserved — the backend stays the authority for how copies group into chat history threads (pick one stable system identity per source to keep a channel's copies in one thread). Each copy's `inject_id` is derived as `<original>#<player_id>` for log correlation only; the hub does not deduplicate on it. Subscriber iteration order is unspecified.
+带 `game_id` 的注入不会被原样转发。枢纽在订阅注册表里查 `(game_id, channel_id)` 的全部订阅(见下),给**每个订阅者投一份私聊副本**:`channel_type` 变为 `PRIVATE`,`receiver_id` = 订阅者的 `player_id`,`sender_kind` 变为 `SENDER_SERVICE`,原始 `sender_id` 和 `content` 保留——副本如何聚成聊天历史线程由后端说了算(每个来源固定用一个系统身份,同一频道的副本就能落进同一线程)。每份副本的 `inject_id` 派生为 `<original>#<player_id>`,仅用于日志关联;枢纽不做基于它的去重。订阅者遍历顺序未定义。
 
-The chat service owns delivery from there — online push, offline queue, ack-based redelivery — so fan-in adds no chat-side logic. Outcomes:
+从那之后投递由 chat 服务负责——在线推送、离线队列、基于 ack 的重投——所以扇入不给 chat 添任何逻辑。各种结局:
 
-- **No subscribers**: `OK` without contacting chat. A channel nobody follows is a semantic no-op; answering `SERVER_UNAVAILABLE` would make the stream broker replay the entry forever.
-- **Chat offline, or every copy fails**: `SERVER_UNAVAILABLE` with nothing stored — a replay is safe. Stream-broker entries in this state stay pending and are redelivered (see "Broker fallback").
-- **Partial success**: `OK`. Retrying would duplicate the copies already handed over.
-- **Over `--max_fanout` subscribers**: `RATE_LIMITED`, rejected before any copy is sent. The broker treats any non-`SERVER_UNAVAILABLE` answer as terminal and acks the entry; a long-connection caller should split the channel or raise the limit.
+- **无订阅者**:不联系 chat 直接 `OK`。没人关注的频道是语义上的空操作;回 `SERVER_UNAVAILABLE` 会让流式 broker 永远重放这条记录。
+- **chat 离线,或每份副本都失败**:`SERVER_UNAVAILABLE`,什么都没存——重放是安全的。流式 broker 里这种状态的条目保持 pending 并被重投(见"Broker 回退")。
+- **部分成功**:`OK`。重试会把已交付的副本翻倍。
+- **订阅者超过 `--max_fanout`**:`RATE_LIMITED`,在发出任何副本之前拒绝。broker 把任何非 `SERVER_UNAVAILABLE` 的应答当终态并 ack 该条目;长连接调用方应当拆分频道或调高上限。
 
-Mixed deployments (new hub, older chat) are safe: copies carry `game_id` through, which an old chat binary drops as an unknown proto3 field.
+混合部署(新枢纽 + 旧 chat)是安全的:副本把 `game_id` 带过去,旧 chat 二进制会把它当未知 proto3 字段丢掉。
 
-Every copy successfully handed to the chat service also increments the recipient's unread badge for `(game_id, channel_id)` in the hub's unread ledger (see "Unified unread" below). Partial failures count only delivered copies; rejected and unavailable fan-outs count nothing.
+每份成功交给 chat 服务的副本,还会在枢纽的未读账本里给接收者按 `(game_id, channel_id)` 加一(见下文"统一未读")。部分失败只给已交付的副本计数;被拒和不可用的扇出不计数。
 
-### Chat-side consumption
+### chat 侧消费
 
-The chat service connects to the hub as an internal peer (`--server_gateway_host`, default disabled when empty) and answers auth + heartbeats. A forwarded `InjectMessageNotify` follows the same tail as `SEND_MESSAGE`:
+chat 服务以内部 peer 身份连到枢纽(`--server_gateway_host`,默认空即关闭),应答认证和心跳。转发来的 `InjectMessageNotify` 走与 `SEND_MESSAGE` 相同的尾段:
 
-- Stored to history first; no membership checks and no mention cooldowns (the sender is not a user).
-- `PRIVATE` with an online receiver is delivered immediately, otherwise queued for the offline user.
-- Non-private channels (`TEAM` / `GUILD` / `WORLD`) broadcast to members and queue the message for offline members.
-- A malformed `InjectMessageNotify` is logged and skipped; the connection stays up.
+- 先存历史;没有成员校验,也没有提及冷却(发送者不是用户)。
+- `PRIVATE` 且接收者在线立即投递,否则为离线用户排队。
+- 非私聊频道(`TEAM` / `GUILD` / `WORLD`)广播给成员并为离线成员排队。
+- 格式损坏的 `InjectMessageNotify` 记日志后跳过;连接保持。
 
-### Broker fallback (upstream over Redis Streams)
+### Broker 回退(上游走 Redis Streams)
 
-For game backends that cannot host a long-connection client, the same injection path is also available over a Redis Stream. Start the hub with `--broker_redis_host` (empty, the default, disables the consumer):
+对无法承载长连接客户端的游戏后端,同一注入路径也可以走 Redis Stream。以 `--broker_redis_host` 启动枢纽(空,即默认,禁用消费者):
 
-| Flag | Default | Meaning |
+| 参数 | 默认 | 含义 |
 | --- | --- | --- |
-| `--broker_redis_host` | (empty) | Redis host; empty disables the broker |
-| `--broker_redis_port` | 6379 | Redis port |
-| `--broker_stream` | `chirp:server_plane:inject` | Stream to consume |
-| `--broker_group` | `chirp-plane` | Consumer group (created idempotently) |
-| `--broker_consumer` | `<hostname>:<pid>` | Consumer name inside the group |
-| `--broker_claim_min_idle_ms` | 30000 | `XAUTOCLAIM` min-idle-time for redelivery |
+| `--broker_redis_host` | (空) | Redis 主机;空禁用 broker |
+| `--broker_redis_port` | 6379 | Redis 端口 |
+| `--broker_stream` | `chirp:server_plane:inject` | 要消费的 Stream |
+| `--broker_group` | `chirp-plane` | 消费者组(幂等创建) |
+| `--broker_consumer` | `<hostname>:<pid>` | 组内消费者名 |
+| `--broker_claim_min_idle_ms` | 30000 | `XAUTOCLAIM` 的 min-idle-time(重投用) |
 
-Requires Redis >= 6.2 (`XAUTOCLAIM`). A producer writes one entry per message with flat string fields — any language that can `XADD` can integrate:
+要求 Redis >= 6.2(`XAUTOCLAIM`)。生产方每条消息写一个条目,扁平字符串字段——任何能 `XADD` 的语言都能接入:
 
-| Field | Required | Meaning |
+| 字段 | 必填 | 含义 |
 | --- | --- | --- |
-| `service_id` | yes | Service identity (must exist in `--service`) |
-| `secret` | yes | Shared secret, same credentials as the connection plane |
-| `sender_kind` | yes | `SYSTEM` / `NPC` / `SERVICE` (`SENDER_` prefix tolerated) |
-| `channel_type` | yes | `PRIVATE` / `TEAM` / `GUILD` / `WORLD`, or `0`–`3` |
-| `sender_id` | yes* | Validated downstream like the proto path |
-| `channel_id` / `receiver_id` | — | Channel target, or receiver for 1:1 |
-| `game_id` | no | Fan-in delivery: set to fan the entry out to every `(game_id, channel_id)` subscriber as a private copy |
-| `content` | yes* | Message body |
-| `inject_id` | no | Idempotency key; `<consumer>-<seq>` is generated when absent |
-| `reply_to` | no | Stream name to receive the `{inject_id, code}` result entry |
+| `service_id` | 是 | 服务身份(必须存在于 `--service`) |
+| `secret` | 是 | 共享 secret,与连接面同一套凭证 |
+| `sender_kind` | 是 | `SYSTEM` / `NPC` / `SERVICE`(容忍 `SENDER_` 前缀) |
+| `channel_type` | 是 | `PRIVATE` / `TEAM` / `GUILD` / `WORLD`,或 `0`–`3` |
+| `sender_id` | 是* | 与 proto 路径一样在下游校验 |
+| `channel_id` / `receiver_id` | — | 频道目标,或一对一的接收者 |
+| `game_id` | 否 | 扇入投递:设置后把条目扇出给每个 (game_id, channel_id) 订阅者各一份私聊副本 |
+| `content` | 是* | 消息体 |
+| `inject_id` | 否 | 幂等键;缺省时生成 `<consumer>-<seq>` |
+| `reply_to` | 否 | 接收 `{inject_id, code}` 结果条目的 Stream 名 |
 
-Semantics:
+语义:
 
-- The hub runs a consumer group (`XREADGROUP ... BLOCK`) and turns each entry into the same `HandleInject` path as the long-connection plane, with identical validation and response codes.
-- `OK` / `INVALID_PARAM` / `AUTH_FAILED` are **acked immediately** (`XACK`): malformed or rejected entries are poison and must not replay.
-- `SERVER_UNAVAILABLE` (chat service offline) is **not acked**: the entry stays in the pending entries list and is redelivered by a periodic `XAUTOCLAIM` sweep until chat is back. Redelivery is unbounded by design — poison is bounded out by the immediate-ack rule above.
-- With `reply_to`, the result (`inject_id` + `ErrorCode` name, e.g. `OK`) is written back only for **acked terminal outcomes**, so a replayed entry answers exactly once.
-- Transport failures between commands drop the connection and reconnect; unacked entries replay. At-least-once overall.
+- 枢纽跑一个消费者组(`XREADGROUP ... BLOCK`),把每个条目送进与长连接面相同的 `HandleInject` 路径,校验与响应码完全一致。
+- `OK` / `INVALID_PARAM` / `AUTH_FAILED` **立即 ack**(`XACK`):畸形或被拒的条目是毒丸,不能重放。
+- `SERVER_UNAVAILABLE`(chat 服务离线)**不 ack**:条目留在 pending entries list 里,由周期性 `XAUTOCLAIM` 清扫重投,直到 chat 恢复。重投在设计上不设上限——毒丸已被上面的立即 ack 规则挡住。
+- 带 `reply_to` 时,结果(`inject_id` + `ErrorCode` 名,如 `OK`)只对 **已 ack 的终态** 回写,因此一条重放的条目恰好应答一次。
+- 命令间传输失败会断开重连;未 ack 的条目重放。整体至少一次。
 
-## Downlink: events (at-least-once)
+## 下行:事件(至少一次)
 
-`EVENT_PUBLISH_REQ` (`chirp.server_gateway.EventPublishRequest`) publishes an event that must reach a target service — e.g. a quest trigger produced by chat-side logic:
+`EVENT_PUBLISH_REQ`(`chirp.server_gateway.EventPublishRequest`)发布一条必须到达目标服务的事件——例如 chat 侧逻辑产生的任务触发器:
 
-- `event_id`: optional caller-supplied idempotency key; generated (`evt-<ts>-<n>`) when omitted and echoed in the response
+- `event_id`:可选的调用方幂等键;缺省时生成(`evt-<ts>-<n>`)并在响应中回显
 - `target_service_id`, `event_type`, `payload`
 
-Delivery semantics:
+投递语义:
 
-- Target **online** → delivered immediately as `EVENT_DELIVER_NOTIFY` (`queued=false`).
-- Target **offline** → queued per service (`queued=true`) and delivered on its next login/reconnect.
-- Events stay queued until `EVENT_ACK_REQ` acknowledges them. Reconnects redeliver everything unacknowledged; `attempt` increments per delivery.
-- A full queue (over `--max_pending`) rejects the publish with `SERVER_UNAVAILABLE` instead of silently dropping older events. Publishers retry with backoff.
-- Acks are idempotent; unknown ids answer `OK`.
-- A displaced connection closing late does not reset the live connection's in-flight tracking (no duplicate redelivery storm).
+- 目标**在线** → 立即以 `EVENT_DELIVER_NOTIFY` 投递(`queued=false`)。
+- 目标**离线** → 按服务排队(`queued=true`),在其下次登录/重连时投递。
+- 事件一直排队,直到 `EVENT_ACK_REQ` 确认。重连会重投全部未确认事件;每投一次 `attempt` 加一。
+- 队列满(超过 `--max_pending`)时,发布以 `SERVER_UNAVAILABLE` 拒绝,而不是悄悄丢掉旧事件。发布方带退避重试。
+- ack 幂等;未知 id 回 `OK`。
+- 被顶掉的旧连接晚关不会重置存活连接的在途跟踪(不会有重复重投风暴)。
 
-## NPC dialog service
+## NPC 对话服务
 
-`services/npc_dialog` is the first event consumer on the plane: a pure server-plane client (no player-facing listener) that closes the NPC conversation loop end to end.
+`services/npc_dialog` 是这个平面上的第一个事件消费者:一个纯 server plane 客户端(无玩家侧监听),把 NPC 对话闭环端到端打通。
 
-- **Uplink (chat → hub → npc_dialog).** Chat rewrites a player's private message to an `npc:`-prefixed receiver into an `EventPublishRequest` of type `npc.player_message` (payload: `chirp.chat.NpcPlayerUtterance`; `event_id` = chat message id) and fire-and-forgets it — the player's `OK` means accepted, not that a reply will come. The chat history keeps the player's original line.
-- **Reply (npc_dialog → hub → chat).** The responder renders a reply with a keyword rule table (`npc_id<TAB>keyword<TAB>reply` TSV, `*` = the NPC's fallback line, ASCII case-insensitive substring, first match wins; built-in demo rules when no `--rules_file`) and injects it as `SENDER_NPC` on a private channel to the player, with the event id as the `inject_id` idempotency key.
-- **Ack policy.** Foreign event types, unparseable payloads, and utterances missing sender/NPC identity are acked immediately (poison-pill: they can never become valid by retrying). A valid event is acked **only after** the hub accepted its reply injection (`OK`); any other outcome stays unacked, so the hub redelivers — at-least-once. **Redelivery dedupe (2026-09):** once a reply is accepted, the event id is remembered in a bounded most-recent window (1024 events); a redelivered already-answered event is acked without re-injecting, and an event whose injection did not succeed is never remembered, so its redelivery retries. A duplicate delivery that races before the first attempt's outcome is not suppressed (the hub delivers serially, so this is theoretical).
+- **上行(chat → hub → npc_dialog)。** chat 把玩家发给 `npc:` 前缀接收者的私聊改写成 `npc.player_message` 类型的 `EventPublishRequest`(payload:`chirp.chat.NpcPlayerUtterance`;`event_id` = chat 消息 id)并发完即忘——玩家的 `OK` 表示已受理,不代表会有回复。聊天历史里保留玩家的原话。
+- **回复(npc_dialog → hub → chat)。** responder 用关键词规则表(`npc_id<TAB>keyword<TAB>reply` 的 TSV,`*` = 该 NPC 的兜底台词,ASCII 大小写不敏感子串匹配,先命中先用;不给 `--rules_file` 时内置演示规则)生成回复,以 `SENDER_NPC` 走私聊频道注回玩家,`event_id` 作为 `inject_id` 幂等键。
+- **ack 策略。** 陌生事件类型、解析失败的 payload、缺发送者/NPC 身份的语句都立即 ack(毒丸:重试永远不可能变有效)。有效事件只在枢纽接受其回复注入(`OK`)**之后**才 ack;其他任何结局都保持未 ack,枢纽因此重投——至少一次。**重投去重(2026-09):**回复一旦被接受,事件 id 会记进一个有界的最近窗口(1024 条);重投的已应答事件直接 ack 不再注入;注入未成功的事件绝不入窗,其重投会真正重试。在第一次尝试出结果前赶到的重复投递不会被抑制(枢纽串行投递,这只是理论边界)。
 
-Process-level verification: `./test_services.sh --smoke-npc` runs hub + chat + npc_dialog as real processes and checks the keyword reply, the fallback reply, history (player line + reply), and the offline-queue refill path.
+进程级验证:`./test_services.sh --smoke-npc` 以真实进程跑枢纽 + chat + npc_dialog,检查关键词回复、兜底回复、历史(玩家原话 + 回复)和离线队列补投路径。
 
-## Player identity bindings (WP-8 slice 1)
+## 玩家身份绑定(WP-8 切片 1)
 
-The aggregation plane needs a platform-level `player_id` that spans many games; the server plane is where game backends assert those bindings. `chirp_game_server_gateway` keeps an `IdentityRegistry` (`identity_registry.{h,cc}`) behind four RPCs:
+聚合面需要一个横跨多款游戏的平台级 `player_id`;server plane 就是游戏后端断言这些绑定的地方。`chirp_game_server_gateway` 在四个 RPC 后面维护一个 `IdentityRegistry`(`identity_registry.{h,cc}`):
 
-- `BIND_PLAYER_IDENTITY_REQ` (5013) — `binding_id` (caller-chosen idempotency key), `player_id`, `game_id`, `game_user_id`. Same id + same tuple again → `OK` with `existed=true`; same id + a different tuple → `INVALID_PARAM` (reusing keys would silently break duplicate detection). A `(game_id, game_user_id)` pair may be bound to only one player: re-asserting it under a new `binding_id` replaces the old binding (account switch / unlink+relink — the game backend is the authority).
-- `UNBIND_PLAYER_IDENTITY_REQ` (5015) — by `binding_id` **or** by the full `(game_id, game_user_id)` pair, never both, never neither (`INVALID_PARAM` otherwise). Unknown target → `OK` (idempotent).
-- `GET_PLAYER_IDENTITIES_REQ` (5017) — all bindings for a `player_id`.
-- `RESOLVE_GAME_USER_REQ` (5019) — `(game_id, game_user_id)` → `player_id` (`OK` with an empty `player_id` when unbound).
+- `BIND_PLAYER_IDENTITY_REQ`(5013)——`binding_id`(调用方选定的幂等键)、`player_id`、`game_id`、`game_user_id`。同 id + 同元组再来一次 → `OK` 且 `existed=true`;同 id + 不同元组 → `INVALID_PARAM`(复用键会悄悄破坏重复检测)。一个 `(game_id, game_user_id)` 对只能绑到一个玩家:用新 `binding_id` 再断言会顶掉旧绑定(换号/解绑重绑——游戏后端是权威)。
+- `UNBIND_PLAYER_IDENTITY_REQ`(5015)——按 `binding_id` **或**按完整 `(game_id, game_user_id)` 对,二者不可同时给也不可都不给(否则 `INVALID_PARAM`)。目标不存在 → `OK`(幂等)。
+- `GET_PLAYER_IDENTITIES_REQ`(5017)——某 `player_id` 的全部绑定。
+- `RESOLVE_GAME_USER_REQ`(5019)——`(game_id, game_user_id)` → `player_id`(未绑定时 `OK` 且 `player_id` 为空)。
 
-Storage is in-memory with a write-through Redis mirror (`chirp:binding:entry:<binding_id>` = serialized `StoredIdentityBinding`, `--binding_redis_host`/`--binding_redis_port`, off by default). Startup replays all stored entries; corrupted records are skipped with a warning. Redis write failures are best-effort — memory stays authoritative and the next mutation of the same record retries the write — so a Redis outage degrades to memory-only semantics, not errors.
+存储为内存权威 + 直写 Redis 镜像(`chirp:binding:entry:<binding_id>` = 序列化的 `StoredIdentityBinding`,`--binding_redis_host`/`--binding_redis_port`,默认关)。启动时重放全部存量条目;损坏记录跳过并告警。Redis 写失败是尽力而为——内存保持权威,同一记录下次变更会重试写——所以 Redis 故障降级为纯内存语义,而不是报错。
 
-This registry is the foundation both aggregation-plane designs need (shared multi-tenant core with game namespaces, or a federation bridge); fan-in delivery and unified unread (both live, see above/below) were built on it.
+这个注册表是两种聚合面设计共同需要的地基(带游戏命名空间的共享多租户核心,或联邦桥);扇入投递与统一未读(都已上线,见上下文)就建在它上面。
 
-## Player channel subscriptions (WP-8 slice 2)
+## 玩家频道订阅(WP-8 切片 2)
 
-Where bindings answer "which platform player is this game user", subscriptions answer "which game channels does a player want". `chirp_game_server_gateway` keeps a `SubscriptionRegistry` (`subscription_registry.{h,cc}`) behind three RPCs. Since WP-8 slice 3 the registry also powers fan-in delivery: the inject handler reads its `(game_id, channel_id)` reverse index (see "Fan-in delivery" above) — the registry itself still only stores intent, and delivery decisions live in the inject path.
+绑定回答"这个游戏用户是哪个平台玩家",订阅回答"这个玩家想要哪些游戏频道"。`chirp_game_server_gateway` 在三个 RPC 后面维护一个 `SubscriptionRegistry`(`subscription_registry.{h,cc}`)。从 WP-8 切片 3 起,注册表还支撑扇入投递:inject 处理器读它的 (game_id, channel_id) 反向索引(见上文"扇入投递")——注册表本身仍只存意图,投递决策住在 inject 路径里。
 
-- `SUBSCRIBE_PLAYER_CHANNEL_REQ` (5021) — `player_id`, `game_id`, `channel_id`, plus an optional `subscription_id`. With an id, it is the caller's idempotency key: same id + same tuple again → `OK` with `existed=true`; same id + a different tuple → `INVALID_PARAM` (reusing keys would silently break duplicate detection). The `(player_id, game_id, channel_id)` tuple is globally unique: subscribing the same tuple under a new id replaces the old record — the asserting caller is the authority (e.g. a game rewriting its channel layout). With an **empty** `subscription_id` the hub mints one (`sub-...`): this is the player self-service path, where app_gateway pins `player_id` to the authenticated user before forwarding, and re-subscribing the same tuple converges on the stored record (stable id, `existed=true`) instead of accumulating rows.
-- `UNSUBSCRIBE_PLAYER_CHANNEL_REQ` (5023) — by `subscription_id` **or** by the full `(player_id, game_id, channel_id)` triple, never both, never neither (`INVALID_PARAM` otherwise). Unknown target → `OK` (idempotent).
-- `GET_PLAYER_SUBSCRIPTIONS_REQ` (5025) — all subscriptions for a `player_id`, with an optional `game_id` filter ("my subscriptions in game X").
+- `SUBSCRIBE_PLAYER_CHANNEL_REQ`(5021)——`player_id`、`game_id`、`channel_id`,外加可选 `subscription_id`。带 id 时,它是调用方的幂等键:同 id + 同元组再来一次 → `OK` 且 `existed=true`;同 id + 不同元组 → `INVALID_PARAM`(复用键会悄悄破坏重复检测)。`(player_id, game_id, channel_id)` 三元组全局唯一:用新 id 订阅同一元组会顶掉旧记录——断言方是权威(比如游戏改版重排频道)。`subscription_id` 为**空**时由枢纽铸造一个(`sub-...`):这是玩家自服务路径,app_gateway 转发前把 `player_id` 钉到已认证用户,同元组重复订阅会收敛到存量记录(id 稳定、`existed=true`),而不是堆行。
+- `UNSUBSCRIBE_PLAYER_CHANNEL_REQ`(5023)——按 `subscription_id` **或**按完整 `(player_id, game_id, channel_id)` 三元组,不可同时给也不可都不给(否则 `INVALID_PARAM`)。目标不存在 → `OK`(幂等)。
+- `GET_PLAYER_SUBSCRIPTIONS_REQ`(5025)——某 `player_id` 的全部订阅,可带 `game_id` 过滤("我在游戏 X 的订阅")。
 
-The same six message ids serve both callers: game backends hit the server plane directly, and players reach the same handlers through app_gateway's forwarding — the app edge pins `player_id`, so a client can only ever create, list, or remove subscriptions for itself.
+同一组六个消息 id 服务两类调用方:游戏后端直连 server plane,玩家经 app_gateway 转发到达同一批处理器——应用边缘把 `player_id` 钉死,客户端永远只能为自己创建、列举或删除订阅。
 
-Storage mirrors the bindings: in-memory authoritative with a write-through Redis mirror (`chirp:subscription:entry:<subscription_id>` = serialized `StoredChannelSubscription`, `--subscription_redis_host`/`--subscription_redis_port`, off by default), startup replay with corrupted-record skipping, and best-effort writes that degrade to memory-only under a Redis outage.
+存储与绑定镜像:内存权威 + 直写 Redis 镜像(`chirp:subscription:entry:<subscription_id>` = 序列化的 `StoredChannelSubscription`,`--subscription_redis_host`/`--subscription_redis_port`,默认关),启动重放并跳过损坏记录,尽力而为写、Redis 故障降级纯内存。
 
-Open question (revisited when fan-in shipped, kept open): subscriptions are not validated against existing identity bindings — via self-service a player may subscribe to channels of a game they have never played. Fan-in delivery shipped with the permissive choice (no binding required anywhere; backend assertions stay trusted), so the hub's fan-out has no cross-registry dependency. Whether the self-service path should require a binding after all remains an open product decision.
+遗留问题(扇入上线时重新审视过,仍然保留):订阅不校验既有身份绑定——通过自服务,玩家可以订阅一款自己从没玩过的游戏的频道。扇入投递按宽松选择上线(任何地方都不要求绑定;后端断言保持可信),枢纽的扇出因此没有跨注册表依赖。自服务路径是否终究该要求绑定,仍是待定的产品决策。
 
-## Unified unread (WP-8 slice 4)
+## 统一未读(WP-8 切片 4)
 
-The hub keeps an `UnreadLedger` (`unread_ledger.{h,cc}`): a per-player badge counter per `(game_id, channel_id)` counting **unhandled fan-in notifications** — every fan-out copy successfully handed to the chat service increments it (see "Fan-in delivery" above). This is a badge, not a read cursor: it never sees the chat service's read state (gateway 2201-2207), and neither feeds the other. Unsubscribing does not clear a badge either — marking read is the only decrementing path, and a failed delivery is never rolled back. Counters are `int32`.
+枢纽维护一个 `UnreadLedger`(`unread_ledger.{h,cc}`):按玩家、按 `(game_id, channel_id)` 的红点计数,统计**未处理的扇入通知**——每份成功交给 chat 服务的扇出副本加一(见上文"扇入投递")。这是红点,不是已读游标:它看不见 chat 服务的已读状态(gateway 2201-2207),两者互不供数。退订也不清红点——标记已读是唯一的递减路径,投递失败永不回滚。计数器是 `int32`。
 
-Two RPCs (game backends directly; players reach them through app_gateway's forwarding, which pins `player_id` to the authenticated user):
+两个 RPC(游戏后端直连;玩家经 app_gateway 转发,`player_id` 钉到已认证用户):
 
-- `MARK_CHANNELS_READ_REQ` (5027) — layered selector: `channel_id` set (requires `game_id`) clears that one channel; only `game_id` clears every channel of that game; both empty clears everything the player has. Idempotent: unknown targets answer `OK` with `cleared = 0`.
-- `GET_UNREAD_SUMMARY_REQ` (5029) — one `UnreadSummaryEntry` (`game_id`, `channel_id`, `unread_count`) per nonzero counter, ordered by `(game_id, channel_id)`, plus `total_unread` — the sum after the optional `game_id` filter ("my unread in game X").
+- `MARK_CHANNELS_READ_REQ`(5027)——分层选择器:给了 `channel_id`(要求 `game_id`)清那一个频道;只给 `game_id` 清该游戏的全部频道;都空则清玩家的全部。幂等:目标不存在回 `OK` 且 `cleared = 0`。
+- `GET_UNREAD_SUMMARY_REQ`(5029)——每个非零计数一条 `UnreadSummaryEntry`(`game_id`、`channel_id`、`unread_count`),按 `(game_id, channel_id)` 排序,外加 `total_unread`——可选 `game_id` 过滤后的总和("我在游戏 X 的未读")。
 
-Storage mirrors the registries: in-memory authoritative with a write-through Redis mirror (`chirp:unread:entry:<player_id>:<game_id>:<channel_id>` = serialized `StoredUnreadEntry`, `--unread_redis_host`/`--unread_redis_port`, off by default), startup replay with corrupted-record and zero-count skipping, and best-effort writes that degrade to memory-only under a Redis outage. Cleared entries are deleted from the mirror rather than stored as zero, so counters cannot resurrect or accumulate. Key components are concatenated raw: ids containing `:` can alias another entry's key on disk — the in-memory map keeps the exact tuple, so this only limits restart fidelity for exotic ids.
+存储与各注册表镜像:内存权威 + 直写 Redis 镜像(`chirp:unread:entry:<player_id>:<game_id>:<channel_id>` = 序列化的 `StoredUnreadEntry`,`--unread_redis_host`/`--unread_redis_port`,默认关),启动重放并跳过损坏记录与零计数,尽力而为写、Redis 故障降级纯内存。清掉的条目从镜像里删除而不是存零,计数器因此不会复活或累加。键的组成部分是原样拼接:含 `:` 的 id 在磁盘上可能别名成另一条目的键——内存 map 保存精确元组,所以只影响奇异 id 的重启保真度。
 
-## Roadmap
+## 路线图
 
-1. ~~Chat service connects as an internal peer and consumes `InjectMessageNotify`~~ — done (loopback-verified end to end); a process-level E2E smoke is still an option for later.
-2. ~~Redis Streams fallback broker for integrations that cannot host a long-connection client (ack + replay, no raw pub/sub)~~ — done, upstream injection only (see "Broker fallback" above); downlink events still use the long-connection plane.
-3. ~~Event production on the chat side~~ — done for NPC dialogue (`npc.player_message`, consumed by `services/npc_dialog`, see above); sensitive-word penalties and trade state transitions remain open.
+1. ~~chat 服务以内部 peer 连入并消费 `InjectMessageNotify`~~——完成(回环端到端验证);进程级 E2E 冒烟留作后续选项。
+2. ~~为无法承载长连接客户端的集成方提供 Redis Streams 回退 broker(ack + 重放,不用裸 pub/sub)~~——完成,仅上游注入(见上文"Broker 回退");下行事件仍走长连接面。
+3. ~~chat 侧的事件生产~~——NPC 对话部分完成(`npc.player_message`,由 `services/npc_dialog` 消费,见上);敏感词处罚与交易状态流转仍开放。
