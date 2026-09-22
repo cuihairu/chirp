@@ -208,6 +208,20 @@ KNOWN_UNCOVERABLE = {
     ("services/game/server_gateway/src/identity_registry.cc", 143),
     ("services/game/server_gateway/src/identity_registry.cc", 177),
     ("services/game/server_gateway/src/subscription_registry.cc", 180),
+    # ChatPeerHub::Start listen arm: reaching it needs listen(2) to fail
+    # after bind(2) succeeded - only fd exhaustion landing between the two
+    # syscalls does that, which no environment-independent test can force.
+    ("libs/network/chat_peer_hub.cc", 91),
+    ("libs/network/chat_peer_hub.cc", 92),
+    # ChatPeerHub::DoAccept error arm: async_accept fails here only on
+    # kernel-level conditions (EMFILE/ENFILE), unreachable from a test.
+    ("libs/network/chat_peer_hub.cc", 133),
+    ("libs/network/chat_peer_hub.cc", 134),
+    ("libs/network/chat_peer_hub.cc", 135),
+    # ChatPeerHub::PeerConn::SendRawPacket closing guard: Close erases the
+    # conn from peers_ (or the conn is displaced) on the same hub thread, so
+    # no SendInject can ever target a closing connection.
+    ("libs/network/chat_peer_hub.cc", 359),
 }
 
 src_cache = {}

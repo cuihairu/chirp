@@ -583,6 +583,244 @@ TEST(ChatPeerLinkTest, ReconnectsAfterConnectionLoss) {
   runner.Finish();
 }
 
+TEST(ChatPeerLinkTest, ConnectFailureRetriesQuietly) {
+  chirp::common::Logger::Instance().SetLevel(chirp::common::Logger::Level::kError);
+  asio::io_context io;
+  LinkIoRunner runner(io);
+
+  // Nothing listens on loopback port 1: every dial fails with ECONNREFUSED
+  // and the link keeps retrying on the reconnect delay without ever
+  // reporting itself registered.
+  chirp::network::ChatPeerLink::Options opts;
+  opts.host = "127.0.0.1";
+  opts.port = 1;
+  opts.reconnect_delay_seconds = 1;
+  auto link = chirp::network::ChatPeerLink::Create(
+      io, opts,
+      [](int32_t, const std::vector<chirp::gateway::PeerCapability>&) {},
+      [](const chirp::gateway::ChannelMessageNotify&) {},
+      [](const chirp::gateway::PeerInjectMessageNotify&) {});
+  link->Start();
+
+  // Two reconnect windows pass; the link stays unregistered and healthy.
+  std::this_thread::sleep_for(std::chrono::milliseconds(2500));
+  EXPECT_FALSE(RegisteredOnLinkThread(*link, io));
+
+  link->Stop();
+  runner.Drain();
+  runner.Finish();
+}
+
+TEST(ChatPeerLinkTest, ResolveFailureRetriesQuietly) {
+  chirp::common::Logger::Instance().SetLevel(chirp::common::Logger::Level::kError);
+  asio::io_context io;
+  LinkIoRunner runner(io);
+
+  // .invalid is guaranteed NXDOMAIN (RFC 2606): resolve fails on any
+  // RFC-conforming resolver and the link retries without crashing.
+  chirp::network::ChatPeerLink::Options opts;
+  opts.host = "chat-peer-hub.invalid";
+  opts.port = 5050;
+  opts.reconnect_delay_seconds = 1;
+  auto link = chirp::network::ChatPeerLink::Create(
+      io, opts,
+      [](int32_t, const std::vector<chirp::gateway::PeerCapability>&) {},
+      [](const chirp::gateway::ChannelMessageNotify&) {},
+      [](const chirp::gateway::PeerInjectMessageNotify&) {});
+  link->Start();
+
+  std::this_thread::sleep_for(std::chrono::milliseconds(2500));
+  EXPECT_FALSE(RegisteredOnLinkThread(*link, io));
+
+  link->Stop();
+  runner.Drain();
+  runner.Finish();
+}
+
+// Registers a link against the scripted hub and counts on_lost reports.
+struct RegisteredLink {
+  FakePeerHubServer& hub;
+  asio::io_context& io;
+  LinkIoRunner& runner;
+  std::shared_ptr<chirp::network::ChatPeerLink> link;
+  std::mutex mu;
+  size_t losses = 0;
+
+  explicit RegisteredLink(FakePeerHubServer& hub_ref, asio::io_context& io_ref,
+                          LinkIoRunner& runner_ref)
+      : hub(hub_ref), io(io_ref), runner(runner_ref) {
+    link = chirp::network::ChatPeerLink::Create(
+        io, LinkOptions(hub),
+        [](int32_t, const std::vector<chirp::gateway::PeerCapability>&) {},
+        [](const chirp::gateway::ChannelMessageNotify&) {},
+        [](const chirp::gateway::PeerInjectMessageNotify&) {},
+        [this] {
+          std::lock_guard<std::mutex> lock(mu);
+          losses++;
+        });
+    link->Start();
+    EXPECT_TRUE(WaitFor([&] { return RegisteredOnLinkThread(*link, io); },
+                        std::chrono::seconds(5)))
+        << "link never registered against the scripted hub";
+  }
+
+  ~RegisteredLink() {
+    link->Stop();
+    runner.Drain();
+    runner.Finish();
+  }
+};
+
+TEST(ChatPeerLinkTest, BadFrameSizeDropsConnection) {
+  chirp::common::Logger::Instance().SetLevel(chirp::common::Logger::Level::kError);
+  FakePeerHubServer hub;
+  asio::io_context io;
+  LinkIoRunner runner(io);
+  RegisteredLink registered(hub, io, runner);
+
+  // A zero length prefix violates the framing contract and drops the
+  // connection; the loss of a registered link is reported.
+  hub.SendRawToLatest(std::string(4, '\0'));
+  EXPECT_TRUE(WaitFor([&] {
+    std::lock_guard<std::mutex> lock(registered.mu);
+    return registered.losses >= 1;
+  }, std::chrono::seconds(5)));
+}
+
+TEST(ChatPeerLinkTest, GarbagePacketBodyDropsConnection) {
+  chirp::common::Logger::Instance().SetLevel(chirp::common::Logger::Level::kError);
+  FakePeerHubServer hub;
+  asio::io_context io;
+  LinkIoRunner runner(io);
+  RegisteredLink registered(hub, io, runner);
+
+  // A well-formed length prefix over an unparseable outer envelope.
+  hub.SendRawToLatest(std::string("\x00\x00\x00\x01\xff", 5));
+  EXPECT_TRUE(WaitFor([&] {
+    std::lock_guard<std::mutex> lock(registered.mu);
+    return registered.losses >= 1;
+  }, std::chrono::seconds(5)));
+}
+
+TEST(ChatPeerLinkTest, GarbageRegisterRespDropsConnection) {
+  chirp::common::Logger::Instance().SetLevel(chirp::common::Logger::Level::kError);
+  FakePeerHubServer hub;
+  asio::io_context io;
+  LinkIoRunner runner(io);
+  RegisteredLink registered(hub, io, runner);
+
+  // A follow-up PEER_REGISTER_RESP whose body is not parseable protobuf.
+  hub.SendToLatest(
+      MakeRawPacket(chirp::gateway::PEER_REGISTER_RESP, 0, "\xff"));
+  EXPECT_TRUE(WaitFor([&] {
+    std::lock_guard<std::mutex> lock(registered.mu);
+    return registered.losses >= 1;
+  }, std::chrono::seconds(5)));
+}
+
+TEST(ChatPeerLinkTest, MalformedAndUnexpectedDownlinkFramesAreIgnored) {
+  chirp::common::Logger::Instance().SetLevel(chirp::common::Logger::Level::kError);
+  FakePeerHubServer hub;
+  asio::io_context io;
+  LinkIoRunner runner(io);
+  RegisteredLink registered(hub, io, runner);
+
+  // One heartbeat proves the cadence is running before the bad frames land.
+  ASSERT_TRUE(WaitFor([&] { return hub.Count(chirp::gateway::HEARTBEAT_PING) >= 1; },
+                      std::chrono::seconds(5)));
+
+  // Bodies that fail to parse are logged and skipped ...
+  hub.SendToLatest(
+      MakeRawPacket(chirp::gateway::CHANNEL_MESSAGE_NOTIFY, 0, "\xff"));
+  hub.SendToLatest(
+      MakeRawPacket(chirp::gateway::PEER_INJECT_MESSAGE_NOTIFY, 0, "\xff"));
+  // ... and unknown msg ids (future version skew) are dropped loudly, not
+  // fatally. The next heartbeat round-trip proves the link kept reading and
+  // never reported a loss.
+  hub.SendToLatest(MakeRawPacket(static_cast<MsgID>(12345), 0, ""));
+  EXPECT_TRUE(WaitFor([&] { return hub.Count(chirp::gateway::HEARTBEAT_PING) >= 2; },
+                      std::chrono::seconds(5)));
+  {
+    std::lock_guard<std::mutex> lock(registered.mu);
+    EXPECT_EQ(registered.losses, 0u);
+  }
+}
+
+TEST(ChatPeerLinkTest, StopIsIdempotentAndStartAfterStopIsNoop) {
+  chirp::common::Logger::Instance().SetLevel(chirp::common::Logger::Level::kError);
+  FakePeerHubServer hub;
+  asio::io_context io;
+  LinkIoRunner runner(io);
+  RegisteredLink registered(hub, io, runner);
+
+  const auto attempts_before = hub.Count(chirp::gateway::PEER_REGISTER_REQ);
+  registered.link->Stop();
+  registered.link->Stop();  // second Stop is a strand no-op, not a crash
+  registered.link->Start(); // refused on the strand: the link stays stopped
+
+  // A reconnect would reach the fake hub within one reconnect delay.
+  std::this_thread::sleep_for(std::chrono::milliseconds(2500));
+  EXPECT_EQ(hub.Count(chirp::gateway::PEER_REGISTER_REQ), attempts_before);
+}
+
+TEST(ChatPeerLinkTest, InjectUplinkDeliversAfterRegistrationOnly) {
+  chirp::common::Logger::Instance().SetLevel(chirp::common::Logger::Level::kError);
+  FakePeerHubServer hub;
+  asio::io_context io;
+  LinkIoRunner runner(io);
+
+  chirp::gateway::PeerInjectMessageNotify notify;
+  notify.set_channel_id("world");
+  notify.set_sender_id("player_3");
+  notify.set_content("inject uplink");
+  notify.set_client_msg_id("cmid-2");
+
+  auto link = chirp::network::ChatPeerLink::Create(
+      io, LinkOptions(hub),
+      [](int32_t, const std::vector<chirp::gateway::PeerCapability>&) {},
+      [](const chirp::gateway::ChannelMessageNotify&) {},
+      [](const chirp::gateway::PeerInjectMessageNotify&) {});
+  link->Start();
+
+  // Before registration the uplink is refused locally: nothing is queued and
+  // nothing reaches the wire.
+  EXPECT_FALSE(link->SendInject(notify));
+  runner.Drain();
+  EXPECT_EQ(hub.Count(chirp::gateway::PEER_INJECT_MESSAGE_NOTIFY), 0u);
+
+  ASSERT_TRUE(WaitFor([&] { return RegisteredOnLinkThread(*link, io); },
+                      std::chrono::seconds(5)));
+  EXPECT_TRUE(link->SendInject(notify));
+  ASSERT_TRUE(WaitFor([&] { return hub.Count(chirp::gateway::PEER_INJECT_MESSAGE_NOTIFY) >= 1; },
+                      std::chrono::seconds(5)));
+  const auto seen = hub.All(chirp::gateway::PEER_INJECT_MESSAGE_NOTIFY).front();
+  chirp::gateway::PeerInjectMessageNotify delivered;
+  ASSERT_TRUE(delivered.ParseFromString(seen.body()));
+  EXPECT_EQ(delivered.channel_id(), "world");
+  EXPECT_EQ(delivered.client_msg_id(), "cmid-2");
+
+  link->Stop();
+  runner.Drain();
+  runner.Finish();
+}
+
+TEST(ChatPeerLinkTest, ConnectionLossMidFrameIsReported) {
+  chirp::common::Logger::Instance().SetLevel(chirp::common::Logger::Level::kError);
+  FakePeerHubServer hub;
+  asio::io_context io;
+  LinkIoRunner runner(io);
+  RegisteredLink registered(hub, io, runner);
+
+  // A length prefix announcing a body that never arrives: the hub hangs up
+  // right after, so the pending body read fails and the loss is reported.
+  hub.SendRawToLatest(std::string("\x00\x00\x00\x64", 4));
+  hub.CloseLatest();
+  EXPECT_TRUE(WaitFor([&] {
+    std::lock_guard<std::mutex> lock(registered.mu);
+    return registered.losses >= 1;
+  }, std::chrono::seconds(5)));
+}
+
 // ---------------------------------------------------------------------------
 // Hub-side fixture: synchronous client socket driven from the test thread,
 // while the real ChatPeerHub runs on its own io thread.
@@ -703,6 +941,26 @@ chirp::network::ChatPeerHub::Options HubTestOptions(int heartbeat_seconds = 30,
   opts.heartbeat_interval_seconds = heartbeat_seconds;
   opts.min_peer_version = min_version;
   return opts;
+}
+
+// A hub wired to record every callback into `events`.
+std::shared_ptr<chirp::network::ChatPeerHub> MakeRecordingHub(asio::io_context& io,
+                                                              HubEvents& events) {
+  return chirp::network::ChatPeerHub::Create(
+      io, HubTestOptions(),
+      [&events](const std::string& id, const std::string& game_id, int32_t,
+                const std::vector<chirp::gateway::PeerCapability>&) {
+        std::lock_guard<std::mutex> lock(events.mu);
+        events.registered.push_back(id + ":" + game_id);
+      },
+      [&events](const std::string& id, const std::string& reason) {
+        std::lock_guard<std::mutex> lock(events.mu);
+        events.dropped.emplace_back(id, reason);
+      },
+      [&events](const std::string&, const chirp::gateway::ChannelMessageNotify& notify) {
+        std::lock_guard<std::mutex> lock(events.mu);
+        events.uplinks.push_back(notify);
+      });
 }
 
 chirp::gateway::PeerRegisterReq MakeRegisterReq(const std::string& service_id = "game_chat",
@@ -1244,6 +1502,226 @@ TEST(ChatPeerHubTest, HeartbeatKeepsIdlePeerAlive) {
   }
 
   hub->Stop();
+  runner.Drain();
+  runner.Finish();
+}
+
+TEST(ChatPeerHubTest, InvalidFrameSizeClosesConnection) {
+  chirp::common::Logger::Instance().SetLevel(chirp::common::Logger::Level::kError);
+  asio::io_context io;
+  HubEvents events;
+  auto hub = MakeRecordingHub(io, events);
+  hub->Start();
+  HubIoRunner runner(io);
+
+  TestPeerClient client(hub->port());
+  client.SendRaw(std::string(4, '\0'));  // zero length prefix
+  EXPECT_FALSE(client.Read(std::chrono::seconds(1)));
+  {
+    std::lock_guard<std::mutex> lock(events.mu);
+    EXPECT_TRUE(events.dropped.empty());  // never registered, nothing to report
+  }
+
+  hub->Stop();
+  runner.Drain();
+  runner.Finish();
+}
+
+TEST(ChatPeerHubTest, GarbagePacketBodyClosesConnection) {
+  chirp::common::Logger::Instance().SetLevel(chirp::common::Logger::Level::kError);
+  asio::io_context io;
+  HubEvents events;
+  auto hub = MakeRecordingHub(io, events);
+  hub->Start();
+  HubIoRunner runner(io);
+
+  TestPeerClient client(hub->port());
+  // A well-formed length prefix over an unparseable outer envelope.
+  client.SendRaw(std::string("\x00\x00\x00\x01\xff", 5));
+  EXPECT_FALSE(client.Read(std::chrono::seconds(1)));
+
+  hub->Stop();
+  runner.Drain();
+  runner.Finish();
+}
+
+TEST(ChatPeerHubTest, GarbageRegisterReqClosesConnection) {
+  chirp::common::Logger::Instance().SetLevel(chirp::common::Logger::Level::kError);
+  asio::io_context io;
+  HubEvents events;
+  auto hub = MakeRecordingHub(io, events);
+  hub->Start();
+  HubIoRunner runner(io);
+
+  TestPeerClient client(hub->port());
+  client.Send(MakeRawPacket(chirp::gateway::PEER_REGISTER_REQ, 0, "\xff"));
+  EXPECT_FALSE(client.Read(std::chrono::seconds(1)));
+
+  hub->Stop();
+  runner.Drain();
+  runner.Finish();
+}
+
+TEST(ChatPeerHubTest, MalformedChannelBodyKeepsConnection) {
+  chirp::common::Logger::Instance().SetLevel(chirp::common::Logger::Level::kError);
+  asio::io_context io;
+  HubEvents events;
+  auto hub = MakeRecordingHub(io, events);
+  hub->Start();
+  HubIoRunner runner(io);
+
+  TestPeerClient client(hub->port());
+  chirp::gateway::PeerRegisterResp resp;
+  ASSERT_TRUE(RegisterAndGetResp(client, MakeRegisterReq(), resp));
+  EXPECT_EQ(resp.code(), chirp::common::OK);
+
+  // A CHANNEL_MESSAGE_NOTIFY whose body is not parseable protobuf is logged
+  // and skipped; the connection survives and answers the next ping.
+  client.Send(MakeRawPacket(chirp::gateway::CHANNEL_MESSAGE_NOTIFY, 0, "\xff"));
+  chirp::gateway::HeartbeatPing ping;
+  client.Send(MakePacket(chirp::gateway::HEARTBEAT_PING, 7, ping));
+  Packet pkt;
+  ASSERT_TRUE(client.Read(pkt));
+  EXPECT_EQ(pkt.msg_id(), chirp::gateway::HEARTBEAT_PONG);
+  EXPECT_EQ(pkt.sequence(), 7);
+  {
+    std::lock_guard<std::mutex> lock(events.mu);
+    EXPECT_TRUE(events.dropped.empty());
+  }
+
+  hub->Stop();
+  runner.Drain();
+  runner.Finish();
+}
+
+TEST(ChatPeerHubTest, HeartbeatBeforeRegistrationClosesConnection) {
+  chirp::common::Logger::Instance().SetLevel(chirp::common::Logger::Level::kError);
+  asio::io_context io;
+  HubEvents events;
+  auto hub = MakeRecordingHub(io, events);
+  hub->Start();
+  HubIoRunner runner(io);
+
+  TestPeerClient client(hub->port());
+  chirp::gateway::HeartbeatPing ping;
+  client.Send(MakePacket(chirp::gateway::HEARTBEAT_PING, 1, ping));
+  EXPECT_FALSE(client.Read(std::chrono::seconds(1)));
+
+  hub->Stop();
+  runner.Drain();
+  runner.Finish();
+}
+
+TEST(ChatPeerHubTest, UnexpectedMsgIdIsFatalOnlyBeforeRegistration) {
+  chirp::common::Logger::Instance().SetLevel(chirp::common::Logger::Level::kError);
+  asio::io_context io;
+  HubEvents events;
+  auto hub = MakeRecordingHub(io, events);
+  hub->Start();
+  HubIoRunner runner(io);
+
+  // Before registration any non-register frame is a protocol violation.
+  {
+    TestPeerClient early(hub->port());
+    early.Send(MakeRawPacket(static_cast<MsgID>(12345), 0, ""));
+    EXPECT_FALSE(early.Read(std::chrono::seconds(1)));
+  }
+
+  // After registration an unknown msg id only draws a warning.
+  TestPeerClient client(hub->port());
+  chirp::gateway::PeerRegisterResp resp;
+  ASSERT_TRUE(RegisterAndGetResp(client, MakeRegisterReq(), resp));
+  client.Send(MakeRawPacket(static_cast<MsgID>(12345), 0, ""));
+  chirp::gateway::HeartbeatPing ping;
+  client.Send(MakePacket(chirp::gateway::HEARTBEAT_PING, 9, ping));
+  Packet pkt;
+  ASSERT_TRUE(client.Read(pkt));
+  EXPECT_EQ(pkt.msg_id(), chirp::gateway::HEARTBEAT_PONG);
+
+  hub->Stop();
+  runner.Drain();
+  runner.Finish();
+}
+
+TEST(ChatPeerHubTest, ClientHangupReportsLost) {
+  chirp::common::Logger::Instance().SetLevel(chirp::common::Logger::Level::kError);
+  asio::io_context io;
+  HubEvents events;
+  auto hub = MakeRecordingHub(io, events);
+  hub->Start();
+  HubIoRunner runner(io);
+
+  TestPeerClient client(hub->port());
+  chirp::gateway::PeerRegisterResp resp;
+  ASSERT_TRUE(RegisterAndGetResp(client, MakeRegisterReq(), resp));
+
+  // The hub's read loop observes the EOF and reports the registered peer as
+  // dropped with the "lost" reason.
+  client.Close();
+  EXPECT_TRUE(WaitFor([&] {
+    std::lock_guard<std::mutex> lock(events.mu);
+    return events.dropped.size() == 1 && events.dropped[0].first == "game_chat" &&
+           events.dropped[0].second == "lost";
+  }, std::chrono::seconds(5)));
+
+  hub->Stop();
+  runner.Drain();
+  runner.Finish();
+}
+
+TEST(ChatPeerHubTest, ConnectionDropsMidFrameReportsLost) {
+  chirp::common::Logger::Instance().SetLevel(chirp::common::Logger::Level::kError);
+  asio::io_context io;
+  HubEvents events;
+  auto hub = MakeRecordingHub(io, events);
+  hub->Start();
+  HubIoRunner runner(io);
+
+  TestPeerClient client(hub->port());
+  chirp::gateway::PeerRegisterResp resp;
+  ASSERT_TRUE(RegisterAndGetResp(client, MakeRegisterReq(), resp));
+
+  // A length prefix announcing a body that never arrives, then a hangup: the
+  // body read fails with EOF and the peer is reported dropped.
+  client.SendRaw(std::string("\x00\x00\x00\x64", 4));
+  client.Close();
+  EXPECT_TRUE(WaitFor([&] {
+    std::lock_guard<std::mutex> lock(events.mu);
+    return events.dropped.size() == 1 && events.dropped[0].second == "lost";
+  }, std::chrono::seconds(5)));
+
+  hub->Stop();
+  runner.Drain();
+  runner.Finish();
+}
+
+TEST(ChatPeerHubTest, BindFailureLeavesHubDown) {
+  chirp::common::Logger::Instance().SetLevel(chirp::common::Logger::Level::kError);
+  asio::io_context io;
+  HubIoRunner runner(io);
+
+  auto first = chirp::network::ChatPeerHub::Create(
+      io, HubTestOptions(),
+      [](const std::string&, const std::string&, int32_t,
+         const std::vector<chirp::gateway::PeerCapability>&) {},
+      [](const std::string&, const std::string&) {},
+      [](const std::string&, const chirp::gateway::ChannelMessageNotify&) {});
+  first->Start();
+  ASSERT_NE(first->port(), 0);
+
+  // A second hub cannot take the port while the first one is listening
+  // (SO_REUSEADDR does not cover an active listener); Start() fails cleanly
+  // and port() reports 0.
+  auto second = chirp::network::ChatPeerHub::Create(
+      io, HubTestOptions(),
+      [](const std::string&, const std::string&, int32_t,
+         const std::vector<chirp::gateway::PeerCapability>&) {},
+      [](const std::string&, const std::string&) {},
+      [](const std::string&, const chirp::gateway::ChannelMessageNotify&) {});
+  second->Start();
+  EXPECT_EQ(second->port(), 0);
+
+  first->Stop();
   runner.Drain();
   runner.Finish();
 }
