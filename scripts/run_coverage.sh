@@ -118,18 +118,15 @@ KNOWN_UNCOVERABLE = {
     # SerializeToArray disagrees with ByteSizeLong.
     ("libs/network/protobuf_framing.cc", 14),
     ("libs/network/protobuf_framing.cc", 20),
-    # ChatClient::Impl::DoRead socket guard: DoRead is only scheduled after
-    # socket_ is assigned in the connect handler.
-    ("sdks/core/src/sdk_client.cc", 341),
     # ChatClient::Impl::SendRequest timeout sweep: the pending entry is
     # erased only together with timer->cancel(); a handler already dispatched
     # before the cancel exits at the timer_ec arm above, so the find-miss
     # return is unreachable by construction.
-    ("sdks/core/src/sdk_client.cc", 245),
+    ("sdks/core/src/sdk_client.cc", 464),
     # ChatClient::Impl::SendPacket socket guard: every caller checks the
     # connection state on the same io thread immediately before sending, and
     # only DoClose (same thread) clears socket_.
-    ("sdks/core/src/sdk_client.cc", 517),
+    ("sdks/core/src/sdk_client.cc", 758),
     # Logger::LevelToString fallthrough: every enumerator has a case; the
     # trailing return only exists to satisfy the compiler.
     ("libs/common/logger.cc", 40),

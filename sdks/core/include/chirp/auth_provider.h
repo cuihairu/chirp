@@ -23,7 +23,7 @@ class AuthProvider {
       std::function<void(const std::string&)> renew) = 0;
 
   // 认证结果回调。
-  virtual void OnAuthResult(int code, const std::string& user_id) {}
+  virtual void OnAuthResult(int /*code*/, const std::string& /*user_id*/) {}
 };
 
 }  // namespace sdk

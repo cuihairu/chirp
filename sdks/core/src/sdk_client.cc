@@ -4,6 +4,7 @@
 #include <chrono>
 #include <cstdlib>
 #include <deque>
+#include <functional>
 #include <mutex>
 #include <unordered_map>
 #include <vector>
@@ -15,6 +16,12 @@
 #include "proto/chat.pb.h"
 #include "proto/common.pb.h"
 #include "proto/gateway.pb.h"
+
+#include "chirp/auth_provider.h"
+#include "chirp/chat_event_listener.h"
+#include "chirp/command_handler.h"
+#include "chirp/message_interceptor.h"
+#include "chirp/message_store.h"
 
 #include "backoff.h"
 
@@ -52,6 +59,7 @@ public:
         work_(asio::make_work_guard(io_context_)),
         heartbeat_timer_(io_context_),
         reconnect_timer_(io_context_),
+        renew_timer_(io_context_),
         thread_([this] { io_context_.run(); }) {
     std::srand(static_cast<unsigned>(NowMs()));
   }
@@ -91,13 +99,20 @@ public:
       user_disconnect_ = true;
       reconnect_timer_.cancel();
       DoClose(/*notify=*/false, std::error_code{});
-      state_ = ConnectionState::Disconnected;
+      SetState(ConnectionState::Disconnected);
     });
   }
 
   void Login(const std::string& token, LoginCallback cb) {
     asio::post(io_context_, [this, token, cb = std::move(cb)]() mutable {
-      if (token.empty()) {
+      // 注册了 AuthProvider 时空 token 由 provider 签发;显式 token 优先。
+      std::string effective = token;
+      if (effective.empty()) {
+        if (auto provider = SnapshotAuthProvider()) {
+          effective = provider->GetToken();
+        }
+      }
+      if (effective.empty()) {
         cb(MakeEc(ChatError::InvalidParam), "");
         return;
       }
@@ -105,29 +120,108 @@ public:
         cb(MakeEc(ChatError::NotConnected), "");
         return;
       }
-
-      chirp::auth::LoginRequest req;
-      req.set_token(token);
-      req.set_device_id("sdk_device");
-      req.set_platform("pc");
-      SendRequest(MsgID::LOGIN_REQ, MsgID::LOGIN_RESP, req.SerializeAsString(),
-          [this, cb = std::move(cb)](const std::error_code& ec, const std::string& body) mutable {
-            if (ec) {
-              cb(ec, "");
-              return;
-            }
-            chirp::auth::LoginResponse resp;
-            if (!resp.ParseFromString(body) || resp.code() != chirp::common::OK) {
-              cb(MakeEc(ChatError::LoginFailed), "");
-              return;
-            }
-            user_id_ = resp.user_id();
-            session_id_ = resp.session_id();
-            state_ = ConnectionState::LoggedIn;
-            reconnect_attempts_ = 0;
-            cb(std::error_code{}, user_id_);
-          });
+      // 新一轮登录链:丢弃悬挂中的续期回调,重新允许一次 token 续期。
+      if (auth_renewing_) {
+        auth_renewing_ = false;
+        auto stale = std::move(pending_renew_cb_);
+        pending_renew_cb_ = nullptr;
+        if (stale) {
+          stale(MakeEc(ChatError::LoginFailed), "");
+        }
+      }
+      renewal_used_ = false;
+      renew_timer_.cancel();
+      IssueLogin(effective, std::move(cb));
     });
+  }
+
+  // 发 LOGIN_REQ 并处理响应;首次登录与续期重登共用。io 线程调用。
+  void IssueLogin(const std::string& token, LoginCallback cb) {
+    chirp::auth::LoginRequest req;
+    req.set_token(token);
+    req.set_device_id("sdk_device");
+    req.set_platform("pc");
+    SendRequest(MsgID::LOGIN_REQ, MsgID::LOGIN_RESP, req.SerializeAsString(),
+        [this, cb = std::move(cb)](const std::error_code& ec, const std::string& body) mutable {
+          if (ec) {
+            cb(ec, "");
+            return;
+          }
+          chirp::auth::LoginResponse resp;
+          const bool parsed = resp.ParseFromString(body);
+          if (!parsed || resp.code() != chirp::common::OK) {
+            // 解析失败没有可信 code,以 -1 上报。
+            HandleLoginFailure(parsed ? static_cast<int>(resp.code()) : -1,
+                               std::move(cb));
+            return;
+          }
+          user_id_ = resp.user_id();
+          session_id_ = resp.session_id();
+          auth_renewing_ = false;
+          renew_timer_.cancel();
+          SetState(ConnectionState::LoggedIn);
+          reconnect_attempts_ = 0;
+          NotifyAuthOutcome(static_cast<int>(chirp::common::OK), user_id_);
+          cb(std::error_code{}, user_id_);
+        });
+  }
+
+  // 登录失败收尾:AUTH_FAILED 且注册了 provider 且本轮登录链尚未续期时,
+  // 给一次 token 续期机会(OnTokenExpired -> renew -> IssueLogin);续期后
+  // 仍失败不再续期,直接失败。
+  void HandleLoginFailure(int code, LoginCallback cb) {
+    if (code == static_cast<int>(chirp::common::AUTH_FAILED) && !renewal_used_) {
+      if (auto provider = SnapshotAuthProvider()) {
+        renewal_used_ = true;
+        auth_renewing_ = true;
+        pending_renew_cb_ = std::move(cb);
+        NotifyAuthOutcome(code, "");
+        // 游戏迟迟不调 renew:按设计文档进入 Disconnected 并回报失败。
+        renew_timer_.expires_after(
+            std::chrono::milliseconds(config_.request_timeout_ms));
+        renew_timer_.async_wait([this](const std::error_code& timer_ec) {
+          if (timer_ec || !auth_renewing_) {
+            return;  // 已续期或连接已关;cb 由续期/DoClose 路径处理
+          }
+          auth_renewing_ = false;
+          auto cb = std::move(pending_renew_cb_);
+          pending_renew_cb_ = nullptr;
+          // 续期超时 = 本轮会话认证失败:不进入自动重连(挂起的 read 会因
+          // close 以 aborted 完成,提前标记避免它再拉起 ScheduleReconnect)。
+          user_disconnect_ = true;
+          DoClose(/*notify=*/false, std::error_code{});
+          SetState(ConnectionState::Disconnected);
+          if (cb) {
+            cb(MakeEc(ChatError::LoginFailed), "");
+          }
+        });
+        // renew 可能在游戏线程被异步调用,post 回 io 线程重登;与其它公开
+        // 方法一样,client 析构后再调用属于调用方契约破坏。
+        provider->OnTokenExpired([this](const std::string& new_token) {
+          asio::post(io_context_, [this, new_token] {
+            if (!auth_renewing_) {
+              return;  // 已超时/已关闭/被新一轮登录取代
+            }
+            auth_renewing_ = false;  // 每轮登录链至多续期一次
+            auto cb = std::move(pending_renew_cb_);
+            pending_renew_cb_ = nullptr;
+            renew_timer_.cancel();
+            if (new_token.empty() || state_ != ConnectionState::Connected) {
+              if (cb) {
+                cb(MakeEc(ChatError::LoginFailed), "");
+              }
+              return;
+            }
+            IssueLogin(new_token, std::move(cb));
+          });
+        });
+        return;
+      }
+    }
+    NotifyAuthOutcome(code, "");
+    if (cb) {
+      cb(MakeEc(ChatError::LoginFailed), "");
+    }
   }
 
   void Logout() {
@@ -145,7 +239,7 @@ public:
       user_disconnect_ = true;
       reconnect_timer_.cancel();
       DoClose(/*notify=*/false, std::error_code{});
-      state_ = ConnectionState::Disconnected;
+      SetState(ConnectionState::Disconnected);
     });
   }
 
@@ -157,6 +251,15 @@ public:
       if (receiver.empty()) {
         return;
       }
+      // 注册了命令时,'/xxx' 形态的消息走本地命令路由,不进聊天通道。
+      // 零注册时保持旧行为:'/' 消息按普通文本发送(向后兼容)。
+      if (!content.empty() && content.front() == '/' && HasCommands()) {
+        if (!DispatchCommand(content)) {
+          // 无 handler 认领:本地丢弃;unknown command 的提示由引擎层负责。
+          common::Logger::Instance().Warn("sdk: unknown command: " + content);
+        }
+        return;
+      }
 
       chirp::chat::SendMessageRequest req;
       req.set_sender_id(user_id_);
@@ -166,9 +269,21 @@ public:
       req.set_msg_type(chirp::chat::TEXT);
       req.set_content(content);
       req.set_client_timestamp(NowMs());
+
+      auto interceptor = SnapshotInterceptor();
+      if (interceptor && !interceptor->OnBeforeSend(req)) {
+        common::Logger::Instance().Warn("sdk: send blocked by interceptor");
+        return;
+      }
+      if (auto store = SnapshotStore()) {
+        store->Save(MakeStoredSentMessage(req));
+      }
       // fire-and-forget:SEND_MESSAGE_RESP 迟到时找不到 pending 条目,
       // 走通用 stray-response 丢弃路径。需要确认送达时用 Request()。
       SendRequest(MsgID::SEND_MESSAGE_REQ, MsgID::SEND_MESSAGE_RESP, req.SerializeAsString(), nullptr);
+      if (interceptor) {
+        interceptor->OnAfterSend(req);
+      }
     });
   }
 
@@ -218,12 +333,116 @@ public:
     on_kick_ = std::move(cb);
   }
 
+  // ---- 钩子注册(docs/design-notes/sdk_hooks.md):任意线程可调,须在
+  // Connect() 之前完成。回调统一在 io 线程触发,锁内拷快照、锁外调用。
+  void SetMessageInterceptor(std::shared_ptr<MessageInterceptor> interceptor) {
+    std::lock_guard<std::mutex> lock(callbacks_mutex_);
+    interceptor_ = std::move(interceptor);
+  }
+
+  void SetAuthProvider(std::shared_ptr<AuthProvider> provider) {
+    std::lock_guard<std::mutex> lock(callbacks_mutex_);
+    auth_provider_ = std::move(provider);
+  }
+
+  void SetMessageStore(std::unique_ptr<MessageStore> store) {
+    std::lock_guard<std::mutex> lock(callbacks_mutex_);
+    message_store_ = std::move(store);
+  }
+
+  void AddListener(std::shared_ptr<ChatEventListener> listener) {
+    std::lock_guard<std::mutex> lock(callbacks_mutex_);
+    listeners_.push_back(std::move(listener));
+  }
+
+  void RegisterCommand(std::unique_ptr<CommandHandler> handler) {
+    std::lock_guard<std::mutex> lock(callbacks_mutex_);
+    commands_.push_back(std::move(handler));
+  }
+
+  // MessageStore 转发查询:store 可从游戏线程直接访问(自定义 store 的
+  // 线程安全由实现方负责,MemoryMessageStore 内置互斥)。未设置时 no-op。
+  std::vector<chirp::chat::ChatMessage> LoadHistory(
+      chirp::chat::ChannelType type, const std::string& channel_id,
+      int limit, int64_t before_timestamp) {
+    auto store = SnapshotStore();
+    if (!store) {
+      return {};
+    }
+    return store->Load(type, channel_id, limit, before_timestamp);
+  }
+
+  void MarkRead(chirp::chat::ChannelType type, const std::string& channel_id,
+                const std::string& message_id) {
+    if (auto store = SnapshotStore()) {
+      store->MarkRead(type, channel_id, message_id);
+    }
+  }
+
+  int GetUnreadCount(chirp::chat::ChannelType type,
+                     const std::string& channel_id) {
+    if (auto store = SnapshotStore()) {
+      return store->GetUnreadCount(type, channel_id);
+    }
+    return 0;
+  }
+
+  void CleanupMessages(int64_t older_than) {
+    if (auto store = SnapshotStore()) {
+      store->Cleanup(older_than);
+    }
+  }
+
 private:
   chirp::gateway::Packet MakePacket(MsgID msg_id, const std::string& body) {
     chirp::gateway::Packet pkt;
     pkt.set_msg_id(msg_id);
     pkt.set_body(body);
     return pkt;
+  }
+
+  bool HasCommands() {
+    std::lock_guard<std::mutex> lock(callbacks_mutex_);
+    return !commands_.empty();
+  }
+
+  // 本地命令路由:解析 "/cmd args"(首 token 为命令名,余串空格保留),
+  // 按注册顺序找 GetName() 匹配的 handler 执行;Execute 返回 false 继续
+  // 找下一个。返回是否被认领(false = 全 miss)。
+  bool DispatchCommand(const std::string& content) {
+    const std::string body = content.substr(1);
+    const auto space = body.find(' ');
+    const std::string name =
+        body.substr(0, space == std::string::npos ? body.size() : space);
+    const std::string args =
+        space == std::string::npos ? "" : body.substr(space + 1);
+
+    std::vector<std::shared_ptr<CommandHandler>> snapshot;
+    {
+      std::lock_guard<std::mutex> lock(callbacks_mutex_);
+      snapshot = commands_;
+    }
+    for (auto& handler : snapshot) {
+      if (handler && handler->GetName() == name) {
+        return handler->Execute(args, user_id_);
+      }
+    }
+    return false;
+  }
+
+  // 发送侧本地存档:用与请求等价的字段构造 ChatMessage(message_id 由
+  // 服务端签发,fire-and-forget 拿不到,留空)。
+  chirp::chat::ChatMessage MakeStoredSentMessage(
+      const chirp::chat::SendMessageRequest& req) {
+    chirp::chat::ChatMessage msg;
+    msg.set_sender_id(req.sender_id());
+    msg.set_receiver_id(req.receiver_id());
+    msg.set_channel_type(req.channel_type());
+    msg.set_channel_id(req.channel_id());
+    msg.set_msg_type(req.msg_type());
+    msg.set_content(req.content());
+    msg.set_timestamp(req.client_timestamp());
+    return msg;
   }
 
   // 注册 pending 并发送。调用方必须已确认状态为 Connected/LoggedIn(三个
@@ -259,11 +478,11 @@ private:
     if (config_.enable_websocket) {
       // TCP-only(见 ChatConfig 注释):WS 外壳待 app_gateway 聚合边缘
       // 定案后对齐,这里保持 fast-fail 语义。
-      state_ = ConnectionState::Disconnected;
+      SetState(ConnectionState::Disconnected);
       NotifyDisconnect(MakeEc(ChatError::InvalidParam));
       return;
     }
-    state_ = ConnectionState::Connecting;
+    SetState(ConnectionState::Connecting);
 
     auto resolver = std::make_shared<asio::ip::tcp::resolver>(io_context_);
     auto socket = std::make_shared<asio::ip::tcp::socket>(io_context_);
@@ -284,6 +503,8 @@ private:
                   return;
                 }
 
+                // 自动重连成功(而非初次连接)要单独通知;须在计数清零前判定。
+                const bool reconnected = reconnect_attempts_ > 0;
                 socket_ = socket;
                 framer_.Clear();
                 write_q_.clear();
@@ -295,9 +516,12 @@ private:
                 pending_ping_seq_ = 0;
                 missed_pongs_ = 0;
                 reconnect_attempts_ = 0;
-                state_ = ConnectionState::Connected;
+                SetState(ConnectionState::Connected);
                 StartHeartbeat();
                 DoRead();
+                if (reconnected) {
+                  NotifyListeners([](ChatEventListener& l) { l.OnReconnected(); });
+                }
               });
         });
   }
@@ -307,11 +531,11 @@ private:
   void ConnectFailed(const std::error_code& ec) {
     const bool reconnecting = reconnect_attempts_ > 0;
     if (reconnecting) {
-      state_ = ConnectionState::WaitingReconnect;
+      SetState(ConnectionState::WaitingReconnect);
       ScheduleReconnect();
       return;
     }
-    state_ = ConnectionState::Disconnected;
+    SetState(ConnectionState::Disconnected);
     NotifyDisconnect(ec);
   }
 
@@ -321,12 +545,15 @@ private:
     }
     if (config_.max_reconnect_attempts >= 0 &&
         reconnect_attempts_ >= config_.max_reconnect_attempts) {
-      state_ = ConnectionState::Disconnected;
+      SetState(ConnectionState::Disconnected);
       return;
     }
-    state_ = ConnectionState::WaitingReconnect;
-    const auto delay = internal::BackoffDelayMs(reconnect_attempts_);
+    SetState(ConnectionState::WaitingReconnect);
+    const int64_t delay = internal::BackoffDelayMs(reconnect_attempts_);
     ++reconnect_attempts_;
+    NotifyListeners([attempt = reconnect_attempts_, delay](ChatEventListener& l) {
+      l.OnReconnecting(attempt, static_cast<int>(delay));
+    });
     reconnect_timer_.expires_after(std::chrono::milliseconds(delay));
     reconnect_timer_.async_wait([this](const std::error_code& timer_ec) {
       if (timer_ec || kicked_ || user_disconnect_) {
@@ -422,11 +649,13 @@ private:
     // 踢线是终态:先置状态再关连接,pending flush 才能拿到 Kicked 错误,
     // 且重连逻辑不会启动。
     kicked_ = true;
-    state_ = ConnectionState::Kicked;
+    SetState(ConnectionState::Kicked);
     DoClose(/*notify=*/false, std::error_code{});
 
     // 通用 notify 订阅者(与便捷回调平行)同样要看到 KICK。
     DispatchNotify(pkt.msg_id(), pkt.body());
+
+    NotifyListeners([&kick](ChatEventListener& l) { l.OnKicked(kick.reason()); });
 
     KickCallback cb;
     {
@@ -443,6 +672,14 @@ private:
     if (!msg.ParseFromArray(pkt.body().data(), static_cast<int>(pkt.body().size()))) {
       return;
     }
+    auto interceptor = SnapshotInterceptor();
+    if (interceptor && !interceptor->OnBeforeReceive(msg)) {
+      // 拦截器丢弃:不存储、不触发任何回调,也不进入原始分发。
+      return;
+    }
+    if (auto store = SnapshotStore()) {
+      store->Save(msg);
+    }
     MessageCallback cb;
     {
       std::lock_guard<std::mutex> lock(callbacks_mutex_);
@@ -451,6 +688,10 @@ private:
     if (cb) {
       cb(msg.sender_id(), msg.content());
     }
+    if (interceptor) {
+      interceptor->OnAfterReceive(msg);
+    }
+    NotifyListeners([&msg](ChatEventListener& l) { l.OnMessageReceived(msg); });
     DispatchNotify(pkt.msg_id(), pkt.body());
   }
 
@@ -566,6 +807,7 @@ private:
     }
     closed_ = true;
     heartbeat_timer_.cancel();
+    renew_timer_.cancel();
     pending_ping_seq_ = 0;
     missed_pongs_ = 0;
 
@@ -582,6 +824,16 @@ private:
       req.timer->cancel();
       if (req.cb) {
         req.cb(flush_ec, "");
+      }
+    }
+
+    // 登录续期挂起时连接关闭:把悬挂的 Login 回调一并 flush,不让游戏空等。
+    if (auth_renewing_) {
+      auth_renewing_ = false;
+      auto renew_cb = std::move(pending_renew_cb_);
+      pending_renew_cb_ = nullptr;
+      if (renew_cb) {
+        renew_cb(flush_ec, "");
       }
     }
 
@@ -608,12 +860,61 @@ private:
     }
   }
 
+  // ---- 钩子快照辅助:锁内拷 shared_ptr,锁外调用,与既有回调拷贝同款。
+  std::shared_ptr<MessageInterceptor> SnapshotInterceptor() {
+    std::lock_guard<std::mutex> lock(callbacks_mutex_);
+    return interceptor_;
+  }
+
+  std::shared_ptr<AuthProvider> SnapshotAuthProvider() {
+    std::lock_guard<std::mutex> lock(callbacks_mutex_);
+    return auth_provider_;
+  }
+
+  std::shared_ptr<MessageStore> SnapshotStore() {
+    std::lock_guard<std::mutex> lock(callbacks_mutex_);
+    return message_store_;
+  }
+
+  // 拷贝监听器快照后逐个 fan-out;回调里再调 AddListener 不会死锁。
+  void NotifyListeners(const std::function<void(ChatEventListener&)>& fn) {
+    std::vector<std::shared_ptr<ChatEventListener>> snapshot;
+    {
+      std::lock_guard<std::mutex> lock(callbacks_mutex_);
+      snapshot = listeners_;
+    }
+    for (auto& listener : snapshot) {
+      if (listener) {
+        fn(*listener);
+      }
+    }
+  }
+
+  // 全部状态迁移收敛到这里:赋值后同步通知监听器(io 线程)。
+  void SetState(ConnectionState state) {
+    state_ = state;
+    NotifyListeners([state](ChatEventListener& l) {
+      l.OnConnectionStateChanged(static_cast<int>(state));
+    });
+  }
+
+  // 服务端登录判定的统一出口:同时通知监听器(OnLoginResult)与认证提供者
+  // (OnAuthResult)。本地参数校验(InvalidParam/NotConnected)不在此列。
+  void NotifyAuthOutcome(int code, const std::string& user_id) {
+    NotifyListeners([&](ChatEventListener& l) { l.OnLoginResult(code, user_id); });
+    if (auto provider = SnapshotAuthProvider()) {
+      provider->OnAuthResult(code, user_id);
+    }
+  }
+
   ChatConfig config_;
   std::atomic<ConnectionState> state_;
   asio::io_context io_context_;
   asio::executor_work_guard<asio::io_context::executor_type> work_;
   asio::steady_timer heartbeat_timer_;
   asio::steady_timer reconnect_timer_;
+  // 登录续期超时(游戏迟迟不调 renew 则判失败);同样只在 io 线程操作。
+  asio::steady_timer renew_timer_;
   std::thread thread_;
 
   std::shared_ptr<asio::ip::tcp::socket> socket_;
@@ -635,12 +936,27 @@ private:
   bool kicked_{false};
   bool user_disconnect_{false};
 
+  // 登录续期(AUTH_FAILED -> OnTokenExpired -> renew):同样只在 io 线程。
+  // auth_renewing_ = renew 在途;renewal_used_ = 本轮登录链已用过续期机会
+  // (公开 Login() 复位,续期后的再次 AUTH_FAILED 不再续期)。
+  bool auth_renewing_{false};
+  bool renewal_used_{false};
+  LoginCallback pending_renew_cb_;
+
   std::mutex callbacks_mutex_;
   uint64_t next_notify_handle_{1};
   std::unordered_map<uint32_t, std::unordered_map<uint64_t, NotifyCallback>> notify_subs_;
   MessageCallback on_message_;
   DisconnectCallback on_disconnect_;
   KickCallback on_kick_;
+
+  // 钩子注册表(callbacks_mutex_ 保护)。入参 unique_ptr 的项内部转
+  // shared_ptr,便于快照拷贝、锁外调用。
+  std::shared_ptr<MessageInterceptor> interceptor_;
+  std::shared_ptr<AuthProvider> auth_provider_;
+  std::shared_ptr<MessageStore> message_store_;
+  std::vector<std::shared_ptr<ChatEventListener>> listeners_;
+  std::vector<std::shared_ptr<CommandHandler>> commands_;
 };
 
 // ChatClient 实现
@@ -696,6 +1012,47 @@ void ChatClient::SetDisconnectCallback(DisconnectCallback cb) {
 
 void ChatClient::SetKickCallback(KickCallback cb) {
   impl_->SetKickCallback(std::move(cb));
+}
+
+void ChatClient::SetMessageInterceptor(std::shared_ptr<MessageInterceptor> interceptor) {
+  impl_->SetMessageInterceptor(std::move(interceptor));
+}
+
+void ChatClient::SetAuthProvider(std::shared_ptr<AuthProvider> provider) {
+  impl_->SetAuthProvider(std::move(provider));
+}
+
+void ChatClient::SetMessageStore(std::unique_ptr<MessageStore> store) {
+  impl_->SetMessageStore(std::move(store));
+}
+
+void ChatClient::AddListener(std::shared_ptr<ChatEventListener> listener) {
+  impl_->AddListener(std::move(listener));
+}
+
+void ChatClient::RegisterCommand(std::unique_ptr<CommandHandler> handler) {
+  impl_->RegisterCommand(std::move(handler));
+}
+
+std::vector<chirp::chat::ChatMessage> ChatClient::LoadHistory(
+    chirp::chat::ChannelType type, const std::string& channel_id,
+    int limit, int64_t before_timestamp) {
+  return impl_->LoadHistory(type, channel_id, limit, before_timestamp);
+}
+
+void ChatClient::MarkRead(chirp::chat::ChannelType type,
+                          const std::string& channel_id,
+                          const std::string& message_id) {
+  impl_->MarkRead(type, channel_id, message_id);
+}
+
+int ChatClient::GetUnreadCount(chirp::chat::ChannelType type,
+                               const std::string& channel_id) {
+  return impl_->GetUnreadCount(type, channel_id);
+}
+
+void ChatClient::CleanupMessages(int64_t older_than) {
+  impl_->CleanupMessages(older_than);
 }
 
 } // namespace sdk

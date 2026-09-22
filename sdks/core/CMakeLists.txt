@@ -36,6 +36,11 @@ endif()
 set(SDK_PUBLIC_HEADERS
   include/chirp/sdk.h
   include/chirp/sdk_client.h
+  include/chirp/message_interceptor.h
+  include/chirp/command_handler.h
+  include/chirp/message_store.h
+  include/chirp/auth_provider.h
+  include/chirp/chat_event_listener.h
 )
 
 # The shared chirp_core_sdk links the static chirp_network/chirp_common, so
@@ -47,6 +52,7 @@ set(SDK_PIC_LIBS chirp_network chirp_common)
 set(SDK_SOURCES
   src/sdk.cc
   src/sdk_client.cc
+  src/message_store.cc
 )
 
 # Include libs subdirectories

@@ -451,11 +451,12 @@ target_include_directories(search_tests
 
 add_test(NAME search_tests COMMAND search_tests)
 
-# Core SDK (sdk.cc / sdk_client.cc) coverage tests
+# Core SDK (sdk.cc / sdk_client.cc / message_store.cc) coverage tests
 add_executable(sdk_core_tests
   sdk_core_test.cc
   ${CMAKE_SOURCE_DIR}/sdks/core/src/sdk.cc
   ${CMAKE_SOURCE_DIR}/sdks/core/src/sdk_client.cc
+  ${CMAKE_SOURCE_DIR}/sdks/core/src/message_store.cc
 )
 
 chirp_unit_test_common_links(sdk_core_tests)

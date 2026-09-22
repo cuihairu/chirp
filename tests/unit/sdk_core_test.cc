@@ -7,6 +7,11 @@
 #include <vector>
 
 #include "backoff.h"
+#include "chirp/auth_provider.h"
+#include "chirp/chat_event_listener.h"
+#include "chirp/command_handler.h"
+#include "chirp/message_interceptor.h"
+#include "chirp/message_store.h"
 #include "chirp/sdk.h"
 #include "chirp/sdk_client.h"
 
@@ -36,6 +41,111 @@ protected:
     return config;
   }
 };
+
+// ---------------------------------------------------------------------------
+// MemoryMessageStore 纯单元用例(离线,不建连接)。
+// ---------------------------------------------------------------------------
+namespace {
+
+chirp::chat::ChatMessage MakeStoredMessage(const std::string& channel_id,
+                                           int64_t ts,
+                                           const std::string& content) {
+  chirp::chat::ChatMessage msg;
+  msg.set_message_id("m-" + std::to_string(ts));
+  msg.set_sender_id("alice");
+  msg.set_channel_type(chirp::chat::WORLD);
+  msg.set_channel_id(channel_id);
+  msg.set_content(content);
+  msg.set_timestamp(ts);
+  return msg;
+}
+
+}  // namespace
+
+TEST(MemoryMessageStoreTest, LoadReturnsNewestFirstWithLimitAndFilter) {
+  chirp::sdk::MemoryMessageStore store;
+  store.Save(MakeStoredMessage("world", 100, "a"));
+  store.Save(MakeStoredMessage("world", 200, "b"));
+  store.Save(MakeStoredMessage("world", 300, "c"));
+
+  const auto all = store.Load(chirp::chat::WORLD, "world", 10);
+  ASSERT_EQ(all.size(), 3u);
+  EXPECT_EQ(all[0].content(), "c");
+  EXPECT_EQ(all[1].content(), "b");
+  EXPECT_EQ(all[2].content(), "a");
+
+  const auto capped = store.Load(chirp::chat::WORLD, "world", 2);
+  ASSERT_EQ(capped.size(), 2u);
+  EXPECT_EQ(capped[0].content(), "c");
+  EXPECT_EQ(capped[1].content(), "b");
+
+  // before_timestamp 语义:严格早于该时间戳的消息(300 不含)。
+  const auto before = store.Load(chirp::chat::WORLD, "world", 10, 300);
+  ASSERT_EQ(before.size(), 2u);
+  EXPECT_EQ(before[0].content(), "b");
+  EXPECT_EQ(before[1].content(), "a");
+
+  EXPECT_TRUE(store.Load(chirp::chat::WORLD, "missing", 10).empty());
+  EXPECT_TRUE(store.Load(chirp::chat::WORLD, "world", 0).empty());
+}
+
+TEST(MemoryMessageStoreTest, ChannelTypeIsolatesBuckets) {
+  chirp::sdk::MemoryMessageStore store;
+  auto priv = MakeStoredMessage("shared-id", 100, "p");
+  priv.set_channel_type(chirp::chat::PRIVATE);
+  store.Save(priv);
+  store.Save(MakeStoredMessage("shared-id", 101, "w"));
+
+  const auto from_private = store.Load(chirp::chat::PRIVATE, "shared-id", 10);
+  ASSERT_EQ(from_private.size(), 1u);
+  EXPECT_EQ(from_private[0].content(), "p");
+
+  const auto from_world = store.Load(chirp::chat::WORLD, "shared-id", 10);
+  ASSERT_EQ(from_world.size(), 1u);
+  EXPECT_EQ(from_world[0].content(), "w");
+}
+
+TEST(MemoryMessageStoreTest, EvictionKeepsNewestPerChannel) {
+  chirp::sdk::MemoryMessageStore store(2);
+  store.Save(MakeStoredMessage("world", 100, "old"));
+  store.Save(MakeStoredMessage("world", 200, "mid"));
+  store.Save(MakeStoredMessage("world", 300, "new"));
+
+  const auto kept = store.Load(chirp::chat::WORLD, "world", 10);
+  ASSERT_EQ(kept.size(), 2u);
+  EXPECT_EQ(kept[0].content(), "new");
+  EXPECT_EQ(kept[1].content(), "mid");
+}
+
+TEST(MemoryMessageStoreTest, ZeroMaxMeansUnbounded) {
+  chirp::sdk::MemoryMessageStore store(0);
+  for (int i = 0; i < 5; ++i) {
+    store.Save(MakeStoredMessage("world", i, "m" + std::to_string(i)));
+  }
+  EXPECT_EQ(store.Load(chirp::chat::WORLD, "world", 10).size(), 5u);
+}
+
+TEST(MemoryMessageStoreTest, CleanupRemovesOlderAndPrunesBuckets) {
+  chirp::sdk::MemoryMessageStore store;
+  store.Save(MakeStoredMessage("world", 100, "old"));
+  store.Save(MakeStoredMessage("world", 300, "keep"));
+  store.Save(MakeStoredMessage("arena", 50, "only-old"));
+
+  store.Cleanup(200);
+  const auto world = store.Load(chirp::chat::WORLD, "world", 10);
+  ASSERT_EQ(world.size(), 1u);
+  EXPECT_EQ(world[0].content(), "keep");
+  // 整桶被清掉后 Load 回空,不残留空桶。
+  EXPECT_TRUE(store.Load(chirp::chat::WORLD, "arena", 10).empty());
+}
+
+TEST(MemoryMessageStoreTest, ReadTrackingDefaultsToUnreadZero) {
+  chirp::sdk::MemoryMessageStore store;
+  store.Save(MakeStoredMessage("world", 100, "a"));
+  // 基类默认实现:不跟踪已读,计数恒 0,MarkRead 无副作用。
+  store.MarkRead(chirp::chat::WORLD, "world", "m-100");
+  EXPECT_EQ(store.GetUnreadCount(chirp::chat::WORLD, "world"), 0);
+}
 
 TEST(ChatConfigTest, Defaults) {
   ChatConfig config;
@@ -1199,6 +1309,45 @@ TEST_F(ChatClientLoopbackTest, NotifySubscribeReceivesBodyAndUnsubscribeStops) {
   client.Disconnect();
 }
 
+// sequence==0 且非 KICK/CHAT/PONG 特化通道的包走 switch 的 default 臂:
+// 通用 OnNotify 订阅者照常拿到原始 body。
+TEST_F(ChatClientLoopbackTest, GenericNotifyIdFallsThroughToOnNotify) {
+  FakeGateway gateway([](const chirp::gateway::Packet& pkt, auto send) {
+    if (pkt.msg_id() == chirp::gateway::LOGIN_REQ) {
+      chirp::auth::LoginResponse resp;
+      resp.set_code(chirp::common::OK);
+      resp.set_user_id("u");
+      chirp::gateway::Packet out;
+      out.set_msg_id(chirp::gateway::LOGIN_RESP);
+      out.set_sequence(pkt.sequence());
+      out.set_body(resp.SerializeAsString());
+      send(out);
+    }
+  });
+
+  ChatClient client(LoopbackConfig(gateway.port()));
+  client.Connect();
+  WaitState(client, ConnectionState::Connected);
+
+  std::promise<std::string> pushed;
+  auto handle = client.OnNotify(chirp::gateway::GET_HISTORY_RESP,
+                                [&](const std::string& body) {
+                                  pushed.set_value(body);
+                                });
+
+  chirp::gateway::Packet stray;
+  stray.set_msg_id(chirp::gateway::GET_HISTORY_RESP);
+  stray.set_body("raw-generic");
+  gateway.Push(stray);
+
+  auto future = pushed.get_future();
+  ASSERT_EQ(future.wait_for(std::chrono::milliseconds(kWaitMs)),
+            std::future_status::ready);
+  EXPECT_EQ(future.get(), "raw-generic");
+  client.OffNotify(handle);
+  client.Disconnect();
+}
+
 TEST_F(ChatClientLoopbackTest, KickIsTerminalFlushesKickedAndNeverReconnects) {
   FakeGateway gateway([](const chirp::gateway::Packet& pkt, auto send) {
     if (pkt.msg_id() == chirp::gateway::LOGIN_REQ) {
@@ -1498,4 +1647,1100 @@ TEST_F(ChatClientLoopbackTest, UnknownNotifyIsDispatchedAndIgnored) {
   client.Disconnect();
 }
 
+// ---------------------------------------------------------------------------
+// 钩子接口接线(MessageInterceptor / ChatEventListener / AuthProvider /
+// CommandHandler / MessageStore)。所有钩子在 io 线程触发,测试用
+// promise/mutex 与测试线程同步。
+// ---------------------------------------------------------------------------
+
+// 记录型监听器:捕获状态序列与生命周期事件。
+class RecordingListener : public chirp::sdk::ChatEventListener {
+ public:
+  void OnConnectionStateChanged(int state) override {
+    std::lock_guard<std::mutex> lock(mu);
+    states.push_back(state);
+  }
+  void OnLoginResult(int code, const std::string& user_id) override {
+    std::lock_guard<std::mutex> lock(mu);
+    login_codes.push_back(code);
+    login_users.push_back(user_id);
+  }
+  void OnKicked(const std::string& reason) override {
+    std::lock_guard<std::mutex> lock(mu);
+    kick_reasons.push_back(reason);
+  }
+  void OnReconnecting(int attempt, int delay_ms) override {
+    std::lock_guard<std::mutex> lock(mu);
+    reconnectings.emplace_back(attempt, delay_ms);
+  }
+  void OnReconnected() override {
+    std::lock_guard<std::mutex> lock(mu);
+    ++reconnected;
+  }
+  void OnMessageReceived(const chirp::chat::ChatMessage& msg) override {
+    std::lock_guard<std::mutex> lock(mu);
+    messages.push_back(msg.content());
+  }
+
+  std::mutex mu;
+  std::vector<int> states;
+  std::vector<int> login_codes;
+  std::vector<std::string> login_users;
+  std::vector<std::string> kick_reasons;
+  std::vector<std::pair<int, int>> reconnectings;
+  std::vector<std::string> messages;
+  int reconnected = 0;
+};
+
+// 脚本化拦截器:用 std::function 定制两个拦截点,回调触发打旗标。
+class ScriptedInterceptor : public chirp::sdk::MessageInterceptor {
+ public:
+  std::function<bool(chirp::chat::SendMessageRequest&)> on_before_send;
+  std::function<bool(chirp::chat::ChatMessage&)> on_before_receive;
+  std::atomic<bool> before_send_called{false};
+  std::atomic<bool> after_send_called{false};
+  std::atomic<bool> after_receive_called{false};
+
+  bool OnBeforeSend(chirp::chat::SendMessageRequest& msg) override {
+    before_send_called = true;
+    return on_before_send ? on_before_send(msg) : true;
+  }
+  void OnAfterSend(const chirp::chat::SendMessageRequest&) override {
+    after_send_called = true;
+  }
+  bool OnBeforeReceive(chirp::chat::ChatMessage& msg) override {
+    return on_before_receive ? on_before_receive(msg) : true;
+  }
+  void OnAfterReceive(const chirp::chat::ChatMessage&) override {
+    after_receive_called = true;
+  }
+};
+
+// 固定 token 的认证提供者,记录 GetToken/OnTokenExpired/OnAuthResult 调用。
+class ScriptedAuthProvider : public chirp::sdk::AuthProvider {
+ public:
+  explicit ScriptedAuthProvider(std::string token) : token_(std::move(token)) {}
+
+  std::string GetToken() override {
+    ++get_token_calls;
+    return token_;
+  }
+  void OnTokenExpired(std::function<void(const std::string&)> renew) override {
+    // 先写 renew 再发布 expired_calls,测试线程轮询到计数即可安全取用。
+    last_renew = std::move(renew);
+    ++expired_calls;
+  }
+  void OnAuthResult(int code, const std::string& user_id) override {
+    std::lock_guard<std::mutex> lock(mu);
+    auth_results.emplace_back(code, user_id);
+  }
+
+  std::atomic<int> get_token_calls{0};
+  std::atomic<int> expired_calls{0};
+  std::function<void(const std::string&)> last_renew;
+  std::mutex mu;
+  std::vector<std::pair<int, std::string>> auth_results;
+
+ private:
+  std::string token_;
+};
+
+// 最小命令处理器:记录 Execute 入参,返回值可脚本化。
+class RecordingCommand : public chirp::sdk::CommandHandler {
+ public:
+  RecordingCommand(std::string name, bool result)
+      : name_(std::move(name)), result_(result) {}
+
+  std::string GetName() const override { return name_; }
+  std::string GetDescription() const override { return "test command"; }
+  bool Execute(const std::string& args, const std::string& sender_id) override {
+    std::lock_guard<std::mutex> lock(mu);
+    executed_args.push_back(args);
+    executed_senders.push_back(sender_id);
+    return result_;
+  }
+
+  std::mutex mu;
+  std::vector<std::string> executed_args;
+  std::vector<std::string> executed_senders;
+
+ private:
+  std::string name_;
+  bool result_;
+};
+
+// 服务端看到的 SEND_MESSAGE_REQ 计数(带互斥的内容捕获)。
+struct SendCapture {
+  std::mutex mu;
+  int count = 0;
+  std::vector<std::string> contents;
+
+  void Record(const chirp::chat::SendMessageRequest& req) {
+    std::lock_guard<std::mutex> lock(mu);
+    ++count;
+    contents.push_back(req.content());
+  }
+  int Count() {
+    std::lock_guard<std::mutex> lock(mu);
+    return count;
+  }
+};
+
+// 登录响应脚本:第 n 次 LOGIN_REQ 回 code_n;记录收到的 token。
+struct LoginScript {
+  std::mutex mu;
+  int count = 0;
+  std::vector<std::string> tokens;
+  std::vector<chirp::common::ErrorCode> codes;
+
+  // 记录请求并返回应答。codes 未覆盖的请求默认回 OK。
+  chirp::auth::LoginResponse OnLogin(const chirp::gateway::Packet& pkt) {
+    chirp::auth::LoginRequest req;
+    req.ParseFromArray(pkt.body().data(), static_cast<int>(pkt.body().size()));
+    chirp::common::ErrorCode code = chirp::common::OK;
+    {
+      std::lock_guard<std::mutex> lock(mu);
+      tokens.push_back(req.token());
+      if (codes.size() > static_cast<size_t>(count)) {
+        code = codes[static_cast<size_t>(count)];
+      }
+      ++count;
+    }
+    chirp::auth::LoginResponse resp;
+    resp.set_code(code);
+    resp.set_user_id("user-1");
+    resp.set_session_id("sess-1");
+    return resp;
+  }
+};
+
+chirp::gateway::Packet MakeLoginRespPacket(uint32_t sequence,
+                                           const chirp::auth::LoginResponse& resp) {
+  chirp::gateway::Packet out;
+  out.set_msg_id(chirp::gateway::LOGIN_RESP);
+  out.set_sequence(sequence);
+  out.set_body(resp.SerializeAsString());
+  return out;
+}
+
+chirp::gateway::Packet MakeChatNotifyPacket(const chirp::chat::ChatMessage& msg) {
+  chirp::gateway::Packet out;
+  out.set_msg_id(chirp::gateway::CHAT_MESSAGE_NOTIFY);
+  out.set_sequence(0);
+  out.set_body(msg.SerializeAsString());
+  return out;
+}
+
+void PushWorldMessage(FakeGateway& gateway, const std::string& content) {
+  chirp::chat::ChatMessage msg;
+  msg.set_message_id("m-" + content);
+  msg.set_sender_id("bob");
+  msg.set_channel_type(chirp::chat::WORLD);
+  msg.set_channel_id("world");
+  msg.set_content(content);
+  gateway.Push(MakeChatNotifyPacket(msg));
+}
+
+TEST_F(ChatClientLoopbackTest, InterceptorModifiesOutgoingRequest) {
+  SendCapture sends;
+  FakeGateway gateway([&](const chirp::gateway::Packet& pkt, auto send) {
+    if (pkt.msg_id() == chirp::gateway::LOGIN_REQ) {
+      chirp::auth::LoginResponse resp;
+      resp.set_code(chirp::common::OK);
+      resp.set_user_id("user-1");
+      send(MakeLoginRespPacket(pkt.sequence(), resp));
+    }
+    if (pkt.msg_id() == chirp::gateway::SEND_MESSAGE_REQ) {
+      chirp::chat::SendMessageRequest req;
+      req.ParseFromArray(pkt.body().data(), static_cast<int>(pkt.body().size()));
+      sends.Record(req);
+    }
+  });
+
+  auto interceptor = std::make_shared<ScriptedInterceptor>();
+  interceptor->on_before_send = [](chirp::chat::SendMessageRequest& req) {
+    req.set_content("[checked] " + req.content());
+    return true;
+  };
+
+  ChatClient client(LoopbackConfig(gateway.port()));
+  client.SetMessageInterceptor(interceptor);
+  client.Connect();
+  WaitState(client, ConnectionState::Connected);
+  LoginSync(client, "t");
+
+  client.SendMessage("bob", "hello");
+  std::this_thread::sleep_for(std::chrono::milliseconds(300));
+
+  ASSERT_EQ(sends.Count(), 1);
+  std::vector<std::string> contents;
+  {
+    std::lock_guard<std::mutex> lock(sends.mu);
+    contents = sends.contents;
+  }
+  EXPECT_EQ(contents[0], "[checked] hello");
+  client.Disconnect();
+}
+
+TEST_F(ChatClientLoopbackTest, InterceptorBlocksSendAndSkipsAfterSend) {
+  SendCapture sends;
+  FakeGateway gateway([&](const chirp::gateway::Packet& pkt, auto send) {
+    if (pkt.msg_id() == chirp::gateway::LOGIN_REQ) {
+      chirp::auth::LoginResponse resp;
+      resp.set_code(chirp::common::OK);
+      resp.set_user_id("user-1");
+      send(MakeLoginRespPacket(pkt.sequence(), resp));
+    }
+    if (pkt.msg_id() == chirp::gateway::SEND_MESSAGE_REQ) {
+      chirp::chat::SendMessageRequest req;
+      req.ParseFromArray(pkt.body().data(), static_cast<int>(pkt.body().size()));
+      sends.Record(req);
+    }
+  });
+
+  auto interceptor = std::make_shared<ScriptedInterceptor>();
+  interceptor->on_before_send = [](chirp::chat::SendMessageRequest&) {
+    return false;
+  };
+
+  ChatClient client(LoopbackConfig(gateway.port()));
+  client.SetMessageInterceptor(interceptor);
+  client.Connect();
+  WaitState(client, ConnectionState::Connected);
+  LoginSync(client, "t");
+
+  client.SendMessage("bob", "blocked");
+  std::this_thread::sleep_for(std::chrono::milliseconds(300));
+
+  EXPECT_EQ(sends.Count(), 0);
+  EXPECT_FALSE(interceptor->after_send_called.load());
+  client.Disconnect();
+}
+
+TEST_F(ChatClientLoopbackTest, AfterSendFiresOnceRequestIsWritten) {
+  FakeGateway gateway([&](const chirp::gateway::Packet& pkt, auto send) {
+    if (pkt.msg_id() == chirp::gateway::LOGIN_REQ) {
+      chirp::auth::LoginResponse resp;
+      resp.set_code(chirp::common::OK);
+      resp.set_user_id("user-1");
+      send(MakeLoginRespPacket(pkt.sequence(), resp));
+    }
+  });
+
+  auto interceptor = std::make_shared<ScriptedInterceptor>();
+  ChatClient client(LoopbackConfig(gateway.port()));
+  client.SetMessageInterceptor(interceptor);
+  client.Connect();
+  WaitState(client, ConnectionState::Connected);
+  LoginSync(client, "t");
+
+  client.SendMessage("bob", "plain");
+  for (int i = 0; i < 300 && !interceptor->after_send_called.load(); ++i) {
+    std::this_thread::sleep_for(std::chrono::milliseconds(2));
+  }
+  EXPECT_TRUE(interceptor->before_send_called.load());
+  EXPECT_TRUE(interceptor->after_send_called.load());
+  client.Disconnect();
+}
+
+TEST_F(ChatClientLoopbackTest, InterceptorRewritesIncomingMessageButNotRawFrame) {
+  FakeGateway gateway([&](const chirp::gateway::Packet& pkt, auto send) {
+    if (pkt.msg_id() == chirp::gateway::LOGIN_REQ) {
+      chirp::auth::LoginResponse resp;
+      resp.set_code(chirp::common::OK);
+      resp.set_user_id("user-1");
+      send(MakeLoginRespPacket(pkt.sequence(), resp));
+    }
+  });
+
+  auto interceptor = std::make_shared<ScriptedInterceptor>();
+  interceptor->on_before_receive = [](chirp::chat::ChatMessage& msg) {
+    msg.set_content("clean " + msg.content());
+    return true;
+  };
+
+  ChatClient client(LoopbackConfig(gateway.port()));
+  client.SetMessageInterceptor(interceptor);
+  client.Connect();
+  WaitState(client, ConnectionState::Connected);
+  LoginSync(client, "t");
+
+  std::promise<std::string> shown;
+  auto shown_future = shown.get_future();
+  client.SetMessageCallback([&](const std::string&, const std::string& content) {
+    shown.set_value(content);
+  });
+
+  std::promise<std::string> raw_body;
+  auto raw_future = raw_body.get_future();
+  client.OnNotify(chirp::gateway::CHAT_MESSAGE_NOTIFY,
+                  [&](const std::string& body) { raw_body.set_value(body); });
+
+  PushWorldMessage(gateway, "dirty");
+
+  ASSERT_EQ(shown_future.wait_for(std::chrono::milliseconds(kWaitMs)),
+            std::future_status::ready);
+  EXPECT_EQ(shown_future.get(), "clean dirty");
+
+  // 原始分发不受拦截器改写影响:OnNotify 拿到的仍是 wire body。
+  ASSERT_EQ(raw_future.wait_for(std::chrono::milliseconds(kWaitMs)),
+            std::future_status::ready);
+  chirp::chat::ChatMessage raw;
+  ASSERT_TRUE(raw.ParseFromString(raw_future.get()));
+  EXPECT_EQ(raw.content(), "dirty");
+  EXPECT_TRUE(interceptor->after_receive_called.load());
+  client.Disconnect();
+}
+
+TEST_F(ChatClientLoopbackTest, InterceptorDropsIncomingMessageEntirely) {
+  FakeGateway gateway([&](const chirp::gateway::Packet& pkt, auto send) {
+    if (pkt.msg_id() == chirp::gateway::LOGIN_REQ) {
+      chirp::auth::LoginResponse resp;
+      resp.set_code(chirp::common::OK);
+      resp.set_user_id("user-1");
+      send(MakeLoginRespPacket(pkt.sequence(), resp));
+    }
+  });
+
+  auto interceptor = std::make_shared<ScriptedInterceptor>();
+  interceptor->on_before_receive = [](chirp::chat::ChatMessage&) {
+    return false;
+  };
+
+  ChatClient client(LoopbackConfig(gateway.port()));
+  client.SetMessageInterceptor(interceptor);
+  client.SetMessageStore(std::make_unique<chirp::sdk::MemoryMessageStore>());
+  auto listener = std::make_shared<RecordingListener>();
+  client.AddListener(listener);
+  client.Connect();
+  WaitState(client, ConnectionState::Connected);
+  LoginSync(client, "t");
+
+  std::atomic<int> shown{0};
+  client.SetMessageCallback([&](const std::string&, const std::string&) {
+    ++shown;
+  });
+  std::atomic<int> raw{0};
+  client.OnNotify(chirp::gateway::CHAT_MESSAGE_NOTIFY,
+                  [&](const std::string&) { ++raw; });
+
+  PushWorldMessage(gateway, "spam");
+  std::this_thread::sleep_for(std::chrono::milliseconds(300));
+
+  EXPECT_EQ(shown.load(), 0);
+  EXPECT_EQ(raw.load(), 0);
+  EXPECT_FALSE(interceptor->after_receive_called.load());
+  EXPECT_TRUE(client.LoadHistory(chirp::chat::WORLD, "world", 10).empty());
+  {
+    std::lock_guard<std::mutex> lock(listener->mu);
+    EXPECT_TRUE(listener->messages.empty());
+  }
+  client.Disconnect();
+}
+
+TEST_F(ChatClientLoopbackTest, ListenerSeesLifecycleAndReconnectSequence) {
+  FakeGateway gateway([&](const chirp::gateway::Packet& pkt, auto send) {
+    if (pkt.msg_id() == chirp::gateway::LOGIN_REQ) {
+      chirp::auth::LoginResponse resp;
+      resp.set_code(chirp::common::OK);
+      resp.set_user_id("user-1");
+      send(MakeLoginRespPacket(pkt.sequence(), resp));
+    }
+  });
+
+  ChatClient client(LoopbackConfig(gateway.port()));
+  auto listener = std::make_shared<RecordingListener>();
+  client.AddListener(listener);
+  client.Connect();
+  WaitState(client, ConnectionState::Connected);
+  LoginSync(client, "t");
+
+  gateway.DropConnections();
+  for (int i = 0; i < 300; ++i) {
+    {
+      std::lock_guard<std::mutex> lock(listener->mu);
+      if (!listener->reconnectings.empty()) {
+        break;
+      }
+    }
+    std::this_thread::sleep_for(std::chrono::milliseconds(2));
+  }
+  {
+    std::lock_guard<std::mutex> lock(listener->mu);
+    ASSERT_FALSE(listener->reconnectings.empty());
+    EXPECT_EQ(listener->reconnectings[0].first, 1);
+    // 500ms 基础退避 ±20% 抖动。
+    EXPECT_GE(listener->reconnectings[0].second, 400);
+    EXPECT_LE(listener->reconnectings[0].second, 600);
+  }
+  WaitState(client, ConnectionState::Connected);
+  for (int i = 0; i < 300; ++i) {
+    std::lock_guard<std::mutex> lock(listener->mu);
+    if (listener->reconnected > 0) {
+      break;
+    }
+    std::this_thread::sleep_for(std::chrono::milliseconds(2));
+  }
+  {
+    std::lock_guard<std::mutex> lock(listener->mu);
+    // Connecting -> Connected -> LoggedIn -> WaitingReconnect -> 重连
+    // Connecting -> Connected。
+    const std::vector<int> want = {
+        static_cast<int>(ConnectionState::Connecting),
+        static_cast<int>(ConnectionState::Connected),
+        static_cast<int>(ConnectionState::LoggedIn),
+        static_cast<int>(ConnectionState::WaitingReconnect),
+        static_cast<int>(ConnectionState::Connecting),
+        static_cast<int>(ConnectionState::Connected),
+    };
+    EXPECT_EQ(listener->states, want);
+    EXPECT_EQ(listener->reconnected, 1);
+  }
+  client.Disconnect();
+}
+
+TEST_F(ChatClientLoopbackTest, ListenerSeesKickedTerminalState) {
+  FakeGateway gateway([&](const chirp::gateway::Packet& pkt, auto send) {
+    if (pkt.msg_id() == chirp::gateway::LOGIN_REQ) {
+      chirp::auth::LoginResponse resp;
+      resp.set_code(chirp::common::OK);
+      resp.set_user_id("user-1");
+      send(MakeLoginRespPacket(pkt.sequence(), resp));
+
+      chirp::auth::KickNotify kick;
+      kick.set_reason("banned");
+      chirp::gateway::Packet kp;
+      kp.set_msg_id(chirp::gateway::KICK_NOTIFY);
+      kp.set_sequence(0);
+      kp.set_body(kick.SerializeAsString());
+      send(kp);
+    }
+  });
+
+  ChatClient client(LoopbackConfig(gateway.port()));
+  auto listener = std::make_shared<RecordingListener>();
+  client.AddListener(listener);
+  client.Connect();
+  WaitState(client, ConnectionState::Connected);
+  LoginSync(client, "t");
+
+  for (int i = 0; i < 300; ++i) {
+    {
+      std::lock_guard<std::mutex> lock(listener->mu);
+      if (!listener->kick_reasons.empty()) {
+        break;
+      }
+    }
+    std::this_thread::sleep_for(std::chrono::milliseconds(2));
+  }
+  {
+    std::lock_guard<std::mutex> lock(listener->mu);
+    ASSERT_FALSE(listener->kick_reasons.empty());
+    EXPECT_EQ(listener->kick_reasons[0], "banned");
+    ASSERT_FALSE(listener->states.empty());
+    EXPECT_EQ(listener->states.back(),
+              static_cast<int>(ConnectionState::Kicked));
+  }
+  client.Disconnect();
+}
+
+TEST_F(ChatClientLoopbackTest, ListenerSeesLoginResultCodes) {
+  FakeGateway gateway([&](const chirp::gateway::Packet& pkt, auto send) {
+    if (pkt.msg_id() == chirp::gateway::LOGIN_REQ) {
+      chirp::auth::LoginResponse resp;
+      resp.set_code(chirp::common::AUTH_FAILED);
+      send(MakeLoginRespPacket(pkt.sequence(), resp));
+    }
+  });
+
+  ChatClient client(LoopbackConfig(gateway.port()));
+  auto listener = std::make_shared<RecordingListener>();
+  client.AddListener(listener);
+  client.Connect();
+  WaitState(client, ConnectionState::Connected);
+
+  std::promise<std::error_code> login_promise;
+  auto login_future = login_promise.get_future();
+  client.Login("bad", [&login_promise](const std::error_code& ec, const std::string&) {
+    login_promise.set_value(ec);
+  });
+  ASSERT_EQ(login_future.wait_for(std::chrono::milliseconds(kWaitMs)),
+            std::future_status::ready);
+  EXPECT_EQ(login_future.get(), make_error_code(ChatError::LoginFailed));
+  {
+    std::lock_guard<std::mutex> lock(listener->mu);
+    ASSERT_EQ(listener->login_codes.size(), 1u);
+    EXPECT_EQ(listener->login_codes[0],
+              static_cast<int>(chirp::common::AUTH_FAILED));
+    EXPECT_EQ(listener->login_users[0], "");
+  }
+  client.Disconnect();
+}
+
+TEST_F(ChatClientLoopbackTest, LoginBodyParseFailureReportsUnknownCode) {
+  FakeGateway gateway([&](const chirp::gateway::Packet& pkt, auto send) {
+    if (pkt.msg_id() == chirp::gateway::LOGIN_REQ) {
+      chirp::gateway::Packet out;
+      out.set_msg_id(chirp::gateway::LOGIN_RESP);
+      out.set_sequence(pkt.sequence());
+      out.set_body("not-a-login-response");
+      send(out);
+    }
+  });
+
+  ChatClient client(LoopbackConfig(gateway.port()));
+  auto listener = std::make_shared<RecordingListener>();
+  client.AddListener(listener);
+  client.Connect();
+  WaitState(client, ConnectionState::Connected);
+
+  std::promise<std::error_code> login_promise;
+  auto login_future = login_promise.get_future();
+  client.Login("t", [&login_promise](const std::error_code& ec, const std::string&) {
+    login_promise.set_value(ec);
+  });
+  ASSERT_EQ(login_future.wait_for(std::chrono::milliseconds(kWaitMs)),
+            std::future_status::ready);
+  EXPECT_EQ(login_future.get(), make_error_code(ChatError::LoginFailed));
+  {
+    std::lock_guard<std::mutex> lock(listener->mu);
+    ASSERT_EQ(listener->login_codes.size(), 1u);
+    EXPECT_EQ(listener->login_codes[0], -1);
+  }
+  client.Disconnect();
+}
+
+TEST_F(ChatClientLoopbackTest, AuthProviderSuppliesTokenForEmptyLogin) {
+  LoginScript script;
+  FakeGateway gateway([&](const chirp::gateway::Packet& pkt, auto send) {
+    if (pkt.msg_id() == chirp::gateway::LOGIN_REQ) {
+      send(MakeLoginRespPacket(pkt.sequence(), script.OnLogin(pkt)));
+    }
+  });
+
+  auto provider = std::make_shared<ScriptedAuthProvider>("tok-from-provider");
+  ChatClient client(LoopbackConfig(gateway.port()));
+  client.SetAuthProvider(provider);
+  auto listener = std::make_shared<RecordingListener>();
+  client.AddListener(listener);
+  client.Connect();
+  WaitState(client, ConnectionState::Connected);
+
+  std::promise<std::error_code> login_promise;
+  auto login_future = login_promise.get_future();
+  client.Login("", [&login_promise](const std::error_code& ec, const std::string&) {
+    login_promise.set_value(ec);
+  });
+  ASSERT_EQ(login_future.wait_for(std::chrono::milliseconds(kWaitMs)),
+            std::future_status::ready);
+  EXPECT_FALSE(login_future.get());
+  EXPECT_EQ(provider->get_token_calls.load(), 1);
+  {
+    std::lock_guard<std::mutex> lock(script.mu);
+    EXPECT_EQ(script.tokens, std::vector<std::string>{"tok-from-provider"});
+  }
+  {
+    std::lock_guard<std::mutex> lock(listener->mu);
+    ASSERT_EQ(listener->login_codes.size(), 1u);
+    EXPECT_EQ(listener->login_codes[0], static_cast<int>(chirp::common::OK));
+    EXPECT_EQ(listener->login_users[0], "user-1");
+  }
+  client.Disconnect();
+}
+
+// AUTH_FAILED -> 续期(renew) -> 重登成功的完整链路。
+TEST_F(ChatClientLoopbackTest, AuthProviderRenewRecoversFromExpiredToken) {
+  LoginScript script;
+  {
+    std::lock_guard<std::mutex> lock(script.mu);
+    script.codes = {chirp::common::AUTH_FAILED, chirp::common::OK};
+  }
+  FakeGateway gateway([&](const chirp::gateway::Packet& pkt, auto send) {
+    if (pkt.msg_id() == chirp::gateway::LOGIN_REQ) {
+      send(MakeLoginRespPacket(pkt.sequence(), script.OnLogin(pkt)));
+    }
+  });
+
+  auto provider = std::make_shared<ScriptedAuthProvider>("stale-token");
+  ChatClient client(LoopbackConfig(gateway.port()));
+  client.SetAuthProvider(provider);
+  auto listener = std::make_shared<RecordingListener>();
+  client.AddListener(listener);
+  client.Connect();
+  WaitState(client, ConnectionState::Connected);
+
+  std::promise<std::error_code> login_promise;
+  auto login_future = login_promise.get_future();
+  client.Login("", [&login_promise](const std::error_code& ec, const std::string&) {
+    login_promise.set_value(ec);
+  });
+
+  // 游戏侧异步刷新 token 后调 renew。
+  for (int i = 0; i < 300 && provider->expired_calls.load() == 0; ++i) {
+    std::this_thread::sleep_for(std::chrono::milliseconds(2));
+  }
+  ASSERT_EQ(provider->expired_calls.load(), 1);
+  ASSERT_TRUE(provider->last_renew);
+  provider->last_renew("fresh-token");
+
+  ASSERT_EQ(login_future.wait_for(std::chrono::milliseconds(kWaitMs)),
+            std::future_status::ready);
+  EXPECT_FALSE(login_future.get());
+  {
+    std::lock_guard<std::mutex> lock(script.mu);
+    EXPECT_EQ(script.tokens,
+              (std::vector<std::string>{"stale-token", "fresh-token"}));
+  }
+  {
+    std::lock_guard<std::mutex> lock(listener->mu);
+    // 两次判定:先 AUTH_FAILED(续期前),再 OK。
+    const std::vector<int> want_codes = {
+        static_cast<int>(chirp::common::AUTH_FAILED),
+        static_cast<int>(chirp::common::OK),
+    };
+    EXPECT_EQ(listener->login_codes, want_codes);
+    EXPECT_EQ(listener->login_users, (std::vector<std::string>{"", "user-1"}));
+  }
+  std::vector<std::pair<int, std::string>> auth_results;
+  {
+    std::lock_guard<std::mutex> lock(provider->mu);
+    auth_results = provider->auth_results;
+  }
+  ASSERT_EQ(auth_results.size(), 2u);
+  EXPECT_EQ(auth_results[0],
+            std::make_pair(static_cast<int>(chirp::common::AUTH_FAILED),
+                           std::string("")));
+  EXPECT_EQ(auth_results[1],
+            std::make_pair(static_cast<int>(chirp::common::OK),
+                           std::string("user-1")));
+  client.Disconnect();
+}
+
+// 游戏不调 renew:续期超时后按设计文档进入 Disconnected 并回报失败。
+TEST_F(ChatClientLoopbackTest, AuthProviderUnrenewedLoginTimesOutToDisconnected) {
+  ChatConfig config = LoopbackConfig(0);  // port 稍后填
+  config.request_timeout_ms = 200;
+
+  LoginScript script;
+  {
+    std::lock_guard<std::mutex> lock(script.mu);
+    script.codes = {chirp::common::AUTH_FAILED};
+  }
+  FakeGateway gateway([&](const chirp::gateway::Packet& pkt, auto send) {
+    if (pkt.msg_id() == chirp::gateway::LOGIN_REQ) {
+      send(MakeLoginRespPacket(pkt.sequence(), script.OnLogin(pkt)));
+    }
+  });
+  config.gateway_port = gateway.port();
+
+  auto provider = std::make_shared<ScriptedAuthProvider>("stale-token");
+  ChatClient client(config);
+  client.SetAuthProvider(provider);
+  client.Connect();
+  WaitState(client, ConnectionState::Connected);
+
+  std::promise<std::error_code> login_promise;
+  auto login_future = login_promise.get_future();
+  client.Login("", [&login_promise](const std::error_code& ec, const std::string&) {
+    login_promise.set_value(ec);
+  });
+
+  ASSERT_EQ(login_future.wait_for(std::chrono::milliseconds(kWaitMs)),
+            std::future_status::ready);
+  EXPECT_EQ(login_future.get(), make_error_code(ChatError::LoginFailed));
+  EXPECT_EQ(provider->expired_calls.load(), 1);
+  // 超时路径先 SetState 再回调,这里状态必已是 Disconnected。
+  EXPECT_EQ(client.GetState(), ConnectionState::Disconnected);
+}
+
+// 续期后仍 AUTH_FAILED:不再触发第二次 OnTokenExpired,直接失败。
+TEST_F(ChatClientLoopbackTest, AuthProviderRenewedFailureDoesNotRenewAgain) {
+  LoginScript script;
+  {
+    std::lock_guard<std::mutex> lock(script.mu);
+    script.codes = {chirp::common::AUTH_FAILED, chirp::common::AUTH_FAILED};
+  }
+  FakeGateway gateway([&](const chirp::gateway::Packet& pkt, auto send) {
+    if (pkt.msg_id() == chirp::gateway::LOGIN_REQ) {
+      send(MakeLoginRespPacket(pkt.sequence(), script.OnLogin(pkt)));
+    }
+  });
+
+  auto provider = std::make_shared<ScriptedAuthProvider>("stale-token");
+  ChatClient client(LoopbackConfig(gateway.port()));
+  client.SetAuthProvider(provider);
+  client.Connect();
+  WaitState(client, ConnectionState::Connected);
+
+  std::promise<std::error_code> login_promise;
+  auto login_future = login_promise.get_future();
+  client.Login("", [&login_promise](const std::error_code& ec, const std::string&) {
+    login_promise.set_value(ec);
+  });
+
+  for (int i = 0; i < 300 && provider->expired_calls.load() == 0; ++i) {
+    std::this_thread::sleep_for(std::chrono::milliseconds(2));
+  }
+  ASSERT_EQ(provider->expired_calls.load(), 1);
+  provider->last_renew("fresh-token");
+
+  ASSERT_EQ(login_future.wait_for(std::chrono::milliseconds(kWaitMs)),
+            std::future_status::ready);
+  EXPECT_EQ(login_future.get(), make_error_code(ChatError::LoginFailed));
+  std::this_thread::sleep_for(std::chrono::milliseconds(200));
+  EXPECT_EQ(provider->expired_calls.load(), 1);  // 不二次续期
+  client.Disconnect();
+}
+
+// 续期挂起期间发起新一轮 Login:旧回调以 LoginFailed 收尾,新链接管。
+TEST_F(ChatClientLoopbackTest, AuthProviderPendingRenewalSupersededByNewLogin) {
+  LoginScript script;
+  {
+    std::lock_guard<std::mutex> lock(script.mu);
+    script.codes = {chirp::common::AUTH_FAILED, chirp::common::OK};
+  }
+  FakeGateway gateway([&](const chirp::gateway::Packet& pkt, auto send) {
+    if (pkt.msg_id() == chirp::gateway::LOGIN_REQ) {
+      send(MakeLoginRespPacket(pkt.sequence(), script.OnLogin(pkt)));
+    }
+  });
+
+  auto provider = std::make_shared<ScriptedAuthProvider>("stale-token");
+  ChatClient client(LoopbackConfig(gateway.port()));
+  client.SetAuthProvider(provider);
+  client.Connect();
+  WaitState(client, ConnectionState::Connected);
+
+  std::promise<std::error_code> first_done;
+  auto first_future = first_done.get_future();
+  client.Login("", [&first_done](const std::error_code& ec, const std::string&) {
+    first_done.set_value(ec);
+  });
+
+  for (int i = 0; i < 300 && provider->expired_calls.load() == 0; ++i) {
+    std::this_thread::sleep_for(std::chrono::milliseconds(2));
+  }
+  ASSERT_EQ(provider->expired_calls.load(), 1);
+  // 不调 renew,直接发起新登录(显式 token)。
+  std::promise<std::error_code> second_done;
+  auto second_future = second_done.get_future();
+  client.Login("direct-token",
+               [&second_done](const std::error_code& ec, const std::string&) {
+                 second_done.set_value(ec);
+               });
+
+  ASSERT_EQ(first_future.wait_for(std::chrono::milliseconds(kWaitMs)),
+            std::future_status::ready);
+  EXPECT_EQ(first_future.get(), make_error_code(ChatError::LoginFailed));
+  ASSERT_EQ(second_future.wait_for(std::chrono::milliseconds(kWaitMs)),
+            std::future_status::ready);
+  EXPECT_FALSE(second_future.get());
+  {
+    std::lock_guard<std::mutex> lock(script.mu);
+    EXPECT_EQ(script.tokens,
+              (std::vector<std::string>{"stale-token", "direct-token"}));
+  }
+  client.Disconnect();
+}
+
+// 超时已被判定后游戏侧才调 renew:迟到闭包必须被无视,不得复活状态机
+// 或再发登录包。
+TEST_F(ChatClientLoopbackTest, AuthProviderLateRenewIgnoredAfterTimeout) {
+  ChatConfig config = LoopbackConfig(0);
+  config.request_timeout_ms = 200;
+
+  LoginScript script;
+  {
+    std::lock_guard<std::mutex> lock(script.mu);
+    script.codes = {chirp::common::AUTH_FAILED};
+  }
+  FakeGateway gateway([&](const chirp::gateway::Packet& pkt, auto send) {
+    if (pkt.msg_id() == chirp::gateway::LOGIN_REQ) {
+      send(MakeLoginRespPacket(pkt.sequence(), script.OnLogin(pkt)));
+    }
+  });
+  config.gateway_port = gateway.port();
+
+  auto provider = std::make_shared<ScriptedAuthProvider>("stale-token");
+  ChatClient client(config);
+  client.SetAuthProvider(provider);
+  client.Connect();
+  WaitState(client, ConnectionState::Connected);
+
+  std::promise<std::error_code> login_promise;
+  auto login_future = login_promise.get_future();
+  client.Login("", [&login_promise](const std::error_code& ec, const std::string&) {
+    login_promise.set_value(ec);
+  });
+  ASSERT_EQ(login_future.wait_for(std::chrono::milliseconds(kWaitMs)),
+            std::future_status::ready);
+  EXPECT_EQ(login_future.get(), make_error_code(ChatError::LoginFailed));
+  ASSERT_EQ(provider->expired_calls.load(), 1);
+
+  // 超时判定后迟到续期:闭包照常 post,但必须原地返回。
+  provider->last_renew("late-token");
+  std::this_thread::sleep_for(std::chrono::milliseconds(50));
+  EXPECT_EQ(client.GetState(), ConnectionState::Disconnected);
+  EXPECT_EQ(provider->expired_calls.load(), 1);
+  {
+    std::lock_guard<std::mutex> lock(script.mu);
+    EXPECT_EQ(script.tokens, std::vector<std::string>{"stale-token"});
+  }
+  client.Disconnect();
+}
+
+// 续期回调交回空 token:本轮登录以 LoginFailed 收尾,连接保持不拆。
+TEST_F(ChatClientLoopbackTest, AuthProviderRenewWithEmptyTokenFailsLogin) {
+  LoginScript script;
+  {
+    std::lock_guard<std::mutex> lock(script.mu);
+    script.codes = {chirp::common::AUTH_FAILED};
+  }
+  FakeGateway gateway([&](const chirp::gateway::Packet& pkt, auto send) {
+    if (pkt.msg_id() == chirp::gateway::LOGIN_REQ) {
+      send(MakeLoginRespPacket(pkt.sequence(), script.OnLogin(pkt)));
+    }
+  });
+
+  auto provider = std::make_shared<ScriptedAuthProvider>("stale-token");
+  ChatClient client(LoopbackConfig(gateway.port()));
+  client.SetAuthProvider(provider);
+  client.Connect();
+  WaitState(client, ConnectionState::Connected);
+
+  std::promise<std::error_code> login_promise;
+  auto login_future = login_promise.get_future();
+  client.Login("", [&login_promise](const std::error_code& ec, const std::string&) {
+    login_promise.set_value(ec);
+  });
+
+  for (int i = 0; i < 300 && provider->expired_calls.load() == 0; ++i) {
+    std::this_thread::sleep_for(std::chrono::milliseconds(2));
+  }
+  ASSERT_EQ(provider->expired_calls.load(), 1);
+  provider->last_renew("");  // 游戏侧续期失败,交回空 token
+
+  ASSERT_EQ(login_future.wait_for(std::chrono::milliseconds(kWaitMs)),
+            std::future_status::ready);
+  EXPECT_EQ(login_future.get(), make_error_code(ChatError::LoginFailed));
+  // 与超时路径不同:活跃续期只报失败,不主动拆掉还活着的连接。
+  EXPECT_EQ(client.GetState(), ConnectionState::Connected);
+  EXPECT_EQ(provider->expired_calls.load(), 1);
+  {
+    std::lock_guard<std::mutex> lock(script.mu);
+    EXPECT_EQ(script.tokens, std::vector<std::string>{"stale-token"});
+  }
+  client.Disconnect();
+}
+
+// 续期挂起期间显式断开:悬挂的 Login 回调以 Closed 收尾,不悬挂到超时。
+TEST_F(ChatClientLoopbackTest, DisconnectFlushesPendingRenewal) {
+  LoginScript script;
+  {
+    std::lock_guard<std::mutex> lock(script.mu);
+    script.codes = {chirp::common::AUTH_FAILED};
+  }
+  FakeGateway gateway([&](const chirp::gateway::Packet& pkt, auto send) {
+    if (pkt.msg_id() == chirp::gateway::LOGIN_REQ) {
+      send(MakeLoginRespPacket(pkt.sequence(), script.OnLogin(pkt)));
+    }
+  });
+
+  auto provider = std::make_shared<ScriptedAuthProvider>("stale-token");
+  ChatClient client(LoopbackConfig(gateway.port()));
+  client.SetAuthProvider(provider);
+  client.Connect();
+  WaitState(client, ConnectionState::Connected);
+
+  std::promise<std::error_code> login_promise;
+  auto login_future = login_promise.get_future();
+  client.Login("", [&login_promise](const std::error_code& ec, const std::string&) {
+    login_promise.set_value(ec);
+  });
+
+  for (int i = 0; i < 300 && provider->expired_calls.load() == 0; ++i) {
+    std::this_thread::sleep_for(std::chrono::milliseconds(2));
+  }
+  ASSERT_EQ(provider->expired_calls.load(), 1);
+
+  client.Disconnect();
+  ASSERT_EQ(login_future.wait_for(std::chrono::milliseconds(kWaitMs)),
+            std::future_status::ready);
+  EXPECT_EQ(login_future.get(), make_error_code(ChatError::Closed));
+  // flush 回调先于 DoClose 之后的 SetState 执行,状态用等待收敛。
+  WaitState(client, ConnectionState::Disconnected);
+  EXPECT_EQ(client.GetState(), ConnectionState::Disconnected);
+}
+
+TEST_F(ChatClientLoopbackTest, CommandIsHandledLocallyWithoutSending) {
+  SendCapture sends;
+  FakeGateway gateway([&](const chirp::gateway::Packet& pkt, auto send) {
+    if (pkt.msg_id() == chirp::gateway::LOGIN_REQ) {
+      chirp::auth::LoginResponse resp;
+      resp.set_code(chirp::common::OK);
+      resp.set_user_id("user-1");
+      send(MakeLoginRespPacket(pkt.sequence(), resp));
+    }
+    if (pkt.msg_id() == chirp::gateway::SEND_MESSAGE_REQ) {
+      chirp::chat::SendMessageRequest req;
+      req.ParseFromArray(pkt.body().data(), static_cast<int>(pkt.body().size()));
+      sends.Record(req);
+    }
+  });
+
+  // 所有权交给 SDK(唯一),测试侧用裸指针读取记录。
+  auto* trade = new RecordingCommand("trade", true);
+  ChatClient client(LoopbackConfig(gateway.port()));
+  client.RegisterCommand(std::unique_ptr<chirp::sdk::CommandHandler>(trade));
+  client.Connect();
+  WaitState(client, ConnectionState::Connected);
+  LoginSync(client, "t");
+
+  client.SendMessage("bob", "/trade alice 100");
+  std::this_thread::sleep_for(std::chrono::milliseconds(300));
+
+  EXPECT_EQ(sends.Count(), 0);
+  {
+    std::lock_guard<std::mutex> lock(trade->mu);
+    ASSERT_EQ(trade->executed_args.size(), 1u);
+    EXPECT_EQ(trade->executed_args[0], "alice 100");
+    EXPECT_EQ(trade->executed_senders[0], "user-1");
+  }
+  client.Disconnect();
+}
+
+// 命令名匹配但 Execute 返回 false,且没有其他 handler:消息本地丢弃。
+TEST_F(ChatClientLoopbackTest, UnclaimedCommandIsDroppedLocally) {
+  SendCapture sends;
+  FakeGateway gateway([&](const chirp::gateway::Packet& pkt, auto send) {
+    if (pkt.msg_id() == chirp::gateway::LOGIN_REQ) {
+      chirp::auth::LoginResponse resp;
+      resp.set_code(chirp::common::OK);
+      resp.set_user_id("user-1");
+      send(MakeLoginRespPacket(pkt.sequence(), resp));
+    }
+    if (pkt.msg_id() == chirp::gateway::SEND_MESSAGE_REQ) {
+      chirp::chat::SendMessageRequest req;
+      req.ParseFromArray(pkt.body().data(), static_cast<int>(pkt.body().size()));
+      sends.Record(req);
+    }
+  });
+
+  auto* trade = new RecordingCommand("trade", false);
+  ChatClient client(LoopbackConfig(gateway.port()));
+  client.RegisterCommand(std::unique_ptr<chirp::sdk::CommandHandler>(trade));
+  client.Connect();
+  WaitState(client, ConnectionState::Connected);
+  LoginSync(client, "t");
+
+  // "/trade"(无参数):命令名匹配、Execute 返回 false -> 本地丢弃。
+  client.SendMessage("bob", "/trade");
+  // "/dance":无 handler 认领 -> 本地丢弃,Execute 不会被调用。
+  client.SendMessage("bob", "/dance");
+  std::this_thread::sleep_for(std::chrono::milliseconds(300));
+
+  EXPECT_EQ(sends.Count(), 0);
+  {
+    std::lock_guard<std::mutex> lock(trade->mu);
+    ASSERT_EQ(trade->executed_args.size(), 1u);  // 只有 "/trade" 命中
+    EXPECT_EQ(trade->executed_args[0], "");
+  }
+  client.Disconnect();
+}
+
+// 零命令注册:'/' 消息按普通文本发送(向后兼容)。
+TEST_F(ChatClientLoopbackTest, SlashMessagePassesThroughWithoutCommands) {
+  SendCapture sends;
+  FakeGateway gateway([&](const chirp::gateway::Packet& pkt, auto send) {
+    if (pkt.msg_id() == chirp::gateway::LOGIN_REQ) {
+      chirp::auth::LoginResponse resp;
+      resp.set_code(chirp::common::OK);
+      resp.set_user_id("user-1");
+      send(MakeLoginRespPacket(pkt.sequence(), resp));
+    }
+    if (pkt.msg_id() == chirp::gateway::SEND_MESSAGE_REQ) {
+      chirp::chat::SendMessageRequest req;
+      req.ParseFromArray(pkt.body().data(), static_cast<int>(pkt.body().size()));
+      sends.Record(req);
+    }
+  });
+
+  ChatClient client(LoopbackConfig(gateway.port()));
+  client.Connect();
+  WaitState(client, ConnectionState::Connected);
+  LoginSync(client, "t");
+
+  client.SendMessage("bob", "/dance");
+  for (int i = 0; i < 300 && sends.Count() == 0; ++i) {
+    std::this_thread::sleep_for(std::chrono::milliseconds(2));
+  }
+  ASSERT_EQ(sends.Count(), 1);
+  {
+    std::lock_guard<std::mutex> lock(sends.mu);
+    EXPECT_EQ(sends.contents[0], "/dance");
+  }
+  client.Disconnect();
+}
+
+// 收发消息都落 store;转发查询 newest-first。
+TEST_F(ChatClientLoopbackTest, StoreSavesReceivedAndSentMessages) {
+  FakeGateway gateway([&](const chirp::gateway::Packet& pkt, auto send) {
+    if (pkt.msg_id() == chirp::gateway::LOGIN_REQ) {
+      chirp::auth::LoginResponse resp;
+      resp.set_code(chirp::common::OK);
+      resp.set_user_id("user-1");
+      send(MakeLoginRespPacket(pkt.sequence(), resp));
+    }
+  });
+
+  ChatClient client(LoopbackConfig(gateway.port()));
+  client.SetMessageStore(std::make_unique<chirp::sdk::MemoryMessageStore>());
+  client.Connect();
+  WaitState(client, ConnectionState::Connected);
+  LoginSync(client, "t");
+
+  PushWorldMessage(gateway, "recv-text");
+  for (int i = 0; i < 300; ++i) {
+    if (!client.LoadHistory(chirp::chat::WORLD, "world", 10).empty()) {
+      break;
+    }
+    std::this_thread::sleep_for(std::chrono::milliseconds(2));
+  }
+  const auto world = client.LoadHistory(chirp::chat::WORLD, "world", 10);
+  ASSERT_EQ(world.size(), 1u);
+  EXPECT_EQ(world[0].content(), "recv-text");
+
+  client.SendMessage("bob", "sent-text");
+  // user_id_="user-1" > "bob",私聊 channel_id 为 "bob|user-1"。
+  const std::string private_channel = "bob|user-1";
+  for (int i = 0; i < 300; ++i) {
+    if (!client.LoadHistory(chirp::chat::PRIVATE, private_channel, 10).empty()) {
+      break;
+    }
+    std::this_thread::sleep_for(std::chrono::milliseconds(2));
+  }
+  const auto priv = client.LoadHistory(chirp::chat::PRIVATE, private_channel, 10);
+  ASSERT_EQ(priv.size(), 1u);
+  EXPECT_EQ(priv[0].content(), "sent-text");
+  EXPECT_EQ(priv[0].receiver_id(), "bob");
+
+  client.MarkRead(chirp::chat::PRIVATE, private_channel, priv[0].message_id());
+  EXPECT_EQ(client.GetUnreadCount(chirp::chat::PRIVATE, private_channel), 0);
+  // 清理"远期之前"的全部消息。
+  client.CleanupMessages(9999999999999LL);
+  EXPECT_TRUE(client.LoadHistory(chirp::chat::PRIVATE, private_channel, 10).empty());
+  client.Disconnect();
+}
+
+TEST_F(ChatClientLoopbackTest, StorePassThroughWithoutStoreIsNoop) {
+  // 端口 1 仅为占位:不调用 Connect(),不会有任何 TCP 活动。
+  ChatClient client(LoopbackConfig(1));
+  EXPECT_TRUE(client.LoadHistory(chirp::chat::WORLD, "world", 10).empty());
+  EXPECT_EQ(client.GetUnreadCount(chirp::chat::WORLD, "world"), 0);
+  client.MarkRead(chirp::chat::WORLD, "world", "m-1");
+  client.CleanupMessages(0);
+  SUCCEED();
+}
+
 }  // namespace
+
