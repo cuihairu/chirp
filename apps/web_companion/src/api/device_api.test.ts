@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { MsgID } from '@chirp/proto/gateway';
-import { DeviceInfo } from '@chirp/proto/notification';
+import { DeviceInfo } from '@chirp/proto/app_notification';
 import { DeviceApi } from './device_api';
 import { createStore } from '../state/store';
 import { createDeviceStore } from '../state/device_store';

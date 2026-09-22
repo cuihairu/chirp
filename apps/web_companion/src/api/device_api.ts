@@ -1,4 +1,4 @@
-import { DeviceInfo } from '@chirp/proto/notification';
+import { DeviceInfo } from '@chirp/proto/app_notification';
 import { GET_USER_DEVICES, REGISTER_DEVICE, LOGIN, UNREGISTER_DEVICE } from '../protocol/msg_map';
 import {
   setDevices,

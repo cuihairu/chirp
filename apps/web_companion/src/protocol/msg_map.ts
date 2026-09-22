@@ -1,6 +1,6 @@
 import * as Auth from '@chirp/proto/auth';
 import * as Chat from '@chirp/proto/chat';
-import * as Notification from '@chirp/proto/notification';
+import * as Notification from '@chirp/proto/app_notification';
 import * as Party from '@chirp/proto/party';
 import * as Social from '@chirp/proto/social';
 import { MsgID } from '@chirp/proto/gateway';

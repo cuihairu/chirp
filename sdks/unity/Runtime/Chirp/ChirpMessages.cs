@@ -96,11 +96,11 @@ namespace Chirp.Sdk
         // push targets for our account. app_gateway authenticates the session
         // and pins user_id server-side; PUSH_NOTIFICATION is deliberately
         // absent — the edge refuses it from clients.
-        public static readonly MessageSpec<Chirp.Notification.RegisterDeviceResponse> RegisterDevice =
-            new(MsgID.RegisterDeviceReq, MsgID.RegisterDeviceResp, Chirp.Notification.RegisterDeviceResponse.Parser);
-        public static readonly MessageSpec<Chirp.Notification.UnregisterDeviceResponse> UnregisterDevice =
-            new(MsgID.UnregisterDeviceReq, MsgID.UnregisterDeviceResp, Chirp.Notification.UnregisterDeviceResponse.Parser);
-        public static readonly MessageSpec<Chirp.Notification.GetUserDevicesResponse> GetUserDevices =
-            new(MsgID.GetUserDevicesReq, MsgID.GetUserDevicesResp, Chirp.Notification.GetUserDevicesResponse.Parser);
+        public static readonly MessageSpec<Chirp.AppNotification.RegisterDeviceResponse> RegisterDevice =
+            new(MsgID.RegisterDeviceReq, MsgID.RegisterDeviceResp, Chirp.AppNotification.RegisterDeviceResponse.Parser);
+        public static readonly MessageSpec<Chirp.AppNotification.UnregisterDeviceResponse> UnregisterDevice =
+            new(MsgID.UnregisterDeviceReq, MsgID.UnregisterDeviceResp, Chirp.AppNotification.UnregisterDeviceResponse.Parser);
+        public static readonly MessageSpec<Chirp.AppNotification.GetUserDevicesResponse> GetUserDevices =
+            new(MsgID.GetUserDevicesReq, MsgID.GetUserDevicesResp, Chirp.AppNotification.GetUserDevicesResponse.Parser);
     }
 }
