@@ -1,16 +1,16 @@
-# Chirp API Notes
+# Chirp API 说明
 
-The canonical API overview is now [api/overview.md](./api/overview.md).
+权威的 API 总览已迁移到 [api/overview.md](./api/overview.md)。
 
-Use that page for:
+请到那个页面查看:
 
-- packet framing
-- `chirp.gateway.Packet` envelope rules
-- supported endpoint status
-- current message ID mappings
-- login and chat flows
-- common error codes
+- 包帧格式(packet framing)
+- `chirp.gateway.Packet` 信封规则
+- 受支持端点的状态
+- 当前消息 ID 对照
+- 登录与聊天流程
+- 常见错误码
 
-The source of truth for schemas is still `proto/*.proto`.
+Schema 的事实来源仍然是 `proto/*.proto`。
 
-Status reminder: the supported runtime path is `gateway + auth + chat`. Gateway does not yet forward chat, social, or voice business packets; current chat clients connect to the Chat service directly. Check [Capability Matrix](./CAPABILITY_MATRIX.md) before treating broader proto surfaces as stable.
+状态提醒:受支持的运行时路径是 `gateway + auth + chat`。网关(gateway)目前还不转发 chat、social、voice 的业务包;当前聊天客户端直连 Chat 服务。在把更大的 proto 面当成稳定能力之前,先核对 [Capability Matrix](./CAPABILITY_MATRIX.md)。
