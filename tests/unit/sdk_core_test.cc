@@ -2056,7 +2056,10 @@ TEST_F(ChatClientLoopbackTest, ListenerSeesLifecycleAndReconnectSequence) {
   LoginSync(client, "t");
 
   gateway.DropConnections();
-  for (int i = 0; i < 300; ++i) {
+  // CI coverage runner 的 io 线程可能被抢占秒级(断线回调、重连成功后的
+  // OnReconnected fan-out 都在 io 线程),轮询窗口给足 3s;正常路径毫秒级
+  // 即 break,窗口只在调度被饿时兜底。
+  for (int i = 0; i < 1500; ++i) {
     {
       std::lock_guard<std::mutex> lock(listener->mu);
       if (!listener->reconnectings.empty()) {
@@ -2074,7 +2077,7 @@ TEST_F(ChatClientLoopbackTest, ListenerSeesLifecycleAndReconnectSequence) {
     EXPECT_LE(listener->reconnectings[0].second, 600);
   }
   WaitState(client, ConnectionState::Connected);
-  for (int i = 0; i < 300; ++i) {
+  for (int i = 0; i < 1500; ++i) {
     std::lock_guard<std::mutex> lock(listener->mu);
     if (listener->reconnected > 0) {
       break;
