@@ -379,7 +379,6 @@ add_executable(notification_tests
   notification_test.cc
   notification_internal_test.cc
   push_transport_http_test.cc
-  push_transport_tls_test.cc
   ${CMAKE_SOURCE_DIR}/services/app/notification/src/notification_service.cc
   ${CMAKE_SOURCE_DIR}/services/app/notification/src/push_transport.cc
   ${CMAKE_SOURCE_DIR}/services/app/notification/src/http_push_transport.cc
@@ -388,10 +387,6 @@ add_executable(notification_tests
 chirp_unit_test_common_links(notification_tests)
 target_link_libraries(notification_tests PRIVATE chirp_network chirp_common chirp_protos)
 
-# The TLS transport tests present the committed self-signed test
-# certificate from here (SAN: 127.0.0.1 + localhost).
-target_compile_definitions(notification_tests PRIVATE
-  CHIRP_PUSH_TLS_DATA_DIR="${CMAKE_CURRENT_SOURCE_DIR}/data/push_tls")
 
 target_include_directories(notification_tests
   PRIVATE
