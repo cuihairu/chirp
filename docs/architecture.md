@@ -197,7 +197,7 @@ sequenceDiagram
     AG->>AC: per-client pipe 转发
     AC->>AC: 检测 {game_id}: 前缀 → 跨平面
     AC->>AC: 解析 player_id → (game42, game_user_7)
-    AC->>GC: INJECT_MESSAGE_NOTIFY（trusted peer）
+    AC->>GC: PEER_INJECT_MESSAGE_NOTIFY 5053（trusted peer）
     Note right of AC: sender_id="game_user_7",<br/>channel_id="guild_123"
     GC->>GC: 持久化，广播给游戏侧成员
     GC->>G: CHAT_MESSAGE_NOTIFY
@@ -210,7 +210,7 @@ sequenceDiagram
 2. 解析 `player_id → game_user_id`。
 3. 将消息注入到该 `game_id` 对应的已注册 `game_chat` peer。
 
-游戏侧收到的是普通注入——它不知道消息来自 App 玩家。
+游戏侧收到的是普通注入——它不知道消息来自 App 玩家。（2026-09-22 已落地:`PlayerDirectory::RelayGameReply` + `ChatPeerHub::service_id_for_game` + `IdentityRegistry::ResolveGameUser`,回码 OK/SERVER_UNAVAILABLE/INVALID_PARAM,详见 server_plane.md「跨平面回复」。)
 
 ### 游戏后端注入系统消息
 
