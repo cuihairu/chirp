@@ -1,28 +1,28 @@
 ---
-title: Installation
+title: 安装指南
 ---
 
-# Installation Guide
+# 安装指南
 
-> Status note: this page contains environment setup guidance, but the current supported runtime target is still the core `gateway + auth + chat` path. Redis and MySQL are optional for the most basic local build; enhanced auth/chat paths require additional native dependencies.
+> 状态说明:本页是环境搭建指引,但当前受支持的运行时目标仍是核心 `gateway + auth + chat` 路径。最基本的本地构建可以不要 Redis 和 MySQL;增强版 auth/chat 路径需要额外的本地依赖。
 
-This guide covers installing Chirp from source and setting up the development environment.
+本指南覆盖从源码安装 Chirp 和搭建开发环境。
 
-## System Requirements
+## 系统要求
 
-### Linux (Ubuntu 22.04+)
+### Linux(Ubuntu 22.04+)
 
-**Required:**
-- GCC 13+ or Clang 17+
+**必需:**
+- GCC 13+ 或 Clang 17+
 - CMake 3.21+
-- Ninja build system
-- Protocol Buffers compiler
+- Ninja 构建系统
+- Protocol Buffers 编译器
 
-**Optional for extended runtime paths:**
+**扩展运行时路径可选:**
 - Redis
 - MySQL
 
-**Install:**
+**安装:**
 ```bash
 sudo apt-get update
 sudo apt-get install -y \
@@ -39,13 +39,13 @@ sudo apt-get install -y \
     pkg-config
 ```
 
-### macOS (12+)
+### macOS(12+)
 
-**Required:**
+**必需:**
 - Xcode Command Line Tools
 - Homebrew
 
-**Install:**
+**安装:**
 ```bash
 # Install dependencies
 brew install cmake protobuf abseil openssl mysql redis
@@ -56,14 +56,14 @@ brew services start redis
 brew services start mysql
 ```
 
-### Windows (11+)
+### Windows(11+)
 
-**Required:**
+**必需:**
 - Visual Studio 2022 17.10+
 - vcpkg
 - CMake
 
-**Install:**
+**安装:**
 ```powershell
 # Install vcpkg
 git clone https://github.com/Microsoft/vcpkg.git C:\vcpkg
@@ -74,25 +74,25 @@ git clone https://github.com/Microsoft/vcpkg.git C:\vcpkg
 vcpkg install protobuf absl openssl libmariadb redis-plus asio
 ```
 
-## Building from Source
+## 从源码构建
 
-### 1. Clone Repository
+### 1. 克隆仓库
 
 ```bash
 git clone https://github.com/cuihairu/chirp.git
 cd chirp
 ```
 
-### 2. Generate Protocol Buffer Files
+### 2. 生成 Protocol Buffer 文件
 
 ```bash
 chmod +x gen_proto.sh
 ./gen_proto.sh
 ```
 
-This generates C++ files from `.proto` definitions in the `proto/cpp/proto/` directory.
+这会从 `proto/` 下的 `.proto` 定义生成 C++ 文件到 `proto/cpp/proto/` 目录。
 
-### 3. Configure with CMake
+### 3. 用 CMake 配置
 
 ```bash
 mkdir build && cd build
@@ -108,33 +108,33 @@ cmake -G Ninja -DCMAKE_BUILD_TYPE=Release \
     -DCMAKE_TOOLCHAIN_FILE=../vcpkg/scripts/buildsystems/vcpkg.cmake ..
 ```
 
-### 4. Build
+### 4. 构建
 
 ```bash
 cmake --build . --parallel
 ```
 
-On macOS with vcpkg, also pass:
+macOS 上用 vcpkg 时,还要加:
 
 ```bash
 -DCMAKE_OSX_ARCHITECTURES="$(uname -m)"
 ```
 
-### 5. Run Tests (Optional)
+### 5. 跑测试(可选)
 
 ```bash
 ctest --output-on-failure
 ```
 
-## Docker Build
+## Docker 构建
 
-### Using Docker Compose (Recommended)
+### 用 Docker Compose(推荐)
 
 ```bash
 docker-compose up -d
 ```
 
-### Manual Docker Build
+### 手动 Docker 构建
 
 ```bash
 # Build Gateway image
@@ -147,11 +147,11 @@ docker build -t chirp/chat:latest -f services/chat/Dockerfile .
 docker-compose build
 ```
 
-## Configuration
+## 配置
 
-### Environment Variables
+### 环境变量
 
-Create a `.env` file in the project root:
+在项目根目录建一个 `.env` 文件:
 
 ```bash
 # Environment
@@ -170,9 +170,9 @@ MYSQL_USER=chirp
 MYSQL_PASSWORD=chirp123
 ```
 
-### Service Configuration
+### 服务配置
 
-Each service can be configured via JSON files placed in `config/`:
+每个服务都可以用放在 `config/` 下的 JSON 文件配置:
 
 ```json
 {
@@ -190,9 +190,9 @@ Each service can be configured via JSON files placed in `config/`:
 }
 ```
 
-## Database Setup
+## 数据库准备
 
-### MySQL Schema
+### MySQL schema
 
 ```bash
 # Create database
@@ -206,7 +206,7 @@ mysql -u root -p -e "GRANT ALL PRIVILEGES ON chirp.* TO 'chirp'@'localhost';"
 mysql -u chirp -pchirp123 chirp < scripts/init_db.sql
 ```
 
-### Redis Setup
+### Redis 准备
 
 ```bash
 # Start Redis
@@ -217,22 +217,22 @@ redis-cli ping
 # Should return: PONG
 ```
 
-## Verification
+## 验证
 
-### Test Gateway
+### 测试 Gateway
 
 ```bash
 ./build/services/gateway/chirp_gateway
 # Output: Gateway service listening on 0.0.0.0:5000
 ```
 
-### Test CLI Client
+### 测试 CLI 客户端
 
 ```bash
 ./build/apps/cli_client/chirp_cli
 ```
 
-### Test Services
+### 测试服务
 
 ```bash
 # Test all services at once
@@ -242,19 +242,19 @@ redis-cli ping
     --duration 60
 ```
 
-## Troubleshooting
+## 故障排查
 
-### Protobuf Issues
+### Protobuf 问题
 
-**Problem**: Protobuf not found
+**问题**:找不到 Protobuf
 ```bash
 export CMAKE_PREFIX_PATH=/usr/local
 cmake ..
 ```
 
-### MySQL Linker Errors
+### MySQL 链接错误
 
-**Problem**: the MySQL client library (libmariadb) not found
+**问题**:找不到 MySQL 客户端库(libmariadb)
 ```bash
 # Linux
 export MYSQL_DIR=/usr
@@ -265,9 +265,9 @@ cmake -DMYSQL_INCLUDE_DIR=/usr/include/mysql \
 cmake -DMYSQL_DIR=$(brew --prefix mysql) ..
 ```
 
-### Redis Connection
+### Redis 连接
 
-**Problem**: Cannot connect to Redis
+**问题**:连不上 Redis
 ```bash
 # Check Redis status
 redis-cli ping
@@ -276,8 +276,8 @@ redis-cli ping
 netstat -an | grep 6379
 ```
 
-## Next Steps
+## 下一步
 
-- [Getting Started](./getting-started.md)
-- [Architecture Overview](../architecture.md)
-- [Deployment Guide](./deployment.md)
+- [Getting Started(快速上手)](./getting-started.md)
+- [Architecture Overview(架构总览)](../architecture.md)
+- [Deployment Guide(部署指南)](./deployment.md)

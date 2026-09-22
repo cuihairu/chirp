@@ -1,16 +1,16 @@
 ---
-title: API Overview
+title: API 总览
 ---
 
-# API Overview
+# API 总览
 
-Chirp uses Protocol Buffers over TCP or WebSocket. The current supported protocol surface is centered on `chirp.gateway.Packet`.
+Chirp 在 TCP 或 WebSocket 上跑 Protocol Buffers。当前受支持的协议面围绕 `chirp.gateway.Packet` 展开。
 
-For implementation status, read [Capability Matrix](../CAPABILITY_MATRIX.md). Some proto messages exist for roadmap or experimental services and should not be assumed supported by the default runtime.
+实现状态请看 [Capability Matrix](../CAPABILITY_MATRIX.md)。部分 proto 消息为路线图或实验性服务而存在,不要默认它们受默认运行时支持。
 
-## Packet Format
+## 包格式
 
-TCP and WebSocket both carry the same application payload:
+TCP 和 WebSocket 承载同一份应用载荷:
 
 ```
 TCP stream:
@@ -20,9 +20,9 @@ WebSocket binary frame payload:
   [uint32_be payload_size][chirp.gateway.Packet protobuf bytes]
 ```
 
-`payload_size` is the number of bytes in the serialized `chirp.gateway.Packet`.
+`payload_size` 是序列化后的 `chirp.gateway.Packet` 的字节数。
 
-`MsgID` is not a separate network-frame header. It is inside `Packet`:
+`MsgID` 不是独立的网络帧头,它在 `Packet` 里面:
 
 ```protobuf
 message Packet {
@@ -32,9 +32,9 @@ message Packet {
 }
 ```
 
-`body` contains the serialized protobuf message for the selected `msg_id`.
+`body` 装的是所选 `msg_id` 对应的序列化 protobuf 消息。
 
-Example mapping:
+映射示例:
 
 | Packet `msg_id` | Packet `body` protobuf |
 | --- | --- |
@@ -48,72 +48,72 @@ Example mapping:
 | `GET_HISTORY_RESP` | `chirp.chat.GetHistoryResponse` |
 | `CHAT_MESSAGE_NOTIFY` | `chirp.chat.ChatMessage` |
 
-## Current Endpoints
+## 当前端点
 
-| Service | TCP | WebSocket | Status | Notes |
+| 服务 | TCP | WebSocket | 状态 | 说明 |
 | --- | --- | --- | --- | --- |
-| Gateway | 5000 | 5001 | Supported | Login, logout, heartbeat, session registry, optional Redis kick |
-| Auth | 6000 | - | Supported | Called by Gateway when `--auth_host` is configured |
-| Chat | 7000 | 7001 | Supported | Direct chat entry for current smoke tests and SDK examples |
-| Server Gateway | 8100 | - | Experimental | Trusted service-plane hub; see [Server Plane](../server_plane.md) |
-| Social | 8000 | 8001 | Experimental | Not part of the minimal verified path |
-| Voice | 9000 | 9001 | Experimental | Signaling surface exists, not a full media backend guarantee |
-| Notification | 5006 | 5016 | Experimental | Device registry + push plane (6xxx); provider HTTP delivery is a logging stub |
-| App Gateway | 5200 | 5201 | Experimental | Companion-app edge: auth/heartbeat + device-message forwarding to Notification |
-| Search | 5007 | - | Experimental | Present in tree, not a core path |
+| Gateway | 5000 | 5001 | Supported | 登录、登出、心跳、会话注册表,可选 Redis 踢线 |
+| Auth | 6000 | - | Supported | 配置 `--auth_host` 时由 Gateway 调用 |
+| Chat | 7000 | 7001 | Supported | 当前冒烟测试与 SDK 示例的直连聊天入口 |
+| Server Gateway | 8100 | - | Experimental | 可信服务面枢纽;见 [Server Plane](../server_plane.md) |
+| Social | 8000 | 8001 | Experimental | 不在最小验证路径内 |
+| Voice | 9000 | 9001 | Experimental | 信令面存在,尚不构成完整媒体后端保证 |
+| Notification | 5006 | 5016 | Experimental | 设备注册表 + 推送面(6xxx);provider HTTP 投递为日志占位 |
+| App Gateway | 5200 | 5201 | Experimental | 伴侣应用边缘:认证/心跳 + 设备消息转发到 Notification |
+| Search | 5007 | - | Experimental | 代码在树里,不是核心路径 |
 
-## Core Message IDs
+## 核心消息 ID
 
 ### Gateway/Auth
 
-| MsgID | Name | Direction | Current path |
+| MsgID | 名称 | 方向 | 当前状态 |
 | --- | --- | --- | --- |
-| 1001 | `HEARTBEAT_PING` | Client -> Gateway/Chat | Supported |
-| 1002 | `HEARTBEAT_PONG` | Gateway/Chat -> Client | Supported |
-| 1003 | `LOGIN_REQ` | Client -> Gateway/Chat | Supported |
-| 1004 | `LOGIN_RESP` | Gateway/Chat -> Client | Supported |
-| 1005 | `KICK_NOTIFY` | Gateway/Chat -> Client | Supported |
-| 1006 | `LOGOUT_REQ` | Client -> Gateway/Chat | Supported |
-| 1007 | `LOGOUT_RESP` | Gateway/Chat -> Client | Supported |
+| 1001 | `HEARTBEAT_PING` | 客户端 -> Gateway/Chat | Supported |
+| 1002 | `HEARTBEAT_PONG` | Gateway/Chat -> 客户端 | Supported |
+| 1003 | `LOGIN_REQ` | 客户端 -> Gateway/Chat | Supported |
+| 1004 | `LOGIN_RESP` | Gateway/Chat -> 客户端 | Supported |
+| 1005 | `KICK_NOTIFY` | Gateway/Chat -> 客户端 | Supported |
+| 1006 | `LOGOUT_REQ` | 客户端 -> Gateway/Chat | Supported |
+| 1007 | `LOGOUT_RESP` | Gateway/Chat -> 客户端 | Supported |
 
 ### Chat
 
-| MsgID | Name | Direction | Current path |
+| MsgID | 名称 | 方向 | 当前状态 |
 | --- | --- | --- | --- |
-| 2001 | `SEND_MESSAGE_REQ` | Client -> Chat | Supported via direct Chat endpoint |
-| 2002 | `SEND_MESSAGE_RESP` | Chat -> Client | Supported |
-| 2003 | `GET_HISTORY_REQ` | Client -> Chat | Supported |
-| 2004 | `GET_HISTORY_RESP` | Chat -> Client | Supported |
-| 2005 | `CHAT_MESSAGE_NOTIFY` | Chat -> Client | Supported |
+| 2001 | `SEND_MESSAGE_REQ` | 客户端 -> Chat | 经 Chat 直连端点受支持 |
+| 2002 | `SEND_MESSAGE_RESP` | Chat -> 客户端 | Supported |
+| 2003 | `GET_HISTORY_REQ` | 客户端 -> Chat | Supported |
+| 2004 | `GET_HISTORY_RESP` | Chat -> 客户端 | Supported |
+| 2005 | `CHAT_MESSAGE_NOTIFY` | Chat -> 客户端 | Supported |
 
-Gateway currently ignores unimplemented business messages, including chat messages. Send chat packets to the Chat service unless gateway routing has been implemented.
+Gateway 目前会忽略未实现的业务消息,包括聊天消息。除非网关路由已实现,请把聊天包发给 Chat 服务。
 
-### Server plane (5xxx)
+### Server plane(5xxx)
 
-`chirp_server_gateway` (TCP 8100) uses the same Packet framing on a separate
-trust plane. Peers are game backends and internal services authenticated by
-`service_id` + shared secret — never user accounts.
+`chirp_server_gateway`(TCP 8100)在另一个信任面上用同一套 Packet 帧。
+peer 是游戏后端和内部服务,以 `service_id` + 共享 secret 认证——从来不是
+用户账号。
 
-| MsgID | Name | Direction |
+| MsgID | 名称 | 方向 |
 | --- | --- | --- |
-| 5001 / 5002 | `SERVER_AUTH_REQ` / `SERVER_AUTH_RESP` | Service <-> Hub |
-| 5003 / 5004 | `SERVER_HEARTBEAT_PING` / `PONG` | Service <-> Hub |
-| 5005 / 5006 / 5007 | `INJECT_MESSAGE_REQ` / `RESP` / `NOTIFY` | Service -> Hub; NOTIFY forwarded to chat |
-| 5008 / 5009 | `EVENT_PUBLISH_REQ` / `RESP` | Service -> Hub |
-| 5010 | `EVENT_DELIVER_NOTIFY` | Hub -> target service |
-| 5011 / 5012 | `EVENT_ACK_REQ` / `RESP` | Service <-> Hub |
+| 5001 / 5002 | `SERVER_AUTH_REQ` / `SERVER_AUTH_RESP` | 服务 <-> 枢纽 |
+| 5003 / 5004 | `SERVER_HEARTBEAT_PING` / `PONG` | 服务 <-> 枢纽 |
+| 5005 / 5006 / 5007 | `INJECT_MESSAGE_REQ` / `RESP` / `NOTIFY` | 服务 -> 枢纽;NOTIFY 转发给 chat |
+| 5008 / 5009 | `EVENT_PUBLISH_REQ` / `RESP` | 服务 -> 枢纽 |
+| 5010 | `EVENT_DELIVER_NOTIFY` | 枢纽 -> 目标服务 |
+| 5011 / 5012 | `EVENT_ACK_REQ` / `RESP` | 服务 <-> 枢纽 |
 
-Status: Experimental. The full contract (dial-out, at-least-once event
-delivery, injection validation) lives in [Server Plane](../server_plane.md);
-the complete msg-id-to-body mapping is in [Core](../CORE.md).
+状态:Experimental。完整契约(拨出、至少一次事件投递、注入校验)在
+[Server Plane](../server_plane.md);完整的 msg-id 到 body 映射在
+[Core](../CORE.md)。
 
-### Notification / device plane (6xxx)
+### Notification / 设备面(6xxx)
 
-Served by `chirp_notification` (TCP 5006 / WS 5016) and forwarded by
-`chirp_app_gateway` (TCP 5200 / WS 5201). Bodies are `chirp.notification.*`
-messages.
+由 `chirp_notification`(TCP 5006 / WS 5016)提供服务,经
+`chirp_app_gateway`(TCP 5200 / WS 5201)转发。body 是
+`chirp.notification.*` 消息。
 
-| MsgID | Name | Body |
+| MsgID | 名称 | Body |
 | --- | --- | --- |
 | 6001 / 6002 | `REGISTER_DEVICE_REQ` / `RESP` | `RegisterDeviceRequest` / `RegisterDeviceResponse` |
 | 6003 / 6004 | `UNREGISTER_DEVICE_REQ` / `RESP` | `UnregisterDeviceRequest` / `UnregisterDeviceResponse` |
@@ -121,24 +121,23 @@ messages.
 | 6007 / 6008 | `GET_USER_DEVICES_REQ` / `RESP` | `GetUserDevicesRequest` / `GetUserDevicesResponse` |
 | 6009 / 6010 | `PUSH_NOTIFICATION_REQ` / `RESP` | `PushNotificationRequest` / `PushNotificationResponse` |
 
-Ids 6011+ are reserved (badge / silent / preferences) and not implemented.
+6011+ 的 id 预留(角标 / 静默 / 偏好设置),尚未实现。
 
-Auth rules:
+认证规则:
 
-- On `app_gateway`, 6xxx device messages require an authenticated session
-  (`AUTH_FAILED` otherwise) and `user_id` is always overwritten with the
-  authenticated user — clients cannot register or query for someone else.
-  `UPDATE_DEVICE_TOKEN_REQ` addresses devices by `device_id` and has no
-  `user_id` field, but still requires authentication.
-- Direct `notification` access has no session concept; it is meant for
-  internal services (e.g. chat's push bridge) on a trusted network.
-- Provider HTTP delivery (APNs/FCM) currently runs through a logging
-  `PushTransport` stub: requests are built and logged, and a device with a
-  real token counts as "send failed" until a real transport is injected.
+- 在 `app_gateway` 上,6xxx 设备消息要求已认证会话(否则 `AUTH_FAILED`),
+  且 `user_id` 永远被改写为认证用户——客户端不能替别人注册或查询设备。
+  `UPDATE_DEVICE_TOKEN_REQ` 用 `device_id` 寻址设备,没有 `user_id` 字段,
+  但同样要求认证。
+- 直连 `notification` 没有会话概念;它面向可信网络上的内部服务
+  (比如 chat 的推送桥)。
+- provider HTTP 投递(APNs/FCM)当前经日志占位 `PushTransport` 运行:
+  请求会被构建并记录日志,持真实 token 的设备在真实传输层注入之前都算
+  "发送失败"。
 
-## Login Flows
+## 登录流程
 
-### Gateway Login
+### Gateway 登录
 
 ```mermaid
 sequenceDiagram
@@ -154,7 +153,7 @@ sequenceDiagram
     G-->>C: Packet(LOGIN_RESP, LoginResponse)
 ```
 
-### Direct Chat Login
+### 直连 Chat 登录
 
 ```mermaid
 sequenceDiagram
@@ -165,9 +164,9 @@ sequenceDiagram
     S-->>C: Packet(LOGIN_RESP, LoginResponse)
 ```
 
-Current limitation: gateway login and direct chat login are separate session concepts. A client that logs in to Gateway is not automatically authenticated in Chat.
+当前限制:Gateway 登录和直连 Chat 登录是两个独立的会话概念。登录了 Gateway 的客户端不会因此在 Chat 里自动完成认证。
 
-## Chat Message Flow
+## 聊天消息流程
 
 ```mermaid
 sequenceDiagram
@@ -180,13 +179,13 @@ sequenceDiagram
     S-->>B: Packet(CHAT_MESSAGE_NOTIFY, ChatMessage)
 ```
 
-If the receiver is offline, Chat may store the message in Redis or in-memory fallback and return `TARGET_OFFLINE`; the message is replayed when the receiver logs in to Chat. Offline messages also trigger a device push through the notification service when chat is started with `--notification_host` (fire-and-forget; see the 6xxx section above).
+接收方离线时,Chat 可把消息存进 Redis 或内存兜底并返回 `TARGET_OFFLINE`;接收方登录 Chat 后重放。以 `--notification_host` 启动 chat 时,离线消息还会经 notification 服务触发一次设备推送(发完即忘;见上文 6xxx 一节)。
 
-## WebSocket Usage
+## WebSocket 用法
 
-Use binary frames. Do not send JSON.
+用二进制帧,不要发 JSON。
 
-Pseudo-code:
+伪代码:
 
 ```ts
 const loginBody = LoginRequest.encode({
@@ -204,24 +203,24 @@ const packet = Packet.encode({
 ws.send(concat(uint32be(packet.length), packet))
 ```
 
-The server response is also a WebSocket binary frame whose payload starts with a 4-byte big-endian length prefix.
+服务端响应同样是 WebSocket 二进制帧,载荷以 4 字节大端长度前缀开头。
 
-## Error Codes
+## 错误码
 
-The common response code enum is defined in `proto/common.proto`.
+通用响应码枚举定义在 `proto/common.proto`。
 
-| Code | Name | Meaning |
+| 码 | 名称 | 含义 |
 | --- | --- | --- |
-| 0 | `OK` | Success |
-| 1 | `INTERNAL_ERROR` | Server error |
-| 2 | `INVALID_PARAM` | Invalid request |
-| 3 | `AUTH_FAILED` | Authentication failed |
-| 4 | `SESSION_EXPIRED` | Session no longer valid |
-| 5 | `USER_NOT_FOUND` | User does not exist |
-| 6 | `TARGET_OFFLINE` | Recipient is not currently online |
-| 7 | `SERVER_UNAVAILABLE` | Server-plane target service is not connected, or its event queue is full |
+| 0 | `OK` | 成功 |
+| 1 | `INTERNAL_ERROR` | 服务端错误 |
+| 2 | `INVALID_PARAM` | 请求无效 |
+| 3 | `AUTH_FAILED` | 认证失败 |
+| 4 | `SESSION_EXPIRED` | 会话已失效 |
+| 5 | `USER_NOT_FOUND` | 用户不存在 |
+| 6 | `TARGET_OFFLINE` | 接收方当前不在线 |
+| 7 | `SERVER_UNAVAILABLE` | 服务面目标服务未连接,或其事件队列已满 |
 
-## Related Docs
+## 相关文档
 
 - [Overall Architecture](../architecture.md)
 - [Capability Matrix](../CAPABILITY_MATRIX.md)
