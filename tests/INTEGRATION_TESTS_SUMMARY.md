@@ -1,32 +1,32 @@
-# Integration Test Status
+# 集成测试现状
 
-## What Is Verified
+## 已验证的内容
 
-The repository currently has two tested layers:
+仓库目前有两个经过验证的层:
 
-- Unit tests through `ctest --test-dir build --output-on-failure`
-- A buildable integration test target in `tests/integration`
+- 经 `ctest --test-dir build --output-on-failure` 的单元测试
+- `tests/integration` 下可构建的集成测试目标
 
-The integration executable currently guarantees a local smoke check:
+集成可执行文件目前保证一次本地冒烟检查:
 
-- protobuf encode/decode
-- gateway packet framing
-- linkage against project libraries
+- protobuf 编解码
+- 网关包帧格式
+- 与工程库的链接
 
-It also has an optional live connection path:
+它还有一条可选的活连接路径:
 
-- opens a TCP connection to the gateway
-- sends `LOGIN_REQ`
-- expects a successful `LOGIN_RESP`
+- 打开到网关的 TCP 连接
+- 发送 `LOGIN_REQ`
+- 期待成功的 `LOGIN_RESP`
 
-That path is not exercised by default. You can provide services in two ways:
+这条路径默认不跑。服务可以两种方式提供:
 
-- Docker with `--docker --connect`
-- local binaries with `--local-services`
+- Docker:`--docker --connect`
+- 本地二进制:`--local-services`
 
-## Supported Commands
+## 支持的命令
 
-Local smoke:
+本地冒烟:
 
 ```bash
 cmake -S . -B build
@@ -34,14 +34,14 @@ cmake --build build -j4
 bash tests/run_integration_tests.sh
 ```
 
-Connection smoke against live services:
+对活服务做连接冒烟:
 
 ```bash
 docker compose up -d redis auth gateway chat social
 bash tests/run_integration_tests.sh --docker --connect
 ```
 
-Connection smoke with local binaries:
+用本地二进制做连接冒烟:
 
 ```bash
 cmake -S . -B build
@@ -49,29 +49,29 @@ cmake --build build -j4 --target chirp_auth chirp_gateway
 bash tests/run_integration_tests.sh --local-services --gateway-port 5500 --auth-port 6500
 ```
 
-## Script Behavior
+## 脚本行为
 
-`tests/run_integration_tests.sh` now defaults to the least surprising behavior:
+`tests/run_integration_tests.sh` 现在默认采用最不意外的行为:
 
-- it reuses the main project build
-- it uses system dependencies when they already work
-- it does not force `vcpkg install`
-- it accepts `--use-vcpkg` when dependency bootstrapping is actually desired
-- it can orchestrate a local auth/gateway smoke path without Docker
+- 复用主工程构建
+- 系统依赖已可用时直接用
+- 不强制 `vcpkg install`
+- 确实想要依赖引导时接受 `--use-vcpkg`
+- 可以不经 Docker 编排一条本地 auth/gateway 冒烟路径
 
-## Scope Notes
+## 范围说明
 
-The integration framework should currently be read as smoke coverage, not comprehensive end-to-end coverage for every service.
+目前应把集成框架理解为冒烟覆盖,而不是每个服务的全面端到端覆盖。
 
-What is present today:
+今天已有的:
 
-- `tests/integration/integration_test.cc` builds and runs
-- `tests/integration/CMakeLists.txt` links against the repo libraries
-- `tests/integration/demo_test_framework.sh` documents the real entrypoints
+- `tests/integration/integration_test.cc` 可构建可运行
+- `tests/integration/CMakeLists.txt` 链接仓库库
+- `tests/integration/demo_test_framework.sh` 记录了真实入口
 
-What still needs deeper validation over time:
+仍需随时间深入验证的:
 
-- chat delivery flows against live services
-- social/presence flows against live services
-- newer service surfaces such as notification and search
-- SDK behavior beyond successful compilation
+- 对活服务的聊天投递流程
+- 对活服务的 social/在线状态流程
+- notification、search 等较新的服务面
+- SDK 超出"能编译"之外的行为

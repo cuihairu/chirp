@@ -1,28 +1,28 @@
-# Game Chat Architecture Notes
+# 游戏聊天架构笔记
 
-This page is kept as a design-notes entry for game chat scenarios.
+本页作为游戏聊天场景的设计笔记(design-notes)保留。
 
-For the current repository architecture, service boundaries, protocol baseline, and architecture reasonableness review, read [Overall Architecture](../architecture.md) first.
+当前的仓库架构、服务边界、协议基线与架构合理性评审,请先读 [Overall Architecture](../architecture.md)。
 
-## Current Position
+## 当前位置
 
-The current supported backend path is `gateway + auth + chat`.
+当前受支持的后端路径是 `gateway + auth + chat`。
 
-- `gateway` is the login/session edge and currently handles login, logout, heartbeat, and optional Redis-backed cross-instance kick.
-- `chat` is a separate TCP/WebSocket service today and is the practical entrypoint for current chat smoke tests.
-- Social, voice, notification, search, SDK wrappers, mobile app, and admin dashboard are experimental or demo surfaces unless the [Capability Matrix](../CAPABILITY_MATRIX.md) says otherwise.
+- `gateway` 是登录/会话边缘,目前处理登录、登出、心跳和可选的 Redis 支撑跨实例踢线。
+- `chat` 目前是独立的 TCP/WebSocket 服务,是当前聊天冒烟测试的实际入口。
+- Social、voice、notification、search、SDK 包装层、移动应用和管理后台,除非 [Capability Matrix](../CAPABILITY_MATRIX.md) 另有说明,均为实验性或演示面。
 
-## Design Intent
+## 设计意图
 
-The long-term direction is still a unified realtime communication platform for games and companion apps:
+长期方向仍是面向游戏和伴侣应用的统一实时通信平台:
 
-- Game clients can use TCP for predictable binary protocol integration.
-- Web and mobile companion clients can use WebSocket.
-- A future gateway can become the single public edge and route business packets to internal services.
-- Redis can remain the fast shared coordination layer for session ownership, Pub/Sub, recent/offline buffers, and distributed routing.
-- MySQL can remain the durable history and account/session store where enhanced builds are enabled.
+- 游戏客户端可以用 TCP 做可预期的二进制协议集成。
+- Web 和移动伴侣客户端可以用 WebSocket。
+- 将来的 gateway 可以成为唯一公网边缘,把业务包路由给内部服务。
+- Redis 可以继续作为会话归属、Pub/Sub、近期/离线缓冲、分布式路由的快速共享协调层。
+- MySQL 可以继续作为增强构建启用时的持久化历史与账号/会话存储。
 
-## Reasonable Target Shape
+## 合理的目标形态
 
 ```mermaid
 graph TD
@@ -38,22 +38,22 @@ graph TD
     Chat --> MySQL[(MySQL)]
 ```
 
-This target is reasonable, but it is not the exact runtime implemented today. The missing architectural step is gateway-to-business-service routing plus a unified session/auth contract.
+这个目标是合理的,但它不是今天实现的运行时。缺的架构环节是网关到业务服务的路由,以及统一的会话/认证契约。
 
-## Protocol Choice
+## 协议选择
 
-The current code uses one binary protocol across TCP and WebSocket:
+当前代码在 TCP 和 WebSocket 上用同一套二进制协议:
 
 ```
 [uint32_be payload_size][chirp.gateway.Packet protobuf bytes]
 ```
 
-`Packet.msg_id` identifies the business message, and `Packet.body` contains the serialized protobuf request or response.
+`Packet.msg_id` 标识业务消息,`Packet.body` 装序列化的 protobuf 请求或响应。
 
-This is a good choice for game clients because it is compact, stable across languages, and works with both TCP and WebSocket. KCP/QUIC and full WebRTC media paths should remain separate future decisions instead of being implied by the current core.
+对游戏客户端来说这是个好选择:紧凑、跨语言稳定、TCP 和 WebSocket 通吃。KCP/QUIC 和完整 WebRTC 媒体路径应该留作独立的未来决策,而不应由当前核心隐含承诺。
 
-## Practical Guidance
+## 实操建议
 
-- For local validation, use the current direct `chat` path described in [Overall Architecture](../architecture.md).
-- For product architecture, prefer a single public edge once gateway routing is implemented.
-- Do not document social, voice, search, push, or advanced chat features as supported until they have matching tests and a clear runtime topology.
+- 本地验证用 [Overall Architecture](../architecture.md) 描述的当前直连 `chat` 路径。
+- 产品架构上,等网关路由实现后优先收敛到单一公网边缘。
+- social、voice、search、推送或高级聊天功能,在有配套测试和明确的运行时拓扑之前,不要写成"受支持"。
