@@ -82,6 +82,9 @@ if(MYSQL_FOUND)
         # Shared send validation (auth/spoofing/channel shape/content length):
         # the enhanced form calls ValidateContentLength in on_send_message.
         src/chat_validation.cc
+        # Per-channel send pacing (game_chat_features P0 发送频率限制):
+        # world 5s / guild 2s / private 1s between sends by the same user.
+        src/channel_pacer.cc
     )
 
     chirp_configure_chat_target(chirp_chat)

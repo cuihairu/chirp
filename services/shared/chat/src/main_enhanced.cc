@@ -17,6 +17,7 @@
 
 #include "hybrid_message_store.h"
 #include "chat_rate_limiter.h"
+#include "channel_pacer.h"
 #include "chat_validation.h"
 #include "delivery_ack_manager.h"
 #include "inject_consumer.h"
@@ -914,6 +915,7 @@ int main(int argc, char** argv) {
   word_filter_options.lexicon_path = word_filter_file;
   word_filter_options.policy = chirp::chat::WordFilterPolicyFromString(word_filter_policy);
   chirp::chat::WordFilter word_filter(word_filter_options);
+  chirp::chat::ChannelPacer channel_pacer;
 
   chirp::chat::runtime::DistributedDispatchHandlers handlers;
   handlers.on_login = [state, store, router, &token_verifier, acks](
@@ -925,7 +927,8 @@ int main(int argc, char** argv) {
   handlers.on_send_message = [state, store, delivery_tracker, acks, router,
                               peer = hub_peer.get(), npc_service_id, npc_prefix,
                               link = spoke_link.get(), spoke_game_id,
-                              hub = chat_hub.get(), &directory, &word_filter](
+                              hub = chat_hub.get(), &directory, &word_filter,
+                              &channel_pacer](
                                  const std::shared_ptr<chirp::network::Session>& session,
                                  const chirp::chat::SendMessageRequest& req,
                                  int64_t seq) {
@@ -935,6 +938,19 @@ int main(int argc, char** argv) {
     if (chirp::chat::ValidateContentLength(req) != chirp::common::OK) {
       chirp::chat::SendMessageResponse resp;
       resp.set_code(chirp::common::INVALID_PARAM);
+      resp.set_server_timestamp(chirp::chat::runtime::NowMs());
+      chirp::chat::runtime::SendPacket(session, chirp::gateway::SEND_MESSAGE_RESP, seq,
+                                       resp.SerializeAsString());
+      return;
+    }
+    // Per-channel pacing (game_chat_features P0 发送频率限制): world 5s,
+    // guild 2s, private 1s between sends by the same user, keyed by the
+    // authenticated identity and anchored to the last allowed send.
+    const std::string pacing_user = state->GetUserId(session);
+    if (!pacing_user.empty() &&
+        !channel_pacer.Allow(pacing_user, req.channel_type(), chirp::chat::runtime::NowMs())) {
+      chirp::chat::SendMessageResponse resp;
+      resp.set_code(chirp::common::RATE_LIMITED);
       resp.set_server_timestamp(chirp::chat::runtime::NowMs());
       chirp::chat::runtime::SendPacket(session, chirp::gateway::SEND_MESSAGE_RESP, seq,
                                        resp.SerializeAsString());

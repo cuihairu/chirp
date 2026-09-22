@@ -658,6 +658,24 @@ target_include_directories(word_filter_tests
 
 add_test(NAME word_filter_tests COMMAND word_filter_tests)
 
+# Per-channel send pacing (game_chat_features P0 发送频率限制): interval
+# table and the per-user/per-channel window anchoring.
+add_executable(channel_pacer_tests
+  channel_pacer_test.cc
+  ${CMAKE_SOURCE_DIR}/services/shared/chat/src/channel_pacer.cc
+)
+
+chirp_unit_test_common_links(channel_pacer_tests)
+target_link_libraries(channel_pacer_tests PRIVATE chirp_protos)
+
+target_include_directories(channel_pacer_tests
+  PRIVATE
+  ${CMAKE_SOURCE_DIR}/services/shared/chat/src
+  ${CMAKE_SOURCE_DIR}/proto/cpp
+)
+
+add_test(NAME channel_pacer_tests COMMAND channel_pacer_tests)
+
 # NOTE: presence_manager.cc used to be excluded from the social build
 # because it did not compile (a proto enum name clash plus a copyable-mutex
 # member); it is fixed and covered by social_presence_tests below. The

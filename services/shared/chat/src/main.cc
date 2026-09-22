@@ -28,6 +28,7 @@
 #include "network/websocket_server.h"
 #include "npc_uplink.h"
 #include "player_directory.h"
+#include "channel_pacer.h"
 #include "word_filter.h"
 #include "push_bridge.h"
 #include "network/chat_peer_hub.h"
@@ -358,6 +359,8 @@ struct FeatureHandlers {
   // expected in practice — main always installs one; it fails open without
   // Redis).
   chirp::chat::ChatRateLimiter* rate_limiter = nullptr;
+  // Per-channel pacing (world 5s / guild 2s / private 1s); always installed.
+  chirp::chat::ChannelPacer* channel_pacer = nullptr;
   // Lexicon content filter; a null/empty-lexicon filter is a pass-through.
   chirp::chat::WordFilter* word_filter = nullptr;
   // Null or disabled() keeps the scaffold "token is user_id" login.
@@ -582,6 +585,21 @@ void HandlePacket(const std::shared_ptr<MessageStore>& store,
                                          pkt.sequence(), resp.SerializeAsString());
         return;
       }
+    }
+
+    // Per-channel pacing (game_chat_features P0 发送频率限制): world 5s,
+    // guild 2s, private 1s between sends by the same user, anchored to the
+    // last allowed send. Sits after the abuse gate and before the filter —
+    // a filter-rejected send still consumed its pacing slot.
+    if (features.channel_pacer != nullptr &&
+        !features.channel_pacer->Allow(authenticated_user_id, req.channel_type(),
+                                       chirp::chat::runtime::NowMs())) {
+      chirp::chat::SendMessageResponse resp;
+      resp.set_code(chirp::common::RATE_LIMITED);
+      resp.set_server_timestamp(chirp::chat::runtime::NowMs());
+      chirp::chat::runtime::SendPacket(session, chirp::gateway::SEND_MESSAGE_RESP,
+                                       pkt.sequence(), resp.SerializeAsString());
+      return;
     }
 
     // Lexicon content filter: sits after the rate limiter (a rejected send
@@ -1244,6 +1262,7 @@ int main(int argc, char** argv) {
   word_filter_options.lexicon_path = word_filter_file;
   word_filter_options.policy = chirp::chat::WordFilterPolicyFromString(word_filter_policy);
   chirp::chat::WordFilter word_filter(word_filter_options);
+  chirp::chat::ChannelPacer channel_pacer;
 
   FeatureHandlers features{.groups = group_handlers, .receipts = receipt_handlers,
                            .typing = typing_handlers, .reactions = reaction_handlers,
@@ -1251,6 +1270,7 @@ int main(int argc, char** argv) {
                            .push = push, .npc_service_id = {},
                            .gateway_secret = {}, .trusted_conns = nullptr};
   features.rate_limiter = rate_limiter.get();
+  features.channel_pacer = &channel_pacer;
   features.word_filter = &word_filter;
   features.token_verifier = &token_verifier;
   features.acks = acks.get();
