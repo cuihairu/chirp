@@ -102,5 +102,25 @@ namespace Chirp.Sdk
             new(MsgID.UnregisterDeviceReq, MsgID.UnregisterDeviceResp, Chirp.AppNotification.UnregisterDeviceResponse.Parser);
         public static readonly MessageSpec<Chirp.AppNotification.GetUserDevicesResponse> GetUserDevices =
             new(MsgID.GetUserDevicesReq, MsgID.GetUserDevicesResp, Chirp.AppNotification.GetUserDevicesResponse.Parser);
+
+        // Voice plane (voice WS 9001): game voice-room signaling. Join carries
+        // the WebRTC SDP offer and the response brings the answer plus TURN
+        // short-term credentials (IceServer). ICE/SDP relay (4007-4009) and
+        // the participant/speaking notifies are fire-and-forget or pushes —
+        // no spec; subscribe with OnNotify / client.Send.
+        public static readonly MessageSpec<Chirp.Voice.CreateRoomResponse> CreateVoiceRoom =
+            new(MsgID.CreateRoomReq, MsgID.CreateRoomResp, Chirp.Voice.CreateRoomResponse.Parser);
+        public static readonly MessageSpec<Chirp.Voice.JoinRoomResponse> JoinVoiceRoom =
+            new(MsgID.JoinRoomReq, MsgID.JoinRoomResp, Chirp.Voice.JoinRoomResponse.Parser);
+        public static readonly MessageSpec<Chirp.Voice.LeaveRoomResponse> LeaveVoiceRoom =
+            new(MsgID.LeaveRoomReq, MsgID.LeaveRoomResp, Chirp.Voice.LeaveRoomResponse.Parser);
+        public static readonly MessageSpec<Chirp.Voice.GetRoomInfoResponse> GetVoiceRoomInfo =
+            new(MsgID.GetRoomInfoReq, MsgID.GetRoomInfoResp, Chirp.Voice.GetRoomInfoResponse.Parser);
+        public static readonly MessageSpec<Chirp.Voice.GetUserRoomResponse> GetUserVoiceRoom =
+            new(MsgID.GetUserRoomReq, MsgID.GetUserRoomResp, Chirp.Voice.GetUserRoomResponse.Parser);
+        public static readonly MessageSpec<Chirp.Voice.SetMuteResponse> SetVoiceMute =
+            new(MsgID.SetMuteReq, MsgID.SetMuteResp, Chirp.Voice.SetMuteResponse.Parser);
+        public static readonly MessageSpec<Chirp.Voice.SetDeafenResponse> SetVoiceDeafen =
+            new(MsgID.SetDeafenReq, MsgID.SetDeafenResp, Chirp.Voice.SetDeafenResponse.Parser);
     }
 }

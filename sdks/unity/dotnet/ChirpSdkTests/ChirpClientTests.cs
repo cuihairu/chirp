@@ -252,4 +252,131 @@ public class ChirpClientTests
         await Task.Delay(600); // reconnect base backoff would have fired
         Assert.Equal(ConnStatus.Closed, client.Status);
     }
+
+    [Fact]
+    public async Task AutoReconnect_FiresReconnectingReconnected_AndRestoresConnected()
+    {
+        var transports = new List<FakeTransport>();
+        var client = new ChirpClient(
+            "ws://test",
+            transportFactory: _ =>
+            {
+                var t = new FakeTransport();
+                transports.Add(t);
+                return t;
+            },
+            options: new ChirpClientOptions
+            {
+                RequestTimeoutMs = 10_000,
+                ReconnectBaseMs = 50,
+                ReconnectMaxMs = 100,
+            });
+        await client.ConnectAsync();
+        Assert.Single(transports);
+
+        var reconnecting = new List<(int Attempt, int DelayMs)>();
+        var reconnected = new List<bool>();
+        client.Reconnecting += (attempt, delayMs) => reconnecting.Add((attempt, delayMs));
+        client.Reconnected += () => reconnected.Add(true);
+
+        transports[0].SimulateRemoteClose();
+
+        // The backoff (50ms) may elapse during settle alone; assert the end
+        // state, not the mid-states (covered by the other lifecycle tests).
+        await Task.Delay(800);
+        Assert.Equal(ConnStatus.Connected, client.Status);
+        Assert.Equal(2, transports.Count);
+        Assert.Equal(new[] { 1 }, reconnecting.Select(r => r.Attempt).ToArray());
+        Assert.InRange(reconnecting[0].DelayMs, 1, 1000);
+        Assert.Single(reconnected);
+    }
+
+    [Fact]
+    public async Task DisconnectDuringBackoff_ReconnectingFires_ReconnectedNeverDoes()
+    {
+        var transport = new FakeTransport();
+        TestClient.Connected(transport, out var client);
+        await client.ConnectAsync();
+
+        var reconnected = 0;
+        client.Reconnected += () => reconnected++;
+
+        transport.SimulateRemoteClose();
+        await Settle();
+        client.Disconnect();
+        await Task.Delay(600);
+        Assert.Equal(ConnStatus.Closed, client.Status);
+        Assert.Equal(0, reconnected);
+    }
+
+    [Fact]
+    public async Task Kicked_ClientRecoversThroughExplicitConnect()
+    {
+        var transport = new FakeTransport();
+        TestClient.Connected(transport, out var client);
+        await client.ConnectAsync();
+
+        transport.ServerPacket(new Packet
+        {
+            MsgId = MsgID.KickNotify,
+            Body = ByteString.CopyFrom(new Chirp.Auth.KickNotify { Reason = "takeover" }.ToByteArray()),
+        });
+        await Settle();
+        Assert.Equal(ConnStatus.Kicked, client.Status);
+
+        // An explicit connect is a user action: it clears the terminal kick.
+        await client.ConnectAsync();
+        Assert.Equal(ConnStatus.Connected, client.Status);
+        Assert.False(client.Kicked);
+    }
+
+    [Fact]
+    public async Task RemoteClose_RejectsPendingRequestsWithClosed()
+    {
+        var transport = new FakeTransport();
+        TestClient.Connected(transport, out var client);
+        await client.ConnectAsync();
+
+        var pending = client.RequestAsync(
+            Specs.SendMessage, new Chirp.Chat.SendMessageRequest { SenderId = "u1" });
+        await Settle();
+        transport.SimulateRemoteClose();
+
+        var error = await Assert.ThrowsAsync<RequestError>(() => pending);
+        Assert.Equal(RequestErrorKind.Closed, error.Kind);
+    }
+
+    [Fact]
+    public async Task VoiceSpec_RoundTripsJoinRoom()
+    {
+        var transport = new FakeTransport();
+        TestClient.Connected(transport, out var client);
+        await client.ConnectAsync();
+
+        var pending = client.RequestAsync(
+            Specs.JoinVoiceRoom, new Chirp.Voice.JoinRoomRequest { UserId = "u1", RoomId = "r1" });
+        await Settle();
+        var request = transport.LastSentPacket();
+        Assert.Equal(MsgID.JoinRoomReq, request.MsgId);
+
+        transport.ServerPacket(new Packet
+        {
+            MsgId = MsgID.JoinRoomResp,
+            Sequence = request.Sequence,
+            Body = ByteString.CopyFrom(new Chirp.Voice.JoinRoomResponse
+            {
+                Code = Chirp.Common.ErrorCode.Ok,
+                RoomId = "r1",
+                SdpAnswer = "v=answer",
+            }.ToByteArray()),
+        });
+
+        var resp = await pending;
+        Assert.Equal(Chirp.Common.ErrorCode.Ok, resp.Code);
+        Assert.Equal("r1", resp.RoomId);
+        Assert.Equal("v=answer", resp.SdpAnswer);
+        Assert.Equal(new[] { "u1", "r1" },
+            new[] { Chirp.Voice.JoinRoomRequest.Parser.ParseFrom(request.Body.ToByteArray()).UserId,
+                    Chirp.Voice.JoinRoomRequest.Parser.ParseFrom(request.Body.ToByteArray()).RoomId });
+    }
 }

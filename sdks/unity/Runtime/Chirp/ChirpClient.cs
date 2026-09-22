@@ -105,6 +105,16 @@ namespace Chirp.Sdk
             remove { lock (_gate) _statusListeners.Remove(value); }
         }
 
+        /// <summary>A reconnect attempt was scheduled: (attempt, delayMs),
+        /// attempt starting at 1. Fires from the close path, before the
+        /// delay elapses.</summary>
+        public event Action<int, int>? Reconnecting;
+
+        /// <summary>An automatic reconnect succeeded and the socket is
+        /// Connected again. Note the session is NOT re-established — replay
+        /// LOGIN here (the C++ reference SDK's OnReconnected contract).</summary>
+        public event Action? Reconnected;
+
         /// <summary>Subscribe to server pushes (sequence === 0 packets). Unknown
         /// msgIds are ignored, so subscribing to one is purely optional. Returns
         /// the unsubscribe function.</summary>
@@ -576,6 +586,7 @@ namespace Chirp.Sdk
         private void ScheduleReconnect()
         {
             int delay;
+            int attempt;
             lock (_gate)
             {
                 var baseMs = Math.Min(
@@ -583,8 +594,9 @@ namespace Chirp.Sdk
                     Options.ReconnectMaxMs);
                 var jitter = (int)Math.Round(baseMs * Options.JitterRatio);
                 delay = baseMs + _random.Next(jitter * 2 + 1) - jitter;
-                _attempt++;
+                attempt = ++_attempt;
             }
+            Reconnecting?.Invoke(attempt, delay);
             _reconnectCts = new CancellationTokenSource();
             var token = _reconnectCts.Token;
             _ = Task.Run(async () =>
@@ -604,6 +616,14 @@ namespace Chirp.Sdk
                 }
                 catch (Exception)
                 {
+                    return;
+                }
+                // Connected again only if nothing tore the client down while
+                // the socket was opening — dispose returns silently with the
+                // status stuck in Connecting, and a kick flips to Kicked.
+                if (Status == ConnStatus.Connected)
+                {
+                    Reconnected?.Invoke();
                 }
             }, token);
         }
