@@ -379,6 +379,7 @@ add_executable(notification_tests
   notification_test.cc
   notification_internal_test.cc
   push_transport_http_test.cc
+  push_transport_tls_test.cc
   ${CMAKE_SOURCE_DIR}/services/app/notification/src/notification_service.cc
   ${CMAKE_SOURCE_DIR}/services/app/notification/src/push_transport.cc
   ${CMAKE_SOURCE_DIR}/services/app/notification/src/http_push_transport.cc
@@ -386,6 +387,11 @@ add_executable(notification_tests
 
 chirp_unit_test_common_links(notification_tests)
 target_link_libraries(notification_tests PRIVATE chirp_network chirp_common chirp_protos)
+
+# The TLS transport tests present the committed self-signed test
+# certificate from here (SAN: 127.0.0.1 + localhost).
+target_compile_definitions(notification_tests PRIVATE
+  CHIRP_PUSH_TLS_DATA_DIR="${CMAKE_CURRENT_SOURCE_DIR}/data/push_tls")
 
 target_include_directories(notification_tests
   PRIVATE
@@ -588,12 +594,9 @@ add_executable(server_gateway_tests
   server_gateway_test.cc
   server_gateway_stream_broker_test.cc
   ${CMAKE_SOURCE_DIR}/services/game/server_gateway/src/event_queue.cc
-  ${CMAKE_SOURCE_DIR}/services/game/server_gateway/src/identity_registry.cc
-  ${CMAKE_SOURCE_DIR}/services/game/server_gateway/src/subscription_registry.cc
   ${CMAKE_SOURCE_DIR}/services/game/server_gateway/src/server_gateway_handlers.cc
   ${CMAKE_SOURCE_DIR}/services/game/server_gateway/src/service_registry.cc
   ${CMAKE_SOURCE_DIR}/services/game/server_gateway/src/stream_broker.cc
-  ${CMAKE_SOURCE_DIR}/services/game/server_gateway/src/unread_ledger.cc
 )
 
 chirp_unit_test_common_links(server_gateway_tests)
@@ -611,6 +614,34 @@ target_include_directories(server_gateway_tests
 )
 
 add_test(NAME server_gateway_tests COMMAND server_gateway_tests)
+
+# App-plane player directory (WP-8): the identity/subscription/unread
+# registries and the hub fan-out tail moved from game_server_gateway into
+# app_chat; their coverage moved with them.
+add_executable(chat_player_directory_tests
+  chat_player_directory_test.cc
+  ${CMAKE_SOURCE_DIR}/services/shared/chat/src/identity_registry.cc
+  ${CMAKE_SOURCE_DIR}/services/shared/chat/src/player_directory.cc
+  ${CMAKE_SOURCE_DIR}/services/shared/chat/src/runtime_utils.cc
+  ${CMAKE_SOURCE_DIR}/services/shared/chat/src/subscription_registry.cc
+  ${CMAKE_SOURCE_DIR}/services/shared/chat/src/unread_ledger.cc
+)
+
+chirp_unit_test_common_links(chat_player_directory_tests)
+target_link_libraries(chat_player_directory_tests PRIVATE chirp_network chirp_common chirp_protos)
+
+target_include_directories(chat_player_directory_tests
+  PRIVATE
+  ${CMAKE_SOURCE_DIR}/services/shared/chat/src
+  ${CMAKE_SOURCE_DIR}/libs
+  ${CMAKE_SOURCE_DIR}/libs/common
+  ${CMAKE_SOURCE_DIR}/libs/common/include
+  ${CMAKE_SOURCE_DIR}/libs/network
+  ${CMAKE_SOURCE_DIR}/proto/cpp
+  ${CMAKE_SOURCE_DIR}/proto/cpp/proto
+)
+
+add_test(NAME chat_player_directory_tests COMMAND chat_player_directory_tests)
 
 # NOTE: presence_manager.cc used to be excluded from the social build
 # because it did not compile (a proto enum name clash plus a copyable-mutex

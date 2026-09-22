@@ -12,7 +12,7 @@
 #include "network/redis_client.h"
 #include "proto/game_server_gateway.pb.h"
 
-namespace chirp::game_server_gateway {
+namespace chirp::chat {
 
 // Unified unread ledger (WP-8 slice 4): per-player badge counters for
 // subscription channels — "how many fan-in notifications has this player not
@@ -23,7 +23,7 @@ namespace chirp::game_server_gateway {
 // not clear it (marking read is the only decrementing path).
 //
 // In-memory maps are authoritative; an optional Redis client write-through
-// (one serialized StoredUnreadEntry per counter under
+// (one serialized game_server_gateway::StoredUnreadEntry per counter under
 // chirp:unread:entry:<player>:<game>:<channel>) keeps counters across hub
 // restarts, loaded by Load() before the hub starts serving. Redis failures
 // degrade to memory-only operation with a warning, like every other
@@ -35,7 +35,7 @@ namespace chirp::game_server_gateway {
 class UnreadLedger {
  public:
   // Returns nullptr (or an empty factory) for memory-only operation.
-  using RedisFactory = std::function<std::unique_ptr<network::RedisClient>()>;
+  using RedisFactory = std::function<std::unique_ptr<chirp::network::RedisClient>()>;
 
   UnreadLedger() = default;
   explicit UnreadLedger(RedisFactory factory);
@@ -60,7 +60,7 @@ class UnreadLedger {
 
   // The player's nonzero counters, ordered by (game_id, channel_id),
   // optionally restricted to one game.
-  std::vector<UnreadSummaryEntry> GetSummary(const std::string& player_id,
+  std::vector<game_server_gateway::UnreadSummaryEntry> GetSummary(const std::string& player_id,
                                              const std::string& game_id) const;
 
   size_t Size() const;
@@ -77,10 +77,10 @@ class UnreadLedger {
                            const std::string& channel_id);
 
   RedisFactory redis_factory_;
-  std::unique_ptr<network::RedisClient> redis_;  // nullptr = memory-only
+  std::unique_ptr<chirp::network::RedisClient> redis_;  // nullptr = memory-only
 
   mutable std::mutex mu_;
   std::unordered_map<std::string, ChannelCounters> entries_;
 };
 
-}  // namespace chirp::game_server_gateway
+}  // namespace chirp::chat

@@ -2,7 +2,7 @@
 
 #include "common/logger.h"
 
-namespace chirp::game_server_gateway {
+namespace chirp::chat {
 
 namespace {
 
@@ -31,7 +31,7 @@ void UnreadLedger::Load() {
     if (!value) {
       continue;
     }
-    StoredUnreadEntry entry;
+    game_server_gateway::StoredUnreadEntry entry;
     if (!entry.ParseFromString(*value)) {
       chirp::common::Logger::Instance().Warn(
           "unread ledger store: skipping unparseable entry " + key);
@@ -101,10 +101,10 @@ size_t UnreadLedger::MarkRead(const std::string& player_id, const std::string& g
   return cleared;
 }
 
-std::vector<UnreadSummaryEntry> UnreadLedger::GetSummary(const std::string& player_id,
+std::vector<game_server_gateway::UnreadSummaryEntry> UnreadLedger::GetSummary(const std::string& player_id,
                                                          const std::string& game_id) const {
   std::lock_guard<std::mutex> lock(mu_);
-  std::vector<UnreadSummaryEntry> out;
+  std::vector<game_server_gateway::UnreadSummaryEntry> out;
   const auto pit = entries_.find(player_id);
   if (pit == entries_.end()) {
     return out;
@@ -113,7 +113,7 @@ std::vector<UnreadSummaryEntry> UnreadLedger::GetSummary(const std::string& play
     if (!game_id.empty() && key.first != game_id) {
       continue;
     }
-    UnreadSummaryEntry entry;
+    game_server_gateway::UnreadSummaryEntry entry;
     entry.set_game_id(key.first);
     entry.set_channel_id(key.second);
     entry.set_unread_count(count);
@@ -136,7 +136,7 @@ void UnreadLedger::PersistLocked(const std::string& player_id, const std::string
   if (!redis_) {
     return;
   }
-  StoredUnreadEntry entry;
+  game_server_gateway::StoredUnreadEntry entry;
   entry.set_player_id(player_id);
   entry.set_game_id(game_id);
   entry.set_channel_id(channel_id);
@@ -162,4 +162,4 @@ void UnreadLedger::PersistDeleteLocked(const std::string& player_id, const std::
   }
 }
 
-}  // namespace chirp::game_server_gateway
+}  // namespace chirp::chat

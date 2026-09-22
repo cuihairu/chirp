@@ -2,7 +2,7 @@
 
 #include "common/logger.h"
 
-namespace chirp::game_server_gateway {
+namespace chirp::chat {
 
 namespace {
 
@@ -17,19 +17,19 @@ IdentityRegistry::IdentityRegistry(RedisFactory factory)
   }
 }
 
-std::vector<StoredIdentityBinding> IdentityRegistry::LoadFromRedis() {
+std::vector<game_server_gateway::StoredIdentityBinding> IdentityRegistry::LoadFromRedis() {
   if (!redis_) {
     return {};
   }
   const auto keys = redis_->Keys(kEntryPrefix + std::string("*"));
-  std::vector<StoredIdentityBinding> loaded;
+  std::vector<game_server_gateway::StoredIdentityBinding> loaded;
   loaded.reserve(keys.size());
   for (const auto& key : keys) {
     const auto value = redis_->Get(key);
     if (!value) {
       continue;
     }
-    StoredIdentityBinding entry;
+    game_server_gateway::StoredIdentityBinding entry;
     if (!entry.ParseFromString(*value)) {
       chirp::common::Logger::Instance().Warn(
           "identity binding store: skipping unparseable entry " + key);
@@ -88,7 +88,7 @@ IdentityRegistry::BindOutcome IdentityRegistry::Bind(const std::string& binding_
     return BindOutcome::kInvalid;
   }
 
-  StoredIdentityBinding entry;
+  game_server_gateway::StoredIdentityBinding entry;
   entry.set_binding_id(binding_id);
   entry.set_player_id(player_id);
   entry.set_game_id(game_id);
@@ -147,10 +147,10 @@ bool IdentityRegistry::UnbindByGameUser(const std::string& game_id,
   return true;
 }
 
-std::vector<StoredIdentityBinding> IdentityRegistry::GetByPlayer(
+std::vector<game_server_gateway::StoredIdentityBinding> IdentityRegistry::GetByPlayer(
     const std::string& player_id) const {
   std::lock_guard<std::mutex> lock(mu_);
-  std::vector<StoredIdentityBinding> out;
+  std::vector<game_server_gateway::StoredIdentityBinding> out;
   const auto it = player_index_.find(player_id);
   if (it == player_index_.end()) {
     return out;
@@ -184,7 +184,7 @@ size_t IdentityRegistry::Size() const {
   return by_id_.size();
 }
 
-void IdentityRegistry::EraseEntryLocked(const StoredIdentityBinding& entry) {
+void IdentityRegistry::EraseEntryLocked(const game_server_gateway::StoredIdentityBinding& entry) {
   // `entry` usually aliases a node inside by_id_, so the by_id_ erase must
   // come last: after it the reference is dangling.
   game_user_index_.erase(std::make_pair(entry.game_id(), entry.game_user_id()));
@@ -198,7 +198,7 @@ void IdentityRegistry::EraseEntryLocked(const StoredIdentityBinding& entry) {
   by_id_.erase(entry.binding_id());
 }
 
-void IdentityRegistry::PersistLocked(const StoredIdentityBinding& entry) {
+void IdentityRegistry::PersistLocked(const game_server_gateway::StoredIdentityBinding& entry) {
   if (!redis_) {
     return;
   }
@@ -220,4 +220,4 @@ void IdentityRegistry::PersistDeleteLocked(const std::string& binding_id) {
   }
 }
 
-}  // namespace chirp::game_server_gateway
+}  // namespace chirp::chat

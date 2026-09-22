@@ -24,6 +24,7 @@
 #include "message_migration_worker.h"
 #include "npc_uplink.h"
 #include "paginated_history_retriever.h"
+#include "player_directory.h"
 #include "push_bridge.h"
 #include "network/chat_peer_hub.h"
 #include "network/chat_peer_link.h"
@@ -630,6 +631,78 @@ int main(int argc, char** argv) {
   const std::string token_secret = chirp::chat::runtime::GetArg(argc, argv, "--token_secret", "");
   chirp::common::LoginTokenVerifier token_verifier(token_secret);
 
+  // App-plane player directory (WP-8): the identity/subscription/unread
+  // registries relocated from game_server_gateway, plus the hub fan-out
+  // tail. Optional per-registry Redis write-through keeps records across
+  // app_chat restarts; empty hosts stay memory-only.
+  const std::string binding_redis_host =
+      chirp::chat::runtime::GetArg(argc, argv, "--binding_redis_host", "");
+  const uint16_t binding_redis_port =
+      chirp::chat::runtime::ParseU16Arg(argc, argv, "--binding_redis_port", 6379);
+  const std::string subscription_redis_host =
+      chirp::chat::runtime::GetArg(argc, argv, "--subscription_redis_host", "");
+  const uint16_t subscription_redis_port =
+      chirp::chat::runtime::ParseU16Arg(argc, argv, "--subscription_redis_port", 6379);
+  const std::string unread_redis_host =
+      chirp::chat::runtime::GetArg(argc, argv, "--unread_redis_host", "");
+  const uint16_t unread_redis_port =
+      chirp::chat::runtime::ParseU16Arg(argc, argv, "--unread_redis_port", 6379);
+  chirp::chat::PlayerDirectory::Options directory_options;
+  directory_options.max_fanout_per_message = static_cast<size_t>(chirp::chat::runtime::ParseIntArg(
+      argc, argv, "--max_fanout_per_message", 10000));
+  if (!binding_redis_host.empty()) {
+    directory_options.identities_redis = [host = binding_redis_host, port = binding_redis_port] {
+      return std::make_unique<chirp::network::RedisClient>(host, port);
+    };
+  }
+  if (!subscription_redis_host.empty()) {
+    directory_options.subscriptions_redis = [host = subscription_redis_host,
+                                             port = subscription_redis_port] {
+      return std::make_unique<chirp::network::RedisClient>(host, port);
+    };
+  }
+  if (!unread_redis_host.empty()) {
+    directory_options.unread_redis = [host = unread_redis_host, port = unread_redis_port] {
+      return std::make_unique<chirp::network::RedisClient>(host, port);
+    };
+  }
+  // One private copy per subscriber through the same store/deliver tail as
+  // an injected private message: hybrid storage, healthy-session push with
+  // ack tracking, offline queue + push when nobody is online.
+  directory_options.deliver_copy =
+      [&state, &store, &delivery_tracker, acks, &push](
+          const std::string& player_id, const chirp::gateway::ChannelMessageNotify& notify) {
+        chirp::chat::ChatMessage copy = notify.message();
+        copy.set_message_id(chirp::chat::runtime::GenerateMessageId());
+        // The App client answers to the namespaced game identity — the
+        // same "{game_id}:" prefix the cross-plane reply path parses.
+        copy.set_sender_id(notify.game_id() + ":" + notify.message().sender_id());
+        copy.set_receiver_id(player_id);
+        copy.set_channel_type(chirp::chat::PRIVATE);
+        copy.set_channel_id(HybridMessageStore::PrivateChannelId(copy.sender_id(), player_id));
+        copy.set_sender_kind(chirp::chat::SENDER_USER);
+        chirp::chat::MessageData data = ToMessageData(copy);
+        store->StoreMessageAsync(data, [](bool ok) {
+          if (!ok) {
+            Logger::Instance().Warn("fan-out copy storage to MySQL failed");
+          }
+        });
+        auto recv_session = state->GetLocalSession(player_id);
+        if (recv_session && !recv_session->PeerHalfClosed()) {
+          if (acks && acks->IsCapable(recv_session.get())) {
+            acks->Track(copy.message_id(), player_id, copy.SerializeAsString());
+          } else {
+            delivery_tracker->Acknowledge(copy.message_id(), player_id);
+          }
+          chirp::chat::runtime::SendChatNotify(recv_session, copy);
+        } else {
+          store->AddOfflineMessage(player_id, data.SerializeAsString());
+          push.NotifyOffline(copy, player_id);
+        }
+      };
+  chirp::chat::PlayerDirectory directory(std::move(directory_options));
+  directory.LoadAll();
+
   // Hub mode: accept game_chat peer registrations on the dedicated peer port
   // (app_chat deployment). The main client port keeps serving the client
   // protocol only.
@@ -667,13 +740,16 @@ int main(int argc, char** argv) {
         [](const std::string& service_id, const std::string& reason) {
           Logger::Instance().Info("peer dropped: service_id=" + service_id + " reason=" + reason);
         },
-        [](const std::string& service_id,
-           const chirp::gateway::ChannelMessageNotify& notify) {
-          // App-plane fan-out (subscriber lookup + private-message copies) is
-          // the app_chat hub P1 item; the hub records the uplink for now.
+        [&directory](const std::string& service_id,
+                     const chirp::gateway::ChannelMessageNotify& notify) {
+          // Cross-plane fan-out (TODO 55): resolve the channel's
+          // subscribers in the player directory and hand each one a
+          // private copy (plus one unread badge increment per copy).
+          const size_t copies = directory.FanoutChannelMessage(notify);
           Logger::Instance().Info("channel message uplink: service_id=" + service_id +
                                   " game_id=" + notify.game_id() +
-                                  " channel=" + notify.channel_id());
+                                  " channel=" + notify.channel_id() +
+                                  " copies=" + std::to_string(copies));
         });
     chat_hub->Start();
     Logger::Instance().Info("hub mode enabled: peer_port=" + std::to_string(chat_hub->port()));
@@ -830,11 +906,18 @@ int main(int argc, char** argv) {
     }
   };
 
-  auto on_packet = [handlers, gateway_service_secret, trusted_conns, &edge_rate_limiter](
-                       const std::shared_ptr<chirp::network::Session>& session,
-                       const chirp::gateway::Packet& pkt) {
+  auto on_packet = [handlers, gateway_service_secret, trusted_conns, &edge_rate_limiter,
+                    &directory](const std::shared_ptr<chirp::network::Session>& session,
+                                const chirp::gateway::Packet& pkt) {
     if (pkt.msg_id() == chirp::gateway::SERVER_AUTH_REQ) {
       HandleServerAuth(pkt, session, gateway_service_secret, trusted_conns.get());
+      return;
+    }
+    // WP-8 player-directory block (5013-5030) rides this port behind the
+    // same trust gate: game backends assert bindings/subscriptions here and
+    // the app edge self-serves through it.
+    if (chirp::chat::DispatchPlayerDirectoryPacket(pkt, session, directory,
+                                                   trusted_conns.get())) {
       return;
     }
     if (pkt.msg_id() == chirp::gateway::LOGIN_REQ &&

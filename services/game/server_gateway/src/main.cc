@@ -19,7 +19,6 @@
 #include "event_queue.h"
 #include "logger.h"
 #include "network/protobuf_framing.h"
-#include "network/redis_client.h"
 #include "network/session.h"
 #include "network/tcp_server.h"
 #include "proto/common.pb.h"
@@ -28,7 +27,6 @@
 #include "server_gateway_handlers.h"
 #include "service_registry.h"
 #include "stream_broker.h"
-#include "unread_ledger.h"
 
 namespace {
 
@@ -116,8 +114,6 @@ int main(int argc, char** argv) {
       std::atoi(GetArg(argc, argv, "--heartbeat_interval", "30").c_str());
   config.max_pending_events_per_service =
       static_cast<size_t>(std::atoi(GetArg(argc, argv, "--max_pending", "1000").c_str()));
-  config.max_fanout_per_inject =
-      static_cast<size_t>(std::atoi(GetArg(argc, argv, "--max_fanout", "10000").c_str()));
   // Repeatable: --service <service_id>=<secret>
   for (int i = 1; i < argc; i++) {
     if (argv[i] == std::string("--service") && i + 1 < argc) {
@@ -140,51 +136,9 @@ int main(int argc, char** argv) {
 
   asio::io_context io;
 
-  // Player identity bindings (WP-8): optional Redis write-through keeps
-  // bindings across restarts; an empty --binding_redis_host stays
-  // memory-only.
-  const std::string binding_redis_host = GetArg(argc, argv, "--binding_redis_host", "");
-  const uint16_t binding_redis_port = ParseU16Arg(argc, argv, "--binding_redis_port", 6379);
-  sg::IdentityRegistry::RedisFactory binding_redis_factory;
-  if (!binding_redis_host.empty()) {
-    binding_redis_factory = [host = binding_redis_host, port = binding_redis_port] {
-      return std::make_unique<chirp::network::RedisClient>(host, port);
-    };
-  }
-  sg::IdentityRegistry identities(binding_redis_factory);
-  identities.Load();
-
-  // Player channel subscriptions (WP-8): same optional write-through shape
-  // as the bindings; an empty --subscription_redis_host stays memory-only.
-  const std::string subscription_redis_host = GetArg(argc, argv, "--subscription_redis_host", "");
-  const uint16_t subscription_redis_port =
-      ParseU16Arg(argc, argv, "--subscription_redis_port", 6379);
-  sg::SubscriptionRegistry::RedisFactory subscription_redis_factory;
-  if (!subscription_redis_host.empty()) {
-    subscription_redis_factory = [host = subscription_redis_host,
-                                  port = subscription_redis_port] {
-      return std::make_unique<chirp::network::RedisClient>(host, port);
-    };
-  }
-  sg::SubscriptionRegistry subscriptions(subscription_redis_factory);
-  subscriptions.Load();
-
-  // Unified unread ledger (WP-8 slice 4): same optional write-through shape
-  // as the registries above; an empty --unread_redis_host stays memory-only.
-  const std::string unread_redis_host = GetArg(argc, argv, "--unread_redis_host", "");
-  const uint16_t unread_redis_port = ParseU16Arg(argc, argv, "--unread_redis_port", 6379);
-  sg::UnreadLedger::RedisFactory unread_redis_factory;
-  if (!unread_redis_host.empty()) {
-    unread_redis_factory = [host = unread_redis_host, port = unread_redis_port] {
-      return std::make_unique<chirp::network::RedisClient>(host, port);
-    };
-  }
-  sg::UnreadLedger unread(unread_redis_factory);
-  unread.Load();
-
   sg::ServiceRegistry registry;
   sg::EventQueue queue(config.max_pending_events_per_service);
-  sg::ServerGatewayHandlers handlers(config, registry, queue, identities, subscriptions, unread);
+  sg::ServerGatewayHandlers handlers(config, registry, queue);
 
   // Optional Redis Streams intake for game backends that cannot host a
   // long-connection client (empty --broker_redis_host disables it).
@@ -380,107 +334,10 @@ int main(int argc, char** argv) {
         SendPacket(session, chirp::gateway::EVENT_ACK_RESP, pkt.sequence(), resp);
         break;
       }
-      case chirp::gateway::BIND_PLAYER_IDENTITY_REQ: {
-        sg::BindPlayerIdentityRequest req;
-        sg::BindPlayerIdentityResponse resp;
-        if (!ParseBody(pkt, &req)) {
-          resp.set_code(chirp::common::INVALID_PARAM);
-        } else {
-          resp = handlers.HandleBindPlayerIdentity(req);
-        }
-        SendPacket(session, chirp::gateway::BIND_PLAYER_IDENTITY_RESP, pkt.sequence(), resp);
-        break;
-      }
-      case chirp::gateway::UNBIND_PLAYER_IDENTITY_REQ: {
-        sg::UnbindPlayerIdentityRequest req;
-        sg::UnbindPlayerIdentityResponse resp;
-        if (!ParseBody(pkt, &req)) {
-          resp.set_code(chirp::common::INVALID_PARAM);
-        } else {
-          resp = handlers.HandleUnbindPlayerIdentity(req);
-        }
-        SendPacket(session, chirp::gateway::UNBIND_PLAYER_IDENTITY_RESP, pkt.sequence(), resp);
-        break;
-      }
-      case chirp::gateway::GET_PLAYER_IDENTITIES_REQ: {
-        sg::GetPlayerIdentitiesRequest req;
-        sg::GetPlayerIdentitiesResponse resp;
-        if (!ParseBody(pkt, &req)) {
-          resp.set_code(chirp::common::INVALID_PARAM);
-        } else {
-          resp = handlers.HandleGetPlayerIdentities(req);
-        }
-        SendPacket(session, chirp::gateway::GET_PLAYER_IDENTITIES_RESP, pkt.sequence(), resp);
-        break;
-      }
-      case chirp::gateway::RESOLVE_GAME_USER_REQ: {
-        sg::ResolveGameUserRequest req;
-        sg::ResolveGameUserResponse resp;
-        if (!ParseBody(pkt, &req)) {
-          resp.set_code(chirp::common::INVALID_PARAM);
-        } else {
-          resp = handlers.HandleResolveGameUser(req);
-        }
-        SendPacket(session, chirp::gateway::RESOLVE_GAME_USER_RESP, pkt.sequence(), resp);
-        break;
-      }
-      case chirp::gateway::SUBSCRIBE_PLAYER_CHANNEL_REQ: {
-        sg::SubscribePlayerChannelRequest req;
-        sg::SubscribePlayerChannelResponse resp;
-        if (!ParseBody(pkt, &req)) {
-          resp.set_code(chirp::common::INVALID_PARAM);
-        } else {
-          resp = handlers.HandleSubscribePlayerChannel(req);
-        }
-        SendPacket(session, chirp::gateway::SUBSCRIBE_PLAYER_CHANNEL_RESP, pkt.sequence(), resp);
-        break;
-      }
-      case chirp::gateway::UNSUBSCRIBE_PLAYER_CHANNEL_REQ: {
-        sg::UnsubscribePlayerChannelRequest req;
-        sg::UnsubscribePlayerChannelResponse resp;
-        if (!ParseBody(pkt, &req)) {
-          resp.set_code(chirp::common::INVALID_PARAM);
-        } else {
-          resp = handlers.HandleUnsubscribePlayerChannel(req);
-        }
-        SendPacket(session, chirp::gateway::UNSUBSCRIBE_PLAYER_CHANNEL_RESP, pkt.sequence(), resp);
-        break;
-      }
-      case chirp::gateway::GET_PLAYER_SUBSCRIPTIONS_REQ: {
-        sg::GetPlayerSubscriptionsRequest req;
-        sg::GetPlayerSubscriptionsResponse resp;
-        if (!ParseBody(pkt, &req)) {
-          resp.set_code(chirp::common::INVALID_PARAM);
-        } else {
-          resp = handlers.HandleGetPlayerSubscriptions(req);
-        }
-        SendPacket(session, chirp::gateway::GET_PLAYER_SUBSCRIPTIONS_RESP, pkt.sequence(), resp);
-        break;
-      }
-      case chirp::gateway::MARK_CHANNELS_READ_REQ: {
-        sg::MarkChannelsReadRequest req;
-        sg::MarkChannelsReadResponse resp;
-        if (!ParseBody(pkt, &req)) {
-          resp.set_code(chirp::common::INVALID_PARAM);
-        } else {
-          resp = handlers.HandleMarkChannelsRead(req);
-        }
-        SendPacket(session, chirp::gateway::MARK_CHANNELS_READ_RESP, pkt.sequence(), resp);
-        break;
-      }
-      case chirp::gateway::GET_UNREAD_SUMMARY_REQ: {
-        sg::GetUnreadSummaryRequest req;
-        sg::GetUnreadSummaryResponse resp;
-        if (!ParseBody(pkt, &req)) {
-          resp.set_code(chirp::common::INVALID_PARAM);
-        } else {
-          resp = handlers.HandleGetUnreadSummary(req);
-        }
-        SendPacket(session, chirp::gateway::GET_UNREAD_SUMMARY_RESP, pkt.sequence(), resp);
-        break;
-      }
       default:
-        // Unknown/unimplemented server-plane messages are ignored.
+        // Unknown/unimplemented server-plane messages are ignored. The
+        // WP-8 player-directory block (5013-5030) is served by app_chat's
+        // main port now, not this hub.
         break;
       }
     }

@@ -14,7 +14,7 @@
 #include "network/redis_client.h"
 #include "proto/game_server_gateway.pb.h"
 
-namespace chirp::game_server_gateway {
+namespace chirp::chat {
 
 // Player identity bindings (WP-8 slice 1): the game backend's assertion
 // "platform player P is game user U of game G". The binding_id is the
@@ -23,7 +23,7 @@ namespace chirp::game_server_gateway {
 // is the authority on where a game user belongs).
 //
 // In-memory maps are authoritative; an optional Redis client write-through
-// (one serialized StoredIdentityBinding per binding under
+// (one serialized game_server_gateway::StoredIdentityBinding per binding under
 // chirp:binding:entry:<binding_id>) keeps bindings across hub restarts,
 // loaded by Load() before the hub starts serving. Redis failures degrade to
 // memory-only operation with a warning, like every other write-through in
@@ -31,7 +31,7 @@ namespace chirp::game_server_gateway {
 class IdentityRegistry {
  public:
   // Returns nullptr (or an empty factory) for memory-only operation.
-  using RedisFactory = std::function<std::unique_ptr<network::RedisClient>()>;
+  using RedisFactory = std::function<std::unique_ptr<chirp::network::RedisClient>()>;
 
   IdentityRegistry() = default;
   explicit IdentityRegistry(RedisFactory factory);
@@ -59,7 +59,7 @@ class IdentityRegistry {
   bool UnbindByGameUser(const std::string& game_id, const std::string& game_user_id);
 
   // All bindings asserted for one player (one per game identity).
-  std::vector<StoredIdentityBinding> GetByPlayer(const std::string& player_id) const;
+  std::vector<game_server_gateway::StoredIdentityBinding> GetByPlayer(const std::string& player_id) const;
 
   // The platform player behind a game user, or nullptr when unbound.
   std::unique_ptr<std::string> Resolve(const std::string& game_id,
@@ -68,21 +68,21 @@ class IdentityRegistry {
   size_t Size() const;
 
  private:
-  void EraseEntryLocked(const StoredIdentityBinding& entry);
-  void PersistLocked(const StoredIdentityBinding& entry);
+  void EraseEntryLocked(const game_server_gateway::StoredIdentityBinding& entry);
+  void PersistLocked(const game_server_gateway::StoredIdentityBinding& entry);
   void PersistDeleteLocked(const std::string& binding_id);
 
-  std::vector<StoredIdentityBinding> LoadFromRedis();
+  std::vector<game_server_gateway::StoredIdentityBinding> LoadFromRedis();
 
   RedisFactory redis_factory_;
-  std::unique_ptr<network::RedisClient> redis_;  // nullptr = memory-only
+  std::unique_ptr<chirp::network::RedisClient> redis_;  // nullptr = memory-only
 
   mutable std::mutex mu_;
-  std::unordered_map<std::string, StoredIdentityBinding> by_id_;
+  std::unordered_map<std::string, game_server_gateway::StoredIdentityBinding> by_id_;
   // Unique index: game user -> binding_id.
   std::map<std::pair<std::string, std::string>, std::string> game_user_index_;
   // Forward index: player -> binding ids.
   std::unordered_map<std::string, std::unordered_set<std::string>> player_index_;
 };
 
-}  // namespace chirp::game_server_gateway
+}  // namespace chirp::chat

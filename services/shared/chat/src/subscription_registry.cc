@@ -6,7 +6,7 @@
 
 #include "common/logger.h"
 
-namespace chirp::game_server_gateway {
+namespace chirp::chat {
 
 namespace {
 
@@ -38,19 +38,19 @@ SubscriptionRegistry::SubscriptionRegistry(RedisFactory factory)
   }
 }
 
-std::vector<StoredChannelSubscription> SubscriptionRegistry::LoadFromRedis() {
+std::vector<game_server_gateway::StoredChannelSubscription> SubscriptionRegistry::LoadFromRedis() {
   if (!redis_) {
     return {};
   }
   const auto keys = redis_->Keys(kEntryPrefix + std::string("*"));
-  std::vector<StoredChannelSubscription> loaded;
+  std::vector<game_server_gateway::StoredChannelSubscription> loaded;
   loaded.reserve(keys.size());
   for (const auto& key : keys) {
     const auto value = redis_->Get(key);
     if (!value) {
       continue;
     }
-    StoredChannelSubscription entry;
+    game_server_gateway::StoredChannelSubscription entry;
     if (!entry.ParseFromString(*value)) {
       chirp::common::Logger::Instance().Warn(
           "player channel subscription store: skipping unparseable entry " + key);
@@ -135,7 +135,7 @@ SubscriptionRegistry::SubscribeOutcome SubscriptionRegistry::Subscribe(
     *subscription_id = MintSubscriptionId();
   }
 
-  StoredChannelSubscription entry;
+  game_server_gateway::StoredChannelSubscription entry;
   entry.set_subscription_id(*subscription_id);
   entry.set_player_id(player_id);
   entry.set_game_id(game_id);
@@ -184,10 +184,10 @@ bool SubscriptionRegistry::UnsubscribeByTuple(const std::string& player_id,
   return true;
 }
 
-std::vector<StoredChannelSubscription> SubscriptionRegistry::GetForPlayer(
+std::vector<game_server_gateway::StoredChannelSubscription> SubscriptionRegistry::GetForPlayer(
     const std::string& player_id, const std::string& game_id) const {
   std::lock_guard<std::mutex> lock(mu_);
-  std::vector<StoredChannelSubscription> out;
+  std::vector<game_server_gateway::StoredChannelSubscription> out;
   const auto it = player_index_.find(player_id);
   if (it == player_index_.end()) {
     return out;
@@ -202,9 +202,9 @@ std::vector<StoredChannelSubscription> SubscriptionRegistry::GetForPlayer(
   return out;
 }
 
-std::vector<StoredChannelSubscription> SubscriptionRegistry::GetForChannel(
+std::vector<game_server_gateway::StoredChannelSubscription> SubscriptionRegistry::GetForChannel(
     const std::string& game_id, const std::string& channel_id) const {
-  std::vector<StoredChannelSubscription> out;
+  std::vector<game_server_gateway::StoredChannelSubscription> out;
   if (game_id.empty() || channel_id.empty()) {
     return out;  // defensive: the handler validates before calling
   }
@@ -228,7 +228,7 @@ size_t SubscriptionRegistry::Size() const {
   return by_id_.size();
 }
 
-void SubscriptionRegistry::EraseEntryLocked(const StoredChannelSubscription& entry) {
+void SubscriptionRegistry::EraseEntryLocked(const game_server_gateway::StoredChannelSubscription& entry) {
   // `entry` usually aliases a node inside by_id_, so the by_id_ erase must
   // come last: after it the reference is dangling.
   tuple_index_.erase(TupleKey(entry.player_id(), entry.game_id(), entry.channel_id()));
@@ -249,7 +249,7 @@ void SubscriptionRegistry::EraseEntryLocked(const StoredChannelSubscription& ent
   by_id_.erase(entry.subscription_id());
 }
 
-void SubscriptionRegistry::PersistLocked(const StoredChannelSubscription& entry) {
+void SubscriptionRegistry::PersistLocked(const game_server_gateway::StoredChannelSubscription& entry) {
   if (!redis_) {
     return;
   }
@@ -272,4 +272,4 @@ void SubscriptionRegistry::PersistDeleteLocked(const std::string& subscription_i
   }
 }
 
-}  // namespace chirp::game_server_gateway
+}  // namespace chirp::chat

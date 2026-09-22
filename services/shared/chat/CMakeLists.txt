@@ -69,6 +69,13 @@ if(MYSQL_FOUND)
         src/inject_consumer.cc
         src/npc_uplink.cc
         src/push_bridge.cc
+        # App-plane player directory (WP-8): identity bindings, channel
+        # subscriptions, unread ledger and the hub fan-out tail, served on
+        # the main port behind the SERVER_AUTH_REQ trust gate.
+        src/identity_registry.cc
+        src/subscription_registry.cc
+        src/unread_ledger.cc
+        src/player_directory.cc
     )
 
     chirp_configure_chat_target(chirp_chat)

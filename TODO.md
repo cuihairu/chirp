@@ -34,8 +34,8 @@ SDK 引擎兼容性见 [SDK 引擎兼容性](docs/design-notes/sdk_compatibility
 - [x] 消息注入（`INJECT_MESSAGE_REQ` → `InjectMessageNotify`）
 - [x] 事件下发（`EVENT_PUBLISH_REQ` / `EVENT_DELIVER_NOTIFY` / `EVENT_ACK_REQ`）
 - [x] Redis Streams broker 回退
-- [ ] **搬走 WP-8 功能**：身份绑定/频道订阅/未读计数迁移到 app_chat 内部，game_server_gateway 只保留注入 + 事件
-- [ ] **瘦身后验证**：smoke test 确认注入链路正常
+- [x] **搬走 WP-8 功能**（2026-09-22：身份绑定/频道订阅/未读计数三个 registry 与 9 个 WP-8 RPC（5013-5030）整体迁入 `services/shared/chat/src`（`identity_registry`/`subscription_registry`/`unread_ledger`/`player_directory`，命名空间 `chirp::chat`），`chirp_game_server_gateway` 只保留注入 + 事件；hub 对带 `game_id` 的注入回 `INVALID_PARAM`，`server_gateway_test` 瘦身至 53 例，WP-8 覆盖迁至新增 `chat_player_directory_tests` 55 例）
+- [x] **瘦身后验证**（2026-09-22：主树 ctest 35/35 全绿；`test_services.sh --smoke-npc` 真实进程注入链路通过（NPC 关键词回复/兜底/历史/离线补投四环节），支持 `CHAT_BIN` 覆盖以无 MySQL 树跑 smoke（同 web_smoke 先例）；`--smoke-game` 需 MySQL（CI 容器内验证））
 
 ## App 平面（P1，游戏平面稳定后开始）
 
@@ -44,17 +44,17 @@ SDK 引擎兼容性见 [SDK 引擎兼容性](docs/design-notes/sdk_compatibility
 - [x] 基础登录/心跳/踢出/会话 claim
 - [x] 6xxx 设备消息转发到 app_notification
 - [x] ChatBridge 转发 2xxx 到 app_chat
-- [ ] 对接 app_auth（替代原来的共享 auth）
+- [ ] 对接 app_auth（替代原来的共享 auth；2026-09-22 注记：WP-8 迁入 app_chat 后 `--sg_host` 自服务链（5021-5029 转发 server_gateway）已断——hub 不再承载这些 RPC，对接时需把转发目标一并切到 `app_chat`，详见 CAPABILITY_MATRIX「App 边缘」行）
 
 ### app_chat（原 chat，部署为 App 平面 hub）
 
 - [x] 基础聊天能力（与 game_chat 同一二进制）
 - [x] **hub 模式**：接受 game_chat 的 `PEER_REGISTER_REQ`，白名单 + 版本协商（2026-09-22：9edaca3 将两种构建形态统一接线 libs 层 `ChatPeerHub`——`--hub_mode`/`--hub_peer_port`（默认 8200）独立监听注册面，`--allowed_peers` 白名单 + `--min_peer_version`/`VERSION_MISMATCH` 拒绝，同 id 顶替、心跳 idle 踢出、断线重连；`chat_peer_test` 36 例含真实 link↔hub 端到端）
-- [ ] **身份映射**：持有 `player_id ↔ (game_id, game_user_id)` 绑定，game 后端调 `BIND_PLAYER_IDENTITY` RPC
-- [ ] **频道订阅**：持有玩家订阅的 `(game_id, channel_id)` 列表
-- [ ] **跨平面 fan-out**：收到 `CHANNEL_MESSAGE_NOTIFY` 后查询订阅者，注入私信副本
+- [x] **身份映射**（2026-09-22：`PlayerDirectory` + `IdentityRegistry` 落地 app_chat，`BIND/UNBIND/GET/RESOLVE` 四 RPC 经 `SERVER_AUTH_REQ` 信任门在 chat 主端口应答，(game_id, game_user_id) 唯一索引 replace-on-reassert，可选 Redis 镜像跨重启）
+- [x] **频道订阅**（2026-09-22：`SubscriptionRegistry` 落地，SUBSCRIBE/UNSUBSCRIBE/GET 三 RPC，(player, game, channel) 三元组唯一索引 + (game, channel) 反向扇入索引；后端断言带幂等键，自服务空 id 由服务端铸 `sub-` id 且收敛稳定）
+- [x] **跨平面 fan-out**（2026-09-22：`PlayerDirectory::FanoutChannelMessage` 在 hub 侧承接 spoke 的 `CHANNEL_MESSAGE_NOTIFY` 上行，每订阅者一份私信副本交接 + 未读自增；空订阅语义 no-op、超 `--max_fanout_per_message` 整条丢弃告警）
 - [ ] **跨平面回复**：收到带 `{game_id}:` 前缀的消息后，解析 player_id → game_user_id，注入 game_chat
-- [ ] **未读计数**：fan-out 时自增 badge，提供 `MARK_CHANNELS_READ` / `GET_UNREAD_SUMMARY`
+- [x] **未读计数**（2026-09-22：`UnreadLedger` 落地，fan-out 每份被接受副本自增 badge；`MARK_CHANNELS_READ` 分层选择器（单频道/单游戏/全部）幂等清除，`GET_UNREAD_SUMMARY` 按 (game, channel) 排序含过滤与 total_unread）
 - [x] **离线推送触发**：消息投递时调 app_notification（PushBridge + NotificationClient 在 basic/enhanced/distributed 三入口全部接线，私聊接收方无健康会话、群广播离线成员、注入离线入队三处触发，`--notification_host` 门控；peer 注入路径同样落离线队列）
 - [ ] **enhanced 会话语义修复**：AddSession 改为 (user, device) 维度互踢，对齐 basic 的 session_registry 行为
 

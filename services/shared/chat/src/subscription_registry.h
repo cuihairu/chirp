@@ -14,7 +14,7 @@
 #include "network/redis_client.h"
 #include "proto/game_server_gateway.pb.h"
 
-namespace chirp::game_server_gateway {
+namespace chirp::chat {
 
 // Player channel subscriptions (WP-8 slice 2): the recorded intent "platform
 // player P follows channel C of game G". Game backends assert subscriptions
@@ -26,7 +26,7 @@ namespace chirp::game_server_gateway {
 // reverse index via GetForChannel.
 //
 // In-memory maps are authoritative; an optional Redis client write-through
-// (one serialized StoredChannelSubscription per subscription under
+// (one serialized game_server_gateway::StoredChannelSubscription per subscription under
 // chirp:subscription:entry:<subscription_id>) keeps subscriptions across hub
 // restarts, loaded by Load() before the hub starts serving. Redis failures
 // degrade to memory-only operation with a warning, like every other
@@ -35,7 +35,7 @@ namespace chirp::game_server_gateway {
 class SubscriptionRegistry {
  public:
   // Returns nullptr (or an empty factory) for memory-only operation.
-  using RedisFactory = std::function<std::unique_ptr<network::RedisClient>()>;
+  using RedisFactory = std::function<std::unique_ptr<chirp::network::RedisClient>()>;
 
   SubscriptionRegistry() = default;
   explicit SubscriptionRegistry(RedisFactory factory);
@@ -68,30 +68,30 @@ class SubscriptionRegistry {
                           const std::string& channel_id);
 
   // All subscriptions of one player, optionally restricted to one game.
-  std::vector<StoredChannelSubscription> GetForPlayer(const std::string& player_id,
+  std::vector<game_server_gateway::StoredChannelSubscription> GetForPlayer(const std::string& player_id,
                                                       const std::string& game_id) const;
 
   // All subscriptions following one (game, channel) — the fan-in source
   // list (WP-8 slice 3). Snapshot copies taken under the lock; iteration
   // order is unspecified. Records (not bare player ids) so later slices can
   // compute per-subscription unread state without another index.
-  std::vector<StoredChannelSubscription> GetForChannel(const std::string& game_id,
+  std::vector<game_server_gateway::StoredChannelSubscription> GetForChannel(const std::string& game_id,
                                                        const std::string& channel_id) const;
 
   size_t Size() const;
 
  private:
-  void EraseEntryLocked(const StoredChannelSubscription& entry);
-  void PersistLocked(const StoredChannelSubscription& entry);
+  void EraseEntryLocked(const game_server_gateway::StoredChannelSubscription& entry);
+  void PersistLocked(const game_server_gateway::StoredChannelSubscription& entry);
   void PersistDeleteLocked(const std::string& subscription_id);
 
-  std::vector<StoredChannelSubscription> LoadFromRedis();
+  std::vector<game_server_gateway::StoredChannelSubscription> LoadFromRedis();
 
   RedisFactory redis_factory_;
-  std::unique_ptr<network::RedisClient> redis_;  // nullptr = memory-only
+  std::unique_ptr<chirp::network::RedisClient> redis_;  // nullptr = memory-only
 
   mutable std::mutex mu_;
-  std::unordered_map<std::string, StoredChannelSubscription> by_id_;
+  std::unordered_map<std::string, game_server_gateway::StoredChannelSubscription> by_id_;
   // Unique index: (player, game, channel) -> subscription_id.
   std::map<std::tuple<std::string, std::string, std::string>, std::string> tuple_index_;
   // Forward index: player -> subscription ids.
@@ -100,4 +100,4 @@ class SubscriptionRegistry {
   std::map<std::pair<std::string, std::string>, std::unordered_set<std::string>> channel_index_;
 };
 
-}  // namespace chirp::game_server_gateway
+}  // namespace chirp::chat

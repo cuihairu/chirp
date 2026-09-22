@@ -212,7 +212,8 @@ spoke 侧看不到 `player_id`;hub 侧看不到 `game_user_id` 明文(除了注�
 | `--hub_mode` / `--hub_peer_port` / `--allowed_peers` 等 hub CLI | 已落地(两形态) |
 | `--app_chat_host` 等 spoke CLI | 已落地(两形态) |
 | 能力位协商(交集生效) | 握手已交换,**实际能力尚未在代码中激活**——交集为空时仍会注册成功,能力位定义待用 |
-| `CHANNEL_MESSAGE_NOTIFY` 上行 + hub 扇出 | spoke 上行已通(非 PRIVATE 频道,注册后 best-effort);hub 侧的"按订阅扇出到 App 玩家"仍依赖 `chirp_game_server_gateway` 的 WP-8 功能,待搬迁到 `app_chat`(TODO.md P1),当前 hub 只记录上行 |
+| `CHANNEL_MESSAGE_NOTIFY` 上行 + hub 扇出 | 已落地(2026-09-22):spoke 上行照旧(非 PRIVATE 频道,注册后 best-effort);hub 侧"按订阅扇出到 App 玩家"由 `PlayerDirectory::FanoutChannelMessage` 承接(`services/shared/chat/src/player_directory.cc`),每订阅者一份私信副本交接 + 未读 badge 自增,受 `--max_fanout_per_message` 上限(超限整条丢弃并告警),空订阅为语义 no-op |
+| WP-8 RPC 块(5013-5030) | 已落地:身份绑定/频道订阅/未读计数三个 registry + 9 个 RPC 从 `chirp_game_server_gateway` 搬入 `app_chat`(`PlayerDirectory`,授权细节见 `docs/api/game_server_gateway.md` WP-8 段);`DispatchPlayerDirectoryPacket` 在 chat 主客户端端口响应,须经 `SERVER_AUTH_REQ` 信任门(未信任回 `AUTH_FAILED`),App 边缘自服务路径用空 id 由服务端铸 id |
 | `PEER_INJECT_MESSAGE_NOTIFY` 下行 | spoke 侧已消费,注入走与玩家发消息相同的 store/deliver 尾段(离线队列含) |
 | `heartbeat_interval_seconds` 心跳剔除 | 已实现:hub 按 2× 周期 idle 剔除(`ChatPeerHub` idle timer),spoke 按协商周期发 `HEARTBEAT_PING` |
 | 真链路 E2E(hub + spoke 同进程真实联通) | `chat_peer_tests` 的 `EndToEndAgainstRealHub`:真 `ChatPeerLink` 注册进真 `ChatPeerHub`,上行/下行往返断言;进程级 smoke 编排仍未纳入脚本 |

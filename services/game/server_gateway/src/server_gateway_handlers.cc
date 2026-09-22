@@ -5,7 +5,6 @@
 #include <vector>
 
 #include "logger.h"
-#include "proto/chat.pb.h"
 
 namespace chirp::game_server_gateway {
 
@@ -19,15 +18,8 @@ int64_t NowMs() {
 }  // namespace
 
 ServerGatewayHandlers::ServerGatewayHandlers(ServerGatewayConfig config, ServiceRegistry& registry,
-                                             EventQueue& queue, IdentityRegistry& identities,
-                                             SubscriptionRegistry& subscriptions,
-                                             UnreadLedger& unread)
-    : config_(std::move(config)),
-      registry_(registry),
-      queue_(queue),
-      identities_(identities),
-      subscriptions_(subscriptions),
-      unread_(unread) {}
+                                             EventQueue& queue)
+    : config_(std::move(config)), registry_(registry), queue_(queue) {}
 
 AuthOutcome ServerGatewayHandlers::HandleAuth(const ServerAuthRequest& req,
                                               std::shared_ptr<PeerSender> peer) {
@@ -71,19 +63,16 @@ MessageInjectResponse ServerGatewayHandlers::HandleInject(const MessageInjectReq
     resp.set_code(chirp::common::INVALID_PARAM);
     return resp;
   }
-  // WP-8 slice 3: a game-tagged injection fans out to the channel's
-  // subscribers instead of being forwarded as-is. The selector must be
-  // unambiguous — a channel fan-out or a 1:1 inject, never a mixture.
+  // Game-tagged injections (the old WP-8 fan-out selector) are rejected:
+  // subscriber fan-out now lives in app_chat's player directory, reached
+  // through the game_chat spoke uplink (CHANNEL_MESSAGE_NOTIFY over the
+  // chat peer link). This plane forwards plain 1:1 injects only.
   if (!req.game_id().empty()) {
-    if (req.channel_type() == static_cast<int32_t>(chirp::chat::PRIVATE)) {
-      resp.set_code(chirp::common::INVALID_PARAM);
-      return resp;
-    }
-    if (req.channel_id().empty()) {
-      resp.set_code(chirp::common::INVALID_PARAM);
-      return resp;
-    }
-    return FanoutInject(req);
+    chirp::common::Logger::Instance().Warn(
+        "inject " + req.inject_id() + ": game-tagged injections moved to the app_chat player "
+        "directory (spoke uplink); rejected here");
+    resp.set_code(chirp::common::INVALID_PARAM);
+    return resp;
   }
 
   auto chat = registry_.Get(config_.chat_service_id);
@@ -99,73 +88,6 @@ MessageInjectResponse ServerGatewayHandlers::HandleInject(const MessageInjectReq
   chirp::common::Logger::Instance().Info(
       "inject " + req.inject_id() + " from=" + req.sender_id() + " to=" +
       req.receiver_id() + " delivered to " + config_.chat_service_id);
-  resp.set_code(chirp::common::OK);
-  return resp;
-}
-
-MessageInjectResponse ServerGatewayHandlers::FanoutInject(const MessageInjectRequest& req) const {
-  MessageInjectResponse resp;
-  resp.set_inject_id(req.inject_id());
-
-  // Snapshot under the registry lock; the chat writes below must not hold it.
-  const auto subscribers = subscriptions_.GetForChannel(req.game_id(), req.channel_id());
-  if (subscribers.empty()) {
-    // Nobody follows the channel: a semantic no-op. Answering SERVER_UNAVAILABLE
-    // here would make the stream broker replay a message no one wants forever.
-    resp.set_code(chirp::common::OK);
-    return resp;
-  }
-  if (subscribers.size() > config_.max_fanout_per_inject) {
-    chirp::common::Logger::Instance().Warn(
-        "inject " + req.inject_id() + ": fan-out to " +
-        std::to_string(subscribers.size()) + " subscribers of " + req.game_id() + ":" +
-        req.channel_id() + " exceeds --max_fanout, rejected");
-    resp.set_code(chirp::common::RATE_LIMITED);
-    return resp;
-  }
-
-  auto chat = registry_.Get(config_.chat_service_id);
-  if (!chat) {
-    resp.set_code(chirp::common::SERVER_UNAVAILABLE);
-    return resp;
-  }
-
-  // One private copy per subscriber; the chat service owns delivery from
-  // here (online push, offline queue, ack tracking). The original sender
-  // identity is preserved so the backend controls how copies group into
-  // history threads; the original channel_id is dropped because chat keys
-  // private history by the canonical sender|receiver pair anyway.
-  size_t failed = 0;
-  for (const auto& sub : subscribers) {
-    MessageInjectRequest copy = req;
-    copy.set_channel_type(static_cast<int32_t>(chirp::chat::PRIVATE));
-    copy.set_receiver_id(sub.player_id());
-    copy.set_channel_id("");
-    copy.set_inject_id(req.inject_id() + "#" + sub.player_id());
-    InjectMessageNotify notify;
-    *notify.mutable_message() = copy;
-    if (!chat->Send(chirp::gateway::INJECT_MESSAGE_NOTIFY, notify)) {
-      ++failed;
-      chirp::common::Logger::Instance().Warn(
-          "inject " + req.inject_id() + ": fan-out copy for " + sub.player_id() +
-          " could not be handed to " + config_.chat_service_id);
-    } else {
-      // A copy accepted by the plane is one unhandled notification for the
-      // recipient; only delivered copies count (WP-8 slice 4).
-      unread_.Increment(sub.player_id(), req.game_id(), req.channel_id());
-    }
-  }
-  if (failed == subscribers.size()) {
-    // Nothing was stored anywhere, so a replay (stream broker) is safe.
-    resp.set_code(chirp::common::SERVER_UNAVAILABLE);
-    return resp;
-  }
-  // Partial success answers OK: retrying would re-deliver to the players
-  // already served. "OK = accepted by the plane", not delivered-to-player.
-  chirp::common::Logger::Instance().Info(
-      "inject " + req.inject_id() + ": fanned out to " +
-      std::to_string(subscribers.size() - failed) + "/" + std::to_string(subscribers.size()) +
-      " subscribers of " + req.game_id() + ":" + req.channel_id());
   resp.set_code(chirp::common::OK);
   return resp;
 }
@@ -211,195 +133,6 @@ EventAckResponse ServerGatewayHandlers::HandleEventAck(const EventAckRequest& re
   resp.set_code(chirp::common::OK);
   return resp;
 // GCOVR_EXCL_LINE -- unreachable exit-block line (gcc/NRVO artifact); body is covered
-}
-
-BindPlayerIdentityResponse ServerGatewayHandlers::HandleBindPlayerIdentity(
-    const BindPlayerIdentityRequest& req) {
-  BindPlayerIdentityResponse resp;
-  resp.set_binding_id(req.binding_id());
-  const auto outcome =
-      identities_.Bind(req.binding_id(), req.player_id(), req.game_id(), req.game_user_id(),
-                       /*bound_at_ms=*/NowMs());
-  switch (outcome) {
-  case IdentityRegistry::BindOutcome::kBound:
-    chirp::common::Logger::Instance().Info(
-        "binding " + req.binding_id() + ": player " + req.player_id() + " <- " + req.game_id() +
-        ":" + req.game_user_id());
-    resp.set_code(chirp::common::OK);
-    break;
-  case IdentityRegistry::BindOutcome::kExisted:
-    resp.set_code(chirp::common::OK);
-    resp.set_existed(true);
-    break;
-  case IdentityRegistry::BindOutcome::kInvalid:
-    resp.set_code(chirp::common::INVALID_PARAM);
-    break;
-  }
-  return resp;
-}
-
-UnbindPlayerIdentityResponse ServerGatewayHandlers::HandleUnbindPlayerIdentity(
-    const UnbindPlayerIdentityRequest& req) {
-  UnbindPlayerIdentityResponse resp;
-  // Exactly one selector: binding_id, or the complete (game_id,
-  // game_user_id) pair — anything else is a bad request, not a no-op.
-  const bool by_id = !req.binding_id().empty();
-  const bool by_pair = !req.game_id().empty() && !req.game_user_id().empty();
-  const bool malformed_pair = req.game_id().empty() != req.game_user_id().empty();
-  if (by_id == by_pair || malformed_pair) {
-    resp.set_code(chirp::common::INVALID_PARAM);
-    return resp;
-  }
-  const bool removed =
-      by_id ? identities_.UnbindById(req.binding_id())
-            : identities_.UnbindByGameUser(req.game_id(), req.game_user_id());
-  resp.set_code(chirp::common::OK);
-  if (removed) {
-    chirp::common::Logger::Instance().Info(
-        "unbound " + (by_id ? req.binding_id() : req.game_id() + ":" + req.game_user_id()));
-  }
-  return resp;
-}
-
-GetPlayerIdentitiesResponse ServerGatewayHandlers::HandleGetPlayerIdentities(
-    const GetPlayerIdentitiesRequest& req) const {
-  GetPlayerIdentitiesResponse resp;
-  if (req.player_id().empty()) {
-    resp.set_code(chirp::common::INVALID_PARAM);
-    return resp;
-  }
-  for (const auto& entry : identities_.GetByPlayer(req.player_id())) {
-    *resp.add_bindings() = entry;
-  }
-  resp.set_code(chirp::common::OK);
-  return resp;
-}
-
-ResolveGameUserResponse ServerGatewayHandlers::HandleResolveGameUser(
-    const ResolveGameUserRequest& req) const {
-  ResolveGameUserResponse resp;
-  if (req.game_id().empty() || req.game_user_id().empty()) {
-    resp.set_code(chirp::common::INVALID_PARAM);
-    return resp;
-  }
-  const auto player = identities_.Resolve(req.game_id(), req.game_user_id());
-  if (player) {
-    resp.set_player_id(*player);
-  }
-  resp.set_code(chirp::common::OK);
-  return resp;
-}
-
-SubscribePlayerChannelResponse ServerGatewayHandlers::HandleSubscribePlayerChannel(
-    const SubscribePlayerChannelRequest& req) {
-  SubscribePlayerChannelResponse resp;
-  // The registry mints an id when the caller supplied none (the app edge's
-  // self-service path), so only the tuple fields must be present here.
-  if (req.player_id().empty() || req.game_id().empty() || req.channel_id().empty()) {
-    resp.set_code(chirp::common::INVALID_PARAM);
-    return resp;
-  }
-  std::string subscription_id = req.subscription_id();
-  const auto outcome =
-      subscriptions_.Subscribe(&subscription_id, req.player_id(), req.game_id(), req.channel_id(),
-                               /*subscribed_at_ms=*/NowMs());
-  switch (outcome) {
-  case SubscriptionRegistry::SubscribeOutcome::kSubscribed:
-    chirp::common::Logger::Instance().Info(
-        "subscribed " + subscription_id + ": player " + req.player_id() + " -> " + req.game_id() +
-        ":" + req.channel_id());
-    resp.set_code(chirp::common::OK);
-    break;
-  case SubscriptionRegistry::SubscribeOutcome::kExisted:
-    resp.set_code(chirp::common::OK);
-    resp.set_existed(true);
-    break;
-  case SubscriptionRegistry::SubscribeOutcome::kInvalid:
-    resp.set_code(chirp::common::INVALID_PARAM);
-    break;
-  }
-  resp.set_subscription_id(subscription_id);
-  return resp;
-}
-
-UnsubscribePlayerChannelResponse ServerGatewayHandlers::HandleUnsubscribePlayerChannel(
-    const UnsubscribePlayerChannelRequest& req) {
-  UnsubscribePlayerChannelResponse resp;
-  // Exactly one selector: subscription_id, or the complete (player_id,
-  // game_id, channel_id) triple — anything else is a bad request, not a
-  // no-op.
-  const bool by_id = !req.subscription_id().empty();
-  const bool by_tuple =
-      !req.player_id().empty() && !req.game_id().empty() && !req.channel_id().empty();
-  const bool malformed_tuple =
-      !(req.player_id().empty() && req.game_id().empty() && req.channel_id().empty()) && !by_tuple;
-  if (by_id == by_tuple || malformed_tuple) {
-    resp.set_code(chirp::common::INVALID_PARAM);
-    return resp;
-  }
-  const bool removed =
-      by_id ? subscriptions_.UnsubscribeById(req.subscription_id())
-            : subscriptions_.UnsubscribeByTuple(req.player_id(), req.game_id(), req.channel_id());
-  resp.set_code(chirp::common::OK);
-  if (removed) {
-    chirp::common::Logger::Instance().Info(
-        "unsubscribed " +
-        (by_id ? req.subscription_id()
-               : req.player_id() + ":" + req.game_id() + ":" + req.channel_id()));
-  }
-  return resp;
-}
-
-GetPlayerSubscriptionsResponse ServerGatewayHandlers::HandleGetPlayerSubscriptions(
-    const GetPlayerSubscriptionsRequest& req) const {
-  GetPlayerSubscriptionsResponse resp;
-  if (req.player_id().empty()) {
-    resp.set_code(chirp::common::INVALID_PARAM);
-    return resp;
-  }
-  for (const auto& entry : subscriptions_.GetForPlayer(req.player_id(), req.game_id())) {
-    *resp.add_subscriptions() = entry;
-  }
-  resp.set_code(chirp::common::OK);
-  return resp;
-}
-
-MarkChannelsReadResponse ServerGatewayHandlers::HandleMarkChannelsRead(
-    const MarkChannelsReadRequest& req) {
-  MarkChannelsReadResponse resp;
-  // Layered selector: channel_id needs game_id; game_id alone or both empty
-  // are valid (clear the game / clear everything). The app edge pins
-  // player_id, but backend callers go through this path directly too.
-  if (req.player_id().empty() || (!req.channel_id().empty() && req.game_id().empty())) {
-    resp.set_code(chirp::common::INVALID_PARAM);
-    return resp;
-  }
-  const size_t cleared = unread_.MarkRead(req.player_id(), req.game_id(), req.channel_id());
-  resp.set_code(chirp::common::OK);
-  resp.set_cleared(static_cast<int32_t>(cleared));
-  if (cleared > 0) {
-    chirp::common::Logger::Instance().Info(
-        "marked read for player " + req.player_id() + ": cleared " + std::to_string(cleared) +
-        " unread entries");
-  }
-  return resp;
-}
-
-GetUnreadSummaryResponse ServerGatewayHandlers::HandleGetUnreadSummary(
-    const GetUnreadSummaryRequest& req) const {
-  GetUnreadSummaryResponse resp;
-  if (req.player_id().empty()) {
-    resp.set_code(chirp::common::INVALID_PARAM);
-    return resp;
-  }
-  int32_t total = 0;
-  for (const auto& entry : unread_.GetSummary(req.player_id(), req.game_id())) {
-    total += entry.unread_count();
-    *resp.add_entries() = entry;
-  }
-  resp.set_code(chirp::common::OK);
-  resp.set_total_unread(total);
-  return resp;
 }
 
 void ServerGatewayHandlers::OnPeerDisconnected(const std::string& service_id,

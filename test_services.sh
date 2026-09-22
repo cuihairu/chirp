@@ -206,6 +206,12 @@ if [[ "${1:-}" == "--smoke-game" ]]; then
   # 走 scaffold（token 即 user_id + BindAuthenticatedSession），ChatBridge
   # 把 2xxx 转给 game_chat；chat 开 --gateway_service_secret 信任管道，
   # 不配 --token_secret 走本地 scaffold。离线补投递证明全管道双向。
+  CHAT_BIN="${CHAT_BIN:-./build/services/shared/chat/chirp_chat}"
+  if [ ! -f "${CHAT_BIN}" ]; then
+    echo "错误: 未找到 ${CHAT_BIN}"
+    exit 1
+  fi
+
   CHAT_PORT="${CHAT_PORT:-$(pick_port)}"
   CHAT_WS_PORT="${CHAT_WS_PORT:-$(pick_port)}"
   GW_PORT="${GW_PORT:-$(pick_port)}"
@@ -216,7 +222,7 @@ if [[ "${1:-}" == "--smoke-game" ]]; then
   A_LOG="${A_LOG:-/tmp/chirp_game_a_send.log}"
   B_LOG="${B_LOG:-/tmp/chirp_game_b_refill.log}"
 
-  ./build/services/shared/chat/chirp_chat --port "${CHAT_PORT}" --ws_port "${CHAT_WS_PORT}" \
+  "${CHAT_BIN}" --port "${CHAT_PORT}" --ws_port "${CHAT_WS_PORT}" \
     --gateway_service_secret game-secret "${MYSQL_ARGS[@]+"${MYSQL_ARGS[@]}"}" > "${CHAT_LOG}" 2>&1 &
   CHAT_PID=$!
 
@@ -489,6 +495,15 @@ elif [[ "${1:-}" == "--smoke-npc" ]]; then
   NPC_LISTEN_LOG="${NPC_LISTEN_LOG:-/tmp/chirp_npc_listen_smoke.log}"
   NPC_OFFLINE_LISTEN_LOG="${NPC_OFFLINE_LISTEN_LOG:-/tmp/chirp_npc_offline_listen_smoke.log}"
 
+  # CHAT_BIN is overridable: the enhanced build hard-depends on MySQL at
+  # startup, so a MySQL-less tree (ENABLE_TESTS off, basic main.cc) can cover
+  # this smoke by pointing CHAT_BIN at its own chirp_chat.
+  CHAT_BIN="${CHAT_BIN:-./build/services/shared/chat/chirp_chat}"
+  if [ ! -f "${CHAT_BIN}" ]; then
+    echo "错误: 未找到 ${CHAT_BIN}"
+    exit 1
+  fi
+
   ./build/services/game/server_gateway/chirp_game_server_gateway --port "${HUB_PORT}" \
     --service chat=chat-secret --service npc_dialog=npc-secret --chat_service_id chat \
     > "${HUB_LOG}" 2>&1 &
@@ -496,7 +511,7 @@ elif [[ "${1:-}" == "--smoke-npc" ]]; then
 
   wait_port "${HUB_PORT}" chirp_game_server_gateway "${HUB_LOG}"
 
-  ./build/services/shared/chat/chirp_chat --port "${CHAT_PORT}" --ws_port "${CHAT_WS_PORT}" \
+  "${CHAT_BIN}" --port "${CHAT_PORT}" --ws_port "${CHAT_WS_PORT}" \
     --server_gateway_host 127.0.0.1 --server_gateway_port "${HUB_PORT}" \
     --server_gateway_secret chat-secret --npc_service_id npc_dialog \
     "${MYSQL_ARGS[@]+"${MYSQL_ARGS[@]}"}" > "${CHAT_LOG}" 2>&1 &
