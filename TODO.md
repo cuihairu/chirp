@@ -31,7 +31,7 @@ SDK 引擎兼容性见 [SDK 引擎兼容性](docs/design-notes/sdk_compatibility
 - [x] **消息长度限制**（2026-09-22：game_chat_features P0 第二项——按频道码点上限：私聊 200 字、世界 100 字、系统公告 500 字，TEAM/GUILD/MARQUEE 不限；`chat_validation` 新增公开 `MaxContentChars`/`ValidateContentLength`，按 UTF-8 非续字节计码点（CJK 3 字节/字不误伤），超限拒收回 `INVALID_PARAM`（不做截断）；basic 经 `ValidateSendMessageRequest` 自动获得，enhanced 在 `on_send_message` 词过滤之前调用（超长不耗词库工作；MySQL 构建列表补链 `chat_validation.cc`）；`chat_validation_tests` 新增 8 例达 35/35）
 - [x] **发送频率限制**（2026-09-22：game_chat_features P0 第三项——`ChannelPacer` 按用户×频道最小间隔：世界 5s/公会 2s/私聊 1s，TEAM/MARQUEE/系统公告不限；窗口锚定在最后一次**放行**的发送，窗口内被拒的重试不延长等待；超频回 `RATE_LIMITED`；io 线程专有内存态（进程内限流，多实例部署下每实例独立计数——模糊闸仍是 Redis 全局口径）；basic 在模糊闸后、词过滤前接线（filter 拒绝也耗节奏槽），enhanced 在长度校验后接线、键取 registry 认证身份；`channel_pacer_tests` 8 例）
 - [x] **enhanced 直连入口补每用户发送模糊闸**（2026-09-22：`--send_rate_limit_per_min` 接入 enhanced 的 `on_send_message`(长度校验后、节奏限流前,只对已认证会话计数,无 Redis/未开启时惰性直通,与 basic 同一 fail-open 契约);沿用 enhanced 模糊闸的**默认关**约定(`--login_rate_limit_per_min` 同款,默认 0),要开需显式配置。同批修掉 pacing 引入的 smoke flake:`--smoke-chat` 的 user_1 四连私聊间隔可能 <1s,补 3 处 `sleep 1.1` 模拟守节奏客户端）
-- [ ] **enhanced 直连入口补每用户发送模糊闸**（basic 有 120/分每用户 Redis 固定窗口，enhanced 只有每 IP 登录闸；对齐时复用 `ChatRateLimiter::CheckSend`，在 `on_send_message` 最前面接）
+- [x] **重复消息检测**（2026-09-22：game_chat_features P0 第四项——`RepeatGuard` 连续相同内容禁言：同用户连续第 3 条相同内容触发 5 分钟禁言,**触发那条本身也拒发**（不让第 3 条刷屏到达），禁言期内任何内容都拒（回 `RATE_LIMITED`）,禁言到期计数重置；插入内容不同即重置连击；io 线程专有内存态；basic 在节奏限流后、词过滤前接线,enhanced 同位置（键取 registry 认证身份）；`repeat_guard_tests` 6 例）
 
 ### game_server_gateway（原 server_gateway，瘦身版）
 

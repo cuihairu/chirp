@@ -85,6 +85,9 @@ if(MYSQL_FOUND)
         # Per-channel send pacing (game_chat_features P0 发送频率限制):
         # world 5s / guild 2s / private 1s between sends by the same user.
         src/channel_pacer.cc
+        # Repeat-message mute (game_chat_features P0 重复消息检测): third
+        # consecutive identical send starts a 5-minute mute.
+        src/repeat_guard.cc
     )
 
     chirp_configure_chat_target(chirp_chat)

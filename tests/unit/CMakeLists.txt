@@ -676,6 +676,21 @@ target_include_directories(channel_pacer_tests
 
 add_test(NAME channel_pacer_tests COMMAND channel_pacer_tests)
 
+# Repeat-message mute (game_chat_features P0 重复消息检测): streak
+# counting, mute window and expiry semantics.
+add_executable(repeat_guard_tests
+  repeat_guard_test.cc
+  ${CMAKE_SOURCE_DIR}/services/shared/chat/src/repeat_guard.cc
+)
+
+chirp_unit_test_common_links(repeat_guard_tests)
+
+target_include_directories(repeat_guard_tests
+  PRIVATE
+  ${CMAKE_SOURCE_DIR}/services/shared/chat/src
+)
+
+add_test(NAME repeat_guard_tests COMMAND repeat_guard_tests)
 # NOTE: presence_manager.cc used to be excluded from the social build
 # because it did not compile (a proto enum name clash plus a copyable-mutex
 # member); it is fixed and covered by social_presence_tests below. The

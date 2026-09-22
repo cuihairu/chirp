@@ -29,6 +29,7 @@
 #include "npc_uplink.h"
 #include "player_directory.h"
 #include "channel_pacer.h"
+#include "repeat_guard.h"
 #include "word_filter.h"
 #include "push_bridge.h"
 #include "network/chat_peer_hub.h"
@@ -361,6 +362,8 @@ struct FeatureHandlers {
   chirp::chat::ChatRateLimiter* rate_limiter = nullptr;
   // Per-channel pacing (world 5s / guild 2s / private 1s); always installed.
   chirp::chat::ChannelPacer* channel_pacer = nullptr;
+  // Repeat-message mute (3 identical sends -> 5 min); always installed.
+  chirp::chat::RepeatGuard* repeat_guard = nullptr;
   // Lexicon content filter; a null/empty-lexicon filter is a pass-through.
   chirp::chat::WordFilter* word_filter = nullptr;
   // Null or disabled() keeps the scaffold "token is user_id" login.
@@ -594,6 +597,20 @@ void HandlePacket(const std::shared_ptr<MessageStore>& store,
     if (features.channel_pacer != nullptr &&
         !features.channel_pacer->Allow(authenticated_user_id, req.channel_type(),
                                        chirp::chat::runtime::NowMs())) {
+      chirp::chat::SendMessageResponse resp;
+      resp.set_code(chirp::common::RATE_LIMITED);
+      resp.set_server_timestamp(chirp::chat::runtime::NowMs());
+      chirp::chat::runtime::SendPacket(session, chirp::gateway::SEND_MESSAGE_RESP,
+                                       pkt.sequence(), resp.SerializeAsString());
+      return;
+    }
+
+    // Repeat-message mute (game_chat_features P0 重复消息检测): the third
+    // consecutive identical send starts a 5-minute mute during which every
+    // send is refused. Sits after pacing and before the filter.
+    if (features.repeat_guard != nullptr &&
+        !features.repeat_guard->Allow(authenticated_user_id, req.content(),
+                                      chirp::chat::runtime::NowMs())) {
       chirp::chat::SendMessageResponse resp;
       resp.set_code(chirp::common::RATE_LIMITED);
       resp.set_server_timestamp(chirp::chat::runtime::NowMs());
@@ -1263,6 +1280,7 @@ int main(int argc, char** argv) {
   word_filter_options.policy = chirp::chat::WordFilterPolicyFromString(word_filter_policy);
   chirp::chat::WordFilter word_filter(word_filter_options);
   chirp::chat::ChannelPacer channel_pacer;
+  chirp::chat::RepeatGuard repeat_guard;
 
   FeatureHandlers features{.groups = group_handlers, .receipts = receipt_handlers,
                            .typing = typing_handlers, .reactions = reaction_handlers,
@@ -1271,6 +1289,7 @@ int main(int argc, char** argv) {
                            .gateway_secret = {}, .trusted_conns = nullptr};
   features.rate_limiter = rate_limiter.get();
   features.channel_pacer = &channel_pacer;
+  features.repeat_guard = &repeat_guard;
   features.word_filter = &word_filter;
   features.token_verifier = &token_verifier;
   features.acks = acks.get();

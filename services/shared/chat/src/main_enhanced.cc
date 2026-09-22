@@ -20,6 +20,7 @@
 #include "channel_pacer.h"
 #include "chat_validation.h"
 #include "delivery_ack_manager.h"
+#include "repeat_guard.h"
 #include "inject_consumer.h"
 #include "login_token_verifier.h"
 #include "message_delivery_tracker.h"
@@ -922,6 +923,7 @@ int main(int argc, char** argv) {
   word_filter_options.policy = chirp::chat::WordFilterPolicyFromString(word_filter_policy);
   chirp::chat::WordFilter word_filter(word_filter_options);
   chirp::chat::ChannelPacer channel_pacer;
+  chirp::chat::RepeatGuard repeat_guard;
 
   chirp::chat::runtime::DistributedDispatchHandlers handlers;
   handlers.on_login = [state, store, router, &token_verifier, acks](
@@ -934,7 +936,8 @@ int main(int argc, char** argv) {
                               peer = hub_peer.get(), npc_service_id, npc_prefix,
                               link = spoke_link.get(), spoke_game_id,
                               hub = chat_hub.get(), &directory, &word_filter,
-                              &channel_pacer, send_gate = &edge_rate_limiter](
+                              &channel_pacer, &repeat_guard,
+                              send_gate = &edge_rate_limiter](
                                  const std::shared_ptr<chirp::network::Session>& session,
                                  const chirp::chat::SendMessageRequest& req,
                                  int64_t seq) {
@@ -969,6 +972,19 @@ int main(int argc, char** argv) {
     // authenticated identity and anchored to the last allowed send.
     if (!authenticated_user.empty() &&
         !channel_pacer.Allow(authenticated_user, req.channel_type(), chirp::chat::runtime::NowMs())) {
+      chirp::chat::SendMessageResponse resp;
+      resp.set_code(chirp::common::RATE_LIMITED);
+      resp.set_server_timestamp(chirp::chat::runtime::NowMs());
+      chirp::chat::runtime::SendPacket(session, chirp::gateway::SEND_MESSAGE_RESP, seq,
+                                       resp.SerializeAsString());
+      return;
+    }
+    // Repeat-message mute (game_chat_features P0 重复消息检测): the third
+    // consecutive identical send starts a 5-minute mute during which every
+    // send is refused. Same position as the basic build: after pacing,
+    // before the filter.
+    if (!authenticated_user.empty() &&
+        !repeat_guard.Allow(authenticated_user, req.content(), chirp::chat::runtime::NowMs())) {
       chirp::chat::SendMessageResponse resp;
       resp.set_code(chirp::common::RATE_LIMITED);
       resp.set_server_timestamp(chirp::chat::runtime::NowMs());
