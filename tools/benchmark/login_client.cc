@@ -176,12 +176,34 @@ int main(int argc, char** argv) {
   auto ping_out = chirp::network::ProtobufFraming::Encode(ping_pkt);
   asio::write(sock, asio::buffer(ping_out));
 
+  // The offline refill races the pong here: chat flushes queued messages
+  // right after the login response, so the next frame can be a
+  // CHAT_MESSAGE_NOTIFY rather than the pong answer. Consume frames until
+  // the pong shows up instead of assuming the first frame is it; a notify
+  // seen this early already proves delivery for --expect_notify_ms.
   chirp::gateway::Packet pong_pkt;
-  if (!ReadOnePacket(sock, &framer, &pong_pkt)) {
-    std::cerr << "failed to read ping response frame\n";
-    return 1;
+  bool notify_seen = false;
+  while (true) {
+    if (!ReadOnePacket(sock, &framer, &pong_pkt)) {
+      std::cerr << "failed to read ping response frame\n";
+      return 1;
+    }
+    if (pong_pkt.msg_id() == chirp::gateway::HEARTBEAT_PONG) {
+      std::cout << "pong msg_id=" << pong_pkt.msg_id() << " seq=" << pong_pkt.sequence() << "\n";
+      break;
+    }
+    if (pong_pkt.msg_id() == chirp::gateway::CHAT_MESSAGE_NOTIFY) {
+      chirp::chat::ChatMessage msg;
+      if (msg.ParseFromArray(pong_pkt.body().data(), static_cast<int>(pong_pkt.body().size()))) {
+        std::cout << "notify from=" << msg.sender_id() << " content=" << msg.content() << "\n";
+      } else {
+        std::cout << "notify\n";
+      }
+      notify_seen = true;
+      continue;
+    }
+    // Unrelated frame (e.g. a push we did not ask for): keep waiting.
   }
-  std::cout << "pong msg_id=" << pong_pkt.msg_id() << " seq=" << pong_pkt.sequence() << "\n";
 
   // Optional: send one private message after login (chat smoke paths).
   if (!send_text.empty()) {
@@ -217,6 +239,9 @@ int main(int argc, char** argv) {
 
   // Optional: wait for the first CHAT_MESSAGE_NOTIFY (private or refill).
   if (expect_notify_ms > 0) {
+    if (notify_seen) {
+      return 0;  // already observed while waiting for the pong
+    }
     while (true) {
       chirp::gateway::Packet maybe_notify;
       const ReadResult r = ReadOnePacketWithTimeout(sock, &framer, &maybe_notify, expect_notify_ms);
