@@ -4,7 +4,7 @@ title: Chat Peer 注册协议
 
 # Chat Peer 注册协议(5050-5053)
 
-最后核对:2026-09-22,对齐 `proto/gateway.proto` 与 `services/shared/chat/src/peer_{hub,spoke}.{h,cc}`。
+最后核对:2026-09-22,对齐 `proto/gateway.proto` 与 `libs/network/chat_peer_{hub,link}.{h,cc}`(chat 的 basic 与 enhanced 两个形态都接线)。
 
 `game_chat`(spoke)与 `app_chat`(hub)是同一个 `chirp_chat` 二进制,通过启动参数选择角色。spoke 通过内置的 peer 注册协议接入 hub,注册、白名单、版本协商都是 chat 的原生能力——没有外部桥接进程。本文是这条链路的协议级事实来源;整体架构见[整体架构](../architecture.md)。
 
@@ -53,7 +53,7 @@ sequenceDiagram
 规则:
 
 - 注册在连接生命周期内有效。连接断开,spoke 必须重新走完整握手——hub 不恢复旧注册状态。
-- 同一 `service_id` 第二次注册会挤掉第一次(`PeerHub::HandleRegister` 覆盖旧条目)。这使重连语义简单:spoke 崩了立刻重连即可,旧连接会被新注册顶掉。
+- 同一 `service_id` 第二次注册会挤掉第一次(`ChatPeerHub` 覆盖旧条目)。这使重连语义简单:spoke 崩了立刻重连即可,旧连接会被新注册顶掉。
 - `PEER_REGISTER_RESP.sequence` 回显 `PEER_REGISTER_REQ.sequence`,spoke 端可据此关联请求/响应。
 
 ## 消息字段
@@ -123,14 +123,15 @@ enum PeerCapability {
 ## 心跳与超时
 
 - `PEER_REGISTER_RESP.heartbeat_interval_seconds` 由 hub 分配,spoke 以此周期发 `HEARTBEAT_PING`,hub 回 `HEARTBEAT_PONG`。
-- spoke 沉默约 2× 周期,hub 剔除该 peer(`PeerHub::OnPeerDisconnected`)。
-- hub 崩溃或网络断开时,spoke 端以指数退避重连并重新注册;当前实现由 `PeerSpoke` 内置的重连循环负责。
+- spoke 沉默约 2× 周期,hub 剔除该 peer(`ChatPeerHub` 的 idle timer)。
+- hub 崩溃或网络断开时,spoke 端按固定延迟重连并重新注册;由 `ChatPeerLink` 内置的重连循环负责。
 
 ## 白名单与访问控制(hub 侧 CLI)
 
 | flag | 默认 | 含义 |
 | --- | --- | --- |
-| `--hub_mode` | `0` | `1` 启用 hub 角色,接受 peer 注册;`0` 时收到 `PEER_REGISTER_REQ` 返回 `INTERNAL_ERROR` |
+| `--hub_mode` | `0` | `1` 启用 hub 角色,在 peer 端口上接受 peer 注册;`0` 时 hub 完全关闭 |
+| `--hub_peer_port` | `8200` | peer 链路独立监听端口。主客户端端口(`--port`)**不再**接受 `PEER_REGISTER_REQ`,5050 打到主端口会被静默丢弃 |
 | `--allowed_peers` | 空 | 逗号分隔的 `service_id:secret` 对,如 `game_42:s3cr3t,game_99:hunter2`。**空 = 拒绝所有** |
 | `--min_peer_version` | `1` | 接受的最低 `protocol_version`;低于此值返回 `VERSION_MISMATCH` |
 | `--allow_unknown_peers` | `0` | `1` 时白名单之外的 peer 也可注册(开放注册模式,仅限内网调试) |
@@ -140,12 +141,12 @@ enum PeerCapability {
 | flag | 默认 | 含义 |
 | --- | --- | --- |
 | `--app_chat_host` | 空 | hub 地址;空 = 不启用 spoke 角色 |
-| `--app_chat_port` | `7000` | hub 端口 |
+| `--app_chat_port` | `8200` | hub 的 **peer 端口**(`--hub_peer_port`),不是主客户端端口 |
 | `--game_service_id` | 空 | 本 peer 的 `service_id`;空 = 不启用 spoke |
 | `--game_service_secret` | 空 | 共享密钥,须与 hub 的 `--allowed_peers` 中该 id 对应值一致 |
 | `--game_id` | 空 | 频道命名空间;空 = 不启用 spoke |
 
-spoke 角色需要 `app_chat_host`、`game_service_id`、`game_id` 三个同时非空才激活,缺一则完全关闭(见 `main.cc:1238`)。
+spoke 角色需要 `app_chat_host`、`game_service_id`、`game_id` 三个同时非空才激活,缺一则完全关闭。
 
 ## 部署示例
 
@@ -154,7 +155,7 @@ spoke 角色需要 `app_chat_host`、`game_service_id`、`game_id` 三个同时�
 ```bash
 ./chirp_chat \
   --port 7000 --ws_port 7001 \
-  --hub_mode 1 \
+  --hub_mode 1 --hub_peer_port 8200 \
   --allowed_peers "game_42:s3cr3t_42,game_99:s3cr3t_99" \
   --min_peer_version 1
 ```
@@ -165,7 +166,7 @@ spoke(`game_chat` for game 42):
 ./chirp_chat \
   --port 7100 --ws_port 7101 \
   --token_secret <game_jwt_secret> \
-  --app_chat_host app-chat.internal --app_chat_port 7000 \
+  --app_chat_host app-chat.internal --app_chat_port 8200 \
   --game_service_id game_42 --game_service_secret s3cr3t_42 \
   --game_id game_42
 ```
@@ -205,15 +206,16 @@ spoke 侧看不到 `player_id`;hub 侧看不到 `game_user_id` 明文(除了注�
 | 模块 | 状态 |
 | --- | --- |
 | proto 定义(5050-5053、能力位、错误码) | 已落地 |
-| `PeerHub::HandleRegister` + 白名单 + `VERSION_MISMATCH` | 已落地(`peer_hub.cc`),有单测覆盖(`chat_hub_peer_tests`、`chat_peer_tests`) |
-| `PeerSpoke` 连接/注册/重连骨架 | 已落地(`peer_spoke.cc`) |
-| `--hub_mode` / `--allowed_peers` / `--min_peer_version` / `--allow_unknown_peers` | 已落地(`main.cc:1050-1057`) |
-| `--app_chat_host` 等 spoke CLI | 已落地(`main.cc:1059-1068`) |
+| hub 侧注册/白名单/版本协商/顶替 | `libs/network/chat_peer_hub.cc`,有单测覆盖(`chat_peer_tests`) |
+| spoke 侧连接/注册/心跳/重连 | `libs/network/chat_peer_link.cc`(strand 化),有单测覆盖(`chat_peer_tests`) |
+| chat 接线(basic + enhanced 两形态) | 已落地:`main.cc` 与 `main_enhanced.cc` 都接 `ChatPeerHub`/`ChatPeerLink`;旧的 `services/shared/chat/src/peer_{hub,spoke}.{h,cc}` 半成品(单次读、无心跳、无重连,且从未编译通过)已删除 |
+| `--hub_mode` / `--hub_peer_port` / `--allowed_peers` 等 hub CLI | 已落地(两形态) |
+| `--app_chat_host` 等 spoke CLI | 已落地(两形态) |
 | 能力位协商(交集生效) | 握手已交换,**实际能力尚未在代码中激活**——交集为空时仍会注册成功,能力位定义待用 |
-| `CHANNEL_MESSAGE_NOTIFY` 上行 + hub 扇出 | 链路骨架已通;hub 侧的"按订阅扇出到 App 玩家"仍依赖 `chirp_game_server_gateway` 的 WP-8 功能,待搬迁到 `app_chat`(TODO.md P1) |
-| `PEER_INJECT_MESSAGE_NOTIFY` 下行 | spoke 侧已消费(`main.cc:1253-1273`),注入走与玩家发消息相同的 store/deliver 尾段 |
-| `heartbeat_interval_seconds` 心跳剔除 | 字段已在 resp 中下发,剔除逻辑依赖底层 session 超时;精确 2× 周期踢出未实现 |
-| 进程级 E2E(hub + spoke 真实联通) | **未纳入 smoke 脚本**;当前只有单测级覆盖 |
+| `CHANNEL_MESSAGE_NOTIFY` 上行 + hub 扇出 | spoke 上行已通(非 PRIVATE 频道,注册后 best-effort);hub 侧的"按订阅扇出到 App 玩家"仍依赖 `chirp_game_server_gateway` 的 WP-8 功能,待搬迁到 `app_chat`(TODO.md P1),当前 hub 只记录上行 |
+| `PEER_INJECT_MESSAGE_NOTIFY` 下行 | spoke 侧已消费,注入走与玩家发消息相同的 store/deliver 尾段(离线队列含) |
+| `heartbeat_interval_seconds` 心跳剔除 | 已实现:hub 按 2× 周期 idle 剔除(`ChatPeerHub` idle timer),spoke 按协商周期发 `HEARTBEAT_PING` |
+| 真链路 E2E(hub + spoke 同进程真实联通) | `chat_peer_tests` 的 `EndToEndAgainstRealHub`:真 `ChatPeerLink` 注册进真 `ChatPeerHub`,上行/下行往返断言;进程级 smoke 编排仍未纳入脚本 |
 
 未实现的能力位(`RELAY_READ_RECEIPTS` / `RELAY_TYPING` / `RELAY_PRESENCE` / `RELAY_OFFLINE_MESSAGES`)在协议上已预留,接入时**不需要**再 bump `protocol_version`——旧的 peer 看到交集为空会自动停用对应功能。
 

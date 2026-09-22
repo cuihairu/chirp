@@ -25,6 +25,8 @@
 #include "npc_uplink.h"
 #include "paginated_history_retriever.h"
 #include "push_bridge.h"
+#include "network/chat_peer_hub.h"
+#include "network/chat_peer_link.h"
 #include "network/server_gateway_peer.h"
 #include "distributed_dispatch.h"
 #include "distributed_runtime.h"
@@ -134,6 +136,8 @@ void HandleSendMessage(const chirp::chat::SendMessageRequest& req,
                       chirp::network::ServerGatewayPeer* hub_peer,
                       const std::string& npc_service_id,
                       const std::string& npc_prefix,
+                      chirp::network::ChatPeerLink* spoke_link,
+                      const std::string& spoke_game_id,
                       int64_t seq) {
   chirp::chat::ChatMessage msg;
   msg.set_message_id(chirp::chat::runtime::GenerateMessageId());
@@ -240,6 +244,16 @@ void HandleSendMessage(const chirp::chat::SendMessageRequest& req,
     }
   } else {
     router->BroadcastToGroup(channel_id, msg.SerializeAsString());
+    // Spoke mode: relay non-private channels up to the app-plane hub.
+    // Best-effort by design — an unregistered link drops the uplink and
+    // the game plane keeps running.
+    if (spoke_link != nullptr && spoke_link->registered()) {
+      chirp::gateway::ChannelMessageNotify notify;
+      notify.set_game_id(spoke_game_id);
+      notify.set_channel_id(req.channel_id());
+      *notify.mutable_message() = msg;
+      spoke_link->SendChannelMessage(notify);
+    }
   }
 }
 
@@ -616,6 +630,135 @@ int main(int argc, char** argv) {
   const std::string token_secret = chirp::chat::runtime::GetArg(argc, argv, "--token_secret", "");
   chirp::common::LoginTokenVerifier token_verifier(token_secret);
 
+  // Hub mode: accept game_chat peer registrations on the dedicated peer port
+  // (app_chat deployment). The main client port keeps serving the client
+  // protocol only.
+  const bool hub_mode = chirp::chat::runtime::ParseIntArg(argc, argv, "--hub_mode", 0) != 0;
+  std::shared_ptr<chirp::network::ChatPeerHub> chat_hub;
+  if (hub_mode) {
+    chirp::network::ChatPeerHub::Options hub_opts;
+    hub_opts.port = chirp::chat::runtime::ParseU16Arg(argc, argv, "--hub_peer_port", 8200);
+    hub_opts.min_peer_version = chirp::chat::runtime::ParseIntArg(argc, argv, "--min_peer_version", 1);
+    hub_opts.allow_unknown_peers =
+        chirp::chat::runtime::ParseIntArg(argc, argv, "--allow_unknown_peers", 0) != 0;
+    // Parse allowed_peers: "id1:secret1,id2:secret2"
+    const std::string allowed_peers_str =
+        chirp::chat::runtime::GetArg(argc, argv, "--allowed_peers", "");
+    if (!allowed_peers_str.empty()) {
+      std::string s = allowed_peers_str;
+      while (!s.empty()) {
+        auto comma = s.find(',');
+        std::string pair = s.substr(0, comma);
+        auto colon = pair.find(':');
+        if (colon != std::string::npos) {
+          hub_opts.allowed_peers[pair.substr(0, colon)] = pair.substr(colon + 1);
+        }
+        if (comma == std::string::npos) break;
+        s = s.substr(comma + 1);
+      }
+    }
+    chat_hub = chirp::network::ChatPeerHub::Create(
+        io, std::move(hub_opts),
+        [](const std::string& service_id, const std::string& game_id, int32_t version,
+           const std::vector<chirp::gateway::PeerCapability>&) {
+          Logger::Instance().Info("peer registered: service_id=" + service_id +
+                                  " game_id=" + game_id + " version=" + std::to_string(version));
+        },
+        [](const std::string& service_id, const std::string& reason) {
+          Logger::Instance().Info("peer dropped: service_id=" + service_id + " reason=" + reason);
+        },
+        [](const std::string& service_id,
+           const chirp::gateway::ChannelMessageNotify& notify) {
+          // App-plane fan-out (subscriber lookup + private-message copies) is
+          // the app_chat hub P1 item; the hub records the uplink for now.
+          Logger::Instance().Info("channel message uplink: service_id=" + service_id +
+                                  " game_id=" + notify.game_id() +
+                                  " channel=" + notify.channel_id());
+        });
+    chat_hub->Start();
+    Logger::Instance().Info("hub mode enabled: peer_port=" + std::to_string(chat_hub->port()));
+  }
+
+  // Spoke mode: register into an app_chat hub (game_chat deployment). Needs
+  // host + service_id + game_id all set; anything missing keeps the spoke
+  // fully off. Uplink relays non-private channels best-effort — an
+  // unregistered link drops the uplink and the game plane keeps running.
+  std::shared_ptr<chirp::network::ChatPeerLink> spoke_link;
+  std::string spoke_game_id;
+  const std::string app_chat_host = chirp::chat::runtime::GetArg(argc, argv, "--app_chat_host", "");
+  if (!app_chat_host.empty()) {
+    const std::string game_service_id =
+        chirp::chat::runtime::GetArg(argc, argv, "--game_service_id", "");
+    const std::string game_id_arg = chirp::chat::runtime::GetArg(argc, argv, "--game_id", "");
+    if (game_service_id.empty() || game_id_arg.empty()) {
+      Logger::Instance().Warn(
+          "--app_chat_host is set but --game_service_id/--game_id is not; the "
+          "peer spoke stays disabled");
+    } else {
+      chirp::network::ChatPeerLink::Options link_opts;
+      link_opts.host = app_chat_host;
+      link_opts.port = chirp::chat::runtime::ParseU16Arg(argc, argv, "--app_chat_port", 8200);
+      link_opts.service_id = game_service_id;
+      link_opts.secret = chirp::chat::runtime::GetArg(argc, argv, "--game_service_secret", "");
+      link_opts.game_id = game_id_arg;
+      link_opts.supported_features = {chirp::gateway::RELAY_READ_RECEIPTS,
+                                      chirp::gateway::RELAY_TYPING,
+                                      chirp::gateway::RELAY_PRESENCE};
+      spoke_link = chirp::network::ChatPeerLink::Create(
+          io, std::move(link_opts),
+          [game_id_arg](int32_t version,
+                        const std::vector<chirp::gateway::PeerCapability>&) {
+            Logger::Instance().Info("spoke registered to hub: game_id=" + game_id_arg +
+                                    " negotiated_version=" + std::to_string(version));
+          },
+          // A hub never sends CHANNEL_MESSAGE_NOTIFY downstream; leave the
+          // handler unset (an unexpected frame is logged by the link).
+          nullptr,
+          // Hub -> spoke player reply: the hub already resolved
+          // player_id -> game_user_id. Delivered through the same
+          // store + local-session tail as an injected private message.
+          [&state, &store, &delivery_tracker, acks](
+              const chirp::gateway::PeerInjectMessageNotify& inject) {
+            chirp::chat::ChatMessage msg;
+            msg.set_message_id(chirp::chat::runtime::GenerateMessageId());
+            msg.set_sender_id(inject.sender_id());
+            msg.set_receiver_id(inject.channel_id());  // channel_id carries the target user
+            msg.set_channel_type(chirp::chat::PRIVATE);
+            msg.set_channel_id(inject.channel_id());
+            msg.set_msg_type(chirp::chat::TEXT);
+            msg.set_content(inject.content());
+            msg.set_timestamp(chirp::chat::runtime::NowMs());
+            msg.set_sender_kind(chirp::chat::SENDER_USER);
+            chirp::chat::MessageData data = ToMessageData(msg);
+            store->StoreMessageAsync(data, [](bool ok) {
+              if (!ok) {
+                Logger::Instance().Warn("peer inject storage to MySQL failed");
+              }
+            });
+            auto recv_session = state->GetLocalSession(inject.channel_id());
+            if (recv_session && !recv_session->PeerHalfClosed()) {
+              if (acks && acks->IsCapable(recv_session.get())) {
+                acks->Track(msg.message_id(), inject.channel_id(), msg.SerializeAsString());
+              } else {
+                delivery_tracker->Acknowledge(msg.message_id(), inject.channel_id());
+              }
+              chirp::chat::runtime::SendChatNotify(recv_session, msg);
+              Logger::Instance().Info("peer inject delivered live to " + inject.channel_id());
+            } else {
+              store->AddOfflineMessage(inject.channel_id(), data.SerializeAsString());
+              Logger::Instance().Info("peer inject queued offline for " + inject.channel_id());
+            }
+          },
+          []() {
+            Logger::Instance().Warn("spoke lost the hub connection, will retry");
+          });
+      spoke_game_id = game_id_arg;
+      spoke_link->Start();
+      Logger::Instance().Info("spoke mode enabled: game_id=" + spoke_game_id +
+                              " -> hub=" + app_chat_host);
+    }
+  }
+
   // Internal-plane trust gate + per-IP login limiter (parity with the basic
   // build's main.cc). The limiter defaults OFF here so the historical
   // enhanced behavior is unchanged unless explicitly enabled; the trust gate
@@ -643,12 +786,13 @@ int main(int argc, char** argv) {
     HandleLogin(req, session, state, store, router, &token_verifier, acks.get(), seq);
   };
   handlers.on_send_message = [state, store, delivery_tracker, acks, router,
-                              peer = hub_peer.get(), npc_service_id, npc_prefix](
+                              peer = hub_peer.get(), npc_service_id, npc_prefix,
+                              link = spoke_link.get(), spoke_game_id](
                                  const std::shared_ptr<chirp::network::Session>& session,
                                  const chirp::chat::SendMessageRequest& req,
                                  int64_t seq) {
     HandleSendMessage(req, session, state, store, delivery_tracker, acks.get(), router,
-                      peer, npc_service_id, npc_prefix, seq);
+                      peer, npc_service_id, npc_prefix, link, spoke_game_id, seq);
   };
   handlers.on_get_history = [retriever](const std::shared_ptr<chirp::network::Session>& session,
                                         const chirp::chat::GetHistoryRequest& req,
@@ -743,6 +887,12 @@ int main(int argc, char** argv) {
     acks->Stop();
     if (hub_peer) {
       hub_peer->Stop();
+    }
+    if (spoke_link) {
+      spoke_link->Stop();
+    }
+    if (chat_hub) {
+      chat_hub->Stop();
     }
     server->Stop();
     ws_server->Stop();

@@ -1726,4 +1726,107 @@ TEST(ChatPeerHubTest, BindFailureLeavesHubDown) {
   runner.Finish();
 }
 
+// End-to-end over the real wire: a real ChatPeerLink registers into a real
+// ChatPeerHub on one io loop, relays a channel message up, and receives an
+// injected player reply down — the full game_chat spoke chain (register,
+// CHANNEL_MESSAGE_NOTIFY uplink, PEER_INJECT_MESSAGE_NOTIFY downlink) both
+// sides genuine, no scripting.
+TEST(ChatPeerLinkTest, EndToEndAgainstRealHub) {
+  chirp::common::Logger::Instance().SetLevel(chirp::common::Logger::Level::kError);
+  asio::io_context io;
+
+  struct Recorded {
+    std::mutex mu;
+    size_t registrations = 0;
+    std::vector<chirp::gateway::ChannelMessageNotify> uplinks;
+    std::vector<chirp::gateway::PeerInjectMessageNotify> injects;
+  } rec;
+
+  auto hub = chirp::network::ChatPeerHub::Create(
+      io, HubTestOptions(),
+      [&](const std::string&, const std::string&, int32_t,
+          const std::vector<chirp::gateway::PeerCapability>&) {
+        std::lock_guard<std::mutex> lock(rec.mu);
+        rec.registrations++;
+      },
+      [](const std::string&, const std::string&) {},
+      [&](const std::string&, const chirp::gateway::ChannelMessageNotify& notify) {
+        std::lock_guard<std::mutex> lock(rec.mu);
+        rec.uplinks.push_back(notify);
+      });
+  hub->Start();
+  HubIoRunner runner(io);
+  ASSERT_GT(hub->port(), 0);
+
+  chirp::network::ChatPeerLink::Options opts;
+  opts.host = "127.0.0.1";
+  opts.port = hub->port();
+  opts.service_id = "game_chat";
+  opts.secret = "peer-s3cret";
+  opts.game_id = "game42";
+  opts.supported_features = {chirp::gateway::RELAY_TYPING, chirp::gateway::RELAY_PRESENCE};
+  opts.reconnect_delay_seconds = 1;
+  auto link = chirp::network::ChatPeerLink::Create(
+      io, std::move(opts),
+      [](int32_t, const std::vector<chirp::gateway::PeerCapability>&) {},
+      nullptr,
+      [&](const chirp::gateway::PeerInjectMessageNotify& notify) {
+        std::lock_guard<std::mutex> lock(rec.mu);
+        rec.injects.push_back(notify);
+      });
+  link->Start();
+
+  // Registration completes on both sides of the wire.
+  ASSERT_TRUE(WaitFor([&] { return RegisteredOnLinkThread(*link, io); },
+                      std::chrono::seconds(5)));
+  ASSERT_TRUE(WaitFor([&] {
+    std::lock_guard<std::mutex> lock(rec.mu);
+    return rec.registrations == 1;
+  }, std::chrono::seconds(3)));
+
+  // Uplink: identity and payload survive the relay untouched.
+  chirp::gateway::ChannelMessageNotify up;
+  up.set_game_id("game42");
+  up.set_channel_id("lobby");
+  up.mutable_message()->set_message_id("m1");
+  up.mutable_message()->set_sender_id("alice");
+  up.mutable_message()->set_content("gg wp");
+  asio::post(io, [&] { link->SendChannelMessage(up); });
+  ASSERT_TRUE(WaitFor([&] {
+    std::lock_guard<std::mutex> lock(rec.mu);
+    return rec.uplinks.size() == 1;
+  }, std::chrono::seconds(3)));
+  {
+    std::lock_guard<std::mutex> lock(rec.mu);
+    EXPECT_EQ(rec.uplinks[0].game_id(), "game42");
+    EXPECT_EQ(rec.uplinks[0].channel_id(), "lobby");
+    EXPECT_EQ(rec.uplinks[0].message().sender_id(), "alice");
+    EXPECT_EQ(rec.uplinks[0].message().content(), "gg wp");
+  }
+
+  // Downlink: the hub injects a player reply routed by service_id.
+  chirp::gateway::PeerInjectMessageNotify down;
+  down.set_channel_id("bob");
+  down.set_sender_id("player_9");
+  down.set_content("hi from the app plane");
+  asio::post(io, [&] { EXPECT_TRUE(hub->SendInject("game_chat", down)); });
+  ASSERT_TRUE(WaitFor([&] {
+    std::lock_guard<std::mutex> lock(rec.mu);
+    return rec.injects.size() == 1;
+  }, std::chrono::seconds(3)));
+  {
+    std::lock_guard<std::mutex> lock(rec.mu);
+    EXPECT_EQ(rec.injects[0].sender_id(), "player_9");
+    EXPECT_EQ(rec.injects[0].channel_id(), "bob");
+    EXPECT_EQ(rec.injects[0].content(), "hi from the app plane");
+  }
+
+  // A late uplink after Stop is dropped, not queued (best-effort contract).
+  link->Stop();
+  asio::post(io, [&] { EXPECT_FALSE(link->SendChannelMessage(up)); });
+  runner.Drain();
+  runner.Finish();
+  hub->Stop();
+}
+
 }  // namespace
