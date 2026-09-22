@@ -4,6 +4,8 @@
 
 语义逐项对齐 C++ 参考实现 `libs/network/server_gateway_peer.cc`(wire 契约见 `proto/server_gateway.proto`)。
 
+> **连接目标(2026-09-22 起)**:玩家身份绑定 / 频道订阅 / 未读账本(5013-5030)已从 `chirp_server_gateway` 迁入 `chirp_chat` 的 app_chat 实例(`PlayerDirectory`)。这些方法请用**第二个 Client 实例**拨 `chirp_chat` 的主客户端端口(默认 TCP 7000,服务端需配置 `--gateway_service_secret` 以开放 `SERVER_AUTH_REQ` 信任门);`InjectMessage` / `PublishEvent` / `AckEvents` 仍连 `chirp_server_gateway`。向已迁走的 id 发 RPC 会因对端不处理而超时。
+
 ## 能力面
 
 - **认证握手**:首帧 `SERVER_AUTH_REQ`(sequence 0);`ServerAuthResponse` 非 OK → `*AuthError` + 固定延迟重试(与 C++ 一致,无退避上限)。
@@ -12,9 +14,9 @@
   - `InjectMessage` — 注入 SYSTEM/NPC/SERVICE 发送者的消息(`inject_id` 幂等键)
   - `PublishEvent` — 发布可靠事件(目标离线则入队,重连重投直到 ack)
   - `AckEvents` — 批量确认已处理的 `EVENT_DELIVER_NOTIFY`(at-least-once)
-  - `BindPlayerIdentity` / `UnbindPlayerIdentity` / `GetPlayerIdentities` / `ResolveGameUser` — 玩家身份绑定(`binding_id` 幂等键;详见 `docs/server_plane.md`「Player identity bindings」)
-  - `SubscribePlayerChannel` / `UnsubscribePlayerChannel` / `GetPlayerSubscriptions` — 玩家频道订阅(`subscription_id` 幂等键,留空由服务端铸造;详见 `docs/server_plane.md`「Player channel subscriptions」)
-  - `MarkChannelsRead` / `GetUnreadSummary` — 统一未读 badge 账本(分层标记选择器:单频道/整游戏/全部,幂等;summary 按 (game, channel) 稳定排序 + 过滤后总数;详见 `docs/server_plane.md`「Unified unread」)
+  - `BindPlayerIdentity` / `UnbindPlayerIdentity` / `GetPlayerIdentities` / `ResolveGameUser` — 玩家身份绑定(`binding_id` 幂等键;**目标 `chirp_chat`(app_chat)主端口**,见顶部连接目标说明;详见 `docs/server_plane.md`「玩家身份绑定」)
+  - `SubscribePlayerChannel` / `UnsubscribePlayerChannel` / `GetPlayerSubscriptions` — 玩家频道订阅(`subscription_id` 幂等键,留空由服务端铸造;同上,**目标 `chirp_chat`**;详见 `docs/server_plane.md`「玩家频道订阅」)
+  - `MarkChannelsRead` / `GetUnreadSummary` — 统一未读 badge 账本(分层标记选择器:单频道/整游戏/全部,幂等;summary 按 (game, channel) 稳定排序 + 过滤后总数;同上,**目标 `chirp_chat`**;详见 `docs/server_plane.md`「统一未读」)
 - **推送 handler**:`SetInjectHandler` / `SetEventHandler` / `SetDisconnectHandler`,在内部读 goroutine 触发,**不得阻塞**。
 - **断线**:在途调用收到 `ErrConnectionLost`,客户端自动重连;已认证连接断开才触发 disconnect handler(认证拒绝/拨号失败只记日志)。
 
@@ -50,15 +52,17 @@ c.InjectMessage(ctx, &pbsg.MessageInjectRequest{
     ReceiverId: "player-7",
     Content:    []byte("订单已发货"),
 })
-// fan-in(WP-8 分片 3):设置 GameId + 非 PRIVATE 频道,
-// 消息会扇出给 (GameId, ChannelId) 的每个订阅者一份私聊副本。
+// 频道注入(不带 GameId):消息经 server_gateway 送达 game_chat,
+// 注入其本地频道;spoke 再经 CHANNEL_MESSAGE_NOTIFY 上行 hub,
+// 由 app_chat 扇出给订阅了 (game_id, channel) 的每个 App 玩家一份私聊副本。
+// 注意:自 2026-09-22 起,带 GameId 的注入会被 server_gateway 以
+// INVALID_PARAM 拒绝——直注 hub 频道的前缀解析(跨平面回复)尚未实现。
 c.InjectMessage(ctx, &pbsg.MessageInjectRequest{
     InjectId:    "raid-5678",
     SenderKind:  pbsg.SenderKind_SENDER_SERVICE,
     SenderId:    "raid-boss",
     ChannelType: 3, // WORLD
     ChannelId:   "world-boss",
-    GameId:      "game-a",
     Content:     []byte("世界 Boss 已刷新"),
 })
 ```
