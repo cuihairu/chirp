@@ -37,6 +37,7 @@
 #include "network/protobuf_framing.h"
 #include "network/redis_client.h"
 #include "network/session.h"
+#include "network/session_registry.h"
 #include "network/tcp_server.h"
 #include "network/websocket_server.h"
 #include "proto/auth.pb.h"
@@ -55,61 +56,92 @@ using chirp::chat::MessageStoreConfig;
 using chirp::common::Logger;
 
 /// @brief Distributed chat state management
+///
+/// Session bindings live in the shared SessionRegistry - the same
+/// (user, device) store the basic build uses, so a rebinding login kicks the
+/// previous session of the same pair while another device of the user
+/// coexists, instead of silently overwriting it and leaving a zombie.
 struct DistributedChatState {
-  std::mutex mu;
-
-  // Local user session mapping
-  std::unordered_map<std::string, std::weak_ptr<chirp::network::Session>> local_sessions;
-
-  // Session to user reverse mapping
-  std::unordered_map<void*, std::string> session_to_user;
+  std::shared_ptr<chirp::network::SessionRegistry> registry =
+      std::make_shared<chirp::network::SessionRegistry>();
 
   // Current instance ID
   std::string instance_id;
 
-  void AddSession(const std::string& user_id, std::shared_ptr<chirp::network::Session> session) {
-    std::lock_guard<std::mutex> lock(mu);
-    local_sessions[user_id] = session;
-    session_to_user[session.get()] = user_id;
+  // Returns the session previously bound to the same (user, device) pair so
+  // the caller can kick it; null when the slot was free, stale, or this very
+  // connection. The device id is normalized inside the registry.
+  std::shared_ptr<chirp::network::Session> AddSession(
+      const std::string& user_id, const std::string& device_id,
+      const std::string& session_id,
+      const std::shared_ptr<chirp::network::Session>& session) {
+    return chirp::network::BindAuthenticatedSession(registry, user_id, session_id,
+                                                    device_id, session);
   }
 
-  void RemoveSession(chirp::network::Session* session) {
-    std::lock_guard<std::mutex> lock(mu);
-    auto it = session_to_user.find(session);
-    if (it != session_to_user.end()) {
-      // Only clear the user slot while it still points at THIS session: a
-      // newer login for the same user may already own it, and a stale
-      // disconnect (e.g. the send client's late FIN) must not unregister
-      // the current session.
-      auto sit = local_sessions.find(it->second);
-      if (sit != local_sessions.end() && sit->second.lock().get() == session) {
-        local_sessions.erase(sit);
-      }
-      session_to_user.erase(it);
-    }
+  // Only releases the (user, device) slot while it still points at THIS
+  // session: a newer login for the same pair may already own it, and a stale
+  // disconnect (e.g. the send client's late FIN) must not unregister the
+  // current session.
+  void RemoveSession(const std::shared_ptr<chirp::network::Session>& session) {
+    chirp::network::RemoveAuthenticatedSession(registry, session);
   }
 
-  std::shared_ptr<chirp::network::Session> GetLocalSession(const std::string& user_id) {
-    std::lock_guard<std::mutex> lock(mu);
-    auto it = local_sessions.find(user_id);
-    if (it != local_sessions.end()) {
-      return it->second.lock();
-    }
-    return nullptr;
-  }
-
-  bool IsUserLocal(const std::string& user_id) {
-    std::lock_guard<std::mutex> lock(mu);
-    auto it = local_sessions.find(user_id);
-    return it != local_sessions.end() && !it->second.expired();
-  }
-
-  std::string GetUserId(chirp::network::Session* session) {
-    std::lock_guard<std::mutex> lock(mu);
-    auto it = session_to_user.find(session);
-    return it != session_to_user.end() ? it->second : "";
+  std::string GetUserId(const std::shared_ptr<chirp::network::Session>& session) {
+    return chirp::network::GetAuthenticatedSession(registry, session).user_id;
   }
 };
+
+/// @brief Tell a session it was displaced and close it (same contract as the
+/// basic build's KickSession).
+void KickSession(const std::shared_ptr<chirp::network::Session>& session,
+                 const std::string& reason) {
+  chirp::auth::KickNotify kick;
+  kick.set_reason(reason.empty() ? "kicked" : reason);
+
+  chirp::gateway::Packet pkt;
+  pkt.set_msg_id(chirp::gateway::KICK_NOTIFY);
+  pkt.set_sequence(0);
+  pkt.set_body(kick.SerializeAsString());
+
+  auto framed = chirp::network::ProtobufFraming::Encode(pkt);
+  session->SendAndClose(std::string(reinterpret_cast<const char*>(framed.data()), framed.size()));
+}
+
+// All live sessions of a user whose connection has not half-closed - the
+// healthy delivery targets across every device. Empty means the user has no
+// connection worth writing to right now.
+std::vector<std::shared_ptr<chirp::network::Session>> HealthyLocalSessions(
+    const std::shared_ptr<DistributedChatState>& state, const std::string& user_id) {
+  std::vector<std::shared_ptr<chirp::network::Session>> healthy;
+  for (const auto& recv : chirp::network::GetUserSessions(state->registry, user_id)) {
+    if (!recv->PeerHalfClosed()) {
+      healthy.push_back(recv);
+    }
+  }
+  return healthy;
+}
+
+// Holds a delivery until MESSAGE_ACK when any target device declared the
+// ack capability. Track is idempotent per message id, so one capable device
+// is enough; the ack may arrive over a different one. Returns whether the
+// delivery is now held for an ack.
+bool TrackAckIfCapable(chirp::chat::DeliveryAckManager* acks,
+                       const std::vector<std::shared_ptr<chirp::network::Session>>& sessions,
+                       const std::string& message_id,
+                       const std::string& receiver_id,
+                       const std::string& payload) {
+  if (!acks) {
+    return false;
+  }
+  for (const auto& recv : sessions) {
+    if (acks->IsCapable(recv.get())) {
+      acks->Track(message_id, receiver_id, payload);
+      return true;
+    }
+  }
+  return false;
+}
 
 /// @brief Convert a protocol ChatMessage into the store's MessageData.
 chirp::chat::MessageData ToMessageData(const chirp::chat::ChatMessage& msg) {
@@ -215,24 +247,24 @@ void HandleSendMessage(const chirp::chat::SendMessageRequest& req,
     const std::string msg_bytes = msg.SerializeAsString();
     const int64_t receivers = router->SendChatMessageCount(req.receiver_id(), msg_bytes,
       [&](const std::string& user_id) -> bool {
-        auto recv_session = state->GetLocalSession(user_id);
-        // A receiver whose connection already sent FIN would "consume" the
+        // A receiver whose connections already sent FIN would "consume" the
         // message without ever reading it; report not-delivered so the
         // caller queues it offline.
-        if (recv_session && !recv_session->PeerHalfClosed()) {
-          // Ack-capable sessions hold the delivery until MESSAGE_ACK; only
-          // legacy sessions keep the write-means-delivered self answer.
-          const bool capable = acks && acks->IsCapable(recv_session.get());
-          if (capable) {
-            acks->Track(msg.message_id(), user_id, msg_bytes);
-          } else {
-            delivery_tracker->Acknowledge(msg.message_id(), user_id);
-          }
-          chirp::chat::runtime::SendChatNotify(recv_session, msg);
-          Logger::Instance().Info("Message delivered locally to " + user_id);
-          return true;
+        auto healthy = HealthyLocalSessions(state, user_id);
+        if (healthy.empty()) {
+          return false;
         }
-        return false;
+        // Ack-capable sessions hold the delivery until MESSAGE_ACK; only
+        // legacy sessions keep the write-means-delivered self answer.
+        if (!TrackAckIfCapable(acks, healthy, msg.message_id(), user_id, msg_bytes)) {
+          delivery_tracker->Acknowledge(msg.message_id(), user_id);
+        }
+        for (const auto& recv_session : healthy) {
+          chirp::chat::runtime::SendChatNotify(recv_session, msg);
+        }
+        Logger::Instance().Info("Message delivered locally to " + user_id + " (" +
+                                std::to_string(healthy.size()) + " session(s))");
+        return true;
       });
 
     // Nobody received it live (offline here, or on another instance with no
@@ -335,27 +367,38 @@ void HandleLogin(const chirp::auth::LoginRequest& req,
     resp.set_code(chirp::common::OK);
     resp.set_user_id(user_id);
     resp.set_session_id(state->instance_id + "_" + std::to_string(chirp::chat::runtime::NowMs()));
+    resp.set_kick_previous(true);
+    resp.mutable_kick()->set_reason("login from another device");
 
-    state->AddSession(user_id, session);
+    // Rebinding the same (user, device) pair displaces the previous session,
+    // which gets a KICK_NOTIFY instead of silently rotting; another device
+    // of the same user keeps its session.
+    auto old = state->AddSession(user_id, req.device_id(), resp.session_id(), session);
+    if (old && old.get() != session.get()) {
+      KickSession(old, "login from another device");
+    }
 
     if (acks && req.supports_message_ack()) {
       acks->MarkCapable(session);
     }
 
-    // Subscribe to user's chat channel
-    std::string channel = chirp::network::RouterChannels::UserChat(user_id);
-    router->SubscribeUserChat(user_id, [session, state, acks, user_id](const std::string& msg_data) {
-      auto s = session;
-      if (s) {
-        chirp::chat::ChatMessage msg;
-        if (msg.ParseFromArray(msg_data.data(), static_cast<int>(msg_data.size()))) {
-          // Cross-instance deliveries are tracked like local ones - this
-          // instance owns the receiving session, so the ack comes back here.
-          if (acks && acks->IsCapable(session.get())) {
-            acks->Track(msg.message_id(), user_id, msg_data);
-          }
-          chirp::chat::runtime::SendChatNotify(s, msg);
-        }
+    // Cross-instance deliveries fan to every live local session of the user
+    // (one per device) through the registry - the callback outlives any
+    // single connection, so it must not capture one.
+    router->SubscribeUserChat(user_id, [state, acks, user_id](const std::string& msg_data) {
+      chirp::chat::ChatMessage msg;
+      if (!msg.ParseFromArray(msg_data.data(), static_cast<int>(msg_data.size()))) {
+        return;
+      }
+      auto healthy = HealthyLocalSessions(state, user_id);
+      if (healthy.empty()) {
+        return;
+      }
+      // Cross-instance deliveries are tracked like local ones - this
+      // instance owns the receiving sessions, so the ack comes back here.
+      TrackAckIfCapable(acks, healthy, msg.message_id(), user_id, msg_data);
+      for (const auto& recv : healthy) {
+        chirp::chat::runtime::SendChatNotify(recv, msg);
       }
     });
 
@@ -569,19 +612,20 @@ int main(int argc, char** argv) {
     hooks.deliver_private =
         [state, &delivery_tracker, acks](const std::string& receiver_id,
                                    const chirp::chat::ChatMessage& msg) -> bool {
-      auto recv_session = state->GetLocalSession(receiver_id);
-      if (!recv_session || recv_session->PeerHalfClosed()) {
+      auto healthy = HealthyLocalSessions(state, receiver_id);
+      if (healthy.empty()) {
         Logger::Instance().Info("inject receiver not online: " + receiver_id);
         return false;
       }
       // Injected private replies are tracked like SEND_MESSAGE deliveries;
       // only legacy sessions keep the write-means-delivered self answer.
-      if (acks && acks->IsCapable(recv_session.get())) {
-        acks->Track(msg.message_id(), receiver_id, msg.SerializeAsString());
-      } else {
+      if (!TrackAckIfCapable(acks.get(), healthy, msg.message_id(), receiver_id,
+                             msg.SerializeAsString())) {
         delivery_tracker->Acknowledge(msg.message_id(), receiver_id);
       }
-      chirp::chat::runtime::SendChatNotify(recv_session, msg);
+      for (const auto& recv_session : healthy) {
+        chirp::chat::runtime::SendChatNotify(recv_session, msg);
+      }
       Logger::Instance().Info("inject delivered live to " + receiver_id);
       return true;
     };
@@ -687,14 +731,15 @@ int main(int argc, char** argv) {
             Logger::Instance().Warn("fan-out copy storage to MySQL failed");
           }
         });
-        auto recv_session = state->GetLocalSession(player_id);
-        if (recv_session && !recv_session->PeerHalfClosed()) {
-          if (acks && acks->IsCapable(recv_session.get())) {
-            acks->Track(copy.message_id(), player_id, copy.SerializeAsString());
-          } else {
+        auto healthy = HealthyLocalSessions(state, player_id);
+        if (!healthy.empty()) {
+          if (!TrackAckIfCapable(acks.get(), healthy, copy.message_id(), player_id,
+                                 copy.SerializeAsString())) {
             delivery_tracker->Acknowledge(copy.message_id(), player_id);
           }
-          chirp::chat::runtime::SendChatNotify(recv_session, copy);
+          for (const auto& recv_session : healthy) {
+            chirp::chat::runtime::SendChatNotify(recv_session, copy);
+          }
         } else {
           store->AddOfflineMessage(player_id, data.SerializeAsString());
           push.NotifyOffline(copy, player_id);
@@ -811,14 +856,15 @@ int main(int argc, char** argv) {
                 Logger::Instance().Warn("peer inject storage to MySQL failed");
               }
             });
-            auto recv_session = state->GetLocalSession(inject.channel_id());
-            if (recv_session && !recv_session->PeerHalfClosed()) {
-              if (acks && acks->IsCapable(recv_session.get())) {
-                acks->Track(msg.message_id(), inject.channel_id(), msg.SerializeAsString());
-              } else {
+            auto healthy = HealthyLocalSessions(state, inject.channel_id());
+            if (!healthy.empty()) {
+              if (!TrackAckIfCapable(acks.get(), healthy, msg.message_id(), inject.channel_id(),
+                                     msg.SerializeAsString())) {
                 delivery_tracker->Acknowledge(msg.message_id(), inject.channel_id());
               }
-              chirp::chat::runtime::SendChatNotify(recv_session, msg);
+              for (const auto& recv_session : healthy) {
+                chirp::chat::runtime::SendChatNotify(recv_session, msg);
+              }
               Logger::Instance().Info("peer inject delivered live to " + inject.channel_id());
             } else {
               store->AddOfflineMessage(inject.channel_id(), data.SerializeAsString());
@@ -923,7 +969,7 @@ int main(int argc, char** argv) {
                                const chirp::auth::LogoutRequest&,
                                int64_t seq) {
     acks->ForgetSession(session.get());
-    state->RemoveSession(session.get());
+    state->RemoveSession(session);
     chirp::auth::LogoutResponse resp;
     resp.set_code(chirp::common::OK);
     resp.set_server_time(chirp::chat::runtime::NowMs());
@@ -933,7 +979,7 @@ int main(int argc, char** argv) {
                                 const std::shared_ptr<chirp::network::Session>& session,
                                 const chirp::chat::MessageAck& req,
                                 int64_t /*seq*/) {
-    const std::string user_id = state->GetUserId(session.get());
+    const std::string user_id = state->GetUserId(session);
     if (req.message_id().empty() || user_id.empty() ||
         (!req.user_id().empty() && req.user_id() != user_id)) {
       return;
@@ -977,7 +1023,7 @@ int main(int argc, char** argv) {
   };
 
   auto tcp_disconnect = [state, acks, trusted_conns](const std::shared_ptr<chirp::network::Session>& session) {
-    std::string user_id = state->GetUserId(session.get());
+    std::string user_id = state->GetUserId(session);
     if (!user_id.empty()) {
       Logger::Instance().Info("User disconnected: " + user_id);
     }
@@ -985,13 +1031,13 @@ int main(int argc, char** argv) {
     // Drop any trust-grant bound to this connection so a reused pointer
     // cannot inherit the previous connection's limiter bypass.
     trusted_conns->erase(session.get());
-    state->RemoveSession(session.get());
+    state->RemoveSession(session);
   };
 
   auto ws_disconnect = [state, acks, trusted_conns](const std::shared_ptr<chirp::network::Session>& session) {
     acks->ForgetSession(session.get());
     trusted_conns->erase(session.get());
-    state->RemoveSession(session.get());
+    state->RemoveSession(session);
   };
 
   auto server = chirp::chat::runtime::MakeDistributedTcpServer(io, port, on_packet, tcp_disconnect);

@@ -56,7 +56,7 @@ SDK 引擎兼容性见 [SDK 引擎兼容性](docs/design-notes/sdk_compatibility
 - [x] **跨平面回复**（2026-09-22：hub 模式拦截带 `<game_id>:<bare>` 前缀的非私聊发送——`PlayerDirectory::RelayGameReply` 编排，`ChatPeerHub::service_id_for_game` 反查在线 spoke + `IdentityRegistry::ResolveGameUser` 反查游戏身份（同游戏多绑定取字典序最小保证确定性），`PEER_INJECT_MESSAGE_NOTIFY` 注入 spoke（裸频道 ID、游戏侧铸 message_id、走存储/离线队列同一尾段）；回码 OK / SERVER_UNAVAILABLE（无在线 spoke 或下行失败）/ INVALID_PARAM（发送者无该游戏绑定），拒绝显式回码不降级本地频道；basic/enhanced 两形态接线，拦截点在发送限流之后（消耗发送预算）、mention 处理之前（内容透传游戏侧）；无回环——扇回 App 玩家的是无前缀私聊副本，不再触发本路径）
 - [x] **未读计数**（2026-09-22：`UnreadLedger` 落地，fan-out 每份被接受副本自增 badge；`MARK_CHANNELS_READ` 分层选择器（单频道/单游戏/全部）幂等清除，`GET_UNREAD_SUMMARY` 按 (game, channel) 排序含过滤与 total_unread）
 - [x] **离线推送触发**：消息投递时调 app_notification（PushBridge + NotificationClient 在 basic/enhanced/distributed 三入口全部接线，私聊接收方无健康会话、群广播离线成员、注入离线入队三处触发，`--notification_host` 门控；peer 注入路径同样落离线队列）
-- [ ] **enhanced 会话语义修复**：AddSession 改为 (user, device) 维度互踢，对齐 basic 的 session_registry 行为
+- [x] **enhanced 会话语义修复**（2026-09-22：`DistributedChatState` 不再自带 user 维度单 slot——存储整体换装共享 `SessionRegistry`（与 basic 同一份 (user, device) 互踢内核，`BindAuthenticatedSession` 返回同对旧会话），同对重登发 `KICK_NOTIFY`（"login from another device"）+ `LOGIN_RESP.kick_previous`，另一设备共存。本地投递（私聊/注入/扇出副本/peer 注入）与跨实例回调从单 slot 改为 `HealthyLocalSessions` 全设备扇出（半关连接跳过；`TrackAckIfCapable` 任一 ack-capable 设备即挂起待 MESSAGE_ACK），`RemoveSession`/`GetUserId` 走 registry 语义（陈旧断开不顶掉新会话）。互踢内核由 `session_registry_test` 12 例覆盖）
 
 ### app_auth（原 auth）
 
