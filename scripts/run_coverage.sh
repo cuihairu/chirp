@@ -154,10 +154,10 @@ KNOWN_UNCOVERABLE = {
     # MessageMigrationWorker migrating_ guards: reaching the "already
     # migrating" arms requires RunMigrationNow to race an in-flight migration
     # on the io thread, which the single-threaded test io context cannot do.
-    ("services/shared/chat/src/message_migration_worker.cc", 58),
     ("services/shared/chat/src/message_migration_worker.cc", 59),
-    ("services/shared/chat/src/message_migration_worker.cc", 89),
+    ("services/shared/chat/src/message_migration_worker.cc", 60),
     ("services/shared/chat/src/message_migration_worker.cc", 90),
+    ("services/shared/chat/src/message_migration_worker.cc", 91),
     # MessageDeliveryTracker::RunCheck stop guard: firing depends on a timer
     # tick landing after Stop(), a race the deterministic test loop avoids.
     ("services/shared/chat/src/message_delivery_tracker.cc", 106),
