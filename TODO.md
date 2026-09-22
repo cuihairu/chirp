@@ -15,8 +15,8 @@ SDK 引擎兼容性见 [SDK 引擎兼容性](docs/design-notes/sdk_compatibility
 
 - [x] 基础登录/心跳/踢出/会话 claim
 - [x] ChatBridge 转发 2xxx 到 game_chat
-- [ ] **修复 scaffold 分支不 bind session 的 bug**：无 `--auth_host` 时登录成功但 2xxx 被静默丢弃，需要对齐 app_sdk_gateway 的 scaffold 行为（补 `BindAuthenticatedSession`）
-- [ ] 统一 TCP/WS 两份 switch 为 `HandleClientPacket`（已做，确认无残留）
+- [x] **修复 scaffold 分支不 bind session 的 bug**：无 `--auth_host` 时登录成功但 2xxx 被静默丢弃，需要对齐 app_sdk_gateway 的 scaffold 行为（补 `BindAuthenticatedSession`）
+- [x] 统一 TCP/WS 两份 switch 为 `HandleClientPacket`（已做，确认无残留）
 
 ### game_chat（原 chat，部署为游戏平面实例）
 

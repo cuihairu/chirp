@@ -328,6 +328,29 @@ target_include_directories(app_sdk_gateway_tests
 
 add_test(NAME app_sdk_gateway_tests COMMAND app_sdk_gateway_tests)
 
+# Game gateway edge tests: scaffold login binding (the 2c08a21 fix — without
+# --auth_host the registry must still be bound or 2xxx chat packets are
+# silently dropped) plus 2xxx forwarding through a real ChatBridge against
+# the shared loopback fake chat server
+add_executable(game_sdk_gateway_tests
+  game_sdk_gateway_test.cc
+)
+
+chirp_unit_test_common_links(game_sdk_gateway_tests)
+target_link_libraries(game_sdk_gateway_tests PRIVATE chirp_network chirp_common chirp_protos)
+
+target_include_directories(game_sdk_gateway_tests
+  PRIVATE
+  ${CMAKE_SOURCE_DIR}/libs
+  ${CMAKE_SOURCE_DIR}/libs/common
+  ${CMAKE_SOURCE_DIR}/libs/common/include
+  ${CMAKE_SOURCE_DIR}/libs/network
+  ${CMAKE_SOURCE_DIR}/proto/cpp
+  ${CMAKE_SOURCE_DIR}/proto/cpp/proto
+)
+
+add_test(NAME game_sdk_gateway_tests COMMAND game_sdk_gateway_tests)
+
 # Gateway chat-bridge loopback tests against a scripted in-process fake chat
 # server (shared with the app_sdk_gateway tests via fake_chat_server.h). The
 # bridge itself comes from chirp_network.
