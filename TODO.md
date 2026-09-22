@@ -63,6 +63,7 @@ SDK 引擎兼容性见 [SDK 引擎兼容性](docs/design-notes/sdk_compatibility
 - [x] 基础 token 验证
 - [x] enhanced 模式（MySQL + libsodium）
 - [ ] 确认只服务 App 平面，game 平面不依赖
+- [ ] **PostgreSQL 存储后端**（暂缓，等真实需求；2026-09 驱动与接缝就绪）：MySQL 客户端驱动已从 libmysqlclient 换为 libmariadb（MariaDB Connector/C，`mysql_*` C API 与 `mysql/mysql.h` 头布局兼容，源码零改动；vcpkg/CMake/Docker 三条构建路径同步）；auth 的 `UserStore`/`SessionStore` 与 chat 的 `MessageStore` 已抽为后端中立纯虚接口——`services/app/auth/src/store_factory.cc` 与 `services/shared/chat/src/message_store_factory.cc` 是唯一换装点，未来 PG = 新增 `postgres_*_store` 实现类 + 工厂各加一分支，调用方零改动。chat 的 MySQL 方言 SQL（ON DUPLICATE KEY / ENGINE=InnoDB 等）留在 MySQL 实现内，PG 实现自行写方言。不引入 ORM，维持手写 SQL。
 
 ### app_notification（原 notification）
 
