@@ -5,6 +5,8 @@
 
 #include <gtest/gtest.h>
 
+#include <memory>
+
 #include <asio.hpp>
 
 #include "fake_mysql.h"
@@ -548,6 +550,17 @@ TEST_F(HybridStoreTest, RemoveOfflineMessageDropsRedisAndFallbackCopies) {
   EXPECT_TRUE(dead_redis.RemoveOfflineMessage("r2", blob2));
   EXPECT_TRUE(dead_redis.GetOfflineMessages("r2").empty());
   EXPECT_FALSE(dead_redis.RemoveOfflineMessage("r2", blob2));  // already gone
+
+  // Two fallback copies: a scan that misses the first element still reaches
+  // the second (loop-continue arm), then a non-matching remove walks off the
+  // end without erasing (loop-exit-without-match arm).
+  const std::string a = MakeMessage("ma", "ch", 1, "r3").SerializeAsString();
+  const std::string b = MakeMessage("mb", "ch", 2, "r3").SerializeAsString();
+  EXPECT_FALSE(dead_redis.AddOfflineMessage("r3", a));
+  EXPECT_FALSE(dead_redis.AddOfflineMessage("r3", b));
+  EXPECT_TRUE(dead_redis.RemoveOfflineMessage("r3", b));
+  EXPECT_FALSE(dead_redis.RemoveOfflineMessage("r3", "not-in-queue"));
+  EXPECT_TRUE(dead_redis.RemoveOfflineMessage("r3", a));
 }
 
 TEST_F(HybridStoreTest, DeliveryTrackingLifecycle) {
@@ -663,6 +676,18 @@ TEST_F(DeliveryTrackerTest, StartStopIdempotentAndTimeoutCheckFailsPending) {
   EXPECT_TRUE(tracker_->GetStats().total_tracked == 0u);
 
   store_->TrackMessage("late", "r1", 1);  // expires in the past
+  store_->TrackMessage("doomed", "r1", 1);  // expires in the past, still pending
+  // "late" is still listed by GetPendingDeliveries but already delivered:
+  // RunCheck must take the `status && status != kPending` short-circuit and
+  // leave it delivered; "doomed" stays kPending and is failed on timeout.
+  store_->AcknowledgeMessage("late", "r1");
+
+  // A pending-list entry whose delivery status key has expired/removed: the
+  // tracker still sees it in GetPendingDeliveries, but GetDeliveryStatus
+  // returns nullopt, so RunCheck takes the `status &&` short-circuit false
+  // branch (never reaches Fail or the kPending compare).
+  store_->TrackMessage("vanish", "r1", 1);
+  ASSERT_TRUE(store_->GetRedisClient()->Del("chirp:chat:delivery:vanish:r1"));
 
   // Run the io loop: the timer fires RunCheck immediately.
   std::thread runner([this] { io_.run(); });
@@ -670,7 +695,17 @@ TEST_F(DeliveryTrackerTest, StartStopIdempotentAndTimeoutCheckFailsPending) {
   tracker_->Stop();
   runner.join();
 
+  EXPECT_FALSE(store_->GetDeliveryStatus("vanish", "r1").has_value());
+  EXPECT_EQ(store_->GetDeliveryStatus("late", "r1")->status,
+            chirp::chat::DeliveryState::kDelivered);
+  EXPECT_EQ(store_->GetDeliveryStatus("doomed", "r1")->status,
+            chirp::chat::DeliveryState::kFailed);
+
   auto status = store_->GetDeliveryStatus("late", "r1");
+  ASSERT_TRUE(status.has_value());
+  EXPECT_EQ(status->status, chirp::chat::DeliveryState::kDelivered);
+
+  status = store_->GetDeliveryStatus("doomed", "r1");
   ASSERT_TRUE(status.has_value());
   EXPECT_EQ(status->status, chirp::chat::DeliveryState::kFailed);
 
@@ -921,6 +956,126 @@ TEST_F(PaginatedRetrieverTest, AfterAndTimeRangeStopAtPageSizeCap) {
   auto ranged = retriever.GetTimeRange("ch", 0, 1000, 3000, 2);
   ASSERT_EQ(ranged.size(), 2u);
   EXPECT_EQ(ranged[1].message_id, "m2");
+}
+
+
+// ---------------------------------------------------------------------------
+// Batch D: hybrid delivery parse arms + paginated token/time + D0
+// ---------------------------------------------------------------------------
+
+TEST_F(MySqlStoreTest, GetUnreadCountRejectsEmptyCell) {
+  // rows[0].empty() is the third arm of `rows.empty() || rows[0].empty() ||
+  // rows[0][0] == "NULL"`.
+  auto pool = std::make_shared<MySQLConnectionPool>(1, "h", 3306, "db", "u", "p");
+  MySQLMessageStore store(pool);
+  fake_mysql::PushRows({{}});
+  EXPECT_EQ(store.GetUnreadCount("u1"), 0);
+  // And the explicit "NULL" string arm (cell present but nullopt-mapped).
+  fake_mysql::PushRows({{"NULL"}});
+  EXPECT_EQ(store.GetUnreadCount("u1"), 0);
+}
+
+TEST_F(MySqlStoreTest, D0DestroysThroughBasePointer) {
+  // `unique_ptr<MessageStore>` reset runs MySQLMessageStore's virtual dtor
+  // (D0) — the function-gap arm for mysql_message_store.h:95.
+  auto pool = std::make_shared<MySQLConnectionPool>(1, "h", 3306, "db", "u", "p");
+  std::unique_ptr<chirp::chat::MessageStore> store =
+      std::make_unique<MySQLMessageStore>(pool);
+  EXPECT_TRUE(store->Initialize());
+  store.reset();
+  SUCCEED();
+}
+
+TEST_F(HybridStoreTest, GetDeliveryStatusParsesColonlessValue) {
+  // A stored value with no ':' skips the whole parse block (arm of
+  // colon1 != npos is false) and returns default-typed DeliveryInfo.
+  ASSERT_TRUE(store_->Initialize());
+  // TrackMessage writes "status:created_at"; overwrite with a raw value via
+  // the public path is unavailable, so use a message id that yields a key
+  // we can… no: use redis Get path by failing Parse? Instead: TrackMessage
+  // then FailMessage with empty error still has colons. Write directly through
+  // the store's redis client.
+  auto redis = store_->GetRedisClient();
+  ASSERT_NE(redis, nullptr);
+  const std::string key = "chirp:chat:delivery:colonless:r1";
+  ASSERT_TRUE(redis->SetEx(key, "nocolon", 60));
+  auto status = store_->GetDeliveryStatus("colonless", "r1");
+  ASSERT_TRUE(status.has_value());
+  EXPECT_EQ(status->message_id, "colonless");
+  EXPECT_EQ(status->receiver_id, "r1");
+}
+
+TEST_F(HybridStoreTest, GetPendingDeliveriesSkipsMalformedEntries) {
+  // Entries with zero or one colon fail the two-colon parse and are skipped.
+  ASSERT_TRUE(store_->Initialize());
+  auto redis = store_->GetRedisClient();
+  ASSERT_NE(redis, nullptr);
+  // Seed pending list with: no colon, one colon, and a well-formed entry.
+  // PendingDeliveryKey is private; TrackMessage always writes well-formed
+  // entries. Push malformed ones through the same key the tracker uses by
+  // tracking one real message first, then… we need the key. Use RPush on the
+  // documented constant from DeliveryKey pattern.
+  ASSERT_TRUE(redis->RPush("chirp:chat:pending_delivery", "nocolon"));
+  ASSERT_TRUE(redis->RPush("chirp:chat:pending_delivery", "one:colon"));
+  ASSERT_TRUE(redis->RPush("chirp:chat:pending_delivery", "m1:r1:100"));
+  auto due = store_->GetPendingDeliveries(1000);
+  ASSERT_EQ(due.size(), 1u);
+  EXPECT_EQ(due[0].message_id, "m1");
+  EXPECT_EQ(due[0].receiver_id, "r1");
+}
+
+TEST_F(HybridStoreTest, FailMessageCarriesLongLastError) {
+  // Exercise the third-colon parse (last_error = substr(colon2+1)) with a
+  // multi-segment error so colon2 lands after the timestamp.
+  ASSERT_TRUE(store_->Initialize());
+  const std::string long_err(80, 'e');
+  EXPECT_TRUE(store_->FailMessage("mX", "r1", long_err));
+  auto status = store_->GetDeliveryStatus("mX", "r1");
+  ASSERT_TRUE(status.has_value());
+  EXPECT_EQ(status->status, chirp::chat::DeliveryState::kFailed);
+  EXPECT_EQ(status->last_error, long_err);
+}
+
+TEST_F(PaginatedRetrieverTest, DeserializeSinglePipeYieldsEmptyCursor) {
+  // pos2 == npos: the compound `pos1 != npos && pos2 != npos` fails on the
+  // second arm; the token stays default (cursor empty → !IsValid).
+  auto partial = chirp::chat::PaginatedHistoryRetriever::PageToken::Deserialize("a|b");
+  EXPECT_FALSE(partial.IsValid());
+  EXPECT_TRUE(partial.cursor.empty());
+  // And the no-pipe arm (already covered by "garbage").
+}
+
+TEST_F(PaginatedRetrieverTest, GetTimeRangeOutsideAllMessagesIsEmpty) {
+  ASSERT_TRUE(store_->Initialize());
+  store_->StoreMessage(MakeMessage("m1", "ch", 1000));
+  store_->StoreMessage(MakeMessage("m2", "ch", 2000));
+
+  PaginatedHistoryRetriever retriever(store_);
+  // Range entirely after every message: both compare arms fail every row.
+  EXPECT_TRUE(retriever.GetTimeRange("ch", 0, 5000, 6000, 10).empty());
+  // Range entirely before every message.
+  EXPECT_TRUE(retriever.GetTimeRange("ch", 0, 1, 10, 10).empty());
+}
+
+TEST_F(PaginatedRetrieverTest, GetTimeRangeUsesInclusiveBoundaries) {
+  ASSERT_TRUE(store_->Initialize());
+  store_->StoreMessage(MakeMessage("m1", "ch", 1000));
+  store_->StoreMessage(MakeMessage("m2", "ch", 2000));
+  store_->StoreMessage(MakeMessage("m3", "ch", 3000));
+
+  PaginatedHistoryRetriever retriever(store_);
+  // Inclusive start: the row exactly at start_timestamp is kept; the row
+  // before it is the only miss on `>= start`.
+  auto ranged = retriever.GetTimeRange("ch", 0, 2000, 6000, 10);
+  ASSERT_EQ(ranged.size(), 2u);
+  EXPECT_EQ(ranged[0].message_id, "m2");
+  EXPECT_EQ(ranged[1].message_id, "m3");
+
+  // end_timestamp <= 0 disables GetHistory's before_timestamp pre-filter, so
+  // every row reaches line 171. Then `ts >= start && ts <= end` takes the
+  // true/false arm (row after start but after end=0).
+  auto past_end = retriever.GetTimeRange("ch", 0, 1500, 0, 10);
+  EXPECT_TRUE(past_end.empty());
 }
 
 }  // namespace

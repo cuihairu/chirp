@@ -2033,4 +2033,83 @@ TEST_F(ReactionManagerTest, GetReactionsForMessagesSortsDifferentCounts) {
   EXPECT_EQ(result["m1"][1].count(), 1);
 }
 
+
+// ---------------------------------------------------------------------------
+// Batch D: parse-fail + empty-handler arms for the six late dispatch cases
+// ---------------------------------------------------------------------------
+
+TEST_F(DispatchTest, GarbageBodiesSkipAllLateHandlers) {
+  // Each of these six cases uses `handlers.on_X && req.Parse...`; the parse-
+  // fail arm needs a non-empty invalid body while the handler is non-null.
+  DistributedDispatchHandlers handlers;
+  int calls = 0;
+  handlers.on_message_ack = [&](auto&&, auto&&, auto&&) { ++calls; };
+  handlers.on_set_channel_mute = [&](auto&&, auto&&, auto&&) { ++calls; };
+  handlers.on_get_channel_mutes = [&](auto&&, auto&&, auto&&) { ++calls; };
+  handlers.on_block_message_sender = [&](auto&&, auto&&, auto&&) { ++calls; };
+  handlers.on_unblock_message_sender = [&](auto&&, auto&&, auto&&) { ++calls; };
+  handlers.on_get_blocked_senders = [&](auto&&, auto&&, auto&&) { ++calls; };
+
+  const std::string junk("\xff\xff\xff\xff", 4);
+  DispatchDistributedPacket(session_, MakePacket(chirp::gateway::MESSAGE_ACK, 1, junk), handlers);
+  DispatchDistributedPacket(session_, MakePacket(chirp::gateway::SET_CHANNEL_MUTE_REQ, 2, junk), handlers);
+  DispatchDistributedPacket(session_, MakePacket(chirp::gateway::GET_CHANNEL_MUTES_REQ, 3, junk), handlers);
+  DispatchDistributedPacket(session_, MakePacket(chirp::gateway::BLOCK_MESSAGE_SENDER_REQ, 4, junk), handlers);
+  DispatchDistributedPacket(session_, MakePacket(chirp::gateway::UNBLOCK_MESSAGE_SENDER_REQ, 5, junk), handlers);
+  DispatchDistributedPacket(session_, MakePacket(chirp::gateway::GET_BLOCKED_SENDERS_REQ, 6, junk), handlers);
+  EXPECT_EQ(calls, 0);
+}
+
+TEST_F(DispatchTest, EmptyHandlersSkipLateParseGate) {
+  // Same six cases with a null handler: the short-circuit never parses.
+  DistributedDispatchHandlers handlers;
+  const std::string junk("\xff\xff\xff\xff", 4);
+  DispatchDistributedPacket(session_, MakePacket(chirp::gateway::MESSAGE_ACK, 1, junk), handlers);
+  DispatchDistributedPacket(session_, MakePacket(chirp::gateway::SET_CHANNEL_MUTE_REQ, 2, junk), handlers);
+  DispatchDistributedPacket(session_, MakePacket(chirp::gateway::GET_CHANNEL_MUTES_REQ, 3, junk), handlers);
+  DispatchDistributedPacket(session_, MakePacket(chirp::gateway::BLOCK_MESSAGE_SENDER_REQ, 4, junk), handlers);
+  DispatchDistributedPacket(session_, MakePacket(chirp::gateway::UNBLOCK_MESSAGE_SENDER_REQ, 5, junk), handlers);
+  DispatchDistributedPacket(session_, MakePacket(chirp::gateway::GET_BLOCKED_SENDERS_REQ, 6, junk), handlers);
+  SUCCEED();
+}
+
+TEST_F(DistributedRuntimeTest, InstallSignalStopInvokesShutdownOnSigint) {
+  // SIGTERM already covered; SIGINT is the other arm of the signal_set.
+  asio::io_context io;
+  std::promise<void> promise;
+  auto fut = promise.get_future();
+  InstallSignalStop(io, [&promise] { promise.set_value(); });
+  ::raise(SIGINT);
+  io.run();
+  ASSERT_EQ(fut.wait_for(std::chrono::seconds(2)), std::future_status::ready);
+}
+
+TEST_F(ReactionManagerTest, AddReactionOmitsUserIdsWhenCrossingTen) {
+  // AddReaction appends user_ids without clearing: reuse a fresh out each
+  // call. size<=10 includes ids; the 11th skips the <=10 loop arm.
+  MessageReaction small;
+  for (int i = 0; i < 10; ++i) {
+    small.Clear();
+    ASSERT_TRUE(mgr_.AddReaction("m1", "u" + std::to_string(i), "👍", &small));
+  }
+  EXPECT_EQ(small.user_ids_size(), 10);
+  EXPECT_EQ(small.count(), 10);
+
+  MessageReaction big;
+  ASSERT_TRUE(mgr_.AddReaction("m1", "u10", "👍", &big));
+  EXPECT_EQ(big.count(), 11);
+  EXPECT_EQ(big.user_ids_size(), 0);
+}
+
+TEST_F(ReactionManagerTest, GetReactionsForMessagesOmitsUserIdsWhenCrossingTen) {
+  // Same >10 arm on the bulk path (line 267).
+  for (int i = 0; i < 11; ++i) {
+    ASSERT_TRUE(mgr_.AddReaction("m_bulk", "u" + std::to_string(i), "👍", nullptr));
+  }
+  auto result = mgr_.GetReactionsForMessages({"m_bulk"});
+  ASSERT_EQ(result["m_bulk"].size(), 1u);
+  EXPECT_EQ(result["m_bulk"][0].count(), 11);
+  EXPECT_EQ(result["m_bulk"][0].user_ids_size(), 0);
+}
+
 }  // namespace

@@ -84,6 +84,22 @@ TEST(ChatValidationTest, RejectsUnauthenticatedSend) {
   EXPECT_EQ(ValidateSendMessageRequest(req, ""), chirp::common::AUTH_FAILED);
 }
 
+TEST(ChatValidationTest, RejectsEmptySenderEvenWhenAuthenticated) {
+  SendMessageRequest req;
+  req.set_receiver_id("bob");
+  req.set_channel_type(PRIVATE);
+
+  EXPECT_EQ(ValidateSendMessageRequest(req, "alice"), chirp::common::AUTH_FAILED);
+}
+
+TEST(ChatValidationTest, RejectsPrivateMessageWithoutReceiver) {
+  SendMessageRequest req;
+  req.set_sender_id("alice");
+  req.set_channel_type(PRIVATE);
+
+  EXPECT_EQ(ValidateSendMessageRequest(req, "alice"), chirp::common::INVALID_PARAM);
+}
+
 TEST(ChatValidationTest, RejectsGroupSendWithoutChannelId) {
   SendMessageRequest req;
   req.set_sender_id("alice");
@@ -118,6 +134,23 @@ TEST(ChatValidationTest, AcceptsValidGroupHistory) {
   req.set_channel_id("g1");
 
   EXPECT_EQ(ValidateGetHistoryRequest(req, "alice"), chirp::common::OK);
+}
+
+TEST(ChatValidationTest, RejectsHistoryWithoutAuthentication) {
+  GetHistoryRequest req;
+  req.set_user_id("alice");
+  req.set_channel_type(GUILD);
+  req.set_channel_id("g1");
+
+  EXPECT_EQ(ValidateGetHistoryRequest(req, ""), chirp::common::AUTH_FAILED);
+}
+
+TEST(ChatValidationTest, RejectsHistoryWithEmptyUserId) {
+  GetHistoryRequest req;
+  req.set_channel_type(GUILD);
+  req.set_channel_id("g1");
+
+  EXPECT_EQ(ValidateGetHistoryRequest(req, "alice"), chirp::common::AUTH_FAILED);
 }
 
 TEST(ChatValidationTest, RejectsHistoryForDifferentUser) {
@@ -185,6 +218,23 @@ TEST(ChatValidationTest, AcceptsLogoutWhenSessionMatches) {
   req.set_session_id("chat_session_alice");
 
   EXPECT_EQ(ValidateLogoutRequest(req, "alice", "chat_session_alice"), chirp::common::OK);
+}
+
+TEST(ChatValidationTest, AcceptsLogoutWithEmptySessionId) {
+  // A request that never carried a session id skips the mismatch check.
+  chirp::auth::LogoutRequest req;
+  req.set_user_id("alice");
+
+  EXPECT_EQ(ValidateLogoutRequest(req, "alice", "chat_session_alice"), chirp::common::OK);
+}
+
+TEST(ChatValidationTest, RejectsLogoutForAuthenticatedEmptyUserId) {
+  // Authenticated session but the logout body omitted user_id: the empty
+  // arm of `user_id.empty() || user_id != authenticated` fires first.
+  chirp::auth::LogoutRequest req;
+  req.set_session_id("chat_session_alice");
+
+  EXPECT_EQ(ValidateLogoutRequest(req, "alice", "chat_session_alice"), chirp::common::AUTH_FAILED);
 }
 
 // --- content length limits (game_chat_features P0 消息长度限制) ---

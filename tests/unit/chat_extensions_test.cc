@@ -148,6 +148,37 @@ TEST(MentionManagerTest, HereNotifiesOnlyOnlineUsers) {
   EXPECT_EQ(recipients[0], "bob");
 }
 
+TEST(MentionManagerTest, HereSkipsSenderWhenSenderIsAMember) {
+  MentionManager mgr;
+  auto parsed = mgr.ParseMentions("@here", "alice");
+  auto recipients = mgr.BuildNotificationRecipients(
+      parsed, "alice", {"alice", "bob"}, {"alice", "bob"});
+  ASSERT_EQ(recipients.size(), 1u);
+  EXPECT_EQ(recipients[0], "bob");
+}
+
+TEST(MentionManagerTest, DirectMentionSkipsSenderInTheMemberLoop) {
+  MentionManager mgr;
+  auto parsed = mgr.ParseMentions("@alice @bob", "alice");
+  auto ids = parsed.GetNotifyUserIds("alice", {"alice", "bob"});
+  EXPECT_EQ(ids.count("alice"), 0u);
+  EXPECT_EQ(ids.count("bob"), 1u);
+}
+
+TEST(MentionManagerTest, ChannelMentionCapStopsFurtherMatches) {
+  MentionConfig config;
+  config.max_mentions_per_message = 1;
+  MentionManager mgr(config);
+  auto parsed = mgr.ParseMentions("#one #two #three", "sender");
+  int channels = 0;
+  for (const auto& m : parsed.mentions) {
+    if (m.type() == chirp::chat::MENTION_TYPE_CHANNEL) {
+      ++channels;
+    }
+  }
+  EXPECT_EQ(channels, 1);
+}
+
 TEST(MentionManagerTest, FormatMentionsKeepsContent) {
   MentionManager mgr;
   EXPECT_EQ(mgr.FormatMentions("no mentions here", {}), "no mentions here");
@@ -199,6 +230,16 @@ TEST(MentionManagerTest, FormatHereAndEveryoneMarkers) {
   unknown_type.set_length(4);
   // Unknown mention types replace the range with an empty string.
   EXPECT_EQ(mgr.FormatMentions("text", {unknown_type}), "");
+}
+
+TEST(MentionManagerTest, FormatMentionsSkipsOutOfRangeSpans) {
+  MentionManager mgr;
+  chirp::chat::Mention overrun;
+  overrun.set_type(chirp::chat::MENTION_TYPE_USER);
+  overrun.set_id("alice");
+  overrun.set_start_index(0);
+  overrun.set_length(99);
+  EXPECT_EQ(mgr.FormatMentions("short", {overrun}), "short");
 }
 
 TEST(MessageEditManagerTest, ZeroWindowAndLimitMeanUnlimited) {
@@ -458,7 +499,7 @@ TEST(MessageStoreConfigTest, FromEnvOverridesDefaults) {
   setenv("CHIRP_MYSQL_DATABASE", "envdb", 1);
   setenv("CHIRP_MYSQL_USER", "envuser", 1);
   setenv("CHIRP_MYSQL_PASSWORD", "envpass", 1);
-  setenv("CHIRP_MIGRATION_ENABLED", "0", 1);
+  setenv("CHIRP_MIGRATION_ENABLED", "1", 1);
   setenv("CHIRP_MIGRATION_BATCH_SIZE", "500", 1);
   setenv("CHIRP_DELIVERY_TRACKING_ENABLED", "true", 1);
 
@@ -470,10 +511,20 @@ TEST(MessageStoreConfigTest, FromEnvOverridesDefaults) {
   EXPECT_EQ(config.mysql_database, "envdb");
   EXPECT_EQ(config.mysql_user, "envuser");
   EXPECT_EQ(config.mysql_password, "envpass");
-  EXPECT_FALSE(config.enable_migration);
+  EXPECT_TRUE(config.enable_migration);
   EXPECT_EQ(config.migration_batch_size, 500);
   EXPECT_TRUE(config.enable_delivery_tracking);
   EXPECT_TRUE(config.Validate());
+
+  // "true" is accepted as well; a non-matching value leaves the flag false.
+  setenv("CHIRP_MIGRATION_ENABLED", "true", 1);
+  EXPECT_TRUE(MessageStoreConfig::FromEnv().enable_migration);
+  setenv("CHIRP_MIGRATION_ENABLED", "yes", 1);
+  EXPECT_FALSE(MessageStoreConfig::FromEnv().enable_migration);
+  setenv("CHIRP_DELIVERY_TRACKING_ENABLED", "1", 1);
+  EXPECT_TRUE(MessageStoreConfig::FromEnv().enable_delivery_tracking);
+  setenv("CHIRP_DELIVERY_TRACKING_ENABLED", "0", 1);
+  EXPECT_FALSE(MessageStoreConfig::FromEnv().enable_delivery_tracking);
 
   unsetenv("CHIRP_REDIS_HOST");
   unsetenv("CHIRP_REDIS_PORT");
@@ -520,6 +571,17 @@ PermissionOverrideEntry MakeOverride(const std::string& id,
   return entry;
 }
 
+PermissionOverrideEntry MakeManageOverride(const std::string& id,
+                                           PermissionType type) {
+  PermissionOverrideEntry entry;
+  entry.set_type(type);
+  entry.set_id(id);
+  // Only can_manage is in the verdict set: can_write must stay untouched.
+  entry.mutable_permissions()->set_can_manage(true);
+  entry.set_allow(chirp::chat::PermissionOverride::ALLOW);
+  return entry;
+}
+
 TEST(ChannelManagerTest, CategoryCrud) {
   ChannelManager mgr;
   const std::string cat = mgr.CreateCategory("g1", "Voice", 0);
@@ -534,6 +596,11 @@ TEST(ChannelManagerTest, CategoryCrud) {
   EXPECT_EQ(info.name(), "Renamed");
   EXPECT_EQ(info.position(), 5);
 
+  // A negative position leaves the stored ordering untouched.
+  EXPECT_TRUE(mgr.UpdateCategory(cat, "", -1));
+  ASSERT_TRUE(mgr.GetCategory(cat, &info));
+  EXPECT_EQ(info.position(), 5);
+
   auto cats = mgr.GetCategories("g1");
   ASSERT_EQ(cats.size(), 1u);
 
@@ -544,6 +611,16 @@ TEST(ChannelManagerTest, CategoryCrud) {
   // Unknown updates fail.
   EXPECT_FALSE(mgr.UpdateCategory("missing", "x", 0));
   EXPECT_FALSE(mgr.DeleteCategory("missing"));
+}
+
+TEST(ChannelManagerTest, CategoriesSortByPosition) {
+  ChannelManager mgr;
+  const std::string high = mgr.CreateCategory("g1", "Later", 10);
+  const std::string low = mgr.CreateCategory("g1", "First", 1);
+  auto cats = mgr.GetCategories("g1");
+  ASSERT_EQ(cats.size(), 2u);
+  EXPECT_EQ(cats[0].category_id(), low);
+  EXPECT_EQ(cats[1].category_id(), high);
 }
 
 TEST(ChannelManagerTest, ChannelCrudAndListing) {
@@ -562,6 +639,11 @@ TEST(ChannelManagerTest, ChannelCrudAndListing) {
   EXPECT_TRUE(mgr.UpdateChannel(c1, "renamed", "desc2", 3, "", {}));
   ASSERT_TRUE(mgr.GetChannel(c1, &info));
   EXPECT_EQ(info.name(), "renamed");
+  EXPECT_EQ(info.position(), 3);
+
+  // Negative position is ignored (ordering is only advanced forward).
+  EXPECT_TRUE(mgr.UpdateChannel(c1, "", "", -1, "", {}));
+  ASSERT_TRUE(mgr.GetChannel(c1, &info));
   EXPECT_EQ(info.position(), 3);
 
   auto channels = mgr.GetChannels("g1", "alice", "");
@@ -658,11 +740,15 @@ TEST(ChannelManagerTest, SearchChannelsByName) {
   ChannelManager mgr;
   mgr.CreateChannel("g1", "general", ChannelKind::CHANNEL_KIND_TEXT, "", "", {}, 0);
   mgr.CreateChannel("g1", "gen-lobby", ChannelKind::CHANNEL_KIND_TEXT, "", "", {}, 0);
-  mgr.CreateChannel("g1", "random", ChannelKind::CHANNEL_KIND_TEXT, "", "", {}, 0);
+  mgr.CreateChannel("g1", "random", ChannelKind::CHANNEL_KIND_TEXT, "", "public square", {}, 0);
 
   auto hits = mgr.SearchChannels("g1", "gen");
   EXPECT_EQ(hits.size(), 2u);
   EXPECT_TRUE(mgr.SearchChannels("g1", "zzz").empty());
+  // Description-only hit: the name does not match but the topic does.
+  auto desc_hits = mgr.SearchChannels("g1", "square");
+  ASSERT_EQ(desc_hits.size(), 1u);
+  EXPECT_EQ(desc_hits[0].name(), "random");
 }
 
 TEST(ChannelManagerTest, PermissionCheckerStaticHelpers) {
@@ -690,21 +776,62 @@ TEST(ChannelManagerTest, RoleOverrideApplies) {
   // Users carrying the role are denied, others keep the default allow.
   EXPECT_FALSE(mgr.CanWrite(c1, "anyone", "role-guest"));
   EXPECT_TRUE(mgr.CanWrite(c1, "anyone", "role-mod"));
+  // An empty role id never matches a ROLE override (short-circuit).
+  EXPECT_TRUE(mgr.CanWrite(c1, "anyone", ""));
+}
+
+TEST(ChannelManagerTest, ManageOnlyOverrideLeavesWriteAlone) {
+  PermissionOverrideEntry manage = MakeManageOverride("bob",
+                                                      PermissionType::PERMISSION_TYPE_USER);
+  ChannelManager mgr;
+  const std::string c1 = mgr.CreateChannel("g1", "general", ChannelKind::CHANNEL_KIND_TEXT,
+                                           "", "", {manage}, 0);
+  // can_write is not in the verdict set, so the default allow stands while
+  // can_manage flips on for the targeted user.
+  EXPECT_TRUE(mgr.CanWrite(c1, "bob", ""));
+  using Field = chirp::chat::ChannelPermissionChecker::Field;
+  ChannelPermissions required;
+  required.set_can_manage(true);
+  EXPECT_TRUE(mgr.HasPermission(c1, "bob", "", required));
+  EXPECT_FALSE(mgr.HasPermission(c1, "alice", "", required));
+}
+
+TEST(ChannelManagerTest, OverrideWithoutVerdictIsIgnored) {
+  PermissionOverrideEntry neutral;
+  neutral.set_type(PermissionType::PERMISSION_TYPE_USER);
+  neutral.set_id("bob");
+  neutral.mutable_permissions()->set_can_write(true);
+  // Neither ALLOW nor DENY: the entry must not change effective rights.
+  ChannelManager mgr;
+  const std::string c1 = mgr.CreateChannel("g1", "general", ChannelKind::CHANNEL_KIND_TEXT,
+                                           "", "", {neutral}, 0);
+  EXPECT_TRUE(mgr.CanWrite(c1, "bob", ""));
 }
 
 TEST(ChannelManagerTest, CategoryDeletionClearsChannelLinks) {
   ChannelManager mgr;
   const std::string cat = mgr.CreateCategory("g1", "Cat", 0);
+  const std::string other = mgr.CreateCategory("g1", "Other", 1);
   const std::string c1 = mgr.CreateChannel("g1", "general", ChannelKind::CHANNEL_KIND_TEXT,
                                            cat, "", {}, 0);
+  const std::string c2 = mgr.CreateChannel("g1", "lobby", ChannelKind::CHANNEL_KIND_TEXT,
+                                           other, "", {}, 1);
   ASSERT_TRUE(mgr.DeleteCategory(cat));
 
   // The channel survives but is detached from the removed category.
   Channel info;
   ASSERT_TRUE(mgr.GetChannel(c1, &info));
   EXPECT_TRUE(info.category_id().empty());
-  EXPECT_TRUE(mgr.GetCategories("g1").empty());
+  // The sibling in the other category keeps its link.
+  ASSERT_TRUE(mgr.GetChannel(c2, &info));
+  EXPECT_EQ(info.category_id(), other);
+  auto cats = mgr.GetCategories("g1");
+  ASSERT_EQ(cats.size(), 1u);
+  EXPECT_EQ(cats[0].category_id(), other);
   EXPECT_TRUE(mgr.GetCategories("unknown-group").empty());
+  // Deleting the last category leaves the group with no categories.
+  ASSERT_TRUE(mgr.DeleteCategory(other));
+  EXPECT_TRUE(mgr.GetCategories("g1").empty());
 }
 
 TEST(ChannelManagerTest, UpdateChannelAcceptsCategoryAndOverrides) {
@@ -776,6 +903,15 @@ TEST(ChannelManagerTest, VoiceJoinRequiresVoiceKind) {
   EXPECT_FALSE(mgr.JoinVoiceChannel(text, "alice"));  // text channels reject joins
   EXPECT_TRUE(mgr.GetVoiceChannelParticipants("unknown").empty());
   EXPECT_FALSE(mgr.LeaveVoiceChannel("unknown", "alice"));
+}
+
+TEST(ChannelManagerTest, StageChannelAcceptsJoinsLikeVoice) {
+  ChannelManager mgr;
+  const std::string stage = mgr.CreateChannel("g1", "Stage", ChannelKind::CHANNEL_KIND_STAGE,
+                                              "", "", {}, 0);
+  EXPECT_TRUE(mgr.JoinVoiceChannel(stage, "alice"));
+  EXPECT_EQ(mgr.GetVoiceChannelParticipants(stage).size(), 1u);
+  EXPECT_TRUE(mgr.LeaveVoiceChannel(stage, "alice"));
 }
 
 }  // namespace

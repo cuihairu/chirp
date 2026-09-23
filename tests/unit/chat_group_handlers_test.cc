@@ -477,4 +477,39 @@ TEST_F(GroupHandlersTest, IsMemberReflectsMembership) {
   EXPECT_FALSE(handlers_->IsMember(group.group_id(), "carl"));
 }
 
+TEST_F(GroupHandlersTest, SameUserRejectsEmptyClaimedIds) {
+  // Empty claimed ids take the !claimed.empty() short-circuit inside
+  // SameUser; spoof tests only cover non-empty mismatches.
+  chirp::chat::JoinGroupRequest join;
+  join.set_group_id("whatever");
+  EXPECT_EQ(handlers_->HandleJoinGroup(join, "alice").code(),
+            chirp::common::AUTH_FAILED);
+
+  chirp::chat::LeaveGroupRequest leave;
+  leave.set_group_id("whatever");
+  EXPECT_EQ(handlers_->HandleLeaveGroup(leave, "alice").code(),
+            chirp::common::AUTH_FAILED);
+
+  chirp::chat::GetUserGroupsRequest groups;
+  groups.set_user_id("");
+  EXPECT_EQ(handlers_->HandleGetUserGroups(groups, "alice").code(),
+            chirp::common::AUTH_FAILED);
+
+  chirp::chat::InviteToGroupRequest invite;
+  invite.set_group_id("g");
+  invite.set_target_user_id("bob");
+  invite.set_inviter_id("");
+  EXPECT_EQ(handlers_->HandleInviteToGroup(invite, "alice").code(),
+            chirp::common::AUTH_FAILED);
+
+  // Empty creator_id skips SameUser entirely (the guard is
+  // !creator_id.empty() && !SameUser(...)); non-empty + match is the
+  // normal create path already covered elsewhere.
+  chirp::chat::CreateGroupRequest create;
+  create.set_creator_id("");
+  create.set_group_name("g");
+  EXPECT_EQ(handlers_->HandleCreateGroup(create, "alice").code(),
+            chirp::common::OK);
+}
+
 }  // namespace

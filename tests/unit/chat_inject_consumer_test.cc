@@ -198,6 +198,19 @@ TEST(InjectConsumerTest, RejectsInvalidChannelType) {
   EXPECT_TRUE(rec.stored.empty());
 }
 
+TEST(InjectConsumerTest, RejectsNegativeChannelType) {
+  RecordingHooks rec;
+  InjectConsumer consumer(rec.MakeHooks());
+
+  InjectMessageNotify notify = MakeNotify("system", "hello");
+  notify.mutable_message()->set_channel_type(-1);
+
+  const InjectOutcome out = consumer.HandleInject(notify);
+
+  EXPECT_EQ(out.code, ErrorCode::INVALID_PARAM);
+  EXPECT_TRUE(rec.stored.empty());
+}
+
 TEST(InjectConsumerTest, RejectsPrivateWithoutReceiver) {
   RecordingHooks rec;
   InjectConsumer consumer(rec.MakeHooks());

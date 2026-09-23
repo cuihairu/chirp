@@ -182,6 +182,56 @@ TEST(DeliveryAckTest, RepeatStartAndNullForgetSessionAreNoops) {
   EXPECT_TRUE(manager.IsCapable(session.get()));
 }
 
+TEST(DeliveryAckTest, NullSessionCapabilityProbesAreSafe) {
+  asio::io_context io;
+  DeliveryAckManager manager(io, FastConfig(),
+                             [](const std::string&, const std::string&) {},
+                             [](const std::string&, const std::string&) {});
+  manager.Start();
+
+  manager.MarkCapable(nullptr);
+  EXPECT_FALSE(manager.IsCapable(nullptr));
+  EXPECT_EQ(manager.pending_count(), 0u);
+}
+
+TEST(DeliveryAckTest, TrackRejectsEmptyIdentifiers) {
+  asio::io_context io;
+  DeliveryAckManager manager(io, FastConfig(),
+                             [](const std::string&, const std::string&) {},
+                             [](const std::string&, const std::string&) {});
+  manager.Start();
+
+  manager.Track("", "user_2", "payload");
+  manager.Track("msg_1", "", "payload");
+  EXPECT_EQ(manager.pending_count(), 0u);
+}
+
+TEST(DeliveryAckTest, HeapAllocatedIdentifiersTrackAndRequeue) {
+  asio::io_context io;
+  Recorded recorded;
+  DeliveryAckManager manager(io, FastConfig(),
+                             [&](const std::string& u, const std::string& p) {
+                               recorded.requeued.emplace_back(u, p);
+                             },
+                             [](const std::string&, const std::string&) {});
+  manager.Start();
+
+  // Long ids/payloads force heap allocation past the SSO buffer.
+  const std::string msg(64, 'm');
+  const std::string user(64, 'u');
+  const std::string payload(128, 'p');
+  manager.Track(msg, user, payload);
+  EXPECT_EQ(manager.pending_count(), 1u);
+  EXPECT_TRUE(manager.Acknowledge(msg));
+  EXPECT_EQ(manager.pending_count(), 0u);
+
+  manager.Track(msg + "x", user, payload);
+  io.run_for(std::chrono::milliseconds(200));
+  ASSERT_EQ(recorded.requeued.size(), 1u);
+  EXPECT_EQ(recorded.requeued[0].first, user);
+  EXPECT_EQ(recorded.requeued[0].second, payload);
+}
+
 TEST(DeliveryAckTest, RequeuedRetentionWindowClosesLateAcks) {
   asio::io_context io;
   Recorded recorded;

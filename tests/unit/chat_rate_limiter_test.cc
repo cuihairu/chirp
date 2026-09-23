@@ -154,4 +154,15 @@ TEST_F(ChatRateLimiterTest, NonPositiveLimitDisablesTheGate) {
   EXPECT_TRUE(redis_->GetDirect("chirp:chat:rl:login:10.0.0.1").empty());
 }
 
+TEST_F(ChatRateLimiterTest, HeapAllocatedIdentityBuildsTheSameKey) {
+  ChatRateLimiter limiter(client_, StrictConfig());
+
+  // Past the SSO buffer so the concatenated redis key takes the heap path.
+  const std::string long_ip(80, '7');
+  EXPECT_TRUE(limiter.CheckLogin(long_ip).allowed);
+  EXPECT_TRUE(limiter.CheckSend(long_ip).allowed);
+  EXPECT_EQ(redis_->GetDirect("chirp:chat:rl:login:" + long_ip), "1");
+  EXPECT_EQ(redis_->GetDirect("chirp:chat:rl:send:" + long_ip), "1");
+}
+
 }  // namespace

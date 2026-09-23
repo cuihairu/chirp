@@ -350,9 +350,16 @@ TEST(SubscriptionRegistryTest, SubscribeLifecycleAndIdempotency) {
   EXPECT_EQ(registry.Subscribe(&id, "player-1", "game-a", "world-1", 2000),
             chat::SubscriptionRegistry::SubscribeOutcome::kExisted);
   // The same key asserting a different tuple would silently break duplicate
-  // detection and is rejected.
+  // detection and is rejected. Player / game / channel each mismatched in
+  // turn so every short-circuit arm of the three-way equality runs.
   std::string reused = "s1";
   EXPECT_EQ(registry.Subscribe(&reused, "player-2", "game-a", "world-1", 3000),
+            chat::SubscriptionRegistry::SubscribeOutcome::kInvalid);
+  reused = "s1";
+  EXPECT_EQ(registry.Subscribe(&reused, "player-1", "game-b", "world-1", 3001),
+            chat::SubscriptionRegistry::SubscribeOutcome::kInvalid);
+  reused = "s1";
+  EXPECT_EQ(registry.Subscribe(&reused, "player-1", "game-a", "world-2", 3002),
             chat::SubscriptionRegistry::SubscribeOutcome::kInvalid);
   // Empty tuple fields are rejected (the handler validates first, the store
   // enforces the same contract).
@@ -936,6 +943,30 @@ TEST_F(PlayerDirectoryHandlerTest, UnbindHandlerRequiresExactlyOneSelector) {
             }()).code(),
             OK);
 
+  // binding_id-only is the other valid single-selector shape (by_id true,
+  // by_pair false, no half-pair) and takes the by_id log/erase path.
+  sg::UnbindPlayerIdentityRequest by_id_only;
+  by_id_only.set_binding_id("b9");
+  EXPECT_EQ(directory_.HandleUnbindPlayerIdentity(by_id_only).code(), OK);
+
+  // by_id != by_pair with malformed_pair: binding_id plus exactly one of the
+  // pair fields. This is the only shape that reaches the `malformed_pair`
+  // operand of the `||` after `by_id == by_pair` is false.
+  EXPECT_EQ(directory_.HandleUnbindPlayerIdentity([] {
+              sg::UnbindPlayerIdentityRequest req;
+              req.set_binding_id("b10");
+              req.set_game_id("game-a");
+              return req;
+            }()).code(),
+            INVALID_PARAM);
+  EXPECT_EQ(directory_.HandleUnbindPlayerIdentity([] {
+              sg::UnbindPlayerIdentityRequest req;
+              req.set_binding_id("b11");
+              req.set_game_user_id("u-2");
+              return req;
+            }()).code(),
+            INVALID_PARAM);
+
   sg::GetPlayerIdentitiesRequest gone;
   gone.set_player_id("player-1");
   EXPECT_EQ(directory_.HandleGetPlayerIdentities(gone).bindings_size(), 0);
@@ -1031,6 +1062,21 @@ TEST_F(PlayerDirectoryHandlerTest, UnsubscribeHandlerRequiresExactlyOneSelector)
   req.clear_channel_id();  // half a triple
   EXPECT_EQ(directory_.HandleUnsubscribePlayerChannel(req).code(), INVALID_PARAM);
 
+  // Every proper subset of the triple: malformed_tuple true, by_tuple false.
+  sg::UnsubscribePlayerChannelRequest only_player;
+  only_player.set_player_id("player-1");
+  EXPECT_EQ(directory_.HandleUnsubscribePlayerChannel(only_player).code(), INVALID_PARAM);
+  sg::UnsubscribePlayerChannelRequest only_game;
+  only_game.set_game_id("game-a");
+  EXPECT_EQ(directory_.HandleUnsubscribePlayerChannel(only_game).code(), INVALID_PARAM);
+  sg::UnsubscribePlayerChannelRequest only_channel;
+  only_channel.set_channel_id("world-1");
+  EXPECT_EQ(directory_.HandleUnsubscribePlayerChannel(only_channel).code(), INVALID_PARAM);
+  sg::UnsubscribePlayerChannelRequest game_and_channel;
+  game_and_channel.set_game_id("game-a");
+  game_and_channel.set_channel_id("world-1");
+  EXPECT_EQ(directory_.HandleUnsubscribePlayerChannel(game_and_channel).code(), INVALID_PARAM);
+
   req.set_channel_id("world-1");  // full triple, unknown target: idempotent OK
   EXPECT_EQ(directory_.HandleUnsubscribePlayerChannel(req).code(), OK);
 
@@ -1044,6 +1090,25 @@ TEST_F(PlayerDirectoryHandlerTest, UnsubscribeHandlerRequiresExactlyOneSelector)
   req.clear_game_id();
   req.clear_channel_id();
   EXPECT_EQ(directory_.HandleUnsubscribePlayerChannel(req).code(), OK);
+
+  // by_id != by_tuple with malformed_tuple: subscription_id plus a proper
+  // non-empty subset of the triple. Only then is `by_id == by_tuple` false
+  // and `malformed_tuple` evaluated true.
+  EXPECT_EQ(directory_.HandleUnsubscribePlayerChannel([] {
+              sg::UnsubscribePlayerChannelRequest r;
+              r.set_subscription_id("s10");
+              r.set_player_id("player-1");
+              return r;
+            }()).code(),
+            INVALID_PARAM);
+  EXPECT_EQ(directory_.HandleUnsubscribePlayerChannel([] {
+              sg::UnsubscribePlayerChannelRequest r;
+              r.set_subscription_id("s11");
+              r.set_game_id("game-a");
+              r.set_channel_id("world-1");
+              return r;
+            }()).code(),
+            INVALID_PARAM);
 }
 
 TEST_F(PlayerDirectoryHandlerTest, GetHandlerReturnsSubscriptionsForPlayer) {
@@ -1407,6 +1472,14 @@ TEST_F(DispatchTest, IgnoresPacketsOutsideTheBlock) {
   EXPECT_FALSE(chirp::chat::DispatchPlayerDirectoryPacket(
       MakePacket(chirp::gateway::SEND_MESSAGE_REQ, unrelated), session, directory_, &trusted));
   EXPECT_TRUE(session->sent.empty());
+
+  // Id at the upper boundary of the block but one past GET_UNREAD_SUMMARY_RESP:
+  // the `id >= BIND && id <= GET_UNREAD` compound takes the second-compare
+  // false arm instead of short-circuiting on the first.
+  EXPECT_FALSE(chirp::chat::DispatchPlayerDirectoryPacket(
+      MakePacket(static_cast<chirp::gateway::MsgID>(5031), unrelated), session, directory_,
+      &trusted));
+  EXPECT_TRUE(session->sent.empty());
 }
 
 TEST_F(DispatchTest, DeniesUntrustedDials) {
@@ -1658,6 +1731,222 @@ TEST(PlayerDirectoryLoadAllTest, MemoryOnlyDirectoryLoadsAsACleanNoOp) {
   sg::GetPlayerIdentitiesRequest get_identities;
   get_identities.set_player_id("player-1");
   EXPECT_EQ(directory.HandleGetPlayerIdentities(get_identities).bindings_size(), 0);
+}
+
+
+// ---------------------------------------------------------------------------
+// Batch D: identity/subscription registry arms + remaining DenyUntrusted
+// ---------------------------------------------------------------------------
+
+TEST(IdentityRegistryTest, SameBindingIdReusedForDifferentPlayerFails) {
+  // Partial-match idempotency: same binding_id but different player_id only
+  // (game/game_user identical) takes the mismatch arm of the three-way compare.
+  chat::IdentityRegistry registry;
+  ASSERT_EQ(registry.Bind("b1", "player-1", "game-a", "u-1", 1000),
+            chat::IdentityRegistry::BindOutcome::kBound);
+  EXPECT_EQ(registry.Bind("b1", "player-2", "game-a", "u-1", 2000),
+            chat::IdentityRegistry::BindOutcome::kInvalid);
+  // Same id, different game_id only.
+  EXPECT_EQ(registry.Bind("b1", "player-1", "game-b", "u-1", 3000),
+            chat::IdentityRegistry::BindOutcome::kInvalid);
+  // Same id, different game_user only.
+  EXPECT_EQ(registry.Bind("b1", "player-1", "game-a", "u-2", 4000),
+            chat::IdentityRegistry::BindOutcome::kInvalid);
+}
+
+TEST(IdentityRegistryTest, ResolveGameUserSkipsOtherGames) {
+  // Multi-game player: ResolveGameUser for game-a must continue past the
+  // game-b entry (the `game_id != game` skip arm).
+  chat::IdentityRegistry registry;
+  ASSERT_EQ(registry.Bind("b1", "player-1", "game-a", "u-a", 1000),
+            chat::IdentityRegistry::BindOutcome::kBound);
+  ASSERT_EQ(registry.Bind("b2", "player-1", "game-b", "u-b", 1000),
+            chat::IdentityRegistry::BindOutcome::kBound);
+  ASSERT_EQ(registry.Bind("b3", "player-1", "game-c", "u-c", 1000),
+            chat::IdentityRegistry::BindOutcome::kBound);
+
+  auto user = registry.ResolveGameUser("game-a", "player-1");
+  ASSERT_NE(user, nullptr);
+  EXPECT_EQ(*user, "u-a");
+  user = registry.ResolveGameUser("game-b", "player-1");
+  ASSERT_NE(user, nullptr);
+  EXPECT_EQ(*user, "u-b");
+}
+
+TEST(SubscriptionRegistryTest, ReSubscribeSameTupleMultipleTimesKeepsId) {
+  // Several no-id re-subscribes: each hits the existing-tuple + empty-id arm.
+  chat::SubscriptionRegistry registry;
+  std::string id;
+  EXPECT_EQ(registry.Subscribe(&id, "player-1", "game-a", "world-1", 1000),
+            chat::SubscriptionRegistry::SubscribeOutcome::kSubscribed);
+  const std::string first = id;
+  for (int i = 0; i < 3; ++i) {
+    std::string again;
+    EXPECT_EQ(registry.Subscribe(&again, "player-1", "game-a", "world-1", 2000 + i),
+              chat::SubscriptionRegistry::SubscribeOutcome::kExisted);
+    EXPECT_EQ(again, first);
+  }
+  EXPECT_EQ(registry.Size(), 1u);
+}
+
+TEST(SubscriptionRegistryTest, GetForPlayerFiltersByNonEmptyGameId) {
+  // Non-empty game_id filter takes the second half of the compound if
+  // (game_id.empty() || entry.game_id() == game_id).
+  chat::SubscriptionRegistry registry;
+  std::string a, b;
+  ASSERT_EQ(registry.Subscribe(&a, "player-1", "game-a", "ch-1", 1000),
+            chat::SubscriptionRegistry::SubscribeOutcome::kSubscribed);
+  ASSERT_EQ(registry.Subscribe(&b, "player-1", "game-b", "ch-2", 1000),
+            chat::SubscriptionRegistry::SubscribeOutcome::kSubscribed);
+
+  const auto all = registry.GetForPlayer("player-1", "");
+  EXPECT_EQ(all.size(), 2u);
+  const auto only_a = registry.GetForPlayer("player-1", "game-a");
+  ASSERT_EQ(only_a.size(), 1u);
+  EXPECT_EQ(only_a[0].game_id(), "game-a");
+  const auto only_b = registry.GetForPlayer("player-1", "game-b");
+  ASSERT_EQ(only_b.size(), 1u);
+  EXPECT_EQ(only_b[0].game_id(), "game-b");
+}
+
+TEST_F(PlayerDirectoryHandlerTest, UnbindLogsThePairPathWhenRemoved) {
+  // Pair-based unbind that succeeds takes the log string arm with
+  // game_id + ":" + game_user_id (the by_id path is covered elsewhere).
+  ASSERT_EQ(directory_
+                .HandleBindPlayerIdentity(MakeBindRequest("b1", "player-1", "game-a", "u-1"))
+                .code(),
+            OK);
+  sg::UnbindPlayerIdentityRequest req;
+  req.set_game_id("game-a");
+  req.set_game_user_id("u-1");
+  const auto resp = directory_.HandleUnbindPlayerIdentity(req);
+  EXPECT_EQ(resp.code(), OK);
+}
+
+TEST_F(PlayerDirectoryHandlerTest, UnsubscribeLogsTheTuplePathWhenRemoved) {
+  // Tuple-based unsubscribe that succeeds takes the log string arm with
+  // player:game:channel (the by_id path is covered elsewhere).
+  ASSERT_EQ(directory_
+                .HandleSubscribePlayerChannel(
+                    MakeSubscribeRequest("s1", "player-1", "game-a", "world-1"))
+                .code(),
+            OK);
+  sg::UnsubscribePlayerChannelRequest req;
+  req.set_player_id("player-1");
+  req.set_game_id("game-a");
+  req.set_channel_id("world-1");
+  const auto resp = directory_.HandleUnsubscribePlayerChannel(req);
+  EXPECT_EQ(resp.code(), OK);
+}
+
+TEST_F(DispatchTest, DeniesEveryRemainingUntrustedRequest) {
+  // BIND was covered in DeniesUntrustedDials; hit the other seven response
+  // types so every DenyUntrusted template instantiation runs.
+  const auto deny = [&](chirp::gateway::MsgID req_id, const google::protobuf::Message& body,
+                        chirp::gateway::MsgID resp_id) {
+    session->sent.clear();
+    const auto pkt = MakePacket(req_id, body);
+    EXPECT_TRUE(chirp::chat::DispatchPlayerDirectoryPacket(pkt, session, directory_, nullptr))
+        << static_cast<int>(req_id);
+    ASSERT_EQ(session->sent.size(), 1u) << static_cast<int>(req_id);
+    EXPECT_EQ(session->sent[0].msg_id(), resp_id);
+  };
+
+  sg::UnbindPlayerIdentityRequest unbind;
+  unbind.set_binding_id("b1");
+  deny(chirp::gateway::UNBIND_PLAYER_IDENTITY_REQ, unbind,
+       chirp::gateway::UNBIND_PLAYER_IDENTITY_RESP);
+  {
+    auto r = session->Decode<sg::UnbindPlayerIdentityResponse>(
+        chirp::gateway::UNBIND_PLAYER_IDENTITY_RESP);
+    ASSERT_EQ(r.size(), 1u);
+    EXPECT_EQ(r[0].code(), AUTH_FAILED);
+  }
+
+  session->sent.clear();
+  sg::GetPlayerIdentitiesRequest get_id;
+  get_id.set_player_id("player-1");
+  deny(chirp::gateway::GET_PLAYER_IDENTITIES_REQ, get_id,
+       chirp::gateway::GET_PLAYER_IDENTITIES_RESP);
+  {
+    auto r = session->Decode<sg::GetPlayerIdentitiesResponse>(
+        chirp::gateway::GET_PLAYER_IDENTITIES_RESP);
+    ASSERT_EQ(r.size(), 1u);
+    EXPECT_EQ(r[0].code(), AUTH_FAILED);
+  }
+
+  session->sent.clear();
+  sg::ResolveGameUserRequest resolve;
+  resolve.set_game_id("game-a");
+  resolve.set_game_user_id("u-1");
+  deny(chirp::gateway::RESOLVE_GAME_USER_REQ, resolve,
+       chirp::gateway::RESOLVE_GAME_USER_RESP);
+  {
+    auto r = session->Decode<sg::ResolveGameUserResponse>(
+        chirp::gateway::RESOLVE_GAME_USER_RESP);
+    ASSERT_EQ(r.size(), 1u);
+    EXPECT_EQ(r[0].code(), AUTH_FAILED);
+  }
+
+  session->sent.clear();
+  deny(chirp::gateway::SUBSCRIBE_PLAYER_CHANNEL_REQ,
+       MakeSubscribeRequest("s1", "player-1", "game-a", "world-1"),
+       chirp::gateway::SUBSCRIBE_PLAYER_CHANNEL_RESP);
+  {
+    auto r = session->Decode<sg::SubscribePlayerChannelResponse>(
+        chirp::gateway::SUBSCRIBE_PLAYER_CHANNEL_RESP);
+    ASSERT_EQ(r.size(), 1u);
+    EXPECT_EQ(r[0].code(), AUTH_FAILED);
+  }
+
+  session->sent.clear();
+  sg::UnsubscribePlayerChannelRequest unsub;
+  unsub.set_subscription_id("s1");
+  deny(chirp::gateway::UNSUBSCRIBE_PLAYER_CHANNEL_REQ, unsub,
+       chirp::gateway::UNSUBSCRIBE_PLAYER_CHANNEL_RESP);
+  {
+    auto r = session->Decode<sg::UnsubscribePlayerChannelResponse>(
+        chirp::gateway::UNSUBSCRIBE_PLAYER_CHANNEL_RESP);
+    ASSERT_EQ(r.size(), 1u);
+    EXPECT_EQ(r[0].code(), AUTH_FAILED);
+  }
+
+  session->sent.clear();
+  sg::GetPlayerSubscriptionsRequest get_subs;
+  get_subs.set_player_id("player-1");
+  deny(chirp::gateway::GET_PLAYER_SUBSCRIPTIONS_REQ, get_subs,
+       chirp::gateway::GET_PLAYER_SUBSCRIPTIONS_RESP);
+  {
+    auto r = session->Decode<sg::GetPlayerSubscriptionsResponse>(
+        chirp::gateway::GET_PLAYER_SUBSCRIPTIONS_RESP);
+    ASSERT_EQ(r.size(), 1u);
+    EXPECT_EQ(r[0].code(), AUTH_FAILED);
+  }
+
+  session->sent.clear();
+  sg::MarkChannelsReadRequest mark;
+  mark.set_player_id("player-1");
+  mark.set_game_id("game-a");
+  deny(chirp::gateway::MARK_CHANNELS_READ_REQ, mark,
+       chirp::gateway::MARK_CHANNELS_READ_RESP);
+  {
+    auto r = session->Decode<sg::MarkChannelsReadResponse>(
+        chirp::gateway::MARK_CHANNELS_READ_RESP);
+    ASSERT_EQ(r.size(), 1u);
+    EXPECT_EQ(r[0].code(), AUTH_FAILED);
+  }
+
+  session->sent.clear();
+  sg::GetUnreadSummaryRequest summary;
+  summary.set_player_id("player-1");
+  deny(chirp::gateway::GET_UNREAD_SUMMARY_REQ, summary,
+       chirp::gateway::GET_UNREAD_SUMMARY_RESP);
+  {
+    auto r = session->Decode<sg::GetUnreadSummaryResponse>(
+        chirp::gateway::GET_UNREAD_SUMMARY_RESP);
+    ASSERT_EQ(r.size(), 1u);
+    EXPECT_EQ(r[0].code(), AUTH_FAILED);
+  }
 }
 
 }  // namespace

@@ -374,6 +374,39 @@ TEST_F(EditMentionHandlersTest, EveryoneMentionIsAllowedOnceThenCooldown) {
   // @here shares the same cooldown key.
   EXPECT_FALSE(mention_handlers_->ProcessOutgoingMessage(
       MakeMessage("alice", "@here"), &code));
+
+  // The deny path must tolerate a null reason pointer (the gateway always
+  // passes one; other embedders may not).
+  EXPECT_FALSE(mention_handlers_->ProcessOutgoingMessage(
+      MakeMessage("alice", "@everyone again"), nullptr));
+  EXPECT_FALSE(mention_handlers_->ProcessOutgoingMessage(
+      MakeMessage("alice", "@here"), nullptr));
+}
+
+TEST_F(EditMentionHandlersTest, SameUserRejectsEmptyClaimedIds) {
+  // Empty claimed ids fail the !claimed.empty() short-circuit before the
+  // equality compare (spoof tests only cover non-empty mismatches).
+  chirp::chat::EditMessageRequest edit;
+  edit.set_message_id("msg_e");
+  edit.set_new_content("x");
+  EXPECT_EQ(edit_handlers_->HandleEditMessage(edit, "alice").code(),
+            chirp::common::AUTH_FAILED);
+
+  chirp::chat::DeleteMessageRequest del;
+  del.set_message_id("msg_e");
+  EXPECT_EQ(edit_handlers_->HandleDeleteMessage(del, "alice").code(),
+            chirp::common::AUTH_FAILED);
+
+  chirp::chat::BulkDeleteRequest bulk;
+  bulk.set_channel_id("ch1");
+  bulk.add_message_ids("msg_e");
+  EXPECT_EQ(edit_handlers_->HandleBulkDelete(bulk, "alice").code(),
+            chirp::common::AUTH_FAILED);
+
+  chirp::chat::GetMentionSuggestionsRequest sugg;
+  sugg.set_user_id("");
+  EXPECT_EQ(mention_handlers_->HandleGetMentionSuggestions(sugg, "alice").code(),
+            chirp::common::AUTH_FAILED);
 }
 
 TEST_F(EditMentionHandlersTest, ModeratorBypassesEveryoneCooldown) {

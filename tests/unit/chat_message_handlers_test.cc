@@ -438,4 +438,35 @@ TEST_F(MessageHandlersTest, TrackMessageIgnoresEmptyInput) {
   EXPECT_TRUE(notifications_.empty());
 }
 
+TEST_F(MessageHandlersTest, SameUserRejectsEmptyClaimedId) {
+  // Empty claimed ids fail the !claimed.empty() short-circuit before the
+  // equality compare (spoof tests only cover non-empty mismatches).
+  chirp::chat::MarkReadRequest mark;
+  mark.set_channel_id("alice|bob");
+  mark.set_message_id("msg_e");
+  const auto mark_resp = receipt_handlers_->HandleMarkRead(mark, "alice");
+  EXPECT_EQ(mark_resp.code(), chirp::common::AUTH_FAILED);
+
+  chirp::chat::GetUnreadCountRequest unread;
+  unread.set_user_id("");
+  EXPECT_EQ(receipt_handlers_->HandleGetUnreadCount(unread, "alice").code(),
+            chirp::common::AUTH_FAILED);
+
+  chirp::chat::AddReactionRequest add;
+  add.set_message_id("msg_e");
+  add.set_emoji("👍");
+  EXPECT_EQ(reaction_handlers_->HandleAddReaction(add, "alice").code(),
+            chirp::common::AUTH_FAILED);
+
+  chirp::chat::RemoveReactionRequest remove;
+  remove.set_message_id("msg_e");
+  remove.set_emoji("👍");
+  EXPECT_EQ(reaction_handlers_->HandleRemoveReaction(remove, "alice").code(),
+            chirp::common::AUTH_FAILED);
+
+  chirp::chat::TypingIndicator typing;
+  typing.set_channel_id("alice|bob");
+  EXPECT_FALSE(typing_handlers_->HandleTypingIndicator(typing, "alice"));
+}
+
 }  // namespace
