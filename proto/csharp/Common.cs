@@ -24,13 +24,14 @@ namespace Chirp.Common {
     static CommonReflection() {
       byte[] descriptorData = global::System.Convert.FromBase64String(
           string.Concat(
-            "ChJwcm90by9jb21tb24ucHJvdG8SDGNoaXJwLmNvbW1vbiIHCgVFbXB0eSrI",
+            "ChJwcm90by9jb21tb24ucHJvdG8SDGNoaXJwLmNvbW1vbiIHCgVFbXB0eSrx",
             "AQoJRXJyb3JDb2RlEgYKAk9LEAASEgoOSU5URVJOQUxfRVJST1IQARIRCg1J",
             "TlZBTElEX1BBUkFNEAISDwoLQVVUSF9GQUlMRUQQAxITCg9TRVNTSU9OX0VY",
             "UElSRUQQBBISCg5VU0VSX05PVF9GT1VORBAFEhIKDlRBUkdFVF9PRkZMSU5F",
             "EAYSFgoSU0VSVkVSX1VOQVZBSUxBQkxFEAcSEAoMUkFURV9MSU1JVEVEEAgS",
-            "FAoQVkVSU0lPTl9NSVNNQVRDSBAJQiZaJGdpdGh1Yi5jb20vY3VpL2NoaXJw",
-            "L3Byb3RvL2dvL2NvbW1vbmIGcHJvdG8z"));
+            "FAoQVkVSU0lPTl9NSVNNQVRDSBAJEhEKDVdPUkRfRklMVEVSRUQQChIUChBD",
+            "T05URU5UX1RPT19MT05HEAtCJlokZ2l0aHViLmNvbS9jdWkvY2hpcnAvcHJv",
+            "dG8vZ28vY29tbW9uYgZwcm90bzM="));
       descriptor = pbr::FileDescriptor.FromGeneratedCode(descriptorData,
           new pbr::FileDescriptor[] { },
           new pbr::GeneratedClrTypeInfo(new[] {typeof(global::Chirp.Common.ErrorCode), }, null, new pbr::GeneratedClrTypeInfo[] {
@@ -64,6 +65,16 @@ namespace Chirp.Common {
     /// minimum (PEER_REGISTER_RESP carries min_version so the peer can upgrade).
     /// </summary>
     [pbr::OriginalName("VERSION_MISMATCH")] VersionMismatch = 9,
+    /// <summary>
+    /// Game-plane word filter (game_chat_features P1 专码): the message hit the
+    /// lexicon and the configured policy is `reject` (basic/enhanced both).
+    /// </summary>
+    [pbr::OriginalName("WORD_FILTERED")] WordFiltered = 10,
+    /// <summary>
+    /// Game-plane per-channel content-length cap (game_chat_features P1 专码):
+    /// the message exceeded MaxContentChars for its channel type.
+    /// </summary>
+    [pbr::OriginalName("CONTENT_TOO_LONG")] ContentTooLong = 11,
   }
 
   #endregion

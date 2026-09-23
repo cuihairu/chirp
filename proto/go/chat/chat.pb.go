@@ -573,19 +573,20 @@ func (DeliveryStatus_Status) EnumDescriptor() ([]byte, []int) {
 
 // 发送消息请求
 type SendMessageRequest struct {
-	state           protoimpl.MessageState `protogen:"open.v1"`
-	SenderId        string                 `protobuf:"bytes,1,opt,name=sender_id,json=senderId,proto3" json:"sender_id,omitempty"`
-	ReceiverId      string                 `protobuf:"bytes,2,opt,name=receiver_id,json=receiverId,proto3" json:"receiver_id,omitempty"` // 私聊时的接收者
-	ChannelType     ChannelType            `protobuf:"varint,3,opt,name=channel_type,json=channelType,proto3,enum=chirp.chat.ChannelType" json:"channel_type,omitempty"`
-	ChannelId       string                 `protobuf:"bytes,4,opt,name=channel_id,json=channelId,proto3" json:"channel_id,omitempty"` // 频道 ID (队伍 ID、公会 ID 等)
-	MsgType         MsgType                `protobuf:"varint,5,opt,name=msg_type,json=msgType,proto3,enum=chirp.chat.MsgType" json:"msg_type,omitempty"`
-	Content         []byte                 `protobuf:"bytes,6,opt,name=content,proto3" json:"content,omitempty"` // 消息内容 (根据 MsgType 解析)
-	ClientTimestamp int64                  `protobuf:"varint,7,opt,name=client_timestamp,json=clientTimestamp,proto3" json:"client_timestamp,omitempty"`
-	Priority        Priority               `protobuf:"varint,8,opt,name=priority,proto3,enum=chirp.chat.Priority" json:"priority,omitempty"` // 消息优先级
-	Metadata        []byte                 `protobuf:"bytes,9,opt,name=metadata,proto3" json:"metadata,omitempty"`                           // 扩展数据（物品/技能/成就的序列化）
-	TtlSeconds      int32                  `protobuf:"varint,10,opt,name=ttl_seconds,json=ttlSeconds,proto3" json:"ttl_seconds,omitempty"`   // 走马灯/公告的显示时长（秒）
-	unknownFields   protoimpl.UnknownFields
-	sizeCache       protoimpl.SizeCache
+	state            protoimpl.MessageState `protogen:"open.v1"`
+	SenderId         string                 `protobuf:"bytes,1,opt,name=sender_id,json=senderId,proto3" json:"sender_id,omitempty"`
+	ReceiverId       string                 `protobuf:"bytes,2,opt,name=receiver_id,json=receiverId,proto3" json:"receiver_id,omitempty"` // 私聊时的接收者
+	ChannelType      ChannelType            `protobuf:"varint,3,opt,name=channel_type,json=channelType,proto3,enum=chirp.chat.ChannelType" json:"channel_type,omitempty"`
+	ChannelId        string                 `protobuf:"bytes,4,opt,name=channel_id,json=channelId,proto3" json:"channel_id,omitempty"` // 频道 ID (队伍 ID、公会 ID 等)
+	MsgType          MsgType                `protobuf:"varint,5,opt,name=msg_type,json=msgType,proto3,enum=chirp.chat.MsgType" json:"msg_type,omitempty"`
+	Content          []byte                 `protobuf:"bytes,6,opt,name=content,proto3" json:"content,omitempty"` // 消息内容 (根据 MsgType 解析)
+	ClientTimestamp  int64                  `protobuf:"varint,7,opt,name=client_timestamp,json=clientTimestamp,proto3" json:"client_timestamp,omitempty"`
+	Priority         Priority               `protobuf:"varint,8,opt,name=priority,proto3,enum=chirp.chat.Priority" json:"priority,omitempty"`                    // 消息优先级
+	Metadata         []byte                 `protobuf:"bytes,9,opt,name=metadata,proto3" json:"metadata,omitempty"`                                              // 扩展数据（物品/技能/成就的序列化）
+	TtlSeconds       int32                  `protobuf:"varint,10,opt,name=ttl_seconds,json=ttlSeconds,proto3" json:"ttl_seconds,omitempty"`                      // 走马灯/公告的显示时长（秒）
+	ReplyToMessageId string                 `protobuf:"bytes,11,opt,name=reply_to_message_id,json=replyToMessageId,proto3" json:"reply_to_message_id,omitempty"` // 消息引用（P1）：被回复消息的 ID，空 = 非引用
+	unknownFields    protoimpl.UnknownFields
+	sizeCache        protoimpl.SizeCache
 }
 
 func (x *SendMessageRequest) Reset() {
@@ -688,6 +689,13 @@ func (x *SendMessageRequest) GetTtlSeconds() int32 {
 	return 0
 }
 
+func (x *SendMessageRequest) GetReplyToMessageId() string {
+	if x != nil {
+		return x.ReplyToMessageId
+	}
+	return ""
+}
+
 // 发送消息响应
 type SendMessageResponse struct {
 	state           protoimpl.MessageState `protogen:"open.v1"`
@@ -751,21 +759,22 @@ func (x *SendMessageResponse) GetServerTimestamp() int64 {
 
 // 聊天消息
 type ChatMessage struct {
-	state         protoimpl.MessageState `protogen:"open.v1"`
-	MessageId     string                 `protobuf:"bytes,1,opt,name=message_id,json=messageId,proto3" json:"message_id,omitempty"`
-	SenderId      string                 `protobuf:"bytes,2,opt,name=sender_id,json=senderId,proto3" json:"sender_id,omitempty"`
-	ReceiverId    string                 `protobuf:"bytes,3,opt,name=receiver_id,json=receiverId,proto3" json:"receiver_id,omitempty"` // 私聊时的接收者
-	ChannelType   ChannelType            `protobuf:"varint,4,opt,name=channel_type,json=channelType,proto3,enum=chirp.chat.ChannelType" json:"channel_type,omitempty"`
-	ChannelId     string                 `protobuf:"bytes,5,opt,name=channel_id,json=channelId,proto3" json:"channel_id,omitempty"`
-	MsgType       MsgType                `protobuf:"varint,6,opt,name=msg_type,json=msgType,proto3,enum=chirp.chat.MsgType" json:"msg_type,omitempty"`
-	Content       []byte                 `protobuf:"bytes,7,opt,name=content,proto3" json:"content,omitempty"`
-	Timestamp     int64                  `protobuf:"varint,8,opt,name=timestamp,proto3" json:"timestamp,omitempty"`
-	Priority      Priority               `protobuf:"varint,9,opt,name=priority,proto3,enum=chirp.chat.Priority" json:"priority,omitempty"`                          // 消息优先级
-	Metadata      []byte                 `protobuf:"bytes,10,opt,name=metadata,proto3" json:"metadata,omitempty"`                                                   // 扩展数据（物品/技能/成就的序列化）
-	TtlSeconds    int32                  `protobuf:"varint,11,opt,name=ttl_seconds,json=ttlSeconds,proto3" json:"ttl_seconds,omitempty"`                            // 走马灯/公告的显示时长
-	SenderKind    SenderKind             `protobuf:"varint,12,opt,name=sender_kind,json=senderKind,proto3,enum=chirp.chat.SenderKind" json:"sender_kind,omitempty"` // 发送者类型
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
+	state            protoimpl.MessageState `protogen:"open.v1"`
+	MessageId        string                 `protobuf:"bytes,1,opt,name=message_id,json=messageId,proto3" json:"message_id,omitempty"`
+	SenderId         string                 `protobuf:"bytes,2,opt,name=sender_id,json=senderId,proto3" json:"sender_id,omitempty"`
+	ReceiverId       string                 `protobuf:"bytes,3,opt,name=receiver_id,json=receiverId,proto3" json:"receiver_id,omitempty"` // 私聊时的接收者
+	ChannelType      ChannelType            `protobuf:"varint,4,opt,name=channel_type,json=channelType,proto3,enum=chirp.chat.ChannelType" json:"channel_type,omitempty"`
+	ChannelId        string                 `protobuf:"bytes,5,opt,name=channel_id,json=channelId,proto3" json:"channel_id,omitempty"`
+	MsgType          MsgType                `protobuf:"varint,6,opt,name=msg_type,json=msgType,proto3,enum=chirp.chat.MsgType" json:"msg_type,omitempty"`
+	Content          []byte                 `protobuf:"bytes,7,opt,name=content,proto3" json:"content,omitempty"`
+	Timestamp        int64                  `protobuf:"varint,8,opt,name=timestamp,proto3" json:"timestamp,omitempty"`
+	Priority         Priority               `protobuf:"varint,9,opt,name=priority,proto3,enum=chirp.chat.Priority" json:"priority,omitempty"`                          // 消息优先级
+	Metadata         []byte                 `protobuf:"bytes,10,opt,name=metadata,proto3" json:"metadata,omitempty"`                                                   // 扩展数据（物品/技能/成就的序列化）
+	TtlSeconds       int32                  `protobuf:"varint,11,opt,name=ttl_seconds,json=ttlSeconds,proto3" json:"ttl_seconds,omitempty"`                            // 走马灯/公告的显示时长
+	SenderKind       SenderKind             `protobuf:"varint,12,opt,name=sender_kind,json=senderKind,proto3,enum=chirp.chat.SenderKind" json:"sender_kind,omitempty"` // 发送者类型
+	ReplyToMessageId string                 `protobuf:"bytes,13,opt,name=reply_to_message_id,json=replyToMessageId,proto3" json:"reply_to_message_id,omitempty"`       // 消息引用（P1）：服务端校验通过后回填，随通知/历史下发
+	unknownFields    protoimpl.UnknownFields
+	sizeCache        protoimpl.SizeCache
 }
 
 func (x *ChatMessage) Reset() {
@@ -880,6 +889,13 @@ func (x *ChatMessage) GetSenderKind() SenderKind {
 		return x.SenderKind
 	}
 	return SenderKind_SENDER_USER
+}
+
+func (x *ChatMessage) GetReplyToMessageId() string {
+	if x != nil {
+		return x.ReplyToMessageId
+	}
+	return ""
 }
 
 // Player -> NPC utterance, published as an event payload to the NPC dialog
@@ -8399,7 +8415,7 @@ var File_proto_chat_proto protoreflect.FileDescriptor
 const file_proto_chat_proto_rawDesc = "" +
 	"\n" +
 	"\x10proto/chat.proto\x12\n" +
-	"chirp.chat\x1a\x12proto/common.proto\"\x91\x03\n" +
+	"chirp.chat\x1a\x12proto/common.proto\"\xc0\x03\n" +
 	"\x12SendMessageRequest\x12\x1b\n" +
 	"\tsender_id\x18\x01 \x01(\tR\bsenderId\x12\x1f\n" +
 	"\vreceiver_id\x18\x02 \x01(\tR\n" +
@@ -8414,12 +8430,13 @@ const file_proto_chat_proto_rawDesc = "" +
 	"\bmetadata\x18\t \x01(\fR\bmetadata\x12\x1f\n" +
 	"\vttl_seconds\x18\n" +
 	" \x01(\x05R\n" +
-	"ttlSeconds\"\x8c\x01\n" +
+	"ttlSeconds\x12-\n" +
+	"\x13reply_to_message_id\x18\v \x01(\tR\x10replyToMessageId\"\x8c\x01\n" +
 	"\x13SendMessageResponse\x12+\n" +
 	"\x04code\x18\x01 \x01(\x0e2\x17.chirp.common.ErrorCodeR\x04code\x12\x1d\n" +
 	"\n" +
 	"message_id\x18\x02 \x01(\tR\tmessageId\x12)\n" +
-	"\x10server_timestamp\x18\x03 \x01(\x03R\x0fserverTimestamp\"\xd5\x03\n" +
+	"\x10server_timestamp\x18\x03 \x01(\x03R\x0fserverTimestamp\"\x84\x04\n" +
 	"\vChatMessage\x12\x1d\n" +
 	"\n" +
 	"message_id\x18\x01 \x01(\tR\tmessageId\x12\x1b\n" +
@@ -8438,7 +8455,8 @@ const file_proto_chat_proto_rawDesc = "" +
 	"\vttl_seconds\x18\v \x01(\x05R\n" +
 	"ttlSeconds\x127\n" +
 	"\vsender_kind\x18\f \x01(\x0e2\x16.chirp.chat.SenderKindR\n" +
-	"senderKind\"\x9f\x01\n" +
+	"senderKind\x12-\n" +
+	"\x13reply_to_message_id\x18\r \x01(\tR\x10replyToMessageId\"\x9f\x01\n" +
 	"\x12NpcPlayerUtterance\x12\x1d\n" +
 	"\n" +
 	"message_id\x18\x01 \x01(\tR\tmessageId\x12\x1b\n" +

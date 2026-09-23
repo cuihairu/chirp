@@ -40,21 +40,29 @@ const (
 	// Trusted-peer plane: the peer's protocol_version is below the hub's
 	// minimum (PEER_REGISTER_RESP carries min_version so the peer can upgrade).
 	ErrorCode_VERSION_MISMATCH ErrorCode = 9
+	// Game-plane word filter (game_chat_features P1 专码): the message hit the
+	// lexicon and the configured policy is `reject` (basic/enhanced both).
+	ErrorCode_WORD_FILTERED ErrorCode = 10
+	// Game-plane per-channel content-length cap (game_chat_features P1 专码):
+	// the message exceeded MaxContentChars for its channel type.
+	ErrorCode_CONTENT_TOO_LONG ErrorCode = 11
 )
 
 // Enum value maps for ErrorCode.
 var (
 	ErrorCode_name = map[int32]string{
-		0: "OK",
-		1: "INTERNAL_ERROR",
-		2: "INVALID_PARAM",
-		3: "AUTH_FAILED",
-		4: "SESSION_EXPIRED",
-		5: "USER_NOT_FOUND",
-		6: "TARGET_OFFLINE",
-		7: "SERVER_UNAVAILABLE",
-		8: "RATE_LIMITED",
-		9: "VERSION_MISMATCH",
+		0:  "OK",
+		1:  "INTERNAL_ERROR",
+		2:  "INVALID_PARAM",
+		3:  "AUTH_FAILED",
+		4:  "SESSION_EXPIRED",
+		5:  "USER_NOT_FOUND",
+		6:  "TARGET_OFFLINE",
+		7:  "SERVER_UNAVAILABLE",
+		8:  "RATE_LIMITED",
+		9:  "VERSION_MISMATCH",
+		10: "WORD_FILTERED",
+		11: "CONTENT_TOO_LONG",
 	}
 	ErrorCode_value = map[string]int32{
 		"OK":                 0,
@@ -67,6 +75,8 @@ var (
 		"SERVER_UNAVAILABLE": 7,
 		"RATE_LIMITED":       8,
 		"VERSION_MISMATCH":   9,
+		"WORD_FILTERED":      10,
+		"CONTENT_TOO_LONG":   11,
 	}
 )
 
@@ -138,7 +148,7 @@ var File_proto_common_proto protoreflect.FileDescriptor
 const file_proto_common_proto_rawDesc = "" +
 	"\n" +
 	"\x12proto/common.proto\x12\fchirp.common\"\a\n" +
-	"\x05Empty*\xc8\x01\n" +
+	"\x05Empty*\xf1\x01\n" +
 	"\tErrorCode\x12\x06\n" +
 	"\x02OK\x10\x00\x12\x12\n" +
 	"\x0eINTERNAL_ERROR\x10\x01\x12\x11\n" +
@@ -149,7 +159,10 @@ const file_proto_common_proto_rawDesc = "" +
 	"\x0eTARGET_OFFLINE\x10\x06\x12\x16\n" +
 	"\x12SERVER_UNAVAILABLE\x10\a\x12\x10\n" +
 	"\fRATE_LIMITED\x10\b\x12\x14\n" +
-	"\x10VERSION_MISMATCH\x10\tB&Z$github.com/cui/chirp/proto/go/commonb\x06proto3"
+	"\x10VERSION_MISMATCH\x10\t\x12\x11\n" +
+	"\rWORD_FILTERED\x10\n" +
+	"\x12\x14\n" +
+	"\x10CONTENT_TOO_LONG\x10\vB&Z$github.com/cui/chirp/proto/go/commonb\x06proto3"
 
 var (
 	file_proto_common_proto_rawDescOnce sync.Once

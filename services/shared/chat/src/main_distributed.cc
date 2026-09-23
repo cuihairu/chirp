@@ -144,6 +144,22 @@ struct DistributedMessageStore {
     return redis->LRange(HistoryKey(channel_id), -limit, -1);
   }
 
+  // 消息引用（game_chat_features P1）：回复目标是否仍在该会话的历史列表里。
+  // 历史只存于 Redis（序列化 ChatMessage），全列表扫描即完整判据。
+  bool HasMessage(const std::string& channel_id, const std::string& message_id) const {
+    if (!redis || channel_id.empty() || message_id.empty()) {
+      return false;
+    }
+    for (const auto& raw : redis->LRange(HistoryKey(channel_id), 0, -1)) {
+      chirp::chat::ChatMessage msg;
+      if (msg.ParseFromArray(raw.data(), static_cast<int>(raw.size())) &&
+          msg.message_id() == message_id) {
+        return true;
+      }
+    }
+    return false;
+  }
+
   std::shared_ptr<chirp::network::RedisClient> redis;
   int offline_ttl_seconds{0};
 };
@@ -179,6 +195,19 @@ void HandleSendMessage(const chirp::chat::SendMessageRequest& req,
     channel_id = req.channel_id();
   }
   msg.set_channel_id(channel_id);
+
+  // 消息引用（game_chat_features P1）：回复目标必须存在于同一会话的历史里，
+  // 否则拒绝——悬空引用让客户端渲染不出被引用消息的摘要。
+  if (!req.reply_to_message_id().empty() &&
+      !store->HasMessage(channel_id, req.reply_to_message_id())) {
+    chirp::chat::SendMessageResponse resp;
+    resp.set_code(chirp::common::INVALID_PARAM);
+    resp.set_server_timestamp(chirp::chat::runtime::NowMs());
+    chirp::chat::runtime::SendPacket(sender_session, chirp::gateway::SEND_MESSAGE_RESP,
+                                     seq, resp.SerializeAsString());
+    return;
+  }
+  msg.set_reply_to_message_id(req.reply_to_message_id());
 
   store->AddToHistory(channel_id, msg.SerializeAsString());
 

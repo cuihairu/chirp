@@ -3635,6 +3635,7 @@ class SendMessageRequest final : public ::google::protobuf::Message
     kChannelIdFieldNumber = 4,
     kContentFieldNumber = 6,
     kMetadataFieldNumber = 9,
+    kReplyToMessageIdFieldNumber = 11,
     kChannelTypeFieldNumber = 3,
     kMsgTypeFieldNumber = 5,
     kClientTimestampFieldNumber = 7,
@@ -3716,6 +3717,21 @@ class SendMessageRequest final : public ::google::protobuf::Message
   ::std::string* PROTOBUF_NONNULL _internal_mutable_metadata();
 
   public:
+  // string reply_to_message_id = 11;
+  void clear_reply_to_message_id() ;
+  const ::std::string& reply_to_message_id() const;
+  template <typename Arg_ = const ::std::string&, typename... Args_>
+  void set_reply_to_message_id(Arg_&& arg, Args_... args);
+  ::std::string* PROTOBUF_NONNULL mutable_reply_to_message_id();
+  [[nodiscard]] ::std::string* PROTOBUF_NULLABLE release_reply_to_message_id();
+  void set_allocated_reply_to_message_id(::std::string* PROTOBUF_NULLABLE value);
+
+  private:
+  const ::std::string& _internal_reply_to_message_id() const;
+  PROTOBUF_ALWAYS_INLINE void _internal_set_reply_to_message_id(const ::std::string& value);
+  ::std::string* PROTOBUF_NONNULL _internal_mutable_reply_to_message_id();
+
+  public:
   // .chirp.chat.ChannelType channel_type = 3;
   void clear_channel_type() ;
   ::chirp::chat::ChannelType channel_type() const;
@@ -3770,8 +3786,8 @@ class SendMessageRequest final : public ::google::protobuf::Message
  private:
   class _Internal;
   friend class ::google::protobuf::internal::TcParser;
-  static const ::google::protobuf::internal::TcParseTable<4, 10,
-                                   0, 76,
+  static const ::google::protobuf::internal::TcParseTable<4, 11,
+                                   0, 95,
                                    2>
       _table_;
 
@@ -3797,6 +3813,7 @@ class SendMessageRequest final : public ::google::protobuf::Message
     ::google::protobuf::internal::ArenaStringPtr channel_id_;
     ::google::protobuf::internal::ArenaStringPtr content_;
     ::google::protobuf::internal::ArenaStringPtr metadata_;
+    ::google::protobuf::internal::ArenaStringPtr reply_to_message_id_;
     int channel_type_;
     int msg_type_;
     ::int64_t client_timestamp_;
@@ -17141,6 +17158,7 @@ class ChatMessage final : public ::google::protobuf::Message
     kChannelIdFieldNumber = 5,
     kContentFieldNumber = 7,
     kMetadataFieldNumber = 10,
+    kReplyToMessageIdFieldNumber = 13,
     kChannelTypeFieldNumber = 4,
     kMsgTypeFieldNumber = 6,
     kTimestampFieldNumber = 8,
@@ -17238,6 +17256,21 @@ class ChatMessage final : public ::google::protobuf::Message
   ::std::string* PROTOBUF_NONNULL _internal_mutable_metadata();
 
   public:
+  // string reply_to_message_id = 13;
+  void clear_reply_to_message_id() ;
+  const ::std::string& reply_to_message_id() const;
+  template <typename Arg_ = const ::std::string&, typename... Args_>
+  void set_reply_to_message_id(Arg_&& arg, Args_... args);
+  ::std::string* PROTOBUF_NONNULL mutable_reply_to_message_id();
+  [[nodiscard]] ::std::string* PROTOBUF_NULLABLE release_reply_to_message_id();
+  void set_allocated_reply_to_message_id(::std::string* PROTOBUF_NULLABLE value);
+
+  private:
+  const ::std::string& _internal_reply_to_message_id() const;
+  PROTOBUF_ALWAYS_INLINE void _internal_set_reply_to_message_id(const ::std::string& value);
+  ::std::string* PROTOBUF_NONNULL _internal_mutable_reply_to_message_id();
+
+  public:
   // .chirp.chat.ChannelType channel_type = 4;
   void clear_channel_type() ;
   ::chirp::chat::ChannelType channel_type() const;
@@ -17302,8 +17335,8 @@ class ChatMessage final : public ::google::protobuf::Message
  private:
   class _Internal;
   friend class ::google::protobuf::internal::TcParser;
-  static const ::google::protobuf::internal::TcParseTable<4, 12,
-                                   0, 79,
+  static const ::google::protobuf::internal::TcParseTable<4, 13,
+                                   0, 98,
                                    2>
       _table_;
 
@@ -17330,6 +17363,7 @@ class ChatMessage final : public ::google::protobuf::Message
     ::google::protobuf::internal::ArenaStringPtr channel_id_;
     ::google::protobuf::internal::ArenaStringPtr content_;
     ::google::protobuf::internal::ArenaStringPtr metadata_;
+    ::google::protobuf::internal::ArenaStringPtr reply_to_message_id_;
     int channel_type_;
     int msg_type_;
     ::int64_t timestamp_;
@@ -28553,7 +28587,7 @@ inline void SendMessageRequest::clear_channel_type() {
   ::google::protobuf::internal::TSanWrite(&_impl_);
   _impl_.channel_type_ = 0;
   ClearHasBit(_impl_._has_bits_[0],
-                  0x00000020U);
+                  0x00000040U);
 }
 inline ::chirp::chat::ChannelType SendMessageRequest::channel_type() const {
   // @@protoc_insertion_point(field_get:chirp.chat.SendMessageRequest.channel_type)
@@ -28561,7 +28595,7 @@ inline ::chirp::chat::ChannelType SendMessageRequest::channel_type() const {
 }
 inline void SendMessageRequest::set_channel_type(::chirp::chat::ChannelType value) {
   _internal_set_channel_type(value);
-  SetHasBit(_impl_._has_bits_[0], 0x00000020U);
+  SetHasBit(_impl_._has_bits_[0], 0x00000040U);
   // @@protoc_insertion_point(field_set:chirp.chat.SendMessageRequest.channel_type)
 }
 inline ::chirp::chat::ChannelType SendMessageRequest::_internal_channel_type() const {
@@ -28643,7 +28677,7 @@ inline void SendMessageRequest::clear_msg_type() {
   ::google::protobuf::internal::TSanWrite(&_impl_);
   _impl_.msg_type_ = 0;
   ClearHasBit(_impl_._has_bits_[0],
-                  0x00000040U);
+                  0x00000080U);
 }
 inline ::chirp::chat::MsgType SendMessageRequest::msg_type() const {
   // @@protoc_insertion_point(field_get:chirp.chat.SendMessageRequest.msg_type)
@@ -28651,7 +28685,7 @@ inline ::chirp::chat::MsgType SendMessageRequest::msg_type() const {
 }
 inline void SendMessageRequest::set_msg_type(::chirp::chat::MsgType value) {
   _internal_set_msg_type(value);
-  SetHasBit(_impl_._has_bits_[0], 0x00000040U);
+  SetHasBit(_impl_._has_bits_[0], 0x00000080U);
   // @@protoc_insertion_point(field_set:chirp.chat.SendMessageRequest.msg_type)
 }
 inline ::chirp::chat::MsgType SendMessageRequest::_internal_msg_type() const {
@@ -28733,7 +28767,7 @@ inline void SendMessageRequest::clear_client_timestamp() {
   ::google::protobuf::internal::TSanWrite(&_impl_);
   _impl_.client_timestamp_ = ::int64_t{0};
   ClearHasBit(_impl_._has_bits_[0],
-                  0x00000080U);
+                  0x00000100U);
 }
 inline ::int64_t SendMessageRequest::client_timestamp() const {
   // @@protoc_insertion_point(field_get:chirp.chat.SendMessageRequest.client_timestamp)
@@ -28741,7 +28775,7 @@ inline ::int64_t SendMessageRequest::client_timestamp() const {
 }
 inline void SendMessageRequest::set_client_timestamp(::int64_t value) {
   _internal_set_client_timestamp(value);
-  SetHasBit(_impl_._has_bits_[0], 0x00000080U);
+  SetHasBit(_impl_._has_bits_[0], 0x00000100U);
   // @@protoc_insertion_point(field_set:chirp.chat.SendMessageRequest.client_timestamp)
 }
 inline ::int64_t SendMessageRequest::_internal_client_timestamp() const {
@@ -28758,7 +28792,7 @@ inline void SendMessageRequest::clear_priority() {
   ::google::protobuf::internal::TSanWrite(&_impl_);
   _impl_.priority_ = 0;
   ClearHasBit(_impl_._has_bits_[0],
-                  0x00000100U);
+                  0x00000200U);
 }
 inline ::chirp::chat::Priority SendMessageRequest::priority() const {
   // @@protoc_insertion_point(field_get:chirp.chat.SendMessageRequest.priority)
@@ -28766,7 +28800,7 @@ inline ::chirp::chat::Priority SendMessageRequest::priority() const {
 }
 inline void SendMessageRequest::set_priority(::chirp::chat::Priority value) {
   _internal_set_priority(value);
-  SetHasBit(_impl_._has_bits_[0], 0x00000100U);
+  SetHasBit(_impl_._has_bits_[0], 0x00000200U);
   // @@protoc_insertion_point(field_set:chirp.chat.SendMessageRequest.priority)
 }
 inline ::chirp::chat::Priority SendMessageRequest::_internal_priority() const {
@@ -28848,7 +28882,7 @@ inline void SendMessageRequest::clear_ttl_seconds() {
   ::google::protobuf::internal::TSanWrite(&_impl_);
   _impl_.ttl_seconds_ = 0;
   ClearHasBit(_impl_._has_bits_[0],
-                  0x00000200U);
+                  0x00000400U);
 }
 inline ::int32_t SendMessageRequest::ttl_seconds() const {
   // @@protoc_insertion_point(field_get:chirp.chat.SendMessageRequest.ttl_seconds)
@@ -28856,7 +28890,7 @@ inline ::int32_t SendMessageRequest::ttl_seconds() const {
 }
 inline void SendMessageRequest::set_ttl_seconds(::int32_t value) {
   _internal_set_ttl_seconds(value);
-  SetHasBit(_impl_._has_bits_[0], 0x00000200U);
+  SetHasBit(_impl_._has_bits_[0], 0x00000400U);
   // @@protoc_insertion_point(field_set:chirp.chat.SendMessageRequest.ttl_seconds)
 }
 inline ::int32_t SendMessageRequest::_internal_ttl_seconds() const {
@@ -28866,6 +28900,71 @@ inline ::int32_t SendMessageRequest::_internal_ttl_seconds() const {
 inline void SendMessageRequest::_internal_set_ttl_seconds(::int32_t value) {
   ::google::protobuf::internal::TSanWrite(&_impl_);
   _impl_.ttl_seconds_ = value;
+}
+
+// string reply_to_message_id = 11;
+inline void SendMessageRequest::clear_reply_to_message_id() {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_.reply_to_message_id_.ClearToEmpty();
+  ClearHasBit(_impl_._has_bits_[0],
+                  0x00000020U);
+}
+inline const ::std::string& SendMessageRequest::reply_to_message_id() const
+    ABSL_ATTRIBUTE_LIFETIME_BOUND {
+  // @@protoc_insertion_point(field_get:chirp.chat.SendMessageRequest.reply_to_message_id)
+  return _internal_reply_to_message_id();
+}
+template <typename Arg_, typename... Args_>
+PROTOBUF_ALWAYS_INLINE void SendMessageRequest::set_reply_to_message_id(Arg_&& arg, Args_... args) {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  SetHasBit(_impl_._has_bits_[0], 0x00000020U);
+  _impl_.reply_to_message_id_.Set(static_cast<Arg_&&>(arg), args..., GetArena());
+  // @@protoc_insertion_point(field_set:chirp.chat.SendMessageRequest.reply_to_message_id)
+}
+inline ::std::string* PROTOBUF_NONNULL SendMessageRequest::mutable_reply_to_message_id()
+    ABSL_ATTRIBUTE_LIFETIME_BOUND {
+  SetHasBit(_impl_._has_bits_[0], 0x00000020U);
+  ::std::string* _s = _internal_mutable_reply_to_message_id();
+  // @@protoc_insertion_point(field_mutable:chirp.chat.SendMessageRequest.reply_to_message_id)
+  return _s;
+}
+inline const ::std::string& SendMessageRequest::_internal_reply_to_message_id() const {
+  ::google::protobuf::internal::TSanRead(&_impl_);
+  return _impl_.reply_to_message_id_.Get();
+}
+inline void SendMessageRequest::_internal_set_reply_to_message_id(const ::std::string& value) {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_.reply_to_message_id_.Set(value, GetArena());
+}
+inline ::std::string* PROTOBUF_NONNULL SendMessageRequest::_internal_mutable_reply_to_message_id() {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  return _impl_.reply_to_message_id_.Mutable( GetArena());
+}
+inline ::std::string* PROTOBUF_NULLABLE SendMessageRequest::release_reply_to_message_id() {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  // @@protoc_insertion_point(field_release:chirp.chat.SendMessageRequest.reply_to_message_id)
+  if (!CheckHasBit(_impl_._has_bits_[0], 0x00000020U)) {
+    return nullptr;
+  }
+  ClearHasBit(_impl_._has_bits_[0], 0x00000020U);
+  auto* released = _impl_.reply_to_message_id_.Release();
+  if (::google::protobuf::internal::DebugHardenForceCopyDefaultString()) {
+    _impl_.reply_to_message_id_.Set("", GetArena());
+  }
+  return released;
+}
+inline void SendMessageRequest::set_allocated_reply_to_message_id(::std::string* PROTOBUF_NULLABLE value) {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  if (value != nullptr) {
+    SetHasBit(_impl_._has_bits_[0], 0x00000020U);
+  } else {
+    ClearHasBit(_impl_._has_bits_[0], 0x00000020U);
+  }
+  _impl_.reply_to_message_id_.SetAllocated(value, GetArena());
+  if (::google::protobuf::internal::DebugHardenForceCopyDefaultString() && _impl_.reply_to_message_id_.IsDefault()) {
+    _impl_.reply_to_message_id_.Set("", GetArena());
+  }
+  // @@protoc_insertion_point(field_set_allocated:chirp.chat.SendMessageRequest.reply_to_message_id)
 }
 
 // -------------------------------------------------------------------
@@ -29191,7 +29290,7 @@ inline void ChatMessage::clear_channel_type() {
   ::google::protobuf::internal::TSanWrite(&_impl_);
   _impl_.channel_type_ = 0;
   ClearHasBit(_impl_._has_bits_[0],
-                  0x00000040U);
+                  0x00000080U);
 }
 inline ::chirp::chat::ChannelType ChatMessage::channel_type() const {
   // @@protoc_insertion_point(field_get:chirp.chat.ChatMessage.channel_type)
@@ -29199,7 +29298,7 @@ inline ::chirp::chat::ChannelType ChatMessage::channel_type() const {
 }
 inline void ChatMessage::set_channel_type(::chirp::chat::ChannelType value) {
   _internal_set_channel_type(value);
-  SetHasBit(_impl_._has_bits_[0], 0x00000040U);
+  SetHasBit(_impl_._has_bits_[0], 0x00000080U);
   // @@protoc_insertion_point(field_set:chirp.chat.ChatMessage.channel_type)
 }
 inline ::chirp::chat::ChannelType ChatMessage::_internal_channel_type() const {
@@ -29281,7 +29380,7 @@ inline void ChatMessage::clear_msg_type() {
   ::google::protobuf::internal::TSanWrite(&_impl_);
   _impl_.msg_type_ = 0;
   ClearHasBit(_impl_._has_bits_[0],
-                  0x00000080U);
+                  0x00000100U);
 }
 inline ::chirp::chat::MsgType ChatMessage::msg_type() const {
   // @@protoc_insertion_point(field_get:chirp.chat.ChatMessage.msg_type)
@@ -29289,7 +29388,7 @@ inline ::chirp::chat::MsgType ChatMessage::msg_type() const {
 }
 inline void ChatMessage::set_msg_type(::chirp::chat::MsgType value) {
   _internal_set_msg_type(value);
-  SetHasBit(_impl_._has_bits_[0], 0x00000080U);
+  SetHasBit(_impl_._has_bits_[0], 0x00000100U);
   // @@protoc_insertion_point(field_set:chirp.chat.ChatMessage.msg_type)
 }
 inline ::chirp::chat::MsgType ChatMessage::_internal_msg_type() const {
@@ -29371,7 +29470,7 @@ inline void ChatMessage::clear_timestamp() {
   ::google::protobuf::internal::TSanWrite(&_impl_);
   _impl_.timestamp_ = ::int64_t{0};
   ClearHasBit(_impl_._has_bits_[0],
-                  0x00000100U);
+                  0x00000200U);
 }
 inline ::int64_t ChatMessage::timestamp() const {
   // @@protoc_insertion_point(field_get:chirp.chat.ChatMessage.timestamp)
@@ -29379,7 +29478,7 @@ inline ::int64_t ChatMessage::timestamp() const {
 }
 inline void ChatMessage::set_timestamp(::int64_t value) {
   _internal_set_timestamp(value);
-  SetHasBit(_impl_._has_bits_[0], 0x00000100U);
+  SetHasBit(_impl_._has_bits_[0], 0x00000200U);
   // @@protoc_insertion_point(field_set:chirp.chat.ChatMessage.timestamp)
 }
 inline ::int64_t ChatMessage::_internal_timestamp() const {
@@ -29396,7 +29495,7 @@ inline void ChatMessage::clear_priority() {
   ::google::protobuf::internal::TSanWrite(&_impl_);
   _impl_.priority_ = 0;
   ClearHasBit(_impl_._has_bits_[0],
-                  0x00000200U);
+                  0x00000400U);
 }
 inline ::chirp::chat::Priority ChatMessage::priority() const {
   // @@protoc_insertion_point(field_get:chirp.chat.ChatMessage.priority)
@@ -29404,7 +29503,7 @@ inline ::chirp::chat::Priority ChatMessage::priority() const {
 }
 inline void ChatMessage::set_priority(::chirp::chat::Priority value) {
   _internal_set_priority(value);
-  SetHasBit(_impl_._has_bits_[0], 0x00000200U);
+  SetHasBit(_impl_._has_bits_[0], 0x00000400U);
   // @@protoc_insertion_point(field_set:chirp.chat.ChatMessage.priority)
 }
 inline ::chirp::chat::Priority ChatMessage::_internal_priority() const {
@@ -29486,7 +29585,7 @@ inline void ChatMessage::clear_ttl_seconds() {
   ::google::protobuf::internal::TSanWrite(&_impl_);
   _impl_.ttl_seconds_ = 0;
   ClearHasBit(_impl_._has_bits_[0],
-                  0x00000400U);
+                  0x00000800U);
 }
 inline ::int32_t ChatMessage::ttl_seconds() const {
   // @@protoc_insertion_point(field_get:chirp.chat.ChatMessage.ttl_seconds)
@@ -29494,7 +29593,7 @@ inline ::int32_t ChatMessage::ttl_seconds() const {
 }
 inline void ChatMessage::set_ttl_seconds(::int32_t value) {
   _internal_set_ttl_seconds(value);
-  SetHasBit(_impl_._has_bits_[0], 0x00000400U);
+  SetHasBit(_impl_._has_bits_[0], 0x00000800U);
   // @@protoc_insertion_point(field_set:chirp.chat.ChatMessage.ttl_seconds)
 }
 inline ::int32_t ChatMessage::_internal_ttl_seconds() const {
@@ -29511,7 +29610,7 @@ inline void ChatMessage::clear_sender_kind() {
   ::google::protobuf::internal::TSanWrite(&_impl_);
   _impl_.sender_kind_ = 0;
   ClearHasBit(_impl_._has_bits_[0],
-                  0x00000800U);
+                  0x00001000U);
 }
 inline ::chirp::chat::SenderKind ChatMessage::sender_kind() const {
   // @@protoc_insertion_point(field_get:chirp.chat.ChatMessage.sender_kind)
@@ -29519,7 +29618,7 @@ inline ::chirp::chat::SenderKind ChatMessage::sender_kind() const {
 }
 inline void ChatMessage::set_sender_kind(::chirp::chat::SenderKind value) {
   _internal_set_sender_kind(value);
-  SetHasBit(_impl_._has_bits_[0], 0x00000800U);
+  SetHasBit(_impl_._has_bits_[0], 0x00001000U);
   // @@protoc_insertion_point(field_set:chirp.chat.ChatMessage.sender_kind)
 }
 inline ::chirp::chat::SenderKind ChatMessage::_internal_sender_kind() const {
@@ -29529,6 +29628,71 @@ inline ::chirp::chat::SenderKind ChatMessage::_internal_sender_kind() const {
 inline void ChatMessage::_internal_set_sender_kind(::chirp::chat::SenderKind value) {
   ::google::protobuf::internal::TSanWrite(&_impl_);
   _impl_.sender_kind_ = value;
+}
+
+// string reply_to_message_id = 13;
+inline void ChatMessage::clear_reply_to_message_id() {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_.reply_to_message_id_.ClearToEmpty();
+  ClearHasBit(_impl_._has_bits_[0],
+                  0x00000040U);
+}
+inline const ::std::string& ChatMessage::reply_to_message_id() const
+    ABSL_ATTRIBUTE_LIFETIME_BOUND {
+  // @@protoc_insertion_point(field_get:chirp.chat.ChatMessage.reply_to_message_id)
+  return _internal_reply_to_message_id();
+}
+template <typename Arg_, typename... Args_>
+PROTOBUF_ALWAYS_INLINE void ChatMessage::set_reply_to_message_id(Arg_&& arg, Args_... args) {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  SetHasBit(_impl_._has_bits_[0], 0x00000040U);
+  _impl_.reply_to_message_id_.Set(static_cast<Arg_&&>(arg), args..., GetArena());
+  // @@protoc_insertion_point(field_set:chirp.chat.ChatMessage.reply_to_message_id)
+}
+inline ::std::string* PROTOBUF_NONNULL ChatMessage::mutable_reply_to_message_id()
+    ABSL_ATTRIBUTE_LIFETIME_BOUND {
+  SetHasBit(_impl_._has_bits_[0], 0x00000040U);
+  ::std::string* _s = _internal_mutable_reply_to_message_id();
+  // @@protoc_insertion_point(field_mutable:chirp.chat.ChatMessage.reply_to_message_id)
+  return _s;
+}
+inline const ::std::string& ChatMessage::_internal_reply_to_message_id() const {
+  ::google::protobuf::internal::TSanRead(&_impl_);
+  return _impl_.reply_to_message_id_.Get();
+}
+inline void ChatMessage::_internal_set_reply_to_message_id(const ::std::string& value) {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_.reply_to_message_id_.Set(value, GetArena());
+}
+inline ::std::string* PROTOBUF_NONNULL ChatMessage::_internal_mutable_reply_to_message_id() {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  return _impl_.reply_to_message_id_.Mutable( GetArena());
+}
+inline ::std::string* PROTOBUF_NULLABLE ChatMessage::release_reply_to_message_id() {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  // @@protoc_insertion_point(field_release:chirp.chat.ChatMessage.reply_to_message_id)
+  if (!CheckHasBit(_impl_._has_bits_[0], 0x00000040U)) {
+    return nullptr;
+  }
+  ClearHasBit(_impl_._has_bits_[0], 0x00000040U);
+  auto* released = _impl_.reply_to_message_id_.Release();
+  if (::google::protobuf::internal::DebugHardenForceCopyDefaultString()) {
+    _impl_.reply_to_message_id_.Set("", GetArena());
+  }
+  return released;
+}
+inline void ChatMessage::set_allocated_reply_to_message_id(::std::string* PROTOBUF_NULLABLE value) {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  if (value != nullptr) {
+    SetHasBit(_impl_._has_bits_[0], 0x00000040U);
+  } else {
+    ClearHasBit(_impl_._has_bits_[0], 0x00000040U);
+  }
+  _impl_.reply_to_message_id_.SetAllocated(value, GetArena());
+  if (::google::protobuf::internal::DebugHardenForceCopyDefaultString() && _impl_.reply_to_message_id_.IsDefault()) {
+    _impl_.reply_to_message_id_.Set("", GetArena());
+  }
+  // @@protoc_insertion_point(field_set_allocated:chirp.chat.ChatMessage.reply_to_message_id)
 }
 
 // -------------------------------------------------------------------

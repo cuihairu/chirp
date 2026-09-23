@@ -160,6 +160,7 @@ chirp::chat::MessageData ToMessageData(const chirp::chat::ChatMessage& msg) {
   data.msg_type = msg.msg_type();
   data.content = msg.content();
   data.timestamp = msg.timestamp();
+  data.reply_to_message_id = msg.reply_to_message_id();
   data.created_at = chirp::chat::runtime::NowMs();
   return data;
 }
@@ -202,6 +203,20 @@ void HandleSendMessage(const chirp::chat::SendMessageRequest& req,
     channel_id = req.channel_id();
   }
   msg.set_channel_id(channel_id);
+
+  // 消息引用（game_chat_features P1）：回复目标必须存在于同一会话——先查
+  // Redis 热层（同步写，刚发出的消息必可见），未命中再落 MySQL 冷层。悬空
+  // 引用拒绝，避免客户端渲染不出被引用消息的摘要。
+  if (!req.reply_to_message_id().empty() &&
+      !store->HasMessage(channel_id, req.reply_to_message_id())) {
+    chirp::chat::SendMessageResponse resp;
+    resp.set_code(chirp::common::INVALID_PARAM);
+    resp.set_server_timestamp(chirp::chat::runtime::NowMs());
+    chirp::chat::runtime::SendPacket(sender_session, chirp::gateway::SEND_MESSAGE_RESP,
+                                     seq, resp.SerializeAsString());
+    return;
+  }
+  msg.set_reply_to_message_id(req.reply_to_message_id());
 
   // Store in hybrid store (Redis + MySQL)
   chirp::chat::MessageData msg_data = ToMessageData(msg);
@@ -480,6 +495,7 @@ void HandleGetHistory(const chirp::chat::GetHistoryRequest& req,
     msg->set_msg_type(static_cast<chirp::chat::MsgType>(msg_data.msg_type));
     msg->set_content(msg_data.content);
     msg->set_timestamp(msg_data.timestamp);
+    msg->set_reply_to_message_id(msg_data.reply_to_message_id);
   }
 
   chirp::chat::runtime::SendPacket(session, chirp::gateway::GET_HISTORY_RESP, seq, resp.SerializeAsString());
@@ -962,10 +978,12 @@ int main(int argc, char** argv) {
                                  int64_t seq) {
     // Per-channel content cap (game_chat_features P0 长度限制) — checked
     // before the filter so over-long messages are refused without spending
-    // lexicon work. Same shared validation the basic form gets for free.
-    if (chirp::chat::ValidateContentLength(req) != chirp::common::OK) {
+    // lexicon work. Same shared validation the basic form gets for free;
+    // the shared validator reports the dedicated CONTENT_TOO_LONG code.
+    if (const chirp::common::ErrorCode length_code = chirp::chat::ValidateContentLength(req);
+        length_code != chirp::common::OK) {
       chirp::chat::SendMessageResponse resp;
-      resp.set_code(chirp::common::INVALID_PARAM);
+      resp.set_code(length_code);
       resp.set_server_timestamp(chirp::chat::runtime::NowMs());
       chirp::chat::runtime::SendPacket(session, chirp::gateway::SEND_MESSAGE_RESP, seq,
                                        resp.SerializeAsString());
@@ -1014,13 +1032,13 @@ int main(int argc, char** argv) {
     // Lexicon content filter before every delivery path — the cross-plane
     // intercept below included, so filtered content never reaches the game
     // plane either. kReplace filters the content in place; kReject refuses
-    // with INVALID_PARAM (no dedicated result code exists yet).
+    // with the dedicated WORD_FILTERED code.
     chirp::chat::SendMessageRequest working = req;
     if (word_filter.enabled()) {
       std::string filtered = working.content();
       if (!word_filter.Filter(working.sender_id(), &filtered)) {
         chirp::chat::SendMessageResponse resp;
-        resp.set_code(chirp::common::INVALID_PARAM);
+        resp.set_code(chirp::common::WORD_FILTERED);
         resp.set_server_timestamp(chirp::chat::runtime::NowMs());
         chirp::chat::runtime::SendPacket(session, chirp::gateway::SEND_MESSAGE_RESP, seq,
                                          resp.SerializeAsString());

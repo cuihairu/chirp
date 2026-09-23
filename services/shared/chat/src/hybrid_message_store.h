@@ -32,6 +32,7 @@ struct MessageData {
   std::string content;
   int64_t timestamp{0};
   int64_t created_at{0};
+  std::string reply_to_message_id;  // 消息引用（P1）：空 = 非引用
 
   std::string SerializeAsString() const;
   bool ParseFromArray(const void* data, int size);
@@ -94,6 +95,10 @@ public:
                                        const std::string& cursor,
                                        int32_t limit,
                                        std::string* next_cursor);
+
+  /// @brief 消息引用（P1）：回复目标是否存在——先扫 Redis 热层（同步写，
+  /// 刚发出的消息必可见），未命中再查 MySQL 冷层。仅按 channel_id 归属校验。
+  bool HasMessage(const std::string& channel_id, const std::string& message_id);
 
   /// @brief Enqueue an offline message for a user (serialized MessageData).
   /// Writes to Redis; when Redis is unavailable the message is kept in an

@@ -30,6 +30,7 @@ std::string MessageData::SerializeAsString() const {
   msg.set_msg_type(static_cast<MsgType>(msg_type));
   msg.set_content(content);
   msg.set_timestamp(timestamp);
+  msg.set_reply_to_message_id(reply_to_message_id);
   return msg.SerializeAsString();
 }
 
@@ -47,6 +48,7 @@ bool MessageData::ParseFromArray(const void* data, int size) {
   msg_type = static_cast<int>(msg.msg_type());
   content = msg.content();
   timestamp = msg.timestamp();
+  reply_to_message_id = msg.reply_to_message_id();
   created_at = msg.timestamp();
   return true;
 }
@@ -109,6 +111,7 @@ bool HybridMessageStore::StoreMessage(const MessageData& message) {
   mysql_msg.content = message.content;
   mysql_msg.timestamp = message.timestamp;
   mysql_msg.created_at = message.created_at;
+  mysql_msg.reply_to_message_id = message.reply_to_message_id;
 
   bool mysql_result = mysql_store_->StoreMessage(mysql_msg);
 
@@ -139,6 +142,7 @@ void HybridMessageStore::StoreMessageAsync(const MessageData& message,
     mysql_msg.content = message.content;
     mysql_msg.timestamp = message.timestamp;
     mysql_msg.created_at = message.created_at;
+    mysql_msg.reply_to_message_id = message.reply_to_message_id;
 
     bool result = mysql_store_->StoreMessage(mysql_msg);
 
@@ -196,6 +200,7 @@ std::vector<MessageData> HybridMessageStore::GetHistory(const std::string& chann
         converted.content = std::move(msg.content);
         converted.timestamp = msg.timestamp;
         converted.created_at = msg.created_at;
+        converted.reply_to_message_id = msg.reply_to_message_id;
         results.push_back(std::move(converted));
       }
     }
@@ -239,6 +244,28 @@ std::vector<MessageData> HybridMessageStore::GetHistoryV2(const std::string& cha
   }
 
   return messages;
+}
+
+bool HybridMessageStore::HasMessage(const std::string& channel_id,
+                                    const std::string& message_id) {
+  if (channel_id.empty() || message_id.empty()) {
+    return false;
+  }
+
+  // Hot tier first: StoreMessage/StoreMessageAsync push to Redis
+  // synchronously, so a just-sent message is always visible here even
+  // before its async MySQL write lands.
+  auto redis_messages = redis_->LRange(HistoryKey(channel_id), 0, -1);
+  for (const auto& raw : redis_messages) {
+    MessageData msg;
+    if (msg.ParseFromArray(raw.data(), static_cast<int>(raw.size())) &&
+        msg.message_id == message_id) {
+      return true;
+    }
+  }
+
+  // Cold tier: messages that already aged out of the Redis list.
+  return mysql_store_->MessageExists(channel_id, message_id);
 }
 
 bool HybridMessageStore::AddOfflineMessage(const std::string& user_id,

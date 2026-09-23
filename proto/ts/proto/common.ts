@@ -32,6 +32,16 @@ export enum ErrorCode {
    * minimum (PEER_REGISTER_RESP carries min_version so the peer can upgrade).
    */
   VERSION_MISMATCH = 9,
+  /**
+   * WORD_FILTERED - Game-plane word filter (game_chat_features P1 专码): the message hit the
+   * lexicon and the configured policy is `reject` (basic/enhanced both).
+   */
+  WORD_FILTERED = 10,
+  /**
+   * CONTENT_TOO_LONG - Game-plane per-channel content-length cap (game_chat_features P1 专码):
+   * the message exceeded MaxContentChars for its channel type.
+   */
+  CONTENT_TOO_LONG = 11,
   UNRECOGNIZED = -1,
 }
 
@@ -67,6 +77,12 @@ export function errorCodeFromJSON(object: any): ErrorCode {
     case 9:
     case "VERSION_MISMATCH":
       return ErrorCode.VERSION_MISMATCH;
+    case 10:
+    case "WORD_FILTERED":
+      return ErrorCode.WORD_FILTERED;
+    case 11:
+    case "CONTENT_TOO_LONG":
+      return ErrorCode.CONTENT_TOO_LONG;
     case -1:
     case "UNRECOGNIZED":
     default:
@@ -96,6 +112,10 @@ export function errorCodeToJSON(object: ErrorCode): string {
       return "RATE_LIMITED";
     case ErrorCode.VERSION_MISMATCH:
       return "VERSION_MISMATCH";
+    case ErrorCode.WORD_FILTERED:
+      return "WORD_FILTERED";
+    case ErrorCode.CONTENT_TOO_LONG:
+      return "CONTENT_TOO_LONG";
     case ErrorCode.UNRECOGNIZED:
     default:
       return "UNRECOGNIZED";

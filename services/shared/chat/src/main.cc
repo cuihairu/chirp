@@ -80,6 +80,23 @@ struct MessageStore {
     return b + "|" + a;
   }
 
+  // 消息引用（game_chat_features P1）：回复目标必须能在同一会话的历史里找到，
+  // 否则引用在客户端渲染不出摘要。历史里始终有本进程写入的全部消息（Redis
+  // 只是镜像），所以内存扫描即完整判据。
+  bool HasMessage(chirp::chat::ChannelType type, const std::string& channel_id,
+                  const std::string& message_id) {
+    const auto it = history.find(ChannelKey(type, channel_id));
+    if (it == history.end()) {
+      return false;
+    }
+    for (const auto& msg : it->second) {
+      if (msg.message_id() == message_id) {
+        return true;
+      }
+    }
+    return false;
+  }
+
   void AddMessage(const chirp::chat::ChatMessage& msg) {
     if (redis) {
       redis->RPush(HistoryKey(msg.channel_type(), msg.channel_id()), msg.SerializeAsString());
@@ -626,12 +643,12 @@ void HandlePacket(const std::shared_ptr<MessageStore>& store,
     // still consumed budget) and before every delivery path — the cross-plane
     // intercept below included, so filtered content never reaches the game
     // plane either. kReplace filters the content in place; kReject refuses
-    // with INVALID_PARAM (no dedicated result code exists yet).
+    // with the dedicated WORD_FILTERED code.
     if (features.word_filter != nullptr && features.word_filter->enabled()) {
       std::string filtered = req.content();
       if (!features.word_filter->Filter(authenticated_user_id, &filtered)) {
         chirp::chat::SendMessageResponse resp;
-        resp.set_code(chirp::common::INVALID_PARAM);
+        resp.set_code(chirp::common::WORD_FILTERED);
         resp.set_server_timestamp(chirp::chat::runtime::NowMs());
         chirp::chat::runtime::SendPacket(session, chirp::gateway::SEND_MESSAGE_RESP,
                                          pkt.sequence(), resp.SerializeAsString());
@@ -695,6 +712,20 @@ void HandlePacket(const std::shared_ptr<MessageStore>& store,
     } else {
       msg.set_channel_id(req.channel_id());
     }
+
+    // 消息引用（game_chat_features P1）：回复目标必须存在于同一会话的历史里，
+    // 否则拒绝——悬空引用让客户端渲染不出被引用消息的摘要。放在 msg 构造完
+    // 之后， PRIVATE 的会话键已归一化为 (sender, receiver) 有序对。
+    if (!req.reply_to_message_id().empty() &&
+        !store->HasMessage(msg.channel_type(), msg.channel_id(), req.reply_to_message_id())) {
+      chirp::chat::SendMessageResponse resp;
+      resp.set_code(chirp::common::INVALID_PARAM);
+      resp.set_server_timestamp(chirp::chat::runtime::NowMs());
+      chirp::chat::runtime::SendPacket(session, chirp::gateway::SEND_MESSAGE_RESP,
+                                       pkt.sequence(), resp.SerializeAsString());
+      return;
+    }
+    msg.set_reply_to_message_id(req.reply_to_message_id());
 
     // Enforce mention permissions (@everyone/@here cooldown) before the
     // message becomes visible to anyone.

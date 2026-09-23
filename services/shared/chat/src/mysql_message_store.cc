@@ -2,8 +2,14 @@
 
 #include <cstring>
 
+#include "logger.h"
+
 namespace chirp {
 namespace chat {
+
+namespace {
+using Logger = chirp::common::Logger;
+} // namespace
 
 // MySQLConnection implementation
 MySQLConnection::MySQLConnection(const std::string& host, uint16_t port,
@@ -178,6 +184,7 @@ bool MySQLMessageStore::Initialize() {
       content TEXT,
       timestamp BIGINT NOT NULL,
       created_at BIGINT NOT NULL,
+      reply_to VARCHAR(255),
       INDEX idx_channel (channel_id, channel_type, timestamp),
       INDEX idx_receiver (receiver_id, timestamp),
       INDEX idx_timestamp (timestamp)
@@ -187,6 +194,12 @@ bool MySQLMessageStore::Initialize() {
   if (!conn->Execute(create_messages_table)) {
     pool_->ReturnConnection(std::move(conn));
     return false;
+  }
+
+  // 存量表升级：CREATE TABLE IF NOT EXISTS 不会给既有表补列。新装库上一句
+  // 已带 reply_to；老库走这条 ALTER，重复加列的报错（code 1060）按幂等放行。
+  if (!conn->Execute("ALTER TABLE messages ADD COLUMN reply_to VARCHAR(255)")) {
+    Logger::Instance().Info("messages.reply_to column already present (or ALTER unsupported); keeping schema as-is");
   }
 
   // Create read_receipts table
@@ -234,7 +247,7 @@ bool MySQLMessageStore::StoreMessage(const StoredMessage& message) {
   }
 
   std::string query = "INSERT INTO messages (message_id, sender_id, receiver_id, channel_id, "
-                     "channel_type, msg_type, content, timestamp, created_at) VALUES ('" +
+                     "channel_type, msg_type, content, timestamp, created_at, reply_to) VALUES ('" +
                      conn->Escape(message.message_id) + "', '" +
                      conn->Escape(message.sender_id) + "', '" +
                      conn->Escape(message.receiver_id) + "', '" +
@@ -243,7 +256,8 @@ bool MySQLMessageStore::StoreMessage(const StoredMessage& message) {
                      std::to_string(message.msg_type) + ", '" +
                      conn->Escape(message.content) + "', " +
                      std::to_string(message.timestamp) + ", " +
-                     std::to_string(message.created_at) + ")";
+                     std::to_string(message.created_at) + ", '" +
+                     conn->Escape(message.reply_to_message_id) + "')";
 
   bool result = conn->Execute(query);
   pool_->ReturnConnection(std::move(conn));
@@ -260,7 +274,7 @@ std::vector<StoredMessage> MySQLMessageStore::GetHistory(const std::string& chan
   }
 
   std::string query = "SELECT message_id, sender_id, receiver_id, channel_id, "
-                     "channel_type, msg_type, content, timestamp FROM messages WHERE "
+                     "channel_type, msg_type, content, timestamp, reply_to FROM messages WHERE "
                      "channel_id = '" + conn->Escape(channel_id) + "' AND "
                      "channel_type = " + std::to_string(channel_type);
 
@@ -289,12 +303,36 @@ std::vector<StoredMessage> MySQLMessageStore::GetHistory(const std::string& chan
     msg.msg_type = std::stoi(row[5]);
     msg.content = row[6];
     msg.timestamp = std::stoll(row[7]);
+    if (row.size() > 8) {
+      msg.reply_to_message_id = row[8];
+    }
     messages.push_back(std::move(msg));
   }
 
   // Reverse to get chronological order
   std::reverse(messages.begin(), messages.end());
   return messages;
+}
+
+bool MySQLMessageStore::MessageExists(const std::string& channel_id,
+                                      const std::string& message_id) {
+  auto conn = pool_->GetConnection();
+  if (!conn) {
+    return false;
+  }
+
+  std::string query = "SELECT 1 FROM messages WHERE channel_id = '" +
+                      conn->Escape(channel_id) + "' AND message_id = '" +
+                      conn->Escape(message_id) + "' LIMIT 1";
+
+  if (!conn->Query(query)) {
+    pool_->ReturnConnection(std::move(conn));
+    return false;
+  }
+
+  auto rows = conn->FetchResults();
+  pool_->ReturnConnection(std::move(conn));
+  return !rows.empty();
 }
 
 std::vector<StoredMessage> MySQLMessageStore::GetOfflineMessages(const std::string& user_id) {

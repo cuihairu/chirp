@@ -1655,6 +1655,76 @@ TEST_F(DistributedInternalsTest, HandleSendMessageDeliversToOnlineReceiver) {
   EXPECT_EQ(msg.channel_id(), "alice|bob");
 }
 
+TEST_F(DistributedInternalsTest, HandleSendMessageReplyToUnknownTargetRejected) {
+  asio::io_context io;
+  auto router = std::make_shared<chirp::network::MessageRouter>(io, "127.0.0.1", 1);
+  auto sender = std::make_shared<MockSession>();
+  auto receiver = std::make_shared<MockSession>();
+  state_->AddSession("bob", receiver);
+
+  chirp::chat::SendMessageRequest req;
+  req.set_sender_id("alice");
+  req.set_receiver_id("bob");
+  req.set_channel_type(chirp::chat::PRIVATE);
+  req.set_content("a dangling reply");
+  // store_ 未接 Redis（redis 为空）→ HasMessage 恒 false → 引用悬空。
+  req.set_reply_to_message_id("m-missing");
+
+  HandleSendMessage(req, sender, state_, store_, router, push_, nullptr, /*seq=*/5);
+
+  ASSERT_EQ(sender->sent.size(), 1u);
+  Packet pkt;
+  ASSERT_TRUE(DecodeFramed(sender->sent[0], &pkt));
+  chirp::chat::SendMessageResponse resp;
+  ASSERT_TRUE(resp.ParseFromString(pkt.body()));
+  EXPECT_EQ(resp.code(), chirp::common::INVALID_PARAM);
+  // 拒绝发生在投递之前：接收方一条消息都不该收到。
+  EXPECT_TRUE(receiver->sent.empty());
+}
+
+TEST_F(DistributedInternalsTest, HandleSendMessageReplyToKnownTargetKeepsReference) {
+  asio::io_context io;
+  auto router = std::make_shared<chirp::network::MessageRouter>(io, "127.0.0.1", 1);
+  auto sender = std::make_shared<MockSession>();
+  auto receiver = std::make_shared<MockSession>();
+  state_->AddSession("bob", receiver);
+
+  chirp::chat::ChatMessage target;
+  target.set_message_id("m1");
+  target.set_sender_id("bob");
+  target.set_content("original");
+  chirp_test::FakeRedisServer fake([&](const std::vector<std::string>& args) {
+    if (!args.empty() && args[0] == "LRANGE") {
+      return chirp_test::Array({target.SerializeAsString()});
+    }
+    return chirp_test::Simple("OK");
+  });
+  store_->redis = std::make_shared<chirp::network::RedisClient>("127.0.0.1", fake.port());
+
+  chirp::chat::SendMessageRequest req;
+  req.set_sender_id("alice");
+  req.set_receiver_id("bob");
+  req.set_channel_type(chirp::chat::PRIVATE);
+  req.set_content("a reply");
+  req.set_reply_to_message_id("m1");
+
+  HandleSendMessage(req, sender, state_, store_, router, push_, nullptr, /*seq=*/6);
+
+  Packet pkt;
+  ASSERT_TRUE(DecodeFramed(sender->sent[0], &pkt));
+  chirp::chat::SendMessageResponse resp;
+  ASSERT_TRUE(resp.ParseFromString(pkt.body()));
+  EXPECT_EQ(resp.code(), chirp::common::OK);
+
+  // 接收方通知里的消息带回引用 ID，客户端才能渲染被引用消息的摘要。
+  Packet notify;
+  ASSERT_TRUE(DecodeFramed(receiver->sent[0], &notify));
+  EXPECT_EQ(notify.msg_id(), chirp::gateway::CHAT_MESSAGE_NOTIFY);
+  chirp::chat::ChatMessage delivered;
+  ASSERT_TRUE(delivered.ParseFromString(notify.body()));
+  EXPECT_EQ(delivered.reply_to_message_id(), "m1");
+}
+
 TEST_F(DistributedInternalsTest, HandleSendMessageGroupUsesChannelAndBroadcast) {
   asio::io_context io;
   auto router = std::make_shared<chirp::network::MessageRouter>(io, "127.0.0.1", 1);

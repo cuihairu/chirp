@@ -15,7 +15,7 @@ bool PrivateChannelContainsUser(std::string_view channel_id, std::string_view us
 // "characters"), not UTF-8 bytes: CJK text is 3 bytes per char. 0 = uncapped.
 size_t MaxContentChars(ChannelType type);
 
-// Rejects over-long content with INVALID_PARAM. Called inside
+// Rejects over-long content with CONTENT_TOO_LONG. Called inside
 // ValidateSendMessageRequest, so both binary forms enforce it.
 chirp::common::ErrorCode ValidateContentLength(const SendMessageRequest& req);
 

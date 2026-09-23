@@ -106,6 +106,10 @@ public:
                                         int64_t before_timestamp,
                                         int32_t limit) override;
 
+  // 消息引用（P1）：按 channel_id + message_id 判定消息是否仍在库
+  bool MessageExists(const std::string& channel_id,
+                     const std::string& message_id) override;
+
   // Get offline messages for a user
   std::vector<StoredMessage> GetOfflineMessages(const std::string& user_id) override;
 

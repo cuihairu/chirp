@@ -21,6 +21,7 @@ struct StoredMessage {
   std::string content;
   int64_t timestamp{0};
   int64_t created_at{0};
+  std::string reply_to_message_id;  // 消息引用（P1）：空 = 非引用
 };
 
 // Read receipt data
@@ -47,6 +48,11 @@ public:
                                                 int channel_type,
                                                 int64_t before_timestamp,
                                                 int32_t limit) = 0;
+
+  // 消息引用（P1）：消息是否存在于该会话（按 message_id + channel_id 判定，
+  // 不区分 channel_type——私聊键已含双方身份，天然隔离）
+  virtual bool MessageExists(const std::string& channel_id,
+                             const std::string& message_id) = 0;
 
   // Get offline messages for a user
   virtual std::vector<StoredMessage> GetOfflineMessages(const std::string& user_id) = 0;

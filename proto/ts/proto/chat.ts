@@ -527,6 +527,8 @@ export interface SendMessageRequest {
   metadata: Uint8Array;
   /** 走马灯/公告的显示时长（秒） */
   ttlSeconds: number;
+  /** 消息引用（P1）：被回复消息的 ID，空 = 非引用 */
+  replyToMessageId: string;
 }
 
 /** 发送消息响应 */
@@ -556,6 +558,8 @@ export interface ChatMessage {
   ttlSeconds: number;
   /** 发送者类型 */
   senderKind: SenderKind;
+  /** 消息引用（P1）：服务端校验通过后回填，随通知/历史下发 */
+  replyToMessageId: string;
 }
 
 /**
@@ -1573,6 +1577,7 @@ function createBaseSendMessageRequest(): SendMessageRequest {
     priority: 0,
     metadata: new Uint8Array(0),
     ttlSeconds: 0,
+    replyToMessageId: "",
   };
 }
 
@@ -1607,6 +1612,9 @@ export const SendMessageRequest = {
     }
     if (message.ttlSeconds !== 0) {
       writer.uint32(80).int32(message.ttlSeconds);
+    }
+    if (message.replyToMessageId !== "") {
+      writer.uint32(90).string(message.replyToMessageId);
     }
     return writer;
   },
@@ -1688,6 +1696,13 @@ export const SendMessageRequest = {
 
           message.ttlSeconds = reader.int32();
           continue;
+        case 11:
+          if (tag !== 90) {
+            break;
+          }
+
+          message.replyToMessageId = reader.string();
+          continue;
       }
       if ((tag & 7) === 4 || tag === 0) {
         break;
@@ -1709,6 +1724,7 @@ export const SendMessageRequest = {
       priority: isSet(object.priority) ? priorityFromJSON(object.priority) : 0,
       metadata: isSet(object.metadata) ? bytesFromBase64(object.metadata) : new Uint8Array(0),
       ttlSeconds: isSet(object.ttlSeconds) ? globalThis.Number(object.ttlSeconds) : 0,
+      replyToMessageId: isSet(object.replyToMessageId) ? globalThis.String(object.replyToMessageId) : "",
     };
   },
 
@@ -1744,6 +1760,9 @@ export const SendMessageRequest = {
     if (message.ttlSeconds !== 0) {
       obj.ttlSeconds = Math.round(message.ttlSeconds);
     }
+    if (message.replyToMessageId !== "") {
+      obj.replyToMessageId = message.replyToMessageId;
+    }
     return obj;
   },
 
@@ -1762,6 +1781,7 @@ export const SendMessageRequest = {
     message.priority = object.priority ?? 0;
     message.metadata = object.metadata ?? new Uint8Array(0);
     message.ttlSeconds = object.ttlSeconds ?? 0;
+    message.replyToMessageId = object.replyToMessageId ?? "";
     return message;
   },
 };
@@ -1869,6 +1889,7 @@ function createBaseChatMessage(): ChatMessage {
     metadata: new Uint8Array(0),
     ttlSeconds: 0,
     senderKind: 0,
+    replyToMessageId: "",
   };
 }
 
@@ -1909,6 +1930,9 @@ export const ChatMessage = {
     }
     if (message.senderKind !== 0) {
       writer.uint32(96).int32(message.senderKind);
+    }
+    if (message.replyToMessageId !== "") {
+      writer.uint32(106).string(message.replyToMessageId);
     }
     return writer;
   },
@@ -2004,6 +2028,13 @@ export const ChatMessage = {
 
           message.senderKind = reader.int32() as any;
           continue;
+        case 13:
+          if (tag !== 106) {
+            break;
+          }
+
+          message.replyToMessageId = reader.string();
+          continue;
       }
       if ((tag & 7) === 4 || tag === 0) {
         break;
@@ -2027,6 +2058,7 @@ export const ChatMessage = {
       metadata: isSet(object.metadata) ? bytesFromBase64(object.metadata) : new Uint8Array(0),
       ttlSeconds: isSet(object.ttlSeconds) ? globalThis.Number(object.ttlSeconds) : 0,
       senderKind: isSet(object.senderKind) ? senderKindFromJSON(object.senderKind) : 0,
+      replyToMessageId: isSet(object.replyToMessageId) ? globalThis.String(object.replyToMessageId) : "",
     };
   },
 
@@ -2068,6 +2100,9 @@ export const ChatMessage = {
     if (message.senderKind !== 0) {
       obj.senderKind = senderKindToJSON(message.senderKind);
     }
+    if (message.replyToMessageId !== "") {
+      obj.replyToMessageId = message.replyToMessageId;
+    }
     return obj;
   },
 
@@ -2088,6 +2123,7 @@ export const ChatMessage = {
     message.metadata = object.metadata ?? new Uint8Array(0);
     message.ttlSeconds = object.ttlSeconds ?? 0;
     message.senderKind = object.senderKind ?? 0;
+    message.replyToMessageId = object.replyToMessageId ?? "";
     return message;
   },
 };

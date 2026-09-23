@@ -21,6 +21,12 @@ enum ErrorCode {
   // Trusted-peer plane: the peer's protocol_version is below the hub's
   // minimum (PEER_REGISTER_RESP carries min_version so the peer can upgrade).
   VERSION_MISMATCH = 9;
+  // Game-plane word filter (game_chat_features P1 专码): the message hit the
+  // lexicon and the configured policy is `reject` (basic/enhanced both).
+  WORD_FILTERED = 10;
+  // Game-plane per-channel content-length cap (game_chat_features P1 专码):
+  // the message exceeded MaxContentChars for its channel type.
+  CONTENT_TOO_LONG = 11;
 }
 
 message Empty {}

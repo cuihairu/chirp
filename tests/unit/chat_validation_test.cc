@@ -278,10 +278,10 @@ TEST(ChatValidationTest, PrivateContentOverTheLimitIsRejected) {
   SendMessageRequest req;
   req.set_channel_type(PRIVATE);
   req.set_content(std::string(201, 'a'));
-  EXPECT_EQ(ValidateContentLength(req), chirp::common::INVALID_PARAM);
+  EXPECT_EQ(ValidateContentLength(req), chirp::common::CONTENT_TOO_LONG);
 
   req.set_content(CjkChars(201));
-  EXPECT_EQ(ValidateContentLength(req), chirp::common::INVALID_PARAM);
+  EXPECT_EQ(ValidateContentLength(req), chirp::common::CONTENT_TOO_LONG);
 }
 
 TEST(ChatValidationTest, MixedScriptIsCountedInCodePoints) {
@@ -300,7 +300,7 @@ TEST(ChatValidationTest, WorldContentLimitIsEnforced) {
   EXPECT_EQ(ValidateContentLength(req), chirp::common::OK);
 
   req.set_content(std::string(101, 'a'));
-  EXPECT_EQ(ValidateContentLength(req), chirp::common::INVALID_PARAM);
+  EXPECT_EQ(ValidateContentLength(req), chirp::common::CONTENT_TOO_LONG);
 }
 
 TEST(ChatValidationTest, SystemChannelContentLimitIsEnforced) {
@@ -310,7 +310,18 @@ TEST(ChatValidationTest, SystemChannelContentLimitIsEnforced) {
   EXPECT_EQ(ValidateContentLength(req), chirp::common::OK);
 
   req.set_content(std::string(501, 'a'));
-  EXPECT_EQ(ValidateContentLength(req), chirp::common::INVALID_PARAM);
+  EXPECT_EQ(ValidateContentLength(req), chirp::common::CONTENT_TOO_LONG);
+}
+
+TEST(ChatValidationTest, ValidateSendMessageRequestPropagatesContentTooLong) {
+  // P1 专码批次：合并校验器把长度超限的专码原样上抛（此前折叠为
+  // INVALID_PARAM），发送入口直接回给客户端。
+  SendMessageRequest req;
+  req.set_sender_id("alice");
+  req.set_channel_type(PRIVATE);
+  req.set_receiver_id("bob");
+  req.set_content(std::string(201, 'a'));
+  EXPECT_EQ(ValidateSendMessageRequest(req, "alice"), chirp::common::CONTENT_TOO_LONG);
 }
 
 TEST(ChatValidationTest, TeamGuildAndMarqueeAreUnlimited) {
@@ -333,8 +344,9 @@ TEST(ChatValidationTest, SendValidationAppliesTheWorldLengthLimit) {
   req.set_content(std::string(100, 'a'));
   EXPECT_EQ(ValidateSendMessageRequest(req, "alice"), chirp::common::OK);
 
+  // P1 专码批次后超长在合并校验器里就是 CONTENT_TOO_LONG（不再折叠）。
   req.set_content(std::string(101, 'a'));
-  EXPECT_EQ(ValidateSendMessageRequest(req, "alice"), chirp::common::INVALID_PARAM);
+  EXPECT_EQ(ValidateSendMessageRequest(req, "alice"), chirp::common::CONTENT_TOO_LONG);
 }
 
 TEST(SessionCloseBehaviorTest, LogoutSuccessWouldCloseSessionAfterResponse) {

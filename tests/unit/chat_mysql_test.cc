@@ -267,6 +267,80 @@ TEST_F(MySqlStoreTest, HistoryQueriesAndParsing) {
   EXPECT_TRUE(store.GetOfflineMessages("r").empty());
 }
 
+TEST_F(MySqlStoreTest, StoreMessageWritesReplyColumn) {
+  auto pool = std::make_shared<MySQLConnectionPool>(1, "h", 3306, "db", "u", "p");
+  MySQLMessageStore store(pool);
+
+  StoredMessage msg;
+  msg.message_id = "m1";
+  msg.sender_id = "s";
+  msg.channel_id = "ch";
+  msg.msg_type = 0;
+  msg.channel_type = 0;
+  msg.timestamp = 1000;
+  msg.created_at = 1000;
+  msg.reply_to_message_id = "m0";  // 消息引用（P1）
+  EXPECT_TRUE(store.StoreMessage(msg));
+
+  auto queries = fake_mysql::TakeQueries();
+  ASSERT_FALSE(queries.empty());
+  EXPECT_NE(queries.back().find("INSERT INTO messages"), std::string::npos);
+  EXPECT_NE(queries.back().find("reply_to"), std::string::npos);
+  EXPECT_NE(queries.back().find("'m0'"), std::string::npos);
+}
+
+TEST_F(MySqlStoreTest, HistoryParsesReplyColumnAndToleratesLegacyRows) {
+  auto pool = std::make_shared<MySQLConnectionPool>(1, "h", 3306, "db", "u", "p");
+  MySQLMessageStore store(pool);
+
+  // 新 schema：第 9 列 reply_to。
+  fake_mysql::PushRows({{"m1", "s", "r", "ch", "0", "1", "c1", "1000", "m0"}});
+  auto history = store.GetHistory("ch", 0, 0, 10);
+  ASSERT_EQ(history.size(), 1u);
+  EXPECT_EQ(history[0].reply_to_message_id, "m0");
+
+  // 旧 schema 行（未回填 reply_to 列）按空引用处理。
+  fake_mysql::PushRows({{"m2", "s", "r", "ch", "0", "1", "c2", "2000"}});
+  auto legacy = store.GetHistory("ch", 0, 0, 10);
+  ASSERT_EQ(legacy.size(), 1u);
+  EXPECT_EQ(legacy[0].reply_to_message_id, "");
+}
+
+TEST_F(MySqlStoreTest, InitializeToleratesAlterFailure) {
+  auto pool = std::make_shared<MySQLConnectionPool>(1, "h", 3306, "db", "u", "p");
+  MySQLMessageStore store(pool);
+  // 老库幂等补列：ALTER 失败（列已存在是最常见原因）只记日志，不判
+  // 初始化失败——三张 CREATE TABLE 仍全部成功。
+  fake_mysql::FailQueriesMatching("ALTER TABLE messages");
+  EXPECT_TRUE(store.Initialize());
+}
+
+TEST_F(MySqlStoreTest, MessageExistsChecksChannelAndMessage) {
+  auto pool = std::make_shared<MySQLConnectionPool>(1, "h", 3306, "db", "u", "p");
+  MySQLMessageStore store(pool);
+
+  fake_mysql::PushRows({{"1"}});
+  EXPECT_TRUE(store.MessageExists("ch1", "m1"));
+  auto queries = fake_mysql::TakeQueries();
+  ASSERT_FALSE(queries.empty());
+  EXPECT_NE(queries.back().find("SELECT 1 FROM messages"), std::string::npos);
+  EXPECT_NE(queries.back().find("channel_id = 'ch1'"), std::string::npos);
+  EXPECT_NE(queries.back().find("message_id = 'm1'"), std::string::npos);
+
+  fake_mysql::PushRows({});
+  EXPECT_FALSE(store.MessageExists("ch1", "m1"));
+
+  fake_mysql::PushQueryError("select failed");
+  EXPECT_FALSE(store.MessageExists("ch1", "m1"));
+
+  // 池中留有现成连接时 GetConnection 直接复用、不走 Connect，所以
+  // SetConnectShouldFail 对旧池形同虚设；换全新池让池构造与现场补连
+  // 都失败，GetConnection 返回 null，MessageExists 按不可用回 false。
+  fake_mysql::SetConnectShouldFail(true);
+  MySQLMessageStore dead_store(std::make_shared<MySQLConnectionPool>(1, "h", 3306, "db", "u", "p"));
+  EXPECT_FALSE(dead_store.MessageExists("ch1", "m1"));
+}
+
 TEST_F(MySqlStoreTest, ReceiptsUnreadAndMutations) {
   auto pool = std::make_shared<MySQLConnectionPool>(1, "h", 3306, "db", "u", "p");
   MySQLMessageStore store(pool);
@@ -351,12 +425,15 @@ class HybridStoreTest : public ::testing::Test {
 
 TEST_F(HybridStoreTest, MessageDataSerializationRoundTrip) {
   MessageData msg = MakeMessage("m1");
+  msg.reply_to_message_id = "m0";
   const std::string blob = msg.SerializeAsString();
   MessageData parsed;
   ASSERT_TRUE(parsed.ParseFromArray(blob.data(), static_cast<int>(blob.size())));
   EXPECT_EQ(parsed.message_id, "m1");
   EXPECT_EQ(parsed.channel_id, "ch1");
   EXPECT_EQ(parsed.content, "hello m1");
+  // 消息引用（P1）：引用 ID 随序列化往返，不因存储落盘而丢失。
+  EXPECT_EQ(parsed.reply_to_message_id, "m0");
 
   EXPECT_FALSE(parsed.ParseFromArray("garbage", 7));
 }
@@ -455,6 +532,48 @@ TEST_F(HybridStoreTest, GetHistoryV2CursorPagination) {
   std::string none;
   store_->GetHistoryV2("ch", 0, "", 100, &none);
   EXPECT_TRUE(none.empty());
+}
+
+TEST_F(HybridStoreTest, HasMessageResolvesHotTierThenMysqlColdTier) {
+  ASSERT_TRUE(store_->Initialize());
+
+  // 热层命中：StoreMessage 同步写 Redis，刚发出的消息立即可作引用目标。
+  MessageData hot = MakeMessage("m1", "ch1", 1000);
+  hot.reply_to_message_id = "m0";
+  ASSERT_TRUE(store_->StoreMessage(hot));
+  EXPECT_TRUE(store_->HasMessage("ch1", "m1"));
+
+  // 热层未命中（其他频道）→ 落 MySQL 冷层：无行 → 不存在。
+  fake_mysql::PushRows({});
+  EXPECT_FALSE(store_->HasMessage("ch2", "m1"));
+
+  // 热层未命中、冷层命中（已从 Redis 列表老化的消息仍可被引用）。
+  fake_mysql::PushRows({{"1"}});
+  EXPECT_TRUE(store_->HasMessage("ch3", "m-aged"));
+
+  // 空参数守卫。
+  EXPECT_FALSE(store_->HasMessage("", "m1"));
+  EXPECT_FALSE(store_->HasMessage("ch1", ""));
+}
+
+TEST_F(HybridStoreTest, GetHistoryMysqlMergeCarriesReply) {
+  ASSERT_TRUE(store_->Initialize());
+
+  // 热层只有一条；limit 要求两条 → 触发 MySQL 回退合并。
+  ASSERT_TRUE(store_->StoreMessage(MakeMessage("m2", "ch", 2000)));
+  fake_mysql::PushRows({{"m1", "s", "r", "ch", "0", "0", "hello m1", "1000", "m0"}});
+  auto page = store_->GetHistory("ch", 0, 0, 2);
+  ASSERT_EQ(page.size(), 2u);
+  const MessageData* old = nullptr;
+  const MessageData* fresh = nullptr;
+  for (const auto& m : page) {
+    if (m.message_id == "m1") old = &m;
+    if (m.message_id == "m2") fresh = &m;
+  }
+  ASSERT_NE(old, nullptr);
+  ASSERT_NE(fresh, nullptr);
+  EXPECT_EQ(old->reply_to_message_id, "m0");
+  EXPECT_EQ(fresh->reply_to_message_id, "");
 }
 
 TEST_F(HybridStoreTest, OfflineQueueOperations) {

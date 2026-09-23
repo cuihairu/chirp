@@ -40,7 +40,7 @@ chirp::common::ErrorCode ValidateContentLength(const SendMessageRequest& req) {
     }
   }
   if (chars > max_chars) {
-    return chirp::common::INVALID_PARAM;
+    return chirp::common::CONTENT_TOO_LONG;
   }
   return chirp::common::OK;
 }
@@ -68,8 +68,9 @@ chirp::common::ErrorCode ValidateSendMessageRequest(const SendMessageRequest& re
   if (req.sender_id().empty() || req.sender_id() != authenticated_user_id) {
     return chirp::common::AUTH_FAILED;
   }
-  if (ValidateContentLength(req) != chirp::common::OK) {
-    return chirp::common::INVALID_PARAM;
+  if (const chirp::common::ErrorCode length_code = ValidateContentLength(req);
+      length_code != chirp::common::OK) {
+    return length_code;
   }
 
   if (req.channel_type() == PRIVATE) {
