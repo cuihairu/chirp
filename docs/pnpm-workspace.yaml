@@ -2,3 +2,7 @@ packages:
   - '.'
 overrides:
   stylis: 4.1.4
+# pnpm 12 默认不跑依赖的生命周期脚本,未显式决定时 CI 里直接报错退出
+# (ERR_PNPM_IGNORED_BUILDS)。esbuild 的 postinstall 校验平台二进制,放行。
+allowBuilds:
+  esbuild: true
