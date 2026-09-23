@@ -680,6 +680,11 @@ TEST(ChatHubPeerTest, RpcRoundTripsWithEchoedIds) {
   peer->Start();
   ASSERT_TRUE(WaitFor([&] { return hub.Count(chirp::gateway::SERVER_AUTH_REQ) >= 1; },
                       std::chrono::seconds(5)));
+  // The first heartbeat is the observable proof that the peer processed
+  // SERVER_AUTH_RESP (connected_ flips there and arms the heartbeat): RPCs
+  // fired before that point fail fast with SERVER_UNAVAILABLE by contract.
+  ASSERT_TRUE(WaitFor([&] { return hub.Count(chirp::gateway::SERVER_HEARTBEAT_PING) >= 1; },
+                      std::chrono::seconds(5)));
 
   std::mutex mu;
   chirp::game_server_gateway::MessageInjectRequest inject_req;
@@ -757,6 +762,10 @@ TEST(ChatHubPeerTest, GenericSendRpcRoundTrip) {
       io, HubOptions(hub), [](const chirp::game_server_gateway::InjectMessageNotify&) {});
   peer->Start();
   ASSERT_TRUE(WaitFor([&] { return hub.Count(chirp::gateway::SERVER_AUTH_REQ) >= 1; },
+                      std::chrono::seconds(5)));
+  // Same readiness sync as RpcRoundTripsWithEchoedIds: wait for the first
+  // heartbeat so the RPC below cannot race the AUTH_RESP processing window.
+  ASSERT_TRUE(WaitFor([&] { return hub.Count(chirp::gateway::SERVER_HEARTBEAT_PING) >= 1; },
                       std::chrono::seconds(5)));
 
   chirp::game_server_gateway::SubscribePlayerChannelRequest sub_req;
