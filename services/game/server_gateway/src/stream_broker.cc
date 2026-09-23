@@ -59,7 +59,8 @@ bool ParseInjectEnvelope(const std::vector<std::string>& flat, StreamInjectEnvel
     const char* begin = channel.c_str();
     char* end = nullptr;
     const long value = channel.empty() ? -1 : std::strtol(begin, &end, 10);
-    if (end == begin || *end != '\0' || value < 0 || value > 3) {
+    // channel.empty() leaves end == nullptr; check it before dereferencing.
+    if (channel.empty() || end == begin || *end != '\0' || value < 0 || value > 3) {
       return false;
     }
     channel_type = static_cast<int32_t>(value);
