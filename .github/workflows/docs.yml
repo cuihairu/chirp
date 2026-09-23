@@ -43,7 +43,9 @@ jobs:
       - name: Setup pnpm
         uses: pnpm/action-setup@v6
         with:
-          version: 9
+          # 与本地一致(pnpm 12)。pnpm 9 读不了 v12 生成的锁文件,
+          # 也不认 pnpm-workspace.yaml 里的 overrides(pnpm 10+ 的配置位)。
+          version: 12
 
       - name: Install dependencies
         working-directory: ./docs
