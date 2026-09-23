@@ -789,7 +789,6 @@ TEST(ChannelManagerTest, ManageOnlyOverrideLeavesWriteAlone) {
   // can_write is not in the verdict set, so the default allow stands while
   // can_manage flips on for the targeted user.
   EXPECT_TRUE(mgr.CanWrite(c1, "bob", ""));
-  using Field = chirp::chat::ChannelPermissionChecker::Field;
   ChannelPermissions required;
   required.set_can_manage(true);
   EXPECT_TRUE(mgr.HasPermission(c1, "bob", "", required));
