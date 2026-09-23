@@ -967,3 +967,32 @@ message GetChannelMutesResponse {
   // 固定含全部三个可屏蔽频道（含未屏蔽的），顺序稳定（WORLD/GUILD/TEAM）。
   repeated ChannelMuteState states = 2;
 }
+
+// 黑名单（game_chat_features P0）：拉黑某人后，对方发给自己的世界/公会/
+// 队伍频道消息与私聊都不再投递——私聊对发送方静默成功（code=0，不暴露
+// 拉黑态），频道消息按成员逐个过滤；拉黑前已入离线队列的消息照常补投。
+// 与社交面的 BLOCK_USER（好友关系）互相独立，只影响消息投递。
+message BlockMessageSenderRequest {
+  string target_user_id = 1;
+}
+
+message BlockMessageSenderResponse {
+  common.ErrorCode code = 1;
+  string target_user_id = 2;  // 回显请求值
+}
+
+message UnblockMessageSenderRequest {
+  string target_user_id = 1;
+}
+
+message UnblockMessageSenderResponse {
+  common.ErrorCode code = 1;
+  string target_user_id = 2;  // 回显请求值
+}
+
+message GetBlockedSendersRequest {}
+
+message GetBlockedSendersResponse {
+  common.ErrorCode code = 1;
+  repeated string target_user_ids = 2;
+}

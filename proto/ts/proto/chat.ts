@@ -1527,6 +1527,40 @@ export interface GetChannelMutesResponse {
   states: ChannelMuteState[];
 }
 
+/**
+ * 黑名单（game_chat_features P0）：拉黑某人后，对方发给自己的世界/公会/
+ * 队伍频道消息与私聊都不再投递——私聊对发送方静默成功（code=0，不暴露
+ * 拉黑态），频道消息按成员逐个过滤；拉黑前已入离线队列的消息照常补投。
+ * 与社交面的 BLOCK_USER（好友关系）互相独立，只影响消息投递。
+ */
+export interface BlockMessageSenderRequest {
+  targetUserId: string;
+}
+
+export interface BlockMessageSenderResponse {
+  code: ErrorCode;
+  /** 回显请求值 */
+  targetUserId: string;
+}
+
+export interface UnblockMessageSenderRequest {
+  targetUserId: string;
+}
+
+export interface UnblockMessageSenderResponse {
+  code: ErrorCode;
+  /** 回显请求值 */
+  targetUserId: string;
+}
+
+export interface GetBlockedSendersRequest {
+}
+
+export interface GetBlockedSendersResponse {
+  code: ErrorCode;
+  targetUserIds: string[];
+}
+
 function createBaseSendMessageRequest(): SendMessageRequest {
   return {
     senderId: "",
@@ -13386,6 +13420,387 @@ export const GetChannelMutesResponse = {
     const message = createBaseGetChannelMutesResponse();
     message.code = object.code ?? 0;
     message.states = object.states?.map((e) => ChannelMuteState.fromPartial(e)) || [];
+    return message;
+  },
+};
+
+function createBaseBlockMessageSenderRequest(): BlockMessageSenderRequest {
+  return { targetUserId: "" };
+}
+
+export const BlockMessageSenderRequest = {
+  encode(message: BlockMessageSenderRequest, writer: _m0.Writer = _m0.Writer.create()): _m0.Writer {
+    if (message.targetUserId !== "") {
+      writer.uint32(10).string(message.targetUserId);
+    }
+    return writer;
+  },
+
+  decode(input: _m0.Reader | Uint8Array, length?: number): BlockMessageSenderRequest {
+    const reader = input instanceof _m0.Reader ? input : _m0.Reader.create(input);
+    let end = length === undefined ? reader.len : reader.pos + length;
+    const message = createBaseBlockMessageSenderRequest();
+    while (reader.pos < end) {
+      const tag = reader.uint32();
+      switch (tag >>> 3) {
+        case 1:
+          if (tag !== 10) {
+            break;
+          }
+
+          message.targetUserId = reader.string();
+          continue;
+      }
+      if ((tag & 7) === 4 || tag === 0) {
+        break;
+      }
+      reader.skipType(tag & 7);
+    }
+    return message;
+  },
+
+  fromJSON(object: any): BlockMessageSenderRequest {
+    return { targetUserId: isSet(object.targetUserId) ? globalThis.String(object.targetUserId) : "" };
+  },
+
+  toJSON(message: BlockMessageSenderRequest): unknown {
+    const obj: any = {};
+    if (message.targetUserId !== "") {
+      obj.targetUserId = message.targetUserId;
+    }
+    return obj;
+  },
+
+  create<I extends Exact<DeepPartial<BlockMessageSenderRequest>, I>>(base?: I): BlockMessageSenderRequest {
+    return BlockMessageSenderRequest.fromPartial(base ?? ({} as any));
+  },
+  fromPartial<I extends Exact<DeepPartial<BlockMessageSenderRequest>, I>>(object: I): BlockMessageSenderRequest {
+    const message = createBaseBlockMessageSenderRequest();
+    message.targetUserId = object.targetUserId ?? "";
+    return message;
+  },
+};
+
+function createBaseBlockMessageSenderResponse(): BlockMessageSenderResponse {
+  return { code: 0, targetUserId: "" };
+}
+
+export const BlockMessageSenderResponse = {
+  encode(message: BlockMessageSenderResponse, writer: _m0.Writer = _m0.Writer.create()): _m0.Writer {
+    if (message.code !== 0) {
+      writer.uint32(8).int32(message.code);
+    }
+    if (message.targetUserId !== "") {
+      writer.uint32(18).string(message.targetUserId);
+    }
+    return writer;
+  },
+
+  decode(input: _m0.Reader | Uint8Array, length?: number): BlockMessageSenderResponse {
+    const reader = input instanceof _m0.Reader ? input : _m0.Reader.create(input);
+    let end = length === undefined ? reader.len : reader.pos + length;
+    const message = createBaseBlockMessageSenderResponse();
+    while (reader.pos < end) {
+      const tag = reader.uint32();
+      switch (tag >>> 3) {
+        case 1:
+          if (tag !== 8) {
+            break;
+          }
+
+          message.code = reader.int32() as any;
+          continue;
+        case 2:
+          if (tag !== 18) {
+            break;
+          }
+
+          message.targetUserId = reader.string();
+          continue;
+      }
+      if ((tag & 7) === 4 || tag === 0) {
+        break;
+      }
+      reader.skipType(tag & 7);
+    }
+    return message;
+  },
+
+  fromJSON(object: any): BlockMessageSenderResponse {
+    return {
+      code: isSet(object.code) ? errorCodeFromJSON(object.code) : 0,
+      targetUserId: isSet(object.targetUserId) ? globalThis.String(object.targetUserId) : "",
+    };
+  },
+
+  toJSON(message: BlockMessageSenderResponse): unknown {
+    const obj: any = {};
+    if (message.code !== 0) {
+      obj.code = errorCodeToJSON(message.code);
+    }
+    if (message.targetUserId !== "") {
+      obj.targetUserId = message.targetUserId;
+    }
+    return obj;
+  },
+
+  create<I extends Exact<DeepPartial<BlockMessageSenderResponse>, I>>(base?: I): BlockMessageSenderResponse {
+    return BlockMessageSenderResponse.fromPartial(base ?? ({} as any));
+  },
+  fromPartial<I extends Exact<DeepPartial<BlockMessageSenderResponse>, I>>(object: I): BlockMessageSenderResponse {
+    const message = createBaseBlockMessageSenderResponse();
+    message.code = object.code ?? 0;
+    message.targetUserId = object.targetUserId ?? "";
+    return message;
+  },
+};
+
+function createBaseUnblockMessageSenderRequest(): UnblockMessageSenderRequest {
+  return { targetUserId: "" };
+}
+
+export const UnblockMessageSenderRequest = {
+  encode(message: UnblockMessageSenderRequest, writer: _m0.Writer = _m0.Writer.create()): _m0.Writer {
+    if (message.targetUserId !== "") {
+      writer.uint32(10).string(message.targetUserId);
+    }
+    return writer;
+  },
+
+  decode(input: _m0.Reader | Uint8Array, length?: number): UnblockMessageSenderRequest {
+    const reader = input instanceof _m0.Reader ? input : _m0.Reader.create(input);
+    let end = length === undefined ? reader.len : reader.pos + length;
+    const message = createBaseUnblockMessageSenderRequest();
+    while (reader.pos < end) {
+      const tag = reader.uint32();
+      switch (tag >>> 3) {
+        case 1:
+          if (tag !== 10) {
+            break;
+          }
+
+          message.targetUserId = reader.string();
+          continue;
+      }
+      if ((tag & 7) === 4 || tag === 0) {
+        break;
+      }
+      reader.skipType(tag & 7);
+    }
+    return message;
+  },
+
+  fromJSON(object: any): UnblockMessageSenderRequest {
+    return { targetUserId: isSet(object.targetUserId) ? globalThis.String(object.targetUserId) : "" };
+  },
+
+  toJSON(message: UnblockMessageSenderRequest): unknown {
+    const obj: any = {};
+    if (message.targetUserId !== "") {
+      obj.targetUserId = message.targetUserId;
+    }
+    return obj;
+  },
+
+  create<I extends Exact<DeepPartial<UnblockMessageSenderRequest>, I>>(base?: I): UnblockMessageSenderRequest {
+    return UnblockMessageSenderRequest.fromPartial(base ?? ({} as any));
+  },
+  fromPartial<I extends Exact<DeepPartial<UnblockMessageSenderRequest>, I>>(object: I): UnblockMessageSenderRequest {
+    const message = createBaseUnblockMessageSenderRequest();
+    message.targetUserId = object.targetUserId ?? "";
+    return message;
+  },
+};
+
+function createBaseUnblockMessageSenderResponse(): UnblockMessageSenderResponse {
+  return { code: 0, targetUserId: "" };
+}
+
+export const UnblockMessageSenderResponse = {
+  encode(message: UnblockMessageSenderResponse, writer: _m0.Writer = _m0.Writer.create()): _m0.Writer {
+    if (message.code !== 0) {
+      writer.uint32(8).int32(message.code);
+    }
+    if (message.targetUserId !== "") {
+      writer.uint32(18).string(message.targetUserId);
+    }
+    return writer;
+  },
+
+  decode(input: _m0.Reader | Uint8Array, length?: number): UnblockMessageSenderResponse {
+    const reader = input instanceof _m0.Reader ? input : _m0.Reader.create(input);
+    let end = length === undefined ? reader.len : reader.pos + length;
+    const message = createBaseUnblockMessageSenderResponse();
+    while (reader.pos < end) {
+      const tag = reader.uint32();
+      switch (tag >>> 3) {
+        case 1:
+          if (tag !== 8) {
+            break;
+          }
+
+          message.code = reader.int32() as any;
+          continue;
+        case 2:
+          if (tag !== 18) {
+            break;
+          }
+
+          message.targetUserId = reader.string();
+          continue;
+      }
+      if ((tag & 7) === 4 || tag === 0) {
+        break;
+      }
+      reader.skipType(tag & 7);
+    }
+    return message;
+  },
+
+  fromJSON(object: any): UnblockMessageSenderResponse {
+    return {
+      code: isSet(object.code) ? errorCodeFromJSON(object.code) : 0,
+      targetUserId: isSet(object.targetUserId) ? globalThis.String(object.targetUserId) : "",
+    };
+  },
+
+  toJSON(message: UnblockMessageSenderResponse): unknown {
+    const obj: any = {};
+    if (message.code !== 0) {
+      obj.code = errorCodeToJSON(message.code);
+    }
+    if (message.targetUserId !== "") {
+      obj.targetUserId = message.targetUserId;
+    }
+    return obj;
+  },
+
+  create<I extends Exact<DeepPartial<UnblockMessageSenderResponse>, I>>(base?: I): UnblockMessageSenderResponse {
+    return UnblockMessageSenderResponse.fromPartial(base ?? ({} as any));
+  },
+  fromPartial<I extends Exact<DeepPartial<UnblockMessageSenderResponse>, I>>(object: I): UnblockMessageSenderResponse {
+    const message = createBaseUnblockMessageSenderResponse();
+    message.code = object.code ?? 0;
+    message.targetUserId = object.targetUserId ?? "";
+    return message;
+  },
+};
+
+function createBaseGetBlockedSendersRequest(): GetBlockedSendersRequest {
+  return {};
+}
+
+export const GetBlockedSendersRequest = {
+  encode(_: GetBlockedSendersRequest, writer: _m0.Writer = _m0.Writer.create()): _m0.Writer {
+    return writer;
+  },
+
+  decode(input: _m0.Reader | Uint8Array, length?: number): GetBlockedSendersRequest {
+    const reader = input instanceof _m0.Reader ? input : _m0.Reader.create(input);
+    let end = length === undefined ? reader.len : reader.pos + length;
+    const message = createBaseGetBlockedSendersRequest();
+    while (reader.pos < end) {
+      const tag = reader.uint32();
+      switch (tag >>> 3) {
+      }
+      if ((tag & 7) === 4 || tag === 0) {
+        break;
+      }
+      reader.skipType(tag & 7);
+    }
+    return message;
+  },
+
+  fromJSON(_: any): GetBlockedSendersRequest {
+    return {};
+  },
+
+  toJSON(_: GetBlockedSendersRequest): unknown {
+    const obj: any = {};
+    return obj;
+  },
+
+  create<I extends Exact<DeepPartial<GetBlockedSendersRequest>, I>>(base?: I): GetBlockedSendersRequest {
+    return GetBlockedSendersRequest.fromPartial(base ?? ({} as any));
+  },
+  fromPartial<I extends Exact<DeepPartial<GetBlockedSendersRequest>, I>>(_: I): GetBlockedSendersRequest {
+    const message = createBaseGetBlockedSendersRequest();
+    return message;
+  },
+};
+
+function createBaseGetBlockedSendersResponse(): GetBlockedSendersResponse {
+  return { code: 0, targetUserIds: [] };
+}
+
+export const GetBlockedSendersResponse = {
+  encode(message: GetBlockedSendersResponse, writer: _m0.Writer = _m0.Writer.create()): _m0.Writer {
+    if (message.code !== 0) {
+      writer.uint32(8).int32(message.code);
+    }
+    for (const v of message.targetUserIds) {
+      writer.uint32(18).string(v!);
+    }
+    return writer;
+  },
+
+  decode(input: _m0.Reader | Uint8Array, length?: number): GetBlockedSendersResponse {
+    const reader = input instanceof _m0.Reader ? input : _m0.Reader.create(input);
+    let end = length === undefined ? reader.len : reader.pos + length;
+    const message = createBaseGetBlockedSendersResponse();
+    while (reader.pos < end) {
+      const tag = reader.uint32();
+      switch (tag >>> 3) {
+        case 1:
+          if (tag !== 8) {
+            break;
+          }
+
+          message.code = reader.int32() as any;
+          continue;
+        case 2:
+          if (tag !== 18) {
+            break;
+          }
+
+          message.targetUserIds.push(reader.string());
+          continue;
+      }
+      if ((tag & 7) === 4 || tag === 0) {
+        break;
+      }
+      reader.skipType(tag & 7);
+    }
+    return message;
+  },
+
+  fromJSON(object: any): GetBlockedSendersResponse {
+    return {
+      code: isSet(object.code) ? errorCodeFromJSON(object.code) : 0,
+      targetUserIds: globalThis.Array.isArray(object?.targetUserIds)
+        ? object.targetUserIds.map((e: any) => globalThis.String(e))
+        : [],
+    };
+  },
+
+  toJSON(message: GetBlockedSendersResponse): unknown {
+    const obj: any = {};
+    if (message.code !== 0) {
+      obj.code = errorCodeToJSON(message.code);
+    }
+    if (message.targetUserIds?.length) {
+      obj.targetUserIds = message.targetUserIds;
+    }
+    return obj;
+  },
+
+  create<I extends Exact<DeepPartial<GetBlockedSendersResponse>, I>>(base?: I): GetBlockedSendersResponse {
+    return GetBlockedSendersResponse.fromPartial(base ?? ({} as any));
+  },
+  fromPartial<I extends Exact<DeepPartial<GetBlockedSendersResponse>, I>>(object: I): GetBlockedSendersResponse {
+    const message = createBaseGetBlockedSendersResponse();
+    message.code = object.code ?? 0;
+    message.targetUserIds = object.targetUserIds?.map((e) => e) || [];
     return message;
   },
 };

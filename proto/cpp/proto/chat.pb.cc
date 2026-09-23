@@ -27,6 +27,61 @@ namespace _fl = ::google::protobuf::internal::field_layout;
 namespace chirp {
 namespace chat {
 
+inline constexpr UnblockMessageSenderResponse::Impl_::Impl_(
+    ::_pbi::ConstantInitialized) noexcept
+      : _cached_size_{0},
+        target_user_id_(
+            &::google::protobuf::internal::fixed_address_empty_string,
+            ::_pbi::ConstantInitialized()),
+        code_{static_cast< ::chirp::common::ErrorCode >(0)} {}
+
+template <typename>
+PROTOBUF_CONSTEXPR UnblockMessageSenderResponse::UnblockMessageSenderResponse(::_pbi::ConstantInitialized)
+#if defined(PROTOBUF_CUSTOM_VTABLE)
+    : ::google::protobuf::Message(UnblockMessageSenderResponse_class_data_.base()),
+#else   // PROTOBUF_CUSTOM_VTABLE
+    : ::google::protobuf::Message(),
+#endif  // PROTOBUF_CUSTOM_VTABLE
+      _impl_(::_pbi::ConstantInitialized()) {
+}
+struct UnblockMessageSenderResponseDefaultTypeInternal {
+  PROTOBUF_CONSTEXPR UnblockMessageSenderResponseDefaultTypeInternal() : _instance(::_pbi::ConstantInitialized{}) {}
+  ~UnblockMessageSenderResponseDefaultTypeInternal() {}
+  union {
+    UnblockMessageSenderResponse _instance;
+  };
+};
+
+PROTOBUF_ATTRIBUTE_NO_DESTROY PROTOBUF_CONSTINIT
+    PROTOBUF_ATTRIBUTE_INIT_PRIORITY1 UnblockMessageSenderResponseDefaultTypeInternal _UnblockMessageSenderResponse_default_instance_;
+
+inline constexpr UnblockMessageSenderRequest::Impl_::Impl_(
+    ::_pbi::ConstantInitialized) noexcept
+      : _cached_size_{0},
+        target_user_id_(
+            &::google::protobuf::internal::fixed_address_empty_string,
+            ::_pbi::ConstantInitialized()) {}
+
+template <typename>
+PROTOBUF_CONSTEXPR UnblockMessageSenderRequest::UnblockMessageSenderRequest(::_pbi::ConstantInitialized)
+#if defined(PROTOBUF_CUSTOM_VTABLE)
+    : ::google::protobuf::Message(UnblockMessageSenderRequest_class_data_.base()),
+#else   // PROTOBUF_CUSTOM_VTABLE
+    : ::google::protobuf::Message(),
+#endif  // PROTOBUF_CUSTOM_VTABLE
+      _impl_(::_pbi::ConstantInitialized()) {
+}
+struct UnblockMessageSenderRequestDefaultTypeInternal {
+  PROTOBUF_CONSTEXPR UnblockMessageSenderRequestDefaultTypeInternal() : _instance(::_pbi::ConstantInitialized{}) {}
+  ~UnblockMessageSenderRequestDefaultTypeInternal() {}
+  union {
+    UnblockMessageSenderRequest _instance;
+  };
+};
+
+PROTOBUF_ATTRIBUTE_NO_DESTROY PROTOBUF_CONSTINIT
+    PROTOBUF_ATTRIBUTE_INIT_PRIORITY1 UnblockMessageSenderRequestDefaultTypeInternal _UnblockMessageSenderRequest_default_instance_;
+
 inline constexpr TypingIndicatorState::Impl_::Impl_(
     ::_pbi::ConstantInitialized) noexcept
       : _cached_size_{0},
@@ -1786,6 +1841,50 @@ struct GetChannelMutesRequestDefaultTypeInternal {
 PROTOBUF_ATTRIBUTE_NO_DESTROY PROTOBUF_CONSTINIT
     PROTOBUF_ATTRIBUTE_INIT_PRIORITY1 GetChannelMutesRequestDefaultTypeInternal _GetChannelMutesRequest_default_instance_;
 
+inline constexpr GetBlockedSendersResponse::Impl_::Impl_(
+    ::_pbi::ConstantInitialized) noexcept
+      : _cached_size_{0},
+        target_user_ids_{},
+        code_{static_cast< ::chirp::common::ErrorCode >(0)} {}
+
+template <typename>
+PROTOBUF_CONSTEXPR GetBlockedSendersResponse::GetBlockedSendersResponse(::_pbi::ConstantInitialized)
+#if defined(PROTOBUF_CUSTOM_VTABLE)
+    : ::google::protobuf::Message(GetBlockedSendersResponse_class_data_.base()),
+#else   // PROTOBUF_CUSTOM_VTABLE
+    : ::google::protobuf::Message(),
+#endif  // PROTOBUF_CUSTOM_VTABLE
+      _impl_(::_pbi::ConstantInitialized()) {
+}
+struct GetBlockedSendersResponseDefaultTypeInternal {
+  PROTOBUF_CONSTEXPR GetBlockedSendersResponseDefaultTypeInternal() : _instance(::_pbi::ConstantInitialized{}) {}
+  ~GetBlockedSendersResponseDefaultTypeInternal() {}
+  union {
+    GetBlockedSendersResponse _instance;
+  };
+};
+
+PROTOBUF_ATTRIBUTE_NO_DESTROY PROTOBUF_CONSTINIT
+    PROTOBUF_ATTRIBUTE_INIT_PRIORITY1 GetBlockedSendersResponseDefaultTypeInternal _GetBlockedSendersResponse_default_instance_;
+template <typename>
+PROTOBUF_CONSTEXPR GetBlockedSendersRequest::GetBlockedSendersRequest(::_pbi::ConstantInitialized)
+#if defined(PROTOBUF_CUSTOM_VTABLE)
+    : ::google::protobuf::internal::ZeroFieldsBase(GetBlockedSendersRequest_class_data_.base()){}
+#else   // PROTOBUF_CUSTOM_VTABLE
+    : ::google::protobuf::internal::ZeroFieldsBase() {
+}
+#endif  // PROTOBUF_CUSTOM_VTABLE
+struct GetBlockedSendersRequestDefaultTypeInternal {
+  PROTOBUF_CONSTEXPR GetBlockedSendersRequestDefaultTypeInternal() : _instance(::_pbi::ConstantInitialized{}) {}
+  ~GetBlockedSendersRequestDefaultTypeInternal() {}
+  union {
+    GetBlockedSendersRequest _instance;
+  };
+};
+
+PROTOBUF_ATTRIBUTE_NO_DESTROY PROTOBUF_CONSTINIT
+    PROTOBUF_ATTRIBUTE_INIT_PRIORITY1 GetBlockedSendersRequestDefaultTypeInternal _GetBlockedSendersRequest_default_instance_;
+
 inline constexpr FileInfo::Impl_::Impl_(
     ::_pbi::ConstantInitialized) noexcept
       : _cached_size_{0},
@@ -2376,6 +2475,61 @@ struct BulkDeleteRequestDefaultTypeInternal {
 
 PROTOBUF_ATTRIBUTE_NO_DESTROY PROTOBUF_CONSTINIT
     PROTOBUF_ATTRIBUTE_INIT_PRIORITY1 BulkDeleteRequestDefaultTypeInternal _BulkDeleteRequest_default_instance_;
+
+inline constexpr BlockMessageSenderResponse::Impl_::Impl_(
+    ::_pbi::ConstantInitialized) noexcept
+      : _cached_size_{0},
+        target_user_id_(
+            &::google::protobuf::internal::fixed_address_empty_string,
+            ::_pbi::ConstantInitialized()),
+        code_{static_cast< ::chirp::common::ErrorCode >(0)} {}
+
+template <typename>
+PROTOBUF_CONSTEXPR BlockMessageSenderResponse::BlockMessageSenderResponse(::_pbi::ConstantInitialized)
+#if defined(PROTOBUF_CUSTOM_VTABLE)
+    : ::google::protobuf::Message(BlockMessageSenderResponse_class_data_.base()),
+#else   // PROTOBUF_CUSTOM_VTABLE
+    : ::google::protobuf::Message(),
+#endif  // PROTOBUF_CUSTOM_VTABLE
+      _impl_(::_pbi::ConstantInitialized()) {
+}
+struct BlockMessageSenderResponseDefaultTypeInternal {
+  PROTOBUF_CONSTEXPR BlockMessageSenderResponseDefaultTypeInternal() : _instance(::_pbi::ConstantInitialized{}) {}
+  ~BlockMessageSenderResponseDefaultTypeInternal() {}
+  union {
+    BlockMessageSenderResponse _instance;
+  };
+};
+
+PROTOBUF_ATTRIBUTE_NO_DESTROY PROTOBUF_CONSTINIT
+    PROTOBUF_ATTRIBUTE_INIT_PRIORITY1 BlockMessageSenderResponseDefaultTypeInternal _BlockMessageSenderResponse_default_instance_;
+
+inline constexpr BlockMessageSenderRequest::Impl_::Impl_(
+    ::_pbi::ConstantInitialized) noexcept
+      : _cached_size_{0},
+        target_user_id_(
+            &::google::protobuf::internal::fixed_address_empty_string,
+            ::_pbi::ConstantInitialized()) {}
+
+template <typename>
+PROTOBUF_CONSTEXPR BlockMessageSenderRequest::BlockMessageSenderRequest(::_pbi::ConstantInitialized)
+#if defined(PROTOBUF_CUSTOM_VTABLE)
+    : ::google::protobuf::Message(BlockMessageSenderRequest_class_data_.base()),
+#else   // PROTOBUF_CUSTOM_VTABLE
+    : ::google::protobuf::Message(),
+#endif  // PROTOBUF_CUSTOM_VTABLE
+      _impl_(::_pbi::ConstantInitialized()) {
+}
+struct BlockMessageSenderRequestDefaultTypeInternal {
+  PROTOBUF_CONSTEXPR BlockMessageSenderRequestDefaultTypeInternal() : _instance(::_pbi::ConstantInitialized{}) {}
+  ~BlockMessageSenderRequestDefaultTypeInternal() {}
+  union {
+    BlockMessageSenderRequest _instance;
+  };
+};
+
+PROTOBUF_ATTRIBUTE_NO_DESTROY PROTOBUF_CONSTINIT
+    PROTOBUF_ATTRIBUTE_INIT_PRIORITY1 BlockMessageSenderRequestDefaultTypeInternal _BlockMessageSenderRequest_default_instance_;
 
 inline constexpr AddReactionRequest::Impl_::Impl_(
     ::_pbi::ConstantInitialized) noexcept
@@ -4779,6 +4933,38 @@ const ::uint32_t
         PROTOBUF_FIELD_OFFSET(::chirp::chat::GetChannelMutesResponse, _impl_.states_),
         1,
         0,
+        0x081, // bitmap
+        PROTOBUF_FIELD_OFFSET(::chirp::chat::BlockMessageSenderRequest, _impl_._has_bits_),
+        4, // hasbit index offset
+        PROTOBUF_FIELD_OFFSET(::chirp::chat::BlockMessageSenderRequest, _impl_.target_user_id_),
+        0,
+        0x081, // bitmap
+        PROTOBUF_FIELD_OFFSET(::chirp::chat::BlockMessageSenderResponse, _impl_._has_bits_),
+        5, // hasbit index offset
+        PROTOBUF_FIELD_OFFSET(::chirp::chat::BlockMessageSenderResponse, _impl_.code_),
+        PROTOBUF_FIELD_OFFSET(::chirp::chat::BlockMessageSenderResponse, _impl_.target_user_id_),
+        1,
+        0,
+        0x081, // bitmap
+        PROTOBUF_FIELD_OFFSET(::chirp::chat::UnblockMessageSenderRequest, _impl_._has_bits_),
+        4, // hasbit index offset
+        PROTOBUF_FIELD_OFFSET(::chirp::chat::UnblockMessageSenderRequest, _impl_.target_user_id_),
+        0,
+        0x081, // bitmap
+        PROTOBUF_FIELD_OFFSET(::chirp::chat::UnblockMessageSenderResponse, _impl_._has_bits_),
+        5, // hasbit index offset
+        PROTOBUF_FIELD_OFFSET(::chirp::chat::UnblockMessageSenderResponse, _impl_.code_),
+        PROTOBUF_FIELD_OFFSET(::chirp::chat::UnblockMessageSenderResponse, _impl_.target_user_id_),
+        1,
+        0,
+        0x000, // bitmap
+        0x081, // bitmap
+        PROTOBUF_FIELD_OFFSET(::chirp::chat::GetBlockedSendersResponse, _impl_._has_bits_),
+        5, // hasbit index offset
+        PROTOBUF_FIELD_OFFSET(::chirp::chat::GetBlockedSendersResponse, _impl_.code_),
+        PROTOBUF_FIELD_OFFSET(::chirp::chat::GetBlockedSendersResponse, _impl_.target_user_ids_),
+        1,
+        0,
 };
 
 static const ::_pbi::MigrationSchema
@@ -4896,6 +5082,12 @@ static const ::_pbi::MigrationSchema
         {1208, sizeof(::chirp::chat::ChannelMuteState)},
         {1215, sizeof(::chirp::chat::GetChannelMutesRequest)},
         {1216, sizeof(::chirp::chat::GetChannelMutesResponse)},
+        {1223, sizeof(::chirp::chat::BlockMessageSenderRequest)},
+        {1228, sizeof(::chirp::chat::BlockMessageSenderResponse)},
+        {1235, sizeof(::chirp::chat::UnblockMessageSenderRequest)},
+        {1240, sizeof(::chirp::chat::UnblockMessageSenderResponse)},
+        {1247, sizeof(::chirp::chat::GetBlockedSendersRequest)},
+        {1248, sizeof(::chirp::chat::GetBlockedSendersResponse)},
 };
 static const ::_pb::Message* PROTOBUF_NONNULL const file_default_instances[] = {
     &::chirp::chat::_SendMessageRequest_default_instance_._instance,
@@ -5011,6 +5203,12 @@ static const ::_pb::Message* PROTOBUF_NONNULL const file_default_instances[] = {
     &::chirp::chat::_ChannelMuteState_default_instance_._instance,
     &::chirp::chat::_GetChannelMutesRequest_default_instance_._instance,
     &::chirp::chat::_GetChannelMutesResponse_default_instance_._instance,
+    &::chirp::chat::_BlockMessageSenderRequest_default_instance_._instance,
+    &::chirp::chat::_BlockMessageSenderResponse_default_instance_._instance,
+    &::chirp::chat::_UnblockMessageSenderRequest_default_instance_._instance,
+    &::chirp::chat::_UnblockMessageSenderResponse_default_instance_._instance,
+    &::chirp::chat::_GetBlockedSendersRequest_default_instance_._instance,
+    &::chirp::chat::_GetBlockedSendersResponse_default_instance_._instance,
 };
 const char descriptor_table_protodef_proto_2fchat_2eproto[] ABSL_ATTRIBUTE_SECTION_VARIABLE(
     protodesc_cold) = {
@@ -5360,30 +5558,41 @@ const char descriptor_table_protodef_proto_2fchat_2eproto[] ABSL_ATTRIBUTE_SECTI
     "lMutesRequest\"n\n\027GetChannelMutesResponse"
     "\022%\n\004code\030\001 \001(\0162\027.chirp.common.ErrorCode\022"
     ",\n\006states\030\002 \003(\0132\034.chirp.chat.ChannelMute"
-    "State*\222\001\n\007MsgType\022\010\n\004TEXT\020\000\022\t\n\005EMOJI\020\001\022\t"
-    "\n\005VOICE\020\002\022\t\n\005IMAGE\020\003\022\r\n\tITEM_LINK\020\n\022\016\n\nS"
-    "KILL_LINK\020\013\022\017\n\013ACHIEVEMENT\020\014\022\016\n\nNPC_DIAL"
-    "OG\020\r\022\020\n\014TRADE_STATUS\020\016\022\n\n\006SYSTEM\020c*[\n\013Ch"
-    "annelType\022\013\n\007PRIVATE\020\000\022\010\n\004TEAM\020\001\022\t\n\005GUIL"
-    "D\020\002\022\t\n\005WORLD\020\003\022\022\n\016SYSTEM_CHANNEL\020\004\022\013\n\007MA"
-    "RQUEE\020\005*Y\n\010Priority\022\020\n\014PRIORITY_LOW\020\000\022\023\n"
-    "\017PRIORITY_NORMAL\020\001\022\021\n\rPRIORITY_HIGH\020\002\022\023\n"
-    "\017PRIORITY_URGENT\020\003*T\n\nSenderKind\022\017\n\013SEND"
-    "ER_USER\020\000\022\021\n\rSENDER_SYSTEM\020\001\022\016\n\nSENDER_N"
-    "PC\020\002\022\022\n\016SENDER_SERVICE\020\003*B\n\017GroupMemberR"
-    "ole\022\n\n\006MEMBER\020\000\022\r\n\tMODERATOR\020\001\022\t\n\005ADMIN\020"
-    "\002\022\t\n\005OWNER\020\003*\213\001\n\013ChannelKind\022\025\n\021CHANNEL_"
-    "KIND_TEXT\020\000\022\026\n\022CHANNEL_KIND_VOICE\020\001\022\035\n\031C"
-    "HANNEL_KIND_ANNOUNCEMENT\020\002\022\026\n\022CHANNEL_KI"
-    "ND_STAGE\020\003\022\026\n\022CHANNEL_KIND_FORUM\020\004*D\n\016Pe"
-    "rmissionType\022\030\n\024PERMISSION_TYPE_ROLE\020\000\022\030"
-    "\n\024PERMISSION_TYPE_USER\020\001*6\n\022PermissionOv"
-    "erride\022\013\n\007INHERIT\020\000\022\t\n\005ALLOW\020\001\022\010\n\004DENY\020\002"
-    "*\207\001\n\013MentionType\022\025\n\021MENTION_TYPE_USER\020\000\022"
-    "\025\n\021MENTION_TYPE_ROLE\020\001\022\030\n\024MENTION_TYPE_C"
-    "HANNEL\020\002\022\031\n\025MENTION_TYPE_EVERYONE\020\003\022\025\n\021M"
-    "ENTION_TYPE_HERE\020\004B$Z\"github.com/cui/chi"
-    "rp/proto/go/chatb\006proto3"
+    "State\"3\n\031BlockMessageSenderRequest\022\026\n\016ta"
+    "rget_user_id\030\001 \001(\t\"[\n\032BlockMessageSender"
+    "Response\022%\n\004code\030\001 \001(\0162\027.chirp.common.Er"
+    "rorCode\022\026\n\016target_user_id\030\002 \001(\t\"5\n\033Unblo"
+    "ckMessageSenderRequest\022\026\n\016target_user_id"
+    "\030\001 \001(\t\"]\n\034UnblockMessageSenderResponse\022%"
+    "\n\004code\030\001 \001(\0162\027.chirp.common.ErrorCode\022\026\n"
+    "\016target_user_id\030\002 \001(\t\"\032\n\030GetBlockedSende"
+    "rsRequest\"[\n\031GetBlockedSendersResponse\022%"
+    "\n\004code\030\001 \001(\0162\027.chirp.common.ErrorCode\022\027\n"
+    "\017target_user_ids\030\002 \003(\t*\222\001\n\007MsgType\022\010\n\004TE"
+    "XT\020\000\022\t\n\005EMOJI\020\001\022\t\n\005VOICE\020\002\022\t\n\005IMAGE\020\003\022\r\n"
+    "\tITEM_LINK\020\n\022\016\n\nSKILL_LINK\020\013\022\017\n\013ACHIEVEM"
+    "ENT\020\014\022\016\n\nNPC_DIALOG\020\r\022\020\n\014TRADE_STATUS\020\016\022"
+    "\n\n\006SYSTEM\020c*[\n\013ChannelType\022\013\n\007PRIVATE\020\000\022"
+    "\010\n\004TEAM\020\001\022\t\n\005GUILD\020\002\022\t\n\005WORLD\020\003\022\022\n\016SYSTE"
+    "M_CHANNEL\020\004\022\013\n\007MARQUEE\020\005*Y\n\010Priority\022\020\n\014"
+    "PRIORITY_LOW\020\000\022\023\n\017PRIORITY_NORMAL\020\001\022\021\n\rP"
+    "RIORITY_HIGH\020\002\022\023\n\017PRIORITY_URGENT\020\003*T\n\nS"
+    "enderKind\022\017\n\013SENDER_USER\020\000\022\021\n\rSENDER_SYS"
+    "TEM\020\001\022\016\n\nSENDER_NPC\020\002\022\022\n\016SENDER_SERVICE\020"
+    "\003*B\n\017GroupMemberRole\022\n\n\006MEMBER\020\000\022\r\n\tMODE"
+    "RATOR\020\001\022\t\n\005ADMIN\020\002\022\t\n\005OWNER\020\003*\213\001\n\013Channe"
+    "lKind\022\025\n\021CHANNEL_KIND_TEXT\020\000\022\026\n\022CHANNEL_"
+    "KIND_VOICE\020\001\022\035\n\031CHANNEL_KIND_ANNOUNCEMEN"
+    "T\020\002\022\026\n\022CHANNEL_KIND_STAGE\020\003\022\026\n\022CHANNEL_K"
+    "IND_FORUM\020\004*D\n\016PermissionType\022\030\n\024PERMISS"
+    "ION_TYPE_ROLE\020\000\022\030\n\024PERMISSION_TYPE_USER\020"
+    "\001*6\n\022PermissionOverride\022\013\n\007INHERIT\020\000\022\t\n\005"
+    "ALLOW\020\001\022\010\n\004DENY\020\002*\207\001\n\013MentionType\022\025\n\021MEN"
+    "TION_TYPE_USER\020\000\022\025\n\021MENTION_TYPE_ROLE\020\001\022"
+    "\030\n\024MENTION_TYPE_CHANNEL\020\002\022\031\n\025MENTION_TYP"
+    "E_EVERYONE\020\003\022\025\n\021MENTION_TYPE_HERE\020\004B$Z\"g"
+    "ithub.com/cui/chirp/proto/go/chatb\006proto"
+    "3"
 };
 static const ::_pbi::DescriptorTable* PROTOBUF_NONNULL const
     descriptor_table_proto_2fchat_2eproto_deps[1] = {
@@ -5393,13 +5602,13 @@ static ::absl::once_flag descriptor_table_proto_2fchat_2eproto_once;
 PROTOBUF_CONSTINIT const ::_pbi::DescriptorTable descriptor_table_proto_2fchat_2eproto = {
     false,
     false,
-    14784,
+    15201,
     descriptor_table_protodef_proto_2fchat_2eproto,
     "proto/chat.proto",
     &descriptor_table_proto_2fchat_2eproto_once,
     descriptor_table_proto_2fchat_2eproto_deps,
     1,
-    113,
+    119,
     schemas,
     file_default_instances,
     TableStruct_proto_2fchat_2eproto::offsets,
@@ -48610,6 +48819,1600 @@ void GetChannelMutesResponse::InternalSwap(GetChannelMutesResponse* PROTOBUF_RES
 }
 
 ::google::protobuf::Metadata GetChannelMutesResponse::GetMetadata() const {
+  return ::google::protobuf::Message::GetMetadataImpl(GetClassData()->full());
+}
+// ===================================================================
+
+class BlockMessageSenderRequest::_Internal {
+ public:
+  using HasBits =
+      decltype(::std::declval<BlockMessageSenderRequest>()._impl_._has_bits_);
+  static constexpr ::int32_t kHasBitsOffset =
+      8 * PROTOBUF_FIELD_OFFSET(BlockMessageSenderRequest, _impl_._has_bits_);
+};
+
+BlockMessageSenderRequest::BlockMessageSenderRequest(::google::protobuf::Arena* PROTOBUF_NULLABLE arena)
+#if defined(PROTOBUF_CUSTOM_VTABLE)
+    : ::google::protobuf::Message(arena, BlockMessageSenderRequest_class_data_.base()) {
+#else   // PROTOBUF_CUSTOM_VTABLE
+    : ::google::protobuf::Message(arena) {
+#endif  // PROTOBUF_CUSTOM_VTABLE
+  SharedCtor(arena);
+  // @@protoc_insertion_point(arena_constructor:chirp.chat.BlockMessageSenderRequest)
+}
+PROTOBUF_NDEBUG_INLINE BlockMessageSenderRequest::Impl_::Impl_(
+    [[maybe_unused]] ::google::protobuf::internal::InternalVisibility visibility,
+    [[maybe_unused]] ::google::protobuf::Arena* PROTOBUF_NULLABLE arena, const Impl_& from,
+    [[maybe_unused]] const ::chirp::chat::BlockMessageSenderRequest& from_msg)
+      : _has_bits_{from._has_bits_},
+        _cached_size_{0},
+        target_user_id_(arena, from.target_user_id_) {}
+
+BlockMessageSenderRequest::BlockMessageSenderRequest(
+    ::google::protobuf::Arena* PROTOBUF_NULLABLE arena,
+    const BlockMessageSenderRequest& from)
+#if defined(PROTOBUF_CUSTOM_VTABLE)
+    : ::google::protobuf::Message(arena, BlockMessageSenderRequest_class_data_.base()) {
+#else   // PROTOBUF_CUSTOM_VTABLE
+    : ::google::protobuf::Message(arena) {
+#endif  // PROTOBUF_CUSTOM_VTABLE
+  BlockMessageSenderRequest* const _this = this;
+  (void)_this;
+  _internal_metadata_.MergeFrom<::google::protobuf::UnknownFieldSet>(
+      from._internal_metadata_);
+  new (&_impl_) Impl_(internal_visibility(), arena, from._impl_, from);
+
+  // @@protoc_insertion_point(copy_constructor:chirp.chat.BlockMessageSenderRequest)
+}
+PROTOBUF_NDEBUG_INLINE BlockMessageSenderRequest::Impl_::Impl_(
+    [[maybe_unused]] ::google::protobuf::internal::InternalVisibility visibility,
+    [[maybe_unused]] ::google::protobuf::Arena* PROTOBUF_NULLABLE arena)
+      : _cached_size_{0},
+        target_user_id_(arena) {}
+
+inline void BlockMessageSenderRequest::SharedCtor(::_pb::Arena* PROTOBUF_NULLABLE arena) {
+  new (&_impl_) Impl_(internal_visibility(), arena);
+}
+BlockMessageSenderRequest::~BlockMessageSenderRequest() {
+  // @@protoc_insertion_point(destructor:chirp.chat.BlockMessageSenderRequest)
+  SharedDtor(*this);
+}
+inline void BlockMessageSenderRequest::SharedDtor(MessageLite& self) {
+  BlockMessageSenderRequest& this_ = static_cast<BlockMessageSenderRequest&>(self);
+  if constexpr (::_pbi::DebugHardenCheckHasBitConsistency()) {
+    this_.CheckHasBitConsistency();
+  }
+  this_._internal_metadata_.Delete<::google::protobuf::UnknownFieldSet>();
+  ABSL_DCHECK(this_.GetArena() == nullptr);
+  this_._impl_.target_user_id_.Destroy();
+  this_._impl_.~Impl_();
+}
+
+inline void* PROTOBUF_NONNULL BlockMessageSenderRequest::PlacementNew_(
+    const void* PROTOBUF_NONNULL, void* PROTOBUF_NONNULL mem,
+    ::google::protobuf::Arena* PROTOBUF_NULLABLE arena) {
+  return ::new (mem) BlockMessageSenderRequest(arena);
+}
+constexpr auto BlockMessageSenderRequest::InternalNewImpl_() {
+  return ::google::protobuf::internal::MessageCreator::CopyInit(sizeof(BlockMessageSenderRequest),
+                                            alignof(BlockMessageSenderRequest));
+}
+constexpr auto BlockMessageSenderRequest::InternalGenerateClassData_() {
+  return ::google::protobuf::internal::ClassDataFull{
+      ::google::protobuf::internal::ClassData{
+          &_BlockMessageSenderRequest_default_instance_._instance,
+          &_table_.header,
+          nullptr,  // OnDemandRegisterArenaDtor
+          nullptr,  // IsInitialized
+          &BlockMessageSenderRequest::MergeImpl,
+          ::google::protobuf::Message::GetNewImpl<BlockMessageSenderRequest>(),
+#if defined(PROTOBUF_CUSTOM_VTABLE)
+          &BlockMessageSenderRequest::SharedDtor,
+          ::google::protobuf::Message::GetClearImpl<BlockMessageSenderRequest>(), &BlockMessageSenderRequest::ByteSizeLong,
+              &BlockMessageSenderRequest::_InternalSerialize,
+#endif  // PROTOBUF_CUSTOM_VTABLE
+          PROTOBUF_FIELD_OFFSET(BlockMessageSenderRequest, _impl_._cached_size_),
+          false,
+      },
+      &BlockMessageSenderRequest::kDescriptorMethods,
+      &descriptor_table_proto_2fchat_2eproto,
+      nullptr,  // tracker
+  };
+}
+
+PROTOBUF_CONSTINIT PROTOBUF_ATTRIBUTE_INIT_PRIORITY1 const
+    ::google::protobuf::internal::ClassDataFull BlockMessageSenderRequest_class_data_ =
+        BlockMessageSenderRequest::InternalGenerateClassData_();
+
+PROTOBUF_ATTRIBUTE_WEAK const ::google::protobuf::internal::ClassData* PROTOBUF_NONNULL
+BlockMessageSenderRequest::GetClassData() const {
+  ::google::protobuf::internal::PrefetchToLocalCache(&BlockMessageSenderRequest_class_data_);
+  ::google::protobuf::internal::PrefetchToLocalCache(BlockMessageSenderRequest_class_data_.tc_table);
+  return BlockMessageSenderRequest_class_data_.base();
+}
+PROTOBUF_CONSTINIT PROTOBUF_ATTRIBUTE_INIT_PRIORITY1
+const ::_pbi::TcParseTable<0, 1, 0, 59, 2>
+BlockMessageSenderRequest::_table_ = {
+  {
+    PROTOBUF_FIELD_OFFSET(BlockMessageSenderRequest, _impl_._has_bits_),
+    0, // no _extensions_
+    1, 0,  // max_field_number, fast_idx_mask
+    offsetof(decltype(_table_), field_lookup_table),
+    4294967294,  // skipmap
+    offsetof(decltype(_table_), field_entries),
+    1,  // num_field_entries
+    0,  // num_aux_entries
+    offsetof(decltype(_table_), field_names),  // no aux_entries
+    BlockMessageSenderRequest_class_data_.base(),
+    nullptr,  // post_loop_handler
+    ::_pbi::TcParser::GenericFallback,  // fallback
+    #ifdef PROTOBUF_PREFETCH_PARSE_TABLE
+    ::_pbi::TcParser::GetTable<::chirp::chat::BlockMessageSenderRequest>(),  // to_prefetch
+    #endif  // PROTOBUF_PREFETCH_PARSE_TABLE
+  }, {{
+    // string target_user_id = 1;
+    {::_pbi::TcParser::FastUS1,
+     {10, 0, 0,
+      PROTOBUF_FIELD_OFFSET(BlockMessageSenderRequest, _impl_.target_user_id_)}},
+  }}, {{
+    65535, 65535
+  }}, {{
+    // string target_user_id = 1;
+    {PROTOBUF_FIELD_OFFSET(BlockMessageSenderRequest, _impl_.target_user_id_), _Internal::kHasBitsOffset + 0, 0, (0 | ::_fl::kFcOptional | ::_fl::kUtf8String | ::_fl::kRepAString)},
+  }},
+  // no aux_entries
+  {{
+    "\44\16\0\0\0\0\0\0"
+    "chirp.chat.BlockMessageSenderRequest"
+    "target_user_id"
+  }},
+};
+PROTOBUF_NOINLINE void BlockMessageSenderRequest::Clear() {
+// @@protoc_insertion_point(message_clear_start:chirp.chat.BlockMessageSenderRequest)
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  ::uint32_t cached_has_bits = 0;
+  // Prevent compiler warnings about cached_has_bits being unused
+  (void) cached_has_bits;
+
+  cached_has_bits = _impl_._has_bits_[0];
+  if (CheckHasBit(cached_has_bits, 0x00000001U)) {
+    _impl_.target_user_id_.ClearNonDefaultToEmpty();
+  }
+  _impl_._has_bits_.Clear();
+  _internal_metadata_.Clear<::google::protobuf::UnknownFieldSet>();
+}
+
+#if defined(PROTOBUF_CUSTOM_VTABLE)
+::uint8_t* PROTOBUF_NONNULL BlockMessageSenderRequest::_InternalSerialize(
+    const ::google::protobuf::MessageLite& base, ::uint8_t* PROTOBUF_NONNULL target,
+    ::google::protobuf::io::EpsCopyOutputStream* PROTOBUF_NONNULL stream) {
+  const BlockMessageSenderRequest& this_ = static_cast<const BlockMessageSenderRequest&>(base);
+#else   // PROTOBUF_CUSTOM_VTABLE
+::uint8_t* PROTOBUF_NONNULL BlockMessageSenderRequest::_InternalSerialize(
+    ::uint8_t* PROTOBUF_NONNULL target,
+    ::google::protobuf::io::EpsCopyOutputStream* PROTOBUF_NONNULL stream) const {
+  const BlockMessageSenderRequest& this_ = *this;
+#endif  // PROTOBUF_CUSTOM_VTABLE
+  if constexpr (::_pbi::DebugHardenCheckHasBitConsistency()) {
+    this_.CheckHasBitConsistency();
+  }
+  // @@protoc_insertion_point(serialize_to_array_start:chirp.chat.BlockMessageSenderRequest)
+  ::uint32_t cached_has_bits = 0;
+  (void)cached_has_bits;
+
+  cached_has_bits = this_._impl_._has_bits_[0];
+  // string target_user_id = 1;
+  if (CheckHasBit(cached_has_bits, 0x00000001U)) {
+    if (!this_._internal_target_user_id().empty()) {
+      const ::std::string& _s = this_._internal_target_user_id();
+      ::google::protobuf::internal::WireFormatLite::VerifyUtf8String(
+          _s.data(), static_cast<int>(_s.length()), ::google::protobuf::internal::WireFormatLite::SERIALIZE, "chirp.chat.BlockMessageSenderRequest.target_user_id");
+      target = stream->WriteStringMaybeAliased(1, _s, target);
+    }
+  }
+
+  if (ABSL_PREDICT_FALSE(this_._internal_metadata_.have_unknown_fields())) {
+    target =
+        ::_pbi::WireFormat::InternalSerializeUnknownFieldsToArray(
+            this_._internal_metadata_.unknown_fields<::google::protobuf::UnknownFieldSet>(::google::protobuf::UnknownFieldSet::default_instance), target, stream);
+  }
+  // @@protoc_insertion_point(serialize_to_array_end:chirp.chat.BlockMessageSenderRequest)
+  return target;
+}
+
+#if defined(PROTOBUF_CUSTOM_VTABLE)
+::size_t BlockMessageSenderRequest::ByteSizeLong(const MessageLite& base) {
+  const BlockMessageSenderRequest& this_ = static_cast<const BlockMessageSenderRequest&>(base);
+#else   // PROTOBUF_CUSTOM_VTABLE
+::size_t BlockMessageSenderRequest::ByteSizeLong() const {
+  const BlockMessageSenderRequest& this_ = *this;
+#endif  // PROTOBUF_CUSTOM_VTABLE
+  // @@protoc_insertion_point(message_byte_size_start:chirp.chat.BlockMessageSenderRequest)
+  ::size_t total_size = 0;
+
+  ::uint32_t cached_has_bits = 0;
+  // Prevent compiler warnings about cached_has_bits being unused
+  (void)cached_has_bits;
+
+   {
+    // string target_user_id = 1;
+    cached_has_bits = this_._impl_._has_bits_[0];
+    if (CheckHasBit(cached_has_bits, 0x00000001U)) {
+      if (!this_._internal_target_user_id().empty()) {
+        total_size += 1 + ::google::protobuf::internal::WireFormatLite::StringSize(
+                                        this_._internal_target_user_id());
+      }
+    }
+  }
+  return this_.MaybeComputeUnknownFieldsSize(total_size,
+                                             &this_._impl_._cached_size_);
+}
+
+void BlockMessageSenderRequest::MergeImpl(::google::protobuf::MessageLite& to_msg,
+                            const ::google::protobuf::MessageLite& from_msg) {
+   auto* const _this =
+      static_cast<BlockMessageSenderRequest*>(&to_msg);
+  auto& from = static_cast<const BlockMessageSenderRequest&>(from_msg);
+  if constexpr (::_pbi::DebugHardenCheckHasBitConsistency()) {
+    from.CheckHasBitConsistency();
+  }
+  // @@protoc_insertion_point(class_specific_merge_from_start:chirp.chat.BlockMessageSenderRequest)
+  ABSL_DCHECK_NE(&from, _this);
+  ::uint32_t cached_has_bits = 0;
+  (void)cached_has_bits;
+
+  cached_has_bits = from._impl_._has_bits_[0];
+  if (CheckHasBit(cached_has_bits, 0x00000001U)) {
+    if (!from._internal_target_user_id().empty()) {
+      _this->_internal_set_target_user_id(from._internal_target_user_id());
+    } else {
+      if (_this->_impl_.target_user_id_.IsDefault()) {
+        _this->_internal_set_target_user_id("");
+      }
+    }
+  }
+  _this->_impl_._has_bits_[0] |= cached_has_bits;
+  _this->_internal_metadata_.MergeFrom<::google::protobuf::UnknownFieldSet>(
+      from._internal_metadata_);
+}
+
+void BlockMessageSenderRequest::CopyFrom(const BlockMessageSenderRequest& from) {
+  // @@protoc_insertion_point(class_specific_copy_from_start:chirp.chat.BlockMessageSenderRequest)
+  if (&from == this) return;
+  Clear();
+  MergeFrom(from);
+}
+
+
+void BlockMessageSenderRequest::InternalSwap(BlockMessageSenderRequest* PROTOBUF_RESTRICT PROTOBUF_NONNULL other) {
+  using ::std::swap;
+  auto* arena = GetArena();
+  ABSL_DCHECK_EQ(arena, other->GetArena());
+  _internal_metadata_.InternalSwap(&other->_internal_metadata_);
+  swap(_impl_._has_bits_[0], other->_impl_._has_bits_[0]);
+  ::_pbi::ArenaStringPtr::InternalSwap(&_impl_.target_user_id_, &other->_impl_.target_user_id_, arena);
+}
+
+::google::protobuf::Metadata BlockMessageSenderRequest::GetMetadata() const {
+  return ::google::protobuf::Message::GetMetadataImpl(GetClassData()->full());
+}
+// ===================================================================
+
+class BlockMessageSenderResponse::_Internal {
+ public:
+  using HasBits =
+      decltype(::std::declval<BlockMessageSenderResponse>()._impl_._has_bits_);
+  static constexpr ::int32_t kHasBitsOffset =
+      8 * PROTOBUF_FIELD_OFFSET(BlockMessageSenderResponse, _impl_._has_bits_);
+};
+
+BlockMessageSenderResponse::BlockMessageSenderResponse(::google::protobuf::Arena* PROTOBUF_NULLABLE arena)
+#if defined(PROTOBUF_CUSTOM_VTABLE)
+    : ::google::protobuf::Message(arena, BlockMessageSenderResponse_class_data_.base()) {
+#else   // PROTOBUF_CUSTOM_VTABLE
+    : ::google::protobuf::Message(arena) {
+#endif  // PROTOBUF_CUSTOM_VTABLE
+  SharedCtor(arena);
+  // @@protoc_insertion_point(arena_constructor:chirp.chat.BlockMessageSenderResponse)
+}
+PROTOBUF_NDEBUG_INLINE BlockMessageSenderResponse::Impl_::Impl_(
+    [[maybe_unused]] ::google::protobuf::internal::InternalVisibility visibility,
+    [[maybe_unused]] ::google::protobuf::Arena* PROTOBUF_NULLABLE arena, const Impl_& from,
+    [[maybe_unused]] const ::chirp::chat::BlockMessageSenderResponse& from_msg)
+      : _has_bits_{from._has_bits_},
+        _cached_size_{0},
+        target_user_id_(arena, from.target_user_id_) {}
+
+BlockMessageSenderResponse::BlockMessageSenderResponse(
+    ::google::protobuf::Arena* PROTOBUF_NULLABLE arena,
+    const BlockMessageSenderResponse& from)
+#if defined(PROTOBUF_CUSTOM_VTABLE)
+    : ::google::protobuf::Message(arena, BlockMessageSenderResponse_class_data_.base()) {
+#else   // PROTOBUF_CUSTOM_VTABLE
+    : ::google::protobuf::Message(arena) {
+#endif  // PROTOBUF_CUSTOM_VTABLE
+  BlockMessageSenderResponse* const _this = this;
+  (void)_this;
+  _internal_metadata_.MergeFrom<::google::protobuf::UnknownFieldSet>(
+      from._internal_metadata_);
+  new (&_impl_) Impl_(internal_visibility(), arena, from._impl_, from);
+  _impl_.code_ = from._impl_.code_;
+
+  // @@protoc_insertion_point(copy_constructor:chirp.chat.BlockMessageSenderResponse)
+}
+PROTOBUF_NDEBUG_INLINE BlockMessageSenderResponse::Impl_::Impl_(
+    [[maybe_unused]] ::google::protobuf::internal::InternalVisibility visibility,
+    [[maybe_unused]] ::google::protobuf::Arena* PROTOBUF_NULLABLE arena)
+      : _cached_size_{0},
+        target_user_id_(arena) {}
+
+inline void BlockMessageSenderResponse::SharedCtor(::_pb::Arena* PROTOBUF_NULLABLE arena) {
+  new (&_impl_) Impl_(internal_visibility(), arena);
+  _impl_.code_ = {};
+}
+BlockMessageSenderResponse::~BlockMessageSenderResponse() {
+  // @@protoc_insertion_point(destructor:chirp.chat.BlockMessageSenderResponse)
+  SharedDtor(*this);
+}
+inline void BlockMessageSenderResponse::SharedDtor(MessageLite& self) {
+  BlockMessageSenderResponse& this_ = static_cast<BlockMessageSenderResponse&>(self);
+  if constexpr (::_pbi::DebugHardenCheckHasBitConsistency()) {
+    this_.CheckHasBitConsistency();
+  }
+  this_._internal_metadata_.Delete<::google::protobuf::UnknownFieldSet>();
+  ABSL_DCHECK(this_.GetArena() == nullptr);
+  this_._impl_.target_user_id_.Destroy();
+  this_._impl_.~Impl_();
+}
+
+inline void* PROTOBUF_NONNULL BlockMessageSenderResponse::PlacementNew_(
+    const void* PROTOBUF_NONNULL, void* PROTOBUF_NONNULL mem,
+    ::google::protobuf::Arena* PROTOBUF_NULLABLE arena) {
+  return ::new (mem) BlockMessageSenderResponse(arena);
+}
+constexpr auto BlockMessageSenderResponse::InternalNewImpl_() {
+  return ::google::protobuf::internal::MessageCreator::CopyInit(sizeof(BlockMessageSenderResponse),
+                                            alignof(BlockMessageSenderResponse));
+}
+constexpr auto BlockMessageSenderResponse::InternalGenerateClassData_() {
+  return ::google::protobuf::internal::ClassDataFull{
+      ::google::protobuf::internal::ClassData{
+          &_BlockMessageSenderResponse_default_instance_._instance,
+          &_table_.header,
+          nullptr,  // OnDemandRegisterArenaDtor
+          nullptr,  // IsInitialized
+          &BlockMessageSenderResponse::MergeImpl,
+          ::google::protobuf::Message::GetNewImpl<BlockMessageSenderResponse>(),
+#if defined(PROTOBUF_CUSTOM_VTABLE)
+          &BlockMessageSenderResponse::SharedDtor,
+          ::google::protobuf::Message::GetClearImpl<BlockMessageSenderResponse>(), &BlockMessageSenderResponse::ByteSizeLong,
+              &BlockMessageSenderResponse::_InternalSerialize,
+#endif  // PROTOBUF_CUSTOM_VTABLE
+          PROTOBUF_FIELD_OFFSET(BlockMessageSenderResponse, _impl_._cached_size_),
+          false,
+      },
+      &BlockMessageSenderResponse::kDescriptorMethods,
+      &descriptor_table_proto_2fchat_2eproto,
+      nullptr,  // tracker
+  };
+}
+
+PROTOBUF_CONSTINIT PROTOBUF_ATTRIBUTE_INIT_PRIORITY1 const
+    ::google::protobuf::internal::ClassDataFull BlockMessageSenderResponse_class_data_ =
+        BlockMessageSenderResponse::InternalGenerateClassData_();
+
+PROTOBUF_ATTRIBUTE_WEAK const ::google::protobuf::internal::ClassData* PROTOBUF_NONNULL
+BlockMessageSenderResponse::GetClassData() const {
+  ::google::protobuf::internal::PrefetchToLocalCache(&BlockMessageSenderResponse_class_data_);
+  ::google::protobuf::internal::PrefetchToLocalCache(BlockMessageSenderResponse_class_data_.tc_table);
+  return BlockMessageSenderResponse_class_data_.base();
+}
+PROTOBUF_CONSTINIT PROTOBUF_ATTRIBUTE_INIT_PRIORITY1
+const ::_pbi::TcParseTable<1, 2, 0, 60, 2>
+BlockMessageSenderResponse::_table_ = {
+  {
+    PROTOBUF_FIELD_OFFSET(BlockMessageSenderResponse, _impl_._has_bits_),
+    0, // no _extensions_
+    2, 8,  // max_field_number, fast_idx_mask
+    offsetof(decltype(_table_), field_lookup_table),
+    4294967292,  // skipmap
+    offsetof(decltype(_table_), field_entries),
+    2,  // num_field_entries
+    0,  // num_aux_entries
+    offsetof(decltype(_table_), field_names),  // no aux_entries
+    BlockMessageSenderResponse_class_data_.base(),
+    nullptr,  // post_loop_handler
+    ::_pbi::TcParser::GenericFallback,  // fallback
+    #ifdef PROTOBUF_PREFETCH_PARSE_TABLE
+    ::_pbi::TcParser::GetTable<::chirp::chat::BlockMessageSenderResponse>(),  // to_prefetch
+    #endif  // PROTOBUF_PREFETCH_PARSE_TABLE
+  }, {{
+    // string target_user_id = 2;
+    {::_pbi::TcParser::FastUS1,
+     {18, 0, 0,
+      PROTOBUF_FIELD_OFFSET(BlockMessageSenderResponse, _impl_.target_user_id_)}},
+    // .chirp.common.ErrorCode code = 1;
+    {::_pbi::TcParser::SingularVarintNoZag1<::uint32_t, offsetof(BlockMessageSenderResponse, _impl_.code_), 1>(),
+     {8, 1, 0,
+      PROTOBUF_FIELD_OFFSET(BlockMessageSenderResponse, _impl_.code_)}},
+  }}, {{
+    65535, 65535
+  }}, {{
+    // .chirp.common.ErrorCode code = 1;
+    {PROTOBUF_FIELD_OFFSET(BlockMessageSenderResponse, _impl_.code_), _Internal::kHasBitsOffset + 1, 0, (0 | ::_fl::kFcOptional | ::_fl::kOpenEnum)},
+    // string target_user_id = 2;
+    {PROTOBUF_FIELD_OFFSET(BlockMessageSenderResponse, _impl_.target_user_id_), _Internal::kHasBitsOffset + 0, 0, (0 | ::_fl::kFcOptional | ::_fl::kUtf8String | ::_fl::kRepAString)},
+  }},
+  // no aux_entries
+  {{
+    "\45\0\16\0\0\0\0\0"
+    "chirp.chat.BlockMessageSenderResponse"
+    "target_user_id"
+  }},
+};
+PROTOBUF_NOINLINE void BlockMessageSenderResponse::Clear() {
+// @@protoc_insertion_point(message_clear_start:chirp.chat.BlockMessageSenderResponse)
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  ::uint32_t cached_has_bits = 0;
+  // Prevent compiler warnings about cached_has_bits being unused
+  (void) cached_has_bits;
+
+  cached_has_bits = _impl_._has_bits_[0];
+  if (CheckHasBit(cached_has_bits, 0x00000001U)) {
+    _impl_.target_user_id_.ClearNonDefaultToEmpty();
+  }
+  _impl_.code_ = 0;
+  _impl_._has_bits_.Clear();
+  _internal_metadata_.Clear<::google::protobuf::UnknownFieldSet>();
+}
+
+#if defined(PROTOBUF_CUSTOM_VTABLE)
+::uint8_t* PROTOBUF_NONNULL BlockMessageSenderResponse::_InternalSerialize(
+    const ::google::protobuf::MessageLite& base, ::uint8_t* PROTOBUF_NONNULL target,
+    ::google::protobuf::io::EpsCopyOutputStream* PROTOBUF_NONNULL stream) {
+  const BlockMessageSenderResponse& this_ = static_cast<const BlockMessageSenderResponse&>(base);
+#else   // PROTOBUF_CUSTOM_VTABLE
+::uint8_t* PROTOBUF_NONNULL BlockMessageSenderResponse::_InternalSerialize(
+    ::uint8_t* PROTOBUF_NONNULL target,
+    ::google::protobuf::io::EpsCopyOutputStream* PROTOBUF_NONNULL stream) const {
+  const BlockMessageSenderResponse& this_ = *this;
+#endif  // PROTOBUF_CUSTOM_VTABLE
+  if constexpr (::_pbi::DebugHardenCheckHasBitConsistency()) {
+    this_.CheckHasBitConsistency();
+  }
+  // @@protoc_insertion_point(serialize_to_array_start:chirp.chat.BlockMessageSenderResponse)
+  ::uint32_t cached_has_bits = 0;
+  (void)cached_has_bits;
+
+  cached_has_bits = this_._impl_._has_bits_[0];
+  // .chirp.common.ErrorCode code = 1;
+  if (CheckHasBit(cached_has_bits, 0x00000002U)) {
+    if (this_._internal_code() != 0) {
+      target = stream->EnsureSpace(target);
+      target = ::_pbi::WireFormatLite::WriteEnumToArray(
+          1, this_._internal_code(), target);
+    }
+  }
+
+  // string target_user_id = 2;
+  if (CheckHasBit(cached_has_bits, 0x00000001U)) {
+    if (!this_._internal_target_user_id().empty()) {
+      const ::std::string& _s = this_._internal_target_user_id();
+      ::google::protobuf::internal::WireFormatLite::VerifyUtf8String(
+          _s.data(), static_cast<int>(_s.length()), ::google::protobuf::internal::WireFormatLite::SERIALIZE, "chirp.chat.BlockMessageSenderResponse.target_user_id");
+      target = stream->WriteStringMaybeAliased(2, _s, target);
+    }
+  }
+
+  if (ABSL_PREDICT_FALSE(this_._internal_metadata_.have_unknown_fields())) {
+    target =
+        ::_pbi::WireFormat::InternalSerializeUnknownFieldsToArray(
+            this_._internal_metadata_.unknown_fields<::google::protobuf::UnknownFieldSet>(::google::protobuf::UnknownFieldSet::default_instance), target, stream);
+  }
+  // @@protoc_insertion_point(serialize_to_array_end:chirp.chat.BlockMessageSenderResponse)
+  return target;
+}
+
+#if defined(PROTOBUF_CUSTOM_VTABLE)
+::size_t BlockMessageSenderResponse::ByteSizeLong(const MessageLite& base) {
+  const BlockMessageSenderResponse& this_ = static_cast<const BlockMessageSenderResponse&>(base);
+#else   // PROTOBUF_CUSTOM_VTABLE
+::size_t BlockMessageSenderResponse::ByteSizeLong() const {
+  const BlockMessageSenderResponse& this_ = *this;
+#endif  // PROTOBUF_CUSTOM_VTABLE
+  // @@protoc_insertion_point(message_byte_size_start:chirp.chat.BlockMessageSenderResponse)
+  ::size_t total_size = 0;
+
+  ::uint32_t cached_has_bits = 0;
+  // Prevent compiler warnings about cached_has_bits being unused
+  (void)cached_has_bits;
+
+  ::_pbi::Prefetch5LinesFrom7Lines(&this_);
+  cached_has_bits = this_._impl_._has_bits_[0];
+  if (BatchCheckHasBit(cached_has_bits, 0x00000003U)) {
+    // string target_user_id = 2;
+    if (CheckHasBit(cached_has_bits, 0x00000001U)) {
+      if (!this_._internal_target_user_id().empty()) {
+        total_size += 1 + ::google::protobuf::internal::WireFormatLite::StringSize(
+                                        this_._internal_target_user_id());
+      }
+    }
+    // .chirp.common.ErrorCode code = 1;
+    if (CheckHasBit(cached_has_bits, 0x00000002U)) {
+      if (this_._internal_code() != 0) {
+        total_size += 1 +
+                      ::_pbi::WireFormatLite::EnumSize(this_._internal_code());
+      }
+    }
+  }
+  return this_.MaybeComputeUnknownFieldsSize(total_size,
+                                             &this_._impl_._cached_size_);
+}
+
+void BlockMessageSenderResponse::MergeImpl(::google::protobuf::MessageLite& to_msg,
+                            const ::google::protobuf::MessageLite& from_msg) {
+   auto* const _this =
+      static_cast<BlockMessageSenderResponse*>(&to_msg);
+  auto& from = static_cast<const BlockMessageSenderResponse&>(from_msg);
+  if constexpr (::_pbi::DebugHardenCheckHasBitConsistency()) {
+    from.CheckHasBitConsistency();
+  }
+  // @@protoc_insertion_point(class_specific_merge_from_start:chirp.chat.BlockMessageSenderResponse)
+  ABSL_DCHECK_NE(&from, _this);
+  ::uint32_t cached_has_bits = 0;
+  (void)cached_has_bits;
+
+  cached_has_bits = from._impl_._has_bits_[0];
+  if (BatchCheckHasBit(cached_has_bits, 0x00000003U)) {
+    if (CheckHasBit(cached_has_bits, 0x00000001U)) {
+      if (!from._internal_target_user_id().empty()) {
+        _this->_internal_set_target_user_id(from._internal_target_user_id());
+      } else {
+        if (_this->_impl_.target_user_id_.IsDefault()) {
+          _this->_internal_set_target_user_id("");
+        }
+      }
+    }
+    if (CheckHasBit(cached_has_bits, 0x00000002U)) {
+      if (from._internal_code() != 0) {
+        _this->_impl_.code_ = from._impl_.code_;
+      }
+    }
+  }
+  _this->_impl_._has_bits_[0] |= cached_has_bits;
+  _this->_internal_metadata_.MergeFrom<::google::protobuf::UnknownFieldSet>(
+      from._internal_metadata_);
+}
+
+void BlockMessageSenderResponse::CopyFrom(const BlockMessageSenderResponse& from) {
+  // @@protoc_insertion_point(class_specific_copy_from_start:chirp.chat.BlockMessageSenderResponse)
+  if (&from == this) return;
+  Clear();
+  MergeFrom(from);
+}
+
+
+void BlockMessageSenderResponse::InternalSwap(BlockMessageSenderResponse* PROTOBUF_RESTRICT PROTOBUF_NONNULL other) {
+  using ::std::swap;
+  auto* arena = GetArena();
+  ABSL_DCHECK_EQ(arena, other->GetArena());
+  _internal_metadata_.InternalSwap(&other->_internal_metadata_);
+  swap(_impl_._has_bits_[0], other->_impl_._has_bits_[0]);
+  ::_pbi::ArenaStringPtr::InternalSwap(&_impl_.target_user_id_, &other->_impl_.target_user_id_, arena);
+  swap(_impl_.code_, other->_impl_.code_);
+}
+
+::google::protobuf::Metadata BlockMessageSenderResponse::GetMetadata() const {
+  return ::google::protobuf::Message::GetMetadataImpl(GetClassData()->full());
+}
+// ===================================================================
+
+class UnblockMessageSenderRequest::_Internal {
+ public:
+  using HasBits =
+      decltype(::std::declval<UnblockMessageSenderRequest>()._impl_._has_bits_);
+  static constexpr ::int32_t kHasBitsOffset =
+      8 * PROTOBUF_FIELD_OFFSET(UnblockMessageSenderRequest, _impl_._has_bits_);
+};
+
+UnblockMessageSenderRequest::UnblockMessageSenderRequest(::google::protobuf::Arena* PROTOBUF_NULLABLE arena)
+#if defined(PROTOBUF_CUSTOM_VTABLE)
+    : ::google::protobuf::Message(arena, UnblockMessageSenderRequest_class_data_.base()) {
+#else   // PROTOBUF_CUSTOM_VTABLE
+    : ::google::protobuf::Message(arena) {
+#endif  // PROTOBUF_CUSTOM_VTABLE
+  SharedCtor(arena);
+  // @@protoc_insertion_point(arena_constructor:chirp.chat.UnblockMessageSenderRequest)
+}
+PROTOBUF_NDEBUG_INLINE UnblockMessageSenderRequest::Impl_::Impl_(
+    [[maybe_unused]] ::google::protobuf::internal::InternalVisibility visibility,
+    [[maybe_unused]] ::google::protobuf::Arena* PROTOBUF_NULLABLE arena, const Impl_& from,
+    [[maybe_unused]] const ::chirp::chat::UnblockMessageSenderRequest& from_msg)
+      : _has_bits_{from._has_bits_},
+        _cached_size_{0},
+        target_user_id_(arena, from.target_user_id_) {}
+
+UnblockMessageSenderRequest::UnblockMessageSenderRequest(
+    ::google::protobuf::Arena* PROTOBUF_NULLABLE arena,
+    const UnblockMessageSenderRequest& from)
+#if defined(PROTOBUF_CUSTOM_VTABLE)
+    : ::google::protobuf::Message(arena, UnblockMessageSenderRequest_class_data_.base()) {
+#else   // PROTOBUF_CUSTOM_VTABLE
+    : ::google::protobuf::Message(arena) {
+#endif  // PROTOBUF_CUSTOM_VTABLE
+  UnblockMessageSenderRequest* const _this = this;
+  (void)_this;
+  _internal_metadata_.MergeFrom<::google::protobuf::UnknownFieldSet>(
+      from._internal_metadata_);
+  new (&_impl_) Impl_(internal_visibility(), arena, from._impl_, from);
+
+  // @@protoc_insertion_point(copy_constructor:chirp.chat.UnblockMessageSenderRequest)
+}
+PROTOBUF_NDEBUG_INLINE UnblockMessageSenderRequest::Impl_::Impl_(
+    [[maybe_unused]] ::google::protobuf::internal::InternalVisibility visibility,
+    [[maybe_unused]] ::google::protobuf::Arena* PROTOBUF_NULLABLE arena)
+      : _cached_size_{0},
+        target_user_id_(arena) {}
+
+inline void UnblockMessageSenderRequest::SharedCtor(::_pb::Arena* PROTOBUF_NULLABLE arena) {
+  new (&_impl_) Impl_(internal_visibility(), arena);
+}
+UnblockMessageSenderRequest::~UnblockMessageSenderRequest() {
+  // @@protoc_insertion_point(destructor:chirp.chat.UnblockMessageSenderRequest)
+  SharedDtor(*this);
+}
+inline void UnblockMessageSenderRequest::SharedDtor(MessageLite& self) {
+  UnblockMessageSenderRequest& this_ = static_cast<UnblockMessageSenderRequest&>(self);
+  if constexpr (::_pbi::DebugHardenCheckHasBitConsistency()) {
+    this_.CheckHasBitConsistency();
+  }
+  this_._internal_metadata_.Delete<::google::protobuf::UnknownFieldSet>();
+  ABSL_DCHECK(this_.GetArena() == nullptr);
+  this_._impl_.target_user_id_.Destroy();
+  this_._impl_.~Impl_();
+}
+
+inline void* PROTOBUF_NONNULL UnblockMessageSenderRequest::PlacementNew_(
+    const void* PROTOBUF_NONNULL, void* PROTOBUF_NONNULL mem,
+    ::google::protobuf::Arena* PROTOBUF_NULLABLE arena) {
+  return ::new (mem) UnblockMessageSenderRequest(arena);
+}
+constexpr auto UnblockMessageSenderRequest::InternalNewImpl_() {
+  return ::google::protobuf::internal::MessageCreator::CopyInit(sizeof(UnblockMessageSenderRequest),
+                                            alignof(UnblockMessageSenderRequest));
+}
+constexpr auto UnblockMessageSenderRequest::InternalGenerateClassData_() {
+  return ::google::protobuf::internal::ClassDataFull{
+      ::google::protobuf::internal::ClassData{
+          &_UnblockMessageSenderRequest_default_instance_._instance,
+          &_table_.header,
+          nullptr,  // OnDemandRegisterArenaDtor
+          nullptr,  // IsInitialized
+          &UnblockMessageSenderRequest::MergeImpl,
+          ::google::protobuf::Message::GetNewImpl<UnblockMessageSenderRequest>(),
+#if defined(PROTOBUF_CUSTOM_VTABLE)
+          &UnblockMessageSenderRequest::SharedDtor,
+          ::google::protobuf::Message::GetClearImpl<UnblockMessageSenderRequest>(), &UnblockMessageSenderRequest::ByteSizeLong,
+              &UnblockMessageSenderRequest::_InternalSerialize,
+#endif  // PROTOBUF_CUSTOM_VTABLE
+          PROTOBUF_FIELD_OFFSET(UnblockMessageSenderRequest, _impl_._cached_size_),
+          false,
+      },
+      &UnblockMessageSenderRequest::kDescriptorMethods,
+      &descriptor_table_proto_2fchat_2eproto,
+      nullptr,  // tracker
+  };
+}
+
+PROTOBUF_CONSTINIT PROTOBUF_ATTRIBUTE_INIT_PRIORITY1 const
+    ::google::protobuf::internal::ClassDataFull UnblockMessageSenderRequest_class_data_ =
+        UnblockMessageSenderRequest::InternalGenerateClassData_();
+
+PROTOBUF_ATTRIBUTE_WEAK const ::google::protobuf::internal::ClassData* PROTOBUF_NONNULL
+UnblockMessageSenderRequest::GetClassData() const {
+  ::google::protobuf::internal::PrefetchToLocalCache(&UnblockMessageSenderRequest_class_data_);
+  ::google::protobuf::internal::PrefetchToLocalCache(UnblockMessageSenderRequest_class_data_.tc_table);
+  return UnblockMessageSenderRequest_class_data_.base();
+}
+PROTOBUF_CONSTINIT PROTOBUF_ATTRIBUTE_INIT_PRIORITY1
+const ::_pbi::TcParseTable<0, 1, 0, 61, 2>
+UnblockMessageSenderRequest::_table_ = {
+  {
+    PROTOBUF_FIELD_OFFSET(UnblockMessageSenderRequest, _impl_._has_bits_),
+    0, // no _extensions_
+    1, 0,  // max_field_number, fast_idx_mask
+    offsetof(decltype(_table_), field_lookup_table),
+    4294967294,  // skipmap
+    offsetof(decltype(_table_), field_entries),
+    1,  // num_field_entries
+    0,  // num_aux_entries
+    offsetof(decltype(_table_), field_names),  // no aux_entries
+    UnblockMessageSenderRequest_class_data_.base(),
+    nullptr,  // post_loop_handler
+    ::_pbi::TcParser::GenericFallback,  // fallback
+    #ifdef PROTOBUF_PREFETCH_PARSE_TABLE
+    ::_pbi::TcParser::GetTable<::chirp::chat::UnblockMessageSenderRequest>(),  // to_prefetch
+    #endif  // PROTOBUF_PREFETCH_PARSE_TABLE
+  }, {{
+    // string target_user_id = 1;
+    {::_pbi::TcParser::FastUS1,
+     {10, 0, 0,
+      PROTOBUF_FIELD_OFFSET(UnblockMessageSenderRequest, _impl_.target_user_id_)}},
+  }}, {{
+    65535, 65535
+  }}, {{
+    // string target_user_id = 1;
+    {PROTOBUF_FIELD_OFFSET(UnblockMessageSenderRequest, _impl_.target_user_id_), _Internal::kHasBitsOffset + 0, 0, (0 | ::_fl::kFcOptional | ::_fl::kUtf8String | ::_fl::kRepAString)},
+  }},
+  // no aux_entries
+  {{
+    "\46\16\0\0\0\0\0\0"
+    "chirp.chat.UnblockMessageSenderRequest"
+    "target_user_id"
+  }},
+};
+PROTOBUF_NOINLINE void UnblockMessageSenderRequest::Clear() {
+// @@protoc_insertion_point(message_clear_start:chirp.chat.UnblockMessageSenderRequest)
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  ::uint32_t cached_has_bits = 0;
+  // Prevent compiler warnings about cached_has_bits being unused
+  (void) cached_has_bits;
+
+  cached_has_bits = _impl_._has_bits_[0];
+  if (CheckHasBit(cached_has_bits, 0x00000001U)) {
+    _impl_.target_user_id_.ClearNonDefaultToEmpty();
+  }
+  _impl_._has_bits_.Clear();
+  _internal_metadata_.Clear<::google::protobuf::UnknownFieldSet>();
+}
+
+#if defined(PROTOBUF_CUSTOM_VTABLE)
+::uint8_t* PROTOBUF_NONNULL UnblockMessageSenderRequest::_InternalSerialize(
+    const ::google::protobuf::MessageLite& base, ::uint8_t* PROTOBUF_NONNULL target,
+    ::google::protobuf::io::EpsCopyOutputStream* PROTOBUF_NONNULL stream) {
+  const UnblockMessageSenderRequest& this_ = static_cast<const UnblockMessageSenderRequest&>(base);
+#else   // PROTOBUF_CUSTOM_VTABLE
+::uint8_t* PROTOBUF_NONNULL UnblockMessageSenderRequest::_InternalSerialize(
+    ::uint8_t* PROTOBUF_NONNULL target,
+    ::google::protobuf::io::EpsCopyOutputStream* PROTOBUF_NONNULL stream) const {
+  const UnblockMessageSenderRequest& this_ = *this;
+#endif  // PROTOBUF_CUSTOM_VTABLE
+  if constexpr (::_pbi::DebugHardenCheckHasBitConsistency()) {
+    this_.CheckHasBitConsistency();
+  }
+  // @@protoc_insertion_point(serialize_to_array_start:chirp.chat.UnblockMessageSenderRequest)
+  ::uint32_t cached_has_bits = 0;
+  (void)cached_has_bits;
+
+  cached_has_bits = this_._impl_._has_bits_[0];
+  // string target_user_id = 1;
+  if (CheckHasBit(cached_has_bits, 0x00000001U)) {
+    if (!this_._internal_target_user_id().empty()) {
+      const ::std::string& _s = this_._internal_target_user_id();
+      ::google::protobuf::internal::WireFormatLite::VerifyUtf8String(
+          _s.data(), static_cast<int>(_s.length()), ::google::protobuf::internal::WireFormatLite::SERIALIZE, "chirp.chat.UnblockMessageSenderRequest.target_user_id");
+      target = stream->WriteStringMaybeAliased(1, _s, target);
+    }
+  }
+
+  if (ABSL_PREDICT_FALSE(this_._internal_metadata_.have_unknown_fields())) {
+    target =
+        ::_pbi::WireFormat::InternalSerializeUnknownFieldsToArray(
+            this_._internal_metadata_.unknown_fields<::google::protobuf::UnknownFieldSet>(::google::protobuf::UnknownFieldSet::default_instance), target, stream);
+  }
+  // @@protoc_insertion_point(serialize_to_array_end:chirp.chat.UnblockMessageSenderRequest)
+  return target;
+}
+
+#if defined(PROTOBUF_CUSTOM_VTABLE)
+::size_t UnblockMessageSenderRequest::ByteSizeLong(const MessageLite& base) {
+  const UnblockMessageSenderRequest& this_ = static_cast<const UnblockMessageSenderRequest&>(base);
+#else   // PROTOBUF_CUSTOM_VTABLE
+::size_t UnblockMessageSenderRequest::ByteSizeLong() const {
+  const UnblockMessageSenderRequest& this_ = *this;
+#endif  // PROTOBUF_CUSTOM_VTABLE
+  // @@protoc_insertion_point(message_byte_size_start:chirp.chat.UnblockMessageSenderRequest)
+  ::size_t total_size = 0;
+
+  ::uint32_t cached_has_bits = 0;
+  // Prevent compiler warnings about cached_has_bits being unused
+  (void)cached_has_bits;
+
+   {
+    // string target_user_id = 1;
+    cached_has_bits = this_._impl_._has_bits_[0];
+    if (CheckHasBit(cached_has_bits, 0x00000001U)) {
+      if (!this_._internal_target_user_id().empty()) {
+        total_size += 1 + ::google::protobuf::internal::WireFormatLite::StringSize(
+                                        this_._internal_target_user_id());
+      }
+    }
+  }
+  return this_.MaybeComputeUnknownFieldsSize(total_size,
+                                             &this_._impl_._cached_size_);
+}
+
+void UnblockMessageSenderRequest::MergeImpl(::google::protobuf::MessageLite& to_msg,
+                            const ::google::protobuf::MessageLite& from_msg) {
+   auto* const _this =
+      static_cast<UnblockMessageSenderRequest*>(&to_msg);
+  auto& from = static_cast<const UnblockMessageSenderRequest&>(from_msg);
+  if constexpr (::_pbi::DebugHardenCheckHasBitConsistency()) {
+    from.CheckHasBitConsistency();
+  }
+  // @@protoc_insertion_point(class_specific_merge_from_start:chirp.chat.UnblockMessageSenderRequest)
+  ABSL_DCHECK_NE(&from, _this);
+  ::uint32_t cached_has_bits = 0;
+  (void)cached_has_bits;
+
+  cached_has_bits = from._impl_._has_bits_[0];
+  if (CheckHasBit(cached_has_bits, 0x00000001U)) {
+    if (!from._internal_target_user_id().empty()) {
+      _this->_internal_set_target_user_id(from._internal_target_user_id());
+    } else {
+      if (_this->_impl_.target_user_id_.IsDefault()) {
+        _this->_internal_set_target_user_id("");
+      }
+    }
+  }
+  _this->_impl_._has_bits_[0] |= cached_has_bits;
+  _this->_internal_metadata_.MergeFrom<::google::protobuf::UnknownFieldSet>(
+      from._internal_metadata_);
+}
+
+void UnblockMessageSenderRequest::CopyFrom(const UnblockMessageSenderRequest& from) {
+  // @@protoc_insertion_point(class_specific_copy_from_start:chirp.chat.UnblockMessageSenderRequest)
+  if (&from == this) return;
+  Clear();
+  MergeFrom(from);
+}
+
+
+void UnblockMessageSenderRequest::InternalSwap(UnblockMessageSenderRequest* PROTOBUF_RESTRICT PROTOBUF_NONNULL other) {
+  using ::std::swap;
+  auto* arena = GetArena();
+  ABSL_DCHECK_EQ(arena, other->GetArena());
+  _internal_metadata_.InternalSwap(&other->_internal_metadata_);
+  swap(_impl_._has_bits_[0], other->_impl_._has_bits_[0]);
+  ::_pbi::ArenaStringPtr::InternalSwap(&_impl_.target_user_id_, &other->_impl_.target_user_id_, arena);
+}
+
+::google::protobuf::Metadata UnblockMessageSenderRequest::GetMetadata() const {
+  return ::google::protobuf::Message::GetMetadataImpl(GetClassData()->full());
+}
+// ===================================================================
+
+class UnblockMessageSenderResponse::_Internal {
+ public:
+  using HasBits =
+      decltype(::std::declval<UnblockMessageSenderResponse>()._impl_._has_bits_);
+  static constexpr ::int32_t kHasBitsOffset =
+      8 * PROTOBUF_FIELD_OFFSET(UnblockMessageSenderResponse, _impl_._has_bits_);
+};
+
+UnblockMessageSenderResponse::UnblockMessageSenderResponse(::google::protobuf::Arena* PROTOBUF_NULLABLE arena)
+#if defined(PROTOBUF_CUSTOM_VTABLE)
+    : ::google::protobuf::Message(arena, UnblockMessageSenderResponse_class_data_.base()) {
+#else   // PROTOBUF_CUSTOM_VTABLE
+    : ::google::protobuf::Message(arena) {
+#endif  // PROTOBUF_CUSTOM_VTABLE
+  SharedCtor(arena);
+  // @@protoc_insertion_point(arena_constructor:chirp.chat.UnblockMessageSenderResponse)
+}
+PROTOBUF_NDEBUG_INLINE UnblockMessageSenderResponse::Impl_::Impl_(
+    [[maybe_unused]] ::google::protobuf::internal::InternalVisibility visibility,
+    [[maybe_unused]] ::google::protobuf::Arena* PROTOBUF_NULLABLE arena, const Impl_& from,
+    [[maybe_unused]] const ::chirp::chat::UnblockMessageSenderResponse& from_msg)
+      : _has_bits_{from._has_bits_},
+        _cached_size_{0},
+        target_user_id_(arena, from.target_user_id_) {}
+
+UnblockMessageSenderResponse::UnblockMessageSenderResponse(
+    ::google::protobuf::Arena* PROTOBUF_NULLABLE arena,
+    const UnblockMessageSenderResponse& from)
+#if defined(PROTOBUF_CUSTOM_VTABLE)
+    : ::google::protobuf::Message(arena, UnblockMessageSenderResponse_class_data_.base()) {
+#else   // PROTOBUF_CUSTOM_VTABLE
+    : ::google::protobuf::Message(arena) {
+#endif  // PROTOBUF_CUSTOM_VTABLE
+  UnblockMessageSenderResponse* const _this = this;
+  (void)_this;
+  _internal_metadata_.MergeFrom<::google::protobuf::UnknownFieldSet>(
+      from._internal_metadata_);
+  new (&_impl_) Impl_(internal_visibility(), arena, from._impl_, from);
+  _impl_.code_ = from._impl_.code_;
+
+  // @@protoc_insertion_point(copy_constructor:chirp.chat.UnblockMessageSenderResponse)
+}
+PROTOBUF_NDEBUG_INLINE UnblockMessageSenderResponse::Impl_::Impl_(
+    [[maybe_unused]] ::google::protobuf::internal::InternalVisibility visibility,
+    [[maybe_unused]] ::google::protobuf::Arena* PROTOBUF_NULLABLE arena)
+      : _cached_size_{0},
+        target_user_id_(arena) {}
+
+inline void UnblockMessageSenderResponse::SharedCtor(::_pb::Arena* PROTOBUF_NULLABLE arena) {
+  new (&_impl_) Impl_(internal_visibility(), arena);
+  _impl_.code_ = {};
+}
+UnblockMessageSenderResponse::~UnblockMessageSenderResponse() {
+  // @@protoc_insertion_point(destructor:chirp.chat.UnblockMessageSenderResponse)
+  SharedDtor(*this);
+}
+inline void UnblockMessageSenderResponse::SharedDtor(MessageLite& self) {
+  UnblockMessageSenderResponse& this_ = static_cast<UnblockMessageSenderResponse&>(self);
+  if constexpr (::_pbi::DebugHardenCheckHasBitConsistency()) {
+    this_.CheckHasBitConsistency();
+  }
+  this_._internal_metadata_.Delete<::google::protobuf::UnknownFieldSet>();
+  ABSL_DCHECK(this_.GetArena() == nullptr);
+  this_._impl_.target_user_id_.Destroy();
+  this_._impl_.~Impl_();
+}
+
+inline void* PROTOBUF_NONNULL UnblockMessageSenderResponse::PlacementNew_(
+    const void* PROTOBUF_NONNULL, void* PROTOBUF_NONNULL mem,
+    ::google::protobuf::Arena* PROTOBUF_NULLABLE arena) {
+  return ::new (mem) UnblockMessageSenderResponse(arena);
+}
+constexpr auto UnblockMessageSenderResponse::InternalNewImpl_() {
+  return ::google::protobuf::internal::MessageCreator::CopyInit(sizeof(UnblockMessageSenderResponse),
+                                            alignof(UnblockMessageSenderResponse));
+}
+constexpr auto UnblockMessageSenderResponse::InternalGenerateClassData_() {
+  return ::google::protobuf::internal::ClassDataFull{
+      ::google::protobuf::internal::ClassData{
+          &_UnblockMessageSenderResponse_default_instance_._instance,
+          &_table_.header,
+          nullptr,  // OnDemandRegisterArenaDtor
+          nullptr,  // IsInitialized
+          &UnblockMessageSenderResponse::MergeImpl,
+          ::google::protobuf::Message::GetNewImpl<UnblockMessageSenderResponse>(),
+#if defined(PROTOBUF_CUSTOM_VTABLE)
+          &UnblockMessageSenderResponse::SharedDtor,
+          ::google::protobuf::Message::GetClearImpl<UnblockMessageSenderResponse>(), &UnblockMessageSenderResponse::ByteSizeLong,
+              &UnblockMessageSenderResponse::_InternalSerialize,
+#endif  // PROTOBUF_CUSTOM_VTABLE
+          PROTOBUF_FIELD_OFFSET(UnblockMessageSenderResponse, _impl_._cached_size_),
+          false,
+      },
+      &UnblockMessageSenderResponse::kDescriptorMethods,
+      &descriptor_table_proto_2fchat_2eproto,
+      nullptr,  // tracker
+  };
+}
+
+PROTOBUF_CONSTINIT PROTOBUF_ATTRIBUTE_INIT_PRIORITY1 const
+    ::google::protobuf::internal::ClassDataFull UnblockMessageSenderResponse_class_data_ =
+        UnblockMessageSenderResponse::InternalGenerateClassData_();
+
+PROTOBUF_ATTRIBUTE_WEAK const ::google::protobuf::internal::ClassData* PROTOBUF_NONNULL
+UnblockMessageSenderResponse::GetClassData() const {
+  ::google::protobuf::internal::PrefetchToLocalCache(&UnblockMessageSenderResponse_class_data_);
+  ::google::protobuf::internal::PrefetchToLocalCache(UnblockMessageSenderResponse_class_data_.tc_table);
+  return UnblockMessageSenderResponse_class_data_.base();
+}
+PROTOBUF_CONSTINIT PROTOBUF_ATTRIBUTE_INIT_PRIORITY1
+const ::_pbi::TcParseTable<1, 2, 0, 62, 2>
+UnblockMessageSenderResponse::_table_ = {
+  {
+    PROTOBUF_FIELD_OFFSET(UnblockMessageSenderResponse, _impl_._has_bits_),
+    0, // no _extensions_
+    2, 8,  // max_field_number, fast_idx_mask
+    offsetof(decltype(_table_), field_lookup_table),
+    4294967292,  // skipmap
+    offsetof(decltype(_table_), field_entries),
+    2,  // num_field_entries
+    0,  // num_aux_entries
+    offsetof(decltype(_table_), field_names),  // no aux_entries
+    UnblockMessageSenderResponse_class_data_.base(),
+    nullptr,  // post_loop_handler
+    ::_pbi::TcParser::GenericFallback,  // fallback
+    #ifdef PROTOBUF_PREFETCH_PARSE_TABLE
+    ::_pbi::TcParser::GetTable<::chirp::chat::UnblockMessageSenderResponse>(),  // to_prefetch
+    #endif  // PROTOBUF_PREFETCH_PARSE_TABLE
+  }, {{
+    // string target_user_id = 2;
+    {::_pbi::TcParser::FastUS1,
+     {18, 0, 0,
+      PROTOBUF_FIELD_OFFSET(UnblockMessageSenderResponse, _impl_.target_user_id_)}},
+    // .chirp.common.ErrorCode code = 1;
+    {::_pbi::TcParser::SingularVarintNoZag1<::uint32_t, offsetof(UnblockMessageSenderResponse, _impl_.code_), 1>(),
+     {8, 1, 0,
+      PROTOBUF_FIELD_OFFSET(UnblockMessageSenderResponse, _impl_.code_)}},
+  }}, {{
+    65535, 65535
+  }}, {{
+    // .chirp.common.ErrorCode code = 1;
+    {PROTOBUF_FIELD_OFFSET(UnblockMessageSenderResponse, _impl_.code_), _Internal::kHasBitsOffset + 1, 0, (0 | ::_fl::kFcOptional | ::_fl::kOpenEnum)},
+    // string target_user_id = 2;
+    {PROTOBUF_FIELD_OFFSET(UnblockMessageSenderResponse, _impl_.target_user_id_), _Internal::kHasBitsOffset + 0, 0, (0 | ::_fl::kFcOptional | ::_fl::kUtf8String | ::_fl::kRepAString)},
+  }},
+  // no aux_entries
+  {{
+    "\47\0\16\0\0\0\0\0"
+    "chirp.chat.UnblockMessageSenderResponse"
+    "target_user_id"
+  }},
+};
+PROTOBUF_NOINLINE void UnblockMessageSenderResponse::Clear() {
+// @@protoc_insertion_point(message_clear_start:chirp.chat.UnblockMessageSenderResponse)
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  ::uint32_t cached_has_bits = 0;
+  // Prevent compiler warnings about cached_has_bits being unused
+  (void) cached_has_bits;
+
+  cached_has_bits = _impl_._has_bits_[0];
+  if (CheckHasBit(cached_has_bits, 0x00000001U)) {
+    _impl_.target_user_id_.ClearNonDefaultToEmpty();
+  }
+  _impl_.code_ = 0;
+  _impl_._has_bits_.Clear();
+  _internal_metadata_.Clear<::google::protobuf::UnknownFieldSet>();
+}
+
+#if defined(PROTOBUF_CUSTOM_VTABLE)
+::uint8_t* PROTOBUF_NONNULL UnblockMessageSenderResponse::_InternalSerialize(
+    const ::google::protobuf::MessageLite& base, ::uint8_t* PROTOBUF_NONNULL target,
+    ::google::protobuf::io::EpsCopyOutputStream* PROTOBUF_NONNULL stream) {
+  const UnblockMessageSenderResponse& this_ = static_cast<const UnblockMessageSenderResponse&>(base);
+#else   // PROTOBUF_CUSTOM_VTABLE
+::uint8_t* PROTOBUF_NONNULL UnblockMessageSenderResponse::_InternalSerialize(
+    ::uint8_t* PROTOBUF_NONNULL target,
+    ::google::protobuf::io::EpsCopyOutputStream* PROTOBUF_NONNULL stream) const {
+  const UnblockMessageSenderResponse& this_ = *this;
+#endif  // PROTOBUF_CUSTOM_VTABLE
+  if constexpr (::_pbi::DebugHardenCheckHasBitConsistency()) {
+    this_.CheckHasBitConsistency();
+  }
+  // @@protoc_insertion_point(serialize_to_array_start:chirp.chat.UnblockMessageSenderResponse)
+  ::uint32_t cached_has_bits = 0;
+  (void)cached_has_bits;
+
+  cached_has_bits = this_._impl_._has_bits_[0];
+  // .chirp.common.ErrorCode code = 1;
+  if (CheckHasBit(cached_has_bits, 0x00000002U)) {
+    if (this_._internal_code() != 0) {
+      target = stream->EnsureSpace(target);
+      target = ::_pbi::WireFormatLite::WriteEnumToArray(
+          1, this_._internal_code(), target);
+    }
+  }
+
+  // string target_user_id = 2;
+  if (CheckHasBit(cached_has_bits, 0x00000001U)) {
+    if (!this_._internal_target_user_id().empty()) {
+      const ::std::string& _s = this_._internal_target_user_id();
+      ::google::protobuf::internal::WireFormatLite::VerifyUtf8String(
+          _s.data(), static_cast<int>(_s.length()), ::google::protobuf::internal::WireFormatLite::SERIALIZE, "chirp.chat.UnblockMessageSenderResponse.target_user_id");
+      target = stream->WriteStringMaybeAliased(2, _s, target);
+    }
+  }
+
+  if (ABSL_PREDICT_FALSE(this_._internal_metadata_.have_unknown_fields())) {
+    target =
+        ::_pbi::WireFormat::InternalSerializeUnknownFieldsToArray(
+            this_._internal_metadata_.unknown_fields<::google::protobuf::UnknownFieldSet>(::google::protobuf::UnknownFieldSet::default_instance), target, stream);
+  }
+  // @@protoc_insertion_point(serialize_to_array_end:chirp.chat.UnblockMessageSenderResponse)
+  return target;
+}
+
+#if defined(PROTOBUF_CUSTOM_VTABLE)
+::size_t UnblockMessageSenderResponse::ByteSizeLong(const MessageLite& base) {
+  const UnblockMessageSenderResponse& this_ = static_cast<const UnblockMessageSenderResponse&>(base);
+#else   // PROTOBUF_CUSTOM_VTABLE
+::size_t UnblockMessageSenderResponse::ByteSizeLong() const {
+  const UnblockMessageSenderResponse& this_ = *this;
+#endif  // PROTOBUF_CUSTOM_VTABLE
+  // @@protoc_insertion_point(message_byte_size_start:chirp.chat.UnblockMessageSenderResponse)
+  ::size_t total_size = 0;
+
+  ::uint32_t cached_has_bits = 0;
+  // Prevent compiler warnings about cached_has_bits being unused
+  (void)cached_has_bits;
+
+  ::_pbi::Prefetch5LinesFrom7Lines(&this_);
+  cached_has_bits = this_._impl_._has_bits_[0];
+  if (BatchCheckHasBit(cached_has_bits, 0x00000003U)) {
+    // string target_user_id = 2;
+    if (CheckHasBit(cached_has_bits, 0x00000001U)) {
+      if (!this_._internal_target_user_id().empty()) {
+        total_size += 1 + ::google::protobuf::internal::WireFormatLite::StringSize(
+                                        this_._internal_target_user_id());
+      }
+    }
+    // .chirp.common.ErrorCode code = 1;
+    if (CheckHasBit(cached_has_bits, 0x00000002U)) {
+      if (this_._internal_code() != 0) {
+        total_size += 1 +
+                      ::_pbi::WireFormatLite::EnumSize(this_._internal_code());
+      }
+    }
+  }
+  return this_.MaybeComputeUnknownFieldsSize(total_size,
+                                             &this_._impl_._cached_size_);
+}
+
+void UnblockMessageSenderResponse::MergeImpl(::google::protobuf::MessageLite& to_msg,
+                            const ::google::protobuf::MessageLite& from_msg) {
+   auto* const _this =
+      static_cast<UnblockMessageSenderResponse*>(&to_msg);
+  auto& from = static_cast<const UnblockMessageSenderResponse&>(from_msg);
+  if constexpr (::_pbi::DebugHardenCheckHasBitConsistency()) {
+    from.CheckHasBitConsistency();
+  }
+  // @@protoc_insertion_point(class_specific_merge_from_start:chirp.chat.UnblockMessageSenderResponse)
+  ABSL_DCHECK_NE(&from, _this);
+  ::uint32_t cached_has_bits = 0;
+  (void)cached_has_bits;
+
+  cached_has_bits = from._impl_._has_bits_[0];
+  if (BatchCheckHasBit(cached_has_bits, 0x00000003U)) {
+    if (CheckHasBit(cached_has_bits, 0x00000001U)) {
+      if (!from._internal_target_user_id().empty()) {
+        _this->_internal_set_target_user_id(from._internal_target_user_id());
+      } else {
+        if (_this->_impl_.target_user_id_.IsDefault()) {
+          _this->_internal_set_target_user_id("");
+        }
+      }
+    }
+    if (CheckHasBit(cached_has_bits, 0x00000002U)) {
+      if (from._internal_code() != 0) {
+        _this->_impl_.code_ = from._impl_.code_;
+      }
+    }
+  }
+  _this->_impl_._has_bits_[0] |= cached_has_bits;
+  _this->_internal_metadata_.MergeFrom<::google::protobuf::UnknownFieldSet>(
+      from._internal_metadata_);
+}
+
+void UnblockMessageSenderResponse::CopyFrom(const UnblockMessageSenderResponse& from) {
+  // @@protoc_insertion_point(class_specific_copy_from_start:chirp.chat.UnblockMessageSenderResponse)
+  if (&from == this) return;
+  Clear();
+  MergeFrom(from);
+}
+
+
+void UnblockMessageSenderResponse::InternalSwap(UnblockMessageSenderResponse* PROTOBUF_RESTRICT PROTOBUF_NONNULL other) {
+  using ::std::swap;
+  auto* arena = GetArena();
+  ABSL_DCHECK_EQ(arena, other->GetArena());
+  _internal_metadata_.InternalSwap(&other->_internal_metadata_);
+  swap(_impl_._has_bits_[0], other->_impl_._has_bits_[0]);
+  ::_pbi::ArenaStringPtr::InternalSwap(&_impl_.target_user_id_, &other->_impl_.target_user_id_, arena);
+  swap(_impl_.code_, other->_impl_.code_);
+}
+
+::google::protobuf::Metadata UnblockMessageSenderResponse::GetMetadata() const {
+  return ::google::protobuf::Message::GetMetadataImpl(GetClassData()->full());
+}
+// ===================================================================
+
+class GetBlockedSendersRequest::_Internal {
+ public:
+};
+
+GetBlockedSendersRequest::GetBlockedSendersRequest(::google::protobuf::Arena* PROTOBUF_NULLABLE arena)
+#if defined(PROTOBUF_CUSTOM_VTABLE)
+    : ::google::protobuf::internal::ZeroFieldsBase(arena, GetBlockedSendersRequest_class_data_.base()) {
+#else   // PROTOBUF_CUSTOM_VTABLE
+    : ::google::protobuf::internal::ZeroFieldsBase(arena) {
+#endif  // PROTOBUF_CUSTOM_VTABLE
+  // @@protoc_insertion_point(arena_constructor:chirp.chat.GetBlockedSendersRequest)
+}
+GetBlockedSendersRequest::GetBlockedSendersRequest(
+    ::google::protobuf::Arena* PROTOBUF_NULLABLE arena,
+    const GetBlockedSendersRequest& from)
+#if defined(PROTOBUF_CUSTOM_VTABLE)
+    : ::google::protobuf::internal::ZeroFieldsBase(arena, GetBlockedSendersRequest_class_data_.base()) {
+#else   // PROTOBUF_CUSTOM_VTABLE
+    : ::google::protobuf::internal::ZeroFieldsBase(arena) {
+#endif  // PROTOBUF_CUSTOM_VTABLE
+  GetBlockedSendersRequest* const _this = this;
+  (void)_this;
+  _internal_metadata_.MergeFrom<::google::protobuf::UnknownFieldSet>(
+      from._internal_metadata_);
+
+  // @@protoc_insertion_point(copy_constructor:chirp.chat.GetBlockedSendersRequest)
+}
+
+inline void* PROTOBUF_NONNULL GetBlockedSendersRequest::PlacementNew_(
+    const void* PROTOBUF_NONNULL, void* PROTOBUF_NONNULL mem,
+    ::google::protobuf::Arena* PROTOBUF_NULLABLE arena) {
+  return ::new (mem) GetBlockedSendersRequest(arena);
+}
+constexpr auto GetBlockedSendersRequest::InternalNewImpl_() {
+  return ::google::protobuf::internal::MessageCreator::ZeroInit(sizeof(GetBlockedSendersRequest),
+                                            alignof(GetBlockedSendersRequest));
+}
+constexpr auto GetBlockedSendersRequest::InternalGenerateClassData_() {
+  return ::google::protobuf::internal::ClassDataFull{
+      ::google::protobuf::internal::ClassData{
+          &_GetBlockedSendersRequest_default_instance_._instance,
+          &_table_.header,
+          nullptr,  // OnDemandRegisterArenaDtor
+          nullptr,  // IsInitialized
+          &GetBlockedSendersRequest::MergeImpl,
+          ::google::protobuf::internal::ZeroFieldsBase::GetNewImpl<GetBlockedSendersRequest>(),
+#if defined(PROTOBUF_CUSTOM_VTABLE)
+          &GetBlockedSendersRequest::SharedDtor,
+          ::google::protobuf::internal::ZeroFieldsBase::GetClearImpl<GetBlockedSendersRequest>(), &GetBlockedSendersRequest::ByteSizeLong,
+              &GetBlockedSendersRequest::_InternalSerialize,
+#endif  // PROTOBUF_CUSTOM_VTABLE
+          PROTOBUF_FIELD_OFFSET(GetBlockedSendersRequest, _impl_._cached_size_),
+          false,
+      },
+      &GetBlockedSendersRequest::kDescriptorMethods,
+      &descriptor_table_proto_2fchat_2eproto,
+      nullptr,  // tracker
+  };
+}
+
+PROTOBUF_CONSTINIT PROTOBUF_ATTRIBUTE_INIT_PRIORITY1 const
+    ::google::protobuf::internal::ClassDataFull GetBlockedSendersRequest_class_data_ =
+        GetBlockedSendersRequest::InternalGenerateClassData_();
+
+PROTOBUF_ATTRIBUTE_WEAK const ::google::protobuf::internal::ClassData* PROTOBUF_NONNULL
+GetBlockedSendersRequest::GetClassData() const {
+  ::google::protobuf::internal::PrefetchToLocalCache(&GetBlockedSendersRequest_class_data_);
+  ::google::protobuf::internal::PrefetchToLocalCache(GetBlockedSendersRequest_class_data_.tc_table);
+  return GetBlockedSendersRequest_class_data_.base();
+}
+PROTOBUF_CONSTINIT PROTOBUF_ATTRIBUTE_INIT_PRIORITY1
+const ::_pbi::TcParseTable<0, 0, 0, 0, 2>
+GetBlockedSendersRequest::_table_ = {
+  {
+    0,  // no _has_bits_
+    0, // no _extensions_
+    0, 0,  // max_field_number, fast_idx_mask
+    offsetof(decltype(_table_), field_lookup_table),
+    4294967295,  // skipmap
+    offsetof(decltype(_table_), field_names),  // no field_entries
+    0,  // num_field_entries
+    0,  // num_aux_entries
+    offsetof(decltype(_table_), field_names),  // no aux_entries
+    GetBlockedSendersRequest_class_data_.base(),
+    nullptr,  // post_loop_handler
+    ::_pbi::TcParser::GenericFallback,  // fallback
+    #ifdef PROTOBUF_PREFETCH_PARSE_TABLE
+    ::_pbi::TcParser::GetTable<::chirp::chat::GetBlockedSendersRequest>(),  // to_prefetch
+    #endif  // PROTOBUF_PREFETCH_PARSE_TABLE
+  }, {{
+    {::_pbi::TcParser::MiniParse, {}},
+  }}, {{
+    65535, 65535
+  }}, // no field_entries, or aux_entries
+  {{
+  }},
+};
+
+
+
+
+
+
+
+::google::protobuf::Metadata GetBlockedSendersRequest::GetMetadata() const {
+  return ::google::protobuf::internal::ZeroFieldsBase::GetMetadataImpl(GetClassData()->full());
+}
+// ===================================================================
+
+class GetBlockedSendersResponse::_Internal {
+ public:
+  using HasBits =
+      decltype(::std::declval<GetBlockedSendersResponse>()._impl_._has_bits_);
+  static constexpr ::int32_t kHasBitsOffset =
+      8 * PROTOBUF_FIELD_OFFSET(GetBlockedSendersResponse, _impl_._has_bits_);
+};
+
+GetBlockedSendersResponse::GetBlockedSendersResponse(::google::protobuf::Arena* PROTOBUF_NULLABLE arena)
+#if defined(PROTOBUF_CUSTOM_VTABLE)
+    : ::google::protobuf::Message(arena, GetBlockedSendersResponse_class_data_.base()) {
+#else   // PROTOBUF_CUSTOM_VTABLE
+    : ::google::protobuf::Message(arena) {
+#endif  // PROTOBUF_CUSTOM_VTABLE
+  SharedCtor(arena);
+  // @@protoc_insertion_point(arena_constructor:chirp.chat.GetBlockedSendersResponse)
+}
+PROTOBUF_NDEBUG_INLINE GetBlockedSendersResponse::Impl_::Impl_(
+    [[maybe_unused]] ::google::protobuf::internal::InternalVisibility visibility,
+    [[maybe_unused]] ::google::protobuf::Arena* PROTOBUF_NULLABLE arena, const Impl_& from,
+    [[maybe_unused]] const ::chirp::chat::GetBlockedSendersResponse& from_msg)
+      : _has_bits_{from._has_bits_},
+        _cached_size_{0},
+        target_user_ids_{visibility, arena, from.target_user_ids_} {}
+
+GetBlockedSendersResponse::GetBlockedSendersResponse(
+    ::google::protobuf::Arena* PROTOBUF_NULLABLE arena,
+    const GetBlockedSendersResponse& from)
+#if defined(PROTOBUF_CUSTOM_VTABLE)
+    : ::google::protobuf::Message(arena, GetBlockedSendersResponse_class_data_.base()) {
+#else   // PROTOBUF_CUSTOM_VTABLE
+    : ::google::protobuf::Message(arena) {
+#endif  // PROTOBUF_CUSTOM_VTABLE
+  GetBlockedSendersResponse* const _this = this;
+  (void)_this;
+  _internal_metadata_.MergeFrom<::google::protobuf::UnknownFieldSet>(
+      from._internal_metadata_);
+  new (&_impl_) Impl_(internal_visibility(), arena, from._impl_, from);
+  _impl_.code_ = from._impl_.code_;
+
+  // @@protoc_insertion_point(copy_constructor:chirp.chat.GetBlockedSendersResponse)
+}
+PROTOBUF_NDEBUG_INLINE GetBlockedSendersResponse::Impl_::Impl_(
+    [[maybe_unused]] ::google::protobuf::internal::InternalVisibility visibility,
+    [[maybe_unused]] ::google::protobuf::Arena* PROTOBUF_NULLABLE arena)
+      : _cached_size_{0},
+        target_user_ids_{visibility, arena} {}
+
+inline void GetBlockedSendersResponse::SharedCtor(::_pb::Arena* PROTOBUF_NULLABLE arena) {
+  new (&_impl_) Impl_(internal_visibility(), arena);
+  _impl_.code_ = {};
+}
+GetBlockedSendersResponse::~GetBlockedSendersResponse() {
+  // @@protoc_insertion_point(destructor:chirp.chat.GetBlockedSendersResponse)
+  SharedDtor(*this);
+}
+inline void GetBlockedSendersResponse::SharedDtor(MessageLite& self) {
+  GetBlockedSendersResponse& this_ = static_cast<GetBlockedSendersResponse&>(self);
+  if constexpr (::_pbi::DebugHardenCheckHasBitConsistency()) {
+    this_.CheckHasBitConsistency();
+  }
+  this_._internal_metadata_.Delete<::google::protobuf::UnknownFieldSet>();
+  ABSL_DCHECK(this_.GetArena() == nullptr);
+  this_._impl_.~Impl_();
+}
+
+inline void* PROTOBUF_NONNULL GetBlockedSendersResponse::PlacementNew_(
+    const void* PROTOBUF_NONNULL, void* PROTOBUF_NONNULL mem,
+    ::google::protobuf::Arena* PROTOBUF_NULLABLE arena) {
+  return ::new (mem) GetBlockedSendersResponse(arena);
+}
+constexpr auto GetBlockedSendersResponse::InternalNewImpl_() {
+  constexpr auto arena_bits = ::google::protobuf::internal::EncodePlacementArenaOffsets({
+      PROTOBUF_FIELD_OFFSET(GetBlockedSendersResponse, _impl_.target_user_ids_) +
+          decltype(GetBlockedSendersResponse::_impl_.target_user_ids_)::
+              InternalGetArenaOffset(
+                  ::google::protobuf::Message::internal_visibility()),
+  });
+  if (arena_bits.has_value()) {
+    return ::google::protobuf::internal::MessageCreator::ZeroInit(
+        sizeof(GetBlockedSendersResponse), alignof(GetBlockedSendersResponse), *arena_bits);
+  } else {
+    return ::google::protobuf::internal::MessageCreator(&GetBlockedSendersResponse::PlacementNew_,
+                                 sizeof(GetBlockedSendersResponse),
+                                 alignof(GetBlockedSendersResponse));
+  }
+}
+constexpr auto GetBlockedSendersResponse::InternalGenerateClassData_() {
+  return ::google::protobuf::internal::ClassDataFull{
+      ::google::protobuf::internal::ClassData{
+          &_GetBlockedSendersResponse_default_instance_._instance,
+          &_table_.header,
+          nullptr,  // OnDemandRegisterArenaDtor
+          nullptr,  // IsInitialized
+          &GetBlockedSendersResponse::MergeImpl,
+          ::google::protobuf::Message::GetNewImpl<GetBlockedSendersResponse>(),
+#if defined(PROTOBUF_CUSTOM_VTABLE)
+          &GetBlockedSendersResponse::SharedDtor,
+          ::google::protobuf::Message::GetClearImpl<GetBlockedSendersResponse>(), &GetBlockedSendersResponse::ByteSizeLong,
+              &GetBlockedSendersResponse::_InternalSerialize,
+#endif  // PROTOBUF_CUSTOM_VTABLE
+          PROTOBUF_FIELD_OFFSET(GetBlockedSendersResponse, _impl_._cached_size_),
+          false,
+      },
+      &GetBlockedSendersResponse::kDescriptorMethods,
+      &descriptor_table_proto_2fchat_2eproto,
+      nullptr,  // tracker
+  };
+}
+
+PROTOBUF_CONSTINIT PROTOBUF_ATTRIBUTE_INIT_PRIORITY1 const
+    ::google::protobuf::internal::ClassDataFull GetBlockedSendersResponse_class_data_ =
+        GetBlockedSendersResponse::InternalGenerateClassData_();
+
+PROTOBUF_ATTRIBUTE_WEAK const ::google::protobuf::internal::ClassData* PROTOBUF_NONNULL
+GetBlockedSendersResponse::GetClassData() const {
+  ::google::protobuf::internal::PrefetchToLocalCache(&GetBlockedSendersResponse_class_data_);
+  ::google::protobuf::internal::PrefetchToLocalCache(GetBlockedSendersResponse_class_data_.tc_table);
+  return GetBlockedSendersResponse_class_data_.base();
+}
+PROTOBUF_CONSTINIT PROTOBUF_ATTRIBUTE_INIT_PRIORITY1
+const ::_pbi::TcParseTable<1, 2, 0, 60, 2>
+GetBlockedSendersResponse::_table_ = {
+  {
+    PROTOBUF_FIELD_OFFSET(GetBlockedSendersResponse, _impl_._has_bits_),
+    0, // no _extensions_
+    2, 8,  // max_field_number, fast_idx_mask
+    offsetof(decltype(_table_), field_lookup_table),
+    4294967292,  // skipmap
+    offsetof(decltype(_table_), field_entries),
+    2,  // num_field_entries
+    0,  // num_aux_entries
+    offsetof(decltype(_table_), field_names),  // no aux_entries
+    GetBlockedSendersResponse_class_data_.base(),
+    nullptr,  // post_loop_handler
+    ::_pbi::TcParser::GenericFallback,  // fallback
+    #ifdef PROTOBUF_PREFETCH_PARSE_TABLE
+    ::_pbi::TcParser::GetTable<::chirp::chat::GetBlockedSendersResponse>(),  // to_prefetch
+    #endif  // PROTOBUF_PREFETCH_PARSE_TABLE
+  }, {{
+    // repeated string target_user_ids = 2;
+    {::_pbi::TcParser::FastUR1,
+     {18, 0, 0,
+      PROTOBUF_FIELD_OFFSET(GetBlockedSendersResponse, _impl_.target_user_ids_)}},
+    // .chirp.common.ErrorCode code = 1;
+    {::_pbi::TcParser::SingularVarintNoZag1<::uint32_t, offsetof(GetBlockedSendersResponse, _impl_.code_), 1>(),
+     {8, 1, 0,
+      PROTOBUF_FIELD_OFFSET(GetBlockedSendersResponse, _impl_.code_)}},
+  }}, {{
+    65535, 65535
+  }}, {{
+    // .chirp.common.ErrorCode code = 1;
+    {PROTOBUF_FIELD_OFFSET(GetBlockedSendersResponse, _impl_.code_), _Internal::kHasBitsOffset + 1, 0, (0 | ::_fl::kFcOptional | ::_fl::kOpenEnum)},
+    // repeated string target_user_ids = 2;
+    {PROTOBUF_FIELD_OFFSET(GetBlockedSendersResponse, _impl_.target_user_ids_), _Internal::kHasBitsOffset + 0, 0, (0 | ::_fl::kFcRepeated | ::_fl::kUtf8String | ::_fl::kRepSString)},
+  }},
+  // no aux_entries
+  {{
+    "\44\0\17\0\0\0\0\0"
+    "chirp.chat.GetBlockedSendersResponse"
+    "target_user_ids"
+  }},
+};
+PROTOBUF_NOINLINE void GetBlockedSendersResponse::Clear() {
+// @@protoc_insertion_point(message_clear_start:chirp.chat.GetBlockedSendersResponse)
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  ::uint32_t cached_has_bits = 0;
+  // Prevent compiler warnings about cached_has_bits being unused
+  (void) cached_has_bits;
+
+  cached_has_bits = _impl_._has_bits_[0];
+  if (CheckHasBitForRepeated(cached_has_bits, 0x00000001U)) {
+    _impl_.target_user_ids_.Clear();
+  }
+  _impl_.code_ = 0;
+  _impl_._has_bits_.Clear();
+  _internal_metadata_.Clear<::google::protobuf::UnknownFieldSet>();
+}
+
+#if defined(PROTOBUF_CUSTOM_VTABLE)
+::uint8_t* PROTOBUF_NONNULL GetBlockedSendersResponse::_InternalSerialize(
+    const ::google::protobuf::MessageLite& base, ::uint8_t* PROTOBUF_NONNULL target,
+    ::google::protobuf::io::EpsCopyOutputStream* PROTOBUF_NONNULL stream) {
+  const GetBlockedSendersResponse& this_ = static_cast<const GetBlockedSendersResponse&>(base);
+#else   // PROTOBUF_CUSTOM_VTABLE
+::uint8_t* PROTOBUF_NONNULL GetBlockedSendersResponse::_InternalSerialize(
+    ::uint8_t* PROTOBUF_NONNULL target,
+    ::google::protobuf::io::EpsCopyOutputStream* PROTOBUF_NONNULL stream) const {
+  const GetBlockedSendersResponse& this_ = *this;
+#endif  // PROTOBUF_CUSTOM_VTABLE
+  if constexpr (::_pbi::DebugHardenCheckHasBitConsistency()) {
+    this_.CheckHasBitConsistency();
+  }
+  // @@protoc_insertion_point(serialize_to_array_start:chirp.chat.GetBlockedSendersResponse)
+  ::uint32_t cached_has_bits = 0;
+  (void)cached_has_bits;
+
+  cached_has_bits = this_._impl_._has_bits_[0];
+  // .chirp.common.ErrorCode code = 1;
+  if (CheckHasBit(cached_has_bits, 0x00000002U)) {
+    if (this_._internal_code() != 0) {
+      target = stream->EnsureSpace(target);
+      target = ::_pbi::WireFormatLite::WriteEnumToArray(
+          1, this_._internal_code(), target);
+    }
+  }
+
+  // repeated string target_user_ids = 2;
+  if (CheckHasBitForRepeated(cached_has_bits, 0x00000001U)) {
+    for (int i = 0, n = this_._internal_target_user_ids_size(); i < n; ++i) {
+      const auto& s = this_._internal_target_user_ids().Get(i);
+      ::google::protobuf::internal::WireFormatLite::VerifyUtf8String(
+          s.data(), static_cast<int>(s.length()), ::google::protobuf::internal::WireFormatLite::SERIALIZE, "chirp.chat.GetBlockedSendersResponse.target_user_ids");
+      target = stream->WriteString(2, s, target);
+    }
+  }
+
+  if (ABSL_PREDICT_FALSE(this_._internal_metadata_.have_unknown_fields())) {
+    target =
+        ::_pbi::WireFormat::InternalSerializeUnknownFieldsToArray(
+            this_._internal_metadata_.unknown_fields<::google::protobuf::UnknownFieldSet>(::google::protobuf::UnknownFieldSet::default_instance), target, stream);
+  }
+  // @@protoc_insertion_point(serialize_to_array_end:chirp.chat.GetBlockedSendersResponse)
+  return target;
+}
+
+#if defined(PROTOBUF_CUSTOM_VTABLE)
+::size_t GetBlockedSendersResponse::ByteSizeLong(const MessageLite& base) {
+  const GetBlockedSendersResponse& this_ = static_cast<const GetBlockedSendersResponse&>(base);
+#else   // PROTOBUF_CUSTOM_VTABLE
+::size_t GetBlockedSendersResponse::ByteSizeLong() const {
+  const GetBlockedSendersResponse& this_ = *this;
+#endif  // PROTOBUF_CUSTOM_VTABLE
+  // @@protoc_insertion_point(message_byte_size_start:chirp.chat.GetBlockedSendersResponse)
+  ::size_t total_size = 0;
+
+  ::uint32_t cached_has_bits = 0;
+  // Prevent compiler warnings about cached_has_bits being unused
+  (void)cached_has_bits;
+
+  ::_pbi::Prefetch5LinesFrom7Lines(&this_);
+  cached_has_bits = this_._impl_._has_bits_[0];
+  if (BatchCheckHasBit(cached_has_bits, 0x00000003U)) {
+    // repeated string target_user_ids = 2;
+    if (CheckHasBitForRepeated(cached_has_bits, 0x00000001U)) {
+      total_size +=
+          1 * ::google::protobuf::internal::FromIntSize(this_._internal_target_user_ids().size());
+      for (int i = 0, n = this_._internal_target_user_ids().size(); i < n; ++i) {
+        total_size += ::google::protobuf::internal::WireFormatLite::StringSize(
+            this_._internal_target_user_ids().Get(i));
+      }
+    }
+    // .chirp.common.ErrorCode code = 1;
+    if (CheckHasBit(cached_has_bits, 0x00000002U)) {
+      if (this_._internal_code() != 0) {
+        total_size += 1 +
+                      ::_pbi::WireFormatLite::EnumSize(this_._internal_code());
+      }
+    }
+  }
+  return this_.MaybeComputeUnknownFieldsSize(total_size,
+                                             &this_._impl_._cached_size_);
+}
+
+void GetBlockedSendersResponse::MergeImpl(::google::protobuf::MessageLite& to_msg,
+                            const ::google::protobuf::MessageLite& from_msg) {
+   auto* const _this =
+      static_cast<GetBlockedSendersResponse*>(&to_msg);
+  auto& from = static_cast<const GetBlockedSendersResponse&>(from_msg);
+  if constexpr (::_pbi::DebugHardenCheckHasBitConsistency()) {
+    from.CheckHasBitConsistency();
+  }
+  ::google::protobuf::Arena* arena = _this->GetArena();
+  // @@protoc_insertion_point(class_specific_merge_from_start:chirp.chat.GetBlockedSendersResponse)
+  ABSL_DCHECK_NE(&from, _this);
+  ::uint32_t cached_has_bits = 0;
+  (void)cached_has_bits;
+
+  cached_has_bits = from._impl_._has_bits_[0];
+  if (BatchCheckHasBit(cached_has_bits, 0x00000003U)) {
+    if (CheckHasBitForRepeated(cached_has_bits, 0x00000001U)) {
+      _this->_internal_mutable_target_user_ids()->InternalMergeFromWithArena(
+          ::google::protobuf::MessageLite::internal_visibility(), arena,
+          from._internal_target_user_ids());
+    }
+    if (CheckHasBit(cached_has_bits, 0x00000002U)) {
+      if (from._internal_code() != 0) {
+        _this->_impl_.code_ = from._impl_.code_;
+      }
+    }
+  }
+  _this->_impl_._has_bits_[0] |= cached_has_bits;
+  _this->_internal_metadata_.MergeFrom<::google::protobuf::UnknownFieldSet>(
+      from._internal_metadata_);
+}
+
+void GetBlockedSendersResponse::CopyFrom(const GetBlockedSendersResponse& from) {
+  // @@protoc_insertion_point(class_specific_copy_from_start:chirp.chat.GetBlockedSendersResponse)
+  if (&from == this) return;
+  Clear();
+  MergeFrom(from);
+}
+
+
+void GetBlockedSendersResponse::InternalSwap(GetBlockedSendersResponse* PROTOBUF_RESTRICT PROTOBUF_NONNULL other) {
+  using ::std::swap;
+  _internal_metadata_.InternalSwap(&other->_internal_metadata_);
+  swap(_impl_._has_bits_[0], other->_impl_._has_bits_[0]);
+  _impl_.target_user_ids_.InternalSwap(&other->_impl_.target_user_ids_);
+  swap(_impl_.code_, other->_impl_.code_);
+}
+
+::google::protobuf::Metadata GetBlockedSendersResponse::GetMetadata() const {
   return ::google::protobuf::Message::GetMetadataImpl(GetClassData()->full());
 }
 // @@protoc_insertion_point(namespace_scope)

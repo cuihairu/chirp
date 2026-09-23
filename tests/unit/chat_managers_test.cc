@@ -1044,6 +1044,65 @@ TEST_F(DispatchTest, GetChannelMutesRequestDispatched) {
   EXPECT_EQ(got_seq, 6);
 }
 
+TEST_F(DispatchTest, BlockMessageSenderRequestDispatched) {
+  chirp::chat::BlockMessageSenderRequest req;
+  req.set_target_user_id("bob");
+
+  DistributedDispatchHandlers handlers;
+  chirp::chat::BlockMessageSenderRequest got;
+  int64_t got_seq = -1;
+  handlers.on_block_message_sender = [&](const std::shared_ptr<Session>& s,
+                                         const chirp::chat::BlockMessageSenderRequest& r,
+                                         int64_t seq) {
+    ASSERT_EQ(s, session_);
+    got = r;
+    got_seq = seq;
+  };
+
+  DispatchDistributedPacket(session_, MakePacket(chirp::gateway::BLOCK_MESSAGE_SENDER_REQ, 7,
+                                                 req.SerializeAsString()),
+                            handlers);
+  EXPECT_EQ(got.target_user_id(), "bob");
+  EXPECT_EQ(got_seq, 7);
+}
+
+TEST_F(DispatchTest, UnblockMessageSenderRequestDispatched) {
+  chirp::chat::UnblockMessageSenderRequest req;
+  req.set_target_user_id("bob");
+
+  DistributedDispatchHandlers handlers;
+  chirp::chat::UnblockMessageSenderRequest got;
+  int64_t got_seq = -1;
+  handlers.on_unblock_message_sender = [&](const std::shared_ptr<Session>& s,
+                                           const chirp::chat::UnblockMessageSenderRequest& r,
+                                           int64_t seq) {
+    ASSERT_EQ(s, session_);
+    got = r;
+    got_seq = seq;
+  };
+
+  DispatchDistributedPacket(session_, MakePacket(chirp::gateway::UNBLOCK_MESSAGE_SENDER_REQ, 8,
+                                                 req.SerializeAsString()),
+                            handlers);
+  EXPECT_EQ(got.target_user_id(), "bob");
+  EXPECT_EQ(got_seq, 8);
+}
+
+TEST_F(DispatchTest, GetBlockedSendersRequestDispatched) {
+  DistributedDispatchHandlers handlers;
+  int64_t got_seq = -1;
+  handlers.on_get_blocked_senders = [&](const std::shared_ptr<Session>& s,
+                                        const chirp::chat::GetBlockedSendersRequest&,
+                                        int64_t seq) {
+    ASSERT_EQ(s, session_);
+    got_seq = seq;
+  };
+
+  DispatchDistributedPacket(session_, MakePacket(chirp::gateway::GET_BLOCKED_SENDERS_REQ, 9, ""),
+                            handlers);
+  EXPECT_EQ(got_seq, 9);
+}
+
 TEST_F(DispatchTest, SendMessageRequestDispatched) {
   chirp::chat::SendMessageRequest req;
   req.set_sender_id("alice");

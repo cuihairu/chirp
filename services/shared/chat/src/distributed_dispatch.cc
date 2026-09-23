@@ -70,6 +70,30 @@ void DispatchDistributedPacket(const std::shared_ptr<network::Session>& session,
       }
       break;
     }
+    case gateway::BLOCK_MESSAGE_SENDER_REQ: {
+      chat::BlockMessageSenderRequest req;
+      if (handlers.on_block_message_sender &&
+          req.ParseFromArray(pkt.body().data(), static_cast<int>(pkt.body().size()))) {
+        handlers.on_block_message_sender(session, req, pkt.sequence());
+      }
+      break;
+    }
+    case gateway::UNBLOCK_MESSAGE_SENDER_REQ: {
+      chat::UnblockMessageSenderRequest req;
+      if (handlers.on_unblock_message_sender &&
+          req.ParseFromArray(pkt.body().data(), static_cast<int>(pkt.body().size()))) {
+        handlers.on_unblock_message_sender(session, req, pkt.sequence());
+      }
+      break;
+    }
+    case gateway::GET_BLOCKED_SENDERS_REQ: {
+      chat::GetBlockedSendersRequest req;
+      if (handlers.on_get_blocked_senders &&
+          req.ParseFromArray(pkt.body().data(), static_cast<int>(pkt.body().size()))) {
+        handlers.on_get_blocked_senders(session, req, pkt.sequence());
+      }
+      break;
+    }
     case gateway::HEARTBEAT_PING: {
       gateway::HeartbeatPong pong;
       pong.set_timestamp(NowMs());

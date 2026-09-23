@@ -171,6 +171,7 @@ void HandleSendMessage(const chirp::chat::SendMessageRequest& req,
                       const std::shared_ptr<HybridMessageStore>& store,
                       const std::shared_ptr<MessageDeliveryTracker>& delivery_tracker,
                       chirp::chat::DeliveryAckManager* acks,
+                      const chirp::chat::DeliveryPrefs* delivery_prefs,
                       const std::shared_ptr<chirp::network::MessageRouter>& router,
                       chirp::network::ServerGatewayPeer* hub_peer,
                       const std::string& npc_service_id,
@@ -253,6 +254,11 @@ void HandleSendMessage(const chirp::chat::SendMessageRequest& req,
     const std::string msg_bytes = msg.SerializeAsString();
     const int64_t receivers = router->SendChatMessageCount(req.receiver_id(), msg_bytes,
       [&](const std::string& user_id) -> bool {
+        // 黑名单：接收方拉黑了发送方时消息整体消失——报告"已投递"阻止调用
+        // 方入离线队列，实际两端都不送（不暴露拉黑态）。
+        if (delivery_prefs->IsUserBlocked(user_id, msg.sender_id())) {
+          return true;
+        }
         // A receiver whose connections already sent FIN would "consume" the
         // message without ever reading it; report not-delivered so the
         // caller queues it offline.
@@ -346,6 +352,7 @@ void HandleLogin(const chirp::auth::LoginRequest& req,
                 const std::shared_ptr<chirp::network::MessageRouter>& router,
                 const chirp::common::LoginTokenVerifier* token_verifier,
                 chirp::chat::DeliveryAckManager* acks,
+                const chirp::chat::DeliveryPrefs* delivery_prefs,
                 int64_t seq) {
   std::string user_id;
 
@@ -391,9 +398,15 @@ void HandleLogin(const chirp::auth::LoginRequest& req,
     // Cross-instance deliveries fan to every live local session of the user
     // (one per device) through the registry - the callback outlives any
     // single connection, so it must not capture one.
-    router->SubscribeUserChat(user_id, [state, acks, user_id](const std::string& msg_data) {
+    router->SubscribeUserChat(user_id, [state, acks, user_id, delivery_prefs](
+                                           const std::string& msg_data) {
       chirp::chat::ChatMessage msg;
       if (!msg.ParseFromArray(msg_data.data(), static_cast<int>(msg_data.size()))) {
+        return;
+      }
+      // 黑名单：本实例用户拉黑了发送方，跨实例投递到此为止（静默丢弃，
+      // 不暴露拉黑态）。
+      if (delivery_prefs->IsUserBlocked(user_id, msg.sender_id())) {
         return;
       }
       auto healthy = HealthyLocalSessions(state, user_id);
@@ -930,17 +943,19 @@ int main(int argc, char** argv) {
   chirp::chat::DeliveryPrefs delivery_prefs;
 
   chirp::chat::runtime::DistributedDispatchHandlers handlers;
-  handlers.on_login = [state, store, router, &token_verifier, acks](
+  handlers.on_login = [state, store, router, &token_verifier, acks, &delivery_prefs](
                           const std::shared_ptr<chirp::network::Session>& session,
                           const chirp::auth::LoginRequest& req,
                           int64_t seq) {
-    HandleLogin(req, session, state, store, router, &token_verifier, acks.get(), seq);
+    HandleLogin(req, session, state, store, router, &token_verifier, acks.get(),
+                &delivery_prefs, seq);
   };
   handlers.on_send_message = [state, store, delivery_tracker, acks, router,
                               peer = hub_peer.get(), npc_service_id, npc_prefix,
                               link = spoke_link.get(), spoke_game_id,
                               hub = chat_hub.get(), &directory, &word_filter,
                               &channel_pacer, &repeat_guard,
+                              delivery_prefs_ptr = &delivery_prefs,
                               send_gate = &edge_rate_limiter](
                                  const std::shared_ptr<chirp::network::Session>& session,
                                  const chirp::chat::SendMessageRequest& req,
@@ -1051,8 +1066,9 @@ int main(int argc, char** argv) {
         return;
       }
     }
-    HandleSendMessage(working, session, state, store, delivery_tracker, acks.get(), router,
-                      peer, npc_service_id, npc_prefix, link, spoke_game_id, seq);
+    HandleSendMessage(working, session, state, store, delivery_tracker, acks.get(),
+                      delivery_prefs_ptr, router, peer, npc_service_id, npc_prefix, link,
+                      spoke_game_id, seq);
   };
   handlers.on_get_history = [retriever](const std::shared_ptr<chirp::network::Session>& session,
                                         const chirp::chat::GetHistoryRequest& req,
@@ -1129,6 +1145,61 @@ int main(int argc, char** argv) {
       }
     }
     chirp::chat::runtime::SendPacket(session, chirp::gateway::GET_CHANNEL_MUTES_RESP, seq,
+                                     resp.SerializeAsString());
+  };
+  // 黑名单（game_chat_features P0）：与 basic 构建的 BLOCK/UNBLOCK/
+  // GET_BLOCKED_SENDERS 同一契约——空目标与自拉黑拒绝（INVALID_PARAM），
+  // 解除幂等；过滤挂在投递尾段（local_send 报"已投递"阻止离线入队、跨实例
+  // SubscribeUserChat 回调丢弃）。
+  handlers.on_block_message_sender = [state, &delivery_prefs](
+                                         const std::shared_ptr<chirp::network::Session>& session,
+                                         const chirp::chat::BlockMessageSenderRequest& req,
+                                         int64_t seq) {
+    chirp::chat::BlockMessageSenderResponse resp;
+    const std::string user_id = state->GetUserId(session);
+    if (user_id.empty()) {
+      resp.set_code(chirp::common::AUTH_FAILED);
+    } else if (!delivery_prefs.BlockUser(user_id, req.target_user_id())) {
+      resp.set_code(chirp::common::INVALID_PARAM);
+    } else {
+      resp.set_code(chirp::common::OK);
+    }
+    resp.set_target_user_id(req.target_user_id());
+    chirp::chat::runtime::SendPacket(session, chirp::gateway::BLOCK_MESSAGE_SENDER_RESP, seq,
+                                     resp.SerializeAsString());
+  };
+  handlers.on_unblock_message_sender = [state, &delivery_prefs](
+                                           const std::shared_ptr<chirp::network::Session>& session,
+                                           const chirp::chat::UnblockMessageSenderRequest& req,
+                                           int64_t seq) {
+    chirp::chat::UnblockMessageSenderResponse resp;
+    const std::string user_id = state->GetUserId(session);
+    if (user_id.empty()) {
+      resp.set_code(chirp::common::AUTH_FAILED);
+    } else if (!delivery_prefs.UnblockUser(user_id, req.target_user_id())) {
+      resp.set_code(chirp::common::INVALID_PARAM);
+    } else {
+      resp.set_code(chirp::common::OK);
+    }
+    resp.set_target_user_id(req.target_user_id());
+    chirp::chat::runtime::SendPacket(session, chirp::gateway::UNBLOCK_MESSAGE_SENDER_RESP, seq,
+                                     resp.SerializeAsString());
+  };
+  handlers.on_get_blocked_senders = [state, &delivery_prefs](
+                                        const std::shared_ptr<chirp::network::Session>& session,
+                                        const chirp::chat::GetBlockedSendersRequest&,
+                                        int64_t seq) {
+    chirp::chat::GetBlockedSendersResponse resp;
+    const std::string user_id = state->GetUserId(session);
+    if (user_id.empty()) {
+      resp.set_code(chirp::common::AUTH_FAILED);
+    } else {
+      resp.set_code(chirp::common::OK);
+      for (const auto& target : delivery_prefs.GetBlockedUsers(user_id)) {
+        resp.add_target_user_ids(target);
+      }
+    }
+    chirp::chat::runtime::SendPacket(session, chirp::gateway::GET_BLOCKED_SENDERS_RESP, seq,
                                      resp.SerializeAsString());
   };
 

@@ -1,5 +1,8 @@
 #include "gtest/gtest.h"
 
+#include <algorithm>
+#include <vector>
+
 #include "proto/common.pb.h"
 
 #include "delivery_prefs.h"
@@ -80,6 +83,58 @@ TEST(DeliveryPrefsTest, GetChannelMutesListsAllThreeInOrder) {
   EXPECT_TRUE(mixed[1].second);
   EXPECT_EQ(mixed[2].first, TEAM);
   EXPECT_TRUE(mixed[2].second);
+}
+
+TEST(DeliveryPrefsTest, BlockHidesSendersMessages) {
+  DeliveryPrefs prefs;
+  EXPECT_TRUE(prefs.BlockUser("alice", "bob"));
+  EXPECT_TRUE(prefs.IsUserBlocked("alice", "bob"));
+  // The block is one-directional: bob blocking nobody still sees alice.
+  EXPECT_FALSE(prefs.IsUserBlocked("bob", "alice"));
+
+  EXPECT_TRUE(prefs.UnblockUser("alice", "bob"));
+  EXPECT_FALSE(prefs.IsUserBlocked("alice", "bob"));
+}
+
+TEST(DeliveryPrefsTest, BlockRejectsEmptyTargetAndSelf) {
+  DeliveryPrefs prefs;
+  EXPECT_FALSE(prefs.BlockUser("alice", ""));
+  EXPECT_FALSE(prefs.BlockUser("alice", "alice"));
+  EXPECT_FALSE(prefs.IsUserBlocked("alice", "alice"));
+  EXPECT_TRUE(prefs.GetBlockedUsers("alice").empty());
+}
+
+TEST(DeliveryPrefsTest, UnblockIsIdempotent) {
+  DeliveryPrefs prefs;
+  // Unblocking someone never blocked is a no-op success (only an empty
+  // target is refused).
+  EXPECT_TRUE(prefs.UnblockUser("alice", "bob"));
+  EXPECT_FALSE(prefs.UnblockUser("alice", ""));
+
+  // And it clears an existing block.
+  EXPECT_TRUE(prefs.BlockUser("alice", "carol"));
+  EXPECT_TRUE(prefs.UnblockUser("alice", "carol"));
+  EXPECT_FALSE(prefs.IsUserBlocked("alice", "carol"));
+}
+
+TEST(DeliveryPrefsTest, BlockedUsersAreIsolatedPerUser) {
+  DeliveryPrefs prefs;
+  EXPECT_TRUE(prefs.BlockUser("alice", "bob"));
+  // bob's own view is untouched: he never blocked anyone.
+  EXPECT_FALSE(prefs.IsUserBlocked("bob", "alice"));
+  EXPECT_TRUE(prefs.GetBlockedUsers("bob").empty());
+}
+
+TEST(DeliveryPrefsTest, GetBlockedUsersListsEveryBlockedSender) {
+  DeliveryPrefs prefs;
+  EXPECT_TRUE(prefs.GetBlockedUsers("nobody").empty());
+
+  EXPECT_TRUE(prefs.BlockUser("alice", "bob"));
+  EXPECT_TRUE(prefs.BlockUser("alice", "carol"));
+  auto blocked = prefs.GetBlockedUsers("alice");
+  // The set is unordered; compare as a set.
+  std::sort(blocked.begin(), blocked.end());
+  EXPECT_EQ(blocked, (std::vector<std::string>{"bob", "carol"}));
 }
 
 } // namespace

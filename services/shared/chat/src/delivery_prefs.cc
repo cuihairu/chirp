@@ -50,4 +50,37 @@ std::vector<std::pair<ChannelType, bool>> DeliveryPrefs::GetChannelMutes(
   return result;
 }
 
+bool DeliveryPrefs::BlockUser(const std::string& user_id,
+                              const std::string& target_id) {
+  if (target_id.empty() || target_id == user_id) {
+    return false;
+  }
+  blocked_[user_id].insert(target_id);
+  return true;
+}
+
+bool DeliveryPrefs::UnblockUser(const std::string& user_id,
+                                const std::string& target_id) {
+  if (target_id.empty()) {
+    return false;
+  }
+  blocked_[user_id].erase(target_id);
+  return true;
+}
+
+bool DeliveryPrefs::IsUserBlocked(const std::string& user_id,
+                                  const std::string& target_id) const {
+  const auto it = blocked_.find(user_id);
+  return it != blocked_.end() && it->second.count(target_id) > 0;
+}
+
+std::vector<std::string> DeliveryPrefs::GetBlockedUsers(
+    const std::string& user_id) const {
+  const auto it = blocked_.find(user_id);
+  if (it == blocked_.end()) {
+    return {};
+  }
+  return {it->second.begin(), it->second.end()};
+}
+
 } // namespace chirp::chat

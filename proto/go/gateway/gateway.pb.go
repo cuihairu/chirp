@@ -126,6 +126,15 @@ const (
 	MsgID_SET_CHANNEL_MUTE_RESP  MsgID = 2236
 	MsgID_GET_CHANNEL_MUTES_REQ  MsgID = 2237
 	MsgID_GET_CHANNEL_MUTES_RESP MsgID = 2238
+	// 黑名单（game_chat_features P0）：拉黑后对方的世界/公会/队伍频道消息
+	// 与私聊都不再投递。独立于社交面的 BLOCK_USER（3011，好友关系语义），
+	// 这里只作用于消息投递。
+	MsgID_BLOCK_MESSAGE_SENDER_REQ    MsgID = 2239
+	MsgID_BLOCK_MESSAGE_SENDER_RESP   MsgID = 2240
+	MsgID_UNBLOCK_MESSAGE_SENDER_REQ  MsgID = 2241
+	MsgID_UNBLOCK_MESSAGE_SENDER_RESP MsgID = 2242
+	MsgID_GET_BLOCKED_SENDERS_REQ     MsgID = 2243
+	MsgID_GET_BLOCKED_SENDERS_RESP    MsgID = 2244
 	// Social service
 	MsgID_ADD_FRIEND_REQ             MsgID = 3001
 	MsgID_ADD_FRIEND_RESP            MsgID = 3002
@@ -353,6 +362,12 @@ var (
 		2236: "SET_CHANNEL_MUTE_RESP",
 		2237: "GET_CHANNEL_MUTES_REQ",
 		2238: "GET_CHANNEL_MUTES_RESP",
+		2239: "BLOCK_MESSAGE_SENDER_REQ",
+		2240: "BLOCK_MESSAGE_SENDER_RESP",
+		2241: "UNBLOCK_MESSAGE_SENDER_REQ",
+		2242: "UNBLOCK_MESSAGE_SENDER_RESP",
+		2243: "GET_BLOCKED_SENDERS_REQ",
+		2244: "GET_BLOCKED_SENDERS_RESP",
 		3001: "ADD_FRIEND_REQ",
 		3002: "ADD_FRIEND_RESP",
 		3003: "FRIEND_REQUEST_ACTION_REQ",
@@ -555,6 +570,12 @@ var (
 		"SET_CHANNEL_MUTE_RESP":            2236,
 		"GET_CHANNEL_MUTES_REQ":            2237,
 		"GET_CHANNEL_MUTES_RESP":           2238,
+		"BLOCK_MESSAGE_SENDER_REQ":         2239,
+		"BLOCK_MESSAGE_SENDER_RESP":        2240,
+		"UNBLOCK_MESSAGE_SENDER_REQ":       2241,
+		"UNBLOCK_MESSAGE_SENDER_RESP":      2242,
+		"GET_BLOCKED_SENDERS_REQ":          2243,
+		"GET_BLOCKED_SENDERS_RESP":         2244,
 		"ADD_FRIEND_REQ":                   3001,
 		"ADD_FRIEND_RESP":                  3002,
 		"FRIEND_REQUEST_ACTION_REQ":        3003,
@@ -1250,7 +1271,7 @@ const file_proto_gateway_proto_rawDesc = "" +
 	"channel_id\x18\x01 \x01(\tR\tchannelId\x12\x1b\n" +
 	"\tsender_id\x18\x02 \x01(\tR\bsenderId\x12\x18\n" +
 	"\acontent\x18\x03 \x01(\fR\acontent\x12\"\n" +
-	"\rclient_msg_id\x18\x04 \x01(\tR\vclientMsgId*\xa9(\n" +
+	"\rclient_msg_id\x18\x04 \x01(\tR\vclientMsgId*\xe8)\n" +
 	"\x05MsgID\x12\v\n" +
 	"\aUNKNOWN\x10\x00\x12\x13\n" +
 	"\x0eHEARTBEAT_PING\x10\xe9\a\x12\x13\n" +
@@ -1337,7 +1358,13 @@ const file_proto_gateway_proto_rawDesc = "" +
 	"\x14SET_CHANNEL_MUTE_REQ\x10\xbb\x11\x12\x1a\n" +
 	"\x15SET_CHANNEL_MUTE_RESP\x10\xbc\x11\x12\x1a\n" +
 	"\x15GET_CHANNEL_MUTES_REQ\x10\xbd\x11\x12\x1b\n" +
-	"\x16GET_CHANNEL_MUTES_RESP\x10\xbe\x11\x12\x13\n" +
+	"\x16GET_CHANNEL_MUTES_RESP\x10\xbe\x11\x12\x1d\n" +
+	"\x18BLOCK_MESSAGE_SENDER_REQ\x10\xbf\x11\x12\x1e\n" +
+	"\x19BLOCK_MESSAGE_SENDER_RESP\x10\xc0\x11\x12\x1f\n" +
+	"\x1aUNBLOCK_MESSAGE_SENDER_REQ\x10\xc1\x11\x12 \n" +
+	"\x1bUNBLOCK_MESSAGE_SENDER_RESP\x10\xc2\x11\x12\x1c\n" +
+	"\x17GET_BLOCKED_SENDERS_REQ\x10\xc3\x11\x12\x1d\n" +
+	"\x18GET_BLOCKED_SENDERS_RESP\x10\xc4\x11\x12\x13\n" +
 	"\x0eADD_FRIEND_REQ\x10\xb9\x17\x12\x14\n" +
 	"\x0fADD_FRIEND_RESP\x10\xba\x17\x12\x1e\n" +
 	"\x19FRIEND_REQUEST_ACTION_REQ\x10\xbb\x17\x12\x1f\n" +

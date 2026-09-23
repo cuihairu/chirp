@@ -115,6 +115,17 @@ export enum MsgID {
   SET_CHANNEL_MUTE_RESP = 2236,
   GET_CHANNEL_MUTES_REQ = 2237,
   GET_CHANNEL_MUTES_RESP = 2238,
+  /**
+   * BLOCK_MESSAGE_SENDER_REQ - 黑名单（game_chat_features P0）：拉黑后对方的世界/公会/队伍频道消息
+   * 与私聊都不再投递。独立于社交面的 BLOCK_USER（3011，好友关系语义），
+   * 这里只作用于消息投递。
+   */
+  BLOCK_MESSAGE_SENDER_REQ = 2239,
+  BLOCK_MESSAGE_SENDER_RESP = 2240,
+  UNBLOCK_MESSAGE_SENDER_REQ = 2241,
+  UNBLOCK_MESSAGE_SENDER_RESP = 2242,
+  GET_BLOCKED_SENDERS_REQ = 2243,
+  GET_BLOCKED_SENDERS_RESP = 2244,
   /** ADD_FRIEND_REQ - Social service */
   ADD_FRIEND_REQ = 3001,
   ADD_FRIEND_RESP = 3002,
@@ -537,6 +548,24 @@ export function msgIDFromJSON(object: any): MsgID {
     case 2238:
     case "GET_CHANNEL_MUTES_RESP":
       return MsgID.GET_CHANNEL_MUTES_RESP;
+    case 2239:
+    case "BLOCK_MESSAGE_SENDER_REQ":
+      return MsgID.BLOCK_MESSAGE_SENDER_REQ;
+    case 2240:
+    case "BLOCK_MESSAGE_SENDER_RESP":
+      return MsgID.BLOCK_MESSAGE_SENDER_RESP;
+    case 2241:
+    case "UNBLOCK_MESSAGE_SENDER_REQ":
+      return MsgID.UNBLOCK_MESSAGE_SENDER_REQ;
+    case 2242:
+    case "UNBLOCK_MESSAGE_SENDER_RESP":
+      return MsgID.UNBLOCK_MESSAGE_SENDER_RESP;
+    case 2243:
+    case "GET_BLOCKED_SENDERS_REQ":
+      return MsgID.GET_BLOCKED_SENDERS_REQ;
+    case 2244:
+    case "GET_BLOCKED_SENDERS_RESP":
+      return MsgID.GET_BLOCKED_SENDERS_RESP;
     case 3001:
     case "ADD_FRIEND_REQ":
       return MsgID.ADD_FRIEND_REQ;
@@ -1062,6 +1091,18 @@ export function msgIDToJSON(object: MsgID): string {
       return "GET_CHANNEL_MUTES_REQ";
     case MsgID.GET_CHANNEL_MUTES_RESP:
       return "GET_CHANNEL_MUTES_RESP";
+    case MsgID.BLOCK_MESSAGE_SENDER_REQ:
+      return "BLOCK_MESSAGE_SENDER_REQ";
+    case MsgID.BLOCK_MESSAGE_SENDER_RESP:
+      return "BLOCK_MESSAGE_SENDER_RESP";
+    case MsgID.UNBLOCK_MESSAGE_SENDER_REQ:
+      return "UNBLOCK_MESSAGE_SENDER_REQ";
+    case MsgID.UNBLOCK_MESSAGE_SENDER_RESP:
+      return "UNBLOCK_MESSAGE_SENDER_RESP";
+    case MsgID.GET_BLOCKED_SENDERS_REQ:
+      return "GET_BLOCKED_SENDERS_REQ";
+    case MsgID.GET_BLOCKED_SENDERS_RESP:
+      return "GET_BLOCKED_SENDERS_RESP";
     case MsgID.ADD_FRIEND_REQ:
       return "ADD_FRIEND_REQ";
     case MsgID.ADD_FRIEND_RESP:

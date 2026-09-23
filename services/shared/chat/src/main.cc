@@ -742,6 +742,15 @@ void HandlePacket(const std::shared_ptr<MessageStore>& store,
                                          pkt.sequence(), resp.SerializeAsString());
         break;
       }
+      // 黑名单：接收方拉黑了发送方时，消息整体消失——不投递也不入离线队列，
+      // 但发送方仍看到 OK（不暴露拉黑态）。msg.sender_id 已经过发送校验，
+      // 与认证身份等同。
+      if (features.delivery_prefs->IsUserBlocked(req.receiver_id(), msg.sender_id())) {
+        resp.set_code(chirp::common::OK);
+        chirp::chat::runtime::SendPacket(session, chirp::gateway::SEND_MESSAGE_RESP,
+                                         pkt.sequence(), resp.SerializeAsString());
+        break;
+      }
       auto receivers = HealthyUserSessions(state, req.receiver_id());
       // Deliver to every device of the receiver. A connection that already
       // sent FIN would "consume" the message without ever reading it, so
@@ -843,6 +852,58 @@ void HandlePacket(const std::shared_ptr<MessageStore>& store,
       }
     }
     chirp::chat::runtime::SendPacket(session, chirp::gateway::GET_CHANNEL_MUTES_RESP,
+                                     pkt.sequence(), resp.SerializeAsString());
+    break;
+  }
+  case chirp::gateway::BLOCK_MESSAGE_SENDER_REQ: {
+    // 黑名单（game_chat_features P0）：拒绝空目标与自拉黑（INVALID_PARAM），
+    // 其余记入 DeliveryPrefs。过滤本身挂在投递尾段（私聊静默丢弃、群播按
+    // 成员过滤），不向发送方暴露拉黑态。
+    chirp::chat::BlockMessageSenderRequest req;
+    chirp::chat::BlockMessageSenderResponse resp;
+    if (!req.ParseFromArray(pkt.body().data(), static_cast<int>(pkt.body().size()))) {
+      resp.set_code(chirp::common::INVALID_PARAM);
+    } else if (authenticated_user_id.empty()) {
+      resp.set_code(chirp::common::AUTH_FAILED);
+    } else if (!features.delivery_prefs->BlockUser(authenticated_user_id, req.target_user_id())) {
+      resp.set_code(chirp::common::INVALID_PARAM);
+    } else {
+      resp.set_code(chirp::common::OK);
+    }
+    resp.set_target_user_id(req.target_user_id());
+    chirp::chat::runtime::SendPacket(session, chirp::gateway::BLOCK_MESSAGE_SENDER_RESP,
+                                     pkt.sequence(), resp.SerializeAsString());
+    break;
+  }
+  case chirp::gateway::UNBLOCK_MESSAGE_SENDER_REQ: {
+    // 解除拉黑是幂等的：解一个从未拉黑过的人也回 OK（状态本来就没变）。
+    chirp::chat::UnblockMessageSenderRequest req;
+    chirp::chat::UnblockMessageSenderResponse resp;
+    if (!req.ParseFromArray(pkt.body().data(), static_cast<int>(pkt.body().size()))) {
+      resp.set_code(chirp::common::INVALID_PARAM);
+    } else if (authenticated_user_id.empty()) {
+      resp.set_code(chirp::common::AUTH_FAILED);
+    } else if (!features.delivery_prefs->UnblockUser(authenticated_user_id, req.target_user_id())) {
+      resp.set_code(chirp::common::INVALID_PARAM);
+    } else {
+      resp.set_code(chirp::common::OK);
+    }
+    resp.set_target_user_id(req.target_user_id());
+    chirp::chat::runtime::SendPacket(session, chirp::gateway::UNBLOCK_MESSAGE_SENDER_RESP,
+                                     pkt.sequence(), resp.SerializeAsString());
+    break;
+  }
+  case chirp::gateway::GET_BLOCKED_SENDERS_REQ: {
+    chirp::chat::GetBlockedSendersResponse resp;
+    if (authenticated_user_id.empty()) {
+      resp.set_code(chirp::common::AUTH_FAILED);
+    } else {
+      resp.set_code(chirp::common::OK);
+      for (const auto& target : features.delivery_prefs->GetBlockedUsers(authenticated_user_id)) {
+        resp.add_target_user_ids(target);
+      }
+    }
+    chirp::chat::runtime::SendPacket(session, chirp::gateway::GET_BLOCKED_SENDERS_RESP,
                                      pkt.sequence(), resp.SerializeAsString());
     break;
   }
@@ -1251,15 +1312,19 @@ int main(int argc, char** argv) {
   // additionally respect the recipient's channel mutes (game_chat_features
   // P0 频道屏蔽): a muted member reports "delivered" so the broadcast does
   // not queue an offline copy either — the mute is a push filter, history
-  // stays browsable. Membership notices (group joined/left/...) ignore
-  // mutes on purpose.
+  // stays browsable. The same notice also respects the recipient's block
+  // list（黑名单）: a member who blocked the sender is skipped per member,
+  // other members still receive the message. Membership notices (group
+  // joined/left/...) ignore mutes and blocks on purpose.
   chirp::chat::GroupMemberNotifier notify_member =
       [state, &delivery_prefs](const std::string& user_id, chirp::gateway::MsgID msg_id,
                                const google::protobuf::Message& body) -> bool {
-    if (msg_id == chirp::gateway::CHAT_MESSAGE_NOTIFY &&
-        delivery_prefs.IsChannelMuted(
-            user_id, static_cast<const chirp::chat::ChatMessage&>(body).channel_type())) {
-      return true;
+    if (msg_id == chirp::gateway::CHAT_MESSAGE_NOTIFY) {
+      const auto& chat_msg = static_cast<const chirp::chat::ChatMessage&>(body);
+      if (delivery_prefs.IsChannelMuted(user_id, chat_msg.channel_type()) ||
+          delivery_prefs.IsUserBlocked(user_id, chat_msg.sender_id())) {
+        return true;
+      }
     }
     const auto recvs = chirp::network::GetUserSessions(state, user_id);
     if (recvs.empty()) {
