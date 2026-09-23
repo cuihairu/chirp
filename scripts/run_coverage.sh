@@ -22,7 +22,7 @@ set -euo pipefail
 
 ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 BUILD_DIR="${ROOT_DIR}/build-cov"
-FAIL_UNDER=98
+FAIL_UNDER=100
 SKIP_BUILD=0
 FRESH=0
 
