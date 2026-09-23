@@ -131,23 +131,15 @@ namespace Chirp.Sdk
         /// <summary>LOGIN round-trip. Throws <see cref="RequestError"/>; on
         /// AuthFailed the game should show its own login error UI. Scaffold
         /// gateways take the userId as the token; pass <paramref name="token"/>
-        /// explicitly against an enhanced auth (JWT) edge.</summary>
+        /// explicitly against an enhanced auth (JWT) edge. Delegates to
+        /// <see cref="ChirpClient.LoginAsync"/>, so a registered IAuthProvider
+        /// supplies the token when <paramref name="token"/> is omitted and
+        /// gets one renewal chance on AUTH_FAILED.</summary>
         public async Task<Chirp.Auth.LoginResponse> LoginAsync(string userId, string deviceId,
             string? token = null)
         {
             var client = _client ?? throw new InvalidOperationException("ConnectAsync() first");
-            var resp = await client.RequestAsync(Specs.Login, new Chirp.Auth.LoginRequest
-            {
-                Token = token ?? userId,
-                DeviceId = deviceId,
-                Platform = "unity",
-                SupportsMessageAck = true,
-            }).ConfigureAwait(false);
-            if (resp.Code != Chirp.Common.ErrorCode.Ok)
-            {
-                throw new RequestError(RequestErrorKind.Server, resp.Code);
-            }
-            client.ResetBackoff();
+            var resp = await client.LoginAsync(userId, deviceId, token).ConfigureAwait(false);
             if (AutoRelogin)
             {
                 _reloginUserId = userId;
@@ -199,9 +191,10 @@ namespace Chirp.Sdk
 
         /// <summary>Fire-and-forget chat send (SEND_MESSAGE has a RESP; await
         /// RequestAsync(Specs.SendMessage, ...) when you need the server
-        /// message id).</summary>
+        /// message id). Goes straight to the wire: interceptors and '/'-command
+        /// routing only apply to <see cref="SendChatMessageAsync"/>.</summary>
         public void SendChatMessage(string senderId, string receiverId, string channelId,
-            Chirp.Chat.ChannelType channelType, string text)
+            Chirp.Chat.ChannelType channelType, string text, string replyToMessageId = "")
         {
             var client = _client ?? throw new InvalidOperationException("ConnectAsync() first");
             client.Send(MsgID.SendMessageReq, new Chirp.Chat.SendMessageRequest
@@ -213,7 +206,21 @@ namespace Chirp.Sdk
                 MsgType = Chirp.Chat.MsgType.Text,
                 Content = ByteString.CopyFrom(Encoding.UTF8.GetBytes(text)),
                 ClientTimestamp = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds(),
+                ReplyToMessageId = replyToMessageId,
             }.ToByteArray());
+        }
+
+        /// <summary>Chat send through the full pipeline (interceptor,
+        /// '/'-command routing, local archive — see
+        /// <see cref="ChirpClient.SendMessageAsync"/>). Returns the server
+        /// response (read <c>resp.MessageId</c> for the server id). Private
+        /// sends normalize the channel id; a locally blocked message throws
+        /// RequestError(Blocked).</summary>
+        public Task<Chirp.Chat.SendMessageResponse> SendChatMessageAsync(SendOptions options,
+            string senderId, string text, int? timeoutMs = null)
+        {
+            var client = _client ?? throw new InvalidOperationException("ConnectAsync() first");
+            return client.SendMessageAsync(options, text, senderId, timeoutMs);
         }
 
         /// <summary>Recent history for a channel, newest first.</summary>

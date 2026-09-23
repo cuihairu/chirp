@@ -6,13 +6,16 @@ namespace Chirp.Sdk
     /// Timeout — the response never arrived within the deadline; Closed — the
     /// connection dropped (pending requests are flushed on drop); Kicked —
     /// the server sent KICK_NOTIFY and closed the socket; Server — a response
-    /// arrived and carried a non-OK ErrorCode.</summary>
+    /// arrived and carried a non-OK ErrorCode; Blocked — the message never
+    /// went on the wire (local validation, interceptor drop or '/' command
+    /// routing).</summary>
     public enum RequestErrorKind
     {
         Timeout,
         Closed,
         Kicked,
         Server,
+        Blocked,
     }
 
     public sealed class RequestError : Exception
@@ -40,6 +43,8 @@ namespace Chirp.Sdk
                     return "连接已断开";
                 case RequestErrorKind.Kicked:
                     return "已在其他设备登录";
+                case RequestErrorKind.Blocked:
+                    return "消息未发送";
                 default:
                     return ChirpErrorText.Of(code ?? Chirp.Common.ErrorCode.InternalError);
             }

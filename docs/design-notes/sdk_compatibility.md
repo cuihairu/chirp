@@ -41,7 +41,7 @@ title: SDK 引擎兼容性
 - `proto/csharp/` 生成代码
 
 待补：
-- [x] Hook 接口（MessageInterceptor、AuthProvider、CommandHandler）——C++ core 已接入(sdks/core,2026-09);.NET 端待对齐
+- [x] Hook 接口（MessageInterceptor/AuthProvider/MessageStore/ChatEventListener/CommandHandler 五件套）——C++ core(2026-09)与 .NET/Unity(2026-09,`ChirpHooks.cs`,interface + 默认方法)均已对齐
 - [ ] 历史消息本地存储（SQLite）
 - [ ] 敏感词过滤客户端预检
 - [ ] Unity Package 发布配置

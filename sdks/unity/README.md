@@ -10,6 +10,8 @@ Runtime/
     ChirpError.cs       RequestError / RequestErrorKind / 错误码中文文案
     MessageSpec.cs      请求-响应 spec(消息 ID + 响应 parser)
     ChirpClient.cs      连接状态机(心跳/重连/踢线/超时 + Reconnecting/Reconnected 事件)
+    ChirpHooks.cs       五钩子接口(拦截/认证/存档/监听/命令)+ SendOptions
+    ChirpMessageStore.cs MemoryMessageStore(内存存档,newest-first)
     ChirpMessages.cs    Specs 全表:聊天/社交/组队/设备/语音全部 Req/Resp 消息对
   ChirpManager.cs   MonoBehaviour 薄壳(主线程派发 + 常用便捷方法)
 dotnet/            纯 .NET 测试工程(CI 里跑真单测,不需要 Unity)
@@ -89,6 +91,43 @@ public class GameChat : MonoBehaviour
 - **离线投递**:`TargetOffline` 不是发送失败——服务端已把消息滚进对方离线队列,上线后补投。错误码中文文案见 `ChirpErrorText.Of`。
 - **踢线是终态**:被顶号后客户端不再自动重连(`Status == ConnStatus.Kicked`),需要玩家重新登录;显式再调 `ConnectAsync()` 会清掉终态。
 
+## 钩子接口
+
+五个钩子与 C++ 核心 SDK(`sdks/core`)逐一对齐,全部可选,注册在 `ChirpClient` 上(manager 用户经 `_chirp.Client`,在 `ConnectAsync()` 之后、`LoginAsync()` 之前注册):
+
+| 钩子 | 形态 | 作用 |
+| --- | --- | --- |
+| `IMessageInterceptor` | interface,全部默认放行 | 发送/接收的改写与审计点;`OnBeforeSend`/`OnBeforeReceive` 返回 false 即拦截(接收侧全丢:不存档、不触发监听、不分发 `OnNotify`) |
+| `IAuthProvider` | interface | `LoginAsync` 不传 token 时经 `GetToken()` 取;`AUTH_FAILED` 时 `RenewTokenAsync()` 给一次续期并自动重登一轮;`OnAuthResult` 报终态 |
+| `IMessageStore` | interface(`MarkRead`/`GetUnreadCount`/`Cleanup` 有默认) | 本地存档:收发双路自动 `Save`;配套转发 `LoadHistory`/`MarkRead`/`GetUnreadCount`/`CleanupMessages`;内置 `MemoryMessageStore`(newest-first,超限淘汰最旧,不跟踪已读) |
+| `IChatEventListener` | interface,全默认空 | 连接状态/登录结果/被踢/重连中/重连成功/消息到达;未读、presence、typing、跑马灯、系统公告本期无触发源(与 C++ 一致) |
+| `ICommandHandler` | interface(`Usage` 默认 `"/"+Name`) | `'/cmd args'` 本地路由:`Execute(args, senderId)` 返回 false 轮下一个同名 handler;全 miss 本地丢弃;**零注册时 `/` 消息照常发送** |
+
+```csharp
+var client = _chirp.Client!;
+client.SetMessageStore(new MemoryMessageStore(maxPerChannel: 200));
+client.SetMessageInterceptor(new CleanInterceptor());   // 敏感词/改写
+client.SetAuthProvider(gameAuthProvider);               // LoginAsync 自动取 token
+client.AddListener(gameListener);
+client.RegisterCommand(new TradeCommand());
+
+// 带引用回复的完整管线发送(过拦截器/命令路由/本地存档):
+var resp = await _chirp.SendChatMessageAsync(new SendOptions
+{
+    ChannelType = ChannelType.Private,
+    ReceiverId = "peer-7",
+    ReplyToMessageId = "m-42",
+}, senderId: "u1", text: "gg");
+```
+
+语义要点:
+
+- **回调线程**:五个钩子在 `ChirpClient` 的收发线程上直调(与 C++ "io 线程触发、引擎层派发"同一契约)——钩子里不要碰 Unity API,要碰就 `_chirp.RunOnMainThread(...)`。`ChirpManager.On*` 事件仍是主线程。
+- **改写范围**:`OnBeforeReceive` 的改写影响存档与监听;`OnNotify` 订阅者(manager 的 `OnChatMessage`)收到的仍是线上原文。
+- **完整管线 vs 直发**:`SendChatMessageAsync` 走拦截器/命令路由/存档,消息未上网时抛 `RequestError(Blocked)`;旧 `SendChatMessage(...)` 保持 fire-and-forget 直发(新增 `replyToMessageId` 参数),不经钩子。
+- **私聊归一化**:private 发送的 `channel_id` 由双方 id 按字典序归一化为 `"a|b"`,与 C++/服务端同款;非私聊必须显式 `ChannelId`。
+- **C# 编排差异**:`IAuthProvider.RenewTokenAsync()` 以 await 返回新 token(由 SDK 重登一轮)替代 C++ 的 `OnTokenExpired(renew)` 闭包;契约相同(AUTH_FAILED 后至多续期一次)。
+
 ## 组队 / 语音:第二连接
 
 组队(7501)、语音(9001)、社交(8001)是独立服务,各开一条 `ChirpClient`,回调经 `RunOnMainThread` 借 `ChirpManager` 的主线程泵:
@@ -128,9 +167,9 @@ voice.OnNotify(MsgID.IceCandidateMsg, body => /* candidate → RunOnMainThread *
 
 ## 持续集成(CI)
 
-`.github/workflows/unity-sdk.yml` 在每次 push/PR 时用 .NET 10 跑 `dotnet test dotnet/ChirpSdkTests`(16 个用例:帧编解码、序列号关联、超时、通知订阅、踢线终态与恢复、心跳回声、重连生命周期(Reconnecting/Reconnected 事件)、断线 pending 拒绝、语音 spec 往返),并校验 `proto/csharp` 与 `gen_proto.sh` 无漂移。
+`.github/workflows/unity-sdk.yml` 在每次 push/PR 时用 .NET 10 跑 `dotnet test dotnet/ChirpSdkTests`(44 个用例:帧编解码、序列号关联、超时、通知订阅、踢线终态与恢复、心跳回声、重连生命周期(Reconnecting/Reconnected 事件)、断线 pending 拒绝、语音 spec 往返、钩子接线(拦截改写/拦截丢弃/命令路由/本地存档/登录续期/监听扇出)、reply 引用与私聊归一化),并校验 `proto/csharp` 与 `gen_proto.sh` 无漂移。
 
 ## 路线
 
-- 本版交付:连接层 + 全消息 spec 表(含语音面)+ 常用便捷方法 + AutoRelogin。社交/组队的高级封装(好友面板、组队大厅之类)按游戏需求再补。
+- 本版交付:连接层 + 全消息 spec 表(含语音面)+ 常用便捷方法 + AutoRelogin + 五钩子接口(C++ core 对齐)。社交/组队的高级封装(好友面板、组队大厅之类)按游戏需求再补。
 - iOS/Android 原生构建脚本属于旧桥方案,已随桥一并移除;纯 C# 方案全平台通用(IL2CPP/Mono 均可)。
