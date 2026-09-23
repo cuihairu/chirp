@@ -80,14 +80,14 @@ src/
 13. **邀请是内存态,刷新即丢**:服务端无 GET_MY_INVITES 补拉(7028+ 保留),页面刷新时未处理的入队邀请不恢复;登录/重连只恢复**在队状态**(GET_MY_PARTY)。
 14. **设备面是转发面,不是推送面**:web 只经 app_gateway 做 REGISTER/UNREGISTER/LIST(6001/6003/6007;6009 客户端不可用,user_id 服务端钉死)。真正的"推送到达"走厂商传输,当前为日志传输;Web-Push 传输落地前,关页消息不可达,在页消息由桌面通知(Notification API)覆盖。设备表在 notification 服务内存,重启即空(下次登录自动重注册)。
 
-## CI
+## 持续集成（CI）
 
 `.github/workflows/web.yml`(paths 过滤 `apps/web_companion/**`、`proto/**`,C++ 推送不会空跑):
 
 - **test**:node 24(与开发环境一致)→ `npm ci`(仓库根,workspaces)→ typecheck → lint → vitest --coverage(阈值硬卡)→ build。
 - **proto-sync**:重跑 `gen_proto.sh` 后 `git diff` 校验 `proto/ts` 无漂移(protoc 版本注释行除外)。
 
-## Roadmap
+## 路线图（Roadmap）
 
 ```
 [一期·已完成] 本文档:Web 伴侣 App(登录/私聊/群组/好友/在线状态)

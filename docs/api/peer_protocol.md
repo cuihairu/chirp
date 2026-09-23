@@ -20,10 +20,10 @@ TCP 流:[uint32_be payload_size][chirp.gateway.Packet protobuf bytes]
 
 | msg_id | 值 | 方向 | body |
 | --- | --- | --- | --- |
-| `PEER_REGISTER_REQ` | 5050 | spoke → hub | `chirp.gateway.PeerRegisterReq` |
-| `PEER_REGISTER_RESP` | 5051 | hub → spoke | `chirp.gateway.PeerRegisterResp` |
-| `CHANNEL_MESSAGE_NOTIFY` | 5052 | spoke → hub | `chirp.gateway.ChannelMessageNotify` |
-| `PEER_INJECT_MESSAGE_NOTIFY` | 5053 | hub → spoke | `chirp.gateway.PeerInjectMessageNotify` |
+| `PEER_REGISTER_REQ` | 5050 | spoke 发往 hub | `chirp.gateway.PeerRegisterReq` |
+| `PEER_REGISTER_RESP` | 5051 | hub 发往 spoke | `chirp.gateway.PeerRegisterResp` |
+| `CHANNEL_MESSAGE_NOTIFY` | 5052 | spoke 发往 hub | `chirp.gateway.ChannelMessageNotify` |
+| `PEER_INJECT_MESSAGE_NOTIFY` | 5053 | hub 发往 spoke | `chirp.gateway.PeerInjectMessageNotify` |
 
 所有 4 个 id 都在 server-plane(5xxx)块内,只对 trusted peer 开放,客户端永远不会发送。
 
@@ -58,7 +58,7 @@ sequenceDiagram
 
 ## 消息字段
 
-### PeerRegisterReq(spoke → hub,5050)
+### PeerRegisterReq(spoke 发往 hub,5050)
 
 | 字段 | 类型 | 含义 |
 | --- | --- | --- |
@@ -68,7 +68,7 @@ sequenceDiagram
 | `game_id` | string | 频道命名空间;hub 会把该 peer 所有频道自动加 `<game_id>:` 前缀。**不得包含 `:`** |
 | `supported_features` | repeated `PeerCapability` | spoke 支持的能力位;会话最终能力为两侧交集 |
 
-### PeerRegisterResp(hub → spoke,5051)
+### PeerRegisterResp(hub 发往 spoke,5051)
 
 | 字段 | 类型 | 含义 |
 | --- | --- | --- |
@@ -78,7 +78,7 @@ sequenceDiagram
 | `heartbeat_interval_seconds` | int32 | hub 分配的心跳节奏;spoke 沉默约 2× 此周期会被 hub 剔除 |
 | `supported_features` | repeated `PeerCapability` | 协商后交集;spoke 必须只使用交集内的能力 |
 
-### ChannelMessageNotify(spoke → hub,5052)
+### ChannelMessageNotify(spoke 发往 hub,5052)
 
 | 字段 | 类型 | 含义 |
 | --- | --- | --- |
@@ -86,7 +86,7 @@ sequenceDiagram
 | `channel_id` | string | **裸频道 id**(spoke 不加前缀);hub 收到后自动加 `<game_id>:` |
 | `message` | `chirp.chat.ChatMessage` | 游戏侧原始消息,原样转发;hub 据此扇出 |
 
-### PeerInjectMessageNotify(hub → spoke,5053)
+### PeerInjectMessageNotify(hub 发往 spoke,5053)
 
 | 字段 | 类型 | 含义 |
 | --- | --- | --- |
@@ -150,7 +150,7 @@ spoke 角色需要 `app_chat_host`、`game_service_id`、`game_id` 三个同时�
 
 ## 部署示例
 
- hub(`app_chat`):
+ hub 侧(`app_chat`):
 
 ```bash
 ./chirp_chat \
@@ -160,7 +160,7 @@ spoke 角色需要 `app_chat_host`、`game_service_id`、`game_id` 三个同时�
   --min_peer_version 1
 ```
 
-spoke(`game_chat` for game 42):
+spoke(供 game 42 使用的 `game_chat`):
 
 ```bash
 ./chirp_chat \

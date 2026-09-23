@@ -1,4 +1,4 @@
-# Chirp Core SDK(C++)
+# Chirp 核心 SDK(C++)
 
 C++ 客户端协议核心:`chirp::sdk::ChatClient` 直连 chat 网关的 TCP 长连接(`[u32_be len][Packet protobuf]` 帧)。桌面游戏客户端与 Unreal SDK(`sdks/unreal`)共用这一份实现;连接语义与 web/mobile/unity 三端的 `ChirpClient` 逐一对齐。
 

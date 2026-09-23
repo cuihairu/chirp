@@ -580,7 +580,7 @@ dsn = "user:pass@tcp(127.0.0.1:3306)/chirp_npc"
 max_open_conns = 20
 ```
 
-### 7.2 Docker Compose
+### 7.2 Docker Compose 部署
 
 ```yaml
 services:

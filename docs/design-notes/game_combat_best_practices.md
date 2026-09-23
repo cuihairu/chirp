@@ -66,7 +66,7 @@ MMORPG 的核心挑战在于**网络延迟掩盖**、**状态同步**以及**技
   - **移动**：客户端先行移动，服务器回滚纠正（Rubber banding）。
   - **表现**：技能特效先行播放，伤害数字等服务器回包。
 
-### C. AOI (Area of Interest)
+### C. 兴趣区域 (Area of Interest - AOI)
 
 - MMO 必须做 AOI，只同步玩家视野周边的实体状态，节省带宽。
 - 常见做法：九宫格 (9-Grid) 或 十字链表 (Cross Linked List)。

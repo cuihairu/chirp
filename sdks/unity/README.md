@@ -1,4 +1,4 @@
-# Chirp Unity SDK
+# Chirp Unity 客户端 SDK
 
 Unity 客户端 SDK,直连 Chirp 网关的 WebSocket 协议(`[u32_be len][Packet protobuf]` 帧,序列号关联请求响应)。与 web / mobile 端同构:连接、心跳、重连、踢线、请求超时全部内建,游戏侧只面对 `Task` 与事件。
 
@@ -126,7 +126,7 @@ voice.OnNotify(MsgID.SdpOfferMsg, body => /* 对端 offer → RunOnMainThread */
 voice.OnNotify(MsgID.IceCandidateMsg, body => /* candidate → RunOnMainThread */);
 ```
 
-## CI
+## 持续集成(CI)
 
 `.github/workflows/unity-sdk.yml` 在每次 push/PR 时用 .NET 10 跑 `dotnet test dotnet/ChirpSdkTests`(16 个用例:帧编解码、序列号关联、超时、通知订阅、踢线终态与恢复、心跳回声、重连生命周期(Reconnecting/Reconnected 事件)、断线 pending 拒绝、语音 spec 往返),并校验 `proto/csharp` 与 `gen_proto.sh` 无漂移。
 

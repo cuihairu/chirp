@@ -89,8 +89,8 @@ router->SendChatMessage(user_id, message,
 ### 3. 负载均衡配置
 
 **HAProxy 配置：**
-- Gateway: TCP 5000/5001 (least_conn)
-- Chat: TCP 7000/7001 (least_conn)
+- Gateway:TCP 5000/5001(least_conn,最少连接)
+- Chat:TCP 7000/7001(least_conn,最少连接)
 - 健康检查
 - 会话亲和
 

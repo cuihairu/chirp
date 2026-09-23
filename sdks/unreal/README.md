@@ -1,4 +1,4 @@
-# Chirp Unreal SDK
+# Chirp Unreal 插件 SDK
 
 Unreal Engine 插件壳,包装 native 协议核心 `chirp::sdk::ChatClient`(`sdks/core`,与桌面 C++ SDK 同一份代码)。协议逻辑(帧、心跳 pong 回声校验、指数退避重连、KICK 终态、请求超时)全部在 native 核心,由 chirp 仓库 CI 的 `sdk_core_tests`(37 例 loopback 单测)覆盖;本目录只做两件事:
 
@@ -41,7 +41,7 @@ SendChatMessage("peer-7", "hello")
 
 - **没有 OnConnected 事件**(故意的):用 `GetState()` 轮询或等 `OnLoginResult`。
 - **KICK 是终态**:核心不再自动重连,`GetState() == Kicked`,需要重新 `Connect`+`Login`。
-- 端口:开发拓扑 chat TCP **5000**(WS 5001 是 web/uniity 走的入口,Unreal 用 TCP 帧——帧协议与 WS 消息体一致)。
+- 端口:开发拓扑 chat TCP **5000**(WS 5001 是 web/unity 走的入口,Unreal 用 TCP 帧——帧协议与 WS 消息体一致)。
 - 事件都在游戏线程,回调里可直接碰 UWorld/UWidget。
 
 ## 与其他端的关系

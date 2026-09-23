@@ -104,8 +104,8 @@ cmake --build . --config Debug
 - 网络:建议 1 Gbps
 
 **软件:**
-- OS:Linux(Ubuntu 20.04+、CentOS 8+)
-- Docker:20.10+
+- 操作系统:Linux(Ubuntu 20.04+、CentOS 8+)
+- Docker:20.10 及以上
 - Docker Compose:2.0+(本地测试用)
 
 ### 端口要求
@@ -516,10 +516,10 @@ chirp_connections_total{service="gateway"} 423
 
 | 服务 | 并发用户 | 实例数(4C/4G) |
 |---------|-----------------|---------------------|
-| Gateway | 10,000 | 3 |
-| Chat | 5,000 | 2 |
-| Social | 20,000 | 2 |
-| Voice | 1,000 | 1 |
+| Gateway（网关） | 10,000 | 3 |
+| Chat（聊天） | 5,000 | 2 |
+| Social（社交） | 20,000 | 2 |
+| Voice（语音） | 1,000 | 1 |
 
 ---
 

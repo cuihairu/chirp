@@ -4,7 +4,7 @@ title: 部署指南
 
 # 部署指南
 
-> 状态说明:本页是部署指南草稿。当前受支持的路径是 `gateway + auth + chat`;social、voice、notification、search 服务仍是实验性的。命令和端点假设请对照 [Overall Architecture](../architecture.md) 与 [Capability Matrix](../CAPABILITY_MATRIX.md) 核实。
+> 状态说明:本页是部署指南草稿。当前受支持的路径是 `gateway + auth + chat`;social、voice、notification、search 服务仍是实验性的。命令和端点(endpoint)假设请对照 [总体架构](../architecture.md) 与 [能力矩阵](../CAPABILITY_MATRIX.md) 核实。
 
 本指南覆盖把 Chirp 部署到生产环境。
 
@@ -61,7 +61,7 @@ kubectl scale deployment chirp-gateway --replicas=3
 - [ ] MySQL 和 Redis 使用强密码
 - [ ] 所有服务启用 TLS/SSL
 - [ ] 配置防火墙规则
-- [ ] 启用限流
+- [ ] 启用限流(rate limiting)
 - [ ] 设置正确的 CORS 策略
 
 ### 监控
@@ -75,9 +75,9 @@ kubectl scale deployment chirp-gateway --replicas=3
 ### 可扩展性
 
 - [ ] 配置 Redis 集群实现高可用
-- [ ] 启用 MySQL 主从复制
-- [ ] 用 HAProxy/nginx 做负载均衡
-- [ ] 为 pod/容器配置自动扩缩容
+- [ ] 启用 MySQL 主从复制(master-replica replication)
+- [ ] 用 HAProxy/nginx 做负载均衡(load balancing)
+- [ ] 为 pod/容器配置自动扩缩容(autoscaling)
 - [ ] 静态资源启用 CDN
 
 ## 服务配置
@@ -94,7 +94,7 @@ REDIS_PORT=6379
 LOG_LEVEL=info
 ```
 
-**Docker Compose:**
+**Docker Compose 配置:**
 ```yaml
 gateway:
   image: chirp/gateway:latest
@@ -291,6 +291,6 @@ sudo systemctl start mysql
 
 ## 下一步
 
-- [Overall Architecture(总体架构)](../architecture.md)
-- [Scalability Notes(可扩展性笔记)](../design-notes/SCALABILITY.md)
-- [API Reference(API 参考)](../api/overview.md)
+- [总体架构](../architecture.md)
+- [可扩展性笔记](../design-notes/SCALABILITY.md)
+- [API 参考](../api/overview.md)

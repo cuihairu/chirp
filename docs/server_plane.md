@@ -1,6 +1,6 @@
 # Server Plane:游戏后端集成
 
-状态:**Experimental**——枢纽(`chirp_game_server_gateway`)、chat 侧消费者、Redis Streams broker 回退都已实现并经单测验证(行覆盖 100%):chat 以内部 peer 身份拨入,注入消息走与玩家消息相同的存储/投递尾段。两平面拓扑见 [Architecture](./architecture.md)。
+状态:**实验性(Experimental)**——枢纽(`chirp_game_server_gateway`)、chat 侧消费者、Redis Streams broker 回退都已实现并经单测验证(行覆盖 100%):chat 以内部 peer 身份拨入,注入消息走与玩家消息相同的存储/投递尾段。两平面拓扑见[整体架构](./architecture.md)。
 
 > **架构注记(2026-09-21;2026-09-22 落地)。** 目标拓扑:`game_chat` 用原生 peer 注册协议(带白名单与版本协商)注册进 `app_chat`,没有外部桥接进程。身份绑定、频道订阅和未读红点账本都由 `app_chat` 内部处理(`PlayerDirectory`);扇入投递随之上移——`game_chat` 把频道消息经 peer 上行交给 `app_chat`,由它按订阅扇出。`chirp_game_server_gateway` 保持其原有职责:游戏后端注入 + 可靠事件下行,不再承载 WP-8 的任何数据面。
 
@@ -18,7 +18,7 @@ server plane 是游戏后端与 chirp 通话的方式。它刻意与玩家边缘
 
 `service_id` + secret 这一对是 appkey/appSecret 式凭证:它标识接入的后端,长期有效。由此有两条铁律:
 
-- **永远不要带进客户端。** 凡打进游戏客户端或应用二进制的东西,等同于公开。客户端持有的是短时效用户 token;游戏后端在玩家自身登录之后兑换/派生这些 token。见 [Credential model](./architecture.md#credential-model-service-credentials-vs-user-tokens)。
+- **永远不要带进客户端。** 凡打进游戏客户端或应用二进制的东西,等同于公开。客户端持有的是短时效用户 token;游戏后端在玩家自身登录之后兑换/派生这些 token。见[凭证模型](./architecture.md#凭证模型)。
 - **永远不要用它冒充用户。** 注入携带 `sender_kind`(`SYSTEM` / `NPC` / `SERVICE`)正是为了 server plane 可以行动而不假装成某个玩家账号。
 
 ## 运行
@@ -57,10 +57,10 @@ cmake --preset dev && cmake --build --preset dev
 可信服务请求 chirp 投递一条发送者不是用户的消息(公告、NPC 台词、交易状态)。`INJECT_MESSAGE_REQ` 携带 `chirp.server_gateway.MessageInjectRequest`:
 
 - `inject_id`:调用方提供的幂等键(响应中原样回显)
-- `sender_kind`:`SENDER_SYSTEM` / `SENDER_NPC` / `SENDER_SERVICE`
+- `sender_kind`:发送者类型,取 `SENDER_SYSTEM` / `SENDER_NPC` / `SENDER_SERVICE` 之一
 - `sender_id`:如 `npc:blacksmith_01`、`trade`
 - `channel_type` + `channel_id`,或一对一场景的 `receiver_id`
-- `content`
+- `content`:消息体
 - `game_id`:**必须为空**。带 `game_id` 的扇入投递已迁到 app 平面(见下一节),枢纽对这种形态回 `INVALID_PARAM`
 
 响应码:
@@ -131,7 +131,7 @@ chat 服务以内部 peer 身份连到枢纽(`--server_gateway_host`,默认空�
 `EVENT_PUBLISH_REQ`(`chirp.server_gateway.EventPublishRequest`)发布一条必须到达目标服务的事件——例如 chat 侧逻辑产生的任务触发器:
 
 - `event_id`:可选的调用方幂等键;缺省时生成(`evt-<ts>-<n>`)并在响应中回显
-- `target_service_id`, `event_type`, `payload`
+- 其余请求字段:`target_service_id`(目标服务)、`event_type`(事件类型)、`payload`(载荷)
 
 投递语义:
 

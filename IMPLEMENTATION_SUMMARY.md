@@ -1,4 +1,4 @@
-# Chirp Implementation Overview
+# Chirp 实现概览
 
 > 实现构成一览(2026-09-14)。能力状态以[能力矩阵](docs/CAPABILITY_MATRIX.md)为权威;验证命令见 [PROJECT_COMPLETE.md](PROJECT_COMPLETE.md)。
 

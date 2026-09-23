@@ -46,7 +46,7 @@ cmake --preset dev \
   -DCMAKE_OSX_ARCHITECTURES="$(uname -m)"
 ```
 
-## 冒烟测试
+## 冒烟测试(smoke test)
 
 ```bash
 ./test_services.sh --smoke       # auth + gateway + TCP/WS 登录客户端
@@ -63,7 +63,7 @@ bash tests/run_integration_tests.sh
 bash tests/run_integration_tests.sh --local-services --gateway-port 5500 --auth-port 6500
 ```
 
-## Docker Compose
+## 用 Docker Compose 启动
 
 ```bash
 docker compose up --build
@@ -71,16 +71,16 @@ docker compose up --build
 
 Compose 会启动 Redis、MySQL、Auth、Gateway、Chat 和实验性服务。第一次验证时,只关注:
 
-- `redis`
-- `auth`
-- `gateway`
-- `chat`
+- `redis`:缓存与会话存储
+- `auth`:认证服务
+- `gateway`:网关服务
+- `chat`:聊天服务
 
 常用默认端口:
 
 | 服务 | TCP | WebSocket | 说明 |
 | --- | --- | --- | --- |
-| Gateway | 5000 | 5001 | 登录、登出、心跳、会话 |
+| Gateway | 5000 | 5001 | 登录、登出、心跳(heartbeat)、会话(session) |
 | Auth | 6000 | - | 认证校验 |
 | Chat | 7000 | 7001 | 直连聊天入口 |
 
@@ -92,7 +92,7 @@ Compose 会启动 Redis、MySQL、Auth、Gateway、Chat 和实验性服务。第
 ./build/services/chat/chirp_chat --port 7000 --ws_port 7001 --redis_host 127.0.0.1 --redis_port 6379 --offline_ttl 604800
 ```
 
-最基本的本地聊天测试可以不配 Redis,但验证离线队列、历史列表或分布式会话行为时建议配上。
+最基本的本地聊天测试可以不配 Redis,但验证离线队列(offline queue)、历史列表或分布式会话行为时建议配上。
 
 ## 协议提醒
 
@@ -102,7 +102,7 @@ TCP 和 WebSocket 承载的都是:
 [uint32_be payload_size][chirp.gateway.Packet protobuf bytes]
 ```
 
-`Packet.msg_id` 在 protobuf 信封里面,不是独立的 2 字节网络帧头。
+`Packet.msg_id` 在 protobuf 信封(envelope)里面,不是独立的 2 字节网络帧头。
 
 ## 当前限制
 

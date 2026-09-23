@@ -105,7 +105,7 @@ cmake --preset minimal
 cmake --build --preset minimal
 ```
 
-smoke test：
+smoke test（冒烟测试）：
 
 ```bash
 ./test_services.sh --smoke       # auth + gateway + TCP/WS login
@@ -117,7 +117,7 @@ smoke test：
 ./test_services.sh --smoke-redis # Redis session/kick path
 ```
 
-Docker Compose：
+Docker Compose（容器编排）：
 
 ```bash
 docker compose up --build
@@ -147,7 +147,7 @@ TCP 和 WebSocket 使用同一套二进制 payload：
 - `app_sdk_gateway` 与推送链路已可用但边界明确：chat 离线消息会经 `PushBridge` → `app_notification` 触发设备推送；`app_notification` 的 provider HTTP 投递是日志 stub（无 TLS，真实 APNs HTTP/2 / FCM HTTP 待接），推送桥仅接入默认构建的 `chirp_chat`（`main_enhanced`/`main_distributed` 未接）。
 - NPC 对话已落地为关键词规则引擎（`services/npc_dialog`）：玩家私聊 `npc:` 前缀的接收者会转为 `npc.player_message` 事件发给 NPC 服务，NPC 的回复经注入通道回到 chat（at-least-once，hub 重投窗口内可能重复回复）；对话质量是规则表（`*` 为默认台词），LLM 引擎留作接口替换。设计文档（[docs/design-notes/](docs/design-notes/)）描述的完整 NPC 系统仍不是现状。
 
-## Roadmap
+## 路线图
 
 已完成的里程碑：
 
@@ -175,6 +175,6 @@ TCP 和 WebSocket 使用同一套二进制 payload：
 - `tools/benchmark`：本地验证工具
 - `tests`：单元和集成 smoke 测试
 
-## License
+## 许可证
 
 [Apache License 2.0](LICENSE)

@@ -1,4 +1,4 @@
-# Chirp Go Server SDK
+# Chirp Go 服务器 SDK
 
 游戏后端服务(trade、matchmaking、NPC 引擎等)接入 chirp **服务器平面**的 Go 参考客户端。dial-out 连接 `chirp_server_gateway`(默认 TCP 8100),以 `service_id` + 共享 secret 过信任门,然后向 chat 平面注入非玩家消息、向其他服务发布可靠事件。
 

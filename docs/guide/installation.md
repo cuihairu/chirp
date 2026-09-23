@@ -10,17 +10,17 @@ title: 安装指南
 
 ## 系统要求
 
-### Linux(Ubuntu 22.04+)
+### Linux 系统(Ubuntu 22.04+)
 
 **必需:**
 - GCC 13+ 或 Clang 17+
-- CMake 3.21+
+- CMake 3.21 或更新
 - Ninja 构建系统
 - Protocol Buffers 编译器
 
 **扩展运行时路径可选:**
-- Redis
-- MySQL
+- Redis(缓存与会话存储)
+- MySQL(数据库服务)
 
 **安装:**
 ```bash
@@ -39,11 +39,11 @@ sudo apt-get install -y \
     pkg-config
 ```
 
-### macOS(12+)
+### macOS 系统(12+)
 
 **必需:**
-- Xcode Command Line Tools
-- Homebrew
+- Xcode Command Line Tools(Apple 命令行工具)
+- Homebrew(macOS 包管理器)
 
 **安装:**
 ```bash
@@ -56,12 +56,12 @@ brew services start redis
 brew services start mysql
 ```
 
-### Windows(11+)
+### Windows 系统(11+)
 
 **必需:**
-- Visual Studio 2022 17.10+
-- vcpkg
-- CMake
+- Visual Studio 2022 17.10 或更新
+- vcpkg(C++ 依赖管理器)
+- CMake(构建工具)
 
 **安装:**
 ```powershell
@@ -192,7 +192,7 @@ MYSQL_PASSWORD=chirp123
 
 ## 数据库准备
 
-### MySQL schema
+### MySQL schema(表结构)
 
 ```bash
 # Create database
@@ -278,6 +278,6 @@ netstat -an | grep 6379
 
 ## 下一步
 
-- [Getting Started(快速上手)](./getting-started.md)
-- [Architecture Overview(架构总览)](../architecture.md)
-- [Deployment Guide(部署指南)](./deployment.md)
+- [快速上手](./getting-started.md)
+- [架构总览](../architecture.md)
+- [部署指南](./deployment.md)

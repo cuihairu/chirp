@@ -1,4 +1,4 @@
-# Chirp Project Status
+# Chirp 项目现状
 
 > 当前状态快照(2026-09-14)。这不是"一切生产就绪"的声明——各能力的真实完成度以[能力矩阵](docs/CAPABILITY_MATRIX.md)为准。
 

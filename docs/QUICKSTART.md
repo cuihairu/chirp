@@ -21,4 +21,4 @@ ctest --preset dev
 ./test_services.sh --smoke-redis
 ```
 
-启用非核心服务前,先读 [Core](./CORE.md) 和 [Capability Matrix](./CAPABILITY_MATRIX.md)。
+启用非核心服务前,先读 [Core](./CORE.md) 和 [Capability Matrix(能力矩阵)](./CAPABILITY_MATRIX.md)。

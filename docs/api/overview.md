@@ -6,7 +6,7 @@ title: API 总览
 
 Chirp 在 TCP 或 WebSocket 上跑 Protocol Buffers。当前受支持的协议面围绕 `chirp.gateway.Packet` 展开。
 
-实现状态请看 [Capability Matrix](../CAPABILITY_MATRIX.md)。部分 proto 消息为路线图或实验性服务而存在,不要默认它们受默认运行时支持。
+实现状态请看 [能力矩阵](../CAPABILITY_MATRIX.md)。部分 proto 消息为路线图或实验性服务而存在,不要默认它们受默认运行时支持。
 
 ## 包格式
 
@@ -36,17 +36,17 @@ message Packet {
 
 映射示例:
 
-| Packet `msg_id` | Packet `body` protobuf |
+| Packet 的 `msg_id` | Packet 的 `body` protobuf |
 | --- | --- |
-| `LOGIN_REQ` | `chirp.auth.LoginRequest` |
-| `LOGIN_RESP` | `chirp.auth.LoginResponse` |
-| `HEARTBEAT_PING` | `chirp.gateway.HeartbeatPing` |
-| `HEARTBEAT_PONG` | `chirp.gateway.HeartbeatPong` |
-| `SEND_MESSAGE_REQ` | `chirp.chat.SendMessageRequest` |
-| `SEND_MESSAGE_RESP` | `chirp.chat.SendMessageResponse` |
-| `GET_HISTORY_REQ` | `chirp.chat.GetHistoryRequest` |
-| `GET_HISTORY_RESP` | `chirp.chat.GetHistoryResponse` |
-| `CHAT_MESSAGE_NOTIFY` | `chirp.chat.ChatMessage` |
+| `LOGIN_REQ` | `chirp.auth.LoginRequest`(登录请求) |
+| `LOGIN_RESP` | `chirp.auth.LoginResponse`(登录应答) |
+| `HEARTBEAT_PING` | `chirp.gateway.HeartbeatPing`(心跳请求) |
+| `HEARTBEAT_PONG` | `chirp.gateway.HeartbeatPong`(心跳应答) |
+| `SEND_MESSAGE_REQ` | `chirp.chat.SendMessageRequest`(发送消息请求) |
+| `SEND_MESSAGE_RESP` | `chirp.chat.SendMessageResponse`(发送消息应答) |
+| `GET_HISTORY_REQ` | `chirp.chat.GetHistoryRequest`(拉取历史请求) |
+| `GET_HISTORY_RESP` | `chirp.chat.GetHistoryResponse`(拉取历史应答) |
+| `CHAT_MESSAGE_NOTIFY` | `chirp.chat.ChatMessage`(聊天消息通知) |
 
 ## 当前端点
 
@@ -55,7 +55,7 @@ message Packet {
 | Gateway | 5000 | 5001 | Supported | 登录、登出、心跳、会话注册表,可选 Redis 踢线 |
 | Auth | 6000 | - | Supported | 配置 `--auth_host` 时由 Gateway 调用 |
 | Chat | 7000 | 7001 | Supported | 当前冒烟测试与 SDK 示例的直连聊天入口 |
-| Server Gateway | 8100 | - | Experimental | 可信服务面枢纽;见 [Server Plane](../server_plane.md) |
+| Server Gateway | 8100 | - | Experimental | 可信服务面枢纽;见 [服务面](../server_plane.md) |
 | Social | 8000 | 8001 | Experimental | 不在最小验证路径内 |
 | Voice | 9000 | 9001 | Experimental | 信令面存在,尚不构成完整媒体后端保证 |
 | Notification | 5006 | 5016 | Experimental | 设备注册表 + 推送面(6xxx);provider HTTP 投递为日志占位 |
@@ -64,7 +64,7 @@ message Packet {
 
 ## 核心消息 ID
 
-### Gateway/Auth
+### 网关与认证(Gateway/Auth)
 
 | MsgID | 名称 | 方向 | 当前状态 |
 | --- | --- | --- | --- |
@@ -76,7 +76,7 @@ message Packet {
 | 1006 | `LOGOUT_REQ` | 客户端 -> Gateway/Chat | Supported |
 | 1007 | `LOGOUT_RESP` | Gateway/Chat -> 客户端 | Supported |
 
-### Chat
+### 聊天(Chat)
 
 | MsgID | 名称 | 方向 | 当前状态 |
 | --- | --- | --- | --- |
@@ -88,7 +88,7 @@ message Packet {
 
 Gateway 目前会忽略未实现的业务消息,包括聊天消息。除非网关路由已实现,请把聊天包发给 Chat 服务。
 
-### Server plane(5xxx)
+### 服务面(Server plane,5xxx)
 
 `chirp_server_gateway`(TCP 8100)在另一个信任面上用同一套 Packet 帧。
 peer 是游戏后端和内部服务,以 `service_id` + 共享 secret 认证——从来不是
@@ -104,8 +104,8 @@ peer 是游戏后端和内部服务,以 `service_id` + 共享 secret 认证—�
 | 5011 / 5012 | `EVENT_ACK_REQ` / `RESP` | 服务 <-> 枢纽 |
 
 状态:Experimental。完整契约(拨出、至少一次事件投递、注入校验)在
-[Server Plane](../server_plane.md);完整的 msg-id 到 body 映射在
-[Core](../CORE.md)。
+[服务面](../server_plane.md);完整的 msg-id 到 body 映射在
+[核心文档](../CORE.md)。
 
 ### Notification / 设备面(6xxx)
 
@@ -115,11 +115,11 @@ peer 是游戏后端和内部服务,以 `service_id` + 共享 secret 认证—�
 
 | MsgID | 名称 | Body |
 | --- | --- | --- |
-| 6001 / 6002 | `REGISTER_DEVICE_REQ` / `RESP` | `RegisterDeviceRequest` / `RegisterDeviceResponse` |
-| 6003 / 6004 | `UNREGISTER_DEVICE_REQ` / `RESP` | `UnregisterDeviceRequest` / `UnregisterDeviceResponse` |
-| 6005 / 6006 | `UPDATE_DEVICE_TOKEN_REQ` / `RESP` | `UpdateDeviceTokenRequest` / `UpdateDeviceTokenResponse` |
-| 6007 / 6008 | `GET_USER_DEVICES_REQ` / `RESP` | `GetUserDevicesRequest` / `GetUserDevicesResponse` |
-| 6009 / 6010 | `PUSH_NOTIFICATION_REQ` / `RESP` | `PushNotificationRequest` / `PushNotificationResponse` |
+| 6001 / 6002 | `REGISTER_DEVICE_REQ` / `RESP` | `RegisterDeviceRequest` / `RegisterDeviceResponse`(设备注册请求/应答) |
+| 6003 / 6004 | `UNREGISTER_DEVICE_REQ` / `RESP` | `UnregisterDeviceRequest` / `UnregisterDeviceResponse`(设备注销请求/应答) |
+| 6005 / 6006 | `UPDATE_DEVICE_TOKEN_REQ` / `RESP` | `UpdateDeviceTokenRequest` / `UpdateDeviceTokenResponse`(推送 token 更新请求/应答) |
+| 6007 / 6008 | `GET_USER_DEVICES_REQ` / `RESP` | `GetUserDevicesRequest` / `GetUserDevicesResponse`(用户设备列表查询请求/应答) |
+| 6009 / 6010 | `PUSH_NOTIFICATION_REQ` / `RESP` | `PushNotificationRequest` / `PushNotificationResponse`(推送请求/应答) |
 
 6011+ 的 id 预留(角标 / 静默 / 偏好设置),尚未实现。
 
@@ -222,6 +222,6 @@ ws.send(concat(uint32be(packet.length), packet))
 
 ## 相关文档
 
-- [Overall Architecture](../architecture.md)
-- [Capability Matrix](../CAPABILITY_MATRIX.md)
-- [Core](../CORE.md)
+- [整体架构](../architecture.md)
+- [能力矩阵](../CAPABILITY_MATRIX.md)
+- [核心文档](../CORE.md)

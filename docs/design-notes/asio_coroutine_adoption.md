@@ -2,7 +2,7 @@
 
 > 状态:技术决策分析(2026-09)。结论是"不整体重写、新模块采用",理由见下文;若未来证据变化,按文末决策表重新评估。能力边界以 [CAPABILITY_MATRIX](../CAPABILITY_MATRIX.md) 为准。
 
-## TL;DR
+## 要点速览(TL;DR)
 
 1. **前提纠正**:asio 对 C++20 协程的支持不是 1.36 才开始的——`awaitable`/`co_spawn`/`use_awaitable` 这套原生协程设施自 **asio 1.16(2019 年底,对应 Boost.Asio 1.70)就已可用**,更早还有 TS 风格的 stackless 伪协程(`asio::coroutine` + `yield`)。
 2. **本项目已经在用支持协程的版本**:vcpkg 提供的 **asio 1.32.0**(standalone 模式),编译标准 **C++23**(`CMakeLists.txt:4`),GCC 工具链对协程的原生支持齐备。启用协程不需要升级任何依赖。
