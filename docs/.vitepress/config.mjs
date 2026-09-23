@@ -1,5 +1,22 @@
 import { defineConfig } from 'vitepress'
 import { withMermaid } from 'vitepress-plugin-mermaid'
+import { fileURLToPath } from 'node:url'
+
+// mermaid 11.x 的 dist 按 stylis 4.4 的导出面打包(import LAYER),
+// vitepress 1.6.4 运行时按 stylis 4.1 的导出面加载(import SCOPE),
+// 任何单一 stylis 版本都无法同时满足。stylis 经 pnpm-workspace.yaml
+// 钉在 4.1.4(供 vitepress 运行时),打包期用下面的插件把裸 'stylis'
+// 指到补齐 LAYER 常量的 shim(值取自 stylis 4.4.0 的 Enum.js)。
+const stylisShim = fileURLToPath(new URL('./stylis-shim.mjs', import.meta.url))
+const stylisShimPlugin = {
+  name: 'stylis-shim',
+  enforce: 'pre',
+  resolveId(id, importer) {
+    if (id !== 'stylis') return null
+    if (importer && importer.replace(/\\/g, '/').endsWith('/.vitepress/stylis-shim.mjs')) return null
+    return stylisShim
+  },
+}
 
 const config = defineConfig({
   lang: 'zh-CN',
@@ -24,12 +41,33 @@ const config = defineConfig({
       { text: '架构', link: '/architecture' },
       { text: 'API', link: '/api/overview' },
       {
+        text: 'SDK 接入',
+        items: [
+          { text: 'Unity3D', link: '/sdk/unity3d' },
+          { text: 'Unreal', link: '/sdk/unreal' },
+          { text: 'Cocos Creator', link: '/sdk/cocos-creator' },
+          { text: 'LayaAir', link: '/sdk/layaair' },
+          { text: '微信小游戏', link: '/sdk/wechat-minigame' },
+          { text: '服务端 SDK', link: '/sdk/server' },
+        ]
+      },
+      {
         text: 'GitHub',
         link: 'https://github.com/cuihairu/chirp'
       },
     ],
 
     sidebar: {
+      '/sdk/': [
+        { text: 'SDK 接入', collapsed: false, items: [
+          { text: 'Unity3D', link: '/sdk/unity3d' },
+          { text: 'Unreal', link: '/sdk/unreal' },
+          { text: 'Cocos Creator', link: '/sdk/cocos-creator' },
+          { text: 'LayaAir', link: '/sdk/layaair' },
+          { text: '微信小游戏', link: '/sdk/wechat-minigame' },
+          { text: '服务端 SDK', link: '/sdk/server' },
+        ]},
+      ],
       '/guide/': [
         { text: '入门指南', collapsed: false, items: [
           { text: '导言', link: '/guide/introduction' },
@@ -96,6 +134,7 @@ const config = defineConfig({
   },
 
   vite: {
+    plugins: [stylisShimPlugin],
     build: {
       chunkSizeWarningLimit: 1200,
     },
