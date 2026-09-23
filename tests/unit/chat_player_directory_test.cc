@@ -1498,4 +1498,166 @@ TEST_F(DispatchTest, ConsumesUnexpectedResponseIds) {
   EXPECT_TRUE(session->sent.empty());
 }
 
+TEST_F(DispatchTest, ServesEveryRemainingRequestInTheBlock) {
+  // The happy-path dispatch arms for every request id the block routes;
+  // BIND/GET_IDENTITIES/SUBSCRIBE have their own tests above.
+  trusted.insert(session.get());
+
+  // Seed through the handlers so each RPC answers with real state.
+  ASSERT_EQ(directory_
+                .HandleBindPlayerIdentity(MakeBindRequest("b1", "player-1", "game-a", "u-1"))
+                .code(),
+            OK);
+  ASSERT_EQ(directory_
+                .HandleSubscribePlayerChannel(MakeSubscribeRequest("s1", "player-1", "game-a", "world-1"))
+                .code(),
+            OK);
+  chirp::gateway::ChannelMessageNotify uplink;
+  uplink.set_game_id("game-a");
+  uplink.set_channel_id("world-1");
+  ASSERT_GT(directory_.FanoutChannelMessage(uplink), 0u);
+
+  const auto dispatch = [&](chirp::gateway::MsgID id, const google::protobuf::Message& body) {
+    SCOPED_TRACE(static_cast<int>(id));
+    EXPECT_TRUE(
+        chirp::chat::DispatchPlayerDirectoryPacket(MakePacket(id, body), session, directory_,
+                                                   &trusted));
+  };
+
+  // RESOLVE_GAME_USER_REQ: the bound identity answers with the player.
+  sg::ResolveGameUserRequest resolve;
+  resolve.set_game_id("game-a");
+  resolve.set_game_user_id("u-1");
+  dispatch(chirp::gateway::RESOLVE_GAME_USER_REQ, resolve);
+  {
+    auto resps = session->Decode<sg::ResolveGameUserResponse>(
+        chirp::gateway::RESOLVE_GAME_USER_RESP);
+    ASSERT_EQ(resps.size(), 1u);
+    EXPECT_EQ(resps[0].code(), OK);
+    EXPECT_EQ(resps[0].player_id(), "player-1");
+  }
+
+  // GET_PLAYER_SUBSCRIPTIONS_REQ: the seeded subscription comes back.
+  sg::GetPlayerSubscriptionsRequest get_subs;
+  get_subs.set_player_id("player-1");
+  dispatch(chirp::gateway::GET_PLAYER_SUBSCRIPTIONS_REQ, get_subs);
+  {
+    auto resps = session->Decode<sg::GetPlayerSubscriptionsResponse>(
+        chirp::gateway::GET_PLAYER_SUBSCRIPTIONS_RESP);
+    ASSERT_EQ(resps.size(), 1u);
+    EXPECT_EQ(resps[0].code(), OK);
+    ASSERT_EQ(resps[0].subscriptions_size(), 1);
+    EXPECT_EQ(resps[0].subscriptions(0).subscription_id(), "s1");
+  }
+
+  // GET_UNREAD_SUMMARY_REQ: one fan-out increment is pending for the player.
+  sg::GetUnreadSummaryRequest summary;
+  summary.set_player_id("player-1");
+  dispatch(chirp::gateway::GET_UNREAD_SUMMARY_REQ, summary);
+  {
+    auto resps = session->Decode<sg::GetUnreadSummaryResponse>(
+        chirp::gateway::GET_UNREAD_SUMMARY_RESP);
+    ASSERT_EQ(resps.size(), 1u);
+    EXPECT_EQ(resps[0].code(), OK);
+    EXPECT_EQ(resps[0].total_unread(), 1);
+  }
+
+  // MARK_CHANNELS_READ_REQ: the layered selector clears the seeded counter.
+  sg::MarkChannelsReadRequest mark;
+  mark.set_player_id("player-1");
+  mark.set_game_id("game-a");
+  mark.set_channel_id("world-1");
+  dispatch(chirp::gateway::MARK_CHANNELS_READ_REQ, mark);
+  {
+    auto resps = session->Decode<sg::MarkChannelsReadResponse>(
+        chirp::gateway::MARK_CHANNELS_READ_RESP);
+    ASSERT_EQ(resps.size(), 1u);
+    EXPECT_EQ(resps[0].code(), OK);
+    EXPECT_EQ(resps[0].cleared(), 1);
+  }
+
+  // UNSUBSCRIBE_PLAYER_CHANNEL_REQ: by id, on the seeded subscription.
+  sg::UnsubscribePlayerChannelRequest unsub;
+  unsub.set_subscription_id("s1");
+  dispatch(chirp::gateway::UNSUBSCRIBE_PLAYER_CHANNEL_REQ, unsub);
+  {
+    auto resps = session->Decode<sg::UnsubscribePlayerChannelResponse>(
+        chirp::gateway::UNSUBSCRIBE_PLAYER_CHANNEL_RESP);
+    ASSERT_EQ(resps.size(), 1u);
+    EXPECT_EQ(resps[0].code(), OK);
+  }
+
+  // UNBIND_PLAYER_IDENTITY_REQ: by binding id, idempotent.
+  sg::UnbindPlayerIdentityRequest unbind;
+  unbind.set_binding_id("b1");
+  dispatch(chirp::gateway::UNBIND_PLAYER_IDENTITY_REQ, unbind);
+  {
+    auto resps = session->Decode<sg::UnbindPlayerIdentityResponse>(
+        chirp::gateway::UNBIND_PLAYER_IDENTITY_RESP);
+    ASSERT_EQ(resps.size(), 1u);
+    EXPECT_EQ(resps[0].code(), OK);
+  }
+}
+
+// ---------------------------------------------------------------------------
+// PlayerDirectory::LoadAll (cold-start restore across all three registries)
+// ---------------------------------------------------------------------------
+
+TEST(PlayerDirectoryLoadAllTest, RestoresIdentitiesSubscriptionsAndUnread) {
+  // One Redis stand-in backing every registry: seed a "previous process"
+  // through a writer directory, then restore into a fresh one via LoadAll.
+  const auto store = std::make_shared<std::map<std::string, std::string>>();
+  chat::PlayerDirectory::Options persisted;
+  persisted.identities_redis = [store]() mutable {
+    return std::make_unique<FakeRedisClient>(store);
+  };
+  persisted.subscriptions_redis = [store]() mutable {
+    return std::make_unique<FakeRedisClient>(store);
+  };
+  persisted.unread_redis = [store]() mutable {
+    return std::make_unique<FakeRedisClient>(store);
+  };
+
+  chat::PlayerDirectory writer(persisted);
+  ASSERT_EQ(writer.HandleBindPlayerIdentity(MakeBindRequest("b1", "player-1", "game-a", "u-1"))
+                .code(),
+            OK);
+  ASSERT_EQ(writer.HandleSubscribePlayerChannel(
+                MakeSubscribeRequest("s1", "player-1", "game-a", "world-1"))
+                .code(),
+            OK);
+  chirp::gateway::ChannelMessageNotify uplink;
+  uplink.set_game_id("game-a");
+  uplink.set_channel_id("world-1");
+  ASSERT_GT(writer.FanoutChannelMessage(uplink), 0u);
+
+  chat::PlayerDirectory fresh(persisted);
+  fresh.LoadAll();
+
+  sg::GetPlayerIdentitiesRequest get_identities;
+  get_identities.set_player_id("player-1");
+  const auto identities = fresh.HandleGetPlayerIdentities(get_identities);
+  ASSERT_EQ(identities.bindings_size(), 1);
+  EXPECT_EQ(identities.bindings(0).binding_id(), "b1");
+
+  sg::GetPlayerSubscriptionsRequest get_subs;
+  get_subs.set_player_id("player-1");
+  EXPECT_EQ(fresh.HandleGetPlayerSubscriptions(get_subs).subscriptions_size(), 1);
+
+  sg::GetUnreadSummaryRequest summary;
+  summary.set_player_id("player-1");
+  EXPECT_EQ(fresh.HandleGetUnreadSummary(summary).total_unread(), 1);
+}
+
+TEST(PlayerDirectoryLoadAllTest, MemoryOnlyDirectoryLoadsAsACleanNoOp) {
+  // Without factories there is nothing to pull: LoadAll must not crash or
+  // fabricate state.
+  chat::PlayerDirectory directory{chat::PlayerDirectory::Options()};
+  directory.LoadAll();
+
+  sg::GetPlayerIdentitiesRequest get_identities;
+  get_identities.set_player_id("player-1");
+  EXPECT_EQ(directory.HandleGetPlayerIdentities(get_identities).bindings_size(), 0);
+}
+
 }  // namespace

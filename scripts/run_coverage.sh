@@ -201,10 +201,12 @@ KNOWN_UNCOVERABLE = {
     ("libs/network/chat_bridge.cc", 364),
     # Server-plane registry defensive arms: the by-id map and the
     # tuple/game-user index are only ever mutated together under one lock,
-    # so a tuple hit whose by-id record is missing cannot happen.
-    ("services/game/server_gateway/src/identity_registry.cc", 143),
-    ("services/game/server_gateway/src/identity_registry.cc", 177),
-    ("services/game/server_gateway/src/subscription_registry.cc", 180),
+    # so a tuple hit whose by-id record is missing cannot happen. (These
+    # registries moved from services/game/server_gateway into
+    # services/shared/chat with app_chat; the arms kept their line numbers.)
+    ("services/shared/chat/src/identity_registry.cc", 143),
+    ("services/shared/chat/src/identity_registry.cc", 177),
+    ("services/shared/chat/src/subscription_registry.cc", 180),
     # ChatPeerHub::Start listen arm: reaching it needs listen(2) to fail
     # after bind(2) succeeded - only fd exhaustion landing between the two
     # syscalls does that, which no environment-independent test can force.
@@ -212,13 +214,15 @@ KNOWN_UNCOVERABLE = {
     ("libs/network/chat_peer_hub.cc", 92),
     # ChatPeerHub::DoAccept error arm: async_accept fails here only on
     # kernel-level conditions (EMFILE/ENFILE), unreachable from a test.
-    ("libs/network/chat_peer_hub.cc", 133),
-    ("libs/network/chat_peer_hub.cc", 134),
-    ("libs/network/chat_peer_hub.cc", 135),
+    # (Line numbers moved +10 when the unregistered-peer handling landed in
+    # the accept completion.)
+    ("libs/network/chat_peer_hub.cc", 143),
+    ("libs/network/chat_peer_hub.cc", 144),
+    ("libs/network/chat_peer_hub.cc", 145),
     # ChatPeerHub::PeerConn::SendRawPacket closing guard: Close erases the
     # conn from peers_ (or the conn is displaced) on the same hub thread, so
     # no SendInject can ever target a closing connection.
-    ("libs/network/chat_peer_hub.cc", 359),
+    ("libs/network/chat_peer_hub.cc", 369),
 }
 
 src_cache = {}

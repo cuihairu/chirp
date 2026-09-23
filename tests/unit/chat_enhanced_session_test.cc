@@ -7,6 +7,7 @@
 
 #include <memory>
 #include <string>
+#include <type_traits>
 #include <utility>
 #include <vector>
 
@@ -93,6 +94,85 @@ std::vector<Packet> FramesOf(const MockSession& session, chirp::gateway::MsgID m
   return matches;
 }
 
+// The block-list wiring (in flight elsewhere) threads a DeliveryPrefs*
+// through HandleLogin/HandleSendMessage; the committed signatures do not
+// carry it. Detect which form is present by casting &HandleLogin to the
+// matching function-pointer type (SFINAE in the immediate context), then
+// dispatch with if constexpr so only the viable call is instantiated. Both
+// call expressions mention `prefs` - a template parameter - so they stay
+// type-dependent: otherwise GCC checks arity at definition time and hard-
+// errors on the other form instead of discarding it.
+using HandleLoginWithPrefsFn = void (*)(const chirp::auth::LoginRequest&,
+                                        const std::shared_ptr<chirp::network::Session>&,
+                                        const std::shared_ptr<DistributedChatState>&,
+                                        const std::shared_ptr<HybridMessageStore>&,
+                                        const std::shared_ptr<chirp::network::MessageRouter>&,
+                                        const chirp::common::LoginTokenVerifier*,
+                                        DeliveryAckManager*,
+                                        const chirp::chat::DeliveryPrefs*, int64_t);
+
+using HandleSendMessageWithPrefsFn = void (*)(
+    const chirp::chat::SendMessageRequest&,
+    const std::shared_ptr<chirp::network::Session>&,
+    const std::shared_ptr<DistributedChatState>&, const std::shared_ptr<HybridMessageStore>&,
+    const std::shared_ptr<MessageDeliveryTracker>&, DeliveryAckManager*,
+    const chirp::chat::DeliveryPrefs*,
+    const std::shared_ptr<chirp::network::MessageRouter>&, chirp::network::ServerGatewayPeer*,
+    const std::string&, const std::string&, chirp::network::ChatPeerLink*, const std::string&,
+    int64_t);
+
+template <typename Fn, typename = void>
+struct CanCastHandleLogin : std::false_type {};
+template <typename Fn>
+struct CanCastHandleLogin<Fn, std::void_t<decltype(static_cast<Fn>(&HandleLogin))>>
+    : std::true_type {};
+
+template <typename Fn, typename = void>
+struct CanCastHandleSendMessage : std::false_type {};
+template <typename Fn>
+struct CanCastHandleSendMessage<Fn, std::void_t<decltype(static_cast<Fn>(&HandleSendMessage))>>
+    : std::true_type {};
+
+template <typename Prefs>
+void InvokeLogin(const chirp::auth::LoginRequest& req,
+                 const std::shared_ptr<chirp::network::Session>& session,
+                 const std::shared_ptr<DistributedChatState>& state,
+                 const std::shared_ptr<HybridMessageStore>& store,
+                 const std::shared_ptr<chirp::network::MessageRouter>& router,
+                 const chirp::common::LoginTokenVerifier* verifier, DeliveryAckManager* acks,
+                 Prefs* prefs, int64_t seq) {
+  if constexpr (CanCastHandleLogin<HandleLoginWithPrefsFn>::value) {
+    HandleLogin(req, session, state, store, router, verifier, acks, prefs, seq);
+  } else {
+    // The always-zero `prefs` term keeps this call type-dependent (and the
+    // value unchanged); the branch is only ever instantiated when it fits.
+    HandleLogin(req, session, state, store, router, verifier, acks,
+                seq + (prefs == nullptr ? int64_t{0} : int64_t{0}));
+  }
+}
+
+template <typename Prefs>
+void InvokeSendMessage(const chirp::chat::SendMessageRequest& req,
+                       const std::shared_ptr<chirp::network::Session>& session,
+                       const std::shared_ptr<DistributedChatState>& state,
+                       const std::shared_ptr<HybridMessageStore>& store,
+                       const std::shared_ptr<MessageDeliveryTracker>& tracker,
+                       DeliveryAckManager* acks, Prefs* prefs,
+                       const std::shared_ptr<chirp::network::MessageRouter>& router,
+                       chirp::network::ServerGatewayPeer* hub_peer,
+                       const std::string& npc_service_id, const std::string& npc_prefix,
+                       chirp::network::ChatPeerLink* spoke_link, const std::string& spoke_game_id,
+                       int64_t seq) {
+  if constexpr (CanCastHandleSendMessage<HandleSendMessageWithPrefsFn>::value) {
+    HandleSendMessage(req, session, state, store, tracker, acks, prefs, router, hub_peer,
+                      npc_service_id, npc_prefix, spoke_link, spoke_game_id, seq);
+  } else {
+    HandleSendMessage(req, session, state, store, tracker, acks, router, hub_peer,
+                      npc_service_id, npc_prefix, spoke_link, spoke_game_id,
+                      seq + (prefs == nullptr ? int64_t{0} : int64_t{0}));
+  }
+}
+
 class EnhancedSessionTest : public ::testing::Test {
  protected:
   void SetUp() override {
@@ -117,7 +197,7 @@ class EnhancedSessionTest : public ::testing::Test {
     chirp::auth::LoginRequest req;
     req.set_token(token);
     req.set_device_id(device_id);
-    HandleLogin(req, session, state_, store_, router_, nullptr, nullptr, seq);
+    InvokeLogin(req, session, state_, store_, router_, nullptr, nullptr, &delivery_prefs_, seq);
   }
 
   asio::io_context io_;
@@ -126,6 +206,10 @@ class EnhancedSessionTest : public ::testing::Test {
   std::shared_ptr<HybridMessageStore> store_;
   std::shared_ptr<MessageDeliveryTracker> tracker_;
   std::shared_ptr<chirp::network::MessageRouter> router_;
+  // The Invoke* wrappers always thread this through; the committed handler
+  // form drops it (the in-flight one dereferences it per delivery, with no
+  // null guard), so hand them a real, empty instance either way.
+  chirp::chat::DeliveryPrefs delivery_prefs_;
 };
 
 // --- DistributedChatState over the shared SessionRegistry -----------------
@@ -296,8 +380,8 @@ TEST_F(EnhancedSessionTest, PrivateSendFansOutToEveryDevice) {
   req.set_receiver_id("bob");
   req.set_channel_type(chirp::chat::PRIVATE);
   req.set_content("hi bob");
-  HandleSendMessage(req, sender, state_, store_, tracker_, /*acks=*/nullptr, router_,
-                    /*hub_peer=*/nullptr, /*npc_service_id=*/"", /*npc_prefix=*/"npc:",
+  InvokeSendMessage(req, sender, state_, store_, tracker_, /*acks=*/nullptr, &delivery_prefs_,
+                    router_, /*hub_peer=*/nullptr, /*npc_service_id=*/"", /*npc_prefix=*/"npc:",
                     /*spoke_link=*/nullptr, /*spoke_game_id=*/"", /*seq=*/3);
 
   auto resps = FramesOf(*sender, chirp::gateway::SEND_MESSAGE_RESP);
@@ -331,8 +415,8 @@ TEST_F(EnhancedSessionTest, PrivateSendQueuesOfflineWhenEveryDeviceHalfClosed) {
   req.set_receiver_id("bob");
   req.set_channel_type(chirp::chat::PRIVATE);
   req.set_content("hi bob");
-  HandleSendMessage(req, sender, state_, store_, tracker_, /*acks=*/nullptr, router_,
-                    /*hub_peer=*/nullptr, /*npc_service_id=*/"", /*npc_prefix=*/"npc:",
+  InvokeSendMessage(req, sender, state_, store_, tracker_, /*acks=*/nullptr, &delivery_prefs_,
+                    router_, /*hub_peer=*/nullptr, /*npc_service_id=*/"", /*npc_prefix=*/"npc:",
                     /*spoke_link=*/nullptr, /*spoke_game_id=*/"", /*seq=*/4);
 
   // A half-closed connection counts as offline: nothing is written to it.
