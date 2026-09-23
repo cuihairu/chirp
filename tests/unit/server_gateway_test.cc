@@ -254,6 +254,12 @@ TEST_F(ServerGatewayTest, QueueIsolatesServices) {
   EXPECT_EQ(q.UnackedCount("nobody"), 0u);
 }
 
+TEST_F(ServerGatewayTest, QueueResetInFlightIgnoresUnknownService) {
+  sg::EventQueue q(10);
+  q.ResetInFlight("never-enqueued");
+  EXPECT_EQ(q.UnackedCount("never-enqueued"), 0u);
+}
+
 // ---------------------------------------------------------------------------
 // Auth
 // ---------------------------------------------------------------------------

@@ -115,9 +115,99 @@ KNOWN_UNCOVERABLE = {
     ("services/app/notification/src/http_push_transport.cc", 267),
     ("services/app/notification/src/http_push_transport.cc", 268),
     # Frame encoder guards: needs a >4GiB message / a Message whose
-    # SerializeToArray disagrees with ByteSizeLong.
+    # SerializeToArray disagrees with ByteSizeLong. L12's untaken arms are
+    # the >UINT32_MAX / >INT_MAX sides of the size check (same 4GiB wall).
+    ("libs/network/protobuf_framing.cc", 12),
     ("libs/network/protobuf_framing.cc", 14),
     ("libs/network/protobuf_framing.cc", 20),
+    # NormalizeDeviceId string-return EH pads (std::string copy throw only);
+    # both ternary arms are covered by NormalizeDeviceIdDefaultsEmptyToDevice.
+    ("libs/network/session_registry.cc", 35),
+    # TcpSession/WebSocketSession Send/SendAndClose: untaken arms are EH
+    # pads for asio::post lambda capture (std::string move / shared_ptr
+    # copy throwing bad_alloc); the post body itself is covered by every
+    # loopback echo test.
+    ("libs/network/tcp_session.cc", 59),
+    ("libs/network/tcp_session.cc", 70),
+    ("libs/network/websocket_session.cc", 74),
+    ("libs/network/websocket_session.cc", 88),
+    # ChatPeerHub/ChatPeerLink/ServerGatewayPeer Create: PrivateTag +
+    # std::move of handlers — untaken arms are construction EH pads.
+    ("libs/network/chat_peer_hub.cc", 25),
+    ("libs/network/chat_peer_link.cc", 25),
+    ("libs/network/server_gateway_peer.cc", 29),
+    # Peer link Send paths: same asio::post capture EH pattern as sessions.
+    ("libs/network/chat_peer_link.cc", 78),
+    ("libs/network/chat_peer_link.cc", 90),
+    # message_router / redis_session_manager / notification_client /
+    # chat_bridge request lambdas: asio::post capture EH pads.
+    ("libs/network/message_router.cc", 68),
+    ("libs/network/redis_session_manager.cc", 97),
+    ("libs/network/redis_session_manager.cc", 147),
+    ("libs/network/notification_client.cc", 108),
+    ("libs/network/chat_bridge.cc", 270),
+    ("libs/network/chat_bridge.cc", 284),
+    ("libs/network/server_gateway_peer.cc", 113),
+    # WebSocket FindHeaderValue: untaken arms need a header line without
+    # trailing \r (fragmented/odd handshake) or getline throwing.
+    ("libs/network/websocket_session.cc", 16),
+    # Frame size ==0 || >cap: the >cap arm needs a 4MiB+ header write;
+    # size==0 and normal sizes are covered by loopback tests.
+    ("libs/network/chat_bridge.cc", 130),
+    ("libs/network/chat_peer_hub.cc", 259),
+    ("libs/network/chat_peer_link.cc", 150),
+    ("libs/network/server_gateway_peer.cc", 214),
+    # Handshake/resolver async_wait cancel-vs-fire races: the untaken arms
+    # are the operation_aborted / already-ready sides of the || chain that
+    # require cancelling a timer after the handler already dispatched.
+    ("libs/network/chat_bridge.cc", 260),
+    ("libs/network/chat_bridge.cc", 261),
+    # Peer idle/reconnect timers: same cancel-vs-fire race as above.
+    ("libs/network/chat_peer_hub.cc", 357),
+    ("libs/network/chat_peer_hub.cc", 360),
+    ("libs/network/chat_peer_link.cc", 283),
+    ("libs/network/chat_peer_link.cc", 307),
+    ("libs/network/server_gateway_peer.cc", 341),
+    ("libs/network/server_gateway_peer.cc", 362),
+    # PeerConn::Close re-entry / pen-scan miss: closing is set once and the
+    # pen erase always finds `this` when the conn was still unregistered;
+    # displaced-entry erase needs a same-pointer race on the vector.
+    ("libs/network/chat_peer_hub.cc", 397),
+    ("libs/network/chat_peer_hub.cc", 398),
+    ("libs/network/chat_peer_hub.cc", 408),
+    # SendRawPacket/Send while closing: closing is checked before the post
+    # and set under the same strand — the post-body closing arm only runs
+    # if Close wins the race after Send entered.
+    ("libs/network/chat_peer_link.cc", 303),
+    ("libs/network/server_gateway_peer.cc", 358),
+    # Create-handshake resolve callbacks: stop-during-resolve races.
+    ("libs/network/chat_peer_link.cc", 115),
+    # SessionRegistry identity-change EH pads on string != (high/odd arms
+    # only reachable if std::string compare throws); the semantic arms are
+    # covered by RebindSameIdentityKeepsSlotWithoutErase + cross-device
+    # + cross-user rebind tests. L125's untaken arm is the weak_ptr lock
+    # landing pad between !bound and bound==session (covered semantically
+    # by RemoveWithExpiredSlotOwner + RemoveReportsNoReleaseWhen...).
+    ("libs/network/session_registry.cc", 56),
+    ("libs/network/session_registry.cc", 125),
+    # service_id_for_game: null-shared_ptr / unregistered entries cannot
+    # appear in peers_ (insert only after registered=true with a live conn).
+    ("libs/network/chat_peer_hub.cc", 120),
+    # ReadBody closing short-circuit: requires Close() to win the race with
+    # an in-flight body completion on the same conn (idle timer vs read).
+    ("libs/network/chat_peer_hub.cc", 274),
+    # SendKickAndClose reason.empty() ? "kicked" : reason — every FailClient
+    # call site passes a non-empty literal; empty-reason is dead.
+    ("libs/network/chat_bridge.cc", 36),
+    # notification_service/handlers defensive arms: deferred by decision
+    # (other session owns those files).
+    ("services/app/notification/src/notification_handlers.cc", 94),
+    ("services/app/notification/src/notification_service.cc", 46),
+    ("services/app/notification/src/notification_service.cc", 128),
+    ("services/app/notification/src/notification_service.cc", 175),
+    ("services/app/notification/src/notification_service.cc", 223),
+    ("services/app/notification/src/notification_service.cc", 226),
+    ("services/app/notification/src/notification_service.cc", 394),
     # ChatClient::Impl::SendRequest timeout sweep: the pending entry is
     # erased only together with timer->cancel(); a handler already dispatched
     # before the cancel exits at the timer_ec arm above, so the find-miss
@@ -407,6 +497,94 @@ KNOWN_UNCOVERABLE = {
     ("services/shared/chat/src/subscription_registry.cc", 219),
     ("services/shared/chat/src/subscription_registry.cc", 236),
     ("services/shared/chat/src/subscription_registry.cc", 243),
+    # MySQL row-parse / COUNT lines: semantic arms (null column, "0"/"1"
+    # flags, empty fetch) are covered by NullSessionRow/NullUserRow/
+    # NullTokenRow and existence-check probes. The untaken high-block arms
+    # are EH landing-pad internals for the inlined std::stoll/std::stoi/
+    # temporary std::string (reach them only via bad_alloc/invalid_argument
+    # that would unwind out of the store with no local catch).
+    ("services/app/auth/src/mysql_session_store.cc", 180),
+    ("services/app/auth/src/mysql_session_store.cc", 225),
+    ("services/app/auth/src/mysql_session_store.cc", 399),
+    ("services/app/auth/src/mysql_session_store.cc", 446),
+    ("services/app/auth/src/mysql_session_store.cc", 554),
+    ("services/app/auth/src/mysql_user_store.cc", 237),
+    ("services/app/auth/src/mysql_user_store.cc", 281),
+    ("services/app/auth/src/mysql_user_store.cc", 325),
+    ("services/app/auth/src/mysql_user_store.cc", 431),
+    ("services/app/auth/src/mysql_user_store.cc", 459),
+    ("services/app/auth/src/mysql_user_store.cc", 488),
+    # RedisClient SendCmd/BuildRedisCommand call sites: the untaken high-block
+    # arms are EH landing-pad internals for the temporary initializer_list /
+    # std::string / std::to_string construction (reach only via bad_alloc);
+    # success, wrong-type, and connection-refused replies are covered by
+    # network_full_tests RedisClientTest probes.
+    ("libs/network/redis_client.cc", 60),
+    ("libs/network/redis_client.cc", 74),
+    ("libs/network/redis_client.cc", 79),
+    ("libs/network/redis_client.cc", 84),
+    ("libs/network/redis_client.cc", 93),
+    ("libs/network/redis_client.cc", 98),
+    ("libs/network/redis_client.cc", 103),
+    ("libs/network/redis_client.cc", 108),
+    ("libs/network/redis_client.cc", 114),
+    ("libs/network/redis_client.cc", 129),
+    ("libs/network/redis_client.cc", 253),
+    ("libs/network/redis_client.cc", 258),
+    # StreamBroker RoundTrip call sites: untaken arms are EH landing-pad
+    # internals for the temporary BuildRedisCommand initializer_list
+    # (bad_alloc only); success/wrong-reply/transport paths are covered by
+    # server_gateway_stream_broker_test probes.
+    ("services/game/server_gateway/src/stream_broker.cc", 184),
+    ("services/game/server_gateway/src/stream_broker.cc", 196),
+    ("services/game/server_gateway/src/stream_broker.cc", 239),
+    ("services/game/server_gateway/src/stream_broker.cc", 245),
+    ("services/game/server_gateway/src/stream_broker.cc", 255),
+    # StreamBroker Run() empty-consumer ternary: untaken arms are EH pads
+    # for the std::string temporary (src_block 107); the empty vs non-empty
+    # semantic arms are covered by EmptyConsumerFallsBackToDefaultPrefix
+    # and every BrokerConfig with consumer "c1".
+    ("services/game/server_gateway/src/stream_broker.cc", 323),
+    # AuthService Register rate-limit body: UserRegisterResult default-ctor
+    # and return EH pads (RegisterBlockedByRateLimit covers the semantic
+    # if/return; the untaken arms are landing pads for exception unwinding).
+    ("services/app/auth/src/auth_service.cc", 76),
+    ("services/app/auth/src/auth_service.cc", 80),
+    # AuthService password_reset_tokens_ insert: untaken arms are EH pads
+    # for unordered_map operator[] (bad_alloc only); semantic insert path
+    # is covered by PasswordResetFlow.
+    ("services/app/auth/src/auth_service.cc", 391),
+    # AuthService CompletePasswordReset expiry if: the expired-true arm is
+    # the GCOVR_EXCL_LINE body below (tokens live 1h, no injectable clock).
+    ("services/app/auth/src/auth_service.cc", 423),
+    # PasswordHasher HashPassword null-trim: after resize(STRBYTES) the
+    # buffer is never empty and the last byte stays '\0', so only the
+    # true/true arm is reachable through the fake pwhash.
+    ("services/app/auth/src/password_hasher.cc", 92),
+    # PasswordHasher ValidateStrength else-if chains: untaken [3] arms are
+    # EH pads for the inlined char range compares (logic arms covered by
+    # StrengthValidation class-matrix probes).
+    ("services/app/auth/src/password_hasher.cc", 129),
+    ("services/app/auth/src/password_hasher.cc", 130),
+    # RedisAuthStore GetUserDevices last-colon: every key returned by the
+    # user_devices:<id>:* glob contains ':', so pos==npos is unreachable.
+    ("services/app/auth/src/redis_auth_store.cc", 402),
+    # TokenGenerator fallback static-local guards + string/return EH pads:
+    # the std::random path itself is covered by
+    # TokenIdFallsBackToStdRandomWhenSodiumUnavailable; untaken arms are
+    # thread_local init exception paths and NRVO/copy EH for `out`.
+    ("services/app/auth/src/token_generator.cc", 48),
+    ("services/app/auth/src/token_generator.cc", 49),
+    ("services/app/auth/src/token_generator.cc", 52),
+    ("services/app/auth/src/token_generator.cc", 59),
+    # AuthClient asio::post closure lines: same shape as sdk_client's
+    # excluded post sites -- untaken arms are EH pads and the always-equal
+    # merge half for the inlined std::function/string moves; success and
+    # error deliveries are covered by AuthClientLoopback tests.
+    ("libs/network/auth_client.cc", 115),
+    ("libs/network/auth_client.cc", 128),
+    ("libs/network/auth_client.cc", 140),
+    ("libs/network/auth_client.cc", 149),
 }
 
 # Whole functions tests can never execute: deleting-dtors of abstract

@@ -337,6 +337,22 @@ TEST(StreamBrokerParseTest, RejectsUnmappableEnvelopes) {
       {"sender_kind", "NPC", "channel_type", "abc"}, &env));
 }
 
+TEST(StreamBrokerParseTest, RejectsEmptyPartialAndNegativeNumericChannels) {
+  StreamInjectEnvelope env;
+  // empty -> strtol skipped (value -1)
+  EXPECT_FALSE(chirp::game_server_gateway::ParseInjectEnvelope(
+      {"sender_kind", "NPC", "channel_type", ""}, &env));
+  // trailing garbage: end != begin but *end != '\0'
+  EXPECT_FALSE(chirp::game_server_gateway::ParseInjectEnvelope(
+      {"sender_kind", "NPC", "channel_type", "2x"}, &env));
+  // negative value
+  EXPECT_FALSE(chirp::game_server_gateway::ParseInjectEnvelope(
+      {"sender_kind", "NPC", "channel_type", "-1"}, &env));
+  // no conversion at all: end == begin
+  EXPECT_FALSE(chirp::game_server_gateway::ParseInjectEnvelope(
+      {"sender_kind", "NPC", "channel_type", "+"}, &env));
+}
+
 // Builds an entry list ([[id, [f, v, ...]], ...]) as a RESP array value.
 chirp::network::RedisResp MakeEntryList() {
   chirp::network::RedisResp list;
@@ -405,6 +421,22 @@ TEST(StreamBrokerParseTest, ParsesStreamReplies) {
   EXPECT_FALSE(chirp::game_server_gateway::ParseXReadGroupResp(short_array, &entries));
   EXPECT_FALSE(chirp::game_server_gateway::ParseXAutoClaimResp(short_array, &entries));
 
+  // Outer array size != 1 (size 0 above; size 2 takes the same || arm).
+  chirp::network::RedisResp outer_size2;
+  outer_size2.type = RedisResp::Type::kArray;
+  outer_size2.array.emplace_back();
+  outer_size2.array.emplace_back();
+  EXPECT_FALSE(chirp::game_server_gateway::ParseXReadGroupResp(outer_size2, &entries));
+  EXPECT_FALSE(chirp::game_server_gateway::ParseXAutoClaimResp(outer_size2, &entries));
+
+  // Outer size == 1 but the stream element is not an array.
+  chirp::network::RedisResp outer_non_array;
+  outer_non_array.type = RedisResp::Type::kArray;
+  auto& only_str = outer_non_array.array.emplace_back();
+  only_str.type = RedisResp::Type::kBulkString;
+  only_str.str = "inject";
+  EXPECT_FALSE(chirp::game_server_gateway::ParseXReadGroupResp(outer_non_array, &entries));
+
   auto bad_entry_list = MakeEntryList();
   bad_entry_list.array.clear();
   auto& not_a_pair = bad_entry_list.array.emplace_back();
@@ -452,6 +484,61 @@ TEST(StreamBrokerParseTest, ParsesStreamReplies) {
   auto& claim_list = claim_scalar.array.emplace_back();
   claim_list.type = RedisResp::Type::kBulkString;
   EXPECT_FALSE(chirp::game_server_gateway::ParseXAutoClaimResp(claim_scalar, &entries));
+
+  // Outer [key, entries] pair is an array but has size != 2.
+  chirp::network::RedisResp pair_wrong_size;
+  pair_wrong_size.type = RedisResp::Type::kArray;
+  auto& outer = pair_wrong_size.array.emplace_back();
+  outer.type = RedisResp::Type::kArray;
+  auto& only_name = outer.array.emplace_back();
+  only_name.type = RedisResp::Type::kBulkString;
+  only_name.str = "inject";
+  EXPECT_FALSE(chirp::game_server_gateway::ParseXReadGroupResp(pair_wrong_size, &entries));
+
+  // Entry item is an array with size > 2 (size == 1 is covered above).
+  auto long_pair_list = MakeEntryList();
+  long_pair_list.array[0].array.resize(3);
+  long_pair_list.array[0].array[2].type = RedisResp::Type::kBulkString;
+  chirp::network::RedisResp long_entry;
+  long_entry.type = RedisResp::Type::kArray;
+  long_entry.array.push_back(long_pair_list);
+  EXPECT_FALSE(chirp::game_server_gateway::ParseXReadGroupResp(long_entry, &entries));
+
+  // Properly nested [[name, entries]] so ParseEntryList (not the outer
+  // guard) rejects a non-array item / non-pair item / fields-not-array.
+  auto WrapEntries = [](const chirp::network::RedisResp& entry_list) {
+    chirp::network::RedisResp resp;
+    resp.type = RedisResp::Type::kArray;
+    auto& stream = resp.array.emplace_back();
+    stream.type = RedisResp::Type::kArray;
+    auto& name = stream.array.emplace_back();
+    name.type = RedisResp::Type::kBulkString;
+    name.str = "inject";
+    stream.array.push_back(entry_list);
+    return resp;
+  };
+
+  chirp::network::RedisResp scalar_item_list;
+  scalar_item_list.type = RedisResp::Type::kArray;
+  auto& scalar_item = scalar_item_list.array.emplace_back();
+  scalar_item.type = RedisResp::Type::kBulkString;
+  scalar_item.str = "not-a-pair";
+  EXPECT_FALSE(
+      chirp::game_server_gateway::ParseXReadGroupResp(WrapEntries(scalar_item_list), &entries));
+
+  auto size1_item_list = MakeEntryList();
+  size1_item_list.array[0].array.resize(1);
+  EXPECT_FALSE(chirp::game_server_gateway::ParseXReadGroupResp(WrapEntries(size1_item_list), &entries));
+
+  auto size3_item_list = MakeEntryList();
+  size3_item_list.array[0].array.resize(3);
+  size3_item_list.array[0].array[2].type = RedisResp::Type::kBulkString;
+  EXPECT_FALSE(chirp::game_server_gateway::ParseXReadGroupResp(WrapEntries(size3_item_list), &entries));
+
+  auto bad_fields_nested = MakeEntryList();
+  bad_fields_nested.array[0].array[1].type = RedisResp::Type::kInteger;
+  EXPECT_FALSE(
+      chirp::game_server_gateway::ParseXReadGroupResp(WrapEntries(bad_fields_nested), &entries));
 }
 
 TEST(StreamBrokerLifecycleTest, StopWithoutStartIsANoOp) {
@@ -751,6 +838,136 @@ TEST(StreamBrokerTest, ConnectFailuresKeepRetryingWithoutHanging) {
     broker.Stop();
   }
   SUCCEED();
+}
+
+TEST(StreamBrokerTest, EmptyConsumerFallsBackToDefaultPrefix) {
+  chirp::common::Logger::Instance().SetLevel(chirp::common::Logger::Level::kError);
+  FakeStreamRedis redis;
+  RecordingHandler handler;
+  auto config = BrokerConfig(redis);
+  config.consumer.clear();  // takes the "brk" prefix arm
+  StreamBrokerConsumer broker(config,
+                              [&](const MessageInjectRequest& req) { return handler.Respond(req); });
+  broker.Start();
+
+  auto fields = ValidFields();
+  fields.erase(std::find(fields.begin(), fields.end(), "inject_id"));
+  fields.erase(std::find(fields.begin(), fields.end(), "inj-9"));
+  fields.push_back("reply_to");
+  fields.push_back("reply");
+  redis.Add("inject", fields);
+
+  ASSERT_TRUE(WaitFor([&] { return redis.All("reply").size() == 1; }, std::chrono::seconds(5)));
+  const auto reply = redis.All("reply")[0];
+  ASSERT_EQ(reply.size(), 4u);
+  EXPECT_NE(reply[1].find("brk-"), std::string::npos);
+
+  broker.Stop();
+}
+
+TEST(StreamBrokerTest, StopDuringReconnectSleepExitsTheWaitLoop) {
+  chirp::common::Logger::Instance().SetLevel(chirp::common::Logger::Level::kError);
+  StreamBrokerConfig config;
+  config.redis_host = "127.0.0.1";
+  config.redis_port = 1;  // connection refused -> SleepInterruptible path
+  config.reconnect_delay_ms = 500;  // long enough for Stop to interrupt mid-sleep
+  StreamBrokerConsumer broker(
+      config, [](const MessageInjectRequest&) { return MessageInjectResponse{}; });
+  broker.Start();
+  std::this_thread::sleep_for(std::chrono::milliseconds(30));
+  broker.Stop();  // must cut the 500ms sleep short via !stopping_
+  SUCCEED();
+}
+
+TEST(StreamBrokerTest, EnsureGroupToleratesNonOkAndNonBusygroupReplies) {
+  chirp::common::Logger::Instance().SetLevel(chirp::common::Logger::Level::kError);
+  // Drive EnsureGroup indirectly: first CREATE answers a non-OK simple
+  // string (type-ok but str != "OK"), then a non-BUSYGROUP error, then a
+  // non-error non-simple reply — each must fail EnsureGroup and reconnect.
+  class WeirdGroupRedis {
+   public:
+    WeirdGroupRedis() : server_([this](const std::vector<std::string>& a) { return Handle(a); }) {}
+    uint16_t port() const { return server_.port(); }
+
+   private:
+    std::string Handle(const std::vector<std::string>& a) {
+      std::lock_guard<std::mutex> lock(mu_);
+      if (!a.empty() && a[0] == "XGROUP") {
+        const int n = ++create_count_;
+        if (n == 1) return "+QUEUED\r\n";                 // simple, not OK
+        if (n == 2) return "-ERR no permission\r\n";      // error, not BUSYGROUP
+        if (n == 3) return "$-1\r\n";                     // not simple/error
+        return chirp_test::Simple("OK");
+      }
+      if (!a.empty() && a[0] == "XREADGROUP") {
+        return "*-1\r\n";  // no data; keeps the loop alive until reconnects settle
+      }
+      return "-ERR unknown\r\n";
+    }
+    int create_count_ = 0;
+    std::mutex mu_;
+    chirp_test::FakeRedisServer server_;
+  };
+
+  WeirdGroupRedis redis;
+  RecordingHandler handler;
+  auto config = BrokerConfig(FakeStreamRedis());
+  config.redis_port = redis.port();
+  StreamBrokerConsumer broker(config,
+                              [&](const MessageInjectRequest& req) { return handler.Respond(req); });
+  broker.Start();
+  // Three failed EnsureGroup cycles (one per weird reply) then the fourth
+  // succeeds and the broker settles.
+  std::this_thread::sleep_for(std::chrono::milliseconds(400));
+  broker.Stop();
+  SUCCEED();
+}
+
+TEST(StreamBrokerTest, SecretFieldAbsentIsRejected) {
+  chirp::common::Logger::Instance().SetLevel(chirp::common::Logger::Level::kError);
+  FakeStreamRedis redis;
+  RecordingHandler handler;
+  StreamBrokerConsumer broker(BrokerConfig(redis),
+                              [&](const MessageInjectRequest& req) { return handler.Respond(req); });
+  broker.Start();
+
+  // service_id is known but the secret field is missing entirely.
+  redis.Add("inject", {"service_id", "chat", "sender_kind", "SYSTEM", "channel_type", "WORLD",
+                       "sender_id", "s", "content", "x", "reply_to", "reply"});
+  EXPECT_TRUE(WaitFor([&] { return redis.All("reply").size() == 1; }, std::chrono::seconds(5)));
+  EXPECT_EQ(handler.Count(), 0u);
+  EXPECT_EQ(redis.All("reply")[0][3], "AUTH_FAILED");
+
+  // Unknown service_id short-circuits before the secret lookup.
+  redis.Add("inject", {"service_id", "unknown_svc", "secret", "sec", "sender_kind", "SYSTEM",
+                       "channel_type", "WORLD", "sender_id", "s", "content", "x", "reply_to",
+                       "reply"});
+  EXPECT_TRUE(WaitFor([&] { return redis.All("reply").size() == 2; }, std::chrono::seconds(5)));
+  EXPECT_EQ(handler.Count(), 0u);
+  EXPECT_EQ(redis.All("reply")[1][3], "AUTH_FAILED");
+
+  broker.Stop();
+}
+
+TEST(StreamBrokerTest, EmptyReplyToSkipsXAdd) {
+  chirp::common::Logger::Instance().SetLevel(chirp::common::Logger::Level::kError);
+  FakeStreamRedis redis;
+  RecordingHandler handler;
+  StreamBrokerConsumer broker(BrokerConfig(redis),
+                              [&](const MessageInjectRequest& req) { return handler.Respond(req); });
+  broker.Start();
+
+  auto fields = ValidFields();
+  fields.push_back("reply_to");
+  fields.push_back("");  // present but empty -> no XADD
+  redis.Add("inject", fields);
+
+  EXPECT_TRUE(WaitFor([&] { return handler.Count() >= 1 && redis.Pending("inject") == 0; },
+                      std::chrono::seconds(5)));
+  EXPECT_TRUE(redis.All("").empty());
+  EXPECT_TRUE(redis.All("reply").empty());
+
+  broker.Stop();
 }
 
 TEST(StreamBrokerCommandTest, RedisClientCommandRoundTrip) {

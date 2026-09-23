@@ -874,6 +874,58 @@ TEST(ChatHubPeerTest, RpcErrorResponsePropagates) {
   runner.Finish();
 }
 
+// Unparsable EVENT_PUBLISH/ACK reply bodies surface as INTERNAL_ERROR.
+TEST(ChatHubPeerTest, GarbageRpcResponseBodyYieldsInternalError) {
+  chirp::common::Logger::Instance().SetLevel(chirp::common::Logger::Level::kError);
+  FakeHubServer hub;
+  SetRpcModeSync(hub, FakeHubServer::RpcMode::kOff);  // answer manually
+  asio::io_context io;
+  PeerIoRunner runner(io);
+
+  auto peer = chirp::network::ServerGatewayPeer::Create(
+      io, HubOptions(hub), [](const chirp::game_server_gateway::InjectMessageNotify&) {});
+  peer->Start();
+  ASSERT_TRUE(WaitFor([&] { return hub.Count(chirp::gateway::SERVER_AUTH_REQ) >= 1; },
+                      std::chrono::seconds(5)));
+
+  std::mutex mu;
+  std::vector<chirp::common::ErrorCode> codes;
+  chirp::game_server_gateway::EventPublishRequest pub;
+  pub.set_event_id("evt-garbage");
+  chirp::game_server_gateway::EventAckRequest ack;
+  ack.add_event_ids("evt-garbage");
+  peer->SendEventPublish(pub, [&](chirp::common::ErrorCode c) {
+    std::lock_guard<std::mutex> lock(mu);
+    codes.push_back(c);
+  });
+  peer->SendEventAck(ack, [&](chirp::common::ErrorCode c) {
+    std::lock_guard<std::mutex> lock(mu);
+    codes.push_back(c);
+  });
+  ASSERT_TRUE(WaitFor([&] { return hub.Count(chirp::gateway::EVENT_PUBLISH_REQ) >= 1; },
+                      std::chrono::seconds(5)));
+  ASSERT_TRUE(WaitFor([&] { return hub.Count(chirp::gateway::EVENT_ACK_REQ) >= 1; },
+                      std::chrono::seconds(5)));
+  const int64_t pub_seq = hub.All(chirp::gateway::EVENT_PUBLISH_REQ)[0].sequence();
+  const int64_t ack_seq = hub.All(chirp::gateway::EVENT_ACK_REQ)[0].sequence();
+  hub.SendToLatest(MakeRawPacket(chirp::gateway::EVENT_PUBLISH_RESP, pub_seq, "not-a-proto"));
+  hub.SendToLatest(MakeRawPacket(chirp::gateway::EVENT_ACK_RESP, ack_seq, "not-a-proto"));
+  EXPECT_TRUE(WaitFor([&] {
+    std::lock_guard<std::mutex> lock(mu);
+    return codes.size() == 2;
+  }, std::chrono::seconds(5)));
+  {
+    std::lock_guard<std::mutex> lock(mu);
+    for (auto code : codes) {
+      EXPECT_EQ(code, chirp::common::INTERNAL_ERROR);
+    }
+  }
+
+  peer->Stop();
+  runner.Drain();
+  runner.Finish();
+}
+
 // A connection drop with RPCs in flight fails them all; the reconnect recovers.
 TEST(ChatHubPeerTest, ConnectionLossFailsPendingRpc) {
   chirp::common::Logger::Instance().SetLevel(chirp::common::Logger::Level::kError);

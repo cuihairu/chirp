@@ -706,12 +706,66 @@ TEST_F(RedisClientTest, ConnectionFailureYieldsDefaults) {
   RedisClient c("127.0.0.1", dead);
   EXPECT_FALSE(c.Get("k").has_value());
   EXPECT_FALSE(c.SetEx("k", "v", 1));
+  EXPECT_FALSE(c.Set("k", "v"));
   EXPECT_FALSE(c.Del("k"));
   EXPECT_FALSE(c.Publish("ch", "m"));
   EXPECT_FALSE(c.RPush("k", "v"));
   EXPECT_FALSE(c.Expire("k", 1));
   EXPECT_TRUE(c.LRange("k", 0, -1).empty());
   EXPECT_TRUE(c.Keys("*").empty());
+}
+
+TEST_F(RedisClientTest, SetOkAndNonOkReplies) {
+  MockRedisServer ok;
+  ok.Start({{"SET", "+OK\r\n"}});
+  RedisClient good("127.0.0.1", ok.port());
+  EXPECT_TRUE(good.Set("k", "v"));
+
+  // Mirrors SetExNonOkSimpleStringFails but for the no-TTL Set() return.
+  MockRedisServer s;
+  s.Start({{"SET", "+QUEUED\r\n"}});
+  RedisClient c("127.0.0.1", s.port());
+  EXPECT_FALSE(c.Set("k", "v"));
+
+  // Non-simple reply takes the type-mismatch arm.
+  MockRedisServer bulk;
+  bulk.Start({{"SET", "$-1\r\n"}});
+  RedisClient b("127.0.0.1", bulk.port());
+  EXPECT_FALSE(b.Set("k", "v"));
+}
+
+TEST_F(RedisClientTest, PublishCountAndLRemHandleTypeMismatches) {
+  MockRedisServer wrong;
+  wrong.Start({
+      {"PUBLISH", "+OK\r\n"},  // integer required
+      {"LREM", "+OK\r\n"},     // integer required
+  });
+  RedisClient w("127.0.0.1", wrong.port());
+  EXPECT_EQ(w.PublishCount("ch", "m"), -1);
+  EXPECT_EQ(w.LRem("list", 1, "item"), -1);
+
+  MockRedisServer ok;
+  ok.Start({{"LREM", ":2\r\n"}});
+  RedisClient c("127.0.0.1", ok.port());
+  EXPECT_EQ(c.LRem("list", 1, "item"), 2);
+
+  RedisClient dead("127.0.0.1", FreePort());
+  EXPECT_EQ(dead.PublishCount("ch", "m"), -1);
+  EXPECT_EQ(dead.LRem("list", 1, "item"), -1);
+}
+
+TEST_F(RedisClientTest, ListAndKeysAcceptStringAndSkipNonStringElements) {
+  // LRANGE: bulk + simple strings are kept; integer elements are skipped.
+  MockRedisServer mixed;
+  mixed.Start({{"LRANGE", "*3\r\n$3\r\nabc\r\n+ok2\r\n:9\r\n"}});
+  RedisClient m("127.0.0.1", mixed.port());
+  EXPECT_EQ(m.LRange("list", 0, -1), (std::vector<std::string>{"abc", "ok2"}));
+
+  // KEYS: non-string (integer) elements are skipped entirely.
+  MockRedisServer ints;
+  ints.Start({{"KEYS", "*2\r\n:5\r\n$2\r\nk1\r\n"}});
+  RedisClient k("127.0.0.1", ints.port());
+  EXPECT_EQ(k.Keys("*"), (std::vector<std::string>{"k1"}));
 }
 
 // ---------------------------------------------------------------------------
@@ -1380,6 +1434,21 @@ TEST(MessageRouterTest, SubscriptionsPublishAndRouting) {
   server.PushRaw("*3\r\n$7\r\nmessage\r\n$21\r\nchirp:chat:user:alice\r\n$6\r\nrouted\r\n");
   EXPECT_TRUE(WaitFor([&] { return got_msg.load() == 1; }));
 
+  // A message on a channel nobody subscribed (and a channel whose local
+  // entry was never wired) is dropped by the find/null-callback guards.
+  server.PushRaw("*3\r\n$7\r\nmessage\r\n$5\r\nroomX\r\n$2\r\nhi\r\n");
+  server.PushRaw(
+      "*3\r\n$7\r\nmessage\r\n$21\r\nchirp:chat:user:nobody\r\n$3\r\nzzz\r\n");
+  std::this_thread::sleep_for(std::chrono::milliseconds(100));
+  EXPECT_EQ(got_msg.load(), 1);
+
+  // Registered-but-null callback: entry exists, it->second is empty → skip.
+  EXPECT_TRUE(router.SubscribeUserChat("nullcb", nullptr));
+  server.PushRaw(
+      "*3\r\n$7\r\nmessage\r\n$22\r\nchirp:chat:user:nullcb\r\n$4\r\nnone\r\n");
+  std::this_thread::sleep_for(std::chrono::milliseconds(100));
+  EXPECT_EQ(got_msg.load(), 1);
+
   // Publish goes through RedisClient and reports the integer reply.
   EXPECT_TRUE(router.Publish("some:channel", "payload"));
   EXPECT_TRUE(WaitFor([&] {
@@ -1476,7 +1545,15 @@ TEST(RedisSubscriberTest, MalformedPushesAreIgnoredAndRecoveryWorks) {
   server.PushRaw("\r\n");
   server.PushRaw("*1\r\n$x\r\n");
   server.PushRaw("*1\r\n$-1\r\n");
-  std::this_thread::sleep_for(std::chrono::milliseconds(200));
+
+  // Arrays of 3 that are not ["message", ...]: null-bulk first element
+  // (type != kBulkString) and bulk first element with a different command
+  // name must be dropped. Non-$ lines are skipped by the parser, so the
+  // "wrong type" case has to use a $-1 null bulk.
+  server.PushRaw("*3\r\n$-1\r\n$5\r\nroom1\r\n$2\r\nok\r\n");
+  server.PushRaw("*3\r\n$7\r\npmessage\r\n$5\r\nroom1\r\n$2\r\nok\r\n");
+  server.PushRaw("*3\r\n$7\r\nsubscribe\r\n$5\r\nroom1\r\n$2\r\nok\r\n");
+  std::this_thread::sleep_for(std::chrono::milliseconds(300));
   {
     std::lock_guard<std::mutex> l(mu);
     EXPECT_TRUE(messages.empty());
@@ -1494,12 +1571,24 @@ TEST(RedisSubscriberTest, MalformedPushesAreIgnoredAndRecoveryWorks) {
     EXPECT_EQ(messages[0].second, "ok");
   }
 
-  // Truncated array and a dangling line without CRLF leave the parser
-  // waiting for more bytes (no callback, no crash). The declared bulk
-  // length is longer than the delivered data: the read stays incomplete.
+  // Dangling line with no CRLF at all: SubscribeParser::Process must park on
+  // the npos arm (buffer stays non-empty, no callback).
+  server.PushRaw("dangling-no-crln");
+  std::this_thread::sleep_for(std::chrono::milliseconds(200));
+  {
+    std::lock_guard<std::mutex> l(mu);
+    EXPECT_EQ(messages.size(), 1u);
+  }
+
+  // Truncated array: declared bulk length longer than the delivered data so
+  // the read stays incomplete (line 199), then a second dangling chunk.
   server.PushRaw("*2\r\n$7\r\nmessage\r\n$50\r\nshort");
   server.PushRaw("partial-without-crln");
   std::this_thread::sleep_for(std::chrono::milliseconds(200));
+  {
+    std::lock_guard<std::mutex> l(mu);
+    EXPECT_EQ(messages.size(), 1u);
+  }
   sub.Stop();
 }
 

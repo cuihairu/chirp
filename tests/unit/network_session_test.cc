@@ -807,6 +807,7 @@ TEST_F(LoopbackLinkTest, TcpServerAcceptsClientAndDeliversFrames) {
       },
       [](std::shared_ptr<Session>) {});
   ASSERT_TRUE(client.Connect("127.0.0.1", port));
+  EXPECT_TRUE(client.IsConnected());
 
   client.GetSession()->Send(FrameBytes("ping"));
   // Wait for the frame to reach the server
@@ -828,7 +829,66 @@ TEST_F(LoopbackLinkTest, TcpServerAcceptsClientAndDeliversFrames) {
     std::this_thread::sleep_for(std::chrono::milliseconds(2));
   }
   EXPECT_TRUE(closed.load());
+  // Disconnect clears session_: IsConnected is false via the null arm.
+  EXPECT_FALSE(client.IsConnected());
+  EXPECT_EQ(client.GetSession(), nullptr);
 
+  server.Stop();
+  io.stop();
+  server_thread.join();
+}
+
+TEST_F(LoopbackLinkTest, TcpClientIsConnectedFalseWhenSessionClosedNotReset) {
+  asio::io_context io;
+  uint16_t port = FreePort();
+  chirp::network::TcpServer server(io, port, [](std::shared_ptr<Session>, std::string&&) {},
+                                   nullptr);
+  server.Start();
+  std::thread server_thread([&io] { io.run(); });
+
+  chirp::network::TcpClient client(io);
+  client.SetCallbacks([](std::shared_ptr<Session>, std::string&&) {},
+                       [](std::shared_ptr<Session>) {});
+  ASSERT_TRUE(client.Connect("127.0.0.1", port));
+  EXPECT_TRUE(client.IsConnected());
+
+  client.GetSession()->Close();
+  for (int i = 0; i < 300 && client.IsConnected(); ++i) {
+    std::this_thread::sleep_for(std::chrono::milliseconds(2));
+  }
+  EXPECT_FALSE(client.IsConnected());
+  ASSERT_NE(client.GetSession(), nullptr);
+  EXPECT_TRUE(client.GetSession()->IsClosed());
+
+  client.Disconnect();
+  server.Stop();
+  io.stop();
+  server_thread.join();
+}
+
+TEST_F(LoopbackLinkTest, WebSocketClientIsConnectedFalseWhenSessionClosedNotReset) {
+  asio::io_context io;
+  uint16_t port = FreePort();
+  chirp::network::WebSocketServer server(
+      io, port, [](std::shared_ptr<Session>, std::string&&) {}, nullptr);
+  server.Start();
+  std::thread server_thread([&io] { io.run(); });
+
+  chirp::network::WebSocketClient client(io);
+  client.SetCallbacks([](std::shared_ptr<Session>, std::string&&) {},
+                       [](std::shared_ptr<Session>) {});
+  ASSERT_TRUE(client.Connect("127.0.0.1", port, "/ws"));
+  EXPECT_TRUE(client.IsConnected());
+
+  client.GetSession()->Close();
+  for (int i = 0; i < 300 && client.IsConnected(); ++i) {
+    std::this_thread::sleep_for(std::chrono::milliseconds(2));
+  }
+  EXPECT_FALSE(client.IsConnected());
+  ASSERT_NE(client.GetSession(), nullptr);
+  EXPECT_TRUE(client.GetSession()->IsClosed());
+
+  client.Disconnect();
   server.Stop();
   io.stop();
   server_thread.join();
@@ -861,6 +921,7 @@ TEST_F(LoopbackLinkTest, WebSocketServerCompletesClientHandshake) {
 
   // Connect performs the full HTTP upgrade handshake synchronously.
   EXPECT_TRUE(client.Connect("127.0.0.1", port, "/ws"));
+  EXPECT_TRUE(client.IsConnected());
 
   client.GetSession()->Send(FrameBytes("ping"));
   for (int i = 0; i < 300 && got.Empty(); ++i) {

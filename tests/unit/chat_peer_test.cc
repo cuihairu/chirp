@@ -522,6 +522,39 @@ TEST(ChatPeerLinkTest, RejectedRegistrationRetries) {
   runner.Finish();
 }
 
+TEST(ChatPeerLinkTest, ZeroHeartbeatFromHubFallsBackToOptions) {
+  chirp::common::Logger::Instance().SetLevel(chirp::common::Logger::Level::kError);
+  // Hub advertises heartbeat_interval_seconds=0: the link must keep its
+  // configured options_.heartbeat_interval_seconds instead of arming a
+  // zero/negative cadence.
+  FakePeerHubServer hub(chirp::common::OK, /*heartbeat_interval=*/0);
+  asio::io_context io;
+  LinkIoRunner runner(io);
+
+  std::atomic<int> registered{0};
+  auto link = chirp::network::ChatPeerLink::Create(
+      io, LinkOptions(hub),
+      [&](int32_t, const std::vector<chirp::gateway::PeerCapability>&) {
+        registered.fetch_add(1);
+      },
+      [](const chirp::gateway::ChannelMessageNotify&) {},
+      [](const chirp::gateway::PeerInjectMessageNotify&) {});
+  link->Start();
+
+  EXPECT_TRUE(WaitFor([&] { return registered.load() >= 1; }, std::chrono::seconds(5)));
+  EXPECT_TRUE(WaitFor([&] { return hub.Count(chirp::gateway::PEER_REGISTER_REQ) >= 1; },
+                      std::chrono::seconds(5)));
+  const auto regs = hub.All(chirp::gateway::PEER_REGISTER_REQ);
+  ASSERT_FALSE(regs.empty());
+  chirp::gateway::PeerRegisterResp resp;
+  // The fake answered with 0; registration still succeeded.
+  EXPECT_TRUE(WaitFor([&] { return registered.load() >= 1; }, std::chrono::seconds(3)));
+
+  link->Stop();
+  runner.Drain();
+  runner.Finish();
+}
+
 TEST(ChatPeerLinkTest, VersionMismatchRetries) {
   chirp::common::Logger::Instance().SetLevel(chirp::common::Logger::Level::kError);
   FakePeerHubServer hub(chirp::common::VERSION_MISMATCH);
@@ -1008,9 +1041,15 @@ TEST(ChatPeerHubTest, RegistersPeerAndReports) {
         events.dropped.emplace_back(id, reason);
       },
       [&](const std::string&, const chirp::gateway::ChannelMessageNotify&) {});
+  // Acceptor is not open until Start: local_endpoint fails and port() is 0.
+  EXPECT_EQ(hub->port(), 0);
+  // Unknown service id resolves to empty before any peer registers.
+  std::promise<std::string> miss;
+  asio::post(io, [&] { miss.set_value(hub->game_id_for("nope")); });
   hub->Start();
   HubIoRunner runner(io);
   ASSERT_GT(hub->port(), 0);
+  EXPECT_EQ(miss.get_future().get(), "");
 
   TestPeerClient client(hub->port());
   chirp::gateway::PeerRegisterResp resp;

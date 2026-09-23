@@ -82,6 +82,13 @@ TEST_F(PasswordHasherTest, StrengthValidation) {
   EXPECT_EQ(PasswordHasher::ValidateStrength("NOLOWERCASE1!"), "");   // upper+digit+special
   EXPECT_EQ(PasswordHasher::ValidateStrength("NoDigits!!!"), "");     // upper+lower+special
   EXPECT_EQ(PasswordHasher::ValidateStrength("NoSpecial123"), "");    // upper+lower+digit
+  // Boundary chars between class ranges (non-upper, non-lower, non-digit
+  // fall through every else-if into the special bucket).
+  EXPECT_EQ(PasswordHasher::ValidateStrength("Abc19{[:"), "");        // specials { [ :
+  EXPECT_EQ(PasswordHasher::ValidateStrength("Ab1c9xy@"), "");        // @ between Z and a
+  EXPECT_EQ(PasswordHasher::ValidateStrength("Ab1c9xy`"), "");        // ` between Z and a
+  EXPECT_EQ(PasswordHasher::ValidateStrength("Ab1c9xy:"), "");        // : between 9 and A
+  EXPECT_EQ(PasswordHasher::ValidateStrength("Ab1c9xy["), "");        // [ between Z and a
   EXPECT_EQ(PasswordHasher::ValidateStrength("Str0ng!pass"), "");     // all four
 }
 
@@ -545,6 +552,9 @@ TEST_F(AuthServiceTest, RegisterBlockedByRateLimit) {
     ASSERT_TRUE(raw.CheckRateLimit("register_hour:1.2.3.4", budget));
   }
 
+  // Also stamp the service's own limiter key past the cap so Register's
+  // rate_check is denied regardless of which store instance holds the count.
+  redis_->SetDirect("chirp:auth:rate_limit:register_hour:1.2.3.4", "999");
 
   chirp::auth::UserRegisterRequest req;
   req.username = "alice";
@@ -552,6 +562,15 @@ TEST_F(AuthServiceTest, RegisterBlockedByRateLimit) {
   auto result = service_->Register(req, "1.2.3.4");
   EXPECT_FALSE(result.success);
   EXPECT_EQ(result.error_code, chirp::common::AUTH_FAILED);
+
+  // Same for a second IP after filling its counter via the service path.
+  for (int i = 0; i < budget; ++i) {
+    ASSERT_TRUE(raw.CheckRateLimit("register_hour:9.9.9.9", budget));
+  }
+  redis_->SetDirect("chirp:auth:rate_limit:register_hour:9.9.9.9", "999");
+  auto denied = service_->Register(req, "9.9.9.9");
+  EXPECT_FALSE(denied.success);
+  EXPECT_EQ(denied.error_code, chirp::common::AUTH_FAILED);
 }
 
 TEST_F(AuthServiceTest, LoginHappyPathIssuesTokensAndSession) {
@@ -768,6 +787,20 @@ TEST_F(AuthServiceTest, LogoutAndFriends) {
   EXPECT_TRUE(sessions.empty());
 
   EXPECT_TRUE(service_->RevokeSession("user_1", "sess_2"));
+
+  // db_result || redis_result combinations: MySQL error + redis miss,
+  // redis-only hit (db error), and the short-circuit when both succeed.
+  fake_mysql::PushQueryError("revoke failed");
+  EXPECT_TRUE(service_->Logout("user_1", "sess_db_only"));  // redis Del may still succeed
+  redis_->SetDirect("chirp:auth:session:redis_only", "u|d|p|99999999999999|1");
+  fake_mysql::PushQueryError("revoke failed");
+  EXPECT_TRUE(service_->Logout("user_1", "redis_only"));
+
+  // Both arms of `db_result || redis_result` false: MySQL revoke fails and
+  // the Redis store is disconnected so DeleteSession short-circuits false.
+  fake_mysql::PushQueryError("revoke failed");
+  service_->Shutdown();  // redis_store_->Disconnect()
+  EXPECT_FALSE(service_->Logout("user_1", "both_fail"));
 
   EXPECT_FALSE(service_->ValidateAccessToken("").has_value());
   EXPECT_FALSE(service_->ValidateAccessToken("not-a-jwt").has_value());

@@ -140,6 +140,19 @@ class FakeChatServer {
     login_reply_id_ = id;
   }
 
+  // Replaces the serialized body of the scripted handshake replies so the
+  // bridge's ParseFromString failure paths can be driven from tests.
+  void set_auth_reply_body(std::string body) {
+    std::lock_guard<std::mutex> lock(mu_);
+    auth_body_override_ = std::move(body);
+    has_auth_body_override_ = true;
+  }
+  void set_login_reply_body(std::string body) {
+    std::lock_guard<std::mutex> lock(mu_);
+    login_body_override_ = std::move(body);
+    has_login_body_override_ = true;
+  }
+
   // Writes arbitrary bytes (malformed frames) to the most recent connection.
   void SendRawToLatest(std::string bytes) {
     asio::post(io_, [this, bytes = std::move(bytes)] {
@@ -230,17 +243,19 @@ class FakeChatServer {
       resp.set_code(auth_code_);
       resp.set_server_time_ms(0);
       MsgID reply_id;
+      std::string body;
       {
         std::lock_guard<std::mutex> lock(mu_);
         auth_requests_.push_back(req);
         reply_id = auth_reply_id_;
+        body = has_auth_body_override_ ? auth_body_override_ : resp.SerializeAsString();
       }
       if (hold_) {
         std::lock_guard<std::mutex> lock(mu_);
-        held_.push_back({sock, MakePacket(reply_id, pkt.sequence(), resp)});
+        held_.push_back({sock, MakeRawPacket(reply_id, pkt.sequence(), body)});
         return;
       }
-      WriteTo(*sock, MakePacket(reply_id, pkt.sequence(), resp));
+      WriteTo(*sock, MakeRawPacket(reply_id, pkt.sequence(), body));
       if (auth_code_ != chirp::common::OK) {
         asio::error_code ec;
         sock->close(ec);
@@ -253,17 +268,19 @@ class FakeChatServer {
       resp.set_user_id(req.token());
       resp.set_server_time(0);
       MsgID reply_id;
+      std::string body;
       {
         std::lock_guard<std::mutex> lock(mu_);
         login_requests_.push_back(req);
         reply_id = login_reply_id_;
+        body = has_login_body_override_ ? login_body_override_ : resp.SerializeAsString();
       }
       if (hold_) {
         std::lock_guard<std::mutex> lock(mu_);
-        held_.push_back({sock, MakePacket(reply_id, pkt.sequence(), resp)});
+        held_.push_back({sock, MakeRawPacket(reply_id, pkt.sequence(), body)});
         return;
       }
-      WriteTo(*sock, MakePacket(reply_id, pkt.sequence(), resp));
+      WriteTo(*sock, MakeRawPacket(reply_id, pkt.sequence(), body));
     }
   }
 
@@ -299,6 +316,10 @@ class FakeChatServer {
   std::vector<chirp::auth::LoginRequest> login_requests_;
   MsgID auth_reply_id_{chirp::gateway::SERVER_AUTH_RESP};
   MsgID login_reply_id_{chirp::gateway::LOGIN_RESP};
+  bool has_auth_body_override_{false};
+  bool has_login_body_override_{false};
+  std::string auth_body_override_;
+  std::string login_body_override_;
   size_t eof_count_{0};
 };
 

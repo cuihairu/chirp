@@ -717,6 +717,31 @@ TEST_F(RedisAuthStoreTest, ConnectedEdgeCases) {
   redis_.SetDirect("chirp:auth:session:bad", "garbage");
   EXPECT_FALSE(store_->UpdateSessionActivity("bad", 1));
 
+  // Partial separator counts: 1 pipe fails pos3, 2 pipes fails pos3's
+  // companion search, 3 pipes take the no-4th-pipe expires arm.
+  redis_.SetDirect("chirp:auth:session:p1", "u|d");
+  EXPECT_FALSE(store_->UpdateSessionActivity("p1", 1));
+  redis_.SetDirect("chirp:auth:session:p2", "u|d|pc");
+  EXPECT_FALSE(store_->UpdateSessionActivity("p2", 1));
+  redis_.SetDirect("chirp:auth:session:p3", "u|d|pc|99999999999999");
+  EXPECT_TRUE(store_->UpdateSessionActivity("p3", 1));
+
+  // GetSessionUser: 0/1/2 pipes never yield a live session.
+  redis_.SetDirect("chirp:auth:session:g0", "nouser");
+  EXPECT_FALSE(store_->GetSessionUser("g0").has_value());
+  redis_.SetDirect("chirp:auth:session:g1", "u1|dev");
+  EXPECT_FALSE(store_->GetSessionUser("g1").has_value());
+  redis_.SetDirect("chirp:auth:session:g2", "u1|dev|ios");
+  EXPECT_FALSE(store_->GetSessionUser("g2").has_value());
+  redis_.SetDirect("chirp:auth:session:g3", "u1|dev|ios|99999999999999|1");
+  EXPECT_EQ(store_->GetSessionUser("g3").value_or(""), "u1");
+
+  // Refresh token parse: 0 and 1 separators never resolve.
+  redis_.SetDirect("chirp:auth:refresh_token:r0", "nouser");
+  EXPECT_FALSE(store_->GetRefreshTokenUser("r0").has_value());
+  redis_.SetDirect("chirp:auth:refresh_token:r1", "u1|s1");
+  EXPECT_FALSE(store_->GetRefreshTokenUser("r1").has_value());
+
   // An expiry already in the past falls back to the configured token TTL.
   EXPECT_TRUE(store_->StoreRefreshToken("t1", "u1", "s1", 1000));
 
@@ -839,6 +864,218 @@ TEST_F(UserStoreTest, D0DestroysThroughBasePointer) {
   EXPECT_TRUE(store->Initialize());
   store.reset();
   SUCCEED();
+}
+
+// ---------------------------------------------------------------------------
+// Null-column parse probes: every `row[i] ? row[i] : default` false arm.
+// ---------------------------------------------------------------------------
+
+std::vector<std::optional<std::string>> NullSessionRow() {
+  return std::vector<std::optional<std::string>>(9, std::nullopt);
+}
+
+std::vector<std::optional<std::string>> NullUserRow() {
+  return std::vector<std::optional<std::string>>(9, std::nullopt);
+}
+
+std::vector<std::optional<std::string>> NullTokenRow() {
+  return std::vector<std::optional<std::string>>(10, std::nullopt);
+}
+
+TEST_F(SessionStoreTest, GetSessionHandlesEveryNullColumn) {
+  fake_mysql::PushRows({NullSessionRow()});
+  MySQLSessionStore store(DefaultSessionConfig());
+  auto session = store.GetSession("any");
+  ASSERT_TRUE(session.has_value());
+  EXPECT_EQ(session->id, 0);
+  EXPECT_EQ(session->session_id, "");
+  EXPECT_EQ(session->user_id, "");
+  EXPECT_EQ(session->device_id, "");
+  EXPECT_EQ(session->platform, "");
+  EXPECT_EQ(session->created_at, 0);
+  EXPECT_EQ(session->expires_at, 0);
+  EXPECT_EQ(session->last_activity_at, 0);
+  EXPECT_TRUE(session->is_active);  // NULL -> default true
+
+  // Non-"1" is_active value maps to inactive (false arm of `== "1"`).
+  std::vector<std::optional<std::string>> zero_row = {
+      "9", "sess_0", "u1", "d1", "pc", "10", "99999999999", "20", "0"};
+  fake_mysql::PushRows({zero_row});
+  auto inactive = store.GetSession("sess_0");
+  ASSERT_TRUE(inactive.has_value());
+  EXPECT_FALSE(inactive->is_active);
+}
+
+TEST_F(SessionStoreTest, GetUserSessionsHandlesEveryNullColumn) {
+  fake_mysql::PushRows({NullSessionRow()});
+  MySQLSessionStore store(DefaultSessionConfig());
+  auto sessions = store.GetUserSessions("u1");
+  ASSERT_EQ(sessions.size(), 1u);
+  EXPECT_EQ(sessions[0].id, 0);
+  EXPECT_EQ(sessions[0].session_id, "");
+  EXPECT_EQ(sessions[0].user_id, "");
+  EXPECT_EQ(sessions[0].device_id, "");
+  EXPECT_EQ(sessions[0].platform, "");
+  EXPECT_EQ(sessions[0].created_at, 0);
+  EXPECT_EQ(sessions[0].expires_at, 0);
+  EXPECT_EQ(sessions[0].last_activity_at, 0);
+  EXPECT_TRUE(sessions[0].is_active);
+}
+
+TEST_F(SessionStoreTest, GetRefreshTokenHandlesEveryNullColumn) {
+  fake_mysql::PushRows({NullTokenRow()});
+  MySQLSessionStore store(DefaultSessionConfig());
+  auto token = store.GetRefreshToken("tok");
+  ASSERT_TRUE(token.has_value());
+  EXPECT_EQ(token->id, 0);
+  EXPECT_EQ(token->token_id, "");
+  EXPECT_EQ(token->user_id, "");
+  EXPECT_EQ(token->session_id, "");
+  EXPECT_EQ(token->device_id, "");
+  EXPECT_EQ(token->token_hash, "");
+  EXPECT_EQ(token->created_at, 0);
+  EXPECT_EQ(token->expires_at, 0);
+  EXPECT_EQ(token->revoked_at, 0);
+  EXPECT_FALSE(token->is_revoked);  // NULL -> default false
+
+  // is_revoked = "1" takes the `== "1"` true arm.
+  std::vector<std::optional<std::string>> revoked = {
+      "1", "tok_1", "u1", "s1", "d1", "h", "10", "99999999999", "20", "1"};
+  fake_mysql::PushRows({revoked});
+  auto revoked_token = store.GetRefreshToken("tok_1");
+  ASSERT_TRUE(revoked_token.has_value());
+  EXPECT_TRUE(revoked_token->is_revoked);
+}
+
+TEST_F(SessionStoreTest, VerifyRefreshTokenHandlesEveryNullColumn) {
+  fake_mysql::PushRows({NullTokenRow()});
+  MySQLSessionStore store(DefaultSessionConfig());
+  auto token = store.VerifyRefreshToken("hash");
+  ASSERT_TRUE(token.has_value());
+  EXPECT_EQ(token->id, 0);
+  EXPECT_EQ(token->token_id, "");
+  EXPECT_EQ(token->user_id, "");
+  EXPECT_EQ(token->session_id, "");
+  EXPECT_EQ(token->device_id, "");
+  EXPECT_EQ(token->token_hash, "");
+  EXPECT_EQ(token->created_at, 0);
+  EXPECT_EQ(token->expires_at, 0);
+  EXPECT_EQ(token->revoked_at, 0);
+  EXPECT_FALSE(token->is_revoked);
+
+  std::vector<std::optional<std::string>> revoked = {
+      "1", "t", "u", "s", "d", "h", "10", "99999999999", "20", "1"};
+  fake_mysql::PushRows({revoked});
+  auto revoked_token = store.VerifyRefreshToken("h");
+  ASSERT_TRUE(revoked_token.has_value());
+  EXPECT_TRUE(revoked_token->is_revoked);
+}
+
+TEST_F(SessionStoreTest, CheckSessionLimitHandlesMissingCountCell) {
+  MySQLSessionStore store(DefaultSessionConfig());
+
+  // fetch_row returns no row at all -> count 0.
+  fake_mysql::PushRows({});
+  EXPECT_TRUE(store.CheckSessionLimit("u1", 5));
+
+  // Row present but COUNT cell is NULL -> default 0.
+  fake_mysql::PushRows({std::vector<std::optional<std::string>>{std::nullopt}});
+  EXPECT_TRUE(store.CheckSessionLimit("u1", 5));
+}
+
+TEST_F(UserStoreTest, FindByUserIdHandlesEveryNullColumn) {
+  fake_mysql::PushRows({NullUserRow()});
+  MySQLUserStore store(DefaultUserConfig());
+  auto user = store.FindByUserId("u1");
+  ASSERT_TRUE(user.has_value());
+  EXPECT_EQ(user->id, 0);
+  EXPECT_EQ(user->user_id, "");
+  EXPECT_EQ(user->username, "");
+  EXPECT_EQ(user->email, "");
+  EXPECT_EQ(user->password_hash, "");
+  EXPECT_EQ(user->created_at, 0);
+  EXPECT_EQ(user->updated_at, 0);
+  EXPECT_EQ(user->last_login_at, 0);
+  EXPECT_TRUE(user->is_active);
+}
+
+TEST_F(UserStoreTest, FindByUserIdNonNullEmailAndInactive) {
+  // Non-null email takes the `row[3] ?` true arm (line 232); is_active "0"
+  // takes the `== "1"` false arm (line 237).
+  fake_mysql::PushRows({UserRow("user_1", "alice", "a@b.c", "$fake$00$", "0")});
+  MySQLUserStore store(DefaultUserConfig());
+  auto user = store.FindByUserId("user_1");
+  ASSERT_TRUE(user.has_value());
+  EXPECT_EQ(user->email, "a@b.c");
+  EXPECT_FALSE(user->is_active);
+}
+
+TEST_F(UserStoreTest, FindByEmailInactiveRow) {
+  fake_mysql::PushRows({UserRow("user_1", "alice", "a@b.c", "h", "0")});
+  MySQLUserStore store(DefaultUserConfig());
+  auto user = store.FindByEmail("a@b.c");
+  ASSERT_TRUE(user.has_value());
+  EXPECT_FALSE(user->is_active);
+}
+
+TEST_F(UserStoreTest, FindByUsernameHandlesEveryNullColumn) {
+  fake_mysql::PushRows({NullUserRow()});
+  MySQLUserStore store(DefaultUserConfig());
+  auto user = store.FindByUsername("alice");
+  ASSERT_TRUE(user.has_value());
+  EXPECT_EQ(user->id, 0);
+  EXPECT_EQ(user->user_id, "");
+  EXPECT_EQ(user->username, "");
+  EXPECT_EQ(user->email, "");
+  EXPECT_EQ(user->password_hash, "");
+  EXPECT_EQ(user->created_at, 0);
+  EXPECT_EQ(user->updated_at, 0);
+  EXPECT_EQ(user->last_login_at, 0);
+  EXPECT_TRUE(user->is_active);
+}
+
+TEST_F(UserStoreTest, FindByEmailHandlesEveryNullColumn) {
+  fake_mysql::PushRows({NullUserRow()});
+  MySQLUserStore store(DefaultUserConfig());
+  auto user = store.FindByEmail("a@b.c");
+  ASSERT_TRUE(user.has_value());
+  EXPECT_EQ(user->id, 0);
+  EXPECT_EQ(user->user_id, "");
+  EXPECT_EQ(user->username, "");
+  EXPECT_EQ(user->email, "");
+  EXPECT_EQ(user->password_hash, "");
+  EXPECT_EQ(user->created_at, 0);
+  EXPECT_EQ(user->updated_at, 0);
+  EXPECT_EQ(user->last_login_at, 0);
+  EXPECT_TRUE(user->is_active);
+}
+
+TEST_F(UserStoreTest, ExistenceChecksHandleMissingCountCell) {
+  MySQLUserStore store(DefaultUserConfig());
+
+  // No result row -> exists == false.
+  fake_mysql::PushRows({});
+  EXPECT_FALSE(store.UsernameExists("alice"));
+  fake_mysql::PushRows({});
+  EXPECT_FALSE(store.EmailExists("a@b.c"));
+
+  // Row present but COUNT cell is NULL -> short-circuit false.
+  fake_mysql::PushRows({std::vector<std::optional<std::string>>{std::nullopt}});
+  EXPECT_FALSE(store.UsernameExists("alice"));
+  fake_mysql::PushRows({std::vector<std::optional<std::string>>{std::nullopt}});
+  EXPECT_FALSE(store.EmailExists("a@b.c"));
+}
+
+TEST_F(UserStoreTest, SetActiveStatusCoversTrueOnLiveConnection) {
+  MySQLUserStore store(DefaultUserConfig());
+  EXPECT_TRUE(store.SetActiveStatus("u1", true));
+  EXPECT_TRUE(store.SetActiveStatus("u1", false));
+}
+
+TEST_F(UserStoreTest, InitializeToleratesFailedStoreResult) {
+  fake_mysql::SetStoreResultShouldFail(true);
+  MySQLUserStore store(DefaultUserConfig());
+  EXPECT_TRUE(store.Initialize());  // has_table=false, still succeeds
 }
 
 }  // namespace

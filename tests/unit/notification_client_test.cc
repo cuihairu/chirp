@@ -180,12 +180,22 @@ struct Loopback {
     reg.device_id = "dev";
     reg.user_id = "u";
     reg.platform = "android";
+    reg.fcm_token = "tok";  // untokened devices fail closed now
     service.RegisterDevice(reg);
   }
 
   uint16_t port() const { return server.port(); }
 
-  chirp::app_notification::NotificationService service;
+  // Provider requests are answered inline; the client under test only
+  // needs the service to report success.
+  struct OkTransport : chirp::app_notification::PushTransport {
+    std::string Post(const chirp::app_notification::PushRequest&) override {
+      return "{}";
+    }
+  };
+  chirp::app_notification::NotificationService service{
+      chirp::app_notification::FCMConfig{}, chirp::app_notification::APNsConfig{},
+      std::make_shared<OkTransport>()};
   chirp::app_notification::NotificationHandlers handlers{service};
   FakeNotificationServer server;
 };
@@ -526,6 +536,57 @@ TEST_F(NotificationClientTest, GarbageResponseBodyReportsInternalError) {
   });
   asio::io_context io;
   NotificationClient client(io, "127.0.0.1", fake.port());
+
+  chirp::app_notification::PushNotificationRequest req;
+  req.set_user_id("u");
+  std::promise<chirp::app_notification::PushNotificationResponse> promise;
+  auto future = promise.get_future();
+  client.AsyncPush(req, 1, [&promise](const chirp::app_notification::PushNotificationResponse& r) {
+    promise.set_value(r);
+  });
+  ASSERT_TRUE(SpinIoFor(io, future));
+  EXPECT_EQ(future.get().code(), chirp::common::INTERNAL_ERROR);
+}
+
+TEST_F(NotificationClientTest, UnparseableOuterFrameReportsInternalError) {
+  // ReadFrame succeeds (4-byte BE length + payload) but the payload is not a
+  // gateway.Packet: ParseFromArray fails before the msg_id check.
+  class RawGarbageServer {
+   public:
+    RawGarbageServer()
+        : acceptor_(io_, asio::ip::tcp::endpoint(asio::ip::tcp::v4(), 0)) {
+      port_ = static_cast<uint16_t>(acceptor_.local_endpoint().port());
+      acceptor_.async_accept([this](const std::error_code& ec,
+                                    asio::ip::tcp::socket sock) {
+        if (ec) return;
+        const std::string junk = "\xff\xff\xff\xff\x01\x02";
+        std::string frame;
+        frame.push_back(0);
+        frame.push_back(0);
+        frame.push_back(0);
+        frame.push_back(static_cast<char>(junk.size()));
+        frame.append(junk);
+        asio::error_code wec;
+        asio::write(sock, asio::buffer(frame), wec);
+        sock.close(wec);
+      });
+      thread_ = std::thread([this] { io_.run(); });
+    }
+    ~RawGarbageServer() {
+      io_.stop();
+      if (thread_.joinable()) thread_.join();
+    }
+    uint16_t port() const { return port_; }
+
+   private:
+    asio::io_context io_;
+    asio::ip::tcp::acceptor acceptor_;
+    uint16_t port_{0};
+    std::thread thread_;
+  };
+  RawGarbageServer raw;
+  asio::io_context io;
+  NotificationClient client(io, "127.0.0.1", raw.port());
 
   chirp::app_notification::PushNotificationRequest req;
   req.set_user_id("u");

@@ -186,6 +186,10 @@ TEST_F(RedisSessionManagerTest, ClaimWithNonStdExceptionAlsoDeliversEmptyOwner) 
     });
     ASSERT_EQ(future.wait_for(std::chrono::milliseconds(3000)), std::future_status::ready);
     EXPECT_FALSE(future.get().has_value());
+
+    // Release with a non-std exception exercises catch(...)'s kRelease arm.
+    mgr.AsyncRelease("bob", "dev-2");
+    std::this_thread::sleep_for(std::chrono::milliseconds(200));
   }
 
   io.stop();

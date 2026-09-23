@@ -27,6 +27,19 @@ TEST(SessionRegistryTest, NormalizeDeviceIdDefaultsEmptyToDevice) {
   EXPECT_EQ(NormalizeDeviceId("phone-a"), "phone-a");
 }
 
+TEST(SessionRegistryTest, SessionToUserWithoutDeviceMapRebindsCleanly) {
+  // A session_to_user entry with no session_to_device twin: the previous
+  // device id defaults to "" and the identity-change arm still runs.
+  auto state = std::make_shared<SessionRegistry>();
+  auto session = std::make_shared<FakeSession>();
+
+  EXPECT_FALSE(BindAuthenticatedSession(state, "alice", "s1", "phone-a", session));
+  state->session_to_device.erase(session.get());
+  // Rebind as a different user: previous_device_id is the "" default.
+  EXPECT_FALSE(BindAuthenticatedSession(state, "bob", "s2", "phone-a", session));
+  EXPECT_EQ(GetAuthenticatedSession(state, session).user_id, "bob");
+}
+
 TEST(SessionRegistryTest, RebindingSameConnectionRemovesPreviousUserMapping) {
   auto state = std::make_shared<SessionRegistry>();
   auto session = std::make_shared<FakeSession>();
@@ -42,6 +55,23 @@ TEST(SessionRegistryTest, RebindingSameConnectionRemovesPreviousUserMapping) {
   EXPECT_EQ(state->user_to_sessions.count("alice"), 0u);
   ASSERT_EQ(state->user_to_sessions.count("bob"), 1u);
   EXPECT_EQ(state->user_to_sessions["bob"].at("phone-a").lock().get(), session.get());
+}
+
+TEST(SessionRegistryTest, RebindSameIdentityKeepsSlotWithoutErase) {
+  // Same (user, device) on the same connection: the identity-change guard at
+  // Bind is false for both operands, so EraseDeviceSlot must not run and the
+  // slot stays owned by this session.
+  auto state = std::make_shared<SessionRegistry>();
+  auto session = std::make_shared<FakeSession>();
+
+  EXPECT_FALSE(BindAuthenticatedSession(state, "alice", "s1", "phone-a", session));
+  // Same identity rebind still returns the slot's current owner (this session)
+  // without running EraseDeviceSlot.
+  EXPECT_EQ(BindAuthenticatedSession(state, "alice", "s2", "phone-a", session).get(),
+            session.get());
+  EXPECT_EQ(GetSession(state, "alice", "phone-a").get(), session.get());
+  EXPECT_EQ(state->user_to_sessions["alice"].size(), 1u);
+  EXPECT_EQ(GetAuthenticatedSession(state, session).session_id, "s2");
 }
 
 TEST(SessionRegistryTest, RebindingSameUserAndDeviceReturnsOldSessionForKick) {
@@ -99,6 +129,38 @@ TEST(SessionRegistryTest, RebindingSameConnectionAcrossDevicesMovesSlot) {
   EXPECT_EQ(GetSession(state, "alice", "phone-a"), nullptr);
   EXPECT_EQ(GetSession(state, "alice", "tablet-b").get(), session.get());
   EXPECT_EQ(GetUserSessions(state, "alice").size(), 1u);
+}
+
+TEST(SessionRegistryTest, RemoveWithExpiredSlotOwnerReportsRelease) {
+  // The device slot's weak_ptr is expired (owner died without Remove) while
+  // this session's session_to_* maps still point at the pair: lock() is null
+  // and Remove must take the !bound arm and report a release.
+  auto state = std::make_shared<SessionRegistry>();
+  auto phone = std::make_shared<FakeSession>();
+
+  EXPECT_FALSE(BindAuthenticatedSession(state, "alice", "s1", "phone-a", phone));
+  {
+    auto transient = std::make_shared<FakeSession>();
+    EXPECT_EQ(BindAuthenticatedSession(state, "alice", "s2", "phone-a", transient).get(),
+              phone.get());
+  }  // transient destroyed: user_to_sessions weak expired, phone's maps remain
+  // phone still has session_to_user/device from its first bind; the slot now
+  // has an expired weak. Re-bind phone as the owner of a fresh identity so
+  // session_to_* and the expired slot coexist, then Remove.
+  // Simpler: rebind phone onto the same (user, device) after the owner died.
+  EXPECT_FALSE(BindAuthenticatedSession(state, "alice", "s3", "phone-a", phone));
+  // Drop the live owner again without Remove so lock() is null at Remove time.
+  {
+    auto again = std::make_shared<FakeSession>();
+    EXPECT_EQ(BindAuthenticatedSession(state, "alice", "s4", "phone-a", again).get(),
+              phone.get());
+  }
+  std::string removed_user;
+  std::string removed_device;
+  EXPECT_TRUE(RemoveAuthenticatedSession(state, phone, &removed_user, &removed_device));
+  EXPECT_EQ(removed_user, "alice");
+  EXPECT_EQ(removed_device, "phone-a");
+  EXPECT_EQ(state->user_to_sessions.count("alice"), 0u);
 }
 
 TEST(SessionRegistryTest, RemoveClearsOnlyOwnDeviceSlot) {
@@ -213,6 +275,83 @@ TEST(SessionRegistryTest, RemoveUnknownSessionReturnsFalse) {
   EXPECT_TRUE(removed.empty());
   EXPECT_EQ(state->session_to_user.count(bound.get()), 1u);
   EXPECT_EQ(state->session_to_user.count(stranger.get()), 0u);
+}
+
+TEST(SessionRegistryTest, EraseDeviceSlotSkipsWhenSlotTakenOver) {
+  // Session A is kicked by B (same pair), then A rebinds as another user:
+  // EraseDeviceSlot must leave B's slot alone (bound.get() != session).
+  auto state = std::make_shared<SessionRegistry>();
+  auto a = std::make_shared<FakeSession>();
+  auto b = std::make_shared<FakeSession>();
+
+  EXPECT_FALSE(BindAuthenticatedSession(state, "alice", "s1", "phone-a", a));
+  EXPECT_EQ(BindAuthenticatedSession(state, "alice", "s2", "phone-a", b).get(), a.get());
+  // A still maps to alice/phone-a in session_to_*; rebind as bob.
+  EXPECT_FALSE(BindAuthenticatedSession(state, "bob", "s3", "phone-a", a));
+  EXPECT_EQ(GetSession(state, "alice", "phone-a").get(), b.get());
+  EXPECT_EQ(state->user_to_sessions.count("alice"), 1u);
+  EXPECT_EQ(GetAuthenticatedSession(state, a).user_id, "bob");
+}
+
+TEST(SessionRegistryTest, EraseDeviceSlotClearsExpiredSlot) {
+  // Same takeover shape, but the new owner died without Remove: the weak_ptr
+  // is expired and EraseDeviceSlot must clear the stale slot (!bound).
+  auto state = std::make_shared<SessionRegistry>();
+  auto a = std::make_shared<FakeSession>();
+
+  EXPECT_FALSE(BindAuthenticatedSession(state, "alice", "s1", "phone-a", a));
+  {
+    auto b = std::make_shared<FakeSession>();
+    EXPECT_EQ(BindAuthenticatedSession(state, "alice", "s2", "phone-a", b).get(), a.get());
+  }  // b destroyed without Remove: user_to_sessions[alice][phone-a] expires
+  EXPECT_FALSE(BindAuthenticatedSession(state, "bob", "s3", "phone-a", a));
+  EXPECT_EQ(state->user_to_sessions.count("alice"), 0u);
+  EXPECT_EQ(state->user_to_sessions["bob"].at("phone-a").lock().get(), a.get());
+}
+
+TEST(SessionRegistryTest, RemoveWhenUserEntryAlreadyGoneStillReportsIdentity) {
+  // session_to_user still has the pair after the user entry was wiped out of
+  // band: identity is reported but nothing is released (returns false).
+  auto state = std::make_shared<SessionRegistry>();
+  auto phone = std::make_shared<FakeSession>();
+
+  BindAuthenticatedSession(state, "alice", "s1", "phone-a", phone);
+  state->user_to_sessions.erase("alice");
+
+  std::string removed_user;
+  std::string removed_device;
+  EXPECT_FALSE(RemoveAuthenticatedSession(state, phone, &removed_user, &removed_device));
+  EXPECT_EQ(removed_user, "alice");
+  EXPECT_EQ(removed_device, "phone-a");
+  EXPECT_EQ(state->session_to_user.count(phone.get()), 0u);
+}
+
+TEST(SessionRegistryTest, RemoveSkipsEraseWhenDeviceMapLostSlot) {
+  // session_to_device still points at phone-a but user_to_sessions lost that
+  // device map entry: the erase path must not report a release.
+  auto state = std::make_shared<SessionRegistry>();
+  auto phone = std::make_shared<FakeSession>();
+
+  BindAuthenticatedSession(state, "alice", "s1", "phone-a", phone);
+  state->user_to_sessions["alice"].erase("phone-a");
+
+  EXPECT_FALSE(RemoveAuthenticatedSession(state, phone));
+  EXPECT_EQ(state->session_to_user.count(phone.get()), 0u);
+}
+
+TEST(SessionRegistryTest, RemoveStaleDeviceEntryInSessionToDevice) {
+  // session has a user mapping but no device mapping: device id defaults to
+  // "", no device slot matches, so no release is reported.
+  auto state = std::make_shared<SessionRegistry>();
+  auto phone = std::make_shared<FakeSession>();
+
+  BindAuthenticatedSession(state, "alice", "s1", "phone-a", phone);
+  state->session_to_device.erase(phone.get());
+
+  std::string removed_device;
+  EXPECT_FALSE(RemoveAuthenticatedSession(state, phone, nullptr, &removed_device));
+  EXPECT_EQ(removed_device, "");
+  EXPECT_EQ(state->session_to_user.count(phone.get()), 0u);
 }
 
 } // namespace
