@@ -83,7 +83,7 @@ trap 'rm -rf "${WORK_DIR}"' EXIT
 i=0
 while IFS= read -r -d '' gcda; do
   mkdir -p "${WORK_DIR}/${i}"
-  (cd "${WORK_DIR}/${i}" && gcov -i "${gcda}" >/dev/null 2>&1) || true
+  (cd "${WORK_DIR}/${i}" && gcov -j -b -c "${gcda}" >/dev/null 2>&1) || true
   i=$((i + 1))
 done < <(find "${BUILD_DIR}" -name '*.gcda' -print0)
 
@@ -122,7 +122,51 @@ KNOWN_UNCOVERABLE = {
     # erased only together with timer->cancel(); a handler already dispatched
     # before the cancel exits at the timer_ec arm above, so the find-miss
     # return is unreachable by construction.
+    ("sdks/core/src/sdk_client.cc", 463),
     ("sdks/core/src/sdk_client.cc", 464),
+    # ChatClient::Impl::SendRequest pending_.emplace: next_seq_ is monotonic,
+    # so the red-black insert comparison always walks the greater side; the
+    # less/duplicate arms would require a 2^32 sequence wrap.
+    ("sdks/core/src/sdk_client.cc", 473),
+    # ChatClient static error-category construction: the exception-cleanup
+    # arm of the function-local static guard only runs when allocation of
+    # the category object throws.
+    ("sdks/core/src/sdk.cc", 35),
+    # SendMessage command-predicate line: the only untaken arm is the
+    # exception path of the inlined string ops (content.front()).
+    ("sdks/core/src/sdk_client.cc", 256),
+    # SendMessage channel_id ternary: untaken arms are throw edges into the
+    # landing pad (blocks 114/118) plus the pad's internal cleanup branches;
+    # reaching them requires operator+ to throw (std::bad_alloc).
+    ("sdks/core/src/sdk_client.cc", 268),
+    # DispatchCommand args ternary: untaken arms are the throw edges into
+    # landing pad block 55 (string construction throwing) and the pad's
+    # internal branches.
+    ("sdks/core/src/sdk_client.cc", 418),
+    # HandleFrame pong match: the untaken arm is the throw edge into landing
+    # pad block 83 (string/stdexcept during logging).
+    ("sdks/core/src/sdk_client.cc", 600),
+    # Renewal post: the untaken (state != Connected) arm is unreachable
+    # because every transition away from Connected (DoClose, login success,
+    # a fresh Login) clears auth_renewing_ first, so the guard at line 202
+    # would have returned before line 209 is evaluated.
+    ("sdks/core/src/sdk_client.cc", 209),
+    # DispatchCommand loop: untaken arms are the throw edge into landing pad
+    # block 63 and the pad's internal branches (string ctor throwing while
+    # comparing handler names). The zero-trip loop entry and the null-handler
+    # arm are covered by probes (HasCommands + NullCommandHandlerIsSkipped).
+    ("sdks/core/src/sdk_client.cc", 426),
+    # Login/Request/SendMessage asio::post lines: untaken arms are (a) throw
+    # edges, (b) the out-edges of pad blocks 13/11 which have no in-edges,
+    # and (c) the fall arm of the same-destination merge emitted for the
+    # inlined std::string/std::function move inside the closure construction.
+    # Every constructible input -- empty/SSO/heap tokens and bodies, empty/
+    # SBO/heap std::function captures -- takes the tree arm; the fall arm is
+    # the untaken half of an always-equal allocator/equality check (same
+    # shape as the asio chrono_time_traits comparisons excluded above).
+    ("sdks/core/src/sdk_client.cc", 107),
+    ("sdks/core/src/sdk_client.cc", 247),
+    ("sdks/core/src/sdk_client.cc", 292),
     # ChatClient::Impl::SendPacket socket guard: every caller checks the
     # connection state on the same io thread immediately before sending, and
     # only DoClose (same thread) clears socket_.
@@ -223,6 +267,177 @@ KNOWN_UNCOVERABLE = {
     # conn from peers_ (or the conn is displaced) on the same hub thread, so
     # no SendInject can ever target a closing connection.
     ("libs/network/chat_peer_hub.cc", 369),
+    # base64 DecodeTable function-local static: gcov counts the guard's
+    # exception-cleanup arcs, but MakeDecodeTable is non-throwing so those
+    # arcs can never fire.
+    ("libs/common/base64.cc", 21),
+    # SimpleMetrics::Instance function-local static: same gcov guard-cleanup
+    # shape as DecodeTable above; the constructor cannot throw.
+    ("libs/common/src/metrics.cc", 119),
+    # Search's orphan-token defense: inverted_index_ is written only inside
+    # IndexDocument (together with documents_) and erased only inside
+    # DeleteDocument (also together with documents_), so a token can never
+    # reference a missing document.
+    ("services/search/src/message_search_service.cc", 180),
+    # CalculateScore's find-miss defense: Search scores results it just read
+    # out of documents_ under the same lock, so the lookup always hits.
+    ("services/search/src/message_search_service.cc", 327),
+    # UnregisterSession's missing-presence guard: RegisterSession always
+    # creates presence, and the only eraser is CleanupOfflineUsers' 24h purge
+    # (needs last_seen < now-24h; no public API injects time), so a session
+    # that is still registered always has presence.
+    ("services/social/src/presence_manager.cc", 346),
+    # CleanupOfflineUsers' purge condition: the erase arm needs last_seen
+    # older than 24h (the body is already GCOVR_EXCL_LINE'd); the adjacent
+    # short-circuit arm is dropped with it because exclusions are per line.
+    ("services/social/src/presence_manager.cc", 405),
+    # ConfigParser TrimInPlace trailing loop: the '\n' operand's true arm.
+    # getline() strips the terminator before TrimInPlace runs, so a line -
+    # and therefore a key or value extracted from it - can never end in '\n'.
+    ("libs/common/config.cc", 11),
+    # MetricsHttpServer::HandleRequest exception landing pad: the untaken
+    # arms hang off the THROW edges of the inlined metrics_handler_
+    # invocation. Reaching them requires the handler itself to throw, which
+    # would escape the asio read callback and terminate the process.
+    ("libs/common/src/metrics_http_server.cc", 106),
+    # GetUsername exception landing pad: same shape as the metrics handler
+    # above - the untaken arms sit on the THROW edges of the it->second
+    # string copy and need an allocation failure inside the copy.
+    ("services/search/src/message_search_service.cc", 403),
+    # BuildRequest path assignment exception landing pad: the untaken arms
+    # hang off the THROW edges of the `path_slash == npos ? "/" : substr`
+    # string write and need an allocation failure inside the assignment.
+    ("services/app/notification/src/http_push_transport.cc", 62),
+    # ParseResponseHead header-loop guards: the caller guarantees the head
+    # block ends with "\r\n\r\n" at head_end, so find("\r\n", pos) from any
+    # pos < head_end always lands at or before head_end - neither the npos
+    # arm nor the "past head_end" arm can fire.
+    ("services/app/notification/src/http_push_transport.cc", 166),
+    # TcpHttpConnection::WaitReadable mask-false arm: poll is requested with
+    # POLLIN only, so revents is a subset of POLLIN|POLLHUP|POLLERR|POLLNVAL;
+    # POLLNVAL needs the fd closed underneath the live connection, which the
+    # transport never does while waiting.
+    ("services/app/notification/src/http_push_transport.cc", 216),
+    # TcpHttpConnectionFactory connect-deadline lambda: the wait_ec-false arm
+    # only fires when the timer expires before async_connect settles - the
+    # same environment race already excluded on the two lines below.
+    ("services/app/notification/src/http_push_transport.cc", 266),
+    # Connect's success-path return line: the untaken arms are (a) block 47,
+    # an asio chrono_time_traits.hpp:86 comparison attributed to this line
+    # whose direction never flips for a deadline set in the future, and
+    # (b) block 73's arms on the bad_alloc unwind of the new/make_unique
+    # call - neither is reachable from a unit test.
+    ("services/app/notification/src/http_push_transport.cc", 285),
+    # ReadReceiptManager ChannelKey npos arm: ChannelKey always builds
+    # `std::to_string(type) + ":" + channel_id` (read_receipt_manager.h:65),
+    # so find(':') never returns npos and the defense arm is dead code.
+    ("services/shared/chat/src/read_receipt_manager.cc", 80),
+    # MessageMigrationWorker entry guards: the migrating_ arms are marked
+    # GCOVR_EXCL_LINE (comments on 59/60/91/92) but gcov still attributes the
+    # condition's branches; racing an in-flight migration on one io context is
+    # impossible in the single-threaded test loop.
+    ("services/shared/chat/src/message_migration_worker.cc", 58),
+    ("services/shared/chat/src/message_migration_worker.cc", 89),
+    # ReactionHandlers::BroadcastReaction short-circuit: both call sites hardcode
+    # channel_id="", so resolved_channel.empty() is always true and the
+    # non-empty short-circuit arm (skip ChannelOfMessage) is unreachable.
+    ("services/shared/chat/src/message_handlers.cc", 187),
+    # ChannelManager category/channel index lookups: maps are updated under
+    # the same mu_ as their group_index_ reverse maps, so a reverse-map hit
+    # with a missing forward-map entry cannot be observed through the public
+    # API (same defense shape as line 364's GCOVR_EXCL_LINE).
+    ("services/shared/chat/src/channel_manager.cc", 201),
+    ("services/shared/chat/src/channel_manager.cc", 364),
+    ("services/shared/chat/src/channel_manager.cc", 590),
+    # ChatRateLimiter CheckLogin/CheckSend identity ternary: untaken arms are
+    # the always-equal allocator/SSO half of the string concat emitted for
+    # `prefix + identity` (same shape as sdk_client.cc:107/247/292).
+    ("services/shared/chat/src/chat_rate_limiter.cc", 20),
+    ("services/shared/chat/src/chat_rate_limiter.cc", 26),
+    # DeliveryAckManager Track/Acknowledge/RunCheck: untaken arms are throw
+    # edges into std::string/std::unordered_map landing pads (Pending and
+    # requeued_ insertion); reaching them requires bad_alloc during map ops.
+    ("services/shared/chat/src/delivery_ack_manager.cc", 102),
+    ("services/shared/chat/src/delivery_ack_manager.cc", 161),
+    ("services/shared/chat/src/delivery_ack_manager.cc", 163),
+    # InstallSignalStop async_wait registration: untaken arms are asio
+    # internal signal_set/error_code paths (and the shared_ptr capture's
+    # throw edge); the handler itself is covered by the SIGINT probe.
+    ("services/shared/chat/src/distributed_runtime.cc", 55),
+    # HybridMessageStore PrivateChannelId string concat: untaken arms are
+    # throw edges into the `a + "|" + b` landing pad (bad_alloc).
+    ("services/shared/chat/src/hybrid_message_store.cc", 446),
+    # IdentityRegistry Load clash lookup + Bind idempotency tuple equality +
+    # game_user_index/by_id stale finds + GetByPlayer/Resolve/Unbind by_id_
+    # finds: all by_id_/index maps are written together under mu_, so the
+    # stale/miss arms are defensive (same shape as the already-excluded
+    # map-miss lines). Line 200's `it == by_id_.end()` half is the same
+    # defense; the game_id-mismatch half is covered by ResolveGameUserSkipsOtherGames.
+    ("services/shared/chat/src/identity_registry.cc", 57),
+    ("services/shared/chat/src/identity_registry.cc", 104),
+    ("services/shared/chat/src/identity_registry.cc", 142),
+    ("services/shared/chat/src/identity_registry.cc", 161),
+    ("services/shared/chat/src/identity_registry.cc", 176),
+    ("services/shared/chat/src/identity_registry.cc", 200),
+    ("services/shared/chat/src/identity_registry.cc", 219),
+    # MessageStoreConfig FromEnv boolean env parses: untaken arms are throw
+    # edges into the two temporary std::string construction landing pads on
+    # `std::string(env_val) == "1" || == "true"` (bad_alloc); the true/false
+    # value arms are covered by FromEnvOverridesDefaults.
+    ("services/shared/chat/src/message_store_config.cc", 29),
+    ("services/shared/chat/src/message_store_config.cc", 34),
+    # PlayerDirectory log string concats on successful unbind/unsubscribe:
+    # untaken arms are throw edges into the `prefix + id` / triple-concat
+    # landing pads (bad_alloc); the taken arms execute the log normally.
+    ("services/shared/chat/src/player_directory.cc", 69),
+    ("services/shared/chat/src/player_directory.cc", 159),
+    # RepeatGuard mute-expire reset: `state = RepeatState{}` untaken arm is
+    # the move/copy half of the implicitly-generated assignment (always the
+    # same direction for a prvalue Reset).
+    ("services/shared/chat/src/repeat_guard.cc", 12),
+    # SubscriptionRegistry MintSubscriptionId static salt + Load/Subscribe
+    # tuple-index stale finds + GetForPlayer/GetForChannel/Unsubscribe/
+    # EraseEntry by_id_ finds: function-local static init throw arm and
+    # map-miss defenses (indices written together under mu_).
+    ("services/shared/chat/src/subscription_registry.cc", 20),
+    ("services/shared/chat/src/subscription_registry.cc", 78),
+    ("services/shared/chat/src/subscription_registry.cc", 128),
+    ("services/shared/chat/src/subscription_registry.cc", 179),
+    ("services/shared/chat/src/subscription_registry.cc", 198),
+    ("services/shared/chat/src/subscription_registry.cc", 219),
+    ("services/shared/chat/src/subscription_registry.cc", 236),
+    ("services/shared/chat/src/subscription_registry.cc", 243),
+}
+
+# Whole functions tests can never execute: deleting-dtors of abstract
+# interfaces are never the most-derived dtor, so `delete`-through-base always
+# dispatches to the concrete class's own D0. Keys are (relpath, start_line)
+# matching the coverage-gaps.txt function format.
+KNOWN_UNCOVERABLE_FUNCTIONS = {
+    # NpcEngine is abstract (Reply is pure virtual); its inline deleting-dtor
+    # is never the most-derived one.
+    ("services/game/npc_dialog/src/npc_engine.h", 24),
+    # Session is abstract (Send/SendAndClose/Close/IsClosed/RemoteAddress are
+    # pure virtual); only TcpSession/WebSocketSession/Mock D0s can run.
+    ("libs/network/session.h", 9),
+    # SessionStore is abstract (Initialize/CreateSession/... are pure
+    # virtual); only MySQLSessionStore's concrete D0 can run.
+    ("services/app/auth/src/session_store.h", 69),
+    # UserStore is abstract (Initialize/Register/... are pure virtual).
+    ("services/app/auth/src/user_store.h", 57),
+    # MessageStore is abstract (Initialize/StoreMessage/... pure virtual).
+    ("services/shared/chat/src/message_store.h", 37),
+    # HttpConnection is abstract (WriteAll/WaitReadable/ReadSome pure
+    # virtual); only the TcpHttpConnection Impl D0 can run.
+    ("services/app/notification/src/http_push_transport.h", 20),
+    # HttpConnectionFactory is abstract (Connect pure virtual).
+    ("services/app/notification/src/http_push_transport.h", 39),
+    # PushTransport is abstract (Post pure virtual); LoggingPushTransport
+    # and HttpPushTransport own their concrete D0s.
+    ("services/app/notification/src/push_transport.h", 25),
+    # PeerSender is abstract (Send pure virtual); only concrete senders'
+    # D0s can run.
+    ("services/game/server_gateway/src/service_registry.h", 19),
 }
 
 src_cache = {}
@@ -266,6 +481,10 @@ def executable_line(path, lineno):
 
 # file -> line -> max count
 data = defaultdict(lambda: defaultdict(int))
+# file -> line -> {arm_index: [max_count, is_throw_edge]}
+branch_data = defaultdict(lambda: defaultdict(dict))
+# (file, start_line, function_name) -> max execution count across contexts
+func_exec = {}
 
 for gz in glob.glob(os.path.join(work_dir, "**", "*.gcov.json.gz"), recursive=True):
     with gzip.open(gz, "rt") as fh:
@@ -283,6 +502,22 @@ for gz in glob.glob(os.path.join(work_dir, "**", "*.gcov.json.gz"), recursive=Tr
             ln = l["line_number"]
             if l["count"] > data[name][ln]:
                 data[name][ln] = l["count"]
+            for bi, br in enumerate(l.get("branches", [])):
+                cnt = br.get("count", 0)
+                thr = bool(br.get("throw", False))
+                slot = branch_data[name][ln].get(bi)
+                if slot is None:
+                    branch_data[name][ln][bi] = [cnt, thr]
+                elif cnt > slot[0]:
+                    slot[0] = cnt
+        for fn in fc.get("functions", []):
+            fname = fn.get("name", "")
+            if fname.startswith("<") or "artificial" in fname:
+                continue
+            key = (name, fn.get("start_line", 0), fname)
+            cnt = fn.get("execution_count", 0)
+            if cnt > func_exec.get(key, -1):
+                func_exec[key] = cnt
 
 report = []
 for name in sorted(data):
@@ -360,6 +595,89 @@ for pkg in sorted(pkgs):
     if p < fail_under:
         failed = True
     print(f"{status:3}  {p:6.2f}%  {c:5}/{t:<5}  {pkg}")
+
+# ---------------------------------------------------------------------------
+# Branch / function coverage. Informational for now: the gate above stays
+# line-based; this section inventories which control-flow arms and whole
+# functions tests never reach. Throw edges (exception cleanup) are skipped -
+# they are unreachable without a throwing path and gcov counts them as
+# ordinary arms. KNOWN_UNCOVERABLE lines drop out via executable_line, same
+# as the line stats.
+# ---------------------------------------------------------------------------
+branch_taken = branch_total = 0
+func_cov = func_total = 0
+branch_gaps = []  # (name, line, taken, total, untaken_arm_indices)
+func_gaps = []    # (name, start_line, function_name)
+pkg_branch = defaultdict(lambda: [0, 0])
+pkg_func = defaultdict(lambda: [0, 0])
+
+for name, _t, _c, _miss in report:
+    pkg = os.path.dirname(os.path.relpath(name, root)) or "."
+    for ln in sorted(data[name]):
+        if not executable_line(name, ln):
+            continue
+        arms = branch_data.get(name, {}).get(ln)
+        if not arms:
+            continue
+        tot = tak = 0
+        untaken = []
+        for bi in sorted(arms):
+            cnt, thr = arms[bi]
+            if thr:
+                continue
+            tot += 1
+            if cnt > 0:
+                tak += 1
+            else:
+                untaken.append(bi)
+        branch_total += tot
+        branch_taken += tak
+        pkg_branch[pkg][0] += tak
+        pkg_branch[pkg][1] += tot
+        if tak < tot:
+            branch_gaps.append((name, ln, tak, tot, untaken))
+
+for (name, sl, fname), cnt in sorted(func_exec.items()):
+    if (os.path.relpath(name, root), sl) in KNOWN_UNCOVERABLE_FUNCTIONS:
+        continue
+    pkg = os.path.dirname(os.path.relpath(name, root)) or "."
+    func_total += 1
+    pkg_func[pkg][1] += 1
+    if cnt > 0:
+        func_cov += 1
+        pkg_func[pkg][0] += 1
+    else:
+        func_gaps.append((name, sl, fname))
+
+bpct = 100.0 * branch_taken / branch_total if branch_total else 100.0
+fpct = 100.0 * func_cov / func_total if func_total else 100.0
+
+print()
+print(f"branches:  {bpct:.1f}% ({branch_taken} of {branch_total} arms, "
+      "throw edges excluded)")
+print(f"functions: {fpct:.1f}% ({func_cov} of {func_total})")
+
+print()
+print("Per-package branch/function coverage (informational, not gated)")
+for pkg in sorted(set(pkg_branch) | set(pkg_func)):
+    bt, bb = pkg_branch[pkg]
+    fc_, ft = pkg_func[pkg]
+    b = 100.0 * bt / bb if bb else 100.0
+    f = 100.0 * fc_ / ft if ft else 100.0
+    print(f"     branch {b:6.2f}% {bt:5}/{bb:<5}  "
+          f"func {f:6.2f}% {fc_:5}/{ft:<5}  {pkg}")
+
+with open("coverage-gaps.txt", "w") as fh:
+    fh.write("uncovered branch arms (file:line taken/total untaken=[arm indices])\n")
+    for name, ln, tak, tot, untaken in branch_gaps:
+        fh.write(f"{os.path.relpath(name, root)}:{ln}  {tak}/{tot} {untaken}\n")
+    fh.write("\nuncovered functions (file:start_line name)\n")
+    for name, sl, fname in func_gaps:
+        fh.write(f"{os.path.relpath(name, root)}:{sl}  {fname}\n")
+
+print()
+print(f"branch gaps: {len(branch_gaps)} lines, "
+      f"function gaps: {len(func_gaps)} (see coverage-gaps.txt)")
 
 if failed:
     print(f"\nCoverage threshold {fail_under}% not met for some packages.", file=sys.stderr)
