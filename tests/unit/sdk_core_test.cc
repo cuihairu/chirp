@@ -2745,5 +2745,389 @@ TEST_F(ChatClientLoopbackTest, StorePassThroughWithoutStoreIsNoop) {
   SUCCEED();
 }
 
+
+// ---------------------------------------------------------------------------
+// Batch C branch/function coverage probes.
+// ---------------------------------------------------------------------------
+
+// 119: re-Login while already LoggedIn takes the state-guard short-circuit
+// (state != Connected true, state != LoggedIn false).
+TEST_F(ChatClientLoopbackTest, LoginAgainWhileLoggedInStillComplets) {
+  FakeGateway gateway([](const chirp::gateway::Packet& pkt, auto send) {
+    if (pkt.msg_id() == chirp::gateway::LOGIN_REQ) {
+      chirp::auth::LoginResponse resp;
+      resp.set_code(chirp::common::OK);
+      resp.set_user_id("user-1");
+      resp.set_session_id("sess-1");
+      send(MakeLoginRespPacket(pkt.sequence(), resp));
+    }
+  });
+  ChatClient client(LoopbackConfig(gateway.port()));
+  client.Connect();
+  WaitState(client, ConnectionState::Connected);
+  LoginSync(client, "t1");
+
+  std::promise<std::error_code> second;
+  auto future = second.get_future();
+  client.Login("t2", [&second](const std::error_code& ec, const std::string&) {
+    second.set_value(ec);
+  });
+  ASSERT_EQ(future.wait_for(std::chrono::milliseconds(kWaitMs)),
+            std::future_status::ready);
+  EXPECT_FALSE(future.get());
+  EXPECT_EQ(client.GetState(), ConnectionState::LoggedIn);
+  client.Disconnect();
+}
+
+// 293: Request while merely Connected (state != Connected false short-circuit)
+// still reaches the gateway; also exercises a heap-sized body capture.
+TEST_F(ChatClientLoopbackTest, RequestWhileConnectedBeforeLoginReachesGateway) {
+  std::atomic<bool> seen{false};
+  FakeGateway gateway([&](const chirp::gateway::Packet& pkt, auto send) {
+    if (pkt.msg_id() == chirp::gateway::GET_HISTORY_REQ) {
+      seen = true;
+      chirp::gateway::Packet out;
+      out.set_msg_id(chirp::gateway::GET_HISTORY_RESP);
+      out.set_sequence(pkt.sequence());
+      out.set_body("{}");
+      send(out);
+    }
+  });
+  ChatClient client(LoopbackConfig(gateway.port()));
+  client.Connect();
+  WaitState(client, ConnectionState::Connected);
+  ASSERT_EQ(client.GetState(), ConnectionState::Connected);
+
+  std::promise<std::error_code> done;
+  auto future = done.get_future();
+  const std::string body(120, 'b');
+  client.Request(chirp::gateway::GET_HISTORY_REQ, chirp::gateway::GET_HISTORY_RESP,
+                 body, [&done](const std::error_code& ec, const std::string&) {
+                   done.set_value(ec);
+                 });
+  ASSERT_EQ(future.wait_for(std::chrono::milliseconds(kWaitMs)),
+            std::future_status::ready);
+  EXPECT_TRUE(seen.load());
+  client.Disconnect();
+}
+
+// 292/293: Request with a null callback while disconnected must swallow the
+// error silently (empty std::function capture + if (cb) false arm).
+TEST_F(SdkClientTest, RequestWithNullCallbackIsSilentWhenNotConnected) {
+  ChatClient client(TcpConfig());
+  client.Request(chirp::gateway::GET_HISTORY_REQ, chirp::gateway::GET_HISTORY_RESP,
+                 "", nullptr);
+  std::this_thread::sleep_for(std::chrono::milliseconds(200));
+  EXPECT_EQ(client.GetState(), ConnectionState::Disconnected);
+}
+
+// 107: heap-sized token capture on the Login lambda (string move/ctor arm).
+TEST_F(SdkClientTest, LoginWithLongTokenReportsNotConnected) {
+  ChatClient client(TcpConfig());
+  const std::string long_token(80, 'x');
+  std::promise<std::error_code> done;
+  auto future = done.get_future();
+  client.Login(long_token,
+               [&done](const std::error_code& ec, const std::string&) {
+                 done.set_value(ec);
+               });
+  ASSERT_EQ(future.wait_for(std::chrono::milliseconds(kWaitMs)),
+            std::future_status::ready);
+  EXPECT_EQ(future.get(), chirp::sdk::make_error_code(ChatError::NotConnected));
+}
+
+// 107: empty token + provider that also returns empty -> InvalidParam via
+// the provider/GetToken path (provider present, effective stays empty).
+TEST_F(SdkClientTest, LoginWithEmptyProviderTokenFailsInvalidParam) {
+  ChatClient client(TcpConfig());
+  client.SetAuthProvider(std::make_shared<ScriptedAuthProvider>(""));
+
+  std::promise<std::error_code> done;
+  auto future = done.get_future();
+  client.Login("", [&done](const std::error_code& ec, const std::string&) {
+    done.set_value(ec);
+  });
+  ASSERT_EQ(future.wait_for(std::chrono::milliseconds(kWaitMs)),
+            std::future_status::ready);
+  EXPECT_EQ(future.get(), chirp::sdk::make_error_code(ChatError::InvalidParam));
+}
+
+// 268: forward channel_id arm (user_id <= receiver, taken as "user-1" <=
+// "zoe"), heap receiver capture, and empty content which skips the command
+// predicate at 256 and still saves/sends.
+TEST_F(ChatClientLoopbackTest, SendMessageForwardChannelAndEmptyContent) {
+  SendCapture sends;
+  std::mutex mu;
+  std::vector<chirp::chat::SendMessageRequest> reqs;
+  FakeGateway gateway([&](const chirp::gateway::Packet& pkt, auto send) {
+    if (pkt.msg_id() == chirp::gateway::LOGIN_REQ) {
+      chirp::auth::LoginResponse resp;
+      resp.set_code(chirp::common::OK);
+      resp.set_user_id("user-1");
+      resp.set_session_id("sess-1");
+      send(MakeLoginRespPacket(pkt.sequence(), resp));
+    }
+    if (pkt.msg_id() == chirp::gateway::SEND_MESSAGE_REQ) {
+      chirp::chat::SendMessageRequest req;
+      req.ParseFromArray(pkt.body().data(), static_cast<int>(pkt.body().size()));
+      sends.Record(req);
+      std::lock_guard<std::mutex> lock(mu);
+      reqs.push_back(req);
+    }
+  });
+
+  ChatClient client(LoopbackConfig(gateway.port()));
+  client.SetMessageStore(std::make_unique<chirp::sdk::MemoryMessageStore>());
+  client.Connect();
+  WaitState(client, ConnectionState::Connected);
+  LoginSync(client, "t");
+
+  client.SendMessage("zoe", "hi");                        // forward, SSO ids
+  client.SendMessage(std::string(60, 'z'), "hi");         // forward, heap receiver
+  client.SendMessage("zoe", "");                          // empty content
+  std::this_thread::sleep_for(std::chrono::milliseconds(500));
+
+  ASSERT_EQ(sends.Count(), 3);
+  {
+    std::lock_guard<std::mutex> lock(mu);
+    ASSERT_EQ(reqs.size(), 3u);
+    EXPECT_EQ(reqs[0].channel_id(), "user-1|zoe");
+    EXPECT_EQ(reqs[1].channel_id(), "user-1|" + std::string(60, 'z'));
+    EXPECT_EQ(reqs[2].content(), "");
+  }
+  client.Disconnect();
+}
+
+// 694: the OnMessageReceived listener lambda inside HandleChatNotify only
+// runs when a listener is registered AND a chat notify arrives unblocked.
+TEST_F(ChatClientLoopbackTest, ListenerReceivesChatNotify) {
+  FakeGateway gateway([](const chirp::gateway::Packet& pkt, auto send) {
+    if (pkt.msg_id() == chirp::gateway::LOGIN_REQ) {
+      chirp::auth::LoginResponse resp;
+      resp.set_code(chirp::common::OK);
+      resp.set_user_id("user-1");
+      resp.set_session_id("sess-1");
+      send(MakeLoginRespPacket(pkt.sequence(), resp));
+    }
+  });
+
+  auto listener = std::make_shared<RecordingListener>();
+  ChatClient client(LoopbackConfig(gateway.port()));
+  client.AddListener(listener);
+  client.Connect();
+  WaitState(client, ConnectionState::Connected);
+  LoginSync(client, "t");
+
+  PushWorldMessage(gateway, "hello-listener");
+  bool got = false;
+  for (int i = 0; i < 150 && !got; ++i) {
+    {
+      std::lock_guard<std::mutex> lock(listener->mu);
+      got = !listener->messages.empty();
+    }
+    if (!got) {
+      std::this_thread::sleep_for(std::chrono::milliseconds(20));
+    }
+  }
+  {
+    std::lock_guard<std::mutex> lock(listener->mu);
+    ASSERT_EQ(listener->messages.size(), 1u);
+    EXPECT_EQ(listener->messages[0], "hello-listener");
+  }
+  client.Disconnect();
+}
+
+// 426: first handler misses so the loop continues to the second (hit);
+// equal-length name mismatch exercises the string== internals; trailing
+// space yields an empty args string via substr (418).
+TEST_F(ChatClientLoopbackTest, SecondCommandHandlerClaimsAndEqualLengthMiss) {
+  SendCapture sends;
+  FakeGateway gateway([&](const chirp::gateway::Packet& pkt, auto send) {
+    if (pkt.msg_id() == chirp::gateway::LOGIN_REQ) {
+      chirp::auth::LoginResponse resp;
+      resp.set_code(chirp::common::OK);
+      resp.set_user_id("user-1");
+      resp.set_session_id("sess-1");
+      send(MakeLoginRespPacket(pkt.sequence(), resp));
+    }
+    if (pkt.msg_id() == chirp::gateway::SEND_MESSAGE_REQ) {
+      chirp::chat::SendMessageRequest req;
+      req.ParseFromArray(pkt.body().data(), static_cast<int>(pkt.body().size()));
+      sends.Record(req);
+    }
+  });
+
+  auto* abcd = new RecordingCommand("abcd", false);
+  auto* trade = new RecordingCommand("trade", true);
+  ChatClient client(LoopbackConfig(gateway.port()));
+  client.RegisterCommand(std::unique_ptr<chirp::sdk::CommandHandler>(abcd));
+  client.RegisterCommand(std::unique_ptr<chirp::sdk::CommandHandler>(trade));
+  client.Connect();
+  WaitState(client, ConnectionState::Connected);
+  LoginSync(client, "t");
+
+  client.SendMessage("bob", "/trade alice 1");  // first miss, second hit
+  client.SendMessage("bob", "/abce");           // equal-length name miss
+  client.SendMessage("bob", "/trade ");         // hit with empty substr args
+  std::this_thread::sleep_for(std::chrono::milliseconds(400));
+
+  EXPECT_EQ(sends.Count(), 0);
+  {
+    std::lock_guard<std::mutex> lock(abcd->mu);
+    EXPECT_TRUE(abcd->executed_args.empty());
+  }
+  {
+    std::lock_guard<std::mutex> lock(trade->mu);
+    ASSERT_EQ(trade->executed_args.size(), 2u);
+    EXPECT_EQ(trade->executed_args[0], "alice 1");
+    EXPECT_EQ(trade->executed_args[1], "");
+  }
+  client.Disconnect();
+}
+
+// 600: a pong whose sequence does not match pending_ping_seq_ must be
+// dropped without crediting the heartbeat.
+TEST_F(ChatClientLoopbackTest, StalePongSequenceIsIgnored) {
+  FakeGateway gateway([](const chirp::gateway::Packet& pkt, auto send) {
+    if (pkt.msg_id() == chirp::gateway::LOGIN_REQ) {
+      chirp::auth::LoginResponse resp;
+      resp.set_code(chirp::common::OK);
+      resp.set_user_id("user-1");
+      resp.set_session_id("sess-1");
+      send(MakeLoginRespPacket(pkt.sequence(), resp));
+    }
+    if (pkt.msg_id() == chirp::gateway::HEARTBEAT_PING) {
+      chirp::gateway::HeartbeatPong pong;
+      chirp::gateway::Packet out;
+      out.set_msg_id(chirp::gateway::HEARTBEAT_PONG);
+      out.set_sequence(pkt.sequence() + 1);  // stale: never matches
+      out.set_body(pong.SerializeAsString());
+      send(out);
+    }
+  });
+
+  ChatClient client(LoopbackConfig(gateway.port(), /*heartbeat_s=*/1));
+  client.Connect();
+  WaitState(client, ConnectionState::Connected);
+  LoginSync(client, "t");
+  // First ping fires at ~1s; the mismatched pong leaves pending_ping_seq_
+  // set. Disconnect before the second ping could trip death detection.
+  std::this_thread::sleep_for(std::chrono::milliseconds(1500));
+  EXPECT_EQ(client.GetState(), ConnectionState::LoggedIn);
+  client.Disconnect();
+}
+
+// 89: second Connect() while the first is still Connecting hits the
+// Connecting arm of the state guard; if the first already reached Connected
+// it hits the Connected arm instead.
+TEST_F(ChatClientLoopbackTest, ConnectWhileConnectingIsIgnored) {
+  FakeGateway gateway([](const chirp::gateway::Packet&, auto) {});
+  ChatClient client(LoopbackConfig(gateway.port()));
+  client.Connect();
+  client.Connect();  // runs right after the first post on the io thread
+  std::this_thread::sleep_for(std::chrono::milliseconds(150));
+  EXPECT_NE(client.GetState(), ConnectionState::Disconnected);
+  client.Disconnect();
+}
+
+// 88/89: second Connect() while LoggedIn takes the LoggedIn arm of the
+// guard (the Connecting/Connected arms are covered by the probe above and
+// ConnectWhileAlreadyConnectedIsIgnored).
+TEST_F(ChatClientLoopbackTest, ConnectWhileLoggedInIsIgnored) {
+  FakeGateway gateway([](const chirp::gateway::Packet& pkt, auto send) {
+    if (pkt.msg_id() == chirp::gateway::LOGIN_REQ) {
+      chirp::auth::LoginResponse resp;
+      resp.set_code(chirp::common::OK);
+      resp.set_user_id("user-1");
+      resp.set_session_id("sess-1");
+      send(MakeLoginRespPacket(pkt.sequence(), resp));
+    }
+  });
+  ChatClient client(LoopbackConfig(gateway.port()));
+  client.Connect();
+  WaitState(client, ConnectionState::Connected);
+  LoginSync(client, "t");
+  ASSERT_EQ(client.GetState(), ConnectionState::LoggedIn);
+  client.Connect();  // ignored: state is LoggedIn
+  std::this_thread::sleep_for(std::chrono::milliseconds(150));
+  EXPECT_EQ(client.GetState(), ConnectionState::LoggedIn);
+  client.Disconnect();
+}
+
+
+// 426: a null handler entry still passes HasCommands() (non-empty vector)
+// and must be skipped by the `if (handler && ...)` guard in the dispatch
+// loop.
+TEST_F(ChatClientLoopbackTest, NullCommandHandlerIsSkippedInDispatch) {
+  SendCapture sends;
+  FakeGateway gateway([&](const chirp::gateway::Packet& pkt, auto send) {
+    if (pkt.msg_id() == chirp::gateway::LOGIN_REQ) {
+      chirp::auth::LoginResponse resp;
+      resp.set_code(chirp::common::OK);
+      resp.set_user_id("user-1");
+      resp.set_session_id("sess-1");
+      send(MakeLoginRespPacket(pkt.sequence(), resp));
+    }
+    if (pkt.msg_id() == chirp::gateway::SEND_MESSAGE_REQ) {
+      chirp::chat::SendMessageRequest req;
+      req.ParseFromArray(pkt.body().data(), static_cast<int>(pkt.body().size()));
+      sends.Record(req);
+    }
+  });
+
+  auto* trade = new RecordingCommand("trade", true);
+  ChatClient client(LoopbackConfig(gateway.port()));
+  client.RegisterCommand(std::unique_ptr<chirp::sdk::CommandHandler>(nullptr));
+  client.RegisterCommand(std::unique_ptr<chirp::sdk::CommandHandler>(trade));
+  client.Connect();
+  WaitState(client, ConnectionState::Connected);
+  LoginSync(client, "t");
+
+  client.SendMessage("bob", "/trade x");
+  std::this_thread::sleep_for(std::chrono::milliseconds(300));
+  EXPECT_EQ(sends.Count(), 0);
+  {
+    std::lock_guard<std::mutex> lock(trade->mu);
+    ASSERT_EQ(trade->executed_args.size(), 1u);
+    EXPECT_EQ(trade->executed_args[0], "x");
+  }
+  client.Disconnect();
+}
+
+
+// Large (heap-allocated) std::function captures exercise the non-SBO move
+// arm of the closure construction inside asio::post on the Login/Request
+// lines (107/292).
+struct BigCallbackCapture {
+  char pad[160]{};
+};
+
+TEST_F(SdkClientTest, LoginWithHeapFunctionCallbackReportsNotConnected) {
+  ChatClient client(TcpConfig());
+  BigCallbackCapture big;
+  std::promise<std::error_code> done;
+  auto future = done.get_future();
+  client.Login("t", [big, &done](const std::error_code& ec, const std::string&) {
+    done.set_value(ec);
+  });
+  ASSERT_EQ(future.wait_for(std::chrono::milliseconds(kWaitMs)),
+            std::future_status::ready);
+  EXPECT_EQ(future.get(), chirp::sdk::make_error_code(ChatError::NotConnected));
+}
+
+TEST_F(SdkClientTest, RequestWithHeapFunctionCallbackReportsNotConnected) {
+  ChatClient client(TcpConfig());
+  BigCallbackCapture big;
+  std::promise<std::error_code> done;
+  auto future = done.get_future();
+  client.Request(chirp::gateway::GET_HISTORY_REQ, chirp::gateway::GET_HISTORY_RESP,
+                 "{}", [big, &done](const std::error_code& ec, const std::string&) {
+                   done.set_value(ec);
+                 });
+  ASSERT_EQ(future.wait_for(std::chrono::milliseconds(kWaitMs)),
+            std::future_status::ready);
+  EXPECT_EQ(future.get(), chirp::sdk::make_error_code(ChatError::NotConnected));
+}
+
 }  // namespace
 

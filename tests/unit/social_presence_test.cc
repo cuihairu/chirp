@@ -255,6 +255,60 @@ TEST_F(PresenceManagerTest, GetOnlineFriendsFiltersByStatusAndRecency) {
   EXPECT_EQ(friends, (std::vector<std::string>{"alice", "bob", "idle"}));
 }
 
+TEST_F(PresenceManagerTest, GetOnlineFriendsIncludesDndVoiceAndCall) {
+  PresenceConfig config;
+  config.offline_timeout_ms = 600000;
+  chirp::social::PresenceManager mgr(config);
+
+  mgr.UpdatePresence("dnd", PresenceStatus::DO_NOT_DISTURB);
+  mgr.UpdatePresence("voice", PresenceStatus::IN_VOICE);
+  mgr.UpdatePresence("call", PresenceStatus::IN_CALL);
+
+  auto friends = mgr.GetOnlineFriends("me", {"dnd", "voice", "call"});
+  std::sort(friends.begin(), friends.end());
+  EXPECT_EQ(friends, (std::vector<std::string>{"call", "dnd", "voice"}));
+}
+
+TEST_F(PresenceManagerTest, GetOnlineFriendsExcludesStaleWhenTimeoutInverted) {
+  // A negative timeout makes cutoff sit in the future, so even a friend who
+  // just reported in counts as stale and is filtered out.
+  PresenceConfig config;
+  config.offline_timeout_ms = -1;
+  chirp::social::PresenceManager mgr(config);
+
+  mgr.UpdatePresence("fresh", PresenceStatus::ONLINE);
+  EXPECT_TRUE(mgr.GetOnlineFriends("me", {"fresh"}).empty());
+}
+
+TEST_F(PresenceManagerTest, RecordActivityKeepsUsersAlreadyActive) {
+  // Active activity on a user who is neither OFFLINE nor IDLE leaves the
+  // status untouched (the revive-if only fires for those two states).
+  manager_->UpdatePresence("on", PresenceStatus::ONLINE);
+  EXPECT_TRUE(manager_->RecordActivity("on", UserActivity::TYPING));
+  PresenceData data;
+  ASSERT_TRUE(manager_->GetPresence("on", &data));
+  EXPECT_EQ(data.status, PresenceStatus::ONLINE);
+
+  manager_->UpdatePresence("busy", PresenceStatus::DO_NOT_DISTURB);
+  EXPECT_TRUE(manager_->RecordActivity("busy", UserActivity::INTERACTING));
+  ASSERT_TRUE(manager_->GetPresence("busy", &data));
+  EXPECT_EQ(data.status, PresenceStatus::DO_NOT_DISTURB);
+}
+
+TEST_F(PresenceManagerTest, OnlineUserCountExcludesOfflineAndStale) {
+  PresenceManager mgr(PresenceConfig{});
+  mgr.UpdatePresence("off", PresenceStatus::OFFLINE);
+  mgr.UpdatePresence("on", PresenceStatus::ONLINE);
+  EXPECT_EQ(mgr.GetOnlineUserCount(), 1u);
+
+  // Inverted timeout: cutoff is in the future, so nobody is recent enough.
+  PresenceConfig stale_cfg;
+  stale_cfg.offline_timeout_ms = -1;
+  PresenceManager stale_mgr(stale_cfg);
+  stale_mgr.UpdatePresence("ghost", PresenceStatus::ONLINE);
+  EXPECT_EQ(stale_mgr.GetOnlineUserCount(), 0u);
+}
+
 TEST_F(PresenceManagerTest, SerializePresenceEmitsFields) {
   PresenceData data;
   data.user_id = "alice";

@@ -158,6 +158,72 @@ TEST_F(MessageSearchServiceTest, SpecialCharactersArePartOfTokens) {
   EXPECT_EQ(svc_.Search(q2).results.size(), 1u);
 }
 
+TEST_F(MessageSearchServiceTest, UnderscoreTokensIndexQueryAndDelete) {
+  // Underscores flow through the index tokenizer, the query tokenizer, the
+  // normalizer, and the removal pass on delete.
+  svc_.IndexDocument(MakeDoc("m1", "user_id login @team_chat #ops_room here"));
+
+  SearchQuery by_underscore;
+  by_underscore.query = "user_id";
+  EXPECT_EQ(svc_.Search(by_underscore).results.size(), 1u);
+
+  SearchQuery by_hash;
+  by_hash.query = "#ops_room";
+  EXPECT_EQ(svc_.Search(by_hash).results.size(), 1u);
+
+  SearchQuery by_at;
+  by_at.query = "@team_chat";
+  EXPECT_EQ(svc_.Search(by_at).results.size(), 1u);
+
+  ASSERT_TRUE(svc_.DeleteDocument("m1"));
+  EXPECT_TRUE(svc_.Search(by_underscore).results.empty());
+}
+
+TEST_F(MessageSearchServiceTest, NonContiguousQueryTruncatesSnippetWithoutMatches) {
+  // The two tokens are indexed independently, but the full query string is
+  // not a substring of the content, so the match list stays empty and the
+  // snippet falls back to the truncation path.
+  const std::string content =
+      "aaaa " + std::string(280, 'x') + " cccc";
+  svc_.IndexDocument(MakeDoc("m1", content));
+
+  SearchQuery q;
+  q.query = "aaaa cccc";
+  auto resp = svc_.Search(q);
+  ASSERT_EQ(resp.results.size(), 1u);
+  EXPECT_TRUE(resp.results[0].matches.empty());
+  ASSERT_GE(resp.results[0].snippet.size(), 3u);
+  EXPECT_EQ(resp.results[0].snippet.substr(resp.results[0].snippet.size() - 3),
+            "...");
+  EXPECT_LT(resp.results[0].snippet.size(), content.size());  // truncated
+}
+
+TEST_F(MessageSearchServiceTest, GetUsernameHandlesEmptyAndLongValues) {
+  svc_.SetUsername("empty_user", "");
+  EXPECT_EQ(svc_.GetUsername("empty_user"), "");
+
+  const std::string long_name(300, 'z');
+  svc_.SetUsername("long_user", long_name);
+  EXPECT_EQ(svc_.GetUsername("long_user"), long_name);
+
+  EXPECT_EQ(svc_.GetUsername("missing_user"), "");
+}
+
+TEST_F(MessageSearchServiceTest, SuggestionsSkipNonTokenCharacters) {
+  svc_.SetUsername("u1", "helpdesk");
+
+  // Hyphen is not a token character: NormalizeWord drops it via the final
+  // reject arm, so "hel-p" still prefixes the username "helpdesk".
+  auto sugg = svc_.GetSuggestions("hel-p", 10);
+  ASSERT_EQ(sugg.size(), 1u);
+  EXPECT_EQ(sugg[0].text, "helpdesk");
+
+  // Separators-only prefix normalizes to the empty string, which matches
+  // every registered source; '.', ' ' and '-' each exercise the reject arm.
+  auto all = svc_.GetSuggestions(". -", 10);
+  EXPECT_EQ(all.size(), 1u);
+}
+
 TEST_F(MessageSearchServiceTest, FilterByChannelId) {
   svc_.IndexDocument(MakeDoc("m1", "hello", "u1", "c1"));
   svc_.IndexDocument(MakeDoc("m2", "hello", "u1", "c2"));

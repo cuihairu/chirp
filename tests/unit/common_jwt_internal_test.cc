@@ -46,6 +46,13 @@ TEST(JwtInternalJsonTest, ExtractStringWithSpacingParses) {
   EXPECT_EQ(out, "value");
 }
 
+TEST(JwtInternalJsonTest, ExtractStringTrailingBackslashFails) {
+  // Lone backslash at the end of the input: the escape guard sees pos at
+  // the end, falls through, and the closing quote never arrives.
+  std::string out;
+  EXPECT_FALSE(ExtractJsonString(R"({"k":"abc\)", "k", &out));
+}
+
 TEST(JwtInternalJsonTest, ExtractIntNullOutFails) {
   EXPECT_FALSE(ExtractJsonInt64(R"({"k":5})", "k", nullptr));
 }
@@ -63,6 +70,13 @@ TEST(JwtInternalJsonTest, ExtractIntMissingColonFails) {
 TEST(JwtInternalJsonTest, ExtractIntTruncatedFails) {
   int64_t out = 0;
   EXPECT_FALSE(ExtractJsonInt64(R"({"k":)", "k", &out));
+}
+
+TEST(JwtInternalJsonTest, ExtractIntKeyAtEofFails) {
+  // The key sits flush against the end: after the needle there is nothing
+  // left to scan for the colon.
+  int64_t out = 0;
+  EXPECT_FALSE(ExtractJsonInt64(R"({"k")", "k", &out));
 }
 
 TEST(JwtInternalJsonTest, ExtractIntNotANumberFails) {

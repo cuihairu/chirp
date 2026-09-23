@@ -216,6 +216,26 @@ TEST_F(SocialServiceTest, JwtTokenLogsInAsSubject) {
   EXPECT_EQ(resp.user_id(), "user_jwt");
 }
 
+TEST_F(SocialServiceTest, JwtLoginAcceptsSecretLongerThanHashBlock) {
+  // A secret beyond the64-byte HMAC block forces the hash-then-use key path
+  // in HmacSha256 (this binary links the coverage-instrumented library copy
+  // of sha256.cc, where that path's branch lives).
+  const int64_t now = NowMs() / 1000;
+  const std::string long_secret(131, 'x');
+  chirp::common::LoginTokenVerifier verifier(long_secret);
+  verifier_ = &verifier;
+
+  chirp::auth::LoginRequest req;
+  req.set_token(
+      chirp::common::JwtSignHS256("user_long", now, long_secret, now + 600));
+  SendPacketBody(chirp::gateway::LOGIN_REQ, 1, req.SerializeAsString());
+
+  chirp::auth::LoginResponse resp;
+  ASSERT_TRUE(LastBody(*session_, &resp));
+  EXPECT_EQ(resp.code(), chirp::common::OK);
+  EXPECT_EQ(resp.user_id(), "user_long");
+}
+
 TEST_F(SocialServiceTest, BadJwtTokensRejectedAndUnbound) {
   const int64_t now = NowMs() / 1000;
   chirp::common::LoginTokenVerifier verifier("s3cret");

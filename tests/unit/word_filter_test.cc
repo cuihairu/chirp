@@ -96,6 +96,22 @@ TEST(WordFilterTest, LoadSkipsBlankLinesCommentsAndDuplicates) {
   EXPECT_EQ(filter.word_count(), 3u);
 }
 
+TEST(WordFilterTest, LoadTrimsTrailingWhitespaceAndCrWithoutNewline) {
+  TempLexicon file;
+  // fgets splits on '\n' only: CRLF, bare trailing spaces on a middle line,
+  // and a final line without a newline all exercise different trim exits.
+  file.Write("alpha  \r\nbeta   \ngamma   ");
+  WordFilterOptions options;
+  options.lexicon_path = file.path();
+  options.reload_check_interval_ms = 0;
+  WordFilter filter(options);
+  EXPECT_TRUE(filter.enabled());
+  EXPECT_EQ(filter.word_count(), 3u);
+  std::string content = "alpha beta gamma";
+  EXPECT_TRUE(filter.Filter("sender", &content));
+  EXPECT_EQ(content, "** ** **");
+}
+
 TEST(WordFilterTest, ReplaceMasksHitsAndKeepsTheRest) {
   TempLexicon file;
   file.Write("badword\nevil\n");
@@ -200,6 +216,23 @@ TEST(WordFilterTest, ReloadCheckIsThrottledWithinTheInterval) {
   EXPECT_EQ(filter.word_count(), 1u);
   filter.ReloadIfStale(61'001);
   EXPECT_EQ(filter.word_count(), 2u);
+}
+
+TEST(WordFilterTest, MissingFileAfterLoadSkipsReload) {
+  TempLexicon file;
+  file.Write("oldterm\n");
+  WordFilterOptions options;
+  options.lexicon_path = file.path();
+  options.reload_check_interval_ms = 0;
+  WordFilter filter(options);
+  ASSERT_EQ(filter.word_count(), 1u);
+
+  // Unlink the lexicon: mtime reads as 0 and the reload is skipped so the
+  // in-memory terms stay in place.
+  std::remove(file.path().c_str());
+  filter.ReloadIfStale(10'000);
+  EXPECT_EQ(filter.word_count(), 1u);
+  EXPECT_TRUE(filter.enabled());
 }
 
 } // namespace

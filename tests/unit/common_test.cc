@@ -173,6 +173,17 @@ TEST(JwtTest, PaddedSignatureAccepted) {
   EXPECT_EQ(parsed.subject, "user1");
 }
 
+TEST(JwtTest, EqualsOnlySignatureStripsToEmpty) {
+  // A signature part made only of '=' strips down to the empty string, which
+  // drives the loop's empty-exit arm before the comparison fails.
+  const std::string token = JwtSignHS256("user1", 7, "s");
+  const std::string sig_only = token.substr(0, token.rfind('.') + 1) + "=";
+  JwtClaims parsed;
+  std::string err;
+  EXPECT_FALSE(JwtVerifyHS256(sig_only, "s", &parsed, &err));
+  EXPECT_EQ(err, "bad signature");
+}
+
 TEST(JwtTest, UnsupportedAlgRejected) {
   const std::string token = MakeRawToken(R"({"alg":"none","typ":"JWT"})", R"({"sub":"u","iat":1})", "s");
   JwtClaims parsed;
@@ -423,6 +434,24 @@ TEST(ConfigTest, ParsesWhitespaceAndCrlfLines) {
   EXPECT_EQ(cfg.GetString("name"), "alice");
   EXPECT_EQ(cfg.GetString("url"), "a=b"); // only the first '=' splits key/value
   EXPECT_EQ(cfg.GetString("does_not_exist"), std::nullopt);
+}
+
+TEST(ConfigTest, TrailingTabTrimmedFromValues) {
+  const std::string path = "/tmp/chirp_config_test_tab.ini";
+  {
+    FILE* f = std::fopen(path.c_str(), "w");
+    ASSERT_NE(f, nullptr);
+    std::fputs("host\t=127.0.0.1\t\r\n", f);  // value ends in tab before CRLF
+    std::fputs("port\t=7000\t\n", f);          // value ends in tab before LF
+    std::fclose(f);
+  }
+
+  Config cfg;
+  ASSERT_TRUE(cfg.LoadFromFile(path));
+  std::remove(path.c_str());
+
+  EXPECT_EQ(cfg.GetString("host"), "127.0.0.1");
+  EXPECT_EQ(cfg.GetInt("port"), 7000);
 }
 
 TEST(ConfigTest, EmptyFileLoadsSuccessfully) {

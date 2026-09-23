@@ -95,6 +95,14 @@ TEST_F(NpcResponderTest, ForeignEventTypeIsAckedImmediately) {
   EXPECT_EQ(senders_.acked[0], "evt-1");
 }
 
+TEST_F(NpcResponderTest, SuccessfulAckSkipsWarningPath) {
+  responder_->OnEvent(MakeEvent(UtterancePayload(), "trade.state"));
+  ASSERT_EQ(senders_.acked.size(), 1u);
+  // Completing the ack with OK takes the quiet branch of the callback.
+  senders_.CompleteAck(0, OK);
+  EXPECT_TRUE(senders_.injects.empty());
+}
+
 TEST_F(NpcResponderTest, GarbagePayloadIsAckedImmediately) {
   responder_->OnEvent(MakeEvent("not-a-proto"));
   EXPECT_TRUE(senders_.injects.empty());

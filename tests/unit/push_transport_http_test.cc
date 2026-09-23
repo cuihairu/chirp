@@ -623,4 +623,65 @@ TEST(HttpPushTransportLoopbackTest, ResetConnectionYieldsEmpty) {
   EXPECT_EQ(transport.Post(request), "");
 }
 
+TEST(HttpPushTransportScriptedTest, InformationalStatusYieldsEmpty) {
+  // status < 200 takes IsSuccess's lower-bound false arm (500/404 only
+  // ever exercise the upper-bound side).
+  auto connection = std::make_unique<ScriptedConnection>(std::vector<ScriptStep>{
+      {.read_result = 0,
+       .bytes = Response("HTTP/1.1 101 Switching Protocols", "")}});
+  ScriptedFactory factory;
+  factory.connection = std::move(connection);
+  HttpPushTransport transport(
+      std::shared_ptr<HttpConnectionFactory>(&factory, [](auto*) {}));
+  EXPECT_EQ(transport.Post(SampleRequest()), "");
+}
+
+TEST(HttpPushTransportScriptedTest, ExtraHeaderBeforeContentLengthParses) {
+  // A non-Content-Length header exercises the prefix-miss arm of the
+  // "content-length:" check inside ParseResponseHead.
+  const std::string head =
+      "HTTP/1.1 200 OK\r\nServer: test\r\nContent-Length: 2\r\n\r\n";
+  auto connection = std::make_unique<ScriptedConnection>(
+      std::vector<ScriptStep>{{.read_result = 0, .bytes = head + "hi"}});
+  ScriptedFactory factory;
+  factory.connection = std::move(connection);
+  HttpPushTransport transport(
+      std::shared_ptr<HttpConnectionFactory>(&factory, [](auto*) {}));
+  EXPECT_EQ(transport.Post(SampleRequest()), "hi");
+}
+
+TEST(HttpPushTransportScriptedTest, ExplicitNonDefaultHttpsPortKeepsPort) {
+  // https with a non-443 port misses the first default_port conjunct and
+  // also fails scheme == "http", so the Host header keeps the explicit port.
+  auto wire = std::make_shared<std::string>();
+  auto connection = std::make_unique<ScriptedConnection>(
+      std::vector<ScriptStep>{
+          {.read_result = 0, .bytes = Response("HTTP/1.1 200 OK", "ok")}},
+      wire);
+  ScriptedFactory factory;
+  factory.connection = std::move(connection);
+  HttpPushTransport transport(
+      std::shared_ptr<HttpConnectionFactory>(&factory, [](auto*) {}));
+
+  PushRequest request = SampleRequest();
+  request.url = "https://secure.test:444/push";
+  EXPECT_EQ(transport.Post(request), "ok");
+  EXPECT_EQ(factory.last_port, 444);
+  EXPECT_EQ(factory.last_scheme, "https");
+  EXPECT_NE(wire->find("Host: secure.test:444\r\n"), std::string::npos);
+}
+
+TEST(HttpPushTransportScriptedTest, DestructorsDispatchThroughBasePointers) {
+  // Destroying through PushTransport* dispatches to HttpPushTransportD0.
+  // The factory_ member is a shared_ptr<HttpConnectionFactory> built over a
+  // raw new, so its deleter deletes through the abstract base and dispatches
+  // to TcpHttpConnectionFactoryD0 (make_shared would skip that path).
+  auto owned = std::make_unique<HttpPushTransport>(
+      std::shared_ptr<HttpConnectionFactory>(new TcpHttpConnectionFactory()),
+      HttpPushTransport::Config{});
+  std::unique_ptr<chirp::app_notification::PushTransport> via_base =
+      std::move(owned);
+  via_base.reset();
+}
+
 }  // namespace

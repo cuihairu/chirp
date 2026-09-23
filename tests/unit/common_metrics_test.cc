@@ -184,6 +184,22 @@ TEST_F(MetricsHttpServerTest, EndpointsServeExpectedBodies) {
   EXPECT_NE(Request("POST /metrics HTTP/1.1\r\n\r\n").find("405"), std::string::npos);
 }
 
+TEST_F(MetricsHttpServerTest, TrailingSlashPathsServe) {
+  const std::string metrics = Request("GET /metrics/ HTTP/1.1\r\n\r\n");
+  EXPECT_NE(metrics.find("200"), std::string::npos);
+
+  const std::string health = Request("GET /health/ HTTP/1.1\r\n\r\n");
+  EXPECT_NE(health.find("200"), std::string::npos);
+  EXPECT_NE(health.find("OK"), std::string::npos);
+}
+
+TEST_F(MetricsHttpServerTest, NullHandlerServesEmptyBody) {
+  server_->SetMetricsHandler(nullptr);
+  const std::string resp = Request("GET /metrics HTTP/1.1\r\n\r\n");
+  EXPECT_NE(resp.find("200"), std::string::npos);
+  EXPECT_EQ(resp.find("#"), std::string::npos);  // no exporter output
+}
+
 TEST_F(MetricsHttpServerTest, AbortedRequestDoesNotKillServer) {
   // A client that hangs up mid-request drives the read-error branch of the
   // request handler.
