@@ -954,3 +954,38 @@ target_include_directories(npc_dialog_tests
 )
 
 add_test(NAME npc_dialog_tests COMMAND npc_dialog_tests)
+
+# Enhanced chat build internals (app_chat): the session semantics of
+# DistributedChatState - the (user, device) mutual kick through the shared
+# SessionRegistry, the KICK_NOTIFY contract and the multi-device local
+# fan-out. main_enhanced.cc is pulled in via #include with main() renamed
+# (same pattern as chat_managers_tests and main_distributed.cc); every
+# other chat service translation unit is globbed so this target tracks
+# exactly the translation units the enhanced binary links
+# (services/shared/chat/CMakeLists.txt globs the same way).
+file(GLOB CHAT_ENHANCED_SESSION_SRCS "${CMAKE_SOURCE_DIR}/services/shared/chat/src/*.cc")
+list(FILTER CHAT_ENHANCED_SESSION_SRCS EXCLUDE REGEX "/main(_distributed|_enhanced)?\\.cc$")
+
+add_executable(chat_enhanced_session_tests
+  chat_enhanced_session_test.cc
+  fake_mysql.cc
+  ${CMAKE_SOURCE_DIR}/libs/common/login_token_verifier.cc
+  ${CHAT_ENHANCED_SESSION_SRCS}
+)
+
+chirp_unit_test_common_links(chat_enhanced_session_tests)
+target_link_libraries(chat_enhanced_session_tests PRIVATE chirp_network chirp_common chirp_protos)
+
+target_include_directories(chat_enhanced_session_tests
+  PRIVATE
+  ${CMAKE_SOURCE_DIR}/services/shared/chat/src
+  ${CMAKE_SOURCE_DIR}/libs
+  ${CMAKE_SOURCE_DIR}/libs/common
+  ${CMAKE_SOURCE_DIR}/libs/common/include
+  ${CMAKE_SOURCE_DIR}/libs/network
+  ${CMAKE_SOURCE_DIR}/proto/cpp
+  ${CMAKE_SOURCE_DIR}/proto/cpp/proto
+)
+chirp_fake_deps_include(chat_enhanced_session_tests)
+
+add_test(NAME chat_enhanced_session_tests COMMAND chat_enhanced_session_tests)
