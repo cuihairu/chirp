@@ -524,6 +524,98 @@ TEST_F(TlsEdgeTest, TlsWebSocketServerHandshakeAndEcho) {
   server_thread.join();
 }
 
+TEST_F(TlsEdgeTest, TlsWebSocketSessionCloseEndpointAndSendAndClose) {
+  asio::io_context io;
+  LockedSession captured;
+  std::atomic<bool> closed{false};
+
+  chirp::network::TlsWebSocketServer server(
+      io, /*port=*/0, ssl_,
+      [&](std::shared_ptr<Session> s, std::string&&) { captured.Set(s); },
+      [&](std::shared_ptr<Session>) { closed.store(true); });
+  server.Start();
+  const uint16_t port = server.Port();
+  std::thread server_thread([&io] { io.run(); });
+
+  SyncTlsClient client;
+  ASSERT_TRUE(client.Connect(port));
+  ASSERT_TRUE(client.Write(chirp::network::BuildWebSocketHandshake("localhost", port, "/ws")));
+  const std::string resp = client.ReadUntil("\r\n\r\n");
+  ASSERT_TRUE(chirp::network::IsWebSocketUpgradeSuccessful(resp)) << resp;
+  ASSERT_TRUE(client.Write(chirp::network::BuildWebSocketFrame(0x2, FrameBytes("ping"),
+                                                               /*mask=*/true)));
+
+  for (int i = 0; i < 300 && !captured.Get(); ++i) {
+    SleepMs(10);
+  }
+  auto session = captured.Get();
+  ASSERT_TRUE(session);
+
+  // Cover the TLS specialization of WebSocketSessionT: RemoteEndpoint,
+  // RemoteAddress, IsClosed (inline), Close (posts lambda), then
+  // SendAndClose for a second Close path once the write drains.
+  EXPECT_FALSE(session->IsClosed());
+  EXPECT_EQ(session->RemoteAddress(), "127.0.0.1");
+
+  session->Close();
+  for (int i = 0; i < 300 && !closed.load(); ++i) {
+    SleepMs(10);
+  }
+  EXPECT_TRUE(closed.load());
+  EXPECT_TRUE(session->IsClosed());
+
+  // SendAndClose after the socket is already closed: the posted lambda
+  // still runs, sees closed_ and returns without touching the socket.
+  session->SendAndClose(FrameBytes("late"));
+  SleepMs(50);
+
+  client.Disconnect();
+  server.Stop();
+  io.stop();
+  server_thread.join();
+}
+
+TEST_F(TlsEdgeTest, TlsWebSocketSessionSendAndCloseDrainsThenCloses) {
+  asio::io_context io;
+  LockedSession captured;
+  std::atomic<bool> closed{false};
+
+  chirp::network::TlsWebSocketServer server(
+      io, /*port=*/0, ssl_,
+      [&](std::shared_ptr<Session> s, std::string&&) { captured.Set(s); },
+      [&](std::shared_ptr<Session>) { closed.store(true); });
+  server.Start();
+  const uint16_t port = server.Port();
+  std::thread server_thread([&io] { io.run(); });
+
+  SyncTlsClient client;
+  ASSERT_TRUE(client.Connect(port));
+  ASSERT_TRUE(client.Write(chirp::network::BuildWebSocketHandshake("localhost", port, "/ws")));
+  const std::string resp = client.ReadUntil("\r\n\r\n");
+  ASSERT_TRUE(chirp::network::IsWebSocketUpgradeSuccessful(resp)) << resp;
+  ASSERT_TRUE(client.Write(chirp::network::BuildWebSocketFrame(0x2, FrameBytes("ping"),
+                                                               /*mask=*/true)));
+  for (int i = 0; i < 300 && !captured.Get(); ++i) {
+    SleepMs(10);
+  }
+  auto session = captured.Get();
+  ASSERT_TRUE(session);
+
+  // SendAndClose queues a frame with close_after_write_; DoWrite drains it
+  // and fires DoClose → on_close. This is the primary close path for wss.
+  session->SendAndClose(FrameBytes("bye"));
+  for (int i = 0; i < 300 && !closed.load(); ++i) {
+    SleepMs(10);
+  }
+  EXPECT_TRUE(closed.load());
+  EXPECT_TRUE(session->IsClosed());
+
+  client.Disconnect();
+  server.Stop();
+  io.stop();
+  server_thread.join();
+}
+
 // ---------------------------------------------------------------------------
 // ssl_context failure arms
 // ---------------------------------------------------------------------------
@@ -556,6 +648,44 @@ TEST_F(TlsEdgeTest, TlsServerStopJoinsCleanly) {
   io.stop();
   server_thread.join();  // must return promptly with a session attached
   SUCCEED();
+}
+
+TEST_F(TlsEdgeTest, TlsTcpSessionCloseViaInterface) {
+  asio::io_context io;
+  LockedSession captured;
+  std::atomic<bool> closed{false};
+
+  chirp::network::TlsTcpServer server(
+      io, /*port=*/0, ssl_,
+      [&](std::shared_ptr<Session> s, std::string&&) { captured.Set(s); },
+      [&](std::shared_ptr<Session>) { closed.store(true); });
+  server.Start();
+  const uint16_t port = server.Port();
+  std::thread server_thread([&io] { io.run(); });
+
+  SyncTlsClient client;
+  ASSERT_TRUE(client.Connect(port));
+  ASSERT_TRUE(client.Write(FrameBytes("hi")));
+  for (int i = 0; i < 300 && !captured.Get(); ++i) {
+    SleepMs(10);
+  }
+  auto session = captured.Get();
+  ASSERT_TRUE(session);
+  EXPECT_FALSE(session->IsClosed());
+
+  // Close() is the explicit interface path (posts DoClose through the
+  // strand) — the TLS specialization of TcpSessionT::Close and its lambda.
+  session->Close();
+  for (int i = 0; i < 300 && !closed.load(); ++i) {
+    SleepMs(10);
+  }
+  EXPECT_TRUE(closed.load());
+  EXPECT_TRUE(session->IsClosed());
+
+  client.Disconnect();
+  server.Stop();
+  io.stop();
+  server_thread.join();
 }
 
 // ---------------------------------------------------------------------------

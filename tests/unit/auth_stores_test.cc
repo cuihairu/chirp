@@ -821,4 +821,24 @@ TEST_F(SessionStoreTest, SurplusConnectionsAreClosedNotPooled) {
   EXPECT_EQ(fake_mysql::LiveHandles(), 0);
 }
 
+TEST_F(SessionStoreTest, D0DestroysThroughBasePointer) {
+  // unique_ptr<SessionStore> reset runs MySQLSessionStore's virtual dtor (D0)
+  // — the function-gap arm for mysql_session_store.cc:92.
+  std::unique_ptr<SessionStore> store =
+      std::make_unique<MySQLSessionStore>(DefaultSessionConfig());
+  EXPECT_TRUE(store->Initialize());
+  store.reset();
+  SUCCEED();
+}
+
+TEST_F(UserStoreTest, D0DestroysThroughBasePointer) {
+  // unique_ptr<UserStore> reset runs MySQLUserStore's virtual dtor (D0)
+  // — the function-gap arm for mysql_user_store.cc:97.
+  std::unique_ptr<UserStore> store =
+      std::make_unique<MySQLUserStore>(DefaultUserConfig());
+  EXPECT_TRUE(store->Initialize());
+  store.reset();
+  SUCCEED();
+}
+
 }  // namespace
