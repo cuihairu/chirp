@@ -110,6 +110,11 @@ export enum MsgID {
   /** GET_MENTION_SUGGESTIONS_REQ - Mentions */
   GET_MENTION_SUGGESTIONS_REQ = 2233,
   GET_MENTION_SUGGESTIONS_RESP = 2234,
+  /** SET_CHANNEL_MUTE_REQ - Channel mute (player-level push filter; history stays browsable) */
+  SET_CHANNEL_MUTE_REQ = 2235,
+  SET_CHANNEL_MUTE_RESP = 2236,
+  GET_CHANNEL_MUTES_REQ = 2237,
+  GET_CHANNEL_MUTES_RESP = 2238,
   /** ADD_FRIEND_REQ - Social service */
   ADD_FRIEND_REQ = 3001,
   ADD_FRIEND_RESP = 3002,
@@ -520,6 +525,18 @@ export function msgIDFromJSON(object: any): MsgID {
     case 2234:
     case "GET_MENTION_SUGGESTIONS_RESP":
       return MsgID.GET_MENTION_SUGGESTIONS_RESP;
+    case 2235:
+    case "SET_CHANNEL_MUTE_REQ":
+      return MsgID.SET_CHANNEL_MUTE_REQ;
+    case 2236:
+    case "SET_CHANNEL_MUTE_RESP":
+      return MsgID.SET_CHANNEL_MUTE_RESP;
+    case 2237:
+    case "GET_CHANNEL_MUTES_REQ":
+      return MsgID.GET_CHANNEL_MUTES_REQ;
+    case 2238:
+    case "GET_CHANNEL_MUTES_RESP":
+      return MsgID.GET_CHANNEL_MUTES_RESP;
     case 3001:
     case "ADD_FRIEND_REQ":
       return MsgID.ADD_FRIEND_REQ;
@@ -1037,6 +1054,14 @@ export function msgIDToJSON(object: MsgID): string {
       return "GET_MENTION_SUGGESTIONS_REQ";
     case MsgID.GET_MENTION_SUGGESTIONS_RESP:
       return "GET_MENTION_SUGGESTIONS_RESP";
+    case MsgID.SET_CHANNEL_MUTE_REQ:
+      return "SET_CHANNEL_MUTE_REQ";
+    case MsgID.SET_CHANNEL_MUTE_RESP:
+      return "SET_CHANNEL_MUTE_RESP";
+    case MsgID.GET_CHANNEL_MUTES_REQ:
+      return "GET_CHANNEL_MUTES_REQ";
+    case MsgID.GET_CHANNEL_MUTES_RESP:
+      return "GET_CHANNEL_MUTES_RESP";
     case MsgID.ADD_FRIEND_REQ:
       return "ADD_FRIEND_REQ";
     case MsgID.ADD_FRIEND_RESP:

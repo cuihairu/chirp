@@ -937,3 +937,33 @@ message NpcDialogMetadata {
   string dialog_id = 3;          // 对话树节点 ID
   repeated string options = 4;   // 玩家可选的回复选项
 }
+
+// ---- 频道屏蔽（玩家级推送过滤） ----
+//
+// 玩家可关闭特定频道的推送（如关闭世界频道）。屏蔽只挡推送：历史仍可
+// 拉取（屏蔽不是抹除），屏蔽生效后的频道消息也不再进入离线队列。
+// 可屏蔽范围：WORLD / GUILD / TEAM——MARQUEE 与 SYSTEM_CHANNEL 是服务
+// 广播不可关；「不想收到某人的私聊」归黑名单特性，不在此处。
+message SetChannelMuteRequest {
+  ChannelType channel_type = 1;
+  bool muted = 2;
+}
+
+message SetChannelMuteResponse {
+  common.ErrorCode code = 1;
+  ChannelType channel_type = 2;  // 回显请求值
+  bool muted = 3;                // 回显生效后的状态
+}
+
+message ChannelMuteState {
+  ChannelType channel_type = 1;
+  bool muted = 2;
+}
+
+message GetChannelMutesRequest {}
+
+message GetChannelMutesResponse {
+  common.ErrorCode code = 1;
+  // 固定含全部三个可屏蔽频道（含未屏蔽的），顺序稳定（WORLD/GUILD/TEAM）。
+  repeated ChannelMuteState states = 2;
+}

@@ -322,27 +322,37 @@ namespace Chirp.Chat {
             "GAMgASgDEhEKCWl0ZW1fbmFtZRgEIAEoCRISCgppdGVtX2NvdW50GAUgASgF",
             "IlkKEU5wY0RpYWxvZ01ldGFkYXRhEg4KBm5wY19pZBgBIAEoCRIQCghucGNf",
             "bmFtZRgCIAEoCRIRCglkaWFsb2dfaWQYAyABKAkSDwoHb3B0aW9ucxgEIAMo",
-            "CSqSAQoHTXNnVHlwZRIICgRURVhUEAASCQoFRU1PSkkQARIJCgVWT0lDRRAC",
-            "EgkKBUlNQUdFEAMSDQoJSVRFTV9MSU5LEAoSDgoKU0tJTExfTElOSxALEg8K",
-            "C0FDSElFVkVNRU5UEAwSDgoKTlBDX0RJQUxPRxANEhAKDFRSQURFX1NUQVRV",
-            "UxAOEgoKBlNZU1RFTRBjKlsKC0NoYW5uZWxUeXBlEgsKB1BSSVZBVEUQABII",
-            "CgRURUFNEAESCQoFR1VJTEQQAhIJCgVXT1JMRBADEhIKDlNZU1RFTV9DSEFO",
-            "TkVMEAQSCwoHTUFSUVVFRRAFKlkKCFByaW9yaXR5EhAKDFBSSU9SSVRZX0xP",
-            "VxAAEhMKD1BSSU9SSVRZX05PUk1BTBABEhEKDVBSSU9SSVRZX0hJR0gQAhIT",
-            "Cg9QUklPUklUWV9VUkdFTlQQAypUCgpTZW5kZXJLaW5kEg8KC1NFTkRFUl9V",
-            "U0VSEAASEQoNU0VOREVSX1NZU1RFTRABEg4KClNFTkRFUl9OUEMQAhISCg5T",
-            "RU5ERVJfU0VSVklDRRADKkIKD0dyb3VwTWVtYmVyUm9sZRIKCgZNRU1CRVIQ",
-            "ABINCglNT0RFUkFUT1IQARIJCgVBRE1JThACEgkKBU9XTkVSEAMqiwEKC0No",
-            "YW5uZWxLaW5kEhUKEUNIQU5ORUxfS0lORF9URVhUEAASFgoSQ0hBTk5FTF9L",
-            "SU5EX1ZPSUNFEAESHQoZQ0hBTk5FTF9LSU5EX0FOTk9VTkNFTUVOVBACEhYK",
-            "EkNIQU5ORUxfS0lORF9TVEFHRRADEhYKEkNIQU5ORUxfS0lORF9GT1JVTRAE",
-            "KkQKDlBlcm1pc3Npb25UeXBlEhgKFFBFUk1JU1NJT05fVFlQRV9ST0xFEAAS",
-            "GAoUUEVSTUlTU0lPTl9UWVBFX1VTRVIQASo2ChJQZXJtaXNzaW9uT3ZlcnJp",
-            "ZGUSCwoHSU5IRVJJVBAAEgkKBUFMTE9XEAESCAoEREVOWRACKocBCgtNZW50",
-            "aW9uVHlwZRIVChFNRU5USU9OX1RZUEVfVVNFUhAAEhUKEU1FTlRJT05fVFlQ",
-            "RV9ST0xFEAESGAoUTUVOVElPTl9UWVBFX0NIQU5ORUwQAhIZChVNRU5USU9O",
-            "X1RZUEVfRVZFUllPTkUQAxIVChFNRU5USU9OX1RZUEVfSEVSRRAEQiRaImdp",
-            "dGh1Yi5jb20vY3VpL2NoaXJwL3Byb3RvL2dvL2NoYXRiBnByb3RvMw=="));
+            "CSJVChVTZXRDaGFubmVsTXV0ZVJlcXVlc3QSLQoMY2hhbm5lbF90eXBlGAEg",
+            "ASgOMhcuY2hpcnAuY2hhdC5DaGFubmVsVHlwZRINCgVtdXRlZBgCIAEoCCJ9",
+            "ChZTZXRDaGFubmVsTXV0ZVJlc3BvbnNlEiUKBGNvZGUYASABKA4yFy5jaGly",
+            "cC5jb21tb24uRXJyb3JDb2RlEi0KDGNoYW5uZWxfdHlwZRgCIAEoDjIXLmNo",
+            "aXJwLmNoYXQuQ2hhbm5lbFR5cGUSDQoFbXV0ZWQYAyABKAgiUAoQQ2hhbm5l",
+            "bE11dGVTdGF0ZRItCgxjaGFubmVsX3R5cGUYASABKA4yFy5jaGlycC5jaGF0",
+            "LkNoYW5uZWxUeXBlEg0KBW11dGVkGAIgASgIIhgKFkdldENoYW5uZWxNdXRl",
+            "c1JlcXVlc3QibgoXR2V0Q2hhbm5lbE11dGVzUmVzcG9uc2USJQoEY29kZRgB",
+            "IAEoDjIXLmNoaXJwLmNvbW1vbi5FcnJvckNvZGUSLAoGc3RhdGVzGAIgAygL",
+            "MhwuY2hpcnAuY2hhdC5DaGFubmVsTXV0ZVN0YXRlKpIBCgdNc2dUeXBlEggK",
+            "BFRFWFQQABIJCgVFTU9KSRABEgkKBVZPSUNFEAISCQoFSU1BR0UQAxINCglJ",
+            "VEVNX0xJTksQChIOCgpTS0lMTF9MSU5LEAsSDwoLQUNISUVWRU1FTlQQDBIO",
+            "CgpOUENfRElBTE9HEA0SEAoMVFJBREVfU1RBVFVTEA4SCgoGU1lTVEVNEGMq",
+            "WwoLQ2hhbm5lbFR5cGUSCwoHUFJJVkFURRAAEggKBFRFQU0QARIJCgVHVUlM",
+            "RBACEgkKBVdPUkxEEAMSEgoOU1lTVEVNX0NIQU5ORUwQBBILCgdNQVJRVUVF",
+            "EAUqWQoIUHJpb3JpdHkSEAoMUFJJT1JJVFlfTE9XEAASEwoPUFJJT1JJVFlf",
+            "Tk9STUFMEAESEQoNUFJJT1JJVFlfSElHSBACEhMKD1BSSU9SSVRZX1VSR0VO",
+            "VBADKlQKClNlbmRlcktpbmQSDwoLU0VOREVSX1VTRVIQABIRCg1TRU5ERVJf",
+            "U1lTVEVNEAESDgoKU0VOREVSX05QQxACEhIKDlNFTkRFUl9TRVJWSUNFEAMq",
+            "QgoPR3JvdXBNZW1iZXJSb2xlEgoKBk1FTUJFUhAAEg0KCU1PREVSQVRPUhAB",
+            "EgkKBUFETUlOEAISCQoFT1dORVIQAyqLAQoLQ2hhbm5lbEtpbmQSFQoRQ0hB",
+            "Tk5FTF9LSU5EX1RFWFQQABIWChJDSEFOTkVMX0tJTkRfVk9JQ0UQARIdChlD",
+            "SEFOTkVMX0tJTkRfQU5OT1VOQ0VNRU5UEAISFgoSQ0hBTk5FTF9LSU5EX1NU",
+            "QUdFEAMSFgoSQ0hBTk5FTF9LSU5EX0ZPUlVNEAQqRAoOUGVybWlzc2lvblR5",
+            "cGUSGAoUUEVSTUlTU0lPTl9UWVBFX1JPTEUQABIYChRQRVJNSVNTSU9OX1RZ",
+            "UEVfVVNFUhABKjYKElBlcm1pc3Npb25PdmVycmlkZRILCgdJTkhFUklUEAAS",
+            "CQoFQUxMT1cQARIICgRERU5ZEAIqhwEKC01lbnRpb25UeXBlEhUKEU1FTlRJ",
+            "T05fVFlQRV9VU0VSEAASFQoRTUVOVElPTl9UWVBFX1JPTEUQARIYChRNRU5U",
+            "SU9OX1RZUEVfQ0hBTk5FTBACEhkKFU1FTlRJT05fVFlQRV9FVkVSWU9ORRAD",
+            "EhUKEU1FTlRJT05fVFlQRV9IRVJFEARCJFoiZ2l0aHViLmNvbS9jdWkvY2hp",
+            "cnAvcHJvdG8vZ28vY2hhdGIGcHJvdG8z"));
       descriptor = pbr::FileDescriptor.FromGeneratedCode(descriptorData,
           new pbr::FileDescriptor[] { global::Chirp.Common.CommonReflection.Descriptor, },
           new pbr::GeneratedClrTypeInfo(new[] {typeof(global::Chirp.Chat.MsgType), typeof(global::Chirp.Chat.ChannelType), typeof(global::Chirp.Chat.Priority), typeof(global::Chirp.Chat.SenderKind), typeof(global::Chirp.Chat.GroupMemberRole), typeof(global::Chirp.Chat.ChannelKind), typeof(global::Chirp.Chat.PermissionType), typeof(global::Chirp.Chat.PermissionOverride), typeof(global::Chirp.Chat.MentionType), }, null, new pbr::GeneratedClrTypeInfo[] {
@@ -449,7 +459,12 @@ namespace Chirp.Chat {
             new pbr::GeneratedClrTypeInfo(typeof(global::Chirp.Chat.SkillMetadata), global::Chirp.Chat.SkillMetadata.Parser, new[]{ "SkillId", "SkillName", "Level", "IconUrl", "Description" }, null, null, null, null),
             new pbr::GeneratedClrTypeInfo(typeof(global::Chirp.Chat.AchievementMetadata), global::Chirp.Chat.AchievementMetadata.Parser, new[]{ "AchievementId", "AchievementName", "Description", "IconUrl", "Rarity" }, null, null, null, null),
             new pbr::GeneratedClrTypeInfo(typeof(global::Chirp.Chat.TradeMetadata), global::Chirp.Chat.TradeMetadata.Parser, new[]{ "TradeId", "Status", "Amount", "ItemName", "ItemCount" }, null, null, null, null),
-            new pbr::GeneratedClrTypeInfo(typeof(global::Chirp.Chat.NpcDialogMetadata), global::Chirp.Chat.NpcDialogMetadata.Parser, new[]{ "NpcId", "NpcName", "DialogId", "Options" }, null, null, null, null)
+            new pbr::GeneratedClrTypeInfo(typeof(global::Chirp.Chat.NpcDialogMetadata), global::Chirp.Chat.NpcDialogMetadata.Parser, new[]{ "NpcId", "NpcName", "DialogId", "Options" }, null, null, null, null),
+            new pbr::GeneratedClrTypeInfo(typeof(global::Chirp.Chat.SetChannelMuteRequest), global::Chirp.Chat.SetChannelMuteRequest.Parser, new[]{ "ChannelType", "Muted" }, null, null, null, null),
+            new pbr::GeneratedClrTypeInfo(typeof(global::Chirp.Chat.SetChannelMuteResponse), global::Chirp.Chat.SetChannelMuteResponse.Parser, new[]{ "Code", "ChannelType", "Muted" }, null, null, null, null),
+            new pbr::GeneratedClrTypeInfo(typeof(global::Chirp.Chat.ChannelMuteState), global::Chirp.Chat.ChannelMuteState.Parser, new[]{ "ChannelType", "Muted" }, null, null, null, null),
+            new pbr::GeneratedClrTypeInfo(typeof(global::Chirp.Chat.GetChannelMutesRequest), global::Chirp.Chat.GetChannelMutesRequest.Parser, null, null, null, null, null),
+            new pbr::GeneratedClrTypeInfo(typeof(global::Chirp.Chat.GetChannelMutesResponse), global::Chirp.Chat.GetChannelMutesResponse.Parser, new[]{ "Code", "States" }, null, null, null, null)
           }));
     }
     #endregion
@@ -33867,6 +33882,1150 @@ namespace Chirp.Chat {
           }
           case 34: {
             options_.AddEntriesFrom(ref input, _repeated_options_codec);
+            break;
+          }
+        }
+      }
+    }
+    #endif
+
+  }
+
+  /// <summary>
+  /// ---- 频道屏蔽（玩家级推送过滤） ----
+  ///
+  /// 玩家可关闭特定频道的推送（如关闭世界频道）。屏蔽只挡推送：历史仍可
+  /// 拉取（屏蔽不是抹除），屏蔽生效后的频道消息也不再进入离线队列。
+  /// 可屏蔽范围：WORLD / GUILD / TEAM——MARQUEE 与 SYSTEM_CHANNEL 是服务
+  /// 广播不可关；「不想收到某人的私聊」归黑名单特性，不在此处。
+  /// </summary>
+  [global::System.Diagnostics.DebuggerDisplayAttribute("{ToString(),nq}")]
+  public sealed partial class SetChannelMuteRequest : pb::IMessage<SetChannelMuteRequest>
+  #if !GOOGLE_PROTOBUF_REFSTRUCT_COMPATIBILITY_MODE
+      , pb::IBufferMessage
+  #endif
+  {
+    private static readonly pb::MessageParser<SetChannelMuteRequest> _parser = new pb::MessageParser<SetChannelMuteRequest>(() => new SetChannelMuteRequest());
+    private pb::UnknownFieldSet _unknownFields;
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    public static pb::MessageParser<SetChannelMuteRequest> Parser { get { return _parser; } }
+
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    public static pbr::MessageDescriptor Descriptor {
+      get { return global::Chirp.Chat.ChatReflection.Descriptor.MessageTypes[104]; }
+    }
+
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    pbr::MessageDescriptor pb::IMessage.Descriptor {
+      get { return Descriptor; }
+    }
+
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    public SetChannelMuteRequest() {
+      OnConstruction();
+    }
+
+    partial void OnConstruction();
+
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    public SetChannelMuteRequest(SetChannelMuteRequest other) : this() {
+      channelType_ = other.channelType_;
+      muted_ = other.muted_;
+      _unknownFields = pb::UnknownFieldSet.Clone(other._unknownFields);
+    }
+
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    public SetChannelMuteRequest Clone() {
+      return new SetChannelMuteRequest(this);
+    }
+
+    /// <summary>Field number for the "channel_type" field.</summary>
+    public const int ChannelTypeFieldNumber = 1;
+    private global::Chirp.Chat.ChannelType channelType_ = global::Chirp.Chat.ChannelType.Private;
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    public global::Chirp.Chat.ChannelType ChannelType {
+      get { return channelType_; }
+      set {
+        channelType_ = value;
+      }
+    }
+
+    /// <summary>Field number for the "muted" field.</summary>
+    public const int MutedFieldNumber = 2;
+    private bool muted_;
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    public bool Muted {
+      get { return muted_; }
+      set {
+        muted_ = value;
+      }
+    }
+
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    public override bool Equals(object other) {
+      return Equals(other as SetChannelMuteRequest);
+    }
+
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    public bool Equals(SetChannelMuteRequest other) {
+      if (ReferenceEquals(other, null)) {
+        return false;
+      }
+      if (ReferenceEquals(other, this)) {
+        return true;
+      }
+      if (ChannelType != other.ChannelType) return false;
+      if (Muted != other.Muted) return false;
+      return Equals(_unknownFields, other._unknownFields);
+    }
+
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    public override int GetHashCode() {
+      int hash = 1;
+      if (ChannelType != global::Chirp.Chat.ChannelType.Private) hash ^= ChannelType.GetHashCode();
+      if (Muted != false) hash ^= Muted.GetHashCode();
+      if (_unknownFields != null) {
+        hash ^= _unknownFields.GetHashCode();
+      }
+      return hash;
+    }
+
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    public override string ToString() {
+      return pb::JsonFormatter.ToDiagnosticString(this);
+    }
+
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    public void WriteTo(pb::CodedOutputStream output) {
+    #if !GOOGLE_PROTOBUF_REFSTRUCT_COMPATIBILITY_MODE
+      output.WriteRawMessage(this);
+    #else
+      if (ChannelType != global::Chirp.Chat.ChannelType.Private) {
+        output.WriteRawTag(8);
+        output.WriteEnum((int) ChannelType);
+      }
+      if (Muted != false) {
+        output.WriteRawTag(16);
+        output.WriteBool(Muted);
+      }
+      if (_unknownFields != null) {
+        _unknownFields.WriteTo(output);
+      }
+    #endif
+    }
+
+    #if !GOOGLE_PROTOBUF_REFSTRUCT_COMPATIBILITY_MODE
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    void pb::IBufferMessage.InternalWriteTo(ref pb::WriteContext output) {
+      if (ChannelType != global::Chirp.Chat.ChannelType.Private) {
+        output.WriteRawTag(8);
+        output.WriteEnum((int) ChannelType);
+      }
+      if (Muted != false) {
+        output.WriteRawTag(16);
+        output.WriteBool(Muted);
+      }
+      if (_unknownFields != null) {
+        _unknownFields.WriteTo(ref output);
+      }
+    }
+    #endif
+
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    public int CalculateSize() {
+      int size = 0;
+      if (ChannelType != global::Chirp.Chat.ChannelType.Private) {
+        size += 1 + pb::CodedOutputStream.ComputeEnumSize((int) ChannelType);
+      }
+      if (Muted != false) {
+        size += 1 + 1;
+      }
+      if (_unknownFields != null) {
+        size += _unknownFields.CalculateSize();
+      }
+      return size;
+    }
+
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    public void MergeFrom(SetChannelMuteRequest other) {
+      if (other == null) {
+        return;
+      }
+      if (other.ChannelType != global::Chirp.Chat.ChannelType.Private) {
+        ChannelType = other.ChannelType;
+      }
+      if (other.Muted != false) {
+        Muted = other.Muted;
+      }
+      _unknownFields = pb::UnknownFieldSet.MergeFrom(_unknownFields, other._unknownFields);
+    }
+
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    public void MergeFrom(pb::CodedInputStream input) {
+    #if !GOOGLE_PROTOBUF_REFSTRUCT_COMPATIBILITY_MODE
+      input.ReadRawMessage(this);
+    #else
+      uint tag;
+      while ((tag = input.ReadTag()) != 0) {
+      if ((tag & 7) == 4) {
+        // Abort on any end group tag.
+        return;
+      }
+      switch(tag) {
+          default:
+            _unknownFields = pb::UnknownFieldSet.MergeFieldFrom(_unknownFields, input);
+            break;
+          case 8: {
+            ChannelType = (global::Chirp.Chat.ChannelType) input.ReadEnum();
+            break;
+          }
+          case 16: {
+            Muted = input.ReadBool();
+            break;
+          }
+        }
+      }
+    #endif
+    }
+
+    #if !GOOGLE_PROTOBUF_REFSTRUCT_COMPATIBILITY_MODE
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    void pb::IBufferMessage.InternalMergeFrom(ref pb::ParseContext input) {
+      uint tag;
+      while ((tag = input.ReadTag()) != 0) {
+      if ((tag & 7) == 4) {
+        // Abort on any end group tag.
+        return;
+      }
+      switch(tag) {
+          default:
+            _unknownFields = pb::UnknownFieldSet.MergeFieldFrom(_unknownFields, ref input);
+            break;
+          case 8: {
+            ChannelType = (global::Chirp.Chat.ChannelType) input.ReadEnum();
+            break;
+          }
+          case 16: {
+            Muted = input.ReadBool();
+            break;
+          }
+        }
+      }
+    }
+    #endif
+
+  }
+
+  [global::System.Diagnostics.DebuggerDisplayAttribute("{ToString(),nq}")]
+  public sealed partial class SetChannelMuteResponse : pb::IMessage<SetChannelMuteResponse>
+  #if !GOOGLE_PROTOBUF_REFSTRUCT_COMPATIBILITY_MODE
+      , pb::IBufferMessage
+  #endif
+  {
+    private static readonly pb::MessageParser<SetChannelMuteResponse> _parser = new pb::MessageParser<SetChannelMuteResponse>(() => new SetChannelMuteResponse());
+    private pb::UnknownFieldSet _unknownFields;
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    public static pb::MessageParser<SetChannelMuteResponse> Parser { get { return _parser; } }
+
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    public static pbr::MessageDescriptor Descriptor {
+      get { return global::Chirp.Chat.ChatReflection.Descriptor.MessageTypes[105]; }
+    }
+
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    pbr::MessageDescriptor pb::IMessage.Descriptor {
+      get { return Descriptor; }
+    }
+
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    public SetChannelMuteResponse() {
+      OnConstruction();
+    }
+
+    partial void OnConstruction();
+
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    public SetChannelMuteResponse(SetChannelMuteResponse other) : this() {
+      code_ = other.code_;
+      channelType_ = other.channelType_;
+      muted_ = other.muted_;
+      _unknownFields = pb::UnknownFieldSet.Clone(other._unknownFields);
+    }
+
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    public SetChannelMuteResponse Clone() {
+      return new SetChannelMuteResponse(this);
+    }
+
+    /// <summary>Field number for the "code" field.</summary>
+    public const int CodeFieldNumber = 1;
+    private global::Chirp.Common.ErrorCode code_ = global::Chirp.Common.ErrorCode.Ok;
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    public global::Chirp.Common.ErrorCode Code {
+      get { return code_; }
+      set {
+        code_ = value;
+      }
+    }
+
+    /// <summary>Field number for the "channel_type" field.</summary>
+    public const int ChannelTypeFieldNumber = 2;
+    private global::Chirp.Chat.ChannelType channelType_ = global::Chirp.Chat.ChannelType.Private;
+    /// <summary>
+    /// 回显请求值
+    /// </summary>
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    public global::Chirp.Chat.ChannelType ChannelType {
+      get { return channelType_; }
+      set {
+        channelType_ = value;
+      }
+    }
+
+    /// <summary>Field number for the "muted" field.</summary>
+    public const int MutedFieldNumber = 3;
+    private bool muted_;
+    /// <summary>
+    /// 回显生效后的状态
+    /// </summary>
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    public bool Muted {
+      get { return muted_; }
+      set {
+        muted_ = value;
+      }
+    }
+
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    public override bool Equals(object other) {
+      return Equals(other as SetChannelMuteResponse);
+    }
+
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    public bool Equals(SetChannelMuteResponse other) {
+      if (ReferenceEquals(other, null)) {
+        return false;
+      }
+      if (ReferenceEquals(other, this)) {
+        return true;
+      }
+      if (Code != other.Code) return false;
+      if (ChannelType != other.ChannelType) return false;
+      if (Muted != other.Muted) return false;
+      return Equals(_unknownFields, other._unknownFields);
+    }
+
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    public override int GetHashCode() {
+      int hash = 1;
+      if (Code != global::Chirp.Common.ErrorCode.Ok) hash ^= Code.GetHashCode();
+      if (ChannelType != global::Chirp.Chat.ChannelType.Private) hash ^= ChannelType.GetHashCode();
+      if (Muted != false) hash ^= Muted.GetHashCode();
+      if (_unknownFields != null) {
+        hash ^= _unknownFields.GetHashCode();
+      }
+      return hash;
+    }
+
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    public override string ToString() {
+      return pb::JsonFormatter.ToDiagnosticString(this);
+    }
+
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    public void WriteTo(pb::CodedOutputStream output) {
+    #if !GOOGLE_PROTOBUF_REFSTRUCT_COMPATIBILITY_MODE
+      output.WriteRawMessage(this);
+    #else
+      if (Code != global::Chirp.Common.ErrorCode.Ok) {
+        output.WriteRawTag(8);
+        output.WriteEnum((int) Code);
+      }
+      if (ChannelType != global::Chirp.Chat.ChannelType.Private) {
+        output.WriteRawTag(16);
+        output.WriteEnum((int) ChannelType);
+      }
+      if (Muted != false) {
+        output.WriteRawTag(24);
+        output.WriteBool(Muted);
+      }
+      if (_unknownFields != null) {
+        _unknownFields.WriteTo(output);
+      }
+    #endif
+    }
+
+    #if !GOOGLE_PROTOBUF_REFSTRUCT_COMPATIBILITY_MODE
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    void pb::IBufferMessage.InternalWriteTo(ref pb::WriteContext output) {
+      if (Code != global::Chirp.Common.ErrorCode.Ok) {
+        output.WriteRawTag(8);
+        output.WriteEnum((int) Code);
+      }
+      if (ChannelType != global::Chirp.Chat.ChannelType.Private) {
+        output.WriteRawTag(16);
+        output.WriteEnum((int) ChannelType);
+      }
+      if (Muted != false) {
+        output.WriteRawTag(24);
+        output.WriteBool(Muted);
+      }
+      if (_unknownFields != null) {
+        _unknownFields.WriteTo(ref output);
+      }
+    }
+    #endif
+
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    public int CalculateSize() {
+      int size = 0;
+      if (Code != global::Chirp.Common.ErrorCode.Ok) {
+        size += 1 + pb::CodedOutputStream.ComputeEnumSize((int) Code);
+      }
+      if (ChannelType != global::Chirp.Chat.ChannelType.Private) {
+        size += 1 + pb::CodedOutputStream.ComputeEnumSize((int) ChannelType);
+      }
+      if (Muted != false) {
+        size += 1 + 1;
+      }
+      if (_unknownFields != null) {
+        size += _unknownFields.CalculateSize();
+      }
+      return size;
+    }
+
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    public void MergeFrom(SetChannelMuteResponse other) {
+      if (other == null) {
+        return;
+      }
+      if (other.Code != global::Chirp.Common.ErrorCode.Ok) {
+        Code = other.Code;
+      }
+      if (other.ChannelType != global::Chirp.Chat.ChannelType.Private) {
+        ChannelType = other.ChannelType;
+      }
+      if (other.Muted != false) {
+        Muted = other.Muted;
+      }
+      _unknownFields = pb::UnknownFieldSet.MergeFrom(_unknownFields, other._unknownFields);
+    }
+
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    public void MergeFrom(pb::CodedInputStream input) {
+    #if !GOOGLE_PROTOBUF_REFSTRUCT_COMPATIBILITY_MODE
+      input.ReadRawMessage(this);
+    #else
+      uint tag;
+      while ((tag = input.ReadTag()) != 0) {
+      if ((tag & 7) == 4) {
+        // Abort on any end group tag.
+        return;
+      }
+      switch(tag) {
+          default:
+            _unknownFields = pb::UnknownFieldSet.MergeFieldFrom(_unknownFields, input);
+            break;
+          case 8: {
+            Code = (global::Chirp.Common.ErrorCode) input.ReadEnum();
+            break;
+          }
+          case 16: {
+            ChannelType = (global::Chirp.Chat.ChannelType) input.ReadEnum();
+            break;
+          }
+          case 24: {
+            Muted = input.ReadBool();
+            break;
+          }
+        }
+      }
+    #endif
+    }
+
+    #if !GOOGLE_PROTOBUF_REFSTRUCT_COMPATIBILITY_MODE
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    void pb::IBufferMessage.InternalMergeFrom(ref pb::ParseContext input) {
+      uint tag;
+      while ((tag = input.ReadTag()) != 0) {
+      if ((tag & 7) == 4) {
+        // Abort on any end group tag.
+        return;
+      }
+      switch(tag) {
+          default:
+            _unknownFields = pb::UnknownFieldSet.MergeFieldFrom(_unknownFields, ref input);
+            break;
+          case 8: {
+            Code = (global::Chirp.Common.ErrorCode) input.ReadEnum();
+            break;
+          }
+          case 16: {
+            ChannelType = (global::Chirp.Chat.ChannelType) input.ReadEnum();
+            break;
+          }
+          case 24: {
+            Muted = input.ReadBool();
+            break;
+          }
+        }
+      }
+    }
+    #endif
+
+  }
+
+  [global::System.Diagnostics.DebuggerDisplayAttribute("{ToString(),nq}")]
+  public sealed partial class ChannelMuteState : pb::IMessage<ChannelMuteState>
+  #if !GOOGLE_PROTOBUF_REFSTRUCT_COMPATIBILITY_MODE
+      , pb::IBufferMessage
+  #endif
+  {
+    private static readonly pb::MessageParser<ChannelMuteState> _parser = new pb::MessageParser<ChannelMuteState>(() => new ChannelMuteState());
+    private pb::UnknownFieldSet _unknownFields;
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    public static pb::MessageParser<ChannelMuteState> Parser { get { return _parser; } }
+
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    public static pbr::MessageDescriptor Descriptor {
+      get { return global::Chirp.Chat.ChatReflection.Descriptor.MessageTypes[106]; }
+    }
+
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    pbr::MessageDescriptor pb::IMessage.Descriptor {
+      get { return Descriptor; }
+    }
+
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    public ChannelMuteState() {
+      OnConstruction();
+    }
+
+    partial void OnConstruction();
+
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    public ChannelMuteState(ChannelMuteState other) : this() {
+      channelType_ = other.channelType_;
+      muted_ = other.muted_;
+      _unknownFields = pb::UnknownFieldSet.Clone(other._unknownFields);
+    }
+
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    public ChannelMuteState Clone() {
+      return new ChannelMuteState(this);
+    }
+
+    /// <summary>Field number for the "channel_type" field.</summary>
+    public const int ChannelTypeFieldNumber = 1;
+    private global::Chirp.Chat.ChannelType channelType_ = global::Chirp.Chat.ChannelType.Private;
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    public global::Chirp.Chat.ChannelType ChannelType {
+      get { return channelType_; }
+      set {
+        channelType_ = value;
+      }
+    }
+
+    /// <summary>Field number for the "muted" field.</summary>
+    public const int MutedFieldNumber = 2;
+    private bool muted_;
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    public bool Muted {
+      get { return muted_; }
+      set {
+        muted_ = value;
+      }
+    }
+
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    public override bool Equals(object other) {
+      return Equals(other as ChannelMuteState);
+    }
+
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    public bool Equals(ChannelMuteState other) {
+      if (ReferenceEquals(other, null)) {
+        return false;
+      }
+      if (ReferenceEquals(other, this)) {
+        return true;
+      }
+      if (ChannelType != other.ChannelType) return false;
+      if (Muted != other.Muted) return false;
+      return Equals(_unknownFields, other._unknownFields);
+    }
+
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    public override int GetHashCode() {
+      int hash = 1;
+      if (ChannelType != global::Chirp.Chat.ChannelType.Private) hash ^= ChannelType.GetHashCode();
+      if (Muted != false) hash ^= Muted.GetHashCode();
+      if (_unknownFields != null) {
+        hash ^= _unknownFields.GetHashCode();
+      }
+      return hash;
+    }
+
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    public override string ToString() {
+      return pb::JsonFormatter.ToDiagnosticString(this);
+    }
+
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    public void WriteTo(pb::CodedOutputStream output) {
+    #if !GOOGLE_PROTOBUF_REFSTRUCT_COMPATIBILITY_MODE
+      output.WriteRawMessage(this);
+    #else
+      if (ChannelType != global::Chirp.Chat.ChannelType.Private) {
+        output.WriteRawTag(8);
+        output.WriteEnum((int) ChannelType);
+      }
+      if (Muted != false) {
+        output.WriteRawTag(16);
+        output.WriteBool(Muted);
+      }
+      if (_unknownFields != null) {
+        _unknownFields.WriteTo(output);
+      }
+    #endif
+    }
+
+    #if !GOOGLE_PROTOBUF_REFSTRUCT_COMPATIBILITY_MODE
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    void pb::IBufferMessage.InternalWriteTo(ref pb::WriteContext output) {
+      if (ChannelType != global::Chirp.Chat.ChannelType.Private) {
+        output.WriteRawTag(8);
+        output.WriteEnum((int) ChannelType);
+      }
+      if (Muted != false) {
+        output.WriteRawTag(16);
+        output.WriteBool(Muted);
+      }
+      if (_unknownFields != null) {
+        _unknownFields.WriteTo(ref output);
+      }
+    }
+    #endif
+
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    public int CalculateSize() {
+      int size = 0;
+      if (ChannelType != global::Chirp.Chat.ChannelType.Private) {
+        size += 1 + pb::CodedOutputStream.ComputeEnumSize((int) ChannelType);
+      }
+      if (Muted != false) {
+        size += 1 + 1;
+      }
+      if (_unknownFields != null) {
+        size += _unknownFields.CalculateSize();
+      }
+      return size;
+    }
+
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    public void MergeFrom(ChannelMuteState other) {
+      if (other == null) {
+        return;
+      }
+      if (other.ChannelType != global::Chirp.Chat.ChannelType.Private) {
+        ChannelType = other.ChannelType;
+      }
+      if (other.Muted != false) {
+        Muted = other.Muted;
+      }
+      _unknownFields = pb::UnknownFieldSet.MergeFrom(_unknownFields, other._unknownFields);
+    }
+
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    public void MergeFrom(pb::CodedInputStream input) {
+    #if !GOOGLE_PROTOBUF_REFSTRUCT_COMPATIBILITY_MODE
+      input.ReadRawMessage(this);
+    #else
+      uint tag;
+      while ((tag = input.ReadTag()) != 0) {
+      if ((tag & 7) == 4) {
+        // Abort on any end group tag.
+        return;
+      }
+      switch(tag) {
+          default:
+            _unknownFields = pb::UnknownFieldSet.MergeFieldFrom(_unknownFields, input);
+            break;
+          case 8: {
+            ChannelType = (global::Chirp.Chat.ChannelType) input.ReadEnum();
+            break;
+          }
+          case 16: {
+            Muted = input.ReadBool();
+            break;
+          }
+        }
+      }
+    #endif
+    }
+
+    #if !GOOGLE_PROTOBUF_REFSTRUCT_COMPATIBILITY_MODE
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    void pb::IBufferMessage.InternalMergeFrom(ref pb::ParseContext input) {
+      uint tag;
+      while ((tag = input.ReadTag()) != 0) {
+      if ((tag & 7) == 4) {
+        // Abort on any end group tag.
+        return;
+      }
+      switch(tag) {
+          default:
+            _unknownFields = pb::UnknownFieldSet.MergeFieldFrom(_unknownFields, ref input);
+            break;
+          case 8: {
+            ChannelType = (global::Chirp.Chat.ChannelType) input.ReadEnum();
+            break;
+          }
+          case 16: {
+            Muted = input.ReadBool();
+            break;
+          }
+        }
+      }
+    }
+    #endif
+
+  }
+
+  [global::System.Diagnostics.DebuggerDisplayAttribute("{ToString(),nq}")]
+  public sealed partial class GetChannelMutesRequest : pb::IMessage<GetChannelMutesRequest>
+  #if !GOOGLE_PROTOBUF_REFSTRUCT_COMPATIBILITY_MODE
+      , pb::IBufferMessage
+  #endif
+  {
+    private static readonly pb::MessageParser<GetChannelMutesRequest> _parser = new pb::MessageParser<GetChannelMutesRequest>(() => new GetChannelMutesRequest());
+    private pb::UnknownFieldSet _unknownFields;
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    public static pb::MessageParser<GetChannelMutesRequest> Parser { get { return _parser; } }
+
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    public static pbr::MessageDescriptor Descriptor {
+      get { return global::Chirp.Chat.ChatReflection.Descriptor.MessageTypes[107]; }
+    }
+
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    pbr::MessageDescriptor pb::IMessage.Descriptor {
+      get { return Descriptor; }
+    }
+
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    public GetChannelMutesRequest() {
+      OnConstruction();
+    }
+
+    partial void OnConstruction();
+
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    public GetChannelMutesRequest(GetChannelMutesRequest other) : this() {
+      _unknownFields = pb::UnknownFieldSet.Clone(other._unknownFields);
+    }
+
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    public GetChannelMutesRequest Clone() {
+      return new GetChannelMutesRequest(this);
+    }
+
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    public override bool Equals(object other) {
+      return Equals(other as GetChannelMutesRequest);
+    }
+
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    public bool Equals(GetChannelMutesRequest other) {
+      if (ReferenceEquals(other, null)) {
+        return false;
+      }
+      if (ReferenceEquals(other, this)) {
+        return true;
+      }
+      return Equals(_unknownFields, other._unknownFields);
+    }
+
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    public override int GetHashCode() {
+      int hash = 1;
+      if (_unknownFields != null) {
+        hash ^= _unknownFields.GetHashCode();
+      }
+      return hash;
+    }
+
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    public override string ToString() {
+      return pb::JsonFormatter.ToDiagnosticString(this);
+    }
+
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    public void WriteTo(pb::CodedOutputStream output) {
+    #if !GOOGLE_PROTOBUF_REFSTRUCT_COMPATIBILITY_MODE
+      output.WriteRawMessage(this);
+    #else
+      if (_unknownFields != null) {
+        _unknownFields.WriteTo(output);
+      }
+    #endif
+    }
+
+    #if !GOOGLE_PROTOBUF_REFSTRUCT_COMPATIBILITY_MODE
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    void pb::IBufferMessage.InternalWriteTo(ref pb::WriteContext output) {
+      if (_unknownFields != null) {
+        _unknownFields.WriteTo(ref output);
+      }
+    }
+    #endif
+
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    public int CalculateSize() {
+      int size = 0;
+      if (_unknownFields != null) {
+        size += _unknownFields.CalculateSize();
+      }
+      return size;
+    }
+
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    public void MergeFrom(GetChannelMutesRequest other) {
+      if (other == null) {
+        return;
+      }
+      _unknownFields = pb::UnknownFieldSet.MergeFrom(_unknownFields, other._unknownFields);
+    }
+
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    public void MergeFrom(pb::CodedInputStream input) {
+    #if !GOOGLE_PROTOBUF_REFSTRUCT_COMPATIBILITY_MODE
+      input.ReadRawMessage(this);
+    #else
+      uint tag;
+      while ((tag = input.ReadTag()) != 0) {
+      if ((tag & 7) == 4) {
+        // Abort on any end group tag.
+        return;
+      }
+      switch(tag) {
+          default:
+            _unknownFields = pb::UnknownFieldSet.MergeFieldFrom(_unknownFields, input);
+            break;
+        }
+      }
+    #endif
+    }
+
+    #if !GOOGLE_PROTOBUF_REFSTRUCT_COMPATIBILITY_MODE
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    void pb::IBufferMessage.InternalMergeFrom(ref pb::ParseContext input) {
+      uint tag;
+      while ((tag = input.ReadTag()) != 0) {
+      if ((tag & 7) == 4) {
+        // Abort on any end group tag.
+        return;
+      }
+      switch(tag) {
+          default:
+            _unknownFields = pb::UnknownFieldSet.MergeFieldFrom(_unknownFields, ref input);
+            break;
+        }
+      }
+    }
+    #endif
+
+  }
+
+  [global::System.Diagnostics.DebuggerDisplayAttribute("{ToString(),nq}")]
+  public sealed partial class GetChannelMutesResponse : pb::IMessage<GetChannelMutesResponse>
+  #if !GOOGLE_PROTOBUF_REFSTRUCT_COMPATIBILITY_MODE
+      , pb::IBufferMessage
+  #endif
+  {
+    private static readonly pb::MessageParser<GetChannelMutesResponse> _parser = new pb::MessageParser<GetChannelMutesResponse>(() => new GetChannelMutesResponse());
+    private pb::UnknownFieldSet _unknownFields;
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    public static pb::MessageParser<GetChannelMutesResponse> Parser { get { return _parser; } }
+
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    public static pbr::MessageDescriptor Descriptor {
+      get { return global::Chirp.Chat.ChatReflection.Descriptor.MessageTypes[108]; }
+    }
+
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    pbr::MessageDescriptor pb::IMessage.Descriptor {
+      get { return Descriptor; }
+    }
+
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    public GetChannelMutesResponse() {
+      OnConstruction();
+    }
+
+    partial void OnConstruction();
+
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    public GetChannelMutesResponse(GetChannelMutesResponse other) : this() {
+      code_ = other.code_;
+      states_ = other.states_.Clone();
+      _unknownFields = pb::UnknownFieldSet.Clone(other._unknownFields);
+    }
+
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    public GetChannelMutesResponse Clone() {
+      return new GetChannelMutesResponse(this);
+    }
+
+    /// <summary>Field number for the "code" field.</summary>
+    public const int CodeFieldNumber = 1;
+    private global::Chirp.Common.ErrorCode code_ = global::Chirp.Common.ErrorCode.Ok;
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    public global::Chirp.Common.ErrorCode Code {
+      get { return code_; }
+      set {
+        code_ = value;
+      }
+    }
+
+    /// <summary>Field number for the "states" field.</summary>
+    public const int StatesFieldNumber = 2;
+    private static readonly pb::FieldCodec<global::Chirp.Chat.ChannelMuteState> _repeated_states_codec
+        = pb::FieldCodec.ForMessage(18, global::Chirp.Chat.ChannelMuteState.Parser);
+    private readonly pbc::RepeatedField<global::Chirp.Chat.ChannelMuteState> states_ = new pbc::RepeatedField<global::Chirp.Chat.ChannelMuteState>();
+    /// <summary>
+    /// 固定含全部三个可屏蔽频道（含未屏蔽的），顺序稳定（WORLD/GUILD/TEAM）。
+    /// </summary>
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    public pbc::RepeatedField<global::Chirp.Chat.ChannelMuteState> States {
+      get { return states_; }
+    }
+
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    public override bool Equals(object other) {
+      return Equals(other as GetChannelMutesResponse);
+    }
+
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    public bool Equals(GetChannelMutesResponse other) {
+      if (ReferenceEquals(other, null)) {
+        return false;
+      }
+      if (ReferenceEquals(other, this)) {
+        return true;
+      }
+      if (Code != other.Code) return false;
+      if(!states_.Equals(other.states_)) return false;
+      return Equals(_unknownFields, other._unknownFields);
+    }
+
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    public override int GetHashCode() {
+      int hash = 1;
+      if (Code != global::Chirp.Common.ErrorCode.Ok) hash ^= Code.GetHashCode();
+      hash ^= states_.GetHashCode();
+      if (_unknownFields != null) {
+        hash ^= _unknownFields.GetHashCode();
+      }
+      return hash;
+    }
+
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    public override string ToString() {
+      return pb::JsonFormatter.ToDiagnosticString(this);
+    }
+
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    public void WriteTo(pb::CodedOutputStream output) {
+    #if !GOOGLE_PROTOBUF_REFSTRUCT_COMPATIBILITY_MODE
+      output.WriteRawMessage(this);
+    #else
+      if (Code != global::Chirp.Common.ErrorCode.Ok) {
+        output.WriteRawTag(8);
+        output.WriteEnum((int) Code);
+      }
+      states_.WriteTo(output, _repeated_states_codec);
+      if (_unknownFields != null) {
+        _unknownFields.WriteTo(output);
+      }
+    #endif
+    }
+
+    #if !GOOGLE_PROTOBUF_REFSTRUCT_COMPATIBILITY_MODE
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    void pb::IBufferMessage.InternalWriteTo(ref pb::WriteContext output) {
+      if (Code != global::Chirp.Common.ErrorCode.Ok) {
+        output.WriteRawTag(8);
+        output.WriteEnum((int) Code);
+      }
+      states_.WriteTo(ref output, _repeated_states_codec);
+      if (_unknownFields != null) {
+        _unknownFields.WriteTo(ref output);
+      }
+    }
+    #endif
+
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    public int CalculateSize() {
+      int size = 0;
+      if (Code != global::Chirp.Common.ErrorCode.Ok) {
+        size += 1 + pb::CodedOutputStream.ComputeEnumSize((int) Code);
+      }
+      size += states_.CalculateSize(_repeated_states_codec);
+      if (_unknownFields != null) {
+        size += _unknownFields.CalculateSize();
+      }
+      return size;
+    }
+
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    public void MergeFrom(GetChannelMutesResponse other) {
+      if (other == null) {
+        return;
+      }
+      if (other.Code != global::Chirp.Common.ErrorCode.Ok) {
+        Code = other.Code;
+      }
+      states_.Add(other.states_);
+      _unknownFields = pb::UnknownFieldSet.MergeFrom(_unknownFields, other._unknownFields);
+    }
+
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    public void MergeFrom(pb::CodedInputStream input) {
+    #if !GOOGLE_PROTOBUF_REFSTRUCT_COMPATIBILITY_MODE
+      input.ReadRawMessage(this);
+    #else
+      uint tag;
+      while ((tag = input.ReadTag()) != 0) {
+      if ((tag & 7) == 4) {
+        // Abort on any end group tag.
+        return;
+      }
+      switch(tag) {
+          default:
+            _unknownFields = pb::UnknownFieldSet.MergeFieldFrom(_unknownFields, input);
+            break;
+          case 8: {
+            Code = (global::Chirp.Common.ErrorCode) input.ReadEnum();
+            break;
+          }
+          case 18: {
+            states_.AddEntriesFrom(input, _repeated_states_codec);
+            break;
+          }
+        }
+      }
+    #endif
+    }
+
+    #if !GOOGLE_PROTOBUF_REFSTRUCT_COMPATIBILITY_MODE
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    void pb::IBufferMessage.InternalMergeFrom(ref pb::ParseContext input) {
+      uint tag;
+      while ((tag = input.ReadTag()) != 0) {
+      if ((tag & 7) == 4) {
+        // Abort on any end group tag.
+        return;
+      }
+      switch(tag) {
+          default:
+            _unknownFields = pb::UnknownFieldSet.MergeFieldFrom(_unknownFields, ref input);
+            break;
+          case 8: {
+            Code = (global::Chirp.Common.ErrorCode) input.ReadEnum();
+            break;
+          }
+          case 18: {
+            states_.AddEntriesFrom(ref input, _repeated_states_codec);
             break;
           }
         }

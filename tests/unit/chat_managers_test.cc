@@ -1005,6 +1005,45 @@ TEST_F(DispatchTest, MessageAckRequestDispatched) {
   EXPECT_EQ(got_seq, 8);
 }
 
+TEST_F(DispatchTest, SetChannelMuteRequestDispatched) {
+  chirp::chat::SetChannelMuteRequest req;
+  req.set_channel_type(chirp::chat::WORLD);
+  req.set_muted(true);
+
+  DistributedDispatchHandlers handlers;
+  chirp::chat::SetChannelMuteRequest got;
+  int64_t got_seq = -1;
+  handlers.on_set_channel_mute = [&](const std::shared_ptr<Session>& s,
+                                     const chirp::chat::SetChannelMuteRequest& r,
+                                     int64_t seq) {
+    ASSERT_EQ(s, session_);
+    got = r;
+    got_seq = seq;
+  };
+
+  DispatchDistributedPacket(session_, MakePacket(chirp::gateway::SET_CHANNEL_MUTE_REQ, 5,
+                                                 req.SerializeAsString()),
+                            handlers);
+  EXPECT_EQ(got.channel_type(), chirp::chat::WORLD);
+  EXPECT_TRUE(got.muted());
+  EXPECT_EQ(got_seq, 5);
+}
+
+TEST_F(DispatchTest, GetChannelMutesRequestDispatched) {
+  DistributedDispatchHandlers handlers;
+  int64_t got_seq = -1;
+  handlers.on_get_channel_mutes = [&](const std::shared_ptr<Session>& s,
+                                      const chirp::chat::GetChannelMutesRequest&,
+                                      int64_t seq) {
+    ASSERT_EQ(s, session_);
+    got_seq = seq;
+  };
+
+  DispatchDistributedPacket(session_, MakePacket(chirp::gateway::GET_CHANNEL_MUTES_REQ, 6, ""),
+                            handlers);
+  EXPECT_EQ(got_seq, 6);
+}
+
 TEST_F(DispatchTest, SendMessageRequestDispatched) {
   chirp::chat::SendMessageRequest req;
   req.set_sender_id("alice");

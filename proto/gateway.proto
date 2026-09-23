@@ -115,6 +115,12 @@ enum MsgID {
   GET_MENTION_SUGGESTIONS_REQ = 2233;
   GET_MENTION_SUGGESTIONS_RESP = 2234;
 
+  // Channel mute (player-level push filter; history stays browsable)
+  SET_CHANNEL_MUTE_REQ = 2235;
+  SET_CHANNEL_MUTE_RESP = 2236;
+  GET_CHANNEL_MUTES_REQ = 2237;
+  GET_CHANNEL_MUTES_RESP = 2238;
+
   // Social service
   ADD_FRIEND_REQ = 3001;
   ADD_FRIEND_RESP = 3002;

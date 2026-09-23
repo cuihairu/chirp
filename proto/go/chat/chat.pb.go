@@ -7783,6 +7783,265 @@ func (x *NpcDialogMetadata) GetOptions() []string {
 	return nil
 }
 
+// ---- 频道屏蔽（玩家级推送过滤） ----
+//
+// 玩家可关闭特定频道的推送（如关闭世界频道）。屏蔽只挡推送：历史仍可
+// 拉取（屏蔽不是抹除），屏蔽生效后的频道消息也不再进入离线队列。
+// 可屏蔽范围：WORLD / GUILD / TEAM——MARQUEE 与 SYSTEM_CHANNEL 是服务
+// 广播不可关；「不想收到某人的私聊」归黑名单特性，不在此处。
+type SetChannelMuteRequest struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	ChannelType   ChannelType            `protobuf:"varint,1,opt,name=channel_type,json=channelType,proto3,enum=chirp.chat.ChannelType" json:"channel_type,omitempty"`
+	Muted         bool                   `protobuf:"varint,2,opt,name=muted,proto3" json:"muted,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *SetChannelMuteRequest) Reset() {
+	*x = SetChannelMuteRequest{}
+	mi := &file_proto_chat_proto_msgTypes[104]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *SetChannelMuteRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*SetChannelMuteRequest) ProtoMessage() {}
+
+func (x *SetChannelMuteRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_proto_chat_proto_msgTypes[104]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use SetChannelMuteRequest.ProtoReflect.Descriptor instead.
+func (*SetChannelMuteRequest) Descriptor() ([]byte, []int) {
+	return file_proto_chat_proto_rawDescGZIP(), []int{104}
+}
+
+func (x *SetChannelMuteRequest) GetChannelType() ChannelType {
+	if x != nil {
+		return x.ChannelType
+	}
+	return ChannelType_PRIVATE
+}
+
+func (x *SetChannelMuteRequest) GetMuted() bool {
+	if x != nil {
+		return x.Muted
+	}
+	return false
+}
+
+type SetChannelMuteResponse struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Code          common.ErrorCode       `protobuf:"varint,1,opt,name=code,proto3,enum=chirp.common.ErrorCode" json:"code,omitempty"`
+	ChannelType   ChannelType            `protobuf:"varint,2,opt,name=channel_type,json=channelType,proto3,enum=chirp.chat.ChannelType" json:"channel_type,omitempty"` // 回显请求值
+	Muted         bool                   `protobuf:"varint,3,opt,name=muted,proto3" json:"muted,omitempty"`                                                            // 回显生效后的状态
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *SetChannelMuteResponse) Reset() {
+	*x = SetChannelMuteResponse{}
+	mi := &file_proto_chat_proto_msgTypes[105]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *SetChannelMuteResponse) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*SetChannelMuteResponse) ProtoMessage() {}
+
+func (x *SetChannelMuteResponse) ProtoReflect() protoreflect.Message {
+	mi := &file_proto_chat_proto_msgTypes[105]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use SetChannelMuteResponse.ProtoReflect.Descriptor instead.
+func (*SetChannelMuteResponse) Descriptor() ([]byte, []int) {
+	return file_proto_chat_proto_rawDescGZIP(), []int{105}
+}
+
+func (x *SetChannelMuteResponse) GetCode() common.ErrorCode {
+	if x != nil {
+		return x.Code
+	}
+	return common.ErrorCode(0)
+}
+
+func (x *SetChannelMuteResponse) GetChannelType() ChannelType {
+	if x != nil {
+		return x.ChannelType
+	}
+	return ChannelType_PRIVATE
+}
+
+func (x *SetChannelMuteResponse) GetMuted() bool {
+	if x != nil {
+		return x.Muted
+	}
+	return false
+}
+
+type ChannelMuteState struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	ChannelType   ChannelType            `protobuf:"varint,1,opt,name=channel_type,json=channelType,proto3,enum=chirp.chat.ChannelType" json:"channel_type,omitempty"`
+	Muted         bool                   `protobuf:"varint,2,opt,name=muted,proto3" json:"muted,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *ChannelMuteState) Reset() {
+	*x = ChannelMuteState{}
+	mi := &file_proto_chat_proto_msgTypes[106]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *ChannelMuteState) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*ChannelMuteState) ProtoMessage() {}
+
+func (x *ChannelMuteState) ProtoReflect() protoreflect.Message {
+	mi := &file_proto_chat_proto_msgTypes[106]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use ChannelMuteState.ProtoReflect.Descriptor instead.
+func (*ChannelMuteState) Descriptor() ([]byte, []int) {
+	return file_proto_chat_proto_rawDescGZIP(), []int{106}
+}
+
+func (x *ChannelMuteState) GetChannelType() ChannelType {
+	if x != nil {
+		return x.ChannelType
+	}
+	return ChannelType_PRIVATE
+}
+
+func (x *ChannelMuteState) GetMuted() bool {
+	if x != nil {
+		return x.Muted
+	}
+	return false
+}
+
+type GetChannelMutesRequest struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *GetChannelMutesRequest) Reset() {
+	*x = GetChannelMutesRequest{}
+	mi := &file_proto_chat_proto_msgTypes[107]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *GetChannelMutesRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*GetChannelMutesRequest) ProtoMessage() {}
+
+func (x *GetChannelMutesRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_proto_chat_proto_msgTypes[107]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use GetChannelMutesRequest.ProtoReflect.Descriptor instead.
+func (*GetChannelMutesRequest) Descriptor() ([]byte, []int) {
+	return file_proto_chat_proto_rawDescGZIP(), []int{107}
+}
+
+type GetChannelMutesResponse struct {
+	state protoimpl.MessageState `protogen:"open.v1"`
+	Code  common.ErrorCode       `protobuf:"varint,1,opt,name=code,proto3,enum=chirp.common.ErrorCode" json:"code,omitempty"`
+	// 固定含全部三个可屏蔽频道（含未屏蔽的），顺序稳定（WORLD/GUILD/TEAM）。
+	States        []*ChannelMuteState `protobuf:"bytes,2,rep,name=states,proto3" json:"states,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *GetChannelMutesResponse) Reset() {
+	*x = GetChannelMutesResponse{}
+	mi := &file_proto_chat_proto_msgTypes[108]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *GetChannelMutesResponse) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*GetChannelMutesResponse) ProtoMessage() {}
+
+func (x *GetChannelMutesResponse) ProtoReflect() protoreflect.Message {
+	mi := &file_proto_chat_proto_msgTypes[108]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use GetChannelMutesResponse.ProtoReflect.Descriptor instead.
+func (*GetChannelMutesResponse) Descriptor() ([]byte, []int) {
+	return file_proto_chat_proto_rawDescGZIP(), []int{108}
+}
+
+func (x *GetChannelMutesResponse) GetCode() common.ErrorCode {
+	if x != nil {
+		return x.Code
+	}
+	return common.ErrorCode(0)
+}
+
+func (x *GetChannelMutesResponse) GetStates() []*ChannelMuteState {
+	if x != nil {
+		return x.States
+	}
+	return nil
+}
+
 type GetUnreadCountResponse_ChannelUnread struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	ChannelId     string                 `protobuf:"bytes,1,opt,name=channel_id,json=channelId,proto3" json:"channel_id,omitempty"`
@@ -7795,7 +8054,7 @@ type GetUnreadCountResponse_ChannelUnread struct {
 
 func (x *GetUnreadCountResponse_ChannelUnread) Reset() {
 	*x = GetUnreadCountResponse_ChannelUnread{}
-	mi := &file_proto_chat_proto_msgTypes[105]
+	mi := &file_proto_chat_proto_msgTypes[110]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -7807,7 +8066,7 @@ func (x *GetUnreadCountResponse_ChannelUnread) String() string {
 func (*GetUnreadCountResponse_ChannelUnread) ProtoMessage() {}
 
 func (x *GetUnreadCountResponse_ChannelUnread) ProtoReflect() protoreflect.Message {
-	mi := &file_proto_chat_proto_msgTypes[105]
+	mi := &file_proto_chat_proto_msgTypes[110]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -8539,7 +8798,21 @@ const file_proto_chat_proto_rawDesc = "" +
 	"\x06npc_id\x18\x01 \x01(\tR\x05npcId\x12\x19\n" +
 	"\bnpc_name\x18\x02 \x01(\tR\anpcName\x12\x1b\n" +
 	"\tdialog_id\x18\x03 \x01(\tR\bdialogId\x12\x18\n" +
-	"\aoptions\x18\x04 \x03(\tR\aoptions*\x92\x01\n" +
+	"\aoptions\x18\x04 \x03(\tR\aoptions\"i\n" +
+	"\x15SetChannelMuteRequest\x12:\n" +
+	"\fchannel_type\x18\x01 \x01(\x0e2\x17.chirp.chat.ChannelTypeR\vchannelType\x12\x14\n" +
+	"\x05muted\x18\x02 \x01(\bR\x05muted\"\x97\x01\n" +
+	"\x16SetChannelMuteResponse\x12+\n" +
+	"\x04code\x18\x01 \x01(\x0e2\x17.chirp.common.ErrorCodeR\x04code\x12:\n" +
+	"\fchannel_type\x18\x02 \x01(\x0e2\x17.chirp.chat.ChannelTypeR\vchannelType\x12\x14\n" +
+	"\x05muted\x18\x03 \x01(\bR\x05muted\"d\n" +
+	"\x10ChannelMuteState\x12:\n" +
+	"\fchannel_type\x18\x01 \x01(\x0e2\x17.chirp.chat.ChannelTypeR\vchannelType\x12\x14\n" +
+	"\x05muted\x18\x02 \x01(\bR\x05muted\"\x18\n" +
+	"\x16GetChannelMutesRequest\"|\n" +
+	"\x17GetChannelMutesResponse\x12+\n" +
+	"\x04code\x18\x01 \x01(\x0e2\x17.chirp.common.ErrorCodeR\x04code\x124\n" +
+	"\x06states\x18\x02 \x03(\v2\x1c.chirp.chat.ChannelMuteStateR\x06states*\x92\x01\n" +
 	"\aMsgType\x12\b\n" +
 	"\x04TEXT\x10\x00\x12\t\n" +
 	"\x05EMOJI\x10\x01\x12\t\n" +
@@ -8613,7 +8886,7 @@ func file_proto_chat_proto_rawDescGZIP() []byte {
 }
 
 var file_proto_chat_proto_enumTypes = make([]protoimpl.EnumInfo, 10)
-var file_proto_chat_proto_msgTypes = make([]protoimpl.MessageInfo, 108)
+var file_proto_chat_proto_msgTypes = make([]protoimpl.MessageInfo, 113)
 var file_proto_chat_proto_goTypes = []any{
 	(MsgType)(0),                                 // 0: chirp.chat.MsgType
 	(ChannelType)(0),                             // 1: chirp.chat.ChannelType
@@ -8729,57 +9002,62 @@ var file_proto_chat_proto_goTypes = []any{
 	(*AchievementMetadata)(nil),                  // 111: chirp.chat.AchievementMetadata
 	(*TradeMetadata)(nil),                        // 112: chirp.chat.TradeMetadata
 	(*NpcDialogMetadata)(nil),                    // 113: chirp.chat.NpcDialogMetadata
-	nil,                                          // 114: chirp.chat.GroupInfo.MetadataEntry
-	(*GetUnreadCountResponse_ChannelUnread)(nil), // 115: chirp.chat.GetUnreadCountResponse.ChannelUnread
-	nil,                   // 116: chirp.chat.PrepareFileUploadResponse.HeadersEntry
-	nil,                   // 117: chirp.chat.ItemMetadata.AttrsEntry
-	(common.ErrorCode)(0), // 118: chirp.common.ErrorCode
+	(*SetChannelMuteRequest)(nil),                // 114: chirp.chat.SetChannelMuteRequest
+	(*SetChannelMuteResponse)(nil),               // 115: chirp.chat.SetChannelMuteResponse
+	(*ChannelMuteState)(nil),                     // 116: chirp.chat.ChannelMuteState
+	(*GetChannelMutesRequest)(nil),               // 117: chirp.chat.GetChannelMutesRequest
+	(*GetChannelMutesResponse)(nil),              // 118: chirp.chat.GetChannelMutesResponse
+	nil,                                          // 119: chirp.chat.GroupInfo.MetadataEntry
+	(*GetUnreadCountResponse_ChannelUnread)(nil), // 120: chirp.chat.GetUnreadCountResponse.ChannelUnread
+	nil,                   // 121: chirp.chat.PrepareFileUploadResponse.HeadersEntry
+	nil,                   // 122: chirp.chat.ItemMetadata.AttrsEntry
+	(common.ErrorCode)(0), // 123: chirp.common.ErrorCode
 }
 var file_proto_chat_proto_depIdxs = []int32{
 	1,   // 0: chirp.chat.SendMessageRequest.channel_type:type_name -> chirp.chat.ChannelType
 	0,   // 1: chirp.chat.SendMessageRequest.msg_type:type_name -> chirp.chat.MsgType
 	2,   // 2: chirp.chat.SendMessageRequest.priority:type_name -> chirp.chat.Priority
-	118, // 3: chirp.chat.SendMessageResponse.code:type_name -> chirp.common.ErrorCode
+	123, // 3: chirp.chat.SendMessageResponse.code:type_name -> chirp.common.ErrorCode
 	1,   // 4: chirp.chat.ChatMessage.channel_type:type_name -> chirp.chat.ChannelType
 	0,   // 5: chirp.chat.ChatMessage.msg_type:type_name -> chirp.chat.MsgType
 	2,   // 6: chirp.chat.ChatMessage.priority:type_name -> chirp.chat.Priority
 	3,   // 7: chirp.chat.ChatMessage.sender_kind:type_name -> chirp.chat.SenderKind
 	1,   // 8: chirp.chat.GetHistoryRequest.channel_type:type_name -> chirp.chat.ChannelType
-	118, // 9: chirp.chat.GetHistoryResponse.code:type_name -> chirp.common.ErrorCode
+	123, // 9: chirp.chat.GetHistoryResponse.code:type_name -> chirp.common.ErrorCode
 	12,  // 10: chirp.chat.GetHistoryResponse.messages:type_name -> chirp.chat.ChatMessage
-	118, // 11: chirp.chat.CreateGroupResponse.code:type_name -> chirp.common.ErrorCode
-	114, // 12: chirp.chat.GroupInfo.metadata:type_name -> chirp.chat.GroupInfo.MetadataEntry
+	123, // 11: chirp.chat.CreateGroupResponse.code:type_name -> chirp.common.ErrorCode
+	119, // 12: chirp.chat.GroupInfo.metadata:type_name -> chirp.chat.GroupInfo.MetadataEntry
 	4,   // 13: chirp.chat.GroupMember.role:type_name -> chirp.chat.GroupMemberRole
-	118, // 14: chirp.chat.JoinGroupResponse.code:type_name -> chirp.common.ErrorCode
+	123, // 14: chirp.chat.JoinGroupResponse.code:type_name -> chirp.common.ErrorCode
 	18,  // 15: chirp.chat.JoinGroupResponse.group:type_name -> chirp.chat.GroupInfo
-	118, // 16: chirp.chat.LeaveGroupResponse.code:type_name -> chirp.common.ErrorCode
-	118, // 17: chirp.chat.KickMemberResponse.code:type_name -> chirp.common.ErrorCode
-	118, // 18: chirp.chat.GetGroupInfoResponse.code:type_name -> chirp.common.ErrorCode
+	123, // 16: chirp.chat.LeaveGroupResponse.code:type_name -> chirp.common.ErrorCode
+	123, // 17: chirp.chat.KickMemberResponse.code:type_name -> chirp.common.ErrorCode
+	123, // 18: chirp.chat.GetGroupInfoResponse.code:type_name -> chirp.common.ErrorCode
 	18,  // 19: chirp.chat.GetGroupInfoResponse.group:type_name -> chirp.chat.GroupInfo
-	118, // 20: chirp.chat.GetGroupMembersResponse.code:type_name -> chirp.common.ErrorCode
+	123, // 20: chirp.chat.GetGroupMembersResponse.code:type_name -> chirp.common.ErrorCode
 	19,  // 21: chirp.chat.GetGroupMembersResponse.members:type_name -> chirp.chat.GroupMember
-	118, // 22: chirp.chat.GetUserGroupsResponse.code:type_name -> chirp.common.ErrorCode
+	123, // 22: chirp.chat.GetUserGroupsResponse.code:type_name -> chirp.common.ErrorCode
 	18,  // 23: chirp.chat.GetUserGroupsResponse.groups:type_name -> chirp.chat.GroupInfo
-	118, // 24: chirp.chat.InviteToGroupResponse.code:type_name -> chirp.common.ErrorCode
+	123, // 24: chirp.chat.InviteToGroupResponse.code:type_name -> chirp.common.ErrorCode
 	18,  // 25: chirp.chat.GroupCreatedNotify.group:type_name -> chirp.chat.GroupInfo
 	19,  // 26: chirp.chat.GroupMemberJoinedNotify.member:type_name -> chirp.chat.GroupMember
 	18,  // 27: chirp.chat.GroupUpdatedNotify.group:type_name -> chirp.chat.GroupInfo
 	1,   // 28: chirp.chat.MarkReadRequest.channel_type:type_name -> chirp.chat.ChannelType
-	118, // 29: chirp.chat.MarkReadResponse.code:type_name -> chirp.common.ErrorCode
-	118, // 30: chirp.chat.GetReadReceiptsResponse.code:type_name -> chirp.common.ErrorCode
+	123, // 29: chirp.chat.MarkReadResponse.code:type_name -> chirp.common.ErrorCode
+	123, // 30: chirp.chat.GetReadReceiptsResponse.code:type_name -> chirp.common.ErrorCode
 	41,  // 31: chirp.chat.GetReadReceiptsResponse.receipts:type_name -> chirp.chat.ReadReceipt
-	118, // 32: chirp.chat.GetUnreadCountResponse.code:type_name -> chirp.common.ErrorCode
-	115, // 33: chirp.chat.GetUnreadCountResponse.channels:type_name -> chirp.chat.GetUnreadCountResponse.ChannelUnread
+	123, // 32: chirp.chat.GetUnreadCountResponse.code:type_name -> chirp.common.ErrorCode
+	120, // 33: chirp.chat.GetUnreadCountResponse.channels:type_name -> chirp.chat.GetUnreadCountResponse.ChannelUnread
 	1,   // 34: chirp.chat.MessageReadNotify.channel_type:type_name -> chirp.chat.ChannelType
 	1,   // 35: chirp.chat.TypingIndicatorState.channel_type:type_name -> chirp.chat.ChannelType
-	118, // 36: chirp.chat.MessageNack.error_code:type_name -> chirp.common.ErrorCode
+	123, // 36: chirp.chat.MessageNack.error_code:type_name -> chirp.common.ErrorCode
 	9,   // 37: chirp.chat.DeliveryStatus.status:type_name -> chirp.chat.DeliveryStatus.Status
 	1,   // 38: chirp.chat.GetHistoryRequestV2.channel_type:type_name -> chirp.chat.ChannelType
 	51,  // 39: chirp.chat.GetHistoryRequestV2.pagination:type_name -> chirp.chat.PaginationToken
-	118, // 40: chirp.chat.GetHistoryResponseV2.code:type_name -> chirp.common.ErrorCode
+	123, // 40: chirp.chat.GetHistoryResponseV2.code:type_name -> chirp.common.ErrorCode
 	12,  // 41: chirp.chat.GetHistoryResponseV2.messages:type_name -> chirp.chat.ChatMessage
 	51,  // 42: chirp.chat.GetHistoryResponseV2.next_page:type_name -> chirp.chat.PaginationToken
-	118, // 43: chirp.chat.TrackMessageResponse.code:type_name -> chirp.common.ErrorCode
+	123, // 43: chirp.chat.TrackMessageResponse.code:type_name -> chirp.common.ErrorCode
 	6,   // 44: chirp.chat.PermissionOverrideEntry.type:type_name -> chirp.chat.PermissionType
 	56,  // 45: chirp.chat.PermissionOverrideEntry.permissions:type_name -> chirp.chat.ChannelPermissions
 	7,   // 46: chirp.chat.PermissionOverrideEntry.allow:type_name -> chirp.chat.PermissionOverride
@@ -8788,59 +9066,65 @@ var file_proto_chat_proto_depIdxs = []int32{
 	57,  // 49: chirp.chat.Channel.permission_overrides:type_name -> chirp.chat.PermissionOverrideEntry
 	5,   // 50: chirp.chat.CreateChannelRequest.kind:type_name -> chirp.chat.ChannelKind
 	57,  // 51: chirp.chat.CreateChannelRequest.permission_overrides:type_name -> chirp.chat.PermissionOverrideEntry
-	118, // 52: chirp.chat.CreateChannelResponse.code:type_name -> chirp.common.ErrorCode
+	123, // 52: chirp.chat.CreateChannelResponse.code:type_name -> chirp.common.ErrorCode
 	59,  // 53: chirp.chat.CreateChannelResponse.channel:type_name -> chirp.chat.Channel
 	57,  // 54: chirp.chat.UpdateChannelRequest.permission_overrides:type_name -> chirp.chat.PermissionOverrideEntry
-	118, // 55: chirp.chat.UpdateChannelResponse.code:type_name -> chirp.common.ErrorCode
+	123, // 55: chirp.chat.UpdateChannelResponse.code:type_name -> chirp.common.ErrorCode
 	59,  // 56: chirp.chat.UpdateChannelResponse.channel:type_name -> chirp.chat.Channel
-	118, // 57: chirp.chat.DeleteChannelResponse.code:type_name -> chirp.common.ErrorCode
-	118, // 58: chirp.chat.GetChannelsResponse.code:type_name -> chirp.common.ErrorCode
+	123, // 57: chirp.chat.DeleteChannelResponse.code:type_name -> chirp.common.ErrorCode
+	123, // 58: chirp.chat.GetChannelsResponse.code:type_name -> chirp.common.ErrorCode
 	59,  // 59: chirp.chat.GetChannelsResponse.channels:type_name -> chirp.chat.Channel
 	58,  // 60: chirp.chat.GetChannelsResponse.categories:type_name -> chirp.chat.ChannelCategory
-	118, // 61: chirp.chat.CreateCategoryResponse.code:type_name -> chirp.common.ErrorCode
+	123, // 61: chirp.chat.CreateCategoryResponse.code:type_name -> chirp.common.ErrorCode
 	58,  // 62: chirp.chat.CreateCategoryResponse.category:type_name -> chirp.chat.ChannelCategory
 	59,  // 63: chirp.chat.ChannelCreatedNotify.channel:type_name -> chirp.chat.Channel
 	59,  // 64: chirp.chat.ChannelUpdatedNotify.channel:type_name -> chirp.chat.Channel
-	118, // 65: chirp.chat.AddReactionResponse.code:type_name -> chirp.common.ErrorCode
+	123, // 65: chirp.chat.AddReactionResponse.code:type_name -> chirp.common.ErrorCode
 	73,  // 66: chirp.chat.AddReactionResponse.reaction:type_name -> chirp.chat.MessageReaction
-	118, // 67: chirp.chat.RemoveReactionResponse.code:type_name -> chirp.common.ErrorCode
-	118, // 68: chirp.chat.GetReactionsResponse.code:type_name -> chirp.common.ErrorCode
+	123, // 67: chirp.chat.RemoveReactionResponse.code:type_name -> chirp.common.ErrorCode
+	123, // 68: chirp.chat.GetReactionsResponse.code:type_name -> chirp.common.ErrorCode
 	73,  // 69: chirp.chat.GetReactionsResponse.reactions:type_name -> chirp.chat.MessageReaction
 	8,   // 70: chirp.chat.Mention.type:type_name -> chirp.chat.MentionType
 	12,  // 71: chirp.chat.ChatMessageEx.base_message:type_name -> chirp.chat.ChatMessage
 	82,  // 72: chirp.chat.ChatMessageEx.mentions:type_name -> chirp.chat.Mention
 	8,   // 73: chirp.chat.MentionSuggestion.type:type_name -> chirp.chat.MentionType
-	118, // 74: chirp.chat.GetMentionSuggestionsResponse.code:type_name -> chirp.common.ErrorCode
+	123, // 74: chirp.chat.GetMentionSuggestionsResponse.code:type_name -> chirp.common.ErrorCode
 	84,  // 75: chirp.chat.GetMentionSuggestionsResponse.suggestions:type_name -> chirp.chat.MentionSuggestion
 	1,   // 76: chirp.chat.ChatMessageFull.channel_type:type_name -> chirp.chat.ChannelType
 	0,   // 77: chirp.chat.ChatMessageFull.msg_type:type_name -> chirp.chat.MsgType
 	87,  // 78: chirp.chat.ChatMessageFull.edit_history:type_name -> chirp.chat.MessageEdit
 	73,  // 79: chirp.chat.ChatMessageFull.reactions:type_name -> chirp.chat.MessageReaction
 	82,  // 80: chirp.chat.ChatMessageFull.mentions:type_name -> chirp.chat.Mention
-	118, // 81: chirp.chat.EditMessageResponse.code:type_name -> chirp.common.ErrorCode
+	123, // 81: chirp.chat.EditMessageResponse.code:type_name -> chirp.common.ErrorCode
 	88,  // 82: chirp.chat.EditMessageResponse.message:type_name -> chirp.chat.ChatMessageFull
-	118, // 83: chirp.chat.DeleteMessageResponse.code:type_name -> chirp.common.ErrorCode
-	118, // 84: chirp.chat.BulkDeleteResponse.code:type_name -> chirp.common.ErrorCode
+	123, // 83: chirp.chat.DeleteMessageResponse.code:type_name -> chirp.common.ErrorCode
+	123, // 84: chirp.chat.BulkDeleteResponse.code:type_name -> chirp.common.ErrorCode
 	1,   // 85: chirp.chat.TypingIndicator.channel_type:type_name -> chirp.chat.ChannelType
 	1,   // 86: chirp.chat.GetTypingUsersRequest.channel_type:type_name -> chirp.chat.ChannelType
-	118, // 87: chirp.chat.GetTypingUsersResponse.code:type_name -> chirp.common.ErrorCode
+	123, // 87: chirp.chat.GetTypingUsersResponse.code:type_name -> chirp.common.ErrorCode
 	1,   // 88: chirp.chat.PrepareFileUploadRequest.channel_type:type_name -> chirp.chat.ChannelType
-	118, // 89: chirp.chat.PrepareFileUploadResponse.code:type_name -> chirp.common.ErrorCode
-	116, // 90: chirp.chat.PrepareFileUploadResponse.headers:type_name -> chirp.chat.PrepareFileUploadResponse.HeadersEntry
-	118, // 91: chirp.chat.ConfirmFileUploadResponse.code:type_name -> chirp.common.ErrorCode
+	123, // 89: chirp.chat.PrepareFileUploadResponse.code:type_name -> chirp.common.ErrorCode
+	121, // 90: chirp.chat.PrepareFileUploadResponse.headers:type_name -> chirp.chat.PrepareFileUploadResponse.HeadersEntry
+	123, // 91: chirp.chat.ConfirmFileUploadResponse.code:type_name -> chirp.common.ErrorCode
 	100, // 92: chirp.chat.ConfirmFileUploadResponse.file_info:type_name -> chirp.chat.FileInfo
-	118, // 93: chirp.chat.GetFileDownloadResponse.code:type_name -> chirp.common.ErrorCode
+	123, // 93: chirp.chat.GetFileDownloadResponse.code:type_name -> chirp.common.ErrorCode
 	100, // 94: chirp.chat.GetFileDownloadResponse.file_info:type_name -> chirp.chat.FileInfo
 	100, // 95: chirp.chat.FileAttachment.file:type_name -> chirp.chat.FileInfo
 	12,  // 96: chirp.chat.FileMessage.base_message:type_name -> chirp.chat.ChatMessage
 	107, // 97: chirp.chat.FileMessage.attachments:type_name -> chirp.chat.FileAttachment
-	117, // 98: chirp.chat.ItemMetadata.attrs:type_name -> chirp.chat.ItemMetadata.AttrsEntry
-	1,   // 99: chirp.chat.GetUnreadCountResponse.ChannelUnread.channel_type:type_name -> chirp.chat.ChannelType
-	100, // [100:100] is the sub-list for method output_type
-	100, // [100:100] is the sub-list for method input_type
-	100, // [100:100] is the sub-list for extension type_name
-	100, // [100:100] is the sub-list for extension extendee
-	0,   // [0:100] is the sub-list for field type_name
+	122, // 98: chirp.chat.ItemMetadata.attrs:type_name -> chirp.chat.ItemMetadata.AttrsEntry
+	1,   // 99: chirp.chat.SetChannelMuteRequest.channel_type:type_name -> chirp.chat.ChannelType
+	123, // 100: chirp.chat.SetChannelMuteResponse.code:type_name -> chirp.common.ErrorCode
+	1,   // 101: chirp.chat.SetChannelMuteResponse.channel_type:type_name -> chirp.chat.ChannelType
+	1,   // 102: chirp.chat.ChannelMuteState.channel_type:type_name -> chirp.chat.ChannelType
+	123, // 103: chirp.chat.GetChannelMutesResponse.code:type_name -> chirp.common.ErrorCode
+	116, // 104: chirp.chat.GetChannelMutesResponse.states:type_name -> chirp.chat.ChannelMuteState
+	1,   // 105: chirp.chat.GetUnreadCountResponse.ChannelUnread.channel_type:type_name -> chirp.chat.ChannelType
+	106, // [106:106] is the sub-list for method output_type
+	106, // [106:106] is the sub-list for method input_type
+	106, // [106:106] is the sub-list for extension type_name
+	106, // [106:106] is the sub-list for extension extendee
+	0,   // [0:106] is the sub-list for field type_name
 }
 
 func init() { file_proto_chat_proto_init() }
@@ -8855,7 +9139,7 @@ func file_proto_chat_proto_init() {
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_proto_chat_proto_rawDesc), len(file_proto_chat_proto_rawDesc)),
 			NumEnums:      10,
-			NumMessages:   108,
+			NumMessages:   113,
 			NumExtensions: 0,
 			NumServices:   0,
 		},

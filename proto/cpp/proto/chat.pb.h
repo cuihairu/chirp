@@ -20,6 +20,7 @@
 #include "google/protobuf/io/coded_stream.h"
 #include "google/protobuf/arena.h"
 #include "google/protobuf/arenastring.h"
+#include "google/protobuf/generated_message_bases.h"
 #include "google/protobuf/generated_message_tctable_decl.h"
 #include "google/protobuf/generated_message_util.h"
 #include "google/protobuf/metadata_lite.h"
@@ -116,6 +117,10 @@ class ChannelDeletedNotify;
 struct ChannelDeletedNotifyDefaultTypeInternal;
 extern ChannelDeletedNotifyDefaultTypeInternal _ChannelDeletedNotify_default_instance_;
 extern const ::google::protobuf::internal::ClassDataFull ChannelDeletedNotify_class_data_;
+class ChannelMuteState;
+struct ChannelMuteStateDefaultTypeInternal;
+extern ChannelMuteStateDefaultTypeInternal _ChannelMuteState_default_instance_;
+extern const ::google::protobuf::internal::ClassDataFull ChannelMuteState_class_data_;
 class ChannelPermissions;
 struct ChannelPermissionsDefaultTypeInternal;
 extern ChannelPermissionsDefaultTypeInternal _ChannelPermissions_default_instance_;
@@ -208,6 +213,14 @@ class FileMessage;
 struct FileMessageDefaultTypeInternal;
 extern FileMessageDefaultTypeInternal _FileMessage_default_instance_;
 extern const ::google::protobuf::internal::ClassDataFull FileMessage_class_data_;
+class GetChannelMutesRequest;
+struct GetChannelMutesRequestDefaultTypeInternal;
+extern GetChannelMutesRequestDefaultTypeInternal _GetChannelMutesRequest_default_instance_;
+extern const ::google::protobuf::internal::ClassDataFull GetChannelMutesRequest_class_data_;
+class GetChannelMutesResponse;
+struct GetChannelMutesResponseDefaultTypeInternal;
+extern GetChannelMutesResponseDefaultTypeInternal _GetChannelMutesResponse_default_instance_;
+extern const ::google::protobuf::internal::ClassDataFull GetChannelMutesResponse_class_data_;
 class GetChannelsRequest;
 struct GetChannelsRequestDefaultTypeInternal;
 extern GetChannelsRequestDefaultTypeInternal _GetChannelsRequest_default_instance_;
@@ -480,6 +493,14 @@ class SendMessageResponse;
 struct SendMessageResponseDefaultTypeInternal;
 extern SendMessageResponseDefaultTypeInternal _SendMessageResponse_default_instance_;
 extern const ::google::protobuf::internal::ClassDataFull SendMessageResponse_class_data_;
+class SetChannelMuteRequest;
+struct SetChannelMuteRequestDefaultTypeInternal;
+extern SetChannelMuteRequestDefaultTypeInternal _SetChannelMuteRequest_default_instance_;
+extern const ::google::protobuf::internal::ClassDataFull SetChannelMuteRequest_class_data_;
+class SetChannelMuteResponse;
+struct SetChannelMuteResponseDefaultTypeInternal;
+extern SetChannelMuteResponseDefaultTypeInternal _SetChannelMuteResponse_default_instance_;
+extern const ::google::protobuf::internal::ClassDataFull SetChannelMuteResponse_class_data_;
 class SkillMetadata;
 struct SkillMetadataDefaultTypeInternal;
 extern SkillMetadataDefaultTypeInternal _SkillMetadata_default_instance_;
@@ -2404,6 +2425,422 @@ class SkillMetadata final : public ::google::protobuf::Message
 };
 
 extern const ::google::protobuf::internal::ClassDataFull SkillMetadata_class_data_;
+// -------------------------------------------------------------------
+
+class SetChannelMuteResponse final : public ::google::protobuf::Message
+/* @@protoc_insertion_point(class_definition:chirp.chat.SetChannelMuteResponse) */ {
+ public:
+  inline SetChannelMuteResponse() : SetChannelMuteResponse(nullptr) {}
+  ~SetChannelMuteResponse() PROTOBUF_FINAL;
+
+#if defined(PROTOBUF_CUSTOM_VTABLE)
+  void operator delete(SetChannelMuteResponse* PROTOBUF_NONNULL msg, ::std::destroying_delete_t) {
+    SharedDtor(*msg);
+    ::google::protobuf::internal::SizedDelete(msg, sizeof(SetChannelMuteResponse));
+  }
+#endif
+
+  template <typename = void>
+  explicit PROTOBUF_CONSTEXPR SetChannelMuteResponse(::google::protobuf::internal::ConstantInitialized);
+
+  inline SetChannelMuteResponse(const SetChannelMuteResponse& from) : SetChannelMuteResponse(nullptr, from) {}
+  inline SetChannelMuteResponse(SetChannelMuteResponse&& from) noexcept
+      : SetChannelMuteResponse(nullptr, ::std::move(from)) {}
+  inline SetChannelMuteResponse& operator=(const SetChannelMuteResponse& from) {
+    CopyFrom(from);
+    return *this;
+  }
+  inline SetChannelMuteResponse& operator=(SetChannelMuteResponse&& from) noexcept {
+    if (this == &from) return *this;
+    if (::google::protobuf::internal::CanMoveWithInternalSwap(GetArena(), from.GetArena())) {
+      InternalSwap(&from);
+    } else {
+      CopyFrom(from);
+    }
+    return *this;
+  }
+
+  inline const ::google::protobuf::UnknownFieldSet& unknown_fields() const
+      ABSL_ATTRIBUTE_LIFETIME_BOUND {
+    return _internal_metadata_.unknown_fields<::google::protobuf::UnknownFieldSet>(::google::protobuf::UnknownFieldSet::default_instance);
+  }
+  inline ::google::protobuf::UnknownFieldSet* PROTOBUF_NONNULL mutable_unknown_fields()
+      ABSL_ATTRIBUTE_LIFETIME_BOUND {
+    return _internal_metadata_.mutable_unknown_fields<::google::protobuf::UnknownFieldSet>();
+  }
+
+  static const ::google::protobuf::Descriptor* PROTOBUF_NONNULL descriptor() {
+    return GetDescriptor();
+  }
+  static const ::google::protobuf::Descriptor* PROTOBUF_NONNULL GetDescriptor() {
+    return default_instance().GetMetadata().descriptor;
+  }
+  static const ::google::protobuf::Reflection* PROTOBUF_NONNULL GetReflection() {
+    return default_instance().GetMetadata().reflection;
+  }
+  static const SetChannelMuteResponse& default_instance() {
+    return *reinterpret_cast<const SetChannelMuteResponse*>(
+        &_SetChannelMuteResponse_default_instance_);
+  }
+  static constexpr int kIndexInFileMessages = 109;
+  friend void swap(SetChannelMuteResponse& a, SetChannelMuteResponse& b) { a.Swap(&b); }
+  inline void Swap(SetChannelMuteResponse* PROTOBUF_NONNULL other) {
+    if (other == this) return;
+    if (::google::protobuf::internal::CanUseInternalSwap(GetArena(), other->GetArena())) {
+      InternalSwap(other);
+    } else {
+      ::google::protobuf::internal::GenericSwap(this, other);
+    }
+  }
+  void UnsafeArenaSwap(SetChannelMuteResponse* PROTOBUF_NONNULL other) {
+    if (other == this) return;
+    ABSL_DCHECK(GetArena() == other->GetArena());
+    InternalSwap(other);
+  }
+
+  // implements Message ----------------------------------------------
+
+  SetChannelMuteResponse* PROTOBUF_NONNULL New(::google::protobuf::Arena* PROTOBUF_NULLABLE arena = nullptr) const {
+    return ::google::protobuf::Message::DefaultConstruct<SetChannelMuteResponse>(arena);
+  }
+  using ::google::protobuf::Message::CopyFrom;
+  void CopyFrom(const SetChannelMuteResponse& from);
+  using ::google::protobuf::Message::MergeFrom;
+  void MergeFrom(const SetChannelMuteResponse& from) { SetChannelMuteResponse::MergeImpl(*this, from); }
+
+  private:
+  static void MergeImpl(::google::protobuf::MessageLite& to_msg,
+                        const ::google::protobuf::MessageLite& from_msg);
+
+  public:
+  bool IsInitialized() const {
+    return true;
+  }
+  ABSL_ATTRIBUTE_REINITIALIZES void Clear() PROTOBUF_FINAL;
+  #if defined(PROTOBUF_CUSTOM_VTABLE)
+  private:
+  static ::size_t ByteSizeLong(const ::google::protobuf::MessageLite& msg);
+  static ::uint8_t* PROTOBUF_NONNULL _InternalSerialize(
+      const ::google::protobuf::MessageLite& msg, ::uint8_t* PROTOBUF_NONNULL target,
+      ::google::protobuf::io::EpsCopyOutputStream* PROTOBUF_NONNULL stream);
+
+  public:
+  ::size_t ByteSizeLong() const { return ByteSizeLong(*this); }
+  ::uint8_t* PROTOBUF_NONNULL _InternalSerialize(
+      ::uint8_t* PROTOBUF_NONNULL target,
+      ::google::protobuf::io::EpsCopyOutputStream* PROTOBUF_NONNULL stream) const {
+    return _InternalSerialize(*this, target, stream);
+  }
+  #else   // PROTOBUF_CUSTOM_VTABLE
+  ::size_t ByteSizeLong() const final;
+  ::uint8_t* PROTOBUF_NONNULL _InternalSerialize(
+      ::uint8_t* PROTOBUF_NONNULL target,
+      ::google::protobuf::io::EpsCopyOutputStream* PROTOBUF_NONNULL stream) const final;
+  #endif  // PROTOBUF_CUSTOM_VTABLE
+  int GetCachedSize() const { return _impl_._cached_size_.Get(); }
+
+  private:
+  void SharedCtor(::google::protobuf::Arena* PROTOBUF_NULLABLE arena);
+  static void SharedDtor(MessageLite& self);
+  void InternalSwap(SetChannelMuteResponse* PROTOBUF_NONNULL other);
+ private:
+  template <typename T>
+  friend ::absl::string_view(::google::protobuf::internal::GetAnyMessageName)();
+  static ::absl::string_view FullMessageName() { return "chirp.chat.SetChannelMuteResponse"; }
+
+  explicit SetChannelMuteResponse(::google::protobuf::Arena* PROTOBUF_NULLABLE arena);
+  SetChannelMuteResponse(::google::protobuf::Arena* PROTOBUF_NULLABLE arena, const SetChannelMuteResponse& from);
+  SetChannelMuteResponse(
+      ::google::protobuf::Arena* PROTOBUF_NULLABLE arena, SetChannelMuteResponse&& from) noexcept
+      : SetChannelMuteResponse(arena) {
+    *this = ::std::move(from);
+  }
+  const ::google::protobuf::internal::ClassData* PROTOBUF_NONNULL GetClassData() const PROTOBUF_FINAL;
+  static void* PROTOBUF_NONNULL PlacementNew_(
+      const void* PROTOBUF_NONNULL, void* PROTOBUF_NONNULL mem,
+      ::google::protobuf::Arena* PROTOBUF_NULLABLE arena);
+  static constexpr auto InternalNewImpl_();
+
+ public:
+  static constexpr auto InternalGenerateClassData_();
+
+  ::google::protobuf::Metadata GetMetadata() const;
+  // nested types ----------------------------------------------------
+
+  // accessors -------------------------------------------------------
+  enum : int {
+    kCodeFieldNumber = 1,
+    kChannelTypeFieldNumber = 2,
+    kMutedFieldNumber = 3,
+  };
+  // .chirp.common.ErrorCode code = 1;
+  void clear_code() ;
+  ::chirp::common::ErrorCode code() const;
+  void set_code(::chirp::common::ErrorCode value);
+
+  private:
+  ::chirp::common::ErrorCode _internal_code() const;
+  void _internal_set_code(::chirp::common::ErrorCode value);
+
+  public:
+  // .chirp.chat.ChannelType channel_type = 2;
+  void clear_channel_type() ;
+  ::chirp::chat::ChannelType channel_type() const;
+  void set_channel_type(::chirp::chat::ChannelType value);
+
+  private:
+  ::chirp::chat::ChannelType _internal_channel_type() const;
+  void _internal_set_channel_type(::chirp::chat::ChannelType value);
+
+  public:
+  // bool muted = 3;
+  void clear_muted() ;
+  bool muted() const;
+  void set_muted(bool value);
+
+  private:
+  bool _internal_muted() const;
+  void _internal_set_muted(bool value);
+
+  public:
+  // @@protoc_insertion_point(class_scope:chirp.chat.SetChannelMuteResponse)
+ private:
+  class _Internal;
+  friend class ::google::protobuf::internal::TcParser;
+  static const ::google::protobuf::internal::TcParseTable<2, 3,
+                                   0, 0,
+                                   2>
+      _table_;
+
+  friend class ::google::protobuf::MessageLite;
+  friend class ::google::protobuf::Arena;
+  template <typename T>
+  friend class ::google::protobuf::Arena::InternalHelper;
+  using InternalArenaConstructable_ = void;
+  using DestructorSkippable_ = void;
+  struct Impl_ {
+    inline explicit constexpr Impl_(::google::protobuf::internal::ConstantInitialized) noexcept;
+    inline explicit Impl_(
+        ::google::protobuf::internal::InternalVisibility visibility,
+        ::google::protobuf::Arena* PROTOBUF_NULLABLE arena);
+    inline explicit Impl_(
+        ::google::protobuf::internal::InternalVisibility visibility,
+        ::google::protobuf::Arena* PROTOBUF_NULLABLE arena, const Impl_& from,
+        const SetChannelMuteResponse& from_msg);
+    ::google::protobuf::internal::HasBits<1> _has_bits_;
+    ::google::protobuf::internal::CachedSize _cached_size_;
+    int code_;
+    int channel_type_;
+    bool muted_;
+    PROTOBUF_TSAN_DECLARE_MEMBER
+  };
+  union { Impl_ _impl_; };
+  friend struct ::TableStruct_proto_2fchat_2eproto;
+};
+
+extern const ::google::protobuf::internal::ClassDataFull SetChannelMuteResponse_class_data_;
+// -------------------------------------------------------------------
+
+class SetChannelMuteRequest final : public ::google::protobuf::Message
+/* @@protoc_insertion_point(class_definition:chirp.chat.SetChannelMuteRequest) */ {
+ public:
+  inline SetChannelMuteRequest() : SetChannelMuteRequest(nullptr) {}
+  ~SetChannelMuteRequest() PROTOBUF_FINAL;
+
+#if defined(PROTOBUF_CUSTOM_VTABLE)
+  void operator delete(SetChannelMuteRequest* PROTOBUF_NONNULL msg, ::std::destroying_delete_t) {
+    SharedDtor(*msg);
+    ::google::protobuf::internal::SizedDelete(msg, sizeof(SetChannelMuteRequest));
+  }
+#endif
+
+  template <typename = void>
+  explicit PROTOBUF_CONSTEXPR SetChannelMuteRequest(::google::protobuf::internal::ConstantInitialized);
+
+  inline SetChannelMuteRequest(const SetChannelMuteRequest& from) : SetChannelMuteRequest(nullptr, from) {}
+  inline SetChannelMuteRequest(SetChannelMuteRequest&& from) noexcept
+      : SetChannelMuteRequest(nullptr, ::std::move(from)) {}
+  inline SetChannelMuteRequest& operator=(const SetChannelMuteRequest& from) {
+    CopyFrom(from);
+    return *this;
+  }
+  inline SetChannelMuteRequest& operator=(SetChannelMuteRequest&& from) noexcept {
+    if (this == &from) return *this;
+    if (::google::protobuf::internal::CanMoveWithInternalSwap(GetArena(), from.GetArena())) {
+      InternalSwap(&from);
+    } else {
+      CopyFrom(from);
+    }
+    return *this;
+  }
+
+  inline const ::google::protobuf::UnknownFieldSet& unknown_fields() const
+      ABSL_ATTRIBUTE_LIFETIME_BOUND {
+    return _internal_metadata_.unknown_fields<::google::protobuf::UnknownFieldSet>(::google::protobuf::UnknownFieldSet::default_instance);
+  }
+  inline ::google::protobuf::UnknownFieldSet* PROTOBUF_NONNULL mutable_unknown_fields()
+      ABSL_ATTRIBUTE_LIFETIME_BOUND {
+    return _internal_metadata_.mutable_unknown_fields<::google::protobuf::UnknownFieldSet>();
+  }
+
+  static const ::google::protobuf::Descriptor* PROTOBUF_NONNULL descriptor() {
+    return GetDescriptor();
+  }
+  static const ::google::protobuf::Descriptor* PROTOBUF_NONNULL GetDescriptor() {
+    return default_instance().GetMetadata().descriptor;
+  }
+  static const ::google::protobuf::Reflection* PROTOBUF_NONNULL GetReflection() {
+    return default_instance().GetMetadata().reflection;
+  }
+  static const SetChannelMuteRequest& default_instance() {
+    return *reinterpret_cast<const SetChannelMuteRequest*>(
+        &_SetChannelMuteRequest_default_instance_);
+  }
+  static constexpr int kIndexInFileMessages = 108;
+  friend void swap(SetChannelMuteRequest& a, SetChannelMuteRequest& b) { a.Swap(&b); }
+  inline void Swap(SetChannelMuteRequest* PROTOBUF_NONNULL other) {
+    if (other == this) return;
+    if (::google::protobuf::internal::CanUseInternalSwap(GetArena(), other->GetArena())) {
+      InternalSwap(other);
+    } else {
+      ::google::protobuf::internal::GenericSwap(this, other);
+    }
+  }
+  void UnsafeArenaSwap(SetChannelMuteRequest* PROTOBUF_NONNULL other) {
+    if (other == this) return;
+    ABSL_DCHECK(GetArena() == other->GetArena());
+    InternalSwap(other);
+  }
+
+  // implements Message ----------------------------------------------
+
+  SetChannelMuteRequest* PROTOBUF_NONNULL New(::google::protobuf::Arena* PROTOBUF_NULLABLE arena = nullptr) const {
+    return ::google::protobuf::Message::DefaultConstruct<SetChannelMuteRequest>(arena);
+  }
+  using ::google::protobuf::Message::CopyFrom;
+  void CopyFrom(const SetChannelMuteRequest& from);
+  using ::google::protobuf::Message::MergeFrom;
+  void MergeFrom(const SetChannelMuteRequest& from) { SetChannelMuteRequest::MergeImpl(*this, from); }
+
+  private:
+  static void MergeImpl(::google::protobuf::MessageLite& to_msg,
+                        const ::google::protobuf::MessageLite& from_msg);
+
+  public:
+  bool IsInitialized() const {
+    return true;
+  }
+  ABSL_ATTRIBUTE_REINITIALIZES void Clear() PROTOBUF_FINAL;
+  #if defined(PROTOBUF_CUSTOM_VTABLE)
+  private:
+  static ::size_t ByteSizeLong(const ::google::protobuf::MessageLite& msg);
+  static ::uint8_t* PROTOBUF_NONNULL _InternalSerialize(
+      const ::google::protobuf::MessageLite& msg, ::uint8_t* PROTOBUF_NONNULL target,
+      ::google::protobuf::io::EpsCopyOutputStream* PROTOBUF_NONNULL stream);
+
+  public:
+  ::size_t ByteSizeLong() const { return ByteSizeLong(*this); }
+  ::uint8_t* PROTOBUF_NONNULL _InternalSerialize(
+      ::uint8_t* PROTOBUF_NONNULL target,
+      ::google::protobuf::io::EpsCopyOutputStream* PROTOBUF_NONNULL stream) const {
+    return _InternalSerialize(*this, target, stream);
+  }
+  #else   // PROTOBUF_CUSTOM_VTABLE
+  ::size_t ByteSizeLong() const final;
+  ::uint8_t* PROTOBUF_NONNULL _InternalSerialize(
+      ::uint8_t* PROTOBUF_NONNULL target,
+      ::google::protobuf::io::EpsCopyOutputStream* PROTOBUF_NONNULL stream) const final;
+  #endif  // PROTOBUF_CUSTOM_VTABLE
+  int GetCachedSize() const { return _impl_._cached_size_.Get(); }
+
+  private:
+  void SharedCtor(::google::protobuf::Arena* PROTOBUF_NULLABLE arena);
+  static void SharedDtor(MessageLite& self);
+  void InternalSwap(SetChannelMuteRequest* PROTOBUF_NONNULL other);
+ private:
+  template <typename T>
+  friend ::absl::string_view(::google::protobuf::internal::GetAnyMessageName)();
+  static ::absl::string_view FullMessageName() { return "chirp.chat.SetChannelMuteRequest"; }
+
+  explicit SetChannelMuteRequest(::google::protobuf::Arena* PROTOBUF_NULLABLE arena);
+  SetChannelMuteRequest(::google::protobuf::Arena* PROTOBUF_NULLABLE arena, const SetChannelMuteRequest& from);
+  SetChannelMuteRequest(
+      ::google::protobuf::Arena* PROTOBUF_NULLABLE arena, SetChannelMuteRequest&& from) noexcept
+      : SetChannelMuteRequest(arena) {
+    *this = ::std::move(from);
+  }
+  const ::google::protobuf::internal::ClassData* PROTOBUF_NONNULL GetClassData() const PROTOBUF_FINAL;
+  static void* PROTOBUF_NONNULL PlacementNew_(
+      const void* PROTOBUF_NONNULL, void* PROTOBUF_NONNULL mem,
+      ::google::protobuf::Arena* PROTOBUF_NULLABLE arena);
+  static constexpr auto InternalNewImpl_();
+
+ public:
+  static constexpr auto InternalGenerateClassData_();
+
+  ::google::protobuf::Metadata GetMetadata() const;
+  // nested types ----------------------------------------------------
+
+  // accessors -------------------------------------------------------
+  enum : int {
+    kChannelTypeFieldNumber = 1,
+    kMutedFieldNumber = 2,
+  };
+  // .chirp.chat.ChannelType channel_type = 1;
+  void clear_channel_type() ;
+  ::chirp::chat::ChannelType channel_type() const;
+  void set_channel_type(::chirp::chat::ChannelType value);
+
+  private:
+  ::chirp::chat::ChannelType _internal_channel_type() const;
+  void _internal_set_channel_type(::chirp::chat::ChannelType value);
+
+  public:
+  // bool muted = 2;
+  void clear_muted() ;
+  bool muted() const;
+  void set_muted(bool value);
+
+  private:
+  bool _internal_muted() const;
+  void _internal_set_muted(bool value);
+
+  public:
+  // @@protoc_insertion_point(class_scope:chirp.chat.SetChannelMuteRequest)
+ private:
+  class _Internal;
+  friend class ::google::protobuf::internal::TcParser;
+  static const ::google::protobuf::internal::TcParseTable<1, 2,
+                                   0, 0,
+                                   2>
+      _table_;
+
+  friend class ::google::protobuf::MessageLite;
+  friend class ::google::protobuf::Arena;
+  template <typename T>
+  friend class ::google::protobuf::Arena::InternalHelper;
+  using InternalArenaConstructable_ = void;
+  using DestructorSkippable_ = void;
+  struct Impl_ {
+    inline explicit constexpr Impl_(::google::protobuf::internal::ConstantInitialized) noexcept;
+    inline explicit Impl_(
+        ::google::protobuf::internal::InternalVisibility visibility,
+        ::google::protobuf::Arena* PROTOBUF_NULLABLE arena);
+    inline explicit Impl_(
+        ::google::protobuf::internal::InternalVisibility visibility,
+        ::google::protobuf::Arena* PROTOBUF_NULLABLE arena, const Impl_& from,
+        const SetChannelMuteRequest& from_msg);
+    ::google::protobuf::internal::HasBits<1> _has_bits_;
+    ::google::protobuf::internal::CachedSize _cached_size_;
+    int channel_type_;
+    bool muted_;
+    PROTOBUF_TSAN_DECLARE_MEMBER
+  };
+  union { Impl_ _impl_; };
+  friend struct ::TableStruct_proto_2fchat_2eproto;
+};
+
+extern const ::google::protobuf::internal::ClassDataFull SetChannelMuteRequest_class_data_;
 // -------------------------------------------------------------------
 
 class SendMessageResponse final : public ::google::protobuf::Message
@@ -12974,6 +13411,140 @@ class GetChannelsRequest final : public ::google::protobuf::Message
 extern const ::google::protobuf::internal::ClassDataFull GetChannelsRequest_class_data_;
 // -------------------------------------------------------------------
 
+class GetChannelMutesRequest final : public ::google::protobuf::internal::ZeroFieldsBase
+/* @@protoc_insertion_point(class_definition:chirp.chat.GetChannelMutesRequest) */ {
+ public:
+  inline GetChannelMutesRequest() : GetChannelMutesRequest(nullptr) {}
+
+#if defined(PROTOBUF_CUSTOM_VTABLE)
+  void operator delete(GetChannelMutesRequest* PROTOBUF_NONNULL msg, ::std::destroying_delete_t) {
+    SharedDtor(*msg);
+    ::google::protobuf::internal::SizedDelete(msg, sizeof(GetChannelMutesRequest));
+  }
+#endif
+
+  template <typename = void>
+  explicit PROTOBUF_CONSTEXPR GetChannelMutesRequest(::google::protobuf::internal::ConstantInitialized);
+
+  inline GetChannelMutesRequest(const GetChannelMutesRequest& from) : GetChannelMutesRequest(nullptr, from) {}
+  inline GetChannelMutesRequest(GetChannelMutesRequest&& from) noexcept
+      : GetChannelMutesRequest(nullptr, ::std::move(from)) {}
+  inline GetChannelMutesRequest& operator=(const GetChannelMutesRequest& from) {
+    CopyFrom(from);
+    return *this;
+  }
+  inline GetChannelMutesRequest& operator=(GetChannelMutesRequest&& from) noexcept {
+    if (this == &from) return *this;
+    if (::google::protobuf::internal::CanMoveWithInternalSwap(GetArena(), from.GetArena())) {
+      InternalSwap(&from);
+    } else {
+      CopyFrom(from);
+    }
+    return *this;
+  }
+
+  inline const ::google::protobuf::UnknownFieldSet& unknown_fields() const
+      ABSL_ATTRIBUTE_LIFETIME_BOUND {
+    return _internal_metadata_.unknown_fields<::google::protobuf::UnknownFieldSet>(::google::protobuf::UnknownFieldSet::default_instance);
+  }
+  inline ::google::protobuf::UnknownFieldSet* PROTOBUF_NONNULL mutable_unknown_fields()
+      ABSL_ATTRIBUTE_LIFETIME_BOUND {
+    return _internal_metadata_.mutable_unknown_fields<::google::protobuf::UnknownFieldSet>();
+  }
+
+  static const ::google::protobuf::Descriptor* PROTOBUF_NONNULL descriptor() {
+    return GetDescriptor();
+  }
+  static const ::google::protobuf::Descriptor* PROTOBUF_NONNULL GetDescriptor() {
+    return default_instance().GetMetadata().descriptor;
+  }
+  static const ::google::protobuf::Reflection* PROTOBUF_NONNULL GetReflection() {
+    return default_instance().GetMetadata().reflection;
+  }
+  static const GetChannelMutesRequest& default_instance() {
+    return *reinterpret_cast<const GetChannelMutesRequest*>(
+        &_GetChannelMutesRequest_default_instance_);
+  }
+  static constexpr int kIndexInFileMessages = 111;
+  friend void swap(GetChannelMutesRequest& a, GetChannelMutesRequest& b) { a.Swap(&b); }
+  inline void Swap(GetChannelMutesRequest* PROTOBUF_NONNULL other) {
+    if (other == this) return;
+    if (::google::protobuf::internal::CanUseInternalSwap(GetArena(), other->GetArena())) {
+      InternalSwap(other);
+    } else {
+      ::google::protobuf::internal::GenericSwap(this, other);
+    }
+  }
+  void UnsafeArenaSwap(GetChannelMutesRequest* PROTOBUF_NONNULL other) {
+    if (other == this) return;
+    ABSL_DCHECK(GetArena() == other->GetArena());
+    InternalSwap(other);
+  }
+
+  // implements Message ----------------------------------------------
+
+  GetChannelMutesRequest* PROTOBUF_NONNULL New(::google::protobuf::Arena* PROTOBUF_NULLABLE arena = nullptr) const {
+    return ::google::protobuf::internal::ZeroFieldsBase::DefaultConstruct<GetChannelMutesRequest>(arena);
+  }
+  using ::google::protobuf::internal::ZeroFieldsBase::CopyFrom;
+  inline void CopyFrom(const GetChannelMutesRequest& from) {
+    ::google::protobuf::internal::ZeroFieldsBase::CopyImpl(*this, from);
+  }
+  using ::google::protobuf::internal::ZeroFieldsBase::MergeFrom;
+  void MergeFrom(const GetChannelMutesRequest& from) {
+    ::google::protobuf::internal::ZeroFieldsBase::MergeImpl(*this, from);
+  }
+
+  public:
+  bool IsInitialized() const {
+    return true;
+  }
+ private:
+  template <typename T>
+  friend ::absl::string_view(::google::protobuf::internal::GetAnyMessageName)();
+  static ::absl::string_view FullMessageName() { return "chirp.chat.GetChannelMutesRequest"; }
+
+  explicit GetChannelMutesRequest(::google::protobuf::Arena* PROTOBUF_NULLABLE arena);
+  GetChannelMutesRequest(::google::protobuf::Arena* PROTOBUF_NULLABLE arena, const GetChannelMutesRequest& from);
+  GetChannelMutesRequest(
+      ::google::protobuf::Arena* PROTOBUF_NULLABLE arena, GetChannelMutesRequest&& from) noexcept
+      : GetChannelMutesRequest(arena) {
+    *this = ::std::move(from);
+  }
+  const ::google::protobuf::internal::ClassData* PROTOBUF_NONNULL GetClassData() const PROTOBUF_FINAL;
+  static void* PROTOBUF_NONNULL PlacementNew_(
+      const void* PROTOBUF_NONNULL, void* PROTOBUF_NONNULL mem,
+      ::google::protobuf::Arena* PROTOBUF_NULLABLE arena);
+  static constexpr auto InternalNewImpl_();
+
+ public:
+  static constexpr auto InternalGenerateClassData_();
+
+  ::google::protobuf::Metadata GetMetadata() const;
+  // nested types ----------------------------------------------------
+
+  // accessors -------------------------------------------------------
+  // @@protoc_insertion_point(class_scope:chirp.chat.GetChannelMutesRequest)
+ private:
+  class _Internal;
+  friend class ::google::protobuf::internal::TcParser;
+  static const ::google::protobuf::internal::TcParseTable<0, 0,
+                                   0, 0,
+                                   2>
+      _table_;
+
+  friend class ::google::protobuf::MessageLite;
+  friend class ::google::protobuf::Arena;
+  template <typename T>
+  friend class ::google::protobuf::Arena::InternalHelper;
+  using InternalArenaConstructable_ = void;
+  using DestructorSkippable_ = void;
+  friend struct ::TableStruct_proto_2fchat_2eproto;
+};
+
+extern const ::google::protobuf::internal::ClassDataFull GetChannelMutesRequest_class_data_;
+// -------------------------------------------------------------------
+
 class FileInfo final : public ::google::protobuf::Message
 /* @@protoc_insertion_point(class_definition:chirp.chat.FileInfo) */ {
  public:
@@ -16236,6 +16807,208 @@ class ChannelPermissions final : public ::google::protobuf::Message
 };
 
 extern const ::google::protobuf::internal::ClassDataFull ChannelPermissions_class_data_;
+// -------------------------------------------------------------------
+
+class ChannelMuteState final : public ::google::protobuf::Message
+/* @@protoc_insertion_point(class_definition:chirp.chat.ChannelMuteState) */ {
+ public:
+  inline ChannelMuteState() : ChannelMuteState(nullptr) {}
+  ~ChannelMuteState() PROTOBUF_FINAL;
+
+#if defined(PROTOBUF_CUSTOM_VTABLE)
+  void operator delete(ChannelMuteState* PROTOBUF_NONNULL msg, ::std::destroying_delete_t) {
+    SharedDtor(*msg);
+    ::google::protobuf::internal::SizedDelete(msg, sizeof(ChannelMuteState));
+  }
+#endif
+
+  template <typename = void>
+  explicit PROTOBUF_CONSTEXPR ChannelMuteState(::google::protobuf::internal::ConstantInitialized);
+
+  inline ChannelMuteState(const ChannelMuteState& from) : ChannelMuteState(nullptr, from) {}
+  inline ChannelMuteState(ChannelMuteState&& from) noexcept
+      : ChannelMuteState(nullptr, ::std::move(from)) {}
+  inline ChannelMuteState& operator=(const ChannelMuteState& from) {
+    CopyFrom(from);
+    return *this;
+  }
+  inline ChannelMuteState& operator=(ChannelMuteState&& from) noexcept {
+    if (this == &from) return *this;
+    if (::google::protobuf::internal::CanMoveWithInternalSwap(GetArena(), from.GetArena())) {
+      InternalSwap(&from);
+    } else {
+      CopyFrom(from);
+    }
+    return *this;
+  }
+
+  inline const ::google::protobuf::UnknownFieldSet& unknown_fields() const
+      ABSL_ATTRIBUTE_LIFETIME_BOUND {
+    return _internal_metadata_.unknown_fields<::google::protobuf::UnknownFieldSet>(::google::protobuf::UnknownFieldSet::default_instance);
+  }
+  inline ::google::protobuf::UnknownFieldSet* PROTOBUF_NONNULL mutable_unknown_fields()
+      ABSL_ATTRIBUTE_LIFETIME_BOUND {
+    return _internal_metadata_.mutable_unknown_fields<::google::protobuf::UnknownFieldSet>();
+  }
+
+  static const ::google::protobuf::Descriptor* PROTOBUF_NONNULL descriptor() {
+    return GetDescriptor();
+  }
+  static const ::google::protobuf::Descriptor* PROTOBUF_NONNULL GetDescriptor() {
+    return default_instance().GetMetadata().descriptor;
+  }
+  static const ::google::protobuf::Reflection* PROTOBUF_NONNULL GetReflection() {
+    return default_instance().GetMetadata().reflection;
+  }
+  static const ChannelMuteState& default_instance() {
+    return *reinterpret_cast<const ChannelMuteState*>(
+        &_ChannelMuteState_default_instance_);
+  }
+  static constexpr int kIndexInFileMessages = 110;
+  friend void swap(ChannelMuteState& a, ChannelMuteState& b) { a.Swap(&b); }
+  inline void Swap(ChannelMuteState* PROTOBUF_NONNULL other) {
+    if (other == this) return;
+    if (::google::protobuf::internal::CanUseInternalSwap(GetArena(), other->GetArena())) {
+      InternalSwap(other);
+    } else {
+      ::google::protobuf::internal::GenericSwap(this, other);
+    }
+  }
+  void UnsafeArenaSwap(ChannelMuteState* PROTOBUF_NONNULL other) {
+    if (other == this) return;
+    ABSL_DCHECK(GetArena() == other->GetArena());
+    InternalSwap(other);
+  }
+
+  // implements Message ----------------------------------------------
+
+  ChannelMuteState* PROTOBUF_NONNULL New(::google::protobuf::Arena* PROTOBUF_NULLABLE arena = nullptr) const {
+    return ::google::protobuf::Message::DefaultConstruct<ChannelMuteState>(arena);
+  }
+  using ::google::protobuf::Message::CopyFrom;
+  void CopyFrom(const ChannelMuteState& from);
+  using ::google::protobuf::Message::MergeFrom;
+  void MergeFrom(const ChannelMuteState& from) { ChannelMuteState::MergeImpl(*this, from); }
+
+  private:
+  static void MergeImpl(::google::protobuf::MessageLite& to_msg,
+                        const ::google::protobuf::MessageLite& from_msg);
+
+  public:
+  bool IsInitialized() const {
+    return true;
+  }
+  ABSL_ATTRIBUTE_REINITIALIZES void Clear() PROTOBUF_FINAL;
+  #if defined(PROTOBUF_CUSTOM_VTABLE)
+  private:
+  static ::size_t ByteSizeLong(const ::google::protobuf::MessageLite& msg);
+  static ::uint8_t* PROTOBUF_NONNULL _InternalSerialize(
+      const ::google::protobuf::MessageLite& msg, ::uint8_t* PROTOBUF_NONNULL target,
+      ::google::protobuf::io::EpsCopyOutputStream* PROTOBUF_NONNULL stream);
+
+  public:
+  ::size_t ByteSizeLong() const { return ByteSizeLong(*this); }
+  ::uint8_t* PROTOBUF_NONNULL _InternalSerialize(
+      ::uint8_t* PROTOBUF_NONNULL target,
+      ::google::protobuf::io::EpsCopyOutputStream* PROTOBUF_NONNULL stream) const {
+    return _InternalSerialize(*this, target, stream);
+  }
+  #else   // PROTOBUF_CUSTOM_VTABLE
+  ::size_t ByteSizeLong() const final;
+  ::uint8_t* PROTOBUF_NONNULL _InternalSerialize(
+      ::uint8_t* PROTOBUF_NONNULL target,
+      ::google::protobuf::io::EpsCopyOutputStream* PROTOBUF_NONNULL stream) const final;
+  #endif  // PROTOBUF_CUSTOM_VTABLE
+  int GetCachedSize() const { return _impl_._cached_size_.Get(); }
+
+  private:
+  void SharedCtor(::google::protobuf::Arena* PROTOBUF_NULLABLE arena);
+  static void SharedDtor(MessageLite& self);
+  void InternalSwap(ChannelMuteState* PROTOBUF_NONNULL other);
+ private:
+  template <typename T>
+  friend ::absl::string_view(::google::protobuf::internal::GetAnyMessageName)();
+  static ::absl::string_view FullMessageName() { return "chirp.chat.ChannelMuteState"; }
+
+  explicit ChannelMuteState(::google::protobuf::Arena* PROTOBUF_NULLABLE arena);
+  ChannelMuteState(::google::protobuf::Arena* PROTOBUF_NULLABLE arena, const ChannelMuteState& from);
+  ChannelMuteState(
+      ::google::protobuf::Arena* PROTOBUF_NULLABLE arena, ChannelMuteState&& from) noexcept
+      : ChannelMuteState(arena) {
+    *this = ::std::move(from);
+  }
+  const ::google::protobuf::internal::ClassData* PROTOBUF_NONNULL GetClassData() const PROTOBUF_FINAL;
+  static void* PROTOBUF_NONNULL PlacementNew_(
+      const void* PROTOBUF_NONNULL, void* PROTOBUF_NONNULL mem,
+      ::google::protobuf::Arena* PROTOBUF_NULLABLE arena);
+  static constexpr auto InternalNewImpl_();
+
+ public:
+  static constexpr auto InternalGenerateClassData_();
+
+  ::google::protobuf::Metadata GetMetadata() const;
+  // nested types ----------------------------------------------------
+
+  // accessors -------------------------------------------------------
+  enum : int {
+    kChannelTypeFieldNumber = 1,
+    kMutedFieldNumber = 2,
+  };
+  // .chirp.chat.ChannelType channel_type = 1;
+  void clear_channel_type() ;
+  ::chirp::chat::ChannelType channel_type() const;
+  void set_channel_type(::chirp::chat::ChannelType value);
+
+  private:
+  ::chirp::chat::ChannelType _internal_channel_type() const;
+  void _internal_set_channel_type(::chirp::chat::ChannelType value);
+
+  public:
+  // bool muted = 2;
+  void clear_muted() ;
+  bool muted() const;
+  void set_muted(bool value);
+
+  private:
+  bool _internal_muted() const;
+  void _internal_set_muted(bool value);
+
+  public:
+  // @@protoc_insertion_point(class_scope:chirp.chat.ChannelMuteState)
+ private:
+  class _Internal;
+  friend class ::google::protobuf::internal::TcParser;
+  static const ::google::protobuf::internal::TcParseTable<1, 2,
+                                   0, 0,
+                                   2>
+      _table_;
+
+  friend class ::google::protobuf::MessageLite;
+  friend class ::google::protobuf::Arena;
+  template <typename T>
+  friend class ::google::protobuf::Arena::InternalHelper;
+  using InternalArenaConstructable_ = void;
+  using DestructorSkippable_ = void;
+  struct Impl_ {
+    inline explicit constexpr Impl_(::google::protobuf::internal::ConstantInitialized) noexcept;
+    inline explicit Impl_(
+        ::google::protobuf::internal::InternalVisibility visibility,
+        ::google::protobuf::Arena* PROTOBUF_NULLABLE arena);
+    inline explicit Impl_(
+        ::google::protobuf::internal::InternalVisibility visibility,
+        ::google::protobuf::Arena* PROTOBUF_NULLABLE arena, const Impl_& from,
+        const ChannelMuteState& from_msg);
+    ::google::protobuf::internal::HasBits<1> _has_bits_;
+    ::google::protobuf::internal::CachedSize _cached_size_;
+    int channel_type_;
+    bool muted_;
+    PROTOBUF_TSAN_DECLARE_MEMBER
+  };
+  union { Impl_ _impl_; };
+  friend struct ::TableStruct_proto_2fchat_2eproto;
+};
+
+extern const ::google::protobuf::internal::ClassDataFull ChannelMuteState_class_data_;
 // -------------------------------------------------------------------
 
 class ChannelDeletedNotify final : public ::google::protobuf::Message
@@ -21077,6 +21850,215 @@ class GetFileDownloadResponse final : public ::google::protobuf::Message
 };
 
 extern const ::google::protobuf::internal::ClassDataFull GetFileDownloadResponse_class_data_;
+// -------------------------------------------------------------------
+
+class GetChannelMutesResponse final : public ::google::protobuf::Message
+/* @@protoc_insertion_point(class_definition:chirp.chat.GetChannelMutesResponse) */ {
+ public:
+  inline GetChannelMutesResponse() : GetChannelMutesResponse(nullptr) {}
+  ~GetChannelMutesResponse() PROTOBUF_FINAL;
+
+#if defined(PROTOBUF_CUSTOM_VTABLE)
+  void operator delete(GetChannelMutesResponse* PROTOBUF_NONNULL msg, ::std::destroying_delete_t) {
+    SharedDtor(*msg);
+    ::google::protobuf::internal::SizedDelete(msg, sizeof(GetChannelMutesResponse));
+  }
+#endif
+
+  template <typename = void>
+  explicit PROTOBUF_CONSTEXPR GetChannelMutesResponse(::google::protobuf::internal::ConstantInitialized);
+
+  inline GetChannelMutesResponse(const GetChannelMutesResponse& from) : GetChannelMutesResponse(nullptr, from) {}
+  inline GetChannelMutesResponse(GetChannelMutesResponse&& from) noexcept
+      : GetChannelMutesResponse(nullptr, ::std::move(from)) {}
+  inline GetChannelMutesResponse& operator=(const GetChannelMutesResponse& from) {
+    CopyFrom(from);
+    return *this;
+  }
+  inline GetChannelMutesResponse& operator=(GetChannelMutesResponse&& from) noexcept {
+    if (this == &from) return *this;
+    if (::google::protobuf::internal::CanMoveWithInternalSwap(GetArena(), from.GetArena())) {
+      InternalSwap(&from);
+    } else {
+      CopyFrom(from);
+    }
+    return *this;
+  }
+
+  inline const ::google::protobuf::UnknownFieldSet& unknown_fields() const
+      ABSL_ATTRIBUTE_LIFETIME_BOUND {
+    return _internal_metadata_.unknown_fields<::google::protobuf::UnknownFieldSet>(::google::protobuf::UnknownFieldSet::default_instance);
+  }
+  inline ::google::protobuf::UnknownFieldSet* PROTOBUF_NONNULL mutable_unknown_fields()
+      ABSL_ATTRIBUTE_LIFETIME_BOUND {
+    return _internal_metadata_.mutable_unknown_fields<::google::protobuf::UnknownFieldSet>();
+  }
+
+  static const ::google::protobuf::Descriptor* PROTOBUF_NONNULL descriptor() {
+    return GetDescriptor();
+  }
+  static const ::google::protobuf::Descriptor* PROTOBUF_NONNULL GetDescriptor() {
+    return default_instance().GetMetadata().descriptor;
+  }
+  static const ::google::protobuf::Reflection* PROTOBUF_NONNULL GetReflection() {
+    return default_instance().GetMetadata().reflection;
+  }
+  static const GetChannelMutesResponse& default_instance() {
+    return *reinterpret_cast<const GetChannelMutesResponse*>(
+        &_GetChannelMutesResponse_default_instance_);
+  }
+  static constexpr int kIndexInFileMessages = 112;
+  friend void swap(GetChannelMutesResponse& a, GetChannelMutesResponse& b) { a.Swap(&b); }
+  inline void Swap(GetChannelMutesResponse* PROTOBUF_NONNULL other) {
+    if (other == this) return;
+    if (::google::protobuf::internal::CanUseInternalSwap(GetArena(), other->GetArena())) {
+      InternalSwap(other);
+    } else {
+      ::google::protobuf::internal::GenericSwap(this, other);
+    }
+  }
+  void UnsafeArenaSwap(GetChannelMutesResponse* PROTOBUF_NONNULL other) {
+    if (other == this) return;
+    ABSL_DCHECK(GetArena() == other->GetArena());
+    InternalSwap(other);
+  }
+
+  // implements Message ----------------------------------------------
+
+  GetChannelMutesResponse* PROTOBUF_NONNULL New(::google::protobuf::Arena* PROTOBUF_NULLABLE arena = nullptr) const {
+    return ::google::protobuf::Message::DefaultConstruct<GetChannelMutesResponse>(arena);
+  }
+  using ::google::protobuf::Message::CopyFrom;
+  void CopyFrom(const GetChannelMutesResponse& from);
+  using ::google::protobuf::Message::MergeFrom;
+  void MergeFrom(const GetChannelMutesResponse& from) { GetChannelMutesResponse::MergeImpl(*this, from); }
+
+  private:
+  static void MergeImpl(::google::protobuf::MessageLite& to_msg,
+                        const ::google::protobuf::MessageLite& from_msg);
+
+  public:
+  bool IsInitialized() const {
+    return true;
+  }
+  ABSL_ATTRIBUTE_REINITIALIZES void Clear() PROTOBUF_FINAL;
+  #if defined(PROTOBUF_CUSTOM_VTABLE)
+  private:
+  static ::size_t ByteSizeLong(const ::google::protobuf::MessageLite& msg);
+  static ::uint8_t* PROTOBUF_NONNULL _InternalSerialize(
+      const ::google::protobuf::MessageLite& msg, ::uint8_t* PROTOBUF_NONNULL target,
+      ::google::protobuf::io::EpsCopyOutputStream* PROTOBUF_NONNULL stream);
+
+  public:
+  ::size_t ByteSizeLong() const { return ByteSizeLong(*this); }
+  ::uint8_t* PROTOBUF_NONNULL _InternalSerialize(
+      ::uint8_t* PROTOBUF_NONNULL target,
+      ::google::protobuf::io::EpsCopyOutputStream* PROTOBUF_NONNULL stream) const {
+    return _InternalSerialize(*this, target, stream);
+  }
+  #else   // PROTOBUF_CUSTOM_VTABLE
+  ::size_t ByteSizeLong() const final;
+  ::uint8_t* PROTOBUF_NONNULL _InternalSerialize(
+      ::uint8_t* PROTOBUF_NONNULL target,
+      ::google::protobuf::io::EpsCopyOutputStream* PROTOBUF_NONNULL stream) const final;
+  #endif  // PROTOBUF_CUSTOM_VTABLE
+  int GetCachedSize() const { return _impl_._cached_size_.Get(); }
+
+  private:
+  void SharedCtor(::google::protobuf::Arena* PROTOBUF_NULLABLE arena);
+  static void SharedDtor(MessageLite& self);
+  void InternalSwap(GetChannelMutesResponse* PROTOBUF_NONNULL other);
+ private:
+  template <typename T>
+  friend ::absl::string_view(::google::protobuf::internal::GetAnyMessageName)();
+  static ::absl::string_view FullMessageName() { return "chirp.chat.GetChannelMutesResponse"; }
+
+  explicit GetChannelMutesResponse(::google::protobuf::Arena* PROTOBUF_NULLABLE arena);
+  GetChannelMutesResponse(::google::protobuf::Arena* PROTOBUF_NULLABLE arena, const GetChannelMutesResponse& from);
+  GetChannelMutesResponse(
+      ::google::protobuf::Arena* PROTOBUF_NULLABLE arena, GetChannelMutesResponse&& from) noexcept
+      : GetChannelMutesResponse(arena) {
+    *this = ::std::move(from);
+  }
+  const ::google::protobuf::internal::ClassData* PROTOBUF_NONNULL GetClassData() const PROTOBUF_FINAL;
+  static void* PROTOBUF_NONNULL PlacementNew_(
+      const void* PROTOBUF_NONNULL, void* PROTOBUF_NONNULL mem,
+      ::google::protobuf::Arena* PROTOBUF_NULLABLE arena);
+  static constexpr auto InternalNewImpl_();
+
+ public:
+  static constexpr auto InternalGenerateClassData_();
+
+  ::google::protobuf::Metadata GetMetadata() const;
+  // nested types ----------------------------------------------------
+
+  // accessors -------------------------------------------------------
+  enum : int {
+    kStatesFieldNumber = 2,
+    kCodeFieldNumber = 1,
+  };
+  // repeated .chirp.chat.ChannelMuteState states = 2;
+  int states_size() const;
+  private:
+  int _internal_states_size() const;
+
+  public:
+  void clear_states() ;
+  ::chirp::chat::ChannelMuteState* PROTOBUF_NONNULL mutable_states(int index);
+  ::google::protobuf::RepeatedPtrField<::chirp::chat::ChannelMuteState>* PROTOBUF_NONNULL mutable_states();
+
+  private:
+  const ::google::protobuf::RepeatedPtrField<::chirp::chat::ChannelMuteState>& _internal_states() const;
+  ::google::protobuf::RepeatedPtrField<::chirp::chat::ChannelMuteState>* PROTOBUF_NONNULL _internal_mutable_states();
+  public:
+  const ::chirp::chat::ChannelMuteState& states(int index) const;
+  ::chirp::chat::ChannelMuteState* PROTOBUF_NONNULL add_states();
+  const ::google::protobuf::RepeatedPtrField<::chirp::chat::ChannelMuteState>& states() const;
+  // .chirp.common.ErrorCode code = 1;
+  void clear_code() ;
+  ::chirp::common::ErrorCode code() const;
+  void set_code(::chirp::common::ErrorCode value);
+
+  private:
+  ::chirp::common::ErrorCode _internal_code() const;
+  void _internal_set_code(::chirp::common::ErrorCode value);
+
+  public:
+  // @@protoc_insertion_point(class_scope:chirp.chat.GetChannelMutesResponse)
+ private:
+  class _Internal;
+  friend class ::google::protobuf::internal::TcParser;
+  static const ::google::protobuf::internal::TcParseTable<1, 2,
+                                   1, 0,
+                                   2>
+      _table_;
+
+  friend class ::google::protobuf::MessageLite;
+  friend class ::google::protobuf::Arena;
+  template <typename T>
+  friend class ::google::protobuf::Arena::InternalHelper;
+  using InternalArenaConstructable_ = void;
+  using DestructorSkippable_ = void;
+  struct Impl_ {
+    inline explicit constexpr Impl_(::google::protobuf::internal::ConstantInitialized) noexcept;
+    inline explicit Impl_(
+        ::google::protobuf::internal::InternalVisibility visibility,
+        ::google::protobuf::Arena* PROTOBUF_NULLABLE arena);
+    inline explicit Impl_(
+        ::google::protobuf::internal::InternalVisibility visibility,
+        ::google::protobuf::Arena* PROTOBUF_NULLABLE arena, const Impl_& from,
+        const GetChannelMutesResponse& from_msg);
+    ::google::protobuf::internal::HasBits<1> _has_bits_;
+    ::google::protobuf::internal::CachedSize _cached_size_;
+    ::google::protobuf::RepeatedPtrField< ::chirp::chat::ChannelMuteState > states_;
+    int code_;
+    PROTOBUF_TSAN_DECLARE_MEMBER
+  };
+  union { Impl_ _impl_; };
+  friend struct ::TableStruct_proto_2fchat_2eproto;
+};
+
+extern const ::google::protobuf::internal::ClassDataFull GetChannelMutesResponse_class_data_;
 // -------------------------------------------------------------------
 
 class FileAttachment final : public ::google::protobuf::Message
@@ -47751,6 +48733,282 @@ inline ::google::protobuf::RepeatedPtrField<::std::string>* PROTOBUF_NONNULL
 NpcDialogMetadata::_internal_mutable_options() {
   ::google::protobuf::internal::TSanRead(&_impl_);
   return &_impl_.options_;
+}
+
+// -------------------------------------------------------------------
+
+// SetChannelMuteRequest
+
+// .chirp.chat.ChannelType channel_type = 1;
+inline void SetChannelMuteRequest::clear_channel_type() {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_.channel_type_ = 0;
+  ClearHasBit(_impl_._has_bits_[0],
+                  0x00000001U);
+}
+inline ::chirp::chat::ChannelType SetChannelMuteRequest::channel_type() const {
+  // @@protoc_insertion_point(field_get:chirp.chat.SetChannelMuteRequest.channel_type)
+  return _internal_channel_type();
+}
+inline void SetChannelMuteRequest::set_channel_type(::chirp::chat::ChannelType value) {
+  _internal_set_channel_type(value);
+  SetHasBit(_impl_._has_bits_[0], 0x00000001U);
+  // @@protoc_insertion_point(field_set:chirp.chat.SetChannelMuteRequest.channel_type)
+}
+inline ::chirp::chat::ChannelType SetChannelMuteRequest::_internal_channel_type() const {
+  ::google::protobuf::internal::TSanRead(&_impl_);
+  return static_cast<::chirp::chat::ChannelType>(_impl_.channel_type_);
+}
+inline void SetChannelMuteRequest::_internal_set_channel_type(::chirp::chat::ChannelType value) {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_.channel_type_ = value;
+}
+
+// bool muted = 2;
+inline void SetChannelMuteRequest::clear_muted() {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_.muted_ = false;
+  ClearHasBit(_impl_._has_bits_[0],
+                  0x00000002U);
+}
+inline bool SetChannelMuteRequest::muted() const {
+  // @@protoc_insertion_point(field_get:chirp.chat.SetChannelMuteRequest.muted)
+  return _internal_muted();
+}
+inline void SetChannelMuteRequest::set_muted(bool value) {
+  _internal_set_muted(value);
+  SetHasBit(_impl_._has_bits_[0], 0x00000002U);
+  // @@protoc_insertion_point(field_set:chirp.chat.SetChannelMuteRequest.muted)
+}
+inline bool SetChannelMuteRequest::_internal_muted() const {
+  ::google::protobuf::internal::TSanRead(&_impl_);
+  return _impl_.muted_;
+}
+inline void SetChannelMuteRequest::_internal_set_muted(bool value) {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_.muted_ = value;
+}
+
+// -------------------------------------------------------------------
+
+// SetChannelMuteResponse
+
+// .chirp.common.ErrorCode code = 1;
+inline void SetChannelMuteResponse::clear_code() {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_.code_ = 0;
+  ClearHasBit(_impl_._has_bits_[0],
+                  0x00000001U);
+}
+inline ::chirp::common::ErrorCode SetChannelMuteResponse::code() const {
+  // @@protoc_insertion_point(field_get:chirp.chat.SetChannelMuteResponse.code)
+  return _internal_code();
+}
+inline void SetChannelMuteResponse::set_code(::chirp::common::ErrorCode value) {
+  _internal_set_code(value);
+  SetHasBit(_impl_._has_bits_[0], 0x00000001U);
+  // @@protoc_insertion_point(field_set:chirp.chat.SetChannelMuteResponse.code)
+}
+inline ::chirp::common::ErrorCode SetChannelMuteResponse::_internal_code() const {
+  ::google::protobuf::internal::TSanRead(&_impl_);
+  return static_cast<::chirp::common::ErrorCode>(_impl_.code_);
+}
+inline void SetChannelMuteResponse::_internal_set_code(::chirp::common::ErrorCode value) {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_.code_ = value;
+}
+
+// .chirp.chat.ChannelType channel_type = 2;
+inline void SetChannelMuteResponse::clear_channel_type() {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_.channel_type_ = 0;
+  ClearHasBit(_impl_._has_bits_[0],
+                  0x00000002U);
+}
+inline ::chirp::chat::ChannelType SetChannelMuteResponse::channel_type() const {
+  // @@protoc_insertion_point(field_get:chirp.chat.SetChannelMuteResponse.channel_type)
+  return _internal_channel_type();
+}
+inline void SetChannelMuteResponse::set_channel_type(::chirp::chat::ChannelType value) {
+  _internal_set_channel_type(value);
+  SetHasBit(_impl_._has_bits_[0], 0x00000002U);
+  // @@protoc_insertion_point(field_set:chirp.chat.SetChannelMuteResponse.channel_type)
+}
+inline ::chirp::chat::ChannelType SetChannelMuteResponse::_internal_channel_type() const {
+  ::google::protobuf::internal::TSanRead(&_impl_);
+  return static_cast<::chirp::chat::ChannelType>(_impl_.channel_type_);
+}
+inline void SetChannelMuteResponse::_internal_set_channel_type(::chirp::chat::ChannelType value) {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_.channel_type_ = value;
+}
+
+// bool muted = 3;
+inline void SetChannelMuteResponse::clear_muted() {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_.muted_ = false;
+  ClearHasBit(_impl_._has_bits_[0],
+                  0x00000004U);
+}
+inline bool SetChannelMuteResponse::muted() const {
+  // @@protoc_insertion_point(field_get:chirp.chat.SetChannelMuteResponse.muted)
+  return _internal_muted();
+}
+inline void SetChannelMuteResponse::set_muted(bool value) {
+  _internal_set_muted(value);
+  SetHasBit(_impl_._has_bits_[0], 0x00000004U);
+  // @@protoc_insertion_point(field_set:chirp.chat.SetChannelMuteResponse.muted)
+}
+inline bool SetChannelMuteResponse::_internal_muted() const {
+  ::google::protobuf::internal::TSanRead(&_impl_);
+  return _impl_.muted_;
+}
+inline void SetChannelMuteResponse::_internal_set_muted(bool value) {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_.muted_ = value;
+}
+
+// -------------------------------------------------------------------
+
+// ChannelMuteState
+
+// .chirp.chat.ChannelType channel_type = 1;
+inline void ChannelMuteState::clear_channel_type() {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_.channel_type_ = 0;
+  ClearHasBit(_impl_._has_bits_[0],
+                  0x00000001U);
+}
+inline ::chirp::chat::ChannelType ChannelMuteState::channel_type() const {
+  // @@protoc_insertion_point(field_get:chirp.chat.ChannelMuteState.channel_type)
+  return _internal_channel_type();
+}
+inline void ChannelMuteState::set_channel_type(::chirp::chat::ChannelType value) {
+  _internal_set_channel_type(value);
+  SetHasBit(_impl_._has_bits_[0], 0x00000001U);
+  // @@protoc_insertion_point(field_set:chirp.chat.ChannelMuteState.channel_type)
+}
+inline ::chirp::chat::ChannelType ChannelMuteState::_internal_channel_type() const {
+  ::google::protobuf::internal::TSanRead(&_impl_);
+  return static_cast<::chirp::chat::ChannelType>(_impl_.channel_type_);
+}
+inline void ChannelMuteState::_internal_set_channel_type(::chirp::chat::ChannelType value) {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_.channel_type_ = value;
+}
+
+// bool muted = 2;
+inline void ChannelMuteState::clear_muted() {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_.muted_ = false;
+  ClearHasBit(_impl_._has_bits_[0],
+                  0x00000002U);
+}
+inline bool ChannelMuteState::muted() const {
+  // @@protoc_insertion_point(field_get:chirp.chat.ChannelMuteState.muted)
+  return _internal_muted();
+}
+inline void ChannelMuteState::set_muted(bool value) {
+  _internal_set_muted(value);
+  SetHasBit(_impl_._has_bits_[0], 0x00000002U);
+  // @@protoc_insertion_point(field_set:chirp.chat.ChannelMuteState.muted)
+}
+inline bool ChannelMuteState::_internal_muted() const {
+  ::google::protobuf::internal::TSanRead(&_impl_);
+  return _impl_.muted_;
+}
+inline void ChannelMuteState::_internal_set_muted(bool value) {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_.muted_ = value;
+}
+
+// -------------------------------------------------------------------
+
+// GetChannelMutesRequest
+
+// -------------------------------------------------------------------
+
+// GetChannelMutesResponse
+
+// .chirp.common.ErrorCode code = 1;
+inline void GetChannelMutesResponse::clear_code() {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_.code_ = 0;
+  ClearHasBit(_impl_._has_bits_[0],
+                  0x00000002U);
+}
+inline ::chirp::common::ErrorCode GetChannelMutesResponse::code() const {
+  // @@protoc_insertion_point(field_get:chirp.chat.GetChannelMutesResponse.code)
+  return _internal_code();
+}
+inline void GetChannelMutesResponse::set_code(::chirp::common::ErrorCode value) {
+  _internal_set_code(value);
+  SetHasBit(_impl_._has_bits_[0], 0x00000002U);
+  // @@protoc_insertion_point(field_set:chirp.chat.GetChannelMutesResponse.code)
+}
+inline ::chirp::common::ErrorCode GetChannelMutesResponse::_internal_code() const {
+  ::google::protobuf::internal::TSanRead(&_impl_);
+  return static_cast<::chirp::common::ErrorCode>(_impl_.code_);
+}
+inline void GetChannelMutesResponse::_internal_set_code(::chirp::common::ErrorCode value) {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_.code_ = value;
+}
+
+// repeated .chirp.chat.ChannelMuteState states = 2;
+inline int GetChannelMutesResponse::_internal_states_size() const {
+  return _internal_states().size();
+}
+inline int GetChannelMutesResponse::states_size() const {
+  return _internal_states_size();
+}
+inline void GetChannelMutesResponse::clear_states() {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_.states_.Clear();
+  ClearHasBitForRepeated(_impl_._has_bits_[0],
+                  0x00000001U);
+}
+inline ::chirp::chat::ChannelMuteState* PROTOBUF_NONNULL GetChannelMutesResponse::mutable_states(int index)
+    ABSL_ATTRIBUTE_LIFETIME_BOUND {
+  // @@protoc_insertion_point(field_mutable:chirp.chat.GetChannelMutesResponse.states)
+  return _internal_mutable_states()->Mutable(index);
+}
+inline ::google::protobuf::RepeatedPtrField<::chirp::chat::ChannelMuteState>* PROTOBUF_NONNULL GetChannelMutesResponse::mutable_states()
+    ABSL_ATTRIBUTE_LIFETIME_BOUND {
+  SetHasBitForRepeated(_impl_._has_bits_[0], 0x00000001U);
+  // @@protoc_insertion_point(field_mutable_list:chirp.chat.GetChannelMutesResponse.states)
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  return _internal_mutable_states();
+}
+inline const ::chirp::chat::ChannelMuteState& GetChannelMutesResponse::states(int index) const
+    ABSL_ATTRIBUTE_LIFETIME_BOUND {
+  // @@protoc_insertion_point(field_get:chirp.chat.GetChannelMutesResponse.states)
+  return _internal_states().Get(index);
+}
+inline ::chirp::chat::ChannelMuteState* PROTOBUF_NONNULL GetChannelMutesResponse::add_states()
+    ABSL_ATTRIBUTE_LIFETIME_BOUND {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  ::chirp::chat::ChannelMuteState* _add =
+      _internal_mutable_states()->InternalAddWithArena(
+          ::google::protobuf::MessageLite::internal_visibility(), GetArena());
+  SetHasBitForRepeated(_impl_._has_bits_[0], 0x00000001U);
+  // @@protoc_insertion_point(field_add:chirp.chat.GetChannelMutesResponse.states)
+  return _add;
+}
+inline const ::google::protobuf::RepeatedPtrField<::chirp::chat::ChannelMuteState>& GetChannelMutesResponse::states() const
+    ABSL_ATTRIBUTE_LIFETIME_BOUND {
+  // @@protoc_insertion_point(field_list:chirp.chat.GetChannelMutesResponse.states)
+  return _internal_states();
+}
+inline const ::google::protobuf::RepeatedPtrField<::chirp::chat::ChannelMuteState>&
+GetChannelMutesResponse::_internal_states() const {
+  ::google::protobuf::internal::TSanRead(&_impl_);
+  return _impl_.states_;
+}
+inline ::google::protobuf::RepeatedPtrField<::chirp::chat::ChannelMuteState>* PROTOBUF_NONNULL
+GetChannelMutesResponse::_internal_mutable_states() {
+  ::google::protobuf::internal::TSanRead(&_impl_);
+  return &_impl_.states_;
 }
 
 #ifdef __GNUC__

@@ -29,6 +29,7 @@
 #include "npc_uplink.h"
 #include "player_directory.h"
 #include "channel_pacer.h"
+#include "delivery_prefs.h"
 #include "repeat_guard.h"
 #include "word_filter.h"
 #include "push_bridge.h"
@@ -364,6 +365,8 @@ struct FeatureHandlers {
   chirp::chat::ChannelPacer* channel_pacer = nullptr;
   // Repeat-message mute (3 identical sends -> 5 min); always installed.
   chirp::chat::RepeatGuard* repeat_guard = nullptr;
+  // Per-user push filters (channel mutes); always installed.
+  chirp::chat::DeliveryPrefs* delivery_prefs = nullptr;
   // Lexicon content filter; a null/empty-lexicon filter is a pass-through.
   chirp::chat::WordFilter* word_filter = nullptr;
   // Null or disabled() keeps the scaffold "token is user_id" login.
@@ -804,6 +807,45 @@ void HandlePacket(const std::shared_ptr<MessageStore>& store,
     }
     break;
   }
+  case chirp::gateway::SET_CHANNEL_MUTE_REQ: {
+    // Channel mute (game_chat_features P0 频道屏蔽): per-user push filter,
+    // io-thread state. Non-muteable channel types (marquee, system, private)
+    // answer INVALID_PARAM; the filter itself sits in the group notifier.
+    chirp::chat::SetChannelMuteRequest req;
+    chirp::chat::SetChannelMuteResponse resp;
+    if (!req.ParseFromArray(pkt.body().data(), static_cast<int>(pkt.body().size()))) {
+      resp.set_code(chirp::common::INVALID_PARAM);
+    } else if (authenticated_user_id.empty()) {
+      resp.set_code(chirp::common::AUTH_FAILED);
+    } else if (!chirp::chat::IsMuteableChannel(req.channel_type())) {
+      resp.set_code(chirp::common::INVALID_PARAM);
+    } else {
+      resp.set_code(chirp::common::OK);
+      resp.set_muted(features.delivery_prefs->SetChannelMuted(
+          authenticated_user_id, req.channel_type(), req.muted()));
+    }
+    resp.set_channel_type(req.channel_type());
+    chirp::chat::runtime::SendPacket(session, chirp::gateway::SET_CHANNEL_MUTE_RESP,
+                                     pkt.sequence(), resp.SerializeAsString());
+    break;
+  }
+  case chirp::gateway::GET_CHANNEL_MUTES_REQ: {
+    // Reports all three muteable channels with their current state.
+    chirp::chat::GetChannelMutesResponse resp;
+    if (authenticated_user_id.empty()) {
+      resp.set_code(chirp::common::AUTH_FAILED);
+    } else {
+      resp.set_code(chirp::common::OK);
+      for (const auto& [type, muted] : features.delivery_prefs->GetChannelMutes(authenticated_user_id)) {
+        chirp::chat::ChannelMuteState* state_msg = resp.add_states();
+        state_msg->set_channel_type(type);
+        state_msg->set_muted(muted);
+      }
+    }
+    chirp::chat::runtime::SendPacket(session, chirp::gateway::GET_CHANNEL_MUTES_RESP,
+                                     pkt.sequence(), resp.SerializeAsString());
+    break;
+  }
   case chirp::gateway::GET_HISTORY_REQ: {
     chirp::chat::GetHistoryRequest req;
     if (!req.ParseFromArray(pkt.body().data(), static_cast<int>(pkt.body().size()))) {
@@ -1200,11 +1242,25 @@ int main(int argc, char** argv) {
   }
   chirp::chat::PushBridge push(notification);
 
+  // Per-user push filters (channel mutes); declared before the group
+  // notifier because the notifier consults it on every chat broadcast.
+  chirp::chat::DeliveryPrefs delivery_prefs;
+
   // Delivers group notifications to every live session of a member; false
-  // means the member has no session right now.
+  // means the member has no session right now. Chat-message notifications
+  // additionally respect the recipient's channel mutes (game_chat_features
+  // P0 频道屏蔽): a muted member reports "delivered" so the broadcast does
+  // not queue an offline copy either — the mute is a push filter, history
+  // stays browsable. Membership notices (group joined/left/...) ignore
+  // mutes on purpose.
   chirp::chat::GroupMemberNotifier notify_member =
-      [state](const std::string& user_id, chirp::gateway::MsgID msg_id,
-              const google::protobuf::Message& body) -> bool {
+      [state, &delivery_prefs](const std::string& user_id, chirp::gateway::MsgID msg_id,
+                               const google::protobuf::Message& body) -> bool {
+    if (msg_id == chirp::gateway::CHAT_MESSAGE_NOTIFY &&
+        delivery_prefs.IsChannelMuted(
+            user_id, static_cast<const chirp::chat::ChatMessage&>(body).channel_type())) {
+      return true;
+    }
     const auto recvs = chirp::network::GetUserSessions(state, user_id);
     if (recvs.empty()) {
       return false;
@@ -1290,6 +1346,7 @@ int main(int argc, char** argv) {
   features.rate_limiter = rate_limiter.get();
   features.channel_pacer = &channel_pacer;
   features.repeat_guard = &repeat_guard;
+  features.delivery_prefs = &delivery_prefs;
   features.word_filter = &word_filter;
   features.token_verifier = &token_verifier;
   features.acks = acks.get();

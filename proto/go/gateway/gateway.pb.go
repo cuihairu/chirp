@@ -121,6 +121,11 @@ const (
 	// Mentions
 	MsgID_GET_MENTION_SUGGESTIONS_REQ  MsgID = 2233
 	MsgID_GET_MENTION_SUGGESTIONS_RESP MsgID = 2234
+	// Channel mute (player-level push filter; history stays browsable)
+	MsgID_SET_CHANNEL_MUTE_REQ   MsgID = 2235
+	MsgID_SET_CHANNEL_MUTE_RESP  MsgID = 2236
+	MsgID_GET_CHANNEL_MUTES_REQ  MsgID = 2237
+	MsgID_GET_CHANNEL_MUTES_RESP MsgID = 2238
 	// Social service
 	MsgID_ADD_FRIEND_REQ             MsgID = 3001
 	MsgID_ADD_FRIEND_RESP            MsgID = 3002
@@ -344,6 +349,10 @@ var (
 		2232: "MESSAGE_DELETED_NOTIFY",
 		2233: "GET_MENTION_SUGGESTIONS_REQ",
 		2234: "GET_MENTION_SUGGESTIONS_RESP",
+		2235: "SET_CHANNEL_MUTE_REQ",
+		2236: "SET_CHANNEL_MUTE_RESP",
+		2237: "GET_CHANNEL_MUTES_REQ",
+		2238: "GET_CHANNEL_MUTES_RESP",
 		3001: "ADD_FRIEND_REQ",
 		3002: "ADD_FRIEND_RESP",
 		3003: "FRIEND_REQUEST_ACTION_REQ",
@@ -542,6 +551,10 @@ var (
 		"MESSAGE_DELETED_NOTIFY":           2232,
 		"GET_MENTION_SUGGESTIONS_REQ":      2233,
 		"GET_MENTION_SUGGESTIONS_RESP":     2234,
+		"SET_CHANNEL_MUTE_REQ":             2235,
+		"SET_CHANNEL_MUTE_RESP":            2236,
+		"GET_CHANNEL_MUTES_REQ":            2237,
+		"GET_CHANNEL_MUTES_RESP":           2238,
 		"ADD_FRIEND_REQ":                   3001,
 		"ADD_FRIEND_RESP":                  3002,
 		"FRIEND_REQUEST_ACTION_REQ":        3003,
@@ -1237,7 +1250,7 @@ const file_proto_gateway_proto_rawDesc = "" +
 	"channel_id\x18\x01 \x01(\tR\tchannelId\x12\x1b\n" +
 	"\tsender_id\x18\x02 \x01(\tR\bsenderId\x12\x18\n" +
 	"\acontent\x18\x03 \x01(\fR\acontent\x12\"\n" +
-	"\rclient_msg_id\x18\x04 \x01(\tR\vclientMsgId*\xb9'\n" +
+	"\rclient_msg_id\x18\x04 \x01(\tR\vclientMsgId*\xa9(\n" +
 	"\x05MsgID\x12\v\n" +
 	"\aUNKNOWN\x10\x00\x12\x13\n" +
 	"\x0eHEARTBEAT_PING\x10\xe9\a\x12\x13\n" +
@@ -1320,7 +1333,11 @@ const file_proto_gateway_proto_rawDesc = "" +
 	"\x15MESSAGE_EDITED_NOTIFY\x10\xb7\x11\x12\x1b\n" +
 	"\x16MESSAGE_DELETED_NOTIFY\x10\xb8\x11\x12 \n" +
 	"\x1bGET_MENTION_SUGGESTIONS_REQ\x10\xb9\x11\x12!\n" +
-	"\x1cGET_MENTION_SUGGESTIONS_RESP\x10\xba\x11\x12\x13\n" +
+	"\x1cGET_MENTION_SUGGESTIONS_RESP\x10\xba\x11\x12\x19\n" +
+	"\x14SET_CHANNEL_MUTE_REQ\x10\xbb\x11\x12\x1a\n" +
+	"\x15SET_CHANNEL_MUTE_RESP\x10\xbc\x11\x12\x1a\n" +
+	"\x15GET_CHANNEL_MUTES_REQ\x10\xbd\x11\x12\x1b\n" +
+	"\x16GET_CHANNEL_MUTES_RESP\x10\xbe\x11\x12\x13\n" +
 	"\x0eADD_FRIEND_REQ\x10\xb9\x17\x12\x14\n" +
 	"\x0fADD_FRIEND_RESP\x10\xba\x17\x12\x1e\n" +
 	"\x19FRIEND_REQUEST_ACTION_REQ\x10\xbb\x17\x12\x1f\n" +

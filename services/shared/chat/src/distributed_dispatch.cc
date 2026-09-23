@@ -54,6 +54,22 @@ void DispatchDistributedPacket(const std::shared_ptr<network::Session>& session,
       }
       break;
     }
+    case gateway::SET_CHANNEL_MUTE_REQ: {
+      chat::SetChannelMuteRequest req;
+      if (handlers.on_set_channel_mute &&
+          req.ParseFromArray(pkt.body().data(), static_cast<int>(pkt.body().size()))) {
+        handlers.on_set_channel_mute(session, req, pkt.sequence());
+      }
+      break;
+    }
+    case gateway::GET_CHANNEL_MUTES_REQ: {
+      chat::GetChannelMutesRequest req;
+      if (handlers.on_get_channel_mutes &&
+          req.ParseFromArray(pkt.body().data(), static_cast<int>(pkt.body().size()))) {
+        handlers.on_get_channel_mutes(session, req, pkt.sequence());
+      }
+      break;
+    }
     case gateway::HEARTBEAT_PING: {
       gateway::HeartbeatPong pong;
       pong.set_timestamp(NowMs());

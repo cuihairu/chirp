@@ -228,6 +228,59 @@ struct SkillMetadataDefaultTypeInternal {
 PROTOBUF_ATTRIBUTE_NO_DESTROY PROTOBUF_CONSTINIT
     PROTOBUF_ATTRIBUTE_INIT_PRIORITY1 SkillMetadataDefaultTypeInternal _SkillMetadata_default_instance_;
 
+inline constexpr SetChannelMuteResponse::Impl_::Impl_(
+    ::_pbi::ConstantInitialized) noexcept
+      : _cached_size_{0},
+        code_{static_cast< ::chirp::common::ErrorCode >(0)},
+        channel_type_{static_cast< ::chirp::chat::ChannelType >(0)},
+        muted_{false} {}
+
+template <typename>
+PROTOBUF_CONSTEXPR SetChannelMuteResponse::SetChannelMuteResponse(::_pbi::ConstantInitialized)
+#if defined(PROTOBUF_CUSTOM_VTABLE)
+    : ::google::protobuf::Message(SetChannelMuteResponse_class_data_.base()),
+#else   // PROTOBUF_CUSTOM_VTABLE
+    : ::google::protobuf::Message(),
+#endif  // PROTOBUF_CUSTOM_VTABLE
+      _impl_(::_pbi::ConstantInitialized()) {
+}
+struct SetChannelMuteResponseDefaultTypeInternal {
+  PROTOBUF_CONSTEXPR SetChannelMuteResponseDefaultTypeInternal() : _instance(::_pbi::ConstantInitialized{}) {}
+  ~SetChannelMuteResponseDefaultTypeInternal() {}
+  union {
+    SetChannelMuteResponse _instance;
+  };
+};
+
+PROTOBUF_ATTRIBUTE_NO_DESTROY PROTOBUF_CONSTINIT
+    PROTOBUF_ATTRIBUTE_INIT_PRIORITY1 SetChannelMuteResponseDefaultTypeInternal _SetChannelMuteResponse_default_instance_;
+
+inline constexpr SetChannelMuteRequest::Impl_::Impl_(
+    ::_pbi::ConstantInitialized) noexcept
+      : _cached_size_{0},
+        channel_type_{static_cast< ::chirp::chat::ChannelType >(0)},
+        muted_{false} {}
+
+template <typename>
+PROTOBUF_CONSTEXPR SetChannelMuteRequest::SetChannelMuteRequest(::_pbi::ConstantInitialized)
+#if defined(PROTOBUF_CUSTOM_VTABLE)
+    : ::google::protobuf::Message(SetChannelMuteRequest_class_data_.base()),
+#else   // PROTOBUF_CUSTOM_VTABLE
+    : ::google::protobuf::Message(),
+#endif  // PROTOBUF_CUSTOM_VTABLE
+      _impl_(::_pbi::ConstantInitialized()) {
+}
+struct SetChannelMuteRequestDefaultTypeInternal {
+  PROTOBUF_CONSTEXPR SetChannelMuteRequestDefaultTypeInternal() : _instance(::_pbi::ConstantInitialized{}) {}
+  ~SetChannelMuteRequestDefaultTypeInternal() {}
+  union {
+    SetChannelMuteRequest _instance;
+  };
+};
+
+PROTOBUF_ATTRIBUTE_NO_DESTROY PROTOBUF_CONSTINIT
+    PROTOBUF_ATTRIBUTE_INIT_PRIORITY1 SetChannelMuteRequestDefaultTypeInternal _SetChannelMuteRequest_default_instance_;
+
 inline constexpr SendMessageResponse::Impl_::Impl_(
     ::_pbi::ConstantInitialized) noexcept
       : _cached_size_{0},
@@ -1714,6 +1767,24 @@ struct GetChannelsRequestDefaultTypeInternal {
 
 PROTOBUF_ATTRIBUTE_NO_DESTROY PROTOBUF_CONSTINIT
     PROTOBUF_ATTRIBUTE_INIT_PRIORITY1 GetChannelsRequestDefaultTypeInternal _GetChannelsRequest_default_instance_;
+template <typename>
+PROTOBUF_CONSTEXPR GetChannelMutesRequest::GetChannelMutesRequest(::_pbi::ConstantInitialized)
+#if defined(PROTOBUF_CUSTOM_VTABLE)
+    : ::google::protobuf::internal::ZeroFieldsBase(GetChannelMutesRequest_class_data_.base()){}
+#else   // PROTOBUF_CUSTOM_VTABLE
+    : ::google::protobuf::internal::ZeroFieldsBase() {
+}
+#endif  // PROTOBUF_CUSTOM_VTABLE
+struct GetChannelMutesRequestDefaultTypeInternal {
+  PROTOBUF_CONSTEXPR GetChannelMutesRequestDefaultTypeInternal() : _instance(::_pbi::ConstantInitialized{}) {}
+  ~GetChannelMutesRequestDefaultTypeInternal() {}
+  union {
+    GetChannelMutesRequest _instance;
+  };
+};
+
+PROTOBUF_ATTRIBUTE_NO_DESTROY PROTOBUF_CONSTINIT
+    PROTOBUF_ATTRIBUTE_INIT_PRIORITY1 GetChannelMutesRequestDefaultTypeInternal _GetChannelMutesRequest_default_instance_;
 
 inline constexpr FileInfo::Impl_::Impl_(
     ::_pbi::ConstantInitialized) noexcept
@@ -2153,6 +2224,32 @@ struct ChannelPermissionsDefaultTypeInternal {
 
 PROTOBUF_ATTRIBUTE_NO_DESTROY PROTOBUF_CONSTINIT
     PROTOBUF_ATTRIBUTE_INIT_PRIORITY1 ChannelPermissionsDefaultTypeInternal _ChannelPermissions_default_instance_;
+
+inline constexpr ChannelMuteState::Impl_::Impl_(
+    ::_pbi::ConstantInitialized) noexcept
+      : _cached_size_{0},
+        channel_type_{static_cast< ::chirp::chat::ChannelType >(0)},
+        muted_{false} {}
+
+template <typename>
+PROTOBUF_CONSTEXPR ChannelMuteState::ChannelMuteState(::_pbi::ConstantInitialized)
+#if defined(PROTOBUF_CUSTOM_VTABLE)
+    : ::google::protobuf::Message(ChannelMuteState_class_data_.base()),
+#else   // PROTOBUF_CUSTOM_VTABLE
+    : ::google::protobuf::Message(),
+#endif  // PROTOBUF_CUSTOM_VTABLE
+      _impl_(::_pbi::ConstantInitialized()) {
+}
+struct ChannelMuteStateDefaultTypeInternal {
+  PROTOBUF_CONSTEXPR ChannelMuteStateDefaultTypeInternal() : _instance(::_pbi::ConstantInitialized{}) {}
+  ~ChannelMuteStateDefaultTypeInternal() {}
+  union {
+    ChannelMuteState _instance;
+  };
+};
+
+PROTOBUF_ATTRIBUTE_NO_DESTROY PROTOBUF_CONSTINIT
+    PROTOBUF_ATTRIBUTE_INIT_PRIORITY1 ChannelMuteStateDefaultTypeInternal _ChannelMuteState_default_instance_;
 
 inline constexpr ChannelDeletedNotify::Impl_::Impl_(
     ::_pbi::ConstantInitialized) noexcept
@@ -2777,6 +2874,32 @@ struct GetFileDownloadResponseDefaultTypeInternal {
 
 PROTOBUF_ATTRIBUTE_NO_DESTROY PROTOBUF_CONSTINIT
     PROTOBUF_ATTRIBUTE_INIT_PRIORITY1 GetFileDownloadResponseDefaultTypeInternal _GetFileDownloadResponse_default_instance_;
+
+inline constexpr GetChannelMutesResponse::Impl_::Impl_(
+    ::_pbi::ConstantInitialized) noexcept
+      : _cached_size_{0},
+        states_{},
+        code_{static_cast< ::chirp::common::ErrorCode >(0)} {}
+
+template <typename>
+PROTOBUF_CONSTEXPR GetChannelMutesResponse::GetChannelMutesResponse(::_pbi::ConstantInitialized)
+#if defined(PROTOBUF_CUSTOM_VTABLE)
+    : ::google::protobuf::Message(GetChannelMutesResponse_class_data_.base()),
+#else   // PROTOBUF_CUSTOM_VTABLE
+    : ::google::protobuf::Message(),
+#endif  // PROTOBUF_CUSTOM_VTABLE
+      _impl_(::_pbi::ConstantInitialized()) {
+}
+struct GetChannelMutesResponseDefaultTypeInternal {
+  PROTOBUF_CONSTEXPR GetChannelMutesResponseDefaultTypeInternal() : _instance(::_pbi::ConstantInitialized{}) {}
+  ~GetChannelMutesResponseDefaultTypeInternal() {}
+  union {
+    GetChannelMutesResponse _instance;
+  };
+};
+
+PROTOBUF_ATTRIBUTE_NO_DESTROY PROTOBUF_CONSTINIT
+    PROTOBUF_ATTRIBUTE_INIT_PRIORITY1 GetChannelMutesResponseDefaultTypeInternal _GetChannelMutesResponse_default_instance_;
 
 inline constexpr FileAttachment::Impl_::Impl_(
     ::_pbi::ConstantInitialized) noexcept
@@ -4625,6 +4748,37 @@ const ::uint32_t
         2,
         3,
         0,
+        0x081, // bitmap
+        PROTOBUF_FIELD_OFFSET(::chirp::chat::SetChannelMuteRequest, _impl_._has_bits_),
+        5, // hasbit index offset
+        PROTOBUF_FIELD_OFFSET(::chirp::chat::SetChannelMuteRequest, _impl_.channel_type_),
+        PROTOBUF_FIELD_OFFSET(::chirp::chat::SetChannelMuteRequest, _impl_.muted_),
+        0,
+        1,
+        0x081, // bitmap
+        PROTOBUF_FIELD_OFFSET(::chirp::chat::SetChannelMuteResponse, _impl_._has_bits_),
+        6, // hasbit index offset
+        PROTOBUF_FIELD_OFFSET(::chirp::chat::SetChannelMuteResponse, _impl_.code_),
+        PROTOBUF_FIELD_OFFSET(::chirp::chat::SetChannelMuteResponse, _impl_.channel_type_),
+        PROTOBUF_FIELD_OFFSET(::chirp::chat::SetChannelMuteResponse, _impl_.muted_),
+        0,
+        1,
+        2,
+        0x081, // bitmap
+        PROTOBUF_FIELD_OFFSET(::chirp::chat::ChannelMuteState, _impl_._has_bits_),
+        5, // hasbit index offset
+        PROTOBUF_FIELD_OFFSET(::chirp::chat::ChannelMuteState, _impl_.channel_type_),
+        PROTOBUF_FIELD_OFFSET(::chirp::chat::ChannelMuteState, _impl_.muted_),
+        0,
+        1,
+        0x000, // bitmap
+        0x081, // bitmap
+        PROTOBUF_FIELD_OFFSET(::chirp::chat::GetChannelMutesResponse, _impl_._has_bits_),
+        5, // hasbit index offset
+        PROTOBUF_FIELD_OFFSET(::chirp::chat::GetChannelMutesResponse, _impl_.code_),
+        PROTOBUF_FIELD_OFFSET(::chirp::chat::GetChannelMutesResponse, _impl_.states_),
+        1,
+        0,
 };
 
 static const ::_pbi::MigrationSchema
@@ -4737,6 +4891,11 @@ static const ::_pbi::MigrationSchema
         {1155, sizeof(::chirp::chat::AchievementMetadata)},
         {1168, sizeof(::chirp::chat::TradeMetadata)},
         {1181, sizeof(::chirp::chat::NpcDialogMetadata)},
+        {1192, sizeof(::chirp::chat::SetChannelMuteRequest)},
+        {1199, sizeof(::chirp::chat::SetChannelMuteResponse)},
+        {1208, sizeof(::chirp::chat::ChannelMuteState)},
+        {1215, sizeof(::chirp::chat::GetChannelMutesRequest)},
+        {1216, sizeof(::chirp::chat::GetChannelMutesResponse)},
 };
 static const ::_pb::Message* PROTOBUF_NONNULL const file_default_instances[] = {
     &::chirp::chat::_SendMessageRequest_default_instance_._instance,
@@ -4847,6 +5006,11 @@ static const ::_pb::Message* PROTOBUF_NONNULL const file_default_instances[] = {
     &::chirp::chat::_AchievementMetadata_default_instance_._instance,
     &::chirp::chat::_TradeMetadata_default_instance_._instance,
     &::chirp::chat::_NpcDialogMetadata_default_instance_._instance,
+    &::chirp::chat::_SetChannelMuteRequest_default_instance_._instance,
+    &::chirp::chat::_SetChannelMuteResponse_default_instance_._instance,
+    &::chirp::chat::_ChannelMuteState_default_instance_._instance,
+    &::chirp::chat::_GetChannelMutesRequest_default_instance_._instance,
+    &::chirp::chat::_GetChannelMutesResponse_default_instance_._instance,
 };
 const char descriptor_table_protodef_proto_2fchat_2eproto[] ABSL_ATTRIBUTE_SECTION_VARIABLE(
     protodesc_cold) = {
@@ -5185,30 +5349,41 @@ const char descriptor_table_protodef_proto_2fchat_2eproto[] ABSL_ATTRIBUTE_SECTI
     "\003\022\021\n\titem_name\030\004 \001(\t\022\022\n\nitem_count\030\005 \001(\005"
     "\"Y\n\021NpcDialogMetadata\022\016\n\006npc_id\030\001 \001(\t\022\020\n"
     "\010npc_name\030\002 \001(\t\022\021\n\tdialog_id\030\003 \001(\t\022\017\n\007op"
-    "tions\030\004 \003(\t*\222\001\n\007MsgType\022\010\n\004TEXT\020\000\022\t\n\005EMO"
-    "JI\020\001\022\t\n\005VOICE\020\002\022\t\n\005IMAGE\020\003\022\r\n\tITEM_LINK\020"
-    "\n\022\016\n\nSKILL_LINK\020\013\022\017\n\013ACHIEVEMENT\020\014\022\016\n\nNP"
-    "C_DIALOG\020\r\022\020\n\014TRADE_STATUS\020\016\022\n\n\006SYSTEM\020c"
-    "*[\n\013ChannelType\022\013\n\007PRIVATE\020\000\022\010\n\004TEAM\020\001\022\t"
-    "\n\005GUILD\020\002\022\t\n\005WORLD\020\003\022\022\n\016SYSTEM_CHANNEL\020\004"
-    "\022\013\n\007MARQUEE\020\005*Y\n\010Priority\022\020\n\014PRIORITY_LO"
-    "W\020\000\022\023\n\017PRIORITY_NORMAL\020\001\022\021\n\rPRIORITY_HIG"
-    "H\020\002\022\023\n\017PRIORITY_URGENT\020\003*T\n\nSenderKind\022\017"
-    "\n\013SENDER_USER\020\000\022\021\n\rSENDER_SYSTEM\020\001\022\016\n\nSE"
-    "NDER_NPC\020\002\022\022\n\016SENDER_SERVICE\020\003*B\n\017GroupM"
-    "emberRole\022\n\n\006MEMBER\020\000\022\r\n\tMODERATOR\020\001\022\t\n\005"
-    "ADMIN\020\002\022\t\n\005OWNER\020\003*\213\001\n\013ChannelKind\022\025\n\021CH"
-    "ANNEL_KIND_TEXT\020\000\022\026\n\022CHANNEL_KIND_VOICE\020"
-    "\001\022\035\n\031CHANNEL_KIND_ANNOUNCEMENT\020\002\022\026\n\022CHAN"
-    "NEL_KIND_STAGE\020\003\022\026\n\022CHANNEL_KIND_FORUM\020\004"
-    "*D\n\016PermissionType\022\030\n\024PERMISSION_TYPE_RO"
-    "LE\020\000\022\030\n\024PERMISSION_TYPE_USER\020\001*6\n\022Permis"
-    "sionOverride\022\013\n\007INHERIT\020\000\022\t\n\005ALLOW\020\001\022\010\n\004"
-    "DENY\020\002*\207\001\n\013MentionType\022\025\n\021MENTION_TYPE_U"
-    "SER\020\000\022\025\n\021MENTION_TYPE_ROLE\020\001\022\030\n\024MENTION_"
-    "TYPE_CHANNEL\020\002\022\031\n\025MENTION_TYPE_EVERYONE\020"
-    "\003\022\025\n\021MENTION_TYPE_HERE\020\004B$Z\"github.com/c"
-    "ui/chirp/proto/go/chatb\006proto3"
+    "tions\030\004 \003(\t\"U\n\025SetChannelMuteRequest\022-\n\014"
+    "channel_type\030\001 \001(\0162\027.chirp.chat.ChannelT"
+    "ype\022\r\n\005muted\030\002 \001(\010\"}\n\026SetChannelMuteResp"
+    "onse\022%\n\004code\030\001 \001(\0162\027.chirp.common.ErrorC"
+    "ode\022-\n\014channel_type\030\002 \001(\0162\027.chirp.chat.C"
+    "hannelType\022\r\n\005muted\030\003 \001(\010\"P\n\020ChannelMute"
+    "State\022-\n\014channel_type\030\001 \001(\0162\027.chirp.chat"
+    ".ChannelType\022\r\n\005muted\030\002 \001(\010\"\030\n\026GetChanne"
+    "lMutesRequest\"n\n\027GetChannelMutesResponse"
+    "\022%\n\004code\030\001 \001(\0162\027.chirp.common.ErrorCode\022"
+    ",\n\006states\030\002 \003(\0132\034.chirp.chat.ChannelMute"
+    "State*\222\001\n\007MsgType\022\010\n\004TEXT\020\000\022\t\n\005EMOJI\020\001\022\t"
+    "\n\005VOICE\020\002\022\t\n\005IMAGE\020\003\022\r\n\tITEM_LINK\020\n\022\016\n\nS"
+    "KILL_LINK\020\013\022\017\n\013ACHIEVEMENT\020\014\022\016\n\nNPC_DIAL"
+    "OG\020\r\022\020\n\014TRADE_STATUS\020\016\022\n\n\006SYSTEM\020c*[\n\013Ch"
+    "annelType\022\013\n\007PRIVATE\020\000\022\010\n\004TEAM\020\001\022\t\n\005GUIL"
+    "D\020\002\022\t\n\005WORLD\020\003\022\022\n\016SYSTEM_CHANNEL\020\004\022\013\n\007MA"
+    "RQUEE\020\005*Y\n\010Priority\022\020\n\014PRIORITY_LOW\020\000\022\023\n"
+    "\017PRIORITY_NORMAL\020\001\022\021\n\rPRIORITY_HIGH\020\002\022\023\n"
+    "\017PRIORITY_URGENT\020\003*T\n\nSenderKind\022\017\n\013SEND"
+    "ER_USER\020\000\022\021\n\rSENDER_SYSTEM\020\001\022\016\n\nSENDER_N"
+    "PC\020\002\022\022\n\016SENDER_SERVICE\020\003*B\n\017GroupMemberR"
+    "ole\022\n\n\006MEMBER\020\000\022\r\n\tMODERATOR\020\001\022\t\n\005ADMIN\020"
+    "\002\022\t\n\005OWNER\020\003*\213\001\n\013ChannelKind\022\025\n\021CHANNEL_"
+    "KIND_TEXT\020\000\022\026\n\022CHANNEL_KIND_VOICE\020\001\022\035\n\031C"
+    "HANNEL_KIND_ANNOUNCEMENT\020\002\022\026\n\022CHANNEL_KI"
+    "ND_STAGE\020\003\022\026\n\022CHANNEL_KIND_FORUM\020\004*D\n\016Pe"
+    "rmissionType\022\030\n\024PERMISSION_TYPE_ROLE\020\000\022\030"
+    "\n\024PERMISSION_TYPE_USER\020\001*6\n\022PermissionOv"
+    "erride\022\013\n\007INHERIT\020\000\022\t\n\005ALLOW\020\001\022\010\n\004DENY\020\002"
+    "*\207\001\n\013MentionType\022\025\n\021MENTION_TYPE_USER\020\000\022"
+    "\025\n\021MENTION_TYPE_ROLE\020\001\022\030\n\024MENTION_TYPE_C"
+    "HANNEL\020\002\022\031\n\025MENTION_TYPE_EVERYONE\020\003\022\025\n\021M"
+    "ENTION_TYPE_HERE\020\004B$Z\"github.com/cui/chi"
+    "rp/proto/go/chatb\006proto3"
 };
 static const ::_pbi::DescriptorTable* PROTOBUF_NONNULL const
     descriptor_table_proto_2fchat_2eproto_deps[1] = {
@@ -5218,13 +5393,13 @@ static ::absl::once_flag descriptor_table_proto_2fchat_2eproto_once;
 PROTOBUF_CONSTINIT const ::_pbi::DescriptorTable descriptor_table_proto_2fchat_2eproto = {
     false,
     false,
-    14350,
+    14784,
     descriptor_table_protodef_proto_2fchat_2eproto,
     "proto/chat.proto",
     &descriptor_table_proto_2fchat_2eproto_once,
     descriptor_table_proto_2fchat_2eproto_deps,
     1,
-    108,
+    113,
     schemas,
     file_default_instances,
     TableStruct_proto_2fchat_2eproto::offsets,
@@ -47105,6 +47280,1336 @@ void NpcDialogMetadata::InternalSwap(NpcDialogMetadata* PROTOBUF_RESTRICT PROTOB
 }
 
 ::google::protobuf::Metadata NpcDialogMetadata::GetMetadata() const {
+  return ::google::protobuf::Message::GetMetadataImpl(GetClassData()->full());
+}
+// ===================================================================
+
+class SetChannelMuteRequest::_Internal {
+ public:
+  using HasBits =
+      decltype(::std::declval<SetChannelMuteRequest>()._impl_._has_bits_);
+  static constexpr ::int32_t kHasBitsOffset =
+      8 * PROTOBUF_FIELD_OFFSET(SetChannelMuteRequest, _impl_._has_bits_);
+};
+
+SetChannelMuteRequest::SetChannelMuteRequest(::google::protobuf::Arena* PROTOBUF_NULLABLE arena)
+#if defined(PROTOBUF_CUSTOM_VTABLE)
+    : ::google::protobuf::Message(arena, SetChannelMuteRequest_class_data_.base()) {
+#else   // PROTOBUF_CUSTOM_VTABLE
+    : ::google::protobuf::Message(arena) {
+#endif  // PROTOBUF_CUSTOM_VTABLE
+  SharedCtor(arena);
+  // @@protoc_insertion_point(arena_constructor:chirp.chat.SetChannelMuteRequest)
+}
+SetChannelMuteRequest::SetChannelMuteRequest(
+    ::google::protobuf::Arena* PROTOBUF_NULLABLE arena, const SetChannelMuteRequest& from)
+#if defined(PROTOBUF_CUSTOM_VTABLE)
+    : ::google::protobuf::Message(arena, SetChannelMuteRequest_class_data_.base()),
+#else   // PROTOBUF_CUSTOM_VTABLE
+    : ::google::protobuf::Message(arena),
+#endif  // PROTOBUF_CUSTOM_VTABLE
+      _impl_(from._impl_) {
+  _internal_metadata_.MergeFrom<::google::protobuf::UnknownFieldSet>(
+      from._internal_metadata_);
+}
+PROTOBUF_NDEBUG_INLINE SetChannelMuteRequest::Impl_::Impl_(
+    [[maybe_unused]] ::google::protobuf::internal::InternalVisibility visibility,
+    [[maybe_unused]] ::google::protobuf::Arena* PROTOBUF_NULLABLE arena)
+      : _cached_size_{0} {}
+
+inline void SetChannelMuteRequest::SharedCtor(::_pb::Arena* PROTOBUF_NULLABLE arena) {
+  new (&_impl_) Impl_(internal_visibility(), arena);
+  ::memset(reinterpret_cast<char*>(&_impl_) +
+               offsetof(Impl_, channel_type_),
+           0,
+           offsetof(Impl_, muted_) -
+               offsetof(Impl_, channel_type_) +
+               sizeof(Impl_::muted_));
+}
+SetChannelMuteRequest::~SetChannelMuteRequest() {
+  // @@protoc_insertion_point(destructor:chirp.chat.SetChannelMuteRequest)
+  SharedDtor(*this);
+}
+inline void SetChannelMuteRequest::SharedDtor(MessageLite& self) {
+  SetChannelMuteRequest& this_ = static_cast<SetChannelMuteRequest&>(self);
+  if constexpr (::_pbi::DebugHardenCheckHasBitConsistency()) {
+    this_.CheckHasBitConsistency();
+  }
+  this_._internal_metadata_.Delete<::google::protobuf::UnknownFieldSet>();
+  ABSL_DCHECK(this_.GetArena() == nullptr);
+  this_._impl_.~Impl_();
+}
+
+inline void* PROTOBUF_NONNULL SetChannelMuteRequest::PlacementNew_(
+    const void* PROTOBUF_NONNULL, void* PROTOBUF_NONNULL mem,
+    ::google::protobuf::Arena* PROTOBUF_NULLABLE arena) {
+  return ::new (mem) SetChannelMuteRequest(arena);
+}
+constexpr auto SetChannelMuteRequest::InternalNewImpl_() {
+  return ::google::protobuf::internal::MessageCreator::ZeroInit(sizeof(SetChannelMuteRequest),
+                                            alignof(SetChannelMuteRequest));
+}
+constexpr auto SetChannelMuteRequest::InternalGenerateClassData_() {
+  return ::google::protobuf::internal::ClassDataFull{
+      ::google::protobuf::internal::ClassData{
+          &_SetChannelMuteRequest_default_instance_._instance,
+          &_table_.header,
+          nullptr,  // OnDemandRegisterArenaDtor
+          nullptr,  // IsInitialized
+          &SetChannelMuteRequest::MergeImpl,
+          ::google::protobuf::Message::GetNewImpl<SetChannelMuteRequest>(),
+#if defined(PROTOBUF_CUSTOM_VTABLE)
+          &SetChannelMuteRequest::SharedDtor,
+          ::google::protobuf::Message::GetClearImpl<SetChannelMuteRequest>(), &SetChannelMuteRequest::ByteSizeLong,
+              &SetChannelMuteRequest::_InternalSerialize,
+#endif  // PROTOBUF_CUSTOM_VTABLE
+          PROTOBUF_FIELD_OFFSET(SetChannelMuteRequest, _impl_._cached_size_),
+          false,
+      },
+      &SetChannelMuteRequest::kDescriptorMethods,
+      &descriptor_table_proto_2fchat_2eproto,
+      nullptr,  // tracker
+  };
+}
+
+PROTOBUF_CONSTINIT PROTOBUF_ATTRIBUTE_INIT_PRIORITY1 const
+    ::google::protobuf::internal::ClassDataFull SetChannelMuteRequest_class_data_ =
+        SetChannelMuteRequest::InternalGenerateClassData_();
+
+PROTOBUF_ATTRIBUTE_WEAK const ::google::protobuf::internal::ClassData* PROTOBUF_NONNULL
+SetChannelMuteRequest::GetClassData() const {
+  ::google::protobuf::internal::PrefetchToLocalCache(&SetChannelMuteRequest_class_data_);
+  ::google::protobuf::internal::PrefetchToLocalCache(SetChannelMuteRequest_class_data_.tc_table);
+  return SetChannelMuteRequest_class_data_.base();
+}
+PROTOBUF_CONSTINIT PROTOBUF_ATTRIBUTE_INIT_PRIORITY1
+const ::_pbi::TcParseTable<1, 2, 0, 0, 2>
+SetChannelMuteRequest::_table_ = {
+  {
+    PROTOBUF_FIELD_OFFSET(SetChannelMuteRequest, _impl_._has_bits_),
+    0, // no _extensions_
+    2, 8,  // max_field_number, fast_idx_mask
+    offsetof(decltype(_table_), field_lookup_table),
+    4294967292,  // skipmap
+    offsetof(decltype(_table_), field_entries),
+    2,  // num_field_entries
+    0,  // num_aux_entries
+    offsetof(decltype(_table_), field_names),  // no aux_entries
+    SetChannelMuteRequest_class_data_.base(),
+    nullptr,  // post_loop_handler
+    ::_pbi::TcParser::GenericFallback,  // fallback
+    #ifdef PROTOBUF_PREFETCH_PARSE_TABLE
+    ::_pbi::TcParser::GetTable<::chirp::chat::SetChannelMuteRequest>(),  // to_prefetch
+    #endif  // PROTOBUF_PREFETCH_PARSE_TABLE
+  }, {{
+    // bool muted = 2;
+    {::_pbi::TcParser::SingularVarintNoZag1<bool, offsetof(SetChannelMuteRequest, _impl_.muted_), 1>(),
+     {16, 1, 0,
+      PROTOBUF_FIELD_OFFSET(SetChannelMuteRequest, _impl_.muted_)}},
+    // .chirp.chat.ChannelType channel_type = 1;
+    {::_pbi::TcParser::SingularVarintNoZag1<::uint32_t, offsetof(SetChannelMuteRequest, _impl_.channel_type_), 0>(),
+     {8, 0, 0,
+      PROTOBUF_FIELD_OFFSET(SetChannelMuteRequest, _impl_.channel_type_)}},
+  }}, {{
+    65535, 65535
+  }}, {{
+    // .chirp.chat.ChannelType channel_type = 1;
+    {PROTOBUF_FIELD_OFFSET(SetChannelMuteRequest, _impl_.channel_type_), _Internal::kHasBitsOffset + 0, 0, (0 | ::_fl::kFcOptional | ::_fl::kOpenEnum)},
+    // bool muted = 2;
+    {PROTOBUF_FIELD_OFFSET(SetChannelMuteRequest, _impl_.muted_), _Internal::kHasBitsOffset + 1, 0, (0 | ::_fl::kFcOptional | ::_fl::kBool)},
+  }},
+  // no aux_entries
+  {{
+  }},
+};
+PROTOBUF_NOINLINE void SetChannelMuteRequest::Clear() {
+// @@protoc_insertion_point(message_clear_start:chirp.chat.SetChannelMuteRequest)
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  ::uint32_t cached_has_bits = 0;
+  // Prevent compiler warnings about cached_has_bits being unused
+  (void) cached_has_bits;
+
+  cached_has_bits = _impl_._has_bits_[0];
+  if (BatchCheckHasBit(cached_has_bits, 0x00000003U)) {
+    ::memset(&_impl_.channel_type_, 0, static_cast<::size_t>(
+        reinterpret_cast<char*>(&_impl_.muted_) -
+        reinterpret_cast<char*>(&_impl_.channel_type_)) + sizeof(_impl_.muted_));
+  }
+  _impl_._has_bits_.Clear();
+  _internal_metadata_.Clear<::google::protobuf::UnknownFieldSet>();
+}
+
+#if defined(PROTOBUF_CUSTOM_VTABLE)
+::uint8_t* PROTOBUF_NONNULL SetChannelMuteRequest::_InternalSerialize(
+    const ::google::protobuf::MessageLite& base, ::uint8_t* PROTOBUF_NONNULL target,
+    ::google::protobuf::io::EpsCopyOutputStream* PROTOBUF_NONNULL stream) {
+  const SetChannelMuteRequest& this_ = static_cast<const SetChannelMuteRequest&>(base);
+#else   // PROTOBUF_CUSTOM_VTABLE
+::uint8_t* PROTOBUF_NONNULL SetChannelMuteRequest::_InternalSerialize(
+    ::uint8_t* PROTOBUF_NONNULL target,
+    ::google::protobuf::io::EpsCopyOutputStream* PROTOBUF_NONNULL stream) const {
+  const SetChannelMuteRequest& this_ = *this;
+#endif  // PROTOBUF_CUSTOM_VTABLE
+  if constexpr (::_pbi::DebugHardenCheckHasBitConsistency()) {
+    this_.CheckHasBitConsistency();
+  }
+  // @@protoc_insertion_point(serialize_to_array_start:chirp.chat.SetChannelMuteRequest)
+  ::uint32_t cached_has_bits = 0;
+  (void)cached_has_bits;
+
+  cached_has_bits = this_._impl_._has_bits_[0];
+  // .chirp.chat.ChannelType channel_type = 1;
+  if (CheckHasBit(cached_has_bits, 0x00000001U)) {
+    if (this_._internal_channel_type() != 0) {
+      target = stream->EnsureSpace(target);
+      target = ::_pbi::WireFormatLite::WriteEnumToArray(
+          1, this_._internal_channel_type(), target);
+    }
+  }
+
+  // bool muted = 2;
+  if (CheckHasBit(cached_has_bits, 0x00000002U)) {
+    if (this_._internal_muted() != 0) {
+      target = stream->EnsureSpace(target);
+      target = ::_pbi::WireFormatLite::WriteBoolToArray(
+          2, this_._internal_muted(), target);
+    }
+  }
+
+  if (ABSL_PREDICT_FALSE(this_._internal_metadata_.have_unknown_fields())) {
+    target =
+        ::_pbi::WireFormat::InternalSerializeUnknownFieldsToArray(
+            this_._internal_metadata_.unknown_fields<::google::protobuf::UnknownFieldSet>(::google::protobuf::UnknownFieldSet::default_instance), target, stream);
+  }
+  // @@protoc_insertion_point(serialize_to_array_end:chirp.chat.SetChannelMuteRequest)
+  return target;
+}
+
+#if defined(PROTOBUF_CUSTOM_VTABLE)
+::size_t SetChannelMuteRequest::ByteSizeLong(const MessageLite& base) {
+  const SetChannelMuteRequest& this_ = static_cast<const SetChannelMuteRequest&>(base);
+#else   // PROTOBUF_CUSTOM_VTABLE
+::size_t SetChannelMuteRequest::ByteSizeLong() const {
+  const SetChannelMuteRequest& this_ = *this;
+#endif  // PROTOBUF_CUSTOM_VTABLE
+  // @@protoc_insertion_point(message_byte_size_start:chirp.chat.SetChannelMuteRequest)
+  ::size_t total_size = 0;
+
+  ::uint32_t cached_has_bits = 0;
+  // Prevent compiler warnings about cached_has_bits being unused
+  (void)cached_has_bits;
+
+  ::_pbi::Prefetch5LinesFrom7Lines(&this_);
+  cached_has_bits = this_._impl_._has_bits_[0];
+  if (BatchCheckHasBit(cached_has_bits, 0x00000003U)) {
+    // .chirp.chat.ChannelType channel_type = 1;
+    if (CheckHasBit(cached_has_bits, 0x00000001U)) {
+      if (this_._internal_channel_type() != 0) {
+        total_size += 1 +
+                      ::_pbi::WireFormatLite::EnumSize(this_._internal_channel_type());
+      }
+    }
+    // bool muted = 2;
+    if (CheckHasBit(cached_has_bits, 0x00000002U)) {
+      if (this_._internal_muted() != 0) {
+        total_size += 2;
+      }
+    }
+  }
+  return this_.MaybeComputeUnknownFieldsSize(total_size,
+                                             &this_._impl_._cached_size_);
+}
+
+void SetChannelMuteRequest::MergeImpl(::google::protobuf::MessageLite& to_msg,
+                            const ::google::protobuf::MessageLite& from_msg) {
+   auto* const _this =
+      static_cast<SetChannelMuteRequest*>(&to_msg);
+  auto& from = static_cast<const SetChannelMuteRequest&>(from_msg);
+  if constexpr (::_pbi::DebugHardenCheckHasBitConsistency()) {
+    from.CheckHasBitConsistency();
+  }
+  // @@protoc_insertion_point(class_specific_merge_from_start:chirp.chat.SetChannelMuteRequest)
+  ABSL_DCHECK_NE(&from, _this);
+  ::uint32_t cached_has_bits = 0;
+  (void)cached_has_bits;
+
+  cached_has_bits = from._impl_._has_bits_[0];
+  if (BatchCheckHasBit(cached_has_bits, 0x00000003U)) {
+    if (CheckHasBit(cached_has_bits, 0x00000001U)) {
+      if (from._internal_channel_type() != 0) {
+        _this->_impl_.channel_type_ = from._impl_.channel_type_;
+      }
+    }
+    if (CheckHasBit(cached_has_bits, 0x00000002U)) {
+      if (from._internal_muted() != 0) {
+        _this->_impl_.muted_ = from._impl_.muted_;
+      }
+    }
+  }
+  _this->_impl_._has_bits_[0] |= cached_has_bits;
+  _this->_internal_metadata_.MergeFrom<::google::protobuf::UnknownFieldSet>(
+      from._internal_metadata_);
+}
+
+void SetChannelMuteRequest::CopyFrom(const SetChannelMuteRequest& from) {
+  // @@protoc_insertion_point(class_specific_copy_from_start:chirp.chat.SetChannelMuteRequest)
+  if (&from == this) return;
+  Clear();
+  MergeFrom(from);
+}
+
+
+void SetChannelMuteRequest::InternalSwap(SetChannelMuteRequest* PROTOBUF_RESTRICT PROTOBUF_NONNULL other) {
+  using ::std::swap;
+  _internal_metadata_.InternalSwap(&other->_internal_metadata_);
+  swap(_impl_._has_bits_[0], other->_impl_._has_bits_[0]);
+  ::google::protobuf::internal::memswap<
+      PROTOBUF_FIELD_OFFSET(SetChannelMuteRequest, _impl_.muted_)
+      + sizeof(SetChannelMuteRequest::_impl_.muted_)
+      - PROTOBUF_FIELD_OFFSET(SetChannelMuteRequest, _impl_.channel_type_)>(
+          reinterpret_cast<char*>(&_impl_.channel_type_),
+          reinterpret_cast<char*>(&other->_impl_.channel_type_));
+}
+
+::google::protobuf::Metadata SetChannelMuteRequest::GetMetadata() const {
+  return ::google::protobuf::Message::GetMetadataImpl(GetClassData()->full());
+}
+// ===================================================================
+
+class SetChannelMuteResponse::_Internal {
+ public:
+  using HasBits =
+      decltype(::std::declval<SetChannelMuteResponse>()._impl_._has_bits_);
+  static constexpr ::int32_t kHasBitsOffset =
+      8 * PROTOBUF_FIELD_OFFSET(SetChannelMuteResponse, _impl_._has_bits_);
+};
+
+SetChannelMuteResponse::SetChannelMuteResponse(::google::protobuf::Arena* PROTOBUF_NULLABLE arena)
+#if defined(PROTOBUF_CUSTOM_VTABLE)
+    : ::google::protobuf::Message(arena, SetChannelMuteResponse_class_data_.base()) {
+#else   // PROTOBUF_CUSTOM_VTABLE
+    : ::google::protobuf::Message(arena) {
+#endif  // PROTOBUF_CUSTOM_VTABLE
+  SharedCtor(arena);
+  // @@protoc_insertion_point(arena_constructor:chirp.chat.SetChannelMuteResponse)
+}
+SetChannelMuteResponse::SetChannelMuteResponse(
+    ::google::protobuf::Arena* PROTOBUF_NULLABLE arena, const SetChannelMuteResponse& from)
+#if defined(PROTOBUF_CUSTOM_VTABLE)
+    : ::google::protobuf::Message(arena, SetChannelMuteResponse_class_data_.base()),
+#else   // PROTOBUF_CUSTOM_VTABLE
+    : ::google::protobuf::Message(arena),
+#endif  // PROTOBUF_CUSTOM_VTABLE
+      _impl_(from._impl_) {
+  _internal_metadata_.MergeFrom<::google::protobuf::UnknownFieldSet>(
+      from._internal_metadata_);
+}
+PROTOBUF_NDEBUG_INLINE SetChannelMuteResponse::Impl_::Impl_(
+    [[maybe_unused]] ::google::protobuf::internal::InternalVisibility visibility,
+    [[maybe_unused]] ::google::protobuf::Arena* PROTOBUF_NULLABLE arena)
+      : _cached_size_{0} {}
+
+inline void SetChannelMuteResponse::SharedCtor(::_pb::Arena* PROTOBUF_NULLABLE arena) {
+  new (&_impl_) Impl_(internal_visibility(), arena);
+  ::memset(reinterpret_cast<char*>(&_impl_) +
+               offsetof(Impl_, code_),
+           0,
+           offsetof(Impl_, muted_) -
+               offsetof(Impl_, code_) +
+               sizeof(Impl_::muted_));
+}
+SetChannelMuteResponse::~SetChannelMuteResponse() {
+  // @@protoc_insertion_point(destructor:chirp.chat.SetChannelMuteResponse)
+  SharedDtor(*this);
+}
+inline void SetChannelMuteResponse::SharedDtor(MessageLite& self) {
+  SetChannelMuteResponse& this_ = static_cast<SetChannelMuteResponse&>(self);
+  if constexpr (::_pbi::DebugHardenCheckHasBitConsistency()) {
+    this_.CheckHasBitConsistency();
+  }
+  this_._internal_metadata_.Delete<::google::protobuf::UnknownFieldSet>();
+  ABSL_DCHECK(this_.GetArena() == nullptr);
+  this_._impl_.~Impl_();
+}
+
+inline void* PROTOBUF_NONNULL SetChannelMuteResponse::PlacementNew_(
+    const void* PROTOBUF_NONNULL, void* PROTOBUF_NONNULL mem,
+    ::google::protobuf::Arena* PROTOBUF_NULLABLE arena) {
+  return ::new (mem) SetChannelMuteResponse(arena);
+}
+constexpr auto SetChannelMuteResponse::InternalNewImpl_() {
+  return ::google::protobuf::internal::MessageCreator::ZeroInit(sizeof(SetChannelMuteResponse),
+                                            alignof(SetChannelMuteResponse));
+}
+constexpr auto SetChannelMuteResponse::InternalGenerateClassData_() {
+  return ::google::protobuf::internal::ClassDataFull{
+      ::google::protobuf::internal::ClassData{
+          &_SetChannelMuteResponse_default_instance_._instance,
+          &_table_.header,
+          nullptr,  // OnDemandRegisterArenaDtor
+          nullptr,  // IsInitialized
+          &SetChannelMuteResponse::MergeImpl,
+          ::google::protobuf::Message::GetNewImpl<SetChannelMuteResponse>(),
+#if defined(PROTOBUF_CUSTOM_VTABLE)
+          &SetChannelMuteResponse::SharedDtor,
+          ::google::protobuf::Message::GetClearImpl<SetChannelMuteResponse>(), &SetChannelMuteResponse::ByteSizeLong,
+              &SetChannelMuteResponse::_InternalSerialize,
+#endif  // PROTOBUF_CUSTOM_VTABLE
+          PROTOBUF_FIELD_OFFSET(SetChannelMuteResponse, _impl_._cached_size_),
+          false,
+      },
+      &SetChannelMuteResponse::kDescriptorMethods,
+      &descriptor_table_proto_2fchat_2eproto,
+      nullptr,  // tracker
+  };
+}
+
+PROTOBUF_CONSTINIT PROTOBUF_ATTRIBUTE_INIT_PRIORITY1 const
+    ::google::protobuf::internal::ClassDataFull SetChannelMuteResponse_class_data_ =
+        SetChannelMuteResponse::InternalGenerateClassData_();
+
+PROTOBUF_ATTRIBUTE_WEAK const ::google::protobuf::internal::ClassData* PROTOBUF_NONNULL
+SetChannelMuteResponse::GetClassData() const {
+  ::google::protobuf::internal::PrefetchToLocalCache(&SetChannelMuteResponse_class_data_);
+  ::google::protobuf::internal::PrefetchToLocalCache(SetChannelMuteResponse_class_data_.tc_table);
+  return SetChannelMuteResponse_class_data_.base();
+}
+PROTOBUF_CONSTINIT PROTOBUF_ATTRIBUTE_INIT_PRIORITY1
+const ::_pbi::TcParseTable<2, 3, 0, 0, 2>
+SetChannelMuteResponse::_table_ = {
+  {
+    PROTOBUF_FIELD_OFFSET(SetChannelMuteResponse, _impl_._has_bits_),
+    0, // no _extensions_
+    3, 24,  // max_field_number, fast_idx_mask
+    offsetof(decltype(_table_), field_lookup_table),
+    4294967288,  // skipmap
+    offsetof(decltype(_table_), field_entries),
+    3,  // num_field_entries
+    0,  // num_aux_entries
+    offsetof(decltype(_table_), field_names),  // no aux_entries
+    SetChannelMuteResponse_class_data_.base(),
+    nullptr,  // post_loop_handler
+    ::_pbi::TcParser::GenericFallback,  // fallback
+    #ifdef PROTOBUF_PREFETCH_PARSE_TABLE
+    ::_pbi::TcParser::GetTable<::chirp::chat::SetChannelMuteResponse>(),  // to_prefetch
+    #endif  // PROTOBUF_PREFETCH_PARSE_TABLE
+  }, {{
+    {::_pbi::TcParser::MiniParse, {}},
+    // .chirp.common.ErrorCode code = 1;
+    {::_pbi::TcParser::SingularVarintNoZag1<::uint32_t, offsetof(SetChannelMuteResponse, _impl_.code_), 0>(),
+     {8, 0, 0,
+      PROTOBUF_FIELD_OFFSET(SetChannelMuteResponse, _impl_.code_)}},
+    // .chirp.chat.ChannelType channel_type = 2;
+    {::_pbi::TcParser::SingularVarintNoZag1<::uint32_t, offsetof(SetChannelMuteResponse, _impl_.channel_type_), 1>(),
+     {16, 1, 0,
+      PROTOBUF_FIELD_OFFSET(SetChannelMuteResponse, _impl_.channel_type_)}},
+    // bool muted = 3;
+    {::_pbi::TcParser::SingularVarintNoZag1<bool, offsetof(SetChannelMuteResponse, _impl_.muted_), 2>(),
+     {24, 2, 0,
+      PROTOBUF_FIELD_OFFSET(SetChannelMuteResponse, _impl_.muted_)}},
+  }}, {{
+    65535, 65535
+  }}, {{
+    // .chirp.common.ErrorCode code = 1;
+    {PROTOBUF_FIELD_OFFSET(SetChannelMuteResponse, _impl_.code_), _Internal::kHasBitsOffset + 0, 0, (0 | ::_fl::kFcOptional | ::_fl::kOpenEnum)},
+    // .chirp.chat.ChannelType channel_type = 2;
+    {PROTOBUF_FIELD_OFFSET(SetChannelMuteResponse, _impl_.channel_type_), _Internal::kHasBitsOffset + 1, 0, (0 | ::_fl::kFcOptional | ::_fl::kOpenEnum)},
+    // bool muted = 3;
+    {PROTOBUF_FIELD_OFFSET(SetChannelMuteResponse, _impl_.muted_), _Internal::kHasBitsOffset + 2, 0, (0 | ::_fl::kFcOptional | ::_fl::kBool)},
+  }},
+  // no aux_entries
+  {{
+  }},
+};
+PROTOBUF_NOINLINE void SetChannelMuteResponse::Clear() {
+// @@protoc_insertion_point(message_clear_start:chirp.chat.SetChannelMuteResponse)
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  ::uint32_t cached_has_bits = 0;
+  // Prevent compiler warnings about cached_has_bits being unused
+  (void) cached_has_bits;
+
+  cached_has_bits = _impl_._has_bits_[0];
+  if (BatchCheckHasBit(cached_has_bits, 0x00000007U)) {
+    ::memset(&_impl_.code_, 0, static_cast<::size_t>(
+        reinterpret_cast<char*>(&_impl_.muted_) -
+        reinterpret_cast<char*>(&_impl_.code_)) + sizeof(_impl_.muted_));
+  }
+  _impl_._has_bits_.Clear();
+  _internal_metadata_.Clear<::google::protobuf::UnknownFieldSet>();
+}
+
+#if defined(PROTOBUF_CUSTOM_VTABLE)
+::uint8_t* PROTOBUF_NONNULL SetChannelMuteResponse::_InternalSerialize(
+    const ::google::protobuf::MessageLite& base, ::uint8_t* PROTOBUF_NONNULL target,
+    ::google::protobuf::io::EpsCopyOutputStream* PROTOBUF_NONNULL stream) {
+  const SetChannelMuteResponse& this_ = static_cast<const SetChannelMuteResponse&>(base);
+#else   // PROTOBUF_CUSTOM_VTABLE
+::uint8_t* PROTOBUF_NONNULL SetChannelMuteResponse::_InternalSerialize(
+    ::uint8_t* PROTOBUF_NONNULL target,
+    ::google::protobuf::io::EpsCopyOutputStream* PROTOBUF_NONNULL stream) const {
+  const SetChannelMuteResponse& this_ = *this;
+#endif  // PROTOBUF_CUSTOM_VTABLE
+  if constexpr (::_pbi::DebugHardenCheckHasBitConsistency()) {
+    this_.CheckHasBitConsistency();
+  }
+  // @@protoc_insertion_point(serialize_to_array_start:chirp.chat.SetChannelMuteResponse)
+  ::uint32_t cached_has_bits = 0;
+  (void)cached_has_bits;
+
+  cached_has_bits = this_._impl_._has_bits_[0];
+  // .chirp.common.ErrorCode code = 1;
+  if (CheckHasBit(cached_has_bits, 0x00000001U)) {
+    if (this_._internal_code() != 0) {
+      target = stream->EnsureSpace(target);
+      target = ::_pbi::WireFormatLite::WriteEnumToArray(
+          1, this_._internal_code(), target);
+    }
+  }
+
+  // .chirp.chat.ChannelType channel_type = 2;
+  if (CheckHasBit(cached_has_bits, 0x00000002U)) {
+    if (this_._internal_channel_type() != 0) {
+      target = stream->EnsureSpace(target);
+      target = ::_pbi::WireFormatLite::WriteEnumToArray(
+          2, this_._internal_channel_type(), target);
+    }
+  }
+
+  // bool muted = 3;
+  if (CheckHasBit(cached_has_bits, 0x00000004U)) {
+    if (this_._internal_muted() != 0) {
+      target = stream->EnsureSpace(target);
+      target = ::_pbi::WireFormatLite::WriteBoolToArray(
+          3, this_._internal_muted(), target);
+    }
+  }
+
+  if (ABSL_PREDICT_FALSE(this_._internal_metadata_.have_unknown_fields())) {
+    target =
+        ::_pbi::WireFormat::InternalSerializeUnknownFieldsToArray(
+            this_._internal_metadata_.unknown_fields<::google::protobuf::UnknownFieldSet>(::google::protobuf::UnknownFieldSet::default_instance), target, stream);
+  }
+  // @@protoc_insertion_point(serialize_to_array_end:chirp.chat.SetChannelMuteResponse)
+  return target;
+}
+
+#if defined(PROTOBUF_CUSTOM_VTABLE)
+::size_t SetChannelMuteResponse::ByteSizeLong(const MessageLite& base) {
+  const SetChannelMuteResponse& this_ = static_cast<const SetChannelMuteResponse&>(base);
+#else   // PROTOBUF_CUSTOM_VTABLE
+::size_t SetChannelMuteResponse::ByteSizeLong() const {
+  const SetChannelMuteResponse& this_ = *this;
+#endif  // PROTOBUF_CUSTOM_VTABLE
+  // @@protoc_insertion_point(message_byte_size_start:chirp.chat.SetChannelMuteResponse)
+  ::size_t total_size = 0;
+
+  ::uint32_t cached_has_bits = 0;
+  // Prevent compiler warnings about cached_has_bits being unused
+  (void)cached_has_bits;
+
+  ::_pbi::Prefetch5LinesFrom7Lines(&this_);
+  cached_has_bits = this_._impl_._has_bits_[0];
+  if (BatchCheckHasBit(cached_has_bits, 0x00000007U)) {
+    // .chirp.common.ErrorCode code = 1;
+    if (CheckHasBit(cached_has_bits, 0x00000001U)) {
+      if (this_._internal_code() != 0) {
+        total_size += 1 +
+                      ::_pbi::WireFormatLite::EnumSize(this_._internal_code());
+      }
+    }
+    // .chirp.chat.ChannelType channel_type = 2;
+    if (CheckHasBit(cached_has_bits, 0x00000002U)) {
+      if (this_._internal_channel_type() != 0) {
+        total_size += 1 +
+                      ::_pbi::WireFormatLite::EnumSize(this_._internal_channel_type());
+      }
+    }
+    // bool muted = 3;
+    if (CheckHasBit(cached_has_bits, 0x00000004U)) {
+      if (this_._internal_muted() != 0) {
+        total_size += 2;
+      }
+    }
+  }
+  return this_.MaybeComputeUnknownFieldsSize(total_size,
+                                             &this_._impl_._cached_size_);
+}
+
+void SetChannelMuteResponse::MergeImpl(::google::protobuf::MessageLite& to_msg,
+                            const ::google::protobuf::MessageLite& from_msg) {
+   auto* const _this =
+      static_cast<SetChannelMuteResponse*>(&to_msg);
+  auto& from = static_cast<const SetChannelMuteResponse&>(from_msg);
+  if constexpr (::_pbi::DebugHardenCheckHasBitConsistency()) {
+    from.CheckHasBitConsistency();
+  }
+  // @@protoc_insertion_point(class_specific_merge_from_start:chirp.chat.SetChannelMuteResponse)
+  ABSL_DCHECK_NE(&from, _this);
+  ::uint32_t cached_has_bits = 0;
+  (void)cached_has_bits;
+
+  cached_has_bits = from._impl_._has_bits_[0];
+  if (BatchCheckHasBit(cached_has_bits, 0x00000007U)) {
+    if (CheckHasBit(cached_has_bits, 0x00000001U)) {
+      if (from._internal_code() != 0) {
+        _this->_impl_.code_ = from._impl_.code_;
+      }
+    }
+    if (CheckHasBit(cached_has_bits, 0x00000002U)) {
+      if (from._internal_channel_type() != 0) {
+        _this->_impl_.channel_type_ = from._impl_.channel_type_;
+      }
+    }
+    if (CheckHasBit(cached_has_bits, 0x00000004U)) {
+      if (from._internal_muted() != 0) {
+        _this->_impl_.muted_ = from._impl_.muted_;
+      }
+    }
+  }
+  _this->_impl_._has_bits_[0] |= cached_has_bits;
+  _this->_internal_metadata_.MergeFrom<::google::protobuf::UnknownFieldSet>(
+      from._internal_metadata_);
+}
+
+void SetChannelMuteResponse::CopyFrom(const SetChannelMuteResponse& from) {
+  // @@protoc_insertion_point(class_specific_copy_from_start:chirp.chat.SetChannelMuteResponse)
+  if (&from == this) return;
+  Clear();
+  MergeFrom(from);
+}
+
+
+void SetChannelMuteResponse::InternalSwap(SetChannelMuteResponse* PROTOBUF_RESTRICT PROTOBUF_NONNULL other) {
+  using ::std::swap;
+  _internal_metadata_.InternalSwap(&other->_internal_metadata_);
+  swap(_impl_._has_bits_[0], other->_impl_._has_bits_[0]);
+  ::google::protobuf::internal::memswap<
+      PROTOBUF_FIELD_OFFSET(SetChannelMuteResponse, _impl_.muted_)
+      + sizeof(SetChannelMuteResponse::_impl_.muted_)
+      - PROTOBUF_FIELD_OFFSET(SetChannelMuteResponse, _impl_.code_)>(
+          reinterpret_cast<char*>(&_impl_.code_),
+          reinterpret_cast<char*>(&other->_impl_.code_));
+}
+
+::google::protobuf::Metadata SetChannelMuteResponse::GetMetadata() const {
+  return ::google::protobuf::Message::GetMetadataImpl(GetClassData()->full());
+}
+// ===================================================================
+
+class ChannelMuteState::_Internal {
+ public:
+  using HasBits =
+      decltype(::std::declval<ChannelMuteState>()._impl_._has_bits_);
+  static constexpr ::int32_t kHasBitsOffset =
+      8 * PROTOBUF_FIELD_OFFSET(ChannelMuteState, _impl_._has_bits_);
+};
+
+ChannelMuteState::ChannelMuteState(::google::protobuf::Arena* PROTOBUF_NULLABLE arena)
+#if defined(PROTOBUF_CUSTOM_VTABLE)
+    : ::google::protobuf::Message(arena, ChannelMuteState_class_data_.base()) {
+#else   // PROTOBUF_CUSTOM_VTABLE
+    : ::google::protobuf::Message(arena) {
+#endif  // PROTOBUF_CUSTOM_VTABLE
+  SharedCtor(arena);
+  // @@protoc_insertion_point(arena_constructor:chirp.chat.ChannelMuteState)
+}
+ChannelMuteState::ChannelMuteState(
+    ::google::protobuf::Arena* PROTOBUF_NULLABLE arena, const ChannelMuteState& from)
+#if defined(PROTOBUF_CUSTOM_VTABLE)
+    : ::google::protobuf::Message(arena, ChannelMuteState_class_data_.base()),
+#else   // PROTOBUF_CUSTOM_VTABLE
+    : ::google::protobuf::Message(arena),
+#endif  // PROTOBUF_CUSTOM_VTABLE
+      _impl_(from._impl_) {
+  _internal_metadata_.MergeFrom<::google::protobuf::UnknownFieldSet>(
+      from._internal_metadata_);
+}
+PROTOBUF_NDEBUG_INLINE ChannelMuteState::Impl_::Impl_(
+    [[maybe_unused]] ::google::protobuf::internal::InternalVisibility visibility,
+    [[maybe_unused]] ::google::protobuf::Arena* PROTOBUF_NULLABLE arena)
+      : _cached_size_{0} {}
+
+inline void ChannelMuteState::SharedCtor(::_pb::Arena* PROTOBUF_NULLABLE arena) {
+  new (&_impl_) Impl_(internal_visibility(), arena);
+  ::memset(reinterpret_cast<char*>(&_impl_) +
+               offsetof(Impl_, channel_type_),
+           0,
+           offsetof(Impl_, muted_) -
+               offsetof(Impl_, channel_type_) +
+               sizeof(Impl_::muted_));
+}
+ChannelMuteState::~ChannelMuteState() {
+  // @@protoc_insertion_point(destructor:chirp.chat.ChannelMuteState)
+  SharedDtor(*this);
+}
+inline void ChannelMuteState::SharedDtor(MessageLite& self) {
+  ChannelMuteState& this_ = static_cast<ChannelMuteState&>(self);
+  if constexpr (::_pbi::DebugHardenCheckHasBitConsistency()) {
+    this_.CheckHasBitConsistency();
+  }
+  this_._internal_metadata_.Delete<::google::protobuf::UnknownFieldSet>();
+  ABSL_DCHECK(this_.GetArena() == nullptr);
+  this_._impl_.~Impl_();
+}
+
+inline void* PROTOBUF_NONNULL ChannelMuteState::PlacementNew_(
+    const void* PROTOBUF_NONNULL, void* PROTOBUF_NONNULL mem,
+    ::google::protobuf::Arena* PROTOBUF_NULLABLE arena) {
+  return ::new (mem) ChannelMuteState(arena);
+}
+constexpr auto ChannelMuteState::InternalNewImpl_() {
+  return ::google::protobuf::internal::MessageCreator::ZeroInit(sizeof(ChannelMuteState),
+                                            alignof(ChannelMuteState));
+}
+constexpr auto ChannelMuteState::InternalGenerateClassData_() {
+  return ::google::protobuf::internal::ClassDataFull{
+      ::google::protobuf::internal::ClassData{
+          &_ChannelMuteState_default_instance_._instance,
+          &_table_.header,
+          nullptr,  // OnDemandRegisterArenaDtor
+          nullptr,  // IsInitialized
+          &ChannelMuteState::MergeImpl,
+          ::google::protobuf::Message::GetNewImpl<ChannelMuteState>(),
+#if defined(PROTOBUF_CUSTOM_VTABLE)
+          &ChannelMuteState::SharedDtor,
+          ::google::protobuf::Message::GetClearImpl<ChannelMuteState>(), &ChannelMuteState::ByteSizeLong,
+              &ChannelMuteState::_InternalSerialize,
+#endif  // PROTOBUF_CUSTOM_VTABLE
+          PROTOBUF_FIELD_OFFSET(ChannelMuteState, _impl_._cached_size_),
+          false,
+      },
+      &ChannelMuteState::kDescriptorMethods,
+      &descriptor_table_proto_2fchat_2eproto,
+      nullptr,  // tracker
+  };
+}
+
+PROTOBUF_CONSTINIT PROTOBUF_ATTRIBUTE_INIT_PRIORITY1 const
+    ::google::protobuf::internal::ClassDataFull ChannelMuteState_class_data_ =
+        ChannelMuteState::InternalGenerateClassData_();
+
+PROTOBUF_ATTRIBUTE_WEAK const ::google::protobuf::internal::ClassData* PROTOBUF_NONNULL
+ChannelMuteState::GetClassData() const {
+  ::google::protobuf::internal::PrefetchToLocalCache(&ChannelMuteState_class_data_);
+  ::google::protobuf::internal::PrefetchToLocalCache(ChannelMuteState_class_data_.tc_table);
+  return ChannelMuteState_class_data_.base();
+}
+PROTOBUF_CONSTINIT PROTOBUF_ATTRIBUTE_INIT_PRIORITY1
+const ::_pbi::TcParseTable<1, 2, 0, 0, 2>
+ChannelMuteState::_table_ = {
+  {
+    PROTOBUF_FIELD_OFFSET(ChannelMuteState, _impl_._has_bits_),
+    0, // no _extensions_
+    2, 8,  // max_field_number, fast_idx_mask
+    offsetof(decltype(_table_), field_lookup_table),
+    4294967292,  // skipmap
+    offsetof(decltype(_table_), field_entries),
+    2,  // num_field_entries
+    0,  // num_aux_entries
+    offsetof(decltype(_table_), field_names),  // no aux_entries
+    ChannelMuteState_class_data_.base(),
+    nullptr,  // post_loop_handler
+    ::_pbi::TcParser::GenericFallback,  // fallback
+    #ifdef PROTOBUF_PREFETCH_PARSE_TABLE
+    ::_pbi::TcParser::GetTable<::chirp::chat::ChannelMuteState>(),  // to_prefetch
+    #endif  // PROTOBUF_PREFETCH_PARSE_TABLE
+  }, {{
+    // bool muted = 2;
+    {::_pbi::TcParser::SingularVarintNoZag1<bool, offsetof(ChannelMuteState, _impl_.muted_), 1>(),
+     {16, 1, 0,
+      PROTOBUF_FIELD_OFFSET(ChannelMuteState, _impl_.muted_)}},
+    // .chirp.chat.ChannelType channel_type = 1;
+    {::_pbi::TcParser::SingularVarintNoZag1<::uint32_t, offsetof(ChannelMuteState, _impl_.channel_type_), 0>(),
+     {8, 0, 0,
+      PROTOBUF_FIELD_OFFSET(ChannelMuteState, _impl_.channel_type_)}},
+  }}, {{
+    65535, 65535
+  }}, {{
+    // .chirp.chat.ChannelType channel_type = 1;
+    {PROTOBUF_FIELD_OFFSET(ChannelMuteState, _impl_.channel_type_), _Internal::kHasBitsOffset + 0, 0, (0 | ::_fl::kFcOptional | ::_fl::kOpenEnum)},
+    // bool muted = 2;
+    {PROTOBUF_FIELD_OFFSET(ChannelMuteState, _impl_.muted_), _Internal::kHasBitsOffset + 1, 0, (0 | ::_fl::kFcOptional | ::_fl::kBool)},
+  }},
+  // no aux_entries
+  {{
+  }},
+};
+PROTOBUF_NOINLINE void ChannelMuteState::Clear() {
+// @@protoc_insertion_point(message_clear_start:chirp.chat.ChannelMuteState)
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  ::uint32_t cached_has_bits = 0;
+  // Prevent compiler warnings about cached_has_bits being unused
+  (void) cached_has_bits;
+
+  cached_has_bits = _impl_._has_bits_[0];
+  if (BatchCheckHasBit(cached_has_bits, 0x00000003U)) {
+    ::memset(&_impl_.channel_type_, 0, static_cast<::size_t>(
+        reinterpret_cast<char*>(&_impl_.muted_) -
+        reinterpret_cast<char*>(&_impl_.channel_type_)) + sizeof(_impl_.muted_));
+  }
+  _impl_._has_bits_.Clear();
+  _internal_metadata_.Clear<::google::protobuf::UnknownFieldSet>();
+}
+
+#if defined(PROTOBUF_CUSTOM_VTABLE)
+::uint8_t* PROTOBUF_NONNULL ChannelMuteState::_InternalSerialize(
+    const ::google::protobuf::MessageLite& base, ::uint8_t* PROTOBUF_NONNULL target,
+    ::google::protobuf::io::EpsCopyOutputStream* PROTOBUF_NONNULL stream) {
+  const ChannelMuteState& this_ = static_cast<const ChannelMuteState&>(base);
+#else   // PROTOBUF_CUSTOM_VTABLE
+::uint8_t* PROTOBUF_NONNULL ChannelMuteState::_InternalSerialize(
+    ::uint8_t* PROTOBUF_NONNULL target,
+    ::google::protobuf::io::EpsCopyOutputStream* PROTOBUF_NONNULL stream) const {
+  const ChannelMuteState& this_ = *this;
+#endif  // PROTOBUF_CUSTOM_VTABLE
+  if constexpr (::_pbi::DebugHardenCheckHasBitConsistency()) {
+    this_.CheckHasBitConsistency();
+  }
+  // @@protoc_insertion_point(serialize_to_array_start:chirp.chat.ChannelMuteState)
+  ::uint32_t cached_has_bits = 0;
+  (void)cached_has_bits;
+
+  cached_has_bits = this_._impl_._has_bits_[0];
+  // .chirp.chat.ChannelType channel_type = 1;
+  if (CheckHasBit(cached_has_bits, 0x00000001U)) {
+    if (this_._internal_channel_type() != 0) {
+      target = stream->EnsureSpace(target);
+      target = ::_pbi::WireFormatLite::WriteEnumToArray(
+          1, this_._internal_channel_type(), target);
+    }
+  }
+
+  // bool muted = 2;
+  if (CheckHasBit(cached_has_bits, 0x00000002U)) {
+    if (this_._internal_muted() != 0) {
+      target = stream->EnsureSpace(target);
+      target = ::_pbi::WireFormatLite::WriteBoolToArray(
+          2, this_._internal_muted(), target);
+    }
+  }
+
+  if (ABSL_PREDICT_FALSE(this_._internal_metadata_.have_unknown_fields())) {
+    target =
+        ::_pbi::WireFormat::InternalSerializeUnknownFieldsToArray(
+            this_._internal_metadata_.unknown_fields<::google::protobuf::UnknownFieldSet>(::google::protobuf::UnknownFieldSet::default_instance), target, stream);
+  }
+  // @@protoc_insertion_point(serialize_to_array_end:chirp.chat.ChannelMuteState)
+  return target;
+}
+
+#if defined(PROTOBUF_CUSTOM_VTABLE)
+::size_t ChannelMuteState::ByteSizeLong(const MessageLite& base) {
+  const ChannelMuteState& this_ = static_cast<const ChannelMuteState&>(base);
+#else   // PROTOBUF_CUSTOM_VTABLE
+::size_t ChannelMuteState::ByteSizeLong() const {
+  const ChannelMuteState& this_ = *this;
+#endif  // PROTOBUF_CUSTOM_VTABLE
+  // @@protoc_insertion_point(message_byte_size_start:chirp.chat.ChannelMuteState)
+  ::size_t total_size = 0;
+
+  ::uint32_t cached_has_bits = 0;
+  // Prevent compiler warnings about cached_has_bits being unused
+  (void)cached_has_bits;
+
+  ::_pbi::Prefetch5LinesFrom7Lines(&this_);
+  cached_has_bits = this_._impl_._has_bits_[0];
+  if (BatchCheckHasBit(cached_has_bits, 0x00000003U)) {
+    // .chirp.chat.ChannelType channel_type = 1;
+    if (CheckHasBit(cached_has_bits, 0x00000001U)) {
+      if (this_._internal_channel_type() != 0) {
+        total_size += 1 +
+                      ::_pbi::WireFormatLite::EnumSize(this_._internal_channel_type());
+      }
+    }
+    // bool muted = 2;
+    if (CheckHasBit(cached_has_bits, 0x00000002U)) {
+      if (this_._internal_muted() != 0) {
+        total_size += 2;
+      }
+    }
+  }
+  return this_.MaybeComputeUnknownFieldsSize(total_size,
+                                             &this_._impl_._cached_size_);
+}
+
+void ChannelMuteState::MergeImpl(::google::protobuf::MessageLite& to_msg,
+                            const ::google::protobuf::MessageLite& from_msg) {
+   auto* const _this =
+      static_cast<ChannelMuteState*>(&to_msg);
+  auto& from = static_cast<const ChannelMuteState&>(from_msg);
+  if constexpr (::_pbi::DebugHardenCheckHasBitConsistency()) {
+    from.CheckHasBitConsistency();
+  }
+  // @@protoc_insertion_point(class_specific_merge_from_start:chirp.chat.ChannelMuteState)
+  ABSL_DCHECK_NE(&from, _this);
+  ::uint32_t cached_has_bits = 0;
+  (void)cached_has_bits;
+
+  cached_has_bits = from._impl_._has_bits_[0];
+  if (BatchCheckHasBit(cached_has_bits, 0x00000003U)) {
+    if (CheckHasBit(cached_has_bits, 0x00000001U)) {
+      if (from._internal_channel_type() != 0) {
+        _this->_impl_.channel_type_ = from._impl_.channel_type_;
+      }
+    }
+    if (CheckHasBit(cached_has_bits, 0x00000002U)) {
+      if (from._internal_muted() != 0) {
+        _this->_impl_.muted_ = from._impl_.muted_;
+      }
+    }
+  }
+  _this->_impl_._has_bits_[0] |= cached_has_bits;
+  _this->_internal_metadata_.MergeFrom<::google::protobuf::UnknownFieldSet>(
+      from._internal_metadata_);
+}
+
+void ChannelMuteState::CopyFrom(const ChannelMuteState& from) {
+  // @@protoc_insertion_point(class_specific_copy_from_start:chirp.chat.ChannelMuteState)
+  if (&from == this) return;
+  Clear();
+  MergeFrom(from);
+}
+
+
+void ChannelMuteState::InternalSwap(ChannelMuteState* PROTOBUF_RESTRICT PROTOBUF_NONNULL other) {
+  using ::std::swap;
+  _internal_metadata_.InternalSwap(&other->_internal_metadata_);
+  swap(_impl_._has_bits_[0], other->_impl_._has_bits_[0]);
+  ::google::protobuf::internal::memswap<
+      PROTOBUF_FIELD_OFFSET(ChannelMuteState, _impl_.muted_)
+      + sizeof(ChannelMuteState::_impl_.muted_)
+      - PROTOBUF_FIELD_OFFSET(ChannelMuteState, _impl_.channel_type_)>(
+          reinterpret_cast<char*>(&_impl_.channel_type_),
+          reinterpret_cast<char*>(&other->_impl_.channel_type_));
+}
+
+::google::protobuf::Metadata ChannelMuteState::GetMetadata() const {
+  return ::google::protobuf::Message::GetMetadataImpl(GetClassData()->full());
+}
+// ===================================================================
+
+class GetChannelMutesRequest::_Internal {
+ public:
+};
+
+GetChannelMutesRequest::GetChannelMutesRequest(::google::protobuf::Arena* PROTOBUF_NULLABLE arena)
+#if defined(PROTOBUF_CUSTOM_VTABLE)
+    : ::google::protobuf::internal::ZeroFieldsBase(arena, GetChannelMutesRequest_class_data_.base()) {
+#else   // PROTOBUF_CUSTOM_VTABLE
+    : ::google::protobuf::internal::ZeroFieldsBase(arena) {
+#endif  // PROTOBUF_CUSTOM_VTABLE
+  // @@protoc_insertion_point(arena_constructor:chirp.chat.GetChannelMutesRequest)
+}
+GetChannelMutesRequest::GetChannelMutesRequest(
+    ::google::protobuf::Arena* PROTOBUF_NULLABLE arena,
+    const GetChannelMutesRequest& from)
+#if defined(PROTOBUF_CUSTOM_VTABLE)
+    : ::google::protobuf::internal::ZeroFieldsBase(arena, GetChannelMutesRequest_class_data_.base()) {
+#else   // PROTOBUF_CUSTOM_VTABLE
+    : ::google::protobuf::internal::ZeroFieldsBase(arena) {
+#endif  // PROTOBUF_CUSTOM_VTABLE
+  GetChannelMutesRequest* const _this = this;
+  (void)_this;
+  _internal_metadata_.MergeFrom<::google::protobuf::UnknownFieldSet>(
+      from._internal_metadata_);
+
+  // @@protoc_insertion_point(copy_constructor:chirp.chat.GetChannelMutesRequest)
+}
+
+inline void* PROTOBUF_NONNULL GetChannelMutesRequest::PlacementNew_(
+    const void* PROTOBUF_NONNULL, void* PROTOBUF_NONNULL mem,
+    ::google::protobuf::Arena* PROTOBUF_NULLABLE arena) {
+  return ::new (mem) GetChannelMutesRequest(arena);
+}
+constexpr auto GetChannelMutesRequest::InternalNewImpl_() {
+  return ::google::protobuf::internal::MessageCreator::ZeroInit(sizeof(GetChannelMutesRequest),
+                                            alignof(GetChannelMutesRequest));
+}
+constexpr auto GetChannelMutesRequest::InternalGenerateClassData_() {
+  return ::google::protobuf::internal::ClassDataFull{
+      ::google::protobuf::internal::ClassData{
+          &_GetChannelMutesRequest_default_instance_._instance,
+          &_table_.header,
+          nullptr,  // OnDemandRegisterArenaDtor
+          nullptr,  // IsInitialized
+          &GetChannelMutesRequest::MergeImpl,
+          ::google::protobuf::internal::ZeroFieldsBase::GetNewImpl<GetChannelMutesRequest>(),
+#if defined(PROTOBUF_CUSTOM_VTABLE)
+          &GetChannelMutesRequest::SharedDtor,
+          ::google::protobuf::internal::ZeroFieldsBase::GetClearImpl<GetChannelMutesRequest>(), &GetChannelMutesRequest::ByteSizeLong,
+              &GetChannelMutesRequest::_InternalSerialize,
+#endif  // PROTOBUF_CUSTOM_VTABLE
+          PROTOBUF_FIELD_OFFSET(GetChannelMutesRequest, _impl_._cached_size_),
+          false,
+      },
+      &GetChannelMutesRequest::kDescriptorMethods,
+      &descriptor_table_proto_2fchat_2eproto,
+      nullptr,  // tracker
+  };
+}
+
+PROTOBUF_CONSTINIT PROTOBUF_ATTRIBUTE_INIT_PRIORITY1 const
+    ::google::protobuf::internal::ClassDataFull GetChannelMutesRequest_class_data_ =
+        GetChannelMutesRequest::InternalGenerateClassData_();
+
+PROTOBUF_ATTRIBUTE_WEAK const ::google::protobuf::internal::ClassData* PROTOBUF_NONNULL
+GetChannelMutesRequest::GetClassData() const {
+  ::google::protobuf::internal::PrefetchToLocalCache(&GetChannelMutesRequest_class_data_);
+  ::google::protobuf::internal::PrefetchToLocalCache(GetChannelMutesRequest_class_data_.tc_table);
+  return GetChannelMutesRequest_class_data_.base();
+}
+PROTOBUF_CONSTINIT PROTOBUF_ATTRIBUTE_INIT_PRIORITY1
+const ::_pbi::TcParseTable<0, 0, 0, 0, 2>
+GetChannelMutesRequest::_table_ = {
+  {
+    0,  // no _has_bits_
+    0, // no _extensions_
+    0, 0,  // max_field_number, fast_idx_mask
+    offsetof(decltype(_table_), field_lookup_table),
+    4294967295,  // skipmap
+    offsetof(decltype(_table_), field_names),  // no field_entries
+    0,  // num_field_entries
+    0,  // num_aux_entries
+    offsetof(decltype(_table_), field_names),  // no aux_entries
+    GetChannelMutesRequest_class_data_.base(),
+    nullptr,  // post_loop_handler
+    ::_pbi::TcParser::GenericFallback,  // fallback
+    #ifdef PROTOBUF_PREFETCH_PARSE_TABLE
+    ::_pbi::TcParser::GetTable<::chirp::chat::GetChannelMutesRequest>(),  // to_prefetch
+    #endif  // PROTOBUF_PREFETCH_PARSE_TABLE
+  }, {{
+    {::_pbi::TcParser::MiniParse, {}},
+  }}, {{
+    65535, 65535
+  }}, // no field_entries, or aux_entries
+  {{
+  }},
+};
+
+
+
+
+
+
+
+::google::protobuf::Metadata GetChannelMutesRequest::GetMetadata() const {
+  return ::google::protobuf::internal::ZeroFieldsBase::GetMetadataImpl(GetClassData()->full());
+}
+// ===================================================================
+
+class GetChannelMutesResponse::_Internal {
+ public:
+  using HasBits =
+      decltype(::std::declval<GetChannelMutesResponse>()._impl_._has_bits_);
+  static constexpr ::int32_t kHasBitsOffset =
+      8 * PROTOBUF_FIELD_OFFSET(GetChannelMutesResponse, _impl_._has_bits_);
+};
+
+GetChannelMutesResponse::GetChannelMutesResponse(::google::protobuf::Arena* PROTOBUF_NULLABLE arena)
+#if defined(PROTOBUF_CUSTOM_VTABLE)
+    : ::google::protobuf::Message(arena, GetChannelMutesResponse_class_data_.base()) {
+#else   // PROTOBUF_CUSTOM_VTABLE
+    : ::google::protobuf::Message(arena) {
+#endif  // PROTOBUF_CUSTOM_VTABLE
+  SharedCtor(arena);
+  // @@protoc_insertion_point(arena_constructor:chirp.chat.GetChannelMutesResponse)
+}
+PROTOBUF_NDEBUG_INLINE GetChannelMutesResponse::Impl_::Impl_(
+    [[maybe_unused]] ::google::protobuf::internal::InternalVisibility visibility,
+    [[maybe_unused]] ::google::protobuf::Arena* PROTOBUF_NULLABLE arena, const Impl_& from,
+    [[maybe_unused]] const ::chirp::chat::GetChannelMutesResponse& from_msg)
+      : _has_bits_{from._has_bits_},
+        _cached_size_{0},
+        states_{visibility, arena, from.states_} {}
+
+GetChannelMutesResponse::GetChannelMutesResponse(
+    ::google::protobuf::Arena* PROTOBUF_NULLABLE arena,
+    const GetChannelMutesResponse& from)
+#if defined(PROTOBUF_CUSTOM_VTABLE)
+    : ::google::protobuf::Message(arena, GetChannelMutesResponse_class_data_.base()) {
+#else   // PROTOBUF_CUSTOM_VTABLE
+    : ::google::protobuf::Message(arena) {
+#endif  // PROTOBUF_CUSTOM_VTABLE
+  GetChannelMutesResponse* const _this = this;
+  (void)_this;
+  _internal_metadata_.MergeFrom<::google::protobuf::UnknownFieldSet>(
+      from._internal_metadata_);
+  new (&_impl_) Impl_(internal_visibility(), arena, from._impl_, from);
+  _impl_.code_ = from._impl_.code_;
+
+  // @@protoc_insertion_point(copy_constructor:chirp.chat.GetChannelMutesResponse)
+}
+PROTOBUF_NDEBUG_INLINE GetChannelMutesResponse::Impl_::Impl_(
+    [[maybe_unused]] ::google::protobuf::internal::InternalVisibility visibility,
+    [[maybe_unused]] ::google::protobuf::Arena* PROTOBUF_NULLABLE arena)
+      : _cached_size_{0},
+        states_{visibility, arena} {}
+
+inline void GetChannelMutesResponse::SharedCtor(::_pb::Arena* PROTOBUF_NULLABLE arena) {
+  new (&_impl_) Impl_(internal_visibility(), arena);
+  _impl_.code_ = {};
+}
+GetChannelMutesResponse::~GetChannelMutesResponse() {
+  // @@protoc_insertion_point(destructor:chirp.chat.GetChannelMutesResponse)
+  SharedDtor(*this);
+}
+inline void GetChannelMutesResponse::SharedDtor(MessageLite& self) {
+  GetChannelMutesResponse& this_ = static_cast<GetChannelMutesResponse&>(self);
+  if constexpr (::_pbi::DebugHardenCheckHasBitConsistency()) {
+    this_.CheckHasBitConsistency();
+  }
+  this_._internal_metadata_.Delete<::google::protobuf::UnknownFieldSet>();
+  ABSL_DCHECK(this_.GetArena() == nullptr);
+  this_._impl_.~Impl_();
+}
+
+inline void* PROTOBUF_NONNULL GetChannelMutesResponse::PlacementNew_(
+    const void* PROTOBUF_NONNULL, void* PROTOBUF_NONNULL mem,
+    ::google::protobuf::Arena* PROTOBUF_NULLABLE arena) {
+  return ::new (mem) GetChannelMutesResponse(arena);
+}
+constexpr auto GetChannelMutesResponse::InternalNewImpl_() {
+  constexpr auto arena_bits = ::google::protobuf::internal::EncodePlacementArenaOffsets({
+      PROTOBUF_FIELD_OFFSET(GetChannelMutesResponse, _impl_.states_) +
+          decltype(GetChannelMutesResponse::_impl_.states_)::
+              InternalGetArenaOffset(
+                  ::google::protobuf::Message::internal_visibility()),
+  });
+  if (arena_bits.has_value()) {
+    return ::google::protobuf::internal::MessageCreator::ZeroInit(
+        sizeof(GetChannelMutesResponse), alignof(GetChannelMutesResponse), *arena_bits);
+  } else {
+    return ::google::protobuf::internal::MessageCreator(&GetChannelMutesResponse::PlacementNew_,
+                                 sizeof(GetChannelMutesResponse),
+                                 alignof(GetChannelMutesResponse));
+  }
+}
+constexpr auto GetChannelMutesResponse::InternalGenerateClassData_() {
+  return ::google::protobuf::internal::ClassDataFull{
+      ::google::protobuf::internal::ClassData{
+          &_GetChannelMutesResponse_default_instance_._instance,
+          &_table_.header,
+          nullptr,  // OnDemandRegisterArenaDtor
+          nullptr,  // IsInitialized
+          &GetChannelMutesResponse::MergeImpl,
+          ::google::protobuf::Message::GetNewImpl<GetChannelMutesResponse>(),
+#if defined(PROTOBUF_CUSTOM_VTABLE)
+          &GetChannelMutesResponse::SharedDtor,
+          ::google::protobuf::Message::GetClearImpl<GetChannelMutesResponse>(), &GetChannelMutesResponse::ByteSizeLong,
+              &GetChannelMutesResponse::_InternalSerialize,
+#endif  // PROTOBUF_CUSTOM_VTABLE
+          PROTOBUF_FIELD_OFFSET(GetChannelMutesResponse, _impl_._cached_size_),
+          false,
+      },
+      &GetChannelMutesResponse::kDescriptorMethods,
+      &descriptor_table_proto_2fchat_2eproto,
+      nullptr,  // tracker
+  };
+}
+
+PROTOBUF_CONSTINIT PROTOBUF_ATTRIBUTE_INIT_PRIORITY1 const
+    ::google::protobuf::internal::ClassDataFull GetChannelMutesResponse_class_data_ =
+        GetChannelMutesResponse::InternalGenerateClassData_();
+
+PROTOBUF_ATTRIBUTE_WEAK const ::google::protobuf::internal::ClassData* PROTOBUF_NONNULL
+GetChannelMutesResponse::GetClassData() const {
+  ::google::protobuf::internal::PrefetchToLocalCache(&GetChannelMutesResponse_class_data_);
+  ::google::protobuf::internal::PrefetchToLocalCache(GetChannelMutesResponse_class_data_.tc_table);
+  return GetChannelMutesResponse_class_data_.base();
+}
+PROTOBUF_CONSTINIT PROTOBUF_ATTRIBUTE_INIT_PRIORITY1
+const ::_pbi::TcParseTable<1, 2, 1, 0, 2>
+GetChannelMutesResponse::_table_ = {
+  {
+    PROTOBUF_FIELD_OFFSET(GetChannelMutesResponse, _impl_._has_bits_),
+    0, // no _extensions_
+    2, 8,  // max_field_number, fast_idx_mask
+    offsetof(decltype(_table_), field_lookup_table),
+    4294967292,  // skipmap
+    offsetof(decltype(_table_), field_entries),
+    2,  // num_field_entries
+    1,  // num_aux_entries
+    offsetof(decltype(_table_), aux_entries),
+    GetChannelMutesResponse_class_data_.base(),
+    nullptr,  // post_loop_handler
+    ::_pbi::TcParser::GenericFallback,  // fallback
+    #ifdef PROTOBUF_PREFETCH_PARSE_TABLE
+    ::_pbi::TcParser::GetTable<::chirp::chat::GetChannelMutesResponse>(),  // to_prefetch
+    #endif  // PROTOBUF_PREFETCH_PARSE_TABLE
+  }, {{
+    // repeated .chirp.chat.ChannelMuteState states = 2;
+    {::_pbi::TcParser::FastMtR1,
+     {18, 0, 0,
+      PROTOBUF_FIELD_OFFSET(GetChannelMutesResponse, _impl_.states_)}},
+    // .chirp.common.ErrorCode code = 1;
+    {::_pbi::TcParser::SingularVarintNoZag1<::uint32_t, offsetof(GetChannelMutesResponse, _impl_.code_), 1>(),
+     {8, 1, 0,
+      PROTOBUF_FIELD_OFFSET(GetChannelMutesResponse, _impl_.code_)}},
+  }}, {{
+    65535, 65535
+  }}, {{
+    // .chirp.common.ErrorCode code = 1;
+    {PROTOBUF_FIELD_OFFSET(GetChannelMutesResponse, _impl_.code_), _Internal::kHasBitsOffset + 1, 0, (0 | ::_fl::kFcOptional | ::_fl::kOpenEnum)},
+    // repeated .chirp.chat.ChannelMuteState states = 2;
+    {PROTOBUF_FIELD_OFFSET(GetChannelMutesResponse, _impl_.states_), _Internal::kHasBitsOffset + 0, 0, (0 | ::_fl::kFcRepeated | ::_fl::kMessage | ::_fl::kTvTable)},
+  }},
+  {{
+      {::_pbi::TcParser::GetTable<::chirp::chat::ChannelMuteState>()},
+  }},
+  {{
+  }},
+};
+PROTOBUF_NOINLINE void GetChannelMutesResponse::Clear() {
+// @@protoc_insertion_point(message_clear_start:chirp.chat.GetChannelMutesResponse)
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  ::uint32_t cached_has_bits = 0;
+  // Prevent compiler warnings about cached_has_bits being unused
+  (void) cached_has_bits;
+
+  cached_has_bits = _impl_._has_bits_[0];
+  if (CheckHasBitForRepeated(cached_has_bits, 0x00000001U)) {
+    _impl_.states_.Clear();
+  }
+  _impl_.code_ = 0;
+  _impl_._has_bits_.Clear();
+  _internal_metadata_.Clear<::google::protobuf::UnknownFieldSet>();
+}
+
+#if defined(PROTOBUF_CUSTOM_VTABLE)
+::uint8_t* PROTOBUF_NONNULL GetChannelMutesResponse::_InternalSerialize(
+    const ::google::protobuf::MessageLite& base, ::uint8_t* PROTOBUF_NONNULL target,
+    ::google::protobuf::io::EpsCopyOutputStream* PROTOBUF_NONNULL stream) {
+  const GetChannelMutesResponse& this_ = static_cast<const GetChannelMutesResponse&>(base);
+#else   // PROTOBUF_CUSTOM_VTABLE
+::uint8_t* PROTOBUF_NONNULL GetChannelMutesResponse::_InternalSerialize(
+    ::uint8_t* PROTOBUF_NONNULL target,
+    ::google::protobuf::io::EpsCopyOutputStream* PROTOBUF_NONNULL stream) const {
+  const GetChannelMutesResponse& this_ = *this;
+#endif  // PROTOBUF_CUSTOM_VTABLE
+  if constexpr (::_pbi::DebugHardenCheckHasBitConsistency()) {
+    this_.CheckHasBitConsistency();
+  }
+  // @@protoc_insertion_point(serialize_to_array_start:chirp.chat.GetChannelMutesResponse)
+  ::uint32_t cached_has_bits = 0;
+  (void)cached_has_bits;
+
+  cached_has_bits = this_._impl_._has_bits_[0];
+  // .chirp.common.ErrorCode code = 1;
+  if (CheckHasBit(cached_has_bits, 0x00000002U)) {
+    if (this_._internal_code() != 0) {
+      target = stream->EnsureSpace(target);
+      target = ::_pbi::WireFormatLite::WriteEnumToArray(
+          1, this_._internal_code(), target);
+    }
+  }
+
+  // repeated .chirp.chat.ChannelMuteState states = 2;
+  if (CheckHasBitForRepeated(cached_has_bits, 0x00000001U)) {
+    for (unsigned i = 0, n = static_cast<unsigned>(
+                             this_._internal_states_size());
+         i < n; i++) {
+      const auto& repfield = this_._internal_states().Get(i);
+      target =
+          ::google::protobuf::internal::WireFormatLite::InternalWriteMessage(
+              2, repfield, repfield.GetCachedSize(),
+              target, stream);
+    }
+  }
+
+  if (ABSL_PREDICT_FALSE(this_._internal_metadata_.have_unknown_fields())) {
+    target =
+        ::_pbi::WireFormat::InternalSerializeUnknownFieldsToArray(
+            this_._internal_metadata_.unknown_fields<::google::protobuf::UnknownFieldSet>(::google::protobuf::UnknownFieldSet::default_instance), target, stream);
+  }
+  // @@protoc_insertion_point(serialize_to_array_end:chirp.chat.GetChannelMutesResponse)
+  return target;
+}
+
+#if defined(PROTOBUF_CUSTOM_VTABLE)
+::size_t GetChannelMutesResponse::ByteSizeLong(const MessageLite& base) {
+  const GetChannelMutesResponse& this_ = static_cast<const GetChannelMutesResponse&>(base);
+#else   // PROTOBUF_CUSTOM_VTABLE
+::size_t GetChannelMutesResponse::ByteSizeLong() const {
+  const GetChannelMutesResponse& this_ = *this;
+#endif  // PROTOBUF_CUSTOM_VTABLE
+  // @@protoc_insertion_point(message_byte_size_start:chirp.chat.GetChannelMutesResponse)
+  ::size_t total_size = 0;
+
+  ::uint32_t cached_has_bits = 0;
+  // Prevent compiler warnings about cached_has_bits being unused
+  (void)cached_has_bits;
+
+  ::_pbi::Prefetch5LinesFrom7Lines(&this_);
+  cached_has_bits = this_._impl_._has_bits_[0];
+  if (BatchCheckHasBit(cached_has_bits, 0x00000003U)) {
+    // repeated .chirp.chat.ChannelMuteState states = 2;
+    if (CheckHasBitForRepeated(cached_has_bits, 0x00000001U)) {
+      total_size += 1UL * this_._internal_states_size();
+      for (const auto& msg : this_._internal_states()) {
+        total_size += ::google::protobuf::internal::WireFormatLite::MessageSize(msg);
+      }
+    }
+    // .chirp.common.ErrorCode code = 1;
+    if (CheckHasBit(cached_has_bits, 0x00000002U)) {
+      if (this_._internal_code() != 0) {
+        total_size += 1 +
+                      ::_pbi::WireFormatLite::EnumSize(this_._internal_code());
+      }
+    }
+  }
+  return this_.MaybeComputeUnknownFieldsSize(total_size,
+                                             &this_._impl_._cached_size_);
+}
+
+void GetChannelMutesResponse::MergeImpl(::google::protobuf::MessageLite& to_msg,
+                            const ::google::protobuf::MessageLite& from_msg) {
+   auto* const _this =
+      static_cast<GetChannelMutesResponse*>(&to_msg);
+  auto& from = static_cast<const GetChannelMutesResponse&>(from_msg);
+  if constexpr (::_pbi::DebugHardenCheckHasBitConsistency()) {
+    from.CheckHasBitConsistency();
+  }
+  ::google::protobuf::Arena* arena = _this->GetArena();
+  // @@protoc_insertion_point(class_specific_merge_from_start:chirp.chat.GetChannelMutesResponse)
+  ABSL_DCHECK_NE(&from, _this);
+  ::uint32_t cached_has_bits = 0;
+  (void)cached_has_bits;
+
+  cached_has_bits = from._impl_._has_bits_[0];
+  if (BatchCheckHasBit(cached_has_bits, 0x00000003U)) {
+    if (CheckHasBitForRepeated(cached_has_bits, 0x00000001U)) {
+      _this->_internal_mutable_states()->InternalMergeFromWithArena(
+          ::google::protobuf::MessageLite::internal_visibility(), arena,
+          from._internal_states());
+    }
+    if (CheckHasBit(cached_has_bits, 0x00000002U)) {
+      if (from._internal_code() != 0) {
+        _this->_impl_.code_ = from._impl_.code_;
+      }
+    }
+  }
+  _this->_impl_._has_bits_[0] |= cached_has_bits;
+  _this->_internal_metadata_.MergeFrom<::google::protobuf::UnknownFieldSet>(
+      from._internal_metadata_);
+}
+
+void GetChannelMutesResponse::CopyFrom(const GetChannelMutesResponse& from) {
+  // @@protoc_insertion_point(class_specific_copy_from_start:chirp.chat.GetChannelMutesResponse)
+  if (&from == this) return;
+  Clear();
+  MergeFrom(from);
+}
+
+
+void GetChannelMutesResponse::InternalSwap(GetChannelMutesResponse* PROTOBUF_RESTRICT PROTOBUF_NONNULL other) {
+  using ::std::swap;
+  _internal_metadata_.InternalSwap(&other->_internal_metadata_);
+  swap(_impl_._has_bits_[0], other->_impl_._has_bits_[0]);
+  _impl_.states_.InternalSwap(&other->_impl_.states_);
+  swap(_impl_.code_, other->_impl_.code_);
+}
+
+::google::protobuf::Metadata GetChannelMutesResponse::GetMetadata() const {
   return ::google::protobuf::Message::GetMetadataImpl(GetClassData()->full());
 }
 // @@protoc_insertion_point(namespace_scope)

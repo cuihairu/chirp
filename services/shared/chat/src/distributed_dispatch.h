@@ -28,6 +28,12 @@ using LogoutDispatch = std::function<void(const std::shared_ptr<network::Session
 using MessageAckDispatch = std::function<void(const std::shared_ptr<network::Session>& session,
                                               const chat::MessageAck& req,
                                               int64_t seq)>;
+using SetChannelMuteDispatch = std::function<void(const std::shared_ptr<network::Session>& session,
+                                                  const chat::SetChannelMuteRequest& req,
+                                                  int64_t seq)>;
+using GetChannelMutesDispatch = std::function<void(const std::shared_ptr<network::Session>& session,
+                                                   const chat::GetChannelMutesRequest& req,
+                                                   int64_t seq)>;
 
 struct DistributedDispatchHandlers {
   LoginDispatch on_login;
@@ -37,6 +43,9 @@ struct DistributedDispatchHandlers {
   LogoutDispatch on_logout;
   // Client confirms it received a CHAT_MESSAGE_NOTIFY (delivery tracking).
   MessageAckDispatch on_message_ack;
+  // Channel mutes (game_chat_features P0 频道屏蔽): per-user push filters.
+  SetChannelMuteDispatch on_set_channel_mute;
+  GetChannelMutesDispatch on_get_channel_mutes;
 };
 
 void DispatchDistributedPacket(const std::shared_ptr<network::Session>& session,

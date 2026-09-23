@@ -20,6 +20,7 @@
 #include "channel_pacer.h"
 #include "chat_validation.h"
 #include "delivery_ack_manager.h"
+#include "delivery_prefs.h"
 #include "repeat_guard.h"
 #include "inject_consumer.h"
 #include "login_token_verifier.h"
@@ -924,6 +925,9 @@ int main(int argc, char** argv) {
   chirp::chat::WordFilter word_filter(word_filter_options);
   chirp::chat::ChannelPacer channel_pacer;
   chirp::chat::RepeatGuard repeat_guard;
+  // Per-user push filters (game_chat_features P0 频道屏蔽). Referenced by the
+  // mute handlers below; lives as long as main, like channel_pacer.
+  chirp::chat::DeliveryPrefs delivery_prefs;
 
   chirp::chat::runtime::DistributedDispatchHandlers handlers;
   handlers.on_login = [state, store, router, &token_verifier, acks](
@@ -1084,6 +1088,48 @@ int main(int argc, char** argv) {
       delivery_tracker->Acknowledge(req.message_id(), user_id);
       Logger::Instance().Info("message acked id=" + req.message_id() + " user=" + user_id);
     }
+  };
+  // Channel mutes (game_chat_features P0 频道屏蔽): the same contract as the
+  // basic build's SET_CHANNEL_MUTE/GET_CHANNEL_MUTES handlers. Only the
+  // world/guild/team channels are muteable — marquee and SYSTEM_CHANNEL are
+  // service broadcasts, private chat belongs to the block list.
+  handlers.on_set_channel_mute = [state, &delivery_prefs](
+                                     const std::shared_ptr<chirp::network::Session>& session,
+                                     const chirp::chat::SetChannelMuteRequest& req,
+                                     int64_t seq) {
+    chirp::chat::SetChannelMuteResponse resp;
+    const std::string user_id = state->GetUserId(session);
+    if (user_id.empty()) {
+      resp.set_code(chirp::common::AUTH_FAILED);
+    } else if (!chirp::chat::IsMuteableChannel(req.channel_type())) {
+      resp.set_code(chirp::common::INVALID_PARAM);
+    } else {
+      resp.set_code(chirp::common::OK);
+      resp.set_muted(
+          delivery_prefs.SetChannelMuted(user_id, req.channel_type(), req.muted()));
+    }
+    resp.set_channel_type(req.channel_type());
+    chirp::chat::runtime::SendPacket(session, chirp::gateway::SET_CHANNEL_MUTE_RESP, seq,
+                                     resp.SerializeAsString());
+  };
+  handlers.on_get_channel_mutes = [state, &delivery_prefs](
+                                      const std::shared_ptr<chirp::network::Session>& session,
+                                      const chirp::chat::GetChannelMutesRequest&,
+                                      int64_t seq) {
+    chirp::chat::GetChannelMutesResponse resp;
+    const std::string user_id = state->GetUserId(session);
+    if (user_id.empty()) {
+      resp.set_code(chirp::common::AUTH_FAILED);
+    } else {
+      resp.set_code(chirp::common::OK);
+      for (const auto& [channel_type, muted] : delivery_prefs.GetChannelMutes(user_id)) {
+        chirp::chat::ChannelMuteState* entry = resp.add_states();
+        entry->set_channel_type(channel_type);
+        entry->set_muted(muted);
+      }
+    }
+    chirp::chat::runtime::SendPacket(session, chirp::gateway::GET_CHANNEL_MUTES_RESP, seq,
+                                     resp.SerializeAsString());
   };
 
   auto on_packet = [handlers, gateway_service_secret, trusted_conns, &edge_rate_limiter,

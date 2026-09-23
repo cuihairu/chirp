@@ -1492,6 +1492,41 @@ export interface NpcDialogMetadata {
   options: string[];
 }
 
+/**
+ * ---- 频道屏蔽（玩家级推送过滤） ----
+ *
+ * 玩家可关闭特定频道的推送（如关闭世界频道）。屏蔽只挡推送：历史仍可
+ * 拉取（屏蔽不是抹除），屏蔽生效后的频道消息也不再进入离线队列。
+ * 可屏蔽范围：WORLD / GUILD / TEAM——MARQUEE 与 SYSTEM_CHANNEL 是服务
+ * 广播不可关；「不想收到某人的私聊」归黑名单特性，不在此处。
+ */
+export interface SetChannelMuteRequest {
+  channelType: ChannelType;
+  muted: boolean;
+}
+
+export interface SetChannelMuteResponse {
+  code: ErrorCode;
+  /** 回显请求值 */
+  channelType: ChannelType;
+  /** 回显生效后的状态 */
+  muted: boolean;
+}
+
+export interface ChannelMuteState {
+  channelType: ChannelType;
+  muted: boolean;
+}
+
+export interface GetChannelMutesRequest {
+}
+
+export interface GetChannelMutesResponse {
+  code: ErrorCode;
+  /** 固定含全部三个可屏蔽频道（含未屏蔽的），顺序稳定（WORLD/GUILD/TEAM）。 */
+  states: ChannelMuteState[];
+}
+
 function createBaseSendMessageRequest(): SendMessageRequest {
   return {
     senderId: "",
@@ -12995,6 +13030,362 @@ export const NpcDialogMetadata = {
     message.npcName = object.npcName ?? "";
     message.dialogId = object.dialogId ?? "";
     message.options = object.options?.map((e) => e) || [];
+    return message;
+  },
+};
+
+function createBaseSetChannelMuteRequest(): SetChannelMuteRequest {
+  return { channelType: 0, muted: false };
+}
+
+export const SetChannelMuteRequest = {
+  encode(message: SetChannelMuteRequest, writer: _m0.Writer = _m0.Writer.create()): _m0.Writer {
+    if (message.channelType !== 0) {
+      writer.uint32(8).int32(message.channelType);
+    }
+    if (message.muted !== false) {
+      writer.uint32(16).bool(message.muted);
+    }
+    return writer;
+  },
+
+  decode(input: _m0.Reader | Uint8Array, length?: number): SetChannelMuteRequest {
+    const reader = input instanceof _m0.Reader ? input : _m0.Reader.create(input);
+    let end = length === undefined ? reader.len : reader.pos + length;
+    const message = createBaseSetChannelMuteRequest();
+    while (reader.pos < end) {
+      const tag = reader.uint32();
+      switch (tag >>> 3) {
+        case 1:
+          if (tag !== 8) {
+            break;
+          }
+
+          message.channelType = reader.int32() as any;
+          continue;
+        case 2:
+          if (tag !== 16) {
+            break;
+          }
+
+          message.muted = reader.bool();
+          continue;
+      }
+      if ((tag & 7) === 4 || tag === 0) {
+        break;
+      }
+      reader.skipType(tag & 7);
+    }
+    return message;
+  },
+
+  fromJSON(object: any): SetChannelMuteRequest {
+    return {
+      channelType: isSet(object.channelType) ? channelTypeFromJSON(object.channelType) : 0,
+      muted: isSet(object.muted) ? globalThis.Boolean(object.muted) : false,
+    };
+  },
+
+  toJSON(message: SetChannelMuteRequest): unknown {
+    const obj: any = {};
+    if (message.channelType !== 0) {
+      obj.channelType = channelTypeToJSON(message.channelType);
+    }
+    if (message.muted !== false) {
+      obj.muted = message.muted;
+    }
+    return obj;
+  },
+
+  create<I extends Exact<DeepPartial<SetChannelMuteRequest>, I>>(base?: I): SetChannelMuteRequest {
+    return SetChannelMuteRequest.fromPartial(base ?? ({} as any));
+  },
+  fromPartial<I extends Exact<DeepPartial<SetChannelMuteRequest>, I>>(object: I): SetChannelMuteRequest {
+    const message = createBaseSetChannelMuteRequest();
+    message.channelType = object.channelType ?? 0;
+    message.muted = object.muted ?? false;
+    return message;
+  },
+};
+
+function createBaseSetChannelMuteResponse(): SetChannelMuteResponse {
+  return { code: 0, channelType: 0, muted: false };
+}
+
+export const SetChannelMuteResponse = {
+  encode(message: SetChannelMuteResponse, writer: _m0.Writer = _m0.Writer.create()): _m0.Writer {
+    if (message.code !== 0) {
+      writer.uint32(8).int32(message.code);
+    }
+    if (message.channelType !== 0) {
+      writer.uint32(16).int32(message.channelType);
+    }
+    if (message.muted !== false) {
+      writer.uint32(24).bool(message.muted);
+    }
+    return writer;
+  },
+
+  decode(input: _m0.Reader | Uint8Array, length?: number): SetChannelMuteResponse {
+    const reader = input instanceof _m0.Reader ? input : _m0.Reader.create(input);
+    let end = length === undefined ? reader.len : reader.pos + length;
+    const message = createBaseSetChannelMuteResponse();
+    while (reader.pos < end) {
+      const tag = reader.uint32();
+      switch (tag >>> 3) {
+        case 1:
+          if (tag !== 8) {
+            break;
+          }
+
+          message.code = reader.int32() as any;
+          continue;
+        case 2:
+          if (tag !== 16) {
+            break;
+          }
+
+          message.channelType = reader.int32() as any;
+          continue;
+        case 3:
+          if (tag !== 24) {
+            break;
+          }
+
+          message.muted = reader.bool();
+          continue;
+      }
+      if ((tag & 7) === 4 || tag === 0) {
+        break;
+      }
+      reader.skipType(tag & 7);
+    }
+    return message;
+  },
+
+  fromJSON(object: any): SetChannelMuteResponse {
+    return {
+      code: isSet(object.code) ? errorCodeFromJSON(object.code) : 0,
+      channelType: isSet(object.channelType) ? channelTypeFromJSON(object.channelType) : 0,
+      muted: isSet(object.muted) ? globalThis.Boolean(object.muted) : false,
+    };
+  },
+
+  toJSON(message: SetChannelMuteResponse): unknown {
+    const obj: any = {};
+    if (message.code !== 0) {
+      obj.code = errorCodeToJSON(message.code);
+    }
+    if (message.channelType !== 0) {
+      obj.channelType = channelTypeToJSON(message.channelType);
+    }
+    if (message.muted !== false) {
+      obj.muted = message.muted;
+    }
+    return obj;
+  },
+
+  create<I extends Exact<DeepPartial<SetChannelMuteResponse>, I>>(base?: I): SetChannelMuteResponse {
+    return SetChannelMuteResponse.fromPartial(base ?? ({} as any));
+  },
+  fromPartial<I extends Exact<DeepPartial<SetChannelMuteResponse>, I>>(object: I): SetChannelMuteResponse {
+    const message = createBaseSetChannelMuteResponse();
+    message.code = object.code ?? 0;
+    message.channelType = object.channelType ?? 0;
+    message.muted = object.muted ?? false;
+    return message;
+  },
+};
+
+function createBaseChannelMuteState(): ChannelMuteState {
+  return { channelType: 0, muted: false };
+}
+
+export const ChannelMuteState = {
+  encode(message: ChannelMuteState, writer: _m0.Writer = _m0.Writer.create()): _m0.Writer {
+    if (message.channelType !== 0) {
+      writer.uint32(8).int32(message.channelType);
+    }
+    if (message.muted !== false) {
+      writer.uint32(16).bool(message.muted);
+    }
+    return writer;
+  },
+
+  decode(input: _m0.Reader | Uint8Array, length?: number): ChannelMuteState {
+    const reader = input instanceof _m0.Reader ? input : _m0.Reader.create(input);
+    let end = length === undefined ? reader.len : reader.pos + length;
+    const message = createBaseChannelMuteState();
+    while (reader.pos < end) {
+      const tag = reader.uint32();
+      switch (tag >>> 3) {
+        case 1:
+          if (tag !== 8) {
+            break;
+          }
+
+          message.channelType = reader.int32() as any;
+          continue;
+        case 2:
+          if (tag !== 16) {
+            break;
+          }
+
+          message.muted = reader.bool();
+          continue;
+      }
+      if ((tag & 7) === 4 || tag === 0) {
+        break;
+      }
+      reader.skipType(tag & 7);
+    }
+    return message;
+  },
+
+  fromJSON(object: any): ChannelMuteState {
+    return {
+      channelType: isSet(object.channelType) ? channelTypeFromJSON(object.channelType) : 0,
+      muted: isSet(object.muted) ? globalThis.Boolean(object.muted) : false,
+    };
+  },
+
+  toJSON(message: ChannelMuteState): unknown {
+    const obj: any = {};
+    if (message.channelType !== 0) {
+      obj.channelType = channelTypeToJSON(message.channelType);
+    }
+    if (message.muted !== false) {
+      obj.muted = message.muted;
+    }
+    return obj;
+  },
+
+  create<I extends Exact<DeepPartial<ChannelMuteState>, I>>(base?: I): ChannelMuteState {
+    return ChannelMuteState.fromPartial(base ?? ({} as any));
+  },
+  fromPartial<I extends Exact<DeepPartial<ChannelMuteState>, I>>(object: I): ChannelMuteState {
+    const message = createBaseChannelMuteState();
+    message.channelType = object.channelType ?? 0;
+    message.muted = object.muted ?? false;
+    return message;
+  },
+};
+
+function createBaseGetChannelMutesRequest(): GetChannelMutesRequest {
+  return {};
+}
+
+export const GetChannelMutesRequest = {
+  encode(_: GetChannelMutesRequest, writer: _m0.Writer = _m0.Writer.create()): _m0.Writer {
+    return writer;
+  },
+
+  decode(input: _m0.Reader | Uint8Array, length?: number): GetChannelMutesRequest {
+    const reader = input instanceof _m0.Reader ? input : _m0.Reader.create(input);
+    let end = length === undefined ? reader.len : reader.pos + length;
+    const message = createBaseGetChannelMutesRequest();
+    while (reader.pos < end) {
+      const tag = reader.uint32();
+      switch (tag >>> 3) {
+      }
+      if ((tag & 7) === 4 || tag === 0) {
+        break;
+      }
+      reader.skipType(tag & 7);
+    }
+    return message;
+  },
+
+  fromJSON(_: any): GetChannelMutesRequest {
+    return {};
+  },
+
+  toJSON(_: GetChannelMutesRequest): unknown {
+    const obj: any = {};
+    return obj;
+  },
+
+  create<I extends Exact<DeepPartial<GetChannelMutesRequest>, I>>(base?: I): GetChannelMutesRequest {
+    return GetChannelMutesRequest.fromPartial(base ?? ({} as any));
+  },
+  fromPartial<I extends Exact<DeepPartial<GetChannelMutesRequest>, I>>(_: I): GetChannelMutesRequest {
+    const message = createBaseGetChannelMutesRequest();
+    return message;
+  },
+};
+
+function createBaseGetChannelMutesResponse(): GetChannelMutesResponse {
+  return { code: 0, states: [] };
+}
+
+export const GetChannelMutesResponse = {
+  encode(message: GetChannelMutesResponse, writer: _m0.Writer = _m0.Writer.create()): _m0.Writer {
+    if (message.code !== 0) {
+      writer.uint32(8).int32(message.code);
+    }
+    for (const v of message.states) {
+      ChannelMuteState.encode(v!, writer.uint32(18).fork()).ldelim();
+    }
+    return writer;
+  },
+
+  decode(input: _m0.Reader | Uint8Array, length?: number): GetChannelMutesResponse {
+    const reader = input instanceof _m0.Reader ? input : _m0.Reader.create(input);
+    let end = length === undefined ? reader.len : reader.pos + length;
+    const message = createBaseGetChannelMutesResponse();
+    while (reader.pos < end) {
+      const tag = reader.uint32();
+      switch (tag >>> 3) {
+        case 1:
+          if (tag !== 8) {
+            break;
+          }
+
+          message.code = reader.int32() as any;
+          continue;
+        case 2:
+          if (tag !== 18) {
+            break;
+          }
+
+          message.states.push(ChannelMuteState.decode(reader, reader.uint32()));
+          continue;
+      }
+      if ((tag & 7) === 4 || tag === 0) {
+        break;
+      }
+      reader.skipType(tag & 7);
+    }
+    return message;
+  },
+
+  fromJSON(object: any): GetChannelMutesResponse {
+    return {
+      code: isSet(object.code) ? errorCodeFromJSON(object.code) : 0,
+      states: globalThis.Array.isArray(object?.states)
+        ? object.states.map((e: any) => ChannelMuteState.fromJSON(e))
+        : [],
+    };
+  },
+
+  toJSON(message: GetChannelMutesResponse): unknown {
+    const obj: any = {};
+    if (message.code !== 0) {
+      obj.code = errorCodeToJSON(message.code);
+    }
+    if (message.states?.length) {
+      obj.states = message.states.map((e) => ChannelMuteState.toJSON(e));
+    }
+    return obj;
+  },
+
+  create<I extends Exact<DeepPartial<GetChannelMutesResponse>, I>>(base?: I): GetChannelMutesResponse {
+    return GetChannelMutesResponse.fromPartial(base ?? ({} as any));
+  },
+  fromPartial<I extends Exact<DeepPartial<GetChannelMutesResponse>, I>>(object: I): GetChannelMutesResponse {
+    const message = createBaseGetChannelMutesResponse();
+    message.code = object.code ?? 0;
+    message.states = object.states?.map((e) => ChannelMuteState.fromPartial(e)) || [];
     return message;
   },
 };

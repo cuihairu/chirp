@@ -691,6 +691,22 @@ target_include_directories(repeat_guard_tests
 )
 
 add_test(NAME repeat_guard_tests COMMAND repeat_guard_tests)
+
+# Channel mutes (game_chat_features P0 频道屏蔽): muteable-channel set,
+# per-user set/read-back and the stable reporting order.
+add_executable(delivery_prefs_tests
+  delivery_prefs_test.cc
+  ${CMAKE_SOURCE_DIR}/services/shared/chat/src/delivery_prefs.cc
+)
+
+chirp_unit_test_common_links(delivery_prefs_tests)
+
+target_include_directories(delivery_prefs_tests
+  PRIVATE
+  ${CMAKE_SOURCE_DIR}/services/shared/chat/src
+)
+
+add_test(NAME delivery_prefs_tests COMMAND delivery_prefs_tests)
 # NOTE: presence_manager.cc used to be excluded from the social build
 # because it did not compile (a proto enum name clash plus a copyable-mutex
 # member); it is fixed and covered by social_presence_tests below. The

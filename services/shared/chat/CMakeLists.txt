@@ -88,6 +88,9 @@ if(MYSQL_FOUND)
         # Repeat-message mute (game_chat_features P0 重复消息检测): third
         # consecutive identical send starts a 5-minute mute.
         src/repeat_guard.cc
+        # Channel mutes (game_chat_features P0 频道屏蔽): per-user push
+        # filters over world/guild/team.
+        src/delivery_prefs.cc
     )
 
     chirp_configure_chat_target(chirp_chat)
