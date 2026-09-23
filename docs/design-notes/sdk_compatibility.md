@@ -22,7 +22,7 @@ title: SDK 引擎兼容性
 
 ## 各引擎详细要求
 
-### Unity（P0）
+### Unity（P0 优先级）
 
 | 项目 | 要求 |
 |---|---|
@@ -46,7 +46,7 @@ title: SDK 引擎兼容性
 - [ ] 敏感词过滤客户端预检
 - [ ] Unity Package 发布配置
 
-### Unreal Engine 5（P0）
+### Unreal Engine 5（P0 优先级）
 
 | 项目 | 要求 |
 |---|---|
@@ -69,7 +69,7 @@ title: SDK 引擎兼容性
 - [ ] 物品链接/成就分享的 Blueprint 可渲染数据结构
 - [ ] UE 5.4+ 验证
 
-### LayaBox（P1）
+### LayaBox（P1 优先级）
 
 | 项目 | 要求 |
 |---|---|
@@ -87,7 +87,7 @@ title: SDK 引擎兼容性
 - [ ] Hook 接口（TypeScript interface）
 - [ ] 示例项目
 
-### Godot（P2）
+### Godot（P2 优先级）
 
 | 项目 | 要求 |
 |---|---|
@@ -103,7 +103,7 @@ title: SDK 引擎兼容性
 - [ ] Hook 接口（GDScript signal / C# event）
 - [ ] 示例项目
 
-### Cocos Creator（P2）
+### Cocos Creator（P2 优先级）
 
 | 项目 | 要求 |
 |---|---|
