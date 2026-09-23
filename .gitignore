@@ -67,6 +67,7 @@ coverage-packages.csv
 coverage-summary.json
 coverage.json
 coverage.lcov
+coverage-gaps.txt
 *.gcno
 *.gcda
 *.gcov
