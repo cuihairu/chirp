@@ -212,16 +212,16 @@ KNOWN_UNCOVERABLE = {
     # erased only together with timer->cancel(); a handler already dispatched
     # before the cancel exits at the timer_ec arm above, so the find-miss
     # return is unreachable by construction.
-    ("sdks/core/src/sdk_client.cc", 463),
-    ("sdks/core/src/sdk_client.cc", 464),
+    ("sdks/core/src/sdk_client.cc", 466),
+    ("sdks/core/src/sdk_client.cc", 467),
     # ChatClient::Impl::SendRequest pending_.emplace: next_seq_ is monotonic,
     # so the red-black insert comparison always walks the greater side; the
     # less/duplicate arms would require a 2^32 sequence wrap.
-    ("sdks/core/src/sdk_client.cc", 473),
+    ("sdks/core/src/sdk_client.cc", 476),
     # ChatClient static error-category construction: the exception-cleanup
     # arm of the function-local static guard only runs when allocation of
     # the category object throws.
-    ("sdks/core/src/sdk.cc", 35),
+    ("sdks/core/src/sdk.cc", 41),
     # SendMessage command-predicate line: the only untaken arm is the
     # exception path of the inlined string ops (content.front()).
     ("sdks/core/src/sdk_client.cc", 256),
@@ -233,6 +233,11 @@ KNOWN_UNCOVERABLE = {
     # landing pad block 55 (string construction throwing) and the pad's
     # internal branches.
     ("sdks/core/src/sdk_client.cc", 418),
+    # SendPacket null-socket arm: every caller is state-guarded via
+    # ReadyForRequests(), so socket_ is only null inside the teardown window
+    # between DoClose dropping the socket and the state flip - a disconnect
+    # race no public-API sequence reaches deterministically.
+    ("sdks/core/src/sdk_client.cc", 761),
     # HandleFrame pong match: the untaken arm is the throw edge into landing
     # pad block 83 (string/stdexcept during logging).
     ("sdks/core/src/sdk_client.cc", 600),

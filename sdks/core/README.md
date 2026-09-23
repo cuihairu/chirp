@@ -6,6 +6,7 @@ C++ 客户端协议核心:`chirp::sdk::ChatClient` 直连 chat 网关的 TCP 长
 
 - **连接状态机**:`Disconnected → Connecting → Connected → LoggedIn`,外加 `WaitingReconnect`(运行中断线的退避重连中)与 `Kicked`(顶号终态)。
 - **请求-响应**:通用 `Request(req_msg_id, resp_msg_id, body, cb)`,sequence 关联 + 响应 msg_id 校验,默认 10s 超时(`ChatConfig::request_timeout_ms`),迟到的响应无害丢弃。
+- **便捷 API**(服务端往返的类型化方法):覆盖发送扩展、服务端历史、已读/未读、黑名单、频道静音、输入状态、编辑/删除/表情回执、批量删除、@提及候选与群组全套;见下文「便捷 API」。
 - **notify 订阅**:`OnNotify(msg_id, cb)` 返回退订句柄,`OffNotify` 退订;便捷回调(`SetMessageCallback` 等)与之平行。
 - **心跳**:默认 25s,pong 必须回显 ping 的非零 sequence 才记为已答;连续 `max_missed_pongs`(默认 2)次未答判定连接死亡,进入重连。
 - **自动重连**:指数退避 500ms→15s ±20% 抖动;`max_reconnect_attempts`(-1 无限);KICK 不重连;显式 `Disconnect()`/`Logout()` 取消重连。
@@ -30,7 +31,7 @@ cd sdks/core && cmake -B build && cmake --build build
 
 ## 测试
 
-- 单测:`tests/unit/sdk_core_test.cc`(73 例:状态机、loopback 登录/收发、请求关联与超时、notify 订阅退订、心跳死亡判定、踢线终态、断线重连、钩子接线),CI 自动跑。
+- 单测:`tests/unit/sdk_core_test.cc`(106 例:状态机、loopback 登录/收发、请求关联与超时、notify 订阅退订、心跳死亡判定、踢线终态、断线重连、钩子接线、便捷 API 往返/校验/超时/BadResponse),CI 自动跑。
 - 进程级 E2E:`./test_services.sh --smoke-sdk`(两个 SDK 实例对真 `chirp_chat` 双向收发 + 离线队列)。
 
 ## 使用
@@ -106,6 +107,44 @@ auto recent = client.LoadHistory(chirp::chat::WORLD, "world", 20);
 - 命令路由:注册了至少一个 handler 后,`/cmd args` 形态的 `SendMessage` 走本地路由不再上网;全 miss 本地丢弃(Warn 日志,unknown command 提示由引擎层负责)。零注册时 `/` 消息照常发送。
 - 拦截丢弃(`OnBeforeReceive` 返回 false)的消息:不存储、不触发任何回调、不进原始 notify 分发。
 - 存储转发方法(`LoadHistory`/`MarkRead`/`GetUnreadCount`/`CleanupMessages`)可从任意线程调;自定义 store 的并发安全由实现方负责(`MemoryMessageStore` 内置互斥,但不跟踪已读,`GetUnreadCount` 恒 0)。
+
+## 便捷 API
+
+类型化的服务端往返方法,覆盖高频聊天面;完整字段仍走裸口 `Request()`/`OnNotify()`。任意线程可调(内部 post 到 io 线程)。
+
+**错误契约**:`ChatError` 只覆盖传输层(NotConnected/Timeout/Closed/Kicked)与协议异常(BadResponse);服务端业务结果(鉴权失败、参数非法、限频、专码)一律读 `resp.code()`——`ec == OK` 不代表业务成功。
+
+**命名约定**:动作用动词(`BlockUser`/`JoinGroup`),服务端查询用 `Fetch*`;与钩子转发方法(读写本地存储的 `LoadHistory`/`MarkRead`/`GetUnreadCount`)区分——`FetchHistory` 走服务端请求,`LoadHistory` 读本地。
+
+| 分组 | 方法 |
+|---|---|
+| 发送扩展 | `SendMessage(SendOptions, content, cb)` — 群/世界/私聊 + 引用(`reply_to_message_id`)一条龙;私聊 `channel_id` 按 (sender, receiver) 归一化,要服务端 message id 读 `resp.message_id()`;同样过拦截器、命令路由与本地存档 |
+| 历史 | `FetchHistory(type, channel_id, limit, before_timestamp, cb)` |
+| 已读/未读 | `MarkChannelRead(type, channel_id, message_id, cb)`、`FetchUnreadCount(cb)` |
+| 黑名单 | `BlockUser` / `UnblockUser` / `FetchBlockedUsers` |
+| 频道静音 | `SetChannelMute(type, muted, cb)`、`FetchChannelMutes(cb)` |
+| 输入状态 | `SendTypingIndicator(type, channel_id, is_typing)`(裸发,无响应)、`FetchTypingUsers(type, channel_id, cb)` |
+| 消息操作 | `EditMessage`、`DeleteMessage(id, hard_delete, cb)`、`AddReaction`、`RemoveReaction`、`FetchReactions(id, emoji, cb)`(emoji 空 = 全部)、`FetchReadReceipts(id, cb)` |
+| 批量 | `BulkDeleteMessages(message_ids, channel_id, cb)` |
+| @提及 | `FetchMentionSuggestions(channel_id, query, cb)` |
+| 群组 | `CreateGroup` / `JoinGroup` / `LeaveGroup` / `InviteToGroup` / `KickMember` / `FetchGroupInfo` / `FetchGroupMembers` / `FetchUserGroups` |
+
+```cpp
+chirp::sdk::ChatClient::SendOptions opts;
+opts.channel_type = chirp::chat::PRIVATE;
+opts.receiver_id = "peer-7";
+opts.reply_to_message_id = "m-42";  // 引用回复
+client.SendMessage(opts, "gg", [](const std::error_code& ec,
+                                  const chirp::chat::SendMessageResponse& resp) {
+  if (ec) { /* 传输/协议错误:NotConnected、Timeout、BadResponse… */ return; }
+  if (resp.code() != chirp::common::OK) { /* 业务拒绝:读 code */ return; }
+  Use(resp.message_id());
+});
+client.FetchHistory(chirp::chat::GUILD, "g-1", 50, 0,
+                    [](const std::error_code& ec, const chirp::chat::GetHistoryResponse& resp) {
+                      // resp.messages() 为服务端权威顺序
+                    });
+```
 
 ## 历史
 

@@ -22,6 +22,62 @@ class MessageStore;
 class ChatEventListener;
 class CommandHandler;
 
+// ---- 便捷 API 的类型化回调:ec 只覆盖传输层(NotConnected/Timeout/Closed/
+// Kicked)与协议异常(BadResponse);服务端业务结果(鉴权失败、参数非法、
+// 限频、专码等)一律读 resp.code(),ec 为 OK 不代表业务成功。
+using SendResponseCallback =
+    std::function<void(const std::error_code& ec, const chirp::chat::SendMessageResponse&)>;
+using HistoryCallback =
+    std::function<void(const std::error_code& ec, const chirp::chat::GetHistoryResponse&)>;
+using MarkReadCallback =
+    std::function<void(const std::error_code& ec, const chirp::chat::MarkReadResponse&)>;
+using UnreadCountCallback =
+    std::function<void(const std::error_code& ec, const chirp::chat::GetUnreadCountResponse&)>;
+using BlockSenderCallback =
+    std::function<void(const std::error_code& ec, const chirp::chat::BlockMessageSenderResponse&)>;
+using UnblockSenderCallback =
+    std::function<void(const std::error_code& ec, const chirp::chat::UnblockMessageSenderResponse&)>;
+using BlockedSendersCallback =
+    std::function<void(const std::error_code& ec, const chirp::chat::GetBlockedSendersResponse&)>;
+using SetMuteCallback =
+    std::function<void(const std::error_code& ec, const chirp::chat::SetChannelMuteResponse&)>;
+using ChannelMutesCallback =
+    std::function<void(const std::error_code& ec, const chirp::chat::GetChannelMutesResponse&)>;
+using TypingUsersCallback =
+    std::function<void(const std::error_code& ec, const chirp::chat::GetTypingUsersResponse&)>;
+using EditMessageCallback =
+    std::function<void(const std::error_code& ec, const chirp::chat::EditMessageResponse&)>;
+using DeleteMessageCallback =
+    std::function<void(const std::error_code& ec, const chirp::chat::DeleteMessageResponse&)>;
+using AddReactionCallback =
+    std::function<void(const std::error_code& ec, const chirp::chat::AddReactionResponse&)>;
+using RemoveReactionCallback =
+    std::function<void(const std::error_code& ec, const chirp::chat::RemoveReactionResponse&)>;
+using ReactionsCallback =
+    std::function<void(const std::error_code& ec, const chirp::chat::GetReactionsResponse&)>;
+using ReadReceiptsCallback =
+    std::function<void(const std::error_code& ec, const chirp::chat::GetReadReceiptsResponse&)>;
+using CreateGroupCallback =
+    std::function<void(const std::error_code& ec, const chirp::chat::CreateGroupResponse&)>;
+using JoinGroupCallback =
+    std::function<void(const std::error_code& ec, const chirp::chat::JoinGroupResponse&)>;
+using LeaveGroupCallback =
+    std::function<void(const std::error_code& ec, const chirp::chat::LeaveGroupResponse&)>;
+using InviteToGroupCallback =
+    std::function<void(const std::error_code& ec, const chirp::chat::InviteToGroupResponse&)>;
+using KickMemberCallback =
+    std::function<void(const std::error_code& ec, const chirp::chat::KickMemberResponse&)>;
+using GroupInfoCallback =
+    std::function<void(const std::error_code& ec, const chirp::chat::GetGroupInfoResponse&)>;
+using GroupMembersCallback =
+    std::function<void(const std::error_code& ec, const chirp::chat::GetGroupMembersResponse&)>;
+using UserGroupsCallback =
+    std::function<void(const std::error_code& ec, const chirp::chat::GetUserGroupsResponse&)>;
+using MentionSuggestionsCallback =
+    std::function<void(const std::error_code& ec, const chirp::chat::GetMentionSuggestionsResponse&)>;
+using BulkDeleteCallback =
+    std::function<void(const std::error_code& ec, const chirp::chat::BulkDeleteResponse&)>;
+
 // 聊天客户端 SDK:直连 chat 网关的 TCP 长连接,[u32_be len][Packet protobuf]
 // 帧。sequence 关联请求响应,25s 心跳(pong 回声校验,连续丢失判定死亡),
 // 断线指数退避自动重连(KICK 终态),单请求超时。与 web/mobile/unity 的
@@ -94,6 +150,86 @@ public:
   int GetUnreadCount(chirp::chat::ChannelType type,
                      const std::string& channel_id);
   void CleanupMessages(int64_t older_than);
+
+  // ---- 便捷 API(服务端往返):覆盖消息/已读/黑名单/静音/输入状态/表情/
+  // 群组等高频面。回调类型见 sdk.h——ec 只报传输与协议错误,业务结果读
+  // resp.code()。与钩子转发方法(LoadHistory/MarkRead/GetUnreadCount)的
+  // 区别:钩子系列读写本地存储,Fetch* 系列走服务端请求。任意线程可调。
+  // 完整字段用 Request()/OnNotify() 裸口。
+
+  // 扩展发送:群/世界/私聊/引用一条龙。私聊按 (sender, receiver) 归一化
+  // channel_id(与服务端一致);channel_id 对非 PRIVATE 必填。带回调——
+  // 要 message id 读 resp.message_id(),被拒读 resp.code()(如
+  // CONTENT_TOO_LONG/WORD_FILTERED)。同样过拦截器、命令路由与本地存档。
+  struct SendOptions {
+    chirp::chat::ChannelType channel_type = chirp::chat::PRIVATE;
+    std::string channel_id;            // 非 PRIVATE 必填
+    std::string receiver_id;           // PRIVATE 必填
+    std::string reply_to_message_id;   // 引用的消息 id,空 = 非引用
+  };
+  void SendMessage(const SendOptions& opts, const std::string& content,
+                   SendResponseCallback cb);
+
+  // 服务端历史:按频道拉取,返回服务端权威顺序(与本地 LoadHistory 互补)。
+  void FetchHistory(chirp::chat::ChannelType type, const std::string& channel_id,
+                    int limit, int64_t before_timestamp, HistoryCallback cb);
+
+  // 已读:把频道读到 message_id(服务端游标 + 未读数来源)。
+  void MarkChannelRead(chirp::chat::ChannelType type, const std::string& channel_id,
+                       const std::string& message_id, MarkReadCallback cb);
+  // 全量未读:总数与按频道明细(服务端聚合)。
+  void FetchUnreadCount(UnreadCountCallback cb);
+
+  // 黑名单:拉黑/解除/列表;被拉黑者的消息被服务端静默过滤。
+  void BlockUser(const std::string& user_id, BlockSenderCallback cb);
+  void UnblockUser(const std::string& user_id, UnblockSenderCallback cb);
+  void FetchBlockedUsers(BlockedSendersCallback cb);
+
+  // 频道免打扰(私聊/公会/世界可静音;见服务端 IsMuteableChannel)。
+  void SetChannelMute(chirp::chat::ChannelType type, bool muted, SetMuteCallback cb);
+  void FetchChannelMutes(ChannelMutesCallback cb);
+
+  // 输入状态:广播"正在输入"(无响应,fire-and-forget);查询当前谁在输入。
+  void SendTypingIndicator(chirp::chat::ChannelType type, const std::string& channel_id,
+                           bool is_typing);
+  void FetchTypingUsers(chirp::chat::ChannelType type, const std::string& channel_id,
+                        TypingUsersCallback cb);
+
+  // 消息操作:编辑(作者)/删除(hard_delete 仅管理员语义,透传)/表情回执
+  // /已读回执查询。
+  void EditMessage(const std::string& message_id, const std::string& content,
+                   EditMessageCallback cb);
+  void DeleteMessage(const std::string& message_id, bool hard_delete,
+                     DeleteMessageCallback cb);
+  void AddReaction(const std::string& message_id, const std::string& emoji,
+                   AddReactionCallback cb);
+  void RemoveReaction(const std::string& message_id, const std::string& emoji,
+                      RemoveReactionCallback cb);
+  void FetchReactions(const std::string& message_id, const std::string& emoji,
+                      ReactionsCallback cb);  // emoji 空 = 全部
+  void FetchReadReceipts(const std::string& message_id, ReadReceiptsCallback cb);
+
+  // 批量删除(校验 channel_id 归属)。
+  void BulkDeleteMessages(const std::vector<std::string>& message_ids,
+                          const std::string& channel_id, BulkDeleteCallback cb);
+
+  // @提及候选(按频道与 query 前缀)。
+  void FetchMentionSuggestions(const std::string& channel_id, const std::string& query,
+                               MentionSuggestionsCallback cb);
+
+  // 群组:建/进/出/邀/踢/查。
+  void CreateGroup(const std::string& group_name, const std::string& description,
+                   CreateGroupCallback cb);
+  void JoinGroup(const std::string& group_id, JoinGroupCallback cb);
+  void LeaveGroup(const std::string& group_id, LeaveGroupCallback cb);
+  void InviteToGroup(const std::string& group_id, const std::string& user_id,
+                     InviteToGroupCallback cb);
+  void KickMember(const std::string& group_id, const std::string& user_id,
+                  KickMemberCallback cb);
+  void FetchGroupInfo(const std::string& group_id, GroupInfoCallback cb);
+  void FetchGroupMembers(const std::string& group_id, int limit, int offset,
+                         GroupMembersCallback cb);
+  void FetchUserGroups(int limit, int offset, UserGroupsCallback cb);
 
 private:
   class Impl;

@@ -442,6 +442,9 @@ private:
     msg.set_msg_type(req.msg_type());
     msg.set_content(req.content());
     msg.set_timestamp(req.client_timestamp());
+    if (!req.reply_to_message_id().empty()) {
+      msg.set_reply_to_message_id(req.reply_to_message_id());
+    }
     return msg;
   }
 
@@ -907,6 +910,462 @@ private:
     }
   }
 
+public:
+  // ---- 便捷 API(服务端往返)。Impl 方法在 io 线程执行;公开转发统一
+  // asio::post。ec 只覆盖传输层(NotConnected/Timeout/Closed/Kicked)与
+  // 协议异常(BadResponse);业务结果在 resp.code() 里,调用方自读。
+
+  bool ReadyForRequests() const {
+    const auto s = state_.load();
+    return s == ConnectionState::Connected || s == ConnectionState::LoggedIn;
+  }
+
+  // 类型化请求:发 req,按模板参数解析响应;解析失败报 BadResponse。
+  template <typename Resp>
+  void TypedRequest(MsgID req_id, MsgID resp_id, const google::protobuf::Message& req,
+                    std::function<void(const std::error_code&, const Resp&)> cb) {
+    SendRequest(req_id, resp_id, req.SerializeAsString(),
+        [cb = std::move(cb)](const std::error_code& ec, const std::string& body) mutable {
+          if (ec) {
+            cb(ec, Resp{});
+            return;
+          }
+          Resp resp;
+          if (!resp.ParseFromString(body)) {
+            cb(MakeEc(ChatError::BadResponse), Resp{});
+            return;
+          }
+          cb(std::error_code{}, resp);
+        });
+  }
+
+  // 扩展发送:群/世界/私聊/引用一条龙。与 fire-and-forget 版不同,这里不
+  // 做命令路由(调用方显式指定了完整语义);拦截器与本地存档行为一致。
+  void SendMessage(const SendOptions& opts, const std::string& content,
+                   SendResponseCallback cb) {
+    asio::post(io_context_, [this, opts, content, cb = std::move(cb)] {
+      if (!ReadyForRequests()) {
+        cb(MakeEc(ChatError::NotConnected), {});
+        return;
+      }
+      if (content.empty() ||
+          (opts.channel_type == chirp::chat::PRIVATE && opts.receiver_id.empty())) {
+        cb(MakeEc(ChatError::InvalidParam), {});
+        return;
+      }
+
+      chirp::chat::SendMessageRequest req;
+      req.set_sender_id(user_id_);
+      req.set_channel_type(opts.channel_type);
+      if (opts.channel_type == chirp::chat::PRIVATE) {
+        req.set_receiver_id(opts.receiver_id);
+        req.set_channel_id(user_id_ <= opts.receiver_id
+                               ? (user_id_ + "|" + opts.receiver_id)
+                               : (opts.receiver_id + "|" + user_id_));
+      } else {
+        if (opts.channel_id.empty()) {
+          cb(MakeEc(ChatError::InvalidParam), {});
+          return;
+        }
+        req.set_channel_id(opts.channel_id);
+      }
+      req.set_msg_type(chirp::chat::TEXT);
+      req.set_content(content);
+      req.set_client_timestamp(NowMs());
+      if (!opts.reply_to_message_id.empty()) {
+        req.set_reply_to_message_id(opts.reply_to_message_id);
+      }
+
+      auto interceptor = SnapshotInterceptor();
+      if (interceptor && !interceptor->OnBeforeSend(req)) {
+        common::Logger::Instance().Warn("sdk: send blocked by interceptor");
+        cb(MakeEc(ChatError::SendFailed), {});
+        return;
+      }
+      if (auto store = SnapshotStore()) {
+        store->Save(MakeStoredSentMessage(req));
+      }
+      TypedRequest(MsgID::SEND_MESSAGE_REQ, MsgID::SEND_MESSAGE_RESP, req, std::move(cb));
+      if (interceptor) {
+        interceptor->OnAfterSend(req);
+      }
+    });
+  }
+
+  void FetchHistory(chirp::chat::ChannelType type, const std::string& channel_id,
+                    int limit, int64_t before_timestamp, HistoryCallback cb) {
+    asio::post(io_context_, [this, type, channel_id, limit, before_timestamp,
+                             cb = std::move(cb)] {
+      if (!ReadyForRequests()) {
+        cb(MakeEc(ChatError::NotConnected), {});
+        return;
+      }
+      chirp::chat::GetHistoryRequest req;
+      req.set_user_id(user_id_);
+      req.set_channel_type(type);
+      req.set_channel_id(channel_id);
+      req.set_before_timestamp(before_timestamp);
+      req.set_limit(limit);
+      TypedRequest(MsgID::GET_HISTORY_REQ, MsgID::GET_HISTORY_RESP, req, std::move(cb));
+    });
+  }
+
+  void MarkChannelRead(chirp::chat::ChannelType type, const std::string& channel_id,
+                       const std::string& message_id, MarkReadCallback cb) {
+    asio::post(io_context_, [this, type, channel_id, message_id, cb = std::move(cb)] {
+      if (!ReadyForRequests()) {
+        cb(MakeEc(ChatError::NotConnected), {});
+        return;
+      }
+      chirp::chat::MarkReadRequest req;
+      req.set_user_id(user_id_);
+      req.set_channel_type(type);
+      req.set_channel_id(channel_id);
+      req.set_message_id(message_id);
+      req.set_read_timestamp(NowMs());
+      TypedRequest(MsgID::MARK_READ_REQ, MsgID::MARK_READ_RESP, req, std::move(cb));
+    });
+  }
+
+  void FetchUnreadCount(UnreadCountCallback cb) {
+    asio::post(io_context_, [this, cb = std::move(cb)] {
+      if (!ReadyForRequests()) {
+        cb(MakeEc(ChatError::NotConnected), {});
+        return;
+      }
+      chirp::chat::GetUnreadCountRequest req;
+      req.set_user_id(user_id_);
+      TypedRequest(MsgID::GET_UNREAD_COUNT_REQ, MsgID::GET_UNREAD_COUNT_RESP, req, std::move(cb));
+    });
+  }
+
+  void BlockUser(const std::string& user_id, BlockSenderCallback cb) {
+    asio::post(io_context_, [this, user_id, cb = std::move(cb)] {
+      if (!ReadyForRequests()) {
+        cb(MakeEc(ChatError::NotConnected), {});
+        return;
+      }
+      chirp::chat::BlockMessageSenderRequest req;
+      req.set_target_user_id(user_id);
+      TypedRequest(MsgID::BLOCK_MESSAGE_SENDER_REQ, MsgID::BLOCK_MESSAGE_SENDER_RESP,
+                   req, std::move(cb));
+    });
+  }
+
+  void UnblockUser(const std::string& user_id, UnblockSenderCallback cb) {
+    asio::post(io_context_, [this, user_id, cb = std::move(cb)] {
+      if (!ReadyForRequests()) {
+        cb(MakeEc(ChatError::NotConnected), {});
+        return;
+      }
+      chirp::chat::UnblockMessageSenderRequest req;
+      req.set_target_user_id(user_id);
+      TypedRequest(MsgID::UNBLOCK_MESSAGE_SENDER_REQ, MsgID::UNBLOCK_MESSAGE_SENDER_RESP,
+                   req, std::move(cb));
+    });
+  }
+
+  void FetchBlockedUsers(BlockedSendersCallback cb) {
+    asio::post(io_context_, [this, cb = std::move(cb)] {
+      if (!ReadyForRequests()) {
+        cb(MakeEc(ChatError::NotConnected), {});
+        return;
+      }
+      TypedRequest(MsgID::GET_BLOCKED_SENDERS_REQ, MsgID::GET_BLOCKED_SENDERS_RESP,
+                   chirp::chat::GetBlockedSendersRequest{}, std::move(cb));
+    });
+  }
+
+  void SetChannelMute(chirp::chat::ChannelType type, bool muted, SetMuteCallback cb) {
+    asio::post(io_context_, [this, type, muted, cb = std::move(cb)] {
+      if (!ReadyForRequests()) {
+        cb(MakeEc(ChatError::NotConnected), {});
+        return;
+      }
+      chirp::chat::SetChannelMuteRequest req;
+      req.set_channel_type(type);
+      req.set_muted(muted);
+      TypedRequest(MsgID::SET_CHANNEL_MUTE_REQ, MsgID::SET_CHANNEL_MUTE_RESP, req, std::move(cb));
+    });
+  }
+
+  void FetchChannelMutes(ChannelMutesCallback cb) {
+    asio::post(io_context_, [this, cb = std::move(cb)] {
+      if (!ReadyForRequests()) {
+        cb(MakeEc(ChatError::NotConnected), {});
+        return;
+      }
+      TypedRequest(MsgID::GET_CHANNEL_MUTES_REQ, MsgID::GET_CHANNEL_MUTES_RESP,
+                   chirp::chat::GetChannelMutesRequest{}, std::move(cb));
+    });
+  }
+
+  // "正在输入"广播:NOTIFY 无响应帧,直接裸发(sequence 0),不进 pending。
+  void SendTypingIndicator(chirp::chat::ChannelType type, const std::string& channel_id,
+                           bool is_typing) {
+    asio::post(io_context_, [this, type, channel_id, is_typing] {
+      if (!ReadyForRequests()) {
+        return;
+      }
+      chirp::chat::TypingIndicator req;
+      req.set_channel_type(type);
+      req.set_channel_id(channel_id);
+      req.set_user_id(user_id_);
+      req.set_is_typing(is_typing);
+      req.set_timestamp(NowMs());
+      auto pkt = MakePacket(MsgID::TYPING_INDICATOR_NOTIFY, req.SerializeAsString());
+      pkt.set_sequence(0);
+      SendPacket(pkt);
+    });
+  }
+
+  void FetchTypingUsers(chirp::chat::ChannelType type, const std::string& channel_id,
+                        TypingUsersCallback cb) {
+    asio::post(io_context_, [this, type, channel_id, cb = std::move(cb)] {
+      if (!ReadyForRequests()) {
+        cb(MakeEc(ChatError::NotConnected), {});
+        return;
+      }
+      chirp::chat::GetTypingUsersRequest req;
+      req.set_channel_type(type);
+      req.set_channel_id(channel_id);
+      TypedRequest(MsgID::GET_TYPING_USERS_REQ, MsgID::GET_TYPING_USERS_RESP, req, std::move(cb));
+    });
+  }
+
+  void EditMessage(const std::string& message_id, const std::string& content,
+                   EditMessageCallback cb) {
+    asio::post(io_context_, [this, message_id, content, cb = std::move(cb)] {
+      if (!ReadyForRequests()) {
+        cb(MakeEc(ChatError::NotConnected), {});
+        return;
+      }
+      chirp::chat::EditMessageRequest req;
+      req.set_message_id(message_id);
+      req.set_user_id(user_id_);
+      req.set_new_content(content);
+      req.set_edit_timestamp(NowMs());
+      TypedRequest(MsgID::EDIT_MESSAGE_REQ, MsgID::EDIT_MESSAGE_RESP, req, std::move(cb));
+    });
+  }
+
+  void DeleteMessage(const std::string& message_id, bool hard_delete,
+                     DeleteMessageCallback cb) {
+    asio::post(io_context_, [this, message_id, hard_delete, cb = std::move(cb)] {
+      if (!ReadyForRequests()) {
+        cb(MakeEc(ChatError::NotConnected), {});
+        return;
+      }
+      chirp::chat::DeleteMessageRequest req;
+      req.set_message_id(message_id);
+      req.set_user_id(user_id_);
+      req.set_is_hard_delete(hard_delete);
+      TypedRequest(MsgID::DELETE_MESSAGE_REQ, MsgID::DELETE_MESSAGE_RESP, req, std::move(cb));
+    });
+  }
+
+  void AddReaction(const std::string& message_id, const std::string& emoji,
+                   AddReactionCallback cb) {
+    asio::post(io_context_, [this, message_id, emoji, cb = std::move(cb)] {
+      if (!ReadyForRequests()) {
+        cb(MakeEc(ChatError::NotConnected), {});
+        return;
+      }
+      chirp::chat::AddReactionRequest req;
+      req.set_message_id(message_id);
+      req.set_user_id(user_id_);
+      req.set_emoji(emoji);
+      TypedRequest(MsgID::ADD_REACTION_REQ, MsgID::ADD_REACTION_RESP, req, std::move(cb));
+    });
+  }
+
+  void RemoveReaction(const std::string& message_id, const std::string& emoji,
+                      RemoveReactionCallback cb) {
+    asio::post(io_context_, [this, message_id, emoji, cb = std::move(cb)] {
+      if (!ReadyForRequests()) {
+        cb(MakeEc(ChatError::NotConnected), {});
+        return;
+      }
+      chirp::chat::RemoveReactionRequest req;
+      req.set_message_id(message_id);
+      req.set_user_id(user_id_);
+      req.set_emoji(emoji);
+      TypedRequest(MsgID::REMOVE_REACTION_REQ, MsgID::REMOVE_REACTION_RESP, req, std::move(cb));
+    });
+  }
+
+  void FetchReactions(const std::string& message_id, const std::string& emoji,
+                      ReactionsCallback cb) {
+    asio::post(io_context_, [this, message_id, emoji, cb = std::move(cb)] {
+      if (!ReadyForRequests()) {
+        cb(MakeEc(ChatError::NotConnected), {});
+        return;
+      }
+      chirp::chat::GetReactionsRequest req;
+      req.set_message_id(message_id);
+      req.set_emoji(emoji);
+      TypedRequest(MsgID::GET_REACTIONS_REQ, MsgID::GET_REACTIONS_RESP, req, std::move(cb));
+    });
+  }
+
+  void FetchReadReceipts(const std::string& message_id, ReadReceiptsCallback cb) {
+    asio::post(io_context_, [this, message_id, cb = std::move(cb)] {
+      if (!ReadyForRequests()) {
+        cb(MakeEc(ChatError::NotConnected), {});
+        return;
+      }
+      chirp::chat::GetReadReceiptsRequest req;
+      req.set_message_id(message_id);
+      TypedRequest(MsgID::GET_READ_RECEIPTS_REQ, MsgID::GET_READ_RECEIPTS_RESP, req, std::move(cb));
+    });
+  }
+
+  void BulkDeleteMessages(const std::vector<std::string>& message_ids,
+                          const std::string& channel_id, BulkDeleteCallback cb) {
+    asio::post(io_context_, [this, message_ids, channel_id, cb = std::move(cb)] {
+      if (!ReadyForRequests()) {
+        cb(MakeEc(ChatError::NotConnected), {});
+        return;
+      }
+      chirp::chat::BulkDeleteRequest req;
+      for (const auto& id : message_ids) {
+        req.add_message_ids(id);
+      }
+      req.set_requester_id(user_id_);
+      req.set_channel_id(channel_id);
+      TypedRequest(MsgID::BULK_DELETE_REQ, MsgID::BULK_DELETE_RESP, req, std::move(cb));
+    });
+  }
+
+  void FetchMentionSuggestions(const std::string& channel_id, const std::string& query,
+                               MentionSuggestionsCallback cb) {
+    asio::post(io_context_, [this, channel_id, query, cb = std::move(cb)] {
+      if (!ReadyForRequests()) {
+        cb(MakeEc(ChatError::NotConnected), {});
+        return;
+      }
+      chirp::chat::GetMentionSuggestionsRequest req;
+      req.set_user_id(user_id_);
+      req.set_channel_id(channel_id);
+      req.set_query(query);
+      TypedRequest(MsgID::GET_MENTION_SUGGESTIONS_REQ, MsgID::GET_MENTION_SUGGESTIONS_RESP,
+                   req, std::move(cb));
+    });
+  }
+
+  void CreateGroup(const std::string& group_name, const std::string& description,
+                   CreateGroupCallback cb) {
+    asio::post(io_context_, [this, group_name, description, cb = std::move(cb)] {
+      if (!ReadyForRequests()) {
+        cb(MakeEc(ChatError::NotConnected), {});
+        return;
+      }
+      chirp::chat::CreateGroupRequest req;
+      req.set_creator_id(user_id_);
+      req.set_group_name(group_name);
+      req.set_description(description);
+      TypedRequest(MsgID::CREATE_GROUP_REQ, MsgID::CREATE_GROUP_RESP, req, std::move(cb));
+    });
+  }
+
+  void JoinGroup(const std::string& group_id, JoinGroupCallback cb) {
+    asio::post(io_context_, [this, group_id, cb = std::move(cb)] {
+      if (!ReadyForRequests()) {
+        cb(MakeEc(ChatError::NotConnected), {});
+        return;
+      }
+      chirp::chat::JoinGroupRequest req;
+      req.set_user_id(user_id_);
+      req.set_group_id(group_id);
+      TypedRequest(MsgID::JOIN_GROUP_REQ, MsgID::JOIN_GROUP_RESP, req, std::move(cb));
+    });
+  }
+
+  void LeaveGroup(const std::string& group_id, LeaveGroupCallback cb) {
+    asio::post(io_context_, [this, group_id, cb = std::move(cb)] {
+      if (!ReadyForRequests()) {
+        cb(MakeEc(ChatError::NotConnected), {});
+        return;
+      }
+      chirp::chat::LeaveGroupRequest req;
+      req.set_user_id(user_id_);
+      req.set_group_id(group_id);
+      TypedRequest(MsgID::LEAVE_GROUP_REQ, MsgID::LEAVE_GROUP_RESP, req, std::move(cb));
+    });
+  }
+
+  void InviteToGroup(const std::string& group_id, const std::string& user_id,
+                     InviteToGroupCallback cb) {
+    asio::post(io_context_, [this, group_id, user_id, cb = std::move(cb)] {
+      if (!ReadyForRequests()) {
+        cb(MakeEc(ChatError::NotConnected), {});
+        return;
+      }
+      chirp::chat::InviteToGroupRequest req;
+      req.set_inviter_id(user_id_);
+      req.set_group_id(group_id);
+      req.set_target_user_id(user_id);
+      TypedRequest(MsgID::INVITE_TO_GROUP_REQ, MsgID::INVITE_TO_GROUP_RESP, req, std::move(cb));
+    });
+  }
+
+  void KickMember(const std::string& group_id, const std::string& user_id,
+                  KickMemberCallback cb) {
+    asio::post(io_context_, [this, group_id, user_id, cb = std::move(cb)] {
+      if (!ReadyForRequests()) {
+        cb(MakeEc(ChatError::NotConnected), {});
+        return;
+      }
+      chirp::chat::KickMemberRequest req;
+      req.set_requester_id(user_id_);
+      req.set_group_id(group_id);
+      req.set_target_user_id(user_id);
+      TypedRequest(MsgID::KICK_MEMBER_REQ, MsgID::KICK_MEMBER_RESP, req, std::move(cb));
+    });
+  }
+
+  void FetchGroupInfo(const std::string& group_id, GroupInfoCallback cb) {
+    asio::post(io_context_, [this, group_id, cb = std::move(cb)] {
+      if (!ReadyForRequests()) {
+        cb(MakeEc(ChatError::NotConnected), {});
+        return;
+      }
+      chirp::chat::GetGroupInfoRequest req;
+      req.set_group_id(group_id);
+      TypedRequest(MsgID::GET_GROUP_INFO_REQ, MsgID::GET_GROUP_INFO_RESP, req, std::move(cb));
+    });
+  }
+
+  void FetchGroupMembers(const std::string& group_id, int limit, int offset,
+                         GroupMembersCallback cb) {
+    asio::post(io_context_, [this, group_id, limit, offset, cb = std::move(cb)] {
+      if (!ReadyForRequests()) {
+        cb(MakeEc(ChatError::NotConnected), {});
+        return;
+      }
+      chirp::chat::GetGroupMembersRequest req;
+      req.set_group_id(group_id);
+      req.set_limit(limit);
+      req.set_offset(offset);
+      TypedRequest(MsgID::GET_GROUP_MEMBERS_REQ, MsgID::GET_GROUP_MEMBERS_RESP, req, std::move(cb));
+    });
+  }
+
+  void FetchUserGroups(int limit, int offset, UserGroupsCallback cb) {
+    asio::post(io_context_, [this, limit, offset, cb = std::move(cb)] {
+      if (!ReadyForRequests()) {
+        cb(MakeEc(ChatError::NotConnected), {});
+        return;
+      }
+      chirp::chat::GetUserGroupsRequest req;
+      req.set_user_id(user_id_);
+      req.set_limit(limit);
+      req.set_offset(offset);
+      TypedRequest(MsgID::GET_USER_GROUPS_REQ, MsgID::GET_USER_GROUPS_RESP, req, std::move(cb));
+    });
+  }
+
+private:
   ChatConfig config_;
   std::atomic<ConnectionState> state_;
   asio::io_context io_context_;
@@ -1053,6 +1512,134 @@ int ChatClient::GetUnreadCount(chirp::chat::ChannelType type,
 
 void ChatClient::CleanupMessages(int64_t older_than) {
   impl_->CleanupMessages(older_than);
+}
+
+// ---- 便捷 API 转发:任意线程可调,Impl 内 post 到 io 线程执行。
+
+void ChatClient::SendMessage(const SendOptions& opts, const std::string& content,
+                             SendResponseCallback cb) {
+  impl_->SendMessage(opts, content, std::move(cb));
+}
+
+void ChatClient::FetchHistory(chirp::chat::ChannelType type, const std::string& channel_id,
+                              int limit, int64_t before_timestamp, HistoryCallback cb) {
+  impl_->FetchHistory(type, channel_id, limit, before_timestamp, std::move(cb));
+}
+
+void ChatClient::MarkChannelRead(chirp::chat::ChannelType type, const std::string& channel_id,
+                                 const std::string& message_id, MarkReadCallback cb) {
+  impl_->MarkChannelRead(type, channel_id, message_id, std::move(cb));
+}
+
+void ChatClient::FetchUnreadCount(UnreadCountCallback cb) {
+  impl_->FetchUnreadCount(std::move(cb));
+}
+
+void ChatClient::BlockUser(const std::string& user_id, BlockSenderCallback cb) {
+  impl_->BlockUser(user_id, std::move(cb));
+}
+
+void ChatClient::UnblockUser(const std::string& user_id, UnblockSenderCallback cb) {
+  impl_->UnblockUser(user_id, std::move(cb));
+}
+
+void ChatClient::FetchBlockedUsers(BlockedSendersCallback cb) {
+  impl_->FetchBlockedUsers(std::move(cb));
+}
+
+void ChatClient::SetChannelMute(chirp::chat::ChannelType type, bool muted,
+                                SetMuteCallback cb) {
+  impl_->SetChannelMute(type, muted, std::move(cb));
+}
+
+void ChatClient::FetchChannelMutes(ChannelMutesCallback cb) {
+  impl_->FetchChannelMutes(std::move(cb));
+}
+
+void ChatClient::SendTypingIndicator(chirp::chat::ChannelType type,
+                                     const std::string& channel_id, bool is_typing) {
+  impl_->SendTypingIndicator(type, channel_id, is_typing);
+}
+
+void ChatClient::FetchTypingUsers(chirp::chat::ChannelType type,
+                                  const std::string& channel_id, TypingUsersCallback cb) {
+  impl_->FetchTypingUsers(type, channel_id, std::move(cb));
+}
+
+void ChatClient::EditMessage(const std::string& message_id, const std::string& content,
+                             EditMessageCallback cb) {
+  impl_->EditMessage(message_id, content, std::move(cb));
+}
+
+void ChatClient::DeleteMessage(const std::string& message_id, bool hard_delete,
+                               DeleteMessageCallback cb) {
+  impl_->DeleteMessage(message_id, hard_delete, std::move(cb));
+}
+
+void ChatClient::AddReaction(const std::string& message_id, const std::string& emoji,
+                             AddReactionCallback cb) {
+  impl_->AddReaction(message_id, emoji, std::move(cb));
+}
+
+void ChatClient::RemoveReaction(const std::string& message_id, const std::string& emoji,
+                                RemoveReactionCallback cb) {
+  impl_->RemoveReaction(message_id, emoji, std::move(cb));
+}
+
+void ChatClient::FetchReactions(const std::string& message_id, const std::string& emoji,
+                                ReactionsCallback cb) {
+  impl_->FetchReactions(message_id, emoji, std::move(cb));
+}
+
+void ChatClient::FetchReadReceipts(const std::string& message_id, ReadReceiptsCallback cb) {
+  impl_->FetchReadReceipts(message_id, std::move(cb));
+}
+
+void ChatClient::BulkDeleteMessages(const std::vector<std::string>& message_ids,
+                                    const std::string& channel_id, BulkDeleteCallback cb) {
+  impl_->BulkDeleteMessages(message_ids, channel_id, std::move(cb));
+}
+
+void ChatClient::FetchMentionSuggestions(const std::string& channel_id,
+                                         const std::string& query,
+                                         MentionSuggestionsCallback cb) {
+  impl_->FetchMentionSuggestions(channel_id, query, std::move(cb));
+}
+
+void ChatClient::CreateGroup(const std::string& group_name, const std::string& description,
+                             CreateGroupCallback cb) {
+  impl_->CreateGroup(group_name, description, std::move(cb));
+}
+
+void ChatClient::JoinGroup(const std::string& group_id, JoinGroupCallback cb) {
+  impl_->JoinGroup(group_id, std::move(cb));
+}
+
+void ChatClient::LeaveGroup(const std::string& group_id, LeaveGroupCallback cb) {
+  impl_->LeaveGroup(group_id, std::move(cb));
+}
+
+void ChatClient::InviteToGroup(const std::string& group_id, const std::string& user_id,
+                               InviteToGroupCallback cb) {
+  impl_->InviteToGroup(group_id, user_id, std::move(cb));
+}
+
+void ChatClient::KickMember(const std::string& group_id, const std::string& user_id,
+                            KickMemberCallback cb) {
+  impl_->KickMember(group_id, user_id, std::move(cb));
+}
+
+void ChatClient::FetchGroupInfo(const std::string& group_id, GroupInfoCallback cb) {
+  impl_->FetchGroupInfo(group_id, std::move(cb));
+}
+
+void ChatClient::FetchGroupMembers(const std::string& group_id, int limit, int offset,
+                                   GroupMembersCallback cb) {
+  impl_->FetchGroupMembers(group_id, limit, offset, std::move(cb));
+}
+
+void ChatClient::FetchUserGroups(int limit, int offset, UserGroupsCallback cb) {
+  impl_->FetchUserGroups(limit, offset, std::move(cb));
 }
 
 } // namespace sdk

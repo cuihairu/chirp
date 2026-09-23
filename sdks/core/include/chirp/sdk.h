@@ -73,6 +73,8 @@ enum class ChatError {
   Closed = 7,
   // 会话被顶号(KICK_NOTIFY),请求被 flush,且不再重连。
   Kicked = 8,
+  // 响应帧无法按预期消息类型解析(协议层异常;正常服务端不会发生)。
+  BadResponse = 9,
 };
 
 std::error_code make_error_code(ChatError e);

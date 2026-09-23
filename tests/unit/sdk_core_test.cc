@@ -377,6 +377,16 @@ class FakeGateway {
 
   uint16_t port() const { return port_; }
 
+  // Blocks until a client connection has been accepted (sync point against
+  // the accept-vs-first-push race: async_connect on the client side can
+  // complete before this gateway's accept handler runs, and an early Push()
+  // would silently hit a null socket_).
+  void WaitClient(int ms = 2000) {
+    for (int i = 0; i < ms / 2 && !client_connected_; ++i) {
+      std::this_thread::sleep_for(std::chrono::milliseconds(2));
+    }
+  }
+
   // Closes the accepted connection (keeps listening for new ones).
   void DropConnections() {
     asio::post(io_, [this] {
@@ -407,6 +417,7 @@ class FakeGateway {
         return;
       }
       socket_ = sock;
+      client_connected_ = true;
       DoRead();
     });
   }
@@ -453,7 +464,8 @@ class FakeGateway {
   asio::io_context io_;
   asio::ip::tcp::acceptor acceptor_;
   uint16_t port_;
-  std::shared_ptr<asio::ip::tcp::socket> socket_;
+  std::shared_ptr<asio::ip::tcp::socket> socket_;  // gateway io 线程专有
+  std::atomic<bool> client_connected_{false};
   std::array<uint8_t, 8192> read_buf_{};
   size_t partial_ = 0;
   std::thread thread_;
@@ -1281,6 +1293,7 @@ TEST_F(ChatClientLoopbackTest, NotifySubscribeReceivesBodyAndUnsubscribeStops) {
   ChatClient client(LoopbackConfig(gateway.port()));
   client.Connect();
   WaitState(client, ConnectionState::Connected);
+  gateway.WaitClient();  // 接受完成前 Push 会被 null socket_ 静默丢弃
 
   std::promise<std::string> first_body;
   auto handle = client.OnNotify(chirp::gateway::CHAT_MESSAGE_NOTIFY,
@@ -1328,6 +1341,7 @@ TEST_F(ChatClientLoopbackTest, GenericNotifyIdFallsThroughToOnNotify) {
   ChatClient client(LoopbackConfig(gateway.port()));
   client.Connect();
   WaitState(client, ConnectionState::Connected);
+  gateway.WaitClient();  // 接受完成前 Push 会被 null socket_ 静默丢弃
 
   std::promise<std::string> pushed;
   auto handle = client.OnNotify(chirp::gateway::GET_HISTORY_RESP,
@@ -3127,6 +3141,936 @@ TEST_F(SdkClientTest, RequestWithHeapFunctionCallbackReportsNotConnected) {
   ASSERT_EQ(future.wait_for(std::chrono::milliseconds(kWaitMs)),
             std::future_status::ready);
   EXPECT_EQ(future.get(), chirp::sdk::make_error_code(ChatError::NotConnected));
+}
+
+// ---------------------------------------------------------------------------
+// Convenience API(类型化请求-响应便捷方法)端到端:每个方法至少一条往返
+// 用例(请求字段透传 + 响应解析);本地参数校验、NotConnected、BadResponse、
+// 超时各有一条专属用例。ec 契约:只报传输/协议错误,业务码读 resp.code()。
+// ---------------------------------------------------------------------------
+
+// 同步发起一次便捷调用:等待回调,返回响应体,ec 写回 ec_out。
+template <typename Resp>
+Resp WaitConvenienceRpc(
+    const std::function<void(std::function<void(const std::error_code&, const Resp&)>)>& invoke,
+    std::error_code& ec_out, int wait_ms) {
+  std::promise<Resp> done;
+  auto future = done.get_future();
+  invoke([&](const std::error_code& ec, const Resp& resp) {
+    ec_out = ec;
+    done.set_value(resp);
+  });
+  EXPECT_EQ(future.wait_for(std::chrono::milliseconds(wait_ms)), std::future_status::ready);
+  return future.get();
+}
+
+class ConvenienceApiTest : public ChatClientLoopbackTest {
+ protected:
+  // 登录脚本化;LOGIN 之外的包交给用例提供的 dispatcher(未匹配的帧忽略,
+  // 以免 TearDown 的 LOGOUT_REQ 触发误断言)。
+  void StartGateway(FramedHandler dispatcher) {
+    gateway_ = std::make_unique<FakeGateway>(
+        [dispatcher = std::move(dispatcher)](const chirp::gateway::Packet& pkt, auto send) {
+          if (pkt.msg_id() == chirp::gateway::LOGIN_REQ) {
+            chirp::auth::LoginResponse resp;
+            resp.set_code(chirp::common::OK);
+            resp.set_user_id("sdk-user");
+            resp.set_session_id("sess-1");
+            chirp::gateway::Packet out;
+            out.set_msg_id(chirp::gateway::LOGIN_RESP);
+            out.set_sequence(pkt.sequence());
+            out.set_body(resp.SerializeAsString());
+            send(out);
+            return;
+          }
+          dispatcher(pkt, std::move(send));
+        });
+  }
+
+  void ConnectAndLogin() {
+    client_ = std::make_unique<ChatClient>(LoopbackConfig(gateway_->port()));
+    client_->Connect();
+    WaitState(*client_, ConnectionState::Connected, kWaitMs);
+    ASSERT_EQ(client_->GetState(), ConnectionState::Connected);
+    std::promise<std::error_code> done;
+    auto future = done.get_future();
+    client_->Login("tok", [&](const std::error_code& ec, const std::string& uid) {
+      EXPECT_EQ(uid, "sdk-user");
+      done.set_value(ec);
+    });
+    ASSERT_EQ(future.wait_for(std::chrono::milliseconds(kWaitMs)), std::future_status::ready);
+    ASSERT_FALSE(future.get());
+    ASSERT_EQ(client_->GetState(), ConnectionState::LoggedIn);
+  }
+
+  void TearDown() override {
+    if (client_) {
+      client_->Disconnect();
+      WaitState(*client_, ConnectionState::Disconnected, 2000);
+      client_.reset();
+    }
+    gateway_.reset();
+  }
+
+  // 响应帧样板:回显 sequence,挂 resp_msg_id 与序列化 body。
+  static chirp::gateway::Packet RespFor(const chirp::gateway::Packet& req,
+                                        chirp::gateway::MsgID resp_msg_id,
+                                        const std::string& body) {
+    chirp::gateway::Packet out;
+    out.set_msg_id(resp_msg_id);
+    out.set_sequence(req.sequence());
+    out.set_body(body);
+    return out;
+  }
+
+  template <typename Resp>
+  Resp WaitRpc(const std::function<void(std::function<void(const std::error_code&, const Resp&)>)>& invoke,
+               std::error_code& ec_out) {
+    return WaitConvenienceRpc<Resp>(invoke, ec_out, kWaitMs);
+  }
+
+  std::unique_ptr<FakeGateway> gateway_;
+  std::unique_ptr<ChatClient> client_;
+};
+
+TEST_F(ConvenienceApiTest, SendOptionsPrivateCarriesReplyAndNormalizesChannelId) {
+  std::string seen_receiver, seen_channel, seen_reply, seen_content;
+  int seen_channel_type = -1;
+  StartGateway([&](const chirp::gateway::Packet& pkt, auto send) {
+    if (pkt.msg_id() != chirp::gateway::SEND_MESSAGE_REQ) {
+      return;
+    }
+    chirp::chat::SendMessageRequest req;
+    ASSERT_TRUE(req.ParseFromString(pkt.body()));
+    seen_receiver = req.receiver_id();
+    seen_channel = req.channel_id();
+    seen_reply = req.reply_to_message_id();
+    seen_content = req.content();
+    seen_channel_type = req.channel_type();
+    chirp::chat::SendMessageResponse resp;
+    resp.set_code(chirp::common::OK);
+    resp.set_message_id("m-42");
+    send(RespFor(pkt, chirp::gateway::SEND_MESSAGE_RESP, resp.SerializeAsString()));
+  });
+  ConnectAndLogin();
+
+  ChatClient::SendOptions opts;
+  opts.receiver_id = "alice";
+  opts.reply_to_message_id = "orig-1";
+  std::error_code ec;
+  auto resp = WaitRpc<chirp::chat::SendMessageResponse>([&](auto cb) {
+    client_->SendMessage(opts, "hello there", cb);
+  }, ec);
+  ASSERT_FALSE(ec);
+  EXPECT_EQ(resp.code(), chirp::common::OK);
+  EXPECT_EQ(resp.message_id(), "m-42");
+  // 归一化契约:"alice" <= "sdk-user" → "alice|sdk-user"(与服务端一致)。
+  EXPECT_EQ(seen_receiver, "alice");
+  EXPECT_EQ(seen_channel, "alice|sdk-user");
+  EXPECT_EQ(seen_reply, "orig-1");
+  EXPECT_EQ(seen_content, "hello there");
+  EXPECT_EQ(seen_channel_type, chirp::chat::PRIVATE);
+}
+
+TEST_F(ConvenienceApiTest, SendOptionsNonPrivateCarriesExplicitChannelId) {
+  std::string seen_channel;
+  int seen_type = -1;
+  StartGateway([&](const chirp::gateway::Packet& pkt, auto send) {
+    if (pkt.msg_id() != chirp::gateway::SEND_MESSAGE_REQ) {
+      return;
+    }
+    chirp::chat::SendMessageRequest req;
+    ASSERT_TRUE(req.ParseFromString(pkt.body()));
+    seen_channel = req.channel_id();
+    seen_type = req.channel_type();
+    chirp::chat::SendMessageResponse resp;
+    resp.set_code(chirp::common::OK);
+    resp.set_message_id("m-8");
+    send(RespFor(pkt, chirp::gateway::SEND_MESSAGE_RESP, resp.SerializeAsString()));
+  });
+  ConnectAndLogin();
+
+  // 非 PRIVATE 通道不走归一化:显式 channel_id 原样透传。
+  ChatClient::SendOptions opts;
+  opts.channel_type = chirp::chat::WORLD;
+  opts.channel_id = "world-0";
+  std::error_code ec;
+  (void)WaitRpc<chirp::chat::SendMessageResponse>([&](auto cb) {
+    client_->SendMessage(opts, "gg", cb);
+  }, ec);
+  EXPECT_FALSE(ec);
+  EXPECT_EQ(seen_channel, "world-0");
+  EXPECT_EQ(seen_type, chirp::chat::WORLD);
+}
+
+TEST_F(ConvenienceApiTest, SendOptionsValidatesLocallyWithoutServerRoundTrip) {
+  std::atomic<int> non_login_packets{0};
+  StartGateway([&](const chirp::gateway::Packet&, auto) { ++non_login_packets; });
+  ConnectAndLogin();
+
+  const auto invalid = chirp::sdk::make_error_code(chirp::sdk::ChatError::InvalidParam);
+  std::error_code ec;
+  (void)WaitRpc<chirp::chat::SendMessageResponse>([&](auto cb) {
+    ChatClient::SendOptions world_without_channel;
+    world_without_channel.channel_type = chirp::chat::WORLD;
+    client_->SendMessage(world_without_channel, "hi", cb);
+  }, ec);
+  EXPECT_EQ(ec, invalid);
+
+  (void)WaitRpc<chirp::chat::SendMessageResponse>([&](auto cb) {
+    ChatClient::SendOptions private_without_receiver;
+    client_->SendMessage(private_without_receiver, "hi", cb);
+  }, ec);
+  EXPECT_EQ(ec, invalid);
+
+  (void)WaitRpc<chirp::chat::SendMessageResponse>([&](auto cb) {
+    ChatClient::SendOptions opts;
+    opts.receiver_id = "alice";
+    client_->SendMessage(opts, "", cb);
+  }, ec);
+  EXPECT_EQ(ec, invalid);
+
+  std::this_thread::sleep_for(std::chrono::milliseconds(100));
+  EXPECT_EQ(non_login_packets.load(), 0);
+}
+
+TEST_F(ConvenienceApiTest, SendOptionsBusinessCodeStaysInResponseNotErrorCode) {
+  StartGateway([&](const chirp::gateway::Packet& pkt, auto send) {
+    if (pkt.msg_id() != chirp::gateway::SEND_MESSAGE_REQ) {
+      return;
+    }
+    chirp::chat::SendMessageResponse resp;
+    resp.set_code(chirp::common::CONTENT_TOO_LONG);
+    send(RespFor(pkt, chirp::gateway::SEND_MESSAGE_RESP, resp.SerializeAsString()));
+  });
+  ConnectAndLogin();
+
+  ChatClient::SendOptions opts;
+  opts.receiver_id = "alice";
+  std::error_code ec;
+  auto resp = WaitRpc<chirp::chat::SendMessageResponse>([&](auto cb) {
+    client_->SendMessage(opts, "way too long...", cb);
+  }, ec);
+  // 业务拒绝不折进 ec:传输层 OK,结果读 resp.code()。
+  EXPECT_FALSE(ec);
+  EXPECT_EQ(resp.code(), chirp::common::CONTENT_TOO_LONG);
+}
+
+TEST_F(ConvenienceApiTest, OptionsSendRunsInterceptorAndLocalStore) {
+  std::string seen_content;
+  StartGateway([&](const chirp::gateway::Packet& pkt, auto send) {
+    if (pkt.msg_id() != chirp::gateway::SEND_MESSAGE_REQ) {
+      return;
+    }
+    chirp::chat::SendMessageRequest req;
+    ASSERT_TRUE(req.ParseFromString(pkt.body()));
+    seen_content = req.content();
+    chirp::chat::SendMessageResponse resp;
+    resp.set_code(chirp::common::OK);
+    resp.set_message_id("m-7");
+    send(RespFor(pkt, chirp::gateway::SEND_MESSAGE_RESP, resp.SerializeAsString()));
+  });
+  ConnectAndLogin();
+
+  auto interceptor = std::make_shared<ScriptedInterceptor>();
+  interceptor->on_before_send = [](chirp::chat::SendMessageRequest& msg) {
+    msg.set_content("censored");
+    return true;
+  };
+  client_->SetMessageInterceptor(interceptor);
+  auto store = std::make_unique<chirp::sdk::MemoryMessageStore>();
+  auto* store_ptr = store.get();
+  client_->SetMessageStore(std::move(store));
+
+  ChatClient::SendOptions opts;
+  opts.receiver_id = "alice";
+  opts.reply_to_message_id = "orig-9";
+  std::error_code ec;
+  (void)WaitRpc<chirp::chat::SendMessageResponse>([&](auto cb) {
+    client_->SendMessage(opts, "secret", cb);
+  }, ec);
+  ASSERT_FALSE(ec);
+  // 拦截器改写后上服务端;本地存档保留改写内容与引用字段(同一归一化 key)。
+  EXPECT_EQ(seen_content, "censored");
+  const auto local = store_ptr->Load(chirp::chat::PRIVATE, "alice|sdk-user", 10);
+  ASSERT_FALSE(local.empty());
+  EXPECT_EQ(local.front().content(), "censored");
+  EXPECT_EQ(local.front().reply_to_message_id(), "orig-9");
+}
+
+TEST_F(ConvenienceApiTest, OptionsSendBlockedByInterceptorReportsSendFailed) {
+  std::atomic<int> sends{0};
+  StartGateway([&](const chirp::gateway::Packet& pkt, auto) {
+    if (pkt.msg_id() == chirp::gateway::SEND_MESSAGE_REQ) {
+      ++sends;
+    }
+  });
+  ConnectAndLogin();
+
+  auto interceptor = std::make_shared<ScriptedInterceptor>();
+  interceptor->on_before_send = [](chirp::chat::SendMessageRequest&) { return false; };
+  client_->SetMessageInterceptor(interceptor);
+
+  ChatClient::SendOptions opts;
+  opts.receiver_id = "alice";
+  std::error_code ec;
+  (void)WaitRpc<chirp::chat::SendMessageResponse>([&](auto cb) {
+    client_->SendMessage(opts, "banned", cb);
+  }, ec);
+  // 拦截器拒绝以传输层错误上报(本地未发包),不产生服务端往返。
+  EXPECT_EQ(ec, chirp::sdk::make_error_code(chirp::sdk::ChatError::SendFailed));
+  std::this_thread::sleep_for(std::chrono::milliseconds(100));
+  EXPECT_EQ(sends.load(), 0);
+}
+
+TEST_F(ConvenienceApiTest, FetchHistoryRoundTrip) {
+  std::string seen_user, seen_channel;
+  int seen_type = -1, seen_limit = -1;
+  int64_t seen_before = -1;
+  StartGateway([&](const chirp::gateway::Packet& pkt, auto send) {
+    if (pkt.msg_id() != chirp::gateway::GET_HISTORY_REQ) {
+      return;
+    }
+    chirp::chat::GetHistoryRequest req;
+    ASSERT_TRUE(req.ParseFromString(pkt.body()));
+    seen_user = req.user_id();
+    seen_channel = req.channel_id();
+    seen_type = req.channel_type();
+    seen_limit = req.limit();
+    seen_before = req.before_timestamp();
+    chirp::chat::GetHistoryResponse resp;
+    resp.set_code(chirp::common::OK);
+    resp.set_has_more(true);
+    auto* msg = resp.add_messages();
+    msg->set_message_id("old-1");
+    msg->set_content("first");
+    send(RespFor(pkt, chirp::gateway::GET_HISTORY_RESP, resp.SerializeAsString()));
+  });
+  ConnectAndLogin();
+
+  std::error_code ec;
+  auto resp = WaitRpc<chirp::chat::GetHistoryResponse>([&](auto cb) {
+    client_->FetchHistory(chirp::chat::GUILD, "g-1", 25, 12345, cb);
+  }, ec);
+  ASSERT_FALSE(ec);
+  EXPECT_EQ(resp.code(), chirp::common::OK);
+  ASSERT_EQ(resp.messages_size(), 1);
+  EXPECT_EQ(resp.messages(0).message_id(), "old-1");
+  EXPECT_TRUE(resp.has_more());
+  EXPECT_EQ(seen_user, "sdk-user");
+  EXPECT_EQ(seen_channel, "g-1");
+  EXPECT_EQ(seen_type, chirp::chat::GUILD);
+  EXPECT_EQ(seen_limit, 25);
+  EXPECT_EQ(seen_before, 12345);
+}
+
+TEST_F(ConvenienceApiTest, MarkChannelReadAndFetchUnreadCountRoundTrip) {
+  StartGateway([&](const chirp::gateway::Packet& pkt, auto send) {
+    if (pkt.msg_id() == chirp::gateway::MARK_READ_REQ) {
+      chirp::chat::MarkReadRequest req;
+      ASSERT_TRUE(req.ParseFromString(pkt.body()));
+      EXPECT_EQ(req.user_id(), "sdk-user");
+      EXPECT_EQ(req.channel_id(), "ch-1");
+      EXPECT_EQ(req.channel_type(), chirp::chat::WORLD);
+      EXPECT_EQ(req.message_id(), "msg-99");
+      chirp::chat::MarkReadResponse resp;
+      resp.set_code(chirp::common::OK);
+      send(RespFor(pkt, chirp::gateway::MARK_READ_RESP, resp.SerializeAsString()));
+      return;
+    }
+    if (pkt.msg_id() == chirp::gateway::GET_UNREAD_COUNT_REQ) {
+      chirp::chat::GetUnreadCountResponse resp;
+      resp.set_code(chirp::common::OK);
+      resp.set_total_unread(7);
+      auto* channel = resp.add_channels();
+      channel->set_channel_id("ch-1");
+      channel->set_count(5);
+      send(RespFor(pkt, chirp::gateway::GET_UNREAD_COUNT_RESP, resp.SerializeAsString()));
+      return;
+    }
+  });
+  ConnectAndLogin();
+
+  std::error_code ec;
+  (void)WaitRpc<chirp::chat::MarkReadResponse>([&](auto cb) {
+    client_->MarkChannelRead(chirp::chat::WORLD, "ch-1", "msg-99", cb);
+  }, ec);
+  EXPECT_FALSE(ec);
+  const auto unread = WaitRpc<chirp::chat::GetUnreadCountResponse>([&](auto cb) {
+    client_->FetchUnreadCount(cb);
+  }, ec);
+  EXPECT_FALSE(ec);
+  EXPECT_EQ(unread.total_unread(), 7);
+  ASSERT_EQ(unread.channels_size(), 1);
+  EXPECT_EQ(unread.channels(0).count(), 5);
+}
+
+TEST_F(ConvenienceApiTest, BlocklistRoundTrip) {
+  StartGateway([&](const chirp::gateway::Packet& pkt, auto send) {
+    switch (pkt.msg_id()) {
+    case chirp::gateway::BLOCK_MESSAGE_SENDER_REQ: {
+      chirp::chat::BlockMessageSenderRequest req;
+      ASSERT_TRUE(req.ParseFromString(pkt.body()));
+      EXPECT_EQ(req.target_user_id(), "troll");
+      chirp::chat::BlockMessageSenderResponse resp;
+      resp.set_code(chirp::common::OK);
+      resp.set_target_user_id("troll");
+      send(RespFor(pkt, chirp::gateway::BLOCK_MESSAGE_SENDER_RESP, resp.SerializeAsString()));
+      return;
+    }
+    case chirp::gateway::UNBLOCK_MESSAGE_SENDER_REQ: {
+      chirp::chat::UnblockMessageSenderResponse resp;
+      resp.set_code(chirp::common::OK);
+      resp.set_target_user_id("troll");
+      send(RespFor(pkt, chirp::gateway::UNBLOCK_MESSAGE_SENDER_RESP, resp.SerializeAsString()));
+      return;
+    }
+    case chirp::gateway::GET_BLOCKED_SENDERS_REQ: {
+      chirp::chat::GetBlockedSendersResponse resp;
+      resp.set_code(chirp::common::OK);
+      resp.add_target_user_ids("troll");
+      resp.add_target_user_ids("spammer");
+      send(RespFor(pkt, chirp::gateway::GET_BLOCKED_SENDERS_RESP, resp.SerializeAsString()));
+      return;
+    }
+    default:
+      return;
+    }
+  });
+  ConnectAndLogin();
+
+  std::error_code ec;
+  const auto blocked = WaitRpc<chirp::chat::BlockMessageSenderResponse>([&](auto cb) {
+    client_->BlockUser("troll", cb);
+  }, ec);
+  EXPECT_FALSE(ec);
+  EXPECT_EQ(blocked.target_user_id(), "troll");
+  (void)WaitRpc<chirp::chat::UnblockMessageSenderResponse>([&](auto cb) {
+    client_->UnblockUser("troll", cb);
+  }, ec);
+  EXPECT_FALSE(ec);
+  const auto list = WaitRpc<chirp::chat::GetBlockedSendersResponse>([&](auto cb) {
+    client_->FetchBlockedUsers(cb);
+  }, ec);
+  EXPECT_FALSE(ec);
+  ASSERT_EQ(list.target_user_ids_size(), 2);
+  EXPECT_EQ(list.target_user_ids(0), "troll");
+}
+
+TEST_F(ConvenienceApiTest, ChannelMuteRoundTrip) {
+  StartGateway([&](const chirp::gateway::Packet& pkt, auto send) {
+    if (pkt.msg_id() == chirp::gateway::SET_CHANNEL_MUTE_REQ) {
+      chirp::chat::SetChannelMuteRequest req;
+      ASSERT_TRUE(req.ParseFromString(pkt.body()));
+      EXPECT_EQ(req.channel_type(), chirp::chat::GUILD);
+      EXPECT_TRUE(req.muted());
+      chirp::chat::SetChannelMuteResponse resp;
+      resp.set_code(chirp::common::OK);
+      resp.set_channel_type(chirp::chat::GUILD);
+      resp.set_muted(true);
+      send(RespFor(pkt, chirp::gateway::SET_CHANNEL_MUTE_RESP, resp.SerializeAsString()));
+      return;
+    }
+    if (pkt.msg_id() == chirp::gateway::GET_CHANNEL_MUTES_REQ) {
+      chirp::chat::GetChannelMutesResponse resp;
+      resp.set_code(chirp::common::OK);
+      for (auto type : {chirp::chat::WORLD, chirp::chat::GUILD, chirp::chat::TEAM}) {
+        auto* state = resp.add_states();
+        state->set_channel_type(type);
+        state->set_muted(type == chirp::chat::GUILD);
+      }
+      send(RespFor(pkt, chirp::gateway::GET_CHANNEL_MUTES_RESP, resp.SerializeAsString()));
+      return;
+    }
+  });
+  ConnectAndLogin();
+
+  std::error_code ec;
+  const auto set = WaitRpc<chirp::chat::SetChannelMuteResponse>([&](auto cb) {
+    client_->SetChannelMute(chirp::chat::GUILD, true, cb);
+  }, ec);
+  EXPECT_FALSE(ec);
+  EXPECT_TRUE(set.muted());
+  const auto mutes = WaitRpc<chirp::chat::GetChannelMutesResponse>([&](auto cb) {
+    client_->FetchChannelMutes(cb);
+  }, ec);
+  EXPECT_FALSE(ec);
+  ASSERT_EQ(mutes.states_size(), 3);
+  EXPECT_TRUE(mutes.states(1).muted());
+}
+
+TEST_F(ConvenienceApiTest, TypingIndicatorBroadcastAndQuery) {
+  StartGateway([&](const chirp::gateway::Packet& pkt, auto send) {
+    if (pkt.msg_id() == chirp::gateway::TYPING_INDICATOR_NOTIFY) {
+      // 客户端裸发:sequence==0,不进 pending(无响应帧)。
+      EXPECT_EQ(pkt.sequence(), 0);
+      chirp::chat::TypingIndicator req;
+      ASSERT_TRUE(req.ParseFromString(pkt.body()));
+      EXPECT_EQ(req.user_id(), "sdk-user");
+      EXPECT_EQ(req.channel_id(), "world-1");
+      EXPECT_EQ(req.channel_type(), chirp::chat::WORLD);
+      EXPECT_TRUE(req.is_typing());
+      return;
+    }
+    if (pkt.msg_id() == chirp::gateway::GET_TYPING_USERS_REQ) {
+      chirp::chat::GetTypingUsersResponse resp;
+      resp.set_code(chirp::common::OK);
+      resp.add_typing_user_ids("fast-fingers");
+      resp.add_usernames("FastFingers");
+      send(RespFor(pkt, chirp::gateway::GET_TYPING_USERS_RESP, resp.SerializeAsString()));
+      return;
+    }
+  });
+  ConnectAndLogin();
+
+  // 裸发无回调;同连接 TCP 有序,后续往返必然晚于 typing 帧到达。
+  client_->SendTypingIndicator(chirp::chat::WORLD, "world-1", true);
+  std::error_code ec;
+  const auto typing = WaitRpc<chirp::chat::GetTypingUsersResponse>([&](auto cb) {
+    client_->FetchTypingUsers(chirp::chat::WORLD, "world-1", cb);
+  }, ec);
+  EXPECT_FALSE(ec);
+  ASSERT_EQ(typing.typing_user_ids_size(), 1);
+  EXPECT_EQ(typing.typing_user_ids(0), "fast-fingers");
+}
+
+TEST_F(ConvenienceApiTest, EditDeleteReactionsAndReceiptsRoundTrip) {
+  StartGateway([&](const chirp::gateway::Packet& pkt, auto send) {
+    switch (pkt.msg_id()) {
+    case chirp::gateway::EDIT_MESSAGE_REQ: {
+      chirp::chat::EditMessageRequest req;
+      ASSERT_TRUE(req.ParseFromString(pkt.body()));
+      EXPECT_EQ(req.user_id(), "sdk-user");
+      EXPECT_EQ(req.new_content(), "edited");
+      chirp::chat::EditMessageResponse resp;
+      resp.set_code(chirp::common::OK);
+      send(RespFor(pkt, chirp::gateway::EDIT_MESSAGE_RESP, resp.SerializeAsString()));
+      return;
+    }
+    case chirp::gateway::DELETE_MESSAGE_REQ: {
+      chirp::chat::DeleteMessageRequest req;
+      ASSERT_TRUE(req.ParseFromString(pkt.body()));
+      EXPECT_EQ(req.user_id(), "sdk-user");
+      EXPECT_TRUE(req.is_hard_delete());
+      chirp::chat::DeleteMessageResponse resp;
+      resp.set_code(chirp::common::OK);
+      resp.set_was_permanently_deleted(true);
+      send(RespFor(pkt, chirp::gateway::DELETE_MESSAGE_RESP, resp.SerializeAsString()));
+      return;
+    }
+    case chirp::gateway::ADD_REACTION_REQ: {
+      chirp::chat::AddReactionRequest req;
+      ASSERT_TRUE(req.ParseFromString(pkt.body()));
+      EXPECT_EQ(req.emoji(), "\xF0\x9F\x91\x8D");
+      chirp::chat::AddReactionResponse resp;
+      resp.set_code(chirp::common::OK);
+      send(RespFor(pkt, chirp::gateway::ADD_REACTION_RESP, resp.SerializeAsString()));
+      return;
+    }
+    case chirp::gateway::REMOVE_REACTION_REQ: {
+      chirp::chat::RemoveReactionResponse resp;
+      resp.set_code(chirp::common::OK);
+      send(RespFor(pkt, chirp::gateway::REMOVE_REACTION_RESP, resp.SerializeAsString()));
+      return;
+    }
+    case chirp::gateway::GET_REACTIONS_REQ: {
+      chirp::chat::GetReactionsRequest req;
+      ASSERT_TRUE(req.ParseFromString(pkt.body()));
+      EXPECT_TRUE(req.emoji().empty());  // 空 emoji = 拉全部
+      chirp::chat::GetReactionsResponse resp;
+      resp.set_code(chirp::common::OK);
+      send(RespFor(pkt, chirp::gateway::GET_REACTIONS_RESP, resp.SerializeAsString()));
+      return;
+    }
+    case chirp::gateway::GET_READ_RECEIPTS_REQ: {
+      chirp::chat::GetReadReceiptsRequest req;
+      ASSERT_TRUE(req.ParseFromString(pkt.body()));
+      EXPECT_EQ(req.message_id(), "m-1");
+      chirp::chat::GetReadReceiptsResponse resp;
+      resp.set_code(chirp::common::OK);
+      auto* receipt = resp.add_receipts();
+      receipt->set_user_id("peer");
+      receipt->set_message_id("m-1");
+      send(RespFor(pkt, chirp::gateway::GET_READ_RECEIPTS_RESP, resp.SerializeAsString()));
+      return;
+    }
+    default:
+      return;
+    }
+  });
+  ConnectAndLogin();
+
+  std::error_code ec;
+  (void)WaitRpc<chirp::chat::EditMessageResponse>([&](auto cb) {
+    client_->EditMessage("m-1", "edited", cb);
+  }, ec);
+  EXPECT_FALSE(ec);
+  const auto deleted = WaitRpc<chirp::chat::DeleteMessageResponse>([&](auto cb) {
+    client_->DeleteMessage("m-1", true, cb);
+  }, ec);
+  EXPECT_FALSE(ec);
+  EXPECT_TRUE(deleted.was_permanently_deleted());
+  (void)WaitRpc<chirp::chat::AddReactionResponse>([&](auto cb) {
+    client_->AddReaction("m-1", "\xF0\x9F\x91\x8D", cb);
+  }, ec);
+  EXPECT_FALSE(ec);
+  (void)WaitRpc<chirp::chat::RemoveReactionResponse>([&](auto cb) {
+    client_->RemoveReaction("m-1", "\xF0\x9F\x91\x8D", cb);
+  }, ec);
+  EXPECT_FALSE(ec);
+  (void)WaitRpc<chirp::chat::GetReactionsResponse>([&](auto cb) {
+    client_->FetchReactions("m-1", "", cb);
+  }, ec);
+  EXPECT_FALSE(ec);
+  const auto receipts = WaitRpc<chirp::chat::GetReadReceiptsResponse>([&](auto cb) {
+    client_->FetchReadReceipts("m-1", cb);
+  }, ec);
+  EXPECT_FALSE(ec);
+  ASSERT_EQ(receipts.receipts_size(), 1);
+  EXPECT_EQ(receipts.receipts(0).user_id(), "peer");
+}
+
+TEST_F(ConvenienceApiTest, BulkDeleteAndMentionSuggestionsRoundTrip) {
+  StartGateway([&](const chirp::gateway::Packet& pkt, auto send) {
+    if (pkt.msg_id() == chirp::gateway::BULK_DELETE_REQ) {
+      chirp::chat::BulkDeleteRequest req;
+      ASSERT_TRUE(req.ParseFromString(pkt.body()));
+      EXPECT_EQ(req.requester_id(), "sdk-user");
+      EXPECT_EQ(req.channel_id(), "ch-9");
+      ASSERT_EQ(req.message_ids_size(), 2);
+      EXPECT_EQ(req.message_ids(0), "m-1");
+      chirp::chat::BulkDeleteResponse resp;
+      resp.set_code(chirp::common::OK);
+      resp.set_deleted_count(2);
+      send(RespFor(pkt, chirp::gateway::BULK_DELETE_RESP, resp.SerializeAsString()));
+      return;
+    }
+    if (pkt.msg_id() == chirp::gateway::GET_MENTION_SUGGESTIONS_REQ) {
+      chirp::chat::GetMentionSuggestionsRequest req;
+      ASSERT_TRUE(req.ParseFromString(pkt.body()));
+      EXPECT_EQ(req.user_id(), "sdk-user");
+      EXPECT_EQ(req.query(), "bo");
+      chirp::chat::GetMentionSuggestionsResponse resp;
+      resp.set_code(chirp::common::OK);
+      send(RespFor(pkt, chirp::gateway::GET_MENTION_SUGGESTIONS_RESP, resp.SerializeAsString()));
+      return;
+    }
+  });
+  ConnectAndLogin();
+
+  std::error_code ec;
+  const auto bulk = WaitRpc<chirp::chat::BulkDeleteResponse>([&](auto cb) {
+    client_->BulkDeleteMessages({"m-1", "m-2"}, "ch-9", cb);
+  }, ec);
+  EXPECT_FALSE(ec);
+  EXPECT_EQ(bulk.deleted_count(), 2);
+  (void)WaitRpc<chirp::chat::GetMentionSuggestionsResponse>([&](auto cb) {
+    client_->FetchMentionSuggestions("ch-9", "bo", cb);
+  }, ec);
+  EXPECT_FALSE(ec);
+}
+
+TEST_F(ConvenienceApiTest, GroupLifecycleRoundTrip) {
+  StartGateway([&](const chirp::gateway::Packet& pkt, auto send) {
+    switch (pkt.msg_id()) {
+    case chirp::gateway::CREATE_GROUP_REQ: {
+      chirp::chat::CreateGroupRequest req;
+      ASSERT_TRUE(req.ParseFromString(pkt.body()));
+      EXPECT_EQ(req.creator_id(), "sdk-user");
+      EXPECT_EQ(req.group_name(), "guild");
+      EXPECT_EQ(req.description(), "desc");
+      chirp::chat::CreateGroupResponse resp;
+      resp.set_code(chirp::common::OK);
+      resp.set_group_id("g-1");
+      send(RespFor(pkt, chirp::gateway::CREATE_GROUP_RESP, resp.SerializeAsString()));
+      return;
+    }
+    case chirp::gateway::JOIN_GROUP_REQ: {
+      chirp::chat::JoinGroupRequest req;
+      ASSERT_TRUE(req.ParseFromString(pkt.body()));
+      EXPECT_EQ(req.user_id(), "sdk-user");
+      EXPECT_EQ(req.group_id(), "g-1");
+      chirp::chat::JoinGroupResponse resp;
+      resp.set_code(chirp::common::OK);
+      resp.mutable_group()->set_group_id("g-1");
+      send(RespFor(pkt, chirp::gateway::JOIN_GROUP_RESP, resp.SerializeAsString()));
+      return;
+    }
+    case chirp::gateway::INVITE_TO_GROUP_REQ: {
+      chirp::chat::InviteToGroupRequest req;
+      ASSERT_TRUE(req.ParseFromString(pkt.body()));
+      EXPECT_EQ(req.inviter_id(), "sdk-user");
+      EXPECT_EQ(req.target_user_id(), "pal");
+      chirp::chat::InviteToGroupResponse resp;
+      resp.set_code(chirp::common::OK);
+      send(RespFor(pkt, chirp::gateway::INVITE_TO_GROUP_RESP, resp.SerializeAsString()));
+      return;
+    }
+    case chirp::gateway::KICK_MEMBER_REQ: {
+      chirp::chat::KickMemberRequest req;
+      ASSERT_TRUE(req.ParseFromString(pkt.body()));
+      EXPECT_EQ(req.requester_id(), "sdk-user");
+      EXPECT_EQ(req.target_user_id(), "rogue");
+      chirp::chat::KickMemberResponse resp;
+      resp.set_code(chirp::common::OK);
+      send(RespFor(pkt, chirp::gateway::KICK_MEMBER_RESP, resp.SerializeAsString()));
+      return;
+    }
+    case chirp::gateway::GET_GROUP_INFO_REQ: {
+      chirp::chat::GetGroupInfoResponse resp;
+      resp.set_code(chirp::common::OK);
+      resp.mutable_group()->set_group_name("guild");
+      send(RespFor(pkt, chirp::gateway::GET_GROUP_INFO_RESP, resp.SerializeAsString()));
+      return;
+    }
+    case chirp::gateway::GET_GROUP_MEMBERS_REQ: {
+      chirp::chat::GetGroupMembersRequest req;
+      ASSERT_TRUE(req.ParseFromString(pkt.body()));
+      EXPECT_EQ(req.limit(), 10);
+      EXPECT_EQ(req.offset(), 0);
+      chirp::chat::GetGroupMembersResponse resp;
+      resp.set_code(chirp::common::OK);
+      resp.set_total_count(1);
+      send(RespFor(pkt, chirp::gateway::GET_GROUP_MEMBERS_RESP, resp.SerializeAsString()));
+      return;
+    }
+    case chirp::gateway::LEAVE_GROUP_REQ: {
+      chirp::chat::LeaveGroupResponse resp;
+      resp.set_code(chirp::common::OK);
+      send(RespFor(pkt, chirp::gateway::LEAVE_GROUP_RESP, resp.SerializeAsString()));
+      return;
+    }
+    case chirp::gateway::GET_USER_GROUPS_REQ: {
+      chirp::chat::GetUserGroupsRequest req;
+      ASSERT_TRUE(req.ParseFromString(pkt.body()));
+      EXPECT_EQ(req.user_id(), "sdk-user");
+      chirp::chat::GetUserGroupsResponse resp;
+      resp.set_code(chirp::common::OK);
+      resp.set_total_count(1);
+      send(RespFor(pkt, chirp::gateway::GET_USER_GROUPS_RESP, resp.SerializeAsString()));
+      return;
+    }
+    default:
+      return;
+    }
+  });
+  ConnectAndLogin();
+
+  std::error_code ec;
+  const auto created = WaitRpc<chirp::chat::CreateGroupResponse>([&](auto cb) {
+    client_->CreateGroup("guild", "desc", cb);
+  }, ec);
+  EXPECT_FALSE(ec);
+  EXPECT_EQ(created.group_id(), "g-1");
+  (void)WaitRpc<chirp::chat::JoinGroupResponse>([&](auto cb) {
+    client_->JoinGroup("g-1", cb);
+  }, ec);
+  EXPECT_FALSE(ec);
+  (void)WaitRpc<chirp::chat::InviteToGroupResponse>([&](auto cb) {
+    client_->InviteToGroup("g-1", "pal", cb);
+  }, ec);
+  EXPECT_FALSE(ec);
+  (void)WaitRpc<chirp::chat::KickMemberResponse>([&](auto cb) {
+    client_->KickMember("g-1", "rogue", cb);
+  }, ec);
+  EXPECT_FALSE(ec);
+  const auto info = WaitRpc<chirp::chat::GetGroupInfoResponse>([&](auto cb) {
+    client_->FetchGroupInfo("g-1", cb);
+  }, ec);
+  EXPECT_FALSE(ec);
+  EXPECT_EQ(info.group().group_name(), "guild");
+  const auto members = WaitRpc<chirp::chat::GetGroupMembersResponse>([&](auto cb) {
+    client_->FetchGroupMembers("g-1", 10, 0, cb);
+  }, ec);
+  EXPECT_FALSE(ec);
+  EXPECT_EQ(members.total_count(), 1);
+  (void)WaitRpc<chirp::chat::LeaveGroupResponse>([&](auto cb) {
+    client_->LeaveGroup("g-1", cb);
+  }, ec);
+  EXPECT_FALSE(ec);
+  const auto groups = WaitRpc<chirp::chat::GetUserGroupsResponse>([&](auto cb) {
+    client_->FetchUserGroups(10, 0, cb);
+  }, ec);
+  EXPECT_FALSE(ec);
+  EXPECT_EQ(groups.total_count(), 1);
+}
+
+TEST_F(SdkClientTest, ConvenienceRequestsFailFastWhenNotConnected) {
+  ChatClient client(TcpConfig());
+  const auto not_connected = chirp::sdk::make_error_code(chirp::sdk::ChatError::NotConnected);
+  std::error_code ec;
+  WaitConvenienceRpc<chirp::chat::GetHistoryResponse>([&](auto cb) {
+    client.FetchHistory(chirp::chat::WORLD, "w", 10, 0, cb);
+  }, ec, 5000);
+  EXPECT_EQ(ec, not_connected);
+}
+
+// 全量矩阵:26 个待回调便捷方法的 NotConnected 快速失败臂逐一覆盖
+// (所有方法共享同一守卫,但代码是按方法展开的,需逐个触达)。
+TEST_F(SdkClientTest, AllConvenienceMethodsFailFastWhenNotConnected) {
+  ChatClient client(TcpConfig());
+  const auto not_connected = chirp::sdk::make_error_code(chirp::sdk::ChatError::NotConnected);
+  std::error_code ec;
+  ChatClient::SendOptions opts;
+  opts.receiver_id = "alice";
+
+  (void)WaitConvenienceRpc<chirp::chat::SendMessageResponse>([&](auto cb) {
+    client.SendMessage(opts, "hi", cb);
+  }, ec, 5000);
+  EXPECT_EQ(ec, not_connected);
+  (void)WaitConvenienceRpc<chirp::chat::MarkReadResponse>([&](auto cb) {
+    client.MarkChannelRead(chirp::chat::WORLD, "w", "m", cb);
+  }, ec, 5000);
+  EXPECT_EQ(ec, not_connected);
+  (void)WaitConvenienceRpc<chirp::chat::GetUnreadCountResponse>([&](auto cb) {
+    client.FetchUnreadCount(cb);
+  }, ec, 5000);
+  EXPECT_EQ(ec, not_connected);
+  (void)WaitConvenienceRpc<chirp::chat::BlockMessageSenderResponse>([&](auto cb) {
+    client.BlockUser("t", cb);
+  }, ec, 5000);
+  EXPECT_EQ(ec, not_connected);
+  (void)WaitConvenienceRpc<chirp::chat::UnblockMessageSenderResponse>([&](auto cb) {
+    client.UnblockUser("t", cb);
+  }, ec, 5000);
+  EXPECT_EQ(ec, not_connected);
+  (void)WaitConvenienceRpc<chirp::chat::GetBlockedSendersResponse>([&](auto cb) {
+    client.FetchBlockedUsers(cb);
+  }, ec, 5000);
+  EXPECT_EQ(ec, not_connected);
+  (void)WaitConvenienceRpc<chirp::chat::SetChannelMuteResponse>([&](auto cb) {
+    client.SetChannelMute(chirp::chat::GUILD, true, cb);
+  }, ec, 5000);
+  EXPECT_EQ(ec, not_connected);
+  (void)WaitConvenienceRpc<chirp::chat::GetChannelMutesResponse>([&](auto cb) {
+    client.FetchChannelMutes(cb);
+  }, ec, 5000);
+  EXPECT_EQ(ec, not_connected);
+  (void)WaitConvenienceRpc<chirp::chat::GetTypingUsersResponse>([&](auto cb) {
+    client.FetchTypingUsers(chirp::chat::WORLD, "w", cb);
+  }, ec, 5000);
+  EXPECT_EQ(ec, not_connected);
+  (void)WaitConvenienceRpc<chirp::chat::EditMessageResponse>([&](auto cb) {
+    client.EditMessage("m", "new", cb);
+  }, ec, 5000);
+  EXPECT_EQ(ec, not_connected);
+  (void)WaitConvenienceRpc<chirp::chat::DeleteMessageResponse>([&](auto cb) {
+    client.DeleteMessage("m", false, cb);
+  }, ec, 5000);
+  EXPECT_EQ(ec, not_connected);
+  (void)WaitConvenienceRpc<chirp::chat::AddReactionResponse>([&](auto cb) {
+    client.AddReaction("m", "e", cb);
+  }, ec, 5000);
+  EXPECT_EQ(ec, not_connected);
+  (void)WaitConvenienceRpc<chirp::chat::RemoveReactionResponse>([&](auto cb) {
+    client.RemoveReaction("m", "e", cb);
+  }, ec, 5000);
+  EXPECT_EQ(ec, not_connected);
+  (void)WaitConvenienceRpc<chirp::chat::GetReactionsResponse>([&](auto cb) {
+    client.FetchReactions("m", "e", cb);
+  }, ec, 5000);
+  EXPECT_EQ(ec, not_connected);
+  (void)WaitConvenienceRpc<chirp::chat::GetReadReceiptsResponse>([&](auto cb) {
+    client.FetchReadReceipts("m", cb);
+  }, ec, 5000);
+  EXPECT_EQ(ec, not_connected);
+  (void)WaitConvenienceRpc<chirp::chat::BulkDeleteResponse>([&](auto cb) {
+    client.BulkDeleteMessages({"m"}, "ch", cb);
+  }, ec, 5000);
+  EXPECT_EQ(ec, not_connected);
+  (void)WaitConvenienceRpc<chirp::chat::GetMentionSuggestionsResponse>([&](auto cb) {
+    client.FetchMentionSuggestions("ch", "q", cb);
+  }, ec, 5000);
+  EXPECT_EQ(ec, not_connected);
+  (void)WaitConvenienceRpc<chirp::chat::CreateGroupResponse>([&](auto cb) {
+    client.CreateGroup("g", "d", cb);
+  }, ec, 5000);
+  EXPECT_EQ(ec, not_connected);
+  (void)WaitConvenienceRpc<chirp::chat::JoinGroupResponse>([&](auto cb) {
+    client.JoinGroup("g", cb);
+  }, ec, 5000);
+  EXPECT_EQ(ec, not_connected);
+  (void)WaitConvenienceRpc<chirp::chat::LeaveGroupResponse>([&](auto cb) {
+    client.LeaveGroup("g", cb);
+  }, ec, 5000);
+  EXPECT_EQ(ec, not_connected);
+  (void)WaitConvenienceRpc<chirp::chat::InviteToGroupResponse>([&](auto cb) {
+    client.InviteToGroup("g", "u", cb);
+  }, ec, 5000);
+  EXPECT_EQ(ec, not_connected);
+  (void)WaitConvenienceRpc<chirp::chat::KickMemberResponse>([&](auto cb) {
+    client.KickMember("g", "u", cb);
+  }, ec, 5000);
+  EXPECT_EQ(ec, not_connected);
+  (void)WaitConvenienceRpc<chirp::chat::GetGroupInfoResponse>([&](auto cb) {
+    client.FetchGroupInfo("g", cb);
+  }, ec, 5000);
+  EXPECT_EQ(ec, not_connected);
+  (void)WaitConvenienceRpc<chirp::chat::GetGroupMembersResponse>([&](auto cb) {
+    client.FetchGroupMembers("g", 10, 0, cb);
+  }, ec, 5000);
+  EXPECT_EQ(ec, not_connected);
+  (void)WaitConvenienceRpc<chirp::chat::GetUserGroupsResponse>([&](auto cb) {
+    client.FetchUserGroups(10, 0, cb);
+  }, ec, 5000);
+  EXPECT_EQ(ec, not_connected);
+
+  // 裸发路径:未连接时 SendPacket 无 socket,静默丢弃(覆盖 socket_ 空臂)。
+  client.SendTypingIndicator(chirp::chat::WORLD, "w", true);
+  std::this_thread::sleep_for(std::chrono::milliseconds(100));
+}
+
+// ec 文案映射:message(int) 按枚举逐一分支,全部断言一遍(未知码走 default)。
+TEST(SdkErrorMessages, EveryChatErrorCodeHasExpectedMessage) {
+  using chirp::sdk::make_error_code;
+  using CE = chirp::sdk::ChatError;
+  EXPECT_EQ(make_error_code(CE::OK).message(), "ok");
+  EXPECT_EQ(make_error_code(CE::NotConnected).message(), "not connected");
+  EXPECT_EQ(make_error_code(CE::AlreadyConnected).message(), "already connected");
+  EXPECT_EQ(make_error_code(CE::LoginFailed).message(), "login failed");
+  EXPECT_EQ(make_error_code(CE::SendFailed).message(), "send failed");
+  EXPECT_EQ(make_error_code(CE::InvalidParam).message(), "invalid parameter");
+  EXPECT_EQ(make_error_code(CE::Timeout).message(), "timeout");
+  EXPECT_EQ(make_error_code(CE::Closed).message(), "connection closed");
+  EXPECT_EQ(make_error_code(CE::Kicked).message(), "kicked");
+  EXPECT_EQ(make_error_code(CE::BadResponse).message(), "bad response");
+  EXPECT_EQ(make_error_code(static_cast<CE>(42)).message(), "unknown error");
+}
+
+TEST_F(ConvenienceApiTest, UnparseableResponseReportsBadResponse) {
+  StartGateway([&](const chirp::gateway::Packet& pkt, auto send) {
+    if (pkt.msg_id() != chirp::gateway::GET_HISTORY_REQ) {
+      return;
+    }
+    // 'n' 解出 tag(field 13, wire type 6):非法 wire type,ParseFromString 必败。
+    send(RespFor(pkt, chirp::gateway::GET_HISTORY_RESP, "not-proto"));
+  });
+  ConnectAndLogin();
+  std::error_code ec;
+  (void)WaitRpc<chirp::chat::GetHistoryResponse>([&](auto cb) {
+    client_->FetchHistory(chirp::chat::WORLD, "w", 10, 0, cb);
+  }, ec);
+  EXPECT_EQ(ec, chirp::sdk::make_error_code(chirp::sdk::ChatError::BadResponse));
+}
+
+TEST_F(ConvenienceApiTest, UnansweredConvenienceRequestTimesOut) {
+  StartGateway([](const chirp::gateway::Packet&, auto) {});
+  auto config = LoopbackConfig(gateway_->port());
+  config.request_timeout_ms = 200;
+  client_ = std::make_unique<ChatClient>(config);
+  client_->Connect();
+  WaitState(*client_, ConnectionState::Connected, kWaitMs);
+  std::promise<std::error_code> done;
+  auto future = done.get_future();
+  client_->Login("tok", [&](const std::error_code& ec, const std::string&) { done.set_value(ec); });
+  ASSERT_EQ(future.wait_for(std::chrono::milliseconds(kWaitMs)), std::future_status::ready);
+  ASSERT_EQ(client_->GetState(), ConnectionState::LoggedIn);
+
+  std::error_code ec;
+  (void)WaitRpc<chirp::chat::GetUnreadCountResponse>([&](auto cb) {
+    client_->FetchUnreadCount(cb);
+  }, ec);
+  EXPECT_EQ(ec, chirp::sdk::make_error_code(chirp::sdk::ChatError::Timeout));
 }
 
 }  // namespace

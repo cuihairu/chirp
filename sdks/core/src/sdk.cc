@@ -25,6 +25,12 @@ public:
       return "invalid parameter";
     case ChatError::Timeout:
       return "timeout";
+    case ChatError::Closed:
+      return "connection closed";
+    case ChatError::Kicked:
+      return "kicked";
+    case ChatError::BadResponse:
+      return "bad response";
     default:
       return "unknown error";
     }

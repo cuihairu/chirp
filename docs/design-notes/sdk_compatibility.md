@@ -171,13 +171,10 @@ title: SDK 引擎兼容性
 
 已有：
 - `ChatClient` 完整实现
-- 37 个 loopback 单测
+- 5 个 Hook 接口（MessageInterceptor/AuthProvider/MessageStore/ChatEventListener/CommandHandler）已接线（2026-09）
+- 27 个便捷 API（发送扩展/服务端历史/已读未读/黑名单/静音/输入状态/编辑删除/表情回执/批量删除/@提及/群组全套，2026-09）
+- 106 个单测（状态机/loopback/钩子接线/便捷 API 往返）
 - `sdk_example` 示例
-
-待补：
-- [ ] Hook 接口（虚基类）
-- [ ] 历史消息存储接口
-- [ ] 命令系统
 
 ### Go 服务端（P0，已有基础）
 
