@@ -590,6 +590,59 @@ KNOWN_UNCOVERABLE = {
     ("libs/network/auth_client.cc", 128),
     ("libs/network/auth_client.cc", 140),
     ("libs/network/auth_client.cc", 149),
+    # ChatClient convenience API asio::post closure lines (SendMessage /
+    # MarkChannelRead / BlockUser / typing / edit / reactions / group ops):
+    # untaken arms are EH pads for the captured-string/std::function moves
+    # plus the always-equal allocator half of inlined moves inside the
+    # closure. Semantic arms (NotConnected guard, connected path) are covered
+    # by AllConvenienceMethodsFailFastWhenNotConnected + the per-API matrix.
+    ("sdks/core/src/sdk_client.cc", 946),
+    ("sdks/core/src/sdk_client.cc", 1015),
+    ("sdks/core/src/sdk_client.cc", 1043),
+    ("sdks/core/src/sdk_client.cc", 1056),
+    ("sdks/core/src/sdk_client.cc", 1106),
+    ("sdks/core/src/sdk_client.cc", 1124),
+    ("sdks/core/src/sdk_client.cc", 1138),
+    ("sdks/core/src/sdk_client.cc", 1154),
+    ("sdks/core/src/sdk_client.cc", 1169),
+    ("sdks/core/src/sdk_client.cc", 1184),
+    ("sdks/core/src/sdk_client.cc", 1199),
+    ("sdks/core/src/sdk_client.cc", 1212),
+    ("sdks/core/src/sdk_client.cc", 1225),
+    ("sdks/core/src/sdk_client.cc", 1242),
+    ("sdks/core/src/sdk_client.cc", 1258),
+    ("sdks/core/src/sdk_client.cc", 1272),
+    ("sdks/core/src/sdk_client.cc", 1285),
+    ("sdks/core/src/sdk_client.cc", 1299),
+    ("sdks/core/src/sdk_client.cc", 1314),
+    ("sdks/core/src/sdk_client.cc", 1328),
+    ("sdks/core/src/sdk_client.cc", 1341),
+    # ReadyForRequests || chain: the LoggedIn half never evaluates once
+    # Connected is true (short-circuit); every test either fails fast on
+    # NotConnected or runs fully Connected/LoggedIn, so the "first true"
+    # fall arm is dead.
+    ("sdks/core/src/sdk_client.cc", 920),
+    # TypedRequest lambda: untaken arms are EH pads for Resp{}/
+    # ParseFromString failure construction and the std::function invoke
+    # landing pads; ec-ok, BadResponse and success arms are covered by
+    # UnparseableResponseReportsBadResponse + the typed-request matrix.
+    ("sdks/core/src/sdk_client.cc", 930),
+    ("sdks/core/src/sdk_client.cc", 935),
+    # SendMessage private channel_id ternary string concat: untaken arms
+    # are throw edges into the `a + "|" + b` landing pads (bad_alloc); both
+    # orderings (user<=peer and peer<user) are covered by the SSO/heap
+    # receiver probes.
+    ("sdks/core/src/sdk_client.cc", 963),
+    ("sdks/core/src/sdk_client.cc", 964),
+    # HybridMessageStore::HasMessage redis loop: untaken arms are EH pads
+    # for ParseFromArray / message_id string compare and the loop-empty
+    # fall-through attributed to this line; corrupt-entry skip and cold-tier
+    # fallback are covered by the store probes.
+    ("services/shared/chat/src/hybrid_message_store.cc", 261),
+    # PrivateChannelId ternary: both a<b and b<a orderings are asserted by
+    # PrivateChannelIdOrderingAndAccessors; untaken arms are throw edges
+    # into the string-concat landing pads.
+    ("services/shared/chat/src/hybrid_message_store.cc", 473),
 }
 
 # Whole functions tests can never execute: deleting-dtors of abstract
@@ -608,8 +661,10 @@ KNOWN_UNCOVERABLE_FUNCTIONS = {
     ("services/app/auth/src/session_store.h", 69),
     # UserStore is abstract (Initialize/Register/... are pure virtual).
     ("services/app/auth/src/user_store.h", 57),
-    # MessageStore is abstract (Initialize/StoreMessage/... pure virtual).
-    ("services/shared/chat/src/message_store.h", 37),
+    # MessageStore is abstract (Initialize/StoreMessage/... pure virtual);
+    # deleting-dtor starts at the `virtual ~MessageStore()` line (38), not
+    # the `public:` access specifier (37).
+    ("services/shared/chat/src/message_store.h", 38),
     # HttpConnection is abstract (WriteAll/WaitReadable/ReadSome pure
     # virtual); only the TcpHttpConnection Impl D0 can run.
     ("services/app/notification/src/http_push_transport.h", 20),
