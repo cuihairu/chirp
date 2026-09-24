@@ -14,6 +14,7 @@
 #include "chirp/message_store.h"
 #include "chirp/sdk.h"
 #include "chirp/sdk_client.h"
+#include "chirp/word_filter.h"
 
 using chirp::sdk::ChatClient;
 using chirp::sdk::ChatConfig;
@@ -145,6 +146,88 @@ TEST(MemoryMessageStoreTest, ReadTrackingDefaultsToUnreadZero) {
   // 基类默认实现:不跟踪已读,计数恒 0,MarkRead 无副作用。
   store.MarkRead(chirp::chat::WORLD, "world", "m-100");
   EXPECT_EQ(store.GetUnreadCount(chirp::chat::WORLD, "world"), 0);
+}
+
+// ---------------------------------------------------------------------------
+// WordFilterInterceptor 纯单元用例(离线,不建连接)。语义对齐服务端
+// chirp::chat::WordFilter 的词库格式与替换/拒绝行为。
+// ---------------------------------------------------------------------------
+TEST(WordFilterInterceptorTest, ParseLexiconDropsBlanksCommentsAndDedupes) {
+  const auto terms = chirp::sdk::ParseWordLexicon({
+      "  Spam  ",
+      "# 注释行",
+      "",
+      "spam",
+      "  dummy\r\n",
+      "论坛",
+  });
+  // lower + 去重 + 字典序(与<std::set> 一致)。
+  ASSERT_EQ(terms.size(), 3u);
+  EXPECT_EQ(terms[0], "dummy");
+  EXPECT_EQ(terms[1], "spam");
+  EXPECT_EQ(terms[2], "论坛");
+}
+
+TEST(WordFilterInterceptorTest, ReplaceMasksHitsAndCollapsesAdjacentRuns) {
+  chirp::sdk::WordFilterOptions opts;
+  opts.terms = {"bad dog"};
+  chirp::sdk::WordFilterInterceptor filter(opts);
+
+  chirp::chat::SendMessageRequest msg;
+  msg.set_content("Bad DOG and bad dog");
+  EXPECT_TRUE(filter.OnBeforeSend(msg));
+  // 未命中区间保留原大小写,两次命中各自塌缩成一次替换。
+  EXPECT_EQ(msg.content(), "** and **");
+  EXPECT_EQ(filter.word_count(), 1u);
+}
+
+TEST(WordFilterInterceptorTest, ReplaceCollapsesOverlappingTermRuns) {
+  chirp::sdk::WordFilterOptions opts;
+  opts.terms = {"ab", "bc"};
+  opts.replacement = "#";
+  chirp::sdk::WordFilterInterceptor filter(opts);
+
+  chirp::chat::SendMessageRequest msg;
+  msg.set_content("abc");
+  EXPECT_TRUE(filter.OnBeforeSend(msg));
+  // 两个词的命中区间首尾相接,重建时塌缩成一次替换。
+  EXPECT_EQ(msg.content(), "#");
+}
+
+TEST(WordFilterInterceptorTest, ReplaceKeepsUtf8BytesAroundAsciiHits) {
+  chirp::sdk::WordFilterOptions opts;
+  opts.terms = {"脏话", "damn"};
+  chirp::sdk::WordFilterInterceptor filter(opts);
+
+  chirp::chat::SendMessageRequest msg;
+  // ASCII 词按 lower 命中;中文字节(UTF-8 多字节)两侧原样保留。
+  msg.set_content("你好 damn 世界,真是脏话啊");
+  EXPECT_TRUE(filter.OnBeforeSend(msg));
+  EXPECT_EQ(msg.content(), "你好 ** 世界,真是**啊");
+}
+
+TEST(WordFilterInterceptorTest, RejectPolicyBlocksHitAndPassesCleanText) {
+  chirp::sdk::WordFilterOptions opts;
+  opts.terms = {"banned"};
+  opts.policy = chirp::sdk::WordFilterPolicy::kReject;
+  chirp::sdk::WordFilterInterceptor filter(opts);
+
+  chirp::chat::SendMessageRequest hit;
+  hit.set_content("totally BANNED words");
+  EXPECT_FALSE(filter.OnBeforeSend(hit));
+
+  chirp::chat::SendMessageRequest clean;
+  clean.set_content("perfectly fine");
+  EXPECT_TRUE(filter.OnBeforeSend(clean));
+  EXPECT_EQ(clean.content(), "perfectly fine");  // 无命中不改写
+}
+
+TEST(WordFilterInterceptorTest, EmptyLexiconIsANoOp) {
+  chirp::sdk::WordFilterInterceptor filter(chirp::sdk::WordFilterOptions{});
+  chirp::chat::SendMessageRequest msg;
+  msg.set_content("anything at all");
+  EXPECT_TRUE(filter.OnBeforeSend(msg));
+  EXPECT_EQ(msg.content(), "anything at all");
 }
 
 TEST(ChatConfigTest, Defaults) {
@@ -3396,6 +3479,70 @@ TEST_F(ConvenienceApiTest, OptionsSendRunsInterceptorAndLocalStore) {
   ASSERT_FALSE(local.empty());
   EXPECT_EQ(local.front().content(), "censored");
   EXPECT_EQ(local.front().reply_to_message_id(), "orig-9");
+}
+
+TEST_F(ConvenienceApiTest, WordFilterRewritesContentBeforeWireAndArchive) {
+  std::string seen_content;
+  StartGateway([&](const chirp::gateway::Packet& pkt, auto send) {
+    if (pkt.msg_id() != chirp::gateway::SEND_MESSAGE_REQ) {
+      return;
+    }
+    chirp::chat::SendMessageRequest req;
+    ASSERT_TRUE(req.ParseFromString(pkt.body()));
+    seen_content = req.content();
+    chirp::chat::SendMessageResponse resp;
+    resp.set_code(chirp::common::OK);
+    resp.set_message_id("m-8");
+    send(RespFor(pkt, chirp::gateway::SEND_MESSAGE_RESP, resp.SerializeAsString()));
+  });
+  ConnectAndLogin();
+
+  chirp::sdk::WordFilterOptions opts;
+  opts.terms = chirp::sdk::ParseWordLexicon({"damn"});
+  client_->SetMessageInterceptor(
+      std::make_shared<chirp::sdk::WordFilterInterceptor>(opts));
+  auto store = std::make_unique<chirp::sdk::MemoryMessageStore>();
+  auto* store_ptr = store.get();
+  client_->SetMessageStore(std::move(store));
+
+  ChatClient::SendOptions send_opts;
+  send_opts.receiver_id = "alice";
+  std::error_code ec;
+  (void)WaitRpc<chirp::chat::SendMessageResponse>([&](auto cb) {
+    client_->SendMessage(send_opts, "well damn, hi", cb);
+  }, ec);
+  ASSERT_FALSE(ec);
+  // 服务端与本地存档拿到的都是改写后的内容。
+  EXPECT_EQ(seen_content, "well **, hi");
+  const auto local = store_ptr->Load(chirp::chat::PRIVATE, "alice|sdk-user", 10);
+  ASSERT_FALSE(local.empty());
+  EXPECT_EQ(local.front().content(), "well **, hi");
+}
+
+TEST_F(ConvenienceApiTest, WordFilterRejectStopsSendWithoutServerRoundTrip) {
+  std::atomic<int> sends{0};
+  StartGateway([&](const chirp::gateway::Packet& pkt, auto) {
+    if (pkt.msg_id() == chirp::gateway::SEND_MESSAGE_REQ) {
+      ++sends;
+    }
+  });
+  ConnectAndLogin();
+
+  chirp::sdk::WordFilterOptions opts;
+  opts.terms = {"banned"};
+  opts.policy = chirp::sdk::WordFilterPolicy::kReject;
+  client_->SetMessageInterceptor(
+      std::make_shared<chirp::sdk::WordFilterInterceptor>(opts));
+
+  ChatClient::SendOptions send_opts;
+  send_opts.receiver_id = "alice";
+  std::error_code ec;
+  (void)WaitRpc<chirp::chat::SendMessageResponse>([&](auto cb) {
+    client_->SendMessage(send_opts, "banned goods", cb);
+  }, ec);
+  EXPECT_EQ(ec, chirp::sdk::make_error_code(chirp::sdk::ChatError::SendFailed));
+  std::this_thread::sleep_for(std::chrono::milliseconds(100));
+  EXPECT_EQ(sends.load(), 0);
 }
 
 TEST_F(ConvenienceApiTest, OptionsSendBlockedByInterceptorReportsSendFailed) {

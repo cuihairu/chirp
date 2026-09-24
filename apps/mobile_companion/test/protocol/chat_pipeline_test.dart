@@ -12,6 +12,7 @@ import 'package:chirp_mobile/protocol/chirp_client.dart';
 import 'package:chirp_mobile/protocol/chat_pipeline.dart';
 import 'package:chirp_mobile/protocol/errors.dart';
 import 'package:chirp_mobile/protocol/hooks.dart';
+import 'package:chirp_mobile/protocol/word_filter.dart';
 
 import 'fake_transport.dart';
 
@@ -282,6 +283,44 @@ void main() {
           h.pipeline.loadHistory(chat.ChannelType.PRIVATE, 'p9|u1', 10);
       expect(history.map((m) => utf8.decode(m.content)), ['in', 'out']);
       expect(h.pipeline.unreadCount(chat.ChannelType.PRIVATE, 'p9|u1'), 0);
+    });
+
+    test('word filter rewrites before the wire and the archive; reject drops',
+        () async {
+      final h = await Harness.create()
+        ..pipeline.store = MemoryMessageStore()
+        ..pipeline.interceptor = WordFilterInterceptor(
+            WordFilterOptions(terms: parseWordLexicon(['damn'])));
+      await h.loginOk();
+
+      final sending = h.pipeline.send(
+          const SendOptions(
+              channelType: chat.ChannelType.PRIVATE, receiverId: 'p9'),
+          'well damn, hi');
+      final req =
+          chat.SendMessageRequest.fromBuffer(h.wire.lastSentPacket().body);
+      expect(utf8.decode(req.content), 'well **, hi');
+      h.respondLast(MsgID.SEND_MESSAGE_RESP,
+          chat.SendMessageResponse(code: ErrorCode.OK));
+      await sending;
+
+      final history =
+          h.pipeline.loadHistory(chat.ChannelType.PRIVATE, 'p9|u1', 10);
+      expect(utf8.decode(history.last.content), 'well **, hi');
+
+      // reject 命中 = 本地拦截,零发包。
+      h.pipeline.interceptor = WordFilterInterceptor(WordFilterOptions(
+          terms: ['banned'], policy: WordFilterPolicy.reject));
+      final before = h.wire.sent.length;
+      await expectLater(
+        h.pipeline.send(
+            const SendOptions(
+                channelType: chat.ChannelType.PRIVATE, receiverId: 'p9'),
+            'banned goods'),
+        throwsA(isA<RequestError>()
+            .having((e) => e.kind, 'kind', RequestErrorKind.blocked)),
+      );
+      expect(h.wire.sent.length, before);
     });
 
     test(

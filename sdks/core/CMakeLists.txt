@@ -41,6 +41,7 @@ set(SDK_PUBLIC_HEADERS
   include/chirp/message_store.h
   include/chirp/auth_provider.h
   include/chirp/chat_event_listener.h
+  include/chirp/word_filter.h
 )
 
 # The shared chirp_core_sdk links the static chirp_network/chirp_common, so

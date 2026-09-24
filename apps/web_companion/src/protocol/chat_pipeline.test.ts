@@ -8,6 +8,7 @@ import { ChirpClient, WebSocketLike } from './chirp_client';
 import { encodeFrame } from './frame';
 import { ChatPipeline } from './chat_pipeline';
 import { MemoryMessageStore } from './hooks';
+import { WordFilterInterceptor, parseWordLexicon } from './word_filter';
 
 /**
  * Same fake as chirp_client.test.ts: the test drives the server side
@@ -197,6 +198,35 @@ describe('ChatPipeline send pipeline', () => {
       });
       await expect(
         pipeline.send({ channelType: ChannelType.PRIVATE, receiverId: 'p' }, 'x'),
+      ).rejects.toMatchObject({ kind: 'blocked' });
+      expect(ws.sent.length).toBe(before);
+    });
+  });
+
+  it('word filter interceptor rewrites before the wire and the archive', async () => {
+    await makeHarness(async (_client, pipeline, ws) => {
+      pipeline.setInterceptor(
+        new WordFilterInterceptor({ terms: parseWordLexicon(['damn']) }),
+      );
+      const store = new MemoryMessageStore();
+      pipeline.setStore(store);
+
+      const sending = pipeline.send(
+        { channelType: ChannelType.PRIVATE, receiverId: 'p' }, 'well damn, hi');
+      const req = SendMessageRequest.decode(ws.lastSentPacket().body);
+      expect(new TextDecoder().decode(req.content)).toBe('well **, hi');
+      settle(ws, MsgID.SEND_MESSAGE_RESP, sendResp(ErrorCode.OK));
+      await sending;
+
+      const local = store.load(ChannelType.PRIVATE, 'p|u1', 10);
+      expect(new TextDecoder().decode(local[0].content)).toBe('well **, hi');
+
+      // reject 命中 = 本地拦截,零发包。
+      pipeline.setInterceptor(
+        new WordFilterInterceptor({ terms: ['banned'], policy: 'reject' }));
+      const before = ws.sent.length;
+      await expect(
+        pipeline.send({ channelType: ChannelType.PRIVATE, receiverId: 'p' }, 'banned goods'),
       ).rejects.toMatchObject({ kind: 'blocked' });
       expect(ws.sent.length).toBe(before);
     });

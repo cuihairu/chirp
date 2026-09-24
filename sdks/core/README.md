@@ -81,7 +81,17 @@ class TradeCommand : public chirp::sdk::CommandHandler {
   }
 };
 
-// 敏感词/改写:
+// 敏感词/改写:词库格式与替换语义对齐服务端 WordFilter,开箱即用:
+// ParseWordLexicon 按服务端词库文件格式逐行解析(# 注释/空行忽略),
+// 客户端与服务端可共用同一份词库;kReplace 把命中区间改写为 "**"
+// (连续命中塌缩成一次),kReject 命中即拦截。只滤发送侧。
+chirp::sdk::WordFilterOptions wf_opts;
+wf_opts.terms = chirp::sdk::ParseWordLexicon(ReadLexiconLines("lexicon.txt"));
+wf_opts.policy = chirp::sdk::WordFilterPolicy::kReplace;
+client.SetMessageInterceptor(
+    std::make_shared<chirp::sdk::WordFilterInterceptor>(wf_opts));
+
+// 自定义拦截/改写(WordFilterInterceptor 之外的特殊需求才需要):
 class CleanInterceptor : public chirp::sdk::MessageInterceptor {
   bool OnBeforeSend(chirp::chat::SendMessageRequest& msg) override {
     return !IsBanned(msg.content());  // false = 拦截,消息不进网络
