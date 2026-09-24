@@ -48,6 +48,7 @@ const config = defineConfig({
           { text: 'Cocos Creator', link: '/sdk/cocos-creator' },
           { text: 'LayaAir', link: '/sdk/layaair' },
           { text: '微信小游戏', link: '/sdk/wechat-minigame' },
+          { text: 'Godot', link: '/sdk/godot' },
           { text: '服务端 SDK', link: '/sdk/server' },
         ]
       },
@@ -65,6 +66,7 @@ const config = defineConfig({
           { text: 'Cocos Creator', link: '/sdk/cocos-creator' },
           { text: 'LayaAir', link: '/sdk/layaair' },
           { text: '微信小游戏', link: '/sdk/wechat-minigame' },
+          { text: 'Godot', link: '/sdk/godot' },
           { text: '服务端 SDK', link: '/sdk/server' },
         ]},
       ],
