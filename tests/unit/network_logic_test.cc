@@ -532,6 +532,55 @@ TEST_F(MessageRouterTest, SubscribeRecordsChannelsAndSurvivesStop) {
   EXPECT_FALSE(called);
 }
 
+// The refused-port tests reach the router's error lambda and SendCommand's
+// catch only when the subscriber thread wins a race against Stop() on a
+// loaded machine: until it has attempted its connect, the socket is not
+// open and every send bails out before the try block. A real listener plus
+// a peer reset drives both failure paths on a fixed schedule instead.
+TEST_F(MessageRouterTest, SubscribeAfterPeerResetReportsErrorAndFails) {
+  asio::io_context io;
+  asio::ip::tcp::acceptor acceptor(io, asio::ip::tcp::endpoint(asio::ip::tcp::v4(), 0));
+  acceptor.listen();
+
+  MessageRouter router(io, "127.0.0.1", acceptor.local_endpoint().port());
+  EXPECT_TRUE(router.Start());
+
+  // Accept is the readiness barrier: once the connection sits in the
+  // backlog the subscriber's connect has completed and its socket is open.
+  acceptor.non_blocking(true);
+  asio::ip::tcp::socket peer(io);
+  bool accepted = false;
+  for (int i = 0; i < 500 && !accepted; ++i) {
+    asio::error_code ec;
+    acceptor.accept(peer, ec);
+    accepted = !ec;
+    if (!accepted) {
+      std::this_thread::sleep_for(std::chrono::milliseconds(10));
+    }
+  }
+  ASSERT_TRUE(accepted);
+
+  // Reset instead of a graceful close: the subscriber's socket stays open
+  // until Stop(), so every send after the reset lands throws inside
+  // SendCommand and reports through the router's error callback.
+  asio::socket_base::linger reset_on_close(true, 0);
+  peer.set_option(reset_on_close);
+  peer.close();
+
+  // A successful write just means the reset is still in flight; retry until
+  // it lands (bounded; loopback-scale in practice).
+  bool subscribed = true;
+  for (int i = 0; i < 100 && subscribed; ++i) {
+    subscribed = router.SubscribeUserChat("alice", [](const std::string&) {});
+    if (subscribed) {
+      std::this_thread::sleep_for(std::chrono::milliseconds(10));
+    }
+  }
+  EXPECT_FALSE(subscribed);  // reset landed -> write threw -> reported as error
+
+  router.Stop();
+}
+
 TEST_F(MessageRouterTest, PublishFailsWithoutRedis) {
   EXPECT_FALSE(router_.Publish("chan", "msg"));
 }
