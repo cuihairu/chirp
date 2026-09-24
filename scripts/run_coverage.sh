@@ -103,7 +103,16 @@ INCLUDE_PREFIXES = (
     os.path.join(root, "services") + os.sep,
     os.path.join(root, "sdks", "core", "src") + os.sep,
 )
-EXCLUDE = (".pb.cc", "/proto/", "main", "examples/")
+EXCLUDE = (".pb.cc", "/proto/", "examples/")
+
+def is_excluded(path):
+    if any(tag in path for tag in EXCLUDE):
+        return True
+    # Service entry points (main.cc, main_enhanced.cc, main_distributed.cc):
+    # matched on the basename only. The old substring test also dropped every
+    # file under any ancestor directory whose path merely contains "main"
+    # (e.g. a worktree at /tmp/chirp-cov-main), silently reporting 0/0 = 100%.
+    return os.path.basename(path).startswith("main")
 
 # Defensive branches that cannot be reached through the public APIs; every
 # entry documents why. Removing one requires a reproducing test.
@@ -734,7 +743,7 @@ for gz in glob.glob(os.path.join(work_dir, "**", "*.gcov.json.gz"), recursive=Tr
                 blob.get("current_working_directory") or root, name))
         if not name.startswith(INCLUDE_PREFIXES):
             continue
-        if any(tag in name for tag in EXCLUDE):
+        if is_excluded(name):
             continue
         for l in fc.get("lines", []):
             ln = l["line_number"]
@@ -807,6 +816,13 @@ with open("coverage.lcov", "w") as fh:
         fh.write(f"LF:{t}\n")
         fh.write(f"LH:{c}\n")
         fh.write("end_of_record\n")
+
+# An empty report (no files matched) is an aggregation failure, never a pass:
+# it previously surfaced as 0/0 -> 100% when EXCLUDE swallowed every path.
+if total_all == 0:
+    print("No coverage data aggregated (0 files) - treating as failure.",
+          file=sys.stderr)
+    sys.exit(1)
 
 pct = 100.0 * covered_all / total_all if total_all else 100.0
 with open("coverage-summary.json", "w") as fh:
