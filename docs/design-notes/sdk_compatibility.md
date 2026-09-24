@@ -158,9 +158,14 @@ title: SDK 引擎兼容性
 - `ChirpClient` 协议核心（纯 Dart）
 - Store + API 层
 - 聊天 UI
+- Hook 接口 + `ChatPipeline` 管线（`lib/protocol/hooks.dart` / `chat_pipeline.dart`，2026-09）：
+  MessageInterceptor / AuthProvider / MessageStore / ChatEventListener / CommandHandler
+  五钩子，语义与 C++ core、C#、Web 对齐（Dart 无接口默认方法，钩子为带 no-op
+  具体体的 abstract class，extends 式按需覆写；'/‘ 命令零注册透传、拦截器
+  返回 false 或抛异常 = 拦截、AUTH_FAILED 至多续期一次、onReconnecting/
+  onReconnected 事件面、KICK reason 透传监听器；SendOptions 与 TS 同款可选字段）
 
 待补：
-- [ ] Hook 接口（Dart abstract class）
 - [ ] 独立 pub 包发布
 - [ ] APNs/FCM 推送集成
 

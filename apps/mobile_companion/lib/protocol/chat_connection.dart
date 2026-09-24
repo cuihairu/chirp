@@ -23,7 +23,18 @@ abstract class ChatConnection {
 
   /// Returns the unsubscribe function.
   void Function() onNotify(MsgID msgId, void Function(Uint8List) handler);
-  void onStatus(void Function(ConnStatus) listener);
+
+  /// Returns the unsubscribe function.
+  void Function() onStatus(void Function(ConnStatus) listener);
+
+  /// A backoff reconnect is about to fire (observational). Returns the
+  /// unsubscribe function.
+  void Function() onReconnecting(void Function(int attempt, int delayMs) listener);
+
+  /// A reconnect attempt reached 'connected' again (observational). Returns
+  /// the unsubscribe function.
+  void Function() onReconnected(void Function() listener);
+
   void heartbeatNow();
 
   ConnStatus get status;

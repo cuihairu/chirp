@@ -67,7 +67,18 @@ class FakeConnection implements ChatConnection {
   final listeners = <void Function(ConnStatus)>[];
 
   @override
-  void onStatus(void Function(ConnStatus) listener) => listeners.add(listener);
+  @override
+  void Function() onStatus(void Function(ConnStatus) listener) {
+    listeners.add(listener);
+    return () {};
+  }
+
+  @override
+  void Function() onReconnecting(void Function(int attempt, int delayMs) listener) =>
+      () {};
+
+  @override
+  void Function() onReconnected(void Function() listener) => () {};
 
   @override
   void heartbeatNow() {}

@@ -5,7 +5,9 @@ import 'package:chirp_proto/chirp_proto.dart';
 ///  - closed:  the connection dropped (pending requests are flushed on drop)
 ///  - kicked:  the server sent KICK_NOTIFY and closed the socket
 ///  - server:  a response arrived and carried a non-OK ErrorCode
-enum RequestErrorKind { timeout, closed, kicked, server }
+///  - blocked: the message never went on the wire (interceptor drop, or a
+///             '/'-command consumed locally while handlers are registered)
+enum RequestErrorKind { timeout, closed, kicked, server, blocked }
 
 class RequestError implements Exception {
   RequestError(this.kind, {this.code, String? message})
@@ -29,6 +31,8 @@ class RequestError implements Exception {
         return '连接已断开';
       case RequestErrorKind.kicked:
         return '已在其他设备登录';
+      case RequestErrorKind.blocked:
+        return '消息未发送';
       case RequestErrorKind.server:
         return errorText(code ?? ErrorCode.INTERNAL_ERROR);
     }

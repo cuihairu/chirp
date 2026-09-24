@@ -80,6 +80,8 @@ class ChirpClient implements ChatConnection {
   // MsgID is a ProtobufEnum: identity == / hashCode make it map-safe.
   final Map<MsgID, Set<void Function(Uint8List)>> _notifyHandlers = {};
   final List<void Function(ConnStatus)> _statusListeners = [];
+  final List<void Function(int attempt, int delayMs)> _reconnectListeners = [];
+  final List<void Function()> _reconnectedListeners = [];
 
   ConnStatus _status = ConnStatus.idle;
   int _seqCounter = 0;
@@ -100,9 +102,30 @@ class ChirpClient implements ChatConnection {
   /// server_time − local_time at the last pong; null before the first.
   int? clockOffsetMs;
 
+  /// Subscribe to status flips. Returns the unsubscribe function.
   @override
-  void onStatus(void Function(ConnStatus) listener) {
+  void Function() onStatus(void Function(ConnStatus) listener) {
     _statusListeners.add(listener);
+    return () => _statusListeners.remove(listener);
+  }
+
+  /// A backoff reconnect is about to fire: 1-based attempt and the delay it
+  /// was scheduled with (jitter included). Only fires after the first drop.
+  /// Returns the unsubscribe function.
+  @override
+  void Function() onReconnecting(void Function(int attempt, int delayMs) listener) {
+    _reconnectListeners.add(listener);
+    return () => _reconnectListeners.remove(listener);
+  }
+
+  /// A reconnect attempt reached 'connected' again. The backoff counter is
+  /// only reset by resetBackoff() (login success) — this event is purely
+  /// observational, so the retry cadence is unchanged. Returns the
+  /// unsubscribe function.
+  @override
+  void Function() onReconnected(void Function() listener) {
+    _reconnectedListeners.add(listener);
+    return () => _reconnectedListeners.remove(listener);
   }
 
   /// Subscribe to server pushes (sequence === 0 packets). Unknown msgIds are
@@ -152,6 +175,17 @@ class ChirpClient implements ChatConnection {
       _missedPongs = 0;
       _setStatus(ConnStatus.connected);
       _startHeartbeat();
+      // Observational only: a backoff counter > 0 means this open is a
+      // reconnect. resetBackoff() still owns the counter reset.
+      if (_attempt > 0) {
+        for (final listener in List.of(_reconnectedListeners)) {
+          try {
+            listener();
+          } catch (_) {
+            // Listener errors must not break the connect path.
+          }
+        }
+      }
       _messageSub = ws.binaryMessages.listen(_handleData);
       _closeSub = ws.closed.listen((_) => _handleClose());
       completer.complete();
@@ -347,7 +381,7 @@ class ChirpClient implements ChatConnection {
   void _dispatchNotify(MsgID msgId, Uint8List body) {
     if (msgId == MsgID.KICK_NOTIFY) {
       _markKicked();
-      return;
+      // Fall through: subscribers may also want the KickNotify reason body.
     }
     final handlers = _notifyHandlers[msgId];
     if (handlers == null) return; // unknown or uninteresting msgId
@@ -409,6 +443,13 @@ class ChirpClient implements ChatConnection {
     final jitter = (base * options.jitterRatio).round();
     final delay = base + _random.nextInt(jitter * 2 + 1) - jitter;
     _attempt++;
+    for (final listener in List.of(_reconnectListeners)) {
+      try {
+        listener(_attempt, delay);
+      } catch (_) {
+        // Listener errors must not break the reconnect chain.
+      }
+    }
     _reconnectTimer = Timer(Duration(milliseconds: delay), () {
       _reconnectTimer = null;
       // A failed attempt loops straight back through _handleClose.
