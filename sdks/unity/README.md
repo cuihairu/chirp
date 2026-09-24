@@ -44,6 +44,17 @@ Unity 2021.2+(C# 9 / netstandard2.1)即可,无其他依赖。
 
 > `dotnet/` 目录与 `Runtime/Chirp/` 不要同时拷进 Assets——前者只是 CI 与本地开发用的 xunit 工程,引用了 xunit 包。
 
+### UPM 包形态
+
+本目录同时是合法的 Unity Package(UPM)布局,可作为**本地包**导入而无需拷文件:
+
+- `package.json`:`com.chirp.unity@0.1.0`,最低 Unity 2021.2。
+- `Runtime/Chirp/Chirp.Sdk.asmdef`:纯逻辑程序集,`noEngineReferences: true`(编译期强制零引擎依赖,与 dotnet 测试共享同一份源)。
+- `Runtime/ChirpManager.asmdef`:`Chirp.Manager` 程序集(MonoBehaviour 壳),引用 `Chirp.Sdk`。
+- 前置依赖 Google.Protobuf 需按上面第 3 步以 auto-referenced 插件 DLL 提供(UPM registry 上没有官方 protobuf 包,故 package.json 不声明 dependencies)。
+
+导入方式任选:工程 `Packages/manifest.json` 加 `"com.chirp.unity": "file:../../sdks/unity"`,或 Package Manager → Add package from tarball/disk。proto 生成代码(`proto/csharp/`)仍按第 1 步拷入 Assets——它属每个工程自己的 gencode,不随 SDK 包分发。
+
 ## 使用示例
 
 ```csharp

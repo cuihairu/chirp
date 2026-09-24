@@ -1,0 +1,17 @@
+{
+  "name": "com.chirp.unity",
+  "displayName": "Chirp Unity SDK",
+  "version": "0.1.0",
+  "unity": "2021.2",
+  "description": "Game chat client SDK for Unity: connection state machine with heartbeat/reconnect/kick handling, the five hook interfaces (interceptor / auth provider / message store / event listener / command handler), memory and file message stores, and a sensitive-word pre-check interceptor. Requires Google.Protobuf (netstandard2.1 build, auto-referenced DLL) present in the project.",
+  "author": {
+    "name": "cuihairu"
+  },
+  "keywords": [
+    "chat",
+    "sdk",
+    "game",
+    "websocket"
+  ],
+  "license": "Apache-2.0"
+}

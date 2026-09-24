@@ -1,0 +1,6 @@
+{
+    "name": "Chirp.Sdk",
+    "rootNamespace": "Chirp.Sdk",
+    "autoReferenced": true,
+    "noEngineReferences": true
+}
