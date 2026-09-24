@@ -101,7 +101,7 @@ title: SDK 引擎兼容性
 待开发：
 - [x] GDScript 协议核心（或 C# 复用 Unity SDK 的纯 C# 部分）——2026-09-24：走 C# 复用路线。`sdks/unity/Runtime/Chirp/` 零引擎依赖（`noEngineReferences` asmdef 固化），传输层 `ChirpTransport.cs` 用 `System.Net.WebSockets` 标准库，Godot 4 .NET 直接复用、无需适配；接入指南 `docs/sdk/godot.md`。GDScript 版无路线（无成熟 protobuf 生态）
 - [ ] Godot 节点封装（ChatClient node；需真实 Godot 工程验证）
-- [ ] Hook 接口（GDScript signal / C# event——C# 形态可复用 `ChirpHooks.cs` 五接口；GDScript signal 待做）
+- [x] Hook 接口（C# 形态：直接复用 `ChirpHooks.cs` 五接口，listener 接线示例见 `docs/sdk/godot.md`；GDScript signal 无路线——同上，GDScript 无成熟 protobuf 生态，Godot 走 C# 复用路线）
 - [ ] 示例项目
 
 ### Cocos Creator（P2 优先级）
@@ -184,7 +184,7 @@ title: SDK 引擎兼容性
 - `ChatClient` 完整实现
 - 5 个 Hook 接口（MessageInterceptor/AuthProvider/MessageStore/ChatEventListener/CommandHandler）已接线（2026-09）
 - 27 个便捷 API（发送扩展/服务端历史/已读未读/黑名单/静音/输入状态/编辑删除/表情回执/批量删除/@提及/群组全套，2026-09）
-- 106 个单测（状态机/loopback/钩子接线/便捷 API 往返）
+- 单测见 `tests/unit/sdk_core_test.cc`（状态机/loopback/钩子接线/便捷 API/FileMessageStore 往返）
 - `sdk_example` 示例
 
 ### Go 服务端（P0，已有基础）

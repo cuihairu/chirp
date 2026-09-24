@@ -180,7 +180,7 @@ voice.OnNotify(MsgID.IceCandidateMsg, body => /* candidate → RunOnMainThread *
 
 ## 持续集成(CI)
 
-`.github/workflows/unity-sdk.yml` 在每次 push/PR 时用 .NET 10 跑 `dotnet test dotnet/ChirpSdkTests`(44 个用例:帧编解码、序列号关联、超时、通知订阅、踢线终态与恢复、心跳回声、重连生命周期(Reconnecting/Reconnected 事件)、断线 pending 拒绝、语音 spec 往返、钩子接线(拦截改写/拦截丢弃/命令路由/本地存档/登录续期/监听扇出)、reply 引用与私聊归一化),并校验 `proto/csharp` 与 `gen_proto.sh` 无漂移。
+`.github/workflows/unity-sdk.yml` 在每次 push/PR 时用 .NET 10 跑 `dotnet test dotnet/ChirpSdkTests`(用例覆盖:帧编解码、序列号关联、超时、通知订阅、踢线终态与恢复、心跳回声、重连生命周期(Reconnecting/Reconnected 事件)、断线 pending 拒绝、语音 spec 往返、钩子接线(拦截改写/拦截丢弃/命令路由/本地存档/登录续期/监听扇出)、reply 引用与私聊归一化、FileMessageStore、敏感词预检),并校验 `proto/csharp` 与 `gen_proto.sh` 无漂移。
 
 ## 路线
 

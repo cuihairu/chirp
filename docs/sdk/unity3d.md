@@ -75,5 +75,5 @@ scaffold 网关直接 `LoginAsync(userId, deviceId)`;对接 JWT 认证(`app_auth
 
 ## 现状与边界
 
-- CI(`.github/workflows/unity-sdk.yml`)用 .NET 10 跑 16 个单测(帧编解码、序列号关联、超时、踢线终态、心跳回声、重连生命周期等),并校验 `proto/csharp` 无漂移。
+- CI(`.github/workflows/unity-sdk.yml`)用 .NET 10 跑 `dotnet/ChirpSdkTests` 单测套件(帧编解码、序列号关联、超时、踢线终态、心跳回声、重连生命周期、钩子接线、FileMessageStore、敏感词预检等),并校验 `proto/csharp` 无漂移。
 - 社交/组队的高级封装(好友面板、组队大厅之类 UI 组件)尚未提供,按游戏需求再补;iOS/Android 原生构建脚本属于旧桥方案,已随桥一并移除。
