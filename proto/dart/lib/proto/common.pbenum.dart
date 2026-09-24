@@ -23,6 +23,9 @@ class ErrorCode extends $pb.ProtobufEnum {
   static const ErrorCode TARGET_OFFLINE = ErrorCode._(6, _omitEnumNames ? '' : 'TARGET_OFFLINE');
   static const ErrorCode SERVER_UNAVAILABLE = ErrorCode._(7, _omitEnumNames ? '' : 'SERVER_UNAVAILABLE');
   static const ErrorCode RATE_LIMITED = ErrorCode._(8, _omitEnumNames ? '' : 'RATE_LIMITED');
+  static const ErrorCode VERSION_MISMATCH = ErrorCode._(9, _omitEnumNames ? '' : 'VERSION_MISMATCH');
+  static const ErrorCode WORD_FILTERED = ErrorCode._(10, _omitEnumNames ? '' : 'WORD_FILTERED');
+  static const ErrorCode CONTENT_TOO_LONG = ErrorCode._(11, _omitEnumNames ? '' : 'CONTENT_TOO_LONG');
 
   static const $core.List<ErrorCode> values = <ErrorCode> [
     OK,
@@ -34,6 +37,9 @@ class ErrorCode extends $pb.ProtobufEnum {
     TARGET_OFFLINE,
     SERVER_UNAVAILABLE,
     RATE_LIMITED,
+    VERSION_MISMATCH,
+    WORD_FILTERED,
+    CONTENT_TOO_LONG,
   ];
 
   static final $core.Map<$core.int, ErrorCode> _byValue = $pb.ProtobufEnum.initByValue(values);

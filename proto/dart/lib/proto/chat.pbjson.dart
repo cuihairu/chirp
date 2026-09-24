@@ -21,14 +21,20 @@ const MsgType$json = {
     {'1': 'EMOJI', '2': 1},
     {'1': 'VOICE', '2': 2},
     {'1': 'IMAGE', '2': 3},
+    {'1': 'ITEM_LINK', '2': 10},
+    {'1': 'SKILL_LINK', '2': 11},
+    {'1': 'ACHIEVEMENT', '2': 12},
+    {'1': 'NPC_DIALOG', '2': 13},
+    {'1': 'TRADE_STATUS', '2': 14},
     {'1': 'SYSTEM', '2': 99},
   ],
 };
 
 /// Descriptor for `MsgType`. Decode as a `google.protobuf.EnumDescriptorProto`.
 final $typed_data.Uint8List msgTypeDescriptor = $convert.base64Decode(
-    'CgdNc2dUeXBlEggKBFRFWFQQABIJCgVFTU9KSRABEgkKBVZPSUNFEAISCQoFSU1BR0UQAxIKCg'
-    'ZTWVNURU0QYw==');
+    'CgdNc2dUeXBlEggKBFRFWFQQABIJCgVFTU9KSRABEgkKBVZPSUNFEAISCQoFSU1BR0UQAxINCg'
+    'lJVEVNX0xJTksQChIOCgpTS0lMTF9MSU5LEAsSDwoLQUNISUVWRU1FTlQQDBIOCgpOUENfRElB'
+    'TE9HEA0SEAoMVFJBREVfU1RBVFVTEA4SCgoGU1lTVEVNEGM=');
 
 @$core.Deprecated('Use channelTypeDescriptor instead')
 const ChannelType$json = {
@@ -38,13 +44,47 @@ const ChannelType$json = {
     {'1': 'TEAM', '2': 1},
     {'1': 'GUILD', '2': 2},
     {'1': 'WORLD', '2': 3},
+    {'1': 'SYSTEM_CHANNEL', '2': 4},
+    {'1': 'MARQUEE', '2': 5},
   ],
 };
 
 /// Descriptor for `ChannelType`. Decode as a `google.protobuf.EnumDescriptorProto`.
 final $typed_data.Uint8List channelTypeDescriptor = $convert.base64Decode(
     'CgtDaGFubmVsVHlwZRILCgdQUklWQVRFEAASCAoEVEVBTRABEgkKBUdVSUxEEAISCQoFV09STE'
-    'QQAw==');
+    'QQAxISCg5TWVNURU1fQ0hBTk5FTBAEEgsKB01BUlFVRUUQBQ==');
+
+@$core.Deprecated('Use priorityDescriptor instead')
+const Priority$json = {
+  '1': 'Priority',
+  '2': [
+    {'1': 'PRIORITY_LOW', '2': 0},
+    {'1': 'PRIORITY_NORMAL', '2': 1},
+    {'1': 'PRIORITY_HIGH', '2': 2},
+    {'1': 'PRIORITY_URGENT', '2': 3},
+  ],
+};
+
+/// Descriptor for `Priority`. Decode as a `google.protobuf.EnumDescriptorProto`.
+final $typed_data.Uint8List priorityDescriptor = $convert.base64Decode(
+    'CghQcmlvcml0eRIQCgxQUklPUklUWV9MT1cQABITCg9QUklPUklUWV9OT1JNQUwQARIRCg1QUk'
+    'lPUklUWV9ISUdIEAISEwoPUFJJT1JJVFlfVVJHRU5UEAM=');
+
+@$core.Deprecated('Use senderKindDescriptor instead')
+const SenderKind$json = {
+  '1': 'SenderKind',
+  '2': [
+    {'1': 'SENDER_USER', '2': 0},
+    {'1': 'SENDER_SYSTEM', '2': 1},
+    {'1': 'SENDER_NPC', '2': 2},
+    {'1': 'SENDER_SERVICE', '2': 3},
+  ],
+};
+
+/// Descriptor for `SenderKind`. Decode as a `google.protobuf.EnumDescriptorProto`.
+final $typed_data.Uint8List senderKindDescriptor = $convert.base64Decode(
+    'CgpTZW5kZXJLaW5kEg8KC1NFTkRFUl9VU0VSEAASEQoNU0VOREVSX1NZU1RFTRABEg4KClNFTk'
+    'RFUl9OUEMQAhISCg5TRU5ERVJfU0VSVklDRRAD');
 
 @$core.Deprecated('Use groupMemberRoleDescriptor instead')
 const GroupMemberRole$json = {
@@ -137,6 +177,10 @@ const SendMessageRequest$json = {
     {'1': 'msg_type', '3': 5, '4': 1, '5': 14, '6': '.chirp.chat.MsgType', '10': 'msgType'},
     {'1': 'content', '3': 6, '4': 1, '5': 12, '10': 'content'},
     {'1': 'client_timestamp', '3': 7, '4': 1, '5': 3, '10': 'clientTimestamp'},
+    {'1': 'priority', '3': 8, '4': 1, '5': 14, '6': '.chirp.chat.Priority', '10': 'priority'},
+    {'1': 'metadata', '3': 9, '4': 1, '5': 12, '10': 'metadata'},
+    {'1': 'ttl_seconds', '3': 10, '4': 1, '5': 5, '10': 'ttlSeconds'},
+    {'1': 'reply_to_message_id', '3': 11, '4': 1, '5': 9, '10': 'replyToMessageId'},
   ],
 };
 
@@ -147,7 +191,10 @@ final $typed_data.Uint8List sendMessageRequestDescriptor = $convert.base64Decode
     'cC5jaGF0LkNoYW5uZWxUeXBlUgtjaGFubmVsVHlwZRIdCgpjaGFubmVsX2lkGAQgASgJUgljaG'
     'FubmVsSWQSLgoIbXNnX3R5cGUYBSABKA4yEy5jaGlycC5jaGF0Lk1zZ1R5cGVSB21zZ1R5cGUS'
     'GAoHY29udGVudBgGIAEoDFIHY29udGVudBIpChBjbGllbnRfdGltZXN0YW1wGAcgASgDUg9jbG'
-    'llbnRUaW1lc3RhbXA=');
+    'llbnRUaW1lc3RhbXASMAoIcHJpb3JpdHkYCCABKA4yFC5jaGlycC5jaGF0LlByaW9yaXR5Ughw'
+    'cmlvcml0eRIaCghtZXRhZGF0YRgJIAEoDFIIbWV0YWRhdGESHwoLdHRsX3NlY29uZHMYCiABKA'
+    'VSCnR0bFNlY29uZHMSLQoTcmVwbHlfdG9fbWVzc2FnZV9pZBgLIAEoCVIQcmVwbHlUb01lc3Nh'
+    'Z2VJZA==');
 
 @$core.Deprecated('Use sendMessageResponseDescriptor instead')
 const SendMessageResponse$json = {
@@ -177,6 +224,11 @@ const ChatMessage$json = {
     {'1': 'msg_type', '3': 6, '4': 1, '5': 14, '6': '.chirp.chat.MsgType', '10': 'msgType'},
     {'1': 'content', '3': 7, '4': 1, '5': 12, '10': 'content'},
     {'1': 'timestamp', '3': 8, '4': 1, '5': 3, '10': 'timestamp'},
+    {'1': 'priority', '3': 9, '4': 1, '5': 14, '6': '.chirp.chat.Priority', '10': 'priority'},
+    {'1': 'metadata', '3': 10, '4': 1, '5': 12, '10': 'metadata'},
+    {'1': 'ttl_seconds', '3': 11, '4': 1, '5': 5, '10': 'ttlSeconds'},
+    {'1': 'sender_kind', '3': 12, '4': 1, '5': 14, '6': '.chirp.chat.SenderKind', '10': 'senderKind'},
+    {'1': 'reply_to_message_id', '3': 13, '4': 1, '5': 9, '10': 'replyToMessageId'},
   ],
 };
 
@@ -187,7 +239,11 @@ final $typed_data.Uint8List chatMessageDescriptor = $convert.base64Decode(
     'aGFubmVsX3R5cGUYBCABKA4yFy5jaGlycC5jaGF0LkNoYW5uZWxUeXBlUgtjaGFubmVsVHlwZR'
     'IdCgpjaGFubmVsX2lkGAUgASgJUgljaGFubmVsSWQSLgoIbXNnX3R5cGUYBiABKA4yEy5jaGly'
     'cC5jaGF0Lk1zZ1R5cGVSB21zZ1R5cGUSGAoHY29udGVudBgHIAEoDFIHY29udGVudBIcCgl0aW'
-    '1lc3RhbXAYCCABKANSCXRpbWVzdGFtcA==');
+    '1lc3RhbXAYCCABKANSCXRpbWVzdGFtcBIwCghwcmlvcml0eRgJIAEoDjIULmNoaXJwLmNoYXQu'
+    'UHJpb3JpdHlSCHByaW9yaXR5EhoKCG1ldGFkYXRhGAogASgMUghtZXRhZGF0YRIfCgt0dGxfc2'
+    'Vjb25kcxgLIAEoBVIKdHRsU2Vjb25kcxI3CgtzZW5kZXJfa2luZBgMIAEoDjIWLmNoaXJwLmNo'
+    'YXQuU2VuZGVyS2luZFIKc2VuZGVyS2luZBItChNyZXBseV90b19tZXNzYWdlX2lkGA0gASgJUh'
+    'ByZXBseVRvTWVzc2FnZUlk');
 
 @$core.Deprecated('Use npcPlayerUtteranceDescriptor instead')
 const NpcPlayerUtterance$json = {
@@ -1896,4 +1952,255 @@ final $typed_data.Uint8List fileMessageDescriptor = $convert.base64Decode(
     'CgtGaWxlTWVzc2FnZRI6CgxiYXNlX21lc3NhZ2UYASABKAsyFy5jaGlycC5jaGF0LkNoYXRNZX'
     'NzYWdlUgtiYXNlTWVzc2FnZRI8CgthdHRhY2htZW50cxgCIAMoCzIaLmNoaXJwLmNoYXQuRmls'
     'ZUF0dGFjaG1lbnRSC2F0dGFjaG1lbnRz');
+
+@$core.Deprecated('Use itemMetadataDescriptor instead')
+const ItemMetadata$json = {
+  '1': 'ItemMetadata',
+  '2': [
+    {'1': 'item_id', '3': 1, '4': 1, '5': 9, '10': 'itemId'},
+    {'1': 'item_name', '3': 2, '4': 1, '5': 9, '10': 'itemName'},
+    {'1': 'quality', '3': 3, '4': 1, '5': 5, '10': 'quality'},
+    {'1': 'icon_url', '3': 4, '4': 1, '5': 9, '10': 'iconUrl'},
+    {'1': 'count', '3': 5, '4': 1, '5': 5, '10': 'count'},
+    {'1': 'attrs', '3': 6, '4': 3, '5': 11, '6': '.chirp.chat.ItemMetadata.AttrsEntry', '10': 'attrs'},
+  ],
+  '3': [ItemMetadata_AttrsEntry$json],
+};
+
+@$core.Deprecated('Use itemMetadataDescriptor instead')
+const ItemMetadata_AttrsEntry$json = {
+  '1': 'AttrsEntry',
+  '2': [
+    {'1': 'key', '3': 1, '4': 1, '5': 9, '10': 'key'},
+    {'1': 'value', '3': 2, '4': 1, '5': 9, '10': 'value'},
+  ],
+  '7': {'7': true},
+};
+
+/// Descriptor for `ItemMetadata`. Decode as a `google.protobuf.DescriptorProto`.
+final $typed_data.Uint8List itemMetadataDescriptor = $convert.base64Decode(
+    'CgxJdGVtTWV0YWRhdGESFwoHaXRlbV9pZBgBIAEoCVIGaXRlbUlkEhsKCWl0ZW1fbmFtZRgCIA'
+    'EoCVIIaXRlbU5hbWUSGAoHcXVhbGl0eRgDIAEoBVIHcXVhbGl0eRIZCghpY29uX3VybBgEIAEo'
+    'CVIHaWNvblVybBIUCgVjb3VudBgFIAEoBVIFY291bnQSOQoFYXR0cnMYBiADKAsyIy5jaGlycC'
+    '5jaGF0Lkl0ZW1NZXRhZGF0YS5BdHRyc0VudHJ5UgVhdHRycxo4CgpBdHRyc0VudHJ5EhAKA2tl'
+    'eRgBIAEoCVIDa2V5EhQKBXZhbHVlGAIgASgJUgV2YWx1ZToCOAE=');
+
+@$core.Deprecated('Use skillMetadataDescriptor instead')
+const SkillMetadata$json = {
+  '1': 'SkillMetadata',
+  '2': [
+    {'1': 'skill_id', '3': 1, '4': 1, '5': 9, '10': 'skillId'},
+    {'1': 'skill_name', '3': 2, '4': 1, '5': 9, '10': 'skillName'},
+    {'1': 'level', '3': 3, '4': 1, '5': 5, '10': 'level'},
+    {'1': 'icon_url', '3': 4, '4': 1, '5': 9, '10': 'iconUrl'},
+    {'1': 'description', '3': 5, '4': 1, '5': 9, '10': 'description'},
+  ],
+};
+
+/// Descriptor for `SkillMetadata`. Decode as a `google.protobuf.DescriptorProto`.
+final $typed_data.Uint8List skillMetadataDescriptor = $convert.base64Decode(
+    'Cg1Ta2lsbE1ldGFkYXRhEhkKCHNraWxsX2lkGAEgASgJUgdza2lsbElkEh0KCnNraWxsX25hbW'
+    'UYAiABKAlSCXNraWxsTmFtZRIUCgVsZXZlbBgDIAEoBVIFbGV2ZWwSGQoIaWNvbl91cmwYBCAB'
+    'KAlSB2ljb25VcmwSIAoLZGVzY3JpcHRpb24YBSABKAlSC2Rlc2NyaXB0aW9u');
+
+@$core.Deprecated('Use achievementMetadataDescriptor instead')
+const AchievementMetadata$json = {
+  '1': 'AchievementMetadata',
+  '2': [
+    {'1': 'achievement_id', '3': 1, '4': 1, '5': 9, '10': 'achievementId'},
+    {'1': 'achievement_name', '3': 2, '4': 1, '5': 9, '10': 'achievementName'},
+    {'1': 'description', '3': 3, '4': 1, '5': 9, '10': 'description'},
+    {'1': 'icon_url', '3': 4, '4': 1, '5': 9, '10': 'iconUrl'},
+    {'1': 'rarity', '3': 5, '4': 1, '5': 5, '10': 'rarity'},
+  ],
+};
+
+/// Descriptor for `AchievementMetadata`. Decode as a `google.protobuf.DescriptorProto`.
+final $typed_data.Uint8List achievementMetadataDescriptor = $convert.base64Decode(
+    'ChNBY2hpZXZlbWVudE1ldGFkYXRhEiUKDmFjaGlldmVtZW50X2lkGAEgASgJUg1hY2hpZXZlbW'
+    'VudElkEikKEGFjaGlldmVtZW50X25hbWUYAiABKAlSD2FjaGlldmVtZW50TmFtZRIgCgtkZXNj'
+    'cmlwdGlvbhgDIAEoCVILZGVzY3JpcHRpb24SGQoIaWNvbl91cmwYBCABKAlSB2ljb25VcmwSFg'
+    'oGcmFyaXR5GAUgASgFUgZyYXJpdHk=');
+
+@$core.Deprecated('Use tradeMetadataDescriptor instead')
+const TradeMetadata$json = {
+  '1': 'TradeMetadata',
+  '2': [
+    {'1': 'trade_id', '3': 1, '4': 1, '5': 9, '10': 'tradeId'},
+    {'1': 'status', '3': 2, '4': 1, '5': 9, '10': 'status'},
+    {'1': 'amount', '3': 3, '4': 1, '5': 3, '10': 'amount'},
+    {'1': 'item_name', '3': 4, '4': 1, '5': 9, '10': 'itemName'},
+    {'1': 'item_count', '3': 5, '4': 1, '5': 5, '10': 'itemCount'},
+  ],
+};
+
+/// Descriptor for `TradeMetadata`. Decode as a `google.protobuf.DescriptorProto`.
+final $typed_data.Uint8List tradeMetadataDescriptor = $convert.base64Decode(
+    'Cg1UcmFkZU1ldGFkYXRhEhkKCHRyYWRlX2lkGAEgASgJUgd0cmFkZUlkEhYKBnN0YXR1cxgCIA'
+    'EoCVIGc3RhdHVzEhYKBmFtb3VudBgDIAEoA1IGYW1vdW50EhsKCWl0ZW1fbmFtZRgEIAEoCVII'
+    'aXRlbU5hbWUSHQoKaXRlbV9jb3VudBgFIAEoBVIJaXRlbUNvdW50');
+
+@$core.Deprecated('Use npcDialogMetadataDescriptor instead')
+const NpcDialogMetadata$json = {
+  '1': 'NpcDialogMetadata',
+  '2': [
+    {'1': 'npc_id', '3': 1, '4': 1, '5': 9, '10': 'npcId'},
+    {'1': 'npc_name', '3': 2, '4': 1, '5': 9, '10': 'npcName'},
+    {'1': 'dialog_id', '3': 3, '4': 1, '5': 9, '10': 'dialogId'},
+    {'1': 'options', '3': 4, '4': 3, '5': 9, '10': 'options'},
+  ],
+};
+
+/// Descriptor for `NpcDialogMetadata`. Decode as a `google.protobuf.DescriptorProto`.
+final $typed_data.Uint8List npcDialogMetadataDescriptor = $convert.base64Decode(
+    'ChFOcGNEaWFsb2dNZXRhZGF0YRIVCgZucGNfaWQYASABKAlSBW5wY0lkEhkKCG5wY19uYW1lGA'
+    'IgASgJUgducGNOYW1lEhsKCWRpYWxvZ19pZBgDIAEoCVIIZGlhbG9nSWQSGAoHb3B0aW9ucxgE'
+    'IAMoCVIHb3B0aW9ucw==');
+
+@$core.Deprecated('Use setChannelMuteRequestDescriptor instead')
+const SetChannelMuteRequest$json = {
+  '1': 'SetChannelMuteRequest',
+  '2': [
+    {'1': 'channel_type', '3': 1, '4': 1, '5': 14, '6': '.chirp.chat.ChannelType', '10': 'channelType'},
+    {'1': 'muted', '3': 2, '4': 1, '5': 8, '10': 'muted'},
+  ],
+};
+
+/// Descriptor for `SetChannelMuteRequest`. Decode as a `google.protobuf.DescriptorProto`.
+final $typed_data.Uint8List setChannelMuteRequestDescriptor = $convert.base64Decode(
+    'ChVTZXRDaGFubmVsTXV0ZVJlcXVlc3QSOgoMY2hhbm5lbF90eXBlGAEgASgOMhcuY2hpcnAuY2'
+    'hhdC5DaGFubmVsVHlwZVILY2hhbm5lbFR5cGUSFAoFbXV0ZWQYAiABKAhSBW11dGVk');
+
+@$core.Deprecated('Use setChannelMuteResponseDescriptor instead')
+const SetChannelMuteResponse$json = {
+  '1': 'SetChannelMuteResponse',
+  '2': [
+    {'1': 'code', '3': 1, '4': 1, '5': 14, '6': '.chirp.common.ErrorCode', '10': 'code'},
+    {'1': 'channel_type', '3': 2, '4': 1, '5': 14, '6': '.chirp.chat.ChannelType', '10': 'channelType'},
+    {'1': 'muted', '3': 3, '4': 1, '5': 8, '10': 'muted'},
+  ],
+};
+
+/// Descriptor for `SetChannelMuteResponse`. Decode as a `google.protobuf.DescriptorProto`.
+final $typed_data.Uint8List setChannelMuteResponseDescriptor = $convert.base64Decode(
+    'ChZTZXRDaGFubmVsTXV0ZVJlc3BvbnNlEisKBGNvZGUYASABKA4yFy5jaGlycC5jb21tb24uRX'
+    'Jyb3JDb2RlUgRjb2RlEjoKDGNoYW5uZWxfdHlwZRgCIAEoDjIXLmNoaXJwLmNoYXQuQ2hhbm5l'
+    'bFR5cGVSC2NoYW5uZWxUeXBlEhQKBW11dGVkGAMgASgIUgVtdXRlZA==');
+
+@$core.Deprecated('Use channelMuteStateDescriptor instead')
+const ChannelMuteState$json = {
+  '1': 'ChannelMuteState',
+  '2': [
+    {'1': 'channel_type', '3': 1, '4': 1, '5': 14, '6': '.chirp.chat.ChannelType', '10': 'channelType'},
+    {'1': 'muted', '3': 2, '4': 1, '5': 8, '10': 'muted'},
+  ],
+};
+
+/// Descriptor for `ChannelMuteState`. Decode as a `google.protobuf.DescriptorProto`.
+final $typed_data.Uint8List channelMuteStateDescriptor = $convert.base64Decode(
+    'ChBDaGFubmVsTXV0ZVN0YXRlEjoKDGNoYW5uZWxfdHlwZRgBIAEoDjIXLmNoaXJwLmNoYXQuQ2'
+    'hhbm5lbFR5cGVSC2NoYW5uZWxUeXBlEhQKBW11dGVkGAIgASgIUgVtdXRlZA==');
+
+@$core.Deprecated('Use getChannelMutesRequestDescriptor instead')
+const GetChannelMutesRequest$json = {
+  '1': 'GetChannelMutesRequest',
+};
+
+/// Descriptor for `GetChannelMutesRequest`. Decode as a `google.protobuf.DescriptorProto`.
+final $typed_data.Uint8List getChannelMutesRequestDescriptor = $convert.base64Decode(
+    'ChZHZXRDaGFubmVsTXV0ZXNSZXF1ZXN0');
+
+@$core.Deprecated('Use getChannelMutesResponseDescriptor instead')
+const GetChannelMutesResponse$json = {
+  '1': 'GetChannelMutesResponse',
+  '2': [
+    {'1': 'code', '3': 1, '4': 1, '5': 14, '6': '.chirp.common.ErrorCode', '10': 'code'},
+    {'1': 'states', '3': 2, '4': 3, '5': 11, '6': '.chirp.chat.ChannelMuteState', '10': 'states'},
+  ],
+};
+
+/// Descriptor for `GetChannelMutesResponse`. Decode as a `google.protobuf.DescriptorProto`.
+final $typed_data.Uint8List getChannelMutesResponseDescriptor = $convert.base64Decode(
+    'ChdHZXRDaGFubmVsTXV0ZXNSZXNwb25zZRIrCgRjb2RlGAEgASgOMhcuY2hpcnAuY29tbW9uLk'
+    'Vycm9yQ29kZVIEY29kZRI0CgZzdGF0ZXMYAiADKAsyHC5jaGlycC5jaGF0LkNoYW5uZWxNdXRl'
+    'U3RhdGVSBnN0YXRlcw==');
+
+@$core.Deprecated('Use blockMessageSenderRequestDescriptor instead')
+const BlockMessageSenderRequest$json = {
+  '1': 'BlockMessageSenderRequest',
+  '2': [
+    {'1': 'target_user_id', '3': 1, '4': 1, '5': 9, '10': 'targetUserId'},
+  ],
+};
+
+/// Descriptor for `BlockMessageSenderRequest`. Decode as a `google.protobuf.DescriptorProto`.
+final $typed_data.Uint8List blockMessageSenderRequestDescriptor = $convert.base64Decode(
+    'ChlCbG9ja01lc3NhZ2VTZW5kZXJSZXF1ZXN0EiQKDnRhcmdldF91c2VyX2lkGAEgASgJUgx0YX'
+    'JnZXRVc2VySWQ=');
+
+@$core.Deprecated('Use blockMessageSenderResponseDescriptor instead')
+const BlockMessageSenderResponse$json = {
+  '1': 'BlockMessageSenderResponse',
+  '2': [
+    {'1': 'code', '3': 1, '4': 1, '5': 14, '6': '.chirp.common.ErrorCode', '10': 'code'},
+    {'1': 'target_user_id', '3': 2, '4': 1, '5': 9, '10': 'targetUserId'},
+  ],
+};
+
+/// Descriptor for `BlockMessageSenderResponse`. Decode as a `google.protobuf.DescriptorProto`.
+final $typed_data.Uint8List blockMessageSenderResponseDescriptor = $convert.base64Decode(
+    'ChpCbG9ja01lc3NhZ2VTZW5kZXJSZXNwb25zZRIrCgRjb2RlGAEgASgOMhcuY2hpcnAuY29tbW'
+    '9uLkVycm9yQ29kZVIEY29kZRIkCg50YXJnZXRfdXNlcl9pZBgCIAEoCVIMdGFyZ2V0VXNlcklk');
+
+@$core.Deprecated('Use unblockMessageSenderRequestDescriptor instead')
+const UnblockMessageSenderRequest$json = {
+  '1': 'UnblockMessageSenderRequest',
+  '2': [
+    {'1': 'target_user_id', '3': 1, '4': 1, '5': 9, '10': 'targetUserId'},
+  ],
+};
+
+/// Descriptor for `UnblockMessageSenderRequest`. Decode as a `google.protobuf.DescriptorProto`.
+final $typed_data.Uint8List unblockMessageSenderRequestDescriptor = $convert.base64Decode(
+    'ChtVbmJsb2NrTWVzc2FnZVNlbmRlclJlcXVlc3QSJAoOdGFyZ2V0X3VzZXJfaWQYASABKAlSDH'
+    'RhcmdldFVzZXJJZA==');
+
+@$core.Deprecated('Use unblockMessageSenderResponseDescriptor instead')
+const UnblockMessageSenderResponse$json = {
+  '1': 'UnblockMessageSenderResponse',
+  '2': [
+    {'1': 'code', '3': 1, '4': 1, '5': 14, '6': '.chirp.common.ErrorCode', '10': 'code'},
+    {'1': 'target_user_id', '3': 2, '4': 1, '5': 9, '10': 'targetUserId'},
+  ],
+};
+
+/// Descriptor for `UnblockMessageSenderResponse`. Decode as a `google.protobuf.DescriptorProto`.
+final $typed_data.Uint8List unblockMessageSenderResponseDescriptor = $convert.base64Decode(
+    'ChxVbmJsb2NrTWVzc2FnZVNlbmRlclJlc3BvbnNlEisKBGNvZGUYASABKA4yFy5jaGlycC5jb2'
+    '1tb24uRXJyb3JDb2RlUgRjb2RlEiQKDnRhcmdldF91c2VyX2lkGAIgASgJUgx0YXJnZXRVc2Vy'
+    'SWQ=');
+
+@$core.Deprecated('Use getBlockedSendersRequestDescriptor instead')
+const GetBlockedSendersRequest$json = {
+  '1': 'GetBlockedSendersRequest',
+};
+
+/// Descriptor for `GetBlockedSendersRequest`. Decode as a `google.protobuf.DescriptorProto`.
+final $typed_data.Uint8List getBlockedSendersRequestDescriptor = $convert.base64Decode(
+    'ChhHZXRCbG9ja2VkU2VuZGVyc1JlcXVlc3Q=');
+
+@$core.Deprecated('Use getBlockedSendersResponseDescriptor instead')
+const GetBlockedSendersResponse$json = {
+  '1': 'GetBlockedSendersResponse',
+  '2': [
+    {'1': 'code', '3': 1, '4': 1, '5': 14, '6': '.chirp.common.ErrorCode', '10': 'code'},
+    {'1': 'target_user_ids', '3': 2, '4': 3, '5': 9, '10': 'targetUserIds'},
+  ],
+};
+
+/// Descriptor for `GetBlockedSendersResponse`. Decode as a `google.protobuf.DescriptorProto`.
+final $typed_data.Uint8List getBlockedSendersResponseDescriptor = $convert.base64Decode(
+    'ChlHZXRCbG9ja2VkU2VuZGVyc1Jlc3BvbnNlEisKBGNvZGUYASABKA4yFy5jaGlycC5jb21tb2'
+    '4uRXJyb3JDb2RlUgRjb2RlEiYKD3RhcmdldF91c2VyX2lkcxgCIAMoCVINdGFyZ2V0VXNlcklk'
+    'cw==');
 

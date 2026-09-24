@@ -26,6 +26,9 @@ const ErrorCode$json = {
     {'1': 'TARGET_OFFLINE', '2': 6},
     {'1': 'SERVER_UNAVAILABLE', '2': 7},
     {'1': 'RATE_LIMITED', '2': 8},
+    {'1': 'VERSION_MISMATCH', '2': 9},
+    {'1': 'WORD_FILTERED', '2': 10},
+    {'1': 'CONTENT_TOO_LONG', '2': 11},
   ],
 };
 
@@ -34,7 +37,8 @@ final $typed_data.Uint8List errorCodeDescriptor = $convert.base64Decode(
     'CglFcnJvckNvZGUSBgoCT0sQABISCg5JTlRFUk5BTF9FUlJPUhABEhEKDUlOVkFMSURfUEFSQU'
     '0QAhIPCgtBVVRIX0ZBSUxFRBADEhMKD1NFU1NJT05fRVhQSVJFRBAEEhIKDlVTRVJfTk9UX0ZP'
     'VU5EEAUSEgoOVEFSR0VUX09GRkxJTkUQBhIWChJTRVJWRVJfVU5BVkFJTEFCTEUQBxIQCgxSQV'
-    'RFX0xJTUlURUQQCA==');
+    'RFX0xJTUlURUQQCBIUChBWRVJTSU9OX01JU01BVENIEAkSEQoNV09SRF9GSUxURVJFRBAKEhQK'
+    'EENPTlRFTlRfVE9PX0xPTkcQCw==');
 
 @$core.Deprecated('Use emptyDescriptor instead')
 const Empty$json = {

@@ -95,6 +95,16 @@ class MsgID extends $pb.ProtobufEnum {
   static const MsgID MESSAGE_DELETED_NOTIFY = MsgID._(2232, _omitEnumNames ? '' : 'MESSAGE_DELETED_NOTIFY');
   static const MsgID GET_MENTION_SUGGESTIONS_REQ = MsgID._(2233, _omitEnumNames ? '' : 'GET_MENTION_SUGGESTIONS_REQ');
   static const MsgID GET_MENTION_SUGGESTIONS_RESP = MsgID._(2234, _omitEnumNames ? '' : 'GET_MENTION_SUGGESTIONS_RESP');
+  static const MsgID SET_CHANNEL_MUTE_REQ = MsgID._(2235, _omitEnumNames ? '' : 'SET_CHANNEL_MUTE_REQ');
+  static const MsgID SET_CHANNEL_MUTE_RESP = MsgID._(2236, _omitEnumNames ? '' : 'SET_CHANNEL_MUTE_RESP');
+  static const MsgID GET_CHANNEL_MUTES_REQ = MsgID._(2237, _omitEnumNames ? '' : 'GET_CHANNEL_MUTES_REQ');
+  static const MsgID GET_CHANNEL_MUTES_RESP = MsgID._(2238, _omitEnumNames ? '' : 'GET_CHANNEL_MUTES_RESP');
+  static const MsgID BLOCK_MESSAGE_SENDER_REQ = MsgID._(2239, _omitEnumNames ? '' : 'BLOCK_MESSAGE_SENDER_REQ');
+  static const MsgID BLOCK_MESSAGE_SENDER_RESP = MsgID._(2240, _omitEnumNames ? '' : 'BLOCK_MESSAGE_SENDER_RESP');
+  static const MsgID UNBLOCK_MESSAGE_SENDER_REQ = MsgID._(2241, _omitEnumNames ? '' : 'UNBLOCK_MESSAGE_SENDER_REQ');
+  static const MsgID UNBLOCK_MESSAGE_SENDER_RESP = MsgID._(2242, _omitEnumNames ? '' : 'UNBLOCK_MESSAGE_SENDER_RESP');
+  static const MsgID GET_BLOCKED_SENDERS_REQ = MsgID._(2243, _omitEnumNames ? '' : 'GET_BLOCKED_SENDERS_REQ');
+  static const MsgID GET_BLOCKED_SENDERS_RESP = MsgID._(2244, _omitEnumNames ? '' : 'GET_BLOCKED_SENDERS_RESP');
   static const MsgID ADD_FRIEND_REQ = MsgID._(3001, _omitEnumNames ? '' : 'ADD_FRIEND_REQ');
   static const MsgID ADD_FRIEND_RESP = MsgID._(3002, _omitEnumNames ? '' : 'ADD_FRIEND_RESP');
   static const MsgID FRIEND_REQUEST_ACTION_REQ = MsgID._(3003, _omitEnumNames ? '' : 'FRIEND_REQUEST_ACTION_REQ');
@@ -152,6 +162,28 @@ class MsgID extends $pb.ProtobufEnum {
   static const MsgID EVENT_DELIVER_NOTIFY = MsgID._(5010, _omitEnumNames ? '' : 'EVENT_DELIVER_NOTIFY');
   static const MsgID EVENT_ACK_REQ = MsgID._(5011, _omitEnumNames ? '' : 'EVENT_ACK_REQ');
   static const MsgID EVENT_ACK_RESP = MsgID._(5012, _omitEnumNames ? '' : 'EVENT_ACK_RESP');
+  static const MsgID BIND_PLAYER_IDENTITY_REQ = MsgID._(5013, _omitEnumNames ? '' : 'BIND_PLAYER_IDENTITY_REQ');
+  static const MsgID BIND_PLAYER_IDENTITY_RESP = MsgID._(5014, _omitEnumNames ? '' : 'BIND_PLAYER_IDENTITY_RESP');
+  static const MsgID UNBIND_PLAYER_IDENTITY_REQ = MsgID._(5015, _omitEnumNames ? '' : 'UNBIND_PLAYER_IDENTITY_REQ');
+  static const MsgID UNBIND_PLAYER_IDENTITY_RESP = MsgID._(5016, _omitEnumNames ? '' : 'UNBIND_PLAYER_IDENTITY_RESP');
+  static const MsgID GET_PLAYER_IDENTITIES_REQ = MsgID._(5017, _omitEnumNames ? '' : 'GET_PLAYER_IDENTITIES_REQ');
+  static const MsgID GET_PLAYER_IDENTITIES_RESP = MsgID._(5018, _omitEnumNames ? '' : 'GET_PLAYER_IDENTITIES_RESP');
+  static const MsgID RESOLVE_GAME_USER_REQ = MsgID._(5019, _omitEnumNames ? '' : 'RESOLVE_GAME_USER_REQ');
+  static const MsgID RESOLVE_GAME_USER_RESP = MsgID._(5020, _omitEnumNames ? '' : 'RESOLVE_GAME_USER_RESP');
+  static const MsgID SUBSCRIBE_PLAYER_CHANNEL_REQ = MsgID._(5021, _omitEnumNames ? '' : 'SUBSCRIBE_PLAYER_CHANNEL_REQ');
+  static const MsgID SUBSCRIBE_PLAYER_CHANNEL_RESP = MsgID._(5022, _omitEnumNames ? '' : 'SUBSCRIBE_PLAYER_CHANNEL_RESP');
+  static const MsgID UNSUBSCRIBE_PLAYER_CHANNEL_REQ = MsgID._(5023, _omitEnumNames ? '' : 'UNSUBSCRIBE_PLAYER_CHANNEL_REQ');
+  static const MsgID UNSUBSCRIBE_PLAYER_CHANNEL_RESP = MsgID._(5024, _omitEnumNames ? '' : 'UNSUBSCRIBE_PLAYER_CHANNEL_RESP');
+  static const MsgID GET_PLAYER_SUBSCRIPTIONS_REQ = MsgID._(5025, _omitEnumNames ? '' : 'GET_PLAYER_SUBSCRIPTIONS_REQ');
+  static const MsgID GET_PLAYER_SUBSCRIPTIONS_RESP = MsgID._(5026, _omitEnumNames ? '' : 'GET_PLAYER_SUBSCRIPTIONS_RESP');
+  static const MsgID MARK_CHANNELS_READ_REQ = MsgID._(5027, _omitEnumNames ? '' : 'MARK_CHANNELS_READ_REQ');
+  static const MsgID MARK_CHANNELS_READ_RESP = MsgID._(5028, _omitEnumNames ? '' : 'MARK_CHANNELS_READ_RESP');
+  static const MsgID GET_UNREAD_SUMMARY_REQ = MsgID._(5029, _omitEnumNames ? '' : 'GET_UNREAD_SUMMARY_REQ');
+  static const MsgID GET_UNREAD_SUMMARY_RESP = MsgID._(5030, _omitEnumNames ? '' : 'GET_UNREAD_SUMMARY_RESP');
+  static const MsgID PEER_REGISTER_REQ = MsgID._(5050, _omitEnumNames ? '' : 'PEER_REGISTER_REQ');
+  static const MsgID PEER_REGISTER_RESP = MsgID._(5051, _omitEnumNames ? '' : 'PEER_REGISTER_RESP');
+  static const MsgID CHANNEL_MESSAGE_NOTIFY = MsgID._(5052, _omitEnumNames ? '' : 'CHANNEL_MESSAGE_NOTIFY');
+  static const MsgID PEER_INJECT_MESSAGE_NOTIFY = MsgID._(5053, _omitEnumNames ? '' : 'PEER_INJECT_MESSAGE_NOTIFY');
   static const MsgID REGISTER_DEVICE_REQ = MsgID._(6001, _omitEnumNames ? '' : 'REGISTER_DEVICE_REQ');
   static const MsgID REGISTER_DEVICE_RESP = MsgID._(6002, _omitEnumNames ? '' : 'REGISTER_DEVICE_RESP');
   static const MsgID UNREGISTER_DEVICE_REQ = MsgID._(6003, _omitEnumNames ? '' : 'UNREGISTER_DEVICE_REQ');
@@ -271,6 +303,16 @@ class MsgID extends $pb.ProtobufEnum {
     MESSAGE_DELETED_NOTIFY,
     GET_MENTION_SUGGESTIONS_REQ,
     GET_MENTION_SUGGESTIONS_RESP,
+    SET_CHANNEL_MUTE_REQ,
+    SET_CHANNEL_MUTE_RESP,
+    GET_CHANNEL_MUTES_REQ,
+    GET_CHANNEL_MUTES_RESP,
+    BLOCK_MESSAGE_SENDER_REQ,
+    BLOCK_MESSAGE_SENDER_RESP,
+    UNBLOCK_MESSAGE_SENDER_REQ,
+    UNBLOCK_MESSAGE_SENDER_RESP,
+    GET_BLOCKED_SENDERS_REQ,
+    GET_BLOCKED_SENDERS_RESP,
     ADD_FRIEND_REQ,
     ADD_FRIEND_RESP,
     FRIEND_REQUEST_ACTION_REQ,
@@ -328,6 +370,28 @@ class MsgID extends $pb.ProtobufEnum {
     EVENT_DELIVER_NOTIFY,
     EVENT_ACK_REQ,
     EVENT_ACK_RESP,
+    BIND_PLAYER_IDENTITY_REQ,
+    BIND_PLAYER_IDENTITY_RESP,
+    UNBIND_PLAYER_IDENTITY_REQ,
+    UNBIND_PLAYER_IDENTITY_RESP,
+    GET_PLAYER_IDENTITIES_REQ,
+    GET_PLAYER_IDENTITIES_RESP,
+    RESOLVE_GAME_USER_REQ,
+    RESOLVE_GAME_USER_RESP,
+    SUBSCRIBE_PLAYER_CHANNEL_REQ,
+    SUBSCRIBE_PLAYER_CHANNEL_RESP,
+    UNSUBSCRIBE_PLAYER_CHANNEL_REQ,
+    UNSUBSCRIBE_PLAYER_CHANNEL_RESP,
+    GET_PLAYER_SUBSCRIPTIONS_REQ,
+    GET_PLAYER_SUBSCRIPTIONS_RESP,
+    MARK_CHANNELS_READ_REQ,
+    MARK_CHANNELS_READ_RESP,
+    GET_UNREAD_SUMMARY_REQ,
+    GET_UNREAD_SUMMARY_RESP,
+    PEER_REGISTER_REQ,
+    PEER_REGISTER_RESP,
+    CHANNEL_MESSAGE_NOTIFY,
+    PEER_INJECT_MESSAGE_NOTIFY,
     REGISTER_DEVICE_REQ,
     REGISTER_DEVICE_RESP,
     UNREGISTER_DEVICE_REQ,
@@ -371,6 +435,29 @@ class MsgID extends $pb.ProtobufEnum {
   static MsgID? valueOf($core.int value) => _byValue[value];
 
   const MsgID._($core.int v, $core.String n) : super(v, n);
+}
+
+/// Capability bits exchanged during the handshake. The negotiated set is the
+/// intersection of both sides; anything outside it stays disabled for the
+/// session. New capabilities bump protocol_version and add a bit - old peers
+/// that do not know the bit simply never use it.
+class PeerCapability extends $pb.ProtobufEnum {
+  static const PeerCapability RELAY_READ_RECEIPTS = PeerCapability._(0, _omitEnumNames ? '' : 'RELAY_READ_RECEIPTS');
+  static const PeerCapability RELAY_TYPING = PeerCapability._(1, _omitEnumNames ? '' : 'RELAY_TYPING');
+  static const PeerCapability RELAY_PRESENCE = PeerCapability._(2, _omitEnumNames ? '' : 'RELAY_PRESENCE');
+  static const PeerCapability RELAY_OFFLINE_MESSAGES = PeerCapability._(3, _omitEnumNames ? '' : 'RELAY_OFFLINE_MESSAGES');
+
+  static const $core.List<PeerCapability> values = <PeerCapability> [
+    RELAY_READ_RECEIPTS,
+    RELAY_TYPING,
+    RELAY_PRESENCE,
+    RELAY_OFFLINE_MESSAGES,
+  ];
+
+  static final $core.Map<$core.int, PeerCapability> _byValue = $pb.ProtobufEnum.initByValue(values);
+  static PeerCapability? valueOf($core.int value) => _byValue[value];
+
+  const PeerCapability._($core.int v, $core.String n) : super(v, n);
 }
 
 

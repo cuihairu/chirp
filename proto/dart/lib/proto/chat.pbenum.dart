@@ -19,6 +19,11 @@ class MsgType extends $pb.ProtobufEnum {
   static const MsgType EMOJI = MsgType._(1, _omitEnumNames ? '' : 'EMOJI');
   static const MsgType VOICE = MsgType._(2, _omitEnumNames ? '' : 'VOICE');
   static const MsgType IMAGE = MsgType._(3, _omitEnumNames ? '' : 'IMAGE');
+  static const MsgType ITEM_LINK = MsgType._(10, _omitEnumNames ? '' : 'ITEM_LINK');
+  static const MsgType SKILL_LINK = MsgType._(11, _omitEnumNames ? '' : 'SKILL_LINK');
+  static const MsgType ACHIEVEMENT = MsgType._(12, _omitEnumNames ? '' : 'ACHIEVEMENT');
+  static const MsgType NPC_DIALOG = MsgType._(13, _omitEnumNames ? '' : 'NPC_DIALOG');
+  static const MsgType TRADE_STATUS = MsgType._(14, _omitEnumNames ? '' : 'TRADE_STATUS');
   static const MsgType SYSTEM = MsgType._(99, _omitEnumNames ? '' : 'SYSTEM');
 
   static const $core.List<MsgType> values = <MsgType> [
@@ -26,6 +31,11 @@ class MsgType extends $pb.ProtobufEnum {
     EMOJI,
     VOICE,
     IMAGE,
+    ITEM_LINK,
+    SKILL_LINK,
+    ACHIEVEMENT,
+    NPC_DIALOG,
+    TRADE_STATUS,
     SYSTEM,
   ];
 
@@ -41,18 +51,62 @@ class ChannelType extends $pb.ProtobufEnum {
   static const ChannelType TEAM = ChannelType._(1, _omitEnumNames ? '' : 'TEAM');
   static const ChannelType GUILD = ChannelType._(2, _omitEnumNames ? '' : 'GUILD');
   static const ChannelType WORLD = ChannelType._(3, _omitEnumNames ? '' : 'WORLD');
+  static const ChannelType SYSTEM_CHANNEL = ChannelType._(4, _omitEnumNames ? '' : 'SYSTEM_CHANNEL');
+  static const ChannelType MARQUEE = ChannelType._(5, _omitEnumNames ? '' : 'MARQUEE');
 
   static const $core.List<ChannelType> values = <ChannelType> [
     PRIVATE,
     TEAM,
     GUILD,
     WORLD,
+    SYSTEM_CHANNEL,
+    MARQUEE,
   ];
 
   static final $core.Map<$core.int, ChannelType> _byValue = $pb.ProtobufEnum.initByValue(values);
   static ChannelType? valueOf($core.int value) => _byValue[value];
 
   const ChannelType._($core.int v, $core.String n) : super(v, n);
+}
+
+/// 消息优先级
+class Priority extends $pb.ProtobufEnum {
+  static const Priority PRIORITY_LOW = Priority._(0, _omitEnumNames ? '' : 'PRIORITY_LOW');
+  static const Priority PRIORITY_NORMAL = Priority._(1, _omitEnumNames ? '' : 'PRIORITY_NORMAL');
+  static const Priority PRIORITY_HIGH = Priority._(2, _omitEnumNames ? '' : 'PRIORITY_HIGH');
+  static const Priority PRIORITY_URGENT = Priority._(3, _omitEnumNames ? '' : 'PRIORITY_URGENT');
+
+  static const $core.List<Priority> values = <Priority> [
+    PRIORITY_LOW,
+    PRIORITY_NORMAL,
+    PRIORITY_HIGH,
+    PRIORITY_URGENT,
+  ];
+
+  static final $core.Map<$core.int, Priority> _byValue = $pb.ProtobufEnum.initByValue(values);
+  static Priority? valueOf($core.int value) => _byValue[value];
+
+  const Priority._($core.int v, $core.String n) : super(v, n);
+}
+
+/// 消息发送者类型
+class SenderKind extends $pb.ProtobufEnum {
+  static const SenderKind SENDER_USER = SenderKind._(0, _omitEnumNames ? '' : 'SENDER_USER');
+  static const SenderKind SENDER_SYSTEM = SenderKind._(1, _omitEnumNames ? '' : 'SENDER_SYSTEM');
+  static const SenderKind SENDER_NPC = SenderKind._(2, _omitEnumNames ? '' : 'SENDER_NPC');
+  static const SenderKind SENDER_SERVICE = SenderKind._(3, _omitEnumNames ? '' : 'SENDER_SERVICE');
+
+  static const $core.List<SenderKind> values = <SenderKind> [
+    SENDER_USER,
+    SENDER_SYSTEM,
+    SENDER_NPC,
+    SENDER_SERVICE,
+  ];
+
+  static final $core.Map<$core.int, SenderKind> _byValue = $pb.ProtobufEnum.initByValue(values);
+  static SenderKind? valueOf($core.int value) => _byValue[value];
+
+  const SenderKind._($core.int v, $core.String n) : super(v, n);
 }
 
 /// Group member role
