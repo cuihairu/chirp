@@ -82,11 +82,11 @@ title: SDK 引擎兼容性
 | Protobuf | protobuf.js（运行时）或 ts-proto（编译时） |
 
 待开发：
-- [ ] TypeScript 协议核心（ChirpClient，与 web_companion 共享传输层逻辑）
-- [ ] WebSocket 传输适配
-- [ ] 微信小游戏平台适配（wx.connectSocket）
-- [ ] Hook 接口（TypeScript interface）
-- [ ] 示例项目
+- [x] TypeScript 协议核心（2026-09-24：由独立包 `@chirp/protocol` 提供，ChirpClient + 帧编解码 + 消息映射，自带单测与 90% 覆盖率门禁）
+- [x] WebSocket 传输适配（ChirpClient 构造时注入 `wsFactory`；浏览器原生 WebSocket 即默认实现）
+- [x] 微信小游戏平台适配（2026-09-24：`sdks/ts/src/adapters/wx_socket.ts` 把 `wx.connectSocket` 的 SocketTask 桥到 `WebSocketLike`，回调注册→处理器属性、ArrayBuffer 双向直通；带 fake-socket 单测与真实 ChirpClient 登录回路测试）
+- [x] Hook 接口（`hooks.ts` 五钩子 + ChatPipeline，语义与 C++/C# 对齐）
+- [ ] 示例项目（需真实 LayaAir 工程）
 
 ### Godot（P2 优先级）
 
@@ -116,10 +116,10 @@ title: SDK 引擎兼容性
 | Protobuf | protobuf.js 或 ts-proto |
 
 待开发：
-- [ ] TypeScript 协议核心（可与 LayaBox SDK 共享传输层）
-- [ ] Cocos 组件封装
-- [ ] 微信小游戏平台适配
-- [ ] Hook 接口
+- [x] TypeScript 协议核心（与 LayaAir 共享 `@chirp/protocol`，2026-09-24）
+- [x] 微信小游戏平台适配（共享 `@chirp/protocol` 的 `adapters/wx_socket.ts`）
+- [ ] Cocos 组件封装（需 Cocos Creator 工程）
+- [x] Hook 接口（共享 `hooks.ts` 五钩子）
 
 ### Web（P0，已有基础）
 

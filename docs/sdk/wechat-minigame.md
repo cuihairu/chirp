@@ -20,7 +20,19 @@ task.onMessage((res) => { /* res.data 是 ArrayBuffer:解帧 */ });
 2. **protobuf**:[protobuf.js](https://github.com/protobufjs/protobuf.js) 可在小游戏环境运行(加载 `proto/gateway.proto` 编译产物,注意用 json/commonjs 方式打包,避免动态加载限制);
 3. **客户端状态机**:登录往返、心跳、重连、KICK 终态。
 
-**参考实现**:仓库 `sdks/ts/src/` 是带单测的 TS 协议栈(`frame.ts` / `msg_map.ts` / `chirp_client.ts`),不依赖 DOM,可直接搬进小游戏工程——只需要把传输层从浏览器 `WebSocket` 换成 `wx.connectSocket`。
+**参考实现**:仓库 `sdks/ts/src/` 是带单测的 TS 协议栈(`frame.ts` / `msg_map.ts` / `chirp_client.ts`),不依赖 DOM,可直接搬进小游戏工程。传输层适配已经写好:`sdks/ts/src/adapters/wx_socket.ts` 把 `wx.connectSocket` 的 SocketTask(回调注册 + `{ data }` 信封对象)桥到 ChirpClient 期望的 `WebSocketLike` 接口:
+
+```ts
+import { ChirpClient } from '@chirp/protocol/chirp_client';
+import { createWxSocketFactory } from '@chirp/protocol/adapters/wx_socket';
+
+const client = new ChirpClient({
+  url: 'wss://chat.example.com/ws',
+  wsFactory: createWxSocketFactory(wx), // wx: 小游戏运行时全局
+});
+```
+
+二进制帧以 ArrayBuffer 双向直通;该适配器带 fake-socket 单测与一条真实 ChirpClient 登录回路测试(`adapters/wx_socket.test.ts`)。
 
 ## 生命周期
 

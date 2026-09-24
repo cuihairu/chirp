@@ -12,6 +12,7 @@ shells) can depend on it without dragging React along.
 | `src/frame.ts` | Frame codec (u32 length prefix + `Packet`) |
 | `src/msg_map.ts` | Message id ↔ request/response type mapping |
 | `src/chirp_client.ts` | `ChirpClient` connection state machine (login, heartbeat, reconnect, kick) |
+| `src/adapters/wx_socket.ts` | WeChat minigame transport adapter: `wx.connectSocket` SocketTask → `WebSocketLike`, for LayaAir / Cocos / minigame targets |
 | `src/errors.ts` | Error taxonomy shared across the pipeline |
 | `src/hooks.ts` | The five hook interfaces (MessageInterceptor / AuthProvider / MessageStore / ChatEventListener / CommandHandler) |
 | `src/chat_pipeline.ts` | `ChatPipeline` — hook wiring with C++-aligned send/receive ordering |

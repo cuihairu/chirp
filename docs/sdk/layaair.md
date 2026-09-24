@@ -21,7 +21,7 @@ ws.binaryType = "arraybuffer";
 2. **protobuf**:用 [protobuf.js](https://github.com/protobufjs/protobuf.js) 加载 `proto/gateway.proto` 编译产物;
 3. **客户端状态机**:登录往返、心跳、重连、KICK 终态。
 
-**参考实现**:仓库 `sdks/ts/src/` 是一份带单测的完整 TS 协议栈(`frame.ts` 帧编解码、`msg_map.ts` 消息映射表、`chirp_client.ts` 状态机),可直接搬进 LayaAir 工程,语义与 unity/mobile 端对齐。
+**参考实现**:仓库 `sdks/ts/src/` 是一份带单测的完整 TS 协议栈(`frame.ts` 帧编解码、`msg_map.ts` 消息映射表、`chirp_client.ts` 状态机),可直接搬进 LayaAir 工程,语义与 unity/mobile 端对齐;微信小游戏目标用 `@chirp/protocol/adapters/wx_socket` 的 `createWxSocketFactory(wx)` 作为 ChirpClient 的传输工厂。
 
 ## 生命周期
 

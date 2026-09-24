@@ -21,7 +21,7 @@ ws.binaryType = "arraybuffer";
 2. **protobuf**:用 [protobuf.js](https://github.com/protobufjs/protobuf.js)(或 google-protobuf)加载 `proto/gateway.proto` 编译产物;
 3. **客户端状态机**:登录请求-响应关联、心跳、断线重连、KICK 终态处理。
 
-**直接抄现成实现**:仓库 `sdks/ts/src/` 下有完整的 TS 协议栈,可整目录搬进 Cocos 工程——
+**直接抄现成实现**:仓库 `sdks/ts/src/` 下有完整的 TS 协议栈,可整目录搬进 Cocos 工程(微信小游戏目标用 `@chirp/protocol/adapters/wx_socket` 的 `createWxSocketFactory(wx)` 作传输工厂)——
 
 | 文件 | 职责 |
 | --- | --- |
