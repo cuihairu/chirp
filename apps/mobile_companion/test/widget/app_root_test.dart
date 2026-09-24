@@ -80,7 +80,8 @@ class FakeConnection implements ChatConnection {
   }
 
   @override
-  void Function() onReconnecting(void Function(int attempt, int delayMs) listener) =>
+  void Function() onReconnecting(
+          void Function(int attempt, int delayMs) listener) =>
       () {};
 
   @override

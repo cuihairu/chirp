@@ -130,7 +130,8 @@ class ChatPipeline {
   /// Full-pipeline send. Throws RequestError(RequestErrorKind.closed) when
   /// not connected, (…blocked) for messages consumed before the wire, and
   /// ArgumentError for invalid arguments (C# ArgumentException parity).
-  Future<chat.SendMessageResponse> send(SendOptions options, String content) async {
+  Future<chat.SendMessageResponse> send(
+      SendOptions options, String content) async {
     if (_conn.status != ConnStatus.connected) {
       // 状态检查先于参数校验(C++ 参考实现顺序)。
       throw RequestError(RequestErrorKind.closed);
@@ -140,8 +141,8 @@ class ChatPipeline {
     }
     if (options.channelType == chat.ChannelType.PRIVATE) {
       if (options.receiverId == null || options.receiverId!.isEmpty) {
-        throw ArgumentError.value(options.receiverId, 'receiverId',
-            'private send needs receiverId');
+        throw ArgumentError.value(
+            options.receiverId, 'receiverId', 'private send needs receiverId');
       }
     } else if (options.channelId == null || options.channelId!.isEmpty) {
       throw ArgumentError.value(options.channelId, 'channelId',
@@ -198,10 +199,12 @@ class ChatPipeline {
     int limit, {
     int? beforeTimestamp,
   }) =>
-      _store?.load(channelType, channelId, limit, beforeTimestamp: beforeTimestamp) ??
+      _store?.load(channelType, channelId, limit,
+          beforeTimestamp: beforeTimestamp) ??
       const <ChatMessage>[];
 
-  void markRead(chat.ChannelType channelType, String channelId, String messageId) =>
+  void markRead(
+          chat.ChannelType channelType, String channelId, String messageId) =>
       _store?.markRead(channelType, channelId, messageId);
 
   int unreadCount(chat.ChannelType channelType, String channelId) =>
@@ -236,7 +239,8 @@ class ChatPipeline {
         : 'unknown command, dropped locally: $content';
   }
 
-  chat.SendMessageRequest _buildSendRequest(SendOptions options, String content) {
+  chat.SendMessageRequest _buildSendRequest(
+      SendOptions options, String content) {
     final senderId = _selfId();
     var channelId = options.channelId ?? '';
     if (options.channelType == chat.ChannelType.PRIVATE) {

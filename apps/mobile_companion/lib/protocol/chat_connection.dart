@@ -29,7 +29,8 @@ abstract class ChatConnection {
 
   /// A backoff reconnect is about to fire (observational). Returns the
   /// unsubscribe function.
-  void Function() onReconnecting(void Function(int attempt, int delayMs) listener);
+  void Function() onReconnecting(
+      void Function(int attempt, int delayMs) listener);
 
   /// A reconnect attempt reached 'connected' again (observational). Returns
   /// the unsubscribe function.

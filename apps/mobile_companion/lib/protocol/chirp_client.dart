@@ -113,7 +113,8 @@ class ChirpClient implements ChatConnection {
   /// was scheduled with (jitter included). Only fires after the first drop.
   /// Returns the unsubscribe function.
   @override
-  void Function() onReconnecting(void Function(int attempt, int delayMs) listener) {
+  void Function() onReconnecting(
+      void Function(int attempt, int delayMs) listener) {
     _reconnectListeners.add(listener);
     return () => _reconnectListeners.remove(listener);
   }

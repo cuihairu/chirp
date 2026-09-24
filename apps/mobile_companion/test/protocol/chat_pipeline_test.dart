@@ -58,7 +58,8 @@ class Harness {
     wire.serverPacket(Packet(
       msgId: MsgID.LOGIN_RESP,
       sequence: wire.lastSentPacket().sequence,
-      body: auth.LoginResponse(code: ErrorCode.OK, userId: 'u1').writeToBuffer(),
+      body:
+          auth.LoginResponse(code: ErrorCode.OK, userId: 'u1').writeToBuffer(),
     ));
     expect(await pending, ErrorCode.OK);
   }
@@ -73,7 +74,8 @@ class Harness {
   }
 }
 
-chat.ChatMessage chatOf(String id, String senderId, String content, int timestamp) =>
+chat.ChatMessage chatOf(
+        String id, String senderId, String content, int timestamp) =>
     chat.ChatMessage(
       messageId: id,
       senderId: senderId,
@@ -87,7 +89,8 @@ void main() {
   group('send pipeline', () {
     test('sends to the wire with normalized private channel and reply id',
         () async {
-      final h = await Harness.create()..pipeline.store = MemoryMessageStore();
+      final h = await Harness.create()
+        ..pipeline.store = MemoryMessageStore();
       await h.loginOk();
 
       final sending = h.pipeline.send(
@@ -109,28 +112,28 @@ void main() {
       expect(req.replyToMessageId, 'm-42');
       expect(utf8.decode(req.content), 'gg');
 
-      h.respondLast(
-          MsgID.SEND_MESSAGE_RESP,
-          chat.SendMessageResponse(
-              code: ErrorCode.OK, messageId: 'srv-1'));
+      h.respondLast(MsgID.SEND_MESSAGE_RESP,
+          chat.SendMessageResponse(code: ErrorCode.OK, messageId: 'srv-1'));
       final resp = await sending;
       expect(resp.code, ErrorCode.OK);
       expect(resp.messageId, 'srv-1');
     });
 
-    test('sends non-private traffic with the explicit channelId and no receiver',
+    test(
+        'sends non-private traffic with the explicit channelId and no receiver',
         () async {
       final h = await Harness.create();
       final sending = h.pipeline.send(
-          const SendOptions(channelType: chat.ChannelType.TEAM, channelId: 'team-7'),
+          const SendOptions(
+              channelType: chat.ChannelType.TEAM, channelId: 'team-7'),
           'hi');
       final req =
           chat.SendMessageRequest.fromBuffer(h.wire.lastSentPacket().body);
       expect(req.channelType, chat.ChannelType.TEAM);
       expect(req.channelId, 'team-7'); // passed through, not derived
       expect(req.receiverId, '');
-      h.respondLast(
-          MsgID.SEND_MESSAGE_RESP, chat.SendMessageResponse(code: ErrorCode.OK));
+      h.respondLast(MsgID.SEND_MESSAGE_RESP,
+          chat.SendMessageResponse(code: ErrorCode.OK));
       await sending;
     });
 
@@ -139,17 +142,19 @@ void main() {
       final h = await Harness.create();
       // Argument checks fire while connected (C# ArgumentException parity).
       await expectLater(
-        h.pipeline
-            .send(const SendOptions(channelType: chat.ChannelType.PRIVATE), 'x'),
+        h.pipeline.send(
+            const SendOptions(channelType: chat.ChannelType.PRIVATE), 'x'),
         throwsArgumentError,
       );
       await expectLater(
-        h.pipeline.send(const SendOptions(channelType: chat.ChannelType.TEAM), 'x'),
+        h.pipeline
+            .send(const SendOptions(channelType: chat.ChannelType.TEAM), 'x'),
         throwsArgumentError,
       );
       await expectLater(
         h.pipeline.send(
-            const SendOptions(channelType: chat.ChannelType.PRIVATE, receiverId: 'p'),
+            const SendOptions(
+                channelType: chat.ChannelType.PRIVATE, receiverId: 'p'),
             ''),
         throwsRangeError,
       );
@@ -157,7 +162,8 @@ void main() {
       h.client.disconnect(); // …but the status check wins over all of them
       await expectLater(
         h.pipeline.send(
-            const SendOptions(channelType: chat.ChannelType.PRIVATE, receiverId: 'p'),
+            const SendOptions(
+                channelType: chat.ChannelType.PRIVATE, receiverId: 'p'),
             ''),
         throwsA(isA<RequestError>()
             .having((e) => e.kind, 'kind', RequestErrorKind.closed)),
@@ -167,11 +173,12 @@ void main() {
     test('passes /-text through when no handlers are registered', () async {
       final h = await Harness.create();
       final sending = h.pipeline.send(
-          const SendOptions(channelType: chat.ChannelType.PRIVATE, receiverId: 'p'),
+          const SendOptions(
+              channelType: chat.ChannelType.PRIVATE, receiverId: 'p'),
           '/dance');
       expect(h.wire.lastSentPacket().msgId, MsgID.SEND_MESSAGE_REQ);
-      h.respondLast(
-          MsgID.SEND_MESSAGE_RESP, chat.SendMessageResponse(code: ErrorCode.OK));
+      h.respondLast(MsgID.SEND_MESSAGE_RESP,
+          chat.SendMessageResponse(code: ErrorCode.OK));
       await sending;
     });
 
@@ -198,7 +205,8 @@ void main() {
         );
         expect(h.wire.sent.length, before);
       }
-      expect(throwerRan, isTrue); // the throwing handler declined, next got a try
+      expect(
+          throwerRan, isTrue); // the throwing handler declined, next got a try
       offThrow();
       offChain();
     });
@@ -213,21 +221,22 @@ void main() {
         },
       );
       final sending = h.pipeline.send(
-          const SendOptions(channelType: chat.ChannelType.PRIVATE, receiverId: 'p'),
+          const SendOptions(
+              channelType: chat.ChannelType.PRIVATE, receiverId: 'p'),
           'raw');
       final req =
           chat.SendMessageRequest.fromBuffer(h.wire.lastSentPacket().body);
       expect(utf8.decode(req.content), 'rewritten');
-      h.respondLast(
-          MsgID.SEND_MESSAGE_RESP, chat.SendMessageResponse(code: ErrorCode.OK));
+      h.respondLast(MsgID.SEND_MESSAGE_RESP,
+          chat.SendMessageResponse(code: ErrorCode.OK));
       await sending;
 
-      h.pipeline.interceptor =
-          _FnInterceptor(onBeforeSend: (_) => false);
+      h.pipeline.interceptor = _FnInterceptor(onBeforeSend: (_) => false);
       final before = h.wire.sent.length;
       await expectLater(
         h.pipeline.send(
-            const SendOptions(channelType: chat.ChannelType.PRIVATE, receiverId: 'p'),
+            const SendOptions(
+                channelType: chat.ChannelType.PRIVATE, receiverId: 'p'),
             'x'),
         throwsA(isA<RequestError>()
             .having((e) => e.kind, 'kind', RequestErrorKind.blocked)
@@ -239,7 +248,8 @@ void main() {
       );
       await expectLater(
         h.pipeline.send(
-            const SendOptions(channelType: chat.ChannelType.PRIVATE, receiverId: 'p'),
+            const SendOptions(
+                channelType: chat.ChannelType.PRIVATE, receiverId: 'p'),
             'x'),
         throwsA(isA<RequestError>()
             .having((e) => e.kind, 'kind', RequestErrorKind.blocked)),
@@ -249,14 +259,16 @@ void main() {
 
     test('archives both directions newest-first; unread is 0 without tracking',
         () async {
-      final h = await Harness.create()..pipeline.store = MemoryMessageStore();
+      final h = await Harness.create()
+        ..pipeline.store = MemoryMessageStore();
       await h.loginOk();
 
       final sending = h.pipeline.send(
           const SendOptions(
-              channelType: chat.ChannelType.PRIVATE, receiverId: 'p9'), 'out');
-      h.respondLast(
-          MsgID.SEND_MESSAGE_RESP, chat.SendMessageResponse(code: ErrorCode.OK));
+              channelType: chat.ChannelType.PRIVATE, receiverId: 'p9'),
+          'out');
+      h.respondLast(MsgID.SEND_MESSAGE_RESP,
+          chat.SendMessageResponse(code: ErrorCode.OK));
       await sending;
 
       h.wire.serverPacket(Packet(
@@ -272,13 +284,14 @@ void main() {
       expect(h.pipeline.unreadCount(chat.ChannelType.PRIVATE, 'p9|u1'), 0);
     });
 
-    test('receive pipeline: listeners get the message; drop kills the fan-out only',
+    test(
+        'receive pipeline: listeners get the message; drop kills the fan-out only',
         () async {
       final h = await Harness.create();
       final seen = <String>[];
       final rawCount = <int>[];
-      final offRaw = h.client
-          .onNotify(MsgID.CHAT_MESSAGE_NOTIFY, (_) => rawCount.add(1));
+      final offRaw =
+          h.client.onNotify(MsgID.CHAT_MESSAGE_NOTIFY, (_) => rawCount.add(1));
       final off = h.pipeline.addListener(_FnListener(
         onMessageReceived: (m) => seen.add(utf8.decode(m.content)),
       ));
@@ -291,8 +304,7 @@ void main() {
       expect(seen, ['hello']);
       expect(rawCount, [1]); // raw notify subscribers unaffected
 
-      h.pipeline.interceptor =
-          _FnInterceptor(onBeforeReceive: (_) => false);
+      h.pipeline.interceptor = _FnInterceptor(onBeforeReceive: (_) => false);
       h.wire.serverPacket(Packet(
         msgId: MsgID.CHAT_MESSAGE_NOTIFY,
         body: chatOf('m2', 'p9', 'dropped', 6).writeToBuffer(),
@@ -344,10 +356,11 @@ void main() {
           _FnListener(onMessageReceived: (_) => trail.add('listener')));
 
       final sending = h.pipeline.send(
-          const SendOptions(channelType: chat.ChannelType.PRIVATE, receiverId: 'p'),
+          const SendOptions(
+              channelType: chat.ChannelType.PRIVATE, receiverId: 'p'),
           'x');
-      h.respondLast(
-          MsgID.SEND_MESSAGE_RESP, chat.SendMessageResponse(code: ErrorCode.OK));
+      h.respondLast(MsgID.SEND_MESSAGE_RESP,
+          chat.SendMessageResponse(code: ErrorCode.OK));
       await sending;
       h.wire.serverPacket(Packet(
         msgId: MsgID.CHAT_MESSAGE_NOTIFY,
@@ -359,16 +372,18 @@ void main() {
     });
 
     test('a failing store never blocks send or receive', () async {
-      final h = await Harness.create()..pipeline.store = _ThrowingStore();
+      final h = await Harness.create()
+        ..pipeline.store = _ThrowingStore();
       final seen = <String>[];
       final off = h.pipeline.addListener(_FnListener(
           onMessageReceived: (m) => seen.add(utf8.decode(m.content))));
 
       final sending = h.pipeline.send(
-          const SendOptions(channelType: chat.ChannelType.PRIVATE, receiverId: 'p'),
+          const SendOptions(
+              channelType: chat.ChannelType.PRIVATE, receiverId: 'p'),
           'x');
-      h.respondLast(
-          MsgID.SEND_MESSAGE_RESP, chat.SendMessageResponse(code: ErrorCode.OK));
+      h.respondLast(MsgID.SEND_MESSAGE_RESP,
+          chat.SendMessageResponse(code: ErrorCode.OK));
       await sending;
       h.wire.serverPacket(Packet(
         msgId: MsgID.CHAT_MESSAGE_NOTIFY,
@@ -392,8 +407,8 @@ void main() {
       final req =
           chat.SendMessageRequest.fromBuffer(h.wire.lastSentPacket().body);
       expect(req.msgType, chat.MsgType.EMOJI);
-      h.respondLast(
-          MsgID.SEND_MESSAGE_RESP, chat.SendMessageResponse(code: ErrorCode.OK));
+      h.respondLast(MsgID.SEND_MESSAGE_RESP,
+          chat.SendMessageResponse(code: ErrorCode.OK));
       await sending;
     });
   });
@@ -405,16 +420,14 @@ void main() {
         ..pipeline.provider = _FnProvider(getToken: () => 'from-provider');
 
       final p1 = h.pipeline.login('u1', token: 'explicit-token');
-      expect(
-          auth.LoginRequest.fromBuffer(h.wire.lastSentPacket().body).token,
+      expect(auth.LoginRequest.fromBuffer(h.wire.lastSentPacket().body).token,
           'explicit-token');
       h.respondLast(MsgID.LOGIN_RESP,
           auth.LoginResponse(code: ErrorCode.OK, userId: 'u1'));
       await p1;
 
       final p2 = h.pipeline.login('u1');
-      expect(
-          auth.LoginRequest.fromBuffer(h.wire.lastSentPacket().body).token,
+      expect(auth.LoginRequest.fromBuffer(h.wire.lastSentPacket().body).token,
           'from-provider');
       h.respondLast(MsgID.LOGIN_RESP,
           auth.LoginResponse(code: ErrorCode.OK, userId: 'u1'));
@@ -431,18 +444,16 @@ void main() {
         renewToken: () async => 'fresh',
         onAuthResult: (code, _) => authResults.add(code),
       );
-      final off = h.pipeline.addListener(_FnListener(
-          onLoginResult: (code, _) => loginResults.add(code)));
+      final off = h.pipeline.addListener(
+          _FnListener(onLoginResult: (code, _) => loginResults.add(code)));
 
       final pending = h.pipeline.login('u1');
-      expect(
-          auth.LoginRequest.fromBuffer(h.wire.lastSentPacket().body).token,
+      expect(auth.LoginRequest.fromBuffer(h.wire.lastSentPacket().body).token,
           'stale');
-      h.respondLast(MsgID.LOGIN_RESP,
-          auth.LoginResponse(code: ErrorCode.AUTH_FAILED));
+      h.respondLast(
+          MsgID.LOGIN_RESP, auth.LoginResponse(code: ErrorCode.AUTH_FAILED));
       await h.wire.settle();
-      expect(
-          auth.LoginRequest.fromBuffer(h.wire.lastSentPacket().body).token,
+      expect(auth.LoginRequest.fromBuffer(h.wire.lastSentPacket().body).token,
           'fresh');
       h.respondLast(MsgID.LOGIN_RESP,
           auth.LoginResponse(code: ErrorCode.OK, userId: 'u1'));
@@ -459,11 +470,11 @@ void main() {
         renewToken: () async => 'also-stale',
       );
       final pending = h.pipeline.login('u1');
-      h.respondLast(MsgID.LOGIN_RESP,
-          auth.LoginResponse(code: ErrorCode.AUTH_FAILED));
+      h.respondLast(
+          MsgID.LOGIN_RESP, auth.LoginResponse(code: ErrorCode.AUTH_FAILED));
       await h.wire.settle();
-      h.respondLast(MsgID.LOGIN_RESP,
-          auth.LoginResponse(code: ErrorCode.AUTH_FAILED));
+      h.respondLast(
+          MsgID.LOGIN_RESP, auth.LoginResponse(code: ErrorCode.AUTH_FAILED));
       expect(await pending, ErrorCode.AUTH_FAILED);
       expect(h.wire.sent, hasLength(2)); // two LOGINs, no third
     });
@@ -475,8 +486,8 @@ void main() {
         renewToken: () async => null,
       );
       final pending = h.pipeline.login('u1');
-      h.respondLast(MsgID.LOGIN_RESP,
-          auth.LoginResponse(code: ErrorCode.AUTH_FAILED));
+      h.respondLast(
+          MsgID.LOGIN_RESP, auth.LoginResponse(code: ErrorCode.AUTH_FAILED));
       expect(await pending, ErrorCode.AUTH_FAILED);
       expect(h.wire.sent, hasLength(1)); // no second round without a token
     });
@@ -630,7 +641,8 @@ void main() {
       expect(s.load(chat.ChannelType.PRIVATE, 'a|b', 10, beforeTimestamp: 0),
           hasLength(3)); // 0 = no bound
       expect(
-        s.load(chat.ChannelType.PRIVATE, 'a|b', 10, beforeTimestamp: 3)
+        s
+            .load(chat.ChannelType.PRIVATE, 'a|b', 10, beforeTimestamp: 3)
             .map((m) => m.messageId),
         ['m2', 'm1'],
       );
