@@ -20,7 +20,7 @@ task.onMessage((res) => { /* res.data 是 ArrayBuffer:解帧 */ });
 2. **protobuf**:[protobuf.js](https://github.com/protobufjs/protobuf.js) 可在小游戏环境运行(加载 `proto/gateway.proto` 编译产物,注意用 json/commonjs 方式打包,避免动态加载限制);
 3. **客户端状态机**:登录往返、心跳、重连、KICK 终态。
 
-**参考实现**:仓库 `apps/web_companion/src/protocol/` 是带单测的 TS 协议栈(`frame.ts` / `msg_map.ts` / `chirp_client.ts`),不依赖 DOM,可直接搬进小游戏工程——只需要把传输层从浏览器 `WebSocket` 换成 `wx.connectSocket`。
+**参考实现**:仓库 `sdks/ts/src/` 是带单测的 TS 协议栈(`frame.ts` / `msg_map.ts` / `chirp_client.ts`),不依赖 DOM,可直接搬进小游戏工程——只需要把传输层从浏览器 `WebSocket` 换成 `wx.connectSocket`。
 
 ## 生命周期
 
@@ -41,7 +41,7 @@ connectSocket → LOGIN(1003/1004) → 收发(2001 发送 / 2005 推送) → 心
 
 - 协议总览:[API 概述](/api/overview)(Packet 帧、消息 ID 分段、核心流程)——接入前先读这份
 - 消息 ID 全表:`proto/gateway.proto` 的 `MsgID` 枚举(1xxx 认证/会话、2xxx 聊天、3xxx 社交、4xxx 语音、7xxx 组队)
-- TS 参考实现:[apps/web_companion/src/protocol/](https://github.com/cuihairu/chirp/tree/main/apps/web_companion/src/protocol)
+- TS 参考实现:[sdks/ts](https://github.com/cuihairu/chirp/tree/main/sdks/ts)
 - C# 版语义对照(消息面覆盖表):[Unity3D](/sdk/unity3d)
 - 服务端接入(游戏后端):[服务端 SDK](/sdk/server) 与[服务器平面](/server_plane)
 

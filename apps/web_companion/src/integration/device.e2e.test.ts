@@ -1,11 +1,11 @@
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
-import { ChirpClient } from '../protocol/chirp_client';
+import { ChirpClient } from '@chirp/protocol/chirp_client';
 import {
   GET_USER_DEVICES,
   LOGIN,
   REGISTER_DEVICE,
   UNREGISTER_DEVICE,
-} from '../protocol/msg_map';
+} from '@chirp/protocol/msg_map';
 
 /**
  * Real-backend round-trips against chirp_app_gateway + chirp_notification.

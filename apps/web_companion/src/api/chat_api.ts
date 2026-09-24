@@ -15,8 +15,8 @@ import {
 } from '@chirp/proto/chat';
 import { ErrorCode } from '@chirp/proto/common';
 import { MsgID } from '@chirp/proto/gateway';
-import type { ConnStatus } from '../protocol/chirp_client';
-import { RequestError } from '../protocol/errors';
+import type { ConnStatus } from '@chirp/protocol/chirp_client';
+import { RequestError } from '@chirp/protocol/errors';
 import {
   ADD_REACTION,
   CREATE_GROUP,
@@ -34,7 +34,7 @@ import {
   REMOVE_REACTION,
   SEND_MESSAGE,
   type MessageSpec,
-} from '../protocol/msg_map';
+} from '@chirp/protocol/msg_map';
 import {
   channelTypeOf,
   conversationOf,

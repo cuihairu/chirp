@@ -15,6 +15,7 @@
     "gen:proto": "bash scripts/gen-proto.sh"
   },
   "dependencies": {
+    "@chirp/protocol": "file:../../sdks/ts",
     "@emotion/react": "^11.11.0",
     "@emotion/styled": "^11.11.0",
     "@mui/icons-material": "^5.14.0",

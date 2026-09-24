@@ -2,7 +2,8 @@
   "name": "chirp-docs-root",
   "private": true,
   "workspaces": [
-    "apps/web_companion"
+    "apps/web_companion",
+    "sdks/ts"
   ],
   "scripts": {
     "docs:dev": "npm --prefix docs run dev",

@@ -21,7 +21,7 @@ ws.binaryType = "arraybuffer";
 2. **protobuf**:用 [protobuf.js](https://github.com/protobufjs/protobuf.js) 加载 `proto/gateway.proto` 编译产物;
 3. **客户端状态机**:登录往返、心跳、重连、KICK 终态。
 
-**参考实现**:仓库 `apps/web_companion/src/protocol/` 是一份带单测的完整 TS 协议栈(`frame.ts` 帧编解码、`msg_map.ts` 消息映射表、`chirp_client.ts` 状态机),可直接搬进 LayaAir 工程,语义与 unity/mobile 端对齐。
+**参考实现**:仓库 `sdks/ts/src/` 是一份带单测的完整 TS 协议栈(`frame.ts` 帧编解码、`msg_map.ts` 消息映射表、`chirp_client.ts` 状态机),可直接搬进 LayaAir 工程,语义与 unity/mobile 端对齐。
 
 ## 生命周期
 
@@ -39,7 +39,7 @@ connect → LOGIN(1003/1004) → 收发(2001 发送 / 2005 推送) → 心跳(10
 
 - 协议总览:[API 概述](/api/overview)(Packet 帧、消息 ID 分段、核心流程)——接入前先读这份
 - 消息 ID 全表:`proto/gateway.proto` 的 `MsgID` 枚举(1xxx 认证/会话、2xxx 聊天、3xxx 社交、4xxx 语音、7xxx 组队)
-- TS 参考实现:[apps/web_companion/src/protocol/](https://github.com/cuihairu/chirp/tree/main/apps/web_companion/src/protocol)
+- TS 参考实现:[sdks/ts](https://github.com/cuihairu/chirp/tree/main/sdks/ts)
 - C# 版语义对照(消息面覆盖表):[Unity3D](/sdk/unity3d)
 - 服务端接入(游戏后端):[服务端 SDK](/sdk/server) 与[服务器平面](/server_plane)
 

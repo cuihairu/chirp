@@ -11,7 +11,7 @@ import {
   REMOVE_FRIEND,
   SET_PRESENCE,
   UNBLOCK_USER,
-} from '../protocol/msg_map';
+} from '@chirp/protocol/msg_map';
 import { setPresence } from '../state/presence_store';
 import {
   addFriend,

@@ -21,7 +21,7 @@ ws.binaryType = "arraybuffer";
 2. **protobuf**:用 [protobuf.js](https://github.com/protobufjs/protobuf.js)(或 google-protobuf)加载 `proto/gateway.proto` 编译产物;
 3. **客户端状态机**:登录请求-响应关联、心跳、断线重连、KICK 终态处理。
 
-**直接抄现成实现**:仓库 `apps/web_companion/src/protocol/` 下有完整的 TS 协议栈,可整目录搬进 Cocos 工程——
+**直接抄现成实现**:仓库 `sdks/ts/src/` 下有完整的 TS 协议栈,可整目录搬进 Cocos 工程——
 
 | 文件 | 职责 |
 | --- | --- |
@@ -49,7 +49,7 @@ connect → LOGIN(1003/1004) → 收发(2001 发送 / 2005 推送) → 心跳(10
 
 - 协议总览:[API 概述](/api/overview)(Packet 帧、消息 ID 分段、核心流程)——接入前先读这份
 - 消息 ID 全表:`proto/gateway.proto` 的 `MsgID` 枚举(1xxx 认证/会话、2xxx 聊天、3xxx 社交、4xxx 语音、7xxx 组队)
-- TS 参考实现:[apps/web_companion/src/protocol/](https://github.com/cuihairu/chirp/tree/main/apps/web_companion/src/protocol)
+- TS 参考实现:[sdks/ts](https://github.com/cuihairu/chirp/tree/main/sdks/ts)
 - C# 版语义对照(消息面覆盖表):[Unity3D](/sdk/unity3d)
 - 服务端接入(游戏后端):[服务端 SDK](/sdk/server) 与[服务器平面](/server_plane)
 

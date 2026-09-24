@@ -7,7 +7,7 @@ import {
 } from '@chirp/proto/social';
 import { MsgID } from '@chirp/proto/gateway';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
-import { ChirpClient } from '../protocol/chirp_client';
+import { ChirpClient } from '@chirp/protocol/chirp_client';
 import {
   ADD_FRIEND,
   FRIEND_REQUEST_ACTION,
@@ -17,7 +17,7 @@ import {
   LOGIN,
   REMOVE_FRIEND,
   SET_PRESENCE,
-} from '../protocol/msg_map';
+} from '@chirp/protocol/msg_map';
 import { nextNotify } from './helpers';
 
 /**

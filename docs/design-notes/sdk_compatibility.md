@@ -135,14 +135,16 @@ title: SDK 引擎兼容性
 - `ChirpClient` 协议核心（TypeScript）
 - WebSocket 传输
 - React 组件示例
-- Hook 接口与 `ChatPipeline`（`src/protocol/hooks.ts` + `chat_pipeline.ts`，纯
+- Hook 接口与 `ChatPipeline`（`sdks/ts/src/hooks.ts` + `chat_pipeline.ts`，纯
   TypeScript、零 React 依赖；MessageInterceptor / AuthProvider / MessageStore /
   ChatEventListener / CommandHandler 五钩子，语义与 C++ core、C# 对齐：'/'
   命令零注册透传、拦截器返回 false 或抛异常 = 拦截、AUTH_FAILED 至多续期一次）
 
 待补：
 - [ ] 独立 npm 包发布
-- [ ] 框架无关的核心包独立成包（ChatPipeline 已不依赖 React，待脱离 web_companion 目录）
+- [x] 框架无关的核心包独立成包（2026-09-24：`sdks/ts` = `@chirp/protocol`
+  workspace 包，自带 tsconfig/vitest 与 90% 覆盖率门禁；web_companion 经
+  `@chirp/protocol/*` 引用，红线未动——registry 发布仍不做）
 
 ### Flutter（P1，已有基础）
 

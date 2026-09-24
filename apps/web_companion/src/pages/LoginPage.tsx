@@ -3,7 +3,7 @@ import type { FormEvent } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Alert, Box, Button, Paper, TextField, Typography } from '@mui/material';
 import { useServices } from '../api/services';
-import { errorText } from '../protocol/errors';
+import { errorText } from '@chirp/protocol/errors';
 import { zh } from '../i18n/zh';
 
 /**

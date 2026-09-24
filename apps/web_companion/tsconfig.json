@@ -17,7 +17,8 @@
     "noFallthroughCasesInSwitch": true,
     "baseUrl": ".",
     "paths": {
-      "@chirp/proto/*": ["../../proto/ts/proto/*"]
+      "@chirp/proto/*": ["../../proto/ts/proto/*"],
+      "@chirp/protocol/*": ["../../sdks/ts/src/*"]
     }
   },
   "include": ["src"],

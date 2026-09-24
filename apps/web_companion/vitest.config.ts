@@ -9,6 +9,9 @@ export default defineConfig({
       // Generated protobuf code lives outside the app directory; the commit
       // keeps CI free of any protobuf toolchain.
       '@chirp/proto': resolve(import.meta.dirname, '../../proto/ts/proto'),
+      // The framework-agnostic protocol core lives in its own workspace
+      // package; alias keeps vitest resolution identical to tsc's paths.
+      '@chirp/protocol': resolve(import.meta.dirname, '../../sdks/ts/src'),
     },
   },
   test: {
@@ -26,10 +29,9 @@ export default defineConfig({
       reporter: ['text', 'lcov'],
       include: ['src/**'],
       thresholds: {
-        // The protocol layer is the contract with the C++ backend and the
-        // blueprint for the future Dart port; hold it to a stricter bar than
-        // the UI, which only gets smoke-level tests.
-        'src/protocol/**': { lines: 90, branches: 90, functions: 90, statements: 90 },
+        // The 90% contract-layer bar moved with the protocol core into
+        // sdks/ts (its own vitest config enforces it there); the UI keeps
+        // smoke-level coverage thresholds.
         global: { lines: 70, branches: 70, functions: 60, statements: 70 },
       },
     },

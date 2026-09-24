@@ -1,7 +1,7 @@
 import { ChannelType, GroupMemberJoinedNotify, MessageAck, MessageReadNotify, MsgType } from '@chirp/proto/chat';
 import { MsgID } from '@chirp/proto/gateway';
 import { afterAll, beforeAll, describe, expect, it, vi } from 'vitest';
-import { ChirpClient } from '../protocol/chirp_client';
+import { ChirpClient } from '@chirp/protocol/chirp_client';
 import {
   CREATE_GROUP,
   GET_GROUP_MEMBERS,
@@ -11,7 +11,7 @@ import {
   LEAVE_GROUP,
   MARK_READ,
   SEND_MESSAGE,
-} from '../protocol/msg_map';
+} from '@chirp/protocol/msg_map';
 import { decodeChatMessage, loginClient, nextNotify, privateChannelId } from './helpers';
 
 /**

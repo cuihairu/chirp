@@ -8,6 +8,7 @@ export default defineConfig({
   resolve: {
     alias: {
       '@chirp/proto': resolve(import.meta.dirname, '../../proto/ts/proto'),
+      '@chirp/protocol': resolve(import.meta.dirname, '../../sdks/ts/src'),
     },
   },
   test: {

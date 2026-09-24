@@ -17,7 +17,7 @@ import {
   LOGIN,
   SET_PARTY_READY,
   TRANSFER_PARTY_LEADER,
-} from '../protocol/msg_map';
+} from '@chirp/protocol/msg_map';
 import {
   addInvite,
   applySnapshot,

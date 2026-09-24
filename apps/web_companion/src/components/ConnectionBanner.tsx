@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { Alert, Button } from '@mui/material';
 import { useNavigate } from 'react-router-dom';
-import type { ConnStatus } from '../protocol/chirp_client';
+import type { ConnStatus } from '@chirp/protocol/chirp_client';
 import { patch, useStoreValue } from '../state/store';
 import { useServices } from '../api/services';
 import { zh } from '../i18n/zh';

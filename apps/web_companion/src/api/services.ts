@@ -1,5 +1,5 @@
 import { createContext, useContext } from 'react';
-import { ChirpClient } from '../protocol/chirp_client';
+import { ChirpClient } from '@chirp/protocol/chirp_client';
 import { asConnection, ChatApi, type ChatConnection } from './chat_api';
 import { SocialApi } from './social_api';
 import { PartyApi } from './party_api';
