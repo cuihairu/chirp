@@ -2,6 +2,8 @@
 
 #include <atomic>
 #include <chrono>
+#include <filesystem>
+#include <fstream>
 #include <future>
 #include <string>
 #include <vector>
@@ -10,6 +12,7 @@
 #include "chirp/auth_provider.h"
 #include "chirp/chat_event_listener.h"
 #include "chirp/command_handler.h"
+#include "chirp/file_message_store.h"
 #include "chirp/message_interceptor.h"
 #include "chirp/message_store.h"
 #include "chirp/sdk.h"
@@ -4218,6 +4221,177 @@ TEST_F(ConvenienceApiTest, UnansweredConvenienceRequestTimesOut) {
     client_->FetchUnreadCount(cb);
   }, ec);
   EXPECT_EQ(ec, chirp::sdk::make_error_code(chirp::sdk::ChatError::Timeout));
+}
+
+// ---------------------------------------------------------------------------
+// FileMessageStore: file-backed persistent store, byte-format aligned with
+// the C# FileMessageStore (CHIRPLOG1 + [1B kind][4B len LE][payload]).
+// These are offline cases: no client, no gateway, just the store.
+
+class FileMessageStoreTest : public ::testing::Test {
+ protected:
+  void SetUp() override {
+    dir_ = std::filesystem::temp_directory_path() /
+           ("chirp_file_store_" + std::to_string(++instance_counter_));
+    std::filesystem::create_directories(dir_);
+  }
+  void TearDown() override {
+    std::error_code ec;
+    std::filesystem::remove_all(dir_, ec);
+  }
+
+  std::string Path() const { return (dir_ / "archive.log").string(); }
+
+  chirp::sdk::FileMessageStore::Options Opts(size_t max_per_channel = 0) {
+    return {Path(), max_per_channel};
+  }
+
+  static void AppendGarbageTail(const std::string& path,
+                                const std::string& bytes) {
+    std::ofstream out(path, std::ios::app | std::ios::binary);
+    out.write(bytes.data(), static_cast<std::streamsize>(bytes.size()));
+  }
+
+  static size_t FileSize(const std::string& path) {
+    return static_cast<size_t>(std::filesystem::file_size(path));
+  }
+
+  std::vector<std::string> LoadContents(chirp::sdk::FileMessageStore& store,
+                                        const std::string& channel) {
+    std::vector<std::string> contents;
+    for (const auto& m :
+         store.Load(chirp::chat::WORLD, channel, 50)) {
+      contents.push_back(m.content());
+    }
+    return contents;
+  }
+
+  std::filesystem::path dir_;
+  static std::atomic<int> instance_counter_;
+};
+
+std::atomic<int> FileMessageStoreTest::instance_counter_{0};
+
+TEST_F(FileMessageStoreTest, ReplayRoundTripKeepsOrderAndFilters) {
+  {
+    chirp::sdk::FileMessageStore store(Opts());
+    store.Save(MakeStoredMessage("world", 100, "a"));
+    store.Save(MakeStoredMessage("world", 200, "b"));
+    store.Save(MakeStoredMessage("world", 300, "c"));
+  }
+  chirp::sdk::FileMessageStore reopened(Opts());
+  EXPECT_EQ(LoadContents(reopened, "world"),
+            (std::vector<std::string>{"c", "b", "a"}));
+
+  // before_timestamp strictly excludes the boundary, newest first.
+  std::vector<std::string> before;
+  for (const auto& m : reopened.Load(chirp::chat::WORLD, "world", 50, 300)) {
+    before.push_back(m.content());
+  }
+  EXPECT_EQ(before, (std::vector<std::string>{"b", "a"}));
+  EXPECT_EQ(reopened.Load(chirp::chat::WORLD, "absent", 10).size(), 0u);
+  EXPECT_EQ(reopened.Load(chirp::chat::WORLD, "world", 0).size(), 0u);
+}
+
+TEST_F(FileMessageStoreTest, ReadCursorPersistsAcrossInstances) {
+  {
+    chirp::sdk::FileMessageStore store(Opts());
+    store.Save(MakeStoredMessage("world", 100, "a"));
+    store.Save(MakeStoredMessage("world", 200, "b"));
+    store.MarkRead(chirp::chat::WORLD, "world", "m-100");
+    store.MarkRead(chirp::chat::WORLD, "world", "m-100");  // dedup: lean log
+    store.MarkRead(chirp::chat::WORLD, "world", "");       // empty id: no-op
+  }
+  chirp::sdk::FileMessageStore reopened(Opts());
+  EXPECT_EQ(reopened.GetUnreadCount(chirp::chat::WORLD, "world"), 1);
+}
+
+TEST_F(FileMessageStoreTest, EvictionIsInMemoryUntilCompact) {
+  {
+    chirp::sdk::FileMessageStore capped(Opts(3));
+    for (const int ts : {100, 200, 300, 400}) {
+      capped.Save(MakeStoredMessage("world", ts, "m" + std::to_string(ts)));
+    }
+    EXPECT_EQ(LoadContents(capped, "world").size(), 3u);
+  }
+  // Unlimited instance replays everything the log still holds: eviction
+  // never rewrote the file.
+  {
+    chirp::sdk::FileMessageStore revived(Opts());
+    EXPECT_EQ(LoadContents(revived, "world").size(), 4u);
+  }
+  // Compacting from the capped instance retires the evicted entry on disk.
+  {
+    chirp::sdk::FileMessageStore capped(Opts(3));
+    capped.Compact();
+  }
+  chirp::sdk::FileMessageStore after(Opts());
+  EXPECT_EQ(LoadContents(after, "world").size(), 3u);
+}
+
+TEST_F(FileMessageStoreTest, CleanupRewritesLogWithoutOldMessages) {
+  {
+    chirp::sdk::FileMessageStore store(Opts());
+    store.Save(MakeStoredMessage("world", 100, "old"));
+    store.Save(MakeStoredMessage("world", 200, "keep"));
+    store.Cleanup(150);  // removes + compacts in one step
+  }
+  chirp::sdk::FileMessageStore reopened(Opts());
+  EXPECT_EQ(LoadContents(reopened, "world"),
+            (std::vector<std::string>{"keep"}));
+}
+
+TEST_F(FileMessageStoreTest, TruncatedTailIsRepairedOnReplay) {
+  {
+    chirp::sdk::FileMessageStore store(Opts());
+    store.Save(MakeStoredMessage("world", 100, "a"));
+    store.Save(MakeStoredMessage("world", 200, "b"));
+  }
+  // Half-written record: header announces 100 payload bytes, 3 arrive.
+  // (Split literals: "\x00a" would greedily parse as hex 0x00a.)
+  AppendGarbageTail(Path(), std::string("\x01\x64\x00\x00" "\x00" "abc"));
+  {
+    chirp::sdk::FileMessageStore store(Opts());
+    EXPECT_EQ(LoadContents(store, "world").size(), 2u);
+    // The tail was truncated to the clean boundary: appending still works.
+    store.Save(MakeStoredMessage("world", 300, "c"));
+  }
+  chirp::sdk::FileMessageStore reopened(Opts());
+  EXPECT_EQ(LoadContents(reopened, "world"),
+            (std::vector<std::string>{"c", "b", "a"}));
+}
+
+TEST_F(FileMessageStoreTest, BadMagicResetsWithoutThrowing) {
+  AppendGarbageTail(Path(), "this is not a chirp log at all");
+  {
+    chirp::sdk::FileMessageStore store(Opts());
+    store.Save(MakeStoredMessage("world", 100, "a"));
+  }
+  chirp::sdk::FileMessageStore reopened(Opts());
+  EXPECT_EQ(LoadContents(reopened, "world"),
+            (std::vector<std::string>{"a"}));
+}
+
+TEST_F(FileMessageStoreTest, CompactDropsReadMarksOfEvictedMessages) {
+  {
+    chirp::sdk::FileMessageStore capped(Opts(2));
+    capped.Save(MakeStoredMessage("world", 100, "a"));  // evicted below
+    capped.Save(MakeStoredMessage("world", 200, "b"));
+    capped.MarkRead(chirp::chat::WORLD, "world", "m-100");
+    capped.Save(MakeStoredMessage("world", 300, "c"));  // evicts m-100
+    capped.Compact();  // dead read mark must not survive the rewrite
+  }
+  chirp::sdk::FileMessageStore reopened(Opts());
+  EXPECT_EQ(reopened.GetUnreadCount(chirp::chat::WORLD, "world"), 2);
+  EXPECT_EQ(LoadContents(reopened, "world").size(), 2u);
+}
+
+TEST_F(FileMessageStoreTest, SendSideEntriesWithoutIdNeverCountUnread) {
+  chirp::chat::ChatMessage sent = MakeStoredMessage("world", 100, "mine");
+  sent.set_message_id("");  // fire-and-forget: no server id yet
+  chirp::sdk::FileMessageStore store(Opts());
+  store.Save(sent);
+  EXPECT_EQ(store.GetUnreadCount(chirp::chat::WORLD, "world"), 0);
 }
 
 }  // namespace

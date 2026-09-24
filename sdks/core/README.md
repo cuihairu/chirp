@@ -117,6 +117,17 @@ auto recent = client.LoadHistory(chirp::chat::WORLD, "world", 20);
 - 命令路由:注册了至少一个 handler 后,`/cmd args` 形态的 `SendMessage` 走本地路由不再上网;全 miss 本地丢弃(Warn 日志,unknown command 提示由引擎层负责)。零注册时 `/` 消息照常发送。
 - 拦截丢弃(`OnBeforeReceive` 返回 false)的消息:不存储、不触发任何回调、不进原始 notify 分发。
 - 存储转发方法(`LoadHistory`/`MarkRead`/`GetUnreadCount`/`CleanupMessages`)可从任意线程调;自定义 store 的并发安全由实现方负责(`MemoryMessageStore` 内置互斥,但不跟踪已读,`GetUnreadCount` 恒 0)。
+- **持久化存档**:需要跨会话保留历史时换 `FileMessageStore`(header-only,`#include "chirp/file_message_store.h"`),与 C# SDK 同一文件格式(`CHIRPLOG1` append-only 日志,已读游标一并落盘)。淘汰/Cleanup 只动内存索引,需要紧收历史时调 `Compact()`(原子重写;要淘汰条目真正落定,须由带上限的实例执行):
+
+```cpp
+#include "chirp/file_message_store.h"
+
+chirp::sdk::FileMessageStore::Options opts;
+opts.path = "chat_archive.log";
+opts.max_per_channel = 200;                 // 0 = 不设上限
+client.SetMessageStore(
+    std::make_unique<chirp::sdk::FileMessageStore>(std::move(opts)));
+```
 
 ## 便捷 API
 

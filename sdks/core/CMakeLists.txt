@@ -39,6 +39,7 @@ set(SDK_PUBLIC_HEADERS
   include/chirp/message_interceptor.h
   include/chirp/command_handler.h
   include/chirp/message_store.h
+  include/chirp/file_message_store.h
   include/chirp/auth_provider.h
   include/chirp/chat_event_listener.h
   include/chirp/word_filter.h
