@@ -1,6 +1,6 @@
 # Chirp Unreal 插件 SDK
 
-Unreal Engine 插件壳,包装 native 协议核心 `chirp::sdk::ChatClient`(`sdks/core`,与桌面 C++ SDK 同一份代码)。协议逻辑(帧、心跳 pong 回声校验、指数退避重连、KICK 终态、请求超时)全部在 native 核心,由 chirp 仓库 CI 的 `sdk_core_tests`(106 例 loopback 单测)覆盖;本目录只做两件事:
+Unreal Engine 插件壳,包装 native 协议核心 `chirp::sdk::ChatClient`(`sdks/core`,与桌面 C++ SDK 同一份代码)。协议逻辑(帧、心跳 pong 回声校验、指数退避重连、KICK 终态、请求超时)全部在 native 核心,由 chirp 仓库 CI 的 `sdk_core_tests`(loopback 单测,`tests/unit/sdk_core_test.cc`)覆盖;本目录只做两件事:
 
 1. **游戏线程派发**:native 回调在 SDK 内部 io 线程触发,`UChirpClientSubsystem` 用 `AsyncTask(ENamedThreads::GameThread, ...)` 转发——这是旧版桥完全缺失的关键一环;
 2. **Blueprint 化**:连接状态枚举、可绑定事件、BlueprintCallable 方法。

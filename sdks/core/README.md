@@ -31,7 +31,7 @@ cd sdks/core && cmake -B build && cmake --build build
 
 ## 测试
 
-- 单测:`tests/unit/sdk_core_test.cc`(106 例:状态机、loopback 登录/收发、请求关联与超时、notify 订阅退订、心跳死亡判定、踢线终态、断线重连、钩子接线、便捷 API 往返/校验/超时/BadResponse),CI 自动跑。
+- 单测:`tests/unit/sdk_core_test.cc`(状态机、loopback 登录/收发、请求关联与超时、notify 订阅退订、心跳死亡判定、踢线终态、断线重连、钩子接线、便捷 API 往返/校验/超时/BadResponse),CI 自动跑。
 - 进程级 E2E:`./test_services.sh --smoke-sdk`(两个 SDK 实例对真 `chirp_chat` 双向收发 + 离线队列)。
 
 ## 使用

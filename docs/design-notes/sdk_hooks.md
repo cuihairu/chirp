@@ -254,13 +254,18 @@ sdk.RegisterCommand(std::make_unique<InviteCommand>());
 
 **C++ 定义**：`sdks/core/include/chirp/message_store.h`
 
-**内置实现**：`MemoryMessageStore`（内存缓存，轻量级游戏用）
+**内置实现**：`MemoryMessageStore`（内存缓存，轻量级游戏用）、`FileMessageStore`（文件持久化，`chirp/file_message_store.h`，header-only；append-only 日志 + 已读游标 + `Compact()` 原子重写，与 C# SDK 同一文件格式）
 
 **游戏用法示例**：
 
 ```cpp
 // 轻量级：使用默认内存缓存
 sdk.SetMessageStore(std::make_unique<chirp::sdk::MemoryMessageStore>(200));
+
+// 跨会话：文件持久化存档（已读游标一并落盘）
+sdk.SetMessageStore(std::make_unique<chirp::sdk::FileMessageStore>(
+    chirp::sdk::FileMessageStore::Options{.path = "chat_archive.log",
+                                          .max_per_channel = 200}));
 
 // 重度游戏：SQLite 持久化
 class SqliteMessageStore : public chirp::sdk::MessageStore {
@@ -289,6 +294,8 @@ class SqliteMessageStore : public chirp::sdk::MessageStore {
 | 认证 | `AuthProvider` 虚基类 | `IAuthProvider` interface | `AuthProvider` interface | callback | `AuthProvider` abstract class |
 | 命令 | `CommandHandler` 虚基类 | `ICommandHandler` interface | `CommandHandler` interface | signal | `CommandHandler` abstract class |
 | 存储 | `MessageStore` 虚基类 | `IMessageStore` interface | `MessageStore` interface | Resource | `MessageStore` abstract class |
+
+> C#/TypeScript/Dart 列均已落地（GDScript 列为计划形态，Godot 走 C# 复用路线，见 `docs/sdk/godot.md`）。跨语言内置实现还包括四语言的 `WordFilterInterceptor`（敏感词预检，语义对齐服务端，见 `docs/design-notes/sdk_compatibility.md`）。
 
 ## SDK 注册入口
 
