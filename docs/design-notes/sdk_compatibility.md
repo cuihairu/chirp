@@ -42,7 +42,7 @@ title: SDK 引擎兼容性
 
 待补：
 - [x] Hook 接口（MessageInterceptor/AuthProvider/MessageStore/ChatEventListener/CommandHandler 五件套）——C++ core(2026-09)与 .NET/Unity(2026-09,`ChirpHooks.cs`,interface + 默认方法)均已对齐
-- [ ] 历史消息本地存储（SQLite）
+- [x] 历史消息本地存储——.NET/Unity 侧为 `FileMessageStore`(2026-09,零依赖文件持久化:append-only 日志 + 启动重放 + 已读游标,`Compact()` 原子重写;不绑 SQLite,工程需要可自行接第三方 SQLite 实现同一 `IMessageStore`)
 - [ ] 敏感词过滤客户端预检
 - [ ] Unity Package 发布配置
 

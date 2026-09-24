@@ -12,6 +12,7 @@ Runtime/
     ChirpClient.cs      连接状态机(心跳/重连/踢线/超时 + Reconnecting/Reconnected 事件)
     ChirpHooks.cs       五钩子接口(拦截/认证/存档/监听/命令)+ SendOptions
     ChirpMessageStore.cs MemoryMessageStore(内存存档,newest-first)
+    FileMessageStore.cs 文件版本地存档(append-only 日志 + 启动重放,零依赖)
     ChirpMessages.cs    Specs 全表:聊天/社交/组队/设备/语音全部 Req/Resp 消息对
   ChirpManager.cs   MonoBehaviour 薄壳(主线程派发 + 常用便捷方法)
 dotnet/            纯 .NET 测试工程(CI 里跑真单测,不需要 Unity)
@@ -99,7 +100,7 @@ public class GameChat : MonoBehaviour
 | --- | --- | --- |
 | `IMessageInterceptor` | interface,全部默认放行 | 发送/接收的改写与审计点;`OnBeforeSend`/`OnBeforeReceive` 返回 false 即拦截(接收侧全丢:不存档、不触发监听、不分发 `OnNotify`) |
 | `IAuthProvider` | interface | `LoginAsync` 不传 token 时经 `GetToken()` 取;`AUTH_FAILED` 时 `RenewTokenAsync()` 给一次续期并自动重登一轮;`OnAuthResult` 报终态 |
-| `IMessageStore` | interface(`MarkRead`/`GetUnreadCount`/`Cleanup` 有默认) | 本地存档:收发双路自动 `Save`;配套转发 `LoadHistory`/`MarkRead`/`GetUnreadCount`/`CleanupMessages`;内置 `MemoryMessageStore`(newest-first,超限淘汰最旧,不跟踪已读) |
+| `IMessageStore` | interface(`MarkRead`/`GetUnreadCount`/`Cleanup` 有默认) | 本地存档:收发双路自动 `Save`;配套转发 `LoadHistory`/`MarkRead`/`GetUnreadCount`/`CleanupMessages`;内置 `MemoryMessageStore`(newest-first,超限淘汰最旧,不跟踪已读)与 `FileMessageStore`(持久化:append-only 日志 + 启动重放,跟踪已读,`Compact()`/`Cleanup` 原子重写快照) |
 | `IChatEventListener` | interface,全默认空 | 连接状态/登录结果/被踢/重连中/重连成功/消息到达;未读、presence、typing、跑马灯、系统公告本期无触发源(与 C++ 一致) |
 | `ICommandHandler` | interface(`Usage` 默认 `"/"+Name`) | `'/cmd args'` 本地路由:`Execute(args, senderId)` 返回 false 轮下一个同名 handler;全 miss 本地丢弃;**零注册时 `/` 消息照常发送** |
 
