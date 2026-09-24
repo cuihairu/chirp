@@ -31,7 +31,9 @@ namespace Chirp.Sdk
                     bucket = new List<Chirp.Chat.ChatMessage>();
                     _channels[key] = bucket;
                 }
-                bucket.Add(message);
+                // 快照:调用方 Save 之后可能复用/改写对象(C++ 按值拷贝),
+                // 桶里必须存副本,否则内存历史会被后续修改污染。
+                bucket.Add(message.Clone());
                 if (_maxPerChannel > 0 && bucket.Count > _maxPerChannel)
                 {
                     bucket.RemoveAt(0);

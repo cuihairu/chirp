@@ -659,6 +659,17 @@ void main() {
       );
     });
 
+    test('stores snapshots, not caller references', () {
+      final s = MemoryMessageStore();
+      final m = msgOf('m1', 1);
+      s.save(m);
+      m.messageId = 'hijacked'; // caller mutates after save
+      expect(
+        s.load(chat.ChannelType.PRIVATE, 'a|b', 10).map((x) => x.messageId),
+        ['m1'],
+      );
+    });
+
     test('respects limit and rejects a non-positive one', () {
       final s = MemoryMessageStore();
       for (var i = 1; i <= 3; i++) {

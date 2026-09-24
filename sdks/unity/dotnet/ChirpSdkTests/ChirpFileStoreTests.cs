@@ -51,6 +51,17 @@ public class ChirpFileStoreTests
     }
 
     [Fact]
+    public void Store_SavesSnapshot_NotCallerReference()
+    {
+        var store = new FileMessageStore(TempPath());
+        var msg = Msg("m1", "w", 1);
+        store.Save(msg);
+        msg.MessageId = "hijacked"; // caller mutates after save
+        Assert.Equal("m1",
+            store.Load(Chirp.Chat.ChannelType.World, "w", 10).Single().MessageId);
+    }
+
+    [Fact]
     public void Store_EvictsOldestBeyondCap_InMemoryOnly()
     {
         var path = TempPath();

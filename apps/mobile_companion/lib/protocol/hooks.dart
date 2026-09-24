@@ -1,4 +1,7 @@
 import 'package:chirp_proto/chirp_proto.dart';
+// For GeneratedMessageGenericExtensions.deepCopy: the archive stores a
+// snapshot, not the caller's reference (C++ stores by value).
+import 'package:protobuf/protobuf.dart';
 
 import 'chirp_client.dart';
 
@@ -101,7 +104,9 @@ class MemoryMessageStore extends MessageStore {
   void save(ChatMessage message) {
     final key = '${message.channelType.value}|${message.channelId}';
     final bucket = _channels.putIfAbsent(key, () => <ChatMessage>[]);
-    bucket.add(message);
+    // Snapshot: callers may reuse/mutate the message after save; aliasing
+    // the caller's object would let later edits pollute the archive.
+    bucket.add(message.deepCopy());
     if (maxPerChannel > 0 && bucket.length > maxPerChannel) {
       bucket.removeRange(0, bucket.length - maxPerChannel);
     }

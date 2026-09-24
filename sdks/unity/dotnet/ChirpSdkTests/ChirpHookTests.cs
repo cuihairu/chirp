@@ -87,6 +87,17 @@ public class ChirpHookTests
         Assert.Empty(store.Load(Chirp.Chat.ChannelType.World, "missing", 5));
     }
 
+    [Fact]
+    public void Store_SavesSnapshot_NotCallerReference()
+    {
+        var store = new MemoryMessageStore();
+        var msg = Msg("m1", "w", 1);
+        store.Save(msg);
+        msg.MessageId = "hijacked"; // caller mutates after save
+        Assert.Equal("m1",
+            store.Load(Chirp.Chat.ChannelType.World, "w", 10).Single().MessageId);
+    }
+
     // ----- test scaffolding over FakeTransport -----
 
     private static async Task<ChirpClient> ConnectAsync(FakeTransport transport,

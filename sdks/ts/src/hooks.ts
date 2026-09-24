@@ -16,7 +16,8 @@
  * hook kind entirely when unset, and behaviour is byte-identical to the
  * pre-hook pipeline then (the C++/C# "zero hooks = zero change" rule).
  */
-import type { ChannelType, ChatMessage, MsgType, SendMessageRequest } from '@chirp/proto/chat';
+import { ChatMessage } from '@chirp/proto/chat';
+import type { ChannelType, MsgType, SendMessageRequest } from '@chirp/proto/chat';
 import type { ConnStatus } from './chirp_client';
 
 /** Send parameters for ChatPipeline.send (C++ SendOptions / C# SendOptions). */
@@ -83,7 +84,9 @@ export class MemoryMessageStore implements MessageStore {
   save(msg: ChatMessage): void {
     const key = `${msg.channelType}|${msg.channelId}`;
     const bucket = this.channels.get(key) ?? [];
-    bucket.push(msg);
+    // Snapshot via a codec round-trip: callers may reuse/mutate the message
+    // after save (C++ stores by value); the archive must not alias the caller.
+    bucket.push(ChatMessage.decode(ChatMessage.encode(msg).finish()));
     if (this.maxPerChannel > 0 && bucket.length > this.maxPerChannel) {
       bucket.splice(0, bucket.length - this.maxPerChannel);
     }

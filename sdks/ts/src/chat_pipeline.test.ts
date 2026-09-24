@@ -582,6 +582,14 @@ describe('MemoryMessageStore', () => {
     expect(s.load(ChannelType.PRIVATE, 'a|b', 10).map((m) => m.messageId)).toEqual(['m4', 'm3', 'm2']);
   });
 
+  it('stores snapshots, not caller references', () => {
+    const s = store();
+    const m = msgOf('m1', 1);
+    s.save(m);
+    m.messageId = 'hijacked'; // caller mutates after save
+    expect(s.load(ChannelType.PRIVATE, 'a|b', 10).map((x) => x.messageId)).toEqual(['m1']);
+  });
+
   it('respects limit and rejects a non-positive one', () => {
     const s = store();
     for (const [i, id] of ['m1', 'm2', 'm3'].entries()) s.save(msgOf(id, i + 1));

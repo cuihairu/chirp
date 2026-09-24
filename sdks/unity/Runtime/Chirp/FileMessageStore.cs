@@ -60,7 +60,9 @@ namespace Chirp.Sdk
                     bucket = new List<Chirp.Chat.ChatMessage>();
                     _channels[key] = bucket;
                 }
-                bucket.Add(message);
+                // Snapshot: the caller may reuse/mutate the object after Save
+                // (C++ stores by value); the on-disk record is already a copy.
+                bucket.Add(message.Clone());
                 if (_maxPerChannel > 0 && bucket.Count > _maxPerChannel)
                 {
                     bucket.RemoveAt(0); // in-memory only; Compact() retires it on disk
