@@ -6,6 +6,10 @@ overrides:
   # vite@5 声明 ^0.21.3，锁死在 0.21.5；强制抬到 0.25.12（0.25.x 最新，
   # 构建实测绿）。0.28.2 会因旧 browser target 不支持部分解构降级而失败。
   esbuild: 0.25.12
+  # vite 5.4.21 有 high GHSA-fx2h-pf6j-xcff 等 3 条 alert（修复线 6.4.3）。
+  # vitepress@1 声明 ^5.4.14，强抬到 6.4.3；plugin-vue peer 支持 ^6，
+  # 且 6.4.3 要 esbuild ^0.25.0（与上 override 一致）。构建失败即回滚。
+  vite: 6.4.3
 # pnpm 12 默认不跑依赖的生命周期脚本,未显式决定时 CI 里直接报错退出
 # (ERR_PNPM_IGNORED_BUILDS)。esbuild 的 postinstall 校验平台二进制,放行。
 allowBuilds:
