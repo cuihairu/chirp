@@ -42,7 +42,7 @@ cd apps/web_companion && npm run dev    # http://localhost:3001
 ```bash
 cd apps/web_companion
 npm run typecheck && npm run lint
-npm test -- --coverage        # 165 例;门槛:全局 ≥70%(协议核心 92 例连同 ≥90% 门禁
+npm test -- --coverage        # 门槛:全局 ≥70%(协议核心连同 ≥90% 门禁
                               # 已迁至 sdks/ts=@chirp/protocol 包)
 npm run build
 
