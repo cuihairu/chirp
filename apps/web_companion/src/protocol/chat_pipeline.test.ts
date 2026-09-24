@@ -378,16 +378,206 @@ describe('ChatPipeline listener wiring', () => {
     });
   });
 
-  it('forwards cleanup to the store', async () => {
+  it('sends non-private traffic with the explicit channelId and no receiver', async () => {
+    await makeHarness(async (_client, pipeline, ws) => {
+      const sending = pipeline.send({ channelType: ChannelType.TEAM, channelId: 'team-7' }, 'hi');
+      const req = SendMessageRequest.decode(ws.lastSentPacket().body);
+      expect(req.channelType).toBe(ChannelType.TEAM);
+      expect(req.channelId).toBe('team-7'); // passed through, not derived
+      expect(req.receiverId).toBe('');
+      settle(ws, MsgID.SEND_MESSAGE_RESP, sendResp(ErrorCode.OK));
+      await sending;
+    });
+  });
+
+  it('start() is idempotent and stop()/start() rewires cleanly', async () => {
+    await makeHarness(async (_client, pipeline, ws) => {
+      const seen: string[] = [];
+      const off = pipeline.addListener({
+        onMessageReceived: (msg) => seen.push(new TextDecoder().decode(msg.content)),
+      });
+      pipeline.start(); // second call must not double-subscribe
+
+      ws.serverFrame(MsgID.CHAT_MESSAGE_NOTIFY, 0, chatMsg('m1', 'p9', 'once', 1));
+      expect(seen).toEqual(['once']);
+
+      pipeline.stop();
+      pipeline.start();
+      ws.serverFrame(MsgID.CHAT_MESSAGE_NOTIFY, 0, chatMsg('m2', 'p9', 'again', 2));
+      expect(seen).toEqual(['once', 'again']);
+      off();
+    });
+  });
+
+  it('works without a store: sends, receives and queries degrade to no-ops', async () => {
+    await makeHarness(async (_client, pipeline, ws) => {
+      pipeline.setStore(null);
+      const seen: string[] = [];
+      const off = pipeline.addListener({
+        onMessageReceived: (msg) => seen.push(new TextDecoder().decode(msg.content)),
+      });
+
+      const sending = pipeline.send(
+        { channelType: ChannelType.PRIVATE, receiverId: 'p9' },
+        'nostore',
+      );
+      settle(ws, MsgID.SEND_MESSAGE_RESP, sendResp(ErrorCode.OK));
+      await sending;
+
+      ws.serverFrame(MsgID.CHAT_MESSAGE_NOTIFY, 0, chatMsg('m1', 'p9', 'hello', 5));
+      expect(seen).toEqual(['hello']);
+      expect(pipeline.loadHistory(ChannelType.PRIVATE, 'p9|u1', 10)).toEqual([]);
+      expect(pipeline.unreadCount(ChannelType.PRIVATE, 'p9|u1')).toBe(0);
+      pipeline.markRead(ChannelType.PRIVATE, 'p9|u1', 'm1'); // no store: no-op
+      pipeline.cleanup(0);
+      off();
+    });
+  });
+
+  it('markRead and cleanup forward to a store that implements them', async () => {
     await makeHarness(async (_client, pipeline) => {
+      const reads: Array<[ChannelType, string, string]> = [];
       const cleanups: number[] = [];
       pipeline.setStore({
         save: () => undefined,
         load: () => [],
+        markRead: (channelType, channelId, messageId) => reads.push([channelType, channelId, messageId]),
         cleanup: (olderThanMs) => cleanups.push(olderThanMs),
       });
+      pipeline.markRead(ChannelType.PRIVATE, 'p9|u1', 'm1');
       pipeline.cleanup(1234);
+      expect(reads).toEqual([[ChannelType.PRIVATE, 'p9|u1', 'm1']]);
       expect(cleanups).toEqual([1234]);
     });
+  });
+
+  it('command forms: no-args hit, same-name handlers chain until one accepts', async () => {
+    await makeHarness(async (_client, pipeline, ws) => {
+      const calls: string[] = [];
+      const off1 = pipeline.registerCommand({
+        name: 'trade',
+        execute: () => {
+          calls.push('first');
+          return false; // declines, the next same-name handler gets a try
+        },
+      });
+      const off2 = pipeline.registerCommand({
+        name: 'trade',
+        execute: () => {
+          calls.push('second');
+          return true;
+        },
+      });
+      await expect(
+        pipeline.send({ channelType: ChannelType.PRIVATE, receiverId: 'p' }, '/trade'),
+      ).rejects.toMatchObject({ kind: 'blocked' });
+      expect(calls).toEqual(['first', 'second']);
+      expect(ws.sent.length).toBe(0);
+      off1();
+      off2();
+    });
+  });
+
+  it('receive interceptor: pass-through keeps the fan-out; throw blocks it', async () => {
+    await makeHarness(async (_client, pipeline, ws) => {
+      const seen: string[] = [];
+      const off = pipeline.addListener({
+        onMessageReceived: (msg) => seen.push(new TextDecoder().decode(msg.content)),
+      });
+
+      pipeline.setInterceptor({ onBeforeReceive: () => true });
+      ws.serverFrame(MsgID.CHAT_MESSAGE_NOTIFY, 0, chatMsg('m1', 'p9', 'kept', 1));
+      expect(seen).toEqual(['kept']);
+
+      pipeline.setInterceptor({
+        onBeforeReceive: () => {
+          throw new Error('hook bug');
+        },
+      });
+      ws.serverFrame(MsgID.CHAT_MESSAGE_NOTIFY, 0, chatMsg('m2', 'p9', 'dropped', 2));
+      expect(seen).toEqual(['kept']); // throwing interceptor = blocking one
+      off();
+    });
+  });
+
+  it('onAfterSend and onAfterReceive fire around the wire in order', async () => {
+    await makeHarness(async (_client, pipeline, ws) => {
+      const trail: string[] = [];
+      pipeline.setInterceptor({
+        onAfterSend: () => trail.push('afterSend'),
+        onAfterReceive: () => trail.push('afterReceive'),
+      });
+      const off = pipeline.addListener({
+        onMessageReceived: () => trail.push('listener'),
+      });
+
+      const sending = pipeline.send({ channelType: ChannelType.PRIVATE, receiverId: 'p' }, 'x');
+      settle(ws, MsgID.SEND_MESSAGE_RESP, sendResp(ErrorCode.OK));
+      await sending;
+      ws.serverFrame(MsgID.CHAT_MESSAGE_NOTIFY, 0, chatMsg('m1', 'p9', 'in', 1));
+      expect(trail).toEqual(['afterSend', 'listener', 'afterReceive']);
+      off();
+    });
+  });
+
+  it('allows a custom msgType on send', async () => {
+    await makeHarness(async (_client, pipeline, ws) => {
+      const sending = pipeline.send(
+        { channelType: ChannelType.PRIVATE, receiverId: 'p', msgType: MsgType.EMOJI },
+        ':)',
+      );
+      expect(SendMessageRequest.decode(ws.lastSentPacket().body).msgType).toBe(MsgType.EMOJI);
+      settle(ws, MsgID.SEND_MESSAGE_RESP, sendResp(ErrorCode.OK));
+      await sending;
+    });
+  });
+});
+
+describe('MemoryMessageStore', () => {
+  const store = () => new MemoryMessageStore(3); // small cap so eviction is visible
+
+  function msgOf(id: string, timestamp: number): ChatMessage {
+    return ChatMessage.fromPartial({
+      messageId: id,
+      channelType: ChannelType.PRIVATE,
+      channelId: 'a|b',
+      content: new TextEncoder().encode(id),
+      timestamp,
+    });
+  }
+
+  it('evicts oldest beyond the cap and loads newest-first', () => {
+    const s = store();
+    for (const [i, id] of ['m1', 'm2', 'm3', 'm4'].entries()) s.save(msgOf(id, i + 1));
+    expect(s.load(ChannelType.PRIVATE, 'a|b', 10).map((m) => m.messageId)).toEqual(['m4', 'm3', 'm2']);
+  });
+
+  it('respects limit and rejects a non-positive one', () => {
+    const s = store();
+    for (const [i, id] of ['m1', 'm2', 'm3'].entries()) s.save(msgOf(id, i + 1));
+    expect(s.load(ChannelType.PRIVATE, 'a|b', 2).map((m) => m.messageId)).toEqual(['m3', 'm2']);
+    expect(s.load(ChannelType.PRIVATE, 'a|b', 0)).toEqual([]);
+    expect(s.load(ChannelType.PRIVATE, 'missing', 5)).toEqual([]);
+  });
+
+  it('applies beforeTimestamp as an exclusive upper bound', () => {
+    const s = store();
+    for (const [i, id] of ['m1', 'm2', 'm3'].entries()) s.save(msgOf(id, i + 1));
+    expect(s.load(ChannelType.PRIVATE, 'a|b', 10, 0).length).toBe(3); // 0 = no bound
+    expect(s.load(ChannelType.PRIVATE, 'a|b', 10, 3).map((m) => m.messageId)).toEqual(['m2', 'm1']);
+  });
+
+  it('cleanup drops expired buckets and keeps partially fresh ones', () => {
+    const s = store();
+    s.save(msgOf('old', 100));
+    s.save(ChatMessage.fromPartial({
+      messageId: 'fresh',
+      channelType: ChannelType.WORLD,
+      channelId: 'world',
+      timestamp: 500,
+    }));
+    s.cleanup(300); // private bucket becomes empty (deleted), world keeps one
+    expect(s.load(ChannelType.PRIVATE, 'a|b', 10)).toEqual([]);
+    expect(s.load(ChannelType.WORLD, 'world', 10).map((m) => m.messageId)).toEqual(['fresh']);
   });
 });
