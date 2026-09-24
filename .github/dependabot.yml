@@ -1,0 +1,14 @@
+# P0: stop security-update failures in /docs.
+# vitepress@1.x pins vite@^5 (locked 5.4.21) and esbuild@^0.21 (locked 0.21.5);
+# security fixes require vite>=6.4.3 and esbuild>=0.28.1, unreachable within
+# current semver ranges, so Dependabot security updates exit with
+# security_update_not_possible. Ignore until vitepress stable ships vite>=6.
+version: 2
+updates:
+  - package-ecosystem: npm
+    directory: /docs
+    schedule:
+      interval: weekly
+    ignore:
+      - dependency-name: vite
+      - dependency-name: esbuild
