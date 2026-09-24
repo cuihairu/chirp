@@ -72,6 +72,8 @@ export class ChirpClient {
   private pending = new Map<number, PendingEntry>();
   private notifyHandlers = new Map<number, Set<(body: Uint8Array) => void>>();
   private statusListeners = new Set<(status: ConnStatus) => void>();
+  private reconnectListeners = new Set<(attempt: number, delayMs: number) => void>();
+  private reconnectedListeners = new Set<() => void>();
 
   private _status: ConnStatus = 'idle';
   private seqCounter = 0;
@@ -113,6 +115,25 @@ export class ChirpClient {
   onStatus(listener: (status: ConnStatus) => void): () => void {
     this.statusListeners.add(listener);
     return () => this.statusListeners.delete(listener);
+  }
+
+  /**
+   * A backoff reconnect is about to fire: 1-based attempt and the delay it
+   * was scheduled with (jitter included). Only fires after the first drop.
+   */
+  onReconnecting(listener: (attempt: number, delayMs: number) => void): () => void {
+    this.reconnectListeners.add(listener);
+    return () => this.reconnectListeners.delete(listener);
+  }
+
+  /**
+   * A reconnect attempt reached 'connected' again. The backoff counter is
+   * only reset by resetBackoff() (login success) — this event is purely
+   * observational, so the retry cadence is unchanged.
+   */
+  onReconnected(listener: () => void): () => void {
+    this.reconnectedListeners.add(listener);
+    return () => this.reconnectedListeners.delete(listener);
   }
 
   /**
@@ -158,6 +179,17 @@ export class ChirpClient {
         this.missedPongs = 0;
         this.setStatus('connected');
         this.startHeartbeat();
+        // Observational only: a backoff counter > 0 means this open is a
+        // reconnect. resetBackoff() still owns the counter reset.
+        if (this.attempt > 0) {
+          for (const listener of this.reconnectedListeners) {
+            try {
+              listener();
+            } catch {
+              // Listener errors must not break the connect path.
+            }
+          }
+        }
         resolve();
       };
       ws.onmessage = (ev) => this.handleData(ev.data);
@@ -348,7 +380,7 @@ export class ChirpClient {
   private dispatchNotify(msgId: MsgID, body: Uint8Array): void {
     if (msgId === MsgID.KICK_NOTIFY) {
       this.markKicked();
-      return;
+      // Fall through: subscribers may also want the KickNotify reason body.
     }
     const handlers = this.notifyHandlers.get(msgId);
     if (!handlers) return; // unknown or uninteresting msgId
@@ -406,6 +438,13 @@ export class ChirpClient {
     const jitter = base * this.opts.jitterRatio;
     const delay = base + (Math.random() * 2 - 1) * jitter;
     this.attempt++;
+    for (const listener of this.reconnectListeners) {
+      try {
+        listener(this.attempt, delay);
+      } catch {
+        // Listener errors must not break the reconnect chain.
+      }
+    }
     this.reconnectTimer = setTimeout(() => {
       this.reconnectTimer = null;
       // A failed attempt loops straight back through handleClose.

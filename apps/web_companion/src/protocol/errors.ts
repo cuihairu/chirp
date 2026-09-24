@@ -6,8 +6,10 @@ import { ErrorCode } from '@chirp/proto/common';
  *  - closed:  the connection dropped (pending requests are flushed on drop)
  *  - kicked:  the server sent KICK_NOTIFY and closed the socket
  *  - server:  a response arrived and carried a non-OK ErrorCode
+ *  - blocked: the message never went on the wire (interceptor drop, or a
+ *             '/'-command consumed locally while handlers are registered)
  */
-export type RequestErrorKind = 'timeout' | 'closed' | 'kicked' | 'server';
+export type RequestErrorKind = 'timeout' | 'closed' | 'kicked' | 'server' | 'blocked';
 
 export class RequestError extends Error {
   readonly kind: RequestErrorKind;
@@ -30,6 +32,8 @@ function defaultMessage(kind: RequestErrorKind, code?: ErrorCode): string {
       return '连接已断开';
     case 'kicked':
       return '已在其他设备登录';
+    case 'blocked':
+      return '消息未发送';
     case 'server':
       return errorText(code ?? ErrorCode.INTERNAL_ERROR);
   }
