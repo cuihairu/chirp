@@ -59,14 +59,15 @@ title: SDK 引擎兼容性
 
 已有：
 - `UChirpClientSubsystem`（GameInstance 子系统）
-- Blueprint 事件（login result、chat message、kick、disconnect）
-- 连接状态枚举
+- Blueprint 事件（login result、chat message、kick、disconnect、reconnecting/reconnected、send result、完整信封）
+- 连接状态/频道类型枚举、`FChirpChatEnvelope`/`FChirpSendOptions` 结构
+- `SendChatMessageEx`（命令路由/拦截器/存档全管线 + reply 引用）、`LoadHistory`/`GetUnreadCount`/`MarkRead`/`CleanupMessages` BP 转发
 - native 核心编译脚本
 
 待补：
-- [ ] Hook 接口（C++ 虚基类 + Blueprint 可绑定事件）
+- [x] Hook 接口（C++ 虚基类经 `NativeClient()` 直通 core + Blueprint 可绑定事件；内建 listener 已桥 OnReconnecting/OnReconnected/OnChatEnvelope，2026-09）
 - [ ] UMG 聊天 UI 组件（可选）
-- [ ] 物品链接/成就分享的 Blueprint 可渲染数据结构
+- [x] 物品链接/成就分享的 Blueprint 可渲染数据结构（`FChirpChatEnvelope`：MsgType/Metadata/ReplyToMessageId 全字段 BP 可读，2026-09）
 - [ ] UE 5.4+ 验证
 
 ### LayaBox（P1 优先级）

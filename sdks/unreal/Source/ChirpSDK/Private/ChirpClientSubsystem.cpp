@@ -3,6 +3,7 @@
 // Native core headers — only this .cc sees them; the UCLASS header above
 // stays Unreal-pure (UnrealBuildTool's parser must not meet asio/proto).
 #include "chirp/sdk_client.h"
+#include "chirp/chat_event_listener.h"
 
 #include <unordered_map>
 
@@ -45,7 +46,80 @@ std::string ToStd(const FString& s)
     FTCHARToUTF8 utf8(*s);
     return std::string(utf8.Get(), utf8.Length());
 }
+
+chirp::chat::ChannelType ToChannelType(EChirpChannelType t)
+{
+    // Wire enum values match EChirpChannelType one-to-one (see the UENUM).
+    return static_cast<chirp::chat::ChannelType>(static_cast<int>(t));
+}
+
+FChirpChatEnvelope ToEnvelope(const chirp::chat::ChatMessage& m)
+{
+    FChirpChatEnvelope env;
+    env.MessageId = ToFString(m.message_id());
+    env.SenderId = ToFString(m.sender_id());
+    env.ReceiverId = ToFString(m.receiver_id());
+    env.Channel = static_cast<EChirpChannelType>(static_cast<int>(m.channel_type()));
+    env.ChannelId = ToFString(m.channel_id());
+    env.MsgType = static_cast<int32>(m.msg_type());
+    env.Content = ToFString(m.content());
+    env.TimestampMs = m.timestamp();
+    env.ReplyToMessageId = ToFString(m.reply_to_message_id());
+    const std::string& meta = m.metadata();
+    env.Metadata.Append(reinterpret_cast<const uint8*>(meta.data()),
+                        static_cast<int32>(meta.size()));
+    return env;
+}
 } // namespace
+
+// Game-thread pump for the core ChatEventListener surface. The three events
+// the subsystem already surfaces via dedicated callbacks (disconnect / kick /
+// login result) stay no-ops here — one broadcast per event, never two.
+class FNativeEventListener final : public chirp::sdk::ChatEventListener
+{
+public:
+    explicit FNativeEventListener(UChirpClientSubsystem* InOwner)
+        : Owner(InOwner)
+    {
+    }
+
+    void OnReconnecting(int attempt, int delay_ms) override
+    {
+        AsyncTask(ENamedThreads::GameThread, [Owner, a = attempt, d = delay_ms] {
+            if (Owner.IsValid())
+            {
+                Owner->OnReconnecting.Broadcast(a, d);
+            }
+        });
+    }
+
+    void OnReconnected() override
+    {
+        AsyncTask(ENamedThreads::GameThread, [Owner] {
+            if (Owner.IsValid())
+            {
+                Owner->OnReconnected.Broadcast();
+            }
+        });
+    }
+
+    void OnMessageReceived(const chirp::chat::ChatMessage& msg) override
+    {
+        FChirpChatEnvelope env = ToEnvelope(msg);
+        AsyncTask(ENamedThreads::GameThread, [Owner, env = MoveTemp(env)] {
+            if (Owner.IsValid())
+            {
+                Owner->OnChatEnvelope.Broadcast(env);
+            }
+        });
+    }
+
+private:
+    // Weak on purpose: the core listener table outlives neither Deinitialize
+    // (which destroys the whole native client, listener included) nor the
+    // subsystem itself, but a queued AsyncTask can still land after both.
+    TWeakObjectPtr<UChirpClientSubsystem> Owner;
+};
 
 // Native lives one layer down so the header stays free of chirp includes.
 class FNativeClient
@@ -60,7 +134,7 @@ public:
     // double-check inside the callback keeps it simple.
     TMap<int32, NotifyHandle> RawSubs;
 
-    FNativeClient(const FString& Host, int32 Port)
+    FNativeClient(const FString& Host, int32 Port, UChirpClientSubsystem* Owner)
         : Client([=] {
               ChatConfig config;
               config.gateway_host = ToStd(Host);
@@ -68,6 +142,9 @@ public:
               return config;
           }())
     {
+        // The core table holds the shared_ptr; this listener's lifetime is
+        // bounded by the client's dtor, which joins its io thread first.
+        Client.AddListener(std::make_shared<FNativeEventListener>(Owner));
     }
 };
 
@@ -88,7 +165,7 @@ void UChirpClientSubsystem::Connect(const FString& Host, int32 Port)
 {
     if (!Native)
     {
-        Native = new FNativeClient(Host, Port);
+        Native = new FNativeClient(Host, Port, this);
         ChatClient& client = Native->Client;
 
         // ---- wire callbacks: io thread -> game thread ----
@@ -156,6 +233,89 @@ void UChirpClientSubsystem::SendChatMessage(const FString& Receiver, const FStri
     }
 }
 
+void UChirpClientSubsystem::SendChatMessageEx(const FChirpSendOptions& Options,
+                                              const FString& Content)
+{
+    if (!Native)
+    {
+        // Same posture as SendChatMessage before Connect: silent no-op.
+        return;
+    }
+
+    chirp::sdk::ChatClient::SendOptions opts;
+    opts.channel_type = ToChannelType(Options.Channel);
+    opts.channel_id = ToStd(Options.ChannelId);
+    opts.receiver_id = ToStd(Options.ReceiverId);
+    opts.reply_to_message_id = ToStd(Options.ReplyToMessageId);
+
+    Native->Client.SendMessage(
+        opts, ToStd(Content), [this](const std::error_code& ec,
+                                     const chirp::chat::SendMessageResponse& resp) {
+            // Local failures (not connected, timeout) report ServerCode -1;
+            // server rounds report the wire ErrorCode (0 = ok).
+            const bool ok = !ec && resp.code() == chirp::common::OK;
+            const int32 code = ec ? -1 : static_cast<int32>(resp.code());
+            AsyncTask(ENamedThreads::GameThread,
+                      [this, ok, code, mid = ToFString(resp.message_id())] {
+                          RaiseSendResult(ok, code, mid);
+                      });
+        });
+}
+
+TArray<FChirpChatEnvelope> UChirpClientSubsystem::LoadHistory(EChirpChannelType Type,
+                                                              const FString& ChannelId,
+                                                              int32 Limit,
+                                                              int64 BeforeTimestampMs)
+{
+    TArray<FChirpChatEnvelope> Out;
+    if (!Native)
+    {
+        return Out;
+    }
+    for (const chirp::chat::ChatMessage& msg :
+         Native->Client.LoadHistory(ToChannelType(Type), ToStd(ChannelId), Limit,
+                                    BeforeTimestampMs))
+    {
+        Out.Add(ToEnvelope(msg));
+    }
+    return Out;
+}
+
+int32 UChirpClientSubsystem::GetUnreadCount(EChirpChannelType Type, const FString& ChannelId)
+{
+    return Native ? Native->Client.GetUnreadCount(ToChannelType(Type), ToStd(ChannelId)) : 0;
+}
+
+void UChirpClientSubsystem::MarkRead(EChirpChannelType Type, const FString& ChannelId,
+                                     const FString& MessageId)
+{
+    if (Native)
+    {
+        Native->Client.MarkRead(ToChannelType(Type), ToStd(ChannelId), ToStd(MessageId));
+    }
+}
+
+void UChirpClientSubsystem::CleanupMessages(int64 OlderThanMs)
+{
+    if (Native)
+    {
+        Native->Client.CleanupMessages(OlderThanMs);
+    }
+}
+
+chirp::sdk::ChatClient& UChirpClientSubsystem::NativeClient()
+{
+    if (!Native)
+    {
+        // Default config (localhost:5000) — Connect() can still be used
+        // afterwards to point at another host; the config is fixed at
+        // construction, so call NativeClient() first for hooks, or Connect()
+        // first for a custom target.
+        Native = new FNativeClient(TEXT("localhost"), 5000, this);
+    }
+    return Native->Client;
+}
+
 void UChirpClientSubsystem::WatchNotify(int32 MsgId)
 {
     if (!Native)
@@ -202,4 +362,8 @@ void UChirpClientSubsystem::RaiseChatMessage(const FString& Sender, const FStrin
 void UChirpClientSubsystem::RaiseNotify(int32 MsgId, TArray<uint8> Body)
 {
     OnRawNotify.Broadcast(MsgId, MoveTemp(Body));
+}
+void UChirpClientSubsystem::RaiseSendResult(bool bOk, int32 ServerCode, FString MessageId)
+{
+    OnSendResult.Broadcast(bOk, ServerCode, MoveTemp(MessageId));
 }
