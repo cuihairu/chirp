@@ -5,6 +5,8 @@
 
 #include <memory>
 #include <string>
+#include <unordered_map>
+#include <utility>
 #include <vector>
 
 #include "message_handlers.h"
@@ -55,8 +57,11 @@ class EditMentionHandlersTest : public ::testing::Test {
       notifications_.push_back({user_id, msg_id, body.SerializeAsString()});
       return true;
     };
+    purger_ = [this](const std::string& message_id, const std::string& receiver_id) {
+      purged_.push_back({message_id, receiver_id});
+    };
     edit_handlers_ = std::make_unique<chirp::chat::MessageEditHandlers>(
-        edits_, resolver_, moderator_, notifier_);
+        edits_, resolver_, moderator_, notifier_, purger_);
     mention_handlers_ =
         std::make_unique<chirp::chat::MentionHandlers>(mentions_, moderator_);
   }
@@ -80,12 +85,26 @@ class EditMentionHandlersTest : public ::testing::Test {
     return count;
   }
 
+  // (message_id, receiver_id) pairs whose offline copy was reclaimed.
+  std::vector<std::pair<std::string, std::string>> PurgedFor(
+      const std::string& message_id) const {
+    std::vector<std::pair<std::string, std::string>> out;
+    for (const auto& record : purged_) {
+      if (record.first == message_id) {
+        out.push_back(record);
+      }
+    }
+    return out;
+  }
+
   std::vector<std::string> group_members_;
   std::unordered_map<std::string, bool> moderators_;
   std::vector<NotificationRecord> notifications_;
+  std::vector<std::pair<std::string, std::string>> purged_;
   chirp::chat::ChannelMemberResolver resolver_;
   chirp::chat::ChannelModeratorChecker moderator_;
   chirp::chat::UserNotifier notifier_;
+  chirp::chat::OfflineMessagePurger purger_;
 
   chirp::chat::MessageEditManager edits_;
   chirp::chat::MentionManager mentions_;
@@ -349,6 +368,61 @@ TEST_F(EditMentionHandlersTest, RecallOfUntrackedMessageReturnsUserNotFound) {
   req.set_user_id("alice");
   EXPECT_EQ(edit_handlers_->HandleDeleteMessage(req, "alice").code(),
             chirp::common::USER_NOT_FOUND);
+}
+
+TEST_F(EditMentionHandlersTest, RecallReclaimsQueuedOfflineCopies) {
+  // The private receiver is offline, so the only delivery path left was the
+  // queue: the recall must reclaim that copy, not just broadcast.
+  RegisterSentMessage("m1", "alice", chirp::chat::PRIVATE, "alice|bob", "hi");
+  chirp::chat::DeleteMessageRequest req;
+  req.set_message_id("m1");
+  req.set_user_id("alice");
+  ASSERT_EQ(edit_handlers_->HandleDeleteMessage(req, "alice").code(), chirp::common::OK);
+
+  const auto purged = PurgedFor("m1");
+  ASSERT_EQ(purged.size(), 1u);
+  EXPECT_EQ(purged[0].second, "bob");
+}
+
+TEST_F(EditMentionHandlersTest, ModeratorRemovalReclaimsQueuedCopiesToo) {
+  group_members_ = {"alice", "bob"};
+  moderators_ = {{"g1:carl", true}};
+  RegisterSentMessage("m1", "alice", chirp::chat::GUILD, "g1", "spam");
+  chirp::chat::DeleteMessageRequest mod_req;
+  mod_req.set_message_id("m1");
+  mod_req.set_user_id("carl");
+  ASSERT_EQ(edit_handlers_->HandleDeleteMessage(mod_req, "carl").code(),
+            chirp::common::OK);
+
+  // Every member except the requester may hold a queued copy.
+  const auto purged = PurgedFor("m1");
+  ASSERT_EQ(purged.size(), 2u);
+  EXPECT_EQ(purged[0].second, "alice");
+  EXPECT_EQ(purged[1].second, "bob");
+}
+
+TEST_F(EditMentionHandlersTest, RefusedRecallTouchesNoOfflineQueue) {
+  RegisterSentMessage("m1", "alice", chirp::chat::WORLD, "world", "hi");
+  chirp::chat::DeleteMessageRequest req;
+  req.set_message_id("m1");
+  req.set_user_id("alice");
+  // World channel is not recallable: no notify, and nothing is reclaimed.
+  ASSERT_EQ(edit_handlers_->HandleDeleteMessage(req, "alice").code(),
+            chirp::common::INVALID_PARAM);
+  EXPECT_TRUE(purged_.empty());
+}
+
+TEST_F(EditMentionHandlersTest, NullPurgerIsTolerated) {
+  // Deployments without an offline queue (or embedders that do not wire one)
+  // pass no purger at all; the recall must still succeed.
+  chirp::chat::MessageEditHandlers handlers(edits_, resolver_, moderator_, notifier_);
+  handlers.TrackMessage("m1", chirp::chat::PRIVATE, "alice|bob");
+  handlers.RegisterMessage("m1", "alice", "hi");
+  chirp::chat::DeleteMessageRequest req;
+  req.set_message_id("m1");
+  req.set_user_id("alice");
+  EXPECT_EQ(handlers.HandleDeleteMessage(req, "alice").code(), chirp::common::OK);
+  EXPECT_TRUE(purged_.empty());
 }
 
 TEST_F(EditMentionHandlersTest, ModeratorRemovalOfUntrackedMessageFails) {
