@@ -44,6 +44,12 @@ using ChannelModeratorChecker = std::function<bool(
     chirp::chat::ChannelType channel_type, const std::string& channel_id,
     const std::string& user_id)>;
 
+// Drops a message that is still sitting in a recipient's offline queue.
+// Wired to the message store's offline queue on the basic form; left unset
+// (or set to a no-op) on deployments without an offline queue.
+using OfflineMessagePurger = std::function<void(
+    const std::string& message_id, const std::string& receiver_id)>;
+
 // Handlers for the read-receipt message ids (MARK_READ, GET_READ_RECEIPTS,
 // GET_UNREAD_COUNT). Marking a channel read notifies the other channel
 // members with MESSAGE_READ_NOTIFY.
@@ -155,7 +161,8 @@ class ReactionHandlers {
 class MessageEditHandlers {
  public:
   MessageEditHandlers(MessageEditManager& edits, ChannelMemberResolver members,
-                      ChannelModeratorChecker is_moderator, UserNotifier notify);
+                      ChannelModeratorChecker is_moderator, UserNotifier notify,
+                      OfflineMessagePurger purge_offline = nullptr);
 
   // Remember which channel a message belongs to (called when the message
   // is accepted for delivery).
@@ -191,6 +198,7 @@ class MessageEditHandlers {
   ChannelMemberResolver members_;
   ChannelModeratorChecker is_moderator_;
   UserNotifier notify_;
+  OfflineMessagePurger purge_offline_;
 
   std::mutex mu_;
   std::unordered_map<std::string, std::pair<chirp::chat::ChannelType, std::string>>

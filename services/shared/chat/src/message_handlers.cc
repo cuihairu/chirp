@@ -296,11 +296,13 @@ chirp::chat::GetReactionsResponse ReactionHandlers::HandleGetReactions(
 MessageEditHandlers::MessageEditHandlers(MessageEditManager& edits,
                                          ChannelMemberResolver members,
                                          ChannelModeratorChecker is_moderator,
-                                         UserNotifier notify)
+                                         UserNotifier notify,
+                                         OfflineMessagePurger purge_offline)
     : edits_(edits),
       members_(std::move(members)),
       is_moderator_(std::move(is_moderator)),
-      notify_(std::move(notify)) {}
+      notify_(std::move(notify)),
+      purge_offline_(std::move(purge_offline)) {}
 
 void MessageEditHandlers::TrackMessage(const std::string& message_id,
                                        chirp::chat::ChannelType channel_type,
@@ -434,8 +436,15 @@ chirp::chat::DeleteMessageResponse MessageEditHandlers::HandleDeleteMessage(
   notify.set_is_hard_delete(req.is_hard_delete());
   notify.set_deleted_by(req.user_id());
   notify.set_deleted_at(chirp::chat::runtime::NowMs());
-  for (const auto& member : members_(channel_type, channel_id, req.user_id())) {
+  const auto members = members_(channel_type, channel_id, req.user_id());
+  for (const auto& member : members) {
     notify_(member, chirp::gateway::MESSAGE_DELETED_NOTIFY, notify);
+    // A copy already queued for an offline recipient never saw the notify
+    // above, so the recall would be undone on their next login. Drop those
+    // copies: same recipient list, same reason (the message is gone).
+    if (purge_offline_) {
+      purge_offline_(req.message_id(), member);
+    }
   }
 
   resp.set_code(chirp::common::OK);

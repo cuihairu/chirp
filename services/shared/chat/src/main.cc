@@ -213,6 +213,42 @@ struct MessageStore {
     return removed;
   }
 
+  // 撤回/版主删除后回收离线队列里的副本(game_chat_features P0 消息撤回):
+  // 离线接收方没有 live 会话,收不到 MESSAGE_DELETED_NOTIFY,若副本仍在队列里
+  // 就会在下次登录时把原文补投出去,撤回等于白做。Redis 侧没有 message_id 索引,
+  // 只能扫队列按 message_id 匹配后 LRem(队列有每用户 200 条内存/TTL 上限,代价有界)。
+  size_t PurgeOfflineByMessageId(const std::string& receiver_id,
+                                 const std::string& message_id) {
+    if (receiver_id.empty() || message_id.empty()) {
+      return 0;
+    }
+    size_t removed = 0;
+
+    auto it = offline_messages.find(receiver_id);
+    if (it != offline_messages.end()) {
+      auto& pending = it->second;
+      const size_t before = pending.size();
+      pending.erase(std::remove_if(pending.begin(), pending.end(),
+                                   [&message_id](const chirp::chat::ChatMessage& queued) {
+                                     return queued.message_id() == message_id;
+                                   }),
+                    pending.end());
+      removed += before - pending.size();
+    }
+
+    if (redis) {
+      const std::string key = OfflineKey(receiver_id);
+      for (const auto& item : redis->LRange(key, 0, -1)) {
+        chirp::chat::ChatMessage queued;
+        if (queued.ParseFromArray(item.data(), static_cast<int>(item.size())) &&
+            queued.message_id() == message_id && redis->LRem(key, 1, item) > 0) {
+          ++removed;
+        }
+      }
+    }
+    return removed;
+  }
+
   std::vector<chirp::chat::ChatMessage> GetHistory(chirp::chat::ChannelType type,
                                                    const std::string& channel_id,
                                                    int64_t before_timestamp,
@@ -1436,7 +1472,13 @@ int main(int argc, char** argv) {
   chirp::chat::ReadReceiptHandlers receipt_handlers(receipts, resolve_members, notify_member);
   chirp::chat::TypingHandlers typing_handlers(typing, resolve_members, notify_member);
   chirp::chat::ReactionHandlers reaction_handlers(reactions, resolve_members, notify_member);
-  chirp::chat::MessageEditHandlers edit_handlers(edits, resolve_members, is_moderator, notify_member);
+  // 撤回/删除成功后回收离线副本,否则离线接收方下次登录仍会收到原文。
+  chirp::chat::OfflineMessagePurger purge_offline =
+      [store](const std::string& message_id, const std::string& receiver_id) {
+        store->PurgeOfflineByMessageId(receiver_id, message_id);
+      };
+  chirp::chat::MessageEditHandlers edit_handlers(edits, resolve_members, is_moderator,
+                                                 notify_member, purge_offline);
   chirp::chat::MentionHandlers mention_handlers(mentions, is_moderator);
 
   chirp::chat::WordFilterOptions word_filter_options;
