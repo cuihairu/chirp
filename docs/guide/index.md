@@ -10,3 +10,4 @@ title: 指南
 - [快速开始](./getting-started.md)
 - [安装与构建](./installation.md)
 - [部署方式](./deployment.md)
+- [接入避坑指南](./integration-pitfalls.md)

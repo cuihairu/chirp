@@ -76,6 +76,7 @@ const config = defineConfig({
           { text: '安装', link: '/guide/installation' },
           { text: '快速开始', link: '/guide/getting-started' },
           { text: '部署指南', link: '/guide/deployment' },
+          { text: '接入避坑指南', link: '/guide/integration-pitfalls' },
         ]},
       ],
       '/api/': [
@@ -93,6 +94,7 @@ const config = defineConfig({
           { text: '导言', link: '/guide/introduction' },
           { text: '安装', link: '/guide/installation' },
           { text: '快速开始', link: '/guide/getting-started' },
+          { text: '接入避坑指南', link: '/guide/integration-pitfalls' },
           { text: '整体架构', link: '/architecture' },
           { text: '服务器平面', link: '/server_plane' },
           { text: 'API 参考', link: '/api/overview' },
