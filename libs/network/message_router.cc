@@ -37,6 +37,13 @@ struct MessageRouter::Impl {
   // 订阅回调映射
   std::unordered_map<std::string, SubscribeCallback> subscriptions;
 
+  // Guards the two containers above: mutated on the caller's thread
+  // (Subscribe*/Unsubscribe/Stop), read on the subscriber thread (message
+  // dispatch, reconnect re-subscribe). Never held across subscriber->()
+  // calls: those take the subscriber's sock_mu_ and can re-enter callbacks
+  // while holding it, which would invert the lock order and deadlock.
+  mutable std::mutex state_mu;
+
   // 运行状态
   std::atomic<bool> running{false};
   std::atomic<bool> connected{false};
@@ -62,10 +69,17 @@ struct MessageRouter::Impl {
 
     // 设置订阅者回调
     subscriber->SetMessageCallback([this, &io](const std::string& channel, const std::string& message) {
-      auto it = subscriptions.find(channel);
-      if (it != subscriptions.end() && it->second) {
+      SubscribeCallback cb;
+      {
+        std::lock_guard<std::mutex> lock(state_mu);
+        auto it = subscriptions.find(channel);
+        if (it != subscriptions.end()) {
+          cb = it->second;
+        }
+      }
+      if (cb) {
         // 将回调投递到主 io_context
-        asio::post(io, [cb = it->second, msg = message]() {
+        asio::post(io, [cb = std::move(cb), msg = message]() {
           cb(msg);
         });
       }
@@ -80,11 +94,44 @@ struct MessageRouter::Impl {
       chirp::common::Logger::Instance().Info("MessageRouter Redis connected");
       connected = true;
 
-      // 重新订阅之前的频道
-      for (const auto& channel : subscribed_channels) {
+      // 重新订阅之前的频道：先在锁内取快照，锁外再发 SUBSCRIBE，
+      // 与调用方的订阅/退订互不持锁等待。
+      std::vector<std::string> channels;
+      {
+        std::lock_guard<std::mutex> lock(state_mu);
+        channels.assign(subscribed_channels.begin(), subscribed_channels.end());
+      }
+      for (const auto& channel : channels) {
         subscriber->Subscribe(channel);
       }
     });
+  }
+
+  // Shared tail of the four typed Subscribe* entry points: record the
+  // callback and channel under the lock, then send SUBSCRIBE outside it.
+  bool SubscribeChannel(const std::string& channel, SubscribeCallback cb) {
+    {
+      std::lock_guard<std::mutex> lock(state_mu);
+      subscriptions[channel] = std::move(cb);
+      subscribed_channels.insert(channel);
+    }
+
+    if (subscriber) {
+      return subscriber->Subscribe(channel);
+    }
+    return true;
+  }
+
+  void UnsubscribeChannel(const std::string& channel) {
+    {
+      std::lock_guard<std::mutex> lock(state_mu);
+      subscriptions.erase(channel);
+      subscribed_channels.erase(channel);
+    }
+
+    if (subscriber) {
+      subscriber->Unsubscribe(channel);
+    }
   }
 
   bool Start() {
@@ -108,6 +155,8 @@ struct MessageRouter::Impl {
     if (subscriber) {
       subscriber->Stop();
     }
+    // subscriber 线程已在 Stop() 内 join，此处已无并发访问；仍走锁保持纪律。
+    std::lock_guard<std::mutex> lock(state_mu);
     subscribed_channels.clear();
     subscriptions.clear();
   }
@@ -153,56 +202,23 @@ int64_t MessageRouter::PublishCount(const std::string& channel, const std::strin
 }
 
 bool MessageRouter::SubscribeUserChat(const std::string& user_id, SubscribeCallback cb) {
-  std::string channel = RouterChannels::UserChat(user_id);
-  impl_->subscriptions[channel] = std::move(cb);
-  impl_->subscribed_channels.insert(channel);
-
-  if (impl_->subscriber) {
-    return impl_->subscriber->Subscribe(channel);
-  }
-  return true;
+  return impl_->SubscribeChannel(RouterChannels::UserChat(user_id), std::move(cb));
 }
 
 bool MessageRouter::SubscribeGroupChat(const std::string& group_id, SubscribeCallback cb) {
-  std::string channel = RouterChannels::GroupChat(group_id);
-  impl_->subscriptions[channel] = std::move(cb);
-  impl_->subscribed_channels.insert(channel);
-
-  if (impl_->subscriber) {
-    return impl_->subscriber->Subscribe(channel);
-  }
-  return true;
+  return impl_->SubscribeChannel(RouterChannels::GroupChat(group_id), std::move(cb));
 }
 
 bool MessageRouter::SubscribeUserSocial(const std::string& user_id, SubscribeCallback cb) {
-  std::string channel = RouterChannels::UserSocial(user_id);
-  impl_->subscriptions[channel] = std::move(cb);
-  impl_->subscribed_channels.insert(channel);
-
-  if (impl_->subscriber) {
-    return impl_->subscriber->Subscribe(channel);
-  }
-  return true;
+  return impl_->SubscribeChannel(RouterChannels::UserSocial(user_id), std::move(cb));
 }
 
 bool MessageRouter::SubscribeKickNotification(const std::string& instance_id, SubscribeCallback cb) {
-  std::string channel = RouterChannels::KickNotification(instance_id);
-  impl_->subscriptions[channel] = std::move(cb);
-  impl_->subscribed_channels.insert(channel);
-
-  if (impl_->subscriber) {
-    return impl_->subscriber->Subscribe(channel);
-  }
-  return true;
+  return impl_->SubscribeChannel(RouterChannels::KickNotification(instance_id), std::move(cb));
 }
 
 void MessageRouter::Unsubscribe(const std::string& channel) {
-  impl_->subscriptions.erase(channel);
-  impl_->subscribed_channels.erase(channel);
-
-  if (impl_->subscriber) {
-    impl_->subscriber->Unsubscribe(channel);
-  }
+  impl_->UnsubscribeChannel(channel);
 }
 
 bool MessageRouter::SendChatMessage(const std::string& user_id,
