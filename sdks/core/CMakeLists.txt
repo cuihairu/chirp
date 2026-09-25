@@ -188,7 +188,7 @@ target_include_directories(chirp_core_sdk
     ${CMAKE_CURRENT_SOURCE_DIR}/include
 )
 
-# SDK example program (only if built standalone or explicitly enabled)
+# SDK example programs (only if built standalone or explicitly enabled)
 if(CHIRP_BUILD_SDK_EXAMPLES)
     add_executable(sdk_example
       examples/sdk_example.cc
@@ -200,6 +200,23 @@ if(CHIRP_BUILD_SDK_EXAMPLES)
     )
 
     target_include_directories(sdk_example
+      PRIVATE
+      ${CMAKE_CURRENT_SOURCE_DIR}/include
+    )
+
+    # Full integration tour: lifecycle listener, auth provider, typed send
+    # with per-code handling, server-side guard rails, history/read, local
+    # archive. Complements the minimal smoke-oriented sdk_example.
+    add_executable(integration_example
+      examples/integration_example.cc
+    )
+
+    target_link_libraries(integration_example
+      PRIVATE
+      chirp_core_sdk
+    )
+
+    target_include_directories(integration_example
       PRIVATE
       ${CMAKE_CURRENT_SOURCE_DIR}/include
     )

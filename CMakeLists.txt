@@ -5,6 +5,10 @@ set(CMAKE_CXX_STANDARD 23)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_CXX_EXTENSIONS OFF)
 option(CHIRP_FETCH_DEPS "Allow CMake to download third-party dependencies when not installed" ON)
+# Default ON so bare configure/coverage presets also compile-verify the
+# example programs (sdk_example is the --smoke-sdk probe; integration_example
+# is the integrator tour). Turn off with -DCHIRP_BUILD_SDK_EXAMPLES=OFF.
+option(CHIRP_BUILD_SDK_EXAMPLES "Build the SDK example programs" ON)
 option(CHIRP_ENABLE_COVERAGE "Instrument targets with gcov coverage flags" OFF)
 option(CHIRP_ENABLE_WARNINGS "Build with -Wall -Wextra -Wpedantic" ON)
 option(CHIRP_WARNINGS_AS_ERRORS "Treat compiler warnings as errors" OFF)
