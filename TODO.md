@@ -1,6 +1,6 @@
 # Chirp 任务清单
 
-> 最后更新：2026-09-22（第二次）：勾选 hub 模式/离线推送/版本协商/CI/单测/notification 构建六项（盘点核验已实现），APNs 项标注进行中边界。
+> 最后更新：2026-09-25：接入方支持批次——避坑指南/API 总览重写/C++ 接入示例/压测工具/TS 幽灵依赖修复/smoke-sdk 竞态修复/测试环境鲁棒性加固，覆盖率保持 100.0%。
 
 ## 当前焦点
 
@@ -95,6 +95,18 @@ SDK 引擎兼容性见 [SDK 引擎兼容性](docs/design-notes/sdk_compatibility
 - [x] **更新 CI**：`ci.yml` 适配新路径（2026-09-22 核验：smoke/build-and-test/coverage 均构建两平面完整树，跑全部 7 个 smoke 模式；`.github/`/`scripts/`/CMake/`docker/`/`deploy/` 旧路径 grep 零命中）
 - [x] **更新单元测试**：路径和 namespace 重命名后的测试修复（2026-09-22 核验：tests/unit 34 个目标全部引用新路径与新 namespace（`chirp::auth`/`chirp::gateway`/`chirp::app_notification`），旧路径残留 grep 零命中，ctest 34/34 通过）
 - [x] **全量构建验证**：2026-09-22 clean build（vcpkg toolchain + Debug + ENABLE_TESTS=ON)333/333 目标通过，13 个 `chirp_*` 服务二进制全部产出，`ctest` 34/34 通过
+
+## 接入方支持（2026-09-25 批次）
+
+- [x] **接入避坑指南**（`docs/guide/integration-pitfalls.md` 新建）：发送侧四道防线阈值与回码（模糊闸 120/min、长度 私聊200/世界100/系统500 码点、节奏 世界5s/公会2s/私聊1s、重复第3条禁言5min）、接收侧静默语义（拉黑/频道屏蔽）、心跳/KICK/重连契约、`ec` vs `resp.code()` 代码示例、跨平面 `<game_id>:<频道>` 前缀、服务端接入三坑（双连接/ack 事件/inject_id 幂等）、fire-and-forget 发送+立即断开竞态、快速自查清单；vitepress 双侧栏收录
+- [x] **API 总览重写**（`docs/api/overview.md`）：按平面重组端点表（二进制名×端口×说明）、2xxx 全量表+守门链说明、5xxx 含 5013-5030 app_chat 端口纠正与 5050-5053 peer 协议、错误码 0-11 全表、登录/消息 mermaid 流程更新（KICK 终态/TARGET_OFFLINE 队列语义）、notification 推送现状（`--push_transport http` vs 默认 logging）
+- [x] **C++ 接入示例**（`sdks/core/examples/integration_example.cc` 新建）：接入全流程示例——监听器/鉴权 Provider/`SendOptions` 类型化发送按码分发（含世界节奏双发演示、210 字超长拒收）/`FetchHistory`/`MarkChannelRead`/`MemoryMessageStore` 本地历史；根 CMake 新增 `CHIRP_BUILD_SDK_EXAMPLES`（默认 ON，裸 configure/coverage preset 同步编译验证）；`sdks/core/README.md` 补示例章节
+- [x] **压测工具**（`tools/benchmark/load_client.cc` 新建 + `README.md`）：N 环配对在线用户、阻塞线程 worker、SendAndRead 序列匹配跳过 notify、每轮变内容绕开 RepeatGuard、RTT p50/p90/p99/max、按回码拒绝计数（RATE_LIMITED 附提示）；README 记录守门栏约束（节奏硬编码→唯一杠杆 `--conns`/`--interval`）
+- [x] **TS SDK 幽灵依赖修复**（`sdks/ts/package.json` 补 `long`/`protobufjs`）：proto TS gencode 直接 import 这两个包但此前只在 apps/web_companion 声明，`sdks/ts` 独立安装即 ERR_MODULE_NOT_FOUND/类型检查失败
+- [x] **smoke-sdk 竞态修复**（`sdks/core/examples/sdk_example.cc`）：fire-and-forget `SendMessage` 把发送 post 到 io 线程,客户端收到预期消息立即 `Disconnect()` 停 io_context 时,排队中的发送 lambda 被丢弃——消息在客户端侧无声消失、服务端零痕迹（高负载/慢二进制下偶现,曾致全量门禁 smoke-sdk 阵亡）;改用带回执的类型化重载等 `SEND_MESSAGE_RESP` 再断开,`TARGET_OFFLINE`(basic 离线入队)与 `OK` 同计送达;避坑指南同步收录该坑
+- [x] **测试环境鲁棒性加固**（3 个单测）:解析失败用例的 `*.invalid` 主机名在 DNS 代理沙箱会被假应答(198.18.1.174)导致用例失效——换成含空格主机名,任何环境都在 `getaddrinfo` 本地失败（`chat_peer_test`/`chat_bridge_test`/`push_transport_http_test`）
+- [x] **覆盖率豁免行重锚定**（`scripts/run_coverage.sh`）：gcc 15 行归属漂移后 4 处豁免行号重钉（chat_peer_hub 监听臂/DoAccept 错误臂/SendRawPacket 关门守卫、delivery_tracker RunCheck 停止守卫、migration_worker migrating_ 守卫×4），修正两处过期注释；覆盖率回到 100.0%（8252/8252）
+- [x] **smoke 断言两形态语义对齐**（`test_services.sh`）：离线接收方断言 `send code=0` 放宽为 `(0|6)`——basic 形态离线发送回 TARGET_OFFLINE(6,已入队)、enhanced 回 OK,补投递断言才是真正的证明
 
 ## 文档（P2）
 
