@@ -1,6 +1,7 @@
 #pragma once
 
 #include <array>
+#include <atomic>
 #include <deque>
 #include <functional>
 #include <memory>
@@ -58,7 +59,7 @@ private:
   std::deque<std::string> write_q_;
   bool write_in_flight_{false};
   bool close_after_write_{false};
-  bool closed_{false};
+  std::atomic<bool> closed_{false};  // written on the io strand, read by IsClosed()
   bool stream_established_{false};
 };
 

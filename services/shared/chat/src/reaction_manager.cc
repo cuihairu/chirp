@@ -62,24 +62,30 @@ bool ReactionManager::RemoveReaction(const std::string& message_id,
     return false;  // Message has no reactions
   }
 
-  auto& msg_reactions = it->second;
-  std::lock_guard<std::mutex> msg_lock(msg_reactions->mu);
+  bool message_now_empty = false;
+  {
+    auto& msg_reactions = it->second;
+    std::lock_guard<std::mutex> msg_lock(msg_reactions->mu);
 
-  auto rit = msg_reactions->reactions.find(emoji);
-  if (rit == msg_reactions->reactions.end()) {
-    return false;  // No reactions with this emoji
+    auto rit = msg_reactions->reactions.find(emoji);
+    if (rit == msg_reactions->reactions.end()) {
+      return false;  // No reactions with this emoji
+    }
+
+    auto& reaction = rit->second;
+    reaction->user_ids.erase(user_id);
+
+    // Clean up empty reactions
+    if (reaction->user_ids.empty()) {
+      msg_reactions->reactions.erase(rit);
+      message_now_empty = msg_reactions->reactions.empty();
+    }
   }
 
-  auto& reaction = rit->second;
-  reaction->user_ids.erase(user_id);
-
-  // Clean up empty reactions
-  if (reaction->user_ids.empty()) {
-    msg_reactions->reactions.erase(rit);
-  }
-
-  // Clean up empty message reactions
-  if (msg_reactions->reactions.empty()) {
+  // The message-level erase happens after releasing msg_reactions->mu: the
+  // entry owns that mutex, and unlocking a destroyed mutex is undefined
+  // behavior.
+  if (message_now_empty) {
     message_reactions_.erase(it);
   }
 

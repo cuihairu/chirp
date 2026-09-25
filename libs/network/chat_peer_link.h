@@ -2,6 +2,7 @@
 #define CHIRP_NETWORK_CHAT_PEER_LINK_H_
 
 #include <array>
+#include <atomic>
 #include <cstdint>
 #include <functional>
 #include <memory>
@@ -65,15 +66,14 @@ class ChatPeerLink : public std::enable_shared_from_this<ChatPeerLink> {
   void Start();
   void Stop();
 
-  // Channel message uplink. Call from the link's io_context thread (the chat
-  // main loop) only: the fast-path registered_ check reads strand-owned state
-  // without a lock, which is exactly race-free on the single-threaded chat io.
-  // The actual send posts onto the strand. Returns false when the link is not
-  // registered - nothing is queued, the caller treats bridging as best-effort.
+  // Channel message uplink. Safe from any thread: the fast-path registered_
+  // check reads an atomic the strand owns, and the actual send posts onto
+  // the strand. Returns false when the link is not registered - nothing is
+  // queued, the caller treats bridging as best-effort.
   bool SendChannelMessage(const chirp::gateway::ChannelMessageNotify& notify);
   bool SendInject(const chirp::gateway::PeerInjectMessageNotify& notify);
 
-  // Same threading contract as the Send calls above: io_context thread only.
+  // Same threading contract as the Send calls above.
   bool registered() const { return registered_; }
 
  private:
@@ -108,8 +108,10 @@ class ChatPeerLink : public std::enable_shared_from_this<ChatPeerLink> {
   asio::steady_timer timer_;  // reconnect delay and heartbeat, one at a time
   std::array<uint8_t, 4> header_{};
   std::string body_;
-  bool registered_ = false;
-  bool stopping_ = false;
+  // Written on the strand (registration/teardown), read from caller threads
+  // through SendChannelMessage/SendInject/registered().
+  std::atomic<bool> registered_ = false;
+  bool stopping_ = false;  // strand-only (the destructor is post-strand)
   int64_t heartbeat_seq_ = 0;
   int64_t uplink_seq_ = 0;
   int heartbeat_interval_seconds_ = 30;  // reassigned by the hub on register

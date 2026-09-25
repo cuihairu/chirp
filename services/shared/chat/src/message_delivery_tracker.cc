@@ -21,7 +21,8 @@ MessageDeliveryTracker::MessageDeliveryTracker(asio::io_context& io,
 MessageDeliveryTracker::MessageDeliveryTracker(asio::io_context& io,
                                               std::shared_ptr<HybridMessageStore> store,
                                               Config config)
-    : timer_(io), io_(io), store_(std::move(store)), config_(std::move(config)) {}
+    : timer_(io), io_(io), strand_(io.get_executor()),
+      store_(std::move(store)), config_(std::move(config)) {}
 
 MessageDeliveryTracker::~MessageDeliveryTracker() {
   Stop();
@@ -35,12 +36,15 @@ void MessageDeliveryTracker::Start() {
   running_.store(true);
   Logger::Instance().Info("MessageDeliveryTracker started");
 
-  // Schedule first check
-  timer_.expires_after(std::chrono::seconds(config_.check_interval_seconds));
-  timer_.async_wait([this](const std::error_code& ec) {
-    if (!ec) {
-      RunCheck();
-    }
+  // All timer mutations go through the strand: Start()/Stop() run on the
+  // caller's thread, RunCheck() on the io context.
+  asio::post(strand_, [this] {
+    timer_.expires_after(std::chrono::seconds(config_.check_interval_seconds));
+    timer_.async_wait(asio::bind_executor(strand_, [this](const std::error_code& ec) {
+      if (!ec) {
+        RunCheck();
+      }
+    }));
   });
 }
 
@@ -50,7 +54,7 @@ void MessageDeliveryTracker::Stop() {
   }
 
   running_.store(false);
-  timer_.cancel();
+  asio::post(strand_, [this] { timer_.cancel(); });
   Logger::Instance().Info("MessageDeliveryTracker stopped");
 }
 
@@ -123,14 +127,15 @@ void MessageDeliveryTracker::RunCheck() {
     }
   }
 
-  // Schedule next check
+  // Schedule next check (RunCheck only runs on strand_, so timer_ access
+  // here stays serialized against Start()/Stop()).
   if (running_.load()) {
     timer_.expires_after(std::chrono::seconds(config_.check_interval_seconds));
-    timer_.async_wait([this](const std::error_code& ec) {
+    timer_.async_wait(asio::bind_executor(strand_, [this](const std::error_code& ec) {
       if (!ec) {
         RunCheck();
       }
-    });
+    }));
   }
 }
 

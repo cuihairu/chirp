@@ -20,7 +20,8 @@ int64_t NowMs() {
 MessageMigrationWorker::MessageMigrationWorker(asio::io_context& io,
                                               std::shared_ptr<HybridMessageStore> store,
                                               const MessageStoreConfig& config)
-    : timer_(io), io_(io), store_(std::move(store)), config_(config) {}
+    : timer_(io), io_(io), strand_(io.get_executor()),
+      store_(std::move(store)), config_(config) {}
 
 MessageMigrationWorker::~MessageMigrationWorker() {
   Stop();
@@ -40,8 +41,9 @@ void MessageMigrationWorker::Start() {
   Logger::Instance().Info("MessageMigrationWorker started (interval: " +
                          std::to_string(config_.migration_interval_seconds) + "s)");
 
-  // Schedule first run
-  ScheduleNextRun();
+  // All timer mutations go through the strand: Start() runs on the caller's
+  // thread while the expiry handler runs on the io context.
+  asio::post(strand_, [this] { ScheduleNextRun(); });
 }
 
 void MessageMigrationWorker::Stop() {
@@ -50,7 +52,9 @@ void MessageMigrationWorker::Stop() {
   }
 
   running_.store(false);
-  timer_.cancel();
+  // Timer mutations go through the strand: Stop() runs on the caller's
+  // thread while ScheduleNextRun() runs on the io context.
+  asio::post(strand_, [this] { timer_.cancel(); });
   Logger::Instance().Info("MessageMigrationWorker stopped");
 }
 
@@ -60,7 +64,10 @@ void MessageMigrationWorker::RunMigrationNow() {
     return;  // GCOVR_EXCL_LINE -- needs RunMigrationNow racing an in-flight migration on the io thread
   }
 
-  asio::post(io_, [this]() {
+  // The migration runs on the strand so it serializes against the timer
+  // chain (a RunMigrationNow() racing a scheduled tick can no longer
+  // interleave with an expiring ScheduleNextRun()).
+  asio::post(strand_, [this]() {
     RunMigration();
   });
 }
@@ -75,12 +82,14 @@ void MessageMigrationWorker::ScheduleNextRun() {
     return;
   }
 
+  // Scheduled only from the strand (Start/RunMigration tail), so the timer
+  // never sees concurrent expires_after()/cancel().
   timer_.expires_after(std::chrono::seconds(config_.migration_interval_seconds));
-  timer_.async_wait([this](const std::error_code& ec) {
+  timer_.async_wait(asio::bind_executor(strand_, [this](const std::error_code& ec) {
     if (!ec) {
       RunMigration();
     }
-  });
+  }));
 }
 
 void MessageMigrationWorker::RunMigration() {

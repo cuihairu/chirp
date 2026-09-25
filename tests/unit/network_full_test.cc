@@ -787,33 +787,23 @@ TEST(RedisSubscriberTest, LifecycleDeliversMessages) {
   RedisSubscriber sub("127.0.0.1", server.port());
 
   std::mutex mu;
-  std::condition_variable cv;
-  int connects = 0;
-  std::vector<std::pair<std::string, std::string>> messages;
-  std::vector<std::string> errors;
+  std::atomic<int> connects{0};  // polled by the test thread, written by callbacks
+  std::vector<std::pair<std::string, std::string>> messages;  // guarded by mu
+  std::vector<std::string> errors;                            // guarded by mu
 
-  sub.SetConnectCallback([&] {
-    std::lock_guard<std::mutex> l(mu);
-    ++connects;
-    cv.notify_all();
-  });
+  sub.SetConnectCallback([&] { connects.fetch_add(1); });
   sub.SetErrorCallback([&](const std::string& e) {
     std::lock_guard<std::mutex> l(mu);
     errors.push_back(e);
-    cv.notify_all();
   });
   sub.SetMessageCallback([&](const std::string& ch, const std::string& payload) {
     std::lock_guard<std::mutex> l(mu);
     messages.emplace_back(ch, payload);
-    cv.notify_all();
   });
 
   sub.Start();
-  {
-    std::unique_lock<std::mutex> l(mu);
-    cv.wait_for(l, std::chrono::seconds(3), [&] { return connects == 1; });
-  }
-  ASSERT_EQ(connects, 1);
+  ASSERT_TRUE(WaitFor([&] { return connects.load() == 1; }));
+  EXPECT_EQ(connects.load(), 1);
   EXPECT_TRUE(sub.IsConnected());
 
   EXPECT_TRUE(sub.Subscribe("room1"));
@@ -871,28 +861,21 @@ TEST(RedisSubscriberTest, RestartReconnects) {
 
 TEST(RedisSubscriberTest, ConnectionRefusedReportsError) {
   std::mutex mu;
-  std::condition_variable cv;
-  std::vector<std::string> errors;
-  bool connected = false;
+  std::vector<std::string> errors;  // guarded by mu
+  std::atomic<bool> connected{false};
 
   RedisSubscriber sub("127.0.0.1", FreePort());
   sub.SetErrorCallback([&](const std::string& e) {
     std::lock_guard<std::mutex> l(mu);
     errors.push_back(e);
-    cv.notify_all();
   });
-  sub.SetConnectCallback([&] {
-    std::lock_guard<std::mutex> l(mu);
-    connected = true;
-    cv.notify_all();
-  });
+  sub.SetConnectCallback([&] { connected.store(true); });
 
   sub.Start();
-  {
-    std::unique_lock<std::mutex> l(mu);
-    cv.wait_for(l, std::chrono::seconds(3), [&] { return !errors.empty() || connected; });
-  }
-  EXPECT_TRUE(!errors.empty() || connected);
+  EXPECT_TRUE(WaitFor([&] {
+    std::lock_guard<std::mutex> l(mu);
+    return !errors.empty() || connected.load();
+  }));
   EXPECT_FALSE(sub.IsConnected());
   sub.Stop();
 }

@@ -30,6 +30,7 @@ ChatPeerHub::ChatPeerHub(asio::io_context& io, Options options,
                          ChannelMessageHandler on_channel_message, PrivateTag)
     : options_(std::move(options)),
       io_(io),
+      strand_(io.get_executor()),
       on_registered_(std::move(on_registered)),
       on_dropped_(std::move(on_dropped)),
       on_channel_message_(std::move(on_channel_message)),
@@ -43,36 +44,38 @@ ChatPeerHub::~ChatPeerHub() {
 }
 
 uint16_t ChatPeerHub::port() const {
-  asio::error_code ec;
-  const auto endpoint = acceptor_.local_endpoint(ec);
-  return ec ? 0 : endpoint.port();
+  return bound_port_.load();
 }
 
 void ChatPeerHub::Stop() {
-  // Everything this touches (acceptor, peer tables, stopping_) lives on the
-  // hub's io thread, so the teardown must run there. Posting also keeps the
-  // hub object alive until the cleanup handler itself completes.
+  // The teardown must run on the strand with the rest of the handler chain.
+  // Posting also keeps the hub object alive until the cleanup handler
+  // itself completes.
   auto self = shared_from_this();
-  asio::post(io_, [self] { self->DoStop(); });
+  asio::post(strand_, [self] { self->DoStop(); });
 }
 
 void ChatPeerHub::DoStop() {
   stopping_ = true;
   asio::error_code ec;
   acceptor_.close(ec);
-  // Copy first: Close() erases from peers_ while we iterate.
+  // Copy first: Close() erases from the tables while we iterate, and the
+  // lookup helpers read them from caller threads.
   std::vector<std::shared_ptr<PeerConn>> dropped;
-  for (auto& [id, conn] : peers_) {
-    dropped.push_back(conn);
-  }
-  for (auto& conn : peers_unregistered_) {
-    dropped.push_back(conn);
+  {
+    std::lock_guard<std::mutex> lock(peers_mu_);
+    for (auto& [id, conn] : peers_) {
+      dropped.push_back(conn);
+    }
+    for (auto& conn : peers_unregistered_) {
+      dropped.push_back(conn);
+    }
+    peers_.clear();
+    peers_unregistered_.clear();
   }
   for (auto& conn : dropped) {
     conn->Close(shared_from_this(), "hub stopped");
   }
-  peers_.clear();
-  peers_unregistered_.clear();
 }
 
 void ChatPeerHub::Start() {
@@ -91,6 +94,7 @@ void ChatPeerHub::Start() {
     chirp::common::Logger::Instance().Error("chat peer hub cannot listen: " + ec.message());
     return;
   }
+  bound_port_.store(acceptor_.local_endpoint(ec).port());
   chirp::common::Logger::Instance().Info(
       "chat peer hub listening on port " + std::to_string(options_.port) + " peers=" +
       std::to_string(options_.allowed_peers.size()) +
@@ -100,24 +104,41 @@ void ChatPeerHub::Start() {
 
 bool ChatPeerHub::SendInject(const std::string& service_id,
                              const chirp::gateway::PeerInjectMessageNotify& notify) {
-  auto it = peers_.find(service_id);
-  if (it == peers_.end()) {
-    return false;
+  std::shared_ptr<PeerConn> conn;
+  {
+    std::lock_guard<std::mutex> lock(peers_mu_);
+    auto it = peers_.find(service_id);
+    if (it == peers_.end()) {
+      return false;
+    }
+    conn = it->second;
   }
-  it->second->SendRawPacket(chirp::gateway::PEER_INJECT_MESSAGE_NOTIFY,
-                            ++it->second->uplink_seq, notify.SerializeAsString());
+  // The socket write runs on the strand; the caller's thread never touches
+  // the conn's transport state.
+  auto body = notify.SerializeAsString();
+  asio::post(strand_, [conn, body = std::move(body)] {
+    conn->SendRawPacket(chirp::gateway::PEER_INJECT_MESSAGE_NOTIFY,
+                        ++conn->uplink_seq, body);
+  });
   return true;
 }
 
 std::string ChatPeerHub::game_id_for(const std::string& service_id) const {
+  std::lock_guard<std::mutex> lock(peers_mu_);
   auto it = peers_.find(service_id);
-  return it == peers_.end() ? std::string() : it->second->game_id;
+  if (it == peers_.end()) {
+    return std::string();
+  }
+  std::lock_guard<std::mutex> meta_lock(it->second->meta_mu);
+  return it->second->game_id;
 }
 
 std::string ChatPeerHub::service_id_for_game(const std::string& game_id) const {
   // The peer table is service-count sized; a linear scan is fine.
+  std::lock_guard<std::mutex> lock(peers_mu_);
   for (const auto& [service_id, conn] : peers_) {
-    if (conn && conn->registered && conn->game_id == game_id) {
+    std::lock_guard<std::mutex> meta_lock(conn->meta_mu);
+    if (conn->registered && conn->game_id == game_id) {
       return service_id;
     }
   }
@@ -126,25 +147,30 @@ std::string ChatPeerHub::service_id_for_game(const std::string& game_id) const {
 
 void ChatPeerHub::DoAccept() {
   auto self = shared_from_this();
-  acceptor_.async_accept([self](const std::error_code& ec, asio::ip::tcp::socket socket) {
-    if (self->stopping_) {
-      return;
-    }
-    if (!ec) {
-      auto conn = std::make_shared<PeerConn>(std::move(socket));
-      self->peers_unregistered_.push_back(conn);
-      self->DoAccept();
-      // Unregistered connections live under the same idle window: a peer
-      // that connects but never registers is dropped like a silent one.
-      conn->ArmIdleTimer(self);
-      conn->ReadHeader(self);
-      return;
-    }
-    if (ec != asio::error::operation_aborted) {
-      chirp::common::Logger::Instance().Warn("chat peer hub accept failed: " + ec.message());
-      self->DoAccept();
-    }
-  });
+  acceptor_.async_accept(
+      asio::bind_executor(strand_, [self](const std::error_code& ec,
+                                          asio::ip::tcp::socket socket) {
+        if (self->stopping_) {
+          return;
+        }
+        if (!ec) {
+          auto conn = std::make_shared<PeerConn>(std::move(socket));
+          {
+            std::lock_guard<std::mutex> lock(self->peers_mu_);
+            self->peers_unregistered_.push_back(conn);
+          }
+          self->DoAccept();
+          // Unregistered connections live under the same idle window: a peer
+          // that connects but never registers is dropped like a silent one.
+          conn->ArmIdleTimer(self);
+          conn->ReadHeader(self);
+          return;
+        }
+        if (ec != asio::error::operation_aborted) {
+          chirp::common::Logger::Instance().Warn("chat peer hub accept failed: " + ec.message());
+          self->DoAccept();
+        }
+      }));
 }
 
 void ChatPeerHub::HandleRegister(const std::shared_ptr<PeerConn>& conn,
@@ -201,39 +227,58 @@ void ChatPeerHub::HandleRegister(const std::shared_ptr<PeerConn>& conn,
 
   // Same service_id registering again displaces the old connection. Close()
   // performs the erase + on_dropped_ report while the entry still belongs to
-  // the old conn.
-  auto existing = peers_.find(req.service_id());
-  if (existing != peers_.end()) {
-    existing->second->Close(shared_from_this(), "displaced");
+  // the old conn. Take it out under the lock and close it after releasing:
+  // Close() itself locks peers_mu_, and locking a plain mutex twice on one
+  // thread is undefined behavior.
+  {
+    std::shared_ptr<PeerConn> displaced;
+    {
+      std::lock_guard<std::mutex> lock(peers_mu_);
+      auto existing = peers_.find(req.service_id());
+      if (existing != peers_.end()) {
+        displaced = existing->second;
+      }
+    }
+    if (displaced) {
+      displaced->Close(shared_from_this(), "displaced");
+    }
   }
 
   const int32_t negotiated = std::min(kPeerProtocolVersion, req.protocol_version());
-  conn->service_id = req.service_id();
-  conn->game_id = req.game_id();
   // RepeatedField stores proto enums as int: convert explicitly, the range
   // constructor would need a narrowing no compiler will do for us.
-  conn->features.reserve(req.supported_features_size());
+  std::vector<chirp::gateway::PeerCapability> features;
+  features.reserve(req.supported_features_size());
   for (auto feature : req.supported_features()) {
-    conn->features.push_back(static_cast<chirp::gateway::PeerCapability>(feature));
+    features.push_back(static_cast<chirp::gateway::PeerCapability>(feature));
   }
-  conn->registered = true;
-  peers_[conn->service_id] = conn;
+  {
+    std::lock_guard<std::mutex> meta_lock(conn->meta_mu);
+    conn->service_id = req.service_id();
+    conn->game_id = req.game_id();
+    conn->features = features;
+    conn->registered = true;
+  }
+  {
+    std::lock_guard<std::mutex> lock(peers_mu_);
+    peers_[req.service_id()] = conn;
+  }
 
   resp.set_code(chirp::common::OK);
   resp.set_protocol_version(negotiated);
   resp.set_min_version(options_.min_peer_version);
   resp.set_heartbeat_interval_seconds(options_.heartbeat_interval_seconds);
-  for (auto feature : conn->features) {
+  for (auto feature : features) {
     resp.add_supported_features(feature);
   }
   conn->SendRawPacket(chirp::gateway::PEER_REGISTER_RESP, 0, resp.SerializeAsString());
   conn->ArmIdleTimer(shared_from_this());
 
   chirp::common::Logger::Instance().Info(
-      "chat peer registered: " + conn->service_id + " game=" + conn->game_id + " version=" +
+      "chat peer registered: " + req.service_id() + " game=" + req.game_id() + " version=" +
       std::to_string(negotiated));
   if (on_registered_) {
-    on_registered_(conn->service_id, conn->game_id, negotiated, conn->features);
+    on_registered_(req.service_id(), req.game_id(), negotiated, features);
   }
 }
 
@@ -249,7 +294,7 @@ void ChatPeerHub::PeerConn::ReadHeader(const std::shared_ptr<ChatPeerHub>& hub) 
   auto self = shared_from_this();
   asio::async_read(
       socket, asio::buffer(header),
-      [self, hub](const std::error_code& ec, std::size_t) {
+      asio::bind_executor(hub->strand_, [self, hub](const std::error_code& ec, std::size_t) {
         if (self->closing) return;
         if (ec) {
           self->Close(hub, "lost");
@@ -262,7 +307,7 @@ void ChatPeerHub::PeerConn::ReadHeader(const std::shared_ptr<ChatPeerHub>& hub) 
           return;
         }
         self->ReadBody(size, hub);
-      });
+      }));
 }
 
 void ChatPeerHub::PeerConn::ReadBody(uint32_t size, const std::shared_ptr<ChatPeerHub>& hub) {
@@ -270,7 +315,7 @@ void ChatPeerHub::PeerConn::ReadBody(uint32_t size, const std::shared_ptr<ChatPe
   body.resize(size);
   asio::async_read(
       socket, asio::buffer(body.data(), body.size()),
-      [self, hub](const std::error_code& ec, std::size_t) {
+      asio::bind_executor(hub->strand_, [self, hub](const std::error_code& ec, std::size_t) {
         if (self->closing) return;
         if (ec) {
           self->Close(hub, "lost");
@@ -286,17 +331,26 @@ void ChatPeerHub::PeerConn::ReadBody(uint32_t size, const std::shared_ptr<ChatPe
         if (!self->closing) {
           self->ReadHeader(hub);
         }
-      });
+      }));
 }
 
 void ChatPeerHub::PeerConn::HandlePacket(const chirp::gateway::Packet& pkt,
                                          const std::shared_ptr<ChatPeerHub>& hub) {
+  // Snapshot the identity once: the strand owns the writes, but external
+  // readers (lookup helpers) pair with meta_mu, so reads pair with it too.
+  std::string my_id;
+  bool is_registered = false;
+  {
+    std::lock_guard<std::mutex> meta_lock(meta_mu);
+    my_id = service_id;
+    is_registered = registered;
+  }
   switch (pkt.msg_id()) {
   case chirp::gateway::PEER_REGISTER_REQ: {
-    if (registered) {
+    if (is_registered) {
       // A second registration on a live connection is a protocol violation.
       chirp::common::Logger::Instance().Warn(
-          "chat peer " + service_id + " re-registered on a live connection");
+          "chat peer " + my_id + " re-registered on a live connection");
       Close(hub, "protocol error");
       return;
     }
@@ -310,7 +364,7 @@ void ChatPeerHub::PeerConn::HandlePacket(const chirp::gateway::Packet& pkt,
     break;
   }
   case chirp::gateway::CHANNEL_MESSAGE_NOTIFY: {
-    if (!registered) {
+    if (!is_registered) {
       Close(hub, "protocol error");
       return;
     }
@@ -321,12 +375,12 @@ void ChatPeerHub::PeerConn::HandlePacket(const chirp::gateway::Packet& pkt,
     }
     ArmIdleTimer(hub);  // any traffic proves liveness
     if (hub->on_channel_message_) {
-      hub->on_channel_message_(service_id, notify);
+      hub->on_channel_message_(my_id, notify);
     }
     break;
   }
   case chirp::gateway::HEARTBEAT_PING: {
-    if (!registered) {
+    if (!is_registered) {
       Close(hub, "protocol error");
       return;
     }
@@ -338,7 +392,7 @@ void ChatPeerHub::PeerConn::HandlePacket(const chirp::gateway::Packet& pkt,
     break;
   }
   default:
-    if (!registered) {
+    if (!is_registered) {
       Close(hub, "protocol error");
       return;
     }
@@ -353,14 +407,20 @@ void ChatPeerHub::PeerConn::ArmIdleTimer(const std::shared_ptr<ChatPeerHub>& hub
   idle_timer.cancel();
   const int timeout = std::max(2, hub->options_.heartbeat_interval_seconds * 2);
   idle_timer.expires_after(std::chrono::seconds(timeout));
-  idle_timer.async_wait([self, hub](const std::error_code& ec) {
-    if (ec || self->closing) return;
-    chirp::common::Logger::Instance().Warn(
-        "chat peer " +
-        (self->service_id.empty() ? std::string("(unregistered)") : self->service_id) +
-        " silent past the idle window, dropping");
-    self->Close(hub, "timeout");
-  });
+  idle_timer.async_wait(
+      asio::bind_executor(hub->strand_, [self, hub](const std::error_code& ec) {
+        if (ec || self->closing) return;
+        std::string who;
+        {
+          std::lock_guard<std::mutex> meta_lock(self->meta_mu);
+          who = self->service_id;
+        }
+        chirp::common::Logger::Instance().Warn(
+            "chat peer " +
+            (who.empty() ? std::string("(unregistered)") : who) +
+            " silent past the idle window, dropping");
+        self->Close(hub, "timeout");
+      }));
 }
 
 void ChatPeerHub::PeerConn::SendRawPacket(chirp::gateway::MsgID msg_id, int64_t seq,
@@ -391,8 +451,18 @@ void ChatPeerHub::PeerConn::Close(const std::shared_ptr<ChatPeerHub>& hub,
 
   // Deregister: erase ourselves from the peer table (unless displaced - the
   // entry then belongs to a newer connection) and from the hub's
-  // pre-registration holding pen.
+  // pre-registration holding pen. Both tables are also read from caller
+  // threads (SendInject / lookup helpers), so the mutation goes under
+  // peers_mu_.
+  std::string dropped_id;
+  bool report = false;
   {
+    std::lock_guard<std::mutex> meta_lock(meta_mu);
+    dropped_id = service_id;
+    report = registered;
+  }
+  {
+    std::lock_guard<std::mutex> lock(hub->peers_mu_);
     auto& pen = hub->peers_unregistered_;
     for (auto it = pen.begin(); it != pen.end(); ++it) {
       if (it->get() == this) {
@@ -400,17 +470,21 @@ void ChatPeerHub::PeerConn::Close(const std::shared_ptr<ChatPeerHub>& hub,
         break;
       }
     }
-  }
-  if (!registered) {
-    return;  // never entered the peer table; nothing to report
-  }
-  auto it = hub->peers_.find(service_id);
-  if (it != hub->peers_.end() && it->second.get() == this) {
-    hub->peers_.erase(it);
-    chirp::common::Logger::Instance().Info("chat peer dropped: " + service_id + " (" + reason + ")");
-    if (hub->on_dropped_) {
-      hub->on_dropped_(service_id, reason);
+    if (report) {
+      auto it = hub->peers_.find(dropped_id);
+      if (it != hub->peers_.end() && it->second.get() == this) {
+        hub->peers_.erase(it);
+      } else {
+        report = false;  // displaced: the entry belongs to a newer conn
+      }
     }
+  }
+  if (!report) {
+    return;  // never entered the peer table (or got displaced); nothing to report
+  }
+  chirp::common::Logger::Instance().Info("chat peer dropped: " + dropped_id + " (" + reason + ")");
+  if (hub->on_dropped_) {
+    hub->on_dropped_(dropped_id, reason);
   }
 }
 

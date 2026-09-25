@@ -59,6 +59,11 @@ private:
 
   asio::steady_timer timer_;
   asio::io_context& io_;
+  // Serializes every touch of timer_ (and the migration runs themselves):
+  // Start()/Stop()/RunMigrationNow() run on the caller's thread while the
+  // expiry handler runs on the io context, and asio timers are not safe
+  // against concurrent cancel()/expires_after().
+  asio::strand<asio::io_context::executor_type> strand_;
   std::shared_ptr<HybridMessageStore> store_;
   MessageStoreConfig config_;
 

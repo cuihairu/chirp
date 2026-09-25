@@ -2,10 +2,12 @@
 #define CHIRP_NETWORK_CHAT_PEER_HUB_H_
 
 #include <array>
+#include <atomic>
 #include <cstdint>
 #include <functional>
 #include <map>
 #include <memory>
+#include <mutex>
 #include <string>
 #include <vector>
 
@@ -25,11 +27,14 @@ namespace chirp::network {
 // heartbeat cadence is dropped; a dropped peer must re-register.
 //
 // Single-owner lifecycle: the hub lives in an io_context owned by the chat
-// main loop, so accept/read/timer handlers all run there without a strand.
-// The Send calls are also io-context-thread entry points (same contract as
-// ChatPeerLink's fast path). Every async handler captures the hub's
-// shared_ptr, so the hub - and each connection - stays alive exactly as long
-// as some handler can still touch it; Stop() merely closes everything early.
+// main loop. Every async handler (accept/read/timer/teardown) runs on the
+// hub's strand, so the io_context may be driven by several threads at once
+// and the handler chain still serializes. SendInject and the lookup helpers
+// are safe from any thread: they snapshot the peer table under peers_mu_
+// and post socket writes onto the strand. Every async handler captures the
+// hub's shared_ptr, so the hub - and each connection - stays alive exactly
+// as long as some handler can still touch it; Stop() merely closes
+// everything early.
 class ChatPeerHub : public std::enable_shared_from_this<ChatPeerHub> {
  public:
   using PeerRegisteredHandler =
@@ -120,12 +125,15 @@ class ChatPeerHub : public std::enable_shared_from_this<ChatPeerHub> {
     asio::steady_timer idle_timer;
     std::array<uint8_t, 4> header{};
     std::string body;
+    // Identity fields: written on the strand (registration), but read from
+    // arbitrary threads through game_id_for()/service_id_for_game().
+    mutable std::mutex meta_mu;
     std::string service_id;  // empty until registered
     std::string game_id;
     std::vector<chirp::gateway::PeerCapability> features;
     bool registered = false;
-    bool closing = false;
-    int64_t uplink_seq = 0;
+    bool closing = false;  // strand-only
+    int64_t uplink_seq = 0;  // strand-only
   };
 
   ChatPeerHub(asio::io_context& io, Options options, PeerRegisteredHandler on_registered,
@@ -139,10 +147,17 @@ class ChatPeerHub : public std::enable_shared_from_this<ChatPeerHub> {
 
   Options options_;
   asio::io_context& io_;
+  // Serializes the whole handler chain (accept/read/timer/teardown) so the
+  // io_context may be driven from more than one thread.
+  asio::strand<asio::io_context::executor_type> strand_;
   PeerRegisteredHandler on_registered_;
   PeerDroppedHandler on_dropped_;
   ChannelMessageHandler on_channel_message_;
   asio::ip::tcp::acceptor acceptor_;
+  std::atomic<uint16_t> bound_port_{0};  // set once in Start(), read from any thread
+  // Guards the peer tables: SendInject and the lookup helpers run on caller
+  // threads while the strand mutates registrations.
+  mutable std::mutex peers_mu_;
   // service_id -> live connection; entries are erased on deregistration.
   std::map<std::string, std::shared_ptr<PeerConn>> peers_;
   // Accepted-but-not-yet-registered connections; kept here only so the hub

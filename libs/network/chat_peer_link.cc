@@ -303,10 +303,10 @@ void ChatPeerLink::ScheduleReconnect() {
   if (stopping_) return;
   auto self = shared_from_this();
   timer_.expires_after(std::chrono::seconds(options_.reconnect_delay_seconds));
-  timer_.async_wait([self](const std::error_code& ec) {
+  timer_.async_wait(asio::bind_executor(strand_, [self](const std::error_code& ec) {
     if (ec || self->stopping_) return;
     self->DoConnect();
-  });
+  }));
 }
 
 }  // namespace chirp::network
