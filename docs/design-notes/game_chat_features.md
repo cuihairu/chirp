@@ -16,7 +16,7 @@ title: 游戏聊天特征
 - **消息长度限制**：不同频道不同上限。私聊 200 字、世界 100 字、公告 500 字。超长截断或拒绝。
 - **发送频率限制**：按用户 + 频道限流。世界频道 5 秒一条、公会 2 秒一条、私聊 1 秒一条。超频返回 `RATE_LIMITED`。
 - **重复消息检测**：连续 3 条相同内容自动禁言 5 分钟。防刷屏。
-- **消息撤回**（已落地：`MessageEditManager::RecallMessage`，窗口 `--recall_window_sec` 默认 120s、可撤回频道 `--recall_channels` 默认 `private,guild`；版主删除走 `DeleteMessage` 治理路径，不受窗口约束。回码：非发送者 `AUTH_FAILED`、超窗/非撤回频道/重复撤回 `INVALID_PARAM`、本进程无台账 `USER_NOT_FOUND`）：发送后 2 分钟内可撤回（私聊/公会）。撤回后对方通过 `MESSAGE_DELETED_NOTIFY`（`is_hard_delete=false`、`deleted_by=作者`）把气泡换成"消息已撤回"墓碑。**已知缺口**：存档层没有撤回墓碑，重拉 `GET_HISTORY` 仍会拿到原文（见 TODO.md 后续批次）。
+- **消息撤回**（已落地：`MessageEditManager::RecallMessage`，窗口 `--recall_window_sec` 默认 120s、可撤回频道 `--recall_channels` 默认 `private,guild`；版主删除走 `DeleteMessage` 治理路径，不受窗口约束。回码：非发送者 `AUTH_FAILED`、超窗/非撤回频道/重复撤回 `INVALID_PARAM`、本进程无台账 `USER_NOT_FOUND`）：发送后 2 分钟内可撤回（私聊/公会）。撤回后对方通过 `MESSAGE_DELETED_NOTIFY`（`is_hard_delete=false`、`deleted_by=作者`）把气泡换成"消息已撤回"墓碑，接收方离线队列里已入队的副本同步按 `message_id` 回收。**已知缺口**：存档层（历史）没有撤回墓碑，重拉 `GET_HISTORY` 仍会拿到原文（见 TODO.md 后续批次）。
 - **@提及**：`@某人`、`@全体成员`。被 @ 的玩家收到高亮提示。
 
 ### 频道管理
