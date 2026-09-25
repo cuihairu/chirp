@@ -393,10 +393,39 @@ chirp::chat::DeleteMessageResponse MessageEditHandlers::HandleDeleteMessage(
   }
 
   const bool moderator = is_moderator_(channel_type, channel_id, req.user_id());
-  if (!edits_.DeleteMessage(req.message_id(), req.user_id(), req.is_hard_delete(),
-                            moderator)) {
+  // Hard delete erases the message for good and stays moderator-only, so it is
+  // rejected before the recall path (which is always a soft delete).
+  if (req.is_hard_delete() && !moderator) {
     resp.set_code(chirp::common::AUTH_FAILED);
     return resp;
+  }
+
+  if (moderator) {
+    // Moderation removal: no recall window, any channel, moderator rights.
+    if (!edits_.DeleteMessage(req.message_id(), req.user_id(), req.is_hard_delete(),
+                              true)) {
+      resp.set_code(chirp::common::AUTH_FAILED);
+      return resp;
+    }
+  } else {
+    // Sender recall: bounded by the recall window and the recallable channels.
+    switch (edits_.RecallMessage(req.message_id(), req.user_id(), channel_type)) {
+      case RecallStatus::kRecalled:
+        break;
+      case RecallStatus::kNotFound:
+        resp.set_code(chirp::common::USER_NOT_FOUND);
+        return resp;
+      case RecallStatus::kNotSender:
+        resp.set_code(chirp::common::AUTH_FAILED);
+        return resp;
+      case RecallStatus::kNotRecallableChannel:
+      case RecallStatus::kWindowExpired:
+      case RecallStatus::kAlreadyRecalled:
+        // Not the sender's to withdraw, on a channel that does not support it,
+        // past the window, or already withdrawn: all client-side errors.
+        resp.set_code(chirp::common::INVALID_PARAM);
+        return resp;
+    }
   }
 
   chirp::chat::MessageDeletedNotify notify;

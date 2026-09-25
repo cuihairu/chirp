@@ -45,6 +45,58 @@ chirp::common::ErrorCode ValidateContentLength(const SendMessageRequest& req) {
   return chirp::common::OK;
 }
 
+std::vector<ChannelType> ParseChannelTypeList(std::string_view csv) {
+  std::vector<ChannelType> types;
+  size_t pos = 0;
+  while (pos <= csv.size()) {
+    const size_t comma = csv.find(',', pos);
+    const std::string_view token =
+        csv.substr(pos, comma == std::string_view::npos ? std::string_view::npos : comma - pos);
+    std::string normalized(token);
+    // Trim surrounding whitespace, then case-fold ASCII so "GUILD" and
+    // " guild " behave like "guild".
+    const size_t first = normalized.find_first_not_of(" \t\r\n");
+    if (first != std::string::npos) {
+      const size_t last = normalized.find_last_not_of(" \t\r\n");
+      normalized = normalized.substr(first, last - first + 1);
+      for (char& c : normalized) {
+        if (c >= 'A' && c <= 'Z') {
+          c = static_cast<char>(c - 'A' + 'a');
+        }
+      }
+      if (normalized == "private") {
+        types.push_back(PRIVATE);
+      } else if (normalized == "team") {
+        types.push_back(TEAM);
+      } else if (normalized == "guild") {
+        types.push_back(GUILD);
+      } else if (normalized == "world") {
+        types.push_back(WORLD);
+      } else if (normalized == "system" || normalized == "system_channel") {
+        types.push_back(SYSTEM_CHANNEL);
+      } else if (normalized == "marquee") {
+        types.push_back(MARQUEE);
+      }
+      // Unknown tokens are dropped: a typo narrows the allowlist rather than
+      // widening it.
+    }
+    if (comma == std::string_view::npos) {
+      break;
+    }
+    pos = comma + 1;
+  }
+  return types;
+}
+
+bool ChannelTypeInList(const std::vector<ChannelType>& list, ChannelType type) {
+  for (const ChannelType candidate : list) {
+    if (candidate == type) {
+      return true;
+    }
+  }
+  return false;
+}
+
 bool PrivateChannelContainsUser(std::string_view channel_id, std::string_view user_id) {
   if (channel_id.empty() || user_id.empty()) {
     return false;

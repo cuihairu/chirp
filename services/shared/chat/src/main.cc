@@ -1252,6 +1252,14 @@ int main(int argc, char** argv) {
       chirp::chat::runtime::GetArg(argc, argv, "--word_filter_file", "");
   const std::string word_filter_policy =
       chirp::chat::runtime::GetArg(argc, argv, "--word_filter_policy", "replace");
+  // Message recall (game_chat_features P0 消息撤回): how long a sender may
+  // withdraw their own message (seconds, 0 = unlimited) and on which channels
+  // (game_chat_features default: private + guild). Moderator removal via
+  // DELETE_MESSAGE ignores both.
+  const int recall_window_sec =
+      chirp::chat::runtime::ParseIntArg(argc, argv, "--recall_window_sec", 120);
+  const std::string recall_channels =
+      chirp::chat::runtime::GetArg(argc, argv, "--recall_channels", "private,guild");
   const std::string token_secret = chirp::chat::runtime::GetArg(argc, argv, "--token_secret", "");
   // Internal-plane trust gate: when set, edge gateways that dial in with this
   // secret (SERVER_AUTH_REQ) get per-client pipes that skip the per-IP login
@@ -1402,7 +1410,11 @@ int main(int argc, char** argv) {
   chirp::chat::TypingConfig typing_config;
   chirp::chat::TypingManager typing(typing_config);
   chirp::chat::ReactionManager reactions;
-  chirp::chat::MessageEditManager edits;
+  chirp::chat::EditConfig edit_config;
+  edit_config.recall_time_window_ms =
+      recall_window_sec > 0 ? static_cast<int64_t>(recall_window_sec) * 1000 : 0;
+  edit_config.recall_channel_types = chirp::chat::ParseChannelTypeList(recall_channels);
+  chirp::chat::MessageEditManager edits(edit_config);
   chirp::chat::MentionManager mentions;
 
   // Resolves moderator rights in a channel: group roles for group-style

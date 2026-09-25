@@ -2,6 +2,8 @@
 
 #include <algorithm>
 
+#include "chat_validation.h"
+
 namespace chirp {
 namespace chat {
 
@@ -147,6 +149,75 @@ bool MessageEditManager::DeleteMessage(const std::string& message_id,
   deleted_messages_[message_id] = data;
 
   return true;
+}
+
+// ---------------------------------------------------------------------------
+// Recall (game_chat_features P0 "message recall")
+//
+// The sender withdraws their own message inside a bounded window. Moderator
+// removal stays on DeleteMessage: it is a moderation action, not a recall, so
+// it is exempt from both the window and the channel allowlist.
+// ---------------------------------------------------------------------------
+
+RecallStatus MessageEditManager::RecallMessage(const std::string& message_id,
+                                              const std::string& user_id,
+                                              chirp::chat::ChannelType channel_type) {
+  std::lock_guard<std::mutex> lock(mu_);
+
+  auto it = messages_.find(message_id);
+  if (it == messages_.end()) {
+    return RecallStatus::kNotFound;
+  }
+
+  auto& data = it->second;
+  std::lock_guard<std::mutex> data_lock(data->mu);
+
+  if (data->sender_id != user_id) {
+    return RecallStatus::kNotSender;
+  }
+  if (!IsRecallableChannel(channel_type)) {
+    return RecallStatus::kNotRecallableChannel;
+  }
+  // Checked before the window: a message that was already recalled is a
+  // duplicate request, not a late one, and must not re-broadcast.
+  if (data->is_deleted) {
+    return RecallStatus::kAlreadyRecalled;
+  }
+  if (IsRecallWindowExpired(*data)) {
+    return RecallStatus::kWindowExpired;
+  }
+
+  data->is_deleted = true;
+  data->deleted_at = GetCurrentTimeMs();
+  data->deleted_by = user_id;
+
+  // Keep the entry in deleted_messages_ for the retention sweep, same as the
+  // moderation soft delete.
+  deleted_messages_[message_id] = data;
+
+  return RecallStatus::kRecalled;
+}
+
+bool MessageEditManager::CanRecall(const std::string& message_id,
+                                   const std::string& user_id,
+                                   chirp::chat::ChannelType channel_type) {
+  std::lock_guard<std::mutex> lock(mu_);
+
+  auto it = messages_.find(message_id);
+  if (it == messages_.end()) {
+    return false;
+  }
+
+  const auto& data = it->second;
+  std::lock_guard<std::mutex> data_lock(data->mu);
+
+  if (data->sender_id != user_id) {
+    return false;
+  }
+  if (!IsRecallableChannel(channel_type)) {
+    return false;
+  }
+  return !data->is_deleted && !IsRecallWindowExpired(*data);
 }
 
 std::vector<std::string> MessageEditManager::BulkDelete(
@@ -312,6 +383,19 @@ bool MessageEditManager::HasReachedEditLimit(const MessageEditData& data) const 
     return false;  // No limit
   }
   return data.edit_count >= config_.max_edit_count;
+}
+
+bool MessageEditManager::IsRecallWindowExpired(const MessageEditData& data) const {
+  if (config_.recall_time_window_ms <= 0) {
+    return false;  // No time limit
+  }
+
+  int64_t elapsed = GetCurrentTimeMs() - data.created_at;
+  return elapsed > config_.recall_time_window_ms;
+}
+
+bool MessageEditManager::IsRecallableChannel(chirp::chat::ChannelType channel_type) const {
+  return ChannelTypeInList(config_.recall_channel_types, channel_type);
 }
 
 int64_t MessageEditManager::GetCurrentTimeMs() const {
