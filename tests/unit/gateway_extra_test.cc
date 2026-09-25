@@ -108,9 +108,12 @@ TEST_F(AuthClientTest, MultipleJobsProcessedBeforeDestruction) {
 }
 
 TEST_F(AuthClientTest, DestroyWithoutPendingJobsIsClean) {
-  asio::io_context io;
-  { AuthClient client(io, kRefusedHost, kRefusedPort); }
-  SUCCEED();
+  EXPECT_NO_THROW({
+    asio::io_context io;
+    { AuthClient client(io, kRefusedHost, kRefusedPort); }
+    // Nothing was ever enqueued: the destructor must join its idle worker
+    // and drop the pimpl without throwing.
+  });
 }
 
 class RedisSessionManagerTest : public ::testing::Test {};
@@ -218,8 +221,15 @@ TEST_F(RedisSessionManagerTest, ClaimCallbackMayBeNull) {
   asio::io_context io;
   RedisSessionManager mgr(io, kRefusedHost, kRefusedPort, "inst-2", 60, nullptr);
   mgr.AsyncClaim("bob", "dev", nullptr);  // null callback must not crash
-  io.run_for(std::chrono::milliseconds(1000));
-  SUCCEED();
+
+  // The job with no callback must not poison the queue: the next claim with
+  // a real callback still completes (with no owner, Redis is unreachable).
+  std::promise<std::optional<std::string>> promise;
+  auto future = promise.get_future();
+  mgr.AsyncClaim("bob", "dev2",
+                 [&promise](std::optional<std::string> prev) { promise.set_value(prev); });
+  ASSERT_TRUE(SpinIoFor(io, future));
+  EXPECT_FALSE(future.get().has_value());
 }
 
 TEST_F(RedisSessionManagerTest, ReleaseWithoutRedisIsSafe) {
@@ -227,8 +237,15 @@ TEST_F(RedisSessionManagerTest, ReleaseWithoutRedisIsSafe) {
   RedisSessionManager mgr(io, kRefusedHost, kRefusedPort, "inst-3", 60,
                           [](const std::string&, const std::string&) {});
   mgr.AsyncRelease("carol", "dev-c");
-  io.run_for(std::chrono::milliseconds(1000));
-  SUCCEED();
+
+  // The release job runs against an unreachable Redis; the worker must stay
+  // alive afterwards and still service a following claim.
+  std::promise<std::optional<std::string>> promise;
+  auto future = promise.get_future();
+  mgr.AsyncClaim("carol", "dev-c",
+                 [&promise](std::optional<std::string> prev) { promise.set_value(prev); });
+  ASSERT_TRUE(SpinIoFor(io, future));
+  EXPECT_FALSE(future.get().has_value());
 }
 
 TEST_F(RedisSessionManagerTest, JobsEnqueuedBeforeStopAreDrained) {

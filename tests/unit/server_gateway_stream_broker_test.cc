@@ -542,24 +542,49 @@ TEST(StreamBrokerParseTest, ParsesStreamReplies) {
 }
 
 TEST(StreamBrokerLifecycleTest, StopWithoutStartIsANoOp) {
-  StreamBrokerConsumer broker(BrokerConfig(FakeStreamRedis()),
-                              [](const MessageInjectRequest&) { return MessageInjectResponse{}; });
+  chirp::common::Logger::Instance().SetLevel(chirp::common::Logger::Level::kError);
+  FakeStreamRedis redis;
+  RecordingHandler handler;
+  StreamBrokerConsumer broker(BrokerConfig(redis),
+                              [&](const MessageInjectRequest& req) { return handler.Respond(req); });
+  // Stop() before Start() returns immediately - there is no thread to join
+  // and nothing has been armed yet.
+  const auto stopped_at = std::chrono::steady_clock::now();
   broker.Stop();
-  broker.Start();  // still a no-op: never armed before the first Stop
+  EXPECT_LT(std::chrono::duration_cast<std::chrono::milliseconds>(
+                std::chrono::steady_clock::now() - stopped_at)
+                .count(),
+            1000);
+  EXPECT_EQ(handler.Count(), 0u);
+
+  // ...and because that Stop was a true no-op, a later Start still arms the
+  // consumer: an entry added to the live stream must be consumed.
+  broker.Start();
+  redis.Add("inject", ValidFields());
+  ASSERT_TRUE(WaitFor([&] { return handler.Count() >= 1; }, std::chrono::seconds(5)));
   broker.Stop();
-  SUCCEED();
+  EXPECT_EQ(handler.Count(), 1u);
+  EXPECT_TRUE(redis.All("reply").empty());  // no reply_to field -> no XADD
 }
 
 TEST(StreamBrokerLifecycleTest, StopAfterStartDoesNotRestart) {
   chirp::common::Logger::Instance().SetLevel(chirp::common::Logger::Level::kError);
   FakeStreamRedis redis;
+  RecordingHandler handler;
   StreamBrokerConsumer broker(BrokerConfig(redis),
-                              [](const MessageInjectRequest&) { return MessageInjectResponse{}; });
+                              [&](const MessageInjectRequest& req) { return handler.Respond(req); });
   broker.Start();
+  redis.Add("inject", ValidFields());
+  ASSERT_TRUE(WaitFor([&] { return handler.Count() >= 1; }, std::chrono::seconds(5)));
+
   broker.Stop();
   broker.Start();  // must not spawn a second thread
+
+  redis.Add("inject", ValidFields());
+  std::this_thread::sleep_for(std::chrono::milliseconds(300));
+  // If the restart had worked, this second entry would be consumed by now.
+  EXPECT_EQ(handler.Count(), 1u);
   broker.Stop();
-  SUCCEED();
 }
 
 TEST(StreamBrokerTest, ConsumesValidInjectionAndAcks) {
@@ -780,7 +805,14 @@ TEST(StreamBrokerTest, StopDuringConnectRetryExitsPromptly) {
         config, [](const MessageInjectRequest&) { return MessageInjectResponse{}; });
     broker.Start();
     std::this_thread::sleep_for(std::chrono::milliseconds(2));
+    const auto stop_at = std::chrono::steady_clock::now();
     broker.Stop();
+    const auto stop_ms = std::chrono::duration_cast<std::chrono::milliseconds>(
+                             std::chrono::steady_clock::now() - stop_at)
+                             .count();
+    // A Stop that waited out a retry schedule (or blocked in getaddrinfo)
+    // would blow far past this bound.
+    EXPECT_LT(stop_ms, 1500) << "iteration " << i;
   }
 }
 
@@ -831,13 +863,25 @@ TEST(StreamBrokerTest, ConnectFailuresKeepRetryingWithoutHanging) {
     config.redis_host = host;
     config.redis_port = port;
     config.reconnect_delay_ms = 10;
+    const auto started_at = std::chrono::steady_clock::now();
     StreamBrokerConsumer broker(
         config, [](const MessageInjectRequest&) { return MessageInjectResponse{}; });
     broker.Start();
     std::this_thread::sleep_for(std::chrono::milliseconds(150));
+    const auto stop_at = std::chrono::steady_clock::now();
     broker.Stop();
+    const auto stop_ms = std::chrono::duration_cast<std::chrono::milliseconds>(
+                             std::chrono::steady_clock::now() - stop_at)
+                             .count();
+    // The retry loop keeps running between Start and Stop; only the join is
+    // bounded here, and it must never turn into a hang.
+    EXPECT_LT(stop_ms, 3000) << "host=" << host;
+    EXPECT_LT(std::chrono::duration_cast<std::chrono::milliseconds>(
+                  std::chrono::steady_clock::now() - started_at)
+                  .count(),
+              5000)
+        << "host=" << host;
   }
-  SUCCEED();
 }
 
 TEST(StreamBrokerTest, EmptyConsumerFallsBackToDefaultPrefix) {
@@ -875,8 +919,15 @@ TEST(StreamBrokerTest, StopDuringReconnectSleepExitsTheWaitLoop) {
       config, [](const MessageInjectRequest&) { return MessageInjectResponse{}; });
   broker.Start();
   std::this_thread::sleep_for(std::chrono::milliseconds(30));
+  const auto stop_at = std::chrono::steady_clock::now();
   broker.Stop();  // must cut the 500ms sleep short via !stopping_
-  SUCCEED();
+  const auto stop_ms = std::chrono::duration_cast<std::chrono::milliseconds>(
+                           std::chrono::steady_clock::now() - stop_at)
+                           .count();
+  // SleepInterruptible polls stopping_ every 50ms: an interrupted 500ms
+  // sleep joins in well under 400ms, while a missed interrupt would leave
+  // Stop waiting out most of the remaining sleep.
+  EXPECT_LT(stop_ms, 400);
 }
 
 TEST(StreamBrokerTest, EnsureGroupToleratesNonOkAndNonBusygroupReplies) {
@@ -888,6 +939,11 @@ TEST(StreamBrokerTest, EnsureGroupToleratesNonOkAndNonBusygroupReplies) {
    public:
     WeirdGroupRedis() : server_([this](const std::vector<std::string>& a) { return Handle(a); }) {}
     uint16_t port() const { return server_.port(); }
+    // XGROUP CREATE attempts observed so far (the retry ladder under test).
+    int create_count() {
+      std::lock_guard<std::mutex> lock(mu_);
+      return create_count_;
+    }
 
    private:
     std::string Handle(const std::vector<std::string>& a) {
@@ -900,7 +956,12 @@ TEST(StreamBrokerTest, EnsureGroupToleratesNonOkAndNonBusygroupReplies) {
         return chirp_test::Simple("OK");
       }
       if (!a.empty() && a[0] == "XREADGROUP") {
-        return "*-1\r\n";  // no data; keeps the loop alive until reconnects settle
+        return "$-1\r\n";  // BLOCK timed out: no data, loop keeps polling
+      }
+      if (!a.empty() && a[0] == "XAUTOCLAIM") {
+        // Well-formed empty claim: once EnsureGroup succeeds the consumer has
+        // nothing left to reconnect for, so XGROUP CREATE must stop growing.
+        return "*2\r\n$3\r\n0-0\r\n*0\r\n";
       }
       return "-ERR unknown\r\n";
     }
@@ -916,11 +977,17 @@ TEST(StreamBrokerTest, EnsureGroupToleratesNonOkAndNonBusygroupReplies) {
   StreamBrokerConsumer broker(config,
                               [&](const MessageInjectRequest& req) { return handler.Respond(req); });
   broker.Start();
-  // Three failed EnsureGroup cycles (one per weird reply) then the fourth
-  // succeeds and the broker settles.
+  // Three rejected EnsureGroup replies (simple, error, null) and the fourth
+  // attempt is accepted: the consumer must survive all three and get through.
+  ASSERT_TRUE(WaitFor([&] { return redis.create_count() >= 4; }, std::chrono::seconds(5)));
+  const int settled = redis.create_count();
+  EXPECT_GE(settled, 4);
   std::this_thread::sleep_for(std::chrono::milliseconds(400));
+  // Exactly the three bad replies forced reconnects. With a valid "OK" the
+  // consumer settles into its read/claim loop and never re-issues XGROUP
+  // CREATE, so the count must not have moved while it ran.
+  EXPECT_EQ(redis.create_count(), settled);
   broker.Stop();
-  SUCCEED();
 }
 
 TEST(StreamBrokerTest, SecretFieldAbsentIsRejected) {

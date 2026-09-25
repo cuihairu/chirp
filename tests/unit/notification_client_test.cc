@@ -244,9 +244,13 @@ chirp::chat::ChatMessage MakeChatMessage(const std::string& content) {
 // --- PushBridge ---------------------------------------------------------------
 
 TEST(PushBridgeTest, NullClientIsNoOp) {
-  chirp::chat::PushBridge bridge(nullptr);
-  bridge.NotifyOffline(MakeChatMessage("hi"), "alice");
-  bridge.NotifyOffline(MakeChatMessage("hi"), "");  // empty user is skipped too
+  // Both guard arms (no client, empty user id) must return without touching
+  // the message; nothing here has a transport to fail on.
+  EXPECT_NO_THROW({
+    chirp::chat::PushBridge bridge(nullptr);
+    bridge.NotifyOffline(MakeChatMessage("hi"), "alice");
+    bridge.NotifyOffline(MakeChatMessage("hi"), "");  // empty user is skipped too
+  });
 }
 
 TEST(PushBridgeTest, PayloadCarriesMessageMetadata) {
@@ -358,7 +362,14 @@ TEST(PushBridgeTest, RefusedEndpointDoesNotAffectCaller) {
   chirp::chat::PushBridge bridge(
       std::make_shared<NotificationClient>(io, kRefusedHost, kRefusedPort));
 
-  bridge.NotifyOffline(MakeChatMessage("hi"), "alice");
+  // Enqueueing is fire-and-forget: the caller must not block on a transport
+  // that will never connect.
+  const auto enqueued_at = std::chrono::steady_clock::now();
+  EXPECT_NO_THROW(bridge.NotifyOffline(MakeChatMessage("hi"), "alice"));
+  const auto enqueue_ms = std::chrono::duration_cast<std::chrono::milliseconds>(
+                              std::chrono::steady_clock::now() - enqueued_at)
+                              .count();
+  EXPECT_LT(enqueue_ms, 1000);
 
   // Just spin: the failure is reported to nobody and must not throw.
   const auto deadline = std::chrono::steady_clock::now() + std::chrono::milliseconds(300);
@@ -367,6 +378,9 @@ TEST(PushBridgeTest, RefusedEndpointDoesNotAffectCaller) {
     io.restart();
     std::this_thread::sleep_for(std::chrono::milliseconds(2));
   }
+
+  // A second delivery after the connection attempt failed is still safe.
+  EXPECT_NO_THROW(bridge.NotifyOffline(MakeChatMessage("again"), "alice"));
 }
 
 class NotificationClientTest : public ::testing::Test {};
@@ -638,11 +652,13 @@ TEST_F(NotificationClientTest, WrongResponseMsgIdReportsInternalError) {
 }
 
 TEST_F(NotificationClientTest, DrainedThenDroppedClientIsSafe) {
-  asio::io_context io;
-  NotificationClient client(io, kRefusedHost, kRefusedPort);
-  chirp::app_notification::DrainAndDropNotificationClientForTest(client);
-  // The helper is idempotent, and the destructor hits its null-impl guard.
-  chirp::app_notification::DrainAndDropNotificationClientForTest(client);
+  EXPECT_NO_THROW({
+    asio::io_context io;
+    NotificationClient client(io, kRefusedHost, kRefusedPort);
+    chirp::app_notification::DrainAndDropNotificationClientForTest(client);
+    // The helper is idempotent, and the destructor hits its null-impl guard.
+    chirp::app_notification::DrainAndDropNotificationClientForTest(client);
+  });
 }
 
 TEST_F(NotificationClientTest, NullCallbackIsTolerated) {
@@ -654,13 +670,20 @@ TEST_F(NotificationClientTest, NullCallbackIsTolerated) {
   req.set_user_id("u");
   client.AsyncPush(req, 1, nullptr);
 
-  // The worker must complete the RPC and stop cleanly on destruction.
+  // The worker must complete the RPC and stop cleanly on destruction. With
+  // no callback to observe the reply, the server side is the witness: the
+  // registered device was actually pushed to.
   const auto deadline = std::chrono::steady_clock::now() + std::chrono::seconds(3);
-  while (std::chrono::steady_clock::now() < deadline) {
+  while (std::chrono::steady_clock::now() < deadline &&
+         loop.service.GetStats().notifications_sent.load() == 0) {
     io.poll();
     io.restart();
     std::this_thread::sleep_for(std::chrono::milliseconds(2));
   }
+  EXPECT_GE(loop.service.GetStats().notifications_sent.load(), 1u);
+  EXPECT_EQ(loop.service.GetStats().notifications_failed.load(), 0);
+  EXPECT_EQ(loop.service.GetStats().fcm_sent.load(),
+            loop.service.GetStats().notifications_sent.load());
 }
 
 TEST_F(NotificationClientTest, DestructorDrainsQueuedJobs) {

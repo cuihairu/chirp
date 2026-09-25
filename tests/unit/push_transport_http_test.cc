@@ -676,12 +676,17 @@ TEST(HttpPushTransportScriptedTest, DestructorsDispatchThroughBasePointers) {
   // The factory_ member is a shared_ptr<HttpConnectionFactory> built over a
   // raw new, so its deleter deletes through the abstract base and dispatches
   // to TcpHttpConnectionFactoryD0 (make_shared would skip that path).
-  auto owned = std::make_unique<HttpPushTransport>(
-      std::shared_ptr<HttpConnectionFactory>(new TcpHttpConnectionFactory()),
-      HttpPushTransport::Config{});
-  std::unique_ptr<chirp::app_notification::PushTransport> via_base =
-      std::move(owned);
-  via_base.reset();
+  EXPECT_NO_THROW({
+    auto owned = std::make_unique<HttpPushTransport>(
+        std::shared_ptr<HttpConnectionFactory>(new TcpHttpConnectionFactory()),
+        HttpPushTransport::Config{});
+    EXPECT_NE(owned, nullptr);
+    std::unique_ptr<chirp::app_notification::PushTransport> via_base = std::move(owned);
+    EXPECT_EQ(owned, nullptr);  // ownership really moved through the base type
+    EXPECT_NE(via_base, nullptr);
+    via_base.reset();
+    EXPECT_EQ(via_base, nullptr);
+  });
 }
 
 }  // namespace

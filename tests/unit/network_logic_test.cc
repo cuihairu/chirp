@@ -495,7 +495,12 @@ TEST_F(RedisSubscriberTest, StartStopWithoutCallbacksIsSafe) {
   sub.Start();
   // Give the connection attempt a moment, then stop; no callbacks installed.
   std::this_thread::sleep_for(std::chrono::milliseconds(200));
+  // The refused endpoint must be reported as not connected even though no
+  // error callback was installed to receive the failure.
+  EXPECT_FALSE(sub.IsConnected());
   sub.Stop();
+  EXPECT_FALSE(sub.IsConnected());
+  sub.Stop();  // idempotent with no callbacks installed
 }
 
 class MessageRouterTest : public ::testing::Test {
@@ -660,6 +665,9 @@ TEST(ServerConstructionTest, TcpServerBindAndStop) {
   asio::io_context io;
   TcpServer server(io, /*port=*/0, [](std::shared_ptr<chirp::network::Session>,
                                       std::string&&) {});
+  // The ctor binds synchronously: an ephemeral port must be assigned right
+  // away (0 would mean the acceptor never came up).
+  EXPECT_NE(server.Port(), 0);
   server.Stop();
 }
 
@@ -668,6 +676,7 @@ TEST(ServerConstructionTest, TcpServerWithCloseCallback) {
   TcpServer server(io, /*port=*/0,
                    [](std::shared_ptr<chirp::network::Session>, std::string&&) {},
                    [](std::shared_ptr<chirp::network::Session>) {});
+  EXPECT_NE(server.Port(), 0);
   server.Stop();
 }
 
@@ -677,6 +686,7 @@ TEST(ServerConstructionTest, WebSocketServerBindAndStop) {
                          [](std::shared_ptr<chirp::network::Session>,
                             std::string&&) {},
                          [](std::shared_ptr<chirp::network::Session>) {});
+  EXPECT_NE(server.Port(), 0);
   server.Stop();
 }
 
@@ -685,6 +695,14 @@ TEST(ServerConstructionTest, ServersOnEphemeralPortsDoNotConflict) {
   TcpServer s1(io, 0, [](std::shared_ptr<chirp::network::Session>, std::string&&) {});
   TcpServer s2(io, 0, [](std::shared_ptr<chirp::network::Session>, std::string&&) {});
   WebSocketServer s3(io, 0, [](std::shared_ptr<chirp::network::Session>, std::string&&) {});
+  EXPECT_NE(s1.Port(), 0);
+  EXPECT_NE(s2.Port(), 0);
+  EXPECT_NE(s3.Port(), 0);
+  // Each listener must have received its own port while all three acceptors
+  // are still open at the same time.
+  EXPECT_NE(s1.Port(), s2.Port());
+  EXPECT_NE(s1.Port(), s3.Port());
+  EXPECT_NE(s2.Port(), s3.Port());
   s1.Stop();
   s2.Stop();
   s3.Stop();

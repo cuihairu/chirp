@@ -314,10 +314,14 @@ TEST_F(TcpSessionTest, RemoteEndpointIsCallable) {
   // On a socketpair fd remote_endpoint fails and yields the default
   // endpoint; the call itself must not throw.
   auto ep = session_->RemoteEndpoint();
-  (void)ep;
   auto addr = session_->RemoteAddress();
-  (void)addr;
-  SUCCEED();
+  // Failure path: the default endpoint (no peer name on a socketpair fd),
+  // not a leftover/garbage address, and RemoteAddress() must agree with
+  // RemoteEndpoint().
+  EXPECT_TRUE(ep.address().is_unspecified());
+  EXPECT_EQ(ep.port(), 0);
+  EXPECT_EQ(addr, ep.address().to_string());
+  EXPECT_EQ(addr, "::");
 }
 
 TEST_F(TcpSessionTest, SendAfterCloseIsDropped) {
@@ -650,10 +654,13 @@ TEST_F(WebSocketSessionTest, RemoteEndpointIsCallable) {
   MakeSession();
   session_->Start();
   auto ep = session_->RemoteEndpoint();
-  (void)ep;
   auto addr = session_->RemoteAddress();
-  (void)addr;
-  SUCCEED();
+  // Same failure contract as the TCP session: the default endpoint, and
+  // RemoteAddress() is derived from it rather than an independent source.
+  EXPECT_TRUE(ep.address().is_unspecified());
+  EXPECT_EQ(ep.port(), 0);
+  EXPECT_EQ(addr, ep.address().to_string());
+  EXPECT_EQ(addr, "::");
 }
 
 // ---------------------------------------------------------------------------
@@ -680,9 +687,10 @@ TEST_F(ClientFailureTest, TcpDisconnectWithoutConnectIsSafe) {
   asio::io_context io;
   {
     TcpClient client(io);
+    EXPECT_FALSE(client.IsConnected());  // no session before Connect()
     client.Disconnect();
+    EXPECT_FALSE(client.IsConnected());  // still no session afterwards
   }
-  SUCCEED();
 }
 
 TEST_F(ClientFailureTest, WebSocketConnectRefusedReturnsFalse) {
@@ -703,9 +711,10 @@ TEST_F(ClientFailureTest, WebSocketDisconnectWithoutConnectIsSafe) {
   asio::io_context io;
   {
     WebSocketClient client(io);
+    EXPECT_FALSE(client.IsConnected());  // no session before Connect()
     client.Disconnect();
+    EXPECT_FALSE(client.IsConnected());  // still no session afterwards
   }
-  SUCCEED();
 }
 
 // ---------------------------------------------------------------------------

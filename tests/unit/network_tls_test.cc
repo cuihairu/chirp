@@ -696,15 +696,27 @@ TEST_F(TlsEdgeTest, TlsTcpSessionCloseViaInterface) {
 // pre-started sessions never need an override.
 TEST(SessionInterfaceTest, DefaultStartIsNoOp) {
   struct BareSession : Session {
-    void Send(std::string) override {}
-    void SendAndClose(std::string) override {}
-    void Close() override {}
-    bool IsClosed() const override { return false; }
+    void Send(std::string) override { sent = true; }
+    void SendAndClose(std::string) override { sent = true; }
+    void Close() override { closed = true; }
+    bool IsClosed() const override { return closed; }
     std::string RemoteAddress() const override { return {}; }
+    bool sent = false;
+    bool closed = false;
   };
   std::shared_ptr<Session> s = std::make_shared<BareSession>();
   s->Start();
-  SUCCEED();
+  // The base-class default must not have written, sent or closed anything.
+  auto* bare = static_cast<BareSession*>(s.get());
+  EXPECT_FALSE(bare->sent);
+  EXPECT_FALSE(bare->closed);
+  EXPECT_FALSE(s->IsClosed());
+  EXPECT_TRUE(s->RemoteAddress().empty());
+  // ... and the pure-virtual entry points still dispatch through the base.
+  s->Send("x");
+  EXPECT_TRUE(bare->sent);
+  s->Close();
+  EXPECT_TRUE(s->IsClosed());
 }
 
 } // namespace

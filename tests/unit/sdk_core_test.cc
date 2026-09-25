@@ -382,14 +382,16 @@ TEST_F(SdkClientTest, SendMessageWhenNotLoggedInIsSafe) {
 }
 
 TEST_F(SdkClientTest, SetCallbacksThenDestroyClientIsSafe) {
-  {
+  EXPECT_NO_THROW({
     ChatClient client(TcpConfig());
     client.SetMessageCallback([](const std::string&, const std::string&) {});
     client.SetDisconnectCallback([](const std::error_code&) {});
     client.SetKickCallback([](const std::string&) {});
     client.Disconnect();
-  }
-  SUCCEED();
+    // Disconnect on a never-connected client posts the close path: it must
+    // settle in Disconnected rather than leave Connecting/Connected.
+    EXPECT_EQ(client.GetState(), ConnectionState::Disconnected);
+  });
 }
 
 TEST_F(SdkClientTest, LoginAfterDisconnectStillFailsCleanly) {
@@ -929,6 +931,11 @@ void WaitState(ChatClient& client, ConnectionState want, int ms = 5000) {
   for (int i = 0; i < ms / 2 && client.GetState() != want; ++i) {
     std::this_thread::sleep_for(std::chrono::milliseconds(2));
   }
+  // A wait that silently times out would let every assertion below run
+  // against the wrong state; the timeout itself is the error path.
+  EXPECT_EQ(client.GetState(), want)
+      << "state never reached " << static_cast<int>(want) << " within " << ms
+      << "ms (got " << static_cast<int>(client.GetState()) << ")";
 }
 
 TEST_F(SdkClientTest, IdleLogoutAndSendPostsAreExecuted) {
@@ -1536,7 +1543,11 @@ TEST_F(ChatClientLoopbackTest, AnsweredHeartbeatsKeepTheConnectionAlive) {
 }
 
 TEST_F(ChatClientLoopbackTest, UnansweredHeartbeatsKillTheConnectionAndReconnect) {
-  FakeGateway gateway([](const chirp::gateway::Packet& pkt, auto send) {
+  std::atomic<int> pings{0};
+  FakeGateway gateway([&pings](const chirp::gateway::Packet& pkt, auto send) {
+    if (pkt.msg_id() == chirp::gateway::HEARTBEAT_PING) {
+      ++pings;  // observed but never answered: the missed-pong counter
+    }
     if (pkt.msg_id() == chirp::gateway::LOGIN_REQ) {
       chirp::auth::LoginResponse resp;
       resp.set_code(chirp::common::OK);
@@ -1558,6 +1569,10 @@ TEST_F(ChatClientLoopbackTest, UnansweredHeartbeatsKillTheConnectionAndReconnect
   // loss and the first backoff attempt to land back at Connected.
   WaitState(client, ConnectionState::WaitingReconnect);
   WaitState(client, ConnectionState::Connected);
+  // Two unanswered pings (the max_missed_pongs=2 budget) is what killed the
+  // first connection; a silent wait would not prove pings were ever sent.
+  EXPECT_GE(pings.load(), 2);
+  EXPECT_EQ(client.GetState(), ConnectionState::Connected);
   client.Disconnect();
 }
 

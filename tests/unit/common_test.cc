@@ -4,6 +4,7 @@
 #include <cctype>
 #include <cstdio>
 #include <cstring>
+#include <iostream>
 #include <sstream>
 #include <string>
 #include <string_view>
@@ -564,9 +565,38 @@ TEST(LoggerTest, InvalidLevelFallsBackToUnknownLabel) {
   const Logger::Level original = logger.GetLevel();
 
   // LevelToString only emits "UNKNOWN" for values outside the enum; Log()
-  // exposes it via a cast. Filtering still applies (99 >= any real level).
+  // exposes it via a cast. Filtering still applies (99 >= any real level),
+  // so the record reaches the sink with the fallback label.
   logger.SetLevel(Logger::Level::kError);
-  logger.Log(static_cast<Logger::Level>(99), "bogus level entry");
+  {
+    std::ostringstream captured;
+    std::streambuf* const previous = std::cerr.rdbuf(captured.rdbuf());
+    logger.Log(static_cast<Logger::Level>(99), "bogus level entry");
+    logger.Log(Logger::Level::kError, "real error entry");
+    std::cerr.rdbuf(previous);
+
+    const std::string out = captured.str();
+    // The out-of-range level must never be rendered as a blank or garbage
+    // label, and an in-range level keeps its own label.
+    EXPECT_NE(out.find("[UNKNOWN]"), std::string::npos);
+    EXPECT_NE(out.find("[ERROR]"), std::string::npos);
+    EXPECT_NE(out.find("bogus level entry"), std::string::npos);
+    EXPECT_NE(out.find("real error entry"), std::string::npos);
+  }
+
+  // Below the configured level: gated before it ever reaches the sink.
+  {
+    logger.SetLevel(Logger::Level::kError);
+    std::ostringstream captured;
+    std::streambuf* const previous = std::cerr.rdbuf(captured.rdbuf());
+    logger.Log(static_cast<Logger::Level>(99), "level 99 must pass the gate");
+    logger.Log(Logger::Level::kWarn, "warn below kError must be dropped");
+    std::cerr.rdbuf(previous);
+
+    const std::string out = captured.str();
+    EXPECT_NE(out.find("level 99 must pass the gate"), std::string::npos);
+    EXPECT_EQ(out.find("warn below kError must be dropped"), std::string::npos);
+  }
 
   logger.SetLevel(original);
 }

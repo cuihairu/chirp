@@ -863,8 +863,28 @@ TEST_F(ReadReceiptManagerTest, TrackMessageIsSafeToCall) {
   mgr_.TrackMessage("m1", "chan", chirp::chat::GUILD);
   mgr_.TrackMessage("m1", "other", chirp::chat::TEAM);  // duplicate is ignored
   mgr_.TrackMessage("m2", "chan", chirp::chat::GUILD);
-  // Must not crash; message tracking has no observable getter.
-  SUCCEED();
+
+  // Tracking is bookkeeping only: it must not fabricate receipts, read
+  // cursors or unread counts for a user that never read anything.
+  EXPECT_TRUE(mgr_.GetReadReceipts("m1").empty());
+  EXPECT_TRUE(mgr_.GetReadReceipts("m2").empty());
+  EXPECT_EQ(mgr_.GetUnreadCount("alice"), 0);
+  EXPECT_TRUE(mgr_.GetAllUnread("alice").empty());
+  std::string last_id;
+  int64_t last_ts = 0;
+  EXPECT_FALSE(mgr_.GetReadCursor("alice", "chan", chirp::chat::GUILD, &last_id, &last_ts));
+  // A NULL out-param pair must be tolerated too (the caller may only want
+  // the "has cursor" answer).
+  EXPECT_FALSE(mgr_.GetReadCursor("alice", "chan", chirp::chat::GUILD, nullptr, nullptr));
+
+  // MarkRead on the tracked message still lands its receipt normally.
+  mgr_.MarkRead("alice", "chan", chirp::chat::GUILD, "m1", 1234);
+  ASSERT_EQ(mgr_.GetReadReceipts("m1").size(), 1u);
+  EXPECT_EQ(mgr_.GetReadReceipts("m1")[0].user_id(), "alice");
+  EXPECT_EQ(mgr_.GetReadReceipts("m1")[0].read_at(), 1234);
+  EXPECT_TRUE(mgr_.GetReadCursor("alice", "chan", chirp::chat::GUILD, &last_id, &last_ts));
+  EXPECT_EQ(last_id, "m1");
+  EXPECT_EQ(last_ts, 1234);
 }
 
 TEST_F(ReadReceiptManagerTest, ConcurrentMarkReadsAreSafe) {
@@ -2140,7 +2160,23 @@ TEST_F(DispatchTest, EmptyHandlersSkipLateParseGate) {
   DispatchDistributedPacket(session_, MakePacket(chirp::gateway::BLOCK_MESSAGE_SENDER_REQ, 4, junk), handlers);
   DispatchDistributedPacket(session_, MakePacket(chirp::gateway::UNBLOCK_MESSAGE_SENDER_REQ, 5, junk), handlers);
   DispatchDistributedPacket(session_, MakePacket(chirp::gateway::GET_BLOCKED_SENDERS_REQ, 6, junk), handlers);
-  SUCCEED();
+
+  // A null handler is a full short-circuit: the junk body must never be
+  // parsed into a response, so the session sees neither bytes nor a close.
+  EXPECT_TRUE(session_->sent.empty());
+  EXPECT_FALSE(session_->close_after_send);
+  EXPECT_FALSE(session_->closed);
+
+  // With handlers installed the same junk must be rejected before the
+  // handler runs - the parse gate is what the null check mirrors.
+  DistributedDispatchHandlers with_handler;
+  int ack_calls = 0;
+  with_handler.on_message_ack = [&](const std::shared_ptr<chirp::network::Session>&,
+                                    const chirp::chat::MessageAck&, int64_t) { ++ack_calls; };
+  DispatchDistributedPacket(
+      session_, MakePacket(chirp::gateway::MESSAGE_ACK, 7, junk), with_handler);
+  EXPECT_EQ(ack_calls, 0);
+  EXPECT_TRUE(session_->sent.empty());
 }
 
 TEST_F(DistributedRuntimeTest, InstallSignalStopInvokesShutdownOnSigint) {

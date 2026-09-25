@@ -7,6 +7,7 @@
 #include <asio.hpp>
 
 #include <array>
+#include <atomic>
 #include <chrono>
 #include <memory>
 #include <mutex>
@@ -573,6 +574,33 @@ TEST(ChatHubPeerTest, MidBodyDisconnectTriggersReconnect) {
   runner.Finish();
 }
 
+// Sends one uplink RPC on a peer with no live connection and asserts the
+// documented fail-fast contract: the callback fires exactly once with
+// SERVER_UNAVAILABLE and the request is never queued for a later connection.
+// Drains the io itself, so it works with or without a PeerIoRunner.
+void ExpectSendInjectUnavailable(asio::io_context& io,
+                                 chirp::network::ServerGatewayPeer& peer) {
+  std::atomic<int> done{0};
+  std::atomic<int> code{-1};
+  peer.SendInject(chirp::game_server_gateway::MessageInjectRequest{},
+                   [&](chirp::common::ErrorCode c) {
+                     code.store(static_cast<int>(c));
+                     done.fetch_add(1);
+                   });
+  const auto deadline = std::chrono::steady_clock::now() + std::chrono::seconds(5);
+  while (std::chrono::steady_clock::now() < deadline && done.load() == 0) {
+    // poll() stops the context as soon as it drains the queue (outstanding
+    // work hits 0), which would turn every later poll into a no-op until the
+    // context is restarted - so restart before each attempt.
+    io.restart();
+    while (io.poll() > 0) {
+    }
+    std::this_thread::sleep_for(std::chrono::milliseconds(2));
+  }
+  EXPECT_EQ(done.load(), 1);
+  EXPECT_EQ(code.load(), static_cast<int>(chirp::common::SERVER_UNAVAILABLE));
+}
+
 TEST(ChatHubPeerTest, ConnectFailureRetries) {
   chirp::common::Logger::Instance().SetLevel(chirp::common::Logger::Level::kError);
   asio::io_context io;
@@ -592,10 +620,12 @@ TEST(ChatHubPeerTest, ConnectFailureRetries) {
 
   std::this_thread::sleep_for(std::chrono::milliseconds(2500));
 
+  // Still retrying (never connected): RPCs must fail fast, not queue up.
+  ExpectSendInjectUnavailable(io, *peer);
+
   peer->Stop();
   runner.Drain();
   runner.Finish();
-  SUCCEED();
 }
 
 TEST(ChatHubPeerTest, ResolveFailureRetries) {
@@ -615,10 +645,12 @@ TEST(ChatHubPeerTest, ResolveFailureRetries) {
 
   std::this_thread::sleep_for(std::chrono::milliseconds(2500));
 
+  // Unresolvable host: the same fail-fast contract as a refused connection.
+  ExpectSendInjectUnavailable(io, *peer);
+
   peer->Stop();
   runner.Drain();
   runner.Finish();
-  SUCCEED();
 }
 
 TEST(ChatHubPeerTest, StopDuringConnectAttemptIsClean) {
@@ -635,10 +667,14 @@ TEST(ChatHubPeerTest, StopDuringConnectAttemptIsClean) {
   peer->Start();
 
   std::this_thread::sleep_for(std::chrono::milliseconds(100));
+  // Pending connect: not connected yet -> the !connected_ arm fires.
+  ExpectSendInjectUnavailable(io, *peer);
   peer->Stop();
+  // After Stop the same call takes the stopping_ arm (both arms of the
+  // `stopping_ || !connected_` guard must land on SERVER_UNAVAILABLE).
+  ExpectSendInjectUnavailable(io, *peer);
   runner.Drain();
   runner.Finish();
-  SUCCEED();
 }
 
 TEST(ChatHubPeerTest, StartAfterStopDoesNothing) {
@@ -649,9 +685,12 @@ TEST(ChatHubPeerTest, StartAfterStopDoesNothing) {
       [](const chirp::game_server_gateway::InjectMessageNotify&) {});
   peer->Stop();   // stopped before ever starting
   peer->Start();  // must be a no-op
+  io.restart();
   while (io.poll() > 0) {
   }
-  SUCCEED();
+  // Never connected, so an RPC fails fast instead of waiting for a
+  // connection the no-op Start() will never establish.
+  ExpectSendInjectUnavailable(io, *peer);
 }
 
 TEST(ChatHubPeerTest, StopIsIdempotent) {
@@ -664,7 +703,8 @@ TEST(ChatHubPeerTest, StopIsIdempotent) {
   peer->Stop();  // second call (e.g. SIGINT then SIGTERM) must be a no-op
   while (io.poll() > 0) {
   }
-  SUCCEED();
+  // The peer is stopped: RPCs still resolve once, fast, with the stop arm.
+  ExpectSendInjectUnavailable(io, *peer);
 }
 
 // Uplink RPCs round-trip through the hub: the peer correlates the response by
@@ -861,6 +901,11 @@ TEST(ChatHubPeerTest, RpcErrorResponsePropagates) {
   peer->Start();
   ASSERT_TRUE(WaitFor([&] { return hub.Count(chirp::gateway::SERVER_AUTH_REQ) >= 1; },
                       std::chrono::seconds(5)));
+  // Readiness sync (see RpcRoundTripsWithEchoedIds): the first heartbeat can
+  // only be armed after connected_ flips, so the RPC below really reaches the
+  // hub instead of failing fast in the AUTH_RESP window.
+  ASSERT_TRUE(WaitFor([&] { return hub.Count(chirp::gateway::SERVER_HEARTBEAT_PING) >= 1; },
+                      std::chrono::seconds(5)));
 
   std::mutex mu;
   chirp::common::ErrorCode code = chirp::common::OK;
@@ -895,6 +940,10 @@ TEST(ChatHubPeerTest, GarbageRpcResponseBodyYieldsInternalError) {
       io, HubOptions(hub), [](const chirp::game_server_gateway::InjectMessageNotify&) {});
   peer->Start();
   ASSERT_TRUE(WaitFor([&] { return hub.Count(chirp::gateway::SERVER_AUTH_REQ) >= 1; },
+                      std::chrono::seconds(5)));
+  // Readiness sync: both RPCs below must land on the hub, so wait until the
+  // peer has processed SERVER_AUTH_RESP (first heartbeat proves it).
+  ASSERT_TRUE(WaitFor([&] { return hub.Count(chirp::gateway::SERVER_HEARTBEAT_PING) >= 1; },
                       std::chrono::seconds(5)));
 
   std::mutex mu;
@@ -948,6 +997,10 @@ TEST(ChatHubPeerTest, ConnectionLossFailsPendingRpc) {
   peer->Start();
   ASSERT_TRUE(WaitFor([&] { return hub.Count(chirp::gateway::SERVER_AUTH_REQ) >= 1; },
                       std::chrono::seconds(5)));
+  // Readiness sync: the pending RPC below must reach the hub, which needs
+  // connected_ (proven by the first heartbeat) rather than just the request.
+  ASSERT_TRUE(WaitFor([&] { return hub.Count(chirp::gateway::SERVER_HEARTBEAT_PING) >= 1; },
+                      std::chrono::seconds(5)));
 
   std::mutex mu;
   std::vector<chirp::common::ErrorCode> codes;
@@ -970,9 +1023,17 @@ TEST(ChatHubPeerTest, ConnectionLossFailsPendingRpc) {
     ASSERT_EQ(codes.size(), 1u);
     EXPECT_EQ(codes[0], chirp::common::SERVER_UNAVAILABLE);
   }
+  // conn1 is confirmed dead (its RPC failed), so no further heartbeat can
+  // come from it: the next ping must be armed by the reconnected peer.
+  const size_t pings_before_reconnect = hub.Count(chirp::gateway::SERVER_HEARTBEAT_PING);
 
   // The connection comes back and later RPCs succeed.
   EXPECT_TRUE(WaitFor([&] { return hub.Count(chirp::gateway::SERVER_AUTH_REQ) >= 2; },
+                      std::chrono::seconds(6)));
+  // Readiness sync again: the second RPC must be written to the new
+  // connection, which the fresh heartbeat proves (connected_ is set there).
+  EXPECT_TRUE(WaitFor([&] { return hub.Count(chirp::gateway::SERVER_HEARTBEAT_PING) >
+                                     pings_before_reconnect; },
                       std::chrono::seconds(6)));
   SetRpcModeSync(hub, FakeHubServer::RpcMode::kEchoOk);
   peer->SendEventAck(ack_req, [&](chirp::common::ErrorCode c) {
@@ -1005,6 +1066,10 @@ TEST(ChatHubPeerTest, GarbageRpcBodyMapsToInternalError) {
       io, HubOptions(hub), [](const chirp::game_server_gateway::InjectMessageNotify&) {});
   peer->Start();
   ASSERT_TRUE(WaitFor([&] { return hub.Count(chirp::gateway::SERVER_AUTH_REQ) >= 1; },
+                      std::chrono::seconds(5)));
+  // Readiness sync: the inject below has to be written to the hub, so wait
+  // for the first heartbeat that only fires once connected_ is set.
+  ASSERT_TRUE(WaitFor([&] { return hub.Count(chirp::gateway::SERVER_HEARTBEAT_PING) >= 1; },
                       std::chrono::seconds(5)));
 
   std::mutex mu;
@@ -1049,6 +1114,10 @@ TEST(ChatHubPeerTest, MismatchedResponseIdIsIgnored) {
       io, HubOptions(hub), [](const chirp::game_server_gateway::InjectMessageNotify&) {});
   peer->Start();
   ASSERT_TRUE(WaitFor([&] { return hub.Count(chirp::gateway::SERVER_AUTH_REQ) >= 1; },
+                      std::chrono::seconds(5)));
+  // Readiness sync: the inject must reach the hub, so wait for the first
+  // heartbeat that only fires after SERVER_AUTH_RESP is processed.
+  ASSERT_TRUE(WaitFor([&] { return hub.Count(chirp::gateway::SERVER_HEARTBEAT_PING) >= 1; },
                       std::chrono::seconds(5)));
 
   std::mutex mu;
@@ -1177,6 +1246,10 @@ TEST(ChatHubPeerTest, StopFailsPendingRpc) {
       io, HubOptions(hub), [](const chirp::game_server_gateway::InjectMessageNotify&) {});
   peer->Start();
   ASSERT_TRUE(WaitFor([&] { return hub.Count(chirp::gateway::SERVER_AUTH_REQ) >= 1; },
+                      std::chrono::seconds(5)));
+  // Readiness sync: the publish below has to sit pending on the hub (kOff
+  // mode), so wait until the peer is connected as proven by the heartbeat.
+  ASSERT_TRUE(WaitFor([&] { return hub.Count(chirp::gateway::SERVER_HEARTBEAT_PING) >= 1; },
                       std::chrono::seconds(5)));
 
   std::mutex mu;
