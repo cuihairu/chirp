@@ -387,14 +387,27 @@ void NotificationService::CleanupInactiveDevices(int64_t inactive_threshold_ms) 
   int64_t cutoff = GetCurrentTimeMs() - inactive_threshold_ms;
 
   for (auto it = devices_.begin(); it != devices_.end();) {
-    const auto& device = it->second;
-    std::lock_guard<std::mutex> device_lock(device->mu);
+    // Decide and copy out under the device's mutex, then unlock before the
+    // erase: the registration (and with it the mutex) dies with the map
+    // entry, and unlocking a destroyed mutex is undefined behavior.
+    bool drop = false;
+    std::string user_id;
+    std::string device_id;
+    {
+      const auto& device = it->second;
+      std::lock_guard<std::mutex> device_lock(device->mu);
+      drop = device->registered_at < cutoff && !device->is_active;
+      if (drop) {
+        user_id = device->user_id;
+        device_id = device->device_id;
+      }
+    }
 
-    if (device->registered_at < cutoff && !device->is_active) {
+    if (drop) {
       // Remove from user index
-      auto user_it = user_to_devices_.find(device->user_id);
+      auto user_it = user_to_devices_.find(user_id);
       if (user_it != user_to_devices_.end()) {
-        user_it->second.erase(device->device_id);
+        user_it->second.erase(device_id);
         if (user_it->second.empty()) {
           user_to_devices_.erase(user_it);
         }

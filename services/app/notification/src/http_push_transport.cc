@@ -200,8 +200,9 @@ bool IsSuccess(int status) { return status >= 200 && status < 300; }
 
 class TcpHttpConnection : public HttpConnection {
  public:
-  explicit TcpHttpConnection(std::unique_ptr<asio::ip::tcp::socket> socket)
-      : socket_(std::move(socket)) {}
+  TcpHttpConnection(std::shared_ptr<asio::io_context> io,
+                    std::unique_ptr<asio::ip::tcp::socket> socket)
+      : io_(std::move(io)), socket_(std::move(socket)) {}
 
   bool WriteAll(const char* data, std::size_t size) override {
     std::error_code ec;
@@ -227,13 +228,19 @@ class TcpHttpConnection : public HttpConnection {
   }
 
  private:
+  // Members are destroyed in reverse declaration order: the socket goes
+  // first because it needs its service registry, which lives in the io
+  // context the connection keeps alive. A socket whose context dies first
+  // destroys through a dangling service (TSan: heap-use-after-free).
+  std::shared_ptr<asio::io_context> io_;
   std::unique_ptr<asio::ip::tcp::socket> socket_;
 };
 
 class SslHttpConnection : public HttpConnection {
  public:
-  explicit SslHttpConnection(asio::ssl::stream<asio::ip::tcp::socket> stream)
-      : stream_(std::move(stream)) {}
+  SslHttpConnection(std::shared_ptr<asio::io_context> io,
+                    asio::ssl::stream<asio::ip::tcp::socket> stream)
+      : io_(std::move(io)), stream_(std::move(stream)) {}
 
   bool WriteAll(const char* data, std::size_t size) override {
     std::error_code ec;
@@ -264,6 +271,9 @@ class SslHttpConnection : public HttpConnection {
   }
 
  private:
+  // Same lifetime rule as TcpHttpConnection: stream_ (holding the socket)
+  // is destroyed before the io context it is registered with.
+  std::shared_ptr<asio::io_context> io_;
   asio::ssl::stream<asio::ip::tcp::socket> stream_;
 };
 
@@ -328,16 +338,18 @@ TcpHttpConnectionFactory::~TcpHttpConnectionFactory() = default;
 std::unique_ptr<HttpConnection> TcpHttpConnectionFactory::Connect(
     const std::string& host, std::uint16_t port, const std::string& scheme) {
   (void)scheme;  // plain TCP only; a TLS factory owns https handshakes
-  asio::io_context io;
+  // Heap-allocated so it outlives the connection: the socket keeps using
+  // the context's services until the connection itself is destroyed.
+  auto io = std::make_shared<asio::io_context>();
   std::error_code ec;
   asio::ip::tcp::socket socket = ConnectTcpWithDeadline(
-      io, host, port, config_.connect_timeout_ms, &ec);
+      *io, host, port, config_.connect_timeout_ms, &ec);
   if (ec || !socket.is_open()) {
     return nullptr;
   }
   return std::unique_ptr<HttpConnection>(
-      new TcpHttpConnection(std::make_unique<asio::ip::tcp::socket>(
-          std::move(socket))));
+      new TcpHttpConnection(io, std::make_unique<asio::ip::tcp::socket>(
+                                    std::move(socket))));
 }
 
 // ---------------------------------------------------------------------------
@@ -496,17 +508,20 @@ std::unique_ptr<HttpConnection> SslHttpConnectionFactory::Connect(
   if (!impl_->usable) {
     return nullptr;  // the trust configuration never loaded
   }
-  asio::io_context io;
+  // Heap-allocated so it outlives the connection: both the plain and the
+  // TLS connection keep using the context's services until they are
+  // destroyed themselves.
+  auto io = std::make_shared<asio::io_context>();
   std::error_code ec;
   asio::ip::tcp::socket socket = ConnectTcpWithDeadline(
-      io, host, port, config_.connect_timeout_ms, &ec);
+      *io, host, port, config_.connect_timeout_ms, &ec);
   if (ec || !socket.is_open()) {
     return nullptr;
   }
   if (scheme != "https") {
     return std::unique_ptr<HttpConnection>(
-        new TcpHttpConnection(std::make_unique<asio::ip::tcp::socket>(
-            std::move(socket))));
+        new TcpHttpConnection(io, std::make_unique<asio::ip::tcp::socket>(
+                                      std::move(socket))));
   }
 
   auto stream = std::make_shared<asio::ssl::stream<asio::ip::tcp::socket>>(
@@ -522,7 +537,7 @@ std::unique_ptr<HttpConnection> SslHttpConnectionFactory::Connect(
     ::SSL_set_tlsext_host_name(stream->native_handle(), host.c_str());
   }
 
-  auto timer = std::make_shared<asio::steady_timer>(io);
+  auto timer = std::make_shared<asio::steady_timer>(*io);
   bool settled = false;
   std::error_code handshake_ec;
   timer->expires_after(std::chrono::milliseconds(config_.handshake_timeout_ms));
@@ -538,13 +553,13 @@ std::unique_ptr<HttpConnection> SslHttpConnectionFactory::Connect(
                             handshake_ec = e;
                             timer->cancel();
                           });
-  io.restart();  // ConnectTcpWithDeadline already drained one run() set
-  io.run();
+  io->restart();  // ConnectTcpWithDeadline already drained one run() set
+  io->run();
   if (!settled || handshake_ec) {
     return nullptr;
   }
   return std::unique_ptr<HttpConnection>(
-      new SslHttpConnection(std::move(*stream)));
+      new SslHttpConnection(io, std::move(*stream)));
 }
 
 }  // namespace app_notification
