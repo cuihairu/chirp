@@ -636,6 +636,14 @@ KNOWN_UNCOVERABLE = {
     ("sdks/core/src/sdk_client.cc", 1314),
     ("sdks/core/src/sdk_client.cc", 1328),
     ("sdks/core/src/sdk_client.cc", 1341),
+    # RecallMessage (the recall alias) repeats the closure shape of
+    # DeleteMessage above, plus the always-equal comparison half of the bool
+    # setter on the shared request message. Both semantic paths (NotConnected
+    # fail-fast and the typed round trip) are asserted by
+    # AllConvenienceMethodsFailFastWhenNotConnected +
+    # RecallSendsSoftDeleteForTheAuthor.
+    ("sdks/core/src/sdk_client.cc", 1162),
+    ("sdks/core/src/sdk_client.cc", 1168),
     # ReadyForRequests || chain: the LoggedIn half never evaluates once
     # Connected is true (short-circuit); every test either fails fast on
     # NotConnected or runs fully Connected/LoggedIn, so the "first true"

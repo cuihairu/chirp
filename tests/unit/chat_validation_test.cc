@@ -373,6 +373,13 @@ TEST(ChatValidationTest, ParseChannelTypeListReadsCsvNames) {
   EXPECT_EQ(typo[0], PRIVATE);
   EXPECT_EQ(typo[1], TEAM);
 
+  // "system" is an accepted alias for SYSTEM_CHANNEL, and a token that
+  // case-folds to something with punctuation is still just an unknown token.
+  const auto alias = ParseChannelTypeList("system, G[ ,team");
+  ASSERT_EQ(alias.size(), 2u);
+  EXPECT_EQ(alias[0], SYSTEM_CHANNEL);
+  EXPECT_EQ(alias[1], TEAM);
+
   // Empty / whitespace-only lists allow nothing.
   EXPECT_TRUE(ParseChannelTypeList("").empty());
   EXPECT_TRUE(ParseChannelTypeList(" , , ").empty());

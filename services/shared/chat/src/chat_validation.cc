@@ -48,10 +48,12 @@ chirp::common::ErrorCode ValidateContentLength(const SendMessageRequest& req) {
 std::vector<ChannelType> ParseChannelTypeList(std::string_view csv) {
   std::vector<ChannelType> types;
   size_t pos = 0;
-  while (pos <= csv.size()) {
+  // Bounded by pos < size so a trailing comma terminates the loop through the
+  // condition (the in-loop break only fires on the last token).
+  while (pos < csv.size()) {
     const size_t comma = csv.find(',', pos);
-    const std::string_view token =
-        csv.substr(pos, comma == std::string_view::npos ? std::string_view::npos : comma - pos);
+    const size_t end = comma == std::string_view::npos ? csv.size() : comma;
+    const std::string_view token = csv.substr(pos, end - pos);
     std::string normalized(token);
     // Trim surrounding whitespace, then case-fold ASCII so "GUILD" and
     // " guild " behave like "guild".
