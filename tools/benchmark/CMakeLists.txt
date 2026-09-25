@@ -136,3 +136,20 @@ target_link_libraries(chirp_wp8_client
 )
 
 target_include_directories(chirp_wp8_client PRIVATE ${CMAKE_SOURCE_DIR}/libs ${CMAKE_SOURCE_DIR}/proto/cpp)
+
+# Concurrent send/RTT load probe: N ring-paired online users, RTT percentiles
+# and per-code reject tallies (docs/guide/integration-pitfalls.md thresholds).
+add_executable(chirp_load_client
+    load_client.cc
+)
+
+target_link_libraries(chirp_load_client
+    PRIVATE
+    chirp_network
+    chirp_common
+    chirp_protos
+    ${absl_pkg_LIBRARIES}
+    Threads::Threads
+)
+
+target_include_directories(chirp_load_client PRIVATE ${CMAKE_SOURCE_DIR}/libs ${CMAKE_SOURCE_DIR}/proto/cpp)
