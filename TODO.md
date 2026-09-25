@@ -77,7 +77,7 @@ SDK 引擎兼容性见 [SDK 引擎兼容性](docs/design-notes/sdk_compatibility
 - [x] 设备注册/注销/token 更新/查询
 - [x] 推送协议面（6xxx）
 - [x] 修复 namespace 重命名后的构建问题（2026-09-22：`chirp::app_notification` 全链一致，push_transport/http_push_transport 单测在测，333/333 目标构建通过）
-- [ ] **真实 APNs/FCM 投递**（进行中：HttpPushTransport 已是真 HTTP/1.1 POST 通道；待做 TLS 支持、端点可配、修掉「无 token 记成功」的 stub 语义；真实凭据接入留待部署环境）
+- [x] **真实 APNs/FCM 投递**（2026-09-22：通道做实——`HttpPushTransport` 经 `SslHttpConnectionFactory` 支持 https（TLS 1.2+，证书校验，SNI 仅对主机名；`--push_ca_file` 私有 CA、`--push_verify_tls off` 调试豁免）；端点全部可配（`--fcm-endpoint`/`--apns-endpoint`/`--apns-sandbox`）；无 token 设备改为显式失败（原来「无 token 记成功」的 stub 语义已删）。测试：TLS 回环 9 例（可信 CA/错误 CA/超时/大响应跨 record/明文回落）+ 语义单测，覆盖率保持 100%。APNs HTTP/2 与真实凭据接入留待部署环境（APNs 要求 HTTP/2，生产部署在本通道前置协议转换或走 provider 的 HTTP/1.1 兼容 API））
 
 ## 跨平面协议（P1）
 
