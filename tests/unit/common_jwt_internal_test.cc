@@ -90,5 +90,91 @@ TEST(JwtInternalJsonTest, ExtractIntNegativeAndSpacingParses) {
   EXPECT_EQ(out, -12);
 }
 
+// ---------------------------------------------------------------------------
+// Value-side behaviour: escapes, mis-matched needles and out-param hygiene.
+// ---------------------------------------------------------------------------
+
+TEST(JwtInternalJsonTest, ExtractStringUnescapesEveryKnownEscape) {
+  std::string out;
+  ASSERT_TRUE(ExtractJsonString(R"({"k":"a\"b\\c\nd\re\tf"})", "k", &out));
+  EXPECT_EQ(out, "a\"b\\c\nd\re\tf");
+}
+
+TEST(JwtInternalJsonTest, ExtractStringUnknownEscapeKeepsEscapedChar) {
+  // The default arm keeps the escaped character verbatim instead of failing.
+  std::string out;
+  ASSERT_TRUE(ExtractJsonString(R"({"k":"x\zy"})", "k", &out));
+  EXPECT_EQ(out, "xzy");
+}
+
+TEST(JwtInternalJsonTest, ExtractStringEscapedBackslashBeforeClosingQuote) {
+  // "\\": the escaped backslash must not be mistaken for the closing quote.
+  std::string out;
+  ASSERT_TRUE(ExtractJsonString(R"({"k":"abc\\"})", "k", &out));
+  EXPECT_EQ(out, "abc\\");
+}
+
+TEST(JwtInternalJsonTest, ExtractStringEmptyValueParses) {
+  std::string out = "sentinel";
+  ASSERT_TRUE(ExtractJsonString(R"({"k" : ""})", "k", &out));
+  EXPECT_TRUE(out.empty());
+}
+
+TEST(JwtInternalJsonTest, ExtractStringAcceptsTabWhitespace) {
+  std::string out;
+  ASSERT_TRUE(ExtractJsonString("{\"k\"\t:\t\"v\"}", "k", &out));
+  EXPECT_EQ(out, "v");
+}
+
+TEST(JwtInternalJsonTest, ExtractStringValueLookalikeDoesNotMatchKey) {
+  // The needle "\"k\"" occurs as the *value* of "a"; the colon check after it
+  // fails, so the naive search must not report a hit for key "k".
+  std::string out = "sentinel";
+  EXPECT_FALSE(ExtractJsonString(R"({"a":"k"})", "k", &out));
+  EXPECT_EQ(out, "sentinel");
+}
+
+TEST(JwtInternalJsonTest, ExtractStringDuplicateKeyReturnsFirstValue) {
+  std::string out;
+  ASSERT_TRUE(ExtractJsonString(R"({"k":"first","k":"second"})", "k", &out));
+  EXPECT_EQ(out, "first");
+}
+
+TEST(JwtInternalJsonTest, ExtractStringFailureLeavesOutUntouched) {
+  std::string out = "sentinel";
+  EXPECT_FALSE(ExtractJsonString(R"({"other":"v"})", "k", &out));
+  EXPECT_EQ(out, "sentinel");
+}
+
+TEST(JwtInternalJsonTest, JsonEscapeEscapesSpecialCharacters) {
+  EXPECT_EQ(JsonEscape("plain"), "plain");
+  EXPECT_EQ(JsonEscape("a\\b\"c\nd\re\tf"), "a\\\\b\\\"c\\nd\\re\\tf");
+}
+
+TEST(JwtInternalJsonTest, ExtractIntStopsAtFirstNonDigit) {
+  // The parser is deliberately naive: digits up to the first non-digit win.
+  int64_t out = 0;
+  ASSERT_TRUE(ExtractJsonInt64(R"({"k":12abc})", "k", &out));
+  EXPECT_EQ(out, 12);
+}
+
+TEST(JwtInternalJsonTest, ExtractIntPlusSignRejected) {
+  int64_t out = -1;
+  EXPECT_FALSE(ExtractJsonInt64(R"({"k":+5})", "k", &out));
+  EXPECT_EQ(out, -1);
+}
+
+TEST(JwtInternalJsonTest, ExtractIntLeadingZerosParse) {
+  int64_t out = 0;
+  ASSERT_TRUE(ExtractJsonInt64(R"({"k":007})", "k", &out));
+  EXPECT_EQ(out, 7);
+}
+
+TEST(JwtInternalJsonTest, ExtractIntFailureLeavesOutUntouched) {
+  int64_t out = -42;
+  EXPECT_FALSE(ExtractJsonInt64(R"({"k":})", "k", &out));
+  EXPECT_EQ(out, -42);
+}
+
 } // namespace
 } // namespace chirp::common
