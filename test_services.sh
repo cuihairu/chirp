@@ -245,7 +245,9 @@ if [[ "${1:-}" == "--smoke-game" ]]; then
     --token user_a --device dev_a --platform pc \
     --send_text "game-offline-hello" --peer_user user_b > "${A_LOG}" 2>&1
   grep -q "code=0" "${A_LOG}"
-  grep -q "send code=0" "${A_LOG}"
+  # B is offline by design: basic answers TARGET_OFFLINE(6, queued),
+  # enhanced answers OK; the refill assertion below is the real proof.
+  grep -Eq "send code=(0|6)" "${A_LOG}"
 
   echo ""
   echo "[game] B login via gateway (offline refill via ChatBridge)"
@@ -1033,7 +1035,9 @@ elif [[ "${1:-}" == "--smoke-jwt" ]]; then
     --jwt_user user_a --jwt_secret "${JWT_SECRET}" --device dev_a \
     --send_text "jwt-offline-hello" --peer_user user_b --sender user_a > "${A_LOG}" 2>&1
   grep -q "code=0" "${A_LOG}"
-  grep -q "send code=0" "${A_LOG}"
+  # B is offline by design: basic answers TARGET_OFFLINE(6, queued),
+  # enhanced answers OK; the refill assertion below is the real proof.
+  grep -Eq "send code=(0|6)" "${A_LOG}"
 
   # 6) B 以 JWT 经 gateway 登录,离线补投递经管道回到客户端
   echo ""

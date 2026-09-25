@@ -34,7 +34,7 @@ void PrintUsage(const char* argv0) {
             << "  --timeout-ms N     超时毫秒 (默认 10000)\n"
             << "  --settle-ms N      无 --expect 时发送后停留毫秒 (默认 500)\n"
             << "无参数运行时等同 demo: --user user123 --peer user_2 --settle-ms 5000\n"
-            << "退出码: 0 成功 / 1 连接失败 / 2 登录失败 / 3 等待消息超时" << std::endl;
+            << "退出码: 0 成功 / 1 连接或发送失败 / 2 登录失败 / 3 等待消息超时" << std::endl;
 }
 
 bool ParseArgs(int argc, char** argv, Args& args) {
@@ -151,12 +151,47 @@ int main(int argc, char** argv) {
     return 2;
   }
 
+  int rc = 0;
   if (!args.peer.empty()) {
+    // 回执式发送:等到 SEND_MESSAGE_RESP 再继续。fire-and-forget 版本把发送
+    // post 到 io 线程,若发送后立刻 Disconnect() 停掉 io_context,排在队列里
+    // 的发送 lambda 会被直接丢弃——消息在客户端侧无声消失。回执等待让
+    // "发送完成"变成确定性的,这正是 integration-pitfalls.md 记录的坑。
     std::cout << "发送消息 -> " << args.peer << ": " << args.message << std::endl;
-    client.SendMessage(args.peer, args.message);
+    std::atomic<bool> send_done{false};
+    std::atomic<bool> send_ok{false};
+    ChatClient::SendOptions opts;
+    opts.channel_type = chirp::chat::PRIVATE;
+    opts.receiver_id = args.peer;
+    client.SendMessage(opts, args.message,
+                       [&](const std::error_code& ec, const chirp::chat::SendMessageResponse& resp) {
+                         if (ec) {
+                           std::cerr << "发送失败: " << ec.message() << std::endl;
+                         } else if (resp.code() == chirp::common::OK) {
+                           send_ok = true;
+                           std::cout << "发送回执: code=OK message_id=" << resp.message_id()
+                                     << std::endl;
+                         } else if (resp.code() == chirp::common::TARGET_OFFLINE) {
+                           // 接收方不在线:消息已入离线队列,登录后补投递
+                           // (basic 形态返回 6;enhanced 形态直接返回 OK)。
+                           send_ok = true;
+                           std::cout << "发送回执: code=TARGET_OFFLINE 已入离线队列" << std::endl;
+                         } else {
+                           std::cerr << "发送被拒: code=" << resp.code() << std::endl;
+                         }
+                         send_done = true;
+                       });
+    while (!send_done && std::chrono::steady_clock::now() < deadline) {
+      std::this_thread::sleep_for(std::chrono::milliseconds(50));
+    }
+    if (!send_done) {
+      std::cerr << "等待发送回执超时" << std::endl;
+      rc = 1;
+    } else if (!send_ok) {
+      rc = 1;
+    }
   }
 
-  int rc = 0;
   if (!args.expect.empty()) {
     while (!got_expected && !kicked && std::chrono::steady_clock::now() < deadline) {
       std::this_thread::sleep_for(std::chrono::milliseconds(50));
