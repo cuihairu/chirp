@@ -123,8 +123,14 @@ KNOWN_UNCOVERABLE = {
     # environment-independent unit test can hit this arm deterministically.
     # (Lines track ConnectTcpWithDeadline's timer lambda; keep in sync with
     # the branch-level entry for the same lambda below.)
-    ("services/app/notification/src/http_push_transport.cc", 292),
-    ("services/app/notification/src/http_push_transport.cc", 293),
+    ("services/app/notification/src/http_push_transport.cc", 302),
+    ("services/app/notification/src/http_push_transport.cc", 303),
+    # Connect's success-path "new TcpHttpConnection" lines carry only the
+    # bad_alloc unwind block of the make_unique call; the live block of the
+    # statement sits on the neighbouring return line and is covered by the
+    # loopback tests. Same for the SSL factory's plain-scheme fallthrough.
+    ("services/app/notification/src/http_push_transport.cc", 351),
+    ("services/app/notification/src/http_push_transport.cc", 523),
     # Frame encoder guards: needs a >4GiB message / a Message whose
     # SerializeToArray disagrees with ByteSizeLong. L12's untaken arms are
     # the >UINT32_MAX / >INT_MAX sides of the size check (same 4GiB wall).
@@ -423,19 +429,19 @@ KNOWN_UNCOVERABLE = {
     # POLLIN only, so revents is a subset of POLLIN|POLLHUP|POLLERR|POLLNVAL;
     # POLLNVAL needs the fd closed underneath the live connection, which the
     # transport never does while waiting. SslHttpConnection::WaitReadable
-    # (line 254) is the same shape with the same justification.
-    ("services/app/notification/src/http_push_transport.cc", 217),
-    ("services/app/notification/src/http_push_transport.cc", 254),
+    # (line 261) is the same shape with the same justification.
+    ("services/app/notification/src/http_push_transport.cc", 218),
+    ("services/app/notification/src/http_push_transport.cc", 261),
     # ConnectTcpWithDeadline timer lambda: the wait_ec-false arm only fires
     # when the timer expires before async_connect settles - the same
-    # environment race already excluded on the two lines above.
-    ("services/app/notification/src/http_push_transport.cc", 291),
-    # Connect's success-path return line: the untaken arms are an asio
-    # chrono_time_traits.hpp comparison attributed to this line whose
-    # direction never flips for a deadline set in the future, plus the
-    # bad_alloc unwind of the new/make_unique call - neither is reachable
-    # from a unit test.
-    ("services/app/notification/src/http_push_transport.cc", 338),
+    # environment race already excluded on the two lines above. The SSL
+    # handshake deadline lambda (545) and both factories' success-path
+    # return lines (350 / 562: asio chrono comparison that never flips for
+    # a future deadline, plus bad_alloc unwind) repeat the pattern.
+    ("services/app/notification/src/http_push_transport.cc", 301),
+    ("services/app/notification/src/http_push_transport.cc", 545),
+    ("services/app/notification/src/http_push_transport.cc", 350),
+    ("services/app/notification/src/http_push_transport.cc", 562),
     # ReadReceiptManager ChannelKey npos arm: ChannelKey always builds
     # `std::to_string(type) + ":" + channel_id` (read_receipt_manager.h:65),
     # so find(':') never returns npos and the defense arm is dead code.
