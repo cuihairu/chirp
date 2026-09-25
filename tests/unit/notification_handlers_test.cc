@@ -3,9 +3,11 @@
 
 #include <gtest/gtest.h>
 
+#include <memory>
 #include <string>
 
 #include "notification_handlers.h"
+#include "push_transport.h"
 
 using chirp::common::ErrorCode;
 using chirp::gateway::Packet;
@@ -13,6 +15,15 @@ using chirp::gateway::Packet;
 namespace {
 
 constexpr int64_t kSeq = 77;
+
+// Provider responses are answered inline; handler tests observe routing,
+// not transport failures.
+class OkTransport : public chirp::app_notification::PushTransport {
+ public:
+  std::string Post(const chirp::app_notification::PushRequest&) override {
+    return "{}";
+  }
+};
 
 Packet MakePacket(chirp::gateway::MsgID msg_id, const std::string& body) {
   Packet pkt;
@@ -24,7 +35,9 @@ Packet MakePacket(chirp::gateway::MsgID msg_id, const std::string& body) {
 
 class NotificationHandlersTest : public ::testing::Test {
  protected:
-  chirp::app_notification::NotificationService svc_;
+  chirp::app_notification::NotificationService svc_{
+      chirp::app_notification::FCMConfig{}, chirp::app_notification::APNsConfig{},
+      std::make_shared<OkTransport>()};
   chirp::app_notification::NotificationHandlers handlers_{svc_};
 };
 
@@ -168,10 +181,11 @@ TEST_F(NotificationHandlersTest, ListsUserDevices) {
 }
 
 TEST_F(NotificationHandlersTest, PushesToRegisteredDevice) {
-  chirp::app_notification::DeviceRegistration reg;  // tokenless: stub succeeds
+  chirp::app_notification::DeviceRegistration reg;
   reg.device_id = "dev-5";
   reg.user_id = "u5";
   reg.platform = "android";
+  reg.fcm_token = "tok";  // untokened devices fail closed now
   svc_.RegisterDevice(reg);
 
   chirp::app_notification::PushNotificationRequest req;

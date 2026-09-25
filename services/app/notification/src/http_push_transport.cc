@@ -6,6 +6,7 @@
 #include <poll.h>
 
 #include <asio.hpp>
+#include <asio/ssl.hpp>
 
 #include "logger.h"
 
@@ -229,6 +230,85 @@ class TcpHttpConnection : public HttpConnection {
   std::unique_ptr<asio::ip::tcp::socket> socket_;
 };
 
+class SslHttpConnection : public HttpConnection {
+ public:
+  explicit SslHttpConnection(asio::ssl::stream<asio::ip::tcp::socket> stream)
+      : stream_(std::move(stream)) {}
+
+  bool WriteAll(const char* data, std::size_t size) override {
+    std::error_code ec;
+    asio::write(stream_, asio::buffer(data, size), ec);
+    return !ec;
+  }
+
+  bool WaitReadable(int deadline_ms) override {
+    // Plaintext can already sit decrypted in the TLS buffer past the
+    // socket's readability, where a poll would miss it.
+    if (SSL_pending(stream_.native_handle()) > 0) {
+      return true;
+    }
+    pollfd pfd{};
+    pfd.fd = static_cast<int>(stream_.lowest_layer().native_handle());
+    pfd.events = POLLIN;
+    const int rc = ::poll(&pfd, 1, std::max(deadline_ms, 0));
+    return rc > 0 && (pfd.revents & (POLLIN | POLLHUP | POLLERR)) != 0;
+  }
+
+  int ReadSome(char* data, std::size_t size) override {
+    std::error_code ec;
+    const std::size_t n = stream_.read_some(asio::buffer(data, size), ec);
+    if (ec) {
+      return ec == asio::error::eof ? 0 : -1;
+    }
+    return static_cast<int>(n);
+  }
+
+ private:
+  asio::ssl::stream<asio::ip::tcp::socket> stream_;
+};
+
+// Blocking TCP connect with a deadline. Returns an open socket on success;
+// on failure (resolution, refusal, deadline) *ec is set and the socket is
+// not open. Each call runs its own private io_context so a timed-out
+// attempt can never leak handlers into the next one.
+asio::ip::tcp::socket ConnectTcpWithDeadline(asio::io_context& io,
+                                             const std::string& host,
+                                             std::uint16_t port,
+                                             int timeout_ms,
+                                             std::error_code* ec) {
+  asio::ip::tcp::resolver resolver(io);
+  const auto endpoints = resolver.resolve(host, std::to_string(port), *ec);
+  if (*ec) {
+    return asio::ip::tcp::socket(io);
+  }
+
+  auto socket = std::make_shared<asio::ip::tcp::socket>(io);
+  auto timer = std::make_shared<asio::steady_timer>(io);
+  bool settled = false;
+  std::error_code connect_ec;
+  timer->expires_after(std::chrono::milliseconds(timeout_ms));
+  timer->async_wait([&](const std::error_code& wait_ec) {
+    if (!wait_ec) {  // deadline: abort the connect
+      std::error_code cancel_ec;
+      socket->cancel(cancel_ec);
+    }
+  });
+
+  asio::async_connect(*socket, endpoints,
+                      [&, socket, timer](const std::error_code& e,
+                                         const asio::ip::tcp::endpoint&) {
+                        settled = true;
+                        connect_ec = e;
+                        timer->cancel();
+                      });
+  // Callers reuse the context for a second phase (the TLS handshake), and
+  // a run() set must be preceded by restart() once a previous one drained.
+  io.restart();
+  io.run();
+  *ec = settled ? connect_ec : asio::error::operation_aborted;
+  return std::move(*socket);
+}
+
 }  // namespace
 
 // ---------------------------------------------------------------------------
@@ -249,40 +329,15 @@ std::unique_ptr<HttpConnection> TcpHttpConnectionFactory::Connect(
     const std::string& host, std::uint16_t port, const std::string& scheme) {
   (void)scheme;  // plain TCP only; a TLS factory owns https handshakes
   asio::io_context io;
-  asio::ip::tcp::resolver resolver(io);
   std::error_code ec;
-  const auto endpoints =
-      resolver.resolve(host, std::to_string(port), ec);
-  if (ec) {
-    return nullptr;
-  }
-
-  auto socket = std::make_shared<asio::ip::tcp::socket>(io);
-  auto timer = std::make_shared<asio::steady_timer>(io);
-  bool settled = false;
-  std::error_code connect_ec;
-  timer->expires_after(std::chrono::milliseconds(config_.connect_timeout_ms));
-  timer->async_wait([&](const std::error_code& wait_ec) {
-    if (!wait_ec) {  // deadline: abort the connect
-      std::error_code cancel_ec;
-      socket->cancel(cancel_ec);
-    }
-  });
-
-  asio::async_connect(*socket, endpoints,
-                      [&, socket, timer](const std::error_code& e,
-                                         const asio::ip::tcp::endpoint&) {
-                        settled = true;
-                        connect_ec = e;
-                        timer->cancel();
-                      });
-  io.run();
-  if (!settled || connect_ec) {
+  asio::ip::tcp::socket socket = ConnectTcpWithDeadline(
+      io, host, port, config_.connect_timeout_ms, &ec);
+  if (ec || !socket.is_open()) {
     return nullptr;
   }
   return std::unique_ptr<HttpConnection>(
       new TcpHttpConnection(std::make_unique<asio::ip::tcp::socket>(
-          std::move(*socket))));
+          std::move(socket))));
 }
 
 // ---------------------------------------------------------------------------
@@ -400,6 +455,96 @@ std::string HttpPushTransport::DoPost(const PushRequest& request,
     return "";
   }
   return buf;
+}
+
+// ---------------------------------------------------------------------------
+// SslHttpConnectionFactory
+// ---------------------------------------------------------------------------
+
+struct SslHttpConnectionFactory::Impl {
+  explicit Impl(const Config& config)
+      : ctx(asio::ssl::context::tls_client) {
+    std::error_code ec;
+    if (!config.ca_file.empty()) {
+      ctx.load_verify_file(config.ca_file, ec);
+    } else {
+      // The OpenSSL default trust store is not loaded implicitly.
+      ctx.set_default_verify_paths(ec);
+    }
+    if (ec) {
+      usable = false;
+      return;
+    }
+    ctx.set_verify_mode(config.verify_certificates
+                            ? asio::ssl::verify_peer
+                            : asio::ssl::verify_none,
+                        ec);
+    usable = !ec;
+  }
+
+  asio::ssl::context ctx;
+  bool usable = true;
+};
+
+SslHttpConnectionFactory::SslHttpConnectionFactory(Config config)
+    : config_(config), impl_(std::make_unique<Impl>(config)) {}
+
+SslHttpConnectionFactory::~SslHttpConnectionFactory() = default;
+
+std::unique_ptr<HttpConnection> SslHttpConnectionFactory::Connect(
+    const std::string& host, std::uint16_t port, const std::string& scheme) {
+  if (!impl_->usable) {
+    return nullptr;  // the trust configuration never loaded
+  }
+  asio::io_context io;
+  std::error_code ec;
+  asio::ip::tcp::socket socket = ConnectTcpWithDeadline(
+      io, host, port, config_.connect_timeout_ms, &ec);
+  if (ec || !socket.is_open()) {
+    return nullptr;
+  }
+  if (scheme != "https") {
+    return std::unique_ptr<HttpConnection>(
+        new TcpHttpConnection(std::make_unique<asio::ip::tcp::socket>(
+            std::move(socket))));
+  }
+
+  auto stream = std::make_shared<asio::ssl::stream<asio::ip::tcp::socket>>(
+      std::move(socket), impl_->ctx);
+  // SNI carries host names only: RFC 6066 forbids IP literals, and IPv6
+  // literals announce themselves by their colons.
+  const bool is_ip_literal =
+      host.find(':') != std::string::npos ||
+      std::all_of(host.begin(), host.end(), [](char c) {
+        return c == '.' || (c >= '0' && c <= '9');
+      });
+  if (!host.empty() && !is_ip_literal) {
+    ::SSL_set_tlsext_host_name(stream->native_handle(), host.c_str());
+  }
+
+  auto timer = std::make_shared<asio::steady_timer>(io);
+  bool settled = false;
+  std::error_code handshake_ec;
+  timer->expires_after(std::chrono::milliseconds(config_.handshake_timeout_ms));
+  timer->async_wait([&](const std::error_code& wait_ec) {
+    if (!wait_ec) {  // deadline: abort the handshake
+      std::error_code cancel_ec;
+      stream->lowest_layer().cancel(cancel_ec);
+    }
+  });
+  stream->async_handshake(asio::ssl::stream_base::client,
+                          [&, stream, timer](const std::error_code& e) {
+                            settled = true;
+                            handshake_ec = e;
+                            timer->cancel();
+                          });
+  io.restart();  // ConnectTcpWithDeadline already drained one run() set
+  io.run();
+  if (!settled || handshake_ec) {
+    return nullptr;
+  }
+  return std::unique_ptr<HttpConnection>(
+      new SslHttpConnection(std::move(*stream)));
 }
 
 }  // namespace app_notification

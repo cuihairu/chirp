@@ -58,7 +58,8 @@ struct DeviceRegistration {
   DeviceRegistration& operator=(const DeviceRegistration& other);
 };
 
-// FCM configuration
+// FCM configuration. The endpoint is fully caller-owned: deployments pick
+// the provider URL (legacy HTTP API or HTTP v1) via --fcm-endpoint.
 struct FCMConfig {
   std::string server_key;
   std::string project_id;
@@ -66,7 +67,9 @@ struct FCMConfig {
   int32_t timeout_seconds = 10;
 };
 
-// APNs configuration
+// APNs configuration. The endpoint default is the production host; the
+// sandbox URL is selected by whoever fills the config (the CLI does it from
+// --apns-sandbox) rather than re-derived here.
 struct APNsConfig {
   std::string key_id;
   std::string team_id;

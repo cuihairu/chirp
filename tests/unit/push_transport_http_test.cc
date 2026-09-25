@@ -689,4 +689,16 @@ TEST(HttpPushTransportScriptedTest, DestructorsDispatchThroughBasePointers) {
   });
 }
 
+TEST(LoggingPushTransportTest, PostLogsAndReturnsEmpty) {
+  // The logging transport is the default backend: every request is dropped
+  // with a log line and an empty response, which the service counts as a
+  // send failure (the fail-closed contract).
+  chirp::app_notification::LoggingPushTransport transport;
+  PushRequest request;
+  request.provider = "fcm";
+  request.url = "https://fcm.example.test/send";
+  request.payload = "{\"to\":\"tok\"}";
+  EXPECT_EQ(transport.Post(request), "");
+}
+
 }  // namespace

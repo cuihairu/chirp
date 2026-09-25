@@ -3,6 +3,7 @@
 // second compilation context, so coverage merges cleanly).
 #include <gtest/gtest.h>
 
+#include <memory>
 #include <mutex>
 #include <string>
 
@@ -10,6 +11,13 @@
 
 namespace chirp {
 namespace app_notification {
+
+// Provider responses are answered inline; the incoming-call path only needs
+// a provider that does not fail.
+class OkTransport : public PushTransport {
+ public:
+  std::string Post(const PushRequest&) override { return "{}"; }
+};
 
 // Befriended in notification_service.h: provides test-only accessors.
 struct NotificationServiceInternalAccess {
@@ -46,14 +54,15 @@ NotificationPayload MakePayload() {
 
 TEST(NotificationInternalTest, CallNotificationTitleIsConstant) {
   // The incoming-call path uses the fixed title template.
-  NotificationService svc{FCMConfig{}, APNsConfig{}};
+  NotificationService svc{FCMConfig{}, APNsConfig{},
+                          std::make_shared<chirp::app_notification::OkTransport>()};
   DeviceRegistration reg;
   reg.device_id = "d1";
   reg.user_id = "alice";
   reg.platform = "android";
+  reg.fcm_token = "tok";
   ASSERT_TRUE(svc.RegisterDevice(reg));
 
-  NotificationPayload sent;
   EXPECT_TRUE(svc.NotifyIncomingCall("alice", "bobby"));
 }
 

@@ -1,6 +1,8 @@
 #include <gtest/gtest.h>
 
 #include <algorithm>
+#include <memory>
+#include <mutex>
 #include <string>
 #include <vector>
 
@@ -14,6 +16,21 @@ using chirp::app_notification::NotificationService;
 
 namespace {
 
+// Records provider requests; the canned body stands in for the provider's
+// HTTP response.
+class RecordingTransport : public chirp::app_notification::PushTransport {
+ public:
+  std::string Post(const chirp::app_notification::PushRequest& request) override {
+    std::lock_guard<std::mutex> lock(mu);
+    requests.push_back(request);
+    return canned;
+  }
+
+  std::mutex mu;
+  std::vector<chirp::app_notification::PushRequest> requests;
+  std::string canned;
+};
+
 DeviceRegistration MakeDevice(const std::string& device_id,
                               const std::string& user_id,
                               const std::string& platform) {
@@ -21,6 +38,11 @@ DeviceRegistration MakeDevice(const std::string& device_id,
   reg.device_id = device_id;
   reg.user_id = user_id;
   reg.platform = platform;
+  // Provider tokens by default: an untokened device is now an explicit
+  // send failure, and these tests exercise the send paths, not
+  // registration hygiene.
+  reg.fcm_token = "fcm-tok";
+  reg.apns_token = "apns-tok";
   return reg;
 }
 
@@ -33,8 +55,12 @@ NotificationPayload MakePayload() {
 }
 
 class NotificationServiceTest : public ::testing::Test {
-protected:
-  NotificationService svc_{FCMConfig{}, APNsConfig{}};
+ protected:
+  NotificationServiceTest() { transport_->canned = "ok"; }
+
+  std::shared_ptr<RecordingTransport> transport_ =
+      std::make_shared<RecordingTransport>();
+  NotificationService svc_{FCMConfig{}, APNsConfig{}, transport_};
 };
 
 TEST_F(NotificationServiceTest, RegisterDeviceOverwritesTimestampAndActivates) {
@@ -111,30 +137,50 @@ TEST_F(NotificationServiceTest, UpdateDeviceTokenByPlatform) {
   EXPECT_EQ(browser[0].fcm_token, "web-fcm-token");
 
   auto other = svc_.GetUserDevices("dave");
-  EXPECT_TRUE(other[0].fcm_token.empty());
-  EXPECT_TRUE(other[0].apns_token.empty());
+  // Unknown platform: UpdateDeviceToken is a noop and the tokens keep the
+  // values they were registered with.
+  EXPECT_EQ(other[0].fcm_token, "fcm-tok");
+  EXPECT_EQ(other[0].apns_token, "apns-tok");
 }
 
 TEST_F(NotificationServiceTest, UpdateDeviceTokenUnknownDeviceFails) {
   EXPECT_FALSE(svc_.UpdateDeviceToken("missing", "tok"));
 }
 
-TEST_F(NotificationServiceTest, SendToDeviceWithoutTokenSucceeds) {
-  // HTTPPost stub returns "" -> send "succeeds" when the device has no token.
-  svc_.RegisterDevice(MakeDevice("d1", "alice", "android"));
+TEST_F(NotificationServiceTest, UntokenedDeviceFailsClosed) {
+  // A device without a provider token is a registration gap: the send
+  // fails closed instead of pretending success (the old stub semantics).
+  DeviceRegistration reg = MakeDevice("d1", "alice", "android");
+  reg.fcm_token.clear();
+  svc_.RegisterDevice(reg);
 
-  EXPECT_TRUE(svc_.SendNotificationToDevice("d1", MakePayload()));
+  EXPECT_FALSE(svc_.SendNotificationToDevice("d1", MakePayload()));
   const auto& stats = svc_.GetStats();
-  EXPECT_EQ(stats.notifications_sent.load(), 1u);
-  EXPECT_EQ(stats.fcm_sent.load(), 1u);
-  EXPECT_EQ(stats.notifications_failed.load(), 0u);
+  EXPECT_EQ(stats.notifications_sent.load(), 0u);
+  EXPECT_EQ(stats.fcm_sent.load(), 0u);
+  EXPECT_EQ(stats.notifications_failed.load(), 1u);
+  EXPECT_EQ(transport_->requests.size(), 0u);  // nothing reached the transport
 }
 
-TEST_F(NotificationServiceTest, SendToDeviceWithRealTokenFails) {
-  // With a non-empty token the stub HTTP response counts as failure.
-  DeviceRegistration reg = MakeDevice("d1", "alice", "android");
-  reg.fcm_token = "real-token";
+TEST_F(NotificationServiceTest, UntokenedIosDeviceFailsClosed) {
+  // The APNs path mirrors the FCM fail-closed contract: a device without an
+  // apns token is a registration gap, not a successful no-op.
+  DeviceRegistration reg = MakeDevice("d1", "alice", "ios");
+  reg.apns_token.clear();
   svc_.RegisterDevice(reg);
+
+  EXPECT_FALSE(svc_.SendNotificationToDevice("d1", MakePayload()));
+  const auto& stats = svc_.GetStats();
+  EXPECT_EQ(stats.notifications_sent.load(), 0u);
+  EXPECT_EQ(stats.apns_sent.load(), 0u);
+  EXPECT_EQ(stats.notifications_failed.load(), 1u);
+  EXPECT_EQ(transport_->requests.size(), 0u);  // nothing reached the transport
+}
+
+TEST_F(NotificationServiceTest, ProviderSilenceFailsTheSend) {
+  // Empty transport response = the provider did not answer: failure.
+  transport_->canned = "";
+  svc_.RegisterDevice(MakeDevice("d1", "alice", "android"));
 
   EXPECT_FALSE(svc_.SendNotificationToDevice("d1", MakePayload()));
   EXPECT_EQ(svc_.GetStats().notifications_failed.load(), 1u);
@@ -145,7 +191,7 @@ TEST_F(NotificationServiceTest, SendToUnknownDeviceFails) {
   EXPECT_FALSE(svc_.SendNotificationToDevice("missing", MakePayload()));
 }
 
-TEST_F(NotificationServiceTest, SendIosWithoutTokenCountsApns) {
+TEST_F(NotificationServiceTest, SendIosCountsApns) {
   svc_.RegisterDevice(MakeDevice("phone", "bob", "ios"));
 
   EXPECT_TRUE(svc_.SendNotificationToDevice("phone", MakePayload()));
@@ -332,24 +378,23 @@ TEST_F(NotificationServiceTest, CleanupExpiredCooldownsRemovesStaleEntries) {
   EXPECT_FALSE(svc_.IsOnCooldown("alice"));
 }
 
-TEST(NotificationServiceApnsTest, SandboxAndProductionEndpointsAreSelected) {
-  APNsConfig sandbox;
-  sandbox.use_sandbox = true;
-  NotificationService svc{FCMConfig{}, sandbox};
+TEST(NotificationServiceApnsTest, EndpointIsUsedExactlyAsConfigured) {
+  auto transport = std::make_shared<RecordingTransport>();
+  transport->canned = "ok";
+  APNsConfig apns;
+  apns.endpoint = "https://apns.example.test:2197";
+  apns.use_sandbox = true;  // must NOT rewrite the endpoint anymore
+  NotificationService svc{FCMConfig{}, apns, transport};
 
-  DeviceRegistration ios = MakeDevice("d1", "alice", "ios");
-  ios.apns_token = "real-apns-token";
+  DeviceRegistration ios = MakeDevice("d1", "apns-e", "ios");
   ASSERT_TRUE(svc.RegisterDevice(ios));
 
-  // The HTTP POST fails (no network in tests) but the APNs path including
-  // the sandbox endpoint selection is exercised.
-  EXPECT_FALSE(svc.SendNotificationToDevice("d1", MakePayload()));
+  EXPECT_TRUE(svc.SendNotificationToDevice("d1", MakePayload()));
+  ASSERT_EQ(transport->requests.size(), 1u);
+  EXPECT_EQ(transport->requests[0].url, "https://apns.example.test:2197");
 
-  NotificationPayload p = MakePayload();
-  p.icon = "bell";
-  DeviceRegistration android = MakeDevice("d2", "alice", "android");
-  ASSERT_TRUE(svc.RegisterDevice(android));
-  EXPECT_TRUE(svc.SendNotificationToDevice("d2", p));
+  // The production/sandbox URL choice moved to whoever fills the config
+  // (the CLI derives it from --apns-sandbox / --apns-endpoint).
 }
 
 TEST_F(NotificationServiceTest, PayloadsWithDataAndBadgeAreSerialized) {
@@ -370,20 +415,9 @@ TEST_F(NotificationServiceTest, PayloadsWithDataAndBadgeAreSerialized) {
   EXPECT_TRUE(svc_.SendNotificationToDevice("d2", ios_payload));
 }
 
-// Records provider requests; the canned body stands in for the provider's
-// HTTP response (empty = the historical stub semantics).
-class RecordingTransport : public chirp::app_notification::PushTransport {
- public:
-  std::string Post(const chirp::app_notification::PushRequest& request) override {
-    std::lock_guard<std::mutex> lock(mu);
-    requests.push_back(request);
-    return canned;
-  }
-
-  std::mutex mu;
-  std::vector<chirp::app_notification::PushRequest> requests;
-  std::string canned;
-};
+// ---------------------------------------------------------------------------
+// Transport-backed sends: requests built for the provider seam.
+// ---------------------------------------------------------------------------
 
 TEST(NotificationTransportTest, TokenedDeviceSucceedsWhenProviderResponds) {
   auto transport = std::make_shared<RecordingTransport>();
@@ -412,11 +446,12 @@ TEST(NotificationTransportTest, TokenedDeviceFailsWhenProviderSilent) {
   EXPECT_EQ(svc.GetStats().notifications_failed.load(), 1u);
 }
 
-TEST(NotificationTransportTest, ApnsRequestCarriesSandboxEndpointAndHeaders) {
+TEST(NotificationTransportTest, ApnsRequestCarriesEndpointAndHeaders) {
   auto transport = std::make_shared<RecordingTransport>();
   transport->canned = "ok";
   APNsConfig apns;
-  apns.use_sandbox = true;
+  // The sandbox URL is picked by the config builder (main.cc --apns-sandbox).
+  apns.endpoint = "https://api.development.push.apple.com:443";
   apns.bundle_id = "com.chirp.app";
   NotificationService svc(FCMConfig{}, apns, transport);
 

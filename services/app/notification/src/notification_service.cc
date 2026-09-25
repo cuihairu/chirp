@@ -4,6 +4,8 @@
 #include <sstream>
 #include <algorithm>
 
+#include "logger.h"
+
 namespace chirp {
 namespace app_notification {
 
@@ -421,6 +423,13 @@ void NotificationService::CleanupExpiredCooldowns() {
 
 bool NotificationService::SendFCM(const DeviceRegistration& device,
                                  const NotificationPayload& payload) {
+  if (device.fcm_token.empty()) {
+    common::Logger::Instance().Warn("push fcm skipped for device " +
+                                    device.device_id +
+                                    ": no fcm token registered");
+    return false;
+  }
+
   // Build FCM payload
   std::string fcm_payload = BuildFCMPayload(device.fcm_token, payload);
 
@@ -438,12 +447,20 @@ bool NotificationService::SendFCM(const DeviceRegistration& device,
 
   std::string response = transport_->Post(request);
 
-  // In production, parse response to determine success
-  return !response.empty() || device.fcm_token.empty();  // Don't fail if no token
+  // A 2xx provider response carries the body; anything else (transport
+  // failure, provider rejection) surfaces as empty and counts as failure.
+  return !response.empty();
 }
 
 bool NotificationService::SendAPNs(const DeviceRegistration& device,
                                   const NotificationPayload& payload) {
+  if (device.apns_token.empty()) {
+    common::Logger::Instance().Warn("push apns skipped for device " +
+                                    device.device_id +
+                                    ": no apns token registered");
+    return false;
+  }
+
   // Build APNs payload
   std::string apns_payload = BuildAPNsPayload(payload);
 
@@ -455,24 +472,17 @@ bool NotificationService::SendAPNs(const DeviceRegistration& device,
   headers["apns-priority"] = "10";
   headers["apns-collapse-id"] = payload.tag;
 
-  std::string endpoint;
-  if (apns_config_.use_sandbox) {
-    endpoint = "https://api.development.push.apple.com:443";
-  } else {
-    endpoint = "https://api.push.apple.com:443";
-  }
-
   PushRequest request;
   request.provider = "apns";
-  request.url = std::move(endpoint);
+  request.url = apns_config_.endpoint;
   request.payload = std::move(apns_payload);
   request.device_token = device.apns_token;
   request.headers = std::move(headers);
 
   std::string response = transport_->Post(request);
 
-  // In production, parse response to determine success
-  return !response.empty() || device.apns_token.empty();
+  // Same contract as the FCM path above.
+  return !response.empty();
 }
 
 std::string NotificationService::BuildFCMPayload(const NotificationPayload& payload) {

@@ -66,6 +66,33 @@ class TcpHttpConnectionFactory : public HttpConnectionFactory {
   std::unique_ptr<Impl> impl_;
 };
 
+// TLS-aware factory. "https" endpoints get a certificate-verified TLS 1.2+
+// handshake (with SNI for host names; IP literals connect without it),
+// "http" endpoints fall through to plain TCP so one factory can serve both.
+// An empty ca_file defers to the OpenSSL default trust store; deployments
+// with a private CA point ca_file at it instead.
+class SslHttpConnectionFactory : public HttpConnectionFactory {
+ public:
+  struct Config {
+    int connect_timeout_ms = 3000;
+    int handshake_timeout_ms = 3000;
+    bool verify_certificates = true;
+    std::string ca_file;  // empty: OpenSSL default trust store
+  };
+  SslHttpConnectionFactory() : SslHttpConnectionFactory(Config{}) {}
+  explicit SslHttpConnectionFactory(Config config);
+  ~SslHttpConnectionFactory() override;
+
+  std::unique_ptr<HttpConnection> Connect(const std::string& host,
+                                          std::uint16_t port,
+                                          const std::string& scheme) override;
+
+ private:
+  struct Impl;
+  Config config_;
+  std::unique_ptr<Impl> impl_;  // owns the shared ssl::context
+};
+
 // Real HTTP/1.1 POST transport behind the PushTransport seam. Sends the
 // prebuilt provider payload, reads the response and returns the body for
 // 2xx statuses; every other outcome (bad URL, connect/write/read failure,
