@@ -114,7 +114,7 @@ message Packet {
 | 2211 / 2212 | `TRACK_MESSAGE_REQ` / `RESP` | 客户端 -> Chat | 投递跟踪 |
 | 2215-2222 | 表情回应全套 | 客户端 <-> Chat | 加/删/查 + 增删 notify |
 | 2223 / 2224 | `GET_TYPING_USERS_REQ` / `RESP` | 客户端 -> Chat | 谁在输入 |
-| 2225-2232 | 编辑/删除全套 | 客户端 <-> Chat | 编辑、删除、批量删除 + 事件 notify |
+| 2225-2232 | 编辑/删除全套 | 客户端 <-> Chat | 编辑、删除、批量删除 + 事件 notify;`DELETE`(`is_hard_delete=false`)对发送者本人即**撤回**(默认私聊/公会 120 秒窗口内的软删,超窗/非撤回频道/重复撤回回 `INVALID_PARAM`),版主删除不受窗口约束 |
 | 2233 / 2234 | `GET_MENTION_SUGGESTIONS_REQ` / `RESP` | 客户端 -> Chat | @提及候选 |
 | 2235-2238 | 频道屏蔽(免打扰) | 客户端 <-> Chat | `SET_CHANNEL_MUTE` / `GET_CHANNEL_MUTES`;仅 WORLD/GUILD/TEAM 可屏蔽 |
 | 2239-2244 | 消息黑名单 | 客户端 <-> Chat | `BLOCK/UNBLOCK_MESSAGE_SENDER`、`GET_BLOCKED_SENDERS`;只作用于消息投递,与社交面 3011 黑名单互相独立 |

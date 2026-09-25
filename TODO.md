@@ -1,6 +1,8 @@
 # Chirp 任务清单
 
-> 最后更新：2026-09-25：接入方支持批次——避坑指南/API 总览重写/C++ 接入示例/压测工具/TS 幽灵依赖修复/smoke-sdk 竞态修复/测试环境鲁棒性加固，覆盖率保持 100.0%。
+> 最后更新：2026-09-25：游戏平面 P0 收官——消息撤回（窗口/频道可配 + 六态回码 + 墓碑广播 + SDK `RecallMessage`），并记账撤回墓碑贯通存档的缺口；覆盖率保持 100.0%。
+>
+> 2026-09-25 接入方支持批次（已提交）：避坑指南/API 总览重写/C++ 接入示例/压测工具/TS 幽灵依赖修复/smoke-sdk 竞态修复/测试环境鲁棒性加固。
 
 ## 当前焦点
 
@@ -33,6 +35,8 @@ SDK 引擎兼容性见 [SDK 引擎兼容性](docs/design-notes/sdk_compatibility
 - [x] **enhanced 直连入口补每用户发送模糊闸**（2026-09-22：`--send_rate_limit_per_min` 接入 enhanced 的 `on_send_message`(长度校验后、节奏限流前,只对已认证会话计数,无 Redis/未开启时惰性直通,与 basic 同一 fail-open 契约);沿用 enhanced 模糊闸的**默认关**约定(`--login_rate_limit_per_min` 同款,默认 0),要开需显式配置。同批修掉 pacing 引入的 smoke flake:`--smoke-chat` 的 user_1 四连私聊间隔可能 <1s,补 3 处 `sleep 1.1` 模拟守节奏客户端）
 - [x] **重复消息检测**（2026-09-22：game_chat_features P0 第四项——`RepeatGuard` 连续相同内容禁言：同用户连续第 3 条相同内容触发 5 分钟禁言,**触发那条本身也拒发**（不让第 3 条刷屏到达），禁言期内任何内容都拒（回 `RATE_LIMITED`）,禁言到期计数重置；插入内容不同即重置连击；io 线程专有内存态；basic 在节奏限流后、词过滤前接线,enhanced 同位置（键取 registry 认证身份）；`repeat_guard_tests` 6 例）
 - [x] **频道屏蔽**（2026-09-22：game_chat_features P0 频道管理——`DeliveryPrefs` 每用户推送过滤器:仅 WORLD/GUILD/TEAM 可屏蔽(MARQUEE/系统公告是服务广播不可关,私聊归黑名单)；SET_CHANNEL_MUTE/GET_CHANNEL_MUTES(2235-2238),非可屏蔽频道拒回 `INVALID_PARAM`,未登录回 `AUTH_FAILED`,GET 恒回三项按 WORLD/GUILD/TEAM 序；屏蔽=推送过滤——历史仍可拉、屏蔽前已入离线队列的补投照发、群组 join/left 通知不过滤；basic 在群播尾段 `notify_member` 钩子过滤(实时跳过+离线不入队),本地手动探针经 game_sdk_gateway 完整管道 15 项断言全绿(屏蔽期世界消息不到达、GUILD 照常、解除恢复、不可屏蔽拒收)；enhanced 接 RPC 面+状态(两形态 API 对齐;其群播本地扇出暂缺订阅端——`BroadcastToGroup` 只发布无 `SubscribeGroupChat` 消费者,既有缺口,过滤随该路径落地生效)；io 线程专有内存态(与 ChannelPacer/RepeatGuard 同契约)；`delivery_prefs_tests` 6 例+分发用例 2 例)
+- [x] **消息撤回**（2026-09-25：game_chat_features P0 收官项——`DELETE_MESSAGE`(`is_hard_delete=false`)对发送者本人即撤回：`MessageEditManager::RecallMessage` 返回 `RecallStatus` 六态（已撤回/无台账/非发送者/非撤回频道/超窗/已撤回过），handler 映射回码 `OK`/`USER_NOT_FOUND`/`AUTH_FAILED`/`INVALID_PARAM`；窗口 `--recall_window_sec` 默认 120s（0=不限），可撤回频道 `--recall_channels` 默认 `private,guild`（空=全频道不可撤回，fail-closed），频道名单解析复用新增的 `chat_validation::ParseChannelTypeList`/`ChannelTypeInList`（trim+大小写归一，未知 token 丢弃=收窄而非放宽）；版主删除走 `DeleteMessage` 治理路径不受窗口/频道约束，`is_hard_delete` 仍限版主；`CanRecall` 给客户端同规则的预检；撤回成功向频道成员广播 `MESSAGE_DELETED_NOTIFY`（`deleted_by=作者` 供客户端渲染"消息已撤回"墓碑），重复撤回不二次广播；SDK 新增 `RecallMessage(id, cb)`；`chat_extensions_tests` 6 例 + `chat_edit_mention` 4 例 + `chat_validation` 2 例 + `sdk_core` 2 例）
+- [ ] **撤回墓碑贯通存档**（撤回批次的已知缺口，见 game_chat_features 备注：`GET_HISTORY` 仍返回原文、离线队列里已入队的副本仍会补投。落地需要 store 面的 tombstone：`MessageStore` 加撤回标记 + MySQL 列/Hybrid Redis 镜像 + 历史返回体带 `is_recalled`，再让 basic 的 Redis/内存历史列表与离线队列按 `message_id` 回收；工作量横跨 3 个存储实现，先按 P0 缺口记账，等真实合规诉求触发）
 - [x] **黑名单**（2026-09-23：game_chat_features P0 收官项——拉黑后对方的世界/公会/队伍频道消息按成员过滤、私聊静默成功(不暴露拉黑态)且不入离线队列,拉黑前已入离线队列的补投照发；BLOCK_MESSAGE_SENDER/UNBLOCK_MESSAGE_SENDER/GET_BLOCKED_SENDERS(2239-2244),空目标与自拉黑拒回 `INVALID_PARAM`,未登录回 `AUTH_FAILED`,解除幂等(解未拉黑者亦 OK)；与社交面 BLOCK_USER(3011,好友关系)互相独立,只作用于消息投递；basic 双钩子——私聊尾段在会话查找前整体吞掉(回 OK)、群播 `notify_member` 按成员检查 `msg.sender_id`(其他成员照常收到)；enhanced 在 local_send 回调(报"已投递"阻止离线入队)与跨实例 `SubscribeUserChat` 回调静默丢弃；io 线程专有内存态(与屏蔽同契约)；`delivery_prefs_tests` 新增 5 例+分发用例 3 例,端到端探针经 game_sdk_gateway 完整管道 23 项断言全绿(拉黑期世界+私聊不到达、私聊静默 code=0、C 用户旁证按发送者过滤、解除恢复、自拉黑拒、解未拉黑幂等)
 
 ### game_server_gateway（原 server_gateway，瘦身版）

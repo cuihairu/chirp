@@ -71,6 +71,32 @@ title: 接入避坑指南
 - **频道屏蔽**(2235-2238):屏蔽世界/公会/队伍频道后,实时推送跳过、离线队列不再入队,但**历史仍然可以拉取**(GET_HISTORY 不过滤)。MARQUEE/系统公告是服务端广播,不可屏蔽;对这些频道发 SET_CHANNEL_MUTE 回 `INVALID_PARAM`。
 - **离线队列**:私聊接收方不在线时 `SEND_MESSAGE_RESP` 回 `TARGET_OFFLINE`(不是错误——消息已入队),接收方下次登录补投。内存兜底**每用户 200 条**,超出丢最旧;Redis/MySQL 形态容量见部署配置。**坑**:把 `TARGET_OFFLINE` 当失败提示给用户是错的,消息其实已经收下了。
 
+## 撤回(消息编辑/删除面,2225-2232)
+
+`DELETE_MESSAGE_REQ`(`is_hard_delete = false`)对**发送者本人**就是"撤回":服务端在撤回窗口内把它软删,并向频道成员广播 `MESSAGE_DELETED_NOTIFY`,客户端据此把气泡换成"消息已撤回"墓碑。
+
+| 项 | 默认值 | 启动参数 |
+| --- | --- | --- |
+| 撤回窗口 | 120 秒 | `--recall_window_sec`(秒,0 = 不限) |
+| 可撤回频道 | 私聊 PRIVATE + 公会 GUILD | `--recall_channels`(逗号分隔,空 = 全频道不可撤回) |
+
+回码语义(`DELETE_MESSAGE_RESP.code`):
+
+| 回码 | 含义 | 客户端应对 |
+| --- | --- | --- |
+| `OK` | 已撤回,已广播 delete notify | 把本地气泡换成墓碑 |
+| `AUTH_FAILED` | 不是发送者本人;或请求 `is_hard_delete` 但没有版主权限;或 `user_id` 与认证身份不符 | 隐藏撤回入口,别重试 |
+| `INVALID_PARAM` | 超窗 / 该频道不可撤回 / 已经撤回过 | 提示"超过撤回时间",**不要重试**(重复撤回不会二次广播) |
+| `USER_NOT_FOUND` | 本进程没有这条消息的台账(例如消息早于本进程存在) | 同上,按"撤回失败"处理 |
+
+- **版主删除不是撤回**:频道版主(`is_hard_delete`,公会角色 ≥ MODERATOR)走治理路径,**不受窗口和频道限制**,`is_hard_delete=true` 会永久擦除台账。运营要放开某频道的撤回请改 `--recall_channels`,不要靠版主通道。
+- **渲染墓碑而不是删气泡**:`is_hard_delete=false` 且 `deleted_by == 该消息的 sender_id` → 显示"消息已撤回"灰色占位(保留行高,否则聊天列表会跳);`deleted_by` 不是作者 → 版主删除,按"消息已删除"渲染。
+- C++ SDK 用 `RecallMessage(message_id, cb)`(`DeleteMessage(id, false, cb)` 的语义别名,名字更贴游戏侧"撤回"按钮);服务端回 `OK` 才更新 UI。
+- **坑一(存档无墓碑)**:撤回只作用于**实时链路**。存档层(Redis/MySQL)没有撤回墓碑,重新 `GET_HISTORY` 仍会拿到原文。要做到"撤回后原文不可再被拉回",客户端自己维护 `message_id` 撤回名单并在拉历史时过滤(服务端墓碑已在后续批次排期)。
+- **坑二(离线队列不回收)**:接收方不在线时消息已在离线队列里,撤回**不会**把它从队列里摘掉——对方下次登录仍会收到这条原文(实时链路当时没人可广播)。要求"撤回即刻生效于离线"就得在客户端侧对已撤回 `message_id` 做丢弃。
+- **坑三(`BULK_DELETE` 不受窗口约束)**:批量删除是治理接口(只删自己的或版主有权删的),不查撤回窗口。需要严格窗口语义的客户端不要用它做撤回。
+- **形态差异**:整个编辑/删除/撤回面(2225-2232)目前只在 **basic 形态**(`services/shared/chat/src/main.cc` 的直连入口)接线;enhanced 形态(`main_enhanced.cc` 走 `DispatchDistributedPacket`)没有这些 handler,请求会**超时**而不是回错码。跑 MySQL/Redis 的增强部署前先确认这一点(或把撤回挪到别的 RPC 面)。
+
 ## 会话与连接
 
 ### 心跳是客户端的责任
@@ -157,6 +183,7 @@ client.SendMessage(opts, "gg", [](const std::error_code& ec,
 6. 拉黑/屏蔽了对方吗?(`GET_BLOCKED_SENDERS` / `GET_CHANNEL_MUTES` 查一下)
 7. 频道前缀 `<game_id>:` 写对了吗?玩家绑定关系建了吗?
 8. 服务端事件 ack 了吗?`inject_id` 幂等键带了吗?
+9. 撤回入口的可见性按服务端规则算了吗(发送者本人 + 窗口内 + 可撤回频道),失败回码区分了吗?
 
 ## 相关文档
 
