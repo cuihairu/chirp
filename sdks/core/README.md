@@ -156,7 +156,7 @@ client.SetMessageStore(
 | 黑名单 | `BlockUser` / `UnblockUser` / `FetchBlockedUsers` |
 | 频道静音 | `SetChannelMute(type, muted, cb)`、`FetchChannelMutes(cb)` |
 | 输入状态 | `SendTypingIndicator(type, channel_id, is_typing)`(裸发,无响应)、`FetchTypingUsers(type, channel_id, cb)` |
-| 消息操作 | `EditMessage`、`DeleteMessage(id, hard_delete, cb)`、`AddReaction`、`RemoveReaction`、`FetchReactions(id, emoji, cb)`(emoji 空 = 全部)、`FetchReadReceipts(id, cb)` |
+| 消息操作 | `EditMessage`、`DeleteMessage(id, hard_delete, cb)`、`RecallMessage(id, cb)`(撤回:`is_hard_delete=false` 的软删,服务端按窗口/频道判定)、`AddReaction`、`RemoveReaction`、`FetchReactions(id, emoji, cb)`(emoji 空 = 全部)、`FetchReadReceipts(id, cb)` |
 | 批量 | `BulkDeleteMessages(message_ids, channel_id, cb)` |
 | @提及 | `FetchMentionSuggestions(channel_id, query, cb)` |
 | 群组 | `CreateGroup` / `JoinGroup` / `LeaveGroup` / `InviteToGroup` / `KickMember` / `FetchGroupInfo` / `FetchGroupMembers` / `FetchUserGroups` |

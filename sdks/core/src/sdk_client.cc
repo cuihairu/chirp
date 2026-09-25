@@ -1164,6 +1164,21 @@ public:
     });
   }
 
+  void RecallMessage(const std::string& message_id, DeleteMessageCallback cb) {
+    asio::post(io_context_, [this, message_id, cb = std::move(cb)] {
+      if (!ReadyForRequests()) {
+        cb(MakeEc(ChatError::NotConnected), {});
+        return;
+      }
+      // 撤回 = 软删：服务端按撤回窗口与可撤回频道判定（默认私聊/公会 2 分钟内），
+      // 超窗回 INVALID_PARAM。hard_delete 仅版主语义，普通玩家用不到。
+      chirp::chat::DeleteMessageRequest req;
+      req.set_message_id(message_id);
+      req.set_user_id(user_id_);
+      TypedRequest(MsgID::DELETE_MESSAGE_REQ, MsgID::DELETE_MESSAGE_RESP, req, std::move(cb));
+    });
+  }
+
   void AddReaction(const std::string& message_id, const std::string& emoji,
                    AddReactionCallback cb) {
     asio::post(io_context_, [this, message_id, emoji, cb = std::move(cb)] {
@@ -1574,6 +1589,10 @@ void ChatClient::EditMessage(const std::string& message_id, const std::string& c
 void ChatClient::DeleteMessage(const std::string& message_id, bool hard_delete,
                                DeleteMessageCallback cb) {
   impl_->DeleteMessage(message_id, hard_delete, std::move(cb));
+}
+
+void ChatClient::RecallMessage(const std::string& message_id, DeleteMessageCallback cb) {
+  impl_->RecallMessage(message_id, std::move(cb));
 }
 
 void ChatClient::AddReaction(const std::string& message_id, const std::string& emoji,

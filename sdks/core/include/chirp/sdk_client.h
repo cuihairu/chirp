@@ -201,6 +201,10 @@ public:
                    EditMessageCallback cb);
   void DeleteMessage(const std::string& message_id, bool hard_delete,
                      DeleteMessageCallback cb);
+  // 撤回(游戏平面 P0)：发送者在服务端撤回窗口内撤回自己发的消息(默认私聊/公会
+  // 2 分钟,`--recall_window_sec` / `--recall_channels` 可调)。回 INVALID_PARAM
+  // 表示超窗/该频道不可撤回/已撤回过;非发送者回 AUTH_FAILED。
+  void RecallMessage(const std::string& message_id, DeleteMessageCallback cb);
   void AddReaction(const std::string& message_id, const std::string& emoji,
                    AddReactionCallback cb);
   void RemoveReaction(const std::string& message_id, const std::string& emoji,
