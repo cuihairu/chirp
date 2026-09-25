@@ -284,6 +284,103 @@ TEST_F(EditMentionHandlersTest, HardDeleteRequiresModerator) {
 }
 
 // ---------------------------------------------------------------------------
+// Recall (game_chat_features P0 消息撤回)
+// ---------------------------------------------------------------------------
+
+TEST_F(EditMentionHandlersTest, SenderRecallBroadcastsTombstone) {
+  RegisterSentMessage("m1", "alice", chirp::chat::PRIVATE, "alice|bob", "hi");
+  chirp::chat::DeleteMessageRequest req;
+  req.set_message_id("m1");
+  req.set_user_id("alice");
+
+  const auto resp = edit_handlers_->HandleDeleteMessage(req, "alice");
+  EXPECT_EQ(resp.code(), chirp::common::OK);
+  EXPECT_FALSE(resp.was_permanently_deleted());
+
+  // The receiver learns about the withdrawal from the delete notify: soft
+  // delete, withdrawn by the author, so the client renders a "recalled"
+  // tombstone instead of dropping the bubble silently.
+  ASSERT_EQ(CountNotifications("bob", chirp::gateway::MESSAGE_DELETED_NOTIFY), 1);
+  chirp::chat::MessageDeletedNotify notify;
+  bool parsed = false;
+  for (const auto& record : notifications_) {
+    if (record.user_id == "bob") {
+      ASSERT_TRUE(notify.ParseFromString(record.body));
+      parsed = true;
+    }
+  }
+  ASSERT_TRUE(parsed);
+  EXPECT_EQ(notify.message_id(), "m1");
+  EXPECT_FALSE(notify.is_hard_delete());
+  EXPECT_EQ(notify.deleted_by(), "alice");
+  EXPECT_GT(notify.deleted_at(), 0);
+}
+
+TEST_F(EditMentionHandlersTest, RecallRejectsSecondAttempt) {
+  RegisterSentMessage("m1", "alice", chirp::chat::PRIVATE, "alice|bob", "hi");
+  chirp::chat::DeleteMessageRequest req;
+  req.set_message_id("m1");
+  req.set_user_id("alice");
+  ASSERT_EQ(edit_handlers_->HandleDeleteMessage(req, "alice").code(), chirp::common::OK);
+
+  // No second broadcast: the client keeps the tombstone it already rendered.
+  EXPECT_EQ(edit_handlers_->HandleDeleteMessage(req, "alice").code(),
+            chirp::common::INVALID_PARAM);
+  EXPECT_EQ(CountNotifications("bob", chirp::gateway::MESSAGE_DELETED_NOTIFY), 1);
+}
+
+TEST_F(EditMentionHandlersTest, RecallRejectedOnNonRecallableChannel) {
+  RegisterSentMessage("m1", "alice", chirp::chat::WORLD, "world", "hi");
+  chirp::chat::DeleteMessageRequest req;
+  req.set_message_id("m1");
+  req.set_user_id("alice");
+  EXPECT_EQ(edit_handlers_->HandleDeleteMessage(req, "alice").code(),
+            chirp::common::INVALID_PARAM);
+  EXPECT_EQ(CountNotifications("bob", chirp::gateway::MESSAGE_DELETED_NOTIFY), 0);
+}
+
+TEST_F(EditMentionHandlersTest, RecallOfUntrackedMessageReturnsUserNotFound) {
+  // The handler knows the channel (TrackedMessage) but the edit ledger never
+  // registered it -- e.g. a message that predates this process. Nothing to
+  // withdraw, and the sender must not be told "permission denied".
+  edit_handlers_->TrackMessage("m1", chirp::chat::PRIVATE, "alice|bob");
+  chirp::chat::DeleteMessageRequest req;
+  req.set_message_id("m1");
+  req.set_user_id("alice");
+  EXPECT_EQ(edit_handlers_->HandleDeleteMessage(req, "alice").code(),
+            chirp::common::USER_NOT_FOUND);
+}
+
+TEST_F(EditMentionHandlersTest, ModeratorRemovalOfUntrackedMessageFails) {
+  group_members_ = {"alice", "bob"};
+  moderators_ = {{"g1:carl", true}};
+  // Tracked channel but no ledger entry: the manager has nothing to delete.
+  edit_handlers_->TrackMessage("m1", chirp::chat::GUILD, "g1");
+  chirp::chat::DeleteMessageRequest mod_req;
+  mod_req.set_message_id("m1");
+  mod_req.set_user_id("carl");
+  EXPECT_EQ(edit_handlers_->HandleDeleteMessage(mod_req, "carl").code(),
+            chirp::common::AUTH_FAILED);
+  EXPECT_EQ(CountNotifications("alice", chirp::gateway::MESSAGE_DELETED_NOTIFY), 0);
+}
+
+TEST_F(EditMentionHandlersTest, ModeratorRemovalIgnoresRecallRules) {
+  group_members_ = {"alice", "bob"};
+  moderators_ = {{"g1:carl", true}};
+  // carl is not the sender: the recall path would answer kNotSender, so this
+  // also pins that moderator removal does not run through the recall rules.
+  RegisterSentMessage("m1", "alice", chirp::chat::GUILD, "g1", "spam");
+  chirp::chat::DeleteMessageRequest mod_req;
+  mod_req.set_message_id("m1");
+  mod_req.set_user_id("carl");
+  EXPECT_EQ(edit_handlers_->HandleDeleteMessage(mod_req, "carl").code(),
+            chirp::common::OK);
+  EXPECT_FALSE(mod_req.is_hard_delete());
+  EXPECT_EQ(CountNotifications("alice", chirp::gateway::MESSAGE_DELETED_NOTIFY), 1);
+  EXPECT_EQ(CountNotifications("bob", chirp::gateway::MESSAGE_DELETED_NOTIFY), 1);
+}
+
+// ---------------------------------------------------------------------------
 // Bulk delete
 // ---------------------------------------------------------------------------
 

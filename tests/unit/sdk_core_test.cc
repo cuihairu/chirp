@@ -3895,6 +3895,32 @@ TEST_F(ConvenienceApiTest, EditDeleteReactionsAndReceiptsRoundTrip) {
   EXPECT_EQ(receipts.receipts(0).user_id(), "peer");
 }
 
+TEST_F(ConvenienceApiTest, RecallSendsSoftDeleteForTheAuthor) {
+  StartGateway([&](const chirp::gateway::Packet& pkt, auto send) {
+    if (pkt.msg_id() == chirp::gateway::DELETE_MESSAGE_REQ) {
+      chirp::chat::DeleteMessageRequest req;
+      ASSERT_TRUE(req.ParseFromString(pkt.body()));
+      EXPECT_EQ(req.message_id(), "m-7");
+      EXPECT_EQ(req.user_id(), "sdk-user");
+      // 撤回就是软删：hard_delete 保持 false，由服务端按撤回窗口/频道判定。
+      EXPECT_FALSE(req.is_hard_delete());
+      chirp::chat::DeleteMessageResponse resp;
+      resp.set_code(chirp::common::OK);
+      send(RespFor(pkt, chirp::gateway::DELETE_MESSAGE_RESP, resp.SerializeAsString()));
+      return;
+    }
+  });
+  ConnectAndLogin();
+
+  std::error_code ec;
+  const auto resp = WaitRpc<chirp::chat::DeleteMessageResponse>([&](auto cb) {
+    client_->RecallMessage("m-7", cb);
+  }, ec);
+  EXPECT_FALSE(ec);
+  EXPECT_EQ(resp.code(), chirp::common::OK);
+  EXPECT_FALSE(resp.was_permanently_deleted());
+}
+
 TEST_F(ConvenienceApiTest, BulkDeleteAndMentionSuggestionsRoundTrip) {
   StartGateway([&](const chirp::gateway::Packet& pkt, auto send) {
     if (pkt.msg_id() == chirp::gateway::BULK_DELETE_REQ) {
@@ -4121,6 +4147,10 @@ TEST_F(SdkClientTest, AllConvenienceMethodsFailFastWhenNotConnected) {
   EXPECT_EQ(ec, not_connected);
   (void)WaitConvenienceRpc<chirp::chat::DeleteMessageResponse>([&](auto cb) {
     client.DeleteMessage("m", false, cb);
+  }, ec, 5000);
+  EXPECT_EQ(ec, not_connected);
+  (void)WaitConvenienceRpc<chirp::chat::DeleteMessageResponse>([&](auto cb) {
+    client.RecallMessage("m", cb);
   }, ec, 5000);
   EXPECT_EQ(ec, not_connected);
   (void)WaitConvenienceRpc<chirp::chat::AddReactionResponse>([&](auto cb) {

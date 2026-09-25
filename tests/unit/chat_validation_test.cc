@@ -349,6 +349,43 @@ TEST(ChatValidationTest, SendValidationAppliesTheWorldLengthLimit) {
   EXPECT_EQ(ValidateSendMessageRequest(req, "alice"), chirp::common::CONTENT_TOO_LONG);
 }
 
+// ---------------------------------------------------------------------------
+// Channel-type allowlist parsing (--recall_channels and friends)
+// ---------------------------------------------------------------------------
+
+TEST(ChatValidationTest, ParseChannelTypeListReadsCsvNames) {
+  const auto types = ParseChannelTypeList("private,guild");
+  ASSERT_EQ(types.size(), 2u);
+  EXPECT_EQ(types[0], PRIVATE);
+  EXPECT_EQ(types[1], GUILD);
+
+  // Trimming, case folding, the system_channel alias and a trailing comma.
+  const auto messy = ParseChannelTypeList(" WORLD , system_channel ,marquee,");
+  ASSERT_EQ(messy.size(), 3u);
+  EXPECT_EQ(messy[0], WORLD);
+  EXPECT_EQ(messy[1], SYSTEM_CHANNEL);
+  EXPECT_EQ(messy[2], MARQUEE);
+
+  // Unknown tokens are dropped, so a typo narrows the list instead of
+  // widening it.
+  const auto typo = ParseChannelTypeList("private,guidl,team");
+  ASSERT_EQ(typo.size(), 2u);
+  EXPECT_EQ(typo[0], PRIVATE);
+  EXPECT_EQ(typo[1], TEAM);
+
+  // Empty / whitespace-only lists allow nothing.
+  EXPECT_TRUE(ParseChannelTypeList("").empty());
+  EXPECT_TRUE(ParseChannelTypeList(" , , ").empty());
+}
+
+TEST(ChatValidationTest, ChannelTypeInListMatchesOnlyListedTypes) {
+  const auto types = ParseChannelTypeList("private,guild");
+  EXPECT_TRUE(ChannelTypeInList(types, PRIVATE));
+  EXPECT_TRUE(ChannelTypeInList(types, GUILD));
+  EXPECT_FALSE(ChannelTypeInList(types, WORLD));
+  EXPECT_FALSE(ChannelTypeInList({}, PRIVATE));
+}
+
 TEST(SessionCloseBehaviorTest, LogoutSuccessWouldCloseSessionAfterResponse) {
   auto session = std::make_shared<FakeSession>();
 

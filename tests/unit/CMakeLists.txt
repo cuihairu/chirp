@@ -184,6 +184,7 @@ add_executable(chat_managers_tests
   chat_npc_uplink_test.cc
   ${CMAKE_SOURCE_DIR}/services/shared/chat/src/distributed_dispatch.cc
   ${CMAKE_SOURCE_DIR}/services/shared/chat/src/distributed_runtime.cc
+  ${CMAKE_SOURCE_DIR}/services/shared/chat/src/chat_validation.cc
   ${CMAKE_SOURCE_DIR}/services/shared/chat/src/delivery_ack_manager.cc
   ${CMAKE_SOURCE_DIR}/services/shared/chat/src/group_manager.cc
   ${CMAKE_SOURCE_DIR}/services/shared/chat/src/group_handlers.cc
@@ -569,6 +570,7 @@ add_test(NAME network_tls_tests COMMAND network_tls_tests)
 add_executable(chat_extensions_tests
   chat_extensions_test.cc
   ${CMAKE_SOURCE_DIR}/services/shared/chat/src/channel_manager.cc
+  ${CMAKE_SOURCE_DIR}/services/shared/chat/src/chat_validation.cc
   ${CMAKE_SOURCE_DIR}/services/shared/chat/src/mention_manager.cc
   ${CMAKE_SOURCE_DIR}/services/shared/chat/src/message_edit_manager.cc
   ${CMAKE_SOURCE_DIR}/services/shared/chat/src/message_store_config.cc

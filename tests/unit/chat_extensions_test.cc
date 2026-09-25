@@ -22,6 +22,7 @@ using chirp::chat::MentionConfig;
 using chirp::chat::MentionManager;
 using chirp::chat::MessageEditManager;
 using chirp::chat::MessageStoreConfig;
+using chirp::chat::RecallStatus;
 
 // ---------------------------------------------------------------------------
 // MentionManager
@@ -457,6 +458,112 @@ TEST(MessageEditManagerTest, TrackedCountReflectsRegistrations) {
   mgr.RegisterMessage("m1", "alice", "content");
   mgr.RegisterMessage("m2", "bob", "content");
   EXPECT_EQ(mgr.GetTrackedMessageCount(), 2u);
+}
+
+// ---------------------------------------------------------------------------
+// MessageEditManager recall (game_chat_features P0 消息撤回)
+// ---------------------------------------------------------------------------
+
+TEST(MessageEditManagerTest, RecallInsideWindowMarksMessageDeleted) {
+  MessageEditManager mgr;
+  mgr.RegisterMessage("m1", "alice", "oops");
+
+  EXPECT_TRUE(mgr.CanRecall("m1", "alice", chirp::chat::PRIVATE));
+  EXPECT_EQ(mgr.RecallMessage("m1", "alice", chirp::chat::PRIVATE),
+            RecallStatus::kRecalled);
+
+  chirp::chat::ChatMessageFull full;
+  ASSERT_TRUE(mgr.GetFullMessage("m1", &full));
+  EXPECT_TRUE(full.is_deleted());
+  EXPECT_EQ(full.deleted_by(), "alice");
+  EXPECT_GT(full.deleted_at(), 0);
+  // A recalled message cannot be edited or recalled again.
+  EXPECT_FALSE(mgr.CanEdit("m1", "alice"));
+  EXPECT_FALSE(mgr.CanRecall("m1", "alice", chirp::chat::PRIVATE));
+  EXPECT_EQ(mgr.RecallMessage("m1", "alice", chirp::chat::PRIVATE),
+            RecallStatus::kAlreadyRecalled);
+  // The retention sweep still sees it.
+  EXPECT_EQ(mgr.GetDeletedMessageCount(), 1u);
+}
+
+TEST(MessageEditManagerTest, RecallRejectsNonSenderAndUnknownMessage) {
+  MessageEditManager mgr;
+  mgr.RegisterMessage("m1", "alice", "oops");
+  EXPECT_EQ(mgr.RecallMessage("m1", "bob", chirp::chat::PRIVATE),
+            RecallStatus::kNotSender);
+  EXPECT_EQ(mgr.RecallMessage("ghost", "alice", chirp::chat::PRIVATE),
+            RecallStatus::kNotFound);
+  EXPECT_FALSE(mgr.CanRecall("m1", "bob", chirp::chat::PRIVATE));
+  EXPECT_FALSE(mgr.CanRecall("ghost", "alice", chirp::chat::PRIVATE));
+}
+
+TEST(MessageEditManagerTest, RecallOnlyAppliesToConfiguredChannels) {
+  MessageEditManager mgr;
+  mgr.RegisterMessage("m1", "alice", "world wide");
+
+  // Default allowlist is private + guild (game_chat_features P0 口径).
+  EXPECT_EQ(mgr.RecallMessage("m1", "alice", chirp::chat::WORLD),
+            RecallStatus::kNotRecallableChannel);
+  EXPECT_FALSE(mgr.CanRecall("m1", "alice", chirp::chat::WORLD));
+  EXPECT_EQ(mgr.RecallMessage("m1", "alice", chirp::chat::GUILD),
+            RecallStatus::kRecalled);
+
+  // Widening the allowlist lets the world channel recall too; an empty
+  // allowlist recalls nothing (fail-closed).
+  EditConfig wide;
+  wide.recall_channel_types = {chirp::chat::PRIVATE, chirp::chat::WORLD};
+  MessageEditManager wide_mgr(wide);
+  wide_mgr.RegisterMessage("m2", "alice", "world wide");
+  EXPECT_TRUE(wide_mgr.CanRecall("m2", "alice", chirp::chat::WORLD));
+  EXPECT_FALSE(wide_mgr.CanRecall("m2", "alice", chirp::chat::GUILD));
+  EXPECT_EQ(wide_mgr.RecallMessage("m2", "alice", chirp::chat::GUILD),
+            RecallStatus::kNotRecallableChannel);
+
+  EditConfig none;
+  none.recall_channel_types = {};
+  MessageEditManager none_mgr(none);
+  none_mgr.RegisterMessage("m3", "alice", "content");
+  EXPECT_FALSE(none_mgr.CanRecall("m3", "alice", chirp::chat::PRIVATE));
+  EXPECT_EQ(none_mgr.RecallMessage("m3", "alice", chirp::chat::PRIVATE),
+            RecallStatus::kNotRecallableChannel);
+}
+
+TEST(MessageEditManagerTest, RecallWindowExpiresForSender) {
+  EditConfig config;
+  config.recall_time_window_ms = 1;  // 1ms: expires after a short sleep
+  MessageEditManager mgr(config);
+  mgr.RegisterMessage("m1", "alice", "oops");
+
+  EXPECT_TRUE(mgr.CanRecall("m1", "alice", chirp::chat::PRIVATE));
+  std::this_thread::sleep_for(std::chrono::milliseconds(20));
+  EXPECT_FALSE(mgr.CanRecall("m1", "alice", chirp::chat::PRIVATE));
+  EXPECT_EQ(mgr.RecallMessage("m1", "alice", chirp::chat::PRIVATE),
+            RecallStatus::kWindowExpired);
+
+  // Moderation removal ignores the recall window entirely.
+  EXPECT_TRUE(mgr.DeleteMessage("m1", "mod", /*is_hard_delete=*/false,
+                                /*is_moderator=*/true));
+}
+
+TEST(MessageEditManagerTest, ZeroRecallWindowMeansUnlimited) {
+  EditConfig config;
+  config.recall_time_window_ms = 0;  // no time limit
+  MessageEditManager mgr(config);
+  mgr.RegisterMessage("m1", "alice", "oops");
+  std::this_thread::sleep_for(std::chrono::milliseconds(20));
+  EXPECT_TRUE(mgr.CanRecall("m1", "alice", chirp::chat::PRIVATE));
+  EXPECT_EQ(mgr.RecallMessage("m1", "alice", chirp::chat::PRIVATE),
+            RecallStatus::kRecalled);
+}
+
+TEST(MessageEditManagerTest, ModeratorDeleteIsNotARecall) {
+  MessageEditManager mgr;
+  mgr.RegisterMessage("m1", "alice", "spam");
+  // The moderation path still works on channels that do not support recall
+  // and past any recall window.
+  EXPECT_TRUE(mgr.DeleteMessage("m1", "mod", /*is_hard_delete=*/false,
+                                /*is_moderator=*/true));
+  EXPECT_FALSE(mgr.CanRecall("m1", "alice", chirp::chat::WORLD));
 }
 
 // ---------------------------------------------------------------------------
