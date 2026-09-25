@@ -121,8 +121,10 @@ KNOWN_UNCOVERABLE = {
     # against a packet-blackhole address. Sandboxes whose gateway SYN-proxies
     # every destination complete the handshake instead, so no
     # environment-independent unit test can hit this arm deterministically.
-    ("services/app/notification/src/http_push_transport.cc", 267),
-    ("services/app/notification/src/http_push_transport.cc", 268),
+    # (Lines track ConnectTcpWithDeadline's timer lambda; keep in sync with
+    # the branch-level entry for the same lambda below.)
+    ("services/app/notification/src/http_push_transport.cc", 292),
+    ("services/app/notification/src/http_push_transport.cc", 293),
     # Frame encoder guards: needs a >4GiB message / a Message whose
     # SerializeToArray disagrees with ByteSizeLong. L12's untaken arms are
     # the >UINT32_MAX / >INT_MAX sides of the size check (same 4GiB wall).
@@ -420,18 +422,20 @@ KNOWN_UNCOVERABLE = {
     # TcpHttpConnection::WaitReadable mask-false arm: poll is requested with
     # POLLIN only, so revents is a subset of POLLIN|POLLHUP|POLLERR|POLLNVAL;
     # POLLNVAL needs the fd closed underneath the live connection, which the
-    # transport never does while waiting.
-    ("services/app/notification/src/http_push_transport.cc", 216),
-    # TcpHttpConnectionFactory connect-deadline lambda: the wait_ec-false arm
-    # only fires when the timer expires before async_connect settles - the
-    # same environment race already excluded on the two lines below.
-    ("services/app/notification/src/http_push_transport.cc", 266),
-    # Connect's success-path return line: the untaken arms are (a) block 47,
-    # an asio chrono_time_traits.hpp:86 comparison attributed to this line
-    # whose direction never flips for a deadline set in the future, and
-    # (b) block 73's arms on the bad_alloc unwind of the new/make_unique
-    # call - neither is reachable from a unit test.
-    ("services/app/notification/src/http_push_transport.cc", 285),
+    # transport never does while waiting. SslHttpConnection::WaitReadable
+    # (line 254) is the same shape with the same justification.
+    ("services/app/notification/src/http_push_transport.cc", 217),
+    ("services/app/notification/src/http_push_transport.cc", 254),
+    # ConnectTcpWithDeadline timer lambda: the wait_ec-false arm only fires
+    # when the timer expires before async_connect settles - the same
+    # environment race already excluded on the two lines above.
+    ("services/app/notification/src/http_push_transport.cc", 291),
+    # Connect's success-path return line: the untaken arms are an asio
+    # chrono_time_traits.hpp comparison attributed to this line whose
+    # direction never flips for a deadline set in the future, plus the
+    # bad_alloc unwind of the new/make_unique call - neither is reachable
+    # from a unit test.
+    ("services/app/notification/src/http_push_transport.cc", 338),
     # ReadReceiptManager ChannelKey npos arm: ChannelKey always builds
     # `std::to_string(type) + ":" + channel_id` (read_receipt_manager.h:65),
     # so find(':') never returns npos and the defense arm is dead code.
