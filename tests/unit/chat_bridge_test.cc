@@ -373,7 +373,7 @@ TEST(ChatBridgeTest, ConnectFailureKicksClient) {
 
 TEST(ChatBridgeTest, ResolveFailureKicksClient) {
   asio::io_context io;
-  chirp::gateway::ChatBridge bridge(io, "no-such-host-for-chirp-test.invalid", 7000,
+  chirp::gateway::ChatBridge bridge(io, "no such host for chirp test", 7000,
                                    "gateway", "");
   BridgeIoRunner runner(io);
 
@@ -390,7 +390,7 @@ TEST(ChatBridgeTest, ResolveFailureKicksClient) {
 
 TEST(ChatBridgeTest, DetachDuringResolveIsQuiet) {
   asio::io_context io;
-  chirp::gateway::ChatBridge bridge(io, "no-such-host-for-chirp-test.invalid", 7000,
+  chirp::gateway::ChatBridge bridge(io, "no such host for chirp test", 7000,
                                    "gateway", "");
   BridgeIoRunner runner(io);
 

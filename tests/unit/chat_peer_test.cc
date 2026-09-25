@@ -649,10 +649,12 @@ TEST(ChatPeerLinkTest, ResolveFailureRetriesQuietly) {
   asio::io_context io;
   LinkIoRunner runner(io);
 
-  // .invalid is guaranteed NXDOMAIN (RFC 2606): resolve fails on any
-  // RFC-conforming resolver and the link retries without crashing.
+  // A hostname with spaces fails inside getaddrinfo (EAI_NONAME) before
+  // any DNS query: deterministic on CI (no resolver dependency) and on
+  // sandboxes whose DNS gateway fake-answers even .invalid (RFC 6761)
+  // names, which would otherwise turn this into a connect failure.
   chirp::network::ChatPeerLink::Options opts;
-  opts.host = "chat-peer-hub.invalid";
+  opts.host = "chat peer hub invalid";
   opts.port = 5050;
   opts.reconnect_delay_seconds = 1;
   auto link = chirp::network::ChatPeerLink::Create(

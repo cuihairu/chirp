@@ -310,13 +310,13 @@ KNOWN_UNCOVERABLE = {
     # MessageMigrationWorker migrating_ guards: reaching the "already
     # migrating" arms requires RunMigrationNow to race an in-flight migration
     # on the io thread, which the single-threaded test io context cannot do.
-    ("services/shared/chat/src/message_migration_worker.cc", 59),
-    ("services/shared/chat/src/message_migration_worker.cc", 60),
-    ("services/shared/chat/src/message_migration_worker.cc", 90),
-    ("services/shared/chat/src/message_migration_worker.cc", 91),
+    ("services/shared/chat/src/message_migration_worker.cc", 63),
+    ("services/shared/chat/src/message_migration_worker.cc", 64),
+    ("services/shared/chat/src/message_migration_worker.cc", 99),
+    ("services/shared/chat/src/message_migration_worker.cc", 100),
     # MessageDeliveryTracker::RunCheck stop guard: firing depends on a timer
     # tick landing after Stop(), a race the deterministic test loop avoids.
-    ("services/shared/chat/src/message_delivery_tracker.cc", 106),
+    ("services/shared/chat/src/message_delivery_tracker.cc", 110),
     # DeliveryAckManager::RunCheck stop guard: same shape as the tracker
     # above - RunCheck is private and only timer-driven, and cancel() wins
     # the race against a pending tick in every deterministic test loop.
@@ -366,19 +366,19 @@ KNOWN_UNCOVERABLE = {
     # ChatPeerHub::Start listen arm: reaching it needs listen(2) to fail
     # after bind(2) succeeded - only fd exhaustion landing between the two
     # syscalls does that, which no environment-independent test can force.
-    ("libs/network/chat_peer_hub.cc", 91),
-    ("libs/network/chat_peer_hub.cc", 92),
+    ("libs/network/chat_peer_hub.cc", 94),
+    ("libs/network/chat_peer_hub.cc", 95),
     # ChatPeerHub::DoAccept error arm: async_accept fails here only on
     # kernel-level conditions (EMFILE/ENFILE), unreachable from a test.
-    # (Line numbers moved +10 when the unregistered-peer handling landed in
-    # the accept completion.)
-    ("libs/network/chat_peer_hub.cc", 143),
-    ("libs/network/chat_peer_hub.cc", 144),
-    ("libs/network/chat_peer_hub.cc", 145),
+    # (Line numbers moved again when the unregistered-peer handling landed
+    # in the accept completion; re-pinned 2026-09-25.)
+    ("libs/network/chat_peer_hub.cc", 169),
+    ("libs/network/chat_peer_hub.cc", 170),
+    ("libs/network/chat_peer_hub.cc", 171),
     # ChatPeerHub::PeerConn::SendRawPacket closing guard: Close erases the
     # conn from peers_ (or the conn is displaced) on the same hub thread, so
     # no SendInject can ever target a closing connection.
-    ("libs/network/chat_peer_hub.cc", 369),
+    ("libs/network/chat_peer_hub.cc", 429),
     # base64 DecodeTable function-local static: gcov counts the guard's
     # exception-cleanup arcs, but MakeDecodeTable is non-throwing so those
     # arcs can never fire.
@@ -447,11 +447,11 @@ KNOWN_UNCOVERABLE = {
     # so find(':') never returns npos and the defense arm is dead code.
     ("services/shared/chat/src/read_receipt_manager.cc", 80),
     # MessageMigrationWorker entry guards: the migrating_ arms are marked
-    # GCOVR_EXCL_LINE (comments on 59/60/91/92) but gcov still attributes the
-    # condition's branches; racing an in-flight migration on one io context is
+    # GCOVR_EXCL_LINE (comments at 62-64/98-100) but gcov still attributes
+    # the condition's branches; racing an in-flight migration on one io context is
     # impossible in the single-threaded test loop.
-    ("services/shared/chat/src/message_migration_worker.cc", 58),
-    ("services/shared/chat/src/message_migration_worker.cc", 89),
+    ("services/shared/chat/src/message_migration_worker.cc", 62),
+    ("services/shared/chat/src/message_migration_worker.cc", 98),
     # ReactionHandlers::BroadcastReaction short-circuit: both call sites hardcode
     # channel_id="", so resolved_channel.empty() is always true and the
     # non-empty short-circuit arm (skip ChannelOfMessage) is unreachable.

@@ -566,7 +566,7 @@ TEST(HttpPushTransportLoopbackTest, UnresolvableHostYieldsEmpty) {
   HttpPushTransport transport(
       std::make_shared<TcpHttpConnectionFactory>(config), TestConfig());
   PushRequest request = SampleRequest();
-  request.url = "http://invalid.invalid/send";
+  request.url = "http://no such host/send";
   EXPECT_EQ(transport.Post(request), "");
 }
 
