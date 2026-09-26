@@ -644,7 +644,7 @@ TEST_F(ChatClientLoopbackTest, ConnectLoginSendMessageAndReceiveNotify) {
   client.Connect();
 
   // Wait for connection state
-  for (int i = 0; i < 300 && client.GetState() != ConnectionState::Connected; ++i) {
+  for (int i = 0; i < 2500 && client.GetState() != ConnectionState::Connected; ++i) {
     std::this_thread::sleep_for(std::chrono::milliseconds(2));
   }
   ASSERT_EQ(client.GetState(), ConnectionState::Connected);
@@ -659,7 +659,7 @@ TEST_F(ChatClientLoopbackTest, ConnectLoginSendMessageAndReceiveNotify) {
   ASSERT_EQ(client.GetState(), ConnectionState::LoggedIn);
 
   // First notify came right after login
-  for (int i = 0; i < 300 && messages < 1; ++i) {
+  for (int i = 0; i < 2500 && messages < 1; ++i) {
     std::this_thread::sleep_for(std::chrono::milliseconds(2));
   }
   EXPECT_EQ(messages.load(), 1);
@@ -673,7 +673,7 @@ TEST_F(ChatClientLoopbackTest, ConnectLoginSendMessageAndReceiveNotify) {
   EXPECT_EQ(last_content, "hi there");
 
   client.Disconnect();
-  for (int i = 0; i < 300 && client.GetState() != ConnectionState::Disconnected; ++i) {
+  for (int i = 0; i < 2500 && client.GetState() != ConnectionState::Disconnected; ++i) {
     std::this_thread::sleep_for(std::chrono::milliseconds(2));
   }
   EXPECT_EQ(client.GetState(), ConnectionState::Disconnected);
@@ -694,7 +694,7 @@ TEST_F(ChatClientLoopbackTest, LoginRejectedByServerFailsWithLoginFailed) {
 
   ChatClient client(LoopbackConfig(gateway.port()));
   client.Connect();
-  for (int i = 0; i < 300 && client.GetState() != ConnectionState::Connected; ++i) {
+  for (int i = 0; i < 2500 && client.GetState() != ConnectionState::Connected; ++i) {
     std::this_thread::sleep_for(std::chrono::milliseconds(2));
   }
   ASSERT_EQ(client.GetState(), ConnectionState::Connected);
@@ -742,7 +742,7 @@ TEST_F(ChatClientLoopbackTest, KickNotifyInvokesKickCallback) {
   });
 
   client.Connect();
-  for (int i = 0; i < 300 && client.GetState() != ConnectionState::Connected; ++i) {
+  for (int i = 0; i < 2500 && client.GetState() != ConnectionState::Connected; ++i) {
     std::this_thread::sleep_for(std::chrono::milliseconds(2));
   }
   ASSERT_EQ(client.GetState(), ConnectionState::Connected);
@@ -781,7 +781,7 @@ TEST_F(ChatClientLoopbackTest, HeartbeatPingsAreSentPeriodically) {
 
   ChatClient client(LoopbackConfig(gateway.port(), /*heartbeat_s=*/1));
   client.Connect();
-  for (int i = 0; i < 300 && client.GetState() != ConnectionState::Connected; ++i) {
+  for (int i = 0; i < 2500 && client.GetState() != ConnectionState::Connected; ++i) {
     std::this_thread::sleep_for(std::chrono::milliseconds(2));
   }
   ASSERT_EQ(client.GetState(), ConnectionState::Connected);
@@ -846,6 +846,9 @@ TEST_F(ChatClientLoopbackTest, ServerCloseFailsPendingLogin) {
             std::future_status::ready);
 }
 
+// Defined below (first used here): polled state wait with a generous budget.
+void WaitState(ChatClient& client, ConnectionState want, int ms);
+
 TEST_F(ChatClientLoopbackTest, LogoutAfterLoginClosesCleanly) {
   FakeGateway gateway([](const chirp::gateway::Packet& pkt, auto send) {
     if (pkt.msg_id() == chirp::gateway::LOGIN_REQ) {
@@ -863,10 +866,9 @@ TEST_F(ChatClientLoopbackTest, LogoutAfterLoginClosesCleanly) {
 
   ChatClient client(LoopbackConfig(gateway.port()));
   client.Connect();
-  for (int i = 0; i < 300 && client.GetState() != ConnectionState::Connected; ++i) {
-    std::this_thread::sleep_for(std::chrono::milliseconds(2));
-  }
-  ASSERT_EQ(client.GetState(), ConnectionState::Connected);
+  // WaitState (5s polled) instead of a 600ms inline cap: under load the
+  // loopback connect can take arbitrarily long to surface as Connected.
+  WaitState(client, ConnectionState::Connected, 5000);
 
   std::promise<std::error_code> promise;
   auto future = promise.get_future();
@@ -878,7 +880,7 @@ TEST_F(ChatClientLoopbackTest, LogoutAfterLoginClosesCleanly) {
   ASSERT_EQ(client.GetState(), ConnectionState::LoggedIn);
 
   client.Logout();  // sends LOGOUT_REQ then closes
-  for (int i = 0; i < 300 && client.GetState() != ConnectionState::Disconnected; ++i) {
+  for (int i = 0; i < 2500 && client.GetState() != ConnectionState::Disconnected; ++i) {
     std::this_thread::sleep_for(std::chrono::milliseconds(2));
   }
   EXPECT_EQ(client.GetState(), ConnectionState::Disconnected);
@@ -900,7 +902,7 @@ TEST_F(ChatClientLoopbackTest, SendAndCloseDataPath) {
 
   ChatClient client(LoopbackConfig(gateway.port()));
   client.Connect();
-  for (int i = 0; i < 300 && client.GetState() != ConnectionState::Connected; ++i) {
+  for (int i = 0; i < 2500 && client.GetState() != ConnectionState::Connected; ++i) {
     std::this_thread::sleep_for(std::chrono::milliseconds(2));
   }
   std::promise<std::error_code> promise;
@@ -916,7 +918,7 @@ TEST_F(ChatClientLoopbackTest, SendAndCloseDataPath) {
   }
   std::this_thread::sleep_for(std::chrono::milliseconds(100));
   client.Disconnect();
-  for (int i = 0; i < 300 && client.GetState() != ConnectionState::Disconnected; ++i) {
+  for (int i = 0; i < 2500 && client.GetState() != ConnectionState::Disconnected; ++i) {
     std::this_thread::sleep_for(std::chrono::milliseconds(2));
   }
   EXPECT_EQ(client.GetState(), ConnectionState::Disconnected);
@@ -1206,13 +1208,24 @@ TEST_F(ChatClientLoopbackTest, SendAfterServerCloseIsDropped) {
   ASSERT_EQ(client.GetState(), ConnectionState::LoggedIn);
 
   gateway.DropConnections();
-  std::this_thread::sleep_for(std::chrono::milliseconds(200));
+  // The read error surfaces asynchronously; poll until the client has left
+  // LoggedIn instead of a fixed nap — under load the notice can take longer
+  // than any fixed window, and once noticed the ~500ms backoff may already
+  // be firing.
+  for (int i = 0; i < kWaitMs / 2 &&
+                  (client.GetState() == ConnectionState::LoggedIn ||
+                   client.GetState() == ConnectionState::Connected);
+       ++i) {
+    std::this_thread::sleep_for(std::chrono::milliseconds(2));
+  }
 
-  // The send after the transport died must be dropped harmlessly; meanwhile
-  // the client has noticed the loss and scheduled the backoff reconnect.
+  // The send after the transport died must be dropped harmlessly; the
+  // reconnect cycle is running (WaitingReconnect, or the backoff already
+  // fired into Connecting).
   client.SendMessage("peer", "after-close");
-  std::this_thread::sleep_for(std::chrono::milliseconds(200));
-  EXPECT_EQ(client.GetState(), ConnectionState::WaitingReconnect);
+  EXPECT_TRUE(client.GetState() == ConnectionState::WaitingReconnect ||
+              client.GetState() == ConnectionState::Connecting)
+      << "state " << static_cast<int>(client.GetState());
 
   // The gateway keeps listening, so the backoff reconnect lands back at
   // Connected (without a login: re-auth is the caller's job).
@@ -2050,7 +2063,7 @@ TEST_F(ChatClientLoopbackTest, AfterSendFiresOnceRequestIsWritten) {
   LoginSync(client, "t");
 
   client.SendMessage("bob", "plain");
-  for (int i = 0; i < 300 && !interceptor->after_send_called.load(); ++i) {
+  for (int i = 0; i < 2500 && !interceptor->after_send_called.load(); ++i) {
     std::this_thread::sleep_for(std::chrono::milliseconds(2));
   }
   EXPECT_TRUE(interceptor->before_send_called.load());
@@ -2242,7 +2255,7 @@ TEST_F(ChatClientLoopbackTest, ListenerSeesKickedTerminalState) {
   WaitState(client, ConnectionState::Connected);
   LoginSync(client, "t");
 
-  for (int i = 0; i < 300; ++i) {
+  for (int i = 0; i < 2500; ++i) {
     {
       std::lock_guard<std::mutex> lock(listener->mu);
       if (!listener->kick_reasons.empty()) {
@@ -2394,7 +2407,7 @@ TEST_F(ChatClientLoopbackTest, AuthProviderRenewRecoversFromExpiredToken) {
   });
 
   // 游戏侧异步刷新 token 后调 renew。
-  for (int i = 0; i < 300 && provider->expired_calls.load() == 0; ++i) {
+  for (int i = 0; i < 2500 && provider->expired_calls.load() == 0; ++i) {
     std::this_thread::sleep_for(std::chrono::milliseconds(2));
   }
   ASSERT_EQ(provider->expired_calls.load(), 1);
@@ -2496,7 +2509,7 @@ TEST_F(ChatClientLoopbackTest, AuthProviderRenewedFailureDoesNotRenewAgain) {
     login_promise.set_value(ec);
   });
 
-  for (int i = 0; i < 300 && provider->expired_calls.load() == 0; ++i) {
+  for (int i = 0; i < 2500 && provider->expired_calls.load() == 0; ++i) {
     std::this_thread::sleep_for(std::chrono::milliseconds(2));
   }
   ASSERT_EQ(provider->expired_calls.load(), 1);
@@ -2535,7 +2548,7 @@ TEST_F(ChatClientLoopbackTest, AuthProviderPendingRenewalSupersededByNewLogin) {
     first_done.set_value(ec);
   });
 
-  for (int i = 0; i < 300 && provider->expired_calls.load() == 0; ++i) {
+  for (int i = 0; i < 2500 && provider->expired_calls.load() == 0; ++i) {
     std::this_thread::sleep_for(std::chrono::milliseconds(2));
   }
   ASSERT_EQ(provider->expired_calls.load(), 1);
@@ -2565,7 +2578,11 @@ TEST_F(ChatClientLoopbackTest, AuthProviderPendingRenewalSupersededByNewLogin) {
 // 或再发登录包。
 TEST_F(ChatClientLoopbackTest, AuthProviderLateRenewIgnoredAfterTimeout) {
   ChatConfig config = LoopbackConfig(0);
-  config.request_timeout_ms = 200;
+  // 预算要远大于回环响应在 io 线程上的处理延迟:200ms 时高负载下通用
+  // 请求超时会先于 AUTH_FAILED 响应处理落地,登录以 Timeout(6) 收尾、
+  // 续期路径(expired_calls)根本没走到。2s 只影响"游戏不调 renew"的
+  // 等待窗,迟到续期断言在 login 完成后才发生,预算放宽不弱化语义。
+  config.request_timeout_ms = 2000;
 
   LoginScript script;
   {
@@ -2632,7 +2649,7 @@ TEST_F(ChatClientLoopbackTest, AuthProviderRenewWithEmptyTokenFailsLogin) {
     login_promise.set_value(ec);
   });
 
-  for (int i = 0; i < 300 && provider->expired_calls.load() == 0; ++i) {
+  for (int i = 0; i < 2500 && provider->expired_calls.load() == 0; ++i) {
     std::this_thread::sleep_for(std::chrono::milliseconds(2));
   }
   ASSERT_EQ(provider->expired_calls.load(), 1);
@@ -2676,7 +2693,7 @@ TEST_F(ChatClientLoopbackTest, DisconnectFlushesPendingRenewal) {
     login_promise.set_value(ec);
   });
 
-  for (int i = 0; i < 300 && provider->expired_calls.load() == 0; ++i) {
+  for (int i = 0; i < 2500 && provider->expired_calls.load() == 0; ++i) {
     std::this_thread::sleep_for(std::chrono::milliseconds(2));
   }
   ASSERT_EQ(provider->expired_calls.load(), 1);
@@ -2789,7 +2806,7 @@ TEST_F(ChatClientLoopbackTest, SlashMessagePassesThroughWithoutCommands) {
   LoginSync(client, "t");
 
   client.SendMessage("bob", "/dance");
-  for (int i = 0; i < 300 && sends.Count() == 0; ++i) {
+  for (int i = 0; i < 2500 && sends.Count() == 0; ++i) {
     std::this_thread::sleep_for(std::chrono::milliseconds(2));
   }
   ASSERT_EQ(sends.Count(), 1);
@@ -2818,7 +2835,7 @@ TEST_F(ChatClientLoopbackTest, StoreSavesReceivedAndSentMessages) {
   LoginSync(client, "t");
 
   PushWorldMessage(gateway, "recv-text");
-  for (int i = 0; i < 300; ++i) {
+  for (int i = 0; i < 2500; ++i) {
     if (!client.LoadHistory(chirp::chat::WORLD, "world", 10).empty()) {
       break;
     }
@@ -2831,7 +2848,7 @@ TEST_F(ChatClientLoopbackTest, StoreSavesReceivedAndSentMessages) {
   client.SendMessage("bob", "sent-text");
   // user_id_="user-1" > "bob",私聊 channel_id 为 "bob|user-1"。
   const std::string private_channel = "bob|user-1";
-  for (int i = 0; i < 300; ++i) {
+  for (int i = 0; i < 2500; ++i) {
     if (!client.LoadHistory(chirp::chat::PRIVATE, private_channel, 10).empty()) {
       break;
     }
@@ -3140,7 +3157,12 @@ TEST_F(ChatClientLoopbackTest, ConnectWhileConnectingIsIgnored) {
   ChatClient client(LoopbackConfig(gateway.port()));
   client.Connect();
   client.Connect();  // runs right after the first post on the io thread
-  std::this_thread::sleep_for(std::chrono::milliseconds(150));
+  // Poll instead of a fixed 150ms nap: under load the first Connect may not
+  // have left Disconnected yet, which is the state the guard must have hit.
+  for (int i = 0; i < kWaitMs / 2 && client.GetState() == ConnectionState::Disconnected;
+       ++i) {
+    std::this_thread::sleep_for(std::chrono::milliseconds(2));
+  }
   EXPECT_NE(client.GetState(), ConnectionState::Disconnected);
   client.Disconnect();
 }

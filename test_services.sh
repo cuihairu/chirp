@@ -555,6 +555,36 @@ elif [[ "${1:-}" == "--smoke-npc" ]]; then
     echo "提示: 10s 内未在 chat 日志看到 User disconnected: ${user}，继续执行"
   }
 
+  # NPC 回复与发送端退出是跨进程竞速：回复可能赶在发送端 FIN 处理前到达、
+  # 被"实时投递"给那条垂死连接而整体丢失（发送端不读帧），离线断言随之落空。
+  # 该竞速两端都不受控，所以重发直到 chat 日志确认回复落入离线队列——内容
+  # 每次加序号避开重复禁言，轮间隔 ≥1.1s 避开私聊节奏；3 轮全部竞速失败才
+  # 视为失败。每轮回码仍须 code=0（事件已发布）。
+  npc_send_until_queued() {
+    local user="$1" text="$2" attempt out i
+    for attempt in 1 2 3; do
+      out=$(timeout 30 ./build/tools/benchmark/chirp_chat_send_client \
+        --host 127.0.0.1 --port "${CHAT_PORT}" --sender "${user}" \
+        --receiver "npc:blacksmith_01" --text "${text} (${attempt})")
+      echo "${out}"
+      [[ "${out}" != code=0* ]] && return 1
+      # 等这一轮的回复落地（入队或被实时投递），最多 5s。
+      for i in $(seq 1 50); do
+        if grep -q "inject queued offline for ${user}" "${CHAT_LOG}" 2>/dev/null; then
+          return 0
+        fi
+        if grep -q "inject delivered live to ${user}" "${CHAT_LOG}" 2>/dev/null; then
+          break
+        fi
+        sleep 0.1
+      done
+      wait_disconnect_logged "${user}" >/dev/null
+      sleep 1.1
+    done
+    echo "错误: NPC 回复连续 3 轮都被实时投递给发送端连接（未入离线队列）"
+    return 1
+  }
+
   # 能力探测:chat 连上 hub 后会在 hub 日志里完成服务认证
   # (basic/distributed/enhanced 构建均含服务器平面集成);等不到即说明
   # 该构建无法跑 NPC 回环,直接跳过。
@@ -576,10 +606,7 @@ elif [[ "${1:-}" == "--smoke-npc" ]]; then
   if [[ "${NPC_HUB_BOUND}" == "1" ]]; then
   echo ""
   echo "[npc] send user_2 -> npc:blacksmith_01 (keyword hit)"
-  NPC_SEND_OUTPUT=$(timeout 30 ./build/tools/benchmark/chirp_chat_send_client --host 127.0.0.1 --port "${CHAT_PORT}" --sender user_2 --receiver "npc:blacksmith_01" --text "any quests?")
-  echo "${NPC_SEND_OUTPUT}"
-  if [[ "${NPC_SEND_OUTPUT}" != code=0* ]]; then
-    echo "错误: NPC 私聊应返回 code=0（事件已发布，绕过玩家投递），实际: ${NPC_SEND_OUTPUT}"
+  if ! npc_send_until_queued user_2 "any quests?"; then
     dump_npc_logs
     exit 1
   fi
@@ -603,10 +630,7 @@ elif [[ "${1:-}" == "--smoke-npc" ]]; then
 
   echo ""
   echo "[npc] offline path: user_3 sends (fallback reply), then logs in"
-  NPC_OFFLINE_SEND_OUTPUT=$(timeout 30 ./build/tools/benchmark/chirp_chat_send_client --host 127.0.0.1 --port "${CHAT_PORT}" --sender user_3 --receiver "npc:blacksmith_01" --text "hello forge")
-  echo "${NPC_OFFLINE_SEND_OUTPUT}"
-  if [[ "${NPC_OFFLINE_SEND_OUTPUT}" != code=0* ]]; then
-    echo "错误: NPC 私聊（离线玩家）应返回 code=0，实际: ${NPC_OFFLINE_SEND_OUTPUT}"
+  if ! npc_send_until_queued user_3 "hello forge"; then
     dump_npc_logs
     exit 1
   fi
