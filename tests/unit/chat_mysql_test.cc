@@ -935,7 +935,15 @@ TEST_F(MigrationWorkerTest, ScheduledRunExecutesViaTimer) {
   worker_->Start();
 
   std::thread runner([this] { io_.run(); });
-  std::this_thread::sleep_for(std::chrono::milliseconds(50));
+  // Poll until the first batch lands instead of a fixed sleep: under
+  // coverage builds / load the io thread can take longer than any fixed nap
+  // to arm the zero-interval timer, and a Stop() landing first suppresses
+  // the batch entirely (running_ gates ScheduleNextRun).
+  const auto deadline = std::chrono::steady_clock::now() + std::chrono::seconds(5);
+  while (worker_->GetStats().batches_processed < 1 &&
+         std::chrono::steady_clock::now() < deadline) {
+    std::this_thread::sleep_for(std::chrono::milliseconds(5));
+  }
   worker_->Stop();
   runner.join();
   // A zero interval fires the batch repeatedly until stopped.
@@ -1129,18 +1137,39 @@ TEST_F(HybridStoreTest, GetPendingDeliveriesSkipsMalformedEntries) {
   ASSERT_TRUE(store_->Initialize());
   auto redis = store_->GetRedisClient();
   ASSERT_NE(redis, nullptr);
-  // Seed pending list with: no colon, one colon, and a well-formed entry.
-  // PendingDeliveryKey is private; TrackMessage always writes well-formed
-  // entries. Push malformed ones through the same key the tracker uses by
-  // tracking one real message first, then… we need the key. Use RPush on the
-  // documented constant from DeliveryKey pattern.
+  // Seed pending list with: no colon, one colon, a non-numeric expiry, and
+  // a well-formed entry. PendingDeliveryKey is private; TrackMessage always
+  // writes well-formed entries. Push malformed ones through the same key the
+  // tracker uses by tracking one real message first, then… we need the key.
+  // Use RPush on the documented constant from DeliveryKey pattern.
   ASSERT_TRUE(redis->RPush("chirp:chat:pending_delivery", "nocolon"));
   ASSERT_TRUE(redis->RPush("chirp:chat:pending_delivery", "one:colon"));
+  ASSERT_TRUE(redis->RPush("chirp:chat:pending_delivery", "m2:r2:not-a-number"));
+  // Trailing colon: the expiry slice is empty, exercising ParseI64's
+  // empty-string arm (a distinct failure from non-numeric text).
+  ASSERT_TRUE(redis->RPush("chirp:chat:pending_delivery", "m3:r3:"));
   ASSERT_TRUE(redis->RPush("chirp:chat:pending_delivery", "m1:r1:100"));
   auto due = store_->GetPendingDeliveries(1000);
   ASSERT_EQ(due.size(), 1u);
   EXPECT_EQ(due[0].message_id, "m1");
   EXPECT_EQ(due[0].receiver_id, "r1");
+}
+
+TEST_F(HybridStoreTest, GetPendingDeliveriesParsesNpcReceiverEntries) {
+  // Regression: receiver ids may contain colons (NPC receivers are
+  // "npc:<name>"), so TrackMessage writes four-segment entries like
+  // "m1:npc:blacksmith_01:<expires>". The old first/second-colon split fed
+  // "blacksmith_01:<expires>" to std::stoll and the unhandled throw aborted
+  // the whole chat process on the delivery-tracker strand.
+  ASSERT_TRUE(store_->Initialize());
+  auto redis = store_->GetRedisClient();
+  ASSERT_NE(redis, nullptr);
+  ASSERT_TRUE(redis->RPush("chirp:chat:pending_delivery",
+                           "m1:npc:blacksmith_01:100"));
+  auto due = store_->GetPendingDeliveries(1000);
+  ASSERT_EQ(due.size(), 1u);
+  EXPECT_EQ(due[0].message_id, "m1");
+  EXPECT_EQ(due[0].receiver_id, "npc:blacksmith_01");
 }
 
 TEST_F(HybridStoreTest, FailMessageCarriesLongLastError) {

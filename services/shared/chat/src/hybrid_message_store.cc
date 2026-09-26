@@ -1,6 +1,8 @@
 #include "hybrid_message_store.h"
 
+#include <cerrno>
 #include <chrono>
+#include <cstdlib>
 #include <mutex>
 #include <sstream>
 
@@ -16,6 +18,24 @@ using Logger = chirp::common::Logger;
 int64_t NowMs() {
   using namespace std::chrono;
   return duration_cast<milliseconds>(system_clock::now().time_since_epoch()).count();
+}
+
+// Non-throwing integer parse for values read back from shared Redis.
+// std::stoll aborts the process via an unhandled invalid_argument when the
+// string has no leading digits, and one stale/malformed entry must not take
+// the delivery tracker (and with it the whole io thread) down.
+bool ParseI64(const std::string& text, int64_t* out) {
+  if (text.empty()) {
+    return false;
+  }
+  errno = 0;
+  char* end = nullptr;
+  const long long value = std::strtoll(text.c_str(), &end, 10);
+  if (end == text.c_str() || errno == ERANGE) {
+    return false;
+  }
+  *out = static_cast<int64_t>(value);
+  return true;
 }
 
 } // namespace
@@ -421,17 +441,24 @@ std::optional<DeliveryInfo> HybridMessageStore::GetDeliveryStatus(const std::str
   info.message_id = message_id;
   info.receiver_id = receiver_id;
 
-  // Parse status value: status:created_at or status:timestamp:error
+  // Parse status value: status:created_at or status:timestamp:error. Same
+  // shared-Redis caveat as GetPendingDeliveries: a malformed value parses to
+  // the default info instead of throwing on the io thread. created_at keeps
+  // std::stoll's leading-digits semantics ("0:123:err" -> 123).
   std::string value = *result;
   size_t colon1 = value.find(':');
   if (colon1 != std::string::npos) {
-    int status = std::stoi(value.substr(0, colon1));
-    info.status = static_cast<DeliveryState>(status);
-    info.created_at = std::stoll(value.substr(colon1 + 1));
+    int64_t status = 0;
+    int64_t created_at = 0;
+    if (ParseI64(value.substr(0, colon1), &status) &&
+        ParseI64(value.substr(colon1 + 1), &created_at)) {
+      info.status = static_cast<DeliveryState>(status);
+      info.created_at = created_at;
 
-    size_t colon2 = value.find(':', colon1 + 1);
-    if (colon2 != std::string::npos) {
-      info.last_error = value.substr(colon2 + 1);
+      size_t colon2 = value.find(':', colon1 + 1);
+      if (colon2 != std::string::npos) {
+        info.last_error = value.substr(colon2 + 1);
+      }
     }
   }
 
@@ -446,23 +473,33 @@ std::vector<DeliveryInfo> HybridMessageStore::GetPendingDeliveries(int64_t befor
   auto entries = redis_->LRange(pending_key, 0, -1);
 
   for (const auto& entry : entries) {
-    // Parse: message_id:receiver_id:expires_at
-    size_t colon1 = entry.find(':');
-    size_t colon2 = entry.find(':', colon1 + 1);
+    // Parse: message_id:receiver_id:expires_at — from both ends, because a
+    // receiver_id may itself contain colons (NPC receivers are
+    // "npc:<name>", so TrackMessage writes four-segment entries for them).
+    // Message ids carry no colons and the expiry is pure digits, so the
+    // first and last colon bound the receiver id exactly. Malformed or
+    // stale entries are skipped rather than parsed: this list lives in
+    // shared Redis and one bad entry must not abort the tracker sweep.
+    const size_t colon1 = entry.find(':');
+    const size_t colon2 = entry.rfind(':');
+    if (colon1 == std::string::npos || colon2 == std::string::npos ||
+        colon1 >= colon2) {
+      continue;  // fewer than two colon-separated fields
+    }
+    int64_t expires_at = 0;
+    if (!ParseI64(entry.substr(colon2 + 1), &expires_at)) {
+      continue;  // non-numeric expiry (e.g. legacy colon-split garbage)
+    }
+    const std::string message_id = entry.substr(0, colon1);
+    const std::string receiver_id = entry.substr(colon1 + 1, colon2 - colon1 - 1);
 
-    if (colon1 != std::string::npos && colon2 != std::string::npos) {
-      std::string message_id = entry.substr(0, colon1);
-      std::string receiver_id = entry.substr(colon1 + 1, colon2 - colon1 - 1);
-      int64_t expires_at = std::stoll(entry.substr(colon2 + 1));
-
-      if (expires_at < before_timestamp) {
-        DeliveryInfo info;
-        info.message_id = message_id;
-        info.receiver_id = receiver_id;
-        info.status = DeliveryState::kPending;
-        info.created_at = NowMs();
-        pending.push_back(std::move(info));
-      }
+    if (expires_at < before_timestamp) {
+      DeliveryInfo info;
+      info.message_id = message_id;
+      info.receiver_id = receiver_id;
+      info.status = DeliveryState::kPending;
+      info.created_at = NowMs();
+      pending.push_back(std::move(info));
     }
   }
 
