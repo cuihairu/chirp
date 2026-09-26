@@ -658,15 +658,6 @@ KNOWN_UNCOVERABLE = {
     # receiver probes.
     ("sdks/core/src/sdk_client.cc", 963),
     ("sdks/core/src/sdk_client.cc", 964),
-    # HybridMessageStore::HasMessage redis loop: untaken arms are EH pads
-    # for ParseFromArray / message_id string compare and the loop-empty
-    # fall-through attributed to this line; corrupt-entry skip and cold-tier
-    # fallback are covered by the store probes.
-    ("services/shared/chat/src/hybrid_message_store.cc", 281),
-    # PrivateChannelId ternary: both a<b and b<a orderings are asserted by
-    # PrivateChannelIdOrderingAndAccessors; untaken arms are throw edges
-    # into the string-concat landing pads.
-    ("services/shared/chat/src/hybrid_message_store.cc", 510),
 }
 
 # Whole functions tests can never execute: deleting-dtors of abstract
