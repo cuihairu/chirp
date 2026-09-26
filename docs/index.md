@@ -1,27 +1,31 @@
 ---
-home: true
+layout: home
 title: 首页
-heroImage: /logo.svg
-heroText: Chirp
-tagline: 面向游戏开发的轻量实时通信后端骨架
-actions:
-  - text: 核心说明
-    link: /CORE
-    type: primary
-  - text: 快速开始
-    link: /guide/getting-started
-    type: secondary
-
+hero:
+  name: Chirp
+  image:
+    src: /logo.svg
+  tagline: 面向游戏开发的轻量实时通信后端骨架
+  actions:
+    - text: 核心说明
+      link: /CORE
+      theme: primary
+    - text: 快速开始
+      link: /guide/getting-started
+      theme: secondary
 features:
-  - title: 核心链路
+  - icon: '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" width="24" height="24"><path d="M9.5 14.5 14.5 9.5"/><path d="M7.5 16.5 6 18a3.5 3.5 0 1 1-5-5l1.5-1.5"/><path d="M16.5 7.5 18 6a3.5 3.5 0 1 1 5 5l-1.5 1.5"/></svg>'
+    title: 核心链路
     details: 当前建议优先验证 gateway + auth + chat。
-  - title: 双平面架构
+  - icon: '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" width="24" height="24"><path d="M3 8.5h18"/><path d="M3 15.5h18"/><circle cx="8" cy="8.5" r="2"/><circle cx="16" cy="15.5" r="2"/><path d="M16 8.5h2"/><path d="M6 15.5h2"/></svg>'
+    title: 双平面架构
     details: 游戏平面与 App 平面独立部署，跨平面通信是 chat 原生能力——同协议直连、注册白名单、版本协商。
-  - title: 双协议接入
+  - icon: '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" width="24" height="24"><path d="M4 12h5"/><path d="M15 6.5h5"/><path d="M15 17.5h5"/><path d="M9 12c3.5 0 3.5-5.5 6-5.5"/><path d="M9 12c3.5 0 3.5 5.5 6 5.5"/></svg>'
+    title: 双协议接入
     details: TCP 和 WebSocket 使用同一套长度前缀 Protobuf Packet 协议。
-  - title: 明确能力边界
+  - icon: '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" width="24" height="24"><circle cx="12" cy="12" r="8.5" stroke-dasharray="3.2 3.2"/><path d="M12 7.5v4.5l3 1.8"/></svg>'
+    title: 明确能力边界
     details: 可选 Redis 增强；社交、语音、通知、搜索、SDK 完成度不一致，见能力矩阵。
-
 footer: Apache-2.0 许可证 | Copyright © 2024-Present Chirp Project
 ---
 

@@ -101,10 +101,10 @@
 ## 关键设计决策
 
 ### 1. Gateway 层 - 完全无状态
-- ✅ 通过 Redis 共享会话状态
-- ✅ 每个实例有唯一 `instance_id`
-- ✅ Redis Pub/Sub 跨实例踢人
-- ✅ 可水平扩展至 N 个实例
+- [通过 Redis 共享会话状态]
+- [每个实例有唯一 `instance_id`]
+- [Redis Pub/Sub 跨实例踢人]
+- [可水平扩展至 N 个实例]
 
 ### 2. 业务服务层 - 本地状态 + 消息路由
 - 本地维护 `user_id -> Session` 映射（热数据）
@@ -165,23 +165,23 @@ kubectl scale deployment chirp-chat --replicas=5
 ## 下一步工作
 
 ### 立即可做
-1. ✅ 添加 `MessageRouter` 组件
-2. ✅ 改造 Chat 服务支持分布式
-3. ✅ 创建 HAProxy 负载均衡配置
-4. ✅ 创建 Kubernetes 部署文件
+1. [添加 `MessageRouter` 组件]
+2. [改造 Chat 服务支持分布式]
+3. [创建 HAProxy 负载均衡配置]
+4. [创建 Kubernetes 部署文件]
 
 ### 短期优化
-1. ⚠️ Social/Voice 服务改造
-2. ⚠️ 添加服务健康检查和自动故障转移
-3. ⚠️ 实现连接迁移（实例重启时保持连接）
-4. ⚠️ 添加监控指标（Prometheus）
+1. [Social/Voice 服务改造]
+2. [添加服务健康检查和自动故障转移]
+3. [实现连接迁移（实例重启时保持连接）]
+4. [添加监控指标（Prometheus）]
 
 ### 长期规划
-1. ⚠️ Redis Cluster 支持（自动分片）
-2. ⚠️ MySQL 分库分表方案
-3. ⚠️ 多机房部署（跨地域容灾）
-4. ⚠️ 服务网格（Istio/Linkerd）
-5. ⚠️ 自动化扩缩容策略
+1. [Redis Cluster 支持（自动分片）]
+2. [MySQL 分库分表方案]
+3. [多机房部署（跨地域容灾）]
+4. [服务网格（Istio/Linkerd）]
+5. [自动化扩缩容策略]
 
 ---
 

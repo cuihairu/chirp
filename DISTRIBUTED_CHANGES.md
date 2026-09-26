@@ -1,6 +1,6 @@
 # Chirp 分布式扩展 - 实现总结
 
-## 📋 本次实现内容
+## 本次实现内容
 
 ### 新增文件列表
 
@@ -45,7 +45,7 @@ services/chat/
 
 ---
 
-## 🎯 核心功能
+## 核心功能
 
 ### 1. MessageRouter 消息路由器
 
@@ -73,10 +73,10 @@ router->SendChatMessage(user_id, message,
 ### 2. 分布式 Chat 服务
 
 **特性：**
-- ✅ 多实例消息同步
-- ✅ 离线消息存储
-- ✅ 本地状态 + Redis 路由
-- ✅ WebSocket 支持
+- [多实例消息同步]
+- [离线消息存储]
+- [本地状态 + Redis 路由]
+- [WebSocket 支持]
 
 **启动命令：**
 ```bash
@@ -104,7 +104,7 @@ router->SendChatMessage(user_id, message,
 
 ---
 
-## 🚀 快速开始
+## 快速开始
 
 ### 本地开发
 
@@ -149,7 +149,7 @@ kubectl scale deployment chirp-chat -n chirp --replicas=5
 
 ---
 
-## 📊 容量规划
+## 容量规划
 
 | 指标 | 单实例 | 3实例集群 | 10实例集群 |
 |------|--------|----------|------------|
@@ -160,7 +160,7 @@ kubectl scale deployment chirp-chat -n chirp --replicas=5
 
 ---
 
-## 🔧 配置参数
+## 配置参数
 
 ### MessageRouter
 
@@ -182,7 +182,7 @@ kubectl scale deployment chirp-chat -n chirp --replicas=5
 
 ---
 
-## 📝 Redis 频道设计
+## Redis 频道设计
 
 | 频道模式 | 用途 |
 |----------|------|
@@ -195,7 +195,7 @@ kubectl scale deployment chirp-chat -n chirp --replicas=5
 
 ---
 
-## ✅ 测试检查清单
+## 测试检查清单
 
 ### 基本功能
 - [ ] 用户可以登录到任意实例
@@ -216,7 +216,7 @@ kubectl scale deployment chirp-chat -n chirp --replicas=5
 
 ---
 
-## 📚 相关文档
+## 相关文档
 
 - `docs/SCALABILITY.md` - 扩展性设计文档
 - `docs/DISTRIBUTED_DEPLOYMENT.md` - 分布式部署指南
@@ -226,7 +226,7 @@ kubectl scale deployment chirp-chat -n chirp --replicas=5
 
 ---
 
-## 🎉 完成状态
+## 完成状态
 
 | 组件 | 状态 | 说明 |
 |------|------|------|
@@ -239,7 +239,7 @@ kubectl scale deployment chirp-chat -n chirp --replicas=5
 
 ---
 
-## 🔮 后续工作
+## 后续工作
 
 1. **Social 服务改造** - 同样方式改造 Social 服务
 2. **Voice 服务改造** - 同样方式改造 Voice 服务

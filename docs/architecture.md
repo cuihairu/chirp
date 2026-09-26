@@ -152,7 +152,7 @@ sequenceDiagram
 
 ## 跨平面消息流
 
-### game_chat → app_chat：频道消息桥接
+### game_chat [app_chat：频道消息桥接]
 
 ```mermaid
 sequenceDiagram
@@ -182,7 +182,7 @@ sequenceDiagram
 
 游戏侧不知道订阅者、扇出或玩家身份。它只是把频道消息发给 hub。
 
-### app_chat → game_chat：玩家回复
+### app_chat [game_chat：玩家回复]
 
 ```mermaid
 sequenceDiagram

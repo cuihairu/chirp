@@ -179,7 +179,7 @@ spoke(供 game 42 使用的 `game_chat`):
 
 ## 跨平面消息流(协议视角)
 
-### spoke → hub:频道消息上行
+### spoke [hub:频道消息上行]
 
 ```text
 游戏客户端 --SEND_MESSAGE_REQ--> game_sdk_gateway --pipe--> game_chat
@@ -188,7 +188,7 @@ game_chat(spoke) --CHANNEL_MESSAGE_NOTIFY--> app_chat(hub)
 hub 查询订阅者,为每个 App 玩家注入私信副本到 <game_id>:<channel_id>
 ```
 
-### hub → spoke:玩家回复下行
+### hub [spoke:玩家回复下行]
 
 ```text
 App 玩家 --SEND_MESSAGE_REQ(<game_id>:<channel_id>)--> app_chat(hub)

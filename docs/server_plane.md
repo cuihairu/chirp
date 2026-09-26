@@ -190,7 +190,7 @@ chat 服务以内部 peer 身份连到枢纽(`--server_gateway_host`,默认空�
 
 存储与各注册表镜像:内存权威 + 直写 Redis 镜像(`chirp:unread:entry:<player_id>:<game_id>:<channel_id>` = 序列化的 `StoredUnreadEntry`,在 `chirp_chat` 上经 `--unread_redis_host`/`--unread_redis_port` 启用,默认关),启动重放并跳过损坏记录与零计数,尽力而为写、Redis 故障降级纯内存。清掉的条目从镜像里删除而不是存零,计数器因此不会复活或累加。键的组成部分是原样拼接:含 `:` 的 id 在磁盘上可能别名成另一条目的键——内存 map 保存精确元组,所以只影响奇异 id 的重启保真度。
 
-## 跨平面回复(App 玩家 → 游戏频道,2026-09-22)
+## 跨平面回复(App 玩家 [游戏频道,2026-09-22]
 
 扇入投递的反方向:App 玩家往游戏频道说话。App 玩家经 `app_chat` 主端口的普通 `SEND_MESSAGE_REQ` 发送,`channel_type` 非 `PRIVATE` 且 `channel_id` 形如 `<game_id>:<bare>`(取第一个 `:`;`game_id` 本身不含 `:`,注册表在绑定时就拒绝)。hub 模式的 `app_chat` 把它拦截在发送限流之后(跨平面发送照常消耗发送预算),编排三步(`PlayerDirectory::RelayGameReply`):
 

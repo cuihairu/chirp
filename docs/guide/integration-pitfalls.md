@@ -155,13 +155,13 @@ client.SendMessage(opts, "gg", [](const std::error_code& ec,
 });
 ```
 
-## 跨平面(伴侣 App ↔ 游戏)
+## 跨平面(伴侣 App [游戏]
 
 - App 玩家回复游戏频道:向 app_chat 发消息时,目标频道写成 **`<game_id>:<裸频道id>`**(如 `game_zx:world`),hub 会路由到对应游戏的 game_chat 注入。前缀写错 → `INVALID_PARAM`(玩家没绑定该游戏)或 `SERVER_UNAVAILABLE`(该游戏无在线 spoke)。
 - 该路径**消耗发送预算**(在发送限流之后拦截),与普通发送共享模糊闸/节奏。
 - 扇回 App 玩家的是无前缀私聊副本,不会构成回环。
 
-## 服务端接入(游戏后端 → 5xxx)
+## 服务端接入(游戏后端 [5xxx]
 
 - 拨**两个**连接:`chirp_game_server_gateway`(8100,注入/事件)与 app_chat 主端口(7000,身份绑定/频道订阅/未读)。RPC 发错目标会因对端不处理而**超时**,不是报错——这也是"卡 10 秒才失败"的最常见原因。
 - 事件投递是 **at-least-once**:处理完 `EVENT_DELIVER_NOTIFY` 必须回 `EVENT_ACK_REQ`,否则 hub 重连后重投——消费逻辑要按 `event_id` 幂等。
