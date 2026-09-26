@@ -96,6 +96,24 @@ class InMemoryRedis {
       }
       return Int(removed);
     }
+    if (cmd == "LSET") {
+      // Mirrors real Redis: a -ERR reply (parsed as kError -> client false)
+      // for a missing key or an out-of-range index.
+      auto it = lists_.find(args[1]);
+      if (it == lists_.end()) {
+        return "-ERR no such key\r\n";
+      }
+      const int64_t n = static_cast<int64_t>(it->second.size());
+      int64_t index = std::stoll(args[2]);
+      if (index < 0) {
+        index += n;
+      }
+      if (index < 0 || index >= n) {
+        return "-ERR index out of range\r\n";
+      }
+      it->second[static_cast<size_t>(index)] = args[3];
+      return Simple("OK");
+    }
     if (cmd == "KEYS") {
       std::vector<std::string> keys;
       for (const auto& [k, v] : kv_) {

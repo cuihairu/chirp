@@ -185,6 +185,7 @@ bool MySQLMessageStore::Initialize() {
       timestamp BIGINT NOT NULL,
       created_at BIGINT NOT NULL,
       reply_to VARCHAR(255),
+      is_recalled TINYINT NOT NULL DEFAULT 0,
       INDEX idx_channel (channel_id, channel_type, timestamp),
       INDEX idx_receiver (receiver_id, timestamp),
       INDEX idx_timestamp (timestamp)
@@ -200,6 +201,12 @@ bool MySQLMessageStore::Initialize() {
   // 已带 reply_to；老库走这条 ALTER，重复加列的报错（code 1060）按幂等放行。
   if (!conn->Execute("ALTER TABLE messages ADD COLUMN reply_to VARCHAR(255)")) {
     Logger::Instance().Info("messages.reply_to column already present (or ALTER unsupported); keeping schema as-is");
+  }
+
+  // 撤回墓碑（P0）：同 reply_to 的幂等补列模式。
+  if (!conn->Execute(
+          "ALTER TABLE messages ADD COLUMN is_recalled TINYINT NOT NULL DEFAULT 0")) {
+    Logger::Instance().Info("messages.is_recalled column already present (or ALTER unsupported); keeping schema as-is");
   }
 
   // Create read_receipts table
@@ -247,7 +254,8 @@ bool MySQLMessageStore::StoreMessage(const StoredMessage& message) {
   }
 
   std::string query = "INSERT INTO messages (message_id, sender_id, receiver_id, channel_id, "
-                     "channel_type, msg_type, content, timestamp, created_at, reply_to) VALUES ('" +
+                     "channel_type, msg_type, content, timestamp, created_at, reply_to, "
+                     "is_recalled) VALUES ('" +
                      conn->Escape(message.message_id) + "', '" +
                      conn->Escape(message.sender_id) + "', '" +
                      conn->Escape(message.receiver_id) + "', '" +
@@ -257,7 +265,8 @@ bool MySQLMessageStore::StoreMessage(const StoredMessage& message) {
                      conn->Escape(message.content) + "', " +
                      std::to_string(message.timestamp) + ", " +
                      std::to_string(message.created_at) + ", '" +
-                     conn->Escape(message.reply_to_message_id) + "')";
+                     conn->Escape(message.reply_to_message_id) + "', " +
+                     (message.is_recalled ? "1" : "0") + ")";
 
   bool result = conn->Execute(query);
   pool_->ReturnConnection(std::move(conn));
@@ -274,7 +283,7 @@ std::vector<StoredMessage> MySQLMessageStore::GetHistory(const std::string& chan
   }
 
   std::string query = "SELECT message_id, sender_id, receiver_id, channel_id, "
-                     "channel_type, msg_type, content, timestamp, reply_to FROM messages WHERE "
+                     "channel_type, msg_type, content, timestamp, reply_to, is_recalled FROM messages WHERE "
                      "channel_id = '" + conn->Escape(channel_id) + "' AND "
                      "channel_type = " + std::to_string(channel_type);
 
@@ -306,6 +315,10 @@ std::vector<StoredMessage> MySQLMessageStore::GetHistory(const std::string& chan
     if (row.size() > 8) {
       msg.reply_to_message_id = row[8];
     }
+    // 老库尚未补 is_recalled 列时按未撤回处理（同 reply_to 的旧 schema 容忍）。
+    if (row.size() > 9) {
+      msg.is_recalled = row[9] == "1" || row[9] == "true";
+    }
     messages.push_back(std::move(msg));
   }
 
@@ -333,6 +346,24 @@ bool MySQLMessageStore::MessageExists(const std::string& channel_id,
   auto rows = conn->FetchResults();
   pool_->ReturnConnection(std::move(conn));
   return !rows.empty();
+}
+
+// 撤回墓碑（P0）：按 channel_id + message_id 精确置位（message_id 全表唯一，
+// channel_id 条件是防御，防跨会话误标）。幂等：重复撤回重复置 1 无副作用。
+bool MySQLMessageStore::MarkMessageRecalled(const std::string& channel_id,
+                                            const std::string& message_id) {
+  auto conn = pool_->GetConnection();
+  if (!conn) {
+    return false;
+  }
+
+  std::string query = "UPDATE messages SET is_recalled = 1 WHERE channel_id = '" +
+                      conn->Escape(channel_id) + "' AND message_id = '" +
+                      conn->Escape(message_id) + "'";
+
+  bool result = conn->Execute(query);
+  pool_->ReturnConnection(std::move(conn));
+  return result;
 }
 
 std::vector<StoredMessage> MySQLMessageStore::GetOfflineMessages(const std::string& user_id) {

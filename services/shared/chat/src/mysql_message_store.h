@@ -110,6 +110,10 @@ public:
   bool MessageExists(const std::string& channel_id,
                      const std::string& message_id) override;
 
+  // 撤回墓碑（P0）：messages.is_recalled 置位，历史读回带出标记
+  bool MarkMessageRecalled(const std::string& channel_id,
+                           const std::string& message_id) override;
+
   // Get offline messages for a user
   std::vector<StoredMessage> GetOfflineMessages(const std::string& user_id) override;
 

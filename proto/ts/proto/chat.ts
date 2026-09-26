@@ -560,6 +560,8 @@ export interface ChatMessage {
   senderKind: SenderKind;
   /** 消息引用（P1）：服务端校验通过后回填，随通知/历史下发 */
   replyToMessageId: string;
+  /** 撤回墓碑：发送者撤回/版主软删后置位，随历史下发（客户端渲染"消息已撤回"） */
+  isRecalled: boolean;
 }
 
 /**
@@ -1890,6 +1892,7 @@ function createBaseChatMessage(): ChatMessage {
     ttlSeconds: 0,
     senderKind: 0,
     replyToMessageId: "",
+    isRecalled: false,
   };
 }
 
@@ -1933,6 +1936,9 @@ export const ChatMessage = {
     }
     if (message.replyToMessageId !== "") {
       writer.uint32(106).string(message.replyToMessageId);
+    }
+    if (message.isRecalled !== false) {
+      writer.uint32(112).bool(message.isRecalled);
     }
     return writer;
   },
@@ -2035,6 +2041,13 @@ export const ChatMessage = {
 
           message.replyToMessageId = reader.string();
           continue;
+        case 14:
+          if (tag !== 112) {
+            break;
+          }
+
+          message.isRecalled = reader.bool();
+          continue;
       }
       if ((tag & 7) === 4 || tag === 0) {
         break;
@@ -2059,6 +2072,7 @@ export const ChatMessage = {
       ttlSeconds: isSet(object.ttlSeconds) ? globalThis.Number(object.ttlSeconds) : 0,
       senderKind: isSet(object.senderKind) ? senderKindFromJSON(object.senderKind) : 0,
       replyToMessageId: isSet(object.replyToMessageId) ? globalThis.String(object.replyToMessageId) : "",
+      isRecalled: isSet(object.isRecalled) ? globalThis.Boolean(object.isRecalled) : false,
     };
   },
 
@@ -2103,6 +2117,9 @@ export const ChatMessage = {
     if (message.replyToMessageId !== "") {
       obj.replyToMessageId = message.replyToMessageId;
     }
+    if (message.isRecalled !== false) {
+      obj.isRecalled = message.isRecalled;
+    }
     return obj;
   },
 
@@ -2124,6 +2141,7 @@ export const ChatMessage = {
     message.ttlSeconds = object.ttlSeconds ?? 0;
     message.senderKind = object.senderKind ?? 0;
     message.replyToMessageId = object.replyToMessageId ?? "";
+    message.isRecalled = object.isRecalled ?? false;
     return message;
   },
 };

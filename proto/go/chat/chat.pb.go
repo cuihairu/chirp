@@ -773,6 +773,7 @@ type ChatMessage struct {
 	TtlSeconds       int32                  `protobuf:"varint,11,opt,name=ttl_seconds,json=ttlSeconds,proto3" json:"ttl_seconds,omitempty"`                            // 走马灯/公告的显示时长
 	SenderKind       SenderKind             `protobuf:"varint,12,opt,name=sender_kind,json=senderKind,proto3,enum=chirp.chat.SenderKind" json:"sender_kind,omitempty"` // 发送者类型
 	ReplyToMessageId string                 `protobuf:"bytes,13,opt,name=reply_to_message_id,json=replyToMessageId,proto3" json:"reply_to_message_id,omitempty"`       // 消息引用（P1）：服务端校验通过后回填，随通知/历史下发
+	IsRecalled       bool                   `protobuf:"varint,14,opt,name=is_recalled,json=isRecalled,proto3" json:"is_recalled,omitempty"`                            // 撤回墓碑：发送者撤回/版主软删后置位，随历史下发（客户端渲染"消息已撤回"）
 	unknownFields    protoimpl.UnknownFields
 	sizeCache        protoimpl.SizeCache
 }
@@ -896,6 +897,13 @@ func (x *ChatMessage) GetReplyToMessageId() string {
 		return x.ReplyToMessageId
 	}
 	return ""
+}
+
+func (x *ChatMessage) GetIsRecalled() bool {
+	if x != nil {
+		return x.IsRecalled
+	}
+	return false
 }
 
 // Player -> NPC utterance, published as an event payload to the NPC dialog
@@ -8436,7 +8444,7 @@ const file_proto_chat_proto_rawDesc = "" +
 	"\x04code\x18\x01 \x01(\x0e2\x17.chirp.common.ErrorCodeR\x04code\x12\x1d\n" +
 	"\n" +
 	"message_id\x18\x02 \x01(\tR\tmessageId\x12)\n" +
-	"\x10server_timestamp\x18\x03 \x01(\x03R\x0fserverTimestamp\"\x84\x04\n" +
+	"\x10server_timestamp\x18\x03 \x01(\x03R\x0fserverTimestamp\"\xa5\x04\n" +
 	"\vChatMessage\x12\x1d\n" +
 	"\n" +
 	"message_id\x18\x01 \x01(\tR\tmessageId\x12\x1b\n" +
@@ -8456,7 +8464,9 @@ const file_proto_chat_proto_rawDesc = "" +
 	"ttlSeconds\x127\n" +
 	"\vsender_kind\x18\f \x01(\x0e2\x16.chirp.chat.SenderKindR\n" +
 	"senderKind\x12-\n" +
-	"\x13reply_to_message_id\x18\r \x01(\tR\x10replyToMessageId\"\x9f\x01\n" +
+	"\x13reply_to_message_id\x18\r \x01(\tR\x10replyToMessageId\x12\x1f\n" +
+	"\vis_recalled\x18\x0e \x01(\bR\n" +
+	"isRecalled\"\x9f\x01\n" +
 	"\x12NpcPlayerUtterance\x12\x1d\n" +
 	"\n" +
 	"message_id\x18\x01 \x01(\tR\tmessageId\x12\x1b\n" +

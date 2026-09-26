@@ -249,6 +249,39 @@ struct MessageStore {
     return removed;
   }
 
+  // 撤回墓碑（game_chat_features P0）：撤回/版主软删后把历史存档里的这条
+  // 消息置为已撤回——内存向量原位置位，Redis 镜像按 LSet 原位改写（列表顺
+  // 序不动）。GET_HISTORY 的读回（内存或镜像）由此带出 is_recalled。
+  bool MarkRecalled(chirp::chat::ChannelType type, const std::string& channel_id,
+                    const std::string& message_id) {
+    bool ok = true;
+
+    auto it = history.find(ChannelKey(type, channel_id));
+    if (it != history.end()) {
+      for (auto& msg : it->second) {
+        if (msg.message_id() == message_id) {
+          msg.set_is_recalled(true);
+        }
+      }
+    }
+
+    if (redis) {
+      const std::string key = HistoryKey(type, channel_id);
+      const auto raw = redis->LRange(key, 0, -1);
+      for (size_t i = 0; i < raw.size(); ++i) {
+        chirp::chat::ChatMessage queued;
+        if (!queued.ParseFromArray(raw[i].data(), static_cast<int>(raw[i].size()))) {
+          continue;
+        }
+        if (queued.message_id() == message_id && !queued.is_recalled()) {
+          queued.set_is_recalled(true);
+          ok = redis->LSet(key, static_cast<int64_t>(i), queued.SerializeAsString()) && ok;
+        }
+      }
+    }
+    return ok;
+  }
+
   std::vector<chirp::chat::ChatMessage> GetHistory(chirp::chat::ChannelType type,
                                                    const std::string& channel_id,
                                                    int64_t before_timestamp,
@@ -1477,8 +1510,15 @@ int main(int argc, char** argv) {
       [store](const std::string& message_id, const std::string& receiver_id) {
         store->PurgeOfflineByMessageId(receiver_id, message_id);
       };
+  // 撤回墓碑：历史存档（内存 + Redis 镜像）随撤回/软删置 is_recalled。
+  chirp::chat::RecallTombstoneMarker mark_recalled =
+      [store](chirp::chat::ChannelType channel_type, const std::string& channel_id,
+              const std::string& message_id) {
+        store->MarkRecalled(channel_type, channel_id, message_id);
+      };
   chirp::chat::MessageEditHandlers edit_handlers(edits, resolve_members, is_moderator,
-                                                 notify_member, purge_offline);
+                                                 notify_member, purge_offline,
+                                                 mark_recalled);
   chirp::chat::MentionHandlers mention_handlers(mentions, is_moderator);
 
   chirp::chat::WordFilterOptions word_filter_options;

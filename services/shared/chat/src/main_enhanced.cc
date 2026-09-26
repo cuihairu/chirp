@@ -496,6 +496,7 @@ void HandleGetHistory(const chirp::chat::GetHistoryRequest& req,
     msg->set_content(msg_data.content);
     msg->set_timestamp(msg_data.timestamp);
     msg->set_reply_to_message_id(msg_data.reply_to_message_id);
+    msg->set_is_recalled(msg_data.is_recalled);
   }
 
   chirp::chat::runtime::SendPacket(session, chirp::gateway::GET_HISTORY_RESP, seq, resp.SerializeAsString());

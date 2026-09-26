@@ -51,6 +51,7 @@ std::string MessageData::SerializeAsString() const {
   msg.set_content(content);
   msg.set_timestamp(timestamp);
   msg.set_reply_to_message_id(reply_to_message_id);
+  msg.set_is_recalled(is_recalled);
   return msg.SerializeAsString();
 }
 
@@ -69,6 +70,7 @@ bool MessageData::ParseFromArray(const void* data, int size) {
   content = msg.content();
   timestamp = msg.timestamp();
   reply_to_message_id = msg.reply_to_message_id();
+  is_recalled = msg.is_recalled();
   created_at = msg.timestamp();
   return true;
 }
@@ -132,6 +134,7 @@ bool HybridMessageStore::StoreMessage(const MessageData& message) {
   mysql_msg.timestamp = message.timestamp;
   mysql_msg.created_at = message.created_at;
   mysql_msg.reply_to_message_id = message.reply_to_message_id;
+  mysql_msg.is_recalled = message.is_recalled;
 
   bool mysql_result = mysql_store_->StoreMessage(mysql_msg);
 
@@ -163,6 +166,7 @@ void HybridMessageStore::StoreMessageAsync(const MessageData& message,
     mysql_msg.timestamp = message.timestamp;
     mysql_msg.created_at = message.created_at;
     mysql_msg.reply_to_message_id = message.reply_to_message_id;
+    mysql_msg.is_recalled = message.is_recalled;
 
     bool result = mysql_store_->StoreMessage(mysql_msg);
 
@@ -221,6 +225,7 @@ std::vector<MessageData> HybridMessageStore::GetHistory(const std::string& chann
         converted.timestamp = msg.timestamp;
         converted.created_at = msg.created_at;
         converted.reply_to_message_id = msg.reply_to_message_id;
+        converted.is_recalled = msg.is_recalled;
         results.push_back(std::move(converted));
       }
     }
@@ -286,6 +291,35 @@ bool HybridMessageStore::HasMessage(const std::string& channel_id,
 
   // Cold tier: messages that already aged out of the Redis list.
   return mysql_store_->MessageExists(channel_id, message_id);
+}
+
+// 撤回墓碑（P0）：热层（Redis 历史镜像）按 LSet 原位改写——列表顺序不动，
+// 其余成员的读回不受影响；冷层（已老化出列表的行）走 MySQL UPDATE。两层
+// 各自幂等，返回值取与（Redis 抖动不吞掉冷层置位，但调用方能看到失败）。
+bool HybridMessageStore::MarkMessageRecalled(const std::string& channel_id,
+                                             const std::string& message_id) {
+  if (channel_id.empty() || message_id.empty()) {
+    return false;
+  }
+
+  const std::string history_key = HistoryKey(channel_id);
+  const auto redis_messages = redis_->LRange(history_key, 0, -1);
+  bool redis_ok = true;
+  for (size_t i = 0; i < redis_messages.size(); ++i) {
+    MessageData msg;
+    if (!msg.ParseFromArray(redis_messages[i].data(),
+                            static_cast<int>(redis_messages[i].size()))) {
+      continue;
+    }
+    if (msg.message_id == message_id && !msg.is_recalled) {
+      msg.is_recalled = true;
+      redis_ok = redis_->LSet(history_key, static_cast<int64_t>(i),
+                              msg.SerializeAsString()) && redis_ok;
+    }
+  }
+
+  const bool mysql_ok = mysql_store_->MarkMessageRecalled(channel_id, message_id);
+  return redis_ok && mysql_ok;
 }
 
 bool HybridMessageStore::AddOfflineMessage(const std::string& user_id,

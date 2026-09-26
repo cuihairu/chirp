@@ -50,6 +50,14 @@ using ChannelModeratorChecker = std::function<bool(
 using OfflineMessagePurger = std::function<void(
     const std::string& message_id, const std::string& receiver_id)>;
 
+// 撤回墓碑（P0）：撤回/版主软删成功后，把历史存档里的这条消息标记为已撤回，
+// 让 GET_HISTORY 的读回带出 is_recalled（离线队列副本由 OfflineMessagePurger
+// 回收，历史存档这一半由它补齐）。Wired to the message store on the basic
+// form; left unset (or set to a no-op) where the archive carries no flag.
+using RecallTombstoneMarker = std::function<void(
+    chirp::chat::ChannelType channel_type, const std::string& channel_id,
+    const std::string& message_id)>;
+
 // Handlers for the read-receipt message ids (MARK_READ, GET_READ_RECEIPTS,
 // GET_UNREAD_COUNT). Marking a channel read notifies the other channel
 // members with MESSAGE_READ_NOTIFY.
@@ -162,7 +170,8 @@ class MessageEditHandlers {
  public:
   MessageEditHandlers(MessageEditManager& edits, ChannelMemberResolver members,
                       ChannelModeratorChecker is_moderator, UserNotifier notify,
-                      OfflineMessagePurger purge_offline = nullptr);
+                      OfflineMessagePurger purge_offline = nullptr,
+                      RecallTombstoneMarker mark_recalled = nullptr);
 
   // Remember which channel a message belongs to (called when the message
   // is accepted for delivery).
@@ -199,6 +208,7 @@ class MessageEditHandlers {
   ChannelModeratorChecker is_moderator_;
   UserNotifier notify_;
   OfflineMessagePurger purge_offline_;
+  RecallTombstoneMarker mark_recalled_;
 
   std::mutex mu_;
   std::unordered_map<std::string, std::pair<chirp::chat::ChannelType, std::string>>

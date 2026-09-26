@@ -306,6 +306,71 @@ TEST_F(MySqlStoreTest, HistoryParsesReplyColumnAndToleratesLegacyRows) {
   EXPECT_EQ(legacy[0].reply_to_message_id, "");
 }
 
+TEST_F(MySqlStoreTest, StoreMessageWritesRecalledColumn) {
+  auto pool = std::make_shared<MySQLConnectionPool>(1, "h", 3306, "db", "u", "p");
+  MySQLMessageStore store(pool);
+
+  StoredMessage recalled = ToMySql(MakeMessage("m1"));
+  recalled.is_recalled = true;
+  EXPECT_TRUE(store.StoreMessage(recalled));
+  auto queries = fake_mysql::TakeQueries();
+  ASSERT_FALSE(queries.empty());
+  EXPECT_NE(queries.back().find("INSERT INTO messages"), std::string::npos);
+  EXPECT_NE(queries.back().find("is_recalled"), std::string::npos);
+  EXPECT_NE(queries.back().find(", 1)"), std::string::npos);
+
+  // 未置位时落库为 0（默认未撤回）。
+  EXPECT_TRUE(store.StoreMessage(ToMySql(MakeMessage("m2"))));
+  queries = fake_mysql::TakeQueries();
+  ASSERT_FALSE(queries.empty());
+  EXPECT_NE(queries.back().find(", 0)"), std::string::npos);
+}
+
+TEST_F(MySqlStoreTest, HistoryParsesRecalledColumnAndToleratesLegacyRows) {
+  auto pool = std::make_shared<MySQLConnectionPool>(1, "h", 3306, "db", "u", "p");
+  MySQLMessageStore store(pool);
+
+  // 新 schema：第 10 列 is_recalled，"1"/"true" 都按已撤回读回。
+  fake_mysql::PushRows({{"m1", "s", "r", "ch", "0", "1", "c1", "1000", "", "1"}});
+  auto history = store.GetHistory("ch", 0, 0, 10);
+  ASSERT_EQ(history.size(), 1u);
+  EXPECT_TRUE(history[0].is_recalled);
+
+  fake_mysql::PushRows({{"m2", "s", "r", "ch", "0", "1", "c2", "2000", "", "0"}});
+  auto fresh = store.GetHistory("ch", 0, 0, 10);
+  ASSERT_EQ(fresh.size(), 1u);
+  EXPECT_FALSE(fresh[0].is_recalled);
+
+  // 旧 schema 行（未回填 is_recalled 列）按未撤回处理。
+  fake_mysql::PushRows({{"m3", "s", "r", "ch", "0", "1", "c3", "3000"}});
+  auto legacy = store.GetHistory("ch", 0, 0, 10);
+  ASSERT_EQ(legacy.size(), 1u);
+  EXPECT_FALSE(legacy[0].is_recalled);
+}
+
+TEST_F(MySqlStoreTest, MarkMessageRecalledWritesScopedUpdate) {
+  auto pool = std::make_shared<MySQLConnectionPool>(1, "h", 3306, "db", "u", "p");
+  MySQLMessageStore store(pool);
+
+  EXPECT_TRUE(store.MarkMessageRecalled("ch1", "m1"));
+  auto queries = fake_mysql::TakeQueries();
+  ASSERT_FALSE(queries.empty());
+  EXPECT_NE(queries.back().find("UPDATE messages SET is_recalled = 1"),
+            std::string::npos);
+  // 双条件精确定位：channel_id 是防御（message_id 全表唯一），防跨会话误标。
+  EXPECT_NE(queries.back().find("channel_id = 'ch1'"), std::string::npos);
+  EXPECT_NE(queries.back().find("message_id = 'm1'"), std::string::npos);
+
+  fake_mysql::PushQueryError("update failed");
+  EXPECT_FALSE(store.MarkMessageRecalled("ch1", "m1"));
+
+  // 池中留有现成连接时 GetConnection 直接复用，SetConnectShouldFail 拦不住；
+  // 换全新池让池构造与现场补连都失败，按不可用回 false。
+  fake_mysql::SetConnectShouldFail(true);
+  MySQLMessageStore dead_store(std::make_shared<MySQLConnectionPool>(1, "h", 3306, "db", "u", "p"));
+  EXPECT_FALSE(dead_store.MarkMessageRecalled("ch1", "m1"));
+}
+
 TEST_F(MySqlStoreTest, InitializeToleratesAlterFailure) {
   auto pool = std::make_shared<MySQLConnectionPool>(1, "h", 3306, "db", "u", "p");
   MySQLMessageStore store(pool);
@@ -434,6 +499,12 @@ TEST_F(HybridStoreTest, MessageDataSerializationRoundTrip) {
   EXPECT_EQ(parsed.content, "hello m1");
   // 消息引用（P1）：引用 ID 随序列化往返，不因存储落盘而丢失。
   EXPECT_EQ(parsed.reply_to_message_id, "m0");
+  // 撤回墓碑（P0）：默认未撤回；置位后随序列化往返，历史读回据此渲染墓碑。
+  EXPECT_FALSE(parsed.is_recalled);
+  msg.is_recalled = true;
+  ASSERT_TRUE(parsed.ParseFromArray(msg.SerializeAsString().data(),
+                                    static_cast<int>(msg.SerializeAsString().size())));
+  EXPECT_TRUE(parsed.is_recalled);
 
   EXPECT_FALSE(parsed.ParseFromArray("garbage", 7));
 }
@@ -574,6 +645,93 @@ TEST_F(HybridStoreTest, GetHistoryMysqlMergeCarriesReply) {
   ASSERT_NE(fresh, nullptr);
   EXPECT_EQ(old->reply_to_message_id, "m0");
   EXPECT_EQ(fresh->reply_to_message_id, "");
+}
+
+TEST_F(HybridStoreTest, RecallTombstoneRewritesHotTierInPlace) {
+  ASSERT_TRUE(store_->Initialize());
+
+  ASSERT_TRUE(store_->StoreMessage(MakeMessage("m1", "ch1", 1000)));
+  ASSERT_TRUE(store_->StoreMessage(MakeMessage("m2", "ch1", 2000)));
+  // 畸形历史条目（如旧版本写入的脏数据）被扫墓循环跳过，不被改写也不中断。
+  redis_->PushDirect("chirp:chat:history:ch1", "garbage-not-proto");
+
+  EXPECT_TRUE(store_->MarkMessageRecalled("ch1", "m1"));
+
+  // 热层原位改写：列表仍三条、顺序不动，只有 m1 带墓碑。
+  const auto blobs = redis_->ListDirect("chirp:chat:history:ch1");
+  ASSERT_EQ(blobs.size(), 3u);
+  MessageData first;
+  ASSERT_TRUE(first.ParseFromArray(blobs[0].data(), static_cast<int>(blobs[0].size())));
+  MessageData second;
+  ASSERT_TRUE(second.ParseFromArray(blobs[1].data(), static_cast<int>(blobs[1].size())));
+  EXPECT_EQ(first.message_id, "m1");
+  EXPECT_TRUE(first.is_recalled);
+  EXPECT_EQ(second.message_id, "m2");
+  EXPECT_FALSE(second.is_recalled);
+  EXPECT_EQ(blobs[2], "garbage-not-proto");
+
+  // 冷层同步置位：MySQL 侧收到双条件 UPDATE。
+  auto queries = fake_mysql::TakeQueries();
+  bool saw_update = false;
+  for (const auto& q : queries) {
+    if (q.find("UPDATE messages SET is_recalled = 1") != std::string::npos &&
+        q.find("message_id = 'm1'") != std::string::npos) {
+      saw_update = true;
+    }
+  }
+  EXPECT_TRUE(saw_update);
+
+  // 幂等：重复撤回不再重写热层（已置位即跳过 LSet），仍回 true。
+  EXPECT_TRUE(store_->MarkMessageRecalled("ch1", "m1"));
+  const auto after = redis_->ListDirect("chirp:chat:history:ch1");
+  ASSERT_EQ(after.size(), 3u);
+  EXPECT_EQ(after[0], blobs[0]);
+}
+
+TEST_F(HybridStoreTest, RecallTombstoneReportsHotTierFailure) {
+  // 热层拒写（LSET 一律 -ERR），其余命令走同一份内存态：返回 false 时冷层
+  // UPDATE 仍已发出，热层条目保持未置位。
+  chirp_test::InMemoryRedis hot;
+  chirp_test::FakeRedisServer no_lset(
+      [&hot](const std::vector<std::string>& args) {
+        if (args[0] == "LSET") { return std::string("-ERR injected\r\n"); }
+        return hot.Handle(args);
+      });
+  MessageStoreConfig cfg;
+  cfg.redis_port = no_lset.port();
+  cfg.mysql_pool_size = 1;
+  HybridMessageStore local(io_, cfg);
+  ASSERT_TRUE(local.Initialize());
+  ASSERT_TRUE(local.StoreMessage(MakeMessage("m2", "ch2", 2000)));
+
+  EXPECT_FALSE(local.MarkMessageRecalled("ch2", "m2"));
+  const auto blobs = hot.ListDirect("chirp:chat:history:ch2");
+  ASSERT_EQ(blobs.size(), 1u);
+  MessageData parsed;
+  ASSERT_TRUE(parsed.ParseFromArray(blobs[0].data(), static_cast<int>(blobs[0].size())));
+  EXPECT_FALSE(parsed.is_recalled);
+}
+
+TEST_F(HybridStoreTest, RecallTombstoneFailsWhenColdTierFails) {
+  ASSERT_TRUE(store_->Initialize());
+  ASSERT_TRUE(store_->StoreMessage(MakeMessage("m1", "ch1", 1000)));
+
+  // 冷层 UPDATE 失败必须让调用方看到失败——热层置位成功不吞掉冷层故障。
+  fake_mysql::PushQueryError("update failed");
+  EXPECT_FALSE(store_->MarkMessageRecalled("ch1", "m1"));
+  const auto blobs = redis_->ListDirect("chirp:chat:history:ch1");
+  ASSERT_EQ(blobs.size(), 1u);
+  MessageData parsed;
+  ASSERT_TRUE(parsed.ParseFromArray(blobs[0].data(), static_cast<int>(blobs[0].size())));
+  EXPECT_TRUE(parsed.is_recalled);
+}
+
+TEST_F(HybridStoreTest, RecallTombstoneRejectsEmptyArgs) {
+  ASSERT_TRUE(store_->Initialize());
+
+  EXPECT_FALSE(store_->MarkMessageRecalled("", "m1"));
+  EXPECT_FALSE(store_->MarkMessageRecalled("ch1", ""));
+  EXPECT_TRUE(redis_->ListDirect("chirp:chat:history:ch1").empty());
 }
 
 TEST_F(HybridStoreTest, OfflineQueueOperations) {

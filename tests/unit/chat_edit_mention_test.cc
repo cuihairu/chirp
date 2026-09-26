@@ -60,8 +60,12 @@ class EditMentionHandlersTest : public ::testing::Test {
     purger_ = [this](const std::string& message_id, const std::string& receiver_id) {
       purged_.push_back({message_id, receiver_id});
     };
+    marker_ = [this](chirp::chat::ChannelType channel_type, const std::string& channel_id,
+                     const std::string& message_id) {
+      marked_.push_back({channel_type, channel_id, message_id});
+    };
     edit_handlers_ = std::make_unique<chirp::chat::MessageEditHandlers>(
-        edits_, resolver_, moderator_, notifier_, purger_);
+        edits_, resolver_, moderator_, notifier_, purger_, marker_);
     mention_handlers_ =
         std::make_unique<chirp::chat::MentionHandlers>(mentions_, moderator_);
   }
@@ -97,14 +101,23 @@ class EditMentionHandlersTest : public ::testing::Test {
     return out;
   }
 
+  size_t MarkedCount() const { return marked_.size(); }
+
   std::vector<std::string> group_members_;
   std::unordered_map<std::string, bool> moderators_;
   std::vector<NotificationRecord> notifications_;
   std::vector<std::pair<std::string, std::string>> purged_;
+  struct MarkRecord {
+    chirp::chat::ChannelType channel_type;
+    std::string channel_id;
+    std::string message_id;
+  };
+  std::vector<MarkRecord> marked_;
   chirp::chat::ChannelMemberResolver resolver_;
   chirp::chat::ChannelModeratorChecker moderator_;
   chirp::chat::UserNotifier notifier_;
   chirp::chat::OfflineMessagePurger purger_;
+  chirp::chat::RecallTombstoneMarker marker_;
 
   chirp::chat::MessageEditManager edits_;
   chirp::chat::MentionManager mentions_;
@@ -346,6 +359,8 @@ TEST_F(EditMentionHandlersTest, RecallRejectsSecondAttempt) {
   EXPECT_EQ(edit_handlers_->HandleDeleteMessage(req, "alice").code(),
             chirp::common::INVALID_PARAM);
   EXPECT_EQ(CountNotifications("bob", chirp::gateway::MESSAGE_DELETED_NOTIFY), 1);
+  // The archive marker follows the same once-only rule.
+  EXPECT_EQ(MarkedCount(), 1u);
 }
 
 TEST_F(EditMentionHandlersTest, RecallRejectedOnNonRecallableChannel) {
@@ -406,10 +421,12 @@ TEST_F(EditMentionHandlersTest, RefusedRecallTouchesNoOfflineQueue) {
   chirp::chat::DeleteMessageRequest req;
   req.set_message_id("m1");
   req.set_user_id("alice");
-  // World channel is not recallable: no notify, and nothing is reclaimed.
+  // World channel is not recallable: no notify, nothing is reclaimed, and the
+  // history archive is left untouched.
   ASSERT_EQ(edit_handlers_->HandleDeleteMessage(req, "alice").code(),
             chirp::common::INVALID_PARAM);
   EXPECT_TRUE(purged_.empty());
+  EXPECT_TRUE(marked_.empty());
 }
 
 TEST_F(EditMentionHandlersTest, NullPurgerIsTolerated) {
@@ -451,6 +468,56 @@ TEST_F(EditMentionHandlersTest, ModeratorRemovalIgnoresRecallRules) {
             chirp::common::OK);
   EXPECT_FALSE(mod_req.is_hard_delete());
   EXPECT_EQ(CountNotifications("alice", chirp::gateway::MESSAGE_DELETED_NOTIFY), 1);
+  EXPECT_EQ(CountNotifications("bob", chirp::gateway::MESSAGE_DELETED_NOTIFY), 1);
+}
+
+TEST_F(EditMentionHandlersTest, RecallMarksHistoryTombstone) {
+  // A successful recall hands the tracked channel identity to the archive
+  // marker exactly once, so the store can flip is_recalled in place.
+  RegisterSentMessage("m1", "alice", chirp::chat::PRIVATE, "alice|bob", "hi");
+  chirp::chat::DeleteMessageRequest req;
+  req.set_message_id("m1");
+  req.set_user_id("alice");
+  ASSERT_EQ(edit_handlers_->HandleDeleteMessage(req, "alice").code(),
+            chirp::common::OK);
+
+  ASSERT_EQ(marked_.size(), 1u);
+  EXPECT_EQ(marked_[0].channel_type, chirp::chat::PRIVATE);
+  EXPECT_EQ(marked_[0].channel_id, "alice|bob");
+  EXPECT_EQ(marked_[0].message_id, "m1");
+}
+
+TEST_F(EditMentionHandlersTest, ModeratorSoftDeleteMarksHistoryTombstone) {
+  // Moderator removal defaults to a soft delete: the archive keeps the row and
+  // only flips the tombstone.
+  group_members_ = {"alice", "bob"};
+  moderators_ = {{"g1:carl", true}};
+  RegisterSentMessage("m1", "alice", chirp::chat::GUILD, "g1", "spam");
+  chirp::chat::DeleteMessageRequest mod_req;
+  mod_req.set_message_id("m1");
+  mod_req.set_user_id("carl");
+  ASSERT_EQ(edit_handlers_->HandleDeleteMessage(mod_req, "carl").code(),
+            chirp::common::OK);
+
+  ASSERT_EQ(marked_.size(), 1u);
+  EXPECT_EQ(marked_[0].channel_type, chirp::chat::GUILD);
+  EXPECT_EQ(marked_[0].channel_id, "g1");
+  EXPECT_EQ(marked_[0].message_id, "m1");
+}
+
+TEST_F(EditMentionHandlersTest, HardDeleteSkipsTombstoneMark) {
+  // Hard delete is a governance erasure: the row leaves the archive, so there
+  // is nothing to mark recalled. Members are still told the message is gone.
+  group_members_ = {"alice", "bob"};
+  moderators_ = {{"g1:carl", true}};
+  RegisterSentMessage("m1", "alice", chirp::chat::GUILD, "g1", "spam");
+  chirp::chat::DeleteMessageRequest mod_req;
+  mod_req.set_message_id("m1");
+  mod_req.set_user_id("carl");
+  mod_req.set_is_hard_delete(true);
+  ASSERT_EQ(edit_handlers_->HandleDeleteMessage(mod_req, "carl").code(),
+            chirp::common::OK);
+  EXPECT_TRUE(marked_.empty());
   EXPECT_EQ(CountNotifications("bob", chirp::gateway::MESSAGE_DELETED_NOTIFY), 1);
 }
 

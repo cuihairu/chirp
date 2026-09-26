@@ -297,12 +297,14 @@ MessageEditHandlers::MessageEditHandlers(MessageEditManager& edits,
                                          ChannelMemberResolver members,
                                          ChannelModeratorChecker is_moderator,
                                          UserNotifier notify,
-                                         OfflineMessagePurger purge_offline)
+                                         OfflineMessagePurger purge_offline,
+                                         RecallTombstoneMarker mark_recalled)
     : edits_(edits),
       members_(std::move(members)),
       is_moderator_(std::move(is_moderator)),
       notify_(std::move(notify)),
-      purge_offline_(std::move(purge_offline)) {}
+      purge_offline_(std::move(purge_offline)),
+      mark_recalled_(std::move(mark_recalled)) {}
 
 void MessageEditHandlers::TrackMessage(const std::string& message_id,
                                        chirp::chat::ChannelType channel_type,
@@ -436,6 +438,11 @@ chirp::chat::DeleteMessageResponse MessageEditHandlers::HandleDeleteMessage(
   notify.set_is_hard_delete(req.is_hard_delete());
   notify.set_deleted_by(req.user_id());
   notify.set_deleted_at(chirp::chat::runtime::NowMs());
+  // 软删/撤回同步在历史存档里立墓碑，GET_HISTORY 的读回据此带 is_recalled；
+  // 硬删除是治理抹除，历史语义不变，不在此处标记。
+  if (!req.is_hard_delete() && mark_recalled_) {
+    mark_recalled_(channel_type, channel_id, req.message_id());
+  }
   const auto members = members_(channel_type, channel_id, req.user_id());
   for (const auto& member : members) {
     notify_(member, chirp::gateway::MESSAGE_DELETED_NOTIFY, notify);

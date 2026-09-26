@@ -51,6 +51,10 @@ public:
   // the command failed (no connection / bad reply).
   virtual int64_t LRem(const std::string& key, int64_t count, const std::string& value);
 
+  // Sets the list element at index to value. False when the command failed
+  // (no connection, index out of range, or any reply other than +OK).
+  virtual bool LSet(const std::string& key, int64_t index, const std::string& value);
+
   // Expiration commands
   bool Expire(const std::string& key, int ttl_seconds);
 

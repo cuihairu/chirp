@@ -754,6 +754,28 @@ TEST_F(RedisClientTest, PublishCountAndLRemHandleTypeMismatches) {
   EXPECT_EQ(dead.LRem("list", 1, "item"), -1);
 }
 
+TEST_F(RedisClientTest, LSetRequiresSimpleStringOkReply) {
+  MockRedisServer ok;
+  ok.Start({{"LSET", "+OK\r\n"}});
+  RedisClient good("127.0.0.1", ok.port());
+  EXPECT_TRUE(good.LSet("list", 0, "v"));
+
+  // Real Redis answers -ERR for a missing key / out-of-range index.
+  MockRedisServer err;
+  err.Start({{"LSET", "-ERR no such key\r\n"}});
+  RedisClient e("127.0.0.1", err.port());
+  EXPECT_FALSE(e.LSet("list", 0, "v"));
+
+  // A simple string that is not +OK (e.g. a proxy's +QUEUED) is not an ack.
+  MockRedisServer queued;
+  queued.Start({{"LSET", "+QUEUED\r\n"}});
+  RedisClient q("127.0.0.1", queued.port());
+  EXPECT_FALSE(q.LSet("list", 0, "v"));
+
+  RedisClient dead("127.0.0.1", FreePort());
+  EXPECT_FALSE(dead.LSet("list", 0, "v"));
+}
+
 TEST_F(RedisClientTest, ListAndKeysAcceptStringAndSkipNonStringElements) {
   // LRANGE: bulk + simple strings are kept; integer elements are skipped.
   MockRedisServer mixed;

@@ -22,6 +22,7 @@ struct StoredMessage {
   int64_t timestamp{0};
   int64_t created_at{0};
   std::string reply_to_message_id;  // 消息引用（P1）：空 = 非引用
+  bool is_recalled{false};          // 撤回墓碑（P0）：发送者撤回/版主软删后置位
 };
 
 // Read receipt data
@@ -53,6 +54,12 @@ public:
   // 不区分 channel_type——私聊键已含双方身份，天然隔离）
   virtual bool MessageExists(const std::string& channel_id,
                              const std::string& message_id) = 0;
+
+  // 撤回墓碑（P0）：把该会话内这条消息标记为已撤回。历史读回（GetHistory）
+  // 由此带出 is_recalled，客户端渲染"消息已撤回"；离线队列的副本由撤回批次
+  // 的 OfflineMessagePurger 单独回收，互不重叠。
+  virtual bool MarkMessageRecalled(const std::string& channel_id,
+                                   const std::string& message_id) = 0;
 
   // Get offline messages for a user
   virtual std::vector<StoredMessage> GetOfflineMessages(const std::string& user_id) = 0;

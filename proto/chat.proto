@@ -85,6 +85,7 @@ message ChatMessage {
   int32 ttl_seconds = 11;      // 走马灯/公告的显示时长
   SenderKind sender_kind = 12; // 发送者类型
   string reply_to_message_id = 13; // 消息引用（P1）：服务端校验通过后回填，随通知/历史下发
+  bool is_recalled = 14;       // 撤回墓碑：发送者撤回/版主软删后置位，随历史下发（客户端渲染"消息已撤回"）
 }
 
 // Player -> NPC utterance, published as an event payload to the NPC dialog

@@ -104,6 +104,11 @@ int64_t RedisClient::LRem(const std::string& key, int64_t count, const std::stri
   return (r && r->type == RedisResp::Type::kInteger) ? r->integer : -1;
 }
 
+bool RedisClient::LSet(const std::string& key, int64_t index, const std::string& value) {
+  auto r = SendCmd(host_, port_, {"LSET", key, std::to_string(index), value});
+  return r && r->type == RedisResp::Type::kSimpleString && r->str == "OK";
+}
+
 bool RedisClient::Expire(const std::string& key, int ttl_seconds) {
   auto r = SendCmd(host_, port_, {"EXPIRE", key, std::to_string(ttl_seconds)});
   return r && r->type == RedisResp::Type::kInteger && r->integer > 0;

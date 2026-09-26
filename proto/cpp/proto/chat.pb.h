@@ -17165,6 +17165,7 @@ class ChatMessage final : public ::google::protobuf::Message
     kPriorityFieldNumber = 9,
     kTtlSecondsFieldNumber = 11,
     kSenderKindFieldNumber = 12,
+    kIsRecalledFieldNumber = 14,
   };
   // string message_id = 1;
   void clear_message_id() ;
@@ -17331,11 +17332,21 @@ class ChatMessage final : public ::google::protobuf::Message
   void _internal_set_sender_kind(::chirp::chat::SenderKind value);
 
   public:
+  // bool is_recalled = 14;
+  void clear_is_recalled() ;
+  bool is_recalled() const;
+  void set_is_recalled(bool value);
+
+  private:
+  bool _internal_is_recalled() const;
+  void _internal_set_is_recalled(bool value);
+
+  public:
   // @@protoc_insertion_point(class_scope:chirp.chat.ChatMessage)
  private:
   class _Internal;
   friend class ::google::protobuf::internal::TcParser;
-  static const ::google::protobuf::internal::TcParseTable<4, 13,
+  static const ::google::protobuf::internal::TcParseTable<4, 14,
                                    0, 98,
                                    2>
       _table_;
@@ -17370,6 +17381,7 @@ class ChatMessage final : public ::google::protobuf::Message
     int priority_;
     ::int32_t ttl_seconds_;
     int sender_kind_;
+    bool is_recalled_;
     PROTOBUF_TSAN_DECLARE_MEMBER
   };
   union { Impl_ _impl_; };
@@ -29693,6 +29705,31 @@ inline void ChatMessage::set_allocated_reply_to_message_id(::std::string* PROTOB
     _impl_.reply_to_message_id_.Set("", GetArena());
   }
   // @@protoc_insertion_point(field_set_allocated:chirp.chat.ChatMessage.reply_to_message_id)
+}
+
+// bool is_recalled = 14;
+inline void ChatMessage::clear_is_recalled() {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_.is_recalled_ = false;
+  ClearHasBit(_impl_._has_bits_[0],
+                  0x00002000U);
+}
+inline bool ChatMessage::is_recalled() const {
+  // @@protoc_insertion_point(field_get:chirp.chat.ChatMessage.is_recalled)
+  return _internal_is_recalled();
+}
+inline void ChatMessage::set_is_recalled(bool value) {
+  _internal_set_is_recalled(value);
+  SetHasBit(_impl_._has_bits_[0], 0x00002000U);
+  // @@protoc_insertion_point(field_set:chirp.chat.ChatMessage.is_recalled)
+}
+inline bool ChatMessage::_internal_is_recalled() const {
+  ::google::protobuf::internal::TSanRead(&_impl_);
+  return _impl_.is_recalled_;
+}
+inline void ChatMessage::_internal_set_is_recalled(bool value) {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_.is_recalled_ = value;
 }
 
 // -------------------------------------------------------------------

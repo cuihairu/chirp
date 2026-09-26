@@ -33,6 +33,7 @@ struct MessageData {
   int64_t timestamp{0};
   int64_t created_at{0};
   std::string reply_to_message_id;  // 消息引用（P1）：空 = 非引用
+  bool is_recalled{false};          // 撤回墓碑（P0）：随序列化往返，历史读回带出
 
   std::string SerializeAsString() const;
   bool ParseFromArray(const void* data, int size);
@@ -99,6 +100,10 @@ public:
   /// @brief 消息引用（P1）：回复目标是否存在——先扫 Redis 热层（同步写，
   /// 刚发出的消息必可见），未命中再查 MySQL 冷层。仅按 channel_id 归属校验。
   bool HasMessage(const std::string& channel_id, const std::string& message_id);
+
+  // 撤回墓碑（P0）：热层（Redis 历史镜像）原位改写 + 冷层（MySQL）置位，
+  // GetHistory/GetHistoryV2 的读回由此带出 is_recalled。
+  bool MarkMessageRecalled(const std::string& channel_id, const std::string& message_id);
 
   /// @brief Enqueue an offline message for a user (serialized MessageData).
   /// Writes to Redis; when Redis is unavailable the message is kept in an
