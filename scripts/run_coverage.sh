@@ -21,7 +21,10 @@
 set -euo pipefail
 
 ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
-BUILD_DIR="${ROOT_DIR}/build-cov"
+# COVERAGE_BUILD_DIR isolates the gate from other actors configuring into the
+# default build-cov directory concurrently (a second agent or editor task on
+# the same checkout wipes test binaries and .gcda mid-run otherwise).
+BUILD_DIR="${COVERAGE_BUILD_DIR:-${ROOT_DIR}/build-cov}"
 FAIL_UNDER=100
 SKIP_BUILD=0
 FRESH=0
@@ -52,14 +55,19 @@ if [[ ${FRESH} -eq 1 && ${SKIP_BUILD} -eq 0 ]]; then
 fi
 
 if [[ ${SKIP_BUILD} -eq 0 ]]; then
+  # Same cache variables as the "coverage" preset (see CMakePresets.json), but
+  # passed explicitly so COVERAGE_BUILD_DIR can relocate the binary dir; the
+  # preset hard-codes ${sourceDir}/build-cov.
   # shellcheck disable=SC2086
-  cmake --preset coverage ${CMAKE_ARGS:-}
+  cmake -B "${BUILD_DIR}" \
+    -DCMAKE_BUILD_TYPE=Debug -DENABLE_TESTS=ON -DCHIRP_ENABLE_COVERAGE=ON \
+    ${CMAKE_ARGS:-}
   # Build everything: a fixed target list here would silently skip targets
   # whose source list changed (or new ones), reporting stale coverage.
-  cmake --build --preset coverage
+  cmake --build "${BUILD_DIR}"
 fi
 
-ctest --preset coverage --output-on-failure
+ctest --test-dir "${BUILD_DIR}" --output-on-failure
 
 # ---------------------------------------------------------------------------
 # Coverage aggregation.
@@ -74,18 +82,30 @@ ctest --preset coverage --output-on-failure
 # public APIs).
 # ---------------------------------------------------------------------------
 mkdir -p coverage_html
-WORK_DIR="$(mktemp -d)"
+# Keep the intermediates out of /tmp: temp cleaners running on the host have
+# been observed deleting files under /tmp mid-run, which silently drops
+# packages from the aggregated report. Under the build dir we own the data.
+WORK_DIR="$(mktemp -d "${BUILD_DIR}/.gcov-work.XXXXXX")"
 trap 'rm -rf "${WORK_DIR}"' EXIT
 
 # gcov writes its JSON intermediates into the current directory and names
 # them after the source file, so every gcda is processed in its own
 # subdirectory to prevent clobbering between compilation contexts.
 i=0
+gcov_failed=0
 while IFS= read -r -d '' gcda; do
   mkdir -p "${WORK_DIR}/${i}"
-  (cd "${WORK_DIR}/${i}" && gcov -j -b -c "${gcda}" >/dev/null 2>&1) || true
+  if (cd "${WORK_DIR}/${i}" && gcov -j -b -c "${gcda}" >/dev/null 2>&1); then
+    :
+  else
+    gcov_failed=$((gcov_failed + 1))
+    echo "WARNING: gcov failed on ${gcda} (its lines count as uncovered)" >&2
+  fi
   i=$((i + 1))
 done < <(find "${BUILD_DIR}" -name '*.gcda' -print0)
+if [[ ${gcov_failed} -gt 0 ]]; then
+  echo "WARNING: ${gcov_failed} gcov invocation(s) failed; report may be incomplete" >&2
+fi
 
 python3 - "${ROOT_DIR}" "${WORK_DIR}" "${FAIL_UNDER}" <<'PYEOF'
 import csv
