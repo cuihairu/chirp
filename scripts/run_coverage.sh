@@ -478,9 +478,6 @@ KNOWN_UNCOVERABLE = {
     # internal signal_set/error_code paths (and the shared_ptr capture's
     # throw edge); the handler itself is covered by the SIGINT probe.
     ("services/shared/chat/src/distributed_runtime.cc", 55),
-    # HybridMessageStore PrivateChannelId string concat: untaken arms are
-    # throw edges into the `a + "|" + b` landing pad (bad_alloc).
-    ("services/shared/chat/src/hybrid_message_store.cc", 446),
     # IdentityRegistry Load clash lookup + Bind idempotency tuple equality +
     # game_user_index/by_id stale finds + GetByPlayer/Resolve/Unbind by_id_
     # finds: all by_id_/index maps are written together under mu_, so the
@@ -665,11 +662,11 @@ KNOWN_UNCOVERABLE = {
     # for ParseFromArray / message_id string compare and the loop-empty
     # fall-through attributed to this line; corrupt-entry skip and cold-tier
     # fallback are covered by the store probes.
-    ("services/shared/chat/src/hybrid_message_store.cc", 261),
+    ("services/shared/chat/src/hybrid_message_store.cc", 281),
     # PrivateChannelId ternary: both a<b and b<a orderings are asserted by
     # PrivateChannelIdOrderingAndAccessors; untaken arms are throw edges
     # into the string-concat landing pads.
-    ("services/shared/chat/src/hybrid_message_store.cc", 473),
+    ("services/shared/chat/src/hybrid_message_store.cc", 510),
 }
 
 # Whole functions tests can never execute: deleting-dtors of abstract
