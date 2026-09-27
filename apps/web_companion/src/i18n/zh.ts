@@ -105,6 +105,14 @@ export const zh = {
     online: '在线',
     offline: '离线',
   },
+  gamePresence: {
+    title: '游戏在线状态',
+    note: '开启后好友可见你正在玩的游戏,好友私聊消息也会同步投递进游戏内;关闭后两者都停止。',
+    games: (ids: string[]) => `当前生效:${ids.join('、')}`,
+    noGames: '尚未绑定游戏,绑定后自动开始上报在线状态。',
+    off: '已关闭:好友看不到你的游戏状态,消息也不进游戏。',
+    failed: '设置未保存,请稍后重试。',
+  },
   device: {
     title: '设备管理',
     thisDevice: '本设备',

@@ -4,6 +4,7 @@ import { asConnection, ChatApi, type ChatConnection } from './chat_api';
 import { SocialApi } from './social_api';
 import { PartyApi } from './party_api';
 import { DeviceApi } from './device_api';
+import { GamePresenceApi } from './game_presence_api';
 import { createAuthStore, type AuthState } from '../state/auth_store';
 import { createConversationStore, type ConversationState } from '../state/conversation_store';
 import { createMessageStore, type MessageState } from '../state/message_store';
@@ -16,6 +17,10 @@ import {
   createOnlineDevicesStore,
   type OnlineDevicesState,
 } from '../state/online_devices_store';
+import {
+  createGamePresenceStore,
+  type GamePresenceState,
+} from '../state/game_presence_store';
 import type { Store } from '../state/store';
 
 /**
@@ -40,6 +45,8 @@ export interface Services {
   device: ChatConnection | null;
   /** null when the device plane is not configured; inert when it is down. */
   deviceApi: DeviceApi | null;
+  /** Rides the same app_gateway socket as deviceApi; null without the edge. */
+  gamePresenceApi: GamePresenceApi | null;
   auth: Store<AuthState>;
   conversations: Store<ConversationState>;
   messages: Store<MessageState>;
@@ -50,6 +57,8 @@ export interface Services {
   devices: Store<DeviceState>;
   /** 多端在线（P0）：本账号其他在线端清单。 */
   onlineDevices: Store<OnlineDevicesState>;
+  /** 游戏在线状态（P0）：开关与当前生效的游戏清单。 */
+  gamePresence: Store<GamePresenceState>;
 }
 
 /**
@@ -108,6 +117,7 @@ export function createServices(
   const partyState = createPartyStore();
   const devices = createDeviceStore();
   const onlineDevices = createOnlineDevicesStore();
+  const gamePresence = createGamePresenceStore();
   const api = new ChatApi({
     conn: asConnection(client),
     auth,
@@ -139,6 +149,11 @@ export function createServices(
   const deviceApi = deviceConn
     ? new DeviceApi({ conn: asConnection(deviceConn), auth, devices })
     : null;
+  // Same app_gateway socket: the presence RPCs are the edge's other
+  // self-service surface (player_id pinned server-side like the device RPCs).
+  const gamePresenceApi = deviceConn
+    ? new GamePresenceApi({ conn: asConnection(deviceConn), auth, presence: gamePresence })
+    : null;
 
   return {
     client,
@@ -149,6 +164,7 @@ export function createServices(
     partyApi,
     device: deviceConn,
     deviceApi,
+    gamePresenceApi,
     auth,
     conversations,
     messages,
@@ -158,6 +174,7 @@ export function createServices(
     partyState,
     devices,
     onlineDevices,
+    gamePresence,
   };
 }
 

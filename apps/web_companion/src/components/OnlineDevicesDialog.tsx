@@ -1,4 +1,5 @@
-import { Badge, Button, Dialog, DialogActions, DialogContent, DialogTitle, List, ListItem, ListItemText, Typography } from '@mui/material';
+import { useEffect, useState } from 'react';
+import { Badge, Box, Button, Dialog, DialogActions, DialogContent, DialogTitle, Divider, FormControlLabel, List, ListItem, ListItemText, Switch, Typography } from '@mui/material';
 import { useServices } from '../api/services';
 import { useStoreValue } from '../state/store';
 import { onlineDevicesOf } from '../state/online_devices_store';
@@ -8,6 +9,9 @@ import { zh } from '../i18n/zh';
  * 多端在线（P0）：本账号当前其他在线端的最小只读视图。数据来自登录响应的
  * online_devices 初始清单与 DEVICES_PRESENCE_NOTIFY 变更事件（chat 平面，
  * 随主连接到达，无需独立服务面）。
+ *
+ * 附带「游戏在线状态」开关（游戏在线状态任务）：走 app_gateway 同一 socket,
+ * 关闭后好友既看不到「正在玩 X」,好友私聊也不再投递进游戏。
  */
 export default function OnlineDevicesDialog({
   open,
@@ -16,8 +20,23 @@ export default function OnlineDevicesDialog({
   open: boolean;
   onClose: () => void;
 }) {
-  const { onlineDevices } = useServices();
+  const { onlineDevices, gamePresence, gamePresenceApi } = useServices();
   const devices = onlineDevicesOf(useStoreValue(onlineDevices));
+  const presence = useStoreValue(gamePresence);
+  const [failed, setFailed] = useState(false);
+
+  // 打开即取权威快照:开关默认值(未设置过 → true)与生效游戏清单只有服务端知道。
+  useEffect(() => {
+    if (open && gamePresenceApi) {
+      setFailed(false);
+      void gamePresenceApi.refresh();
+    }
+  }, [open, gamePresenceApi]);
+
+  const toggle = async (enabled: boolean): Promise<void> => {
+    if (!gamePresenceApi) return;
+    setFailed(!(await gamePresenceApi.setEnabled(enabled)));
+  };
 
   return (
     <Dialog open={open} onClose={onClose} maxWidth="xs" fullWidth>
@@ -52,6 +71,39 @@ export default function OnlineDevicesDialog({
               </ListItem>
             ))}
           </List>
+        )}
+        {gamePresenceApi && (
+          <Box sx={{ mt: 1 }} data-testid="game-presence-section">
+            <Divider sx={{ mb: 1 }} />
+            <FormControlLabel
+              data-testid="game-presence-toggle"
+              control={
+                <Switch
+                  checked={presence.enabled}
+                  disabled={!presence.loaded}
+                  onChange={(e) => void toggle(e.target.checked)}
+                />
+              }
+              label={zh.gamePresence.title}
+            />
+            <Typography variant="caption" color="text.secondary" display="block">
+              {zh.gamePresence.note}
+            </Typography>
+            {presence.loaded && (
+              <Typography variant="caption" color="text.secondary" display="block" data-testid="game-presence-state">
+                {!presence.enabled
+                  ? zh.gamePresence.off
+                  : presence.games.length > 0
+                    ? zh.gamePresence.games(presence.games)
+                    : zh.gamePresence.noGames}
+              </Typography>
+            )}
+            {failed && (
+              <Typography variant="caption" color="error" display="block" data-testid="game-presence-failed">
+                {zh.gamePresence.failed}
+              </Typography>
+            )}
+          </Box>
         )}
       </DialogContent>
       <DialogActions>
