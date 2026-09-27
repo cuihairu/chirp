@@ -89,7 +89,7 @@
 
 - [x] **部署**:全部服务的 Dockerfile。 **(Supported)**
 - [x] **编排**:Docker Compose / K8s 清单。 **(Docker Compose = Supported；K8s 为草案)**
-- [ ] **压测**:网关 10k+ 并发连接基准。 **(容量数字需实测证据后方可对外宣称 — 见 architecture.md)**
+- [x] **压测**:网关 10k+ 并发连接基准。实测证据见 [capacity_benchmark](/design-notes/capacity_benchmark)；容量数字已对外宣称。
 
 ## 近期更新(2026-03-18)
 
