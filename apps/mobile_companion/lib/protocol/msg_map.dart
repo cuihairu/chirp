@@ -4,6 +4,7 @@ import 'dart:typed_data';
 
 import 'package:chirp_proto/proto/auth.pb.dart' as auth;
 import 'package:chirp_proto/proto/chat.pb.dart' as chat;
+import 'package:chirp_proto/proto/game_server_gateway.pb.dart' as game_server_gateway;
 import 'package:chirp_proto/proto/notification.pb.dart' as notification;
 // party.KickMemberRequest/Response collide with chat's and are hidden from
 // the barrel; the party file comes in directly, prefixed.
@@ -172,3 +173,17 @@ const getUserDevices = MessageSpec<notification.GetUserDevicesResponse>(
     MsgID.GET_USER_DEVICES_REQ,
     MsgID.GET_USER_DEVICES_RESP,
     notification.GetUserDevicesResponse.fromBuffer);
+
+// 游戏在线状态（游戏在线状态任务, app_gateway self-service like the WP-8
+// block): the per-player switch for the friend-facing "in game X" status and
+// the friend-DM relay into the game plane. Binding opts in by default (the
+// switch reads true when never set); the server pins player_id.
+const setGamePresenceEnabled =
+    MessageSpec<game_server_gateway.SetGamePresenceEnabledResponse>(
+        MsgID.SET_GAME_PRESENCE_ENABLED_REQ,
+        MsgID.SET_GAME_PRESENCE_ENABLED_RESP,
+        game_server_gateway.SetGamePresenceEnabledResponse.fromBuffer);
+const getGamePresence = MessageSpec<game_server_gateway.GetGamePresenceResponse>(
+    MsgID.GET_GAME_PRESENCE_REQ,
+    MsgID.GET_GAME_PRESENCE_RESP,
+    game_server_gateway.GetGamePresenceResponse.fromBuffer);

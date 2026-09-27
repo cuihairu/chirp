@@ -5,6 +5,7 @@ import '../protocol/chat_connection.dart';
 import '../state/auth_store.dart';
 import '../state/conversation_store.dart';
 import '../state/device_store.dart';
+import '../state/game_presence_store.dart';
 import '../state/friend_store.dart';
 import '../state/message_store.dart';
 import '../state/online_devices_store.dart';
@@ -13,6 +14,7 @@ import '../state/store.dart';
 import '../state/typing_presence.dart';
 import 'chat_api.dart';
 import 'device_api.dart';
+import 'game_presence_api.dart';
 import 'local_notifications.dart';
 import 'party_api.dart';
 import 'social_api.dart';
@@ -35,12 +37,14 @@ class Services {
     required this.partyState,
     required this.devices,
     required this.onlineDevices,
+    required this.gamePresence,
     this.social,
     this.socialApi,
     this.party,
     this.partyApi,
     this.device,
     this.deviceApi,
+    this.gamePresenceApi,
     this.notifications,
   });
 
@@ -65,6 +69,9 @@ class Services {
   /// null when the device plane is not configured; inert when it is down.
   final DeviceApi? deviceApi;
 
+  /// Rides the same app_gateway socket as deviceApi; null without the edge.
+  final GamePresenceApi? gamePresenceApi;
+
   /// Local notification surface (shared with the root widget); null in tests.
   final LocalNotifications? notifications;
   final AuthStore auth;
@@ -77,6 +84,8 @@ class Services {
   final Store<DeviceState> devices;
   /// 多端在线（P0）：本账号其他在线端清单。
   final Store<OnlineDevicesState> onlineDevices;
+  /// 游戏在线状态（P0）：开关与当前生效的游戏清单。
+  final Store<GamePresenceState> gamePresence;
 
   /// Chat login, then best-effort logins on the degradeable planes.
   Future<void> loginAll(String userId) async {
@@ -84,10 +93,13 @@ class Services {
     await socialApi?.login(userId).catchError((Object _) => false);
     await partyApi?.login(userId).catchError((Object _) => false);
     await deviceApi?.login(userId).catchError((Object _) => false);
+    // 开关镜像随设备面登录一起拉取(app_gateway 同一 socket)。
+    await gamePresenceApi?.onLoggedIn().catchError((Object _) => false);
   }
 
   /// Everything signs out; chat last (it owns the auth store reset).
   Future<void> logoutAll() async {
+    gamePresenceApi?.logout();
     deviceApi?.logout();
     socialApi?.logout();
     partyApi?.logout();
@@ -144,6 +156,7 @@ Services createServices({
   final partyState = createPartyStore();
   final devices = createDeviceStore();
   final onlineDevices = createOnlineDevicesStore();
+  final gamePresence = createGamePresenceStore();
   final api = ChatApi(
     conn: client,
     auth: auth,
@@ -176,6 +189,11 @@ Services createServices({
           devices: devices,
           deviceSummary: deviceSummary,
         );
+  // Same app_gateway socket: the presence RPCs are the edge's other
+  // self-service surface (player_id pinned server-side like the device RPCs).
+  final gamePresenceApi = deviceConn2 == null
+      ? null
+      : GamePresenceApi(conn: deviceConn2, auth: auth, presence: gamePresence);
 
   return Services(
     client: client,
@@ -186,6 +204,7 @@ Services createServices({
     partyApi: partyApi,
     device: deviceConn2,
     deviceApi: deviceApi,
+    gamePresenceApi: gamePresenceApi,
     notifications: notifications,
     auth: auth,
     conversations: conversations,
@@ -196,5 +215,6 @@ Services createServices({
     partyState: partyState,
     devices: devices,
     onlineDevices: onlineDevices,
+    gamePresence: gamePresence,
   );
 }

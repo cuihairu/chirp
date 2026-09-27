@@ -7,6 +7,7 @@ import '../../api/services.dart';
 import '../../api/social_api.dart';
 import '../../protocol/errors.dart';
 import '../../state/conversation_store.dart';
+import '../../state/game_presence_store.dart';
 import '../../state/models.dart';
 import '../../state/online_devices_store.dart';
 import '../../state/party_store.dart';
@@ -62,6 +63,8 @@ class _HomeScreenState extends State<HomeScreen> {
       widget.services.auth,
       // 多端在线（P0）：我的页的在线设备清单跟随变更事件刷新。
       widget.services.onlineDevices,
+      // 游戏在线状态（P0）：开关镜像。
+      widget.services.gamePresence,
     ]);
     return Scaffold(
       appBar: AppBar(
@@ -438,6 +441,8 @@ class _HomeScreenState extends State<HomeScreen> {
     final deviceApi = widget.services.deviceApi;
     // 多端在线（P0）：其他类型端的在线清单（登录初始 + 变更事件）。
     final onlineDevices = onlineDevicesOf(widget.services.onlineDevices.value);
+    final gamePresence = widget.services.gamePresence.value;
+    final gamePresenceApi = widget.services.gamePresenceApi;
     return ListView(
       children: [
         ListTile(
@@ -459,6 +464,21 @@ class _HomeScreenState extends State<HomeScreen> {
               title: Text('${device.platform} · ${device.deviceId}'),
               trailing: Text(device.online ? '在线' : '离线'),
             ),
+        const _SectionHeader('游戏在线状态'),
+        // 开关走 app_gateway（与设备面同一 socket）。关闭后好友既看不到
+        // 「正在玩 X」，好友私聊也不再投递进游戏；绑定游戏即默认开启。
+        if (gamePresenceApi != null) ...[
+          SwitchListTile(
+            key: const Key('game-presence-switch'),
+            title: const Text('游戏在线状态'),
+            subtitle: Text(_gamePresenceSubtitle(gamePresence)),
+            value: gamePresence.enabled,
+            // 从未拉到权威快照前不可点:默认值只有服务端知道。
+            onChanged: gamePresence.loaded && !gamePresence.unavailable
+                ? (v) => unawaited(_setGamePresence(v))
+                : null,
+          ),
+        ],
         const _SectionHeader('我的设备'),
         if (devices.unavailable)
           const Padding(
@@ -509,6 +529,21 @@ class _HomeScreenState extends State<HomeScreen> {
         ),
       ],
     );
+  }
+
+  String _gamePresenceSubtitle(GamePresenceState state) {
+    if (state.unavailable) return '游戏在线服务未连接,设置暂不可修改';
+    if (!state.enabled) return '已关闭:好友看不到你的游戏状态,消息也不进游戏';
+    if (state.games.isEmpty) return '尚未绑定游戏,绑定后自动开始上报在线状态';
+    return '当前生效:${state.games.join('、')}';
+  }
+
+  Future<void> _setGamePresence(bool enabled) async {
+    final api = widget.services.gamePresenceApi;
+    if (api == null) return;
+    final ok = await api.setEnabled(enabled);
+    if (!mounted) return;
+    _showSnack(ok ? (enabled ? '已开启游戏在线状态' : '已关闭游戏在线状态') : '设置未保存,请稍后重试');
   }
 
   Future<void> _requestNotificationPermission() async {
