@@ -1083,9 +1083,11 @@ TEST(ChatPeerHubTest, ServiceIdForGameResolvesTheLiveSpoke) {
   chirp::common::Logger::Instance().SetLevel(chirp::common::Logger::Level::kError);
   asio::io_context io;
   HubEvents events;
+  auto opts = HubTestOptions();
+  opts.allowed_peers["game_chat2"] = "peer-s3cret";
   auto hub = chirp::network::ChatPeerHub::Create(
-      io, HubTestOptions(), [](const std::string&, const std::string&, int32_t,
-                               const std::vector<chirp::gateway::PeerCapability>&) {},
+      io, opts, [](const std::string&, const std::string&, int32_t,
+                   const std::vector<chirp::gateway::PeerCapability>&) {},
       [](const std::string&, const std::string&) {},
       [](const std::string&, const chirp::gateway::ChannelMessageNotify&) {});
   hub->Start();
@@ -1111,9 +1113,263 @@ TEST(ChatPeerHubTest, ServiceIdForGameResolvesTheLiveSpoke) {
   asio::post(io, [&] { other.set_value(hub->service_id_for_game("other-game")); });
   EXPECT_EQ(other.get_future().get(), "");
 
+  // A second spoke on another game: the scan walks past non-matching entries
+  // (peers_ is keyed by service_id, so "game_chat" sorts before "game_chat2").
+  TestPeerClient client2(hub->port());
+  chirp::gateway::PeerRegisterResp resp2;
+  ASSERT_TRUE(RegisterAndGetResp(client2, MakeRegisterReq("game_chat2", "peer-s3cret",
+                                                          "game43"),
+                                 resp2));
+  ASSERT_EQ(resp2.code(), chirp::common::OK);
+
+  std::promise<std::string> second;
+  asio::post(io, [&] { second.set_value(hub->service_id_for_game("game43")); });
+  EXPECT_EQ(second.get_future().get(), "game_chat2");
+
   hub->Stop();
   runner.Drain();
   runner.Finish();
+}
+
+// A declared frame size above kMaxFrameBytes drops the connection right at
+// the header; no body ever needs to arrive.
+TEST(ChatPeerHubTest, OversizedDeclaredFrameDropsConnection) {
+  chirp::common::Logger::Instance().SetLevel(chirp::common::Logger::Level::kError);
+  asio::io_context io;
+  auto hub = chirp::network::ChatPeerHub::Create(
+      io, HubTestOptions(), [](const std::string&, const std::string&, int32_t,
+                               const std::vector<chirp::gateway::PeerCapability>&) {},
+      [](const std::string&, const std::string&) {},
+      [](const std::string&, const chirp::gateway::ChannelMessageNotify&) {});
+  hub->Start();
+  HubIoRunner runner(io);
+
+  TestPeerClient client(hub->port());
+  std::string header(4, '\0');
+  chirp::network::WriteU32BE(reinterpret_cast<uint8_t*>(header.data()),
+                             4u * 1024u * 1024u + 1);
+  client.SendRaw(header);
+  EXPECT_FALSE(client.Read(std::chrono::seconds(1)));  // hub closed the conn
+
+  // The hub is unharmed: a normal peer still registers.
+  TestPeerClient healthy(hub->port());
+  chirp::gateway::PeerRegisterResp resp;
+  ASSERT_TRUE(RegisterAndGetResp(healthy, MakeRegisterReq(), resp));
+  EXPECT_EQ(resp.code(), chirp::common::OK);
+
+  hub->Stop();
+  runner.Drain();
+  runner.Finish();
+}
+
+// Dropping the socket mid-body hits the body read's error arm; the hub keeps
+// serving later connections.
+TEST(ChatPeerHubTest, MidBodyDisconnectDoesNotPoisonTheHub) {
+  chirp::common::Logger::Instance().SetLevel(chirp::common::Logger::Level::kError);
+  asio::io_context io;
+  auto hub = chirp::network::ChatPeerHub::Create(
+      io, HubTestOptions(), [](const std::string&, const std::string&, int32_t,
+                               const std::vector<chirp::gateway::PeerCapability>&) {},
+      [](const std::string&, const std::string&) {},
+      [](const std::string&, const chirp::gateway::ChannelMessageNotify&) {});
+  hub->Start();
+  HubIoRunner runner(io);
+
+  TestPeerClient client(hub->port());
+  std::string partial(4, '\0');
+  chirp::network::WriteU32BE(reinterpret_cast<uint8_t*>(partial.data()), 64);
+  partial.append(4, '\0');  // only 4 of the promised 64 body bytes
+  client.SendRaw(partial);
+  client.Close();
+
+  // The strand drains the failed body read before this fresh conn's traffic
+  // (FIFO), so a clean registration proves the hub recovered.
+  TestPeerClient next(hub->port());
+  chirp::gateway::PeerRegisterResp resp;
+  ASSERT_TRUE(RegisterAndGetResp(next, MakeRegisterReq(), resp));
+  EXPECT_EQ(resp.code(), chirp::common::OK);
+
+  hub->Stop();
+  runner.Drain();
+  runner.Finish();
+}
+
+// Closing one unregistered conn scans past the other holding-pen entries.
+TEST(ChatPeerHubTest, UnregisteredConnCloseScansPastOlderPenEntries) {
+  chirp::common::Logger::Instance().SetLevel(chirp::common::Logger::Level::kError);
+  asio::io_context io;
+  auto hub = chirp::network::ChatPeerHub::Create(
+      io, HubTestOptions(), [](const std::string&, const std::string&, int32_t,
+                               const std::vector<chirp::gateway::PeerCapability>&) {},
+      [](const std::string&, const std::string&) {},
+      [](const std::string&, const chirp::gateway::ChannelMessageNotify&) {});
+  hub->Start();
+  HubIoRunner runner(io);
+
+  TestPeerClient first(hub->port());
+  TestPeerClient second(hub->port());
+  // Garbage body: a well-formed header promising 4 bytes the hub cannot parse
+  // as a Packet, so `second` is closed as a bad frame.
+  std::string frame(4, '\0');
+  chirp::network::WriteU32BE(reinterpret_cast<uint8_t*>(frame.data()), 4);
+  frame.append(4, '\xff');
+  second.SendRaw(frame);
+  EXPECT_FALSE(second.Read(std::chrono::seconds(1)));
+
+  // `first` entered the pen before `second` could send anything (the hub arms
+  // a conn's reads only after pushing the previously accepted conn), so the
+  // scan above had to step over `first` while looking for `second`.
+  chirp::gateway::PeerRegisterResp resp;
+  ASSERT_TRUE(RegisterAndGetResp(first, MakeRegisterReq(), resp));
+  EXPECT_EQ(resp.code(), chirp::common::OK);
+
+  hub->Stop();
+  runner.Drain();
+  runner.Finish();
+}
+
+// An unregistered conn silent past the idle window is dropped without ever
+// reaching on_dropped_; the warn path names it "(unregistered)".
+TEST(ChatPeerHubTest, IdleTimeoutDropsSilentUnregisteredConn) {
+  chirp::common::Logger::Instance().SetLevel(chirp::common::Logger::Level::kError);
+  asio::io_context io;
+  HubEvents events;
+  auto hub = chirp::network::ChatPeerHub::Create(
+      io, HubTestOptions(1),
+      [](const std::string&, const std::string&, int32_t,
+         const std::vector<chirp::gateway::PeerCapability>&) {},
+      [&](const std::string& id, const std::string& reason) {
+        std::lock_guard<std::mutex> lock(events.mu);
+        events.dropped.emplace_back(id, reason);
+      },
+      [](const std::string&, const chirp::gateway::ChannelMessageNotify&) {});
+  hub->Start();
+  HubIoRunner runner(io);
+
+  // Connect and stay silent: the idle window clamps to 2s for unregistered
+  // conns, so the hub drops the conn on its own.
+  TestPeerClient client(hub->port());
+  EXPECT_FALSE(client.Read(std::chrono::seconds(5)));
+
+  hub->Stop();
+  runner.Drain();
+  runner.Finish();
+  std::lock_guard<std::mutex> lock(events.mu);
+  EXPECT_TRUE(events.dropped.empty());
+}
+
+// A registered peer silent past the idle window is dropped with a "timeout"
+// report that names its service id.
+TEST(ChatPeerHubTest, RegisteredPeerIdleTimeoutReportsTimeout) {
+  chirp::common::Logger::Instance().SetLevel(chirp::common::Logger::Level::kError);
+  asio::io_context io;
+  HubEvents events;
+  auto hub = chirp::network::ChatPeerHub::Create(
+      io, HubTestOptions(1),
+      [](const std::string&, const std::string&, int32_t,
+         const std::vector<chirp::gateway::PeerCapability>&) {},
+      [&](const std::string& id, const std::string& reason) {
+        std::lock_guard<std::mutex> lock(events.mu);
+        events.dropped.emplace_back(id, reason);
+      },
+      [](const std::string&, const chirp::gateway::ChannelMessageNotify&) {});
+  hub->Start();
+  HubIoRunner runner(io);
+
+  TestPeerClient client(hub->port());
+  chirp::gateway::PeerRegisterResp resp;
+  ASSERT_TRUE(RegisterAndGetResp(client, MakeRegisterReq(), resp));
+  ASSERT_EQ(resp.code(), chirp::common::OK);
+
+  // Idle window clamps to 2s; going silent after registering trips it.
+  EXPECT_TRUE(WaitFor([&] {
+    std::lock_guard<std::mutex> lock(events.mu);
+    return events.dropped.size() == 1 && events.dropped[0].first == "game_chat" &&
+           events.dropped[0].second == "timeout";
+  }, std::chrono::seconds(5)));
+  EXPECT_FALSE(client.Read(std::chrono::seconds(1)));  // conn was closed
+
+  hub->Stop();
+  runner.Drain();
+  runner.Finish();
+}
+
+// A body read still pending when the conn is displaced completes after Close
+// set the flag: the handler must bow out on the closing guard instead of
+// reporting the aborted read as a connection loss.
+TEST(ChatPeerHubTest, DisplacedConnPendingBodyBowsOutOnClosingGuard) {
+  chirp::common::Logger::Instance().SetLevel(chirp::common::Logger::Level::kError);
+  asio::io_context io;
+  auto hub = chirp::network::ChatPeerHub::Create(
+      io, HubTestOptions(), [](const std::string&, const std::string&, int32_t,
+                               const std::vector<chirp::gateway::PeerCapability>&) {},
+      [](const std::string&, const std::string&) {},
+      [](const std::string&, const chirp::gateway::ChannelMessageNotify&) {});
+  hub->Start();
+  HubIoRunner runner(io);
+
+  TestPeerClient first(hub->port());
+  chirp::gateway::PeerRegisterResp resp;
+  ASSERT_TRUE(RegisterAndGetResp(first, MakeRegisterReq("game_chat", "peer-s3cret",
+                                                        "game42"),
+                                 resp));
+  ASSERT_EQ(resp.code(), chirp::common::OK);
+
+  // Leave a body read pending: the header promises 64 bytes, 4 arrive.
+  std::string partial(4, '\0');
+  chirp::network::WriteU32BE(reinterpret_cast<uint8_t*>(partial.data()), 64);
+  partial.append(4, '\0');
+  first.SendRaw(partial);
+
+  // Displacement closes `first` while its body read is still in flight; the
+  // aborted completion observes closing and returns early.
+  TestPeerClient second(hub->port());
+  ASSERT_TRUE(RegisterAndGetResp(second, MakeRegisterReq("game_chat", "peer-s3cret",
+                                                         "game43"),
+                                 resp));
+  ASSERT_EQ(resp.code(), chirp::common::OK);
+  EXPECT_FALSE(first.Read(std::chrono::seconds(1)));  // displaced conn was closed
+
+  hub->Stop();
+  runner.Drain();
+  runner.Finish();
+}
+
+// A conn closed for a protocol violation still has its idle timer armed: the
+// timer completion must observe the closing flag and bow out silently (no
+// second close, no drop report) when it fires.
+TEST(ChatPeerHubTest, IdleTimerAfterProtocolErrorBowsOutOnClosingFlag) {
+  chirp::common::Logger::Instance().SetLevel(chirp::common::Logger::Level::kError);
+  asio::io_context io;
+  HubEvents events;
+  auto hub = chirp::network::ChatPeerHub::Create(
+      io, HubTestOptions(1),
+      [](const std::string&, const std::string&, int32_t,
+         const std::vector<chirp::gateway::PeerCapability>&) {},
+      [&](const std::string& id, const std::string& reason) {
+        std::lock_guard<std::mutex> lock(events.mu);
+        events.dropped.emplace_back(id, reason);
+      },
+      [](const std::string&, const chirp::gateway::ChannelMessageNotify&) {});
+  hub->Start();
+  HubIoRunner runner(io);
+
+  // An unregistered conn speaking a registered-only protocol fires the
+  // protocol-error close; its 2s idle timer stays armed.
+  TestPeerClient client(hub->port());
+  chirp::gateway::HeartbeatPing ping;
+  client.Send(MakePacket(chirp::gateway::HEARTBEAT_PING, 1, ping));
+  EXPECT_FALSE(client.Read(std::chrono::seconds(1)));  // closed by the hub
+
+  // Let the idle timer complete against the closed conn; nothing may come of
+  // it (no drop report for an unregistered conn, no crash).
+  std::this_thread::sleep_for(std::chrono::milliseconds(2500));
+
+  hub->Stop();
+  runner.Drain();
+  runner.Finish();
+  std::lock_guard<std::mutex> lock(events.mu);
+  EXPECT_TRUE(events.dropped.empty());
 }
 
 TEST(ChatPeerHubTest, RejectsUnknownPeer) {

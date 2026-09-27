@@ -933,6 +933,61 @@ TEST_F(RedisLoopbackTest, MessageRouterDeliversSubscribedMessages) {
   router.Stop();
 }
 
+// A handler whose target exceeds std::function's small buffer and a payload
+// past the SSO length exercise the heap arms of the dispatch lambda's
+// init-captures.
+TEST_F(RedisLoopbackTest, MessageRouterDispatchMovesBigHandlersAndLongPayloads) {
+  std::atomic<int> publishes{0};
+  std::vector<std::string> subscribed;
+  std::mutex mu;
+  chirp_test::FakeRedisServer fake([&](const std::vector<std::string>& args) {
+    return DefaultRouter(publishes, subscribed, mu, args);
+  });
+
+  asio::io_context io;
+  MessageRouter router(io, "127.0.0.1", fake.port());
+  ASSERT_TRUE(router.Start());
+
+  std::promise<std::string> got_msg;
+  auto msg_future = got_msg.get_future();
+  struct BigHandler {
+    char pad[160];
+  };
+  auto big = std::make_shared<BigHandler>();
+  router.SubscribeUserChat("alice", [big, &got_msg](const std::string& msg) {
+    big->pad[0] = 'x';
+    got_msg.set_value(msg);
+  });
+
+  // Router only knows how to deliver after the subscription callback fired.
+  {
+    const auto deadline = std::chrono::steady_clock::now() +
+                          std::chrono::milliseconds(3000);
+    while (std::chrono::steady_clock::now() < deadline) {
+      {
+        std::lock_guard<std::mutex> lock(mu);
+        if (!subscribed.empty()) break;
+      }
+      std::this_thread::sleep_for(std::chrono::milliseconds(2));
+    }
+  }
+  fake.Publish("chirp:chat:user:alice", "routed-payload-longer-than-fifteen-chars");
+
+  // The router posts the callback onto its io_context.
+  const auto deadline = std::chrono::steady_clock::now() + std::chrono::milliseconds(3000);
+  while (std::chrono::steady_clock::now() < deadline &&
+         msg_future.wait_for(std::chrono::milliseconds(0)) != std::future_status::ready) {
+    io.poll();
+    io.restart();
+    std::this_thread::sleep_for(std::chrono::milliseconds(2));
+  }
+  ASSERT_EQ(msg_future.wait_for(std::chrono::milliseconds(1000)),
+            std::future_status::ready);
+  EXPECT_EQ(msg_future.get(), "routed-payload-longer-than-fifteen-chars");
+
+  router.Stop();
+}
+
 TEST_F(WebSocketUtilTest, EncodeBase64AllLengthClasses) {
   using chirp::network::EncodeBase64;
   // len % 3 == 0

@@ -3266,6 +3266,57 @@ TEST_F(SdkClientTest, RequestWithHeapFunctionCallbackReportsNotConnected) {
   EXPECT_EQ(future.get(), chirp::sdk::make_error_code(ChatError::NotConnected));
 }
 
+// The typed convenience methods share the same NotConnected shortcut; long
+// argument strings plus heap-backed callbacks drive the non-SSO arms of the
+// asio::post init-captures on those entry lines.
+TEST_F(SdkClientTest, ConvenienceMethodsLongArgsHeapCallbacksReportNotConnected) {
+  ChatClient client(TcpConfig());
+  BigCallbackCapture big;
+  const std::string long_id(32, 'i');
+  const std::string long_name(24, 'n');
+  const std::string long_desc(40, 'd');
+  const std::string long_query(20, 'q');
+  const std::vector<std::string> long_ids{std::string(32, 'a'), std::string(32, 'b')};
+  const auto not_connected = chirp::sdk::make_error_code(ChatError::NotConnected);
+
+  struct Done {
+    std::promise<std::error_code> reactions, receipts, bulk, mentions, create,
+        join, leave, invite, kick, info;
+  } done;
+
+  // Big capture -> std::function target lives on the heap, so the post
+  // closure's cb init-capture takes the heap move arm instead of the SBO one.
+  auto notifier = [big](std::promise<std::error_code>& p) {
+    return [big, &p](const std::error_code& ec, const auto&) { p.set_value(ec); };
+  };
+  auto expect_nc = [&](std::future<std::error_code> f) {
+    ASSERT_EQ(f.wait_for(std::chrono::milliseconds(kWaitMs)), std::future_status::ready);
+    EXPECT_EQ(f.get(), not_connected);
+  };
+
+  client.FetchReactions(long_id, "emoji-long-enough-for-heap", notifier(done.reactions));
+  client.FetchReadReceipts(long_id, notifier(done.receipts));
+  client.BulkDeleteMessages(long_ids, long_id, notifier(done.bulk));
+  client.FetchMentionSuggestions(long_id, long_query, notifier(done.mentions));
+  client.CreateGroup(long_name, long_desc, notifier(done.create));
+  client.JoinGroup(long_id, notifier(done.join));
+  client.LeaveGroup(long_id, notifier(done.leave));
+  client.InviteToGroup(long_id, long_id, notifier(done.invite));
+  client.KickMember(long_id, long_id, notifier(done.kick));
+  client.FetchGroupInfo(long_id, notifier(done.info));
+
+  expect_nc(done.reactions.get_future());
+  expect_nc(done.receipts.get_future());
+  expect_nc(done.bulk.get_future());
+  expect_nc(done.mentions.get_future());
+  expect_nc(done.create.get_future());
+  expect_nc(done.join.get_future());
+  expect_nc(done.leave.get_future());
+  expect_nc(done.invite.get_future());
+  expect_nc(done.kick.get_future());
+  expect_nc(done.info.get_future());
+}
+
 // ---------------------------------------------------------------------------
 // Convenience API(类型化请求-响应便捷方法)端到端:每个方法至少一条往返
 // 用例(请求字段透传 + 响应解析);本地参数校验、NotConnected、BadResponse、

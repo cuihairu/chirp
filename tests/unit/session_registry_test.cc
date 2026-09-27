@@ -49,6 +49,10 @@ TEST(SessionRegistryTest, NormalizeDeviceAndPlatformDefaults) {
   EXPECT_EQ(NormalizeDeviceId("phone-a"), "phone-a");
   EXPECT_EQ(NormalizePlatformId(""), "default");
   EXPECT_EQ(NormalizePlatformId("web"), "web");
+  // Heap-sized ids exercise the non-SSO construction arm of the returned
+  // strings (the SSO halves are the assertions above).
+  EXPECT_EQ(NormalizeDeviceId(std::string(24, 'd')), std::string(24, 'd'));
+  EXPECT_EQ(NormalizePlatformId(std::string(24, 'p')), std::string(24, 'p'));
 }
 
 TEST(SessionRegistryTest, SessionToUserWithoutDeviceMapRebindsCleanly) {
@@ -391,6 +395,24 @@ TEST(SessionRegistryTest, RemoveStalePlatformEntryInSessionToPlatform) {
   EXPECT_EQ(state->session_to_user.count(web.get()), 0u);
 }
 
+TEST(SessionRegistryTest, RemoveSessionWithVanishedDeviceEntryReadsEmptyDevice) {
+  // Removing a session whose device metadata is already gone (zombie shape,
+  // same as the vanished user/platform entries) must read the device lookup
+  // as a miss instead of dereferencing the missing map entry.
+  auto state = std::make_shared<SessionRegistry>();
+  auto session = std::make_shared<FakeSession>();
+
+  ASSERT_FALSE(BindAuthenticatedSession(state, "alice", "s1", "tab-1", session, "web"));
+  state->session_to_device.erase(session.get());
+
+  std::string removed_user, removed_device, removed_platform;
+  EXPECT_TRUE(RemoveAuthenticatedSession(state, session, &removed_user, &removed_device,
+                                         &removed_platform));
+  EXPECT_EQ(removed_user, "alice");
+  EXPECT_EQ(removed_device, "");
+  EXPECT_EQ(removed_platform, "web");
+}
+
 TEST(SessionRegistryTest, ListOnlineDevicesReportsPlatformAndDevice) {
   auto state = std::make_shared<SessionRegistry>();
   auto web = std::make_shared<FakeSession>();
@@ -416,11 +438,25 @@ TEST(SessionRegistryTest, ListOnlineDevicesReportsPlatformAndDevice) {
   ASSERT_EQ(without_web.size(), 1u);
   EXPECT_EQ(without_web[0].platform, "ios");
   EXPECT_EQ(without_web[0].device_id, "phone-a");
+
+  // device_id is metadata: a live binding whose device entry is missing
+  // still lists, just with an empty id (the find-miss arm of the fill).
+  state->session_to_device.erase(phone.get());
+  const auto healed = ListOnlineDevices(state, "alice");
+  ASSERT_EQ(healed.size(), 2u);
+  for (const auto& info : healed) {
+    if (info.platform == "ios") {
+      EXPECT_EQ(info.device_id, "");
+    }
+  }
 }
 
 TEST(SessionRegistryTest, LoginKickReasonNamesPlatformWithLegacyFallback) {
   EXPECT_EQ(LoginKickReason("web"), "logged in on another web");
   EXPECT_EQ(LoginKickReason("ios"), "logged in on another ios");
+  // A heap-sized platform exercises the append-realloc arm of the concat.
+  EXPECT_EQ(LoginKickReason(std::string(20, 'p')),
+            "logged in on another " + std::string(20, 'p'));
   // 归一化的 "default" 不该出现在玩家可见文案里：空 platform 回退旧文案。
   EXPECT_EQ(LoginKickReason(""), "logged in on another device");
 }

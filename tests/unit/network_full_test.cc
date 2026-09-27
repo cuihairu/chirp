@@ -14,6 +14,7 @@
 #include <cstdlib>
 #include <deque>
 #include <future>
+#include <limits>
 #include <memory>
 #include <mutex>
 #include <optional>
@@ -691,6 +692,18 @@ TEST_F(RedisClientTest, ListAndKeysCommands) {
   // KEYS mixes bulk and simple strings; both are returned.
   EXPECT_EQ(client.Keys("k*"), (std::vector<std::string>{"k1", "ok2"}));
 
+  // The int64 extremes produce >15-char to_string results and the long
+  // keys/pattern force heap construction of the command-argument strings
+  // (short ones stay in the SSO buffer). The mock answers with the same
+  // scripted reply regardless of the argument.
+  EXPECT_EQ(client.LRange("list-with-a-longer-than-15-char-key",
+                          std::numeric_limits<int64_t>::min(),
+                          std::numeric_limits<int64_t>::max()),
+            (std::vector<std::string>{"abc", "def"}));
+  EXPECT_TRUE(client.Expire("expire-key-longer-than-fifteen-chars", 1));
+  EXPECT_EQ(client.Keys(std::string("pat-").append(20, 'x')),
+            (std::vector<std::string>{"k1", "ok2"}));
+
   MockRedisServer not_array;
   not_array.Start({
       {"LRANGE", "+OK\r\n"},
@@ -855,6 +868,12 @@ TEST(RedisSubscriberTest, LifecycleDeliversMessages) {
   }
 
   EXPECT_TRUE(sub.Unsubscribe("room1"));
+
+  // A >15-char channel exercises the heap-construction arm of the temporary
+  // command strings (the short ones above stay in the SSO buffer).
+  EXPECT_TRUE(sub.Subscribe("chirp:chat:user:long-name"));
+  EXPECT_TRUE(sub.Unsubscribe("chirp:chat:user:long-name"));
+
   sub.Stop();
   EXPECT_FALSE(sub.IsConnected());
 
