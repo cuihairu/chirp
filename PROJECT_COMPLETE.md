@@ -27,9 +27,11 @@ scripts/run_coverage.sh     # 13 个包全部 100%(仅含已注明理由的 KNOW
 ./test_services.sh --smoke-sdk    # 游戏客户端 SDK + chat:登录/双向收发/离线队列
 ./test_services.sh --smoke-npc    # 服务器平面 + NPC 对话回环
 ./test_services.sh --smoke-redis  # Redis session/kick 路径
+./test_services.sh --smoke-voice  # voice 房间生命周期(真实 chirp_voice)
+./test_services.sh --smoke-party  # party 快照生命周期(真实 chirp_party)
 ```
 
-CI(`ci.yml`)跑 Debug + Release 构建与 ctest,另有覆盖率 job 卡 98% 包门槛。
+CI(`ci.yml`)跑 Debug + Release 构建与 ctest,另有覆盖率 job 卡 98% 包门槛;smoke job 把十条 smoke 腿(含 voice/party)各跑一步。
 
 ## 与 2026-04 快照的差异
 
@@ -40,8 +42,7 @@ CI(`ci.yml`)跑 Debug + Release 构建与 ctest,另有覆盖率 job 卡 98% 包�
 
 ## 已知未验证区域
 
-- `app_gateway`、`voice` 尚未接入任何单测套件(TODO.md P2)。
-- `test_services.sh` 的五条 smoke 均未纳入 CI(TODO.md Current Focus)。
+- voice/party/app_gateway 均已接入单测套件(`voice_tests` 61 例、`party_tests` 46 例、`app_sdk_gateway_tests`);仍未验证的是 WebRTC **媒体面**端到端——语音信令面(房间/名单/静音)有单测与 `--smoke-voice` 进程级覆盖,真实浏览器/音频链路未验证。
 - notification 的真实 APNs/FCM HTTP 投递仍是 `PushTransport` 日志 stub。
 
 路线图与架构债见 [TODO.md](TODO.md)。

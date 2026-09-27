@@ -1,6 +1,8 @@
 # Chirp 任务清单
 
-> 最后更新：2026-09-27：覆盖率缺口审计批次#5——覆盖率缺口单文件最大者 `hybrid_message_store`（17 臂/7 行）逐臂判定：可达臂补 4 个 `HybridStoreTest` 用例（脏投递状态值全类别、热层脏历史扫描、离线队列脏条目免疫、300 条强制扩容 + ERANGE/INT64_MAX 边界）清零，残余 7 臂（514 死 post-inline 重复块、546 内联块布局死边、571 operator+ 分配失败 unwind，25 个输入类别全部操纵过不翻）按 #4 同口径登记豁免（累计 75 臂）；行覆盖 100.0% 保持。#4：六文件 27 条未覆盖分支臂逐条判定：可达臂补 10 个真单测 + 6 处扩展清零，真不可达臂经新 `KNOWN_UNCOVERABLE_ARMS` 机制（理由+行号锚定，每次报告列出）豁免。上批：游戏在线状态 + 好友消息进游戏（绑定即"在游戏内"断言，自服务开关 5031-5034，多端在线同批）。
+> 最后更新：2026-09-27：voice 交付补齐批次——`voice_tests` 61 例本已存在（PROJECT_COMPLETE 自认清单过期），实际缺口在 smoke 与客户端接入：新增 `chirp_voice_smoke_client`/`chirp_party_smoke_client` 两个一次性进程级客户端，`--smoke-voice`/`--smoke-party` 两腿接入 `test_services.sh` 并挂上 CI smoke job（十条腿全量）；web 伴侣补第五条 websocket 语音平面（`msg_map.ts` 7 对 voice spec、`voice_store`/`voice_api`/`VoiceDialog` 最小闭环：建房/加入/名单/静音拒听/离开 + 三种参与者 notify），vite `/ws/voice` 代理，SDK/web vitest 216+104 全绿，`web_smoke.sh` 加 voice e2e 套件（协议面）。媒体面边界：WebRTC SDP/ICE/SPEAKING 中继服务端存在，客户端不驱动音频。
+>
+> 2026-09-27：覆盖率缺口审计批次#5——覆盖率缺口单文件最大者 `hybrid_message_store`（17 臂/7 行）逐臂判定：可达臂补 4 个 `HybridStoreTest` 用例（脏投递状态值全类别、热层脏历史扫描、离线队列脏条目免疫、300 条强制扩容 + ERANGE/INT64_MAX 边界）清零，残余 7 臂（514 死 post-inline 重复块、546 内联块布局死边、571 operator+ 分配失败 unwind，25 个输入类别全部操纵过不翻）按 #4 同口径登记豁免（累计 75 臂）；行覆盖 100.0% 保持。#4：六文件 27 条未覆盖分支臂逐条判定：可达臂补 10 个真单测 + 6 处扩展清零，真不可达臂经新 `KNOWN_UNCOVERABLE_ARMS` 机制（理由+行号锚定，每次报告列出）豁免。上批：游戏在线状态 + 好友消息进游戏（绑定即"在游戏内"断言，自服务开关 5031-5034，多端在线同批）。
 >
 > 2026-09-27：撤回墓碑贯通历史存档收口——墓碑改为「置位 + 抹除正文」并在三种存储实现里落地（MySQL 列 / Hybrid 双 tier / 基础形态内存+Redis 镜像，收敛为新单元 `recall_tombstone`），`BULK_DELETE` 软删补上立碑与离线回收，`GET_HISTORY` 从此读不出原文；覆盖率保持 100.0%。
 >
@@ -139,4 +141,4 @@ SDK 引擎兼容性见 [SDK 引擎兼容性](docs/design-notes/sdk_compatibility
 
 ## 实验性服务（暂不动）
 
-`services/social`、`services/voice`、`services/party`、`services/search` 保持原样，后续按需迁移到对应平面目录。例外：social 已按需接入游戏在线状态事件（好友可见 IN_GAME 叠加，见 app_chat 条目 ③），voice/party/search 仍未动。
+`services/social`、`services/voice`、`services/party`、`services/search` 保持原样，后续按需迁移到对应平面目录。例外：social 已按需接入游戏在线状态事件（好友可见 IN_GAME 叠加，见 app_chat 条目 ③）；voice/party 已接进程级 smoke（`--smoke-voice`/`--smoke-party`，CI smoke job 内）与 web 伴侣客户端（party 快照 UI + voice 协议面 VoiceDialog，无媒体面）；search 仍未动。
