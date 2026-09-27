@@ -18,6 +18,7 @@
  */
 import { ChatMessage } from '@chirp/proto/chat';
 import type { ChannelType, MsgType, SendMessageRequest } from '@chirp/proto/chat';
+import type { DevicePresence } from '@chirp/proto/auth';
 import type { ConnStatus } from './chirp_client';
 
 /** Send parameters for ChatPipeline.send (C++ SendOptions / C# SendOptions). */
@@ -134,6 +135,13 @@ export interface ChatEventListener {
   onReconnecting?(attempt: number, delayMs: number): void;
   onReconnected?(): void;
   onMessageReceived?(msg: ChatMessage): void;
+  /**
+   * 多端在线（P0）：某端上线/下线/被顶时的清单变更（DEVICES_PRESENCE_NOTIFY，
+   * 风格对齐 onKicked 的 KICK_NOTIFY）。每个设备的 online 标志区分上线/下线。
+   */
+  onDevicesPresence?(devices: DevicePresence[]): void;
+  /** 多端在线（P0）：登录成功时该用户其他在线端的初始清单。 */
+  onLoginDevices?(devices: DevicePresence[]): void;
 }
 
 export interface CommandHandler {

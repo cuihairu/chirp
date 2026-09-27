@@ -32,6 +32,7 @@ import (
 
 	"google.golang.org/protobuf/proto"
 
+	pbauth "github.com/cui/chirp/proto/go/auth"
 	pbcommon "github.com/cui/chirp/proto/go/common"
 	pbgw "github.com/cui/chirp/proto/go/gateway"
 	pbsg "github.com/cui/chirp/proto/go/game_server_gateway"
@@ -149,7 +150,9 @@ type Client struct {
 	handlerMu    sync.RWMutex
 	onInject     func(*pbsg.InjectMessageNotify)
 	onEvent      func(*pbsg.EventDeliverNotify)
-	onDisconnect func(err error)
+	// 多端在线（P0）：同账号其他端的上线/下线/被顶清单变更。
+	onDevicesPresence func(*pbauth.DevicesPresenceNotify)
+	onDisconnect      func(err error)
 
 	// mu guards the connection-scoped state below.
 	mu      sync.Mutex
@@ -191,6 +194,18 @@ func (c *Client) SetInjectHandler(h func(*pbsg.InjectMessageNotify)) {
 func (c *Client) SetEventHandler(h func(*pbsg.EventDeliverNotify)) {
 	c.handlerMu.Lock()
 	c.onEvent = h
+	c.handlerMu.Unlock()
+}
+
+// SetDevicePresenceHandler registers the callback for
+// DEVICES_PRESENCE_NOTIFY frames — 多端在线（P0）: every online-state change
+// of another device of the same account (login, disconnect, kicked by a
+// same-platform re-login), one auth.DevicePresence entry per event with
+// {platform, device_id, online, ts}. Style-aligned with the kick notify.
+// Called on the read goroutine; must not block.
+func (c *Client) SetDevicePresenceHandler(h func(*pbauth.DevicesPresenceNotify)) {
+	c.handlerMu.Lock()
+	c.onDevicesPresence = h
 	c.handlerMu.Unlock()
 }
 
@@ -432,6 +447,18 @@ func (c *Client) dispatch(pkt *pbgw.Packet) bool {
 			return true
 		}
 		h(notify)
+	case pbgw.MsgID_DEVICES_PRESENCE_NOTIFY:
+		notify := &pbauth.DevicesPresenceNotify{}
+		if err := proto.Unmarshal(pkt.GetBody(), notify); err != nil {
+			c.log.Warn("chirp: failed to parse DevicesPresenceNotify", "err", err)
+			return true
+		}
+		c.handlerMu.RLock()
+		h := c.onDevicesPresence
+		c.handlerMu.RUnlock()
+		if h != nil {
+			h(notify)
+		}
 	case pbgw.MsgID_SERVER_HEARTBEAT_PONG:
 		// Liveness is enforced by the hub, as on the C++ peer: nothing to do.
 	default:

@@ -14,6 +14,7 @@ import (
 
 	"google.golang.org/protobuf/proto"
 
+	pbauth "github.com/cui/chirp/proto/go/auth"
 	pbcommon "github.com/cui/chirp/proto/go/common"
 	pbgw "github.com/cui/chirp/proto/go/gateway"
 	pbsg "github.com/cui/chirp/proto/go/game_server_gateway"
@@ -446,6 +447,42 @@ func TestInjectNotifyDispatchedToHandler(t *testing.T) {
 		}
 	case <-time.After(3 * time.Second):
 		t.Fatal("inject notify never dispatched")
+	}
+}
+
+// 多端在线（P0）：DEVICES_PRESENCE_NOTIFY 到达时派发给已注册的 handler。
+func TestDevicesPresenceNotifyDispatchedToHandler(t *testing.T) {
+	received := make(chan *pbauth.DevicesPresenceNotify, 1)
+	h := startFakeHub(t, func(sc *syncConn, pkt *pbgw.Packet) {
+		if pkt.GetMsgId() != pbgw.MsgID_SERVER_AUTH_REQ {
+			return
+		}
+		authOK(sc, pkt)
+		sc.write(&pbgw.Packet{
+			MsgId: pbgw.MsgID_DEVICES_PRESENCE_NOTIFY,
+			Body: mustMarshal(&pbauth.DevicesPresenceNotify{
+				Devices: []*pbauth.DevicePresence{{
+					Platform: "ios", DeviceId: "p1", Online: true, Ts: 1727400000000,
+				}},
+			}),
+		})
+	})
+
+	c := NewClient(testConfig(h))
+	c.SetDevicePresenceHandler(func(n *pbauth.DevicesPresenceNotify) { received <- n })
+	c.Start()
+	defer c.Stop()
+
+	select {
+	case n := <-received:
+		if n.GetDevices()[0].GetPlatform() != "ios" ||
+			n.GetDevices()[0].GetDeviceId() != "p1" ||
+			!n.GetDevices()[0].GetOnline() ||
+			n.GetDevices()[0].GetTs() != 1727400000000 {
+			t.Errorf("presence notify mismatch: %+v", n.GetDevices())
+		}
+	case <-time.After(3 * time.Second):
+		t.Fatal("devices presence notify never dispatched")
 	}
 }
 

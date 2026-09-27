@@ -23,7 +23,8 @@ import {
   SendMessageResponse,
 } from '@chirp/proto/chat';
 import { ErrorCode } from '@chirp/proto/common';
-import { KickNotify } from '@chirp/proto/auth';
+import { DevicesPresenceNotify, KickNotify } from '@chirp/proto/auth';
+import type { DevicePresence } from '@chirp/proto/auth';
 import { MsgID } from '@chirp/proto/gateway';
 import type { ConnStatus } from './chirp_client';
 import { RequestError } from './errors';
@@ -126,6 +127,7 @@ export class ChatPipeline {
     this.unsubs = [
       this.conn.onNotify(MsgID.CHAT_MESSAGE_NOTIFY, (body) => this.onIncoming(body)),
       this.conn.onNotify(MsgID.KICK_NOTIFY, (body) => this.onKickBody(body)),
+      this.conn.onNotify(MsgID.DEVICES_PRESENCE_NOTIFY, (body) => this.onDevicesPresenceBody(body)),
       this.conn.onStatus((status) => {
         for (const { listener } of this.snapshotListeners()) {
           try {
@@ -362,6 +364,24 @@ export class ChatPipeline {
     }
   }
 
+  private onDevicesPresenceBody(body: Uint8Array): void {
+    let notify: DevicesPresenceNotify;
+    try {
+      notify = DevicesPresenceNotify.decode(body);
+    } catch {
+      notify = DevicesPresenceNotify.fromPartial({});
+    }
+    const devices = notify.devices;
+    if (devices.length === 0) return;
+    for (const { listener } of this.snapshotListeners()) {
+      try {
+        listener.onDevicesPresence?.(devices);
+      } catch {
+        // Same isolation rule.
+      }
+    }
+  }
+
   private onKickBody(body: Uint8Array): void {
     let kick: KickNotify;
     try {
@@ -386,6 +406,17 @@ export class ChatPipeline {
     });
     if (resp.code === 0) {
       this.conn.resetBackoff();
+      // 多端在线（P0）：登录响应携带的其他在线端初始清单。
+      const devices: DevicePresence[] = resp.onlineDevices;
+      if (devices.length > 0) {
+        for (const { listener } of this.snapshotListeners()) {
+          try {
+            listener.onLoginDevices?.(devices);
+          } catch {
+            // Same isolation rule.
+          }
+        }
+      }
     }
     return resp.code;
   }
