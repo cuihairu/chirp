@@ -202,6 +202,44 @@ chat 服务以内部 peer 身份连到枢纽(`--server_gateway_host`,默认空�
 
 约定与边界:App 侧频道 ID 含 `:` 即保留给游戏平面,部署上不得用冒号命名 App 自有频道;不带前缀的发送照走本地频道,行为不变。无回环:注入消息经 spoke 上行扇回 App 玩家时是**无前缀的私聊副本**(见"扇入投递"),不会再触发本路径。mention 处理跳过(内容原样透传游戏侧)。非 hub 模式(hub 未启用)没有 spoke 可解析,整段拦截不生效。
 
+## 游戏在线状态与好友消息进游戏(2026-09-27)
+
+两件同源的事:好友能不能看到"这人正在玩《X》",以及好友私聊能不能落进游戏里。两者由同一个开关控制,都建立在 WP-8 的**身份绑定**之上——绑定就是"在线断言":游戏后端在进入游戏时 `BIND_PLAYER_IDENTITY`,退出时 `UNBIND`,所以状态随断言的存续自然上下线,没有独立的心跳或 TTL 要维护。
+
+住在 `app_chat` 的 `PlayerDirectory`(`game_presence.{h,cc}` 存开关,`player_directory.cc` 派生 roster/事件),四个新消息 id 与 WP-8 同块(5031-5034),同一套 `SERVER_AUTH_REQ` 信任门;玩家侧经 app_gateway 转发,`player_id` 钉死为登录身份:
+
+- `SET_GAME_PRESENCE_ENABLED_REQ`(5031)——写玩家自己的开关。空 `player_id` → `INVALID_PARAM`(转发路径永远填得上,直连才可能漏)。值变化才触发 roster 重算,同值重复写是静默 no-op。
+- `GET_GAME_PRESENCE_REQ`(5033)——回 `enabled` + `entries`(每项 `game_id`/`game_user_id`),按 `game_id` 排序。**关闭态 `entries` 恒空**——绑定一条没少,只是不再对外扇出。
+
+### 默认值语义(绑定即默认开启)
+
+`game_presence_enabled` **没有行就是 true**:`GamePresence` 只存显式选择(`chirp:game_presence:setting:<player_id>` = `"1"`/`"0"`,经 `--game_presence_redis_host`/`--game_presence_redis_port` 启用,默认关=纯内存),从没设置过的玩家读出来是开启。产品后果是:游戏后端什么都不做,绑定完成的那一刻起好友就能看见在线状态、私聊也能进游戏;要关必须玩家自己明确关一次。写 `true` 在一个从未写过的玩家身上仍然算"记录了显式选择"(effective 值没变,但落了行),因此返回码 `OK` 且不产生额外事件——重算是幂等的。
+
+### 派生 roster 与事件(状态不推)
+
+`PlayerDirectory::RefreshPresence(player_id)` 在绑定、解绑、开关翻转三个时机重算该玩家的期望集:`enabled ? 绑定里的 game_id 集合(排序去重) : 空集`。与上次已公布集合做差,只对**翻转的**游戏发一条 `GamePresenceEvent{player_id, game_id, online}` 到 Redis pub/sub 频道 `chirp:game_presence:events`;派生键 `chirp:game_presence:online:<player_id>` = 换行拼接的 game_id 集合,空集时 `DEL`(不是写空串)。
+
+因此**关闭态是彻底静默的**:既不写 roster 键,也不发任何事件——`chirp_social` 收不到该玩家的任何翻转,好友视图自然回到基础在线状态。同理,在游戏关闭期间新绑定也不产生事件(绑了但不扇出)。事件是尽力而为的:发布失败只告警,绑定/开关写入照样成功——Redis 在这里是传输,不是权威。
+
+`chirp_social` 侧(`services/social/src/main.cc`)用 `RedisSubscriber` 订阅该频道(注意 `SUBSCRIBE` 必须挂在 connect 回调里,`Start()` 之前 socket 还没开),把事件并进一张 `game_presence` 覆盖表:`EffectivePresence` = 基础状态(连接生命周期 + `SET_PRESENCE`)与游戏断言的合并视图,**非空覆盖表恒为 `IN_GAME`**(更具体的事实),游戏 id 同时进 `status_message`(逗号拼接,集合序)与 `metadata[<game_id>]="1"`(机器读)。覆盖表与基础状态生命周期**刻意不同**:社交端断开只翻基础状态,玩家还挂在游戏里就仍然 `IN_GAME`——这正是本特性要对好友暴露的东西;`SET_PRESENCE AWAY` 也压不过游戏断言。没配 Redis 时覆盖表恒空,`GET_PRESENCE` 退化为基础状态。
+
+### 好友私聊投递进游戏
+
+`PlayerDirectory::RelayFriendMessage(sender_player_id, recipient_player_id, content, client_msg_id, resolver, inject)`:hub 模式的 `app_chat` 在私聊投递尾段(在线推送/离线队列之后)对**接收方**调一次,把同一条消息镜像进游戏平面。规则:
+
+1. 接收方开关关闭、或没有任何绑定 → 直接 0,不产生任何 inject;
+2. 接收方的每个绑定对应一份副本,按 `game_id` 排序(确定性);
+3. `service_id_for_game(game_id)` 解析不到在线 spoke → **跳过并继续**,不算错误:常规端投递已经成功,游戏侧缺席不是失败;
+4. inject 返回 false(spoke 下行失败)同样只跳过,不计数;
+5. 屏蔽对(blocked pair)与 NPC 接收者不进入本路径。
+
+`PEER_INJECT_MESSAGE_NOTIFY` 的字段语义与跨平面回复不同,这点必须记住:**spoke 把 `channel_id` 当作目标用户**(游戏侧按玩家私聊消费),所以 `channel_id` = 接收方的 `game_user_id`,而 `sender_id` 是**发送方的 chirp `user_id`**——游戏客户端拿到的是"平台好友 xxx 给你带了句话",不是游戏内身份。这是刻意的:接收方在游戏里认得的是自己,而发送方的平台身份正是 App 侧要跨过去的那条边。
+
+边界:relay 只在 hub 模式生效(没有 spoke 注册表就没有可解析的游戏);投递是尽力而为的镜像,不占用 `RelayGameReply` 那套显式回码语义,App 客户端看见的仍是常规私聊回码。开关与绑定都是**注册表本地内存权威** + 各自 Redis 镜像:多节点 `app_chat` 部署下,只处理了那次绑定/写开关的实例会重算并广播事件,其他实例的 `published_games_` 视图不会自动同步(与既有本地 notify 同边界)。
+
+测试锚点:`chat_player_directory_tests`(开关缺省语义、写穿/重放、roster 与事件流、关闭态静默、relay 扇出/跳过/不计失败/发送方身份),`social_tests`(覆盖表合并、断言释放回落、logout 后仍在游戏、`GET_PRESENCE` 合并视图、畸形/错频道事件),`app_sdk_gateway_tests`(5031/5033 转发 + `player_id` 钉死)。
+
+
 ## 路线图
 
 1. ~~chat 服务以内部 peer 连入并消费 `InjectMessageNotify`~~——完成(回环端到端验证);进程级 E2E 冒烟留作后续选项。

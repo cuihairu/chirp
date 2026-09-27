@@ -1,6 +1,8 @@
 # Chirp 任务清单
 
-> 最后更新：2026-09-27：撤回墓碑贯通历史存档收口——墓碑改为「置位 + 抹除正文」并在三种存储实现里落地（MySQL 列 / Hybrid 双 tier / 基础形态内存+Redis 镜像，收敛为新单元 `recall_tombstone`），`BULK_DELETE` 软删补上立碑与离线回收，`GET_HISTORY` 从此读不出原文；覆盖率保持 100.0%。
+> 最后更新：2026-09-27：游戏在线状态 + 好友消息进游戏——身份绑定即"在游戏内"断言，绑定默认开启上报，可经自服务开关（5031-5034）关闭；关闭后不推状态、游戏内不投递。多端在线（顶号键 (user_id, platform) + 在线设备清单 + SDK/伴侣 UI，见 game_sdk_gateway 条目）同批落地。
+>
+> 2026-09-27：撤回墓碑贯通历史存档收口——墓碑改为「置位 + 抹除正文」并在三种存储实现里落地（MySQL 列 / Hybrid 双 tier / 基础形态内存+Redis 镜像，收敛为新单元 `recall_tombstone`），`BULK_DELETE` 软删补上立碑与离线回收，`GET_HISTORY` 从此读不出原文；覆盖率保持 100.0%。
 >
 > 2026-09-25：游戏平面 P0 收官——消息撤回（窗口/频道可配 + 六态回码 + 墓碑广播 + 离线副本回收 + SDK `RecallMessage`），并记账撤回墓碑贯通历史存档的剩余缺口。
 >
@@ -61,6 +63,7 @@ SDK 引擎兼容性见 [SDK 引擎兼容性](docs/design-notes/sdk_compatibility
 - [x] 6xxx 设备消息转发到 app_notification
 - [x] ChatBridge 转发 2xxx 到 app_chat
 - [x] **对接 app_auth + 自服务链切到 app_chat**(2026-09-22:app 边缘 `--auth_host` 指 app_auth(scaffold 同链可用);WP-8 迁入 app_chat 后转发目标随之切换——`--sg_host/--sg_port` 指 app_chat 主端口、`--sg_secret` 用其 `--gateway_service_secret`,零代码改动纯配置;`--smoke-edge` 端到端证明:新增 `chirp_wp8_client` 以空 `player_id` 登录后走订阅(幂等重订回同 id)/未读摘要/标读/退订/列表五 RPC,空 `player_id` 拿到 OK 即证明边缘把身份钉死为登录用户;`AUTH_BIN`/`CHAT_BIN` 覆盖让无 MySQL 树本地可跑 edge smoke,离线发送断言放宽为 `code=0|6` 对齐两形态语义分歧)
+- [x] **游戏在线状态自服务开关**（2026-09-27：`SET_GAME_PRESENCE_ENABLED_REQ/RESP`（5031/5032）与 `GET_GAME_PRESENCE_REQ/RESP`（5033/5034）经与 WP-8 同一条自服务链应答——`DispatchPlayerDirectoryPacket` `SERVER_AUTH_REQ` 信任门 + `ForwardSubscriptionPacket` 把 `player_id` 钉死为登录身份（伪造 player_id 不落地，测试扫描 hub 全量上行帧验证无泄漏）；开启=删覆盖行、关闭=写覆盖行并停广播/清 roster（语义见 app_chat 条目）。客户端三层：Go `SetGamePresenceEnabled`/`GetGamePresence`（dispatch 白名单补两 RESP，往返测试覆盖默认开启读数）；TS `msg_map` 导出两 spec；Flutter `msg_map` 对齐。web 伴侣：`game_presence_store`/`game_presence_api`（与设备面共用 app_gateway socket）+ 在线设备 Dialog 内开关区（绑定前默认开启显示"未绑定"文案、关闭即本地清空游戏清单、读写失败标 unavailable 不再可点）；mobile 伴侣：「我的」页 SwitchListTile（副标题随状态切换：未绑定提示/当前生效游戏/已关闭文案，snack 反馈，unavailable 禁用））
 
 ### app_chat（原 chat，部署为 App 平面 hub）
 
@@ -71,6 +74,7 @@ SDK 引擎兼容性见 [SDK 引擎兼容性](docs/design-notes/sdk_compatibility
 - [x] **跨平面 fan-out**（2026-09-22：`PlayerDirectory::FanoutChannelMessage` 在 hub 侧承接 spoke 的 `CHANNEL_MESSAGE_NOTIFY` 上行，每订阅者一份私信副本交接 + 未读自增；空订阅语义 no-op、超 `--max_fanout_per_message` 整条丢弃告警）
 - [x] **跨平面回复**（2026-09-22：hub 模式拦截带 `<game_id>:<bare>` 前缀的非私聊发送——`PlayerDirectory::RelayGameReply` 编排，`ChatPeerHub::service_id_for_game` 反查在线 spoke + `IdentityRegistry::ResolveGameUser` 反查游戏身份（同游戏多绑定取字典序最小保证确定性），`PEER_INJECT_MESSAGE_NOTIFY` 注入 spoke（裸频道 ID、游戏侧铸 message_id、走存储/离线队列同一尾段）；回码 OK / SERVER_UNAVAILABLE（无在线 spoke 或下行失败）/ INVALID_PARAM（发送者无该游戏绑定），拒绝显式回码不降级本地频道；basic/enhanced 两形态接线，拦截点在发送限流之后（消耗发送预算）、mention 处理之前（内容透传游戏侧）；无回环——扇回 App 玩家的是无前缀私聊副本，不再触发本路径）
 - [x] **未读计数**（2026-09-22：`UnreadLedger` 落地，fan-out 每份被接受副本自增 badge；`MARK_CHANNELS_READ` 分层选择器（单频道/单游戏/全部）幂等清除，`GET_UNREAD_SUMMARY` 按 (game, channel) 排序含过滤与 total_unread）
+- [x] **游戏在线状态 + 好友消息进游戏**（2026-09-27：身份绑定即"在游戏内"断言，绑定默认开启上报，开关见 app_sdk_gateway 条目。① 状态推导与广播：`GamePresence`（`services/shared/chat/src/game_presence.*`）只存**显式关闭**的覆盖行（缺行=开启，"绑定即默认开启"），键 `chirp:game_presence:setting:<player_id>`；`PlayerDirectory::RefreshPresence` 在绑定增删后重算 desired = 开启 ? 排序绑定 game_ids : 空，与 roster 键 `chirp:game_presence:online:<player_id>`（换行连接排序 game_ids，空则 DEL）比对，翻转才发布 `GamePresenceEvent{player_id, game_id, online}` 到 Redis pub/sub `chirp:game_presence:events`——Redis 是传输介质不是权威，进程重启从身份绑定全量重建（LoadAll 先恢复开关再服务，避免用空 roster 覆盖真相）。**关闭态完全静默**：无事件、无 roster（回归用例锁定）；game 断言随 spoke 断开/超时失效，状态自然下线，无独立心跳。② 好友私聊进游戏：`PlayerDirectory::RelayFriendMessage` best-effort 镜像——接收方开关开且有绑定时每绑定按 game_id 排序注入一份 `PEER_INJECT_MESSAGE_NOTIFY`（channel_id=接收方该游戏 `game_user_id`，sender_id=chirp 好友 `user_id`），常规端照常收；spoke 不在线/解析失败/注入拒绝逐项跳过不回码（镜像语义：聊天主链路不受影响，无回环——游戏内回复走既有 `RelayGameReply` 前缀路径）。③ social 平面叠加：`chirp_social` 订阅 `chirp:game_presence:events`（`ConsumeGamePresenceEvent` 事实化便于测试），好友 `EffectivePresence` 游戏叠加非空 → IN_GAME（status_message=逗号连接 game_ids，metadata[game_id]="1"）；叠加活过 social 登出，SET_PRESENCE AWAY 不覆盖 IN_GAME，断线（游戏断言失效）补发 offline 给好友。测试：`chat_player_directory_tests` 55→96 例（presence 边界改 5035、GamePresenceTest 5、PlayerDirectoryPresenceTest 11 含重启重建与 Redis 故障降级、RelayHarness 好友镜像 6、GetById 哨兵/缺失 1）、`social_tests` 28→37 例（断言呈现/回落/登出存活/多游戏进出/事件广播合并视图/断线通知/畸形事件忽略/SET_PRESENCE 不覆盖 IN_GAME）、`app_sdk_gateway_tests` 29→30 例、Go 往返 1 例、web store 4+api 6+Dialog 10、mobile store 4+api 8+widget 5）
 - [x] **离线推送触发**：消息投递时调 app_notification（PushBridge + NotificationClient 在 basic/enhanced/distributed 三入口全部接线，私聊接收方无健康会话、群广播离线成员、注入离线入队三处触发，`--notification_host` 门控；peer 注入路径同样落离线队列）
 - [x] **enhanced 会话语义修复**（2026-09-22：`DistributedChatState` 不再自带 user 维度单 slot——存储整体换装共享 `SessionRegistry`（与 basic 同一份 (user, device) 互踢内核，`BindAuthenticatedSession` 返回同对旧会话），同对重登发 `KICK_NOTIFY`（"login from another device"）+ `LOGIN_RESP.kick_previous`，另一设备共存。本地投递（私聊/注入/扇出副本/peer 注入）与跨实例回调从单 slot 改为 `HealthyLocalSessions` 全设备扇出（半关连接跳过；`TrackAckIfCapable` 任一 ack-capable 设备即挂起待 MESSAGE_ACK），`RemoveSession`/`GetUserId` 走 registry 语义（陈旧断开不顶掉新会话）。互踢内核由 `session_registry_test` 12 例覆盖）
 
@@ -129,4 +133,4 @@ SDK 引擎兼容性见 [SDK 引擎兼容性](docs/design-notes/sdk_compatibility
 
 ## 实验性服务（暂不动）
 
-`services/social`、`services/voice`、`services/party`、`services/search` 保持原样，后续按需迁移到对应平面目录。
+`services/social`、`services/voice`、`services/party`、`services/search` 保持原样，后续按需迁移到对应平面目录。例外：social 已按需接入游戏在线状态事件（好友可见 IN_GAME 叠加，见 app_chat 条目 ③），voice/party/search 仍未动。
