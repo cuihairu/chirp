@@ -11,7 +11,7 @@ import { zh } from '../i18n/zh';
 
 /** Two-pane chat shell: conversation list on the left, open channel right. */
 export default function ChatPage() {
-  const { api, socialApi, partyApi, deviceApi, auth, social, party, device, conversations } =
+  const { api, socialApi, partyApi, voiceApi, deviceApi, auth, social, party, voice, device, conversations } =
     useServices();
   const navigate = useNavigate();
   const { channelKey } = useParams();
@@ -46,6 +46,17 @@ export default function ChatPage() {
     });
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [partyApi]);
+
+  // Voice plane login, same degradeable contract (roster/state surface only;
+  // no media plane — see VoiceApi).
+  useEffect(() => {
+    const id = auth.get().userId;
+    if (!voiceApi || !id) return;
+    void voiceApi.login(id).catch(() => {
+      // Voice unreachable: chat keeps working, voice features hide.
+    });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [voiceApi]);
 
   // Device plane login, same degradeable contract; a successful login also
   // registers this browser as a push target (registerSelf inside login).
@@ -97,9 +108,11 @@ export default function ChatPage() {
     await api.logout();
     socialApi?.logout();
     partyApi?.logout();
+    voiceApi?.logout();
     deviceApi?.logout();
     void social?.disconnect();
     void party?.disconnect();
+    void voice?.disconnect();
     void device?.disconnect();
     navigate('/login', { replace: true });
   };

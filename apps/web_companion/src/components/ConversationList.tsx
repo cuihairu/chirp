@@ -21,6 +21,7 @@ import { presenceFresh, presenceOf } from '../state/presence_store';
 import { PresenceStatus } from '@chirp/proto/social';
 import FriendsDialog from './FriendsDialog';
 import PartyDialog, { PartyButton } from './PartyDialog';
+import VoiceDialog, { VoiceButton } from './VoiceDialog';
 import DevicesDialog, { DevicesButton } from './DevicesDialog';
 import OnlineDevicesDialog, { OnlineDevicesButton } from './OnlineDevicesDialog';
 import { zh } from '../i18n/zh';
@@ -33,7 +34,8 @@ export default function ConversationList({
   activeKey?: string;
   onOpen: (key: string) => void;
 }) {
-  const { api, socialApi, partyApi, deviceApi, auth, conversations, presence } = useServices();
+  const { api, socialApi, partyApi, voiceApi, deviceApi, auth, conversations, presence } =
+    useServices();
   const selfId = useStoreValue(auth).userId ?? '';
   const { conversations: list } = useStoreValue(conversations);
   const presenceState = useStoreValue(presence);
@@ -44,6 +46,7 @@ export default function ConversationList({
   const [groupName, setGroupName] = useState('');
   const [friendsOpen, setFriendsOpen] = useState(false);
   const [partyOpen, setPartyOpen] = useState(false);
+  const [voiceOpen, setVoiceOpen] = useState(false);
   const [devicesOpen, setDevicesOpen] = useState(false);
   const [onlineDevicesOpen, setOnlineDevicesOpen] = useState(false);
 
@@ -101,6 +104,7 @@ export default function ConversationList({
           </Button>
         )}
         {partyApi && <PartyButton onClick={() => setPartyOpen(true)} />}
+        {voiceApi && <VoiceButton onClick={() => setVoiceOpen(true)} />}
         {deviceApi && <DevicesButton onClick={() => setDevicesOpen(true)} />}
         <OnlineDevicesButton onClick={() => setOnlineDevicesOpen(true)} />
       </Box>
@@ -208,6 +212,7 @@ export default function ConversationList({
         />
       )}
       {partyApi && <PartyDialog open={partyOpen} onClose={() => setPartyOpen(false)} />}
+      {voiceApi && <VoiceDialog open={voiceOpen} onClose={() => setVoiceOpen(false)} />}
       {deviceApi && <DevicesDialog open={devicesOpen} onClose={() => setDevicesOpen(false)} />}
       <OnlineDevicesDialog open={onlineDevicesOpen} onClose={() => setOnlineDevicesOpen(false)} />
     </Box>

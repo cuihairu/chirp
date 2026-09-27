@@ -3,6 +3,7 @@ import { ChirpClient } from '@chirp/protocol/chirp_client';
 import { asConnection, ChatApi, type ChatConnection } from './chat_api';
 import { SocialApi } from './social_api';
 import { PartyApi } from './party_api';
+import { VoiceApi } from './voice_api';
 import { DeviceApi } from './device_api';
 import { GamePresenceApi } from './game_presence_api';
 import { createAuthStore, type AuthState } from '../state/auth_store';
@@ -12,6 +13,7 @@ import { createTypingStore, type TypingState } from '../state/typing_store';
 import { createPresenceStore, type PresenceState } from '../state/presence_store';
 import { createFriendStore, type FriendState } from '../state/friend_store';
 import { createPartyStore, type PartyState } from '../state/party_store';
+import { createVoiceStore, type VoiceState } from '../state/voice_store';
 import { createDeviceStore, type DeviceState } from '../state/device_store';
 import {
   createOnlineDevicesStore,
@@ -41,6 +43,10 @@ export interface Services {
   party: ChatConnection | null;
   /** null when party is not configured; goes inert when party is down. */
   partyApi: PartyApi | null;
+  /** Voice-plane connection; null when voice is not configured. */
+  voice: ChatConnection | null;
+  /** null when voice is not configured; goes inert when voice is down. */
+  voiceApi: VoiceApi | null;
   /** Device-plane connection (app_gateway); null when not configured. */
   device: ChatConnection | null;
   /** null when the device plane is not configured; inert when it is down. */
@@ -54,6 +60,7 @@ export interface Services {
   presence: Store<PresenceState>;
   friends: Store<FriendState>;
   partyState: Store<PartyState>;
+  voiceState: Store<VoiceState>;
   devices: Store<DeviceState>;
   /** 多端在线（P0）：本账号其他在线端清单。 */
   onlineDevices: Store<OnlineDevicesState>;
@@ -63,8 +70,8 @@ export interface Services {
 
 /**
  * Dev defaults ride the vite proxy (same-origin, no CORS to think about);
- * VITE_CHAT_WS_URL / VITE_SOCIAL_WS_URL / VITE_PARTY_WS_URL override for
- * direct-backend runs.
+ * VITE_CHAT_WS_URL / VITE_SOCIAL_WS_URL / VITE_PARTY_WS_URL /
+ * VITE_VOICE_WS_URL override for direct-backend runs.
  */
 export function resolveChatWsUrl(): string {
   const fromEnv = import.meta.env.VITE_CHAT_WS_URL;
@@ -87,6 +94,13 @@ export function resolvePartyWsUrl(): string {
   return `${scheme}://${window.location.host}/ws/party`;
 }
 
+export function resolveVoiceWsUrl(): string {
+  const fromEnv = import.meta.env.VITE_VOICE_WS_URL;
+  if (fromEnv) return fromEnv;
+  const scheme = window.location.protocol === 'https:' ? 'wss' : 'ws';
+  return `${scheme}://${window.location.host}/ws/voice`;
+}
+
 export function resolveDeviceWsUrl(): string {
   const fromEnv = import.meta.env.VITE_DEVICE_WS_URL;
   if (fromEnv) return fromEnv;
@@ -102,6 +116,8 @@ export function createServices(
     socialConn?: ChatConnection;
     partyUrl?: string;
     partyConn?: ChatConnection;
+    voiceUrl?: string;
+    voiceConn?: ChatConnection;
     deviceUrl?: string;
     deviceConn?: ChatConnection;
   } = {},
@@ -115,6 +131,7 @@ export function createServices(
   const presence = createPresenceStore();
   const friends = createFriendStore();
   const partyState = createPartyStore();
+  const voiceState = createVoiceStore();
   const devices = createDeviceStore();
   const onlineDevices = createOnlineDevicesStore();
   const gamePresence = createGamePresenceStore();
@@ -129,8 +146,8 @@ export function createServices(
 
   // Social defaults ON in production (a real chat ChirpClient implies a real
   // deployment); tests that inject a chat fake get chat-only unless they also
-  // inject a social fake or an explicit socialUrl. Same for the party and
-  // device planes.
+  // inject a social fake or an explicit socialUrl. Same for the party, voice
+  // and device planes.
   const socialConn: ChatConnection | null =
     options.socialConn ??
     (options.conn ? null : new ChirpClient({ url: options.socialUrl ?? resolveSocialWsUrl() }));
@@ -142,6 +159,12 @@ export function createServices(
     (options.conn ? null : new ChirpClient({ url: options.partyUrl ?? resolvePartyWsUrl() }));
   const partyApi = partyConn
     ? new PartyApi({ conn: asConnection(partyConn), auth, party: partyState })
+    : null;
+  const voiceConn: ChatConnection | null =
+    options.voiceConn ??
+    (options.conn ? null : new ChirpClient({ url: options.voiceUrl ?? resolveVoiceWsUrl() }));
+  const voiceApi = voiceConn
+    ? new VoiceApi({ conn: asConnection(voiceConn), auth, voice: voiceState })
     : null;
   const deviceConn: ChatConnection | null =
     options.deviceConn ??
@@ -162,6 +185,8 @@ export function createServices(
     socialApi,
     party: partyConn,
     partyApi,
+    voice: voiceConn,
+    voiceApi,
     device: deviceConn,
     deviceApi,
     gamePresenceApi,
@@ -172,6 +197,7 @@ export function createServices(
     presence,
     friends,
     partyState,
+    voiceState,
     devices,
     onlineDevices,
     gamePresence,

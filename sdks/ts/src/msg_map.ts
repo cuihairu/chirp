@@ -4,6 +4,7 @@ import * as GameServerGateway from '@chirp/proto/game_server_gateway';
 import * as Notification from '@chirp/proto/app_notification';
 import * as Party from '@chirp/proto/party';
 import * as Social from '@chirp/proto/social';
+import * as Voice from '@chirp/proto/voice';
 import { MsgID } from '@chirp/proto/gateway';
 
 /**
@@ -307,4 +308,51 @@ export const GET_GAME_PRESENCE = defineSpec(
   MsgID.GET_GAME_PRESENCE_RESP,
   GameServerGateway.GetGamePresenceRequest,
   GameServerGateway.GetGamePresenceResponse,
+);
+
+// Voice plane (WS 9001): room lifecycle and participant-state sync. The
+// roster changes ride PARTICIPANT_JOINED/LEFT/STATE_CHANGED notifies; the
+// SDP/ICE relay (4007-4009) and SPEAKING_NOTIFY are the media plane and are
+// deliberately not exposed to the web protocol-layer client.
+export const CREATE_ROOM = defineSpec(
+  MsgID.CREATE_ROOM_REQ,
+  MsgID.CREATE_ROOM_RESP,
+  Voice.CreateRoomRequest,
+  Voice.CreateRoomResponse,
+);
+export const JOIN_ROOM = defineSpec(
+  MsgID.JOIN_ROOM_REQ,
+  MsgID.JOIN_ROOM_RESP,
+  Voice.JoinRoomRequest,
+  Voice.JoinRoomResponse,
+);
+export const LEAVE_ROOM = defineSpec(
+  MsgID.LEAVE_ROOM_REQ,
+  MsgID.LEAVE_ROOM_RESP,
+  Voice.LeaveRoomRequest,
+  Voice.LeaveRoomResponse,
+);
+export const GET_ROOM_INFO = defineSpec(
+  MsgID.GET_ROOM_INFO_REQ,
+  MsgID.GET_ROOM_INFO_RESP,
+  Voice.GetRoomInfoRequest,
+  Voice.GetRoomInfoResponse,
+);
+export const GET_USER_ROOM = defineSpec(
+  MsgID.GET_USER_ROOM_REQ,
+  MsgID.GET_USER_ROOM_RESP,
+  Voice.GetUserRoomRequest,
+  Voice.GetUserRoomResponse,
+);
+export const SET_MUTE = defineSpec(
+  MsgID.SET_MUTE_REQ,
+  MsgID.SET_MUTE_RESP,
+  Voice.SetMuteRequest,
+  Voice.SetMuteResponse,
+);
+export const SET_DEAFEN = defineSpec(
+  MsgID.SET_DEAFEN_REQ,
+  MsgID.SET_DEAFEN_RESP,
+  Voice.SetDeafenRequest,
+  Voice.SetDeafenResponse,
 );

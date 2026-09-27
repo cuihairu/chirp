@@ -3,9 +3,10 @@
 # Web companion E2E smoke: start a real chirp_chat and chirp_social (both
 # in-memory mode) on free ports, then run the vitest integration suites
 # against their websocket entries. Mirrors the orchestration conventions of
-# the repo-root test_services.sh. When the app_gateway + notification
-# binaries are also present, the device-plane suite runs against them too;
-# otherwise it self-skips.
+# the repo-root test_services.sh. When the voice binary is also present, the
+# voice suite runs against it; when the app_gateway + notification binaries
+# are also present, the device-plane suite runs against them too; otherwise
+# the missing suites self-skip.
 
 set -euo pipefail
 
@@ -13,6 +14,7 @@ cd "$(dirname "$0")/../../.."
 
 CHAT_BIN="${CHAT_BIN:-./build/services/shared/chat/chirp_chat}"
 SOCIAL_BIN="${SOCIAL_BIN:-./build/services/social/chirp_social}"
+VOICE_BIN="${VOICE_BIN:-./build/services/voice/chirp_voice}"
 # Device plane is optional: the suite needs both the auth-gated forward edge
 # and its notification backend. Miss one and the device cases self-skip.
 EDGE_BIN="${EDGE_BIN:-./build/services/app/sdk_gateway/chirp_app_sdk_gateway}"
@@ -75,6 +77,15 @@ SOCIAL_PORT="${SOCIAL_PORT:-$(pick_port)}"
 SOCIAL_WS_PORT="${SOCIAL_WS_PORT:-$(pick_port)}"
 SOCIAL_LOG="${SOCIAL_LOG:-/tmp/chirp_web_smoke_social.log}"
 
+VOICE_ENV=()
+VOICE_PID=""
+if [ -f "${VOICE_BIN}" ]; then
+  VOICE_PORT="${VOICE_PORT:-$(pick_port)}"
+  VOICE_WS_PORT="${VOICE_WS_PORT:-$(pick_port)}"
+  VOICE_LOG="${VOICE_LOG:-/tmp/chirp_web_smoke_voice.log}"
+  VOICE_ENV=("CHIRP_VOICE_WS_URL=ws://127.0.0.1:${VOICE_WS_PORT}")
+fi
+
 DEVICE_ENV=()
 EDGE_PID=""
 NOTIF_PID=""
@@ -108,8 +119,14 @@ CHAT_PID=$!
   > "${SOCIAL_LOG}" 2>&1 &
 SOCIAL_PID=$!
 
+if [ -n "${VOICE_ENV[*]}" ]; then
+  "${VOICE_BIN}" --port "${VOICE_PORT}" --ws_port "${VOICE_WS_PORT}" \
+    > "${VOICE_LOG}" 2>&1 &
+  VOICE_PID=$!
+fi
+
 cleanup() {
-  stop_proc "${CHAT_PID}" "${SOCIAL_PID}" "${EDGE_PID}" "${NOTIF_PID}"
+  stop_proc "${CHAT_PID}" "${SOCIAL_PID}" "${VOICE_PID}" "${EDGE_PID}" "${NOTIF_PID}"
 }
 trap cleanup EXIT
 
@@ -117,6 +134,10 @@ wait_port "${CHAT_PORT}" chirp_chat "${CHAT_LOG}"
 wait_port "${CHAT_WS_PORT}" chirp_chat_ws "${CHAT_LOG}"
 wait_port "${SOCIAL_PORT}" chirp_social "${SOCIAL_LOG}"
 wait_port "${SOCIAL_WS_PORT}" chirp_social_ws "${SOCIAL_LOG}"
+if [ -n "${VOICE_PID}" ]; then
+  wait_port "${VOICE_PORT}" chirp_voice "${VOICE_LOG}"
+  wait_port "${VOICE_WS_PORT}" chirp_voice_ws "${VOICE_LOG}"
+fi
 if [ -n "${EDGE_PID}" ]; then
   wait_port "${NOTIF_PORT}" chirp_app_notification "${NOTIF_LOG}"
   wait_port "${NOTIF_WS_PORT}" chirp_app_notification_ws "${NOTIF_LOG}"
@@ -129,6 +150,7 @@ echo "[web] vitest integration against ws://127.0.0.1:${CHAT_WS_PORT} + ws://127
 # array element would be a command word, not an assignment.
 env CHIRP_WS_URL="ws://127.0.0.1:${CHAT_WS_PORT}" \
   CHIRP_SOCIAL_WS_URL="ws://127.0.0.1:${SOCIAL_WS_PORT}" \
+  "${VOICE_ENV[@]}" \
   "${DEVICE_ENV[@]}" \
   npm --prefix apps/web_companion run test:integration
 
@@ -138,5 +160,10 @@ tail -n 12 "${CHAT_LOG}" || true
 echo ""
 echo "--- social log tail (${SOCIAL_LOG}) ---"
 tail -n 12 "${SOCIAL_LOG}" || true
+if [ -n "${VOICE_PID}" ]; then
+  echo ""
+  echo "--- voice log tail (${VOICE_LOG}) ---"
+  tail -n 12 "${VOICE_LOG}" || true
+fi
 echo ""
 echo "=== Web Smoke Done ==="
