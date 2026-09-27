@@ -938,9 +938,156 @@ TEST_F(HybridStoreTest, PendingDeliveriesFilterByExpiry) {
   EXPECT_EQ(due[0].message_id, "m1");
 }
 
+// 畸形投递状态值（共享 Redis 里可能混入旧版本/脏数据）不回退成默认信息，
+// 也不在 io 线程上爆 stoll。四类坏值全覆盖 ParseI64 的两个失败出口
+// （end==begin、errno==ERANGE）以及 colon2 缺失的短路。
+TEST_F(HybridStoreTest, MalformedDeliveryStatusValuesFallBackToDefaults) {
+  ASSERT_TRUE(store_->Initialize());
+
+  // 非数字前缀：ParseI64 end==begin —— status 侧（&& 短路，秒数不再解析）。
+  redis_->SetDirect("chirp:chat:delivery:m1:r1", "abc:123");
+  auto a = store_->GetDeliveryStatus("m1", "r1");
+  ASSERT_TRUE(a.has_value());
+  EXPECT_EQ(a->status, chirp::chat::DeliveryState::kPending);
+  EXPECT_EQ(a->created_at, 0);
+
+  // 非数字后缀：ParseI64 end==begin —— created_at 侧。两段必须同时解析
+  // 成功才赋值，任一失败都整体退回默认 info（status 不吃前缀的 5）。
+  redis_->SetDirect("chirp:chat:delivery:m2:r1", "5:zzz");
+  auto b = store_->GetDeliveryStatus("m2", "r1");
+  ASSERT_TRUE(b.has_value());
+  EXPECT_EQ(b->status, chirp::chat::DeliveryState::kPending);
+  EXPECT_EQ(b->created_at, 0);
+
+  // 数值溢出：strtoll 置 errno==ERANGE。
+  redis_->SetDirect("chirp:chat:delivery:m3:r1",
+                    "5:99999999999999999999");
+  auto c = store_->GetDeliveryStatus("m3", "r1");
+  ASSERT_TRUE(c.has_value());
+  EXPECT_EQ(c->status, chirp::chat::DeliveryState::kPending);
+  EXPECT_EQ(c->created_at, 0);
+
+  // 只有两段、没有第三个冒号：两段解析成功照常赋值，last_error 短路不解析。
+  redis_->SetDirect("chirp:chat:delivery:m4:r1", "5:123");
+  auto d = store_->GetDeliveryStatus("m4", "r1");
+  ASSERT_TRUE(d.has_value());
+  EXPECT_EQ(d->status, static_cast<chirp::chat::DeliveryState>(5));
+  EXPECT_EQ(d->created_at, 123);
+  EXPECT_TRUE(d->last_error.empty());
+
+  // 空字段：status 侧空串走 ParseI64 的 empty 早退；created_at 侧空串同理。
+  redis_->SetDirect("chirp:chat:delivery:m5:r1", ":123");
+  auto e = store_->GetDeliveryStatus("m5", "r1");
+  ASSERT_TRUE(e.has_value());
+  EXPECT_EQ(e->status, chirp::chat::DeliveryState::kPending);
+  EXPECT_EQ(e->created_at, 0);
+
+  redis_->SetDirect("chirp:chat:delivery:m6:r1", "5:");
+  auto f = store_->GetDeliveryStatus("m6", "r1");
+  ASSERT_TRUE(f.has_value());
+  EXPECT_EQ(f->status, chirp::chat::DeliveryState::kPending);
+  EXPECT_EQ(f->created_at, 0);
+
+  // 第三段存在但为空：last_error 置空串而非保持短路。
+  redis_->SetDirect("chirp:chat:delivery:m7:r1", "5:123:");
+  auto g = store_->GetDeliveryStatus("m7", "r1");
+  ASSERT_TRUE(g.has_value());
+  EXPECT_EQ(g->status, static_cast<chirp::chat::DeliveryState>(5));
+  EXPECT_TRUE(g->last_error.empty());
+
+  // 超过 SSO 阈值的 status 字段：substr 临时串走堆分配路径后照常解析。
+  redis_->SetDirect("chirp:chat:delivery:m8:r1", "12345678901234567:123");
+  auto h = store_->GetDeliveryStatus("m8", "r1");
+  ASSERT_TRUE(h.has_value());
+  EXPECT_EQ(h->status, static_cast<chirp::chat::DeliveryState>(12345678901234567LL));
+  EXPECT_EQ(h->created_at, 123);
+}
+
+// HasMessage 热层扫描对历史列表里的脏条目免疫：解析失败的字节、
+// id 不匹配的合法消息都只是跳过；只有精确 id 命中才返回 true。
+TEST_F(HybridStoreTest, HasMessageSkipsCorruptAndMismatchedHistoryEntries) {
+  ASSERT_TRUE(store_->Initialize());
+
+  // 队列里只有脏数据（解析失败）和别的消息（id 不符）：全部跳过 → 返回 false。
+  redis_->PushDirect("chirp:chat:history:ch9", "garbage-not-proto");
+  redis_->PushDirect("chirp:chat:history:ch9",
+                     MakeMessage("m-other", "ch9", 1000).SerializeAsString());
+  fake_mysql::PushRows({});
+  EXPECT_FALSE(store_->HasMessage("ch9", "m1"));
+
+  // 目标消息也在队列里：扫描到即返回 true（脏条目在前也能越过）。
+  redis_->PushDirect("chirp:chat:history:ch9",
+                     MakeMessage("m1", "ch9", 2000).SerializeAsString());
+  EXPECT_TRUE(store_->HasMessage("ch9", "m1"));
+}
+
+// PurgeOfflineByMessageId 扫 Redis 队列与 Redis-down 回退队列时，
+// 畸形条目（解析失败）只是跳过，不中断回收也不误删。
+TEST_F(HybridStoreTest, PurgeOfflineByMessageIdSkipsCorruptEntries) {
+  ASSERT_TRUE(store_->Initialize());
+
+  // Redis 队列：脏字节排在中间，前后各一条正常消息。
+  EXPECT_TRUE(store_->AddOfflineMessage("r1",
+      MakeMessage("m1", "ch", 1000, "r1").SerializeAsString()));
+  EXPECT_TRUE(store_->AddOfflineMessage("r1", "garbage-not-proto"));
+  EXPECT_TRUE(store_->AddOfflineMessage("r1",
+      MakeMessage("m2", "ch", 2000, "r1").SerializeAsString()));
+  EXPECT_EQ(store_->PurgeOfflineByMessageId("r1", "m1"), 1u);
+  // 队列原样留下脏条目与未命中的 m2（GetOfflineMessages 会跳过脏字节，
+  // 所以这里直接看队列原始内容）。
+  const auto queue = redis_->ListDirect("chirp:chat:offline:r1");
+  ASSERT_EQ(queue.size(), 2u);
+  EXPECT_EQ(queue[0], "garbage-not-proto");
+  MessageData kept;
+  ASSERT_TRUE(kept.ParseFromArray(queue[1].data(), static_cast<int>(queue[1].size())));
+  EXPECT_EQ(kept.message_id, "m2");
+
+  // Redis-down 回退队列：同样跳过脏字节、只回收命中的 id。
+  MessageStoreConfig cfg;
+  cfg.redis_port = 1;
+  HybridMessageStore dead_redis(io_, cfg);
+  EXPECT_FALSE(dead_redis.AddOfflineMessage("r2", "garbage-not-proto"));
+  EXPECT_FALSE(dead_redis.AddOfflineMessage("r2",
+      MakeMessage("mb", "ch", 2, "r2").SerializeAsString()));
+  EXPECT_EQ(dead_redis.PurgeOfflineByMessageId("r2", "mb"), 1u);
+  EXPECT_TRUE(dead_redis.GetOfflineMessages("r2").empty());  // 只剩脏条目 → 整体清空
+}
+
+// 大批过期条目强制 vector 多次扩容（1→2→4→…→256→512），覆盖
+// push_back 的重分配路径；按序返回全部应扫出项。
+TEST_F(HybridStoreTest, PendingDeliveriesGrowPastInlineCapacity) {
+  ASSERT_TRUE(store_->Initialize());
+
+  for (int i = 0; i < 300; ++i) {
+    redis_->PushDirect("chirp:chat:pending_delivery",
+                       "m" + std::to_string(i) + ":r:500");
+  }
+  // 边界与非数值：INT64_MAX 合法但不满足 <before；溢出串走 ERANGE 出口被跳过。
+  redis_->PushDirect("chirp:chat:pending_delivery",
+                     "m-big:r:9223372036854775807");
+  redis_->PushDirect("chirp:chat:pending_delivery",
+                     "m-er:r:99999999999999999999");
+  // 17 位十进制过期时间（< INT64_MAX）：substr 临时串超过 SSO 阈值走堆分配。
+  redis_->PushDirect("chirp:chat:pending_delivery",
+                     "m-long:r:12345678901234567");
+  auto due = store_->GetPendingDeliveries(1000);
+  ASSERT_EQ(due.size(), 300u);
+  // INT64_MAX 语义：17 位合法条目严格小于 before 被扫出；恰好等于 before 的
+  // m-big（9223372036854775807）不满足严格小于，留在队列里（共 301）。
+  auto all = store_->GetPendingDeliveries(INT64_MAX);
+  ASSERT_EQ(all.size(), 301u);
+  EXPECT_EQ(due[0].message_id, "m0");
+  EXPECT_EQ(due[299].message_id, "m299");
+}
+
 TEST_F(HybridStoreTest, PrivateChannelIdOrderingAndAccessors) {
   EXPECT_EQ(HybridMessageStore::PrivateChannelId("a", "b"), "a|b");
   EXPECT_EQ(HybridMessageStore::PrivateChannelId("b", "a"), "a|b");
+  // 超过 SSO 阈值的两个方向：拼接结果走堆分配路径，排序不变。
+  const std::string long_a(24, 'x');
+  const std::string long_b(24, 'y');
+  EXPECT_EQ(HybridMessageStore::PrivateChannelId(long_a, long_b), long_a + "|" + long_b);
+  EXPECT_EQ(HybridMessageStore::PrivateChannelId(long_b, long_a), long_a + "|" + long_b);
   EXPECT_NE(store_->GetRedisClient(), nullptr);
   EXPECT_NE(store_->GetMySQLStore(), nullptr);
   EXPECT_EQ(store_->GetConfig().mysql_pool_size, 1u);

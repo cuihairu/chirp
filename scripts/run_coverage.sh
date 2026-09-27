@@ -766,6 +766,30 @@ KNOWN_UNCOVERABLE_ARMS = {
         "KickMember post-closure construction unwind edges"),
     ("sdks/core/src/sdk_client.cc", 1356): ((4, 6, 7),
         "FetchGroupInfo post-closure construction unwind edges"),
+    # -- 覆盖率批次5（hybrid_message_store.cc 逐臂审计）----------------------
+    # All semantic input classes are exercised for each of the lines below
+    # (empty field, non-numeric text, 17-digit heap-allocated field, ERANGE
+    # overflow, INT64_MAX-exact boundary, valid values; see
+    # MalformedDeliveryStatusValuesFallBackToDefaults /
+    # PendingDeliveriesGrowPastInlineCapacity in chat_mysql_test.cc). The
+    # exempted arms are the residual edges that stayed 0 under every input:
+    # post-inline dead blocks / allocation-failure unwind paths that no
+    # argument shape can reach.
+    ("services/shared/chat/src/hybrid_message_store.cc", 514): ((7, 8),
+        "GetDeliveryStatus: dead post-inline duplicate of the second "
+        "ParseI64 entry block (46->47/46->48 with the never-returning call); "
+        "every live edge of both parses is taken across empty, non-numeric, "
+        "overflow, heap-length and valid status values"),
+    ("services/shared/chat/src/hybrid_message_store.cc", 546): ((3,),
+        "GetPendingDeliveries expiry parse: structurally dead edge in the "
+        "inlined ParseI64/substr block layout (12->14); empty, non-numeric, "
+        "17-digit heap, overflow and INT64_MAX-exact expiry inputs all "
+        "exercise the other five arms"),
+    ("services/shared/chat/src/hybrid_message_store.cc", 571): ((10, 11, 12, 13),
+        "PrivateChannelId string-concat fragments attributed to the "
+        "push_back line: operator+ allocation-failure blocks (calls with "
+        "returned=0, bad_alloc unwind); the live SSO and heap-concat edges "
+        "are exercised by short and >15-char channel-id inputs"),
     # -- invariant-defensive arms --------------------------------------------
     ("libs/network/chat_peer_hub.cc", 412): ((2,),
         "ArmIdleTimer's async_wait: Close() cancels the timer before setting "
