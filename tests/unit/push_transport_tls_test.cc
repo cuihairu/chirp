@@ -104,16 +104,18 @@ class LoopbackTlsServer {
       std::function<void(asio::ssl::stream<asio::ip::tcp::socket>&)>;
 
   // A nonzero stall holds the connection thread before the server
-  // handshake, so the client's handshake deadline can fire first.
+  // handshake, so the client's handshake deadline can fire first. The bind
+  // address defaults to the IPv4 wildcard; IPv6-literal tests pass ::1.
   explicit LoopbackTlsServer(
       std::string cert_path, std::string key_path, Handler handler,
-      std::chrono::milliseconds stall = std::chrono::milliseconds(0))
+      std::chrono::milliseconds stall = std::chrono::milliseconds(0),
+      asio::ip::address bind_addr = asio::ip::address_v4::any())
       : handler_(std::move(handler)), stall_(stall) {
     ctx_ = std::make_unique<asio::ssl::context>(asio::ssl::context::tls_server);
     ctx_->use_certificate_chain_file(std::move(cert_path));
     ctx_->use_private_key_file(std::move(key_path), asio::ssl::context::pem);
     asio::ip::tcp::acceptor acceptor(
-        io_, asio::ip::tcp::endpoint(asio::ip::tcp::v4(), 0));
+        io_, asio::ip::tcp::endpoint(bind_addr, 0));
     port_ = acceptor.local_endpoint().port();
     acceptor_ = std::make_unique<asio::ip::tcp::acceptor>(std::move(acceptor));
     accept_thread_ = std::thread([this] { AcceptLoop(); });
@@ -384,6 +386,56 @@ TEST(HttpPushTransportTlsTest, RefusedConnectionYieldsEmpty) {
   PushRequest request = SampleRequest();
   request.url = "https://127.0.0.1:1/x";  // loopback, nothing listens
   EXPECT_EQ(transport.Post(request), "");
+}
+
+TEST(HttpPushTransportTlsTest, Ipv6LiteralEndpointRoundTripsWithoutSni) {
+  // "[::1]" parses as an IP literal (the ':' in the host), so Connect must
+  // skip SNI yet still complete the handshake; the committed cert has no
+  // ::1 SAN, so verification is disabled to prove the full round trip.
+  LoopbackTlsServer server(DataFile("server.crt"), DataFile("server.key"),
+                           [](asio::ssl::stream<asio::ip::tcp::socket>& s) {
+                             WriteAll(s, Response("HTTP/1.1 200 OK", "v6"));
+                           },
+                           std::chrono::milliseconds(0),
+                           asio::ip::address_v6::loopback());
+
+  SslHttpConnectionFactory::Config factory_config = TrustedFactoryConfig();
+  factory_config.verify_certificates = false;
+  HttpPushTransport transport(
+      std::make_shared<SslHttpConnectionFactory>(factory_config), TestConfig());
+  PushRequest request = SampleRequest();
+  request.url = "https://[::1]:" + std::to_string(server.port()) + "/x";
+  EXPECT_EQ(transport.Post(request), "v6");
+}
+
+TEST(HttpPushTransportTlsTest, GarbageRecordAfterHandshakeYieldsEmpty) {
+  // Raw non-TLS bytes on the wire after a completed handshake make SSL_read
+  // surface a protocol error - neither clean EOF nor data - and the
+  // transport must answer "" just like the truncated-response cases (the
+  // close_notify test above drives the eof arm).
+  LoopbackTlsServer server(DataFile("server.crt"), DataFile("server.key"),
+                           [](asio::ssl::stream<asio::ip::tcp::socket>& s) {
+                             std::error_code ec;
+                             s.next_layer().write_some(
+                                 asio::buffer(std::string("not-tls")), ec);
+                           });
+
+  HttpPushTransport transport(
+      std::make_shared<SslHttpConnectionFactory>(TrustedFactoryConfig()),
+      TestConfig());
+  PushRequest request = SampleRequest();
+  request.url =
+      "https://127.0.0.1:" + std::to_string(server.port()) + "/x";
+  EXPECT_EQ(transport.Post(request), "");
+}
+
+TEST(HttpPushTransportTlsTest, DeletingFactoryThroughBaseDtor) {
+  // SslHttpConnectionFactory's deleting destructor only runs when a
+  // complete object dies through the virtual base destructor (an actual
+  // `delete base_ptr`); stack and shared_ptr lifetime never emit it.
+  HttpConnectionFactory* factory =
+      new SslHttpConnectionFactory(TrustedFactoryConfig());
+  delete factory;
 }
 
 }  // namespace

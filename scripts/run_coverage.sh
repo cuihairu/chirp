@@ -809,6 +809,51 @@ KNOWN_UNCOVERABLE_ARMS = {
         "peers_ entry) calls Close on the old conn BEFORE overwriting the "
         "entry, so a closing registered conn always still owns its table "
         "entry; the else is defensive against a future reordering"),
+    # -- notification push transport / service (2026-09-27 gap sweep) -------
+    ("services/app/notification/src/http_push_transport.cc", 63): ((8, 9),
+        "ParseHttpUrl path-assignment EH-pad arcs: the two 0/0 edges hang off "
+        "the THROW targets of the inlined `path_slash == npos ? \"/\" : "
+        "url.substr(path_slash)` string write (same shape as line 62) and "
+        "need an allocation failure inside the assignment"),
+    ("services/app/notification/src/http_push_transport.cc", 167): ((1, 3),
+        "ParseResponseHead header-loop guard-fire arms: the caller only "
+        "parses a head whose \\r\\n\\r\\n terminator it already located at "
+        "head_end, so from any pos < head_end find(\"\\r\\n\", pos) lands at "
+        "or before head_end - neither the npos arm nor the past-head_end arm "
+        "can fire (line 166 exempts the loop-condition siblings)"),
+    ("services/app/notification/src/http_push_transport.cc", 352): ((4, 6, 7),
+        "TcpHttpConnectionFactory::Connect construction line: the untaken "
+        "arms are the EH-pad-internal arcs of the `new "
+        "TcpHttpConnection(io, make_unique<socket>(...))` chain (bad_alloc "
+        "unwind, same family as the line-350 success-path return) plus one "
+        "always-false inlined-block edge on that chain"),
+    ("services/app/notification/src/http_push_transport.cc", 524): ((4, 6, 7),
+        "SslHttpConnectionFactory::Connect construction line: identical "
+        "block topology to the Tcp variant on line 352"),
+    ("services/app/notification/src/notification_service.cc", 48): ((4, 5),
+        "ctor make_shared<LoggingPushTransport> EH-pad-internal arcs: only "
+        "an allocation failure inside the fallback construction can enter "
+        "them"),
+    ("services/app/notification/src/notification_service.cc", 130): ((1,),
+        "UnregisterDevice user-index miss: devices_ and user_to_devices_ are "
+        "only ever mutated together under the same mutex (RegisterDevice "
+        "inserts both, UnregisterDevice/CleanupInactiveDevices erase both), "
+        "so a devices_ hit whose user entry is missing cannot happen"),
+    ("services/app/notification/src/notification_service.cc", 177): ((1,),
+        "GetUserDevices per-device miss: the user index only lists ids that "
+        "RegisterDevice put into devices_ under the same lock, and every "
+        "eraser removes both sides together, so the lookup always hits"),
+    ("services/app/notification/src/notification_service.cc", 409): ((1,),
+        "CleanupInactiveDevices user-index miss: same co-maintained-map "
+        "invariant as line 130"),
+    ("services/app/notification/src/http_push_transport.cc", 534): ((3,),
+        "is_ip_literal lambda digit-range lower-bound arm (c < '0'): the "
+        "lambda only runs after a successful TCP connect (line 519 returns "
+        "first otherwise), and every host string getaddrinfo resolves "
+        "without environment control is digits+dots (numeric IPv4), colon-"
+        "bearing (IPv6, short-circuited at line 532), or lettered (letters "
+        "fail the c <= '9' upper-bound arm, which tests cover) - no "
+        "resolvable name can evaluate a char below '0' here"),
 }
 
 src_cache = {}

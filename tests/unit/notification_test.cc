@@ -191,6 +191,37 @@ TEST_F(NotificationServiceTest, SendToUnknownDeviceFails) {
   EXPECT_FALSE(svc_.SendNotificationToDevice("missing", MakePayload()));
 }
 
+TEST_F(NotificationServiceTest, WebPlatformDeviceSendsViaFcm) {
+  // Web rides the FCM path: the platform check must accept it inside the
+  // android||web arm, not fall through to the APNs else-if.
+  svc_.RegisterDevice(MakeDevice("browser", "alice", "web"));
+
+  EXPECT_TRUE(svc_.NotifyNewMessage("alice", "bob", "bobby", "hi", "c1"));
+  EXPECT_EQ(svc_.GetStats().fcm_sent.load(), 1u);
+  EXPECT_EQ(svc_.GetStats().apns_sent.load(), 0u);
+}
+
+TEST_F(NotificationServiceTest, UnknownPlatformDeviceFallsThroughUnsent) {
+  // Platforms matching neither the FCM (android/web) nor the APNs (ios)
+  // arm fall through both branches: the send is refused and only the
+  // failure counter moves. The three strings cover every length-gated arm
+  // of the inlined platform comparisons (9/8/3 chars vs 7/3/3).
+  for (const char* platform : {"harmonyos", "harmony", "wap"}) {
+    ASSERT_TRUE(svc_.RegisterDevice(
+        MakeDevice("d-" + std::string(platform), "alice", platform)));
+  }
+
+  // Snapshot the counters as scalars: GetStats() hands back a reference to
+  // the live stats, so copying the struct (or keeping the reference) would
+  // alias the post-send state.
+  const uint64_t failed_before = svc_.GetStats().notifications_failed.load();
+  EXPECT_FALSE(svc_.NotifyNewMessage("alice", "bob", "bobby", "hi", "c1"));
+  EXPECT_EQ(svc_.GetStats().notifications_failed.load(), failed_before + 3u);
+  EXPECT_EQ(svc_.GetStats().notifications_sent.load(), 0u);
+  EXPECT_EQ(svc_.GetStats().fcm_sent.load(), 0u);
+  EXPECT_EQ(svc_.GetStats().apns_sent.load(), 0u);
+}
+
 TEST_F(NotificationServiceTest, SendIosCountsApns) {
   svc_.RegisterDevice(MakeDevice("phone", "bob", "ios"));
 

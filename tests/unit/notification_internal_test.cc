@@ -118,6 +118,31 @@ TEST(NotificationInternalTest, CleanupRemovesStaleInactiveDevices) {
   EXPECT_EQ(svc.GetUserDevices("bob").size(), 1u);
 }
 
+TEST(NotificationInternalTest, CleanupKeepsOldButActiveDevices) {
+  NotificationService svc{FCMConfig{}, APNsConfig{}};
+  DeviceRegistration reg;
+  reg.device_id = "d1";
+  reg.user_id = "alice";
+  reg.platform = "android";
+  ASSERT_TRUE(svc.RegisterDevice(reg));
+
+  // Age the device past the cutoff while it stays active: the drop
+  // predicate is `old && !active`, so this side of the conjunction must
+  // survive the sweep (the sibling test above drives the drop side).
+  {
+    std::lock_guard<std::mutex> lock(NotificationServiceInternalAccess::mutex(svc));
+    auto& devices = NotificationServiceInternalAccess::devices(svc);
+    auto it = devices.find("d1");
+    ASSERT_NE(it, devices.end());
+    std::lock_guard<std::mutex> device_lock(it->second->mu);
+    it->second->registered_at = 1;  // long before any real cutoff
+  }
+
+  svc.CleanupInactiveDevices(1000);
+
+  EXPECT_EQ(svc.GetUserDevices("alice").size(), 1u);
+}
+
 TEST(NotificationInternalTest, FcmPayloadWithoutTokenBuildsTemplate) {
   NotificationService svc{FCMConfig{}, APNsConfig{}};
   NotificationPayload p = MakePayload();
