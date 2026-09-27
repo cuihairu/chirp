@@ -1,6 +1,6 @@
 # Chirp 任务清单
 
-> 最后更新：2026-09-27：游戏在线状态 + 好友消息进游戏——身份绑定即"在游戏内"断言，绑定默认开启上报，可经自服务开关（5031-5034）关闭；关闭后不推状态、游戏内不投递。多端在线（顶号键 (user_id, platform) + 在线设备清单 + SDK/伴侣 UI，见 game_sdk_gateway 条目）同批落地。
+> 最后更新：2026-09-27：覆盖率缺口审计批次——六文件 27 条未覆盖分支臂逐条判定：可达臂补 10 个真单测 + 6 处扩展清零，真不可达臂经新 `KNOWN_UNCOVERABLE_ARMS` 机制（理由+行号锚定，每次报告列出）豁免；100% 行覆盖门保持不破。上批：游戏在线状态 + 好友消息进游戏（绑定即"在游戏内"断言，自服务开关 5031-5034，多端在线同批）。
 >
 > 2026-09-27：撤回墓碑贯通历史存档收口——墓碑改为「置位 + 抹除正文」并在三种存储实现里落地（MySQL 列 / Hybrid 双 tier / 基础形态内存+Redis 镜像，收敛为新单元 `recall_tombstone`），`BULK_DELETE` 软删补上立碑与离线回收，`GET_HISTORY` 从此读不出原文；覆盖率保持 100.0%。
 >
@@ -68,7 +68,7 @@ SDK 引擎兼容性见 [SDK 引擎兼容性](docs/design-notes/sdk_compatibility
 ### app_chat（原 chat，部署为 App 平面 hub）
 
 - [x] 基础聊天能力（与 game_chat 同一二进制）
-- [x] **hub 模式**：接受 game_chat 的 `PEER_REGISTER_REQ`，白名单 + 版本协商（2026-09-22：9edaca3 将两种构建形态统一接线 libs 层 `ChatPeerHub`——`--hub_mode`/`--hub_peer_port`（默认 8200）独立监听注册面，`--allowed_peers` 白名单 + `--min_peer_version`/`VERSION_MISMATCH` 拒绝，同 id 顶替、心跳 idle 踢出、断线重连；`chat_peer_test` 36 例含真实 link↔hub 端到端）
+- [x] **hub 模式**：接受 game_chat 的 `PEER_REGISTER_REQ`，白名单 + 版本协商（2026-09-22：9edaca3 将两种构建形态统一接线 libs 层 `ChatPeerHub`——`--hub_mode`/`--hub_peer_port`（默认 8200）独立监听注册面，`--allowed_peers` 白名单 + `--min_peer_version`/`VERSION_MISMATCH` 拒绝，同 id 顶替、心跳 idle 踢出、断线重连；`chat_peer_test` 53 例含真实 link↔hub 端到端）
 - [x] **身份映射**（2026-09-22：`PlayerDirectory` + `IdentityRegistry` 落地 app_chat，`BIND/UNBIND/GET/RESOLVE` 四 RPC 经 `SERVER_AUTH_REQ` 信任门在 chat 主端口应答，(game_id, game_user_id) 唯一索引 replace-on-reassert，可选 Redis 镜像跨重启）
 - [x] **频道订阅**（2026-09-22：`SubscriptionRegistry` 落地，SUBSCRIBE/UNSUBSCRIBE/GET 三 RPC，(player, game, channel) 三元组唯一索引 + (game, channel) 反向扇入索引；后端断言带幂等键，自服务空 id 由服务端铸 `sub-` id 且收敛稳定）
 - [x] **跨平面 fan-out**（2026-09-22：`PlayerDirectory::FanoutChannelMessage` 在 hub 侧承接 spoke 的 `CHANNEL_MESSAGE_NOTIFY` 上行，每订阅者一份私信副本交接 + 未读自增；空订阅语义 no-op、超 `--max_fanout_per_message` 整条丢弃告警）
@@ -130,6 +130,10 @@ SDK 引擎兼容性见 [SDK 引擎兼容性](docs/design-notes/sdk_compatibility
 - [x] 设计并集成 logo
 - [x] CAPABILITY_MATRIX.md 更新服务名和路径（2026-09-22：`chirp_game_sdk_gateway` / `chirp_app_auth` / `chirp_app_sdk_gateway` / `chirp_app_notification` / `chirp_game_server_gateway` 全部对齐，补充二进制命名约定段）
 - [x] 补充 peer 注册协议的详细文档（2026-09-22：新增 `docs/api/peer_protocol.md`，覆盖握手、字段、错误码、能力位、白名单、CLI、部署示例与实现状态；vitepress sidebar 与 architecture.md 已交叉引用）
+
+## 覆盖率缺口审计（2026-09-27 批次，#4）
+
+- [x] **六文件 27 条未覆盖分支臂逐条判定**（`chat_peer_hub` / `device_presence` / `message_router` / `redis_client` / `session_registry` / `sdk_client`；coverage-gaps.txt 实为 27 条，任务面 19 条按六文件全量扩审）：**可达臂补真单测**——`chat_peer_test` +7 例（4MiB+1 超限帧头即断、帧体中断不毒化 hub、双未注册 pen 扫描跳过、未注册 2s 空闲超时 "(unregistered)" 告警路径、注册态空闲超时回 "timeout" 事件、顶号时在途帧体完成撞 closing 守卫、协议错误关闭后空闲定时器 completion 静默退出）+ service_id_for_game 双 spoke 扫描扩展；`session_registry_test` +1 例（移除时 device 元数据已失落的僵尸会话读空 device_id）+ 长 platform/device 归一与 `LoginKickReason` 长 platform 拼接扩展；`network_full_tests` 扩展（EXPIRE/LRANGE/KEYS 长 key 与 int64 极值 to_string 堆臂、>15 字节频道订阅/退订）；`network_logic_tests` +1 例（MessageRouter 派发用 >SBO 捕获 handler + >15 字节载荷走堆构造臂）；`sdk_core_tests` +1 例（十个类型化便捷方法长参数 + 堆回调 NotConnected 一次全过）。**真不可达臂引入 `KNOWN_UNCOVERABLE_ARMS` 豁免机制**（`scripts/run_coverage.sh`：按 (文件, 行, 臂号) 豁免并带理由，臂退出分支分母、每次报告重列清单——臂因源码/编译器变化变得可达时会在 gaps 里现形，与整行 `KNOWN_UNCOVERABLE` 互补不遮蔽行统计）：22 行 / 68 臂，三类理由——① unwind-only（内联 string/function 构造的异常清理边，特征为成对 0/0 尾块，SSO/堆、小/大捕获全部操纵过仍不翻）、② 不变量防御（`service_id_for_game` 的 registered==false 臂：peers_ 只收已注册连接；`Close` 顶号 else 臂：顶号在覆盖表项之前 Close，关连接时必然仍持有自己的表项）、③ 竞态窗（空闲定时器 `ec==OK && closing` 臂：Close 先 cancel 定时器，仅在 completion 已入 strand 队列的亚毫秒窗内可达，同 websocket 握手写竞态类）。门禁结果：行覆盖 100.0%（8592/8592）保持，ctest 40/40，分支覆盖（信息项）99.4%（8352/8404，throw 边除外），八条 smoke 腿逐条 rc=0
 
 ## 实验性服务（暂不动）
 
