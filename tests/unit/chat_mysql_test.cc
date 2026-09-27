@@ -341,6 +341,12 @@ TEST_F(MySqlStoreTest, HistoryParsesRecalledColumnAndToleratesLegacyRows) {
   ASSERT_EQ(fresh.size(), 1u);
   EXPECT_FALSE(fresh[0].is_recalled);
 
+  // "true" 字面量与 "1" 等价,同样读回为已撤回。
+  fake_mysql::PushRows({{"m4", "s", "r", "ch", "0", "1", "c4", "4000", "", "true"}});
+  auto textual = store.GetHistory("ch", 0, 0, 10);
+  ASSERT_EQ(textual.size(), 1u);
+  EXPECT_TRUE(textual[0].is_recalled);
+
   // 旧 schema 行（未回填 is_recalled 列）按未撤回处理。
   fake_mysql::PushRows({{"m3", "s", "r", "ch", "0", "1", "c3", "3000"}});
   auto legacy = store.GetHistory("ch", 0, 0, 10);

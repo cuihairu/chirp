@@ -149,4 +149,33 @@ TEST_F(RecallTombstoneRedisTest, ReportsWriteFailure) {
   EXPECT_EQ(untouched.content(), "text");
 }
 
+TEST_F(RecallTombstoneRedisTest, PartialFailureKeepsFailingResult) {
+  // 两条同 id 命中:第一条 LSET 注入失败,第二条照常回写。第二次的 LSET
+  // 虽然成功,但短路右侧的 ok 已是 false —— 整体结果保持失败;已写成功的
+  // 条目不回滚,由调用方按返回值决定补偿。
+  chirp_test::InMemoryRedis backing;
+  int lset_calls = 0;
+  chirp_test::FakeRedisServer partial(
+      [&backing, &lset_calls](const std::vector<std::string>& args) {
+        if (args[0] == "LSET" && ++lset_calls == 1) {
+          return std::string("-ERR injected\r\n");
+        }
+        return backing.Handle(args);
+      });
+  chirp::network::RedisClient client("127.0.0.1", partial.port());
+  backing.PushDirect("k", MakeMsg("m1", "first").SerializeAsString());
+  backing.PushDirect("k", MakeMsg("m1", "second").SerializeAsString());
+
+  EXPECT_FALSE(chirp::chat::MarkRecalledInRedisList(client, "k", "m1"));
+  const auto blobs = backing.ListDirect("k");
+  ASSERT_EQ(blobs.size(), 2u);
+  chirp::chat::ChatMessage head, tail;
+  ASSERT_TRUE(head.ParseFromArray(blobs[0].data(), static_cast<int>(blobs[0].size())));
+  EXPECT_FALSE(head.is_recalled());  // 失败的条目保持原状
+  EXPECT_EQ(head.content(), "first");
+  ASSERT_TRUE(tail.ParseFromArray(blobs[1].data(), static_cast<int>(blobs[1].size())));
+  EXPECT_TRUE(tail.is_recalled());  // 成功的条目照常落位
+  EXPECT_TRUE(tail.content().empty());
+}
+
 } // namespace

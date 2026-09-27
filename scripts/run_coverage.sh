@@ -233,6 +233,12 @@ KNOWN_UNCOVERABLE = {
     # ReadBody closing short-circuit: requires Close() to win the race with
     # an in-flight body completion on the same conn (idle timer vs read).
     ("libs/network/chat_peer_hub.cc", 274),
+    # Displaced-conn body-read closing guard (same race family as 274):
+    # DisplacedConnPendingBodyBowsOutOnClosingGuard drives it, but whether
+    # the aborted completion is queued before or after Close()'s strand
+    # entry flips with machine load — taken in the batch-6 full run,
+    # untaken in batch-7's, test green both ways.
+    ("libs/network/chat_peer_hub.cc", 319),
     # SendKickAndClose reason.empty() ? "kicked" : reason — every FailClient
     # call site passes a non-empty literal; empty-reason is dead.
     ("libs/network/chat_bridge.cc", 36),
@@ -697,9 +703,10 @@ KNOWN_UNCOVERABLE_FUNCTIONS = {
     # UserStore is abstract (Initialize/Register/... are pure virtual).
     ("services/app/auth/src/user_store.h", 57),
     # MessageStore is abstract (Initialize/StoreMessage/... pure virtual);
-    # deleting-dtor starts at the `virtual ~MessageStore()` line (38), not
-    # the `public:` access specifier (37).
-    ("services/shared/chat/src/message_store.h", 38),
+    # deleting-dtor starts at the `virtual ~MessageStore()` line (39), not
+    # the `public:` access specifier (38). (Re-pinned from 38 after the
+    # header gained a line and gcov's function start-line moved.)
+    ("services/shared/chat/src/message_store.h", 39),
     # HttpConnection is abstract (WriteAll/WaitReadable/ReadSome pure
     # virtual); only the TcpHttpConnection Impl D0 can run.
     ("services/app/notification/src/http_push_transport.h", 20),
@@ -775,21 +782,39 @@ KNOWN_UNCOVERABLE_ARMS = {
     # exempted arms are the residual edges that stayed 0 under every input:
     # post-inline dead blocks / allocation-failure unwind paths that no
     # argument shape can reach.
-    ("services/shared/chat/src/hybrid_message_store.cc", 514): ((7, 8),
+    ("services/shared/chat/src/hybrid_message_store.cc", 514): ((8, 9),
         "GetDeliveryStatus: dead post-inline duplicate of the second "
         "ParseI64 entry block (46->47/46->48 with the never-returning call); "
         "every live edge of both parses is taken across empty, non-numeric, "
-        "overflow, heap-length and valid status values"),
+        "overflow, heap-length and valid status values. (Re-pinned from "
+        "(7, 8): gcov arm indices shifted after upstream line-count drift; "
+        "the dead pair is today's (8, 9) — pinning only 9 let 8 resurface "
+        "in the batch-7 gate.)"),
     ("services/shared/chat/src/hybrid_message_store.cc", 546): ((3,),
         "GetPendingDeliveries expiry parse: structurally dead edge in the "
         "inlined ParseI64/substr block layout (12->14); empty, non-numeric, "
         "17-digit heap, overflow and INT64_MAX-exact expiry inputs all "
         "exercise the other five arms"),
-    ("services/shared/chat/src/hybrid_message_store.cc", 571): ((10, 11, 12, 13),
+    ("services/shared/chat/src/hybrid_message_store.cc", 571): ((14, 15, 16, 17),
         "PrivateChannelId string-concat fragments attributed to the "
         "push_back line: operator+ allocation-failure blocks (calls with "
         "returned=0, bad_alloc unwind); the live SSO and heap-concat edges "
-        "are exercised by short and >15-char channel-id inputs"),
+        "are exercised by short and >15-char channel-id inputs. (Re-pinned "
+        "from (10, 11, 12, 13): those live arms are now taken and gcov "
+        "renumbered the pad arcs 16->17/16->18 and 20->21/20->22.)"),
+    ("services/shared/chat/src/player_directory.cc", 194): ((20, 21, 22, 23, 24, 25),
+        "Unsubscribe log line: internal arcs of the bad_alloc landing pads "
+        "(blocks 72/76/80, the unwind targets of the log-concat operator+ "
+        "chain); no argument shape can allocate-fail, and every live ternary/"
+        "concat edge is taken by the by-id and by-tuple unsubscribe tests"),
+    ("services/shared/chat/src/recall_tombstone.cc", 32): ((9, 10, 11),
+        "MarkRecalledInRedisList write-back: 32[9] is a structurally dead "
+        "parallel arc 29->31 beside the executed 29->30->31 loop-tail route "
+        "(block 30 is the SerializeAsString temporary's destructor); "
+        "32[10, 11] are internal arcs of the bad_alloc pad at block 43 "
+        "(unwind targets of the SerializeAsString/LSet calls). The reachable "
+        "short-circuit outcomes LSet-false and ok-already-false are both "
+        "exercised (ReportsWriteFailure / PartialFailureKeepsFailingResult)"),
     # -- invariant-defensive arms --------------------------------------------
     ("libs/network/chat_peer_hub.cc", 412): ((2,),
         "ArmIdleTimer's async_wait: Close() cancels the timer before setting "

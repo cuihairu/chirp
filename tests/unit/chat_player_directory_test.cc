@@ -538,6 +538,30 @@ TEST(GamePresenceTest, LoadSkipsCorruptRecords) {
   EXPECT_FALSE(reader.Enabled("player-2"));
 }
 
+TEST(GamePresenceTest, LoadDefaultsPlayersWhoseRowCannotBeRead) {
+  const auto store = std::make_shared<std::map<std::string, std::string>>();
+  (*store)["chirp:game_presence:setting:player-1"] = "0";
+  chat::GamePresence reader([store]() mutable {
+    auto client = std::make_unique<FakeRedisClient>(store);
+    client->fail_get = true;
+    return client;
+  });
+  reader.Load();
+  // Keys 列出了行但逐行 Get 失败:该行按默认开启处理,不落 overrides。
+  EXPECT_TRUE(reader.Enabled("player-1"));
+}
+
+TEST(GamePresenceTest, LoadReplaysExplicitOptIn) {
+  const auto store = std::make_shared<std::map<std::string, std::string>>();
+  (*store)["chirp:game_presence:setting:player-1"] = "1";
+  chat::GamePresence reader([store]() mutable {
+    return std::make_unique<FakeRedisClient>(store);
+  });
+  reader.Load();
+  // 显式开启的选择也要重放:与缺省 true 语义一致,但来源是已落库的选择。
+  EXPECT_TRUE(reader.Enabled("player-1"));
+}
+
 TEST(GamePresenceTest, RedisFailureDegradesToMemoryOnly) {
   const auto store = std::make_shared<std::map<std::string, std::string>>();
   chat::GamePresence presence([store]() mutable {
@@ -1097,6 +1121,16 @@ TEST_F(PlayerDirectoryHandlerTest, UnbindHandlerRequiresExactlyOneSelector) {
               sg::UnbindPlayerIdentityRequest req;
               req.set_game_id("game-a");
               req.set_game_user_id("u-1");
+              return req;
+            }()).code(),
+            OK);
+
+  // A pair that was never bound resolves to no owner: the unbind still
+  // answers OK, with nobody to refresh in the game-presence roster.
+  EXPECT_EQ(directory_.HandleUnbindPlayerIdentity([] {
+              sg::UnbindPlayerIdentityRequest req;
+              req.set_game_id("game-zz");
+              req.set_game_user_id("nobody");
               return req;
             }()).code(),
             OK);

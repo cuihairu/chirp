@@ -380,6 +380,12 @@ TEST(ChatValidationTest, ParseChannelTypeListReadsCsvNames) {
   EXPECT_EQ(alias[0], SYSTEM_CHANNEL);
   EXPECT_EQ(alias[1], TEAM);
 
+  // Digits sit below 'A', so the case-fold lower-bound check takes its
+  // not-uppercase arm; the token stays unknown and is dropped as usual.
+  const auto numbered = ParseChannelTypeList("guild-2,team");
+  ASSERT_EQ(numbered.size(), 1u);
+  EXPECT_EQ(numbered[0], TEAM);
+
   // Empty / whitespace-only lists allow nothing.
   EXPECT_TRUE(ParseChannelTypeList("").empty());
   EXPECT_TRUE(ParseChannelTypeList(" , , ").empty());
