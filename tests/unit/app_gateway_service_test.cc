@@ -510,7 +510,7 @@ TEST_F(AppGatewayServiceTest, ScaffoldLoginBindsSession) {
   ASSERT_TRUE(LastBody(*session_, &resp));
   EXPECT_EQ(resp.user_id(), "alice");
   EXPECT_TRUE(resp.kick_previous());
-  EXPECT_EQ(resp.kick().reason(), "login from another device");
+  EXPECT_EQ(resp.kick().reason(), "logged in on another device");
 
   auto authed = chirp::network::GetAuthenticatedSession(state_, session_);
   EXPECT_EQ(authed.user_id, "alice");
@@ -530,7 +530,7 @@ TEST_F(AppGatewayServiceTest, ReLoginKicksPreviousSession) {
     if (pkt.msg_id() == chirp::gateway::KICK_NOTIFY) {
       chirp::auth::KickNotify kick;
       ASSERT_TRUE(kick.ParseFromString(pkt.body()));
-      EXPECT_EQ(kick.reason(), "login from another device");
+      EXPECT_EQ(kick.reason(), "logged in on another device");
       kicked = true;
     }
   }

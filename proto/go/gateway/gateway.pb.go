@@ -48,6 +48,10 @@ const (
 	MsgID_REVOKE_SESSION_RESP  MsgID = 1017
 	MsgID_CHANGE_PASSWORD_REQ  MsgID = 1018
 	MsgID_CHANGE_PASSWORD_RESP MsgID = 1019
+	// 多端在线（P0）：某端上线/下线/被顶时，服务端向该用户其余在线会话推的
+	// 清单变更事件（body = auth.DevicesPresenceNotify，风格对齐 KICK_NOTIFY：
+	// sequence 0、客户端只读、不要求 ACK）。
+	MsgID_DEVICES_PRESENCE_NOTIFY MsgID = 1020
 	// Chat service. Both gateways relay these verbatim through the per-client
 	// ChatBridge pipeline (gateway and app_gateway, each with --chat_host);
 	// chat answers on the same internal connection, so no edge synthesizes
@@ -298,6 +302,7 @@ var (
 		1017: "REVOKE_SESSION_RESP",
 		1018: "CHANGE_PASSWORD_REQ",
 		1019: "CHANGE_PASSWORD_RESP",
+		1020: "DEVICES_PRESENCE_NOTIFY",
 		2001: "SEND_MESSAGE_REQ",
 		2002: "SEND_MESSAGE_RESP",
 		2003: "GET_HISTORY_REQ",
@@ -506,6 +511,7 @@ var (
 		"REVOKE_SESSION_RESP":              1017,
 		"CHANGE_PASSWORD_REQ":              1018,
 		"CHANGE_PASSWORD_RESP":             1019,
+		"DEVICES_PRESENCE_NOTIFY":          1020,
 		"SEND_MESSAGE_REQ":                 2001,
 		"SEND_MESSAGE_RESP":                2002,
 		"GET_HISTORY_REQ":                  2003,
@@ -1271,7 +1277,7 @@ const file_proto_gateway_proto_rawDesc = "" +
 	"channel_id\x18\x01 \x01(\tR\tchannelId\x12\x1b\n" +
 	"\tsender_id\x18\x02 \x01(\tR\bsenderId\x12\x18\n" +
 	"\acontent\x18\x03 \x01(\fR\acontent\x12\"\n" +
-	"\rclient_msg_id\x18\x04 \x01(\tR\vclientMsgId*\xe8)\n" +
+	"\rclient_msg_id\x18\x04 \x01(\tR\vclientMsgId*\x86*\n" +
 	"\x05MsgID\x12\v\n" +
 	"\aUNKNOWN\x10\x00\x12\x13\n" +
 	"\x0eHEARTBEAT_PING\x10\xe9\a\x12\x13\n" +
@@ -1294,7 +1300,8 @@ const file_proto_gateway_proto_rawDesc = "" +
 	"\x12REVOKE_SESSION_REQ\x10\xf8\a\x12\x18\n" +
 	"\x13REVOKE_SESSION_RESP\x10\xf9\a\x12\x18\n" +
 	"\x13CHANGE_PASSWORD_REQ\x10\xfa\a\x12\x19\n" +
-	"\x14CHANGE_PASSWORD_RESP\x10\xfb\a\x12\x15\n" +
+	"\x14CHANGE_PASSWORD_RESP\x10\xfb\a\x12\x1c\n" +
+	"\x17DEVICES_PRESENCE_NOTIFY\x10\xfc\a\x12\x15\n" +
 	"\x10SEND_MESSAGE_REQ\x10\xd1\x0f\x12\x16\n" +
 	"\x11SEND_MESSAGE_RESP\x10\xd2\x0f\x12\x14\n" +
 	"\x0fGET_HISTORY_REQ\x10\xd3\x0f\x12\x15\n" +

@@ -14,6 +14,7 @@
 
 #include "chat_rate_limiter.h"
 #include "delivery_ack_manager.h"
+#include "network/device_presence.h"
 #include "network/session_registry.h"
 #include "login_token_verifier.h"
 #include "chat_validation.h"
@@ -411,9 +412,16 @@ void HandleDisconnect(const std::shared_ptr<chirp::network::SessionRegistry>& st
     trusted_conns->erase(session.get());
   }
   std::string user_id;
-  if (chirp::network::RemoveAuthenticatedSession(state, session, &user_id) &&
+  std::string device_id;
+  std::string platform;
+  if (chirp::network::RemoveAuthenticatedSession(state, session, &user_id, &device_id,
+                                                 &platform) &&
       !user_id.empty()) {
     chirp::common::Logger::Instance().Info("User disconnected: " + user_id);
+    // 多端在线（P0）：确认下线才广播清单变更（被顶的旧会话不广播——它没有
+    // 赢得这个槽位）。
+    chirp::network::BroadcastDevicePresence(state, user_id, platform, device_id,
+                                            /*online=*/false);
   }
 }
 
@@ -582,18 +590,25 @@ void HandlePacket(const std::shared_ptr<MessageStore>& store,
       login_resp.set_user_id(user_id);
       login_resp.set_session_id(GenerateSessionId());
       login_resp.set_kick_previous(true);
-      login_resp.mutable_kick()->set_reason("login from another device");
+      login_resp.mutable_kick()->set_reason(chirp::network::LoginKickReason(login_req.platform()));
     }
     login_resp.set_server_time(chirp::chat::runtime::NowMs());
 
     if (!user_id.empty()) {
+      // 多端在线（P0）：同 (user, platform) 重登录顶掉旧会话（KICK_NOTIFY
+      // 带新 platform 的顶号理由），跨 platform 共存；初始在线端清单随登录
+      // 响应下发，其余在线端收到本端上线事件。
       auto old =
           chirp::network::BindAuthenticatedSession(state, user_id, login_resp.session_id(),
-                                                   chirp::network::NormalizeDeviceId(login_req.device_id()),
-                                                   session);
+                                                   login_req.device_id(), session,
+                                                   login_req.platform());
       if (old && old.get() != session.get()) {
-        KickSession(old, "login from another device");
+        KickSession(old, chirp::network::LoginKickReason(login_req.platform()));
       }
+      chirp::network::FillOnlineDevices(state, user_id, &login_resp, session.get());
+      chirp::network::BroadcastDevicePresence(state, user_id, login_req.platform(),
+                                              chirp::network::NormalizeDeviceId(login_req.device_id()),
+                                              /*online=*/true, session.get());
       if (features.acks && login_req.supports_message_ack()) {
         features.acks->MarkCapable(session);
       }

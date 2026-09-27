@@ -305,6 +305,7 @@ class ChatMessage extends $pb.GeneratedMessage {
     $core.int? ttlSeconds,
     SenderKind? senderKind,
     $core.String? replyToMessageId,
+    $core.bool? isRecalled,
   }) {
     final $result = create();
     if (messageId != null) {
@@ -346,6 +347,9 @@ class ChatMessage extends $pb.GeneratedMessage {
     if (replyToMessageId != null) {
       $result.replyToMessageId = replyToMessageId;
     }
+    if (isRecalled != null) {
+      $result.isRecalled = isRecalled;
+    }
     return $result;
   }
   ChatMessage._() : super();
@@ -366,6 +370,7 @@ class ChatMessage extends $pb.GeneratedMessage {
     ..a<$core.int>(11, _omitFieldNames ? '' : 'ttlSeconds', $pb.PbFieldType.O3)
     ..e<SenderKind>(12, _omitFieldNames ? '' : 'senderKind', $pb.PbFieldType.OE, defaultOrMaker: SenderKind.SENDER_USER, valueOf: SenderKind.valueOf, enumValues: SenderKind.values)
     ..aOS(13, _omitFieldNames ? '' : 'replyToMessageId')
+    ..aOB(14, _omitFieldNames ? '' : 'isRecalled')
     ..hasRequiredFields = false
   ;
 
@@ -506,6 +511,15 @@ class ChatMessage extends $pb.GeneratedMessage {
   $core.bool hasReplyToMessageId() => $_has(12);
   @$pb.TagNumber(13)
   void clearReplyToMessageId() => clearField(13);
+
+  @$pb.TagNumber(14)
+  $core.bool get isRecalled => $_getBF(13);
+  @$pb.TagNumber(14)
+  set isRecalled($core.bool v) { $_setBool(13, v); }
+  @$pb.TagNumber(14)
+  $core.bool hasIsRecalled() => $_has(13);
+  @$pb.TagNumber(14)
+  void clearIsRecalled() => clearField(14);
 }
 
 /// Player -> NPC utterance, published as an event payload to the NPC dialog

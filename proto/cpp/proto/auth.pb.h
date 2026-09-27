@@ -63,6 +63,14 @@ class ChangePasswordResponse;
 struct ChangePasswordResponseDefaultTypeInternal;
 extern ChangePasswordResponseDefaultTypeInternal _ChangePasswordResponse_default_instance_;
 extern const ::google::protobuf::internal::ClassDataFull ChangePasswordResponse_class_data_;
+class DevicePresence;
+struct DevicePresenceDefaultTypeInternal;
+extern DevicePresenceDefaultTypeInternal _DevicePresence_default_instance_;
+extern const ::google::protobuf::internal::ClassDataFull DevicePresence_class_data_;
+class DevicesPresenceNotify;
+struct DevicesPresenceNotifyDefaultTypeInternal;
+extern DevicesPresenceNotifyDefaultTypeInternal _DevicesPresenceNotify_default_instance_;
+extern const ::google::protobuf::internal::ClassDataFull DevicesPresenceNotify_class_data_;
 class GetSessionsRequest;
 struct GetSessionsRequestDefaultTypeInternal;
 extern GetSessionsRequestDefaultTypeInternal _GetSessionsRequest_default_instance_;
@@ -197,7 +205,7 @@ class SessionInfo final : public ::google::protobuf::Message
     return *reinterpret_cast<const SessionInfo*>(
         &_SessionInfo_default_instance_);
   }
-  static constexpr int kIndexInFileMessages = 12;
+  static constexpr int kIndexInFileMessages = 14;
   friend void swap(SessionInfo& a, SessionInfo& b) { a.Swap(&b); }
   inline void Swap(SessionInfo* PROTOBUF_NONNULL other) {
     if (other == this) return;
@@ -462,7 +470,7 @@ class RevokeSessionResponse final : public ::google::protobuf::Message
     return *reinterpret_cast<const RevokeSessionResponse*>(
         &_RevokeSessionResponse_default_instance_);
   }
-  static constexpr int kIndexInFileMessages = 15;
+  static constexpr int kIndexInFileMessages = 17;
   friend void swap(RevokeSessionResponse& a, RevokeSessionResponse& b) { a.Swap(&b); }
   inline void Swap(RevokeSessionResponse* PROTOBUF_NONNULL other) {
     if (other == this) return;
@@ -664,7 +672,7 @@ class RevokeSessionRequest final : public ::google::protobuf::Message
     return *reinterpret_cast<const RevokeSessionRequest*>(
         &_RevokeSessionRequest_default_instance_);
   }
-  static constexpr int kIndexInFileMessages = 14;
+  static constexpr int kIndexInFileMessages = 16;
   friend void swap(RevokeSessionRequest& a, RevokeSessionRequest& b) { a.Swap(&b); }
   inline void Swap(RevokeSessionRequest* PROTOBUF_NONNULL other) {
     if (other == this) return;
@@ -876,7 +884,7 @@ class RegisterResponse final : public ::google::protobuf::Message
     return *reinterpret_cast<const RegisterResponse*>(
         &_RegisterResponse_default_instance_);
   }
-  static constexpr int kIndexInFileMessages = 6;
+  static constexpr int kIndexInFileMessages = 8;
   friend void swap(RegisterResponse& a, RegisterResponse& b) { a.Swap(&b); }
   inline void Swap(RegisterResponse* PROTOBUF_NONNULL other) {
     if (other == this) return;
@@ -1112,7 +1120,7 @@ class RegisterRequest final : public ::google::protobuf::Message
     return *reinterpret_cast<const RegisterRequest*>(
         &_RegisterRequest_default_instance_);
   }
-  static constexpr int kIndexInFileMessages = 5;
+  static constexpr int kIndexInFileMessages = 7;
   friend void swap(RegisterRequest& a, RegisterRequest& b) { a.Swap(&b); }
   inline void Swap(RegisterRequest* PROTOBUF_NONNULL other) {
     if (other == this) return;
@@ -1358,7 +1366,7 @@ class RefreshTokenResponse final : public ::google::protobuf::Message
     return *reinterpret_cast<const RefreshTokenResponse*>(
         &_RefreshTokenResponse_default_instance_);
   }
-  static constexpr int kIndexInFileMessages = 10;
+  static constexpr int kIndexInFileMessages = 12;
   friend void swap(RefreshTokenResponse& a, RefreshTokenResponse& b) { a.Swap(&b); }
   inline void Swap(RefreshTokenResponse* PROTOBUF_NONNULL other) {
     if (other == this) return;
@@ -1606,7 +1614,7 @@ class RefreshTokenRequest final : public ::google::protobuf::Message
     return *reinterpret_cast<const RefreshTokenRequest*>(
         &_RefreshTokenRequest_default_instance_);
   }
-  static constexpr int kIndexInFileMessages = 9;
+  static constexpr int kIndexInFileMessages = 11;
   friend void swap(RefreshTokenRequest& a, RefreshTokenRequest& b) { a.Swap(&b); }
   inline void Swap(RefreshTokenRequest* PROTOBUF_NONNULL other) {
     if (other == this) return;
@@ -1801,7 +1809,7 @@ class PasswordLoginResponse final : public ::google::protobuf::Message
     return *reinterpret_cast<const PasswordLoginResponse*>(
         &_PasswordLoginResponse_default_instance_);
   }
-  static constexpr int kIndexInFileMessages = 8;
+  static constexpr int kIndexInFileMessages = 10;
   friend void swap(PasswordLoginResponse& a, PasswordLoginResponse& b) { a.Swap(&b); }
   inline void Swap(PasswordLoginResponse* PROTOBUF_NONNULL other) {
     if (other == this) return;
@@ -2141,7 +2149,7 @@ class PasswordLoginRequest final : public ::google::protobuf::Message
     return *reinterpret_cast<const PasswordLoginRequest*>(
         &_PasswordLoginRequest_default_instance_);
   }
-  static constexpr int kIndexInFileMessages = 7;
+  static constexpr int kIndexInFileMessages = 9;
   friend void swap(PasswordLoginRequest& a, PasswordLoginRequest& b) { a.Swap(&b); }
   inline void Swap(PasswordLoginRequest* PROTOBUF_NONNULL other) {
     if (other == this) return;
@@ -2387,7 +2395,7 @@ class LogoutResponse final : public ::google::protobuf::Message
     return *reinterpret_cast<const LogoutResponse*>(
         &_LogoutResponse_default_instance_);
   }
-  static constexpr int kIndexInFileMessages = 4;
+  static constexpr int kIndexInFileMessages = 6;
   friend void swap(LogoutResponse& a, LogoutResponse& b) { a.Swap(&b); }
   inline void Swap(LogoutResponse* PROTOBUF_NONNULL other) {
     if (other == this) return;
@@ -2589,7 +2597,7 @@ class LogoutRequest final : public ::google::protobuf::Message
     return *reinterpret_cast<const LogoutRequest*>(
         &_LogoutRequest_default_instance_);
   }
-  static constexpr int kIndexInFileMessages = 3;
+  static constexpr int kIndexInFileMessages = 5;
   friend void swap(LogoutRequest& a, LogoutRequest& b) { a.Swap(&b); }
   inline void Swap(LogoutRequest* PROTOBUF_NONNULL other) {
     if (other == this) return;
@@ -3237,7 +3245,7 @@ class GetSessionsRequest final : public ::google::protobuf::Message
     return *reinterpret_cast<const GetSessionsRequest*>(
         &_GetSessionsRequest_default_instance_);
   }
-  static constexpr int kIndexInFileMessages = 11;
+  static constexpr int kIndexInFileMessages = 13;
   friend void swap(GetSessionsRequest& a, GetSessionsRequest& b) { a.Swap(&b); }
   inline void Swap(GetSessionsRequest* PROTOBUF_NONNULL other) {
     if (other == this) return;
@@ -3377,6 +3385,242 @@ class GetSessionsRequest final : public ::google::protobuf::Message
 extern const ::google::protobuf::internal::ClassDataFull GetSessionsRequest_class_data_;
 // -------------------------------------------------------------------
 
+class DevicePresence final : public ::google::protobuf::Message
+/* @@protoc_insertion_point(class_definition:chirp.auth.DevicePresence) */ {
+ public:
+  inline DevicePresence() : DevicePresence(nullptr) {}
+  ~DevicePresence() PROTOBUF_FINAL;
+
+#if defined(PROTOBUF_CUSTOM_VTABLE)
+  void operator delete(DevicePresence* PROTOBUF_NONNULL msg, ::std::destroying_delete_t) {
+    SharedDtor(*msg);
+    ::google::protobuf::internal::SizedDelete(msg, sizeof(DevicePresence));
+  }
+#endif
+
+  template <typename = void>
+  explicit PROTOBUF_CONSTEXPR DevicePresence(::google::protobuf::internal::ConstantInitialized);
+
+  inline DevicePresence(const DevicePresence& from) : DevicePresence(nullptr, from) {}
+  inline DevicePresence(DevicePresence&& from) noexcept
+      : DevicePresence(nullptr, ::std::move(from)) {}
+  inline DevicePresence& operator=(const DevicePresence& from) {
+    CopyFrom(from);
+    return *this;
+  }
+  inline DevicePresence& operator=(DevicePresence&& from) noexcept {
+    if (this == &from) return *this;
+    if (::google::protobuf::internal::CanMoveWithInternalSwap(GetArena(), from.GetArena())) {
+      InternalSwap(&from);
+    } else {
+      CopyFrom(from);
+    }
+    return *this;
+  }
+
+  inline const ::google::protobuf::UnknownFieldSet& unknown_fields() const
+      ABSL_ATTRIBUTE_LIFETIME_BOUND {
+    return _internal_metadata_.unknown_fields<::google::protobuf::UnknownFieldSet>(::google::protobuf::UnknownFieldSet::default_instance);
+  }
+  inline ::google::protobuf::UnknownFieldSet* PROTOBUF_NONNULL mutable_unknown_fields()
+      ABSL_ATTRIBUTE_LIFETIME_BOUND {
+    return _internal_metadata_.mutable_unknown_fields<::google::protobuf::UnknownFieldSet>();
+  }
+
+  static const ::google::protobuf::Descriptor* PROTOBUF_NONNULL descriptor() {
+    return GetDescriptor();
+  }
+  static const ::google::protobuf::Descriptor* PROTOBUF_NONNULL GetDescriptor() {
+    return default_instance().GetMetadata().descriptor;
+  }
+  static const ::google::protobuf::Reflection* PROTOBUF_NONNULL GetReflection() {
+    return default_instance().GetMetadata().reflection;
+  }
+  static const DevicePresence& default_instance() {
+    return *reinterpret_cast<const DevicePresence*>(
+        &_DevicePresence_default_instance_);
+  }
+  static constexpr int kIndexInFileMessages = 2;
+  friend void swap(DevicePresence& a, DevicePresence& b) { a.Swap(&b); }
+  inline void Swap(DevicePresence* PROTOBUF_NONNULL other) {
+    if (other == this) return;
+    if (::google::protobuf::internal::CanUseInternalSwap(GetArena(), other->GetArena())) {
+      InternalSwap(other);
+    } else {
+      ::google::protobuf::internal::GenericSwap(this, other);
+    }
+  }
+  void UnsafeArenaSwap(DevicePresence* PROTOBUF_NONNULL other) {
+    if (other == this) return;
+    ABSL_DCHECK(GetArena() == other->GetArena());
+    InternalSwap(other);
+  }
+
+  // implements Message ----------------------------------------------
+
+  DevicePresence* PROTOBUF_NONNULL New(::google::protobuf::Arena* PROTOBUF_NULLABLE arena = nullptr) const {
+    return ::google::protobuf::Message::DefaultConstruct<DevicePresence>(arena);
+  }
+  using ::google::protobuf::Message::CopyFrom;
+  void CopyFrom(const DevicePresence& from);
+  using ::google::protobuf::Message::MergeFrom;
+  void MergeFrom(const DevicePresence& from) { DevicePresence::MergeImpl(*this, from); }
+
+  private:
+  static void MergeImpl(::google::protobuf::MessageLite& to_msg,
+                        const ::google::protobuf::MessageLite& from_msg);
+
+  public:
+  bool IsInitialized() const {
+    return true;
+  }
+  ABSL_ATTRIBUTE_REINITIALIZES void Clear() PROTOBUF_FINAL;
+  #if defined(PROTOBUF_CUSTOM_VTABLE)
+  private:
+  static ::size_t ByteSizeLong(const ::google::protobuf::MessageLite& msg);
+  static ::uint8_t* PROTOBUF_NONNULL _InternalSerialize(
+      const ::google::protobuf::MessageLite& msg, ::uint8_t* PROTOBUF_NONNULL target,
+      ::google::protobuf::io::EpsCopyOutputStream* PROTOBUF_NONNULL stream);
+
+  public:
+  ::size_t ByteSizeLong() const { return ByteSizeLong(*this); }
+  ::uint8_t* PROTOBUF_NONNULL _InternalSerialize(
+      ::uint8_t* PROTOBUF_NONNULL target,
+      ::google::protobuf::io::EpsCopyOutputStream* PROTOBUF_NONNULL stream) const {
+    return _InternalSerialize(*this, target, stream);
+  }
+  #else   // PROTOBUF_CUSTOM_VTABLE
+  ::size_t ByteSizeLong() const final;
+  ::uint8_t* PROTOBUF_NONNULL _InternalSerialize(
+      ::uint8_t* PROTOBUF_NONNULL target,
+      ::google::protobuf::io::EpsCopyOutputStream* PROTOBUF_NONNULL stream) const final;
+  #endif  // PROTOBUF_CUSTOM_VTABLE
+  int GetCachedSize() const { return _impl_._cached_size_.Get(); }
+
+  private:
+  void SharedCtor(::google::protobuf::Arena* PROTOBUF_NULLABLE arena);
+  static void SharedDtor(MessageLite& self);
+  void InternalSwap(DevicePresence* PROTOBUF_NONNULL other);
+ private:
+  template <typename T>
+  friend ::absl::string_view(::google::protobuf::internal::GetAnyMessageName)();
+  static ::absl::string_view FullMessageName() { return "chirp.auth.DevicePresence"; }
+
+  explicit DevicePresence(::google::protobuf::Arena* PROTOBUF_NULLABLE arena);
+  DevicePresence(::google::protobuf::Arena* PROTOBUF_NULLABLE arena, const DevicePresence& from);
+  DevicePresence(
+      ::google::protobuf::Arena* PROTOBUF_NULLABLE arena, DevicePresence&& from) noexcept
+      : DevicePresence(arena) {
+    *this = ::std::move(from);
+  }
+  const ::google::protobuf::internal::ClassData* PROTOBUF_NONNULL GetClassData() const PROTOBUF_FINAL;
+  static void* PROTOBUF_NONNULL PlacementNew_(
+      const void* PROTOBUF_NONNULL, void* PROTOBUF_NONNULL mem,
+      ::google::protobuf::Arena* PROTOBUF_NULLABLE arena);
+  static constexpr auto InternalNewImpl_();
+
+ public:
+  static constexpr auto InternalGenerateClassData_();
+
+  ::google::protobuf::Metadata GetMetadata() const;
+  // nested types ----------------------------------------------------
+
+  // accessors -------------------------------------------------------
+  enum : int {
+    kPlatformFieldNumber = 1,
+    kDeviceIdFieldNumber = 2,
+    kTsFieldNumber = 4,
+    kOnlineFieldNumber = 3,
+  };
+  // string platform = 1;
+  void clear_platform() ;
+  const ::std::string& platform() const;
+  template <typename Arg_ = const ::std::string&, typename... Args_>
+  void set_platform(Arg_&& arg, Args_... args);
+  ::std::string* PROTOBUF_NONNULL mutable_platform();
+  [[nodiscard]] ::std::string* PROTOBUF_NULLABLE release_platform();
+  void set_allocated_platform(::std::string* PROTOBUF_NULLABLE value);
+
+  private:
+  const ::std::string& _internal_platform() const;
+  PROTOBUF_ALWAYS_INLINE void _internal_set_platform(const ::std::string& value);
+  ::std::string* PROTOBUF_NONNULL _internal_mutable_platform();
+
+  public:
+  // string device_id = 2;
+  void clear_device_id() ;
+  const ::std::string& device_id() const;
+  template <typename Arg_ = const ::std::string&, typename... Args_>
+  void set_device_id(Arg_&& arg, Args_... args);
+  ::std::string* PROTOBUF_NONNULL mutable_device_id();
+  [[nodiscard]] ::std::string* PROTOBUF_NULLABLE release_device_id();
+  void set_allocated_device_id(::std::string* PROTOBUF_NULLABLE value);
+
+  private:
+  const ::std::string& _internal_device_id() const;
+  PROTOBUF_ALWAYS_INLINE void _internal_set_device_id(const ::std::string& value);
+  ::std::string* PROTOBUF_NONNULL _internal_mutable_device_id();
+
+  public:
+  // int64 ts = 4;
+  void clear_ts() ;
+  ::int64_t ts() const;
+  void set_ts(::int64_t value);
+
+  private:
+  ::int64_t _internal_ts() const;
+  void _internal_set_ts(::int64_t value);
+
+  public:
+  // bool online = 3;
+  void clear_online() ;
+  bool online() const;
+  void set_online(bool value);
+
+  private:
+  bool _internal_online() const;
+  void _internal_set_online(bool value);
+
+  public:
+  // @@protoc_insertion_point(class_scope:chirp.auth.DevicePresence)
+ private:
+  class _Internal;
+  friend class ::google::protobuf::internal::TcParser;
+  static const ::google::protobuf::internal::TcParseTable<2, 4,
+                                   0, 51,
+                                   2>
+      _table_;
+
+  friend class ::google::protobuf::MessageLite;
+  friend class ::google::protobuf::Arena;
+  template <typename T>
+  friend class ::google::protobuf::Arena::InternalHelper;
+  using InternalArenaConstructable_ = void;
+  using DestructorSkippable_ = void;
+  struct Impl_ {
+    inline explicit constexpr Impl_(::google::protobuf::internal::ConstantInitialized) noexcept;
+    inline explicit Impl_(
+        ::google::protobuf::internal::InternalVisibility visibility,
+        ::google::protobuf::Arena* PROTOBUF_NULLABLE arena);
+    inline explicit Impl_(
+        ::google::protobuf::internal::InternalVisibility visibility,
+        ::google::protobuf::Arena* PROTOBUF_NULLABLE arena, const Impl_& from,
+        const DevicePresence& from_msg);
+    ::google::protobuf::internal::HasBits<1> _has_bits_;
+    ::google::protobuf::internal::CachedSize _cached_size_;
+    ::google::protobuf::internal::ArenaStringPtr platform_;
+    ::google::protobuf::internal::ArenaStringPtr device_id_;
+    ::int64_t ts_;
+    bool online_;
+    PROTOBUF_TSAN_DECLARE_MEMBER
+  };
+  union { Impl_ _impl_; };
+  friend struct ::TableStruct_proto_2fauth_2eproto;
+};
+
+extern const ::google::protobuf::internal::ClassDataFull DevicePresence_class_data_;
+// -------------------------------------------------------------------
+
 class ChangePasswordResponse final : public ::google::protobuf::Message
 /* @@protoc_insertion_point(class_definition:chirp.auth.ChangePasswordResponse) */ {
  public:
@@ -3432,7 +3676,7 @@ class ChangePasswordResponse final : public ::google::protobuf::Message
     return *reinterpret_cast<const ChangePasswordResponse*>(
         &_ChangePasswordResponse_default_instance_);
   }
-  static constexpr int kIndexInFileMessages = 17;
+  static constexpr int kIndexInFileMessages = 19;
   friend void swap(ChangePasswordResponse& a, ChangePasswordResponse& b) { a.Swap(&b); }
   inline void Swap(ChangePasswordResponse* PROTOBUF_NONNULL other) {
     if (other == this) return;
@@ -3651,7 +3895,7 @@ class ChangePasswordRequest final : public ::google::protobuf::Message
     return *reinterpret_cast<const ChangePasswordRequest*>(
         &_ChangePasswordRequest_default_instance_);
   }
-  static constexpr int kIndexInFileMessages = 16;
+  static constexpr int kIndexInFileMessages = 18;
   friend void swap(ChangePasswordRequest& a, ChangePasswordRequest& b) { a.Swap(&b); }
   inline void Swap(ChangePasswordRequest* PROTOBUF_NONNULL other) {
     if (other == this) return;
@@ -3880,7 +4124,7 @@ class LoginResponse final : public ::google::protobuf::Message
     return *reinterpret_cast<const LoginResponse*>(
         &_LoginResponse_default_instance_);
   }
-  static constexpr int kIndexInFileMessages = 2;
+  static constexpr int kIndexInFileMessages = 4;
   friend void swap(LoginResponse& a, LoginResponse& b) { a.Swap(&b); }
   inline void Swap(LoginResponse* PROTOBUF_NONNULL other) {
     if (other == this) return;
@@ -3967,6 +4211,7 @@ class LoginResponse final : public ::google::protobuf::Message
 
   // accessors -------------------------------------------------------
   enum : int {
+    kOnlineDevicesFieldNumber = 7,
     kSessionIdFieldNumber = 2,
     kUserIdFieldNumber = 4,
     kKickFieldNumber = 6,
@@ -3974,6 +4219,23 @@ class LoginResponse final : public ::google::protobuf::Message
     kCodeFieldNumber = 1,
     kKickPreviousFieldNumber = 5,
   };
+  // repeated .chirp.auth.DevicePresence online_devices = 7;
+  int online_devices_size() const;
+  private:
+  int _internal_online_devices_size() const;
+
+  public:
+  void clear_online_devices() ;
+  ::chirp::auth::DevicePresence* PROTOBUF_NONNULL mutable_online_devices(int index);
+  ::google::protobuf::RepeatedPtrField<::chirp::auth::DevicePresence>* PROTOBUF_NONNULL mutable_online_devices();
+
+  private:
+  const ::google::protobuf::RepeatedPtrField<::chirp::auth::DevicePresence>& _internal_online_devices() const;
+  ::google::protobuf::RepeatedPtrField<::chirp::auth::DevicePresence>* PROTOBUF_NONNULL _internal_mutable_online_devices();
+  public:
+  const ::chirp::auth::DevicePresence& online_devices(int index) const;
+  ::chirp::auth::DevicePresence* PROTOBUF_NONNULL add_online_devices();
+  const ::google::protobuf::RepeatedPtrField<::chirp::auth::DevicePresence>& online_devices() const;
   // string session_id = 2;
   void clear_session_id() ;
   const ::std::string& session_id() const;
@@ -4053,8 +4315,8 @@ class LoginResponse final : public ::google::protobuf::Message
  private:
   class _Internal;
   friend class ::google::protobuf::internal::TcParser;
-  static const ::google::protobuf::internal::TcParseTable<3, 6,
-                                   1, 50,
+  static const ::google::protobuf::internal::TcParseTable<3, 7,
+                                   2, 50,
                                    2>
       _table_;
 
@@ -4075,6 +4337,7 @@ class LoginResponse final : public ::google::protobuf::Message
         const LoginResponse& from_msg);
     ::google::protobuf::internal::HasBits<1> _has_bits_;
     ::google::protobuf::internal::CachedSize _cached_size_;
+    ::google::protobuf::RepeatedPtrField< ::chirp::auth::DevicePresence > online_devices_;
     ::google::protobuf::internal::ArenaStringPtr session_id_;
     ::google::protobuf::internal::ArenaStringPtr user_id_;
     ::chirp::auth::KickNotify* PROTOBUF_NULLABLE kick_;
@@ -4145,7 +4408,7 @@ class GetSessionsResponse final : public ::google::protobuf::Message
     return *reinterpret_cast<const GetSessionsResponse*>(
         &_GetSessionsResponse_default_instance_);
   }
-  static constexpr int kIndexInFileMessages = 13;
+  static constexpr int kIndexInFileMessages = 15;
   friend void swap(GetSessionsResponse& a, GetSessionsResponse& b) { a.Swap(&b); }
   inline void Swap(GetSessionsResponse* PROTOBUF_NONNULL other) {
     if (other == this) return;
@@ -4309,6 +4572,203 @@ class GetSessionsResponse final : public ::google::protobuf::Message
 };
 
 extern const ::google::protobuf::internal::ClassDataFull GetSessionsResponse_class_data_;
+// -------------------------------------------------------------------
+
+class DevicesPresenceNotify final : public ::google::protobuf::Message
+/* @@protoc_insertion_point(class_definition:chirp.auth.DevicesPresenceNotify) */ {
+ public:
+  inline DevicesPresenceNotify() : DevicesPresenceNotify(nullptr) {}
+  ~DevicesPresenceNotify() PROTOBUF_FINAL;
+
+#if defined(PROTOBUF_CUSTOM_VTABLE)
+  void operator delete(DevicesPresenceNotify* PROTOBUF_NONNULL msg, ::std::destroying_delete_t) {
+    SharedDtor(*msg);
+    ::google::protobuf::internal::SizedDelete(msg, sizeof(DevicesPresenceNotify));
+  }
+#endif
+
+  template <typename = void>
+  explicit PROTOBUF_CONSTEXPR DevicesPresenceNotify(::google::protobuf::internal::ConstantInitialized);
+
+  inline DevicesPresenceNotify(const DevicesPresenceNotify& from) : DevicesPresenceNotify(nullptr, from) {}
+  inline DevicesPresenceNotify(DevicesPresenceNotify&& from) noexcept
+      : DevicesPresenceNotify(nullptr, ::std::move(from)) {}
+  inline DevicesPresenceNotify& operator=(const DevicesPresenceNotify& from) {
+    CopyFrom(from);
+    return *this;
+  }
+  inline DevicesPresenceNotify& operator=(DevicesPresenceNotify&& from) noexcept {
+    if (this == &from) return *this;
+    if (::google::protobuf::internal::CanMoveWithInternalSwap(GetArena(), from.GetArena())) {
+      InternalSwap(&from);
+    } else {
+      CopyFrom(from);
+    }
+    return *this;
+  }
+
+  inline const ::google::protobuf::UnknownFieldSet& unknown_fields() const
+      ABSL_ATTRIBUTE_LIFETIME_BOUND {
+    return _internal_metadata_.unknown_fields<::google::protobuf::UnknownFieldSet>(::google::protobuf::UnknownFieldSet::default_instance);
+  }
+  inline ::google::protobuf::UnknownFieldSet* PROTOBUF_NONNULL mutable_unknown_fields()
+      ABSL_ATTRIBUTE_LIFETIME_BOUND {
+    return _internal_metadata_.mutable_unknown_fields<::google::protobuf::UnknownFieldSet>();
+  }
+
+  static const ::google::protobuf::Descriptor* PROTOBUF_NONNULL descriptor() {
+    return GetDescriptor();
+  }
+  static const ::google::protobuf::Descriptor* PROTOBUF_NONNULL GetDescriptor() {
+    return default_instance().GetMetadata().descriptor;
+  }
+  static const ::google::protobuf::Reflection* PROTOBUF_NONNULL GetReflection() {
+    return default_instance().GetMetadata().reflection;
+  }
+  static const DevicesPresenceNotify& default_instance() {
+    return *reinterpret_cast<const DevicesPresenceNotify*>(
+        &_DevicesPresenceNotify_default_instance_);
+  }
+  static constexpr int kIndexInFileMessages = 3;
+  friend void swap(DevicesPresenceNotify& a, DevicesPresenceNotify& b) { a.Swap(&b); }
+  inline void Swap(DevicesPresenceNotify* PROTOBUF_NONNULL other) {
+    if (other == this) return;
+    if (::google::protobuf::internal::CanUseInternalSwap(GetArena(), other->GetArena())) {
+      InternalSwap(other);
+    } else {
+      ::google::protobuf::internal::GenericSwap(this, other);
+    }
+  }
+  void UnsafeArenaSwap(DevicesPresenceNotify* PROTOBUF_NONNULL other) {
+    if (other == this) return;
+    ABSL_DCHECK(GetArena() == other->GetArena());
+    InternalSwap(other);
+  }
+
+  // implements Message ----------------------------------------------
+
+  DevicesPresenceNotify* PROTOBUF_NONNULL New(::google::protobuf::Arena* PROTOBUF_NULLABLE arena = nullptr) const {
+    return ::google::protobuf::Message::DefaultConstruct<DevicesPresenceNotify>(arena);
+  }
+  using ::google::protobuf::Message::CopyFrom;
+  void CopyFrom(const DevicesPresenceNotify& from);
+  using ::google::protobuf::Message::MergeFrom;
+  void MergeFrom(const DevicesPresenceNotify& from) { DevicesPresenceNotify::MergeImpl(*this, from); }
+
+  private:
+  static void MergeImpl(::google::protobuf::MessageLite& to_msg,
+                        const ::google::protobuf::MessageLite& from_msg);
+
+  public:
+  bool IsInitialized() const {
+    return true;
+  }
+  ABSL_ATTRIBUTE_REINITIALIZES void Clear() PROTOBUF_FINAL;
+  #if defined(PROTOBUF_CUSTOM_VTABLE)
+  private:
+  static ::size_t ByteSizeLong(const ::google::protobuf::MessageLite& msg);
+  static ::uint8_t* PROTOBUF_NONNULL _InternalSerialize(
+      const ::google::protobuf::MessageLite& msg, ::uint8_t* PROTOBUF_NONNULL target,
+      ::google::protobuf::io::EpsCopyOutputStream* PROTOBUF_NONNULL stream);
+
+  public:
+  ::size_t ByteSizeLong() const { return ByteSizeLong(*this); }
+  ::uint8_t* PROTOBUF_NONNULL _InternalSerialize(
+      ::uint8_t* PROTOBUF_NONNULL target,
+      ::google::protobuf::io::EpsCopyOutputStream* PROTOBUF_NONNULL stream) const {
+    return _InternalSerialize(*this, target, stream);
+  }
+  #else   // PROTOBUF_CUSTOM_VTABLE
+  ::size_t ByteSizeLong() const final;
+  ::uint8_t* PROTOBUF_NONNULL _InternalSerialize(
+      ::uint8_t* PROTOBUF_NONNULL target,
+      ::google::protobuf::io::EpsCopyOutputStream* PROTOBUF_NONNULL stream) const final;
+  #endif  // PROTOBUF_CUSTOM_VTABLE
+  int GetCachedSize() const { return _impl_._cached_size_.Get(); }
+
+  private:
+  void SharedCtor(::google::protobuf::Arena* PROTOBUF_NULLABLE arena);
+  static void SharedDtor(MessageLite& self);
+  void InternalSwap(DevicesPresenceNotify* PROTOBUF_NONNULL other);
+ private:
+  template <typename T>
+  friend ::absl::string_view(::google::protobuf::internal::GetAnyMessageName)();
+  static ::absl::string_view FullMessageName() { return "chirp.auth.DevicesPresenceNotify"; }
+
+  explicit DevicesPresenceNotify(::google::protobuf::Arena* PROTOBUF_NULLABLE arena);
+  DevicesPresenceNotify(::google::protobuf::Arena* PROTOBUF_NULLABLE arena, const DevicesPresenceNotify& from);
+  DevicesPresenceNotify(
+      ::google::protobuf::Arena* PROTOBUF_NULLABLE arena, DevicesPresenceNotify&& from) noexcept
+      : DevicesPresenceNotify(arena) {
+    *this = ::std::move(from);
+  }
+  const ::google::protobuf::internal::ClassData* PROTOBUF_NONNULL GetClassData() const PROTOBUF_FINAL;
+  static void* PROTOBUF_NONNULL PlacementNew_(
+      const void* PROTOBUF_NONNULL, void* PROTOBUF_NONNULL mem,
+      ::google::protobuf::Arena* PROTOBUF_NULLABLE arena);
+  static constexpr auto InternalNewImpl_();
+
+ public:
+  static constexpr auto InternalGenerateClassData_();
+
+  ::google::protobuf::Metadata GetMetadata() const;
+  // nested types ----------------------------------------------------
+
+  // accessors -------------------------------------------------------
+  enum : int {
+    kDevicesFieldNumber = 1,
+  };
+  // repeated .chirp.auth.DevicePresence devices = 1;
+  int devices_size() const;
+  private:
+  int _internal_devices_size() const;
+
+  public:
+  void clear_devices() ;
+  ::chirp::auth::DevicePresence* PROTOBUF_NONNULL mutable_devices(int index);
+  ::google::protobuf::RepeatedPtrField<::chirp::auth::DevicePresence>* PROTOBUF_NONNULL mutable_devices();
+
+  private:
+  const ::google::protobuf::RepeatedPtrField<::chirp::auth::DevicePresence>& _internal_devices() const;
+  ::google::protobuf::RepeatedPtrField<::chirp::auth::DevicePresence>* PROTOBUF_NONNULL _internal_mutable_devices();
+  public:
+  const ::chirp::auth::DevicePresence& devices(int index) const;
+  ::chirp::auth::DevicePresence* PROTOBUF_NONNULL add_devices();
+  const ::google::protobuf::RepeatedPtrField<::chirp::auth::DevicePresence>& devices() const;
+  // @@protoc_insertion_point(class_scope:chirp.auth.DevicesPresenceNotify)
+ private:
+  class _Internal;
+  friend class ::google::protobuf::internal::TcParser;
+  static const ::google::protobuf::internal::TcParseTable<0, 1,
+                                   1, 0,
+                                   2>
+      _table_;
+
+  friend class ::google::protobuf::MessageLite;
+  friend class ::google::protobuf::Arena;
+  template <typename T>
+  friend class ::google::protobuf::Arena::InternalHelper;
+  using InternalArenaConstructable_ = void;
+  using DestructorSkippable_ = void;
+  struct Impl_ {
+    inline explicit constexpr Impl_(::google::protobuf::internal::ConstantInitialized) noexcept;
+    inline explicit Impl_(
+        ::google::protobuf::internal::InternalVisibility visibility,
+        ::google::protobuf::Arena* PROTOBUF_NULLABLE arena);
+    inline explicit Impl_(
+        ::google::protobuf::internal::InternalVisibility visibility,
+        ::google::protobuf::Arena* PROTOBUF_NULLABLE arena, const Impl_& from,
+        const DevicesPresenceNotify& from_msg);
+    ::google::protobuf::internal::HasBits<1> _has_bits_;
+    ::google::protobuf::internal::CachedSize _cached_size_;
+    ::google::protobuf::RepeatedPtrField< ::chirp::auth::DevicePresence > devices_;
+    PROTOBUF_TSAN_DECLARE_MEMBER
+  };
+  union { Impl_ _impl_; };
+  friend struct ::TableStruct_proto_2fauth_2eproto;
+};
+
+extern const ::google::protobuf::internal::ClassDataFull DevicesPresenceNotify_class_data_;
 
 // ===================================================================
 
@@ -4617,6 +5077,250 @@ inline void KickNotify::set_allocated_reason(::std::string* PROTOBUF_NULLABLE va
 
 // -------------------------------------------------------------------
 
+// DevicePresence
+
+// string platform = 1;
+inline void DevicePresence::clear_platform() {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_.platform_.ClearToEmpty();
+  ClearHasBit(_impl_._has_bits_[0],
+                  0x00000001U);
+}
+inline const ::std::string& DevicePresence::platform() const
+    ABSL_ATTRIBUTE_LIFETIME_BOUND {
+  // @@protoc_insertion_point(field_get:chirp.auth.DevicePresence.platform)
+  return _internal_platform();
+}
+template <typename Arg_, typename... Args_>
+PROTOBUF_ALWAYS_INLINE void DevicePresence::set_platform(Arg_&& arg, Args_... args) {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  SetHasBit(_impl_._has_bits_[0], 0x00000001U);
+  _impl_.platform_.Set(static_cast<Arg_&&>(arg), args..., GetArena());
+  // @@protoc_insertion_point(field_set:chirp.auth.DevicePresence.platform)
+}
+inline ::std::string* PROTOBUF_NONNULL DevicePresence::mutable_platform()
+    ABSL_ATTRIBUTE_LIFETIME_BOUND {
+  SetHasBit(_impl_._has_bits_[0], 0x00000001U);
+  ::std::string* _s = _internal_mutable_platform();
+  // @@protoc_insertion_point(field_mutable:chirp.auth.DevicePresence.platform)
+  return _s;
+}
+inline const ::std::string& DevicePresence::_internal_platform() const {
+  ::google::protobuf::internal::TSanRead(&_impl_);
+  return _impl_.platform_.Get();
+}
+inline void DevicePresence::_internal_set_platform(const ::std::string& value) {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_.platform_.Set(value, GetArena());
+}
+inline ::std::string* PROTOBUF_NONNULL DevicePresence::_internal_mutable_platform() {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  return _impl_.platform_.Mutable( GetArena());
+}
+inline ::std::string* PROTOBUF_NULLABLE DevicePresence::release_platform() {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  // @@protoc_insertion_point(field_release:chirp.auth.DevicePresence.platform)
+  if (!CheckHasBit(_impl_._has_bits_[0], 0x00000001U)) {
+    return nullptr;
+  }
+  ClearHasBit(_impl_._has_bits_[0], 0x00000001U);
+  auto* released = _impl_.platform_.Release();
+  if (::google::protobuf::internal::DebugHardenForceCopyDefaultString()) {
+    _impl_.platform_.Set("", GetArena());
+  }
+  return released;
+}
+inline void DevicePresence::set_allocated_platform(::std::string* PROTOBUF_NULLABLE value) {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  if (value != nullptr) {
+    SetHasBit(_impl_._has_bits_[0], 0x00000001U);
+  } else {
+    ClearHasBit(_impl_._has_bits_[0], 0x00000001U);
+  }
+  _impl_.platform_.SetAllocated(value, GetArena());
+  if (::google::protobuf::internal::DebugHardenForceCopyDefaultString() && _impl_.platform_.IsDefault()) {
+    _impl_.platform_.Set("", GetArena());
+  }
+  // @@protoc_insertion_point(field_set_allocated:chirp.auth.DevicePresence.platform)
+}
+
+// string device_id = 2;
+inline void DevicePresence::clear_device_id() {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_.device_id_.ClearToEmpty();
+  ClearHasBit(_impl_._has_bits_[0],
+                  0x00000002U);
+}
+inline const ::std::string& DevicePresence::device_id() const
+    ABSL_ATTRIBUTE_LIFETIME_BOUND {
+  // @@protoc_insertion_point(field_get:chirp.auth.DevicePresence.device_id)
+  return _internal_device_id();
+}
+template <typename Arg_, typename... Args_>
+PROTOBUF_ALWAYS_INLINE void DevicePresence::set_device_id(Arg_&& arg, Args_... args) {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  SetHasBit(_impl_._has_bits_[0], 0x00000002U);
+  _impl_.device_id_.Set(static_cast<Arg_&&>(arg), args..., GetArena());
+  // @@protoc_insertion_point(field_set:chirp.auth.DevicePresence.device_id)
+}
+inline ::std::string* PROTOBUF_NONNULL DevicePresence::mutable_device_id()
+    ABSL_ATTRIBUTE_LIFETIME_BOUND {
+  SetHasBit(_impl_._has_bits_[0], 0x00000002U);
+  ::std::string* _s = _internal_mutable_device_id();
+  // @@protoc_insertion_point(field_mutable:chirp.auth.DevicePresence.device_id)
+  return _s;
+}
+inline const ::std::string& DevicePresence::_internal_device_id() const {
+  ::google::protobuf::internal::TSanRead(&_impl_);
+  return _impl_.device_id_.Get();
+}
+inline void DevicePresence::_internal_set_device_id(const ::std::string& value) {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_.device_id_.Set(value, GetArena());
+}
+inline ::std::string* PROTOBUF_NONNULL DevicePresence::_internal_mutable_device_id() {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  return _impl_.device_id_.Mutable( GetArena());
+}
+inline ::std::string* PROTOBUF_NULLABLE DevicePresence::release_device_id() {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  // @@protoc_insertion_point(field_release:chirp.auth.DevicePresence.device_id)
+  if (!CheckHasBit(_impl_._has_bits_[0], 0x00000002U)) {
+    return nullptr;
+  }
+  ClearHasBit(_impl_._has_bits_[0], 0x00000002U);
+  auto* released = _impl_.device_id_.Release();
+  if (::google::protobuf::internal::DebugHardenForceCopyDefaultString()) {
+    _impl_.device_id_.Set("", GetArena());
+  }
+  return released;
+}
+inline void DevicePresence::set_allocated_device_id(::std::string* PROTOBUF_NULLABLE value) {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  if (value != nullptr) {
+    SetHasBit(_impl_._has_bits_[0], 0x00000002U);
+  } else {
+    ClearHasBit(_impl_._has_bits_[0], 0x00000002U);
+  }
+  _impl_.device_id_.SetAllocated(value, GetArena());
+  if (::google::protobuf::internal::DebugHardenForceCopyDefaultString() && _impl_.device_id_.IsDefault()) {
+    _impl_.device_id_.Set("", GetArena());
+  }
+  // @@protoc_insertion_point(field_set_allocated:chirp.auth.DevicePresence.device_id)
+}
+
+// bool online = 3;
+inline void DevicePresence::clear_online() {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_.online_ = false;
+  ClearHasBit(_impl_._has_bits_[0],
+                  0x00000008U);
+}
+inline bool DevicePresence::online() const {
+  // @@protoc_insertion_point(field_get:chirp.auth.DevicePresence.online)
+  return _internal_online();
+}
+inline void DevicePresence::set_online(bool value) {
+  _internal_set_online(value);
+  SetHasBit(_impl_._has_bits_[0], 0x00000008U);
+  // @@protoc_insertion_point(field_set:chirp.auth.DevicePresence.online)
+}
+inline bool DevicePresence::_internal_online() const {
+  ::google::protobuf::internal::TSanRead(&_impl_);
+  return _impl_.online_;
+}
+inline void DevicePresence::_internal_set_online(bool value) {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_.online_ = value;
+}
+
+// int64 ts = 4;
+inline void DevicePresence::clear_ts() {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_.ts_ = ::int64_t{0};
+  ClearHasBit(_impl_._has_bits_[0],
+                  0x00000004U);
+}
+inline ::int64_t DevicePresence::ts() const {
+  // @@protoc_insertion_point(field_get:chirp.auth.DevicePresence.ts)
+  return _internal_ts();
+}
+inline void DevicePresence::set_ts(::int64_t value) {
+  _internal_set_ts(value);
+  SetHasBit(_impl_._has_bits_[0], 0x00000004U);
+  // @@protoc_insertion_point(field_set:chirp.auth.DevicePresence.ts)
+}
+inline ::int64_t DevicePresence::_internal_ts() const {
+  ::google::protobuf::internal::TSanRead(&_impl_);
+  return _impl_.ts_;
+}
+inline void DevicePresence::_internal_set_ts(::int64_t value) {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_.ts_ = value;
+}
+
+// -------------------------------------------------------------------
+
+// DevicesPresenceNotify
+
+// repeated .chirp.auth.DevicePresence devices = 1;
+inline int DevicesPresenceNotify::_internal_devices_size() const {
+  return _internal_devices().size();
+}
+inline int DevicesPresenceNotify::devices_size() const {
+  return _internal_devices_size();
+}
+inline void DevicesPresenceNotify::clear_devices() {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_.devices_.Clear();
+  ClearHasBitForRepeated(_impl_._has_bits_[0],
+                  0x00000001U);
+}
+inline ::chirp::auth::DevicePresence* PROTOBUF_NONNULL DevicesPresenceNotify::mutable_devices(int index)
+    ABSL_ATTRIBUTE_LIFETIME_BOUND {
+  // @@protoc_insertion_point(field_mutable:chirp.auth.DevicesPresenceNotify.devices)
+  return _internal_mutable_devices()->Mutable(index);
+}
+inline ::google::protobuf::RepeatedPtrField<::chirp::auth::DevicePresence>* PROTOBUF_NONNULL DevicesPresenceNotify::mutable_devices()
+    ABSL_ATTRIBUTE_LIFETIME_BOUND {
+  SetHasBitForRepeated(_impl_._has_bits_[0], 0x00000001U);
+  // @@protoc_insertion_point(field_mutable_list:chirp.auth.DevicesPresenceNotify.devices)
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  return _internal_mutable_devices();
+}
+inline const ::chirp::auth::DevicePresence& DevicesPresenceNotify::devices(int index) const
+    ABSL_ATTRIBUTE_LIFETIME_BOUND {
+  // @@protoc_insertion_point(field_get:chirp.auth.DevicesPresenceNotify.devices)
+  return _internal_devices().Get(index);
+}
+inline ::chirp::auth::DevicePresence* PROTOBUF_NONNULL DevicesPresenceNotify::add_devices()
+    ABSL_ATTRIBUTE_LIFETIME_BOUND {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  ::chirp::auth::DevicePresence* _add =
+      _internal_mutable_devices()->InternalAddWithArena(
+          ::google::protobuf::MessageLite::internal_visibility(), GetArena());
+  SetHasBitForRepeated(_impl_._has_bits_[0], 0x00000001U);
+  // @@protoc_insertion_point(field_add:chirp.auth.DevicesPresenceNotify.devices)
+  return _add;
+}
+inline const ::google::protobuf::RepeatedPtrField<::chirp::auth::DevicePresence>& DevicesPresenceNotify::devices() const
+    ABSL_ATTRIBUTE_LIFETIME_BOUND {
+  // @@protoc_insertion_point(field_list:chirp.auth.DevicesPresenceNotify.devices)
+  return _internal_devices();
+}
+inline const ::google::protobuf::RepeatedPtrField<::chirp::auth::DevicePresence>&
+DevicesPresenceNotify::_internal_devices() const {
+  ::google::protobuf::internal::TSanRead(&_impl_);
+  return _impl_.devices_;
+}
+inline ::google::protobuf::RepeatedPtrField<::chirp::auth::DevicePresence>* PROTOBUF_NONNULL
+DevicesPresenceNotify::_internal_mutable_devices() {
+  ::google::protobuf::internal::TSanRead(&_impl_);
+  return &_impl_.devices_;
+}
+
+// -------------------------------------------------------------------
+
 // LoginResponse
 
 // .chirp.common.ErrorCode code = 1;
@@ -4624,7 +5328,7 @@ inline void LoginResponse::clear_code() {
   ::google::protobuf::internal::TSanWrite(&_impl_);
   _impl_.code_ = 0;
   ClearHasBit(_impl_._has_bits_[0],
-                  0x00000010U);
+                  0x00000020U);
 }
 inline ::chirp::common::ErrorCode LoginResponse::code() const {
   // @@protoc_insertion_point(field_get:chirp.auth.LoginResponse.code)
@@ -4632,7 +5336,7 @@ inline ::chirp::common::ErrorCode LoginResponse::code() const {
 }
 inline void LoginResponse::set_code(::chirp::common::ErrorCode value) {
   _internal_set_code(value);
-  SetHasBit(_impl_._has_bits_[0], 0x00000010U);
+  SetHasBit(_impl_._has_bits_[0], 0x00000020U);
   // @@protoc_insertion_point(field_set:chirp.auth.LoginResponse.code)
 }
 inline ::chirp::common::ErrorCode LoginResponse::_internal_code() const {
@@ -4649,7 +5353,7 @@ inline void LoginResponse::clear_session_id() {
   ::google::protobuf::internal::TSanWrite(&_impl_);
   _impl_.session_id_.ClearToEmpty();
   ClearHasBit(_impl_._has_bits_[0],
-                  0x00000001U);
+                  0x00000002U);
 }
 inline const ::std::string& LoginResponse::session_id() const
     ABSL_ATTRIBUTE_LIFETIME_BOUND {
@@ -4659,13 +5363,13 @@ inline const ::std::string& LoginResponse::session_id() const
 template <typename Arg_, typename... Args_>
 PROTOBUF_ALWAYS_INLINE void LoginResponse::set_session_id(Arg_&& arg, Args_... args) {
   ::google::protobuf::internal::TSanWrite(&_impl_);
-  SetHasBit(_impl_._has_bits_[0], 0x00000001U);
+  SetHasBit(_impl_._has_bits_[0], 0x00000002U);
   _impl_.session_id_.Set(static_cast<Arg_&&>(arg), args..., GetArena());
   // @@protoc_insertion_point(field_set:chirp.auth.LoginResponse.session_id)
 }
 inline ::std::string* PROTOBUF_NONNULL LoginResponse::mutable_session_id()
     ABSL_ATTRIBUTE_LIFETIME_BOUND {
-  SetHasBit(_impl_._has_bits_[0], 0x00000001U);
+  SetHasBit(_impl_._has_bits_[0], 0x00000002U);
   ::std::string* _s = _internal_mutable_session_id();
   // @@protoc_insertion_point(field_mutable:chirp.auth.LoginResponse.session_id)
   return _s;
@@ -4685,10 +5389,10 @@ inline ::std::string* PROTOBUF_NONNULL LoginResponse::_internal_mutable_session_
 inline ::std::string* PROTOBUF_NULLABLE LoginResponse::release_session_id() {
   ::google::protobuf::internal::TSanWrite(&_impl_);
   // @@protoc_insertion_point(field_release:chirp.auth.LoginResponse.session_id)
-  if (!CheckHasBit(_impl_._has_bits_[0], 0x00000001U)) {
+  if (!CheckHasBit(_impl_._has_bits_[0], 0x00000002U)) {
     return nullptr;
   }
-  ClearHasBit(_impl_._has_bits_[0], 0x00000001U);
+  ClearHasBit(_impl_._has_bits_[0], 0x00000002U);
   auto* released = _impl_.session_id_.Release();
   if (::google::protobuf::internal::DebugHardenForceCopyDefaultString()) {
     _impl_.session_id_.Set("", GetArena());
@@ -4698,9 +5402,9 @@ inline ::std::string* PROTOBUF_NULLABLE LoginResponse::release_session_id() {
 inline void LoginResponse::set_allocated_session_id(::std::string* PROTOBUF_NULLABLE value) {
   ::google::protobuf::internal::TSanWrite(&_impl_);
   if (value != nullptr) {
-    SetHasBit(_impl_._has_bits_[0], 0x00000001U);
+    SetHasBit(_impl_._has_bits_[0], 0x00000002U);
   } else {
-    ClearHasBit(_impl_._has_bits_[0], 0x00000001U);
+    ClearHasBit(_impl_._has_bits_[0], 0x00000002U);
   }
   _impl_.session_id_.SetAllocated(value, GetArena());
   if (::google::protobuf::internal::DebugHardenForceCopyDefaultString() && _impl_.session_id_.IsDefault()) {
@@ -4714,7 +5418,7 @@ inline void LoginResponse::clear_server_time() {
   ::google::protobuf::internal::TSanWrite(&_impl_);
   _impl_.server_time_ = ::int64_t{0};
   ClearHasBit(_impl_._has_bits_[0],
-                  0x00000008U);
+                  0x00000010U);
 }
 inline ::int64_t LoginResponse::server_time() const {
   // @@protoc_insertion_point(field_get:chirp.auth.LoginResponse.server_time)
@@ -4722,7 +5426,7 @@ inline ::int64_t LoginResponse::server_time() const {
 }
 inline void LoginResponse::set_server_time(::int64_t value) {
   _internal_set_server_time(value);
-  SetHasBit(_impl_._has_bits_[0], 0x00000008U);
+  SetHasBit(_impl_._has_bits_[0], 0x00000010U);
   // @@protoc_insertion_point(field_set:chirp.auth.LoginResponse.server_time)
 }
 inline ::int64_t LoginResponse::_internal_server_time() const {
@@ -4739,7 +5443,7 @@ inline void LoginResponse::clear_user_id() {
   ::google::protobuf::internal::TSanWrite(&_impl_);
   _impl_.user_id_.ClearToEmpty();
   ClearHasBit(_impl_._has_bits_[0],
-                  0x00000002U);
+                  0x00000004U);
 }
 inline const ::std::string& LoginResponse::user_id() const
     ABSL_ATTRIBUTE_LIFETIME_BOUND {
@@ -4749,13 +5453,13 @@ inline const ::std::string& LoginResponse::user_id() const
 template <typename Arg_, typename... Args_>
 PROTOBUF_ALWAYS_INLINE void LoginResponse::set_user_id(Arg_&& arg, Args_... args) {
   ::google::protobuf::internal::TSanWrite(&_impl_);
-  SetHasBit(_impl_._has_bits_[0], 0x00000002U);
+  SetHasBit(_impl_._has_bits_[0], 0x00000004U);
   _impl_.user_id_.Set(static_cast<Arg_&&>(arg), args..., GetArena());
   // @@protoc_insertion_point(field_set:chirp.auth.LoginResponse.user_id)
 }
 inline ::std::string* PROTOBUF_NONNULL LoginResponse::mutable_user_id()
     ABSL_ATTRIBUTE_LIFETIME_BOUND {
-  SetHasBit(_impl_._has_bits_[0], 0x00000002U);
+  SetHasBit(_impl_._has_bits_[0], 0x00000004U);
   ::std::string* _s = _internal_mutable_user_id();
   // @@protoc_insertion_point(field_mutable:chirp.auth.LoginResponse.user_id)
   return _s;
@@ -4775,10 +5479,10 @@ inline ::std::string* PROTOBUF_NONNULL LoginResponse::_internal_mutable_user_id(
 inline ::std::string* PROTOBUF_NULLABLE LoginResponse::release_user_id() {
   ::google::protobuf::internal::TSanWrite(&_impl_);
   // @@protoc_insertion_point(field_release:chirp.auth.LoginResponse.user_id)
-  if (!CheckHasBit(_impl_._has_bits_[0], 0x00000002U)) {
+  if (!CheckHasBit(_impl_._has_bits_[0], 0x00000004U)) {
     return nullptr;
   }
-  ClearHasBit(_impl_._has_bits_[0], 0x00000002U);
+  ClearHasBit(_impl_._has_bits_[0], 0x00000004U);
   auto* released = _impl_.user_id_.Release();
   if (::google::protobuf::internal::DebugHardenForceCopyDefaultString()) {
     _impl_.user_id_.Set("", GetArena());
@@ -4788,9 +5492,9 @@ inline ::std::string* PROTOBUF_NULLABLE LoginResponse::release_user_id() {
 inline void LoginResponse::set_allocated_user_id(::std::string* PROTOBUF_NULLABLE value) {
   ::google::protobuf::internal::TSanWrite(&_impl_);
   if (value != nullptr) {
-    SetHasBit(_impl_._has_bits_[0], 0x00000002U);
+    SetHasBit(_impl_._has_bits_[0], 0x00000004U);
   } else {
-    ClearHasBit(_impl_._has_bits_[0], 0x00000002U);
+    ClearHasBit(_impl_._has_bits_[0], 0x00000004U);
   }
   _impl_.user_id_.SetAllocated(value, GetArena());
   if (::google::protobuf::internal::DebugHardenForceCopyDefaultString() && _impl_.user_id_.IsDefault()) {
@@ -4804,7 +5508,7 @@ inline void LoginResponse::clear_kick_previous() {
   ::google::protobuf::internal::TSanWrite(&_impl_);
   _impl_.kick_previous_ = false;
   ClearHasBit(_impl_._has_bits_[0],
-                  0x00000020U);
+                  0x00000040U);
 }
 inline bool LoginResponse::kick_previous() const {
   // @@protoc_insertion_point(field_get:chirp.auth.LoginResponse.kick_previous)
@@ -4812,7 +5516,7 @@ inline bool LoginResponse::kick_previous() const {
 }
 inline void LoginResponse::set_kick_previous(bool value) {
   _internal_set_kick_previous(value);
-  SetHasBit(_impl_._has_bits_[0], 0x00000020U);
+  SetHasBit(_impl_._has_bits_[0], 0x00000040U);
   // @@protoc_insertion_point(field_set:chirp.auth.LoginResponse.kick_previous)
 }
 inline bool LoginResponse::_internal_kick_previous() const {
@@ -4826,7 +5530,7 @@ inline void LoginResponse::_internal_set_kick_previous(bool value) {
 
 // .chirp.auth.KickNotify kick = 6;
 inline bool LoginResponse::has_kick() const {
-  bool value = CheckHasBit(_impl_._has_bits_[0], 0x00000004U);
+  bool value = CheckHasBit(_impl_._has_bits_[0], 0x00000008U);
   PROTOBUF_ASSUME(!value || _impl_.kick_ != nullptr);
   return value;
 }
@@ -4834,7 +5538,7 @@ inline void LoginResponse::clear_kick() {
   ::google::protobuf::internal::TSanWrite(&_impl_);
   if (_impl_.kick_ != nullptr) _impl_.kick_->Clear();
   ClearHasBit(_impl_._has_bits_[0],
-                  0x00000004U);
+                  0x00000008U);
 }
 inline const ::chirp::auth::KickNotify& LoginResponse::_internal_kick() const {
   ::google::protobuf::internal::TSanRead(&_impl_);
@@ -4853,16 +5557,16 @@ inline void LoginResponse::unsafe_arena_set_allocated_kick(
   }
   _impl_.kick_ = reinterpret_cast<::chirp::auth::KickNotify*>(value);
   if (value != nullptr) {
-    SetHasBit(_impl_._has_bits_[0], 0x00000004U);
+    SetHasBit(_impl_._has_bits_[0], 0x00000008U);
   } else {
-    ClearHasBit(_impl_._has_bits_[0], 0x00000004U);
+    ClearHasBit(_impl_._has_bits_[0], 0x00000008U);
   }
   // @@protoc_insertion_point(field_unsafe_arena_set_allocated:chirp.auth.LoginResponse.kick)
 }
 inline ::chirp::auth::KickNotify* PROTOBUF_NULLABLE LoginResponse::release_kick() {
   ::google::protobuf::internal::TSanWrite(&_impl_);
 
-  ClearHasBit(_impl_._has_bits_[0], 0x00000004U);
+  ClearHasBit(_impl_._has_bits_[0], 0x00000008U);
   ::chirp::auth::KickNotify* released = _impl_.kick_;
   _impl_.kick_ = nullptr;
   if (::google::protobuf::internal::DebugHardenForceCopyInRelease()) {
@@ -4882,7 +5586,7 @@ inline ::chirp::auth::KickNotify* PROTOBUF_NULLABLE LoginResponse::unsafe_arena_
   ::google::protobuf::internal::TSanWrite(&_impl_);
   // @@protoc_insertion_point(field_release:chirp.auth.LoginResponse.kick)
 
-  ClearHasBit(_impl_._has_bits_[0], 0x00000004U);
+  ClearHasBit(_impl_._has_bits_[0], 0x00000008U);
   ::chirp::auth::KickNotify* temp = _impl_.kick_;
   _impl_.kick_ = nullptr;
   return temp;
@@ -4897,7 +5601,7 @@ inline ::chirp::auth::KickNotify* PROTOBUF_NONNULL LoginResponse::_internal_muta
 }
 inline ::chirp::auth::KickNotify* PROTOBUF_NONNULL LoginResponse::mutable_kick()
     ABSL_ATTRIBUTE_LIFETIME_BOUND {
-  SetHasBit(_impl_._has_bits_[0], 0x00000004U);
+  SetHasBit(_impl_._has_bits_[0], 0x00000008U);
   ::chirp::auth::KickNotify* _msg = _internal_mutable_kick();
   // @@protoc_insertion_point(field_mutable:chirp.auth.LoginResponse.kick)
   return _msg;
@@ -4914,13 +5618,69 @@ inline void LoginResponse::set_allocated_kick(::chirp::auth::KickNotify* PROTOBU
     if (message_arena != submessage_arena) {
       value = ::google::protobuf::internal::GetOwnedMessage(message_arena, value, submessage_arena);
     }
-    SetHasBit(_impl_._has_bits_[0], 0x00000004U);
+    SetHasBit(_impl_._has_bits_[0], 0x00000008U);
   } else {
-    ClearHasBit(_impl_._has_bits_[0], 0x00000004U);
+    ClearHasBit(_impl_._has_bits_[0], 0x00000008U);
   }
 
   _impl_.kick_ = reinterpret_cast<::chirp::auth::KickNotify*>(value);
   // @@protoc_insertion_point(field_set_allocated:chirp.auth.LoginResponse.kick)
+}
+
+// repeated .chirp.auth.DevicePresence online_devices = 7;
+inline int LoginResponse::_internal_online_devices_size() const {
+  return _internal_online_devices().size();
+}
+inline int LoginResponse::online_devices_size() const {
+  return _internal_online_devices_size();
+}
+inline void LoginResponse::clear_online_devices() {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_.online_devices_.Clear();
+  ClearHasBitForRepeated(_impl_._has_bits_[0],
+                  0x00000001U);
+}
+inline ::chirp::auth::DevicePresence* PROTOBUF_NONNULL LoginResponse::mutable_online_devices(int index)
+    ABSL_ATTRIBUTE_LIFETIME_BOUND {
+  // @@protoc_insertion_point(field_mutable:chirp.auth.LoginResponse.online_devices)
+  return _internal_mutable_online_devices()->Mutable(index);
+}
+inline ::google::protobuf::RepeatedPtrField<::chirp::auth::DevicePresence>* PROTOBUF_NONNULL LoginResponse::mutable_online_devices()
+    ABSL_ATTRIBUTE_LIFETIME_BOUND {
+  SetHasBitForRepeated(_impl_._has_bits_[0], 0x00000001U);
+  // @@protoc_insertion_point(field_mutable_list:chirp.auth.LoginResponse.online_devices)
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  return _internal_mutable_online_devices();
+}
+inline const ::chirp::auth::DevicePresence& LoginResponse::online_devices(int index) const
+    ABSL_ATTRIBUTE_LIFETIME_BOUND {
+  // @@protoc_insertion_point(field_get:chirp.auth.LoginResponse.online_devices)
+  return _internal_online_devices().Get(index);
+}
+inline ::chirp::auth::DevicePresence* PROTOBUF_NONNULL LoginResponse::add_online_devices()
+    ABSL_ATTRIBUTE_LIFETIME_BOUND {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  ::chirp::auth::DevicePresence* _add =
+      _internal_mutable_online_devices()->InternalAddWithArena(
+          ::google::protobuf::MessageLite::internal_visibility(), GetArena());
+  SetHasBitForRepeated(_impl_._has_bits_[0], 0x00000001U);
+  // @@protoc_insertion_point(field_add:chirp.auth.LoginResponse.online_devices)
+  return _add;
+}
+inline const ::google::protobuf::RepeatedPtrField<::chirp::auth::DevicePresence>& LoginResponse::online_devices() const
+    ABSL_ATTRIBUTE_LIFETIME_BOUND {
+  // @@protoc_insertion_point(field_list:chirp.auth.LoginResponse.online_devices)
+  return _internal_online_devices();
+}
+inline const ::google::protobuf::RepeatedPtrField<::chirp::auth::DevicePresence>&
+LoginResponse::_internal_online_devices() const {
+  ::google::protobuf::internal::TSanRead(&_impl_);
+  return _impl_.online_devices_;
+}
+inline ::google::protobuf::RepeatedPtrField<::chirp::auth::DevicePresence>* PROTOBUF_NONNULL
+LoginResponse::_internal_mutable_online_devices() {
+  ::google::protobuf::internal::TSanRead(&_impl_);
+  return &_impl_.online_devices_;
 }
 
 // -------------------------------------------------------------------

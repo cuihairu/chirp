@@ -474,6 +474,38 @@ struct GetSessionsRequestDefaultTypeInternal {
 PROTOBUF_ATTRIBUTE_NO_DESTROY PROTOBUF_CONSTINIT
     PROTOBUF_ATTRIBUTE_INIT_PRIORITY1 GetSessionsRequestDefaultTypeInternal _GetSessionsRequest_default_instance_;
 
+inline constexpr DevicePresence::Impl_::Impl_(
+    ::_pbi::ConstantInitialized) noexcept
+      : _cached_size_{0},
+        platform_(
+            &::google::protobuf::internal::fixed_address_empty_string,
+            ::_pbi::ConstantInitialized()),
+        device_id_(
+            &::google::protobuf::internal::fixed_address_empty_string,
+            ::_pbi::ConstantInitialized()),
+        ts_{::int64_t{0}},
+        online_{false} {}
+
+template <typename>
+PROTOBUF_CONSTEXPR DevicePresence::DevicePresence(::_pbi::ConstantInitialized)
+#if defined(PROTOBUF_CUSTOM_VTABLE)
+    : ::google::protobuf::Message(DevicePresence_class_data_.base()),
+#else   // PROTOBUF_CUSTOM_VTABLE
+    : ::google::protobuf::Message(),
+#endif  // PROTOBUF_CUSTOM_VTABLE
+      _impl_(::_pbi::ConstantInitialized()) {
+}
+struct DevicePresenceDefaultTypeInternal {
+  PROTOBUF_CONSTEXPR DevicePresenceDefaultTypeInternal() : _instance(::_pbi::ConstantInitialized{}) {}
+  ~DevicePresenceDefaultTypeInternal() {}
+  union {
+    DevicePresence _instance;
+  };
+};
+
+PROTOBUF_ATTRIBUTE_NO_DESTROY PROTOBUF_CONSTINIT
+    PROTOBUF_ATTRIBUTE_INIT_PRIORITY1 DevicePresenceDefaultTypeInternal _DevicePresence_default_instance_;
+
 inline constexpr ChangePasswordResponse::Impl_::Impl_(
     ::_pbi::ConstantInitialized) noexcept
       : _cached_size_{0},
@@ -539,6 +571,7 @@ PROTOBUF_ATTRIBUTE_NO_DESTROY PROTOBUF_CONSTINIT
 inline constexpr LoginResponse::Impl_::Impl_(
     ::_pbi::ConstantInitialized) noexcept
       : _cached_size_{0},
+        online_devices_{},
         session_id_(
             &::google::protobuf::internal::fixed_address_empty_string,
             ::_pbi::ConstantInitialized()),
@@ -596,6 +629,31 @@ struct GetSessionsResponseDefaultTypeInternal {
 
 PROTOBUF_ATTRIBUTE_NO_DESTROY PROTOBUF_CONSTINIT
     PROTOBUF_ATTRIBUTE_INIT_PRIORITY1 GetSessionsResponseDefaultTypeInternal _GetSessionsResponse_default_instance_;
+
+inline constexpr DevicesPresenceNotify::Impl_::Impl_(
+    ::_pbi::ConstantInitialized) noexcept
+      : _cached_size_{0},
+        devices_{} {}
+
+template <typename>
+PROTOBUF_CONSTEXPR DevicesPresenceNotify::DevicesPresenceNotify(::_pbi::ConstantInitialized)
+#if defined(PROTOBUF_CUSTOM_VTABLE)
+    : ::google::protobuf::Message(DevicesPresenceNotify_class_data_.base()),
+#else   // PROTOBUF_CUSTOM_VTABLE
+    : ::google::protobuf::Message(),
+#endif  // PROTOBUF_CUSTOM_VTABLE
+      _impl_(::_pbi::ConstantInitialized()) {
+}
+struct DevicesPresenceNotifyDefaultTypeInternal {
+  PROTOBUF_CONSTEXPR DevicesPresenceNotifyDefaultTypeInternal() : _instance(::_pbi::ConstantInitialized{}) {}
+  ~DevicesPresenceNotifyDefaultTypeInternal() {}
+  union {
+    DevicesPresenceNotify _instance;
+  };
+};
+
+PROTOBUF_ATTRIBUTE_NO_DESTROY PROTOBUF_CONSTINIT
+    PROTOBUF_ATTRIBUTE_INIT_PRIORITY1 DevicesPresenceNotifyDefaultTypeInternal _DevicesPresenceNotify_default_instance_;
 }  // namespace auth
 }  // namespace chirp
 static constexpr const ::_pb::EnumDescriptor* PROTOBUF_NONNULL* PROTOBUF_NULLABLE
@@ -622,20 +680,38 @@ const ::uint32_t
         PROTOBUF_FIELD_OFFSET(::chirp::auth::KickNotify, _impl_.reason_),
         0,
         0x081, // bitmap
+        PROTOBUF_FIELD_OFFSET(::chirp::auth::DevicePresence, _impl_._has_bits_),
+        7, // hasbit index offset
+        PROTOBUF_FIELD_OFFSET(::chirp::auth::DevicePresence, _impl_.platform_),
+        PROTOBUF_FIELD_OFFSET(::chirp::auth::DevicePresence, _impl_.device_id_),
+        PROTOBUF_FIELD_OFFSET(::chirp::auth::DevicePresence, _impl_.online_),
+        PROTOBUF_FIELD_OFFSET(::chirp::auth::DevicePresence, _impl_.ts_),
+        0,
+        1,
+        3,
+        2,
+        0x081, // bitmap
+        PROTOBUF_FIELD_OFFSET(::chirp::auth::DevicesPresenceNotify, _impl_._has_bits_),
+        4, // hasbit index offset
+        PROTOBUF_FIELD_OFFSET(::chirp::auth::DevicesPresenceNotify, _impl_.devices_),
+        0,
+        0x081, // bitmap
         PROTOBUF_FIELD_OFFSET(::chirp::auth::LoginResponse, _impl_._has_bits_),
-        9, // hasbit index offset
+        10, // hasbit index offset
         PROTOBUF_FIELD_OFFSET(::chirp::auth::LoginResponse, _impl_.code_),
         PROTOBUF_FIELD_OFFSET(::chirp::auth::LoginResponse, _impl_.session_id_),
         PROTOBUF_FIELD_OFFSET(::chirp::auth::LoginResponse, _impl_.server_time_),
         PROTOBUF_FIELD_OFFSET(::chirp::auth::LoginResponse, _impl_.user_id_),
         PROTOBUF_FIELD_OFFSET(::chirp::auth::LoginResponse, _impl_.kick_previous_),
         PROTOBUF_FIELD_OFFSET(::chirp::auth::LoginResponse, _impl_.kick_),
-        4,
-        0,
-        3,
-        1,
+        PROTOBUF_FIELD_OFFSET(::chirp::auth::LoginResponse, _impl_.online_devices_),
         5,
+        1,
+        4,
         2,
+        6,
+        3,
+        0,
         0x081, // bitmap
         PROTOBUF_FIELD_OFFSET(::chirp::auth::LogoutRequest, _impl_._has_bits_),
         5, // hasbit index offset
@@ -793,26 +869,30 @@ static const ::_pbi::MigrationSchema
     schemas[] ABSL_ATTRIBUTE_SECTION_VARIABLE(protodesc_cold) = {
         {0, sizeof(::chirp::auth::LoginRequest)},
         {11, sizeof(::chirp::auth::KickNotify)},
-        {16, sizeof(::chirp::auth::LoginResponse)},
-        {31, sizeof(::chirp::auth::LogoutRequest)},
-        {38, sizeof(::chirp::auth::LogoutResponse)},
-        {45, sizeof(::chirp::auth::RegisterRequest)},
-        {56, sizeof(::chirp::auth::RegisterResponse)},
-        {67, sizeof(::chirp::auth::PasswordLoginRequest)},
-        {78, sizeof(::chirp::auth::PasswordLoginResponse)},
-        {103, sizeof(::chirp::auth::RefreshTokenRequest)},
-        {108, sizeof(::chirp::auth::RefreshTokenResponse)},
-        {121, sizeof(::chirp::auth::GetSessionsRequest)},
-        {126, sizeof(::chirp::auth::SessionInfo)},
-        {141, sizeof(::chirp::auth::GetSessionsResponse)},
-        {150, sizeof(::chirp::auth::RevokeSessionRequest)},
-        {157, sizeof(::chirp::auth::RevokeSessionResponse)},
-        {164, sizeof(::chirp::auth::ChangePasswordRequest)},
-        {173, sizeof(::chirp::auth::ChangePasswordResponse)},
+        {16, sizeof(::chirp::auth::DevicePresence)},
+        {27, sizeof(::chirp::auth::DevicesPresenceNotify)},
+        {32, sizeof(::chirp::auth::LoginResponse)},
+        {49, sizeof(::chirp::auth::LogoutRequest)},
+        {56, sizeof(::chirp::auth::LogoutResponse)},
+        {63, sizeof(::chirp::auth::RegisterRequest)},
+        {74, sizeof(::chirp::auth::RegisterResponse)},
+        {85, sizeof(::chirp::auth::PasswordLoginRequest)},
+        {96, sizeof(::chirp::auth::PasswordLoginResponse)},
+        {121, sizeof(::chirp::auth::RefreshTokenRequest)},
+        {126, sizeof(::chirp::auth::RefreshTokenResponse)},
+        {139, sizeof(::chirp::auth::GetSessionsRequest)},
+        {144, sizeof(::chirp::auth::SessionInfo)},
+        {159, sizeof(::chirp::auth::GetSessionsResponse)},
+        {168, sizeof(::chirp::auth::RevokeSessionRequest)},
+        {175, sizeof(::chirp::auth::RevokeSessionResponse)},
+        {182, sizeof(::chirp::auth::ChangePasswordRequest)},
+        {191, sizeof(::chirp::auth::ChangePasswordResponse)},
 };
 static const ::_pb::Message* PROTOBUF_NONNULL const file_default_instances[] = {
     &::chirp::auth::_LoginRequest_default_instance_._instance,
     &::chirp::auth::_KickNotify_default_instance_._instance,
+    &::chirp::auth::_DevicePresence_default_instance_._instance,
+    &::chirp::auth::_DevicesPresenceNotify_default_instance_._instance,
     &::chirp::auth::_LoginResponse_default_instance_._instance,
     &::chirp::auth::_LogoutRequest_default_instance_._instance,
     &::chirp::auth::_LogoutResponse_default_instance_._instance,
@@ -836,52 +916,58 @@ const char descriptor_table_protodef_proto_2fauth_2eproto[] ABSL_ATTRIBUTE_SECTI
     "mmon.proto\"`\n\014LoginRequest\022\r\n\005token\030\001 \001("
     "\t\022\021\n\tdevice_id\030\002 \001(\t\022\020\n\010platform\030\003 \001(\t\022\034"
     "\n\024supports_message_ack\030\004 \001(\010\"\034\n\nKickNoti"
-    "fy\022\016\n\006reason\030\001 \001(\t\"\255\001\n\rLoginResponse\022%\n\004"
-    "code\030\001 \001(\0162\027.chirp.common.ErrorCode\022\022\n\ns"
-    "ession_id\030\002 \001(\t\022\023\n\013server_time\030\003 \001(\003\022\017\n\007"
-    "user_id\030\004 \001(\t\022\025\n\rkick_previous\030\005 \001(\010\022$\n\004"
-    "kick\030\006 \001(\0132\026.chirp.auth.KickNotify\"4\n\rLo"
-    "goutRequest\022\017\n\007user_id\030\001 \001(\t\022\022\n\nsession_"
-    "id\030\002 \001(\t\"L\n\016LogoutResponse\022%\n\004code\030\001 \001(\016"
-    "2\027.chirp.common.ErrorCode\022\023\n\013server_time"
-    "\030\002 \001(\003\"Z\n\017RegisterRequest\022\020\n\010username\030\001 "
-    "\001(\t\022\r\n\005email\030\002 \001(\t\022\020\n\010password\030\003 \001(\t\022\024\n\014"
-    "display_name\030\004 \001(\t\"v\n\020RegisterResponse\022%"
-    "\n\004code\030\001 \001(\0162\027.chirp.common.ErrorCode\022\017\n"
-    "\007user_id\030\002 \001(\t\022\023\n\013server_time\030\003 \001(\003\022\025\n\re"
-    "rror_message\030\004 \001(\t\"a\n\024PasswordLoginReque"
-    "st\022\022\n\nidentifier\030\001 \001(\t\022\020\n\010password\030\002 \001(\t"
-    "\022\021\n\tdevice_id\030\003 \001(\t\022\020\n\010platform\030\004 \001(\t\"\250\002"
-    "\n\025PasswordLoginResponse\022%\n\004code\030\001 \001(\0162\027."
-    "chirp.common.ErrorCode\022\017\n\007user_id\030\002 \001(\t\022"
-    "\020\n\010username\030\003 \001(\t\022\022\n\nsession_id\030\004 \001(\t\022\024\n"
-    "\014access_token\030\005 \001(\t\022\025\n\rrefresh_token\030\006 \001"
-    "(\t\022\037\n\027access_token_expires_at\030\007 \001(\003\022 \n\030r"
-    "efresh_token_expires_at\030\010 \001(\003\022\023\n\013server_"
-    "time\030\t \001(\003\022\025\n\rkick_previous\030\n \001(\010\022\025\n\rerr"
-    "or_message\030\013 \001(\t\",\n\023RefreshTokenRequest\022"
-    "\025\n\rrefresh_token\030\001 \001(\t\"\240\001\n\024RefreshTokenR"
-    "esponse\022%\n\004code\030\001 \001(\0162\027.chirp.common.Err"
-    "orCode\022\024\n\014access_token\030\002 \001(\t\022\037\n\027access_t"
-    "oken_expires_at\030\003 \001(\003\022\023\n\013server_time\030\004 \001"
-    "(\003\022\025\n\rerror_message\030\005 \001(\t\"%\n\022GetSessions"
-    "Request\022\017\n\007user_id\030\001 \001(\t\"\210\001\n\013SessionInfo"
-    "\022\022\n\nsession_id\030\001 \001(\t\022\021\n\tdevice_id\030\002 \001(\t\022"
-    "\020\n\010platform\030\003 \001(\t\022\022\n\ncreated_at\030\004 \001(\003\022\030\n"
-    "\020last_activity_at\030\005 \001(\003\022\022\n\nis_current\030\006 "
-    "\001(\010\"|\n\023GetSessionsResponse\022%\n\004code\030\001 \001(\016"
-    "2\027.chirp.common.ErrorCode\022)\n\010sessions\030\002 "
-    "\003(\0132\027.chirp.auth.SessionInfo\022\023\n\013server_t"
-    "ime\030\003 \001(\003\";\n\024RevokeSessionRequest\022\017\n\007use"
-    "r_id\030\001 \001(\t\022\022\n\nsession_id\030\002 \001(\t\"S\n\025Revoke"
-    "SessionResponse\022%\n\004code\030\001 \001(\0162\027.chirp.co"
-    "mmon.ErrorCode\022\023\n\013server_time\030\002 \001(\003\"T\n\025C"
-    "hangePasswordRequest\022\017\n\007user_id\030\001 \001(\t\022\024\n"
-    "\014old_password\030\002 \001(\t\022\024\n\014new_password\030\003 \001("
-    "\t\"k\n\026ChangePasswordResponse\022%\n\004code\030\001 \001("
-    "\0162\027.chirp.common.ErrorCode\022\023\n\013server_tim"
-    "e\030\002 \001(\003\022\025\n\rerror_message\030\003 \001(\tB$Z\"github"
-    ".com/cui/chirp/proto/go/authb\006proto3"
+    "fy\022\016\n\006reason\030\001 \001(\t\"Q\n\016DevicePresence\022\020\n\010"
+    "platform\030\001 \001(\t\022\021\n\tdevice_id\030\002 \001(\t\022\016\n\006onl"
+    "ine\030\003 \001(\010\022\n\n\002ts\030\004 \001(\003\"D\n\025DevicesPresence"
+    "Notify\022+\n\007devices\030\001 \003(\0132\032.chirp.auth.Dev"
+    "icePresence\"\341\001\n\rLoginResponse\022%\n\004code\030\001 "
+    "\001(\0162\027.chirp.common.ErrorCode\022\022\n\nsession_"
+    "id\030\002 \001(\t\022\023\n\013server_time\030\003 \001(\003\022\017\n\007user_id"
+    "\030\004 \001(\t\022\025\n\rkick_previous\030\005 \001(\010\022$\n\004kick\030\006 "
+    "\001(\0132\026.chirp.auth.KickNotify\0222\n\016online_de"
+    "vices\030\007 \003(\0132\032.chirp.auth.DevicePresence\""
+    "4\n\rLogoutRequest\022\017\n\007user_id\030\001 \001(\t\022\022\n\nses"
+    "sion_id\030\002 \001(\t\"L\n\016LogoutResponse\022%\n\004code\030"
+    "\001 \001(\0162\027.chirp.common.ErrorCode\022\023\n\013server"
+    "_time\030\002 \001(\003\"Z\n\017RegisterRequest\022\020\n\010userna"
+    "me\030\001 \001(\t\022\r\n\005email\030\002 \001(\t\022\020\n\010password\030\003 \001("
+    "\t\022\024\n\014display_name\030\004 \001(\t\"v\n\020RegisterRespo"
+    "nse\022%\n\004code\030\001 \001(\0162\027.chirp.common.ErrorCo"
+    "de\022\017\n\007user_id\030\002 \001(\t\022\023\n\013server_time\030\003 \001(\003"
+    "\022\025\n\rerror_message\030\004 \001(\t\"a\n\024PasswordLogin"
+    "Request\022\022\n\nidentifier\030\001 \001(\t\022\020\n\010password\030"
+    "\002 \001(\t\022\021\n\tdevice_id\030\003 \001(\t\022\020\n\010platform\030\004 \001"
+    "(\t\"\250\002\n\025PasswordLoginResponse\022%\n\004code\030\001 \001"
+    "(\0162\027.chirp.common.ErrorCode\022\017\n\007user_id\030\002"
+    " \001(\t\022\020\n\010username\030\003 \001(\t\022\022\n\nsession_id\030\004 \001"
+    "(\t\022\024\n\014access_token\030\005 \001(\t\022\025\n\rrefresh_toke"
+    "n\030\006 \001(\t\022\037\n\027access_token_expires_at\030\007 \001(\003"
+    "\022 \n\030refresh_token_expires_at\030\010 \001(\003\022\023\n\013se"
+    "rver_time\030\t \001(\003\022\025\n\rkick_previous\030\n \001(\010\022\025"
+    "\n\rerror_message\030\013 \001(\t\",\n\023RefreshTokenReq"
+    "uest\022\025\n\rrefresh_token\030\001 \001(\t\"\240\001\n\024RefreshT"
+    "okenResponse\022%\n\004code\030\001 \001(\0162\027.chirp.commo"
+    "n.ErrorCode\022\024\n\014access_token\030\002 \001(\t\022\037\n\027acc"
+    "ess_token_expires_at\030\003 \001(\003\022\023\n\013server_tim"
+    "e\030\004 \001(\003\022\025\n\rerror_message\030\005 \001(\t\"%\n\022GetSes"
+    "sionsRequest\022\017\n\007user_id\030\001 \001(\t\"\210\001\n\013Sessio"
+    "nInfo\022\022\n\nsession_id\030\001 \001(\t\022\021\n\tdevice_id\030\002"
+    " \001(\t\022\020\n\010platform\030\003 \001(\t\022\022\n\ncreated_at\030\004 \001"
+    "(\003\022\030\n\020last_activity_at\030\005 \001(\003\022\022\n\nis_curre"
+    "nt\030\006 \001(\010\"|\n\023GetSessionsResponse\022%\n\004code\030"
+    "\001 \001(\0162\027.chirp.common.ErrorCode\022)\n\010sessio"
+    "ns\030\002 \003(\0132\027.chirp.auth.SessionInfo\022\023\n\013ser"
+    "ver_time\030\003 \001(\003\";\n\024RevokeSessionRequest\022\017"
+    "\n\007user_id\030\001 \001(\t\022\022\n\nsession_id\030\002 \001(\t\"S\n\025R"
+    "evokeSessionResponse\022%\n\004code\030\001 \001(\0162\027.chi"
+    "rp.common.ErrorCode\022\023\n\013server_time\030\002 \001(\003"
+    "\"T\n\025ChangePasswordRequest\022\017\n\007user_id\030\001 \001"
+    "(\t\022\024\n\014old_password\030\002 \001(\t\022\024\n\014new_password"
+    "\030\003 \001(\t\"k\n\026ChangePasswordResponse\022%\n\004code"
+    "\030\001 \001(\0162\027.chirp.common.ErrorCode\022\023\n\013serve"
+    "r_time\030\002 \001(\003\022\025\n\rerror_message\030\003 \001(\tB$Z\"g"
+    "ithub.com/cui/chirp/proto/go/authb\006proto"
+    "3"
 };
 static const ::_pbi::DescriptorTable* PROTOBUF_NONNULL const
     descriptor_table_proto_2fauth_2eproto_deps[1] = {
@@ -891,13 +977,13 @@ static ::absl::once_flag descriptor_table_proto_2fauth_2eproto_once;
 PROTOBUF_CONSTINIT const ::_pbi::DescriptorTable descriptor_table_proto_2fauth_2eproto = {
     false,
     false,
-    1996,
+    2201,
     descriptor_table_protodef_proto_2fauth_2eproto,
     "proto/auth.proto",
     &descriptor_table_proto_2fauth_2eproto_once,
     descriptor_table_proto_2fauth_2eproto_deps,
     1,
-    18,
+    20,
     schemas,
     file_default_instances,
     TableStruct_proto_2fauth_2eproto::offsets,
@@ -1573,6 +1659,687 @@ void KickNotify::InternalSwap(KickNotify* PROTOBUF_RESTRICT PROTOBUF_NONNULL oth
 }
 // ===================================================================
 
+class DevicePresence::_Internal {
+ public:
+  using HasBits =
+      decltype(::std::declval<DevicePresence>()._impl_._has_bits_);
+  static constexpr ::int32_t kHasBitsOffset =
+      8 * PROTOBUF_FIELD_OFFSET(DevicePresence, _impl_._has_bits_);
+};
+
+DevicePresence::DevicePresence(::google::protobuf::Arena* PROTOBUF_NULLABLE arena)
+#if defined(PROTOBUF_CUSTOM_VTABLE)
+    : ::google::protobuf::Message(arena, DevicePresence_class_data_.base()) {
+#else   // PROTOBUF_CUSTOM_VTABLE
+    : ::google::protobuf::Message(arena) {
+#endif  // PROTOBUF_CUSTOM_VTABLE
+  SharedCtor(arena);
+  // @@protoc_insertion_point(arena_constructor:chirp.auth.DevicePresence)
+}
+PROTOBUF_NDEBUG_INLINE DevicePresence::Impl_::Impl_(
+    [[maybe_unused]] ::google::protobuf::internal::InternalVisibility visibility,
+    [[maybe_unused]] ::google::protobuf::Arena* PROTOBUF_NULLABLE arena, const Impl_& from,
+    [[maybe_unused]] const ::chirp::auth::DevicePresence& from_msg)
+      : _has_bits_{from._has_bits_},
+        _cached_size_{0},
+        platform_(arena, from.platform_),
+        device_id_(arena, from.device_id_) {}
+
+DevicePresence::DevicePresence(
+    ::google::protobuf::Arena* PROTOBUF_NULLABLE arena,
+    const DevicePresence& from)
+#if defined(PROTOBUF_CUSTOM_VTABLE)
+    : ::google::protobuf::Message(arena, DevicePresence_class_data_.base()) {
+#else   // PROTOBUF_CUSTOM_VTABLE
+    : ::google::protobuf::Message(arena) {
+#endif  // PROTOBUF_CUSTOM_VTABLE
+  DevicePresence* const _this = this;
+  (void)_this;
+  _internal_metadata_.MergeFrom<::google::protobuf::UnknownFieldSet>(
+      from._internal_metadata_);
+  new (&_impl_) Impl_(internal_visibility(), arena, from._impl_, from);
+  ::memcpy(reinterpret_cast<char*>(&_impl_) +
+               offsetof(Impl_, ts_),
+           reinterpret_cast<const char*>(&from._impl_) +
+               offsetof(Impl_, ts_),
+           offsetof(Impl_, online_) -
+               offsetof(Impl_, ts_) +
+               sizeof(Impl_::online_));
+
+  // @@protoc_insertion_point(copy_constructor:chirp.auth.DevicePresence)
+}
+PROTOBUF_NDEBUG_INLINE DevicePresence::Impl_::Impl_(
+    [[maybe_unused]] ::google::protobuf::internal::InternalVisibility visibility,
+    [[maybe_unused]] ::google::protobuf::Arena* PROTOBUF_NULLABLE arena)
+      : _cached_size_{0},
+        platform_(arena),
+        device_id_(arena) {}
+
+inline void DevicePresence::SharedCtor(::_pb::Arena* PROTOBUF_NULLABLE arena) {
+  new (&_impl_) Impl_(internal_visibility(), arena);
+  ::memset(reinterpret_cast<char*>(&_impl_) +
+               offsetof(Impl_, ts_),
+           0,
+           offsetof(Impl_, online_) -
+               offsetof(Impl_, ts_) +
+               sizeof(Impl_::online_));
+}
+DevicePresence::~DevicePresence() {
+  // @@protoc_insertion_point(destructor:chirp.auth.DevicePresence)
+  SharedDtor(*this);
+}
+inline void DevicePresence::SharedDtor(MessageLite& self) {
+  DevicePresence& this_ = static_cast<DevicePresence&>(self);
+  if constexpr (::_pbi::DebugHardenCheckHasBitConsistency()) {
+    this_.CheckHasBitConsistency();
+  }
+  this_._internal_metadata_.Delete<::google::protobuf::UnknownFieldSet>();
+  ABSL_DCHECK(this_.GetArena() == nullptr);
+  this_._impl_.platform_.Destroy();
+  this_._impl_.device_id_.Destroy();
+  this_._impl_.~Impl_();
+}
+
+inline void* PROTOBUF_NONNULL DevicePresence::PlacementNew_(
+    const void* PROTOBUF_NONNULL, void* PROTOBUF_NONNULL mem,
+    ::google::protobuf::Arena* PROTOBUF_NULLABLE arena) {
+  return ::new (mem) DevicePresence(arena);
+}
+constexpr auto DevicePresence::InternalNewImpl_() {
+  return ::google::protobuf::internal::MessageCreator::CopyInit(sizeof(DevicePresence),
+                                            alignof(DevicePresence));
+}
+constexpr auto DevicePresence::InternalGenerateClassData_() {
+  return ::google::protobuf::internal::ClassDataFull{
+      ::google::protobuf::internal::ClassData{
+          &_DevicePresence_default_instance_._instance,
+          &_table_.header,
+          nullptr,  // OnDemandRegisterArenaDtor
+          nullptr,  // IsInitialized
+          &DevicePresence::MergeImpl,
+          ::google::protobuf::Message::GetNewImpl<DevicePresence>(),
+#if defined(PROTOBUF_CUSTOM_VTABLE)
+          &DevicePresence::SharedDtor,
+          ::google::protobuf::Message::GetClearImpl<DevicePresence>(), &DevicePresence::ByteSizeLong,
+              &DevicePresence::_InternalSerialize,
+#endif  // PROTOBUF_CUSTOM_VTABLE
+          PROTOBUF_FIELD_OFFSET(DevicePresence, _impl_._cached_size_),
+          false,
+      },
+      &DevicePresence::kDescriptorMethods,
+      &descriptor_table_proto_2fauth_2eproto,
+      nullptr,  // tracker
+  };
+}
+
+PROTOBUF_CONSTINIT PROTOBUF_ATTRIBUTE_INIT_PRIORITY1 const
+    ::google::protobuf::internal::ClassDataFull DevicePresence_class_data_ =
+        DevicePresence::InternalGenerateClassData_();
+
+PROTOBUF_ATTRIBUTE_WEAK const ::google::protobuf::internal::ClassData* PROTOBUF_NONNULL
+DevicePresence::GetClassData() const {
+  ::google::protobuf::internal::PrefetchToLocalCache(&DevicePresence_class_data_);
+  ::google::protobuf::internal::PrefetchToLocalCache(DevicePresence_class_data_.tc_table);
+  return DevicePresence_class_data_.base();
+}
+PROTOBUF_CONSTINIT PROTOBUF_ATTRIBUTE_INIT_PRIORITY1
+const ::_pbi::TcParseTable<2, 4, 0, 51, 2>
+DevicePresence::_table_ = {
+  {
+    PROTOBUF_FIELD_OFFSET(DevicePresence, _impl_._has_bits_),
+    0, // no _extensions_
+    4, 24,  // max_field_number, fast_idx_mask
+    offsetof(decltype(_table_), field_lookup_table),
+    4294967280,  // skipmap
+    offsetof(decltype(_table_), field_entries),
+    4,  // num_field_entries
+    0,  // num_aux_entries
+    offsetof(decltype(_table_), field_names),  // no aux_entries
+    DevicePresence_class_data_.base(),
+    nullptr,  // post_loop_handler
+    ::_pbi::TcParser::GenericFallback,  // fallback
+    #ifdef PROTOBUF_PREFETCH_PARSE_TABLE
+    ::_pbi::TcParser::GetTable<::chirp::auth::DevicePresence>(),  // to_prefetch
+    #endif  // PROTOBUF_PREFETCH_PARSE_TABLE
+  }, {{
+    // int64 ts = 4;
+    {::_pbi::TcParser::SingularVarintNoZag1<::uint64_t, offsetof(DevicePresence, _impl_.ts_), 2>(),
+     {32, 2, 0,
+      PROTOBUF_FIELD_OFFSET(DevicePresence, _impl_.ts_)}},
+    // string platform = 1;
+    {::_pbi::TcParser::FastUS1,
+     {10, 0, 0,
+      PROTOBUF_FIELD_OFFSET(DevicePresence, _impl_.platform_)}},
+    // string device_id = 2;
+    {::_pbi::TcParser::FastUS1,
+     {18, 1, 0,
+      PROTOBUF_FIELD_OFFSET(DevicePresence, _impl_.device_id_)}},
+    // bool online = 3;
+    {::_pbi::TcParser::SingularVarintNoZag1<bool, offsetof(DevicePresence, _impl_.online_), 3>(),
+     {24, 3, 0,
+      PROTOBUF_FIELD_OFFSET(DevicePresence, _impl_.online_)}},
+  }}, {{
+    65535, 65535
+  }}, {{
+    // string platform = 1;
+    {PROTOBUF_FIELD_OFFSET(DevicePresence, _impl_.platform_), _Internal::kHasBitsOffset + 0, 0, (0 | ::_fl::kFcOptional | ::_fl::kUtf8String | ::_fl::kRepAString)},
+    // string device_id = 2;
+    {PROTOBUF_FIELD_OFFSET(DevicePresence, _impl_.device_id_), _Internal::kHasBitsOffset + 1, 0, (0 | ::_fl::kFcOptional | ::_fl::kUtf8String | ::_fl::kRepAString)},
+    // bool online = 3;
+    {PROTOBUF_FIELD_OFFSET(DevicePresence, _impl_.online_), _Internal::kHasBitsOffset + 3, 0, (0 | ::_fl::kFcOptional | ::_fl::kBool)},
+    // int64 ts = 4;
+    {PROTOBUF_FIELD_OFFSET(DevicePresence, _impl_.ts_), _Internal::kHasBitsOffset + 2, 0, (0 | ::_fl::kFcOptional | ::_fl::kInt64)},
+  }},
+  // no aux_entries
+  {{
+    "\31\10\11\0\0\0\0\0"
+    "chirp.auth.DevicePresence"
+    "platform"
+    "device_id"
+  }},
+};
+PROTOBUF_NOINLINE void DevicePresence::Clear() {
+// @@protoc_insertion_point(message_clear_start:chirp.auth.DevicePresence)
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  ::uint32_t cached_has_bits = 0;
+  // Prevent compiler warnings about cached_has_bits being unused
+  (void) cached_has_bits;
+
+  cached_has_bits = _impl_._has_bits_[0];
+  if (BatchCheckHasBit(cached_has_bits, 0x00000003U)) {
+    if (CheckHasBit(cached_has_bits, 0x00000001U)) {
+      _impl_.platform_.ClearNonDefaultToEmpty();
+    }
+    if (CheckHasBit(cached_has_bits, 0x00000002U)) {
+      _impl_.device_id_.ClearNonDefaultToEmpty();
+    }
+  }
+  if (BatchCheckHasBit(cached_has_bits, 0x0000000cU)) {
+    ::memset(&_impl_.ts_, 0, static_cast<::size_t>(
+        reinterpret_cast<char*>(&_impl_.online_) -
+        reinterpret_cast<char*>(&_impl_.ts_)) + sizeof(_impl_.online_));
+  }
+  _impl_._has_bits_.Clear();
+  _internal_metadata_.Clear<::google::protobuf::UnknownFieldSet>();
+}
+
+#if defined(PROTOBUF_CUSTOM_VTABLE)
+::uint8_t* PROTOBUF_NONNULL DevicePresence::_InternalSerialize(
+    const ::google::protobuf::MessageLite& base, ::uint8_t* PROTOBUF_NONNULL target,
+    ::google::protobuf::io::EpsCopyOutputStream* PROTOBUF_NONNULL stream) {
+  const DevicePresence& this_ = static_cast<const DevicePresence&>(base);
+#else   // PROTOBUF_CUSTOM_VTABLE
+::uint8_t* PROTOBUF_NONNULL DevicePresence::_InternalSerialize(
+    ::uint8_t* PROTOBUF_NONNULL target,
+    ::google::protobuf::io::EpsCopyOutputStream* PROTOBUF_NONNULL stream) const {
+  const DevicePresence& this_ = *this;
+#endif  // PROTOBUF_CUSTOM_VTABLE
+  if constexpr (::_pbi::DebugHardenCheckHasBitConsistency()) {
+    this_.CheckHasBitConsistency();
+  }
+  // @@protoc_insertion_point(serialize_to_array_start:chirp.auth.DevicePresence)
+  ::uint32_t cached_has_bits = 0;
+  (void)cached_has_bits;
+
+  cached_has_bits = this_._impl_._has_bits_[0];
+  // string platform = 1;
+  if (CheckHasBit(cached_has_bits, 0x00000001U)) {
+    if (!this_._internal_platform().empty()) {
+      const ::std::string& _s = this_._internal_platform();
+      ::google::protobuf::internal::WireFormatLite::VerifyUtf8String(
+          _s.data(), static_cast<int>(_s.length()), ::google::protobuf::internal::WireFormatLite::SERIALIZE, "chirp.auth.DevicePresence.platform");
+      target = stream->WriteStringMaybeAliased(1, _s, target);
+    }
+  }
+
+  // string device_id = 2;
+  if (CheckHasBit(cached_has_bits, 0x00000002U)) {
+    if (!this_._internal_device_id().empty()) {
+      const ::std::string& _s = this_._internal_device_id();
+      ::google::protobuf::internal::WireFormatLite::VerifyUtf8String(
+          _s.data(), static_cast<int>(_s.length()), ::google::protobuf::internal::WireFormatLite::SERIALIZE, "chirp.auth.DevicePresence.device_id");
+      target = stream->WriteStringMaybeAliased(2, _s, target);
+    }
+  }
+
+  // bool online = 3;
+  if (CheckHasBit(cached_has_bits, 0x00000008U)) {
+    if (this_._internal_online() != 0) {
+      target = stream->EnsureSpace(target);
+      target = ::_pbi::WireFormatLite::WriteBoolToArray(
+          3, this_._internal_online(), target);
+    }
+  }
+
+  // int64 ts = 4;
+  if (CheckHasBit(cached_has_bits, 0x00000004U)) {
+    if (this_._internal_ts() != 0) {
+      target =
+          ::google::protobuf::internal::WireFormatLite::WriteInt64ToArrayWithField<4>(
+              stream, this_._internal_ts(), target);
+    }
+  }
+
+  if (ABSL_PREDICT_FALSE(this_._internal_metadata_.have_unknown_fields())) {
+    target =
+        ::_pbi::WireFormat::InternalSerializeUnknownFieldsToArray(
+            this_._internal_metadata_.unknown_fields<::google::protobuf::UnknownFieldSet>(::google::protobuf::UnknownFieldSet::default_instance), target, stream);
+  }
+  // @@protoc_insertion_point(serialize_to_array_end:chirp.auth.DevicePresence)
+  return target;
+}
+
+#if defined(PROTOBUF_CUSTOM_VTABLE)
+::size_t DevicePresence::ByteSizeLong(const MessageLite& base) {
+  const DevicePresence& this_ = static_cast<const DevicePresence&>(base);
+#else   // PROTOBUF_CUSTOM_VTABLE
+::size_t DevicePresence::ByteSizeLong() const {
+  const DevicePresence& this_ = *this;
+#endif  // PROTOBUF_CUSTOM_VTABLE
+  // @@protoc_insertion_point(message_byte_size_start:chirp.auth.DevicePresence)
+  ::size_t total_size = 0;
+
+  ::uint32_t cached_has_bits = 0;
+  // Prevent compiler warnings about cached_has_bits being unused
+  (void)cached_has_bits;
+
+  ::_pbi::Prefetch5LinesFrom7Lines(&this_);
+  cached_has_bits = this_._impl_._has_bits_[0];
+  if (BatchCheckHasBit(cached_has_bits, 0x0000000fU)) {
+    // string platform = 1;
+    if (CheckHasBit(cached_has_bits, 0x00000001U)) {
+      if (!this_._internal_platform().empty()) {
+        total_size += 1 + ::google::protobuf::internal::WireFormatLite::StringSize(
+                                        this_._internal_platform());
+      }
+    }
+    // string device_id = 2;
+    if (CheckHasBit(cached_has_bits, 0x00000002U)) {
+      if (!this_._internal_device_id().empty()) {
+        total_size += 1 + ::google::protobuf::internal::WireFormatLite::StringSize(
+                                        this_._internal_device_id());
+      }
+    }
+    // int64 ts = 4;
+    if (CheckHasBit(cached_has_bits, 0x00000004U)) {
+      if (this_._internal_ts() != 0) {
+        total_size += ::_pbi::WireFormatLite::Int64SizePlusOne(
+            this_._internal_ts());
+      }
+    }
+    // bool online = 3;
+    if (CheckHasBit(cached_has_bits, 0x00000008U)) {
+      if (this_._internal_online() != 0) {
+        total_size += 2;
+      }
+    }
+  }
+  return this_.MaybeComputeUnknownFieldsSize(total_size,
+                                             &this_._impl_._cached_size_);
+}
+
+void DevicePresence::MergeImpl(::google::protobuf::MessageLite& to_msg,
+                            const ::google::protobuf::MessageLite& from_msg) {
+   auto* const _this =
+      static_cast<DevicePresence*>(&to_msg);
+  auto& from = static_cast<const DevicePresence&>(from_msg);
+  if constexpr (::_pbi::DebugHardenCheckHasBitConsistency()) {
+    from.CheckHasBitConsistency();
+  }
+  // @@protoc_insertion_point(class_specific_merge_from_start:chirp.auth.DevicePresence)
+  ABSL_DCHECK_NE(&from, _this);
+  ::uint32_t cached_has_bits = 0;
+  (void)cached_has_bits;
+
+  cached_has_bits = from._impl_._has_bits_[0];
+  if (BatchCheckHasBit(cached_has_bits, 0x0000000fU)) {
+    if (CheckHasBit(cached_has_bits, 0x00000001U)) {
+      if (!from._internal_platform().empty()) {
+        _this->_internal_set_platform(from._internal_platform());
+      } else {
+        if (_this->_impl_.platform_.IsDefault()) {
+          _this->_internal_set_platform("");
+        }
+      }
+    }
+    if (CheckHasBit(cached_has_bits, 0x00000002U)) {
+      if (!from._internal_device_id().empty()) {
+        _this->_internal_set_device_id(from._internal_device_id());
+      } else {
+        if (_this->_impl_.device_id_.IsDefault()) {
+          _this->_internal_set_device_id("");
+        }
+      }
+    }
+    if (CheckHasBit(cached_has_bits, 0x00000004U)) {
+      if (from._internal_ts() != 0) {
+        _this->_impl_.ts_ = from._impl_.ts_;
+      }
+    }
+    if (CheckHasBit(cached_has_bits, 0x00000008U)) {
+      if (from._internal_online() != 0) {
+        _this->_impl_.online_ = from._impl_.online_;
+      }
+    }
+  }
+  _this->_impl_._has_bits_[0] |= cached_has_bits;
+  _this->_internal_metadata_.MergeFrom<::google::protobuf::UnknownFieldSet>(
+      from._internal_metadata_);
+}
+
+void DevicePresence::CopyFrom(const DevicePresence& from) {
+  // @@protoc_insertion_point(class_specific_copy_from_start:chirp.auth.DevicePresence)
+  if (&from == this) return;
+  Clear();
+  MergeFrom(from);
+}
+
+
+void DevicePresence::InternalSwap(DevicePresence* PROTOBUF_RESTRICT PROTOBUF_NONNULL other) {
+  using ::std::swap;
+  auto* arena = GetArena();
+  ABSL_DCHECK_EQ(arena, other->GetArena());
+  _internal_metadata_.InternalSwap(&other->_internal_metadata_);
+  swap(_impl_._has_bits_[0], other->_impl_._has_bits_[0]);
+  ::_pbi::ArenaStringPtr::InternalSwap(&_impl_.platform_, &other->_impl_.platform_, arena);
+  ::_pbi::ArenaStringPtr::InternalSwap(&_impl_.device_id_, &other->_impl_.device_id_, arena);
+  ::google::protobuf::internal::memswap<
+      PROTOBUF_FIELD_OFFSET(DevicePresence, _impl_.online_)
+      + sizeof(DevicePresence::_impl_.online_)
+      - PROTOBUF_FIELD_OFFSET(DevicePresence, _impl_.ts_)>(
+          reinterpret_cast<char*>(&_impl_.ts_),
+          reinterpret_cast<char*>(&other->_impl_.ts_));
+}
+
+::google::protobuf::Metadata DevicePresence::GetMetadata() const {
+  return ::google::protobuf::Message::GetMetadataImpl(GetClassData()->full());
+}
+// ===================================================================
+
+class DevicesPresenceNotify::_Internal {
+ public:
+  using HasBits =
+      decltype(::std::declval<DevicesPresenceNotify>()._impl_._has_bits_);
+  static constexpr ::int32_t kHasBitsOffset =
+      8 * PROTOBUF_FIELD_OFFSET(DevicesPresenceNotify, _impl_._has_bits_);
+};
+
+DevicesPresenceNotify::DevicesPresenceNotify(::google::protobuf::Arena* PROTOBUF_NULLABLE arena)
+#if defined(PROTOBUF_CUSTOM_VTABLE)
+    : ::google::protobuf::Message(arena, DevicesPresenceNotify_class_data_.base()) {
+#else   // PROTOBUF_CUSTOM_VTABLE
+    : ::google::protobuf::Message(arena) {
+#endif  // PROTOBUF_CUSTOM_VTABLE
+  SharedCtor(arena);
+  // @@protoc_insertion_point(arena_constructor:chirp.auth.DevicesPresenceNotify)
+}
+PROTOBUF_NDEBUG_INLINE DevicesPresenceNotify::Impl_::Impl_(
+    [[maybe_unused]] ::google::protobuf::internal::InternalVisibility visibility,
+    [[maybe_unused]] ::google::protobuf::Arena* PROTOBUF_NULLABLE arena, const Impl_& from,
+    [[maybe_unused]] const ::chirp::auth::DevicesPresenceNotify& from_msg)
+      : _has_bits_{from._has_bits_},
+        _cached_size_{0},
+        devices_{visibility, arena, from.devices_} {}
+
+DevicesPresenceNotify::DevicesPresenceNotify(
+    ::google::protobuf::Arena* PROTOBUF_NULLABLE arena,
+    const DevicesPresenceNotify& from)
+#if defined(PROTOBUF_CUSTOM_VTABLE)
+    : ::google::protobuf::Message(arena, DevicesPresenceNotify_class_data_.base()) {
+#else   // PROTOBUF_CUSTOM_VTABLE
+    : ::google::protobuf::Message(arena) {
+#endif  // PROTOBUF_CUSTOM_VTABLE
+  DevicesPresenceNotify* const _this = this;
+  (void)_this;
+  _internal_metadata_.MergeFrom<::google::protobuf::UnknownFieldSet>(
+      from._internal_metadata_);
+  new (&_impl_) Impl_(internal_visibility(), arena, from._impl_, from);
+
+  // @@protoc_insertion_point(copy_constructor:chirp.auth.DevicesPresenceNotify)
+}
+PROTOBUF_NDEBUG_INLINE DevicesPresenceNotify::Impl_::Impl_(
+    [[maybe_unused]] ::google::protobuf::internal::InternalVisibility visibility,
+    [[maybe_unused]] ::google::protobuf::Arena* PROTOBUF_NULLABLE arena)
+      : _cached_size_{0},
+        devices_{visibility, arena} {}
+
+inline void DevicesPresenceNotify::SharedCtor(::_pb::Arena* PROTOBUF_NULLABLE arena) {
+  new (&_impl_) Impl_(internal_visibility(), arena);
+}
+DevicesPresenceNotify::~DevicesPresenceNotify() {
+  // @@protoc_insertion_point(destructor:chirp.auth.DevicesPresenceNotify)
+  SharedDtor(*this);
+}
+inline void DevicesPresenceNotify::SharedDtor(MessageLite& self) {
+  DevicesPresenceNotify& this_ = static_cast<DevicesPresenceNotify&>(self);
+  if constexpr (::_pbi::DebugHardenCheckHasBitConsistency()) {
+    this_.CheckHasBitConsistency();
+  }
+  this_._internal_metadata_.Delete<::google::protobuf::UnknownFieldSet>();
+  ABSL_DCHECK(this_.GetArena() == nullptr);
+  this_._impl_.~Impl_();
+}
+
+inline void* PROTOBUF_NONNULL DevicesPresenceNotify::PlacementNew_(
+    const void* PROTOBUF_NONNULL, void* PROTOBUF_NONNULL mem,
+    ::google::protobuf::Arena* PROTOBUF_NULLABLE arena) {
+  return ::new (mem) DevicesPresenceNotify(arena);
+}
+constexpr auto DevicesPresenceNotify::InternalNewImpl_() {
+  constexpr auto arena_bits = ::google::protobuf::internal::EncodePlacementArenaOffsets({
+      PROTOBUF_FIELD_OFFSET(DevicesPresenceNotify, _impl_.devices_) +
+          decltype(DevicesPresenceNotify::_impl_.devices_)::
+              InternalGetArenaOffset(
+                  ::google::protobuf::Message::internal_visibility()),
+  });
+  if (arena_bits.has_value()) {
+    return ::google::protobuf::internal::MessageCreator::ZeroInit(
+        sizeof(DevicesPresenceNotify), alignof(DevicesPresenceNotify), *arena_bits);
+  } else {
+    return ::google::protobuf::internal::MessageCreator(&DevicesPresenceNotify::PlacementNew_,
+                                 sizeof(DevicesPresenceNotify),
+                                 alignof(DevicesPresenceNotify));
+  }
+}
+constexpr auto DevicesPresenceNotify::InternalGenerateClassData_() {
+  return ::google::protobuf::internal::ClassDataFull{
+      ::google::protobuf::internal::ClassData{
+          &_DevicesPresenceNotify_default_instance_._instance,
+          &_table_.header,
+          nullptr,  // OnDemandRegisterArenaDtor
+          nullptr,  // IsInitialized
+          &DevicesPresenceNotify::MergeImpl,
+          ::google::protobuf::Message::GetNewImpl<DevicesPresenceNotify>(),
+#if defined(PROTOBUF_CUSTOM_VTABLE)
+          &DevicesPresenceNotify::SharedDtor,
+          ::google::protobuf::Message::GetClearImpl<DevicesPresenceNotify>(), &DevicesPresenceNotify::ByteSizeLong,
+              &DevicesPresenceNotify::_InternalSerialize,
+#endif  // PROTOBUF_CUSTOM_VTABLE
+          PROTOBUF_FIELD_OFFSET(DevicesPresenceNotify, _impl_._cached_size_),
+          false,
+      },
+      &DevicesPresenceNotify::kDescriptorMethods,
+      &descriptor_table_proto_2fauth_2eproto,
+      nullptr,  // tracker
+  };
+}
+
+PROTOBUF_CONSTINIT PROTOBUF_ATTRIBUTE_INIT_PRIORITY1 const
+    ::google::protobuf::internal::ClassDataFull DevicesPresenceNotify_class_data_ =
+        DevicesPresenceNotify::InternalGenerateClassData_();
+
+PROTOBUF_ATTRIBUTE_WEAK const ::google::protobuf::internal::ClassData* PROTOBUF_NONNULL
+DevicesPresenceNotify::GetClassData() const {
+  ::google::protobuf::internal::PrefetchToLocalCache(&DevicesPresenceNotify_class_data_);
+  ::google::protobuf::internal::PrefetchToLocalCache(DevicesPresenceNotify_class_data_.tc_table);
+  return DevicesPresenceNotify_class_data_.base();
+}
+PROTOBUF_CONSTINIT PROTOBUF_ATTRIBUTE_INIT_PRIORITY1
+const ::_pbi::TcParseTable<0, 1, 1, 0, 2>
+DevicesPresenceNotify::_table_ = {
+  {
+    PROTOBUF_FIELD_OFFSET(DevicesPresenceNotify, _impl_._has_bits_),
+    0, // no _extensions_
+    1, 0,  // max_field_number, fast_idx_mask
+    offsetof(decltype(_table_), field_lookup_table),
+    4294967294,  // skipmap
+    offsetof(decltype(_table_), field_entries),
+    1,  // num_field_entries
+    1,  // num_aux_entries
+    offsetof(decltype(_table_), aux_entries),
+    DevicesPresenceNotify_class_data_.base(),
+    nullptr,  // post_loop_handler
+    ::_pbi::TcParser::GenericFallback,  // fallback
+    #ifdef PROTOBUF_PREFETCH_PARSE_TABLE
+    ::_pbi::TcParser::GetTable<::chirp::auth::DevicesPresenceNotify>(),  // to_prefetch
+    #endif  // PROTOBUF_PREFETCH_PARSE_TABLE
+  }, {{
+    // repeated .chirp.auth.DevicePresence devices = 1;
+    {::_pbi::TcParser::FastMtR1,
+     {10, 0, 0,
+      PROTOBUF_FIELD_OFFSET(DevicesPresenceNotify, _impl_.devices_)}},
+  }}, {{
+    65535, 65535
+  }}, {{
+    // repeated .chirp.auth.DevicePresence devices = 1;
+    {PROTOBUF_FIELD_OFFSET(DevicesPresenceNotify, _impl_.devices_), _Internal::kHasBitsOffset + 0, 0, (0 | ::_fl::kFcRepeated | ::_fl::kMessage | ::_fl::kTvTable)},
+  }},
+  {{
+      {::_pbi::TcParser::GetTable<::chirp::auth::DevicePresence>()},
+  }},
+  {{
+  }},
+};
+PROTOBUF_NOINLINE void DevicesPresenceNotify::Clear() {
+// @@protoc_insertion_point(message_clear_start:chirp.auth.DevicesPresenceNotify)
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  ::uint32_t cached_has_bits = 0;
+  // Prevent compiler warnings about cached_has_bits being unused
+  (void) cached_has_bits;
+
+  cached_has_bits = _impl_._has_bits_[0];
+  if (CheckHasBitForRepeated(cached_has_bits, 0x00000001U)) {
+    _impl_.devices_.Clear();
+  }
+  _impl_._has_bits_.Clear();
+  _internal_metadata_.Clear<::google::protobuf::UnknownFieldSet>();
+}
+
+#if defined(PROTOBUF_CUSTOM_VTABLE)
+::uint8_t* PROTOBUF_NONNULL DevicesPresenceNotify::_InternalSerialize(
+    const ::google::protobuf::MessageLite& base, ::uint8_t* PROTOBUF_NONNULL target,
+    ::google::protobuf::io::EpsCopyOutputStream* PROTOBUF_NONNULL stream) {
+  const DevicesPresenceNotify& this_ = static_cast<const DevicesPresenceNotify&>(base);
+#else   // PROTOBUF_CUSTOM_VTABLE
+::uint8_t* PROTOBUF_NONNULL DevicesPresenceNotify::_InternalSerialize(
+    ::uint8_t* PROTOBUF_NONNULL target,
+    ::google::protobuf::io::EpsCopyOutputStream* PROTOBUF_NONNULL stream) const {
+  const DevicesPresenceNotify& this_ = *this;
+#endif  // PROTOBUF_CUSTOM_VTABLE
+  if constexpr (::_pbi::DebugHardenCheckHasBitConsistency()) {
+    this_.CheckHasBitConsistency();
+  }
+  // @@protoc_insertion_point(serialize_to_array_start:chirp.auth.DevicesPresenceNotify)
+  ::uint32_t cached_has_bits = 0;
+  (void)cached_has_bits;
+
+  cached_has_bits = this_._impl_._has_bits_[0];
+  // repeated .chirp.auth.DevicePresence devices = 1;
+  if (CheckHasBitForRepeated(cached_has_bits, 0x00000001U)) {
+    for (unsigned i = 0, n = static_cast<unsigned>(
+                             this_._internal_devices_size());
+         i < n; i++) {
+      const auto& repfield = this_._internal_devices().Get(i);
+      target =
+          ::google::protobuf::internal::WireFormatLite::InternalWriteMessage(
+              1, repfield, repfield.GetCachedSize(),
+              target, stream);
+    }
+  }
+
+  if (ABSL_PREDICT_FALSE(this_._internal_metadata_.have_unknown_fields())) {
+    target =
+        ::_pbi::WireFormat::InternalSerializeUnknownFieldsToArray(
+            this_._internal_metadata_.unknown_fields<::google::protobuf::UnknownFieldSet>(::google::protobuf::UnknownFieldSet::default_instance), target, stream);
+  }
+  // @@protoc_insertion_point(serialize_to_array_end:chirp.auth.DevicesPresenceNotify)
+  return target;
+}
+
+#if defined(PROTOBUF_CUSTOM_VTABLE)
+::size_t DevicesPresenceNotify::ByteSizeLong(const MessageLite& base) {
+  const DevicesPresenceNotify& this_ = static_cast<const DevicesPresenceNotify&>(base);
+#else   // PROTOBUF_CUSTOM_VTABLE
+::size_t DevicesPresenceNotify::ByteSizeLong() const {
+  const DevicesPresenceNotify& this_ = *this;
+#endif  // PROTOBUF_CUSTOM_VTABLE
+  // @@protoc_insertion_point(message_byte_size_start:chirp.auth.DevicesPresenceNotify)
+  ::size_t total_size = 0;
+
+  ::uint32_t cached_has_bits = 0;
+  // Prevent compiler warnings about cached_has_bits being unused
+  (void)cached_has_bits;
+
+  ::_pbi::Prefetch5LinesFrom7Lines(&this_);
+   {
+    // repeated .chirp.auth.DevicePresence devices = 1;
+    cached_has_bits = this_._impl_._has_bits_[0];
+    if (CheckHasBitForRepeated(cached_has_bits, 0x00000001U)) {
+      total_size += 1UL * this_._internal_devices_size();
+      for (const auto& msg : this_._internal_devices()) {
+        total_size += ::google::protobuf::internal::WireFormatLite::MessageSize(msg);
+      }
+    }
+  }
+  return this_.MaybeComputeUnknownFieldsSize(total_size,
+                                             &this_._impl_._cached_size_);
+}
+
+void DevicesPresenceNotify::MergeImpl(::google::protobuf::MessageLite& to_msg,
+                            const ::google::protobuf::MessageLite& from_msg) {
+   auto* const _this =
+      static_cast<DevicesPresenceNotify*>(&to_msg);
+  auto& from = static_cast<const DevicesPresenceNotify&>(from_msg);
+  if constexpr (::_pbi::DebugHardenCheckHasBitConsistency()) {
+    from.CheckHasBitConsistency();
+  }
+  ::google::protobuf::Arena* arena = _this->GetArena();
+  // @@protoc_insertion_point(class_specific_merge_from_start:chirp.auth.DevicesPresenceNotify)
+  ABSL_DCHECK_NE(&from, _this);
+  ::uint32_t cached_has_bits = 0;
+  (void)cached_has_bits;
+
+  cached_has_bits = from._impl_._has_bits_[0];
+  if (CheckHasBitForRepeated(cached_has_bits, 0x00000001U)) {
+    _this->_internal_mutable_devices()->InternalMergeFromWithArena(
+        ::google::protobuf::MessageLite::internal_visibility(), arena,
+        from._internal_devices());
+  }
+  _this->_impl_._has_bits_[0] |= cached_has_bits;
+  _this->_internal_metadata_.MergeFrom<::google::protobuf::UnknownFieldSet>(
+      from._internal_metadata_);
+}
+
+void DevicesPresenceNotify::CopyFrom(const DevicesPresenceNotify& from) {
+  // @@protoc_insertion_point(class_specific_copy_from_start:chirp.auth.DevicesPresenceNotify)
+  if (&from == this) return;
+  Clear();
+  MergeFrom(from);
+}
+
+
+void DevicesPresenceNotify::InternalSwap(DevicesPresenceNotify* PROTOBUF_RESTRICT PROTOBUF_NONNULL other) {
+  using ::std::swap;
+  _internal_metadata_.InternalSwap(&other->_internal_metadata_);
+  swap(_impl_._has_bits_[0], other->_impl_._has_bits_[0]);
+  _impl_.devices_.InternalSwap(&other->_impl_.devices_);
+}
+
+::google::protobuf::Metadata DevicesPresenceNotify::GetMetadata() const {
+  return ::google::protobuf::Message::GetMetadataImpl(GetClassData()->full());
+}
+// ===================================================================
+
 class LoginResponse::_Internal {
  public:
   using HasBits =
@@ -1596,6 +2363,7 @@ PROTOBUF_NDEBUG_INLINE LoginResponse::Impl_::Impl_(
     [[maybe_unused]] const ::chirp::auth::LoginResponse& from_msg)
       : _has_bits_{from._has_bits_},
         _cached_size_{0},
+        online_devices_{visibility, arena, from.online_devices_},
         session_id_(arena, from.session_id_),
         user_id_(arena, from.user_id_) {}
 
@@ -1613,7 +2381,7 @@ LoginResponse::LoginResponse(
       from._internal_metadata_);
   new (&_impl_) Impl_(internal_visibility(), arena, from._impl_, from);
   ::uint32_t cached_has_bits = _impl_._has_bits_[0];
-  _impl_.kick_ = (CheckHasBit(cached_has_bits, 0x00000004U))
+  _impl_.kick_ = (CheckHasBit(cached_has_bits, 0x00000008U))
                 ? ::google::protobuf::Message::CopyConstruct(arena, *from._impl_.kick_)
                 : nullptr;
   ::memcpy(reinterpret_cast<char*>(&_impl_) +
@@ -1630,6 +2398,7 @@ PROTOBUF_NDEBUG_INLINE LoginResponse::Impl_::Impl_(
     [[maybe_unused]] ::google::protobuf::internal::InternalVisibility visibility,
     [[maybe_unused]] ::google::protobuf::Arena* PROTOBUF_NULLABLE arena)
       : _cached_size_{0},
+        online_devices_{visibility, arena},
         session_id_(arena),
         user_id_(arena) {}
 
@@ -1665,8 +2434,20 @@ inline void* PROTOBUF_NONNULL LoginResponse::PlacementNew_(
   return ::new (mem) LoginResponse(arena);
 }
 constexpr auto LoginResponse::InternalNewImpl_() {
-  return ::google::protobuf::internal::MessageCreator::CopyInit(sizeof(LoginResponse),
-                                            alignof(LoginResponse));
+  constexpr auto arena_bits = ::google::protobuf::internal::EncodePlacementArenaOffsets({
+      PROTOBUF_FIELD_OFFSET(LoginResponse, _impl_.online_devices_) +
+          decltype(LoginResponse::_impl_.online_devices_)::
+              InternalGetArenaOffset(
+                  ::google::protobuf::Message::internal_visibility()),
+  });
+  if (arena_bits.has_value()) {
+    return ::google::protobuf::internal::MessageCreator::CopyInit(
+        sizeof(LoginResponse), alignof(LoginResponse), *arena_bits);
+  } else {
+    return ::google::protobuf::internal::MessageCreator(&LoginResponse::PlacementNew_,
+                                 sizeof(LoginResponse),
+                                 alignof(LoginResponse));
+  }
 }
 constexpr auto LoginResponse::InternalGenerateClassData_() {
   return ::google::protobuf::internal::ClassDataFull{
@@ -1702,17 +2483,17 @@ LoginResponse::GetClassData() const {
   return LoginResponse_class_data_.base();
 }
 PROTOBUF_CONSTINIT PROTOBUF_ATTRIBUTE_INIT_PRIORITY1
-const ::_pbi::TcParseTable<3, 6, 1, 50, 2>
+const ::_pbi::TcParseTable<3, 7, 2, 50, 2>
 LoginResponse::_table_ = {
   {
     PROTOBUF_FIELD_OFFSET(LoginResponse, _impl_._has_bits_),
     0, // no _extensions_
-    6, 56,  // max_field_number, fast_idx_mask
+    7, 56,  // max_field_number, fast_idx_mask
     offsetof(decltype(_table_), field_lookup_table),
-    4294967232,  // skipmap
+    4294967168,  // skipmap
     offsetof(decltype(_table_), field_entries),
-    6,  // num_field_entries
-    1,  // num_aux_entries
+    7,  // num_field_entries
+    2,  // num_aux_entries
     offsetof(decltype(_table_), aux_entries),
     LoginResponse_class_data_.base(),
     nullptr,  // post_loop_handler
@@ -1723,48 +2504,54 @@ LoginResponse::_table_ = {
   }, {{
     {::_pbi::TcParser::MiniParse, {}},
     // .chirp.common.ErrorCode code = 1;
-    {::_pbi::TcParser::SingularVarintNoZag1<::uint32_t, offsetof(LoginResponse, _impl_.code_), 4>(),
-     {8, 4, 0,
+    {::_pbi::TcParser::SingularVarintNoZag1<::uint32_t, offsetof(LoginResponse, _impl_.code_), 5>(),
+     {8, 5, 0,
       PROTOBUF_FIELD_OFFSET(LoginResponse, _impl_.code_)}},
     // string session_id = 2;
     {::_pbi::TcParser::FastUS1,
-     {18, 0, 0,
+     {18, 1, 0,
       PROTOBUF_FIELD_OFFSET(LoginResponse, _impl_.session_id_)}},
     // int64 server_time = 3;
-    {::_pbi::TcParser::SingularVarintNoZag1<::uint64_t, offsetof(LoginResponse, _impl_.server_time_), 3>(),
-     {24, 3, 0,
+    {::_pbi::TcParser::SingularVarintNoZag1<::uint64_t, offsetof(LoginResponse, _impl_.server_time_), 4>(),
+     {24, 4, 0,
       PROTOBUF_FIELD_OFFSET(LoginResponse, _impl_.server_time_)}},
     // string user_id = 4;
     {::_pbi::TcParser::FastUS1,
-     {34, 1, 0,
+     {34, 2, 0,
       PROTOBUF_FIELD_OFFSET(LoginResponse, _impl_.user_id_)}},
     // bool kick_previous = 5;
-    {::_pbi::TcParser::SingularVarintNoZag1<bool, offsetof(LoginResponse, _impl_.kick_previous_), 5>(),
-     {40, 5, 0,
+    {::_pbi::TcParser::SingularVarintNoZag1<bool, offsetof(LoginResponse, _impl_.kick_previous_), 6>(),
+     {40, 6, 0,
       PROTOBUF_FIELD_OFFSET(LoginResponse, _impl_.kick_previous_)}},
     // .chirp.auth.KickNotify kick = 6;
     {::_pbi::TcParser::FastMtS1,
-     {50, 2, 0,
+     {50, 3, 0,
       PROTOBUF_FIELD_OFFSET(LoginResponse, _impl_.kick_)}},
-    {::_pbi::TcParser::MiniParse, {}},
+    // repeated .chirp.auth.DevicePresence online_devices = 7;
+    {::_pbi::TcParser::FastMtR1,
+     {58, 0, 1,
+      PROTOBUF_FIELD_OFFSET(LoginResponse, _impl_.online_devices_)}},
   }}, {{
     65535, 65535
   }}, {{
     // .chirp.common.ErrorCode code = 1;
-    {PROTOBUF_FIELD_OFFSET(LoginResponse, _impl_.code_), _Internal::kHasBitsOffset + 4, 0, (0 | ::_fl::kFcOptional | ::_fl::kOpenEnum)},
+    {PROTOBUF_FIELD_OFFSET(LoginResponse, _impl_.code_), _Internal::kHasBitsOffset + 5, 0, (0 | ::_fl::kFcOptional | ::_fl::kOpenEnum)},
     // string session_id = 2;
-    {PROTOBUF_FIELD_OFFSET(LoginResponse, _impl_.session_id_), _Internal::kHasBitsOffset + 0, 0, (0 | ::_fl::kFcOptional | ::_fl::kUtf8String | ::_fl::kRepAString)},
+    {PROTOBUF_FIELD_OFFSET(LoginResponse, _impl_.session_id_), _Internal::kHasBitsOffset + 1, 0, (0 | ::_fl::kFcOptional | ::_fl::kUtf8String | ::_fl::kRepAString)},
     // int64 server_time = 3;
-    {PROTOBUF_FIELD_OFFSET(LoginResponse, _impl_.server_time_), _Internal::kHasBitsOffset + 3, 0, (0 | ::_fl::kFcOptional | ::_fl::kInt64)},
+    {PROTOBUF_FIELD_OFFSET(LoginResponse, _impl_.server_time_), _Internal::kHasBitsOffset + 4, 0, (0 | ::_fl::kFcOptional | ::_fl::kInt64)},
     // string user_id = 4;
-    {PROTOBUF_FIELD_OFFSET(LoginResponse, _impl_.user_id_), _Internal::kHasBitsOffset + 1, 0, (0 | ::_fl::kFcOptional | ::_fl::kUtf8String | ::_fl::kRepAString)},
+    {PROTOBUF_FIELD_OFFSET(LoginResponse, _impl_.user_id_), _Internal::kHasBitsOffset + 2, 0, (0 | ::_fl::kFcOptional | ::_fl::kUtf8String | ::_fl::kRepAString)},
     // bool kick_previous = 5;
-    {PROTOBUF_FIELD_OFFSET(LoginResponse, _impl_.kick_previous_), _Internal::kHasBitsOffset + 5, 0, (0 | ::_fl::kFcOptional | ::_fl::kBool)},
+    {PROTOBUF_FIELD_OFFSET(LoginResponse, _impl_.kick_previous_), _Internal::kHasBitsOffset + 6, 0, (0 | ::_fl::kFcOptional | ::_fl::kBool)},
     // .chirp.auth.KickNotify kick = 6;
-    {PROTOBUF_FIELD_OFFSET(LoginResponse, _impl_.kick_), _Internal::kHasBitsOffset + 2, 0, (0 | ::_fl::kFcOptional | ::_fl::kMessage | ::_fl::kTvTable)},
+    {PROTOBUF_FIELD_OFFSET(LoginResponse, _impl_.kick_), _Internal::kHasBitsOffset + 3, 0, (0 | ::_fl::kFcOptional | ::_fl::kMessage | ::_fl::kTvTable)},
+    // repeated .chirp.auth.DevicePresence online_devices = 7;
+    {PROTOBUF_FIELD_OFFSET(LoginResponse, _impl_.online_devices_), _Internal::kHasBitsOffset + 0, 1, (0 | ::_fl::kFcRepeated | ::_fl::kMessage | ::_fl::kTvTable)},
   }},
   {{
       {::_pbi::TcParser::GetTable<::chirp::auth::KickNotify>()},
+      {::_pbi::TcParser::GetTable<::chirp::auth::DevicePresence>()},
   }},
   {{
     "\30\0\12\0\7\0\0\0"
@@ -1781,19 +2568,22 @@ PROTOBUF_NOINLINE void LoginResponse::Clear() {
   (void) cached_has_bits;
 
   cached_has_bits = _impl_._has_bits_[0];
-  if (BatchCheckHasBit(cached_has_bits, 0x00000007U)) {
-    if (CheckHasBit(cached_has_bits, 0x00000001U)) {
-      _impl_.session_id_.ClearNonDefaultToEmpty();
+  if (BatchCheckHasBit(cached_has_bits, 0x0000000fU)) {
+    if (CheckHasBitForRepeated(cached_has_bits, 0x00000001U)) {
+      _impl_.online_devices_.Clear();
     }
     if (CheckHasBit(cached_has_bits, 0x00000002U)) {
-      _impl_.user_id_.ClearNonDefaultToEmpty();
+      _impl_.session_id_.ClearNonDefaultToEmpty();
     }
     if (CheckHasBit(cached_has_bits, 0x00000004U)) {
+      _impl_.user_id_.ClearNonDefaultToEmpty();
+    }
+    if (CheckHasBit(cached_has_bits, 0x00000008U)) {
       ABSL_DCHECK(_impl_.kick_ != nullptr);
       _impl_.kick_->Clear();
     }
   }
-  if (BatchCheckHasBit(cached_has_bits, 0x00000038U)) {
+  if (BatchCheckHasBit(cached_has_bits, 0x00000070U)) {
     ::memset(&_impl_.server_time_, 0, static_cast<::size_t>(
         reinterpret_cast<char*>(&_impl_.kick_previous_) -
         reinterpret_cast<char*>(&_impl_.server_time_)) + sizeof(_impl_.kick_previous_));
@@ -1822,7 +2612,7 @@ PROTOBUF_NOINLINE void LoginResponse::Clear() {
 
   cached_has_bits = this_._impl_._has_bits_[0];
   // .chirp.common.ErrorCode code = 1;
-  if (CheckHasBit(cached_has_bits, 0x00000010U)) {
+  if (CheckHasBit(cached_has_bits, 0x00000020U)) {
     if (this_._internal_code() != 0) {
       target = stream->EnsureSpace(target);
       target = ::_pbi::WireFormatLite::WriteEnumToArray(
@@ -1831,7 +2621,7 @@ PROTOBUF_NOINLINE void LoginResponse::Clear() {
   }
 
   // string session_id = 2;
-  if (CheckHasBit(cached_has_bits, 0x00000001U)) {
+  if (CheckHasBit(cached_has_bits, 0x00000002U)) {
     if (!this_._internal_session_id().empty()) {
       const ::std::string& _s = this_._internal_session_id();
       ::google::protobuf::internal::WireFormatLite::VerifyUtf8String(
@@ -1841,7 +2631,7 @@ PROTOBUF_NOINLINE void LoginResponse::Clear() {
   }
 
   // int64 server_time = 3;
-  if (CheckHasBit(cached_has_bits, 0x00000008U)) {
+  if (CheckHasBit(cached_has_bits, 0x00000010U)) {
     if (this_._internal_server_time() != 0) {
       target =
           ::google::protobuf::internal::WireFormatLite::WriteInt64ToArrayWithField<3>(
@@ -1850,7 +2640,7 @@ PROTOBUF_NOINLINE void LoginResponse::Clear() {
   }
 
   // string user_id = 4;
-  if (CheckHasBit(cached_has_bits, 0x00000002U)) {
+  if (CheckHasBit(cached_has_bits, 0x00000004U)) {
     if (!this_._internal_user_id().empty()) {
       const ::std::string& _s = this_._internal_user_id();
       ::google::protobuf::internal::WireFormatLite::VerifyUtf8String(
@@ -1860,7 +2650,7 @@ PROTOBUF_NOINLINE void LoginResponse::Clear() {
   }
 
   // bool kick_previous = 5;
-  if (CheckHasBit(cached_has_bits, 0x00000020U)) {
+  if (CheckHasBit(cached_has_bits, 0x00000040U)) {
     if (this_._internal_kick_previous() != 0) {
       target = stream->EnsureSpace(target);
       target = ::_pbi::WireFormatLite::WriteBoolToArray(
@@ -1869,10 +2659,23 @@ PROTOBUF_NOINLINE void LoginResponse::Clear() {
   }
 
   // .chirp.auth.KickNotify kick = 6;
-  if (CheckHasBit(cached_has_bits, 0x00000004U)) {
+  if (CheckHasBit(cached_has_bits, 0x00000008U)) {
     target = ::google::protobuf::internal::WireFormatLite::InternalWriteMessage(
         6, *this_._impl_.kick_, this_._impl_.kick_->GetCachedSize(), target,
         stream);
+  }
+
+  // repeated .chirp.auth.DevicePresence online_devices = 7;
+  if (CheckHasBitForRepeated(cached_has_bits, 0x00000001U)) {
+    for (unsigned i = 0, n = static_cast<unsigned>(
+                             this_._internal_online_devices_size());
+         i < n; i++) {
+      const auto& repfield = this_._internal_online_devices().Get(i);
+      target =
+          ::google::protobuf::internal::WireFormatLite::InternalWriteMessage(
+              7, repfield, repfield.GetCachedSize(),
+              target, stream);
+    }
   }
 
   if (ABSL_PREDICT_FALSE(this_._internal_metadata_.have_unknown_fields())) {
@@ -1900,42 +2703,49 @@ PROTOBUF_NOINLINE void LoginResponse::Clear() {
 
   ::_pbi::Prefetch5LinesFrom7Lines(&this_);
   cached_has_bits = this_._impl_._has_bits_[0];
-  if (BatchCheckHasBit(cached_has_bits, 0x0000003fU)) {
+  if (BatchCheckHasBit(cached_has_bits, 0x0000007fU)) {
+    // repeated .chirp.auth.DevicePresence online_devices = 7;
+    if (CheckHasBitForRepeated(cached_has_bits, 0x00000001U)) {
+      total_size += 1UL * this_._internal_online_devices_size();
+      for (const auto& msg : this_._internal_online_devices()) {
+        total_size += ::google::protobuf::internal::WireFormatLite::MessageSize(msg);
+      }
+    }
     // string session_id = 2;
-    if (CheckHasBit(cached_has_bits, 0x00000001U)) {
+    if (CheckHasBit(cached_has_bits, 0x00000002U)) {
       if (!this_._internal_session_id().empty()) {
         total_size += 1 + ::google::protobuf::internal::WireFormatLite::StringSize(
                                         this_._internal_session_id());
       }
     }
     // string user_id = 4;
-    if (CheckHasBit(cached_has_bits, 0x00000002U)) {
+    if (CheckHasBit(cached_has_bits, 0x00000004U)) {
       if (!this_._internal_user_id().empty()) {
         total_size += 1 + ::google::protobuf::internal::WireFormatLite::StringSize(
                                         this_._internal_user_id());
       }
     }
     // .chirp.auth.KickNotify kick = 6;
-    if (CheckHasBit(cached_has_bits, 0x00000004U)) {
+    if (CheckHasBit(cached_has_bits, 0x00000008U)) {
       total_size += 1 +
                     ::google::protobuf::internal::WireFormatLite::MessageSize(*this_._impl_.kick_);
     }
     // int64 server_time = 3;
-    if (CheckHasBit(cached_has_bits, 0x00000008U)) {
+    if (CheckHasBit(cached_has_bits, 0x00000010U)) {
       if (this_._internal_server_time() != 0) {
         total_size += ::_pbi::WireFormatLite::Int64SizePlusOne(
             this_._internal_server_time());
       }
     }
     // .chirp.common.ErrorCode code = 1;
-    if (CheckHasBit(cached_has_bits, 0x00000010U)) {
+    if (CheckHasBit(cached_has_bits, 0x00000020U)) {
       if (this_._internal_code() != 0) {
         total_size += 1 +
                       ::_pbi::WireFormatLite::EnumSize(this_._internal_code());
       }
     }
     // bool kick_previous = 5;
-    if (CheckHasBit(cached_has_bits, 0x00000020U)) {
+    if (CheckHasBit(cached_has_bits, 0x00000040U)) {
       if (this_._internal_kick_previous() != 0) {
         total_size += 2;
       }
@@ -1960,8 +2770,13 @@ void LoginResponse::MergeImpl(::google::protobuf::MessageLite& to_msg,
   (void)cached_has_bits;
 
   cached_has_bits = from._impl_._has_bits_[0];
-  if (BatchCheckHasBit(cached_has_bits, 0x0000003fU)) {
-    if (CheckHasBit(cached_has_bits, 0x00000001U)) {
+  if (BatchCheckHasBit(cached_has_bits, 0x0000007fU)) {
+    if (CheckHasBitForRepeated(cached_has_bits, 0x00000001U)) {
+      _this->_internal_mutable_online_devices()->InternalMergeFromWithArena(
+          ::google::protobuf::MessageLite::internal_visibility(), arena,
+          from._internal_online_devices());
+    }
+    if (CheckHasBit(cached_has_bits, 0x00000002U)) {
       if (!from._internal_session_id().empty()) {
         _this->_internal_set_session_id(from._internal_session_id());
       } else {
@@ -1970,7 +2785,7 @@ void LoginResponse::MergeImpl(::google::protobuf::MessageLite& to_msg,
         }
       }
     }
-    if (CheckHasBit(cached_has_bits, 0x00000002U)) {
+    if (CheckHasBit(cached_has_bits, 0x00000004U)) {
       if (!from._internal_user_id().empty()) {
         _this->_internal_set_user_id(from._internal_user_id());
       } else {
@@ -1979,7 +2794,7 @@ void LoginResponse::MergeImpl(::google::protobuf::MessageLite& to_msg,
         }
       }
     }
-    if (CheckHasBit(cached_has_bits, 0x00000004U)) {
+    if (CheckHasBit(cached_has_bits, 0x00000008U)) {
       ABSL_DCHECK(from._impl_.kick_ != nullptr);
       if (_this->_impl_.kick_ == nullptr) {
         _this->_impl_.kick_ = ::google::protobuf::Message::CopyConstruct(arena, *from._impl_.kick_);
@@ -1987,17 +2802,17 @@ void LoginResponse::MergeImpl(::google::protobuf::MessageLite& to_msg,
         _this->_impl_.kick_->MergeFrom(*from._impl_.kick_);
       }
     }
-    if (CheckHasBit(cached_has_bits, 0x00000008U)) {
+    if (CheckHasBit(cached_has_bits, 0x00000010U)) {
       if (from._internal_server_time() != 0) {
         _this->_impl_.server_time_ = from._impl_.server_time_;
       }
     }
-    if (CheckHasBit(cached_has_bits, 0x00000010U)) {
+    if (CheckHasBit(cached_has_bits, 0x00000020U)) {
       if (from._internal_code() != 0) {
         _this->_impl_.code_ = from._impl_.code_;
       }
     }
-    if (CheckHasBit(cached_has_bits, 0x00000020U)) {
+    if (CheckHasBit(cached_has_bits, 0x00000040U)) {
       if (from._internal_kick_previous() != 0) {
         _this->_impl_.kick_previous_ = from._impl_.kick_previous_;
       }
@@ -2022,6 +2837,7 @@ void LoginResponse::InternalSwap(LoginResponse* PROTOBUF_RESTRICT PROTOBUF_NONNU
   ABSL_DCHECK_EQ(arena, other->GetArena());
   _internal_metadata_.InternalSwap(&other->_internal_metadata_);
   swap(_impl_._has_bits_[0], other->_impl_._has_bits_[0]);
+  _impl_.online_devices_.InternalSwap(&other->_impl_.online_devices_);
   ::_pbi::ArenaStringPtr::InternalSwap(&_impl_.session_id_, &other->_impl_.session_id_, arena);
   ::_pbi::ArenaStringPtr::InternalSwap(&_impl_.user_id_, &other->_impl_.user_id_, arena);
   ::google::protobuf::internal::memswap<

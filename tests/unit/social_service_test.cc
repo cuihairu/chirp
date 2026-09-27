@@ -141,11 +141,13 @@ class SocialServiceTest : public ::testing::Test {
   }
 
   // Scaffold login (token is user_id) on a fresh mock session.
-  std::shared_ptr<MockSession> Login(const std::string& user_id, const std::string& device = "") {
+  std::shared_ptr<MockSession> Login(const std::string& user_id, const std::string& device = "",
+                                     const std::string& platform = "") {
     auto s = std::make_shared<MockSession>();
     chirp::auth::LoginRequest req;
     req.set_token(user_id);
     req.set_device_id(device);
+    req.set_platform(platform);
     Deliver(chirp::gateway::LOGIN_REQ, 1, req.SerializeAsString(), s);
     chirp::auth::LoginResponse resp;
     EXPECT_TRUE(LastBody(*s, &resp));
@@ -277,9 +279,10 @@ TEST_F(SocialServiceTest, SameDeviceRebindKicksOldSession) {
   EXPECT_EQ(chirp::network::GetUserSessions(state_->registry, "user_a")[0], second);
 }
 
-TEST_F(SocialServiceTest, DifferentDevicesCoexist) {
-  auto phone = Login("user_a", "phone");
-  auto desktop = Login("user_a", "desktop");
+TEST_F(SocialServiceTest, DifferentPlatformsCoexist) {
+  // 多端在线：跨 platform 共存（同 device 不同 platform 也互不干扰）。
+  auto phone = Login("user_a", "phone", "ios");
+  auto desktop = Login("user_a", "desktop", "web");
   auto sessions = chirp::network::GetUserSessions(state_->registry, "user_a");
   EXPECT_EQ(sessions.size(), 2u);
   // Neither was kicked.
@@ -683,8 +686,8 @@ TEST_F(SocialServiceTest, DisconnectBroadcastsOfflineToFriends) {
 
 TEST_F(SocialServiceTest, OneOfTwoDevicesDisconnectingStaysOnline) {
   auto b = Login("user_b");
-  auto a1 = Login("user_a", "phone");
-  auto a2 = Login("user_a", "desktop");
+  auto a1 = Login("user_a", "phone", "ios");
+  auto a2 = Login("user_a", "desktop", "web");
   (void)a1;
   state_->friends["user_a"].insert("user_b");
   state_->friends["user_b"].insert("user_a");

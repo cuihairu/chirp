@@ -278,10 +278,11 @@ class EnhancedSessionTest : public ::testing::Test {
   // Scaffold LOGIN_REQ: token doubles as the user id (the verifier stays
   // disabled - nullptr - exactly like a build without --token_secret).
   void Login(const std::shared_ptr<MockSession>& session, const std::string& token,
-             const std::string& device_id, int64_t seq) {
+             const std::string& device_id, int64_t seq, const std::string& platform = "web") {
     chirp::auth::LoginRequest req;
     req.set_token(token);
     req.set_device_id(device_id);
+    req.set_platform(platform);
     InvokeLogin(req, session, state_, store_, router_, nullptr, nullptr, &delivery_prefs_, seq);
   }
 
@@ -302,33 +303,33 @@ class EnhancedSessionTest : public ::testing::Test {
 
 // --- DistributedChatState over the shared SessionRegistry -----------------
 
-TEST_F(EnhancedSessionTest, AddSessionSameDeviceReturnsPreviousSession) {
+TEST_F(EnhancedSessionTest, AddSessionSamePlatformReturnsPreviousSession) {
   auto first = std::make_shared<MockSession>();
   auto second = std::make_shared<MockSession>();
 
-  EXPECT_EQ(state_->AddSession("alice", "phone", "s1", first), nullptr);
-  auto kicked = state_->AddSession("alice", "phone", "s2", second);
+  EXPECT_EQ(state_->AddSession("alice", "phone", "s1", first, "web"), nullptr);
+  auto kicked = state_->AddSession("alice", "tablet", "s2", second, "web");
 
-  // The same (user, device) pair displaces the previous session so the
-  // caller can kick it - never a silent overwrite that orphans the old
-  // connection.
+  // 多端在线（P0）：同一个 (user, platform) 槽位被新登录接管，旧会话交还给
+  // 调用方去顶（KICK_NOTIFY）——绝不静默覆盖把旧连接变成孤儿。同 device_id
+  // 断线重连走的也是这条路（同 platform → 同槽位，幂等重绑）。
   ASSERT_TRUE(kicked);
   EXPECT_EQ(kicked, first);
   EXPECT_EQ(state_->GetUserId(second), "alice");
   // The displaced session keeps its identity until its (late) disconnect
-  // arrives; the registry only moves the device slot.
+  // arrives; the registry only moves the platform slot.
   EXPECT_EQ(state_->GetUserId(first), "alice");
 }
 
-TEST_F(EnhancedSessionTest, AddSessionOtherDeviceCoexists) {
+TEST_F(EnhancedSessionTest, AddSessionOtherPlatformCoexists) {
+  auto web = std::make_shared<MockSession>();
   auto phone = std::make_shared<MockSession>();
-  auto tablet = std::make_shared<MockSession>();
 
-  EXPECT_EQ(state_->AddSession("alice", "phone", "s1", phone), nullptr);
-  EXPECT_EQ(state_->AddSession("alice", "tablet", "s2", tablet), nullptr);
+  EXPECT_EQ(state_->AddSession("alice", "tab-1", "s1", web, "web"), nullptr);
+  EXPECT_EQ(state_->AddSession("alice", "p1", "s2", phone, "ios"), nullptr);
 
+  EXPECT_EQ(state_->GetUserId(web), "alice");
   EXPECT_EQ(state_->GetUserId(phone), "alice");
-  EXPECT_EQ(state_->GetUserId(tablet), "alice");
   EXPECT_EQ(HealthyLocalSessions(state_, "alice").size(), 2u);
 }
 
@@ -336,10 +337,10 @@ TEST_F(EnhancedSessionTest, AddSessionEmptyDeviceSharesDefaultSlot) {
   auto legacy_a = std::make_shared<MockSession>();
   auto legacy_b = std::make_shared<MockSession>();
 
-  EXPECT_EQ(state_->AddSession("alice", "", "s1", legacy_a), nullptr);
-  // Legacy clients that never send a device id all map onto the "default"
+  EXPECT_EQ(state_->AddSession("alice", "", "s1", legacy_a, ""), nullptr);
+  // Legacy clients that never send a platform all map onto the "default"
   // slot and keep the historical one-session-per-user kick behavior.
-  auto kicked = state_->AddSession("alice", "", "s2", legacy_b);
+  auto kicked = state_->AddSession("alice", "", "s2", legacy_b, "");
   ASSERT_TRUE(kicked);
   EXPECT_EQ(kicked, legacy_a);
   EXPECT_EQ(HealthyLocalSessions(state_, "alice").size(), 1u);
@@ -352,8 +353,8 @@ TEST_F(EnhancedSessionTest, StaleDisconnectKeepsNewerSession) {
   // Re-login takes over the (user, device) slot first; the old connection's
   // disconnect only arrives afterwards (e.g. its late FIN). The stale
   // disconnect must not unregister the session that now owns the slot.
-  EXPECT_EQ(state_->AddSession("carol", "phone", "s1", old_session), nullptr);
-  ASSERT_TRUE(state_->AddSession("carol", "phone", "s2", new_session));
+  EXPECT_EQ(state_->AddSession("carol", "p1", "s1", old_session, "ios"), nullptr);
+  ASSERT_TRUE(state_->AddSession("carol", "p2", "s2", new_session, "ios"));
   state_->RemoveSession(old_session);
 
   EXPECT_EQ(state_->GetUserId(old_session), "");
@@ -363,31 +364,31 @@ TEST_F(EnhancedSessionTest, StaleDisconnectKeepsNewerSession) {
   EXPECT_EQ(healthy[0], new_session);
 }
 
-TEST_F(EnhancedSessionTest, RemoveSessionOnlyClearsOwnDeviceSlot) {
+TEST_F(EnhancedSessionTest, RemoveSessionOnlyClearsOwnPlatformSlot) {
+  auto web = std::make_shared<MockSession>();
   auto phone = std::make_shared<MockSession>();
-  auto tablet = std::make_shared<MockSession>();
-  state_->AddSession("alice", "phone", "s1", phone);
-  state_->AddSession("alice", "tablet", "s2", tablet);
+  state_->AddSession("alice", "tab-1", "s1", web, "web");
+  state_->AddSession("alice", "p1", "s2", phone, "ios");
 
   state_->RemoveSession(phone);
 
   EXPECT_EQ(state_->GetUserId(phone), "");
-  EXPECT_EQ(state_->GetUserId(tablet), "alice");
+  EXPECT_EQ(state_->GetUserId(web), "alice");
   auto healthy = HealthyLocalSessions(state_, "alice");
   ASSERT_EQ(healthy.size(), 1u);
-  EXPECT_EQ(healthy[0], tablet);
+  EXPECT_EQ(healthy[0], web);
 
   // Removing an unknown session is a no-op.
   state_->RemoveSession(nullptr);
-  EXPECT_EQ(state_->GetUserId(tablet), "alice");
+  EXPECT_EQ(state_->GetUserId(web), "alice");
 }
 
 TEST_F(EnhancedSessionTest, HealthyLocalSessionsSkipsHalfClosed) {
   auto live = std::make_shared<MockSession>();
   auto half = std::make_shared<MockSession>();
   half->half_closed = true;
-  state_->AddSession("alice", "phone", "s1", live);
-  state_->AddSession("alice", "tablet", "s2", half);
+  state_->AddSession("alice", "tab-1", "s1", live, "web");
+  state_->AddSession("alice", "p1", "s2", half, "ios");
 
   auto healthy = HealthyLocalSessions(state_, "alice");
   ASSERT_EQ(healthy.size(), 1u);
@@ -398,11 +399,11 @@ TEST_F(EnhancedSessionTest, HealthyLocalSessionsSkipsHalfClosed) {
 
 // --- HandleLogin: kick contract on top of the registry --------------------
 
-TEST_F(EnhancedSessionTest, LoginSameDeviceKicksPreviousSession) {
+TEST_F(EnhancedSessionTest, LoginSamePlatformKicksPreviousSession) {
   auto first = std::make_shared<MockSession>();
   auto second = std::make_shared<MockSession>();
 
-  Login(first, "alice", "phone", 1);
+  Login(first, "alice", "tab-1", 1, "web");
   auto first_logins = FramesOf(*first, chirp::gateway::LOGIN_RESP);
   ASSERT_EQ(first_logins.size(), 1u);
   {
@@ -410,9 +411,11 @@ TEST_F(EnhancedSessionTest, LoginSameDeviceKicksPreviousSession) {
     ASSERT_TRUE(resp.ParseFromString(first_logins[0].body()));
     EXPECT_EQ(resp.code(), chirp::common::OK);
     EXPECT_EQ(resp.user_id(), "alice");
+    // 首个登录：没有其他在线端，初始清单为空。
+    EXPECT_EQ(resp.online_devices_size(), 0);
   }
 
-  Login(second, "alice", "phone", 2);
+  Login(second, "alice", "tab-2", 2, "web");
 
   // The new session logs in with the kick flags set...
   auto second_logins = FramesOf(*second, chirp::gateway::LOGIN_RESP);
@@ -421,37 +424,90 @@ TEST_F(EnhancedSessionTest, LoginSameDeviceKicksPreviousSession) {
   ASSERT_TRUE(resp.ParseFromString(second_logins[0].body()));
   EXPECT_EQ(resp.code(), chirp::common::OK);
   EXPECT_TRUE(resp.kick_previous());
-  EXPECT_EQ(resp.kick().reason(), "login from another device");
+  EXPECT_EQ(resp.kick().reason(), "logged in on another web");
 
   // ...and the displaced connection is told instead of silently orphaned.
   auto kicks = FramesOf(*first, chirp::gateway::KICK_NOTIFY);
   ASSERT_EQ(kicks.size(), 1u);
   chirp::auth::KickNotify kick;
   ASSERT_TRUE(kick.ParseFromString(kicks[0].body()));
-  EXPECT_EQ(kick.reason(), "login from another device");
+  EXPECT_EQ(kick.reason(), "logged in on another web");
   EXPECT_TRUE(first->close_after_send);
 
-  // The device slot now belongs to the new session only.
+  // The platform slot now belongs to the new session only.
   auto healthy = HealthyLocalSessions(state_, "alice");
   ASSERT_EQ(healthy.size(), 1u);
   EXPECT_EQ(healthy[0], second);
 }
 
-TEST_F(EnhancedSessionTest, LoginOtherDeviceKeepsBothSessions) {
+TEST_F(EnhancedSessionTest, LoginOtherPlatformKeepsBothSessionsAndAnnounces) {
+  auto web = std::make_shared<MockSession>();
   auto phone = std::make_shared<MockSession>();
-  auto tablet = std::make_shared<MockSession>();
 
-  Login(phone, "alice", "phone", 1);
-  Login(tablet, "alice", "tablet", 2);
+  Login(web, "alice", "tab-1", 1, "web");
+  Login(phone, "alice", "p1", 2, "ios");
 
-  // A second device never kicks the first one.
-  EXPECT_EQ(phone->sent.size(), 1u);  // only its LOGIN_RESP
+  // 跨 platform 共存：谁也不顶谁。
+  EXPECT_EQ(FramesOf(*web, chirp::gateway::KICK_NOTIFY).size(), 0u);
   EXPECT_EQ(FramesOf(*phone, chirp::gateway::KICK_NOTIFY).size(), 0u);
-  EXPECT_EQ(FramesOf(*tablet, chirp::gateway::KICK_NOTIFY).size(), 0u);
 
+  EXPECT_EQ(state_->GetUserId(web), "alice");
   EXPECT_EQ(state_->GetUserId(phone), "alice");
-  EXPECT_EQ(state_->GetUserId(tablet), "alice");
   EXPECT_EQ(HealthyLocalSessions(state_, "alice").size(), 2u);
+
+  // 先登录的 web 端只收到 ios 上线事件（多端清单变更，风格对齐 KICK_NOTIFY）。
+  auto announces = FramesOf(*web, chirp::gateway::DEVICES_PRESENCE_NOTIFY);
+  ASSERT_EQ(announces.size(), 1u);
+  chirp::auth::DevicesPresenceNotify notify;
+  ASSERT_TRUE(notify.ParseFromString(announces[0].body()));
+  ASSERT_EQ(notify.devices_size(), 1);
+  EXPECT_EQ(notify.devices(0).platform(), "ios");
+  EXPECT_EQ(notify.devices(0).device_id(), "p1");
+  EXPECT_TRUE(notify.devices(0).online());
+  EXPECT_GT(notify.devices(0).ts(), 0);
+
+  // 后登录的 ios 端在登录响应里拿到其他在线端的初始清单（不含自己）。
+  auto phone_logins = FramesOf(*phone, chirp::gateway::LOGIN_RESP);
+  ASSERT_EQ(phone_logins.size(), 1u);
+  chirp::auth::LoginResponse resp;
+  ASSERT_TRUE(resp.ParseFromString(phone_logins[0].body()));
+  ASSERT_EQ(resp.online_devices_size(), 1);
+  EXPECT_EQ(resp.online_devices(0).platform(), "web");
+  EXPECT_EQ(resp.online_devices(0).device_id(), "tab-1");
+  EXPECT_TRUE(resp.online_devices(0).online());
+}
+
+// --- 多端在线：断开下线的清单变更（login 建立的槽位经 RemoveSession 释放）-
+
+TEST_F(EnhancedSessionTest, DisconnectAnnouncesOfflineToRemainingDevices) {
+  auto web = std::make_shared<MockSession>();
+  auto phone = std::make_shared<MockSession>();
+  Login(web, "alice", "tab-1", 1, "web");
+  Login(phone, "alice", "p1", 2, "ios");
+  // FramesOf 是累计快照：先记下 web 已收到的清单变更数，之后只看增量。
+  const size_t announces_before = FramesOf(*web, chirp::gateway::DEVICES_PRESENCE_NOTIFY).size();
+
+  state_->RemoveSession(phone);
+
+  // 剩余端收到 ios 下线；下线的会话自己不需要（也不该）收到。
+  auto announces = FramesOf(*web, chirp::gateway::DEVICES_PRESENCE_NOTIFY);
+  ASSERT_EQ(announces.size(), announces_before + 1u);
+  chirp::auth::DevicesPresenceNotify notify;
+  ASSERT_TRUE(notify.ParseFromString(announces.back().body()));
+  ASSERT_EQ(notify.devices_size(), 1);
+  EXPECT_EQ(notify.devices(0).platform(), "ios");
+  EXPECT_EQ(notify.devices(0).device_id(), "p1");
+  EXPECT_FALSE(notify.devices(0).online());
+  EXPECT_EQ(FramesOf(*phone, chirp::gateway::DEVICES_PRESENCE_NOTIFY).size(), 0u);
+
+  // 被顶的旧会话断开不广播（它没有赢得这个槽位）：web 先下线再重新登录，
+  // 旧连接的 stale 断开不应产生 ios→offline 的假事件。web2 登录本身会让
+  // phone 收到一条 web 上线事件（合法），所以这里也只看增量。
+  auto web2 = std::make_shared<MockSession>();
+  Login(web2, "alice", "tab-2", 3, "web");
+  const size_t phone_before = FramesOf(*phone, chirp::gateway::DEVICES_PRESENCE_NOTIFY).size();
+  state_->RemoveSession(web);                                  // stale disconnect
+  EXPECT_EQ(FramesOf(*phone, chirp::gateway::DEVICES_PRESENCE_NOTIFY).size(), phone_before);
 }
 
 // --- Local delivery fans out to every healthy device ----------------------
@@ -460,8 +516,8 @@ TEST_F(EnhancedSessionTest, PrivateSendFansOutToEveryDevice) {
   auto phone = std::make_shared<MockSession>();
   auto tablet = std::make_shared<MockSession>();
   auto sender = std::make_shared<MockSession>();
-  state_->AddSession("bob", "phone", "s1", phone);
-  state_->AddSession("bob", "tablet", "s2", tablet);
+  state_->AddSession("bob", "p1", "s1", phone, "ios");
+  state_->AddSession("bob", "p2", "s2", tablet, "android");
 
   chirp::chat::SendMessageRequest req;
   req.set_sender_id("alice");
@@ -497,7 +553,7 @@ TEST_F(EnhancedSessionTest, PrivateSendQueuesOfflineWhenEveryDeviceHalfClosed) {
   auto bob = std::make_shared<MockSession>();
   auto sender = std::make_shared<MockSession>();
   bob->half_closed = true;
-  state_->AddSession("bob", "phone", "s1", bob);
+  state_->AddSession("bob", "p1", "s1", bob, "ios");
 
   chirp::chat::SendMessageRequest req;
   req.set_sender_id("alice");
@@ -545,8 +601,9 @@ TEST_F(EnhancedSessionTest, RecallNotifiesEveryDeviceAndErasesHistory) {
   auto bob_phone = std::make_shared<MockSession>();
   auto bob_tablet = std::make_shared<MockSession>();
   Login(alice, "alice", "a1", 1);
-  Login(bob_phone, "bob", "p1", 2);
-  Login(bob_tablet, "bob", "p2", 3);
+  // bob 的两条设备会话必须跨 platform 才能共存（多端在线：同型互顶）。
+  Login(bob_phone, "bob", "p1", 2, "ios");
+  Login(bob_tablet, "bob", "p2", 3, "android");
 
   std::string mid;
   EXPECT_EQ(SendPrivate(alice, "alice", "bob", "recall me", &mid, live.store,

@@ -36,6 +36,12 @@ export enum MsgID {
   CHANGE_PASSWORD_REQ = 1018,
   CHANGE_PASSWORD_RESP = 1019,
   /**
+   * DEVICES_PRESENCE_NOTIFY - 多端在线（P0）：某端上线/下线/被顶时，服务端向该用户其余在线会话推的
+   * 清单变更事件（body = auth.DevicesPresenceNotify，风格对齐 KICK_NOTIFY：
+   * sequence 0、客户端只读、不要求 ACK）。
+   */
+  DEVICES_PRESENCE_NOTIFY = 1020,
+  /**
    * SEND_MESSAGE_REQ - Chat service. Both gateways relay these verbatim through the per-client
    * ChatBridge pipeline (gateway and app_gateway, each with --chat_host);
    * chat answers on the same internal connection, so no edge synthesizes
@@ -356,6 +362,9 @@ export function msgIDFromJSON(object: any): MsgID {
     case 1019:
     case "CHANGE_PASSWORD_RESP":
       return MsgID.CHANGE_PASSWORD_RESP;
+    case 1020:
+    case "DEVICES_PRESENCE_NOTIFY":
+      return MsgID.DEVICES_PRESENCE_NOTIFY;
     case 2001:
     case "SEND_MESSAGE_REQ":
       return MsgID.SEND_MESSAGE_REQ;
@@ -963,6 +972,8 @@ export function msgIDToJSON(object: MsgID): string {
       return "CHANGE_PASSWORD_REQ";
     case MsgID.CHANGE_PASSWORD_RESP:
       return "CHANGE_PASSWORD_RESP";
+    case MsgID.DEVICES_PRESENCE_NOTIFY:
+      return "DEVICES_PRESENCE_NOTIFY";
     case MsgID.SEND_MESSAGE_REQ:
       return "SEND_MESSAGE_REQ";
     case MsgID.SEND_MESSAGE_RESP:

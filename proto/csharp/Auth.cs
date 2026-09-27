@@ -27,54 +27,60 @@ namespace Chirp.Auth {
             "ChBwcm90by9hdXRoLnByb3RvEgpjaGlycC5hdXRoGhJwcm90by9jb21tb24u",
             "cHJvdG8iYAoMTG9naW5SZXF1ZXN0Eg0KBXRva2VuGAEgASgJEhEKCWRldmlj",
             "ZV9pZBgCIAEoCRIQCghwbGF0Zm9ybRgDIAEoCRIcChRzdXBwb3J0c19tZXNz",
-            "YWdlX2FjaxgEIAEoCCIcCgpLaWNrTm90aWZ5Eg4KBnJlYXNvbhgBIAEoCSKt",
-            "AQoNTG9naW5SZXNwb25zZRIlCgRjb2RlGAEgASgOMhcuY2hpcnAuY29tbW9u",
-            "LkVycm9yQ29kZRISCgpzZXNzaW9uX2lkGAIgASgJEhMKC3NlcnZlcl90aW1l",
-            "GAMgASgDEg8KB3VzZXJfaWQYBCABKAkSFQoNa2lja19wcmV2aW91cxgFIAEo",
-            "CBIkCgRraWNrGAYgASgLMhYuY2hpcnAuYXV0aC5LaWNrTm90aWZ5IjQKDUxv",
-            "Z291dFJlcXVlc3QSDwoHdXNlcl9pZBgBIAEoCRISCgpzZXNzaW9uX2lkGAIg",
-            "ASgJIkwKDkxvZ291dFJlc3BvbnNlEiUKBGNvZGUYASABKA4yFy5jaGlycC5j",
-            "b21tb24uRXJyb3JDb2RlEhMKC3NlcnZlcl90aW1lGAIgASgDIloKD1JlZ2lz",
-            "dGVyUmVxdWVzdBIQCgh1c2VybmFtZRgBIAEoCRINCgVlbWFpbBgCIAEoCRIQ",
-            "CghwYXNzd29yZBgDIAEoCRIUCgxkaXNwbGF5X25hbWUYBCABKAkidgoQUmVn",
-            "aXN0ZXJSZXNwb25zZRIlCgRjb2RlGAEgASgOMhcuY2hpcnAuY29tbW9uLkVy",
-            "cm9yQ29kZRIPCgd1c2VyX2lkGAIgASgJEhMKC3NlcnZlcl90aW1lGAMgASgD",
-            "EhUKDWVycm9yX21lc3NhZ2UYBCABKAkiYQoUUGFzc3dvcmRMb2dpblJlcXVl",
-            "c3QSEgoKaWRlbnRpZmllchgBIAEoCRIQCghwYXNzd29yZBgCIAEoCRIRCglk",
-            "ZXZpY2VfaWQYAyABKAkSEAoIcGxhdGZvcm0YBCABKAkiqAIKFVBhc3N3b3Jk",
-            "TG9naW5SZXNwb25zZRIlCgRjb2RlGAEgASgOMhcuY2hpcnAuY29tbW9uLkVy",
-            "cm9yQ29kZRIPCgd1c2VyX2lkGAIgASgJEhAKCHVzZXJuYW1lGAMgASgJEhIK",
-            "CnNlc3Npb25faWQYBCABKAkSFAoMYWNjZXNzX3Rva2VuGAUgASgJEhUKDXJl",
-            "ZnJlc2hfdG9rZW4YBiABKAkSHwoXYWNjZXNzX3Rva2VuX2V4cGlyZXNfYXQY",
-            "ByABKAMSIAoYcmVmcmVzaF90b2tlbl9leHBpcmVzX2F0GAggASgDEhMKC3Nl",
-            "cnZlcl90aW1lGAkgASgDEhUKDWtpY2tfcHJldmlvdXMYCiABKAgSFQoNZXJy",
-            "b3JfbWVzc2FnZRgLIAEoCSIsChNSZWZyZXNoVG9rZW5SZXF1ZXN0EhUKDXJl",
-            "ZnJlc2hfdG9rZW4YASABKAkioAEKFFJlZnJlc2hUb2tlblJlc3BvbnNlEiUK",
-            "BGNvZGUYASABKA4yFy5jaGlycC5jb21tb24uRXJyb3JDb2RlEhQKDGFjY2Vz",
-            "c190b2tlbhgCIAEoCRIfChdhY2Nlc3NfdG9rZW5fZXhwaXJlc19hdBgDIAEo",
-            "AxITCgtzZXJ2ZXJfdGltZRgEIAEoAxIVCg1lcnJvcl9tZXNzYWdlGAUgASgJ",
-            "IiUKEkdldFNlc3Npb25zUmVxdWVzdBIPCgd1c2VyX2lkGAEgASgJIogBCgtT",
-            "ZXNzaW9uSW5mbxISCgpzZXNzaW9uX2lkGAEgASgJEhEKCWRldmljZV9pZBgC",
-            "IAEoCRIQCghwbGF0Zm9ybRgDIAEoCRISCgpjcmVhdGVkX2F0GAQgASgDEhgK",
-            "EGxhc3RfYWN0aXZpdHlfYXQYBSABKAMSEgoKaXNfY3VycmVudBgGIAEoCCJ8",
-            "ChNHZXRTZXNzaW9uc1Jlc3BvbnNlEiUKBGNvZGUYASABKA4yFy5jaGlycC5j",
-            "b21tb24uRXJyb3JDb2RlEikKCHNlc3Npb25zGAIgAygLMhcuY2hpcnAuYXV0",
-            "aC5TZXNzaW9uSW5mbxITCgtzZXJ2ZXJfdGltZRgDIAEoAyI7ChRSZXZva2VT",
-            "ZXNzaW9uUmVxdWVzdBIPCgd1c2VyX2lkGAEgASgJEhIKCnNlc3Npb25faWQY",
-            "AiABKAkiUwoVUmV2b2tlU2Vzc2lvblJlc3BvbnNlEiUKBGNvZGUYASABKA4y",
-            "Fy5jaGlycC5jb21tb24uRXJyb3JDb2RlEhMKC3NlcnZlcl90aW1lGAIgASgD",
-            "IlQKFUNoYW5nZVBhc3N3b3JkUmVxdWVzdBIPCgd1c2VyX2lkGAEgASgJEhQK",
-            "DG9sZF9wYXNzd29yZBgCIAEoCRIUCgxuZXdfcGFzc3dvcmQYAyABKAkiawoW",
-            "Q2hhbmdlUGFzc3dvcmRSZXNwb25zZRIlCgRjb2RlGAEgASgOMhcuY2hpcnAu",
-            "Y29tbW9uLkVycm9yQ29kZRITCgtzZXJ2ZXJfdGltZRgCIAEoAxIVCg1lcnJv",
-            "cl9tZXNzYWdlGAMgASgJQiRaImdpdGh1Yi5jb20vY3VpL2NoaXJwL3Byb3Rv",
-            "L2dvL2F1dGhiBnByb3RvMw=="));
+            "YWdlX2FjaxgEIAEoCCIcCgpLaWNrTm90aWZ5Eg4KBnJlYXNvbhgBIAEoCSJR",
+            "Cg5EZXZpY2VQcmVzZW5jZRIQCghwbGF0Zm9ybRgBIAEoCRIRCglkZXZpY2Vf",
+            "aWQYAiABKAkSDgoGb25saW5lGAMgASgIEgoKAnRzGAQgASgDIkQKFURldmlj",
+            "ZXNQcmVzZW5jZU5vdGlmeRIrCgdkZXZpY2VzGAEgAygLMhouY2hpcnAuYXV0",
+            "aC5EZXZpY2VQcmVzZW5jZSLhAQoNTG9naW5SZXNwb25zZRIlCgRjb2RlGAEg",
+            "ASgOMhcuY2hpcnAuY29tbW9uLkVycm9yQ29kZRISCgpzZXNzaW9uX2lkGAIg",
+            "ASgJEhMKC3NlcnZlcl90aW1lGAMgASgDEg8KB3VzZXJfaWQYBCABKAkSFQoN",
+            "a2lja19wcmV2aW91cxgFIAEoCBIkCgRraWNrGAYgASgLMhYuY2hpcnAuYXV0",
+            "aC5LaWNrTm90aWZ5EjIKDm9ubGluZV9kZXZpY2VzGAcgAygLMhouY2hpcnAu",
+            "YXV0aC5EZXZpY2VQcmVzZW5jZSI0Cg1Mb2dvdXRSZXF1ZXN0Eg8KB3VzZXJf",
+            "aWQYASABKAkSEgoKc2Vzc2lvbl9pZBgCIAEoCSJMCg5Mb2dvdXRSZXNwb25z",
+            "ZRIlCgRjb2RlGAEgASgOMhcuY2hpcnAuY29tbW9uLkVycm9yQ29kZRITCgtz",
+            "ZXJ2ZXJfdGltZRgCIAEoAyJaCg9SZWdpc3RlclJlcXVlc3QSEAoIdXNlcm5h",
+            "bWUYASABKAkSDQoFZW1haWwYAiABKAkSEAoIcGFzc3dvcmQYAyABKAkSFAoM",
+            "ZGlzcGxheV9uYW1lGAQgASgJInYKEFJlZ2lzdGVyUmVzcG9uc2USJQoEY29k",
+            "ZRgBIAEoDjIXLmNoaXJwLmNvbW1vbi5FcnJvckNvZGUSDwoHdXNlcl9pZBgC",
+            "IAEoCRITCgtzZXJ2ZXJfdGltZRgDIAEoAxIVCg1lcnJvcl9tZXNzYWdlGAQg",
+            "ASgJImEKFFBhc3N3b3JkTG9naW5SZXF1ZXN0EhIKCmlkZW50aWZpZXIYASAB",
+            "KAkSEAoIcGFzc3dvcmQYAiABKAkSEQoJZGV2aWNlX2lkGAMgASgJEhAKCHBs",
+            "YXRmb3JtGAQgASgJIqgCChVQYXNzd29yZExvZ2luUmVzcG9uc2USJQoEY29k",
+            "ZRgBIAEoDjIXLmNoaXJwLmNvbW1vbi5FcnJvckNvZGUSDwoHdXNlcl9pZBgC",
+            "IAEoCRIQCgh1c2VybmFtZRgDIAEoCRISCgpzZXNzaW9uX2lkGAQgASgJEhQK",
+            "DGFjY2Vzc190b2tlbhgFIAEoCRIVCg1yZWZyZXNoX3Rva2VuGAYgASgJEh8K",
+            "F2FjY2Vzc190b2tlbl9leHBpcmVzX2F0GAcgASgDEiAKGHJlZnJlc2hfdG9r",
+            "ZW5fZXhwaXJlc19hdBgIIAEoAxITCgtzZXJ2ZXJfdGltZRgJIAEoAxIVCg1r",
+            "aWNrX3ByZXZpb3VzGAogASgIEhUKDWVycm9yX21lc3NhZ2UYCyABKAkiLAoT",
+            "UmVmcmVzaFRva2VuUmVxdWVzdBIVCg1yZWZyZXNoX3Rva2VuGAEgASgJIqAB",
+            "ChRSZWZyZXNoVG9rZW5SZXNwb25zZRIlCgRjb2RlGAEgASgOMhcuY2hpcnAu",
+            "Y29tbW9uLkVycm9yQ29kZRIUCgxhY2Nlc3NfdG9rZW4YAiABKAkSHwoXYWNj",
+            "ZXNzX3Rva2VuX2V4cGlyZXNfYXQYAyABKAMSEwoLc2VydmVyX3RpbWUYBCAB",
+            "KAMSFQoNZXJyb3JfbWVzc2FnZRgFIAEoCSIlChJHZXRTZXNzaW9uc1JlcXVl",
+            "c3QSDwoHdXNlcl9pZBgBIAEoCSKIAQoLU2Vzc2lvbkluZm8SEgoKc2Vzc2lv",
+            "bl9pZBgBIAEoCRIRCglkZXZpY2VfaWQYAiABKAkSEAoIcGxhdGZvcm0YAyAB",
+            "KAkSEgoKY3JlYXRlZF9hdBgEIAEoAxIYChBsYXN0X2FjdGl2aXR5X2F0GAUg",
+            "ASgDEhIKCmlzX2N1cnJlbnQYBiABKAgifAoTR2V0U2Vzc2lvbnNSZXNwb25z",
+            "ZRIlCgRjb2RlGAEgASgOMhcuY2hpcnAuY29tbW9uLkVycm9yQ29kZRIpCghz",
+            "ZXNzaW9ucxgCIAMoCzIXLmNoaXJwLmF1dGguU2Vzc2lvbkluZm8SEwoLc2Vy",
+            "dmVyX3RpbWUYAyABKAMiOwoUUmV2b2tlU2Vzc2lvblJlcXVlc3QSDwoHdXNl",
+            "cl9pZBgBIAEoCRISCgpzZXNzaW9uX2lkGAIgASgJIlMKFVJldm9rZVNlc3Np",
+            "b25SZXNwb25zZRIlCgRjb2RlGAEgASgOMhcuY2hpcnAuY29tbW9uLkVycm9y",
+            "Q29kZRITCgtzZXJ2ZXJfdGltZRgCIAEoAyJUChVDaGFuZ2VQYXNzd29yZFJl",
+            "cXVlc3QSDwoHdXNlcl9pZBgBIAEoCRIUCgxvbGRfcGFzc3dvcmQYAiABKAkS",
+            "FAoMbmV3X3Bhc3N3b3JkGAMgASgJImsKFkNoYW5nZVBhc3N3b3JkUmVzcG9u",
+            "c2USJQoEY29kZRgBIAEoDjIXLmNoaXJwLmNvbW1vbi5FcnJvckNvZGUSEwoL",
+            "c2VydmVyX3RpbWUYAiABKAMSFQoNZXJyb3JfbWVzc2FnZRgDIAEoCUIkWiJn",
+            "aXRodWIuY29tL2N1aS9jaGlycC9wcm90by9nby9hdXRoYgZwcm90bzM="));
       descriptor = pbr::FileDescriptor.FromGeneratedCode(descriptorData,
           new pbr::FileDescriptor[] { global::Chirp.Common.CommonReflection.Descriptor, },
           new pbr::GeneratedClrTypeInfo(null, null, new pbr::GeneratedClrTypeInfo[] {
             new pbr::GeneratedClrTypeInfo(typeof(global::Chirp.Auth.LoginRequest), global::Chirp.Auth.LoginRequest.Parser, new[]{ "Token", "DeviceId", "Platform", "SupportsMessageAck" }, null, null, null, null),
             new pbr::GeneratedClrTypeInfo(typeof(global::Chirp.Auth.KickNotify), global::Chirp.Auth.KickNotify.Parser, new[]{ "Reason" }, null, null, null, null),
-            new pbr::GeneratedClrTypeInfo(typeof(global::Chirp.Auth.LoginResponse), global::Chirp.Auth.LoginResponse.Parser, new[]{ "Code", "SessionId", "ServerTime", "UserId", "KickPrevious", "Kick" }, null, null, null, null),
+            new pbr::GeneratedClrTypeInfo(typeof(global::Chirp.Auth.DevicePresence), global::Chirp.Auth.DevicePresence.Parser, new[]{ "Platform", "DeviceId", "Online", "Ts" }, null, null, null, null),
+            new pbr::GeneratedClrTypeInfo(typeof(global::Chirp.Auth.DevicesPresenceNotify), global::Chirp.Auth.DevicesPresenceNotify.Parser, new[]{ "Devices" }, null, null, null, null),
+            new pbr::GeneratedClrTypeInfo(typeof(global::Chirp.Auth.LoginResponse), global::Chirp.Auth.LoginResponse.Parser, new[]{ "Code", "SessionId", "ServerTime", "UserId", "KickPrevious", "Kick", "OnlineDevices" }, null, null, null, null),
             new pbr::GeneratedClrTypeInfo(typeof(global::Chirp.Auth.LogoutRequest), global::Chirp.Auth.LogoutRequest.Parser, new[]{ "UserId", "SessionId" }, null, null, null, null),
             new pbr::GeneratedClrTypeInfo(typeof(global::Chirp.Auth.LogoutResponse), global::Chirp.Auth.LogoutResponse.Parser, new[]{ "Code", "ServerTime" }, null, null, null, null),
             new pbr::GeneratedClrTypeInfo(typeof(global::Chirp.Auth.RegisterRequest), global::Chirp.Auth.RegisterRequest.Parser, new[]{ "Username", "Email", "Password", "DisplayName" }, null, null, null, null),
@@ -611,6 +617,517 @@ namespace Chirp.Auth {
 
   }
 
+  /// <summary>
+  /// 多端在线（P0）：一台设备的在线快照。登录响应的初始清单里所有条目都是
+  /// 在线的；变更事件里 online=false 表示该端已下线（断开/被顶）。
+  /// </summary>
+  [global::System.Diagnostics.DebuggerDisplayAttribute("{ToString(),nq}")]
+  public sealed partial class DevicePresence : pb::IMessage<DevicePresence>
+  #if !GOOGLE_PROTOBUF_REFSTRUCT_COMPATIBILITY_MODE
+      , pb::IBufferMessage
+  #endif
+  {
+    private static readonly pb::MessageParser<DevicePresence> _parser = new pb::MessageParser<DevicePresence>(() => new DevicePresence());
+    private pb::UnknownFieldSet _unknownFields;
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    public static pb::MessageParser<DevicePresence> Parser { get { return _parser; } }
+
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    public static pbr::MessageDescriptor Descriptor {
+      get { return global::Chirp.Auth.AuthReflection.Descriptor.MessageTypes[2]; }
+    }
+
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    pbr::MessageDescriptor pb::IMessage.Descriptor {
+      get { return Descriptor; }
+    }
+
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    public DevicePresence() {
+      OnConstruction();
+    }
+
+    partial void OnConstruction();
+
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    public DevicePresence(DevicePresence other) : this() {
+      platform_ = other.platform_;
+      deviceId_ = other.deviceId_;
+      online_ = other.online_;
+      ts_ = other.ts_;
+      _unknownFields = pb::UnknownFieldSet.Clone(other._unknownFields);
+    }
+
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    public DevicePresence Clone() {
+      return new DevicePresence(this);
+    }
+
+    /// <summary>Field number for the "platform" field.</summary>
+    public const int PlatformFieldNumber = 1;
+    private string platform_ = "";
+    /// <summary>
+    /// "ios"/"android"/"web"/"pc"，空 = 归一化为 "default"
+    /// </summary>
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    public string Platform {
+      get { return platform_; }
+      set {
+        platform_ = pb::ProtoPreconditions.CheckNotNull(value, "value");
+      }
+    }
+
+    /// <summary>Field number for the "device_id" field.</summary>
+    public const int DeviceIdFieldNumber = 2;
+    private string deviceId_ = "";
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    public string DeviceId {
+      get { return deviceId_; }
+      set {
+        deviceId_ = pb::ProtoPreconditions.CheckNotNull(value, "value");
+      }
+    }
+
+    /// <summary>Field number for the "online" field.</summary>
+    public const int OnlineFieldNumber = 3;
+    private bool online_;
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    public bool Online {
+      get { return online_; }
+      set {
+        online_ = value;
+      }
+    }
+
+    /// <summary>Field number for the "ts" field.</summary>
+    public const int TsFieldNumber = 4;
+    private long ts_;
+    /// <summary>
+    /// ms since epoch
+    /// </summary>
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    public long Ts {
+      get { return ts_; }
+      set {
+        ts_ = value;
+      }
+    }
+
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    public override bool Equals(object other) {
+      return Equals(other as DevicePresence);
+    }
+
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    public bool Equals(DevicePresence other) {
+      if (ReferenceEquals(other, null)) {
+        return false;
+      }
+      if (ReferenceEquals(other, this)) {
+        return true;
+      }
+      if (Platform != other.Platform) return false;
+      if (DeviceId != other.DeviceId) return false;
+      if (Online != other.Online) return false;
+      if (Ts != other.Ts) return false;
+      return Equals(_unknownFields, other._unknownFields);
+    }
+
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    public override int GetHashCode() {
+      int hash = 1;
+      if (Platform.Length != 0) hash ^= Platform.GetHashCode();
+      if (DeviceId.Length != 0) hash ^= DeviceId.GetHashCode();
+      if (Online != false) hash ^= Online.GetHashCode();
+      if (Ts != 0L) hash ^= Ts.GetHashCode();
+      if (_unknownFields != null) {
+        hash ^= _unknownFields.GetHashCode();
+      }
+      return hash;
+    }
+
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    public override string ToString() {
+      return pb::JsonFormatter.ToDiagnosticString(this);
+    }
+
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    public void WriteTo(pb::CodedOutputStream output) {
+    #if !GOOGLE_PROTOBUF_REFSTRUCT_COMPATIBILITY_MODE
+      output.WriteRawMessage(this);
+    #else
+      if (Platform.Length != 0) {
+        output.WriteRawTag(10);
+        output.WriteString(Platform);
+      }
+      if (DeviceId.Length != 0) {
+        output.WriteRawTag(18);
+        output.WriteString(DeviceId);
+      }
+      if (Online != false) {
+        output.WriteRawTag(24);
+        output.WriteBool(Online);
+      }
+      if (Ts != 0L) {
+        output.WriteRawTag(32);
+        output.WriteInt64(Ts);
+      }
+      if (_unknownFields != null) {
+        _unknownFields.WriteTo(output);
+      }
+    #endif
+    }
+
+    #if !GOOGLE_PROTOBUF_REFSTRUCT_COMPATIBILITY_MODE
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    void pb::IBufferMessage.InternalWriteTo(ref pb::WriteContext output) {
+      if (Platform.Length != 0) {
+        output.WriteRawTag(10);
+        output.WriteString(Platform);
+      }
+      if (DeviceId.Length != 0) {
+        output.WriteRawTag(18);
+        output.WriteString(DeviceId);
+      }
+      if (Online != false) {
+        output.WriteRawTag(24);
+        output.WriteBool(Online);
+      }
+      if (Ts != 0L) {
+        output.WriteRawTag(32);
+        output.WriteInt64(Ts);
+      }
+      if (_unknownFields != null) {
+        _unknownFields.WriteTo(ref output);
+      }
+    }
+    #endif
+
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    public int CalculateSize() {
+      int size = 0;
+      if (Platform.Length != 0) {
+        size += 1 + pb::CodedOutputStream.ComputeStringSize(Platform);
+      }
+      if (DeviceId.Length != 0) {
+        size += 1 + pb::CodedOutputStream.ComputeStringSize(DeviceId);
+      }
+      if (Online != false) {
+        size += 1 + 1;
+      }
+      if (Ts != 0L) {
+        size += 1 + pb::CodedOutputStream.ComputeInt64Size(Ts);
+      }
+      if (_unknownFields != null) {
+        size += _unknownFields.CalculateSize();
+      }
+      return size;
+    }
+
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    public void MergeFrom(DevicePresence other) {
+      if (other == null) {
+        return;
+      }
+      if (other.Platform.Length != 0) {
+        Platform = other.Platform;
+      }
+      if (other.DeviceId.Length != 0) {
+        DeviceId = other.DeviceId;
+      }
+      if (other.Online != false) {
+        Online = other.Online;
+      }
+      if (other.Ts != 0L) {
+        Ts = other.Ts;
+      }
+      _unknownFields = pb::UnknownFieldSet.MergeFrom(_unknownFields, other._unknownFields);
+    }
+
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    public void MergeFrom(pb::CodedInputStream input) {
+    #if !GOOGLE_PROTOBUF_REFSTRUCT_COMPATIBILITY_MODE
+      input.ReadRawMessage(this);
+    #else
+      uint tag;
+      while ((tag = input.ReadTag()) != 0) {
+      if ((tag & 7) == 4) {
+        // Abort on any end group tag.
+        return;
+      }
+      switch(tag) {
+          default:
+            _unknownFields = pb::UnknownFieldSet.MergeFieldFrom(_unknownFields, input);
+            break;
+          case 10: {
+            Platform = input.ReadString();
+            break;
+          }
+          case 18: {
+            DeviceId = input.ReadString();
+            break;
+          }
+          case 24: {
+            Online = input.ReadBool();
+            break;
+          }
+          case 32: {
+            Ts = input.ReadInt64();
+            break;
+          }
+        }
+      }
+    #endif
+    }
+
+    #if !GOOGLE_PROTOBUF_REFSTRUCT_COMPATIBILITY_MODE
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    void pb::IBufferMessage.InternalMergeFrom(ref pb::ParseContext input) {
+      uint tag;
+      while ((tag = input.ReadTag()) != 0) {
+      if ((tag & 7) == 4) {
+        // Abort on any end group tag.
+        return;
+      }
+      switch(tag) {
+          default:
+            _unknownFields = pb::UnknownFieldSet.MergeFieldFrom(_unknownFields, ref input);
+            break;
+          case 10: {
+            Platform = input.ReadString();
+            break;
+          }
+          case 18: {
+            DeviceId = input.ReadString();
+            break;
+          }
+          case 24: {
+            Online = input.ReadBool();
+            break;
+          }
+          case 32: {
+            Ts = input.ReadInt64();
+            break;
+          }
+        }
+      }
+    }
+    #endif
+
+  }
+
+  /// <summary>
+  /// 清单变更事件（风格对齐 KickNotify：服务端主动推、客户端只读）。一次绑定
+  /// 变化（登录/断开/被顶）至少一条；repeated 保留批量能力。推给该用户的
+  /// 其他在线会话（变化的会话自己已经在登录响应里拿到初始清单）。
+  /// </summary>
+  [global::System.Diagnostics.DebuggerDisplayAttribute("{ToString(),nq}")]
+  public sealed partial class DevicesPresenceNotify : pb::IMessage<DevicesPresenceNotify>
+  #if !GOOGLE_PROTOBUF_REFSTRUCT_COMPATIBILITY_MODE
+      , pb::IBufferMessage
+  #endif
+  {
+    private static readonly pb::MessageParser<DevicesPresenceNotify> _parser = new pb::MessageParser<DevicesPresenceNotify>(() => new DevicesPresenceNotify());
+    private pb::UnknownFieldSet _unknownFields;
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    public static pb::MessageParser<DevicesPresenceNotify> Parser { get { return _parser; } }
+
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    public static pbr::MessageDescriptor Descriptor {
+      get { return global::Chirp.Auth.AuthReflection.Descriptor.MessageTypes[3]; }
+    }
+
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    pbr::MessageDescriptor pb::IMessage.Descriptor {
+      get { return Descriptor; }
+    }
+
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    public DevicesPresenceNotify() {
+      OnConstruction();
+    }
+
+    partial void OnConstruction();
+
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    public DevicesPresenceNotify(DevicesPresenceNotify other) : this() {
+      devices_ = other.devices_.Clone();
+      _unknownFields = pb::UnknownFieldSet.Clone(other._unknownFields);
+    }
+
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    public DevicesPresenceNotify Clone() {
+      return new DevicesPresenceNotify(this);
+    }
+
+    /// <summary>Field number for the "devices" field.</summary>
+    public const int DevicesFieldNumber = 1;
+    private static readonly pb::FieldCodec<global::Chirp.Auth.DevicePresence> _repeated_devices_codec
+        = pb::FieldCodec.ForMessage(10, global::Chirp.Auth.DevicePresence.Parser);
+    private readonly pbc::RepeatedField<global::Chirp.Auth.DevicePresence> devices_ = new pbc::RepeatedField<global::Chirp.Auth.DevicePresence>();
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    public pbc::RepeatedField<global::Chirp.Auth.DevicePresence> Devices {
+      get { return devices_; }
+    }
+
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    public override bool Equals(object other) {
+      return Equals(other as DevicesPresenceNotify);
+    }
+
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    public bool Equals(DevicesPresenceNotify other) {
+      if (ReferenceEquals(other, null)) {
+        return false;
+      }
+      if (ReferenceEquals(other, this)) {
+        return true;
+      }
+      if(!devices_.Equals(other.devices_)) return false;
+      return Equals(_unknownFields, other._unknownFields);
+    }
+
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    public override int GetHashCode() {
+      int hash = 1;
+      hash ^= devices_.GetHashCode();
+      if (_unknownFields != null) {
+        hash ^= _unknownFields.GetHashCode();
+      }
+      return hash;
+    }
+
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    public override string ToString() {
+      return pb::JsonFormatter.ToDiagnosticString(this);
+    }
+
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    public void WriteTo(pb::CodedOutputStream output) {
+    #if !GOOGLE_PROTOBUF_REFSTRUCT_COMPATIBILITY_MODE
+      output.WriteRawMessage(this);
+    #else
+      devices_.WriteTo(output, _repeated_devices_codec);
+      if (_unknownFields != null) {
+        _unknownFields.WriteTo(output);
+      }
+    #endif
+    }
+
+    #if !GOOGLE_PROTOBUF_REFSTRUCT_COMPATIBILITY_MODE
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    void pb::IBufferMessage.InternalWriteTo(ref pb::WriteContext output) {
+      devices_.WriteTo(ref output, _repeated_devices_codec);
+      if (_unknownFields != null) {
+        _unknownFields.WriteTo(ref output);
+      }
+    }
+    #endif
+
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    public int CalculateSize() {
+      int size = 0;
+      size += devices_.CalculateSize(_repeated_devices_codec);
+      if (_unknownFields != null) {
+        size += _unknownFields.CalculateSize();
+      }
+      return size;
+    }
+
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    public void MergeFrom(DevicesPresenceNotify other) {
+      if (other == null) {
+        return;
+      }
+      devices_.Add(other.devices_);
+      _unknownFields = pb::UnknownFieldSet.MergeFrom(_unknownFields, other._unknownFields);
+    }
+
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    public void MergeFrom(pb::CodedInputStream input) {
+    #if !GOOGLE_PROTOBUF_REFSTRUCT_COMPATIBILITY_MODE
+      input.ReadRawMessage(this);
+    #else
+      uint tag;
+      while ((tag = input.ReadTag()) != 0) {
+      if ((tag & 7) == 4) {
+        // Abort on any end group tag.
+        return;
+      }
+      switch(tag) {
+          default:
+            _unknownFields = pb::UnknownFieldSet.MergeFieldFrom(_unknownFields, input);
+            break;
+          case 10: {
+            devices_.AddEntriesFrom(input, _repeated_devices_codec);
+            break;
+          }
+        }
+      }
+    #endif
+    }
+
+    #if !GOOGLE_PROTOBUF_REFSTRUCT_COMPATIBILITY_MODE
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    void pb::IBufferMessage.InternalMergeFrom(ref pb::ParseContext input) {
+      uint tag;
+      while ((tag = input.ReadTag()) != 0) {
+      if ((tag & 7) == 4) {
+        // Abort on any end group tag.
+        return;
+      }
+      switch(tag) {
+          default:
+            _unknownFields = pb::UnknownFieldSet.MergeFieldFrom(_unknownFields, ref input);
+            break;
+          case 10: {
+            devices_.AddEntriesFrom(ref input, _repeated_devices_codec);
+            break;
+          }
+        }
+      }
+    }
+    #endif
+
+  }
+
   [global::System.Diagnostics.DebuggerDisplayAttribute("{ToString(),nq}")]
   public sealed partial class LoginResponse : pb::IMessage<LoginResponse>
   #if !GOOGLE_PROTOBUF_REFSTRUCT_COMPATIBILITY_MODE
@@ -626,7 +1143,7 @@ namespace Chirp.Auth {
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
     public static pbr::MessageDescriptor Descriptor {
-      get { return global::Chirp.Auth.AuthReflection.Descriptor.MessageTypes[2]; }
+      get { return global::Chirp.Auth.AuthReflection.Descriptor.MessageTypes[4]; }
     }
 
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
@@ -652,6 +1169,7 @@ namespace Chirp.Auth {
       userId_ = other.userId_;
       kickPrevious_ = other.kickPrevious_;
       kick_ = other.kick_ != null ? other.kick_.Clone() : null;
+      onlineDevices_ = other.onlineDevices_.Clone();
       _unknownFields = pb::UnknownFieldSet.Clone(other._unknownFields);
     }
 
@@ -739,6 +1257,20 @@ namespace Chirp.Auth {
       }
     }
 
+    /// <summary>Field number for the "online_devices" field.</summary>
+    public const int OnlineDevicesFieldNumber = 7;
+    private static readonly pb::FieldCodec<global::Chirp.Auth.DevicePresence> _repeated_onlineDevices_codec
+        = pb::FieldCodec.ForMessage(58, global::Chirp.Auth.DevicePresence.Parser);
+    private readonly pbc::RepeatedField<global::Chirp.Auth.DevicePresence> onlineDevices_ = new pbc::RepeatedField<global::Chirp.Auth.DevicePresence>();
+    /// <summary>
+    /// 多端在线（P0）：登录时刻该用户其他在线端的初始清单（不含本会话）。
+    /// </summary>
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    public pbc::RepeatedField<global::Chirp.Auth.DevicePresence> OnlineDevices {
+      get { return onlineDevices_; }
+    }
+
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
     public override bool Equals(object other) {
@@ -760,6 +1292,7 @@ namespace Chirp.Auth {
       if (UserId != other.UserId) return false;
       if (KickPrevious != other.KickPrevious) return false;
       if (!object.Equals(Kick, other.Kick)) return false;
+      if(!onlineDevices_.Equals(other.onlineDevices_)) return false;
       return Equals(_unknownFields, other._unknownFields);
     }
 
@@ -773,6 +1306,7 @@ namespace Chirp.Auth {
       if (UserId.Length != 0) hash ^= UserId.GetHashCode();
       if (KickPrevious != false) hash ^= KickPrevious.GetHashCode();
       if (kick_ != null) hash ^= Kick.GetHashCode();
+      hash ^= onlineDevices_.GetHashCode();
       if (_unknownFields != null) {
         hash ^= _unknownFields.GetHashCode();
       }
@@ -815,6 +1349,7 @@ namespace Chirp.Auth {
         output.WriteRawTag(50);
         output.WriteMessage(Kick);
       }
+      onlineDevices_.WriteTo(output, _repeated_onlineDevices_codec);
       if (_unknownFields != null) {
         _unknownFields.WriteTo(output);
       }
@@ -849,6 +1384,7 @@ namespace Chirp.Auth {
         output.WriteRawTag(50);
         output.WriteMessage(Kick);
       }
+      onlineDevices_.WriteTo(ref output, _repeated_onlineDevices_codec);
       if (_unknownFields != null) {
         _unknownFields.WriteTo(ref output);
       }
@@ -877,6 +1413,7 @@ namespace Chirp.Auth {
       if (kick_ != null) {
         size += 1 + pb::CodedOutputStream.ComputeMessageSize(Kick);
       }
+      size += onlineDevices_.CalculateSize(_repeated_onlineDevices_codec);
       if (_unknownFields != null) {
         size += _unknownFields.CalculateSize();
       }
@@ -910,6 +1447,7 @@ namespace Chirp.Auth {
         }
         Kick.MergeFrom(other.Kick);
       }
+      onlineDevices_.Add(other.onlineDevices_);
       _unknownFields = pb::UnknownFieldSet.MergeFrom(_unknownFields, other._unknownFields);
     }
 
@@ -954,6 +1492,10 @@ namespace Chirp.Auth {
               Kick = new global::Chirp.Auth.KickNotify();
             }
             input.ReadMessage(Kick);
+            break;
+          }
+          case 58: {
+            onlineDevices_.AddEntriesFrom(input, _repeated_onlineDevices_codec);
             break;
           }
         }
@@ -1002,6 +1544,10 @@ namespace Chirp.Auth {
             input.ReadMessage(Kick);
             break;
           }
+          case 58: {
+            onlineDevices_.AddEntriesFrom(ref input, _repeated_onlineDevices_codec);
+            break;
+          }
         }
       }
     }
@@ -1024,7 +1570,7 @@ namespace Chirp.Auth {
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
     public static pbr::MessageDescriptor Descriptor {
-      get { return global::Chirp.Auth.AuthReflection.Descriptor.MessageTypes[3]; }
+      get { return global::Chirp.Auth.AuthReflection.Descriptor.MessageTypes[5]; }
     }
 
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
@@ -1259,7 +1805,7 @@ namespace Chirp.Auth {
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
     public static pbr::MessageDescriptor Descriptor {
-      get { return global::Chirp.Auth.AuthReflection.Descriptor.MessageTypes[4]; }
+      get { return global::Chirp.Auth.AuthReflection.Descriptor.MessageTypes[6]; }
     }
 
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
@@ -1497,7 +2043,7 @@ namespace Chirp.Auth {
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
     public static pbr::MessageDescriptor Descriptor {
-      get { return global::Chirp.Auth.AuthReflection.Descriptor.MessageTypes[5]; }
+      get { return global::Chirp.Auth.AuthReflection.Descriptor.MessageTypes[7]; }
     }
 
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
@@ -1809,7 +2355,7 @@ namespace Chirp.Auth {
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
     public static pbr::MessageDescriptor Descriptor {
-      get { return global::Chirp.Auth.AuthReflection.Descriptor.MessageTypes[6]; }
+      get { return global::Chirp.Auth.AuthReflection.Descriptor.MessageTypes[8]; }
     }
 
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
@@ -2121,7 +2667,7 @@ namespace Chirp.Auth {
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
     public static pbr::MessageDescriptor Descriptor {
-      get { return global::Chirp.Auth.AuthReflection.Descriptor.MessageTypes[7]; }
+      get { return global::Chirp.Auth.AuthReflection.Descriptor.MessageTypes[9]; }
     }
 
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
@@ -2436,7 +2982,7 @@ namespace Chirp.Auth {
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
     public static pbr::MessageDescriptor Descriptor {
-      get { return global::Chirp.Auth.AuthReflection.Descriptor.MessageTypes[8]; }
+      get { return global::Chirp.Auth.AuthReflection.Descriptor.MessageTypes[10]; }
     }
 
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
@@ -3007,7 +3553,7 @@ namespace Chirp.Auth {
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
     public static pbr::MessageDescriptor Descriptor {
-      get { return global::Chirp.Auth.AuthReflection.Descriptor.MessageTypes[9]; }
+      get { return global::Chirp.Auth.AuthReflection.Descriptor.MessageTypes[11]; }
     }
 
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
@@ -3208,7 +3754,7 @@ namespace Chirp.Auth {
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
     public static pbr::MessageDescriptor Descriptor {
-      get { return global::Chirp.Auth.AuthReflection.Descriptor.MessageTypes[10]; }
+      get { return global::Chirp.Auth.AuthReflection.Descriptor.MessageTypes[12]; }
     }
 
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
@@ -3557,7 +4103,7 @@ namespace Chirp.Auth {
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
     public static pbr::MessageDescriptor Descriptor {
-      get { return global::Chirp.Auth.AuthReflection.Descriptor.MessageTypes[11]; }
+      get { return global::Chirp.Auth.AuthReflection.Descriptor.MessageTypes[13]; }
     }
 
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
@@ -3758,7 +4304,7 @@ namespace Chirp.Auth {
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
     public static pbr::MessageDescriptor Descriptor {
-      get { return global::Chirp.Auth.AuthReflection.Descriptor.MessageTypes[12]; }
+      get { return global::Chirp.Auth.AuthReflection.Descriptor.MessageTypes[14]; }
     }
 
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
@@ -4144,7 +4690,7 @@ namespace Chirp.Auth {
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
     public static pbr::MessageDescriptor Descriptor {
-      get { return global::Chirp.Auth.AuthReflection.Descriptor.MessageTypes[13]; }
+      get { return global::Chirp.Auth.AuthReflection.Descriptor.MessageTypes[15]; }
     }
 
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
@@ -4408,7 +4954,7 @@ namespace Chirp.Auth {
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
     public static pbr::MessageDescriptor Descriptor {
-      get { return global::Chirp.Auth.AuthReflection.Descriptor.MessageTypes[14]; }
+      get { return global::Chirp.Auth.AuthReflection.Descriptor.MessageTypes[16]; }
     }
 
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
@@ -4646,7 +5192,7 @@ namespace Chirp.Auth {
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
     public static pbr::MessageDescriptor Descriptor {
-      get { return global::Chirp.Auth.AuthReflection.Descriptor.MessageTypes[15]; }
+      get { return global::Chirp.Auth.AuthReflection.Descriptor.MessageTypes[17]; }
     }
 
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
@@ -4884,7 +5430,7 @@ namespace Chirp.Auth {
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
     public static pbr::MessageDescriptor Descriptor {
-      get { return global::Chirp.Auth.AuthReflection.Descriptor.MessageTypes[16]; }
+      get { return global::Chirp.Auth.AuthReflection.Descriptor.MessageTypes[18]; }
     }
 
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
@@ -5159,7 +5705,7 @@ namespace Chirp.Auth {
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
     public static pbr::MessageDescriptor Descriptor {
-      get { return global::Chirp.Auth.AuthReflection.Descriptor.MessageTypes[17]; }
+      get { return global::Chirp.Auth.AuthReflection.Descriptor.MessageTypes[19]; }
     }
 
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]

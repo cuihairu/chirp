@@ -161,6 +161,147 @@ class KickNotify extends $pb.GeneratedMessage {
   void clearReason() => clearField(1);
 }
 
+/// 多端在线（P0）：一台设备的在线快照。登录响应的初始清单里所有条目都是
+/// 在线的；变更事件里 online=false 表示该端已下线（断开/被顶）。
+class DevicePresence extends $pb.GeneratedMessage {
+  factory DevicePresence({
+    $core.String? platform,
+    $core.String? deviceId,
+    $core.bool? online,
+    $fixnum.Int64? ts,
+  }) {
+    final $result = create();
+    if (platform != null) {
+      $result.platform = platform;
+    }
+    if (deviceId != null) {
+      $result.deviceId = deviceId;
+    }
+    if (online != null) {
+      $result.online = online;
+    }
+    if (ts != null) {
+      $result.ts = ts;
+    }
+    return $result;
+  }
+  DevicePresence._() : super();
+  factory DevicePresence.fromBuffer($core.List<$core.int> i, [$pb.ExtensionRegistry r = $pb.ExtensionRegistry.EMPTY]) => create()..mergeFromBuffer(i, r);
+  factory DevicePresence.fromJson($core.String i, [$pb.ExtensionRegistry r = $pb.ExtensionRegistry.EMPTY]) => create()..mergeFromJson(i, r);
+
+  static final $pb.BuilderInfo _i = $pb.BuilderInfo(_omitMessageNames ? '' : 'DevicePresence', package: const $pb.PackageName(_omitMessageNames ? '' : 'chirp.auth'), createEmptyInstance: create)
+    ..aOS(1, _omitFieldNames ? '' : 'platform')
+    ..aOS(2, _omitFieldNames ? '' : 'deviceId')
+    ..aOB(3, _omitFieldNames ? '' : 'online')
+    ..aInt64(4, _omitFieldNames ? '' : 'ts')
+    ..hasRequiredFields = false
+  ;
+
+  @$core.Deprecated(
+  'Using this can add significant overhead to your binary. '
+  'Use [GeneratedMessageGenericExtensions.deepCopy] instead. '
+  'Will be removed in next major version')
+  DevicePresence clone() => DevicePresence()..mergeFromMessage(this);
+  @$core.Deprecated(
+  'Using this can add significant overhead to your binary. '
+  'Use [GeneratedMessageGenericExtensions.rebuild] instead. '
+  'Will be removed in next major version')
+  DevicePresence copyWith(void Function(DevicePresence) updates) => super.copyWith((message) => updates(message as DevicePresence)) as DevicePresence;
+
+  $pb.BuilderInfo get info_ => _i;
+
+  @$core.pragma('dart2js:noInline')
+  static DevicePresence create() => DevicePresence._();
+  DevicePresence createEmptyInstance() => create();
+  static $pb.PbList<DevicePresence> createRepeated() => $pb.PbList<DevicePresence>();
+  @$core.pragma('dart2js:noInline')
+  static DevicePresence getDefault() => _defaultInstance ??= $pb.GeneratedMessage.$_defaultFor<DevicePresence>(create);
+  static DevicePresence? _defaultInstance;
+
+  @$pb.TagNumber(1)
+  $core.String get platform => $_getSZ(0);
+  @$pb.TagNumber(1)
+  set platform($core.String v) { $_setString(0, v); }
+  @$pb.TagNumber(1)
+  $core.bool hasPlatform() => $_has(0);
+  @$pb.TagNumber(1)
+  void clearPlatform() => clearField(1);
+
+  @$pb.TagNumber(2)
+  $core.String get deviceId => $_getSZ(1);
+  @$pb.TagNumber(2)
+  set deviceId($core.String v) { $_setString(1, v); }
+  @$pb.TagNumber(2)
+  $core.bool hasDeviceId() => $_has(1);
+  @$pb.TagNumber(2)
+  void clearDeviceId() => clearField(2);
+
+  @$pb.TagNumber(3)
+  $core.bool get online => $_getBF(2);
+  @$pb.TagNumber(3)
+  set online($core.bool v) { $_setBool(2, v); }
+  @$pb.TagNumber(3)
+  $core.bool hasOnline() => $_has(2);
+  @$pb.TagNumber(3)
+  void clearOnline() => clearField(3);
+
+  @$pb.TagNumber(4)
+  $fixnum.Int64 get ts => $_getI64(3);
+  @$pb.TagNumber(4)
+  set ts($fixnum.Int64 v) { $_setInt64(3, v); }
+  @$pb.TagNumber(4)
+  $core.bool hasTs() => $_has(3);
+  @$pb.TagNumber(4)
+  void clearTs() => clearField(4);
+}
+
+/// 清单变更事件（风格对齐 KickNotify：服务端主动推、客户端只读）。一次绑定
+/// 变化（登录/断开/被顶）至少一条；repeated 保留批量能力。推给该用户的
+/// 其他在线会话（变化的会话自己已经在登录响应里拿到初始清单）。
+class DevicesPresenceNotify extends $pb.GeneratedMessage {
+  factory DevicesPresenceNotify({
+    $core.Iterable<DevicePresence>? devices,
+  }) {
+    final $result = create();
+    if (devices != null) {
+      $result.devices.addAll(devices);
+    }
+    return $result;
+  }
+  DevicesPresenceNotify._() : super();
+  factory DevicesPresenceNotify.fromBuffer($core.List<$core.int> i, [$pb.ExtensionRegistry r = $pb.ExtensionRegistry.EMPTY]) => create()..mergeFromBuffer(i, r);
+  factory DevicesPresenceNotify.fromJson($core.String i, [$pb.ExtensionRegistry r = $pb.ExtensionRegistry.EMPTY]) => create()..mergeFromJson(i, r);
+
+  static final $pb.BuilderInfo _i = $pb.BuilderInfo(_omitMessageNames ? '' : 'DevicesPresenceNotify', package: const $pb.PackageName(_omitMessageNames ? '' : 'chirp.auth'), createEmptyInstance: create)
+    ..pc<DevicePresence>(1, _omitFieldNames ? '' : 'devices', $pb.PbFieldType.PM, subBuilder: DevicePresence.create)
+    ..hasRequiredFields = false
+  ;
+
+  @$core.Deprecated(
+  'Using this can add significant overhead to your binary. '
+  'Use [GeneratedMessageGenericExtensions.deepCopy] instead. '
+  'Will be removed in next major version')
+  DevicesPresenceNotify clone() => DevicesPresenceNotify()..mergeFromMessage(this);
+  @$core.Deprecated(
+  'Using this can add significant overhead to your binary. '
+  'Use [GeneratedMessageGenericExtensions.rebuild] instead. '
+  'Will be removed in next major version')
+  DevicesPresenceNotify copyWith(void Function(DevicesPresenceNotify) updates) => super.copyWith((message) => updates(message as DevicesPresenceNotify)) as DevicesPresenceNotify;
+
+  $pb.BuilderInfo get info_ => _i;
+
+  @$core.pragma('dart2js:noInline')
+  static DevicesPresenceNotify create() => DevicesPresenceNotify._();
+  DevicesPresenceNotify createEmptyInstance() => create();
+  static $pb.PbList<DevicesPresenceNotify> createRepeated() => $pb.PbList<DevicesPresenceNotify>();
+  @$core.pragma('dart2js:noInline')
+  static DevicesPresenceNotify getDefault() => _defaultInstance ??= $pb.GeneratedMessage.$_defaultFor<DevicesPresenceNotify>(create);
+  static DevicesPresenceNotify? _defaultInstance;
+
+  @$pb.TagNumber(1)
+  $core.List<DevicePresence> get devices => $_getList(0);
+}
+
 class LoginResponse extends $pb.GeneratedMessage {
   factory LoginResponse({
     $0.ErrorCode? code,
@@ -169,6 +310,7 @@ class LoginResponse extends $pb.GeneratedMessage {
     $core.String? userId,
     $core.bool? kickPrevious,
     KickNotify? kick,
+    $core.Iterable<DevicePresence>? onlineDevices,
   }) {
     final $result = create();
     if (code != null) {
@@ -189,6 +331,9 @@ class LoginResponse extends $pb.GeneratedMessage {
     if (kick != null) {
       $result.kick = kick;
     }
+    if (onlineDevices != null) {
+      $result.onlineDevices.addAll(onlineDevices);
+    }
     return $result;
   }
   LoginResponse._() : super();
@@ -202,6 +347,7 @@ class LoginResponse extends $pb.GeneratedMessage {
     ..aOS(4, _omitFieldNames ? '' : 'userId')
     ..aOB(5, _omitFieldNames ? '' : 'kickPrevious')
     ..aOM<KickNotify>(6, _omitFieldNames ? '' : 'kick', subBuilder: KickNotify.create)
+    ..pc<DevicePresence>(7, _omitFieldNames ? '' : 'onlineDevices', $pb.PbFieldType.PM, subBuilder: DevicePresence.create)
     ..hasRequiredFields = false
   ;
 
@@ -283,6 +429,10 @@ class LoginResponse extends $pb.GeneratedMessage {
   void clearKick() => clearField(6);
   @$pb.TagNumber(6)
   KickNotify ensureKick() => $_ensure(5);
+
+  /// 多端在线（P0）：登录时刻该用户其他在线端的初始清单（不含本会话）。
+  @$pb.TagNumber(7)
+  $core.List<DevicePresence> get onlineDevices => $_getList(6);
 }
 
 class LogoutRequest extends $pb.GeneratedMessage {

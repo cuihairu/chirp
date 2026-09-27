@@ -21,6 +21,22 @@ message KickNotify {
   string reason = 1;
 }
 
+// 多端在线（P0）：一台设备的在线快照。登录响应的初始清单里所有条目都是
+// 在线的；变更事件里 online=false 表示该端已下线（断开/被顶）。
+message DevicePresence {
+  string platform = 1; // "ios"/"android"/"web"/"pc"，空 = 归一化为 "default"
+  string device_id = 2;
+  bool online = 3;
+  int64 ts = 4; // ms since epoch
+}
+
+// 清单变更事件（风格对齐 KickNotify：服务端主动推、客户端只读）。一次绑定
+// 变化（登录/断开/被顶）至少一条；repeated 保留批量能力。推给该用户的
+// 其他在线会话（变化的会话自己已经在登录响应里拿到初始清单）。
+message DevicesPresenceNotify {
+  repeated DevicePresence devices = 1;
+}
+
 message LoginResponse {
   common.ErrorCode code = 1;
   string session_id = 2;
@@ -32,6 +48,9 @@ message LoginResponse {
   // Whether the previous login should be kicked (last-login-wins policy).
   bool kick_previous = 5;
   KickNotify kick = 6;
+
+  // 多端在线（P0）：登录时刻该用户其他在线端的初始清单（不含本会话）。
+  repeated DevicePresence online_devices = 7;
 }
 
 message LogoutRequest {

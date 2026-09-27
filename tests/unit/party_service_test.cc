@@ -148,11 +148,13 @@ class PartyServiceTest : public ::testing::Test {
   }
 
   // Scaffold login (token is user_id) on a fresh mock session.
-  std::shared_ptr<MockSession> Login(const std::string& user_id, const std::string& device = "") {
+  std::shared_ptr<MockSession> Login(const std::string& user_id, const std::string& device = "",
+                                     const std::string& platform = "") {
     auto s = std::make_shared<MockSession>();
     chirp::auth::LoginRequest req;
     req.set_token(user_id);
     req.set_device_id(device);
+    req.set_platform(platform);
     Deliver(chirp::gateway::LOGIN_REQ, 1, req.SerializeAsString(), s);
     chirp::auth::LoginResponse resp;
     EXPECT_TRUE(LastBody(*s, &resp));
@@ -292,9 +294,10 @@ TEST_F(PartyServiceTest, SameDeviceRebindKicksOldSession) {
   EXPECT_EQ(chirp::network::GetUserSessions(state_->registry, "user_a")[0], second);
 }
 
-TEST_F(PartyServiceTest, DifferentDevicesCoexist) {
-  auto phone = Login("user_a", "phone");
-  auto desktop = Login("user_a", "desktop");
+TEST_F(PartyServiceTest, DifferentPlatformsCoexist) {
+  // 多端在线：跨 platform 共存（同 device 不同 platform 也互不干扰）。
+  auto phone = Login("user_a", "phone", "ios");
+  auto desktop = Login("user_a", "desktop", "web");
   auto sessions = chirp::network::GetUserSessions(state_->registry, "user_a");
   EXPECT_EQ(sessions.size(), 2u);
   // Neither was kicked.
@@ -488,8 +491,8 @@ TEST_F(PartyServiceTest, UnknownPartyOpsReturnNotFound) {
 
 TEST_F(PartyServiceTest, InviteNotifiesAllTargetDevices) {
   auto a = Login("user_a");
-  auto b_phone = Login("user_b", "phone");
-  auto b_desktop = Login("user_b", "desktop");
+  auto b_phone = Login("user_b", "phone", "ios");
+  auto b_desktop = Login("user_b", "desktop", "web");
   const auto party_id = CreateParty(a, "user_a");
 
   const auto invite_id = Invite(a, "user_a", party_id, "user_b");
@@ -807,8 +810,8 @@ TEST_F(PartyServiceTest, KickGuards) {
 
 TEST_F(PartyServiceTest, KickNotifiesTargetOnAllDevicesAndRemaining) {
   auto a = Login("user_a");
-  auto b_phone = Login("user_b", "phone");
-  auto b_desktop = Login("user_b", "desktop");
+  auto b_phone = Login("user_b", "phone", "ios");
+  auto b_desktop = Login("user_b", "desktop", "web");
   auto c = Login("user_c");
   const auto party_id = CreateParty(a, "user_a");
   JoinViaInvite(a, "user_a", party_id, b_phone, "user_b");
@@ -1114,8 +1117,8 @@ TEST_F(PartyServiceTest, StrangerDisconnectHarmless) {
 }
 
 TEST_F(PartyServiceTest, JoinerAcceptReachesEachDeviceOnce) {
-  auto a1 = Login("user_a", "phone");
-  auto a2 = Login("user_a", "desktop");
+  auto a1 = Login("user_a", "phone", "ios");
+  auto a2 = Login("user_a", "desktop", "web");
   auto b = Login("user_b");
   const auto party_id = CreateParty(a1, "user_a");
   const auto invite_id = Invite(a1, "user_a", party_id, "user_b");

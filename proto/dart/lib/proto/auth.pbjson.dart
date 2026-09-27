@@ -42,6 +42,36 @@ const KickNotify$json = {
 final $typed_data.Uint8List kickNotifyDescriptor = $convert.base64Decode(
     'CgpLaWNrTm90aWZ5EhYKBnJlYXNvbhgBIAEoCVIGcmVhc29u');
 
+@$core.Deprecated('Use devicePresenceDescriptor instead')
+const DevicePresence$json = {
+  '1': 'DevicePresence',
+  '2': [
+    {'1': 'platform', '3': 1, '4': 1, '5': 9, '10': 'platform'},
+    {'1': 'device_id', '3': 2, '4': 1, '5': 9, '10': 'deviceId'},
+    {'1': 'online', '3': 3, '4': 1, '5': 8, '10': 'online'},
+    {'1': 'ts', '3': 4, '4': 1, '5': 3, '10': 'ts'},
+  ],
+};
+
+/// Descriptor for `DevicePresence`. Decode as a `google.protobuf.DescriptorProto`.
+final $typed_data.Uint8List devicePresenceDescriptor = $convert.base64Decode(
+    'Cg5EZXZpY2VQcmVzZW5jZRIaCghwbGF0Zm9ybRgBIAEoCVIIcGxhdGZvcm0SGwoJZGV2aWNlX2'
+    'lkGAIgASgJUghkZXZpY2VJZBIWCgZvbmxpbmUYAyABKAhSBm9ubGluZRIOCgJ0cxgEIAEoA1IC'
+    'dHM=');
+
+@$core.Deprecated('Use devicesPresenceNotifyDescriptor instead')
+const DevicesPresenceNotify$json = {
+  '1': 'DevicesPresenceNotify',
+  '2': [
+    {'1': 'devices', '3': 1, '4': 3, '5': 11, '6': '.chirp.auth.DevicePresence', '10': 'devices'},
+  ],
+};
+
+/// Descriptor for `DevicesPresenceNotify`. Decode as a `google.protobuf.DescriptorProto`.
+final $typed_data.Uint8List devicesPresenceNotifyDescriptor = $convert.base64Decode(
+    'ChVEZXZpY2VzUHJlc2VuY2VOb3RpZnkSNAoHZGV2aWNlcxgBIAMoCzIaLmNoaXJwLmF1dGguRG'
+    'V2aWNlUHJlc2VuY2VSB2RldmljZXM=');
+
 @$core.Deprecated('Use loginResponseDescriptor instead')
 const LoginResponse$json = {
   '1': 'LoginResponse',
@@ -52,6 +82,7 @@ const LoginResponse$json = {
     {'1': 'user_id', '3': 4, '4': 1, '5': 9, '10': 'userId'},
     {'1': 'kick_previous', '3': 5, '4': 1, '5': 8, '10': 'kickPrevious'},
     {'1': 'kick', '3': 6, '4': 1, '5': 11, '6': '.chirp.auth.KickNotify', '10': 'kick'},
+    {'1': 'online_devices', '3': 7, '4': 3, '5': 11, '6': '.chirp.auth.DevicePresence', '10': 'onlineDevices'},
   ],
 };
 
@@ -61,7 +92,8 @@ final $typed_data.Uint8List loginResponseDescriptor = $convert.base64Decode(
     'Rjb2RlEh0KCnNlc3Npb25faWQYAiABKAlSCXNlc3Npb25JZBIfCgtzZXJ2ZXJfdGltZRgDIAEo'
     'A1IKc2VydmVyVGltZRIXCgd1c2VyX2lkGAQgASgJUgZ1c2VySWQSIwoNa2lja19wcmV2aW91cx'
     'gFIAEoCFIMa2lja1ByZXZpb3VzEioKBGtpY2sYBiABKAsyFi5jaGlycC5hdXRoLktpY2tOb3Rp'
-    'ZnlSBGtpY2s=');
+    'ZnlSBGtpY2sSQQoOb25saW5lX2RldmljZXMYByADKAsyGi5jaGlycC5hdXRoLkRldmljZVByZX'
+    'NlbmNlUg1vbmxpbmVEZXZpY2Vz');
 
 @$core.Deprecated('Use logoutRequestDescriptor instead')
 const LogoutRequest$json = {

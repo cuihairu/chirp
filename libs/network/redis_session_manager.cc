@@ -15,27 +15,27 @@ namespace chirp::gateway {
 namespace {
 
 // Same separator as the Redis claim keys' only structured payload: user and
-// device ids are free-form strings, so they are joined with \x1F (which
+// platform ids are free-form strings, so they are joined with \x1F (which
 // neither field may contain - see the class comment in the header).
 constexpr char kIdSep = '\x1F';
 
-std::string SessionKey(const std::string& user_id, const std::string& device_id) {
-  return "chirp:sess:" + user_id + kIdSep + device_id;
+std::string SessionKey(const std::string& user_id, const std::string& platform) {
+  return "chirp:sess:" + user_id + kIdSep + platform;
 }
 std::string KickChannel(const std::string& instance_id) { return "chirp:kick:" + instance_id; }
-std::string KickPayload(const std::string& user_id, const std::string& device_id) {
-  return user_id + kIdSep + device_id;
+std::string KickPayload(const std::string& user_id, const std::string& platform) {
+  return user_id + kIdSep + platform;
 }
-// Splits "user<sep>device" on the first separator. Returns false for
-// payloads without one (e.g. user-level kicks from a pre-device instance,
+// Splits "user<sep>platform" on the first separator. Returns false for
+// payloads without one (e.g. user-level kicks from a pre-platform instance,
 // which are dropped instead of kicking an arbitrary local session).
-bool ParseKickPayload(const std::string& payload, std::string* user_id, std::string* device_id) {
+bool ParseKickPayload(const std::string& payload, std::string* user_id, std::string* platform) {
   const auto sep = payload.find(kIdSep);
   if (sep == std::string::npos) {
     return false;
   }
   *user_id = payload.substr(0, sep);
-  *device_id = payload.substr(sep + 1);
+  *platform = payload.substr(sep + 1);
   return true;
 }
 
@@ -46,7 +46,7 @@ struct RedisSessionManager::Impl {
     enum class Type { kClaim, kRelease };
     Type type{Type::kClaim};
     std::string user_id;
-    std::string device_id;
+    std::string platform;
     ClaimCallback cb;
   };
 
@@ -86,17 +86,17 @@ struct RedisSessionManager::Impl {
     // Set message callback before starting
     sub.SetMessageCallback([this](const std::string& /*ch*/, const std::string& payload) {
       std::string user_id;
-      std::string device_id;
+      std::string platform;
       // Parsed on the subscriber thread: only local copies are touched, and
-      // malformed payloads (pre-device writers) are dropped with a warning.
-      if (!ParseKickPayload(payload, &user_id, &device_id)) {
+      // malformed payloads (pre-platform writers) are dropped with a warning.
+      if (!ParseKickPayload(payload, &user_id, &platform)) {
         chirp::common::Logger::Instance().Warn("dropping malformed kick payload on " +
                                                KickChannel(instance_id));
         return;
       }
-      asio::post(main_io, [cb = on_kick, user_id, device_id] {
+      asio::post(main_io, [cb = on_kick, user_id, platform] {
         if (cb) {
-          cb(user_id, device_id);
+          cb(user_id, platform);
         }
       });
     });
@@ -138,11 +138,11 @@ struct RedisSessionManager::Impl {
 
       try {
         if (job.type == Job::Type::kClaim) {
-          std::optional<std::string> prev = client->Get(SessionKey(job.user_id, job.device_id));
+          std::optional<std::string> prev = client->Get(SessionKey(job.user_id, job.platform));
           if (prev && *prev != instance_id) {
-            client->Publish(KickChannel(*prev), KickPayload(job.user_id, job.device_id));
+            client->Publish(KickChannel(*prev), KickPayload(job.user_id, job.platform));
           }
-          client->SetEx(SessionKey(job.user_id, job.device_id), instance_id, ttl);
+          client->SetEx(SessionKey(job.user_id, job.platform), instance_id, ttl);
 
           asio::post(main_io, [cb = std::move(job.cb), prev]() mutable {
             if (cb) {
@@ -150,9 +150,9 @@ struct RedisSessionManager::Impl {
             }
           });
         } else {
-          auto cur = client->Get(SessionKey(job.user_id, job.device_id));
+          auto cur = client->Get(SessionKey(job.user_id, job.platform));
           if (cur && *cur == instance_id) {
-            client->Del(SessionKey(job.user_id, job.device_id));
+            client->Del(SessionKey(job.user_id, job.platform));
           }
         }
       } catch (const std::exception& e) {
@@ -199,21 +199,21 @@ RedisSessionManager::~RedisSessionManager() {
 }
 
 void RedisSessionManager::AsyncClaim(const std::string& user_id,
-                                     const std::string& device_id,
+                                     const std::string& platform,
                                      ClaimCallback cb) {
   {
     std::lock_guard<std::mutex> lock(impl_->mu);
     impl_->q.push_back(Impl::Job{Impl::Job::Type::kClaim, user_id,
-                                 chirp::network::NormalizeDeviceId(device_id), std::move(cb)});
+                                 chirp::network::NormalizePlatformId(platform), std::move(cb)});
   }
   impl_->cv.notify_one();
 }
 
-void RedisSessionManager::AsyncRelease(const std::string& user_id, const std::string& device_id) {
+void RedisSessionManager::AsyncRelease(const std::string& user_id, const std::string& platform) {
   {
     std::lock_guard<std::mutex> lock(impl_->mu);
     impl_->q.push_back(Impl::Job{Impl::Job::Type::kRelease, user_id,
-                                 chirp::network::NormalizeDeviceId(device_id), {}});
+                                 chirp::network::NormalizePlatformId(platform), {}});
   }
   impl_->cv.notify_one();
 }

@@ -35,6 +35,7 @@ class MsgID extends $pb.ProtobufEnum {
   static const MsgID REVOKE_SESSION_RESP = MsgID._(1017, _omitEnumNames ? '' : 'REVOKE_SESSION_RESP');
   static const MsgID CHANGE_PASSWORD_REQ = MsgID._(1018, _omitEnumNames ? '' : 'CHANGE_PASSWORD_REQ');
   static const MsgID CHANGE_PASSWORD_RESP = MsgID._(1019, _omitEnumNames ? '' : 'CHANGE_PASSWORD_RESP');
+  static const MsgID DEVICES_PRESENCE_NOTIFY = MsgID._(1020, _omitEnumNames ? '' : 'DEVICES_PRESENCE_NOTIFY');
   static const MsgID SEND_MESSAGE_REQ = MsgID._(2001, _omitEnumNames ? '' : 'SEND_MESSAGE_REQ');
   static const MsgID SEND_MESSAGE_RESP = MsgID._(2002, _omitEnumNames ? '' : 'SEND_MESSAGE_RESP');
   static const MsgID GET_HISTORY_REQ = MsgID._(2003, _omitEnumNames ? '' : 'GET_HISTORY_REQ');
@@ -243,6 +244,7 @@ class MsgID extends $pb.ProtobufEnum {
     REVOKE_SESSION_RESP,
     CHANGE_PASSWORD_REQ,
     CHANGE_PASSWORD_RESP,
+    DEVICES_PRESENCE_NOTIFY,
     SEND_MESSAGE_REQ,
     SEND_MESSAGE_RESP,
     GET_HISTORY_REQ,

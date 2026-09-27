@@ -229,6 +229,7 @@ const ChatMessage$json = {
     {'1': 'ttl_seconds', '3': 11, '4': 1, '5': 5, '10': 'ttlSeconds'},
     {'1': 'sender_kind', '3': 12, '4': 1, '5': 14, '6': '.chirp.chat.SenderKind', '10': 'senderKind'},
     {'1': 'reply_to_message_id', '3': 13, '4': 1, '5': 9, '10': 'replyToMessageId'},
+    {'1': 'is_recalled', '3': 14, '4': 1, '5': 8, '10': 'isRecalled'},
   ],
 };
 
@@ -243,7 +244,7 @@ final $typed_data.Uint8List chatMessageDescriptor = $convert.base64Decode(
     'UHJpb3JpdHlSCHByaW9yaXR5EhoKCG1ldGFkYXRhGAogASgMUghtZXRhZGF0YRIfCgt0dGxfc2'
     'Vjb25kcxgLIAEoBVIKdHRsU2Vjb25kcxI3CgtzZW5kZXJfa2luZBgMIAEoDjIWLmNoaXJwLmNo'
     'YXQuU2VuZGVyS2luZFIKc2VuZGVyS2luZBItChNyZXBseV90b19tZXNzYWdlX2lkGA0gASgJUh'
-    'ByZXBseVRvTWVzc2FnZUlk');
+    'ByZXBseVRvTWVzc2FnZUlkEh8KC2lzX3JlY2FsbGVkGA4gASgIUgppc1JlY2FsbGVk');
 
 @$core.Deprecated('Use npcPlayerUtteranceDescriptor instead')
 const NpcPlayerUtterance$json = {

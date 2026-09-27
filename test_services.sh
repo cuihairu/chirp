@@ -376,7 +376,7 @@ elif [[ "${1:-}" == "--smoke-redis" ]]; then
   wait_port "${GW2_PORT}" chirp_game_sdk_gateway-b "${GW2_LOG}"
 
   echo ""
-  echo "[tcp] hold login on gw_a (expect kick: same user+device via redis claim)"
+  echo "[tcp] hold login on gw_a (expect kick: same user+platform via redis claim)"
   # Kick window: 15s. On CI a cold 49M binary needs seconds just to start,
   # and the whole gw_b chain (cold start + login + claim + publish + kick
   # frame) ran ~5s locally but >5s there - the window must dwarf that chain
@@ -390,12 +390,13 @@ elif [[ "${1:-}" == "--smoke-redis" ]]; then
   # wait_key - client stdout is fully buffered when redirected, so waiting
   # for the pong log line only fires after the hold process has exited and
   # released its own claim, which would make the kick below impossible).
-  wait_key "chirp:sess:user_1${DEV_SEP}dev_a" 15
+  # Claim keys are platform-scoped since 2026-09-27: chirp:sess:<user>\x1F<platform>.
+  wait_key "chirp:sess:user_1${DEV_SEP}pc" 15
 
   echo ""
-  echo "[tcp] login on gw_b same device (should kick gw_a)"
+  echo "[tcp] login on gw_b same platform, different device (should kick gw_a)"
   timeout 30 ./build/tools/benchmark/chirp_login_client --host 127.0.0.1 --port "${GW2_PORT}" \
-    --token user_1 --device dev_a --platform pc
+    --token user_1 --device dev_b --platform pc
 
   set +e
   wait "${CLIENT1_PID}"
@@ -409,19 +410,19 @@ elif [[ "${1:-}" == "--smoke-redis" ]]; then
   fi
 
   echo ""
-  echo "[tcp] coexistence: hold on gw_a device dev_a, login gw_b device dev_b (no kick)"
+  echo "[tcp] coexistence: hold on gw_a platform pc, login gw_b platform console (no kick)"
   timeout 60 ./build/tools/benchmark/chirp_login_client --host 127.0.0.1 --port "${GW1_PORT}" \
     --token user_3 --device dev_a --platform pc --wait_kick_ms 15000 > "${CLIENT3_LOG}" 2>&1 &
   CLIENT3_PID=$!
-  wait_key "chirp:sess:user_3${DEV_SEP}dev_a" 15
+  wait_key "chirp:sess:user_3${DEV_SEP}pc" 15
 
-  # Same user, different device on the other instance: rc must be 0 (login
+  # Same user, different platform on the other instance: rc must be 0 (login
   # OK, the tool prints `code=0`) and the hold client must survive its whole
-  # kick window (rc=2 = "no kick within Nms"). rc=0 on the hold would mean a
-  # device-level claim still kicks across devices; rc=3 means the connection
-  # was closed some other way.
+  # kick window (rc=2 = "no kick within Nms"). rc=0 on the hold would mean
+  # cross-platform logins still kick (platform keys broken); rc=3 means the
+  # connection was closed some other way.
   timeout 30 ./build/tools/benchmark/chirp_login_client --host 127.0.0.1 --port "${GW2_PORT}" \
-    --token user_3 --device dev_b --platform pc > "${CLIENT3_LOG}.login_b" 2>&1
+    --token user_3 --device dev_b --platform console > "${CLIENT3_LOG}.login_b" 2>&1
   grep -q "code=0" "${CLIENT3_LOG}.login_b"
 
   set +e
@@ -430,7 +431,7 @@ elif [[ "${1:-}" == "--smoke-redis" ]]; then
   set -e
   if [[ "${CLIENT3_RC}" == "0" ]]; then
     echo ""
-    echo "device-level claim incorrectly kicked the other device (rc=0)"
+    echo "cross-platform login incorrectly kicked the hold session (rc=0)"
     cat "${CLIENT3_LOG}" || true
     exit 1
   elif [[ "${CLIENT3_RC}" != "2" ]]; then
@@ -441,15 +442,15 @@ elif [[ "${1:-}" == "--smoke-redis" ]]; then
   fi
 
   echo ""
-  echo "[ws] hold login on gw_a (expect kick: same user+device via redis claim)"
+  echo "[ws] hold login on gw_a (expect kick: same user+platform via redis claim)"
   timeout 60 ./build/tools/benchmark/chirp_ws_login_client --host 127.0.0.1 --port "${WS1_PORT}" \
     --token user_2 --device dev_a --platform web --wait_kick_ms 15000 > "${WS_CLIENT1_LOG}" 2>&1 &
   WS_CLIENT1_PID=$!
 
-  wait_key "chirp:sess:user_2${DEV_SEP}dev_a" 15
+  wait_key "chirp:sess:user_2${DEV_SEP}web" 15
 
   echo ""
-  echo "[ws] login on gw_b same device (should kick gw_a)"
+  echo "[ws] login on gw_b same platform (should kick gw_a)"
   timeout 30 ./build/tools/benchmark/chirp_ws_login_client --host 127.0.0.1 --port "${WS2_PORT}" --token user_2 --device dev_a --platform web
 
   set +e

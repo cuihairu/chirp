@@ -23,6 +23,7 @@
 #include "network/protobuf_framing.h"
 #include "network/redis_client.h"
 #include "network/session.h"
+#include "network/device_presence.h"
 #include "network/session_registry.h"
 #include "network/tcp_server.h"
 #include "network/websocket_server.h"
@@ -361,14 +362,17 @@ void HandleLogin(const std::shared_ptr<PartyState>& state,
   login_resp.set_user_id(user_id);
   login_resp.set_session_id("party_session_" + RandomHex(8));
   login_resp.set_kick_previous(true);
-  login_resp.mutable_kick()->set_reason("login from another device");
+  login_resp.mutable_kick()->set_reason(chirp::network::LoginKickReason(login_req.platform()));
   login_resp.set_server_time(NowMs());
 
+  // 多端在线（P0）：槽位键 (user, platform)——同 platform 顶号（KICK_NOTIFY
+  // 带新 platform 的顶号理由），跨 platform 共存。本平面不广播设备清单变更
+  // （设备在线清单属于客户端接入面：两个 sdk_gateway 与 chat 直连入口）。
   auto old = chirp::network::BindAuthenticatedSession(
       state->registry, user_id, login_resp.session_id(),
-      chirp::network::NormalizeDeviceId(login_req.device_id()), session);
+      login_req.device_id(), session, login_req.platform());
   if (old && old.get() != session.get()) {
-    KickSession(old, "login from another device");
+    KickSession(old, chirp::network::LoginKickReason(login_req.platform()));
   }
 
   SendPacket(session, chirp::gateway::LOGIN_RESP, pkt.sequence(), login_resp.SerializeAsString());

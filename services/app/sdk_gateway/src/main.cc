@@ -20,6 +20,7 @@
 
 #include "network/auth_client.h"
 #include "network/chat_bridge.h"
+#include "network/device_presence.h"
 #include "network/session_registry.h"
 #include "logger.h"
 #include "network/protobuf_framing.h"
@@ -131,17 +132,23 @@ void HandleLogin(const std::shared_ptr<chirp::network::Session>& session,
     resp.set_user_id(req.token());
     resp.set_session_id(RandomHex(16));
     resp.set_kick_previous(true);
-    resp.mutable_kick()->set_reason("login from another device");
+    resp.mutable_kick()->set_reason(chirp::network::LoginKickReason(req.platform()));
     // Both edges bind the session in the scaffolding fallback: device
     // messages (here) and chat forwarding (game gateway) below require an
     // authenticated session.
     if (!resp.user_id().empty()) {
+      // 多端在线（P0）：槽位键 (user, platform)——同 platform 顶号、跨
+      // platform 共存；初始清单随响应下发，其余在线端收到上线事件。
       auto old = chirp::network::BindAuthenticatedSession(state, resp.user_id(), resp.session_id(),
-                                                          chirp::network::NormalizeDeviceId(req.device_id()),
-                                                          session);
+                                                          req.device_id(), session,
+                                                          req.platform());
       if (old && old.get() != session.get()) {
-        KickSession(old, "login from another device");
+        KickSession(old, chirp::network::LoginKickReason(req.platform()));
       }
+      chirp::network::FillOnlineDevices(state, resp.user_id(), &resp, session.get());
+      chirp::network::BroadcastDevicePresence(state, resp.user_id(), req.platform(),
+                                              chirp::network::NormalizeDeviceId(req.device_id()),
+                                              /*online=*/true, session.get());
       SendPacket(session, chirp::gateway::LOGIN_RESP, seq, resp.SerializeAsString());
       if (bridge) {
         bridge->Attach(session, req.token(), req.device_id());
@@ -167,16 +174,24 @@ void HandleLogin(const std::shared_ptr<chirp::network::Session>& session,
     }
 
     auto old = chirp::network::BindAuthenticatedSession(state, user_id, resp.session_id(),
-                                                        chirp::network::NormalizeDeviceId(req.device_id()),
-                                                        session);
+                                                        req.device_id(), session,
+                                                        req.platform());
 
     if (old && old.get() != session.get()) {
-      const std::string reason = resp.has_kick() ? resp.kick().reason() : "login from another device";
+      const std::string reason = resp.has_kick() && !resp.kick().reason().empty()
+                                     ? resp.kick().reason()
+                                     : chirp::network::LoginKickReason(req.platform());
       KickSession(old, reason);
     }
+    // 多端在线（P0）：初始在线端清单（不含本会话）随登录响应下发，其余
+    // 在线端收到本端上线事件。
+    chirp::network::FillOnlineDevices(state, user_id, &resp, session.get());
+    chirp::network::BroadcastDevicePresence(state, user_id, req.platform(),
+                                            chirp::network::NormalizeDeviceId(req.device_id()),
+                                            /*online=*/true, session.get());
 
     if (redis_mgr) {
-      redis_mgr->AsyncClaim(user_id, req.device_id(),
+      redis_mgr->AsyncClaim(user_id, req.platform(),
                             [session, seq, resp, bridge, req](std::optional<std::string> /*prev_owner*/) mutable {
         SendPacket(session, chirp::gateway::LOGIN_RESP, seq, resp.SerializeAsString());
         if (bridge) {
@@ -234,11 +249,20 @@ void HandleLogout(const std::shared_ptr<chirp::network::Session>& session,
       bool should_release = false;
       std::string removed_user_id;
       std::string removed_device_id;
+      std::string removed_platform;
       should_release = chirp::network::RemoveAuthenticatedSession(state, session, &removed_user_id,
-                                                                  &removed_device_id);
-      if (should_release && redis_mgr) {
-        redis_mgr->AsyncRelease(removed_user_id.empty() ? req.user_id() : removed_user_id,
-                                removed_device_id);
+                                                                  &removed_device_id,
+                                                                  &removed_platform);
+      if (should_release) {
+        if (redis_mgr) {
+          redis_mgr->AsyncRelease(removed_user_id.empty() ? req.user_id() : removed_user_id,
+                                  removed_platform);
+        }
+        // 多端在线（P0）：确认释放才广播下线（被顶的旧会话不广播）。
+        if (!removed_user_id.empty()) {
+          chirp::network::BroadcastDevicePresence(state, removed_user_id, removed_platform,
+                                                  removed_device_id, /*online=*/false);
+        }
       }
       SendPacketAndClose(session, chirp::gateway::LOGOUT_RESP, seq, resp.SerializeAsString());
       return;
@@ -512,10 +536,18 @@ void HandleDisconnect(const std::shared_ptr<chirp::network::Session>& session,
                       chirp::gateway::ChatBridge* bridge) {
   std::string user_id;
   std::string device_id;
+  std::string platform;
   const bool should_release =
-      chirp::network::RemoveAuthenticatedSession(state, session, &user_id, &device_id);
-  if (should_release && redis_mgr) {
-    redis_mgr->AsyncRelease(user_id, device_id);
+      chirp::network::RemoveAuthenticatedSession(state, session, &user_id, &device_id, &platform);
+  if (should_release) {
+    if (redis_mgr) {
+      redis_mgr->AsyncRelease(user_id, platform);
+    }
+    // 多端在线（P0）：确认释放才广播下线。
+    if (!user_id.empty()) {
+      chirp::network::BroadcastDevicePresence(state, user_id, platform, device_id,
+                                              /*online=*/false);
+    }
   }
   // Single detach point, mirroring the game gateway's on_close: logout,
   // kick and plain disconnects all close the socket, which funnels here.

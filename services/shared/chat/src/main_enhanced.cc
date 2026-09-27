@@ -28,6 +28,7 @@
 #include "message_edit_manager.h"
 #include "message_handlers.h"
 #include "message_migration_worker.h"
+#include "network/device_presence.h"
 #include "npc_uplink.h"
 #include "paginated_history_retriever.h"
 #include "player_directory.h"
@@ -76,23 +77,34 @@ struct DistributedChatState {
   // Current instance ID
   std::string instance_id;
 
-  // Returns the session previously bound to the same (user, device) pair so
-  // the caller can kick it; null when the slot was free, stale, or this very
-  // connection. The device id is normalized inside the registry.
+  // Returns the session previously bound to the same (user, platform) pair
+  // so the caller can kick it (多端在线顶号：同 platform 新登录顶旧，跨
+  // platform 共存)；null when the slot was free, stale, or this very
+  // connection. Device/platform strings are normalized inside the registry.
   std::shared_ptr<chirp::network::Session> AddSession(
       const std::string& user_id, const std::string& device_id,
       const std::string& session_id,
-      const std::shared_ptr<chirp::network::Session>& session) {
+      const std::shared_ptr<chirp::network::Session>& session,
+      const std::string& platform) {
     return chirp::network::BindAuthenticatedSession(registry, user_id, session_id,
-                                                    device_id, session);
+                                                    device_id, session, platform);
   }
 
-  // Only releases the (user, device) slot while it still points at THIS
+  // Only releases the (user, platform) slot while it still points at THIS
   // session: a newer login for the same pair may already own it, and a stale
   // disconnect (e.g. the send client's late FIN) must not unregister the
-  // current session.
+  // current session. When the release lands, the user's remaining devices
+  // are told this (platform, device) went offline (多端在线清单变更).
   void RemoveSession(const std::shared_ptr<chirp::network::Session>& session) {
-    chirp::network::RemoveAuthenticatedSession(registry, session);
+    std::string user_id;
+    std::string device_id;
+    std::string platform;
+    const bool released = chirp::network::RemoveAuthenticatedSession(
+        registry, session, &user_id, &device_id, &platform);
+    if (released && !user_id.empty()) {
+      chirp::network::BroadcastDevicePresence(registry, user_id, platform, device_id,
+                                              /*online=*/false);
+    }
   }
 
   std::string GetUserId(const std::shared_ptr<chirp::network::Session>& session) {
@@ -494,15 +506,22 @@ void HandleLogin(const chirp::auth::LoginRequest& req,
     resp.set_user_id(user_id);
     resp.set_session_id(state->instance_id + "_" + std::to_string(chirp::chat::runtime::NowMs()));
     resp.set_kick_previous(true);
-    resp.mutable_kick()->set_reason("login from another device");
+    resp.mutable_kick()->set_reason(chirp::network::LoginKickReason(req.platform()));
 
-    // Rebinding the same (user, device) pair displaces the previous session,
-    // which gets a KICK_NOTIFY instead of silently rotting; another device
-    // of the same user keeps its session.
-    auto old = state->AddSession(user_id, req.device_id(), resp.session_id(), session);
+    // 多端在线（P0）：同 (user, platform) 重登录 displaces the previous
+    // session, which gets a KICK_NOTIFY instead of silently rotting; another
+    // platform of the same user keeps its session. The initial online-device
+    // listing (self excluded) rides in the response, and the user's other
+    // devices learn this device came online.
+    auto old = state->AddSession(user_id, req.device_id(), resp.session_id(), session,
+                                 req.platform());
     if (old && old.get() != session.get()) {
-      KickSession(old, "login from another device");
+      KickSession(old, chirp::network::LoginKickReason(req.platform()));
     }
+    chirp::network::FillOnlineDevices(state->registry, user_id, &resp, session.get());
+    chirp::network::BroadcastDevicePresence(state->registry, user_id, req.platform(),
+                                            chirp::network::NormalizeDeviceId(req.device_id()),
+                                            /*online=*/true, session.get());
 
     if (acks && req.supports_message_ack()) {
       acks->MarkCapable(session);

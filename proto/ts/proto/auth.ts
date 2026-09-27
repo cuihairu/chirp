@@ -28,6 +28,28 @@ export interface KickNotify {
   reason: string;
 }
 
+/**
+ * 多端在线（P0）：一台设备的在线快照。登录响应的初始清单里所有条目都是
+ * 在线的；变更事件里 online=false 表示该端已下线（断开/被顶）。
+ */
+export interface DevicePresence {
+  /** "ios"/"android"/"web"/"pc"，空 = 归一化为 "default" */
+  platform: string;
+  deviceId: string;
+  online: boolean;
+  /** ms since epoch */
+  ts: number;
+}
+
+/**
+ * 清单变更事件（风格对齐 KickNotify：服务端主动推、客户端只读）。一次绑定
+ * 变化（登录/断开/被顶）至少一条；repeated 保留批量能力。推给该用户的
+ * 其他在线会话（变化的会话自己已经在登录响应里拿到初始清单）。
+ */
+export interface DevicesPresenceNotify {
+  devices: DevicePresence[];
+}
+
 export interface LoginResponse {
   code: ErrorCode;
   sessionId: string;
@@ -36,7 +58,11 @@ export interface LoginResponse {
   userId: string;
   /** Whether the previous login should be kicked (last-login-wins policy). */
   kickPrevious: boolean;
-  kick: KickNotify | undefined;
+  kick:
+    | KickNotify
+    | undefined;
+  /** 多端在线（P0）：登录时刻该用户其他在线端的初始清单（不含本会话）。 */
+  onlineDevices: DevicePresence[];
 }
 
 export interface LogoutRequest {
@@ -312,8 +338,173 @@ export const KickNotify = {
   },
 };
 
+function createBaseDevicePresence(): DevicePresence {
+  return { platform: "", deviceId: "", online: false, ts: 0 };
+}
+
+export const DevicePresence = {
+  encode(message: DevicePresence, writer: _m0.Writer = _m0.Writer.create()): _m0.Writer {
+    if (message.platform !== "") {
+      writer.uint32(10).string(message.platform);
+    }
+    if (message.deviceId !== "") {
+      writer.uint32(18).string(message.deviceId);
+    }
+    if (message.online !== false) {
+      writer.uint32(24).bool(message.online);
+    }
+    if (message.ts !== 0) {
+      writer.uint32(32).int64(message.ts);
+    }
+    return writer;
+  },
+
+  decode(input: _m0.Reader | Uint8Array, length?: number): DevicePresence {
+    const reader = input instanceof _m0.Reader ? input : _m0.Reader.create(input);
+    let end = length === undefined ? reader.len : reader.pos + length;
+    const message = createBaseDevicePresence();
+    while (reader.pos < end) {
+      const tag = reader.uint32();
+      switch (tag >>> 3) {
+        case 1:
+          if (tag !== 10) {
+            break;
+          }
+
+          message.platform = reader.string();
+          continue;
+        case 2:
+          if (tag !== 18) {
+            break;
+          }
+
+          message.deviceId = reader.string();
+          continue;
+        case 3:
+          if (tag !== 24) {
+            break;
+          }
+
+          message.online = reader.bool();
+          continue;
+        case 4:
+          if (tag !== 32) {
+            break;
+          }
+
+          message.ts = longToNumber(reader.int64() as Long);
+          continue;
+      }
+      if ((tag & 7) === 4 || tag === 0) {
+        break;
+      }
+      reader.skipType(tag & 7);
+    }
+    return message;
+  },
+
+  fromJSON(object: any): DevicePresence {
+    return {
+      platform: isSet(object.platform) ? globalThis.String(object.platform) : "",
+      deviceId: isSet(object.deviceId) ? globalThis.String(object.deviceId) : "",
+      online: isSet(object.online) ? globalThis.Boolean(object.online) : false,
+      ts: isSet(object.ts) ? globalThis.Number(object.ts) : 0,
+    };
+  },
+
+  toJSON(message: DevicePresence): unknown {
+    const obj: any = {};
+    if (message.platform !== "") {
+      obj.platform = message.platform;
+    }
+    if (message.deviceId !== "") {
+      obj.deviceId = message.deviceId;
+    }
+    if (message.online !== false) {
+      obj.online = message.online;
+    }
+    if (message.ts !== 0) {
+      obj.ts = Math.round(message.ts);
+    }
+    return obj;
+  },
+
+  create<I extends Exact<DeepPartial<DevicePresence>, I>>(base?: I): DevicePresence {
+    return DevicePresence.fromPartial(base ?? ({} as any));
+  },
+  fromPartial<I extends Exact<DeepPartial<DevicePresence>, I>>(object: I): DevicePresence {
+    const message = createBaseDevicePresence();
+    message.platform = object.platform ?? "";
+    message.deviceId = object.deviceId ?? "";
+    message.online = object.online ?? false;
+    message.ts = object.ts ?? 0;
+    return message;
+  },
+};
+
+function createBaseDevicesPresenceNotify(): DevicesPresenceNotify {
+  return { devices: [] };
+}
+
+export const DevicesPresenceNotify = {
+  encode(message: DevicesPresenceNotify, writer: _m0.Writer = _m0.Writer.create()): _m0.Writer {
+    for (const v of message.devices) {
+      DevicePresence.encode(v!, writer.uint32(10).fork()).ldelim();
+    }
+    return writer;
+  },
+
+  decode(input: _m0.Reader | Uint8Array, length?: number): DevicesPresenceNotify {
+    const reader = input instanceof _m0.Reader ? input : _m0.Reader.create(input);
+    let end = length === undefined ? reader.len : reader.pos + length;
+    const message = createBaseDevicesPresenceNotify();
+    while (reader.pos < end) {
+      const tag = reader.uint32();
+      switch (tag >>> 3) {
+        case 1:
+          if (tag !== 10) {
+            break;
+          }
+
+          message.devices.push(DevicePresence.decode(reader, reader.uint32()));
+          continue;
+      }
+      if ((tag & 7) === 4 || tag === 0) {
+        break;
+      }
+      reader.skipType(tag & 7);
+    }
+    return message;
+  },
+
+  fromJSON(object: any): DevicesPresenceNotify {
+    return {
+      devices: globalThis.Array.isArray(object?.devices)
+        ? object.devices.map((e: any) => DevicePresence.fromJSON(e))
+        : [],
+    };
+  },
+
+  toJSON(message: DevicesPresenceNotify): unknown {
+    const obj: any = {};
+    if (message.devices?.length) {
+      obj.devices = message.devices.map((e) => DevicePresence.toJSON(e));
+    }
+    return obj;
+  },
+
+  create<I extends Exact<DeepPartial<DevicesPresenceNotify>, I>>(base?: I): DevicesPresenceNotify {
+    return DevicesPresenceNotify.fromPartial(base ?? ({} as any));
+  },
+  fromPartial<I extends Exact<DeepPartial<DevicesPresenceNotify>, I>>(object: I): DevicesPresenceNotify {
+    const message = createBaseDevicesPresenceNotify();
+    message.devices = object.devices?.map((e) => DevicePresence.fromPartial(e)) || [];
+    return message;
+  },
+};
+
 function createBaseLoginResponse(): LoginResponse {
-  return { code: 0, sessionId: "", serverTime: 0, userId: "", kickPrevious: false, kick: undefined };
+  return { code: 0, sessionId: "", serverTime: 0, userId: "", kickPrevious: false, kick: undefined, onlineDevices: [] };
 }
 
 export const LoginResponse = {
@@ -335,6 +526,9 @@ export const LoginResponse = {
     }
     if (message.kick !== undefined) {
       KickNotify.encode(message.kick, writer.uint32(50).fork()).ldelim();
+    }
+    for (const v of message.onlineDevices) {
+      DevicePresence.encode(v!, writer.uint32(58).fork()).ldelim();
     }
     return writer;
   },
@@ -388,6 +582,13 @@ export const LoginResponse = {
 
           message.kick = KickNotify.decode(reader, reader.uint32());
           continue;
+        case 7:
+          if (tag !== 58) {
+            break;
+          }
+
+          message.onlineDevices.push(DevicePresence.decode(reader, reader.uint32()));
+          continue;
       }
       if ((tag & 7) === 4 || tag === 0) {
         break;
@@ -405,6 +606,9 @@ export const LoginResponse = {
       userId: isSet(object.userId) ? globalThis.String(object.userId) : "",
       kickPrevious: isSet(object.kickPrevious) ? globalThis.Boolean(object.kickPrevious) : false,
       kick: isSet(object.kick) ? KickNotify.fromJSON(object.kick) : undefined,
+      onlineDevices: globalThis.Array.isArray(object?.onlineDevices)
+        ? object.onlineDevices.map((e: any) => DevicePresence.fromJSON(e))
+        : [],
     };
   },
 
@@ -428,6 +632,9 @@ export const LoginResponse = {
     if (message.kick !== undefined) {
       obj.kick = KickNotify.toJSON(message.kick);
     }
+    if (message.onlineDevices?.length) {
+      obj.onlineDevices = message.onlineDevices.map((e) => DevicePresence.toJSON(e));
+    }
     return obj;
   },
 
@@ -444,6 +651,7 @@ export const LoginResponse = {
     message.kick = (object.kick !== undefined && object.kick !== null)
       ? KickNotify.fromPartial(object.kick)
       : undefined;
+    message.onlineDevices = object.onlineDevices?.map((e) => DevicePresence.fromPartial(e)) || [];
     return message;
   },
 };

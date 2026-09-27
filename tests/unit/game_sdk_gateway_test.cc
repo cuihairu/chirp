@@ -171,7 +171,7 @@ TEST_F(GameSdkGatewayTest, ScaffoldLoginBindsSessionRegistry) {
   ASSERT_TRUE(LastBody(*session_, &resp));
   EXPECT_EQ(resp.user_id(), "alice");
   EXPECT_TRUE(resp.kick_previous());
-  EXPECT_EQ(resp.kick().reason(), "login from another device");
+  EXPECT_EQ(resp.kick().reason(), "logged in on another device");
 
   auto authed = chirp::network::GetAuthenticatedSession(state_, session_);
   EXPECT_EQ(authed.user_id, "alice");
@@ -205,7 +205,7 @@ TEST_F(GameSdkGatewayTest, ReLoginKicksPreviousSession) {
       kicked = true;
       chirp::auth::KickNotify body;
       ASSERT_TRUE(body.ParseFromString(pkt.body()));
-      EXPECT_EQ(body.reason(), "login from another device");
+      EXPECT_EQ(body.reason(), "logged in on another device");
     }
   }
   EXPECT_TRUE(kicked);
