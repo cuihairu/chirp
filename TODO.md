@@ -1,6 +1,6 @@
 # Chirp 任务清单
 
-> 最后更新：2026-09-27：覆盖率缺口审计批次——六文件 27 条未覆盖分支臂逐条判定：可达臂补 10 个真单测 + 6 处扩展清零，真不可达臂经新 `KNOWN_UNCOVERABLE_ARMS` 机制（理由+行号锚定，每次报告列出）豁免；100% 行覆盖门保持不破。上批：游戏在线状态 + 好友消息进游戏（绑定即"在游戏内"断言，自服务开关 5031-5034，多端在线同批）。
+> 最后更新：2026-09-27：覆盖率缺口审计批次#5——覆盖率缺口单文件最大者 `hybrid_message_store`（17 臂/7 行）逐臂判定：可达臂补 4 个 `HybridStoreTest` 用例（脏投递状态值全类别、热层脏历史扫描、离线队列脏条目免疫、300 条强制扩容 + ERANGE/INT64_MAX 边界）清零，残余 7 臂（514 死 post-inline 重复块、546 内联块布局死边、571 operator+ 分配失败 unwind，25 个输入类别全部操纵过不翻）按 #4 同口径登记豁免（累计 75 臂）；行覆盖 100.0% 保持。#4：六文件 27 条未覆盖分支臂逐条判定：可达臂补 10 个真单测 + 6 处扩展清零，真不可达臂经新 `KNOWN_UNCOVERABLE_ARMS` 机制（理由+行号锚定，每次报告列出）豁免。上批：游戏在线状态 + 好友消息进游戏（绑定即"在游戏内"断言，自服务开关 5031-5034，多端在线同批）。
 >
 > 2026-09-27：撤回墓碑贯通历史存档收口——墓碑改为「置位 + 抹除正文」并在三种存储实现里落地（MySQL 列 / Hybrid 双 tier / 基础形态内存+Redis 镜像，收敛为新单元 `recall_tombstone`），`BULK_DELETE` 软删补上立碑与离线回收，`GET_HISTORY` 从此读不出原文；覆盖率保持 100.0%。
 >
@@ -134,6 +134,8 @@ SDK 引擎兼容性见 [SDK 引擎兼容性](docs/design-notes/sdk_compatibility
 ## 覆盖率缺口审计（2026-09-27 批次，#4）
 
 - [x] **六文件 27 条未覆盖分支臂逐条判定**（`chat_peer_hub` / `device_presence` / `message_router` / `redis_client` / `session_registry` / `sdk_client`；coverage-gaps.txt 实为 27 条，任务面 19 条按六文件全量扩审）：**可达臂补真单测**——`chat_peer_test` +7 例（4MiB+1 超限帧头即断、帧体中断不毒化 hub、双未注册 pen 扫描跳过、未注册 2s 空闲超时 "(unregistered)" 告警路径、注册态空闲超时回 "timeout" 事件、顶号时在途帧体完成撞 closing 守卫、协议错误关闭后空闲定时器 completion 静默退出）+ service_id_for_game 双 spoke 扫描扩展；`session_registry_test` +1 例（移除时 device 元数据已失落的僵尸会话读空 device_id）+ 长 platform/device 归一与 `LoginKickReason` 长 platform 拼接扩展；`network_full_tests` 扩展（EXPIRE/LRANGE/KEYS 长 key 与 int64 极值 to_string 堆臂、>15 字节频道订阅/退订）；`network_logic_tests` +1 例（MessageRouter 派发用 >SBO 捕获 handler + >15 字节载荷走堆构造臂）；`sdk_core_tests` +1 例（十个类型化便捷方法长参数 + 堆回调 NotConnected 一次全过）。**真不可达臂引入 `KNOWN_UNCOVERABLE_ARMS` 豁免机制**（`scripts/run_coverage.sh`：按 (文件, 行, 臂号) 豁免并带理由，臂退出分支分母、每次报告重列清单——臂因源码/编译器变化变得可达时会在 gaps 里现形，与整行 `KNOWN_UNCOVERABLE` 互补不遮蔽行统计）：22 行 / 68 臂，三类理由——① unwind-only（内联 string/function 构造的异常清理边，特征为成对 0/0 尾块，SSO/堆、小/大捕获全部操纵过仍不翻）、② 不变量防御（`service_id_for_game` 的 registered==false 臂：peers_ 只收已注册连接；`Close` 顶号 else 臂：顶号在覆盖表项之前 Close，关连接时必然仍持有自己的表项）、③ 竞态窗（空闲定时器 `ec==OK && closing` 臂：Close 先 cancel 定时器，仅在 completion 已入 strand 队列的亚毫秒窗内可达，同 websocket 握手写竞态类）。门禁结果：行覆盖 100.0%（8592/8592）保持，ctest 40/40，分支覆盖（信息项）99.4%（8352/8404，throw 边除外），八条 smoke 腿逐条 rc=0
+
+- [x] **覆盖率批次5：单文件最大缺口 `hybrid_message_store`（17 臂/7 行）逐臂判定**：可达臂补 4 个 `HybridStoreTest` 用例——`MalformedDeliveryStatusValuesFallBackToDefaults`（共享 Redis 脏状态值七类输入：空字段/非数字/ERANGE 溢出/两段无第三冒号/空 last_error/17 位堆串，钉死「两段都解析成功才赋值、任一失败整体退回默认 info」与 ParseI64 双失败出口）、`HasMessageSkipsCorruptAndMismatchedHistoryEntries`（热层扫描解析失败字节与 id 不匹配条目的跳过语义）、`PurgeOfflineByMessageIdSkipsCorruptEntries`（Redis 队列 + Redis-down 回退队列双路径脏条目免疫）、`PendingDeliveriesGrowPastInlineCapacity`（300 条过期项强制 vector 1→512 扩容、ERANGE/INT64_MAX 严格小于边界、17 位堆串过期时间）；残余 7 臂全部操纵过输入类别（空/非数字/17 位堆/溢出/恰等 INT64_MAX/合法值）仍为 0，判明为编译器 post-inline 死块与 `operator+` 分配失败 unwind（call returned=0 特征），按 #4 同口径登记豁免（514/546/571，累计 22+3 行 68+7 臂 = 75 臂）。门禁：行覆盖 100.0% 保持、ctest 40/40、八条 smoke 腿 rc=0
 
 ## 实验性服务（暂不动）
 

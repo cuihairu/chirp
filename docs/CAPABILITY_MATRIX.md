@@ -52,7 +52,7 @@
 
 | 关注点 | 当前状态 | 状态 |
 | --- | --- | --- |
-| 单元测试 | `tests/unit` 下 40 个套件;凡链接进测试二进制的后端包,行覆盖按 `scripts/run_coverage.sh` 都是 100%(仅限已登记的 `KNOWN_UNCOVERABLE` 行豁免与 `KNOWN_UNCOVERABLE_ARMS` 分支臂豁免——后者 2026-09-27 批次审计六文件 27 条未覆盖分支臂后落地:可达臂补真单测清零,残留的 unwind-only/不变量/竞态臂带理由与行号锚定逐条豁免并在每次报告列出)。`chirp_app_sdk_gateway`、`chirp_voice`、`chirp_party` 有套件(`app_sdk_gateway_tests`、`voice_tests`、`party_tests`),但它们的 `main.cc` 不在覆盖测量范围内 | Supported |
+| 单元测试 | `tests/unit` 下 40 个套件;凡链接进测试二进制的后端包,行覆盖按 `scripts/run_coverage.sh` 都是 100%(仅限已登记的 `KNOWN_UNCOVERABLE` 行豁免与 `KNOWN_UNCOVERABLE_ARMS` 分支臂豁免——后者 2026-09-27 批次审计六文件 27 条未覆盖分支臂后落地:可达臂补真单测清零,残留的 unwind-only/不变量/竞态臂带理由与行号锚定逐条豁免并在每次报告列出;2026-09-27 批次#5 再收 hybrid_message_store 7 臂(3 行),累计豁免 22 行/75 臂,行覆盖门保持 100%)。`chirp_app_sdk_gateway`、`chirp_voice`、`chirp_party` 有套件(`app_sdk_gateway_tests`、`voice_tests`、`party_tests`),但它们的 `main.cc` 不在覆盖测量范围内 | Supported |
 | 标准本地构建经 `ctest` 跑测试 | `ctest --preset dev`(gcov 构建用 `--preset coverage`);全新树可构建并通过 | Supported |
 | CI 把测试失败当硬失败 | `ci.yml` 跑 Debug + Release 构建 + `ctest`,外加一个 coverage job:任何包行覆盖跌破 98% 即失败 | Supported |
 | 进程级冒烟覆盖 | `test_services.sh --smoke / --smoke-chat / --smoke-sdk / --smoke-npc / --smoke-edge / --smoke-jwt / --smoke-redis / --smoke-game` 八条腿全部本地逐条验证且跑在 CI smoke job 里(`--smoke-redis` 用 docker redis 验跨实例踢线) | Supported |
