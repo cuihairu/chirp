@@ -16,6 +16,7 @@
 #include "proto/auth.pb.h"
 #include "proto/common.pb.h"
 #include "proto/gateway.pb.h"
+#include "proto/game_server_gateway.pb.h"
 #include "proto/social.pb.h"
 
 // Relative path, same convention as the voice service test: unambiguous even
@@ -839,6 +840,203 @@ TEST_F(SocialRedisTest, PresenceSnapshotKeepsTtlKey) {
   ASSERT_TRUE(stored.ParseFromString(mem_->GetDirect("chirp:social:presence:user_a")));
   EXPECT_EQ(stored.user_id(), "user_a");
   EXPECT_EQ(stored.status(), chirp::social::IN_GAME);
+}
+
+
+// ---------------------------------------------------------------------------
+// 游戏在线状态 overlay (chat chirp:game_presence:events -> friends)
+// ---------------------------------------------------------------------------
+
+namespace {
+
+std::string PresenceEventBody(const std::string& player, const std::string& game, bool online) {
+  chirp::game_server_gateway::GamePresenceEvent event;
+  event.set_player_id(player);
+  event.set_game_id(game);
+  event.set_online(online);
+  return event.SerializeAsString();
+}
+
+constexpr const char* kEventsChannel = "chirp:game_presence:events";
+
+}  // namespace
+
+TEST_F(SocialServiceTest, GameAssertionPresentsInGameWithoutAnySession) {
+  // The overlay's whole point: a player can be in-game with no companion
+  // app connected. Base OFFLINE + a live game assertion => IN_GAME.
+  ConsumeGamePresenceEvent(state_, kEventsChannel, PresenceEventBody("user_b", "g1", true));
+
+  const auto info = EffectivePresence(state_, "user_b");
+  EXPECT_EQ(info.user_id(), "user_b");
+  EXPECT_EQ(info.status(), chirp::social::IN_GAME);
+  EXPECT_EQ(info.status_message(), "g1");
+  ASSERT_EQ(info.metadata().count("g1"), 1);
+  EXPECT_EQ(info.metadata().at("g1"), "1");
+}
+
+TEST_F(SocialServiceTest, ReleasedGameAssertionFallsBackToBase) {
+  auto b = Login("user_b");
+
+  ConsumeGamePresenceEvent(state_, kEventsChannel, PresenceEventBody("user_b", "g1", true));
+  EXPECT_EQ(EffectivePresence(state_, "user_b").status(), chirp::social::IN_GAME);
+
+  // 退出游戏(断言失效)→ 状态自然下线:回到基础的 ONLINE。
+  ConsumeGamePresenceEvent(state_, kEventsChannel, PresenceEventBody("user_b", "g1", false));
+  const auto info = EffectivePresence(state_, "user_b");
+  EXPECT_EQ(info.status(), chirp::social::ONLINE);
+  EXPECT_TRUE(info.status_message().empty());
+  EXPECT_EQ(state_->game_presence.count("user_b"), 0u);
+  (void)b;
+}
+
+TEST_F(SocialServiceTest, OverlaySurvivesSocialLogout) {
+  // Two lifecycles: disconnecting the companion app does not leave the game.
+  auto b = Login("user_b");
+  ConsumeGamePresenceEvent(state_, kEventsChannel, PresenceEventBody("user_b", "g1", true));
+
+  HandleDisconnect(state_, nullptr, b);
+
+  const auto info = EffectivePresence(state_, "user_b");
+  EXPECT_EQ(info.status(), chirp::social::IN_GAME);
+  EXPECT_EQ(info.status_message(), "g1");
+}
+
+TEST_F(SocialServiceTest, MultipleGamesJoinSortedAndExitOneAtATime) {
+  ConsumeGamePresenceEvent(state_, kEventsChannel, PresenceEventBody("user_b", "g2", true));
+  ConsumeGamePresenceEvent(state_, kEventsChannel, PresenceEventBody("user_b", "g1", true));
+
+  auto info = EffectivePresence(state_, "user_b");
+  EXPECT_EQ(info.status(), chirp::social::IN_GAME);
+  EXPECT_EQ(info.status_message(), "g1,g2");  // set order, deterministic
+  EXPECT_EQ(info.metadata().size(), 2u);
+
+  ConsumeGamePresenceEvent(state_, kEventsChannel, PresenceEventBody("user_b", "g2", false));
+  info = EffectivePresence(state_, "user_b");
+  EXPECT_EQ(info.status(), chirp::social::IN_GAME);
+  EXPECT_EQ(info.status_message(), "g1");
+  EXPECT_EQ(info.metadata().count("g2"), 0);
+
+  ConsumeGamePresenceEvent(state_, kEventsChannel, PresenceEventBody("user_b", "g1", false));
+  EXPECT_EQ(EffectivePresence(state_, "user_b").status(), chirp::social::OFFLINE);
+  EXPECT_EQ(state_->game_presence.count("user_b"), 0u);
+}
+
+TEST_F(SocialServiceTest, PresenceEventBroadcastsMergedViewToFriends) {
+  auto a = Login("user_a");
+  Login("user_b");
+  state_->friends["user_a"].insert("user_b");
+  state_->friends["user_b"].insert("user_a");
+
+  ConsumeGamePresenceEvent(state_, kEventsChannel, PresenceEventBody("user_b", "g1", true));
+
+  ASSERT_EQ(CountNotify(*a, chirp::gateway::PRESENCE_NOTIFY), 1);
+  chirp::social::PresenceNotify notify;
+  ASSERT_TRUE(notify.ParseFromString(ReceivedPackets(*a).back().body()));
+  EXPECT_EQ(notify.user_id(), "user_b");
+  EXPECT_EQ(notify.status(), chirp::social::IN_GAME);
+  EXPECT_EQ(notify.status_message(), "g1");
+
+  ConsumeGamePresenceEvent(state_, kEventsChannel, PresenceEventBody("user_b", "g1", false));
+  ASSERT_EQ(CountNotify(*a, chirp::gateway::PRESENCE_NOTIFY), 2);
+  ASSERT_TRUE(notify.ParseFromString(ReceivedPackets(*a).back().body()));
+  EXPECT_EQ(notify.status(), chirp::social::ONLINE);  // back to the base view
+}
+
+TEST_F(SocialServiceTest, DisconnectWithLiveGameAssertionNotifiesInGame) {
+  auto a = Login("user_a");
+  auto b = Login("user_b");
+  state_->friends["user_a"].insert("user_b");
+  state_->friends["user_b"].insert("user_a");
+  ConsumeGamePresenceEvent(state_, kEventsChannel, PresenceEventBody("user_b", "g1", true));
+  const size_t before = ReceivedPackets(*a).size();
+
+  // The friend's app session drops, but they are still in-game: the merged
+  // broadcast must say IN_GAME, not OFFLINE.
+  HandleDisconnect(state_, nullptr, b);
+
+  ASSERT_EQ(ReceivedPackets(*a).size(), before + 1u);
+  chirp::social::PresenceNotify notify;
+  EXPECT_EQ(ReceivedPackets(*a).back().msg_id(), chirp::gateway::PRESENCE_NOTIFY);
+  ASSERT_TRUE(notify.ParseFromString(ReceivedPackets(*a).back().body()));
+  EXPECT_EQ(notify.user_id(), "user_b");
+  EXPECT_EQ(notify.status(), chirp::social::IN_GAME);
+}
+
+TEST_F(SocialServiceTest, LoginBroadcastUsesTheMergedView) {
+  auto a = Login("user_a");
+  state_->friends["user_a"].insert("user_b");
+  state_->friends["user_b"].insert("user_a");
+  ConsumeGamePresenceEvent(state_, kEventsChannel, PresenceEventBody("user_b", "g7", true));
+
+  // user_b comes back online on the app while still in game g7: friends see
+  // the more specific IN_GAME truth, with the game id attached. (The event
+  // above already pushed one notify to a; the login pushes the merged one.)
+  auto b = Login("user_b");
+  ASSERT_EQ(CountNotify(*a, chirp::gateway::PRESENCE_NOTIFY), 2);
+  chirp::social::PresenceNotify notify;
+  ASSERT_TRUE(notify.ParseFromString(ReceivedPackets(*a).back().body()));
+  EXPECT_EQ(notify.status(), chirp::social::IN_GAME);
+  EXPECT_EQ(notify.status_message(), "g7");
+  (void)b;
+}
+
+TEST_F(SocialServiceTest, GetPresenceAnswersWithTheMergedView) {
+  auto a = Login("user_a");
+
+  // Ghost with no base and no assertion: the OFFLINE placeholder.
+  chirp::social::GetPresenceRequest get;
+  get.add_user_ids("user_b");
+  Deliver(chirp::gateway::GET_PRESENCE_REQ, 1, get.SerializeAsString(), a);
+  chirp::social::GetPresenceResponse resp;
+  ASSERT_TRUE(LastBody(*a, &resp));
+  ASSERT_EQ(resp.presences_size(), 1);
+  EXPECT_EQ(resp.presences(0).status(), chirp::social::OFFLINE);
+
+  ConsumeGamePresenceEvent(state_, kEventsChannel, PresenceEventBody("user_b", "g1", true));
+
+  get.Clear();
+  get.add_user_ids("user_b");
+  Deliver(chirp::gateway::GET_PRESENCE_REQ, 2, get.SerializeAsString(), a);
+  ASSERT_TRUE(LastBody(*a, &resp));
+  ASSERT_EQ(resp.presences_size(), 1);
+  EXPECT_EQ(resp.presences(0).status(), chirp::social::IN_GAME);
+  EXPECT_EQ(resp.presences(0).status_message(), "g1");
+  ASSERT_EQ(resp.presences(0).metadata().count("g1"), 1);
+}
+
+TEST_F(SocialServiceTest, MalformedOrOffChannelEventsAreIgnored) {
+  auto a = Login("user_a");
+  state_->friends["user_a"].insert("user_b");
+  state_->friends["user_b"].insert("user_a");
+  const size_t before = ReceivedPackets(*a).size();
+
+  ConsumeGamePresenceEvent(state_, "some/other/channel", PresenceEventBody("user_b", "g1", true));
+  ConsumeGamePresenceEvent(state_, kEventsChannel, "\x01\x02not-a-proto");
+  // An event without a player/game is refused (it would poison the overlay).
+  ConsumeGamePresenceEvent(state_, kEventsChannel, PresenceEventBody("", "g1", true));
+
+  EXPECT_EQ(ReceivedPackets(*a).size(), before);
+  EXPECT_EQ(state_->game_presence.count("user_b"), 0u);
+  EXPECT_EQ(EffectivePresence(state_, "user_b").status(), chirp::social::OFFLINE);
+}
+
+TEST_F(SocialServiceTest, SetPresenceAfterGameAssertionStillPresentsInGame) {
+  // 基础状态与游戏断言互不覆盖:SET_PRESENCE AWAY 只是 base,正在游戏中
+  // 仍然是更具体的事实。
+  auto b = Login("user_b");
+  ConsumeGamePresenceEvent(state_, kEventsChannel, PresenceEventBody("user_b", "g1", true));
+
+  chirp::social::SetPresenceRequest set;
+  set.set_user_id("user_b");
+  set.set_status(chirp::social::AWAY);
+  set.set_status_message("in a meeting");
+  Deliver(chirp::gateway::SET_PRESENCE_REQ, 1, set.SerializeAsString(), b);
+
+  const auto info = EffectivePresence(state_, "user_b");
+  EXPECT_EQ(info.status(), chirp::social::IN_GAME);
+  EXPECT_EQ(info.status_message(), "g1");
+  // The base keeps the explicit AWAY for when the game assertion goes away.
+  EXPECT_EQ(state_->presence["user_b"].status(), chirp::social::AWAY);
 }
 
 }  // namespace

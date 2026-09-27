@@ -30,6 +30,7 @@
 #include "proto/chat.pb.h"
 #include "proto/common.pb.h"
 #include "proto/gateway.pb.h"
+#include "proto/game_server_gateway.pb.h"
 #include "proto/social.pb.h"
 
 namespace {
@@ -94,6 +95,15 @@ struct SocialState {
 
   // Presence: user_id -> presence info
   std::unordered_map<std::string, chirp::social::PresenceInfo> presence;
+
+  // 游戏在线状态 overlay (user_id -> set of game ids), fed by chat's
+  // chirp:game_presence:events pub/sub. Kept separate from `presence`
+  // because the two lifecycles differ: the social base flips with the
+  // connection lifecycle, the overlay follows the game binding assertions
+  // and survives a social logout (a player can be in-game with no
+  // companion app connected — that is the exact surface this feature
+  // exposes to friends).
+  std::map<std::string, std::set<std::string>> game_presence;
 
   // Authenticated (user, device) -> session bindings; the single source of
   // truth for who is connected and where to deliver.
@@ -295,6 +305,101 @@ chirp::social::PresenceNotify MakePresenceNotify(const std::string& user_id,
   return notify;
 }
 
+// Merges the base presence (connection lifecycle + explicit SET_PRESENCE)
+// with the 游戏在线状态 overlay: a non-empty overlay always presents as
+// IN_GAME regardless of the base — being in a game is the more specific
+// truth, including for a player with no social session at all (base
+// offline + in-game stays IN_GAME). The game ids ride both in
+// status_message (display: "g1,g2") and in the metadata map (machine
+// read: metadata["<game_id>"] = "1").
+chirp::social::PresenceInfo EffectivePresence(const std::shared_ptr<SocialState>& state,
+                                              const std::string& user_id) {
+  std::set<std::string> games;
+  chirp::social::PresenceInfo base;
+  bool has_base = false;
+  {
+    std::lock_guard<std::mutex> lock(state->mu);
+    const auto git = state->game_presence.find(user_id);
+    if (git != state->game_presence.end()) {
+      games = git->second;
+    }
+    const auto pit = state->presence.find(user_id);
+    if (pit != state->presence.end()) {
+      base = pit->second;
+      has_base = true;
+    }
+  }
+
+  if (!games.empty()) {
+    chirp::social::PresenceInfo info;
+    info.set_user_id(user_id);
+    info.set_status(chirp::social::IN_GAME);
+    std::string joined;
+    for (const auto& game_id : games) {
+      (*info.mutable_metadata())[game_id] = "1";
+      if (!joined.empty()) {
+        joined.push_back(',');
+      }
+      joined += game_id;
+    }
+    info.set_status_message(joined);
+    info.set_last_seen(has_base ? base.last_seen() : 0);
+    return info;
+  }
+  if (!has_base) {
+    chirp::social::PresenceInfo info;
+    info.set_user_id(user_id);
+    info.set_status(chirp::social::OFFLINE);
+    return info;
+  }
+  return base;
+}
+
+// Chat-plane game-presence flip (chirp:game_presence:events): apply it to
+// the overlay and return the merged notify to fan out to friends. The
+// events only arrive while the player's switch is on — the closed state
+// never reaches this service (状态不推), so no filtering happens here.
+chirp::social::PresenceNotify ApplyGamePresenceEvent(
+    const std::shared_ptr<SocialState>& state,
+    const chirp::game_server_gateway::GamePresenceEvent& event) {
+  if (event.player_id().empty() || event.game_id().empty()) {
+    return MakePresenceNotify(event.player_id(), chirp::social::OFFLINE, "");
+  }
+  {
+    std::lock_guard<std::mutex> lock(state->mu);
+    auto& games = state->game_presence[event.player_id()];
+    if (event.online()) {
+      games.insert(event.game_id());
+    } else {
+      games.erase(event.game_id());
+      if (games.empty()) {
+        state->game_presence.erase(event.player_id());
+      }
+    }
+  }
+  const auto info = EffectivePresence(state, event.player_id());
+  return MakePresenceNotify(info.user_id(), info.status(), info.status_message());
+}
+
+// Pub/sub entry point: filters the channel, parses the payload and pushes
+// the merged status to the player's friends. Kept out of the lambda so the
+// whole event path (including the malformed-payload guard) is testable.
+void ConsumeGamePresenceEvent(const std::shared_ptr<SocialState>& state,
+                              const std::string& channel,
+                              const std::string& payload) {
+  if (channel != "chirp:game_presence:events") {
+    return;
+  }
+  chirp::game_server_gateway::GamePresenceEvent event;
+  if (!event.ParseFromString(payload)) {
+    chirp::common::Logger::Instance().Warn("social: failed to parse GamePresenceEvent");
+    return;
+  }
+  const auto notify = ApplyGamePresenceEvent(state, event);
+  BroadcastToFriends(state, event.player_id(), chirp::gateway::PRESENCE_NOTIFY,
+                     notify.SerializeAsString());
+}
+
 // Guards a business handler: the caller must be a logged-in session, and a
 // non-empty req.user_id must match the authenticated identity. Returns the
 // authenticated user id, or empty after sending an error response.
@@ -407,8 +512,11 @@ void HandleLogin(const std::shared_ptr<SocialState>& state,
     state->presence[user_id] = info;
   }
 
+  // Friends see the merged view: an in-game player coming online stays
+  // IN_GAME (the overlay outlives the social connection lifecycle).
+  const auto effective = EffectivePresence(state, user_id);
   BroadcastToFriends(state, user_id, chirp::gateway::PRESENCE_NOTIFY,
-                     MakePresenceNotify(user_id, chirp::social::ONLINE, info.status_message())
+                     MakePresenceNotify(user_id, effective.status(), effective.status_message())
                          .SerializeAsString());
 }
 
@@ -930,8 +1038,11 @@ void HandleSetPresence(const std::shared_ptr<SocialState>& state,
     redis->SetEx("chirp:social:presence:" + user_id, stored.SerializeAsString(), 3600);
   }
 
+  // The broadcast is the merged view — an explicit status never masks an
+  // active game presence (the game overlay wins, see EffectivePresence).
+  const auto effective = EffectivePresence(state, user_id);
   BroadcastToFriends(state, user_id, chirp::gateway::PRESENCE_NOTIFY,
-                     MakePresenceNotify(user_id, req.status(), req.status_message())
+                     MakePresenceNotify(user_id, effective.status(), effective.status_message())
                          .SerializeAsString());
 
   resp.set_code(chirp::common::OK);
@@ -957,20 +1068,11 @@ void HandleGetPresence(const std::shared_ptr<SocialState>& state,
   }
 
   resp.set_code(chirp::common::OK);
-  {
-    std::lock_guard<std::mutex> lock(state->mu);
-    for (const auto& user_id : req.user_ids()) {
-      auto it = state->presence.find(user_id);
-      if (it != state->presence.end()) {
-        *resp.add_presences() = it->second;
-      } else {
-        // Unknown user: a plain offline placeholder.
-        chirp::social::PresenceInfo info;
-        info.set_user_id(user_id);
-        info.set_status(chirp::social::OFFLINE);
-        resp.add_presences()->CopyFrom(info);
-      }
-    }
+  // The merged view per user: base presence overlaid by the game presence
+  // (IN_GAME wins, game ids in status_message + metadata). EffectivePresence
+  // locks internally, so no outer lock here.
+  for (const auto& user_id : req.user_ids()) {
+    resp.add_presences()->CopyFrom(EffectivePresence(state, user_id));
   }
 
   SendPacket(session, chirp::gateway::GET_PRESENCE_RESP, pkt.sequence(), resp.SerializeAsString());
@@ -1007,7 +1109,13 @@ void HandleDisconnect(const std::shared_ptr<SocialState>& state,
   if (redis) {
     redis->SetEx("chirp:social:presence:" + user_id, notify.SerializeAsString(), 3600);
   }
-  BroadcastToFriends(state, user_id, chirp::gateway::PRESENCE_NOTIFY, notify.SerializeAsString());
+  // The offline fan-out is the merged view: a player still bound to a game
+  // (switch on) stays IN_GAME to friends even with the last social session
+  // gone — being reachable in-game is the whole point of the feature.
+  const auto effective = EffectivePresence(state, user_id);
+  BroadcastToFriends(state, user_id, chirp::gateway::PRESENCE_NOTIFY,
+                     MakePresenceNotify(user_id, effective.status(), effective.status_message())
+                         .SerializeAsString());
 }
 
 void HandlePacket(const std::shared_ptr<SocialState>& state,
@@ -1103,6 +1211,25 @@ int main(int argc, char** argv) {
 
   auto state = std::make_shared<SocialState>();
   LoadSocialState(redis, state);
+
+  // 游戏在线状态 (chat plane -> friends)：订阅 chat 派生的上下线事件，把
+  // IN_GAME / 回落状态推给好友。SUBSCRIBE 必须在连接建立后发（Start 之前
+  // socket 未开，是静默 no-op，见 RedisSubscriber 契约），所以挂 connect
+  // 回调。没配 Redis 时 overlay 永远为空，GET_PRESENCE 退化为基础状态。
+  std::unique_ptr<chirp::network::RedisSubscriber> presence_subscriber;
+  if (redis) {
+    presence_subscriber = std::make_unique<chirp::network::RedisSubscriber>(redis_host, redis_port);
+    presence_subscriber->SetConnectCallback([sub = presence_subscriber.get()] {
+      if (sub->Subscribe("chirp:game_presence:events")) {
+        Logger::Instance().Info("social: subscribed to game presence events");
+      }
+    });
+    presence_subscriber->SetMessageCallback(
+        [state](const std::string& channel, const std::string& payload) {
+          ConsumeGamePresenceEvent(state, channel, payload);
+        });
+    presence_subscriber->Start();
+  }
 
   auto on_packet = [state, redis, &token_verifier](std::shared_ptr<chirp::network::Session> session,
                                                    std::string&& payload) {
