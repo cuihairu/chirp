@@ -2,6 +2,7 @@ import 'dart:typed_data';
 
 import 'package:chirp_proto/chirp_proto.dart';
 import 'package:chirp_proto/proto/chat.pb.dart' as chat;
+import 'package:chirp_proto/proto/auth.pb.dart' as pbauth;
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:chirp_mobile/api/local_notifications.dart';
@@ -9,6 +10,7 @@ import 'package:chirp_mobile/api/services.dart';
 import 'package:chirp_mobile/protocol/chat_connection.dart';
 import 'package:chirp_mobile/protocol/chirp_client.dart';
 import 'package:chirp_mobile/protocol/msg_map.dart';
+import 'package:chirp_mobile/state/online_devices_store.dart';
 import 'package:chirp_mobile/ui/app_root.dart';
 import 'package:protobuf/protobuf.dart';
 
@@ -132,6 +134,25 @@ void main() {
     await tester.pumpAndSettle();
     expect(find.text('alice'), findsOneWidget);
     expect(find.textContaining('dev-1'), findsOneWidget);
+  });
+
+  testWidgets('profile tab lists other online devices from the store',
+      (tester) async {
+    final conn = FakeConnection();
+    final services = createServices(conn: conn, ensureDeviceId: () => 'dev-1');
+    await pumpApp(tester, services);
+    await tester.enterText(find.byType(TextField), 'alice');
+    await tester.tap(find.text('登录'));
+    await tester.pumpAndSettle();
+
+    // 多端在线（P0）：登录后另一类型端在线 → 我的页出现该条目。
+    applyDevicePresence(services.onlineDevices,
+        pbauth.DevicePresence(platform: 'ios', deviceId: 'p1', online: true),
+        1);
+    await tester.tap(find.text('我的'));
+    await tester.pumpAndSettle();
+    expect(find.byKey(const Key('online-device-ios')), findsOneWidget);
+    expect(find.text('ios · p1'), findsOneWidget);
   });
 
   testWidgets('failed login keeps the user on the login screen with copy',

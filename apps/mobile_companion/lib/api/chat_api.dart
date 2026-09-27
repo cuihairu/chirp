@@ -2,6 +2,7 @@ import 'dart:convert';
 import 'dart:typed_data';
 
 import 'package:chirp_proto/chirp_proto.dart';
+import 'package:chirp_proto/proto/auth.pb.dart' as pbauth;
 import 'package:fixnum/fixnum.dart';
 
 import '../protocol/chat_connection.dart';
@@ -12,6 +13,7 @@ import '../state/auth_store.dart';
 import '../state/conversation_store.dart';
 import '../state/message_store.dart';
 import '../state/models.dart';
+import '../state/online_devices_store.dart';
 import '../state/store.dart';
 import '../state/typing_presence.dart';
 
@@ -56,6 +58,7 @@ class ChatApi {
     required this.conversations,
     required this.messages,
     required this.typing,
+    this.onlineDevices,
   });
 
   final ChatConnection conn;
@@ -63,6 +66,8 @@ class ChatApi {
   final Store<ConversationState> conversations;
   final Store<MessageState> messages;
   final Store<TypingState> typing;
+  /// 多端在线（P0）；optional so older constructions stay source-compatible.
+  final Store<OnlineDevicesState>? onlineDevices;
 
   /// The channel currently open on screen; it never accumulates local unread.
   String? _activeChannelKey;
@@ -86,6 +91,9 @@ class ChatApi {
           (body) => onReactionNotify(body, false)),
       conn.onNotify(MsgID.MESSAGE_EDITED_NOTIFY, onEditedNotify),
       conn.onNotify(MsgID.MESSAGE_DELETED_NOTIFY, onDeletedNotify),
+      // 多端在线（P0）：同账号其他端的上线/下线清单变更。
+      if (onlineDevices != null)
+        conn.onNotify(MsgID.DEVICES_PRESENCE_NOTIFY, onDevicesPresence),
     ]);
   }
 
@@ -134,6 +142,12 @@ class ChatApi {
           kicked: false,
         ));
     conn.resetBackoff();
+    // 多端在线（P0）：登录响应带其他在线端的初始清单（服务端已排除自己）。
+    if (onlineDevices != null) {
+      resetOnlineDevices(onlineDevices!);
+      applyPresenceList(onlineDevices!, resp.onlineDevices,
+          DateTime.now().millisecondsSinceEpoch);
+    }
     start();
     return resp.code;
   }
@@ -150,6 +164,9 @@ class ChatApi {
     }
     stop();
     conn.disconnect();
+    if (onlineDevices != null) {
+      resetOnlineDevices(onlineDevices!);
+    }
     // Not copyWith: null means "keep the field" there, and logout must
     // actually clear the user id.
     auth.value = AuthState(
@@ -625,6 +642,18 @@ class ChatApi {
       return;
     }
     applyDeleteById(messages, notify.messageId);
+  }
+
+  /// 多端在线（P0）：清单变更事件 → store（畸形包丢弃）。
+  void onDevicesPresence(Uint8List body) {
+    if (onlineDevices == null) return;
+    try {
+      applyPresenceList(onlineDevices!,
+          pbauth.DevicesPresenceNotify.fromBuffer(body).devices,
+          DateTime.now().millisecondsSinceEpoch);
+    } catch (_) {
+      return;
+    }
   }
 }
 

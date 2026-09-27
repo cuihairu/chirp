@@ -74,6 +74,7 @@ class ChatPipeline {
     _unsubs
       ..add(_conn.onNotify(MsgID.CHAT_MESSAGE_NOTIFY, _onIncoming))
       ..add(_conn.onNotify(MsgID.KICK_NOTIFY, _onKickBody))
+      ..add(_conn.onNotify(MsgID.DEVICES_PRESENCE_NOTIFY, _onDevicesPresenceBody))
       ..add(_conn.onStatus((status) {
         for (final listener in List.of(_listeners)) {
           try {
@@ -310,6 +311,23 @@ class ChatPipeline {
     }
   }
 
+  void _onDevicesPresenceBody(Uint8List body) {
+    var devices = <auth.DevicePresence>[];
+    try {
+      devices = auth.DevicesPresenceNotify.fromBuffer(body).devices;
+    } catch (_) {
+      // 多端在线（P0）：畸形清单丢弃，不影响其他订阅者。
+    }
+    if (devices.isEmpty) return;
+    for (final listener in List.of(_listeners)) {
+      try {
+        listener.onDevicesPresence(devices);
+      } catch (_) {
+        // Same isolation rule.
+      }
+    }
+  }
+
   void _onKickBody(Uint8List body) {
     var reason = '';
     try {
@@ -337,6 +355,17 @@ class ChatPipeline {
     );
     if (resp.code == ErrorCode.OK) {
       _conn.resetBackoff();
+      // 多端在线（P0）：登录响应携带的其他在线端初始清单。
+      final devices = resp.onlineDevices;
+      if (devices.isNotEmpty) {
+        for (final listener in List.of(_listeners)) {
+          try {
+            listener.onLoginDevices(devices);
+          } catch (_) {
+            // Same isolation rule.
+          }
+        }
+      }
     }
     return resp.code;
   }

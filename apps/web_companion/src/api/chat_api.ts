@@ -15,6 +15,7 @@ import {
 } from '@chirp/proto/chat';
 import { ErrorCode } from '@chirp/proto/common';
 import { MsgID } from '@chirp/proto/gateway';
+import { DevicesPresenceNotify } from '@chirp/proto/auth';
 import type { ConnStatus } from '@chirp/protocol/chirp_client';
 import { RequestError } from '@chirp/protocol/errors';
 import {
@@ -63,6 +64,11 @@ import type { Store } from '../state/store';
 import { patch } from '../state/store';
 import { bumpUnread, removeConversation, touchConversation, upsertConversation, type ConversationState } from '../state/conversation_store';
 import { clearTyping, setTyping, type TypingState } from '../state/typing_store';
+import {
+  applyPresenceList,
+  resetOnlineDevices,
+  type OnlineDevicesState,
+} from '../state/online_devices_store';
 import type { AuthState } from '../state/auth_store';
 
 /**
@@ -92,6 +98,8 @@ export interface ChatApiDeps {
   conversations: Store<ConversationState>;
   messages: Store<MessageState>;
   typing: Store<TypingState>;
+  /** 多端在线（P0）；optional so older constructions stay source-compatible. */
+  onlineDevices?: Store<OnlineDevicesState>;
 }
 
 export interface ChannelRef {
@@ -113,6 +121,7 @@ export class ChatApi {
   private readonly conversations: Store<ConversationState>;
   private readonly messages: Store<MessageState>;
   private readonly typing: Store<TypingState>;
+  private readonly onlineDevices: Store<OnlineDevicesState> | null;
   /** The channel currently open on screen; it never accumulates local unread. */
   private activeChannelKey: string | null = null;
   private unsubs: Array<() => void> = [];
@@ -127,6 +136,7 @@ export class ChatApi {
     this.conversations = deps.conversations;
     this.messages = deps.messages;
     this.typing = deps.typing;
+    this.onlineDevices = deps.onlineDevices ?? null;
   }
 
   /** Subscribe to server pushes. Idempotent; call again after stop(). */
@@ -144,6 +154,14 @@ export class ChatApi {
       this.conn.onNotify(MsgID.REACTION_REMOVED_NOTIFY, (body) => this.onReactionNotify(body, false)),
       this.conn.onNotify(MsgID.MESSAGE_EDITED_NOTIFY, (body) => this.onEditedNotify(body)),
       this.conn.onNotify(MsgID.MESSAGE_DELETED_NOTIFY, (body) => this.onDeletedNotify(body)),
+      // 多端在线（P0）：同账号其他端的上线/下线清单变更。
+      ...(this.onlineDevices
+        ? [
+            this.conn.onNotify(MsgID.DEVICES_PRESENCE_NOTIFY, (body) =>
+              this.onDevicesPresence(body),
+            ),
+          ]
+        : []),
     ];
   }
 
@@ -188,6 +206,11 @@ export class ChatApi {
     if (resp.code === 0) {
       patch(this.auth, { userId, loggedIn: true, kicked: false });
       this.conn.resetBackoff();
+      // 多端在线（P0）：登录响应带其他在线端的初始清单（服务端已排除自己）。
+      if (this.onlineDevices) {
+        resetOnlineDevices(this.onlineDevices);
+        applyPresenceList(this.onlineDevices, resp.onlineDevices, Date.now());
+      }
       this.start();
     }
     return resp.code;
@@ -205,6 +228,9 @@ export class ChatApi {
     }
     this.stop();
     this.conn.disconnect();
+    if (this.onlineDevices) {
+      resetOnlineDevices(this.onlineDevices);
+    }
     patch(this.auth, { userId: null, loggedIn: false, kicked: false });
   }
 
@@ -601,6 +627,18 @@ export class ChatApi {
       return;
     }
     applyDeleteById(this.messages, notify.messageId);
+  }
+
+  /** 多端在线（P0）：清单变更事件 → store（畸形包丢弃）。 */
+  private onDevicesPresence(body: Uint8Array): void {
+    if (!this.onlineDevices) return;
+    let notify: DevicesPresenceNotify;
+    try {
+      notify = DevicesPresenceNotify.decode(body);
+    } catch {
+      return;
+    }
+    applyPresenceList(this.onlineDevices, notify.devices, Date.now());
   }
 }
 

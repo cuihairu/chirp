@@ -12,6 +12,10 @@ import { createPresenceStore, type PresenceState } from '../state/presence_store
 import { createFriendStore, type FriendState } from '../state/friend_store';
 import { createPartyStore, type PartyState } from '../state/party_store';
 import { createDeviceStore, type DeviceState } from '../state/device_store';
+import {
+  createOnlineDevicesStore,
+  type OnlineDevicesState,
+} from '../state/online_devices_store';
 import type { Store } from '../state/store';
 
 /**
@@ -44,6 +48,8 @@ export interface Services {
   friends: Store<FriendState>;
   partyState: Store<PartyState>;
   devices: Store<DeviceState>;
+  /** 多端在线（P0）：本账号其他在线端清单。 */
+  onlineDevices: Store<OnlineDevicesState>;
 }
 
 /**
@@ -101,7 +107,15 @@ export function createServices(
   const friends = createFriendStore();
   const partyState = createPartyStore();
   const devices = createDeviceStore();
-  const api = new ChatApi({ conn: asConnection(client), auth, conversations, messages, typing });
+  const onlineDevices = createOnlineDevicesStore();
+  const api = new ChatApi({
+    conn: asConnection(client),
+    auth,
+    conversations,
+    messages,
+    typing,
+    onlineDevices,
+  });
 
   // Social defaults ON in production (a real chat ChirpClient implies a real
   // deployment); tests that inject a chat fake get chat-only unless they also
@@ -143,6 +157,7 @@ export function createServices(
     friends,
     partyState,
     devices,
+    onlineDevices,
   };
 }
 

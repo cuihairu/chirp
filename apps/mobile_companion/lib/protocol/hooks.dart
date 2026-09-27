@@ -1,6 +1,7 @@
 import 'package:chirp_proto/chirp_proto.dart';
 // For GeneratedMessageGenericExtensions.deepCopy: the archive stores a
 // snapshot, not the caller's reference (C++ stores by value).
+import 'package:chirp_proto/proto/auth.pb.dart' as auth;
 import 'package:protobuf/protobuf.dart';
 
 import 'chirp_client.dart';
@@ -158,6 +159,14 @@ abstract class ChatEventListener {
   void onReconnecting(int attempt, int delayMs) {}
   void onReconnected() {}
   void onMessageReceived(ChatMessage message) {}
+
+  /// 多端在线（P0）：某端上线/下线/被顶时的清单变更
+  /// （DEVICES_PRESENCE_NOTIFY，风格对齐 [onKicked] 的 KICK_NOTIFY）。
+  /// 每个设备的 online 标志区分上线/下线。
+  void onDevicesPresence(List<auth.DevicePresence> devices) {}
+
+  /// 多端在线（P0）：登录成功时该用户其他在线端的初始清单。
+  void onLoginDevices(List<auth.DevicePresence> devices) {}
 }
 
 abstract class CommandHandler {

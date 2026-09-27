@@ -98,6 +98,13 @@ export const zh = {
     members: (n: number, max: number) => `成员 ${n}/${max}`,
     unavailable: '组队服务未连接',
   },
+  onlineDevices: {
+    title: '在线设备',
+    note: '同一账号在其他类型端(web/ios/android…)上的在线状态;同类型端新登录会顶掉旧会话。',
+    empty: '当前没有其他在线端。',
+    online: '在线',
+    offline: '离线',
+  },
   device: {
     title: '设备管理',
     thisDevice: '本设备',

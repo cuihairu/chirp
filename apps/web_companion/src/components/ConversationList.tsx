@@ -22,6 +22,7 @@ import { PresenceStatus } from '@chirp/proto/social';
 import FriendsDialog from './FriendsDialog';
 import PartyDialog, { PartyButton } from './PartyDialog';
 import DevicesDialog, { DevicesButton } from './DevicesDialog';
+import OnlineDevicesDialog, { OnlineDevicesButton } from './OnlineDevicesDialog';
 import { zh } from '../i18n/zh';
 
 /** Left pane: conversations, newest first, plus the start-private-chat entry. */
@@ -44,6 +45,7 @@ export default function ConversationList({
   const [friendsOpen, setFriendsOpen] = useState(false);
   const [partyOpen, setPartyOpen] = useState(false);
   const [devicesOpen, setDevicesOpen] = useState(false);
+  const [onlineDevicesOpen, setOnlineDevicesOpen] = useState(false);
 
   const startChat = (): void => {
     const peer = peerId.trim();
@@ -100,6 +102,7 @@ export default function ConversationList({
         )}
         {partyApi && <PartyButton onClick={() => setPartyOpen(true)} />}
         {deviceApi && <DevicesButton onClick={() => setDevicesOpen(true)} />}
+        <OnlineDevicesButton onClick={() => setOnlineDevicesOpen(true)} />
       </Box>
       <List dense sx={{ overflowY: 'auto', flex: 1 }}>
         {list.map((conversation: Conversation) => {
@@ -206,6 +209,7 @@ export default function ConversationList({
       )}
       {partyApi && <PartyDialog open={partyOpen} onClose={() => setPartyOpen(false)} />}
       {deviceApi && <DevicesDialog open={devicesOpen} onClose={() => setDevicesOpen(false)} />}
+      <OnlineDevicesDialog open={onlineDevicesOpen} onClose={() => setOnlineDevicesOpen(false)} />
     </Box>
   );
 }

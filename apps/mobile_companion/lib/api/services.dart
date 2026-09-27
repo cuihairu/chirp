@@ -7,6 +7,7 @@ import '../state/conversation_store.dart';
 import '../state/device_store.dart';
 import '../state/friend_store.dart';
 import '../state/message_store.dart';
+import '../state/online_devices_store.dart';
 import '../state/party_store.dart';
 import '../state/store.dart';
 import '../state/typing_presence.dart';
@@ -33,6 +34,7 @@ class Services {
     required this.friends,
     required this.partyState,
     required this.devices,
+    required this.onlineDevices,
     this.social,
     this.socialApi,
     this.party,
@@ -73,6 +75,8 @@ class Services {
   final Store<FriendState> friends;
   final Store<PartyState> partyState;
   final Store<DeviceState> devices;
+  /// 多端在线（P0）：本账号其他在线端清单。
+  final Store<OnlineDevicesState> onlineDevices;
 
   /// Chat login, then best-effort logins on the degradeable planes.
   Future<void> loginAll(String userId) async {
@@ -139,12 +143,14 @@ Services createServices({
   final friends = createFriendStore();
   final partyState = createPartyStore();
   final devices = createDeviceStore();
+  final onlineDevices = createOnlineDevicesStore();
   final api = ChatApi(
     conn: client,
     auth: auth,
     conversations: conversations,
     messages: messages,
     typing: typing,
+    onlineDevices: onlineDevices,
   );
 
   // The social/party/device planes default ON for real ChirpClients; tests
@@ -189,5 +195,6 @@ Services createServices({
     friends: friends,
     partyState: partyState,
     devices: devices,
+    onlineDevices: onlineDevices,
   );
 }

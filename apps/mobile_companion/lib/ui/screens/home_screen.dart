@@ -8,6 +8,7 @@ import '../../api/social_api.dart';
 import '../../protocol/errors.dart';
 import '../../state/conversation_store.dart';
 import '../../state/models.dart';
+import '../../state/online_devices_store.dart';
 import '../../state/party_store.dart';
 import '../../state/typing_presence.dart';
 import 'chat_screen.dart';
@@ -59,6 +60,8 @@ class _HomeScreenState extends State<HomeScreen> {
       widget.services.devices,
       widget.services.presence,
       widget.services.auth,
+      // 多端在线（P0）：我的页的在线设备清单跟随变更事件刷新。
+      widget.services.onlineDevices,
     ]);
     return Scaffold(
       appBar: AppBar(
@@ -433,6 +436,8 @@ class _HomeScreenState extends State<HomeScreen> {
     final auth = widget.services.auth.value;
     final devices = widget.services.devices.value;
     final deviceApi = widget.services.deviceApi;
+    // 多端在线（P0）：其他类型端的在线清单（登录初始 + 变更事件）。
+    final onlineDevices = onlineDevicesOf(widget.services.onlineDevices.value);
     return ListView(
       children: [
         ListTile(
@@ -440,6 +445,20 @@ class _HomeScreenState extends State<HomeScreen> {
           title: Text(auth.userId ?? '-'),
           subtitle: Text('设备 ID:${auth.deviceId}'),
         ),
+        const _SectionHeader('在线设备'),
+        if (onlineDevices.isEmpty)
+          const Padding(
+            padding: EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+            child: Text('当前没有其他在线端', key: Key('online-devices-empty')),
+          )
+        else
+          for (final device in onlineDevices)
+            ListTile(
+              key: Key('online-device-${device.platform}'),
+              leading: const Icon(Icons.devices_other),
+              title: Text('${device.platform} · ${device.deviceId}'),
+              trailing: Text(device.online ? '在线' : '离线'),
+            ),
         const _SectionHeader('我的设备'),
         if (devices.unavailable)
           const Padding(

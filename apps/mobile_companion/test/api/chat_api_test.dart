@@ -12,6 +12,8 @@ import 'package:chirp_mobile/state/auth_store.dart';
 import 'package:chirp_mobile/state/conversation_store.dart';
 import 'package:chirp_mobile/state/message_store.dart';
 import 'package:chirp_mobile/state/models.dart';
+import 'package:chirp_mobile/state/online_devices_store.dart';
+import 'package:chirp_mobile/state/store.dart';
 import 'package:chirp_mobile/state/typing_presence.dart';
 import 'package:protobuf/protobuf.dart';
 
@@ -96,13 +98,14 @@ class FakeConnection implements ChatConnection {
 }
 
 class Harness {
-  Harness() {
+  Harness({this.onlineDevices}) {
     api = ChatApi(
       conn: conn,
       auth: auth,
       conversations: conversations,
       messages: messages,
       typing: typing,
+      onlineDevices: onlineDevices,
     );
   }
 
@@ -111,6 +114,8 @@ class Harness {
   final conversations = createConversationStore();
   final messages = createMessageStore();
   final typing = createTypingStore();
+  /// 多端在线（P0）；null keeps the api store-less (legacy constructions).
+  final Store<OnlineDevicesState>? onlineDevices;
   late final ChatApi api;
 }
 
