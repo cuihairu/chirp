@@ -4,7 +4,7 @@ title: 游戏聊天特征
 
 # 游戏聊天特征
 
-最后更新：2026-09-27（撤回墓碑贯通历史存档：置位并抹除正文，缺口关闭）
+最后更新：2026-09-27（enhanced 形态接入撤回端点：游戏平面部署形态补上 `DELETE_MESSAGE`，撤回在两种形态均可用）
 
 本文档列出游戏聊天系统需要支持的特征，按优先级分阶段实现。
 
@@ -16,7 +16,7 @@ title: 游戏聊天特征
 - **消息长度限制**：不同频道不同上限。私聊 200 字、世界 100 字、公告 500 字。超长截断或拒绝。
 - **发送频率限制**：按用户 + 频道限流。世界频道 5 秒一条、公会 2 秒一条、私聊 1 秒一条。超频返回 `RATE_LIMITED`。
 - **重复消息检测**：连续 3 条相同内容自动禁言 5 分钟。防刷屏。
-- **消息撤回**（已落地：`MessageEditManager::RecallMessage`，窗口 `--recall_window_sec` 默认 120s、可撤回频道 `--recall_channels` 默认 `private,guild`；版主删除走 `DeleteMessage` 治理路径，不受窗口约束。回码：非发送者 `AUTH_FAILED`、超窗/非撤回频道/重复撤回 `INVALID_PARAM`、本进程无台账 `USER_NOT_FOUND`）：发送后 2 分钟内可撤回（私聊/公会）。撤回后对方通过 `MESSAGE_DELETED_NOTIFY`（`is_hard_delete=false`、`deleted_by=作者`）把气泡换成"消息已撤回"墓碑，接收方离线队列里已入队的副本同步按 `message_id` 回收。**历史存档墓碑已贯通（2026-09-27）**：墓碑的语义是「置位 `is_recalled` + 抹除正文」，只置位等于原文仍躺在存档里——`MessageStore::MarkMessageRecalled` 与基础形态的 `MarkRecalled` 都连 `content` 一并清空（MySQL `UPDATE ... SET is_recalled = 1, content = ''`；Hybrid 双 tier：Redis 热层 `LSet` 原位改写、列表顺序与其余条目不动，冷层同上 UPDATE；镜像就是 `ChatMessage` proto 字节，抹除逻辑收敛为 `recall_tombstone.{h,cc}` 供三种存储实现共用）。因此重拉 `GET_HISTORY` 只剩"这条被撤回过"的事实，读不出原文；`BULK_DELETE` 的软删与单体软删同语义（成功每条立碑、每成员回收副本）。仍存的部署面缺口见 TODO：`main_enhanced.cc` 的 dispatch 尚无 `DELETE_MESSAGE` 槽位，撤回入口目前只在 basic 形态可用。
+- **消息撤回**（已落地：`MessageEditManager::RecallMessage`，窗口 `--recall_window_sec` 默认 120s、可撤回频道 `--recall_channels` 默认 `private,guild`；版主删除走 `DeleteMessage` 治理路径，不受窗口约束。回码：非发送者 `AUTH_FAILED`、超窗/非撤回频道/重复撤回 `INVALID_PARAM`、本进程无台账 `USER_NOT_FOUND`）：发送后 2 分钟内可撤回（私聊/公会）。撤回后对方通过 `MESSAGE_DELETED_NOTIFY`（`is_hard_delete=false`、`deleted_by=作者`）把气泡换成"消息已撤回"墓碑，接收方离线队列里已入队的副本同步按 `message_id` 回收。**历史存档墓碑已贯通（2026-09-27）**：墓碑的语义是「置位 `is_recalled` + 抹除正文」，只置位等于原文仍躺在存档里——`MessageStore::MarkMessageRecalled` 与基础形态的 `MarkRecalled` 都连 `content` 一并清空（MySQL `UPDATE ... SET is_recalled = 1, content = ''`；Hybrid 双 tier：Redis 热层 `LSet` 原位改写、列表顺序与其余条目不动，冷层同上 UPDATE；镜像就是 `ChatMessage` proto 字节，抹除逻辑收敛为 `recall_tombstone.{h,cc}` 供三种存储实现共用）。因此重拉 `GET_HISTORY` 只剩"这条被撤回过"的事实，读不出原文；`BULK_DELETE` 的软删与单体软删同语义（成功每条立碑、每成员回收副本）。**两种部署形态都有撤回入口（2026-09-27）**：basic 之外，enhanced（`MYSQL_FOUND` 下实际构建的 `main_enhanced.cc`）此前根本没有 `DELETE_MESSAGE` 槽位，现已接入同一套 `MessageEditManager`/`MessageEditHandlers`——发送侧记台账，撤回侧经 session registry 把墓碑扇出到接收方的每一条在线设备，marker/purger 分别接 `HybridMessageStore::MarkMessageRecalled`（双 tier 抹除）与 `PurgeOfflineByMessageId`（Redis 与 Redis-down 回退队列都扫）。两条已记账的形态差异：游戏平面没有群组订阅登记，成员解析只覆盖私聊（规范 `a|b` 键取对方），公会撤回的 notify/离线回收对空成员列表是 no-op——与频道屏蔽同缺口，随群聊扇出路径一起落地；无角色体系则版主恒判 false（fail-closed），`is_hard_delete=true` 一律 `AUTH_FAILED`。gateway 侧零改动：已认证连接原样转发 2001-2999，`MESSAGE_DELETED_NOTIFY`(2232) 经 ChatBridge 的 verbatim 管道可达客户端。
 - **@提及**：`@某人`、`@全体成员`。被 @ 的玩家收到高亮提示。
 
 ### 频道管理

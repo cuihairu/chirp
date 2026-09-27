@@ -21,6 +21,9 @@
 #include "proto/common.pb.h"
 #include "proto/gateway.pb.h"
 
+#include "fake_servers.h"
+#include "in_memory_redis.h"
+
 // The enhanced main keeps its session internals (DistributedChatState,
 // HandleLogin, HandleSendMessage, HealthyLocalSessions, ...) in an anonymous
 // namespace; pull the file in with main() renamed so the tests below can
@@ -119,7 +122,7 @@ using HandleSendMessageWithPrefsFn = void (*)(
     const chirp::chat::DeliveryPrefs*,
     const std::shared_ptr<chirp::network::MessageRouter>&, chirp::network::ServerGatewayPeer*,
     const std::string&, const std::string&, chirp::network::ChatPeerLink*, const std::string&,
-    int64_t);
+    chirp::chat::MessageEditHandlers*, int64_t);
 
 template <typename Fn, typename = void>
 struct CanCastHandleLogin : std::false_type {};
@@ -162,10 +165,10 @@ void InvokeSendMessage(const chirp::chat::SendMessageRequest& req,
                        chirp::network::ServerGatewayPeer* hub_peer,
                        const std::string& npc_service_id, const std::string& npc_prefix,
                        chirp::network::ChatPeerLink* spoke_link, const std::string& spoke_game_id,
-                       int64_t seq) {
+                       chirp::chat::MessageEditHandlers* edits, int64_t seq) {
   if constexpr (CanCastHandleSendMessage<HandleSendMessageWithPrefsFn>::value) {
     HandleSendMessage(req, session, state, store, tracker, acks, prefs, router, hub_peer,
-                      npc_service_id, npc_prefix, spoke_link, spoke_game_id, seq);
+                      npc_service_id, npc_prefix, spoke_link, spoke_game_id, edits, seq);
   } else {
     HandleSendMessage(req, session, state, store, tracker, acks, router, hub_peer,
                       npc_service_id, npc_prefix, spoke_link, spoke_game_id,
@@ -188,6 +191,88 @@ class EnhancedSessionTest : public ::testing::Test {
     store_ = std::make_shared<HybridMessageStore>(io_, store_config_);
     tracker_ = std::make_shared<MessageDeliveryTracker>(io_, store_);
     router_ = std::make_shared<chirp::network::MessageRouter>(io_, "127.0.0.1", 1);
+    // 生产同一份的撤回装配（MakeEnhancedRecallRuntime 在 main_enhanced.cc 里，
+    // 测试经 #include 直驱）：默认窗口 2 分钟、可撤回频道 private+guild。
+    recall_ = MakeEnhancedRecallRuntime(state_, store_, edit_config_);
+  }
+
+  // Scaffold private send through the real send path; returns the response
+  // code, and message_id (optional) receives the server-minted id. store/edits
+  // 覆盖默认装配：撤回端到端用例会换成带真历史层的那一套。
+  chirp::common::ErrorCode SendPrivate(const std::shared_ptr<MockSession>& sender_session,
+                                       const std::string& sender, const std::string& receiver,
+                                       const std::string& content, std::string* message_id,
+                                       const std::shared_ptr<HybridMessageStore>& store_override =
+                                           nullptr,
+                                       chirp::chat::MessageEditHandlers* edits_override = nullptr) {
+    chirp::chat::SendMessageRequest req;
+    req.set_sender_id(sender);
+    req.set_receiver_id(receiver);
+    req.set_channel_type(chirp::chat::PRIVATE);
+    req.set_content(content);
+    InvokeSendMessage(req, sender_session, state_, store_override ? store_override : store_, tracker_, /*acks=*/nullptr,
+                      &delivery_prefs_, router_, /*hub_peer=*/nullptr, /*npc_service_id=*/"",
+                      /*npc_prefix=*/"npc:", /*spoke_link=*/nullptr, /*spoke_game_id=*/"",
+                      edits_override ? edits_override : recall_.handlers.get(), /*seq=*/1);
+    // 同会话多次发送会累积历史帧，这里只断言"有响应"并取最新一帧。
+    const auto resps = FramesOf(*sender_session, chirp::gateway::SEND_MESSAGE_RESP);
+    EXPECT_FALSE(resps.empty());
+    if (resps.empty()) {
+      return chirp::common::SERVER_UNAVAILABLE;
+    }
+    chirp::chat::SendMessageResponse resp;
+    if (!resp.ParseFromString(resps.back().body())) {
+      return chirp::common::INVALID_PARAM;
+    }
+    if (message_id != nullptr) {
+      *message_id = resp.message_id();
+    }
+    return resp.code();
+  }
+
+  // DELETE_MESSAGE dispatch body through the production wiring; returns the
+  // response the requester got.
+  chirp::chat::DeleteMessageResponse Recall(const std::shared_ptr<MockSession>& session,
+                                            const std::string& message_id,
+                                            const std::string& user_id,
+                                            bool hard_delete = false,
+                                            chirp::chat::MessageEditHandlers* edits_override =
+                                                nullptr) {
+    chirp::chat::DeleteMessageRequest req;
+    req.set_message_id(message_id);
+    req.set_user_id(user_id);
+    req.set_is_hard_delete(hard_delete);
+    HandleDeleteMessage(req, session, state_,
+                        edits_override ? *edits_override : *recall_.handlers, /*seq=*/9);
+    const auto resps = FramesOf(*session, chirp::gateway::DELETE_MESSAGE_RESP);
+    chirp::chat::DeleteMessageResponse resp;
+    // 哨兵回码：没响应/解析不了都暴露成 SERVER_UNAVAILABLE，调用方的具体
+    // 回码断言会立刻失败，不会把"没回包"误读成 OK。
+    if (resps.empty() || !resp.ParseFromString(resps.back().body())) {
+      resp.set_code(chirp::common::SERVER_UNAVAILABLE);
+    }
+    return resp;
+  }
+
+  // 撤回端到端的墓碑/历史断言需要真历史层：主 fixture 的 Redis 端口是死的，
+  // HybridMessageStore 只有离线队列有内存回退，历史层没有。这几个用例自带
+  // InMemoryRedis + store + 召回装配（仍是生产同一个 MakeEnhancedRecallRuntime，
+  // 只是绑到活历史层的 store 上）。通过出参在调用方栈上构造，避免把
+  // FakeRedisServer 的 handler 引用悬垂在返回值移动上。
+  struct LiveHistoryRecall {
+    chirp_test::InMemoryRedis redis;
+    std::unique_ptr<chirp_test::FakeRedisServer> fake;
+    std::shared_ptr<HybridMessageStore> store;
+    EnhancedRecallRuntime recall;
+  };
+
+  void StartLiveHistory(LiveHistoryRecall& lh) {
+    lh.fake = std::make_unique<chirp_test::FakeRedisServer>(
+        [&lh](const std::vector<std::string>& args) { return lh.redis.Handle(args); });
+    MessageStoreConfig cfg = store_config_;
+    cfg.redis_port = lh.fake->port();
+    lh.store = std::make_shared<HybridMessageStore>(io_, cfg);
+    lh.recall = MakeEnhancedRecallRuntime(state_, lh.store, edit_config_);
   }
 
   // Scaffold LOGIN_REQ: token doubles as the user id (the verifier stays
@@ -210,6 +295,9 @@ class EnhancedSessionTest : public ::testing::Test {
   // form drops it (the in-flight one dereferences it per delivery, with no
   // null guard), so hand them a real, empty instance either way.
   chirp::chat::DeliveryPrefs delivery_prefs_;
+  // 撤回装配：默认 EditConfig（窗口 2 分钟、private+guild 可撤回）。
+  chirp::chat::EditConfig edit_config_;
+  EnhancedRecallRuntime recall_;
 };
 
 // --- DistributedChatState over the shared SessionRegistry -----------------
@@ -382,7 +470,8 @@ TEST_F(EnhancedSessionTest, PrivateSendFansOutToEveryDevice) {
   req.set_content("hi bob");
   InvokeSendMessage(req, sender, state_, store_, tracker_, /*acks=*/nullptr, &delivery_prefs_,
                     router_, /*hub_peer=*/nullptr, /*npc_service_id=*/"", /*npc_prefix=*/"npc:",
-                    /*spoke_link=*/nullptr, /*spoke_game_id=*/"", /*seq=*/3);
+                    /*spoke_link=*/nullptr, /*spoke_game_id=*/"", recall_.handlers.get(),
+                    /*seq=*/3);
 
   auto resps = FramesOf(*sender, chirp::gateway::SEND_MESSAGE_RESP);
   ASSERT_EQ(resps.size(), 1u);
@@ -417,7 +506,8 @@ TEST_F(EnhancedSessionTest, PrivateSendQueuesOfflineWhenEveryDeviceHalfClosed) {
   req.set_content("hi bob");
   InvokeSendMessage(req, sender, state_, store_, tracker_, /*acks=*/nullptr, &delivery_prefs_,
                     router_, /*hub_peer=*/nullptr, /*npc_service_id=*/"", /*npc_prefix=*/"npc:",
-                    /*spoke_link=*/nullptr, /*spoke_game_id=*/"", /*seq=*/4);
+                    /*spoke_link=*/nullptr, /*spoke_game_id=*/"", recall_.handlers.get(),
+                    /*seq=*/4);
 
   // A half-closed connection counts as offline: nothing is written to it.
   EXPECT_TRUE(bob->sent.empty());
@@ -443,6 +533,177 @@ TEST_F(EnhancedSessionTest, TrackAckIfCapableHoldsWhenAnyDeviceIsCapable) {
   acks.MarkCapable(modern);
   EXPECT_TRUE(TrackAckIfCapable(&acks, {legacy, modern}, "m2", "bob", "payload-2"));
   EXPECT_EQ(acks.pending_count(), 1u);
+}
+
+// --- 撤回（DELETE_MESSAGE，game_chat_features P0）：enhanced 形态端到端 -----
+
+TEST_F(EnhancedSessionTest, RecallNotifiesEveryDeviceAndErasesHistory) {
+  LiveHistoryRecall live;
+  StartLiveHistory(live);
+
+  auto alice = std::make_shared<MockSession>();
+  auto bob_phone = std::make_shared<MockSession>();
+  auto bob_tablet = std::make_shared<MockSession>();
+  Login(alice, "alice", "a1", 1);
+  Login(bob_phone, "bob", "p1", 2);
+  Login(bob_tablet, "bob", "p2", 3);
+
+  std::string mid;
+  EXPECT_EQ(SendPrivate(alice, "alice", "bob", "recall me", &mid, live.store,
+                        live.recall.handlers.get()),
+            chirp::common::OK);
+  EXPECT_FALSE(mid.empty());
+
+  const chirp::chat::DeleteMessageResponse resp =
+      Recall(alice, mid, "alice", /*hard_delete=*/false, live.recall.handlers.get());
+  EXPECT_EQ(resp.code(), chirp::common::OK);
+  EXPECT_FALSE(resp.was_permanently_deleted());
+
+  // 撤回广播到达 bob 的每一条设备会话（多端共存语义）。
+  for (const auto& device : {bob_phone, bob_tablet}) {
+    const auto notifies = FramesOf(*device, chirp::gateway::MESSAGE_DELETED_NOTIFY);
+    ASSERT_EQ(notifies.size(), 1u);
+    chirp::chat::MessageDeletedNotify notify;
+    ASSERT_TRUE(notify.ParseFromString(notifies[0].body()));
+    EXPECT_EQ(notify.message_id(), mid);
+    EXPECT_EQ(notify.channel_id(), "alice|bob");
+    EXPECT_FALSE(notify.is_hard_delete());
+    EXPECT_EQ(notify.deleted_by(), "alice");
+  }
+
+  // 历史存档只剩墓碑：is_recalled 置位、正文抹除。
+  const auto page = live.store->GetHistory("alice|bob", 0, 0, 10);
+  ASSERT_EQ(page.size(), 1u);
+  EXPECT_EQ(page[0].message_id, mid);
+  EXPECT_TRUE(page[0].is_recalled);
+  EXPECT_TRUE(page[0].content.empty());
+}
+
+TEST_F(EnhancedSessionTest, RecallPurgesOfflineCopyOfAbsentReceiver) {
+  LiveHistoryRecall live;
+  StartLiveHistory(live);
+
+  auto alice = std::make_shared<MockSession>();
+  Login(alice, "alice", "a1", 1);
+  // bob 不登录：消息进离线队列，撤回时他收不到 notify，副本必须被回收，
+  // 否则下次登录会把原文补投出去。
+  std::string mid;
+  EXPECT_EQ(SendPrivate(alice, "alice", "bob", "offline secret", &mid, live.store,
+                        live.recall.handlers.get()),
+            chirp::common::OK);
+  ASSERT_EQ(live.store->GetOfflineMessages("bob").size(), 1u);
+
+  const chirp::chat::DeleteMessageResponse resp =
+      Recall(alice, mid, "alice", /*hard_delete=*/false, live.recall.handlers.get());
+  EXPECT_EQ(resp.code(), chirp::common::OK);
+  EXPECT_TRUE(live.store->GetOfflineMessages("bob").empty());
+
+  const auto page = live.store->GetHistory("alice|bob", 0, 0, 10);
+  ASSERT_EQ(page.size(), 1u);
+  EXPECT_TRUE(page[0].is_recalled);
+  EXPECT_TRUE(page[0].content.empty());
+}
+
+TEST_F(EnhancedSessionTest, RecallRejectsNonSenderUnknownWorldChannelAndHardDelete) {
+  LiveHistoryRecall live;
+  StartLiveHistory(live);
+
+  auto alice = std::make_shared<MockSession>();
+  auto bob = std::make_shared<MockSession>();
+  Login(alice, "alice", "a1", 1);
+  Login(bob, "bob", "p1", 2);
+
+  std::string mid;
+  ASSERT_EQ(SendPrivate(alice, "alice", "bob", "mine", &mid, live.store,
+                        live.recall.handlers.get()),
+            chirp::common::OK);
+
+  // 非发送者：回码 AUTH_FAILED（版主请走治理路径，这里没有版主）。
+  EXPECT_EQ(Recall(bob, mid, "bob", /*hard_delete=*/false, live.recall.handlers.get())
+                .code(),
+            chirp::common::AUTH_FAILED);
+
+  // 未知消息（台账里没有）：USER_NOT_FOUND。
+  EXPECT_EQ(
+      Recall(alice, "no-such-message", "alice", /*hard_delete=*/false,
+             live.recall.handlers.get())
+          .code(),
+      chirp::common::USER_NOT_FOUND);
+
+  // 世界频道不在默认可撤回名单（private,guild）：INVALID_PARAM。
+  chirp::chat::SendMessageRequest world_req;
+  world_req.set_sender_id("alice");
+  world_req.set_channel_type(chirp::chat::WORLD);
+  world_req.set_channel_id("world");
+  world_req.set_content("world hello");
+  InvokeSendMessage(world_req, alice, state_, live.store, tracker_, /*acks=*/nullptr,
+                    &delivery_prefs_, router_, /*hub_peer=*/nullptr, /*npc_service_id=*/"",
+                    /*npc_prefix=*/"npc:", /*spoke_link=*/nullptr, /*spoke_game_id=*/"",
+                    live.recall.handlers.get(), /*seq=*/2);
+  std::string world_mid;
+  {
+    const auto resps = FramesOf(*alice, chirp::gateway::SEND_MESSAGE_RESP);
+    ASSERT_GE(resps.size(), 2u);
+    chirp::chat::SendMessageResponse resp;
+    ASSERT_TRUE(resp.ParseFromString(resps.back().body()));
+    ASSERT_EQ(resp.code(), chirp::common::OK);
+    world_mid = resp.message_id();
+  }
+  EXPECT_EQ(
+      Recall(alice, world_mid, "alice", /*hard_delete=*/false, live.recall.handlers.get())
+          .code(),
+      chirp::common::INVALID_PARAM);
+
+  // is_hard_delete 是版主治理路径；enhanced 无角色体系恒非版主 → fail-closed。
+  std::string mid2;
+  ASSERT_EQ(SendPrivate(alice, "alice", "bob", "hard target", &mid2, live.store,
+                        live.recall.handlers.get()),
+            chirp::common::OK);
+  EXPECT_EQ(
+      Recall(alice, mid2, "alice", /*hard_delete=*/true, live.recall.handlers.get()).code(),
+      chirp::common::AUTH_FAILED);
+  // 被拒的硬删不动历史。
+  const auto page = live.store->GetHistory("alice|bob", 0, 0, 10);
+  EXPECT_EQ(page.size(), 2u);
+}
+
+TEST_F(EnhancedSessionTest, DispatchRoutesDeleteMessageAndRejectsGarbage) {
+  chirp::chat::runtime::DistributedDispatchHandlers handlers;
+  int calls = 0;
+  std::string seen_id;
+  handlers.on_delete_message = [&](const std::shared_ptr<chirp::network::Session>&,
+                                   const chirp::chat::DeleteMessageRequest& req, int64_t seq) {
+    ++calls;
+    seen_id = req.message_id();
+    EXPECT_EQ(seq, 7);
+  };
+
+  auto session = std::make_shared<MockSession>();
+  chirp::chat::DeleteMessageRequest req;
+  req.set_message_id("m-1");
+  req.set_user_id("alice");
+  chirp::gateway::Packet pkt;
+  pkt.set_msg_id(chirp::gateway::DELETE_MESSAGE_REQ);
+  pkt.set_sequence(7);
+  pkt.set_body(req.SerializeAsString());
+  chirp::chat::runtime::DispatchDistributedPacket(session, pkt, handlers);
+  EXPECT_EQ(calls, 1);
+  EXPECT_EQ(seen_id, "m-1");
+
+  // 解析失败的 body：不进 handler，但必须回 INVALID_PARAM（撤回请求不许悬着）。
+  pkt.set_body(std::string("\xde\xad\xbe\xef", 4));
+  chirp::chat::runtime::DispatchDistributedPacket(session, pkt, handlers);
+  EXPECT_EQ(calls, 1);
+  const auto resps = FramesOf(*session, chirp::gateway::DELETE_MESSAGE_RESP);
+  ASSERT_EQ(resps.size(), 1u);
+  chirp::chat::DeleteMessageResponse resp;
+  ASSERT_TRUE(resp.ParseFromString(resps[0].body()));
+  EXPECT_EQ(resp.code(), chirp::common::INVALID_PARAM);
+
+  // 没接 handler（比如旧进程/新客户端）同样不崩，只回 INVALID_PARAM。
+  chirp::chat::runtime::DistributedDispatchHandlers bare;
+  chirp::chat::runtime::DispatchDistributedPacket(session, pkt, bare);
+  EXPECT_EQ(FramesOf(*session, chirp::gateway::DELETE_MESSAGE_RESP).size(), 2u);
 }
 
 }  // namespace

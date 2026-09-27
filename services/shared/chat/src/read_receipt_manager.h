@@ -7,17 +7,15 @@
 #include <unordered_map>
 #include <vector>
 
+#include "message_store.h"
 #include "proto/chat.pb.h"
 
 namespace chirp {
 namespace chat {
 
-// Read receipt data
-struct ReadReceiptData {
-  std::string user_id;
-  std::string message_id;
-  int64_t read_at;
-};
+// ReadReceiptData 复用 message_store.h 的定义：这里曾经另有一份字段同名但
+// 成员顺序不同的副本，任何同时包含两个头的 TU（比如接入 message_handlers.h
+// 的 enhanced 形态）都会因重定义编译失败。只留一份。
 
 // Per-user read cursor: channel_key -> last_read_message_id/timestamp
 struct UserReadCursor {

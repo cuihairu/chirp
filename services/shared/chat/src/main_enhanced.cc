@@ -25,6 +25,8 @@
 #include "inject_consumer.h"
 #include "login_token_verifier.h"
 #include "message_delivery_tracker.h"
+#include "message_edit_manager.h"
+#include "message_handlers.h"
 #include "message_migration_worker.h"
 #include "npc_uplink.h"
 #include "paginated_history_retriever.h"
@@ -179,6 +181,7 @@ void HandleSendMessage(const chirp::chat::SendMessageRequest& req,
                       const std::string& npc_prefix,
                       chirp::network::ChatPeerLink* spoke_link,
                       const std::string& spoke_game_id,
+                      chirp::chat::MessageEditHandlers* edit_handlers,
                       int64_t seq) {
   chirp::chat::ChatMessage msg;
   msg.set_message_id(chirp::chat::runtime::GenerateMessageId());
@@ -234,6 +237,14 @@ void HandleSendMessage(const chirp::chat::SendMessageRequest& req,
   resp.set_message_id(msg.message_id());
   resp.set_server_timestamp(msg.timestamp());
   chirp::chat::runtime::SendPacket(sender_session, chirp::gateway::SEND_MESSAGE_RESP, seq, resp.SerializeAsString());
+
+  // 撤回/编辑台账（game_chat_features P0）：DELETE_MESSAGE 请求只带
+  // message_id，频道要从 TrackMessage 的台账反查；RegisterMessage 记下发送者
+  // 与内容，「非发送者」判定和撤回窗口起点都靠它。与 basic 的 accept 同一时机。
+  if (edit_handlers != nullptr) {
+    edit_handlers->TrackMessage(msg.message_id(), msg.channel_type(), channel_id);
+    edit_handlers->RegisterMessage(msg.message_id(), msg.sender_id(), msg.content());
+  }
 
   // Track delivery for private messages
   if (req.channel_type() == chirp::chat::PRIVATE && !req.receiver_id().empty()) {
@@ -315,6 +326,93 @@ void HandleSendMessage(const chirp::chat::SendMessageRequest& req,
       spoke_link->SendChannelMessage(notify);
     }
   }
+}
+
+/// @brief 撤回管道的 enhanced 装配（game_chat_features P0「enhanced 形态接入
+/// 撤回端点」）。五个回调与 basic 构建同契约，落在共享的 SessionRegistry 与
+/// HybridMessageStore 上：
+///  - notify：发给该用户在本实例注册的全部会话（多端共存语义下每条设备会话都
+///    收到 MESSAGE_DELETED_NOTIFY；跨实例与既有 notify 一致是尽力而为）；
+///  - members：私聊从规范 "a|b" 频道 id 解析对端；游戏平面没有频道成员台账，
+///    非私聊返回空（存档墓碑与离线回收仍按 store 生效，见 TODO 记账）；
+///  - moderator：enhanced 无角色体系，恒 false——is_hard_delete 一律
+///    AUTH_FAILED（fail-closed，版主治理路径留在 basic）；
+///  - marker：历史存档双 tier 置位并抹除正文；
+///  - purger：按 message_id 回收接收方离线队列里的副本（Redis + 内存回退）。
+struct EnhancedRecallRuntime {
+  std::unique_ptr<chirp::chat::MessageEditManager> edits;
+  std::unique_ptr<chirp::chat::MessageEditHandlers> handlers;
+};
+
+EnhancedRecallRuntime MakeEnhancedRecallRuntime(
+    const std::shared_ptr<DistributedChatState>& state,
+    const std::shared_ptr<HybridMessageStore>& store,
+    const chirp::chat::EditConfig& edit_config) {
+  EnhancedRecallRuntime rt;
+  rt.edits = std::make_unique<chirp::chat::MessageEditManager>(edit_config);
+
+  chirp::chat::UserNotifier notify =
+      [state](const std::string& user_id, chirp::gateway::MsgID msg_id,
+              const google::protobuf::Message& body) -> bool {
+    const auto sessions = chirp::network::GetUserSessions(state->registry, user_id);
+    if (sessions.empty()) {
+      return false;
+    }
+    const std::string payload = body.SerializeAsString();
+    for (const auto& session : sessions) {
+      chirp::chat::runtime::SendPacket(session, msg_id, 0, payload);
+    }
+    return true;
+  };
+
+  chirp::chat::ChannelMemberResolver members =
+      [](chirp::chat::ChannelType channel_type, const std::string& channel_id,
+         const std::string& exclude_user_id) -> std::vector<std::string> {
+    if (channel_type != chirp::chat::PRIVATE) {
+      return {};
+    }
+    const size_t sep = channel_id.find('|');
+    if (sep == std::string::npos || sep == 0 || sep + 1 >= channel_id.size()) {
+      return {};
+    }
+    const std::string left = channel_id.substr(0, sep);
+    const std::string right = channel_id.substr(sep + 1);
+    const std::string& other = (left == exclude_user_id) ? right : left;
+    if (other.empty() || other == exclude_user_id) {
+      return {};
+    }
+    return {other};
+  };
+
+  chirp::chat::ChannelModeratorChecker moderator =
+      [](chirp::chat::ChannelType, const std::string&, const std::string&) { return false; };
+
+  chirp::chat::OfflineMessagePurger purger =
+      [store](const std::string& message_id, const std::string& receiver_id) {
+        store->PurgeOfflineByMessageId(receiver_id, message_id);
+      };
+  chirp::chat::RecallTombstoneMarker marker =
+      [store](chirp::chat::ChannelType, const std::string& channel_id,
+              const std::string& message_id) {
+        store->MarkMessageRecalled(channel_id, message_id);
+      };
+
+  rt.handlers = std::make_unique<chirp::chat::MessageEditHandlers>(
+      *rt.edits, members, moderator, notify, purger, marker);
+  return rt;
+}
+
+/// @brief DELETE_MESSAGE 的 enhanced 分发体：以注册表里的认证身份跑
+/// MessageEditHandlers（撤回回码语义与 basic 完全一致），并把响应帧回给请求者。
+/// 解析失败由 DispatchDistributedPacket 按 INVALID_PARAM 拒绝，不进到这里。
+void HandleDeleteMessage(const chirp::chat::DeleteMessageRequest& req,
+                         const std::shared_ptr<chirp::network::Session>& session,
+                         const std::shared_ptr<DistributedChatState>& state,
+                         chirp::chat::MessageEditHandlers& edit_handlers, int64_t seq) {
+  const chirp::chat::DeleteMessageResponse resp =
+      edit_handlers.HandleDeleteMessage(req, state->GetUserId(session));
+  chirp::chat::runtime::SendPacket(session, chirp::gateway::DELETE_MESSAGE_RESP, seq,
+                                   resp.SerializeAsString());
 }
 
 /// @brief Internal-plane trust gate (parity with the basic build's main.cc):
@@ -544,6 +642,12 @@ int main(int argc, char** argv) {
       chirp::chat::runtime::GetArg(argc, argv, "--word_filter_file", "");
   const std::string word_filter_policy =
       chirp::chat::runtime::GetArg(argc, argv, "--word_filter_policy", "replace");
+  // 撤回窗口与可撤回频道（game_chat_features P0 消息撤回）：与 basic 构建同一套
+  // 参数语义——窗口 0 = 不限；频道名单 fail-closed（解析不出的一律不可撤回）。
+  const int recall_window_sec =
+      chirp::chat::runtime::ParseIntArg(argc, argv, "--recall_window_sec", 120);
+  const std::string recall_channels =
+      chirp::chat::runtime::GetArg(argc, argv, "--recall_channels", "private,guild");
 
   std::string instance_id = chirp::chat::runtime::GetArg(argc, argv, "--instance_id", "");
   if (instance_id.empty()) {
@@ -953,6 +1057,15 @@ int main(int argc, char** argv) {
   word_filter_options.lexicon_path = word_filter_file;
   word_filter_options.policy = chirp::chat::WordFilterPolicyFromString(word_filter_policy);
   chirp::chat::WordFilter word_filter(word_filter_options);
+  // 撤回（game_chat_features P0）：enhanced 形态的 DELETE_MESSAGE 入口。窗口与
+  // 频道名单与 basic 同一套 flag；装配体（notify/members/moderator/marker/
+  // purger 五回调）见 MakeEnhancedRecallRuntime，main 与单测共用同一份。
+  chirp::chat::EditConfig recall_edit_config;
+  recall_edit_config.recall_time_window_ms =
+      recall_window_sec > 0 ? static_cast<int64_t>(recall_window_sec) * 1000 : 0;
+  recall_edit_config.recall_channel_types = chirp::chat::ParseChannelTypeList(recall_channels);
+  EnhancedRecallRuntime recall_runtime =
+      MakeEnhancedRecallRuntime(state, store, recall_edit_config);
   chirp::chat::ChannelPacer channel_pacer;
   chirp::chat::RepeatGuard repeat_guard;
   // Per-user push filters (game_chat_features P0 频道屏蔽). Referenced by the
@@ -973,7 +1086,8 @@ int main(int argc, char** argv) {
                               hub = chat_hub.get(), &directory, &word_filter,
                               &channel_pacer, &repeat_guard,
                               delivery_prefs_ptr = &delivery_prefs,
-                              send_gate = &edge_rate_limiter](
+                              send_gate = &edge_rate_limiter,
+                              edit_handlers = recall_runtime.handlers.get()](
                                  const std::shared_ptr<chirp::network::Session>& session,
                                  const chirp::chat::SendMessageRequest& req,
                                  int64_t seq) {
@@ -1087,7 +1201,7 @@ int main(int argc, char** argv) {
     }
     HandleSendMessage(working, session, state, store, delivery_tracker, acks.get(),
                       delivery_prefs_ptr, router, peer, npc_service_id, npc_prefix, link,
-                      spoke_game_id, seq);
+                      spoke_game_id, edit_handlers, seq);
   };
   handlers.on_get_history = [retriever](const std::shared_ptr<chirp::network::Session>& session,
                                         const chirp::chat::GetHistoryRequest& req,
@@ -1220,6 +1334,14 @@ int main(int argc, char** argv) {
     }
     chirp::chat::runtime::SendPacket(session, chirp::gateway::GET_BLOCKED_SENDERS_RESP, seq,
                                      resp.SerializeAsString());
+  };
+  // 撤回/版主删除（game_chat_features P0）：DELETE_MESSAGE 此前在 enhanced
+  // dispatch 里没有槽位——游戏平面部署形态一直没有撤回入口，这里补上。
+  handlers.on_delete_message = [state, edit_handlers = recall_runtime.handlers.get()](
+                                   const std::shared_ptr<chirp::network::Session>& session,
+                                   const chirp::chat::DeleteMessageRequest& req,
+                                   int64_t seq) {
+    HandleDeleteMessage(req, session, state, *edit_handlers, seq);
   };
 
   auto on_packet = [handlers, gateway_service_secret, trusted_conns, &edge_rate_limiter,

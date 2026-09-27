@@ -866,6 +866,43 @@ TEST_F(HybridStoreTest, RemoveOfflineMessageDropsRedisAndFallbackCopies) {
   EXPECT_TRUE(dead_redis.RemoveOfflineMessage("r3", a));
 }
 
+// 撤回的离线半边：只有 message_id，没有原始字节，所以按 id 扫队列回收。
+TEST_F(HybridStoreTest, PurgeOfflineByMessageIdSweepsRedisAndFallbackCopies) {
+  ASSERT_TRUE(store_->Initialize());
+
+  // Redis 队列：命中回收一条，非命中的原样留下。
+  EXPECT_TRUE(store_->AddOfflineMessage("r1", MakeMessage("m1", "ch", 1000, "r1").SerializeAsString()));
+  EXPECT_TRUE(store_->AddOfflineMessage("r1", MakeMessage("m2", "ch", 2000, "r1").SerializeAsString()));
+  EXPECT_EQ(store_->PurgeOfflineByMessageId("r1", "m1"), 1u);
+  auto remaining = store_->GetOfflineMessages("r1");
+  ASSERT_EQ(remaining.size(), 1u);
+  EXPECT_EQ(remaining[0].message_id, "m2");
+
+  // 不存在的 id：什么都不删。
+  EXPECT_EQ(store_->PurgeOfflineByMessageId("r1", "m-gone"), 0u);
+  // 没有队列的用户：什么都不动。
+  EXPECT_EQ(store_->PurgeOfflineByMessageId("nobody", "m1"), 0u);
+
+  // 空参数早退：撤回请求不带 id 时不扫队列。
+  EXPECT_EQ(store_->PurgeOfflineByMessageId("", "m2"), 0u);
+  EXPECT_EQ(store_->PurgeOfflineByMessageId("r1", ""), 0u);
+
+  // Redis-down 回退队列：逐条解析比对，末条删除后用户映射一并消失。
+  MessageStoreConfig cfg;
+  cfg.redis_port = 1;
+  HybridMessageStore dead_redis(io_, cfg);
+  EXPECT_FALSE(dead_redis.AddOfflineMessage("r2", MakeMessage("ma", "ch", 1, "r2").SerializeAsString()));
+  EXPECT_FALSE(dead_redis.AddOfflineMessage("r2", MakeMessage("mb", "ch", 2, "r2").SerializeAsString()));
+  EXPECT_EQ(dead_redis.PurgeOfflineByMessageId("r2", "mb"), 1u);
+  auto left = dead_redis.GetOfflineMessages("r2");
+  ASSERT_EQ(left.size(), 1u);
+  EXPECT_EQ(left[0].message_id, "ma");
+  EXPECT_EQ(dead_redis.PurgeOfflineByMessageId("r2", "ma"), 1u);
+  EXPECT_TRUE(dead_redis.GetOfflineMessages("r2").empty());
+  // 队列已空（映射已回收）：再 purge 同一 id 返回 0。
+  EXPECT_EQ(dead_redis.PurgeOfflineByMessageId("r2", "ma"), 0u);
+}
+
 TEST_F(HybridStoreTest, DeliveryTrackingLifecycle) {
   ASSERT_TRUE(store_->Initialize());
 

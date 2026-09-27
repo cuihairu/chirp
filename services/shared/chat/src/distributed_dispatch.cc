@@ -94,6 +94,22 @@ void DispatchDistributedPacket(const std::shared_ptr<network::Session>& session,
       }
       break;
     }
+    case gateway::DELETE_MESSAGE_REQ: {
+      chat::DeleteMessageRequest req;
+      if (!req.ParseFromArray(pkt.body().data(), static_cast<int>(pkt.body().size()))) {
+        // 解析失败也要有回码（basic 的 DELETE_MESSAGE 分支同契约）：沉默会让
+        // 客户端的撤回请求永远悬着。
+        chat::DeleteMessageResponse resp;
+        resp.set_code(common::INVALID_PARAM);
+        SendPacket(session, gateway::DELETE_MESSAGE_RESP, pkt.sequence(),
+                   resp.SerializeAsString());
+        break;
+      }
+      if (handlers.on_delete_message) {
+        handlers.on_delete_message(session, req, pkt.sequence());
+      }
+      break;
+    }
     case gateway::HEARTBEAT_PING: {
       gateway::HeartbeatPong pong;
       pong.set_timestamp(NowMs());

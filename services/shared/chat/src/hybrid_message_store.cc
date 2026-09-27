@@ -355,6 +355,45 @@ bool HybridMessageStore::RemoveOfflineMessage(const std::string& user_id,
   return removed;
 }
 
+// 撤回的离线半边：按 message_id 扫队列回收副本。与 RemoveOfflineMessage 的
+// 区别是这里只有 message_id（撤回请求不带原始字节），所以逐条解析比对。
+size_t HybridMessageStore::PurgeOfflineByMessageId(const std::string& user_id,
+                                                   const std::string& message_id) {
+  if (user_id.empty() || message_id.empty()) {
+    return 0;
+  }
+  size_t removed = 0;
+
+  const std::string offline_key = OfflineKey(user_id);
+  for (const auto& blob : redis_->LRange(offline_key, 0, -1)) {
+    MessageData msg;
+    if (!msg.ParseFromArray(blob.data(), static_cast<int>(blob.size())) ||
+        msg.message_id != message_id) {
+      continue;
+    }
+    removed += static_cast<size_t>(redis_->LRem(offline_key, 1, blob));
+  }
+
+  std::lock_guard<std::mutex> lock(offline_fallback_mutex_);
+  auto it = offline_fallback_.find(user_id);
+  if (it != offline_fallback_.end()) {
+    for (auto elem = it->second.begin(); elem != it->second.end();) {
+      MessageData msg;
+      if (msg.ParseFromArray(elem->data(), static_cast<int>(elem->size())) &&
+          msg.message_id == message_id) {
+        elem = it->second.erase(elem);
+        ++removed;
+      } else {
+        ++elem;
+      }
+    }
+    if (it->second.empty()) {
+      offline_fallback_.erase(it);
+    }
+  }
+  return removed;
+}
+
 std::vector<MessageData> HybridMessageStore::GetOfflineMessages(const std::string& user_id) {  // GCOVR_EXCL_LINE -- unreachable exit-block line (gcc/NRVO artifact); body is covered
   std::string offline_key = OfflineKey(user_id);
   auto redis_messages = redis_->LRange(offline_key, 0, -1);

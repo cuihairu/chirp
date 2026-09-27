@@ -118,6 +118,14 @@ public:
   bool RemoveOfflineMessage(const std::string& user_id,
                             const std::string& serialized);
 
+  /// @brief 撤回/版主删除后回收离线队列里的副本（game_chat_features P0）：
+  /// 离线接收方收不到 MESSAGE_DELETED_NOTIFY，副本若留在队列里就会在下次登录
+  /// 时把原文补投出去——撤回等于白做。队列没有 message_id 索引，只能扫队列
+  /// 按 message_id 匹配后 LRem（每用户队列有长度/TTL 上限，代价有界）。
+  /// Redis 与 Redis-down 内存回退两个队列都扫。返回删掉的副本数。
+  size_t PurgeOfflineByMessageId(const std::string& user_id,
+                                 const std::string& message_id);
+
   /// @brief Get offline messages for a user (Redis queue + in-memory fallback)
   std::vector<MessageData> GetOfflineMessages(const std::string& user_id);
 

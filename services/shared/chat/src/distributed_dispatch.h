@@ -43,6 +43,12 @@ using UnblockMessageSenderDispatch = std::function<void(
 using GetBlockedSendersDispatch = std::function<void(
     const std::shared_ptr<network::Session>& session, const chat::GetBlockedSendersRequest& req,
     int64_t seq)>;
+// 撤回/版主删除（DELETE_MESSAGE，game_chat_features P0）：is_hard_delete=false
+// 且请求者是发送者本人即撤回，true 走版主治理路径。enhanced 形态此前没有这个
+// 槽位——游戏平面因此一直没有撤回入口。
+using DeleteMessageDispatch = std::function<void(
+    const std::shared_ptr<network::Session>& session, const chat::DeleteMessageRequest& req,
+    int64_t seq)>;
 
 struct DistributedDispatchHandlers {
   LoginDispatch on_login;
@@ -59,6 +65,9 @@ struct DistributedDispatchHandlers {
   BlockMessageSenderDispatch on_block_message_sender;
   UnblockMessageSenderDispatch on_unblock_message_sender;
   GetBlockedSendersDispatch on_get_blocked_senders;
+  // 撤回/版主软删（game_chat_features P0）：成功回 DELETE_MESSAGE_RESP，
+  // 并向频道成员广播 MESSAGE_DELETED_NOTIFY、在历史存档立墓碑。
+  DeleteMessageDispatch on_delete_message;
 };
 
 void DispatchDistributedPacket(const std::shared_ptr<network::Session>& session,
