@@ -513,6 +513,24 @@ void HandleClientPacket(const std::shared_ptr<chirp::network::Session>& session,
         chirp::network::GetAuthenticatedSession(state, session).user_id, sg);
     break;
   }
+  // 游戏在线状态（游戏在线状态开关，默认 true）：同一自服务转发路径，
+  // player_id 钉死为登录用户。
+  case chirp::gateway::SET_GAME_PRESENCE_ENABLED_REQ: {
+    ForwardSubscriptionPacket<chirp::game_server_gateway::SetGamePresenceEnabledRequest,
+                              chirp::game_server_gateway::SetGamePresenceEnabledResponse>(
+        session, pkt, chirp::gateway::SET_GAME_PRESENCE_ENABLED_REQ,
+        chirp::gateway::SET_GAME_PRESENCE_ENABLED_RESP,
+        chirp::network::GetAuthenticatedSession(state, session).user_id, sg);
+    break;
+  }
+  case chirp::gateway::GET_GAME_PRESENCE_REQ: {
+    ForwardSubscriptionPacket<chirp::game_server_gateway::GetGamePresenceRequest,
+                              chirp::game_server_gateway::GetGamePresenceResponse>(
+        session, pkt, chirp::gateway::GET_GAME_PRESENCE_REQ,
+        chirp::gateway::GET_GAME_PRESENCE_RESP,
+        chirp::network::GetAuthenticatedSession(state, session).user_id, sg);
+    break;
+  }
   default: {
     // Chat business packets relay through the per-client pipeline once the
     // client is authenticated; chat answers on the same connection, so the

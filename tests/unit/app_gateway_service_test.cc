@@ -392,6 +392,24 @@ class FakeServerGatewayServer {
           resp.set_body(r.SerializeAsString());
           break;
         }
+        case chirp::gateway::SET_GAME_PRESENCE_ENABLED_REQ: {
+          chirp::game_server_gateway::SetGamePresenceEnabledResponse r;
+          r.set_code(chirp::common::OK);
+          resp.set_msg_id(chirp::gateway::SET_GAME_PRESENCE_ENABLED_RESP);
+          resp.set_body(r.SerializeAsString());
+          break;
+        }
+        case chirp::gateway::GET_GAME_PRESENCE_REQ: {
+          chirp::game_server_gateway::GetGamePresenceResponse r;
+          r.set_code(chirp::common::OK);
+          r.set_enabled(true);
+          auto* entry = r.add_entries();
+          entry->set_game_id("game_a");
+          entry->set_game_user_id("u-1");
+          resp.set_msg_id(chirp::gateway::GET_GAME_PRESENCE_RESP);
+          resp.set_body(r.SerializeAsString());
+          break;
+        }
         default:
           answered = false;  // nothing else is answered
           break;
@@ -849,6 +867,98 @@ TEST_F(AppGatewayServiceTest, SubscriptionForwardedWithPinnedPlayerId) {
   ASSERT_TRUE(LastBody(*session_, &resp));
   EXPECT_EQ(resp.code(), chirp::common::OK);
   EXPECT_EQ(resp.subscription_id(), "sub-fake-1");
+}
+
+TEST_F(AppGatewayServiceTest, GamePresenceForwardedWithPinnedPlayerId) {
+  // The 游戏在线状态 pair rides the same self-service path as the WP-8
+  // block: player_id is pinned to the authenticated user, so no dial can
+  // flip or read another account's switch.
+  FakeServerGatewayServer fake;
+  asio::io_context io;
+  chirp::network::ServerGatewayPeer::Options opts;
+  opts.host = "127.0.0.1";
+  opts.port = fake.port();
+  opts.service_id = "app_gateway";
+  opts.secret = "edge-secret";
+  opts.reconnect_delay_seconds = 1;
+  auto sg = chirp::network::ServerGatewayPeer::Create(io, opts, nullptr, nullptr);
+  sg->Start();
+
+  Login(session_, "alice");
+  ASSERT_TRUE(WaitForIo(io, [&] { return fake.CountAuth() >= 1; }, std::chrono::seconds(5)));
+  WaitForIo(io, [] { return false; }, std::chrono::milliseconds(100));
+
+  chirp::game_server_gateway::SetGamePresenceEnabledRequest set_req;
+  set_req.set_player_id("mallory");  // must be overwritten with the authenticated user
+  set_req.set_enabled(false);
+  HandleClientPacket(session_,
+                     MakePacket(chirp::gateway::SET_GAME_PRESENCE_ENABLED_REQ, 21,
+                                set_req.SerializeAsString()).SerializeAsString(),
+                     state_, nullptr, nullptr, nullptr, sg.get(), nullptr);
+  // Wait on the specific response frame, not on sent.empty(): the login
+  // response is already sitting there (the same trap the subscription test
+  // documents), and frames arrive length-prefixed so they must be decoded.
+  const auto got_set_resp = [&] {
+    for (const auto& framed : session_->sent) {
+      Packet p;
+      if (DecodeFramed(framed, &p) &&
+          p.msg_id() == chirp::gateway::SET_GAME_PRESENCE_ENABLED_RESP && p.sequence() == 21) {
+        return true;
+      }
+    }
+    return false;
+  };
+  ASSERT_TRUE(WaitForIo(io, got_set_resp, std::chrono::seconds(5)));
+  chirp::game_server_gateway::SetGamePresenceEnabledResponse set_resp;
+  ASSERT_TRUE(LastBody(*session_, &set_resp));
+  EXPECT_EQ(set_resp.code(), chirp::common::OK);
+
+  chirp::game_server_gateway::GetGamePresenceRequest get_req;
+  get_req.set_player_id("mallory");
+  session_->sent.clear();
+  HandleClientPacket(session_,
+                     MakePacket(chirp::gateway::GET_GAME_PRESENCE_REQ, 22,
+                                get_req.SerializeAsString()).SerializeAsString(),
+                     state_, nullptr, nullptr, nullptr, sg.get(), nullptr);
+  const auto got_presence = [&] {
+    for (const auto& framed : session_->sent) {
+      Packet p;
+      if (DecodeFramed(framed, &p) &&
+          p.msg_id() == chirp::gateway::GET_GAME_PRESENCE_RESP && p.sequence() == 22) {
+        return true;
+      }
+    }
+    return false;
+  };
+  ASSERT_TRUE(WaitForIo(io, got_presence, std::chrono::seconds(5)));
+
+  // The hub's body travels verbatim: enabled + the bound game come back.
+  chirp::game_server_gateway::GetGamePresenceResponse get_resp;
+  ASSERT_TRUE(LastBody(*session_, &get_resp));
+  EXPECT_EQ(get_resp.code(), chirp::common::OK);
+  EXPECT_TRUE(get_resp.enabled());
+  ASSERT_EQ(get_resp.entries_size(), 1);
+  EXPECT_EQ(get_resp.entries(0).game_id(), "game_a");
+
+  sg->Stop();
+  WaitForIo(io, [&] { return true; }, std::chrono::milliseconds(50));
+
+  // No frame that ever left the edge named another player. Scanning the
+  // whole recording (heartbeats included) is the honest assertion here: the
+  // two request types share field 1 with other messages, so pinning is
+  // checked by absence of the spoofed id rather than by type match.
+  for (const auto& body : fake.Received()) {
+    EXPECT_EQ(body.find("mallory"), std::string::npos)
+        << "spoofed player_id leaked to the hub in " << body.size() << " bytes";
+  }
+  bool saw_alice = false;
+  for (const auto& body : fake.Received()) {
+    chirp::game_server_gateway::SetGamePresenceEnabledRequest candidate;
+    if (candidate.ParseFromString(body) && candidate.player_id() == "alice") {
+      saw_alice = true;
+    }
+  }
+  EXPECT_TRUE(saw_alice) << "the pinned request never reached the hub";
 }
 
 TEST_F(AppGatewayServiceTest, UnreadMarkForwardedWithPinnedPlayerId) {
