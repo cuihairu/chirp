@@ -2094,6 +2094,380 @@ func (x *GetUnreadSummaryResponse) GetTotalUnread() int32 {
 	return 0
 }
 
+// Persistence record (Redis, not a wire message): the explicit toggle.
+// Absent key = enabled (the default); only an explicit choice is stored.
+type StoredGamePresenceSetting struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	PlayerId      string                 `protobuf:"bytes,1,opt,name=player_id,json=playerId,proto3" json:"player_id,omitempty"`
+	Enabled       bool                   `protobuf:"varint,2,opt,name=enabled,proto3" json:"enabled,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *StoredGamePresenceSetting) Reset() {
+	*x = StoredGamePresenceSetting{}
+	mi := &file_proto_game_server_gateway_proto_msgTypes[34]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *StoredGamePresenceSetting) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*StoredGamePresenceSetting) ProtoMessage() {}
+
+func (x *StoredGamePresenceSetting) ProtoReflect() protoreflect.Message {
+	mi := &file_proto_game_server_gateway_proto_msgTypes[34]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use StoredGamePresenceSetting.ProtoReflect.Descriptor instead.
+func (*StoredGamePresenceSetting) Descriptor() ([]byte, []int) {
+	return file_proto_game_server_gateway_proto_rawDescGZIP(), []int{34}
+}
+
+func (x *StoredGamePresenceSetting) GetPlayerId() string {
+	if x != nil {
+		return x.PlayerId
+	}
+	return ""
+}
+
+func (x *StoredGamePresenceSetting) GetEnabled() bool {
+	if x != nil {
+		return x.Enabled
+	}
+	return false
+}
+
+// Pub/sub payload (Redis channel chirp:game_presence:events, not a wire
+// message): one game's presence flipped. Emitted only while the switch is
+// enabled — a disabled player never publishes, which is the closed-state
+// contract (状态不推、游戏内不投).
+type GamePresenceEvent struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	PlayerId      string                 `protobuf:"bytes,1,opt,name=player_id,json=playerId,proto3" json:"player_id,omitempty"`
+	GameId        string                 `protobuf:"bytes,2,opt,name=game_id,json=gameId,proto3" json:"game_id,omitempty"`
+	Online        bool                   `protobuf:"varint,3,opt,name=online,proto3" json:"online,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *GamePresenceEvent) Reset() {
+	*x = GamePresenceEvent{}
+	mi := &file_proto_game_server_gateway_proto_msgTypes[35]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *GamePresenceEvent) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*GamePresenceEvent) ProtoMessage() {}
+
+func (x *GamePresenceEvent) ProtoReflect() protoreflect.Message {
+	mi := &file_proto_game_server_gateway_proto_msgTypes[35]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use GamePresenceEvent.ProtoReflect.Descriptor instead.
+func (*GamePresenceEvent) Descriptor() ([]byte, []int) {
+	return file_proto_game_server_gateway_proto_rawDescGZIP(), []int{35}
+}
+
+func (x *GamePresenceEvent) GetPlayerId() string {
+	if x != nil {
+		return x.PlayerId
+	}
+	return ""
+}
+
+func (x *GamePresenceEvent) GetGameId() string {
+	if x != nil {
+		return x.GameId
+	}
+	return ""
+}
+
+func (x *GamePresenceEvent) GetOnline() bool {
+	if x != nil {
+		return x.Online
+	}
+	return false
+}
+
+type SetGamePresenceEnabledRequest struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	PlayerId      string                 `protobuf:"bytes,1,opt,name=player_id,json=playerId,proto3" json:"player_id,omitempty"`
+	Enabled       bool                   `protobuf:"varint,2,opt,name=enabled,proto3" json:"enabled,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *SetGamePresenceEnabledRequest) Reset() {
+	*x = SetGamePresenceEnabledRequest{}
+	mi := &file_proto_game_server_gateway_proto_msgTypes[36]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *SetGamePresenceEnabledRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*SetGamePresenceEnabledRequest) ProtoMessage() {}
+
+func (x *SetGamePresenceEnabledRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_proto_game_server_gateway_proto_msgTypes[36]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use SetGamePresenceEnabledRequest.ProtoReflect.Descriptor instead.
+func (*SetGamePresenceEnabledRequest) Descriptor() ([]byte, []int) {
+	return file_proto_game_server_gateway_proto_rawDescGZIP(), []int{36}
+}
+
+func (x *SetGamePresenceEnabledRequest) GetPlayerId() string {
+	if x != nil {
+		return x.PlayerId
+	}
+	return ""
+}
+
+func (x *SetGamePresenceEnabledRequest) GetEnabled() bool {
+	if x != nil {
+		return x.Enabled
+	}
+	return false
+}
+
+type SetGamePresenceEnabledResponse struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Code          common.ErrorCode       `protobuf:"varint,1,opt,name=code,proto3,enum=chirp.common.ErrorCode" json:"code,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *SetGamePresenceEnabledResponse) Reset() {
+	*x = SetGamePresenceEnabledResponse{}
+	mi := &file_proto_game_server_gateway_proto_msgTypes[37]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *SetGamePresenceEnabledResponse) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*SetGamePresenceEnabledResponse) ProtoMessage() {}
+
+func (x *SetGamePresenceEnabledResponse) ProtoReflect() protoreflect.Message {
+	mi := &file_proto_game_server_gateway_proto_msgTypes[37]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use SetGamePresenceEnabledResponse.ProtoReflect.Descriptor instead.
+func (*SetGamePresenceEnabledResponse) Descriptor() ([]byte, []int) {
+	return file_proto_game_server_gateway_proto_rawDescGZIP(), []int{37}
+}
+
+func (x *SetGamePresenceEnabledResponse) GetCode() common.ErrorCode {
+	if x != nil {
+		return x.Code
+	}
+	return common.ErrorCode(0)
+}
+
+type GamePresenceEntry struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	GameId        string                 `protobuf:"bytes,1,opt,name=game_id,json=gameId,proto3" json:"game_id,omitempty"`
+	GameUserId    string                 `protobuf:"bytes,2,opt,name=game_user_id,json=gameUserId,proto3" json:"game_user_id,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *GamePresenceEntry) Reset() {
+	*x = GamePresenceEntry{}
+	mi := &file_proto_game_server_gateway_proto_msgTypes[38]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *GamePresenceEntry) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*GamePresenceEntry) ProtoMessage() {}
+
+func (x *GamePresenceEntry) ProtoReflect() protoreflect.Message {
+	mi := &file_proto_game_server_gateway_proto_msgTypes[38]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use GamePresenceEntry.ProtoReflect.Descriptor instead.
+func (*GamePresenceEntry) Descriptor() ([]byte, []int) {
+	return file_proto_game_server_gateway_proto_rawDescGZIP(), []int{38}
+}
+
+func (x *GamePresenceEntry) GetGameId() string {
+	if x != nil {
+		return x.GameId
+	}
+	return ""
+}
+
+func (x *GamePresenceEntry) GetGameUserId() string {
+	if x != nil {
+		return x.GameUserId
+	}
+	return ""
+}
+
+type GetGamePresenceRequest struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	PlayerId      string                 `protobuf:"bytes,1,opt,name=player_id,json=playerId,proto3" json:"player_id,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *GetGamePresenceRequest) Reset() {
+	*x = GetGamePresenceRequest{}
+	mi := &file_proto_game_server_gateway_proto_msgTypes[39]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *GetGamePresenceRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*GetGamePresenceRequest) ProtoMessage() {}
+
+func (x *GetGamePresenceRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_proto_game_server_gateway_proto_msgTypes[39]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use GetGamePresenceRequest.ProtoReflect.Descriptor instead.
+func (*GetGamePresenceRequest) Descriptor() ([]byte, []int) {
+	return file_proto_game_server_gateway_proto_rawDescGZIP(), []int{39}
+}
+
+func (x *GetGamePresenceRequest) GetPlayerId() string {
+	if x != nil {
+		return x.PlayerId
+	}
+	return ""
+}
+
+type GetGamePresenceResponse struct {
+	state protoimpl.MessageState `protogen:"open.v1"`
+	Code  common.ErrorCode       `protobuf:"varint,1,opt,name=code,proto3,enum=chirp.common.ErrorCode" json:"code,omitempty"`
+	// The current switch (true when never explicitly disabled).
+	Enabled bool `protobuf:"varint,2,opt,name=enabled,proto3" json:"enabled,omitempty"`
+	// Games the presence currently covers (enabled && bound), ordered by
+	// game_id. Empty while disabled or unbound — binding is what makes
+	// presence live, disabling only freezes the fan-out.
+	Entries       []*GamePresenceEntry `protobuf:"bytes,3,rep,name=entries,proto3" json:"entries,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *GetGamePresenceResponse) Reset() {
+	*x = GetGamePresenceResponse{}
+	mi := &file_proto_game_server_gateway_proto_msgTypes[40]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *GetGamePresenceResponse) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*GetGamePresenceResponse) ProtoMessage() {}
+
+func (x *GetGamePresenceResponse) ProtoReflect() protoreflect.Message {
+	mi := &file_proto_game_server_gateway_proto_msgTypes[40]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use GetGamePresenceResponse.ProtoReflect.Descriptor instead.
+func (*GetGamePresenceResponse) Descriptor() ([]byte, []int) {
+	return file_proto_game_server_gateway_proto_rawDescGZIP(), []int{40}
+}
+
+func (x *GetGamePresenceResponse) GetCode() common.ErrorCode {
+	if x != nil {
+		return x.Code
+	}
+	return common.ErrorCode(0)
+}
+
+func (x *GetGamePresenceResponse) GetEnabled() bool {
+	if x != nil {
+		return x.Enabled
+	}
+	return false
+}
+
+func (x *GetGamePresenceResponse) GetEntries() []*GamePresenceEntry {
+	if x != nil {
+		return x.Entries
+	}
+	return nil
+}
+
 var File_proto_game_server_gateway_proto protoreflect.FileDescriptor
 
 const file_proto_game_server_gateway_proto_rawDesc = "" +
@@ -2246,7 +2620,29 @@ const file_proto_game_server_gateway_proto_rawDesc = "" +
 	"\x18GetUnreadSummaryResponse\x12+\n" +
 	"\x04code\x18\x01 \x01(\x0e2\x17.chirp.common.ErrorCodeR\x04code\x12G\n" +
 	"\aentries\x18\x02 \x03(\v2-.chirp.game_server_gateway.UnreadSummaryEntryR\aentries\x12!\n" +
-	"\ftotal_unread\x18\x03 \x01(\x05R\vtotalUnread*W\n" +
+	"\ftotal_unread\x18\x03 \x01(\x05R\vtotalUnread\"R\n" +
+	"\x19StoredGamePresenceSetting\x12\x1b\n" +
+	"\tplayer_id\x18\x01 \x01(\tR\bplayerId\x12\x18\n" +
+	"\aenabled\x18\x02 \x01(\bR\aenabled\"a\n" +
+	"\x11GamePresenceEvent\x12\x1b\n" +
+	"\tplayer_id\x18\x01 \x01(\tR\bplayerId\x12\x17\n" +
+	"\agame_id\x18\x02 \x01(\tR\x06gameId\x12\x16\n" +
+	"\x06online\x18\x03 \x01(\bR\x06online\"V\n" +
+	"\x1dSetGamePresenceEnabledRequest\x12\x1b\n" +
+	"\tplayer_id\x18\x01 \x01(\tR\bplayerId\x12\x18\n" +
+	"\aenabled\x18\x02 \x01(\bR\aenabled\"M\n" +
+	"\x1eSetGamePresenceEnabledResponse\x12+\n" +
+	"\x04code\x18\x01 \x01(\x0e2\x17.chirp.common.ErrorCodeR\x04code\"N\n" +
+	"\x11GamePresenceEntry\x12\x17\n" +
+	"\agame_id\x18\x01 \x01(\tR\x06gameId\x12 \n" +
+	"\fgame_user_id\x18\x02 \x01(\tR\n" +
+	"gameUserId\"5\n" +
+	"\x16GetGamePresenceRequest\x12\x1b\n" +
+	"\tplayer_id\x18\x01 \x01(\tR\bplayerId\"\xa8\x01\n" +
+	"\x17GetGamePresenceResponse\x12+\n" +
+	"\x04code\x18\x01 \x01(\x0e2\x17.chirp.common.ErrorCodeR\x04code\x12\x18\n" +
+	"\aenabled\x18\x02 \x01(\bR\aenabled\x12F\n" +
+	"\aentries\x18\x03 \x03(\v2,.chirp.game_server_gateway.GamePresenceEntryR\aentries*W\n" +
 	"\n" +
 	"SenderKind\x12\x12\n" +
 	"\x0eSENDER_UNKNOWN\x10\x00\x12\x11\n" +
@@ -2268,7 +2664,7 @@ func file_proto_game_server_gateway_proto_rawDescGZIP() []byte {
 }
 
 var file_proto_game_server_gateway_proto_enumTypes = make([]protoimpl.EnumInfo, 1)
-var file_proto_game_server_gateway_proto_msgTypes = make([]protoimpl.MessageInfo, 34)
+var file_proto_game_server_gateway_proto_msgTypes = make([]protoimpl.MessageInfo, 41)
 var file_proto_game_server_gateway_proto_goTypes = []any{
 	(SenderKind)(0),                          // 0: chirp.game_server_gateway.SenderKind
 	(*ServerAuthRequest)(nil),                // 1: chirp.game_server_gateway.ServerAuthRequest
@@ -2305,32 +2701,42 @@ var file_proto_game_server_gateway_proto_goTypes = []any{
 	(*UnreadSummaryEntry)(nil),               // 32: chirp.game_server_gateway.UnreadSummaryEntry
 	(*GetUnreadSummaryRequest)(nil),          // 33: chirp.game_server_gateway.GetUnreadSummaryRequest
 	(*GetUnreadSummaryResponse)(nil),         // 34: chirp.game_server_gateway.GetUnreadSummaryResponse
-	(common.ErrorCode)(0),                    // 35: chirp.common.ErrorCode
+	(*StoredGamePresenceSetting)(nil),        // 35: chirp.game_server_gateway.StoredGamePresenceSetting
+	(*GamePresenceEvent)(nil),                // 36: chirp.game_server_gateway.GamePresenceEvent
+	(*SetGamePresenceEnabledRequest)(nil),    // 37: chirp.game_server_gateway.SetGamePresenceEnabledRequest
+	(*SetGamePresenceEnabledResponse)(nil),   // 38: chirp.game_server_gateway.SetGamePresenceEnabledResponse
+	(*GamePresenceEntry)(nil),                // 39: chirp.game_server_gateway.GamePresenceEntry
+	(*GetGamePresenceRequest)(nil),           // 40: chirp.game_server_gateway.GetGamePresenceRequest
+	(*GetGamePresenceResponse)(nil),          // 41: chirp.game_server_gateway.GetGamePresenceResponse
+	(common.ErrorCode)(0),                    // 42: chirp.common.ErrorCode
 }
 var file_proto_game_server_gateway_proto_depIdxs = []int32{
-	35, // 0: chirp.game_server_gateway.ServerAuthResponse.code:type_name -> chirp.common.ErrorCode
+	42, // 0: chirp.game_server_gateway.ServerAuthResponse.code:type_name -> chirp.common.ErrorCode
 	0,  // 1: chirp.game_server_gateway.MessageInjectRequest.sender_kind:type_name -> chirp.game_server_gateway.SenderKind
-	35, // 2: chirp.game_server_gateway.MessageInjectResponse.code:type_name -> chirp.common.ErrorCode
+	42, // 2: chirp.game_server_gateway.MessageInjectResponse.code:type_name -> chirp.common.ErrorCode
 	5,  // 3: chirp.game_server_gateway.InjectMessageNotify.message:type_name -> chirp.game_server_gateway.MessageInjectRequest
-	35, // 4: chirp.game_server_gateway.EventPublishResponse.code:type_name -> chirp.common.ErrorCode
-	35, // 5: chirp.game_server_gateway.EventAckResponse.code:type_name -> chirp.common.ErrorCode
-	35, // 6: chirp.game_server_gateway.BindPlayerIdentityResponse.code:type_name -> chirp.common.ErrorCode
-	35, // 7: chirp.game_server_gateway.UnbindPlayerIdentityResponse.code:type_name -> chirp.common.ErrorCode
-	35, // 8: chirp.game_server_gateway.GetPlayerIdentitiesResponse.code:type_name -> chirp.common.ErrorCode
+	42, // 4: chirp.game_server_gateway.EventPublishResponse.code:type_name -> chirp.common.ErrorCode
+	42, // 5: chirp.game_server_gateway.EventAckResponse.code:type_name -> chirp.common.ErrorCode
+	42, // 6: chirp.game_server_gateway.BindPlayerIdentityResponse.code:type_name -> chirp.common.ErrorCode
+	42, // 7: chirp.game_server_gateway.UnbindPlayerIdentityResponse.code:type_name -> chirp.common.ErrorCode
+	42, // 8: chirp.game_server_gateway.GetPlayerIdentitiesResponse.code:type_name -> chirp.common.ErrorCode
 	13, // 9: chirp.game_server_gateway.GetPlayerIdentitiesResponse.bindings:type_name -> chirp.game_server_gateway.StoredIdentityBinding
-	35, // 10: chirp.game_server_gateway.ResolveGameUserResponse.code:type_name -> chirp.common.ErrorCode
-	35, // 11: chirp.game_server_gateway.SubscribePlayerChannelResponse.code:type_name -> chirp.common.ErrorCode
-	35, // 12: chirp.game_server_gateway.UnsubscribePlayerChannelResponse.code:type_name -> chirp.common.ErrorCode
-	35, // 13: chirp.game_server_gateway.GetPlayerSubscriptionsResponse.code:type_name -> chirp.common.ErrorCode
+	42, // 10: chirp.game_server_gateway.ResolveGameUserResponse.code:type_name -> chirp.common.ErrorCode
+	42, // 11: chirp.game_server_gateway.SubscribePlayerChannelResponse.code:type_name -> chirp.common.ErrorCode
+	42, // 12: chirp.game_server_gateway.UnsubscribePlayerChannelResponse.code:type_name -> chirp.common.ErrorCode
+	42, // 13: chirp.game_server_gateway.GetPlayerSubscriptionsResponse.code:type_name -> chirp.common.ErrorCode
 	22, // 14: chirp.game_server_gateway.GetPlayerSubscriptionsResponse.subscriptions:type_name -> chirp.game_server_gateway.StoredChannelSubscription
-	35, // 15: chirp.game_server_gateway.MarkChannelsReadResponse.code:type_name -> chirp.common.ErrorCode
-	35, // 16: chirp.game_server_gateway.GetUnreadSummaryResponse.code:type_name -> chirp.common.ErrorCode
+	42, // 15: chirp.game_server_gateway.MarkChannelsReadResponse.code:type_name -> chirp.common.ErrorCode
+	42, // 16: chirp.game_server_gateway.GetUnreadSummaryResponse.code:type_name -> chirp.common.ErrorCode
 	32, // 17: chirp.game_server_gateway.GetUnreadSummaryResponse.entries:type_name -> chirp.game_server_gateway.UnreadSummaryEntry
-	18, // [18:18] is the sub-list for method output_type
-	18, // [18:18] is the sub-list for method input_type
-	18, // [18:18] is the sub-list for extension type_name
-	18, // [18:18] is the sub-list for extension extendee
-	0,  // [0:18] is the sub-list for field type_name
+	42, // 18: chirp.game_server_gateway.SetGamePresenceEnabledResponse.code:type_name -> chirp.common.ErrorCode
+	42, // 19: chirp.game_server_gateway.GetGamePresenceResponse.code:type_name -> chirp.common.ErrorCode
+	39, // 20: chirp.game_server_gateway.GetGamePresenceResponse.entries:type_name -> chirp.game_server_gateway.GamePresenceEntry
+	21, // [21:21] is the sub-list for method output_type
+	21, // [21:21] is the sub-list for method input_type
+	21, // [21:21] is the sub-list for extension type_name
+	21, // [21:21] is the sub-list for extension extendee
+	0,  // [0:21] is the sub-list for field type_name
 }
 
 func init() { file_proto_game_server_gateway_proto_init() }
@@ -2344,7 +2750,7 @@ func file_proto_game_server_gateway_proto_init() {
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_proto_game_server_gateway_proto_rawDesc), len(file_proto_game_server_gateway_proto_rawDesc)),
 			NumEnums:      1,
-			NumMessages:   34,
+			NumMessages:   41,
 			NumExtensions: 0,
 			NumServices:   0,
 		},

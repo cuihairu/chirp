@@ -2579,6 +2579,458 @@ class GetUnreadSummaryResponse extends $pb.GeneratedMessage {
   void clearTotalUnread() => clearField(3);
 }
 
+/// Persistence record (Redis, not a wire message): the explicit toggle.
+/// Absent key = enabled (the default); only an explicit choice is stored.
+class StoredGamePresenceSetting extends $pb.GeneratedMessage {
+  factory StoredGamePresenceSetting({
+    $core.String? playerId,
+    $core.bool? enabled,
+  }) {
+    final $result = create();
+    if (playerId != null) {
+      $result.playerId = playerId;
+    }
+    if (enabled != null) {
+      $result.enabled = enabled;
+    }
+    return $result;
+  }
+  StoredGamePresenceSetting._() : super();
+  factory StoredGamePresenceSetting.fromBuffer($core.List<$core.int> i, [$pb.ExtensionRegistry r = $pb.ExtensionRegistry.EMPTY]) => create()..mergeFromBuffer(i, r);
+  factory StoredGamePresenceSetting.fromJson($core.String i, [$pb.ExtensionRegistry r = $pb.ExtensionRegistry.EMPTY]) => create()..mergeFromJson(i, r);
+
+  static final $pb.BuilderInfo _i = $pb.BuilderInfo(_omitMessageNames ? '' : 'StoredGamePresenceSetting', package: const $pb.PackageName(_omitMessageNames ? '' : 'chirp.game_server_gateway'), createEmptyInstance: create)
+    ..aOS(1, _omitFieldNames ? '' : 'playerId')
+    ..aOB(2, _omitFieldNames ? '' : 'enabled')
+    ..hasRequiredFields = false
+  ;
+
+  @$core.Deprecated(
+  'Using this can add significant overhead to your binary. '
+  'Use [GeneratedMessageGenericExtensions.deepCopy] instead. '
+  'Will be removed in next major version')
+  StoredGamePresenceSetting clone() => StoredGamePresenceSetting()..mergeFromMessage(this);
+  @$core.Deprecated(
+  'Using this can add significant overhead to your binary. '
+  'Use [GeneratedMessageGenericExtensions.rebuild] instead. '
+  'Will be removed in next major version')
+  StoredGamePresenceSetting copyWith(void Function(StoredGamePresenceSetting) updates) => super.copyWith((message) => updates(message as StoredGamePresenceSetting)) as StoredGamePresenceSetting;
+
+  $pb.BuilderInfo get info_ => _i;
+
+  @$core.pragma('dart2js:noInline')
+  static StoredGamePresenceSetting create() => StoredGamePresenceSetting._();
+  StoredGamePresenceSetting createEmptyInstance() => create();
+  static $pb.PbList<StoredGamePresenceSetting> createRepeated() => $pb.PbList<StoredGamePresenceSetting>();
+  @$core.pragma('dart2js:noInline')
+  static StoredGamePresenceSetting getDefault() => _defaultInstance ??= $pb.GeneratedMessage.$_defaultFor<StoredGamePresenceSetting>(create);
+  static StoredGamePresenceSetting? _defaultInstance;
+
+  @$pb.TagNumber(1)
+  $core.String get playerId => $_getSZ(0);
+  @$pb.TagNumber(1)
+  set playerId($core.String v) { $_setString(0, v); }
+  @$pb.TagNumber(1)
+  $core.bool hasPlayerId() => $_has(0);
+  @$pb.TagNumber(1)
+  void clearPlayerId() => clearField(1);
+
+  @$pb.TagNumber(2)
+  $core.bool get enabled => $_getBF(1);
+  @$pb.TagNumber(2)
+  set enabled($core.bool v) { $_setBool(1, v); }
+  @$pb.TagNumber(2)
+  $core.bool hasEnabled() => $_has(1);
+  @$pb.TagNumber(2)
+  void clearEnabled() => clearField(2);
+}
+
+/// Pub/sub payload (Redis channel chirp:game_presence:events, not a wire
+/// message): one game's presence flipped. Emitted only while the switch is
+/// enabled — a disabled player never publishes, which is the closed-state
+/// contract (状态不推、游戏内不投).
+class GamePresenceEvent extends $pb.GeneratedMessage {
+  factory GamePresenceEvent({
+    $core.String? playerId,
+    $core.String? gameId,
+    $core.bool? online,
+  }) {
+    final $result = create();
+    if (playerId != null) {
+      $result.playerId = playerId;
+    }
+    if (gameId != null) {
+      $result.gameId = gameId;
+    }
+    if (online != null) {
+      $result.online = online;
+    }
+    return $result;
+  }
+  GamePresenceEvent._() : super();
+  factory GamePresenceEvent.fromBuffer($core.List<$core.int> i, [$pb.ExtensionRegistry r = $pb.ExtensionRegistry.EMPTY]) => create()..mergeFromBuffer(i, r);
+  factory GamePresenceEvent.fromJson($core.String i, [$pb.ExtensionRegistry r = $pb.ExtensionRegistry.EMPTY]) => create()..mergeFromJson(i, r);
+
+  static final $pb.BuilderInfo _i = $pb.BuilderInfo(_omitMessageNames ? '' : 'GamePresenceEvent', package: const $pb.PackageName(_omitMessageNames ? '' : 'chirp.game_server_gateway'), createEmptyInstance: create)
+    ..aOS(1, _omitFieldNames ? '' : 'playerId')
+    ..aOS(2, _omitFieldNames ? '' : 'gameId')
+    ..aOB(3, _omitFieldNames ? '' : 'online')
+    ..hasRequiredFields = false
+  ;
+
+  @$core.Deprecated(
+  'Using this can add significant overhead to your binary. '
+  'Use [GeneratedMessageGenericExtensions.deepCopy] instead. '
+  'Will be removed in next major version')
+  GamePresenceEvent clone() => GamePresenceEvent()..mergeFromMessage(this);
+  @$core.Deprecated(
+  'Using this can add significant overhead to your binary. '
+  'Use [GeneratedMessageGenericExtensions.rebuild] instead. '
+  'Will be removed in next major version')
+  GamePresenceEvent copyWith(void Function(GamePresenceEvent) updates) => super.copyWith((message) => updates(message as GamePresenceEvent)) as GamePresenceEvent;
+
+  $pb.BuilderInfo get info_ => _i;
+
+  @$core.pragma('dart2js:noInline')
+  static GamePresenceEvent create() => GamePresenceEvent._();
+  GamePresenceEvent createEmptyInstance() => create();
+  static $pb.PbList<GamePresenceEvent> createRepeated() => $pb.PbList<GamePresenceEvent>();
+  @$core.pragma('dart2js:noInline')
+  static GamePresenceEvent getDefault() => _defaultInstance ??= $pb.GeneratedMessage.$_defaultFor<GamePresenceEvent>(create);
+  static GamePresenceEvent? _defaultInstance;
+
+  @$pb.TagNumber(1)
+  $core.String get playerId => $_getSZ(0);
+  @$pb.TagNumber(1)
+  set playerId($core.String v) { $_setString(0, v); }
+  @$pb.TagNumber(1)
+  $core.bool hasPlayerId() => $_has(0);
+  @$pb.TagNumber(1)
+  void clearPlayerId() => clearField(1);
+
+  @$pb.TagNumber(2)
+  $core.String get gameId => $_getSZ(1);
+  @$pb.TagNumber(2)
+  set gameId($core.String v) { $_setString(1, v); }
+  @$pb.TagNumber(2)
+  $core.bool hasGameId() => $_has(1);
+  @$pb.TagNumber(2)
+  void clearGameId() => clearField(2);
+
+  @$pb.TagNumber(3)
+  $core.bool get online => $_getBF(2);
+  @$pb.TagNumber(3)
+  set online($core.bool v) { $_setBool(2, v); }
+  @$pb.TagNumber(3)
+  $core.bool hasOnline() => $_has(2);
+  @$pb.TagNumber(3)
+  void clearOnline() => clearField(3);
+}
+
+class SetGamePresenceEnabledRequest extends $pb.GeneratedMessage {
+  factory SetGamePresenceEnabledRequest({
+    $core.String? playerId,
+    $core.bool? enabled,
+  }) {
+    final $result = create();
+    if (playerId != null) {
+      $result.playerId = playerId;
+    }
+    if (enabled != null) {
+      $result.enabled = enabled;
+    }
+    return $result;
+  }
+  SetGamePresenceEnabledRequest._() : super();
+  factory SetGamePresenceEnabledRequest.fromBuffer($core.List<$core.int> i, [$pb.ExtensionRegistry r = $pb.ExtensionRegistry.EMPTY]) => create()..mergeFromBuffer(i, r);
+  factory SetGamePresenceEnabledRequest.fromJson($core.String i, [$pb.ExtensionRegistry r = $pb.ExtensionRegistry.EMPTY]) => create()..mergeFromJson(i, r);
+
+  static final $pb.BuilderInfo _i = $pb.BuilderInfo(_omitMessageNames ? '' : 'SetGamePresenceEnabledRequest', package: const $pb.PackageName(_omitMessageNames ? '' : 'chirp.game_server_gateway'), createEmptyInstance: create)
+    ..aOS(1, _omitFieldNames ? '' : 'playerId')
+    ..aOB(2, _omitFieldNames ? '' : 'enabled')
+    ..hasRequiredFields = false
+  ;
+
+  @$core.Deprecated(
+  'Using this can add significant overhead to your binary. '
+  'Use [GeneratedMessageGenericExtensions.deepCopy] instead. '
+  'Will be removed in next major version')
+  SetGamePresenceEnabledRequest clone() => SetGamePresenceEnabledRequest()..mergeFromMessage(this);
+  @$core.Deprecated(
+  'Using this can add significant overhead to your binary. '
+  'Use [GeneratedMessageGenericExtensions.rebuild] instead. '
+  'Will be removed in next major version')
+  SetGamePresenceEnabledRequest copyWith(void Function(SetGamePresenceEnabledRequest) updates) => super.copyWith((message) => updates(message as SetGamePresenceEnabledRequest)) as SetGamePresenceEnabledRequest;
+
+  $pb.BuilderInfo get info_ => _i;
+
+  @$core.pragma('dart2js:noInline')
+  static SetGamePresenceEnabledRequest create() => SetGamePresenceEnabledRequest._();
+  SetGamePresenceEnabledRequest createEmptyInstance() => create();
+  static $pb.PbList<SetGamePresenceEnabledRequest> createRepeated() => $pb.PbList<SetGamePresenceEnabledRequest>();
+  @$core.pragma('dart2js:noInline')
+  static SetGamePresenceEnabledRequest getDefault() => _defaultInstance ??= $pb.GeneratedMessage.$_defaultFor<SetGamePresenceEnabledRequest>(create);
+  static SetGamePresenceEnabledRequest? _defaultInstance;
+
+  @$pb.TagNumber(1)
+  $core.String get playerId => $_getSZ(0);
+  @$pb.TagNumber(1)
+  set playerId($core.String v) { $_setString(0, v); }
+  @$pb.TagNumber(1)
+  $core.bool hasPlayerId() => $_has(0);
+  @$pb.TagNumber(1)
+  void clearPlayerId() => clearField(1);
+
+  @$pb.TagNumber(2)
+  $core.bool get enabled => $_getBF(1);
+  @$pb.TagNumber(2)
+  set enabled($core.bool v) { $_setBool(1, v); }
+  @$pb.TagNumber(2)
+  $core.bool hasEnabled() => $_has(1);
+  @$pb.TagNumber(2)
+  void clearEnabled() => clearField(2);
+}
+
+class SetGamePresenceEnabledResponse extends $pb.GeneratedMessage {
+  factory SetGamePresenceEnabledResponse({
+    $0.ErrorCode? code,
+  }) {
+    final $result = create();
+    if (code != null) {
+      $result.code = code;
+    }
+    return $result;
+  }
+  SetGamePresenceEnabledResponse._() : super();
+  factory SetGamePresenceEnabledResponse.fromBuffer($core.List<$core.int> i, [$pb.ExtensionRegistry r = $pb.ExtensionRegistry.EMPTY]) => create()..mergeFromBuffer(i, r);
+  factory SetGamePresenceEnabledResponse.fromJson($core.String i, [$pb.ExtensionRegistry r = $pb.ExtensionRegistry.EMPTY]) => create()..mergeFromJson(i, r);
+
+  static final $pb.BuilderInfo _i = $pb.BuilderInfo(_omitMessageNames ? '' : 'SetGamePresenceEnabledResponse', package: const $pb.PackageName(_omitMessageNames ? '' : 'chirp.game_server_gateway'), createEmptyInstance: create)
+    ..e<$0.ErrorCode>(1, _omitFieldNames ? '' : 'code', $pb.PbFieldType.OE, defaultOrMaker: $0.ErrorCode.OK, valueOf: $0.ErrorCode.valueOf, enumValues: $0.ErrorCode.values)
+    ..hasRequiredFields = false
+  ;
+
+  @$core.Deprecated(
+  'Using this can add significant overhead to your binary. '
+  'Use [GeneratedMessageGenericExtensions.deepCopy] instead. '
+  'Will be removed in next major version')
+  SetGamePresenceEnabledResponse clone() => SetGamePresenceEnabledResponse()..mergeFromMessage(this);
+  @$core.Deprecated(
+  'Using this can add significant overhead to your binary. '
+  'Use [GeneratedMessageGenericExtensions.rebuild] instead. '
+  'Will be removed in next major version')
+  SetGamePresenceEnabledResponse copyWith(void Function(SetGamePresenceEnabledResponse) updates) => super.copyWith((message) => updates(message as SetGamePresenceEnabledResponse)) as SetGamePresenceEnabledResponse;
+
+  $pb.BuilderInfo get info_ => _i;
+
+  @$core.pragma('dart2js:noInline')
+  static SetGamePresenceEnabledResponse create() => SetGamePresenceEnabledResponse._();
+  SetGamePresenceEnabledResponse createEmptyInstance() => create();
+  static $pb.PbList<SetGamePresenceEnabledResponse> createRepeated() => $pb.PbList<SetGamePresenceEnabledResponse>();
+  @$core.pragma('dart2js:noInline')
+  static SetGamePresenceEnabledResponse getDefault() => _defaultInstance ??= $pb.GeneratedMessage.$_defaultFor<SetGamePresenceEnabledResponse>(create);
+  static SetGamePresenceEnabledResponse? _defaultInstance;
+
+  @$pb.TagNumber(1)
+  $0.ErrorCode get code => $_getN(0);
+  @$pb.TagNumber(1)
+  set code($0.ErrorCode v) { setField(1, v); }
+  @$pb.TagNumber(1)
+  $core.bool hasCode() => $_has(0);
+  @$pb.TagNumber(1)
+  void clearCode() => clearField(1);
+}
+
+class GamePresenceEntry extends $pb.GeneratedMessage {
+  factory GamePresenceEntry({
+    $core.String? gameId,
+    $core.String? gameUserId,
+  }) {
+    final $result = create();
+    if (gameId != null) {
+      $result.gameId = gameId;
+    }
+    if (gameUserId != null) {
+      $result.gameUserId = gameUserId;
+    }
+    return $result;
+  }
+  GamePresenceEntry._() : super();
+  factory GamePresenceEntry.fromBuffer($core.List<$core.int> i, [$pb.ExtensionRegistry r = $pb.ExtensionRegistry.EMPTY]) => create()..mergeFromBuffer(i, r);
+  factory GamePresenceEntry.fromJson($core.String i, [$pb.ExtensionRegistry r = $pb.ExtensionRegistry.EMPTY]) => create()..mergeFromJson(i, r);
+
+  static final $pb.BuilderInfo _i = $pb.BuilderInfo(_omitMessageNames ? '' : 'GamePresenceEntry', package: const $pb.PackageName(_omitMessageNames ? '' : 'chirp.game_server_gateway'), createEmptyInstance: create)
+    ..aOS(1, _omitFieldNames ? '' : 'gameId')
+    ..aOS(2, _omitFieldNames ? '' : 'gameUserId')
+    ..hasRequiredFields = false
+  ;
+
+  @$core.Deprecated(
+  'Using this can add significant overhead to your binary. '
+  'Use [GeneratedMessageGenericExtensions.deepCopy] instead. '
+  'Will be removed in next major version')
+  GamePresenceEntry clone() => GamePresenceEntry()..mergeFromMessage(this);
+  @$core.Deprecated(
+  'Using this can add significant overhead to your binary. '
+  'Use [GeneratedMessageGenericExtensions.rebuild] instead. '
+  'Will be removed in next major version')
+  GamePresenceEntry copyWith(void Function(GamePresenceEntry) updates) => super.copyWith((message) => updates(message as GamePresenceEntry)) as GamePresenceEntry;
+
+  $pb.BuilderInfo get info_ => _i;
+
+  @$core.pragma('dart2js:noInline')
+  static GamePresenceEntry create() => GamePresenceEntry._();
+  GamePresenceEntry createEmptyInstance() => create();
+  static $pb.PbList<GamePresenceEntry> createRepeated() => $pb.PbList<GamePresenceEntry>();
+  @$core.pragma('dart2js:noInline')
+  static GamePresenceEntry getDefault() => _defaultInstance ??= $pb.GeneratedMessage.$_defaultFor<GamePresenceEntry>(create);
+  static GamePresenceEntry? _defaultInstance;
+
+  @$pb.TagNumber(1)
+  $core.String get gameId => $_getSZ(0);
+  @$pb.TagNumber(1)
+  set gameId($core.String v) { $_setString(0, v); }
+  @$pb.TagNumber(1)
+  $core.bool hasGameId() => $_has(0);
+  @$pb.TagNumber(1)
+  void clearGameId() => clearField(1);
+
+  @$pb.TagNumber(2)
+  $core.String get gameUserId => $_getSZ(1);
+  @$pb.TagNumber(2)
+  set gameUserId($core.String v) { $_setString(1, v); }
+  @$pb.TagNumber(2)
+  $core.bool hasGameUserId() => $_has(1);
+  @$pb.TagNumber(2)
+  void clearGameUserId() => clearField(2);
+}
+
+class GetGamePresenceRequest extends $pb.GeneratedMessage {
+  factory GetGamePresenceRequest({
+    $core.String? playerId,
+  }) {
+    final $result = create();
+    if (playerId != null) {
+      $result.playerId = playerId;
+    }
+    return $result;
+  }
+  GetGamePresenceRequest._() : super();
+  factory GetGamePresenceRequest.fromBuffer($core.List<$core.int> i, [$pb.ExtensionRegistry r = $pb.ExtensionRegistry.EMPTY]) => create()..mergeFromBuffer(i, r);
+  factory GetGamePresenceRequest.fromJson($core.String i, [$pb.ExtensionRegistry r = $pb.ExtensionRegistry.EMPTY]) => create()..mergeFromJson(i, r);
+
+  static final $pb.BuilderInfo _i = $pb.BuilderInfo(_omitMessageNames ? '' : 'GetGamePresenceRequest', package: const $pb.PackageName(_omitMessageNames ? '' : 'chirp.game_server_gateway'), createEmptyInstance: create)
+    ..aOS(1, _omitFieldNames ? '' : 'playerId')
+    ..hasRequiredFields = false
+  ;
+
+  @$core.Deprecated(
+  'Using this can add significant overhead to your binary. '
+  'Use [GeneratedMessageGenericExtensions.deepCopy] instead. '
+  'Will be removed in next major version')
+  GetGamePresenceRequest clone() => GetGamePresenceRequest()..mergeFromMessage(this);
+  @$core.Deprecated(
+  'Using this can add significant overhead to your binary. '
+  'Use [GeneratedMessageGenericExtensions.rebuild] instead. '
+  'Will be removed in next major version')
+  GetGamePresenceRequest copyWith(void Function(GetGamePresenceRequest) updates) => super.copyWith((message) => updates(message as GetGamePresenceRequest)) as GetGamePresenceRequest;
+
+  $pb.BuilderInfo get info_ => _i;
+
+  @$core.pragma('dart2js:noInline')
+  static GetGamePresenceRequest create() => GetGamePresenceRequest._();
+  GetGamePresenceRequest createEmptyInstance() => create();
+  static $pb.PbList<GetGamePresenceRequest> createRepeated() => $pb.PbList<GetGamePresenceRequest>();
+  @$core.pragma('dart2js:noInline')
+  static GetGamePresenceRequest getDefault() => _defaultInstance ??= $pb.GeneratedMessage.$_defaultFor<GetGamePresenceRequest>(create);
+  static GetGamePresenceRequest? _defaultInstance;
+
+  @$pb.TagNumber(1)
+  $core.String get playerId => $_getSZ(0);
+  @$pb.TagNumber(1)
+  set playerId($core.String v) { $_setString(0, v); }
+  @$pb.TagNumber(1)
+  $core.bool hasPlayerId() => $_has(0);
+  @$pb.TagNumber(1)
+  void clearPlayerId() => clearField(1);
+}
+
+class GetGamePresenceResponse extends $pb.GeneratedMessage {
+  factory GetGamePresenceResponse({
+    $0.ErrorCode? code,
+    $core.bool? enabled,
+    $core.Iterable<GamePresenceEntry>? entries,
+  }) {
+    final $result = create();
+    if (code != null) {
+      $result.code = code;
+    }
+    if (enabled != null) {
+      $result.enabled = enabled;
+    }
+    if (entries != null) {
+      $result.entries.addAll(entries);
+    }
+    return $result;
+  }
+  GetGamePresenceResponse._() : super();
+  factory GetGamePresenceResponse.fromBuffer($core.List<$core.int> i, [$pb.ExtensionRegistry r = $pb.ExtensionRegistry.EMPTY]) => create()..mergeFromBuffer(i, r);
+  factory GetGamePresenceResponse.fromJson($core.String i, [$pb.ExtensionRegistry r = $pb.ExtensionRegistry.EMPTY]) => create()..mergeFromJson(i, r);
+
+  static final $pb.BuilderInfo _i = $pb.BuilderInfo(_omitMessageNames ? '' : 'GetGamePresenceResponse', package: const $pb.PackageName(_omitMessageNames ? '' : 'chirp.game_server_gateway'), createEmptyInstance: create)
+    ..e<$0.ErrorCode>(1, _omitFieldNames ? '' : 'code', $pb.PbFieldType.OE, defaultOrMaker: $0.ErrorCode.OK, valueOf: $0.ErrorCode.valueOf, enumValues: $0.ErrorCode.values)
+    ..aOB(2, _omitFieldNames ? '' : 'enabled')
+    ..pc<GamePresenceEntry>(3, _omitFieldNames ? '' : 'entries', $pb.PbFieldType.PM, subBuilder: GamePresenceEntry.create)
+    ..hasRequiredFields = false
+  ;
+
+  @$core.Deprecated(
+  'Using this can add significant overhead to your binary. '
+  'Use [GeneratedMessageGenericExtensions.deepCopy] instead. '
+  'Will be removed in next major version')
+  GetGamePresenceResponse clone() => GetGamePresenceResponse()..mergeFromMessage(this);
+  @$core.Deprecated(
+  'Using this can add significant overhead to your binary. '
+  'Use [GeneratedMessageGenericExtensions.rebuild] instead. '
+  'Will be removed in next major version')
+  GetGamePresenceResponse copyWith(void Function(GetGamePresenceResponse) updates) => super.copyWith((message) => updates(message as GetGamePresenceResponse)) as GetGamePresenceResponse;
+
+  $pb.BuilderInfo get info_ => _i;
+
+  @$core.pragma('dart2js:noInline')
+  static GetGamePresenceResponse create() => GetGamePresenceResponse._();
+  GetGamePresenceResponse createEmptyInstance() => create();
+  static $pb.PbList<GetGamePresenceResponse> createRepeated() => $pb.PbList<GetGamePresenceResponse>();
+  @$core.pragma('dart2js:noInline')
+  static GetGamePresenceResponse getDefault() => _defaultInstance ??= $pb.GeneratedMessage.$_defaultFor<GetGamePresenceResponse>(create);
+  static GetGamePresenceResponse? _defaultInstance;
+
+  @$pb.TagNumber(1)
+  $0.ErrorCode get code => $_getN(0);
+  @$pb.TagNumber(1)
+  set code($0.ErrorCode v) { setField(1, v); }
+  @$pb.TagNumber(1)
+  $core.bool hasCode() => $_has(0);
+  @$pb.TagNumber(1)
+  void clearCode() => clearField(1);
+
+  /// The current switch (true when never explicitly disabled).
+  @$pb.TagNumber(2)
+  $core.bool get enabled => $_getBF(1);
+  @$pb.TagNumber(2)
+  set enabled($core.bool v) { $_setBool(1, v); }
+  @$pb.TagNumber(2)
+  $core.bool hasEnabled() => $_has(1);
+  @$pb.TagNumber(2)
+  void clearEnabled() => clearField(2);
+
+  /// Games the presence currently covers (enabled && bound), ordered by
+  /// game_id. Empty while disabled or unbound — binding is what makes
+  /// presence live, disabling only freezes the fan-out.
+  @$pb.TagNumber(3)
+  $core.List<GamePresenceEntry> get entries => $_getList(2);
+}
+
 
 const _omitFieldNames = $core.bool.fromEnvironment('protobuf.omit_field_names');
 const _omitMessageNames = $core.bool.fromEnvironment('protobuf.omit_message_names');

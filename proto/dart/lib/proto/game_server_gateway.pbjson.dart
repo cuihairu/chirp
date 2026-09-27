@@ -556,3 +556,102 @@ final $typed_data.Uint8List getUnreadSummaryResponseDescriptor = $convert.base64
     'dGV3YXkuVW5yZWFkU3VtbWFyeUVudHJ5UgdlbnRyaWVzEiEKDHRvdGFsX3VucmVhZBgDIAEoBV'
     'ILdG90YWxVbnJlYWQ=');
 
+@$core.Deprecated('Use storedGamePresenceSettingDescriptor instead')
+const StoredGamePresenceSetting$json = {
+  '1': 'StoredGamePresenceSetting',
+  '2': [
+    {'1': 'player_id', '3': 1, '4': 1, '5': 9, '10': 'playerId'},
+    {'1': 'enabled', '3': 2, '4': 1, '5': 8, '10': 'enabled'},
+  ],
+};
+
+/// Descriptor for `StoredGamePresenceSetting`. Decode as a `google.protobuf.DescriptorProto`.
+final $typed_data.Uint8List storedGamePresenceSettingDescriptor = $convert.base64Decode(
+    'ChlTdG9yZWRHYW1lUHJlc2VuY2VTZXR0aW5nEhsKCXBsYXllcl9pZBgBIAEoCVIIcGxheWVySW'
+    'QSGAoHZW5hYmxlZBgCIAEoCFIHZW5hYmxlZA==');
+
+@$core.Deprecated('Use gamePresenceEventDescriptor instead')
+const GamePresenceEvent$json = {
+  '1': 'GamePresenceEvent',
+  '2': [
+    {'1': 'player_id', '3': 1, '4': 1, '5': 9, '10': 'playerId'},
+    {'1': 'game_id', '3': 2, '4': 1, '5': 9, '10': 'gameId'},
+    {'1': 'online', '3': 3, '4': 1, '5': 8, '10': 'online'},
+  ],
+};
+
+/// Descriptor for `GamePresenceEvent`. Decode as a `google.protobuf.DescriptorProto`.
+final $typed_data.Uint8List gamePresenceEventDescriptor = $convert.base64Decode(
+    'ChFHYW1lUHJlc2VuY2VFdmVudBIbCglwbGF5ZXJfaWQYASABKAlSCHBsYXllcklkEhcKB2dhbW'
+    'VfaWQYAiABKAlSBmdhbWVJZBIWCgZvbmxpbmUYAyABKAhSBm9ubGluZQ==');
+
+@$core.Deprecated('Use setGamePresenceEnabledRequestDescriptor instead')
+const SetGamePresenceEnabledRequest$json = {
+  '1': 'SetGamePresenceEnabledRequest',
+  '2': [
+    {'1': 'player_id', '3': 1, '4': 1, '5': 9, '10': 'playerId'},
+    {'1': 'enabled', '3': 2, '4': 1, '5': 8, '10': 'enabled'},
+  ],
+};
+
+/// Descriptor for `SetGamePresenceEnabledRequest`. Decode as a `google.protobuf.DescriptorProto`.
+final $typed_data.Uint8List setGamePresenceEnabledRequestDescriptor = $convert.base64Decode(
+    'Ch1TZXRHYW1lUHJlc2VuY2VFbmFibGVkUmVxdWVzdBIbCglwbGF5ZXJfaWQYASABKAlSCHBsYX'
+    'llcklkEhgKB2VuYWJsZWQYAiABKAhSB2VuYWJsZWQ=');
+
+@$core.Deprecated('Use setGamePresenceEnabledResponseDescriptor instead')
+const SetGamePresenceEnabledResponse$json = {
+  '1': 'SetGamePresenceEnabledResponse',
+  '2': [
+    {'1': 'code', '3': 1, '4': 1, '5': 14, '6': '.chirp.common.ErrorCode', '10': 'code'},
+  ],
+};
+
+/// Descriptor for `SetGamePresenceEnabledResponse`. Decode as a `google.protobuf.DescriptorProto`.
+final $typed_data.Uint8List setGamePresenceEnabledResponseDescriptor = $convert.base64Decode(
+    'Ch5TZXRHYW1lUHJlc2VuY2VFbmFibGVkUmVzcG9uc2USKwoEY29kZRgBIAEoDjIXLmNoaXJwLm'
+    'NvbW1vbi5FcnJvckNvZGVSBGNvZGU=');
+
+@$core.Deprecated('Use gamePresenceEntryDescriptor instead')
+const GamePresenceEntry$json = {
+  '1': 'GamePresenceEntry',
+  '2': [
+    {'1': 'game_id', '3': 1, '4': 1, '5': 9, '10': 'gameId'},
+    {'1': 'game_user_id', '3': 2, '4': 1, '5': 9, '10': 'gameUserId'},
+  ],
+};
+
+/// Descriptor for `GamePresenceEntry`. Decode as a `google.protobuf.DescriptorProto`.
+final $typed_data.Uint8List gamePresenceEntryDescriptor = $convert.base64Decode(
+    'ChFHYW1lUHJlc2VuY2VFbnRyeRIXCgdnYW1lX2lkGAEgASgJUgZnYW1lSWQSIAoMZ2FtZV91c2'
+    'VyX2lkGAIgASgJUgpnYW1lVXNlcklk');
+
+@$core.Deprecated('Use getGamePresenceRequestDescriptor instead')
+const GetGamePresenceRequest$json = {
+  '1': 'GetGamePresenceRequest',
+  '2': [
+    {'1': 'player_id', '3': 1, '4': 1, '5': 9, '10': 'playerId'},
+  ],
+};
+
+/// Descriptor for `GetGamePresenceRequest`. Decode as a `google.protobuf.DescriptorProto`.
+final $typed_data.Uint8List getGamePresenceRequestDescriptor = $convert.base64Decode(
+    'ChZHZXRHYW1lUHJlc2VuY2VSZXF1ZXN0EhsKCXBsYXllcl9pZBgBIAEoCVIIcGxheWVySWQ=');
+
+@$core.Deprecated('Use getGamePresenceResponseDescriptor instead')
+const GetGamePresenceResponse$json = {
+  '1': 'GetGamePresenceResponse',
+  '2': [
+    {'1': 'code', '3': 1, '4': 1, '5': 14, '6': '.chirp.common.ErrorCode', '10': 'code'},
+    {'1': 'enabled', '3': 2, '4': 1, '5': 8, '10': 'enabled'},
+    {'1': 'entries', '3': 3, '4': 3, '5': 11, '6': '.chirp.game_server_gateway.GamePresenceEntry', '10': 'entries'},
+  ],
+};
+
+/// Descriptor for `GetGamePresenceResponse`. Decode as a `google.protobuf.DescriptorProto`.
+final $typed_data.Uint8List getGamePresenceResponseDescriptor = $convert.base64Decode(
+    'ChdHZXRHYW1lUHJlc2VuY2VSZXNwb25zZRIrCgRjb2RlGAEgASgOMhcuY2hpcnAuY29tbW9uLk'
+    'Vycm9yQ29kZVIEY29kZRIYCgdlbmFibGVkGAIgASgIUgdlbmFibGVkEkYKB2VudHJpZXMYAyAD'
+    'KAsyLC5jaGlycC5nYW1lX3NlcnZlcl9nYXRld2F5LkdhbWVQcmVzZW5jZUVudHJ5UgdlbnRyaW'
+    'Vz');
+

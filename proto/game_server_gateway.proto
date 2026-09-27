@@ -289,3 +289,58 @@ message GetUnreadSummaryResponse {
   // Sum of the returned entries' counters (after the filter).
   int32 total_unread = 3;
 }
+
+// ---------------------------------------------------------------------------
+// Game presence (游戏在线状态 + 好友消息进游戏). A player's identity bindings
+// (slice 1) double as the in-game assertion: the game backend binds on
+// entry and unbinds on exit, so presence follows the assertion lifecycle
+// instead of a separate liveness signal. The per-player switch defaults to
+// TRUE when unset — binding opts in by default; docs/server_plane.md
+// records the semantics. app_gateway forwards both RPCs with player_id
+// pinned to the authenticated user (gateway 5031-5034).
+// ---------------------------------------------------------------------------
+
+// Persistence record (Redis, not a wire message): the explicit toggle.
+// Absent key = enabled (the default); only an explicit choice is stored.
+message StoredGamePresenceSetting {
+  string player_id = 1;
+  bool enabled = 2;
+}
+
+// Pub/sub payload (Redis channel chirp:game_presence:events, not a wire
+// message): one game's presence flipped. Emitted only while the switch is
+// enabled — a disabled player never publishes, which is the closed-state
+// contract (状态不推、游戏内不投).
+message GamePresenceEvent {
+  string player_id = 1;
+  string game_id = 2;
+  bool online = 3;
+}
+
+message SetGamePresenceEnabledRequest {
+  string player_id = 1;
+  bool enabled = 2;
+}
+
+message SetGamePresenceEnabledResponse {
+  chirp.common.ErrorCode code = 1;
+}
+
+message GamePresenceEntry {
+  string game_id = 1;
+  string game_user_id = 2;
+}
+
+message GetGamePresenceRequest {
+  string player_id = 1;
+}
+
+message GetGamePresenceResponse {
+  chirp.common.ErrorCode code = 1;
+  // The current switch (true when never explicitly disabled).
+  bool enabled = 2;
+  // Games the presence currently covers (enabled && bound), ordered by
+  // game_id. Empty while disabled or unbound — binding is what makes
+  // presence live, disabling only freezes the fan-out.
+  repeated GamePresenceEntry entries = 3;
+}

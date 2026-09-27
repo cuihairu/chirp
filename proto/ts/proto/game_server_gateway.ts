@@ -333,6 +333,57 @@ export interface GetUnreadSummaryResponse {
   totalUnread: number;
 }
 
+/**
+ * Persistence record (Redis, not a wire message): the explicit toggle.
+ * Absent key = enabled (the default); only an explicit choice is stored.
+ */
+export interface StoredGamePresenceSetting {
+  playerId: string;
+  enabled: boolean;
+}
+
+/**
+ * Pub/sub payload (Redis channel chirp:game_presence:events, not a wire
+ * message): one game's presence flipped. Emitted only while the switch is
+ * enabled — a disabled player never publishes, which is the closed-state
+ * contract (状态不推、游戏内不投).
+ */
+export interface GamePresenceEvent {
+  playerId: string;
+  gameId: string;
+  online: boolean;
+}
+
+export interface SetGamePresenceEnabledRequest {
+  playerId: string;
+  enabled: boolean;
+}
+
+export interface SetGamePresenceEnabledResponse {
+  code: ErrorCode;
+}
+
+export interface GamePresenceEntry {
+  gameId: string;
+  gameUserId: string;
+}
+
+export interface GetGamePresenceRequest {
+  playerId: string;
+}
+
+export interface GetGamePresenceResponse {
+  code: ErrorCode;
+  /** The current switch (true when never explicitly disabled). */
+  enabled: boolean;
+  /**
+   * Games the presence currently covers (enabled && bound), ordered by
+   * game_id. Empty while disabled or unbound — binding is what makes
+   * presence live, disabling only freezes the fan-out.
+   */
+  entries: GamePresenceEntry[];
+}
+
 function createBaseServerAuthRequest(): ServerAuthRequest {
   return { serviceId: "", secret: "", protocolVersion: 0 };
 }
@@ -3254,6 +3305,526 @@ export const GetUnreadSummaryResponse = {
     message.code = object.code ?? 0;
     message.entries = object.entries?.map((e) => UnreadSummaryEntry.fromPartial(e)) || [];
     message.totalUnread = object.totalUnread ?? 0;
+    return message;
+  },
+};
+
+function createBaseStoredGamePresenceSetting(): StoredGamePresenceSetting {
+  return { playerId: "", enabled: false };
+}
+
+export const StoredGamePresenceSetting = {
+  encode(message: StoredGamePresenceSetting, writer: _m0.Writer = _m0.Writer.create()): _m0.Writer {
+    if (message.playerId !== "") {
+      writer.uint32(10).string(message.playerId);
+    }
+    if (message.enabled !== false) {
+      writer.uint32(16).bool(message.enabled);
+    }
+    return writer;
+  },
+
+  decode(input: _m0.Reader | Uint8Array, length?: number): StoredGamePresenceSetting {
+    const reader = input instanceof _m0.Reader ? input : _m0.Reader.create(input);
+    let end = length === undefined ? reader.len : reader.pos + length;
+    const message = createBaseStoredGamePresenceSetting();
+    while (reader.pos < end) {
+      const tag = reader.uint32();
+      switch (tag >>> 3) {
+        case 1:
+          if (tag !== 10) {
+            break;
+          }
+
+          message.playerId = reader.string();
+          continue;
+        case 2:
+          if (tag !== 16) {
+            break;
+          }
+
+          message.enabled = reader.bool();
+          continue;
+      }
+      if ((tag & 7) === 4 || tag === 0) {
+        break;
+      }
+      reader.skipType(tag & 7);
+    }
+    return message;
+  },
+
+  fromJSON(object: any): StoredGamePresenceSetting {
+    return {
+      playerId: isSet(object.playerId) ? globalThis.String(object.playerId) : "",
+      enabled: isSet(object.enabled) ? globalThis.Boolean(object.enabled) : false,
+    };
+  },
+
+  toJSON(message: StoredGamePresenceSetting): unknown {
+    const obj: any = {};
+    if (message.playerId !== "") {
+      obj.playerId = message.playerId;
+    }
+    if (message.enabled !== false) {
+      obj.enabled = message.enabled;
+    }
+    return obj;
+  },
+
+  create<I extends Exact<DeepPartial<StoredGamePresenceSetting>, I>>(base?: I): StoredGamePresenceSetting {
+    return StoredGamePresenceSetting.fromPartial(base ?? ({} as any));
+  },
+  fromPartial<I extends Exact<DeepPartial<StoredGamePresenceSetting>, I>>(object: I): StoredGamePresenceSetting {
+    const message = createBaseStoredGamePresenceSetting();
+    message.playerId = object.playerId ?? "";
+    message.enabled = object.enabled ?? false;
+    return message;
+  },
+};
+
+function createBaseGamePresenceEvent(): GamePresenceEvent {
+  return { playerId: "", gameId: "", online: false };
+}
+
+export const GamePresenceEvent = {
+  encode(message: GamePresenceEvent, writer: _m0.Writer = _m0.Writer.create()): _m0.Writer {
+    if (message.playerId !== "") {
+      writer.uint32(10).string(message.playerId);
+    }
+    if (message.gameId !== "") {
+      writer.uint32(18).string(message.gameId);
+    }
+    if (message.online !== false) {
+      writer.uint32(24).bool(message.online);
+    }
+    return writer;
+  },
+
+  decode(input: _m0.Reader | Uint8Array, length?: number): GamePresenceEvent {
+    const reader = input instanceof _m0.Reader ? input : _m0.Reader.create(input);
+    let end = length === undefined ? reader.len : reader.pos + length;
+    const message = createBaseGamePresenceEvent();
+    while (reader.pos < end) {
+      const tag = reader.uint32();
+      switch (tag >>> 3) {
+        case 1:
+          if (tag !== 10) {
+            break;
+          }
+
+          message.playerId = reader.string();
+          continue;
+        case 2:
+          if (tag !== 18) {
+            break;
+          }
+
+          message.gameId = reader.string();
+          continue;
+        case 3:
+          if (tag !== 24) {
+            break;
+          }
+
+          message.online = reader.bool();
+          continue;
+      }
+      if ((tag & 7) === 4 || tag === 0) {
+        break;
+      }
+      reader.skipType(tag & 7);
+    }
+    return message;
+  },
+
+  fromJSON(object: any): GamePresenceEvent {
+    return {
+      playerId: isSet(object.playerId) ? globalThis.String(object.playerId) : "",
+      gameId: isSet(object.gameId) ? globalThis.String(object.gameId) : "",
+      online: isSet(object.online) ? globalThis.Boolean(object.online) : false,
+    };
+  },
+
+  toJSON(message: GamePresenceEvent): unknown {
+    const obj: any = {};
+    if (message.playerId !== "") {
+      obj.playerId = message.playerId;
+    }
+    if (message.gameId !== "") {
+      obj.gameId = message.gameId;
+    }
+    if (message.online !== false) {
+      obj.online = message.online;
+    }
+    return obj;
+  },
+
+  create<I extends Exact<DeepPartial<GamePresenceEvent>, I>>(base?: I): GamePresenceEvent {
+    return GamePresenceEvent.fromPartial(base ?? ({} as any));
+  },
+  fromPartial<I extends Exact<DeepPartial<GamePresenceEvent>, I>>(object: I): GamePresenceEvent {
+    const message = createBaseGamePresenceEvent();
+    message.playerId = object.playerId ?? "";
+    message.gameId = object.gameId ?? "";
+    message.online = object.online ?? false;
+    return message;
+  },
+};
+
+function createBaseSetGamePresenceEnabledRequest(): SetGamePresenceEnabledRequest {
+  return { playerId: "", enabled: false };
+}
+
+export const SetGamePresenceEnabledRequest = {
+  encode(message: SetGamePresenceEnabledRequest, writer: _m0.Writer = _m0.Writer.create()): _m0.Writer {
+    if (message.playerId !== "") {
+      writer.uint32(10).string(message.playerId);
+    }
+    if (message.enabled !== false) {
+      writer.uint32(16).bool(message.enabled);
+    }
+    return writer;
+  },
+
+  decode(input: _m0.Reader | Uint8Array, length?: number): SetGamePresenceEnabledRequest {
+    const reader = input instanceof _m0.Reader ? input : _m0.Reader.create(input);
+    let end = length === undefined ? reader.len : reader.pos + length;
+    const message = createBaseSetGamePresenceEnabledRequest();
+    while (reader.pos < end) {
+      const tag = reader.uint32();
+      switch (tag >>> 3) {
+        case 1:
+          if (tag !== 10) {
+            break;
+          }
+
+          message.playerId = reader.string();
+          continue;
+        case 2:
+          if (tag !== 16) {
+            break;
+          }
+
+          message.enabled = reader.bool();
+          continue;
+      }
+      if ((tag & 7) === 4 || tag === 0) {
+        break;
+      }
+      reader.skipType(tag & 7);
+    }
+    return message;
+  },
+
+  fromJSON(object: any): SetGamePresenceEnabledRequest {
+    return {
+      playerId: isSet(object.playerId) ? globalThis.String(object.playerId) : "",
+      enabled: isSet(object.enabled) ? globalThis.Boolean(object.enabled) : false,
+    };
+  },
+
+  toJSON(message: SetGamePresenceEnabledRequest): unknown {
+    const obj: any = {};
+    if (message.playerId !== "") {
+      obj.playerId = message.playerId;
+    }
+    if (message.enabled !== false) {
+      obj.enabled = message.enabled;
+    }
+    return obj;
+  },
+
+  create<I extends Exact<DeepPartial<SetGamePresenceEnabledRequest>, I>>(base?: I): SetGamePresenceEnabledRequest {
+    return SetGamePresenceEnabledRequest.fromPartial(base ?? ({} as any));
+  },
+  fromPartial<I extends Exact<DeepPartial<SetGamePresenceEnabledRequest>, I>>(
+    object: I,
+  ): SetGamePresenceEnabledRequest {
+    const message = createBaseSetGamePresenceEnabledRequest();
+    message.playerId = object.playerId ?? "";
+    message.enabled = object.enabled ?? false;
+    return message;
+  },
+};
+
+function createBaseSetGamePresenceEnabledResponse(): SetGamePresenceEnabledResponse {
+  return { code: 0 };
+}
+
+export const SetGamePresenceEnabledResponse = {
+  encode(message: SetGamePresenceEnabledResponse, writer: _m0.Writer = _m0.Writer.create()): _m0.Writer {
+    if (message.code !== 0) {
+      writer.uint32(8).int32(message.code);
+    }
+    return writer;
+  },
+
+  decode(input: _m0.Reader | Uint8Array, length?: number): SetGamePresenceEnabledResponse {
+    const reader = input instanceof _m0.Reader ? input : _m0.Reader.create(input);
+    let end = length === undefined ? reader.len : reader.pos + length;
+    const message = createBaseSetGamePresenceEnabledResponse();
+    while (reader.pos < end) {
+      const tag = reader.uint32();
+      switch (tag >>> 3) {
+        case 1:
+          if (tag !== 8) {
+            break;
+          }
+
+          message.code = reader.int32() as any;
+          continue;
+      }
+      if ((tag & 7) === 4 || tag === 0) {
+        break;
+      }
+      reader.skipType(tag & 7);
+    }
+    return message;
+  },
+
+  fromJSON(object: any): SetGamePresenceEnabledResponse {
+    return { code: isSet(object.code) ? errorCodeFromJSON(object.code) : 0 };
+  },
+
+  toJSON(message: SetGamePresenceEnabledResponse): unknown {
+    const obj: any = {};
+    if (message.code !== 0) {
+      obj.code = errorCodeToJSON(message.code);
+    }
+    return obj;
+  },
+
+  create<I extends Exact<DeepPartial<SetGamePresenceEnabledResponse>, I>>(base?: I): SetGamePresenceEnabledResponse {
+    return SetGamePresenceEnabledResponse.fromPartial(base ?? ({} as any));
+  },
+  fromPartial<I extends Exact<DeepPartial<SetGamePresenceEnabledResponse>, I>>(
+    object: I,
+  ): SetGamePresenceEnabledResponse {
+    const message = createBaseSetGamePresenceEnabledResponse();
+    message.code = object.code ?? 0;
+    return message;
+  },
+};
+
+function createBaseGamePresenceEntry(): GamePresenceEntry {
+  return { gameId: "", gameUserId: "" };
+}
+
+export const GamePresenceEntry = {
+  encode(message: GamePresenceEntry, writer: _m0.Writer = _m0.Writer.create()): _m0.Writer {
+    if (message.gameId !== "") {
+      writer.uint32(10).string(message.gameId);
+    }
+    if (message.gameUserId !== "") {
+      writer.uint32(18).string(message.gameUserId);
+    }
+    return writer;
+  },
+
+  decode(input: _m0.Reader | Uint8Array, length?: number): GamePresenceEntry {
+    const reader = input instanceof _m0.Reader ? input : _m0.Reader.create(input);
+    let end = length === undefined ? reader.len : reader.pos + length;
+    const message = createBaseGamePresenceEntry();
+    while (reader.pos < end) {
+      const tag = reader.uint32();
+      switch (tag >>> 3) {
+        case 1:
+          if (tag !== 10) {
+            break;
+          }
+
+          message.gameId = reader.string();
+          continue;
+        case 2:
+          if (tag !== 18) {
+            break;
+          }
+
+          message.gameUserId = reader.string();
+          continue;
+      }
+      if ((tag & 7) === 4 || tag === 0) {
+        break;
+      }
+      reader.skipType(tag & 7);
+    }
+    return message;
+  },
+
+  fromJSON(object: any): GamePresenceEntry {
+    return {
+      gameId: isSet(object.gameId) ? globalThis.String(object.gameId) : "",
+      gameUserId: isSet(object.gameUserId) ? globalThis.String(object.gameUserId) : "",
+    };
+  },
+
+  toJSON(message: GamePresenceEntry): unknown {
+    const obj: any = {};
+    if (message.gameId !== "") {
+      obj.gameId = message.gameId;
+    }
+    if (message.gameUserId !== "") {
+      obj.gameUserId = message.gameUserId;
+    }
+    return obj;
+  },
+
+  create<I extends Exact<DeepPartial<GamePresenceEntry>, I>>(base?: I): GamePresenceEntry {
+    return GamePresenceEntry.fromPartial(base ?? ({} as any));
+  },
+  fromPartial<I extends Exact<DeepPartial<GamePresenceEntry>, I>>(object: I): GamePresenceEntry {
+    const message = createBaseGamePresenceEntry();
+    message.gameId = object.gameId ?? "";
+    message.gameUserId = object.gameUserId ?? "";
+    return message;
+  },
+};
+
+function createBaseGetGamePresenceRequest(): GetGamePresenceRequest {
+  return { playerId: "" };
+}
+
+export const GetGamePresenceRequest = {
+  encode(message: GetGamePresenceRequest, writer: _m0.Writer = _m0.Writer.create()): _m0.Writer {
+    if (message.playerId !== "") {
+      writer.uint32(10).string(message.playerId);
+    }
+    return writer;
+  },
+
+  decode(input: _m0.Reader | Uint8Array, length?: number): GetGamePresenceRequest {
+    const reader = input instanceof _m0.Reader ? input : _m0.Reader.create(input);
+    let end = length === undefined ? reader.len : reader.pos + length;
+    const message = createBaseGetGamePresenceRequest();
+    while (reader.pos < end) {
+      const tag = reader.uint32();
+      switch (tag >>> 3) {
+        case 1:
+          if (tag !== 10) {
+            break;
+          }
+
+          message.playerId = reader.string();
+          continue;
+      }
+      if ((tag & 7) === 4 || tag === 0) {
+        break;
+      }
+      reader.skipType(tag & 7);
+    }
+    return message;
+  },
+
+  fromJSON(object: any): GetGamePresenceRequest {
+    return { playerId: isSet(object.playerId) ? globalThis.String(object.playerId) : "" };
+  },
+
+  toJSON(message: GetGamePresenceRequest): unknown {
+    const obj: any = {};
+    if (message.playerId !== "") {
+      obj.playerId = message.playerId;
+    }
+    return obj;
+  },
+
+  create<I extends Exact<DeepPartial<GetGamePresenceRequest>, I>>(base?: I): GetGamePresenceRequest {
+    return GetGamePresenceRequest.fromPartial(base ?? ({} as any));
+  },
+  fromPartial<I extends Exact<DeepPartial<GetGamePresenceRequest>, I>>(object: I): GetGamePresenceRequest {
+    const message = createBaseGetGamePresenceRequest();
+    message.playerId = object.playerId ?? "";
+    return message;
+  },
+};
+
+function createBaseGetGamePresenceResponse(): GetGamePresenceResponse {
+  return { code: 0, enabled: false, entries: [] };
+}
+
+export const GetGamePresenceResponse = {
+  encode(message: GetGamePresenceResponse, writer: _m0.Writer = _m0.Writer.create()): _m0.Writer {
+    if (message.code !== 0) {
+      writer.uint32(8).int32(message.code);
+    }
+    if (message.enabled !== false) {
+      writer.uint32(16).bool(message.enabled);
+    }
+    for (const v of message.entries) {
+      GamePresenceEntry.encode(v!, writer.uint32(26).fork()).ldelim();
+    }
+    return writer;
+  },
+
+  decode(input: _m0.Reader | Uint8Array, length?: number): GetGamePresenceResponse {
+    const reader = input instanceof _m0.Reader ? input : _m0.Reader.create(input);
+    let end = length === undefined ? reader.len : reader.pos + length;
+    const message = createBaseGetGamePresenceResponse();
+    while (reader.pos < end) {
+      const tag = reader.uint32();
+      switch (tag >>> 3) {
+        case 1:
+          if (tag !== 8) {
+            break;
+          }
+
+          message.code = reader.int32() as any;
+          continue;
+        case 2:
+          if (tag !== 16) {
+            break;
+          }
+
+          message.enabled = reader.bool();
+          continue;
+        case 3:
+          if (tag !== 26) {
+            break;
+          }
+
+          message.entries.push(GamePresenceEntry.decode(reader, reader.uint32()));
+          continue;
+      }
+      if ((tag & 7) === 4 || tag === 0) {
+        break;
+      }
+      reader.skipType(tag & 7);
+    }
+    return message;
+  },
+
+  fromJSON(object: any): GetGamePresenceResponse {
+    return {
+      code: isSet(object.code) ? errorCodeFromJSON(object.code) : 0,
+      enabled: isSet(object.enabled) ? globalThis.Boolean(object.enabled) : false,
+      entries: globalThis.Array.isArray(object?.entries)
+        ? object.entries.map((e: any) => GamePresenceEntry.fromJSON(e))
+        : [],
+    };
+  },
+
+  toJSON(message: GetGamePresenceResponse): unknown {
+    const obj: any = {};
+    if (message.code !== 0) {
+      obj.code = errorCodeToJSON(message.code);
+    }
+    if (message.enabled !== false) {
+      obj.enabled = message.enabled;
+    }
+    if (message.entries?.length) {
+      obj.entries = message.entries.map((e) => GamePresenceEntry.toJSON(e));
+    }
+    return obj;
+  },
+
+  create<I extends Exact<DeepPartial<GetGamePresenceResponse>, I>>(base?: I): GetGamePresenceResponse {
+    return GetGamePresenceResponse.fromPartial(base ?? ({} as any));
+  },
+  fromPartial<I extends Exact<DeepPartial<GetGamePresenceResponse>, I>>(object: I): GetGamePresenceResponse {
+    const message = createBaseGetGamePresenceResponse();
+    message.code = object.code ?? 0;
+    message.enabled = object.enabled ?? false;
+    message.entries = object.entries?.map((e) => GamePresenceEntry.fromPartial(e)) || [];
     return message;
   },
 };

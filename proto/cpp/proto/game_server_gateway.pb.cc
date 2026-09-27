@@ -313,6 +313,34 @@ struct StoredIdentityBindingDefaultTypeInternal {
 PROTOBUF_ATTRIBUTE_NO_DESTROY PROTOBUF_CONSTINIT
     PROTOBUF_ATTRIBUTE_INIT_PRIORITY1 StoredIdentityBindingDefaultTypeInternal _StoredIdentityBinding_default_instance_;
 
+inline constexpr StoredGamePresenceSetting::Impl_::Impl_(
+    ::_pbi::ConstantInitialized) noexcept
+      : _cached_size_{0},
+        player_id_(
+            &::google::protobuf::internal::fixed_address_empty_string,
+            ::_pbi::ConstantInitialized()),
+        enabled_{false} {}
+
+template <typename>
+PROTOBUF_CONSTEXPR StoredGamePresenceSetting::StoredGamePresenceSetting(::_pbi::ConstantInitialized)
+#if defined(PROTOBUF_CUSTOM_VTABLE)
+    : ::google::protobuf::Message(StoredGamePresenceSetting_class_data_.base()),
+#else   // PROTOBUF_CUSTOM_VTABLE
+    : ::google::protobuf::Message(),
+#endif  // PROTOBUF_CUSTOM_VTABLE
+      _impl_(::_pbi::ConstantInitialized()) {
+}
+struct StoredGamePresenceSettingDefaultTypeInternal {
+  PROTOBUF_CONSTEXPR StoredGamePresenceSettingDefaultTypeInternal() : _instance(::_pbi::ConstantInitialized{}) {}
+  ~StoredGamePresenceSettingDefaultTypeInternal() {}
+  union {
+    StoredGamePresenceSetting _instance;
+  };
+};
+
+PROTOBUF_ATTRIBUTE_NO_DESTROY PROTOBUF_CONSTINIT
+    PROTOBUF_ATTRIBUTE_INIT_PRIORITY1 StoredGamePresenceSettingDefaultTypeInternal _StoredGamePresenceSetting_default_instance_;
+
 inline constexpr StoredChannelSubscription::Impl_::Impl_(
     ::_pbi::ConstantInitialized) noexcept
       : _cached_size_{0},
@@ -349,6 +377,59 @@ struct StoredChannelSubscriptionDefaultTypeInternal {
 
 PROTOBUF_ATTRIBUTE_NO_DESTROY PROTOBUF_CONSTINIT
     PROTOBUF_ATTRIBUTE_INIT_PRIORITY1 StoredChannelSubscriptionDefaultTypeInternal _StoredChannelSubscription_default_instance_;
+
+inline constexpr SetGamePresenceEnabledResponse::Impl_::Impl_(
+    ::_pbi::ConstantInitialized) noexcept
+      : _cached_size_{0},
+        code_{static_cast< ::chirp::common::ErrorCode >(0)} {}
+
+template <typename>
+PROTOBUF_CONSTEXPR SetGamePresenceEnabledResponse::SetGamePresenceEnabledResponse(::_pbi::ConstantInitialized)
+#if defined(PROTOBUF_CUSTOM_VTABLE)
+    : ::google::protobuf::Message(SetGamePresenceEnabledResponse_class_data_.base()),
+#else   // PROTOBUF_CUSTOM_VTABLE
+    : ::google::protobuf::Message(),
+#endif  // PROTOBUF_CUSTOM_VTABLE
+      _impl_(::_pbi::ConstantInitialized()) {
+}
+struct SetGamePresenceEnabledResponseDefaultTypeInternal {
+  PROTOBUF_CONSTEXPR SetGamePresenceEnabledResponseDefaultTypeInternal() : _instance(::_pbi::ConstantInitialized{}) {}
+  ~SetGamePresenceEnabledResponseDefaultTypeInternal() {}
+  union {
+    SetGamePresenceEnabledResponse _instance;
+  };
+};
+
+PROTOBUF_ATTRIBUTE_NO_DESTROY PROTOBUF_CONSTINIT
+    PROTOBUF_ATTRIBUTE_INIT_PRIORITY1 SetGamePresenceEnabledResponseDefaultTypeInternal _SetGamePresenceEnabledResponse_default_instance_;
+
+inline constexpr SetGamePresenceEnabledRequest::Impl_::Impl_(
+    ::_pbi::ConstantInitialized) noexcept
+      : _cached_size_{0},
+        player_id_(
+            &::google::protobuf::internal::fixed_address_empty_string,
+            ::_pbi::ConstantInitialized()),
+        enabled_{false} {}
+
+template <typename>
+PROTOBUF_CONSTEXPR SetGamePresenceEnabledRequest::SetGamePresenceEnabledRequest(::_pbi::ConstantInitialized)
+#if defined(PROTOBUF_CUSTOM_VTABLE)
+    : ::google::protobuf::Message(SetGamePresenceEnabledRequest_class_data_.base()),
+#else   // PROTOBUF_CUSTOM_VTABLE
+    : ::google::protobuf::Message(),
+#endif  // PROTOBUF_CUSTOM_VTABLE
+      _impl_(::_pbi::ConstantInitialized()) {
+}
+struct SetGamePresenceEnabledRequestDefaultTypeInternal {
+  PROTOBUF_CONSTEXPR SetGamePresenceEnabledRequestDefaultTypeInternal() : _instance(::_pbi::ConstantInitialized{}) {}
+  ~SetGamePresenceEnabledRequestDefaultTypeInternal() {}
+  union {
+    SetGamePresenceEnabledRequest _instance;
+  };
+};
+
+PROTOBUF_ATTRIBUTE_NO_DESTROY PROTOBUF_CONSTINIT
+    PROTOBUF_ATTRIBUTE_INIT_PRIORITY1 SetGamePresenceEnabledRequestDefaultTypeInternal _SetGamePresenceEnabledRequest_default_instance_;
 
 inline constexpr ServerHeartbeatPong::Impl_::Impl_(
     ::_pbi::ConstantInitialized) noexcept
@@ -734,6 +815,94 @@ struct GetPlayerIdentitiesRequestDefaultTypeInternal {
 PROTOBUF_ATTRIBUTE_NO_DESTROY PROTOBUF_CONSTINIT
     PROTOBUF_ATTRIBUTE_INIT_PRIORITY1 GetPlayerIdentitiesRequestDefaultTypeInternal _GetPlayerIdentitiesRequest_default_instance_;
 
+inline constexpr GetGamePresenceRequest::Impl_::Impl_(
+    ::_pbi::ConstantInitialized) noexcept
+      : _cached_size_{0},
+        player_id_(
+            &::google::protobuf::internal::fixed_address_empty_string,
+            ::_pbi::ConstantInitialized()) {}
+
+template <typename>
+PROTOBUF_CONSTEXPR GetGamePresenceRequest::GetGamePresenceRequest(::_pbi::ConstantInitialized)
+#if defined(PROTOBUF_CUSTOM_VTABLE)
+    : ::google::protobuf::Message(GetGamePresenceRequest_class_data_.base()),
+#else   // PROTOBUF_CUSTOM_VTABLE
+    : ::google::protobuf::Message(),
+#endif  // PROTOBUF_CUSTOM_VTABLE
+      _impl_(::_pbi::ConstantInitialized()) {
+}
+struct GetGamePresenceRequestDefaultTypeInternal {
+  PROTOBUF_CONSTEXPR GetGamePresenceRequestDefaultTypeInternal() : _instance(::_pbi::ConstantInitialized{}) {}
+  ~GetGamePresenceRequestDefaultTypeInternal() {}
+  union {
+    GetGamePresenceRequest _instance;
+  };
+};
+
+PROTOBUF_ATTRIBUTE_NO_DESTROY PROTOBUF_CONSTINIT
+    PROTOBUF_ATTRIBUTE_INIT_PRIORITY1 GetGamePresenceRequestDefaultTypeInternal _GetGamePresenceRequest_default_instance_;
+
+inline constexpr GamePresenceEvent::Impl_::Impl_(
+    ::_pbi::ConstantInitialized) noexcept
+      : _cached_size_{0},
+        player_id_(
+            &::google::protobuf::internal::fixed_address_empty_string,
+            ::_pbi::ConstantInitialized()),
+        game_id_(
+            &::google::protobuf::internal::fixed_address_empty_string,
+            ::_pbi::ConstantInitialized()),
+        online_{false} {}
+
+template <typename>
+PROTOBUF_CONSTEXPR GamePresenceEvent::GamePresenceEvent(::_pbi::ConstantInitialized)
+#if defined(PROTOBUF_CUSTOM_VTABLE)
+    : ::google::protobuf::Message(GamePresenceEvent_class_data_.base()),
+#else   // PROTOBUF_CUSTOM_VTABLE
+    : ::google::protobuf::Message(),
+#endif  // PROTOBUF_CUSTOM_VTABLE
+      _impl_(::_pbi::ConstantInitialized()) {
+}
+struct GamePresenceEventDefaultTypeInternal {
+  PROTOBUF_CONSTEXPR GamePresenceEventDefaultTypeInternal() : _instance(::_pbi::ConstantInitialized{}) {}
+  ~GamePresenceEventDefaultTypeInternal() {}
+  union {
+    GamePresenceEvent _instance;
+  };
+};
+
+PROTOBUF_ATTRIBUTE_NO_DESTROY PROTOBUF_CONSTINIT
+    PROTOBUF_ATTRIBUTE_INIT_PRIORITY1 GamePresenceEventDefaultTypeInternal _GamePresenceEvent_default_instance_;
+
+inline constexpr GamePresenceEntry::Impl_::Impl_(
+    ::_pbi::ConstantInitialized) noexcept
+      : _cached_size_{0},
+        game_id_(
+            &::google::protobuf::internal::fixed_address_empty_string,
+            ::_pbi::ConstantInitialized()),
+        game_user_id_(
+            &::google::protobuf::internal::fixed_address_empty_string,
+            ::_pbi::ConstantInitialized()) {}
+
+template <typename>
+PROTOBUF_CONSTEXPR GamePresenceEntry::GamePresenceEntry(::_pbi::ConstantInitialized)
+#if defined(PROTOBUF_CUSTOM_VTABLE)
+    : ::google::protobuf::Message(GamePresenceEntry_class_data_.base()),
+#else   // PROTOBUF_CUSTOM_VTABLE
+    : ::google::protobuf::Message(),
+#endif  // PROTOBUF_CUSTOM_VTABLE
+      _impl_(::_pbi::ConstantInitialized()) {
+}
+struct GamePresenceEntryDefaultTypeInternal {
+  PROTOBUF_CONSTEXPR GamePresenceEntryDefaultTypeInternal() : _instance(::_pbi::ConstantInitialized{}) {}
+  ~GamePresenceEntryDefaultTypeInternal() {}
+  union {
+    GamePresenceEntry _instance;
+  };
+};
+
+PROTOBUF_ATTRIBUTE_NO_DESTROY PROTOBUF_CONSTINIT
+    PROTOBUF_ATTRIBUTE_INIT_PRIORITY1 GamePresenceEntryDefaultTypeInternal _GamePresenceEntry_default_instance_;
+
 inline constexpr EventPublishResponse::Impl_::Impl_(
     ::_pbi::ConstantInitialized) noexcept
       : _cached_size_{0},
@@ -1052,6 +1221,33 @@ struct GetPlayerIdentitiesResponseDefaultTypeInternal {
 
 PROTOBUF_ATTRIBUTE_NO_DESTROY PROTOBUF_CONSTINIT
     PROTOBUF_ATTRIBUTE_INIT_PRIORITY1 GetPlayerIdentitiesResponseDefaultTypeInternal _GetPlayerIdentitiesResponse_default_instance_;
+
+inline constexpr GetGamePresenceResponse::Impl_::Impl_(
+    ::_pbi::ConstantInitialized) noexcept
+      : _cached_size_{0},
+        entries_{},
+        code_{static_cast< ::chirp::common::ErrorCode >(0)},
+        enabled_{false} {}
+
+template <typename>
+PROTOBUF_CONSTEXPR GetGamePresenceResponse::GetGamePresenceResponse(::_pbi::ConstantInitialized)
+#if defined(PROTOBUF_CUSTOM_VTABLE)
+    : ::google::protobuf::Message(GetGamePresenceResponse_class_data_.base()),
+#else   // PROTOBUF_CUSTOM_VTABLE
+    : ::google::protobuf::Message(),
+#endif  // PROTOBUF_CUSTOM_VTABLE
+      _impl_(::_pbi::ConstantInitialized()) {
+}
+struct GetGamePresenceResponseDefaultTypeInternal {
+  PROTOBUF_CONSTEXPR GetGamePresenceResponseDefaultTypeInternal() : _instance(::_pbi::ConstantInitialized{}) {}
+  ~GetGamePresenceResponseDefaultTypeInternal() {}
+  union {
+    GetGamePresenceResponse _instance;
+  };
+};
+
+PROTOBUF_ATTRIBUTE_NO_DESTROY PROTOBUF_CONSTINIT
+    PROTOBUF_ATTRIBUTE_INIT_PRIORITY1 GetGamePresenceResponseDefaultTypeInternal _GetGamePresenceResponse_default_instance_;
 }  // namespace game_server_gateway
 }  // namespace chirp
 static const ::_pb::EnumDescriptor* PROTOBUF_NONNULL
@@ -1351,6 +1547,55 @@ const ::uint32_t
         1,
         0,
         2,
+        0x081, // bitmap
+        PROTOBUF_FIELD_OFFSET(::chirp::game_server_gateway::StoredGamePresenceSetting, _impl_._has_bits_),
+        5, // hasbit index offset
+        PROTOBUF_FIELD_OFFSET(::chirp::game_server_gateway::StoredGamePresenceSetting, _impl_.player_id_),
+        PROTOBUF_FIELD_OFFSET(::chirp::game_server_gateway::StoredGamePresenceSetting, _impl_.enabled_),
+        0,
+        1,
+        0x081, // bitmap
+        PROTOBUF_FIELD_OFFSET(::chirp::game_server_gateway::GamePresenceEvent, _impl_._has_bits_),
+        6, // hasbit index offset
+        PROTOBUF_FIELD_OFFSET(::chirp::game_server_gateway::GamePresenceEvent, _impl_.player_id_),
+        PROTOBUF_FIELD_OFFSET(::chirp::game_server_gateway::GamePresenceEvent, _impl_.game_id_),
+        PROTOBUF_FIELD_OFFSET(::chirp::game_server_gateway::GamePresenceEvent, _impl_.online_),
+        0,
+        1,
+        2,
+        0x081, // bitmap
+        PROTOBUF_FIELD_OFFSET(::chirp::game_server_gateway::SetGamePresenceEnabledRequest, _impl_._has_bits_),
+        5, // hasbit index offset
+        PROTOBUF_FIELD_OFFSET(::chirp::game_server_gateway::SetGamePresenceEnabledRequest, _impl_.player_id_),
+        PROTOBUF_FIELD_OFFSET(::chirp::game_server_gateway::SetGamePresenceEnabledRequest, _impl_.enabled_),
+        0,
+        1,
+        0x081, // bitmap
+        PROTOBUF_FIELD_OFFSET(::chirp::game_server_gateway::SetGamePresenceEnabledResponse, _impl_._has_bits_),
+        4, // hasbit index offset
+        PROTOBUF_FIELD_OFFSET(::chirp::game_server_gateway::SetGamePresenceEnabledResponse, _impl_.code_),
+        0,
+        0x081, // bitmap
+        PROTOBUF_FIELD_OFFSET(::chirp::game_server_gateway::GamePresenceEntry, _impl_._has_bits_),
+        5, // hasbit index offset
+        PROTOBUF_FIELD_OFFSET(::chirp::game_server_gateway::GamePresenceEntry, _impl_.game_id_),
+        PROTOBUF_FIELD_OFFSET(::chirp::game_server_gateway::GamePresenceEntry, _impl_.game_user_id_),
+        0,
+        1,
+        0x081, // bitmap
+        PROTOBUF_FIELD_OFFSET(::chirp::game_server_gateway::GetGamePresenceRequest, _impl_._has_bits_),
+        4, // hasbit index offset
+        PROTOBUF_FIELD_OFFSET(::chirp::game_server_gateway::GetGamePresenceRequest, _impl_.player_id_),
+        0,
+        0x081, // bitmap
+        PROTOBUF_FIELD_OFFSET(::chirp::game_server_gateway::GetGamePresenceResponse, _impl_._has_bits_),
+        6, // hasbit index offset
+        PROTOBUF_FIELD_OFFSET(::chirp::game_server_gateway::GetGamePresenceResponse, _impl_.code_),
+        PROTOBUF_FIELD_OFFSET(::chirp::game_server_gateway::GetGamePresenceResponse, _impl_.enabled_),
+        PROTOBUF_FIELD_OFFSET(::chirp::game_server_gateway::GetGamePresenceResponse, _impl_.entries_),
+        1,
+        2,
+        0,
 };
 
 static const ::_pbi::MigrationSchema
@@ -1389,6 +1634,13 @@ static const ::_pbi::MigrationSchema
         {265, sizeof(::chirp::game_server_gateway::UnreadSummaryEntry)},
         {274, sizeof(::chirp::game_server_gateway::GetUnreadSummaryRequest)},
         {281, sizeof(::chirp::game_server_gateway::GetUnreadSummaryResponse)},
+        {290, sizeof(::chirp::game_server_gateway::StoredGamePresenceSetting)},
+        {297, sizeof(::chirp::game_server_gateway::GamePresenceEvent)},
+        {306, sizeof(::chirp::game_server_gateway::SetGamePresenceEnabledRequest)},
+        {313, sizeof(::chirp::game_server_gateway::SetGamePresenceEnabledResponse)},
+        {318, sizeof(::chirp::game_server_gateway::GamePresenceEntry)},
+        {325, sizeof(::chirp::game_server_gateway::GetGamePresenceRequest)},
+        {330, sizeof(::chirp::game_server_gateway::GetGamePresenceResponse)},
 };
 static const ::_pb::Message* PROTOBUF_NONNULL const file_default_instances[] = {
     &::chirp::game_server_gateway::_ServerAuthRequest_default_instance_._instance,
@@ -1425,6 +1677,13 @@ static const ::_pb::Message* PROTOBUF_NONNULL const file_default_instances[] = {
     &::chirp::game_server_gateway::_UnreadSummaryEntry_default_instance_._instance,
     &::chirp::game_server_gateway::_GetUnreadSummaryRequest_default_instance_._instance,
     &::chirp::game_server_gateway::_GetUnreadSummaryResponse_default_instance_._instance,
+    &::chirp::game_server_gateway::_StoredGamePresenceSetting_default_instance_._instance,
+    &::chirp::game_server_gateway::_GamePresenceEvent_default_instance_._instance,
+    &::chirp::game_server_gateway::_SetGamePresenceEnabledRequest_default_instance_._instance,
+    &::chirp::game_server_gateway::_SetGamePresenceEnabledResponse_default_instance_._instance,
+    &::chirp::game_server_gateway::_GamePresenceEntry_default_instance_._instance,
+    &::chirp::game_server_gateway::_GetGamePresenceRequest_default_instance_._instance,
+    &::chirp::game_server_gateway::_GetGamePresenceResponse_default_instance_._instance,
 };
 const char descriptor_table_protodef_proto_2fgame_5fserver_5fgateway_2eproto[] ABSL_ATTRIBUTE_SECTION_VARIABLE(
     protodesc_cold) = {
@@ -1512,10 +1771,24 @@ const char descriptor_table_protodef_proto_2fgame_5fserver_5fgateway_2eproto[] A
     "\022%\n\004code\030\001 \001(\0162\027.chirp.common.ErrorCode\022"
     ">\n\007entries\030\002 \003(\0132-.chirp.game_server_gat"
     "eway.UnreadSummaryEntry\022\024\n\014total_unread\030"
-    "\003 \001(\005*W\n\nSenderKind\022\022\n\016SENDER_UNKNOWN\020\000\022"
-    "\021\n\rSENDER_SYSTEM\020\001\022\016\n\nSENDER_NPC\020\002\022\022\n\016SE"
-    "NDER_SERVICE\020\003B3Z1github.com/cui/chirp/p"
-    "roto/go/game_server_gatewayb\006proto3"
+    "\003 \001(\005\"\?\n\031StoredGamePresenceSetting\022\021\n\tpl"
+    "ayer_id\030\001 \001(\t\022\017\n\007enabled\030\002 \001(\010\"G\n\021GamePr"
+    "esenceEvent\022\021\n\tplayer_id\030\001 \001(\t\022\017\n\007game_i"
+    "d\030\002 \001(\t\022\016\n\006online\030\003 \001(\010\"C\n\035SetGamePresen"
+    "ceEnabledRequest\022\021\n\tplayer_id\030\001 \001(\t\022\017\n\007e"
+    "nabled\030\002 \001(\010\"G\n\036SetGamePresenceEnabledRe"
+    "sponse\022%\n\004code\030\001 \001(\0162\027.chirp.common.Erro"
+    "rCode\":\n\021GamePresenceEntry\022\017\n\007game_id\030\001 "
+    "\001(\t\022\024\n\014game_user_id\030\002 \001(\t\"+\n\026GetGamePres"
+    "enceRequest\022\021\n\tplayer_id\030\001 \001(\t\"\220\001\n\027GetGa"
+    "mePresenceResponse\022%\n\004code\030\001 \001(\0162\027.chirp"
+    ".common.ErrorCode\022\017\n\007enabled\030\002 \001(\010\022=\n\007en"
+    "tries\030\003 \003(\0132,.chirp.game_server_gateway."
+    "GamePresenceEntry*W\n\nSenderKind\022\022\n\016SENDE"
+    "R_UNKNOWN\020\000\022\021\n\rSENDER_SYSTEM\020\001\022\016\n\nSENDER"
+    "_NPC\020\002\022\022\n\016SENDER_SERVICE\020\003B3Z1github.com"
+    "/cui/chirp/proto/go/game_server_gatewayb"
+    "\006proto3"
 };
 static const ::_pbi::DescriptorTable* PROTOBUF_NONNULL const
     descriptor_table_proto_2fgame_5fserver_5fgateway_2eproto_deps[1] = {
@@ -1525,13 +1798,13 @@ static ::absl::once_flag descriptor_table_proto_2fgame_5fserver_5fgateway_2eprot
 PROTOBUF_CONSTINIT const ::_pbi::DescriptorTable descriptor_table_proto_2fgame_5fserver_5fgateway_2eproto = {
     false,
     false,
-    3515,
+    4047,
     descriptor_table_protodef_proto_2fgame_5fserver_5fgateway_2eproto,
     "proto/game_server_gateway.proto",
     &descriptor_table_proto_2fgame_5fserver_5fgateway_2eproto_once,
     descriptor_table_proto_2fgame_5fserver_5fgateway_2eproto_deps,
     1,
-    34,
+    41,
     schemas,
     file_default_instances,
     TableStruct_proto_2fgame_5fserver_5fgateway_2eproto::offsets,
@@ -13148,6 +13421,2180 @@ void GetUnreadSummaryResponse::InternalSwap(GetUnreadSummaryResponse* PROTOBUF_R
 }
 
 ::google::protobuf::Metadata GetUnreadSummaryResponse::GetMetadata() const {
+  return ::google::protobuf::Message::GetMetadataImpl(GetClassData()->full());
+}
+// ===================================================================
+
+class StoredGamePresenceSetting::_Internal {
+ public:
+  using HasBits =
+      decltype(::std::declval<StoredGamePresenceSetting>()._impl_._has_bits_);
+  static constexpr ::int32_t kHasBitsOffset =
+      8 * PROTOBUF_FIELD_OFFSET(StoredGamePresenceSetting, _impl_._has_bits_);
+};
+
+StoredGamePresenceSetting::StoredGamePresenceSetting(::google::protobuf::Arena* PROTOBUF_NULLABLE arena)
+#if defined(PROTOBUF_CUSTOM_VTABLE)
+    : ::google::protobuf::Message(arena, StoredGamePresenceSetting_class_data_.base()) {
+#else   // PROTOBUF_CUSTOM_VTABLE
+    : ::google::protobuf::Message(arena) {
+#endif  // PROTOBUF_CUSTOM_VTABLE
+  SharedCtor(arena);
+  // @@protoc_insertion_point(arena_constructor:chirp.game_server_gateway.StoredGamePresenceSetting)
+}
+PROTOBUF_NDEBUG_INLINE StoredGamePresenceSetting::Impl_::Impl_(
+    [[maybe_unused]] ::google::protobuf::internal::InternalVisibility visibility,
+    [[maybe_unused]] ::google::protobuf::Arena* PROTOBUF_NULLABLE arena, const Impl_& from,
+    [[maybe_unused]] const ::chirp::game_server_gateway::StoredGamePresenceSetting& from_msg)
+      : _has_bits_{from._has_bits_},
+        _cached_size_{0},
+        player_id_(arena, from.player_id_) {}
+
+StoredGamePresenceSetting::StoredGamePresenceSetting(
+    ::google::protobuf::Arena* PROTOBUF_NULLABLE arena,
+    const StoredGamePresenceSetting& from)
+#if defined(PROTOBUF_CUSTOM_VTABLE)
+    : ::google::protobuf::Message(arena, StoredGamePresenceSetting_class_data_.base()) {
+#else   // PROTOBUF_CUSTOM_VTABLE
+    : ::google::protobuf::Message(arena) {
+#endif  // PROTOBUF_CUSTOM_VTABLE
+  StoredGamePresenceSetting* const _this = this;
+  (void)_this;
+  _internal_metadata_.MergeFrom<::google::protobuf::UnknownFieldSet>(
+      from._internal_metadata_);
+  new (&_impl_) Impl_(internal_visibility(), arena, from._impl_, from);
+  _impl_.enabled_ = from._impl_.enabled_;
+
+  // @@protoc_insertion_point(copy_constructor:chirp.game_server_gateway.StoredGamePresenceSetting)
+}
+PROTOBUF_NDEBUG_INLINE StoredGamePresenceSetting::Impl_::Impl_(
+    [[maybe_unused]] ::google::protobuf::internal::InternalVisibility visibility,
+    [[maybe_unused]] ::google::protobuf::Arena* PROTOBUF_NULLABLE arena)
+      : _cached_size_{0},
+        player_id_(arena) {}
+
+inline void StoredGamePresenceSetting::SharedCtor(::_pb::Arena* PROTOBUF_NULLABLE arena) {
+  new (&_impl_) Impl_(internal_visibility(), arena);
+  _impl_.enabled_ = {};
+}
+StoredGamePresenceSetting::~StoredGamePresenceSetting() {
+  // @@protoc_insertion_point(destructor:chirp.game_server_gateway.StoredGamePresenceSetting)
+  SharedDtor(*this);
+}
+inline void StoredGamePresenceSetting::SharedDtor(MessageLite& self) {
+  StoredGamePresenceSetting& this_ = static_cast<StoredGamePresenceSetting&>(self);
+  if constexpr (::_pbi::DebugHardenCheckHasBitConsistency()) {
+    this_.CheckHasBitConsistency();
+  }
+  this_._internal_metadata_.Delete<::google::protobuf::UnknownFieldSet>();
+  ABSL_DCHECK(this_.GetArena() == nullptr);
+  this_._impl_.player_id_.Destroy();
+  this_._impl_.~Impl_();
+}
+
+inline void* PROTOBUF_NONNULL StoredGamePresenceSetting::PlacementNew_(
+    const void* PROTOBUF_NONNULL, void* PROTOBUF_NONNULL mem,
+    ::google::protobuf::Arena* PROTOBUF_NULLABLE arena) {
+  return ::new (mem) StoredGamePresenceSetting(arena);
+}
+constexpr auto StoredGamePresenceSetting::InternalNewImpl_() {
+  return ::google::protobuf::internal::MessageCreator::CopyInit(sizeof(StoredGamePresenceSetting),
+                                            alignof(StoredGamePresenceSetting));
+}
+constexpr auto StoredGamePresenceSetting::InternalGenerateClassData_() {
+  return ::google::protobuf::internal::ClassDataFull{
+      ::google::protobuf::internal::ClassData{
+          &_StoredGamePresenceSetting_default_instance_._instance,
+          &_table_.header,
+          nullptr,  // OnDemandRegisterArenaDtor
+          nullptr,  // IsInitialized
+          &StoredGamePresenceSetting::MergeImpl,
+          ::google::protobuf::Message::GetNewImpl<StoredGamePresenceSetting>(),
+#if defined(PROTOBUF_CUSTOM_VTABLE)
+          &StoredGamePresenceSetting::SharedDtor,
+          ::google::protobuf::Message::GetClearImpl<StoredGamePresenceSetting>(), &StoredGamePresenceSetting::ByteSizeLong,
+              &StoredGamePresenceSetting::_InternalSerialize,
+#endif  // PROTOBUF_CUSTOM_VTABLE
+          PROTOBUF_FIELD_OFFSET(StoredGamePresenceSetting, _impl_._cached_size_),
+          false,
+      },
+      &StoredGamePresenceSetting::kDescriptorMethods,
+      &descriptor_table_proto_2fgame_5fserver_5fgateway_2eproto,
+      nullptr,  // tracker
+  };
+}
+
+PROTOBUF_CONSTINIT PROTOBUF_ATTRIBUTE_INIT_PRIORITY1 const
+    ::google::protobuf::internal::ClassDataFull StoredGamePresenceSetting_class_data_ =
+        StoredGamePresenceSetting::InternalGenerateClassData_();
+
+PROTOBUF_ATTRIBUTE_WEAK const ::google::protobuf::internal::ClassData* PROTOBUF_NONNULL
+StoredGamePresenceSetting::GetClassData() const {
+  ::google::protobuf::internal::PrefetchToLocalCache(&StoredGamePresenceSetting_class_data_);
+  ::google::protobuf::internal::PrefetchToLocalCache(StoredGamePresenceSetting_class_data_.tc_table);
+  return StoredGamePresenceSetting_class_data_.base();
+}
+PROTOBUF_CONSTINIT PROTOBUF_ATTRIBUTE_INIT_PRIORITY1
+const ::_pbi::TcParseTable<1, 2, 0, 69, 2>
+StoredGamePresenceSetting::_table_ = {
+  {
+    PROTOBUF_FIELD_OFFSET(StoredGamePresenceSetting, _impl_._has_bits_),
+    0, // no _extensions_
+    2, 8,  // max_field_number, fast_idx_mask
+    offsetof(decltype(_table_), field_lookup_table),
+    4294967292,  // skipmap
+    offsetof(decltype(_table_), field_entries),
+    2,  // num_field_entries
+    0,  // num_aux_entries
+    offsetof(decltype(_table_), field_names),  // no aux_entries
+    StoredGamePresenceSetting_class_data_.base(),
+    nullptr,  // post_loop_handler
+    ::_pbi::TcParser::GenericFallback,  // fallback
+    #ifdef PROTOBUF_PREFETCH_PARSE_TABLE
+    ::_pbi::TcParser::GetTable<::chirp::game_server_gateway::StoredGamePresenceSetting>(),  // to_prefetch
+    #endif  // PROTOBUF_PREFETCH_PARSE_TABLE
+  }, {{
+    // bool enabled = 2;
+    {::_pbi::TcParser::SingularVarintNoZag1<bool, offsetof(StoredGamePresenceSetting, _impl_.enabled_), 1>(),
+     {16, 1, 0,
+      PROTOBUF_FIELD_OFFSET(StoredGamePresenceSetting, _impl_.enabled_)}},
+    // string player_id = 1;
+    {::_pbi::TcParser::FastUS1,
+     {10, 0, 0,
+      PROTOBUF_FIELD_OFFSET(StoredGamePresenceSetting, _impl_.player_id_)}},
+  }}, {{
+    65535, 65535
+  }}, {{
+    // string player_id = 1;
+    {PROTOBUF_FIELD_OFFSET(StoredGamePresenceSetting, _impl_.player_id_), _Internal::kHasBitsOffset + 0, 0, (0 | ::_fl::kFcOptional | ::_fl::kUtf8String | ::_fl::kRepAString)},
+    // bool enabled = 2;
+    {PROTOBUF_FIELD_OFFSET(StoredGamePresenceSetting, _impl_.enabled_), _Internal::kHasBitsOffset + 1, 0, (0 | ::_fl::kFcOptional | ::_fl::kBool)},
+  }},
+  // no aux_entries
+  {{
+    "\63\11\0\0\0\0\0\0"
+    "chirp.game_server_gateway.StoredGamePresenceSetting"
+    "player_id"
+  }},
+};
+PROTOBUF_NOINLINE void StoredGamePresenceSetting::Clear() {
+// @@protoc_insertion_point(message_clear_start:chirp.game_server_gateway.StoredGamePresenceSetting)
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  ::uint32_t cached_has_bits = 0;
+  // Prevent compiler warnings about cached_has_bits being unused
+  (void) cached_has_bits;
+
+  cached_has_bits = _impl_._has_bits_[0];
+  if (CheckHasBit(cached_has_bits, 0x00000001U)) {
+    _impl_.player_id_.ClearNonDefaultToEmpty();
+  }
+  _impl_.enabled_ = false;
+  _impl_._has_bits_.Clear();
+  _internal_metadata_.Clear<::google::protobuf::UnknownFieldSet>();
+}
+
+#if defined(PROTOBUF_CUSTOM_VTABLE)
+::uint8_t* PROTOBUF_NONNULL StoredGamePresenceSetting::_InternalSerialize(
+    const ::google::protobuf::MessageLite& base, ::uint8_t* PROTOBUF_NONNULL target,
+    ::google::protobuf::io::EpsCopyOutputStream* PROTOBUF_NONNULL stream) {
+  const StoredGamePresenceSetting& this_ = static_cast<const StoredGamePresenceSetting&>(base);
+#else   // PROTOBUF_CUSTOM_VTABLE
+::uint8_t* PROTOBUF_NONNULL StoredGamePresenceSetting::_InternalSerialize(
+    ::uint8_t* PROTOBUF_NONNULL target,
+    ::google::protobuf::io::EpsCopyOutputStream* PROTOBUF_NONNULL stream) const {
+  const StoredGamePresenceSetting& this_ = *this;
+#endif  // PROTOBUF_CUSTOM_VTABLE
+  if constexpr (::_pbi::DebugHardenCheckHasBitConsistency()) {
+    this_.CheckHasBitConsistency();
+  }
+  // @@protoc_insertion_point(serialize_to_array_start:chirp.game_server_gateway.StoredGamePresenceSetting)
+  ::uint32_t cached_has_bits = 0;
+  (void)cached_has_bits;
+
+  cached_has_bits = this_._impl_._has_bits_[0];
+  // string player_id = 1;
+  if (CheckHasBit(cached_has_bits, 0x00000001U)) {
+    if (!this_._internal_player_id().empty()) {
+      const ::std::string& _s = this_._internal_player_id();
+      ::google::protobuf::internal::WireFormatLite::VerifyUtf8String(
+          _s.data(), static_cast<int>(_s.length()), ::google::protobuf::internal::WireFormatLite::SERIALIZE, "chirp.game_server_gateway.StoredGamePresenceSetting.player_id");
+      target = stream->WriteStringMaybeAliased(1, _s, target);
+    }
+  }
+
+  // bool enabled = 2;
+  if (CheckHasBit(cached_has_bits, 0x00000002U)) {
+    if (this_._internal_enabled() != 0) {
+      target = stream->EnsureSpace(target);
+      target = ::_pbi::WireFormatLite::WriteBoolToArray(
+          2, this_._internal_enabled(), target);
+    }
+  }
+
+  if (ABSL_PREDICT_FALSE(this_._internal_metadata_.have_unknown_fields())) {
+    target =
+        ::_pbi::WireFormat::InternalSerializeUnknownFieldsToArray(
+            this_._internal_metadata_.unknown_fields<::google::protobuf::UnknownFieldSet>(::google::protobuf::UnknownFieldSet::default_instance), target, stream);
+  }
+  // @@protoc_insertion_point(serialize_to_array_end:chirp.game_server_gateway.StoredGamePresenceSetting)
+  return target;
+}
+
+#if defined(PROTOBUF_CUSTOM_VTABLE)
+::size_t StoredGamePresenceSetting::ByteSizeLong(const MessageLite& base) {
+  const StoredGamePresenceSetting& this_ = static_cast<const StoredGamePresenceSetting&>(base);
+#else   // PROTOBUF_CUSTOM_VTABLE
+::size_t StoredGamePresenceSetting::ByteSizeLong() const {
+  const StoredGamePresenceSetting& this_ = *this;
+#endif  // PROTOBUF_CUSTOM_VTABLE
+  // @@protoc_insertion_point(message_byte_size_start:chirp.game_server_gateway.StoredGamePresenceSetting)
+  ::size_t total_size = 0;
+
+  ::uint32_t cached_has_bits = 0;
+  // Prevent compiler warnings about cached_has_bits being unused
+  (void)cached_has_bits;
+
+  ::_pbi::Prefetch5LinesFrom7Lines(&this_);
+  cached_has_bits = this_._impl_._has_bits_[0];
+  if (BatchCheckHasBit(cached_has_bits, 0x00000003U)) {
+    // string player_id = 1;
+    if (CheckHasBit(cached_has_bits, 0x00000001U)) {
+      if (!this_._internal_player_id().empty()) {
+        total_size += 1 + ::google::protobuf::internal::WireFormatLite::StringSize(
+                                        this_._internal_player_id());
+      }
+    }
+    // bool enabled = 2;
+    if (CheckHasBit(cached_has_bits, 0x00000002U)) {
+      if (this_._internal_enabled() != 0) {
+        total_size += 2;
+      }
+    }
+  }
+  return this_.MaybeComputeUnknownFieldsSize(total_size,
+                                             &this_._impl_._cached_size_);
+}
+
+void StoredGamePresenceSetting::MergeImpl(::google::protobuf::MessageLite& to_msg,
+                            const ::google::protobuf::MessageLite& from_msg) {
+   auto* const _this =
+      static_cast<StoredGamePresenceSetting*>(&to_msg);
+  auto& from = static_cast<const StoredGamePresenceSetting&>(from_msg);
+  if constexpr (::_pbi::DebugHardenCheckHasBitConsistency()) {
+    from.CheckHasBitConsistency();
+  }
+  // @@protoc_insertion_point(class_specific_merge_from_start:chirp.game_server_gateway.StoredGamePresenceSetting)
+  ABSL_DCHECK_NE(&from, _this);
+  ::uint32_t cached_has_bits = 0;
+  (void)cached_has_bits;
+
+  cached_has_bits = from._impl_._has_bits_[0];
+  if (BatchCheckHasBit(cached_has_bits, 0x00000003U)) {
+    if (CheckHasBit(cached_has_bits, 0x00000001U)) {
+      if (!from._internal_player_id().empty()) {
+        _this->_internal_set_player_id(from._internal_player_id());
+      } else {
+        if (_this->_impl_.player_id_.IsDefault()) {
+          _this->_internal_set_player_id("");
+        }
+      }
+    }
+    if (CheckHasBit(cached_has_bits, 0x00000002U)) {
+      if (from._internal_enabled() != 0) {
+        _this->_impl_.enabled_ = from._impl_.enabled_;
+      }
+    }
+  }
+  _this->_impl_._has_bits_[0] |= cached_has_bits;
+  _this->_internal_metadata_.MergeFrom<::google::protobuf::UnknownFieldSet>(
+      from._internal_metadata_);
+}
+
+void StoredGamePresenceSetting::CopyFrom(const StoredGamePresenceSetting& from) {
+  // @@protoc_insertion_point(class_specific_copy_from_start:chirp.game_server_gateway.StoredGamePresenceSetting)
+  if (&from == this) return;
+  Clear();
+  MergeFrom(from);
+}
+
+
+void StoredGamePresenceSetting::InternalSwap(StoredGamePresenceSetting* PROTOBUF_RESTRICT PROTOBUF_NONNULL other) {
+  using ::std::swap;
+  auto* arena = GetArena();
+  ABSL_DCHECK_EQ(arena, other->GetArena());
+  _internal_metadata_.InternalSwap(&other->_internal_metadata_);
+  swap(_impl_._has_bits_[0], other->_impl_._has_bits_[0]);
+  ::_pbi::ArenaStringPtr::InternalSwap(&_impl_.player_id_, &other->_impl_.player_id_, arena);
+  swap(_impl_.enabled_, other->_impl_.enabled_);
+}
+
+::google::protobuf::Metadata StoredGamePresenceSetting::GetMetadata() const {
+  return ::google::protobuf::Message::GetMetadataImpl(GetClassData()->full());
+}
+// ===================================================================
+
+class GamePresenceEvent::_Internal {
+ public:
+  using HasBits =
+      decltype(::std::declval<GamePresenceEvent>()._impl_._has_bits_);
+  static constexpr ::int32_t kHasBitsOffset =
+      8 * PROTOBUF_FIELD_OFFSET(GamePresenceEvent, _impl_._has_bits_);
+};
+
+GamePresenceEvent::GamePresenceEvent(::google::protobuf::Arena* PROTOBUF_NULLABLE arena)
+#if defined(PROTOBUF_CUSTOM_VTABLE)
+    : ::google::protobuf::Message(arena, GamePresenceEvent_class_data_.base()) {
+#else   // PROTOBUF_CUSTOM_VTABLE
+    : ::google::protobuf::Message(arena) {
+#endif  // PROTOBUF_CUSTOM_VTABLE
+  SharedCtor(arena);
+  // @@protoc_insertion_point(arena_constructor:chirp.game_server_gateway.GamePresenceEvent)
+}
+PROTOBUF_NDEBUG_INLINE GamePresenceEvent::Impl_::Impl_(
+    [[maybe_unused]] ::google::protobuf::internal::InternalVisibility visibility,
+    [[maybe_unused]] ::google::protobuf::Arena* PROTOBUF_NULLABLE arena, const Impl_& from,
+    [[maybe_unused]] const ::chirp::game_server_gateway::GamePresenceEvent& from_msg)
+      : _has_bits_{from._has_bits_},
+        _cached_size_{0},
+        player_id_(arena, from.player_id_),
+        game_id_(arena, from.game_id_) {}
+
+GamePresenceEvent::GamePresenceEvent(
+    ::google::protobuf::Arena* PROTOBUF_NULLABLE arena,
+    const GamePresenceEvent& from)
+#if defined(PROTOBUF_CUSTOM_VTABLE)
+    : ::google::protobuf::Message(arena, GamePresenceEvent_class_data_.base()) {
+#else   // PROTOBUF_CUSTOM_VTABLE
+    : ::google::protobuf::Message(arena) {
+#endif  // PROTOBUF_CUSTOM_VTABLE
+  GamePresenceEvent* const _this = this;
+  (void)_this;
+  _internal_metadata_.MergeFrom<::google::protobuf::UnknownFieldSet>(
+      from._internal_metadata_);
+  new (&_impl_) Impl_(internal_visibility(), arena, from._impl_, from);
+  _impl_.online_ = from._impl_.online_;
+
+  // @@protoc_insertion_point(copy_constructor:chirp.game_server_gateway.GamePresenceEvent)
+}
+PROTOBUF_NDEBUG_INLINE GamePresenceEvent::Impl_::Impl_(
+    [[maybe_unused]] ::google::protobuf::internal::InternalVisibility visibility,
+    [[maybe_unused]] ::google::protobuf::Arena* PROTOBUF_NULLABLE arena)
+      : _cached_size_{0},
+        player_id_(arena),
+        game_id_(arena) {}
+
+inline void GamePresenceEvent::SharedCtor(::_pb::Arena* PROTOBUF_NULLABLE arena) {
+  new (&_impl_) Impl_(internal_visibility(), arena);
+  _impl_.online_ = {};
+}
+GamePresenceEvent::~GamePresenceEvent() {
+  // @@protoc_insertion_point(destructor:chirp.game_server_gateway.GamePresenceEvent)
+  SharedDtor(*this);
+}
+inline void GamePresenceEvent::SharedDtor(MessageLite& self) {
+  GamePresenceEvent& this_ = static_cast<GamePresenceEvent&>(self);
+  if constexpr (::_pbi::DebugHardenCheckHasBitConsistency()) {
+    this_.CheckHasBitConsistency();
+  }
+  this_._internal_metadata_.Delete<::google::protobuf::UnknownFieldSet>();
+  ABSL_DCHECK(this_.GetArena() == nullptr);
+  this_._impl_.player_id_.Destroy();
+  this_._impl_.game_id_.Destroy();
+  this_._impl_.~Impl_();
+}
+
+inline void* PROTOBUF_NONNULL GamePresenceEvent::PlacementNew_(
+    const void* PROTOBUF_NONNULL, void* PROTOBUF_NONNULL mem,
+    ::google::protobuf::Arena* PROTOBUF_NULLABLE arena) {
+  return ::new (mem) GamePresenceEvent(arena);
+}
+constexpr auto GamePresenceEvent::InternalNewImpl_() {
+  return ::google::protobuf::internal::MessageCreator::CopyInit(sizeof(GamePresenceEvent),
+                                            alignof(GamePresenceEvent));
+}
+constexpr auto GamePresenceEvent::InternalGenerateClassData_() {
+  return ::google::protobuf::internal::ClassDataFull{
+      ::google::protobuf::internal::ClassData{
+          &_GamePresenceEvent_default_instance_._instance,
+          &_table_.header,
+          nullptr,  // OnDemandRegisterArenaDtor
+          nullptr,  // IsInitialized
+          &GamePresenceEvent::MergeImpl,
+          ::google::protobuf::Message::GetNewImpl<GamePresenceEvent>(),
+#if defined(PROTOBUF_CUSTOM_VTABLE)
+          &GamePresenceEvent::SharedDtor,
+          ::google::protobuf::Message::GetClearImpl<GamePresenceEvent>(), &GamePresenceEvent::ByteSizeLong,
+              &GamePresenceEvent::_InternalSerialize,
+#endif  // PROTOBUF_CUSTOM_VTABLE
+          PROTOBUF_FIELD_OFFSET(GamePresenceEvent, _impl_._cached_size_),
+          false,
+      },
+      &GamePresenceEvent::kDescriptorMethods,
+      &descriptor_table_proto_2fgame_5fserver_5fgateway_2eproto,
+      nullptr,  // tracker
+  };
+}
+
+PROTOBUF_CONSTINIT PROTOBUF_ATTRIBUTE_INIT_PRIORITY1 const
+    ::google::protobuf::internal::ClassDataFull GamePresenceEvent_class_data_ =
+        GamePresenceEvent::InternalGenerateClassData_();
+
+PROTOBUF_ATTRIBUTE_WEAK const ::google::protobuf::internal::ClassData* PROTOBUF_NONNULL
+GamePresenceEvent::GetClassData() const {
+  ::google::protobuf::internal::PrefetchToLocalCache(&GamePresenceEvent_class_data_);
+  ::google::protobuf::internal::PrefetchToLocalCache(GamePresenceEvent_class_data_.tc_table);
+  return GamePresenceEvent_class_data_.base();
+}
+PROTOBUF_CONSTINIT PROTOBUF_ATTRIBUTE_INIT_PRIORITY1
+const ::_pbi::TcParseTable<2, 3, 0, 68, 2>
+GamePresenceEvent::_table_ = {
+  {
+    PROTOBUF_FIELD_OFFSET(GamePresenceEvent, _impl_._has_bits_),
+    0, // no _extensions_
+    3, 24,  // max_field_number, fast_idx_mask
+    offsetof(decltype(_table_), field_lookup_table),
+    4294967288,  // skipmap
+    offsetof(decltype(_table_), field_entries),
+    3,  // num_field_entries
+    0,  // num_aux_entries
+    offsetof(decltype(_table_), field_names),  // no aux_entries
+    GamePresenceEvent_class_data_.base(),
+    nullptr,  // post_loop_handler
+    ::_pbi::TcParser::GenericFallback,  // fallback
+    #ifdef PROTOBUF_PREFETCH_PARSE_TABLE
+    ::_pbi::TcParser::GetTable<::chirp::game_server_gateway::GamePresenceEvent>(),  // to_prefetch
+    #endif  // PROTOBUF_PREFETCH_PARSE_TABLE
+  }, {{
+    {::_pbi::TcParser::MiniParse, {}},
+    // string player_id = 1;
+    {::_pbi::TcParser::FastUS1,
+     {10, 0, 0,
+      PROTOBUF_FIELD_OFFSET(GamePresenceEvent, _impl_.player_id_)}},
+    // string game_id = 2;
+    {::_pbi::TcParser::FastUS1,
+     {18, 1, 0,
+      PROTOBUF_FIELD_OFFSET(GamePresenceEvent, _impl_.game_id_)}},
+    // bool online = 3;
+    {::_pbi::TcParser::SingularVarintNoZag1<bool, offsetof(GamePresenceEvent, _impl_.online_), 2>(),
+     {24, 2, 0,
+      PROTOBUF_FIELD_OFFSET(GamePresenceEvent, _impl_.online_)}},
+  }}, {{
+    65535, 65535
+  }}, {{
+    // string player_id = 1;
+    {PROTOBUF_FIELD_OFFSET(GamePresenceEvent, _impl_.player_id_), _Internal::kHasBitsOffset + 0, 0, (0 | ::_fl::kFcOptional | ::_fl::kUtf8String | ::_fl::kRepAString)},
+    // string game_id = 2;
+    {PROTOBUF_FIELD_OFFSET(GamePresenceEvent, _impl_.game_id_), _Internal::kHasBitsOffset + 1, 0, (0 | ::_fl::kFcOptional | ::_fl::kUtf8String | ::_fl::kRepAString)},
+    // bool online = 3;
+    {PROTOBUF_FIELD_OFFSET(GamePresenceEvent, _impl_.online_), _Internal::kHasBitsOffset + 2, 0, (0 | ::_fl::kFcOptional | ::_fl::kBool)},
+  }},
+  // no aux_entries
+  {{
+    "\53\11\7\0\0\0\0\0"
+    "chirp.game_server_gateway.GamePresenceEvent"
+    "player_id"
+    "game_id"
+  }},
+};
+PROTOBUF_NOINLINE void GamePresenceEvent::Clear() {
+// @@protoc_insertion_point(message_clear_start:chirp.game_server_gateway.GamePresenceEvent)
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  ::uint32_t cached_has_bits = 0;
+  // Prevent compiler warnings about cached_has_bits being unused
+  (void) cached_has_bits;
+
+  cached_has_bits = _impl_._has_bits_[0];
+  if (BatchCheckHasBit(cached_has_bits, 0x00000003U)) {
+    if (CheckHasBit(cached_has_bits, 0x00000001U)) {
+      _impl_.player_id_.ClearNonDefaultToEmpty();
+    }
+    if (CheckHasBit(cached_has_bits, 0x00000002U)) {
+      _impl_.game_id_.ClearNonDefaultToEmpty();
+    }
+  }
+  _impl_.online_ = false;
+  _impl_._has_bits_.Clear();
+  _internal_metadata_.Clear<::google::protobuf::UnknownFieldSet>();
+}
+
+#if defined(PROTOBUF_CUSTOM_VTABLE)
+::uint8_t* PROTOBUF_NONNULL GamePresenceEvent::_InternalSerialize(
+    const ::google::protobuf::MessageLite& base, ::uint8_t* PROTOBUF_NONNULL target,
+    ::google::protobuf::io::EpsCopyOutputStream* PROTOBUF_NONNULL stream) {
+  const GamePresenceEvent& this_ = static_cast<const GamePresenceEvent&>(base);
+#else   // PROTOBUF_CUSTOM_VTABLE
+::uint8_t* PROTOBUF_NONNULL GamePresenceEvent::_InternalSerialize(
+    ::uint8_t* PROTOBUF_NONNULL target,
+    ::google::protobuf::io::EpsCopyOutputStream* PROTOBUF_NONNULL stream) const {
+  const GamePresenceEvent& this_ = *this;
+#endif  // PROTOBUF_CUSTOM_VTABLE
+  if constexpr (::_pbi::DebugHardenCheckHasBitConsistency()) {
+    this_.CheckHasBitConsistency();
+  }
+  // @@protoc_insertion_point(serialize_to_array_start:chirp.game_server_gateway.GamePresenceEvent)
+  ::uint32_t cached_has_bits = 0;
+  (void)cached_has_bits;
+
+  cached_has_bits = this_._impl_._has_bits_[0];
+  // string player_id = 1;
+  if (CheckHasBit(cached_has_bits, 0x00000001U)) {
+    if (!this_._internal_player_id().empty()) {
+      const ::std::string& _s = this_._internal_player_id();
+      ::google::protobuf::internal::WireFormatLite::VerifyUtf8String(
+          _s.data(), static_cast<int>(_s.length()), ::google::protobuf::internal::WireFormatLite::SERIALIZE, "chirp.game_server_gateway.GamePresenceEvent.player_id");
+      target = stream->WriteStringMaybeAliased(1, _s, target);
+    }
+  }
+
+  // string game_id = 2;
+  if (CheckHasBit(cached_has_bits, 0x00000002U)) {
+    if (!this_._internal_game_id().empty()) {
+      const ::std::string& _s = this_._internal_game_id();
+      ::google::protobuf::internal::WireFormatLite::VerifyUtf8String(
+          _s.data(), static_cast<int>(_s.length()), ::google::protobuf::internal::WireFormatLite::SERIALIZE, "chirp.game_server_gateway.GamePresenceEvent.game_id");
+      target = stream->WriteStringMaybeAliased(2, _s, target);
+    }
+  }
+
+  // bool online = 3;
+  if (CheckHasBit(cached_has_bits, 0x00000004U)) {
+    if (this_._internal_online() != 0) {
+      target = stream->EnsureSpace(target);
+      target = ::_pbi::WireFormatLite::WriteBoolToArray(
+          3, this_._internal_online(), target);
+    }
+  }
+
+  if (ABSL_PREDICT_FALSE(this_._internal_metadata_.have_unknown_fields())) {
+    target =
+        ::_pbi::WireFormat::InternalSerializeUnknownFieldsToArray(
+            this_._internal_metadata_.unknown_fields<::google::protobuf::UnknownFieldSet>(::google::protobuf::UnknownFieldSet::default_instance), target, stream);
+  }
+  // @@protoc_insertion_point(serialize_to_array_end:chirp.game_server_gateway.GamePresenceEvent)
+  return target;
+}
+
+#if defined(PROTOBUF_CUSTOM_VTABLE)
+::size_t GamePresenceEvent::ByteSizeLong(const MessageLite& base) {
+  const GamePresenceEvent& this_ = static_cast<const GamePresenceEvent&>(base);
+#else   // PROTOBUF_CUSTOM_VTABLE
+::size_t GamePresenceEvent::ByteSizeLong() const {
+  const GamePresenceEvent& this_ = *this;
+#endif  // PROTOBUF_CUSTOM_VTABLE
+  // @@protoc_insertion_point(message_byte_size_start:chirp.game_server_gateway.GamePresenceEvent)
+  ::size_t total_size = 0;
+
+  ::uint32_t cached_has_bits = 0;
+  // Prevent compiler warnings about cached_has_bits being unused
+  (void)cached_has_bits;
+
+  ::_pbi::Prefetch5LinesFrom7Lines(&this_);
+  cached_has_bits = this_._impl_._has_bits_[0];
+  if (BatchCheckHasBit(cached_has_bits, 0x00000007U)) {
+    // string player_id = 1;
+    if (CheckHasBit(cached_has_bits, 0x00000001U)) {
+      if (!this_._internal_player_id().empty()) {
+        total_size += 1 + ::google::protobuf::internal::WireFormatLite::StringSize(
+                                        this_._internal_player_id());
+      }
+    }
+    // string game_id = 2;
+    if (CheckHasBit(cached_has_bits, 0x00000002U)) {
+      if (!this_._internal_game_id().empty()) {
+        total_size += 1 + ::google::protobuf::internal::WireFormatLite::StringSize(
+                                        this_._internal_game_id());
+      }
+    }
+    // bool online = 3;
+    if (CheckHasBit(cached_has_bits, 0x00000004U)) {
+      if (this_._internal_online() != 0) {
+        total_size += 2;
+      }
+    }
+  }
+  return this_.MaybeComputeUnknownFieldsSize(total_size,
+                                             &this_._impl_._cached_size_);
+}
+
+void GamePresenceEvent::MergeImpl(::google::protobuf::MessageLite& to_msg,
+                            const ::google::protobuf::MessageLite& from_msg) {
+   auto* const _this =
+      static_cast<GamePresenceEvent*>(&to_msg);
+  auto& from = static_cast<const GamePresenceEvent&>(from_msg);
+  if constexpr (::_pbi::DebugHardenCheckHasBitConsistency()) {
+    from.CheckHasBitConsistency();
+  }
+  // @@protoc_insertion_point(class_specific_merge_from_start:chirp.game_server_gateway.GamePresenceEvent)
+  ABSL_DCHECK_NE(&from, _this);
+  ::uint32_t cached_has_bits = 0;
+  (void)cached_has_bits;
+
+  cached_has_bits = from._impl_._has_bits_[0];
+  if (BatchCheckHasBit(cached_has_bits, 0x00000007U)) {
+    if (CheckHasBit(cached_has_bits, 0x00000001U)) {
+      if (!from._internal_player_id().empty()) {
+        _this->_internal_set_player_id(from._internal_player_id());
+      } else {
+        if (_this->_impl_.player_id_.IsDefault()) {
+          _this->_internal_set_player_id("");
+        }
+      }
+    }
+    if (CheckHasBit(cached_has_bits, 0x00000002U)) {
+      if (!from._internal_game_id().empty()) {
+        _this->_internal_set_game_id(from._internal_game_id());
+      } else {
+        if (_this->_impl_.game_id_.IsDefault()) {
+          _this->_internal_set_game_id("");
+        }
+      }
+    }
+    if (CheckHasBit(cached_has_bits, 0x00000004U)) {
+      if (from._internal_online() != 0) {
+        _this->_impl_.online_ = from._impl_.online_;
+      }
+    }
+  }
+  _this->_impl_._has_bits_[0] |= cached_has_bits;
+  _this->_internal_metadata_.MergeFrom<::google::protobuf::UnknownFieldSet>(
+      from._internal_metadata_);
+}
+
+void GamePresenceEvent::CopyFrom(const GamePresenceEvent& from) {
+  // @@protoc_insertion_point(class_specific_copy_from_start:chirp.game_server_gateway.GamePresenceEvent)
+  if (&from == this) return;
+  Clear();
+  MergeFrom(from);
+}
+
+
+void GamePresenceEvent::InternalSwap(GamePresenceEvent* PROTOBUF_RESTRICT PROTOBUF_NONNULL other) {
+  using ::std::swap;
+  auto* arena = GetArena();
+  ABSL_DCHECK_EQ(arena, other->GetArena());
+  _internal_metadata_.InternalSwap(&other->_internal_metadata_);
+  swap(_impl_._has_bits_[0], other->_impl_._has_bits_[0]);
+  ::_pbi::ArenaStringPtr::InternalSwap(&_impl_.player_id_, &other->_impl_.player_id_, arena);
+  ::_pbi::ArenaStringPtr::InternalSwap(&_impl_.game_id_, &other->_impl_.game_id_, arena);
+  swap(_impl_.online_, other->_impl_.online_);
+}
+
+::google::protobuf::Metadata GamePresenceEvent::GetMetadata() const {
+  return ::google::protobuf::Message::GetMetadataImpl(GetClassData()->full());
+}
+// ===================================================================
+
+class SetGamePresenceEnabledRequest::_Internal {
+ public:
+  using HasBits =
+      decltype(::std::declval<SetGamePresenceEnabledRequest>()._impl_._has_bits_);
+  static constexpr ::int32_t kHasBitsOffset =
+      8 * PROTOBUF_FIELD_OFFSET(SetGamePresenceEnabledRequest, _impl_._has_bits_);
+};
+
+SetGamePresenceEnabledRequest::SetGamePresenceEnabledRequest(::google::protobuf::Arena* PROTOBUF_NULLABLE arena)
+#if defined(PROTOBUF_CUSTOM_VTABLE)
+    : ::google::protobuf::Message(arena, SetGamePresenceEnabledRequest_class_data_.base()) {
+#else   // PROTOBUF_CUSTOM_VTABLE
+    : ::google::protobuf::Message(arena) {
+#endif  // PROTOBUF_CUSTOM_VTABLE
+  SharedCtor(arena);
+  // @@protoc_insertion_point(arena_constructor:chirp.game_server_gateway.SetGamePresenceEnabledRequest)
+}
+PROTOBUF_NDEBUG_INLINE SetGamePresenceEnabledRequest::Impl_::Impl_(
+    [[maybe_unused]] ::google::protobuf::internal::InternalVisibility visibility,
+    [[maybe_unused]] ::google::protobuf::Arena* PROTOBUF_NULLABLE arena, const Impl_& from,
+    [[maybe_unused]] const ::chirp::game_server_gateway::SetGamePresenceEnabledRequest& from_msg)
+      : _has_bits_{from._has_bits_},
+        _cached_size_{0},
+        player_id_(arena, from.player_id_) {}
+
+SetGamePresenceEnabledRequest::SetGamePresenceEnabledRequest(
+    ::google::protobuf::Arena* PROTOBUF_NULLABLE arena,
+    const SetGamePresenceEnabledRequest& from)
+#if defined(PROTOBUF_CUSTOM_VTABLE)
+    : ::google::protobuf::Message(arena, SetGamePresenceEnabledRequest_class_data_.base()) {
+#else   // PROTOBUF_CUSTOM_VTABLE
+    : ::google::protobuf::Message(arena) {
+#endif  // PROTOBUF_CUSTOM_VTABLE
+  SetGamePresenceEnabledRequest* const _this = this;
+  (void)_this;
+  _internal_metadata_.MergeFrom<::google::protobuf::UnknownFieldSet>(
+      from._internal_metadata_);
+  new (&_impl_) Impl_(internal_visibility(), arena, from._impl_, from);
+  _impl_.enabled_ = from._impl_.enabled_;
+
+  // @@protoc_insertion_point(copy_constructor:chirp.game_server_gateway.SetGamePresenceEnabledRequest)
+}
+PROTOBUF_NDEBUG_INLINE SetGamePresenceEnabledRequest::Impl_::Impl_(
+    [[maybe_unused]] ::google::protobuf::internal::InternalVisibility visibility,
+    [[maybe_unused]] ::google::protobuf::Arena* PROTOBUF_NULLABLE arena)
+      : _cached_size_{0},
+        player_id_(arena) {}
+
+inline void SetGamePresenceEnabledRequest::SharedCtor(::_pb::Arena* PROTOBUF_NULLABLE arena) {
+  new (&_impl_) Impl_(internal_visibility(), arena);
+  _impl_.enabled_ = {};
+}
+SetGamePresenceEnabledRequest::~SetGamePresenceEnabledRequest() {
+  // @@protoc_insertion_point(destructor:chirp.game_server_gateway.SetGamePresenceEnabledRequest)
+  SharedDtor(*this);
+}
+inline void SetGamePresenceEnabledRequest::SharedDtor(MessageLite& self) {
+  SetGamePresenceEnabledRequest& this_ = static_cast<SetGamePresenceEnabledRequest&>(self);
+  if constexpr (::_pbi::DebugHardenCheckHasBitConsistency()) {
+    this_.CheckHasBitConsistency();
+  }
+  this_._internal_metadata_.Delete<::google::protobuf::UnknownFieldSet>();
+  ABSL_DCHECK(this_.GetArena() == nullptr);
+  this_._impl_.player_id_.Destroy();
+  this_._impl_.~Impl_();
+}
+
+inline void* PROTOBUF_NONNULL SetGamePresenceEnabledRequest::PlacementNew_(
+    const void* PROTOBUF_NONNULL, void* PROTOBUF_NONNULL mem,
+    ::google::protobuf::Arena* PROTOBUF_NULLABLE arena) {
+  return ::new (mem) SetGamePresenceEnabledRequest(arena);
+}
+constexpr auto SetGamePresenceEnabledRequest::InternalNewImpl_() {
+  return ::google::protobuf::internal::MessageCreator::CopyInit(sizeof(SetGamePresenceEnabledRequest),
+                                            alignof(SetGamePresenceEnabledRequest));
+}
+constexpr auto SetGamePresenceEnabledRequest::InternalGenerateClassData_() {
+  return ::google::protobuf::internal::ClassDataFull{
+      ::google::protobuf::internal::ClassData{
+          &_SetGamePresenceEnabledRequest_default_instance_._instance,
+          &_table_.header,
+          nullptr,  // OnDemandRegisterArenaDtor
+          nullptr,  // IsInitialized
+          &SetGamePresenceEnabledRequest::MergeImpl,
+          ::google::protobuf::Message::GetNewImpl<SetGamePresenceEnabledRequest>(),
+#if defined(PROTOBUF_CUSTOM_VTABLE)
+          &SetGamePresenceEnabledRequest::SharedDtor,
+          ::google::protobuf::Message::GetClearImpl<SetGamePresenceEnabledRequest>(), &SetGamePresenceEnabledRequest::ByteSizeLong,
+              &SetGamePresenceEnabledRequest::_InternalSerialize,
+#endif  // PROTOBUF_CUSTOM_VTABLE
+          PROTOBUF_FIELD_OFFSET(SetGamePresenceEnabledRequest, _impl_._cached_size_),
+          false,
+      },
+      &SetGamePresenceEnabledRequest::kDescriptorMethods,
+      &descriptor_table_proto_2fgame_5fserver_5fgateway_2eproto,
+      nullptr,  // tracker
+  };
+}
+
+PROTOBUF_CONSTINIT PROTOBUF_ATTRIBUTE_INIT_PRIORITY1 const
+    ::google::protobuf::internal::ClassDataFull SetGamePresenceEnabledRequest_class_data_ =
+        SetGamePresenceEnabledRequest::InternalGenerateClassData_();
+
+PROTOBUF_ATTRIBUTE_WEAK const ::google::protobuf::internal::ClassData* PROTOBUF_NONNULL
+SetGamePresenceEnabledRequest::GetClassData() const {
+  ::google::protobuf::internal::PrefetchToLocalCache(&SetGamePresenceEnabledRequest_class_data_);
+  ::google::protobuf::internal::PrefetchToLocalCache(SetGamePresenceEnabledRequest_class_data_.tc_table);
+  return SetGamePresenceEnabledRequest_class_data_.base();
+}
+PROTOBUF_CONSTINIT PROTOBUF_ATTRIBUTE_INIT_PRIORITY1
+const ::_pbi::TcParseTable<1, 2, 0, 73, 2>
+SetGamePresenceEnabledRequest::_table_ = {
+  {
+    PROTOBUF_FIELD_OFFSET(SetGamePresenceEnabledRequest, _impl_._has_bits_),
+    0, // no _extensions_
+    2, 8,  // max_field_number, fast_idx_mask
+    offsetof(decltype(_table_), field_lookup_table),
+    4294967292,  // skipmap
+    offsetof(decltype(_table_), field_entries),
+    2,  // num_field_entries
+    0,  // num_aux_entries
+    offsetof(decltype(_table_), field_names),  // no aux_entries
+    SetGamePresenceEnabledRequest_class_data_.base(),
+    nullptr,  // post_loop_handler
+    ::_pbi::TcParser::GenericFallback,  // fallback
+    #ifdef PROTOBUF_PREFETCH_PARSE_TABLE
+    ::_pbi::TcParser::GetTable<::chirp::game_server_gateway::SetGamePresenceEnabledRequest>(),  // to_prefetch
+    #endif  // PROTOBUF_PREFETCH_PARSE_TABLE
+  }, {{
+    // bool enabled = 2;
+    {::_pbi::TcParser::SingularVarintNoZag1<bool, offsetof(SetGamePresenceEnabledRequest, _impl_.enabled_), 1>(),
+     {16, 1, 0,
+      PROTOBUF_FIELD_OFFSET(SetGamePresenceEnabledRequest, _impl_.enabled_)}},
+    // string player_id = 1;
+    {::_pbi::TcParser::FastUS1,
+     {10, 0, 0,
+      PROTOBUF_FIELD_OFFSET(SetGamePresenceEnabledRequest, _impl_.player_id_)}},
+  }}, {{
+    65535, 65535
+  }}, {{
+    // string player_id = 1;
+    {PROTOBUF_FIELD_OFFSET(SetGamePresenceEnabledRequest, _impl_.player_id_), _Internal::kHasBitsOffset + 0, 0, (0 | ::_fl::kFcOptional | ::_fl::kUtf8String | ::_fl::kRepAString)},
+    // bool enabled = 2;
+    {PROTOBUF_FIELD_OFFSET(SetGamePresenceEnabledRequest, _impl_.enabled_), _Internal::kHasBitsOffset + 1, 0, (0 | ::_fl::kFcOptional | ::_fl::kBool)},
+  }},
+  // no aux_entries
+  {{
+    "\67\11\0\0\0\0\0\0"
+    "chirp.game_server_gateway.SetGamePresenceEnabledRequest"
+    "player_id"
+  }},
+};
+PROTOBUF_NOINLINE void SetGamePresenceEnabledRequest::Clear() {
+// @@protoc_insertion_point(message_clear_start:chirp.game_server_gateway.SetGamePresenceEnabledRequest)
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  ::uint32_t cached_has_bits = 0;
+  // Prevent compiler warnings about cached_has_bits being unused
+  (void) cached_has_bits;
+
+  cached_has_bits = _impl_._has_bits_[0];
+  if (CheckHasBit(cached_has_bits, 0x00000001U)) {
+    _impl_.player_id_.ClearNonDefaultToEmpty();
+  }
+  _impl_.enabled_ = false;
+  _impl_._has_bits_.Clear();
+  _internal_metadata_.Clear<::google::protobuf::UnknownFieldSet>();
+}
+
+#if defined(PROTOBUF_CUSTOM_VTABLE)
+::uint8_t* PROTOBUF_NONNULL SetGamePresenceEnabledRequest::_InternalSerialize(
+    const ::google::protobuf::MessageLite& base, ::uint8_t* PROTOBUF_NONNULL target,
+    ::google::protobuf::io::EpsCopyOutputStream* PROTOBUF_NONNULL stream) {
+  const SetGamePresenceEnabledRequest& this_ = static_cast<const SetGamePresenceEnabledRequest&>(base);
+#else   // PROTOBUF_CUSTOM_VTABLE
+::uint8_t* PROTOBUF_NONNULL SetGamePresenceEnabledRequest::_InternalSerialize(
+    ::uint8_t* PROTOBUF_NONNULL target,
+    ::google::protobuf::io::EpsCopyOutputStream* PROTOBUF_NONNULL stream) const {
+  const SetGamePresenceEnabledRequest& this_ = *this;
+#endif  // PROTOBUF_CUSTOM_VTABLE
+  if constexpr (::_pbi::DebugHardenCheckHasBitConsistency()) {
+    this_.CheckHasBitConsistency();
+  }
+  // @@protoc_insertion_point(serialize_to_array_start:chirp.game_server_gateway.SetGamePresenceEnabledRequest)
+  ::uint32_t cached_has_bits = 0;
+  (void)cached_has_bits;
+
+  cached_has_bits = this_._impl_._has_bits_[0];
+  // string player_id = 1;
+  if (CheckHasBit(cached_has_bits, 0x00000001U)) {
+    if (!this_._internal_player_id().empty()) {
+      const ::std::string& _s = this_._internal_player_id();
+      ::google::protobuf::internal::WireFormatLite::VerifyUtf8String(
+          _s.data(), static_cast<int>(_s.length()), ::google::protobuf::internal::WireFormatLite::SERIALIZE, "chirp.game_server_gateway.SetGamePresenceEnabledRequest.player_id");
+      target = stream->WriteStringMaybeAliased(1, _s, target);
+    }
+  }
+
+  // bool enabled = 2;
+  if (CheckHasBit(cached_has_bits, 0x00000002U)) {
+    if (this_._internal_enabled() != 0) {
+      target = stream->EnsureSpace(target);
+      target = ::_pbi::WireFormatLite::WriteBoolToArray(
+          2, this_._internal_enabled(), target);
+    }
+  }
+
+  if (ABSL_PREDICT_FALSE(this_._internal_metadata_.have_unknown_fields())) {
+    target =
+        ::_pbi::WireFormat::InternalSerializeUnknownFieldsToArray(
+            this_._internal_metadata_.unknown_fields<::google::protobuf::UnknownFieldSet>(::google::protobuf::UnknownFieldSet::default_instance), target, stream);
+  }
+  // @@protoc_insertion_point(serialize_to_array_end:chirp.game_server_gateway.SetGamePresenceEnabledRequest)
+  return target;
+}
+
+#if defined(PROTOBUF_CUSTOM_VTABLE)
+::size_t SetGamePresenceEnabledRequest::ByteSizeLong(const MessageLite& base) {
+  const SetGamePresenceEnabledRequest& this_ = static_cast<const SetGamePresenceEnabledRequest&>(base);
+#else   // PROTOBUF_CUSTOM_VTABLE
+::size_t SetGamePresenceEnabledRequest::ByteSizeLong() const {
+  const SetGamePresenceEnabledRequest& this_ = *this;
+#endif  // PROTOBUF_CUSTOM_VTABLE
+  // @@protoc_insertion_point(message_byte_size_start:chirp.game_server_gateway.SetGamePresenceEnabledRequest)
+  ::size_t total_size = 0;
+
+  ::uint32_t cached_has_bits = 0;
+  // Prevent compiler warnings about cached_has_bits being unused
+  (void)cached_has_bits;
+
+  ::_pbi::Prefetch5LinesFrom7Lines(&this_);
+  cached_has_bits = this_._impl_._has_bits_[0];
+  if (BatchCheckHasBit(cached_has_bits, 0x00000003U)) {
+    // string player_id = 1;
+    if (CheckHasBit(cached_has_bits, 0x00000001U)) {
+      if (!this_._internal_player_id().empty()) {
+        total_size += 1 + ::google::protobuf::internal::WireFormatLite::StringSize(
+                                        this_._internal_player_id());
+      }
+    }
+    // bool enabled = 2;
+    if (CheckHasBit(cached_has_bits, 0x00000002U)) {
+      if (this_._internal_enabled() != 0) {
+        total_size += 2;
+      }
+    }
+  }
+  return this_.MaybeComputeUnknownFieldsSize(total_size,
+                                             &this_._impl_._cached_size_);
+}
+
+void SetGamePresenceEnabledRequest::MergeImpl(::google::protobuf::MessageLite& to_msg,
+                            const ::google::protobuf::MessageLite& from_msg) {
+   auto* const _this =
+      static_cast<SetGamePresenceEnabledRequest*>(&to_msg);
+  auto& from = static_cast<const SetGamePresenceEnabledRequest&>(from_msg);
+  if constexpr (::_pbi::DebugHardenCheckHasBitConsistency()) {
+    from.CheckHasBitConsistency();
+  }
+  // @@protoc_insertion_point(class_specific_merge_from_start:chirp.game_server_gateway.SetGamePresenceEnabledRequest)
+  ABSL_DCHECK_NE(&from, _this);
+  ::uint32_t cached_has_bits = 0;
+  (void)cached_has_bits;
+
+  cached_has_bits = from._impl_._has_bits_[0];
+  if (BatchCheckHasBit(cached_has_bits, 0x00000003U)) {
+    if (CheckHasBit(cached_has_bits, 0x00000001U)) {
+      if (!from._internal_player_id().empty()) {
+        _this->_internal_set_player_id(from._internal_player_id());
+      } else {
+        if (_this->_impl_.player_id_.IsDefault()) {
+          _this->_internal_set_player_id("");
+        }
+      }
+    }
+    if (CheckHasBit(cached_has_bits, 0x00000002U)) {
+      if (from._internal_enabled() != 0) {
+        _this->_impl_.enabled_ = from._impl_.enabled_;
+      }
+    }
+  }
+  _this->_impl_._has_bits_[0] |= cached_has_bits;
+  _this->_internal_metadata_.MergeFrom<::google::protobuf::UnknownFieldSet>(
+      from._internal_metadata_);
+}
+
+void SetGamePresenceEnabledRequest::CopyFrom(const SetGamePresenceEnabledRequest& from) {
+  // @@protoc_insertion_point(class_specific_copy_from_start:chirp.game_server_gateway.SetGamePresenceEnabledRequest)
+  if (&from == this) return;
+  Clear();
+  MergeFrom(from);
+}
+
+
+void SetGamePresenceEnabledRequest::InternalSwap(SetGamePresenceEnabledRequest* PROTOBUF_RESTRICT PROTOBUF_NONNULL other) {
+  using ::std::swap;
+  auto* arena = GetArena();
+  ABSL_DCHECK_EQ(arena, other->GetArena());
+  _internal_metadata_.InternalSwap(&other->_internal_metadata_);
+  swap(_impl_._has_bits_[0], other->_impl_._has_bits_[0]);
+  ::_pbi::ArenaStringPtr::InternalSwap(&_impl_.player_id_, &other->_impl_.player_id_, arena);
+  swap(_impl_.enabled_, other->_impl_.enabled_);
+}
+
+::google::protobuf::Metadata SetGamePresenceEnabledRequest::GetMetadata() const {
+  return ::google::protobuf::Message::GetMetadataImpl(GetClassData()->full());
+}
+// ===================================================================
+
+class SetGamePresenceEnabledResponse::_Internal {
+ public:
+  using HasBits =
+      decltype(::std::declval<SetGamePresenceEnabledResponse>()._impl_._has_bits_);
+  static constexpr ::int32_t kHasBitsOffset =
+      8 * PROTOBUF_FIELD_OFFSET(SetGamePresenceEnabledResponse, _impl_._has_bits_);
+};
+
+SetGamePresenceEnabledResponse::SetGamePresenceEnabledResponse(::google::protobuf::Arena* PROTOBUF_NULLABLE arena)
+#if defined(PROTOBUF_CUSTOM_VTABLE)
+    : ::google::protobuf::Message(arena, SetGamePresenceEnabledResponse_class_data_.base()) {
+#else   // PROTOBUF_CUSTOM_VTABLE
+    : ::google::protobuf::Message(arena) {
+#endif  // PROTOBUF_CUSTOM_VTABLE
+  SharedCtor(arena);
+  // @@protoc_insertion_point(arena_constructor:chirp.game_server_gateway.SetGamePresenceEnabledResponse)
+}
+SetGamePresenceEnabledResponse::SetGamePresenceEnabledResponse(
+    ::google::protobuf::Arena* PROTOBUF_NULLABLE arena, const SetGamePresenceEnabledResponse& from)
+#if defined(PROTOBUF_CUSTOM_VTABLE)
+    : ::google::protobuf::Message(arena, SetGamePresenceEnabledResponse_class_data_.base()),
+#else   // PROTOBUF_CUSTOM_VTABLE
+    : ::google::protobuf::Message(arena),
+#endif  // PROTOBUF_CUSTOM_VTABLE
+      _impl_(from._impl_) {
+  _internal_metadata_.MergeFrom<::google::protobuf::UnknownFieldSet>(
+      from._internal_metadata_);
+}
+PROTOBUF_NDEBUG_INLINE SetGamePresenceEnabledResponse::Impl_::Impl_(
+    [[maybe_unused]] ::google::protobuf::internal::InternalVisibility visibility,
+    [[maybe_unused]] ::google::protobuf::Arena* PROTOBUF_NULLABLE arena)
+      : _cached_size_{0} {}
+
+inline void SetGamePresenceEnabledResponse::SharedCtor(::_pb::Arena* PROTOBUF_NULLABLE arena) {
+  new (&_impl_) Impl_(internal_visibility(), arena);
+  _impl_.code_ = {};
+}
+SetGamePresenceEnabledResponse::~SetGamePresenceEnabledResponse() {
+  // @@protoc_insertion_point(destructor:chirp.game_server_gateway.SetGamePresenceEnabledResponse)
+  SharedDtor(*this);
+}
+inline void SetGamePresenceEnabledResponse::SharedDtor(MessageLite& self) {
+  SetGamePresenceEnabledResponse& this_ = static_cast<SetGamePresenceEnabledResponse&>(self);
+  if constexpr (::_pbi::DebugHardenCheckHasBitConsistency()) {
+    this_.CheckHasBitConsistency();
+  }
+  this_._internal_metadata_.Delete<::google::protobuf::UnknownFieldSet>();
+  ABSL_DCHECK(this_.GetArena() == nullptr);
+  this_._impl_.~Impl_();
+}
+
+inline void* PROTOBUF_NONNULL SetGamePresenceEnabledResponse::PlacementNew_(
+    const void* PROTOBUF_NONNULL, void* PROTOBUF_NONNULL mem,
+    ::google::protobuf::Arena* PROTOBUF_NULLABLE arena) {
+  return ::new (mem) SetGamePresenceEnabledResponse(arena);
+}
+constexpr auto SetGamePresenceEnabledResponse::InternalNewImpl_() {
+  return ::google::protobuf::internal::MessageCreator::ZeroInit(sizeof(SetGamePresenceEnabledResponse),
+                                            alignof(SetGamePresenceEnabledResponse));
+}
+constexpr auto SetGamePresenceEnabledResponse::InternalGenerateClassData_() {
+  return ::google::protobuf::internal::ClassDataFull{
+      ::google::protobuf::internal::ClassData{
+          &_SetGamePresenceEnabledResponse_default_instance_._instance,
+          &_table_.header,
+          nullptr,  // OnDemandRegisterArenaDtor
+          nullptr,  // IsInitialized
+          &SetGamePresenceEnabledResponse::MergeImpl,
+          ::google::protobuf::Message::GetNewImpl<SetGamePresenceEnabledResponse>(),
+#if defined(PROTOBUF_CUSTOM_VTABLE)
+          &SetGamePresenceEnabledResponse::SharedDtor,
+          ::google::protobuf::Message::GetClearImpl<SetGamePresenceEnabledResponse>(), &SetGamePresenceEnabledResponse::ByteSizeLong,
+              &SetGamePresenceEnabledResponse::_InternalSerialize,
+#endif  // PROTOBUF_CUSTOM_VTABLE
+          PROTOBUF_FIELD_OFFSET(SetGamePresenceEnabledResponse, _impl_._cached_size_),
+          false,
+      },
+      &SetGamePresenceEnabledResponse::kDescriptorMethods,
+      &descriptor_table_proto_2fgame_5fserver_5fgateway_2eproto,
+      nullptr,  // tracker
+  };
+}
+
+PROTOBUF_CONSTINIT PROTOBUF_ATTRIBUTE_INIT_PRIORITY1 const
+    ::google::protobuf::internal::ClassDataFull SetGamePresenceEnabledResponse_class_data_ =
+        SetGamePresenceEnabledResponse::InternalGenerateClassData_();
+
+PROTOBUF_ATTRIBUTE_WEAK const ::google::protobuf::internal::ClassData* PROTOBUF_NONNULL
+SetGamePresenceEnabledResponse::GetClassData() const {
+  ::google::protobuf::internal::PrefetchToLocalCache(&SetGamePresenceEnabledResponse_class_data_);
+  ::google::protobuf::internal::PrefetchToLocalCache(SetGamePresenceEnabledResponse_class_data_.tc_table);
+  return SetGamePresenceEnabledResponse_class_data_.base();
+}
+PROTOBUF_CONSTINIT PROTOBUF_ATTRIBUTE_INIT_PRIORITY1
+const ::_pbi::TcParseTable<0, 1, 0, 0, 2>
+SetGamePresenceEnabledResponse::_table_ = {
+  {
+    PROTOBUF_FIELD_OFFSET(SetGamePresenceEnabledResponse, _impl_._has_bits_),
+    0, // no _extensions_
+    1, 0,  // max_field_number, fast_idx_mask
+    offsetof(decltype(_table_), field_lookup_table),
+    4294967294,  // skipmap
+    offsetof(decltype(_table_), field_entries),
+    1,  // num_field_entries
+    0,  // num_aux_entries
+    offsetof(decltype(_table_), field_names),  // no aux_entries
+    SetGamePresenceEnabledResponse_class_data_.base(),
+    nullptr,  // post_loop_handler
+    ::_pbi::TcParser::GenericFallback,  // fallback
+    #ifdef PROTOBUF_PREFETCH_PARSE_TABLE
+    ::_pbi::TcParser::GetTable<::chirp::game_server_gateway::SetGamePresenceEnabledResponse>(),  // to_prefetch
+    #endif  // PROTOBUF_PREFETCH_PARSE_TABLE
+  }, {{
+    // .chirp.common.ErrorCode code = 1;
+    {::_pbi::TcParser::SingularVarintNoZag1<::uint32_t, offsetof(SetGamePresenceEnabledResponse, _impl_.code_), 0>(),
+     {8, 0, 0,
+      PROTOBUF_FIELD_OFFSET(SetGamePresenceEnabledResponse, _impl_.code_)}},
+  }}, {{
+    65535, 65535
+  }}, {{
+    // .chirp.common.ErrorCode code = 1;
+    {PROTOBUF_FIELD_OFFSET(SetGamePresenceEnabledResponse, _impl_.code_), _Internal::kHasBitsOffset + 0, 0, (0 | ::_fl::kFcOptional | ::_fl::kOpenEnum)},
+  }},
+  // no aux_entries
+  {{
+  }},
+};
+PROTOBUF_NOINLINE void SetGamePresenceEnabledResponse::Clear() {
+// @@protoc_insertion_point(message_clear_start:chirp.game_server_gateway.SetGamePresenceEnabledResponse)
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  ::uint32_t cached_has_bits = 0;
+  // Prevent compiler warnings about cached_has_bits being unused
+  (void) cached_has_bits;
+
+  _impl_.code_ = 0;
+  _impl_._has_bits_.Clear();
+  _internal_metadata_.Clear<::google::protobuf::UnknownFieldSet>();
+}
+
+#if defined(PROTOBUF_CUSTOM_VTABLE)
+::uint8_t* PROTOBUF_NONNULL SetGamePresenceEnabledResponse::_InternalSerialize(
+    const ::google::protobuf::MessageLite& base, ::uint8_t* PROTOBUF_NONNULL target,
+    ::google::protobuf::io::EpsCopyOutputStream* PROTOBUF_NONNULL stream) {
+  const SetGamePresenceEnabledResponse& this_ = static_cast<const SetGamePresenceEnabledResponse&>(base);
+#else   // PROTOBUF_CUSTOM_VTABLE
+::uint8_t* PROTOBUF_NONNULL SetGamePresenceEnabledResponse::_InternalSerialize(
+    ::uint8_t* PROTOBUF_NONNULL target,
+    ::google::protobuf::io::EpsCopyOutputStream* PROTOBUF_NONNULL stream) const {
+  const SetGamePresenceEnabledResponse& this_ = *this;
+#endif  // PROTOBUF_CUSTOM_VTABLE
+  if constexpr (::_pbi::DebugHardenCheckHasBitConsistency()) {
+    this_.CheckHasBitConsistency();
+  }
+  // @@protoc_insertion_point(serialize_to_array_start:chirp.game_server_gateway.SetGamePresenceEnabledResponse)
+  ::uint32_t cached_has_bits = 0;
+  (void)cached_has_bits;
+
+  cached_has_bits = this_._impl_._has_bits_[0];
+  // .chirp.common.ErrorCode code = 1;
+  if (CheckHasBit(cached_has_bits, 0x00000001U)) {
+    if (this_._internal_code() != 0) {
+      target = stream->EnsureSpace(target);
+      target = ::_pbi::WireFormatLite::WriteEnumToArray(
+          1, this_._internal_code(), target);
+    }
+  }
+
+  if (ABSL_PREDICT_FALSE(this_._internal_metadata_.have_unknown_fields())) {
+    target =
+        ::_pbi::WireFormat::InternalSerializeUnknownFieldsToArray(
+            this_._internal_metadata_.unknown_fields<::google::protobuf::UnknownFieldSet>(::google::protobuf::UnknownFieldSet::default_instance), target, stream);
+  }
+  // @@protoc_insertion_point(serialize_to_array_end:chirp.game_server_gateway.SetGamePresenceEnabledResponse)
+  return target;
+}
+
+#if defined(PROTOBUF_CUSTOM_VTABLE)
+::size_t SetGamePresenceEnabledResponse::ByteSizeLong(const MessageLite& base) {
+  const SetGamePresenceEnabledResponse& this_ = static_cast<const SetGamePresenceEnabledResponse&>(base);
+#else   // PROTOBUF_CUSTOM_VTABLE
+::size_t SetGamePresenceEnabledResponse::ByteSizeLong() const {
+  const SetGamePresenceEnabledResponse& this_ = *this;
+#endif  // PROTOBUF_CUSTOM_VTABLE
+  // @@protoc_insertion_point(message_byte_size_start:chirp.game_server_gateway.SetGamePresenceEnabledResponse)
+  ::size_t total_size = 0;
+
+  ::uint32_t cached_has_bits = 0;
+  // Prevent compiler warnings about cached_has_bits being unused
+  (void)cached_has_bits;
+
+   {
+    // .chirp.common.ErrorCode code = 1;
+    cached_has_bits = this_._impl_._has_bits_[0];
+    if (CheckHasBit(cached_has_bits, 0x00000001U)) {
+      if (this_._internal_code() != 0) {
+        total_size += 1 +
+                      ::_pbi::WireFormatLite::EnumSize(this_._internal_code());
+      }
+    }
+  }
+  return this_.MaybeComputeUnknownFieldsSize(total_size,
+                                             &this_._impl_._cached_size_);
+}
+
+void SetGamePresenceEnabledResponse::MergeImpl(::google::protobuf::MessageLite& to_msg,
+                            const ::google::protobuf::MessageLite& from_msg) {
+   auto* const _this =
+      static_cast<SetGamePresenceEnabledResponse*>(&to_msg);
+  auto& from = static_cast<const SetGamePresenceEnabledResponse&>(from_msg);
+  if constexpr (::_pbi::DebugHardenCheckHasBitConsistency()) {
+    from.CheckHasBitConsistency();
+  }
+  // @@protoc_insertion_point(class_specific_merge_from_start:chirp.game_server_gateway.SetGamePresenceEnabledResponse)
+  ABSL_DCHECK_NE(&from, _this);
+  ::uint32_t cached_has_bits = 0;
+  (void)cached_has_bits;
+
+  cached_has_bits = from._impl_._has_bits_[0];
+  if (CheckHasBit(cached_has_bits, 0x00000001U)) {
+    if (from._internal_code() != 0) {
+      _this->_impl_.code_ = from._impl_.code_;
+    }
+  }
+  _this->_impl_._has_bits_[0] |= cached_has_bits;
+  _this->_internal_metadata_.MergeFrom<::google::protobuf::UnknownFieldSet>(
+      from._internal_metadata_);
+}
+
+void SetGamePresenceEnabledResponse::CopyFrom(const SetGamePresenceEnabledResponse& from) {
+  // @@protoc_insertion_point(class_specific_copy_from_start:chirp.game_server_gateway.SetGamePresenceEnabledResponse)
+  if (&from == this) return;
+  Clear();
+  MergeFrom(from);
+}
+
+
+void SetGamePresenceEnabledResponse::InternalSwap(SetGamePresenceEnabledResponse* PROTOBUF_RESTRICT PROTOBUF_NONNULL other) {
+  using ::std::swap;
+  _internal_metadata_.InternalSwap(&other->_internal_metadata_);
+  swap(_impl_._has_bits_[0], other->_impl_._has_bits_[0]);
+  swap(_impl_.code_, other->_impl_.code_);
+}
+
+::google::protobuf::Metadata SetGamePresenceEnabledResponse::GetMetadata() const {
+  return ::google::protobuf::Message::GetMetadataImpl(GetClassData()->full());
+}
+// ===================================================================
+
+class GamePresenceEntry::_Internal {
+ public:
+  using HasBits =
+      decltype(::std::declval<GamePresenceEntry>()._impl_._has_bits_);
+  static constexpr ::int32_t kHasBitsOffset =
+      8 * PROTOBUF_FIELD_OFFSET(GamePresenceEntry, _impl_._has_bits_);
+};
+
+GamePresenceEntry::GamePresenceEntry(::google::protobuf::Arena* PROTOBUF_NULLABLE arena)
+#if defined(PROTOBUF_CUSTOM_VTABLE)
+    : ::google::protobuf::Message(arena, GamePresenceEntry_class_data_.base()) {
+#else   // PROTOBUF_CUSTOM_VTABLE
+    : ::google::protobuf::Message(arena) {
+#endif  // PROTOBUF_CUSTOM_VTABLE
+  SharedCtor(arena);
+  // @@protoc_insertion_point(arena_constructor:chirp.game_server_gateway.GamePresenceEntry)
+}
+PROTOBUF_NDEBUG_INLINE GamePresenceEntry::Impl_::Impl_(
+    [[maybe_unused]] ::google::protobuf::internal::InternalVisibility visibility,
+    [[maybe_unused]] ::google::protobuf::Arena* PROTOBUF_NULLABLE arena, const Impl_& from,
+    [[maybe_unused]] const ::chirp::game_server_gateway::GamePresenceEntry& from_msg)
+      : _has_bits_{from._has_bits_},
+        _cached_size_{0},
+        game_id_(arena, from.game_id_),
+        game_user_id_(arena, from.game_user_id_) {}
+
+GamePresenceEntry::GamePresenceEntry(
+    ::google::protobuf::Arena* PROTOBUF_NULLABLE arena,
+    const GamePresenceEntry& from)
+#if defined(PROTOBUF_CUSTOM_VTABLE)
+    : ::google::protobuf::Message(arena, GamePresenceEntry_class_data_.base()) {
+#else   // PROTOBUF_CUSTOM_VTABLE
+    : ::google::protobuf::Message(arena) {
+#endif  // PROTOBUF_CUSTOM_VTABLE
+  GamePresenceEntry* const _this = this;
+  (void)_this;
+  _internal_metadata_.MergeFrom<::google::protobuf::UnknownFieldSet>(
+      from._internal_metadata_);
+  new (&_impl_) Impl_(internal_visibility(), arena, from._impl_, from);
+
+  // @@protoc_insertion_point(copy_constructor:chirp.game_server_gateway.GamePresenceEntry)
+}
+PROTOBUF_NDEBUG_INLINE GamePresenceEntry::Impl_::Impl_(
+    [[maybe_unused]] ::google::protobuf::internal::InternalVisibility visibility,
+    [[maybe_unused]] ::google::protobuf::Arena* PROTOBUF_NULLABLE arena)
+      : _cached_size_{0},
+        game_id_(arena),
+        game_user_id_(arena) {}
+
+inline void GamePresenceEntry::SharedCtor(::_pb::Arena* PROTOBUF_NULLABLE arena) {
+  new (&_impl_) Impl_(internal_visibility(), arena);
+}
+GamePresenceEntry::~GamePresenceEntry() {
+  // @@protoc_insertion_point(destructor:chirp.game_server_gateway.GamePresenceEntry)
+  SharedDtor(*this);
+}
+inline void GamePresenceEntry::SharedDtor(MessageLite& self) {
+  GamePresenceEntry& this_ = static_cast<GamePresenceEntry&>(self);
+  if constexpr (::_pbi::DebugHardenCheckHasBitConsistency()) {
+    this_.CheckHasBitConsistency();
+  }
+  this_._internal_metadata_.Delete<::google::protobuf::UnknownFieldSet>();
+  ABSL_DCHECK(this_.GetArena() == nullptr);
+  this_._impl_.game_id_.Destroy();
+  this_._impl_.game_user_id_.Destroy();
+  this_._impl_.~Impl_();
+}
+
+inline void* PROTOBUF_NONNULL GamePresenceEntry::PlacementNew_(
+    const void* PROTOBUF_NONNULL, void* PROTOBUF_NONNULL mem,
+    ::google::protobuf::Arena* PROTOBUF_NULLABLE arena) {
+  return ::new (mem) GamePresenceEntry(arena);
+}
+constexpr auto GamePresenceEntry::InternalNewImpl_() {
+  return ::google::protobuf::internal::MessageCreator::CopyInit(sizeof(GamePresenceEntry),
+                                            alignof(GamePresenceEntry));
+}
+constexpr auto GamePresenceEntry::InternalGenerateClassData_() {
+  return ::google::protobuf::internal::ClassDataFull{
+      ::google::protobuf::internal::ClassData{
+          &_GamePresenceEntry_default_instance_._instance,
+          &_table_.header,
+          nullptr,  // OnDemandRegisterArenaDtor
+          nullptr,  // IsInitialized
+          &GamePresenceEntry::MergeImpl,
+          ::google::protobuf::Message::GetNewImpl<GamePresenceEntry>(),
+#if defined(PROTOBUF_CUSTOM_VTABLE)
+          &GamePresenceEntry::SharedDtor,
+          ::google::protobuf::Message::GetClearImpl<GamePresenceEntry>(), &GamePresenceEntry::ByteSizeLong,
+              &GamePresenceEntry::_InternalSerialize,
+#endif  // PROTOBUF_CUSTOM_VTABLE
+          PROTOBUF_FIELD_OFFSET(GamePresenceEntry, _impl_._cached_size_),
+          false,
+      },
+      &GamePresenceEntry::kDescriptorMethods,
+      &descriptor_table_proto_2fgame_5fserver_5fgateway_2eproto,
+      nullptr,  // tracker
+  };
+}
+
+PROTOBUF_CONSTINIT PROTOBUF_ATTRIBUTE_INIT_PRIORITY1 const
+    ::google::protobuf::internal::ClassDataFull GamePresenceEntry_class_data_ =
+        GamePresenceEntry::InternalGenerateClassData_();
+
+PROTOBUF_ATTRIBUTE_WEAK const ::google::protobuf::internal::ClassData* PROTOBUF_NONNULL
+GamePresenceEntry::GetClassData() const {
+  ::google::protobuf::internal::PrefetchToLocalCache(&GamePresenceEntry_class_data_);
+  ::google::protobuf::internal::PrefetchToLocalCache(GamePresenceEntry_class_data_.tc_table);
+  return GamePresenceEntry_class_data_.base();
+}
+PROTOBUF_CONSTINIT PROTOBUF_ATTRIBUTE_INIT_PRIORITY1
+const ::_pbi::TcParseTable<1, 2, 0, 71, 2>
+GamePresenceEntry::_table_ = {
+  {
+    PROTOBUF_FIELD_OFFSET(GamePresenceEntry, _impl_._has_bits_),
+    0, // no _extensions_
+    2, 8,  // max_field_number, fast_idx_mask
+    offsetof(decltype(_table_), field_lookup_table),
+    4294967292,  // skipmap
+    offsetof(decltype(_table_), field_entries),
+    2,  // num_field_entries
+    0,  // num_aux_entries
+    offsetof(decltype(_table_), field_names),  // no aux_entries
+    GamePresenceEntry_class_data_.base(),
+    nullptr,  // post_loop_handler
+    ::_pbi::TcParser::GenericFallback,  // fallback
+    #ifdef PROTOBUF_PREFETCH_PARSE_TABLE
+    ::_pbi::TcParser::GetTable<::chirp::game_server_gateway::GamePresenceEntry>(),  // to_prefetch
+    #endif  // PROTOBUF_PREFETCH_PARSE_TABLE
+  }, {{
+    // string game_user_id = 2;
+    {::_pbi::TcParser::FastUS1,
+     {18, 1, 0,
+      PROTOBUF_FIELD_OFFSET(GamePresenceEntry, _impl_.game_user_id_)}},
+    // string game_id = 1;
+    {::_pbi::TcParser::FastUS1,
+     {10, 0, 0,
+      PROTOBUF_FIELD_OFFSET(GamePresenceEntry, _impl_.game_id_)}},
+  }}, {{
+    65535, 65535
+  }}, {{
+    // string game_id = 1;
+    {PROTOBUF_FIELD_OFFSET(GamePresenceEntry, _impl_.game_id_), _Internal::kHasBitsOffset + 0, 0, (0 | ::_fl::kFcOptional | ::_fl::kUtf8String | ::_fl::kRepAString)},
+    // string game_user_id = 2;
+    {PROTOBUF_FIELD_OFFSET(GamePresenceEntry, _impl_.game_user_id_), _Internal::kHasBitsOffset + 1, 0, (0 | ::_fl::kFcOptional | ::_fl::kUtf8String | ::_fl::kRepAString)},
+  }},
+  // no aux_entries
+  {{
+    "\53\7\14\0\0\0\0\0"
+    "chirp.game_server_gateway.GamePresenceEntry"
+    "game_id"
+    "game_user_id"
+  }},
+};
+PROTOBUF_NOINLINE void GamePresenceEntry::Clear() {
+// @@protoc_insertion_point(message_clear_start:chirp.game_server_gateway.GamePresenceEntry)
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  ::uint32_t cached_has_bits = 0;
+  // Prevent compiler warnings about cached_has_bits being unused
+  (void) cached_has_bits;
+
+  cached_has_bits = _impl_._has_bits_[0];
+  if (BatchCheckHasBit(cached_has_bits, 0x00000003U)) {
+    if (CheckHasBit(cached_has_bits, 0x00000001U)) {
+      _impl_.game_id_.ClearNonDefaultToEmpty();
+    }
+    if (CheckHasBit(cached_has_bits, 0x00000002U)) {
+      _impl_.game_user_id_.ClearNonDefaultToEmpty();
+    }
+  }
+  _impl_._has_bits_.Clear();
+  _internal_metadata_.Clear<::google::protobuf::UnknownFieldSet>();
+}
+
+#if defined(PROTOBUF_CUSTOM_VTABLE)
+::uint8_t* PROTOBUF_NONNULL GamePresenceEntry::_InternalSerialize(
+    const ::google::protobuf::MessageLite& base, ::uint8_t* PROTOBUF_NONNULL target,
+    ::google::protobuf::io::EpsCopyOutputStream* PROTOBUF_NONNULL stream) {
+  const GamePresenceEntry& this_ = static_cast<const GamePresenceEntry&>(base);
+#else   // PROTOBUF_CUSTOM_VTABLE
+::uint8_t* PROTOBUF_NONNULL GamePresenceEntry::_InternalSerialize(
+    ::uint8_t* PROTOBUF_NONNULL target,
+    ::google::protobuf::io::EpsCopyOutputStream* PROTOBUF_NONNULL stream) const {
+  const GamePresenceEntry& this_ = *this;
+#endif  // PROTOBUF_CUSTOM_VTABLE
+  if constexpr (::_pbi::DebugHardenCheckHasBitConsistency()) {
+    this_.CheckHasBitConsistency();
+  }
+  // @@protoc_insertion_point(serialize_to_array_start:chirp.game_server_gateway.GamePresenceEntry)
+  ::uint32_t cached_has_bits = 0;
+  (void)cached_has_bits;
+
+  cached_has_bits = this_._impl_._has_bits_[0];
+  // string game_id = 1;
+  if (CheckHasBit(cached_has_bits, 0x00000001U)) {
+    if (!this_._internal_game_id().empty()) {
+      const ::std::string& _s = this_._internal_game_id();
+      ::google::protobuf::internal::WireFormatLite::VerifyUtf8String(
+          _s.data(), static_cast<int>(_s.length()), ::google::protobuf::internal::WireFormatLite::SERIALIZE, "chirp.game_server_gateway.GamePresenceEntry.game_id");
+      target = stream->WriteStringMaybeAliased(1, _s, target);
+    }
+  }
+
+  // string game_user_id = 2;
+  if (CheckHasBit(cached_has_bits, 0x00000002U)) {
+    if (!this_._internal_game_user_id().empty()) {
+      const ::std::string& _s = this_._internal_game_user_id();
+      ::google::protobuf::internal::WireFormatLite::VerifyUtf8String(
+          _s.data(), static_cast<int>(_s.length()), ::google::protobuf::internal::WireFormatLite::SERIALIZE, "chirp.game_server_gateway.GamePresenceEntry.game_user_id");
+      target = stream->WriteStringMaybeAliased(2, _s, target);
+    }
+  }
+
+  if (ABSL_PREDICT_FALSE(this_._internal_metadata_.have_unknown_fields())) {
+    target =
+        ::_pbi::WireFormat::InternalSerializeUnknownFieldsToArray(
+            this_._internal_metadata_.unknown_fields<::google::protobuf::UnknownFieldSet>(::google::protobuf::UnknownFieldSet::default_instance), target, stream);
+  }
+  // @@protoc_insertion_point(serialize_to_array_end:chirp.game_server_gateway.GamePresenceEntry)
+  return target;
+}
+
+#if defined(PROTOBUF_CUSTOM_VTABLE)
+::size_t GamePresenceEntry::ByteSizeLong(const MessageLite& base) {
+  const GamePresenceEntry& this_ = static_cast<const GamePresenceEntry&>(base);
+#else   // PROTOBUF_CUSTOM_VTABLE
+::size_t GamePresenceEntry::ByteSizeLong() const {
+  const GamePresenceEntry& this_ = *this;
+#endif  // PROTOBUF_CUSTOM_VTABLE
+  // @@protoc_insertion_point(message_byte_size_start:chirp.game_server_gateway.GamePresenceEntry)
+  ::size_t total_size = 0;
+
+  ::uint32_t cached_has_bits = 0;
+  // Prevent compiler warnings about cached_has_bits being unused
+  (void)cached_has_bits;
+
+  ::_pbi::Prefetch5LinesFrom7Lines(&this_);
+  cached_has_bits = this_._impl_._has_bits_[0];
+  if (BatchCheckHasBit(cached_has_bits, 0x00000003U)) {
+    // string game_id = 1;
+    if (CheckHasBit(cached_has_bits, 0x00000001U)) {
+      if (!this_._internal_game_id().empty()) {
+        total_size += 1 + ::google::protobuf::internal::WireFormatLite::StringSize(
+                                        this_._internal_game_id());
+      }
+    }
+    // string game_user_id = 2;
+    if (CheckHasBit(cached_has_bits, 0x00000002U)) {
+      if (!this_._internal_game_user_id().empty()) {
+        total_size += 1 + ::google::protobuf::internal::WireFormatLite::StringSize(
+                                        this_._internal_game_user_id());
+      }
+    }
+  }
+  return this_.MaybeComputeUnknownFieldsSize(total_size,
+                                             &this_._impl_._cached_size_);
+}
+
+void GamePresenceEntry::MergeImpl(::google::protobuf::MessageLite& to_msg,
+                            const ::google::protobuf::MessageLite& from_msg) {
+   auto* const _this =
+      static_cast<GamePresenceEntry*>(&to_msg);
+  auto& from = static_cast<const GamePresenceEntry&>(from_msg);
+  if constexpr (::_pbi::DebugHardenCheckHasBitConsistency()) {
+    from.CheckHasBitConsistency();
+  }
+  // @@protoc_insertion_point(class_specific_merge_from_start:chirp.game_server_gateway.GamePresenceEntry)
+  ABSL_DCHECK_NE(&from, _this);
+  ::uint32_t cached_has_bits = 0;
+  (void)cached_has_bits;
+
+  cached_has_bits = from._impl_._has_bits_[0];
+  if (BatchCheckHasBit(cached_has_bits, 0x00000003U)) {
+    if (CheckHasBit(cached_has_bits, 0x00000001U)) {
+      if (!from._internal_game_id().empty()) {
+        _this->_internal_set_game_id(from._internal_game_id());
+      } else {
+        if (_this->_impl_.game_id_.IsDefault()) {
+          _this->_internal_set_game_id("");
+        }
+      }
+    }
+    if (CheckHasBit(cached_has_bits, 0x00000002U)) {
+      if (!from._internal_game_user_id().empty()) {
+        _this->_internal_set_game_user_id(from._internal_game_user_id());
+      } else {
+        if (_this->_impl_.game_user_id_.IsDefault()) {
+          _this->_internal_set_game_user_id("");
+        }
+      }
+    }
+  }
+  _this->_impl_._has_bits_[0] |= cached_has_bits;
+  _this->_internal_metadata_.MergeFrom<::google::protobuf::UnknownFieldSet>(
+      from._internal_metadata_);
+}
+
+void GamePresenceEntry::CopyFrom(const GamePresenceEntry& from) {
+  // @@protoc_insertion_point(class_specific_copy_from_start:chirp.game_server_gateway.GamePresenceEntry)
+  if (&from == this) return;
+  Clear();
+  MergeFrom(from);
+}
+
+
+void GamePresenceEntry::InternalSwap(GamePresenceEntry* PROTOBUF_RESTRICT PROTOBUF_NONNULL other) {
+  using ::std::swap;
+  auto* arena = GetArena();
+  ABSL_DCHECK_EQ(arena, other->GetArena());
+  _internal_metadata_.InternalSwap(&other->_internal_metadata_);
+  swap(_impl_._has_bits_[0], other->_impl_._has_bits_[0]);
+  ::_pbi::ArenaStringPtr::InternalSwap(&_impl_.game_id_, &other->_impl_.game_id_, arena);
+  ::_pbi::ArenaStringPtr::InternalSwap(&_impl_.game_user_id_, &other->_impl_.game_user_id_, arena);
+}
+
+::google::protobuf::Metadata GamePresenceEntry::GetMetadata() const {
+  return ::google::protobuf::Message::GetMetadataImpl(GetClassData()->full());
+}
+// ===================================================================
+
+class GetGamePresenceRequest::_Internal {
+ public:
+  using HasBits =
+      decltype(::std::declval<GetGamePresenceRequest>()._impl_._has_bits_);
+  static constexpr ::int32_t kHasBitsOffset =
+      8 * PROTOBUF_FIELD_OFFSET(GetGamePresenceRequest, _impl_._has_bits_);
+};
+
+GetGamePresenceRequest::GetGamePresenceRequest(::google::protobuf::Arena* PROTOBUF_NULLABLE arena)
+#if defined(PROTOBUF_CUSTOM_VTABLE)
+    : ::google::protobuf::Message(arena, GetGamePresenceRequest_class_data_.base()) {
+#else   // PROTOBUF_CUSTOM_VTABLE
+    : ::google::protobuf::Message(arena) {
+#endif  // PROTOBUF_CUSTOM_VTABLE
+  SharedCtor(arena);
+  // @@protoc_insertion_point(arena_constructor:chirp.game_server_gateway.GetGamePresenceRequest)
+}
+PROTOBUF_NDEBUG_INLINE GetGamePresenceRequest::Impl_::Impl_(
+    [[maybe_unused]] ::google::protobuf::internal::InternalVisibility visibility,
+    [[maybe_unused]] ::google::protobuf::Arena* PROTOBUF_NULLABLE arena, const Impl_& from,
+    [[maybe_unused]] const ::chirp::game_server_gateway::GetGamePresenceRequest& from_msg)
+      : _has_bits_{from._has_bits_},
+        _cached_size_{0},
+        player_id_(arena, from.player_id_) {}
+
+GetGamePresenceRequest::GetGamePresenceRequest(
+    ::google::protobuf::Arena* PROTOBUF_NULLABLE arena,
+    const GetGamePresenceRequest& from)
+#if defined(PROTOBUF_CUSTOM_VTABLE)
+    : ::google::protobuf::Message(arena, GetGamePresenceRequest_class_data_.base()) {
+#else   // PROTOBUF_CUSTOM_VTABLE
+    : ::google::protobuf::Message(arena) {
+#endif  // PROTOBUF_CUSTOM_VTABLE
+  GetGamePresenceRequest* const _this = this;
+  (void)_this;
+  _internal_metadata_.MergeFrom<::google::protobuf::UnknownFieldSet>(
+      from._internal_metadata_);
+  new (&_impl_) Impl_(internal_visibility(), arena, from._impl_, from);
+
+  // @@protoc_insertion_point(copy_constructor:chirp.game_server_gateway.GetGamePresenceRequest)
+}
+PROTOBUF_NDEBUG_INLINE GetGamePresenceRequest::Impl_::Impl_(
+    [[maybe_unused]] ::google::protobuf::internal::InternalVisibility visibility,
+    [[maybe_unused]] ::google::protobuf::Arena* PROTOBUF_NULLABLE arena)
+      : _cached_size_{0},
+        player_id_(arena) {}
+
+inline void GetGamePresenceRequest::SharedCtor(::_pb::Arena* PROTOBUF_NULLABLE arena) {
+  new (&_impl_) Impl_(internal_visibility(), arena);
+}
+GetGamePresenceRequest::~GetGamePresenceRequest() {
+  // @@protoc_insertion_point(destructor:chirp.game_server_gateway.GetGamePresenceRequest)
+  SharedDtor(*this);
+}
+inline void GetGamePresenceRequest::SharedDtor(MessageLite& self) {
+  GetGamePresenceRequest& this_ = static_cast<GetGamePresenceRequest&>(self);
+  if constexpr (::_pbi::DebugHardenCheckHasBitConsistency()) {
+    this_.CheckHasBitConsistency();
+  }
+  this_._internal_metadata_.Delete<::google::protobuf::UnknownFieldSet>();
+  ABSL_DCHECK(this_.GetArena() == nullptr);
+  this_._impl_.player_id_.Destroy();
+  this_._impl_.~Impl_();
+}
+
+inline void* PROTOBUF_NONNULL GetGamePresenceRequest::PlacementNew_(
+    const void* PROTOBUF_NONNULL, void* PROTOBUF_NONNULL mem,
+    ::google::protobuf::Arena* PROTOBUF_NULLABLE arena) {
+  return ::new (mem) GetGamePresenceRequest(arena);
+}
+constexpr auto GetGamePresenceRequest::InternalNewImpl_() {
+  return ::google::protobuf::internal::MessageCreator::CopyInit(sizeof(GetGamePresenceRequest),
+                                            alignof(GetGamePresenceRequest));
+}
+constexpr auto GetGamePresenceRequest::InternalGenerateClassData_() {
+  return ::google::protobuf::internal::ClassDataFull{
+      ::google::protobuf::internal::ClassData{
+          &_GetGamePresenceRequest_default_instance_._instance,
+          &_table_.header,
+          nullptr,  // OnDemandRegisterArenaDtor
+          nullptr,  // IsInitialized
+          &GetGamePresenceRequest::MergeImpl,
+          ::google::protobuf::Message::GetNewImpl<GetGamePresenceRequest>(),
+#if defined(PROTOBUF_CUSTOM_VTABLE)
+          &GetGamePresenceRequest::SharedDtor,
+          ::google::protobuf::Message::GetClearImpl<GetGamePresenceRequest>(), &GetGamePresenceRequest::ByteSizeLong,
+              &GetGamePresenceRequest::_InternalSerialize,
+#endif  // PROTOBUF_CUSTOM_VTABLE
+          PROTOBUF_FIELD_OFFSET(GetGamePresenceRequest, _impl_._cached_size_),
+          false,
+      },
+      &GetGamePresenceRequest::kDescriptorMethods,
+      &descriptor_table_proto_2fgame_5fserver_5fgateway_2eproto,
+      nullptr,  // tracker
+  };
+}
+
+PROTOBUF_CONSTINIT PROTOBUF_ATTRIBUTE_INIT_PRIORITY1 const
+    ::google::protobuf::internal::ClassDataFull GetGamePresenceRequest_class_data_ =
+        GetGamePresenceRequest::InternalGenerateClassData_();
+
+PROTOBUF_ATTRIBUTE_WEAK const ::google::protobuf::internal::ClassData* PROTOBUF_NONNULL
+GetGamePresenceRequest::GetClassData() const {
+  ::google::protobuf::internal::PrefetchToLocalCache(&GetGamePresenceRequest_class_data_);
+  ::google::protobuf::internal::PrefetchToLocalCache(GetGamePresenceRequest_class_data_.tc_table);
+  return GetGamePresenceRequest_class_data_.base();
+}
+PROTOBUF_CONSTINIT PROTOBUF_ATTRIBUTE_INIT_PRIORITY1
+const ::_pbi::TcParseTable<0, 1, 0, 66, 2>
+GetGamePresenceRequest::_table_ = {
+  {
+    PROTOBUF_FIELD_OFFSET(GetGamePresenceRequest, _impl_._has_bits_),
+    0, // no _extensions_
+    1, 0,  // max_field_number, fast_idx_mask
+    offsetof(decltype(_table_), field_lookup_table),
+    4294967294,  // skipmap
+    offsetof(decltype(_table_), field_entries),
+    1,  // num_field_entries
+    0,  // num_aux_entries
+    offsetof(decltype(_table_), field_names),  // no aux_entries
+    GetGamePresenceRequest_class_data_.base(),
+    nullptr,  // post_loop_handler
+    ::_pbi::TcParser::GenericFallback,  // fallback
+    #ifdef PROTOBUF_PREFETCH_PARSE_TABLE
+    ::_pbi::TcParser::GetTable<::chirp::game_server_gateway::GetGamePresenceRequest>(),  // to_prefetch
+    #endif  // PROTOBUF_PREFETCH_PARSE_TABLE
+  }, {{
+    // string player_id = 1;
+    {::_pbi::TcParser::FastUS1,
+     {10, 0, 0,
+      PROTOBUF_FIELD_OFFSET(GetGamePresenceRequest, _impl_.player_id_)}},
+  }}, {{
+    65535, 65535
+  }}, {{
+    // string player_id = 1;
+    {PROTOBUF_FIELD_OFFSET(GetGamePresenceRequest, _impl_.player_id_), _Internal::kHasBitsOffset + 0, 0, (0 | ::_fl::kFcOptional | ::_fl::kUtf8String | ::_fl::kRepAString)},
+  }},
+  // no aux_entries
+  {{
+    "\60\11\0\0\0\0\0\0"
+    "chirp.game_server_gateway.GetGamePresenceRequest"
+    "player_id"
+  }},
+};
+PROTOBUF_NOINLINE void GetGamePresenceRequest::Clear() {
+// @@protoc_insertion_point(message_clear_start:chirp.game_server_gateway.GetGamePresenceRequest)
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  ::uint32_t cached_has_bits = 0;
+  // Prevent compiler warnings about cached_has_bits being unused
+  (void) cached_has_bits;
+
+  cached_has_bits = _impl_._has_bits_[0];
+  if (CheckHasBit(cached_has_bits, 0x00000001U)) {
+    _impl_.player_id_.ClearNonDefaultToEmpty();
+  }
+  _impl_._has_bits_.Clear();
+  _internal_metadata_.Clear<::google::protobuf::UnknownFieldSet>();
+}
+
+#if defined(PROTOBUF_CUSTOM_VTABLE)
+::uint8_t* PROTOBUF_NONNULL GetGamePresenceRequest::_InternalSerialize(
+    const ::google::protobuf::MessageLite& base, ::uint8_t* PROTOBUF_NONNULL target,
+    ::google::protobuf::io::EpsCopyOutputStream* PROTOBUF_NONNULL stream) {
+  const GetGamePresenceRequest& this_ = static_cast<const GetGamePresenceRequest&>(base);
+#else   // PROTOBUF_CUSTOM_VTABLE
+::uint8_t* PROTOBUF_NONNULL GetGamePresenceRequest::_InternalSerialize(
+    ::uint8_t* PROTOBUF_NONNULL target,
+    ::google::protobuf::io::EpsCopyOutputStream* PROTOBUF_NONNULL stream) const {
+  const GetGamePresenceRequest& this_ = *this;
+#endif  // PROTOBUF_CUSTOM_VTABLE
+  if constexpr (::_pbi::DebugHardenCheckHasBitConsistency()) {
+    this_.CheckHasBitConsistency();
+  }
+  // @@protoc_insertion_point(serialize_to_array_start:chirp.game_server_gateway.GetGamePresenceRequest)
+  ::uint32_t cached_has_bits = 0;
+  (void)cached_has_bits;
+
+  cached_has_bits = this_._impl_._has_bits_[0];
+  // string player_id = 1;
+  if (CheckHasBit(cached_has_bits, 0x00000001U)) {
+    if (!this_._internal_player_id().empty()) {
+      const ::std::string& _s = this_._internal_player_id();
+      ::google::protobuf::internal::WireFormatLite::VerifyUtf8String(
+          _s.data(), static_cast<int>(_s.length()), ::google::protobuf::internal::WireFormatLite::SERIALIZE, "chirp.game_server_gateway.GetGamePresenceRequest.player_id");
+      target = stream->WriteStringMaybeAliased(1, _s, target);
+    }
+  }
+
+  if (ABSL_PREDICT_FALSE(this_._internal_metadata_.have_unknown_fields())) {
+    target =
+        ::_pbi::WireFormat::InternalSerializeUnknownFieldsToArray(
+            this_._internal_metadata_.unknown_fields<::google::protobuf::UnknownFieldSet>(::google::protobuf::UnknownFieldSet::default_instance), target, stream);
+  }
+  // @@protoc_insertion_point(serialize_to_array_end:chirp.game_server_gateway.GetGamePresenceRequest)
+  return target;
+}
+
+#if defined(PROTOBUF_CUSTOM_VTABLE)
+::size_t GetGamePresenceRequest::ByteSizeLong(const MessageLite& base) {
+  const GetGamePresenceRequest& this_ = static_cast<const GetGamePresenceRequest&>(base);
+#else   // PROTOBUF_CUSTOM_VTABLE
+::size_t GetGamePresenceRequest::ByteSizeLong() const {
+  const GetGamePresenceRequest& this_ = *this;
+#endif  // PROTOBUF_CUSTOM_VTABLE
+  // @@protoc_insertion_point(message_byte_size_start:chirp.game_server_gateway.GetGamePresenceRequest)
+  ::size_t total_size = 0;
+
+  ::uint32_t cached_has_bits = 0;
+  // Prevent compiler warnings about cached_has_bits being unused
+  (void)cached_has_bits;
+
+   {
+    // string player_id = 1;
+    cached_has_bits = this_._impl_._has_bits_[0];
+    if (CheckHasBit(cached_has_bits, 0x00000001U)) {
+      if (!this_._internal_player_id().empty()) {
+        total_size += 1 + ::google::protobuf::internal::WireFormatLite::StringSize(
+                                        this_._internal_player_id());
+      }
+    }
+  }
+  return this_.MaybeComputeUnknownFieldsSize(total_size,
+                                             &this_._impl_._cached_size_);
+}
+
+void GetGamePresenceRequest::MergeImpl(::google::protobuf::MessageLite& to_msg,
+                            const ::google::protobuf::MessageLite& from_msg) {
+   auto* const _this =
+      static_cast<GetGamePresenceRequest*>(&to_msg);
+  auto& from = static_cast<const GetGamePresenceRequest&>(from_msg);
+  if constexpr (::_pbi::DebugHardenCheckHasBitConsistency()) {
+    from.CheckHasBitConsistency();
+  }
+  // @@protoc_insertion_point(class_specific_merge_from_start:chirp.game_server_gateway.GetGamePresenceRequest)
+  ABSL_DCHECK_NE(&from, _this);
+  ::uint32_t cached_has_bits = 0;
+  (void)cached_has_bits;
+
+  cached_has_bits = from._impl_._has_bits_[0];
+  if (CheckHasBit(cached_has_bits, 0x00000001U)) {
+    if (!from._internal_player_id().empty()) {
+      _this->_internal_set_player_id(from._internal_player_id());
+    } else {
+      if (_this->_impl_.player_id_.IsDefault()) {
+        _this->_internal_set_player_id("");
+      }
+    }
+  }
+  _this->_impl_._has_bits_[0] |= cached_has_bits;
+  _this->_internal_metadata_.MergeFrom<::google::protobuf::UnknownFieldSet>(
+      from._internal_metadata_);
+}
+
+void GetGamePresenceRequest::CopyFrom(const GetGamePresenceRequest& from) {
+  // @@protoc_insertion_point(class_specific_copy_from_start:chirp.game_server_gateway.GetGamePresenceRequest)
+  if (&from == this) return;
+  Clear();
+  MergeFrom(from);
+}
+
+
+void GetGamePresenceRequest::InternalSwap(GetGamePresenceRequest* PROTOBUF_RESTRICT PROTOBUF_NONNULL other) {
+  using ::std::swap;
+  auto* arena = GetArena();
+  ABSL_DCHECK_EQ(arena, other->GetArena());
+  _internal_metadata_.InternalSwap(&other->_internal_metadata_);
+  swap(_impl_._has_bits_[0], other->_impl_._has_bits_[0]);
+  ::_pbi::ArenaStringPtr::InternalSwap(&_impl_.player_id_, &other->_impl_.player_id_, arena);
+}
+
+::google::protobuf::Metadata GetGamePresenceRequest::GetMetadata() const {
+  return ::google::protobuf::Message::GetMetadataImpl(GetClassData()->full());
+}
+// ===================================================================
+
+class GetGamePresenceResponse::_Internal {
+ public:
+  using HasBits =
+      decltype(::std::declval<GetGamePresenceResponse>()._impl_._has_bits_);
+  static constexpr ::int32_t kHasBitsOffset =
+      8 * PROTOBUF_FIELD_OFFSET(GetGamePresenceResponse, _impl_._has_bits_);
+};
+
+GetGamePresenceResponse::GetGamePresenceResponse(::google::protobuf::Arena* PROTOBUF_NULLABLE arena)
+#if defined(PROTOBUF_CUSTOM_VTABLE)
+    : ::google::protobuf::Message(arena, GetGamePresenceResponse_class_data_.base()) {
+#else   // PROTOBUF_CUSTOM_VTABLE
+    : ::google::protobuf::Message(arena) {
+#endif  // PROTOBUF_CUSTOM_VTABLE
+  SharedCtor(arena);
+  // @@protoc_insertion_point(arena_constructor:chirp.game_server_gateway.GetGamePresenceResponse)
+}
+PROTOBUF_NDEBUG_INLINE GetGamePresenceResponse::Impl_::Impl_(
+    [[maybe_unused]] ::google::protobuf::internal::InternalVisibility visibility,
+    [[maybe_unused]] ::google::protobuf::Arena* PROTOBUF_NULLABLE arena, const Impl_& from,
+    [[maybe_unused]] const ::chirp::game_server_gateway::GetGamePresenceResponse& from_msg)
+      : _has_bits_{from._has_bits_},
+        _cached_size_{0},
+        entries_{visibility, arena, from.entries_} {}
+
+GetGamePresenceResponse::GetGamePresenceResponse(
+    ::google::protobuf::Arena* PROTOBUF_NULLABLE arena,
+    const GetGamePresenceResponse& from)
+#if defined(PROTOBUF_CUSTOM_VTABLE)
+    : ::google::protobuf::Message(arena, GetGamePresenceResponse_class_data_.base()) {
+#else   // PROTOBUF_CUSTOM_VTABLE
+    : ::google::protobuf::Message(arena) {
+#endif  // PROTOBUF_CUSTOM_VTABLE
+  GetGamePresenceResponse* const _this = this;
+  (void)_this;
+  _internal_metadata_.MergeFrom<::google::protobuf::UnknownFieldSet>(
+      from._internal_metadata_);
+  new (&_impl_) Impl_(internal_visibility(), arena, from._impl_, from);
+  ::memcpy(reinterpret_cast<char*>(&_impl_) +
+               offsetof(Impl_, code_),
+           reinterpret_cast<const char*>(&from._impl_) +
+               offsetof(Impl_, code_),
+           offsetof(Impl_, enabled_) -
+               offsetof(Impl_, code_) +
+               sizeof(Impl_::enabled_));
+
+  // @@protoc_insertion_point(copy_constructor:chirp.game_server_gateway.GetGamePresenceResponse)
+}
+PROTOBUF_NDEBUG_INLINE GetGamePresenceResponse::Impl_::Impl_(
+    [[maybe_unused]] ::google::protobuf::internal::InternalVisibility visibility,
+    [[maybe_unused]] ::google::protobuf::Arena* PROTOBUF_NULLABLE arena)
+      : _cached_size_{0},
+        entries_{visibility, arena} {}
+
+inline void GetGamePresenceResponse::SharedCtor(::_pb::Arena* PROTOBUF_NULLABLE arena) {
+  new (&_impl_) Impl_(internal_visibility(), arena);
+  ::memset(reinterpret_cast<char*>(&_impl_) +
+               offsetof(Impl_, code_),
+           0,
+           offsetof(Impl_, enabled_) -
+               offsetof(Impl_, code_) +
+               sizeof(Impl_::enabled_));
+}
+GetGamePresenceResponse::~GetGamePresenceResponse() {
+  // @@protoc_insertion_point(destructor:chirp.game_server_gateway.GetGamePresenceResponse)
+  SharedDtor(*this);
+}
+inline void GetGamePresenceResponse::SharedDtor(MessageLite& self) {
+  GetGamePresenceResponse& this_ = static_cast<GetGamePresenceResponse&>(self);
+  if constexpr (::_pbi::DebugHardenCheckHasBitConsistency()) {
+    this_.CheckHasBitConsistency();
+  }
+  this_._internal_metadata_.Delete<::google::protobuf::UnknownFieldSet>();
+  ABSL_DCHECK(this_.GetArena() == nullptr);
+  this_._impl_.~Impl_();
+}
+
+inline void* PROTOBUF_NONNULL GetGamePresenceResponse::PlacementNew_(
+    const void* PROTOBUF_NONNULL, void* PROTOBUF_NONNULL mem,
+    ::google::protobuf::Arena* PROTOBUF_NULLABLE arena) {
+  return ::new (mem) GetGamePresenceResponse(arena);
+}
+constexpr auto GetGamePresenceResponse::InternalNewImpl_() {
+  constexpr auto arena_bits = ::google::protobuf::internal::EncodePlacementArenaOffsets({
+      PROTOBUF_FIELD_OFFSET(GetGamePresenceResponse, _impl_.entries_) +
+          decltype(GetGamePresenceResponse::_impl_.entries_)::
+              InternalGetArenaOffset(
+                  ::google::protobuf::Message::internal_visibility()),
+  });
+  if (arena_bits.has_value()) {
+    return ::google::protobuf::internal::MessageCreator::ZeroInit(
+        sizeof(GetGamePresenceResponse), alignof(GetGamePresenceResponse), *arena_bits);
+  } else {
+    return ::google::protobuf::internal::MessageCreator(&GetGamePresenceResponse::PlacementNew_,
+                                 sizeof(GetGamePresenceResponse),
+                                 alignof(GetGamePresenceResponse));
+  }
+}
+constexpr auto GetGamePresenceResponse::InternalGenerateClassData_() {
+  return ::google::protobuf::internal::ClassDataFull{
+      ::google::protobuf::internal::ClassData{
+          &_GetGamePresenceResponse_default_instance_._instance,
+          &_table_.header,
+          nullptr,  // OnDemandRegisterArenaDtor
+          nullptr,  // IsInitialized
+          &GetGamePresenceResponse::MergeImpl,
+          ::google::protobuf::Message::GetNewImpl<GetGamePresenceResponse>(),
+#if defined(PROTOBUF_CUSTOM_VTABLE)
+          &GetGamePresenceResponse::SharedDtor,
+          ::google::protobuf::Message::GetClearImpl<GetGamePresenceResponse>(), &GetGamePresenceResponse::ByteSizeLong,
+              &GetGamePresenceResponse::_InternalSerialize,
+#endif  // PROTOBUF_CUSTOM_VTABLE
+          PROTOBUF_FIELD_OFFSET(GetGamePresenceResponse, _impl_._cached_size_),
+          false,
+      },
+      &GetGamePresenceResponse::kDescriptorMethods,
+      &descriptor_table_proto_2fgame_5fserver_5fgateway_2eproto,
+      nullptr,  // tracker
+  };
+}
+
+PROTOBUF_CONSTINIT PROTOBUF_ATTRIBUTE_INIT_PRIORITY1 const
+    ::google::protobuf::internal::ClassDataFull GetGamePresenceResponse_class_data_ =
+        GetGamePresenceResponse::InternalGenerateClassData_();
+
+PROTOBUF_ATTRIBUTE_WEAK const ::google::protobuf::internal::ClassData* PROTOBUF_NONNULL
+GetGamePresenceResponse::GetClassData() const {
+  ::google::protobuf::internal::PrefetchToLocalCache(&GetGamePresenceResponse_class_data_);
+  ::google::protobuf::internal::PrefetchToLocalCache(GetGamePresenceResponse_class_data_.tc_table);
+  return GetGamePresenceResponse_class_data_.base();
+}
+PROTOBUF_CONSTINIT PROTOBUF_ATTRIBUTE_INIT_PRIORITY1
+const ::_pbi::TcParseTable<2, 3, 1, 0, 2>
+GetGamePresenceResponse::_table_ = {
+  {
+    PROTOBUF_FIELD_OFFSET(GetGamePresenceResponse, _impl_._has_bits_),
+    0, // no _extensions_
+    3, 24,  // max_field_number, fast_idx_mask
+    offsetof(decltype(_table_), field_lookup_table),
+    4294967288,  // skipmap
+    offsetof(decltype(_table_), field_entries),
+    3,  // num_field_entries
+    1,  // num_aux_entries
+    offsetof(decltype(_table_), aux_entries),
+    GetGamePresenceResponse_class_data_.base(),
+    nullptr,  // post_loop_handler
+    ::_pbi::TcParser::GenericFallback,  // fallback
+    #ifdef PROTOBUF_PREFETCH_PARSE_TABLE
+    ::_pbi::TcParser::GetTable<::chirp::game_server_gateway::GetGamePresenceResponse>(),  // to_prefetch
+    #endif  // PROTOBUF_PREFETCH_PARSE_TABLE
+  }, {{
+    {::_pbi::TcParser::MiniParse, {}},
+    // .chirp.common.ErrorCode code = 1;
+    {::_pbi::TcParser::SingularVarintNoZag1<::uint32_t, offsetof(GetGamePresenceResponse, _impl_.code_), 1>(),
+     {8, 1, 0,
+      PROTOBUF_FIELD_OFFSET(GetGamePresenceResponse, _impl_.code_)}},
+    // bool enabled = 2;
+    {::_pbi::TcParser::SingularVarintNoZag1<bool, offsetof(GetGamePresenceResponse, _impl_.enabled_), 2>(),
+     {16, 2, 0,
+      PROTOBUF_FIELD_OFFSET(GetGamePresenceResponse, _impl_.enabled_)}},
+    // repeated .chirp.game_server_gateway.GamePresenceEntry entries = 3;
+    {::_pbi::TcParser::FastMtR1,
+     {26, 0, 0,
+      PROTOBUF_FIELD_OFFSET(GetGamePresenceResponse, _impl_.entries_)}},
+  }}, {{
+    65535, 65535
+  }}, {{
+    // .chirp.common.ErrorCode code = 1;
+    {PROTOBUF_FIELD_OFFSET(GetGamePresenceResponse, _impl_.code_), _Internal::kHasBitsOffset + 1, 0, (0 | ::_fl::kFcOptional | ::_fl::kOpenEnum)},
+    // bool enabled = 2;
+    {PROTOBUF_FIELD_OFFSET(GetGamePresenceResponse, _impl_.enabled_), _Internal::kHasBitsOffset + 2, 0, (0 | ::_fl::kFcOptional | ::_fl::kBool)},
+    // repeated .chirp.game_server_gateway.GamePresenceEntry entries = 3;
+    {PROTOBUF_FIELD_OFFSET(GetGamePresenceResponse, _impl_.entries_), _Internal::kHasBitsOffset + 0, 0, (0 | ::_fl::kFcRepeated | ::_fl::kMessage | ::_fl::kTvTable)},
+  }},
+  {{
+      {::_pbi::TcParser::GetTable<::chirp::game_server_gateway::GamePresenceEntry>()},
+  }},
+  {{
+  }},
+};
+PROTOBUF_NOINLINE void GetGamePresenceResponse::Clear() {
+// @@protoc_insertion_point(message_clear_start:chirp.game_server_gateway.GetGamePresenceResponse)
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  ::uint32_t cached_has_bits = 0;
+  // Prevent compiler warnings about cached_has_bits being unused
+  (void) cached_has_bits;
+
+  cached_has_bits = _impl_._has_bits_[0];
+  if (CheckHasBitForRepeated(cached_has_bits, 0x00000001U)) {
+    _impl_.entries_.Clear();
+  }
+  if (BatchCheckHasBit(cached_has_bits, 0x00000006U)) {
+    ::memset(&_impl_.code_, 0, static_cast<::size_t>(
+        reinterpret_cast<char*>(&_impl_.enabled_) -
+        reinterpret_cast<char*>(&_impl_.code_)) + sizeof(_impl_.enabled_));
+  }
+  _impl_._has_bits_.Clear();
+  _internal_metadata_.Clear<::google::protobuf::UnknownFieldSet>();
+}
+
+#if defined(PROTOBUF_CUSTOM_VTABLE)
+::uint8_t* PROTOBUF_NONNULL GetGamePresenceResponse::_InternalSerialize(
+    const ::google::protobuf::MessageLite& base, ::uint8_t* PROTOBUF_NONNULL target,
+    ::google::protobuf::io::EpsCopyOutputStream* PROTOBUF_NONNULL stream) {
+  const GetGamePresenceResponse& this_ = static_cast<const GetGamePresenceResponse&>(base);
+#else   // PROTOBUF_CUSTOM_VTABLE
+::uint8_t* PROTOBUF_NONNULL GetGamePresenceResponse::_InternalSerialize(
+    ::uint8_t* PROTOBUF_NONNULL target,
+    ::google::protobuf::io::EpsCopyOutputStream* PROTOBUF_NONNULL stream) const {
+  const GetGamePresenceResponse& this_ = *this;
+#endif  // PROTOBUF_CUSTOM_VTABLE
+  if constexpr (::_pbi::DebugHardenCheckHasBitConsistency()) {
+    this_.CheckHasBitConsistency();
+  }
+  // @@protoc_insertion_point(serialize_to_array_start:chirp.game_server_gateway.GetGamePresenceResponse)
+  ::uint32_t cached_has_bits = 0;
+  (void)cached_has_bits;
+
+  cached_has_bits = this_._impl_._has_bits_[0];
+  // .chirp.common.ErrorCode code = 1;
+  if (CheckHasBit(cached_has_bits, 0x00000002U)) {
+    if (this_._internal_code() != 0) {
+      target = stream->EnsureSpace(target);
+      target = ::_pbi::WireFormatLite::WriteEnumToArray(
+          1, this_._internal_code(), target);
+    }
+  }
+
+  // bool enabled = 2;
+  if (CheckHasBit(cached_has_bits, 0x00000004U)) {
+    if (this_._internal_enabled() != 0) {
+      target = stream->EnsureSpace(target);
+      target = ::_pbi::WireFormatLite::WriteBoolToArray(
+          2, this_._internal_enabled(), target);
+    }
+  }
+
+  // repeated .chirp.game_server_gateway.GamePresenceEntry entries = 3;
+  if (CheckHasBitForRepeated(cached_has_bits, 0x00000001U)) {
+    for (unsigned i = 0, n = static_cast<unsigned>(
+                             this_._internal_entries_size());
+         i < n; i++) {
+      const auto& repfield = this_._internal_entries().Get(i);
+      target =
+          ::google::protobuf::internal::WireFormatLite::InternalWriteMessage(
+              3, repfield, repfield.GetCachedSize(),
+              target, stream);
+    }
+  }
+
+  if (ABSL_PREDICT_FALSE(this_._internal_metadata_.have_unknown_fields())) {
+    target =
+        ::_pbi::WireFormat::InternalSerializeUnknownFieldsToArray(
+            this_._internal_metadata_.unknown_fields<::google::protobuf::UnknownFieldSet>(::google::protobuf::UnknownFieldSet::default_instance), target, stream);
+  }
+  // @@protoc_insertion_point(serialize_to_array_end:chirp.game_server_gateway.GetGamePresenceResponse)
+  return target;
+}
+
+#if defined(PROTOBUF_CUSTOM_VTABLE)
+::size_t GetGamePresenceResponse::ByteSizeLong(const MessageLite& base) {
+  const GetGamePresenceResponse& this_ = static_cast<const GetGamePresenceResponse&>(base);
+#else   // PROTOBUF_CUSTOM_VTABLE
+::size_t GetGamePresenceResponse::ByteSizeLong() const {
+  const GetGamePresenceResponse& this_ = *this;
+#endif  // PROTOBUF_CUSTOM_VTABLE
+  // @@protoc_insertion_point(message_byte_size_start:chirp.game_server_gateway.GetGamePresenceResponse)
+  ::size_t total_size = 0;
+
+  ::uint32_t cached_has_bits = 0;
+  // Prevent compiler warnings about cached_has_bits being unused
+  (void)cached_has_bits;
+
+  ::_pbi::Prefetch5LinesFrom7Lines(&this_);
+  cached_has_bits = this_._impl_._has_bits_[0];
+  if (BatchCheckHasBit(cached_has_bits, 0x00000007U)) {
+    // repeated .chirp.game_server_gateway.GamePresenceEntry entries = 3;
+    if (CheckHasBitForRepeated(cached_has_bits, 0x00000001U)) {
+      total_size += 1UL * this_._internal_entries_size();
+      for (const auto& msg : this_._internal_entries()) {
+        total_size += ::google::protobuf::internal::WireFormatLite::MessageSize(msg);
+      }
+    }
+    // .chirp.common.ErrorCode code = 1;
+    if (CheckHasBit(cached_has_bits, 0x00000002U)) {
+      if (this_._internal_code() != 0) {
+        total_size += 1 +
+                      ::_pbi::WireFormatLite::EnumSize(this_._internal_code());
+      }
+    }
+    // bool enabled = 2;
+    if (CheckHasBit(cached_has_bits, 0x00000004U)) {
+      if (this_._internal_enabled() != 0) {
+        total_size += 2;
+      }
+    }
+  }
+  return this_.MaybeComputeUnknownFieldsSize(total_size,
+                                             &this_._impl_._cached_size_);
+}
+
+void GetGamePresenceResponse::MergeImpl(::google::protobuf::MessageLite& to_msg,
+                            const ::google::protobuf::MessageLite& from_msg) {
+   auto* const _this =
+      static_cast<GetGamePresenceResponse*>(&to_msg);
+  auto& from = static_cast<const GetGamePresenceResponse&>(from_msg);
+  if constexpr (::_pbi::DebugHardenCheckHasBitConsistency()) {
+    from.CheckHasBitConsistency();
+  }
+  ::google::protobuf::Arena* arena = _this->GetArena();
+  // @@protoc_insertion_point(class_specific_merge_from_start:chirp.game_server_gateway.GetGamePresenceResponse)
+  ABSL_DCHECK_NE(&from, _this);
+  ::uint32_t cached_has_bits = 0;
+  (void)cached_has_bits;
+
+  cached_has_bits = from._impl_._has_bits_[0];
+  if (BatchCheckHasBit(cached_has_bits, 0x00000007U)) {
+    if (CheckHasBitForRepeated(cached_has_bits, 0x00000001U)) {
+      _this->_internal_mutable_entries()->InternalMergeFromWithArena(
+          ::google::protobuf::MessageLite::internal_visibility(), arena,
+          from._internal_entries());
+    }
+    if (CheckHasBit(cached_has_bits, 0x00000002U)) {
+      if (from._internal_code() != 0) {
+        _this->_impl_.code_ = from._impl_.code_;
+      }
+    }
+    if (CheckHasBit(cached_has_bits, 0x00000004U)) {
+      if (from._internal_enabled() != 0) {
+        _this->_impl_.enabled_ = from._impl_.enabled_;
+      }
+    }
+  }
+  _this->_impl_._has_bits_[0] |= cached_has_bits;
+  _this->_internal_metadata_.MergeFrom<::google::protobuf::UnknownFieldSet>(
+      from._internal_metadata_);
+}
+
+void GetGamePresenceResponse::CopyFrom(const GetGamePresenceResponse& from) {
+  // @@protoc_insertion_point(class_specific_copy_from_start:chirp.game_server_gateway.GetGamePresenceResponse)
+  if (&from == this) return;
+  Clear();
+  MergeFrom(from);
+}
+
+
+void GetGamePresenceResponse::InternalSwap(GetGamePresenceResponse* PROTOBUF_RESTRICT PROTOBUF_NONNULL other) {
+  using ::std::swap;
+  _internal_metadata_.InternalSwap(&other->_internal_metadata_);
+  swap(_impl_._has_bits_[0], other->_impl_._has_bits_[0]);
+  _impl_.entries_.InternalSwap(&other->_impl_.entries_);
+  ::google::protobuf::internal::memswap<
+      PROTOBUF_FIELD_OFFSET(GetGamePresenceResponse, _impl_.enabled_)
+      + sizeof(GetGamePresenceResponse::_impl_.enabled_)
+      - PROTOBUF_FIELD_OFFSET(GetGamePresenceResponse, _impl_.code_)>(
+          reinterpret_cast<char*>(&_impl_.code_),
+          reinterpret_cast<char*>(&other->_impl_.code_));
+}
+
+::google::protobuf::Metadata GetGamePresenceResponse::GetMetadata() const {
   return ::google::protobuf::Message::GetMetadataImpl(GetClassData()->full());
 }
 // @@protoc_insertion_point(namespace_scope)

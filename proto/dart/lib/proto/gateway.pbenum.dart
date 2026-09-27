@@ -181,6 +181,10 @@ class MsgID extends $pb.ProtobufEnum {
   static const MsgID MARK_CHANNELS_READ_RESP = MsgID._(5028, _omitEnumNames ? '' : 'MARK_CHANNELS_READ_RESP');
   static const MsgID GET_UNREAD_SUMMARY_REQ = MsgID._(5029, _omitEnumNames ? '' : 'GET_UNREAD_SUMMARY_REQ');
   static const MsgID GET_UNREAD_SUMMARY_RESP = MsgID._(5030, _omitEnumNames ? '' : 'GET_UNREAD_SUMMARY_RESP');
+  static const MsgID SET_GAME_PRESENCE_ENABLED_REQ = MsgID._(5031, _omitEnumNames ? '' : 'SET_GAME_PRESENCE_ENABLED_REQ');
+  static const MsgID SET_GAME_PRESENCE_ENABLED_RESP = MsgID._(5032, _omitEnumNames ? '' : 'SET_GAME_PRESENCE_ENABLED_RESP');
+  static const MsgID GET_GAME_PRESENCE_REQ = MsgID._(5033, _omitEnumNames ? '' : 'GET_GAME_PRESENCE_REQ');
+  static const MsgID GET_GAME_PRESENCE_RESP = MsgID._(5034, _omitEnumNames ? '' : 'GET_GAME_PRESENCE_RESP');
   static const MsgID PEER_REGISTER_REQ = MsgID._(5050, _omitEnumNames ? '' : 'PEER_REGISTER_REQ');
   static const MsgID PEER_REGISTER_RESP = MsgID._(5051, _omitEnumNames ? '' : 'PEER_REGISTER_RESP');
   static const MsgID CHANNEL_MESSAGE_NOTIFY = MsgID._(5052, _omitEnumNames ? '' : 'CHANNEL_MESSAGE_NOTIFY');
@@ -390,6 +394,10 @@ class MsgID extends $pb.ProtobufEnum {
     MARK_CHANNELS_READ_RESP,
     GET_UNREAD_SUMMARY_REQ,
     GET_UNREAD_SUMMARY_RESP,
+    SET_GAME_PRESENCE_ENABLED_REQ,
+    SET_GAME_PRESENCE_ENABLED_RESP,
+    GET_GAME_PRESENCE_REQ,
+    GET_GAME_PRESENCE_RESP,
     PEER_REGISTER_REQ,
     PEER_REGISTER_RESP,
     CHANNEL_MESSAGE_NOTIFY,

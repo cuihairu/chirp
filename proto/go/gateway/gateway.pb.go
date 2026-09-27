@@ -226,6 +226,16 @@ const (
 	MsgID_MARK_CHANNELS_READ_RESP MsgID = 5028
 	MsgID_GET_UNREAD_SUMMARY_REQ  MsgID = 5029
 	MsgID_GET_UNREAD_SUMMARY_RESP MsgID = 5030
+	// Game presence (游戏在线状态): the per-player switch for the "in game X"
+	// friend status and the friend-DM relay into the game plane. Bindings
+	// (5013-5020) are the in-game assertion; the switch defaults to true.
+	// app_gateway forwards these for self-served players (player_id pinned
+	// to the authenticated user). Bodies are chirp.game_server_gateway.*
+	// messages; see proto/game_server_gateway.proto.
+	MsgID_SET_GAME_PRESENCE_ENABLED_REQ  MsgID = 5031
+	MsgID_SET_GAME_PRESENCE_ENABLED_RESP MsgID = 5032
+	MsgID_GET_GAME_PRESENCE_REQ          MsgID = 5033
+	MsgID_GET_GAME_PRESENCE_RESP         MsgID = 5034
 	// Chat peer registration: game_chat (spoke) registers with app_chat (hub)
 	// so channel messages bridge between the two planes natively - no external
 	// bridge process. See docs/architecture.md (对等注册协议).
@@ -448,6 +458,10 @@ var (
 		5028: "MARK_CHANNELS_READ_RESP",
 		5029: "GET_UNREAD_SUMMARY_REQ",
 		5030: "GET_UNREAD_SUMMARY_RESP",
+		5031: "SET_GAME_PRESENCE_ENABLED_REQ",
+		5032: "SET_GAME_PRESENCE_ENABLED_RESP",
+		5033: "GET_GAME_PRESENCE_REQ",
+		5034: "GET_GAME_PRESENCE_RESP",
 		5050: "PEER_REGISTER_REQ",
 		5051: "PEER_REGISTER_RESP",
 		5052: "CHANNEL_MESSAGE_NOTIFY",
@@ -657,6 +671,10 @@ var (
 		"MARK_CHANNELS_READ_RESP":          5028,
 		"GET_UNREAD_SUMMARY_REQ":           5029,
 		"GET_UNREAD_SUMMARY_RESP":          5030,
+		"SET_GAME_PRESENCE_ENABLED_REQ":    5031,
+		"SET_GAME_PRESENCE_ENABLED_RESP":   5032,
+		"GET_GAME_PRESENCE_REQ":            5033,
+		"GET_GAME_PRESENCE_RESP":           5034,
 		"PEER_REGISTER_REQ":                5050,
 		"PEER_REGISTER_RESP":               5051,
 		"CHANNEL_MESSAGE_NOTIFY":           5052,
@@ -1277,7 +1295,7 @@ const file_proto_gateway_proto_rawDesc = "" +
 	"channel_id\x18\x01 \x01(\tR\tchannelId\x12\x1b\n" +
 	"\tsender_id\x18\x02 \x01(\tR\bsenderId\x12\x18\n" +
 	"\acontent\x18\x03 \x01(\fR\acontent\x12\"\n" +
-	"\rclient_msg_id\x18\x04 \x01(\tR\vclientMsgId*\x86*\n" +
+	"\rclient_msg_id\x18\x04 \x01(\tR\vclientMsgId*\x88+\n" +
 	"\x05MsgID\x12\v\n" +
 	"\aUNKNOWN\x10\x00\x12\x13\n" +
 	"\x0eHEARTBEAT_PING\x10\xe9\a\x12\x13\n" +
@@ -1446,7 +1464,11 @@ const file_proto_gateway_proto_rawDesc = "" +
 	"\x16MARK_CHANNELS_READ_REQ\x10\xa3'\x12\x1c\n" +
 	"\x17MARK_CHANNELS_READ_RESP\x10\xa4'\x12\x1b\n" +
 	"\x16GET_UNREAD_SUMMARY_REQ\x10\xa5'\x12\x1c\n" +
-	"\x17GET_UNREAD_SUMMARY_RESP\x10\xa6'\x12\x16\n" +
+	"\x17GET_UNREAD_SUMMARY_RESP\x10\xa6'\x12\"\n" +
+	"\x1dSET_GAME_PRESENCE_ENABLED_REQ\x10\xa7'\x12#\n" +
+	"\x1eSET_GAME_PRESENCE_ENABLED_RESP\x10\xa8'\x12\x1a\n" +
+	"\x15GET_GAME_PRESENCE_REQ\x10\xa9'\x12\x1b\n" +
+	"\x16GET_GAME_PRESENCE_RESP\x10\xaa'\x12\x16\n" +
 	"\x11PEER_REGISTER_REQ\x10\xba'\x12\x17\n" +
 	"\x12PEER_REGISTER_RESP\x10\xbb'\x12\x1b\n" +
 	"\x16CHANNEL_MESSAGE_NOTIFY\x10\xbc'\x12\x1f\n" +

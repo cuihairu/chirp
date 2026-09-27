@@ -86,6 +86,22 @@ class EventPublishResponse;
 struct EventPublishResponseDefaultTypeInternal;
 extern EventPublishResponseDefaultTypeInternal _EventPublishResponse_default_instance_;
 extern const ::google::protobuf::internal::ClassDataFull EventPublishResponse_class_data_;
+class GamePresenceEntry;
+struct GamePresenceEntryDefaultTypeInternal;
+extern GamePresenceEntryDefaultTypeInternal _GamePresenceEntry_default_instance_;
+extern const ::google::protobuf::internal::ClassDataFull GamePresenceEntry_class_data_;
+class GamePresenceEvent;
+struct GamePresenceEventDefaultTypeInternal;
+extern GamePresenceEventDefaultTypeInternal _GamePresenceEvent_default_instance_;
+extern const ::google::protobuf::internal::ClassDataFull GamePresenceEvent_class_data_;
+class GetGamePresenceRequest;
+struct GetGamePresenceRequestDefaultTypeInternal;
+extern GetGamePresenceRequestDefaultTypeInternal _GetGamePresenceRequest_default_instance_;
+extern const ::google::protobuf::internal::ClassDataFull GetGamePresenceRequest_class_data_;
+class GetGamePresenceResponse;
+struct GetGamePresenceResponseDefaultTypeInternal;
+extern GetGamePresenceResponseDefaultTypeInternal _GetGamePresenceResponse_default_instance_;
+extern const ::google::protobuf::internal::ClassDataFull GetGamePresenceResponse_class_data_;
 class GetPlayerIdentitiesRequest;
 struct GetPlayerIdentitiesRequestDefaultTypeInternal;
 extern GetPlayerIdentitiesRequestDefaultTypeInternal _GetPlayerIdentitiesRequest_default_instance_;
@@ -154,10 +170,22 @@ class ServerHeartbeatPong;
 struct ServerHeartbeatPongDefaultTypeInternal;
 extern ServerHeartbeatPongDefaultTypeInternal _ServerHeartbeatPong_default_instance_;
 extern const ::google::protobuf::internal::ClassDataFull ServerHeartbeatPong_class_data_;
+class SetGamePresenceEnabledRequest;
+struct SetGamePresenceEnabledRequestDefaultTypeInternal;
+extern SetGamePresenceEnabledRequestDefaultTypeInternal _SetGamePresenceEnabledRequest_default_instance_;
+extern const ::google::protobuf::internal::ClassDataFull SetGamePresenceEnabledRequest_class_data_;
+class SetGamePresenceEnabledResponse;
+struct SetGamePresenceEnabledResponseDefaultTypeInternal;
+extern SetGamePresenceEnabledResponseDefaultTypeInternal _SetGamePresenceEnabledResponse_default_instance_;
+extern const ::google::protobuf::internal::ClassDataFull SetGamePresenceEnabledResponse_class_data_;
 class StoredChannelSubscription;
 struct StoredChannelSubscriptionDefaultTypeInternal;
 extern StoredChannelSubscriptionDefaultTypeInternal _StoredChannelSubscription_default_instance_;
 extern const ::google::protobuf::internal::ClassDataFull StoredChannelSubscription_class_data_;
+class StoredGamePresenceSetting;
+struct StoredGamePresenceSettingDefaultTypeInternal;
+extern StoredGamePresenceSettingDefaultTypeInternal _StoredGamePresenceSetting_default_instance_;
+extern const ::google::protobuf::internal::ClassDataFull StoredGamePresenceSetting_class_data_;
 class StoredIdentityBinding;
 struct StoredIdentityBindingDefaultTypeInternal;
 extern StoredIdentityBindingDefaultTypeInternal _StoredIdentityBinding_default_instance_;
@@ -2293,6 +2321,213 @@ class StoredIdentityBinding final : public ::google::protobuf::Message
 extern const ::google::protobuf::internal::ClassDataFull StoredIdentityBinding_class_data_;
 // -------------------------------------------------------------------
 
+class StoredGamePresenceSetting final : public ::google::protobuf::Message
+/* @@protoc_insertion_point(class_definition:chirp.game_server_gateway.StoredGamePresenceSetting) */ {
+ public:
+  inline StoredGamePresenceSetting() : StoredGamePresenceSetting(nullptr) {}
+  ~StoredGamePresenceSetting() PROTOBUF_FINAL;
+
+#if defined(PROTOBUF_CUSTOM_VTABLE)
+  void operator delete(StoredGamePresenceSetting* PROTOBUF_NONNULL msg, ::std::destroying_delete_t) {
+    SharedDtor(*msg);
+    ::google::protobuf::internal::SizedDelete(msg, sizeof(StoredGamePresenceSetting));
+  }
+#endif
+
+  template <typename = void>
+  explicit PROTOBUF_CONSTEXPR StoredGamePresenceSetting(::google::protobuf::internal::ConstantInitialized);
+
+  inline StoredGamePresenceSetting(const StoredGamePresenceSetting& from) : StoredGamePresenceSetting(nullptr, from) {}
+  inline StoredGamePresenceSetting(StoredGamePresenceSetting&& from) noexcept
+      : StoredGamePresenceSetting(nullptr, ::std::move(from)) {}
+  inline StoredGamePresenceSetting& operator=(const StoredGamePresenceSetting& from) {
+    CopyFrom(from);
+    return *this;
+  }
+  inline StoredGamePresenceSetting& operator=(StoredGamePresenceSetting&& from) noexcept {
+    if (this == &from) return *this;
+    if (::google::protobuf::internal::CanMoveWithInternalSwap(GetArena(), from.GetArena())) {
+      InternalSwap(&from);
+    } else {
+      CopyFrom(from);
+    }
+    return *this;
+  }
+
+  inline const ::google::protobuf::UnknownFieldSet& unknown_fields() const
+      ABSL_ATTRIBUTE_LIFETIME_BOUND {
+    return _internal_metadata_.unknown_fields<::google::protobuf::UnknownFieldSet>(::google::protobuf::UnknownFieldSet::default_instance);
+  }
+  inline ::google::protobuf::UnknownFieldSet* PROTOBUF_NONNULL mutable_unknown_fields()
+      ABSL_ATTRIBUTE_LIFETIME_BOUND {
+    return _internal_metadata_.mutable_unknown_fields<::google::protobuf::UnknownFieldSet>();
+  }
+
+  static const ::google::protobuf::Descriptor* PROTOBUF_NONNULL descriptor() {
+    return GetDescriptor();
+  }
+  static const ::google::protobuf::Descriptor* PROTOBUF_NONNULL GetDescriptor() {
+    return default_instance().GetMetadata().descriptor;
+  }
+  static const ::google::protobuf::Reflection* PROTOBUF_NONNULL GetReflection() {
+    return default_instance().GetMetadata().reflection;
+  }
+  static const StoredGamePresenceSetting& default_instance() {
+    return *reinterpret_cast<const StoredGamePresenceSetting*>(
+        &_StoredGamePresenceSetting_default_instance_);
+  }
+  static constexpr int kIndexInFileMessages = 34;
+  friend void swap(StoredGamePresenceSetting& a, StoredGamePresenceSetting& b) { a.Swap(&b); }
+  inline void Swap(StoredGamePresenceSetting* PROTOBUF_NONNULL other) {
+    if (other == this) return;
+    if (::google::protobuf::internal::CanUseInternalSwap(GetArena(), other->GetArena())) {
+      InternalSwap(other);
+    } else {
+      ::google::protobuf::internal::GenericSwap(this, other);
+    }
+  }
+  void UnsafeArenaSwap(StoredGamePresenceSetting* PROTOBUF_NONNULL other) {
+    if (other == this) return;
+    ABSL_DCHECK(GetArena() == other->GetArena());
+    InternalSwap(other);
+  }
+
+  // implements Message ----------------------------------------------
+
+  StoredGamePresenceSetting* PROTOBUF_NONNULL New(::google::protobuf::Arena* PROTOBUF_NULLABLE arena = nullptr) const {
+    return ::google::protobuf::Message::DefaultConstruct<StoredGamePresenceSetting>(arena);
+  }
+  using ::google::protobuf::Message::CopyFrom;
+  void CopyFrom(const StoredGamePresenceSetting& from);
+  using ::google::protobuf::Message::MergeFrom;
+  void MergeFrom(const StoredGamePresenceSetting& from) { StoredGamePresenceSetting::MergeImpl(*this, from); }
+
+  private:
+  static void MergeImpl(::google::protobuf::MessageLite& to_msg,
+                        const ::google::protobuf::MessageLite& from_msg);
+
+  public:
+  bool IsInitialized() const {
+    return true;
+  }
+  ABSL_ATTRIBUTE_REINITIALIZES void Clear() PROTOBUF_FINAL;
+  #if defined(PROTOBUF_CUSTOM_VTABLE)
+  private:
+  static ::size_t ByteSizeLong(const ::google::protobuf::MessageLite& msg);
+  static ::uint8_t* PROTOBUF_NONNULL _InternalSerialize(
+      const ::google::protobuf::MessageLite& msg, ::uint8_t* PROTOBUF_NONNULL target,
+      ::google::protobuf::io::EpsCopyOutputStream* PROTOBUF_NONNULL stream);
+
+  public:
+  ::size_t ByteSizeLong() const { return ByteSizeLong(*this); }
+  ::uint8_t* PROTOBUF_NONNULL _InternalSerialize(
+      ::uint8_t* PROTOBUF_NONNULL target,
+      ::google::protobuf::io::EpsCopyOutputStream* PROTOBUF_NONNULL stream) const {
+    return _InternalSerialize(*this, target, stream);
+  }
+  #else   // PROTOBUF_CUSTOM_VTABLE
+  ::size_t ByteSizeLong() const final;
+  ::uint8_t* PROTOBUF_NONNULL _InternalSerialize(
+      ::uint8_t* PROTOBUF_NONNULL target,
+      ::google::protobuf::io::EpsCopyOutputStream* PROTOBUF_NONNULL stream) const final;
+  #endif  // PROTOBUF_CUSTOM_VTABLE
+  int GetCachedSize() const { return _impl_._cached_size_.Get(); }
+
+  private:
+  void SharedCtor(::google::protobuf::Arena* PROTOBUF_NULLABLE arena);
+  static void SharedDtor(MessageLite& self);
+  void InternalSwap(StoredGamePresenceSetting* PROTOBUF_NONNULL other);
+ private:
+  template <typename T>
+  friend ::absl::string_view(::google::protobuf::internal::GetAnyMessageName)();
+  static ::absl::string_view FullMessageName() { return "chirp.game_server_gateway.StoredGamePresenceSetting"; }
+
+  explicit StoredGamePresenceSetting(::google::protobuf::Arena* PROTOBUF_NULLABLE arena);
+  StoredGamePresenceSetting(::google::protobuf::Arena* PROTOBUF_NULLABLE arena, const StoredGamePresenceSetting& from);
+  StoredGamePresenceSetting(
+      ::google::protobuf::Arena* PROTOBUF_NULLABLE arena, StoredGamePresenceSetting&& from) noexcept
+      : StoredGamePresenceSetting(arena) {
+    *this = ::std::move(from);
+  }
+  const ::google::protobuf::internal::ClassData* PROTOBUF_NONNULL GetClassData() const PROTOBUF_FINAL;
+  static void* PROTOBUF_NONNULL PlacementNew_(
+      const void* PROTOBUF_NONNULL, void* PROTOBUF_NONNULL mem,
+      ::google::protobuf::Arena* PROTOBUF_NULLABLE arena);
+  static constexpr auto InternalNewImpl_();
+
+ public:
+  static constexpr auto InternalGenerateClassData_();
+
+  ::google::protobuf::Metadata GetMetadata() const;
+  // nested types ----------------------------------------------------
+
+  // accessors -------------------------------------------------------
+  enum : int {
+    kPlayerIdFieldNumber = 1,
+    kEnabledFieldNumber = 2,
+  };
+  // string player_id = 1;
+  void clear_player_id() ;
+  const ::std::string& player_id() const;
+  template <typename Arg_ = const ::std::string&, typename... Args_>
+  void set_player_id(Arg_&& arg, Args_... args);
+  ::std::string* PROTOBUF_NONNULL mutable_player_id();
+  [[nodiscard]] ::std::string* PROTOBUF_NULLABLE release_player_id();
+  void set_allocated_player_id(::std::string* PROTOBUF_NULLABLE value);
+
+  private:
+  const ::std::string& _internal_player_id() const;
+  PROTOBUF_ALWAYS_INLINE void _internal_set_player_id(const ::std::string& value);
+  ::std::string* PROTOBUF_NONNULL _internal_mutable_player_id();
+
+  public:
+  // bool enabled = 2;
+  void clear_enabled() ;
+  bool enabled() const;
+  void set_enabled(bool value);
+
+  private:
+  bool _internal_enabled() const;
+  void _internal_set_enabled(bool value);
+
+  public:
+  // @@protoc_insertion_point(class_scope:chirp.game_server_gateway.StoredGamePresenceSetting)
+ private:
+  class _Internal;
+  friend class ::google::protobuf::internal::TcParser;
+  static const ::google::protobuf::internal::TcParseTable<1, 2,
+                                   0, 69,
+                                   2>
+      _table_;
+
+  friend class ::google::protobuf::MessageLite;
+  friend class ::google::protobuf::Arena;
+  template <typename T>
+  friend class ::google::protobuf::Arena::InternalHelper;
+  using InternalArenaConstructable_ = void;
+  using DestructorSkippable_ = void;
+  struct Impl_ {
+    inline explicit constexpr Impl_(::google::protobuf::internal::ConstantInitialized) noexcept;
+    inline explicit Impl_(
+        ::google::protobuf::internal::InternalVisibility visibility,
+        ::google::protobuf::Arena* PROTOBUF_NULLABLE arena);
+    inline explicit Impl_(
+        ::google::protobuf::internal::InternalVisibility visibility,
+        ::google::protobuf::Arena* PROTOBUF_NULLABLE arena, const Impl_& from,
+        const StoredGamePresenceSetting& from_msg);
+    ::google::protobuf::internal::HasBits<1> _has_bits_;
+    ::google::protobuf::internal::CachedSize _cached_size_;
+    ::google::protobuf::internal::ArenaStringPtr player_id_;
+    bool enabled_;
+    PROTOBUF_TSAN_DECLARE_MEMBER
+  };
+  union { Impl_ _impl_; };
+  friend struct ::TableStruct_proto_2fgame_5fserver_5fgateway_2eproto;
+};
+
+extern const ::google::protobuf::internal::ClassDataFull StoredGamePresenceSetting_class_data_;
+// -------------------------------------------------------------------
+
 class StoredChannelSubscription final : public ::google::protobuf::Message
 /* @@protoc_insertion_point(class_definition:chirp.game_server_gateway.StoredChannelSubscription) */ {
  public:
@@ -2549,6 +2784,403 @@ class StoredChannelSubscription final : public ::google::protobuf::Message
 };
 
 extern const ::google::protobuf::internal::ClassDataFull StoredChannelSubscription_class_data_;
+// -------------------------------------------------------------------
+
+class SetGamePresenceEnabledResponse final : public ::google::protobuf::Message
+/* @@protoc_insertion_point(class_definition:chirp.game_server_gateway.SetGamePresenceEnabledResponse) */ {
+ public:
+  inline SetGamePresenceEnabledResponse() : SetGamePresenceEnabledResponse(nullptr) {}
+  ~SetGamePresenceEnabledResponse() PROTOBUF_FINAL;
+
+#if defined(PROTOBUF_CUSTOM_VTABLE)
+  void operator delete(SetGamePresenceEnabledResponse* PROTOBUF_NONNULL msg, ::std::destroying_delete_t) {
+    SharedDtor(*msg);
+    ::google::protobuf::internal::SizedDelete(msg, sizeof(SetGamePresenceEnabledResponse));
+  }
+#endif
+
+  template <typename = void>
+  explicit PROTOBUF_CONSTEXPR SetGamePresenceEnabledResponse(::google::protobuf::internal::ConstantInitialized);
+
+  inline SetGamePresenceEnabledResponse(const SetGamePresenceEnabledResponse& from) : SetGamePresenceEnabledResponse(nullptr, from) {}
+  inline SetGamePresenceEnabledResponse(SetGamePresenceEnabledResponse&& from) noexcept
+      : SetGamePresenceEnabledResponse(nullptr, ::std::move(from)) {}
+  inline SetGamePresenceEnabledResponse& operator=(const SetGamePresenceEnabledResponse& from) {
+    CopyFrom(from);
+    return *this;
+  }
+  inline SetGamePresenceEnabledResponse& operator=(SetGamePresenceEnabledResponse&& from) noexcept {
+    if (this == &from) return *this;
+    if (::google::protobuf::internal::CanMoveWithInternalSwap(GetArena(), from.GetArena())) {
+      InternalSwap(&from);
+    } else {
+      CopyFrom(from);
+    }
+    return *this;
+  }
+
+  inline const ::google::protobuf::UnknownFieldSet& unknown_fields() const
+      ABSL_ATTRIBUTE_LIFETIME_BOUND {
+    return _internal_metadata_.unknown_fields<::google::protobuf::UnknownFieldSet>(::google::protobuf::UnknownFieldSet::default_instance);
+  }
+  inline ::google::protobuf::UnknownFieldSet* PROTOBUF_NONNULL mutable_unknown_fields()
+      ABSL_ATTRIBUTE_LIFETIME_BOUND {
+    return _internal_metadata_.mutable_unknown_fields<::google::protobuf::UnknownFieldSet>();
+  }
+
+  static const ::google::protobuf::Descriptor* PROTOBUF_NONNULL descriptor() {
+    return GetDescriptor();
+  }
+  static const ::google::protobuf::Descriptor* PROTOBUF_NONNULL GetDescriptor() {
+    return default_instance().GetMetadata().descriptor;
+  }
+  static const ::google::protobuf::Reflection* PROTOBUF_NONNULL GetReflection() {
+    return default_instance().GetMetadata().reflection;
+  }
+  static const SetGamePresenceEnabledResponse& default_instance() {
+    return *reinterpret_cast<const SetGamePresenceEnabledResponse*>(
+        &_SetGamePresenceEnabledResponse_default_instance_);
+  }
+  static constexpr int kIndexInFileMessages = 37;
+  friend void swap(SetGamePresenceEnabledResponse& a, SetGamePresenceEnabledResponse& b) { a.Swap(&b); }
+  inline void Swap(SetGamePresenceEnabledResponse* PROTOBUF_NONNULL other) {
+    if (other == this) return;
+    if (::google::protobuf::internal::CanUseInternalSwap(GetArena(), other->GetArena())) {
+      InternalSwap(other);
+    } else {
+      ::google::protobuf::internal::GenericSwap(this, other);
+    }
+  }
+  void UnsafeArenaSwap(SetGamePresenceEnabledResponse* PROTOBUF_NONNULL other) {
+    if (other == this) return;
+    ABSL_DCHECK(GetArena() == other->GetArena());
+    InternalSwap(other);
+  }
+
+  // implements Message ----------------------------------------------
+
+  SetGamePresenceEnabledResponse* PROTOBUF_NONNULL New(::google::protobuf::Arena* PROTOBUF_NULLABLE arena = nullptr) const {
+    return ::google::protobuf::Message::DefaultConstruct<SetGamePresenceEnabledResponse>(arena);
+  }
+  using ::google::protobuf::Message::CopyFrom;
+  void CopyFrom(const SetGamePresenceEnabledResponse& from);
+  using ::google::protobuf::Message::MergeFrom;
+  void MergeFrom(const SetGamePresenceEnabledResponse& from) { SetGamePresenceEnabledResponse::MergeImpl(*this, from); }
+
+  private:
+  static void MergeImpl(::google::protobuf::MessageLite& to_msg,
+                        const ::google::protobuf::MessageLite& from_msg);
+
+  public:
+  bool IsInitialized() const {
+    return true;
+  }
+  ABSL_ATTRIBUTE_REINITIALIZES void Clear() PROTOBUF_FINAL;
+  #if defined(PROTOBUF_CUSTOM_VTABLE)
+  private:
+  static ::size_t ByteSizeLong(const ::google::protobuf::MessageLite& msg);
+  static ::uint8_t* PROTOBUF_NONNULL _InternalSerialize(
+      const ::google::protobuf::MessageLite& msg, ::uint8_t* PROTOBUF_NONNULL target,
+      ::google::protobuf::io::EpsCopyOutputStream* PROTOBUF_NONNULL stream);
+
+  public:
+  ::size_t ByteSizeLong() const { return ByteSizeLong(*this); }
+  ::uint8_t* PROTOBUF_NONNULL _InternalSerialize(
+      ::uint8_t* PROTOBUF_NONNULL target,
+      ::google::protobuf::io::EpsCopyOutputStream* PROTOBUF_NONNULL stream) const {
+    return _InternalSerialize(*this, target, stream);
+  }
+  #else   // PROTOBUF_CUSTOM_VTABLE
+  ::size_t ByteSizeLong() const final;
+  ::uint8_t* PROTOBUF_NONNULL _InternalSerialize(
+      ::uint8_t* PROTOBUF_NONNULL target,
+      ::google::protobuf::io::EpsCopyOutputStream* PROTOBUF_NONNULL stream) const final;
+  #endif  // PROTOBUF_CUSTOM_VTABLE
+  int GetCachedSize() const { return _impl_._cached_size_.Get(); }
+
+  private:
+  void SharedCtor(::google::protobuf::Arena* PROTOBUF_NULLABLE arena);
+  static void SharedDtor(MessageLite& self);
+  void InternalSwap(SetGamePresenceEnabledResponse* PROTOBUF_NONNULL other);
+ private:
+  template <typename T>
+  friend ::absl::string_view(::google::protobuf::internal::GetAnyMessageName)();
+  static ::absl::string_view FullMessageName() { return "chirp.game_server_gateway.SetGamePresenceEnabledResponse"; }
+
+  explicit SetGamePresenceEnabledResponse(::google::protobuf::Arena* PROTOBUF_NULLABLE arena);
+  SetGamePresenceEnabledResponse(::google::protobuf::Arena* PROTOBUF_NULLABLE arena, const SetGamePresenceEnabledResponse& from);
+  SetGamePresenceEnabledResponse(
+      ::google::protobuf::Arena* PROTOBUF_NULLABLE arena, SetGamePresenceEnabledResponse&& from) noexcept
+      : SetGamePresenceEnabledResponse(arena) {
+    *this = ::std::move(from);
+  }
+  const ::google::protobuf::internal::ClassData* PROTOBUF_NONNULL GetClassData() const PROTOBUF_FINAL;
+  static void* PROTOBUF_NONNULL PlacementNew_(
+      const void* PROTOBUF_NONNULL, void* PROTOBUF_NONNULL mem,
+      ::google::protobuf::Arena* PROTOBUF_NULLABLE arena);
+  static constexpr auto InternalNewImpl_();
+
+ public:
+  static constexpr auto InternalGenerateClassData_();
+
+  ::google::protobuf::Metadata GetMetadata() const;
+  // nested types ----------------------------------------------------
+
+  // accessors -------------------------------------------------------
+  enum : int {
+    kCodeFieldNumber = 1,
+  };
+  // .chirp.common.ErrorCode code = 1;
+  void clear_code() ;
+  ::chirp::common::ErrorCode code() const;
+  void set_code(::chirp::common::ErrorCode value);
+
+  private:
+  ::chirp::common::ErrorCode _internal_code() const;
+  void _internal_set_code(::chirp::common::ErrorCode value);
+
+  public:
+  // @@protoc_insertion_point(class_scope:chirp.game_server_gateway.SetGamePresenceEnabledResponse)
+ private:
+  class _Internal;
+  friend class ::google::protobuf::internal::TcParser;
+  static const ::google::protobuf::internal::TcParseTable<0, 1,
+                                   0, 0,
+                                   2>
+      _table_;
+
+  friend class ::google::protobuf::MessageLite;
+  friend class ::google::protobuf::Arena;
+  template <typename T>
+  friend class ::google::protobuf::Arena::InternalHelper;
+  using InternalArenaConstructable_ = void;
+  using DestructorSkippable_ = void;
+  struct Impl_ {
+    inline explicit constexpr Impl_(::google::protobuf::internal::ConstantInitialized) noexcept;
+    inline explicit Impl_(
+        ::google::protobuf::internal::InternalVisibility visibility,
+        ::google::protobuf::Arena* PROTOBUF_NULLABLE arena);
+    inline explicit Impl_(
+        ::google::protobuf::internal::InternalVisibility visibility,
+        ::google::protobuf::Arena* PROTOBUF_NULLABLE arena, const Impl_& from,
+        const SetGamePresenceEnabledResponse& from_msg);
+    ::google::protobuf::internal::HasBits<1> _has_bits_;
+    ::google::protobuf::internal::CachedSize _cached_size_;
+    int code_;
+    PROTOBUF_TSAN_DECLARE_MEMBER
+  };
+  union { Impl_ _impl_; };
+  friend struct ::TableStruct_proto_2fgame_5fserver_5fgateway_2eproto;
+};
+
+extern const ::google::protobuf::internal::ClassDataFull SetGamePresenceEnabledResponse_class_data_;
+// -------------------------------------------------------------------
+
+class SetGamePresenceEnabledRequest final : public ::google::protobuf::Message
+/* @@protoc_insertion_point(class_definition:chirp.game_server_gateway.SetGamePresenceEnabledRequest) */ {
+ public:
+  inline SetGamePresenceEnabledRequest() : SetGamePresenceEnabledRequest(nullptr) {}
+  ~SetGamePresenceEnabledRequest() PROTOBUF_FINAL;
+
+#if defined(PROTOBUF_CUSTOM_VTABLE)
+  void operator delete(SetGamePresenceEnabledRequest* PROTOBUF_NONNULL msg, ::std::destroying_delete_t) {
+    SharedDtor(*msg);
+    ::google::protobuf::internal::SizedDelete(msg, sizeof(SetGamePresenceEnabledRequest));
+  }
+#endif
+
+  template <typename = void>
+  explicit PROTOBUF_CONSTEXPR SetGamePresenceEnabledRequest(::google::protobuf::internal::ConstantInitialized);
+
+  inline SetGamePresenceEnabledRequest(const SetGamePresenceEnabledRequest& from) : SetGamePresenceEnabledRequest(nullptr, from) {}
+  inline SetGamePresenceEnabledRequest(SetGamePresenceEnabledRequest&& from) noexcept
+      : SetGamePresenceEnabledRequest(nullptr, ::std::move(from)) {}
+  inline SetGamePresenceEnabledRequest& operator=(const SetGamePresenceEnabledRequest& from) {
+    CopyFrom(from);
+    return *this;
+  }
+  inline SetGamePresenceEnabledRequest& operator=(SetGamePresenceEnabledRequest&& from) noexcept {
+    if (this == &from) return *this;
+    if (::google::protobuf::internal::CanMoveWithInternalSwap(GetArena(), from.GetArena())) {
+      InternalSwap(&from);
+    } else {
+      CopyFrom(from);
+    }
+    return *this;
+  }
+
+  inline const ::google::protobuf::UnknownFieldSet& unknown_fields() const
+      ABSL_ATTRIBUTE_LIFETIME_BOUND {
+    return _internal_metadata_.unknown_fields<::google::protobuf::UnknownFieldSet>(::google::protobuf::UnknownFieldSet::default_instance);
+  }
+  inline ::google::protobuf::UnknownFieldSet* PROTOBUF_NONNULL mutable_unknown_fields()
+      ABSL_ATTRIBUTE_LIFETIME_BOUND {
+    return _internal_metadata_.mutable_unknown_fields<::google::protobuf::UnknownFieldSet>();
+  }
+
+  static const ::google::protobuf::Descriptor* PROTOBUF_NONNULL descriptor() {
+    return GetDescriptor();
+  }
+  static const ::google::protobuf::Descriptor* PROTOBUF_NONNULL GetDescriptor() {
+    return default_instance().GetMetadata().descriptor;
+  }
+  static const ::google::protobuf::Reflection* PROTOBUF_NONNULL GetReflection() {
+    return default_instance().GetMetadata().reflection;
+  }
+  static const SetGamePresenceEnabledRequest& default_instance() {
+    return *reinterpret_cast<const SetGamePresenceEnabledRequest*>(
+        &_SetGamePresenceEnabledRequest_default_instance_);
+  }
+  static constexpr int kIndexInFileMessages = 36;
+  friend void swap(SetGamePresenceEnabledRequest& a, SetGamePresenceEnabledRequest& b) { a.Swap(&b); }
+  inline void Swap(SetGamePresenceEnabledRequest* PROTOBUF_NONNULL other) {
+    if (other == this) return;
+    if (::google::protobuf::internal::CanUseInternalSwap(GetArena(), other->GetArena())) {
+      InternalSwap(other);
+    } else {
+      ::google::protobuf::internal::GenericSwap(this, other);
+    }
+  }
+  void UnsafeArenaSwap(SetGamePresenceEnabledRequest* PROTOBUF_NONNULL other) {
+    if (other == this) return;
+    ABSL_DCHECK(GetArena() == other->GetArena());
+    InternalSwap(other);
+  }
+
+  // implements Message ----------------------------------------------
+
+  SetGamePresenceEnabledRequest* PROTOBUF_NONNULL New(::google::protobuf::Arena* PROTOBUF_NULLABLE arena = nullptr) const {
+    return ::google::protobuf::Message::DefaultConstruct<SetGamePresenceEnabledRequest>(arena);
+  }
+  using ::google::protobuf::Message::CopyFrom;
+  void CopyFrom(const SetGamePresenceEnabledRequest& from);
+  using ::google::protobuf::Message::MergeFrom;
+  void MergeFrom(const SetGamePresenceEnabledRequest& from) { SetGamePresenceEnabledRequest::MergeImpl(*this, from); }
+
+  private:
+  static void MergeImpl(::google::protobuf::MessageLite& to_msg,
+                        const ::google::protobuf::MessageLite& from_msg);
+
+  public:
+  bool IsInitialized() const {
+    return true;
+  }
+  ABSL_ATTRIBUTE_REINITIALIZES void Clear() PROTOBUF_FINAL;
+  #if defined(PROTOBUF_CUSTOM_VTABLE)
+  private:
+  static ::size_t ByteSizeLong(const ::google::protobuf::MessageLite& msg);
+  static ::uint8_t* PROTOBUF_NONNULL _InternalSerialize(
+      const ::google::protobuf::MessageLite& msg, ::uint8_t* PROTOBUF_NONNULL target,
+      ::google::protobuf::io::EpsCopyOutputStream* PROTOBUF_NONNULL stream);
+
+  public:
+  ::size_t ByteSizeLong() const { return ByteSizeLong(*this); }
+  ::uint8_t* PROTOBUF_NONNULL _InternalSerialize(
+      ::uint8_t* PROTOBUF_NONNULL target,
+      ::google::protobuf::io::EpsCopyOutputStream* PROTOBUF_NONNULL stream) const {
+    return _InternalSerialize(*this, target, stream);
+  }
+  #else   // PROTOBUF_CUSTOM_VTABLE
+  ::size_t ByteSizeLong() const final;
+  ::uint8_t* PROTOBUF_NONNULL _InternalSerialize(
+      ::uint8_t* PROTOBUF_NONNULL target,
+      ::google::protobuf::io::EpsCopyOutputStream* PROTOBUF_NONNULL stream) const final;
+  #endif  // PROTOBUF_CUSTOM_VTABLE
+  int GetCachedSize() const { return _impl_._cached_size_.Get(); }
+
+  private:
+  void SharedCtor(::google::protobuf::Arena* PROTOBUF_NULLABLE arena);
+  static void SharedDtor(MessageLite& self);
+  void InternalSwap(SetGamePresenceEnabledRequest* PROTOBUF_NONNULL other);
+ private:
+  template <typename T>
+  friend ::absl::string_view(::google::protobuf::internal::GetAnyMessageName)();
+  static ::absl::string_view FullMessageName() { return "chirp.game_server_gateway.SetGamePresenceEnabledRequest"; }
+
+  explicit SetGamePresenceEnabledRequest(::google::protobuf::Arena* PROTOBUF_NULLABLE arena);
+  SetGamePresenceEnabledRequest(::google::protobuf::Arena* PROTOBUF_NULLABLE arena, const SetGamePresenceEnabledRequest& from);
+  SetGamePresenceEnabledRequest(
+      ::google::protobuf::Arena* PROTOBUF_NULLABLE arena, SetGamePresenceEnabledRequest&& from) noexcept
+      : SetGamePresenceEnabledRequest(arena) {
+    *this = ::std::move(from);
+  }
+  const ::google::protobuf::internal::ClassData* PROTOBUF_NONNULL GetClassData() const PROTOBUF_FINAL;
+  static void* PROTOBUF_NONNULL PlacementNew_(
+      const void* PROTOBUF_NONNULL, void* PROTOBUF_NONNULL mem,
+      ::google::protobuf::Arena* PROTOBUF_NULLABLE arena);
+  static constexpr auto InternalNewImpl_();
+
+ public:
+  static constexpr auto InternalGenerateClassData_();
+
+  ::google::protobuf::Metadata GetMetadata() const;
+  // nested types ----------------------------------------------------
+
+  // accessors -------------------------------------------------------
+  enum : int {
+    kPlayerIdFieldNumber = 1,
+    kEnabledFieldNumber = 2,
+  };
+  // string player_id = 1;
+  void clear_player_id() ;
+  const ::std::string& player_id() const;
+  template <typename Arg_ = const ::std::string&, typename... Args_>
+  void set_player_id(Arg_&& arg, Args_... args);
+  ::std::string* PROTOBUF_NONNULL mutable_player_id();
+  [[nodiscard]] ::std::string* PROTOBUF_NULLABLE release_player_id();
+  void set_allocated_player_id(::std::string* PROTOBUF_NULLABLE value);
+
+  private:
+  const ::std::string& _internal_player_id() const;
+  PROTOBUF_ALWAYS_INLINE void _internal_set_player_id(const ::std::string& value);
+  ::std::string* PROTOBUF_NONNULL _internal_mutable_player_id();
+
+  public:
+  // bool enabled = 2;
+  void clear_enabled() ;
+  bool enabled() const;
+  void set_enabled(bool value);
+
+  private:
+  bool _internal_enabled() const;
+  void _internal_set_enabled(bool value);
+
+  public:
+  // @@protoc_insertion_point(class_scope:chirp.game_server_gateway.SetGamePresenceEnabledRequest)
+ private:
+  class _Internal;
+  friend class ::google::protobuf::internal::TcParser;
+  static const ::google::protobuf::internal::TcParseTable<1, 2,
+                                   0, 73,
+                                   2>
+      _table_;
+
+  friend class ::google::protobuf::MessageLite;
+  friend class ::google::protobuf::Arena;
+  template <typename T>
+  friend class ::google::protobuf::Arena::InternalHelper;
+  using InternalArenaConstructable_ = void;
+  using DestructorSkippable_ = void;
+  struct Impl_ {
+    inline explicit constexpr Impl_(::google::protobuf::internal::ConstantInitialized) noexcept;
+    inline explicit Impl_(
+        ::google::protobuf::internal::InternalVisibility visibility,
+        ::google::protobuf::Arena* PROTOBUF_NULLABLE arena);
+    inline explicit Impl_(
+        ::google::protobuf::internal::InternalVisibility visibility,
+        ::google::protobuf::Arena* PROTOBUF_NULLABLE arena, const Impl_& from,
+        const SetGamePresenceEnabledRequest& from_msg);
+    ::google::protobuf::internal::HasBits<1> _has_bits_;
+    ::google::protobuf::internal::CachedSize _cached_size_;
+    ::google::protobuf::internal::ArenaStringPtr player_id_;
+    bool enabled_;
+    PROTOBUF_TSAN_DECLARE_MEMBER
+  };
+  union { Impl_ _impl_; };
+  friend struct ::TableStruct_proto_2fgame_5fserver_5fgateway_2eproto;
+};
+
+extern const ::google::protobuf::internal::ClassDataFull SetGamePresenceEnabledRequest_class_data_;
 // -------------------------------------------------------------------
 
 class ServerHeartbeatPong final : public ::google::protobuf::Message
@@ -5349,6 +5981,637 @@ class GetPlayerIdentitiesRequest final : public ::google::protobuf::Message
 extern const ::google::protobuf::internal::ClassDataFull GetPlayerIdentitiesRequest_class_data_;
 // -------------------------------------------------------------------
 
+class GetGamePresenceRequest final : public ::google::protobuf::Message
+/* @@protoc_insertion_point(class_definition:chirp.game_server_gateway.GetGamePresenceRequest) */ {
+ public:
+  inline GetGamePresenceRequest() : GetGamePresenceRequest(nullptr) {}
+  ~GetGamePresenceRequest() PROTOBUF_FINAL;
+
+#if defined(PROTOBUF_CUSTOM_VTABLE)
+  void operator delete(GetGamePresenceRequest* PROTOBUF_NONNULL msg, ::std::destroying_delete_t) {
+    SharedDtor(*msg);
+    ::google::protobuf::internal::SizedDelete(msg, sizeof(GetGamePresenceRequest));
+  }
+#endif
+
+  template <typename = void>
+  explicit PROTOBUF_CONSTEXPR GetGamePresenceRequest(::google::protobuf::internal::ConstantInitialized);
+
+  inline GetGamePresenceRequest(const GetGamePresenceRequest& from) : GetGamePresenceRequest(nullptr, from) {}
+  inline GetGamePresenceRequest(GetGamePresenceRequest&& from) noexcept
+      : GetGamePresenceRequest(nullptr, ::std::move(from)) {}
+  inline GetGamePresenceRequest& operator=(const GetGamePresenceRequest& from) {
+    CopyFrom(from);
+    return *this;
+  }
+  inline GetGamePresenceRequest& operator=(GetGamePresenceRequest&& from) noexcept {
+    if (this == &from) return *this;
+    if (::google::protobuf::internal::CanMoveWithInternalSwap(GetArena(), from.GetArena())) {
+      InternalSwap(&from);
+    } else {
+      CopyFrom(from);
+    }
+    return *this;
+  }
+
+  inline const ::google::protobuf::UnknownFieldSet& unknown_fields() const
+      ABSL_ATTRIBUTE_LIFETIME_BOUND {
+    return _internal_metadata_.unknown_fields<::google::protobuf::UnknownFieldSet>(::google::protobuf::UnknownFieldSet::default_instance);
+  }
+  inline ::google::protobuf::UnknownFieldSet* PROTOBUF_NONNULL mutable_unknown_fields()
+      ABSL_ATTRIBUTE_LIFETIME_BOUND {
+    return _internal_metadata_.mutable_unknown_fields<::google::protobuf::UnknownFieldSet>();
+  }
+
+  static const ::google::protobuf::Descriptor* PROTOBUF_NONNULL descriptor() {
+    return GetDescriptor();
+  }
+  static const ::google::protobuf::Descriptor* PROTOBUF_NONNULL GetDescriptor() {
+    return default_instance().GetMetadata().descriptor;
+  }
+  static const ::google::protobuf::Reflection* PROTOBUF_NONNULL GetReflection() {
+    return default_instance().GetMetadata().reflection;
+  }
+  static const GetGamePresenceRequest& default_instance() {
+    return *reinterpret_cast<const GetGamePresenceRequest*>(
+        &_GetGamePresenceRequest_default_instance_);
+  }
+  static constexpr int kIndexInFileMessages = 39;
+  friend void swap(GetGamePresenceRequest& a, GetGamePresenceRequest& b) { a.Swap(&b); }
+  inline void Swap(GetGamePresenceRequest* PROTOBUF_NONNULL other) {
+    if (other == this) return;
+    if (::google::protobuf::internal::CanUseInternalSwap(GetArena(), other->GetArena())) {
+      InternalSwap(other);
+    } else {
+      ::google::protobuf::internal::GenericSwap(this, other);
+    }
+  }
+  void UnsafeArenaSwap(GetGamePresenceRequest* PROTOBUF_NONNULL other) {
+    if (other == this) return;
+    ABSL_DCHECK(GetArena() == other->GetArena());
+    InternalSwap(other);
+  }
+
+  // implements Message ----------------------------------------------
+
+  GetGamePresenceRequest* PROTOBUF_NONNULL New(::google::protobuf::Arena* PROTOBUF_NULLABLE arena = nullptr) const {
+    return ::google::protobuf::Message::DefaultConstruct<GetGamePresenceRequest>(arena);
+  }
+  using ::google::protobuf::Message::CopyFrom;
+  void CopyFrom(const GetGamePresenceRequest& from);
+  using ::google::protobuf::Message::MergeFrom;
+  void MergeFrom(const GetGamePresenceRequest& from) { GetGamePresenceRequest::MergeImpl(*this, from); }
+
+  private:
+  static void MergeImpl(::google::protobuf::MessageLite& to_msg,
+                        const ::google::protobuf::MessageLite& from_msg);
+
+  public:
+  bool IsInitialized() const {
+    return true;
+  }
+  ABSL_ATTRIBUTE_REINITIALIZES void Clear() PROTOBUF_FINAL;
+  #if defined(PROTOBUF_CUSTOM_VTABLE)
+  private:
+  static ::size_t ByteSizeLong(const ::google::protobuf::MessageLite& msg);
+  static ::uint8_t* PROTOBUF_NONNULL _InternalSerialize(
+      const ::google::protobuf::MessageLite& msg, ::uint8_t* PROTOBUF_NONNULL target,
+      ::google::protobuf::io::EpsCopyOutputStream* PROTOBUF_NONNULL stream);
+
+  public:
+  ::size_t ByteSizeLong() const { return ByteSizeLong(*this); }
+  ::uint8_t* PROTOBUF_NONNULL _InternalSerialize(
+      ::uint8_t* PROTOBUF_NONNULL target,
+      ::google::protobuf::io::EpsCopyOutputStream* PROTOBUF_NONNULL stream) const {
+    return _InternalSerialize(*this, target, stream);
+  }
+  #else   // PROTOBUF_CUSTOM_VTABLE
+  ::size_t ByteSizeLong() const final;
+  ::uint8_t* PROTOBUF_NONNULL _InternalSerialize(
+      ::uint8_t* PROTOBUF_NONNULL target,
+      ::google::protobuf::io::EpsCopyOutputStream* PROTOBUF_NONNULL stream) const final;
+  #endif  // PROTOBUF_CUSTOM_VTABLE
+  int GetCachedSize() const { return _impl_._cached_size_.Get(); }
+
+  private:
+  void SharedCtor(::google::protobuf::Arena* PROTOBUF_NULLABLE arena);
+  static void SharedDtor(MessageLite& self);
+  void InternalSwap(GetGamePresenceRequest* PROTOBUF_NONNULL other);
+ private:
+  template <typename T>
+  friend ::absl::string_view(::google::protobuf::internal::GetAnyMessageName)();
+  static ::absl::string_view FullMessageName() { return "chirp.game_server_gateway.GetGamePresenceRequest"; }
+
+  explicit GetGamePresenceRequest(::google::protobuf::Arena* PROTOBUF_NULLABLE arena);
+  GetGamePresenceRequest(::google::protobuf::Arena* PROTOBUF_NULLABLE arena, const GetGamePresenceRequest& from);
+  GetGamePresenceRequest(
+      ::google::protobuf::Arena* PROTOBUF_NULLABLE arena, GetGamePresenceRequest&& from) noexcept
+      : GetGamePresenceRequest(arena) {
+    *this = ::std::move(from);
+  }
+  const ::google::protobuf::internal::ClassData* PROTOBUF_NONNULL GetClassData() const PROTOBUF_FINAL;
+  static void* PROTOBUF_NONNULL PlacementNew_(
+      const void* PROTOBUF_NONNULL, void* PROTOBUF_NONNULL mem,
+      ::google::protobuf::Arena* PROTOBUF_NULLABLE arena);
+  static constexpr auto InternalNewImpl_();
+
+ public:
+  static constexpr auto InternalGenerateClassData_();
+
+  ::google::protobuf::Metadata GetMetadata() const;
+  // nested types ----------------------------------------------------
+
+  // accessors -------------------------------------------------------
+  enum : int {
+    kPlayerIdFieldNumber = 1,
+  };
+  // string player_id = 1;
+  void clear_player_id() ;
+  const ::std::string& player_id() const;
+  template <typename Arg_ = const ::std::string&, typename... Args_>
+  void set_player_id(Arg_&& arg, Args_... args);
+  ::std::string* PROTOBUF_NONNULL mutable_player_id();
+  [[nodiscard]] ::std::string* PROTOBUF_NULLABLE release_player_id();
+  void set_allocated_player_id(::std::string* PROTOBUF_NULLABLE value);
+
+  private:
+  const ::std::string& _internal_player_id() const;
+  PROTOBUF_ALWAYS_INLINE void _internal_set_player_id(const ::std::string& value);
+  ::std::string* PROTOBUF_NONNULL _internal_mutable_player_id();
+
+  public:
+  // @@protoc_insertion_point(class_scope:chirp.game_server_gateway.GetGamePresenceRequest)
+ private:
+  class _Internal;
+  friend class ::google::protobuf::internal::TcParser;
+  static const ::google::protobuf::internal::TcParseTable<0, 1,
+                                   0, 66,
+                                   2>
+      _table_;
+
+  friend class ::google::protobuf::MessageLite;
+  friend class ::google::protobuf::Arena;
+  template <typename T>
+  friend class ::google::protobuf::Arena::InternalHelper;
+  using InternalArenaConstructable_ = void;
+  using DestructorSkippable_ = void;
+  struct Impl_ {
+    inline explicit constexpr Impl_(::google::protobuf::internal::ConstantInitialized) noexcept;
+    inline explicit Impl_(
+        ::google::protobuf::internal::InternalVisibility visibility,
+        ::google::protobuf::Arena* PROTOBUF_NULLABLE arena);
+    inline explicit Impl_(
+        ::google::protobuf::internal::InternalVisibility visibility,
+        ::google::protobuf::Arena* PROTOBUF_NULLABLE arena, const Impl_& from,
+        const GetGamePresenceRequest& from_msg);
+    ::google::protobuf::internal::HasBits<1> _has_bits_;
+    ::google::protobuf::internal::CachedSize _cached_size_;
+    ::google::protobuf::internal::ArenaStringPtr player_id_;
+    PROTOBUF_TSAN_DECLARE_MEMBER
+  };
+  union { Impl_ _impl_; };
+  friend struct ::TableStruct_proto_2fgame_5fserver_5fgateway_2eproto;
+};
+
+extern const ::google::protobuf::internal::ClassDataFull GetGamePresenceRequest_class_data_;
+// -------------------------------------------------------------------
+
+class GamePresenceEvent final : public ::google::protobuf::Message
+/* @@protoc_insertion_point(class_definition:chirp.game_server_gateway.GamePresenceEvent) */ {
+ public:
+  inline GamePresenceEvent() : GamePresenceEvent(nullptr) {}
+  ~GamePresenceEvent() PROTOBUF_FINAL;
+
+#if defined(PROTOBUF_CUSTOM_VTABLE)
+  void operator delete(GamePresenceEvent* PROTOBUF_NONNULL msg, ::std::destroying_delete_t) {
+    SharedDtor(*msg);
+    ::google::protobuf::internal::SizedDelete(msg, sizeof(GamePresenceEvent));
+  }
+#endif
+
+  template <typename = void>
+  explicit PROTOBUF_CONSTEXPR GamePresenceEvent(::google::protobuf::internal::ConstantInitialized);
+
+  inline GamePresenceEvent(const GamePresenceEvent& from) : GamePresenceEvent(nullptr, from) {}
+  inline GamePresenceEvent(GamePresenceEvent&& from) noexcept
+      : GamePresenceEvent(nullptr, ::std::move(from)) {}
+  inline GamePresenceEvent& operator=(const GamePresenceEvent& from) {
+    CopyFrom(from);
+    return *this;
+  }
+  inline GamePresenceEvent& operator=(GamePresenceEvent&& from) noexcept {
+    if (this == &from) return *this;
+    if (::google::protobuf::internal::CanMoveWithInternalSwap(GetArena(), from.GetArena())) {
+      InternalSwap(&from);
+    } else {
+      CopyFrom(from);
+    }
+    return *this;
+  }
+
+  inline const ::google::protobuf::UnknownFieldSet& unknown_fields() const
+      ABSL_ATTRIBUTE_LIFETIME_BOUND {
+    return _internal_metadata_.unknown_fields<::google::protobuf::UnknownFieldSet>(::google::protobuf::UnknownFieldSet::default_instance);
+  }
+  inline ::google::protobuf::UnknownFieldSet* PROTOBUF_NONNULL mutable_unknown_fields()
+      ABSL_ATTRIBUTE_LIFETIME_BOUND {
+    return _internal_metadata_.mutable_unknown_fields<::google::protobuf::UnknownFieldSet>();
+  }
+
+  static const ::google::protobuf::Descriptor* PROTOBUF_NONNULL descriptor() {
+    return GetDescriptor();
+  }
+  static const ::google::protobuf::Descriptor* PROTOBUF_NONNULL GetDescriptor() {
+    return default_instance().GetMetadata().descriptor;
+  }
+  static const ::google::protobuf::Reflection* PROTOBUF_NONNULL GetReflection() {
+    return default_instance().GetMetadata().reflection;
+  }
+  static const GamePresenceEvent& default_instance() {
+    return *reinterpret_cast<const GamePresenceEvent*>(
+        &_GamePresenceEvent_default_instance_);
+  }
+  static constexpr int kIndexInFileMessages = 35;
+  friend void swap(GamePresenceEvent& a, GamePresenceEvent& b) { a.Swap(&b); }
+  inline void Swap(GamePresenceEvent* PROTOBUF_NONNULL other) {
+    if (other == this) return;
+    if (::google::protobuf::internal::CanUseInternalSwap(GetArena(), other->GetArena())) {
+      InternalSwap(other);
+    } else {
+      ::google::protobuf::internal::GenericSwap(this, other);
+    }
+  }
+  void UnsafeArenaSwap(GamePresenceEvent* PROTOBUF_NONNULL other) {
+    if (other == this) return;
+    ABSL_DCHECK(GetArena() == other->GetArena());
+    InternalSwap(other);
+  }
+
+  // implements Message ----------------------------------------------
+
+  GamePresenceEvent* PROTOBUF_NONNULL New(::google::protobuf::Arena* PROTOBUF_NULLABLE arena = nullptr) const {
+    return ::google::protobuf::Message::DefaultConstruct<GamePresenceEvent>(arena);
+  }
+  using ::google::protobuf::Message::CopyFrom;
+  void CopyFrom(const GamePresenceEvent& from);
+  using ::google::protobuf::Message::MergeFrom;
+  void MergeFrom(const GamePresenceEvent& from) { GamePresenceEvent::MergeImpl(*this, from); }
+
+  private:
+  static void MergeImpl(::google::protobuf::MessageLite& to_msg,
+                        const ::google::protobuf::MessageLite& from_msg);
+
+  public:
+  bool IsInitialized() const {
+    return true;
+  }
+  ABSL_ATTRIBUTE_REINITIALIZES void Clear() PROTOBUF_FINAL;
+  #if defined(PROTOBUF_CUSTOM_VTABLE)
+  private:
+  static ::size_t ByteSizeLong(const ::google::protobuf::MessageLite& msg);
+  static ::uint8_t* PROTOBUF_NONNULL _InternalSerialize(
+      const ::google::protobuf::MessageLite& msg, ::uint8_t* PROTOBUF_NONNULL target,
+      ::google::protobuf::io::EpsCopyOutputStream* PROTOBUF_NONNULL stream);
+
+  public:
+  ::size_t ByteSizeLong() const { return ByteSizeLong(*this); }
+  ::uint8_t* PROTOBUF_NONNULL _InternalSerialize(
+      ::uint8_t* PROTOBUF_NONNULL target,
+      ::google::protobuf::io::EpsCopyOutputStream* PROTOBUF_NONNULL stream) const {
+    return _InternalSerialize(*this, target, stream);
+  }
+  #else   // PROTOBUF_CUSTOM_VTABLE
+  ::size_t ByteSizeLong() const final;
+  ::uint8_t* PROTOBUF_NONNULL _InternalSerialize(
+      ::uint8_t* PROTOBUF_NONNULL target,
+      ::google::protobuf::io::EpsCopyOutputStream* PROTOBUF_NONNULL stream) const final;
+  #endif  // PROTOBUF_CUSTOM_VTABLE
+  int GetCachedSize() const { return _impl_._cached_size_.Get(); }
+
+  private:
+  void SharedCtor(::google::protobuf::Arena* PROTOBUF_NULLABLE arena);
+  static void SharedDtor(MessageLite& self);
+  void InternalSwap(GamePresenceEvent* PROTOBUF_NONNULL other);
+ private:
+  template <typename T>
+  friend ::absl::string_view(::google::protobuf::internal::GetAnyMessageName)();
+  static ::absl::string_view FullMessageName() { return "chirp.game_server_gateway.GamePresenceEvent"; }
+
+  explicit GamePresenceEvent(::google::protobuf::Arena* PROTOBUF_NULLABLE arena);
+  GamePresenceEvent(::google::protobuf::Arena* PROTOBUF_NULLABLE arena, const GamePresenceEvent& from);
+  GamePresenceEvent(
+      ::google::protobuf::Arena* PROTOBUF_NULLABLE arena, GamePresenceEvent&& from) noexcept
+      : GamePresenceEvent(arena) {
+    *this = ::std::move(from);
+  }
+  const ::google::protobuf::internal::ClassData* PROTOBUF_NONNULL GetClassData() const PROTOBUF_FINAL;
+  static void* PROTOBUF_NONNULL PlacementNew_(
+      const void* PROTOBUF_NONNULL, void* PROTOBUF_NONNULL mem,
+      ::google::protobuf::Arena* PROTOBUF_NULLABLE arena);
+  static constexpr auto InternalNewImpl_();
+
+ public:
+  static constexpr auto InternalGenerateClassData_();
+
+  ::google::protobuf::Metadata GetMetadata() const;
+  // nested types ----------------------------------------------------
+
+  // accessors -------------------------------------------------------
+  enum : int {
+    kPlayerIdFieldNumber = 1,
+    kGameIdFieldNumber = 2,
+    kOnlineFieldNumber = 3,
+  };
+  // string player_id = 1;
+  void clear_player_id() ;
+  const ::std::string& player_id() const;
+  template <typename Arg_ = const ::std::string&, typename... Args_>
+  void set_player_id(Arg_&& arg, Args_... args);
+  ::std::string* PROTOBUF_NONNULL mutable_player_id();
+  [[nodiscard]] ::std::string* PROTOBUF_NULLABLE release_player_id();
+  void set_allocated_player_id(::std::string* PROTOBUF_NULLABLE value);
+
+  private:
+  const ::std::string& _internal_player_id() const;
+  PROTOBUF_ALWAYS_INLINE void _internal_set_player_id(const ::std::string& value);
+  ::std::string* PROTOBUF_NONNULL _internal_mutable_player_id();
+
+  public:
+  // string game_id = 2;
+  void clear_game_id() ;
+  const ::std::string& game_id() const;
+  template <typename Arg_ = const ::std::string&, typename... Args_>
+  void set_game_id(Arg_&& arg, Args_... args);
+  ::std::string* PROTOBUF_NONNULL mutable_game_id();
+  [[nodiscard]] ::std::string* PROTOBUF_NULLABLE release_game_id();
+  void set_allocated_game_id(::std::string* PROTOBUF_NULLABLE value);
+
+  private:
+  const ::std::string& _internal_game_id() const;
+  PROTOBUF_ALWAYS_INLINE void _internal_set_game_id(const ::std::string& value);
+  ::std::string* PROTOBUF_NONNULL _internal_mutable_game_id();
+
+  public:
+  // bool online = 3;
+  void clear_online() ;
+  bool online() const;
+  void set_online(bool value);
+
+  private:
+  bool _internal_online() const;
+  void _internal_set_online(bool value);
+
+  public:
+  // @@protoc_insertion_point(class_scope:chirp.game_server_gateway.GamePresenceEvent)
+ private:
+  class _Internal;
+  friend class ::google::protobuf::internal::TcParser;
+  static const ::google::protobuf::internal::TcParseTable<2, 3,
+                                   0, 68,
+                                   2>
+      _table_;
+
+  friend class ::google::protobuf::MessageLite;
+  friend class ::google::protobuf::Arena;
+  template <typename T>
+  friend class ::google::protobuf::Arena::InternalHelper;
+  using InternalArenaConstructable_ = void;
+  using DestructorSkippable_ = void;
+  struct Impl_ {
+    inline explicit constexpr Impl_(::google::protobuf::internal::ConstantInitialized) noexcept;
+    inline explicit Impl_(
+        ::google::protobuf::internal::InternalVisibility visibility,
+        ::google::protobuf::Arena* PROTOBUF_NULLABLE arena);
+    inline explicit Impl_(
+        ::google::protobuf::internal::InternalVisibility visibility,
+        ::google::protobuf::Arena* PROTOBUF_NULLABLE arena, const Impl_& from,
+        const GamePresenceEvent& from_msg);
+    ::google::protobuf::internal::HasBits<1> _has_bits_;
+    ::google::protobuf::internal::CachedSize _cached_size_;
+    ::google::protobuf::internal::ArenaStringPtr player_id_;
+    ::google::protobuf::internal::ArenaStringPtr game_id_;
+    bool online_;
+    PROTOBUF_TSAN_DECLARE_MEMBER
+  };
+  union { Impl_ _impl_; };
+  friend struct ::TableStruct_proto_2fgame_5fserver_5fgateway_2eproto;
+};
+
+extern const ::google::protobuf::internal::ClassDataFull GamePresenceEvent_class_data_;
+// -------------------------------------------------------------------
+
+class GamePresenceEntry final : public ::google::protobuf::Message
+/* @@protoc_insertion_point(class_definition:chirp.game_server_gateway.GamePresenceEntry) */ {
+ public:
+  inline GamePresenceEntry() : GamePresenceEntry(nullptr) {}
+  ~GamePresenceEntry() PROTOBUF_FINAL;
+
+#if defined(PROTOBUF_CUSTOM_VTABLE)
+  void operator delete(GamePresenceEntry* PROTOBUF_NONNULL msg, ::std::destroying_delete_t) {
+    SharedDtor(*msg);
+    ::google::protobuf::internal::SizedDelete(msg, sizeof(GamePresenceEntry));
+  }
+#endif
+
+  template <typename = void>
+  explicit PROTOBUF_CONSTEXPR GamePresenceEntry(::google::protobuf::internal::ConstantInitialized);
+
+  inline GamePresenceEntry(const GamePresenceEntry& from) : GamePresenceEntry(nullptr, from) {}
+  inline GamePresenceEntry(GamePresenceEntry&& from) noexcept
+      : GamePresenceEntry(nullptr, ::std::move(from)) {}
+  inline GamePresenceEntry& operator=(const GamePresenceEntry& from) {
+    CopyFrom(from);
+    return *this;
+  }
+  inline GamePresenceEntry& operator=(GamePresenceEntry&& from) noexcept {
+    if (this == &from) return *this;
+    if (::google::protobuf::internal::CanMoveWithInternalSwap(GetArena(), from.GetArena())) {
+      InternalSwap(&from);
+    } else {
+      CopyFrom(from);
+    }
+    return *this;
+  }
+
+  inline const ::google::protobuf::UnknownFieldSet& unknown_fields() const
+      ABSL_ATTRIBUTE_LIFETIME_BOUND {
+    return _internal_metadata_.unknown_fields<::google::protobuf::UnknownFieldSet>(::google::protobuf::UnknownFieldSet::default_instance);
+  }
+  inline ::google::protobuf::UnknownFieldSet* PROTOBUF_NONNULL mutable_unknown_fields()
+      ABSL_ATTRIBUTE_LIFETIME_BOUND {
+    return _internal_metadata_.mutable_unknown_fields<::google::protobuf::UnknownFieldSet>();
+  }
+
+  static const ::google::protobuf::Descriptor* PROTOBUF_NONNULL descriptor() {
+    return GetDescriptor();
+  }
+  static const ::google::protobuf::Descriptor* PROTOBUF_NONNULL GetDescriptor() {
+    return default_instance().GetMetadata().descriptor;
+  }
+  static const ::google::protobuf::Reflection* PROTOBUF_NONNULL GetReflection() {
+    return default_instance().GetMetadata().reflection;
+  }
+  static const GamePresenceEntry& default_instance() {
+    return *reinterpret_cast<const GamePresenceEntry*>(
+        &_GamePresenceEntry_default_instance_);
+  }
+  static constexpr int kIndexInFileMessages = 38;
+  friend void swap(GamePresenceEntry& a, GamePresenceEntry& b) { a.Swap(&b); }
+  inline void Swap(GamePresenceEntry* PROTOBUF_NONNULL other) {
+    if (other == this) return;
+    if (::google::protobuf::internal::CanUseInternalSwap(GetArena(), other->GetArena())) {
+      InternalSwap(other);
+    } else {
+      ::google::protobuf::internal::GenericSwap(this, other);
+    }
+  }
+  void UnsafeArenaSwap(GamePresenceEntry* PROTOBUF_NONNULL other) {
+    if (other == this) return;
+    ABSL_DCHECK(GetArena() == other->GetArena());
+    InternalSwap(other);
+  }
+
+  // implements Message ----------------------------------------------
+
+  GamePresenceEntry* PROTOBUF_NONNULL New(::google::protobuf::Arena* PROTOBUF_NULLABLE arena = nullptr) const {
+    return ::google::protobuf::Message::DefaultConstruct<GamePresenceEntry>(arena);
+  }
+  using ::google::protobuf::Message::CopyFrom;
+  void CopyFrom(const GamePresenceEntry& from);
+  using ::google::protobuf::Message::MergeFrom;
+  void MergeFrom(const GamePresenceEntry& from) { GamePresenceEntry::MergeImpl(*this, from); }
+
+  private:
+  static void MergeImpl(::google::protobuf::MessageLite& to_msg,
+                        const ::google::protobuf::MessageLite& from_msg);
+
+  public:
+  bool IsInitialized() const {
+    return true;
+  }
+  ABSL_ATTRIBUTE_REINITIALIZES void Clear() PROTOBUF_FINAL;
+  #if defined(PROTOBUF_CUSTOM_VTABLE)
+  private:
+  static ::size_t ByteSizeLong(const ::google::protobuf::MessageLite& msg);
+  static ::uint8_t* PROTOBUF_NONNULL _InternalSerialize(
+      const ::google::protobuf::MessageLite& msg, ::uint8_t* PROTOBUF_NONNULL target,
+      ::google::protobuf::io::EpsCopyOutputStream* PROTOBUF_NONNULL stream);
+
+  public:
+  ::size_t ByteSizeLong() const { return ByteSizeLong(*this); }
+  ::uint8_t* PROTOBUF_NONNULL _InternalSerialize(
+      ::uint8_t* PROTOBUF_NONNULL target,
+      ::google::protobuf::io::EpsCopyOutputStream* PROTOBUF_NONNULL stream) const {
+    return _InternalSerialize(*this, target, stream);
+  }
+  #else   // PROTOBUF_CUSTOM_VTABLE
+  ::size_t ByteSizeLong() const final;
+  ::uint8_t* PROTOBUF_NONNULL _InternalSerialize(
+      ::uint8_t* PROTOBUF_NONNULL target,
+      ::google::protobuf::io::EpsCopyOutputStream* PROTOBUF_NONNULL stream) const final;
+  #endif  // PROTOBUF_CUSTOM_VTABLE
+  int GetCachedSize() const { return _impl_._cached_size_.Get(); }
+
+  private:
+  void SharedCtor(::google::protobuf::Arena* PROTOBUF_NULLABLE arena);
+  static void SharedDtor(MessageLite& self);
+  void InternalSwap(GamePresenceEntry* PROTOBUF_NONNULL other);
+ private:
+  template <typename T>
+  friend ::absl::string_view(::google::protobuf::internal::GetAnyMessageName)();
+  static ::absl::string_view FullMessageName() { return "chirp.game_server_gateway.GamePresenceEntry"; }
+
+  explicit GamePresenceEntry(::google::protobuf::Arena* PROTOBUF_NULLABLE arena);
+  GamePresenceEntry(::google::protobuf::Arena* PROTOBUF_NULLABLE arena, const GamePresenceEntry& from);
+  GamePresenceEntry(
+      ::google::protobuf::Arena* PROTOBUF_NULLABLE arena, GamePresenceEntry&& from) noexcept
+      : GamePresenceEntry(arena) {
+    *this = ::std::move(from);
+  }
+  const ::google::protobuf::internal::ClassData* PROTOBUF_NONNULL GetClassData() const PROTOBUF_FINAL;
+  static void* PROTOBUF_NONNULL PlacementNew_(
+      const void* PROTOBUF_NONNULL, void* PROTOBUF_NONNULL mem,
+      ::google::protobuf::Arena* PROTOBUF_NULLABLE arena);
+  static constexpr auto InternalNewImpl_();
+
+ public:
+  static constexpr auto InternalGenerateClassData_();
+
+  ::google::protobuf::Metadata GetMetadata() const;
+  // nested types ----------------------------------------------------
+
+  // accessors -------------------------------------------------------
+  enum : int {
+    kGameIdFieldNumber = 1,
+    kGameUserIdFieldNumber = 2,
+  };
+  // string game_id = 1;
+  void clear_game_id() ;
+  const ::std::string& game_id() const;
+  template <typename Arg_ = const ::std::string&, typename... Args_>
+  void set_game_id(Arg_&& arg, Args_... args);
+  ::std::string* PROTOBUF_NONNULL mutable_game_id();
+  [[nodiscard]] ::std::string* PROTOBUF_NULLABLE release_game_id();
+  void set_allocated_game_id(::std::string* PROTOBUF_NULLABLE value);
+
+  private:
+  const ::std::string& _internal_game_id() const;
+  PROTOBUF_ALWAYS_INLINE void _internal_set_game_id(const ::std::string& value);
+  ::std::string* PROTOBUF_NONNULL _internal_mutable_game_id();
+
+  public:
+  // string game_user_id = 2;
+  void clear_game_user_id() ;
+  const ::std::string& game_user_id() const;
+  template <typename Arg_ = const ::std::string&, typename... Args_>
+  void set_game_user_id(Arg_&& arg, Args_... args);
+  ::std::string* PROTOBUF_NONNULL mutable_game_user_id();
+  [[nodiscard]] ::std::string* PROTOBUF_NULLABLE release_game_user_id();
+  void set_allocated_game_user_id(::std::string* PROTOBUF_NULLABLE value);
+
+  private:
+  const ::std::string& _internal_game_user_id() const;
+  PROTOBUF_ALWAYS_INLINE void _internal_set_game_user_id(const ::std::string& value);
+  ::std::string* PROTOBUF_NONNULL _internal_mutable_game_user_id();
+
+  public:
+  // @@protoc_insertion_point(class_scope:chirp.game_server_gateway.GamePresenceEntry)
+ private:
+  class _Internal;
+  friend class ::google::protobuf::internal::TcParser;
+  static const ::google::protobuf::internal::TcParseTable<1, 2,
+                                   0, 71,
+                                   2>
+      _table_;
+
+  friend class ::google::protobuf::MessageLite;
+  friend class ::google::protobuf::Arena;
+  template <typename T>
+  friend class ::google::protobuf::Arena::InternalHelper;
+  using InternalArenaConstructable_ = void;
+  using DestructorSkippable_ = void;
+  struct Impl_ {
+    inline explicit constexpr Impl_(::google::protobuf::internal::ConstantInitialized) noexcept;
+    inline explicit Impl_(
+        ::google::protobuf::internal::InternalVisibility visibility,
+        ::google::protobuf::Arena* PROTOBUF_NULLABLE arena);
+    inline explicit Impl_(
+        ::google::protobuf::internal::InternalVisibility visibility,
+        ::google::protobuf::Arena* PROTOBUF_NULLABLE arena, const Impl_& from,
+        const GamePresenceEntry& from_msg);
+    ::google::protobuf::internal::HasBits<1> _has_bits_;
+    ::google::protobuf::internal::CachedSize _cached_size_;
+    ::google::protobuf::internal::ArenaStringPtr game_id_;
+    ::google::protobuf::internal::ArenaStringPtr game_user_id_;
+    PROTOBUF_TSAN_DECLARE_MEMBER
+  };
+  union { Impl_ _impl_; };
+  friend struct ::TableStruct_proto_2fgame_5fserver_5fgateway_2eproto;
+};
+
+extern const ::google::protobuf::internal::ClassDataFull GamePresenceEntry_class_data_;
+// -------------------------------------------------------------------
+
 class EventPublishResponse final : public ::google::protobuf::Message
 /* @@protoc_insertion_point(class_definition:chirp.game_server_gateway.EventPublishResponse) */ {
  public:
@@ -7756,6 +9019,227 @@ class GetPlayerIdentitiesResponse final : public ::google::protobuf::Message
 };
 
 extern const ::google::protobuf::internal::ClassDataFull GetPlayerIdentitiesResponse_class_data_;
+// -------------------------------------------------------------------
+
+class GetGamePresenceResponse final : public ::google::protobuf::Message
+/* @@protoc_insertion_point(class_definition:chirp.game_server_gateway.GetGamePresenceResponse) */ {
+ public:
+  inline GetGamePresenceResponse() : GetGamePresenceResponse(nullptr) {}
+  ~GetGamePresenceResponse() PROTOBUF_FINAL;
+
+#if defined(PROTOBUF_CUSTOM_VTABLE)
+  void operator delete(GetGamePresenceResponse* PROTOBUF_NONNULL msg, ::std::destroying_delete_t) {
+    SharedDtor(*msg);
+    ::google::protobuf::internal::SizedDelete(msg, sizeof(GetGamePresenceResponse));
+  }
+#endif
+
+  template <typename = void>
+  explicit PROTOBUF_CONSTEXPR GetGamePresenceResponse(::google::protobuf::internal::ConstantInitialized);
+
+  inline GetGamePresenceResponse(const GetGamePresenceResponse& from) : GetGamePresenceResponse(nullptr, from) {}
+  inline GetGamePresenceResponse(GetGamePresenceResponse&& from) noexcept
+      : GetGamePresenceResponse(nullptr, ::std::move(from)) {}
+  inline GetGamePresenceResponse& operator=(const GetGamePresenceResponse& from) {
+    CopyFrom(from);
+    return *this;
+  }
+  inline GetGamePresenceResponse& operator=(GetGamePresenceResponse&& from) noexcept {
+    if (this == &from) return *this;
+    if (::google::protobuf::internal::CanMoveWithInternalSwap(GetArena(), from.GetArena())) {
+      InternalSwap(&from);
+    } else {
+      CopyFrom(from);
+    }
+    return *this;
+  }
+
+  inline const ::google::protobuf::UnknownFieldSet& unknown_fields() const
+      ABSL_ATTRIBUTE_LIFETIME_BOUND {
+    return _internal_metadata_.unknown_fields<::google::protobuf::UnknownFieldSet>(::google::protobuf::UnknownFieldSet::default_instance);
+  }
+  inline ::google::protobuf::UnknownFieldSet* PROTOBUF_NONNULL mutable_unknown_fields()
+      ABSL_ATTRIBUTE_LIFETIME_BOUND {
+    return _internal_metadata_.mutable_unknown_fields<::google::protobuf::UnknownFieldSet>();
+  }
+
+  static const ::google::protobuf::Descriptor* PROTOBUF_NONNULL descriptor() {
+    return GetDescriptor();
+  }
+  static const ::google::protobuf::Descriptor* PROTOBUF_NONNULL GetDescriptor() {
+    return default_instance().GetMetadata().descriptor;
+  }
+  static const ::google::protobuf::Reflection* PROTOBUF_NONNULL GetReflection() {
+    return default_instance().GetMetadata().reflection;
+  }
+  static const GetGamePresenceResponse& default_instance() {
+    return *reinterpret_cast<const GetGamePresenceResponse*>(
+        &_GetGamePresenceResponse_default_instance_);
+  }
+  static constexpr int kIndexInFileMessages = 40;
+  friend void swap(GetGamePresenceResponse& a, GetGamePresenceResponse& b) { a.Swap(&b); }
+  inline void Swap(GetGamePresenceResponse* PROTOBUF_NONNULL other) {
+    if (other == this) return;
+    if (::google::protobuf::internal::CanUseInternalSwap(GetArena(), other->GetArena())) {
+      InternalSwap(other);
+    } else {
+      ::google::protobuf::internal::GenericSwap(this, other);
+    }
+  }
+  void UnsafeArenaSwap(GetGamePresenceResponse* PROTOBUF_NONNULL other) {
+    if (other == this) return;
+    ABSL_DCHECK(GetArena() == other->GetArena());
+    InternalSwap(other);
+  }
+
+  // implements Message ----------------------------------------------
+
+  GetGamePresenceResponse* PROTOBUF_NONNULL New(::google::protobuf::Arena* PROTOBUF_NULLABLE arena = nullptr) const {
+    return ::google::protobuf::Message::DefaultConstruct<GetGamePresenceResponse>(arena);
+  }
+  using ::google::protobuf::Message::CopyFrom;
+  void CopyFrom(const GetGamePresenceResponse& from);
+  using ::google::protobuf::Message::MergeFrom;
+  void MergeFrom(const GetGamePresenceResponse& from) { GetGamePresenceResponse::MergeImpl(*this, from); }
+
+  private:
+  static void MergeImpl(::google::protobuf::MessageLite& to_msg,
+                        const ::google::protobuf::MessageLite& from_msg);
+
+  public:
+  bool IsInitialized() const {
+    return true;
+  }
+  ABSL_ATTRIBUTE_REINITIALIZES void Clear() PROTOBUF_FINAL;
+  #if defined(PROTOBUF_CUSTOM_VTABLE)
+  private:
+  static ::size_t ByteSizeLong(const ::google::protobuf::MessageLite& msg);
+  static ::uint8_t* PROTOBUF_NONNULL _InternalSerialize(
+      const ::google::protobuf::MessageLite& msg, ::uint8_t* PROTOBUF_NONNULL target,
+      ::google::protobuf::io::EpsCopyOutputStream* PROTOBUF_NONNULL stream);
+
+  public:
+  ::size_t ByteSizeLong() const { return ByteSizeLong(*this); }
+  ::uint8_t* PROTOBUF_NONNULL _InternalSerialize(
+      ::uint8_t* PROTOBUF_NONNULL target,
+      ::google::protobuf::io::EpsCopyOutputStream* PROTOBUF_NONNULL stream) const {
+    return _InternalSerialize(*this, target, stream);
+  }
+  #else   // PROTOBUF_CUSTOM_VTABLE
+  ::size_t ByteSizeLong() const final;
+  ::uint8_t* PROTOBUF_NONNULL _InternalSerialize(
+      ::uint8_t* PROTOBUF_NONNULL target,
+      ::google::protobuf::io::EpsCopyOutputStream* PROTOBUF_NONNULL stream) const final;
+  #endif  // PROTOBUF_CUSTOM_VTABLE
+  int GetCachedSize() const { return _impl_._cached_size_.Get(); }
+
+  private:
+  void SharedCtor(::google::protobuf::Arena* PROTOBUF_NULLABLE arena);
+  static void SharedDtor(MessageLite& self);
+  void InternalSwap(GetGamePresenceResponse* PROTOBUF_NONNULL other);
+ private:
+  template <typename T>
+  friend ::absl::string_view(::google::protobuf::internal::GetAnyMessageName)();
+  static ::absl::string_view FullMessageName() { return "chirp.game_server_gateway.GetGamePresenceResponse"; }
+
+  explicit GetGamePresenceResponse(::google::protobuf::Arena* PROTOBUF_NULLABLE arena);
+  GetGamePresenceResponse(::google::protobuf::Arena* PROTOBUF_NULLABLE arena, const GetGamePresenceResponse& from);
+  GetGamePresenceResponse(
+      ::google::protobuf::Arena* PROTOBUF_NULLABLE arena, GetGamePresenceResponse&& from) noexcept
+      : GetGamePresenceResponse(arena) {
+    *this = ::std::move(from);
+  }
+  const ::google::protobuf::internal::ClassData* PROTOBUF_NONNULL GetClassData() const PROTOBUF_FINAL;
+  static void* PROTOBUF_NONNULL PlacementNew_(
+      const void* PROTOBUF_NONNULL, void* PROTOBUF_NONNULL mem,
+      ::google::protobuf::Arena* PROTOBUF_NULLABLE arena);
+  static constexpr auto InternalNewImpl_();
+
+ public:
+  static constexpr auto InternalGenerateClassData_();
+
+  ::google::protobuf::Metadata GetMetadata() const;
+  // nested types ----------------------------------------------------
+
+  // accessors -------------------------------------------------------
+  enum : int {
+    kEntriesFieldNumber = 3,
+    kCodeFieldNumber = 1,
+    kEnabledFieldNumber = 2,
+  };
+  // repeated .chirp.game_server_gateway.GamePresenceEntry entries = 3;
+  int entries_size() const;
+  private:
+  int _internal_entries_size() const;
+
+  public:
+  void clear_entries() ;
+  ::chirp::game_server_gateway::GamePresenceEntry* PROTOBUF_NONNULL mutable_entries(int index);
+  ::google::protobuf::RepeatedPtrField<::chirp::game_server_gateway::GamePresenceEntry>* PROTOBUF_NONNULL mutable_entries();
+
+  private:
+  const ::google::protobuf::RepeatedPtrField<::chirp::game_server_gateway::GamePresenceEntry>& _internal_entries() const;
+  ::google::protobuf::RepeatedPtrField<::chirp::game_server_gateway::GamePresenceEntry>* PROTOBUF_NONNULL _internal_mutable_entries();
+  public:
+  const ::chirp::game_server_gateway::GamePresenceEntry& entries(int index) const;
+  ::chirp::game_server_gateway::GamePresenceEntry* PROTOBUF_NONNULL add_entries();
+  const ::google::protobuf::RepeatedPtrField<::chirp::game_server_gateway::GamePresenceEntry>& entries() const;
+  // .chirp.common.ErrorCode code = 1;
+  void clear_code() ;
+  ::chirp::common::ErrorCode code() const;
+  void set_code(::chirp::common::ErrorCode value);
+
+  private:
+  ::chirp::common::ErrorCode _internal_code() const;
+  void _internal_set_code(::chirp::common::ErrorCode value);
+
+  public:
+  // bool enabled = 2;
+  void clear_enabled() ;
+  bool enabled() const;
+  void set_enabled(bool value);
+
+  private:
+  bool _internal_enabled() const;
+  void _internal_set_enabled(bool value);
+
+  public:
+  // @@protoc_insertion_point(class_scope:chirp.game_server_gateway.GetGamePresenceResponse)
+ private:
+  class _Internal;
+  friend class ::google::protobuf::internal::TcParser;
+  static const ::google::protobuf::internal::TcParseTable<2, 3,
+                                   1, 0,
+                                   2>
+      _table_;
+
+  friend class ::google::protobuf::MessageLite;
+  friend class ::google::protobuf::Arena;
+  template <typename T>
+  friend class ::google::protobuf::Arena::InternalHelper;
+  using InternalArenaConstructable_ = void;
+  using DestructorSkippable_ = void;
+  struct Impl_ {
+    inline explicit constexpr Impl_(::google::protobuf::internal::ConstantInitialized) noexcept;
+    inline explicit Impl_(
+        ::google::protobuf::internal::InternalVisibility visibility,
+        ::google::protobuf::Arena* PROTOBUF_NULLABLE arena);
+    inline explicit Impl_(
+        ::google::protobuf::internal::InternalVisibility visibility,
+        ::google::protobuf::Arena* PROTOBUF_NULLABLE arena, const Impl_& from,
+        const GetGamePresenceResponse& from_msg);
+    ::google::protobuf::internal::HasBits<1> _has_bits_;
+    ::google::protobuf::internal::CachedSize _cached_size_;
+    ::google::protobuf::RepeatedPtrField< ::chirp::game_server_gateway::GamePresenceEntry > entries_;
+    int code_;
+    bool enabled_;
+    PROTOBUF_TSAN_DECLARE_MEMBER
+  };
+  union { Impl_ _impl_; };
+  friend struct ::TableStruct_proto_2fgame_5fserver_5fgateway_2eproto;
+};
+
+extern const ::google::protobuf::internal::ClassDataFull GetGamePresenceResponse_class_data_;
 
 // ===================================================================
 
@@ -12787,6 +14271,695 @@ inline ::int32_t GetUnreadSummaryResponse::_internal_total_unread() const {
 inline void GetUnreadSummaryResponse::_internal_set_total_unread(::int32_t value) {
   ::google::protobuf::internal::TSanWrite(&_impl_);
   _impl_.total_unread_ = value;
+}
+
+// -------------------------------------------------------------------
+
+// StoredGamePresenceSetting
+
+// string player_id = 1;
+inline void StoredGamePresenceSetting::clear_player_id() {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_.player_id_.ClearToEmpty();
+  ClearHasBit(_impl_._has_bits_[0],
+                  0x00000001U);
+}
+inline const ::std::string& StoredGamePresenceSetting::player_id() const
+    ABSL_ATTRIBUTE_LIFETIME_BOUND {
+  // @@protoc_insertion_point(field_get:chirp.game_server_gateway.StoredGamePresenceSetting.player_id)
+  return _internal_player_id();
+}
+template <typename Arg_, typename... Args_>
+PROTOBUF_ALWAYS_INLINE void StoredGamePresenceSetting::set_player_id(Arg_&& arg, Args_... args) {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  SetHasBit(_impl_._has_bits_[0], 0x00000001U);
+  _impl_.player_id_.Set(static_cast<Arg_&&>(arg), args..., GetArena());
+  // @@protoc_insertion_point(field_set:chirp.game_server_gateway.StoredGamePresenceSetting.player_id)
+}
+inline ::std::string* PROTOBUF_NONNULL StoredGamePresenceSetting::mutable_player_id()
+    ABSL_ATTRIBUTE_LIFETIME_BOUND {
+  SetHasBit(_impl_._has_bits_[0], 0x00000001U);
+  ::std::string* _s = _internal_mutable_player_id();
+  // @@protoc_insertion_point(field_mutable:chirp.game_server_gateway.StoredGamePresenceSetting.player_id)
+  return _s;
+}
+inline const ::std::string& StoredGamePresenceSetting::_internal_player_id() const {
+  ::google::protobuf::internal::TSanRead(&_impl_);
+  return _impl_.player_id_.Get();
+}
+inline void StoredGamePresenceSetting::_internal_set_player_id(const ::std::string& value) {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_.player_id_.Set(value, GetArena());
+}
+inline ::std::string* PROTOBUF_NONNULL StoredGamePresenceSetting::_internal_mutable_player_id() {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  return _impl_.player_id_.Mutable( GetArena());
+}
+inline ::std::string* PROTOBUF_NULLABLE StoredGamePresenceSetting::release_player_id() {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  // @@protoc_insertion_point(field_release:chirp.game_server_gateway.StoredGamePresenceSetting.player_id)
+  if (!CheckHasBit(_impl_._has_bits_[0], 0x00000001U)) {
+    return nullptr;
+  }
+  ClearHasBit(_impl_._has_bits_[0], 0x00000001U);
+  auto* released = _impl_.player_id_.Release();
+  if (::google::protobuf::internal::DebugHardenForceCopyDefaultString()) {
+    _impl_.player_id_.Set("", GetArena());
+  }
+  return released;
+}
+inline void StoredGamePresenceSetting::set_allocated_player_id(::std::string* PROTOBUF_NULLABLE value) {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  if (value != nullptr) {
+    SetHasBit(_impl_._has_bits_[0], 0x00000001U);
+  } else {
+    ClearHasBit(_impl_._has_bits_[0], 0x00000001U);
+  }
+  _impl_.player_id_.SetAllocated(value, GetArena());
+  if (::google::protobuf::internal::DebugHardenForceCopyDefaultString() && _impl_.player_id_.IsDefault()) {
+    _impl_.player_id_.Set("", GetArena());
+  }
+  // @@protoc_insertion_point(field_set_allocated:chirp.game_server_gateway.StoredGamePresenceSetting.player_id)
+}
+
+// bool enabled = 2;
+inline void StoredGamePresenceSetting::clear_enabled() {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_.enabled_ = false;
+  ClearHasBit(_impl_._has_bits_[0],
+                  0x00000002U);
+}
+inline bool StoredGamePresenceSetting::enabled() const {
+  // @@protoc_insertion_point(field_get:chirp.game_server_gateway.StoredGamePresenceSetting.enabled)
+  return _internal_enabled();
+}
+inline void StoredGamePresenceSetting::set_enabled(bool value) {
+  _internal_set_enabled(value);
+  SetHasBit(_impl_._has_bits_[0], 0x00000002U);
+  // @@protoc_insertion_point(field_set:chirp.game_server_gateway.StoredGamePresenceSetting.enabled)
+}
+inline bool StoredGamePresenceSetting::_internal_enabled() const {
+  ::google::protobuf::internal::TSanRead(&_impl_);
+  return _impl_.enabled_;
+}
+inline void StoredGamePresenceSetting::_internal_set_enabled(bool value) {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_.enabled_ = value;
+}
+
+// -------------------------------------------------------------------
+
+// GamePresenceEvent
+
+// string player_id = 1;
+inline void GamePresenceEvent::clear_player_id() {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_.player_id_.ClearToEmpty();
+  ClearHasBit(_impl_._has_bits_[0],
+                  0x00000001U);
+}
+inline const ::std::string& GamePresenceEvent::player_id() const
+    ABSL_ATTRIBUTE_LIFETIME_BOUND {
+  // @@protoc_insertion_point(field_get:chirp.game_server_gateway.GamePresenceEvent.player_id)
+  return _internal_player_id();
+}
+template <typename Arg_, typename... Args_>
+PROTOBUF_ALWAYS_INLINE void GamePresenceEvent::set_player_id(Arg_&& arg, Args_... args) {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  SetHasBit(_impl_._has_bits_[0], 0x00000001U);
+  _impl_.player_id_.Set(static_cast<Arg_&&>(arg), args..., GetArena());
+  // @@protoc_insertion_point(field_set:chirp.game_server_gateway.GamePresenceEvent.player_id)
+}
+inline ::std::string* PROTOBUF_NONNULL GamePresenceEvent::mutable_player_id()
+    ABSL_ATTRIBUTE_LIFETIME_BOUND {
+  SetHasBit(_impl_._has_bits_[0], 0x00000001U);
+  ::std::string* _s = _internal_mutable_player_id();
+  // @@protoc_insertion_point(field_mutable:chirp.game_server_gateway.GamePresenceEvent.player_id)
+  return _s;
+}
+inline const ::std::string& GamePresenceEvent::_internal_player_id() const {
+  ::google::protobuf::internal::TSanRead(&_impl_);
+  return _impl_.player_id_.Get();
+}
+inline void GamePresenceEvent::_internal_set_player_id(const ::std::string& value) {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_.player_id_.Set(value, GetArena());
+}
+inline ::std::string* PROTOBUF_NONNULL GamePresenceEvent::_internal_mutable_player_id() {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  return _impl_.player_id_.Mutable( GetArena());
+}
+inline ::std::string* PROTOBUF_NULLABLE GamePresenceEvent::release_player_id() {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  // @@protoc_insertion_point(field_release:chirp.game_server_gateway.GamePresenceEvent.player_id)
+  if (!CheckHasBit(_impl_._has_bits_[0], 0x00000001U)) {
+    return nullptr;
+  }
+  ClearHasBit(_impl_._has_bits_[0], 0x00000001U);
+  auto* released = _impl_.player_id_.Release();
+  if (::google::protobuf::internal::DebugHardenForceCopyDefaultString()) {
+    _impl_.player_id_.Set("", GetArena());
+  }
+  return released;
+}
+inline void GamePresenceEvent::set_allocated_player_id(::std::string* PROTOBUF_NULLABLE value) {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  if (value != nullptr) {
+    SetHasBit(_impl_._has_bits_[0], 0x00000001U);
+  } else {
+    ClearHasBit(_impl_._has_bits_[0], 0x00000001U);
+  }
+  _impl_.player_id_.SetAllocated(value, GetArena());
+  if (::google::protobuf::internal::DebugHardenForceCopyDefaultString() && _impl_.player_id_.IsDefault()) {
+    _impl_.player_id_.Set("", GetArena());
+  }
+  // @@protoc_insertion_point(field_set_allocated:chirp.game_server_gateway.GamePresenceEvent.player_id)
+}
+
+// string game_id = 2;
+inline void GamePresenceEvent::clear_game_id() {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_.game_id_.ClearToEmpty();
+  ClearHasBit(_impl_._has_bits_[0],
+                  0x00000002U);
+}
+inline const ::std::string& GamePresenceEvent::game_id() const
+    ABSL_ATTRIBUTE_LIFETIME_BOUND {
+  // @@protoc_insertion_point(field_get:chirp.game_server_gateway.GamePresenceEvent.game_id)
+  return _internal_game_id();
+}
+template <typename Arg_, typename... Args_>
+PROTOBUF_ALWAYS_INLINE void GamePresenceEvent::set_game_id(Arg_&& arg, Args_... args) {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  SetHasBit(_impl_._has_bits_[0], 0x00000002U);
+  _impl_.game_id_.Set(static_cast<Arg_&&>(arg), args..., GetArena());
+  // @@protoc_insertion_point(field_set:chirp.game_server_gateway.GamePresenceEvent.game_id)
+}
+inline ::std::string* PROTOBUF_NONNULL GamePresenceEvent::mutable_game_id()
+    ABSL_ATTRIBUTE_LIFETIME_BOUND {
+  SetHasBit(_impl_._has_bits_[0], 0x00000002U);
+  ::std::string* _s = _internal_mutable_game_id();
+  // @@protoc_insertion_point(field_mutable:chirp.game_server_gateway.GamePresenceEvent.game_id)
+  return _s;
+}
+inline const ::std::string& GamePresenceEvent::_internal_game_id() const {
+  ::google::protobuf::internal::TSanRead(&_impl_);
+  return _impl_.game_id_.Get();
+}
+inline void GamePresenceEvent::_internal_set_game_id(const ::std::string& value) {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_.game_id_.Set(value, GetArena());
+}
+inline ::std::string* PROTOBUF_NONNULL GamePresenceEvent::_internal_mutable_game_id() {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  return _impl_.game_id_.Mutable( GetArena());
+}
+inline ::std::string* PROTOBUF_NULLABLE GamePresenceEvent::release_game_id() {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  // @@protoc_insertion_point(field_release:chirp.game_server_gateway.GamePresenceEvent.game_id)
+  if (!CheckHasBit(_impl_._has_bits_[0], 0x00000002U)) {
+    return nullptr;
+  }
+  ClearHasBit(_impl_._has_bits_[0], 0x00000002U);
+  auto* released = _impl_.game_id_.Release();
+  if (::google::protobuf::internal::DebugHardenForceCopyDefaultString()) {
+    _impl_.game_id_.Set("", GetArena());
+  }
+  return released;
+}
+inline void GamePresenceEvent::set_allocated_game_id(::std::string* PROTOBUF_NULLABLE value) {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  if (value != nullptr) {
+    SetHasBit(_impl_._has_bits_[0], 0x00000002U);
+  } else {
+    ClearHasBit(_impl_._has_bits_[0], 0x00000002U);
+  }
+  _impl_.game_id_.SetAllocated(value, GetArena());
+  if (::google::protobuf::internal::DebugHardenForceCopyDefaultString() && _impl_.game_id_.IsDefault()) {
+    _impl_.game_id_.Set("", GetArena());
+  }
+  // @@protoc_insertion_point(field_set_allocated:chirp.game_server_gateway.GamePresenceEvent.game_id)
+}
+
+// bool online = 3;
+inline void GamePresenceEvent::clear_online() {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_.online_ = false;
+  ClearHasBit(_impl_._has_bits_[0],
+                  0x00000004U);
+}
+inline bool GamePresenceEvent::online() const {
+  // @@protoc_insertion_point(field_get:chirp.game_server_gateway.GamePresenceEvent.online)
+  return _internal_online();
+}
+inline void GamePresenceEvent::set_online(bool value) {
+  _internal_set_online(value);
+  SetHasBit(_impl_._has_bits_[0], 0x00000004U);
+  // @@protoc_insertion_point(field_set:chirp.game_server_gateway.GamePresenceEvent.online)
+}
+inline bool GamePresenceEvent::_internal_online() const {
+  ::google::protobuf::internal::TSanRead(&_impl_);
+  return _impl_.online_;
+}
+inline void GamePresenceEvent::_internal_set_online(bool value) {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_.online_ = value;
+}
+
+// -------------------------------------------------------------------
+
+// SetGamePresenceEnabledRequest
+
+// string player_id = 1;
+inline void SetGamePresenceEnabledRequest::clear_player_id() {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_.player_id_.ClearToEmpty();
+  ClearHasBit(_impl_._has_bits_[0],
+                  0x00000001U);
+}
+inline const ::std::string& SetGamePresenceEnabledRequest::player_id() const
+    ABSL_ATTRIBUTE_LIFETIME_BOUND {
+  // @@protoc_insertion_point(field_get:chirp.game_server_gateway.SetGamePresenceEnabledRequest.player_id)
+  return _internal_player_id();
+}
+template <typename Arg_, typename... Args_>
+PROTOBUF_ALWAYS_INLINE void SetGamePresenceEnabledRequest::set_player_id(Arg_&& arg, Args_... args) {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  SetHasBit(_impl_._has_bits_[0], 0x00000001U);
+  _impl_.player_id_.Set(static_cast<Arg_&&>(arg), args..., GetArena());
+  // @@protoc_insertion_point(field_set:chirp.game_server_gateway.SetGamePresenceEnabledRequest.player_id)
+}
+inline ::std::string* PROTOBUF_NONNULL SetGamePresenceEnabledRequest::mutable_player_id()
+    ABSL_ATTRIBUTE_LIFETIME_BOUND {
+  SetHasBit(_impl_._has_bits_[0], 0x00000001U);
+  ::std::string* _s = _internal_mutable_player_id();
+  // @@protoc_insertion_point(field_mutable:chirp.game_server_gateway.SetGamePresenceEnabledRequest.player_id)
+  return _s;
+}
+inline const ::std::string& SetGamePresenceEnabledRequest::_internal_player_id() const {
+  ::google::protobuf::internal::TSanRead(&_impl_);
+  return _impl_.player_id_.Get();
+}
+inline void SetGamePresenceEnabledRequest::_internal_set_player_id(const ::std::string& value) {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_.player_id_.Set(value, GetArena());
+}
+inline ::std::string* PROTOBUF_NONNULL SetGamePresenceEnabledRequest::_internal_mutable_player_id() {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  return _impl_.player_id_.Mutable( GetArena());
+}
+inline ::std::string* PROTOBUF_NULLABLE SetGamePresenceEnabledRequest::release_player_id() {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  // @@protoc_insertion_point(field_release:chirp.game_server_gateway.SetGamePresenceEnabledRequest.player_id)
+  if (!CheckHasBit(_impl_._has_bits_[0], 0x00000001U)) {
+    return nullptr;
+  }
+  ClearHasBit(_impl_._has_bits_[0], 0x00000001U);
+  auto* released = _impl_.player_id_.Release();
+  if (::google::protobuf::internal::DebugHardenForceCopyDefaultString()) {
+    _impl_.player_id_.Set("", GetArena());
+  }
+  return released;
+}
+inline void SetGamePresenceEnabledRequest::set_allocated_player_id(::std::string* PROTOBUF_NULLABLE value) {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  if (value != nullptr) {
+    SetHasBit(_impl_._has_bits_[0], 0x00000001U);
+  } else {
+    ClearHasBit(_impl_._has_bits_[0], 0x00000001U);
+  }
+  _impl_.player_id_.SetAllocated(value, GetArena());
+  if (::google::protobuf::internal::DebugHardenForceCopyDefaultString() && _impl_.player_id_.IsDefault()) {
+    _impl_.player_id_.Set("", GetArena());
+  }
+  // @@protoc_insertion_point(field_set_allocated:chirp.game_server_gateway.SetGamePresenceEnabledRequest.player_id)
+}
+
+// bool enabled = 2;
+inline void SetGamePresenceEnabledRequest::clear_enabled() {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_.enabled_ = false;
+  ClearHasBit(_impl_._has_bits_[0],
+                  0x00000002U);
+}
+inline bool SetGamePresenceEnabledRequest::enabled() const {
+  // @@protoc_insertion_point(field_get:chirp.game_server_gateway.SetGamePresenceEnabledRequest.enabled)
+  return _internal_enabled();
+}
+inline void SetGamePresenceEnabledRequest::set_enabled(bool value) {
+  _internal_set_enabled(value);
+  SetHasBit(_impl_._has_bits_[0], 0x00000002U);
+  // @@protoc_insertion_point(field_set:chirp.game_server_gateway.SetGamePresenceEnabledRequest.enabled)
+}
+inline bool SetGamePresenceEnabledRequest::_internal_enabled() const {
+  ::google::protobuf::internal::TSanRead(&_impl_);
+  return _impl_.enabled_;
+}
+inline void SetGamePresenceEnabledRequest::_internal_set_enabled(bool value) {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_.enabled_ = value;
+}
+
+// -------------------------------------------------------------------
+
+// SetGamePresenceEnabledResponse
+
+// .chirp.common.ErrorCode code = 1;
+inline void SetGamePresenceEnabledResponse::clear_code() {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_.code_ = 0;
+  ClearHasBit(_impl_._has_bits_[0],
+                  0x00000001U);
+}
+inline ::chirp::common::ErrorCode SetGamePresenceEnabledResponse::code() const {
+  // @@protoc_insertion_point(field_get:chirp.game_server_gateway.SetGamePresenceEnabledResponse.code)
+  return _internal_code();
+}
+inline void SetGamePresenceEnabledResponse::set_code(::chirp::common::ErrorCode value) {
+  _internal_set_code(value);
+  SetHasBit(_impl_._has_bits_[0], 0x00000001U);
+  // @@protoc_insertion_point(field_set:chirp.game_server_gateway.SetGamePresenceEnabledResponse.code)
+}
+inline ::chirp::common::ErrorCode SetGamePresenceEnabledResponse::_internal_code() const {
+  ::google::protobuf::internal::TSanRead(&_impl_);
+  return static_cast<::chirp::common::ErrorCode>(_impl_.code_);
+}
+inline void SetGamePresenceEnabledResponse::_internal_set_code(::chirp::common::ErrorCode value) {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_.code_ = value;
+}
+
+// -------------------------------------------------------------------
+
+// GamePresenceEntry
+
+// string game_id = 1;
+inline void GamePresenceEntry::clear_game_id() {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_.game_id_.ClearToEmpty();
+  ClearHasBit(_impl_._has_bits_[0],
+                  0x00000001U);
+}
+inline const ::std::string& GamePresenceEntry::game_id() const
+    ABSL_ATTRIBUTE_LIFETIME_BOUND {
+  // @@protoc_insertion_point(field_get:chirp.game_server_gateway.GamePresenceEntry.game_id)
+  return _internal_game_id();
+}
+template <typename Arg_, typename... Args_>
+PROTOBUF_ALWAYS_INLINE void GamePresenceEntry::set_game_id(Arg_&& arg, Args_... args) {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  SetHasBit(_impl_._has_bits_[0], 0x00000001U);
+  _impl_.game_id_.Set(static_cast<Arg_&&>(arg), args..., GetArena());
+  // @@protoc_insertion_point(field_set:chirp.game_server_gateway.GamePresenceEntry.game_id)
+}
+inline ::std::string* PROTOBUF_NONNULL GamePresenceEntry::mutable_game_id()
+    ABSL_ATTRIBUTE_LIFETIME_BOUND {
+  SetHasBit(_impl_._has_bits_[0], 0x00000001U);
+  ::std::string* _s = _internal_mutable_game_id();
+  // @@protoc_insertion_point(field_mutable:chirp.game_server_gateway.GamePresenceEntry.game_id)
+  return _s;
+}
+inline const ::std::string& GamePresenceEntry::_internal_game_id() const {
+  ::google::protobuf::internal::TSanRead(&_impl_);
+  return _impl_.game_id_.Get();
+}
+inline void GamePresenceEntry::_internal_set_game_id(const ::std::string& value) {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_.game_id_.Set(value, GetArena());
+}
+inline ::std::string* PROTOBUF_NONNULL GamePresenceEntry::_internal_mutable_game_id() {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  return _impl_.game_id_.Mutable( GetArena());
+}
+inline ::std::string* PROTOBUF_NULLABLE GamePresenceEntry::release_game_id() {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  // @@protoc_insertion_point(field_release:chirp.game_server_gateway.GamePresenceEntry.game_id)
+  if (!CheckHasBit(_impl_._has_bits_[0], 0x00000001U)) {
+    return nullptr;
+  }
+  ClearHasBit(_impl_._has_bits_[0], 0x00000001U);
+  auto* released = _impl_.game_id_.Release();
+  if (::google::protobuf::internal::DebugHardenForceCopyDefaultString()) {
+    _impl_.game_id_.Set("", GetArena());
+  }
+  return released;
+}
+inline void GamePresenceEntry::set_allocated_game_id(::std::string* PROTOBUF_NULLABLE value) {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  if (value != nullptr) {
+    SetHasBit(_impl_._has_bits_[0], 0x00000001U);
+  } else {
+    ClearHasBit(_impl_._has_bits_[0], 0x00000001U);
+  }
+  _impl_.game_id_.SetAllocated(value, GetArena());
+  if (::google::protobuf::internal::DebugHardenForceCopyDefaultString() && _impl_.game_id_.IsDefault()) {
+    _impl_.game_id_.Set("", GetArena());
+  }
+  // @@protoc_insertion_point(field_set_allocated:chirp.game_server_gateway.GamePresenceEntry.game_id)
+}
+
+// string game_user_id = 2;
+inline void GamePresenceEntry::clear_game_user_id() {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_.game_user_id_.ClearToEmpty();
+  ClearHasBit(_impl_._has_bits_[0],
+                  0x00000002U);
+}
+inline const ::std::string& GamePresenceEntry::game_user_id() const
+    ABSL_ATTRIBUTE_LIFETIME_BOUND {
+  // @@protoc_insertion_point(field_get:chirp.game_server_gateway.GamePresenceEntry.game_user_id)
+  return _internal_game_user_id();
+}
+template <typename Arg_, typename... Args_>
+PROTOBUF_ALWAYS_INLINE void GamePresenceEntry::set_game_user_id(Arg_&& arg, Args_... args) {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  SetHasBit(_impl_._has_bits_[0], 0x00000002U);
+  _impl_.game_user_id_.Set(static_cast<Arg_&&>(arg), args..., GetArena());
+  // @@protoc_insertion_point(field_set:chirp.game_server_gateway.GamePresenceEntry.game_user_id)
+}
+inline ::std::string* PROTOBUF_NONNULL GamePresenceEntry::mutable_game_user_id()
+    ABSL_ATTRIBUTE_LIFETIME_BOUND {
+  SetHasBit(_impl_._has_bits_[0], 0x00000002U);
+  ::std::string* _s = _internal_mutable_game_user_id();
+  // @@protoc_insertion_point(field_mutable:chirp.game_server_gateway.GamePresenceEntry.game_user_id)
+  return _s;
+}
+inline const ::std::string& GamePresenceEntry::_internal_game_user_id() const {
+  ::google::protobuf::internal::TSanRead(&_impl_);
+  return _impl_.game_user_id_.Get();
+}
+inline void GamePresenceEntry::_internal_set_game_user_id(const ::std::string& value) {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_.game_user_id_.Set(value, GetArena());
+}
+inline ::std::string* PROTOBUF_NONNULL GamePresenceEntry::_internal_mutable_game_user_id() {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  return _impl_.game_user_id_.Mutable( GetArena());
+}
+inline ::std::string* PROTOBUF_NULLABLE GamePresenceEntry::release_game_user_id() {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  // @@protoc_insertion_point(field_release:chirp.game_server_gateway.GamePresenceEntry.game_user_id)
+  if (!CheckHasBit(_impl_._has_bits_[0], 0x00000002U)) {
+    return nullptr;
+  }
+  ClearHasBit(_impl_._has_bits_[0], 0x00000002U);
+  auto* released = _impl_.game_user_id_.Release();
+  if (::google::protobuf::internal::DebugHardenForceCopyDefaultString()) {
+    _impl_.game_user_id_.Set("", GetArena());
+  }
+  return released;
+}
+inline void GamePresenceEntry::set_allocated_game_user_id(::std::string* PROTOBUF_NULLABLE value) {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  if (value != nullptr) {
+    SetHasBit(_impl_._has_bits_[0], 0x00000002U);
+  } else {
+    ClearHasBit(_impl_._has_bits_[0], 0x00000002U);
+  }
+  _impl_.game_user_id_.SetAllocated(value, GetArena());
+  if (::google::protobuf::internal::DebugHardenForceCopyDefaultString() && _impl_.game_user_id_.IsDefault()) {
+    _impl_.game_user_id_.Set("", GetArena());
+  }
+  // @@protoc_insertion_point(field_set_allocated:chirp.game_server_gateway.GamePresenceEntry.game_user_id)
+}
+
+// -------------------------------------------------------------------
+
+// GetGamePresenceRequest
+
+// string player_id = 1;
+inline void GetGamePresenceRequest::clear_player_id() {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_.player_id_.ClearToEmpty();
+  ClearHasBit(_impl_._has_bits_[0],
+                  0x00000001U);
+}
+inline const ::std::string& GetGamePresenceRequest::player_id() const
+    ABSL_ATTRIBUTE_LIFETIME_BOUND {
+  // @@protoc_insertion_point(field_get:chirp.game_server_gateway.GetGamePresenceRequest.player_id)
+  return _internal_player_id();
+}
+template <typename Arg_, typename... Args_>
+PROTOBUF_ALWAYS_INLINE void GetGamePresenceRequest::set_player_id(Arg_&& arg, Args_... args) {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  SetHasBit(_impl_._has_bits_[0], 0x00000001U);
+  _impl_.player_id_.Set(static_cast<Arg_&&>(arg), args..., GetArena());
+  // @@protoc_insertion_point(field_set:chirp.game_server_gateway.GetGamePresenceRequest.player_id)
+}
+inline ::std::string* PROTOBUF_NONNULL GetGamePresenceRequest::mutable_player_id()
+    ABSL_ATTRIBUTE_LIFETIME_BOUND {
+  SetHasBit(_impl_._has_bits_[0], 0x00000001U);
+  ::std::string* _s = _internal_mutable_player_id();
+  // @@protoc_insertion_point(field_mutable:chirp.game_server_gateway.GetGamePresenceRequest.player_id)
+  return _s;
+}
+inline const ::std::string& GetGamePresenceRequest::_internal_player_id() const {
+  ::google::protobuf::internal::TSanRead(&_impl_);
+  return _impl_.player_id_.Get();
+}
+inline void GetGamePresenceRequest::_internal_set_player_id(const ::std::string& value) {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_.player_id_.Set(value, GetArena());
+}
+inline ::std::string* PROTOBUF_NONNULL GetGamePresenceRequest::_internal_mutable_player_id() {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  return _impl_.player_id_.Mutable( GetArena());
+}
+inline ::std::string* PROTOBUF_NULLABLE GetGamePresenceRequest::release_player_id() {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  // @@protoc_insertion_point(field_release:chirp.game_server_gateway.GetGamePresenceRequest.player_id)
+  if (!CheckHasBit(_impl_._has_bits_[0], 0x00000001U)) {
+    return nullptr;
+  }
+  ClearHasBit(_impl_._has_bits_[0], 0x00000001U);
+  auto* released = _impl_.player_id_.Release();
+  if (::google::protobuf::internal::DebugHardenForceCopyDefaultString()) {
+    _impl_.player_id_.Set("", GetArena());
+  }
+  return released;
+}
+inline void GetGamePresenceRequest::set_allocated_player_id(::std::string* PROTOBUF_NULLABLE value) {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  if (value != nullptr) {
+    SetHasBit(_impl_._has_bits_[0], 0x00000001U);
+  } else {
+    ClearHasBit(_impl_._has_bits_[0], 0x00000001U);
+  }
+  _impl_.player_id_.SetAllocated(value, GetArena());
+  if (::google::protobuf::internal::DebugHardenForceCopyDefaultString() && _impl_.player_id_.IsDefault()) {
+    _impl_.player_id_.Set("", GetArena());
+  }
+  // @@protoc_insertion_point(field_set_allocated:chirp.game_server_gateway.GetGamePresenceRequest.player_id)
+}
+
+// -------------------------------------------------------------------
+
+// GetGamePresenceResponse
+
+// .chirp.common.ErrorCode code = 1;
+inline void GetGamePresenceResponse::clear_code() {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_.code_ = 0;
+  ClearHasBit(_impl_._has_bits_[0],
+                  0x00000002U);
+}
+inline ::chirp::common::ErrorCode GetGamePresenceResponse::code() const {
+  // @@protoc_insertion_point(field_get:chirp.game_server_gateway.GetGamePresenceResponse.code)
+  return _internal_code();
+}
+inline void GetGamePresenceResponse::set_code(::chirp::common::ErrorCode value) {
+  _internal_set_code(value);
+  SetHasBit(_impl_._has_bits_[0], 0x00000002U);
+  // @@protoc_insertion_point(field_set:chirp.game_server_gateway.GetGamePresenceResponse.code)
+}
+inline ::chirp::common::ErrorCode GetGamePresenceResponse::_internal_code() const {
+  ::google::protobuf::internal::TSanRead(&_impl_);
+  return static_cast<::chirp::common::ErrorCode>(_impl_.code_);
+}
+inline void GetGamePresenceResponse::_internal_set_code(::chirp::common::ErrorCode value) {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_.code_ = value;
+}
+
+// bool enabled = 2;
+inline void GetGamePresenceResponse::clear_enabled() {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_.enabled_ = false;
+  ClearHasBit(_impl_._has_bits_[0],
+                  0x00000004U);
+}
+inline bool GetGamePresenceResponse::enabled() const {
+  // @@protoc_insertion_point(field_get:chirp.game_server_gateway.GetGamePresenceResponse.enabled)
+  return _internal_enabled();
+}
+inline void GetGamePresenceResponse::set_enabled(bool value) {
+  _internal_set_enabled(value);
+  SetHasBit(_impl_._has_bits_[0], 0x00000004U);
+  // @@protoc_insertion_point(field_set:chirp.game_server_gateway.GetGamePresenceResponse.enabled)
+}
+inline bool GetGamePresenceResponse::_internal_enabled() const {
+  ::google::protobuf::internal::TSanRead(&_impl_);
+  return _impl_.enabled_;
+}
+inline void GetGamePresenceResponse::_internal_set_enabled(bool value) {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_.enabled_ = value;
+}
+
+// repeated .chirp.game_server_gateway.GamePresenceEntry entries = 3;
+inline int GetGamePresenceResponse::_internal_entries_size() const {
+  return _internal_entries().size();
+}
+inline int GetGamePresenceResponse::entries_size() const {
+  return _internal_entries_size();
+}
+inline void GetGamePresenceResponse::clear_entries() {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_.entries_.Clear();
+  ClearHasBitForRepeated(_impl_._has_bits_[0],
+                  0x00000001U);
+}
+inline ::chirp::game_server_gateway::GamePresenceEntry* PROTOBUF_NONNULL GetGamePresenceResponse::mutable_entries(int index)
+    ABSL_ATTRIBUTE_LIFETIME_BOUND {
+  // @@protoc_insertion_point(field_mutable:chirp.game_server_gateway.GetGamePresenceResponse.entries)
+  return _internal_mutable_entries()->Mutable(index);
+}
+inline ::google::protobuf::RepeatedPtrField<::chirp::game_server_gateway::GamePresenceEntry>* PROTOBUF_NONNULL GetGamePresenceResponse::mutable_entries()
+    ABSL_ATTRIBUTE_LIFETIME_BOUND {
+  SetHasBitForRepeated(_impl_._has_bits_[0], 0x00000001U);
+  // @@protoc_insertion_point(field_mutable_list:chirp.game_server_gateway.GetGamePresenceResponse.entries)
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  return _internal_mutable_entries();
+}
+inline const ::chirp::game_server_gateway::GamePresenceEntry& GetGamePresenceResponse::entries(int index) const
+    ABSL_ATTRIBUTE_LIFETIME_BOUND {
+  // @@protoc_insertion_point(field_get:chirp.game_server_gateway.GetGamePresenceResponse.entries)
+  return _internal_entries().Get(index);
+}
+inline ::chirp::game_server_gateway::GamePresenceEntry* PROTOBUF_NONNULL GetGamePresenceResponse::add_entries()
+    ABSL_ATTRIBUTE_LIFETIME_BOUND {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  ::chirp::game_server_gateway::GamePresenceEntry* _add =
+      _internal_mutable_entries()->InternalAddWithArena(
+          ::google::protobuf::MessageLite::internal_visibility(), GetArena());
+  SetHasBitForRepeated(_impl_._has_bits_[0], 0x00000001U);
+  // @@protoc_insertion_point(field_add:chirp.game_server_gateway.GetGamePresenceResponse.entries)
+  return _add;
+}
+inline const ::google::protobuf::RepeatedPtrField<::chirp::game_server_gateway::GamePresenceEntry>& GetGamePresenceResponse::entries() const
+    ABSL_ATTRIBUTE_LIFETIME_BOUND {
+  // @@protoc_insertion_point(field_list:chirp.game_server_gateway.GetGamePresenceResponse.entries)
+  return _internal_entries();
+}
+inline const ::google::protobuf::RepeatedPtrField<::chirp::game_server_gateway::GamePresenceEntry>&
+GetGamePresenceResponse::_internal_entries() const {
+  ::google::protobuf::internal::TSanRead(&_impl_);
+  return _impl_.entries_;
+}
+inline ::google::protobuf::RepeatedPtrField<::chirp::game_server_gateway::GamePresenceEntry>* PROTOBUF_NONNULL
+GetGamePresenceResponse::_internal_mutable_entries() {
+  ::google::protobuf::internal::TSanRead(&_impl_);
+  return &_impl_.entries_;
 }
 
 #ifdef __GNUC__

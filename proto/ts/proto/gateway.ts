@@ -226,6 +226,18 @@ export enum MsgID {
   GET_UNREAD_SUMMARY_REQ = 5029,
   GET_UNREAD_SUMMARY_RESP = 5030,
   /**
+   * SET_GAME_PRESENCE_ENABLED_REQ - Game presence (游戏在线状态): the per-player switch for the "in game X"
+   * friend status and the friend-DM relay into the game plane. Bindings
+   * (5013-5020) are the in-game assertion; the switch defaults to true.
+   * app_gateway forwards these for self-served players (player_id pinned
+   * to the authenticated user). Bodies are chirp.game_server_gateway.*
+   * messages; see proto/game_server_gateway.proto.
+   */
+  SET_GAME_PRESENCE_ENABLED_REQ = 5031,
+  SET_GAME_PRESENCE_ENABLED_RESP = 5032,
+  GET_GAME_PRESENCE_REQ = 5033,
+  GET_GAME_PRESENCE_RESP = 5034,
+  /**
    * PEER_REGISTER_REQ - Chat peer registration: game_chat (spoke) registers with app_chat (hub)
    * so channel messages bridge between the two planes natively - no external
    * bridge process. See docs/architecture.md (对等注册协议).
@@ -800,6 +812,18 @@ export function msgIDFromJSON(object: any): MsgID {
     case 5030:
     case "GET_UNREAD_SUMMARY_RESP":
       return MsgID.GET_UNREAD_SUMMARY_RESP;
+    case 5031:
+    case "SET_GAME_PRESENCE_ENABLED_REQ":
+      return MsgID.SET_GAME_PRESENCE_ENABLED_REQ;
+    case 5032:
+    case "SET_GAME_PRESENCE_ENABLED_RESP":
+      return MsgID.SET_GAME_PRESENCE_ENABLED_RESP;
+    case 5033:
+    case "GET_GAME_PRESENCE_REQ":
+      return MsgID.GET_GAME_PRESENCE_REQ;
+    case 5034:
+    case "GET_GAME_PRESENCE_RESP":
+      return MsgID.GET_GAME_PRESENCE_RESP;
     case 5050:
     case "PEER_REGISTER_REQ":
       return MsgID.PEER_REGISTER_REQ;
@@ -1264,6 +1288,14 @@ export function msgIDToJSON(object: MsgID): string {
       return "GET_UNREAD_SUMMARY_REQ";
     case MsgID.GET_UNREAD_SUMMARY_RESP:
       return "GET_UNREAD_SUMMARY_RESP";
+    case MsgID.SET_GAME_PRESENCE_ENABLED_REQ:
+      return "SET_GAME_PRESENCE_ENABLED_REQ";
+    case MsgID.SET_GAME_PRESENCE_ENABLED_RESP:
+      return "SET_GAME_PRESENCE_ENABLED_RESP";
+    case MsgID.GET_GAME_PRESENCE_REQ:
+      return "GET_GAME_PRESENCE_REQ";
+    case MsgID.GET_GAME_PRESENCE_RESP:
+      return "GET_GAME_PRESENCE_RESP";
     case MsgID.PEER_REGISTER_REQ:
       return "PEER_REGISTER_REQ";
     case MsgID.PEER_REGISTER_RESP:
