@@ -122,7 +122,8 @@ using HandleSendMessageWithPrefsFn = void (*)(
     const chirp::chat::DeliveryPrefs*,
     const std::shared_ptr<chirp::network::MessageRouter>&, chirp::network::ServerGatewayPeer*,
     const std::string&, const std::string&, chirp::network::ChatPeerLink*, const std::string&,
-    chirp::chat::MessageEditHandlers*, int64_t);
+    chirp::chat::MessageEditHandlers*, chirp::chat::PlayerDirectory*, chirp::network::ChatPeerHub*,
+    int64_t);
 
 template <typename Fn, typename = void>
 struct CanCastHandleLogin : std::false_type {};
@@ -165,10 +166,13 @@ void InvokeSendMessage(const chirp::chat::SendMessageRequest& req,
                        chirp::network::ServerGatewayPeer* hub_peer,
                        const std::string& npc_service_id, const std::string& npc_prefix,
                        chirp::network::ChatPeerLink* spoke_link, const std::string& spoke_game_id,
-                       chirp::chat::MessageEditHandlers* edits, int64_t seq) {
+                       chirp::chat::MessageEditHandlers* edits,
+                       chirp::chat::PlayerDirectory* directory, chirp::network::ChatPeerHub* hub,
+                       int64_t seq) {
   if constexpr (CanCastHandleSendMessage<HandleSendMessageWithPrefsFn>::value) {
     HandleSendMessage(req, session, state, store, tracker, acks, prefs, router, hub_peer,
-                      npc_service_id, npc_prefix, spoke_link, spoke_game_id, edits, seq);
+                      npc_service_id, npc_prefix, spoke_link, spoke_game_id, edits, directory, hub,
+                      seq);
   } else {
     HandleSendMessage(req, session, state, store, tracker, acks, router, hub_peer,
                       npc_service_id, npc_prefix, spoke_link, spoke_game_id,
@@ -213,7 +217,8 @@ class EnhancedSessionTest : public ::testing::Test {
     InvokeSendMessage(req, sender_session, state_, store_override ? store_override : store_, tracker_, /*acks=*/nullptr,
                       &delivery_prefs_, router_, /*hub_peer=*/nullptr, /*npc_service_id=*/"",
                       /*npc_prefix=*/"npc:", /*spoke_link=*/nullptr, /*spoke_game_id=*/"",
-                      edits_override ? edits_override : recall_.handlers.get(), /*seq=*/1);
+                      edits_override ? edits_override : recall_.handlers.get(),
+                      /*directory=*/nullptr, /*hub=*/nullptr, /*seq=*/1);
     // 同会话多次发送会累积历史帧，这里只断言"有响应"并取最新一帧。
     const auto resps = FramesOf(*sender_session, chirp::gateway::SEND_MESSAGE_RESP);
     EXPECT_FALSE(resps.empty());
@@ -527,7 +532,7 @@ TEST_F(EnhancedSessionTest, PrivateSendFansOutToEveryDevice) {
   InvokeSendMessage(req, sender, state_, store_, tracker_, /*acks=*/nullptr, &delivery_prefs_,
                     router_, /*hub_peer=*/nullptr, /*npc_service_id=*/"", /*npc_prefix=*/"npc:",
                     /*spoke_link=*/nullptr, /*spoke_game_id=*/"", recall_.handlers.get(),
-                    /*seq=*/3);
+                    /*directory=*/nullptr, /*hub=*/nullptr, /*seq=*/3);
 
   auto resps = FramesOf(*sender, chirp::gateway::SEND_MESSAGE_RESP);
   ASSERT_EQ(resps.size(), 1u);
@@ -563,7 +568,7 @@ TEST_F(EnhancedSessionTest, PrivateSendQueuesOfflineWhenEveryDeviceHalfClosed) {
   InvokeSendMessage(req, sender, state_, store_, tracker_, /*acks=*/nullptr, &delivery_prefs_,
                     router_, /*hub_peer=*/nullptr, /*npc_service_id=*/"", /*npc_prefix=*/"npc:",
                     /*spoke_link=*/nullptr, /*spoke_game_id=*/"", recall_.handlers.get(),
-                    /*seq=*/4);
+                    /*directory=*/nullptr, /*hub=*/nullptr, /*seq=*/4);
 
   // A half-closed connection counts as offline: nothing is written to it.
   EXPECT_TRUE(bob->sent.empty());
@@ -696,7 +701,8 @@ TEST_F(EnhancedSessionTest, RecallRejectsNonSenderUnknownWorldChannelAndHardDele
   InvokeSendMessage(world_req, alice, state_, live.store, tracker_, /*acks=*/nullptr,
                     &delivery_prefs_, router_, /*hub_peer=*/nullptr, /*npc_service_id=*/"",
                     /*npc_prefix=*/"npc:", /*spoke_link=*/nullptr, /*spoke_game_id=*/"",
-                    live.recall.handlers.get(), /*seq=*/2);
+                    live.recall.handlers.get(), /*directory=*/nullptr, /*hub=*/nullptr,
+                    /*seq=*/2);
   std::string world_mid;
   {
     const auto resps = FramesOf(*alice, chirp::gateway::SEND_MESSAGE_RESP);

@@ -61,6 +61,12 @@ class IdentityRegistry {
   // All bindings asserted for one player (one per game identity).
   std::vector<game_server_gateway::StoredIdentityBinding> GetByPlayer(const std::string& player_id) const;
 
+  // One binding by its idempotency key, or nullptr when unknown. The
+  // presence refresh path needs the affected player before an unbind-by-id
+  // erases the row (the unbind result carries no owner).
+  std::unique_ptr<game_server_gateway::StoredIdentityBinding> GetById(
+      const std::string& binding_id) const;
+
   // The platform player behind a game user, or nullptr when unbound.
   std::unique_ptr<std::string> Resolve(const std::string& game_id,
                                        const std::string& game_user_id) const;

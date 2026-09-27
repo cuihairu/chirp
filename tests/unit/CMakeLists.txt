@@ -624,6 +624,7 @@ add_test(NAME server_gateway_tests COMMAND server_gateway_tests)
 # app_chat; their coverage moved with them.
 add_executable(chat_player_directory_tests
   chat_player_directory_test.cc
+  ${CMAKE_SOURCE_DIR}/services/shared/chat/src/game_presence.cc
   ${CMAKE_SOURCE_DIR}/services/shared/chat/src/identity_registry.cc
   ${CMAKE_SOURCE_DIR}/services/shared/chat/src/player_directory.cc
   ${CMAKE_SOURCE_DIR}/services/shared/chat/src/runtime_utils.cc

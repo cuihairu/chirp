@@ -114,6 +114,20 @@ IdentityRegistry::BindOutcome IdentityRegistry::Bind(const std::string& binding_
   return BindOutcome::kBound;
 }
 
+std::unique_ptr<game_server_gateway::StoredIdentityBinding> IdentityRegistry::GetById(
+    const std::string& binding_id) const {
+  if (binding_id.empty()) {
+    return nullptr;
+  }
+  std::lock_guard<std::mutex> lock(mu_);
+  const auto it = by_id_.find(binding_id);
+  if (it == by_id_.end()) {
+    return nullptr;
+  }
+  auto copy = std::make_unique<game_server_gateway::StoredIdentityBinding>(it->second);
+  return copy;
+}
+
 bool IdentityRegistry::UnbindById(const std::string& binding_id) {
   if (binding_id.empty()) {
     return false;

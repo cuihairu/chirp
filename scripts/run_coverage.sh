@@ -380,8 +380,8 @@ KNOWN_UNCOVERABLE = {
     # so a tuple hit whose by-id record is missing cannot happen. (These
     # registries moved from services/game/server_gateway into
     # services/shared/chat with app_chat; the arms kept their line numbers.)
-    ("services/shared/chat/src/identity_registry.cc", 143),
-    ("services/shared/chat/src/identity_registry.cc", 177),
+    ("services/shared/chat/src/identity_registry.cc", 157),
+    ("services/shared/chat/src/identity_registry.cc", 191),
     ("services/shared/chat/src/subscription_registry.cc", 180),
     # ChatPeerHub::Start listen arm: reaching it needs listen(2) to fail
     # after bind(2) succeeded - only fd exhaustion landing between the two
@@ -506,11 +506,11 @@ KNOWN_UNCOVERABLE = {
     # defense; the game_id-mismatch half is covered by ResolveGameUserSkipsOtherGames.
     ("services/shared/chat/src/identity_registry.cc", 57),
     ("services/shared/chat/src/identity_registry.cc", 104),
-    ("services/shared/chat/src/identity_registry.cc", 142),
-    ("services/shared/chat/src/identity_registry.cc", 161),
-    ("services/shared/chat/src/identity_registry.cc", 176),
-    ("services/shared/chat/src/identity_registry.cc", 200),
-    ("services/shared/chat/src/identity_registry.cc", 219),
+    ("services/shared/chat/src/identity_registry.cc", 156),
+    ("services/shared/chat/src/identity_registry.cc", 175),
+    ("services/shared/chat/src/identity_registry.cc", 190),
+    ("services/shared/chat/src/identity_registry.cc", 214),
+    ("services/shared/chat/src/identity_registry.cc", 233),
     # MessageStoreConfig FromEnv boolean env parses: untaken arms are throw
     # edges into the two temporary std::string construction landing pads on
     # `std::string(env_val) == "1" || == "true"` (bad_alloc); the true/false
@@ -520,8 +520,8 @@ KNOWN_UNCOVERABLE = {
     # PlayerDirectory log string concats on successful unbind/unsubscribe:
     # untaken arms are throw edges into the `prefix + id` / triple-concat
     # landing pads (bad_alloc); the taken arms execute the log normally.
-    ("services/shared/chat/src/player_directory.cc", 69),
-    ("services/shared/chat/src/player_directory.cc", 159),
+    ("services/shared/chat/src/player_directory.cc", 99),
+    ("services/shared/chat/src/player_directory.cc", 195),
     # RepeatGuard mute-expire reset: `state = RepeatState{}` untaken arm is
     # the move/copy half of the implicitly-generated assignment (always the
     # same direction for a prvalue Reset).

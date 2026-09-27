@@ -76,6 +76,9 @@ if(MYSQL_FOUND)
         src/identity_registry.cc
         src/subscription_registry.cc
         src/unread_ledger.cc
+        # Game presence (游戏在线状态): the per-player switch behind the
+        # friend-facing "in game X" status and the friend-DM relay.
+        src/game_presence.cc
         src/player_directory.cc
         # Lexicon-based content filter (game_chat_features P0 敏感词过滤):
         # three-level policy over a hot-reloadable term file.

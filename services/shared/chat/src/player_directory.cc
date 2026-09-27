@@ -1,5 +1,6 @@
 #include "player_directory.h"
 
+#include <algorithm>
 #include <functional>
 #include <utility>
 
@@ -7,6 +8,15 @@
 #include "runtime_utils.h"
 
 namespace chirp::chat {
+namespace {
+// Derived roster: which games a player's presence currently covers. One key
+// per player, newline-joined sorted game ids (DEL when empty). Read by the
+// social plane's presence queries; ownership is this directory's.
+constexpr const char* kOnlinePrefix = "chirp:game_presence:online:";
+// Pub/sub channel: one serialized GamePresenceEvent per game flip, consumed
+// by the social plane to push IN_GAME / back-to-online to friends.
+constexpr const char* kEventsChannel = "chirp:game_presence:events";
+}  // namespace
 
 PlayerDirectory::PlayerDirectory(Options options)
     : options_(std::move(options)),
@@ -15,12 +25,17 @@ PlayerDirectory::PlayerDirectory(Options options)
       subscriptions_(options_.subscriptions_redis ? std::move(options_.subscriptions_redis)
                                                   : SubscriptionRegistry::RedisFactory()),
       unread_(options_.unread_redis ? std::move(options_.unread_redis)
-                                    : UnreadLedger::RedisFactory()) {}
+                                    : UnreadLedger::RedisFactory()),
+      // Copied, not moved: RefreshPresence needs the factory too (it opens a
+      // short-lived client per roster refresh), unlike the registries above
+      // which each keep a single long-lived client.
+      presence_(options_.presence_redis) {}
 
 void PlayerDirectory::LoadAll() {
   identities_.Load();
   subscriptions_.Load();
   unread_.Load();
+  presence_.Load();
 }
 
 game_server_gateway::BindPlayerIdentityResponse PlayerDirectory::HandleBindPlayerIdentity(
@@ -36,6 +51,10 @@ game_server_gateway::BindPlayerIdentityResponse PlayerDirectory::HandleBindPlaye
         "binding " + req.binding_id() + ": player " + req.player_id() + " <- " + req.game_id() +
         ":" + req.game_user_id());
     resp.set_code(chirp::common::OK);
+    // A new binding is a new presence assertion: the derived roster and the
+    // friend-facing status follow it (when the switch is on, which is the
+    // default).
+    RefreshPresence(req.player_id());
     break;
   case IdentityRegistry::BindOutcome::kExisted:
     resp.set_code(chirp::common::OK);
@@ -60,6 +79,17 @@ game_server_gateway::UnbindPlayerIdentityResponse PlayerDirectory::HandleUnbindP
     resp.set_code(chirp::common::INVALID_PARAM);
     return resp;
   }
+  // The unbind results carry no owner, but the presence refresh needs the
+  // affected player — resolve them before the row disappears.
+  std::string affected_player;
+  if (by_id) {
+    const auto entry = identities_.GetById(req.binding_id());
+    if (entry) {
+      affected_player = entry->player_id();
+    }
+  } else if (const auto player = identities_.Resolve(req.game_id(), req.game_user_id())) {
+    affected_player = *player;
+  }
   const bool removed =
       by_id ? identities_.UnbindById(req.binding_id())
             : identities_.UnbindByGameUser(req.game_id(), req.game_user_id());
@@ -67,6 +97,11 @@ game_server_gateway::UnbindPlayerIdentityResponse PlayerDirectory::HandleUnbindP
   if (removed) {
     chirp::common::Logger::Instance().Info(
         "unbound " + (by_id ? req.binding_id() : req.game_id() + ":" + req.game_user_id()));
+    // Losing the last binding is what takes a player's game status offline
+    // naturally — the assertion is the binding, not a liveness signal.
+    if (!affected_player.empty()) {
+      RefreshPresence(affected_player);
+    }
   }
   return resp;
 }
@@ -213,6 +248,167 @@ game_server_gateway::GetUnreadSummaryResponse PlayerDirectory::HandleGetUnreadSu
   return resp;
 }
 
+game_server_gateway::SetGamePresenceEnabledResponse
+PlayerDirectory::HandleSetGamePresenceEnabled(
+    const game_server_gateway::SetGamePresenceEnabledRequest& req) {
+  game_server_gateway::SetGamePresenceEnabledResponse resp;
+  if (req.player_id().empty()) {
+    resp.set_code(chirp::common::INVALID_PARAM);
+    return resp;
+  }
+  if (presence_.SetEnabled(req.player_id(), req.enabled())) {
+    // The switch flip gates both the friend-facing roster and the DM relay
+    // below, so the derived state follows it immediately (disabling drops
+    // the roster and takes the status offline right away).
+    RefreshPresence(req.player_id());
+    chirp::common::Logger::Instance().Info(
+        "game presence for player " + req.player_id() + " -> " +
+        (req.enabled() ? "enabled" : "disabled"));
+  }
+  resp.set_code(chirp::common::OK);
+  return resp;
+}
+
+game_server_gateway::GetGamePresenceResponse PlayerDirectory::HandleGetGamePresence(
+    const game_server_gateway::GetGamePresenceRequest& req) const {
+  game_server_gateway::GetGamePresenceResponse resp;
+  if (req.player_id().empty()) {
+    resp.set_code(chirp::common::INVALID_PARAM);
+    return resp;
+  }
+  resp.set_code(chirp::common::OK);
+  resp.set_enabled(presence_.Enabled(req.player_id()));
+  if (!resp.enabled()) {
+    return resp;
+  }
+  // Entries are the live bindings sorted by game_id — the games the
+  // presence currently covers, straight from the assertion store.
+  auto bindings = identities_.GetByPlayer(req.player_id());
+  std::sort(bindings.begin(), bindings.end(),
+            [](const auto& a, const auto& b) { return a.game_id() < b.game_id(); });
+  for (const auto& binding : bindings) {
+    auto* entry = resp.add_entries();
+    entry->set_game_id(binding.game_id());
+    entry->set_game_user_id(binding.game_user_id());
+  }
+  return resp;
+}
+
+void PlayerDirectory::RefreshPresence(const std::string& player_id) {
+  if (player_id.empty()) {
+    return;
+  }
+  // Desired state: the sorted game ids of the live bindings, but only while
+  // the switch is on. Disabled players keep their bindings yet drop out of
+  // the roster entirely — that is the closed-state contract (状态不推).
+  std::set<std::string> desired;
+  if (presence_.Enabled(player_id)) {
+    for (const auto& binding : identities_.GetByPlayer(player_id)) {
+      desired.insert(binding.game_id());
+    }
+  }
+
+  auto& published = published_games_[player_id];
+  if (published == desired) {
+    return;
+  }
+
+  // One shared connection serves the roster write and every event publish.
+  auto redis = options_.presence_redis ? options_.presence_redis() : nullptr;
+  auto publish = [&redis](const game_server_gateway::GamePresenceEvent& event) {
+    if (!redis || redis->Publish(kEventsChannel, event.SerializeAsString())) {
+      return;
+    }
+    chirp::common::Logger::Instance().Warn(
+        "game presence: failed to publish event for player " + event.player_id());
+  };
+  for (const auto& game_id : published) {
+    if (desired.count(game_id) == 0) {
+      game_server_gateway::GamePresenceEvent event;
+      event.set_player_id(player_id);
+      event.set_game_id(game_id);
+      event.set_online(false);
+      publish(event);
+    }
+  }
+  for (const auto& game_id : desired) {
+    if (published.count(game_id) == 0) {
+      game_server_gateway::GamePresenceEvent event;
+      event.set_player_id(player_id);
+      event.set_game_id(game_id);
+      event.set_online(true);
+      publish(event);
+      chirp::common::Logger::Instance().Info(
+          "game presence: player " + player_id + " entered game " + game_id);
+    }
+  }
+  published = desired;
+
+  if (redis) {
+    const std::string key = std::string(kOnlinePrefix) + player_id;
+    if (desired.empty()) {
+      redis->Del(key);
+    } else {
+      std::string joined;
+      for (const auto& game_id : desired) {
+        if (!joined.empty()) {
+          joined.push_back('\n');
+        }
+        joined += game_id;
+      }
+      redis->Set(key, joined);
+    }
+  }
+}
+
+size_t PlayerDirectory::RelayFriendMessage(const std::string& sender_player_id,
+                                           const std::string& recipient_player_id,
+                                           const std::string& content,
+                                           const std::string& client_msg_id,
+                                           const GameServiceResolver& resolve,
+                                           const GameReplySender& inject) const {
+  if (sender_player_id.empty() || recipient_player_id.empty()) {
+    return 0;
+  }
+  // The switch is the off switch for exactly this relay and the status
+  // push: a disabled player gets neither (关闭态回归语义, tested).
+  if (!presence_.Enabled(recipient_player_id)) {
+    return 0;
+  }
+  auto bindings = identities_.GetByPlayer(recipient_player_id);
+  if (bindings.empty()) {
+    return 0;
+  }
+  // Deterministic order: one binding per game, sorted by game_id.
+  std::sort(bindings.begin(), bindings.end(),
+            [](const auto& a, const auto& b) { return a.game_id() < b.game_id(); });
+
+  size_t injected = 0;
+  for (const auto& binding : bindings) {
+    const std::string service_id = resolve(binding.game_id());
+    if (service_id.empty()) {
+      // No live spoke for this game: a logged skip, never an error — the
+      // ordinary chat delivery above already succeeded.
+      continue;
+    }
+    gateway::PeerInjectMessageNotify notify;
+    // The spoke treats channel_id as the target user: the private copy is
+    // addressed to the bound game identity, sender is the chirp friend.
+    notify.set_channel_id(binding.game_user_id());
+    notify.set_sender_id(sender_player_id);
+    notify.set_content(content);
+    notify.set_client_msg_id(client_msg_id);
+    if (!inject(service_id, notify)) {
+      continue;
+    }
+    ++injected;
+    chirp::common::Logger::Instance().Info(
+        "friend DM relayed into game " + binding.game_id() + " for " + recipient_player_id +
+        " (" + binding.game_user_id() + ") from " + sender_player_id);
+  }
+  return injected;
+}
+
 size_t PlayerDirectory::FanoutChannelMessage(const gateway::ChannelMessageNotify& notify) {
   // Snapshot under the registry lock; the delivery below must not hold it.
   const auto subscribers = subscriptions_.GetForChannel(notify.game_id(), notify.channel_id());
@@ -335,7 +531,7 @@ bool DispatchPlayerDirectoryPacket(
     const std::unordered_set<const network::Session*>* trusted_conns) {
   using chirp::gateway::MsgID;
   const MsgID id = pkt.msg_id();
-  const bool in_block = id >= MsgID::BIND_PLAYER_IDENTITY_REQ && id <= MsgID::GET_UNREAD_SUMMARY_RESP;
+  const bool in_block = id >= MsgID::BIND_PLAYER_IDENTITY_REQ && id <= MsgID::GET_GAME_PRESENCE_RESP;
   if (!in_block) {
     return false;
   }
@@ -415,6 +611,22 @@ bool DispatchPlayerDirectoryPacket(
         session, pkt, MsgID::GET_UNREAD_SUMMARY_RESP, trusted,
         [&directory](const game_server_gateway::GetUnreadSummaryRequest& req) {
           return directory.HandleGetUnreadSummary(req);
+        });
+    return true;
+  case MsgID::SET_GAME_PRESENCE_ENABLED_REQ:
+    ServeRpc<game_server_gateway::SetGamePresenceEnabledRequest,
+             game_server_gateway::SetGamePresenceEnabledResponse>(
+        session, pkt, MsgID::SET_GAME_PRESENCE_ENABLED_RESP, trusted,
+        [&directory](const game_server_gateway::SetGamePresenceEnabledRequest& req) {
+          return directory.HandleSetGamePresenceEnabled(req);
+        });
+    return true;
+  case MsgID::GET_GAME_PRESENCE_REQ:
+    ServeRpc<game_server_gateway::GetGamePresenceRequest,
+             game_server_gateway::GetGamePresenceResponse>(
+        session, pkt, MsgID::GET_GAME_PRESENCE_RESP, trusted,
+        [&directory](const game_server_gateway::GetGamePresenceRequest& req) {
+          return directory.HandleGetGamePresence(req);
         });
     return true;
   default:

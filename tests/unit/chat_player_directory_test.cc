@@ -37,8 +37,12 @@ using chirp::common::OK;
 // Get/Set/Del/Keys. `fail` simulates a dead Redis (writes/reads no-op).
 class FakeRedisClient : public chirp::network::RedisClient {
  public:
-  explicit FakeRedisClient(std::shared_ptr<std::map<std::string, std::string>> store)
-      : RedisClient("127.0.0.1", 1), store_(std::move(store)) {}
+  // `publishes` (optional) records every PUBLISH as (channel, payload) so
+  // the game-presence event stream is assertable without a server.
+  explicit FakeRedisClient(std::shared_ptr<std::map<std::string, std::string>> store,
+                           std::shared_ptr<std::vector<std::pair<std::string, std::string>>> publishes =
+                               nullptr)
+      : RedisClient("127.0.0.1", 1), store_(std::move(store)), publishes_(std::move(publishes)) {}
 
   std::optional<std::string> Get(const std::string& key) override {
     if (fail || fail_get) {
@@ -63,6 +67,15 @@ class FakeRedisClient : public chirp::network::RedisClient {
     store_->erase(key);
     return true;
   }
+  bool Publish(const std::string& channel, const std::string& message) override {
+    if (fail) {
+      return false;
+    }
+    if (publishes_) {
+      publishes_->emplace_back(channel, message);
+    }
+    return true;
+  }
   std::vector<std::string> Keys(const std::string& pattern) override {
     std::vector<std::string> out;
     if (fail) {
@@ -84,6 +97,7 @@ class FakeRedisClient : public chirp::network::RedisClient {
 
  private:
   std::shared_ptr<std::map<std::string, std::string>> store_;
+  std::shared_ptr<std::vector<std::pair<std::string, std::string>>> publishes_;
 };
 
 // ---------------------------------------------------------------------------
@@ -180,6 +194,14 @@ TEST(IdentityRegistryTest, UnbindByIdAndByPairAreIdempotent) {
 TEST(IdentityRegistryTest, ResolveUnboundReturnsNull) {
   chat::IdentityRegistry registry;
   EXPECT_EQ(registry.Resolve("game-a", "u-1"), nullptr);
+}
+
+TEST(IdentityRegistryTest, GetByIdEmptyAndUnknownIdsReturnNull) {
+  chat::IdentityRegistry registry;
+  // The empty id is the "no by-id lookup requested" sentinel; the unknown
+  // id is the ordinary miss. Both hand back null.
+  EXPECT_EQ(registry.GetById(""), nullptr);
+  EXPECT_EQ(registry.GetById("missing"), nullptr);
 }
 
 TEST(IdentityRegistryTest, ResolveGameUserReverseLookup) {
@@ -459,6 +481,142 @@ std::set<std::string> SubscriberIds(const std::vector<sg::StoredChannelSubscript
   }
   return out;
 }
+
+// ---------------------------------------------------------------------------
+// GamePresence (游戏在线状态开关: default-enabled + explicit-choice store)
+// ---------------------------------------------------------------------------
+
+TEST(GamePresenceTest, UnknownPlayerReadsAsEnabled) {
+  chat::GamePresence presence{chat::GamePresence::RedisFactory()};
+  // 绑定即默认开启:从未写过的账号读出来就是 true。
+  EXPECT_TRUE(presence.Enabled("nobody"));
+  EXPECT_TRUE(presence.Enabled("player-1"));
+}
+
+TEST(GamePresenceTest, SetReportsEffectiveChangeAndRoundTrips) {
+  chat::GamePresence presence{chat::GamePresence::RedisFactory()};
+  // First explicit choice always "changes" the record, even when it agrees
+  // with the default - the caller's refresh is idempotent either way.
+  EXPECT_TRUE(presence.SetEnabled("player-1", true));
+  EXPECT_FALSE(presence.SetEnabled("player-1", true));
+  EXPECT_TRUE(presence.SetEnabled("player-1", false));
+  EXPECT_FALSE(presence.Enabled("player-1"));
+  EXPECT_TRUE(presence.Enabled("player-2"));  // untouched players keep default
+  EXPECT_TRUE(presence.SetEnabled("player-1", true));
+  EXPECT_TRUE(presence.Enabled("player-1"));
+}
+
+TEST(GamePresenceTest, RedisWriteThroughAndLoadRestore) {
+  const auto store = std::make_shared<std::map<std::string, std::string>>();
+  chat::GamePresence writer([store]() mutable {
+    return std::make_unique<FakeRedisClient>(store);
+  });
+  writer.Load();  // empty store is a clean no-op
+  writer.SetEnabled("player-1", false);
+  ASSERT_EQ(store->count("chirp:game_presence:setting:player-1"), 1u);
+  EXPECT_EQ((*store)["chirp:game_presence:setting:player-1"], "0");
+
+  // A fresh process replays only the explicit choices.
+  chat::GamePresence reader([store]() mutable {
+    return std::make_unique<FakeRedisClient>(store);
+  });
+  reader.Load();
+  EXPECT_FALSE(reader.Enabled("player-1"));
+  EXPECT_TRUE(reader.Enabled("player-2"));
+}
+
+TEST(GamePresenceTest, LoadSkipsCorruptRecords) {
+  const auto store = std::make_shared<std::map<std::string, std::string>>();
+  (*store)["chirp:game_presence:setting:player-1"] = "maybe";
+  (*store)["chirp:game_presence:setting:player-2"] = "0";
+  chat::GamePresence reader([store]() mutable {
+    return std::make_unique<FakeRedisClient>(store);
+  });
+  reader.Load();
+  // The unreadable row is skipped (default applies), the readable one lands.
+  EXPECT_TRUE(reader.Enabled("player-1"));
+  EXPECT_FALSE(reader.Enabled("player-2"));
+}
+
+TEST(GamePresenceTest, RedisFailureDegradesToMemoryOnly) {
+  const auto store = std::make_shared<std::map<std::string, std::string>>();
+  chat::GamePresence presence([store]() mutable {
+    auto client = std::make_unique<FakeRedisClient>(store);
+    client->fail = true;
+    return client;
+  });
+  presence.Load();
+  EXPECT_TRUE(presence.SetEnabled("player-1", false));
+  // The write-through failed but the working authority is memory.
+  EXPECT_FALSE(presence.Enabled("player-1"));
+  EXPECT_TRUE(store->empty());
+}
+
+// ---------------------------------------------------------------------------
+// PlayerDirectory game presence: derived roster + pub/sub events (状态不推)
+// ---------------------------------------------------------------------------
+
+namespace presence_test {
+
+inline constexpr const char* kRosterPrefix = "chirp:game_presence:online:";
+inline constexpr const char* kEvents = "chirp:game_presence:events";
+
+struct Harness {
+  std::shared_ptr<std::map<std::string, std::string>> store =
+      std::make_shared<std::map<std::string, std::string>>();
+  std::shared_ptr<std::vector<std::pair<std::string, std::string>>> publishes =
+      std::make_shared<std::vector<std::pair<std::string, std::string>>>();
+
+  chat::PlayerDirectory::Options Options() {
+    chat::PlayerDirectory::Options options;
+    options.presence_redis = [this]() mutable {
+      return std::make_unique<FakeRedisClient>(store, publishes);
+    };
+    return options;
+  }
+
+  // (game_id, online) of every published event, in order.
+  std::vector<std::pair<std::string, bool>> Events() const {
+    std::vector<std::pair<std::string, bool>> out;
+    for (const auto& [channel, payload] : *publishes) {
+      EXPECT_EQ(channel, kEvents);
+      sg::GamePresenceEvent event;
+      EXPECT_TRUE(event.ParseFromString(payload));
+      out.emplace_back(event.game_id(), event.online());
+    }
+    return out;
+  }
+
+  // The most recent flip; asserts non-empty so a regression reads as a
+  // failure instead of an out-of-range back().
+  std::pair<std::string, bool> LastEvent() const {
+    const auto events = Events();
+    EXPECT_FALSE(events.empty());
+    return events.empty() ? std::pair<std::string, bool>{"<none>", false} : events.back();
+  }
+
+  std::string Roster(const std::string& player) const {
+    const auto it = store->find(std::string(kRosterPrefix) + player);
+    return it == store->end() ? std::string("<absent>") : it->second;
+  }
+};
+
+inline sg::SetGamePresenceEnabledRequest MakeSetRequest(const std::string& player,
+                                                        bool enabled) {
+  sg::SetGamePresenceEnabledRequest req;
+  req.set_player_id(player);
+  req.set_enabled(enabled);
+  return req;
+}
+
+inline sg::GetGamePresenceRequest MakeGetRequest(const std::string& player) {
+  sg::GetGamePresenceRequest req;
+  req.set_player_id(player);
+  return req;
+}
+
+}  // namespace presence_test
+
 
 }  // namespace
 
@@ -1473,11 +1631,12 @@ TEST_F(DispatchTest, IgnoresPacketsOutsideTheBlock) {
       MakePacket(chirp::gateway::SEND_MESSAGE_REQ, unrelated), session, directory_, &trusted));
   EXPECT_TRUE(session->sent.empty());
 
-  // Id at the upper boundary of the block but one past GET_UNREAD_SUMMARY_RESP:
-  // the `id >= BIND && id <= GET_UNREAD` compound takes the second-compare
-  // false arm instead of short-circuiting on the first.
+  // Id one past GET_GAME_PRESENCE_RESP (the block's upper bound since the
+  // 游戏在线状态 RPCs landed at 5031-5034): the `id >= BIND && id <=
+  // GET_GAME_PRESENCE_RESP` compound takes the second-compare false arm
+  // instead of short-circuiting on the first.
   EXPECT_FALSE(chirp::chat::DispatchPlayerDirectoryPacket(
-      MakePacket(static_cast<chirp::gateway::MsgID>(5031), unrelated), session, directory_,
+      MakePacket(static_cast<chirp::gateway::MsgID>(5035), unrelated), session, directory_,
       &trusted));
   EXPECT_TRUE(session->sent.empty());
 }
@@ -1670,6 +1829,32 @@ TEST_F(DispatchTest, ServesEveryRemainingRequestInTheBlock) {
     ASSERT_EQ(resps.size(), 1u);
     EXPECT_EQ(resps[0].code(), OK);
   }
+
+  // SET_GAME_PRESENCE_ENABLED_REQ: the switch write is served (the binding
+  // above was just unbound, so the roster ends up empty either way).
+  sg::SetGamePresenceEnabledRequest set_switch;
+  set_switch.set_player_id("player-1");
+  set_switch.set_enabled(false);
+  dispatch(chirp::gateway::SET_GAME_PRESENCE_ENABLED_REQ, set_switch);
+  {
+    auto resps = session->Decode<sg::SetGamePresenceEnabledResponse>(
+        chirp::gateway::SET_GAME_PRESENCE_ENABLED_RESP);
+    ASSERT_EQ(resps.size(), 1u);
+    EXPECT_EQ(resps[0].code(), OK);
+  }
+
+  // GET_GAME_PRESENCE_REQ: reads back the switch we just wrote.
+  sg::GetGamePresenceRequest get_presence;
+  get_presence.set_player_id("player-1");
+  dispatch(chirp::gateway::GET_GAME_PRESENCE_REQ, get_presence);
+  {
+    auto resps = session->Decode<sg::GetGamePresenceResponse>(
+        chirp::gateway::GET_GAME_PRESENCE_RESP);
+    ASSERT_EQ(resps.size(), 1u);
+    EXPECT_EQ(resps[0].code(), OK);
+    EXPECT_FALSE(resps[0].enabled());
+    EXPECT_EQ(resps[0].entries_size(), 0);
+  }
 }
 
 // ---------------------------------------------------------------------------
@@ -1840,7 +2025,7 @@ TEST_F(PlayerDirectoryHandlerTest, UnsubscribeLogsTheTuplePathWhenRemoved) {
 }
 
 TEST_F(DispatchTest, DeniesEveryRemainingUntrustedRequest) {
-  // BIND was covered in DeniesUntrustedDials; hit the other seven response
+  // BIND was covered in DeniesUntrustedDials; hit the other nine response
   // types so every DenyUntrusted template instantiation runs.
   const auto deny = [&](chirp::gateway::MsgID req_id, const google::protobuf::Message& body,
                         chirp::gateway::MsgID resp_id) {
@@ -1947,6 +2132,438 @@ TEST_F(DispatchTest, DeniesEveryRemainingUntrustedRequest) {
     ASSERT_EQ(r.size(), 1u);
     EXPECT_EQ(r[0].code(), AUTH_FAILED);
   }
+
+  // The 游戏在线状态 pair rides the same trust gate: an untrusted dial may
+  // not flip another player's switch nor read their roster.
+  sg::SetGamePresenceEnabledRequest set_switch;
+  set_switch.set_player_id("player-1");
+  set_switch.set_enabled(false);
+  deny(chirp::gateway::SET_GAME_PRESENCE_ENABLED_REQ, set_switch,
+       chirp::gateway::SET_GAME_PRESENCE_ENABLED_RESP);
+  {
+    auto r = session->Decode<sg::SetGamePresenceEnabledResponse>(
+        chirp::gateway::SET_GAME_PRESENCE_ENABLED_RESP);
+    ASSERT_EQ(r.size(), 1u);
+    EXPECT_EQ(r[0].code(), AUTH_FAILED);
+  }
+
+  session->sent.clear();
+  sg::GetGamePresenceRequest get_presence;
+  get_presence.set_player_id("player-1");
+  deny(chirp::gateway::GET_GAME_PRESENCE_REQ, get_presence,
+       chirp::gateway::GET_GAME_PRESENCE_RESP);
+  {
+    auto r = session->Decode<sg::GetGamePresenceResponse>(
+        chirp::gateway::GET_GAME_PRESENCE_RESP);
+    ASSERT_EQ(r.size(), 1u);
+    EXPECT_EQ(r[0].code(), AUTH_FAILED);
+  }
+}
+
+
+TEST(PlayerDirectoryPresenceTest, BindPublishesOnlineEventAndWritesRoster) {
+  presence_test::Harness h;
+  chat::PlayerDirectory directory(h.Options());
+
+  ASSERT_EQ(directory.HandleBindPlayerIdentity(MakeBindRequest("b1", "player-1", "game-a", "u-1"))
+                .code(),
+            OK);
+  // 绑定即上线:一条 online 事件 + roster 键。
+  EXPECT_EQ(h.Events(), (std::vector<std::pair<std::string, bool>>{{"game-a", true}}));
+  EXPECT_EQ(h.Roster("player-1"), "game-a");
+
+  // A repeated bind (idempotent kExisted) must not re-publish anything.
+  ASSERT_EQ(directory.HandleBindPlayerIdentity(MakeBindRequest("b1", "player-1", "game-a", "u-1"))
+                .code(),
+            OK);
+  EXPECT_EQ(h.publishes->size(), 1u);
+}
+
+TEST(PlayerDirectoryPresenceTest, RosterIsTheSortedGameSet) {
+  presence_test::Harness h;
+  chat::PlayerDirectory directory(h.Options());
+
+  // Bind in reverse order: the derived roster and the event stream both
+  // follow game_id order, never arrival order.
+  ASSERT_EQ(directory.HandleBindPlayerIdentity(MakeBindRequest("b2", "player-1", "game-b", "u-2"))
+                .code(),
+            OK);
+  ASSERT_EQ(directory.HandleBindPlayerIdentity(MakeBindRequest("b1", "player-1", "game-a", "u-1"))
+                .code(),
+            OK);
+  EXPECT_EQ(h.Roster("player-1"), "game-a\ngame-b");
+  EXPECT_EQ(h.Events(), (std::vector<std::pair<std::string, bool>>{
+                            {"game-b", true}, {"game-a", true}}));
+}
+
+TEST(PlayerDirectoryPresenceTest, UnbindTakesThatGameOffline) {
+  presence_test::Harness h;
+  chat::PlayerDirectory directory(h.Options());
+  ASSERT_EQ(directory.HandleBindPlayerIdentity(MakeBindRequest("b1", "player-1", "game-a", "u-1"))
+                .code(),
+            OK);
+  ASSERT_EQ(directory.HandleBindPlayerIdentity(MakeBindRequest("b2", "player-1", "game-b", "u-2"))
+                .code(),
+            OK);
+
+  sg::UnbindPlayerIdentityRequest unbind;
+  unbind.set_binding_id("b1");
+  ASSERT_EQ(directory.HandleUnbindPlayerIdentity(unbind).code(), OK);
+
+  // One offline event for the game that went away; the other stays up.
+  EXPECT_EQ(h.LastEvent(), (std::pair<std::string, bool>{"game-a", false}));
+  EXPECT_EQ(h.Roster("player-1"), "game-b");
+}
+
+TEST(PlayerDirectoryPresenceTest, LastUnbindDeletesTheRoster) {
+  presence_test::Harness h;
+  chat::PlayerDirectory directory(h.Options());
+  ASSERT_EQ(directory.HandleBindPlayerIdentity(MakeBindRequest("b1", "player-1", "game-a", "u-1"))
+                .code(),
+            OK);
+
+  sg::UnbindPlayerIdentityRequest unbind;
+  unbind.set_game_id("game-a");
+  unbind.set_game_user_id("u-1");
+  ASSERT_EQ(directory.HandleUnbindPlayerIdentity(unbind).code(), OK);
+
+  // 退出游戏(断言失效)→ 状态自然下线:offline 事件 + roster 键删除。
+  EXPECT_EQ(h.Events(), (std::vector<std::pair<std::string, bool>>{
+                            {"game-a", true}, {"game-a", false}}));
+  EXPECT_EQ(h.Roster("player-1"), "<absent>");
+  EXPECT_EQ(h.store->count(std::string(presence_test::kRosterPrefix) + "player-1"), 0u);
+}
+
+TEST(PlayerDirectoryPresenceTest, DisablingDropsRosterAndPublishesOfflines) {
+  presence_test::Harness h;
+  chat::PlayerDirectory directory(h.Options());
+  ASSERT_EQ(directory.HandleBindPlayerIdentity(MakeBindRequest("b1", "player-1", "game-a", "u-1"))
+                .code(),
+            OK);
+  ASSERT_EQ(directory.HandleBindPlayerIdentity(MakeBindRequest("b2", "player-1", "game-b", "u-2"))
+                .code(),
+            OK);
+
+  ASSERT_EQ(directory.HandleSetGamePresenceEnabled(presence_test::MakeSetRequest("player-1", false))
+                .code(),
+            OK);
+
+  // 关闭态:两个游戏各一条 offline,roster 键删除,GET 报 disabled 且无条目。
+  EXPECT_EQ(h.LastEvent(), (std::pair<std::string, bool>{"game-b", false}));
+  EXPECT_EQ(h.Roster("player-1"), "<absent>");
+  const auto get = directory.HandleGetGamePresence(presence_test::MakeGetRequest("player-1"));
+  ASSERT_EQ(get.code(), OK);
+  EXPECT_FALSE(get.enabled());
+  EXPECT_EQ(get.entries_size(), 0);
+}
+
+TEST(PlayerDirectoryPresenceTest, ReEnablingRebuildsFromBindings) {
+  presence_test::Harness h;
+  chat::PlayerDirectory directory(h.Options());
+  ASSERT_EQ(directory.HandleBindPlayerIdentity(MakeBindRequest("b1", "player-1", "game-a", "u-1"))
+                .code(),
+            OK);
+  ASSERT_EQ(directory.HandleSetGamePresenceEnabled(presence_test::MakeSetRequest("player-1", false))
+                .code(),
+            OK);
+  const size_t before = h.publishes->size();
+
+  ASSERT_EQ(directory.HandleSetGamePresenceEnabled(presence_test::MakeSetRequest("player-1", true))
+                .code(),
+            OK);
+  // 绑定没动,开关重新打开 → 重新上线(重新推 online)。
+  EXPECT_EQ(h.LastEvent(), (std::pair<std::string, bool>{"game-a", true}));
+  EXPECT_GT(h.publishes->size(), before);
+  EXPECT_EQ(h.Roster("player-1"), "game-a");
+}
+
+TEST(PlayerDirectoryPresenceTest, BindingsWhileDisabledStayQuiet) {
+  presence_test::Harness h;
+  chat::PlayerDirectory directory(h.Options());
+  ASSERT_EQ(directory.HandleSetGamePresenceEnabled(presence_test::MakeSetRequest("player-1", false))
+                .code(),
+            OK);
+
+  // A closed switch is the off switch for the push too: binding while
+  // disabled publishes nothing and writes no roster.
+  ASSERT_EQ(directory.HandleBindPlayerIdentity(MakeBindRequest("b1", "player-1", "game-a", "u-1"))
+                .code(),
+            OK);
+  EXPECT_TRUE(h.publishes->empty());
+  EXPECT_EQ(h.Roster("player-1"), "<absent>");
+}
+
+TEST(PlayerDirectoryPresenceTest, SwitchFlipWithoutChangeRepublishesNothing) {
+  presence_test::Harness h;
+  chat::PlayerDirectory directory(h.Options());
+  ASSERT_EQ(directory.HandleBindPlayerIdentity(MakeBindRequest("b1", "player-1", "game-a", "u-1"))
+                .code(),
+            OK);
+  const size_t before = h.publishes->size();
+  // Explicitly writing the value the default already gives changes the
+  // record but not the derived state: the refresh must stay silent.
+  ASSERT_EQ(directory.HandleSetGamePresenceEnabled(presence_test::MakeSetRequest("player-1", true))
+                .code(),
+            OK);
+  EXPECT_EQ(h.publishes->size(), before);
+}
+
+TEST(PlayerDirectoryPresenceTest, HandlersValidateEmptyPlayer) {
+  chat::PlayerDirectory directory{chat::PlayerDirectory::Options()};
+  EXPECT_EQ(directory.HandleSetGamePresenceEnabled(presence_test::MakeSetRequest("", false)).code(),
+            INVALID_PARAM);
+  EXPECT_EQ(directory.HandleGetGamePresence(presence_test::MakeGetRequest("")).code(),
+            INVALID_PARAM);
+}
+
+TEST(PlayerDirectoryPresenceTest, GetListsBoundGamesSortedWhileEnabled) {
+  chat::PlayerDirectory directory{chat::PlayerDirectory::Options()};
+  ASSERT_EQ(directory.HandleBindPlayerIdentity(MakeBindRequest("b2", "player-1", "game-b", "u-2"))
+                .code(),
+            OK);
+  ASSERT_EQ(directory.HandleBindPlayerIdentity(MakeBindRequest("b1", "player-1", "game-a", "u-1"))
+                .code(),
+            OK);
+
+  const auto resp = directory.HandleGetGamePresence(presence_test::MakeGetRequest("player-1"));
+  ASSERT_EQ(resp.code(), OK);
+  EXPECT_TRUE(resp.enabled());
+  ASSERT_EQ(resp.entries_size(), 2);
+  EXPECT_EQ(resp.entries(0).game_id(), "game-a");
+  EXPECT_EQ(resp.entries(0).game_user_id(), "u-1");
+  EXPECT_EQ(resp.entries(1).game_id(), "game-b");
+
+  // Another player's roster is empty, not an error.
+  EXPECT_EQ(directory.HandleGetGamePresence(presence_test::MakeGetRequest("player-9")).entries_size(),
+            0);
+}
+
+TEST(PlayerDirectoryPresenceTest, LoadAllRestoresSwitchBeforeServing) {
+  // Cold start: the persisted explicit choice must be in place before the
+  // first bind of that player is handled, or a disabled player would light
+  // up again.
+  const auto store = std::make_shared<std::map<std::string, std::string>>();
+  (*store)["chirp:game_presence:setting:player-1"] = "0";
+
+  presence_test::Harness h;
+  h.store = store;
+  chat::PlayerDirectory directory(h.Options());
+  directory.LoadAll();
+
+  ASSERT_EQ(directory.HandleBindPlayerIdentity(MakeBindRequest("b1", "player-1", "game-a", "u-1"))
+                .code(),
+            OK);
+  EXPECT_TRUE(h.publishes->empty());
+  EXPECT_FALSE(
+      directory.HandleGetGamePresence(presence_test::MakeGetRequest("player-1")).enabled());
+}
+
+TEST(PlayerDirectoryPresenceTest, PublishFailureStillAdvancesTheMirrorAndRecovers) {
+  // Redis down mid-flip: the event publish and the roster write degrade to
+  // a Warn, but the in-memory mirror still advances — otherwise the next
+  // successful refresh would replay stale flips (or, worse, drop them).
+  auto store = std::make_shared<std::map<std::string, std::string>>();
+  auto publishes =
+      std::make_shared<std::vector<std::pair<std::string, std::string>>>();
+  bool fail = true;
+  chat::PlayerDirectory::Options options;
+  options.presence_redis = [&]() {
+    auto client = std::make_unique<FakeRedisClient>(store, publishes);
+    client->fail = fail;
+    return client;
+  };
+  chat::PlayerDirectory directory(options);
+
+  ASSERT_EQ(directory.HandleBindPlayerIdentity(MakeBindRequest("b1", "player-1", "game-a", "u-1"))
+                .code(),
+            OK);
+  // The flip's event was refused and the roster write refused with it.
+  EXPECT_TRUE(publishes->empty());
+  EXPECT_TRUE(store->empty());
+
+  // Redis returns: the *next* real flip publishes exactly once — the mirror
+  // had already advanced to {game-a}, so the unbind emits only the offline.
+  fail = false;
+  sg::UnbindPlayerIdentityRequest unbind;
+  unbind.set_binding_id("b1");
+  ASSERT_EQ(directory.HandleUnbindPlayerIdentity(unbind).code(), OK);
+  ASSERT_EQ(publishes->size(), 1u);
+  sg::GamePresenceEvent event;
+  ASSERT_TRUE(event.ParseFromString(publishes->front().second));
+  EXPECT_EQ(event.game_id(), "game-a");
+  EXPECT_FALSE(event.online());
+  // The roster stays deleted: the last binding is gone.
+  EXPECT_TRUE(store->find(std::string(presence_test::kRosterPrefix) + "player-1") ==
+              store->end());
+}
+
+// ---------------------------------------------------------------------------
+// PlayerDirectory::RelayFriendMessage (好友私聊投递进游戏)
+// ---------------------------------------------------------------------------
+
+struct RelayHarness {
+  struct Inject {
+    std::string service_id;
+    chirp::gateway::PeerInjectMessageNotify notify;
+  };
+  std::vector<Inject> injected;
+
+  // game_id -> service_id; missing keys resolve to "" (no live spoke).
+  chat::PlayerDirectory::GameServiceResolver Resolver(
+      std::map<std::string, std::string> spokes) {
+    return [spokes = std::move(spokes)](const std::string& game_id) {
+      const auto it = spokes.find(game_id);
+      return it == spokes.end() ? std::string() : it->second;
+    };
+  }
+
+  chat::PlayerDirectory::GameReplySender Sender(bool accept_all = true) {
+    return [this, accept_all](const std::string& service_id,
+                              const chirp::gateway::PeerInjectMessageNotify& notify) {
+      injected.push_back({service_id, notify});
+      return accept_all;
+    };
+  }
+
+  const Inject& Only() const {
+    EXPECT_EQ(injected.size(), 1u);
+    return injected.front();
+  }
+};
+
+TEST(PlayerDirectoryFriendRelayTest, DeliversOneCopyPerBoundGameInOrder) {
+  chat::PlayerDirectory directory{chat::PlayerDirectory::Options()};
+  ASSERT_EQ(directory.HandleBindPlayerIdentity(MakeBindRequest("b2", "player-1", "game-b", "u-2"))
+                .code(),
+            OK);
+  ASSERT_EQ(directory.HandleBindPlayerIdentity(MakeBindRequest("b1", "player-1", "game-a", "u-1"))
+                .code(),
+            OK);
+
+  RelayHarness h;
+  const size_t count = directory.RelayFriendMessage(
+      "friend-1", "player-1", "are you online?", "cmi-1",
+      h.Resolver({{"game-a", "svc-a"}, {"game-b", "svc-b"}}), h.Sender());
+
+  EXPECT_EQ(count, 2u);
+  ASSERT_EQ(h.injected.size(), 2u);
+  // Deterministic game_id order, one copy per game.
+  EXPECT_EQ(h.injected[0].service_id, "svc-a");
+  EXPECT_EQ(h.injected[1].service_id, "svc-b");
+  // The spoke addresses the target through channel_id: the bound game
+  // identity, while the sender stays the chirp friend (not a game identity).
+  EXPECT_EQ(h.injected[0].notify.channel_id(), "u-1");
+  EXPECT_EQ(h.injected[1].notify.channel_id(), "u-2");
+  EXPECT_EQ(h.injected[0].notify.sender_id(), "friend-1");
+  EXPECT_EQ(h.injected[0].notify.content(), "are you online?");
+  EXPECT_EQ(h.injected[0].notify.client_msg_id(), "cmi-1");
+}
+
+TEST(PlayerDirectoryFriendRelayTest, DisabledRecipientReceivesNothing) {
+  // 关闭态回归:开关关掉后,游戏内不再收到好友私聊(常规端照常投递由 chat
+  // 主路径负责,这里只断言 relay 归零且一次 inject 都没发生)。
+  chat::PlayerDirectory directory{chat::PlayerDirectory::Options()};
+  ASSERT_EQ(directory.HandleBindPlayerIdentity(MakeBindRequest("b1", "player-1", "game-a", "u-1"))
+                .code(),
+            OK);
+
+  RelayHarness h;
+  const auto resolve = h.Resolver({{"game-a", "svc-a"}});
+  const auto send = h.Sender();
+  EXPECT_EQ(directory.RelayFriendMessage("friend-1", "player-1", "hi", "", resolve, send), 1u);
+  ASSERT_EQ(directory.HandleSetGamePresenceEnabled(presence_test::MakeSetRequest("player-1", false))
+                .code(),
+            OK);
+
+  h.injected.clear();
+  EXPECT_EQ(directory.RelayFriendMessage("friend-1", "player-1", "hi again", "", resolve, send), 0u);
+  EXPECT_TRUE(h.injected.empty());
+
+  // Re-opening the switch resumes the relay; the binding never went away.
+  ASSERT_EQ(directory.HandleSetGamePresenceEnabled(presence_test::MakeSetRequest("player-1", true))
+                .code(),
+            OK);
+  EXPECT_EQ(directory.RelayFriendMessage("friend-1", "player-1", "back now", "", resolve, send), 1u);
+  EXPECT_EQ(h.Only().notify.content(), "back now");
+}
+
+TEST(PlayerDirectoryFriendRelayTest, UnboundOrEmptyEndpointsRelayNothing) {
+  chat::PlayerDirectory directory{chat::PlayerDirectory::Options()};
+  RelayHarness h;
+  const auto resolve = h.Resolver({{"game-a", "svc-a"}});
+  const auto send = h.Sender();
+
+  EXPECT_EQ(directory.RelayFriendMessage("", "player-1", "hi", "", resolve, send), 0u);
+  EXPECT_EQ(directory.RelayFriendMessage("friend-1", "", "hi", "", resolve, send), 0u);
+  // A player with no bindings is simply not in any game.
+  EXPECT_EQ(directory.RelayFriendMessage("friend-1", "player-9", "hi", "", resolve, send), 0u);
+  EXPECT_TRUE(h.injected.empty());
+}
+
+TEST(PlayerDirectoryFriendRelayTest, MissingSpokeIsASkipNotAnError) {
+  chat::PlayerDirectory directory{chat::PlayerDirectory::Options()};
+  ASSERT_EQ(directory.HandleBindPlayerIdentity(MakeBindRequest("b1", "player-1", "game-a", "u-1"))
+                .code(),
+            OK);
+  ASSERT_EQ(directory.HandleBindPlayerIdentity(MakeBindRequest("b2", "player-1", "game-b", "u-2"))
+                .code(),
+            OK);
+
+  // Only game-a has a live spoke; game-b's backend is offline. The ordinary
+  // chat delivery already succeeded, so this is a logged skip.
+  RelayHarness h;
+  EXPECT_EQ(directory.RelayFriendMessage("friend-1", "player-1", "hi", "",
+                                         h.Resolver({{"game-a", "svc-a"}}), h.Sender()),
+            1u);
+  EXPECT_EQ(h.Only().service_id, "svc-a");
+}
+
+TEST(PlayerDirectoryFriendRelayTest, RefusedInjectIsNotCountedButOthersContinue) {
+  chat::PlayerDirectory directory{chat::PlayerDirectory::Options()};
+  ASSERT_EQ(directory.HandleBindPlayerIdentity(MakeBindRequest("b1", "player-1", "game-a", "u-1"))
+                .code(),
+            OK);
+  ASSERT_EQ(directory.HandleBindPlayerIdentity(MakeBindRequest("b2", "player-1", "game-b", "u-2"))
+                .code(),
+            OK);
+
+  // game-a's spoke is unreachable (SendInject false); the second game must
+  // still get its copy, and the count only reflects accepted injections.
+  int seen = 0;
+  const auto sender = [&](const std::string& service_id,
+                          const chirp::gateway::PeerInjectMessageNotify& notify) {
+    ++seen;
+    return service_id != "svc-a";
+  };
+  EXPECT_EQ(directory.RelayFriendMessage("friend-1", "player-1", "hi", "",
+                                         RelayHarness{}.Resolver(
+                                             {{"game-a", "svc-a"}, {"game-b", "svc-b"}}),
+                                         sender),
+            1u);
+  EXPECT_EQ(seen, 2);
+}
+
+TEST(PlayerDirectoryFriendRelayTest, SenderIsTheChirpFriendNotAGameIdentity) {
+  // The relay keeps the App-side identity visible to the game: sender_id is
+  // the friend's chirp user id, so the game client can label the message.
+  chat::PlayerDirectory directory{chat::PlayerDirectory::Options()};
+  ASSERT_EQ(directory.HandleBindPlayerIdentity(MakeBindRequest("b1", "player-1", "game-a", "u-1"))
+                .code(),
+            OK);
+  RelayHarness h;
+  directory.RelayFriendMessage("player-1", "player-2", "hi", "",
+                              h.Resolver({{"game-a", "svc-a"}}), h.Sender());
+  // player-2 has no bindings: nothing is injected, and the sender stays the
+  // chirp id of whoever asked (never a game user id).
+  EXPECT_TRUE(h.injected.empty());
+
+  ASSERT_EQ(directory.HandleBindPlayerIdentity(MakeBindRequest("b2", "player-2", "game-a", "u-2"))
+                .code(),
+            OK);
+  directory.RelayFriendMessage("player-1", "player-2", "hi", "",
+                               h.Resolver({{"game-a", "svc-a"}}), h.Sender());
+  EXPECT_EQ(h.Only().notify.sender_id(), "player-1");
+  EXPECT_EQ(h.Only().notify.channel_id(), "u-2");
 }
 
 }  // namespace

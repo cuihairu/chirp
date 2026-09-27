@@ -874,6 +874,24 @@ void HandlePacket(const std::shared_ptr<MessageStore>& store,
         store->AddOffline(req.receiver_id(), msg);
         features.push.NotifyOffline(msg, req.receiver_id());
       }
+      // Friend-DM relay into the game plane (游戏在线状态): the recipient's
+      // bindings are the in-game assertion, and the per-player switch
+      // (default on) gates the relay together with the friend-facing
+      // status. Strictly best-effort — the response above already reflects
+      // the chat delivery, so a missing spoke is a logged skip. NPC
+      // receivers and blocked pairs never reach this point.
+      if (features.directory && features.hub) {
+        features.directory->RelayFriendMessage(
+            authenticated_user_id, req.receiver_id(), msg.content(),
+            /*client_msg_id=*/"",
+            [hub = features.hub](const std::string& game_id) {
+              return hub->service_id_for_game(game_id);
+            },
+            [hub = features.hub](const std::string& service_id,
+                                 const chirp::gateway::PeerInjectMessageNotify& notify) {
+              return hub->SendInject(service_id, notify);
+            });
+      }
     } else {
       // GROUP channel: fan the message out to every member via the group
       // handlers; members not online right now land in the offline queue.
@@ -1563,6 +1581,10 @@ int main(int argc, char** argv) {
       chirp::chat::runtime::GetArg(argc, argv, "--unread_redis_host", "");
   const uint16_t unread_redis_port =
       chirp::chat::runtime::ParseU16Arg(argc, argv, "--unread_redis_port", 6379);
+  const std::string presence_redis_host =
+      chirp::chat::runtime::GetArg(argc, argv, "--game_presence_redis_host", "");
+  const uint16_t presence_redis_port =
+      chirp::chat::runtime::ParseU16Arg(argc, argv, "--game_presence_redis_port", 6379);
   chirp::chat::PlayerDirectory::Options directory_options;
   directory_options.max_fanout_per_message = static_cast<size_t>(chirp::chat::runtime::ParseIntArg(
       argc, argv, "--max_fanout_per_message", 10000));
@@ -1579,6 +1601,15 @@ int main(int argc, char** argv) {
   }
   if (!unread_redis_host.empty()) {
     directory_options.unread_redis = [host = unread_redis_host, port = unread_redis_port] {
+      return std::make_unique<chirp::network::RedisClient>(host, port);
+    };
+  }
+  // 游戏在线状态（好友消息进游戏）：开关走写透镜像，在线名单与上下线事件发
+  // 到这个 Redis（social 平面消费）；不配则纯内存——开关仍生效，只是不对外
+  // 发布。
+  if (!presence_redis_host.empty()) {
+    directory_options.presence_redis = [host = presence_redis_host,
+                                        port = presence_redis_port] {
       return std::make_unique<chirp::network::RedisClient>(host, port);
     };
   }

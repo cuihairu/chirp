@@ -4,8 +4,13 @@
 #include <functional>
 #include <memory>
 #include <string>
+#include <unordered_map>
 #include <unordered_set>
 
+#include <map>
+#include <set>
+
+#include "game_presence.h"
 #include "identity_registry.h"
 #include "network/session.h"
 #include "proto/common.pb.h"
@@ -52,6 +57,10 @@ class PlayerDirectory {
     IdentityRegistry::RedisFactory identities_redis;
     SubscriptionRegistry::RedisFactory subscriptions_redis;
     UnreadLedger::RedisFactory unread_redis;
+    // Backs the game-presence switch write-through and the derived roster
+    // key + pub/sub events. Null keeps presence memory-only (the switch
+    // works, nothing is published to the social plane).
+    GamePresence::RedisFactory presence_redis;
     // Null keeps the fan-out tail a no-op (directory still serves the RPCs).
     CopyDeliverer deliver_copy;
   };
@@ -72,6 +81,14 @@ class PlayerDirectory {
       const game_server_gateway::GetPlayerIdentitiesRequest& req) const;
   game_server_gateway::ResolveGameUserResponse HandleResolveGameUser(
       const game_server_gateway::ResolveGameUserRequest& req) const;
+
+  // Game presence (游戏在线状态): the per-player switch for the friend-facing
+  // "in game X" status and the friend-DM relay below. Absent choice reads as
+  // enabled — binding a game identity opts the player in by default.
+  game_server_gateway::SetGamePresenceEnabledResponse HandleSetGamePresenceEnabled(
+      const game_server_gateway::SetGamePresenceEnabledRequest& req);
+  game_server_gateway::GetGamePresenceResponse HandleGetGamePresence(
+      const game_server_gateway::GetGamePresenceRequest& req) const;
 
   // WP-8 slice 2: player channel subscriptions. The same messages serve the
   // backend-asserted path (with a subscription_id idempotency key) and the
@@ -131,11 +148,42 @@ class PlayerDirectory {
                                   const GameServiceResolver& resolve,
                                   const GameReplySender& inject) const;
 
+  // Friend-DM relay into the game plane (游戏在线状态, the send-tail mirror of
+  // RelayGameReply): when the recipient's presence switch is on (the
+  // default) and they hold identity bindings, one private copy is handed to
+  // the live spoke of each bound game — the spoke consumes it like any
+  // injected private message, with the bound game_user_id as the target
+  // ("channel_id carries the target user") and the chirp friend as
+  // sender_id. Best-effort by contract: the caller already answered the
+  // ordinary chat delivery, so a missing spoke or a refused downlink is a
+  // logged skip, never an error code. Returns the number of injects handed
+  // out (0 = disabled, unbound, or nothing live — all no-ops).
+  size_t RelayFriendMessage(const std::string& sender_player_id,
+                            const std::string& recipient_player_id,
+                            const std::string& content, const std::string& client_msg_id,
+                            const GameServiceResolver& resolve,
+                            const GameReplySender& inject) const;
+
  private:
+  // Recomputes the player's derived presence roster from the switch and
+  // their live bindings: rewrites chirp:game_presence:online:<player_id>
+  // (newline-joined sorted game ids, DEL when empty) and publishes one
+  // GamePresenceEvent per game flip on chirp:game_presence:events so the
+  // social plane can push IN_GAME / back-to-online to friends. Unbinding
+  // the last game takes the status offline naturally — the assertion is the
+  // binding, not a liveness signal. Redis-unavailable degrades to no key
+  // and no events (memory cache still tracks the state).
+  void RefreshPresence(const std::string& player_id);
+
   Options options_;
   IdentityRegistry identities_;
   SubscriptionRegistry subscriptions_;
   UnreadLedger unread_;
+  GamePresence presence_;
+  // Last state this process published, per player — the diff baseline for
+  // RefreshPresence. Single-threaded like the rest of the directory
+  // handlers; starts empty on boot (the first refresh per player re-announces).
+  std::unordered_map<std::string, std::set<std::string>> published_games_;
 };
 
 // Serves the WP-8 RPC block (5013-5030) on a chat main client port. Shared
