@@ -42,6 +42,7 @@ chirp_load_client ──TCP──> chirp_game_sdk_gateway ──每客户端一�
 
 - 工具：`chirp_load_client`（`tools/benchmark/load_client.cc`）——每连接一线程，支持 `--ramp-ms` 铺开建连、`--barrier on|off`、`--rounds 0` 纯连接档、逐轮 RTT 分位、登录 RTT 分位、发送窗口吞吐。
 - 运行器：`tools/benchmark/run_capacity_bench.sh`——端口预检+归属断言（bind 冲突时探测会假成功，曾产出「5000/5000 在线、登录 p99=42s」的废数据）、taskset 分核（服务 0-3 / 客户端 5-13）、VmHWM 与 `/proc/$pid/stat` CPU 核·秒、网关握手超时计数。
+- 并发守卫：`tools/benchmark/bench_guard.sh`（被 source 的两件套，run_capacity_bench.sh 与各 probe 脚本共用）——`bench_acquire_lock` 用 flock 对 `/tmp/chirp_bench.lock` 机器级互斥（`LOCK_WAIT=1` 排队，`LOCK_TIMEOUT` 默认 3600s）；`bench_preflight_ports` 逐端口查监听者，空闲放行，被占时只有「本 uid + 基准二进制」的孤儿在 `FORCE=1` 下才清理，其余一律报错退出（共享机纪律：绝不代杀别的会话的活体进程）。各 probe 的端口块：steady 17880-83、scale 17850-53、perf 17840-43、est_rate 17870-73、stack 17830-33、cpu_attribution 17810-13、run_capacity_bench 17800-03（`CHAT_PORT` 等可覆盖）。阶梯驱动（ladder_local / capacity_ladder_local / capacity_ramp_ladder）不重复拿锁——每档内层运行器自带守卫，外层再拿同一把 flock 会自锁。
 - 每档独立起停服务；用户前缀按档轮换，规避跨档限流/禁言残留。
 
 复现（示例）：

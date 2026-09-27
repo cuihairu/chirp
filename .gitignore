@@ -78,3 +78,10 @@ build-cov/
 
 # Local compile scratch space (TMPDIR bypass for /tmp quota)
 .tmpbuild/
+
+# Local-only artifacts on this box (never commit):
+# `build` is a symlink into a build dir — the `build*/` pattern above matches
+# directories only, so a symlink slips through it.
+/build
+docs/package-lock.json
+overlay-ports/
