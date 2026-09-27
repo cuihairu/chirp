@@ -130,6 +130,12 @@ jobs:
     - name: "Smoke: cross-instance kick (docker redis)"
       run: timeout 900 bash test_services.sh --smoke-redis
 
+    - name: "Smoke: voice room lifecycle"
+      run: timeout 600 bash test_services.sh --smoke-voice
+
+    - name: "Smoke: party snapshot lifecycle"
+      run: timeout 600 bash test_services.sh --smoke-party
+
   build-and-test:
     runs-on: ubuntu-22.04
     strategy:

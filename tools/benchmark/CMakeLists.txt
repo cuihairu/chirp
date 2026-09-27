@@ -153,3 +153,33 @@ target_link_libraries(chirp_load_client
 )
 
 target_include_directories(chirp_load_client PRIVATE ${CMAKE_SOURCE_DIR}/libs ${CMAKE_SOURCE_DIR}/proto/cpp)
+
+add_executable(chirp_voice_smoke_client
+    voice_smoke_client.cc
+)
+
+target_link_libraries(chirp_voice_smoke_client
+    PRIVATE
+    chirp_network
+    chirp_common
+    chirp_protos
+    ${absl_pkg_LIBRARIES}
+    Threads::Threads
+)
+
+target_include_directories(chirp_voice_smoke_client PRIVATE ${CMAKE_SOURCE_DIR}/libs ${CMAKE_SOURCE_DIR}/proto/cpp)
+
+add_executable(chirp_party_smoke_client
+    party_smoke_client.cc
+)
+
+target_link_libraries(chirp_party_smoke_client
+    PRIVATE
+    chirp_network
+    chirp_common
+    chirp_protos
+    ${absl_pkg_LIBRARIES}
+    Threads::Threads
+)
+
+target_include_directories(chirp_party_smoke_client PRIVATE ${CMAKE_SOURCE_DIR}/libs ${CMAKE_SOURCE_DIR}/proto/cpp)

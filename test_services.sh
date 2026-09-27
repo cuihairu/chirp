@@ -37,7 +37,7 @@ echo "  ./build/services/game/sdk_gateway/chirp_game_sdk_gateway --port 5000 --w
 echo "  ./build/services/app/auth/chirp_app_auth --port 6000"
 echo "  ./build/services/shared/chat/chirp_chat --port 7000 --ws_port 7001"
 
-SMOKE_ARGS="--smoke --smoke-chat --smoke-redis --smoke-npc --smoke-sdk --smoke-edge --smoke-jwt --smoke-game"
+SMOKE_ARGS="--smoke --smoke-chat --smoke-redis --smoke-npc --smoke-sdk --smoke-edge --smoke-jwt --smoke-game --smoke-voice --smoke-party"
 is_smoke=0
 for a in ${SMOKE_ARGS}; do
   if [[ "${1:-}" == "${a}" ]]; then
@@ -86,6 +86,14 @@ case "${1}" in
     require_bin "./build/tools/benchmark/chirp_chat_history_client"
     require_bin "./build/tools/benchmark/chirp_ws_login_client"
     ;;
+  --smoke-voice)
+    require_bin "./build/services/voice/chirp_voice"
+    require_bin "./build/tools/benchmark/chirp_voice_smoke_client"
+    ;;
+  --smoke-party)
+    require_bin "./build/services/party/chirp_party"
+    require_bin "./build/tools/benchmark/chirp_party_smoke_client"
+    ;;
 esac
 
 echo ""
@@ -103,6 +111,10 @@ elif [[ "${1:-}" == "--smoke-jwt" ]]; then
   echo "=== Smoke Test (unified login: signed JWT end to end, scaffold rejected) ==="
 elif [[ "${1:-}" == "--smoke-game" ]]; then
   echo "=== Smoke Test (pure game plane: no app_auth, gateway scaffold + chat bridge) ==="
+elif [[ "${1:-}" == "--smoke-voice" ]]; then
+  echo "=== Smoke Test (voice plane: room lifecycle over real chirp_voice) ==="
+elif [[ "${1:-}" == "--smoke-party" ]]; then
+  echo "=== Smoke Test (party plane: snapshot lifecycle over real chirp_party) ==="
 else
   echo "=== Smoke Test (chat + clients) ==="
 fi
@@ -1088,6 +1100,74 @@ elif [[ "${1:-}" == "--smoke-jwt" ]]; then
   echo ""
   echo "auth log: ${AUTH_LOG}"
   tail -n 20 "${AUTH_LOG}" || true
+elif [[ "${1:-}" == "--smoke-voice" ]]; then
+  # Voice plane over a real chirp_voice: scaffold login (no secret) and the
+  # full room lifecycle asserted inside the client. No Redis/MySQL deps.
+  VOICE_PORT="${VOICE_PORT:-$(pick_port)}"
+  VOICE_WS_PORT="${VOICE_WS_PORT:-$(pick_port)}"
+  VOICE_LOG="${VOICE_LOG:-/tmp/chirp_voice_smoke.log}"
+  VOICE_CLIENT_LOG="${VOICE_CLIENT_LOG:-/tmp/chirp_voice_smoke_client.log}"
+
+  ./build/services/voice/chirp_voice --port "${VOICE_PORT}" --ws_port "${VOICE_WS_PORT}" \
+    > "${VOICE_LOG}" 2>&1 &
+  VOICE_PID=$!
+
+  cleanup() {
+    stop_proc "${VOICE_PID}"
+  }
+  trap cleanup EXIT
+
+  wait_port "${VOICE_PORT}" chirp_voice "${VOICE_LOG}"
+
+  if ! timeout 30 ./build/tools/benchmark/chirp_voice_smoke_client \
+    --host 127.0.0.1 --port "${VOICE_PORT}" --user voice_smoke_user \
+    > "${VOICE_CLIENT_LOG}" 2>&1; then
+    echo "错误: voice smoke 客户端断言失败"
+    echo "---- voice client log tail (${VOICE_CLIENT_LOG}) ----"
+    tail -n 30 "${VOICE_CLIENT_LOG}" 2>/dev/null || true
+    echo "---- voice log tail (${VOICE_LOG}) ----"
+    tail -n 30 "${VOICE_LOG}" 2>/dev/null || true
+    exit 1
+  fi
+  cat "${VOICE_CLIENT_LOG}"
+  echo ""
+  echo "voice log: ${VOICE_LOG}"
+  tail -n 10 "${VOICE_LOG}" || true
+
+elif [[ "${1:-}" == "--smoke-party" ]]; then
+  # Party plane over a real chirp_party: scaffold login, create/invite/leave
+  # round-trip asserted inside the client. In-memory state, no Redis/MySQL.
+  PARTY_PORT="${PARTY_PORT:-$(pick_port)}"
+  PARTY_WS_PORT="${PARTY_WS_PORT:-$(pick_port)}"
+  PARTY_LOG="${PARTY_LOG:-/tmp/chirp_party_smoke.log}"
+  PARTY_CLIENT_LOG="${PARTY_CLIENT_LOG:-/tmp/chirp_party_smoke_client.log}"
+
+  ./build/services/party/chirp_party --port "${PARTY_PORT}" --ws_port "${PARTY_WS_PORT}" \
+    > "${PARTY_LOG}" 2>&1 &
+  PARTY_PID=$!
+
+  cleanup() {
+    stop_proc "${PARTY_PID}"
+  }
+  trap cleanup EXIT
+
+  wait_port "${PARTY_PORT}" chirp_party "${PARTY_LOG}"
+
+  if ! timeout 30 ./build/tools/benchmark/chirp_party_smoke_client \
+    --host 127.0.0.1 --port "${PARTY_PORT}" --user party_smoke_user \
+    > "${PARTY_CLIENT_LOG}" 2>&1; then
+    echo "错误: party smoke 客户端断言失败"
+    echo "---- party client log tail (${PARTY_CLIENT_LOG}) ----"
+    tail -n 30 "${PARTY_CLIENT_LOG}" 2>/dev/null || true
+    echo "---- party log tail (${PARTY_LOG}) ----"
+    tail -n 30 "${PARTY_LOG}" 2>/dev/null || true
+    exit 1
+  fi
+  cat "${PARTY_CLIENT_LOG}"
+  echo ""
+  echo "party log: ${PARTY_LOG}"
+  tail -n 10 "${PARTY_LOG}" || true
+
 else
   CHAT_PORT="${CHAT_PORT:-$(pick_port)}"
   CHAT_WS_PORT="${CHAT_WS_PORT:-$(pick_port)}"
