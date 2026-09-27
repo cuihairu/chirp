@@ -713,6 +713,80 @@ KNOWN_UNCOVERABLE_FUNCTIONS = {
     ("services/game/server_gateway/src/service_registry.h", 19),
 }
 
+# Individual branch arms that stay untaken even though every reachable arm of
+# the same line has a reproducing test, and that a whole-line KNOWN_UNCOVERABLE
+# entry would wrongly drop from the line statistics. Keys are (relpath, line);
+# values are (untaken arm indices, why). Exempt arms leave the branch
+# denominator and are re-listed in every report run, so an arm becoming
+# reachable (source edit, compiler upgrade) is visible as a mismatch against
+# this table instead of silently shrinking coverage.
+KNOWN_UNCOVERABLE_ARMS = {
+    # -- unwind-only edges of inlined construction ---------------------------
+    # On every line below the arms with live callers are exercised; the
+    # exempted arms are the trailing never-entered block(s) gcc emits for the
+    # exceptional path of the inlined std::string / std::function
+    # construction (bad_alloc unwind) - identical 0/0 two-edge signatures,
+    # immune to every argument-shape manipulation (SSO vs heap, small vs
+    # >160-byte captures), same class as the EH-pad KNOWN_UNCOVERABLE entries.
+    ("libs/network/chat_peer_hub.cc", 119): ((2, 4, 5),
+        "SendInject asio::post closure construction unwind edges"),
+    ("libs/network/chat_peer_hub.cc", 420): ((10, 11),
+        "idle-warn concat expression unwind edges"),
+    ("libs/network/device_presence.cc", 31): ((2, 3),
+        "LoginKickReason ternary string construction unwind edges"),
+    ("libs/network/message_router.cc", 82): ((4, 6, 7),
+        "dispatch asio::post closure construction unwind edges"),
+    ("libs/network/redis_client.cc", 113): ((6, 7),
+        "EXPIRE command-argument construction unwind edges"),
+    ("libs/network/redis_client.cc", 119): ((6, 7),
+        "LRANGE command-argument construction unwind edges"),
+    ("libs/network/redis_client.cc", 134): ((6, 7),
+        "KEYS command-argument construction unwind edges"),
+    ("libs/network/redis_client.cc", 263): ((6, 7),
+        "UNSUBSCRIBE command-argument construction unwind edges"),
+    ("libs/network/session_registry.cc", 39): ((8, 9),
+        "NormalizePlatformId ternary result construction unwind edges"),
+    ("sdks/core/src/sdk_client.cc", 1214): ((6, 8, 10, 11, 12, 13),
+        "FetchReactions post-closure construction unwind edges"),
+    ("sdks/core/src/sdk_client.cc", 1227): ((4, 6, 7),
+        "FetchReadReceipts post-closure construction unwind edges"),
+    ("sdks/core/src/sdk_client.cc", 1240): ((6, 8, 10, 11, 12, 13),
+        "BulkDeleteMessages post-closure construction unwind edges"),
+    ("sdks/core/src/sdk_client.cc", 1257): ((6, 8, 10, 11, 12, 13),
+        "FetchMentionSuggestions post-closure construction unwind edges"),
+    ("sdks/core/src/sdk_client.cc", 1273): ((6, 8, 10, 11, 12, 13),
+        "CreateGroup post-closure construction unwind edges"),
+    ("sdks/core/src/sdk_client.cc", 1287): ((4, 6, 7),
+        "JoinGroup post-closure construction unwind edges"),
+    ("sdks/core/src/sdk_client.cc", 1300): ((4, 6, 7),
+        "LeaveGroup post-closure construction unwind edges"),
+    ("sdks/core/src/sdk_client.cc", 1329): ((6, 8, 10, 11, 12, 13),
+        "InviteToGroup post-closure construction unwind edges"),
+    ("sdks/core/src/sdk_client.cc", 1343): ((4, 6, 7),
+        "KickMember post-closure construction unwind edges"),
+    ("sdks/core/src/sdk_client.cc", 1356): ((4, 6, 7),
+        "FetchGroupInfo post-closure construction unwind edges"),
+    # -- invariant-defensive arms --------------------------------------------
+    ("libs/network/chat_peer_hub.cc", 412): ((2,),
+        "ArmIdleTimer's async_wait: Close() cancels the timer before setting "
+        "the closing flag, so the handler never sees ec==OK with closing set "
+        "except in the sub-millisecond window where the expiry completion is "
+        "already queued on the strand when a packet-triggered Close runs "
+        "(same shape as the websocket_client handshake-write race above); "
+        "both deterministic sides (ec==OK/closing==false after a real idle "
+        "timeout, ec==aborted on Stop) have tests"),
+    ("libs/network/chat_peer_hub.cc", 141): ((1,),
+        "service_id_for_game scan: peers_ is only ever populated with conns "
+        "whose registered flag was already set true (HandleRegister inserts "
+        "after flipping it, every Close removes), so the registered==false "
+        "side of the scan predicate cannot fire"),
+    ("libs/network/chat_peer_hub.cc", 475): ((3,),
+        "Close's displaced-else: displacement (the only code that re-points a "
+        "peers_ entry) calls Close on the old conn BEFORE overwriting the "
+        "entry, so a closing registered conn always still owns its table "
+        "entry; the else is defensive against a future reordering"),
+}
+
 src_cache = {}
 
 def source_lines(path):
@@ -890,6 +964,7 @@ branch_gaps = []  # (name, line, taken, total, untaken_arm_indices)
 func_gaps = []    # (name, start_line, function_name)
 pkg_branch = defaultdict(lambda: [0, 0])
 pkg_func = defaultdict(lambda: [0, 0])
+exempted_arm_count = 0
 
 for name, _t, _c, _miss in report:
     pkg = os.path.dirname(os.path.relpath(name, root)) or "."
@@ -899,11 +974,16 @@ for name, _t, _c, _miss in report:
         arms = branch_data.get(name, {}).get(ln)
         if not arms:
             continue
+        arm_entry = KNOWN_UNCOVERABLE_ARMS.get((os.path.relpath(name, root), ln))
+        exempt_arms = arm_entry[0] if arm_entry else ()
         tot = tak = 0
         untaken = []
         for bi in sorted(arms):
             cnt, thr = arms[bi]
             if thr:
+                continue
+            if bi in exempt_arms:
+                exempted_arm_count += 1
                 continue
             tot += 1
             if cnt > 0:
@@ -936,6 +1016,10 @@ print()
 print(f"branches:  {bpct:.1f}% ({branch_taken} of {branch_total} arms, "
       "throw edges excluded)")
 print(f"functions: {fpct:.1f}% ({func_cov} of {func_total})")
+if KNOWN_UNCOVERABLE_ARMS:
+    print(f"exempted branch arms: {exempted_arm_count} (KNOWN_UNCOVERABLE_ARMS)")
+    for (arm_path, arm_ln), (arm_idxs, arm_why) in sorted(KNOWN_UNCOVERABLE_ARMS.items()):
+        print(f"  {arm_path}:{arm_ln} arms={list(arm_idxs)} - {arm_why}")
 
 print()
 print("Per-package branch/function coverage (informational, not gated)")
