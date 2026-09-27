@@ -416,7 +416,9 @@ func (c *Client) dispatch(pkt *pbgw.Packet) bool {
 		pbgw.MsgID_UNSUBSCRIBE_PLAYER_CHANNEL_RESP,
 		pbgw.MsgID_GET_PLAYER_SUBSCRIPTIONS_RESP,
 		pbgw.MsgID_MARK_CHANNELS_READ_RESP,
-		pbgw.MsgID_GET_UNREAD_SUMMARY_RESP:
+		pbgw.MsgID_GET_UNREAD_SUMMARY_RESP,
+		pbgw.MsgID_SET_GAME_PRESENCE_ENABLED_RESP,
+		pbgw.MsgID_GET_GAME_PRESENCE_RESP:
 		c.completePending(pkt)
 	case pbgw.MsgID_INJECT_MESSAGE_NOTIFY:
 		notify := &pbsg.InjectMessageNotify{}
@@ -708,6 +710,35 @@ func (c *Client) MarkChannelsRead(ctx context.Context, req *pbsg.MarkChannelsRea
 func (c *Client) GetUnreadSummary(ctx context.Context, req *pbsg.GetUnreadSummaryRequest) (*pbsg.GetUnreadSummaryResponse, error) {
 	resp := &pbsg.GetUnreadSummaryResponse{}
 	err := c.rpc(ctx, pbgw.MsgID_GET_UNREAD_SUMMARY_REQ, pbgw.MsgID_GET_UNREAD_SUMMARY_RESP, req, resp,
+		func() error { return serverErr(resp.GetCode()) })
+	if err != nil {
+		return nil, err
+	}
+	return resp, nil
+}
+
+// SetGamePresenceEnabled writes the player's 游戏在线状态 switch. While it
+// is on (the default for any bound player — an account that never set it
+// reads as enabled), friends see "in game X" and friend DMs are relayed into
+// the game plane; turning it off stops both and takes the published roster
+// down immediately. The caller owns the player identity here: pass the same
+// player_id used for BindPlayerIdentity.
+func (c *Client) SetGamePresenceEnabled(ctx context.Context, req *pbsg.SetGamePresenceEnabledRequest) (*pbsg.SetGamePresenceEnabledResponse, error) {
+	resp := &pbsg.SetGamePresenceEnabledResponse{}
+	err := c.rpc(ctx, pbgw.MsgID_SET_GAME_PRESENCE_ENABLED_REQ, pbgw.MsgID_SET_GAME_PRESENCE_ENABLED_RESP, req, resp,
+		func() error { return serverErr(resp.GetCode()) })
+	if err != nil {
+		return nil, err
+	}
+	return resp, nil
+}
+
+// GetGamePresence reads back the switch plus the games the presence
+// currently covers (enabled && bound, ordered by game_id; empty while
+// disabled — bindings stay intact, only the fan-out freezes).
+func (c *Client) GetGamePresence(ctx context.Context, req *pbsg.GetGamePresenceRequest) (*pbsg.GetGamePresenceResponse, error) {
+	resp := &pbsg.GetGamePresenceResponse{}
+	err := c.rpc(ctx, pbgw.MsgID_GET_GAME_PRESENCE_REQ, pbgw.MsgID_GET_GAME_PRESENCE_RESP, req, resp,
 		func() error { return serverErr(resp.GetCode()) })
 	if err != nil {
 		return nil, err

@@ -968,3 +968,82 @@ func indexByte(s string, b byte) int {
 	}
 	return -1
 }
+
+func TestGamePresenceSwitchRoundTrip(t *testing.T) {
+	var mu sync.Mutex
+	// The directory's switch semantics in miniature: absent = enabled (绑定
+	// 即默认开启), an explicit false hides the game list but keeps bindings.
+	overrides := map[string]bool{}
+	bindings := []string{"game-a", "game-b"}
+	h := startFakeHub(t, func(sc *syncConn, pkt *pbgw.Packet) {
+		switch pkt.GetMsgId() {
+		case pbgw.MsgID_SERVER_AUTH_REQ:
+			authOK(sc, pkt)
+		case pbgw.MsgID_SET_GAME_PRESENCE_ENABLED_REQ:
+			req := &pbsg.SetGamePresenceEnabledRequest{}
+			if err := proto.Unmarshal(pkt.GetBody(), req); err != nil {
+				t.Errorf("bad set body: %v", err)
+				return
+			}
+			mu.Lock()
+			overrides[req.GetPlayerId()] = req.GetEnabled()
+			mu.Unlock()
+			sc.write(&pbgw.Packet{
+				MsgId:    pbgw.MsgID_SET_GAME_PRESENCE_ENABLED_RESP,
+				Sequence: pkt.GetSequence(),
+				Body:     mustMarshal(&pbsg.SetGamePresenceEnabledResponse{Code: pbcommon.ErrorCode_OK}),
+			})
+		case pbgw.MsgID_GET_GAME_PRESENCE_REQ:
+			req := &pbsg.GetGamePresenceRequest{}
+			if err := proto.Unmarshal(pkt.GetBody(), req); err != nil {
+				t.Errorf("bad get body: %v", err)
+				return
+			}
+			resp := &pbsg.GetGamePresenceResponse{Code: pbcommon.ErrorCode_OK, Enabled: true}
+			mu.Lock()
+			if v, ok := overrides[req.GetPlayerId()]; ok && !v {
+				resp.Enabled = false
+			} else {
+				for _, g := range bindings {
+					resp.Entries = append(resp.Entries, &pbsg.GamePresenceEntry{
+						GameId: g, GameUserId: "u-" + g,
+					})
+				}
+			}
+			mu.Unlock()
+			sc.write(&pbgw.Packet{
+				MsgId:    pbgw.MsgID_GET_GAME_PRESENCE_RESP,
+				Sequence: pkt.GetSequence(),
+				Body:     mustMarshal(resp),
+			})
+		}
+	})
+
+	c := NewClient(testConfig(h))
+	c.Start()
+	defer c.Stop()
+	waitFor(t, 3*time.Second, "connect", c.Connected)
+
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	defer cancel()
+
+	// Default-on: a player who never touched the switch reads enabled with
+	// every bound game listed.
+	before, err := c.GetGamePresence(ctx, &pbsg.GetGamePresenceRequest{PlayerId: "player-1"})
+	if err != nil || !before.GetEnabled() {
+		t.Fatalf("default read: resp=%v err=%v (want enabled)", before, err)
+	}
+	if len(before.GetEntries()) != 2 || before.GetEntries()[0].GetGameId() != "game-a" {
+		t.Fatalf("entries: resp=%v (want both bindings, game order)", before)
+	}
+
+	if _, err := c.SetGamePresenceEnabled(ctx, &pbsg.SetGamePresenceEnabledRequest{
+		PlayerId: "player-1", Enabled: false,
+	}); err != nil {
+		t.Fatalf("disable: %v", err)
+	}
+	after, err := c.GetGamePresence(ctx, &pbsg.GetGamePresenceRequest{PlayerId: "player-1"})
+	if err != nil || after.GetEnabled() || len(after.GetEntries()) != 0 {
+		t.Fatalf("disabled read: resp=%v err=%v (want off, no entries)", after, err)
+	}
+}

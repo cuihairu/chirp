@@ -1,5 +1,6 @@
 import * as Auth from '@chirp/proto/auth';
 import * as Chat from '@chirp/proto/chat';
+import * as GameServerGateway from '@chirp/proto/game_server_gateway';
 import * as Notification from '@chirp/proto/app_notification';
 import * as Party from '@chirp/proto/party';
 import * as Social from '@chirp/proto/social';
@@ -289,4 +290,21 @@ export const GET_USER_DEVICES = defineSpec(
   MsgID.GET_USER_DEVICES_RESP,
   Notification.GetUserDevicesRequest,
   Notification.GetUserDevicesResponse,
+);
+
+// Game presence (游戏在线状态, app_gateway self-service like the WP-8 block):
+// the per-player switch for the friend-facing "in game X" status and the
+// friend-DM relay into the game plane. Binding opts in by default (the
+// switch reads true when never set); the server pins player_id.
+export const SET_GAME_PRESENCE_ENABLED = defineSpec(
+  MsgID.SET_GAME_PRESENCE_ENABLED_REQ,
+  MsgID.SET_GAME_PRESENCE_ENABLED_RESP,
+  GameServerGateway.SetGamePresenceEnabledRequest,
+  GameServerGateway.SetGamePresenceEnabledResponse,
+);
+export const GET_GAME_PRESENCE = defineSpec(
+  MsgID.GET_GAME_PRESENCE_REQ,
+  MsgID.GET_GAME_PRESENCE_RESP,
+  GameServerGateway.GetGamePresenceRequest,
+  GameServerGateway.GetGamePresenceResponse,
 );
