@@ -10,10 +10,21 @@
 #include <vector>
 
 #include "message_handlers.h"
+#include "recall_tombstone.h"
 
 #include "proto/common.pb.h"
 
 namespace {
+
+// 历史存档里的一条消息(带 message_id,内存向量原位改写要按它匹配)。
+chirp::chat::ChatMessage MakeTracked(const std::string& message_id,
+                                     const std::string& content) {
+  chirp::chat::ChatMessage msg;
+  msg.set_message_id(message_id);
+  msg.set_content(content);
+  msg.set_timestamp(1000);
+  return msg;
+}
 
 struct NotificationRecord {
   std::string user_id;
@@ -524,6 +535,74 @@ TEST_F(EditMentionHandlersTest, HardDeleteSkipsTombstoneMark) {
 // ---------------------------------------------------------------------------
 // Bulk delete
 // ---------------------------------------------------------------------------
+
+TEST_F(EditMentionHandlersTest, BulkDeleteMarksTombstoneAndPurgesPerMessage) {
+  // 批量软删走的是和单体软删同一条语义:成功的每条都立墓碑、每个成员都回收
+  // 离线副本;失败的那条什么都不做(否则历史里照样躺着原文)。
+  group_members_ = {"alice", "bob"};
+  moderators_ = {{"g1:carl", true}};
+  RegisterSentMessage("m1", "alice", chirp::chat::GUILD, "g1", "a");
+  RegisterSentMessage("m2", "bob", chirp::chat::GUILD, "g1", "b");
+
+  chirp::chat::BulkDeleteRequest req;
+  req.add_message_ids("m1");
+  req.add_message_ids("m9");  // 不存在的条目:不得触发墓碑与回收
+  req.set_channel_id("g1");
+  req.set_requester_id("carl");
+  ASSERT_EQ(edit_handlers_->HandleBulkDelete(req, "carl").code(), chirp::common::OK);
+
+  ASSERT_EQ(marked_.size(), 1u);
+  EXPECT_EQ(marked_[0].channel_type, chirp::chat::GUILD);
+  EXPECT_EQ(marked_[0].channel_id, "g1");
+  EXPECT_EQ(marked_[0].message_id, "m1");
+
+  const auto purged = PurgedFor("m1");
+  EXPECT_EQ(purged.size(), 2u);  // 除请求者外的每个成员都可能有排队副本
+  EXPECT_TRUE(PurgedFor("m9").empty());
+}
+
+TEST_F(EditMentionHandlersTest, BulkDeleteToleratesNullMarkerAndPurger) {
+  // 部署形态可以不接墓碑/离线队列(4 参构造),批量软删仍须成功。
+  group_members_ = {"alice", "bob"};
+  moderators_ = {{"g1:carl", true}};
+  chirp::chat::MessageEditHandlers handlers(edits_, resolver_, moderator_, notifier_);
+  handlers.TrackMessage("m1", chirp::chat::GUILD, "g1");
+  handlers.RegisterMessage("m1", "alice", "a");
+
+  chirp::chat::BulkDeleteRequest req;
+  req.add_message_ids("m1");
+  req.set_channel_id("g1");
+  req.set_requester_id("carl");
+  EXPECT_EQ(handlers.HandleBulkDelete(req, "carl").code(), chirp::common::OK);
+  EXPECT_TRUE(marked_.empty());
+  EXPECT_TRUE(purged_.empty());
+}
+
+TEST_F(EditMentionHandlersTest, RecallWritesTombstoneIntoRealHistoryArchive) {
+  // 端到端语义闭环:撤回 → 墓碑原语落到真实历史向量 → 历史读回只剩墓碑。
+  // 这里接的是生产同一份 recall_tombstone 实现(main.cc 的历史向量用的就是它),
+  // 而不是只断言 marker 被调用——「不再返回原文」必须是读出来的结果。
+  std::vector<chirp::chat::ChatMessage> archive = {MakeTracked("m1", "the secret text")};
+  chirp::chat::MessageEditHandlers handlers(
+      edits_, resolver_, moderator_, notifier_,
+      [](const std::string&, const std::string&) {},
+      [&archive](chirp::chat::ChannelType, const std::string&,
+                 const std::string& message_id) {
+        chirp::chat::MarkRecalledInMemory(archive, message_id);
+      });
+  handlers.TrackMessage("m1", chirp::chat::PRIVATE, "alice|bob");
+  handlers.RegisterMessage("m1", "alice", "the secret text");
+
+  chirp::chat::DeleteMessageRequest req;
+  req.set_message_id("m1");
+  req.set_user_id("alice");
+  ASSERT_EQ(handlers.HandleDeleteMessage(req, "alice").code(), chirp::common::OK);
+
+  ASSERT_EQ(archive.size(), 1u);
+  EXPECT_TRUE(archive[0].is_recalled());
+  EXPECT_TRUE(archive[0].content().empty());
+  EXPECT_EQ(archive[0].message_id(), "m1");  // 墓碑仍在原位:分页与序不受影响
+}
 
 TEST_F(EditMentionHandlersTest, BulkDeleteValidatesInput) {
   chirp::chat::BulkDeleteRequest no_ids;

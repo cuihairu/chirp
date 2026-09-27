@@ -180,6 +180,7 @@ add_executable(chat_managers_tests
   chat_group_handlers_test.cc
   chat_message_handlers_test.cc
   chat_edit_mention_test.cc
+  chat_recall_tombstone_test.cc
   chat_inject_consumer_test.cc
   chat_npc_uplink_test.cc
   ${CMAKE_SOURCE_DIR}/services/shared/chat/src/distributed_dispatch.cc
@@ -199,6 +200,7 @@ add_executable(chat_managers_tests
   ${CMAKE_SOURCE_DIR}/services/shared/chat/src/typing_manager.cc
   ${CMAKE_SOURCE_DIR}/libs/common/login_token_verifier.cc
   ${CMAKE_SOURCE_DIR}/services/shared/chat/src/push_bridge.cc
+  ${CMAKE_SOURCE_DIR}/services/shared/chat/src/recall_tombstone.cc
 )
 # main_distributed.cc is pulled in via #include with main() renamed in
 # chat_managers_test.cc; compiling it separately would hijack the test entry
@@ -848,6 +850,7 @@ add_executable(chat_mysql_tests
   ${CMAKE_SOURCE_DIR}/services/shared/chat/src/message_store_factory.cc
   ${CMAKE_SOURCE_DIR}/services/shared/chat/src/mysql_message_store.cc
   ${CMAKE_SOURCE_DIR}/services/shared/chat/src/paginated_history_retriever.cc
+  ${CMAKE_SOURCE_DIR}/services/shared/chat/src/recall_tombstone.cc
 )
 
 chirp_unit_test_common_links(chat_mysql_tests)

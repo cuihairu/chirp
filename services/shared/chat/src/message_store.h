@@ -55,9 +55,10 @@ public:
   virtual bool MessageExists(const std::string& channel_id,
                              const std::string& message_id) = 0;
 
-  // 撤回墓碑（P0）：把该会话内这条消息标记为已撤回。历史读回（GetHistory）
-  // 由此带出 is_recalled，客户端渲染"消息已撤回"；离线队列的副本由撤回批次
-  // 的 OfflineMessagePurger 单独回收，互不重叠。
+  // 撤回墓碑（P0）：把该会话内这条消息标记为已撤回**并抹除正文**——历史读回
+  // （GetHistory）由此带出 is_recalled 且 content 为空，客户端渲染"消息已撤回"。
+  // 只置位不抹除等于原文仍在存档里可查，墓碑必须在存储侧生效，不能只靠客户端
+  // 不渲染。离线队列的副本由撤回批次的 OfflineMessagePurger 单独回收，互不重叠。
   virtual bool MarkMessageRecalled(const std::string& channel_id,
                                    const std::string& message_id) = 0;
 

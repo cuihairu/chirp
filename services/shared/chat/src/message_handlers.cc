@@ -494,9 +494,18 @@ chirp::chat::BulkDeleteResponse MessageEditHandlers::HandleBulkDelete(
       continue;
     }
     notify.set_message_id(message_id);
+    // 批量软删与单体软删必须同一语义：历史存档立墓碑（置位并抹正文）、
+    // 离线队列回收副本。少了这两步，从批量入口删掉的消息照样能在
+    // GET_HISTORY 里读出原文、离线方下次登录照样被补投。
+    if (mark_recalled_) {
+      mark_recalled_(chirp::chat::GUILD, req.channel_id(), message_id);
+    }
     for (const auto& member :
          members_(chirp::chat::GUILD, req.channel_id(), req.requester_id())) {
       notify_(member, chirp::gateway::MESSAGE_DELETED_NOTIFY, notify);
+      if (purge_offline_) {
+        purge_offline_(message_id, member);
+      }
     }
   }
 

@@ -9,6 +9,7 @@
 #include "logger.h"
 #include "message_store_factory.h"
 #include "proto/chat.pb.h"
+#include "recall_tombstone.h"
 
 namespace chirp::chat {
 namespace {
@@ -293,31 +294,18 @@ bool HybridMessageStore::HasMessage(const std::string& channel_id,
   return mysql_store_->MessageExists(channel_id, message_id);
 }
 
-// 撤回墓碑（P0）：热层（Redis 历史镜像）按 LSet 原位改写——列表顺序不动，
-// 其余成员的读回不受影响；冷层（已老化出列表的行）走 MySQL UPDATE。两层
-// 各自幂等，返回值取与（Redis 抖动不吞掉冷层置位，但调用方能看到失败）。
+// 撤回墓碑（P0）：热层（Redis 历史镜像）按 LSet 原位改写并抹除正文——列表顺序
+// 不动，其余成员的读回不受影响；冷层（已老化出列表的行）走 MySQL UPDATE。两层
+// 各自幂等，返回值取与（Redis 抖动不吞掉冷层置位，但调用方能看到失败）。镜像
+// 就是 ChatMessage 的 proto 字节，抹除逻辑与基础形态共用 recall_tombstone.h。
 bool HybridMessageStore::MarkMessageRecalled(const std::string& channel_id,
                                              const std::string& message_id) {
   if (channel_id.empty() || message_id.empty()) {
     return false;
   }
 
-  const std::string history_key = HistoryKey(channel_id);
-  const auto redis_messages = redis_->LRange(history_key, 0, -1);
-  bool redis_ok = true;
-  for (size_t i = 0; i < redis_messages.size(); ++i) {
-    MessageData msg;
-    if (!msg.ParseFromArray(redis_messages[i].data(),
-                            static_cast<int>(redis_messages[i].size()))) {
-      continue;
-    }
-    if (msg.message_id == message_id && !msg.is_recalled) {
-      msg.is_recalled = true;
-      redis_ok = redis_->LSet(history_key, static_cast<int64_t>(i),
-                              msg.SerializeAsString()) && redis_ok;
-    }
-  }
-
+  const bool redis_ok = MarkRecalledInRedisList(*redis_, HistoryKey(channel_id),
+                                                message_id);
   const bool mysql_ok = mysql_store_->MarkMessageRecalled(channel_id, message_id);
   return redis_ok && mysql_ok;
 }

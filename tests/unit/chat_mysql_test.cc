@@ -357,6 +357,8 @@ TEST_F(MySqlStoreTest, MarkMessageRecalledWritesScopedUpdate) {
   ASSERT_FALSE(queries.empty());
   EXPECT_NE(queries.back().find("UPDATE messages SET is_recalled = 1"),
             std::string::npos);
+  // 墓碑必须连正文一起抹掉：只置位的话历史读回依旧带着原文。
+  EXPECT_NE(queries.back().find("content = ''"), std::string::npos);
   // 双条件精确定位：channel_id 是防御（message_id 全表唯一），防跨会话误标。
   EXPECT_NE(queries.back().find("channel_id = 'ch1'"), std::string::npos);
   EXPECT_NE(queries.back().find("message_id = 'm1'"), std::string::npos);
@@ -666,15 +668,17 @@ TEST_F(HybridStoreTest, RecallTombstoneRewritesHotTierInPlace) {
   ASSERT_TRUE(second.ParseFromArray(blobs[1].data(), static_cast<int>(blobs[1].size())));
   EXPECT_EQ(first.message_id, "m1");
   EXPECT_TRUE(first.is_recalled);
+  EXPECT_TRUE(first.content.empty());  // 墓碑=置位+抹除,只置位等于原文还在存档里
   EXPECT_EQ(second.message_id, "m2");
   EXPECT_FALSE(second.is_recalled);
+  EXPECT_EQ(second.content, "hello m2");
   EXPECT_EQ(blobs[2], "garbage-not-proto");
 
-  // 冷层同步置位：MySQL 侧收到双条件 UPDATE。
+  // 冷层同步置位并抹除：MySQL 侧收到双条件 UPDATE（含 content 清空）。
   auto queries = fake_mysql::TakeQueries();
   bool saw_update = false;
   for (const auto& q : queries) {
-    if (q.find("UPDATE messages SET is_recalled = 1") != std::string::npos &&
+    if (q.find("UPDATE messages SET is_recalled = 1, content = ''") != std::string::npos &&
         q.find("message_id = 'm1'") != std::string::npos) {
       saw_update = true;
     }
@@ -686,6 +690,28 @@ TEST_F(HybridStoreTest, RecallTombstoneRewritesHotTierInPlace) {
   const auto after = redis_->ListDirect("chirp:chat:history:ch1");
   ASSERT_EQ(after.size(), 3u);
   EXPECT_EQ(after[0], blobs[0]);
+}
+
+TEST_F(HybridStoreTest, RecallTombstoneSweepsBodyOutOfHistoryReadback) {
+  // 撤回的验收语义:GET_HISTORY 不再返回原文,只返回「这条已被撤回」的事实。
+  ASSERT_TRUE(store_->Initialize());
+  ASSERT_TRUE(store_->StoreMessage(MakeMessage("m1", "ch1", 1000)));
+  ASSERT_TRUE(store_->StoreMessage(MakeMessage("m2", "ch1", 2000)));
+  ASSERT_TRUE(store_->MarkMessageRecalled("ch1", "m1"));
+
+  const auto page = store_->GetHistory("ch1", 0, 0, 10);
+  ASSERT_EQ(page.size(), 2u);
+  const MessageData* recalled = nullptr;
+  const MessageData* intact = nullptr;
+  for (const auto& m : page) {
+    if (m.message_id == "m1") recalled = &m;
+    if (m.message_id == "m2") intact = &m;
+  }
+  ASSERT_NE(recalled, nullptr);
+  ASSERT_NE(intact, nullptr);
+  EXPECT_TRUE(recalled->is_recalled);
+  EXPECT_TRUE(recalled->content.empty());
+  EXPECT_EQ(intact->content, "hello m2");
 }
 
 TEST_F(HybridStoreTest, RecallTombstoneReportsHotTierFailure) {

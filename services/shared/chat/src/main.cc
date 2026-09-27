@@ -25,6 +25,7 @@
 #include "network/redis_client.h"
 #include "network/session.h"
 #include "network/tcp_server.h"
+#include "recall_tombstone.h"
 #include "network/websocket_server.h"
 #include "npc_uplink.h"
 #include "player_directory.h"
@@ -250,34 +251,21 @@ struct MessageStore {
   }
 
   // 撤回墓碑（game_chat_features P0）：撤回/版主软删后把历史存档里的这条
-  // 消息置为已撤回——内存向量原位置位，Redis 镜像按 LSet 原位改写（列表顺
-  // 序不动）。GET_HISTORY 的读回（内存或镜像）由此带出 is_recalled。
+  // 消息置为已撤回并抹除正文——墓碑的语义是原文不复存在，只置位的话
+  // GET_HISTORY 仍会把原文端出去。内存向量原位改写，Redis 镜像按 LSet 原位
+  // 回写（列表顺序不动）。收敛在 recall_tombstone.h，与 Hybrid 热层同一份逻辑。
   bool MarkRecalled(chirp::chat::ChannelType type, const std::string& channel_id,
                     const std::string& message_id) {
     bool ok = true;
 
     auto it = history.find(ChannelKey(type, channel_id));
     if (it != history.end()) {
-      for (auto& msg : it->second) {
-        if (msg.message_id() == message_id) {
-          msg.set_is_recalled(true);
-        }
-      }
+      chirp::chat::MarkRecalledInMemory(it->second, message_id);
     }
 
     if (redis) {
-      const std::string key = HistoryKey(type, channel_id);
-      const auto raw = redis->LRange(key, 0, -1);
-      for (size_t i = 0; i < raw.size(); ++i) {
-        chirp::chat::ChatMessage queued;
-        if (!queued.ParseFromArray(raw[i].data(), static_cast<int>(raw[i].size()))) {
-          continue;
-        }
-        if (queued.message_id() == message_id && !queued.is_recalled()) {
-          queued.set_is_recalled(true);
-          ok = redis->LSet(key, static_cast<int64_t>(i), queued.SerializeAsString()) && ok;
-        }
-      }
+      ok = chirp::chat::MarkRecalledInRedisList(*redis, HistoryKey(type, channel_id),
+                                                message_id) && ok;
     }
     return ok;
   }

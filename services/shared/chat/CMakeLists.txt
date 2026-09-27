@@ -62,6 +62,7 @@ if(MYSQL_FOUND)
         src/message_delivery_tracker.cc
         src/message_migration_worker.cc
         src/paginated_history_retriever.cc
+        src/recall_tombstone.cc
         # Server-plane integration and the notification push bridge: the
         # enhanced build dials the hub like the basic/distributed builds do
         # (inject_consumer turns forwarded injections into deliveries, and

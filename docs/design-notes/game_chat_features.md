@@ -4,7 +4,7 @@ title: 游戏聊天特征
 
 # 游戏聊天特征
 
-最后更新：2026-09-25（消息撤回落地 + 存档墓碑缺口记录）
+最后更新：2026-09-27（撤回墓碑贯通历史存档：置位并抹除正文，缺口关闭）
 
 本文档列出游戏聊天系统需要支持的特征，按优先级分阶段实现。
 
@@ -16,7 +16,7 @@ title: 游戏聊天特征
 - **消息长度限制**：不同频道不同上限。私聊 200 字、世界 100 字、公告 500 字。超长截断或拒绝。
 - **发送频率限制**：按用户 + 频道限流。世界频道 5 秒一条、公会 2 秒一条、私聊 1 秒一条。超频返回 `RATE_LIMITED`。
 - **重复消息检测**：连续 3 条相同内容自动禁言 5 分钟。防刷屏。
-- **消息撤回**（已落地：`MessageEditManager::RecallMessage`，窗口 `--recall_window_sec` 默认 120s、可撤回频道 `--recall_channels` 默认 `private,guild`；版主删除走 `DeleteMessage` 治理路径，不受窗口约束。回码：非发送者 `AUTH_FAILED`、超窗/非撤回频道/重复撤回 `INVALID_PARAM`、本进程无台账 `USER_NOT_FOUND`）：发送后 2 分钟内可撤回（私聊/公会）。撤回后对方通过 `MESSAGE_DELETED_NOTIFY`（`is_hard_delete=false`、`deleted_by=作者`）把气泡换成"消息已撤回"墓碑，接收方离线队列里已入队的副本同步按 `message_id` 回收。**已知缺口**：存档层（历史）没有撤回墓碑，重拉 `GET_HISTORY` 仍会拿到原文（见 TODO.md 后续批次）。
+- **消息撤回**（已落地：`MessageEditManager::RecallMessage`，窗口 `--recall_window_sec` 默认 120s、可撤回频道 `--recall_channels` 默认 `private,guild`；版主删除走 `DeleteMessage` 治理路径，不受窗口约束。回码：非发送者 `AUTH_FAILED`、超窗/非撤回频道/重复撤回 `INVALID_PARAM`、本进程无台账 `USER_NOT_FOUND`）：发送后 2 分钟内可撤回（私聊/公会）。撤回后对方通过 `MESSAGE_DELETED_NOTIFY`（`is_hard_delete=false`、`deleted_by=作者`）把气泡换成"消息已撤回"墓碑，接收方离线队列里已入队的副本同步按 `message_id` 回收。**历史存档墓碑已贯通（2026-09-27）**：墓碑的语义是「置位 `is_recalled` + 抹除正文」，只置位等于原文仍躺在存档里——`MessageStore::MarkMessageRecalled` 与基础形态的 `MarkRecalled` 都连 `content` 一并清空（MySQL `UPDATE ... SET is_recalled = 1, content = ''`；Hybrid 双 tier：Redis 热层 `LSet` 原位改写、列表顺序与其余条目不动，冷层同上 UPDATE；镜像就是 `ChatMessage` proto 字节，抹除逻辑收敛为 `recall_tombstone.{h,cc}` 供三种存储实现共用）。因此重拉 `GET_HISTORY` 只剩"这条被撤回过"的事实，读不出原文；`BULK_DELETE` 的软删与单体软删同语义（成功每条立碑、每成员回收副本）。仍存的部署面缺口见 TODO：`main_enhanced.cc` 的 dispatch 尚无 `DELETE_MESSAGE` 槽位，撤回入口目前只在 basic 形态可用。
 - **@提及**：`@某人`、`@全体成员`。被 @ 的玩家收到高亮提示。
 
 ### 频道管理

@@ -348,8 +348,10 @@ bool MySQLMessageStore::MessageExists(const std::string& channel_id,
   return !rows.empty();
 }
 
-// 撤回墓碑（P0）：按 channel_id + message_id 精确置位（message_id 全表唯一，
-// channel_id 条件是防御，防跨会话误标）。幂等：重复撤回重复置 1 无副作用。
+// 撤回墓碑（P0）：按 channel_id + message_id 精确置位**并抹除正文**（message_id
+// 全表唯一，channel_id 条件是防御，防跨会话误标）。只置位不抹除的话，历史读回
+// 依旧带着原文，撤回就退化成「客户端不渲染就当没发生」。
+// 幂等：重复撤回重复置位/清空均无副作用。
 bool MySQLMessageStore::MarkMessageRecalled(const std::string& channel_id,
                                             const std::string& message_id) {
   auto conn = pool_->GetConnection();
@@ -357,9 +359,10 @@ bool MySQLMessageStore::MarkMessageRecalled(const std::string& channel_id,
     return false;
   }
 
-  std::string query = "UPDATE messages SET is_recalled = 1 WHERE channel_id = '" +
-                      conn->Escape(channel_id) + "' AND message_id = '" +
-                      conn->Escape(message_id) + "'";
+  std::string query =
+      "UPDATE messages SET is_recalled = 1, content = '' WHERE channel_id = '" +
+      conn->Escape(channel_id) + "' AND message_id = '" +
+      conn->Escape(message_id) + "'";
 
   bool result = conn->Execute(query);
   pool_->ReturnConnection(std::move(conn));
