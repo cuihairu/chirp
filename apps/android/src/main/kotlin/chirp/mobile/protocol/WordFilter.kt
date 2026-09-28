@@ -5,6 +5,9 @@ package chirp.mobile.protocol
  * WordFilterInterceptor（word_filter.dart）——词库格式、ASCII 大小写不敏感
  * 子串匹配、mask 后重建的替换语义。只滤发送侧：接收内容信任服务端已按其
  * 策略处理。实例构造后不可变，可并发复用。
+ *
+ * 四端共享算法规约（含设计取舍与已知边界）见
+ * docs/design-notes/word_filter.md；改语义先改规约再四处同步。
  */
 enum class WordFilterPolicy { REPLACE, REJECT }
 

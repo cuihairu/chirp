@@ -27,6 +27,8 @@ class WordFilterOptions {
 /// (word_filter.h)/C#(WordFilterInterceptor.cs)的同名实现——词库格式、
 /// ASCII 大小写不敏感子串匹配、mask 后重建的替换语义。只滤发送侧:接收
 /// 内容信任服务端已按其策略处理。实例构造后不可变,可并发复用。
+///
+/// 四端共享算法规约(含设计取舍与已知边界)见 docs/design-notes/word_filter.md。
 class WordFilterInterceptor extends MessageInterceptor {
   WordFilterInterceptor(WordFilterOptions options)
       : terms = parseWordLexicon(options.terms),

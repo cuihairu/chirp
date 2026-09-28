@@ -13,7 +13,7 @@ Runtime/
     ChirpHooks.cs       五钩子接口(拦截/认证/存档/监听/命令)+ SendOptions
     ChirpMessageStore.cs MemoryMessageStore(内存存档,newest-first)
     FileMessageStore.cs 文件版本地存档(append-only 日志 + 启动重放,零依赖)
-    WordFilterInterceptor.cs 敏感词预检拦截器(词库格式/替换语义对齐服务端 WordFilter)
+    WordFilterInterceptor.cs 敏感词预检拦截器(词库格式/替换语义对齐服务端 WordFilter;四端算法规约见 docs/design-notes/word_filter.md)
     ChirpMessages.cs    Specs 全表:聊天/社交/组队/设备/语音全部 Req/Resp 消息对
   ChirpManager.cs   MonoBehaviour 薄壳(主线程派发 + 常用便捷方法)
 dotnet/            纯 .NET 测试工程(CI 里跑真单测,不需要 Unity)

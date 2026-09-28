@@ -16,7 +16,7 @@ unit-tested on the JVM.
 | `protocol/RequestError.kt` | `lib/protocol/errors.dart` | request failure kinds (timeout/closed/kicked; server/blocked are api-layer) |
 | `protocol/WsTransport.kt` + `protocol/OkHttpTransport.kt` | `lib/protocol/ws_transport.dart` | transport seam + the OkHttp WebSocket adapter (OkHttp instead of `java.net.http`: it exists on every Android API level) |
 | `protocol/Scheduler.kt` | dart event-loop timers | time seam; tests drive a manual virtual clock |
-| `protocol/WordFilter.kt` | `lib/protocol/word_filter.dart` | send-side sensitive-word pre-check: server-format lexicon parsing, ASCII-only case folding (UTF-8 safe), mask-interval replace with run collapsing, REPLACE/REJECT policy |
+| `protocol/WordFilter.kt` | `lib/protocol/word_filter.dart` | send-side sensitive-word pre-check: server-format lexicon parsing, ASCII-only case folding (UTF-8 safe), mask-interval replace with run collapsing, REPLACE/REJECT policy. Algorithm spec shared by all four implementations (C++ server / dart / C# / Kotlin): `docs/design-notes/word_filter.md` |
 
 Dart's single event loop becomes a lock: all state transitions hold one
 monitor (transport callbacks arrive on OkHttp threads, timers on the
