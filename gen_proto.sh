@@ -129,4 +129,24 @@ mkdir -p proto/csharp
        proto/app_notification.proto \
        proto/game_server_gateway.proto
 
+# Generate Java code (protoc built-in java_out), used by apps/android (native
+# Kotlin protocol core). Same committed-gencode convention as proto/ts, dart
+# and csharp — consumers never need the toolchain. No java_package options in
+# the .proto sources, so classes land in the default proto packages
+# (chirp.auth, chirp.gateway, ...) as nested classes of the outer files. The
+# protobuf-java runtime is NOT vendored: apps/android/Makefile fetches the
+# pinned jar (4.33.4, must match this protoc's generation) with a checksum.
+mkdir -p proto/java
+"${PROTOC_BIN}" --proto_path=. \
+       --java_out=proto/java \
+       proto/common.proto \
+       proto/auth.proto \
+       proto/gateway.proto \
+       proto/chat.proto \
+       proto/social.proto \
+       proto/voice.proto \
+       proto/party.proto \
+       proto/app_notification.proto \
+       proto/game_server_gateway.proto
+
 echo "Protobuf generation complete."
