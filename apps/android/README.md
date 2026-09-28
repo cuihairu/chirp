@@ -1,9 +1,8 @@
-# chirp Android — native protocol core (M1)
+# chirp Android — native protocol core (M1) + connection layer (M2)
 
 Kotlin/JVM port of the wire protocol shared with `apps/mobile_companion`
-(Dart/Flutter). This is **batch M1 only**: the protocol core, fully
-unit-tested on the JVM. It is an Android *library-so-far* — no Gradle app
-shell yet (see roadmap below).
+(Dart/Flutter). Two batches so far, fully unit-tested on the JVM. It is an
+Android *library-so-far* — no Gradle app shell yet (see roadmap below).
 
 ## What ships here
 
@@ -11,10 +10,15 @@ shell yet (see roadmap below).
 |---|---|---|
 | `src/main/kotlin/chirp/mobile/protocol/Frame.kt` | `lib/protocol/frame.dart` | u32-BE length-prefix framing, 16 MiB cap, stream decoder |
 | `src/main/kotlin/chirp/mobile/protocol/MessageSpec.kt` | `lib/protocol/msg_map.dart` | 40 req/resp MsgID↔type specs with protobuf decoders |
-| `src/main/kotlin/chirp/mobile/protocol/ChatConnection.kt` | `lib/chirp_client.dart` | connect/state machine, sequence correlation, typed request futures, heartbeats, notify dispatch, KICK terminal state |
+| `src/main/kotlin/chirp/mobile/protocol/ChatConnection.kt` | `lib/protocol/chirp_client.dart` | full state machine (`waitingReconnect` included), sequence correlation, typed request futures with deadlines, missed-pong heartbeat detection, auto reconnect with jittered exponential backoff, KICK terminal semantics |
+| `src/main/kotlin/chirp/mobile/protocol/RequestError.kt` | `lib/protocol/errors.dart` | request failure kinds (timeout/closed/kicked; server/blocked are api-layer) |
+| `src/main/kotlin/chirp/mobile/protocol/WsTransport.kt` + `OkHttpTransport.kt` | `lib/protocol/ws_transport.dart` | transport seam + the OkHttp WebSocket adapter (OkHttp instead of `java.net.http`: it exists on every Android API level) |
+| `src/main/kotlin/chirp/mobile/protocol/Scheduler.kt` | dart event-loop timers | time seam; tests drive a manual virtual clock |
 
-Auto-reconnect/backoff is intentionally **not** ported yet (staged with the
-app-shell batch, same as the Dart pipeline's reconnect layer).
+Dart's single event loop becomes a lock: all state transitions hold one
+monitor (transport callbacks arrive on OkHttp threads, timers on the
+scheduler thread). `Scheduler` and `Random` are injectable, so every
+backoff/heartbeat/deadline test is deterministic.
 
 ## Gate
 
@@ -22,14 +26,20 @@ No Gradle/AGP is required (or present on the dev box); the gate is pure
 JDK 21 + kotlinc:
 
 ```sh
-make test    # fetches pinned jars into .cache/ (sha256-verified), compiles, runs 16 tests
+make test    # fetches pinned jars into .cache/ (sha256-verified), compiles, runs 28 tests
 make clean
 ```
 
+The suite includes real-socket OkHttp transport tests over MockWebServer
+(WS upgrade, binary echo, peer close, failed upgrade). MockWebServer quirk
+recorded in the tests: its side never advances the close handshake past
+`onClosing`, so the transport announces "down" there — exactly-once guarded.
+
 Dependencies are **not vendored** (same convention as the Unity csharp
-runtime): `protobuf-java` and the JUnit console launcher are fetched from
-Maven Central into the gitignored `.cache/` with pinned sha256 checksums.
-The protobuf-java version (4.33.4) must match the protoc generation that
+runtime): protobuf-java, okhttp/okio, mockwebserver (+ its junit4
+supertype), and the JUnit console launcher are fetched from Maven Central
+into the gitignored `.cache/` with pinned sha256 checksums. The
+protobuf-java version (4.33.4) must match the protoc generation that
 produced `proto/java` (libprotoc 33.4) — the generated code carries that
 guard.
 
@@ -40,10 +50,11 @@ nested classes of the outer files).
 
 ## Roadmap (staged native migration)
 
-- **M2 — app shell**: Gradle project (AGP + Android SDK), `OkHttp`
-  WebSocket `Transport` implementation behind the `Transport` interface,
-  auto-reconnect with backoff port, minimal login/chat UI.
-- **iOS**: Swift port of the same three files (URLSessionWebSocketTask
+- **M3 — app shell**: Gradle project (AGP + Android SDK), api layer +
+  pipeline (word filter, offline queue — dart `chat_pipeline.dart`),
+  minimal login/chat UI on top of the shipped protocol core. Blocked only
+  on the Android SDK being installable.
+- **iOS**: Swift port of the same files (URLSessionWebSocketTask
   transport). Blocked on a toolchain decision — no Xcode/swift locally and
   CI runners are ubuntu-only.
 - **HarmonyOS**: ArkTS port under DevEco/hvigor. No local hvigor toolchain;
