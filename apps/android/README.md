@@ -50,10 +50,21 @@ nested classes of the outer files).
 
 ## Roadmap (staged native migration)
 
-- **M3 — app shell**: Gradle project (AGP + Android SDK), api layer +
-  pipeline (word filter, offline queue — dart `chat_pipeline.dart`),
-  minimal login/chat UI on top of the shipped protocol core. Blocked only
-  on the Android SDK being installable.
+- **M3 — app shell**: Gradle project (AGP), api layer + pipeline (word
+  filter, offline queue — dart `chat_pipeline.dart`), minimal login/chat UI
+  on top of the shipped protocol core. **Toolchain now present on the dev
+  box**: Android SDK at `~/android-sdk` (commandline-tools 15859902,
+  platform-tools 37.0.1, platform 36, build-tools 36.0.0, licenses
+  accepted; `ANDROID_HOME` in `~/.bashrc`; `local.properties` points here),
+  Gradle 9.8.0 under sdkman. The gate can grow real `gradle` tasks once M3
+  lands.
+- **Push** (app-shell scope): the server plane already exists —
+  `services/app/notification` registers devices with
+  `fcm_token`/`apns_token` (plus Push Kit order) and fans out
+  `PushNotificationRequest` (badge/click_action fields for iOS/Android
+  deep links). Client-side FCM/APNs SDK integration is **not** part of any
+  client yet (Flutter app only has local notifications; the native clients
+  are protocol-core so far) — lands with M3 alongside the shell.
 - **iOS**: Swift port of the same files (URLSessionWebSocketTask
   transport). Blocked on a toolchain decision — no Xcode/swift locally and
   CI runners are ubuntu-only.
