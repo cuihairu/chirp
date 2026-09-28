@@ -52,10 +52,6 @@ const config = defineConfig({
           { text: '服务端 SDK', link: '/sdk/server' },
         ]
       },
-      {
-        text: 'GitHub',
-        link: 'https://github.com/cuihairu/chirp'
-      },
     ],
 
     sidebar: {
@@ -125,7 +121,9 @@ const config = defineConfig({
 
     lastUpdated: { text: '最后更新' },
 
-    social: [
+    // VitePress 内置导航栏 GitHub 图标(此前键名误写为 social,图标从未渲染,
+    // nav 里才被迫手工加了文本 GitHub 项;现改回官方键并由图标承担该入口)。
+    socialLinks: [
       { icon: 'github', link: 'https://github.com/cuihairu/chirp' }
     ],
 
