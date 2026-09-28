@@ -1,7 +1,7 @@
-# chirp Android — native protocol core (M1) + connection layer (M2) + app shell (M3)
+# chirp Android — native protocol core (M1) + connection layer (M2) + app shell (M3) + chat pipeline (M4)
 
 Kotlin/JVM port of the wire protocol shared with `apps/mobile_companion`
-(Dart/Flutter), plus a minimal Android app shell. Three batches so far, all
+(Dart/Flutter), plus a minimal Android app shell. Four batches so far, all
 unit-tested on the JVM.
 
 ## What ships here
@@ -17,6 +17,10 @@ unit-tested on the JVM.
 | `protocol/WsTransport.kt` + `protocol/OkHttpTransport.kt` | `lib/protocol/ws_transport.dart` | transport seam + the OkHttp WebSocket adapter (OkHttp instead of `java.net.http`: it exists on every Android API level) |
 | `protocol/Scheduler.kt` | dart event-loop timers | time seam; tests drive a manual virtual clock |
 | `protocol/WordFilter.kt` | `lib/protocol/word_filter.dart` | send-side sensitive-word pre-check: server-format lexicon parsing, ASCII-only case folding (UTF-8 safe), mask-interval replace with run collapsing, REPLACE/REJECT policy. Algorithm spec shared by all four implementations (C++ server / dart / C# / Kotlin): `docs/design-notes/word_filter.md` |
+| `protocol/Hooks.kt` | `lib/protocol/hooks.dart` + `lib/state/message_store.dart` | the five seam types (`MessageInterceptor` rewrite/drop, `AuthProvider` token sourcing + one renewal, `MessageStore` archive + in-memory impl, `ChatEventListener` fan-out, `CommandHandler`), plus `SendOptions` |
+| `protocol/ChatPipeline.kt` | `lib/protocol/chat_pipeline.dart` (388 lines) | the api layer over `ChatConnection`: login (token sourcing explicit > provider > userId, one AUTH_FAILED renewal round, terminal `onLoginResult`/`onAuthResult` fan-out), send (CLOSED-first validation, `/command` routing with throwing-handler fallback, interceptor rewrite→wire / drop→BLOCKED, archive both directions), incoming path (notify parse → interceptor → archive → listeners, malformed bodies dropped without touching the link), lifecycle (start/stop with throwing-listener isolation) |
+| `protocol/OfflineSendQueue.kt` | new (dart side has UI-level pending flags only) | client outbox replayed on reconnect: at-least-once (TIMEOUT keeps the entry), CLOSED stops the flush with the tail kept in order, BLOCKED/argument errors drop, any server response (incl. TARGET_OFFLINE) confirms; clientId dedupe, drop-oldest eviction at cap |
+| `protocol/WordFilterLoader.kt` | — | reads a server-format lexicon file into a `WordFilter` (no protocol channel for lexicon delivery exists — see below) |
 
 Dart's single event loop becomes a lock: all state transitions hold one
 monitor (transport callbacks arrive on OkHttp threads, timers on the
@@ -27,13 +31,17 @@ backoff/heartbeat/deadline test is deterministic.
 
 | File | Ported from | Role |
 |---|---|---|
-| `MainActivity.kt` | `lib/api/chat_api.dart` login/send + notify ack | dev shell: login (dev token = user id, persisted UUID deviceId, `supports_message_ack=true`), DM a peer (sorted-pair channelId like `home_screen.dart`), live CHAT_MESSAGE_NOTIFY render + mandatory MESSAGE_ACK, word-filter on send |
+| `MainActivity.kt` | `lib/api/chat_api.dart` login/send + notify ack | dev shell, M4-rewired onto `ChatPipeline`: login via `pipeline.login` (provider-less dev token = user id), DM a peer through `pipeline.send` (sorted-pair channelId), interceptor-installed send-side word filter, `MemoryMessageStore` archive, mandatory MESSAGE_ACK stays at the shell layer (pipeline doesn't ack, matching dart layering), `OfflineSendQueue` flushed from `onReconnected` |
 | `AndroidManifest.xml` + `res/` | — | framework-Views UI only (no androidx/Compose — minimal version-coupling surface); cleartext `ws://` enabled for dev gateways |
 
 Host is fixed to `ws://10.0.2.2:7001` (emulator host-loopback alias, same as
 the dart dev default); configurable host comes with real-device work.
-The client-side lexicon is empty for now (the server enforces its own
-filter; this is the REPLACE-semantics send-side seam, lexicon delivery in M4).
+Lexicon loading: **no protocol channel for lexicon delivery exists** (the
+server reads its lexicon from `--word_filter_file` argv; see
+`docs/design-notes/word_filter.md`), so the shell reads
+`filesDir/word_filter.txt` in server format (one term per line, `#`
+comments) when present — an empty lexicon passes everything through and the
+server still enforces its own filter.
 
 ## Gate
 
@@ -41,11 +49,11 @@ Two legs, both must stay green:
 
 ```sh
 make test    # leg 1 (SDK-free): JDK 21 + kotlinc; compiles src/main/kotlin +
-             #   src/test/kotlin against pinned jars, runs the 35 tests
+             #   src/test/kotlin against pinned jars, runs the 73 tests
 make clean
 
 ./gradlew assembleDebug        # leg 2: AGP 9.4.1 app shell → debug APK
-./gradlew testDebugUnitTest    #   the same 35 tests through Gradle
+./gradlew testDebugUnitTest    #   the same 73 tests through Gradle
 ```
 
 Leg 1 needs no Android SDK. Leg 2 needs `ANDROID_HOME`/`local.properties`
@@ -91,10 +99,11 @@ nested classes of the outer files).
 
 ## Roadmap (staged native migration)
 
-- **M4 — chat pipeline**: port `chat_pipeline.dart` (388 lines: command
-  routing, interceptor rewrite/drop, local archive, lifecycle) + the offline
-  queue, word-lexicon delivery into the shell's filter seam, grow real
-  navigation beyond the single-activity dev shell.
+- ~~M4 — chat pipeline~~ **done**: `ChatPipeline.kt` (command routing,
+  interceptor rewrite/drop, local archive, lifecycle), `OfflineSendQueue.kt`,
+  local-file lexicon into the shell's filter seam. Still open: real
+  navigation beyond the single-activity dev shell (M4 shipped the pipeline
+  without new screens).
 - **Push (M3.5)**: the server plane already exists —
   `services/app/notification` registers devices with
   `fcm_token`/`apns_token` (plus Push Kit order) and fans out

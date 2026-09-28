@@ -34,6 +34,12 @@ android {
     compileOptions {
         sourceCompatibility = JavaVersion.VERSION_17
         targetCompatibility = JavaVersion.VERSION_17
+        // The protocol core uses java.time-free but Java-9+ APIs
+        // (CompletableFuture.failedFuture): Android ships them only from
+        // API 31, and minSdk is 26 — desugaring rewrites the calls for older
+        // devices. The JVM make gate runs the real JDK and needs none of
+        // this.
+        isCoreLibraryDesugaringEnabled = true
     }
 
     buildTypes {
@@ -45,6 +51,7 @@ android {
 }
 
 dependencies {
+    coreLibraryDesugaring("com.android.tools:desugar_jdk_libs:2.1.5")
     // Must match the protoc that generated proto/java (libprotoc 33.4
     // gencode guard) — same pin as the make gate's Makefile.
     implementation("com.google.protobuf:protobuf-java:4.33.4")
