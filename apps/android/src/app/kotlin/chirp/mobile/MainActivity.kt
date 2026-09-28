@@ -14,6 +14,7 @@ import chirp.gateway.Gateway
 import chirp.mobile.protocol.ChatConnection
 import chirp.mobile.protocol.ChatPipeline
 import chirp.mobile.protocol.ConnState
+import chirp.mobile.protocol.DeviceRegistrar
 import chirp.mobile.protocol.MemoryMessageStore
 import chirp.mobile.protocol.MessageInterceptor
 import chirp.mobile.protocol.OkHttpTransport
@@ -23,6 +24,7 @@ import chirp.mobile.protocol.SendOptions
 import chirp.mobile.protocol.WordFilter
 import chirp.mobile.protocol.WordFilterLoader
 import chirp.mobile.protocol.WordFilterOptions
+import chirp.mobile.push.PlatformPushTokenSource
 import com.google.protobuf.ByteString
 import okhttp3.OkHttpClient
 import java.io.File
@@ -165,6 +167,7 @@ class MainActivity : Activity() {
                             setStatus("logged in as $userId")
                             sendBtn.isEnabled = true
                             loginBtn.isEnabled = true
+                            registerForPush(fresh, userId)
                         }
                     }
                 }
@@ -183,6 +186,34 @@ class MainActivity : Activity() {
                 .setContent(ByteString.copyFromUtf8(result.content))
                 .build()
         }
+    }
+
+    /**
+     * M3.5：登录成功后注册推送目标（设备面 app_gateway 5201）。token 由构建
+     * 开关决定真假（-PchirpPush=true 走 Firebase，默认构建恒 null），注册本
+     * 身始终执行——dart device_api 降级对齐：空 token 也登记，推送退化为服
+     * 务端日志投递。
+     */
+    private fun registerForPush(conn: ChatConnection, userId: String) {
+        val registrar = DeviceRegistrar(
+            conn = conn,
+            deviceId = ::deviceId,
+            appVersion = runCatching {
+                packageManager.getPackageInfo(packageName, 0).versionName
+            }.getOrNull() ?: "",
+            osVersion = { android.os.Build.VERSION.RELEASE },
+            deviceName = { "${android.os.Build.MANUFACTURER} ${android.os.Build.MODEL}" },
+        )
+        registrar.register(userId, PlatformPushTokenSource(this))
+            .whenComplete { code, err ->
+                main.post {
+                    when {
+                        err != null -> appendLine("[device reg] failed: $err")
+                        code != Common.ErrorCode.OK -> appendLine("[device reg] rejected: $code")
+                        else -> appendLine("[device reg] registered for push")
+                    }
+                }
+            }
     }
 
     private class RequestBlocked(message: String) : RuntimeException(message)

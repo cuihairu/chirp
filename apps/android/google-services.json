@@ -1,0 +1,30 @@
+{
+  "_note": "PLACEHOLDER — no real Firebase credentials exist for this project (2026-09-28). Every value below is fabricated so the google-services plugin parses and the -PchirpPush=true build links; runtime token fetches against the Firebase backend fail and degrade to the empty-token path (see src/push/kotlin/chirp/mobile/push/PlatformPushTokenSource.kt). Replace this file wholesale with a real download from the Firebase console (package_name must stay chirp.mobile); code changes required: none.",
+  "project_info": {
+    "project_number": "000000000000",
+    "project_id": "chirp-placeholder",
+    "storage_bucket": "chirp-placeholder.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:000000000000:android:0123456789abcdef0123456789abcdef",
+        "android_client_info": {
+          "package_name": "chirp.mobile"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyA-PLACEHOLDER-0000000000000000000"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

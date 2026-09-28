@@ -1,4 +1,4 @@
-# chirp Android — native protocol core (M1) + connection layer (M2) + app shell (M3) + chat pipeline (M4)
+# chirp Android — native protocol core (M1) + connection layer (M2) + app shell (M3) + chat pipeline (M4) + push seam (M3.5)
 
 Kotlin/JVM port of the wire protocol shared with `apps/mobile_companion`
 (Dart/Flutter), plus a minimal Android app shell. Four batches so far, all
@@ -31,7 +31,8 @@ backoff/heartbeat/deadline test is deterministic.
 
 | File | Ported from | Role |
 |---|---|---|
-| `MainActivity.kt` | `lib/api/chat_api.dart` login/send + notify ack | dev shell, M4-rewired onto `ChatPipeline`: login via `pipeline.login` (provider-less dev token = user id), DM a peer through `pipeline.send` (sorted-pair channelId), interceptor-installed send-side word filter, `MemoryMessageStore` archive, mandatory MESSAGE_ACK stays at the shell layer (pipeline doesn't ack, matching dart layering), `OfflineSendQueue` flushed from `onReconnected` |
+| `MainActivity.kt` | `lib/api/chat_api.dart` login/send + notify ack | dev shell, M4-rewired onto `ChatPipeline`: login via `pipeline.login` (provider-less dev token = user id), DM a peer through `pipeline.send` (sorted-pair channelId), interceptor-installed send-side word filter, `MemoryMessageStore` archive, mandatory MESSAGE_ACK stays at the shell layer (pipeline doesn't ack, matching dart layering), `OfflineSendQueue` flushed from `onReconnected`, device registration (`DeviceRegistrar` + `PlatformPushTokenSource`) on login success |
+| `src/push` / `src/nopush` (`chirp.mobile.push.PlatformPushTokenSource`) | — | same-FQCN token-source pair picked by the `-PchirpPush` switch: the Firebase one (25.1.3, google-services plugin 4.5.0) fetches the FCM token with a 10s bound, the no-op one always reports `null` |
 | `AndroidManifest.xml` + `res/` | — | framework-Views UI only (no androidx/Compose — minimal version-coupling surface); cleartext `ws://` enabled for dev gateways |
 
 Host is fixed to `ws://10.0.2.2:7001` (emulator host-loopback alias, same as
@@ -43,17 +44,46 @@ server reads its lexicon from `--word_filter_file` argv; see
 comments) when present — an empty lexicon passes everything through and the
 server still enforces its own filter.
 
+## Push (M3.5 — built switch, no real credentials)
+
+`DeviceRegistrar` (protocol core, JVM-tested) ports dart
+`device_api.dart#registerSelf`: after login it registers the install on the
+device plane (app_gateway WS 5201) — the M2 spec set already carried
+`registerDevice`; only the caller was missing. The FCM token flows through
+the `PushTokenSource` seam:
+
+- **Default build** (no flag): `src/nopush` no-op source → empty
+  `fcm_token`, registration still happens (dart's degrade path — the
+  device lists, pushes degrade to the server's logging transport). No
+  Firebase class on any classpath.
+- **`./gradlew assembleDebug -PchirpPush=true`**: applies the
+  google-services plugin, adds firebase-messaging 25.1.3, swaps in the
+  Firebase source (`src/push`). FCM token fetch is bounded at 10s; any
+  failure (Play services missing, bad credentials) reports `null` and
+  degrades to the same empty-token path.
+
+**Assumption, explicit**: there are no Firebase credentials for this
+project. `google-services.json` in this directory is a committed
+PLACEHOLDER (fabricated ids, documented in its `_note` field) that the
+plugin accepts at build time while runtime token fetches fail — which is
+exactly the degrade path above. Real enablement = replace that one file
+(package_name must stay `chirp.mobile`); zero code changes. The switch
+stays off in the default gate so the build stays deterministic.
+
 ## Gate
 
 Two legs, both must stay green:
 
 ```sh
 make test    # leg 1 (SDK-free): JDK 21 + kotlinc; compiles src/main/kotlin +
-             #   src/test/kotlin against pinned jars, runs the 73 tests
+             #   src/test/kotlin against pinned jars, runs the 80 tests
 make clean
 
 ./gradlew assembleDebug        # leg 2: AGP 9.4.1 app shell → debug APK
-./gradlew testDebugUnitTest    #   the same 73 tests through Gradle
+./gradlew testDebugUnitTest    #   the same 80 tests through Gradle
+#   (+ the push variant once: ./gradlew clean assembleDebug testDebugUnitTest
+#    -PchirpPush=true — fetches Firebase, exercises the placeholder
+#    google-services.json through the plugin; verified green 2026-09-28)
 ```
 
 Leg 1 needs no Android SDK. Leg 2 needs `ANDROID_HOME`/`local.properties`
