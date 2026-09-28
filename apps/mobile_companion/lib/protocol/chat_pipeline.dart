@@ -74,7 +74,8 @@ class ChatPipeline {
     _unsubs
       ..add(_conn.onNotify(MsgID.CHAT_MESSAGE_NOTIFY, _onIncoming))
       ..add(_conn.onNotify(MsgID.KICK_NOTIFY, _onKickBody))
-      ..add(_conn.onNotify(MsgID.DEVICES_PRESENCE_NOTIFY, _onDevicesPresenceBody))
+      ..add(
+          _conn.onNotify(MsgID.DEVICES_PRESENCE_NOTIFY, _onDevicesPresenceBody))
       ..add(_conn.onStatus((status) {
         for (final listener in List.of(_listeners)) {
           try {

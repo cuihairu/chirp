@@ -146,7 +146,8 @@ void main() {
     await tester.pumpAndSettle();
 
     // 多端在线（P0）：登录后另一类型端在线 → 我的页出现该条目。
-    applyDevicePresence(services.onlineDevices,
+    applyDevicePresence(
+        services.onlineDevices,
         pbauth.DevicePresence(platform: 'ios', deviceId: 'p1', online: true),
         1);
     await tester.tap(find.text('我的'));

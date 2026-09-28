@@ -41,8 +41,8 @@ void main() {
     test('a disabled account comes back with no games', () async {
       final conn = FakeConnection();
       final presence = createGamePresenceStore();
-      conn.responses[MsgID.GET_GAME_PRESENCE_REQ] = (_) =>
-          GetGamePresenceResponse(code: ErrorCode.OK, enabled: false);
+      conn.responses[MsgID.GET_GAME_PRESENCE_REQ] =
+          (_) => GetGamePresenceResponse(code: ErrorCode.OK, enabled: false);
       final api = makeApi(conn, presence);
       await api.refresh();
       expect(presence.value.enabled, isFalse);
@@ -62,8 +62,8 @@ void main() {
     test('a rejected read also marks unavailable', () async {
       final conn = FakeConnection();
       final presence = createGamePresenceStore();
-      conn.responses[MsgID.GET_GAME_PRESENCE_REQ] = (_) =>
-          GetGamePresenceResponse(code: ErrorCode.AUTH_FAILED);
+      conn.responses[MsgID.GET_GAME_PRESENCE_REQ] =
+          (_) => GetGamePresenceResponse(code: ErrorCode.AUTH_FAILED);
       final api = makeApi(conn, presence);
       expect(await api.refresh(), isFalse);
       expect(presence.value.unavailable, isTrue);
@@ -114,10 +114,10 @@ void main() {
     test('a rejected write leaves the mirror untouched', () async {
       final conn = FakeConnection();
       final presence = createGamePresenceStore();
-      conn.responses[MsgID.GET_GAME_PRESENCE_REQ] = (_) =>
-          GetGamePresenceResponse(code: ErrorCode.OK, enabled: true);
-      conn.responses[MsgID.SET_GAME_PRESENCE_ENABLED_REQ] = (_) =>
-          SetGamePresenceEnabledResponse(code: ErrorCode.INVALID_PARAM);
+      conn.responses[MsgID.GET_GAME_PRESENCE_REQ] =
+          (_) => GetGamePresenceResponse(code: ErrorCode.OK, enabled: true);
+      conn.responses[MsgID.SET_GAME_PRESENCE_ENABLED_REQ] =
+          (_) => SetGamePresenceEnabledResponse(code: ErrorCode.INVALID_PARAM);
       final api = makeApi(conn, presence);
       await api.refresh();
       conn.requests.clear();
@@ -131,8 +131,8 @@ void main() {
   test('logout hides the section; onLoggedIn re-pulls the mirror', () async {
     final conn = FakeConnection();
     final presence = createGamePresenceStore();
-    conn.responses[MsgID.GET_GAME_PRESENCE_REQ] = (_) =>
-        GetGamePresenceResponse(code: ErrorCode.OK, enabled: false);
+    conn.responses[MsgID.GET_GAME_PRESENCE_REQ] =
+        (_) => GetGamePresenceResponse(code: ErrorCode.OK, enabled: false);
     final api = makeApi(conn, presence);
     await api.onLoggedIn();
     expect(presence.value.loaded, isTrue);

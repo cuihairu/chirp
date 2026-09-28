@@ -4,7 +4,8 @@ import 'dart:typed_data';
 
 import 'package:chirp_proto/proto/auth.pb.dart' as auth;
 import 'package:chirp_proto/proto/chat.pb.dart' as chat;
-import 'package:chirp_proto/proto/game_server_gateway.pb.dart' as game_server_gateway;
+import 'package:chirp_proto/proto/game_server_gateway.pb.dart'
+    as game_server_gateway;
 import 'package:chirp_proto/proto/notification.pb.dart' as notification;
 // party.KickMemberRequest/Response collide with chat's and are hidden from
 // the barrel; the party file comes in directly, prefixed.
@@ -183,7 +184,8 @@ const setGamePresenceEnabled =
         MsgID.SET_GAME_PRESENCE_ENABLED_REQ,
         MsgID.SET_GAME_PRESENCE_ENABLED_RESP,
         game_server_gateway.SetGamePresenceEnabledResponse.fromBuffer);
-const getGamePresence = MessageSpec<game_server_gateway.GetGamePresenceResponse>(
-    MsgID.GET_GAME_PRESENCE_REQ,
-    MsgID.GET_GAME_PRESENCE_RESP,
-    game_server_gateway.GetGamePresenceResponse.fromBuffer);
+const getGamePresence =
+    MessageSpec<game_server_gateway.GetGamePresenceResponse>(
+        MsgID.GET_GAME_PRESENCE_REQ,
+        MsgID.GET_GAME_PRESENCE_RESP,
+        game_server_gateway.GetGamePresenceResponse.fromBuffer);

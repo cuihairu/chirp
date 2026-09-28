@@ -9,19 +9,23 @@ import 'package:flutter_test/flutter_test.dart';
 import '../api/chat_api_test.dart';
 
 void main() {
-  test('store keeps one slot per platform; offline marks without dropping',
-      () {
+  test('store keeps one slot per platform; offline marks without dropping', () {
     final store = createOnlineDevicesStore();
-    applyPresenceList(store, [
-      pbauth.DevicePresence(platform: 'ios', deviceId: 'p1', online: true, ts: Int64(1)),
-      pbauth.DevicePresence(
-          platform: 'android', deviceId: 'p2', online: true, ts: Int64(1)),
-    ], 1);
+    applyPresenceList(
+        store,
+        [
+          pbauth.DevicePresence(
+              platform: 'ios', deviceId: 'p1', online: true, ts: Int64(1)),
+          pbauth.DevicePresence(
+              platform: 'android', deviceId: 'p2', online: true, ts: Int64(1)),
+        ],
+        1);
     expect(onlineDevicesOf(store.value).map((d) => d.platform),
         ['android', 'ios']);
 
     // 同 platform 新事件覆盖旧条目（同型互顶后只剩一条）。
-    applyDevicePresence(store,
+    applyDevicePresence(
+        store,
         pbauth.DevicePresence(platform: 'ios', deviceId: 'p9', online: true),
         2);
     expect(store.value.byPlatform['ios']!.deviceId, 'p9');
@@ -29,7 +33,8 @@ void main() {
     expect(onlineDevicesOf(store.value), hasLength(2));
 
     // 下线保留条目只翻标志。
-    applyDevicePresence(store,
+    applyDevicePresence(
+        store,
         pbauth.DevicePresence(platform: 'ios', deviceId: 'p9', online: false),
         3);
     expect(store.value.byPlatform['ios']!.online, isFalse);

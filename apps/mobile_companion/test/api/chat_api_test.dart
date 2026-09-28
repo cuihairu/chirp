@@ -114,6 +114,7 @@ class Harness {
   final conversations = createConversationStore();
   final messages = createMessageStore();
   final typing = createTypingStore();
+
   /// 多端在线（P0）；null keeps the api store-less (legacy constructions).
   final Store<OnlineDevicesState>? onlineDevices;
   late final ChatApi api;

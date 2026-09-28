@@ -82,8 +82,10 @@ class Services {
   final Store<FriendState> friends;
   final Store<PartyState> partyState;
   final Store<DeviceState> devices;
+
   /// 多端在线（P0）：本账号其他在线端清单。
   final Store<OnlineDevicesState> onlineDevices;
+
   /// 游戏在线状态（P0）：开关与当前生效的游戏清单。
   final Store<GamePresenceState> gamePresence;
 

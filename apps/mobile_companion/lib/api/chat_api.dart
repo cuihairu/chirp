@@ -66,6 +66,7 @@ class ChatApi {
   final Store<ConversationState> conversations;
   final Store<MessageState> messages;
   final Store<TypingState> typing;
+
   /// 多端在线（P0）；optional so older constructions stay source-compatible.
   final Store<OnlineDevicesState>? onlineDevices;
 
@@ -648,7 +649,8 @@ class ChatApi {
   void onDevicesPresence(Uint8List body) {
     if (onlineDevices == null) return;
     try {
-      applyPresenceList(onlineDevices!,
+      applyPresenceList(
+          onlineDevices!,
           pbauth.DevicesPresenceNotify.fromBuffer(body).devices,
           DateTime.now().millisecondsSinceEpoch);
     } catch (_) {

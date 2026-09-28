@@ -2565,7 +2565,7 @@ TEST(PlayerDirectoryFriendRelayTest, RefusedInjectIsNotCountedButOthersContinue)
   // still get its copy, and the count only reflects accepted injections.
   int seen = 0;
   const auto sender = [&](const std::string& service_id,
-                          const chirp::gateway::PeerInjectMessageNotify& notify) {
+                          const chirp::gateway::PeerInjectMessageNotify& /*notify*/) {
     ++seen;
     return service_id != "svc-a";
   };

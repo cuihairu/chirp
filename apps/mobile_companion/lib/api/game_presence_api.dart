@@ -49,8 +49,7 @@ class GamePresenceApi {
   /// up the authoritative game list.
   Future<bool> setEnabled(bool enabled) async {
     if (!auth.value.loggedIn) return false;
-    final resp = await conn.request(
-        specs.setGamePresenceEnabled,
+    final resp = await conn.request(specs.setGamePresenceEnabled,
         SetGamePresenceEnabledRequest(playerId: '', enabled: enabled));
     if (resp.code != ErrorCode.OK) return false;
     setGamePresenceEnabled(presence, enabled);

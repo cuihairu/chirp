@@ -61,8 +61,8 @@ Future<Services> pumpLoggedIn(WidgetTester tester, Planes planes) async {
   return services;
 }
 
-SwitchListTile switchTile(WidgetTester tester) => tester.widget<SwitchListTile>(
-    find.byKey(const Key('game-presence-switch')));
+SwitchListTile switchTile(WidgetTester tester) => tester
+    .widget<SwitchListTile>(find.byKey(const Key('game-presence-switch')));
 
 void main() {
   testWidgets('我的 tab renders the switch with the bound game', (tester) async {
@@ -77,8 +77,8 @@ void main() {
       (tester) async {
     final planes = Planes();
     // GET answers enabled with zero entries — the account bound nothing yet.
-    planes.device.responses[MsgID.GET_GAME_PRESENCE_REQ] = (_) =>
-        GetGamePresenceResponse(code: ErrorCode.OK, enabled: true);
+    planes.device.responses[MsgID.GET_GAME_PRESENCE_REQ] =
+        (_) => GetGamePresenceResponse(code: ErrorCode.OK, enabled: true);
     await pumpLoggedIn(tester, planes);
     expect(switchTile(tester).value, isTrue);
     expect(find.text('尚未绑定游戏,绑定后自动开始上报在线状态'), findsOneWidget);
