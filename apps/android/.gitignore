@@ -1,3 +1,4 @@
 build
 .cache
+.gradle
 local.properties

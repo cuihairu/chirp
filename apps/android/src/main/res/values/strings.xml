@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">chirp</string>
+    <string name="hint_user">user id（dev 模式 token 即 user id）</string>
+    <string name="hint_peer">对方 user id（私聊）</string>
+    <string name="hint_message">消息</string>
+    <string name="btn_login">Login</string>
+    <string name="btn_send">Send</string>
+    <string name="status_idle">idle</string>
+</resources>

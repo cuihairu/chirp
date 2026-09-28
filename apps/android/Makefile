@@ -1,6 +1,8 @@
-# Gate for the Android native protocol core (Kotlin JVM). No Gradle yet:
-# the Gradle app shell (AGP + Android SDK + UI) is a later batch; until then
-# this Makefile is the whole gate and needs only a JDK 21 + kotlinc.
+# SDK-free gate for the Android protocol core (Kotlin JVM): only a JDK 21 +
+# kotlinc, no Android SDK/Gradle. Since M3 there is also a Gradle app shell
+# (see README); this gate stays the fast, dependency-light leg and compiles
+# everything under src/main/kotlin + src/test/kotlin (NOT src/app/kotlin,
+# which needs android.jar).
 #
 #   make test    # fetch pinned jars (sha256-verified), compile, run tests
 #   make clean
