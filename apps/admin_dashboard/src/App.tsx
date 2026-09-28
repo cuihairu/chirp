@@ -57,7 +57,16 @@ function App() {
       const response = await fetch('/api/stats');
       if (response.ok) {
         const data = await response.json();
-        setStats(data);
+        // A 200 with missing/non-numeric fields must not blank the shell:
+        // the header renders stats.onlineUsers.toLocaleString() on every
+        // tick, so undefined would throw out of the render.
+        const num = (v: unknown) => (typeof v === 'number' && Number.isFinite(v) ? v : 0);
+        setStats({
+          totalUsers: num(data.totalUsers),
+          onlineUsers: num(data.onlineUsers),
+          totalMessages: num(data.totalMessages),
+          activeChannels: num(data.activeChannels),
+        });
       }
     } catch (error) {
       console.error('Failed to fetch stats:', error);
@@ -112,88 +121,93 @@ function App() {
   );
 
   return (
-    <ThemeProvider theme={theme}>
-      <Box sx={{ display: 'flex' }}>
-        <CssBaseline />
-        <AppBar
-          position="fixed"
-          sx={{
-            width: { sm: `calc(100% - ${drawerWidth}px)` },
-            ml: { sm: `${drawerWidth}px` },
-          }}
-        >
-          <Toolbar>
-            <IconButton
-              color="inherit"
-              aria-label="open drawer"
-              edge="start"
-              onClick={handleDrawerToggle}
-              sx={{ mr: 2, display: { sm: 'none' } }}
+    // The drawer Links and Routes need a router context; main.tsx mounts
+    // <App /> bare, so the provider has to live here (the BrowserRouter
+    // import was previously unused and the app crashed on first paint).
+    <Router>
+      <ThemeProvider theme={theme}>
+        <Box sx={{ display: 'flex' }}>
+          <CssBaseline />
+          <AppBar
+            position="fixed"
+            sx={{
+              width: { sm: `calc(100% - ${drawerWidth}px)` },
+              ml: { sm: `${drawerWidth}px` },
+            }}
+          >
+            <Toolbar>
+              <IconButton
+                color="inherit"
+                aria-label="open drawer"
+                edge="start"
+                onClick={handleDrawerToggle}
+                sx={{ mr: 2, display: { sm: 'none' } }}
+              >
+                <MenuIcon />
+              </IconButton>
+              <Typography variant="h6" noWrap component="div">
+                Chirp Admin Dashboard
+              </Typography>
+              <Box sx={{ flexGrow: 1 }} />
+              <Box sx={{ display: 'flex', gap: 2, alignItems: 'center' }}>
+                <Typography variant="body2">
+                  Online: <strong>{stats.onlineUsers.toLocaleString()}</strong>
+                </Typography>
+                <Typography variant="body2">
+                  Messages: <strong>{stats.totalMessages.toLocaleString()}</strong>
+                </Typography>
+              </Box>
+            </Toolbar>
+          </AppBar>
+          <Box
+            component="nav"
+            sx={{ width: { sm: drawerWidth }, flexShrink: { sm: 0 } }}
+          >
+            <Drawer
+              variant="temporary"
+              open={mobileOpen}
+              onClose={handleDrawerToggle}
+              ModalProps={{ keepMounted: true }}
+              sx={{
+                display: { xs: 'block', sm: 'none' },
+                '& .MuiDrawer-paper': { boxSizing: 'border-box', width: drawerWidth },
+              }}
             >
-              <MenuIcon />
-            </IconButton>
-            <Typography variant="h6" noWrap component="div">
-              Chirp Admin Dashboard
-            </Typography>
-            <Box sx={{ flexGrow: 1 }} />
-            <Box sx={{ display: 'flex', gap: 2, alignItems: 'center' }}>
-              <Typography variant="body2">
-                Online: <strong>{stats.onlineUsers.toLocaleString()}</strong>
-              </Typography>
-              <Typography variant="body2">
-                Messages: <strong>{stats.totalMessages.toLocaleString()}</strong>
-              </Typography>
-            </Box>
-          </Toolbar>
-        </AppBar>
-        <Box
-          component="nav"
-          sx={{ width: { sm: drawerWidth }, flexShrink: { sm: 0 } }}
-        >
-          <Drawer
-            variant="temporary"
-            open={mobileOpen}
-            onClose={handleDrawerToggle}
-            ModalProps={{ keepMounted: true }}
+              {drawer}
+            </Drawer>
+            <Drawer
+              variant="permanent"
+              sx={{
+                display: { xs: 'none', sm: 'block' },
+                '& .MuiDrawer-paper': { boxSizing: 'border-box', width: drawerWidth },
+              }}
+              open
+            >
+              {drawer}
+            </Drawer>
+          </Box>
+          <Box
+            component="main"
             sx={{
-              display: { xs: 'block', sm: 'none' },
-              '& .MuiDrawer-paper': { boxSizing: 'border-box', width: drawerWidth },
+              flexGrow: 1,
+              p: 3,
+              width: { sm: `calc(100% - ${drawerWidth}px)` },
+              minHeight: '100vh',
+              bgcolor: 'background.default',
             }}
           >
-            {drawer}
-          </Drawer>
-          <Drawer
-            variant="permanent"
-            sx={{
-              display: { xs: 'none', sm: 'block' },
-              '& .MuiDrawer-paper': { boxSizing: 'border-box', width: drawerWidth },
-            }}
-            open
-          >
-            {drawer}
-          </Drawer>
+            <Toolbar />
+            <Routes>
+              <Route path="/" element={<Dashboard stats={stats} />} />
+              <Route path="/users" element={<Users />} />
+              <Route path="/channels" element={<Channels />} />
+              <Route path="/messages" element={<Messages />} />
+              <Route path="/settings" element={<Settings />} />
+            </Routes>
+          </Box>
         </Box>
-        <Box
-          component="main"
-          sx={{
-            flexGrow: 1,
-            p: 3,
-            width: { sm: `calc(100% - ${drawerWidth}px)` },
-            minHeight: '100vh',
-            bgcolor: 'background.default',
-          }}
-        >
-          <Toolbar />
-          <Routes>
-            <Route path="/" element={<Dashboard stats={stats} />} />
-            <Route path="/users" element={<Users />} />
-            <Route path="/channels" element={<Channels />} />
-            <Route path="/messages" element={<Messages />} />
-            <Route path="/settings" element={<Settings />} />
-          </Routes>
-        </Box>
-      </Box>
-    </ThemeProvider>
+      </ThemeProvider>
+    </Router>
   );
 }
 
