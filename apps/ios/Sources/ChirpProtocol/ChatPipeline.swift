@@ -238,6 +238,39 @@ public final class ChatPipeline {
         }
     }
 
+    // ---- store queries (Kotlin parity; the dart fetchHistory surface) ------
+
+    /// Newest-first slice; empty when no store is installed.
+    public func loadHistory(
+        channelType: Chirp_Chat_ChannelType,
+        channelId: String,
+        limit: Int,
+        beforeTimestamp: Int64 = 0
+    ) -> [Chirp_Chat_ChatMessage] {
+        store?.load(
+            channelType: channelType,
+            channelId: channelId,
+            limit: limit,
+            beforeTimestamp: beforeTimestamp
+        ) ?? []
+    }
+
+    /// No store installed (or a throwing one): a no-op, never a crash.
+    /// The Swift MessageStore marks the whole channel read (no messageId —
+    /// the Kotlin store protocol is message-granular; noted divergence).
+    public func markRead(channelType: Chirp_Chat_ChannelType, channelId: String) {
+        try? store?.markRead(channelType: channelType, channelId: channelId)
+    }
+
+    /// Without a store the pipeline reports 0 (C++/C#/Kotlin parity).
+    public func unreadCount(channelType: Chirp_Chat_ChannelType, channelId: String) -> Int {
+        store?.getUnreadCount(channelType: channelType, channelId: channelId) ?? 0
+    }
+
+    public func cleanup(olderThanMs: Int64) {
+        try? store?.cleanup(olderThanMs: olderThanMs)
+    }
+
     /// nil = no command consumed the input, send it as a normal message.
     private func routeCommand(_ content: String, senderId: String) -> String? {
         let snapshot: [any CommandHandler] = withLock { commands }

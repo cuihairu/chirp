@@ -73,7 +73,7 @@
 
 ## 5. 客户端应用(`apps/`)
 
-- [x] **移动伴侣应用** (`apps/mobile_companion` - Flutter/RN) **(Demo — 不应呈现为生产就绪)**
+- [x] **移动伴侣应用** (`apps/mobile_companion` - Flutter/RN) **(Demo — 不应呈现为生产就绪)**(2026-09-29 随原生迁移移除:协议核移植至 `apps/android`/`apps/ios`,同组测试向量对拍;CI 腿 `mobile-build.yml` 与 `proto/dart` 同批删除)
   - [x] **UI 框架**:联系人列表、聊天窗口、语音房间。
   - [ ] **后台服务**:推送通知(APNs/FCM),保证应用被杀后用户仍"可达"。 **(provider HTTP 投递仍为日志 stub，见 P2)**
   - [x] **语音交互**:CallKit/ConnectionService 集成(系统电话 UI)。

@@ -16,7 +16,8 @@ title: SDK 引擎兼容性
 | Godot | GDScript / C# | `sdks/godot/` | 4.0 | P2 | 待开发 |
 | Cocos Creator | TypeScript | `sdks/cocos/` | 3.8 | P2 | 待开发 |
 | Web | TypeScript | `apps/web_companion/` | — | P0 | 已有基础 |
-| Flutter | Dart | `apps/mobile_companion/` | 3.0 | P1 | 已有基础 |
+| Android | Kotlin | `apps/android/` | minSdk 26 | P1 | 原生协议核已交付 |
+| iOS | Swift | `apps/ios/` | Swift 5.9+ | P1 | 原生协议核已交付 |
 | C++ 桌面 | C++ | `sdks/core/` | C++17 | P0 | 已有基础 |
 | Go 服务端 | Go | `sdks/go/` | 1.21 | P0 | 已有基础 |
 
@@ -146,30 +147,33 @@ title: SDK 引擎兼容性
   workspace 包，自带 tsconfig/vitest 与 90% 覆盖率门禁；web_companion 经
   `@chirp/protocol/*` 引用，红线未动——registry 发布仍不做）
 
-### Flutter（P1，已有基础）
+### 移动端原生（Android/iOS，2026-09-29 起替代 Flutter）
 
-| 项目 | 要求 |
-|---|---|
-| 最低版本 | Flutter 3.0 / Dart 3.0 |
-| 推荐版本 | Flutter 3.22+ |
-| 语言 | Dart |
-| 传输层 | WebSocket（dart:io） |
-| 平台 | iOS / Android / Linux / Windows / macOS |
+Flutter 应用（`apps/mobile_companion`）已随原生迁移移除：协议核按 Android
+M1→M4+M3.5 与 iOS 分批路径移植到原生包，测试向量沿用同一组做三端对拍
+（Flutter 移除批次补齐了 custom msgType/状态翻转扇出/重连事件扇出/无
+store 降级四条向量，原生包此后独占承载）。
+
+| 项目 | Android | iOS |
+|---|---|---|
+| 路径 | `apps/android/` | `apps/ios/` |
+| 语言 | Kotlin（AGP 9 内建编译器） | Swift（SwiftPM，Linux 上 `swift test` 门禁） |
+| 传输层 | OkHttp WebSocket | URLSessionWebSocketTask（Darwin）/脚本化 fake（Linux 门禁） |
+| 协议核 | Frame/MessageSpec/ChatConnection/WordFilter/ChatPipeline/OfflineSendQueue/DeviceRegistrar | 同左（同组向量） |
+| 门禁 | `make test` 84 例 + `gradlew testDebugUnitTest` | `swift test` 81 例 |
 
 已有：
-- `ChirpClient` 协议核心（纯 Dart）
-- Store + API 层
-- 聊天 UI
-- Hook 接口 + `ChatPipeline` 管线（`lib/protocol/hooks.dart` / `chat_pipeline.dart`，2026-09）：
-  MessageInterceptor / AuthProvider / MessageStore / ChatEventListener / CommandHandler
-  五钩子，语义与 C++ core、C#、Web 对齐（Dart 无接口默认方法，钩子为带 no-op
-  具体体的 abstract class，extends 式按需覆写；'/‘ 命令零注册透传、拦截器
-  返回 false 或抛异常 = 拦截、AUTH_FAILED 至多续期一次、onReconnecting/
-  onReconnected 事件面、KICK reason 透传监听器；SendOptions 与 TS 同款可选字段）
+- 五钩子接口（MessageInterceptor/AuthProvider/MessageStore/ChatEventListener/CommandHandler）
+  + `ChatPipeline` 管线，语义与 C++ core、C#、Web 对齐（'/‘ 命令零注册透传、
+  拦截器改写/拦截、AUTH_FAILED 至多续期一次、onReconnecting/onReconnected
+  事件面、KICK reason 透传监听器；SendOptions 与 TS 同款可选字段）
+- FCM 推送缝（Android M3.5：构建开关 + 占位凭据，空 token 降级注册）/
+  APNs token 缝（iOS M3.5 核：真凭据待接，降级路径已测）
 
 待补：
-- [ ] 独立 pub 包发布
-- [ ] APNs/FCM 推送集成
+- [ ] Android 接收侧通知渲染/点击深链
+- [ ] iOS 壳层 UI、APNs 真凭据
+- [ ] HarmonyOS（ArkTS，工具链未决）
 
 ### C++ 桌面（P0，已有基础）
 
@@ -230,7 +234,7 @@ title: SDK 引擎兼容性
 
 4. **TypeScript 核心包**：独立于 web_companion，LayaBox/Cocos/Web 共用
 5. **LayaBox SDK**：TypeScript 核心 + Laya 适配层
-6. **Flutter SDK**：Hook 接口 + pub 包
+6. **移动端原生包**：`apps/android` + `apps/ios`（2026-09-29 交付；Flutter 应用同批移除）
 
 ### 第三批（P2，按需）
 

@@ -8,9 +8,9 @@
 | 端 | 文件 | 角色 |
 |---|---|---|
 | C++ 服务端（真源） | `services/shared/chat/src/word_filter.{h,cc}` | 聊天服务强制执行点，三策略 + 词库热更新 |
-| Dart (Flutter) | `apps/mobile_companion/lib/protocol/word_filter.dart` | 发送侧预检（interceptor） |
 | C# (Unity) | Unity SDK `WordFilterInterceptor.cs` | 发送侧预检（interceptor） |
 | Kotlin (Android 原生) | `apps/android/src/main/kotlin/chirp/mobile/protocol/WordFilter.kt` | 发送侧预检（双门禁共用：JVM make 腿 + Gradle 腿） |
+| Swift (iOS) | `apps/ios/Sources/ChirpProtocol/WordFilter.swift` | 发送侧预检（匹配按 UTF-16 code unit 与 Kotlin 对齐） |
 
 测试对拍约定：各端测试使用**同一组向量**（见各端 `WordFilterTest`，
 Kotlin 版注释标明「与 word_filter_test.dart 同组测试向量对拍」）。改语义先改

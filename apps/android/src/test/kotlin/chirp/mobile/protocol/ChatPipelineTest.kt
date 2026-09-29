@@ -594,6 +594,121 @@ class ChatPipelineTest {
         assertEquals(listOf("after restart"), seen)
     }
 
+    // ---- 收尾对拍补齐（2026-09-29，Flutter 移除批次）------------------------
+    // dart chat_pipeline_test 里语义已随移植落地、但两平台此前都没有专门
+    // 向量的四条：custom msgType 上线、状态翻转扇出、重连事件扇出、无
+    // store 降级。Flutter 应用删除后这组向量由原生包独占承载。
+
+    @Test
+    fun customMsgTypeOnSendReachesTheWire() {
+        val (pipeline, transport) = connectedPipeline()
+        val future = pipeline.send(
+            SendOptions(Chat.ChannelType.PRIVATE, receiverId = "peer", msgType = Chat.MsgType.IMAGE),
+            content = "hi",
+        )
+        val sent = Gateway.Packet.parseFrom(transport.lastSentPayload())
+        assertEquals(Chat.MsgType.IMAGE, Chat.SendMessageRequest.parseFrom(sent.body).msgType)
+        transport.deliverWsMessage(
+            wsMessage(
+                Gateway.MsgID.SEND_MESSAGE_RESP, sent.sequence,
+                Chat.SendMessageResponse.newBuilder().setCode(Common.ErrorCode.OK).build(),
+            ),
+        )
+        unwrapped(future) // settles the round
+    }
+
+    @Test
+    fun connectionStateFlipsFanOutToListeners() {
+        val connection = ChatConnection(
+            url = "ws://test/chirp",
+            transportFactory = { FakeWsTransport().also { transports.add(it) } },
+            scheduler = scheduler,
+            random = FakeRandom(),
+        )
+        connection.connect().get(5, TimeUnit.SECONDS)
+        val pipeline = ChatPipeline(conn = connection, selfId = { "self" }, deviceId = { "device-1" })
+        val states = ArrayList<ConnState>()
+        pipeline.addListener(object : ChatEventListener {
+            override fun onConnectionStateChanged(state: ConnState) {
+                states.add(state)
+            }
+        })
+        pipeline.start()
+
+        transports[0].closedHandler!!.invoke() // remote drop without our close()
+        assertEquals(ConnState.WAITING_RECONNECT, states.last())
+        scheduler.advance(500)
+        assertEquals(ConnState.CONNECTED, states.last())
+    }
+
+    @Test
+    fun reconnectingAndReconnectedFanOutThroughThePipeline() {
+        // FakeRandom 的抖动取中点，退避延迟恰等于基数——梯子可精确断言
+        // （同 ChatConnectionTest 的同名驱动）。
+        val connection = ChatConnection(
+            url = "ws://test/chirp",
+            transportFactory = { FakeWsTransport().also { transports.add(it) } },
+            scheduler = scheduler,
+            random = FakeRandom(),
+        )
+        connection.connect().get(5, TimeUnit.SECONDS)
+        val pipeline = ChatPipeline(conn = connection, selfId = { "self" }, deviceId = { "device-1" })
+        val reconnecting = ArrayList<Pair<Int, Long>>()
+        var reconnected = 0
+        pipeline.addListener(object : ChatEventListener {
+            override fun onReconnecting(attempt: Int, delayMs: Long) {
+                reconnecting.add(attempt to delayMs)
+            }
+
+            override fun onReconnected() {
+                reconnected += 1
+            }
+        })
+        pipeline.start()
+
+        transports[0].closedHandler!!.invoke()
+        assertEquals(listOf(1 to 500L), reconnecting)
+        assertEquals(0, reconnected)
+        scheduler.advance(500)
+        assertEquals(1, reconnected)
+        transports[1].closedHandler!!.invoke()
+        assertEquals(listOf(1 to 500L, 2 to 1_000L), reconnecting)
+        scheduler.advance(1_000)
+        assertEquals(2, reconnected)
+    }
+
+    @Test
+    fun worksWithoutAStoreSendReceiveAndQueriesDegrade() {
+        val (pipeline, transport) = connectedPipeline()
+        // store 保持 null（默认）：发送/接收照常，查询面降级不崩。
+        val seen = ArrayList<String>()
+        pipeline.addListener(object : ChatEventListener {
+            override fun onMessageReceived(message: Chat.ChatMessage) {
+                seen.add(message.content.toStringUtf8())
+            }
+        })
+        val future = pipeline.send(
+            SendOptions(Chat.ChannelType.PRIVATE, receiverId = "peer"), "hi",
+        )
+        val sent = Gateway.Packet.parseFrom(transport.lastSentPayload())
+        transport.deliverWsMessage(
+            wsMessage(
+                Gateway.MsgID.SEND_MESSAGE_RESP, sent.sequence,
+                Chat.SendMessageResponse.newBuilder().setCode(Common.ErrorCode.OK).build(),
+            ),
+        )
+        unwrapped(future) // settles the round
+        transport.deliverWsMessage(
+            wsMessage(Gateway.MsgID.CHAT_MESSAGE_NOTIFY, 0, textMessage("peer", "yo", channelId = "peer|self")),
+        )
+        assertEquals(listOf("yo"), seen)
+
+        assertEquals(emptyList(), pipeline.loadHistory(Chat.ChannelType.PRIVATE, "peer|self", 10))
+        pipeline.markRead(Chat.ChannelType.PRIVATE, "peer|self", "m-1")
+        assertEquals(0, pipeline.unreadCount(Chat.ChannelType.PRIVATE, "peer|self"))
+        pipeline.cleanup(olderThanMs = 60_000)
+    }
+
     // ---- helpers ------------------------------------------------------------
 
     private fun assertExecutionError(future: java.util.concurrent.CompletableFuture<*>): Throwable =

@@ -42,7 +42,7 @@ fi
 # Generate Go code (protoc-gen-go), part of the repo-root Go module
 # (github.com/cui/chirp). go_package = github.com/cui/chirp/proto/go/<name>;
 # the module= strip places one package per directory under proto/go/. Same
-# committed-gencode convention as ts/dart/csharp: CI regenerates and drift-
+# committed-gencode convention as ts/csharp: CI regenerates and drift-
 # checks it with the pinned plugin (see go-sdk.yml).
 if command -v protoc-gen-go >/dev/null 2>&1; then
   "${PROTOC_BIN}" --proto_path=. \
@@ -89,33 +89,10 @@ else
   echo "warning: protoc or ts-proto plugin not found; skipping TS code generation (npm install in apps/web_companion to enable)"
 fi
 
-# Generate Dart code (protobuf pub plugin), used by apps/mobile_companion.
-# Same committed-gencode convention as proto/ts: neither CI nor other
-# consumers need the toolchain. The plugin ships from
-# `dart pub global activate protoc_plugin` (bin shim in ~/.pub-cache/bin).
-DART_PLUGIN="$HOME/.pub-cache/bin/protoc-gen-dart"
-if [ -x "${PROTOC_BIN}" ] && command -v dart >/dev/null 2>&1 && [ -x "${DART_PLUGIN}" ]; then
-  mkdir -p proto/dart/lib
-  "${PROTOC_BIN}" --proto_path=. \
-         --plugin=protoc-gen-dart="${DART_PLUGIN}" \
-         --dart_out=proto/dart/lib \
-         proto/common.proto \
-         proto/auth.proto \
-         proto/gateway.proto \
-         proto/chat.proto \
-         proto/social.proto \
-         proto/voice.proto \
-         proto/party.proto \
-         proto/app_notification.proto \
-         proto/game_server_gateway.proto
-else
-  echo "warning: dart or protoc-gen-dart not found; skipping Dart code generation (dart pub global activate protoc_plugin to enable)"
-fi
-
 # Generate C# code (protoc built-in csharp_out), used by sdks/unity: the
 # dotnet test project compiles it in CI, Unity projects import it together
 # with the Google.Protobuf runtime. Same committed-gencode convention as
-# proto/ts and proto/dart — consumers never need the toolchain.
+# proto/ts — consumers never need the toolchain.
 mkdir -p proto/csharp
 "${PROTOC_BIN}" --proto_path=. \
        --csharp_out=proto/csharp \
@@ -130,7 +107,7 @@ mkdir -p proto/csharp
        proto/game_server_gateway.proto
 
 # Generate Java code (protoc built-in java_out), used by apps/android (native
-# Kotlin protocol core). Same committed-gencode convention as proto/ts, dart
+# Kotlin protocol core). Same committed-gencode convention as proto/ts
 # and csharp — consumers never need the toolchain. No java_package options in
 # the .proto sources, so classes land in the default proto packages
 # (chirp.auth, chirp.gateway, ...) as nested classes of the outer files. The

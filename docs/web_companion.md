@@ -62,7 +62,7 @@ src/
 └── components/  # ConversationList、ChatWindow、MessageBubble、FriendsDialog、GroupDialogs…
 ```
 
-`protocol/` 刻意保持零 React 依赖——Flutter 端已按此蓝本用 Dart 重写落地(`apps/mobile_companion/lib/protocol/`,2026-09-19;桌面五端属二期)。proto 生成物提交在 `proto/ts/`(ts-proto,`gen_proto.sh` 生成),运行时零工具链依赖;CI 有 proto-sync job 防 `.proto` 与生成物漂移。
+`protocol/` 刻意保持零 React 依赖——移动端曾按此蓝本落地 Flutter 版(`apps/mobile_companion`,2026-09-19),2026-09-29 随原生迁移移除,协议核现由 `apps/android`(Kotlin)与 `apps/ios`(Swift)原生包承载并沿用同一组测试向量。proto 生成物提交在 `proto/ts/`(ts-proto,`gen_proto.sh` 生成),运行时零工具链依赖;CI 有 proto-sync job 防 `.proto` 与生成物漂移。
 
 ## 必须知道的协议语义(代码注释里也有)
 
@@ -106,14 +106,11 @@ src/
    │    为推送目标、设备列表/移除 UI、桌面通知(Notification API 喂 chat 实时流);真实 Web-Push 待
    │    后端传输(TODO:真实推送传输)
    │    语音客户端仍属三期
-   ├─→ [手机 app·已完成 2026-09-19(WP-4)] Android/iOS 共享一套 Flutter 界面;协议/状态/api 层是
-   │    sdks/ts 的 Dart 移植,四条可降级 WS 同构;见 apps/mobile_companion
-   ├─→ [桌面端·已完成 2026-09-19(WP-5)] 同一代码库启用 macOS/Windows/Linux 目标(debug 构建进 CI);
-   │    release 签名与分发打包留待分发阶段
-   ├─→ [二期·Flutter 五端] Android/iOS/macOS/Windows/Linux,协议层以 sdks/ts 为蓝本
-   │    纯 Dart 重写;五端共享同一套界面代码,每端的增量只在构建矩阵与签名发布。
-   │    Flutter 版不接管 Web(React 版已交付,两套 Web 客户端无收益)
-   └─→ [三期] 语音客户端(Web 与 Flutter 同步);Flutter 侧组队随五端一起落
+   ├─→ [手机 app·曾交付 2026-09-19(WP-4),2026-09-29 移除] Flutter 界面曾按 sdks/ts 蓝本 Dart 移植;
+   │    原生迁移后由 apps/android(Kotlin)与 apps/ios(Swift)协议核替代(同组向量对拍)
+   ├─→ [桌面端·曾交付 2026-09-19(WP-5),随 Flutter 移除一同退役] 同一代码库的 macOS/Windows/Linux
+   │    目标;桌面客户端如再启用将独立立项
+   └─→ [三期] 语音客户端(Web 先行);移动端随原生壳层批次再议
 ```
 
 迁移到 app_gateway 聚合边缘后,本文档的"直连 chat/social"过渡路径即废弃,页面与 store 层基本不动,只换连接装配。

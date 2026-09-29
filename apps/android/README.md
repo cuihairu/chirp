@@ -1,8 +1,9 @@
 # chirp Android — native protocol core (M1) + connection layer (M2) + app shell (M3) + chat pipeline (M4) + push seam (M3.5)
 
-Kotlin/JVM port of the wire protocol shared with `apps/mobile_companion`
-(Dart/Flutter), plus a minimal Android app shell. Four batches so far, all
-unit-tested on the JVM.
+Kotlin/JVM port of the wire protocol (ported from the former Flutter app
+`apps/mobile_companion`, removed 2026-09-29 once both native packages
+carried its full test-vector groups), plus a minimal Android app shell.
+Four batches so far, all unit-tested on the JVM.
 
 ## What ships here
 
@@ -76,11 +77,11 @@ Two legs, both must stay green:
 
 ```sh
 make test    # leg 1 (SDK-free): JDK 21 + kotlinc; compiles src/main/kotlin +
-             #   src/test/kotlin against pinned jars, runs the 80 tests
+             #   src/test/kotlin against pinned jars, runs the 84 tests
 make clean
 
 ./gradlew assembleDebug        # leg 2: AGP 9.4.1 app shell → debug APK
-./gradlew testDebugUnitTest    #   the same 80 tests through Gradle
+./gradlew testDebugUnitTest    #   the same 84 tests through Gradle
 #   (+ the push variant once: ./gradlew clean assembleDebug testDebugUnitTest
 #    -PchirpPush=true — fetches Firebase, exercises the placeholder
 #    google-services.json through the plugin; verified green 2026-09-28)
@@ -142,10 +143,13 @@ nested classes of the outer files).
   (needs Firebase project credentials). Registering the WS device plane
   (`registerDevice`, app_gateway 5201) is already possible from the shell.
 - **CI gate job**: none of the two legs runs in CI yet (see Gate).
-- **iOS**: Swift port of the same files (URLSessionWebSocketTask
-  transport). Blocked on a toolchain decision — no Xcode/swift locally and
-  CI runners are ubuntu-only.
+- **iOS**: Swift port of the same files (`apps/ios`, URLSessionWebSocketTask
+  transport on Darwin) — shipped; see its README.
 - **HarmonyOS**: ArkTS port under DevEco/hvigor. No local hvigor toolchain;
   will ship with an honest no-local-gate note unless a CI slot appears.
-- The Flutter app (`apps/mobile_companion`) is frozen until the native
-  clients reach protocol parity, then removed.
+- The Flutter app (`apps/mobile_companion`) was removed 2026-09-29 along
+  with its CI leg (`mobile-build.yml`) and the `proto/dart` gencode: the
+  Android/iOS packages now exclusively carry the shared test vectors
+  (this batch backfilled the four vectors that only the dart suite had
+  covered: custom msgType, state-flip fan-out, reconnect fan-out, and
+  store-less degradation).

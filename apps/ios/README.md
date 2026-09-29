@@ -1,9 +1,10 @@
 # chirp iOS — native protocol core (Swift, batches 1+2 + M3.5 core)
 
-SwiftPM package porting the pure protocol core of `apps/mobile_companion`
-(Dart/Flutter), same migration path the Android package took (its M1→M4
-batches, minus the app shell). Gate: `swift test` on Linux — **77 tests, all
-green** (Swift 6.4, x86_64 linux).
+SwiftPM package porting the pure protocol core of the former Flutter app
+(`apps/mobile_companion`, removed 2026-09-29 once both native packages
+carried its full test-vector groups), same migration path the Android
+package took (its M1→M4 batches, minus the app shell). Gate: `swift test`
+on Linux — **81 tests, all green** (Swift 6.4, x86_64 linux).
 
 ## Layout
 
@@ -23,7 +24,7 @@ green** (Swift 6.4, x86_64 linux).
 | `Sources/ChirpProtocol/Scheduler.swift` | dart event-loop timers | time seam; tests drive a `ManualScheduler` virtual clock |
 | `Sources/ChirpProtocol/Promise.swift` | dart `Future`/Kotlin `CompletableFuture` | settle-once future; combinators `map`/`flatMap`/`handle` are the thenApply/thenCompose/handle mapping |
 | `Sources/ChirpProtocol/RequestError.swift` | `lib/protocol/errors.dart` | timeout/closed/kicked (+ server/blocked used by the pipeline) |
-| `Tests/ChirpProtocolTests/` | the Kotlin test files | same vector groups — three-platform conformance (dart ↔ Kotlin ↔ Swift): Frame 6, ChatConnection 16, MsgSpecs table 3, ChatPipeline 23, OfflineSendQueue 9, Hooks 6, WordFilter 7, DeviceRegistrar 7 |
+| `Tests/ChirpProtocolTests/` | the Kotlin test files | same vector groups — conformance with the Kotlin package (the dart suite was removed with the Flutter app on 2026-09-29; this batch backfilled its four only-there vectors): Frame 6, ChatConnection 16, MsgSpecs table 3, ChatPipeline 27, OfflineSendQueue 9, Hooks 6, WordFilter 7, DeviceRegistrar 7 |
 
 Dart's single event loop becomes one recursive lock (transport callbacks and
 scheduler ticks arrive on foreign threads; `close()` re-enters through the
@@ -39,7 +40,7 @@ the same vectors stay runnable.
 ## Gate
 
 ```sh
-cd apps/ios && swift test    # 77 tests, XCTest, Linux-native
+cd apps/ios && swift test    # 81 tests, XCTest, Linux-native
 ```
 
 No CI leg yet (same as the Android gates — local-only for now). Local

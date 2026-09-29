@@ -218,7 +218,7 @@ docker compose up --build
 - `services/search`(搜索)
 - `services/game/server_gateway`(协议已单测验证,含 chat 侧注入消费;NPC 对话闭环有进程级冒烟)
 - `sdks/core`, `sdks/unity`, `sdks/unreal`(各端 SDK)
-- `apps/mobile_companion`(移动伴侣应用)
+- `apps/android` / `apps/ios`(原生移动端协议核;2026-09-29 起替代已移除的 Flutter 应用 `apps/mobile_companion`)
 - `apps/admin_dashboard`(管理后台)
 - NPC 对话系统设计(`services/npc_dialog` 落地的关键词规则服务范围更窄;设计笔记描述的是更完整的愿景)
 - 分布式聊天的替代目标与可扩展性示例

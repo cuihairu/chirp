@@ -554,4 +554,124 @@ final class ChatPipelineTests: XCTestCase {
             try wsMessage(.chatMessageNotify, 0, textMessage("alice", "after restart")))
         XCTAssertEqual(["after restart"], collector.seen)
     }
+
+    // ---- 收尾对拍补齐（2026-09-29，Flutter 移除批次）------------------------
+    // dart chat_pipeline_test 里语义已随移植落地、但两平台此前都没有专门
+    // 向量的四条：custom msgType 上线、状态翻转扇出、重连事件扇出、无
+    // store 降级。Flutter 应用删除后这组向量由原生包独占承载。
+
+    func testCustomMsgTypeOnSendReachesTheWire() throws {
+        let (pipeline, transport) = try connectedPipeline()
+        let future = pipeline.send(
+            options: SendOptions(channelType: .`private`, receiverId: "peer", msgType: .image),
+            content: "hi")
+        let sent = try sentPacket(transport)
+        XCTAssertEqual(
+            Chirp_Chat_MsgType.image,
+            try Chirp_Chat_SendMessageRequest(serializedBytes: sent.body).msgType)
+        var response = Chirp_Chat_SendMessageResponse()
+        response.code = .ok
+        transport.deliverWsMessage(try wsMessage(.sendMessageResp, sent.sequence, response))
+        _ = try future.get()
+    }
+
+    func testConnectionStateFlipsFanOutToListeners() throws {
+        let connection = ChatConnection(
+            url: "ws://test/chirp",
+            transportFactory: { [self] _ in
+                let fake = FakeWsTransport()
+                transports.append(fake)
+                return fake
+            },
+            random: FakeRandom(),
+            scheduler: scheduler
+        )
+        _ = try connection.connect().get()
+        let pipeline = ChatPipeline(
+            conn: connection,
+            selfId: { "self" },
+            deviceId: { "device-1" }
+        )
+        final class StateCollector: ChatEventListener {
+            private(set) var states: [ConnState] = []
+            func onConnectionStateChanged(_ state: ConnState) throws {
+                states.append(state)
+            }
+        }
+        let collector = StateCollector()
+        _ = pipeline.addListener(collector)
+        pipeline.start()
+
+        transports[0].closedHandler!() // remote drop without our close()
+        XCTAssertEqual(.waitingReconnect, collector.states.last)
+        scheduler.advance(500)
+        XCTAssertEqual(.connected, collector.states.last)
+    }
+
+    func testReconnectingAndReconnectedFanOutThroughThePipeline() throws {
+        // FakeRandom 的抖动取中点，退避延迟恰等于基数——梯子可精确断言
+        // （同 ChatConnectionTests 的同名驱动）。
+        let connection = ChatConnection(
+            url: "ws://test/chirp",
+            transportFactory: { [self] _ in
+                let fake = FakeWsTransport()
+                transports.append(fake)
+                return fake
+            },
+            random: FakeRandom(),
+            scheduler: scheduler
+        )
+        _ = try connection.connect().get()
+        let pipeline = ChatPipeline(
+            conn: connection,
+            selfId: { "self" },
+            deviceId: { "device-1" }
+        )
+        final class ReconnectCollector: ChatEventListener {
+            private(set) var events: [(Int, Int64)] = []
+            private(set) var reconnected = 0
+            func onReconnecting(attempt: Int, delayMs: Int64) throws {
+                events.append((attempt, delayMs))
+            }
+            func onReconnected() throws { reconnected += 1 }
+        }
+        let collector = ReconnectCollector()
+        _ = pipeline.addListener(collector)
+        pipeline.start()
+
+        transports[0].closedHandler!()
+        // (Swift tuples carry no Equatable — assert the two columns.)
+        XCTAssertEqual(collector.events.map(\.0), [1])
+        XCTAssertEqual(collector.events.map(\.1), [500])
+        XCTAssertEqual(0, collector.reconnected)
+        scheduler.advance(500)
+        XCTAssertEqual(1, collector.reconnected)
+        transports[1].closedHandler!()
+        XCTAssertEqual(collector.events.map(\.0), [1, 2])
+        XCTAssertEqual(collector.events.map(\.1), [500, 1_000])
+        scheduler.advance(1_000)
+        XCTAssertEqual(2, collector.reconnected)
+    }
+
+    func testWorksWithoutAStoreSendReceiveAndQueriesDegrade() throws {
+        let (pipeline, transport) = try connectedPipeline()
+        // store 保持 nil（默认）：发送/接收照常，查询面降级不崩。
+        let collector = MessageCollector()
+        _ = pipeline.addListener(collector)
+        let future = pipeline.send(
+            options: SendOptions(channelType: .`private`, receiverId: "peer"), content: "hi")
+        let sent = try sentPacket(transport)
+        var response = Chirp_Chat_SendMessageResponse()
+        response.code = .ok
+        transport.deliverWsMessage(try wsMessage(.sendMessageResp, sent.sequence, response))
+        _ = try future.get()
+        transport.deliverWsMessage(
+            try wsMessage(.chatMessageNotify, 0, textMessage("peer", "yo", channelId: "peer|self")))
+        XCTAssertEqual(["yo"], collector.seen)
+
+        XCTAssertEqual([], pipeline.loadHistory(channelType: .`private`, channelId: "peer|self", limit: 10))
+        pipeline.markRead(channelType: .`private`, channelId: "peer|self")
+        XCTAssertEqual(0, pipeline.unreadCount(channelType: .`private`, channelId: "peer|self"))
+        pipeline.cleanup(olderThanMs: 60_000)
+    }
 }
