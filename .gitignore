@@ -85,3 +85,4 @@ build-cov/
 /build
 docs/package-lock.json
 overlay-ports/
+.build/
