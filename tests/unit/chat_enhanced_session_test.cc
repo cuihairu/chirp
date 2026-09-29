@@ -5,22 +5,33 @@
 
 #include <gtest/gtest.h>
 
+#include <chrono>
+#include <functional>
+#include <future>
 #include <memory>
+#include <mutex>
 #include <string>
+#include <thread>
 #include <type_traits>
 #include <utility>
 #include <vector>
 
 #include <asio.hpp>
 
+#include "common/jwt.h"
 #include "delivery_ack_manager.h"
+#include "network/chat_peer_hub.h"
+#include "network/chat_peer_link.h"
 #include "network/message_router.h"
+#include "network/server_gateway_peer.h"
 #include "network/session.h"
 #include "proto/auth.pb.h"
 #include "proto/chat.pb.h"
 #include "proto/common.pb.h"
+#include "proto/game_server_gateway.pb.h"
 #include "proto/gateway.pb.h"
 
+#include "fake_mysql.h"
 #include "fake_servers.h"
 #include "in_memory_redis.h"
 
@@ -95,6 +106,20 @@ std::vector<Packet> FramesOf(const MockSession& session, chirp::gateway::MsgID m
     }
   }
   return matches;
+}
+
+// Deadline-bounded predicate poll (fixed sleeps flake on this machine's
+// load): 5s budget, 2ms ticks.
+bool WaitFor(const std::function<bool()>& pred, int64_t budget_ms = 5000) {
+  const auto deadline =
+      std::chrono::steady_clock::now() + std::chrono::milliseconds(budget_ms);
+  while (std::chrono::steady_clock::now() < deadline) {
+    if (pred()) {
+      return true;
+    }
+    std::this_thread::sleep_for(std::chrono::milliseconds(2));
+  }
+  return pred();
 }
 
 // The block-list wiring (in flight elsewhere) threads a DeliveryPrefs*
@@ -183,6 +208,9 @@ void InvokeSendMessage(const chirp::chat::SendMessageRequest& req,
 class EnhancedSessionTest : public ::testing::Test {
  protected:
   void SetUp() override {
+    // The scripted fake MySQL is target-global state; a test that fails a
+    // prefix (the async-store callback vector) must not leak it forward.
+    chirp_test::fake_mysql::Reset();
     state_ = std::make_shared<DistributedChatState>();
     state_->instance_id = "enh-test";
 
@@ -289,6 +317,47 @@ class EnhancedSessionTest : public ::testing::Test {
     req.set_device_id(device_id);
     req.set_platform(platform);
     InvokeLogin(req, session, state_, store_, router_, nullptr, nullptr, &delivery_prefs_, seq);
+  }
+
+  // Sends a fully-formed request through the production send path; returns
+  // the newest SEND_MESSAGE_RESP code (sentinel SERVER_UNAVAILABLE when no
+  // parseable frame came back, so "never answered" cannot read as OK).
+  chirp::common::ErrorCode SendReq(
+      const chirp::chat::SendMessageRequest& req,
+      const std::shared_ptr<MockSession>& sender_session,
+      const std::shared_ptr<HybridMessageStore>& store_override = nullptr,
+      chirp::chat::MessageEditHandlers* edits_override = nullptr,
+      chirp::network::ServerGatewayPeer* hub_peer = nullptr,
+      const std::string& npc_service_id = "",
+      chirp::network::ChatPeerLink* spoke_link = nullptr,
+      const std::string& spoke_game_id = "",
+      chirp::chat::PlayerDirectory* directory = nullptr,
+      chirp::network::ChatPeerHub* hub = nullptr,
+      std::string* message_id = nullptr) {
+    InvokeSendMessage(req, sender_session, state_, store_override ? store_override : store_,
+                      tracker_, /*acks=*/nullptr, &delivery_prefs_, router_, hub_peer,
+                      npc_service_id, /*npc_prefix=*/"npc:", spoke_link, spoke_game_id,
+                      edits_override, directory, hub, /*seq=*/1);
+    const auto resps = FramesOf(*sender_session, chirp::gateway::SEND_MESSAGE_RESP);
+    chirp::chat::SendMessageResponse resp;
+    if (resps.empty() || !resp.ParseFromString(resps.back().body())) {
+      return chirp::common::SERVER_UNAVAILABLE;
+    }
+    if (message_id != nullptr) {
+      *message_id = resp.message_id();
+    }
+    return resp.code();
+  }
+
+  // LOGIN_REQ with the full custom surface (verifier / acks / router), for
+  // the paths the scaffold helper cannot reach.
+  void LoginReq(const chirp::auth::LoginRequest& req,
+                const std::shared_ptr<MockSession>& session,
+                const std::shared_ptr<chirp::network::MessageRouter>& router_override = nullptr,
+                const chirp::common::LoginTokenVerifier* verifier = nullptr,
+                chirp::chat::DeliveryAckManager* acks = nullptr) {
+    InvokeLogin(req, session, state_, store_, router_override ? router_override : router_,
+                verifier, acks, &delivery_prefs_, /*seq=*/1);
   }
 
   asio::io_context io_;
@@ -767,6 +836,520 @@ TEST_F(EnhancedSessionTest, DispatchRoutesDeleteMessageAndRejectsGarbage) {
   chirp::chat::runtime::DistributedDispatchHandlers bare;
   chirp::chat::runtime::DispatchDistributedPacket(session, pkt, bare);
   EXPECT_EQ(FramesOf(*session, chirp::gateway::DELETE_MESSAGE_RESP).size(), 2u);
+}
+
+// --- 发送侧回码边界：空接收方 / 悬空引用（协议面校验臂） -------------------
+
+TEST_F(EnhancedSessionTest, PrivateSendRejectsEmptyReceiverAndDanglingReply) {
+  LiveHistoryRecall live;
+  StartLiveHistory(live);
+  auto alice = std::make_shared<MockSession>();
+
+  chirp::chat::SendMessageRequest req;
+  req.set_sender_id("alice");
+  req.set_channel_type(chirp::chat::PRIVATE);
+  req.set_content("to nobody");
+  // 私聊缺接收方：INVALID_PARAM，消息不落库。
+  EXPECT_EQ(SendReq(req, alice, live.store, live.recall.handlers.get()),
+            chirp::common::INVALID_PARAM);
+
+  // 悬空引用：reply_to 不在同一会话（热层/冷层都查不到）→ INVALID_PARAM。
+  req.set_receiver_id("bob");
+  req.set_reply_to_message_id("no-such-message");
+  EXPECT_EQ(SendReq(req, alice, live.store, live.recall.handlers.get()),
+            chirp::common::INVALID_PARAM);
+  EXPECT_TRUE(live.store->GetHistory("alice|bob", 0, 0, 10).empty());
+
+  // 引用存在的消息：放行（引用校验的通过臂）。
+  std::string first_id;
+  ASSERT_EQ(SendPrivate(alice, "alice", "bob", "first", &first_id, live.store,
+                        live.recall.handlers.get()),
+            chirp::common::OK);
+  req.set_content("second");
+  req.set_reply_to_message_id(first_id);
+  EXPECT_EQ(SendReq(req, alice, live.store, live.recall.handlers.get()), chirp::common::OK);
+}
+
+// --- 黑名单：私聊静默成功，两端都不送、不入离线队列 -------------------------
+
+TEST_F(EnhancedSessionTest, PrivateSendSilentlyDropsBlockedReceiver) {
+  auto alice = std::make_shared<MockSession>();
+  auto bob = std::make_shared<MockSession>();
+  Login(bob, "bob", "p1", 1);
+
+  ASSERT_TRUE(delivery_prefs_.BlockUser("bob", "alice"));
+
+  // 拉黑不暴露：发送方照拿 OK，接收端零投递。
+  EXPECT_EQ(SendPrivate(alice, "alice", "bob", "shadowed", nullptr), chirp::common::OK);
+  EXPECT_EQ(FramesOf(*bob, chirp::gateway::CHAT_MESSAGE_NOTIFY).size(), 0u);
+  // 「已投递」的回话阻止离线入队：补投路径也没有副本。
+  EXPECT_TRUE(store_->GetOfflineMessages("bob").empty());
+
+  // 排空的 io 走到 MySQL 写回调：注入失败（scripted fake 拒 INSERT）时
+  // 异步存储的失败分支只留 Warn，不影响发送结果。
+  chirp_test::fake_mysql::FailQueriesMatching("INSERT INTO messages");
+  io_.poll();
+}
+
+// --- NPC 接收方：私聊改道上行为事件，玩家投递路径整体跳过 -------------------
+
+TEST_F(EnhancedSessionTest, NpcReceiverPublishesUtteranceEvent) {
+  chirp::common::Logger::Instance().SetLevel(chirp::common::Logger::Level::kError);
+  // 未 Start 的 hub peer：SendEventPublish 在 strand 上快速失败（SERVER_
+  // UNAVAILABLE），发布回调走失败告警臂——事件上行的可达性由 npc 链路
+  // 冒烟（--smoke-npc）另行证明，这里锁的是改道语义本身。
+  auto npc_peer = chirp::network::ServerGatewayPeer::Create(
+      io_, chirp::network::ServerGatewayPeer::Options{}, nullptr);
+
+  auto alice = std::make_shared<MockSession>();
+  chirp::chat::SendMessageRequest req;
+  req.set_sender_id("alice");
+  req.set_receiver_id("npc:merchant");
+  req.set_channel_type(chirp::chat::PRIVATE);
+  req.set_content("hello smith");
+  EXPECT_EQ(SendReq(req, alice, nullptr, nullptr, /*hub_peer=*/npc_peer.get(),
+                    /*npc_service_id=*/"npc-dialog"),
+            chirp::common::OK);
+
+  // 回复 OK = 事件受理，NPC 不是用户：本地无投递、离线队列也不留副本。
+  io_.poll();  // strand 上排队的发布回调（fail-fast 臂）
+  EXPECT_TRUE(store_->GetOfflineMessages("npc:merchant").empty());
+}
+
+// --- 内部面信任门（SERVER_AUTH_REQ）：无密钥忽略 / 坏密钥拒绝并关 --------
+
+TEST_F(EnhancedSessionTest, ServerAuthGateIgnoresWithoutSecretAndRejectsBad) {
+  auto session = std::make_shared<MockSession>();
+  std::unordered_set<const chirp::network::Session*> trusted;
+
+  chirp::game_server_gateway::ServerAuthRequest auth;
+  auth.set_secret("shh");
+  chirp::gateway::Packet pkt;
+  pkt.set_msg_id(chirp::gateway::SERVER_AUTH_REQ);
+  pkt.set_sequence(11);
+  pkt.set_body(auth.SerializeAsString());
+
+  // 无 secret 配置：直连模式忽略该帧（历史 enhanced 行为）。
+  EXPECT_FALSE(HandleServerAuth(pkt, session, "", &trusted));
+  EXPECT_TRUE(session->sent.empty());
+  EXPECT_TRUE(trusted.empty());
+
+  // 正确 secret：进信任集 + OK 应答，sequence 原样回带。
+  EXPECT_TRUE(HandleServerAuth(pkt, session, "shh", &trusted));
+  EXPECT_EQ(trusted.count(session.get()), 1u);
+  const auto resps = FramesOf(*session, chirp::gateway::SERVER_AUTH_RESP);
+  ASSERT_EQ(resps.size(), 1u);
+  chirp::game_server_gateway::ServerAuthResponse resp;
+  ASSERT_TRUE(resp.ParseFromString(resps[0].body()));
+  EXPECT_EQ(resp.code(), chirp::common::OK);
+  EXPECT_GT(resp.server_time_ms(), 0);
+  EXPECT_EQ(resps[0].sequence(), 11);
+  EXPECT_FALSE(session->close_after_send);
+
+  // 错误 secret：AUTH_FAILED，回完即关（网关管道不许滞留），不进信任集。
+  auto stranger = std::make_shared<MockSession>();
+  auth.set_secret("nope");
+  pkt.set_body(auth.SerializeAsString());
+  EXPECT_TRUE(HandleServerAuth(pkt, stranger, "shh", &trusted));
+  EXPECT_EQ(trusted.count(stranger.get()), 0u);
+  const auto denies = FramesOf(*stranger, chirp::gateway::SERVER_AUTH_RESP);
+  ASSERT_EQ(denies.size(), 1u);
+  ASSERT_TRUE(resp.ParseFromString(denies[0].body()));
+  EXPECT_EQ(resp.code(), chirp::common::AUTH_FAILED);
+  EXPECT_TRUE(stranger->close_after_send);
+
+  // 垃圾 body：解析失败同款 AUTH_FAILED；trusted 为空的调用方形态也走过。
+  auto garbage = std::make_shared<MockSession>();
+  pkt.set_body(std::string("\xde\xad\xbe\xef", 4));
+  EXPECT_TRUE(HandleServerAuth(pkt, garbage, "shh", nullptr));
+  const auto bad = FramesOf(*garbage, chirp::gateway::SERVER_AUTH_RESP);
+  ASSERT_EQ(bad.size(), 1u);
+  ASSERT_TRUE(resp.ParseFromString(bad[0].body()));
+  EXPECT_EQ(resp.code(), chirp::common::AUTH_FAILED);
+}
+
+// --- 登录契约：JWT 验签双向 + scaffold 空 token 拒收 -----------------------
+
+TEST_F(EnhancedSessionTest, LoginVerifiesJwtBothWays) {
+  const int64_t now_s = std::chrono::duration_cast<std::chrono::seconds>(
+                            std::chrono::system_clock::now().time_since_epoch())
+                            .count();
+  chirp::common::LoginTokenVerifier verifier("jwt-s3cret");
+
+  // 有效 HS256（sub=alice，exp 在未来）：按 sub 登录。
+  auto session = std::make_shared<MockSession>();
+  chirp::auth::LoginRequest req;
+  req.set_token(chirp::common::JwtSignHS256("alice", now_s - 10, "jwt-s3cret", now_s + 600));
+  req.set_device_id("a1");
+  req.set_platform("web");
+  LoginReq(req, session, nullptr, &verifier);
+  auto logins = FramesOf(*session, chirp::gateway::LOGIN_RESP);
+  ASSERT_EQ(logins.size(), 1u);
+  chirp::auth::LoginResponse ok_resp;
+  ASSERT_TRUE(ok_resp.ParseFromString(logins[0].body()));
+  EXPECT_EQ(ok_resp.code(), chirp::common::OK);
+  EXPECT_EQ(ok_resp.user_id(), "alice");
+
+  // 坏 token：AUTH_FAILED，绝不把 token 本身当身份。
+  auto denied = std::make_shared<MockSession>();
+  req.set_token("not-a-jwt");
+  LoginReq(req, denied, nullptr, &verifier);
+  logins = FramesOf(*denied, chirp::gateway::LOGIN_RESP);
+  ASSERT_EQ(logins.size(), 1u);
+  chirp::auth::LoginResponse deny;
+  ASSERT_TRUE(deny.ParseFromString(logins[0].body()));
+  EXPECT_EQ(deny.code(), chirp::common::AUTH_FAILED);
+  EXPECT_TRUE(deny.user_id().empty());
+  EXPECT_EQ(state_->GetUserId(denied), "");
+
+  // scaffold 模式（无 verifier）下空 token 是空身份：INVALID_PARAM。
+  auto scaffold = std::make_shared<MockSession>();
+  req.set_token("");
+  LoginReq(req, scaffold);
+  logins = FramesOf(*scaffold, chirp::gateway::LOGIN_RESP);
+  ASSERT_EQ(logins.size(), 1u);
+  chirp::auth::LoginResponse empty;
+  ASSERT_TRUE(empty.ParseFromString(logins[0].body()));
+  EXPECT_EQ(empty.code(), chirp::common::INVALID_PARAM);
+}
+
+// --- 登录补投：离线消息在 LOGIN_RESP 之后回放，ack-capable 端挂起追踪 ------
+
+TEST_F(EnhancedSessionTest, LoginMarksAckCapableAndRefillsOfflineTracked) {
+  DeliveryAckManager::Config cfg;
+  cfg.timeout_ms = 10000;
+  DeliveryAckManager acks(io_, cfg, nullptr, nullptr);
+
+  auto alice = std::make_shared<MockSession>();
+  auto bob = std::make_shared<MockSession>();
+
+  // bob 不在线：私聊进离线队列。
+  ASSERT_EQ(SendPrivate(alice, "alice", "bob", "offline refill", nullptr), chirp::common::OK);
+  ASSERT_EQ(store_->GetOfflineMessages("bob").size(), 1u);
+
+  // supports_message_ack 的登录：会话标为 ack-capable（后续投递可挂起），
+  // 补投副本同样走 Track——未 ack 的补投会回队而不是随连接消失。
+  chirp::auth::LoginRequest req;
+  req.set_token("bob");
+  req.set_device_id("p1");
+  req.set_platform("web");
+  req.set_supports_message_ack(true);
+  LoginReq(req, bob, nullptr, nullptr, &acks);
+
+  const auto notifies = FramesOf(*bob, chirp::gateway::CHAT_MESSAGE_NOTIFY);
+  ASSERT_EQ(notifies.size(), 1u);
+  chirp::chat::ChatMessage msg;
+  ASSERT_TRUE(msg.ParseFromString(notifies[0].body()));
+  EXPECT_EQ(msg.content(), "offline refill");
+  EXPECT_EQ(acks.pending_count(), 1u);
+  EXPECT_TRUE(store_->GetOfflineMessages("bob").empty());
+}
+
+// --- 跨实例投递（Redis pub/sub 回调）：坏 body / 拉黑 / 无健康会话 / 扇出 ---
+
+TEST_F(EnhancedSessionTest, CrossInstanceDeliveryFiltersAndFansOut) {
+  chirp::common::Logger::Instance().SetLevel(chirp::common::Logger::Level::kError);
+  chirp_test::InMemoryRedis redis;
+  auto fake = std::make_unique<chirp_test::FakeRedisServer>(
+      [&redis](const std::vector<std::string>& args) { return redis.Handle(args); });
+  auto router =
+      std::make_shared<chirp::network::MessageRouter>(io_, "127.0.0.1", fake->port());
+  ASSERT_TRUE(router->Start());
+
+  auto bob = std::make_shared<MockSession>();
+  chirp::auth::LoginRequest lreq;
+  lreq.set_token("bob");
+  lreq.set_device_id("p1");
+  lreq.set_platform("web");
+  LoginReq(lreq, bob, router);
+
+  const std::string channel = chirp::network::RouterChannels::UserChat("bob");
+  auto notify_count = [&] { return FramesOf(*bob, chirp::gateway::CHAT_MESSAGE_NOTIFY).size(); };
+  auto make_msg = [](const std::string& sender, const std::string& content) {
+    chirp::chat::ChatMessage msg;
+    msg.set_message_id("m-" + content);
+    msg.set_sender_id(sender);
+    msg.set_receiver_id("bob");
+    msg.set_channel_type(chirp::chat::PRIVATE);
+    msg.set_channel_id("x|bob");
+    msg.set_content(content);
+    return msg;
+  };
+  // 投递直到谓词成立：订阅者连接建立前的推送会丢，重试兜住连接竞态。
+  // io_ 没有常驻 work，run_for 会立刻返回——poll 排空就绪回调 + 睡眠等
+  // 订阅者线程把消息 post 进来。
+  auto settle = [&](int ms) {
+    for (int i = 0; i < ms / 5; ++i) {
+      io_.poll();
+      io_.restart();  // 排空后 io 进入 stopped，后续 poll 是 no-op——必须重启
+      std::this_thread::sleep_for(std::chrono::milliseconds(5));
+    }
+  };
+  auto deliver_until = [&](const chirp::chat::ChatMessage& msg, size_t want) {
+    for (int i = 0; i < 100 && notify_count() < want; ++i) {
+      fake->Publish(channel, msg.SerializeAsString());
+      settle(50);
+    }
+    return notify_count() == want;
+  };
+
+  // 先证明链路活着：合法消息扇出到本实例的每个健康会话。
+  const auto good = make_msg("dave", "live from dave");
+  ASSERT_TRUE(deliver_until(good, 1u));
+
+  // 坏 body：解析失败静默丢弃，链路无恙。
+  fake->Publish(channel, std::string("\xde\xad\xbe\xef", 4));
+  settle(150);
+  EXPECT_EQ(notify_count(), 1u);
+
+  // 黑名单：bob 拉黑了发送方，跨实例投递到此为止（不暴露拉黑态）。
+  ASSERT_TRUE(delivery_prefs_.BlockUser("bob", "eve"));
+  fake->Publish(channel, make_msg("eve", "blocked").SerializeAsString());
+  settle(150);
+  EXPECT_EQ(notify_count(), 1u);
+
+  // 半关连接不算健康投递目标：无人可送，丢弃。
+  bob->half_closed = true;
+  fake->Publish(channel, make_msg("cara", "half closed").SerializeAsString());
+  settle(150);
+  bob->half_closed = false;
+  EXPECT_EQ(notify_count(), 1u);
+
+  router->Stop();
+}
+
+// --- 历史分页：GetPageBefore 映射回协议（含撤回墓碑与 reply 字段） ---------
+
+TEST_F(EnhancedSessionTest, GetHistoryServesPaginationAndTombstones) {
+  LiveHistoryRecall live;
+  StartLiveHistory(live);
+  auto alice = std::make_shared<MockSession>();
+  Login(alice, "alice", "a1", 1);
+
+  std::string m1;
+  ASSERT_EQ(SendPrivate(alice, "alice", "bob", "one", &m1, live.store,
+                        live.recall.handlers.get()),
+            chirp::common::OK);
+  // 引用 m1 的消息：历史回读必须带 reply_to_message_id。
+  chirp::chat::SendMessageRequest req;
+  req.set_sender_id("alice");
+  req.set_receiver_id("bob");
+  req.set_channel_type(chirp::chat::PRIVATE);
+  req.set_content("two");
+  req.set_reply_to_message_id(m1);
+  std::string m2;
+  ASSERT_EQ(SendReq(req, alice, live.store, live.recall.handlers.get(),
+                    nullptr, "", nullptr, "", nullptr, nullptr, &m2),
+            chirp::common::OK);
+  std::string m3;
+  ASSERT_EQ(SendPrivate(alice, "alice", "bob", "three", &m3, live.store,
+                        live.recall.handlers.get()),
+            chirp::common::OK);
+  ASSERT_EQ(Recall(alice, m2, "alice", false, live.recall.handlers.get()).code(),
+            chirp::common::OK);
+
+  auto retriever = std::make_shared<chirp::chat::PaginatedHistoryRetriever>(live.store);
+  chirp::chat::GetHistoryRequest history_req;
+  history_req.set_channel_id("alice|bob");
+  history_req.set_channel_type(chirp::chat::PRIVATE);
+  history_req.set_limit(2);
+  HandleGetHistory(history_req, alice, retriever, /*seq=*/5);
+
+  const auto resps = FramesOf(*alice, chirp::gateway::GET_HISTORY_RESP);
+  ASSERT_EQ(resps.size(), 1u);
+  chirp::chat::GetHistoryResponse resp;
+  ASSERT_TRUE(resp.ParseFromString(resps[0].body()));
+  EXPECT_EQ(resp.code(), chirp::common::OK);
+  EXPECT_TRUE(resp.has_more());
+  ASSERT_EQ(resp.messages_size(), 2);
+
+  auto by_id = [&](const std::string& id) -> const chirp::chat::ChatMessage* {
+    for (const auto& m : resp.messages()) {
+      if (m.message_id() == id) {
+        return &m;
+      }
+    }
+    return nullptr;
+  };
+  // 撤回墓碑照常映射：置位 + 正文抹除。
+  const auto* tomb = by_id(m2);
+  ASSERT_TRUE(tomb != nullptr);
+  EXPECT_TRUE(tomb->is_recalled());
+  EXPECT_TRUE(tomb->content().empty());
+  EXPECT_EQ(tomb->sender_id(), "alice");
+  // 常规条目带全部字段（含引用链）。
+  const auto* latest = by_id(m3);
+  ASSERT_TRUE(latest != nullptr);
+  EXPECT_FALSE(latest->is_recalled());
+  EXPECT_EQ(latest->content(), "three");
+  const auto* reply = by_id(m1);
+  if (reply != nullptr) {  // limit=2 时旧条目可能翻页在外
+    EXPECT_EQ(reply->reply_to_message_id(), "");
+  }
+}
+
+// --- GET_HISTORY_V2：游标面未实现前的显式降级（INVALID_PARAM） --------------
+
+TEST_F(EnhancedSessionTest, GetHistoryV2AlwaysRejects) {
+  auto session = std::make_shared<MockSession>();
+  HandleGetHistoryV2("{}", session, /*seq=*/3);
+
+  const auto resps = FramesOf(*session, chirp::gateway::GET_HISTORY_V2_RESP);
+  ASSERT_EQ(resps.size(), 1u);
+  chirp::chat::GetHistoryResponse resp;
+  ASSERT_TRUE(resp.ParseFromString(resps[0].body()));
+  EXPECT_EQ(resp.code(), chirp::common::INVALID_PARAM);
+  EXPECT_FALSE(resp.has_more());
+  EXPECT_EQ(resps[0].sequence(), 3);
+}
+
+// --- 撤回成员解析的三条空表边界（频道不是台账成员的来源时 notify 静默） -----
+
+TEST_F(EnhancedSessionTest, RecallMemberResolutionEdgesStaySilent) {
+  chirp::common::Logger::Instance().SetLevel(chirp::common::Logger::Level::kError);
+  // 放开世界频道撤回：非私聊频道没有成员台账，members 返回空表。
+  chirp::chat::EditConfig cfg;
+  cfg.recall_channel_types = {chirp::chat::PRIVATE, chirp::chat::GUILD, chirp::chat::WORLD};
+  EnhancedRecallRuntime rt = MakeEnhancedRecallRuntime(state_, store_, cfg);
+
+  auto alice = std::make_shared<MockSession>();
+  auto bob = std::make_shared<MockSession>();
+  Login(alice, "alice", "a1", 1);
+  Login(bob, "bob", "p1", 2);
+
+  // 世界频道：members 的非私聊分支——撤回成功但无人可 notify。
+  chirp::chat::SendMessageRequest world_req;
+  world_req.set_sender_id("alice");
+  world_req.set_channel_type(chirp::chat::WORLD);
+  world_req.set_channel_id("world");
+  world_req.set_content("world hello");
+  std::string world_mid;
+  ASSERT_EQ(SendReq(world_req, alice, nullptr, rt.handlers.get(), nullptr, "", nullptr, "",
+                    nullptr, nullptr, &world_mid),
+            chirp::common::OK);
+  EXPECT_EQ(Recall(alice, world_mid, "alice", false, rt.handlers.get()).code(),
+            chirp::common::OK);
+
+  // 自发给自己（"alice|alice"）：对端就是排除者本人，成员表为空。
+  std::string self_mid;
+  ASSERT_EQ(SendPrivate(alice, "alice", "alice", "note to self", &self_mid, nullptr,
+                        rt.handlers.get()),
+            chirp::common::OK);
+  EXPECT_EQ(Recall(alice, self_mid, "alice", false, rt.handlers.get()).code(),
+            chirp::common::OK);
+
+  // 三次撤回都成功，但没有一条 MESSAGE_DELETED_NOTIFY 发给在线的 bob。
+  EXPECT_EQ(FramesOf(*bob, chirp::gateway::MESSAGE_DELETED_NOTIFY).size(), 0u);
+}
+
+// --- 游戏平面：好友私聊经绑定注入 spoke + 群频道 spoke 上行 -----------------
+
+TEST_F(EnhancedSessionTest, FriendRelayIntoGameAndSpokeUplink) {
+  chirp::common::Logger::Instance().SetLevel(chirp::common::Logger::Level::kError);
+  // hub+link 独占一个本地 io（与 fixture 的 io 隔离，互不排空对方的工作）。
+  asio::io_context io;
+  chirp::network::ChatPeerHub::Options hub_opts;
+  hub_opts.allowed_peers["game_chat"] = "peer-s3cret";
+  hub_opts.heartbeat_interval_seconds = 30;
+  std::mutex plane_mu;
+  std::vector<chirp::gateway::ChannelMessageNotify> uplinks;
+  auto hub = chirp::network::ChatPeerHub::Create(
+      io, hub_opts,
+      [](const std::string&, const std::string&, int32_t,
+         const std::vector<chirp::gateway::PeerCapability>&) {},
+      [](const std::string&, const std::string&) {},
+      [&plane_mu, &uplinks](const std::string& /*service_id*/,
+                            const chirp::gateway::ChannelMessageNotify& notify) {
+        std::lock_guard<std::mutex> lock(plane_mu);
+        uplinks.push_back(notify);
+      });
+  hub->Start();
+  auto watchdog = std::make_shared<asio::steady_timer>(io);
+  watchdog->expires_after(std::chrono::seconds(30));
+  watchdog->async_wait([&io](const std::error_code&) { io.stop(); });
+  std::thread runner([&] { io.run(); });
+
+  chirp::network::ChatPeerLink::Options link_opts;
+  link_opts.host = "127.0.0.1";
+  link_opts.port = hub->port();
+  link_opts.service_id = "game_chat";
+  link_opts.secret = "peer-s3cret";
+  link_opts.game_id = "game42";
+  link_opts.reconnect_delay_seconds = 1;
+  std::mutex inject_mu;
+  std::vector<chirp::gateway::PeerInjectMessageNotify> injects;
+  auto link = chirp::network::ChatPeerLink::Create(
+      io, link_opts, [](int32_t, const std::vector<chirp::gateway::PeerCapability>&) {},
+      [](const chirp::gateway::ChannelMessageNotify&) {},
+      [&inject_mu, &injects](const chirp::gateway::PeerInjectMessageNotify& notify) {
+        std::lock_guard<std::mutex> lock(inject_mu);
+        injects.push_back(notify);
+      });
+  link->Start();
+  // registered 的线程契约在 link 的 io 上——经 post 读，避免竞态直读。
+  auto registered_on_io = [&] {
+    auto task = std::make_shared<std::packaged_task<bool()>>([&] { return link->registered(); });
+    asio::post(io, [task] { (*task)(); });
+    return task->get_future().get();
+  };
+  ASSERT_TRUE(WaitFor(registered_on_io));
+
+  // bob 绑定 game42 的游戏身份：好友私聊的镜像注入按绑定走。
+  chirp::chat::PlayerDirectory directory(chirp::chat::PlayerDirectory::Options{});
+  chirp::game_server_gateway::BindPlayerIdentityRequest bind;
+  bind.set_binding_id("b1");
+  bind.set_player_id("bob");
+  bind.set_game_id("game42");
+  bind.set_game_user_id("u-1");
+  ASSERT_EQ(directory.HandleBindPlayerIdentity(bind).code(), chirp::common::OK);
+
+  // 私聊 alice→bob + directory/hub：本地照常投递，游戏镜像注入 spoke。
+  auto alice = std::make_shared<MockSession>();
+  Login(alice, "alice", "a1", 1);
+  chirp::chat::SendMessageRequest dm;
+  dm.set_sender_id("alice");
+  dm.set_receiver_id("bob");
+  dm.set_channel_type(chirp::chat::PRIVATE);
+  dm.set_content("hi in game too");
+  ASSERT_EQ(SendReq(dm, alice, nullptr, nullptr, nullptr, "", nullptr, "", &directory,
+                    hub.get()),
+            chirp::common::OK);
+  ASSERT_TRUE(WaitFor([&] {
+    std::lock_guard<std::mutex> lock(inject_mu);
+    return injects.size() == 1u;
+  }));
+  {
+    std::lock_guard<std::mutex> lock(inject_mu);
+    EXPECT_EQ(injects[0].channel_id(), "u-1");  // 目标是绑定的游戏身份
+    EXPECT_EQ(injects[0].sender_id(), "alice");
+    EXPECT_EQ(injects[0].content(), "hi in game too");
+  }
+
+  // 群频道 + 已注册 spoke：上行 CHANNEL_MESSAGE_NOTIFY 到 hub（spoke 模式）。
+  chirp::chat::SendMessageRequest guild;
+  guild.set_sender_id("alice");
+  guild.set_channel_type(chirp::chat::GUILD);
+  guild.set_channel_id("guild_1");
+  guild.set_content("guild hello");
+  ASSERT_EQ(SendReq(guild, alice, nullptr, nullptr, nullptr, "", link.get(), "game42"),
+            chirp::common::OK);
+  ASSERT_TRUE(WaitFor([&] {
+    std::lock_guard<std::mutex> lock(plane_mu);
+    return uplinks.size() == 1u;
+  }));
+  {
+    std::lock_guard<std::mutex> lock(plane_mu);
+    EXPECT_EQ(uplinks[0].game_id(), "game42");
+    EXPECT_EQ(uplinks[0].channel_id(), "guild_1");
+    ASSERT_TRUE(uplinks[0].has_message());
+    EXPECT_EQ(uplinks[0].message().content(), "guild hello");
+  }
+
+  link->Stop();
+  hub->Stop();
+  watchdog->cancel();
+  io.stop();
+  runner.join();
 }
 
 }  // namespace
