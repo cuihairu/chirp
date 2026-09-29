@@ -32,7 +32,9 @@ public struct RequestError: Error {
     public init(_ kind: Kind, code: Chirp_Common_ErrorCode? = nil, message: String? = nil) {
         self.kind = kind
         self.code = code
-        self.message = message
+        // Kotlin's Exception falls back to the per-kind default, so a
+        // RequestError always carries a printable message.
+        self.message = message ?? RequestError.defaultMessage(for: kind)
     }
 }
 

@@ -1,8 +1,8 @@
-# chirp iOS — native protocol core (Swift, batches 1+2)
+# chirp iOS — native protocol core (Swift, batches 1+2 + M3.5 core)
 
 SwiftPM package porting the pure protocol core of `apps/mobile_companion`
 (Dart/Flutter), same migration path the Android package took (its M1→M4
-batches, minus the app shell). Gate: `swift test` on Linux — **70 tests, all
+batches, minus the app shell). Gate: `swift test` on Linux — **77 tests, all
 green** (Swift 6.4, x86_64 linux).
 
 ## Layout
@@ -17,11 +17,12 @@ green** (Swift 6.4, x86_64 linux).
 | `Sources/ChirpProtocol/Hooks.swift` | `Hooks.kt` (Android M4) | pipeline seams: `SendOptions`, `MessageInterceptor`, `AuthProvider`, `MessageStore` + `MemoryMessageStore`, `ChatEventListener`, `CommandHandler`, `ChirpArgumentError` |
 | `Sources/ChirpProtocol/ChatPipeline.swift` | `ChatPipeline.kt` (Android M4) | login token chain (explicit > provider > userId, one AUTH_FAILED renewal), send validation order (connection state first), `/`-command routing, interceptor rewrite/block, archive, push fan-out (KICK delivered once per connection), re-entrant start/stop |
 | `Sources/ChirpProtocol/OfflineSendQueue.swift` | `OfflineSendQueue.kt` (Android M4) | at-least-once replay: any server response confirms; CLOSED/TIMEOUT keeps the entry and stops the batch (tail stays queued in order); BLOCKED/argument errors drop; clientId dedupe; beyond `maxQueued` (50) the oldest is evicted |
+| `Sources/ChirpProtocol/DeviceRegistrar.swift` | `DeviceRegistrar.kt` (Android M3.5) | device-plane registration (app_gateway WS 5201) with the async `PushTokenSource` seam: exactly-once delivery guard, throwing source contained, empty token still registers (dart degradation), server ErrorCode passthrough, connection RequestError passthrough |
 | `Sources/ChirpProtocol/WsTransport.swift` | `lib/protocol/ws_transport.dart` | transport seam: open/onBinary/onClosed/send/close |
 | `Sources/ChirpProtocol/Scheduler.swift` | dart event-loop timers | time seam; tests drive a `ManualScheduler` virtual clock |
 | `Sources/ChirpProtocol/Promise.swift` | dart `Future`/Kotlin `CompletableFuture` | settle-once future; combinators `map`/`flatMap`/`handle` are the thenApply/thenCompose/handle mapping |
 | `Sources/ChirpProtocol/RequestError.swift` | `lib/protocol/errors.dart` | timeout/closed/kicked (+ server/blocked used by the pipeline) |
-| `Tests/ChirpProtocolTests/` | the Kotlin test files | same vector groups — three-platform conformance (dart ↔ Kotlin ↔ Swift): Frame 6, ChatConnection 16, MsgSpecs table 3, ChatPipeline 23, OfflineSendQueue 9, Hooks 6, WordFilter 7 |
+| `Tests/ChirpProtocolTests/` | the Kotlin test files | same vector groups — three-platform conformance (dart ↔ Kotlin ↔ Swift): Frame 6, ChatConnection 16, MsgSpecs table 3, ChatPipeline 23, OfflineSendQueue 9, Hooks 6, WordFilter 7, DeviceRegistrar 7 |
 
 Dart's single event loop becomes one recursive lock (transport callbacks and
 scheduler ticks arrive on foreign threads; `close()` re-enters through the
@@ -37,7 +38,7 @@ the same vectors stay runnable.
 ## Gate
 
 ```sh
-cd apps/ios && swift test    # 70 tests, XCTest, Linux-native
+cd apps/ios && swift test    # 77 tests, XCTest, Linux-native
 ```
 
 No CI leg yet (same as the Android gates — local-only for now). Local
@@ -65,10 +66,16 @@ swift build -c release --product protoc-gen-swift`.
   (`Chirp_Gateway_Packet`), `device_id` renders `deviceID`; the spec table
   pins the wire numbers so a renumber cannot slip through.
 - **Login platform is `"ios"`** (the Kotlin pipeline reports `"android"`);
-  per-platform identity semantics, no vector depends on it.
+  per-platform identity semantics, no vector depends on it. Same for the
+  registrar's RegisterDeviceRequest platform field (its Kotlin vector
+  asserts "android", the Swift one "ios" — the only intentional divergence).
+- **APNs token source is a seam only** — the real adapter needs Apple
+  credentials and lives on the Darwin side; `PushTokenSource` conformers
+  that report nil (or throw) degrade to empty-token registration, the same
+  placeholder-credentials posture as Android M3.5's default build.
 
 ## Not in this batch (per TODO)
 
 - Real transport (Darwin `URLSessionWebSocketTask` adapter), app shell/UI,
-  APNs push (TODO L163, needs Apple credentials) — staged later batches on
-  the same M1→M4 path Android walked.
+  real APNs wiring (TODO L163, needs Apple credentials) — staged later
+  batches on the same M1→M4 path Android walked.
