@@ -19,6 +19,7 @@ green** (Swift 6.4, x86_64 linux).
 | `Sources/ChirpProtocol/OfflineSendQueue.swift` | `OfflineSendQueue.kt` (Android M4) | at-least-once replay: any server response confirms; CLOSED/TIMEOUT keeps the entry and stops the batch (tail stays queued in order); BLOCKED/argument errors drop; clientId dedupe; beyond `maxQueued` (50) the oldest is evicted |
 | `Sources/ChirpProtocol/DeviceRegistrar.swift` | `DeviceRegistrar.kt` (Android M3.5) | device-plane registration (app_gateway WS 5201) with the async `PushTokenSource` seam: exactly-once delivery guard, throwing source contained, empty token still registers (dart degradation), server ErrorCode passthrough, connection RequestError passthrough |
 | `Sources/ChirpProtocol/WsTransport.swift` | `lib/protocol/ws_transport.dart` | transport seam: open/onBinary/onClosed/send/close |
+| `Sources/ChirpProtocol/WsTransportDarwin.swift` | `OkHttpTransport.kt` (Android M2) | Darwin real transport: `URLSessionWebSocketTask` adapter; text frames dropped; onClosed announced exactly once after open succeeds; pre-open failure reports through open's result |
 | `Sources/ChirpProtocol/Scheduler.swift` | dart event-loop timers | time seam; tests drive a `ManualScheduler` virtual clock |
 | `Sources/ChirpProtocol/Promise.swift` | dart `Future`/Kotlin `CompletableFuture` | settle-once future; combinators `map`/`flatMap`/`handle` are the thenApply/thenCompose/handle mapping |
 | `Sources/ChirpProtocol/RequestError.swift` | `lib/protocol/errors.dart` | timeout/closed/kicked (+ server/blocked used by the pipeline) |
@@ -49,11 +50,13 @@ swift build -c release --product protoc-gen-swift`.
 
 ## Assumptions (noted per non-interactive rules)
 
-- **Transport is a seam only** — `URLSessionWebSocketTask` is Darwin-only
-  and does not exist in swift-corelibs-foundation, so the real adapter is a
-  TODO on the Darwin side (see `WsTransport.swift`); the Linux gate drives
-  the state machine through the scripted fake, which is the same vector set
-  the Android suite runs against its OkHttp/MockWebServer fakes.
+- **Transport seam + Darwin adapter** — `URLSessionWebSocketTask` is Darwin-only
+  and does not exist in swift-corelibs-foundation. The seam (`WsTransport.swift`)
+  plus the scripted fake drive the Linux gate (`swift test`); the Darwin adapter
+  (`WsTransportDarwin.swift`) drops in on Apple platforms with zero
+  connection-layer changes, mirroring the Android `OkHttpTransport.kt` shape
+  (frame bytes moved verbatim; text frames dropped; onClosed announced exactly
+  once after a successful open; pre-open failure reports through open's result).
 - **Language mode .v5** (Package.swift tools 6.0 + `swiftLanguageMode(.v5)`):
   the lock-serialized port needs no Sendable surgery; strict mode 6 would
   demand `@unchecked Sendable` boilerplate without adding safety the lock
@@ -76,6 +79,6 @@ swift build -c release --product protoc-gen-swift`.
 
 ## Not in this batch (per TODO)
 
-- Real transport (Darwin `URLSessionWebSocketTask` adapter), app shell/UI,
+- App shell/UI,
   real APNs wiring (TODO L163, needs Apple credentials) — staged later
   batches on the same M1→M4 path Android walked.
