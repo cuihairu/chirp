@@ -157,9 +157,6 @@ KNOWN_UNCOVERABLE = {
     ("libs/network/protobuf_framing.cc", 12),
     ("libs/network/protobuf_framing.cc", 14),
     ("libs/network/protobuf_framing.cc", 20),
-    # NormalizeDeviceId string-return EH pads (std::string copy throw only);
-    # both ternary arms are covered by NormalizeDeviceIdDefaultsEmptyToDevice.
-    ("libs/network/session_registry.cc", 35),
     # TcpSession/WebSocketSession Send/SendAndClose: untaken arms are EH
     # pads for asio::post lambda capture (std::string move / shared_ptr
     # copy throwing bad_alloc); the post body itself is covered by every
@@ -188,30 +185,10 @@ KNOWN_UNCOVERABLE = {
     # WebSocket FindHeaderValue: untaken arms need a header line without
     # trailing \r (fragmented/odd handshake) or getline throwing.
     ("libs/network/websocket_session.cc", 16),
-    # Frame size ==0 || >cap: the >cap arm needs a 4MiB+ header write;
-    # size==0 and normal sizes are covered by loopback tests.
-    ("libs/network/chat_bridge.cc", 130),
-    ("libs/network/chat_peer_hub.cc", 259),
-    ("libs/network/chat_peer_link.cc", 150),
-    ("libs/network/server_gateway_peer.cc", 214),
-    # Handshake/resolver async_wait cancel-vs-fire races: the untaken arms
-    # are the operation_aborted / already-ready sides of the || chain that
-    # require cancelling a timer after the handler already dispatched.
-    ("libs/network/chat_bridge.cc", 260),
-    ("libs/network/chat_bridge.cc", 261),
-    # Peer idle/reconnect timers: same cancel-vs-fire race as above.
-    ("libs/network/chat_peer_hub.cc", 357),
-    ("libs/network/chat_peer_hub.cc", 360),
-    ("libs/network/chat_peer_link.cc", 283),
-    ("libs/network/chat_peer_link.cc", 307),
-    ("libs/network/server_gateway_peer.cc", 341),
-    ("libs/network/server_gateway_peer.cc", 362),
     # PeerConn::Close re-entry / pen-scan miss: closing is set once and the
     # pen erase always finds `this` when the conn was still unregistered;
     # displaced-entry erase needs a same-pointer race on the vector.
-    ("libs/network/chat_peer_hub.cc", 397),
     ("libs/network/chat_peer_hub.cc", 398),
-    ("libs/network/chat_peer_hub.cc", 408),
     # SendRawPacket/Send while closing: closing is checked before the post
     # and set under the same strand — the post-body closing arm only runs
     # if Close wins the race after Send entered.
@@ -219,63 +196,24 @@ KNOWN_UNCOVERABLE = {
     ("libs/network/server_gateway_peer.cc", 358),
     # Create-handshake resolve callbacks: stop-during-resolve races.
     ("libs/network/chat_peer_link.cc", 115),
-    # SessionRegistry identity-change EH pads on string != (high/odd arms
-    # only reachable if std::string compare throws); the semantic arms are
-    # covered by RebindSameIdentityKeepsSlotWithoutErase + cross-device
-    # + cross-user rebind tests. L125's untaken arm is the weak_ptr lock
-    # landing pad between !bound and bound==session (covered semantically
-    # by RemoveWithExpiredSlotOwner + RemoveReportsNoReleaseWhen...).
-    ("libs/network/session_registry.cc", 56),
-    ("libs/network/session_registry.cc", 125),
-    # service_id_for_game: null-shared_ptr / unregistered entries cannot
-    # appear in peers_ (insert only after registered=true with a live conn).
-    ("libs/network/chat_peer_hub.cc", 120),
-    # ReadBody closing short-circuit: requires Close() to win the race with
-    # an in-flight body completion on the same conn (idle timer vs read).
-    ("libs/network/chat_peer_hub.cc", 274),
-    # Displaced-conn body-read closing guard (same race family as 274):
-    # DisplacedConnPendingBodyBowsOutOnClosingGuard drives it, but whether
-    # the aborted completion is queued before or after Close()'s strand
-    # entry flips with machine load — taken in the batch-6 full run,
-    # untaken in batch-7's, test green both ways.
-    ("libs/network/chat_peer_hub.cc", 319),
     # SendKickAndClose reason.empty() ? "kicked" : reason — every FailClient
     # call site passes a non-empty literal; empty-reason is dead.
     ("libs/network/chat_bridge.cc", 36),
     # notification_service/handlers defensive arms: deferred by decision
     # (other session owns those files).
     ("services/app/notification/src/notification_handlers.cc", 94),
-    ("services/app/notification/src/notification_service.cc", 46),
     ("services/app/notification/src/notification_service.cc", 128),
-    ("services/app/notification/src/notification_service.cc", 175),
     ("services/app/notification/src/notification_service.cc", 223),
-    ("services/app/notification/src/notification_service.cc", 226),
     ("services/app/notification/src/notification_service.cc", 394),
     # ChatClient::Impl::SendRequest timeout sweep: the pending entry is
     # erased only together with timer->cancel(); a handler already dispatched
     # before the cancel exits at the timer_ec arm above, so the find-miss
     # return is unreachable by construction.
-    ("sdks/core/src/sdk_client.cc", 466),
     ("sdks/core/src/sdk_client.cc", 467),
     # ChatClient::Impl::SendRequest pending_.emplace: next_seq_ is monotonic,
     # so the red-black insert comparison always walks the greater side; the
     # less/duplicate arms would require a 2^32 sequence wrap.
     ("sdks/core/src/sdk_client.cc", 476),
-    # ChatClient static error-category construction: the exception-cleanup
-    # arm of the function-local static guard only runs when allocation of
-    # the category object throws.
-    ("sdks/core/src/sdk.cc", 41),
-    # SendMessage command-predicate line: the only untaken arm is the
-    # exception path of the inlined string ops (content.front()).
-    ("sdks/core/src/sdk_client.cc", 256),
-    # SendMessage channel_id ternary: untaken arms are throw edges into the
-    # landing pad (blocks 114/118) plus the pad's internal cleanup branches;
-    # reaching them requires operator+ to throw (std::bad_alloc).
-    ("sdks/core/src/sdk_client.cc", 268),
-    # DispatchCommand args ternary: untaken arms are the throw edges into
-    # landing pad block 55 (string construction throwing) and the pad's
-    # internal branches.
-    ("sdks/core/src/sdk_client.cc", 418),
     # SendPacket null-socket arm: every caller is state-guarded via
     # ReadyForRequests(), so socket_ is only null inside the teardown window
     # between DoClose dropping the socket and the state flip - a disconnect
@@ -284,16 +222,6 @@ KNOWN_UNCOVERABLE = {
     # HandleFrame pong match: the untaken arm is the throw edge into landing
     # pad block 83 (string/stdexcept during logging).
     ("sdks/core/src/sdk_client.cc", 600),
-    # Renewal post: the untaken (state != Connected) arm is unreachable
-    # because every transition away from Connected (DoClose, login success,
-    # a fresh Login) clears auth_renewing_ first, so the guard at line 202
-    # would have returned before line 209 is evaluated.
-    ("sdks/core/src/sdk_client.cc", 209),
-    # DispatchCommand loop: untaken arms are the throw edge into landing pad
-    # block 63 and the pad's internal branches (string ctor throwing while
-    # comparing handler names). The zero-trip loop entry and the null-handler
-    # arm are covered by probes (HasCommands + NullCommandHandlerIsSkipped).
-    ("sdks/core/src/sdk_client.cc", 426),
     # Login/Request/SendMessage asio::post lines: untaken arms are (a) throw
     # edges, (b) the out-edges of pad blocks 13/11 which have no in-edges,
     # and (c) the fall arm of the same-destination merge emitted for the
@@ -364,10 +292,6 @@ KNOWN_UNCOVERABLE = {
     # PresenceManager CleanupOfflineUsers erase: last_seen is written only
     # from the internal clock, so no test can age an entry past the 24h cutoff.
     ("services/social/src/presence_manager.cc", 408),
-    # ChatBridge::InternalConn::Close re-entry guard: every closer (Detach,
-    # FailClient) erases the map entry in the same call, so a second Close
-    # never lands on an already-closing connection.
-    ("libs/network/chat_bridge.cc", 87),
     # ChatBridge write-error arm: the peer RST always surfaces on the parked
     # header read first, and FailClient then removes the connection, so a
     # later forward can never target the dead socket with an in-flight write.
@@ -409,22 +333,11 @@ KNOWN_UNCOVERABLE = {
     # exception-cleanup arcs, but MakeDecodeTable is non-throwing so those
     # arcs can never fire.
     ("libs/common/base64.cc", 21),
-    # SimpleMetrics::Instance function-local static: same gcov guard-cleanup
-    # shape as DecodeTable above; the constructor cannot throw.
-    ("libs/common/src/metrics.cc", 119),
     # Search's orphan-token defense: inverted_index_ is written only inside
     # IndexDocument (together with documents_) and erased only inside
     # DeleteDocument (also together with documents_), so a token can never
     # reference a missing document.
     ("services/search/src/message_search_service.cc", 180),
-    # CalculateScore's find-miss defense: Search scores results it just read
-    # out of documents_ under the same lock, so the lookup always hits.
-    ("services/search/src/message_search_service.cc", 327),
-    # UnregisterSession's missing-presence guard: RegisterSession always
-    # creates presence, and the only eraser is CleanupOfflineUsers' 24h purge
-    # (needs last_seen < now-24h; no public API injects time), so a session
-    # that is still registered always has presence.
-    ("services/social/src/presence_manager.cc", 346),
     # CleanupOfflineUsers' purge condition: the erase arm needs last_seen
     # older than 24h (the body is already GCOVR_EXCL_LINE'd); the adjacent
     # short-circuit arm is dropped with it because exclusions are per line.
@@ -433,30 +346,11 @@ KNOWN_UNCOVERABLE = {
     # getline() strips the terminator before TrimInPlace runs, so a line -
     # and therefore a key or value extracted from it - can never end in '\n'.
     ("libs/common/config.cc", 11),
-    # MetricsHttpServer::HandleRequest exception landing pad: the untaken
-    # arms hang off the THROW edges of the inlined metrics_handler_
-    # invocation. Reaching them requires the handler itself to throw, which
-    # would escape the asio read callback and terminate the process.
-    ("libs/common/src/metrics_http_server.cc", 106),
-    # GetUsername exception landing pad: same shape as the metrics handler
-    # above - the untaken arms sit on the THROW edges of the it->second
-    # string copy and need an allocation failure inside the copy.
-    ("services/search/src/message_search_service.cc", 403),
-    # BuildRequest path assignment exception landing pad: the untaken arms
-    # hang off the THROW edges of the `path_slash == npos ? "/" : substr`
-    # string write and need an allocation failure inside the assignment.
-    ("services/app/notification/src/http_push_transport.cc", 62),
-    # ParseResponseHead header-loop guards: the caller guarantees the head
-    # block ends with "\r\n\r\n" at head_end, so find("\r\n", pos) from any
-    # pos < head_end always lands at or before head_end - neither the npos
-    # arm nor the "past head_end" arm can fire.
-    ("services/app/notification/src/http_push_transport.cc", 166),
     # TcpHttpConnection::WaitReadable mask-false arm: poll is requested with
     # POLLIN only, so revents is a subset of POLLIN|POLLHUP|POLLERR|POLLNVAL;
     # POLLNVAL needs the fd closed underneath the live connection, which the
     # transport never does while waiting. SslHttpConnection::WaitReadable
     # (line 261) is the same shape with the same justification.
-    ("services/app/notification/src/http_push_transport.cc", 218),
     ("services/app/notification/src/http_push_transport.cc", 261),
     # ConnectTcpWithDeadline timer lambda: the wait_ec-false arm only fires
     # when the timer expires before async_connect settles - the same
@@ -464,8 +358,6 @@ KNOWN_UNCOVERABLE = {
     # handshake deadline lambda (545) and both factories' success-path
     # return lines (350 / 562: asio chrono comparison that never flips for
     # a future deadline, plus bad_alloc unwind) repeat the pattern.
-    ("services/app/notification/src/http_push_transport.cc", 301),
-    ("services/app/notification/src/http_push_transport.cc", 545),
     ("services/app/notification/src/http_push_transport.cc", 350),
     ("services/app/notification/src/http_push_transport.cc", 562),
     # ReadReceiptManager ChannelKey npos arm: ChannelKey always builds
@@ -550,7 +442,6 @@ KNOWN_UNCOVERABLE = {
     # are EH landing-pad internals for the inlined std::stoll/std::stoi/
     # temporary std::string (reach them only via bad_alloc/invalid_argument
     # that would unwind out of the store with no local catch).
-    ("services/app/auth/src/mysql_session_store.cc", 180),
     ("services/app/auth/src/mysql_session_store.cc", 225),
     ("services/app/auth/src/mysql_session_store.cc", 399),
     ("services/app/auth/src/mysql_session_store.cc", 446),
@@ -561,58 +452,14 @@ KNOWN_UNCOVERABLE = {
     ("services/app/auth/src/mysql_user_store.cc", 431),
     ("services/app/auth/src/mysql_user_store.cc", 459),
     ("services/app/auth/src/mysql_user_store.cc", 488),
-    # RedisClient SendCmd/BuildRedisCommand call sites: the untaken high-block
-    # arms are EH landing-pad internals for the temporary initializer_list /
-    # std::string / std::to_string construction (reach only via bad_alloc);
-    # success, wrong-type, and connection-refused replies are covered by
-    # network_full_tests RedisClientTest probes.
-    ("libs/network/redis_client.cc", 60),
-    ("libs/network/redis_client.cc", 74),
-    ("libs/network/redis_client.cc", 79),
-    ("libs/network/redis_client.cc", 84),
-    ("libs/network/redis_client.cc", 93),
-    ("libs/network/redis_client.cc", 98),
-    ("libs/network/redis_client.cc", 103),
-    ("libs/network/redis_client.cc", 108),
-    ("libs/network/redis_client.cc", 114),
-    ("libs/network/redis_client.cc", 129),
-    ("libs/network/redis_client.cc", 253),
-    ("libs/network/redis_client.cc", 258),
-    # StreamBroker RoundTrip call sites: untaken arms are EH landing-pad
-    # internals for the temporary BuildRedisCommand initializer_list
-    # (bad_alloc only); success/wrong-reply/transport paths are covered by
-    # server_gateway_stream_broker_test probes.
-    ("services/game/server_gateway/src/stream_broker.cc", 184),
-    ("services/game/server_gateway/src/stream_broker.cc", 196),
-    ("services/game/server_gateway/src/stream_broker.cc", 239),
-    ("services/game/server_gateway/src/stream_broker.cc", 245),
-    ("services/game/server_gateway/src/stream_broker.cc", 255),
-    # StreamBroker Run() empty-consumer ternary: untaken arms are EH pads
-    # for the std::string temporary (src_block 107); the empty vs non-empty
-    # semantic arms are covered by EmptyConsumerFallsBackToDefaultPrefix
-    # and every BrokerConfig with consumer "c1".
-    ("services/game/server_gateway/src/stream_broker.cc", 323),
-    # AuthService Register rate-limit body: UserRegisterResult default-ctor
-    # and return EH pads (RegisterBlockedByRateLimit covers the semantic
-    # if/return; the untaken arms are landing pads for exception unwinding).
-    ("services/app/auth/src/auth_service.cc", 76),
-    ("services/app/auth/src/auth_service.cc", 80),
     # AuthService password_reset_tokens_ insert: untaken arms are EH pads
     # for unordered_map operator[] (bad_alloc only); semantic insert path
     # is covered by PasswordResetFlow.
     ("services/app/auth/src/auth_service.cc", 391),
-    # AuthService CompletePasswordReset expiry if: the expired-true arm is
-    # the GCOVR_EXCL_LINE body below (tokens live 1h, no injectable clock).
-    ("services/app/auth/src/auth_service.cc", 423),
     # PasswordHasher HashPassword null-trim: after resize(STRBYTES) the
     # buffer is never empty and the last byte stays '\0', so only the
     # true/true arm is reachable through the fake pwhash.
     ("services/app/auth/src/password_hasher.cc", 92),
-    # PasswordHasher ValidateStrength else-if chains: untaken [3] arms are
-    # EH pads for the inlined char range compares (logic arms covered by
-    # StrengthValidation class-matrix probes).
-    ("services/app/auth/src/password_hasher.cc", 129),
-    ("services/app/auth/src/password_hasher.cc", 130),
     # RedisAuthStore GetUserDevices last-colon: every key returned by the
     # user_devices:<id>:* glob contains ':', so pos==npos is unreachable.
     ("services/app/auth/src/redis_auth_store.cc", 402),
@@ -630,8 +477,6 @@ KNOWN_UNCOVERABLE = {
     # error deliveries are covered by AuthClientLoopback tests.
     ("libs/network/auth_client.cc", 115),
     ("libs/network/auth_client.cc", 128),
-    ("libs/network/auth_client.cc", 140),
-    ("libs/network/auth_client.cc", 149),
     # ChatClient convenience API asio::post closure lines (SendMessage /
     # MarkChannelRead / BlockUser / typing / edit / reactions / group ops):
     # untaken arms are EH pads for the captured-string/std::function moves
@@ -646,16 +491,11 @@ KNOWN_UNCOVERABLE = {
     ("sdks/core/src/sdk_client.cc", 1124),
     ("sdks/core/src/sdk_client.cc", 1138),
     ("sdks/core/src/sdk_client.cc", 1154),
-    ("sdks/core/src/sdk_client.cc", 1169),
     ("sdks/core/src/sdk_client.cc", 1184),
     ("sdks/core/src/sdk_client.cc", 1199),
-    ("sdks/core/src/sdk_client.cc", 1212),
     ("sdks/core/src/sdk_client.cc", 1225),
-    ("sdks/core/src/sdk_client.cc", 1242),
-    ("sdks/core/src/sdk_client.cc", 1258),
     ("sdks/core/src/sdk_client.cc", 1272),
     ("sdks/core/src/sdk_client.cc", 1285),
-    ("sdks/core/src/sdk_client.cc", 1299),
     ("sdks/core/src/sdk_client.cc", 1314),
     ("sdks/core/src/sdk_client.cc", 1328),
     ("sdks/core/src/sdk_client.cc", 1341),
@@ -665,13 +505,7 @@ KNOWN_UNCOVERABLE = {
     # fail-fast and the typed round trip) are asserted by
     # AllConvenienceMethodsFailFastWhenNotConnected +
     # RecallSendsSoftDeleteForTheAuthor.
-    ("sdks/core/src/sdk_client.cc", 1162),
     ("sdks/core/src/sdk_client.cc", 1168),
-    # ReadyForRequests || chain: the LoggedIn half never evaluates once
-    # Connected is true (short-circuit); every test either fails fast on
-    # NotConnected or runs fully Connected/LoggedIn, so the "first true"
-    # fall arm is dead.
-    ("sdks/core/src/sdk_client.cc", 920),
     # TypedRequest lambda: untaken arms are EH pads for Resp{}/
     # ParseFromString failure construction and the std::function invoke
     # landing pads; ec-ok, BadResponse and success arms are covered by
@@ -683,7 +517,6 @@ KNOWN_UNCOVERABLE = {
     # orderings (user<=peer and peer<user) are covered by the SSO/heap
     # receiver probes.
     ("sdks/core/src/sdk_client.cc", 963),
-    ("sdks/core/src/sdk_client.cc", 964),
 }
 
 # Whole functions tests can never execute: deleting-dtors of abstract
@@ -879,6 +712,108 @@ KNOWN_UNCOVERABLE_ARMS = {
         "bearing (IPv6, short-circuited at line 532), or lettered (letters "
         "fail the c <= '9' upper-bound arm, which tests cover) - no "
         "resolvable name can evaluate a char below '0' here"),
+    # -- 覆盖率批次8（2026-09-29 陈旧行钉审计：降格迁移）------------------
+    # Each of these lines carried a whole-line KNOWN_UNCOVERABLE pin while
+    # every block on the line actually executed (count>0, unexecuted_block
+    # false in every gcda context of the audit run) - the pin was deflating
+    # the line denominator while the only dead residue was branch arms
+    # (EH / initializer_list cleanup paths, structurally unreachable
+    # guards). The lines are back in the covered line statistics; these
+    # arm pins keep the informational branch inventory honest. Arm indices
+    # folded across every gcda context (max per index), same fold the gate
+    # itself uses; every pinned arm stayed 0 across all 228 contexts.
+    ("libs/common/src/metrics.cc", 119): ((3,),
+        "batch-8 migration from a stale whole-line pin; dead arm(s) in every gcda context of the audit run"),
+    ("libs/common/src/metrics_http_server.cc", 106): ((8, 9),
+        "batch-8 migration from a stale whole-line pin; dead arm(s) in every gcda context of the audit run"),
+    ("libs/network/auth_client.cc", 140): ((2, 4, 5),
+        "batch-8 migration from a stale whole-line pin; dead arm(s) in every gcda context of the audit run"),
+    ("libs/network/auth_client.cc", 149): ((2, 4, 5),
+        "batch-8 migration from a stale whole-line pin; dead arm(s) in every gcda context of the audit run"),
+    ("libs/network/chat_bridge.cc", 130): ((2,),
+        "batch-8 migration from a stale whole-line pin; dead arm(s) in every gcda context of the audit run"),
+    ("libs/network/chat_bridge.cc", 260): ((3, 5, 7),
+        "batch-8 migration from a stale whole-line pin; dead arm(s) in every gcda context of the audit run"),
+    ("libs/network/chat_bridge.cc", 261): ((0,),
+        "batch-8 migration from a stale whole-line pin; dead arm(s) in every gcda context of the audit run"),
+    ("libs/network/chat_peer_link.cc", 150): ((2,),
+        "batch-8 migration from a stale whole-line pin; dead arm(s) in every gcda context of the audit run"),
+    ("libs/network/chat_peer_link.cc", 283): ((3, 4),
+        "batch-8 migration from a stale whole-line pin; dead arm(s) in every gcda context of the audit run"),
+    ("libs/network/chat_peer_link.cc", 307): ((2,),
+        "batch-8 migration from a stale whole-line pin; dead arm(s) in every gcda context of the audit run"),
+    ("libs/network/redis_client.cc", 60): ((6, 7),
+        "batch-8 migration from a stale whole-line pin; dead arm(s) in every gcda context of the audit run"),
+    ("libs/network/redis_client.cc", 74): ((6, 7),
+        "batch-8 migration from a stale whole-line pin; dead arm(s) in every gcda context of the audit run"),
+    ("libs/network/redis_client.cc", 79): ((6, 7),
+        "batch-8 migration from a stale whole-line pin; dead arm(s) in every gcda context of the audit run"),
+    ("libs/network/redis_client.cc", 84): ((6, 7),
+        "batch-8 migration from a stale whole-line pin; dead arm(s) in every gcda context of the audit run"),
+    ("libs/network/redis_client.cc", 93): ((6, 7),
+        "batch-8 migration from a stale whole-line pin; dead arm(s) in every gcda context of the audit run"),
+    ("libs/network/redis_client.cc", 98): ((6, 7),
+        "batch-8 migration from a stale whole-line pin; dead arm(s) in every gcda context of the audit run"),
+    ("libs/network/redis_client.cc", 103): ((6, 7),
+        "batch-8 migration from a stale whole-line pin; dead arm(s) in every gcda context of the audit run"),
+    ("libs/network/redis_client.cc", 108): ((6, 7),
+        "batch-8 migration from a stale whole-line pin; dead arm(s) in every gcda context of the audit run"),
+    ("libs/network/redis_client.cc", 258): ((6, 7),
+        "batch-8 migration from a stale whole-line pin; dead arm(s) in every gcda context of the audit run"),
+    ("libs/network/server_gateway_peer.cc", 214): ((1,),
+        "batch-8 migration from a stale whole-line pin; dead arm(s) in every gcda context of the audit run"),
+    ("libs/network/server_gateway_peer.cc", 341): ((3, 4),
+        "batch-8 migration from a stale whole-line pin; dead arm(s) in every gcda context of the audit run"),
+    ("libs/network/server_gateway_peer.cc", 362): ((2,),
+        "batch-8 migration from a stale whole-line pin; dead arm(s) in every gcda context of the audit run"),
+    ("libs/network/session_registry.cc", 35): ((8, 9),
+        "batch-8 migration from a stale whole-line pin; dead arm(s) in every gcda context of the audit run"),
+    ("sdks/core/src/sdk.cc", 41): ((3,),
+        "batch-8 migration from a stale whole-line pin; dead arm(s) in every gcda context of the audit run"),
+    ("sdks/core/src/sdk_client.cc", 209): ((2,),
+        "batch-8 migration from a stale whole-line pin; dead arm(s) in every gcda context of the audit run"),
+    ("sdks/core/src/sdk_client.cc", 268): ((14, 15, 16, 17),
+        "batch-8 migration from a stale whole-line pin; dead arm(s) in every gcda context of the audit run"),
+    ("sdks/core/src/sdk_client.cc", 418): ((8, 9),
+        "batch-8 migration from a stale whole-line pin; dead arm(s) in every gcda context of the audit run"),
+    ("sdks/core/src/sdk_client.cc", 426): ((10, 11),
+        "batch-8 migration from a stale whole-line pin; dead arm(s) in every gcda context of the audit run"),
+    ("sdks/core/src/sdk_client.cc", 466): ((0,),
+        "batch-8 migration from a stale whole-line pin; dead arm(s) in every gcda context of the audit run"),
+    ("sdks/core/src/sdk_client.cc", 920): ((1,),
+        "batch-8 migration from a stale whole-line pin; dead arm(s) in every gcda context of the audit run"),
+    ("sdks/core/src/sdk_client.cc", 964): ((3, 4, 6, 7),
+        "batch-8 migration from a stale whole-line pin; dead arm(s) in every gcda context of the audit run"),
+    ("services/app/auth/src/auth_service.cc", 76): ((0, 1),
+        "batch-8 migration from a stale whole-line pin; dead arm(s) in every gcda context of the audit run"),
+    ("services/app/auth/src/auth_service.cc", 80): ((0,),
+        "batch-8 migration from a stale whole-line pin; dead arm(s) in every gcda context of the audit run"),
+    ("services/app/auth/src/auth_service.cc", 423): ((2,),
+        "batch-8 migration from a stale whole-line pin; dead arm(s) in every gcda context of the audit run"),
+    ("services/app/auth/src/mysql_session_store.cc", 180): ((12, 13, 14, 15),
+        "batch-8 migration from a stale whole-line pin; dead arm(s) in every gcda context of the audit run"),
+    ("services/app/notification/src/http_push_transport.cc", 218): ((3,),
+        "batch-8 migration from a stale whole-line pin; dead arm(s) in every gcda context of the audit run"),
+    ("services/app/notification/src/http_push_transport.cc", 301): ((0,),
+        "batch-8 migration from a stale whole-line pin; dead arm(s) in every gcda context of the audit run"),
+    ("services/game/server_gateway/src/stream_broker.cc", 184): ((6, 7),
+        "batch-8 migration from a stale whole-line pin; dead arm(s) in every gcda context of the audit run"),
+    ("services/game/server_gateway/src/stream_broker.cc", 196): ((4, 5),
+        "batch-8 migration from a stale whole-line pin; dead arm(s) in every gcda context of the audit run"),
+    ("services/game/server_gateway/src/stream_broker.cc", 239): ((6, 7),
+        "batch-8 migration from a stale whole-line pin; dead arm(s) in every gcda context of the audit run"),
+    ("services/game/server_gateway/src/stream_broker.cc", 245): ((4, 5),
+        "batch-8 migration from a stale whole-line pin; dead arm(s) in every gcda context of the audit run"),
+    ("services/game/server_gateway/src/stream_broker.cc", 255): ((4, 5),
+        "batch-8 migration from a stale whole-line pin; dead arm(s) in every gcda context of the audit run"),
+    ("services/game/server_gateway/src/stream_broker.cc", 323): ((8, 9),
+        "batch-8 migration from a stale whole-line pin; dead arm(s) in every gcda context of the audit run"),
+    ("services/search/src/message_search_service.cc", 327): ((1,),
+        "batch-8 migration from a stale whole-line pin; dead arm(s) in every gcda context of the audit run"),
+    ("services/search/src/message_search_service.cc", 403): ((8, 9),
+        "batch-8 migration from a stale whole-line pin; dead arm(s) in every gcda context of the audit run"),
+    ("services/social/src/presence_manager.cc", 346): ((1,),
+        "batch-8 migration from a stale whole-line pin; dead arm(s) in every gcda context of the audit run"),
 }
 
 src_cache = {}
