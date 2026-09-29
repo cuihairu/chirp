@@ -1,8 +1,8 @@
-# chirp iOS — native protocol core (Swift, batch 1)
+# chirp iOS — native protocol core (Swift, batches 1+2)
 
 SwiftPM package porting the pure protocol core of `apps/mobile_companion`
-(Dart/Flutter), same migration path the Android package took (its M1+M2
-batch, minus the app shell). Gate: `swift test` on Linux — **25 tests, all
+(Dart/Flutter), same migration path the Android package took (its M1→M4
+batches, minus the app shell). Gate: `swift test` on Linux — **70 tests, all
 green** (Swift 6.4, x86_64 linux).
 
 ## Layout
@@ -13,11 +13,15 @@ green** (Swift 6.4, x86_64 linux).
 | `Sources/ChirpProtocol/Frame.swift` | `lib/protocol/frame.dart` | u32-BE length-prefix framing, 16 MiB cap, stream decoder, byte-array in/out |
 | `Sources/ChirpProtocol/MessageSpec.swift` | `lib/protocol/msg_map.dart` | all 40 req/resp MsgID↔type pairs with protobuf decoders + the type-erased `all` table |
 | `Sources/ChirpProtocol/ChatConnection.swift` | `lib/protocol/chirp_client.dart` | full state machine (`idle/connecting/connected/waitingReconnect/kicked/closed`), sequence correlation, typed request futures (`Promise`), request deadlines, missed-pong heartbeat (`maxMissedPongs=2`), auto reconnect with jittered exponential backoff, KICK terminal semantics, clock offset |
+| `Sources/ChirpProtocol/WordFilter.swift` | `WordFilter.kt` (Android M3) | server lexicon parsing, ASCII-only case folding, mask spans with adjacent-run collapse, REPLACE/REJECT; matching runs on UTF-16 code units so mask spans line up with the Kotlin/dart ports; `WordFilterLoader` reads the server lexicon wire format (CRLF/LF/CR) |
+| `Sources/ChirpProtocol/Hooks.swift` | `Hooks.kt` (Android M4) | pipeline seams: `SendOptions`, `MessageInterceptor`, `AuthProvider`, `MessageStore` + `MemoryMessageStore`, `ChatEventListener`, `CommandHandler`, `ChirpArgumentError` |
+| `Sources/ChirpProtocol/ChatPipeline.swift` | `ChatPipeline.kt` (Android M4) | login token chain (explicit > provider > userId, one AUTH_FAILED renewal), send validation order (connection state first), `/`-command routing, interceptor rewrite/block, archive, push fan-out (KICK delivered once per connection), re-entrant start/stop |
+| `Sources/ChirpProtocol/OfflineSendQueue.swift` | `OfflineSendQueue.kt` (Android M4) | at-least-once replay: any server response confirms; CLOSED/TIMEOUT keeps the entry and stops the batch (tail stays queued in order); BLOCKED/argument errors drop; clientId dedupe; beyond `maxQueued` (50) the oldest is evicted |
 | `Sources/ChirpProtocol/WsTransport.swift` | `lib/protocol/ws_transport.dart` | transport seam: open/onBinary/onClosed/send/close |
 | `Sources/ChirpProtocol/Scheduler.swift` | dart event-loop timers | time seam; tests drive a `ManualScheduler` virtual clock |
-| `Sources/ChirpProtocol/Promise.swift` | dart `Future`/Kotlin `CompletableFuture` | settle-once future with completion callbacks and a blocking test `get` |
-| `Sources/ChirpProtocol/RequestError.swift` | `lib/protocol/errors.dart` | timeout/closed/kicked (+ server/blocked reserved for the api layer) |
-| `Tests/ChirpProtocolTests/` | the Kotlin test files | same vector groups: Frame 6, ChatConnection 16, MsgSpecs table 3 — three-platform conformance (dart ↔ Kotlin ↔ Swift) |
+| `Sources/ChirpProtocol/Promise.swift` | dart `Future`/Kotlin `CompletableFuture` | settle-once future; combinators `map`/`flatMap`/`handle` are the thenApply/thenCompose/handle mapping |
+| `Sources/ChirpProtocol/RequestError.swift` | `lib/protocol/errors.dart` | timeout/closed/kicked (+ server/blocked used by the pipeline) |
+| `Tests/ChirpProtocolTests/` | the Kotlin test files | same vector groups — three-platform conformance (dart ↔ Kotlin ↔ Swift): Frame 6, ChatConnection 16, MsgSpecs table 3, ChatPipeline 23, OfflineSendQueue 9, Hooks 6, WordFilter 7 |
 
 Dart's single event loop becomes one recursive lock (transport callbacks and
 scheduler ticks arrive on foreign threads; `close()` re-enters through the
@@ -25,10 +29,15 @@ synchronous down event, so a plain `NSLock` would self-deadlock). `Scheduler`
 and `RandomSource` are injectable — every backoff/heartbeat/deadline test is
 deterministic on the virtual clock.
 
+Kotlin runtime hook semantics map to Swift as follows: every hook method is
+declared `throws` and every call site wraps it in `try?`, so "hook threw"
+degrades exactly like the Kotlin catch blocks (drop / block / decline) and
+the same vectors stay runnable.
+
 ## Gate
 
 ```sh
-cd apps/ios && swift test    # 25 tests, XCTest, Linux-native
+cd apps/ios && swift test    # 70 tests, XCTest, Linux-native
 ```
 
 No CI leg yet (same as the Android gates — local-only for now). Local
@@ -55,10 +64,11 @@ swift build -c release --product protoc-gen-swift`.
 - **Swift 6.4 gencode quirks**: types are package-prefixed
   (`Chirp_Gateway_Packet`), `device_id` renders `deviceID`; the spec table
   pins the wire numbers so a renumber cannot slip through.
+- **Login platform is `"ios"`** (the Kotlin pipeline reports `"android"`);
+  per-platform identity semantics, no vector depends on it.
 
 ## Not in this batch (per TODO)
 
-- Word filter (Android M3 equivalent), chat pipeline / offline queue
-  (Android M4 equivalent), real transport, app shell/UI, APNs push
-  (TODO L163, needs Apple credentials) — staged later batches on the same
-  M1→M4 path Android walked.
+- Real transport (Darwin `URLSessionWebSocketTask` adapter), app shell/UI,
+  APNs push (TODO L163, needs Apple credentials) — staged later batches on
+  the same M1→M4 path Android walked.

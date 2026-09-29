@@ -54,6 +54,63 @@ public final class Promise<T> {
         mutex.unlock()
     }
 
+    // ---- combinators (the CompletableFuture mapping surface) ----------------
+
+    /// Kotlin thenApply: transform the value; an error skips the transform.
+    public func map<U>(_ transform: @escaping (T) -> U) -> Promise<U> {
+        let out = Promise<U>()
+        onComplete { outcome in
+            switch outcome {
+            case .success(let value): out.complete(transform(value))
+            case .failure(let error): out.completeError(error)
+            }
+        }
+        return out
+    }
+
+    /// Kotlin thenCompose: chain onto another future.
+    public func flatMap<U>(_ transform: @escaping (T) -> Promise<U>) -> Promise<U> {
+        let out = Promise<U>()
+        onComplete { outcome in
+            switch outcome {
+            case .success(let value):
+                transform(value).onComplete { nested in
+                    switch nested {
+                    case .success(let v): out.complete(v)
+                    case .failure(let error): out.completeError(error)
+                    }
+                }
+            case .failure(let error): out.completeError(error)
+            }
+        }
+        return out
+    }
+
+    /// Kotlin handle: see both outcomes as optionals; the handler's return
+    /// value always completes the result (errors are consumed).
+    public func handle<U>(_ handler: @escaping (T?, Error?) -> U) -> Promise<U> {
+        let out = Promise<U>()
+        onComplete { outcome in
+            switch outcome {
+            case .success(let value): out.complete(handler(value, nil))
+            case .failure(let error): out.complete(handler(nil, error))
+            }
+        }
+        return out
+    }
+
+    public static func completed(_ value: T) -> Promise<T> {
+        let p = Promise<T>()
+        p.complete(value)
+        return p
+    }
+
+    public static func failed(_ error: Error) -> Promise<T> {
+        let p = Promise<T>()
+        p.completeError(error)
+        return p
+    }
+
     /// Block until settled or the timeout elapses (which throws `.timeout`;
     /// a settled promise returns regardless of the deadline).
     @discardableResult
