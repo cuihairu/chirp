@@ -134,6 +134,163 @@ bool LastBody(const MockSession& s, T* out, chirp::gateway::MsgID* id = nullptr)
   return out->ParseFromString(pkt.body());
 }
 
+// Every business op with its response id (LOGIN excluded: its "auth" is the
+// token itself). Shared by the auth-failure and malformed-body sweeps.
+const struct {
+  chirp::gateway::MsgID req, resp;
+} kBusinessOps[] = {
+    {chirp::gateway::CREATE_PARTY_REQ, chirp::gateway::CREATE_PARTY_RESP},
+    {chirp::gateway::DISBAND_PARTY_REQ, chirp::gateway::DISBAND_PARTY_RESP},
+    {chirp::gateway::INVITE_TO_PARTY_REQ, chirp::gateway::INVITE_TO_PARTY_RESP},
+    {chirp::gateway::ACCEPT_INVITE_REQ, chirp::gateway::ACCEPT_INVITE_RESP},
+    {chirp::gateway::DECLINE_INVITE_REQ, chirp::gateway::DECLINE_INVITE_RESP},
+    {chirp::gateway::LEAVE_PARTY_REQ, chirp::gateway::LEAVE_PARTY_RESP},
+    {chirp::gateway::KICK_PARTY_MEMBER_REQ, chirp::gateway::KICK_PARTY_MEMBER_RESP},
+    {chirp::gateway::TRANSFER_LEADER_REQ, chirp::gateway::TRANSFER_LEADER_RESP},
+    {chirp::gateway::SET_READY_REQ, chirp::gateway::SET_READY_RESP},
+    {chirp::gateway::GET_MY_PARTY_REQ, chirp::gateway::GET_MY_PARTY_RESP},
+};
+
+// A body that parses for every business op: only user_id is set, which is
+// enough to reach (and fail) RequireUser.
+std::string AuthedBody(chirp::gateway::MsgID req, const std::string& user_id) {
+  switch (req) {
+    case chirp::gateway::CREATE_PARTY_REQ: {
+      chirp::party::CreatePartyRequest r;
+      r.set_user_id(user_id);
+      return r.SerializeAsString();
+    }
+    case chirp::gateway::DISBAND_PARTY_REQ: {
+      chirp::party::DisbandPartyRequest r;
+      r.set_user_id(user_id);
+      return r.SerializeAsString();
+    }
+    case chirp::gateway::INVITE_TO_PARTY_REQ: {
+      chirp::party::InviteToPartyRequest r;
+      r.set_user_id(user_id);
+      return r.SerializeAsString();
+    }
+    case chirp::gateway::ACCEPT_INVITE_REQ: {
+      chirp::party::AcceptInviteRequest r;
+      r.set_user_id(user_id);
+      return r.SerializeAsString();
+    }
+    case chirp::gateway::DECLINE_INVITE_REQ: {
+      chirp::party::DeclineInviteRequest r;
+      r.set_user_id(user_id);
+      return r.SerializeAsString();
+    }
+    case chirp::gateway::LEAVE_PARTY_REQ: {
+      chirp::party::LeavePartyRequest r;
+      r.set_user_id(user_id);
+      return r.SerializeAsString();
+    }
+    case chirp::gateway::KICK_PARTY_MEMBER_REQ: {
+      chirp::party::KickMemberRequest r;
+      r.set_user_id(user_id);
+      return r.SerializeAsString();
+    }
+    case chirp::gateway::TRANSFER_LEADER_REQ: {
+      chirp::party::TransferLeaderRequest r;
+      r.set_user_id(user_id);
+      return r.SerializeAsString();
+    }
+    case chirp::gateway::SET_READY_REQ: {
+      chirp::party::SetReadyRequest r;
+      r.set_user_id(user_id);
+      return r.SerializeAsString();
+    }
+    case chirp::gateway::GET_MY_PARTY_REQ: {
+      chirp::party::GetMyPartyRequest r;
+      r.set_user_id(user_id);
+      return r.SerializeAsString();
+    }
+    default:
+      return "";
+  }
+}
+
+// Decodes just the `code` field shared by every response on this plane, so
+// the sweeps don't need one block per response message. False when the
+// expected response never arrived or didn't parse.
+bool ResponseCodeOf(const MockSession& s, chirp::gateway::MsgID resp_id,
+                    chirp::common::ErrorCode* out) {
+  std::string body;
+  if (!LastNotifyOf(s, resp_id, &body)) {
+    return false;
+  }
+  switch (resp_id) {
+    case chirp::gateway::LOGIN_RESP: {
+      chirp::auth::LoginResponse r;
+      if (!r.ParseFromString(body)) return false;
+      *out = r.code();
+      return true;
+    }
+    case chirp::gateway::CREATE_PARTY_RESP: {
+      chirp::party::CreatePartyResponse r;
+      if (!r.ParseFromString(body)) return false;
+      *out = r.code();
+      return true;
+    }
+    case chirp::gateway::DISBAND_PARTY_RESP: {
+      chirp::party::DisbandPartyResponse r;
+      if (!r.ParseFromString(body)) return false;
+      *out = r.code();
+      return true;
+    }
+    case chirp::gateway::INVITE_TO_PARTY_RESP: {
+      chirp::party::InviteToPartyResponse r;
+      if (!r.ParseFromString(body)) return false;
+      *out = r.code();
+      return true;
+    }
+    case chirp::gateway::ACCEPT_INVITE_RESP: {
+      chirp::party::AcceptInviteResponse r;
+      if (!r.ParseFromString(body)) return false;
+      *out = r.code();
+      return true;
+    }
+    case chirp::gateway::DECLINE_INVITE_RESP: {
+      chirp::party::DeclineInviteResponse r;
+      if (!r.ParseFromString(body)) return false;
+      *out = r.code();
+      return true;
+    }
+    case chirp::gateway::LEAVE_PARTY_RESP: {
+      chirp::party::LeavePartyResponse r;
+      if (!r.ParseFromString(body)) return false;
+      *out = r.code();
+      return true;
+    }
+    case chirp::gateway::KICK_PARTY_MEMBER_RESP: {
+      chirp::party::KickMemberResponse r;
+      if (!r.ParseFromString(body)) return false;
+      *out = r.code();
+      return true;
+    }
+    case chirp::gateway::TRANSFER_LEADER_RESP: {
+      chirp::party::TransferLeaderResponse r;
+      if (!r.ParseFromString(body)) return false;
+      *out = r.code();
+      return true;
+    }
+    case chirp::gateway::SET_READY_RESP: {
+      chirp::party::SetReadyResponse r;
+      if (!r.ParseFromString(body)) return false;
+      *out = r.code();
+      return true;
+    }
+    case chirp::gateway::GET_MY_PARTY_RESP: {
+      chirp::party::GetMyPartyResponse r;
+      if (!r.ParseFromString(body)) return false;
+      *out = r.code();
+      return true;
+    }
+    default:
+      return false;
+  }
+}
+
 class PartyServiceTest : public ::testing::Test {
  protected:
   std::shared_ptr<PartyState> state_ = std::make_shared<PartyState>();
@@ -283,6 +440,37 @@ TEST_F(PartyServiceTest, BadJwtTokensRejectedAndUnbound) {
   EXPECT_EQ(party.code(), chirp::common::AUTH_FAILED);
 }
 
+TEST_F(PartyServiceTest, EmptyScaffoldTokenRejected) {
+  // Scaffold mode treats the token as the user id; an empty one is refused
+  // and binds nothing.
+  chirp::auth::LoginRequest req;
+  req.set_token("");
+  Deliver(chirp::gateway::LOGIN_REQ, 1, req.SerializeAsString());
+
+  chirp::auth::LoginResponse resp;
+  ASSERT_TRUE(LastBody(*session_, &resp));
+  EXPECT_EQ(resp.code(), chirp::common::INVALID_PARAM);
+  EXPECT_EQ(resp.user_id(), "");
+  auto party = GetMyParty(session_, "");
+  EXPECT_EQ(party.code(), chirp::common::AUTH_FAILED);
+}
+
+TEST_F(PartyServiceTest, ArgvHelpersReadFlagsAndDefaults) {
+  // The main() scaffold helpers, driven directly (main() itself stays with
+  // the smoke legs): hit, miss, and a dangling key with no value after it.
+  char prog[] = "chirp_party";
+  char port[] = "--port";
+  char value[] = "9000";
+  char bare[] = "--bare";
+  char* argv[] = {prog, port, value, bare};
+
+  EXPECT_EQ(GetArg(4, argv, "--port", "7500"), "9000");
+  EXPECT_EQ(GetArg(4, argv, "--redis_host", ""), "");
+  EXPECT_EQ(GetArg(4, argv, "--bare", "fallback"), "fallback");
+  EXPECT_EQ(ParseU16Arg(4, argv, "--port", 7500), 9000);
+  EXPECT_EQ(ParseU16Arg(4, argv, "--redis_port", 6379), 6379);
+}
+
 TEST_F(PartyServiceTest, SameDeviceRebindKicksOldSession) {
   auto first = Login("user_a", "phone");
   auto second = Login("user_a", "phone");
@@ -306,14 +494,35 @@ TEST_F(PartyServiceTest, DifferentPlatformsCoexist) {
 }
 
 TEST_F(PartyServiceTest, BusinessRequestsRequireLogin) {
-  // A session that never logged in gets AUTH_FAILED, not a party.
-  auto stranger = std::make_shared<MockSession>();
-  chirp::party::CreatePartyRequest req;
-  req.set_user_id("user_a");
-  Deliver(chirp::gateway::CREATE_PARTY_REQ, 1, req.SerializeAsString(), stranger);
-  chirp::party::CreatePartyResponse resp;
-  ASSERT_TRUE(LastBody(*stranger, &resp));
-  EXPECT_EQ(resp.code(), chirp::common::AUTH_FAILED);
+  // A session that never logged in gets AUTH_FAILED on every business op,
+  // long before any party state is consulted.
+  for (const auto& op : kBusinessOps) {
+    auto stranger = std::make_shared<MockSession>();
+    Deliver(op.req, 1, AuthedBody(op.req, "user_a"), stranger);
+    chirp::common::ErrorCode code = chirp::common::OK;
+    ASSERT_TRUE(ResponseCodeOf(*stranger, op.resp, &code)) << int(op.req);
+    EXPECT_EQ(code, chirp::common::AUTH_FAILED) << int(op.req);
+  }
+  EXPECT_EQ(state_->parties.size(), 0u);
+}
+
+TEST_F(PartyServiceTest, MalformedBodiesAreRejectedPerHandler) {
+  // Bytes no request message parses: every handler answers INVALID_PARAM
+  // from its own parse guard — LOGIN included — before auth or state checks.
+  const std::string garbage("\xff\xff\xff\xff\xff\xff\xff\xff");
+  for (const auto& op : kBusinessOps) {
+    auto s = std::make_shared<MockSession>();
+    Deliver(op.req, 1, garbage, s);
+    chirp::common::ErrorCode code = chirp::common::OK;
+    ASSERT_TRUE(ResponseCodeOf(*s, op.resp, &code)) << int(op.req);
+    EXPECT_EQ(code, chirp::common::INVALID_PARAM) << int(op.req);
+  }
+
+  auto s = std::make_shared<MockSession>();
+  Deliver(chirp::gateway::LOGIN_REQ, 1, garbage, s);
+  chirp::common::ErrorCode code = chirp::common::OK;
+  ASSERT_TRUE(ResponseCodeOf(*s, chirp::gateway::LOGIN_RESP, &code));
+  EXPECT_EQ(code, chirp::common::INVALID_PARAM);
   EXPECT_EQ(state_->parties.size(), 0u);
 }
 
@@ -353,6 +562,22 @@ TEST_F(PartyServiceTest, CreateRejectsOversizeCapacity) {
   EXPECT_FALSE(CreateParty(a, "user_a", 8).empty());
 }
 
+TEST_F(PartyServiceTest, CreateWhileInPartyRejected) {
+  auto a = Login("user_a");
+  ASSERT_FALSE(CreateParty(a, "user_a").empty());
+
+  // A second create while still in the first party keeps the one-party
+  // invariant visible instead of silently replacing anything.
+  chirp::party::CreatePartyRequest req;
+  req.set_user_id("user_a");
+  Deliver(chirp::gateway::CREATE_PARTY_REQ, 2, req.SerializeAsString(), a);
+  chirp::party::CreatePartyResponse resp;
+  ASSERT_TRUE(LastBody(*a, &resp));
+  EXPECT_EQ(resp.code(), chirp::common::INVALID_PARAM);
+  EXPECT_EQ(resp.party().party_id(), "");
+  EXPECT_EQ(state_->parties.size(), 1u);  // the original party stands
+}
+
 TEST_F(PartyServiceTest, LeaveBroadcastsLeftExceptLeaver) {
   auto a = Login("user_a");
   auto b = Login("user_b");
@@ -377,6 +602,35 @@ TEST_F(PartyServiceTest, LeaveBroadcastsLeftExceptLeaver) {
   EXPECT_EQ(notify.user_id(), "user_a");
   EXPECT_EQ(notify.reason(), "left");
   EXPECT_EQ(CountNotify(*a, chirp::gateway::PARTY_LEFT_NOTIFY), 0);
+}
+
+TEST_F(PartyServiceTest, LeaveOnForeignPartyDistinguishesMembership) {
+  auto a = Login("user_a");
+  auto b = Login("user_b");
+  auto free = Login("user_free");
+  const auto party1 = CreateParty(a, "user_a");
+  const auto party2 = CreateParty(b, "user_b");
+
+  // Both probe party2, where neither is a member: a is in another party
+  // (INVALID_PARAM), free is in no party at all (USER_NOT_FOUND).
+  chirp::party::LeavePartyRequest req;
+  req.set_party_id(party2);
+
+  req.set_user_id("user_a");
+  Deliver(chirp::gateway::LEAVE_PARTY_REQ, 1, req.SerializeAsString(), a);
+  chirp::party::LeavePartyResponse resp;
+  ASSERT_TRUE(LastBody(*a, &resp));
+  EXPECT_EQ(resp.code(), chirp::common::INVALID_PARAM);
+
+  req.set_user_id("user_free");
+  Deliver(chirp::gateway::LEAVE_PARTY_REQ, 2, req.SerializeAsString(), free);
+  ASSERT_TRUE(LastBody(*free, &resp));
+  EXPECT_EQ(resp.code(), chirp::common::USER_NOT_FOUND);
+
+  // Neither probe disturbed the parties.
+  EXPECT_EQ(state_->parties.size(), 2u);
+  EXPECT_EQ(state_->user_to_party["user_a"], party1);
+  EXPECT_EQ(state_->parties[party2]->members.size(), 1u);
 }
 
 TEST_F(PartyServiceTest, LeaderLeaveSucceedsEarliestJoiner) {
@@ -456,6 +710,32 @@ TEST_F(PartyServiceTest, DisbandRequiresLeaderAndNotifiesRemaining) {
   EXPECT_EQ(state_->user_to_party.size(), 0u);
 }
 
+TEST_F(PartyServiceTest, DisbandKeepsOtherPartiesInvitesOpen) {
+  auto a = Login("user_a");
+  auto b = Login("user_b");
+  auto c = Login("user_c");
+  const auto party_a = CreateParty(a, "user_a");
+  const auto party_b = CreateParty(b, "user_b");
+  const auto invite_a = Invite(a, "user_a", party_a, "user_x");
+  const auto invite_b = Invite(b, "user_b", party_b, "user_c");
+  ASSERT_FALSE(invite_a.empty());
+  ASSERT_FALSE(invite_b.empty());
+
+  // Disbanding a's party sweeps only ITS invites off the map; b's open invite
+  // survives the walk (the skip arm) and still works afterwards.
+  chirp::party::DisbandPartyRequest disband;
+  disband.set_user_id("user_a");
+  disband.set_party_id(party_a);
+  Deliver(chirp::gateway::DISBAND_PARTY_REQ, 14, disband.SerializeAsString(), a);
+  chirp::party::DisbandPartyResponse resp;
+  ASSERT_TRUE(LastBody(*a, &resp));
+  EXPECT_EQ(resp.code(), chirp::common::OK);
+
+  EXPECT_EQ(state_->invites.count(invite_a), 0u);
+  ASSERT_EQ(state_->invites.count(invite_b), 1u);
+  EXPECT_EQ(Accept(c, "user_c", invite_b).code(), chirp::common::OK);
+}
+
 TEST_F(PartyServiceTest, UnknownPartyOpsReturnNotFound) {
   auto a = Login("user_a");
 
@@ -483,6 +763,23 @@ TEST_F(PartyServiceTest, UnknownPartyOpsReturnNotFound) {
   chirp::party::SetReadyResponse ready_resp;
   ASSERT_TRUE(LastBody(*a, &ready_resp));
   EXPECT_EQ(ready_resp.code(), chirp::common::USER_NOT_FOUND);
+
+  chirp::party::DisbandPartyRequest disband;
+  disband.set_user_id("user_a");
+  disband.set_party_id("party_nope");
+  Deliver(chirp::gateway::DISBAND_PARTY_REQ, 4, disband.SerializeAsString(), a);
+  chirp::party::DisbandPartyResponse disband_resp;
+  ASSERT_TRUE(LastBody(*a, &disband_resp));
+  EXPECT_EQ(disband_resp.code(), chirp::common::USER_NOT_FOUND);
+
+  chirp::party::TransferLeaderRequest transfer;
+  transfer.set_user_id("user_a");
+  transfer.set_party_id("party_nope");
+  transfer.set_target_user_id("user_b");
+  Deliver(chirp::gateway::TRANSFER_LEADER_REQ, 5, transfer.SerializeAsString(), a);
+  chirp::party::TransferLeaderResponse transfer_resp;
+  ASSERT_TRUE(LastBody(*a, &transfer_resp));
+  EXPECT_EQ(transfer_resp.code(), chirp::common::USER_NOT_FOUND);
 }
 
 // ---------------------------------------------------------------------------
@@ -717,6 +1014,77 @@ TEST_F(PartyServiceTest, AcceptAfterDisbandConsumesInvite) {
   EXPECT_EQ(state_->invites.size(), 0u);
 }
 
+TEST_F(PartyServiceTest, AcceptAfterSilentDisbandConsumesInvite) {
+  auto a = Login("user_a");
+  auto b = Login("user_b");
+  const auto party_id = CreateParty(a, "user_a");
+  const auto invite_id = Invite(a, "user_a", party_id, "user_b");
+
+  // The leader leaving as the last member disbands SILENTLY — unlike an
+  // explicit disband there is no invite sweep, so the invite outlives the
+  // party...
+  chirp::party::LeavePartyRequest leave;
+  leave.set_user_id("user_a");
+  leave.set_party_id(party_id);
+  Deliver(chirp::gateway::LEAVE_PARTY_REQ, 13, leave.SerializeAsString(), a);
+  chirp::party::LeavePartyResponse leave_resp;
+  ASSERT_TRUE(LastBody(*a, &leave_resp));
+  ASSERT_EQ(leave_resp.code(), chirp::common::OK);
+  ASSERT_TRUE(leave_resp.party_disbanded());
+  ASSERT_EQ(state_->invites.count(invite_id), 1u);
+
+  // ...until the accept finds the party gone: no such party, invite consumed.
+  const auto resp = Accept(b, "user_b", invite_id);
+  EXPECT_EQ(resp.code(), chirp::common::USER_NOT_FOUND);
+  EXPECT_EQ(state_->invites.size(), 0u);
+  // A replay now reads as the plain unknown-invite arm.
+  EXPECT_EQ(Accept(b, "user_b", invite_id).code(), chirp::common::USER_NOT_FOUND);
+}
+
+TEST_F(PartyServiceTest, AcceptingSomeoneElsesInviteReadsAsUnknown) {
+  auto a = Login("user_a");
+  auto b = Login("user_b");
+  auto c = Login("user_c");
+  const auto party_id = CreateParty(a, "user_a");
+  const auto invite_id = Invite(a, "user_a", party_id, "user_b");
+
+  // c is authenticated but the invite is b's: from c it is just unknown.
+  const auto resp = Accept(c, "user_c", invite_id);
+  EXPECT_EQ(resp.code(), chirp::common::USER_NOT_FOUND);
+
+  // The probe didn't touch the invite: b can still accept it.
+  ASSERT_EQ(state_->invites.count(invite_id), 1u);
+  EXPECT_EQ(Accept(b, "user_b", invite_id).code(), chirp::common::OK);
+}
+
+TEST_F(PartyServiceTest, AcceptWhileInAnotherPartyKeepsInviteForRetry) {
+  auto a = Login("user_a");
+  auto b = Login("user_b");
+  const auto host_party = CreateParty(a, "user_a");
+  const auto invite_id = Invite(a, "user_a", host_party, "user_b");
+
+  // b creates a party of their own while invited (creation only checks
+  // user_to_party; open invites don't block it).
+  const auto own_party = CreateParty(b, "user_b");
+  ASSERT_FALSE(own_party.empty());
+
+  // Accepting while in another party is refused, and — unlike the full-party
+  // case's sibling arm — the invite stays open for a retry after leaving.
+  const auto refused = Accept(b, "user_b", invite_id);
+  EXPECT_EQ(refused.code(), chirp::common::INVALID_PARAM);
+  ASSERT_EQ(state_->invites.count(invite_id), 1u);
+
+  chirp::party::LeavePartyRequest leave;
+  leave.set_user_id("user_b");
+  leave.set_party_id(own_party);
+  Deliver(chirp::gateway::LEAVE_PARTY_REQ, 13, leave.SerializeAsString(), b);
+  chirp::party::LeavePartyResponse leave_resp;
+  ASSERT_TRUE(LastBody(*b, &leave_resp));
+  ASSERT_EQ(leave_resp.code(), chirp::common::OK);
+
+  EXPECT_EQ(Accept(b, "user_b", invite_id).code(), chirp::common::OK);
+}
+
 TEST_F(PartyServiceTest, FullPartyAcceptKeepsInviteForRetry) {
   auto a = Login("user_a");
   auto b = Login("user_b");
@@ -768,6 +1136,34 @@ TEST_F(PartyServiceTest, DeclineNotifiesInviterAndConsumes) {
   // The invite is gone.
   const auto again = Accept(b, "user_b", invite_id);
   EXPECT_EQ(again.code(), chirp::common::USER_NOT_FOUND);
+}
+
+TEST_F(PartyServiceTest, DeclineUnknownAndOthersInvitesAreNotFound) {
+  auto a = Login("user_a");
+  auto b = Login("user_b");
+  auto c = Login("user_c");
+  const auto party_id = CreateParty(a, "user_a");
+  const auto invite_id = Invite(a, "user_a", party_id, "user_b");
+
+  chirp::party::DeclineInviteRequest req;
+  req.set_invite_id("deadbeef");
+
+  // A junk id...
+  req.set_user_id("user_b");
+  Deliver(chirp::gateway::DECLINE_INVITE_REQ, 16, req.SerializeAsString(), b);
+  chirp::party::DeclineInviteResponse resp;
+  ASSERT_TRUE(LastBody(*b, &resp));
+  EXPECT_EQ(resp.code(), chirp::common::USER_NOT_FOUND);
+
+  // ...and someone else's invite both read as unknown, without consuming it.
+  req.set_user_id("user_c");
+  Deliver(chirp::gateway::DECLINE_INVITE_REQ, 17, req.SerializeAsString(), c);
+  ASSERT_TRUE(LastBody(*c, &resp));
+  EXPECT_EQ(resp.code(), chirp::common::USER_NOT_FOUND);
+  ASSERT_EQ(state_->invites.count(invite_id), 1u);
+
+  // b's invite still works.
+  EXPECT_EQ(Accept(b, "user_b", invite_id).code(), chirp::common::OK);
 }
 
 // ---------------------------------------------------------------------------
@@ -1017,6 +1413,34 @@ TEST_F(PartyServiceTest, ReadyOutsidePartyRejected) {
   Deliver(chirp::gateway::SET_READY_REQ, 3, own.SerializeAsString(), d);
   ASSERT_TRUE(LastBody(*d, &resp));
   EXPECT_EQ(resp.code(), chirp::common::USER_NOT_FOUND);
+
+  // A free user touching an EXISTING party reads USER_NOT_FOUND too (the
+  // ternary's other arm: in no party at all).
+  auto e = Login("user_e");
+  chirp::party::SetReadyRequest foreign;
+  foreign.set_user_id("user_e");
+  foreign.set_party_id(party2);
+  Deliver(chirp::gateway::SET_READY_REQ, 4, foreign.SerializeAsString(), e);
+  ASSERT_TRUE(LastBody(*e, &resp));
+  EXPECT_EQ(resp.code(), chirp::common::USER_NOT_FOUND);
+}
+
+TEST_F(PartyServiceTest, RemoveMemberLockedContract) {
+  // The leave/kick/disconnect handlers re-check membership under the same
+  // mutex before calling, so the two documented false returns of the helper
+  // are pinned directly: unknown party, and user not in the party.
+  auto a = Login("user_a");
+  const auto party_id = CreateParty(a, "user_a");
+
+  MemberRemoval removal;
+  EXPECT_FALSE(RemoveMemberLocked(*state_, "party_nope", "user_a", &removal));
+  EXPECT_FALSE(RemoveMemberLocked(*state_, party_id, "user_x", &removal));
+  EXPECT_EQ(state_->parties.size(), 1u);  // both probes left state intact
+
+  // ...and removing the sole member silently disbands.
+  EXPECT_TRUE(RemoveMemberLocked(*state_, party_id, "user_a", &removal));
+  EXPECT_TRUE(removal.disbanded);
+  EXPECT_EQ(state_->parties.size(), 0u);
 }
 
 TEST_F(PartyServiceTest, GetMyPartyEmptyThenFull) {
@@ -1033,6 +1457,36 @@ TEST_F(PartyServiceTest, GetMyPartyEmptyThenFull) {
   EXPECT_EQ(full.party().party_id(), party_id);
   EXPECT_EQ(full.party().leader_id(), "user_a");
   EXPECT_EQ(full.party().members_size(), 1);
+}
+
+// ---------------------------------------------------------------------------
+// Dispatch edges: heartbeat, junk, unknown msg ids
+// ---------------------------------------------------------------------------
+
+TEST_F(PartyServiceTest, HeartbeatRoundTripsAndJunkIsIgnored) {
+  auto a = Login("user_a");
+
+  // HEARTBEAT_PING echoes its timestamp with a fresh server_time.
+  chirp::gateway::HeartbeatPing ping;
+  ping.set_timestamp(1234);
+  Deliver(chirp::gateway::HEARTBEAT_PING, 42, ping.SerializeAsString(), a);
+  chirp::gateway::HeartbeatPong pong;
+  ASSERT_TRUE(LastOf(*a, chirp::gateway::HEARTBEAT_PONG, &pong));
+  EXPECT_EQ(pong.timestamp(), 1234);
+  EXPECT_GT(pong.server_time(), 0);
+
+  // An unparseable ping body answers nothing (warn only).
+  const size_t sent_before = a->sent.size();
+  Deliver(chirp::gateway::HEARTBEAT_PING, 43, std::string("\xff\xff\xff\xff"), a);
+  EXPECT_EQ(a->sent.size(), sent_before);
+
+  // An unknown msg_id is ignored: no crash, no reply.
+  Deliver(static_cast<chirp::gateway::MsgID>(9999), 44, "", a);
+  EXPECT_EQ(a->sent.size(), sent_before);
+
+  // A payload that isn't a Packet at all never reaches the dispatcher.
+  HandlePacket(state_, redis_, verifier_, a, std::string("\x08"));
+  EXPECT_EQ(a->sent.size(), sent_before);
 }
 
 // ---------------------------------------------------------------------------
@@ -1116,6 +1570,20 @@ TEST_F(PartyServiceTest, StrangerDisconnectHarmless) {
   EXPECT_EQ(CountNotify(*a, chirp::gateway::PARTY_LEFT_NOTIFY), 0);
 }
 
+TEST_F(PartyServiceTest, LoggedInDisconnectWithoutPartyIsSilent) {
+  auto a = Login("user_a");
+  auto b = Login("user_b");
+  const auto party_id = CreateParty(b, "user_b");
+
+  // a's last device goes offline while a is in no party: nothing to leave,
+  // nobody to tell — but the binding is still released.
+  HandleDisconnect(state_, redis_, a);
+
+  EXPECT_EQ(chirp::network::GetUserSessions(state_->registry, "user_a").size(), 0u);
+  EXPECT_EQ(CountNotify(*b, chirp::gateway::PARTY_LEFT_NOTIFY), 0);
+  EXPECT_EQ(state_->parties[party_id]->members.size(), 1u);
+}
+
 TEST_F(PartyServiceTest, JoinerAcceptReachesEachDeviceOnce) {
   auto a1 = Login("user_a", "phone", "ios");
   auto a2 = Login("user_a", "desktop", "web");
@@ -1141,6 +1609,20 @@ TEST_F(PartyServiceTest, JoinerAcceptReachesEachDeviceOnce) {
 // ---------------------------------------------------------------------------
 // Redis write-through + restore
 // ---------------------------------------------------------------------------
+
+// RedisClient double whose Del always fails: pins DeletePersistedParty's
+// best-effort Warn arm (the in-memory state stays authoritative either way).
+// Nothing else is called on it while it is installed.
+class FailDelRedis : public chirp::network::RedisClient {
+ public:
+  FailDelRedis() : RedisClient("127.0.0.1", 1) {}
+  bool Del(const std::string& /*key*/) override {
+    ++del_calls;
+    return false;
+  }
+
+  int del_calls = 0;
+};
 
 class PartyRedisTest : public PartyServiceTest {
  protected:
@@ -1246,6 +1728,27 @@ TEST_F(PartyRedisTest, DisbandDeletesKey) {
   EXPECT_TRUE(mem_->GetDirect("chirp:party:party:" + party_id).empty());
 }
 
+TEST_F(PartyRedisTest, DisbandWithFailingDeleteStillSucceeds) {
+  auto a = Login("user_a");
+  const auto party_id = CreateParty(a, "user_a");
+  ASSERT_FALSE(mem_->GetDirect("chirp:party:party:" + party_id).empty());
+
+  // Swap in a client whose Del always fails: the delete is attempted and
+  // logged, and the disband still succeeds in memory.
+  auto failing = std::make_shared<FailDelRedis>();
+  redis_ = failing;
+  chirp::party::DisbandPartyRequest disband;
+  disband.set_user_id("user_a");
+  disband.set_party_id(party_id);
+  Deliver(chirp::gateway::DISBAND_PARTY_REQ, 2, disband.SerializeAsString(), a);
+  chirp::party::DisbandPartyResponse resp;
+  ASSERT_TRUE(LastBody(*a, &resp));
+  EXPECT_EQ(resp.code(), chirp::common::OK);
+
+  EXPECT_GE(failing->del_calls, 1);
+  EXPECT_EQ(state_->parties.size(), 0u);
+}
+
 TEST_F(PartyRedisTest, UnreachableRedisServesInMemory) {
   auto dead = std::make_shared<chirp::network::RedisClient>("127.0.0.1", static_cast<uint16_t>(1));
   auto fresh = std::make_shared<PartyState>();
@@ -1286,6 +1789,14 @@ TEST_F(PartyRedisTest, CorruptAndEmptySnapshotsSkipped) {
   ASSERT_EQ(restored->parties.size(), 1u);
   EXPECT_EQ(restored->parties.count(party_id), 1u);
   EXPECT_EQ(restored->parties.count("zz_hollow"), 0u);
+}
+
+TEST_F(PartyServiceTest, LoadWithoutRedisIsPureInMemory) {
+  // No client configured at all: load reports the in-memory mode instead of
+  // touching anything.
+  auto fresh = std::make_shared<PartyState>();
+  EXPECT_FALSE(LoadPartyState(nullptr, fresh));
+  EXPECT_TRUE(fresh->parties.empty());
 }
 
 } // namespace
