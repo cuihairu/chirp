@@ -70,6 +70,266 @@ void SendPacket(const std::shared_ptr<chirp::network::Session>& session,
   session->Send(std::string(reinterpret_cast<const char*>(framed.data()), framed.size()));
 }
 
+// Packet dispatch for the TCP listener: one frame in, one framed response out
+// (or silence on unknown ids). Kept as a free function so the session
+// semantics are drivable without the process scaffolding - same shape as the
+// social/voice/chat mains.
+void HandleAuthPacket(const std::shared_ptr<AuthService>& auth_service,
+                      const std::shared_ptr<chirp::network::Session>& session,
+                      const std::string& payload, bool allow_scaffold_login) {
+  chirp::gateway::Packet pkt;
+  if (!pkt.ParseFromArray(payload.data(), static_cast<int>(payload.size()))) {
+    Logger::Instance().Warn("Failed to parse Packet from client");
+    return;
+  }
+
+  std::string client_ip = GetClientIp(session);
+
+  switch (pkt.msg_id()) {
+  case chirp::gateway::REGISTER_REQ: {
+    chirp::auth::RegisterRequest req;
+    if (!req.ParseFromArray(pkt.body().data(), static_cast<int>(pkt.body().size()))) {
+      chirp::auth::RegisterResponse resp;
+      resp.set_code(chirp::common::INVALID_PARAM);
+      resp.set_server_time(NowMs());
+      resp.set_error_message("Invalid request");
+      SendPacket(session, chirp::gateway::REGISTER_RESP, pkt.sequence(),
+                 resp.SerializeAsString());
+      return;
+    }
+
+    chirp::auth::UserRegisterRequest auth_req;
+    auth_req.username = req.username();
+    auth_req.email = req.email();
+    auth_req.password = req.password();
+    auth_req.display_name = req.display_name();
+
+    auto result = auth_service->Register(auth_req, client_ip);
+
+    chirp::auth::RegisterResponse resp;
+    resp.set_code(result.error_code);
+    resp.set_user_id(result.user_id);
+    resp.set_server_time(NowMs());
+    resp.set_error_message(result.error_message);
+    SendPacket(session, chirp::gateway::REGISTER_RESP, pkt.sequence(),
+               resp.SerializeAsString());
+    break;
+  }
+  case chirp::gateway::PASSWORD_LOGIN_REQ: {
+    chirp::auth::PasswordLoginRequest req;
+    if (!req.ParseFromArray(pkt.body().data(), static_cast<int>(pkt.body().size()))) {
+      chirp::auth::PasswordLoginResponse resp;
+      resp.set_code(chirp::common::INVALID_PARAM);
+      resp.set_server_time(NowMs());
+      resp.set_error_message("Invalid request");
+      SendPacket(session, chirp::gateway::PASSWORD_LOGIN_RESP, pkt.sequence(),
+                 resp.SerializeAsString());
+      return;
+    }
+
+    auto result = auth_service->Login(req.identifier(), req.password(),
+                                      req.device_id(), req.platform(), client_ip);
+
+    chirp::auth::PasswordLoginResponse resp;
+    resp.set_code(result.error_code);
+    resp.set_user_id(result.user_id);
+    resp.set_username(result.username);
+    resp.set_session_id(result.session_id);
+    resp.set_access_token(result.access_token);
+    resp.set_refresh_token(result.refresh_token);
+    resp.set_access_token_expires_at(result.access_token_expires_at);
+    resp.set_refresh_token_expires_at(result.refresh_token_expires_at);
+    resp.set_server_time(NowMs());
+    resp.set_kick_previous(result.kick_previous);
+    resp.set_error_message(result.error_message);
+    SendPacket(session, chirp::gateway::PASSWORD_LOGIN_RESP, pkt.sequence(),
+               resp.SerializeAsString());
+    break;
+  }
+  case chirp::gateway::REFRESH_TOKEN_REQ: {
+    chirp::auth::RefreshTokenRequest req;
+    if (!req.ParseFromArray(pkt.body().data(), static_cast<int>(pkt.body().size()))) {
+      chirp::auth::RefreshTokenResponse resp;
+      resp.set_code(chirp::common::INVALID_PARAM);
+      resp.set_server_time(NowMs());
+      resp.set_error_message("Invalid request");
+      SendPacket(session, chirp::gateway::REFRESH_TOKEN_RESP, pkt.sequence(),
+                 resp.SerializeAsString());
+      return;
+    }
+
+    auto result = auth_service->RefreshAccessToken(req.refresh_token());
+
+    chirp::auth::RefreshTokenResponse resp;
+    resp.set_code(result.error_code);
+    resp.set_access_token(result.access_token);
+    resp.set_access_token_expires_at(result.access_token_expires_at);
+    resp.set_server_time(NowMs());
+    resp.set_error_message(result.error_message);
+    SendPacket(session, chirp::gateway::REFRESH_TOKEN_RESP, pkt.sequence(),
+               resp.SerializeAsString());
+    break;
+  }
+  case chirp::gateway::LOGIN_REQ: {
+    // Legacy login - treat as JWT validation or simple token login
+    chirp::auth::LoginRequest req;
+    if (!req.ParseFromArray(pkt.body().data(), static_cast<int>(pkt.body().size()))) {
+      chirp::auth::LoginResponse resp;
+      resp.set_code(chirp::common::INVALID_PARAM);
+      resp.set_server_time(NowMs());
+      SendPacket(session, chirp::gateway::LOGIN_RESP, pkt.sequence(),
+                 resp.SerializeAsString());
+      return;
+    }
+
+    std::string user_id;
+    chirp::common::ErrorCode code = chirp::common::OK;
+
+    // Try to validate as JWT first
+    auto validated_user = auth_service->ValidateAccessToken(req.token());
+    if (validated_user) {
+      user_id = *validated_user;
+    } else {
+      // Try to validate as session ID
+      auto session_user = auth_service->ValidateSession(req.token());
+      if (session_user) {
+        user_id = *session_user;
+      } else if (!allow_scaffold_login) {
+        // The token is neither a valid access token nor an active
+        // session, and the development scaffold fallback is disabled:
+        // reject instead of trusting an arbitrary token as a user_id.
+        code = chirp::common::AUTH_FAILED;
+        Logger::Instance().Warn(
+            "LOGIN_REQ rejected: token is neither a valid access token "
+            "nor an active session (scaffold login disabled)");
+      } else {
+        // Fall back to treating token as user_id (for development,
+        // opt-in via --allow_scaffold_login)
+        user_id = req.token();
+      }
+    }
+
+    chirp::auth::LoginResponse resp;
+    resp.set_code(code);
+    if (code == chirp::common::OK) {
+      resp.set_user_id(user_id);
+      resp.set_session_id(user_id + "_sess");
+      resp.set_kick_previous(true);
+      resp.mutable_kick()->set_reason("session validated");
+    }
+    resp.set_server_time(NowMs());
+    SendPacket(session, chirp::gateway::LOGIN_RESP, pkt.sequence(),
+               resp.SerializeAsString());
+    break;
+  }
+  case chirp::gateway::LOGOUT_REQ: {
+    chirp::auth::LogoutRequest req;
+    if (!req.ParseFromArray(pkt.body().data(), static_cast<int>(pkt.body().size()))) {
+      chirp::auth::LogoutResponse resp;
+      resp.set_code(chirp::common::INVALID_PARAM);
+      resp.set_server_time(NowMs());
+      SendPacket(session, chirp::gateway::LOGOUT_RESP, pkt.sequence(),
+                 resp.SerializeAsString());
+      return;
+    }
+
+    bool success = auth_service->Logout(req.user_id(), req.session_id());
+
+    chirp::auth::LogoutResponse resp;
+    resp.set_code(success ? chirp::common::OK : chirp::common::INTERNAL_ERROR);
+    resp.set_server_time(NowMs());
+    SendPacket(session, chirp::gateway::LOGOUT_RESP, pkt.sequence(),
+               resp.SerializeAsString());
+    break;
+  }
+  case chirp::gateway::GET_SESSIONS_REQ: {
+    chirp::auth::GetSessionsRequest req;
+    if (!req.ParseFromArray(pkt.body().data(), static_cast<int>(pkt.body().size()))) {
+      chirp::auth::GetSessionsResponse resp;
+      resp.set_code(chirp::common::INVALID_PARAM);
+      resp.set_server_time(NowMs());
+      SendPacket(session, chirp::gateway::GET_SESSIONS_RESP, pkt.sequence(),
+                 resp.SerializeAsString());
+      return;
+    }
+
+    auto sessions = auth_service->GetUserSessions(req.user_id());
+
+    chirp::auth::GetSessionsResponse resp;
+    resp.set_code(chirp::common::OK);
+    resp.set_server_time(NowMs());
+    for (const auto& sess : sessions) {
+      auto* s = resp.add_sessions();
+      s->set_session_id(sess.session_id);
+      s->set_device_id(sess.device_id);
+      s->set_platform(sess.platform);
+      s->set_created_at(sess.created_at);
+      s->set_last_activity_at(sess.last_activity_at);
+      s->set_is_current(sess.is_current);
+    }
+    SendPacket(session, chirp::gateway::GET_SESSIONS_RESP, pkt.sequence(),
+               resp.SerializeAsString());
+    break;
+  }
+  case chirp::gateway::REVOKE_SESSION_REQ: {
+    chirp::auth::RevokeSessionRequest req;
+    if (!req.ParseFromArray(pkt.body().data(), static_cast<int>(pkt.body().size()))) {
+      chirp::auth::RevokeSessionResponse resp;
+      resp.set_code(chirp::common::INVALID_PARAM);
+      resp.set_server_time(NowMs());
+      SendPacket(session, chirp::gateway::REVOKE_SESSION_RESP, pkt.sequence(),
+                 resp.SerializeAsString());
+      return;
+    }
+
+    bool success = auth_service->RevokeSession(req.user_id(), req.session_id());
+
+    chirp::auth::RevokeSessionResponse resp;
+    resp.set_code(success ? chirp::common::OK : chirp::common::INTERNAL_ERROR);
+    resp.set_server_time(NowMs());
+    SendPacket(session, chirp::gateway::REVOKE_SESSION_RESP, pkt.sequence(),
+               resp.SerializeAsString());
+    break;
+  }
+  case chirp::gateway::CHANGE_PASSWORD_REQ: {
+    chirp::auth::ChangePasswordRequest req;
+    if (!req.ParseFromArray(pkt.body().data(), static_cast<int>(pkt.body().size()))) {
+      chirp::auth::ChangePasswordResponse resp;
+      resp.set_code(chirp::common::INVALID_PARAM);
+      resp.set_server_time(NowMs());
+      resp.set_error_message("Invalid request");
+      SendPacket(session, chirp::gateway::CHANGE_PASSWORD_RESP, pkt.sequence(),
+                 resp.SerializeAsString());
+      return;
+    }
+
+    bool success = auth_service->ChangePassword(req.user_id(), req.old_password(),
+                                                req.new_password());
+
+    chirp::auth::ChangePasswordResponse resp;
+    resp.set_code(success ? chirp::common::OK : chirp::common::AUTH_FAILED);
+    resp.set_server_time(NowMs());
+    if (!success) {
+      resp.set_error_message("Failed to change password. Check your old password.");
+    }
+    SendPacket(session, chirp::gateway::CHANGE_PASSWORD_RESP, pkt.sequence(),
+               resp.SerializeAsString());
+    break;
+  }
+  case chirp::gateway::HEARTBEAT_PING: {
+    chirp::gateway::HeartbeatPong pong;
+    pong.set_timestamp(NowMs());
+    pong.set_server_time(NowMs());
+    SendPacket(session, chirp::gateway::HEARTBEAT_PONG, pkt.sequence(),
+               pong.SerializeAsString());
+    break;
+  }
+  default:
+    Logger::Instance().Debug("Unknown MsgID: " + std::to_string(static_cast<int>(pkt.msg_id())));
+    break;
+  }
+}
+
 } // namespace
 
 int main(int argc, char** argv) {
@@ -151,257 +411,7 @@ int main(int argc, char** argv) {
   chirp::network::TcpServer server(
       io, port,
       [&](std::shared_ptr<chirp::network::Session> session, std::string&& payload) {
-        chirp::gateway::Packet pkt;
-        if (!pkt.ParseFromArray(payload.data(), static_cast<int>(payload.size()))) {
-          Logger::Instance().Warn("Failed to parse Packet from client");
-          return;
-        }
-
-        std::string client_ip = GetClientIp(session);
-
-        switch (pkt.msg_id()) {
-        case chirp::gateway::REGISTER_REQ: {
-          chirp::auth::RegisterRequest req;
-          if (!req.ParseFromArray(pkt.body().data(), static_cast<int>(pkt.body().size()))) {
-            chirp::auth::RegisterResponse resp;
-            resp.set_code(chirp::common::INVALID_PARAM);
-            resp.set_server_time(NowMs());
-            resp.set_error_message("Invalid request");
-            SendPacket(session, chirp::gateway::REGISTER_RESP, pkt.sequence(),
-                      resp.SerializeAsString());
-            return;
-          }
-
-          chirp::auth::UserRegisterRequest auth_req;
-          auth_req.username = req.username();
-          auth_req.email = req.email();
-          auth_req.password = req.password();
-          auth_req.display_name = req.display_name();
-
-          auto result = auth_service->Register(auth_req, client_ip);
-
-          chirp::auth::RegisterResponse resp;
-          resp.set_code(result.error_code);
-          resp.set_user_id(result.user_id);
-          resp.set_server_time(NowMs());
-          resp.set_error_message(result.error_message);
-          SendPacket(session, chirp::gateway::REGISTER_RESP, pkt.sequence(),
-                    resp.SerializeAsString());
-          break;
-        }
-        case chirp::gateway::PASSWORD_LOGIN_REQ: {
-          chirp::auth::PasswordLoginRequest req;
-          if (!req.ParseFromArray(pkt.body().data(), static_cast<int>(pkt.body().size()))) {
-            chirp::auth::PasswordLoginResponse resp;
-            resp.set_code(chirp::common::INVALID_PARAM);
-            resp.set_server_time(NowMs());
-            resp.set_error_message("Invalid request");
-            SendPacket(session, chirp::gateway::PASSWORD_LOGIN_RESP, pkt.sequence(),
-                      resp.SerializeAsString());
-            return;
-          }
-
-          auto result = auth_service->Login(req.identifier(), req.password(),
-                                           req.device_id(), req.platform(), client_ip);
-
-          chirp::auth::PasswordLoginResponse resp;
-          resp.set_code(result.error_code);
-          resp.set_user_id(result.user_id);
-          resp.set_username(result.username);
-          resp.set_session_id(result.session_id);
-          resp.set_access_token(result.access_token);
-          resp.set_refresh_token(result.refresh_token);
-          resp.set_access_token_expires_at(result.access_token_expires_at);
-          resp.set_refresh_token_expires_at(result.refresh_token_expires_at);
-          resp.set_server_time(NowMs());
-          resp.set_kick_previous(result.kick_previous);
-          resp.set_error_message(result.error_message);
-          SendPacket(session, chirp::gateway::PASSWORD_LOGIN_RESP, pkt.sequence(),
-                    resp.SerializeAsString());
-          break;
-        }
-        case chirp::gateway::REFRESH_TOKEN_REQ: {
-          chirp::auth::RefreshTokenRequest req;
-          if (!req.ParseFromArray(pkt.body().data(), static_cast<int>(pkt.body().size()))) {
-            chirp::auth::RefreshTokenResponse resp;
-            resp.set_code(chirp::common::INVALID_PARAM);
-            resp.set_server_time(NowMs());
-            resp.set_error_message("Invalid request");
-            SendPacket(session, chirp::gateway::REFRESH_TOKEN_RESP, pkt.sequence(),
-                      resp.SerializeAsString());
-            return;
-          }
-
-          auto result = auth_service->RefreshAccessToken(req.refresh_token());
-
-          chirp::auth::RefreshTokenResponse resp;
-          resp.set_code(result.error_code);
-          resp.set_access_token(result.access_token);
-          resp.set_access_token_expires_at(result.access_token_expires_at);
-          resp.set_server_time(NowMs());
-          resp.set_error_message(result.error_message);
-          SendPacket(session, chirp::gateway::REFRESH_TOKEN_RESP, pkt.sequence(),
-                    resp.SerializeAsString());
-          break;
-        }
-        case chirp::gateway::LOGIN_REQ: {
-          // Legacy login - treat as JWT validation or simple token login
-          chirp::auth::LoginRequest req;
-          if (!req.ParseFromArray(pkt.body().data(), static_cast<int>(pkt.body().size()))) {
-            chirp::auth::LoginResponse resp;
-            resp.set_code(chirp::common::INVALID_PARAM);
-            resp.set_server_time(NowMs());
-            SendPacket(session, chirp::gateway::LOGIN_RESP, pkt.sequence(),
-                      resp.SerializeAsString());
-            return;
-          }
-
-          std::string user_id;
-          chirp::common::ErrorCode code = chirp::common::OK;
-
-          // Try to validate as JWT first
-          auto validated_user = auth_service->ValidateAccessToken(req.token());
-          if (validated_user) {
-            user_id = *validated_user;
-          } else {
-            // Try to validate as session ID
-            auto session_user = auth_service->ValidateSession(req.token());
-            if (session_user) {
-              user_id = *session_user;
-            } else if (!allow_scaffold_login) {
-              // The token is neither a valid access token nor an active
-              // session, and the development scaffold fallback is disabled:
-              // reject instead of trusting an arbitrary token as a user_id.
-              code = chirp::common::AUTH_FAILED;
-              Logger::Instance().Warn(
-                  "LOGIN_REQ rejected: token is neither a valid access token "
-                  "nor an active session (scaffold login disabled)");
-            } else {
-              // Fall back to treating token as user_id (for development,
-              // opt-in via --allow_scaffold_login)
-              user_id = req.token();
-            }
-          }
-
-          chirp::auth::LoginResponse resp;
-          resp.set_code(code);
-          if (code == chirp::common::OK) {
-            resp.set_user_id(user_id);
-            resp.set_session_id(user_id + "_sess");
-            resp.set_kick_previous(true);
-            resp.mutable_kick()->set_reason("session validated");
-          }
-          resp.set_server_time(NowMs());
-          SendPacket(session, chirp::gateway::LOGIN_RESP, pkt.sequence(),
-                    resp.SerializeAsString());
-          break;
-        }
-        case chirp::gateway::LOGOUT_REQ: {
-          chirp::auth::LogoutRequest req;
-          if (!req.ParseFromArray(pkt.body().data(), static_cast<int>(pkt.body().size()))) {
-            chirp::auth::LogoutResponse resp;
-            resp.set_code(chirp::common::INVALID_PARAM);
-            resp.set_server_time(NowMs());
-            SendPacket(session, chirp::gateway::LOGOUT_RESP, pkt.sequence(),
-                      resp.SerializeAsString());
-            return;
-          }
-
-          bool success = auth_service->Logout(req.user_id(), req.session_id());
-
-          chirp::auth::LogoutResponse resp;
-          resp.set_code(success ? chirp::common::OK : chirp::common::INTERNAL_ERROR);
-          resp.set_server_time(NowMs());
-          SendPacket(session, chirp::gateway::LOGOUT_RESP, pkt.sequence(),
-                    resp.SerializeAsString());
-          break;
-        }
-        case chirp::gateway::GET_SESSIONS_REQ: {
-          chirp::auth::GetSessionsRequest req;
-          if (!req.ParseFromArray(pkt.body().data(), static_cast<int>(pkt.body().size()))) {
-            chirp::auth::GetSessionsResponse resp;
-            resp.set_code(chirp::common::INVALID_PARAM);
-            resp.set_server_time(NowMs());
-            SendPacket(session, chirp::gateway::GET_SESSIONS_RESP, pkt.sequence(),
-                      resp.SerializeAsString());
-            return;
-          }
-
-          auto sessions = auth_service->GetUserSessions(req.user_id());
-
-          chirp::auth::GetSessionsResponse resp;
-          resp.set_code(chirp::common::OK);
-          resp.set_server_time(NowMs());
-          for (const auto& sess : sessions) {
-            auto* s = resp.add_sessions();
-            s->set_session_id(sess.session_id);
-            s->set_device_id(sess.device_id);
-            s->set_platform(sess.platform);
-            s->set_created_at(sess.created_at);
-            s->set_last_activity_at(sess.last_activity_at);
-            s->set_is_current(sess.is_current);
-          }
-          SendPacket(session, chirp::gateway::GET_SESSIONS_RESP, pkt.sequence(),
-                    resp.SerializeAsString());
-          break;
-        }
-        case chirp::gateway::REVOKE_SESSION_REQ: {
-          chirp::auth::RevokeSessionRequest req;
-          if (!req.ParseFromArray(pkt.body().data(), static_cast<int>(pkt.body().size()))) {
-            chirp::auth::RevokeSessionResponse resp;
-            resp.set_code(chirp::common::INVALID_PARAM);
-            resp.set_server_time(NowMs());
-            SendPacket(session, chirp::gateway::REVOKE_SESSION_RESP, pkt.sequence(),
-                      resp.SerializeAsString());
-            return;
-          }
-
-          bool success = auth_service->RevokeSession(req.user_id(), req.session_id());
-
-          chirp::auth::RevokeSessionResponse resp;
-          resp.set_code(success ? chirp::common::OK : chirp::common::INTERNAL_ERROR);
-          resp.set_server_time(NowMs());
-          SendPacket(session, chirp::gateway::REVOKE_SESSION_RESP, pkt.sequence(),
-                    resp.SerializeAsString());
-          break;
-        }
-        case chirp::gateway::CHANGE_PASSWORD_REQ: {
-          chirp::auth::ChangePasswordRequest req;
-          if (!req.ParseFromArray(pkt.body().data(), static_cast<int>(pkt.body().size()))) {
-            chirp::auth::ChangePasswordResponse resp;
-            resp.set_code(chirp::common::INVALID_PARAM);
-            resp.set_server_time(NowMs());
-            resp.set_error_message("Invalid request");
-            SendPacket(session, chirp::gateway::CHANGE_PASSWORD_RESP, pkt.sequence(),
-                      resp.SerializeAsString());
-            return;
-          }
-
-          bool success = auth_service->ChangePassword(req.user_id(), req.old_password(),
-                                                     req.new_password());
-
-          chirp::auth::ChangePasswordResponse resp;
-          resp.set_code(success ? chirp::common::OK : chirp::common::AUTH_FAILED);
-          resp.set_server_time(NowMs());
-          if (!success) {
-            resp.set_error_message("Failed to change password. Check your old password.");
-          }
-          SendPacket(session, chirp::gateway::CHANGE_PASSWORD_RESP, pkt.sequence(),
-                    resp.SerializeAsString());
-          break;
-        }
-        case chirp::gateway::HEARTBEAT_PING: {
-          chirp::gateway::HeartbeatPong pong;
-          pong.set_timestamp(NowMs());
-          pong.set_server_time(NowMs());
-          SendPacket(session, chirp::gateway::HEARTBEAT_PONG, pkt.sequence(),
-                    pong.SerializeAsString());
-          break;
-        }
-        default:
-          Logger::Instance().Debug("Unknown MsgID: " + std::to_string(static_cast<int>(pkt.msg_id())));
-          break;
-        }
+        HandleAuthPacket(auth_service, session, payload, allow_scaffold_login);
       },
       [auth_service](std::shared_ptr<chirp::network::Session>) {
         Logger::Instance().Debug("Client disconnected");

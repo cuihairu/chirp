@@ -839,6 +839,40 @@ chirp_fake_deps_include(auth_service_tests)
 
 add_test(NAME auth_service_tests COMMAND auth_service_tests)
 
+# Enhanced auth entrypoint (chirp_app_auth) packet dispatch - handler surface
+# pulled in from main_enhanced.cc with main() renamed (coverage batch 11).
+add_executable(auth_enhanced_session_tests
+  auth_enhanced_session_test.cc
+  fake_mysql.cc
+  fake_sodium.cc
+  ${CMAKE_SOURCE_DIR}/services/app/auth/src/auth_service.cc
+  ${CMAKE_SOURCE_DIR}/services/app/auth/src/brute_force_protector.cc
+  ${CMAKE_SOURCE_DIR}/services/app/auth/src/password_hasher.cc
+  ${CMAKE_SOURCE_DIR}/services/app/auth/src/rate_limiter.cc
+  ${CMAKE_SOURCE_DIR}/services/app/auth/src/redis_auth_store.cc
+  ${CMAKE_SOURCE_DIR}/services/app/auth/src/store_factory.cc
+  ${CMAKE_SOURCE_DIR}/services/app/auth/src/token_generator.cc
+  ${CMAKE_SOURCE_DIR}/services/app/auth/src/mysql_session_store.cc
+  ${CMAKE_SOURCE_DIR}/services/app/auth/src/mysql_user_store.cc
+)
+
+chirp_unit_test_common_links(auth_enhanced_session_tests)
+target_link_libraries(auth_enhanced_session_tests PRIVATE chirp_network chirp_common chirp_protos)
+
+target_include_directories(auth_enhanced_session_tests
+  PRIVATE
+  ${CMAKE_SOURCE_DIR}/services/app/auth/src
+  ${CMAKE_SOURCE_DIR}/libs
+  ${CMAKE_SOURCE_DIR}/libs/common
+  ${CMAKE_SOURCE_DIR}/libs/common/include
+  ${CMAKE_SOURCE_DIR}/libs/network
+  ${CMAKE_SOURCE_DIR}/proto/cpp
+  ${CMAKE_SOURCE_DIR}/proto/cpp/proto
+)
+chirp_fake_deps_include(auth_enhanced_session_tests)
+
+add_test(NAME auth_enhanced_session_tests COMMAND auth_enhanced_session_tests)
+
 # MySQL-backed chat storage stack (connection pool / store / hybrid /
 # migration worker / delivery tracker / pagination)
 add_executable(chat_mysql_tests
