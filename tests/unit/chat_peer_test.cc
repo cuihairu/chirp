@@ -1296,43 +1296,68 @@ TEST(ChatPeerHubTest, RegisteredPeerIdleTimeoutReportsTimeout) {
 
 // A body read still pending when the conn is displaced completes after Close
 // set the flag: the handler must bow out on the closing guard instead of
-// reporting the aborted read as a connection loss.
+// reporting the aborted read as a connection loss. Deterministic by
+// construction: the io_context is polled from the test thread (no runner
+// thread racing the reads), so each protocol step is fully processed before
+// the next bytes are written — after the header-only frame the hub is
+// provably parked in ReadBody (0 of the 64 promised bytes can ever complete
+// it), and the strand orders the aborted completion behind the displacement
+// Close that runs inside the register handler.
 TEST(ChatPeerHubTest, DisplacedConnPendingBodyBowsOutOnClosingGuard) {
   chirp::common::Logger::Instance().SetLevel(chirp::common::Logger::Level::kError);
   asio::io_context io;
-  auto hub = chirp::network::ChatPeerHub::Create(
-      io, HubTestOptions(), [](const std::string&, const std::string&, int32_t,
-                               const std::vector<chirp::gateway::PeerCapability>&) {},
-      [](const std::string&, const std::string&) {},
-      [](const std::string&, const chirp::gateway::ChannelMessageNotify&) {});
+  HubEvents events;
+  auto hub = MakeRecordingHub(io, events);
   hub->Start();
-  HubIoRunner runner(io);
+
+  // Runs every ready handler (and any they post) to quiescence. restart()
+  // first: a poll that exhausts all work leaves the context stopped and
+  // later polls would silently no-op.
+  auto drain = [&io] {
+    io.restart();
+    while (io.poll() > 0) {
+    }
+  };
+
+  // Send a registration and, after the hub has fully processed it, read the
+  // response from the client side. Splitting Send/drain/Read is the point:
+  // with no runner thread, the hub only advances when this thread polls.
+  auto register_ok = [&](TestPeerClient& client, const char* game_id) {
+    client.Send(MakePacket(chirp::gateway::PEER_REGISTER_REQ, 0,
+                           MakeRegisterReq("game_chat", "peer-s3cret", game_id)));
+    drain();
+    Packet pkt;
+    if (!client.Read(pkt)) {
+      return false;
+    }
+    chirp::gateway::PeerRegisterResp resp;
+    return resp.ParseFromString(pkt.body()) && resp.code() == chirp::common::OK;
+  };
 
   TestPeerClient first(hub->port());
-  chirp::gateway::PeerRegisterResp resp;
-  ASSERT_TRUE(RegisterAndGetResp(first, MakeRegisterReq("game_chat", "peer-s3cret",
-                                                        "game42"),
-                                 resp));
-  ASSERT_EQ(resp.code(), chirp::common::OK);
+  ASSERT_TRUE(register_ok(first, "game42"));
 
-  // Leave a body read pending: the header promises 64 bytes, 4 arrive.
-  std::string partial(4, '\0');
-  chirp::network::WriteU32BE(reinterpret_cast<uint8_t*>(partial.data()), 64);
-  partial.append(4, '\0');
-  first.SendRaw(partial);
+  // Leave a body read pending: the header promises 64 bytes, none arrive.
+  std::string header(4, '\0');
+  chirp::network::WriteU32BE(reinterpret_cast<uint8_t*>(header.data()), 64);
+  first.SendRaw(header);
+  drain();  // header consumed, ReadBody(64) issued and parked
 
   // Displacement closes `first` while its body read is still in flight; the
-  // aborted completion observes closing and returns early.
+  // aborted completion observes closing and returns early (no "lost" report).
   TestPeerClient second(hub->port());
-  ASSERT_TRUE(RegisterAndGetResp(second, MakeRegisterReq("game_chat", "peer-s3cret",
-                                                         "game43"),
-                                 resp));
-  ASSERT_EQ(resp.code(), chirp::common::OK);
+  ASSERT_TRUE(register_ok(second, "game43"));
   EXPECT_FALSE(first.Read(std::chrono::seconds(1)));  // displaced conn was closed
 
+  {
+    std::lock_guard<std::mutex> lock(events.mu);
+    ASSERT_EQ(events.dropped.size(), 1u);
+    EXPECT_EQ(events.dropped[0].first, "game_chat");
+    EXPECT_EQ(events.dropped[0].second, "displaced");
+  }
+
   hub->Stop();
-  runner.Drain();
-  runner.Finish();
+  drain();  // consume Stop's teardown so no handler dangles at io destruction
 }
 
 // A conn closed for a protocol violation still has its idle timer armed: the
