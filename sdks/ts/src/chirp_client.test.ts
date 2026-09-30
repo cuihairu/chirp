@@ -304,6 +304,21 @@ describe('kick handling', () => {
     expect(FakeWebSocket.instances.length).toBe(1);
     expect(client.status).toBe('kicked');
   });
+
+  it('a kick landing while a reconnect is pending cancels that redial', async () => {
+    // Defensive arm: transports may deliver the KICK frame after the close
+    // event has already been processed (out-of-order close/kick), leaving a
+    // scheduled redial behind. markKicked must cancel it, not just flag.
+    const { client, ws } = await connectedClient({ jitterRatio: 0 });
+    ws.serverClose(); // schedules the reconnect timer (waiting-reconnect)
+    ws.serverFrame(MsgID.KICK_NOTIFY, 0, new Uint8Array([1]));
+
+    // markKicked ran with the socket already gone, so no close event will
+    // re-fire to flip the status; what matters is the flag and the dead timer.
+    expect(client.kicked).toBe(true);
+    await vi.advanceTimersByTimeAsync(120_000);
+    expect(FakeWebSocket.instances.length).toBe(1); // the redial never fired
+  });
 });
 
 describe('reconnect with backoff', () => {

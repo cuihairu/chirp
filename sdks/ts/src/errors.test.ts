@@ -32,6 +32,7 @@ describe('RequestError', () => {
     expect(new RequestError('timeout').message).toBe('请求超时');
     expect(new RequestError('closed').message).toBe('连接已断开');
     expect(new RequestError('kicked').message).toContain('其他设备');
+    expect(new RequestError('blocked').message).toBe('消息未发送');
   });
 
   it('uses error copy for server errors and carries the code', () => {

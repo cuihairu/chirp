@@ -1,4 +1,4 @@
-import { LoginRequest, LoginResponse } from '@chirp/proto/auth';
+import { DevicesPresenceNotify, LoginRequest, LoginResponse } from '@chirp/proto/auth';
 import { ChannelType, ChatMessage, MsgType, SendMessageRequest, SendMessageResponse } from '@chirp/proto/chat';
 import { ErrorCode } from '@chirp/proto/common';
 import { KickNotify } from '@chirp/proto/auth';
@@ -617,5 +617,94 @@ describe('MemoryMessageStore', () => {
     s.cleanup(300); // private bucket becomes empty (deleted), world keeps one
     expect(s.load(ChannelType.PRIVATE, 'a|b', 10)).toEqual([]);
     expect(s.load(ChannelType.WORLD, 'world', 10).map((m) => m.messageId)).toEqual(['fresh']);
+  });
+});
+
+describe('ChatPipeline inbound edges', () => {
+  it('drops undecodable chat notify bodies before any delivery', async () => {
+    await makeHarness(async (_client, pipeline, ws) => {
+      const seen: string[] = [];
+      pipeline.addListener({ onMessageReceived: (m) => seen.push(m.messageId) });
+
+      ws.serverFrame(MsgID.CHAT_MESSAGE_NOTIFY, 0, new Uint8Array([0xff]));
+      expect(seen).toEqual([]); // dropped before store/listeners; raw subs still got the body
+
+      ws.serverFrame(MsgID.CHAT_MESSAGE_NOTIFY, 0, chatMsg('m1', 'peer', 'hi', 1));
+      expect(seen).toEqual(['m1']); // the link itself stays usable
+    });
+  });
+
+  it('fans devices-presence notifies out; garbage bodies and empty lists are no-ops', async () => {
+    await makeHarness(async (_client, pipeline, ws) => {
+      const seen: number[][] = [];
+      pipeline.addListener({ onDevicesPresence: (devices) => seen.push(devices.map((d) => d.online ? 1 : 0)) });
+      pipeline.addListener({
+        onDevicesPresence: () => {
+          throw new Error('bad listener');
+        },
+      });
+
+      const devices = DevicesPresenceNotify.encode(DevicesPresenceNotify.fromPartial({
+        devices: [
+          { platform: 'ios', deviceId: 'd2', online: true, ts: 5 },
+          { platform: 'pc', deviceId: 'd3', online: false, ts: 6 },
+        ],
+      })).finish();
+      ws.serverFrame(MsgID.DEVICES_PRESENCE_NOTIFY, 0, devices);
+      expect(seen).toEqual([[1, 0]]); // the throwing listener was contained
+
+      ws.serverFrame(MsgID.DEVICES_PRESENCE_NOTIFY, 0, new Uint8Array([0xff])); // undecodable
+      ws.serverFrame(MsgID.DEVICES_PRESENCE_NOTIFY, 0,
+        DevicesPresenceNotify.encode(DevicesPresenceNotify.fromPartial({})).finish());
+      expect(seen).toEqual([[1, 0]]); // garbage -> empty list -> early return both times
+    });
+  });
+
+  it('a throwing command handler declines like a miss', async () => {
+    await makeHarness(async (_client, pipeline, ws) => {
+      const off = pipeline.registerCommand({
+        name: 'boom',
+        execute: () => {
+          throw new Error('handler exploded');
+        },
+      });
+      const before = ws.sent.length;
+      await expect(
+        pipeline.send({ channelType: ChannelType.PRIVATE, receiverId: 'p' }, '/boom now'),
+      ).rejects.toMatchObject({ kind: 'blocked' });
+      expect(ws.sent.length).toBe(before); // nothing hit the wire
+      off();
+    });
+  });
+
+  it('login response online devices fan onLoginDevices out', async () => {
+    await makeHarness(async (_client, pipeline, ws) => {
+      const seen: string[][] = [];
+      pipeline.addListener({ onLoginDevices: (devices) => seen.push(devices.map((d) => d.deviceId)) });
+      pipeline.addListener({
+        onLoginDevices: () => {
+          throw new Error('bad listener');
+        },
+      });
+
+      const pending = pipeline.login('u1');
+      settle(ws, MsgID.LOGIN_RESP, LoginResponse.encode(LoginResponse.fromPartial({
+        code: ErrorCode.OK,
+        userId: 'u1',
+        onlineDevices: [{ platform: 'web', deviceId: 'd9', online: true, ts: 1 }],
+      })).finish());
+      expect(await pending).toBe(ErrorCode.OK);
+      expect(seen).toEqual([['d9']]); // throwing listener contained
+    });
+  });
+
+  it('an undecodable kick body still fans onKicked with an empty reason', async () => {
+    await makeHarness(async (_client, pipeline, ws) => {
+      const reasons: Array<string | undefined> = [];
+      pipeline.addListener({ onKicked: (reason) => reasons.push(reason) });
+
+      ws.serverFrame(MsgID.KICK_NOTIFY, 0, new Uint8Array([0xff]));
+      expect(reasons).toEqual(['']); // fromPartial fallback: kicked, reason unknown
+    });
   });
 });
