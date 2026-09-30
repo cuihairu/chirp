@@ -19,7 +19,7 @@ wire 契约见 `proto/server_gateway.proto`,完整接入语义(凭证、注入�
 
 ## Go(官方 SDK)
 
-`sdks/go` 是官方维护的 Go 参考客户端,语义逐项对齐 C++ 参考实现 `libs/network/server_gateway_peer.cc`,CI(`go-sdk.yml`)用 31 例进程内 fake-hub 环回单测 + proto/go 重生成漂移检查 + `go vet` + `-race` 兜底;client.go 语句覆盖 99.5%(批 20be7ec 后,残余 2 臂为不可达路径)。
+`sdks/go` 是官方维护的 Go 参考客户端,语义逐项对齐 C++ 参考实现 `libs/network/server_gateway_peer.cc`,CI(`go-sdk.yml`)用 31 例进程内 fake-hub 环回单测 + proto/go 重生成漂移检查 + `go vet` + `-race` 兜底;client.go 语句覆盖 100%(批 3026896 后,不可自然触发的 2 臂经注入/竞态用例覆盖)。
 
 能力面:
 

@@ -71,7 +71,7 @@ c.InjectMessage(ctx, &pbsg.MessageInjectRequest{
 
 ## 模块与代码生成
 
-仓库根是单一 Go module(`github.com/cui/chirp`):`sdks/go` 是 SDK 包,`proto/go/<name>/` 是入库的 protobuf 生成物(每 `.proto` 一个包,protoc-gen-go;`go_package` 在 `.proto` 文件里)。CI(`go-sdk.yml`)用固定 protoc 33.4 + protoc-gen-go v1.36.12 重生成并漂移校验,`go vet` + `go test -race` 跑 31 例环回单测(fake hub 进程内回环,无需任何服务;`client.go` 语句覆盖 99.5%,残余 2 臂为不可达路径,见 `client_edge_test.go` 注释)。
+仓库根是单一 Go module(`github.com/cui/chirp`):`sdks/go` 是 SDK 包,`proto/go/<name>/` 是入库的 protobuf 生成物(每 `.proto` 一个包,protoc-gen-go;`go_package` 在 `.proto` 文件里)。CI(`go-sdk.yml`)用固定 protoc 33.4 + protoc-gen-go v1.36.12 重生成并漂移校验,`go vet` + `go test -race` 跑 31 例环回单测(fake hub 进程内回环,无需任何服务;`client.go` 语句覆盖 100%:不可自然触发的 2 臂经 `marshalPacket` 注入缝与 stop 缓存结果竞态用例覆盖,见 `client_edge_test.go` 注释)。
 
 本地重新生成:`PATH="$HOME/go/bin:$PATH" bash gen_proto.sh`(需 `go install google.golang.org/protobuf/cmd/protoc-gen-go@v1.36.12`)。
 
