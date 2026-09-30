@@ -1017,3 +1017,33 @@ target_include_directories(chat_enhanced_session_tests
 chirp_fake_deps_include(chat_enhanced_session_tests)
 
 add_test(NAME chat_enhanced_session_tests COMMAND chat_enhanced_session_tests)
+
+# Basic chat build internals (game_chat/app_chat direct-entry form):
+# MessageStore, HandlePacket's 38-case dispatch and HandleDisconnect all
+# live in main.cc's anonymous namespace - pulled in via #include with
+# main() renamed, same seam as the two targets above. The source glob is
+# the same CHAT_ENHANCED_SESSION_SRCS (it already excludes every main*.cc);
+# this target tracks the translation units the basic binary links.
+add_executable(chat_basic_session_tests
+  chat_basic_session_test.cc
+  fake_mysql.cc
+  ${CMAKE_SOURCE_DIR}/libs/common/login_token_verifier.cc
+  ${CHAT_ENHANCED_SESSION_SRCS}
+)
+
+chirp_unit_test_common_links(chat_basic_session_tests)
+target_link_libraries(chat_basic_session_tests PRIVATE chirp_network chirp_common chirp_protos)
+
+target_include_directories(chat_basic_session_tests
+  PRIVATE
+  ${CMAKE_SOURCE_DIR}/services/shared/chat/src
+  ${CMAKE_SOURCE_DIR}/libs
+  ${CMAKE_SOURCE_DIR}/libs/common
+  ${CMAKE_SOURCE_DIR}/libs/common/include
+  ${CMAKE_SOURCE_DIR}/libs/network
+  ${CMAKE_SOURCE_DIR}/proto/cpp
+  ${CMAKE_SOURCE_DIR}/proto/cpp/proto
+)
+chirp_fake_deps_include(chat_basic_session_tests)
+
+add_test(NAME chat_basic_session_tests COMMAND chat_basic_session_tests)
