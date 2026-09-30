@@ -596,6 +596,7 @@ add_test(NAME chat_extensions_tests COMMAND chat_extensions_tests)
 # Server gateway (service plane hub) coverage tests
 add_executable(server_gateway_tests
   server_gateway_test.cc
+  server_gateway_main_test.cc
   server_gateway_stream_broker_test.cc
   ${CMAKE_SOURCE_DIR}/services/game/server_gateway/src/event_queue.cc
   ${CMAKE_SOURCE_DIR}/services/game/server_gateway/src/server_gateway_handlers.cc

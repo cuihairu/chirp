@@ -49,6 +49,8 @@ uint16_t ParseU16Arg(int argc, char** argv, const std::string& key, uint16_t def
 }
 
 using Session = chirp::network::Session;
+namespace sg = chirp::game_server_gateway;
+using chirp::common::Logger;
 
 // Bridges the abstract PeerSender to a live session. The session is held
 // weakly: ownership stays with the server's callback chain.
@@ -97,12 +99,201 @@ bool ParseBody(const chirp::gateway::Packet& pkt, T* out) {
   return out->ParseFromArray(pkt.body().data(), static_cast<int>(pkt.body().size()));
 }
 
+// Per-run peer table plus the frame/disconnect/deadline handlers. This used
+// to be main()'s lambda graph; hoisted verbatim (batch 15, behavior-
+// preserving) so the unit tests can drive it with in-memory sessions. The
+// lifetime matches the old captures: the runtime is constructed on main()'s
+// stack after the config/io/handlers it references, and the server callbacks
+// (bound later) are destroyed before it.
+struct GatewayRuntime {
+  GatewayRuntime(asio::io_context& io, const sg::ServerGatewayConfig& config,
+                 sg::ServerGatewayHandlers& handlers, int auth_timeout)
+      : io_(io), config_(config), handlers_(handlers), auth_timeout_(auth_timeout) {}
+
+  void OnDisconnect(const Session* key) {
+    auto it = peers.find(key);
+    if (it == peers.end()) {
+      return;
+    }
+    if (!it->second.service_id.empty()) {
+      handlers_.OnPeerDisconnected(it->second.service_id, it->second.sender.get());
+    }
+    if (it->second.deadline) {
+      it->second.deadline->cancel();
+    }
+    peers.erase(it);
+  }
+
+  void ArmDeadline(const Session* key, bool authenticated) {
+    auto it = peers.find(key);
+    if (it == peers.end()) {
+      return;
+    }
+    if (!it->second.deadline) {
+      it->second.deadline = std::make_unique<asio::steady_timer>(io_);
+    }
+    auto& timer = *it->second.deadline;
+    timer.cancel();
+    const int ttl = authenticated
+                        ? std::max(2, 2 * config_.heartbeat_interval_seconds)
+                        : std::max(1, auth_timeout_);
+    timer.expires_after(std::chrono::seconds(ttl));
+    timer.async_wait([this, key](const std::error_code& ec) {
+      if (ec) {
+        return;  // refreshed, removed, or the peer went away on its own
+      }
+      Logger::Instance().Warn("server-plane peer timed out; closing");
+      std::shared_ptr<Session> session;
+      auto it = peers.find(key);
+      if (it != peers.end()) {
+        session = it->second.session;
+      }
+      OnDisconnect(key);
+      if (session) {
+        session->Close();
+      }
+    });
+  }
+
+  void OnFrame(std::shared_ptr<Session> session, std::string&& payload) {
+    chirp::gateway::Packet pkt;
+    if (!pkt.ParseFromArray(payload.data(), static_cast<int>(payload.size()))) {
+      Logger::Instance().Warn("failed to parse Packet from server-plane peer");
+      return;
+    }
+
+    const Session* key = session.get();
+    if (peers.find(key) == peers.end()) {
+      PeerContext ctx;
+      ctx.session = session;
+      ctx.sender = std::make_shared<SessionPeerSender>(session);
+      peers.emplace(key, std::move(ctx));
+    }
+    auto& ctx = peers.at(key);
+
+    if (!ctx.authenticated) {
+      if (pkt.msg_id() != chirp::gateway::SERVER_AUTH_REQ) {
+        Logger::Instance().Warn("first frame from a peer was not SERVER_AUTH_REQ; closing");
+        OnDisconnect(key);
+        session->Close();
+        return;
+      }
+
+      sg::ServerAuthRequest req;
+      sg::ServerAuthResponse resp;
+      if (!ParseBody(pkt, &req)) {
+        resp.set_code(chirp::common::INVALID_PARAM);
+        SendPacket(session, chirp::gateway::SERVER_AUTH_RESP, pkt.sequence(), resp);
+        OnDisconnect(key);
+        session->Close();
+        return;
+      }
+
+      const auto out = handlers_.HandleAuth(req, ctx.sender);
+      resp.set_code(out.code);
+      resp.set_server_time_ms(NowMs());
+      resp.set_heartbeat_interval_seconds(out.heartbeat_interval_seconds);
+      SendPacket(session, chirp::gateway::SERVER_AUTH_RESP, pkt.sequence(), resp);
+
+      if (out.code != chirp::common::OK) {
+        Logger::Instance().Warn("server-plane auth failed for service_id=" + req.service_id());
+        OnDisconnect(key);
+        session->Close();
+        return;
+      }
+
+      ctx.service_id = out.service_id;
+      ctx.authenticated = true;
+      Logger::Instance().Info("service authenticated: " + out.service_id);
+
+      if (out.replaced_peer) {
+        // The service reconnected; find and drop the displaced connection.
+        const Session* stale = nullptr;
+        std::shared_ptr<Session> stale_session;
+        for (const auto& [other_key, other] : peers) {
+          if (other.sender.get() == out.replaced_peer.get()) {
+            stale = other_key;
+            stale_session = other.session;
+            break;
+          }
+        }
+        if (stale != nullptr) {
+          Logger::Instance().Info("closing displaced connection of service " + out.service_id);
+          OnDisconnect(stale);
+          if (stale_session) {
+            stale_session->Close();
+          }
+        }
+      }
+    } else {
+      switch (pkt.msg_id()) {
+      case chirp::gateway::SERVER_HEARTBEAT_PING: {
+        sg::ServerHeartbeatPing ping;
+        if (!ParseBody(pkt, &ping)) {
+          Logger::Instance().Warn("failed to parse ServerHeartbeatPing body");
+          break;
+        }
+        const auto pong = handlers_.HandleHeartbeat(ping);
+        SendPacket(session, chirp::gateway::SERVER_HEARTBEAT_PONG, pkt.sequence(), pong);
+        break;
+      }
+      case chirp::gateway::INJECT_MESSAGE_REQ: {
+        sg::MessageInjectRequest req;
+        sg::MessageInjectResponse resp;
+        if (!ParseBody(pkt, &req)) {
+          resp.set_code(chirp::common::INVALID_PARAM);
+        } else {
+          resp = handlers_.HandleInject(req);
+        }
+        SendPacket(session, chirp::gateway::INJECT_MESSAGE_RESP, pkt.sequence(), resp);
+        break;
+      }
+      case chirp::gateway::EVENT_PUBLISH_REQ: {
+        sg::EventPublishRequest req;
+        sg::EventPublishResponse resp;
+        if (!ParseBody(pkt, &req)) {
+          resp.set_code(chirp::common::INVALID_PARAM);
+        } else {
+          resp = handlers_.HandleEventPublish(req);
+        }
+        SendPacket(session, chirp::gateway::EVENT_PUBLISH_RESP, pkt.sequence(), resp);
+        break;
+      }
+      case chirp::gateway::EVENT_ACK_REQ: {
+        sg::EventAckRequest req;
+        sg::EventAckResponse resp;
+        if (!ParseBody(pkt, &req)) {
+          resp.set_code(chirp::common::INVALID_PARAM);
+        } else {
+          resp = handlers_.HandleEventAck(req, ctx.service_id);
+        }
+        SendPacket(session, chirp::gateway::EVENT_ACK_RESP, pkt.sequence(), resp);
+        break;
+      }
+      default:
+        // Unknown/unimplemented server-plane messages are ignored. The
+        // WP-8 player-directory block (5013-5030) is served by app_chat's
+        // main port now, not this hub.
+        break;
+      }
+    }
+
+    ArmDeadline(key, ctx.authenticated);
+  }
+
+  void OnClose(const std::shared_ptr<Session>& session) { OnDisconnect(session.get()); }
+
+  asio::io_context& io_;
+  const sg::ServerGatewayConfig& config_;
+  sg::ServerGatewayHandlers& handlers_;
+  const int auth_timeout_;
+  // Everything runs on the single io thread; the peers map needs no lock.
+  std::unordered_map<const Session*, PeerContext> peers;
+};
+
 }  // namespace
 
 int main(int argc, char** argv) {
-  using chirp::common::Logger;
-  namespace sg = chirp::game_server_gateway;
-
   Logger::Instance().SetLevel(Logger::Level::kInfo);
 
   const uint16_t port = ParseU16Arg(argc, argv, "--port", 8100);
@@ -172,182 +363,14 @@ int main(int argc, char** argv) {
   }
 
   // Everything runs on the single io thread; the peers map needs no lock.
-  std::unordered_map<const Session*, PeerContext> peers;
+  GatewayRuntime rt(io, config, handlers, auth_timeout);
 
-  const auto on_disconnect = [&](const Session* key) {
-    auto it = peers.find(key);
-    if (it == peers.end()) {
-      return;
-    }
-    if (!it->second.service_id.empty()) {
-      handlers.OnPeerDisconnected(it->second.service_id, it->second.sender.get());
-    }
-    if (it->second.deadline) {
-      it->second.deadline->cancel();
-    }
-    peers.erase(it);
-  };
-
-  const auto arm_deadline = [&](const Session* key, bool authenticated) {
-    auto it = peers.find(key);
-    if (it == peers.end()) {
-      return;
-    }
-    if (!it->second.deadline) {
-      it->second.deadline = std::make_unique<asio::steady_timer>(io);
-    }
-    auto& timer = *it->second.deadline;
-    timer.cancel();
-    const int ttl = authenticated
-                        ? std::max(2, 2 * config.heartbeat_interval_seconds)
-                        : std::max(1, auth_timeout);
-    timer.expires_after(std::chrono::seconds(ttl));
-    timer.async_wait([&, key](const std::error_code& ec) {
-      if (ec) {
-        return;  // refreshed, removed, or the peer went away on its own
-      }
-      Logger::Instance().Warn("server-plane peer timed out; closing");
-      std::shared_ptr<Session> session;
-      auto it = peers.find(key);
-      if (it != peers.end()) {
-        session = it->second.session;
-      }
-      on_disconnect(key);
-      if (session) {
-        session->Close();
-      }
-    });
-  };
-
-  const auto on_frame = [&](std::shared_ptr<Session> session, std::string&& payload) {
-    chirp::gateway::Packet pkt;
-    if (!pkt.ParseFromArray(payload.data(), static_cast<int>(payload.size()))) {
-      Logger::Instance().Warn("failed to parse Packet from server-plane peer");
-      return;
-    }
-
-    const Session* key = session.get();
-    if (peers.find(key) == peers.end()) {
-      PeerContext ctx;
-      ctx.session = session;
-      ctx.sender = std::make_shared<SessionPeerSender>(session);
-      peers.emplace(key, std::move(ctx));
-    }
-    auto& ctx = peers.at(key);
-
-    if (!ctx.authenticated) {
-      if (pkt.msg_id() != chirp::gateway::SERVER_AUTH_REQ) {
-        Logger::Instance().Warn("first frame from a peer was not SERVER_AUTH_REQ; closing");
-        on_disconnect(key);
-        session->Close();
-        return;
-      }
-
-      sg::ServerAuthRequest req;
-      sg::ServerAuthResponse resp;
-      if (!ParseBody(pkt, &req)) {
-        resp.set_code(chirp::common::INVALID_PARAM);
-        SendPacket(session, chirp::gateway::SERVER_AUTH_RESP, pkt.sequence(), resp);
-        on_disconnect(key);
-        session->Close();
-        return;
-      }
-
-      const auto out = handlers.HandleAuth(req, ctx.sender);
-      resp.set_code(out.code);
-      resp.set_server_time_ms(NowMs());
-      resp.set_heartbeat_interval_seconds(out.heartbeat_interval_seconds);
-      SendPacket(session, chirp::gateway::SERVER_AUTH_RESP, pkt.sequence(), resp);
-
-      if (out.code != chirp::common::OK) {
-        Logger::Instance().Warn("server-plane auth failed for service_id=" + req.service_id());
-        on_disconnect(key);
-        session->Close();
-        return;
-      }
-
-      ctx.service_id = out.service_id;
-      ctx.authenticated = true;
-      Logger::Instance().Info("service authenticated: " + out.service_id);
-
-      if (out.replaced_peer) {
-        // The service reconnected; find and drop the displaced connection.
-        const Session* stale = nullptr;
-        std::shared_ptr<Session> stale_session;
-        for (const auto& [other_key, other] : peers) {
-          if (other.sender.get() == out.replaced_peer.get()) {
-            stale = other_key;
-            stale_session = other.session;
-            break;
-          }
-        }
-        if (stale != nullptr) {
-          Logger::Instance().Info("closing displaced connection of service " + out.service_id);
-          on_disconnect(stale);
-          if (stale_session) {
-            stale_session->Close();
-          }
-        }
-      }
-    } else {
-      switch (pkt.msg_id()) {
-      case chirp::gateway::SERVER_HEARTBEAT_PING: {
-        sg::ServerHeartbeatPing ping;
-        if (!ParseBody(pkt, &ping)) {
-          Logger::Instance().Warn("failed to parse ServerHeartbeatPing body");
-          break;
-        }
-        const auto pong = handlers.HandleHeartbeat(ping);
-        SendPacket(session, chirp::gateway::SERVER_HEARTBEAT_PONG, pkt.sequence(), pong);
-        break;
-      }
-      case chirp::gateway::INJECT_MESSAGE_REQ: {
-        sg::MessageInjectRequest req;
-        sg::MessageInjectResponse resp;
-        if (!ParseBody(pkt, &req)) {
-          resp.set_code(chirp::common::INVALID_PARAM);
-        } else {
-          resp = handlers.HandleInject(req);
-        }
-        SendPacket(session, chirp::gateway::INJECT_MESSAGE_RESP, pkt.sequence(), resp);
-        break;
-      }
-      case chirp::gateway::EVENT_PUBLISH_REQ: {
-        sg::EventPublishRequest req;
-        sg::EventPublishResponse resp;
-        if (!ParseBody(pkt, &req)) {
-          resp.set_code(chirp::common::INVALID_PARAM);
-        } else {
-          resp = handlers.HandleEventPublish(req);
-        }
-        SendPacket(session, chirp::gateway::EVENT_PUBLISH_RESP, pkt.sequence(), resp);
-        break;
-      }
-      case chirp::gateway::EVENT_ACK_REQ: {
-        sg::EventAckRequest req;
-        sg::EventAckResponse resp;
-        if (!ParseBody(pkt, &req)) {
-          resp.set_code(chirp::common::INVALID_PARAM);
-        } else {
-          resp = handlers.HandleEventAck(req, ctx.service_id);
-        }
-        SendPacket(session, chirp::gateway::EVENT_ACK_RESP, pkt.sequence(), resp);
-        break;
-      }
-      default:
-        // Unknown/unimplemented server-plane messages are ignored. The
-        // WP-8 player-directory block (5013-5030) is served by app_chat's
-        // main port now, not this hub.
-        break;
-      }
-    }
-
-    arm_deadline(key, ctx.authenticated);
-  };
-
-  const auto on_close = [&](std::shared_ptr<Session> session) { on_disconnect(session.get()); };
-
-  chirp::network::TcpServer server(io, port, on_frame, on_close);
+  chirp::network::TcpServer server(
+      io, port,
+      [&rt](std::shared_ptr<Session> session, std::string&& payload) {
+        rt.OnFrame(std::move(session), std::move(payload));
+      },
+      [&rt](std::shared_ptr<Session> session) { rt.OnClose(session); });
   server.Start();
 
   asio::signal_set signals(io, SIGINT, SIGTERM);
