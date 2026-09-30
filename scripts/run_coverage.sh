@@ -569,9 +569,31 @@ KNOWN_UNCOVERABLE_ARMS = {
     # immune to every argument-shape manipulation (SSO vs heap, small vs
     # >160-byte captures), same class as the EH-pad KNOWN_UNCOVERABLE entries.
     ("libs/network/chat_peer_hub.cc", 119): ((2, 4, 5),
-        "SendInject asio::post closure construction unwind edges"),
+        "SendInject post-call unwind (batch-14 audit): arm 2 is gcc's "
+        "cleanup-state dispatch (mov $0,%ebx before asio::post, "
+        "test %bl,%bl/je after) - the fall-through destroys the closure "
+        "and rethrows, i.e. the EH continuation for a throwing post; arms "
+        "4-5 sit in the never-executed unwind pads behind it. asio::post's "
+        "only throw source is its operation allocation, which serves from "
+        "the recycling allocator's thread-local cache and reaches global "
+        "operator new only on a cache miss: an always-throwing "
+        "std::new_handler around an empty-notify SendInject allocates "
+        "nothing at all and succeeds (verified empirically), and draining "
+        "the cache deterministically would mean poking asio-internal "
+        "freelist state. Heap-payload (>15-byte body) injects are "
+        "exercised; every live edge of the line is taken."),
     ("libs/network/chat_peer_hub.cc", 420): ((10, 11),
-        "idle-warn concat expression unwind edges"),
+        "idle-warn concat unwind (batch-14 audit): arms 10-11 are the "
+        "branches inside the never-executed operator+ unwind pads (blocks "
+        "47/51/53/57/58/60) that destroy the partially built concat "
+        "temporaries when an allocation throws inside the strand's "
+        "idle-timeout handler. All live edges are taken: the ternary's "
+        "both arms (3 unregistered + 6 registered timeouts), every concat "
+        "allocation's success edge, and the result string's destruction in "
+        "both storage classes. A new_handler window cannot be scoped to a "
+        "single handler inside a poll() batch - the first allocation would "
+        "hit an arbitrary handler and unwind through the scheduler. "
+        "Allocation-failure unwind, environment-unreachable."),
     ("libs/network/device_presence.cc", 31): ((2, 3),
         "LoginKickReason ternary string construction unwind edges"),
     ("libs/network/message_router.cc", 82): ((4, 6, 7),
