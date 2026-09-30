@@ -750,8 +750,13 @@ func (c *Client) address() string {
 	return net.JoinHostPort(c.cfg.Host, fmt.Sprintf("%d", c.cfg.Port))
 }
 
+// marshalPacket is proto.Marshal behind an injection seam: a proto3 Packet
+// has no natural marshal failure (open enums, no required fields), so tests
+// swap this var to exercise writePacket's error arm.
+var marshalPacket = proto.Marshal
+
 func (c *Client) writePacket(conn net.Conn, pkt *pbgw.Packet) error {
-	body, err := proto.Marshal(pkt)
+	body, err := marshalPacket(pkt)
 	if err != nil {
 		return err
 	}

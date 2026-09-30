@@ -597,3 +597,78 @@ func TestRPCStopDrainsUnansweredCall(t *testing.T) {
 		t.Fatal("stop must fail in-flight calls promptly")
 	}
 }
+
+// writePacket's proto.Marshal arm has no natural trigger (a proto3 Packet
+// with open enums and no required fields always marshals), so the failure is
+// injected through the marshalPacket seam.
+func TestWritePacketMarshalFailureIsInjected(t *testing.T) {
+	old := marshalPacket
+	marshalPacket = func(proto.Message) ([]byte, error) {
+		return nil, errors.New("marshal boom")
+	}
+	defer func() { marshalPacket = old }()
+
+	c := NewClient(Config{})
+	conn, peer := net.Pipe()
+	defer peer.Close()
+	defer conn.Close()
+	if err := c.writePacket(conn, &pbgw.Packet{MsgId: 1, Body: []byte("x")}); err == nil {
+		t.Error("injected marshal failure must surface from writePacket")
+	}
+}
+
+// Stop firing while a response already sits in the pending call's buffer:
+// the drain arm must return that buffered result instead of ErrClosed.
+// net.Pipe's synchronous Write parks the rpc goroutine before its select,
+// which lets the test stage both channels ready before releasing the write;
+// Go's select then picks randomly among them, so the scenario repeats to
+// exercise the buffered arm (each round is an independent coin flip).
+func TestRPCStopDrainReturnsBufferedResult(t *testing.T) {
+	const rounds = 64
+	for i := 0; i < rounds; i++ {
+		c := NewClient(Config{})
+		conn, peer := net.Pipe()
+		c.mu.Lock()
+		c.conn = conn
+		c.authed = true
+		c.mu.Unlock()
+
+		done := make(chan error, 1)
+		go func() {
+			_, err := c.AckEvents(context.Background(), "e-1")
+			done <- err
+		}()
+		waitFor(t, 3*time.Second, "pending registration", func() bool {
+			c.mu.Lock()
+			defer c.mu.Unlock()
+			return len(c.pending) == 1
+		})
+		// Stage the buffered result, then close stop without tearing the
+		// conn down (Stop would abort the parked Write with a pipe error),
+		// then release the frame so the rpc reaches its select with both
+		// channels ready.
+		c.mu.Lock()
+		for _, call := range c.pending {
+			call.ch <- ErrConnectionLost
+		}
+		c.mu.Unlock()
+		close(c.stopCh)
+		frame := make([]byte, 4096)
+		if _, err := peer.Read(frame); err != nil {
+			t.Fatalf("round %d: draining the frame: %v", i, err)
+		}
+		select {
+		case err := <-done:
+			// Both selection orders are legal and return the staged
+			// ErrConnectionLost (directly, or via the stop-drain arm);
+			// ErrClosed would mean the drain ran on an empty buffer.
+			if !errors.Is(err, ErrConnectionLost) {
+				t.Fatalf("round %d: err = %v, want the staged ErrConnectionLost", i, err)
+			}
+		case <-time.After(3 * time.Second):
+			t.Fatalf("round %d: rpc never returned after release", i)
+		}
+		conn.Close()
+		peer.Close()
+	}
+}
