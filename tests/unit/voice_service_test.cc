@@ -7,6 +7,7 @@
 
 #include <memory>
 #include <string>
+#include <thread>
 #include <vector>
 
 #include "common/jwt.h"
@@ -1239,6 +1240,238 @@ TEST_F(VoiceServiceTest, SweepUnboundExpiredSessionCleansAuthState) {
   std::lock_guard<std::mutex> lock(state_->mu);
   EXPECT_EQ(state_->authenticated_sessions.count(s.get()), 0u);
   EXPECT_EQ(state_->session_to_last_seen_ms.count(s.get()), 0u);
+}
+
+// ===========================================================================
+// Batch 18: handler-face gap closure (argv helpers, HMAC long-key arm, parse
+// guards, verifier-gated room queries, signaling-relay silence, the sweep
+// timer itself and the non-Packet dispatch payload).
+// ===========================================================================
+
+TEST_F(VoiceServiceTest, ArgHelpersHitMissDanglingAndGarbage) {
+  char bin[] = "bin";
+  char port[] = "--port";
+  char value[] = "5300";
+  char dangling[] = "--dangling";
+  char* argv[] = {bin, port, value, dangling};
+  EXPECT_EQ(GetArg(4, argv, "--port", "5000"), "5300");
+  EXPECT_EQ(GetArg(4, argv, "--missing", "5000"), "5000");
+  EXPECT_EQ(GetArg(4, argv, "--dangling", "5000"), "5000");  // flag with no value
+  EXPECT_EQ(ParseU16Arg(4, argv, "--port", 123), 5300);
+  EXPECT_EQ(ParseU16Arg(4, argv, "--gone", 123), 123);
+  char garbage[] = "not-a-number";
+  char* argv2[] = {bin, port, garbage};
+  EXPECT_EQ(ParseU16Arg(3, argv2, "--port", 123), 0);  // std::atoi -> 0
+}
+
+// Keys larger than the 64-byte SHA-1 block are hashed first (RFC 2202 shape);
+// frozen vector cross-checked against python hmac/hashlib.
+TEST_F(VoiceServiceTest, HmacSha1LongKeyIsHashedFirst) {
+  const std::string key(131, '\xaa');
+  const std::string data = "Test Using Larger Than Block-Size Key - Hash Key First";
+  EXPECT_EQ(ToHex(HmacSha1(key, data)), "90d0dace1c1bdc957339307803160335bde6df2b");
+  EXPECT_EQ(MakeTurnCredential(key, data), "kNDazhwb3JVzOTB4AxYDNb3m3ys=");
+}
+
+TEST_F(VoiceServiceTest, LoginGarbageBodyRejected) {
+  SendPacketBody(chirp::gateway::LOGIN_REQ, 80, "\xff\xfe nope");
+  chirp::auth::LoginResponse resp;
+  ASSERT_TRUE(LastBody(*session_, &resp));
+  EXPECT_EQ(resp.code(), chirp::common::INVALID_PARAM);
+  {
+    std::lock_guard<std::mutex> lock(state_->mu);
+    EXPECT_EQ(state_->session_to_user.count(session_.get()), 0u);  // nothing bound
+  }
+}
+
+TEST_F(VoiceServiceTest, JoinRoomGarbageBodyRejected) {
+  SendPacketBody(chirp::gateway::JOIN_ROOM_REQ, 81, "\xff\xfe nope");
+  chirp::voice::JoinRoomResponse resp;
+  ASSERT_TRUE(LastBody(*session_, &resp));
+  EXPECT_EQ(resp.code(), chirp::common::INVALID_PARAM);
+}
+
+TEST_F(VoiceServiceTest, LeaveRoomGarbageBodyRejected) {
+  SendPacketBody(chirp::gateway::LEAVE_ROOM_REQ, 82, "\xff\xfe nope");
+  chirp::voice::LeaveRoomResponse resp;
+  ASSERT_TRUE(LastBody(*session_, &resp));
+  EXPECT_EQ(resp.code(), chirp::common::INVALID_PARAM);
+}
+
+// TURN url segments carry padding spaces around them after the comma split;
+// every segment must come out trimmed. The 131-byte secret also drives the
+// hashed-first HMAC arm end to end through the join response.
+TEST_F(VoiceServiceTest, JoinResponseTrimsSpacesAroundTurnUrls) {
+  state_->cfg.turn_uri = "turn:a:3478 , turn:b:3478 ,stun:c:3478";
+  state_->cfg.turn_secret = std::string(131, '\xaa');
+  state_->cfg.turn_credential_ttl_seconds = 3600;
+
+  const std::string room = CreateRoom(0);
+  auto s = Join("u1", room);
+
+  chirp::voice::JoinRoomResponse resp;
+  ASSERT_TRUE(LastBody(*s, &resp));
+  ASSERT_EQ(resp.ice_servers_size(), 1);
+  const auto& ice = resp.ice_servers(0);
+  ASSERT_EQ(ice.urls_size(), 3);
+  EXPECT_EQ(ice.urls(0), "turn:a:3478");
+  EXPECT_EQ(ice.urls(1), "turn:b:3478");
+  EXPECT_EQ(ice.urls(2), "stun:c:3478");
+  const size_t colon = ice.username().find(':');
+  ASSERT_NE(colon, std::string::npos);
+  EXPECT_EQ(ice.username().substr(colon + 1), "u1");
+  EXPECT_EQ(ice.credential().size(), 28u);  // base64(20-byte HMAC-SHA1)
+}
+
+// SetParticipantFlag's authorize guard: a logged-in session claiming someone
+// else's user id is rejected for both flag handlers before any room lookup.
+TEST_F(VoiceServiceTest, MuteDeafenIdentityMismatchRejectedAfterLogin) {
+  ASSERT_EQ(DoLogin(state_, session_, "u1").code(), chirp::common::OK);
+
+  chirp::voice::SetMuteRequest req;
+  req.set_user_id("mallory");
+  req.set_muted(true);
+  SendPacketBody(chirp::gateway::SET_MUTE_REQ, 83, req.SerializeAsString());
+  chirp::voice::SetMuteResponse resp;
+  ASSERT_TRUE(LastBody(*session_, &resp));
+  EXPECT_EQ(resp.code(), chirp::common::INVALID_PARAM);
+
+  chirp::voice::SetDeafenRequest dreq;
+  dreq.set_user_id("mallory");
+  dreq.set_deafened(true);
+  SendPacketBody(chirp::gateway::SET_DEAFEN_REQ, 84, dreq.SerializeAsString());
+  chirp::voice::SetDeafenResponse dresp;
+  ASSERT_TRUE(LastBody(*session_, &dresp));
+  EXPECT_EQ(dresp.code(), chirp::common::INVALID_PARAM);
+}
+
+TEST_F(VoiceServiceTest, RoomInfoAndUserRoomGarbageBodiesRejected) {
+  SendPacketBody(chirp::gateway::GET_ROOM_INFO_REQ, 85, "\xff\xfe nope");
+  chirp::voice::GetRoomInfoResponse iresp;
+  ASSERT_TRUE(LastBody(*session_, &iresp));
+  EXPECT_EQ(iresp.code(), chirp::common::INVALID_PARAM);
+
+  SendPacketBody(chirp::gateway::GET_USER_ROOM_REQ, 86, "\xff\xfe nope");
+  chirp::voice::GetUserRoomResponse uresp;
+  ASSERT_TRUE(LastBody(*session_, &uresp));
+  EXPECT_EQ(uresp.code(), chirp::common::INVALID_PARAM);
+}
+
+// With a verifier configured, the room queries are login-gated even with a
+// well-formed body (GET_ROOM_INFO claims no user id at all - the gate is
+// purely "did this session LOGIN").
+TEST_F(VoiceServiceTest, RoomInfoAndUserRoomRequireLoginWhenSecretConfigured) {
+  chirp::common::LoginTokenVerifier verifier("s3cret");
+  state_->cfg.verifier = &verifier;
+
+  chirp::voice::GetRoomInfoRequest info;
+  SendPacketBody(chirp::gateway::GET_ROOM_INFO_REQ, 87, info.SerializeAsString());
+  chirp::voice::GetRoomInfoResponse iresp;
+  ASSERT_TRUE(LastBody(*session_, &iresp));
+  EXPECT_EQ(iresp.code(), chirp::common::AUTH_FAILED);
+
+  chirp::voice::GetUserRoomRequest user_room;
+  user_room.set_user_id("u1");
+  SendPacketBody(chirp::gateway::GET_USER_ROOM_REQ, 88, user_room.SerializeAsString());
+  chirp::voice::GetUserRoomResponse uresp;
+  ASSERT_TRUE(LastBody(*session_, &uresp));
+  EXPECT_EQ(uresp.code(), chirp::common::AUTH_FAILED);
+}
+
+// A stale user_to_room entry (room dissolved out from under the mapping)
+// answers USER_NOT_FOUND via the FindRoom-null arm instead of crashing.
+TEST_F(VoiceServiceTest, GetUserRoomStaleRoomEntryReturnsNotFound) {
+  {
+    std::lock_guard<std::mutex> lock(state_->mu);
+    state_->user_to_room["ghost"] = "r-gone";
+  }
+  chirp::voice::GetUserRoomRequest req;
+  req.set_user_id("ghost");
+  SendPacketBody(chirp::gateway::GET_USER_ROOM_REQ, 89, req.SerializeAsString());
+
+  chirp::voice::GetUserRoomResponse resp;
+  ASSERT_TRUE(LastBody(*session_, &resp));
+  EXPECT_EQ(resp.code(), chirp::common::USER_NOT_FOUND);
+}
+
+// The three relay handlers are fire-and-forget: neither a garbage body nor a
+// well-formed body naming an unknown room ever produces a reply or a close.
+TEST_F(VoiceServiceTest, SignalingRelayToleratesGarbageBodiesAndUnknownRooms) {
+  const std::string room = CreateRoom(0);
+  auto u1 = Join("u1", room);
+
+  for (const auto id : {chirp::gateway::ICE_CANDIDATE_MSG, chirp::gateway::SDP_OFFER_MSG,
+                        chirp::gateway::SDP_ANSWER_MSG}) {
+    const size_t before = u1->sent.size();
+    HandlePacket(state_, u1, MakePacket(id, 90, "\xff\xfe nope").SerializeAsString());
+    EXPECT_EQ(u1->sent.size(), before) << "garbage body echoed for msg_id "
+                                       << static_cast<int>(id);
+  }
+
+  const size_t before_unknown_room = u1->sent.size();
+  chirp::voice::IceCandidateMessage ice;
+  ice.set_room_id("r-nope");
+  HandlePacket(state_, u1,
+               MakePacket(chirp::gateway::ICE_CANDIDATE_MSG, 91, ice.SerializeAsString())
+                   .SerializeAsString());
+  chirp::voice::SdpOfferMessage offer;
+  offer.set_room_id("r-nope");
+  HandlePacket(state_, u1,
+               MakePacket(chirp::gateway::SDP_OFFER_MSG, 92, offer.SerializeAsString())
+                   .SerializeAsString());
+
+  EXPECT_EQ(u1->sent.size(), before_unknown_room);
+  EXPECT_FALSE(u1->closed);
+}
+
+// A payload that is not even a Packet is dropped by the dispatcher with only
+// a warning - no reply, no close, no state change.
+TEST_F(VoiceServiceTest, DispatchToleratesNonPacketPayload) {
+  HandlePacket(state_, session_, std::string("\xff\xfe\xfd not a Packet"));
+  EXPECT_TRUE(session_->sent.empty());
+  EXPECT_FALSE(session_->closed);
+}
+
+// Drives the real sweep timer: 5s cadence, sweep on expiry, self-reschedule,
+// and the cancelled completion must not sweep again.
+TEST_F(VoiceServiceTest, HeartbeatSweepTimerFiresReschedulesAndCancelStops) {
+  const std::string room = CreateRoom(0);
+  auto u1 = Join("u1", room);
+  auto u2 = Join("u2", room);
+  {
+    std::lock_guard<std::mutex> lock(state_->mu);
+    state_->cfg.heartbeat_timeout_ms = 75000;
+    state_->session_to_last_seen_ms[u1.get()] = NowMs() - 100000;
+  }
+
+  asio::io_context io;
+  auto timer = std::make_shared<asio::steady_timer>(io);
+  ScheduleHeartbeatSweep(timer, state_);
+
+  // Real 5-second cadence: pump until the first sweep fires. The stale
+  // session closing is the observable that SweepHeartbeatTimeout ran via the
+  // timer path (not a direct call).
+  const auto deadline = std::chrono::steady_clock::now() + std::chrono::seconds(6);
+  while (!u1->closed && std::chrono::steady_clock::now() < deadline) {
+    io.poll();
+    io.restart();
+    std::this_thread::sleep_for(std::chrono::milliseconds(25));
+  }
+  ASSERT_TRUE(u1->closed);
+  EXPECT_FALSE(u2->closed);
+
+  // The fired completion rescheduled itself: exactly one live wait to
+  // retire, and the aborted completion returns without sweeping again.
+  EXPECT_EQ(timer->cancel(), 1u);
+  io.poll();
+  io.restart();
+  {
+    std::lock_guard<std::mutex> lock(state_->mu);
+    state_->session_to_last_seen_ms[u2.get()] = NowMs() - 100000;
+  }
+  io.poll();
+  io.restart();
+  EXPECT_FALSE(u2->closed);
 }
 
 }  // namespace
