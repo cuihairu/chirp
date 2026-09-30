@@ -29,7 +29,7 @@ ws.binaryType = "arraybuffer";
 | `msg_map.ts` | 消息 ID ↔ 请求/响应类型映射表 |
 | `chirp_client.ts` | 客户端状态机(连接/心跳/重连/序列号关联) |
 
-该实现有 104 例 vitest 单测(`*.test.ts`,行覆盖 96.3%)兜底,语义与 unity 端逐项对齐。
+该实现有 110 例 vitest 单测(`*.test.ts`,行覆盖 100%)兜底,语义与 unity 端逐项对齐。
 
 ## 生命周期
 

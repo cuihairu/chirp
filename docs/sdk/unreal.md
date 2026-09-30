@@ -74,6 +74,6 @@ SendChatMessage("peer-7", "hello")
 
 ## 现状与边界
 
-- Unreal 与桌面 C++ 共享 native 核心(`sdks/core`,123 例单测);其余客户端实现为 Unity C#(96 例)与 TS 协议栈(web/小游戏/Cocos/Laya/Godot 经 C#,104 例),移动端为原生双包(Android Kotlin / iOS Swift 壳)。各端语义(sequence 关联、心跳、退避、踢线)逐一对齐,测试矩阵见 [sdks/core/README.md](https://github.com/cuihairu/chirp/tree/main/sdks/core)。
+- Unreal 与桌面 C++ 共享 native 核心(`sdks/core`,123 例单测);其余客户端实现为 Unity C#(96 例)与 TS 协议栈(web/小游戏/Cocos/Laya/Godot 经 C#,110 例),移动端为原生双包(Android Kotlin / iOS Swift 壳)。各端语义(sequence 关联、心跳、退避、踢线)逐一对齐,测试矩阵见 [sdks/core/README.md](https://github.com/cuihairu/chirp/tree/main/sdks/core)。
 - 每日构建:Actions nightly 的 `daily-build` artifact 打包含 `libchirp_core_sdk` 多平台库与头文件(即本页接入步骤 1/3 需要的 native 产物,未签名),入口见 [SDK 总览](/sdk/)。
 - 语音/组队/社交平面在 Unreal 侧暂无现成封装;可经 native 核心的通用请求接口或 `WatchNotify` 自行扩展。
