@@ -1,0 +1,246 @@
+name: Nightly Build
+
+# 每日构建:打包当前真产物(C++ core linux-x64 库 + Go SDK + TS SDK),
+# 产物只进 Actions artifact——固定名 daily-build,上传时覆盖旧一份
+# (upload-artifact overwrite),不打 git tag、不发 GitHub Release。
+#
+# schedule 用非整点分钟(19:23 UTC,避开整点风潮)。48h staleness gate
+# 只门控 schedule 事件:HEAD 与最近一次成功 nightly 相同且其完成时间
+# 距今不足 48h 时跳过(仓库静止时不浪费 runner;GitHub cron 迟发/重发
+# 也不会产生重复构建);workflow_dispatch 永远构建,不受该门控约束。
+
+on:
+  schedule:
+    - cron: '23 19 * * *'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  actions: read
+
+concurrency:
+  group: nightly
+  cancel-in-progress: false
+
+jobs:
+  gate:
+    if: github.event_name == 'schedule'
+    runs-on: ubuntu-latest
+    outputs:
+      skip: ${{ steps.check.outputs.skip }}
+    steps:
+      - name: Skip scheduled build when HEAD already built within 48h
+        id: check
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          # Defensive by design: any parse/lookup failure means "don't skip"
+          # (a broken gate must never silently suppress builds), and the step
+          # always exits 0 so a flaky API never reddens the run.
+          skip=false
+          last="$(gh run list --repo "$GITHUB_REPOSITORY" --workflow nightly.yml \
+            --branch "$GITHUB_REF_NAME" --status success --limit 1 \
+            --json headSha,completedAt 2>/dev/null || echo '[]')"
+          sha="$(printf '%s' "$last" | jq -r '.[0].headSha // empty')"
+          done_at="$(printf '%s' "$last" | jq -r '.[0].completedAt // empty')"
+          if [ -n "$sha" ] && [ "$sha" = "$GITHUB_SHA" ] && [ -n "$done_at" ]; then
+            age=$(( $(date +%s) - $(date -d "$done_at" +%s) ))
+            echo "last successful nightly built $sha ${age}s ago"
+            if [ "$age" -lt 172800 ]; then
+              skip=true
+              echo "same HEAD built within 48h — scheduled build skipped"
+            fi
+          fi
+          echo "skip=$skip" >> "$GITHUB_OUTPUT"
+
+  build:
+    needs: gate
+    # dispatch: gate is skipped, outputs are empty -> build runs;
+    # schedule: build unless the gate decided to skip.
+    if: ${{ !cancelled() && needs.gate.outputs.skip != 'true' }}
+    runs-on: ubuntu-24.04
+    steps:
+    - uses: actions/checkout@v7
+      with:
+        submodules: recursive
+
+    - name: Install build dependencies
+      run: |
+        sudo apt-get update
+        sudo apt-get install -y ninja-build pkg-config autoconf automake libtool libtool-bin autoconf-archive rsync
+
+    - name: Setup vcpkg
+      run: |
+        git clone https://github.com/Microsoft/vcpkg.git
+        ./vcpkg/bootstrap-vcpkg.sh
+
+    - name: Install vcpkg dependencies
+      run: ./vcpkg/vcpkg install --triplet x64-linux
+
+    # Same configure recipe as ci.yml / cmake-multi-platform.yml (the only
+    # C++ platform surface CI actually proves today); the build then asks for
+    # the SDK targets only. No gen_proto.sh here: the committed proto/cpp
+    # gencode is what ships in the artifact, and drift is already gated by CI.
+    - name: Configure CMake
+      run: >
+        cmake -B build -S . -G Ninja
+        -DCMAKE_BUILD_TYPE=Release
+        -DENABLE_TESTS=OFF
+        -DCMAKE_TOOLCHAIN_FILE=${{ github.workspace }}/vcpkg/scripts/buildsystems/vcpkg.cmake
+
+    - name: Build chirp_core_sdk (shared + static)
+      run: cmake --build build --target chirp_core_sdk chirp_core_sdk_static -j$(nproc)
+
+    - uses: actions/setup-go@v5
+      with:
+        go-version: 'stable'
+
+    - name: Verify Go SDK
+      run: |
+        go vet ./sdks/go/... ./proto/go/...
+        go build ./sdks/go/...
+
+    - uses: actions/setup-node@v7
+      with:
+        node-version: 24
+        cache: npm
+        cache-dependency-path: package-lock.json
+
+    - name: Install npm dependencies
+      run: npm ci
+
+    # The TS package that ships is validated by its own suite first, mirroring
+    # web.yml's Test @chirp/protocol step.
+    - name: Verify @chirp/protocol
+      working-directory: sdks/ts
+      run: npm test
+
+    - name: Pack @chirp/protocol
+      working-directory: sdks/ts
+      run: npm pack
+
+    - name: Assemble artifact tree
+      run: |
+        set -eux
+        stamp="$(date -u +%Y%m%d)-${GITHUB_SHA::7}"
+        built="$(date -u '+%Y-%m-%d %H:%M UTC')"
+        dist="dist/chirp-daily-$stamp"
+        echo "dist=$dist" >> "$GITHUB_ENV"
+        echo "stamp=$stamp" >> "$GITHUB_ENV"
+
+        # ---- cpp/linux-x64 -------------------------------------------------
+        cpp="$dist/cpp/linux-x64"
+        mkdir -p "$cpp/lib" "$cpp/include" "$cpp/proto"
+        cp -v build/sdks/core/libchirp_core_sdk.so "$cpp/lib/"
+        cp -v build/sdks/core/libchirp_core_sdk_static.a "$cpp/lib/"
+        cp -r sdks/core/include/chirp "$cpp/include/"
+        # chirp_core_sdk's PUBLIC include surface is three roots (libs/,
+        # libs/common/, libs/common/include/); merge the .h trees so a single
+        # -I include is the only flag a consumer needs.
+        rsync -a --prune-empty-dirs --include='*/' --include='*.h' --exclude='*' \
+          libs/network "$cpp/include/"
+        rsync -a --prune-empty-dirs --exclude='/common/include' \
+          --include='*/' --include='*.h' --exclude='*' libs/common "$cpp/include/"
+        rsync -a --include='*.h' --exclude='*' \
+          libs/common/include/common/ "$cpp/include/common/"
+        mkdir -p "$cpp/include/proto"
+        cp proto/cpp/proto/*.pb.h "$cpp/include/proto/"
+        cp proto/*.proto "$cpp/proto/"
+        cat > "$cpp/NOTE.txt" <<'NOTE'
+        chirp C++ core SDK - linux-x64 (daily build)
+        ============================================
+
+        包内容:
+          lib/libchirp_core_sdk.so        共享库
+          lib/libchirp_core_sdk_static.a  静态库(协议对象已并入)
+          include/chirp/                  SDK 公开头文件(sdk_client.h 等)
+          include/network/, include/common/, include/proto/
+                                          依赖的 libs 头与 protobuf 生成头
+                                          (chirp_core_sdk 的 PUBLIC include 面)
+          proto/*.proto                   协议源文件(可用其他语言插件再生成)
+
+        链接: 编译加 -I include,静态/动态二选一;编译/运行依赖
+        protobuf、abseil 与 header-only 的 asio(vcpkg.json baseline
+        0544202 提供的版本)。
+
+        验证命令(应列出若干 chirp::sdk 符号):
+          nm -C lib/libchirp_core_sdk_static.a | grep -m3 'chirp::sdk'
+
+        警示: 产物未签名;每日构建只证明"能编译+SDK 自身测试通过",
+        完整质量门禁以仓库 CI(ci.yml 等)为准。仅供集成联调。
+        NOTE
+
+        # ---- go ------------------------------------------------------------
+        go="$dist/go"
+        mkdir -p "$go/sdks/go" "$go/proto/go"
+        cp -r sdks/go/* "$go/sdks/go/"
+        cp -r proto/go/* "$go/proto/go/"
+        cp go.mod go.sum "$go/"
+        cat > "$go/NOTE.txt" <<'NOTE'
+        chirp Go SDK(服务端平面)- 每日构建
+
+        包内容:
+          sdks/go/    SDK 源码
+          proto/go/   protobuf 生成物(protoc 33.4 + protoc-gen-go v1.36.12)
+          go.mod / go.sum
+                      仓库是单一 Go module(github.com/cui/chirp):把本目录
+                      内容放到 module 根(或并入你的 module 后调整 module 名),
+                      import "github.com/cui/chirp/sdks/go"。
+
+        验证命令(需要网络拉取 protobuf 依赖):
+          go build ./sdks/go/...
+
+        警示: 产物未签名;仅供集成联调。
+        NOTE
+
+        # ---- ts ------------------------------------------------------------
+        ts="$dist/ts"
+        mkdir -p "$ts"
+        cp -v sdks/ts/chirp-protocol-*.tgz "$ts/"
+        cat > "$ts/NOTE.txt" <<'NOTE'
+        chirp TS 协议栈(@chirp/protocol)- 每日构建
+
+        包内容:
+          chirp-protocol-<version>.tgz   npm pack 产物(src/ 源码 + package.json,
+                                         依赖 long / protobufjs 由安装方解析)
+
+        安装: npm install <tgz 路径>;入口见包内 README(web/小游戏/Cocos/
+        LayaAir 共用,微信小游戏配 adapters/wx_socket)。
+
+        验证命令(应列出 src/ 文件清单):
+          tar -tzf chirp-protocol-*.tgz | head
+
+        警示: 产物未签名;仅供集成联调。
+        NOTE
+
+        # ---- top-level README ----------------------------------------------
+        cat > "$dist/README.txt" <<README
+        chirp daily build
+        =================
+        stamp:  $stamp
+        commit: $GITHUB_SHA
+        built:  $built (GitHub Actions nightly, ubuntu-24.04)
+
+        内容:
+          cpp/linux-x64/   libchirp_core_sdk(.so/.a) + 头文件 + proto 源
+          go/              Go 服务端 SDK 源码包
+          ts/              @chirp/protocol npm 包
+
+        每个平台目录的 NOTE.txt 写明包内容与一条验证命令。
+
+        分发: 本 run 页 -> Artifacts -> daily-build(固定名,每次上传前
+        覆盖旧一份,保留 14 天)。不打 git tag、不发 GitHub Release。
+
+        警示: 全部产物未签名。打包前的验证 = C++ SDK 目标编译 +
+        go vet/build + @chirp/protocol 测试套件;完整门禁以仓库 CI 为准。
+        README
+        find "$dist" -type f | sort
+
+    - name: Upload daily-build artifact (replaces the previous copy)
+      uses: actions/upload-artifact@v4
+      with:
+        name: daily-build
+        path: ${{ env.dist }}
+        if-no-files-found: error
+        overwrite: true
+        retention-days: 14
