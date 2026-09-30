@@ -43,6 +43,7 @@ const config = defineConfig({
       {
         text: 'SDK 接入',
         items: [
+          { text: 'SDK 总览', link: '/sdk/' },
           { text: 'Unity3D', link: '/sdk/unity3d' },
           { text: 'Unreal', link: '/sdk/unreal' },
           { text: 'Cocos Creator', link: '/sdk/cocos-creator' },
@@ -57,6 +58,7 @@ const config = defineConfig({
     sidebar: {
       '/sdk/': [
         { text: 'SDK 接入', collapsed: false, items: [
+          { text: 'SDK 总览', link: '/sdk/' },
           { text: 'Unity3D', link: '/sdk/unity3d' },
           { text: 'Unreal', link: '/sdk/unreal' },
           { text: 'Cocos Creator', link: '/sdk/cocos-creator' },

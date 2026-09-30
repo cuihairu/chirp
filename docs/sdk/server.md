@@ -19,7 +19,7 @@ wire 契约见 `proto/server_gateway.proto`,完整接入语义(凭证、注入�
 
 ## Go(官方 SDK)
 
-`sdks/go` 是官方维护的 Go 参考客户端,语义逐项对齐 C++ 参考实现 `libs/network/server_gateway_peer.cc`,CI 用 10 例环回单测 + `go vet` + `-race` 兜底。
+`sdks/go` 是官方维护的 Go 参考客户端,语义逐项对齐 C++ 参考实现 `libs/network/server_gateway_peer.cc`,CI(`go-sdk.yml`)用 31 例进程内 fake-hub 环回单测 + proto/go 重生成漂移检查 + `go vet` + `-race` 兜底;client.go 语句覆盖 99.5%(批 20be7ec 后,残余 2 臂为不可达路径)。
 
 能力面:
 
@@ -81,4 +81,5 @@ c.InjectMessage(ctx, &pbsg.MessageInjectRequest{
 - hub 平面为**纯 TCP 长连接**,无 WS/TLS 传输;
 - 事件只在已认证连接断开时触发 disconnect handler;凭据配错表现为周期性告警日志(固定延迟无限重试);
 - 注入的 `OK` 只表示"服务平面已受理",未确认玩家侧送达;
-- Go SDK 对真 `chirp_server_gateway` 的进程级 E2E 未建立,同一 wire 契约由 C++ 链路的 `--smoke-npc` 覆盖。
+- Go SDK 对真 `chirp_server_gateway` 的进程级 E2E 未建立,同一 wire 契约由 C++ 链路的 `--smoke-npc` 覆盖;
+- 每日构建:Actions nightly 的 `daily-build` artifact 打包含 Go SDK 源码包(未签名),入口见 [SDK 总览](/sdk/)。

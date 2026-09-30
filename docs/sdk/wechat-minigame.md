@@ -20,7 +20,7 @@ task.onMessage((res) => { /* res.data 是 ArrayBuffer:解帧 */ });
 2. **protobuf**:[protobuf.js](https://github.com/protobufjs/protobuf.js) 可在小游戏环境运行(加载 `proto/gateway.proto` 编译产物,注意用 json/commonjs 方式打包,避免动态加载限制);
 3. **客户端状态机**:登录往返、心跳、重连、KICK 终态。
 
-**参考实现**:仓库 `sdks/ts/src/` 是带单测的 TS 协议栈(`frame.ts` / `msg_map.ts` / `chirp_client.ts`),不依赖 DOM,可直接搬进小游戏工程。传输层适配已经写好:`sdks/ts/src/adapters/wx_socket.ts` 把 `wx.connectSocket` 的 SocketTask(回调注册 + `{ data }` 信封对象)桥到 ChirpClient 期望的 `WebSocketLike` 接口:
+**参考实现**:仓库 `sdks/ts/src/` 是带 104 例 vitest 单测的 TS 协议栈(`frame.ts` / `msg_map.ts` / `chirp_client.ts`,行覆盖 96.3%),不依赖 DOM,可直接搬进小游戏工程。传输层适配已经写好:`sdks/ts/src/adapters/wx_socket.ts` 把 `wx.connectSocket` 的 SocketTask(回调注册 + `{ data }` 信封对象)桥到 ChirpClient 期望的 `WebSocketLike` 接口:
 
 ```ts
 import { ChirpClient } from '@chirp/protocol/chirp_client';
@@ -61,3 +61,4 @@ connectSocket → LOGIN(1003/1004) → 收发(2001 发送 / 2005 推送) → 心
 
 - 语音(4xxx,WebRTC 信令 + 媒体面)在小游戏环境没有 `RTCPeerConnection`,**不可用**;聊天/组队/设备推送等纯消息面不受影响。
 - 聊天主链路只需要 chat 一条连接;社交(WS 8001)、组队(WS 7501)独立服务,按需再接。
+- 每日构建:Actions nightly 的 `daily-build` artifact 打包含 `@chirp/protocol` npm 包(未签名),入口见 [SDK 总览](/sdk/)。

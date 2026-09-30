@@ -180,7 +180,7 @@ voice.OnNotify(MsgID.IceCandidateMsg, body => /* candidate → RunOnMainThread *
 
 ## 持续集成(CI)
 
-`.github/workflows/unity-sdk.yml` 在每次 push/PR 时用 .NET 10 跑 `dotnet test dotnet/ChirpSdkTests`(用例覆盖:帧编解码、序列号关联、超时、通知订阅、踢线终态与恢复、心跳回声、重连生命周期(Reconnecting/Reconnected 事件)、断线 pending 拒绝、语音 spec 往返、钩子接线(拦截改写/拦截丢弃/命令路由/本地存档/登录续期/监听扇出)、reply 引用与私聊归一化、FileMessageStore、敏感词预检),并校验 `proto/csharp` 与 `gen_proto.sh` 无漂移。
+`.github/workflows/unity-sdk.yml` 在每次 push/PR 时用 .NET 10 跑 `dotnet test dotnet/ChirpSdkTests`(当前 96 例;用例覆盖:帧编解码、序列号关联、超时、通知订阅、踢线终态与恢复、心跳回声、重连生命周期(Reconnecting/Reconnected 事件)、断线 pending 拒绝、语音 spec 往返、钩子接线(拦截改写/拦截丢弃/命令路由/本地存档/登录续期/监听扇出)、reply 引用与私聊归一化、FileMessageStore、敏感词预检,另含边缘故障注入(钩子抛异常容错、陈旧 transport 替换、畸形帧/PONG/踢线垃圾 body、损坏日志回放前缀、Compact 死读标清扫)与 `ClientWebSocketTransport` 对回环真实 WebSocket 的传输测试(分片聚合、17MB 上限、双向关闭握手)),并校验 `proto/csharp` 与 `gen_proto.sh` 无漂移。本地覆盖率:`dotnet test dotnet/ChirpSdkTests --collect:"XPlat Code Coverage"`,coverlet cobertura 剔除 `proto/csharp` 生成代码后按文件行去重,运行时行覆盖 97.8%(1393/1425)。
 
 ## 路线
 

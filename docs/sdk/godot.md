@@ -23,7 +23,7 @@ GDScript 版没有路线:`GDScript` 缺少成熟的 protobuf 生态,复用 C# �
 </ItemGroup>
 ```
 
-之后与 Unity 侧同一套用法:`ChirpClient` + 五钩子接口(`ChirpHooks.cs` 的 MessageInterceptor / AuthProvider / MessageStore / ChatEventListener / CommandHandler),登录往返、心跳、重连、KICK 终态语义与 unity3d 文档描述一致。
+之后与 Unity 侧同一套用法:`ChirpClient` + 五钩子接口(`ChirpHooks.cs` 的 MessageInterceptor / AuthProvider / MessageStore / ChatEventListener / CommandHandler),登录往返、心跳、重连、KICK 终态语义与 unity3d 文档描述一致。这套 C# 源码的回归测试(`ChirpSdkTests`,96 例,coverlet 运行时行覆盖 97.8%)不依赖任何引擎,Godot 工程外 `dotnet test` 即可复跑。
 
 ## 桥到 Godot 节点(模式示意)
 
