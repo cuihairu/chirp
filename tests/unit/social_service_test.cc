@@ -6,8 +6,11 @@
 
 #include <gtest/gtest.h>
 
+#include <map>
 #include <memory>
+#include <optional>
 #include <string>
+#include <utility>
 #include <vector>
 
 #include "common/jwt.h"
@@ -1037,6 +1040,528 @@ TEST_F(SocialServiceTest, SetPresenceAfterGameAssertionStillPresentsInGame) {
   EXPECT_EQ(info.status_message(), "g1");
   // The base keeps the explicit AWAY for when the game assertion goes away.
   EXPECT_EQ(state_->presence["user_b"].status(), chirp::social::AWAY);
+}
+
+// ---------------------------------------------------------------------------
+// Batch 16: error/guard/idempotency arms (handler-face coverage follow-up).
+// The suites above pin the happy paths and the presence overlay; these pin
+// the garbage-body guards, the forged-user_id guard, the duplicate-request
+// idempotency, the Redis degrade paths and the dispatch edges.
+// ---------------------------------------------------------------------------
+
+TEST_F(SocialServiceTest, ArgHelpersHitMissDanglingAndGarbage) {
+  char bin[] = "bin";
+  char port[] = "--port";
+  char value[] = "8100";
+  char dangling[] = "--dangling";
+  char* argv[] = {bin, port, value, dangling};
+  EXPECT_EQ(GetArg(4, argv, "--port", "8000"), "8100");
+  EXPECT_EQ(GetArg(4, argv, "--missing", "8000"), "8000");
+  // A key in the last slot has no value to take; the default wins.
+  EXPECT_EQ(GetArg(4, argv, "--dangling", "8000"), "8000");
+  EXPECT_EQ(ParseU16Arg(4, argv, "--port", 123), 8100);
+  EXPECT_EQ(ParseU16Arg(4, argv, "--gone", 123), 123);
+  char garbage[] = "not-a-number";
+  char* argv2[] = {bin, port, garbage};
+  EXPECT_EQ(ParseU16Arg(3, argv2, "--port", 123), 0);  // std::atoi -> 0
+}
+
+// A logged-in session forging req.user_id = someone else gets INVALID_PARAM
+// from every guarded business op (the response is for the *authenticated*
+// identity, never the claimed one).
+TEST_F(SocialServiceTest, ForgedUserIdsAreRejectedAcrossBusinessOps) {
+  // The session is bound to user_a; every request below claims user_b. The
+  // mismatch (not the missing login) is what must reject them.
+  auto a = Login("user_a");
+
+  const auto expect_invalid_param = [&](chirp::gateway::MsgID id, const std::string& body) {
+    Deliver(id, 7, body, a);
+  };
+
+  {
+    chirp::social::AddFriendRequest req;
+    req.set_user_id("user_b");
+    req.set_target_user_id("user_c");
+    expect_invalid_param(chirp::gateway::ADD_FRIEND_REQ, req.SerializeAsString());
+    chirp::social::AddFriendResponse resp;
+    ASSERT_TRUE(LastBody(*a, &resp));
+    EXPECT_EQ(resp.code(), chirp::common::INVALID_PARAM);
+    EXPECT_GT(resp.server_time(), 0);
+  }
+  {
+    chirp::social::FriendRequestAction req;
+    req.set_user_id("user_b");
+    req.set_request_id("nope");
+    expect_invalid_param(chirp::gateway::FRIEND_REQUEST_ACTION_REQ, req.SerializeAsString());
+    chirp::social::FriendRequestActionResponse resp;
+    ASSERT_TRUE(LastBody(*a, &resp));
+    EXPECT_EQ(resp.code(), chirp::common::INVALID_PARAM);
+  }
+  {
+    chirp::social::RemoveFriendRequest req;
+    req.set_user_id("user_b");
+    req.set_friend_user_id("user_c");
+    expect_invalid_param(chirp::gateway::REMOVE_FRIEND_REQ, req.SerializeAsString());
+    chirp::social::RemoveFriendResponse resp;
+    ASSERT_TRUE(LastBody(*a, &resp));
+    EXPECT_EQ(resp.code(), chirp::common::INVALID_PARAM);
+  }
+  {
+    chirp::social::GetFriendListRequest req;
+    req.set_user_id("user_b");
+    expect_invalid_param(chirp::gateway::GET_FRIEND_LIST_REQ, req.SerializeAsString());
+    chirp::social::GetFriendListResponse resp;
+    ASSERT_TRUE(LastBody(*a, &resp));
+    EXPECT_EQ(resp.code(), chirp::common::INVALID_PARAM);
+  }
+  {
+    chirp::social::GetPendingRequestsRequest req;
+    req.set_user_id("user_b");
+    expect_invalid_param(chirp::gateway::GET_PENDING_REQUESTS_REQ, req.SerializeAsString());
+    chirp::social::GetPendingRequestsResponse resp;
+    ASSERT_TRUE(LastBody(*a, &resp));
+    EXPECT_EQ(resp.code(), chirp::common::INVALID_PARAM);
+  }
+  {
+    chirp::social::BlockUserRequest req;
+    req.set_user_id("user_b");
+    req.set_target_user_id("user_c");
+    expect_invalid_param(chirp::gateway::BLOCK_USER_REQ, req.SerializeAsString());
+    chirp::social::BlockUserResponse resp;
+    ASSERT_TRUE(LastBody(*a, &resp));
+    EXPECT_EQ(resp.code(), chirp::common::INVALID_PARAM);
+  }
+  {
+    chirp::social::UnblockUserRequest req;
+    req.set_user_id("user_b");
+    req.set_target_user_id("user_c");
+    expect_invalid_param(chirp::gateway::UNBLOCK_USER_REQ, req.SerializeAsString());
+    chirp::social::UnblockUserResponse resp;
+    ASSERT_TRUE(LastBody(*a, &resp));
+    EXPECT_EQ(resp.code(), chirp::common::INVALID_PARAM);
+  }
+  {
+    chirp::social::GetBlockedListRequest req;
+    req.set_user_id("user_b");
+    expect_invalid_param(chirp::gateway::GET_BLOCKED_LIST_REQ, req.SerializeAsString());
+    chirp::social::GetBlockedListResponse resp;
+    ASSERT_TRUE(LastBody(*a, &resp));
+    EXPECT_EQ(resp.code(), chirp::common::INVALID_PARAM);
+  }
+  {
+    chirp::social::SetPresenceRequest req;
+    req.set_user_id("user_b");
+    req.set_status(chirp::social::AWAY);
+    expect_invalid_param(chirp::gateway::SET_PRESENCE_REQ, req.SerializeAsString());
+    chirp::social::SetPresenceResponse resp;
+    ASSERT_TRUE(LastBody(*a, &resp));
+    EXPECT_EQ(resp.code(), chirp::common::INVALID_PARAM);
+  }
+
+  // No forge attempt left a trace in the tables.
+  EXPECT_TRUE(state_->friends.empty());
+  EXPECT_TRUE(state_->pending_requests.empty());
+  EXPECT_TRUE(state_->blocked.empty());
+}
+
+// Every dispatched op answers garbage bodies with INVALID_PARAM (heartbeat
+// stays silent) and nothing lands in the state tables.
+TEST_F(SocialServiceTest, GarbageBodiesAreRejectedAcrossDispatch) {
+  const std::string kJunk = "\xff\xfe not a message";
+
+  {
+    auto s = std::make_shared<MockSession>();
+    Deliver(chirp::gateway::LOGIN_REQ, 1, kJunk, s);
+    chirp::auth::LoginResponse resp;
+    ASSERT_TRUE(LastBody(*s, &resp));
+    EXPECT_EQ(resp.code(), chirp::common::INVALID_PARAM);
+    EXPECT_GT(resp.server_time(), 0);
+  }
+  const std::vector<std::pair<chirp::gateway::MsgID, bool>> kOps = {
+      {chirp::gateway::ADD_FRIEND_REQ, true},
+      {chirp::gateway::FRIEND_REQUEST_ACTION_REQ, true},
+      {chirp::gateway::REMOVE_FRIEND_REQ, true},
+      {chirp::gateway::GET_FRIEND_LIST_REQ, true},
+      {chirp::gateway::GET_PENDING_REQUESTS_REQ, true},
+      {chirp::gateway::BLOCK_USER_REQ, true},
+      {chirp::gateway::UNBLOCK_USER_REQ, true},
+      {chirp::gateway::GET_BLOCKED_LIST_REQ, true},
+      {chirp::gateway::SET_PRESENCE_REQ, true},
+      {chirp::gateway::GET_PRESENCE_REQ, true},
+      {chirp::gateway::HEARTBEAT_PING, false},  // heartbeat with garbage: silent
+  };
+  for (const auto& [id, responds] : kOps) {
+    auto s = std::make_shared<MockSession>();
+    Deliver(id, 2, kJunk, s);
+    if (responds) {
+      // Each handler answers with its own _RESP id and a non-empty body.
+      const auto pkts = ReceivedPackets(*s);
+      ASSERT_EQ(pkts.size(), 1u) << "msg_id=" << id;
+      EXPECT_NE(pkts[0].msg_id(), id) << "msg_id=" << id;
+      EXPECT_NE(pkts[0].body().size(), 0u) << "msg_id=" << id;
+    } else {
+      EXPECT_TRUE(s->sent.empty()) << "msg_id=" << id;
+    }
+  }
+  EXPECT_TRUE(state_->friends.empty());
+  EXPECT_TRUE(state_->pending_requests.empty());
+  EXPECT_TRUE(state_->blocked.empty());
+  EXPECT_TRUE(state_->presence.empty());
+}
+
+TEST_F(SocialServiceTest, ScaffoldLoginWithEmptyTokenIsRejected) {
+  chirp::auth::LoginRequest req;  // token stays empty -> empty scaffold identity
+  Deliver(chirp::gateway::LOGIN_REQ, 1, req.SerializeAsString());
+  chirp::auth::LoginResponse resp;
+  ASSERT_TRUE(LastBody(*session_, &resp));
+  EXPECT_EQ(resp.code(), chirp::common::INVALID_PARAM);
+  EXPECT_EQ(session_->sent.size(), 1u);  // nothing but the rejection
+  EXPECT_EQ(state_->presence.size(), 0u);
+}
+
+TEST_F(SocialServiceTest, AddFriendRejectsEmptySelfAndExistingTargets) {
+  auto a = Login("user_a");
+  MakeFriends("user_a", "user_b");
+
+  const auto add = [&](const std::string& target) {
+    chirp::social::AddFriendRequest req;
+    req.set_user_id("user_a");
+    req.set_target_user_id(target);
+    Deliver(chirp::gateway::ADD_FRIEND_REQ, 3, req.SerializeAsString(), a);
+    chirp::social::AddFriendResponse resp;
+    EXPECT_TRUE(LastBody(*a, &resp));
+    return resp;
+  };
+
+  EXPECT_EQ(add("").code(), chirp::common::INVALID_PARAM);        // empty target
+  EXPECT_EQ(add("user_a").code(), chirp::common::INVALID_PARAM);  // self
+  EXPECT_EQ(add("user_b").code(), chirp::common::INTERNAL_ERROR);  // already friends
+  EXPECT_EQ(state_->pending_requests.size(), 0u);  // none of the rejects stored one
+}
+
+TEST_F(SocialServiceTest, DuplicateAddFriendReturnsOriginalRequest) {
+  auto a = Login("user_a");
+  auto b = Login("user_b");
+
+  chirp::social::AddFriendRequest req;
+  req.set_user_id("user_a");
+  req.set_target_user_id("user_b");
+  Deliver(chirp::gateway::ADD_FRIEND_REQ, 1, req.SerializeAsString(), a);
+  chirp::social::AddFriendResponse first;
+  ASSERT_TRUE(LastBody(*a, &first));
+  ASSERT_EQ(first.code(), chirp::common::OK);
+  ASSERT_FALSE(first.request_id().empty());
+
+  // The identical open request is idempotent: same id, no second entry.
+  Deliver(chirp::gateway::ADD_FRIEND_REQ, 2, req.SerializeAsString(), a);
+  chirp::social::AddFriendResponse second;
+  ASSERT_TRUE(LastBody(*a, &second));
+  EXPECT_EQ(second.code(), chirp::common::OK);
+  EXPECT_EQ(second.request_id(), first.request_id());
+  EXPECT_EQ(state_->pending_requests.size(), 1u);
+  // The duplicate re-sends the request notify to the target (the handler
+  // notifies after the dedup lookup, on both paths).
+  EXPECT_EQ(CountNotify(*b, chirp::gateway::FRIEND_REQUEST_NOTIFY), 2);
+}
+
+// A handshake in both directions settles both records: accepting A->B also
+// drops B->A (the mirror), while unrelated requests are left alone.
+TEST_F(SocialServiceTest, AcceptingRequestAlsoSettlesTheReverseMirror) {
+  auto a = Login("user_a");
+  auto b = Login("user_b");
+
+  chirp::social::AddFriendRequest add;
+  add.set_user_id("user_a");
+  add.set_target_user_id("user_b");
+  Deliver(chirp::gateway::ADD_FRIEND_REQ, 1, add.SerializeAsString(), a);
+  chirp::social::AddFriendResponse forward;
+  ASSERT_TRUE(LastBody(*a, &forward));
+
+  add.set_user_id("user_b");
+  add.set_target_user_id("user_a");
+  Deliver(chirp::gateway::ADD_FRIEND_REQ, 2, add.SerializeAsString(), b);
+  chirp::social::AddFriendResponse reverse;
+  ASSERT_TRUE(LastBody(*b, &reverse));
+  ASSERT_NE(forward.request_id(), reverse.request_id());
+
+  // An unrelated third request must survive the mirror sweep.
+  auto c = Login("user_c");
+  auto d = Login("user_d");
+  add.set_user_id("user_c");
+  add.set_target_user_id("user_d");
+  Deliver(chirp::gateway::ADD_FRIEND_REQ, 3, add.SerializeAsString(), c);
+  chirp::social::AddFriendResponse third;
+  ASSERT_TRUE(LastBody(*c, &third));
+
+  chirp::social::FriendRequestAction action;
+  action.set_user_id("user_b");
+  action.set_request_id(forward.request_id());
+  action.set_accept(true);
+  Deliver(chirp::gateway::FRIEND_REQUEST_ACTION_REQ, 4, action.SerializeAsString(), b);
+  chirp::social::FriendRequestActionResponse resp;
+  ASSERT_TRUE(LastBody(*b, &resp));
+  EXPECT_EQ(resp.code(), chirp::common::OK);
+
+  EXPECT_EQ(state_->friends["user_a"].count("user_b"), 1u);
+  EXPECT_EQ(state_->friends["user_b"].count("user_a"), 1u);
+  ASSERT_EQ(state_->pending_requests.size(), 1u);  // only the unrelated c->d
+  EXPECT_EQ(state_->pending_requests.count(third.request_id()), 1u);
+}
+
+TEST_F(SocialServiceTest, RemoveFriendRejectsEmptyAndSelfTargets) {
+  auto a = Login("user_a");
+
+  const auto remove = [&](const std::string& target) {
+    chirp::social::RemoveFriendRequest req;
+    req.set_user_id("user_a");
+    req.set_friend_user_id(target);
+    Deliver(chirp::gateway::REMOVE_FRIEND_REQ, 1, req.SerializeAsString(), a);
+    chirp::social::RemoveFriendResponse resp;
+    EXPECT_TRUE(LastBody(*a, &resp));
+    return resp;
+  };
+
+  EXPECT_EQ(remove("").code(), chirp::common::INVALID_PARAM);
+  EXPECT_EQ(remove("user_a").code(), chirp::common::INVALID_PARAM);
+}
+
+TEST_F(SocialServiceTest, BlockUserRejectsEmptyAndSelfTargets) {
+  auto a = Login("user_a");
+
+  const auto block = [&](const std::string& target) {
+    chirp::social::BlockUserRequest req;
+    req.set_user_id("user_a");
+    req.set_target_user_id(target);
+    Deliver(chirp::gateway::BLOCK_USER_REQ, 1, req.SerializeAsString(), a);
+    chirp::social::BlockUserResponse resp;
+    EXPECT_TRUE(LastBody(*a, &resp));
+    return resp;
+  };
+
+  EXPECT_EQ(block("").code(), chirp::common::INVALID_PARAM);
+  EXPECT_EQ(block("user_a").code(), chirp::common::INVALID_PARAM);
+  EXPECT_EQ(state_->blocked.size(), 0u);
+}
+
+// Unblocking one entry keeps the others blocked - and the Redis snapshot
+// keeps them too (an empty snapshot would delete the whole list).
+TEST_F(SocialRedisTest, UnblockKeepsRemainingBlockedEntriesAndSnapshot) {
+  auto a = Login("user_a");
+
+  for (const auto& target : {"user_b", "user_c"}) {
+    chirp::social::BlockUserRequest block;
+    block.set_user_id("user_a");
+    block.set_target_user_id(target);
+    Deliver(chirp::gateway::BLOCK_USER_REQ, 1, block.SerializeAsString(), a);
+    chirp::social::BlockUserResponse resp;
+    ASSERT_TRUE(LastBody(*a, &resp));
+    ASSERT_EQ(resp.code(), chirp::common::OK);
+  }
+
+  // Empty target is rejected before anything is unblocked (unlike the other
+  // handlers, unblock has no self-target arm - only the empty check).
+  {
+    chirp::social::UnblockUserRequest empty;
+    empty.set_user_id("user_a");
+    Deliver(chirp::gateway::UNBLOCK_USER_REQ, 2, empty.SerializeAsString(), a);
+    chirp::social::UnblockUserResponse resp;
+    ASSERT_TRUE(LastBody(*a, &resp));
+    EXPECT_EQ(resp.code(), chirp::common::INVALID_PARAM);
+    EXPECT_EQ(state_->blocked["user_a"].size(), 2u);  // untouched
+  }
+
+  chirp::social::UnblockUserRequest unblock;
+  unblock.set_user_id("user_a");
+  unblock.set_target_user_id("user_b");
+  Deliver(chirp::gateway::UNBLOCK_USER_REQ, 2, unblock.SerializeAsString(), a);
+  chirp::social::UnblockUserResponse resp;
+  ASSERT_TRUE(LastBody(*a, &resp));
+  EXPECT_EQ(resp.code(), chirp::common::OK);
+
+  chirp::social::GetBlockedListRequest list;
+  list.set_user_id("user_a");
+  Deliver(chirp::gateway::GET_BLOCKED_LIST_REQ, 3, list.SerializeAsString(), a);
+  chirp::social::GetBlockedListResponse list_resp;
+  ASSERT_TRUE(LastBody(*a, &list_resp));
+  ASSERT_EQ(list_resp.code(), chirp::common::OK);
+  ASSERT_EQ(list_resp.blocked_user_ids_size(), 1);
+  EXPECT_EQ(list_resp.blocked_user_ids(0), "user_c");
+
+  chirp::social::StoredBlockedList stored;
+  ASSERT_TRUE(stored.ParseFromString(mem_->GetDirect("chirp:social:blocked:user_a")));
+  ASSERT_EQ(stored.blocked_user_ids_size(), 1);
+  EXPECT_EQ(stored.blocked_user_ids(0), "user_c");
+}
+
+TEST_F(SocialServiceTest, SetPresenceRejectsInvalidStatusEnum) {
+  auto a = Login("user_a");
+
+  chirp::social::SetPresenceRequest req;
+  req.set_user_id("user_a");
+  req.set_status(static_cast<chirp::social::PresenceStatus>(999));
+  Deliver(chirp::gateway::SET_PRESENCE_REQ, 1, req.SerializeAsString(), a);
+  chirp::social::SetPresenceResponse resp;
+  ASSERT_TRUE(LastBody(*a, &resp));
+  EXPECT_EQ(resp.code(), chirp::common::INVALID_PARAM);
+  // The rejected status never touched the stored presence.
+  EXPECT_NE(state_->presence["user_a"].status(), 999);
+}
+
+TEST_F(SocialServiceTest, GetPresenceWithoutLoginReturnsAuthFailed) {
+  chirp::social::GetPresenceRequest req;
+  req.add_user_ids("user_a");
+  Deliver(chirp::gateway::GET_PRESENCE_REQ, 1, req.SerializeAsString());
+  chirp::social::GetPresenceResponse resp;
+  ASSERT_TRUE(LastBody(*session_, &resp));
+  EXPECT_EQ(resp.code(), chirp::common::AUTH_FAILED);
+  EXPECT_EQ(resp.presences_size(), 0);
+}
+
+// Free-form metadata rides along both the in-memory presence and the Redis
+// snapshot (the merged view itself stays covered by the overlay suites).
+TEST_F(SocialRedisTest, SetPresenceMetadataLandsInStateAndSnapshot) {
+  auto a = Login("user_a");
+
+  chirp::social::SetPresenceRequest set;
+  set.set_user_id("user_a");
+  set.set_status(chirp::social::AWAY);
+  set.set_status_message("brb");
+  (*set.mutable_metadata())["mood"] = "focused";
+  Deliver(chirp::gateway::SET_PRESENCE_REQ, 1, set.SerializeAsString(), a);
+  chirp::social::SetPresenceResponse resp;
+  ASSERT_TRUE(LastBody(*a, &resp));
+  EXPECT_EQ(resp.code(), chirp::common::OK);
+
+  {
+    std::lock_guard<std::mutex> lock(state_->mu);
+    const auto& info = state_->presence["user_a"];
+    ASSERT_EQ(info.metadata().count("mood"), 1);
+    EXPECT_EQ(info.metadata().at("mood"), "focused");
+  }
+
+  chirp::social::PresenceNotify stored;
+  ASSERT_TRUE(stored.ParseFromString(mem_->GetDirect("chirp:social:presence:user_a")));
+  EXPECT_EQ(stored.status(), chirp::social::AWAY);
+  ASSERT_EQ(stored.metadata().count("mood"), 1);
+  EXPECT_EQ(stored.metadata().at("mood"), "focused");
+}
+
+// The last device going offline writes the offline snapshot to Redis (the
+// offline fan-out is covered by the presence suites with a null redis).
+TEST_F(SocialRedisTest, LastDeviceDisconnectWritesOfflineSnapshotToRedis) {
+  auto a = Login("user_a");
+  HandleDisconnect(state_, redis_, a);
+
+  chirp::social::PresenceNotify stored;
+  ASSERT_TRUE(stored.ParseFromString(mem_->GetDirect("chirp:social:presence:user_a")));
+  EXPECT_EQ(stored.status(), chirp::social::OFFLINE);
+  EXPECT_EQ(stored.user_id(), "user_a");
+}
+
+TEST_F(SocialServiceTest, DispatchToleratesGarbagePayloadAndUnknownMsgId) {
+  HandlePacket(state_, nullptr, nullptr, session_, std::string("\xff\xfe not a packet"));
+  EXPECT_TRUE(session_->sent.empty());
+
+  Packet pkt;
+  pkt.set_msg_id(static_cast<chirp::gateway::MsgID>(9999));
+  pkt.set_sequence(1);
+  HandlePacket(state_, nullptr, nullptr, session_, pkt.SerializeAsString());
+  EXPECT_TRUE(session_->sent.empty());
+  EXPECT_FALSE(session_->closed);
+}
+
+TEST_F(SocialServiceTest, HeartbeatEchoesTimestampAndToleratesGarbageBody) {
+  chirp::gateway::HeartbeatPing ping;
+  ping.set_timestamp(1234);
+  Deliver(chirp::gateway::HEARTBEAT_PING, 5, ping.SerializeAsString());
+  chirp::gateway::HeartbeatPong pong;
+  ASSERT_TRUE(LastBody(*session_, &pong));
+  EXPECT_EQ(pong.timestamp(), 1234);
+  EXPECT_GT(pong.server_time(), 0);
+
+  const size_t sent_before = session_->sent.size();
+  Deliver(chirp::gateway::HEARTBEAT_PING, 6, std::string("\xff junk"));
+  EXPECT_EQ(session_->sent.size(), sent_before);  // garbage ping: silent
+}
+
+// Redis write-through is best-effort: a failing Set is logged, never thrown.
+class FailSetRedis : public chirp::network::RedisClient {
+ public:
+  FailSetRedis() : RedisClient("127.0.0.1", 1) {}
+  bool Set(const std::string& /*key*/, const std::string& /*value*/) override {
+    ++set_calls;
+    return false;
+  }
+  int set_calls = 0;
+};
+
+TEST_F(SocialServiceTest, PersistFailuresAreLoggedNotThrown) {
+  auto redis = std::make_shared<FailSetRedis>();
+  PersistFriends(redis, "user_a", {"user_b"});
+  PersistPending(redis, "user_a", {});
+  PersistBlocked(redis, "user_a", {"user_b"});
+  EXPECT_EQ(redis->set_calls, 3);
+}
+
+// Scripted Redis double: no sockets, PING answers, Keys/Get serve a fixture.
+class ScriptedRedis : public chirp::network::RedisClient {
+ public:
+  ScriptedRedis() : RedisClient("127.0.0.1", 1) {}
+
+  std::optional<chirp::network::RedisResp> Command(
+      const std::vector<std::string>& args) override {
+    if (!args.empty() && args[0] == "PING") {
+      chirp::network::RedisResp resp;
+      resp.type = chirp::network::RedisResp::Type::kSimpleString;
+      resp.str = "PONG";
+      return resp;
+    }
+    return std::nullopt;
+  }
+  std::vector<std::string> Keys(const std::string& pattern) override {
+    auto it = keys_by_pattern.find(pattern);
+    return it == keys_by_pattern.end() ? std::vector<std::string>{} : it->second;
+  }
+  std::optional<std::string> Get(const std::string& key) override {
+    auto it = values.find(key);
+    return it == values.end() ? std::nullopt : std::make_optional(it->second);
+  }
+
+  std::map<std::string, std::vector<std::string>> keys_by_pattern;
+  std::map<std::string, std::string> values;
+};
+
+TEST_F(SocialServiceTest, LoadWithoutRedisReturnsFalse) {
+  auto fresh = std::make_shared<SocialState>();
+  EXPECT_FALSE(LoadSocialState(nullptr, fresh));  // pure in-memory mode
+}
+
+// A corrupt snapshot (or a bare prefix key with an empty user id) is skipped
+// with a warning; the valid ones still load.
+TEST_F(SocialServiceTest, LoadSkipsCorruptAndBareKeySnapshots) {
+  auto redis = std::make_shared<ScriptedRedis>();
+
+  chirp::social::StoredFriendList good_friends;
+  good_friends.add_friend_user_ids("user_z");
+
+  redis->keys_by_pattern["chirp:social:friends:*"] = {
+      "chirp:social:friends:",      // bare prefix: empty user id -> skipped
+      "chirp:social:friends:good",  // valid
+      "chirp:social:friends:bad",   // corrupt value -> skipped
+  };
+  redis->values["chirp:social:friends:good"] = good_friends.SerializeAsString();
+  redis->values["chirp:social:friends:bad"] = "\xff\xfe junk";
+  redis->keys_by_pattern["chirp:social:pending:*"] = {"chirp:social:pending:bad"};
+  redis->values["chirp:social:pending:bad"] = "\xff\xfe junk";
+  redis->keys_by_pattern["chirp:social:blocked:*"] = {"chirp:social:blocked:bad"};
+  redis->values["chirp:social:blocked:bad"] = "\xff\xfe junk";
+
+  auto fresh = std::make_shared<SocialState>();
+  EXPECT_TRUE(LoadSocialState(redis, fresh));
+  EXPECT_EQ(fresh->friends.size(), 1u);
+  EXPECT_EQ(fresh->friends["good"].count("user_z"), 1u);
+  EXPECT_TRUE(fresh->pending_requests.empty());
+  EXPECT_TRUE(fresh->blocked.empty());
 }
 
 }  // namespace
