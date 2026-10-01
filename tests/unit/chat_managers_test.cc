@@ -2263,7 +2263,7 @@ TEST(DistributedMainTest, EndToEndClientSession) {
       ASSERT_LT(attempt, kMaxBindAttempts - 1) << "service kept losing the port race";
       continue;
     }
-    ASSERT_TRUE(connected);
+    EXPECT_TRUE(connected);
 
     auto SendAndWait = [&](chirp::gateway::MsgID id, int64_t seq,
                            const google::protobuf::Message& body, int expect) {
@@ -2325,7 +2325,7 @@ TEST(DistributedMainTest, EndToEndClientSession) {
     for (int i = 0; i < 500 && rc.load() == 12345; ++i) {
       std::this_thread::sleep_for(std::chrono::milliseconds(2));
     }
-    ASSERT_NE(rc.load(), 12345);
+    EXPECT_NE(rc.load(), 12345);
     EXPECT_EQ(rc.load(), 0);
     runner.join();
     return;
@@ -2483,6 +2483,372 @@ TEST_F(ReactionManagerTest, GetReactionsForMessagesOmitsUserIdsWhenCrossingTen) 
   ASSERT_EQ(result["m_bulk"].size(), 1u);
   EXPECT_EQ(result["m_bulk"][0].count(), 11);
   EXPECT_EQ(result["m_bulk"][0].user_ids_size(), 0);
+}
+
+// ---------------------------------------------------------------------------
+// Batch 23: the remaining main_distributed arms driven process-level. This
+// run deliberately omits --instance_id (random-id default arm) and points
+// --notification_host at a refused port (the wire-up block), then walks the
+// ack lifecycle end to end: unacked delivery -> timeout requeue (the
+// AddOfflineBytes callback installed in main) -> late MESSAGE_ACK while
+// still connected (on_late_ack / RemoveOffline + the acked log) -> reconnect
+// sees no refill. The ack guard arms (empty id / unauthenticated / foreign
+// user id) ride along, and both disconnects happen without LOGOUT so the
+// tcp_disconnect lambda takes its logged path.
+// ---------------------------------------------------------------------------
+TEST(DistributedMainTest, AckTimeoutLateAckGuardsAndDisconnectArms) {
+  constexpr int kMaxBindAttempts = 5;
+  for (int attempt = 0; attempt < kMaxBindAttempts; ++attempt) {
+    // 分布式形态的离线队列只落 Redis（PopOffline 无内存兜底）：正向补投臂
+    // 需要一个活的 Redis，这里用进程内 fake（internals 套件同款）。
+    chirp_test::InMemoryRedis redis;
+    chirp_test::FakeRedisServer fake([&](const std::vector<std::string>& args) {
+      return redis.Handle(args);
+    });
+    const uint16_t port = FreeTcpPort();
+    const uint16_t ws_port = FreeTcpPort();
+    std::vector<std::string> args = {
+        "chat", "--port", std::to_string(port), "--ws_port", std::to_string(ws_port),
+        "--redis_host", "127.0.0.1", "--redis_port", std::to_string(fake.port()),
+        "--notification_host", "127.0.0.1", "--notification_port", "1",
+        "--ack_timeout_ms", "400"};
+    std::vector<std::unique_ptr<char[]>> holds;
+    std::vector<char*> argv;
+    for (auto& a : args) {
+      auto buf = std::make_unique<char[]>(a.size() + 1);
+      std::memcpy(buf.get(), a.c_str(), a.size() + 1);
+      argv.push_back(buf.get());
+      holds.push_back(std::move(buf));
+    }
+
+    std::atomic<int> rc{12345};
+    std::thread runner([&] {
+      rc = chirp_chat_distributed_main(static_cast<int>(argv.size()), argv.data());
+    });
+
+    auto pump = [](asio::io_context& io) {
+      io.poll();
+      io.restart();
+    };
+
+    // alice: ack-capable receiver; bob: sender; charlie: never logs in.
+    asio::io_context alice_io, bob_io, charlie_io;
+    chirp::network::TcpClient alice(alice_io), bob(bob_io), charlie(charlie_io);
+    auto make_rx = [](std::vector<Packet>& store, std::mutex& mu) {
+      return [&store, &mu](std::shared_ptr<chirp::network::Session>, std::string&& payload) {
+        Packet pkt;
+        if (pkt.ParseFromArray(payload.data(), static_cast<int>(payload.size()))) {
+          std::lock_guard<std::mutex> lock(mu);
+          store.push_back(pkt);
+        }
+      };
+    };
+    std::vector<Packet> alice_rx, bob_rx, charlie_rx;
+    std::mutex alice_mu, bob_mu, charlie_mu;
+    alice.SetCallbacks(make_rx(alice_rx, alice_mu), {});
+    bob.SetCallbacks(make_rx(bob_rx, bob_mu), {});
+    charlie.SetCallbacks(make_rx(charlie_rx, charlie_mu), {});
+
+    bool ok = false;
+    for (int i = 0; i < 300 && !ok; ++i) {
+      ok = alice.Connect("127.0.0.1", port) && bob.Connect("127.0.0.1", port) &&
+           charlie.Connect("127.0.0.1", port);
+      if (!ok) {
+        if (rc.load() != 12345) break;
+        std::this_thread::sleep_for(std::chrono::milliseconds(5));
+      }
+    }
+    if (!ok) {
+      runner.join();
+      ASSERT_LT(attempt, kMaxBindAttempts - 1) << "service kept losing the port race";
+      continue;
+    }
+
+    auto send_frame = [](chirp::network::TcpClient& c, chirp::gateway::MsgID id,
+                         int64_t seq, const google::protobuf::Message& body) {
+      Packet pkt;
+      pkt.set_msg_id(id);
+      pkt.set_sequence(seq);
+      pkt.set_body(body.SerializeAsString());
+      std::string framed(4 + pkt.ByteSizeLong(), '\0');
+      const uint32_t len = static_cast<uint32_t>(pkt.ByteSizeLong());
+      framed[0] = static_cast<char>((len >> 24) & 0xFF);
+      framed[1] = static_cast<char>((len >> 16) & 0xFF);
+      framed[2] = static_cast<char>((len >> 8) & 0xFF);
+      framed[3] = static_cast<char>(len & 0xFF);
+      pkt.SerializeToArray(framed.data() + 4, static_cast<int>(len));
+      c.GetSession()->Send(framed);
+    };
+    auto count_of = [](std::vector<Packet>& store, std::mutex& mu,
+                       chirp::gateway::MsgID id) {
+      std::lock_guard<std::mutex> lock(mu);
+      return static_cast<size_t>(std::count_if(store.begin(), store.end(),
+                                               [id](const Packet& p) {
+                                                 return p.msg_id() == id;
+                                               }));
+    };
+    auto wait_for = [&](asio::io_context& io, const std::function<bool()>& pred,
+                        int budget_ms) {
+      const auto deadline = std::chrono::steady_clock::now() +
+                            std::chrono::milliseconds(budget_ms);
+      while (std::chrono::steady_clock::now() < deadline) {
+        pump(io);
+        if (pred()) return true;
+        std::this_thread::sleep_for(std::chrono::milliseconds(2));
+      }
+      pump(io);
+      return pred();
+    };
+
+    chirp::auth::LoginRequest alice_login;
+    alice_login.set_token("alice");
+    alice_login.set_supports_message_ack(true);
+    send_frame(alice, chirp::gateway::LOGIN_REQ, 1, alice_login);
+    ASSERT_TRUE(wait_for(alice_io, [&] { return count_of(alice_rx, alice_mu, chirp::gateway::LOGIN_RESP) >= 1; }, 4000));
+
+    chirp::auth::LoginRequest bob_login;
+    bob_login.set_token("bob");
+    send_frame(bob, chirp::gateway::LOGIN_REQ, 1, bob_login);
+    ASSERT_TRUE(wait_for(bob_io, [&] { return count_of(bob_rx, bob_mu, chirp::gateway::LOGIN_RESP) >= 1; }, 4000));
+
+    // Tracked, unacked delivery.
+    chirp::chat::SendMessageRequest send;
+    send.set_sender_id("bob");
+    send.set_receiver_id("alice");
+    send.set_channel_type(chirp::chat::PRIVATE);
+    send.set_content("ack me late");
+    send_frame(bob, chirp::gateway::SEND_MESSAGE_REQ, 2, send);
+    // Session::Send 只是 post 到 strand：bob 的帧必须靠 bob_io 的 poll 才真正
+    // 落到线上，等待期间两个 io 都要泵。
+    ASSERT_TRUE(wait_for(alice_io, [&] {
+      pump(bob_io);
+      return count_of(alice_rx, alice_mu, chirp::gateway::CHAT_MESSAGE_NOTIFY) >= 1;
+    }, 4000));
+    std::string msg_id;
+    {
+      std::lock_guard<std::mutex> lock(alice_mu);
+      chirp::chat::ChatMessage msg;
+      ASSERT_TRUE(msg.ParseFromString(alice_rx.back().body()));
+      msg_id = msg.message_id();
+      ASSERT_FALSE(msg_id.empty());
+    }
+
+    // Guard arms of on_message_ack: empty id (alice), foreign user id
+    // (alice claims bob), unauthenticated session (charlie).
+    chirp::chat::MessageAck empty_ack;
+    send_frame(alice, chirp::gateway::MESSAGE_ACK, 2, empty_ack);
+    chirp::chat::MessageAck foreign_ack;
+    foreign_ack.set_message_id(msg_id);
+    foreign_ack.set_user_id("bob");
+    send_frame(alice, chirp::gateway::MESSAGE_ACK, 3, foreign_ack);
+    chirp::chat::MessageAck anon_ack;
+    anon_ack.set_message_id(msg_id);
+    send_frame(charlie, chirp::gateway::MESSAGE_ACK, 1, anon_ack);
+    pump(alice_io); pump(charlie_io);
+    std::this_thread::sleep_for(std::chrono::milliseconds(100));
+    pump(alice_io); pump(charlie_io);
+
+    // Let the 400ms timeout requeue the tracked copy (scan 500ms cadence).
+    std::this_thread::sleep_for(std::chrono::milliseconds(1300));
+
+    // Late ack while still connected: on_late_ack removes the requeued copy
+    // byte-exactly and logs the ack.
+    chirp::chat::MessageAck late_ack;
+    late_ack.set_message_id(msg_id);
+    send_frame(alice, chirp::gateway::MESSAGE_ACK, 4, late_ack);
+    std::this_thread::sleep_for(std::chrono::milliseconds(300));
+    pump(alice_io);
+
+    // Disconnect WITHOUT logout: tcp_disconnect takes its logged path for a
+    // logged-in user. EOF settles on the service side.
+    alice.Disconnect();
+    std::this_thread::sleep_for(std::chrono::milliseconds(250));
+
+    // Reconnect: LOGIN_RESP only - the late ack removed the requeued copy so
+    // no refill may arrive.
+    asio::io_context alice2_io;
+    chirp::network::TcpClient alice2(alice2_io);
+    std::vector<Packet> alice2_rx;
+    std::mutex alice2_mu;
+    alice2.SetCallbacks(make_rx(alice2_rx, alice2_mu), {});
+    ASSERT_TRUE(alice2.Connect("127.0.0.1", port));
+    send_frame(alice2, chirp::gateway::LOGIN_REQ, 1, alice_login);
+    ASSERT_TRUE(wait_for(alice2_io, [&] { return count_of(alice2_rx, alice2_mu, chirp::gateway::LOGIN_RESP) >= 1; }, 4000));
+    std::this_thread::sleep_for(std::chrono::milliseconds(800));
+    pump(alice2_io);
+    EXPECT_EQ(count_of(alice2_rx, alice2_mu, chirp::gateway::CHAT_MESSAGE_NOTIFY), 0u)
+        << "late ack should have removed the requeued copy";
+
+    // Positive refill arm: second unacked delivery requeues, then the
+    // reconnect refills it.
+    chirp::chat::SendMessageRequest send2 = send;
+    send2.set_content("requeue me");
+    send_frame(bob, chirp::gateway::SEND_MESSAGE_REQ, 3, send2);
+    // 同上：bob 的发送要靠 bob_io 泵出去。
+    ASSERT_TRUE(wait_for(alice2_io, [&] {
+      pump(bob_io);
+      return count_of(alice2_rx, alice2_mu, chirp::gateway::CHAT_MESSAGE_NOTIFY) >= 1;
+    }, 4000));
+    std::string msg2_id;
+    {
+      std::lock_guard<std::mutex> lock(alice2_mu);
+      chirp::chat::ChatMessage msg;
+      ASSERT_TRUE(msg.ParseFromString(alice2_rx.back().body()));
+      msg2_id = msg.message_id();
+      ASSERT_FALSE(msg2_id.empty());
+    }
+    std::this_thread::sleep_for(std::chrono::milliseconds(1300));  // timeout requeue
+    alice2.Disconnect();
+    std::this_thread::sleep_for(std::chrono::milliseconds(250));
+
+    asio::io_context alice3_io;
+    chirp::network::TcpClient alice3(alice3_io);
+    std::vector<Packet> alice3_rx;
+    std::mutex alice3_mu;
+    alice3.SetCallbacks(make_rx(alice3_rx, alice3_mu), {});
+    ASSERT_TRUE(alice3.Connect("127.0.0.1", port));
+    send_frame(alice3, chirp::gateway::LOGIN_REQ, 1, alice_login);
+    ASSERT_TRUE(wait_for(alice3_io, [&] {
+      return count_of(alice3_rx, alice3_mu, chirp::gateway::LOGIN_RESP) >= 1 &&
+             count_of(alice3_rx, alice3_mu, chirp::gateway::CHAT_MESSAGE_NOTIFY) >= 1;
+    }, 4000));
+    {
+      std::lock_guard<std::mutex> lock(alice3_mu);
+      const Packet* notify_pkt = nullptr;
+      for (const auto& p : alice3_rx) {
+        if (p.msg_id() == chirp::gateway::CHAT_MESSAGE_NOTIFY) {
+          notify_pkt = &p;
+        }
+      }
+      ASSERT_NE(notify_pkt, nullptr);
+      chirp::chat::ChatMessage refill;
+      ASSERT_TRUE(refill.ParseFromString(notify_pkt->body()));
+      EXPECT_EQ(refill.message_id(), msg2_id);
+      EXPECT_EQ(refill.content(), "requeue me");
+    }
+
+    alice3.Disconnect();
+    bob.Disconnect();
+    charlie.Disconnect();
+    raise(SIGTERM);
+    for (int i = 0; i < 500 && rc.load() == 12345; ++i) {
+      std::this_thread::sleep_for(std::chrono::milliseconds(2));
+    }
+    EXPECT_NE(rc.load(), 12345);
+    EXPECT_EQ(rc.load(), 0);
+    runner.join();
+    return;
+  }
+}
+
+// The WS plane of main_distributed shares the dispatch lambdas through
+// MakeDistributedWsServer; a WebSocket login round trip plus the WS-side
+// disconnect cleanup (ws_disconnect lambda) are the two arms only a real
+// WS client reaches.
+TEST(DistributedMainTest, WebSocketPlaneLoginAndDisconnect) {
+  constexpr int kMaxBindAttempts = 5;
+  for (int attempt = 0; attempt < kMaxBindAttempts; ++attempt) {
+    const uint16_t port = FreeTcpPort();
+    const uint16_t ws_port = FreeTcpPort();
+    std::vector<std::string> args = {
+        "chat", "--port", std::to_string(port), "--ws_port", std::to_string(ws_port),
+        "--redis_host", "127.0.0.1", "--redis_port", "1",
+        "--instance_id", "ws-e2e", "--ack_timeout_ms", "60000"};
+    std::vector<std::unique_ptr<char[]>> holds;
+    std::vector<char*> argv;
+    for (auto& a : args) {
+      auto buf = std::make_unique<char[]>(a.size() + 1);
+      std::memcpy(buf.get(), a.c_str(), a.size() + 1);
+      argv.push_back(buf.get());
+      holds.push_back(std::move(buf));
+    }
+
+    std::atomic<int> rc{12345};
+    std::thread runner([&] {
+      rc = chirp_chat_distributed_main(static_cast<int>(argv.size()), argv.data());
+    });
+
+    asio::io_context io;
+    chirp::network::WebSocketClient ws(io);
+    std::vector<Packet> received;
+    std::mutex rx_mu;
+    ws.SetCallbacks(
+        [&](std::shared_ptr<chirp::network::Session>, std::string&& payload) {
+          Packet pkt;
+          // Server frames may carry the u32-BE length prefix inside the WS
+          // message; accept both shapes.
+          if (!pkt.ParseFromArray(payload.data(), static_cast<int>(payload.size())) &&
+              payload.size() > 4) {
+            pkt.ParseFromArray(payload.data() + 4,
+                               static_cast<int>(payload.size()) - 4);
+          }
+          std::lock_guard<std::mutex> lock(rx_mu);
+          received.push_back(pkt);
+        },
+        [](std::shared_ptr<chirp::network::Session>) {});
+
+    bool connected = false;
+    for (int i = 0; i < 300 && !connected; ++i) {
+      connected = ws.Connect("127.0.0.1", ws_port, "/ws");
+      if (!connected) {
+        if (rc.load() != 12345) break;
+        std::this_thread::sleep_for(std::chrono::milliseconds(5));
+      }
+    }
+    if (!connected) {
+      runner.join();
+      ASSERT_LT(attempt, kMaxBindAttempts - 1) << "service kept losing the port race";
+      continue;
+    }
+
+    chirp::auth::LoginRequest login;
+    login.set_token("ws-user");
+    login.set_supports_message_ack(true);
+    {
+      Packet pkt;
+      pkt.set_msg_id(chirp::gateway::LOGIN_REQ);
+      pkt.set_sequence(1);
+      pkt.set_body(login.SerializeAsString());
+      ws.GetSession()->Send(LpWrapRaw(pkt.SerializeAsString()));
+    }
+    bool got_login = false;
+    for (int i = 0; i < 400 && !got_login; ++i) {
+      io.poll();
+      io.restart();
+      std::lock_guard<std::mutex> lock(rx_mu);
+      got_login = std::any_of(received.begin(), received.end(), [](const Packet& p) {
+        return p.msg_id() == chirp::gateway::LOGIN_RESP;
+      });
+      if (!got_login) {
+        std::this_thread::sleep_for(std::chrono::milliseconds(5));
+      }
+    }
+    EXPECT_TRUE(got_login);
+    {
+      std::lock_guard<std::mutex> lock(rx_mu);
+      const auto& it = *std::find_if(received.begin(), received.end(),
+                                     [](const Packet& p) {
+                                       return p.msg_id() == chirp::gateway::LOGIN_RESP;
+                                     });
+      chirp::auth::LoginResponse resp;
+      ASSERT_TRUE(resp.ParseFromString(it.body()));
+      EXPECT_EQ(resp.code(), chirp::common::OK);
+      EXPECT_EQ(resp.user_id(), "ws-user");
+    }
+
+    ws.Disconnect();
+    // Let the service side run the WS disconnect lambda before shutdown.
+    std::this_thread::sleep_for(std::chrono::milliseconds(250));
+
+    raise(SIGTERM);
+    for (int i = 0; i < 500 && rc.load() == 12345; ++i) {
+      std::this_thread::sleep_for(std::chrono::milliseconds(2));
+    }
+    EXPECT_NE(rc.load(), 12345);
+    EXPECT_EQ(rc.load(), 0);
+    runner.join();
+    return;
+  }
 }
 
 }  // namespace

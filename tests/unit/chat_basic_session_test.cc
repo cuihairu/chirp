@@ -9,7 +9,9 @@
 
 #include <gtest/gtest.h>
 
+#include <atomic>
 #include <chrono>
+#include <cstring>
 #include <filesystem>
 #include <fstream>
 #include <functional>
@@ -34,6 +36,9 @@
 
 #include "fake_servers.h"
 #include "in_memory_redis.h"
+#include "jwt.h"
+#include "network/tcp_client.h"
+#include "network/websocket_client.h"
 
 // The basic main keeps its internals (MessageStore, FeatureHandlers,
 // HandlePacket, HandleDisconnect, ...) in an anonymous namespace; include
@@ -1672,6 +1677,834 @@ TEST_F(BasicChatTest, PlayerDirectoryRpcRidesTrustGate) {
   auto plain = std::make_shared<MockSession>();
   DispatchReq(chirp::gateway::BIND_PLAYER_IDENTITY_REQ, bind, plain);
   EXPECT_TRUE(plain->sent.empty());
+}
+
+// --- main() 进程级 E2E（覆盖率批次 23）：直驱改名后的 chirp_chat_basic_main ------
+//
+// 与 DistributedMainTest（chat_managers_test.cc）同款形态：runner 线程跑真实的
+// main()，客户端走真 TCP/WS 回环。basic main() 的 TcpServer/WebSocketServer
+// 构造没有 distributed 形态的 try/catch 兜底——丢端口竞态时 system_error 会逸出
+// main，runner 线程在边界接住并记 rc=1，让重试循环换端口重来而不是 terminate
+// 整个测试进程。端口用 bind+close 各自独立探测：内核顺序分配临时端口，连续取
+// 值正是下一条出站连接（如死 Redis 重连）会拿到的端口。
+
+uint16_t BasicMainProbePort() {
+  asio::io_context io;
+  asio::ip::tcp::acceptor probe(io, asio::ip::tcp::endpoint(asio::ip::tcp::v4(), 0));
+  return static_cast<uint16_t>(probe.local_endpoint().port());
+}
+
+std::vector<char*> BasicMainArgv(const std::vector<std::string>& args,
+                                 std::vector<std::unique_ptr<char[]>>& holds) {
+  std::vector<char*> argv;
+  for (const auto& a : args) {
+    auto buf = std::make_unique<char[]>(a.size() + 1);
+    std::memcpy(buf.get(), a.c_str(), a.size() + 1);
+    argv.push_back(buf.get());
+    holds.push_back(std::move(buf));
+  }
+  return argv;
+}
+
+// u32-BE 长度前缀帧（ProtobufFraming::Encode 同款字节布局）。
+std::string BasicMainFrame(chirp::gateway::MsgID id, int64_t seq,
+                           const google::protobuf::Message& body) {
+  chirp::gateway::Packet pkt;
+  pkt.set_msg_id(id);
+  pkt.set_sequence(seq);
+  pkt.set_body(body.SerializeAsString());
+  std::string framed(4 + pkt.ByteSizeLong(), '\0');
+  const uint32_t len = static_cast<uint32_t>(pkt.ByteSizeLong());
+  framed[0] = static_cast<char>((len >> 24) & 0xFF);
+  framed[1] = static_cast<char>((len >> 16) & 0xFF);
+  framed[2] = static_cast<char>((len >> 8) & 0xFF);
+  framed[3] = static_cast<char>(len & 0xFF);
+  pkt.SerializeToArray(framed.data() + 4, static_cast<int>(len));
+  return framed;
+}
+
+// 一个直连客户端：自有 io_context，等待原语内联泵排空（TcpClient 的
+// Connect/Send/Disconnect 都是同步直调、非 strand 投递——泵只发生在等待
+// 循环里，与发送/断开在同一个测试线程上交替，无并发踩踏）。
+class BasicMainClient {
+ public:
+  BasicMainClient() : tcp_(io_) {
+    tcp_.SetCallbacks(
+        [this](std::shared_ptr<chirp::network::Session>, std::string&& payload) {
+          chirp::gateway::Packet pkt;
+          if (pkt.ParseFromArray(payload.data(), static_cast<int>(payload.size()))) {
+            std::lock_guard<std::mutex> lock(rx_mu_);
+            received_.push_back(pkt);
+          }
+        },
+        [](std::shared_ptr<chirp::network::Session>) {});
+  }
+
+  // 连到服务直到成功或服务退出（丢端口竞态）。rc 是 runner 的哨兵原子量。
+  bool ConnectOrDied(uint16_t port, const std::atomic<int>& rc) {
+    for (int i = 0; i < 400; ++i) {
+      if (tcp_.Connect("127.0.0.1", port)) {
+        return true;
+      }
+      if (rc.load() != 12345) {
+        return false;
+      }
+      std::this_thread::sleep_for(std::chrono::milliseconds(5));
+    }
+    return false;
+  }
+
+  // 泵着自己的 io 等谓词为真（回帧都落在本客户端的 io 上）。
+  bool WaitPumped(const std::function<bool()>& pred, int64_t budget_ms = 5000) {
+    const auto deadline =
+        std::chrono::steady_clock::now() + std::chrono::milliseconds(budget_ms);
+    while (std::chrono::steady_clock::now() < deadline) {
+      io_.poll();
+      io_.restart();
+      if (pred()) {
+        return true;
+      }
+      std::this_thread::sleep_for(std::chrono::milliseconds(2));
+    }
+    io_.poll();
+    io_.restart();
+    return pred();
+  }
+
+  // 发一帧并等到累计收帧数不少于 want_total（含异步 notify 帧）。
+  bool SendAndWait(chirp::gateway::MsgID id, const google::protobuf::Message& body,
+                   size_t want_total) {
+    tcp_.GetSession()->Send(BasicMainFrame(id, next_seq_++, body));
+    return WaitPumped([&] {
+      std::lock_guard<std::mutex> lock(rx_mu_);
+      return received_.size() >= want_total;
+    });
+  }
+
+  // 发一帧不等回包（MESSAGE_ACK 等无应答面）。
+  void SendFireAndForget(chirp::gateway::MsgID id, const google::protobuf::Message& body) {
+    tcp_.GetSession()->Send(BasicMainFrame(id, next_seq_++, body));
+  }
+
+  void Pump(int64_t budget_ms = 400) {
+    const auto deadline =
+        std::chrono::steady_clock::now() + std::chrono::milliseconds(budget_ms);
+    while (std::chrono::steady_clock::now() < deadline) {
+      io_.poll();
+      io_.restart();
+      std::this_thread::sleep_for(std::chrono::milliseconds(2));
+    }
+  }
+
+  size_t CountOf(chirp::gateway::MsgID id) {
+    std::lock_guard<std::mutex> lock(rx_mu_);
+    return static_cast<size_t>(std::count_if(received_.begin(), received_.end(),
+                                             [id](const chirp::gateway::Packet& p) {
+                                               return p.msg_id() == id;
+                                             }));
+  }
+
+  std::vector<chirp::gateway::Packet> FramesOf(chirp::gateway::MsgID id) {
+    std::lock_guard<std::mutex> lock(rx_mu_);
+    std::vector<chirp::gateway::Packet> out;
+    for (const auto& pkt : received_) {
+      if (pkt.msg_id() == id) {
+        out.push_back(pkt);
+      }
+    }
+    return out;
+  }
+
+  // Close() 只是 post 到会话 strand：断开后要泵一次 io，FIN 才真正发出去，
+  // 服务端才会把会话摘掉（否则按“健康端”向僵尸连接投递，离线臂永远走不到）。
+  void Disconnect() {
+    tcp_.Disconnect();
+    Pump(200);
+  }
+
+ private:
+  asio::io_context io_;
+  chirp::network::TcpClient tcp_;
+  int64_t next_seq_ = 1;
+  std::mutex rx_mu_;
+  std::vector<chirp::gateway::Packet> received_;
+};
+
+// runner 线程体：接住 basic TcpServer 构造逸出的 system_error（见节首注释）。
+std::thread BasicMainRun(std::atomic<int>& rc, int argc, char** argv) {
+  return std::thread([&rc, argc, argv] {
+    try {
+      rc = chirp_chat_basic_main(argc, argv);
+    } catch (const std::system_error&) {
+      rc = 1;
+    }
+  });
+}
+
+TEST(BasicMainTest, EndToEndTcpSessionWithLiveDeliveryAndAck) {
+  chirp::common::Logger::Instance().SetLevel(chirp::common::Logger::Level::kError);
+  constexpr int kMaxBindAttempts = 5;
+  for (int attempt = 0; attempt < kMaxBindAttempts; ++attempt) {
+    const uint16_t port = BasicMainProbePort();
+    const uint16_t ws_port = BasicMainProbePort();
+    const std::vector<std::string> args = {
+        "chat", "--port", std::to_string(port), "--ws_port", std::to_string(ws_port),
+        "--redis_host", "127.0.0.1", "--redis_port", "1"};
+    std::vector<std::unique_ptr<char[]>> holds;
+    std::vector<char*> argv = BasicMainArgv(args, holds);
+    std::atomic<int> rc{12345};
+    std::thread runner = BasicMainRun(rc, static_cast<int>(argv.size()), argv.data());
+
+    BasicMainClient alice, bob;
+    if (!alice.ConnectOrDied(port, rc) || !bob.ConnectOrDied(port, rc)) {
+      alice.Disconnect();
+      bob.Disconnect();
+      runner.join();
+      ASSERT_LT(attempt, kMaxBindAttempts - 1) << "service kept losing the port race";
+      continue;
+    }
+
+    chirp::auth::LoginRequest alice_login;
+    alice_login.set_token("alice");
+    alice_login.set_supports_message_ack(true);
+    ASSERT_TRUE(alice.SendAndWait(chirp::gateway::LOGIN_REQ, alice_login, 1));
+    {
+      const auto frames = alice.FramesOf(chirp::gateway::LOGIN_RESP);
+      ASSERT_EQ(frames.size(), 1u);
+      chirp::auth::LoginResponse resp;
+      ASSERT_TRUE(resp.ParseFromString(frames[0].body()));
+      EXPECT_EQ(resp.code(), chirp::common::OK);
+      EXPECT_EQ(resp.user_id(), "alice");
+    }
+
+    chirp::auth::LoginRequest bob_login;
+    bob_login.set_token("bob");
+    ASSERT_TRUE(bob.SendAndWait(chirp::gateway::LOGIN_REQ, bob_login, 1));
+    EXPECT_EQ(bob.CountOf(chirp::gateway::LOGIN_RESP), 1u);
+
+    // bob → alice 私聊：在线投递直达 alice 的真实 TCP 会话。SendAndWait 的
+    // 期望数是本会话累计收包数：bob 已收 1 帧 LOGIN_RESP，发送后应为 2。
+    chirp::chat::SendMessageRequest send;
+    send.set_sender_id("bob");
+    send.set_receiver_id("alice");
+    send.set_channel_type(chirp::chat::PRIVATE);
+    send.set_content("hello over tcp");
+    ASSERT_TRUE(bob.SendAndWait(chirp::gateway::SEND_MESSAGE_REQ, send, 2));
+    {
+      const auto frames = bob.FramesOf(chirp::gateway::SEND_MESSAGE_RESP);
+      ASSERT_EQ(frames.size(), 1u);
+      chirp::chat::SendMessageResponse resp;
+      ASSERT_TRUE(resp.ParseFromString(frames[0].body()));
+      EXPECT_EQ(resp.code(), chirp::common::OK);
+    }
+    ASSERT_TRUE(alice.WaitPumped([&] {
+      return alice.CountOf(chirp::gateway::CHAT_MESSAGE_NOTIFY) >= 1;
+    }));
+    std::string delivered_id;
+    {
+      const auto frames = alice.FramesOf(chirp::gateway::CHAT_MESSAGE_NOTIFY);
+      ASSERT_EQ(frames.size(), 1u);
+      chirp::chat::ChatMessage msg;
+      ASSERT_TRUE(msg.ParseFromString(frames[0].body()));
+      EXPECT_EQ(msg.content(), "hello over tcp");
+      delivered_id = msg.message_id();
+      ASSERT_FALSE(delivered_id.empty());
+    }
+
+    // ack-capable 投递被客户端确认（MESSAGE_ACK 无应答面）。
+    chirp::chat::MessageAck ack;
+    ack.set_message_id(delivered_id);
+    alice.SendFireAndForget(chirp::gateway::MESSAGE_ACK, ack);
+
+    chirp::chat::GetHistoryRequest hist;
+    // 校验器要求 user_id 与登录身份一致（否则 AUTH_FAILED）。
+    hist.set_user_id("alice");
+    hist.set_channel_id("alice|bob");
+    hist.set_limit(10);
+    ASSERT_TRUE(alice.SendAndWait(chirp::gateway::GET_HISTORY_REQ, hist, 3));
+    {
+      const auto frames = alice.FramesOf(chirp::gateway::GET_HISTORY_RESP);
+      ASSERT_EQ(frames.size(), 1u);
+      chirp::chat::GetHistoryResponse resp;
+      ASSERT_TRUE(resp.ParseFromString(frames[0].body()));
+      ASSERT_EQ(resp.messages_size(), 1);
+      EXPECT_EQ(resp.messages(0).content(), "hello over tcp");
+    }
+
+    chirp::auth::LogoutRequest logout;
+    logout.set_user_id("alice");
+    ASSERT_TRUE(alice.SendAndWait(chirp::gateway::LOGOUT_REQ, logout, 4));
+    {
+      const auto frames = alice.FramesOf(chirp::gateway::LOGOUT_RESP);
+      ASSERT_EQ(frames.size(), 1u);
+      chirp::auth::LogoutResponse resp;
+      ASSERT_TRUE(resp.ParseFromString(frames[0].body()));
+      EXPECT_EQ(resp.code(), chirp::common::OK);
+    }
+
+    alice.Disconnect();
+    bob.Disconnect();
+    // 让服务侧处理 EOF（TCP 断开 lambda）后再停机。
+    std::this_thread::sleep_for(std::chrono::milliseconds(200));
+
+    raise(SIGTERM);
+    EXPECT_TRUE(WaitFor([&] { return rc.load() != 12345; }, 3000));
+    EXPECT_EQ(rc.load(), 0);
+    runner.join();
+    return;
+  }
+}
+
+// ack 超时重排队：未被确认的在线投递超时后回离线队列，下次登录补投——这是
+// DeliveryAckManager 挂在 main() 装配上的回调（AddOfflineBytes）在真实服务
+// 进程里的闭环。--ack_timeout_ms 300 + 扫描 500ms 节拍，1.5s 等待足够翻篇。
+TEST(BasicMainTest, AckTimeoutRequeuesAndRefillsOnNextLogin) {
+  chirp::common::Logger::Instance().SetLevel(chirp::common::Logger::Level::kError);
+  constexpr int kMaxBindAttempts = 5;
+  for (int attempt = 0; attempt < kMaxBindAttempts; ++attempt) {
+    const uint16_t port = BasicMainProbePort();
+    const uint16_t ws_port = BasicMainProbePort();
+    const std::vector<std::string> args = {
+        "chat", "--port", std::to_string(port), "--ws_port", std::to_string(ws_port),
+        "--redis_host", "127.0.0.1", "--redis_port", "1", "--ack_timeout_ms", "300"};
+    std::vector<std::unique_ptr<char[]>> holds;
+    std::vector<char*> argv = BasicMainArgv(args, holds);
+    std::atomic<int> rc{12345};
+    std::thread runner = BasicMainRun(rc, static_cast<int>(argv.size()), argv.data());
+
+    BasicMainClient alice, bob;
+    if (!alice.ConnectOrDied(port, rc) || !bob.ConnectOrDied(port, rc)) {
+      alice.Disconnect();
+      bob.Disconnect();
+      runner.join();
+      ASSERT_LT(attempt, kMaxBindAttempts - 1) << "service kept losing the port race";
+      continue;
+    }
+
+    chirp::auth::LoginRequest alice_login;
+    alice_login.set_token("alice");
+    alice_login.set_supports_message_ack(true);
+    ASSERT_TRUE(alice.SendAndWait(chirp::gateway::LOGIN_REQ, alice_login, 1));
+
+    chirp::auth::LoginRequest bob_login;
+    bob_login.set_token("bob");
+    ASSERT_TRUE(bob.SendAndWait(chirp::gateway::LOGIN_REQ, bob_login, 1));
+
+    chirp::chat::SendMessageRequest send;
+    send.set_sender_id("bob");
+    send.set_receiver_id("alice");
+    send.set_channel_type(chirp::chat::PRIVATE);
+    send.set_content("please ack me");
+    ASSERT_TRUE(bob.SendAndWait(chirp::gateway::SEND_MESSAGE_REQ, send, 1));
+    ASSERT_TRUE(alice.WaitPumped([&] {
+      return alice.CountOf(chirp::gateway::CHAT_MESSAGE_NOTIFY) >= 1;
+    }));
+    std::string delivered_id;
+    {
+      const auto frames = alice.FramesOf(chirp::gateway::CHAT_MESSAGE_NOTIFY);
+      chirp::chat::ChatMessage msg;
+      ASSERT_TRUE(msg.ParseFromString(frames.back().body()));
+      delivered_id = msg.message_id();
+      ASSERT_FALSE(delivered_id.empty());
+    }
+    // 故意不 ack：等超时重排队落进离线队列（内存回退——redis 是死端口）。
+    std::this_thread::sleep_for(std::chrono::milliseconds(1500));
+    alice.Disconnect();
+    std::this_thread::sleep_for(std::chrono::milliseconds(250));
+
+    // 重登：LOGIN_RESP + 离线补投（字节原样回队的同一 message_id）。
+    BasicMainClient alice_again;
+    ASSERT_TRUE(alice_again.ConnectOrDied(port, rc));
+    ASSERT_TRUE(alice_again.SendAndWait(chirp::gateway::LOGIN_REQ, alice_login, 2));
+    {
+      const auto frames =
+          alice_again.FramesOf(chirp::gateway::CHAT_MESSAGE_NOTIFY);
+      ASSERT_EQ(frames.size(), 1u);
+      chirp::chat::ChatMessage msg;
+      ASSERT_TRUE(msg.ParseFromString(frames[0].body()));
+      EXPECT_EQ(msg.message_id(), delivered_id);
+      EXPECT_EQ(msg.content(), "please ack me");
+    }
+
+    alice_again.Disconnect();
+    bob.Disconnect();
+    raise(SIGTERM);
+    EXPECT_TRUE(WaitFor([&] { return rc.load() != 12345; }, 3000));
+    EXPECT_EQ(rc.load(), 0);
+    runner.join();
+    return;
+  }
+}
+
+// 全旗标扫描：一次 main() 驱动把每个可选块都装配起来——hub 模式（含
+// allowed_peers 逗号/冒号解析双臂）、spoke（拨死端口走重连告警臂）、
+// server-plane peer + NPC uplink 旗标、四个目录 redis 工厂（死端口）、词库
+// reject 策略、JWT 登录（token_secret 面）。全部走回环死端口，无外部依赖。
+TEST(BasicMainTest, FlagSweepStartsEveryOptionalBlock) {
+  chirp::common::Logger::Instance().SetLevel(chirp::common::Logger::Level::kError);
+  const auto lexicon = std::filesystem::temp_directory_path() / "chirp_basic_main_wf.txt";
+  {
+    std::ofstream out(lexicon);
+    out << "# comment line\nbadword\n";
+  }
+  struct LexiconCleanup {
+    std::filesystem::path path;
+    ~LexiconCleanup() {
+      std::error_code ec;
+      std::filesystem::remove(path, ec);
+    }
+  } lexicon_cleanup{lexicon};
+
+  constexpr int kMaxBindAttempts = 5;
+  for (int attempt = 0; attempt < kMaxBindAttempts; ++attempt) {
+    const uint16_t port = BasicMainProbePort();
+    const uint16_t ws_port = BasicMainProbePort();
+    const uint16_t hub_peer_port = BasicMainProbePort();
+    const std::vector<std::string> args = {
+        "chat",
+        "--port", std::to_string(port),
+        "--ws_port", std::to_string(ws_port),
+        "--redis_host", "127.0.0.1", "--redis_port", "1",
+        "--offline_ttl", "300",
+        "--notification_host", "127.0.0.1", "--notification_port", "1",
+        "--login_rate_limit_per_min", "100",
+        "--send_rate_limit_per_min", "100",
+        "--word_filter_file", lexicon.string(),
+        "--word_filter_policy", "reject",
+        "--recall_window_sec", "60",
+        "--recall_channels", "private,guild,world",
+        "--token_secret", "jwt-s3cret",
+        "--gateway_service_secret", "trust",
+        "--hub_mode", "1",
+        "--hub_peer_port", std::to_string(hub_peer_port),
+        "--allowed_peers", "id1:sec1,id2:sec2",
+        "--min_peer_version", "1",
+        "--allow_unknown_peers", "1",
+        "--app_chat_host", "127.0.0.1", "--app_chat_port", "1",
+        "--game_service_id", "game_chat",
+        "--game_service_secret", "sec",
+        "--game_id", "game1",
+        "--server_gateway_host", "127.0.0.1", "--server_gateway_port", "1",
+        "--server_gateway_service", "chat",
+        "--server_gateway_secret", "sgsec",
+        "--server_gateway_reconnect", "1",
+        "--npc_service_id", "npc-svc",
+        "--npc_prefix", "npc:",
+        "--binding_redis_host", "127.0.0.1", "--binding_redis_port", "1",
+        "--subscription_redis_host", "127.0.0.1", "--subscription_redis_port", "1",
+        "--unread_redis_host", "127.0.0.1", "--unread_redis_port", "1",
+        "--game_presence_redis_host", "127.0.0.1", "--game_presence_redis_port", "1",
+        "--max_fanout_per_message", "5",
+        "--ack_timeout_ms", "60000"};
+    std::vector<std::unique_ptr<char[]>> holds;
+    std::vector<char*> argv = BasicMainArgv(args, holds);
+    std::atomic<int> rc{12345};
+    std::thread runner = BasicMainRun(rc, static_cast<int>(argv.size()), argv.data());
+
+    BasicMainClient user;
+    if (!user.ConnectOrDied(port, rc)) {
+      user.Disconnect();
+      runner.join();
+      ASSERT_LT(attempt, kMaxBindAttempts - 1) << "service kept losing the port race";
+      continue;
+    }
+
+    // token_secret 面：真 HS256 JWT 按 sub 登录（批 10 已直测验签器，这里证明
+    // main() 装配出的链路）。
+    const int64_t now_sec = chirp::chat::runtime::NowMs() / 1000;
+    chirp::auth::LoginRequest login;
+    login.set_token(chirp::common::JwtSignHS256("flag-user", now_sec, "jwt-s3cret",
+                                                now_sec + 3600));
+    ASSERT_TRUE(user.SendAndWait(chirp::gateway::LOGIN_REQ, login, 1));
+    {
+      const auto frames = user.FramesOf(chirp::gateway::LOGIN_RESP);
+      ASSERT_EQ(frames.size(), 1u);
+      chirp::auth::LoginResponse resp;
+      ASSERT_TRUE(resp.ParseFromString(frames[0].body()));
+      EXPECT_EQ(resp.code(), chirp::common::OK);
+      EXPECT_EQ(resp.user_id(), "flag-user");
+    }
+
+    // 词库 reject：命中词被拒（INVALID_PARAM），词库是本测试写入的临时文件。
+    chirp::chat::SendMessageRequest curse;
+    curse.set_sender_id("flag-user");
+    curse.set_receiver_id("offline-guy");
+    curse.set_channel_type(chirp::chat::PRIVATE);
+    curse.set_content("curse badword here");
+    ASSERT_TRUE(user.SendAndWait(chirp::gateway::SEND_MESSAGE_REQ, curse, 2));
+    {
+      const auto frames = user.FramesOf(chirp::gateway::SEND_MESSAGE_RESP);
+      ASSERT_EQ(frames.size(), 1u);
+      chirp::chat::SendMessageResponse resp;
+      ASSERT_TRUE(resp.ParseFromString(frames[0].body()));
+      // 词库命中 + reject 策略 → 专码 WORD_FILTERED（10），不是 INVALID_PARAM。
+      EXPECT_EQ(resp.code(), chirp::common::WORD_FILTERED);
+    }
+
+    // 私聊节奏 1s——filter 拒绝也耗节奏槽，隔开再发；离线接收方回
+    // TARGET_OFFLINE（basic 形态已入队语义）。
+    std::this_thread::sleep_for(std::chrono::milliseconds(1100));
+    chirp::chat::SendMessageRequest clean = curse;
+    clean.set_content("clean text");
+    ASSERT_TRUE(user.SendAndWait(chirp::gateway::SEND_MESSAGE_REQ, clean, 3));
+    {
+      const auto frames = user.FramesOf(chirp::gateway::SEND_MESSAGE_RESP);
+      ASSERT_EQ(frames.size(), 2u);
+      chirp::chat::SendMessageResponse resp;
+      ASSERT_TRUE(resp.ParseFromString(frames[1].body()));
+      EXPECT_EQ(resp.code(), chirp::common::TARGET_OFFLINE);
+    }
+
+    user.Disconnect();
+    raise(SIGTERM);
+    EXPECT_TRUE(WaitFor([&] { return rc.load() != 12345; }, 3000));
+    EXPECT_EQ(rc.load(), 0);
+    runner.join();
+    return;
+  }
+}
+
+// WS 平面：同一套 HandlePacket/HandleDisconnect 挂在 WebSocketServer 上的
+// 两条委托 lambda。
+TEST(BasicMainTest, WebSocketPlaneSession) {
+  chirp::common::Logger::Instance().SetLevel(chirp::common::Logger::Level::kError);
+  constexpr int kMaxBindAttempts = 5;
+  for (int attempt = 0; attempt < kMaxBindAttempts; ++attempt) {
+    const uint16_t port = BasicMainProbePort();
+    const uint16_t ws_port = BasicMainProbePort();
+    const std::vector<std::string> args = {
+        "chat", "--port", std::to_string(port), "--ws_port", std::to_string(ws_port),
+        "--redis_host", "127.0.0.1", "--redis_port", "1", "--ack_timeout_ms", "60000"};
+    std::vector<std::unique_ptr<char[]>> holds;
+    std::vector<char*> argv = BasicMainArgv(args, holds);
+    std::atomic<int> rc{12345};
+    std::thread runner = BasicMainRun(rc, static_cast<int>(argv.size()), argv.data());
+
+    asio::io_context io;
+    chirp::network::WebSocketClient ws(io);
+    std::vector<chirp::gateway::Packet> received;
+    std::mutex rx_mu;
+    ws.SetCallbacks(
+        [&](std::shared_ptr<chirp::network::Session>, std::string&& payload) {
+          chirp::gateway::Packet pkt;
+          // 服务端 WS 帧可能带 u32-BE 长度前缀，两种形态都要接受
+          // （managers 套件同款处理）。
+          if (!pkt.ParseFromArray(payload.data(), static_cast<int>(payload.size())) &&
+              payload.size() > 4) {
+            pkt.ParseFromArray(payload.data() + 4,
+                               static_cast<int>(payload.size()) - 4);
+          }
+          std::lock_guard<std::mutex> lock(rx_mu);
+          received.push_back(pkt);
+        },
+        [](std::shared_ptr<chirp::network::Session>) {});
+
+    bool connected = false;
+    bool died = false;
+    for (int i = 0; i < 400 && !connected; ++i) {
+      connected = ws.Connect("127.0.0.1", ws_port, "/ws");
+      if (!connected) {
+        if (rc.load() != 12345) {
+          died = true;
+          break;
+        }
+        std::this_thread::sleep_for(std::chrono::milliseconds(5));
+      }
+    }
+    if (!connected || died) {
+      runner.join();
+      ASSERT_LT(attempt, kMaxBindAttempts - 1) << "service kept losing the port race";
+      continue;
+    }
+
+    chirp::auth::LoginRequest login;
+    login.set_token("ws-user");
+    ws.GetSession()->Send(
+        BasicMainFrame(chirp::gateway::LOGIN_REQ, 1, login));
+    // WS 客户端的收发都跑在本测试的 io 上：等待谓词里必须泵 io
+    // （Session::Send 只是 post 到 strand）。
+    ASSERT_TRUE(WaitFor([&] {
+      io.poll();
+      io.restart();
+      std::lock_guard<std::mutex> lock(rx_mu);
+      return !received.empty();
+    }));
+    {
+      std::lock_guard<std::mutex> lock(rx_mu);
+      ASSERT_EQ(received.size(), 1u);
+      EXPECT_EQ(received[0].msg_id(), chirp::gateway::LOGIN_RESP);
+      chirp::auth::LoginResponse resp;
+      ASSERT_TRUE(resp.ParseFromString(received[0].body()));
+      EXPECT_EQ(resp.code(), chirp::common::OK);
+      EXPECT_EQ(resp.user_id(), "ws-user");
+    }
+
+    ws.Disconnect();
+    // 让服务侧处理 WS 断开（disconnect lambda）后再停机。
+    std::this_thread::sleep_for(std::chrono::milliseconds(200));
+    raise(SIGTERM);
+    EXPECT_TRUE(WaitFor([&] { return rc.load() != 12345; }, 3000));
+    EXPECT_EQ(rc.load(), 0);
+    runner.join();
+    return;
+  }
+}
+
+// 跨平面全链路：同进程两个 main() 实例——hub 模式实例 A + spoke 实例 B。
+// B 的群消息上行 CHANNEL_MESSAGE_NOTIFY 到 A 的 hub，A 的 PlayerDirectory 按
+// 订阅 fan-out 出私信副本（deliver_copy），p1 掉线时落离线队列重登补投；
+// 反向 p1 以 <game_id>:<频道> 前缀发送，hub 解析绑定注入 spoke，spoke 把
+// 频道名当目标用户投给 B 本地会话（g2 以该名登录收信）。
+TEST(BasicMainTest, CrossPlaneHubSpokeFanoutReplyAndInject) {
+  chirp::common::Logger::Instance().SetLevel(chirp::common::Logger::Level::kError);
+  constexpr int kMaxBindAttempts = 5;
+  for (int attempt = 0; attempt < kMaxBindAttempts; ++attempt) {
+    const uint16_t a_port = BasicMainProbePort();
+    const uint16_t a_ws = BasicMainProbePort();
+    const uint16_t a_hub = BasicMainProbePort();
+    const uint16_t b_port = BasicMainProbePort();
+    const uint16_t b_ws = BasicMainProbePort();
+    const std::vector<std::string> hub_args = {
+        "chat", "--port", std::to_string(a_port), "--ws_port", std::to_string(a_ws),
+        "--redis_host", "127.0.0.1", "--redis_port", "1",
+        "--hub_mode", "1", "--hub_peer_port", std::to_string(a_hub),
+        "--allowed_peers", "game_chat:peer-s3cret,spare:sec2",
+        "--gateway_service_secret", "trust"};
+    const std::vector<std::string> spoke_args = {
+        "chat", "--port", std::to_string(b_port), "--ws_port", std::to_string(b_ws),
+        "--redis_host", "127.0.0.1", "--redis_port", "1",
+        "--app_chat_host", "127.0.0.1", "--app_chat_port", std::to_string(a_hub),
+        "--game_service_id", "game_chat", "--game_service_secret", "peer-s3cret",
+        "--game_id", "game42"};
+    std::vector<std::unique_ptr<char[]>> hub_holds, spoke_holds;
+    std::vector<char*> hub_argv = BasicMainArgv(hub_args, hub_holds);
+    std::vector<char*> spoke_argv = BasicMainArgv(spoke_args, spoke_holds);
+    std::atomic<int> rc_hub{12345}, rc_spoke{12345};
+    std::thread hub_runner =
+        BasicMainRun(rc_hub, static_cast<int>(hub_argv.size()), hub_argv.data());
+    std::thread spoke_runner =
+        BasicMainRun(rc_spoke, static_cast<int>(spoke_argv.size()), spoke_argv.data());
+
+    BasicMainClient p1, g1, g2;
+    if (!p1.ConnectOrDied(a_port, rc_hub) || !g1.ConnectOrDied(b_port, rc_spoke) ||
+        !g2.ConnectOrDied(b_port, rc_spoke)) {
+      p1.Disconnect();
+      g1.Disconnect();
+      g2.Disconnect();
+      hub_runner.join();
+      spoke_runner.join();
+      ASSERT_LT(attempt, kMaxBindAttempts - 1) << "service kept losing the port race";
+      continue;
+    }
+
+    // p1 挂 hub：登录 + 内部面信任门 + game42 绑定（u-1）。
+    chirp::auth::LoginRequest p1_login;
+    p1_login.set_token("p1");
+    ASSERT_TRUE(p1.SendAndWait(chirp::gateway::LOGIN_REQ, p1_login, 1));
+    chirp::game_server_gateway::ServerAuthRequest auth;
+    auth.set_secret("trust");
+    ASSERT_TRUE(p1.SendAndWait(chirp::gateway::SERVER_AUTH_REQ, auth, 2));
+    {
+      const auto frames = p1.FramesOf(chirp::gateway::SERVER_AUTH_RESP);
+      ASSERT_EQ(frames.size(), 1u);
+      chirp::game_server_gateway::ServerAuthResponse resp;
+      ASSERT_TRUE(resp.ParseFromString(frames[0].body()));
+      EXPECT_EQ(resp.code(), chirp::common::OK);
+    }
+    chirp::game_server_gateway::BindPlayerIdentityRequest bind;
+    bind.set_binding_id("b1");
+    bind.set_player_id("p1");
+    bind.set_game_id("game42");
+    bind.set_game_user_id("u-1");
+    ASSERT_TRUE(p1.SendAndWait(chirp::gateway::BIND_PLAYER_IDENTITY_REQ, bind, 3));
+    {
+      const auto frames = p1.FramesOf(chirp::gateway::BIND_PLAYER_IDENTITY_RESP);
+      ASSERT_EQ(frames.size(), 1u);
+      chirp::game_server_gateway::BindPlayerIdentityResponse resp;
+      ASSERT_TRUE(resp.ParseFromString(frames[0].body()));
+      EXPECT_EQ(resp.code(), chirp::common::OK);
+    }
+
+    // g1 挂 spoke：登录 + 建群（spoke 上行只对非私聊 OK 发送）。
+    chirp::auth::LoginRequest g1_login;
+    g1_login.set_token("g1");
+    ASSERT_TRUE(g1.SendAndWait(chirp::gateway::LOGIN_REQ, g1_login, 1));
+    chirp::chat::CreateGroupRequest create;
+    create.set_creator_id("g1");
+    create.set_group_name("e2e");
+    create.add_initial_members("g1");
+    // 建群回 CREATE_GROUP_RESP 之外还会推 GROUP_CREATED_NOTIFY，累计帧数等待
+    // 会被 notify 抢跑——按 msg id 等待。
+    g1.SendFireAndForget(chirp::gateway::CREATE_GROUP_REQ, create);
+    ASSERT_TRUE(g1.WaitPumped(
+        [&] { return g1.CountOf(chirp::gateway::CREATE_GROUP_RESP) >= 1; }));
+    std::string group_id;
+    {
+      const auto frames = g1.FramesOf(chirp::gateway::CREATE_GROUP_RESP);
+      ASSERT_EQ(frames.size(), 1u);
+      chirp::chat::CreateGroupResponse resp;
+      ASSERT_TRUE(resp.ParseFromString(frames[0].body()));
+      ASSERT_EQ(resp.code(), chirp::common::OK);
+      group_id = resp.group_id();
+      ASSERT_FALSE(group_id.empty());
+    }
+
+    // p1 订阅 game42 的该群频道：fan-out 的收件人由此解析。
+    chirp::game_server_gateway::SubscribePlayerChannelRequest sub;
+    sub.set_player_id("p1");
+    sub.set_game_id("game42");
+    sub.set_channel_id(group_id);
+    p1.SendFireAndForget(chirp::gateway::SUBSCRIBE_PLAYER_CHANNEL_REQ, sub);
+    ASSERT_TRUE(p1.WaitPumped(
+        [&] { return p1.CountOf(chirp::gateway::SUBSCRIBE_PLAYER_CHANNEL_RESP) >= 1; }));
+    {
+      const auto frames = p1.FramesOf(chirp::gateway::SUBSCRIBE_PLAYER_CHANNEL_RESP);
+      ASSERT_EQ(frames.size(), 1u);
+      chirp::game_server_gateway::SubscribePlayerChannelResponse resp;
+      ASSERT_TRUE(resp.ParseFromString(frames[0].body()));
+      EXPECT_EQ(resp.code(), chirp::common::OK);
+    }
+
+    // 群消息上行 → hub fan-out → 订阅者私信副本。spoke 注册是异步重连的：
+    // 副包没到就按 2.2s 节奏间隔重试（公会频道 2s 节奏 + 内容变化避开
+    // RepeatGuard），副本到达本身就是注册成功的判据。
+    std::string fanned_content;
+    bool fanned = false;
+    for (int i = 0; i < 4 && !fanned; ++i) {
+      if (i > 0) {
+        std::this_thread::sleep_for(std::chrono::milliseconds(2200));
+      }
+      fanned_content = i == 0 ? "cross hello" : "cross hello " + std::to_string(i);
+      chirp::chat::SendMessageRequest up;
+      up.set_sender_id("g1");
+      up.set_channel_type(chirp::chat::GUILD);
+      up.set_channel_id(group_id);
+      up.set_content(fanned_content);
+      const size_t before = g1.CountOf(chirp::gateway::SEND_MESSAGE_RESP);
+      g1.SendFireAndForget(chirp::gateway::SEND_MESSAGE_REQ, up);
+      ASSERT_TRUE(g1.WaitPumped([&] {
+        return g1.CountOf(chirp::gateway::SEND_MESSAGE_RESP) > before;
+      }));
+      {
+        const auto frames = g1.FramesOf(chirp::gateway::SEND_MESSAGE_RESP);
+        chirp::chat::SendMessageResponse resp;
+        ASSERT_TRUE(resp.ParseFromString(frames.back().body()));
+        ASSERT_EQ(resp.code(), chirp::common::OK);
+      }
+      fanned = p1.WaitPumped([&] {
+        return p1.CountOf(chirp::gateway::CHAT_MESSAGE_NOTIFY) >= 1;
+      }, 2500);
+    }
+    ASSERT_TRUE(fanned) << "spoke uplink never reached the hub fan-out";
+    {
+      const auto frames = p1.FramesOf(chirp::gateway::CHAT_MESSAGE_NOTIFY);
+      ASSERT_EQ(frames.size(), 1u);
+      chirp::chat::ChatMessage copy;
+      ASSERT_TRUE(copy.ParseFromString(frames[0].body()));
+      EXPECT_EQ(copy.sender_id(), "game42:g1");
+      EXPECT_EQ(copy.channel_type(), chirp::chat::PRIVATE);
+      EXPECT_EQ(copy.channel_id(), "game42:g1|p1");
+      EXPECT_EQ(copy.content(), fanned_content);
+    }
+
+    // 离线副本臂：p1 掉线后的上行 → AddOffline(+无通知客户端的 NotifyOffline
+    // 空转)，重登补投。
+    p1.Disconnect();
+    std::this_thread::sleep_for(std::chrono::milliseconds(2200));
+    chirp::chat::SendMessageRequest offline_send;
+    offline_send.set_sender_id("g1");
+    offline_send.set_channel_type(chirp::chat::GUILD);
+    offline_send.set_channel_id(group_id);
+    offline_send.set_content("offline copy");
+    {
+      const size_t before = g1.CountOf(chirp::gateway::SEND_MESSAGE_RESP);
+      g1.SendFireAndForget(chirp::gateway::SEND_MESSAGE_REQ, offline_send);
+      ASSERT_TRUE(g1.WaitPumped([&] {
+        return g1.CountOf(chirp::gateway::SEND_MESSAGE_RESP) > before;
+      }));
+    }
+    BasicMainClient p1_back;
+    ASSERT_TRUE(p1_back.ConnectOrDied(a_port, rc_hub));
+    // 重登回 LOGIN_RESP + 离线补投 notify，按各自 msg id 等待。
+    p1_back.SendFireAndForget(chirp::gateway::LOGIN_REQ, p1_login);
+    ASSERT_TRUE(p1_back.WaitPumped([&] {
+      return p1_back.CountOf(chirp::gateway::LOGIN_RESP) >= 1 &&
+             p1_back.CountOf(chirp::gateway::CHAT_MESSAGE_NOTIFY) >= 1;
+    }));
+    {
+      const auto frames = p1_back.FramesOf(chirp::gateway::CHAT_MESSAGE_NOTIFY);
+      ASSERT_EQ(frames.size(), 1u);
+      chirp::chat::ChatMessage copy;
+      ASSERT_TRUE(copy.ParseFromString(frames[0].body()));
+      EXPECT_EQ(copy.sender_id(), "game42:g1");
+      EXPECT_EQ(copy.content(), "offline copy");
+    }
+
+    // 跨平面回复：g2 以目标频道名登录收信；p1 前缀发送 → hub 解析绑定 → 注入
+    // spoke → B 把频道名当目标用户投递。
+    chirp::auth::LoginRequest g2_login;
+    g2_login.set_token("re-chan");
+    ASSERT_TRUE(g2.SendAndWait(chirp::gateway::LOGIN_REQ, g2_login, 1));
+    chirp::chat::SendMessageRequest reply;
+    reply.set_sender_id("p1");
+    reply.set_channel_type(chirp::chat::GUILD);
+    reply.set_channel_id("game42:re-chan");
+    reply.set_content("reply into game");
+    p1_back.SendFireAndForget(chirp::gateway::SEND_MESSAGE_REQ, reply);
+    ASSERT_TRUE(p1_back.WaitPumped(
+        [&] { return p1_back.CountOf(chirp::gateway::SEND_MESSAGE_RESP) >= 1; }));
+    {
+      const auto frames = p1_back.FramesOf(chirp::gateway::SEND_MESSAGE_RESP);
+      ASSERT_EQ(frames.size(), 1u);
+      chirp::chat::SendMessageResponse resp;
+      ASSERT_TRUE(resp.ParseFromString(frames[0].body()));
+      EXPECT_EQ(resp.code(), chirp::common::OK);
+    }
+    ASSERT_TRUE(g2.WaitPumped([&] {
+      return g2.CountOf(chirp::gateway::CHAT_MESSAGE_NOTIFY) >= 1;
+    }, 3000));
+    {
+      const auto frames = g2.FramesOf(chirp::gateway::CHAT_MESSAGE_NOTIFY);
+      ASSERT_EQ(frames.size(), 1u);
+      chirp::chat::ChatMessage msg;
+      ASSERT_TRUE(msg.ParseFromString(frames[0].body()));
+      EXPECT_EQ(msg.sender_id(), "u-1");
+      EXPECT_EQ(msg.receiver_id(), "re-chan");
+      EXPECT_EQ(msg.content(), "reply into game");
+    }
+
+    // 注入离线臂：目标本地无会话 → 入 B 的离线队列（无外部可观测，执行路径；
+    // OK 回码即 hub 解析 + SendInject 成功）。
+    std::this_thread::sleep_for(std::chrono::milliseconds(2200));
+    chirp::chat::SendMessageRequest ghost = reply;
+    ghost.set_channel_id("game42:ghost-chan");
+    ghost.set_content("nobody home");
+    {
+      const size_t before = p1_back.CountOf(chirp::gateway::SEND_MESSAGE_RESP);
+      p1_back.SendFireAndForget(chirp::gateway::SEND_MESSAGE_REQ, ghost);
+      ASSERT_TRUE(p1_back.WaitPumped([&] {
+        return p1_back.CountOf(chirp::gateway::SEND_MESSAGE_RESP) > before;
+      }));
+      const auto frames = p1_back.FramesOf(chirp::gateway::SEND_MESSAGE_RESP);
+      ASSERT_EQ(frames.size(), 2u);
+      chirp::chat::SendMessageResponse resp;
+      ASSERT_TRUE(resp.ParseFromString(frames[1].body()));
+      EXPECT_EQ(resp.code(), chirp::common::OK);
+    }
+
+    p1_back.Disconnect();
+    g1.Disconnect();
+    g2.Disconnect();
+    // 进程内两个 signal_set 都会收到同一个 SIGTERM。
+    raise(SIGTERM);
+    EXPECT_TRUE(WaitFor([&] { return rc_hub.load() != 12345; }, 3000));
+    EXPECT_EQ(rc_hub.load(), 0);
+    EXPECT_TRUE(WaitFor([&] { return rc_spoke.load() != 12345; }, 3000));
+    EXPECT_EQ(rc_spoke.load(), 0);
+    hub_runner.join();
+    spoke_runner.join();
+    return;
+  }
 }
 
 }  // namespace

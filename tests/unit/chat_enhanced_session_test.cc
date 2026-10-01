@@ -5,7 +5,9 @@
 
 #include <gtest/gtest.h>
 
+#include <atomic>
 #include <chrono>
+#include <cstring>
 #include <functional>
 #include <future>
 #include <memory>
@@ -1349,6 +1351,55 @@ TEST_F(EnhancedSessionTest, FriendRelayIntoGameAndSpokeUplink) {
   hub->Stop();
   watchdog->cancel();
   io.stop();
+  runner.join();
+}
+
+// --- 覆盖率批次 23：main_enhanced 的 MySQL 初始化门（进程级 rc==1）--------------
+//
+// HybridMessageStore::Initialize 先过 MySQL（失败即整体 false，redis 只是
+// 告警），main_enhanced 拿到 false 直接 return 1。本 TU 链接的是 fake MySQL
+// 实现（chirp_fake_deps_include），所以无需真库也无需拨号：把 fake 的
+// connect 置为必败即可确定性走到 rc==1。argv 里的 redis/mysql 仍指向回环
+// 死端口，纯为装配路径卫生。
+TEST(EnhancedMainTest, MysqlInitializeFailureExitsOne) {
+  chirp::common::Logger::Instance().SetLevel(chirp::common::Logger::Level::kError);
+  chirp_test::fake_mysql::SetConnectShouldFail(true);
+  struct FakeReset {
+    ~FakeReset() { chirp_test::fake_mysql::Reset(); }
+  } fake_reset;
+
+  const uint16_t port = [] {
+    asio::io_context io;
+    asio::ip::tcp::acceptor a(io, asio::ip::tcp::endpoint(asio::ip::tcp::v4(), 0));
+    return static_cast<uint16_t>(a.local_endpoint().port());
+  }();
+  const std::vector<std::string> args = {
+      "chat", "--port", std::to_string(port),
+      "--ws_port", std::to_string(static_cast<uint16_t>(port + 1)),
+      "--redis_host", "127.0.0.1", "--redis_port", "1",
+      "--mysql_host", "127.0.0.1", "--mysql_port", "1"};
+  std::vector<std::unique_ptr<char[]>> holds;
+  std::vector<char*> argv;
+  for (const auto& a : args) {
+    auto buf = std::make_unique<char[]>(a.size() + 1);
+    std::memcpy(buf.get(), a.c_str(), a.size() + 1);
+    argv.push_back(buf.get());
+    holds.push_back(std::move(buf));
+  }
+
+  std::atomic<int> rc{12345};
+  std::thread runner([&] {
+    rc = chirp_chat_enhanced_main(static_cast<int>(argv.size()), argv.data());
+  });
+  bool exited = false;
+  for (int i = 0; i < 2500 && !exited; ++i) {
+    exited = rc.load() != 12345;
+    if (!exited) {
+      std::this_thread::sleep_for(std::chrono::milliseconds(2));
+    }
+  }
+  ASSERT_TRUE(exited) << "main_enhanced never returned from the store gate";
+  EXPECT_EQ(rc.load(), 1);
   runner.join();
 }
 
