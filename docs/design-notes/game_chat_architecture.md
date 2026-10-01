@@ -1,6 +1,6 @@
 # 游戏聊天架构笔记
 
-本页作为游戏聊天场景的设计笔记(design-notes)保留。
+本页作为游戏聊天场景的设计笔记(design-notes)保留。应用聊天 UI 的当前原型线框与游戏内集成图,见[应用聊天原型](app_chat_prototype.md)。
 
 当前的仓库架构、服务边界、协议基线与架构合理性评审,请先读 [Overall Architecture](../architecture.md)。
 

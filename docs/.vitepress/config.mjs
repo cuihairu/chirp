@@ -105,6 +105,7 @@ const config = defineConfig({
           { text: 'Chat 改造实现', link: '/design-notes/SCALABILITY_CHAT_IMPLEMENTATION' },
           { text: '游戏聊天设计', link: '/design-notes/game_chat_architecture' },
           { text: '游戏聊天功能', link: '/design-notes/game_chat_features' },
+          { text: '应用聊天原型', link: '/design-notes/app_chat_prototype' },
           { text: '敏感词过滤规约', link: '/design-notes/word_filter' },
           { text: 'SDK 钩子接口', link: '/design-notes/sdk_hooks' },
           { text: 'SDK 引擎兼容性', link: '/design-notes/sdk_compatibility' },

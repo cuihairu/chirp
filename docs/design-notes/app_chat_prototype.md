@@ -1,0 +1,203 @@
+# 应用聊天原型与游戏内集成
+
+本文两张图:**应用聊天原型线框**(对应当前已交付的聊天 UI)与**游戏中的集成图**(客户端内嵌 SDK / 游戏后端两条接入路径)。原型不是目标态——每个区块都标注了当前实现的组件来源,改 UI 先对图。
+
+原型基准与范围:
+
+| 客户端 | 现状 | 原型基准 |
+| --- | --- | --- |
+| web 伴侣(`apps/web_companion`,「Chirp 伴侣」) | 已交付,功能最全 | **参考实现**,线框图以它为基准 |
+| 桌面端(`apps/desktop`,Tauri v2 + React/MUI) | 已交付,与 web 同功能面 | 同图;差异只在导航形态(Rail 竖排页签替代 260px 左列,`src/ui/Rail.tsx`) |
+| Android / iOS(`apps/android`、`apps/ios`) | 仅协议库(`protocol/`、`Sources/ChirpProtocol/`),**无 UI** | 不在本文范围;原生壳未来照此原型实现 |
+
+## 一、应用聊天原型
+
+### 登录页
+
+```text
+┌────────────────────────────────────┐
+│                                    │
+│            登录到 Chirp             │
+│     开发模式:输入用户 ID 即可登录      │
+│                                    │
+│      用户 ID  [ al____________ ]    │
+│                                    │
+│            [ 登录 ]                │
+│                                    │
+└────────────────────────────────────┘
+```
+
+来源 `LoginPage.tsx`:dev 模式无密码,用户 ID 即凭据;token 登录是 SDK 面(移动壳)的事。
+
+### 主界面(双栏壳)
+
+```text
+┌───────────────────────┬────────────────────────────────────────────┐
+│ Chirp 伴侣  alice      │  [ConnectionBanner:断线重连/被踢,仅异常时出现] │
+├───────────────────────┼────────────────────────────────────────────┤
+│ [新的私聊] [新建群组]    │  频道标题                            [⚙]   │
+│───────────────────────│  alice, bob 正在输入…                       │
+│ 私聊                   │────────────────────────────────────────────│
+│  bob    (2) 好的,收到   │        [ 加载更早的消息 ]                    │
+│  carol       在吗?      │                                            │
+│ 群聊                   │     ┌──────────────────────────┐           │
+│  战队A  (5) 集合了      │     │ bob: 今晚八点集合          │           │
+│───────────────────────│     │ [👍 2] [👏] +             │           │
+│ [好友] [组队] [语音]     │     └──────────────────────────┘           │
+│ [设备]                 │     ┌──────────────────────────┐           │
+│                       │     │ 我: 收到,准时上线    20:14  │           │
+│ 通知权限(点此开启)       │     └────────────[已读]────────┘           │
+│ 退出登录               │  ┌──────────────────────────────────────┐  │
+│                       │  │ 输入消息,Enter 发送              [发送] │  │
+└───────────────────────┴──┴──────────────────────────────────────┴──┘
+     260px · ConversationList               ChatWindow
+     (未选会话时右栏显示空态提示)
+```
+
+区块来源:
+
+| 区块 | 内容 | 组件 |
+| --- | --- | --- |
+| 左列头部 | 应用名 + 当前用户 ID | `ChatPage.tsx` |
+| 会话列表 | 私聊/群聊分组、未读角标、最近消息预览;顶部「新的私聊」「新建群组」按钮 | `ConversationList.tsx` |
+| 平面入口 | 好友(加好友/请求/在线绿点)、组队(创建/邀请/转让/解散)、语音房(创建/加入/静音)、多端在线(其他在线端清单) | `FriendsDialog` / `PartyDialog` / `VoiceDialog` / `DevicesDialog` / `OnlineDevicesDialog` |
+| 左列底部 | 桌面通知权限入口(从不自动请求)、退出登录 | `ChatPage.tsx` |
+| 右栏头部 | 频道标题;正在输入指示(「alice, bob 正在输入…」);群聊独享 ⚙ 打开群设置 | `ChatWindow.tsx` |
+| 消息列表 | 「加载更早的消息」按页上翻;气泡见下 | `ChatWindow.tsx` + `MessageBubble.tsx` |
+| 输入区 | Enter 发送 | `MessageInput.tsx` |
+
+### 消息气泡解剖
+
+```text
+   对方消息                                自己的消息
+┌────────────────────────┐        ┌────────────────────────────┐
+│ bob                    │        │                         我 │
+│ 今晚八点集合            │        │         收到,准时上线        │
+│ [👍 2] [👏] +          │        │         20:14 · 已读        │
+└────────────────────────┘        └────────────────────────────┘
+ 气泡下方:表情回应 chips             状态行(逐级出现,同一行):
+ (快捷反应一键回应)                   · 发送中… → 已读(对端 MARK_READ 后)
+ (自己的消息另有 编辑/撤回)            · 发送失败
+                                    · 对方离线,已排队(上线自动补投)
+```
+
+状态与特殊形态(全部来自 `MessageBubble.tsx` 现行为):
+
+- **已读**:自己的消息在「对端已读游标 ≥ 本条」后追加 `· 已读`;
+- **(已编辑)**:对方编辑过的消息显示标记;自己的编辑直接原位更新;
+- **撤回**:整条折叠为「消息已撤回」(双方一致);
+- **敏感词**:命中词库的内容已是改写后的文本(REPLACE 策略显示 `**`),规约见 [敏感词过滤](word_filter.md);
+- 群聊额外有群主标识与成员数(群设置内)。
+
+### 群设置(群聊 ⚙)
+
+```text
+┌─ 群组设置:战队A ──────────────┐
+│  成员 4/10                    │
+│  ──────────────────────────  │
+│  ★ alice(群主)        [移出]  │
+│    bob                [移出]  │
+│  ──────────────────────────  │
+│  [添加成员: 输入用户 ID]       │
+│  [退出群组]                   │
+└──────────────────────────────┘
+```
+
+来源 `GroupDialogs.tsx`:创建群、邀请/踢人、群主标识、退群确认。桌面端同功能面在 `desktop/src/ui/Dialogs.tsx`。
+
+### 全局状态与降级行为
+
+| 状态 | 表现 | 依据 |
+| --- | --- | --- |
+| 断线 | 顶部条幅「连接已断开,正在自动重连…」,恢复后自愈 | `ConnectionBanner.tsx` |
+| 被踢(顶号) | 条幅「账号已在其他设备登录…」+ 返回登录按钮——踢线是终态,不自动重连 | 同上 |
+| 平面缺席 | social/party/voice/设备四平面登录均 best-effort:任一宕机聊天主线照常,对应功能入口隐藏 | `ChatPage.tsx` 四个 useEffect 契约 |
+| 桌面通知 | 仅在页面隐藏且消息不在当前频道时弹系统通知;权限从不自动请求 | `ChatPage.tsx` + `desktop_notify.ts` |
+| 未读数 | 客户端本地记账(收消息 +1、MARK_READ 清零),登录后 `GET_UNREAD_COUNT`(2205) 向服务端对账一次;当前**没有**未读变更推送 | `ConversationList.tsx` / `message_handlers.cc` |
+
+## 二、游戏中的集成
+
+游戏接入有两条正交路径:**游戏客户端内嵌 SDK**(玩家聊天主线)与**游戏后端服务器平面**(系统消息/数据互通)。二者可同时存在。
+
+### 图 A:客户端内嵌 SDK(in-process)
+
+```mermaid
+graph TD
+    subgraph GAME["游戏进程(Unity / Unreal / Cocos / 小游戏)"]
+        UI["游戏 UI / HUD 聊天面板"]
+        subgraph SDK["chirp SDK(进程内)"]
+            MGR["引擎壳:ChirpManager / UChirpClientSubsystem<br/>主线程派发 · 自动重连 · AutoRelogin · 踢线终态"]
+            WF["WordFilterSync 拦截器<br/>发送侧预检 + 词库下发 2245-2247"]
+            STORE["MessageStore 本地档案<br/>历史 · 已读游标 · 本地未读数"]
+        end
+    end
+    subgraph EDGE["服务端边缘"]
+        GW["gateway / app_gateway<br/>chat WS 7001 · TCP 5000 · app WS 5201"]
+        PLANES["social 8001 · party 7501 · voice 9001<br/>(可降级平面,缺席不碍聊天)"]
+    end
+    CHAT["chat 服务<br/>服务端强制过滤 · 扇出 · 离线队列"]
+
+    UI -->|"发消息 / On* 事件 / OnNotify 订阅"| MGR
+    MGR --> WF
+    MGR --> STORE
+    SDK -->|"帧协议 Packet(protobuf 小帧)"| GW
+    GW --> CHAT
+    GW -.-> PLANES
+```
+
+要点(接入语义详见 [SDK 总览](../sdk/index.md) 与 [SDK 钩子](sdk_hooks.md)):
+
+- **游戏侧只面对事件与 Task**:`OnChatMessage` 等回调已被引擎壳派发回主线程;请求-响应走 spec 表(`RequestAsync`,序列号关联,超时抛错);
+- **发送侧预检在 SDK 内完成**:注册 `WordFilterSync` 为拦截器后,`SendMessageAsync` 全管线先过词库;词库由服务端下发,客户端裁决预测服务端裁决;
+- **离线不是失败**:发送返回 `TargetOffline` 表示已滚进对方离线队列;收到消息必须 `AckChatMessage`,否则服务端重复投递;
+- **被踢是终态**:顶号后 SDK 停止重连,游戏弹重新登录(对应原型里的条幅)。
+
+### 图 B:游戏后端(服务器平面 dial-out)
+
+```mermaid
+graph TD
+    GS["游戏服务器(任意语言,官方 Go SDK)"]
+    SG["server_gateway hub(TCP 8100,dial-out + service_id + secret)"]
+    CHAT["chat 服务"]
+    DIR["玩家目录 / presence<br/>进游戏绑定 · 退出解绑(好友消息进游戏)"]
+    LEDGER["未读徽标账本(Redis)<br/>GET_UNREAD_SUMMARY 5029 · MARK_CHANNELS_READ 5030"]
+
+    GS -->|"注入消息 / 广播 / 事件"| SG
+    SG --> CHAT
+    GS -->|"绑定在线断言"| DIR
+    CHAT -->|"fan-in 副本成功递交 → 计数 +1"| LEDGER
+    GS -->|"读徽标 / 清徽标"| LEDGER
+```
+
+要点:
+
+- **dial-out 直连**:游戏后端主动外连 hub,不开监听端口;鉴权用 service_id + secret;
+- **徽标账本与聊天未读互不喂**:账本只数「订阅通知被成功递交给 chat」的 fan-in 副本,`MarkChannelsRead` 是唯一递减路径(协议注释明文);
+- **presence 绑定即在线**:游戏后端在玩家进/退游戏时绑定/解绑,好友「在游戏中」状态由此而来,不需要额外心跳信号。
+
+### 图 C:一句话在游戏里的一生
+
+```mermaid
+sequenceDiagram
+    participant A as 玩家A·Unity
+    participant S as chirp SDK
+    participant E as 边缘 WS
+    participant C as chat 服务
+    participant B as 玩家B
+
+    A->>S: 输入并回车发送
+    S->>S: WordFilterSync 发送侧预检(REPLACE 改写 / REJECT 拦下)
+    S->>E: SEND_MESSAGE_REQ
+    E->>C: 路由
+    C->>C: 服务端强制过滤(终审,三策略)
+    alt B 在线
+        C-->>B: MESSAGE_NEW 扇出 → SDK 事件 → UI 气泡 + 本地未读 +1
+    else B 离线
+        C->>C: 滚进离线队列,B 上线补投(B 须 AckChatMessage)
+    end
+    B->>S: 打开频道 MARK_READ
+    S->>E: MARK_READ_REQ(本地未读清零)
+    E-->>A: MESSAGE_READ_NOTIFY → 自己的气泡标「已读」
+```
+
+三道关卡与两处记账都在这张图里:预检(SDK,可被绕过所以服务端必审)→ 强制过滤(chat 服务)→ 扇出/离线;未读(收方本地)、已读游标(驱动 2207 通知)。
