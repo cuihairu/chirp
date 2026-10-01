@@ -46,6 +46,11 @@ namespace Chirp.Sdk
         public static readonly MessageSpec<Chirp.Chat.DeleteMessageResponse> DeleteMessage =
             new(MsgID.DeleteMessageReq, MsgID.DeleteMessageResp, Chirp.Chat.DeleteMessageResponse.Parser);
 
+        // Lexicon distribution (词库下发协议): fetch is a conditional GET
+        // (KnownVersion), updates ride the 2247 notify — see WordFilterSync.
+        public static readonly MessageSpec<Chirp.Chat.WordFilterFetchResponse> WordFilterFetch =
+            new(MsgID.WordFilterFetchReq, MsgID.WordFilterFetchResp, Chirp.Chat.WordFilterFetchResponse.Parser);
+
         // Social plane (WS 8001): friends and presence.
         public static readonly MessageSpec<Chirp.Social.AddFriendResponse> AddFriend =
             new(MsgID.AddFriendReq, MsgID.AddFriendResp, Chirp.Social.AddFriendResponse.Parser);

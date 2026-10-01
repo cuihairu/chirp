@@ -9,7 +9,7 @@
 |---|---|---|
 | C++ 服务端（真源） | `services/shared/chat/src/word_filter.{h,cc}` | 聊天服务强制执行点，三策略 + 词库热更新 |
 | C++ core SDK | `sdks/core/include/chirp/{word_filter.h,word_filter_sync.h}` | 发送侧预检（interceptor）+ 词库下发同步 |
-| C# (Unity) | Unity SDK `WordFilterInterceptor.cs` | 发送侧预检（interceptor） |
+| C# (Unity) | `sdks/unity/Runtime/Chirp/{WordFilterInterceptor.cs,WordFilterSync.cs}` | 发送侧预检（interceptor）+ 词库下发同步 |
 | Kotlin (Android 原生) | `apps/android/src/main/kotlin/chirp/mobile/protocol/WordFilter.kt` | 发送侧预检（双门禁共用：JVM make 腿 + Gradle 腿） |
 | Swift (iOS) | `apps/ios/Sources/ChirpProtocol/WordFilter.swift` | 发送侧预检（匹配按 UTF-16 code unit 与 Kotlin 对齐） |
 
@@ -135,7 +135,7 @@ reject 策略下还造成客户端能发服务端拒的困惑）。本提案给�
    `version=0, enabled=false, 空文本`；客户端收到后清空本地预检词库（服务端
    都不过滤，预检没有意义，且本地词库可能比服务端新——防止客户端误拦）。
 
-### 客户端接收（四端 SDK，`WordFilterSync` 组件）
+### 客户端接收（五端 SDK，`WordFilterSync` 组件）
 
 下发源成为首选，`WordFilterLoader` 本地文件降级为回退：
 
@@ -143,6 +143,7 @@ reject 策略下还造成客户端能发服务端拒的困惑）。本提案给�
 |---|---|---|---|
 | TS | `sdks/ts/src/word_filter_sync.ts` | 应用在登录成功后调 `fetch()` | `loadLocal(lines)` |
 | C++ core | `sdks/core/include/chirp/word_filter_sync.h` | 调用方在登录成功后 `Fetch()`（`Start()` 订阅推送） | `LoadLocal(lines)` |
+| Unity C# | `sdks/unity/Runtime/Chirp/WordFilterSync.cs` | 调用方在登录成功后 `FetchAsync()`（`Start()` 订阅推送） | `LoadLocal(lines)` |
 | Kotlin | `apps/android/.../protocol/WordFilterSync.kt` | 壳层登录成功后 `fetch()` | `loadLocal(lines)`（原 `WordFilterLoader` 读的文件行） |
 | Swift | `apps/ios/Sources/ChirpProtocol/WordFilterSync.swift` | 调用方在登录成功后 `fetch()` | `loadLocal(lines)`（原 `WordFilterLoader` 读的文本行） |
 
