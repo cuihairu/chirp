@@ -54,6 +54,12 @@ export default function MainWindow(props: {
     void socialApi.pullPresence(friends.friends);
   }, [socialApi, friends.friends]);
 
+  // 登录引导：拉一次群名单。会话列表的群入口不能只靠建群/受邀 notify——
+  // 重登后 notify 都错过了，不主动拉就丢群。
+  useEffect(() => {
+    void api.refreshGroups();
+  }, [api]);
+
   // 实验平面登录：各平面独立降级（unreachable → 隐藏对应功能面）。
   useEffect(() => {
     const userId = services.auth.get().userId;

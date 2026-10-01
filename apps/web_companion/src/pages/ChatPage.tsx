@@ -20,6 +20,15 @@ export default function ChatPage() {
     typeof Notification !== 'undefined' ? Notification.permission : 'denied',
   );
 
+  // Group roster bootstrap: conversation-list group entries must not rely
+  // solely on create/invite notifies — after a relogin those are all missed
+  // and the groups vanish from the list. Pull once on mount.
+  useEffect(() => {
+    if (!api || !auth.get().userId) return;
+    void api.refreshGroups();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [api]);
+
   // Social plane login is best-effort: when the service is down the chat
   // keeps working and friend features degrade (the api flags it internally).
   useEffect(() => {
