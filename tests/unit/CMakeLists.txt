@@ -874,6 +874,28 @@ chirp_fake_deps_include(auth_enhanced_session_tests)
 
 add_test(NAME auth_enhanced_session_tests COMMAND auth_enhanced_session_tests)
 
+# Basic auth entry (main.cc): the hoisted HandleAuthPacket dispatch and argv
+# helpers, driven without a live listener (batch 20 seam).
+add_executable(auth_basic_session_tests
+  auth_basic_session_test.cc
+)
+
+chirp_unit_test_common_links(auth_basic_session_tests)
+target_link_libraries(auth_basic_session_tests PRIVATE chirp_network chirp_common chirp_protos)
+
+target_include_directories(auth_basic_session_tests
+  PRIVATE
+  ${CMAKE_SOURCE_DIR}/services/app/auth/src
+  ${CMAKE_SOURCE_DIR}/libs
+  ${CMAKE_SOURCE_DIR}/libs/common
+  ${CMAKE_SOURCE_DIR}/libs/common/include
+  ${CMAKE_SOURCE_DIR}/libs/network
+  ${CMAKE_SOURCE_DIR}/proto/cpp
+  ${CMAKE_SOURCE_DIR}/proto/cpp/proto
+)
+
+add_test(NAME auth_basic_session_tests COMMAND auth_basic_session_tests)
+
 # MySQL-backed chat storage stack (connection pool / store / hybrid /
 # migration worker / delivery tracker / pagination)
 add_executable(chat_mysql_tests

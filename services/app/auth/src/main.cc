@@ -81,6 +81,85 @@ void SendPacket(const std::shared_ptr<chirp::network::Session>& session,
   session->Send(std::string(reinterpret_cast<const char*>(framed.data()), framed.size()));
 }
 
+// Frame handler hoisted from the TcpServer lambda (batch 11 HandleAuthPacket
+// convention): the dispatch body is byte-identical, main() delegates in one
+// line so the whole protocol face is unit-testable without a live listener.
+void HandleAuthPacket(const std::string& jwt_secret,
+                      const std::shared_ptr<chirp::network::Session>& session,
+                      std::string&& payload) {
+  chirp::gateway::Packet pkt;
+  if (!pkt.ParseFromArray(payload.data(), static_cast<int>(payload.size()))) {
+    chirp::common::Logger::Instance().Warn("failed to parse Packet from client");
+    return;
+  }
+
+  switch (pkt.msg_id()) {
+  case chirp::gateway::LOGIN_REQ: {
+    chirp::auth::LoginRequest req;
+    if (!req.ParseFromArray(pkt.body().data(), static_cast<int>(pkt.body().size()))) {
+      chirp::auth::LoginResponse resp;
+      resp.set_code(chirp::common::INVALID_PARAM);
+      resp.set_server_time(NowMs());
+      SendPacket(session, chirp::gateway::LOGIN_RESP, pkt.sequence(), resp.SerializeAsString());
+      return;
+    }
+
+    std::string user_id;
+    if (LooksLikeJwt(req.token())) {
+      chirp::common::JwtClaims claims;
+      std::string err;
+      if (!chirp::common::JwtVerifyHS256(req.token(), jwt_secret, &claims, &err)) {
+        chirp::auth::LoginResponse resp;
+        resp.set_code(chirp::common::AUTH_FAILED);
+        resp.set_server_time(NowMs());
+        SendPacket(session, chirp::gateway::LOGIN_RESP, pkt.sequence(), resp.SerializeAsString());
+        return;
+      }
+      user_id = claims.subject;
+    } else {
+      // Scaffolding fallback: treat token as user id.
+      user_id = req.token();
+    }
+
+    chirp::auth::LoginResponse resp;
+    if (user_id.empty()) {
+      resp.set_code(chirp::common::INVALID_PARAM);
+    } else {
+      resp.set_code(chirp::common::OK);
+      resp.set_user_id(user_id);
+      resp.set_session_id(RandomHex(16));
+      resp.set_kick_previous(true);
+      resp.mutable_kick()->set_reason("login from another device");
+    }
+    resp.set_server_time(NowMs());
+    SendPacket(session, chirp::gateway::LOGIN_RESP, pkt.sequence(), resp.SerializeAsString());
+    break;
+  }
+  case chirp::gateway::LOGOUT_REQ: {
+    chirp::auth::LogoutRequest req;
+    if (!req.ParseFromArray(pkt.body().data(), static_cast<int>(pkt.body().size()))) {
+      chirp::auth::LogoutResponse resp;
+      resp.set_code(chirp::common::INVALID_PARAM);
+      resp.set_server_time(NowMs());
+      SendPacket(session, chirp::gateway::LOGOUT_RESP, pkt.sequence(), resp.SerializeAsString());
+      return;
+    }
+
+    chirp::auth::LogoutResponse resp;
+    if (req.user_id().empty() || req.session_id().empty()) {
+      resp.set_code(chirp::common::INVALID_PARAM);
+    } else {
+      resp.set_code(chirp::common::OK);
+    }
+    resp.set_server_time(NowMs());
+    SendPacket(session, chirp::gateway::LOGOUT_RESP, pkt.sequence(), resp.SerializeAsString());
+    break;
+  }
+  default:
+    break;
+  }
+}
+
 } // namespace
 
 int main(int argc, char** argv) {
@@ -96,77 +175,7 @@ int main(int argc, char** argv) {
   chirp::network::TcpServer server(
       io, port,
       [jwt_secret](std::shared_ptr<chirp::network::Session> session, std::string&& payload) {
-        chirp::gateway::Packet pkt;
-        if (!pkt.ParseFromArray(payload.data(), static_cast<int>(payload.size()))) {
-          Logger::Instance().Warn("failed to parse Packet from client");
-          return;
-        }
-
-        switch (pkt.msg_id()) {
-        case chirp::gateway::LOGIN_REQ: {
-          chirp::auth::LoginRequest req;
-          if (!req.ParseFromArray(pkt.body().data(), static_cast<int>(pkt.body().size()))) {
-            chirp::auth::LoginResponse resp;
-            resp.set_code(chirp::common::INVALID_PARAM);
-            resp.set_server_time(NowMs());
-            SendPacket(session, chirp::gateway::LOGIN_RESP, pkt.sequence(), resp.SerializeAsString());
-            return;
-          }
-
-          std::string user_id;
-          if (LooksLikeJwt(req.token())) {
-            chirp::common::JwtClaims claims;
-            std::string err;
-            if (!chirp::common::JwtVerifyHS256(req.token(), jwt_secret, &claims, &err)) {
-              chirp::auth::LoginResponse resp;
-              resp.set_code(chirp::common::AUTH_FAILED);
-              resp.set_server_time(NowMs());
-              SendPacket(session, chirp::gateway::LOGIN_RESP, pkt.sequence(), resp.SerializeAsString());
-              return;
-            }
-            user_id = claims.subject;
-          } else {
-            // Scaffolding fallback: treat token as user id.
-            user_id = req.token();
-          }
-
-          chirp::auth::LoginResponse resp;
-          if (user_id.empty()) {
-            resp.set_code(chirp::common::INVALID_PARAM);
-          } else {
-            resp.set_code(chirp::common::OK);
-            resp.set_user_id(user_id);
-            resp.set_session_id(RandomHex(16));
-            resp.set_kick_previous(true);
-            resp.mutable_kick()->set_reason("login from another device");
-          }
-          resp.set_server_time(NowMs());
-          SendPacket(session, chirp::gateway::LOGIN_RESP, pkt.sequence(), resp.SerializeAsString());
-          break;
-        }
-        case chirp::gateway::LOGOUT_REQ: {
-          chirp::auth::LogoutRequest req;
-          if (!req.ParseFromArray(pkt.body().data(), static_cast<int>(pkt.body().size()))) {
-            chirp::auth::LogoutResponse resp;
-            resp.set_code(chirp::common::INVALID_PARAM);
-            resp.set_server_time(NowMs());
-            SendPacket(session, chirp::gateway::LOGOUT_RESP, pkt.sequence(), resp.SerializeAsString());
-            return;
-          }
-
-          chirp::auth::LogoutResponse resp;
-          if (req.user_id().empty() || req.session_id().empty()) {
-            resp.set_code(chirp::common::INVALID_PARAM);
-          } else {
-            resp.set_code(chirp::common::OK);
-          }
-          resp.set_server_time(NowMs());
-          SendPacket(session, chirp::gateway::LOGOUT_RESP, pkt.sequence(), resp.SerializeAsString());
-          break;
-        }
-        default:
-          break;
-        }
+        HandleAuthPacket(jwt_secret, session, std::move(payload));
       });
 
   server.Start();
