@@ -171,6 +171,13 @@ object MsgSpecs {
         GameServerGateway.GetGamePresenceResponse::parseFrom,
     )
 
+    // 词库下发（2245-2246，docs/design-notes/word_filter.md「词库下发协议」）。
+    // 2247 UPDATE_NOTIFY 是服务器单向推送，无 REQ/RESP 配对，走 onNotify。
+    val wordFilterFetch = MessageSpec(
+        Gateway.MsgID.WORD_FILTER_FETCH_REQ, Gateway.MsgID.WORD_FILTER_FETCH_RESP,
+        Chat.WordFilterFetchResponse::parseFrom,
+    )
+
     /** Every spec, for whole-table integrity assertions. */
     val all: List<MessageSpec<*>> = listOf(
         login, logout,
@@ -183,5 +190,6 @@ object MsgSpecs {
         leaveParty, kickPartyMember, transferPartyLeader, setPartyReady, getMyParty,
         registerDevice, unregisterDevice, getUserDevices,
         setGamePresenceEnabled, getGamePresence,
+        wordFilterFetch,
     )
 }

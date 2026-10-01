@@ -6,6 +6,7 @@
 #include <cstdio>
 #include <filesystem>
 #include <string>
+#include <vector>
 
 #include "gtest/gtest.h"
 #include "word_filter.h"
@@ -236,3 +237,89 @@ TEST(WordFilterTest, MissingFileAfterLoadSkipsReload) {
 }
 
 } // namespace
+
+// 词库下发（docs/design-notes/word_filter.md「词库下发协议」）：版本单调、
+// SerializeLexicon 规范化文本、on_reload 回调时机。
+TEST(WordFilterTest, VersionStartsAtOneAndBumpsOnEveryLoad) {
+  TempLexicon file;
+  file.Write("spam\n");
+  WordFilterOptions options;
+  options.lexicon_path = file.path();
+  options.reload_check_interval_ms = 0;
+  WordFilter filter(options);
+  EXPECT_EQ(filter.version(), 1);
+
+  file.Write("spam\nsecond\n");
+  file.TouchNewMtime();
+  filter.ReloadIfStale(10'000);
+  EXPECT_EQ(filter.version(), 2);
+}
+
+TEST(WordFilterTest, UnreadableFileStillBumpsTheVersion) {
+  WordFilterOptions options;
+  options.lexicon_path = "/nonexistent/chirp_lexicon_dir/none.txt";
+  WordFilter filter(options);
+  EXPECT_EQ(filter.version(), 1);
+  EXPECT_EQ(filter.word_count(), 0u);
+  EXPECT_FALSE(filter.enabled());
+}
+
+TEST(WordFilterTest, UnreadableFileReloadStillFiresTheCallback) {
+  TempLexicon file;
+  file.Write("spam\n");
+  WordFilterOptions options;
+  options.lexicon_path = file.path();
+  options.reload_check_interval_ms = 0;
+  WordFilter filter(options);
+  ASSERT_EQ(filter.version(), 1);
+
+  std::vector<int64_t> seen;
+  filter.set_on_reload([&seen](int64_t version) { seen.push_back(version); });
+
+  // The file must stay stat-able or ReloadIfStale skips the reload, so strip
+  // read permission instead of removing it: the reload then fails at fopen,
+  // the lexicon becomes empty+disabled, and the version still bumps with the
+  // callback firing (fail-open consumers observe the transition).
+  file.Write("second\n");
+  file.TouchNewMtime();
+  ::chmod(file.path().c_str(), 0000);
+  filter.ReloadIfStale(10'000);
+  ::chmod(file.path().c_str(), 0600);
+  ASSERT_EQ(seen.size(), 1u);
+  EXPECT_EQ(seen[0], 2);
+  EXPECT_EQ(filter.version(), 2);
+  EXPECT_EQ(filter.word_count(), 0u);
+  EXPECT_FALSE(filter.enabled());
+}
+
+TEST(WordFilterTest, SerializeLexiconEmitsNormalizedLowercaseSortedText) {
+  TempLexicon file;
+  file.Write("Zeta\n  alpha  \n# comment\n\nalpha\n");
+  WordFilterOptions options;
+  options.lexicon_path = file.path();
+  WordFilter filter(options);
+  EXPECT_EQ(filter.SerializeLexicon(), "alpha\nzeta\n");
+}
+
+TEST(WordFilterTest, OnReloadFiresOnlyOnLoadsAfterSubscription) {
+  TempLexicon file;
+  file.Write("spam\n");
+  WordFilterOptions options;
+  options.lexicon_path = file.path();
+  options.reload_check_interval_ms = 0;
+  WordFilter filter(options);
+
+  std::vector<int64_t> seen;
+  filter.set_on_reload([&seen](int64_t version) { seen.push_back(version); });
+
+  // No load happened since the callback was set: nothing fired yet.
+  EXPECT_TRUE(seen.empty());
+  file.Write("spam\nsecond\n");
+  file.TouchNewMtime();
+  filter.ReloadIfStale(10'000);
+  ASSERT_EQ(seen.size(), 1u);
+  EXPECT_EQ(seen[0], filter.version());
+  // A throttled check that finds nothing must not fire the callback.
+  filter.ReloadIfStale(10'001);
+  EXPECT_EQ(seen.size(), 1u);
+}

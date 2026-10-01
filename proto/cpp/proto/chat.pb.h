@@ -81,6 +81,8 @@ enum Priority : int;
 extern const uint32_t Priority_internal_data_[];
 enum SenderKind : int;
 extern const uint32_t SenderKind_internal_data_[];
+enum WordFilterDeliveryPolicy : int;
+extern const uint32_t WordFilterDeliveryPolicy_internal_data_[];
 class AchievementMetadata;
 struct AchievementMetadataDefaultTypeInternal;
 extern AchievementMetadataDefaultTypeInternal _AchievementMetadata_default_instance_;
@@ -557,6 +559,22 @@ class UpdateChannelResponse;
 struct UpdateChannelResponseDefaultTypeInternal;
 extern UpdateChannelResponseDefaultTypeInternal _UpdateChannelResponse_default_instance_;
 extern const ::google::protobuf::internal::ClassDataFull UpdateChannelResponse_class_data_;
+class WordFilterFetchRequest;
+struct WordFilterFetchRequestDefaultTypeInternal;
+extern WordFilterFetchRequestDefaultTypeInternal _WordFilterFetchRequest_default_instance_;
+extern const ::google::protobuf::internal::ClassDataFull WordFilterFetchRequest_class_data_;
+class WordFilterFetchResponse;
+struct WordFilterFetchResponseDefaultTypeInternal;
+extern WordFilterFetchResponseDefaultTypeInternal _WordFilterFetchResponse_default_instance_;
+extern const ::google::protobuf::internal::ClassDataFull WordFilterFetchResponse_class_data_;
+class WordFilterLexicon;
+struct WordFilterLexiconDefaultTypeInternal;
+extern WordFilterLexiconDefaultTypeInternal _WordFilterLexicon_default_instance_;
+extern const ::google::protobuf::internal::ClassDataFull WordFilterLexicon_class_data_;
+class WordFilterUpdateNotify;
+struct WordFilterUpdateNotifyDefaultTypeInternal;
+extern WordFilterUpdateNotifyDefaultTypeInternal _WordFilterUpdateNotify_default_instance_;
+extern const ::google::protobuf::internal::ClassDataFull WordFilterUpdateNotify_class_data_;
 }  // namespace chat
 }  // namespace chirp
 namespace google {
@@ -591,6 +609,9 @@ internal::EnumTraitsT<::chirp::chat::Priority_internal_data_>
 template <>
 internal::EnumTraitsT<::chirp::chat::SenderKind_internal_data_>
     internal::EnumTraitsImpl::value<::chirp::chat::SenderKind>;
+template <>
+internal::EnumTraitsT<::chirp::chat::WordFilterDeliveryPolicy_internal_data_>
+    internal::EnumTraitsImpl::value<::chirp::chat::WordFilterDeliveryPolicy>;
 }  // namespace protobuf
 }  // namespace google
 
@@ -978,10 +999,485 @@ inline bool MentionType_Parse(
   return ::google::protobuf::internal::ParseNamedEnum<MentionType>(MentionType_descriptor(), name,
                                            value);
 }
+enum WordFilterDeliveryPolicy : int {
+  WORD_FILTER_POLICY_REPLACE = 0,
+  WORD_FILTER_POLICY_REJECT = 1,
+  WORD_FILTER_POLICY_RECORD = 2,
+  WordFilterDeliveryPolicy_INT_MIN_SENTINEL_DO_NOT_USE_ =
+      ::std::numeric_limits<::int32_t>::min(),
+  WordFilterDeliveryPolicy_INT_MAX_SENTINEL_DO_NOT_USE_ =
+      ::std::numeric_limits<::int32_t>::max(),
+};
+
+extern const uint32_t WordFilterDeliveryPolicy_internal_data_[];
+inline constexpr WordFilterDeliveryPolicy WordFilterDeliveryPolicy_MIN =
+    static_cast<WordFilterDeliveryPolicy>(0);
+inline constexpr WordFilterDeliveryPolicy WordFilterDeliveryPolicy_MAX =
+    static_cast<WordFilterDeliveryPolicy>(2);
+inline bool WordFilterDeliveryPolicy_IsValid(int value) {
+  return 0 <= value && value <= 2;
+}
+inline constexpr int WordFilterDeliveryPolicy_ARRAYSIZE = 2 + 1;
+const ::google::protobuf::EnumDescriptor* PROTOBUF_NONNULL WordFilterDeliveryPolicy_descriptor();
+template <typename T>
+const ::std::string& WordFilterDeliveryPolicy_Name(T value) {
+  static_assert(::std::is_same<T, WordFilterDeliveryPolicy>::value ||
+                    ::std::is_integral<T>::value,
+                "Incorrect type passed to WordFilterDeliveryPolicy_Name().");
+  return WordFilterDeliveryPolicy_Name(static_cast<WordFilterDeliveryPolicy>(value));
+}
+template <>
+inline const ::std::string& WordFilterDeliveryPolicy_Name(WordFilterDeliveryPolicy value) {
+  return ::google::protobuf::internal::NameOfDenseEnum<WordFilterDeliveryPolicy_descriptor, 0, 2>(
+      static_cast<int>(value));
+}
+inline bool WordFilterDeliveryPolicy_Parse(
+    ::absl::string_view name, WordFilterDeliveryPolicy* PROTOBUF_NONNULL value) {
+  return ::google::protobuf::internal::ParseNamedEnum<WordFilterDeliveryPolicy>(WordFilterDeliveryPolicy_descriptor(), name,
+                                           value);
+}
 
 // ===================================================================
 
 
+// -------------------------------------------------------------------
+
+class WordFilterLexicon final : public ::google::protobuf::Message
+/* @@protoc_insertion_point(class_definition:chirp.chat.WordFilterLexicon) */ {
+ public:
+  inline WordFilterLexicon() : WordFilterLexicon(nullptr) {}
+  ~WordFilterLexicon() PROTOBUF_FINAL;
+
+#if defined(PROTOBUF_CUSTOM_VTABLE)
+  void operator delete(WordFilterLexicon* PROTOBUF_NONNULL msg, ::std::destroying_delete_t) {
+    SharedDtor(*msg);
+    ::google::protobuf::internal::SizedDelete(msg, sizeof(WordFilterLexicon));
+  }
+#endif
+
+  template <typename = void>
+  explicit PROTOBUF_CONSTEXPR WordFilterLexicon(::google::protobuf::internal::ConstantInitialized);
+
+  inline WordFilterLexicon(const WordFilterLexicon& from) : WordFilterLexicon(nullptr, from) {}
+  inline WordFilterLexicon(WordFilterLexicon&& from) noexcept
+      : WordFilterLexicon(nullptr, ::std::move(from)) {}
+  inline WordFilterLexicon& operator=(const WordFilterLexicon& from) {
+    CopyFrom(from);
+    return *this;
+  }
+  inline WordFilterLexicon& operator=(WordFilterLexicon&& from) noexcept {
+    if (this == &from) return *this;
+    if (::google::protobuf::internal::CanMoveWithInternalSwap(GetArena(), from.GetArena())) {
+      InternalSwap(&from);
+    } else {
+      CopyFrom(from);
+    }
+    return *this;
+  }
+
+  inline const ::google::protobuf::UnknownFieldSet& unknown_fields() const
+      ABSL_ATTRIBUTE_LIFETIME_BOUND {
+    return _internal_metadata_.unknown_fields<::google::protobuf::UnknownFieldSet>(::google::protobuf::UnknownFieldSet::default_instance);
+  }
+  inline ::google::protobuf::UnknownFieldSet* PROTOBUF_NONNULL mutable_unknown_fields()
+      ABSL_ATTRIBUTE_LIFETIME_BOUND {
+    return _internal_metadata_.mutable_unknown_fields<::google::protobuf::UnknownFieldSet>();
+  }
+
+  static const ::google::protobuf::Descriptor* PROTOBUF_NONNULL descriptor() {
+    return GetDescriptor();
+  }
+  static const ::google::protobuf::Descriptor* PROTOBUF_NONNULL GetDescriptor() {
+    return default_instance().GetMetadata().descriptor;
+  }
+  static const ::google::protobuf::Reflection* PROTOBUF_NONNULL GetReflection() {
+    return default_instance().GetMetadata().reflection;
+  }
+  static const WordFilterLexicon& default_instance() {
+    return *reinterpret_cast<const WordFilterLexicon*>(
+        &_WordFilterLexicon_default_instance_);
+  }
+  static constexpr int kIndexInFileMessages = 120;
+  friend void swap(WordFilterLexicon& a, WordFilterLexicon& b) { a.Swap(&b); }
+  inline void Swap(WordFilterLexicon* PROTOBUF_NONNULL other) {
+    if (other == this) return;
+    if (::google::protobuf::internal::CanUseInternalSwap(GetArena(), other->GetArena())) {
+      InternalSwap(other);
+    } else {
+      ::google::protobuf::internal::GenericSwap(this, other);
+    }
+  }
+  void UnsafeArenaSwap(WordFilterLexicon* PROTOBUF_NONNULL other) {
+    if (other == this) return;
+    ABSL_DCHECK(GetArena() == other->GetArena());
+    InternalSwap(other);
+  }
+
+  // implements Message ----------------------------------------------
+
+  WordFilterLexicon* PROTOBUF_NONNULL New(::google::protobuf::Arena* PROTOBUF_NULLABLE arena = nullptr) const {
+    return ::google::protobuf::Message::DefaultConstruct<WordFilterLexicon>(arena);
+  }
+  using ::google::protobuf::Message::CopyFrom;
+  void CopyFrom(const WordFilterLexicon& from);
+  using ::google::protobuf::Message::MergeFrom;
+  void MergeFrom(const WordFilterLexicon& from) { WordFilterLexicon::MergeImpl(*this, from); }
+
+  private:
+  static void MergeImpl(::google::protobuf::MessageLite& to_msg,
+                        const ::google::protobuf::MessageLite& from_msg);
+
+  public:
+  bool IsInitialized() const {
+    return true;
+  }
+  ABSL_ATTRIBUTE_REINITIALIZES void Clear() PROTOBUF_FINAL;
+  #if defined(PROTOBUF_CUSTOM_VTABLE)
+  private:
+  static ::size_t ByteSizeLong(const ::google::protobuf::MessageLite& msg);
+  static ::uint8_t* PROTOBUF_NONNULL _InternalSerialize(
+      const ::google::protobuf::MessageLite& msg, ::uint8_t* PROTOBUF_NONNULL target,
+      ::google::protobuf::io::EpsCopyOutputStream* PROTOBUF_NONNULL stream);
+
+  public:
+  ::size_t ByteSizeLong() const { return ByteSizeLong(*this); }
+  ::uint8_t* PROTOBUF_NONNULL _InternalSerialize(
+      ::uint8_t* PROTOBUF_NONNULL target,
+      ::google::protobuf::io::EpsCopyOutputStream* PROTOBUF_NONNULL stream) const {
+    return _InternalSerialize(*this, target, stream);
+  }
+  #else   // PROTOBUF_CUSTOM_VTABLE
+  ::size_t ByteSizeLong() const final;
+  ::uint8_t* PROTOBUF_NONNULL _InternalSerialize(
+      ::uint8_t* PROTOBUF_NONNULL target,
+      ::google::protobuf::io::EpsCopyOutputStream* PROTOBUF_NONNULL stream) const final;
+  #endif  // PROTOBUF_CUSTOM_VTABLE
+  int GetCachedSize() const { return _impl_._cached_size_.Get(); }
+
+  private:
+  void SharedCtor(::google::protobuf::Arena* PROTOBUF_NULLABLE arena);
+  static void SharedDtor(MessageLite& self);
+  void InternalSwap(WordFilterLexicon* PROTOBUF_NONNULL other);
+ private:
+  template <typename T>
+  friend ::absl::string_view(::google::protobuf::internal::GetAnyMessageName)();
+  static ::absl::string_view FullMessageName() { return "chirp.chat.WordFilterLexicon"; }
+
+  explicit WordFilterLexicon(::google::protobuf::Arena* PROTOBUF_NULLABLE arena);
+  WordFilterLexicon(::google::protobuf::Arena* PROTOBUF_NULLABLE arena, const WordFilterLexicon& from);
+  WordFilterLexicon(
+      ::google::protobuf::Arena* PROTOBUF_NULLABLE arena, WordFilterLexicon&& from) noexcept
+      : WordFilterLexicon(arena) {
+    *this = ::std::move(from);
+  }
+  const ::google::protobuf::internal::ClassData* PROTOBUF_NONNULL GetClassData() const PROTOBUF_FINAL;
+  static void* PROTOBUF_NONNULL PlacementNew_(
+      const void* PROTOBUF_NONNULL, void* PROTOBUF_NONNULL mem,
+      ::google::protobuf::Arena* PROTOBUF_NULLABLE arena);
+  static constexpr auto InternalNewImpl_();
+
+ public:
+  static constexpr auto InternalGenerateClassData_();
+
+  ::google::protobuf::Metadata GetMetadata() const;
+  // nested types ----------------------------------------------------
+
+  // accessors -------------------------------------------------------
+  enum : int {
+    kReplacementFieldNumber = 4,
+    kLexiconFieldNumber = 5,
+    kVersionFieldNumber = 1,
+    kEnabledFieldNumber = 2,
+    kPolicyFieldNumber = 3,
+  };
+  // string replacement = 4;
+  void clear_replacement() ;
+  const ::std::string& replacement() const;
+  template <typename Arg_ = const ::std::string&, typename... Args_>
+  void set_replacement(Arg_&& arg, Args_... args);
+  ::std::string* PROTOBUF_NONNULL mutable_replacement();
+  [[nodiscard]] ::std::string* PROTOBUF_NULLABLE release_replacement();
+  void set_allocated_replacement(::std::string* PROTOBUF_NULLABLE value);
+
+  private:
+  const ::std::string& _internal_replacement() const;
+  PROTOBUF_ALWAYS_INLINE void _internal_set_replacement(const ::std::string& value);
+  ::std::string* PROTOBUF_NONNULL _internal_mutable_replacement();
+
+  public:
+  // string lexicon = 5;
+  void clear_lexicon() ;
+  const ::std::string& lexicon() const;
+  template <typename Arg_ = const ::std::string&, typename... Args_>
+  void set_lexicon(Arg_&& arg, Args_... args);
+  ::std::string* PROTOBUF_NONNULL mutable_lexicon();
+  [[nodiscard]] ::std::string* PROTOBUF_NULLABLE release_lexicon();
+  void set_allocated_lexicon(::std::string* PROTOBUF_NULLABLE value);
+
+  private:
+  const ::std::string& _internal_lexicon() const;
+  PROTOBUF_ALWAYS_INLINE void _internal_set_lexicon(const ::std::string& value);
+  ::std::string* PROTOBUF_NONNULL _internal_mutable_lexicon();
+
+  public:
+  // int64 version = 1;
+  void clear_version() ;
+  ::int64_t version() const;
+  void set_version(::int64_t value);
+
+  private:
+  ::int64_t _internal_version() const;
+  void _internal_set_version(::int64_t value);
+
+  public:
+  // bool enabled = 2;
+  void clear_enabled() ;
+  bool enabled() const;
+  void set_enabled(bool value);
+
+  private:
+  bool _internal_enabled() const;
+  void _internal_set_enabled(bool value);
+
+  public:
+  // .chirp.chat.WordFilterDeliveryPolicy policy = 3;
+  void clear_policy() ;
+  ::chirp::chat::WordFilterDeliveryPolicy policy() const;
+  void set_policy(::chirp::chat::WordFilterDeliveryPolicy value);
+
+  private:
+  ::chirp::chat::WordFilterDeliveryPolicy _internal_policy() const;
+  void _internal_set_policy(::chirp::chat::WordFilterDeliveryPolicy value);
+
+  public:
+  // @@protoc_insertion_point(class_scope:chirp.chat.WordFilterLexicon)
+ private:
+  class _Internal;
+  friend class ::google::protobuf::internal::TcParser;
+  static const ::google::protobuf::internal::TcParseTable<3, 5,
+                                   0, 55,
+                                   2>
+      _table_;
+
+  friend class ::google::protobuf::MessageLite;
+  friend class ::google::protobuf::Arena;
+  template <typename T>
+  friend class ::google::protobuf::Arena::InternalHelper;
+  using InternalArenaConstructable_ = void;
+  using DestructorSkippable_ = void;
+  struct Impl_ {
+    inline explicit constexpr Impl_(::google::protobuf::internal::ConstantInitialized) noexcept;
+    inline explicit Impl_(
+        ::google::protobuf::internal::InternalVisibility visibility,
+        ::google::protobuf::Arena* PROTOBUF_NULLABLE arena);
+    inline explicit Impl_(
+        ::google::protobuf::internal::InternalVisibility visibility,
+        ::google::protobuf::Arena* PROTOBUF_NULLABLE arena, const Impl_& from,
+        const WordFilterLexicon& from_msg);
+    ::google::protobuf::internal::HasBits<1> _has_bits_;
+    ::google::protobuf::internal::CachedSize _cached_size_;
+    ::google::protobuf::internal::ArenaStringPtr replacement_;
+    ::google::protobuf::internal::ArenaStringPtr lexicon_;
+    ::int64_t version_;
+    bool enabled_;
+    int policy_;
+    PROTOBUF_TSAN_DECLARE_MEMBER
+  };
+  union { Impl_ _impl_; };
+  friend struct ::TableStruct_proto_2fchat_2eproto;
+};
+
+extern const ::google::protobuf::internal::ClassDataFull WordFilterLexicon_class_data_;
+// -------------------------------------------------------------------
+
+class WordFilterFetchRequest final : public ::google::protobuf::Message
+/* @@protoc_insertion_point(class_definition:chirp.chat.WordFilterFetchRequest) */ {
+ public:
+  inline WordFilterFetchRequest() : WordFilterFetchRequest(nullptr) {}
+  ~WordFilterFetchRequest() PROTOBUF_FINAL;
+
+#if defined(PROTOBUF_CUSTOM_VTABLE)
+  void operator delete(WordFilterFetchRequest* PROTOBUF_NONNULL msg, ::std::destroying_delete_t) {
+    SharedDtor(*msg);
+    ::google::protobuf::internal::SizedDelete(msg, sizeof(WordFilterFetchRequest));
+  }
+#endif
+
+  template <typename = void>
+  explicit PROTOBUF_CONSTEXPR WordFilterFetchRequest(::google::protobuf::internal::ConstantInitialized);
+
+  inline WordFilterFetchRequest(const WordFilterFetchRequest& from) : WordFilterFetchRequest(nullptr, from) {}
+  inline WordFilterFetchRequest(WordFilterFetchRequest&& from) noexcept
+      : WordFilterFetchRequest(nullptr, ::std::move(from)) {}
+  inline WordFilterFetchRequest& operator=(const WordFilterFetchRequest& from) {
+    CopyFrom(from);
+    return *this;
+  }
+  inline WordFilterFetchRequest& operator=(WordFilterFetchRequest&& from) noexcept {
+    if (this == &from) return *this;
+    if (::google::protobuf::internal::CanMoveWithInternalSwap(GetArena(), from.GetArena())) {
+      InternalSwap(&from);
+    } else {
+      CopyFrom(from);
+    }
+    return *this;
+  }
+
+  inline const ::google::protobuf::UnknownFieldSet& unknown_fields() const
+      ABSL_ATTRIBUTE_LIFETIME_BOUND {
+    return _internal_metadata_.unknown_fields<::google::protobuf::UnknownFieldSet>(::google::protobuf::UnknownFieldSet::default_instance);
+  }
+  inline ::google::protobuf::UnknownFieldSet* PROTOBUF_NONNULL mutable_unknown_fields()
+      ABSL_ATTRIBUTE_LIFETIME_BOUND {
+    return _internal_metadata_.mutable_unknown_fields<::google::protobuf::UnknownFieldSet>();
+  }
+
+  static const ::google::protobuf::Descriptor* PROTOBUF_NONNULL descriptor() {
+    return GetDescriptor();
+  }
+  static const ::google::protobuf::Descriptor* PROTOBUF_NONNULL GetDescriptor() {
+    return default_instance().GetMetadata().descriptor;
+  }
+  static const ::google::protobuf::Reflection* PROTOBUF_NONNULL GetReflection() {
+    return default_instance().GetMetadata().reflection;
+  }
+  static const WordFilterFetchRequest& default_instance() {
+    return *reinterpret_cast<const WordFilterFetchRequest*>(
+        &_WordFilterFetchRequest_default_instance_);
+  }
+  static constexpr int kIndexInFileMessages = 119;
+  friend void swap(WordFilterFetchRequest& a, WordFilterFetchRequest& b) { a.Swap(&b); }
+  inline void Swap(WordFilterFetchRequest* PROTOBUF_NONNULL other) {
+    if (other == this) return;
+    if (::google::protobuf::internal::CanUseInternalSwap(GetArena(), other->GetArena())) {
+      InternalSwap(other);
+    } else {
+      ::google::protobuf::internal::GenericSwap(this, other);
+    }
+  }
+  void UnsafeArenaSwap(WordFilterFetchRequest* PROTOBUF_NONNULL other) {
+    if (other == this) return;
+    ABSL_DCHECK(GetArena() == other->GetArena());
+    InternalSwap(other);
+  }
+
+  // implements Message ----------------------------------------------
+
+  WordFilterFetchRequest* PROTOBUF_NONNULL New(::google::protobuf::Arena* PROTOBUF_NULLABLE arena = nullptr) const {
+    return ::google::protobuf::Message::DefaultConstruct<WordFilterFetchRequest>(arena);
+  }
+  using ::google::protobuf::Message::CopyFrom;
+  void CopyFrom(const WordFilterFetchRequest& from);
+  using ::google::protobuf::Message::MergeFrom;
+  void MergeFrom(const WordFilterFetchRequest& from) { WordFilterFetchRequest::MergeImpl(*this, from); }
+
+  private:
+  static void MergeImpl(::google::protobuf::MessageLite& to_msg,
+                        const ::google::protobuf::MessageLite& from_msg);
+
+  public:
+  bool IsInitialized() const {
+    return true;
+  }
+  ABSL_ATTRIBUTE_REINITIALIZES void Clear() PROTOBUF_FINAL;
+  #if defined(PROTOBUF_CUSTOM_VTABLE)
+  private:
+  static ::size_t ByteSizeLong(const ::google::protobuf::MessageLite& msg);
+  static ::uint8_t* PROTOBUF_NONNULL _InternalSerialize(
+      const ::google::protobuf::MessageLite& msg, ::uint8_t* PROTOBUF_NONNULL target,
+      ::google::protobuf::io::EpsCopyOutputStream* PROTOBUF_NONNULL stream);
+
+  public:
+  ::size_t ByteSizeLong() const { return ByteSizeLong(*this); }
+  ::uint8_t* PROTOBUF_NONNULL _InternalSerialize(
+      ::uint8_t* PROTOBUF_NONNULL target,
+      ::google::protobuf::io::EpsCopyOutputStream* PROTOBUF_NONNULL stream) const {
+    return _InternalSerialize(*this, target, stream);
+  }
+  #else   // PROTOBUF_CUSTOM_VTABLE
+  ::size_t ByteSizeLong() const final;
+  ::uint8_t* PROTOBUF_NONNULL _InternalSerialize(
+      ::uint8_t* PROTOBUF_NONNULL target,
+      ::google::protobuf::io::EpsCopyOutputStream* PROTOBUF_NONNULL stream) const final;
+  #endif  // PROTOBUF_CUSTOM_VTABLE
+  int GetCachedSize() const { return _impl_._cached_size_.Get(); }
+
+  private:
+  void SharedCtor(::google::protobuf::Arena* PROTOBUF_NULLABLE arena);
+  static void SharedDtor(MessageLite& self);
+  void InternalSwap(WordFilterFetchRequest* PROTOBUF_NONNULL other);
+ private:
+  template <typename T>
+  friend ::absl::string_view(::google::protobuf::internal::GetAnyMessageName)();
+  static ::absl::string_view FullMessageName() { return "chirp.chat.WordFilterFetchRequest"; }
+
+  explicit WordFilterFetchRequest(::google::protobuf::Arena* PROTOBUF_NULLABLE arena);
+  WordFilterFetchRequest(::google::protobuf::Arena* PROTOBUF_NULLABLE arena, const WordFilterFetchRequest& from);
+  WordFilterFetchRequest(
+      ::google::protobuf::Arena* PROTOBUF_NULLABLE arena, WordFilterFetchRequest&& from) noexcept
+      : WordFilterFetchRequest(arena) {
+    *this = ::std::move(from);
+  }
+  const ::google::protobuf::internal::ClassData* PROTOBUF_NONNULL GetClassData() const PROTOBUF_FINAL;
+  static void* PROTOBUF_NONNULL PlacementNew_(
+      const void* PROTOBUF_NONNULL, void* PROTOBUF_NONNULL mem,
+      ::google::protobuf::Arena* PROTOBUF_NULLABLE arena);
+  static constexpr auto InternalNewImpl_();
+
+ public:
+  static constexpr auto InternalGenerateClassData_();
+
+  ::google::protobuf::Metadata GetMetadata() const;
+  // nested types ----------------------------------------------------
+
+  // accessors -------------------------------------------------------
+  enum : int {
+    kKnownVersionFieldNumber = 1,
+  };
+  // int64 known_version = 1;
+  void clear_known_version() ;
+  ::int64_t known_version() const;
+  void set_known_version(::int64_t value);
+
+  private:
+  ::int64_t _internal_known_version() const;
+  void _internal_set_known_version(::int64_t value);
+
+  public:
+  // @@protoc_insertion_point(class_scope:chirp.chat.WordFilterFetchRequest)
+ private:
+  class _Internal;
+  friend class ::google::protobuf::internal::TcParser;
+  static const ::google::protobuf::internal::TcParseTable<0, 1,
+                                   0, 0,
+                                   2>
+      _table_;
+
+  friend class ::google::protobuf::MessageLite;
+  friend class ::google::protobuf::Arena;
+  template <typename T>
+  friend class ::google::protobuf::Arena::InternalHelper;
+  using InternalArenaConstructable_ = void;
+  using DestructorSkippable_ = void;
+  struct Impl_ {
+    inline explicit constexpr Impl_(::google::protobuf::internal::ConstantInitialized) noexcept;
+    inline explicit Impl_(
+        ::google::protobuf::internal::InternalVisibility visibility,
+        ::google::protobuf::Arena* PROTOBUF_NULLABLE arena);
+    inline explicit Impl_(
+        ::google::protobuf::internal::InternalVisibility visibility,
+        ::google::protobuf::Arena* PROTOBUF_NULLABLE arena, const Impl_& from,
+        const WordFilterFetchRequest& from_msg);
+    ::google::protobuf::internal::HasBits<1> _has_bits_;
+    ::google::protobuf::internal::CachedSize _cached_size_;
+    ::int64_t known_version_;
+    PROTOBUF_TSAN_DECLARE_MEMBER
+  };
+  union { Impl_ _impl_; };
+  friend struct ::TableStruct_proto_2fchat_2eproto;
+};
+
+extern const ::google::protobuf::internal::ClassDataFull WordFilterFetchRequest_class_data_;
 // -------------------------------------------------------------------
 
 class UnblockMessageSenderResponse final : public ::google::protobuf::Message
@@ -19681,6 +20177,408 @@ class AchievementMetadata final : public ::google::protobuf::Message
 };
 
 extern const ::google::protobuf::internal::ClassDataFull AchievementMetadata_class_data_;
+// -------------------------------------------------------------------
+
+class WordFilterUpdateNotify final : public ::google::protobuf::Message
+/* @@protoc_insertion_point(class_definition:chirp.chat.WordFilterUpdateNotify) */ {
+ public:
+  inline WordFilterUpdateNotify() : WordFilterUpdateNotify(nullptr) {}
+  ~WordFilterUpdateNotify() PROTOBUF_FINAL;
+
+#if defined(PROTOBUF_CUSTOM_VTABLE)
+  void operator delete(WordFilterUpdateNotify* PROTOBUF_NONNULL msg, ::std::destroying_delete_t) {
+    SharedDtor(*msg);
+    ::google::protobuf::internal::SizedDelete(msg, sizeof(WordFilterUpdateNotify));
+  }
+#endif
+
+  template <typename = void>
+  explicit PROTOBUF_CONSTEXPR WordFilterUpdateNotify(::google::protobuf::internal::ConstantInitialized);
+
+  inline WordFilterUpdateNotify(const WordFilterUpdateNotify& from) : WordFilterUpdateNotify(nullptr, from) {}
+  inline WordFilterUpdateNotify(WordFilterUpdateNotify&& from) noexcept
+      : WordFilterUpdateNotify(nullptr, ::std::move(from)) {}
+  inline WordFilterUpdateNotify& operator=(const WordFilterUpdateNotify& from) {
+    CopyFrom(from);
+    return *this;
+  }
+  inline WordFilterUpdateNotify& operator=(WordFilterUpdateNotify&& from) noexcept {
+    if (this == &from) return *this;
+    if (::google::protobuf::internal::CanMoveWithInternalSwap(GetArena(), from.GetArena())) {
+      InternalSwap(&from);
+    } else {
+      CopyFrom(from);
+    }
+    return *this;
+  }
+
+  inline const ::google::protobuf::UnknownFieldSet& unknown_fields() const
+      ABSL_ATTRIBUTE_LIFETIME_BOUND {
+    return _internal_metadata_.unknown_fields<::google::protobuf::UnknownFieldSet>(::google::protobuf::UnknownFieldSet::default_instance);
+  }
+  inline ::google::protobuf::UnknownFieldSet* PROTOBUF_NONNULL mutable_unknown_fields()
+      ABSL_ATTRIBUTE_LIFETIME_BOUND {
+    return _internal_metadata_.mutable_unknown_fields<::google::protobuf::UnknownFieldSet>();
+  }
+
+  static const ::google::protobuf::Descriptor* PROTOBUF_NONNULL descriptor() {
+    return GetDescriptor();
+  }
+  static const ::google::protobuf::Descriptor* PROTOBUF_NONNULL GetDescriptor() {
+    return default_instance().GetMetadata().descriptor;
+  }
+  static const ::google::protobuf::Reflection* PROTOBUF_NONNULL GetReflection() {
+    return default_instance().GetMetadata().reflection;
+  }
+  static const WordFilterUpdateNotify& default_instance() {
+    return *reinterpret_cast<const WordFilterUpdateNotify*>(
+        &_WordFilterUpdateNotify_default_instance_);
+  }
+  static constexpr int kIndexInFileMessages = 122;
+  friend void swap(WordFilterUpdateNotify& a, WordFilterUpdateNotify& b) { a.Swap(&b); }
+  inline void Swap(WordFilterUpdateNotify* PROTOBUF_NONNULL other) {
+    if (other == this) return;
+    if (::google::protobuf::internal::CanUseInternalSwap(GetArena(), other->GetArena())) {
+      InternalSwap(other);
+    } else {
+      ::google::protobuf::internal::GenericSwap(this, other);
+    }
+  }
+  void UnsafeArenaSwap(WordFilterUpdateNotify* PROTOBUF_NONNULL other) {
+    if (other == this) return;
+    ABSL_DCHECK(GetArena() == other->GetArena());
+    InternalSwap(other);
+  }
+
+  // implements Message ----------------------------------------------
+
+  WordFilterUpdateNotify* PROTOBUF_NONNULL New(::google::protobuf::Arena* PROTOBUF_NULLABLE arena = nullptr) const {
+    return ::google::protobuf::Message::DefaultConstruct<WordFilterUpdateNotify>(arena);
+  }
+  using ::google::protobuf::Message::CopyFrom;
+  void CopyFrom(const WordFilterUpdateNotify& from);
+  using ::google::protobuf::Message::MergeFrom;
+  void MergeFrom(const WordFilterUpdateNotify& from) { WordFilterUpdateNotify::MergeImpl(*this, from); }
+
+  private:
+  static void MergeImpl(::google::protobuf::MessageLite& to_msg,
+                        const ::google::protobuf::MessageLite& from_msg);
+
+  public:
+  bool IsInitialized() const {
+    return true;
+  }
+  ABSL_ATTRIBUTE_REINITIALIZES void Clear() PROTOBUF_FINAL;
+  #if defined(PROTOBUF_CUSTOM_VTABLE)
+  private:
+  static ::size_t ByteSizeLong(const ::google::protobuf::MessageLite& msg);
+  static ::uint8_t* PROTOBUF_NONNULL _InternalSerialize(
+      const ::google::protobuf::MessageLite& msg, ::uint8_t* PROTOBUF_NONNULL target,
+      ::google::protobuf::io::EpsCopyOutputStream* PROTOBUF_NONNULL stream);
+
+  public:
+  ::size_t ByteSizeLong() const { return ByteSizeLong(*this); }
+  ::uint8_t* PROTOBUF_NONNULL _InternalSerialize(
+      ::uint8_t* PROTOBUF_NONNULL target,
+      ::google::protobuf::io::EpsCopyOutputStream* PROTOBUF_NONNULL stream) const {
+    return _InternalSerialize(*this, target, stream);
+  }
+  #else   // PROTOBUF_CUSTOM_VTABLE
+  ::size_t ByteSizeLong() const final;
+  ::uint8_t* PROTOBUF_NONNULL _InternalSerialize(
+      ::uint8_t* PROTOBUF_NONNULL target,
+      ::google::protobuf::io::EpsCopyOutputStream* PROTOBUF_NONNULL stream) const final;
+  #endif  // PROTOBUF_CUSTOM_VTABLE
+  int GetCachedSize() const { return _impl_._cached_size_.Get(); }
+
+  private:
+  void SharedCtor(::google::protobuf::Arena* PROTOBUF_NULLABLE arena);
+  static void SharedDtor(MessageLite& self);
+  void InternalSwap(WordFilterUpdateNotify* PROTOBUF_NONNULL other);
+ private:
+  template <typename T>
+  friend ::absl::string_view(::google::protobuf::internal::GetAnyMessageName)();
+  static ::absl::string_view FullMessageName() { return "chirp.chat.WordFilterUpdateNotify"; }
+
+  explicit WordFilterUpdateNotify(::google::protobuf::Arena* PROTOBUF_NULLABLE arena);
+  WordFilterUpdateNotify(::google::protobuf::Arena* PROTOBUF_NULLABLE arena, const WordFilterUpdateNotify& from);
+  WordFilterUpdateNotify(
+      ::google::protobuf::Arena* PROTOBUF_NULLABLE arena, WordFilterUpdateNotify&& from) noexcept
+      : WordFilterUpdateNotify(arena) {
+    *this = ::std::move(from);
+  }
+  const ::google::protobuf::internal::ClassData* PROTOBUF_NONNULL GetClassData() const PROTOBUF_FINAL;
+  static void* PROTOBUF_NONNULL PlacementNew_(
+      const void* PROTOBUF_NONNULL, void* PROTOBUF_NONNULL mem,
+      ::google::protobuf::Arena* PROTOBUF_NULLABLE arena);
+  static constexpr auto InternalNewImpl_();
+
+ public:
+  static constexpr auto InternalGenerateClassData_();
+
+  ::google::protobuf::Metadata GetMetadata() const;
+  // nested types ----------------------------------------------------
+
+  // accessors -------------------------------------------------------
+  enum : int {
+    kLexiconFieldNumber = 1,
+  };
+  // .chirp.chat.WordFilterLexicon lexicon = 1;
+  bool has_lexicon() const;
+  void clear_lexicon() ;
+  const ::chirp::chat::WordFilterLexicon& lexicon() const;
+  [[nodiscard]] ::chirp::chat::WordFilterLexicon* PROTOBUF_NULLABLE release_lexicon();
+  ::chirp::chat::WordFilterLexicon* PROTOBUF_NONNULL mutable_lexicon();
+  void set_allocated_lexicon(::chirp::chat::WordFilterLexicon* PROTOBUF_NULLABLE value);
+  void unsafe_arena_set_allocated_lexicon(::chirp::chat::WordFilterLexicon* PROTOBUF_NULLABLE value);
+  ::chirp::chat::WordFilterLexicon* PROTOBUF_NULLABLE unsafe_arena_release_lexicon();
+
+  private:
+  const ::chirp::chat::WordFilterLexicon& _internal_lexicon() const;
+  ::chirp::chat::WordFilterLexicon* PROTOBUF_NONNULL _internal_mutable_lexicon();
+
+  public:
+  // @@protoc_insertion_point(class_scope:chirp.chat.WordFilterUpdateNotify)
+ private:
+  class _Internal;
+  friend class ::google::protobuf::internal::TcParser;
+  static const ::google::protobuf::internal::TcParseTable<0, 1,
+                                   1, 0,
+                                   2>
+      _table_;
+
+  friend class ::google::protobuf::MessageLite;
+  friend class ::google::protobuf::Arena;
+  template <typename T>
+  friend class ::google::protobuf::Arena::InternalHelper;
+  using InternalArenaConstructable_ = void;
+  using DestructorSkippable_ = void;
+  struct Impl_ {
+    inline explicit constexpr Impl_(::google::protobuf::internal::ConstantInitialized) noexcept;
+    inline explicit Impl_(
+        ::google::protobuf::internal::InternalVisibility visibility,
+        ::google::protobuf::Arena* PROTOBUF_NULLABLE arena);
+    inline explicit Impl_(
+        ::google::protobuf::internal::InternalVisibility visibility,
+        ::google::protobuf::Arena* PROTOBUF_NULLABLE arena, const Impl_& from,
+        const WordFilterUpdateNotify& from_msg);
+    ::google::protobuf::internal::HasBits<1> _has_bits_;
+    ::google::protobuf::internal::CachedSize _cached_size_;
+    ::chirp::chat::WordFilterLexicon* PROTOBUF_NULLABLE lexicon_;
+    PROTOBUF_TSAN_DECLARE_MEMBER
+  };
+  union { Impl_ _impl_; };
+  friend struct ::TableStruct_proto_2fchat_2eproto;
+};
+
+extern const ::google::protobuf::internal::ClassDataFull WordFilterUpdateNotify_class_data_;
+// -------------------------------------------------------------------
+
+class WordFilterFetchResponse final : public ::google::protobuf::Message
+/* @@protoc_insertion_point(class_definition:chirp.chat.WordFilterFetchResponse) */ {
+ public:
+  inline WordFilterFetchResponse() : WordFilterFetchResponse(nullptr) {}
+  ~WordFilterFetchResponse() PROTOBUF_FINAL;
+
+#if defined(PROTOBUF_CUSTOM_VTABLE)
+  void operator delete(WordFilterFetchResponse* PROTOBUF_NONNULL msg, ::std::destroying_delete_t) {
+    SharedDtor(*msg);
+    ::google::protobuf::internal::SizedDelete(msg, sizeof(WordFilterFetchResponse));
+  }
+#endif
+
+  template <typename = void>
+  explicit PROTOBUF_CONSTEXPR WordFilterFetchResponse(::google::protobuf::internal::ConstantInitialized);
+
+  inline WordFilterFetchResponse(const WordFilterFetchResponse& from) : WordFilterFetchResponse(nullptr, from) {}
+  inline WordFilterFetchResponse(WordFilterFetchResponse&& from) noexcept
+      : WordFilterFetchResponse(nullptr, ::std::move(from)) {}
+  inline WordFilterFetchResponse& operator=(const WordFilterFetchResponse& from) {
+    CopyFrom(from);
+    return *this;
+  }
+  inline WordFilterFetchResponse& operator=(WordFilterFetchResponse&& from) noexcept {
+    if (this == &from) return *this;
+    if (::google::protobuf::internal::CanMoveWithInternalSwap(GetArena(), from.GetArena())) {
+      InternalSwap(&from);
+    } else {
+      CopyFrom(from);
+    }
+    return *this;
+  }
+
+  inline const ::google::protobuf::UnknownFieldSet& unknown_fields() const
+      ABSL_ATTRIBUTE_LIFETIME_BOUND {
+    return _internal_metadata_.unknown_fields<::google::protobuf::UnknownFieldSet>(::google::protobuf::UnknownFieldSet::default_instance);
+  }
+  inline ::google::protobuf::UnknownFieldSet* PROTOBUF_NONNULL mutable_unknown_fields()
+      ABSL_ATTRIBUTE_LIFETIME_BOUND {
+    return _internal_metadata_.mutable_unknown_fields<::google::protobuf::UnknownFieldSet>();
+  }
+
+  static const ::google::protobuf::Descriptor* PROTOBUF_NONNULL descriptor() {
+    return GetDescriptor();
+  }
+  static const ::google::protobuf::Descriptor* PROTOBUF_NONNULL GetDescriptor() {
+    return default_instance().GetMetadata().descriptor;
+  }
+  static const ::google::protobuf::Reflection* PROTOBUF_NONNULL GetReflection() {
+    return default_instance().GetMetadata().reflection;
+  }
+  static const WordFilterFetchResponse& default_instance() {
+    return *reinterpret_cast<const WordFilterFetchResponse*>(
+        &_WordFilterFetchResponse_default_instance_);
+  }
+  static constexpr int kIndexInFileMessages = 121;
+  friend void swap(WordFilterFetchResponse& a, WordFilterFetchResponse& b) { a.Swap(&b); }
+  inline void Swap(WordFilterFetchResponse* PROTOBUF_NONNULL other) {
+    if (other == this) return;
+    if (::google::protobuf::internal::CanUseInternalSwap(GetArena(), other->GetArena())) {
+      InternalSwap(other);
+    } else {
+      ::google::protobuf::internal::GenericSwap(this, other);
+    }
+  }
+  void UnsafeArenaSwap(WordFilterFetchResponse* PROTOBUF_NONNULL other) {
+    if (other == this) return;
+    ABSL_DCHECK(GetArena() == other->GetArena());
+    InternalSwap(other);
+  }
+
+  // implements Message ----------------------------------------------
+
+  WordFilterFetchResponse* PROTOBUF_NONNULL New(::google::protobuf::Arena* PROTOBUF_NULLABLE arena = nullptr) const {
+    return ::google::protobuf::Message::DefaultConstruct<WordFilterFetchResponse>(arena);
+  }
+  using ::google::protobuf::Message::CopyFrom;
+  void CopyFrom(const WordFilterFetchResponse& from);
+  using ::google::protobuf::Message::MergeFrom;
+  void MergeFrom(const WordFilterFetchResponse& from) { WordFilterFetchResponse::MergeImpl(*this, from); }
+
+  private:
+  static void MergeImpl(::google::protobuf::MessageLite& to_msg,
+                        const ::google::protobuf::MessageLite& from_msg);
+
+  public:
+  bool IsInitialized() const {
+    return true;
+  }
+  ABSL_ATTRIBUTE_REINITIALIZES void Clear() PROTOBUF_FINAL;
+  #if defined(PROTOBUF_CUSTOM_VTABLE)
+  private:
+  static ::size_t ByteSizeLong(const ::google::protobuf::MessageLite& msg);
+  static ::uint8_t* PROTOBUF_NONNULL _InternalSerialize(
+      const ::google::protobuf::MessageLite& msg, ::uint8_t* PROTOBUF_NONNULL target,
+      ::google::protobuf::io::EpsCopyOutputStream* PROTOBUF_NONNULL stream);
+
+  public:
+  ::size_t ByteSizeLong() const { return ByteSizeLong(*this); }
+  ::uint8_t* PROTOBUF_NONNULL _InternalSerialize(
+      ::uint8_t* PROTOBUF_NONNULL target,
+      ::google::protobuf::io::EpsCopyOutputStream* PROTOBUF_NONNULL stream) const {
+    return _InternalSerialize(*this, target, stream);
+  }
+  #else   // PROTOBUF_CUSTOM_VTABLE
+  ::size_t ByteSizeLong() const final;
+  ::uint8_t* PROTOBUF_NONNULL _InternalSerialize(
+      ::uint8_t* PROTOBUF_NONNULL target,
+      ::google::protobuf::io::EpsCopyOutputStream* PROTOBUF_NONNULL stream) const final;
+  #endif  // PROTOBUF_CUSTOM_VTABLE
+  int GetCachedSize() const { return _impl_._cached_size_.Get(); }
+
+  private:
+  void SharedCtor(::google::protobuf::Arena* PROTOBUF_NULLABLE arena);
+  static void SharedDtor(MessageLite& self);
+  void InternalSwap(WordFilterFetchResponse* PROTOBUF_NONNULL other);
+ private:
+  template <typename T>
+  friend ::absl::string_view(::google::protobuf::internal::GetAnyMessageName)();
+  static ::absl::string_view FullMessageName() { return "chirp.chat.WordFilterFetchResponse"; }
+
+  explicit WordFilterFetchResponse(::google::protobuf::Arena* PROTOBUF_NULLABLE arena);
+  WordFilterFetchResponse(::google::protobuf::Arena* PROTOBUF_NULLABLE arena, const WordFilterFetchResponse& from);
+  WordFilterFetchResponse(
+      ::google::protobuf::Arena* PROTOBUF_NULLABLE arena, WordFilterFetchResponse&& from) noexcept
+      : WordFilterFetchResponse(arena) {
+    *this = ::std::move(from);
+  }
+  const ::google::protobuf::internal::ClassData* PROTOBUF_NONNULL GetClassData() const PROTOBUF_FINAL;
+  static void* PROTOBUF_NONNULL PlacementNew_(
+      const void* PROTOBUF_NONNULL, void* PROTOBUF_NONNULL mem,
+      ::google::protobuf::Arena* PROTOBUF_NULLABLE arena);
+  static constexpr auto InternalNewImpl_();
+
+ public:
+  static constexpr auto InternalGenerateClassData_();
+
+  ::google::protobuf::Metadata GetMetadata() const;
+  // nested types ----------------------------------------------------
+
+  // accessors -------------------------------------------------------
+  enum : int {
+    kLexiconFieldNumber = 2,
+    kCodeFieldNumber = 1,
+  };
+  // .chirp.chat.WordFilterLexicon lexicon = 2;
+  bool has_lexicon() const;
+  void clear_lexicon() ;
+  const ::chirp::chat::WordFilterLexicon& lexicon() const;
+  [[nodiscard]] ::chirp::chat::WordFilterLexicon* PROTOBUF_NULLABLE release_lexicon();
+  ::chirp::chat::WordFilterLexicon* PROTOBUF_NONNULL mutable_lexicon();
+  void set_allocated_lexicon(::chirp::chat::WordFilterLexicon* PROTOBUF_NULLABLE value);
+  void unsafe_arena_set_allocated_lexicon(::chirp::chat::WordFilterLexicon* PROTOBUF_NULLABLE value);
+  ::chirp::chat::WordFilterLexicon* PROTOBUF_NULLABLE unsafe_arena_release_lexicon();
+
+  private:
+  const ::chirp::chat::WordFilterLexicon& _internal_lexicon() const;
+  ::chirp::chat::WordFilterLexicon* PROTOBUF_NONNULL _internal_mutable_lexicon();
+
+  public:
+  // .chirp.common.ErrorCode code = 1;
+  void clear_code() ;
+  ::chirp::common::ErrorCode code() const;
+  void set_code(::chirp::common::ErrorCode value);
+
+  private:
+  ::chirp::common::ErrorCode _internal_code() const;
+  void _internal_set_code(::chirp::common::ErrorCode value);
+
+  public:
+  // @@protoc_insertion_point(class_scope:chirp.chat.WordFilterFetchResponse)
+ private:
+  class _Internal;
+  friend class ::google::protobuf::internal::TcParser;
+  static const ::google::protobuf::internal::TcParseTable<1, 2,
+                                   1, 0,
+                                   2>
+      _table_;
+
+  friend class ::google::protobuf::MessageLite;
+  friend class ::google::protobuf::Arena;
+  template <typename T>
+  friend class ::google::protobuf::Arena::InternalHelper;
+  using InternalArenaConstructable_ = void;
+  using DestructorSkippable_ = void;
+  struct Impl_ {
+    inline explicit constexpr Impl_(::google::protobuf::internal::ConstantInitialized) noexcept;
+    inline explicit Impl_(
+        ::google::protobuf::internal::InternalVisibility visibility,
+        ::google::protobuf::Arena* PROTOBUF_NULLABLE arena);
+    inline explicit Impl_(
+        ::google::protobuf::internal::InternalVisibility visibility,
+        ::google::protobuf::Arena* PROTOBUF_NULLABLE arena, const Impl_& from,
+        const WordFilterFetchResponse& from_msg);
+    ::google::protobuf::internal::HasBits<1> _has_bits_;
+    ::google::protobuf::internal::CachedSize _cached_size_;
+    ::chirp::chat::WordFilterLexicon* PROTOBUF_NULLABLE lexicon_;
+    int code_;
+    PROTOBUF_TSAN_DECLARE_MEMBER
+  };
+  union { Impl_ _impl_; };
+  friend struct ::TableStruct_proto_2fchat_2eproto;
+};
+
+extern const ::google::protobuf::internal::ClassDataFull WordFilterFetchResponse_class_data_;
 // -------------------------------------------------------------------
 
 class PrepareFileUploadResponse final : public ::google::protobuf::Message
@@ -50819,6 +51717,475 @@ GetBlockedSendersResponse::_internal_mutable_target_user_ids() {
   return &_impl_.target_user_ids_;
 }
 
+// -------------------------------------------------------------------
+
+// WordFilterFetchRequest
+
+// int64 known_version = 1;
+inline void WordFilterFetchRequest::clear_known_version() {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_.known_version_ = ::int64_t{0};
+  ClearHasBit(_impl_._has_bits_[0],
+                  0x00000001U);
+}
+inline ::int64_t WordFilterFetchRequest::known_version() const {
+  // @@protoc_insertion_point(field_get:chirp.chat.WordFilterFetchRequest.known_version)
+  return _internal_known_version();
+}
+inline void WordFilterFetchRequest::set_known_version(::int64_t value) {
+  _internal_set_known_version(value);
+  SetHasBit(_impl_._has_bits_[0], 0x00000001U);
+  // @@protoc_insertion_point(field_set:chirp.chat.WordFilterFetchRequest.known_version)
+}
+inline ::int64_t WordFilterFetchRequest::_internal_known_version() const {
+  ::google::protobuf::internal::TSanRead(&_impl_);
+  return _impl_.known_version_;
+}
+inline void WordFilterFetchRequest::_internal_set_known_version(::int64_t value) {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_.known_version_ = value;
+}
+
+// -------------------------------------------------------------------
+
+// WordFilterLexicon
+
+// int64 version = 1;
+inline void WordFilterLexicon::clear_version() {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_.version_ = ::int64_t{0};
+  ClearHasBit(_impl_._has_bits_[0],
+                  0x00000004U);
+}
+inline ::int64_t WordFilterLexicon::version() const {
+  // @@protoc_insertion_point(field_get:chirp.chat.WordFilterLexicon.version)
+  return _internal_version();
+}
+inline void WordFilterLexicon::set_version(::int64_t value) {
+  _internal_set_version(value);
+  SetHasBit(_impl_._has_bits_[0], 0x00000004U);
+  // @@protoc_insertion_point(field_set:chirp.chat.WordFilterLexicon.version)
+}
+inline ::int64_t WordFilterLexicon::_internal_version() const {
+  ::google::protobuf::internal::TSanRead(&_impl_);
+  return _impl_.version_;
+}
+inline void WordFilterLexicon::_internal_set_version(::int64_t value) {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_.version_ = value;
+}
+
+// bool enabled = 2;
+inline void WordFilterLexicon::clear_enabled() {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_.enabled_ = false;
+  ClearHasBit(_impl_._has_bits_[0],
+                  0x00000008U);
+}
+inline bool WordFilterLexicon::enabled() const {
+  // @@protoc_insertion_point(field_get:chirp.chat.WordFilterLexicon.enabled)
+  return _internal_enabled();
+}
+inline void WordFilterLexicon::set_enabled(bool value) {
+  _internal_set_enabled(value);
+  SetHasBit(_impl_._has_bits_[0], 0x00000008U);
+  // @@protoc_insertion_point(field_set:chirp.chat.WordFilterLexicon.enabled)
+}
+inline bool WordFilterLexicon::_internal_enabled() const {
+  ::google::protobuf::internal::TSanRead(&_impl_);
+  return _impl_.enabled_;
+}
+inline void WordFilterLexicon::_internal_set_enabled(bool value) {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_.enabled_ = value;
+}
+
+// .chirp.chat.WordFilterDeliveryPolicy policy = 3;
+inline void WordFilterLexicon::clear_policy() {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_.policy_ = 0;
+  ClearHasBit(_impl_._has_bits_[0],
+                  0x00000010U);
+}
+inline ::chirp::chat::WordFilterDeliveryPolicy WordFilterLexicon::policy() const {
+  // @@protoc_insertion_point(field_get:chirp.chat.WordFilterLexicon.policy)
+  return _internal_policy();
+}
+inline void WordFilterLexicon::set_policy(::chirp::chat::WordFilterDeliveryPolicy value) {
+  _internal_set_policy(value);
+  SetHasBit(_impl_._has_bits_[0], 0x00000010U);
+  // @@protoc_insertion_point(field_set:chirp.chat.WordFilterLexicon.policy)
+}
+inline ::chirp::chat::WordFilterDeliveryPolicy WordFilterLexicon::_internal_policy() const {
+  ::google::protobuf::internal::TSanRead(&_impl_);
+  return static_cast<::chirp::chat::WordFilterDeliveryPolicy>(_impl_.policy_);
+}
+inline void WordFilterLexicon::_internal_set_policy(::chirp::chat::WordFilterDeliveryPolicy value) {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_.policy_ = value;
+}
+
+// string replacement = 4;
+inline void WordFilterLexicon::clear_replacement() {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_.replacement_.ClearToEmpty();
+  ClearHasBit(_impl_._has_bits_[0],
+                  0x00000001U);
+}
+inline const ::std::string& WordFilterLexicon::replacement() const
+    ABSL_ATTRIBUTE_LIFETIME_BOUND {
+  // @@protoc_insertion_point(field_get:chirp.chat.WordFilterLexicon.replacement)
+  return _internal_replacement();
+}
+template <typename Arg_, typename... Args_>
+PROTOBUF_ALWAYS_INLINE void WordFilterLexicon::set_replacement(Arg_&& arg, Args_... args) {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  SetHasBit(_impl_._has_bits_[0], 0x00000001U);
+  _impl_.replacement_.Set(static_cast<Arg_&&>(arg), args..., GetArena());
+  // @@protoc_insertion_point(field_set:chirp.chat.WordFilterLexicon.replacement)
+}
+inline ::std::string* PROTOBUF_NONNULL WordFilterLexicon::mutable_replacement()
+    ABSL_ATTRIBUTE_LIFETIME_BOUND {
+  SetHasBit(_impl_._has_bits_[0], 0x00000001U);
+  ::std::string* _s = _internal_mutable_replacement();
+  // @@protoc_insertion_point(field_mutable:chirp.chat.WordFilterLexicon.replacement)
+  return _s;
+}
+inline const ::std::string& WordFilterLexicon::_internal_replacement() const {
+  ::google::protobuf::internal::TSanRead(&_impl_);
+  return _impl_.replacement_.Get();
+}
+inline void WordFilterLexicon::_internal_set_replacement(const ::std::string& value) {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_.replacement_.Set(value, GetArena());
+}
+inline ::std::string* PROTOBUF_NONNULL WordFilterLexicon::_internal_mutable_replacement() {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  return _impl_.replacement_.Mutable( GetArena());
+}
+inline ::std::string* PROTOBUF_NULLABLE WordFilterLexicon::release_replacement() {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  // @@protoc_insertion_point(field_release:chirp.chat.WordFilterLexicon.replacement)
+  if (!CheckHasBit(_impl_._has_bits_[0], 0x00000001U)) {
+    return nullptr;
+  }
+  ClearHasBit(_impl_._has_bits_[0], 0x00000001U);
+  auto* released = _impl_.replacement_.Release();
+  if (::google::protobuf::internal::DebugHardenForceCopyDefaultString()) {
+    _impl_.replacement_.Set("", GetArena());
+  }
+  return released;
+}
+inline void WordFilterLexicon::set_allocated_replacement(::std::string* PROTOBUF_NULLABLE value) {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  if (value != nullptr) {
+    SetHasBit(_impl_._has_bits_[0], 0x00000001U);
+  } else {
+    ClearHasBit(_impl_._has_bits_[0], 0x00000001U);
+  }
+  _impl_.replacement_.SetAllocated(value, GetArena());
+  if (::google::protobuf::internal::DebugHardenForceCopyDefaultString() && _impl_.replacement_.IsDefault()) {
+    _impl_.replacement_.Set("", GetArena());
+  }
+  // @@protoc_insertion_point(field_set_allocated:chirp.chat.WordFilterLexicon.replacement)
+}
+
+// string lexicon = 5;
+inline void WordFilterLexicon::clear_lexicon() {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_.lexicon_.ClearToEmpty();
+  ClearHasBit(_impl_._has_bits_[0],
+                  0x00000002U);
+}
+inline const ::std::string& WordFilterLexicon::lexicon() const
+    ABSL_ATTRIBUTE_LIFETIME_BOUND {
+  // @@protoc_insertion_point(field_get:chirp.chat.WordFilterLexicon.lexicon)
+  return _internal_lexicon();
+}
+template <typename Arg_, typename... Args_>
+PROTOBUF_ALWAYS_INLINE void WordFilterLexicon::set_lexicon(Arg_&& arg, Args_... args) {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  SetHasBit(_impl_._has_bits_[0], 0x00000002U);
+  _impl_.lexicon_.Set(static_cast<Arg_&&>(arg), args..., GetArena());
+  // @@protoc_insertion_point(field_set:chirp.chat.WordFilterLexicon.lexicon)
+}
+inline ::std::string* PROTOBUF_NONNULL WordFilterLexicon::mutable_lexicon()
+    ABSL_ATTRIBUTE_LIFETIME_BOUND {
+  SetHasBit(_impl_._has_bits_[0], 0x00000002U);
+  ::std::string* _s = _internal_mutable_lexicon();
+  // @@protoc_insertion_point(field_mutable:chirp.chat.WordFilterLexicon.lexicon)
+  return _s;
+}
+inline const ::std::string& WordFilterLexicon::_internal_lexicon() const {
+  ::google::protobuf::internal::TSanRead(&_impl_);
+  return _impl_.lexicon_.Get();
+}
+inline void WordFilterLexicon::_internal_set_lexicon(const ::std::string& value) {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_.lexicon_.Set(value, GetArena());
+}
+inline ::std::string* PROTOBUF_NONNULL WordFilterLexicon::_internal_mutable_lexicon() {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  return _impl_.lexicon_.Mutable( GetArena());
+}
+inline ::std::string* PROTOBUF_NULLABLE WordFilterLexicon::release_lexicon() {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  // @@protoc_insertion_point(field_release:chirp.chat.WordFilterLexicon.lexicon)
+  if (!CheckHasBit(_impl_._has_bits_[0], 0x00000002U)) {
+    return nullptr;
+  }
+  ClearHasBit(_impl_._has_bits_[0], 0x00000002U);
+  auto* released = _impl_.lexicon_.Release();
+  if (::google::protobuf::internal::DebugHardenForceCopyDefaultString()) {
+    _impl_.lexicon_.Set("", GetArena());
+  }
+  return released;
+}
+inline void WordFilterLexicon::set_allocated_lexicon(::std::string* PROTOBUF_NULLABLE value) {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  if (value != nullptr) {
+    SetHasBit(_impl_._has_bits_[0], 0x00000002U);
+  } else {
+    ClearHasBit(_impl_._has_bits_[0], 0x00000002U);
+  }
+  _impl_.lexicon_.SetAllocated(value, GetArena());
+  if (::google::protobuf::internal::DebugHardenForceCopyDefaultString() && _impl_.lexicon_.IsDefault()) {
+    _impl_.lexicon_.Set("", GetArena());
+  }
+  // @@protoc_insertion_point(field_set_allocated:chirp.chat.WordFilterLexicon.lexicon)
+}
+
+// -------------------------------------------------------------------
+
+// WordFilterFetchResponse
+
+// .chirp.common.ErrorCode code = 1;
+inline void WordFilterFetchResponse::clear_code() {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_.code_ = 0;
+  ClearHasBit(_impl_._has_bits_[0],
+                  0x00000002U);
+}
+inline ::chirp::common::ErrorCode WordFilterFetchResponse::code() const {
+  // @@protoc_insertion_point(field_get:chirp.chat.WordFilterFetchResponse.code)
+  return _internal_code();
+}
+inline void WordFilterFetchResponse::set_code(::chirp::common::ErrorCode value) {
+  _internal_set_code(value);
+  SetHasBit(_impl_._has_bits_[0], 0x00000002U);
+  // @@protoc_insertion_point(field_set:chirp.chat.WordFilterFetchResponse.code)
+}
+inline ::chirp::common::ErrorCode WordFilterFetchResponse::_internal_code() const {
+  ::google::protobuf::internal::TSanRead(&_impl_);
+  return static_cast<::chirp::common::ErrorCode>(_impl_.code_);
+}
+inline void WordFilterFetchResponse::_internal_set_code(::chirp::common::ErrorCode value) {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_.code_ = value;
+}
+
+// .chirp.chat.WordFilterLexicon lexicon = 2;
+inline bool WordFilterFetchResponse::has_lexicon() const {
+  bool value = CheckHasBit(_impl_._has_bits_[0], 0x00000001U);
+  PROTOBUF_ASSUME(!value || _impl_.lexicon_ != nullptr);
+  return value;
+}
+inline void WordFilterFetchResponse::clear_lexicon() {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  if (_impl_.lexicon_ != nullptr) _impl_.lexicon_->Clear();
+  ClearHasBit(_impl_._has_bits_[0],
+                  0x00000001U);
+}
+inline const ::chirp::chat::WordFilterLexicon& WordFilterFetchResponse::_internal_lexicon() const {
+  ::google::protobuf::internal::TSanRead(&_impl_);
+  const ::chirp::chat::WordFilterLexicon* p = _impl_.lexicon_;
+  return p != nullptr ? *p : reinterpret_cast<const ::chirp::chat::WordFilterLexicon&>(::chirp::chat::_WordFilterLexicon_default_instance_);
+}
+inline const ::chirp::chat::WordFilterLexicon& WordFilterFetchResponse::lexicon() const ABSL_ATTRIBUTE_LIFETIME_BOUND {
+  // @@protoc_insertion_point(field_get:chirp.chat.WordFilterFetchResponse.lexicon)
+  return _internal_lexicon();
+}
+inline void WordFilterFetchResponse::unsafe_arena_set_allocated_lexicon(
+    ::chirp::chat::WordFilterLexicon* PROTOBUF_NULLABLE value) {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  if (GetArena() == nullptr) {
+    delete reinterpret_cast<::google::protobuf::MessageLite*>(_impl_.lexicon_);
+  }
+  _impl_.lexicon_ = reinterpret_cast<::chirp::chat::WordFilterLexicon*>(value);
+  if (value != nullptr) {
+    SetHasBit(_impl_._has_bits_[0], 0x00000001U);
+  } else {
+    ClearHasBit(_impl_._has_bits_[0], 0x00000001U);
+  }
+  // @@protoc_insertion_point(field_unsafe_arena_set_allocated:chirp.chat.WordFilterFetchResponse.lexicon)
+}
+inline ::chirp::chat::WordFilterLexicon* PROTOBUF_NULLABLE WordFilterFetchResponse::release_lexicon() {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+
+  ClearHasBit(_impl_._has_bits_[0], 0x00000001U);
+  ::chirp::chat::WordFilterLexicon* released = _impl_.lexicon_;
+  _impl_.lexicon_ = nullptr;
+  if (::google::protobuf::internal::DebugHardenForceCopyInRelease()) {
+    auto* old = reinterpret_cast<::google::protobuf::MessageLite*>(released);
+    released = ::google::protobuf::internal::DuplicateIfNonNull(released);
+    if (GetArena() == nullptr) {
+      delete old;
+    }
+  } else {
+    if (GetArena() != nullptr) {
+      released = ::google::protobuf::internal::DuplicateIfNonNull(released);
+    }
+  }
+  return released;
+}
+inline ::chirp::chat::WordFilterLexicon* PROTOBUF_NULLABLE WordFilterFetchResponse::unsafe_arena_release_lexicon() {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  // @@protoc_insertion_point(field_release:chirp.chat.WordFilterFetchResponse.lexicon)
+
+  ClearHasBit(_impl_._has_bits_[0], 0x00000001U);
+  ::chirp::chat::WordFilterLexicon* temp = _impl_.lexicon_;
+  _impl_.lexicon_ = nullptr;
+  return temp;
+}
+inline ::chirp::chat::WordFilterLexicon* PROTOBUF_NONNULL WordFilterFetchResponse::_internal_mutable_lexicon() {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  if (_impl_.lexicon_ == nullptr) {
+    auto* p = ::google::protobuf::Message::DefaultConstruct<::chirp::chat::WordFilterLexicon>(GetArena());
+    _impl_.lexicon_ = reinterpret_cast<::chirp::chat::WordFilterLexicon*>(p);
+  }
+  return _impl_.lexicon_;
+}
+inline ::chirp::chat::WordFilterLexicon* PROTOBUF_NONNULL WordFilterFetchResponse::mutable_lexicon()
+    ABSL_ATTRIBUTE_LIFETIME_BOUND {
+  SetHasBit(_impl_._has_bits_[0], 0x00000001U);
+  ::chirp::chat::WordFilterLexicon* _msg = _internal_mutable_lexicon();
+  // @@protoc_insertion_point(field_mutable:chirp.chat.WordFilterFetchResponse.lexicon)
+  return _msg;
+}
+inline void WordFilterFetchResponse::set_allocated_lexicon(::chirp::chat::WordFilterLexicon* PROTOBUF_NULLABLE value) {
+  ::google::protobuf::Arena* message_arena = GetArena();
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  if (message_arena == nullptr) {
+    delete reinterpret_cast<::google::protobuf::MessageLite*>(_impl_.lexicon_);
+  }
+
+  if (value != nullptr) {
+    ::google::protobuf::Arena* submessage_arena = value->GetArena();
+    if (message_arena != submessage_arena) {
+      value = ::google::protobuf::internal::GetOwnedMessage(message_arena, value, submessage_arena);
+    }
+    SetHasBit(_impl_._has_bits_[0], 0x00000001U);
+  } else {
+    ClearHasBit(_impl_._has_bits_[0], 0x00000001U);
+  }
+
+  _impl_.lexicon_ = reinterpret_cast<::chirp::chat::WordFilterLexicon*>(value);
+  // @@protoc_insertion_point(field_set_allocated:chirp.chat.WordFilterFetchResponse.lexicon)
+}
+
+// -------------------------------------------------------------------
+
+// WordFilterUpdateNotify
+
+// .chirp.chat.WordFilterLexicon lexicon = 1;
+inline bool WordFilterUpdateNotify::has_lexicon() const {
+  bool value = CheckHasBit(_impl_._has_bits_[0], 0x00000001U);
+  PROTOBUF_ASSUME(!value || _impl_.lexicon_ != nullptr);
+  return value;
+}
+inline void WordFilterUpdateNotify::clear_lexicon() {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  if (_impl_.lexicon_ != nullptr) _impl_.lexicon_->Clear();
+  ClearHasBit(_impl_._has_bits_[0],
+                  0x00000001U);
+}
+inline const ::chirp::chat::WordFilterLexicon& WordFilterUpdateNotify::_internal_lexicon() const {
+  ::google::protobuf::internal::TSanRead(&_impl_);
+  const ::chirp::chat::WordFilterLexicon* p = _impl_.lexicon_;
+  return p != nullptr ? *p : reinterpret_cast<const ::chirp::chat::WordFilterLexicon&>(::chirp::chat::_WordFilterLexicon_default_instance_);
+}
+inline const ::chirp::chat::WordFilterLexicon& WordFilterUpdateNotify::lexicon() const ABSL_ATTRIBUTE_LIFETIME_BOUND {
+  // @@protoc_insertion_point(field_get:chirp.chat.WordFilterUpdateNotify.lexicon)
+  return _internal_lexicon();
+}
+inline void WordFilterUpdateNotify::unsafe_arena_set_allocated_lexicon(
+    ::chirp::chat::WordFilterLexicon* PROTOBUF_NULLABLE value) {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  if (GetArena() == nullptr) {
+    delete reinterpret_cast<::google::protobuf::MessageLite*>(_impl_.lexicon_);
+  }
+  _impl_.lexicon_ = reinterpret_cast<::chirp::chat::WordFilterLexicon*>(value);
+  if (value != nullptr) {
+    SetHasBit(_impl_._has_bits_[0], 0x00000001U);
+  } else {
+    ClearHasBit(_impl_._has_bits_[0], 0x00000001U);
+  }
+  // @@protoc_insertion_point(field_unsafe_arena_set_allocated:chirp.chat.WordFilterUpdateNotify.lexicon)
+}
+inline ::chirp::chat::WordFilterLexicon* PROTOBUF_NULLABLE WordFilterUpdateNotify::release_lexicon() {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+
+  ClearHasBit(_impl_._has_bits_[0], 0x00000001U);
+  ::chirp::chat::WordFilterLexicon* released = _impl_.lexicon_;
+  _impl_.lexicon_ = nullptr;
+  if (::google::protobuf::internal::DebugHardenForceCopyInRelease()) {
+    auto* old = reinterpret_cast<::google::protobuf::MessageLite*>(released);
+    released = ::google::protobuf::internal::DuplicateIfNonNull(released);
+    if (GetArena() == nullptr) {
+      delete old;
+    }
+  } else {
+    if (GetArena() != nullptr) {
+      released = ::google::protobuf::internal::DuplicateIfNonNull(released);
+    }
+  }
+  return released;
+}
+inline ::chirp::chat::WordFilterLexicon* PROTOBUF_NULLABLE WordFilterUpdateNotify::unsafe_arena_release_lexicon() {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  // @@protoc_insertion_point(field_release:chirp.chat.WordFilterUpdateNotify.lexicon)
+
+  ClearHasBit(_impl_._has_bits_[0], 0x00000001U);
+  ::chirp::chat::WordFilterLexicon* temp = _impl_.lexicon_;
+  _impl_.lexicon_ = nullptr;
+  return temp;
+}
+inline ::chirp::chat::WordFilterLexicon* PROTOBUF_NONNULL WordFilterUpdateNotify::_internal_mutable_lexicon() {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  if (_impl_.lexicon_ == nullptr) {
+    auto* p = ::google::protobuf::Message::DefaultConstruct<::chirp::chat::WordFilterLexicon>(GetArena());
+    _impl_.lexicon_ = reinterpret_cast<::chirp::chat::WordFilterLexicon*>(p);
+  }
+  return _impl_.lexicon_;
+}
+inline ::chirp::chat::WordFilterLexicon* PROTOBUF_NONNULL WordFilterUpdateNotify::mutable_lexicon()
+    ABSL_ATTRIBUTE_LIFETIME_BOUND {
+  SetHasBit(_impl_._has_bits_[0], 0x00000001U);
+  ::chirp::chat::WordFilterLexicon* _msg = _internal_mutable_lexicon();
+  // @@protoc_insertion_point(field_mutable:chirp.chat.WordFilterUpdateNotify.lexicon)
+  return _msg;
+}
+inline void WordFilterUpdateNotify::set_allocated_lexicon(::chirp::chat::WordFilterLexicon* PROTOBUF_NULLABLE value) {
+  ::google::protobuf::Arena* message_arena = GetArena();
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  if (message_arena == nullptr) {
+    delete reinterpret_cast<::google::protobuf::MessageLite*>(_impl_.lexicon_);
+  }
+
+  if (value != nullptr) {
+    ::google::protobuf::Arena* submessage_arena = value->GetArena();
+    if (message_arena != submessage_arena) {
+      value = ::google::protobuf::internal::GetOwnedMessage(message_arena, value, submessage_arena);
+    }
+    SetHasBit(_impl_._has_bits_[0], 0x00000001U);
+  } else {
+    ClearHasBit(_impl_._has_bits_[0], 0x00000001U);
+  }
+
+  _impl_.lexicon_ = reinterpret_cast<::chirp::chat::WordFilterLexicon*>(value);
+  // @@protoc_insertion_point(field_set_allocated:chirp.chat.WordFilterUpdateNotify.lexicon)
+}
+
 #ifdef __GNUC__
 #pragma GCC diagnostic pop
 #endif  // __GNUC__
@@ -50890,6 +52257,12 @@ struct is_proto_enum<::chirp::chat::MentionType> : std::true_type {};
 template <>
 inline const EnumDescriptor* PROTOBUF_NONNULL GetEnumDescriptor<::chirp::chat::MentionType>() {
   return ::chirp::chat::MentionType_descriptor();
+}
+template <>
+struct is_proto_enum<::chirp::chat::WordFilterDeliveryPolicy> : std::true_type {};
+template <>
+inline const EnumDescriptor* PROTOBUF_NONNULL GetEnumDescriptor<::chirp::chat::WordFilterDeliveryPolicy>() {
+  return ::chirp::chat::WordFilterDeliveryPolicy_descriptor();
 }
 
 }  // namespace protobuf

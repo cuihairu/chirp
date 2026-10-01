@@ -356,3 +356,12 @@ export const SET_DEAFEN = defineSpec(
   Voice.SetDeafenRequest,
   Voice.SetDeafenResponse,
 );
+
+// 词库下发（2245-2246，docs/design-notes/word_filter.md「词库下发协议」）。
+// 2247 UPDATE_NOTIFY 是服务器单向推送，无 REQ/RESP 配对，走 conn.onNotify。
+export const WORD_FILTER_FETCH = defineSpec(
+  MsgID.WORD_FILTER_FETCH_REQ,
+  MsgID.WORD_FILTER_FETCH_RESP,
+  Chat.WordFilterFetchRequest,
+  Chat.WordFilterFetchResponse,
+);

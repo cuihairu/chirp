@@ -9,6 +9,9 @@
 
 #include <gtest/gtest.h>
 
+#include <fcntl.h>
+#include <unistd.h>
+
 #include <atomic>
 #include <chrono>
 #include <cstring>
@@ -710,6 +713,159 @@ TEST_F(BasicChatTest, WordFilterReplacesOrRejectsContent) {
   ASSERT_TRUE(msg.ParseFromString(notifies[0].body()));
   EXPECT_EQ(msg.content().find("badword"), std::string::npos);
   EXPECT_NE(msg.content().find("has"), std::string::npos);
+
+  std::filesystem::remove(lexicon);
+  features_->word_filter = &word_filter_;
+}
+
+// --- 词库下发：fetch 守卫 / 条件 GET / 热更新广播 ---------------------------------
+
+TEST_F(BasicChatTest, WordFilterFetchGuardsAndEmptyServerAnswer) {
+  auto alice = std::make_shared<MockSession>();
+  auto anon = std::make_shared<MockSession>();
+  ASSERT_EQ(Login(alice, "alice").code(), chirp::common::OK);
+
+  // 垃圾 body → INVALID_PARAM；未认证 → AUTH_FAILED（对齐 2239-2244 守卫惯例）。
+  Dispatch(chirp::gateway::WORD_FILTER_FETCH_REQ, std::string("\xde\xad", 2), alice);
+  DispatchReq(chirp::gateway::WORD_FILTER_FETCH_REQ,
+              chirp::chat::WordFilterFetchRequest{}, anon);
+  {
+    const auto frames = FramesOf(*alice, chirp::gateway::WORD_FILTER_FETCH_RESP);
+    ASSERT_EQ(frames.size(), 1u);
+    chirp::chat::WordFilterFetchResponse resp;
+    ASSERT_TRUE(resp.ParseFromString(frames[0].body()));
+    EXPECT_EQ(resp.code(), chirp::common::INVALID_PARAM);
+  }
+  {
+    const auto frames = FramesOf(*anon, chirp::gateway::WORD_FILTER_FETCH_RESP);
+    ASSERT_EQ(frames.size(), 1u);
+    chirp::chat::WordFilterFetchResponse resp;
+    ASSERT_TRUE(resp.ParseFromString(frames[0].body()));
+    EXPECT_EQ(resp.code(), chirp::common::AUTH_FAILED);
+  }
+
+  // 未装配词库：version 0 / enabled false / 空文本（客户端语义=清空本地词库）。
+  DispatchReq(chirp::gateway::WORD_FILTER_FETCH_REQ,
+              chirp::chat::WordFilterFetchRequest{}, alice);
+  {
+    const auto frames = FramesOf(*alice, chirp::gateway::WORD_FILTER_FETCH_RESP);
+    ASSERT_EQ(frames.size(), 2u);
+    chirp::chat::WordFilterFetchResponse resp;
+    ASSERT_TRUE(resp.ParseFromString(frames[1].body()));
+    EXPECT_EQ(resp.code(), chirp::common::OK);
+    EXPECT_EQ(resp.lexicon().version(), 0);
+    EXPECT_FALSE(resp.lexicon().enabled());
+    EXPECT_EQ(resp.lexicon().lexicon(), "");
+  }
+}
+
+TEST_F(BasicChatTest, WordFilterFetchFullLexiconThenConditionalGet) {
+  auto alice = std::make_shared<MockSession>();
+  ASSERT_EQ(Login(alice, "alice").code(), chirp::common::OK);
+
+  const auto lexicon = std::filesystem::temp_directory_path() /
+                       ("chirp_wf_fetch_" + std::to_string(::getpid()) + ".txt");
+  {
+    std::ofstream out(lexicon);
+    out << "Second\nbadword\n";
+  }
+
+  chirp::chat::WordFilterOptions opts;
+  opts.lexicon_path = lexicon.string();
+  opts.reload_check_interval_ms = 60'000;  // 测试期间文件不变，不触发重载
+  chirp::chat::WordFilter loaded(opts);
+  features_->word_filter = &loaded;
+
+  // 首拉（known_version 0）→ 全量文本，规范化（小写、去重排序）。
+  chirp::chat::WordFilterFetchRequest req;
+  req.set_known_version(0);
+  DispatchReq(chirp::gateway::WORD_FILTER_FETCH_REQ, req, alice, /*seq=*/7);
+  {
+    const auto frames = FramesOf(*alice, chirp::gateway::WORD_FILTER_FETCH_RESP);
+    ASSERT_EQ(frames.size(), 1u);
+    EXPECT_EQ(frames[0].sequence(), 7);
+    chirp::chat::WordFilterFetchResponse resp;
+    ASSERT_TRUE(resp.ParseFromString(frames[0].body()));
+    EXPECT_EQ(resp.code(), chirp::common::OK);
+    EXPECT_EQ(resp.lexicon().version(), 1);
+    EXPECT_TRUE(resp.lexicon().enabled());
+    EXPECT_EQ(resp.lexicon().policy(), chirp::chat::WORD_FILTER_POLICY_REPLACE);
+    EXPECT_EQ(resp.lexicon().replacement(), "**");
+    EXPECT_EQ(resp.lexicon().lexicon(), "badword\nsecond\n");
+  }
+
+  // 条件 GET 命中（known_version == version）→ 文本省略，其余元数据照常。
+  req.set_known_version(1);
+  DispatchReq(chirp::gateway::WORD_FILTER_FETCH_REQ, req, alice, /*seq=*/8);
+  {
+    const auto frames = FramesOf(*alice, chirp::gateway::WORD_FILTER_FETCH_RESP);
+    ASSERT_EQ(frames.size(), 2u);
+    chirp::chat::WordFilterFetchResponse resp;
+    ASSERT_TRUE(resp.ParseFromString(frames[1].body()));
+    EXPECT_EQ(frames[1].sequence(), 8);
+    EXPECT_EQ(resp.code(), chirp::common::OK);
+    EXPECT_EQ(resp.lexicon().version(), 1);
+    EXPECT_EQ(resp.lexicon().lexicon(), "");
+  }
+
+  std::filesystem::remove(lexicon);
+  features_->word_filter = &word_filter_;
+}
+
+TEST_F(BasicChatTest, WordFilterHotReloadBroadcastsToLiveSessions) {
+  auto alice = std::make_shared<MockSession>();
+  auto bob = std::make_shared<MockSession>();
+  auto anon = std::make_shared<MockSession>();  // 从不登录：不在 registry
+  ASSERT_EQ(Login(alice, "alice").code(), chirp::common::OK);
+  ASSERT_EQ(Login(bob, "bob").code(), chirp::common::OK);
+
+  const auto lexicon = std::filesystem::temp_directory_path() /
+                       ("chirp_wf_reload_" + std::to_string(::getpid()) + ".txt");
+  {
+    std::ofstream out(lexicon);
+    out << "first\n";
+  }
+
+  chirp::chat::WordFilterOptions opts;
+  opts.lexicon_path = lexicon.string();
+  opts.reload_check_interval_ms = 0;  // 每次发送都检查 mtime
+  chirp::chat::WordFilter loaded(opts);
+  features_->word_filter = &loaded;
+  // 与生产 main 同款接线：每次装载广播全量词库给全部活会话。
+  loaded.set_on_reload([this, &loaded](int64_t) {
+    chirp::chat::BroadcastWordFilterUpdate(state_, loaded);
+  });
+
+  // 改写词库文件；下一次发送（Filter→ReloadIfStale→LoadLexicon→on_reload）
+  // 触发广播。mtime 显式设到远处，摆脱文件系统时间戳粒度（与
+  // word_filter_test 的 TouchNewMtime 同款手法）。
+  {
+    std::ofstream out(lexicon);
+    out << "first\nsecond\n";
+  }
+  struct timespec times[2];
+  times[0].tv_sec = 0;
+  times[0].tv_nsec = UTIME_NOW;
+  times[1].tv_sec = 1'700'000'000;
+  times[1].tv_nsec = 0;
+  ASSERT_EQ(::utimensat(AT_FDCWD, lexicon.c_str(), times, 0), 0);
+  EXPECT_EQ(Send(alice, "alice", "bob", "clean words only").code(),
+            chirp::common::OK);
+  EXPECT_EQ(loaded.version(), 2);
+  EXPECT_EQ(loaded.word_count(), 2u);
+
+  for (const auto* session : {alice.get(), bob.get()}) {
+    const auto frames = FramesOf(*session, chirp::gateway::WORD_FILTER_UPDATE_NOTIFY);
+    ASSERT_EQ(frames.size(), 1u);
+    EXPECT_EQ(frames[0].sequence(), 0);  // 推送 seq 恒 0
+    chirp::chat::WordFilterUpdateNotify notify;
+    ASSERT_TRUE(notify.ParseFromString(frames[0].body()));
+    EXPECT_EQ(notify.lexicon().version(), 2);
+    EXPECT_TRUE(notify.lexicon().enabled());
+    EXPECT_EQ(notify.lexicon().lexicon(), "first\nsecond\n");
+  }
+  // 未登录连接不在 registry，收不到推送。
+  EXPECT_TRUE(FramesOf(*anon, chirp::gateway::WORD_FILTER_UPDATE_NOTIFY).empty());
 
   std::filesystem::remove(lexicon);
   features_->word_filter = &word_filter_;

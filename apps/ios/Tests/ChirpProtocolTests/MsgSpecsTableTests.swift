@@ -17,7 +17,7 @@ final class MsgSpecsTableTests: XCTestCase {
     }
 
     func testSpecTableIsCompleteAndPairsStayDistinct() {
-        XCTAssertEqual(MsgSpecs.all.count, 40)
+        XCTAssertEqual(MsgSpecs.all.count, 41)
         for spec in MsgSpecs.all {
             XCTAssertNotEqual(spec.reqMsgId, spec.respMsgId, "req/resp ids must differ for \(spec.reqMsgId)")
         }
@@ -34,6 +34,8 @@ final class MsgSpecsTableTests: XCTestCase {
         XCTAssertTrue(try MsgSpecs.registerDevice.decodeResponse([]) is Chirp_AppNotification_RegisterDeviceResponse)
         XCTAssertTrue(
             try MsgSpecs.setGamePresenceEnabled.decodeResponse([]) is Chirp_GameServerGateway_SetGamePresenceEnabledResponse)
+        XCTAssertTrue(
+            try MsgSpecs.wordFilterFetch.decodeResponse([]) is Chirp_Chat_WordFilterFetchResponse)
         for spec in MsgSpecs.all {
             try spec.decodeEmpty() // must not throw for any spec
         }

@@ -132,6 +132,16 @@ export enum MsgID {
   UNBLOCK_MESSAGE_SENDER_RESP = 2242,
   GET_BLOCKED_SENDERS_REQ = 2243,
   GET_BLOCKED_SENDERS_RESP = 2244,
+  /**
+   * WORD_FILTER_FETCH_REQ - 词库下发（敏感词过滤的 lexicon distribution 通道，2026-10 提案落地）：
+   * 客户端登录后主动拉取（FETCH），服务端词库热更新时向全部已认证会话
+   * 推送（UPDATE_NOTIFY）。body 见 chat.proto 的 WordFilter* 消息。下发
+   * 的是服务端当前生效词库的规范化文本（每行一词、小写、去重排序），客户
+   * 端发送侧预检据此镜像服务端裁决，不再依赖本地人工同步的词库文件。
+   */
+  WORD_FILTER_FETCH_REQ = 2245,
+  WORD_FILTER_FETCH_RESP = 2246,
+  WORD_FILTER_UPDATE_NOTIFY = 2247,
   /** ADD_FRIEND_REQ - Social service */
   ADD_FRIEND_REQ = 3001,
   ADD_FRIEND_RESP = 3002,
@@ -587,6 +597,15 @@ export function msgIDFromJSON(object: any): MsgID {
     case 2244:
     case "GET_BLOCKED_SENDERS_RESP":
       return MsgID.GET_BLOCKED_SENDERS_RESP;
+    case 2245:
+    case "WORD_FILTER_FETCH_REQ":
+      return MsgID.WORD_FILTER_FETCH_REQ;
+    case 2246:
+    case "WORD_FILTER_FETCH_RESP":
+      return MsgID.WORD_FILTER_FETCH_RESP;
+    case 2247:
+    case "WORD_FILTER_UPDATE_NOTIFY":
+      return MsgID.WORD_FILTER_UPDATE_NOTIFY;
     case 3001:
     case "ADD_FRIEND_REQ":
       return MsgID.ADD_FRIEND_REQ;
@@ -1138,6 +1157,12 @@ export function msgIDToJSON(object: MsgID): string {
       return "GET_BLOCKED_SENDERS_REQ";
     case MsgID.GET_BLOCKED_SENDERS_RESP:
       return "GET_BLOCKED_SENDERS_RESP";
+    case MsgID.WORD_FILTER_FETCH_REQ:
+      return "WORD_FILTER_FETCH_REQ";
+    case MsgID.WORD_FILTER_FETCH_RESP:
+      return "WORD_FILTER_FETCH_RESP";
+    case MsgID.WORD_FILTER_UPDATE_NOTIFY:
+      return "WORD_FILTER_UPDATE_NOTIFY";
     case MsgID.ADD_FRIEND_REQ:
       return "ADD_FRIEND_REQ";
     case MsgID.ADD_FRIEND_RESP:

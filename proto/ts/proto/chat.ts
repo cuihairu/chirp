@@ -509,6 +509,49 @@ export function mentionTypeToJSON(object: MentionType): string {
   }
 }
 
+/**
+ * 命名避让 C++ 核心既有 chirp::chat::WordFilterPolicy（word_filter.h 的
+ * enum class）——下发通道的 proto 枚举用 Delivery 后缀，取值名保持一致。
+ */
+export enum WordFilterDeliveryPolicy {
+  WORD_FILTER_POLICY_REPLACE = 0,
+  WORD_FILTER_POLICY_REJECT = 1,
+  WORD_FILTER_POLICY_RECORD = 2,
+  UNRECOGNIZED = -1,
+}
+
+export function wordFilterDeliveryPolicyFromJSON(object: any): WordFilterDeliveryPolicy {
+  switch (object) {
+    case 0:
+    case "WORD_FILTER_POLICY_REPLACE":
+      return WordFilterDeliveryPolicy.WORD_FILTER_POLICY_REPLACE;
+    case 1:
+    case "WORD_FILTER_POLICY_REJECT":
+      return WordFilterDeliveryPolicy.WORD_FILTER_POLICY_REJECT;
+    case 2:
+    case "WORD_FILTER_POLICY_RECORD":
+      return WordFilterDeliveryPolicy.WORD_FILTER_POLICY_RECORD;
+    case -1:
+    case "UNRECOGNIZED":
+    default:
+      return WordFilterDeliveryPolicy.UNRECOGNIZED;
+  }
+}
+
+export function wordFilterDeliveryPolicyToJSON(object: WordFilterDeliveryPolicy): string {
+  switch (object) {
+    case WordFilterDeliveryPolicy.WORD_FILTER_POLICY_REPLACE:
+      return "WORD_FILTER_POLICY_REPLACE";
+    case WordFilterDeliveryPolicy.WORD_FILTER_POLICY_REJECT:
+      return "WORD_FILTER_POLICY_REJECT";
+    case WordFilterDeliveryPolicy.WORD_FILTER_POLICY_RECORD:
+      return "WORD_FILTER_POLICY_RECORD";
+    case WordFilterDeliveryPolicy.UNRECOGNIZED:
+    default:
+      return "UNRECOGNIZED";
+  }
+}
+
 /** 发送消息请求 */
 export interface SendMessageRequest {
   senderId: string;
@@ -1565,6 +1608,35 @@ export interface GetBlockedSendersRequest {
 export interface GetBlockedSendersResponse {
   code: ErrorCode;
   targetUserIds: string[];
+}
+
+export interface WordFilterFetchRequest {
+  /** 客户端当前词库版本；0 = 客户端还没有词库。 */
+  knownVersion: number;
+}
+
+/** FETCH_RESP 与 UPDATE_NOTIFY 共用的词库载荷。 */
+export interface WordFilterLexicon {
+  /** 服务端当前版本；0 = 服务端未启用词库 */
+  version: number;
+  /** 服务端过滤是否生效（词库非空） */
+  enabled: boolean;
+  policy: WordFilterDeliveryPolicy;
+  /** replace 策略的替换文本（服务端默认 "**"） */
+  replacement: string;
+  /** 规范化词库文本；条件 GET 命中（known_version == version）时为空。 */
+  lexicon: string;
+}
+
+export interface WordFilterFetchResponse {
+  /** OK / AUTH_FAILED（未登录） / INVALID_PARAM（垃圾 body） */
+  code: ErrorCode;
+  lexicon: WordFilterLexicon | undefined;
+}
+
+export interface WordFilterUpdateNotify {
+  /** 恒带全量新词库 */
+  lexicon: WordFilterLexicon | undefined;
 }
 
 function createBaseSendMessageRequest(): SendMessageRequest {
@@ -13855,6 +13927,317 @@ export const GetBlockedSendersResponse = {
     const message = createBaseGetBlockedSendersResponse();
     message.code = object.code ?? 0;
     message.targetUserIds = object.targetUserIds?.map((e) => e) || [];
+    return message;
+  },
+};
+
+function createBaseWordFilterFetchRequest(): WordFilterFetchRequest {
+  return { knownVersion: 0 };
+}
+
+export const WordFilterFetchRequest = {
+  encode(message: WordFilterFetchRequest, writer: _m0.Writer = _m0.Writer.create()): _m0.Writer {
+    if (message.knownVersion !== 0) {
+      writer.uint32(8).int64(message.knownVersion);
+    }
+    return writer;
+  },
+
+  decode(input: _m0.Reader | Uint8Array, length?: number): WordFilterFetchRequest {
+    const reader = input instanceof _m0.Reader ? input : _m0.Reader.create(input);
+    let end = length === undefined ? reader.len : reader.pos + length;
+    const message = createBaseWordFilterFetchRequest();
+    while (reader.pos < end) {
+      const tag = reader.uint32();
+      switch (tag >>> 3) {
+        case 1:
+          if (tag !== 8) {
+            break;
+          }
+
+          message.knownVersion = longToNumber(reader.int64() as Long);
+          continue;
+      }
+      if ((tag & 7) === 4 || tag === 0) {
+        break;
+      }
+      reader.skipType(tag & 7);
+    }
+    return message;
+  },
+
+  fromJSON(object: any): WordFilterFetchRequest {
+    return { knownVersion: isSet(object.knownVersion) ? globalThis.Number(object.knownVersion) : 0 };
+  },
+
+  toJSON(message: WordFilterFetchRequest): unknown {
+    const obj: any = {};
+    if (message.knownVersion !== 0) {
+      obj.knownVersion = Math.round(message.knownVersion);
+    }
+    return obj;
+  },
+
+  create<I extends Exact<DeepPartial<WordFilterFetchRequest>, I>>(base?: I): WordFilterFetchRequest {
+    return WordFilterFetchRequest.fromPartial(base ?? ({} as any));
+  },
+  fromPartial<I extends Exact<DeepPartial<WordFilterFetchRequest>, I>>(object: I): WordFilterFetchRequest {
+    const message = createBaseWordFilterFetchRequest();
+    message.knownVersion = object.knownVersion ?? 0;
+    return message;
+  },
+};
+
+function createBaseWordFilterLexicon(): WordFilterLexicon {
+  return { version: 0, enabled: false, policy: 0, replacement: "", lexicon: "" };
+}
+
+export const WordFilterLexicon = {
+  encode(message: WordFilterLexicon, writer: _m0.Writer = _m0.Writer.create()): _m0.Writer {
+    if (message.version !== 0) {
+      writer.uint32(8).int64(message.version);
+    }
+    if (message.enabled !== false) {
+      writer.uint32(16).bool(message.enabled);
+    }
+    if (message.policy !== 0) {
+      writer.uint32(24).int32(message.policy);
+    }
+    if (message.replacement !== "") {
+      writer.uint32(34).string(message.replacement);
+    }
+    if (message.lexicon !== "") {
+      writer.uint32(42).string(message.lexicon);
+    }
+    return writer;
+  },
+
+  decode(input: _m0.Reader | Uint8Array, length?: number): WordFilterLexicon {
+    const reader = input instanceof _m0.Reader ? input : _m0.Reader.create(input);
+    let end = length === undefined ? reader.len : reader.pos + length;
+    const message = createBaseWordFilterLexicon();
+    while (reader.pos < end) {
+      const tag = reader.uint32();
+      switch (tag >>> 3) {
+        case 1:
+          if (tag !== 8) {
+            break;
+          }
+
+          message.version = longToNumber(reader.int64() as Long);
+          continue;
+        case 2:
+          if (tag !== 16) {
+            break;
+          }
+
+          message.enabled = reader.bool();
+          continue;
+        case 3:
+          if (tag !== 24) {
+            break;
+          }
+
+          message.policy = reader.int32() as any;
+          continue;
+        case 4:
+          if (tag !== 34) {
+            break;
+          }
+
+          message.replacement = reader.string();
+          continue;
+        case 5:
+          if (tag !== 42) {
+            break;
+          }
+
+          message.lexicon = reader.string();
+          continue;
+      }
+      if ((tag & 7) === 4 || tag === 0) {
+        break;
+      }
+      reader.skipType(tag & 7);
+    }
+    return message;
+  },
+
+  fromJSON(object: any): WordFilterLexicon {
+    return {
+      version: isSet(object.version) ? globalThis.Number(object.version) : 0,
+      enabled: isSet(object.enabled) ? globalThis.Boolean(object.enabled) : false,
+      policy: isSet(object.policy) ? wordFilterDeliveryPolicyFromJSON(object.policy) : 0,
+      replacement: isSet(object.replacement) ? globalThis.String(object.replacement) : "",
+      lexicon: isSet(object.lexicon) ? globalThis.String(object.lexicon) : "",
+    };
+  },
+
+  toJSON(message: WordFilterLexicon): unknown {
+    const obj: any = {};
+    if (message.version !== 0) {
+      obj.version = Math.round(message.version);
+    }
+    if (message.enabled !== false) {
+      obj.enabled = message.enabled;
+    }
+    if (message.policy !== 0) {
+      obj.policy = wordFilterDeliveryPolicyToJSON(message.policy);
+    }
+    if (message.replacement !== "") {
+      obj.replacement = message.replacement;
+    }
+    if (message.lexicon !== "") {
+      obj.lexicon = message.lexicon;
+    }
+    return obj;
+  },
+
+  create<I extends Exact<DeepPartial<WordFilterLexicon>, I>>(base?: I): WordFilterLexicon {
+    return WordFilterLexicon.fromPartial(base ?? ({} as any));
+  },
+  fromPartial<I extends Exact<DeepPartial<WordFilterLexicon>, I>>(object: I): WordFilterLexicon {
+    const message = createBaseWordFilterLexicon();
+    message.version = object.version ?? 0;
+    message.enabled = object.enabled ?? false;
+    message.policy = object.policy ?? 0;
+    message.replacement = object.replacement ?? "";
+    message.lexicon = object.lexicon ?? "";
+    return message;
+  },
+};
+
+function createBaseWordFilterFetchResponse(): WordFilterFetchResponse {
+  return { code: 0, lexicon: undefined };
+}
+
+export const WordFilterFetchResponse = {
+  encode(message: WordFilterFetchResponse, writer: _m0.Writer = _m0.Writer.create()): _m0.Writer {
+    if (message.code !== 0) {
+      writer.uint32(8).int32(message.code);
+    }
+    if (message.lexicon !== undefined) {
+      WordFilterLexicon.encode(message.lexicon, writer.uint32(18).fork()).ldelim();
+    }
+    return writer;
+  },
+
+  decode(input: _m0.Reader | Uint8Array, length?: number): WordFilterFetchResponse {
+    const reader = input instanceof _m0.Reader ? input : _m0.Reader.create(input);
+    let end = length === undefined ? reader.len : reader.pos + length;
+    const message = createBaseWordFilterFetchResponse();
+    while (reader.pos < end) {
+      const tag = reader.uint32();
+      switch (tag >>> 3) {
+        case 1:
+          if (tag !== 8) {
+            break;
+          }
+
+          message.code = reader.int32() as any;
+          continue;
+        case 2:
+          if (tag !== 18) {
+            break;
+          }
+
+          message.lexicon = WordFilterLexicon.decode(reader, reader.uint32());
+          continue;
+      }
+      if ((tag & 7) === 4 || tag === 0) {
+        break;
+      }
+      reader.skipType(tag & 7);
+    }
+    return message;
+  },
+
+  fromJSON(object: any): WordFilterFetchResponse {
+    return {
+      code: isSet(object.code) ? errorCodeFromJSON(object.code) : 0,
+      lexicon: isSet(object.lexicon) ? WordFilterLexicon.fromJSON(object.lexicon) : undefined,
+    };
+  },
+
+  toJSON(message: WordFilterFetchResponse): unknown {
+    const obj: any = {};
+    if (message.code !== 0) {
+      obj.code = errorCodeToJSON(message.code);
+    }
+    if (message.lexicon !== undefined) {
+      obj.lexicon = WordFilterLexicon.toJSON(message.lexicon);
+    }
+    return obj;
+  },
+
+  create<I extends Exact<DeepPartial<WordFilterFetchResponse>, I>>(base?: I): WordFilterFetchResponse {
+    return WordFilterFetchResponse.fromPartial(base ?? ({} as any));
+  },
+  fromPartial<I extends Exact<DeepPartial<WordFilterFetchResponse>, I>>(object: I): WordFilterFetchResponse {
+    const message = createBaseWordFilterFetchResponse();
+    message.code = object.code ?? 0;
+    message.lexicon = (object.lexicon !== undefined && object.lexicon !== null)
+      ? WordFilterLexicon.fromPartial(object.lexicon)
+      : undefined;
+    return message;
+  },
+};
+
+function createBaseWordFilterUpdateNotify(): WordFilterUpdateNotify {
+  return { lexicon: undefined };
+}
+
+export const WordFilterUpdateNotify = {
+  encode(message: WordFilterUpdateNotify, writer: _m0.Writer = _m0.Writer.create()): _m0.Writer {
+    if (message.lexicon !== undefined) {
+      WordFilterLexicon.encode(message.lexicon, writer.uint32(10).fork()).ldelim();
+    }
+    return writer;
+  },
+
+  decode(input: _m0.Reader | Uint8Array, length?: number): WordFilterUpdateNotify {
+    const reader = input instanceof _m0.Reader ? input : _m0.Reader.create(input);
+    let end = length === undefined ? reader.len : reader.pos + length;
+    const message = createBaseWordFilterUpdateNotify();
+    while (reader.pos < end) {
+      const tag = reader.uint32();
+      switch (tag >>> 3) {
+        case 1:
+          if (tag !== 10) {
+            break;
+          }
+
+          message.lexicon = WordFilterLexicon.decode(reader, reader.uint32());
+          continue;
+      }
+      if ((tag & 7) === 4 || tag === 0) {
+        break;
+      }
+      reader.skipType(tag & 7);
+    }
+    return message;
+  },
+
+  fromJSON(object: any): WordFilterUpdateNotify {
+    return { lexicon: isSet(object.lexicon) ? WordFilterLexicon.fromJSON(object.lexicon) : undefined };
+  },
+
+  toJSON(message: WordFilterUpdateNotify): unknown {
+    const obj: any = {};
+    if (message.lexicon !== undefined) {
+      obj.lexicon = WordFilterLexicon.toJSON(message.lexicon);
+    }
+    return obj;
+  },
+
+  create<I extends Exact<DeepPartial<WordFilterUpdateNotify>, I>>(base?: I): WordFilterUpdateNotify {
+    return WordFilterUpdateNotify.fromPartial(base ?? ({} as any));
+  },
+  fromPartial<I extends Exact<DeepPartial<WordFilterUpdateNotify>, I>>(object: I): WordFilterUpdateNotify {
+    const message = createBaseWordFilterUpdateNotify();
+    message.lexicon = (object.lexicon !== undefined && object.lexicon !== null)
+      ? WordFilterLexicon.fromPartial(object.lexicon)
+      : undefined;
     return message;
   },
 };

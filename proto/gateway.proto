@@ -136,6 +136,15 @@ enum MsgID {
   GET_BLOCKED_SENDERS_REQ = 2243;
   GET_BLOCKED_SENDERS_RESP = 2244;
 
+  // 词库下发（敏感词过滤的 lexicon distribution 通道，2026-10 提案落地）：
+  // 客户端登录后主动拉取（FETCH），服务端词库热更新时向全部已认证会话
+  // 推送（UPDATE_NOTIFY）。body 见 chat.proto 的 WordFilter* 消息。下发
+  // 的是服务端当前生效词库的规范化文本（每行一词、小写、去重排序），客户
+  // 端发送侧预检据此镜像服务端裁决，不再依赖本地人工同步的词库文件。
+  WORD_FILTER_FETCH_REQ = 2245;
+  WORD_FILTER_FETCH_RESP = 2246;
+  WORD_FILTER_UPDATE_NOTIFY = 2247;
+
   // Social service
   ADD_FRIEND_REQ = 3001;
   ADD_FRIEND_RESP = 3002;

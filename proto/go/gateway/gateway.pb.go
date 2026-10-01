@@ -139,6 +139,14 @@ const (
 	MsgID_UNBLOCK_MESSAGE_SENDER_RESP MsgID = 2242
 	MsgID_GET_BLOCKED_SENDERS_REQ     MsgID = 2243
 	MsgID_GET_BLOCKED_SENDERS_RESP    MsgID = 2244
+	// 词库下发（敏感词过滤的 lexicon distribution 通道，2026-10 提案落地）：
+	// 客户端登录后主动拉取（FETCH），服务端词库热更新时向全部已认证会话
+	// 推送（UPDATE_NOTIFY）。body 见 chat.proto 的 WordFilter* 消息。下发
+	// 的是服务端当前生效词库的规范化文本（每行一词、小写、去重排序），客户
+	// 端发送侧预检据此镜像服务端裁决，不再依赖本地人工同步的词库文件。
+	MsgID_WORD_FILTER_FETCH_REQ     MsgID = 2245
+	MsgID_WORD_FILTER_FETCH_RESP    MsgID = 2246
+	MsgID_WORD_FILTER_UPDATE_NOTIFY MsgID = 2247
 	// Social service
 	MsgID_ADD_FRIEND_REQ             MsgID = 3001
 	MsgID_ADD_FRIEND_RESP            MsgID = 3002
@@ -383,6 +391,9 @@ var (
 		2242: "UNBLOCK_MESSAGE_SENDER_RESP",
 		2243: "GET_BLOCKED_SENDERS_REQ",
 		2244: "GET_BLOCKED_SENDERS_RESP",
+		2245: "WORD_FILTER_FETCH_REQ",
+		2246: "WORD_FILTER_FETCH_RESP",
+		2247: "WORD_FILTER_UPDATE_NOTIFY",
 		3001: "ADD_FRIEND_REQ",
 		3002: "ADD_FRIEND_RESP",
 		3003: "FRIEND_REQUEST_ACTION_REQ",
@@ -596,6 +607,9 @@ var (
 		"UNBLOCK_MESSAGE_SENDER_RESP":      2242,
 		"GET_BLOCKED_SENDERS_REQ":          2243,
 		"GET_BLOCKED_SENDERS_RESP":         2244,
+		"WORD_FILTER_FETCH_REQ":            2245,
+		"WORD_FILTER_FETCH_RESP":           2246,
+		"WORD_FILTER_UPDATE_NOTIFY":        2247,
 		"ADD_FRIEND_REQ":                   3001,
 		"ADD_FRIEND_RESP":                  3002,
 		"FRIEND_REQUEST_ACTION_REQ":        3003,
@@ -1295,7 +1309,7 @@ const file_proto_gateway_proto_rawDesc = "" +
 	"channel_id\x18\x01 \x01(\tR\tchannelId\x12\x1b\n" +
 	"\tsender_id\x18\x02 \x01(\tR\bsenderId\x12\x18\n" +
 	"\acontent\x18\x03 \x01(\fR\acontent\x12\"\n" +
-	"\rclient_msg_id\x18\x04 \x01(\tR\vclientMsgId*\x88+\n" +
+	"\rclient_msg_id\x18\x04 \x01(\tR\vclientMsgId*\xe1+\n" +
 	"\x05MsgID\x12\v\n" +
 	"\aUNKNOWN\x10\x00\x12\x13\n" +
 	"\x0eHEARTBEAT_PING\x10\xe9\a\x12\x13\n" +
@@ -1389,7 +1403,10 @@ const file_proto_gateway_proto_rawDesc = "" +
 	"\x1aUNBLOCK_MESSAGE_SENDER_REQ\x10\xc1\x11\x12 \n" +
 	"\x1bUNBLOCK_MESSAGE_SENDER_RESP\x10\xc2\x11\x12\x1c\n" +
 	"\x17GET_BLOCKED_SENDERS_REQ\x10\xc3\x11\x12\x1d\n" +
-	"\x18GET_BLOCKED_SENDERS_RESP\x10\xc4\x11\x12\x13\n" +
+	"\x18GET_BLOCKED_SENDERS_RESP\x10\xc4\x11\x12\x1a\n" +
+	"\x15WORD_FILTER_FETCH_REQ\x10\xc5\x11\x12\x1b\n" +
+	"\x16WORD_FILTER_FETCH_RESP\x10\xc6\x11\x12\x1e\n" +
+	"\x19WORD_FILTER_UPDATE_NOTIFY\x10\xc7\x11\x12\x13\n" +
 	"\x0eADD_FRIEND_REQ\x10\xb9\x17\x12\x14\n" +
 	"\x0fADD_FRIEND_RESP\x10\xba\x17\x12\x1e\n" +
 	"\x19FRIEND_REQUEST_ACTION_REQ\x10\xbb\x17\x12\x1f\n" +

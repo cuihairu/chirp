@@ -59,11 +59,15 @@ WordFilter::WordFilter(WordFilterOptions options) : options_(std::move(options))
 size_t WordFilter::LoadLexicon() {
   terms_.clear();
   enabled_ = false;
+  ++version_;
 
   FILE* file = std::fopen(options_.lexicon_path.c_str(), "r");
   if (file == nullptr) {
     chirp::common::Logger::Instance().Warn("word filter lexicon not readable: " + options_.lexicon_path);
     last_mtime_ms_ = MtimeMs(options_.lexicon_path);
+    if (on_reload_) {
+      on_reload_(version_);
+    }
     return 0;
   }
 
@@ -91,7 +95,19 @@ size_t WordFilter::LoadLexicon() {
   enabled_ = !terms_.empty();
   chirp::common::Logger::Instance().Info("word filter lexicon loaded: " + options_.lexicon_path + " (" +
                           std::to_string(terms_.size()) + " terms)");
+  if (on_reload_) {
+    on_reload_(version_);
+  }
   return terms_.size();
+}
+
+std::string WordFilter::SerializeLexicon() const {
+  std::string text;
+  for (const auto& term : terms_) {
+    text += term;
+    text.push_back('\n');
+  }
+  return text;
 }
 
 void WordFilter::ReloadIfStale(int64_t now_ms) {

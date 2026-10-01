@@ -165,6 +165,12 @@ public enum MsgSpecs {
         .getGamePresenceReq, .getGamePresenceResp
     ) { try Chirp_GameServerGateway_GetGamePresenceResponse(serializedBytes: $0) }
 
+    /// 词库下发（2245-2246，docs/design-notes/word_filter.md「词库下发协议」）。
+    /// 2247 UPDATE_NOTIFY 是服务器单向推送，无 REQ/RESP 配对，走 onNotify。
+    public static let wordFilterFetch = MessageSpec(
+        .wordFilterFetchReq, .wordFilterFetchResp
+    ) { try Chirp_Chat_WordFilterFetchResponse(serializedBytes: $0) }
+
     /// Every spec, for whole-table integrity assertions.
     public static let all: [AnyMessageSpec] = [
         AnyMessageSpec(login), AnyMessageSpec(logout),
@@ -186,6 +192,7 @@ public enum MsgSpecs {
         AnyMessageSpec(registerDevice), AnyMessageSpec(unregisterDevice),
         AnyMessageSpec(getUserDevices),
         AnyMessageSpec(setGamePresenceEnabled), AnyMessageSpec(getGamePresence),
+        AnyMessageSpec(wordFilterFetch),
     ]
 }
 

@@ -27,7 +27,7 @@ class MsgSpecsTest {
 
     @Test
     fun specTableIsCompleteAndPairsStayDistinct() {
-        assertEquals(40, MsgSpecs.all.size)
+        assertEquals(41, MsgSpecs.all.size)
         for (spec in MsgSpecs.all) {
             assertTrue(
                 spec.reqMsgId != spec.respMsgId,
@@ -42,6 +42,7 @@ class MsgSpecsTest {
         // pins that each decoder is wired to the matching generated class.
         assertTrue(MsgSpecs.login.decodeResponse(ByteArray(0)) is Auth.LoginResponse)
         assertTrue(MsgSpecs.sendMessage.decodeResponse(ByteArray(0)) is Chat.SendMessageResponse)
+        assertTrue(MsgSpecs.wordFilterFetch.decodeResponse(ByteArray(0)) is Chat.WordFilterFetchResponse)
         assertTrue(MsgSpecs.getHistory.decodeResponse(ByteArray(0)) is Chat.GetHistoryResponse)
         assertTrue(MsgSpecs.addFriend.decodeResponse(ByteArray(0)) is Social.AddFriendResponse)
         assertTrue(MsgSpecs.createParty.decodeResponse(ByteArray(0)) is Party.CreatePartyResponse)

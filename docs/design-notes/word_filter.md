@@ -91,3 +91,80 @@ Kotlin 版注释标明「与 word_filter_test.dart 同组测试向量对拍」�
 **为什么客户端知道结果还要发？**
 客户端预检只是**预测**，服务端是唯一裁决点（词库/策略随时可改且不下发给客
 户端）。预测失败的最坏情形是多一次往返拿 `INVALID_PARAM`。
+
+## 词库下发协议（2026-10 提案，已落地）
+
+### 背景
+
+服务端词库长期只有 `--word_filter_file` 本地装载（mtime 惰性热更新），客户端
+预检词库靠部署侧人工同步（Android 壳读 `filesDir/word_filter.txt`，iOS/TS 由
+调用方构造）——两端词库一旦漂移，客户端预检就预测不准服务端裁决（多浪费往返、
+reject 策略下还造成客户端能发服务端拒的困惑）。本提案给词库立一条下发通道：
+客户端预检词库以下发源为准，本地文件降级为回退。
+
+### 消息（proto/gateway.proto MsgID 2245-2247，body 见 proto/chat.proto）
+
+| MsgID | 名称 | 方向 | 语义 |
+|---|---|---|---|
+| 2245 | `WORD_FILTER_FETCH_REQ` | 客户端 → 服务端 | 拉取，body `WordFilterFetchRequest{known_version}` |
+| 2246 | `WORD_FILTER_FETCH_RESP` | 服务端 → 客户端 | 应答拉取，body `WordFilterFetchResponse{code, lexicon}` |
+| 2247 | `WORD_FILTER_UPDATE_NOTIFY` | 服务端 → 客户端 | 热更新推送，body `WordFilterUpdateNotify{lexicon}`，sequence 0、只读、不要求 ACK |
+
+`WordFilterLexicon`（RESP 与 NOTIFY 共用载荷）：`version` + `enabled` +
+`policy` + `replacement` + `lexicon`（规范化词库文本）。
+
+### 语义规约
+
+1. **版本单调**：服务端每次装载词库（构造首载、mtime 热更新重载、重载失败
+   变空表）`version` 自增，从 1 起；`0` 表示服务端没有装配词库。客户端忽略
+   `version <= 本地版本` 的任何下发——乱序与重复投递免疫。
+2. **拉取 = 条件 GET**：客户端带 `known_version`（0 = 没有）；服务端版本一致
+   时 RESP 省略 `lexicon` 文本（省流量），客户端按 version 相等跳过装载。
+3. **推送 = 热更新广播**：服务端词库 mtime 变化重载成功后，向全部已认证在线
+   会话广播完整新词库（锁内快照、锁外投递，对齐设备清单广播）。没拉取过的
+   端收到推送也照常装载——推送自足，不依赖先拉取。
+4. **文本格式不变**：`lexicon` 文本是服务端词库的规范化形式（每行一词、小写、
+   去重排序），与 `--word_filter_file` 同格式，客户端照常走 `parseWordLexicon`。
+5. **策略随词库下发**：客户端预检镜像服务端策略——`replace` 改写、`reject`
+   拒发；`record` 是纯服务端审计语义，客户端**不预检**（透传，避免客户端拦了
+   服务端却放行的体验分叉）。
+6. **鉴权与守卫**：FETCH 未登录回 `AUTH_FAILED`，垃圾 body 回 `INVALID_PARAM`
+   （对齐 2239-2244 段守卫惯例）；词库不是机密但不开给未认证连接。
+7. **服务端未启用词库**（无 `--word_filter_file`）：FETCH 照常应答
+   `version=0, enabled=false, 空文本`；客户端收到后清空本地预检词库（服务端
+   都不过滤，预检没有意义，且本地词库可能比服务端新——防止客户端误拦）。
+
+### 客户端接收（三端 SDK，`WordFilterSync` 组件）
+
+下发源成为首选，`WordFilterLoader` 本地文件降级为回退：
+
+| 端 | 组件 | 拉取时机 | 回退 |
+|---|---|---|---|
+| TS | `sdks/ts/src/word_filter_sync.ts` | 应用在登录成功后调 `fetch()` | `loadLocal(lines)` |
+| Kotlin | `apps/android/.../protocol/WordFilterSync.kt` | 壳层登录成功后 `fetch()` | `loadLocal(lines)`（原 `WordFilterLoader` 读的文件行） |
+| Swift | `apps/ios/Sources/ChirpProtocol/WordFilterSync.swift` | 调用方在登录成功后 `fetch()` | `loadLocal(lines)`（原 `WordFilterLoader` 读的文本行） |
+
+组件自身实现各端 `MessageInterceptor`：内部持当前 `WordFilter`（可热换），
+`FETCH_RESP` / `UPDATE_NOTIFY` 到达即重建——预检立即跟随服务端词库。`fetch()`
+失败（断线/超时/非 OK）不抛给 UI，回退词库继续生效，下次连接再拉。
+
+### 服务端接线
+
+- **basic**（`main.cc`）：`HandlePacket` switch 新增 `WORD_FILTER_FETCH_REQ`
+  case，词库状态填充与条件 GET 判定在共享单元
+  `services/shared/chat/src/word_filter_push.{h,cc}`；
+- **enhanced**（`main_enhanced.cc`）：`on_packet` 分发在
+  `DispatchDistributedPacket` 前拦截同款处理（SERVER_AUTH_REQ 先例）；
+- **广播**：两形态 `main()` 各挂 `WordFilter::set_on_reload` 回调 →
+  `BroadcastWordFilterUpdate`（遍历 registry 全部活会话）；
+- distributed 形态本就未接词库（无过滤），不接下发。
+
+### 设计取舍
+
+- **版本号 + 全量文本，不做哈希两步拉取**：游戏词库量级是几百项、几 KB，一轮
+  拉取就完事；哈希协商把一次往返变两次，还要客户端持久化哈希状态，收益为负。
+- **推送不做增量**：同上，全量文本是自足载荷，客户端不维护补丁状态。
+- **record 策略客户端不预检**：见语义规约 5——预检的职责是预测裁决，record
+  没有可预测的拒绝行为。
+- **服务端未启用时清空客户端词库**：防「本地词库比服务端狠」的误拦——服务端
+  放行的消息客户端拦住，比漏拦更伤体验。

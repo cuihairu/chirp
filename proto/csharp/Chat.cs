@@ -342,31 +342,42 @@ namespace Chirp.Chat {
             "aGlycC5jb21tb24uRXJyb3JDb2RlEhYKDnRhcmdldF91c2VyX2lkGAIgASgJ",
             "IhoKGEdldEJsb2NrZWRTZW5kZXJzUmVxdWVzdCJbChlHZXRCbG9ja2VkU2Vu",
             "ZGVyc1Jlc3BvbnNlEiUKBGNvZGUYASABKA4yFy5jaGlycC5jb21tb24uRXJy",
-            "b3JDb2RlEhcKD3RhcmdldF91c2VyX2lkcxgCIAMoCSqSAQoHTXNnVHlwZRII",
-            "CgRURVhUEAASCQoFRU1PSkkQARIJCgVWT0lDRRACEgkKBUlNQUdFEAMSDQoJ",
-            "SVRFTV9MSU5LEAoSDgoKU0tJTExfTElOSxALEg8KC0FDSElFVkVNRU5UEAwS",
-            "DgoKTlBDX0RJQUxPRxANEhAKDFRSQURFX1NUQVRVUxAOEgoKBlNZU1RFTRBj",
-            "KlsKC0NoYW5uZWxUeXBlEgsKB1BSSVZBVEUQABIICgRURUFNEAESCQoFR1VJ",
-            "TEQQAhIJCgVXT1JMRBADEhIKDlNZU1RFTV9DSEFOTkVMEAQSCwoHTUFSUVVF",
-            "RRAFKlkKCFByaW9yaXR5EhAKDFBSSU9SSVRZX0xPVxAAEhMKD1BSSU9SSVRZ",
-            "X05PUk1BTBABEhEKDVBSSU9SSVRZX0hJR0gQAhITCg9QUklPUklUWV9VUkdF",
-            "TlQQAypUCgpTZW5kZXJLaW5kEg8KC1NFTkRFUl9VU0VSEAASEQoNU0VOREVS",
-            "X1NZU1RFTRABEg4KClNFTkRFUl9OUEMQAhISCg5TRU5ERVJfU0VSVklDRRAD",
-            "KkIKD0dyb3VwTWVtYmVyUm9sZRIKCgZNRU1CRVIQABINCglNT0RFUkFUT1IQ",
-            "ARIJCgVBRE1JThACEgkKBU9XTkVSEAMqiwEKC0NoYW5uZWxLaW5kEhUKEUNI",
-            "QU5ORUxfS0lORF9URVhUEAASFgoSQ0hBTk5FTF9LSU5EX1ZPSUNFEAESHQoZ",
-            "Q0hBTk5FTF9LSU5EX0FOTk9VTkNFTUVOVBACEhYKEkNIQU5ORUxfS0lORF9T",
-            "VEFHRRADEhYKEkNIQU5ORUxfS0lORF9GT1JVTRAEKkQKDlBlcm1pc3Npb25U",
-            "eXBlEhgKFFBFUk1JU1NJT05fVFlQRV9ST0xFEAASGAoUUEVSTUlTU0lPTl9U",
-            "WVBFX1VTRVIQASo2ChJQZXJtaXNzaW9uT3ZlcnJpZGUSCwoHSU5IRVJJVBAA",
-            "EgkKBUFMTE9XEAESCAoEREVOWRACKocBCgtNZW50aW9uVHlwZRIVChFNRU5U",
-            "SU9OX1RZUEVfVVNFUhAAEhUKEU1FTlRJT05fVFlQRV9ST0xFEAESGAoUTUVO",
-            "VElPTl9UWVBFX0NIQU5ORUwQAhIZChVNRU5USU9OX1RZUEVfRVZFUllPTkUQ",
-            "AxIVChFNRU5USU9OX1RZUEVfSEVSRRAEQiRaImdpdGh1Yi5jb20vY3VpL2No",
-            "aXJwL3Byb3RvL2dvL2NoYXRiBnByb3RvMw=="));
+            "b3JDb2RlEhcKD3RhcmdldF91c2VyX2lkcxgCIAMoCSIvChZXb3JkRmlsdGVy",
+            "RmV0Y2hSZXF1ZXN0EhUKDWtub3duX3ZlcnNpb24YASABKAMikQEKEVdvcmRG",
+            "aWx0ZXJMZXhpY29uEg8KB3ZlcnNpb24YASABKAMSDwoHZW5hYmxlZBgCIAEo",
+            "CBI0CgZwb2xpY3kYAyABKA4yJC5jaGlycC5jaGF0LldvcmRGaWx0ZXJEZWxp",
+            "dmVyeVBvbGljeRITCgtyZXBsYWNlbWVudBgEIAEoCRIPCgdsZXhpY29uGAUg",
+            "ASgJInAKF1dvcmRGaWx0ZXJGZXRjaFJlc3BvbnNlEiUKBGNvZGUYASABKA4y",
+            "Fy5jaGlycC5jb21tb24uRXJyb3JDb2RlEi4KB2xleGljb24YAiABKAsyHS5j",
+            "aGlycC5jaGF0LldvcmRGaWx0ZXJMZXhpY29uIkgKFldvcmRGaWx0ZXJVcGRh",
+            "dGVOb3RpZnkSLgoHbGV4aWNvbhgBIAEoCzIdLmNoaXJwLmNoYXQuV29yZEZp",
+            "bHRlckxleGljb24qkgEKB01zZ1R5cGUSCAoEVEVYVBAAEgkKBUVNT0pJEAES",
+            "CQoFVk9JQ0UQAhIJCgVJTUFHRRADEg0KCUlURU1fTElOSxAKEg4KClNLSUxM",
+            "X0xJTksQCxIPCgtBQ0hJRVZFTUVOVBAMEg4KCk5QQ19ESUFMT0cQDRIQCgxU",
+            "UkFERV9TVEFUVVMQDhIKCgZTWVNURU0QYypbCgtDaGFubmVsVHlwZRILCgdQ",
+            "UklWQVRFEAASCAoEVEVBTRABEgkKBUdVSUxEEAISCQoFV09STEQQAxISCg5T",
+            "WVNURU1fQ0hBTk5FTBAEEgsKB01BUlFVRUUQBSpZCghQcmlvcml0eRIQCgxQ",
+            "UklPUklUWV9MT1cQABITCg9QUklPUklUWV9OT1JNQUwQARIRCg1QUklPUklU",
+            "WV9ISUdIEAISEwoPUFJJT1JJVFlfVVJHRU5UEAMqVAoKU2VuZGVyS2luZBIP",
+            "CgtTRU5ERVJfVVNFUhAAEhEKDVNFTkRFUl9TWVNURU0QARIOCgpTRU5ERVJf",
+            "TlBDEAISEgoOU0VOREVSX1NFUlZJQ0UQAypCCg9Hcm91cE1lbWJlclJvbGUS",
+            "CgoGTUVNQkVSEAASDQoJTU9ERVJBVE9SEAESCQoFQURNSU4QAhIJCgVPV05F",
+            "UhADKosBCgtDaGFubmVsS2luZBIVChFDSEFOTkVMX0tJTkRfVEVYVBAAEhYK",
+            "EkNIQU5ORUxfS0lORF9WT0lDRRABEh0KGUNIQU5ORUxfS0lORF9BTk5PVU5D",
+            "RU1FTlQQAhIWChJDSEFOTkVMX0tJTkRfU1RBR0UQAxIWChJDSEFOTkVMX0tJ",
+            "TkRfRk9SVU0QBCpECg5QZXJtaXNzaW9uVHlwZRIYChRQRVJNSVNTSU9OX1RZ",
+            "UEVfUk9MRRAAEhgKFFBFUk1JU1NJT05fVFlQRV9VU0VSEAEqNgoSUGVybWlz",
+            "c2lvbk92ZXJyaWRlEgsKB0lOSEVSSVQQABIJCgVBTExPVxABEggKBERFTlkQ",
+            "AiqHAQoLTWVudGlvblR5cGUSFQoRTUVOVElPTl9UWVBFX1VTRVIQABIVChFN",
+            "RU5USU9OX1RZUEVfUk9MRRABEhgKFE1FTlRJT05fVFlQRV9DSEFOTkVMEAIS",
+            "GQoVTUVOVElPTl9UWVBFX0VWRVJZT05FEAMSFQoRTUVOVElPTl9UWVBFX0hF",
+            "UkUQBCp4ChhXb3JkRmlsdGVyRGVsaXZlcnlQb2xpY3kSHgoaV09SRF9GSUxU",
+            "RVJfUE9MSUNZX1JFUExBQ0UQABIdChlXT1JEX0ZJTFRFUl9QT0xJQ1lfUkVK",
+            "RUNUEAESHQoZV09SRF9GSUxURVJfUE9MSUNZX1JFQ09SRBACQiRaImdpdGh1",
+            "Yi5jb20vY3VpL2NoaXJwL3Byb3RvL2dvL2NoYXRiBnByb3RvMw=="));
       descriptor = pbr::FileDescriptor.FromGeneratedCode(descriptorData,
           new pbr::FileDescriptor[] { global::Chirp.Common.CommonReflection.Descriptor, },
-          new pbr::GeneratedClrTypeInfo(new[] {typeof(global::Chirp.Chat.MsgType), typeof(global::Chirp.Chat.ChannelType), typeof(global::Chirp.Chat.Priority), typeof(global::Chirp.Chat.SenderKind), typeof(global::Chirp.Chat.GroupMemberRole), typeof(global::Chirp.Chat.ChannelKind), typeof(global::Chirp.Chat.PermissionType), typeof(global::Chirp.Chat.PermissionOverride), typeof(global::Chirp.Chat.MentionType), }, null, new pbr::GeneratedClrTypeInfo[] {
+          new pbr::GeneratedClrTypeInfo(new[] {typeof(global::Chirp.Chat.MsgType), typeof(global::Chirp.Chat.ChannelType), typeof(global::Chirp.Chat.Priority), typeof(global::Chirp.Chat.SenderKind), typeof(global::Chirp.Chat.GroupMemberRole), typeof(global::Chirp.Chat.ChannelKind), typeof(global::Chirp.Chat.PermissionType), typeof(global::Chirp.Chat.PermissionOverride), typeof(global::Chirp.Chat.MentionType), typeof(global::Chirp.Chat.WordFilterDeliveryPolicy), }, null, new pbr::GeneratedClrTypeInfo[] {
             new pbr::GeneratedClrTypeInfo(typeof(global::Chirp.Chat.SendMessageRequest), global::Chirp.Chat.SendMessageRequest.Parser, new[]{ "SenderId", "ReceiverId", "ChannelType", "ChannelId", "MsgType", "Content", "ClientTimestamp", "Priority", "Metadata", "TtlSeconds", "ReplyToMessageId" }, null, null, null, null),
             new pbr::GeneratedClrTypeInfo(typeof(global::Chirp.Chat.SendMessageResponse), global::Chirp.Chat.SendMessageResponse.Parser, new[]{ "Code", "MessageId", "ServerTimestamp" }, null, null, null, null),
             new pbr::GeneratedClrTypeInfo(typeof(global::Chirp.Chat.ChatMessage), global::Chirp.Chat.ChatMessage.Parser, new[]{ "MessageId", "SenderId", "ReceiverId", "ChannelType", "ChannelId", "MsgType", "Content", "Timestamp", "Priority", "Metadata", "TtlSeconds", "SenderKind", "ReplyToMessageId", "IsRecalled" }, null, null, null, null),
@@ -481,7 +492,11 @@ namespace Chirp.Chat {
             new pbr::GeneratedClrTypeInfo(typeof(global::Chirp.Chat.UnblockMessageSenderRequest), global::Chirp.Chat.UnblockMessageSenderRequest.Parser, new[]{ "TargetUserId" }, null, null, null, null),
             new pbr::GeneratedClrTypeInfo(typeof(global::Chirp.Chat.UnblockMessageSenderResponse), global::Chirp.Chat.UnblockMessageSenderResponse.Parser, new[]{ "Code", "TargetUserId" }, null, null, null, null),
             new pbr::GeneratedClrTypeInfo(typeof(global::Chirp.Chat.GetBlockedSendersRequest), global::Chirp.Chat.GetBlockedSendersRequest.Parser, null, null, null, null, null),
-            new pbr::GeneratedClrTypeInfo(typeof(global::Chirp.Chat.GetBlockedSendersResponse), global::Chirp.Chat.GetBlockedSendersResponse.Parser, new[]{ "Code", "TargetUserIds" }, null, null, null, null)
+            new pbr::GeneratedClrTypeInfo(typeof(global::Chirp.Chat.GetBlockedSendersResponse), global::Chirp.Chat.GetBlockedSendersResponse.Parser, new[]{ "Code", "TargetUserIds" }, null, null, null, null),
+            new pbr::GeneratedClrTypeInfo(typeof(global::Chirp.Chat.WordFilterFetchRequest), global::Chirp.Chat.WordFilterFetchRequest.Parser, new[]{ "KnownVersion" }, null, null, null, null),
+            new pbr::GeneratedClrTypeInfo(typeof(global::Chirp.Chat.WordFilterLexicon), global::Chirp.Chat.WordFilterLexicon.Parser, new[]{ "Version", "Enabled", "Policy", "Replacement", "Lexicon" }, null, null, null, null),
+            new pbr::GeneratedClrTypeInfo(typeof(global::Chirp.Chat.WordFilterFetchResponse), global::Chirp.Chat.WordFilterFetchResponse.Parser, new[]{ "Code", "Lexicon" }, null, null, null, null),
+            new pbr::GeneratedClrTypeInfo(typeof(global::Chirp.Chat.WordFilterUpdateNotify), global::Chirp.Chat.WordFilterUpdateNotify.Parser, new[]{ "Lexicon" }, null, null, null, null)
           }));
     }
     #endregion
@@ -709,6 +724,16 @@ namespace Chirp.Chat {
     /// @here
     /// </summary>
     [pbr::OriginalName("MENTION_TYPE_HERE")] Here = 4,
+  }
+
+  /// <summary>
+  /// 命名避让 C++ 核心既有 chirp::chat::WordFilterPolicy（word_filter.h 的
+  /// enum class）——下发通道的 proto 枚举用 Delivery 后缀，取值名保持一致。
+  /// </summary>
+  public enum WordFilterDeliveryPolicy {
+    [pbr::OriginalName("WORD_FILTER_POLICY_REPLACE")] WordFilterPolicyReplace = 0,
+    [pbr::OriginalName("WORD_FILTER_POLICY_REJECT")] WordFilterPolicyReject = 1,
+    [pbr::OriginalName("WORD_FILTER_POLICY_RECORD")] WordFilterPolicyRecord = 2,
   }
 
   #endregion
@@ -36426,6 +36451,1025 @@ namespace Chirp.Chat {
           }
           case 18: {
             targetUserIds_.AddEntriesFrom(ref input, _repeated_targetUserIds_codec);
+            break;
+          }
+        }
+      }
+    }
+    #endif
+
+  }
+
+  [global::System.Diagnostics.DebuggerDisplayAttribute("{ToString(),nq}")]
+  public sealed partial class WordFilterFetchRequest : pb::IMessage<WordFilterFetchRequest>
+  #if !GOOGLE_PROTOBUF_REFSTRUCT_COMPATIBILITY_MODE
+      , pb::IBufferMessage
+  #endif
+  {
+    private static readonly pb::MessageParser<WordFilterFetchRequest> _parser = new pb::MessageParser<WordFilterFetchRequest>(() => new WordFilterFetchRequest());
+    private pb::UnknownFieldSet _unknownFields;
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    public static pb::MessageParser<WordFilterFetchRequest> Parser { get { return _parser; } }
+
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    public static pbr::MessageDescriptor Descriptor {
+      get { return global::Chirp.Chat.ChatReflection.Descriptor.MessageTypes[115]; }
+    }
+
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    pbr::MessageDescriptor pb::IMessage.Descriptor {
+      get { return Descriptor; }
+    }
+
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    public WordFilterFetchRequest() {
+      OnConstruction();
+    }
+
+    partial void OnConstruction();
+
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    public WordFilterFetchRequest(WordFilterFetchRequest other) : this() {
+      knownVersion_ = other.knownVersion_;
+      _unknownFields = pb::UnknownFieldSet.Clone(other._unknownFields);
+    }
+
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    public WordFilterFetchRequest Clone() {
+      return new WordFilterFetchRequest(this);
+    }
+
+    /// <summary>Field number for the "known_version" field.</summary>
+    public const int KnownVersionFieldNumber = 1;
+    private long knownVersion_;
+    /// <summary>
+    /// 客户端当前词库版本；0 = 客户端还没有词库。
+    /// </summary>
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    public long KnownVersion {
+      get { return knownVersion_; }
+      set {
+        knownVersion_ = value;
+      }
+    }
+
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    public override bool Equals(object other) {
+      return Equals(other as WordFilterFetchRequest);
+    }
+
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    public bool Equals(WordFilterFetchRequest other) {
+      if (ReferenceEquals(other, null)) {
+        return false;
+      }
+      if (ReferenceEquals(other, this)) {
+        return true;
+      }
+      if (KnownVersion != other.KnownVersion) return false;
+      return Equals(_unknownFields, other._unknownFields);
+    }
+
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    public override int GetHashCode() {
+      int hash = 1;
+      if (KnownVersion != 0L) hash ^= KnownVersion.GetHashCode();
+      if (_unknownFields != null) {
+        hash ^= _unknownFields.GetHashCode();
+      }
+      return hash;
+    }
+
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    public override string ToString() {
+      return pb::JsonFormatter.ToDiagnosticString(this);
+    }
+
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    public void WriteTo(pb::CodedOutputStream output) {
+    #if !GOOGLE_PROTOBUF_REFSTRUCT_COMPATIBILITY_MODE
+      output.WriteRawMessage(this);
+    #else
+      if (KnownVersion != 0L) {
+        output.WriteRawTag(8);
+        output.WriteInt64(KnownVersion);
+      }
+      if (_unknownFields != null) {
+        _unknownFields.WriteTo(output);
+      }
+    #endif
+    }
+
+    #if !GOOGLE_PROTOBUF_REFSTRUCT_COMPATIBILITY_MODE
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    void pb::IBufferMessage.InternalWriteTo(ref pb::WriteContext output) {
+      if (KnownVersion != 0L) {
+        output.WriteRawTag(8);
+        output.WriteInt64(KnownVersion);
+      }
+      if (_unknownFields != null) {
+        _unknownFields.WriteTo(ref output);
+      }
+    }
+    #endif
+
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    public int CalculateSize() {
+      int size = 0;
+      if (KnownVersion != 0L) {
+        size += 1 + pb::CodedOutputStream.ComputeInt64Size(KnownVersion);
+      }
+      if (_unknownFields != null) {
+        size += _unknownFields.CalculateSize();
+      }
+      return size;
+    }
+
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    public void MergeFrom(WordFilterFetchRequest other) {
+      if (other == null) {
+        return;
+      }
+      if (other.KnownVersion != 0L) {
+        KnownVersion = other.KnownVersion;
+      }
+      _unknownFields = pb::UnknownFieldSet.MergeFrom(_unknownFields, other._unknownFields);
+    }
+
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    public void MergeFrom(pb::CodedInputStream input) {
+    #if !GOOGLE_PROTOBUF_REFSTRUCT_COMPATIBILITY_MODE
+      input.ReadRawMessage(this);
+    #else
+      uint tag;
+      while ((tag = input.ReadTag()) != 0) {
+      if ((tag & 7) == 4) {
+        // Abort on any end group tag.
+        return;
+      }
+      switch(tag) {
+          default:
+            _unknownFields = pb::UnknownFieldSet.MergeFieldFrom(_unknownFields, input);
+            break;
+          case 8: {
+            KnownVersion = input.ReadInt64();
+            break;
+          }
+        }
+      }
+    #endif
+    }
+
+    #if !GOOGLE_PROTOBUF_REFSTRUCT_COMPATIBILITY_MODE
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    void pb::IBufferMessage.InternalMergeFrom(ref pb::ParseContext input) {
+      uint tag;
+      while ((tag = input.ReadTag()) != 0) {
+      if ((tag & 7) == 4) {
+        // Abort on any end group tag.
+        return;
+      }
+      switch(tag) {
+          default:
+            _unknownFields = pb::UnknownFieldSet.MergeFieldFrom(_unknownFields, ref input);
+            break;
+          case 8: {
+            KnownVersion = input.ReadInt64();
+            break;
+          }
+        }
+      }
+    }
+    #endif
+
+  }
+
+  /// <summary>
+  /// FETCH_RESP 与 UPDATE_NOTIFY 共用的词库载荷。
+  /// </summary>
+  [global::System.Diagnostics.DebuggerDisplayAttribute("{ToString(),nq}")]
+  public sealed partial class WordFilterLexicon : pb::IMessage<WordFilterLexicon>
+  #if !GOOGLE_PROTOBUF_REFSTRUCT_COMPATIBILITY_MODE
+      , pb::IBufferMessage
+  #endif
+  {
+    private static readonly pb::MessageParser<WordFilterLexicon> _parser = new pb::MessageParser<WordFilterLexicon>(() => new WordFilterLexicon());
+    private pb::UnknownFieldSet _unknownFields;
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    public static pb::MessageParser<WordFilterLexicon> Parser { get { return _parser; } }
+
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    public static pbr::MessageDescriptor Descriptor {
+      get { return global::Chirp.Chat.ChatReflection.Descriptor.MessageTypes[116]; }
+    }
+
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    pbr::MessageDescriptor pb::IMessage.Descriptor {
+      get { return Descriptor; }
+    }
+
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    public WordFilterLexicon() {
+      OnConstruction();
+    }
+
+    partial void OnConstruction();
+
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    public WordFilterLexicon(WordFilterLexicon other) : this() {
+      version_ = other.version_;
+      enabled_ = other.enabled_;
+      policy_ = other.policy_;
+      replacement_ = other.replacement_;
+      lexicon_ = other.lexicon_;
+      _unknownFields = pb::UnknownFieldSet.Clone(other._unknownFields);
+    }
+
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    public WordFilterLexicon Clone() {
+      return new WordFilterLexicon(this);
+    }
+
+    /// <summary>Field number for the "version" field.</summary>
+    public const int VersionFieldNumber = 1;
+    private long version_;
+    /// <summary>
+    /// 服务端当前版本；0 = 服务端未启用词库
+    /// </summary>
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    public long Version {
+      get { return version_; }
+      set {
+        version_ = value;
+      }
+    }
+
+    /// <summary>Field number for the "enabled" field.</summary>
+    public const int EnabledFieldNumber = 2;
+    private bool enabled_;
+    /// <summary>
+    /// 服务端过滤是否生效（词库非空）
+    /// </summary>
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    public bool Enabled {
+      get { return enabled_; }
+      set {
+        enabled_ = value;
+      }
+    }
+
+    /// <summary>Field number for the "policy" field.</summary>
+    public const int PolicyFieldNumber = 3;
+    private global::Chirp.Chat.WordFilterDeliveryPolicy policy_ = global::Chirp.Chat.WordFilterDeliveryPolicy.WordFilterPolicyReplace;
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    public global::Chirp.Chat.WordFilterDeliveryPolicy Policy {
+      get { return policy_; }
+      set {
+        policy_ = value;
+      }
+    }
+
+    /// <summary>Field number for the "replacement" field.</summary>
+    public const int ReplacementFieldNumber = 4;
+    private string replacement_ = "";
+    /// <summary>
+    /// replace 策略的替换文本（服务端默认 "**"）
+    /// </summary>
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    public string Replacement {
+      get { return replacement_; }
+      set {
+        replacement_ = pb::ProtoPreconditions.CheckNotNull(value, "value");
+      }
+    }
+
+    /// <summary>Field number for the "lexicon" field.</summary>
+    public const int LexiconFieldNumber = 5;
+    private string lexicon_ = "";
+    /// <summary>
+    /// 规范化词库文本；条件 GET 命中（known_version == version）时为空。
+    /// </summary>
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    public string Lexicon {
+      get { return lexicon_; }
+      set {
+        lexicon_ = pb::ProtoPreconditions.CheckNotNull(value, "value");
+      }
+    }
+
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    public override bool Equals(object other) {
+      return Equals(other as WordFilterLexicon);
+    }
+
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    public bool Equals(WordFilterLexicon other) {
+      if (ReferenceEquals(other, null)) {
+        return false;
+      }
+      if (ReferenceEquals(other, this)) {
+        return true;
+      }
+      if (Version != other.Version) return false;
+      if (Enabled != other.Enabled) return false;
+      if (Policy != other.Policy) return false;
+      if (Replacement != other.Replacement) return false;
+      if (Lexicon != other.Lexicon) return false;
+      return Equals(_unknownFields, other._unknownFields);
+    }
+
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    public override int GetHashCode() {
+      int hash = 1;
+      if (Version != 0L) hash ^= Version.GetHashCode();
+      if (Enabled != false) hash ^= Enabled.GetHashCode();
+      if (Policy != global::Chirp.Chat.WordFilterDeliveryPolicy.WordFilterPolicyReplace) hash ^= Policy.GetHashCode();
+      if (Replacement.Length != 0) hash ^= Replacement.GetHashCode();
+      if (Lexicon.Length != 0) hash ^= Lexicon.GetHashCode();
+      if (_unknownFields != null) {
+        hash ^= _unknownFields.GetHashCode();
+      }
+      return hash;
+    }
+
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    public override string ToString() {
+      return pb::JsonFormatter.ToDiagnosticString(this);
+    }
+
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    public void WriteTo(pb::CodedOutputStream output) {
+    #if !GOOGLE_PROTOBUF_REFSTRUCT_COMPATIBILITY_MODE
+      output.WriteRawMessage(this);
+    #else
+      if (Version != 0L) {
+        output.WriteRawTag(8);
+        output.WriteInt64(Version);
+      }
+      if (Enabled != false) {
+        output.WriteRawTag(16);
+        output.WriteBool(Enabled);
+      }
+      if (Policy != global::Chirp.Chat.WordFilterDeliveryPolicy.WordFilterPolicyReplace) {
+        output.WriteRawTag(24);
+        output.WriteEnum((int) Policy);
+      }
+      if (Replacement.Length != 0) {
+        output.WriteRawTag(34);
+        output.WriteString(Replacement);
+      }
+      if (Lexicon.Length != 0) {
+        output.WriteRawTag(42);
+        output.WriteString(Lexicon);
+      }
+      if (_unknownFields != null) {
+        _unknownFields.WriteTo(output);
+      }
+    #endif
+    }
+
+    #if !GOOGLE_PROTOBUF_REFSTRUCT_COMPATIBILITY_MODE
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    void pb::IBufferMessage.InternalWriteTo(ref pb::WriteContext output) {
+      if (Version != 0L) {
+        output.WriteRawTag(8);
+        output.WriteInt64(Version);
+      }
+      if (Enabled != false) {
+        output.WriteRawTag(16);
+        output.WriteBool(Enabled);
+      }
+      if (Policy != global::Chirp.Chat.WordFilterDeliveryPolicy.WordFilterPolicyReplace) {
+        output.WriteRawTag(24);
+        output.WriteEnum((int) Policy);
+      }
+      if (Replacement.Length != 0) {
+        output.WriteRawTag(34);
+        output.WriteString(Replacement);
+      }
+      if (Lexicon.Length != 0) {
+        output.WriteRawTag(42);
+        output.WriteString(Lexicon);
+      }
+      if (_unknownFields != null) {
+        _unknownFields.WriteTo(ref output);
+      }
+    }
+    #endif
+
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    public int CalculateSize() {
+      int size = 0;
+      if (Version != 0L) {
+        size += 1 + pb::CodedOutputStream.ComputeInt64Size(Version);
+      }
+      if (Enabled != false) {
+        size += 1 + 1;
+      }
+      if (Policy != global::Chirp.Chat.WordFilterDeliveryPolicy.WordFilterPolicyReplace) {
+        size += 1 + pb::CodedOutputStream.ComputeEnumSize((int) Policy);
+      }
+      if (Replacement.Length != 0) {
+        size += 1 + pb::CodedOutputStream.ComputeStringSize(Replacement);
+      }
+      if (Lexicon.Length != 0) {
+        size += 1 + pb::CodedOutputStream.ComputeStringSize(Lexicon);
+      }
+      if (_unknownFields != null) {
+        size += _unknownFields.CalculateSize();
+      }
+      return size;
+    }
+
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    public void MergeFrom(WordFilterLexicon other) {
+      if (other == null) {
+        return;
+      }
+      if (other.Version != 0L) {
+        Version = other.Version;
+      }
+      if (other.Enabled != false) {
+        Enabled = other.Enabled;
+      }
+      if (other.Policy != global::Chirp.Chat.WordFilterDeliveryPolicy.WordFilterPolicyReplace) {
+        Policy = other.Policy;
+      }
+      if (other.Replacement.Length != 0) {
+        Replacement = other.Replacement;
+      }
+      if (other.Lexicon.Length != 0) {
+        Lexicon = other.Lexicon;
+      }
+      _unknownFields = pb::UnknownFieldSet.MergeFrom(_unknownFields, other._unknownFields);
+    }
+
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    public void MergeFrom(pb::CodedInputStream input) {
+    #if !GOOGLE_PROTOBUF_REFSTRUCT_COMPATIBILITY_MODE
+      input.ReadRawMessage(this);
+    #else
+      uint tag;
+      while ((tag = input.ReadTag()) != 0) {
+      if ((tag & 7) == 4) {
+        // Abort on any end group tag.
+        return;
+      }
+      switch(tag) {
+          default:
+            _unknownFields = pb::UnknownFieldSet.MergeFieldFrom(_unknownFields, input);
+            break;
+          case 8: {
+            Version = input.ReadInt64();
+            break;
+          }
+          case 16: {
+            Enabled = input.ReadBool();
+            break;
+          }
+          case 24: {
+            Policy = (global::Chirp.Chat.WordFilterDeliveryPolicy) input.ReadEnum();
+            break;
+          }
+          case 34: {
+            Replacement = input.ReadString();
+            break;
+          }
+          case 42: {
+            Lexicon = input.ReadString();
+            break;
+          }
+        }
+      }
+    #endif
+    }
+
+    #if !GOOGLE_PROTOBUF_REFSTRUCT_COMPATIBILITY_MODE
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    void pb::IBufferMessage.InternalMergeFrom(ref pb::ParseContext input) {
+      uint tag;
+      while ((tag = input.ReadTag()) != 0) {
+      if ((tag & 7) == 4) {
+        // Abort on any end group tag.
+        return;
+      }
+      switch(tag) {
+          default:
+            _unknownFields = pb::UnknownFieldSet.MergeFieldFrom(_unknownFields, ref input);
+            break;
+          case 8: {
+            Version = input.ReadInt64();
+            break;
+          }
+          case 16: {
+            Enabled = input.ReadBool();
+            break;
+          }
+          case 24: {
+            Policy = (global::Chirp.Chat.WordFilterDeliveryPolicy) input.ReadEnum();
+            break;
+          }
+          case 34: {
+            Replacement = input.ReadString();
+            break;
+          }
+          case 42: {
+            Lexicon = input.ReadString();
+            break;
+          }
+        }
+      }
+    }
+    #endif
+
+  }
+
+  [global::System.Diagnostics.DebuggerDisplayAttribute("{ToString(),nq}")]
+  public sealed partial class WordFilterFetchResponse : pb::IMessage<WordFilterFetchResponse>
+  #if !GOOGLE_PROTOBUF_REFSTRUCT_COMPATIBILITY_MODE
+      , pb::IBufferMessage
+  #endif
+  {
+    private static readonly pb::MessageParser<WordFilterFetchResponse> _parser = new pb::MessageParser<WordFilterFetchResponse>(() => new WordFilterFetchResponse());
+    private pb::UnknownFieldSet _unknownFields;
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    public static pb::MessageParser<WordFilterFetchResponse> Parser { get { return _parser; } }
+
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    public static pbr::MessageDescriptor Descriptor {
+      get { return global::Chirp.Chat.ChatReflection.Descriptor.MessageTypes[117]; }
+    }
+
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    pbr::MessageDescriptor pb::IMessage.Descriptor {
+      get { return Descriptor; }
+    }
+
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    public WordFilterFetchResponse() {
+      OnConstruction();
+    }
+
+    partial void OnConstruction();
+
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    public WordFilterFetchResponse(WordFilterFetchResponse other) : this() {
+      code_ = other.code_;
+      lexicon_ = other.lexicon_ != null ? other.lexicon_.Clone() : null;
+      _unknownFields = pb::UnknownFieldSet.Clone(other._unknownFields);
+    }
+
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    public WordFilterFetchResponse Clone() {
+      return new WordFilterFetchResponse(this);
+    }
+
+    /// <summary>Field number for the "code" field.</summary>
+    public const int CodeFieldNumber = 1;
+    private global::Chirp.Common.ErrorCode code_ = global::Chirp.Common.ErrorCode.Ok;
+    /// <summary>
+    /// OK / AUTH_FAILED（未登录） / INVALID_PARAM（垃圾 body）
+    /// </summary>
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    public global::Chirp.Common.ErrorCode Code {
+      get { return code_; }
+      set {
+        code_ = value;
+      }
+    }
+
+    /// <summary>Field number for the "lexicon" field.</summary>
+    public const int LexiconFieldNumber = 2;
+    private global::Chirp.Chat.WordFilterLexicon lexicon_;
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    public global::Chirp.Chat.WordFilterLexicon Lexicon {
+      get { return lexicon_; }
+      set {
+        lexicon_ = value;
+      }
+    }
+
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    public override bool Equals(object other) {
+      return Equals(other as WordFilterFetchResponse);
+    }
+
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    public bool Equals(WordFilterFetchResponse other) {
+      if (ReferenceEquals(other, null)) {
+        return false;
+      }
+      if (ReferenceEquals(other, this)) {
+        return true;
+      }
+      if (Code != other.Code) return false;
+      if (!object.Equals(Lexicon, other.Lexicon)) return false;
+      return Equals(_unknownFields, other._unknownFields);
+    }
+
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    public override int GetHashCode() {
+      int hash = 1;
+      if (Code != global::Chirp.Common.ErrorCode.Ok) hash ^= Code.GetHashCode();
+      if (lexicon_ != null) hash ^= Lexicon.GetHashCode();
+      if (_unknownFields != null) {
+        hash ^= _unknownFields.GetHashCode();
+      }
+      return hash;
+    }
+
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    public override string ToString() {
+      return pb::JsonFormatter.ToDiagnosticString(this);
+    }
+
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    public void WriteTo(pb::CodedOutputStream output) {
+    #if !GOOGLE_PROTOBUF_REFSTRUCT_COMPATIBILITY_MODE
+      output.WriteRawMessage(this);
+    #else
+      if (Code != global::Chirp.Common.ErrorCode.Ok) {
+        output.WriteRawTag(8);
+        output.WriteEnum((int) Code);
+      }
+      if (lexicon_ != null) {
+        output.WriteRawTag(18);
+        output.WriteMessage(Lexicon);
+      }
+      if (_unknownFields != null) {
+        _unknownFields.WriteTo(output);
+      }
+    #endif
+    }
+
+    #if !GOOGLE_PROTOBUF_REFSTRUCT_COMPATIBILITY_MODE
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    void pb::IBufferMessage.InternalWriteTo(ref pb::WriteContext output) {
+      if (Code != global::Chirp.Common.ErrorCode.Ok) {
+        output.WriteRawTag(8);
+        output.WriteEnum((int) Code);
+      }
+      if (lexicon_ != null) {
+        output.WriteRawTag(18);
+        output.WriteMessage(Lexicon);
+      }
+      if (_unknownFields != null) {
+        _unknownFields.WriteTo(ref output);
+      }
+    }
+    #endif
+
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    public int CalculateSize() {
+      int size = 0;
+      if (Code != global::Chirp.Common.ErrorCode.Ok) {
+        size += 1 + pb::CodedOutputStream.ComputeEnumSize((int) Code);
+      }
+      if (lexicon_ != null) {
+        size += 1 + pb::CodedOutputStream.ComputeMessageSize(Lexicon);
+      }
+      if (_unknownFields != null) {
+        size += _unknownFields.CalculateSize();
+      }
+      return size;
+    }
+
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    public void MergeFrom(WordFilterFetchResponse other) {
+      if (other == null) {
+        return;
+      }
+      if (other.Code != global::Chirp.Common.ErrorCode.Ok) {
+        Code = other.Code;
+      }
+      if (other.lexicon_ != null) {
+        if (lexicon_ == null) {
+          Lexicon = new global::Chirp.Chat.WordFilterLexicon();
+        }
+        Lexicon.MergeFrom(other.Lexicon);
+      }
+      _unknownFields = pb::UnknownFieldSet.MergeFrom(_unknownFields, other._unknownFields);
+    }
+
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    public void MergeFrom(pb::CodedInputStream input) {
+    #if !GOOGLE_PROTOBUF_REFSTRUCT_COMPATIBILITY_MODE
+      input.ReadRawMessage(this);
+    #else
+      uint tag;
+      while ((tag = input.ReadTag()) != 0) {
+      if ((tag & 7) == 4) {
+        // Abort on any end group tag.
+        return;
+      }
+      switch(tag) {
+          default:
+            _unknownFields = pb::UnknownFieldSet.MergeFieldFrom(_unknownFields, input);
+            break;
+          case 8: {
+            Code = (global::Chirp.Common.ErrorCode) input.ReadEnum();
+            break;
+          }
+          case 18: {
+            if (lexicon_ == null) {
+              Lexicon = new global::Chirp.Chat.WordFilterLexicon();
+            }
+            input.ReadMessage(Lexicon);
+            break;
+          }
+        }
+      }
+    #endif
+    }
+
+    #if !GOOGLE_PROTOBUF_REFSTRUCT_COMPATIBILITY_MODE
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    void pb::IBufferMessage.InternalMergeFrom(ref pb::ParseContext input) {
+      uint tag;
+      while ((tag = input.ReadTag()) != 0) {
+      if ((tag & 7) == 4) {
+        // Abort on any end group tag.
+        return;
+      }
+      switch(tag) {
+          default:
+            _unknownFields = pb::UnknownFieldSet.MergeFieldFrom(_unknownFields, ref input);
+            break;
+          case 8: {
+            Code = (global::Chirp.Common.ErrorCode) input.ReadEnum();
+            break;
+          }
+          case 18: {
+            if (lexicon_ == null) {
+              Lexicon = new global::Chirp.Chat.WordFilterLexicon();
+            }
+            input.ReadMessage(Lexicon);
+            break;
+          }
+        }
+      }
+    }
+    #endif
+
+  }
+
+  [global::System.Diagnostics.DebuggerDisplayAttribute("{ToString(),nq}")]
+  public sealed partial class WordFilterUpdateNotify : pb::IMessage<WordFilterUpdateNotify>
+  #if !GOOGLE_PROTOBUF_REFSTRUCT_COMPATIBILITY_MODE
+      , pb::IBufferMessage
+  #endif
+  {
+    private static readonly pb::MessageParser<WordFilterUpdateNotify> _parser = new pb::MessageParser<WordFilterUpdateNotify>(() => new WordFilterUpdateNotify());
+    private pb::UnknownFieldSet _unknownFields;
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    public static pb::MessageParser<WordFilterUpdateNotify> Parser { get { return _parser; } }
+
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    public static pbr::MessageDescriptor Descriptor {
+      get { return global::Chirp.Chat.ChatReflection.Descriptor.MessageTypes[118]; }
+    }
+
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    pbr::MessageDescriptor pb::IMessage.Descriptor {
+      get { return Descriptor; }
+    }
+
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    public WordFilterUpdateNotify() {
+      OnConstruction();
+    }
+
+    partial void OnConstruction();
+
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    public WordFilterUpdateNotify(WordFilterUpdateNotify other) : this() {
+      lexicon_ = other.lexicon_ != null ? other.lexicon_.Clone() : null;
+      _unknownFields = pb::UnknownFieldSet.Clone(other._unknownFields);
+    }
+
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    public WordFilterUpdateNotify Clone() {
+      return new WordFilterUpdateNotify(this);
+    }
+
+    /// <summary>Field number for the "lexicon" field.</summary>
+    public const int LexiconFieldNumber = 1;
+    private global::Chirp.Chat.WordFilterLexicon lexicon_;
+    /// <summary>
+    /// 恒带全量新词库
+    /// </summary>
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    public global::Chirp.Chat.WordFilterLexicon Lexicon {
+      get { return lexicon_; }
+      set {
+        lexicon_ = value;
+      }
+    }
+
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    public override bool Equals(object other) {
+      return Equals(other as WordFilterUpdateNotify);
+    }
+
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    public bool Equals(WordFilterUpdateNotify other) {
+      if (ReferenceEquals(other, null)) {
+        return false;
+      }
+      if (ReferenceEquals(other, this)) {
+        return true;
+      }
+      if (!object.Equals(Lexicon, other.Lexicon)) return false;
+      return Equals(_unknownFields, other._unknownFields);
+    }
+
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    public override int GetHashCode() {
+      int hash = 1;
+      if (lexicon_ != null) hash ^= Lexicon.GetHashCode();
+      if (_unknownFields != null) {
+        hash ^= _unknownFields.GetHashCode();
+      }
+      return hash;
+    }
+
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    public override string ToString() {
+      return pb::JsonFormatter.ToDiagnosticString(this);
+    }
+
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    public void WriteTo(pb::CodedOutputStream output) {
+    #if !GOOGLE_PROTOBUF_REFSTRUCT_COMPATIBILITY_MODE
+      output.WriteRawMessage(this);
+    #else
+      if (lexicon_ != null) {
+        output.WriteRawTag(10);
+        output.WriteMessage(Lexicon);
+      }
+      if (_unknownFields != null) {
+        _unknownFields.WriteTo(output);
+      }
+    #endif
+    }
+
+    #if !GOOGLE_PROTOBUF_REFSTRUCT_COMPATIBILITY_MODE
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    void pb::IBufferMessage.InternalWriteTo(ref pb::WriteContext output) {
+      if (lexicon_ != null) {
+        output.WriteRawTag(10);
+        output.WriteMessage(Lexicon);
+      }
+      if (_unknownFields != null) {
+        _unknownFields.WriteTo(ref output);
+      }
+    }
+    #endif
+
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    public int CalculateSize() {
+      int size = 0;
+      if (lexicon_ != null) {
+        size += 1 + pb::CodedOutputStream.ComputeMessageSize(Lexicon);
+      }
+      if (_unknownFields != null) {
+        size += _unknownFields.CalculateSize();
+      }
+      return size;
+    }
+
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    public void MergeFrom(WordFilterUpdateNotify other) {
+      if (other == null) {
+        return;
+      }
+      if (other.lexicon_ != null) {
+        if (lexicon_ == null) {
+          Lexicon = new global::Chirp.Chat.WordFilterLexicon();
+        }
+        Lexicon.MergeFrom(other.Lexicon);
+      }
+      _unknownFields = pb::UnknownFieldSet.MergeFrom(_unknownFields, other._unknownFields);
+    }
+
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    public void MergeFrom(pb::CodedInputStream input) {
+    #if !GOOGLE_PROTOBUF_REFSTRUCT_COMPATIBILITY_MODE
+      input.ReadRawMessage(this);
+    #else
+      uint tag;
+      while ((tag = input.ReadTag()) != 0) {
+      if ((tag & 7) == 4) {
+        // Abort on any end group tag.
+        return;
+      }
+      switch(tag) {
+          default:
+            _unknownFields = pb::UnknownFieldSet.MergeFieldFrom(_unknownFields, input);
+            break;
+          case 10: {
+            if (lexicon_ == null) {
+              Lexicon = new global::Chirp.Chat.WordFilterLexicon();
+            }
+            input.ReadMessage(Lexicon);
+            break;
+          }
+        }
+      }
+    #endif
+    }
+
+    #if !GOOGLE_PROTOBUF_REFSTRUCT_COMPATIBILITY_MODE
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    void pb::IBufferMessage.InternalMergeFrom(ref pb::ParseContext input) {
+      uint tag;
+      while ((tag = input.ReadTag()) != 0) {
+      if ((tag & 7) == 4) {
+        // Abort on any end group tag.
+        return;
+      }
+      switch(tag) {
+          default:
+            _unknownFields = pb::UnknownFieldSet.MergeFieldFrom(_unknownFields, ref input);
+            break;
+          case 10: {
+            if (lexicon_ == null) {
+              Lexicon = new global::Chirp.Chat.WordFilterLexicon();
+            }
+            input.ReadMessage(Lexicon);
             break;
           }
         }

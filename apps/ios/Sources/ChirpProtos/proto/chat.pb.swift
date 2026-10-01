@@ -525,6 +525,46 @@ public nonisolated enum Chirp_Chat_MentionType: SwiftProtobuf.Enum, Swift.CaseIt
 
 }
 
+/// 命名避让 C++ 核心既有 chirp::chat::WordFilterPolicy（word_filter.h 的
+/// enum class）——下发通道的 proto 枚举用 Delivery 后缀，取值名保持一致。
+public nonisolated enum Chirp_Chat_WordFilterDeliveryPolicy: SwiftProtobuf.Enum, Swift.CaseIterable {
+  public typealias RawValue = Int
+  case wordFilterPolicyReplace // = 0
+  case wordFilterPolicyReject // = 1
+  case wordFilterPolicyRecord // = 2
+  case UNRECOGNIZED(Int)
+
+  public init() {
+    self = .wordFilterPolicyReplace
+  }
+
+  public init?(rawValue: Int) {
+    switch rawValue {
+    case 0: self = .wordFilterPolicyReplace
+    case 1: self = .wordFilterPolicyReject
+    case 2: self = .wordFilterPolicyRecord
+    default: self = .UNRECOGNIZED(rawValue)
+    }
+  }
+
+  public var rawValue: Int {
+    switch self {
+    case .wordFilterPolicyReplace: return 0
+    case .wordFilterPolicyReject: return 1
+    case .wordFilterPolicyRecord: return 2
+    case .UNRECOGNIZED(let i): return i
+    }
+  }
+
+  // The compiler won't synthesize support with the UNRECOGNIZED case.
+  public static let allCases: [Chirp_Chat_WordFilterDeliveryPolicy] = [
+    .wordFilterPolicyReplace,
+    .wordFilterPolicyReject,
+    .wordFilterPolicyRecord,
+  ]
+
+}
+
 /// 发送消息请求
 public nonisolated struct Chirp_Chat_SendMessageRequest: Sendable {
   // SwiftProtobuf.Message conformance is added in an extension below. See the
@@ -3097,6 +3137,90 @@ public nonisolated struct Chirp_Chat_GetBlockedSendersResponse: Sendable {
   public init() {}
 }
 
+public nonisolated struct Chirp_Chat_WordFilterFetchRequest: Sendable {
+  // SwiftProtobuf.Message conformance is added in an extension below. See the
+  // `Message` and `Message+*Additions` files in the SwiftProtobuf library for
+  // methods supported on all messages.
+
+  /// 客户端当前词库版本；0 = 客户端还没有词库。
+  public var knownVersion: Int64 = 0
+
+  public var unknownFields = SwiftProtobuf.UnknownStorage()
+
+  public init() {}
+}
+
+/// FETCH_RESP 与 UPDATE_NOTIFY 共用的词库载荷。
+public nonisolated struct Chirp_Chat_WordFilterLexicon: Sendable {
+  // SwiftProtobuf.Message conformance is added in an extension below. See the
+  // `Message` and `Message+*Additions` files in the SwiftProtobuf library for
+  // methods supported on all messages.
+
+  /// 服务端当前版本；0 = 服务端未启用词库
+  public var version: Int64 = 0
+
+  /// 服务端过滤是否生效（词库非空）
+  public var enabled: Bool = false
+
+  public var policy: Chirp_Chat_WordFilterDeliveryPolicy = .wordFilterPolicyReplace
+
+  /// replace 策略的替换文本（服务端默认 "**"）
+  public var replacement: String = String()
+
+  /// 规范化词库文本；条件 GET 命中（known_version == version）时为空。
+  public var lexicon: String = String()
+
+  public var unknownFields = SwiftProtobuf.UnknownStorage()
+
+  public init() {}
+}
+
+public nonisolated struct Chirp_Chat_WordFilterFetchResponse: Sendable {
+  // SwiftProtobuf.Message conformance is added in an extension below. See the
+  // `Message` and `Message+*Additions` files in the SwiftProtobuf library for
+  // methods supported on all messages.
+
+  /// OK / AUTH_FAILED（未登录） / INVALID_PARAM（垃圾 body）
+  public var code: Chirp_Common_ErrorCode = .ok
+
+  public var lexicon: Chirp_Chat_WordFilterLexicon {
+    get {_lexicon ?? Chirp_Chat_WordFilterLexicon()}
+    set {_lexicon = newValue}
+  }
+  /// Returns true if `lexicon` has been explicitly set.
+  public var hasLexicon: Bool {self._lexicon != nil}
+  /// Clears the value of `lexicon`. Subsequent reads from it will return its default value.
+  public mutating func clearLexicon() {self._lexicon = nil}
+
+  public var unknownFields = SwiftProtobuf.UnknownStorage()
+
+  public init() {}
+
+  fileprivate var _lexicon: Chirp_Chat_WordFilterLexicon? = nil
+}
+
+public nonisolated struct Chirp_Chat_WordFilterUpdateNotify: Sendable {
+  // SwiftProtobuf.Message conformance is added in an extension below. See the
+  // `Message` and `Message+*Additions` files in the SwiftProtobuf library for
+  // methods supported on all messages.
+
+  /// 恒带全量新词库
+  public var lexicon: Chirp_Chat_WordFilterLexicon {
+    get {_lexicon ?? Chirp_Chat_WordFilterLexicon()}
+    set {_lexicon = newValue}
+  }
+  /// Returns true if `lexicon` has been explicitly set.
+  public var hasLexicon: Bool {self._lexicon != nil}
+  /// Clears the value of `lexicon`. Subsequent reads from it will return its default value.
+  public mutating func clearLexicon() {self._lexicon = nil}
+
+  public var unknownFields = SwiftProtobuf.UnknownStorage()
+
+  public init() {}
+
+  fileprivate var _lexicon: Chirp_Chat_WordFilterLexicon? = nil
+}
+
 // MARK: - Code below here is support for the SwiftProtobuf runtime.
 
 fileprivate nonisolated let _protobuf_package = "chirp.chat"
@@ -3135,6 +3259,10 @@ nonisolated extension Chirp_Chat_PermissionOverride: SwiftProtobuf._ProtoNamePro
 
 nonisolated extension Chirp_Chat_MentionType: SwiftProtobuf._ProtoNameProviding {
   public static let _protobuf_nameMap = SwiftProtobuf._NameMap(bytecode: "\0\u{2}\0MENTION_TYPE_USER\0\u{1}MENTION_TYPE_ROLE\0\u{1}MENTION_TYPE_CHANNEL\0\u{1}MENTION_TYPE_EVERYONE\0\u{1}MENTION_TYPE_HERE\0")
+}
+
+nonisolated extension Chirp_Chat_WordFilterDeliveryPolicy: SwiftProtobuf._ProtoNameProviding {
+  public static let _protobuf_nameMap = SwiftProtobuf._NameMap(bytecode: "\0\u{2}\0WORD_FILTER_POLICY_REPLACE\0\u{1}WORD_FILTER_POLICY_REJECT\0\u{1}WORD_FILTER_POLICY_RECORD\0")
 }
 
 nonisolated extension Chirp_Chat_SendMessageRequest: SwiftProtobuf.Message, SwiftProtobuf._MessageImplementationBase, SwiftProtobuf._ProtoNameProviding {
@@ -8464,6 +8592,159 @@ nonisolated extension Chirp_Chat_GetBlockedSendersResponse: SwiftProtobuf.Messag
   public static func ==(lhs: Chirp_Chat_GetBlockedSendersResponse, rhs: Chirp_Chat_GetBlockedSendersResponse) -> Bool {
     if lhs.code != rhs.code {return false}
     if lhs.targetUserIds != rhs.targetUserIds {return false}
+    if lhs.unknownFields != rhs.unknownFields {return false}
+    return true
+  }
+}
+
+nonisolated extension Chirp_Chat_WordFilterFetchRequest: SwiftProtobuf.Message, SwiftProtobuf._MessageImplementationBase, SwiftProtobuf._ProtoNameProviding {
+  public static let protoMessageName: String = _protobuf_package + ".WordFilterFetchRequest"
+  public static let _protobuf_nameMap = SwiftProtobuf._NameMap(bytecode: "\0\u{3}known_version\0")
+
+  public mutating func decodeMessage<D: SwiftProtobuf.Decoder>(decoder: inout D) throws {
+    while let fieldNumber = try decoder.nextFieldNumber() {
+      // The use of inline closures is to circumvent an issue where the compiler
+      // allocates stack space for every case branch when no optimizations are
+      // enabled. https://github.com/apple/swift-protobuf/issues/1034
+      switch fieldNumber {
+      case 1: try { try decoder.decodeSingularInt64Field(value: &self.knownVersion) }()
+      default: break
+      }
+    }
+  }
+
+  public func traverse<V: SwiftProtobuf.Visitor>(visitor: inout V) throws {
+    if self.knownVersion != 0 {
+      try visitor.visitSingularInt64Field(value: self.knownVersion, fieldNumber: 1)
+    }
+    try unknownFields.traverse(visitor: &visitor)
+  }
+
+  public static func ==(lhs: Chirp_Chat_WordFilterFetchRequest, rhs: Chirp_Chat_WordFilterFetchRequest) -> Bool {
+    if lhs.knownVersion != rhs.knownVersion {return false}
+    if lhs.unknownFields != rhs.unknownFields {return false}
+    return true
+  }
+}
+
+nonisolated extension Chirp_Chat_WordFilterLexicon: SwiftProtobuf.Message, SwiftProtobuf._MessageImplementationBase, SwiftProtobuf._ProtoNameProviding {
+  public static let protoMessageName: String = _protobuf_package + ".WordFilterLexicon"
+  public static let _protobuf_nameMap = SwiftProtobuf._NameMap(bytecode: "\0\u{1}version\0\u{1}enabled\0\u{1}policy\0\u{1}replacement\0\u{1}lexicon\0")
+
+  public mutating func decodeMessage<D: SwiftProtobuf.Decoder>(decoder: inout D) throws {
+    while let fieldNumber = try decoder.nextFieldNumber() {
+      // The use of inline closures is to circumvent an issue where the compiler
+      // allocates stack space for every case branch when no optimizations are
+      // enabled. https://github.com/apple/swift-protobuf/issues/1034
+      switch fieldNumber {
+      case 1: try { try decoder.decodeSingularInt64Field(value: &self.version) }()
+      case 2: try { try decoder.decodeSingularBoolField(value: &self.enabled) }()
+      case 3: try { try decoder.decodeSingularEnumField(value: &self.policy) }()
+      case 4: try { try decoder.decodeSingularStringField(value: &self.replacement) }()
+      case 5: try { try decoder.decodeSingularStringField(value: &self.lexicon) }()
+      default: break
+      }
+    }
+  }
+
+  public func traverse<V: SwiftProtobuf.Visitor>(visitor: inout V) throws {
+    if self.version != 0 {
+      try visitor.visitSingularInt64Field(value: self.version, fieldNumber: 1)
+    }
+    if self.enabled != false {
+      try visitor.visitSingularBoolField(value: self.enabled, fieldNumber: 2)
+    }
+    if self.policy != .wordFilterPolicyReplace {
+      try visitor.visitSingularEnumField(value: self.policy, fieldNumber: 3)
+    }
+    if !self.replacement.isEmpty {
+      try visitor.visitSingularStringField(value: self.replacement, fieldNumber: 4)
+    }
+    if !self.lexicon.isEmpty {
+      try visitor.visitSingularStringField(value: self.lexicon, fieldNumber: 5)
+    }
+    try unknownFields.traverse(visitor: &visitor)
+  }
+
+  public static func ==(lhs: Chirp_Chat_WordFilterLexicon, rhs: Chirp_Chat_WordFilterLexicon) -> Bool {
+    if lhs.version != rhs.version {return false}
+    if lhs.enabled != rhs.enabled {return false}
+    if lhs.policy != rhs.policy {return false}
+    if lhs.replacement != rhs.replacement {return false}
+    if lhs.lexicon != rhs.lexicon {return false}
+    if lhs.unknownFields != rhs.unknownFields {return false}
+    return true
+  }
+}
+
+nonisolated extension Chirp_Chat_WordFilterFetchResponse: SwiftProtobuf.Message, SwiftProtobuf._MessageImplementationBase, SwiftProtobuf._ProtoNameProviding {
+  public static let protoMessageName: String = _protobuf_package + ".WordFilterFetchResponse"
+  public static let _protobuf_nameMap = SwiftProtobuf._NameMap(bytecode: "\0\u{1}code\0\u{1}lexicon\0")
+
+  public mutating func decodeMessage<D: SwiftProtobuf.Decoder>(decoder: inout D) throws {
+    while let fieldNumber = try decoder.nextFieldNumber() {
+      // The use of inline closures is to circumvent an issue where the compiler
+      // allocates stack space for every case branch when no optimizations are
+      // enabled. https://github.com/apple/swift-protobuf/issues/1034
+      switch fieldNumber {
+      case 1: try { try decoder.decodeSingularEnumField(value: &self.code) }()
+      case 2: try { try decoder.decodeSingularMessageField(value: &self._lexicon) }()
+      default: break
+      }
+    }
+  }
+
+  public func traverse<V: SwiftProtobuf.Visitor>(visitor: inout V) throws {
+    // The use of inline closures is to circumvent an issue where the compiler
+    // allocates stack space for every if/case branch local when no optimizations
+    // are enabled. https://github.com/apple/swift-protobuf/issues/1034 and
+    // https://github.com/apple/swift-protobuf/issues/1182
+    if self.code != .ok {
+      try visitor.visitSingularEnumField(value: self.code, fieldNumber: 1)
+    }
+    try { if let v = self._lexicon {
+      try visitor.visitSingularMessageField(value: v, fieldNumber: 2)
+    } }()
+    try unknownFields.traverse(visitor: &visitor)
+  }
+
+  public static func ==(lhs: Chirp_Chat_WordFilterFetchResponse, rhs: Chirp_Chat_WordFilterFetchResponse) -> Bool {
+    if lhs.code != rhs.code {return false}
+    if lhs._lexicon != rhs._lexicon {return false}
+    if lhs.unknownFields != rhs.unknownFields {return false}
+    return true
+  }
+}
+
+nonisolated extension Chirp_Chat_WordFilterUpdateNotify: SwiftProtobuf.Message, SwiftProtobuf._MessageImplementationBase, SwiftProtobuf._ProtoNameProviding {
+  public static let protoMessageName: String = _protobuf_package + ".WordFilterUpdateNotify"
+  public static let _protobuf_nameMap = SwiftProtobuf._NameMap(bytecode: "\0\u{1}lexicon\0")
+
+  public mutating func decodeMessage<D: SwiftProtobuf.Decoder>(decoder: inout D) throws {
+    while let fieldNumber = try decoder.nextFieldNumber() {
+      // The use of inline closures is to circumvent an issue where the compiler
+      // allocates stack space for every case branch when no optimizations are
+      // enabled. https://github.com/apple/swift-protobuf/issues/1034
+      switch fieldNumber {
+      case 1: try { try decoder.decodeSingularMessageField(value: &self._lexicon) }()
+      default: break
+      }
+    }
+  }
+
+  public func traverse<V: SwiftProtobuf.Visitor>(visitor: inout V) throws {
+    // The use of inline closures is to circumvent an issue where the compiler
+    // allocates stack space for every if/case branch local when no optimizations
+    // are enabled. https://github.com/apple/swift-protobuf/issues/1034 and
+    // https://github.com/apple/swift-protobuf/issues/1182
+    try { if let v = self._lexicon {
+      try visitor.visitSingularMessageField(value: v, fieldNumber: 1)
+    } }()
+    try unknownFields.traverse(visitor: &visitor)
+  }
+
+  public static func ==(lhs: Chirp_Chat_WordFilterUpdateNotify, rhs: Chirp_Chat_WordFilterUpdateNotify) -> Bool {
+    if lhs._lexicon != rhs._lexicon {return false}
     if lhs.unknownFields != rhs.unknownFields {return false}
     return true
   }

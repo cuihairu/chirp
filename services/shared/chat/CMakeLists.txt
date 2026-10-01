@@ -83,6 +83,9 @@ if(MYSQL_FOUND)
         # Lexicon-based content filter (game_chat_features P0 敏感词过滤):
         # three-level policy over a hot-reloadable term file.
         src/word_filter.cc
+        # Lexicon delivery channel (词库下发协议): conditional GET + hot-update
+        # broadcast shared by the basic switch and the enhanced on_packet hook.
+        src/word_filter_push.cc
         # Shared send validation (auth/spoofing/channel shape/content length):
         # the enhanced form calls ValidateContentLength in on_send_message.
         src/chat_validation.cc

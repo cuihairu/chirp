@@ -1403,4 +1403,91 @@ TEST(EnhancedMainTest, MysqlInitializeFailureExitsOne) {
   runner.join();
 }
 
+// --- 词库下发：共享单元（Fetch 守卫 / 策略镜像 / 广播收集） -------------------
+
+TEST_F(EnhancedSessionTest, WordFilterFetchGuardsPolicyMirrorAndNullFilter) {
+  chirp::chat::WordFilter empty(chirp::chat::WordFilterOptions{});
+  auto alice = std::make_shared<MockSession>();
+
+  chirp::gateway::Packet pkt;
+  pkt.set_msg_id(chirp::gateway::WORD_FILTER_FETCH_REQ);
+  pkt.set_sequence(3);
+  chirp::chat::WordFilterFetchRequest req;
+  pkt.set_body(req.SerializeAsString());
+
+  // 未认证（registry 查无此会话）→ AUTH_FAILED。
+  chirp::chat::HandleWordFilterFetch(pkt, alice, &empty, state_->GetUserId(alice));
+  {
+    const auto frames = FramesOf(*alice, chirp::gateway::WORD_FILTER_FETCH_RESP);
+    ASSERT_EQ(frames.size(), 1u);
+    EXPECT_EQ(frames[0].sequence(), 3);
+    chirp::chat::WordFilterFetchResponse resp;
+    ASSERT_TRUE(resp.ParseFromString(frames[0].body()));
+    EXPECT_EQ(resp.code(), chirp::common::AUTH_FAILED);
+  }
+
+  ASSERT_EQ(state_->AddSession("alice", "web", "s1", alice, "web"), nullptr);
+  // 空载 filter → OK / version 0 / enabled false / 空文本。
+  chirp::chat::HandleWordFilterFetch(pkt, alice, &empty, state_->GetUserId(alice));
+  {
+    const auto frames = FramesOf(*alice, chirp::gateway::WORD_FILTER_FETCH_RESP);
+    ASSERT_EQ(frames.size(), 2u);
+    chirp::chat::WordFilterFetchResponse resp;
+    ASSERT_TRUE(resp.ParseFromString(frames[1].body()));
+    EXPECT_EQ(resp.code(), chirp::common::OK);
+    EXPECT_EQ(resp.lexicon().version(), 0);
+    EXPECT_FALSE(resp.lexicon().enabled());
+  }
+
+  // 策略镜像：reject / record 原样进枚举（enabled=false 也要带出策略）。
+  chirp::chat::WordFilterOptions reject_opts;
+  reject_opts.policy = chirp::chat::WordFilterPolicy::kReject;
+  chirp::chat::WordFilter rejector(reject_opts);
+  chirp::chat::HandleWordFilterFetch(pkt, alice, &rejector, "alice");
+  chirp::chat::WordFilterOptions record_opts;
+  record_opts.policy = chirp::chat::WordFilterPolicy::kRecord;
+  chirp::chat::WordFilter recorder(record_opts);
+  chirp::chat::HandleWordFilterFetch(pkt, alice, &recorder, "alice");
+  {
+    const auto frames = FramesOf(*alice, chirp::gateway::WORD_FILTER_FETCH_RESP);
+    ASSERT_EQ(frames.size(), 4u);
+    chirp::chat::WordFilterFetchResponse resp;
+    ASSERT_TRUE(resp.ParseFromString(frames[2].body()));
+    EXPECT_EQ(resp.lexicon().policy(), chirp::chat::WORD_FILTER_POLICY_REJECT);
+    ASSERT_TRUE(resp.ParseFromString(frames[3].body()));
+    EXPECT_EQ(resp.lexicon().policy(), chirp::chat::WORD_FILTER_POLICY_RECORD);
+  }
+
+  // null filter（未装配词库的进程形态）：proto 缺省即语义，不崩。
+  chirp::chat::HandleWordFilterFetch(pkt, alice, nullptr, "alice");
+  {
+    const auto frames = FramesOf(*alice, chirp::gateway::WORD_FILTER_FETCH_RESP);
+    ASSERT_EQ(frames.size(), 5u);
+    chirp::chat::WordFilterFetchResponse resp;
+    ASSERT_TRUE(resp.ParseFromString(frames[4].body()));
+    EXPECT_EQ(resp.code(), chirp::common::OK);
+    EXPECT_EQ(resp.lexicon().version(), 0);
+  }
+}
+
+TEST_F(EnhancedSessionTest, WordFilterBroadcastSkipsExpiredSessionsAndEmptyRegistry) {
+  chirp::chat::WordFilter filter(chirp::chat::WordFilterOptions{});
+  // 空 registry：早退不崩。
+  chirp::chat::BroadcastWordFilterUpdate(state_->registry, filter);
+
+  auto alive = std::make_shared<MockSession>();
+  ASSERT_EQ(state_->AddSession("alice", "web", "s1", alive, "web"), nullptr);
+  auto dying = std::make_shared<MockSession>();
+  ASSERT_EQ(state_->AddSession("bob", "web", "s2", dying, "web"), nullptr);
+  dying.reset();  // 死 weak_ptr：收集阶段跳过，不强留会话
+
+  chirp::chat::BroadcastWordFilterUpdate(state_->registry, filter);
+  const auto frames = FramesOf(*alive, chirp::gateway::WORD_FILTER_UPDATE_NOTIFY);
+  ASSERT_EQ(frames.size(), 1u);
+  EXPECT_EQ(frames[0].sequence(), 0);  // 推送 seq 恒 0
+  chirp::chat::WordFilterUpdateNotify notify;
+  ASSERT_TRUE(notify.ParseFromString(frames[0].body()));
+  EXPECT_FALSE(notify.lexicon().enabled());
+}
+
 }  // namespace

@@ -34,6 +34,7 @@
 #include "player_directory.h"
 #include "push_bridge.h"
 #include "word_filter.h"
+#include "word_filter_push.h"
 
 #include "network/chat_peer_hub.h"
 #include "network/chat_peer_link.h"
@@ -1110,6 +1111,11 @@ int main(int argc, char** argv) {
   word_filter_options.lexicon_path = word_filter_file;
   word_filter_options.policy = chirp::chat::WordFilterPolicyFromString(word_filter_policy);
   chirp::chat::WordFilter word_filter(word_filter_options);
+  // 词库热更新广播（docs/design-notes/word_filter.md「词库下发协议」）：每次
+  // LoadLexicon（含热重载）推新词库给全部活会话，与 basic 同一接线。
+  word_filter.set_on_reload([&state, &word_filter](int64_t) {
+    chirp::chat::BroadcastWordFilterUpdate(state->registry, word_filter);
+  });
   // 撤回（game_chat_features P0）：enhanced 形态的 DELETE_MESSAGE 入口。窗口与
   // 频道名单与 basic 同一套 flag；装配体（notify/members/moderator/marker/
   // purger 五回调）见 MakeEnhancedRecallRuntime，main 与单测共用同一份。
@@ -1398,10 +1404,18 @@ int main(int argc, char** argv) {
   };
 
   auto on_packet = [handlers, gateway_service_secret, trusted_conns, &edge_rate_limiter,
-                    &directory](const std::shared_ptr<chirp::network::Session>& session,
+                    &directory, &word_filter, state](const std::shared_ptr<chirp::network::Session>& session,
                                 const chirp::gateway::Packet& pkt) {
     if (pkt.msg_id() == chirp::gateway::SERVER_AUTH_REQ) {
       HandleServerAuth(pkt, session, gateway_service_secret, trusted_conns.get());
+      return;
+    }
+    // 词库下发（docs/design-notes/word_filter.md「词库下发协议」）：分发器
+    // 是槽位制（DistributedDispatchHandlers），FETCH 不进槽位、在这里拦——
+    // 未登录拒绝的判定用 registry 的绑定身份，与 distributed 会话语义一致。
+    if (pkt.msg_id() == chirp::gateway::WORD_FILTER_FETCH_REQ) {
+      chirp::chat::HandleWordFilterFetch(pkt, session, &word_filter,
+                                         state->GetUserId(session));
       return;
     }
     // WP-8 player-directory block (5013-5030) rides this port behind the

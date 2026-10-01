@@ -243,6 +243,10 @@ KNOWN_UNCOVERABLE = {
     # ChannelPermissionChecker::HasPermission: the Field enum is exhaustive;
     # the trailing return only satisfies the compiler.
     ("services/shared/chat/src/channel_manager.cc", 44),
+    # WordFilterPush PolicyToProto: the WordFilterPolicy switch is exhaustive
+    # (all three enumerators covered by the enhanced policy-mirror test); the
+    # trailing return only satisfies the compiler.
+    ("services/shared/chat/src/word_filter_push.cc", 18),
     # GetChannels skips ids missing from channels_: both maps are updated
     # together under the same lock, so the skip cannot trigger.
     ("services/shared/chat/src/channel_manager.cc", 365),

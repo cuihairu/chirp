@@ -34,6 +34,7 @@
 #include "delivery_prefs.h"
 #include "repeat_guard.h"
 #include "word_filter.h"
+#include "word_filter_push.h"
 #include "push_bridge.h"
 #include "network/chat_peer_hub.h"
 #include "network/chat_peer_link.h"
@@ -1028,6 +1029,14 @@ void HandlePacket(const std::shared_ptr<MessageStore>& store,
                                      pkt.sequence(), resp.SerializeAsString());
     break;
   }
+  case chirp::gateway::WORD_FILTER_FETCH_REQ: {
+    // 词库下发（docs/design-notes/word_filter.md「词库下发协议」）：登录后
+    // 的客户端拉取服务端当前生效词库，发送侧预检据此镜像服务端裁决。分发
+    // 逻辑（守卫/条件 GET）在两形态共用的 word_filter_push 单元。
+    chirp::chat::HandleWordFilterFetch(pkt, session, features.word_filter,
+                                       authenticated_user_id);
+    break;
+  }
   case chirp::gateway::GET_HISTORY_REQ: {
     chirp::chat::GetHistoryRequest req;
     if (!req.ParseFromArray(pkt.body().data(), static_cast<int>(pkt.body().size()))) {
@@ -1548,6 +1557,11 @@ int main(int argc, char** argv) {
   chirp::chat::WordFilter word_filter(word_filter_options);
   chirp::chat::ChannelPacer channel_pacer;
   chirp::chat::RepeatGuard repeat_guard;
+  // 词库下发推送半边：mtime 热更新重载后向全部已认证在线会话广播新词库
+  // （回调在 io 线程同步触发，BroadcastWordFilterUpdate 只 post 发送）。
+  word_filter.set_on_reload([&state, &word_filter](int64_t) {
+    chirp::chat::BroadcastWordFilterUpdate(state, word_filter);
+  });
 
   FeatureHandlers features{.groups = group_handlers, .receipts = receipt_handlers,
                            .typing = typing_handlers, .reactions = reaction_handlers,

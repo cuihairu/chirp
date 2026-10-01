@@ -999,3 +999,51 @@ message GetBlockedSendersResponse {
   common.ErrorCode code = 1;
   repeated string target_user_ids = 2;
 }
+
+// ---- 词库下发（敏感词过滤的 lexicon distribution，2245-2247） ----
+//
+// 服务端词库此前只有 --word_filter_file 本地装载（mtime 惰性热更新）；本组
+// 消息把服务端当前生效词库下发给客户端，发送侧预检与真实裁决保持同步。
+// 语义规约（详见 docs/design-notes/word_filter.md「词库下发协议」章节）：
+//  - 拉取：客户端登录后发 FETCH_REQ 带自己已知版本（0 = 没有）；服务端回
+//    当前词库。known_version 与服务端一致时 lexicon 文本省略（条件 GET）。
+//  - 推送：服务端词库热更新（mtime 变化重载）后向全部已认证会话广播
+//    UPDATE_NOTIFY，恒带完整新词库；sequence 0、客户端只读、不要求 ACK。
+//  - version 单调递增（服务端每次装载 +1，从 1 起；0 = 服务端没有词库）。
+//    客户端忽略 version <= 本地版本的推送，乱序/重复投递免疫。
+//  - lexicon 文本是服务端词库的规范化形式（每行一词、小写、去重排序），
+//    与 --word_filter_file 同格式，客户端照常走 parseWordLexicon。
+//  - policy/replacement 随词库下发；客户端预检镜像服务端策略：replace 改
+//    写、reject 拒发，record 是纯服务端审计语义、客户端不预检（透传）。
+
+// 命名避让 C++ 核心既有 chirp::chat::WordFilterPolicy（word_filter.h 的
+// enum class）——下发通道的 proto 枚举用 Delivery 后缀，取值名保持一致。
+enum WordFilterDeliveryPolicy {
+  WORD_FILTER_POLICY_REPLACE = 0;
+  WORD_FILTER_POLICY_REJECT = 1;
+  WORD_FILTER_POLICY_RECORD = 2;
+}
+
+message WordFilterFetchRequest {
+  // 客户端当前词库版本；0 = 客户端还没有词库。
+  int64 known_version = 1;
+}
+
+// FETCH_RESP 与 UPDATE_NOTIFY 共用的词库载荷。
+message WordFilterLexicon {
+  int64 version = 1;  // 服务端当前版本；0 = 服务端未启用词库
+  bool enabled = 2;   // 服务端过滤是否生效（词库非空）
+  WordFilterDeliveryPolicy policy = 3;
+  string replacement = 4;  // replace 策略的替换文本（服务端默认 "**"）
+  // 规范化词库文本；条件 GET 命中（known_version == version）时为空。
+  string lexicon = 5;
+}
+
+message WordFilterFetchResponse {
+  common.ErrorCode code = 1;  // OK / AUTH_FAILED（未登录） / INVALID_PARAM（垃圾 body）
+  WordFilterLexicon lexicon = 2;
+}
+
+message WordFilterUpdateNotify {
+  WordFilterLexicon lexicon = 1;  // 恒带全量新词库
+}

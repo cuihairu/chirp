@@ -16,16 +16,12 @@ import chirp.mobile.protocol.ChatPipeline
 import chirp.mobile.protocol.ConnState
 import chirp.mobile.protocol.DeviceRegistrar
 import chirp.mobile.protocol.MemoryMessageStore
-import chirp.mobile.protocol.MessageInterceptor
 import chirp.mobile.protocol.OkHttpTransport
 import chirp.mobile.protocol.OfflineSendQueue
 import chirp.mobile.protocol.RequestError
 import chirp.mobile.protocol.SendOptions
-import chirp.mobile.protocol.WordFilter
-import chirp.mobile.protocol.WordFilterLoader
-import chirp.mobile.protocol.WordFilterOptions
+import chirp.mobile.protocol.WordFilterSync
 import chirp.mobile.push.PlatformPushTokenSource
-import com.google.protobuf.ByteString
 import okhttp3.OkHttpClient
 import java.io.File
 import java.util.UUID
@@ -39,9 +35,9 @@ import java.util.concurrent.TimeUnit
  *
  * 假设（非交互自行决定，与 M3 相同）：主机固定 ws://10.0.2.2:7001 —— Android
  * 模拟器里 10.0.2.2 是宿主机 loopback 的别名，与 dart 端 dev 默认一致；真机
- * 联调时再引入可配置主机。词库来源是 filesDir/word_filter.txt（服务端格
- * 式：每行一词、# 注释；无该文件则空词库放行）——协议面没有词库下发消息，
- * 见 docs/design-notes/word_filter.md 的「词库装载」说明。
+ * 联调时再引入可配置主机。词库来源以下发为准（[WordFilterSync]，词库下发
+ * 协议 2245-2247，登录成功后 fetch + UPDATE_NOTIFY 热更）；
+ * filesDir/word_filter.txt（服务端格式：每行一词、# 注释）降级为回退。
  */
 class MainActivity : Activity() {
 
@@ -54,16 +50,22 @@ class MainActivity : Activity() {
     private var conn: ChatConnection? = null
     private var pipeline: ChatPipeline? = null
     private var offlineQueue: OfflineSendQueue? = null
+    private var wordFilterSync: WordFilterSync? = null
 
-    /** filesDir/word_filter.txt 决定；无文件 = 空词库（服务端仍强制自己的过滤）。 */
-    private val wordFilter: WordFilter by lazy {
-        val lexicon = File(filesDir, LEXICON_FILE)
-        if (lexicon.isFile) {
-            WordFilterLoader.load(lexicon.inputStream().reader())
-        } else {
-            WordFilter(WordFilterOptions())
+    /**
+     * 发送侧词库预检：下发源（词库下发协议，登录成功后 fetch + UPDATE_NOTIFY
+     * 热更）为准，filesDir/word_filter.txt（服务端格式）降级为回退——无文件
+     * 或未登录时放行，服务端仍强制自己的过滤。
+     */
+    private fun freshWordFilterSync(conn: ChatConnection): WordFilterSync =
+        WordFilterSync(conn).also { sync ->
+            val lexicon = File(filesDir, LEXICON_FILE)
+            if (lexicon.isFile) {
+                val lines = lexicon.readLines()
+                sync.loadLocal(lines)
+            }
+            sync.start()
         }
-    }
 
     private lateinit var userInput: EditText
     private lateinit var peerInput: EditText
@@ -103,10 +105,12 @@ class MainActivity : Activity() {
     override fun onDestroy() {
         super.onDestroy()
         pipeline?.stop()
+        wordFilterSync?.stop()
         conn?.disconnect()
         conn = null
         pipeline = null
         offlineQueue = null
+        wordFilterSync = null
         okClient.dispatcher.executorService.shutdown()
         okClient.connectionPool.evictAll()
     }
@@ -137,7 +141,9 @@ class MainActivity : Activity() {
         )
         pipeline = freshPipeline
         freshPipeline.store = MemoryMessageStore()
-        freshPipeline.interceptor = sendSideWordFilter
+        val sync = freshWordFilterSync(fresh)
+        wordFilterSync = sync
+        freshPipeline.interceptor = sync
         freshPipeline.addListener(shellListener())
         // 断线重连成功后重放离线发送。
         val queue = OfflineSendQueue(
@@ -168,24 +174,13 @@ class MainActivity : Activity() {
                             sendBtn.isEnabled = true
                             loginBtn.isEnabled = true
                             registerForPush(fresh, userId)
+                            // 词库下发：登录成功即拉一次；失败静默，回退词库继续生效，
+                            // 后续热更走 UPDATE_NOTIFY。
+                            wordFilterSync?.fetch()
                         }
                     }
                 }
             })
-    }
-
-    /** 发送侧词库预检：REPLACE 语义改写进管线，拦截交给词库策略。 */
-    private val sendSideWordFilter = object : MessageInterceptor {
-        override fun onBeforeSend(request: Chat.SendMessageRequest): Chat.SendMessageRequest {
-            val result = wordFilter.filter(request.content.toStringUtf8())
-            if (!result.allowed) {
-                throw RequestBlocked("message blocked by word filter")
-            }
-            if (result.content == request.content.toStringUtf8()) return request
-            return request.toBuilder()
-                .setContent(ByteString.copyFromUtf8(result.content))
-                .build()
-        }
     }
 
     /**
@@ -215,8 +210,6 @@ class MainActivity : Activity() {
                 }
             }
     }
-
-    private class RequestBlocked(message: String) : RuntimeException(message)
 
     private fun shellListener() = object : chirp.mobile.protocol.ChatEventListener {
         override fun onConnectionStateChanged(state: ConnState) {

@@ -1680,6 +1680,137 @@ public final class Chat extends com.google.protobuf.GeneratedFile {
     // @@protoc_insertion_point(enum_scope:chirp.chat.MentionType)
   }
 
+  /**
+   * <pre>
+   * 命名避让 C++ 核心既有 chirp::chat::WordFilterPolicy（word_filter.h 的
+   * enum class）——下发通道的 proto 枚举用 Delivery 后缀，取值名保持一致。
+   * </pre>
+   *
+   * Protobuf enum {@code chirp.chat.WordFilterDeliveryPolicy}
+   */
+  public enum WordFilterDeliveryPolicy
+      implements com.google.protobuf.ProtocolMessageEnum {
+    /**
+     * <code>WORD_FILTER_POLICY_REPLACE = 0;</code>
+     */
+    WORD_FILTER_POLICY_REPLACE(0),
+    /**
+     * <code>WORD_FILTER_POLICY_REJECT = 1;</code>
+     */
+    WORD_FILTER_POLICY_REJECT(1),
+    /**
+     * <code>WORD_FILTER_POLICY_RECORD = 2;</code>
+     */
+    WORD_FILTER_POLICY_RECORD(2),
+    UNRECOGNIZED(-1),
+    ;
+
+    static {
+      com.google.protobuf.RuntimeVersion.validateProtobufGencodeVersion(
+        com.google.protobuf.RuntimeVersion.RuntimeDomain.PUBLIC,
+        /* major= */ 4,
+        /* minor= */ 33,
+        /* patch= */ 4,
+        /* suffix= */ "",
+        "WordFilterDeliveryPolicy");
+    }
+    /**
+     * <code>WORD_FILTER_POLICY_REPLACE = 0;</code>
+     */
+    public static final int WORD_FILTER_POLICY_REPLACE_VALUE = 0;
+    /**
+     * <code>WORD_FILTER_POLICY_REJECT = 1;</code>
+     */
+    public static final int WORD_FILTER_POLICY_REJECT_VALUE = 1;
+    /**
+     * <code>WORD_FILTER_POLICY_RECORD = 2;</code>
+     */
+    public static final int WORD_FILTER_POLICY_RECORD_VALUE = 2;
+
+
+    public final int getNumber() {
+      if (this == UNRECOGNIZED) {
+        throw new java.lang.IllegalArgumentException(
+            "Can't get the number of an unknown enum value.");
+      }
+      return value;
+    }
+
+    /**
+     * @param value The numeric wire value of the corresponding enum entry.
+     * @return The enum associated with the given numeric wire value.
+     * @deprecated Use {@link #forNumber(int)} instead.
+     */
+    @java.lang.Deprecated
+    public static WordFilterDeliveryPolicy valueOf(int value) {
+      return forNumber(value);
+    }
+
+    /**
+     * @param value The numeric wire value of the corresponding enum entry.
+     * @return The enum associated with the given numeric wire value.
+     */
+    public static WordFilterDeliveryPolicy forNumber(int value) {
+      switch (value) {
+        case 0: return WORD_FILTER_POLICY_REPLACE;
+        case 1: return WORD_FILTER_POLICY_REJECT;
+        case 2: return WORD_FILTER_POLICY_RECORD;
+        default: return null;
+      }
+    }
+
+    public static com.google.protobuf.Internal.EnumLiteMap<WordFilterDeliveryPolicy>
+        internalGetValueMap() {
+      return internalValueMap;
+    }
+    private static final com.google.protobuf.Internal.EnumLiteMap<
+        WordFilterDeliveryPolicy> internalValueMap =
+          new com.google.protobuf.Internal.EnumLiteMap<WordFilterDeliveryPolicy>() {
+            public WordFilterDeliveryPolicy findValueByNumber(int number) {
+              return WordFilterDeliveryPolicy.forNumber(number);
+            }
+          };
+
+    public final com.google.protobuf.Descriptors.EnumValueDescriptor
+        getValueDescriptor() {
+      if (this == UNRECOGNIZED) {
+        throw new java.lang.IllegalStateException(
+            "Can't get the descriptor of an unrecognized enum value.");
+      }
+      return getDescriptor().getValues().get(ordinal());
+    }
+    public final com.google.protobuf.Descriptors.EnumDescriptor
+        getDescriptorForType() {
+      return getDescriptor();
+    }
+    public static com.google.protobuf.Descriptors.EnumDescriptor
+        getDescriptor() {
+      return chirp.chat.Chat.getDescriptor().getEnumTypes().get(9);
+    }
+
+    private static final WordFilterDeliveryPolicy[] VALUES = values();
+
+    public static WordFilterDeliveryPolicy valueOf(
+        com.google.protobuf.Descriptors.EnumValueDescriptor desc) {
+      if (desc.getType() != getDescriptor()) {
+        throw new java.lang.IllegalArgumentException(
+          "EnumValueDescriptor is not for this type.");
+      }
+      if (desc.getIndex() == -1) {
+        return UNRECOGNIZED;
+      }
+      return VALUES[desc.getIndex()];
+    }
+
+    private final int value;
+
+    private WordFilterDeliveryPolicy(int value) {
+      this.value = value;
+    }
+
+    // @@protoc_insertion_point(enum_scope:chirp.chat.WordFilterDeliveryPolicy)
+  }
+
   public interface SendMessageRequestOrBuilder extends
       // @@protoc_insertion_point(interface_extends:chirp.chat.SendMessageRequest)
       com.google.protobuf.MessageOrBuilder {
@@ -107699,6 +107830,2827 @@ java.lang.String defaultValue) {
 
   }
 
+  public interface WordFilterFetchRequestOrBuilder extends
+      // @@protoc_insertion_point(interface_extends:chirp.chat.WordFilterFetchRequest)
+      com.google.protobuf.MessageOrBuilder {
+
+    /**
+     * <pre>
+     * 客户端当前词库版本；0 = 客户端还没有词库。
+     * </pre>
+     *
+     * <code>int64 known_version = 1;</code>
+     * @return The knownVersion.
+     */
+    long getKnownVersion();
+  }
+  /**
+   * Protobuf type {@code chirp.chat.WordFilterFetchRequest}
+   */
+  public static final class WordFilterFetchRequest extends
+      com.google.protobuf.GeneratedMessage implements
+      // @@protoc_insertion_point(message_implements:chirp.chat.WordFilterFetchRequest)
+      WordFilterFetchRequestOrBuilder {
+  private static final long serialVersionUID = 0L;
+    static {
+      com.google.protobuf.RuntimeVersion.validateProtobufGencodeVersion(
+        com.google.protobuf.RuntimeVersion.RuntimeDomain.PUBLIC,
+        /* major= */ 4,
+        /* minor= */ 33,
+        /* patch= */ 4,
+        /* suffix= */ "",
+        "WordFilterFetchRequest");
+    }
+    // Use WordFilterFetchRequest.newBuilder() to construct.
+    private WordFilterFetchRequest(com.google.protobuf.GeneratedMessage.Builder<?> builder) {
+      super(builder);
+    }
+    private WordFilterFetchRequest() {
+    }
+
+    public static final com.google.protobuf.Descriptors.Descriptor
+        getDescriptor() {
+      return chirp.chat.Chat.internal_static_chirp_chat_WordFilterFetchRequest_descriptor;
+    }
+
+    @java.lang.Override
+    protected com.google.protobuf.GeneratedMessage.FieldAccessorTable
+        internalGetFieldAccessorTable() {
+      return chirp.chat.Chat.internal_static_chirp_chat_WordFilterFetchRequest_fieldAccessorTable
+          .ensureFieldAccessorsInitialized(
+              chirp.chat.Chat.WordFilterFetchRequest.class, chirp.chat.Chat.WordFilterFetchRequest.Builder.class);
+    }
+
+    public static final int KNOWN_VERSION_FIELD_NUMBER = 1;
+    private long knownVersion_ = 0L;
+    /**
+     * <pre>
+     * 客户端当前词库版本；0 = 客户端还没有词库。
+     * </pre>
+     *
+     * <code>int64 known_version = 1;</code>
+     * @return The knownVersion.
+     */
+    @java.lang.Override
+    public long getKnownVersion() {
+      return knownVersion_;
+    }
+
+    private byte memoizedIsInitialized = -1;
+    @java.lang.Override
+    public final boolean isInitialized() {
+      byte isInitialized = memoizedIsInitialized;
+      if (isInitialized == 1) return true;
+      if (isInitialized == 0) return false;
+
+      memoizedIsInitialized = 1;
+      return true;
+    }
+
+    @java.lang.Override
+    public void writeTo(com.google.protobuf.CodedOutputStream output)
+                        throws java.io.IOException {
+      if (knownVersion_ != 0L) {
+        output.writeInt64(1, knownVersion_);
+      }
+      getUnknownFields().writeTo(output);
+    }
+
+    @java.lang.Override
+    public int getSerializedSize() {
+      int size = memoizedSize;
+      if (size != -1) return size;
+
+      size = 0;
+      if (knownVersion_ != 0L) {
+        size += com.google.protobuf.CodedOutputStream
+          .computeInt64Size(1, knownVersion_);
+      }
+      size += getUnknownFields().getSerializedSize();
+      memoizedSize = size;
+      return size;
+    }
+
+    @java.lang.Override
+    public boolean equals(final java.lang.Object obj) {
+      if (obj == this) {
+       return true;
+      }
+      if (!(obj instanceof chirp.chat.Chat.WordFilterFetchRequest)) {
+        return super.equals(obj);
+      }
+      chirp.chat.Chat.WordFilterFetchRequest other = (chirp.chat.Chat.WordFilterFetchRequest) obj;
+
+      if (getKnownVersion()
+          != other.getKnownVersion()) return false;
+      if (!getUnknownFields().equals(other.getUnknownFields())) return false;
+      return true;
+    }
+
+    @java.lang.Override
+    public int hashCode() {
+      if (memoizedHashCode != 0) {
+        return memoizedHashCode;
+      }
+      int hash = 41;
+      hash = (19 * hash) + getDescriptor().hashCode();
+      hash = (37 * hash) + KNOWN_VERSION_FIELD_NUMBER;
+      hash = (53 * hash) + com.google.protobuf.Internal.hashLong(
+          getKnownVersion());
+      hash = (29 * hash) + getUnknownFields().hashCode();
+      memoizedHashCode = hash;
+      return hash;
+    }
+
+    public static chirp.chat.Chat.WordFilterFetchRequest parseFrom(
+        java.nio.ByteBuffer data)
+        throws com.google.protobuf.InvalidProtocolBufferException {
+      return PARSER.parseFrom(data);
+    }
+    public static chirp.chat.Chat.WordFilterFetchRequest parseFrom(
+        java.nio.ByteBuffer data,
+        com.google.protobuf.ExtensionRegistryLite extensionRegistry)
+        throws com.google.protobuf.InvalidProtocolBufferException {
+      return PARSER.parseFrom(data, extensionRegistry);
+    }
+    public static chirp.chat.Chat.WordFilterFetchRequest parseFrom(
+        com.google.protobuf.ByteString data)
+        throws com.google.protobuf.InvalidProtocolBufferException {
+      return PARSER.parseFrom(data);
+    }
+    public static chirp.chat.Chat.WordFilterFetchRequest parseFrom(
+        com.google.protobuf.ByteString data,
+        com.google.protobuf.ExtensionRegistryLite extensionRegistry)
+        throws com.google.protobuf.InvalidProtocolBufferException {
+      return PARSER.parseFrom(data, extensionRegistry);
+    }
+    public static chirp.chat.Chat.WordFilterFetchRequest parseFrom(byte[] data)
+        throws com.google.protobuf.InvalidProtocolBufferException {
+      return PARSER.parseFrom(data);
+    }
+    public static chirp.chat.Chat.WordFilterFetchRequest parseFrom(
+        byte[] data,
+        com.google.protobuf.ExtensionRegistryLite extensionRegistry)
+        throws com.google.protobuf.InvalidProtocolBufferException {
+      return PARSER.parseFrom(data, extensionRegistry);
+    }
+    public static chirp.chat.Chat.WordFilterFetchRequest parseFrom(java.io.InputStream input)
+        throws java.io.IOException {
+      return com.google.protobuf.GeneratedMessage
+          .parseWithIOException(PARSER, input);
+    }
+    public static chirp.chat.Chat.WordFilterFetchRequest parseFrom(
+        java.io.InputStream input,
+        com.google.protobuf.ExtensionRegistryLite extensionRegistry)
+        throws java.io.IOException {
+      return com.google.protobuf.GeneratedMessage
+          .parseWithIOException(PARSER, input, extensionRegistry);
+    }
+
+    public static chirp.chat.Chat.WordFilterFetchRequest parseDelimitedFrom(java.io.InputStream input)
+        throws java.io.IOException {
+      return com.google.protobuf.GeneratedMessage
+          .parseDelimitedWithIOException(PARSER, input);
+    }
+
+    public static chirp.chat.Chat.WordFilterFetchRequest parseDelimitedFrom(
+        java.io.InputStream input,
+        com.google.protobuf.ExtensionRegistryLite extensionRegistry)
+        throws java.io.IOException {
+      return com.google.protobuf.GeneratedMessage
+          .parseDelimitedWithIOException(PARSER, input, extensionRegistry);
+    }
+    public static chirp.chat.Chat.WordFilterFetchRequest parseFrom(
+        com.google.protobuf.CodedInputStream input)
+        throws java.io.IOException {
+      return com.google.protobuf.GeneratedMessage
+          .parseWithIOException(PARSER, input);
+    }
+    public static chirp.chat.Chat.WordFilterFetchRequest parseFrom(
+        com.google.protobuf.CodedInputStream input,
+        com.google.protobuf.ExtensionRegistryLite extensionRegistry)
+        throws java.io.IOException {
+      return com.google.protobuf.GeneratedMessage
+          .parseWithIOException(PARSER, input, extensionRegistry);
+    }
+
+    @java.lang.Override
+    public Builder newBuilderForType() { return newBuilder(); }
+    public static Builder newBuilder() {
+      return DEFAULT_INSTANCE.toBuilder();
+    }
+    public static Builder newBuilder(chirp.chat.Chat.WordFilterFetchRequest prototype) {
+      return DEFAULT_INSTANCE.toBuilder().mergeFrom(prototype);
+    }
+    @java.lang.Override
+    public Builder toBuilder() {
+      return this == DEFAULT_INSTANCE
+          ? new Builder() : new Builder().mergeFrom(this);
+    }
+
+    @java.lang.Override
+    protected Builder newBuilderForType(
+        com.google.protobuf.GeneratedMessage.BuilderParent parent) {
+      Builder builder = new Builder(parent);
+      return builder;
+    }
+    /**
+     * Protobuf type {@code chirp.chat.WordFilterFetchRequest}
+     */
+    public static final class Builder extends
+        com.google.protobuf.GeneratedMessage.Builder<Builder> implements
+        // @@protoc_insertion_point(builder_implements:chirp.chat.WordFilterFetchRequest)
+        chirp.chat.Chat.WordFilterFetchRequestOrBuilder {
+      public static final com.google.protobuf.Descriptors.Descriptor
+          getDescriptor() {
+        return chirp.chat.Chat.internal_static_chirp_chat_WordFilterFetchRequest_descriptor;
+      }
+
+      @java.lang.Override
+      protected com.google.protobuf.GeneratedMessage.FieldAccessorTable
+          internalGetFieldAccessorTable() {
+        return chirp.chat.Chat.internal_static_chirp_chat_WordFilterFetchRequest_fieldAccessorTable
+            .ensureFieldAccessorsInitialized(
+                chirp.chat.Chat.WordFilterFetchRequest.class, chirp.chat.Chat.WordFilterFetchRequest.Builder.class);
+      }
+
+      // Construct using chirp.chat.Chat.WordFilterFetchRequest.newBuilder()
+      private Builder() {
+
+      }
+
+      private Builder(
+          com.google.protobuf.GeneratedMessage.BuilderParent parent) {
+        super(parent);
+
+      }
+      @java.lang.Override
+      public Builder clear() {
+        super.clear();
+        bitField0_ = 0;
+        knownVersion_ = 0L;
+        return this;
+      }
+
+      @java.lang.Override
+      public com.google.protobuf.Descriptors.Descriptor
+          getDescriptorForType() {
+        return chirp.chat.Chat.internal_static_chirp_chat_WordFilterFetchRequest_descriptor;
+      }
+
+      @java.lang.Override
+      public chirp.chat.Chat.WordFilterFetchRequest getDefaultInstanceForType() {
+        return chirp.chat.Chat.WordFilterFetchRequest.getDefaultInstance();
+      }
+
+      @java.lang.Override
+      public chirp.chat.Chat.WordFilterFetchRequest build() {
+        chirp.chat.Chat.WordFilterFetchRequest result = buildPartial();
+        if (!result.isInitialized()) {
+          throw newUninitializedMessageException(result);
+        }
+        return result;
+      }
+
+      @java.lang.Override
+      public chirp.chat.Chat.WordFilterFetchRequest buildPartial() {
+        chirp.chat.Chat.WordFilterFetchRequest result = new chirp.chat.Chat.WordFilterFetchRequest(this);
+        if (bitField0_ != 0) { buildPartial0(result); }
+        onBuilt();
+        return result;
+      }
+
+      private void buildPartial0(chirp.chat.Chat.WordFilterFetchRequest result) {
+        int from_bitField0_ = bitField0_;
+        if (((from_bitField0_ & 0x00000001) != 0)) {
+          result.knownVersion_ = knownVersion_;
+        }
+      }
+
+      @java.lang.Override
+      public Builder mergeFrom(com.google.protobuf.Message other) {
+        if (other instanceof chirp.chat.Chat.WordFilterFetchRequest) {
+          return mergeFrom((chirp.chat.Chat.WordFilterFetchRequest)other);
+        } else {
+          super.mergeFrom(other);
+          return this;
+        }
+      }
+
+      public Builder mergeFrom(chirp.chat.Chat.WordFilterFetchRequest other) {
+        if (other == chirp.chat.Chat.WordFilterFetchRequest.getDefaultInstance()) return this;
+        if (other.getKnownVersion() != 0L) {
+          setKnownVersion(other.getKnownVersion());
+        }
+        this.mergeUnknownFields(other.getUnknownFields());
+        onChanged();
+        return this;
+      }
+
+      @java.lang.Override
+      public final boolean isInitialized() {
+        return true;
+      }
+
+      @java.lang.Override
+      public Builder mergeFrom(
+          com.google.protobuf.CodedInputStream input,
+          com.google.protobuf.ExtensionRegistryLite extensionRegistry)
+          throws java.io.IOException {
+        if (extensionRegistry == null) {
+          throw new java.lang.NullPointerException();
+        }
+        try {
+          boolean done = false;
+          while (!done) {
+            int tag = input.readTag();
+            switch (tag) {
+              case 0:
+                done = true;
+                break;
+              case 8: {
+                knownVersion_ = input.readInt64();
+                bitField0_ |= 0x00000001;
+                break;
+              } // case 8
+              default: {
+                if (!super.parseUnknownField(input, extensionRegistry, tag)) {
+                  done = true; // was an endgroup tag
+                }
+                break;
+              } // default:
+            } // switch (tag)
+          } // while (!done)
+        } catch (com.google.protobuf.InvalidProtocolBufferException e) {
+          throw e.unwrapIOException();
+        } finally {
+          onChanged();
+        } // finally
+        return this;
+      }
+      private int bitField0_;
+
+      private long knownVersion_ ;
+      /**
+       * <pre>
+       * 客户端当前词库版本；0 = 客户端还没有词库。
+       * </pre>
+       *
+       * <code>int64 known_version = 1;</code>
+       * @return The knownVersion.
+       */
+      @java.lang.Override
+      public long getKnownVersion() {
+        return knownVersion_;
+      }
+      /**
+       * <pre>
+       * 客户端当前词库版本；0 = 客户端还没有词库。
+       * </pre>
+       *
+       * <code>int64 known_version = 1;</code>
+       * @param value The knownVersion to set.
+       * @return This builder for chaining.
+       */
+      public Builder setKnownVersion(long value) {
+
+        knownVersion_ = value;
+        bitField0_ |= 0x00000001;
+        onChanged();
+        return this;
+      }
+      /**
+       * <pre>
+       * 客户端当前词库版本；0 = 客户端还没有词库。
+       * </pre>
+       *
+       * <code>int64 known_version = 1;</code>
+       * @return This builder for chaining.
+       */
+      public Builder clearKnownVersion() {
+        bitField0_ = (bitField0_ & ~0x00000001);
+        knownVersion_ = 0L;
+        onChanged();
+        return this;
+      }
+
+      // @@protoc_insertion_point(builder_scope:chirp.chat.WordFilterFetchRequest)
+    }
+
+    // @@protoc_insertion_point(class_scope:chirp.chat.WordFilterFetchRequest)
+    private static final chirp.chat.Chat.WordFilterFetchRequest DEFAULT_INSTANCE;
+    static {
+      DEFAULT_INSTANCE = new chirp.chat.Chat.WordFilterFetchRequest();
+    }
+
+    public static chirp.chat.Chat.WordFilterFetchRequest getDefaultInstance() {
+      return DEFAULT_INSTANCE;
+    }
+
+    private static final com.google.protobuf.Parser<WordFilterFetchRequest>
+        PARSER = new com.google.protobuf.AbstractParser<WordFilterFetchRequest>() {
+      @java.lang.Override
+      public WordFilterFetchRequest parsePartialFrom(
+          com.google.protobuf.CodedInputStream input,
+          com.google.protobuf.ExtensionRegistryLite extensionRegistry)
+          throws com.google.protobuf.InvalidProtocolBufferException {
+        Builder builder = newBuilder();
+        try {
+          builder.mergeFrom(input, extensionRegistry);
+        } catch (com.google.protobuf.InvalidProtocolBufferException e) {
+          throw e.setUnfinishedMessage(builder.buildPartial());
+        } catch (com.google.protobuf.UninitializedMessageException e) {
+          throw e.asInvalidProtocolBufferException().setUnfinishedMessage(builder.buildPartial());
+        } catch (java.io.IOException e) {
+          throw new com.google.protobuf.InvalidProtocolBufferException(e)
+              .setUnfinishedMessage(builder.buildPartial());
+        }
+        return builder.buildPartial();
+      }
+    };
+
+    public static com.google.protobuf.Parser<WordFilterFetchRequest> parser() {
+      return PARSER;
+    }
+
+    @java.lang.Override
+    public com.google.protobuf.Parser<WordFilterFetchRequest> getParserForType() {
+      return PARSER;
+    }
+
+    @java.lang.Override
+    public chirp.chat.Chat.WordFilterFetchRequest getDefaultInstanceForType() {
+      return DEFAULT_INSTANCE;
+    }
+
+  }
+
+  public interface WordFilterLexiconOrBuilder extends
+      // @@protoc_insertion_point(interface_extends:chirp.chat.WordFilterLexicon)
+      com.google.protobuf.MessageOrBuilder {
+
+    /**
+     * <pre>
+     * 服务端当前版本；0 = 服务端未启用词库
+     * </pre>
+     *
+     * <code>int64 version = 1;</code>
+     * @return The version.
+     */
+    long getVersion();
+
+    /**
+     * <pre>
+     * 服务端过滤是否生效（词库非空）
+     * </pre>
+     *
+     * <code>bool enabled = 2;</code>
+     * @return The enabled.
+     */
+    boolean getEnabled();
+
+    /**
+     * <code>.chirp.chat.WordFilterDeliveryPolicy policy = 3;</code>
+     * @return The enum numeric value on the wire for policy.
+     */
+    int getPolicyValue();
+    /**
+     * <code>.chirp.chat.WordFilterDeliveryPolicy policy = 3;</code>
+     * @return The policy.
+     */
+    chirp.chat.Chat.WordFilterDeliveryPolicy getPolicy();
+
+    /**
+     * <pre>
+     * replace 策略的替换文本（服务端默认 "**"）
+     * </pre>
+     *
+     * <code>string replacement = 4;</code>
+     * @return The replacement.
+     */
+    java.lang.String getReplacement();
+    /**
+     * <pre>
+     * replace 策略的替换文本（服务端默认 "**"）
+     * </pre>
+     *
+     * <code>string replacement = 4;</code>
+     * @return The bytes for replacement.
+     */
+    com.google.protobuf.ByteString
+        getReplacementBytes();
+
+    /**
+     * <pre>
+     * 规范化词库文本；条件 GET 命中（known_version == version）时为空。
+     * </pre>
+     *
+     * <code>string lexicon = 5;</code>
+     * @return The lexicon.
+     */
+    java.lang.String getLexicon();
+    /**
+     * <pre>
+     * 规范化词库文本；条件 GET 命中（known_version == version）时为空。
+     * </pre>
+     *
+     * <code>string lexicon = 5;</code>
+     * @return The bytes for lexicon.
+     */
+    com.google.protobuf.ByteString
+        getLexiconBytes();
+  }
+  /**
+   * <pre>
+   * FETCH_RESP 与 UPDATE_NOTIFY 共用的词库载荷。
+   * </pre>
+   *
+   * Protobuf type {@code chirp.chat.WordFilterLexicon}
+   */
+  public static final class WordFilterLexicon extends
+      com.google.protobuf.GeneratedMessage implements
+      // @@protoc_insertion_point(message_implements:chirp.chat.WordFilterLexicon)
+      WordFilterLexiconOrBuilder {
+  private static final long serialVersionUID = 0L;
+    static {
+      com.google.protobuf.RuntimeVersion.validateProtobufGencodeVersion(
+        com.google.protobuf.RuntimeVersion.RuntimeDomain.PUBLIC,
+        /* major= */ 4,
+        /* minor= */ 33,
+        /* patch= */ 4,
+        /* suffix= */ "",
+        "WordFilterLexicon");
+    }
+    // Use WordFilterLexicon.newBuilder() to construct.
+    private WordFilterLexicon(com.google.protobuf.GeneratedMessage.Builder<?> builder) {
+      super(builder);
+    }
+    private WordFilterLexicon() {
+      policy_ = 0;
+      replacement_ = "";
+      lexicon_ = "";
+    }
+
+    public static final com.google.protobuf.Descriptors.Descriptor
+        getDescriptor() {
+      return chirp.chat.Chat.internal_static_chirp_chat_WordFilterLexicon_descriptor;
+    }
+
+    @java.lang.Override
+    protected com.google.protobuf.GeneratedMessage.FieldAccessorTable
+        internalGetFieldAccessorTable() {
+      return chirp.chat.Chat.internal_static_chirp_chat_WordFilterLexicon_fieldAccessorTable
+          .ensureFieldAccessorsInitialized(
+              chirp.chat.Chat.WordFilterLexicon.class, chirp.chat.Chat.WordFilterLexicon.Builder.class);
+    }
+
+    public static final int VERSION_FIELD_NUMBER = 1;
+    private long version_ = 0L;
+    /**
+     * <pre>
+     * 服务端当前版本；0 = 服务端未启用词库
+     * </pre>
+     *
+     * <code>int64 version = 1;</code>
+     * @return The version.
+     */
+    @java.lang.Override
+    public long getVersion() {
+      return version_;
+    }
+
+    public static final int ENABLED_FIELD_NUMBER = 2;
+    private boolean enabled_ = false;
+    /**
+     * <pre>
+     * 服务端过滤是否生效（词库非空）
+     * </pre>
+     *
+     * <code>bool enabled = 2;</code>
+     * @return The enabled.
+     */
+    @java.lang.Override
+    public boolean getEnabled() {
+      return enabled_;
+    }
+
+    public static final int POLICY_FIELD_NUMBER = 3;
+    private int policy_ = 0;
+    /**
+     * <code>.chirp.chat.WordFilterDeliveryPolicy policy = 3;</code>
+     * @return The enum numeric value on the wire for policy.
+     */
+    @java.lang.Override public int getPolicyValue() {
+      return policy_;
+    }
+    /**
+     * <code>.chirp.chat.WordFilterDeliveryPolicy policy = 3;</code>
+     * @return The policy.
+     */
+    @java.lang.Override public chirp.chat.Chat.WordFilterDeliveryPolicy getPolicy() {
+      chirp.chat.Chat.WordFilterDeliveryPolicy result = chirp.chat.Chat.WordFilterDeliveryPolicy.forNumber(policy_);
+      return result == null ? chirp.chat.Chat.WordFilterDeliveryPolicy.UNRECOGNIZED : result;
+    }
+
+    public static final int REPLACEMENT_FIELD_NUMBER = 4;
+    @SuppressWarnings("serial")
+    private volatile java.lang.Object replacement_ = "";
+    /**
+     * <pre>
+     * replace 策略的替换文本（服务端默认 "**"）
+     * </pre>
+     *
+     * <code>string replacement = 4;</code>
+     * @return The replacement.
+     */
+    @java.lang.Override
+    public java.lang.String getReplacement() {
+      java.lang.Object ref = replacement_;
+      if (ref instanceof java.lang.String) {
+        return (java.lang.String) ref;
+      } else {
+        com.google.protobuf.ByteString bs = 
+            (com.google.protobuf.ByteString) ref;
+        java.lang.String s = bs.toStringUtf8();
+        replacement_ = s;
+        return s;
+      }
+    }
+    /**
+     * <pre>
+     * replace 策略的替换文本（服务端默认 "**"）
+     * </pre>
+     *
+     * <code>string replacement = 4;</code>
+     * @return The bytes for replacement.
+     */
+    @java.lang.Override
+    public com.google.protobuf.ByteString
+        getReplacementBytes() {
+      java.lang.Object ref = replacement_;
+      if (ref instanceof java.lang.String) {
+        com.google.protobuf.ByteString b = 
+            com.google.protobuf.ByteString.copyFromUtf8(
+                (java.lang.String) ref);
+        replacement_ = b;
+        return b;
+      } else {
+        return (com.google.protobuf.ByteString) ref;
+      }
+    }
+
+    public static final int LEXICON_FIELD_NUMBER = 5;
+    @SuppressWarnings("serial")
+    private volatile java.lang.Object lexicon_ = "";
+    /**
+     * <pre>
+     * 规范化词库文本；条件 GET 命中（known_version == version）时为空。
+     * </pre>
+     *
+     * <code>string lexicon = 5;</code>
+     * @return The lexicon.
+     */
+    @java.lang.Override
+    public java.lang.String getLexicon() {
+      java.lang.Object ref = lexicon_;
+      if (ref instanceof java.lang.String) {
+        return (java.lang.String) ref;
+      } else {
+        com.google.protobuf.ByteString bs = 
+            (com.google.protobuf.ByteString) ref;
+        java.lang.String s = bs.toStringUtf8();
+        lexicon_ = s;
+        return s;
+      }
+    }
+    /**
+     * <pre>
+     * 规范化词库文本；条件 GET 命中（known_version == version）时为空。
+     * </pre>
+     *
+     * <code>string lexicon = 5;</code>
+     * @return The bytes for lexicon.
+     */
+    @java.lang.Override
+    public com.google.protobuf.ByteString
+        getLexiconBytes() {
+      java.lang.Object ref = lexicon_;
+      if (ref instanceof java.lang.String) {
+        com.google.protobuf.ByteString b = 
+            com.google.protobuf.ByteString.copyFromUtf8(
+                (java.lang.String) ref);
+        lexicon_ = b;
+        return b;
+      } else {
+        return (com.google.protobuf.ByteString) ref;
+      }
+    }
+
+    private byte memoizedIsInitialized = -1;
+    @java.lang.Override
+    public final boolean isInitialized() {
+      byte isInitialized = memoizedIsInitialized;
+      if (isInitialized == 1) return true;
+      if (isInitialized == 0) return false;
+
+      memoizedIsInitialized = 1;
+      return true;
+    }
+
+    @java.lang.Override
+    public void writeTo(com.google.protobuf.CodedOutputStream output)
+                        throws java.io.IOException {
+      if (version_ != 0L) {
+        output.writeInt64(1, version_);
+      }
+      if (enabled_ != false) {
+        output.writeBool(2, enabled_);
+      }
+      if (policy_ != chirp.chat.Chat.WordFilterDeliveryPolicy.WORD_FILTER_POLICY_REPLACE.getNumber()) {
+        output.writeEnum(3, policy_);
+      }
+      if (!com.google.protobuf.GeneratedMessage.isStringEmpty(replacement_)) {
+        com.google.protobuf.GeneratedMessage.writeString(output, 4, replacement_);
+      }
+      if (!com.google.protobuf.GeneratedMessage.isStringEmpty(lexicon_)) {
+        com.google.protobuf.GeneratedMessage.writeString(output, 5, lexicon_);
+      }
+      getUnknownFields().writeTo(output);
+    }
+
+    @java.lang.Override
+    public int getSerializedSize() {
+      int size = memoizedSize;
+      if (size != -1) return size;
+
+      size = 0;
+      if (version_ != 0L) {
+        size += com.google.protobuf.CodedOutputStream
+          .computeInt64Size(1, version_);
+      }
+      if (enabled_ != false) {
+        size += com.google.protobuf.CodedOutputStream
+          .computeBoolSize(2, enabled_);
+      }
+      if (policy_ != chirp.chat.Chat.WordFilterDeliveryPolicy.WORD_FILTER_POLICY_REPLACE.getNumber()) {
+        size += com.google.protobuf.CodedOutputStream
+          .computeEnumSize(3, policy_);
+      }
+      if (!com.google.protobuf.GeneratedMessage.isStringEmpty(replacement_)) {
+        size += com.google.protobuf.GeneratedMessage.computeStringSize(4, replacement_);
+      }
+      if (!com.google.protobuf.GeneratedMessage.isStringEmpty(lexicon_)) {
+        size += com.google.protobuf.GeneratedMessage.computeStringSize(5, lexicon_);
+      }
+      size += getUnknownFields().getSerializedSize();
+      memoizedSize = size;
+      return size;
+    }
+
+    @java.lang.Override
+    public boolean equals(final java.lang.Object obj) {
+      if (obj == this) {
+       return true;
+      }
+      if (!(obj instanceof chirp.chat.Chat.WordFilterLexicon)) {
+        return super.equals(obj);
+      }
+      chirp.chat.Chat.WordFilterLexicon other = (chirp.chat.Chat.WordFilterLexicon) obj;
+
+      if (getVersion()
+          != other.getVersion()) return false;
+      if (getEnabled()
+          != other.getEnabled()) return false;
+      if (policy_ != other.policy_) return false;
+      if (!getReplacement()
+          .equals(other.getReplacement())) return false;
+      if (!getLexicon()
+          .equals(other.getLexicon())) return false;
+      if (!getUnknownFields().equals(other.getUnknownFields())) return false;
+      return true;
+    }
+
+    @java.lang.Override
+    public int hashCode() {
+      if (memoizedHashCode != 0) {
+        return memoizedHashCode;
+      }
+      int hash = 41;
+      hash = (19 * hash) + getDescriptor().hashCode();
+      hash = (37 * hash) + VERSION_FIELD_NUMBER;
+      hash = (53 * hash) + com.google.protobuf.Internal.hashLong(
+          getVersion());
+      hash = (37 * hash) + ENABLED_FIELD_NUMBER;
+      hash = (53 * hash) + com.google.protobuf.Internal.hashBoolean(
+          getEnabled());
+      hash = (37 * hash) + POLICY_FIELD_NUMBER;
+      hash = (53 * hash) + policy_;
+      hash = (37 * hash) + REPLACEMENT_FIELD_NUMBER;
+      hash = (53 * hash) + getReplacement().hashCode();
+      hash = (37 * hash) + LEXICON_FIELD_NUMBER;
+      hash = (53 * hash) + getLexicon().hashCode();
+      hash = (29 * hash) + getUnknownFields().hashCode();
+      memoizedHashCode = hash;
+      return hash;
+    }
+
+    public static chirp.chat.Chat.WordFilterLexicon parseFrom(
+        java.nio.ByteBuffer data)
+        throws com.google.protobuf.InvalidProtocolBufferException {
+      return PARSER.parseFrom(data);
+    }
+    public static chirp.chat.Chat.WordFilterLexicon parseFrom(
+        java.nio.ByteBuffer data,
+        com.google.protobuf.ExtensionRegistryLite extensionRegistry)
+        throws com.google.protobuf.InvalidProtocolBufferException {
+      return PARSER.parseFrom(data, extensionRegistry);
+    }
+    public static chirp.chat.Chat.WordFilterLexicon parseFrom(
+        com.google.protobuf.ByteString data)
+        throws com.google.protobuf.InvalidProtocolBufferException {
+      return PARSER.parseFrom(data);
+    }
+    public static chirp.chat.Chat.WordFilterLexicon parseFrom(
+        com.google.protobuf.ByteString data,
+        com.google.protobuf.ExtensionRegistryLite extensionRegistry)
+        throws com.google.protobuf.InvalidProtocolBufferException {
+      return PARSER.parseFrom(data, extensionRegistry);
+    }
+    public static chirp.chat.Chat.WordFilterLexicon parseFrom(byte[] data)
+        throws com.google.protobuf.InvalidProtocolBufferException {
+      return PARSER.parseFrom(data);
+    }
+    public static chirp.chat.Chat.WordFilterLexicon parseFrom(
+        byte[] data,
+        com.google.protobuf.ExtensionRegistryLite extensionRegistry)
+        throws com.google.protobuf.InvalidProtocolBufferException {
+      return PARSER.parseFrom(data, extensionRegistry);
+    }
+    public static chirp.chat.Chat.WordFilterLexicon parseFrom(java.io.InputStream input)
+        throws java.io.IOException {
+      return com.google.protobuf.GeneratedMessage
+          .parseWithIOException(PARSER, input);
+    }
+    public static chirp.chat.Chat.WordFilterLexicon parseFrom(
+        java.io.InputStream input,
+        com.google.protobuf.ExtensionRegistryLite extensionRegistry)
+        throws java.io.IOException {
+      return com.google.protobuf.GeneratedMessage
+          .parseWithIOException(PARSER, input, extensionRegistry);
+    }
+
+    public static chirp.chat.Chat.WordFilterLexicon parseDelimitedFrom(java.io.InputStream input)
+        throws java.io.IOException {
+      return com.google.protobuf.GeneratedMessage
+          .parseDelimitedWithIOException(PARSER, input);
+    }
+
+    public static chirp.chat.Chat.WordFilterLexicon parseDelimitedFrom(
+        java.io.InputStream input,
+        com.google.protobuf.ExtensionRegistryLite extensionRegistry)
+        throws java.io.IOException {
+      return com.google.protobuf.GeneratedMessage
+          .parseDelimitedWithIOException(PARSER, input, extensionRegistry);
+    }
+    public static chirp.chat.Chat.WordFilterLexicon parseFrom(
+        com.google.protobuf.CodedInputStream input)
+        throws java.io.IOException {
+      return com.google.protobuf.GeneratedMessage
+          .parseWithIOException(PARSER, input);
+    }
+    public static chirp.chat.Chat.WordFilterLexicon parseFrom(
+        com.google.protobuf.CodedInputStream input,
+        com.google.protobuf.ExtensionRegistryLite extensionRegistry)
+        throws java.io.IOException {
+      return com.google.protobuf.GeneratedMessage
+          .parseWithIOException(PARSER, input, extensionRegistry);
+    }
+
+    @java.lang.Override
+    public Builder newBuilderForType() { return newBuilder(); }
+    public static Builder newBuilder() {
+      return DEFAULT_INSTANCE.toBuilder();
+    }
+    public static Builder newBuilder(chirp.chat.Chat.WordFilterLexicon prototype) {
+      return DEFAULT_INSTANCE.toBuilder().mergeFrom(prototype);
+    }
+    @java.lang.Override
+    public Builder toBuilder() {
+      return this == DEFAULT_INSTANCE
+          ? new Builder() : new Builder().mergeFrom(this);
+    }
+
+    @java.lang.Override
+    protected Builder newBuilderForType(
+        com.google.protobuf.GeneratedMessage.BuilderParent parent) {
+      Builder builder = new Builder(parent);
+      return builder;
+    }
+    /**
+     * <pre>
+     * FETCH_RESP 与 UPDATE_NOTIFY 共用的词库载荷。
+     * </pre>
+     *
+     * Protobuf type {@code chirp.chat.WordFilterLexicon}
+     */
+    public static final class Builder extends
+        com.google.protobuf.GeneratedMessage.Builder<Builder> implements
+        // @@protoc_insertion_point(builder_implements:chirp.chat.WordFilterLexicon)
+        chirp.chat.Chat.WordFilterLexiconOrBuilder {
+      public static final com.google.protobuf.Descriptors.Descriptor
+          getDescriptor() {
+        return chirp.chat.Chat.internal_static_chirp_chat_WordFilterLexicon_descriptor;
+      }
+
+      @java.lang.Override
+      protected com.google.protobuf.GeneratedMessage.FieldAccessorTable
+          internalGetFieldAccessorTable() {
+        return chirp.chat.Chat.internal_static_chirp_chat_WordFilterLexicon_fieldAccessorTable
+            .ensureFieldAccessorsInitialized(
+                chirp.chat.Chat.WordFilterLexicon.class, chirp.chat.Chat.WordFilterLexicon.Builder.class);
+      }
+
+      // Construct using chirp.chat.Chat.WordFilterLexicon.newBuilder()
+      private Builder() {
+
+      }
+
+      private Builder(
+          com.google.protobuf.GeneratedMessage.BuilderParent parent) {
+        super(parent);
+
+      }
+      @java.lang.Override
+      public Builder clear() {
+        super.clear();
+        bitField0_ = 0;
+        version_ = 0L;
+        enabled_ = false;
+        policy_ = 0;
+        replacement_ = "";
+        lexicon_ = "";
+        return this;
+      }
+
+      @java.lang.Override
+      public com.google.protobuf.Descriptors.Descriptor
+          getDescriptorForType() {
+        return chirp.chat.Chat.internal_static_chirp_chat_WordFilterLexicon_descriptor;
+      }
+
+      @java.lang.Override
+      public chirp.chat.Chat.WordFilterLexicon getDefaultInstanceForType() {
+        return chirp.chat.Chat.WordFilterLexicon.getDefaultInstance();
+      }
+
+      @java.lang.Override
+      public chirp.chat.Chat.WordFilterLexicon build() {
+        chirp.chat.Chat.WordFilterLexicon result = buildPartial();
+        if (!result.isInitialized()) {
+          throw newUninitializedMessageException(result);
+        }
+        return result;
+      }
+
+      @java.lang.Override
+      public chirp.chat.Chat.WordFilterLexicon buildPartial() {
+        chirp.chat.Chat.WordFilterLexicon result = new chirp.chat.Chat.WordFilterLexicon(this);
+        if (bitField0_ != 0) { buildPartial0(result); }
+        onBuilt();
+        return result;
+      }
+
+      private void buildPartial0(chirp.chat.Chat.WordFilterLexicon result) {
+        int from_bitField0_ = bitField0_;
+        if (((from_bitField0_ & 0x00000001) != 0)) {
+          result.version_ = version_;
+        }
+        if (((from_bitField0_ & 0x00000002) != 0)) {
+          result.enabled_ = enabled_;
+        }
+        if (((from_bitField0_ & 0x00000004) != 0)) {
+          result.policy_ = policy_;
+        }
+        if (((from_bitField0_ & 0x00000008) != 0)) {
+          result.replacement_ = replacement_;
+        }
+        if (((from_bitField0_ & 0x00000010) != 0)) {
+          result.lexicon_ = lexicon_;
+        }
+      }
+
+      @java.lang.Override
+      public Builder mergeFrom(com.google.protobuf.Message other) {
+        if (other instanceof chirp.chat.Chat.WordFilterLexicon) {
+          return mergeFrom((chirp.chat.Chat.WordFilterLexicon)other);
+        } else {
+          super.mergeFrom(other);
+          return this;
+        }
+      }
+
+      public Builder mergeFrom(chirp.chat.Chat.WordFilterLexicon other) {
+        if (other == chirp.chat.Chat.WordFilterLexicon.getDefaultInstance()) return this;
+        if (other.getVersion() != 0L) {
+          setVersion(other.getVersion());
+        }
+        if (other.getEnabled() != false) {
+          setEnabled(other.getEnabled());
+        }
+        if (other.policy_ != 0) {
+          setPolicyValue(other.getPolicyValue());
+        }
+        if (!other.getReplacement().isEmpty()) {
+          replacement_ = other.replacement_;
+          bitField0_ |= 0x00000008;
+          onChanged();
+        }
+        if (!other.getLexicon().isEmpty()) {
+          lexicon_ = other.lexicon_;
+          bitField0_ |= 0x00000010;
+          onChanged();
+        }
+        this.mergeUnknownFields(other.getUnknownFields());
+        onChanged();
+        return this;
+      }
+
+      @java.lang.Override
+      public final boolean isInitialized() {
+        return true;
+      }
+
+      @java.lang.Override
+      public Builder mergeFrom(
+          com.google.protobuf.CodedInputStream input,
+          com.google.protobuf.ExtensionRegistryLite extensionRegistry)
+          throws java.io.IOException {
+        if (extensionRegistry == null) {
+          throw new java.lang.NullPointerException();
+        }
+        try {
+          boolean done = false;
+          while (!done) {
+            int tag = input.readTag();
+            switch (tag) {
+              case 0:
+                done = true;
+                break;
+              case 8: {
+                version_ = input.readInt64();
+                bitField0_ |= 0x00000001;
+                break;
+              } // case 8
+              case 16: {
+                enabled_ = input.readBool();
+                bitField0_ |= 0x00000002;
+                break;
+              } // case 16
+              case 24: {
+                policy_ = input.readEnum();
+                bitField0_ |= 0x00000004;
+                break;
+              } // case 24
+              case 34: {
+                replacement_ = input.readStringRequireUtf8();
+                bitField0_ |= 0x00000008;
+                break;
+              } // case 34
+              case 42: {
+                lexicon_ = input.readStringRequireUtf8();
+                bitField0_ |= 0x00000010;
+                break;
+              } // case 42
+              default: {
+                if (!super.parseUnknownField(input, extensionRegistry, tag)) {
+                  done = true; // was an endgroup tag
+                }
+                break;
+              } // default:
+            } // switch (tag)
+          } // while (!done)
+        } catch (com.google.protobuf.InvalidProtocolBufferException e) {
+          throw e.unwrapIOException();
+        } finally {
+          onChanged();
+        } // finally
+        return this;
+      }
+      private int bitField0_;
+
+      private long version_ ;
+      /**
+       * <pre>
+       * 服务端当前版本；0 = 服务端未启用词库
+       * </pre>
+       *
+       * <code>int64 version = 1;</code>
+       * @return The version.
+       */
+      @java.lang.Override
+      public long getVersion() {
+        return version_;
+      }
+      /**
+       * <pre>
+       * 服务端当前版本；0 = 服务端未启用词库
+       * </pre>
+       *
+       * <code>int64 version = 1;</code>
+       * @param value The version to set.
+       * @return This builder for chaining.
+       */
+      public Builder setVersion(long value) {
+
+        version_ = value;
+        bitField0_ |= 0x00000001;
+        onChanged();
+        return this;
+      }
+      /**
+       * <pre>
+       * 服务端当前版本；0 = 服务端未启用词库
+       * </pre>
+       *
+       * <code>int64 version = 1;</code>
+       * @return This builder for chaining.
+       */
+      public Builder clearVersion() {
+        bitField0_ = (bitField0_ & ~0x00000001);
+        version_ = 0L;
+        onChanged();
+        return this;
+      }
+
+      private boolean enabled_ ;
+      /**
+       * <pre>
+       * 服务端过滤是否生效（词库非空）
+       * </pre>
+       *
+       * <code>bool enabled = 2;</code>
+       * @return The enabled.
+       */
+      @java.lang.Override
+      public boolean getEnabled() {
+        return enabled_;
+      }
+      /**
+       * <pre>
+       * 服务端过滤是否生效（词库非空）
+       * </pre>
+       *
+       * <code>bool enabled = 2;</code>
+       * @param value The enabled to set.
+       * @return This builder for chaining.
+       */
+      public Builder setEnabled(boolean value) {
+
+        enabled_ = value;
+        bitField0_ |= 0x00000002;
+        onChanged();
+        return this;
+      }
+      /**
+       * <pre>
+       * 服务端过滤是否生效（词库非空）
+       * </pre>
+       *
+       * <code>bool enabled = 2;</code>
+       * @return This builder for chaining.
+       */
+      public Builder clearEnabled() {
+        bitField0_ = (bitField0_ & ~0x00000002);
+        enabled_ = false;
+        onChanged();
+        return this;
+      }
+
+      private int policy_ = 0;
+      /**
+       * <code>.chirp.chat.WordFilterDeliveryPolicy policy = 3;</code>
+       * @return The enum numeric value on the wire for policy.
+       */
+      @java.lang.Override public int getPolicyValue() {
+        return policy_;
+      }
+      /**
+       * <code>.chirp.chat.WordFilterDeliveryPolicy policy = 3;</code>
+       * @param value The enum numeric value on the wire for policy to set.
+       * @return This builder for chaining.
+       */
+      public Builder setPolicyValue(int value) {
+        policy_ = value;
+        bitField0_ |= 0x00000004;
+        onChanged();
+        return this;
+      }
+      /**
+       * <code>.chirp.chat.WordFilterDeliveryPolicy policy = 3;</code>
+       * @return The policy.
+       */
+      @java.lang.Override
+      public chirp.chat.Chat.WordFilterDeliveryPolicy getPolicy() {
+        chirp.chat.Chat.WordFilterDeliveryPolicy result = chirp.chat.Chat.WordFilterDeliveryPolicy.forNumber(policy_);
+        return result == null ? chirp.chat.Chat.WordFilterDeliveryPolicy.UNRECOGNIZED : result;
+      }
+      /**
+       * <code>.chirp.chat.WordFilterDeliveryPolicy policy = 3;</code>
+       * @param value The policy to set.
+       * @return This builder for chaining.
+       */
+      public Builder setPolicy(chirp.chat.Chat.WordFilterDeliveryPolicy value) {
+        if (value == null) { throw new NullPointerException(); }
+        bitField0_ |= 0x00000004;
+        policy_ = value.getNumber();
+        onChanged();
+        return this;
+      }
+      /**
+       * <code>.chirp.chat.WordFilterDeliveryPolicy policy = 3;</code>
+       * @return This builder for chaining.
+       */
+      public Builder clearPolicy() {
+        bitField0_ = (bitField0_ & ~0x00000004);
+        policy_ = 0;
+        onChanged();
+        return this;
+      }
+
+      private java.lang.Object replacement_ = "";
+      /**
+       * <pre>
+       * replace 策略的替换文本（服务端默认 "**"）
+       * </pre>
+       *
+       * <code>string replacement = 4;</code>
+       * @return The replacement.
+       */
+      public java.lang.String getReplacement() {
+        java.lang.Object ref = replacement_;
+        if (!(ref instanceof java.lang.String)) {
+          com.google.protobuf.ByteString bs =
+              (com.google.protobuf.ByteString) ref;
+          java.lang.String s = bs.toStringUtf8();
+          replacement_ = s;
+          return s;
+        } else {
+          return (java.lang.String) ref;
+        }
+      }
+      /**
+       * <pre>
+       * replace 策略的替换文本（服务端默认 "**"）
+       * </pre>
+       *
+       * <code>string replacement = 4;</code>
+       * @return The bytes for replacement.
+       */
+      public com.google.protobuf.ByteString
+          getReplacementBytes() {
+        java.lang.Object ref = replacement_;
+        if (ref instanceof String) {
+          com.google.protobuf.ByteString b = 
+              com.google.protobuf.ByteString.copyFromUtf8(
+                  (java.lang.String) ref);
+          replacement_ = b;
+          return b;
+        } else {
+          return (com.google.protobuf.ByteString) ref;
+        }
+      }
+      /**
+       * <pre>
+       * replace 策略的替换文本（服务端默认 "**"）
+       * </pre>
+       *
+       * <code>string replacement = 4;</code>
+       * @param value The replacement to set.
+       * @return This builder for chaining.
+       */
+      public Builder setReplacement(
+          java.lang.String value) {
+        if (value == null) { throw new NullPointerException(); }
+        replacement_ = value;
+        bitField0_ |= 0x00000008;
+        onChanged();
+        return this;
+      }
+      /**
+       * <pre>
+       * replace 策略的替换文本（服务端默认 "**"）
+       * </pre>
+       *
+       * <code>string replacement = 4;</code>
+       * @return This builder for chaining.
+       */
+      public Builder clearReplacement() {
+        replacement_ = getDefaultInstance().getReplacement();
+        bitField0_ = (bitField0_ & ~0x00000008);
+        onChanged();
+        return this;
+      }
+      /**
+       * <pre>
+       * replace 策略的替换文本（服务端默认 "**"）
+       * </pre>
+       *
+       * <code>string replacement = 4;</code>
+       * @param value The bytes for replacement to set.
+       * @return This builder for chaining.
+       */
+      public Builder setReplacementBytes(
+          com.google.protobuf.ByteString value) {
+        if (value == null) { throw new NullPointerException(); }
+        checkByteStringIsUtf8(value);
+        replacement_ = value;
+        bitField0_ |= 0x00000008;
+        onChanged();
+        return this;
+      }
+
+      private java.lang.Object lexicon_ = "";
+      /**
+       * <pre>
+       * 规范化词库文本；条件 GET 命中（known_version == version）时为空。
+       * </pre>
+       *
+       * <code>string lexicon = 5;</code>
+       * @return The lexicon.
+       */
+      public java.lang.String getLexicon() {
+        java.lang.Object ref = lexicon_;
+        if (!(ref instanceof java.lang.String)) {
+          com.google.protobuf.ByteString bs =
+              (com.google.protobuf.ByteString) ref;
+          java.lang.String s = bs.toStringUtf8();
+          lexicon_ = s;
+          return s;
+        } else {
+          return (java.lang.String) ref;
+        }
+      }
+      /**
+       * <pre>
+       * 规范化词库文本；条件 GET 命中（known_version == version）时为空。
+       * </pre>
+       *
+       * <code>string lexicon = 5;</code>
+       * @return The bytes for lexicon.
+       */
+      public com.google.protobuf.ByteString
+          getLexiconBytes() {
+        java.lang.Object ref = lexicon_;
+        if (ref instanceof String) {
+          com.google.protobuf.ByteString b = 
+              com.google.protobuf.ByteString.copyFromUtf8(
+                  (java.lang.String) ref);
+          lexicon_ = b;
+          return b;
+        } else {
+          return (com.google.protobuf.ByteString) ref;
+        }
+      }
+      /**
+       * <pre>
+       * 规范化词库文本；条件 GET 命中（known_version == version）时为空。
+       * </pre>
+       *
+       * <code>string lexicon = 5;</code>
+       * @param value The lexicon to set.
+       * @return This builder for chaining.
+       */
+      public Builder setLexicon(
+          java.lang.String value) {
+        if (value == null) { throw new NullPointerException(); }
+        lexicon_ = value;
+        bitField0_ |= 0x00000010;
+        onChanged();
+        return this;
+      }
+      /**
+       * <pre>
+       * 规范化词库文本；条件 GET 命中（known_version == version）时为空。
+       * </pre>
+       *
+       * <code>string lexicon = 5;</code>
+       * @return This builder for chaining.
+       */
+      public Builder clearLexicon() {
+        lexicon_ = getDefaultInstance().getLexicon();
+        bitField0_ = (bitField0_ & ~0x00000010);
+        onChanged();
+        return this;
+      }
+      /**
+       * <pre>
+       * 规范化词库文本；条件 GET 命中（known_version == version）时为空。
+       * </pre>
+       *
+       * <code>string lexicon = 5;</code>
+       * @param value The bytes for lexicon to set.
+       * @return This builder for chaining.
+       */
+      public Builder setLexiconBytes(
+          com.google.protobuf.ByteString value) {
+        if (value == null) { throw new NullPointerException(); }
+        checkByteStringIsUtf8(value);
+        lexicon_ = value;
+        bitField0_ |= 0x00000010;
+        onChanged();
+        return this;
+      }
+
+      // @@protoc_insertion_point(builder_scope:chirp.chat.WordFilterLexicon)
+    }
+
+    // @@protoc_insertion_point(class_scope:chirp.chat.WordFilterLexicon)
+    private static final chirp.chat.Chat.WordFilterLexicon DEFAULT_INSTANCE;
+    static {
+      DEFAULT_INSTANCE = new chirp.chat.Chat.WordFilterLexicon();
+    }
+
+    public static chirp.chat.Chat.WordFilterLexicon getDefaultInstance() {
+      return DEFAULT_INSTANCE;
+    }
+
+    private static final com.google.protobuf.Parser<WordFilterLexicon>
+        PARSER = new com.google.protobuf.AbstractParser<WordFilterLexicon>() {
+      @java.lang.Override
+      public WordFilterLexicon parsePartialFrom(
+          com.google.protobuf.CodedInputStream input,
+          com.google.protobuf.ExtensionRegistryLite extensionRegistry)
+          throws com.google.protobuf.InvalidProtocolBufferException {
+        Builder builder = newBuilder();
+        try {
+          builder.mergeFrom(input, extensionRegistry);
+        } catch (com.google.protobuf.InvalidProtocolBufferException e) {
+          throw e.setUnfinishedMessage(builder.buildPartial());
+        } catch (com.google.protobuf.UninitializedMessageException e) {
+          throw e.asInvalidProtocolBufferException().setUnfinishedMessage(builder.buildPartial());
+        } catch (java.io.IOException e) {
+          throw new com.google.protobuf.InvalidProtocolBufferException(e)
+              .setUnfinishedMessage(builder.buildPartial());
+        }
+        return builder.buildPartial();
+      }
+    };
+
+    public static com.google.protobuf.Parser<WordFilterLexicon> parser() {
+      return PARSER;
+    }
+
+    @java.lang.Override
+    public com.google.protobuf.Parser<WordFilterLexicon> getParserForType() {
+      return PARSER;
+    }
+
+    @java.lang.Override
+    public chirp.chat.Chat.WordFilterLexicon getDefaultInstanceForType() {
+      return DEFAULT_INSTANCE;
+    }
+
+  }
+
+  public interface WordFilterFetchResponseOrBuilder extends
+      // @@protoc_insertion_point(interface_extends:chirp.chat.WordFilterFetchResponse)
+      com.google.protobuf.MessageOrBuilder {
+
+    /**
+     * <pre>
+     * OK / AUTH_FAILED（未登录） / INVALID_PARAM（垃圾 body）
+     * </pre>
+     *
+     * <code>.chirp.common.ErrorCode code = 1;</code>
+     * @return The enum numeric value on the wire for code.
+     */
+    int getCodeValue();
+    /**
+     * <pre>
+     * OK / AUTH_FAILED（未登录） / INVALID_PARAM（垃圾 body）
+     * </pre>
+     *
+     * <code>.chirp.common.ErrorCode code = 1;</code>
+     * @return The code.
+     */
+    chirp.common.Common.ErrorCode getCode();
+
+    /**
+     * <code>.chirp.chat.WordFilterLexicon lexicon = 2;</code>
+     * @return Whether the lexicon field is set.
+     */
+    boolean hasLexicon();
+    /**
+     * <code>.chirp.chat.WordFilterLexicon lexicon = 2;</code>
+     * @return The lexicon.
+     */
+    chirp.chat.Chat.WordFilterLexicon getLexicon();
+    /**
+     * <code>.chirp.chat.WordFilterLexicon lexicon = 2;</code>
+     */
+    chirp.chat.Chat.WordFilterLexiconOrBuilder getLexiconOrBuilder();
+  }
+  /**
+   * Protobuf type {@code chirp.chat.WordFilterFetchResponse}
+   */
+  public static final class WordFilterFetchResponse extends
+      com.google.protobuf.GeneratedMessage implements
+      // @@protoc_insertion_point(message_implements:chirp.chat.WordFilterFetchResponse)
+      WordFilterFetchResponseOrBuilder {
+  private static final long serialVersionUID = 0L;
+    static {
+      com.google.protobuf.RuntimeVersion.validateProtobufGencodeVersion(
+        com.google.protobuf.RuntimeVersion.RuntimeDomain.PUBLIC,
+        /* major= */ 4,
+        /* minor= */ 33,
+        /* patch= */ 4,
+        /* suffix= */ "",
+        "WordFilterFetchResponse");
+    }
+    // Use WordFilterFetchResponse.newBuilder() to construct.
+    private WordFilterFetchResponse(com.google.protobuf.GeneratedMessage.Builder<?> builder) {
+      super(builder);
+    }
+    private WordFilterFetchResponse() {
+      code_ = 0;
+    }
+
+    public static final com.google.protobuf.Descriptors.Descriptor
+        getDescriptor() {
+      return chirp.chat.Chat.internal_static_chirp_chat_WordFilterFetchResponse_descriptor;
+    }
+
+    @java.lang.Override
+    protected com.google.protobuf.GeneratedMessage.FieldAccessorTable
+        internalGetFieldAccessorTable() {
+      return chirp.chat.Chat.internal_static_chirp_chat_WordFilterFetchResponse_fieldAccessorTable
+          .ensureFieldAccessorsInitialized(
+              chirp.chat.Chat.WordFilterFetchResponse.class, chirp.chat.Chat.WordFilterFetchResponse.Builder.class);
+    }
+
+    private int bitField0_;
+    public static final int CODE_FIELD_NUMBER = 1;
+    private int code_ = 0;
+    /**
+     * <pre>
+     * OK / AUTH_FAILED（未登录） / INVALID_PARAM（垃圾 body）
+     * </pre>
+     *
+     * <code>.chirp.common.ErrorCode code = 1;</code>
+     * @return The enum numeric value on the wire for code.
+     */
+    @java.lang.Override public int getCodeValue() {
+      return code_;
+    }
+    /**
+     * <pre>
+     * OK / AUTH_FAILED（未登录） / INVALID_PARAM（垃圾 body）
+     * </pre>
+     *
+     * <code>.chirp.common.ErrorCode code = 1;</code>
+     * @return The code.
+     */
+    @java.lang.Override public chirp.common.Common.ErrorCode getCode() {
+      chirp.common.Common.ErrorCode result = chirp.common.Common.ErrorCode.forNumber(code_);
+      return result == null ? chirp.common.Common.ErrorCode.UNRECOGNIZED : result;
+    }
+
+    public static final int LEXICON_FIELD_NUMBER = 2;
+    private chirp.chat.Chat.WordFilterLexicon lexicon_;
+    /**
+     * <code>.chirp.chat.WordFilterLexicon lexicon = 2;</code>
+     * @return Whether the lexicon field is set.
+     */
+    @java.lang.Override
+    public boolean hasLexicon() {
+      return ((bitField0_ & 0x00000001) != 0);
+    }
+    /**
+     * <code>.chirp.chat.WordFilterLexicon lexicon = 2;</code>
+     * @return The lexicon.
+     */
+    @java.lang.Override
+    public chirp.chat.Chat.WordFilterLexicon getLexicon() {
+      return lexicon_ == null ? chirp.chat.Chat.WordFilterLexicon.getDefaultInstance() : lexicon_;
+    }
+    /**
+     * <code>.chirp.chat.WordFilterLexicon lexicon = 2;</code>
+     */
+    @java.lang.Override
+    public chirp.chat.Chat.WordFilterLexiconOrBuilder getLexiconOrBuilder() {
+      return lexicon_ == null ? chirp.chat.Chat.WordFilterLexicon.getDefaultInstance() : lexicon_;
+    }
+
+    private byte memoizedIsInitialized = -1;
+    @java.lang.Override
+    public final boolean isInitialized() {
+      byte isInitialized = memoizedIsInitialized;
+      if (isInitialized == 1) return true;
+      if (isInitialized == 0) return false;
+
+      memoizedIsInitialized = 1;
+      return true;
+    }
+
+    @java.lang.Override
+    public void writeTo(com.google.protobuf.CodedOutputStream output)
+                        throws java.io.IOException {
+      if (code_ != chirp.common.Common.ErrorCode.OK.getNumber()) {
+        output.writeEnum(1, code_);
+      }
+      if (((bitField0_ & 0x00000001) != 0)) {
+        output.writeMessage(2, getLexicon());
+      }
+      getUnknownFields().writeTo(output);
+    }
+
+    @java.lang.Override
+    public int getSerializedSize() {
+      int size = memoizedSize;
+      if (size != -1) return size;
+
+      size = 0;
+      if (code_ != chirp.common.Common.ErrorCode.OK.getNumber()) {
+        size += com.google.protobuf.CodedOutputStream
+          .computeEnumSize(1, code_);
+      }
+      if (((bitField0_ & 0x00000001) != 0)) {
+        size += com.google.protobuf.CodedOutputStream
+          .computeMessageSize(2, getLexicon());
+      }
+      size += getUnknownFields().getSerializedSize();
+      memoizedSize = size;
+      return size;
+    }
+
+    @java.lang.Override
+    public boolean equals(final java.lang.Object obj) {
+      if (obj == this) {
+       return true;
+      }
+      if (!(obj instanceof chirp.chat.Chat.WordFilterFetchResponse)) {
+        return super.equals(obj);
+      }
+      chirp.chat.Chat.WordFilterFetchResponse other = (chirp.chat.Chat.WordFilterFetchResponse) obj;
+
+      if (code_ != other.code_) return false;
+      if (hasLexicon() != other.hasLexicon()) return false;
+      if (hasLexicon()) {
+        if (!getLexicon()
+            .equals(other.getLexicon())) return false;
+      }
+      if (!getUnknownFields().equals(other.getUnknownFields())) return false;
+      return true;
+    }
+
+    @java.lang.Override
+    public int hashCode() {
+      if (memoizedHashCode != 0) {
+        return memoizedHashCode;
+      }
+      int hash = 41;
+      hash = (19 * hash) + getDescriptor().hashCode();
+      hash = (37 * hash) + CODE_FIELD_NUMBER;
+      hash = (53 * hash) + code_;
+      if (hasLexicon()) {
+        hash = (37 * hash) + LEXICON_FIELD_NUMBER;
+        hash = (53 * hash) + getLexicon().hashCode();
+      }
+      hash = (29 * hash) + getUnknownFields().hashCode();
+      memoizedHashCode = hash;
+      return hash;
+    }
+
+    public static chirp.chat.Chat.WordFilterFetchResponse parseFrom(
+        java.nio.ByteBuffer data)
+        throws com.google.protobuf.InvalidProtocolBufferException {
+      return PARSER.parseFrom(data);
+    }
+    public static chirp.chat.Chat.WordFilterFetchResponse parseFrom(
+        java.nio.ByteBuffer data,
+        com.google.protobuf.ExtensionRegistryLite extensionRegistry)
+        throws com.google.protobuf.InvalidProtocolBufferException {
+      return PARSER.parseFrom(data, extensionRegistry);
+    }
+    public static chirp.chat.Chat.WordFilterFetchResponse parseFrom(
+        com.google.protobuf.ByteString data)
+        throws com.google.protobuf.InvalidProtocolBufferException {
+      return PARSER.parseFrom(data);
+    }
+    public static chirp.chat.Chat.WordFilterFetchResponse parseFrom(
+        com.google.protobuf.ByteString data,
+        com.google.protobuf.ExtensionRegistryLite extensionRegistry)
+        throws com.google.protobuf.InvalidProtocolBufferException {
+      return PARSER.parseFrom(data, extensionRegistry);
+    }
+    public static chirp.chat.Chat.WordFilterFetchResponse parseFrom(byte[] data)
+        throws com.google.protobuf.InvalidProtocolBufferException {
+      return PARSER.parseFrom(data);
+    }
+    public static chirp.chat.Chat.WordFilterFetchResponse parseFrom(
+        byte[] data,
+        com.google.protobuf.ExtensionRegistryLite extensionRegistry)
+        throws com.google.protobuf.InvalidProtocolBufferException {
+      return PARSER.parseFrom(data, extensionRegistry);
+    }
+    public static chirp.chat.Chat.WordFilterFetchResponse parseFrom(java.io.InputStream input)
+        throws java.io.IOException {
+      return com.google.protobuf.GeneratedMessage
+          .parseWithIOException(PARSER, input);
+    }
+    public static chirp.chat.Chat.WordFilterFetchResponse parseFrom(
+        java.io.InputStream input,
+        com.google.protobuf.ExtensionRegistryLite extensionRegistry)
+        throws java.io.IOException {
+      return com.google.protobuf.GeneratedMessage
+          .parseWithIOException(PARSER, input, extensionRegistry);
+    }
+
+    public static chirp.chat.Chat.WordFilterFetchResponse parseDelimitedFrom(java.io.InputStream input)
+        throws java.io.IOException {
+      return com.google.protobuf.GeneratedMessage
+          .parseDelimitedWithIOException(PARSER, input);
+    }
+
+    public static chirp.chat.Chat.WordFilterFetchResponse parseDelimitedFrom(
+        java.io.InputStream input,
+        com.google.protobuf.ExtensionRegistryLite extensionRegistry)
+        throws java.io.IOException {
+      return com.google.protobuf.GeneratedMessage
+          .parseDelimitedWithIOException(PARSER, input, extensionRegistry);
+    }
+    public static chirp.chat.Chat.WordFilterFetchResponse parseFrom(
+        com.google.protobuf.CodedInputStream input)
+        throws java.io.IOException {
+      return com.google.protobuf.GeneratedMessage
+          .parseWithIOException(PARSER, input);
+    }
+    public static chirp.chat.Chat.WordFilterFetchResponse parseFrom(
+        com.google.protobuf.CodedInputStream input,
+        com.google.protobuf.ExtensionRegistryLite extensionRegistry)
+        throws java.io.IOException {
+      return com.google.protobuf.GeneratedMessage
+          .parseWithIOException(PARSER, input, extensionRegistry);
+    }
+
+    @java.lang.Override
+    public Builder newBuilderForType() { return newBuilder(); }
+    public static Builder newBuilder() {
+      return DEFAULT_INSTANCE.toBuilder();
+    }
+    public static Builder newBuilder(chirp.chat.Chat.WordFilterFetchResponse prototype) {
+      return DEFAULT_INSTANCE.toBuilder().mergeFrom(prototype);
+    }
+    @java.lang.Override
+    public Builder toBuilder() {
+      return this == DEFAULT_INSTANCE
+          ? new Builder() : new Builder().mergeFrom(this);
+    }
+
+    @java.lang.Override
+    protected Builder newBuilderForType(
+        com.google.protobuf.GeneratedMessage.BuilderParent parent) {
+      Builder builder = new Builder(parent);
+      return builder;
+    }
+    /**
+     * Protobuf type {@code chirp.chat.WordFilterFetchResponse}
+     */
+    public static final class Builder extends
+        com.google.protobuf.GeneratedMessage.Builder<Builder> implements
+        // @@protoc_insertion_point(builder_implements:chirp.chat.WordFilterFetchResponse)
+        chirp.chat.Chat.WordFilterFetchResponseOrBuilder {
+      public static final com.google.protobuf.Descriptors.Descriptor
+          getDescriptor() {
+        return chirp.chat.Chat.internal_static_chirp_chat_WordFilterFetchResponse_descriptor;
+      }
+
+      @java.lang.Override
+      protected com.google.protobuf.GeneratedMessage.FieldAccessorTable
+          internalGetFieldAccessorTable() {
+        return chirp.chat.Chat.internal_static_chirp_chat_WordFilterFetchResponse_fieldAccessorTable
+            .ensureFieldAccessorsInitialized(
+                chirp.chat.Chat.WordFilterFetchResponse.class, chirp.chat.Chat.WordFilterFetchResponse.Builder.class);
+      }
+
+      // Construct using chirp.chat.Chat.WordFilterFetchResponse.newBuilder()
+      private Builder() {
+        maybeForceBuilderInitialization();
+      }
+
+      private Builder(
+          com.google.protobuf.GeneratedMessage.BuilderParent parent) {
+        super(parent);
+        maybeForceBuilderInitialization();
+      }
+      private void maybeForceBuilderInitialization() {
+        if (com.google.protobuf.GeneratedMessage
+                .alwaysUseFieldBuilders) {
+          internalGetLexiconFieldBuilder();
+        }
+      }
+      @java.lang.Override
+      public Builder clear() {
+        super.clear();
+        bitField0_ = 0;
+        code_ = 0;
+        lexicon_ = null;
+        if (lexiconBuilder_ != null) {
+          lexiconBuilder_.dispose();
+          lexiconBuilder_ = null;
+        }
+        return this;
+      }
+
+      @java.lang.Override
+      public com.google.protobuf.Descriptors.Descriptor
+          getDescriptorForType() {
+        return chirp.chat.Chat.internal_static_chirp_chat_WordFilterFetchResponse_descriptor;
+      }
+
+      @java.lang.Override
+      public chirp.chat.Chat.WordFilterFetchResponse getDefaultInstanceForType() {
+        return chirp.chat.Chat.WordFilterFetchResponse.getDefaultInstance();
+      }
+
+      @java.lang.Override
+      public chirp.chat.Chat.WordFilterFetchResponse build() {
+        chirp.chat.Chat.WordFilterFetchResponse result = buildPartial();
+        if (!result.isInitialized()) {
+          throw newUninitializedMessageException(result);
+        }
+        return result;
+      }
+
+      @java.lang.Override
+      public chirp.chat.Chat.WordFilterFetchResponse buildPartial() {
+        chirp.chat.Chat.WordFilterFetchResponse result = new chirp.chat.Chat.WordFilterFetchResponse(this);
+        if (bitField0_ != 0) { buildPartial0(result); }
+        onBuilt();
+        return result;
+      }
+
+      private void buildPartial0(chirp.chat.Chat.WordFilterFetchResponse result) {
+        int from_bitField0_ = bitField0_;
+        if (((from_bitField0_ & 0x00000001) != 0)) {
+          result.code_ = code_;
+        }
+        int to_bitField0_ = 0;
+        if (((from_bitField0_ & 0x00000002) != 0)) {
+          result.lexicon_ = lexiconBuilder_ == null
+              ? lexicon_
+              : lexiconBuilder_.build();
+          to_bitField0_ |= 0x00000001;
+        }
+        result.bitField0_ |= to_bitField0_;
+      }
+
+      @java.lang.Override
+      public Builder mergeFrom(com.google.protobuf.Message other) {
+        if (other instanceof chirp.chat.Chat.WordFilterFetchResponse) {
+          return mergeFrom((chirp.chat.Chat.WordFilterFetchResponse)other);
+        } else {
+          super.mergeFrom(other);
+          return this;
+        }
+      }
+
+      public Builder mergeFrom(chirp.chat.Chat.WordFilterFetchResponse other) {
+        if (other == chirp.chat.Chat.WordFilterFetchResponse.getDefaultInstance()) return this;
+        if (other.code_ != 0) {
+          setCodeValue(other.getCodeValue());
+        }
+        if (other.hasLexicon()) {
+          mergeLexicon(other.getLexicon());
+        }
+        this.mergeUnknownFields(other.getUnknownFields());
+        onChanged();
+        return this;
+      }
+
+      @java.lang.Override
+      public final boolean isInitialized() {
+        return true;
+      }
+
+      @java.lang.Override
+      public Builder mergeFrom(
+          com.google.protobuf.CodedInputStream input,
+          com.google.protobuf.ExtensionRegistryLite extensionRegistry)
+          throws java.io.IOException {
+        if (extensionRegistry == null) {
+          throw new java.lang.NullPointerException();
+        }
+        try {
+          boolean done = false;
+          while (!done) {
+            int tag = input.readTag();
+            switch (tag) {
+              case 0:
+                done = true;
+                break;
+              case 8: {
+                code_ = input.readEnum();
+                bitField0_ |= 0x00000001;
+                break;
+              } // case 8
+              case 18: {
+                input.readMessage(
+                    internalGetLexiconFieldBuilder().getBuilder(),
+                    extensionRegistry);
+                bitField0_ |= 0x00000002;
+                break;
+              } // case 18
+              default: {
+                if (!super.parseUnknownField(input, extensionRegistry, tag)) {
+                  done = true; // was an endgroup tag
+                }
+                break;
+              } // default:
+            } // switch (tag)
+          } // while (!done)
+        } catch (com.google.protobuf.InvalidProtocolBufferException e) {
+          throw e.unwrapIOException();
+        } finally {
+          onChanged();
+        } // finally
+        return this;
+      }
+      private int bitField0_;
+
+      private int code_ = 0;
+      /**
+       * <pre>
+       * OK / AUTH_FAILED（未登录） / INVALID_PARAM（垃圾 body）
+       * </pre>
+       *
+       * <code>.chirp.common.ErrorCode code = 1;</code>
+       * @return The enum numeric value on the wire for code.
+       */
+      @java.lang.Override public int getCodeValue() {
+        return code_;
+      }
+      /**
+       * <pre>
+       * OK / AUTH_FAILED（未登录） / INVALID_PARAM（垃圾 body）
+       * </pre>
+       *
+       * <code>.chirp.common.ErrorCode code = 1;</code>
+       * @param value The enum numeric value on the wire for code to set.
+       * @return This builder for chaining.
+       */
+      public Builder setCodeValue(int value) {
+        code_ = value;
+        bitField0_ |= 0x00000001;
+        onChanged();
+        return this;
+      }
+      /**
+       * <pre>
+       * OK / AUTH_FAILED（未登录） / INVALID_PARAM（垃圾 body）
+       * </pre>
+       *
+       * <code>.chirp.common.ErrorCode code = 1;</code>
+       * @return The code.
+       */
+      @java.lang.Override
+      public chirp.common.Common.ErrorCode getCode() {
+        chirp.common.Common.ErrorCode result = chirp.common.Common.ErrorCode.forNumber(code_);
+        return result == null ? chirp.common.Common.ErrorCode.UNRECOGNIZED : result;
+      }
+      /**
+       * <pre>
+       * OK / AUTH_FAILED（未登录） / INVALID_PARAM（垃圾 body）
+       * </pre>
+       *
+       * <code>.chirp.common.ErrorCode code = 1;</code>
+       * @param value The code to set.
+       * @return This builder for chaining.
+       */
+      public Builder setCode(chirp.common.Common.ErrorCode value) {
+        if (value == null) { throw new NullPointerException(); }
+        bitField0_ |= 0x00000001;
+        code_ = value.getNumber();
+        onChanged();
+        return this;
+      }
+      /**
+       * <pre>
+       * OK / AUTH_FAILED（未登录） / INVALID_PARAM（垃圾 body）
+       * </pre>
+       *
+       * <code>.chirp.common.ErrorCode code = 1;</code>
+       * @return This builder for chaining.
+       */
+      public Builder clearCode() {
+        bitField0_ = (bitField0_ & ~0x00000001);
+        code_ = 0;
+        onChanged();
+        return this;
+      }
+
+      private chirp.chat.Chat.WordFilterLexicon lexicon_;
+      private com.google.protobuf.SingleFieldBuilder<
+          chirp.chat.Chat.WordFilterLexicon, chirp.chat.Chat.WordFilterLexicon.Builder, chirp.chat.Chat.WordFilterLexiconOrBuilder> lexiconBuilder_;
+      /**
+       * <code>.chirp.chat.WordFilterLexicon lexicon = 2;</code>
+       * @return Whether the lexicon field is set.
+       */
+      public boolean hasLexicon() {
+        return ((bitField0_ & 0x00000002) != 0);
+      }
+      /**
+       * <code>.chirp.chat.WordFilterLexicon lexicon = 2;</code>
+       * @return The lexicon.
+       */
+      public chirp.chat.Chat.WordFilterLexicon getLexicon() {
+        if (lexiconBuilder_ == null) {
+          return lexicon_ == null ? chirp.chat.Chat.WordFilterLexicon.getDefaultInstance() : lexicon_;
+        } else {
+          return lexiconBuilder_.getMessage();
+        }
+      }
+      /**
+       * <code>.chirp.chat.WordFilterLexicon lexicon = 2;</code>
+       */
+      public Builder setLexicon(chirp.chat.Chat.WordFilterLexicon value) {
+        if (lexiconBuilder_ == null) {
+          if (value == null) {
+            throw new NullPointerException();
+          }
+          lexicon_ = value;
+        } else {
+          lexiconBuilder_.setMessage(value);
+        }
+        bitField0_ |= 0x00000002;
+        onChanged();
+        return this;
+      }
+      /**
+       * <code>.chirp.chat.WordFilterLexicon lexicon = 2;</code>
+       */
+      public Builder setLexicon(
+          chirp.chat.Chat.WordFilterLexicon.Builder builderForValue) {
+        if (lexiconBuilder_ == null) {
+          lexicon_ = builderForValue.build();
+        } else {
+          lexiconBuilder_.setMessage(builderForValue.build());
+        }
+        bitField0_ |= 0x00000002;
+        onChanged();
+        return this;
+      }
+      /**
+       * <code>.chirp.chat.WordFilterLexicon lexicon = 2;</code>
+       */
+      public Builder mergeLexicon(chirp.chat.Chat.WordFilterLexicon value) {
+        if (lexiconBuilder_ == null) {
+          if (((bitField0_ & 0x00000002) != 0) &&
+            lexicon_ != null &&
+            lexicon_ != chirp.chat.Chat.WordFilterLexicon.getDefaultInstance()) {
+            getLexiconBuilder().mergeFrom(value);
+          } else {
+            lexicon_ = value;
+          }
+        } else {
+          lexiconBuilder_.mergeFrom(value);
+        }
+        if (lexicon_ != null) {
+          bitField0_ |= 0x00000002;
+          onChanged();
+        }
+        return this;
+      }
+      /**
+       * <code>.chirp.chat.WordFilterLexicon lexicon = 2;</code>
+       */
+      public Builder clearLexicon() {
+        bitField0_ = (bitField0_ & ~0x00000002);
+        lexicon_ = null;
+        if (lexiconBuilder_ != null) {
+          lexiconBuilder_.dispose();
+          lexiconBuilder_ = null;
+        }
+        onChanged();
+        return this;
+      }
+      /**
+       * <code>.chirp.chat.WordFilterLexicon lexicon = 2;</code>
+       */
+      public chirp.chat.Chat.WordFilterLexicon.Builder getLexiconBuilder() {
+        bitField0_ |= 0x00000002;
+        onChanged();
+        return internalGetLexiconFieldBuilder().getBuilder();
+      }
+      /**
+       * <code>.chirp.chat.WordFilterLexicon lexicon = 2;</code>
+       */
+      public chirp.chat.Chat.WordFilterLexiconOrBuilder getLexiconOrBuilder() {
+        if (lexiconBuilder_ != null) {
+          return lexiconBuilder_.getMessageOrBuilder();
+        } else {
+          return lexicon_ == null ?
+              chirp.chat.Chat.WordFilterLexicon.getDefaultInstance() : lexicon_;
+        }
+      }
+      /**
+       * <code>.chirp.chat.WordFilterLexicon lexicon = 2;</code>
+       */
+      private com.google.protobuf.SingleFieldBuilder<
+          chirp.chat.Chat.WordFilterLexicon, chirp.chat.Chat.WordFilterLexicon.Builder, chirp.chat.Chat.WordFilterLexiconOrBuilder> 
+          internalGetLexiconFieldBuilder() {
+        if (lexiconBuilder_ == null) {
+          lexiconBuilder_ = new com.google.protobuf.SingleFieldBuilder<
+              chirp.chat.Chat.WordFilterLexicon, chirp.chat.Chat.WordFilterLexicon.Builder, chirp.chat.Chat.WordFilterLexiconOrBuilder>(
+                  getLexicon(),
+                  getParentForChildren(),
+                  isClean());
+          lexicon_ = null;
+        }
+        return lexiconBuilder_;
+      }
+
+      // @@protoc_insertion_point(builder_scope:chirp.chat.WordFilterFetchResponse)
+    }
+
+    // @@protoc_insertion_point(class_scope:chirp.chat.WordFilterFetchResponse)
+    private static final chirp.chat.Chat.WordFilterFetchResponse DEFAULT_INSTANCE;
+    static {
+      DEFAULT_INSTANCE = new chirp.chat.Chat.WordFilterFetchResponse();
+    }
+
+    public static chirp.chat.Chat.WordFilterFetchResponse getDefaultInstance() {
+      return DEFAULT_INSTANCE;
+    }
+
+    private static final com.google.protobuf.Parser<WordFilterFetchResponse>
+        PARSER = new com.google.protobuf.AbstractParser<WordFilterFetchResponse>() {
+      @java.lang.Override
+      public WordFilterFetchResponse parsePartialFrom(
+          com.google.protobuf.CodedInputStream input,
+          com.google.protobuf.ExtensionRegistryLite extensionRegistry)
+          throws com.google.protobuf.InvalidProtocolBufferException {
+        Builder builder = newBuilder();
+        try {
+          builder.mergeFrom(input, extensionRegistry);
+        } catch (com.google.protobuf.InvalidProtocolBufferException e) {
+          throw e.setUnfinishedMessage(builder.buildPartial());
+        } catch (com.google.protobuf.UninitializedMessageException e) {
+          throw e.asInvalidProtocolBufferException().setUnfinishedMessage(builder.buildPartial());
+        } catch (java.io.IOException e) {
+          throw new com.google.protobuf.InvalidProtocolBufferException(e)
+              .setUnfinishedMessage(builder.buildPartial());
+        }
+        return builder.buildPartial();
+      }
+    };
+
+    public static com.google.protobuf.Parser<WordFilterFetchResponse> parser() {
+      return PARSER;
+    }
+
+    @java.lang.Override
+    public com.google.protobuf.Parser<WordFilterFetchResponse> getParserForType() {
+      return PARSER;
+    }
+
+    @java.lang.Override
+    public chirp.chat.Chat.WordFilterFetchResponse getDefaultInstanceForType() {
+      return DEFAULT_INSTANCE;
+    }
+
+  }
+
+  public interface WordFilterUpdateNotifyOrBuilder extends
+      // @@protoc_insertion_point(interface_extends:chirp.chat.WordFilterUpdateNotify)
+      com.google.protobuf.MessageOrBuilder {
+
+    /**
+     * <pre>
+     * 恒带全量新词库
+     * </pre>
+     *
+     * <code>.chirp.chat.WordFilterLexicon lexicon = 1;</code>
+     * @return Whether the lexicon field is set.
+     */
+    boolean hasLexicon();
+    /**
+     * <pre>
+     * 恒带全量新词库
+     * </pre>
+     *
+     * <code>.chirp.chat.WordFilterLexicon lexicon = 1;</code>
+     * @return The lexicon.
+     */
+    chirp.chat.Chat.WordFilterLexicon getLexicon();
+    /**
+     * <pre>
+     * 恒带全量新词库
+     * </pre>
+     *
+     * <code>.chirp.chat.WordFilterLexicon lexicon = 1;</code>
+     */
+    chirp.chat.Chat.WordFilterLexiconOrBuilder getLexiconOrBuilder();
+  }
+  /**
+   * Protobuf type {@code chirp.chat.WordFilterUpdateNotify}
+   */
+  public static final class WordFilterUpdateNotify extends
+      com.google.protobuf.GeneratedMessage implements
+      // @@protoc_insertion_point(message_implements:chirp.chat.WordFilterUpdateNotify)
+      WordFilterUpdateNotifyOrBuilder {
+  private static final long serialVersionUID = 0L;
+    static {
+      com.google.protobuf.RuntimeVersion.validateProtobufGencodeVersion(
+        com.google.protobuf.RuntimeVersion.RuntimeDomain.PUBLIC,
+        /* major= */ 4,
+        /* minor= */ 33,
+        /* patch= */ 4,
+        /* suffix= */ "",
+        "WordFilterUpdateNotify");
+    }
+    // Use WordFilterUpdateNotify.newBuilder() to construct.
+    private WordFilterUpdateNotify(com.google.protobuf.GeneratedMessage.Builder<?> builder) {
+      super(builder);
+    }
+    private WordFilterUpdateNotify() {
+    }
+
+    public static final com.google.protobuf.Descriptors.Descriptor
+        getDescriptor() {
+      return chirp.chat.Chat.internal_static_chirp_chat_WordFilterUpdateNotify_descriptor;
+    }
+
+    @java.lang.Override
+    protected com.google.protobuf.GeneratedMessage.FieldAccessorTable
+        internalGetFieldAccessorTable() {
+      return chirp.chat.Chat.internal_static_chirp_chat_WordFilterUpdateNotify_fieldAccessorTable
+          .ensureFieldAccessorsInitialized(
+              chirp.chat.Chat.WordFilterUpdateNotify.class, chirp.chat.Chat.WordFilterUpdateNotify.Builder.class);
+    }
+
+    private int bitField0_;
+    public static final int LEXICON_FIELD_NUMBER = 1;
+    private chirp.chat.Chat.WordFilterLexicon lexicon_;
+    /**
+     * <pre>
+     * 恒带全量新词库
+     * </pre>
+     *
+     * <code>.chirp.chat.WordFilterLexicon lexicon = 1;</code>
+     * @return Whether the lexicon field is set.
+     */
+    @java.lang.Override
+    public boolean hasLexicon() {
+      return ((bitField0_ & 0x00000001) != 0);
+    }
+    /**
+     * <pre>
+     * 恒带全量新词库
+     * </pre>
+     *
+     * <code>.chirp.chat.WordFilterLexicon lexicon = 1;</code>
+     * @return The lexicon.
+     */
+    @java.lang.Override
+    public chirp.chat.Chat.WordFilterLexicon getLexicon() {
+      return lexicon_ == null ? chirp.chat.Chat.WordFilterLexicon.getDefaultInstance() : lexicon_;
+    }
+    /**
+     * <pre>
+     * 恒带全量新词库
+     * </pre>
+     *
+     * <code>.chirp.chat.WordFilterLexicon lexicon = 1;</code>
+     */
+    @java.lang.Override
+    public chirp.chat.Chat.WordFilterLexiconOrBuilder getLexiconOrBuilder() {
+      return lexicon_ == null ? chirp.chat.Chat.WordFilterLexicon.getDefaultInstance() : lexicon_;
+    }
+
+    private byte memoizedIsInitialized = -1;
+    @java.lang.Override
+    public final boolean isInitialized() {
+      byte isInitialized = memoizedIsInitialized;
+      if (isInitialized == 1) return true;
+      if (isInitialized == 0) return false;
+
+      memoizedIsInitialized = 1;
+      return true;
+    }
+
+    @java.lang.Override
+    public void writeTo(com.google.protobuf.CodedOutputStream output)
+                        throws java.io.IOException {
+      if (((bitField0_ & 0x00000001) != 0)) {
+        output.writeMessage(1, getLexicon());
+      }
+      getUnknownFields().writeTo(output);
+    }
+
+    @java.lang.Override
+    public int getSerializedSize() {
+      int size = memoizedSize;
+      if (size != -1) return size;
+
+      size = 0;
+      if (((bitField0_ & 0x00000001) != 0)) {
+        size += com.google.protobuf.CodedOutputStream
+          .computeMessageSize(1, getLexicon());
+      }
+      size += getUnknownFields().getSerializedSize();
+      memoizedSize = size;
+      return size;
+    }
+
+    @java.lang.Override
+    public boolean equals(final java.lang.Object obj) {
+      if (obj == this) {
+       return true;
+      }
+      if (!(obj instanceof chirp.chat.Chat.WordFilterUpdateNotify)) {
+        return super.equals(obj);
+      }
+      chirp.chat.Chat.WordFilterUpdateNotify other = (chirp.chat.Chat.WordFilterUpdateNotify) obj;
+
+      if (hasLexicon() != other.hasLexicon()) return false;
+      if (hasLexicon()) {
+        if (!getLexicon()
+            .equals(other.getLexicon())) return false;
+      }
+      if (!getUnknownFields().equals(other.getUnknownFields())) return false;
+      return true;
+    }
+
+    @java.lang.Override
+    public int hashCode() {
+      if (memoizedHashCode != 0) {
+        return memoizedHashCode;
+      }
+      int hash = 41;
+      hash = (19 * hash) + getDescriptor().hashCode();
+      if (hasLexicon()) {
+        hash = (37 * hash) + LEXICON_FIELD_NUMBER;
+        hash = (53 * hash) + getLexicon().hashCode();
+      }
+      hash = (29 * hash) + getUnknownFields().hashCode();
+      memoizedHashCode = hash;
+      return hash;
+    }
+
+    public static chirp.chat.Chat.WordFilterUpdateNotify parseFrom(
+        java.nio.ByteBuffer data)
+        throws com.google.protobuf.InvalidProtocolBufferException {
+      return PARSER.parseFrom(data);
+    }
+    public static chirp.chat.Chat.WordFilterUpdateNotify parseFrom(
+        java.nio.ByteBuffer data,
+        com.google.protobuf.ExtensionRegistryLite extensionRegistry)
+        throws com.google.protobuf.InvalidProtocolBufferException {
+      return PARSER.parseFrom(data, extensionRegistry);
+    }
+    public static chirp.chat.Chat.WordFilterUpdateNotify parseFrom(
+        com.google.protobuf.ByteString data)
+        throws com.google.protobuf.InvalidProtocolBufferException {
+      return PARSER.parseFrom(data);
+    }
+    public static chirp.chat.Chat.WordFilterUpdateNotify parseFrom(
+        com.google.protobuf.ByteString data,
+        com.google.protobuf.ExtensionRegistryLite extensionRegistry)
+        throws com.google.protobuf.InvalidProtocolBufferException {
+      return PARSER.parseFrom(data, extensionRegistry);
+    }
+    public static chirp.chat.Chat.WordFilterUpdateNotify parseFrom(byte[] data)
+        throws com.google.protobuf.InvalidProtocolBufferException {
+      return PARSER.parseFrom(data);
+    }
+    public static chirp.chat.Chat.WordFilterUpdateNotify parseFrom(
+        byte[] data,
+        com.google.protobuf.ExtensionRegistryLite extensionRegistry)
+        throws com.google.protobuf.InvalidProtocolBufferException {
+      return PARSER.parseFrom(data, extensionRegistry);
+    }
+    public static chirp.chat.Chat.WordFilterUpdateNotify parseFrom(java.io.InputStream input)
+        throws java.io.IOException {
+      return com.google.protobuf.GeneratedMessage
+          .parseWithIOException(PARSER, input);
+    }
+    public static chirp.chat.Chat.WordFilterUpdateNotify parseFrom(
+        java.io.InputStream input,
+        com.google.protobuf.ExtensionRegistryLite extensionRegistry)
+        throws java.io.IOException {
+      return com.google.protobuf.GeneratedMessage
+          .parseWithIOException(PARSER, input, extensionRegistry);
+    }
+
+    public static chirp.chat.Chat.WordFilterUpdateNotify parseDelimitedFrom(java.io.InputStream input)
+        throws java.io.IOException {
+      return com.google.protobuf.GeneratedMessage
+          .parseDelimitedWithIOException(PARSER, input);
+    }
+
+    public static chirp.chat.Chat.WordFilterUpdateNotify parseDelimitedFrom(
+        java.io.InputStream input,
+        com.google.protobuf.ExtensionRegistryLite extensionRegistry)
+        throws java.io.IOException {
+      return com.google.protobuf.GeneratedMessage
+          .parseDelimitedWithIOException(PARSER, input, extensionRegistry);
+    }
+    public static chirp.chat.Chat.WordFilterUpdateNotify parseFrom(
+        com.google.protobuf.CodedInputStream input)
+        throws java.io.IOException {
+      return com.google.protobuf.GeneratedMessage
+          .parseWithIOException(PARSER, input);
+    }
+    public static chirp.chat.Chat.WordFilterUpdateNotify parseFrom(
+        com.google.protobuf.CodedInputStream input,
+        com.google.protobuf.ExtensionRegistryLite extensionRegistry)
+        throws java.io.IOException {
+      return com.google.protobuf.GeneratedMessage
+          .parseWithIOException(PARSER, input, extensionRegistry);
+    }
+
+    @java.lang.Override
+    public Builder newBuilderForType() { return newBuilder(); }
+    public static Builder newBuilder() {
+      return DEFAULT_INSTANCE.toBuilder();
+    }
+    public static Builder newBuilder(chirp.chat.Chat.WordFilterUpdateNotify prototype) {
+      return DEFAULT_INSTANCE.toBuilder().mergeFrom(prototype);
+    }
+    @java.lang.Override
+    public Builder toBuilder() {
+      return this == DEFAULT_INSTANCE
+          ? new Builder() : new Builder().mergeFrom(this);
+    }
+
+    @java.lang.Override
+    protected Builder newBuilderForType(
+        com.google.protobuf.GeneratedMessage.BuilderParent parent) {
+      Builder builder = new Builder(parent);
+      return builder;
+    }
+    /**
+     * Protobuf type {@code chirp.chat.WordFilterUpdateNotify}
+     */
+    public static final class Builder extends
+        com.google.protobuf.GeneratedMessage.Builder<Builder> implements
+        // @@protoc_insertion_point(builder_implements:chirp.chat.WordFilterUpdateNotify)
+        chirp.chat.Chat.WordFilterUpdateNotifyOrBuilder {
+      public static final com.google.protobuf.Descriptors.Descriptor
+          getDescriptor() {
+        return chirp.chat.Chat.internal_static_chirp_chat_WordFilterUpdateNotify_descriptor;
+      }
+
+      @java.lang.Override
+      protected com.google.protobuf.GeneratedMessage.FieldAccessorTable
+          internalGetFieldAccessorTable() {
+        return chirp.chat.Chat.internal_static_chirp_chat_WordFilterUpdateNotify_fieldAccessorTable
+            .ensureFieldAccessorsInitialized(
+                chirp.chat.Chat.WordFilterUpdateNotify.class, chirp.chat.Chat.WordFilterUpdateNotify.Builder.class);
+      }
+
+      // Construct using chirp.chat.Chat.WordFilterUpdateNotify.newBuilder()
+      private Builder() {
+        maybeForceBuilderInitialization();
+      }
+
+      private Builder(
+          com.google.protobuf.GeneratedMessage.BuilderParent parent) {
+        super(parent);
+        maybeForceBuilderInitialization();
+      }
+      private void maybeForceBuilderInitialization() {
+        if (com.google.protobuf.GeneratedMessage
+                .alwaysUseFieldBuilders) {
+          internalGetLexiconFieldBuilder();
+        }
+      }
+      @java.lang.Override
+      public Builder clear() {
+        super.clear();
+        bitField0_ = 0;
+        lexicon_ = null;
+        if (lexiconBuilder_ != null) {
+          lexiconBuilder_.dispose();
+          lexiconBuilder_ = null;
+        }
+        return this;
+      }
+
+      @java.lang.Override
+      public com.google.protobuf.Descriptors.Descriptor
+          getDescriptorForType() {
+        return chirp.chat.Chat.internal_static_chirp_chat_WordFilterUpdateNotify_descriptor;
+      }
+
+      @java.lang.Override
+      public chirp.chat.Chat.WordFilterUpdateNotify getDefaultInstanceForType() {
+        return chirp.chat.Chat.WordFilterUpdateNotify.getDefaultInstance();
+      }
+
+      @java.lang.Override
+      public chirp.chat.Chat.WordFilterUpdateNotify build() {
+        chirp.chat.Chat.WordFilterUpdateNotify result = buildPartial();
+        if (!result.isInitialized()) {
+          throw newUninitializedMessageException(result);
+        }
+        return result;
+      }
+
+      @java.lang.Override
+      public chirp.chat.Chat.WordFilterUpdateNotify buildPartial() {
+        chirp.chat.Chat.WordFilterUpdateNotify result = new chirp.chat.Chat.WordFilterUpdateNotify(this);
+        if (bitField0_ != 0) { buildPartial0(result); }
+        onBuilt();
+        return result;
+      }
+
+      private void buildPartial0(chirp.chat.Chat.WordFilterUpdateNotify result) {
+        int from_bitField0_ = bitField0_;
+        int to_bitField0_ = 0;
+        if (((from_bitField0_ & 0x00000001) != 0)) {
+          result.lexicon_ = lexiconBuilder_ == null
+              ? lexicon_
+              : lexiconBuilder_.build();
+          to_bitField0_ |= 0x00000001;
+        }
+        result.bitField0_ |= to_bitField0_;
+      }
+
+      @java.lang.Override
+      public Builder mergeFrom(com.google.protobuf.Message other) {
+        if (other instanceof chirp.chat.Chat.WordFilterUpdateNotify) {
+          return mergeFrom((chirp.chat.Chat.WordFilterUpdateNotify)other);
+        } else {
+          super.mergeFrom(other);
+          return this;
+        }
+      }
+
+      public Builder mergeFrom(chirp.chat.Chat.WordFilterUpdateNotify other) {
+        if (other == chirp.chat.Chat.WordFilterUpdateNotify.getDefaultInstance()) return this;
+        if (other.hasLexicon()) {
+          mergeLexicon(other.getLexicon());
+        }
+        this.mergeUnknownFields(other.getUnknownFields());
+        onChanged();
+        return this;
+      }
+
+      @java.lang.Override
+      public final boolean isInitialized() {
+        return true;
+      }
+
+      @java.lang.Override
+      public Builder mergeFrom(
+          com.google.protobuf.CodedInputStream input,
+          com.google.protobuf.ExtensionRegistryLite extensionRegistry)
+          throws java.io.IOException {
+        if (extensionRegistry == null) {
+          throw new java.lang.NullPointerException();
+        }
+        try {
+          boolean done = false;
+          while (!done) {
+            int tag = input.readTag();
+            switch (tag) {
+              case 0:
+                done = true;
+                break;
+              case 10: {
+                input.readMessage(
+                    internalGetLexiconFieldBuilder().getBuilder(),
+                    extensionRegistry);
+                bitField0_ |= 0x00000001;
+                break;
+              } // case 10
+              default: {
+                if (!super.parseUnknownField(input, extensionRegistry, tag)) {
+                  done = true; // was an endgroup tag
+                }
+                break;
+              } // default:
+            } // switch (tag)
+          } // while (!done)
+        } catch (com.google.protobuf.InvalidProtocolBufferException e) {
+          throw e.unwrapIOException();
+        } finally {
+          onChanged();
+        } // finally
+        return this;
+      }
+      private int bitField0_;
+
+      private chirp.chat.Chat.WordFilterLexicon lexicon_;
+      private com.google.protobuf.SingleFieldBuilder<
+          chirp.chat.Chat.WordFilterLexicon, chirp.chat.Chat.WordFilterLexicon.Builder, chirp.chat.Chat.WordFilterLexiconOrBuilder> lexiconBuilder_;
+      /**
+       * <pre>
+       * 恒带全量新词库
+       * </pre>
+       *
+       * <code>.chirp.chat.WordFilterLexicon lexicon = 1;</code>
+       * @return Whether the lexicon field is set.
+       */
+      public boolean hasLexicon() {
+        return ((bitField0_ & 0x00000001) != 0);
+      }
+      /**
+       * <pre>
+       * 恒带全量新词库
+       * </pre>
+       *
+       * <code>.chirp.chat.WordFilterLexicon lexicon = 1;</code>
+       * @return The lexicon.
+       */
+      public chirp.chat.Chat.WordFilterLexicon getLexicon() {
+        if (lexiconBuilder_ == null) {
+          return lexicon_ == null ? chirp.chat.Chat.WordFilterLexicon.getDefaultInstance() : lexicon_;
+        } else {
+          return lexiconBuilder_.getMessage();
+        }
+      }
+      /**
+       * <pre>
+       * 恒带全量新词库
+       * </pre>
+       *
+       * <code>.chirp.chat.WordFilterLexicon lexicon = 1;</code>
+       */
+      public Builder setLexicon(chirp.chat.Chat.WordFilterLexicon value) {
+        if (lexiconBuilder_ == null) {
+          if (value == null) {
+            throw new NullPointerException();
+          }
+          lexicon_ = value;
+        } else {
+          lexiconBuilder_.setMessage(value);
+        }
+        bitField0_ |= 0x00000001;
+        onChanged();
+        return this;
+      }
+      /**
+       * <pre>
+       * 恒带全量新词库
+       * </pre>
+       *
+       * <code>.chirp.chat.WordFilterLexicon lexicon = 1;</code>
+       */
+      public Builder setLexicon(
+          chirp.chat.Chat.WordFilterLexicon.Builder builderForValue) {
+        if (lexiconBuilder_ == null) {
+          lexicon_ = builderForValue.build();
+        } else {
+          lexiconBuilder_.setMessage(builderForValue.build());
+        }
+        bitField0_ |= 0x00000001;
+        onChanged();
+        return this;
+      }
+      /**
+       * <pre>
+       * 恒带全量新词库
+       * </pre>
+       *
+       * <code>.chirp.chat.WordFilterLexicon lexicon = 1;</code>
+       */
+      public Builder mergeLexicon(chirp.chat.Chat.WordFilterLexicon value) {
+        if (lexiconBuilder_ == null) {
+          if (((bitField0_ & 0x00000001) != 0) &&
+            lexicon_ != null &&
+            lexicon_ != chirp.chat.Chat.WordFilterLexicon.getDefaultInstance()) {
+            getLexiconBuilder().mergeFrom(value);
+          } else {
+            lexicon_ = value;
+          }
+        } else {
+          lexiconBuilder_.mergeFrom(value);
+        }
+        if (lexicon_ != null) {
+          bitField0_ |= 0x00000001;
+          onChanged();
+        }
+        return this;
+      }
+      /**
+       * <pre>
+       * 恒带全量新词库
+       * </pre>
+       *
+       * <code>.chirp.chat.WordFilterLexicon lexicon = 1;</code>
+       */
+      public Builder clearLexicon() {
+        bitField0_ = (bitField0_ & ~0x00000001);
+        lexicon_ = null;
+        if (lexiconBuilder_ != null) {
+          lexiconBuilder_.dispose();
+          lexiconBuilder_ = null;
+        }
+        onChanged();
+        return this;
+      }
+      /**
+       * <pre>
+       * 恒带全量新词库
+       * </pre>
+       *
+       * <code>.chirp.chat.WordFilterLexicon lexicon = 1;</code>
+       */
+      public chirp.chat.Chat.WordFilterLexicon.Builder getLexiconBuilder() {
+        bitField0_ |= 0x00000001;
+        onChanged();
+        return internalGetLexiconFieldBuilder().getBuilder();
+      }
+      /**
+       * <pre>
+       * 恒带全量新词库
+       * </pre>
+       *
+       * <code>.chirp.chat.WordFilterLexicon lexicon = 1;</code>
+       */
+      public chirp.chat.Chat.WordFilterLexiconOrBuilder getLexiconOrBuilder() {
+        if (lexiconBuilder_ != null) {
+          return lexiconBuilder_.getMessageOrBuilder();
+        } else {
+          return lexicon_ == null ?
+              chirp.chat.Chat.WordFilterLexicon.getDefaultInstance() : lexicon_;
+        }
+      }
+      /**
+       * <pre>
+       * 恒带全量新词库
+       * </pre>
+       *
+       * <code>.chirp.chat.WordFilterLexicon lexicon = 1;</code>
+       */
+      private com.google.protobuf.SingleFieldBuilder<
+          chirp.chat.Chat.WordFilterLexicon, chirp.chat.Chat.WordFilterLexicon.Builder, chirp.chat.Chat.WordFilterLexiconOrBuilder> 
+          internalGetLexiconFieldBuilder() {
+        if (lexiconBuilder_ == null) {
+          lexiconBuilder_ = new com.google.protobuf.SingleFieldBuilder<
+              chirp.chat.Chat.WordFilterLexicon, chirp.chat.Chat.WordFilterLexicon.Builder, chirp.chat.Chat.WordFilterLexiconOrBuilder>(
+                  getLexicon(),
+                  getParentForChildren(),
+                  isClean());
+          lexicon_ = null;
+        }
+        return lexiconBuilder_;
+      }
+
+      // @@protoc_insertion_point(builder_scope:chirp.chat.WordFilterUpdateNotify)
+    }
+
+    // @@protoc_insertion_point(class_scope:chirp.chat.WordFilterUpdateNotify)
+    private static final chirp.chat.Chat.WordFilterUpdateNotify DEFAULT_INSTANCE;
+    static {
+      DEFAULT_INSTANCE = new chirp.chat.Chat.WordFilterUpdateNotify();
+    }
+
+    public static chirp.chat.Chat.WordFilterUpdateNotify getDefaultInstance() {
+      return DEFAULT_INSTANCE;
+    }
+
+    private static final com.google.protobuf.Parser<WordFilterUpdateNotify>
+        PARSER = new com.google.protobuf.AbstractParser<WordFilterUpdateNotify>() {
+      @java.lang.Override
+      public WordFilterUpdateNotify parsePartialFrom(
+          com.google.protobuf.CodedInputStream input,
+          com.google.protobuf.ExtensionRegistryLite extensionRegistry)
+          throws com.google.protobuf.InvalidProtocolBufferException {
+        Builder builder = newBuilder();
+        try {
+          builder.mergeFrom(input, extensionRegistry);
+        } catch (com.google.protobuf.InvalidProtocolBufferException e) {
+          throw e.setUnfinishedMessage(builder.buildPartial());
+        } catch (com.google.protobuf.UninitializedMessageException e) {
+          throw e.asInvalidProtocolBufferException().setUnfinishedMessage(builder.buildPartial());
+        } catch (java.io.IOException e) {
+          throw new com.google.protobuf.InvalidProtocolBufferException(e)
+              .setUnfinishedMessage(builder.buildPartial());
+        }
+        return builder.buildPartial();
+      }
+    };
+
+    public static com.google.protobuf.Parser<WordFilterUpdateNotify> parser() {
+      return PARSER;
+    }
+
+    @java.lang.Override
+    public com.google.protobuf.Parser<WordFilterUpdateNotify> getParserForType() {
+      return PARSER;
+    }
+
+    @java.lang.Override
+    public chirp.chat.Chat.WordFilterUpdateNotify getDefaultInstanceForType() {
+      return DEFAULT_INSTANCE;
+    }
+
+  }
+
   private static final com.google.protobuf.Descriptors.Descriptor
     internal_static_chirp_chat_SendMessageRequest_descriptor;
   private static final 
@@ -108294,6 +111246,26 @@ java.lang.String defaultValue) {
   private static final 
     com.google.protobuf.GeneratedMessage.FieldAccessorTable
       internal_static_chirp_chat_GetBlockedSendersResponse_fieldAccessorTable;
+  private static final com.google.protobuf.Descriptors.Descriptor
+    internal_static_chirp_chat_WordFilterFetchRequest_descriptor;
+  private static final 
+    com.google.protobuf.GeneratedMessage.FieldAccessorTable
+      internal_static_chirp_chat_WordFilterFetchRequest_fieldAccessorTable;
+  private static final com.google.protobuf.Descriptors.Descriptor
+    internal_static_chirp_chat_WordFilterLexicon_descriptor;
+  private static final 
+    com.google.protobuf.GeneratedMessage.FieldAccessorTable
+      internal_static_chirp_chat_WordFilterLexicon_fieldAccessorTable;
+  private static final com.google.protobuf.Descriptors.Descriptor
+    internal_static_chirp_chat_WordFilterFetchResponse_descriptor;
+  private static final 
+    com.google.protobuf.GeneratedMessage.FieldAccessorTable
+      internal_static_chirp_chat_WordFilterFetchResponse_fieldAccessorTable;
+  private static final com.google.protobuf.Descriptors.Descriptor
+    internal_static_chirp_chat_WordFilterUpdateNotify_descriptor;
+  private static final 
+    com.google.protobuf.GeneratedMessage.FieldAccessorTable
+      internal_static_chirp_chat_WordFilterUpdateNotify_fieldAccessorTable;
 
   public static com.google.protobuf.Descriptors.FileDescriptor
       getDescriptor() {
@@ -108661,30 +111633,43 @@ java.lang.String defaultValue) {
       "target_user_id\030\002 \001(\t\"\032\n\030GetBlockedSender" +
       "sRequest\"[\n\031GetBlockedSendersResponse\022%\n" +
       "\004code\030\001 \001(\0162\027.chirp.common.ErrorCode\022\027\n\017" +
-      "target_user_ids\030\002 \003(\t*\222\001\n\007MsgType\022\010\n\004TEX" +
-      "T\020\000\022\t\n\005EMOJI\020\001\022\t\n\005VOICE\020\002\022\t\n\005IMAGE\020\003\022\r\n\t" +
-      "ITEM_LINK\020\n\022\016\n\nSKILL_LINK\020\013\022\017\n\013ACHIEVEME" +
-      "NT\020\014\022\016\n\nNPC_DIALOG\020\r\022\020\n\014TRADE_STATUS\020\016\022\n" +
-      "\n\006SYSTEM\020c*[\n\013ChannelType\022\013\n\007PRIVATE\020\000\022\010" +
-      "\n\004TEAM\020\001\022\t\n\005GUILD\020\002\022\t\n\005WORLD\020\003\022\022\n\016SYSTEM" +
-      "_CHANNEL\020\004\022\013\n\007MARQUEE\020\005*Y\n\010Priority\022\020\n\014P" +
-      "RIORITY_LOW\020\000\022\023\n\017PRIORITY_NORMAL\020\001\022\021\n\rPR" +
-      "IORITY_HIGH\020\002\022\023\n\017PRIORITY_URGENT\020\003*T\n\nSe" +
-      "nderKind\022\017\n\013SENDER_USER\020\000\022\021\n\rSENDER_SYST" +
-      "EM\020\001\022\016\n\nSENDER_NPC\020\002\022\022\n\016SENDER_SERVICE\020\003" +
-      "*B\n\017GroupMemberRole\022\n\n\006MEMBER\020\000\022\r\n\tMODER" +
-      "ATOR\020\001\022\t\n\005ADMIN\020\002\022\t\n\005OWNER\020\003*\213\001\n\013Channel" +
-      "Kind\022\025\n\021CHANNEL_KIND_TEXT\020\000\022\026\n\022CHANNEL_K" +
-      "IND_VOICE\020\001\022\035\n\031CHANNEL_KIND_ANNOUNCEMENT" +
-      "\020\002\022\026\n\022CHANNEL_KIND_STAGE\020\003\022\026\n\022CHANNEL_KI" +
-      "ND_FORUM\020\004*D\n\016PermissionType\022\030\n\024PERMISSI" +
-      "ON_TYPE_ROLE\020\000\022\030\n\024PERMISSION_TYPE_USER\020\001" +
-      "*6\n\022PermissionOverride\022\013\n\007INHERIT\020\000\022\t\n\005A" +
-      "LLOW\020\001\022\010\n\004DENY\020\002*\207\001\n\013MentionType\022\025\n\021MENT" +
-      "ION_TYPE_USER\020\000\022\025\n\021MENTION_TYPE_ROLE\020\001\022\030" +
-      "\n\024MENTION_TYPE_CHANNEL\020\002\022\031\n\025MENTION_TYPE" +
-      "_EVERYONE\020\003\022\025\n\021MENTION_TYPE_HERE\020\004B$Z\"gi" +
-      "thub.com/cui/chirp/proto/go/chatb\006proto3"
+      "target_user_ids\030\002 \003(\t\"/\n\026WordFilterFetch" +
+      "Request\022\025\n\rknown_version\030\001 \001(\003\"\221\001\n\021WordF" +
+      "ilterLexicon\022\017\n\007version\030\001 \001(\003\022\017\n\007enabled" +
+      "\030\002 \001(\010\0224\n\006policy\030\003 \001(\0162$.chirp.chat.Word" +
+      "FilterDeliveryPolicy\022\023\n\013replacement\030\004 \001(" +
+      "\t\022\017\n\007lexicon\030\005 \001(\t\"p\n\027WordFilterFetchRes" +
+      "ponse\022%\n\004code\030\001 \001(\0162\027.chirp.common.Error" +
+      "Code\022.\n\007lexicon\030\002 \001(\0132\035.chirp.chat.WordF" +
+      "ilterLexicon\"H\n\026WordFilterUpdateNotify\022." +
+      "\n\007lexicon\030\001 \001(\0132\035.chirp.chat.WordFilterL" +
+      "exicon*\222\001\n\007MsgType\022\010\n\004TEXT\020\000\022\t\n\005EMOJI\020\001\022" +
+      "\t\n\005VOICE\020\002\022\t\n\005IMAGE\020\003\022\r\n\tITEM_LINK\020\n\022\016\n\n" +
+      "SKILL_LINK\020\013\022\017\n\013ACHIEVEMENT\020\014\022\016\n\nNPC_DIA" +
+      "LOG\020\r\022\020\n\014TRADE_STATUS\020\016\022\n\n\006SYSTEM\020c*[\n\013C" +
+      "hannelType\022\013\n\007PRIVATE\020\000\022\010\n\004TEAM\020\001\022\t\n\005GUI" +
+      "LD\020\002\022\t\n\005WORLD\020\003\022\022\n\016SYSTEM_CHANNEL\020\004\022\013\n\007M" +
+      "ARQUEE\020\005*Y\n\010Priority\022\020\n\014PRIORITY_LOW\020\000\022\023" +
+      "\n\017PRIORITY_NORMAL\020\001\022\021\n\rPRIORITY_HIGH\020\002\022\023" +
+      "\n\017PRIORITY_URGENT\020\003*T\n\nSenderKind\022\017\n\013SEN" +
+      "DER_USER\020\000\022\021\n\rSENDER_SYSTEM\020\001\022\016\n\nSENDER_" +
+      "NPC\020\002\022\022\n\016SENDER_SERVICE\020\003*B\n\017GroupMember" +
+      "Role\022\n\n\006MEMBER\020\000\022\r\n\tMODERATOR\020\001\022\t\n\005ADMIN" +
+      "\020\002\022\t\n\005OWNER\020\003*\213\001\n\013ChannelKind\022\025\n\021CHANNEL" +
+      "_KIND_TEXT\020\000\022\026\n\022CHANNEL_KIND_VOICE\020\001\022\035\n\031" +
+      "CHANNEL_KIND_ANNOUNCEMENT\020\002\022\026\n\022CHANNEL_K" +
+      "IND_STAGE\020\003\022\026\n\022CHANNEL_KIND_FORUM\020\004*D\n\016P" +
+      "ermissionType\022\030\n\024PERMISSION_TYPE_ROLE\020\000\022" +
+      "\030\n\024PERMISSION_TYPE_USER\020\001*6\n\022PermissionO" +
+      "verride\022\013\n\007INHERIT\020\000\022\t\n\005ALLOW\020\001\022\010\n\004DENY\020" +
+      "\002*\207\001\n\013MentionType\022\025\n\021MENTION_TYPE_USER\020\000" +
+      "\022\025\n\021MENTION_TYPE_ROLE\020\001\022\030\n\024MENTION_TYPE_" +
+      "CHANNEL\020\002\022\031\n\025MENTION_TYPE_EVERYONE\020\003\022\025\n\021" +
+      "MENTION_TYPE_HERE\020\004*x\n\030WordFilterDeliver" +
+      "yPolicy\022\036\n\032WORD_FILTER_POLICY_REPLACE\020\000\022" +
+      "\035\n\031WORD_FILTER_POLICY_REJECT\020\001\022\035\n\031WORD_F" +
+      "ILTER_POLICY_RECORD\020\002B$Z\"github.com/cui/" +
+      "chirp/proto/go/chatb\006proto3"
     };
     descriptor = com.google.protobuf.Descriptors.FileDescriptor
       .internalBuildGeneratedFileFrom(descriptorData,
@@ -109405,6 +112390,30 @@ java.lang.String defaultValue) {
       com.google.protobuf.GeneratedMessage.FieldAccessorTable(
         internal_static_chirp_chat_GetBlockedSendersResponse_descriptor,
         new java.lang.String[] { "Code", "TargetUserIds", });
+    internal_static_chirp_chat_WordFilterFetchRequest_descriptor =
+      getDescriptor().getMessageType(115);
+    internal_static_chirp_chat_WordFilterFetchRequest_fieldAccessorTable = new
+      com.google.protobuf.GeneratedMessage.FieldAccessorTable(
+        internal_static_chirp_chat_WordFilterFetchRequest_descriptor,
+        new java.lang.String[] { "KnownVersion", });
+    internal_static_chirp_chat_WordFilterLexicon_descriptor =
+      getDescriptor().getMessageType(116);
+    internal_static_chirp_chat_WordFilterLexicon_fieldAccessorTable = new
+      com.google.protobuf.GeneratedMessage.FieldAccessorTable(
+        internal_static_chirp_chat_WordFilterLexicon_descriptor,
+        new java.lang.String[] { "Version", "Enabled", "Policy", "Replacement", "Lexicon", });
+    internal_static_chirp_chat_WordFilterFetchResponse_descriptor =
+      getDescriptor().getMessageType(117);
+    internal_static_chirp_chat_WordFilterFetchResponse_fieldAccessorTable = new
+      com.google.protobuf.GeneratedMessage.FieldAccessorTable(
+        internal_static_chirp_chat_WordFilterFetchResponse_descriptor,
+        new java.lang.String[] { "Code", "Lexicon", });
+    internal_static_chirp_chat_WordFilterUpdateNotify_descriptor =
+      getDescriptor().getMessageType(118);
+    internal_static_chirp_chat_WordFilterUpdateNotify_fieldAccessorTable = new
+      com.google.protobuf.GeneratedMessage.FieldAccessorTable(
+        internal_static_chirp_chat_WordFilterUpdateNotify_descriptor,
+        new java.lang.String[] { "Lexicon", });
     descriptor.resolveAllFeaturesImmutable();
     chirp.common.Common.getDescriptor();
   }
