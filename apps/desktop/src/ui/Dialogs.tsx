@@ -61,14 +61,20 @@ export function CreateGroupDialog(props: {
     if (!name.trim()) return;
     setBusy(true);
     setError(null);
-    const groupId = await props.api.createGroup(name.trim());
-    setBusy(false);
-    if (groupId) {
-      setName('');
-      props.onCreated(groupId);
-      props.onClose();
-    } else {
+    try {
+      const groupId = await props.api.createGroup(name.trim());
+      if (groupId) {
+        setName('');
+        props.onCreated(groupId);
+        props.onClose();
+      } else {
+        setError('建群失败（服务端拒绝或断线）');
+      }
+    } catch {
+      // 超时等异常会 reject（requestTimeoutMs），不复位 busy 会锁死按钮。
       setError('建群失败（服务端拒绝或断线）');
+    } finally {
+      setBusy(false);
     }
   };
 
@@ -128,20 +134,28 @@ export function GroupManageDialog(props: {
 
   const invite = async (): Promise<void> => {
     setError(null);
-    const code = await props.api.inviteToGroup(props.groupId, inviteId.trim());
-    if (code !== 0) setError(`邀请失败（code ${code}）`);
-    setInviteId('');
-    void refresh();
+    try {
+      const code = await props.api.inviteToGroup(props.groupId, inviteId.trim());
+      if (code !== 0) setError(`邀请失败（code ${code}）`);
+      setInviteId('');
+      void refresh();
+    } catch {
+      setError('邀请失败（服务端拒绝或断线）');
+    }
   };
 
   const leave = async (): Promise<void> => {
-    const code = await props.api.leaveGroup(props.groupId);
-    if (code !== 0) {
-      setError(`退群失败（code ${code}）`);
-      return;
+    try {
+      const code = await props.api.leaveGroup(props.groupId);
+      if (code !== 0) {
+        setError(`退群失败（code ${code}）`);
+        return;
+      }
+      props.onLeft();
+      props.onClose();
+    } catch {
+      setError('退群失败（服务端拒绝或断线）');
     }
-    props.onLeft();
-    props.onClose();
   };
 
   return (
