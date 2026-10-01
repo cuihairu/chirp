@@ -30,6 +30,27 @@ namespace Chirp.Sdk
         Task CloseAsync();
     }
 
+    /// <summary>Socket wrapper seam under <see cref="ClientWebSocketTransport"/>:
+    /// the adapter forwards every call to a <see cref="ClientWebSocket"/>, and
+    /// tests inject a scripted socket instead (the same way the web/mobile
+    /// ports wrap their platform socket). Keeping the seam at this level means
+    /// the receive loop, the size cap and both close-handshake paths are
+    /// driven deterministically without a live TCP peer.</summary>
+    public interface IChirpSocket : IDisposable
+    {
+        WebSocketState State { get; }
+
+        Task ConnectAsync(Uri uri, CancellationToken ct);
+
+        Task<WebSocketReceiveResult> ReceiveAsync(ArraySegment<byte> buffer, CancellationToken ct);
+
+        Task SendAsync(ArraySegment<byte> buffer, WebSocketMessageType messageType,
+            bool endOfMessage, CancellationToken ct);
+
+        Task CloseAsync(WebSocketCloseStatus closeStatus, string? statusDescription,
+            CancellationToken ct);
+    }
+
     /// <summary>System.Net.WebSockets adapter. Works under Unity
     /// (Mono/IL2CPP on all non-WebGL targets) and under plain dotnet, which is
     /// what the CI test run exercises. Text frames never occur on this
@@ -39,23 +60,31 @@ namespace Chirp.Sdk
         // Single ws message can arrive fragmented; aggregate before handing up.
         private const int MaxMessageBytes = 17 * 1024 * 1024;
 
-        private ClientWebSocket? _ws;
+        private readonly Func<IChirpSocket> _socketFactory;
+        private IChirpSocket? _ws;
         private CancellationTokenSource? _loopCts;
         private int _closedRaised;
 
         public event Action<byte[]>? BinaryMessage;
         public event Action? Closed;
 
+        /// <param name="socketFactory">Overrides the socket wrapper (tests
+        /// inject a scripted one); production leaves it null.</param>
+        public ClientWebSocketTransport(Func<IChirpSocket>? socketFactory = null)
+        {
+            _socketFactory = socketFactory ?? (() => new ClientWebSocketSocket());
+        }
+
         public async Task OpenAsync(string url, CancellationToken ct)
         {
-            var ws = new ClientWebSocket();
+            var ws = _socketFactory();
             _ws = ws;
             await ws.ConnectAsync(new Uri(url), ct).ConfigureAwait(false);
             _loopCts = new CancellationTokenSource();
             _ = ReceiveLoopAsync(ws, _loopCts.Token);
         }
 
-        private async Task ReceiveLoopAsync(ClientWebSocket ws, CancellationToken ct)
+        private async Task ReceiveLoopAsync(IChirpSocket ws, CancellationToken ct)
         {
             var buffer = new byte[64 * 1024];
             try
@@ -81,7 +110,7 @@ namespace Chirp.Sdk
         }
 
         private async Task<byte[]?> ReceiveWholeMessageAsync(
-            ClientWebSocket ws, byte[] buffer, CancellationToken ct)
+            IChirpSocket ws, byte[] buffer, CancellationToken ct)
         {
             byte[]? message = null;
             var filled = 0;
@@ -169,6 +198,29 @@ namespace Chirp.Sdk
             {
                 Closed?.Invoke();
             }
+        }
+
+        /// <summary>Production wrapper: a plain one-shot ClientWebSocket, no
+        /// retry logic — reconnect policy lives in ChirpClient.</summary>
+        private sealed class ClientWebSocketSocket : IChirpSocket
+        {
+            private readonly ClientWebSocket _ws = new ClientWebSocket();
+
+            public WebSocketState State => _ws.State;
+
+            public Task ConnectAsync(Uri uri, CancellationToken ct) => _ws.ConnectAsync(uri, ct);
+
+            public Task<WebSocketReceiveResult> ReceiveAsync(ArraySegment<byte> buffer,
+                CancellationToken ct) => _ws.ReceiveAsync(buffer, ct);
+
+            public Task SendAsync(ArraySegment<byte> buffer, WebSocketMessageType messageType,
+                bool endOfMessage, CancellationToken ct) =>
+                _ws.SendAsync(buffer, messageType, endOfMessage, ct);
+
+            public Task CloseAsync(WebSocketCloseStatus closeStatus, string? statusDescription,
+                CancellationToken ct) => _ws.CloseAsync(closeStatus, statusDescription, ct);
+
+            public void Dispose() => _ws.Dispose();
         }
     }
 }
