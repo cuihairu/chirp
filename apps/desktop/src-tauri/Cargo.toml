@@ -1,0 +1,16 @@
+[package]
+name = "chirp-desktop"
+version = "0.1.0"
+description = "Chirp 桌面聊天 App（App 平面桌面客户端）"
+edition = "2021"
+
+[build-dependencies]
+tauri-build = { version = "2", features = [] }
+
+[dependencies]
+tauri = { version = "2", features = [] }
+tauri-plugin-notification = "2"
+
+[lib]
+name = "chirp_desktop_lib"
+crate-type = ["staticlib", "cdylib", "rlib"]

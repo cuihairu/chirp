@@ -169,12 +169,11 @@ export default function ChatPanel(props: {
 
   const lastMessage = list[list.length - 1];
 
-  // 已读回执：如果对方已读本消息则在气泡右上角显示「已读」。
-  // readCursors[channelKey][peerUserId] 存储的是对方已读的最后一条消息的 messageId；
-  // 若当前消息的 messageId 不大于该 cursor，说明已读。
+  // 已读回执：对方已读游标追平最新一条时，我发的行标「已读」（与
+  // web_companion 同一语义；群聊暂无成员游标，不显示）。
   const peerRead =
-    conversation.kind === 'private' && list.length > 0 && cursors[conversation.peerId]
-      ? m.messageId <= cursors[conversation.peerId]
+    conversation.kind === 'private' && list.length > 0
+      ? cursors[conversation.peerId] === lastMessage?.messageId
       : false;
 
   // 正在输入：TTL 内的用户，排除自己。

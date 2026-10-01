@@ -1131,6 +1131,53 @@ int main(int argc, char** argv) {
   // mute handlers below; lives as long as main, like channel_pacer.
   chirp::chat::DeliveryPrefs delivery_prefs;
 
+  // Read receipts (basic parity): in-memory cursor + broadcast MESSAGE_READ_NOTIFY
+  // to the other party in private channels. Group channels are not supported
+  // in the enhanced form yet (no GroupManager), so group read receipts are
+  // recorded locally but not fanned out.
+  chirp::chat::ReadReceiptManager receipts;
+  chirp::chat::ChannelMemberResolver resolve_members =
+      [](chirp::chat::ChannelType channel_type, const std::string& channel_id,
+         const std::string& exclude_user_id) -> std::vector<std::string> {
+    if (channel_type == chirp::chat::PRIVATE) {
+      const size_t sep = channel_id.find('|');
+      if (sep == std::string::npos || sep == 0 || sep + 1 >= channel_id.size()) {
+        return {};
+      }
+      std::string left = channel_id.substr(0, sep);
+      std::string right = channel_id.substr(sep + 1);
+      const std::string& other = (left == exclude_user_id) ? right : left;
+      if (other.empty() || other == exclude_user_id) {
+        return {};
+      }
+      return {other};
+    }
+    // Group channels: no GroupManager in enhanced form yet.
+    return {};
+  };
+  chirp::chat::UserNotifier notify_member =
+      [state, &delivery_prefs](const std::string& user_id,
+                               chirp::gateway::MsgID msg_id,
+                               const google::protobuf::Message& body) -> bool {
+    if (msg_id == chirp::gateway::CHAT_MESSAGE_NOTIFY) {
+      const auto& chat_msg = static_cast<const chirp::chat::ChatMessage&>(body);
+      if (delivery_prefs.IsChannelMuted(user_id, chat_msg.channel_type()) ||
+          delivery_prefs.IsUserBlocked(user_id, chat_msg.sender_id())) {
+        return true;
+      }
+    }
+    const auto recvs = chirp::network::GetUserSessions(state->registry, user_id);
+    if (recvs.empty()) {
+      return false;
+    }
+    const std::string payload = body.SerializeAsString();
+    for (const auto& recv : recvs) {
+      chirp::chat::runtime::SendPacket(recv, msg_id, 0, payload);
+    }
+    return true;
+  };
+  chirp::chat::ReadReceiptHandlers receipt_handlers(receipts, resolve_members, notify_member);
+
   chirp::chat::runtime::DistributedDispatchHandlers handlers;
   handlers.on_login = [state, store, router, &token_verifier, acks, &delivery_prefs](
                           const std::shared_ptr<chirp::network::Session>& session,
@@ -1404,7 +1451,7 @@ int main(int argc, char** argv) {
   };
 
   auto on_packet = [handlers, gateway_service_secret, trusted_conns, &edge_rate_limiter,
-                    &directory, &word_filter, state](const std::shared_ptr<chirp::network::Session>& session,
+                    &directory, &word_filter, &receipt_handlers, state](const std::shared_ptr<chirp::network::Session>& session,
                                 const chirp::gateway::Packet& pkt) {
     if (pkt.msg_id() == chirp::gateway::SERVER_AUTH_REQ) {
       HandleServerAuth(pkt, session, gateway_service_secret, trusted_conns.get());
@@ -1423,6 +1470,23 @@ int main(int argc, char** argv) {
     // the app edge self-serves through it.
     if (chirp::chat::DispatchPlayerDirectoryPacket(pkt, session, directory,
                                                    trusted_conns.get())) {
+      return;
+    }
+    // Read receipts (basic parity): MARK_READ_REQ not in distributed dispatch
+    // yet; handle inline like WORD_FILTER_FETCH_REQ.
+    if (pkt.msg_id() == chirp::gateway::MARK_READ_REQ) {
+      chirp::chat::MarkReadRequest req;
+      if (req.ParseFromArray(pkt.body().data(), static_cast<int>(pkt.body().size()))) {
+        const std::string authenticated_user = state->GetUserId(session);
+        auto resp = receipt_handlers.HandleMarkRead(req, authenticated_user);
+        chirp::chat::runtime::SendPacket(session, chirp::gateway::MARK_READ_RESP,
+                                         pkt.sequence(), resp.SerializeAsString());
+      } else {
+        chirp::chat::MarkReadResponse resp;
+        resp.set_code(chirp::common::INVALID_PARAM);
+        chirp::chat::runtime::SendPacket(session, chirp::gateway::MARK_READ_RESP,
+                                         pkt.sequence(), resp.SerializeAsString());
+      }
       return;
     }
     if (pkt.msg_id() == chirp::gateway::LOGIN_REQ &&
