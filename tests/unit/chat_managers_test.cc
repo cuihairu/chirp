@@ -1,6 +1,7 @@
 #include <gtest/gtest.h>
 
 #include <algorithm>
+#include <chrono>
 #include <string>
 #include <thread>
 #include <vector>
@@ -8,6 +9,9 @@
 #include "distributed_dispatch.h"
 #include "distributed_runtime.h"
 #include "group_manager.h"
+#include "in_memory_redis.h"
+#include "jwt.h"
+#include "login_token_verifier.h"
 #include "network/protobuf_framing.h"
 #include "network/tcp_client.h"
 #include "network/websocket_client.h"
@@ -1914,6 +1918,269 @@ TEST_F(DistributedInternalsTest, HandleGetHistoryWithoutRedisSucceeds) {
   EXPECT_EQ(resp.code(), chirp::common::OK);
   EXPECT_EQ(resp.messages_size(), 0);
   EXPECT_FALSE(resp.has_more());
+}
+
+// ---------------------------------------------------------------------------
+// Batch 21: the never-driven arms of the same seam — the delivery-ack requeue
+// / late-ack store callbacks, the ack-capable login and tracked local
+// delivery, the token-verifier login rejection, the cross-instance
+// subscription callback, and the ack-tracked offline refill.
+// ---------------------------------------------------------------------------
+
+// A no-op ack callback pair: these tests exercise the bookkeeping paths, not
+// the timeout requeue (that is the manager's own suite).
+struct NoopAckCallbacks {
+  static void Requeue(const std::string&, const std::string&) {}
+  static void LateAck(const std::string&, const std::string&) {}
+};
+
+// DeliveryAckManager has a deleted copy ctor, so tests build it in place via
+// unique_ptr instead of a make-helper that would need to move it.
+std::unique_ptr<chirp::chat::DeliveryAckManager> MakeAckManager(asio::io_context& io) {
+  chirp::chat::DeliveryAckManager::Config cfg;
+  cfg.timeout_ms = 10000;
+  return std::unique_ptr<chirp::chat::DeliveryAckManager>(
+      new chirp::chat::DeliveryAckManager(
+          io, cfg, NoopAckCallbacks::Requeue, NoopAckCallbacks::LateAck));
+}
+
+TEST_F(DistributedInternalsTest, OfflineBytesAndLateAckRemoveRoundTrip) {
+  chirp_test::InMemoryRedis redis;
+  chirp_test::FakeRedisServer fake([&](const std::vector<std::string>& args) {
+    return redis.Handle(args);
+  });
+  auto client = std::make_shared<chirp::network::RedisClient>("127.0.0.1", fake.port());
+  store_->redis = client;
+  store_->offline_ttl_seconds = 60;
+
+  // Liveness probe (batch 10 lesson): the assertions below only mean
+  // anything if the client really talks to the fake server.
+  ASSERT_TRUE(client->RPush("probe:ack", "v1"));
+  ASSERT_TRUE(client->Del("probe:ack"));
+
+  // Requeue path: the exact tracked bytes land in the offline queue.
+  store_->AddOfflineBytes("bob", "tracked-bytes");
+  ASSERT_EQ(client->LRange(store_->OfflineKey("bob"), 0, -1),
+            (std::vector<std::string>{"tracked-bytes"}));
+
+  // Late-ack cleanup removes the queued copy byte for byte...
+  EXPECT_TRUE(store_->RemoveOffline("bob", "tracked-bytes"));
+  EXPECT_TRUE(client->LRange(store_->OfflineKey("bob"), 0, -1).empty());
+  // ...and a mismatched cleanup is a clean miss (nothing removed).
+  store_->AddOfflineBytes("bob", "tracked-bytes");
+  EXPECT_FALSE(store_->RemoveOffline("bob", "other-bytes"));
+  ASSERT_EQ(client->LRange(store_->OfflineKey("bob"), 0, -1).size(), 1u);
+
+  // Guard arms: no redis / empty receiver -> false without touching redis.
+  store_->redis = nullptr;
+  EXPECT_FALSE(store_->RemoveOffline("bob", "tracked-bytes"));
+  store_->redis = client;
+  EXPECT_FALSE(store_->RemoveOffline("", "tracked-bytes"));
+}
+
+TEST_F(DistributedInternalsTest, HasMessageMissScansFullHistory) {
+  chirp_test::InMemoryRedis redis;
+  chirp_test::FakeRedisServer fake([&](const std::vector<std::string>& args) {
+    return redis.Handle(args);
+  });
+  store_->redis = std::make_shared<chirp::network::RedisClient>("127.0.0.1", fake.port());
+
+  chirp::chat::ChatMessage m;
+  m.set_message_id("m-live");
+  m.set_content("in history");
+  store_->AddToHistory("alice|bob", m.SerializeAsString());
+
+  // Hit first: the scan really reads the stored entry.
+  ASSERT_TRUE(store_->HasMessage("alice|bob", "m-live"));
+  // Miss: the scan walks the whole list and falls out to the final false.
+  EXPECT_FALSE(store_->HasMessage("alice|bob", "m-missing"));
+  // Guard arm: an empty message_id short-circuits.
+  EXPECT_FALSE(store_->HasMessage("alice|bob", ""));
+}
+
+TEST_F(DistributedInternalsTest, AckCapableLoginAndLocalDeliveryTracksAck) {
+  asio::io_context io;
+  auto router = std::make_shared<chirp::network::MessageRouter>(io, "127.0.0.1", 1);
+  auto acks = MakeAckManager(io);
+  acks->Start();
+
+  auto bob = std::make_shared<MockSession>();
+  chirp::auth::LoginRequest lreq;
+  lreq.set_token("bob");
+  lreq.set_supports_message_ack(true);
+  HandleLogin(lreq, bob, state_, store_, router, &verifier_, acks.get(), 1);
+
+  // The capability bit landed for the declaring session.
+  EXPECT_TRUE(acks->IsCapable(bob.get()));
+
+  auto alice = std::make_shared<MockSession>();
+  chirp::chat::SendMessageRequest req;
+  req.set_sender_id("alice");
+  req.set_receiver_id("bob");
+  req.set_channel_type(chirp::chat::PRIVATE);
+  req.set_content("tracked hello");
+  HandleSendMessage(req, alice, state_, store_, router, push_, acks.get(), 2);
+
+  // Local delivery to a capable receiver is held pending MESSAGE_ACK.
+  ASSERT_EQ(bob->sent.size(), 2u);  // [0] = LOGIN_RESP, [1] = notify
+  Packet notify;
+  ASSERT_TRUE(DecodeFramed(bob->sent[1], &notify));
+  EXPECT_EQ(notify.msg_id(), chirp::gateway::CHAT_MESSAGE_NOTIFY);
+  chirp::chat::ChatMessage got;
+  ASSERT_TRUE(got.ParseFromString(notify.body()));
+  EXPECT_EQ(got.content(), "tracked hello");
+  EXPECT_EQ(acks->pending_count(), 1u);
+
+  // The pending delivery acks out and the bookkeeping drains.
+  EXPECT_TRUE(acks->Acknowledge(got.message_id()));
+  EXPECT_EQ(acks->pending_count(), 0u);
+
+  acks->Stop();
+}
+
+TEST_F(DistributedInternalsTest, TokenVerifierLoginArms) {
+  asio::io_context io;
+  auto router = std::make_shared<chirp::network::MessageRouter>(io, "127.0.0.1", 1);
+  chirp::common::LoginTokenVerifier verifier("jwt-s3cret");
+
+  // Bad token: the verifier rejects it, the login is denied without binding.
+  auto bad = std::make_shared<MockSession>();
+  chirp::auth::LoginRequest req;
+  req.set_token("not-a-jwt");
+  HandleLogin(req, bad, state_, store_, router, &verifier, nullptr, 3);
+
+  Packet pkt;
+  ASSERT_TRUE(DecodeFramed(bad->sent[0], &pkt));
+  EXPECT_EQ(pkt.msg_id(), chirp::gateway::LOGIN_RESP);
+  EXPECT_EQ(pkt.sequence(), 3);
+  chirp::auth::LoginResponse deny;
+  ASSERT_TRUE(deny.ParseFromString(pkt.body()));
+  EXPECT_EQ(deny.code(), chirp::common::AUTH_FAILED);
+  EXPECT_TRUE(deny.session_id().empty());
+  EXPECT_EQ(bad->sent.size(), 1u);  // denied logins get no offline refill
+
+  // Valid HS256 JWT (sub = the identity) signs in.
+  const int64_t now_s = std::chrono::duration_cast<std::chrono::seconds>(
+                            std::chrono::system_clock::now().time_since_epoch())
+                            .count();
+  auto good = std::make_shared<MockSession>();
+  chirp::auth::LoginRequest ok_req;
+  ok_req.set_token(chirp::common::JwtSignHS256("user_1", now_s - 10, "jwt-s3cret", now_s + 600));
+  HandleLogin(ok_req, good, state_, store_, router, &verifier, nullptr, 4);
+
+  ASSERT_TRUE(DecodeFramed(good->sent[0], &pkt));
+  chirp::auth::LoginResponse ok_resp;
+  ASSERT_TRUE(ok_resp.ParseFromString(pkt.body()));
+  EXPECT_EQ(ok_resp.code(), chirp::common::OK);
+  EXPECT_EQ(ok_resp.user_id(), "user_1");
+  EXPECT_TRUE(state_->IsUserLocal("user_1"));
+}
+
+TEST_F(DistributedInternalsTest, CrossInstanceDeliveryTracksAndNotifies) {
+  chirp_test::InMemoryRedis redis;
+  chirp_test::FakeRedisServer fake([&](const std::vector<std::string>& args) {
+    return redis.Handle(args);
+  });
+  asio::io_context io;
+  auto router = std::make_shared<chirp::network::MessageRouter>(io, "127.0.0.1", fake.port());
+  ASSERT_TRUE(router->Start());
+  auto acks = MakeAckManager(io);
+
+  auto bob = std::make_shared<MockSession>();
+  chirp::auth::LoginRequest lreq;
+  lreq.set_token("bob");
+  lreq.set_supports_message_ack(true);
+  HandleLogin(lreq, bob, state_, store_, router, &verifier_, acks.get(), 1);
+
+  chirp::chat::ChatMessage msg;
+  msg.set_message_id("m-cross");
+  msg.set_sender_id("dave");
+  msg.set_receiver_id("bob");
+  msg.set_channel_type(chirp::chat::PRIVATE);
+  msg.set_channel_id("bob|dave");
+  msg.set_content("live from another instance");
+
+  const std::string channel = chirp::network::RouterChannels::UserChat("bob");
+  auto notify_count = [&] {
+    size_t n = 0;
+    for (const auto& framed : bob->sent) {
+      Packet p;
+      if (DecodeFramed(framed, &p) && p.msg_id() == chirp::gateway::CHAT_MESSAGE_NOTIFY) {
+        n++;
+      }
+    }
+    return n;
+  };
+  // Pump until the subscription callback has run: pushes that race the
+  // subscriber connection are lost, so retry (enhanced cross-instance test
+  // pattern); io has no resident work — poll drains what the subscriber
+  // thread posts, restart un-stops the context.
+  for (int i = 0; i < 100 && notify_count() < 1u; ++i) {
+    fake.Publish(channel, msg.SerializeAsString());
+    for (int j = 0; j < 10; ++j) {
+      io.poll();
+      io.restart();
+      std::this_thread::sleep_for(std::chrono::milliseconds(5));
+    }
+  }
+
+  ASSERT_EQ(notify_count(), 1u);
+  Packet notify;
+  ASSERT_TRUE(DecodeFramed(bob->sent[1], &notify));  // [0] = LOGIN_RESP
+  chirp::chat::ChatMessage got;
+  ASSERT_TRUE(got.ParseFromString(notify.body()));
+  EXPECT_EQ(got.content(), "live from another instance");
+  // Cross-instance deliveries are tracked like local ones (this instance owns
+  // the receiving session, so the ack comes back here).
+  EXPECT_EQ(acks->pending_count(), 1u);
+  EXPECT_TRUE(acks->Acknowledge("m-cross"));
+
+  router->Stop();
+}
+
+TEST_F(DistributedInternalsTest, OfflineRefillTracksCapableSession) {
+  chirp_test::InMemoryRedis redis;
+  chirp_test::FakeRedisServer fake([&](const std::vector<std::string>& args) {
+    return redis.Handle(args);
+  });
+  auto client = std::make_shared<chirp::network::RedisClient>("127.0.0.1", fake.port());
+  store_->redis = client;
+  state_->instance_id = "inst";
+
+  chirp::chat::ChatMessage queued;
+  queued.set_message_id("m-refill");
+  queued.set_sender_id("carol");
+  queued.set_receiver_id("alice");
+  queued.set_channel_type(chirp::chat::PRIVATE);
+  queued.set_channel_id("alice|carol");
+  queued.set_content("refill me");
+  store_->AddOffline("alice", queued.SerializeAsString());
+  // Liveness: the refill only proves the tracking arm if the queue really
+  // holds the bytes in Redis.
+  ASSERT_EQ(client->LRange(store_->OfflineKey("alice"), 0, -1).size(), 1u);
+
+  asio::io_context io;
+  auto router = std::make_shared<chirp::network::MessageRouter>(io, "127.0.0.1", 1);
+  auto acks = MakeAckManager(io);
+
+  auto alice = std::make_shared<MockSession>();
+  chirp::auth::LoginRequest lreq;
+  lreq.set_token("alice");
+  lreq.set_supports_message_ack(true);
+  HandleLogin(lreq, alice, state_, store_, router, &verifier_, acks.get(), 1);
+
+  // [0] = LOGIN_RESP, [1] = refill notify: refills are tracked like live
+  // deliveries so a late ack can remove the queued copy cleanly.
+  ASSERT_EQ(alice->sent.size(), 2u);
+  Packet notify;
+  ASSERT_TRUE(DecodeFramed(alice->sent[1], &notify));
+  EXPECT_EQ(notify.msg_id(), chirp::gateway::CHAT_MESSAGE_NOTIFY);
+  chirp::chat::ChatMessage got;
+  ASSERT_TRUE(got.ParseFromString(notify.body()));
+  EXPECT_EQ(got.content(), "refill me");
+  EXPECT_EQ(acks->pending_count(), 1u);
+  EXPECT_TRUE(acks->Acknowledge("m-refill"));
+  EXPECT_TRUE(store_->PopOffline("alice").empty());  // queue consumed
 }
 
 // Full round trip against the real distributed chat main(): a TCP client
