@@ -458,13 +458,39 @@ target_include_directories(notification_client_tests
 
 add_test(NAME notification_client_tests COMMAND notification_client_tests)
 
+# Notification entry seam: main.cc's hoisted on_frame dispatch driven directly
+add_executable(notification_main_session_tests
+  notification_main_session_test.cc
+  ${CMAKE_SOURCE_DIR}/services/app/notification/src/notification_handlers.cc
+  ${CMAKE_SOURCE_DIR}/services/app/notification/src/notification_service.cc
+  ${CMAKE_SOURCE_DIR}/services/app/notification/src/push_transport.cc
+  ${CMAKE_SOURCE_DIR}/services/app/notification/src/http_push_transport.cc
+)
+
+chirp_unit_test_common_links(notification_main_session_tests)
+target_link_libraries(notification_main_session_tests PRIVATE chirp_network chirp_common chirp_protos)
+target_include_directories(notification_main_session_tests
+  PRIVATE
+  ${CMAKE_SOURCE_DIR}/services/app/notification/src
+  ${CMAKE_SOURCE_DIR}/libs
+  ${CMAKE_SOURCE_DIR}/libs/common
+  ${CMAKE_SOURCE_DIR}/libs/common/include
+  ${CMAKE_SOURCE_DIR}/libs/network
+  ${CMAKE_SOURCE_DIR}/proto/cpp
+  ${CMAKE_SOURCE_DIR}/proto/cpp/proto
+)
+
+add_test(NAME notification_main_session_tests COMMAND notification_main_session_tests)
+
 # Gateway auth client target above already compiles auth_client.cc together
 # with gateway_auth_internal_test.cc; chat_managers_tests compiles
 # group_manager.cc together with chat_group_internal_test.cc.
 
-# Message search service coverage tests
+# Message search service coverage tests (the second TU drives the search
+# main.cc seam: SignalHandler / running directly, main() renamed).
 add_executable(search_tests
   search_test.cc
+  search_main_session_test.cc
   ${CMAKE_SOURCE_DIR}/services/search/src/message_search_service.cc
 )
 

@@ -26,6 +26,24 @@ void SendPacket(const std::shared_ptr<network::Session>& session,
   session->Send(std::string(reinterpret_cast<const char*>(framed.data()), framed.size()));
 }
 
+// Dispatch body of the on_frame callback wired into both listeners below,
+// hoisted verbatim (the only change: the logger reference becomes the
+// singleton it aliases) so tests can drive the notification plane directly.
+void HandleNotificationPacket(app_notification::NotificationHandlers& handlers,
+                              const std::shared_ptr<network::Session>& session,
+                              std::string&& payload) {
+  gateway::Packet pkt;
+  if (!pkt.ParseFromArray(payload.data(), static_cast<int>(payload.size()))) {
+    chirp::common::Logger::Instance().Warn(
+        "failed to parse Packet on the notification plane");
+    return;
+  }
+  gateway::Packet resp;
+  if (handlers.HandlePacket(pkt, &resp)) {
+    SendPacket(session, std::move(resp));
+  }
+}
+
 }  // namespace
 
 int main(int argc, char* argv[]) {
@@ -155,17 +173,9 @@ int main(int argc, char* argv[]) {
 
   asio::io_context io;
 
-  auto on_frame = [handlers, &logger](std::shared_ptr<network::Session> session,
-                                      std::string&& payload) mutable {
-    gateway::Packet pkt;
-    if (!pkt.ParseFromArray(payload.data(), static_cast<int>(payload.size()))) {
-      logger.Warn("failed to parse Packet on the notification plane");
-      return;
-    }
-    gateway::Packet resp;
-    if (handlers.HandlePacket(pkt, &resp)) {
-      SendPacket(session, std::move(resp));
-    }
+  auto on_frame = [handlers](std::shared_ptr<network::Session> session,
+                             std::string&& payload) mutable {
+    HandleNotificationPacket(handlers, session, std::move(payload));
   };
 
   network::TcpServer server(io, port, on_frame);
