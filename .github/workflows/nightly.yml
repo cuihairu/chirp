@@ -109,6 +109,16 @@ jobs:
     - name: Install npm dependencies
       run: npm ci
 
+    - uses: actions/setup-node@v7
+      with:
+        node-version: 24
+        cache: npm
+        cache-dependency-path: apps/desktop/package-lock.json
+
+    - name: Install desktop npm dependencies
+      working-directory: apps/desktop
+      run: npm ci
+
     # The TS package that ships is validated by its own suite first, mirroring
     # web.yml's Test @chirp/protocol step.
     - name: Verify @chirp/protocol
@@ -118,6 +128,23 @@ jobs:
     - name: Pack @chirp/protocol
       working-directory: sdks/ts
       run: npm pack
+
+    - name: Setup Rust
+      uses: dtolnay/rust-toolchain@stable
+      with:
+        target: x86_64-unknown-linux-gnu
+
+    - name: Install Tauri system dependencies
+      run: |
+        sudo apt-get update
+        sudo apt-get install -y libwebkit2gtk-4.1-dev libgtk-3-dev libayatana-appindicator3-dev librsvg2-dev
+
+    - name: Build desktop app (.deb)
+      working-directory: apps/desktop
+      run: |
+        npm run tauri build
+        # Verify .deb was created
+        ls -la src-tauri/target/release/bundle/deb/Chirp_*.deb
 
     - name: Assemble artifact tree
       run: |
@@ -193,6 +220,26 @@ jobs:
         警示: 产物未签名;仅供集成联调。
         NOTE
 
+        # ---- desktop/linux-x64 --------------------------------------------
+        desktop="$dist/desktop/linux-x64"
+        mkdir -p "$desktop"
+        cp -v apps/desktop/src-tauri/target/release/bundle/deb/Chirp_*.deb "$desktop/"
+        cat > "$desktop/NOTE.txt" <<'NOTE'
+        chirp Desktop App - linux-x64 (daily build)
+
+        包内容:
+          Chirp_<version>_amd64.deb   Debian 包(经 `dpkg -i` 安装)
+
+        依赖: libwebkit2gtk-4.1-0, libgtk-3-0
+
+        安装: sudo dpkg -i Chirp_*.deb; sudo apt-get install -f
+
+        验证命令(应列出包元数据):
+          dpkg-deb -I Chirp_*.deb
+
+        警示: 产物未签名;仅供集成联调。
+        NOTE
+
         # ---- ts ------------------------------------------------------------
         ts="$dist/ts"
         mkdir -p "$ts"
@@ -225,6 +272,7 @@ jobs:
           cpp/linux-x64/   libchirp_core_sdk(.so/.a) + 头文件 + proto 源
           go/              Go 服务端 SDK 源码包
           ts/              @chirp/protocol npm 包
+          desktop/linux-x64/  Chirp 桌面聊天 App .deb 包
 
         每个平台目录的 NOTE.txt 写明包内容与一条验证命令。
 
@@ -232,7 +280,7 @@ jobs:
         覆盖旧一份,保留 14 天)。不打 git tag、不发 GitHub Release。
 
         警示: 全部产物未签名。打包前的验证 = C++ SDK 目标编译 +
-        go vet/build + @chirp/protocol 测试套件;完整门禁以仓库 CI 为准。
+        go vet/build + @chirp/protocol 测试套件 + 桌面 App Tauri 构建;完整门禁以仓库 CI 为准。
         README
         find "$dist" -type f | sort
 
