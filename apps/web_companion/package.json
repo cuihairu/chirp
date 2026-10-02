@@ -15,7 +15,6 @@
     "gen:proto": "bash scripts/gen-proto.sh"
   },
   "dependencies": {
-    "@chirp/protocol": "file:../../sdks/ts",
     "@emotion/react": "^11.11.0",
     "@emotion/styled": "^11.11.0",
     "@mui/icons-material": "^5.14.0",
@@ -24,7 +23,8 @@
     "protobufjs": "^7.2.0",
     "react": "^18.2.0",
     "react-dom": "^18.2.0",
-    "react-router-dom": "^7.18.4"
+    "react-router-dom": "^7.18.4",
+    "@chirp/app-protocol": "file:../shared/protocol"
   },
   "devDependencies": {
     "@eslint/js": "^9.0.0",

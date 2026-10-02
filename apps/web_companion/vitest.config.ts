@@ -11,7 +11,7 @@ export default defineConfig({
       '@chirp/proto': resolve(import.meta.dirname, '../../proto/ts/proto'),
       // The framework-agnostic protocol core lives in its own workspace
       // package; alias keeps vitest resolution identical to tsc's paths.
-      '@chirp/protocol': resolve(import.meta.dirname, '../../sdks/ts/src'),
+      '@chirp/app-protocol': resolve(import.meta.dirname, '../../sdks/ts/src'),
     },
   },
   test: {

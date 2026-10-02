@@ -6,7 +6,7 @@ import {
   RoomType,
 } from '@chirp/proto/voice';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
-import { ChirpClient } from '@chirp/protocol/chirp_client';
+import { ChirpClient } from '@chirp/app-protocol/chirp_client';
 import {
   CREATE_ROOM,
   GET_ROOM_INFO,
@@ -15,7 +15,7 @@ import {
   LEAVE_ROOM,
   LOGIN,
   SET_MUTE,
-} from '@chirp/protocol/msg_map';
+} from '@chirp/app-protocol/msg_map';
 import { nextNotify } from './helpers';
 
 /**

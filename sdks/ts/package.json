@@ -3,7 +3,7 @@
   "version": "0.1.0",
   "private": true,
   "type": "module",
-  "description": "Framework-agnostic TypeScript chat protocol core for chirp: connection state machine, the five hook interfaces + ChatPipeline, and the sensitive-word pre-check interceptor. No React/DOM dependencies — shared by the web companion and reusable by future LayaBox/Cocos targets.",
+  "description": "Framework-agnostic TypeScript chat protocol core for chirp: connection state machine, the five hook interfaces + ChatPipeline, and the sensitive-word pre-check interceptor. No React/DOM dependencies \u2014 the game-facing TS integration surface (minigame/LayaAir/Cocos). Companion apps do NOT depend on this package: their protocol layer lives in apps/shared/protocol (@chirp/app-protocol), same boundary rule as apps/android .../protocol/ and apps/ios Sources/ChirpProtocol/.",
   "exports": {
     "./*": "./src/*"
   },

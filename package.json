@@ -2,6 +2,7 @@
   "name": "chirp-docs-root",
   "private": true,
   "workspaces": [
+    "apps/shared/protocol",
     "apps/web_companion",
     "sdks/ts"
   ],

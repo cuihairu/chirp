@@ -16,8 +16,8 @@ import {
 import { ErrorCode } from '@chirp/proto/common';
 import { MsgID } from '@chirp/proto/gateway';
 import { DevicesPresenceNotify } from '@chirp/proto/auth';
-import type { ConnStatus } from '@chirp/protocol/chirp_client';
-import { RequestError } from '@chirp/protocol/errors';
+import type { ConnStatus } from '@chirp/app-protocol/chirp_client';
+import { RequestError } from '@chirp/app-protocol/errors';
 import {
   ADD_REACTION,
   CREATE_GROUP,
@@ -35,7 +35,7 @@ import {
   REMOVE_REACTION,
   SEND_MESSAGE,
   type MessageSpec,
-} from '@chirp/protocol/msg_map';
+} from '@chirp/app-protocol/msg_map';
 import {
   channelTypeOf,
   conversationOf,

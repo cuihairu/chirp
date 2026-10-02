@@ -1,4 +1,4 @@
-import { GET_GAME_PRESENCE, SET_GAME_PRESENCE_ENABLED } from '@chirp/protocol/msg_map';
+import { GET_GAME_PRESENCE, SET_GAME_PRESENCE_ENABLED } from '@chirp/app-protocol/msg_map';
 import type { GamePresenceEntry } from '@chirp/proto/game_server_gateway';
 import type { Store } from '../state/store';
 import type { AuthState } from '../state/auth_store';

@@ -15,7 +15,7 @@ import {
   LOGIN,
   SET_DEAFEN,
   SET_MUTE,
-} from '@chirp/protocol/msg_map';
+} from '@chirp/app-protocol/msg_map';
 import {
   applyRoomSnapshot,
   applySelfFlags,

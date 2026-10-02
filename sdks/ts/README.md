@@ -1,9 +1,11 @@
 # @chirp/protocol
 
-Framework-agnostic TypeScript chat protocol core for chirp — the same code that
-used to live in `apps/web_companion/src/protocol/`, now a standalone workspace
-package so any JS/TS target (web, minigame, LayaAir, Cocos, future Electron
-shells) can depend on it without dragging React along.
+Framework-agnostic TypeScript chat protocol core for chirp — extracted from
+`apps/web_companion/src/protocol/` (where it originally lived) as the
+**game-facing** TS integration surface: minigame, LayaAir, Cocos and other
+JS/TS game shells. Boundary rule (2026-10-02): `sdks/` is for games only —
+companion apps carry their own protocol layer in `apps/shared/protocol`
+(`@chirp/app-protocol`, kept in lockstep with this package's test vectors).
 
 ## Contents
 
@@ -38,7 +40,8 @@ import { ChatPipeline } from '@chirp/protocol/chat_pipeline';
 
 Generated protobuf code is **not** a dependency of this package: consumers
 bring their own `@chirp/proto` (see `proto/ts/`) and map it via the tsconfig
-`paths` / bundler alias shown in `apps/web_companion/tsconfig.json`.
+`paths` / bundler alias (this package's `tsconfig.json` + `vitest.config.ts`
+show the pattern).
 
 ## Development
 

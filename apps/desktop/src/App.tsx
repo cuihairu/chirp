@@ -1,7 +1,7 @@
 import { Alert, Snackbar } from '@mui/material';
 import { useCallback, useEffect, useState } from 'react';
 import { ErrorCode } from '@chirp/proto/common';
-import { errorText } from '@chirp/protocol/errors';
+import { errorText } from '@chirp/app-protocol/errors';
 import type { Services } from './api/services';
 import { createServices } from './api/services';
 import LoginPage from './ui/LoginPage';

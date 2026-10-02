@@ -1,7 +1,7 @@
 import { ChatMessage } from '@chirp/proto/chat';
 import { MsgID } from '@chirp/proto/gateway';
-import { ChirpClient } from '@chirp/protocol/chirp_client';
-import { LOGIN } from '@chirp/protocol/msg_map';
+import { ChirpClient } from '@chirp/app-protocol/chirp_client';
+import { LOGIN } from '@chirp/app-protocol/msg_map';
 
 /**
  * Shared helpers for the CHIRP_WS_URL-gated integration suite run by

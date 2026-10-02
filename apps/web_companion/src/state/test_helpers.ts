@@ -1,7 +1,7 @@
 import { MsgID } from '@chirp/proto/gateway';
-import type { MessageSpec } from '@chirp/protocol/msg_map';
-import { RequestError } from '@chirp/protocol/errors';
-import type { ConnStatus } from '@chirp/protocol/chirp_client';
+import type { MessageSpec } from '@chirp/app-protocol/msg_map';
+import { RequestError } from '@chirp/app-protocol/errors';
+import type { ConnStatus } from '@chirp/app-protocol/chirp_client';
 import type { ChatConnection } from '../api/chat_api';
 
 /**

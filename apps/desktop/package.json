@@ -3,7 +3,7 @@
   "version": "0.1.0",
   "private": true,
   "type": "module",
-  "description": "Chirp 桌面聊天 App（App 平面桌面客户端）：Tauri v2 壳 + React/MUI，经 app_gateway WS 与自家 gateway+auth+chat 主线通信。",
+  "description": "Chirp \u684c\u9762\u804a\u5929 App\uff08App \u5e73\u9762\u684c\u9762\u5ba2\u6237\u7aef\uff09\uff1aTauri v2 \u58f3 + React/MUI\uff0c\u7ecf app_gateway WS \u4e0e\u81ea\u5bb6 gateway+auth+chat \u4e3b\u7ebf\u901a\u4fe1\u3002",
   "scripts": {
     "dev": "vite",
     "build": "tsc --noEmit && vite build",
@@ -12,7 +12,6 @@
     "tauri": "tauri"
   },
   "dependencies": {
-    "@chirp/protocol": "file:../../sdks/ts",
     "@emotion/react": "^11.11.0",
     "@emotion/styled": "^11.11.0",
     "@mui/icons-material": "^5.14.0",
@@ -22,7 +21,8 @@
     "long": "^5.3.2",
     "protobufjs": "^7.2.0",
     "react": "^18.2.0",
-    "react-dom": "^18.2.0"
+    "react-dom": "^18.2.0",
+    "@chirp/app-protocol": "file:../shared/protocol"
   },
   "devDependencies": {
     "@tauri-apps/cli": "^2.9.0",

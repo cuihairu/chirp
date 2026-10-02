@@ -18,7 +18,7 @@
     "baseUrl": ".",
     "paths": {
       "@chirp/proto/*": ["../../proto/ts/proto/*"],
-      "@chirp/protocol/*": ["../../sdks/ts/src/*"]
+      "@chirp/app-protocol/*": ["../shared/protocol/src/*"]
     }
   },
   "include": ["src"],

@@ -79,14 +79,14 @@ chirp-desktop
 ## 关键配置文件
 - `src-tauri/tauri.conf.json` — Tauri v2 配置（窗口尺寸、CSP、打包目标 deb、图标）
 - `src-tauri/capabilities/default.json` — 权限：core:default + notification:default
-- `vite.config.ts` — 别名 `@chirp/proto` → `../../proto/ts/proto`，`@chirp/protocol` → `../../sdks/ts/src`，端口 5180
+- `vite.config.ts` — 别名 `@chirp/proto` → `../../proto/ts/proto`，`@chirp/app-protocol` → `../shared/protocol/src`，端口 5180
 - `src/api/services.ts` — 服务图构建，平面连接与降级逻辑
 
 ## 核心类型与复用
 - 直接复制（非深层依赖） web_companion 的 `src/state/*.ts` 与 `src/api/*.ts`
-- `@chirp/proto/*` 与 `@chirp/protocol/*` 通过 tsconfig paths + vite alias 解析
+- `@chirp/proto/*` 与 `@chirp/app-protocol/*` 通过 tsconfig paths + vite alias 解析(app 不依赖 `sdks/`——那是游戏接入面,app 侧协议层在 `apps/shared/protocol`)
 - `Store<T>` 基于 `useSyncExternalStore` 的最小响应式存储，配合 `useStoreValue` hook
-- `ChirpClient` / `ChatApi` / `msg_map` 规范：见 `sdks/ts/src/`
+- `ChirpClient` / `ChatApi` / `msg_map` 规范：见 `apps/shared/protocol/src/`
 
 ## Xvfb 无头走查（CI/本地验收）
 ```bash

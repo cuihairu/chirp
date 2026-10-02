@@ -6,11 +6,14 @@ name: Web
 # The package-lock.json sits at the repo root (npm workspaces), so installs
 # run there; scripts run inside apps/web_companion. @chirp/protocol (sdks/ts)
 # is a workspace of the same lockfile and gets its own test step below.
+# apps/shared/protocol (@chirp/app-protocol) is the companion apps' own
+# protocol layer — sdks/ is the game-facing surface, apps do not depend on it.
 on:
   push:
     branches: [ main, develop ]
     paths:
       - 'apps/web_companion/**'
+      - 'apps/shared/protocol/**'
       - 'sdks/ts/**'
       - 'proto/**'
       - 'package.json'
@@ -20,6 +23,7 @@ on:
     branches: [ main, develop ]
     paths:
       - 'apps/web_companion/**'
+      - 'apps/shared/protocol/**'
       - 'sdks/ts/**'
       - 'proto/**'
       - 'package.json'
@@ -49,6 +53,12 @@ jobs:
 
     - name: Test @chirp/protocol
       working-directory: sdks/ts
+      run: |
+        npm run typecheck
+        npm test -- --coverage
+
+    - name: Test @chirp/app-protocol
+      working-directory: apps/shared/protocol
       run: |
         npm run typecheck
         npm test -- --coverage
