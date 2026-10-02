@@ -99,7 +99,9 @@ jobs:
     # ARM NEON 路径在 GCC(aarch64) 下因向量类型混用编不过(上游 1.0.22-RELEASE
     # 已修,BYTESHL128 的 s8→u8 与 pfx_shift_left 的 BlockVec→uint8x16_t)。
     # 把 master 上的 1.0.22 端口以 overlay 叠给两腿(基线不动,overlay 随
-    # nightly 的 vcpkg master clone 一起浮动)。
+    # nightly 的 vcpkg master clone 一起浮动)。注意 overlay 要给两处:
+    # 显式安装步(--overlay-ports)与 CMake 工具链的清单安装
+    # (-DVCPKG_OVERLAY_PORTS,不带会回落基线 1.0.21 在 arm64 上重炸)。
     - name: Install vcpkg dependencies
       run: |
         mkdir -p overlay-ports
@@ -116,6 +118,7 @@ jobs:
         cmake -B build -S . -G Ninja
         -DCMAKE_BUILD_TYPE=Release
         -DENABLE_TESTS=OFF
+        -DVCPKG_OVERLAY_PORTS=${{ github.workspace }}/overlay-ports
         -DCMAKE_TOOLCHAIN_FILE=${{ github.workspace }}/vcpkg/scripts/buildsystems/vcpkg.cmake
 
     - name: Build chirp_core_sdk (shared + static)
