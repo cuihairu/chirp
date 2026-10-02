@@ -53,6 +53,10 @@ function go(next: number): void {
 }
 
 onMounted(() => {
+  // 预取全部 slide 字节：首次切换到某张才拉会闪空框（线上实测
+  // 96ms–2150ms，CDN 冷资源），挂载即缓存后一切换即有字节。
+  for (const s of slides) new Image().src = s.src;
+
   timer = setInterval(() => {
     if (!paused.value) go(index.value + 1);
   }, AUTOPLAY_MS);
@@ -88,7 +92,6 @@ const detailLink = `${site.value.base}design-notes/app_chat_prototype`;
           class="hc-img"
           :src="current.src"
           :alt="`chirp 管理台：${current.caption}`"
-          loading="lazy"
           decoding="async"
         />
       </Transition>
