@@ -51,7 +51,13 @@ let package = Package(
         ),
         .testTarget(
             name: "ChirpAppCoreTests",
-            dependencies: ["ChirpAppCore"],
+            dependencies: [
+                "ChirpAppCore",
+                // P2 服务级测试直接驱动假传输/虚拟时钟(与协议包测试同手法)。
+                "ChirpProtocol",
+                "ChirpProtos",
+                .product(name: "SwiftProtobuf", package: "swift-protobuf"),
+            ],
             swiftSettings: [.swiftLanguageMode(.v5)]
         ),
     ]

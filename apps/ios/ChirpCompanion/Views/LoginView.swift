@@ -1,11 +1,11 @@
 import ChirpAppCore
 import SwiftUI
 
-/// Phase-one login screen (aligned with the web LoginPage and the Android
-/// shell): the user id IS the token in dev scaffold mode; the host field
-/// carries the simulator default and stays editable for real devices.
+/// 登录面(对齐 web LoginPage 与 Android dev 壳):dev 阶段用户名即 token;
+/// host 承载模拟器默认并保持可编辑(真机联调配 LAN 地址)。
 struct LoginView: View {
     @EnvironmentObject private var model: AppModel
+    @FocusState private var userIdFocused: Bool
 
     var body: some View {
         Form {
@@ -13,6 +13,9 @@ struct LoginView: View {
                 TextField("用户 ID", text: $model.draft.userId)
                     .textInputAutocapitalization(.never)
                     .autocorrectionDisabled()
+                    .focused($userIdFocused)
+                    .submitLabel(.go)
+                    .onSubmit { model.loginTapped() }
                 TextField("服务器(host[:port],模拟器默认 127.0.0.1:7001)", text: $model.draft.host)
                     .textInputAutocapitalization(.never)
                     .autocorrectionDisabled()
@@ -24,20 +27,14 @@ struct LoginView: View {
 
             Section {
                 Button("登录") {
+                    userIdFocused = false
                     model.loginTapped()
                 }
                 .disabled(!model.draft.isValid)
-            }
-
-            if let validated = model.validatedDraft {
-                Section {
-                    Label(
-                        "输入已校验(user \(validated.normalizedUserId))——连接与登录闭环在下一批落地,本批为工程骨架",
-                        systemImage: "info.circle"
-                    )
+            } footer: {
+                Text("dev 联调:先起 chirp chat 网关(默认 7001);模拟器直连 Mac 环回,真机填局域网地址。")
                     .font(.footnote)
                     .foregroundStyle(.secondary)
-                }
             }
         }
         .navigationTitle("Chirp")

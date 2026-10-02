@@ -4,8 +4,8 @@ SwiftPM package porting the pure protocol core of the former Flutter app
 (`apps/mobile_companion`, removed 2026-09-29 once both native packages
 carried its full test-vector groups), same migration path the Android
 package took (its M1→M4 batches, minus the app shell). Gate: `swift test`
-on Linux — **101 tests, all green** (Swift 6.4, x86_64 linux; 92 protocol
-core incl. the 11 lexicon-sync vectors + 9 app core).
+on Linux — **112 tests, all green** (Swift 6.4, x86_64 linux; 92 protocol
+core incl. the 11 lexicon-sync vectors + 20 app core).
 
 ## Layout
 
@@ -26,7 +26,7 @@ core incl. the 11 lexicon-sync vectors + 9 app core).
 | `Sources/ChirpProtocol/Scheduler.swift` | dart event-loop timers | time seam; tests drive a `ManualScheduler` virtual clock |
 | `Sources/ChirpProtocol/Promise.swift` | dart `Future`/Kotlin `CompletableFuture` | settle-once future; combinators `map`/`flatMap`/`handle` are the thenApply/thenCompose/handle mapping |
 | `Sources/ChirpProtocol/RequestError.swift` | `lib/protocol/errors.dart` | timeout/closed/kicked (+ server/blocked used by the pipeline) |
-| `Tests/ChirpProtocolTests/` | the Kotlin test files | same vector groups — conformance with the Kotlin package (the dart suite was removed with the Flutter app on 2026-09-29; this batch backfilled its four only-there vectors): Frame 6, ChatConnection 16, MsgSpecs table 3, ChatPipeline 27, OfflineSendQueue 9, Hooks 6, WordFilter 7, WordFilterSync 11 (lexicon batch), DeviceRegistrar 7; plus `Tests/ChirpAppCoreTests/` 9 for the app core |
+| `Tests/ChirpProtocolTests/` | the Kotlin test files | same vector groups — conformance with the Kotlin package (the dart suite was removed with the Flutter app on 2026-09-29; this batch backfilled its four only-there vectors): Frame 6, ChatConnection 16, MsgSpecs table 3, ChatPipeline 27, OfflineSendQueue 9, Hooks 6, WordFilter 7, WordFilterSync 11 (lexicon batch), DeviceRegistrar 7; plus `Tests/ChirpAppCoreTests/` 20 for the app core (SessionIndex 5, ChatSessionService 6, P1 units 9) |
 
 Dart's single event loop becomes one recursive lock (transport callbacks and
 scheduler ticks arrive on foreign threads; `close()` re-enters through the
@@ -42,7 +42,7 @@ the same vectors stay runnable.
 ## Gate
 
 ```sh
-cd apps/ios && swift test    # 101 tests, XCTest, Linux-native
+cd apps/ios && swift test    # 112 tests, XCTest, Linux-native
 ```
 
 CI: `ios-app.yml` (macos-latest) runs the package tests on the real
@@ -93,7 +93,7 @@ of truth).
 |---|---|
 | `project.yml` | XcodeGen spec → `ChirpCompanion.xcodeproj` (`xcodegen generate`) |
 | `ChirpCompanion/` | SwiftUI shell: `App/` (entry, root observable), `Views/` (login / sessions / chat screens) |
-| `Sources/ChirpAppCore/` | UI-free app logic inside the package (`DeviceIdentity`, `HostConfig`, `LoginDraft`) so `swift test` covers it on Linux **and** macOS |
+| `Sources/ChirpAppCore/` | UI-free app logic inside the package: `DeviceIdentity` / `HostConfig` / `LoginDraft` (P1), plus the P2 closed loop — `ChatSessionService` (login→sessions→DM send/receive wiring: acks, offline queue replay, word-filter sync, event stream) and `SessionIndex` (conversation list state) — so `swift test` covers it on Linux **and** macOS |
 | `.github/workflows/ios-app.yml` | CI leg (macos-latest): xcodegen → simulator build (unsigned) → package tests on the real macOS toolchain |
 
 ```bash
@@ -107,7 +107,7 @@ swift test
 | Phase | Scope | Status |
 |---|---|---|
 | P1 | 工程结构 + CI 构建腿(macos-latest:xcodegen + iOS Simulator 编译证明 + 包测试上 CI);SwiftUI 三屏骨架(登录/会话/聊天,静态);`ChirpAppCore` 入包(DeviceIdentity / HostConfig / LoginDraft) | ✅ 2026-10-03 |
-| P2 | 登录+会话+收发最小闭环:`ChatConnection`/`ChatPipeline`/`WsTransportDarwin` 接线;登录(dev 阶段用户名即 token)→ 会话列表 → DM 收发 + `MESSAGE_ACK` + `OfflineSendQueue` + `WordFilterSync` + 连接横幅/KICK;App 层单测(假 transport,对拍协议包手法) | ⬜ |
+| P2 | 登录+会话+收发最小闭环:`ChatSessionService`(蓝本 MainActivity.kt 接线——ChatConnection/ChatPipeline/MemoryMessageStore/WordFilterSync 拦截器/OfflineSendQueue/MESSAGE_ACK 回执先于渲染/事件流)+ `SessionIndex` 会话列表 + SwiftUI 三屏真接线(连接横幅/KICK 踢下线/离线入队重放提示);服务级单测 11 例(假 transport+虚拟时钟,对拍协议包手法) | ✅ 2026-10-03 |
 | P3 | 推送 APNs(对齐 herald 口径:ES256 `.p8` provider token 优先、cert 兜底、topic=bundle id):远程通知注册 → token → `PushTokenSource` 真实现 → `DeviceRegistrar`(platform="ios" + apns_token);凭据缺失走空 token 降级注册(对齐 android nopush);服务端投递链核对 | ⬜ |
 | P4 | 游戏内聊天集成 + 功能面对齐 web_companion:多平面(social/party/voice/device/game_presence)、quick_reactions、好友/群/设备/在线设备/组队/语音面板 | ⬜ |
 
