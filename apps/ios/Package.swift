@@ -11,6 +11,11 @@ let package = Package(
     name: "chirp-ios",
     products: [
         .library(name: "ChirpProtocol", targets: ["ChirpProtocol"]),
+        // UI-free app logic (state machine drafts, device identity, host
+        // config): lives in the package so `swift test` covers it on both
+        // Linux (the local gate) and macOS (the CI leg) — the SwiftUI shell
+        // in ChirpCompanion/ stays thin over it.
+        .library(name: "ChirpAppCore", targets: ["ChirpAppCore"]),
     ],
     dependencies: [
         .package(url: "https://github.com/apple/swift-protobuf.git", exact: "1.38.1"),
@@ -26,9 +31,19 @@ let package = Package(
             dependencies: ["ChirpProtos"],
             swiftSettings: [.swiftLanguageMode(.v5)]
         ),
+        .target(
+            name: "ChirpAppCore",
+            dependencies: ["ChirpProtocol"],
+            swiftSettings: [.swiftLanguageMode(.v5)]
+        ),
         .testTarget(
             name: "ChirpProtocolTests",
             dependencies: ["ChirpProtocol", "ChirpProtos"],
+            swiftSettings: [.swiftLanguageMode(.v5)]
+        ),
+        .testTarget(
+            name: "ChirpAppCoreTests",
+            dependencies: ["ChirpAppCore"],
             swiftSettings: [.swiftLanguageMode(.v5)]
         ),
     ]

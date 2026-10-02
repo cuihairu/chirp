@@ -90,3 +90,8 @@ overlay-ports/
 # app-side protocol package build outputs
 apps/shared/protocol/coverage/
 apps/shared/protocol/tsconfig.tsbuildinfo
+
+# iOS app: the Xcode project is xcodegen-generated from apps/ios/project.yml
+# (the spec is the source of truth; never commit the generated project).
+apps/ios/*.xcodeproj
+apps/ios/xcuserdata/

@@ -1,0 +1,43 @@
+# XcodeGen spec — the app project is GENERATED from this file (the
+# .xcodeproj is not committed; regenerate with `xcodegen generate`, brew
+# install xcodegen). The SwiftPM package at this directory's root provides
+# the protocol core (ChirpProtocol) and the UI-free app logic
+# (ChirpAppCore); the app target below is the SwiftUI shell.
+name: ChirpCompanion
+options:
+  bundleIdPrefix: com.chirp
+  deploymentTarget:
+    iOS: "17.0"
+  createIntermediateGroups: true
+packages:
+  chirp-ios:
+    path: .
+settings:
+  base:
+    SWIFT_VERSION: "5.0"
+targets:
+  ChirpCompanion:
+    type: application
+    platform: iOS
+    sources:
+      - ChirpCompanion
+    dependencies:
+      - package: chirp-ios
+        product: ChirpProtocol
+      - package: chirp-ios
+        product: ChirpAppCore
+    settings:
+      base:
+        GENERATE_INFOPLIST_FILE: YES
+        INFOPLIST_KEY_UILaunchScreen_Generation: YES
+        INFOPLIST_KEY_UIApplicationSceneManifest_Generation: YES
+        INFOPLIST_KEY_UISupportedInterfaceOrientations: UIInterfaceOrientationPortrait
+        PRODUCT_BUNDLE_IDENTIFIER: com.chirp.companion
+        # SWIFT_VERSION 5 mirrors the package's .v5 language mode: the
+        # protocol core is a lock-serialized port (see Package.swift).
+        SWIFT_VERSION: "5.0"
+schemes:
+  ChirpCompanion:
+    build:
+      targets:
+        ChirpCompanion: all
