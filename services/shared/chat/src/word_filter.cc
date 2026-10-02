@@ -24,7 +24,9 @@ std::string ToLower(const std::string& text) {
 
 // File mtime in milliseconds; 0 when the file cannot be stat'ed.
 // C++20 filesystem 而非 ::stat:glibc 的 st_mtim、BSD/macOS 的 st_mtimespec、
-// MSVC 的 plain st_mtime 是三种方言,file_clock::to_sys 给出可移植纪元。
+// MSVC 的 plain st_mtime 是三种方言,整体绕开。取 file_time_type 自身纪元
+// 而非 to_sys 对齐系统时钟(MSVC 的文件时钟不是 std::chrono::file_clock,
+// 没有 to_sys):本值只与同进程内上一次读数比相等,纪元平台各异无妨。
 int64_t MtimeMs(const std::string& path) {
   std::error_code ec;
   const auto mtime = std::filesystem::last_write_time(std::filesystem::path(path), ec);
@@ -32,7 +34,7 @@ int64_t MtimeMs(const std::string& path) {
     return 0;
   }
   return std::chrono::duration_cast<std::chrono::milliseconds>(
-             std::chrono::file_clock::to_sys(mtime).time_since_epoch())
+             mtime.time_since_epoch())
       .count();
 }
 
