@@ -3,7 +3,11 @@
 #include <algorithm>
 #include <cctype>
 #include <chrono>
+#ifdef _WIN32
+#include <winsock2.h>
+#else
 #include <poll.h>
+#endif
 
 #include <asio.hpp>
 #include <asio/ssl.hpp>
@@ -101,6 +105,21 @@ std::string ToLower(std::string text) {
   });
   return text;
 }
+
+// 单 fd 可读等待:POSIX poll,Windows WSAPoll(Winsock 的等价物,同一套
+// POLLIN/POLLHUP/POLLERR 位语义);native_handle 两端分别是 int/SOCKET,
+// 直接赋给 PollFd.fd 类型天然吻合。
+#ifdef _WIN32
+using PollFd = WSAPOLLFD;
+int PollReadable(PollFd* pfd, int timeout_ms) {
+  return ::WSAPoll(pfd, 1, timeout_ms);
+}
+#else
+using PollFd = pollfd;
+int PollReadable(PollFd* pfd, int timeout_ms) {
+  return ::poll(pfd, 1, timeout_ms);
+}
+#endif
 
 std::string BuildRequest(const PushRequest& request, const HttpEndpoint& ep) {
   std::string wire;
@@ -211,10 +230,10 @@ class TcpHttpConnection : public HttpConnection {
   }
 
   bool WaitReadable(int deadline_ms) override {
-    pollfd pfd{};
-    pfd.fd = static_cast<int>(socket_->native_handle());
+    PollFd pfd{};
+    pfd.fd = socket_->native_handle();
     pfd.events = POLLIN;
-    const int rc = ::poll(&pfd, 1, std::max(deadline_ms, 0));
+    const int rc = PollReadable(&pfd, std::max(deadline_ms, 0));
     return rc > 0 && (pfd.revents & (POLLIN | POLLHUP | POLLERR)) != 0;
   }
 
@@ -254,10 +273,10 @@ class SslHttpConnection : public HttpConnection {
     if (SSL_pending(stream_.native_handle()) > 0) {
       return true;
     }
-    pollfd pfd{};
-    pfd.fd = static_cast<int>(stream_.lowest_layer().native_handle());
+    PollFd pfd{};
+    pfd.fd = stream_.lowest_layer().native_handle();
     pfd.events = POLLIN;
-    const int rc = ::poll(&pfd, 1, std::max(deadline_ms, 0));
+    const int rc = PollReadable(&pfd, std::max(deadline_ms, 0));
     return rc > 0 && (pfd.revents & (POLLIN | POLLHUP | POLLERR)) != 0;
   }
 

@@ -36,6 +36,9 @@ endif()
 
 if(WIN32)
   add_compile_definitions(_WIN32_WINNT=0x0601 WINVER=0x0601)
+  # asio 的 Winsock 面在 MSVC 不 auto-link:ws2_32(套接字 API)+
+  # mswsock(AcceptEx 等 overlapped 扩展,asio 异步 accept 要)。
+  link_libraries(ws2_32 mswsock)
 endif()
 
 # Add cmake module path for custom Find modules

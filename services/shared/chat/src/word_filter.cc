@@ -3,9 +3,9 @@
 #include <algorithm>
 #include <cctype>
 #include <chrono>
+#include <cstdint>
+#include <filesystem>
 #include <set>
-
-#include <sys/stat.h>
 
 #include "logger.h"
 
@@ -23,12 +23,17 @@ std::string ToLower(const std::string& text) {
 }
 
 // File mtime in milliseconds; 0 when the file cannot be stat'ed.
+// C++20 filesystem 而非 ::stat:glibc 的 st_mtim、BSD/macOS 的 st_mtimespec、
+// MSVC 的 plain st_mtime 是三种方言,file_clock::to_sys 给出可移植纪元。
 int64_t MtimeMs(const std::string& path) {
-  struct stat st;
-  if (::stat(path.c_str(), &st) != 0) {
+  std::error_code ec;
+  const auto mtime = std::filesystem::last_write_time(std::filesystem::path(path), ec);
+  if (ec) {
     return 0;
   }
-  return static_cast<int64_t>(st.st_mtim.tv_sec) * 1000 + st.st_mtim.tv_nsec / 1000000;
+  return std::chrono::duration_cast<std::chrono::milliseconds>(
+             std::chrono::file_clock::to_sys(mtime).time_since_epoch())
+      .count();
 }
 
 int64_t NowMs() {

@@ -173,6 +173,10 @@ add_library(chirp_core_sdk SHARED
   ${SDK_PROTO_SRCS}
 )
 
+# MSVC 下零导出的 DLL 不会生成 import lib(examples 链接即 LNK1181),
+# 头文件也无 dllexport 标注:.def 全导出兜底,函数符号自动可解析。
+set_target_properties(chirp_core_sdk PROPERTIES WINDOWS_EXPORT_ALL_SYMBOLS ON)
+
 target_link_libraries(chirp_core_sdk
   PUBLIC
   chirp_network
