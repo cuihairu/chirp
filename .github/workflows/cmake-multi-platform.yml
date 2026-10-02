@@ -27,32 +27,76 @@ jobs:
             c_compiler: clang
             cpp_compiler: clang++
             vcpkg_triplet: x64-linux
+          # darwin/windows 编译证明腿(TODO「每日构建 darwin/windows 构建腿」
+          # 第一步):只证 C++ core 两平台编译通过,桌面 Tauri 打包腿、进
+          # nightly 矩阵、安装脚本放开留后续批次。macos-latest 为 Apple
+          # Silicon,走 arm64-osx 原生;Windows 用 MSVC + 默认 VS 生成器
+          # (cl 无需进 PATH,由生成器装配环境;多配置构建经 --config 选档)。
+          - os: macos-latest
+            c_compiler: clang
+            cpp_compiler: clang++
+            vcpkg_triplet: arm64-osx
+            build_type: Release
+          - os: windows-latest
+            c_compiler: cl
+            cpp_compiler: cl
+            vcpkg_triplet: x64-windows
+            build_type: Release
 
     steps:
     - uses: actions/checkout@v7
       with:
         submodules: recursive
 
-    - name: Install system dependencies
+    - name: Install system dependencies (Linux)
+      if: runner.os == 'Linux'
       run: |
         sudo apt-get update
         sudo apt-get install -y ninja-build protobuf-compiler pkg-config autoconf automake libtool libtool-bin autoconf-archive libtirpc-dev
 
-    - name: Verify protoc installation
-      run: |
-        which protoc
-        protoc --version
+    # macOS 镜像自带 cmake/ninja/pkg-config;C++ 依赖全走 vcpkg,brew 只补
+    # autotools 族(vcpkg 个别端口源码构建要)。
+    - name: Install system dependencies (macOS)
+      if: runner.os == 'macOS'
+      run: brew install autoconf automake libtool
+
+    # Windows 免装:VS/cmake 全在镜像上,生成器用 VS,protoc 走 vcpkg。
 
     - name: Setup vcpkg
+      shell: bash
       run: |
         git clone https://github.com/Microsoft/vcpkg.git
-        ./vcpkg/bootstrap-vcpkg.sh
+        if [ "${{ runner.os }}" = "Windows" ]; then
+          ./vcpkg/bootstrap-vcpkg.bat
+        else
+          ./vcpkg/bootstrap-vcpkg.sh
+        fi
 
     - name: Install vcpkg dependencies
+      shell: bash
       run: |
         ./vcpkg/vcpkg install --triplet ${{ matrix.vcpkg_triplet }}
 
+    # Linux 沿用 apt 的 protoc(既有两腿现状);mac/win 不装系统 protoc——
+    # brew/choco 版本随镜像漂移,与 vcpkg 运行时跨代会生成被拒的 gencode,
+    # 直接用 vcpkg 刚构建的 protoc(与链接的运行时同代,同本地惯例)。
+    - name: Resolve protoc
+      shell: bash
+      run: |
+        if [ "${{ runner.os }}" = "Linux" ]; then
+          which protoc
+          protoc --version
+        else
+          PROTOC="vcpkg_installed/${{ matrix.vcpkg_triplet }}/tools/protobuf/protoc"
+          if [ "${{ runner.os }}" = "Windows" ]; then
+            PROTOC="${PROTOC}.exe"
+          fi
+          "${PROTOC}" --version
+          echo "CHIRP_PROTOC=${PWD}/${PROTOC}" >> "$GITHUB_ENV"
+        fi
+
     - name: Generate proto files
+      shell: bash
       run: ./gen_proto.sh
 
     - name: Set reusable strings
@@ -61,20 +105,36 @@ jobs:
       run: |
         echo "build-output-dir=${{ github.workspace }}/build" >> "$GITHUB_OUTPUT"
 
+    # Windows 用默认 VS 生成器:不传 -G 与编译器旗标(cl 由生成器解析,
+    # 免 vcvars/Ninja 的环境装配);mac/linux 沿用 Ninja + 显式编译器。
+    # CMAKE_BUILD_TYPE 对多配置生成器无害(由 --config 决定实际档位)。
     - name: Configure CMake
-      run: >
-        cmake -B ${{ steps.strings.outputs.build-output-dir }}
-        -DCMAKE_CXX_COMPILER=${{ matrix.cpp_compiler }}
-        -DCMAKE_C_COMPILER=${{ matrix.c_compiler }}
-        -DCMAKE_BUILD_TYPE=${{ matrix.build_type }}
-        -DENABLE_TESTS=OFF
-        -DCMAKE_TOOLCHAIN_FILE=${{ github.workspace }}/vcpkg/scripts/buildsystems/vcpkg.cmake
-        -G Ninja
-        -S ${{ github.workspace }}
+      shell: bash
+      run: |
+        ARGS=(-B "${{ steps.strings.outputs.build-output-dir }}"
+              -S "${{ github.workspace }}"
+              -DCMAKE_BUILD_TYPE=${{ matrix.build_type }}
+              -DENABLE_TESTS=OFF
+              -DCMAKE_TOOLCHAIN_FILE="${{ github.workspace }}/vcpkg/scripts/buildsystems/vcpkg.cmake")
+        if [ "${{ runner.os }}" != "Windows" ]; then
+          ARGS+=(-G Ninja
+                 -DCMAKE_CXX_COMPILER=${{ matrix.cpp_compiler }}
+                 -DCMAKE_C_COMPILER=${{ matrix.c_compiler }})
+        fi
+        cmake "${ARGS[@]}"
 
+    # --parallel 由 cmake 自算逻辑核数(-j$(nproc) 的可移植等价:mac 无
+    # nproc,VS 生成器对应 /m)。
     - name: Build
-      run: cmake --build ${{ steps.strings.outputs.build-output-dir }} --config ${{ matrix.build_type }} -j$(nproc)
+      shell: bash
+      run: >
+        cmake --build "${{ steps.strings.outputs.build-output-dir }}"
+        --config ${{ matrix.build_type }}
+        --parallel
 
+    # ENABLE_TESTS=OFF:本 workflow 是编译证明(既有两腿同口径),测试面
+    # 不进本矩阵;ctest 在零测试时退出码为 0,保留此步维持四腿结构一致。
     - name: Test
       working-directory: ${{ steps.strings.outputs.build-output-dir }}
+      shell: bash
       run: ctest --build-config ${{ matrix.build_type }}

@@ -4,8 +4,12 @@
 #include <iostream>
 #include <string>
 
+#ifdef _WIN32
+#include <winsock2.h>
+#else
 #include <sys/socket.h>
 #include <sys/time.h>
+#endif
 
 #include <asio.hpp>
 
@@ -107,10 +111,17 @@ int main(int argc, char** argv) {
   // Bound every blocking read: without SO_RCVTIMEO a server that accepts
   // the connection but never replies keeps this client hanging forever.
   if (timeout_ms > 0) {
+#ifdef _WIN32
+    // Winsock 的 SO_RCVTIMEO 收 DWORD 毫秒(POSIX 是 struct timeval)。
+    const DWORD ms = static_cast<DWORD>(timeout_ms);
+    ::setsockopt(sock.native_handle(), SOL_SOCKET, SO_RCVTIMEO,
+                 reinterpret_cast<const char*>(&ms), sizeof(ms));
+#else
     struct timeval tv {};
     tv.tv_sec = timeout_ms / 1000;
     tv.tv_usec = (timeout_ms % 1000) * 1000;
     ::setsockopt(sock.native_handle(), SOL_SOCKET, SO_RCVTIMEO, &tv, sizeof(tv));
+#endif
   }
 
   int got = 0;

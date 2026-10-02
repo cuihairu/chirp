@@ -1,6 +1,10 @@
 #include "network/stream_ops.h"
 
+#ifdef _WIN32
+#include <winsock2.h>
+#else
 #include <sys/socket.h>
+#endif
 
 #include <openssl/ssl.h>
 
@@ -28,7 +32,13 @@ bool StreamOps<asio::ip::tcp::socket>::PeerHalfClosed(asio::ip::tcp::socket& s) 
   // this session would vanish. EAGAIN (nothing pending) or pending data
   // both mean still alive as far as we can tell.
   char peek;
+#ifdef _WIN32
+  // Winsock 无 MSG_DONTWAIT:asio 的异步会话本就在非阻塞模式下,recv 出
+  // WSAEWOULDBLOCK 与 POSIX 的 EAGAIN 同义(视为存活);返回 int,无 ssize_t。
+  const int n = ::recv(s.native_handle(), &peek, 1, MSG_PEEK);
+#else
   const ssize_t n = ::recv(s.native_handle(), &peek, 1, MSG_PEEK | MSG_DONTWAIT);
+#endif
   return n == 0;
 }
 

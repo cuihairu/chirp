@@ -12,7 +12,12 @@
 #include <utility>
 #include <vector>
 
+#ifdef _WIN32
+#include <process.h>
+#define getpid _getpid  // MSVC 的 unistd.h 等价物是 process.h 的 _getpid
+#else
 #include <unistd.h>
+#endif
 
 #include <asio.hpp>
 

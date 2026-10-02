@@ -1,0 +1,4 @@
+# Windows 检出(runner 的 Git for Windows 默认 core.autocrlf=true)会把无
+# 标注的文本文件转成 CRLF;gen_proto.sh 在 CI 的 Git Bash 里执行,CRLF 会
+# 让 bash 直接报 "\r: command not found"。shell 脚本一律钉 LF。
+*.sh text eol=lf
