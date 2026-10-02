@@ -11,13 +11,16 @@ import {
   MsgType,
   ReactionAddedNotify,
   ReactionRemovedNotify,
+  type SendMessageRequest,
   TypingIndicator,
 } from '@chirp/proto/chat';
 import { ErrorCode } from '@chirp/proto/common';
 import { MsgID } from '@chirp/proto/gateway';
 import { DevicesPresenceNotify } from '@chirp/proto/auth';
 import type { ConnStatus } from '@chirp/app-protocol/chirp_client';
+import type { PipelineConnection } from '@chirp/app-protocol/chat_pipeline';
 import { RequestError } from '@chirp/app-protocol/errors';
+import { WordFilterSync } from '@chirp/app-protocol/word_filter_sync';
 import {
   ADD_REACTION,
   CREATE_GROUP,
@@ -122,6 +125,8 @@ export class ChatApi {
   private readonly messages: Store<MessageState>;
   private readonly typing: Store<TypingState>;
   private readonly onlineDevices: Store<OnlineDevicesState> | null;
+  /** 词库下发同步（MsgID 2245-2247）：发送侧预检跟随服务端词库。 */
+  private readonly wordFilter: WordFilterSync;
   /** The channel currently open on screen; it never accumulates local unread. */
   private activeChannelKey: string | null = null;
   private unsubs: Array<() => void> = [];
@@ -137,6 +142,10 @@ export class ChatApi {
     this.messages = deps.messages;
     this.typing = deps.typing;
     this.onlineDevices = deps.onlineDevices ?? null;
+    // WordFilterSync 只用 request/onNotify 两面；ChatConnection 未声明
+    // onReconnecting/onReconnected（真实现 ChirpClient 都有，测试桩没有，
+    // 也用不到），故经 unknown 收窄 cast。
+    this.wordFilter = new WordFilterSync(deps.conn as unknown as PipelineConnection);
   }
 
   /** Subscribe to server pushes. Idempotent; call again after stop(). */
@@ -212,6 +221,11 @@ export class ChatApi {
         applyPresenceList(this.onlineDevices, resp.onlineDevices, Date.now());
       }
       this.start();
+      // 词库下发同步：订阅 2247 + 条件 GET（失败静默——兜底词库继续生效，
+      // 下次登录/重连再拉）。重登先摘后订，防重复订阅。
+      this.wordFilter.stop();
+      this.wordFilter.start();
+      void this.wordFilter.fetch();
     }
     return resp.code;
   }
@@ -227,6 +241,7 @@ export class ChatApi {
       // The disconnect below is what matters; a failed LOGOUT is harmless.
     }
     this.stop();
+    this.wordFilter.stop();
     this.conn.disconnect();
     if (this.onlineDevices) {
       resetOnlineDevices(this.onlineDevices);
@@ -242,6 +257,22 @@ export class ChatApi {
   async sendMessage(channel: ChannelRef, text: string): Promise<void> {
     const senderId = this.auth.get().userId;
     if (!senderId) return;
+    // 发送侧预检（词库下发同步）：REPLACE 在上线前就地改写，REJECT 拦下。
+    // 气泡以实际上线的文本上屏——本地所见与线上/服务端一致。
+    const contentBytes = new TextEncoder().encode(text);
+    // Partial 与改造前 conn.request 的入参面一致（缺省字段保持缺省，不上线）。
+    const wire: Partial<SendMessageRequest> = {
+      senderId,
+      // Group sends MUST leave receiver empty (chat_validation.cc rejects it).
+      receiverId: channel.kind === 'private' ? channel.peerId : '',
+      channelType: channelTypeOf(channel.kind),
+      channelId: channel.channelId,
+      msgType: MsgType.TEXT,
+      content: contentBytes,
+      clientTimestamp: Date.now(),
+    };
+    // 预检只读写 content（两面在我们手上非缺省），断言为完整消息面。
+    const blocked = !this.wordFilter.onBeforeSend(wire as SendMessageRequest);
     const clientId = `pending-${Date.now().toString(36)}-${pendingCounter++}`;
     const optimistic: ChatMessageView = {
       messageId: clientId,
@@ -250,7 +281,7 @@ export class ChatApi {
       channelKey: channel.key,
       channelType: channelTypeOf(channel.kind),
       channelId: channel.channelId,
-      content: text,
+      content: new TextDecoder().decode(wire.content ?? contentBytes),
       timestamp: Date.now(),
       pending: true,
     };
@@ -258,16 +289,10 @@ export class ChatApi {
 
     let resp;
     try {
-      resp = await this.conn.request(SEND_MESSAGE, {
-        senderId,
-        // Group sends MUST leave receiver empty (chat_validation.cc rejects it).
-        receiverId: channel.kind === 'private' ? channel.peerId : '',
-        channelType: channelTypeOf(channel.kind),
-        channelId: channel.channelId,
-        msgType: MsgType.TEXT,
-        content: new TextEncoder().encode(text),
-        clientTimestamp: Date.now(),
-      });
+      if (blocked) {
+        throw new RequestError('blocked', undefined, 'message blocked by word filter pre-check');
+      }
+      resp = await this.conn.request(SEND_MESSAGE, wire);
     } catch (err) {
       if (!(err instanceof RequestError)) throw err;
       failPendingMessage(this.messages, channel.key, clientId);

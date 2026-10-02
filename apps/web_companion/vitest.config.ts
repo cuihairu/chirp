@@ -9,9 +9,10 @@ export default defineConfig({
       // Generated protobuf code lives outside the app directory; the commit
       // keeps CI free of any protobuf toolchain.
       '@chirp/proto': resolve(import.meta.dirname, '../../proto/ts/proto'),
-      // The framework-agnostic protocol core lives in its own workspace
-      // package; alias keeps vitest resolution identical to tsc's paths.
-      '@chirp/app-protocol': resolve(import.meta.dirname, '../../sdks/ts/src'),
+      // The app-side protocol core lives in its own workspace package
+      // (sdks/ is the game-facing surface — apps do not depend on it);
+      // alias keeps vitest resolution identical to tsc's paths.
+      '@chirp/app-protocol': resolve(import.meta.dirname, '../shared/protocol/src'),
     },
   },
   test: {
