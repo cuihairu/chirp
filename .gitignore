@@ -86,3 +86,7 @@ build-cov/
 docs/package-lock.json
 overlay-ports/
 .build/
+
+# app-side protocol package build outputs
+apps/shared/protocol/coverage/
+apps/shared/protocol/tsconfig.tsbuildinfo
