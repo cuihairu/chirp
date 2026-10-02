@@ -275,7 +275,13 @@ install_cpp_sdk() {
 		die "解包异常：tarball 内未找到 chirp-cpp-sdk/{lib,include}"
 
 	local incdir="$PREFIX/include" libdir="$PREFIX/lib" datadir="$PREFIX/share/chirp-cpp-sdk"
-	if [ -w "$PREFIX" ] || mkdir -p "$PREFIX" 2>/dev/null; then
+	# 可写探测只能用 [ -w ]:mkdir -p 对已存在目录恒返回 0(不检查写权限),
+	# 拿它的返回值当判据会把 /usr/local 这类只读前缀误判为可写,然后在
+	# 用户分支里裸撞 Permission denied(真机走查抓到的回归)。
+	if [ ! -d "$PREFIX" ]; then
+		mkdir -p "$PREFIX" 2>/dev/null || true
+	fi
+	if [ -w "$PREFIX" ]; then
 		mkdir -p "$incdir" "$libdir" "$datadir/proto"
 		cp -R "$src/include/." "$incdir/"
 		cp -R "$src/lib/." "$libdir/"
@@ -297,11 +303,15 @@ install_cpp_sdk() {
 		warn "链接/运行请加: -I$incdir -L$libdir,并导出 LD_LIBRARY_PATH=$libdir"
 	fi
 
-	# 装完验证:nm 符号探针(NOTE.txt 记载的标准验证命令)
+	# 装完验证:nm 符号探针(NOTE.txt 记载的标准验证命令)。
+	# 落文件再 grep:pipefail 下 `nm | grep -m1` 是竞态——grep 早退后
+	# nm 写几百行符号会吃 SIGPIPE(141),管道整体判失败(真机走查抓到)。
 	local static_lib="$libdir/libchirp_core_sdk_static.a"
 	[ -f "$static_lib" ] || die "安装后验证失败:未找到 $static_lib"
 	if command -v nm >/dev/null 2>&1; then
-		nm -C "$static_lib" 2>/dev/null | grep -m1 'chirp::sdk' >/dev/null ||
+		local syms="$TMPDIR_DL/nm.out"
+		nm -C "$static_lib" > "$syms" 2>/dev/null || true
+		grep -m1 'chirp::sdk' "$syms" >/dev/null ||
 			die "安装后验证失败:$static_lib 中未发现 chirp::sdk 符号（产物损坏？）"
 	fi
 	info "已安装: C++ core SDK ($TARGET) -> $libdir 与 $incdir"
@@ -349,7 +359,10 @@ install_ts_pkg() {
 	info "安装 @chirp/protocol npm 包到 $dir ..."
 	mkdir -p "$dir"
 	cp -f "$tgz" "$dir/chirp-protocol.tgz"
-	tar -tzf "$dir/chirp-protocol.tgz" | grep -q 'package/src/' ||
+	# 同上:列表落文件再 grep(早退 grep 在 pipefail 下有 SIGPIPE 竞态)
+	tar -tzf "$dir/chirp-protocol.tgz" > "$TMPDIR_DL/tgz.list" 2>/dev/null ||
+		die "安装后验证失败:tgz 解包列表读取失败（产物损坏？）"
+	grep -q 'package/src/' "$TMPDIR_DL/tgz.list" ||
 		die "安装后验证失败:tgz 内未找到 package/src/（产物损坏？）"
 	local pkg_version
 	pkg_version="$(tar -xzOf "$dir/chirp-protocol.tgz" package/package.json 2>/dev/null |

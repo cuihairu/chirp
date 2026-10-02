@@ -146,8 +146,11 @@ jobs:
       working-directory: apps/desktop
       run: npm ci
 
-    - name: Install npm dependencies (root, for @chirp/protocol)
-      if: matrix.host_sdks
+    # 桌面 tauri build 会把 ../../proto/ts/proto/*.ts 一起编进去,那些文件
+    # 的 import(long/protobufjs)从文件所在目录向上找 node_modules——只有根
+    # 安装能接住,所以根 npm ci 两条腿都要跑(x64 腿独跑时 arm 桌面构建
+    # TS2307 的根因)。Verify/Pack @chirp/protocol 仍只在 x64 腿(一次)。
+    - name: Install npm dependencies (root, for @chirp/protocol + desktop build)
       run: npm ci
 
     # The TS package that ships is validated by its own suite first, mirroring
