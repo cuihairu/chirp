@@ -1,8 +1,17 @@
 name: Nightly Build
 
-# 每日构建:打包当前真产物(C++ core linux-x64 库 + Go SDK + TS SDK),
-# 产物只进 Actions artifact——固定名 daily-build,上传时覆盖旧一份
-# (upload-artifact overwrite),不打 git tag、不发 GitHub Release。
+# 每日构建:打包当前真产物(C++ core 库 + Go SDK + TS SDK + 桌面 App .deb),
+# 两路分发:
+#   1. Actions artifact——固定名 daily-build,上传时覆盖旧一份
+#      (upload-artifact overwrite),不打 git tag、不发 GitHub Release;
+#   2. nightly-dist 分支镜像——固定文件名 + manifest.json,每次 force 推
+#      单个孤儿提交覆盖。这是 install.sh / install.ps1 一键安装的下载源:
+#      raw.githubusercontent 匿名可直链,不依赖 Actions API(匿名限流
+#      60 次/小时/IP,共享出口 IP 下不可靠),也不要求登录。
+#
+# 矩阵:x86_64 与 aarch64(Linux)。darwin/windows 腿未加——本仓库尚无
+# 该两平台的编译证明(cmake-multi-platform 只证 ubuntu),贸然进矩阵只会
+# 让 nightly 长红;补齐证明后在此扩腿,安装脚本的架构表同步放开。
 #
 # schedule 用非整点分钟(19:23 UTC,避开整点风潮)。48h staleness gate
 # 只门控 schedule 事件:HEAD 与最近一次成功 nightly 相同且其完成时间
@@ -58,7 +67,19 @@ jobs:
     # dispatch: gate is skipped, outputs are empty -> build runs;
     # schedule: build unless the gate decided to skip.
     if: ${{ !cancelled() && needs.gate.outputs.skip != 'true' }}
-    runs-on: ubuntu-24.04
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - os: ubuntu-24.04
+            arch: linux-x64
+            vcpkg_triplet: x64-linux
+            host_sdks: true   # Go/TS 与 @chirp/protocol 打包只在 x64 腿做一次
+          - os: ubuntu-24.04-arm
+            arch: linux-arm64
+            vcpkg_triplet: arm64-linux
+            host_sdks: false
+    runs-on: ${{ matrix.os }}
     steps:
     - uses: actions/checkout@v7
       with:
@@ -75,7 +96,7 @@ jobs:
         ./vcpkg/bootstrap-vcpkg.sh
 
     - name: Install vcpkg dependencies
-      run: ./vcpkg/vcpkg install --triplet x64-linux
+      run: ./vcpkg/vcpkg install --triplet ${{ matrix.vcpkg_triplet }}
 
     # Same configure recipe as ci.yml / cmake-multi-platform.yml (the only
     # C++ platform surface CI actually proves today); the build then asks for
@@ -91,23 +112,17 @@ jobs:
     - name: Build chirp_core_sdk (shared + static)
       run: cmake --build build --target chirp_core_sdk chirp_core_sdk_static -j$(nproc)
 
-    - uses: actions/setup-go@v5
+    - name: Setup Go
+      if: matrix.host_sdks
+      uses: actions/setup-go@v5
       with:
         go-version: 'stable'
 
     - name: Verify Go SDK
+      if: matrix.host_sdks
       run: |
         go vet ./sdks/go/... ./proto/go/...
         go build ./sdks/go/...
-
-    - uses: actions/setup-node@v7
-      with:
-        node-version: 24
-        cache: npm
-        cache-dependency-path: package-lock.json
-
-    - name: Install npm dependencies
-      run: npm ci
 
     - uses: actions/setup-node@v7
       with:
@@ -119,20 +134,26 @@ jobs:
       working-directory: apps/desktop
       run: npm ci
 
+    - name: Install npm dependencies (root, for @chirp/protocol)
+      if: matrix.host_sdks
+      run: npm ci
+
     # The TS package that ships is validated by its own suite first, mirroring
     # web.yml's Test @chirp/protocol step.
     - name: Verify @chirp/protocol
+      if: matrix.host_sdks
       working-directory: sdks/ts
       run: npm test
 
     - name: Pack @chirp/protocol
+      if: matrix.host_sdks
       working-directory: sdks/ts
       run: npm pack
 
     - name: Setup Rust
       uses: dtolnay/rust-toolchain@stable
       with:
-        target: x86_64-unknown-linux-gnu
+        targets: ${{ matrix.arch == 'linux-arm64' && 'aarch64-unknown-linux-gnu' || 'x86_64-unknown-linux-gnu' }}
 
     - name: Install Tauri system dependencies
       run: |
@@ -143,20 +164,19 @@ jobs:
       working-directory: apps/desktop
       run: |
         npm run tauri build
-        # Verify .deb was created
+        # Verify .deb was created for this leg's architecture
         ls -la src-tauri/target/release/bundle/deb/Chirp_*.deb
 
-    - name: Assemble artifact tree
+    - name: Assemble leg tree
       run: |
         set -eux
+        arch="${{ matrix.arch }}"
+        leg="leg"
         stamp="$(date -u +%Y%m%d)-${GITHUB_SHA::7}"
-        built="$(date -u '+%Y-%m-%d %H:%M UTC')"
-        dist="dist/chirp-daily-$stamp"
-        echo "dist=$dist" >> "$GITHUB_ENV"
         echo "stamp=$stamp" >> "$GITHUB_ENV"
 
-        # ---- cpp/linux-x64 -------------------------------------------------
-        cpp="$dist/cpp/linux-x64"
+        # ---- cpp/<arch> ----------------------------------------------------
+        cpp="$leg/cpp/$arch"
         mkdir -p "$cpp/lib" "$cpp/include" "$cpp/proto"
         cp -v build/sdks/core/libchirp_core_sdk.so "$cpp/lib/"
         cp -v build/sdks/core/libchirp_core_sdk_static.a "$cpp/lib/"
@@ -173,9 +193,8 @@ jobs:
         mkdir -p "$cpp/include/proto"
         cp proto/cpp/proto/*.pb.h "$cpp/include/proto/"
         cp proto/*.proto "$cpp/proto/"
-        cat > "$cpp/NOTE.txt" <<'NOTE'
-        chirp C++ core SDK - linux-x64 (daily build)
-        ============================================
+        cat > "$cpp/NOTE.txt" <<NOTE
+        chirp C++ core SDK - $arch (daily build)
 
         包内容:
           lib/libchirp_core_sdk.so        共享库
@@ -188,7 +207,7 @@ jobs:
 
         链接: 编译加 -I include,静态/动态二选一;编译/运行依赖
         protobuf、abseil 与 header-only 的 asio(vcpkg.json baseline
-        0544202 提供的版本)。
+        提供的版本)。
 
         验证命令(应列出若干 chirp::sdk 符号):
           nm -C lib/libchirp_core_sdk_static.a | grep -m3 'chirp::sdk'
@@ -197,42 +216,20 @@ jobs:
         完整质量门禁以仓库 CI(ci.yml 等)为准。仅供集成联调。
         NOTE
 
-        # ---- go ------------------------------------------------------------
-        go="$dist/go"
-        mkdir -p "$go/sdks/go" "$go/proto/go"
-        cp -r sdks/go/* "$go/sdks/go/"
-        cp -r proto/go/* "$go/proto/go/"
-        cp go.mod go.sum "$go/"
-        cat > "$go/NOTE.txt" <<'NOTE'
-        chirp Go SDK(服务端平面)- 每日构建
-
-        包内容:
-          sdks/go/    SDK 源码
-          proto/go/   protobuf 生成物(protoc 33.4 + protoc-gen-go v1.36.12)
-          go.mod / go.sum
-                      仓库是单一 Go module(github.com/cui/chirp):把本目录
-                      内容放到 module 根(或并入你的 module 后调整 module 名),
-                      import "github.com/cui/chirp/sdks/go"。
-
-        验证命令(需要网络拉取 protobuf 依赖):
-          go build ./sdks/go/...
-
-        警示: 产物未签名;仅供集成联调。
-        NOTE
-
-        # ---- desktop/linux-x64 --------------------------------------------
-        desktop="$dist/desktop/linux-x64"
+        # ---- desktop/<arch> ------------------------------------------------
+        desktop="$leg/desktop/$arch"
         mkdir -p "$desktop"
         cp -v apps/desktop/src-tauri/target/release/bundle/deb/Chirp_*.deb "$desktop/"
-        cat > "$desktop/NOTE.txt" <<'NOTE'
-        chirp Desktop App - linux-x64 (daily build)
+        cat > "$desktop/NOTE.txt" <<NOTE
+        chirp Desktop App - $arch (daily build)
 
         包内容:
-          Chirp_<version>_amd64.deb   Debian 包(经 `dpkg -i` 安装)
+          Chirp_<version>_<dpkg-arch>.deb   Debian 包
 
         依赖: libwebkit2gtk-4.1-0, libgtk-3-0
 
         安装: sudo dpkg -i Chirp_*.deb; sudo apt-get install -f
+        (或用仓库根 install.sh 一键安装——无 root 时自动解包进 ~/.local)
 
         验证命令(应列出包元数据):
           dpkg-deb -I Chirp_*.deb
@@ -240,27 +237,131 @@ jobs:
         警示: 产物未签名;仅供集成联调。
         NOTE
 
-        # ---- ts ------------------------------------------------------------
-        ts="$dist/ts"
-        mkdir -p "$ts"
-        cp -v sdks/ts/chirp-protocol-*.tgz "$ts/"
-        cat > "$ts/NOTE.txt" <<'NOTE'
-        chirp TS 协议栈(@chirp/protocol)- 每日构建
+        # ---- go / ts(只在 x64 腿装配一次,产物与架构无关)--------------------
+        if [ "${{ matrix.host_sdks }}" = "true" ]; then
+          go_dir="$leg/go"
+          mkdir -p "$go_dir/sdks/go" "$go_dir/proto/go"
+          cp -r sdks/go/* "$go_dir/sdks/go/"
+          cp -r proto/go/* "$go_dir/proto/go/"
+          cp go.mod go.sum "$go_dir/"
+          cat > "$go_dir/NOTE.txt" <<'NOTE'
+          chirp Go SDK(服务端平面)- 每日构建
 
-        包内容:
-          chirp-protocol-<version>.tgz   npm pack 产物(src/ 源码 + package.json,
-                                         依赖 long / protobufjs 由安装方解析)
+          包内容:
+            sdks/go/    SDK 源码
+            proto/go/   protobuf 生成物
+            go.mod / go.sum
+                        仓库是单一 Go module(github.com/cui/chirp):把本目录
+                        内容放到 module 根(或并入你的 module 后调整 module 名),
+                        import "github.com/cui/chirp/sdks/go"。
 
-        安装: npm install <tgz 路径>;入口见包内 README(web/小游戏/Cocos/
-        LayaAir 共用,微信小游戏配 adapters/wx_socket)。
+          验证命令(需要网络拉取 protobuf 依赖):
+            go build ./sdks/go/...
 
-        验证命令(应列出 src/ 文件清单):
-          tar -tzf chirp-protocol-*.tgz | head
+          警示: 产物未签名;仅供集成联调。
+          NOTE
 
-        警示: 产物未签名;仅供集成联调。
-        NOTE
+          ts_dir="$leg/ts"
+          mkdir -p "$ts_dir"
+          cp -v sdks/ts/chirp-protocol-*.tgz "$ts_dir/"
+          cat > "$ts_dir/NOTE.txt" <<'NOTE'
+          chirp TS 协议栈(@chirp/protocol)- 每日构建
 
-        # ---- top-level README ----------------------------------------------
+          包内容:
+            chirp-protocol-<version>.tgz   npm pack 产物(src/ 源码 + package.json,
+                                           依赖 long / protobufjs 由安装方解析)
+
+          安装: npm install <tgz 路径>;入口见包内 README(web/小游戏/Cocos/
+          LayaAir 共用,微信小游戏配 adapters/wx_socket)。
+
+          验证命令(应列出 src/ 文件清单):
+            tar -tzf chirp-protocol-*.tgz | head
+
+          警示: 产物未签名;仅供集成联调。
+          NOTE
+        fi
+
+        find "$leg" -type f | sort
+
+    - uses: actions/upload-artifact@v4
+      with:
+        name: daily-leg-${{ matrix.arch }}
+        path: leg
+        if-no-files-found: error
+
+  package:
+    # 汇总两腿 → daily-build artifact(既有外部契约,run 页可下)+ 推
+    # nightly-dist 镜像分支(一键安装的匿名下载源)。x64 腿必须成功
+    # (go/ts 源头);arm64 腿失败时降级发布 x64,manifest 如实记录可用面。
+    needs: build
+    if: ${{ !cancelled() && (needs.build.result == 'success' || needs.build.result == 'failure') }}
+    runs-on: ubuntu-24.04
+    permissions:
+      contents: write
+    steps:
+    - name: Download x64 leg (required)
+      uses: actions/download-artifact@v4
+      with:
+        name: daily-leg-linux-x64
+        path: stage
+
+    - name: Download arm64 leg (optional — degraded publish when red)
+      uses: actions/download-artifact@v4
+      with:
+        name: daily-leg-linux-arm64
+        path: stage
+      continue-on-error: true
+      id: arm_leg
+
+    - name: Assemble dist tree (fixed names for the install mirror)
+      run: |
+        set -eux
+        stamp="$(date -u +%Y%m%d)-${GITHUB_SHA::7}"
+        built="$(date -u '+%Y-%m-%d %H:%M UTC')"
+        dist="dist"
+        mkdir -p "$dist/cpp" "$dist/desktop"
+
+        # 固定文件名(安装脚本不追版本号):cpp 打成单 tarball,deb 改名,
+        # ts tgz 定名 chirp-protocol.tgz(npm install 认文件不认名)。
+        for arch in linux-x64 linux-arm64; do
+          if [ -d "stage/cpp/$arch" ]; then
+            tar czf "$dist/cpp/chirp-cpp-sdk-$arch.tar.gz" -C "stage/cpp/$arch" \
+              --transform "s|^|chirp-cpp-sdk/|" lib include proto NOTE.txt
+          fi
+          if [ -d "stage/desktop/$arch" ]; then
+            mkdir -p "$dist/desktop/$arch"
+            cp -v stage/desktop/$arch/Chirp_*.deb \
+              "$dist/desktop/$arch/chirp-desktop-$arch.deb"
+          fi
+        done
+        if [ -d "stage/go" ]; then
+          mkdir -p "$dist/go"
+          tar czf "$dist/go/chirp-go-sdk.tar.gz" -C stage/go sdks proto go.mod go.sum NOTE.txt
+        fi
+        if [ -d "stage/ts" ]; then
+          mkdir -p "$dist/ts"
+          cp -v stage/ts/chirp-protocol-*.tgz "$dist/ts/chirp-protocol.tgz"
+        fi
+
+        # manifest:一键安装的可用面清单(架构探测失败时报这里)。
+        cpp_archs="$(find "$dist/cpp" -name '*.tar.gz' -printf '%f\n' \
+          | sed 's/chirp-cpp-sdk-//; s/\.tar\.gz//' | sort | tr '\n' ' ')"
+        desktop_archs="$(find "$dist/desktop" -name '*.deb' -printf '%h\n' \
+          | sed 's|.*/||' | sort | tr '\n' ' ')"
+        python3 - "$dist/manifest.json" <<PY
+        import json, sys
+        cpp = "${cpp_archs}".split()
+        desktop = "${desktop_archs}".split()
+        comps = {"cpp": cpp, "desktop": desktop, "go": ["any"], "ts": ["any"]}
+        comps = {k: v for k, v in comps.items() if v}
+        json.dump({
+            "stamp": "$stamp",
+            "commit": "$GITHUB_SHA",
+            "built": "$built",
+            "components": comps,
+        }, open(sys.argv[1], "w"))
+        PY
+
         cat > "$dist/README.txt" <<README
         chirp daily build
         =================
@@ -269,26 +370,42 @@ jobs:
         built:  $built (GitHub Actions nightly, ubuntu-24.04)
 
         内容:
-          cpp/linux-x64/   libchirp_core_sdk(.so/.a) + 头文件 + proto 源
-          go/              Go 服务端 SDK 源码包
-          ts/              @chirp/protocol npm 包
-          desktop/linux-x64/  Chirp 桌面聊天 App .deb 包
+          cpp/<arch>/chirp-cpp-sdk-<arch>.tar.gz   C++ core SDK(库+头+proto 源)
+          desktop/<arch>/chirp-desktop-<arch>.deb  桌面聊天 App Debian 包
+          go/chirp-go-sdk.tar.gz                   Go 服务端 SDK 源码包
+          ts/chirp-protocol.tgz                    @chirp/protocol npm 包
+          manifest.json                            可用面清单(一键安装读它)
 
-        每个平台目录的 NOTE.txt 写明包内容与一条验证命令。
-
-        分发: 本 run 页 -> Artifacts -> daily-build(固定名,每次上传前
-        覆盖旧一份,保留 14 天)。不打 git tag、不发 GitHub Release。
-
+        分发(两路):
+          - 本 run 页 -> Artifacts -> daily-build(固定名,覆盖旧一份);
+          - nightly-dist 分支镜像(本树的逐文件直链,匿名可下):
+            https://github.com/cuihairu/chirp/tree/nightly-dist
+          一键安装(仓库根脚本,自动选平台产物):
+            curl -fsSL https://raw.githubusercontent.com/cuihairu/chirp/main/install.sh | bash
         警示: 全部产物未签名。打包前的验证 = C++ SDK 目标编译 +
         go vet/build + @chirp/protocol 测试套件 + 桌面 App Tauri 构建;完整门禁以仓库 CI 为准。
         README
         find "$dist" -type f | sort
 
-    - name: Upload daily-build artifact (replaces the previous copy)
-      uses: actions/upload-artifact@v4
+    - uses: actions/upload-artifact@v4
       with:
         name: daily-build
-        path: ${{ env.dist }}
+        path: dist
         if-no-files-found: error
         overwrite: true
         retention-days: 14
+
+    - name: Push nightly-dist mirror branch
+      run: |
+        set -eux
+        stamp="$(python3 -c "import json; print(json.load(open('dist/manifest.json'))['stamp'])")"
+        git config --global user.name "chirp-nightly"
+        git config --global user.email "actions@users.noreply.github.com"
+        git init mirror
+        git -C mirror checkout -b nightly-dist
+        cp -r dist/. mirror/
+        git -C mirror add -A
+        git -C mirror commit -m "nightly $stamp (${{ github.sha }})"
+        git -C mirror push --force \
+          "https://x-access-token:${{ github.token }}@github.com/${{ github.repository }}.git" \
+          nightly-dist

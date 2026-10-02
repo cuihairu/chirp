@@ -87,6 +87,22 @@ flowchart TB
 - [API 概述](docs/api/overview.md)：Packet 协议、消息 ID 和核心流程
 - [快速开始](docs/guide/getting-started.md)：构建、Docker Compose、smoke test
 
+## 一键安装
+
+装最新每日构建（未签名，仅供集成联调），自动检测 OS 与架构，重跑即升级（幂等）：
+
+```bash
+# Linux / macOS
+curl -fsSL https://raw.githubusercontent.com/cuihairu/chirp/main/install.sh | bash
+```
+
+```powershell
+# Windows (PowerShell)
+irm https://raw.githubusercontent.com/cuihairu/chirp/main/install.ps1 | iex
+```
+
+默认装桌面聊天 App（Linux x86_64/aarch64，root 走 `dpkg -i`，无 root 解包进 `~/.local`）；`--component cpp|go|ts|all` 可装 C++ core SDK（`--prefix`）、Go SDK 源码包（`--install-dir`）、`@chirp/protocol` npm 包。darwin/windows 与 armv7 等无产物的平台会明确报错（构建矩阵见 [nightly.yml](.github/workflows/nightly.yml)，可用面见 [nightly-dist/manifest.json](https://github.com/cuihairu/chirp/tree/nightly-dist)）。下载走 `nightly-dist` 分支镜像，匿名可直链，不要求登录。
+
 ## 快速开始
 
 平台目标为 Linux（CI 仅跑 Linux）。依赖：CMake 3.21+、C++23、Protocol Buffers。Docker、MySQL、libsodium 为可选增强依赖。

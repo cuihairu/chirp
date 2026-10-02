@@ -34,7 +34,12 @@ chirp 的接入面是纯协议(TCP/WebSocket + Protobuf 小帧),SDK 按"协议�
 
 ## 每日构建(Nightly)
 
-主分支每天自动产出一次未签名的 SDK 产物包(C++ core 多平台库 + Go SDK + TS SDK),**只通过 GitHub Actions 分发**:对应 run 页 → **Artifacts → `daily-build`**——不挂 git tag、不发 GitHub Release。产物未签名,仅供集成联调,不要直接进生产。详见各 SDK 文档页的"每日构建"小节与 [nightly workflow](https://github.com/cuihairu/chirp/blob/main/.github/workflows/nightly.yml)。
+主分支每天自动产出一次未签名的 SDK 产物包(C++ core 库 + Go SDK + TS SDK + 桌面 App .deb,Linux x86_64/aarch64),**两路分发,均不挂 git tag、不发 GitHub Release**:
+
+- **一键安装**(推荐):仓库根 `install.sh`(Linux/macOS)/ `install.ps1`(Windows)自动选平台产物装好——见 README「一键安装」节;
+- **手动**:对应 run 页 → **Artifacts → `daily-build`**;或 [nightly-dist 分支镜像](https://github.com/cuihairu/chirp/tree/nightly-dist)(固定文件名 + `manifest.json` 可用面清单,匿名可直链,一键安装的下载源)。
+
+产物未签名,仅供集成联调,不要直接进生产。详见各 SDK 文档页的"每日构建"小节与 [nightly workflow](https://github.com/cuihairu/chirp/blob/main/.github/workflows/nightly.yml)。
 
 ## 测试口径备注
 
