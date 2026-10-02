@@ -95,8 +95,17 @@ jobs:
         git clone https://github.com/Microsoft/vcpkg.git
         ./vcpkg/bootstrap-vcpkg.sh
 
+    # vcpkg.json 的 builtin-baseline 里 libsodium 最高 1.0.21,其 ipcrypt 的
+    # ARM NEON 路径在 GCC(aarch64) 下因向量类型混用编不过(上游 1.0.22-RELEASE
+    # 已修,BYTESHL128 的 s8→u8 与 pfx_shift_left 的 BlockVec→uint8x16_t)。
+    # 把 master 上的 1.0.22 端口以 overlay 叠给两腿(基线不动,overlay 随
+    # nightly 的 vcpkg master clone 一起浮动)。
     - name: Install vcpkg dependencies
-      run: ./vcpkg/vcpkg install --triplet ${{ matrix.vcpkg_triplet }}
+      run: |
+        mkdir -p overlay-ports
+        cp -r vcpkg/ports/libsodium overlay-ports/
+        ./vcpkg/vcpkg install --triplet ${{ matrix.vcpkg_triplet }} \
+          --overlay-ports=${{ github.workspace }}/overlay-ports
 
     # Same configure recipe as ci.yml / cmake-multi-platform.yml (the only
     # C++ platform surface CI actually proves today); the build then asks for
@@ -238,47 +247,49 @@ jobs:
         NOTE
 
         # ---- go / ts(只在 x64 腿装配一次,产物与架构无关)--------------------
+        # 注意: heredoc 内容与终止符一律顶格(bash 的 << 终止符不吃缩进;
+        # if 块内的整段语句不能为了可读性多缩进两格)。
         if [ "${{ matrix.host_sdks }}" = "true" ]; then
-          go_dir="$leg/go"
-          mkdir -p "$go_dir/sdks/go" "$go_dir/proto/go"
-          cp -r sdks/go/* "$go_dir/sdks/go/"
-          cp -r proto/go/* "$go_dir/proto/go/"
-          cp go.mod go.sum "$go_dir/"
-          cat > "$go_dir/NOTE.txt" <<'NOTE'
-          chirp Go SDK(服务端平面)- 每日构建
+        go_dir="$leg/go"
+        mkdir -p "$go_dir/sdks/go" "$go_dir/proto/go"
+        cp -r sdks/go/* "$go_dir/sdks/go/"
+        cp -r proto/go/* "$go_dir/proto/go/"
+        cp go.mod go.sum "$go_dir/"
+        cat > "$go_dir/NOTE.txt" <<'NOTE'
+        chirp Go SDK(服务端平面)- 每日构建
 
-          包内容:
-            sdks/go/    SDK 源码
-            proto/go/   protobuf 生成物
-            go.mod / go.sum
-                        仓库是单一 Go module(github.com/cui/chirp):把本目录
-                        内容放到 module 根(或并入你的 module 后调整 module 名),
-                        import "github.com/cui/chirp/sdks/go"。
+        包内容:
+          sdks/go/    SDK 源码
+          proto/go/   protobuf 生成物
+          go.mod / go.sum
+                      仓库是单一 Go module(github.com/cui/chirp):把本目录
+                      内容放到 module 根(或并入你的 module 后调整 module 名),
+                      import "github.com/cui/chirp/sdks/go"。
 
-          验证命令(需要网络拉取 protobuf 依赖):
-            go build ./sdks/go/...
+        验证命令(需要网络拉取 protobuf 依赖):
+          go build ./sdks/go/...
 
-          警示: 产物未签名;仅供集成联调。
-          NOTE
+        警示: 产物未签名;仅供集成联调。
+        NOTE
 
-          ts_dir="$leg/ts"
-          mkdir -p "$ts_dir"
-          cp -v sdks/ts/chirp-protocol-*.tgz "$ts_dir/"
-          cat > "$ts_dir/NOTE.txt" <<'NOTE'
-          chirp TS 协议栈(@chirp/protocol)- 每日构建
+        ts_dir="$leg/ts"
+        mkdir -p "$ts_dir"
+        cp -v sdks/ts/chirp-protocol-*.tgz "$ts_dir/"
+        cat > "$ts_dir/NOTE.txt" <<'NOTE'
+        chirp TS 协议栈(@chirp/protocol)- 每日构建
 
-          包内容:
-            chirp-protocol-<version>.tgz   npm pack 产物(src/ 源码 + package.json,
-                                           依赖 long / protobufjs 由安装方解析)
+        包内容:
+          chirp-protocol-<version>.tgz   npm pack 产物(src/ 源码 + package.json,
+                                         依赖 long / protobufjs 由安装方解析)
 
-          安装: npm install <tgz 路径>;入口见包内 README(web/小游戏/Cocos/
-          LayaAir 共用,微信小游戏配 adapters/wx_socket)。
+        安装: npm install <tgz 路径>;入口见包内 README(web/小游戏/Cocos/
+        LayaAir 共用,微信小游戏配 adapters/wx_socket)。
 
-          验证命令(应列出 src/ 文件清单):
-            tar -tzf chirp-protocol-*.tgz | head
+        验证命令(应列出 src/ 文件清单):
+          tar -tzf chirp-protocol-*.tgz | head
 
-          警示: 产物未签名;仅供集成联调。
-          NOTE
+        警示: 产物未签名;仅供集成联调。
+        NOTE
         fi
 
         find "$leg" -type f | sort
