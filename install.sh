@@ -3,7 +3,8 @@
 #
 # 从每日构建镜像分支（nightly-dist，匿名可直链下载）拉取与本机 OS/架构
 # 匹配的产物并安装。组件四选：
-#   app   桌面聊天 App（Linux: .deb，root 走 dpkg -i，无 root 解包进 ~/.local）
+#   app   桌面聊天 App（Linux: .deb，root 走 dpkg -i，无 root 解包进 ~/.local；
+#         macOS: .dmg 挂载拷贝 .app 进 /Applications，无权限时 ~/Applications）
 #   cpp   C++ core SDK（库 + 头 + proto 源，装进 --prefix）
 #   go    Go 服务端 SDK 源码包
 #   ts    @chirp/protocol npm 包
@@ -22,8 +23,9 @@
 # 说明:
 #   - 幂等：重跑即升级（覆盖产物；deb 重复安装即替换）。
 #   - 失败即停：任何一步失败明确报错退出，不留半装状态。
-#   - 平台面由每日构建矩阵决定（见 nightly.yml）：当前 Linux x86_64/aarch64；
-#     darwin/windows 构建腿待补（未在 CI 证明过编译），脚本会明确报错。
+#   - 平台面由每日构建矩阵决定（见 nightly.yml）：当前 Linux x86_64/aarch64、
+#     macOS arm64（darwin-arm64）、Windows x64（走 install.ps1）；darwin-x64
+#     与 windows-arm64 无构建腿，脚本会按 manifest 明确报错。
 #   - chirp 每日构建无常驻服务可注册（服务端不在产物内），故无
 #     --with-service 选项；需要服务化部署请走仓库根 docker-compose。
 # 兼容 macOS 自带 bash 3.2（无关联数组等 4.0 特性；manifest 为单行 JSON，
@@ -51,7 +53,7 @@ chirp 一键安装（Linux / macOS）
   CHIRP_COMPONENT / CHIRP_INSTALL_DIR / CHIRP_PREFIX / CHIRP_MIRROR
 
 重跑即升级（幂等）。go/ts 为源码包，装完打印接入方式；C++ SDK 装完
-以 nm 符号探针验证；桌面 App 装完以包元数据版本验证。
+以 nm 符号探针验证；桌面 App 装完以包元数据（macOS 为 .app 落位）验证。
 EOF
 }
 
@@ -195,7 +197,7 @@ need_component() {
 	# need_component <组件>:不可用即明确报错（指明矩阵缺口）
 	if ! have "$1"; then
 		if [ "$1" = "desktop" ] || [ "$1" = "cpp" ]; then
-			die "组件 $1 在 ${TARGET} 无每日产物——矩阵当前只覆盖 Linux x86_64/aarch64（darwin/windows 腿待补，见 nightly.yml 头注）；go/ts 组件与架构无关，可先装"
+			die "组件 $1 在 ${TARGET} 无每日产物——矩阵当前覆盖 Linux x86_64/aarch64、macOS arm64、Windows x64（见 nightly.yml 头注）；go/ts 组件与架构无关，可先装"
 		fi
 		die "组件 $1 在镜像 manifest 中不存在: $MIRROR"
 	fi
@@ -203,9 +205,51 @@ need_component() {
 
 # ---------- 组件安装 ----------
 install_desktop_app() {
-	[ "$OS" = "linux" ] ||
-		die "app 组件暂无 ${TARGET} 产物——darwin 构建腿待补（见 nightly.yml 头注），可先用 --component cpp/go/ts"
 	need_component desktop
+
+	# ---- macOS:dmg 挂载拷贝 .app ----------------------------------------
+	if [ "$OS" = "darwin" ]; then
+		local dmg="$TMPDIR_DL/chirp-desktop.dmg"
+		fetch "$MIRROR/desktop/$TARGET/chirp-desktop-$TARGET.dmg" "$dmg" ||
+			die "下载失败: $MIRROR/desktop/$TARGET/chirp-desktop-$TARGET.dmg"
+
+		local mnt="$TMPDIR_DL/dmg-mnt" appsrc dest
+		mkdir -p "$mnt"
+		hdiutil attach -nobrowse -readonly -mountpoint "$mnt" "$dmg" >/dev/null ||
+			die "hdiutil attach 失败（下载不完整？）: $dmg"
+		appsrc="$(find "$mnt" -maxdepth 2 -name '*.app' -type d -print -quit)"
+		if [ -z "$appsrc" ]; then
+			hdiutil detach "$mnt" >/dev/null 2>&1 || true
+			die "dmg 内未找到 .app（产物异常？）"
+		fi
+
+		# /Applications 可写（admin 组）或免密 sudo → 系统位;否则用户位
+		dest="/Applications"
+		if [ ! -w /Applications ] && ! as_root true 2>/dev/null; then
+			dest="${HOME}/Applications"
+			mkdir -p "$dest"
+		fi
+		info "安装 .app（$(basename "$appsrc")）到 $dest ..."
+		rm -rf "$dest/Chirp.app"
+		if [ "$dest" = "/Applications" ] && [ ! -w "$dest" ]; then
+			as_root cp -R "$appsrc" "$dest/" || { hdiutil detach "$mnt" >/dev/null 2>&1 || true
+				die "复制 .app 失败: $dest"; }
+		else
+			cp -R "$appsrc" "$dest/" || { hdiutil detach "$mnt" >/dev/null 2>&1 || true
+				die "复制 .app 失败: $dest"; }
+		fi
+		hdiutil detach "$mnt" >/dev/null 2>&1 || true
+
+		# 未签名未公证:清隔离属性免「无法验证开发者」首启拦截(best-effort;
+		# 拒绝执行也不影响落位,右键打开是官方兜底路径)
+		xattr -dr com.apple.quarantine "$dest/Chirp.app" 2>/dev/null || true
+		[ -d "$dest/Chirp.app" ] || die "安装后验证失败: 未找到 $dest/Chirp.app"
+		info "已安装: Chirp -> $dest/Chirp.app"
+		warn "产物未签名未公证——若首启仍被 Gatekeeper 拦截:右键 App 选「打开」,或到系统设置允许"
+		return
+	fi
+
+	# ---- Linux:.deb（dpkg 或用户态解包）----------------------------------
 	command -v dpkg >/dev/null 2>&1 ||
 		die "app 组件是 .deb 包，需要 dpkg（Debian/Ubuntu 系）——其他发行版请用 --component cpp 安装 C++ SDK，或到 nightly-dist 手动取包转换"
 
@@ -296,23 +340,32 @@ install_cpp_sdk() {
 		[ -f "$src/NOTE.txt" ] && as_root cp "$src/NOTE.txt" "$datadir/NOTE.txt"
 	fi
 
-	# 动态库加载路径:系统级前缀 → ldconfig 刷新;否则给导出提示
+	# 动态库加载路径:系统级前缀 → ldconfig 刷新(Linux);否则给导出提示
 	if [ "$PREFIX" = "/usr/local" ] && command -v ldconfig >/dev/null 2>&1; then
 		as_root ldconfig 2>/dev/null || true
 	elif [ "$PREFIX" != "/usr/local" ]; then
-		warn "链接/运行请加: -I$incdir -L$libdir,并导出 LD_LIBRARY_PATH=$libdir"
+		if [ "$OS" = "darwin" ]; then
+			warn "链接/运行请加: -I$incdir -L$libdir,运行导出 DYLD_LIBRARY_PATH=$libdir"
+		else
+			warn "链接/运行请加: -I$incdir -L$libdir,并导出 LD_LIBRARY_PATH=$libdir"
+		fi
 	fi
 
-	# 装完验证:nm 符号探针(NOTE.txt 记载的标准验证命令)。
+	# 装完验证:nm 符号探针(NOTE.txt 记载的标准验证命令)。macOS 的 nm 不
+	# 接 -C(c++ 解名是 llvm-nm 的活),直接 grep mangle 前缀 _ZN5chirp。
 	# 落文件再 grep:pipefail 下 `nm | grep -m1` 是竞态——grep 早退后
 	# nm 写几百行符号会吃 SIGPIPE(141),管道整体判失败(真机走查抓到)。
 	local static_lib="$libdir/libchirp_core_sdk_static.a"
 	[ -f "$static_lib" ] || die "安装后验证失败:未找到 $static_lib"
 	if command -v nm >/dev/null 2>&1; then
-		local syms="$TMPDIR_DL/nm.out"
-		nm -C "$static_lib" > "$syms" 2>/dev/null || true
-		grep -m1 'chirp::sdk' "$syms" >/dev/null ||
-			die "安装后验证失败:$static_lib 中未发现 chirp::sdk 符号（产物损坏？）"
+		local syms="$TMPDIR_DL/nm.out" pattern="chirp::sdk"
+		if [ "$OS" = "darwin" ]; then
+			pattern="_ZN5chirp"
+		fi
+		nm -C "$static_lib" > "$syms" 2>/dev/null ||
+			nm "$static_lib" > "$syms" 2>/dev/null || true
+		grep -m1 "$pattern" "$syms" >/dev/null ||
+			die "安装后验证失败:$static_lib 中未发现 $pattern 符号（产物损坏？）"
 	fi
 	info "已安装: C++ core SDK ($TARGET) -> $libdir 与 $incdir"
 	CPP_LIBDIR="$libdir"
@@ -379,10 +432,11 @@ go) install_go_sdk ;;
 ts) install_ts_pkg ;;
 all)
 	# all:逐组件装,桌面 App 缺平台时降级为警告(其余照装)
-	if [ "$OS" = "linux" ] && command -v dpkg >/dev/null 2>&1 && have desktop; then
+	if have desktop && { [ "$OS" = "darwin" ] ||
+		{ [ "$OS" = "linux" ] && command -v dpkg >/dev/null 2>&1; }; }; then
 		install_desktop_app
 	else
-		warn "跳过 app 组件:${TARGET} 无可用 .deb 产物（或无 dpkg）"
+		warn "跳过 app 组件:${TARGET} 无可用桌面产物（或无 dpkg）"
 	fi
 	install_cpp_sdk
 	install_go_sdk
@@ -393,7 +447,7 @@ esac
 info ""
 info "完成。重跑本脚本即升级（幂等）。"
 case "$COMPONENT" in
-app) info "  验证: 包元数据版本见上方输出;启动 Chirp 即可" ;;
+app) info "  验证: Linux 见 dpkg 包元数据 / macOS ls /Applications/Chirp.app;启动 Chirp 即可" ;;
 cpp) info "  验证: nm -C ${CPP_LIBDIR:-\$PREFIX/lib}/libchirp_core_sdk_static.a | grep -m3 'chirp::sdk'" ;;
 go | ts) info "  验证: 见上方接入方式" ;;
 esac

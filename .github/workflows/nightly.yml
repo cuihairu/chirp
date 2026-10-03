@@ -1,6 +1,6 @@
 name: Nightly Build
 
-# 每日构建:打包当前真产物(C++ core 库 + Go SDK + TS SDK + 桌面 App .deb),
+# 每日构建:打包当前真产物(C++ core 库 + Go SDK + TS SDK + 桌面 App),
 # 两路分发:
 #   1. Actions artifact——固定名 daily-build,上传时覆盖旧一份
 #      (upload-artifact overwrite),不打 git tag、不发 GitHub Release;
@@ -9,9 +9,11 @@ name: Nightly Build
 #      raw.githubusercontent 匿名可直链,不依赖 Actions API(匿名限流
 #      60 次/小时/IP,共享出口 IP 下不可靠),也不要求登录。
 #
-# 矩阵:x86_64 与 aarch64(Linux)。darwin/windows 腿未加——本仓库尚无
-# 该两平台的编译证明(cmake-multi-platform 只证 ubuntu),贸然进矩阵只会
-# 让 nightly 长红;补齐证明后在此扩腿,安装脚本的架构表同步放开。
+# 矩阵(四腿):linux x86_64/aarch64(.deb)+ darwin arm64(macos-latest,
+# Tauri .app/.dmg)+ windows x64(windows-latest,Tauri NSIS -setup.exe)。
+# darwin/windows 的 C++ 编译面已由 cmake-multi-platform 四腿证明,本矩阵
+# 在其上加桌面打包与产物分发;darwin-x64 与 windows-arm64 仍无腿,安装
+# 脚本按 manifest 如实报缺口。
 #
 # schedule 用非整点分钟(19:23 UTC,避开整点风潮)。48h staleness gate
 # 只门控 schedule 事件:HEAD 与最近一次成功 nightly 相同且其完成时间
@@ -74,10 +76,22 @@ jobs:
           - os: ubuntu-24.04
             arch: linux-x64
             vcpkg_triplet: x64-linux
+            rust_target: x86_64-unknown-linux-gnu
             host_sdks: true   # Go/TS 与 @chirp/protocol 打包只在 x64 腿做一次
           - os: ubuntu-24.04-arm
             arch: linux-arm64
             vcpkg_triplet: arm64-linux
+            rust_target: aarch64-unknown-linux-gnu
+            host_sdks: false
+          - os: macos-latest
+            arch: darwin-arm64
+            vcpkg_triplet: arm64-osx
+            rust_target: aarch64-apple-darwin
+            host_sdks: false
+          - os: windows-latest
+            arch: windows-x64
+            vcpkg_triplet: x64-windows
+            rust_target: x86_64-pc-windows-msvc
             host_sdks: false
     runs-on: ${{ matrix.os }}
     steps:
@@ -85,44 +99,69 @@ jobs:
       with:
         submodules: recursive
 
-    - name: Install build dependencies
+    - name: Install build dependencies (Linux)
+      if: runner.os == 'Linux'
       run: |
         sudo apt-get update
         sudo apt-get install -y ninja-build pkg-config autoconf automake libtool libtool-bin autoconf-archive rsync
 
+    # macOS 镜像自带 cmake/ninja/pkg-config;C++ 依赖全走 vcpkg,brew 只补
+    # autotools 族(vcpkg 个别端口源码构建要)——cmake-multi-platform 同款。
+    - name: Install build dependencies (macOS)
+      if: runner.os == 'macOS'
+      run: brew install autoconf automake libtool
+
+    # Windows 免装:VS/cmake 全在镜像上,CMake 用默认 VS 生成器(cl 由生成
+    # 器装配环境,免 vcvars),protoc 不需要(nightly 不重生成 gencode)。
+
     - name: Setup vcpkg
+      shell: bash
       run: |
         git clone https://github.com/Microsoft/vcpkg.git
-        ./vcpkg/bootstrap-vcpkg.sh
+        if [ "${{ runner.os }}" = "Windows" ]; then
+          ./vcpkg/bootstrap-vcpkg.bat
+        else
+          ./vcpkg/bootstrap-vcpkg.sh
+        fi
 
     # vcpkg.json 的 builtin-baseline 里 libsodium 最高 1.0.21,其 ipcrypt 的
     # ARM NEON 路径在 GCC(aarch64) 下因向量类型混用编不过(上游 1.0.22-RELEASE
     # 已修,BYTESHL128 的 s8→u8 与 pfx_shift_left 的 BlockVec→uint8x16_t)。
-    # 把 master 上的 1.0.22 端口以 overlay 叠给两腿(基线不动,overlay 随
+    # 把 master 上的 1.0.22 端口以 overlay 叠给所有腿(基线不动,overlay 随
     # nightly 的 vcpkg master clone 一起浮动)。注意 overlay 要给两处:
     # 显式安装步(--overlay-ports)与 CMake 工具链的清单安装
     # (-DVCPKG_OVERLAY_PORTS,不带会回落基线 1.0.21 在 arm64 上重炸)。
     - name: Install vcpkg dependencies
+      shell: bash
       run: |
         mkdir -p overlay-ports
         cp -r vcpkg/ports/libsodium overlay-ports/
         ./vcpkg/vcpkg install --triplet ${{ matrix.vcpkg_triplet }} \
           --overlay-ports=${{ github.workspace }}/overlay-ports
 
-    # Same configure recipe as ci.yml / cmake-multi-platform.yml (the only
-    # C++ platform surface CI actually proves today); the build then asks for
-    # the SDK targets only. No gen_proto.sh here: the committed proto/cpp
-    # gencode is what ships in the artifact, and drift is already gated by CI.
+    # Same configure recipe as ci.yml / cmake-multi-platform.yml; the build
+    # then asks for the SDK targets only. Windows uses the default VS
+    # generator (no -G Ninja; --config picks Release), mac/linux use Ninja.
+    # No gen_proto.sh here: the committed proto/cpp gencode is what ships in
+    # the artifact, and drift is already gated by CI.
     - name: Configure CMake
-      run: >
-        cmake -B build -S . -G Ninja
-        -DCMAKE_BUILD_TYPE=Release
-        -DENABLE_TESTS=OFF
-        -DVCPKG_OVERLAY_PORTS=${{ github.workspace }}/overlay-ports
-        -DCMAKE_TOOLCHAIN_FILE=${{ github.workspace }}/vcpkg/scripts/buildsystems/vcpkg.cmake
+      shell: bash
+      run: |
+        ARGS=(-B build -S . -DCMAKE_BUILD_TYPE=Release -DENABLE_TESTS=OFF
+              -DVCPKG_OVERLAY_PORTS="${{ github.workspace }}/overlay-ports"
+              -DCMAKE_TOOLCHAIN_FILE="${{ github.workspace }}/vcpkg/scripts/buildsystems/vcpkg.cmake")
+        if [ "${{ runner.os }}" != "Windows" ]; then
+          ARGS+=(-G Ninja)
+        fi
+        cmake "${ARGS[@]}"
 
+    # --parallel 由 cmake 自算逻辑核数(-j$(nproc) 的可移植等价:mac/win 无
+    # nproc);--config 对单配置生成器无害。
     - name: Build chirp_core_sdk (shared + static)
-      run: cmake --build build --target chirp_core_sdk chirp_core_sdk_static -j$(nproc)
+      shell: bash
+      run: >
+        cmake --build build --target chirp_core_sdk chirp_core_sdk_static
+        --config Release --parallel
 
     - name: Setup Go
       if: matrix.host_sdks
@@ -148,7 +187,7 @@ jobs:
 
     # 桌面 tauri build 会把 ../../proto/ts/proto/*.ts 一起编进去,那些文件
     # 的 import(long/protobufjs)从文件所在目录向上找 node_modules——只有根
-    # 安装能接住,所以根 npm ci 两条腿都要跑(x64 腿独跑时 arm 桌面构建
+    # 安装能接住,所以根 npm ci 四条腿都要跑(x64 腿独跑时 arm 桌面构建
     # TS2307 的根因)。Verify/Pack @chirp/protocol 仍只在 x64 腿(一次)。
     - name: Install npm dependencies (root, for @chirp/protocol + desktop build)
       run: npm ci
@@ -168,21 +207,38 @@ jobs:
     - name: Setup Rust
       uses: dtolnay/rust-toolchain@stable
       with:
-        targets: ${{ matrix.arch == 'linux-arm64' && 'aarch64-unknown-linux-gnu' || 'x86_64-unknown-linux-gnu' }}
+        targets: ${{ matrix.rust_target }}
 
+    # Tauri 的 webkit/gtk 系统依赖只有 Linux 要(macOS 走系统 WebKit,
+    # Windows 走镜像预装 WebView2)。
     - name: Install Tauri system dependencies
+      if: runner.os == 'Linux'
       run: |
         sudo apt-get update
         sudo apt-get install -y libwebkit2gtk-4.1-dev libgtk-3-dev libayatana-appindicator3-dev librsvg2-dev
 
-    - name: Build desktop app (.deb)
+    # 桌面打包目标按平台自动合并(tauri.{macos,windows}.conf.json):
+    # linux .deb / darwin .app+.dmg / windows NSIS -setup.exe。
+    - name: Build desktop app
       working-directory: apps/desktop
+      shell: bash
       run: |
         npm run tauri build
-        # Verify .deb was created for this leg's architecture
-        ls -la src-tauri/target/release/bundle/deb/Chirp_*.deb
+        # Verify the bundle for this leg's platform/architecture
+        case "$(uname -s)" in
+        Linux)
+          ls -la src-tauri/target/release/bundle/deb/Chirp_*.deb
+          ;;
+        Darwin)
+          ls -la src-tauri/target/release/bundle/dmg/*.dmg
+          ;;
+        *)
+          ls -la src-tauri/target/release/bundle/nsis/*-setup.exe
+          ;;
+        esac
 
     - name: Assemble leg tree
+      shell: bash
       run: |
         set -eux
         arch="${{ matrix.arch }}"
@@ -193,18 +249,80 @@ jobs:
         # ---- cpp/<arch> ----------------------------------------------------
         cpp="$leg/cpp/$arch"
         mkdir -p "$cpp/lib" "$cpp/include" "$cpp/proto"
-        cp -v build/sdks/core/libchirp_core_sdk.so "$cpp/lib/"
-        cp -v build/sdks/core/libchirp_core_sdk_static.a "$cpp/lib/"
+
+        # 库文件按平台命名/落位:linux .so/.a;darwin .dylib/.a;windows
+        # VS 多配置生成器产物在 Release/ 下,import lib 进 lib/,dll 与
+        # vcpkg 运行时依赖(protobuf/abseil 动态族)一起进 bin/——dll 不
+        # 随包走,消费者链接 chirp_core_sdk.lib 后运行期找不到依赖是
+        # Windows 上最典型的暗坑。
+        case "$(uname -s)" in
+        Linux)
+          cp -v build/sdks/core/libchirp_core_sdk.so "$cpp/lib/"
+          cp -v build/sdks/core/libchirp_core_sdk_static.a "$cpp/lib/"
+          cpp_files="lib/libchirp_core_sdk.so  共享库
+          lib/libchirp_core_sdk_static.a  静态库(协议对象已并入)"
+          cpp_verify="nm -C lib/libchirp_core_sdk_static.a | grep -m3 'chirp::sdk'"
+          ;;
+        Darwin)
+          cp -v build/sdks/core/libchirp_core_sdk.dylib "$cpp/lib/"
+          cp -v build/sdks/core/libchirp_core_sdk_static.a "$cpp/lib/"
+          cpp_files="lib/libchirp_core_sdk.dylib      共享库(install_name=@rpath)
+          lib/libchirp_core_sdk_static.a  静态库(协议对象已并入)"
+          cpp_verify="nm lib/libchirp_core_sdk_static.a | grep -m3 '_ZN5chirp'"
+          ;;
+        *)
+          mkdir -p "$cpp/bin"
+          cp -v build/sdks/core/Release/chirp_core_sdk.dll "$cpp/bin/"
+          cp -v build/sdks/core/Release/chirp_core_sdk.lib "$cpp/lib/"
+          cp -v build/sdks/core/Release/chirp_core_sdk_static.lib "$cpp/lib/"
+          cp -v vcpkg_installed/${{ matrix.vcpkg_triplet }}/bin/*.dll "$cpp/bin/"
+          cpp_files="bin/chirp_core_sdk.dll           共享库(与依赖 dll 同目录)
+          bin/*.dll                        vcpkg 运行时依赖(protobuf/abseil 等)
+          lib/chirp_core_sdk.lib           共享库 import lib
+          lib/chirp_core_sdk_static.lib    静态库(协议对象已并入)"
+          cpp_verify="dumpbin 头两行随便看:lib/chirp_core_sdk_static.lib(或仅检查文件存在)"
+          ;;
+        esac
+
         cp -r sdks/core/include/chirp "$cpp/include/"
         # chirp_core_sdk's PUBLIC include surface is three roots (libs/,
         # libs/common/, libs/common/include/); merge the .h trees so a single
-        # -I include is the only flag a consumer needs.
-        rsync -a --prune-empty-dirs --include='*/' --include='*.h' --exclude='*' \
-          libs/network "$cpp/include/"
-        rsync -a --prune-empty-dirs --exclude='/common/include' \
-          --include='*/' --include='*.h' --exclude='*' libs/common "$cpp/include/"
-        rsync -a --include='*.h' --exclude='*' \
-          libs/common/include/common/ "$cpp/include/common/"
+        # -I include is the only flag a consumer needs. find+cp 循环而非
+        # rsync --prune-empty-dirs:git-bash 无 rsync,macOS 自带 rsync 的
+        # 选项面也漂移,POSIX find/bash 三平台同语义。
+        merge_tree() {
+          # merge_tree <src> <dest> <prune-rel-path-or-empty>
+          # 语义对齐旧 rsync「拷目录本身」:find 从 src 的父目录起,路径带
+          # 叶名(network/a.h → dest/network/a.h)。dest 相对调用方 CWD,
+          # 子 shell cd 前先转绝对。
+          local src="$1" dest="$2" prune="$3"
+          case "$dest" in
+          /*) ;;
+          *) dest="${PWD}/${dest}" ;;
+          esac
+          local base leaf
+          base="$(dirname "$src")"
+          leaf="$(basename "$src")"
+          (
+            cd "$base"
+            find "$leaf" -name '*.h' | while read -r h; do
+              if [ -n "$prune" ]; then
+                local rel="${h#"$leaf"/}"
+                case "$rel" in
+                "$prune"|"$prune"/*) continue ;;
+                esac
+              fi
+              mkdir -p "$dest/$(dirname "$h")"
+              cp "$h" "$dest/$h"
+            done
+          )
+        }
+        merge_tree libs/network "$cpp/include" ""
+        merge_tree libs/common "$cpp/include" "include"
+        mkdir -p "$cpp/include/common"
+        for h in libs/common/include/common/*.h; do
+          cp "$h" "$cpp/include/common/"
+        done
         mkdir -p "$cpp/include/proto"
         cp proto/cpp/proto/*.pb.h "$cpp/include/proto/"
         cp proto/*.proto "$cpp/proto/"
@@ -212,8 +330,7 @@ jobs:
         chirp C++ core SDK - $arch (daily build)
 
         包内容:
-          lib/libchirp_core_sdk.so        共享库
-          lib/libchirp_core_sdk_static.a  静态库(协议对象已并入)
+          $cpp_files
           include/chirp/                  SDK 公开头文件(sdk_client.h 等)
           include/network/, include/common/, include/proto/
                                           依赖的 libs 头与 protobuf 生成头
@@ -222,10 +339,10 @@ jobs:
 
         链接: 编译加 -I include,静态/动态二选一;编译/运行依赖
         protobuf、abseil 与 header-only 的 asio(vcpkg.json baseline
-        提供的版本)。
+        提供的版本;windows 包的 bin/ 已附运行时 dll)。
 
         验证命令(应列出若干 chirp::sdk 符号):
-          nm -C lib/libchirp_core_sdk_static.a | grep -m3 'chirp::sdk'
+          $cpp_verify
 
         警示: 产物未签名;每日构建只证明"能编译+SDK 自身测试通过",
         完整质量门禁以仓库 CI(ci.yml 等)为准。仅供集成联调。
@@ -234,12 +351,10 @@ jobs:
         # ---- desktop/<arch> ------------------------------------------------
         desktop="$leg/desktop/$arch"
         mkdir -p "$desktop"
-        cp -v apps/desktop/src-tauri/target/release/bundle/deb/Chirp_*.deb "$desktop/"
-        cat > "$desktop/NOTE.txt" <<NOTE
-        chirp Desktop App - $arch (daily build)
-
-        包内容:
-          Chirp_<version>_<dpkg-arch>.deb   Debian 包
+        case "$(uname -s)" in
+        Linux)
+          cp -v apps/desktop/src-tauri/target/release/bundle/deb/Chirp_*.deb "$desktop/"
+          desktop_note="Chirp_<version>_<dpkg-arch>.deb   Debian 包
 
         依赖: libwebkit2gtk-4.1-0, libgtk-3-0
 
@@ -247,9 +362,37 @@ jobs:
         (或用仓库根 install.sh 一键安装——无 root 时自动解包进 ~/.local)
 
         验证命令(应列出包元数据):
-          dpkg-deb -I Chirp_*.deb
+          dpkg-deb -I Chirp_*.deb"
+          ;;
+        Darwin)
+          cp -v apps/desktop/src-tauri/target/release/bundle/dmg/*.dmg "$desktop/"
+          desktop_note="Chirp_<version>_<arch>.dmg       磁盘镜像(内含 Chirp.app)
 
-        警示: 产物未签名;仅供集成联调。
+        安装: 双击挂载后拖入 Applications
+        (或用仓库根 install.sh 一键安装——自动挂载拷贝 .app)
+
+        验证命令(应列出镜像内容):
+          hdiutil imageinfo Chirp_*.dmg | head -5"
+          ;;
+        *)
+          cp -v apps/desktop/src-tauri/target/release/bundle/nsis/*-setup.exe "$desktop/"
+          desktop_note="Chirp_<version>_<arch>-setup.exe  NSIS 安装器
+
+        安装: 双击;静默安装加参数 /S
+        (或用仓库根 install.ps1 一键安装——自动下载静默装并验证落位)
+
+        验证命令(应列出安装器元数据):
+          powershell -c \"(Get-Item 'Chirp_*-setup.exe').VersionInfo | Format-List\""
+          ;;
+        esac
+        cat > "$desktop/NOTE.txt" <<NOTE
+        chirp Desktop App - $arch (daily build)
+
+        包内容:
+          $desktop_note
+
+        警示: 产物未签名(darwin 未公证,首启被 Gatekeeper 拦截时右键选
+        「打开」);仅供集成联调。
         NOTE
 
         # ---- go / ts(只在 x64 腿装配一次,产物与架构无关)--------------------
@@ -307,28 +450,44 @@ jobs:
         if-no-files-found: error
 
   package:
-    # 汇总两腿 → daily-build artifact(既有外部契约,run 页可下)+ 推
-    # nightly-dist 镜像分支(一键安装的匿名下载源)。x64 腿必须成功
-    # (go/ts 源头);arm64 腿失败时降级发布 x64,manifest 如实记录可用面。
+    # 汇总各腿 → daily-build artifact(既有外部契约,run 页可下)+ 推
+    # nightly-dist 镜像分支(一键安装的匿名下载源)。linux-x64 腿必须成功
+    # (go/ts 源头);其余腿失败时降级发布,manifest 如实记录可用面。
     needs: build
     if: ${{ !cancelled() && (needs.build.result == 'success' || needs.build.result == 'failure') }}
     runs-on: ubuntu-24.04
     permissions:
       contents: write
     steps:
-    - name: Download x64 leg (required)
+    - name: Download linux-x64 leg (required)
       uses: actions/download-artifact@v4
       with:
         name: daily-leg-linux-x64
         path: stage
 
-    - name: Download arm64 leg (optional — degraded publish when red)
+    - name: Download linux-arm64 leg (optional — degraded publish when red)
       uses: actions/download-artifact@v4
       with:
         name: daily-leg-linux-arm64
         path: stage
       continue-on-error: true
       id: arm_leg
+
+    - name: Download darwin-arm64 leg (optional — degraded publish when red)
+      uses: actions/download-artifact@v4
+      with:
+        name: daily-leg-darwin-arm64
+        path: stage
+      continue-on-error: true
+      id: darwin_leg
+
+    - name: Download windows-x64 leg (optional — degraded publish when red)
+      uses: actions/download-artifact@v4
+      with:
+        name: daily-leg-windows-x64
+        path: stage
+      continue-on-error: true
+      id: windows_leg
 
     - name: Assemble dist tree (fixed names for the install mirror)
       run: |
@@ -338,18 +497,38 @@ jobs:
         dist="dist"
         mkdir -p "$dist/cpp" "$dist/desktop"
 
-        # 固定文件名(安装脚本不追版本号):cpp 打成单 tarball,deb 改名,
-        # ts tgz 定名 chirp-protocol.tgz(npm install 认文件不认名)。
-        for arch in linux-x64 linux-arm64; do
-          if [ -d "stage/cpp/$arch" ]; then
-            tar czf "$dist/cpp/chirp-cpp-sdk-$arch.tar.gz" -C "stage/cpp/$arch" \
-              --transform "s|^|chirp-cpp-sdk/|" lib include proto NOTE.txt
+        # 固定文件名(安装脚本不追版本号):cpp 打成单 tarball(windows 腿
+        # 多一个 bin/ 目录),桌面按平台改名为 .deb/.dmg/-setup.exe,ts tgz
+        # 定名 chirp-protocol.tgz(npm install 认文件不认名)。
+        for arch_dir in stage/cpp/*/; do
+          if [ ! -d "$arch_dir" ]; then continue; fi
+          arch="$(basename "$arch_dir")"
+          items="lib include proto NOTE.txt"
+          if [ -d "stage/cpp/$arch/bin" ]; then
+            items="lib include proto bin NOTE.txt"
           fi
-          if [ -d "stage/desktop/$arch" ]; then
-            mkdir -p "$dist/desktop/$arch"
-            cp -v stage/desktop/$arch/Chirp_*.deb \
+          # shellcheck disable=SC2086  # items 是受控词表,需要分词
+          tar czf "$dist/cpp/chirp-cpp-sdk-$arch.tar.gz" -C "stage/cpp/$arch" \
+            --transform "s|^|chirp-cpp-sdk/|" $items
+        done
+        for arch_dir in stage/desktop/*/; do
+          if [ ! -d "$arch_dir" ]; then continue; fi
+          arch="$(basename "$arch_dir")"
+          mkdir -p "$dist/desktop/$arch"
+          case "$arch" in
+          linux-*)
+            cp -v "stage/desktop/$arch"/Chirp_*.deb \
               "$dist/desktop/$arch/chirp-desktop-$arch.deb"
-          fi
+            ;;
+          darwin-*)
+            cp -v "stage/desktop/$arch"/*.dmg \
+              "$dist/desktop/$arch/chirp-desktop-$arch.dmg"
+            ;;
+          windows-*)
+            cp -v "stage/desktop/$arch"/*-setup.exe \
+              "$dist/desktop/$arch/chirp-desktop-$arch-setup.exe"
+            ;;
+          esac
         done
         if [ -d "stage/go" ]; then
           mkdir -p "$dist/go"
@@ -360,11 +539,18 @@ jobs:
           cp -v stage/ts/chirp-protocol-*.tgz "$dist/ts/chirp-protocol.tgz"
         fi
 
-        # manifest:一键安装的可用面清单(架构探测失败时报这里)。
-        cpp_archs="$(find "$dist/cpp" -name '*.tar.gz' -printf '%f\n' \
-          | sed 's/chirp-cpp-sdk-//; s/\.tar\.gz//' | sort | tr '\n' ' ')"
-        desktop_archs="$(find "$dist/desktop" -name '*.deb' -printf '%h\n' \
-          | sed 's|.*/||' | sort | tr '\n' ' ')"
+        # manifest:一键安装的可用面清单(架构探测失败时报这里)。cpp 的
+        # 产物是 dist/cpp/ 下平铺的 tarball 文件名带架构;desktop 是按架构
+        # 分目录——两处推导口径不同,别混。
+        cpp_archs=""
+        if [ -d "$dist/cpp" ]; then
+          cpp_archs="$(find "$dist/cpp" -name '*.tar.gz' -printf '%f\n' \
+            | sed 's/chirp-cpp-sdk-//; s/\.tar\.gz//' | sort | tr '\n' ' ')"
+        fi
+        desktop_archs=""
+        if [ -d "$dist/desktop" ]; then
+          desktop_archs="$(for d in "$dist/desktop"/*/; do basename "$d"; done | sort | tr '\n' ' ')"
+        fi
         python3 - "$dist/manifest.json" <<PY
         import json, sys
         cpp = "${cpp_archs}".split()
@@ -384,11 +570,12 @@ jobs:
         =================
         stamp:  $stamp
         commit: $GITHUB_SHA
-        built:  $built (GitHub Actions nightly, ubuntu-24.04)
+        built:  $built (GitHub Actions nightly)
 
         内容:
           cpp/<arch>/chirp-cpp-sdk-<arch>.tar.gz   C++ core SDK(库+头+proto 源)
-          desktop/<arch>/chirp-desktop-<arch>.deb  桌面聊天 App Debian 包
+          desktop/<arch>/chirp-desktop-<arch>.*    桌面聊天 App
+              linux: .deb / darwin: .dmg / windows: -setup.exe
           go/chirp-go-sdk.tar.gz                   Go 服务端 SDK 源码包
           ts/chirp-protocol.tgz                    @chirp/protocol npm 包
           manifest.json                            可用面清单(一键安装读它)
@@ -399,6 +586,7 @@ jobs:
             https://github.com/cuihairu/chirp/tree/nightly-dist
           一键安装(仓库根脚本,自动选平台产物):
             curl -fsSL https://raw.githubusercontent.com/cuihairu/chirp/main/install.sh | bash
+            irm https://raw.githubusercontent.com/cuihairu/chirp/main/install.ps1 | iex
         警示: 全部产物未签名。打包前的验证 = C++ SDK 目标编译 +
         go vet/build + @chirp/protocol 测试套件 + 桌面 App Tauri 构建;完整门禁以仓库 CI 为准。
         README

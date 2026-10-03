@@ -17,8 +17,9 @@
 # 说明:
 #   - 幂等：重跑即升级（覆盖产物）。
 #   - 失败即停：任何一步失败明确报错退出。
-#   - 平台面由每日构建矩阵决定（见 nightly.yml）：当前 Linux x86_64/aarch64；
-#     Windows 构建腿待补——届时 app/cpp 组件在此放开，go/ts 现在即可装。
+#   - 平台面由每日构建矩阵决定（见 nightly.yml）：Windows x64（NSIS
+#     -setup.exe 静默安装 / C++ SDK tarball 解包）；Linux/macOS 请用
+#     install.sh；windows-arm64 无构建腿，按 manifest 明确报错。
 #   - 无常驻服务可注册（服务端不在每日构建内），故无 -WithService 选项。
 #requires -Version 5.1
 
@@ -83,8 +84,8 @@ function Test-ComponentAvailable($Manifest, [string]$ComponentName, [string]$Tar
 function Assert-ComponentAvailable($Manifest, [string]$ComponentName, [string]$Target) {
     if (Test-ComponentAvailable $Manifest $ComponentName $Target) { return }
     if ($ComponentName -eq 'app' -or $ComponentName -eq 'cpp') {
-        Stop-WithError ("组件 $ComponentName 在 $Target 无每日产物——矩阵当前只覆盖 Linux x86_64/aarch64" +
-            "（windows/darwin 构建腿待补，见 nightly.yml 头注）；go/ts 组件与架构无关，可先装")
+        Stop-WithError ("组件 $ComponentName 在 $Target 无每日产物——矩阵当前覆盖 Linux x86_64/aarch64、" +
+            "macOS arm64、Windows x64（见 nightly.yml 头注）；go/ts 组件与架构无关，可先装")
     }
     Stop-WithError "组件 $ComponentName 在镜像 manifest 中不存在: $Mirror"
 }
@@ -110,6 +111,56 @@ function Expand-Tarball {
 }
 
 # ---------- 组件安装 ----------
+function Install-DesktopApp {
+    $setup = Join-Path ([System.IO.Path]::GetTempPath()) 'chirp-desktop-setup.exe'
+    Write-Info "下载桌面 App 安装器并静默安装（NSIS /S）..."
+    Get-DownloadFile "$Mirror/desktop/$Target/chirp-desktop-$Target-setup.exe" $setup
+    # Tauri v2 NSIS 默认 currentUser 模式:静默装到 %LOCALAPPDATA%\Chirp,免提权
+    $proc = Start-Process -FilePath $setup -ArgumentList '/S' -Wait -PassThru
+    if ($proc.ExitCode -ne 0) {
+        Stop-WithError "安装器退出码 $($proc.ExitCode)——可手动运行: $setup"
+    }
+    # 验证:候选安装位找主程序(currentUser 优先,perMachine 兜底 Program Files)
+    $candidates = @(
+        (Join-Path $env:LOCALAPPDATA 'Chirp\Chirp.exe'),
+        (Join-Path $env:ProgramFiles 'Chirp\Chirp.exe')
+    )
+    if (Test-Path "${env:ProgramFiles(x86)}") {
+        $candidates += (Join-Path ${env:ProgramFiles(x86)} 'Chirp\Chirp.exe')
+    }
+    $installed = $candidates | Where-Object { Test-Path $_ } | Select-Object -First 1
+    if ($installed) {
+        Write-Info "已安装: Chirp -> $installed（开始菜单已建入口,重跑本脚本即升级）"
+    } else {
+        Write-Warning "安装器报告成功但未在候选位置找到 Chirp.exe——请从开始菜单确认"
+    }
+    Write-Warning "产物未签名:SmartScreen 首次运行可能拦截,选「仍要运行」"
+}
+
+function Install-CppSdk {
+    $dir = if ($Prefix) { $Prefix } else { Join-Path $env:LOCALAPPDATA 'chirp\cpp-sdk' }
+    $tgz = Join-Path ([System.IO.Path]::GetTempPath()) 'chirp-cpp-sdk.tar.gz'
+    Write-Info "安装 C++ core SDK 到 $dir ..."
+    Get-DownloadFile "$Mirror/cpp/chirp-cpp-sdk-$Target.tar.gz" $tgz
+    # 幂等:先清旧树再解包(tar 内带 chirp-cpp-sdk/ 顶层目录)
+    if (Test-Path $dir) { Remove-Item -Recurse -Force $dir }
+    Expand-Tarball $tgz $dir
+    $sdk = Join-Path $dir 'chirp-cpp-sdk'
+    # 文件存在性验证(Windows 无 nm 探针;lib/include/bin 三面都在才算成)
+    foreach ($probe in @(
+        (Join-Path $sdk 'lib\chirp_core_sdk_static.lib'),
+        (Join-Path $sdk 'include\chirp\sdk_client.h'),
+        (Join-Path $sdk 'bin\chirp_core_sdk.dll')
+    )) {
+        if (-not (Test-Path $probe)) {
+            Stop-WithError "安装后验证失败:未找到 $probe（产物损坏？）"
+        }
+    }
+    Write-Info "已安装: C++ core SDK ($Target) -> $sdk"
+    Write-Info "  接入: 编译加 /I`"$($sdk)\include`",链接 chirp_core_sdk.lib(动态)或"
+    Write-Info "        chirp_core_sdk_static.lib(静态);运行时把 $($sdk)\bin 加入 PATH(依赖 dll 都在内)"
+}
+
 function Install-GoSdk {
     $dir = if ($InstallDir) { $InstallDir } else { Join-Path $env:LOCALAPPDATA 'chirp\go-sdk' }
     $tgz = Join-Path ([System.IO.Path]::GetTempPath()) 'chirp-go-sdk.tar.gz'
@@ -163,25 +214,18 @@ Write-Info ''
 switch ($Component) {
     'go' { Assert-ComponentAvailable $Manifest 'go' $Target; Install-GoSdk }
     'ts' { Assert-ComponentAvailable $Manifest 'ts' $Target; Install-TsPackage }
-    'app' {
-        # 可用面检查先行(windows 腿落地前在此明确报错);腿落地后补下载+安装
-        Assert-ComponentAvailable $Manifest 'desktop' $Target
-        Stop-WithError "desktop 组件的 Windows 安装路径尚未实现——windows 构建腿待补,见 nightly.yml 头注"
-    }
-    'cpp' {
-        Assert-ComponentAvailable $Manifest 'cpp' $Target
-        Stop-WithError "cpp 组件的 Windows 安装路径尚未实现——windows 构建腿待补,见 nightly.yml 头注"
-    }
+    'app' { Assert-ComponentAvailable $Manifest 'desktop' $Target; Install-DesktopApp }
+    'cpp' { Assert-ComponentAvailable $Manifest 'cpp' $Target; Install-CppSdk }
     'all' {
         if (Test-ComponentAvailable $Manifest 'desktop' $Target) {
-            Write-Warning "app 组件:Windows 安装路径尚未实现,跳过(见 nightly.yml 头注)"
+            Install-DesktopApp
         } else {
-            Write-Warning "跳过 app 组件:$Target 无每日产物(构建腿待补)"
+            Write-Warning "跳过 app 组件:$Target 无每日产物"
         }
         if (Test-ComponentAvailable $Manifest 'cpp' $Target) {
-            Write-Warning "cpp 组件:Windows 安装路径尚未实现,跳过(见 nightly.yml 头注)"
+            Install-CppSdk
         } else {
-            Write-Warning "跳过 cpp 组件:$Target 无每日产物(构建腿待补)"
+            Write-Warning "跳过 cpp 组件:$Target 无每日产物"
         }
         Assert-ComponentAvailable $Manifest 'go' $Target
         Install-GoSdk
