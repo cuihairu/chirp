@@ -12,6 +12,10 @@ public enum ChatServiceEvent {
     case messageReceived(Chirp_Chat_ChatMessage)
     case offlineQueued(content: String)
     case offlineReplayed(count: Int)
+    /// 反应计数变化(通知或自己的应答;数据在 service.reactions)。
+    case reactionChanged(messageId: String)
+    /// 有人开始/停止输入(数据在 service.typists)。
+    case typing(channelId: String, userId: String, isTyping: Bool)
 }
 
 /// 一次发送的终态(离线入队/拦截/服务端拒绝各有独立分支,壳层据此渲染)。
@@ -85,6 +89,8 @@ public final class ChatSessionService {
         pipe.interceptor = filterSync
 
         let index = SessionIndex()
+        let reactionIndex = ReactionIndex()
+        let typingIndex = TypingIndex()
         // 队列重放不经过 service.send(),成功记账在这里补——会话预览对直发
         // 与重放一致(存档侧管线已落,索引侧是应用态)。
         let offlineQueue = OfflineSendQueue { options, content in
@@ -102,11 +108,14 @@ public final class ChatSessionService {
         sync = filterSync
         queue = offlineQueue
         sessions = index
+        reactions = reactionIndex
+        typists = typingIndex
 
         unsubs = [
             pipe.addListener(self),
             wireMessageAcks(),
             connection.onReconnected { [weak self] in self?.replayOfflineQueue() },
+            wireReactionNotifies(reactions: reactionIndex, typists: typingIndex),
         ]
     }
 
@@ -201,8 +210,122 @@ public final class ChatSessionService {
 
     /// 会话索引(壳层列表/未读的数据面)。
     public let sessions: SessionIndex
+    /// 快捷反应与输入状态的数据面(P4a)。
+    public let reactions: ReactionIndex
+    public let typists: TypingIndex
+
+    // ---- 反应/输入状态/服务端历史(P4a)--------------------------------------
+
+    /// 给消息加一枚反应(请求 userID 必须是登录身份——服务端 SameUser 守卫)。
+    /// ok 且带聚合时用聚合覆盖本地槽;失败原样透传 code。
+    public func addReaction(
+        messageId: String, emoji: String
+    ) -> Promise<Chirp_Common_ErrorCode> {
+        var request = Chirp_Chat_AddReactionRequest()
+        request.messageID = messageId
+        request.userID = userId
+        request.emoji = emoji
+        return conn.request(spec: MsgSpecs.addReaction, body: request)
+            .map { [weak self] resp in
+                if let self = self, resp.code == .ok, resp.hasReaction {
+                    self.reactions.applyAggregate(
+                        messageId: messageId, reaction: resp.reaction, selfId: self.userId)
+                    self.emit(.reactionChanged(messageId: messageId))
+                }
+                return resp.code
+            }
+    }
+
+    /// 撤自己的反应。RESP 不带聚合、notify 对操作者被排除——本地递减
+    /// (web removeReaction 同款);失败原样透传 code。
+    public func removeReaction(
+        messageId: String, emoji: String
+    ) -> Promise<Chirp_Common_ErrorCode> {
+        var request = Chirp_Chat_RemoveReactionRequest()
+        request.messageID = messageId
+        request.userID = userId
+        request.emoji = emoji
+        return conn.request(spec: MsgSpecs.removeReaction, body: request)
+            .map { [weak self] resp in
+                if let self = self, resp.code == .ok {
+                    self.reactions.record(
+                        messageId: messageId, emoji: emoji,
+                        userId: self.userId, added: false, selfId: self.userId)
+                    self.emit(.reactionChanged(messageId: messageId))
+                }
+                return resp.code
+            }
+    }
+
+    /// 上报输入状态(fire-and-forget,2208 无 REQ/RESP 配对;起始节流由
+    /// 壳层做——web 同款 3s 首报间隔,发送/清空即补一条 stop)。
+    public func sendTyping(channelId: String, isTyping: Bool) {
+        var indicator = Chirp_Chat_TypingIndicator()
+        indicator.channelID = channelId
+        indicator.channelType = .private
+        indicator.userID = userId
+        // dev 阶段无昵称面,展示名=userId(web sendTyping 同款)。
+        indicator.username = userId
+        indicator.isTyping = isTyping
+        indicator.timestamp = now()
+        try? conn.send(msgId: .typingIndicatorNotify, body: [UInt8](indicator.serializedData()))
+    }
+
+    /// 拉服务端 DM 历史(跨设备/重装后的真相面;store 面只有本会话内存)。
+    /// 壳层按 messageID 去重合并进展示列表。
+    public func loadServerHistory(
+        peerId: String, limit: Int32 = 50
+    ) -> Promise<Chirp_Chat_GetHistoryResponse> {
+        var request = Chirp_Chat_GetHistoryRequest()
+        request.userID = userId
+        request.channelType = .private
+        request.channelID = SessionIndex.dmChannelId(userId, peerId)
+        request.limit = limit
+        return conn.request(spec: MsgSpecs.getHistory, body: request)
+    }
 
     // ---- 内部接线 -----------------------------------------------------------
+
+    /// 反应/输入状态的服务端通知(P4a,对齐 web 的纯 notify 驱动口径——
+    /// 历史消息不回填反应)。坏 body 丢弃不伤链路。
+    private func wireReactionNotifies(
+        reactions: ReactionIndex, typists: TypingIndex
+    ) -> () -> Void {
+        let offAdded = conn.onNotify(msgId: .reactionAddedNotify) { [weak self] body in
+            guard let self = self,
+                let notify = try? Chirp_Chat_ReactionAddedNotify(serializedBytes: Data(body))
+            else { return }
+            reactions.record(
+                messageId: notify.messageID, emoji: notify.emoji,
+                userId: notify.userID, added: true, selfId: self.userId)
+            self.emit(.reactionChanged(messageId: notify.messageID))
+        }
+        let offRemoved = conn.onNotify(msgId: .reactionRemovedNotify) { [weak self] body in
+            guard let self = self,
+                let notify = try? Chirp_Chat_ReactionRemovedNotify(serializedBytes: Data(body))
+            else { return }
+            reactions.record(
+                messageId: notify.messageID, emoji: notify.emoji,
+                userId: notify.userID, added: false, selfId: self.userId)
+            self.emit(.reactionChanged(messageId: notify.messageID))
+        }
+        let offTyping = conn.onNotify(msgId: .typingIndicatorNotify) { [weak self] body in
+            guard let self = self,
+                let indicator = try? Chirp_Chat_TypingIndicator(serializedBytes: Data(body))
+            else { return }
+            typists.record(indicator, selfId: self.userId)
+            self.emit(
+                .typing(
+                    channelId: indicator.channelID,
+                    userId: indicator.userID,
+                    isTyping: indicator.isTyping))
+        }
+        return {
+            offAdded()
+            offRemoved()
+            offTyping()
+        }
+    }
 
     /// CHAT_MESSAGE_NOTIFY → MESSAGE_ACK(服务端 10s 收不到回执会把投递
     /// 回滚进离线滞留)。本订阅先于管线的渲染订阅注册,故回执先于渲染——

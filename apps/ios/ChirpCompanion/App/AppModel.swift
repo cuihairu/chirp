@@ -18,7 +18,17 @@ final class AppModel: ObservableObject {
     @Published private(set) var sessionSummaries: [SessionIndex.Summary] = []
     /// 当前打开的会话消息(旧→新,渲染顺序)。
     @Published private(set) var chatMessages: [Chirp_Chat_ChatMessage] = []
+    /// 当前展示消息的反应快照(P4a:messageId → tallies;事件驱动刷新)。
+    @Published private(set) var reactionSummaries: [String: [ReactionIndex.Tally]] = [:]
+    /// 当前会话 TTL 内在输入的对端(P4a;6s 过期由清扫任务兜底)。
+    @Published private(set) var typingPeers: [String] = []
     private(set) var activePeer: String?
+
+    /// typing 上报节流(web ChatWindow 同款:start ≥3s 一次、最后键击 5s
+    /// 后自动 stop、发送即 stop、空串不触发)。MainActor 上串行,无锁。
+    private var typingLastStartAt: Date?
+    private var typingStopTask: Task<Void, Never>?
+    private var typingSweepTask: Task<Void, Never>?
 
     /// 设备识别(首次生成即持久化);登录面展示用。
     let deviceId: String
@@ -82,6 +92,8 @@ final class AppModel: ObservableObject {
         activePeer = nil
         chatMessages = []
         sessionSummaries = []
+        reactionSummaries = [:]
+        clearTypingState()
         connectionBanner = nil
     }
 
@@ -178,6 +190,12 @@ final class AppModel: ObservableObject {
         case .offlineReplayed(let count):
             toast = "离线重放 \(count) 条"
             refreshSessions()
+        case .reactionChanged(let messageId):
+            reactionSummaries[messageId] = service?.reactions.tallies(messageId: messageId) ?? []
+        case .typing:
+            // 到点清扫兜底(服务端 stop 通知丢失时 TTL 过期仍能灭灯)。
+            scheduleTypingSweep()
+            refreshTyping()
         }
     }
 
@@ -185,15 +203,66 @@ final class AppModel: ObservableObject {
 
     func openChat(peerId: String) {
         activePeer = peerId
-        // history 最新在前 → 渲染旧→新。
+        // store 面(本会话内存)最新在前 → 渲染旧→新;服务端历史异步合并。
         chatMessages = (service?.history(peerId: peerId) ?? []).reversed()
         service?.markRead(peerId: peerId)
         refreshSessions()
+        rebuildReactionSummaries()
+        refreshTyping()
+        loadServerHistory(peerId: peerId)
     }
 
     func closeChat() {
         activePeer = nil
         chatMessages = []
+        reactionSummaries = [:]
+        clearTypingState()
+    }
+
+    /// 服务端 DM 历史(跨设备/重装真相面)按 messageID 去重合并——服务端
+    /// 版本优先(带 id 的真相),本地无 id 的发送侧存档副本保留。
+    private func loadServerHistory(peerId: String) {
+        guard let service = service else { return }
+        service.loadServerHistory(peerId: peerId).onComplete { [weak self] outcome in
+            Task { @MainActor in
+                guard let self = self, self.activePeer == peerId,
+                    case .success(let resp) = outcome, resp.code == .ok
+                else { return }
+                self.chatMessages = Self.mergedMessages(
+                    local: self.chatMessages, server: resp.messages)
+                self.rebuildReactionSummaries()
+            }
+        }
+    }
+
+    /// 去重合并:同 id 保服务端版本,本地空 id 存档副本保留,时间戳升序。
+    static func mergedMessages(
+        local: [Chirp_Chat_ChatMessage], server: [Chirp_Chat_ChatMessage]
+    ) -> [Chirp_Chat_ChatMessage] {
+        var seen = Set<String>()
+        var out: [Chirp_Chat_ChatMessage] = []
+        for message in server where !message.messageID.isEmpty {
+            if seen.insert(message.messageID).inserted { out.append(message) }
+        }
+        for message in local {
+            if message.messageID.isEmpty || seen.insert(message.messageID).inserted {
+                out.append(message)
+            }
+        }
+        return out.sorted { $0.timestamp < $1.timestamp }
+    }
+
+    private func rebuildReactionSummaries() {
+        guard let service = service else {
+            reactionSummaries = [:]
+            return
+        }
+        var next: [String: [ReactionIndex.Tally]] = [:]
+        for message in chatMessages where !message.messageID.isEmpty {
+            let tallies = service.reactions.tallies(messageId: message.messageID)
+            if !tallies.isEmpty { next[message.messageID] = tallies }
+        }
+        reactionSummaries = next
     }
 
     func sendTapped(content: String) {
@@ -205,6 +274,8 @@ final class AppModel: ObservableObject {
                 guard let self = self else { return }
                 switch outcome {
                 case .success(.sent):
+                    // 发送即停 typing(web send 同款:清 timer + 补一条 stop)。
+                    self.stopTypingIndicator()
                     // 存档副本已在管线内(save 先于响应),补一条本地渲染即可。
                     var message = Chirp_Chat_ChatMessage()
                     message.senderID = service.userId
@@ -232,6 +303,96 @@ final class AppModel: ObservableObject {
     private func refreshSessions() {
         sessionSummaries = service?.sessions.summaries() ?? []
     }
+
+    // ---- typing 上报/展示(P4a) ------------------------------------------------
+
+    /// 输入框内容变化(ChatView onChange 驱动;空串不触发——web 语义)。
+    func draftChanged(_ text: String) {
+        guard !text.isEmpty, let peerId = activePeer, let service = service,
+            phase.isloggedIn
+        else { return }
+        let channelId = SessionIndex.dmChannelId(service.userId, peerId)
+        let at = Date()
+        if let lastStart = typingLastStartAt,
+            at.timeIntervalSince(lastStart) < Self.typingStartInterval
+        {
+            // 3s 内不重复上报(服务端本也会对重复 start 降温)。
+        } else {
+            typingLastStartAt = at
+            service.sendTyping(channelId: channelId, isTyping: true)
+        }
+        // 最后键击 5s 后自动 stop。
+        typingStopTask?.cancel()
+        typingStopTask = Task { [weak self, channelId] in
+            try? await Task.sleep(nanoseconds: 5_000_000_000)
+            guard !Task.isCancelled else { return }
+            await MainActor.run {
+                self?.typingLastStartAt = nil
+                self?.service?.sendTyping(channelId: channelId, isTyping: false)
+            }
+        }
+    }
+
+    /// 发送/登出路径的立即停报(清 timer + 补一条 stop)。
+    private func stopTypingIndicator() {
+        typingStopTask?.cancel()
+        typingStopTask = nil
+        typingLastStartAt = nil
+        if let peerId = activePeer, let service = service, phase.isloggedIn {
+            service.sendTyping(
+                channelId: SessionIndex.dmChannelId(service.userId, peerId), isTyping: false)
+        }
+    }
+
+    /// TTL 过期清扫:stop 通知丢失时 6s 后仍能灭灯(留 0.5s 余量保证过期
+    /// 判定成立;每次 start/stop 事件重置,到点重查快照)。
+    private func scheduleTypingSweep() {
+        typingSweepTask?.cancel()
+        typingSweepTask = Task { [weak self] in
+            try? await Task.sleep(nanoseconds: 6_500_000_000)
+            guard !Task.isCancelled else { return }
+            await MainActor.run { self?.refreshTyping() }
+        }
+    }
+
+    private func refreshTyping() {
+        guard let peerId = activePeer, let service = service else {
+            typingPeers = []
+            return
+        }
+        let channelId = SessionIndex.dmChannelId(service.userId, peerId)
+        let nowMs = Int64(Date().timeIntervalSince1970 * 1000)
+        typingPeers = service.typists.typists(
+            channelType: .private, channelId: channelId, nowMs: nowMs)
+    }
+
+    private func clearTypingState() {
+        typingStopTask?.cancel()
+        typingStopTask = nil
+        typingSweepTask?.cancel()
+        typingSweepTask = nil
+        typingLastStartAt = nil
+        typingPeers = []
+    }
+
+    /// 反应切换入口(mine → remove;否则 add)。成功路径的快照更新走
+    /// .reactionChanged 事件;这里只兜连接层失败。
+    func toggleReaction(messageId: String, emoji: String) {
+        guard let service = service else { return }
+        let mine = service.reactions.isMine(messageId: messageId, emoji: emoji)
+        let promise = mine
+            ? service.removeReaction(messageId: messageId, emoji: emoji)
+            : service.addReaction(messageId: messageId, emoji: emoji)
+        promise.onComplete { [weak self] outcome in
+            Task { @MainActor in
+                if case .failure(let err) = outcome {
+                    self?.toast = "反应失败:\(err.localizedDescription)"
+                }
+            }
+        }
+    }
+
+    private static let typingStartInterval: TimeInterval = 3
 
     private func codeName(_ code: Chirp_Common_ErrorCode) -> String {
         "\(code)"

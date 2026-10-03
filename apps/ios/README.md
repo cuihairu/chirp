@@ -4,8 +4,8 @@ SwiftPM package porting the pure protocol core of the former Flutter app
 (`apps/mobile_companion`, removed 2026-09-29 once both native packages
 carried its full test-vector groups), same migration path the Android
 package took (its M1→M4 batches, minus the app shell). Gate: `swift test`
-on Linux — **119 tests, all green** (Swift 6.4, x86_64 linux; 92 protocol
-core incl. the 11 lexicon-sync vectors + 27 app core).
+on Linux — **134 tests, all green** (Swift 6.4, x86_64 linux; 92 protocol
+core incl. the 11 lexicon-sync vectors + 42 app core).
 
 ## Layout
 
@@ -26,7 +26,7 @@ core incl. the 11 lexicon-sync vectors + 27 app core).
 | `Sources/ChirpProtocol/Scheduler.swift` | dart event-loop timers | time seam; tests drive a `ManualScheduler` virtual clock |
 | `Sources/ChirpProtocol/Promise.swift` | dart `Future`/Kotlin `CompletableFuture` | settle-once future; combinators `map`/`flatMap`/`handle` are the thenApply/thenCompose/handle mapping |
 | `Sources/ChirpProtocol/RequestError.swift` | `lib/protocol/errors.dart` | timeout/closed/kicked (+ server/blocked used by the pipeline) |
-| `Tests/ChirpProtocolTests/` | the Kotlin test files | same vector groups — conformance with the Kotlin package (the dart suite was removed with the Flutter app on 2026-09-29; this batch backfilled its four only-there vectors): Frame 6, ChatConnection 16, MsgSpecs table 3, ChatPipeline 27, OfflineSendQueue 9, Hooks 6, WordFilter 7, WordFilterSync 11 (lexicon batch), DeviceRegistrar 7; plus `Tests/ChirpAppCoreTests/` 27 for the app core (SessionIndex 5, ChatSessionService 6, AwaitedPushTokenSource 4, DevicePlaneService 3, P1 units 9) |
+| `Tests/ChirpProtocolTests/` | the Kotlin test files | same vector groups — conformance with the Kotlin package (the dart suite was removed with the Flutter app on 2026-09-29; this batch backfilled its four only-there vectors): Frame 6, ChatConnection 16, MsgSpecs table 3, ChatPipeline 27, OfflineSendQueue 9, Hooks 6, WordFilter 7, WordFilterSync 11 (lexicon batch), DeviceRegistrar 7; plus `Tests/ChirpAppCoreTests/` 42 for the app core (SessionIndex 5, ChatSessionService 12, AwaitedPushTokenSource 4, DevicePlaneService 3, ReactionIndex 5, TypingIndex 4, P1 units 9) |
 
 Dart's single event loop becomes one recursive lock (transport callbacks and
 scheduler ticks arrive on foreign threads; `close()` re-enters through the
@@ -42,7 +42,7 @@ the same vectors stay runnable.
 ## Gate
 
 ```sh
-cd apps/ios && swift test    # 119 tests, XCTest, Linux-native
+cd apps/ios && swift test    # 134 tests, XCTest, Linux-native
 ```
 
 CI: `ios-app.yml` (macos-latest) runs the package tests on the real
@@ -93,7 +93,7 @@ of truth).
 |---|---|
 | `project.yml` | XcodeGen spec → `ChirpCompanion.xcodeproj` (`xcodegen generate`) |
 | `ChirpCompanion/` | SwiftUI shell: `App/` (entry, root observable), `Views/` (login / sessions / chat screens) |
-| `Sources/ChirpAppCore/` | UI-free app logic inside the package: `DeviceIdentity` / `HostConfig` / `LoginDraft` (P1), the P2 closed loop — `ChatSessionService` (login→sessions→DM send/receive wiring: acks, offline queue replay, word-filter sync, event stream) and `SessionIndex` (conversation list state) — and the P3 push pieces — `AwaitedPushTokenSource` (offer-then-fetch APNs token waiter, timeout degrades to nil) and `DevicePlaneService` (device-plane login → RegisterDevice on 5201) — so `swift test` covers it on Linux **and** macOS |
+| `Sources/ChirpAppCore/` | UI-free app logic inside the package: `DeviceIdentity` / `HostConfig` / `LoginDraft` (P1), the P2 closed loop — `ChatSessionService` (login→sessions→DM send/receive wiring: acks, offline queue replay, word-filter sync, event stream) and `SessionIndex` (conversation list state) — and the P3 push pieces — `AwaitedPushTokenSource` (offer-then-fetch APNs token waiter, timeout degrades to nil) and `DevicePlaneService` (device-plane login → RegisterDevice on 5201) — and the P4a pieces — `ReactionIndex` (quick-reaction tallies: notify increments, ADD/REMOVE_RESP aggregate/decrement, empty slots dropped) and `TypingIndex` (per-channel typing TTL 6s, self excluded) — so `swift test` covers it on Linux **and** macOS |
 | `.github/workflows/ios-app.yml` | CI leg (macos-latest): xcodegen → simulator build (unsigned) → package tests on the real macOS toolchain |
 
 ```bash
@@ -109,7 +109,8 @@ swift test
 | P1 | 工程结构 + CI 构建腿(macos-latest:xcodegen + iOS Simulator 编译证明 + 包测试上 CI);SwiftUI 三屏骨架(登录/会话/聊天,静态);`ChirpAppCore` 入包(DeviceIdentity / HostConfig / LoginDraft) | ✅ 2026-10-03 |
 | P2 | 登录+会话+收发最小闭环:`ChatSessionService`(蓝本 MainActivity.kt 接线——ChatConnection/ChatPipeline/MemoryMessageStore/WordFilterSync 拦截器/OfflineSendQueue/MESSAGE_ACK 回执先于渲染/事件流)+ `SessionIndex` 会话列表 + SwiftUI 三屏真接线(连接横幅/KICK 踢下线/离线入队重放提示);服务级单测 11 例(假 transport+虚拟时钟,对拍协议包手法) | ✅ 2026-10-03 |
 | P3 | 推送 APNs 客户端注册链:`AwaitedPushTokenSource`(offer-then-fetch 等待器,10s 超时 nil 降级)+ `DevicePlaneService`(设备面 5201 独连→LOGIN(GetAuthenticatedSession 守卫)→RegisterDevice)+ `DeviceRegistrar` 加 `PushTokenSlot`(iOS 写 `apns_token` 槽,Swift 侧增量)+ 壳层 `UIApplicationDelegateAdaptor` 桥(didRegister→hex token→offer,didFail→nil 降级)+ 通知授权请求;服务端投递链核对(herald ES256 `.p8` provider token/cert 兜底/topic=bundle id——服务端既有,无需改动) | ✅ 2026-10-03 |
-| P4 | 游戏内聊天集成 + 功能面对齐 web_companion:多平面(social/party/voice/device/game_presence)、quick_reactions、好友/群/设备/在线设备/组队/语音面板 | ⬜ |
+| P4a | 快捷反应 + 输入状态 + 服务端历史:`ReactionIndex`(八枚 QUICK_REACTIONS,notify 增量/应答聚合覆盖,操作者不在 notify 扇出面 web 同款)+ `TypingIndex`(6s TTL,排自己)+ `ChatSessionService` 四方法(add/remove/sendTyping/loadServerHistory)+ 壳层接线(长按快捷反应、chips 切换、正在输入横幅、3s/5s 输入上报节流、打开会话拉服务端历史按 messageID 去重合并) | ✅ 2026-10-03 |
+| P4 | 余下功能面对齐 web_companion:多平面(social/party/voice/device/game_presence)、好友/群/设备/在线设备/组队/语音面板 | ⬜ |
 
 Out of scope until credentials exist: a signed build with the
 aps-environment entitlement (real device token), provisioning for physical

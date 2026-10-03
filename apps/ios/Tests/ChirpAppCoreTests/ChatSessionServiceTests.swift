@@ -192,4 +192,177 @@ final class ChatSessionServiceTests: XCTestCase {
         XCTAssertEqual(service.connectionState, .kicked)
         service.logout()
     }
+
+    // ---- P4a:反应/输入状态/服务端历史 ----------------------------------------
+
+    func testReactionNotifyUpdatesIndexAndEmitsEvent() throws {
+        let (t, factory) = singleTransport()
+        let service = makeService(factory: factory)
+        try loginOk(service, t)
+
+        var added = Chirp_Chat_ReactionAddedNotify()
+        added.messageID = "m1"
+        added.channelID = "alice|bob"
+        added.emoji = "👍"
+        added.userID = "bob"
+        added.timestamp = 1_000
+        t.deliver(try wsNotify(.reactionAddedNotify, added))
+
+        XCTAssertEqual(service.reactions.tallies(messageId: "m1").count, 1)
+        XCTAssertEqual(service.reactions.tallies(messageId: "m1")[0].count, 1)
+        XCTAssertFalse(service.reactions.isMine(messageId: "m1", emoji: "👍"))
+        XCTAssertTrue(events.contains {
+            if case .reactionChanged(let messageId) = $0 { return messageId == "m1" }
+            return false
+        })
+
+        // 移除走同一数据面。
+        var removed = Chirp_Chat_ReactionRemovedNotify()
+        removed.messageID = "m1"
+        removed.channelID = "alice|bob"
+        removed.emoji = "👍"
+        removed.userID = "bob"
+        removed.timestamp = 1_100
+        t.deliver(try wsNotify(.reactionRemovedNotify, removed))
+        XCTAssertTrue(service.reactions.tallies(messageId: "m1").isEmpty)
+        service.logout()
+    }
+
+    func testAddReactionSendsThreeFieldsAndAppliesAggregate() throws {
+        let (t, factory) = singleTransport()
+        let service = makeService(factory: factory)
+        try loginOk(service, t)
+
+        let pending = service.addReaction(messageId: "m1", emoji: "🎉")
+        let seq = try expectRequest(t, .addReactionReq)
+        let request = try Chirp_Chat_AddReactionRequest(serializedBytes: lastRequestBody(t))
+        XCTAssertEqual(request.messageID, "m1")
+        XCTAssertEqual(request.userID, "alice", "请求 userID=登录身份(SameUser 守卫)")
+        XCTAssertEqual(request.emoji, "🎉")
+
+        // 服务端聚合覆盖本地槽(操作者不在 notify 扇出面,应答即真相)。
+        var response = Chirp_Chat_AddReactionResponse()
+        response.code = .ok
+        response.serverTime = 1_200
+        response.reaction.messageID = "m1"
+        response.reaction.emoji = "🎉"
+        response.reaction.count = 3
+        response.reaction.userIds = ["alice", "bob", "carol"]
+        response.reaction.reactedByMe = true
+        t.deliver(try wsResponse(.addReactionResp, seq, response))
+        XCTAssertEqual(try pending.get(timeoutSeconds: 2), .ok)
+
+        let tallies = service.reactions.tallies(messageId: "m1")
+        XCTAssertEqual(tallies.count, 1)
+        XCTAssertEqual(tallies[0].count, 3)
+        XCTAssertTrue(tallies[0].isMine)
+        XCTAssertTrue(events.contains {
+            if case .reactionChanged(let messageId) = $0 { return messageId == "m1" }
+            return false
+        })
+        service.logout()
+    }
+
+    func testRemoveReactionDecrementsLocallyOnOk() throws {
+        let (t, factory) = singleTransport()
+        let service = makeService(factory: factory)
+        try loginOk(service, t)
+
+        // 他人先到一条计数,自己再撤——RESP 无聚合,本地递减(web 同款)。
+        var other = Chirp_Chat_ReactionAddedNotify()
+        other.messageID = "m1"
+        other.channelID = "alice|bob"
+        other.emoji = "👍"
+        other.userID = "bob"
+        other.timestamp = 1_000
+        t.deliver(try wsNotify(.reactionAddedNotify, other))
+
+        let pending = service.removeReaction(messageId: "m1", emoji: "👍")
+        let seq = try expectRequest(t, .removeReactionReq)
+        let request = try Chirp_Chat_RemoveReactionRequest(serializedBytes: lastRequestBody(t))
+        XCTAssertEqual(request.messageID, "m1")
+        XCTAssertEqual(request.userID, "alice")
+        XCTAssertEqual(request.emoji, "👍")
+
+        var response = Chirp_Chat_RemoveReactionResponse()
+        response.code = .ok
+        t.deliver(try wsResponse(.removeReactionResp, seq, response))
+        XCTAssertEqual(try pending.get(timeoutSeconds: 2), .ok)
+        XCTAssertTrue(service.reactions.tallies(messageId: "m1").isEmpty)
+        service.logout()
+    }
+
+    func testTypingNotifyRecordsAndEmits() throws {
+        let (t, factory) = singleTransport()
+        let service = makeService(factory: factory)
+        try loginOk(service, t)
+
+        var indicator = Chirp_Chat_TypingIndicator()
+        indicator.channelID = "alice|bob"
+        indicator.channelType = .private
+        indicator.userID = "bob"
+        indicator.username = "bob"
+        indicator.isTyping = true
+        indicator.timestamp = 1_000
+        t.deliver(try wsNotify(.typingIndicatorNotify, indicator))
+
+        XCTAssertEqual(
+            service.typists.typists(channelType: .private, channelId: "alice|bob", nowMs: 1_000),
+            ["bob"])
+        XCTAssertTrue(events.contains {
+            if case .typing(let channelId, let userId, let isTyping) = $0 {
+                return channelId == "alice|bob" && userId == "bob" && isTyping
+            }
+            return false
+        })
+        service.logout()
+    }
+
+    func testSendTypingSendsIndicatorBody() throws {
+        let (t, factory) = singleTransport()
+        let service = makeService(factory: factory)
+        try loginOk(service, t)
+
+        let before = t.sent.count
+        service.sendTyping(channelId: "alice|bob", isTyping: true)
+        XCTAssertEqual(t.sent.count, before + 1, "fire-and-forget 直发,无应答")
+        XCTAssertEqual(try sentPacket(t).msgID, .typingIndicatorNotify)
+        let body = try Chirp_Chat_TypingIndicator(serializedBytes: lastRequestBody(t))
+        XCTAssertEqual(body.channelID, "alice|bob")
+        XCTAssertEqual(body.channelType, .private)
+        XCTAssertEqual(body.userID, "alice")
+        XCTAssertEqual(body.username, "alice", "展示名=userId(web 同款)")
+        XCTAssertTrue(body.isTyping)
+        XCTAssertEqual(body.timestamp, 1_000, "now 固定 1000")
+        service.logout()
+    }
+
+    func testLoadServerHistoryRoundTrip() throws {
+        let (t, factory) = singleTransport()
+        let service = makeService(factory: factory)
+        try loginOk(service, t)
+
+        let pending = service.loadServerHistory(peerId: "bob", limit: 50)
+        let seq = try expectRequest(t, .getHistoryReq)
+        let request = try Chirp_Chat_GetHistoryRequest(serializedBytes: lastRequestBody(t))
+        XCTAssertEqual(request.userID, "alice")
+        XCTAssertEqual(request.channelType, .private)
+        XCTAssertEqual(request.channelID, "alice|bob")
+        XCTAssertEqual(request.limit, 50)
+        XCTAssertEqual(request.beforeTimestamp, 0, "0=取最新一页")
+
+        var response = Chirp_Chat_GetHistoryResponse()
+        response.code = .ok
+        response.messages = [
+            dmText("bob", "alice", id: "m1", text: "早", ts: 900),
+            dmText("alice", "bob", id: "m2", text: "早", ts: 901),
+        ]
+        response.hasMore_p = true
+        t.deliver(try wsResponse(.getHistoryResp, seq, response))
+        let resp = try pending.get(timeoutSeconds: 2)
+        XCTAssertEqual(resp.code, .ok)
+        XCTAssertEqual(resp.messages.map(\.messageID), ["m1", "m2"])
+        XCTAssertTrue(resp.hasMore_p)
+        service.logout()
+    }
 }
