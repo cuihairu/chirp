@@ -156,6 +156,9 @@ SDK 引擎兼容性见 [SDK 引擎兼容性](docs/design-notes/sdk_compatibility
 - [x] **更新单元测试**：路径和 namespace 重命名后的测试修复（2026-09-22 核验：tests/unit 34 个目标全部引用新路径与新 namespace（`chirp::auth`/`chirp::gateway`/`chirp::app_notification`），旧路径残留 grep 零命中，ctest 34/34 通过）
 - [x] **全量构建验证**：2026-09-22 clean build（vcpkg toolchain + Debug + ENABLE_TESTS=ON)333/333 目标通过，13 个 `chirp_*` 服务二进制全部产出，`ctest` 34/34 通过
 
+- [ ] **dependabot #18 glib（medium，upstream-blocked）**（2026-10-04 登记）：`apps/desktop/src-tauri/Cargo.lock` glib 0.18.5——RUSTSA-2026 系 unsoundness（`VariantStrIter` 的 Iterator/DoubleEndedIterator 实现非健全），修复版 0.20.0。**不可达**：glib 0.18 由 tauri 2.12.1 Linux 后端的 gtk ^0.18 栈钉死（atk/gtk/tao/muda/webkit2gtk 全 0.18 系），cargo 拒绝单独提升；tauri 2.12.1 已是 2.x 最新（3.0 尚 alpha），gtk-0.20 栈需等 tauri 后续版本带动。桌面 App 不直接迭代 GVariant 字符串（非可达面，风险实质有限）。**重评触发**：tauri 2.13+/3.0 stable 发布后 `cargo update -p tauri` 看是否带动整栈，届时清告警
+- [x] **dependabot #13 dompurify（low，2026-10-04 修）**：docs 站 mermaid 传递依赖 dompurify 3.4.15→3.4.16（IN_PLACE 钩子 detached subtree XSS）。pnpm@12（CI 钉版）`update dompurify` lock 最小 diff（仅 resolution+snapshot+mermaid 边三处）；清 node_modules 干净重装 `pnpm build` 全绿（36s）。教训记档：本地默认 pnpm 10.22.0 重写 lock 会掉 rollup 可选包 libc 字段（格式回退）且污染 node_modules 致 stylis LAYER 假失败——docs 锁操作必须走 npx pnpm@12
+
 ## 接入方支持（2026-09-25 批次）
 
 - [x] **接入避坑指南**（`docs/guide/integration-pitfalls.md` 新建）：发送侧四道防线阈值与回码（模糊闸 120/min、长度 私聊200/世界100/系统500 码点、节奏 世界5s/公会2s/私聊1s、重复第3条禁言5min）、接收侧静默语义（拉黑/频道屏蔽）、心跳/KICK/重连契约、`ec` vs `resp.code()` 代码示例、跨平面 `<game_id>:<频道>` 前缀、服务端接入三坑（双连接/ack 事件/inject_id 幂等）、fire-and-forget 发送+立即断开竞态、快速自查清单；vitepress 双侧栏收录
