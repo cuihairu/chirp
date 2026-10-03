@@ -1,18 +1,23 @@
-# chirp 服务端镜像(演示部署):与 docker/Dockerfile.service 同构的多阶段
-# 构建,差异在 runtime 以非 root 用户跑(端口均 >1024,无需特权)。
-# 单镜像多服务:ARG SERVICE 选二进制,compose command 定参。
-#   chat_enhanced | social | party | voice | app_auth | app_notification
-#   | app_sdk_gateway | game_server_gateway | npc_dialog | search
+# chirp 服务端镜像(演示部署):单镜像带全演示栈 8 个服务二进制,
+# compose 以 CHIRP_SERVICE 环境变量选执行体(docker-entrypoint.sh 兜底
+# /usr/local/bin/chirp_*)。与 docker/Dockerfile.service(dev 单服务镜像,
+# 构建期烧 CHIRP_BIN)的差异:runtime 以非 root 用户跑(端口均 >1024,
+# 无需特权),且不烧 CHIRP_BIN——烧了会盖住 CHIRP_SERVICE 选体。
+# 演示栈服务:chat | social | party | voice | app_auth | app_notification
+#   | app_sdk_gateway | game_server_gateway
 ARG UBUNTU_VERSION=22.04
 
 FROM ubuntu:${UBUNTU_VERSION} AS build
 
-ARG SERVICE=chat_enhanced
-
 # libmariadb-dev (MariaDB Connector/C): same mysql_* C API and mysql/mysql.h
 # layout as libmysqlclient, with a much lighter dependency footprint.
-# libmariadb-dev-compat 保证 mysql/mysql.h 可被 FindMySQL 发现;
-# libsodium-dev 供 app_auth_enhanced(可选)。
+# libmariadb-dev-compat 保证 mysql/mysql.h 可被 FindMySQL 发现(否则 FindMySQL
+# 静默退 basic 实现);libsodium-dev 让 app_auth 走增强版(密码登录+MySQL)。
+# 有 MySQL+libsodium 时 chirp_chat/chirp_app_auth 即增强实现(ALIAS 同源),
+# compose 传 --mysql_* 等增强参数才有效。
+# protobuf-compiler/libprotobuf-dev:gen_proto.sh 用 PATH protoc 现场生成
+# gencode(带 --experimental_allow_proto3_optional),与同版本 libprotobuf
+# 头/库严格配对——不依赖仓库内提交的 gencode 版本。
 RUN apt-get update && apt-get install -y --no-install-recommends \
     build-essential \
     ca-certificates \
@@ -33,46 +38,44 @@ COPY . .
 
 RUN ./gen_proto.sh
 RUN cmake -S . -B build -DCMAKE_BUILD_TYPE=Release -DENABLE_TESTS=OFF
-# chat_enhanced/app_auth_enhanced 是 ALIAS 目标(需 MySQL/libsodium),否则用基目标
-RUN case "${SERVICE}" in \
-      chat|chat_enhanced|chat_distributed) cmake --build build --target chirp_chat chirp_chat_mysql_exporter -j"$(nproc)" ;; \
-      app_auth|app_auth_enhanced) cmake --build build --target chirp_app_auth chirp_chat_mysql_exporter -j"$(nproc)" ;; \
-      npc_dialog) cmake --build build --target chirp_npc_dialog chirp_chat_mysql_exporter -j"$(nproc)" ;; \
-      game_sdk_gateway) cmake --build build --target chirp_game_sdk_gateway chirp_chat_mysql_exporter -j"$(nproc)" ;; \
-      game_server_gateway) cmake --build build --target chirp_game_server_gateway chirp_chat_mysql_exporter -j"$(nproc)" ;; \
-      app_sdk_gateway) cmake --build build --target chirp_app_sdk_gateway chirp_chat_mysql_exporter -j"$(nproc)" ;; \
-      app_notification) cmake --build build --target chirp_app_notification chirp_chat_mysql_exporter -j"$(nproc)" ;; \
-      social|voice|party|search) cmake --build build --target chirp_${SERVICE} chirp_chat_mysql_exporter -j"$(nproc)" ;; \
-      *) echo "Unsupported service target: ${SERVICE}" >&2; exit 1 ;; \
-    esac
-RUN case "${SERVICE}" in \
-      chat|chat_enhanced|chat_distributed) cp "/src/build/services/shared/chat/chirp_chat" /tmp/chirp_bin ;; \
-      app_auth|app_auth_enhanced) cp "/src/build/services/app/auth/chirp_app_auth" /tmp/chirp_bin ;; \
-      npc_dialog) cp "/src/build/services/game/npc_dialog/chirp_npc_dialog" /tmp/chirp_bin ;; \
-      game_sdk_gateway) cp "/src/build/services/game/sdk_gateway/chirp_game_sdk_gateway" /tmp/chirp_bin ;; \
-      game_server_gateway) cp "/src/build/services/game/server_gateway/chirp_game_server_gateway" /tmp/chirp_bin ;; \
-      app_sdk_gateway) cp "/src/build/services/app/sdk_gateway/chirp_app_sdk_gateway" /tmp/chirp_bin ;; \
-      app_notification) cp "/src/build/services/app/notification/chirp_app_notification" /tmp/chirp_bin ;; \
-      social|voice|party|search) cp "/src/build/services/${SERVICE}/chirp_${SERVICE}" /tmp/chirp_bin ;; \
-      *) echo "Unsupported service target: ${SERVICE}" >&2; exit 1 ;; \
-    esac
+# 8 个演示栈二进制一次编出(基目标名;MySQL+libsodium 齐时即增强实现),
+# 全部收进 /tmp/chirp_bins 交给 runtime 阶段。
+RUN cmake --build build --target \
+      chirp_chat \
+      chirp_social \
+      chirp_party \
+      chirp_voice \
+      chirp_app_auth \
+      chirp_app_notification \
+      chirp_app_sdk_gateway \
+      chirp_game_server_gateway \
+      -j"$(nproc)" \
+    && mkdir -p /tmp/chirp_bins \
+    && cp build/services/shared/chat/chirp_chat \
+           build/services/social/chirp_social \
+           build/services/party/chirp_party \
+           build/services/voice/chirp_voice \
+           build/services/app/auth/chirp_app_auth \
+           build/services/app/notification/chirp_app_notification \
+           build/services/app/sdk_gateway/chirp_app_sdk_gateway \
+           build/services/game/server_gateway/chirp_game_server_gateway \
+           /tmp/chirp_bins/
 
 FROM ubuntu:${UBUNTU_VERSION} AS runtime
 
-ARG SERVICE=chat_enhanced
-
 # Runtime only: the mariadb client .so (default-mysql-client is the MariaDB
-# CLI on Ubuntu/Debian, kept for manual database inspection).
+# CLI on Ubuntu/Debian, kept for manual database inspection);
+# libsodium23 供增强版 app_auth(与构建期 libsodium-dev 配对)。
 RUN apt-get update && apt-get install -y --no-install-recommends \
     ca-certificates \
     libmariadb3 \
     libprotobuf23 \
+    libsodium23 \
     default-mysql-client \
     redis-tools \
   && rm -rf /var/lib/apt/lists/*
 
-COPY --from=build /tmp/chirp_bin /usr/local/bin/chirp_${SERVICE}
-COPY --from=build /src/build/tools/benchmark/chirp_chat_mysql_exporter /usr/local/bin/chirp_chat_mysql_exporter
+COPY --from=build /tmp/chirp_bins/ /usr/local/bin/
 COPY docker/docker-entrypoint.sh /usr/local/bin/docker-entrypoint.sh
 RUN chmod 0755 /usr/local/bin/docker-entrypoint.sh \
   && useradd --system --uid 10001 --no-create-home chirp
@@ -80,7 +83,8 @@ RUN chmod 0755 /usr/local/bin/docker-entrypoint.sh \
 # 非 root 运行:所有监听端口(5000+/6000+/7000+/8xxx)均无需特权。
 USER chirp
 
-ENV CHIRP_BIN=/usr/local/bin/chirp_${SERVICE}
+# 不烧 CHIRP_BIN:演示镜像按 compose 注入的 CHIRP_SERVICE 选执行体
+# (entrypoint 缺省兜底 chirp_chat)。
 
 EXPOSE 5000 5001 5006 5016 5200 5201 6000 7000 7001 7500 7501 8000 8001 8100 9000 9001
 ENTRYPOINT ["/usr/local/bin/docker-entrypoint.sh"]
