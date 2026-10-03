@@ -17,7 +17,7 @@ final class MsgSpecsTableTests: XCTestCase {
     }
 
     func testSpecTableIsCompleteAndPairsStayDistinct() {
-        XCTAssertEqual(MsgSpecs.all.count, 41)
+        XCTAssertEqual(MsgSpecs.all.count, 48)
         for spec in MsgSpecs.all {
             XCTAssertNotEqual(spec.reqMsgId, spec.respMsgId, "req/resp ids must differ for \(spec.reqMsgId)")
         }

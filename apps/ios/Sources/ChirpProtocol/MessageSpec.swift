@@ -140,6 +140,31 @@ public enum MsgSpecs {
         .getMyPartyReq, .getMyPartyResp
     ) { try Chirp_Party_GetMyPartyResponse(serializedBytes: $0) }
 
+    // Voice plane (WS 9001): room roster signalling only — the SDP/ICE relay
+    // (4007-4009) and SPEAKING_NOTIFY (4021) are a WebRTC media plane the
+    // companion does not ship; join carries an empty sdp_offer (web 同口径).
+    public static let createRoom = MessageSpec(
+        .createRoomReq, .createRoomResp
+    ) { try Chirp_Voice_CreateRoomResponse(serializedBytes: $0) }
+    public static let joinRoom = MessageSpec(
+        .joinRoomReq, .joinRoomResp
+    ) { try Chirp_Voice_JoinRoomResponse(serializedBytes: $0) }
+    public static let leaveRoom = MessageSpec(
+        .leaveRoomReq, .leaveRoomResp
+    ) { try Chirp_Voice_LeaveRoomResponse(serializedBytes: $0) }
+    public static let getRoomInfo = MessageSpec(
+        .getRoomInfoReq, .getRoomInfoResp
+    ) { try Chirp_Voice_GetRoomInfoResponse(serializedBytes: $0) }
+    public static let getUserRoom = MessageSpec(
+        .getUserRoomReq, .getUserRoomResp
+    ) { try Chirp_Voice_GetUserRoomResponse(serializedBytes: $0) }
+    public static let setMute = MessageSpec(
+        .setMuteReq, .setMuteResp
+    ) { try Chirp_Voice_SetMuteResponse(serializedBytes: $0) }
+    public static let setDeafen = MessageSpec(
+        .setDeafenReq, .setDeafenResp
+    ) { try Chirp_Voice_SetDeafenResponse(serializedBytes: $0) }
+
     // Device plane (app_gateway WS 5201): registration / listing of the push
     // targets for our account. app_gateway authenticates the session and pins
     // user_id server-side; 6009 PUSH_NOTIFICATION is deliberately absent —
@@ -189,6 +214,10 @@ public enum MsgSpecs {
         AnyMessageSpec(leaveParty), AnyMessageSpec(kickPartyMember),
         AnyMessageSpec(transferPartyLeader), AnyMessageSpec(setPartyReady),
         AnyMessageSpec(getMyParty),
+        AnyMessageSpec(createRoom), AnyMessageSpec(joinRoom),
+        AnyMessageSpec(leaveRoom), AnyMessageSpec(getRoomInfo),
+        AnyMessageSpec(getUserRoom), AnyMessageSpec(setMute),
+        AnyMessageSpec(setDeafen),
         AnyMessageSpec(registerDevice), AnyMessageSpec(unregisterDevice),
         AnyMessageSpec(getUserDevices),
         AnyMessageSpec(setGamePresenceEnabled), AnyMessageSpec(getGamePresence),

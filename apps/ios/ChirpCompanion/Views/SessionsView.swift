@@ -9,6 +9,7 @@ struct SessionsView: View {
     @State private var newPeer = ""
     @State private var showDevices = false
     @State private var showFriends = false
+    @State private var showPartyVoice = false
     @State private var path: [String] = []
 
     var body: some View {
@@ -57,6 +58,14 @@ struct SessionsView: View {
                 }
                 ToolbarItem(placement: .topBarTrailing) {
                     Button {
+                        showPartyVoice = true
+                    } label: {
+                        Image(systemName: "person.3")
+                    }
+                    .accessibilityLabel("组队与语音面板")
+                }
+                ToolbarItem(placement: .topBarTrailing) {
+                    Button {
                         model.loadRegisteredDevices()
                         showDevices = true
                     } label: {
@@ -73,6 +82,9 @@ struct SessionsView: View {
             }
             .sheet(isPresented: $showFriends) {
                 FriendsView()
+            }
+            .sheet(isPresented: $showPartyVoice) {
+                PartyVoiceView()
             }
             .navigationDestination(for: String.self) { peerId in
                 ChatView(peerId: peerId)

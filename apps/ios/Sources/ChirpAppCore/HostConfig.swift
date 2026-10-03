@@ -14,10 +14,19 @@ public struct HostConfig: Equatable {
     /// registration — wired in the APNs phase, parsed here so the config
     /// surface is settled once).
     public let deviceUrl: URL
+    /// Party-plane WebSocket endpoint (party gateway on 7501, P4d).
+    public let partyUrl: URL
+    /// Voice-plane WebSocket endpoint (voice gateway on 9001, P4d — roster
+    /// signalling only, no media).
+    public let voiceUrl: URL
 
-    public init(chatUrl: URL, deviceUrl: URL) {
+    public init(
+        chatUrl: URL, deviceUrl: URL, partyUrl: URL, voiceUrl: URL
+    ) {
         self.chatUrl = chatUrl
         self.deviceUrl = deviceUrl
+        self.partyUrl = partyUrl
+        self.voiceUrl = voiceUrl
     }
 
     /// Derives both endpoints from one editable host entry.
@@ -47,14 +56,19 @@ public struct HostConfig: Equatable {
         guard let chat = URL(string: text), chat.host != nil else {
             return nil
         }
-        // Device plane: same host, fixed app_gateway port.
+        // Device/party/voice planes: same host, fixed gateway ports.
         guard let deviceHost = chat.host else { return nil }
         let device = URL(string: "ws://\(deviceHost):5201") ?? chat
-        return HostConfig(chatUrl: chat, deviceUrl: device)
+        let party = URL(string: "ws://\(deviceHost):7501") ?? chat
+        let voice = URL(string: "ws://\(deviceHost):9001") ?? chat
+        return HostConfig(
+            chatUrl: chat, deviceUrl: device, partyUrl: party, voiceUrl: voice)
     }
 
     public static let simulatorDefault = HostConfig(
         chatUrl: URL(string: "ws://127.0.0.1:7001")!,
-        deviceUrl: URL(string: "ws://127.0.0.1:5201")!
+        deviceUrl: URL(string: "ws://127.0.0.1:5201")!,
+        partyUrl: URL(string: "ws://127.0.0.1:7501")!,
+        voiceUrl: URL(string: "ws://127.0.0.1:9001")!
     )
 }

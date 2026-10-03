@@ -192,4 +192,80 @@ final class DevicePlaneServiceTests: XCTestCase {
         XCTAssertEqual(t.sent.count, 1, "登录被拒后不发送 REGISTER_DEVICE")
         service.shutdown()
     }
+
+    // ---- 游戏在线状态面(P4d) ---------------------------------------------------
+
+    private func registeredService(_ t: FakeWsTransport) throws -> DevicePlaneService {
+        let service = makeService { _ in t }
+        let pending = service.register()
+        try answerLogin(t)
+        try answerRegister(t, code: .ok)
+        XCTAssertEqual(try pending.get(timeoutSeconds: 2), .ok)
+        return service
+    }
+
+    private func answerGamePresence(
+        _ t: FakeWsTransport, enabled: Bool, gameIds: [String]
+    ) throws {
+        let seq = try expectRequest(t, .getGamePresenceReq)
+        let request = try Chirp_GameServerGateway_GetGamePresenceRequest(
+            serializedBytes: lastRequestBody(t))
+        XCTAssertEqual(request.playerID, "", "空 playerID=会话钉的自己")
+        var resp = Chirp_GameServerGateway_GetGamePresenceResponse()
+        resp.code = .ok
+        resp.enabled = enabled
+        resp.entries = gameIds.map {
+            var entry = Chirp_GameServerGateway_GamePresenceEntry()
+            entry.gameID = $0
+            return entry
+        }
+        t.deliver(try wsResponse(.getGamePresenceResp, seq, resp))
+    }
+
+    func testRefreshGamePresenceRoundTrip() throws {
+        let t = FakeWsTransport()
+        let service = try registeredService(t)
+
+        let pending = service.refreshGamePresence()
+        try answerGamePresence(t, enabled: true, gameIds: ["game-a", "game-b"])
+        XCTAssertEqual(try pending.get(timeoutSeconds: 2), .ok)
+        XCTAssertFalse(service.gamePresence.unavailable())
+        XCTAssertEqual(service.gamePresence.state().enabled, true)
+        XCTAssertEqual(service.gamePresence.state().gameIds, ["game-a", "game-b"])
+        service.shutdown()
+    }
+
+    func testSetGamePresenceEnabledMirrorsThenRequeries() throws {
+        let t = FakeWsTransport()
+        let service = try registeredService(t)
+
+        let pending = service.setGamePresenceEnabled(true)
+        let seq = try expectRequest(t, .setGamePresenceEnabledReq)
+        let request = try Chirp_GameServerGateway_SetGamePresenceEnabledRequest(
+            serializedBytes: lastRequestBody(t))
+        XCTAssertEqual(request.enabled, true)
+        var ok = Chirp_GameServerGateway_SetGamePresenceEnabledResponse()
+        ok.code = .ok
+        t.deliver(try wsResponse(.setGamePresenceEnabledResp, seq, ok))
+        // 本地回显后立即复核拉取(服务端为准)。
+        try answerGamePresence(t, enabled: true, gameIds: ["game-c"])
+        XCTAssertEqual(try pending.get(timeoutSeconds: 2), .ok)
+        XCTAssertEqual(service.gamePresence.state().enabled, true)
+        XCTAssertEqual(service.gamePresence.state().gameIds, ["game-c"])
+        service.shutdown()
+    }
+
+    func testGamePresenceFailureMarksUnavailable() throws {
+        let t = FakeWsTransport()
+        let service = try registeredService(t)
+
+        let pending = service.refreshGamePresence()
+        let seq = try expectRequest(t, .getGamePresenceReq)
+        var resp = Chirp_GameServerGateway_GetGamePresenceResponse()
+        resp.code = .internalError
+        t.deliver(try wsResponse(.getGamePresenceResp, seq, resp))
+        XCTAssertEqual(try pending.get(timeoutSeconds: 2), .internalError)
+        XCTAssertTrue(service.gamePresence.unavailable(), "失败降级:面板隐藏")
+        service.shutdown()
+    }
 }

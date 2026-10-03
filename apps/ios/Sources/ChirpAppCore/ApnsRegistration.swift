@@ -80,6 +80,7 @@ public final class DevicePlaneService {
     }
 
     public let userId: String
+    public let gamePresence: GamePresenceIndex
     private let deviceId: String
     private let conn: ChatConnection
     private let registrar: DeviceRegistrar
@@ -106,6 +107,7 @@ public final class DevicePlaneService {
         emit: @escaping (Event) -> Void
     ) {
         self.userId = userId
+        gamePresence = GamePresenceIndex()
         self.deviceId = deviceId
         self.emit = emit
         conn = ChatConnection(
@@ -175,6 +177,59 @@ public final class DevicePlaneService {
         var request = Chirp_AppNotification_GetUserDevicesRequest()
         request.userID = userId
         return conn.request(spec: MsgSpecs.getUserDevices, body: request)
+    }
+
+    /// 游戏在线状态面(P4d,web game_presence_api.ts 对位):GET_GAME_
+    /// PRESENCE(playerID 留空=会话钉的自己)→ 开关 + 游戏清单。失败即
+    /// unavailable 降级,不重试不抛 UI。
+    public func refreshGamePresence() -> Promise<Chirp_Common_ErrorCode> {
+        guard connectionState == .connected else {
+            gamePresence.markUnavailable()
+            return Promise<Chirp_Common_ErrorCode>.failed(
+                RequestError(.closed, message: "device plane not connected"))
+        }
+        var request = Chirp_GameServerGateway_GetGamePresenceRequest()
+        request.playerID = ""
+        return conn.request(spec: MsgSpecs.getGamePresence, body: request)
+            .handle { [weak self] resp, err in
+                guard let self = self else {
+                    return Chirp_Common_ErrorCode.internalError
+                }
+                guard err == nil, let resp = resp, resp.code == .ok else {
+                    self.gamePresence.markUnavailable()
+                    return resp?.code ?? .internalError
+                }
+                self.gamePresence.apply(.init(
+                    enabled: resp.enabled,
+                    gameIds: resp.entries.map { $0.gameID }))
+                return resp.code
+            }
+    }
+
+    /// 开关翻转:成功先本地回显,再复核拉取(服务端为准;web 同款)。
+    public func setGamePresenceEnabled(_ enabled: Bool)
+        -> Promise<Chirp_Common_ErrorCode>
+    {
+        guard connectionState == .connected else {
+            gamePresence.markUnavailable()
+            return Promise<Chirp_Common_ErrorCode>.failed(
+                RequestError(.closed, message: "device plane not connected"))
+        }
+        let request = Chirp_GameServerGateway_SetGamePresenceEnabledRequest.with {
+            $0.playerID = ""
+            $0.enabled = enabled
+        }
+        return conn.request(spec: MsgSpecs.setGamePresenceEnabled, body: request)
+            .flatMap { [weak self] resp -> Promise<Chirp_Common_ErrorCode> in
+                guard let self = self else {
+                    return Promise<Chirp_Common_ErrorCode>.completed(resp.code)
+                }
+                guard resp.code == .ok else {
+                    return Promise<Chirp_Common_ErrorCode>.completed(resp.code)
+                }
+                self.gamePresence.setEnabled(enabled)
+                return self.refreshGamePresence()
+            }
     }
 
     /// 断开设备面;幂等。
