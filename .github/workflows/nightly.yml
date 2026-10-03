@@ -137,7 +137,7 @@ jobs:
         mkdir -p overlay-ports
         cp -r vcpkg/ports/libsodium overlay-ports/
         ./vcpkg/vcpkg install --triplet ${{ matrix.vcpkg_triplet }} \
-          --overlay-ports=${{ github.workspace }}/overlay-ports
+          --overlay-ports="${{ github.workspace }}/overlay-ports"
 
     # Same configure recipe as ci.yml / cmake-multi-platform.yml; the build
     # then asks for the SDK targets only. Windows uses the default VS
