@@ -28,6 +28,7 @@ fi
 
 # Generate C++ Code
 "${PROTOC_BIN}" --proto_path=. \
+       --experimental_allow_proto3_optional \
        --cpp_out=proto/cpp \
        proto/common.proto \
        proto/auth.proto \
@@ -46,6 +47,7 @@ fi
 # checks it with the pinned plugin (see go-sdk.yml).
 if command -v protoc-gen-go >/dev/null 2>&1; then
   "${PROTOC_BIN}" --proto_path=. \
+         --experimental_allow_proto3_optional \
          --go_out=proto/go --go_opt=paths=import \
          --go_opt=module=github.com/cui/chirp/proto/go \
          proto/common.proto \
@@ -73,6 +75,7 @@ fi
 if [ -x "${PROTOC_BIN}" ] && [ -x "$TS_PROTO_PLUGIN" ]; then
   mkdir -p proto/ts
   "${PROTOC_BIN}" --proto_path=. \
+         --experimental_allow_proto3_optional \
          --plugin=protoc-gen-ts_proto="$TS_PROTO_PLUGIN" \
          --ts_proto_out=proto/ts \
          --ts_proto_opt=forceLong=number,esModuleInterop=true \
@@ -95,6 +98,7 @@ fi
 # proto/ts — consumers never need the toolchain.
 mkdir -p proto/csharp
 "${PROTOC_BIN}" --proto_path=. \
+       --experimental_allow_proto3_optional \
        --csharp_out=proto/csharp \
        proto/common.proto \
        proto/auth.proto \
@@ -115,6 +119,7 @@ mkdir -p proto/csharp
 # pinned jar (4.33.4, must match this protoc's generation) with a checksum.
 mkdir -p proto/java
 "${PROTOC_BIN}" --proto_path=. \
+       --experimental_allow_proto3_optional \
        --java_out=proto/java \
        proto/common.proto \
        proto/auth.proto \
