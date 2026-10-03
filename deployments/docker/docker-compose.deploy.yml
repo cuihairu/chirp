@@ -42,6 +42,9 @@ services:
       interval: 10s
       timeout: 5s
       retries: 10
+      # 首次启动要初始化 datadir 并跑 init_db.sql,这期间服务还没起来,
+      # 健康检查的失败不该计入 streak(部署机负载高时初始化可能 >60s)。
+      start_period: 30s
 
   # 设备面/SDK 面的登录验证。演示站保持 scaffold 登录(web/iOS 的
   # phase-one 链路);生产换真凭据时去掉 --allow_scaffold_login。

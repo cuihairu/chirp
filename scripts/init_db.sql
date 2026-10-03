@@ -76,7 +76,9 @@ CREATE TABLE IF NOT EXISTS read_cursors (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
 -- Groups table (for Chat service)
-CREATE TABLE IF NOT EXISTS groups (
+-- `groups` is a reserved word in MySQL 8.0 (GROUPS window-frame clause), so
+-- the table name must be backquoted here and in every query that touches it.
+CREATE TABLE IF NOT EXISTS `groups` (
   id BIGINT AUTO_INCREMENT PRIMARY KEY,
   group_id VARCHAR(255) NOT NULL UNIQUE,
   group_name VARCHAR(255) NOT NULL,
