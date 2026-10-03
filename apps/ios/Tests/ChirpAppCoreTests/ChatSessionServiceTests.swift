@@ -228,6 +228,68 @@ final class ChatSessionServiceTests: XCTestCase {
         service.logout()
     }
 
+    func testLoginDevicesFromLoginResponseAppliedAndEmitted() throws {
+        let (t, factory) = singleTransport()
+        let service = makeService(factory: factory)
+
+        // 登录响应带初始清单(服务端已排除本会话)→ 入索引 + 事件。
+        let pending = service.login()
+        let seq = try expectRequest(t, .loginReq)
+        var ok = Chirp_Auth_LoginResponse()
+        ok.code = .ok
+        var web = Chirp_Auth_DevicePresence()
+        web.platform = "web"
+        web.deviceID = "web-1"
+        web.online = true
+        ok.onlineDevices = [web]
+        t.deliver(try wsResponse(.loginResp, seq, ok))
+        XCTAssertEqual(try pending.get(timeoutSeconds: 2), .ok)
+
+        XCTAssertEqual(service.devices.entries().count, 1)
+        XCTAssertEqual(service.devices.entries()[0].deviceId, "web-1")
+        XCTAssertTrue(events.contains { if case .devicesChanged = $0 { return true }; return false })
+        service.logout()
+    }
+
+    func testDevicesPresenceNotifyUpdatesIndexAndLogoutResets() throws {
+        let (t, factory) = singleTransport()
+        let service = makeService(factory: factory)
+        try loginOk(service, t)
+
+        var notify = Chirp_Auth_DevicesPresenceNotify()
+        var web = Chirp_Auth_DevicePresence()
+        web.platform = "web"
+        web.deviceID = "web-2"
+        web.online = true
+        var android = Chirp_Auth_DevicePresence()
+        android.platform = "android"
+        android.deviceID = "and-1"
+        android.online = true
+        notify.devices = [web, android]
+        t.deliver(try wsNotify(.devicesPresenceNotify, notify))
+        XCTAssertEqual(
+            service.devices.entries().map(\.deviceId), ["and-1", "web-2"],
+            "platform 字典序")
+
+        // offline 条目保留(last-seen)。
+        var offline = Chirp_Auth_DevicePresence()
+        offline.platform = "android"
+        offline.deviceID = "and-1"
+        offline.online = false
+        var gone = Chirp_Auth_DevicesPresenceNotify()
+        gone.devices = [offline]
+        t.deliver(try wsNotify(.devicesPresenceNotify, gone))
+        XCTAssertEqual(service.devices.entries().count, 2)
+        XCTAssertFalse(
+            service.devices.entries().first { $0.platform == "android" }!.online)
+
+        XCTAssertEqual(
+            events.filter { if case .devicesChanged = $0 { return true }; return false }.count, 2)
+        // logout 丢弃旧账号镜像。
+        service.logout()
+        XCTAssertTrue(service.devices.entries().isEmpty)
+    }
+
     func testAddReactionSendsThreeFieldsAndAppliesAggregate() throws {
         let (t, factory) = singleTransport()
         let service = makeService(factory: factory)

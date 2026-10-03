@@ -16,6 +16,8 @@ public enum ChatServiceEvent {
     case reactionChanged(messageId: String)
     /// 有人开始/停止输入(数据在 service.typists)。
     case typing(channelId: String, userId: String, isTyping: Bool)
+    /// 多端在线变化(登录清单或 notify 批次;数据在 service.devices)。
+    case devicesChanged
 }
 
 /// 一次发送的终态(离线入队/拦截/服务端拒绝各有独立分支,壳层据此渲染)。
@@ -91,6 +93,7 @@ public final class ChatSessionService {
         let index = SessionIndex()
         let reactionIndex = ReactionIndex()
         let typingIndex = TypingIndex()
+        let deviceIndex = OnlineDeviceIndex()
         // 队列重放不经过 service.send(),成功记账在这里补——会话预览对直发
         // 与重放一致(存档侧管线已落,索引侧是应用态)。
         let offlineQueue = OfflineSendQueue { options, content in
@@ -110,12 +113,14 @@ public final class ChatSessionService {
         sessions = index
         reactions = reactionIndex
         typists = typingIndex
+        devices = deviceIndex
 
         unsubs = [
             pipe.addListener(self),
             wireMessageAcks(),
             connection.onReconnected { [weak self] in self?.replayOfflineQueue() },
             wireReactionNotifies(reactions: reactionIndex, typists: typingIndex),
+            wireDevicesNotifies(devices: deviceIndex),
         ]
     }
 
@@ -139,6 +144,7 @@ public final class ChatSessionService {
             return taken
         }()
         for unsubscribe in tokens { unsubscribe() }
+        devices.reset()
         pipeline.stop()
         sync.stop()
         conn.disconnect()
@@ -213,6 +219,8 @@ public final class ChatSessionService {
     /// 快捷反应与输入状态的数据面(P4a)。
     public let reactions: ReactionIndex
     public let typists: TypingIndex
+    /// 多端在线数据面(P4b):登录清单 + DEVICES_PRESENCE_NOTIFY 同槽。
+    public let devices: OnlineDeviceIndex
 
     // ---- 反应/输入状态/服务端历史(P4a)--------------------------------------
 
@@ -327,6 +335,18 @@ public final class ChatSessionService {
         }
     }
 
+    /// DEVICES_PRESENCE_NOTIFY → 在线索引(服务端推给本账号的其他在线
+    /// 会话;登录清单在 onLoginDevices)。坏 body 丢弃不伤链路。
+    private func wireDevicesNotifies(devices: OnlineDeviceIndex) -> () -> Void {
+        conn.onNotify(msgId: .devicesPresenceNotify) { [weak self] body in
+            guard let self = self,
+                let notify = try? Chirp_Auth_DevicesPresenceNotify(serializedBytes: Data(body))
+            else { return }
+            devices.apply(notify.devices, nowMs: self.now())
+            self.emit(.devicesChanged)
+        }
+    }
+
     /// CHAT_MESSAGE_NOTIFY → MESSAGE_ACK(服务端 10s 收不到回执会把投递
     /// 回滚进离线滞留)。本订阅先于管线的渲染订阅注册,故回执先于渲染——
     /// 与蓝本 wireMessageAcks 同序。坏 body 丢弃不伤链路。
@@ -379,5 +399,12 @@ extension ChatSessionService: ChatEventListener {
     public func onMessageReceived(_ message: Chirp_Chat_ChatMessage) throws {
         sessions.recordIncoming(message)
         emit(.messageReceived(message))
+    }
+
+    /// 登录响应的初始清单(服务端已排除本会话):入索引,与 notify 同槽。
+    public func onLoginDevices(_ devices: [Chirp_Auth_DevicePresence]) throws {
+        guard !devices.isEmpty else { return }
+        self.devices.apply(devices, nowMs: now())
+        emit(.devicesChanged)
     }
 }

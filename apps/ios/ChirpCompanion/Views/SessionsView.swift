@@ -6,6 +6,7 @@ import SwiftUI
 struct SessionsView: View {
     @EnvironmentObject var model: AppModel
     @State private var newPeer = ""
+    @State private var showDevices = false
 
     var body: some View {
         NavigationStack {
@@ -48,8 +49,20 @@ struct SessionsView: View {
             .navigationTitle("chirp")
             .toolbar {
                 ToolbarItem(placement: .topBarTrailing) {
+                    Button {
+                        model.loadRegisteredDevices()
+                        showDevices = true
+                    } label: {
+                        Image(systemName: "laptopcomputer.and.iphone")
+                    }
+                    .accessibilityLabel("设备面板")
+                }
+                ToolbarItem(placement: .topBarTrailing) {
                     Button("登出") { model.logoutTapped() }
                 }
+            }
+            .sheet(isPresented: $showDevices) {
+                DevicesView()
             }
         }
     }

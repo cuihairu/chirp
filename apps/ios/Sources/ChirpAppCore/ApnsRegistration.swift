@@ -164,6 +164,19 @@ public final class DevicePlaneService {
         return conn.request(spec: MsgSpecs.login, body: request).map { $0.code }
     }
 
+    /// 注册设备清单(GET_USER_DEVICES,P4b 设备面板)。服务端按会话钉
+    /// user_id,请求里的 id 只是形式对齐。设备面断开时直接以 CLOSED 终态
+    /// 失败——壳层据此降级,不重连(重连/注册是 AppModel 的事)。
+    public func loadDevices() -> Promise<Chirp_AppNotification_GetUserDevicesResponse> {
+        guard connectionState == .connected else {
+            return Promise<Chirp_AppNotification_GetUserDevicesResponse>.failed(
+                RequestError(.closed, message: "device plane not connected"))
+        }
+        var request = Chirp_AppNotification_GetUserDevicesRequest()
+        request.userID = userId
+        return conn.request(spec: MsgSpecs.getUserDevices, body: request)
+    }
+
     /// 断开设备面;幂等。
     public func shutdown() {
         conn.disconnect()

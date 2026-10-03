@@ -22,6 +22,12 @@ final class AppModel: ObservableObject {
     @Published private(set) var reactionSummaries: [String: [ReactionIndex.Tally]] = [:]
     /// 当前会话 TTL 内在输入的对端(P4a;6s 过期由清扫任务兜底)。
     @Published private(set) var typingPeers: [String] = []
+    /// 多端在线镜像(P4b:登录清单 + notify,platform 一槽)。
+    @Published private(set) var onlineDevices: [OnlineDeviceIndex.Entry] = []
+    /// 设备面注册清单(P4b:GET_USER_DEVICES,设备面就绪后拉取)。
+    @Published private(set) var registeredDevices: [Chirp_AppNotification_DeviceInfo] = []
+    /// 设备清单降级文案(设备面未注册/拉取失败;nil = 无事)。
+    @Published private(set) var devicesPanelNotice: String?
     private(set) var activePeer: String?
 
     /// typing 上报节流(web ChatWindow 同款:start ≥3s 一次、最后键击 5s
@@ -93,6 +99,9 @@ final class AppModel: ObservableObject {
         chatMessages = []
         sessionSummaries = []
         reactionSummaries = [:]
+        onlineDevices = []
+        registeredDevices = []
+        devicesPanelNotice = nil
         clearTypingState()
         connectionBanner = nil
     }
@@ -135,10 +144,37 @@ final class AppModel: ObservableObject {
         switch event {
         case .registered:
             toast = "设备已登记(推送目标:APNs token 或降级日志投递)"
+            loadRegisteredDevices()
         case .rejected(let code):
             toast = "设备注册被拒:\(codeName(code))"
         case .failed(let reason):
             toast = "设备注册失败:\(reason)"
+        }
+    }
+
+    /// 设备面板的注册清单(P4b):设备面就绪后拉取;面板打开时可再拉刷新。
+    /// 拉取失败置降级文案,面板照开(在线端数据走 chat 面不受影响)。
+    func loadRegisteredDevices() {
+        guard let plane = devicePlane else {
+            devicesPanelNotice = "设备面未就绪(注册未完成或已断开)"
+            return
+        }
+        plane.loadDevices().onComplete { [weak self] outcome in
+            Task { @MainActor in
+                guard let self = self else { return }
+                switch outcome {
+                case .success(let resp):
+                    if resp.code == .ok {
+                        self.registeredDevices = resp.devices
+                        self.devicesPanelNotice =
+                            resp.devices.isEmpty ? "尚无注册设备" : nil
+                    } else {
+                        self.devicesPanelNotice = "设备清单拉取被拒:\(self.codeName(resp.code))"
+                    }
+                case .failure(let err):
+                    self.devicesPanelNotice = "设备清单拉取失败:\(err.localizedDescription)"
+                }
+            }
         }
     }
 
@@ -196,6 +232,8 @@ final class AppModel: ObservableObject {
             // 到点清扫兜底(服务端 stop 通知丢失时 TTL 过期仍能灭灯)。
             scheduleTypingSweep()
             refreshTyping()
+        case .devicesChanged:
+            onlineDevices = service?.devices.entries() ?? []
         }
     }
 
