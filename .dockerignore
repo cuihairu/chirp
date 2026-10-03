@@ -22,6 +22,7 @@ Testing
 apps/desktop
 apps/admin_dashboard
 apps/android
+apps/ios
 apps/load_tester
 *.md
 *.lcov
