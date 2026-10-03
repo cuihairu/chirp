@@ -47,14 +47,36 @@ services:
   # phase-one 链路);生产换真凭据时去掉 --allow_scaffold_login。
   app_auth:
     image: *server-image
-    command: ["--port", "6000", "--jwt_secret", "${AUTH_JWT_SECRET:?set in deploy .env}", "--allow_scaffold_login", "1"]
+    # 增强版 auth(演示账号密码登录)要连 MySQL+Redis:库表由 init_db.sql 建。
+    environment:
+      CHIRP_SERVICE: app_auth
+    command:
+      [
+        "--port", "6000",
+        "--jwt_secret", "${AUTH_JWT_SECRET:?set in deploy .env}",
+        "--allow_scaffold_login", "1",
+        "--mysql_host", "mysql",
+        "--mysql_port", "3306",
+        "--mysql_database", "chirp",
+        "--mysql_user", "chirp",
+        "--mysql_password", "${MYSQL_PASSWORD:?set in deploy .env}",
+        "--redis_host", "redis",
+        "--redis_port", "6379",
+      ]
     restart: unless-stopped
+    depends_on:
+      redis:
+        condition: service_healthy
+      mysql:
+        condition: service_healthy
     healthcheck:
       test: ["CMD", "bash", "-c", "</dev/tcp/127.0.0.1/6000"]
       <<: *tcp-health
 
   app_notification:
     image: *server-image
+    environment:
+      CHIRP_SERVICE: app_notification
     command: ["--port", "5006", "--ws_port", "5016"]
     restart: unless-stopped
     healthcheck:
@@ -64,6 +86,8 @@ services:
   # 游戏面接入网关(chat 的游戏集成上联对端;演示站只为 chat 启动不报错)。
   game_server_gateway:
     image: *server-image
+    environment:
+      CHIRP_SERVICE: game_server_gateway
     command: ["--port", "8100", "--service", "chat=chat-secret", "--chat_service_id", "chat"]
     restart: unless-stopped
     healthcheck:
@@ -72,6 +96,8 @@ services:
 
   chat:
     image: *server-image
+    environment:
+      CHIRP_SERVICE: chat
     command:
       [
         "--port", "7000",
@@ -100,6 +126,8 @@ services:
 
   social:
     image: *server-image
+    environment:
+      CHIRP_SERVICE: social
     command: ["--port", "8000", "--ws_port", "8001", "--redis_host", "redis", "--redis_port", "6379"]
     restart: unless-stopped
     depends_on:
@@ -111,6 +139,8 @@ services:
 
   party:
     image: *server-image
+    environment:
+      CHIRP_SERVICE: party
     command: ["--port", "7500", "--ws_port", "7501", "--redis_host", "redis", "--redis_port", "6379"]
     restart: unless-stopped
     depends_on:
@@ -124,6 +154,8 @@ services:
   # turn_uri 指向不存在的 coturn 时语音面板照常,媒体退 P2P/失败。
   voice:
     image: *server-image
+    environment:
+      CHIRP_SERVICE: voice
     command:
       [
         "--port", "9000",
@@ -139,6 +171,8 @@ services:
 
   app_sdk_gateway:
     image: *server-image
+    environment:
+      CHIRP_SERVICE: app_sdk_gateway
     command:
       [
         "--port", "5200",
