@@ -103,6 +103,15 @@ struct SessionsView: View {
                 ChatView(channelKey: key)
             }
         }
+        .onAppear {
+            // 挂载前已置位的跳转请求(登录成功与挂载同帧 / 推送点击落在
+            // 本视图尚未挂载的窗):onChange 只在挂载后变化时触发,这里
+            // 补消费一次(重复消费读到 nil 自然无害)。
+            if let key = model.pendingChatKey, !key.isEmpty {
+                model.pendingChatKey = nil
+                path = [key]
+            }
+        }
         .onChange(of: model.pendingChatKey) { _, key in
             guard let key, !key.isEmpty else { return }
             model.pendingChatKey = nil

@@ -83,12 +83,20 @@ final class AppModel: ObservableObject {
     private var voicePlane: VoicePlaneService?
     private var loginHost: HostConfig?
 
+    /// 推送点击深链暂存(P5):未登录时点击先存这里,登录成功后应用为
+    /// pendingChatKey;登出/被踢不吞它(tap 已被用户消费,下次登录深链
+    /// 仍到位——登出只清 pendingChatKey)。
+    private var pendingPushRoute: String?
+
     init() {
         // UserDefaults 闭包对接 DeviceIdentity(key 与 web/android 同位)。
         let identity = DeviceIdentity(
             load: { UserDefaults.standard.string(forKey: Self.deviceIdKey) },
             save: { UserDefaults.standard.set($0, forKey: Self.deviceIdKey) })
         deviceId = identity.ensureDeviceId()
+        // 通知面落点:前台呈现裁决与点击深链经 AppDelegate 静态桥进来
+        // (willPresent/didReceive 回调跳主线程后读这里)。
+        AppDelegate.model = self
     }
 
     // ---- 登录/登出 ------------------------------------------------------------
@@ -519,6 +527,12 @@ final class AppModel: ObservableObject {
         case .loginSucceeded:
             phase = .loggedIn(userId: service?.userId ?? "")
             connectionBanner = nil
+            // 推送点击深链暂存(P5,登录期间点击落在这里):置 pendingChatKey
+            // ——SessionsView 挂载前后的 onChange/onAppear 任一路径消费。
+            if let route = pendingPushRoute {
+                pendingPushRoute = nil
+                pendingChatKey = route
+            }
             refreshSessions()
             refreshGroupsRoster()
             startDeviceRegistration()
@@ -594,6 +608,17 @@ final class AppModel: ObservableObject {
     func requestGroupChat(groupId: String) {
         guard !groupId.isEmpty else { return }
         pendingChatKey = SessionChannel.group(groupId).key
+    }
+
+    /// 推送点击深链(P5,AppDelegate.didReceive 经主线程跳入):已登录直接置
+    /// pendingChatKey(SessionsView 消费导航);未登录暂存,登录成功后应用。
+    /// 键形态已由 PushRouteParser 过结构门,这里只分登录态。
+    func handlePushTap(channelKey: String) {
+        if phase.isloggedIn {
+            pendingChatKey = channelKey
+        } else {
+            pendingPushRoute = channelKey
+        }
     }
 
     /// 打开会话(键寻址;DM 与群共用)。坏键(登出竞态)直接忽略。
