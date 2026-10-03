@@ -28,6 +28,19 @@ final class AppModel: ObservableObject {
     @Published private(set) var registeredDevices: [Chirp_AppNotification_DeviceInfo] = []
     /// 设备清单降级文案(设备面未注册/拉取失败;nil = 无事)。
     @Published private(set) var devicesPanelNotice: String?
+    /// 好友名册 + 在线状态(P4c:FriendIndex/PresenceIndex 派生视图行)。
+    @Published private(set) var socialFriends: [SocialFriendRow] = []
+    /// 待我处理的入向申请(FRIEND_REQUEST_NOTIFY 累积)。
+    @Published private(set) var pendingRequests: [FriendIndex.PendingIn] = []
+    /// 我已发出、等对方确认的申请(纯本地,刷新即丢——服务端无出向查询)。
+    @Published private(set) var pendingOutIds: [String] = []
+    /// 我自己的在线状态(P4c:面板里可改,登录默认在线)。
+    @Published private(set) var myPresence: Chirp_Social_PresenceStatus = .online
+    /// 社交面板降级文案(名册/在线状态拉取失败;nil = 无事)。
+    @Published private(set) var socialPanelNotice: String?
+    /// 跳转请求:好友面板/新会话入口置位,SessionsView 消费后清空(导航栈
+    /// 归它自己持有,本层只发请求)。
+    @Published var pendingChatPeerId: String?
     private(set) var activePeer: String?
 
     /// typing 上报节流(web ChatWindow 同款:start ≥3s 一次、最后键击 5s
@@ -96,12 +109,18 @@ final class AppModel: ObservableObject {
         AppDelegate.tokenSink = nil
         phase = .loggedOut
         activePeer = nil
+        pendingChatPeerId = nil
         chatMessages = []
         sessionSummaries = []
         reactionSummaries = [:]
         onlineDevices = []
         registeredDevices = []
         devicesPanelNotice = nil
+        socialFriends = []
+        pendingRequests = []
+        pendingOutIds = []
+        myPresence = .online
+        socialPanelNotice = nil
         clearTypingState()
         connectionBanner = nil
     }
@@ -208,6 +227,10 @@ final class AppModel: ObservableObject {
             connectionBanner = nil
             refreshSessions()
             startDeviceRegistration()
+            // 登录即对外在线(好友才能收到 PRESENCE_NOTIFY);被拒静默——
+            // 非好友身份下服务端不广播,不影响聊天。
+            setMyPresence(.online)
+            rebuildSocial()
         case .loginRejected(let code):
             toast = "登录被拒:\(codeName(code))"
             tearDownService()
@@ -234,10 +257,19 @@ final class AppModel: ObservableObject {
             refreshTyping()
         case .devicesChanged:
             onlineDevices = service?.devices.entries() ?? []
+        case .friendsChanged, .presenceChanged:
+            rebuildSocial()
         }
     }
 
     // ---- 会话/聊天面 ------------------------------------------------------------
+
+    /// 请求跳转到某对端的聊天窗口(新会话/好友面板入口)。
+    func requestChat(peerId: String) {
+        let peer = peerId.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !peer.isEmpty else { return }
+        pendingChatPeerId = peer
+    }
 
     func openChat(peerId: String) {
         activePeer = peerId
@@ -342,6 +374,131 @@ final class AppModel: ObservableObject {
         sessionSummaries = service?.sessions.summaries() ?? []
     }
 
+    // ---- 好友/在线状态面(P4c) ---------------------------------------------
+
+    /// 好友面板的整表刷新(打开面板时调):名册换入后按名册批量拉一次在线
+    /// 状态。任一路失败置降级文案,面板照开——在线状态缺失只影响小圆点。
+    func loadFriends() {
+        guard let service = service else {
+            socialPanelNotice = "尚未登录"
+            return
+        }
+        socialPanelNotice = nil
+        service.refreshFriends()
+            .flatMap { [weak self] _ -> Promise<Chirp_Common_ErrorCode> in
+                guard let self = self, let service = self.service else {
+                    return Promise<Chirp_Common_ErrorCode>.completed(.ok)
+                }
+                return service.pullPresence(of: service.friends.friends())
+            }
+            .onComplete { [weak self] outcome in
+                Task { @MainActor in
+                    guard let self = self else { return }
+                    self.rebuildSocial()
+                    if case .failure(let err) = outcome {
+                        self.socialPanelNotice = "名册拉取失败:\(err.localizedDescription)"
+                    }
+                }
+            }
+    }
+
+    /// 改自己的在线状态(广播给好友)。失败只提示,面板状态保持原值。
+    func setMyPresence(_ status: Chirp_Social_PresenceStatus) {
+        guard let service = service else { return }
+        service.setPresence(status).onComplete { [weak self] outcome in
+            Task { @MainActor in
+                guard let self = self else { return }
+                switch outcome {
+                case .success(let code) where code == .ok:
+                    self.myPresence = status
+                case .success(let code):
+                    self.toast = "状态切换被拒:\(self.codeName(code))"
+                case .failure(let err):
+                    self.toast = "状态切换失败:\(err.localizedDescription)"
+                }
+            }
+        }
+    }
+
+    /// 发起好友申请(空 id / 自己的 id 由 service 侧守卫,这里只做去空白)。
+    func addFriendTapped(targetUserId: String) {
+        let target = targetUserId.trimmingCharacters(in: .whitespaces)
+        guard !target.isEmpty, let service = service else { return }
+        service.addFriend(targetUserId: target).onComplete { [weak self] outcome in
+            Task { @MainActor in
+                guard let self = self else { return }
+                switch outcome {
+                case .success(let code) where code == .ok:
+                    self.toast = "已向 \(target) 发出好友申请"
+                    self.rebuildSocial()
+                case .success(let code):
+                    self.toast = "申请被拒:\(self.codeName(code))"
+                case .failure(let err):
+                    self.toast = "申请失败:\(err.localizedDescription)"
+                }
+            }
+        }
+    }
+
+    /// 同意/拒绝一条入向申请;名册由 FRIEND_ACCEPTED_NOTIFY 补。
+    func respondToRequestTapped(requestId: String, accept: Bool) {
+        guard let service = service else { return }
+        service.respondToRequest(requestId: requestId, accept: accept)
+            .onComplete { [weak self] outcome in
+                Task { @MainActor in
+                    guard let self = self else { return }
+                    switch outcome {
+                    case .success(let code) where code == .ok:
+                        self.rebuildSocial()
+                    case .success(let code):
+                        self.toast = "处理被拒:\(self.codeName(code))"
+                    case .failure(let err):
+                        self.toast = "处理失败:\(err.localizedDescription)"
+                    }
+                }
+            }
+    }
+
+    /// 删好友(服务端对称幂等,对方走 notify)。
+    func removeFriendTapped(userId: String) {
+        guard let service = service else { return }
+        service.removeFriend(targetUserId: userId).onComplete { [weak self] outcome in
+            Task { @MainActor in
+                guard let self = self else { return }
+                switch outcome {
+                case .success(let code) where code == .ok:
+                    self.rebuildSocial()
+                case .success(let code):
+                    self.toast = "删除被拒:\(self.codeName(code))"
+                case .failure(let err):
+                    self.toast = "删除失败:\(err.localizedDescription)"
+                }
+            }
+        }
+    }
+
+    /// 名册/申请/在线状态 → @Published 视图行。TTL 过期(70s 无增量)的快照
+    /// 按离线渲染,漏掉的 disconnect notify 由这一层兜底。
+    private func rebuildSocial() {
+        guard let service = service else {
+            socialFriends = []
+            pendingRequests = []
+            pendingOutIds = []
+            return
+        }
+        let nowMs = Int64(Date().timeIntervalSince1970 * 1000)
+        socialFriends = service.friends.friends().map { userId in
+            let fresh = service.presence.isFresh(userId, nowMs: nowMs)
+            let entry = fresh ? service.presence.entry(userId) : nil
+            return SocialFriendRow(
+                userId: userId,
+                status: entry?.status ?? .offline,
+                statusMessage: entry?.statusMessage ?? "")
+        }
+        pendingRequests = service.friends.pendingIn()
+        pendingOutIds = service.friends.pendingOut()
+    }
+
     // ---- typing 上报/展示(P4a) ------------------------------------------------
 
     /// 输入框内容变化(ChatView onChange 驱动;空串不触发——web 语义)。
@@ -443,4 +600,46 @@ final class AppModel: ObservableObject {
     }
 
     private static let deviceIdKey = "chirp.device_id"
+}
+
+/// 好友行的视图模型(P4c):名册 id + 快照状态。快照缺失或 TTL 过期一律
+/// `.offline`(PresenceIndex.isFresh 已判),壳层不再二次判龄。
+struct SocialFriendRow: Identifiable, Equatable {
+    let userId: String
+    let status: Chirp_Social_PresenceStatus
+    let statusMessage: String
+
+    var id: String { userId }
+
+    /// 小圆点颜色:只有真在线态亮绿,其余按语义色。
+    var dotColor: PresenceDot {
+        switch status {
+        case .online: return .online
+        case .away: return .away
+        case .dnd: return .busy
+        case .inGame, .inBattle: return .inGame
+        case .offline: return .offline
+        default: return .offline
+        }
+    }
+
+    var statusText: String {
+        switch status {
+        case .online: return "在线"
+        case .away: return "离开"
+        case .dnd: return "勿扰"
+        case .inGame: return "游戏中"
+        case .inBattle: return "战斗中"
+        case .offline: return "离线"
+        default: return "未知"
+        }
+    }
+}
+
+enum PresenceDot {
+    case online
+    case away
+    case busy
+    case inGame
+    case offline
 }

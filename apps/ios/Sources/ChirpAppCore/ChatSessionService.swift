@@ -18,6 +18,12 @@ public enum ChatServiceEvent {
     case typing(channelId: String, userId: String, isTyping: Bool)
     /// 多端在线变化(登录清单或 notify 批次;数据在 service.devices)。
     case devicesChanged
+    /// 好友名册变化(整表拉取或 request/accepted/removed notify;
+    /// 数据在 service.friends)。
+    case friendsChanged
+    /// 对端在线状态变化(PRESENCE_NOTIFY 或 GET_PRESENCE 批量拉;
+    /// 数据在 service.presence)。
+    case presenceChanged
 }
 
 /// 一次发送的终态(离线入队/拦截/服务端拒绝各有独立分支,壳层据此渲染)。
@@ -94,6 +100,8 @@ public final class ChatSessionService {
         let reactionIndex = ReactionIndex()
         let typingIndex = TypingIndex()
         let deviceIndex = OnlineDeviceIndex()
+        let friendIndex = FriendIndex()
+        let presenceIndex = PresenceIndex()
         // 队列重放不经过 service.send(),成功记账在这里补——会话预览对直发
         // 与重放一致(存档侧管线已落,索引侧是应用态)。
         let offlineQueue = OfflineSendQueue { options, content in
@@ -114,6 +122,8 @@ public final class ChatSessionService {
         reactions = reactionIndex
         typists = typingIndex
         devices = deviceIndex
+        friends = friendIndex
+        presence = presenceIndex
 
         unsubs = [
             pipe.addListener(self),
@@ -121,6 +131,7 @@ public final class ChatSessionService {
             connection.onReconnected { [weak self] in self?.replayOfflineQueue() },
             wireReactionNotifies(reactions: reactionIndex, typists: typingIndex),
             wireDevicesNotifies(devices: deviceIndex),
+            wireSocialNotifies(friends: friendIndex, presence: presenceIndex),
         ]
     }
 
@@ -145,6 +156,8 @@ public final class ChatSessionService {
         }()
         for unsubscribe in tokens { unsubscribe() }
         devices.reset()
+        friends.reset()
+        presence.reset()
         pipeline.stop()
         sync.stop()
         conn.disconnect()
@@ -221,6 +234,10 @@ public final class ChatSessionService {
     public let typists: TypingIndex
     /// 多端在线数据面(P4b):登录清单 + DEVICES_PRESENCE_NOTIFY 同槽。
     public let devices: OnlineDeviceIndex
+    /// 好友名册数据面(P4c):服务端权威,GET_FRIEND_LIST 整表 + 三条 notify。
+    public let friends: FriendIndex
+    /// 对端在线状态数据面(P4c):PRESENCE_NOTIFY 增量 + GET_PRESENCE 批量。
+    public let presence: PresenceIndex
 
     // ---- 反应/输入状态/服务端历史(P4a)--------------------------------------
 
@@ -347,6 +364,201 @@ public final class ChatSessionService {
         }
     }
 
+    /// PRESENCE_NOTIFY / FRIEND_*_NOTIFY → social 两个索引。服务端把
+    /// PRESENCE_NOTIFY 广播给好友,FRIEND_REQUEST/ACCEPTED/REMOVED 定向发给
+    /// 涉及方;坏 body 丢弃不伤链路。ACCEPTED 携带的是**对方** id(双方对称),
+    /// 与 web 同款——本地接受后靠这条通知补名册,不在应答里写。
+    private func wireSocialNotifies(
+        friends: FriendIndex, presence: PresenceIndex
+    ) -> () -> Void {
+        let offPresence = conn.onNotify(msgId: .presenceNotify) { [weak self] body in
+            guard let self = self,
+                let notify = try? Chirp_Social_PresenceNotify(serializedBytes: Data(body))
+            else { return }
+            presence.set(
+                notify.userID, status: notify.status,
+                statusMessage: notify.statusMessage, atMs: self.now())
+            self.emit(.presenceChanged)
+        }
+        let offRequest = conn.onNotify(msgId: .friendRequestNotify) { [weak self] body in
+            guard let self = self,
+                let notify = try? Chirp_Social_FriendRequestNotify(serializedBytes: Data(body))
+            else { return }
+            friends.addPendingIn(
+                requestId: notify.requestID, fromUserId: notify.fromUserID)
+            self.emit(.friendsChanged)
+        }
+        let offAccepted = conn.onNotify(msgId: .friendAcceptedNotify) { [weak self] body in
+            guard let self = self,
+                let notify = try? Chirp_Social_FriendAcceptedNotify(serializedBytes: Data(body))
+            else { return }
+            friends.addFriend(notify.userID)
+            self.emit(.friendsChanged)
+        }
+        let offRemoved = conn.onNotify(msgId: .friendRemovedNotify) { [weak self] body in
+            guard let self = self,
+                let notify = try? Chirp_Social_FriendRemovedNotify(serializedBytes: Data(body))
+            else { return }
+            friends.removeFriend(notify.userID)
+            // 名册已无此人,其 presence 快照一并作废(留着只会陈旧)。
+            presence.remove(notify.userID)
+            self.emit(.friendsChanged)
+        }
+        return {
+            offPresence()
+            offRequest()
+            offAccepted()
+            offRemoved()
+        }
+    }
+
+    // ---- 好友/在线状态请求面(P4c,web social_api.ts 同款字段)-------------------
+
+    /// 拉好友名册(整表换入)并顺带拉待处理申请;返回名册的 code。待处理
+    /// 那一路失败静默——名册可用即面板可用,申请另走一条 .friendsChanged。
+    @discardableResult
+    public func refreshFriends() -> Promise<Chirp_Common_ErrorCode> {
+        let pending = Chirp_Social_GetPendingRequestsRequest.with { $0.userID = userId }
+        _ = conn.request(spec: MsgSpecs.getPendingRequests, body: pending)
+            .handle { [weak self] resp, err in
+                guard let self = self, err == nil, let resp = resp, resp.code == .ok
+                else { return false }
+                self.friends.replacePendingIn(
+                    resp.requests.map {
+                        .init(requestId: $0.requestID, fromUserId: $0.fromUserID)
+                    })
+                self.emit(.friendsChanged)
+                return true
+            }
+
+        let list = Chirp_Social_GetFriendListRequest.with {
+            $0.userID = userId
+            $0.limit = 0  // 0 = 不分页,演示栈一次性取全量
+            $0.offset = 0
+        }
+        return conn.request(spec: MsgSpecs.getFriendList, body: list)
+            .handle { [weak self] resp, err in
+                guard let self = self, err == nil, let resp = resp, resp.code == .ok
+                else { return Chirp_Common_ErrorCode.internalError }
+                self.friends.replaceFriends(resp.friends.map(\.userID))
+                self.emit(.friendsChanged)
+                return resp.code
+            }
+    }
+
+    /// 批量拉对端在线状态(名册/会话列表进面板时调);空名单直接 ok,
+    /// 不发包。
+    @discardableResult
+    public func pullPresence(of userIds: [String]) -> Promise<Chirp_Common_ErrorCode> {
+        let ids = userIds.filter { !$0.isEmpty && $0 != userId }
+        guard !ids.isEmpty else {
+            return Promise<Chirp_Common_ErrorCode>.completed(.ok)
+        }
+        let request = Chirp_Social_GetPresenceRequest.with { $0.userIds = ids }
+        return conn.request(spec: MsgSpecs.getPresence, body: request)
+            .handle { [weak self] resp, err in
+                guard let self = self, err == nil, let resp = resp, resp.code == .ok
+                else { return Chirp_Common_ErrorCode.internalError }
+                let atMs = self.now()
+                for info in resp.presences {
+                    self.presence.set(
+                        info.userID, status: info.status,
+                        statusMessage: info.statusMessage, atMs: atMs)
+                }
+                self.emit(.presenceChanged)
+                return resp.code
+            }
+    }
+
+    /// 改自己的在线状态(广播给好友)。statusMessage 空串即清空。
+    @discardableResult
+    public func setPresence(
+        _ status: Chirp_Social_PresenceStatus, statusMessage: String = ""
+    ) -> Promise<Chirp_Common_ErrorCode> {
+        let request = Chirp_Social_SetPresenceRequest.with {
+            $0.userID = userId
+            $0.status = status
+            $0.statusMessage = statusMessage
+        }
+        return conn.request(spec: MsgSpecs.setPresence, body: request)
+            .map { resp in resp.code }
+    }
+
+    /// 发起好友申请。成功只记本地出向(对方是否收到由服务端 notify 决定),
+    /// 与 web 同款。
+    @discardableResult
+    public func addFriend(
+        targetUserId: String, message: String = ""
+    ) -> Promise<Chirp_Common_ErrorCode> {
+        guard !targetUserId.isEmpty, targetUserId != userId else {
+            return Promise<Chirp_Common_ErrorCode>.completed(.invalidParam)
+        }
+        let request = Chirp_Social_AddFriendRequest.with {
+            $0.userID = userId
+            $0.targetUserID = targetUserId
+            $0.message = message
+        }
+        return conn.request(spec: MsgSpecs.addFriend, body: request)
+            .handle { [weak self] resp, err in
+                guard let self = self, err == nil, let resp = resp, resp.code == .ok
+                else {
+                    return err == nil
+                        ? (resp?.code ?? Chirp_Common_ErrorCode.internalError)
+                        : Chirp_Common_ErrorCode.internalError
+                }
+                self.friends.addPendingOut(targetUserId)
+                self.emit(.friendsChanged)
+                return resp.code
+            }
+    }
+
+    /// 同意/拒绝一条入向申请。应答成功后出队;名册由 ACCEPTED notify 补。
+    @discardableResult
+    public func respondToRequest(
+        requestId: String, accept: Bool
+    ) -> Promise<Chirp_Common_ErrorCode> {
+        let request = Chirp_Social_FriendRequestAction.with {
+            $0.userID = userId
+            $0.requestID = requestId
+            $0.accept = accept
+        }
+        return conn.request(spec: MsgSpecs.friendRequestAction, body: request)
+            .handle { [weak self] resp, err in
+                guard let self = self, err == nil, let resp = resp, resp.code == .ok
+                else {
+                    return err == nil
+                        ? (resp?.code ?? Chirp_Common_ErrorCode.internalError)
+                        : Chirp_Common_ErrorCode.internalError
+                }
+                self.friends.resolvePending(requestId: requestId)
+                self.emit(.friendsChanged)
+                return resp.code
+            }
+    }
+
+    /// 删好友(服务端对称幂等);本地同步移除,对端走 notify。
+    @discardableResult
+    public func removeFriend(
+        targetUserId: String
+    ) -> Promise<Chirp_Common_ErrorCode> {
+        let request = Chirp_Social_RemoveFriendRequest.with {
+            $0.userID = userId
+            $0.friendUserID = targetUserId
+        }
+        return conn.request(spec: MsgSpecs.removeFriend, body: request)
+            .handle { [weak self] resp, err in
+                guard let self = self, err == nil, let resp = resp, resp.code == .ok
+                else {
+                    return err == nil
+                        ? (resp?.code ?? Chirp_Common_ErrorCode.internalError)
+                        : Chirp_Common_ErrorCode.internalError
+                }
+                self.friends.removeFriend(targetUserId)
+                self.emit(.friendsChanged)
+                return resp.code
+            }
+    }
+
     /// CHAT_MESSAGE_NOTIFY → MESSAGE_ACK(服务端 10s 收不到回执会把投递
     /// 回滚进离线滞留)。本订阅先于管线的渲染订阅注册,故回执先于渲染——
     /// 与蓝本 wireMessageAcks 同序。坏 body 丢弃不伤链路。
@@ -386,6 +598,13 @@ extension ChatSessionService: ChatEventListener {
             // 词库下发:登录成功即拉一次;失败静默,回退词库继续生效,
             // 后续热更走 UPDATE_NOTIFY(sync 已 start)。
             _ = sync.fetch()
+            // 好友名册 + 在线状态:登录即整表拉一次(与 web friend_store
+            // 同款)。名册先到再按名册批量拉 presence;两路失败静默——
+            // 面板不可用不该影响登录终态,notify 后续会补。
+            _ = refreshFriends().flatMap { [weak self] _ -> Promise<Chirp_Common_ErrorCode> in
+                guard let self = self else { return Promise.completed(.ok) }
+                return self.pullPresence(of: self.friends.friends())
+            }
             emit(.loginSucceeded)
         } else {
             emit(.loginRejected(code))

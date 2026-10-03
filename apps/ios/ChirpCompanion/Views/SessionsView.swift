@@ -2,14 +2,17 @@ import ChirpAppCore
 import SwiftUI
 
 /// 会话列表:SessionIndex 派生(最新在前),点击进聊天;支持任意对端发起
-/// 新会话(P2 的 DM 面与 web/android dev 壳同位)。
+/// 新会话(P2 的 DM 面与 web/android dev 壳同位)。导航走 path:栈由本视图
+/// 持有,好友面板/新会话入口通过 model.pendingChatPeerId 请求跳转。
 struct SessionsView: View {
     @EnvironmentObject var model: AppModel
     @State private var newPeer = ""
     @State private var showDevices = false
+    @State private var showFriends = false
+    @State private var path: [String] = []
 
     var body: some View {
-        NavigationStack {
+        NavigationStack(path: $path) {
             List {
                 if model.sessionSummaries.isEmpty {
                     ContentUnavailableView(
@@ -28,7 +31,7 @@ struct SessionsView: View {
                             let peer = newPeer.trimmingCharacters(in: .whitespaces)
                             guard !peer.isEmpty else { return }
                             newPeer = ""
-                            model.openChat(peerId: peer)
+                            model.requestChat(peerId: peer)
                         }
                         .disabled(newPeer.trimmingCharacters(in: .whitespaces).isEmpty)
                     }
@@ -36,9 +39,7 @@ struct SessionsView: View {
                 if !model.sessionSummaries.isEmpty {
                     Section("会话") {
                         ForEach(model.sessionSummaries, id: \.peerId) { session in
-                            NavigationLink {
-                                ChatView(peerId: session.peerId)
-                            } label: {
+                            NavigationLink(value: session.peerId) {
                                 sessionRow(session)
                             }
                         }
@@ -48,6 +49,12 @@ struct SessionsView: View {
             }
             .navigationTitle("chirp")
             .toolbar {
+                ToolbarItem(placement: .topBarTrailing) {
+                    Button { showFriends = true } label: {
+                        Image(systemName: "person.2")
+                    }
+                    .accessibilityLabel("好友面板")
+                }
                 ToolbarItem(placement: .topBarTrailing) {
                     Button {
                         model.loadRegisteredDevices()
@@ -64,6 +71,17 @@ struct SessionsView: View {
             .sheet(isPresented: $showDevices) {
                 DevicesView()
             }
+            .sheet(isPresented: $showFriends) {
+                FriendsView()
+            }
+            .navigationDestination(for: String.self) { peerId in
+                ChatView(peerId: peerId)
+            }
+        }
+        .onChange(of: model.pendingChatPeerId) { _, peer in
+            guard let peer, !peer.isEmpty else { return }
+            model.pendingChatPeerId = nil
+            path = [peer]
         }
     }
 
