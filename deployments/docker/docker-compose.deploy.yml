@@ -1,0 +1,189 @@
+# chirp 演示站栈(runner-docker 机,192.168.5.5):web 伴侣 + 全功能面。
+# 与 docker-compose.yml(dev 全家桶)的差异:
+#   - 镜像来自 GHCR(不在部署机构建);npc_dialog/search/coturn/archive 不进演示栈
+#   - 口令/密钥从部署目录 .env 注入(不进版本库;部署腿首建时随机生成)
+#   - 对外只暴露 web 的 8086(Cloudflare 隧道 chirp.cuihairu.site 的回源端口),
+#     其余端口只在 compose 网络内互通
+#   - 全部 restart: unless-stopped + healthcheck
+name: chirp-demo
+
+x-server-image: &server-image ghcr.io/${GHCR_OWNER:-cuihairu}/chirp-server:${CHIRP_TAG:-latest}
+
+# C++ 服务通用健康探测:连一下自己的主监听口(dash 没有 /dev/tcp,显式 bash)。
+x-tcp-health: &tcp-health
+  interval: 15s
+  timeout: 5s
+  retries: 5
+  start_period: 10s
+
+services:
+  redis:
+    image: redis:7-alpine
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  mysql:
+    image: mysql:8.0
+    restart: unless-stopped
+    environment:
+      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD:?set in deploy .env}
+      MYSQL_DATABASE: chirp
+      MYSQL_USER: chirp
+      MYSQL_PASSWORD: ${MYSQL_PASSWORD:?set in deploy .env}
+    volumes:
+      - mysql_data:/var/lib/mysql
+      - ./init_db.sql:/docker-entrypoint-initdb.d/init_db.sql:ro
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-u", "root", "-p$$MYSQL_ROOT_PASSWORD"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+
+  # 设备面/SDK 面的登录验证。演示站保持 scaffold 登录(web/iOS 的
+  # phase-one 链路);生产换真凭据时去掉 --allow_scaffold_login。
+  app_auth:
+    image: *server-image
+    command: ["--port", "6000", "--jwt_secret", "${AUTH_JWT_SECRET:?set in deploy .env}", "--allow_scaffold_login", "1"]
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "bash", "-c", "</dev/tcp/127.0.0.1/6000"]
+      <<: *tcp-health
+
+  app_notification:
+    image: *server-image
+    command: ["--port", "5006", "--ws_port", "5016"]
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "bash", "-c", "</dev/tcp/127.0.0.1/5006"]
+      <<: *tcp-health
+
+  # 游戏面接入网关(chat 的游戏集成上联对端;演示站只为 chat 启动不报错)。
+  game_server_gateway:
+    image: *server-image
+    command: ["--port", "8100", "--service", "chat=chat-secret", "--chat_service_id", "chat"]
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "bash", "-c", "</dev/tcp/127.0.0.1/8100"]
+      <<: *tcp-health
+
+  chat:
+    image: *server-image
+    command:
+      [
+        "--port", "7000",
+        "--ws_port", "7001",
+        "--redis_host", "redis",
+        "--redis_port", "6379",
+        "--mysql_host", "mysql",
+        "--mysql_port", "3306",
+        "--mysql_database", "chirp",
+        "--mysql_user", "chirp",
+        "--mysql_password", "${MYSQL_PASSWORD:?set in deploy .env}",
+        "--server_gateway_host", "game_server_gateway",
+        "--server_gateway_secret", "chat-secret",
+        "--gateway_service_secret", "edge-secret",
+        "--npc_service_id", "npc_dialog",
+      ]
+    restart: unless-stopped
+    depends_on:
+      redis:
+        condition: service_healthy
+      mysql:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "bash", "-c", "</dev/tcp/127.0.0.1/7001"]
+      <<: *tcp-health
+
+  social:
+    image: *server-image
+    command: ["--port", "8000", "--ws_port", "8001", "--redis_host", "redis", "--redis_port", "6379"]
+    restart: unless-stopped
+    depends_on:
+      redis:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "bash", "-c", "</dev/tcp/127.0.0.1/8001"]
+      <<: *tcp-health
+
+  party:
+    image: *server-image
+    command: ["--port", "7500", "--ws_port", "7501", "--redis_host", "redis", "--redis_port", "6379"]
+    restart: unless-stopped
+    depends_on:
+      redis:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "bash", "-c", "</dev/tcp/127.0.0.1/7501"]
+      <<: *tcp-health
+
+  # TURN 中继不在演示栈(Cloudflare 隧道只过 HTTP/WS,UDP relay 无从暴露);
+  # turn_uri 指向不存在的 coturn 时语音面板照常,媒体退 P2P/失败。
+  voice:
+    image: *server-image
+    command:
+      [
+        "--port", "9000",
+        "--ws_port", "9001",
+        "--turn_uri", "turn:coturn:3478?transport=udp,turn:coturn:3478?transport=tcp,stun:coturn:3478",
+        "--turn_static_secret", "demo_turn_secret",
+        "--heartbeat_timeout_ms", "75000",
+      ]
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "bash", "-c", "</dev/tcp/127.0.0.1/9001"]
+      <<: *tcp-health
+
+  app_sdk_gateway:
+    image: *server-image
+    command:
+      [
+        "--port", "5200",
+        "--ws_port", "5201",
+        "--auth_host", "app_auth",
+        "--auth_port", "6000",
+        "--redis_host", "redis",
+        "--redis_port", "6379",
+        "--redis_ttl", "3600",
+        "--instance_id", "app_gw_1",
+        "--notification_host", "app_notification",
+        "--notification_port", "5006",
+        "--chat_host", "chat",
+        "--chat_port", "7000",
+        "--chat_service_secret", "edge-secret",
+      ]
+    restart: unless-stopped
+    depends_on:
+      app_auth:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      app_notification:
+        condition: service_healthy
+      chat:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "bash", "-c", "</dev/tcp/127.0.0.1/5201"]
+      <<: *tcp-health
+
+  web:
+    image: ghcr.io/${GHCR_OWNER:-cuihairu}/chirp-web:${CHIRP_TAG:-latest}
+    restart: unless-stopped
+    # 8086 = Cloudflare 隧道 chirp.cuihairu.site 的回源端口(ingress rule)。
+    ports:
+      - "8086:8080"
+    depends_on:
+      chat:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD-SHELL", "wget -qO- http://127.0.0.1:8080/healthz >/dev/null || exit 1"]
+      interval: 15s
+      timeout: 5s
+      retries: 5
+      start_period: 5s
+
+volumes:
+  mysql_data:

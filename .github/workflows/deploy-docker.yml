@@ -1,0 +1,183 @@
+# 部署 chirp 演示栈到自托管 docker 主机(chirp.cuihairu.site):
+#   拉镜像 → 起栈 → 健康检查 → 失败回滚旧镜像。
+#
+# 触发链:main 的 CI(测试面)全绿后自动部署(workflow_run),或手动
+# workflow_dispatch(可指定 tag = 回滚/重放指定版本)。「主分支绿才部署」
+# 由触发条件保证:CI 不绿的提交不会走到这里。
+#
+# 跑在 runner-docker 机自己的 runner 上(标签 chirp-docker100,与其他仓库
+# 的 runner 隔离)。部署机不需要源码工具链:compose/init_db.sql 由本工作流
+# 同步过去,镜像全部来自 GHCR。口令不进版本库:部署目录 .env 首建时随机
+# 生成,之后只滚动镜像标签。
+#
+# 站点:web 的 8086 即 Cloudflare 隧道 chirp.cuihairu.site 的回源端口;
+# 其余服务只在 compose 网络内互通。
+name: Deploy Docker
+
+on:
+  workflow_run:
+    workflows: ["CI"]
+    types: [completed]
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: "镜像标签(chirp-server 与 chirp-web 共用;缺省 latest)"
+        required: false
+        default: "latest"
+      deploy_dir:
+        description: "部署机上的部署目录"
+        required: false
+        default: "/data/deploy/chirp"
+
+permissions:
+  contents: read
+  packages: read
+
+# 同时只允许一个部署在跑:并发 up -d 会互相 --remove-orphans。
+concurrency:
+  group: deploy-docker
+  cancel-in-progress: false
+
+jobs:
+  deploy:
+    # workflow_run 触发:仅 main 分支且 CI 结论为 success 才部署;
+    # 手动触发不受此限(回滚/重放指定 tag 用)。
+    if: >-
+      github.event_name == 'workflow_dispatch' ||
+      (github.event.workflow_run.conclusion == 'success' &&
+       github.event.workflow_run.head_branch == 'main')
+    runs-on: [self-hosted, chirp-docker100]
+    timeout-minutes: 40
+    steps:
+      - name: Checkout
+        timeout-minutes: 3
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.workflow_run.head_sha || github.sha }}
+
+      - name: Login GHCR
+        timeout-minutes: 3
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Prepare deploy directory
+        timeout-minutes: 3
+        run: |
+          set -euo pipefail
+          deploy_dir="${{ inputs.deploy_dir || '/data/deploy/chirp' }}"
+          tag="${{ inputs.tag || 'latest' }}"
+          sudo_cmd=""
+          if [ "$(id -u)" -ne 0 ] && command -v sudo >/dev/null 2>&1; then
+            sudo_cmd="sudo"
+          fi
+          $sudo_cmd mkdir -p "$deploy_dir"
+          $sudo_cmd chown "$(id -u):$(id -g)" "$deploy_dir"
+          cp deployments/docker/docker-compose.deploy.yml "$deploy_dir/docker-compose.yml"
+          cp scripts/init_db.sql "$deploy_dir/init_db.sql"
+          if [ ! -f "$deploy_dir/.env" ]; then
+            # 首建:口令/密钥随机生成,只落部署机 .env(不进版本库)。
+            cat > "$deploy_dir/.env" <<EOF
+          CHIRP_TAG=${tag}
+          GHCR_OWNER=${{ github.repository_owner }}
+          MYSQL_ROOT_PASSWORD=$(openssl rand -hex 16)
+          MYSQL_PASSWORD=$(openssl rand -hex 16)
+          AUTH_JWT_SECRET=$(openssl rand -hex 32)
+          EOF
+            echo "PREV_TAG=" >> "$GITHUB_ENV"
+          else
+            # 已有 .env:只滚动镜像标签,口令保持;记下旧 tag 供回滚。
+            prev="$(grep -E '^CHIRP_TAG=' "$deploy_dir/.env" | tail -1 | cut -d= -f2 || true)"
+            sed -i '/^CHIRP_TAG=/d;/^GHCR_OWNER=/d' "$deploy_dir/.env"
+            printf 'CHIRP_TAG=%s\nGHCR_OWNER=%s\n' \
+              "${tag}" "${{ github.repository_owner }}" >> "$deploy_dir/.env"
+            echo "PREV_TAG=${prev}" >> "$GITHUB_ENV"
+          fi
+          echo "--- deploy_dir/$deploy_dir ---"
+          sed -E 's/(PASSWORD|SECRET)=.*/\1=<redacted>/' "$deploy_dir/.env"
+
+      - name: Pull images
+        timeout-minutes: 10
+        run: |
+          set -euo pipefail
+          deploy_dir="${{ inputs.deploy_dir || '/data/deploy/chirp' }}"
+          docker compose --env-file "$deploy_dir/.env" -f "$deploy_dir/docker-compose.yml" pull
+
+      - name: Deploy containers
+        timeout-minutes: 10
+        run: |
+          set -euo pipefail
+          deploy_dir="${{ inputs.deploy_dir || '/data/deploy/chirp' }}"
+          docker compose --env-file "$deploy_dir/.env" -f "$deploy_dir/docker-compose.yml" \
+            up -d --remove-orphans
+          docker compose --env-file "$deploy_dir/.env" -f "$deploy_dir/docker-compose.yml" ps
+
+      - name: Wait for health (rollback on failure)
+        timeout-minutes: 12
+        run: |
+          set -euo pipefail
+          deploy_dir="${{ inputs.deploy_dir || '/data/deploy/chirp' }}"
+          tag="${{ inputs.tag || 'latest' }}"
+          prev_tag="${PREV_TAG:-}"
+          compose() { docker compose --env-file "$deploy_dir/.env" -f "$deploy_dir/docker-compose.yml" "$@"; }
+
+          wait_healthy() {
+            # 端到端:web /healthz + 首页 HTML + 各服务容器健康态。
+            for i in $(seq 1 50); do
+              if curl -fsS http://127.0.0.1:8086/healthz >/dev/null 2>&1 \
+                 && curl -fsS http://127.0.0.1:8086/ | grep -q '<div id="root">' 2>/dev/null; then
+                if ! compose ps -a --format json | grep -qE '"(unhealthy|starting)"'; then
+                  echo "stack healthy after ${i} tries"
+                  return 0
+                fi
+              fi
+              sleep 10
+            done
+            echo "stack did not become healthy; last compose ps:"
+            compose ps || true
+            compose logs --tail 40 || true
+            return 1
+          }
+
+          if ! wait_healthy; then
+            if [ -n "$prev_tag" ] && [ "$prev_tag" != "$tag" ]; then
+              echo "::warning::健康检查失败,回滚到旧镜像 ${prev_tag}"
+              sed -i "s/^CHIRP_TAG=.*/CHIRP_TAG=${prev_tag}/" "$deploy_dir/.env"
+              compose pull
+              compose up -d --remove-orphans
+              for i in $(seq 1 30); do
+                if curl -fsS http://127.0.0.1:8086/healthz >/dev/null 2>&1; then
+                  echo "rollback to ${prev_tag} healthy"
+                  break
+                fi
+                if [ "$i" = "30" ]; then
+                  echo "::error::回滚后仍未恢复健康,需人工介入"
+                fi
+                sleep 10
+              done
+            else
+              echo "::error::无旧镜像可回滚(首建或同 tag 重部署)"
+            fi
+            exit 1
+          fi
+
+      - name: Deploy summary
+        if: always()
+        timeout-minutes: 3
+        run: |
+          deploy_dir="${{ inputs.deploy_dir || '/data/deploy/chirp' }}"
+          {
+            echo "### chirp 部署完成"
+            echo
+            echo "- 提交:\`${{ github.event.workflow_run.head_sha || github.sha }}\`"
+            echo "- 镜像标签:\`${{ inputs.tag || 'latest' }}\`"
+            echo "- 部署目录:\`$deploy_dir\`"
+            echo "- 站点:<https://chirp.cuihairu.site/>"
+            echo
+            echo '```'
+            docker compose --env-file "$deploy_dir/.env" -f "$deploy_dir/docker-compose.yml" \
+              ps --format '{{.Name}}\t{{.Image}}\t{{.Status}}' 2>/dev/null || true
+            echo '```'
+          } >> "$GITHUB_STEP_SUMMARY"

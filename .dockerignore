@@ -1,12 +1,27 @@
+# 镜像构建上下文瘦身:COPY . . 不进这些(容器内全部重新生成/安装)。
+# 镜像面只需要 proto/services/libs/cmake/tools/docker/deployments/scripts
+# + web 构建的 apps/web_companion、apps/shared/protocol、proto/ts。
 .git
 .github
 build
-proto/cpp
-proto/go
-**/*.o
-**/*.a
-**/*.so
-**/*.dylib
-**/*.exe
-**/*.obj
-**/.DS_Store
+build-*
+vcpkg
+vcpkg_installed
+node_modules
+**/node_modules
+**/dist
+**/coverage
+coverage*
+coverage_html
+docs
+ios
+tests
+Testing
+apps/desktop
+apps/admin_dashboard
+apps/android
+apps/load_tester
+apps/cli_client
+*.md
+*.lcov
+*.csv

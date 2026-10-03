@@ -1,0 +1,26 @@
+# chirp web 伴侣镜像:根 npm workspaces 构建 vite 产物 → nginx 托管并
+# 同源反代 /ws/* 到各后端(浏览器侧默认 wss://<host>/ws/<plane>)。
+# nginx 以非 root 用户跑(listen 8080,>1024 无需特权)。
+FROM node:20-alpine AS build
+
+WORKDIR /repo
+# 先只拷 package.json 集合让 npm ci 吃层缓存(workspaces 缺一不可)。
+COPY package.json package-lock.json ./
+COPY apps/shared/protocol/package.json apps/shared/protocol/
+COPY apps/web_companion/package.json apps/web_companion/
+COPY sdks/ts/package.json sdks/ts/
+RUN npm ci
+
+COPY proto/ts proto/ts
+COPY apps/shared/protocol apps/shared/protocol
+COPY apps/web_companion apps/web_companion
+RUN npm run build -w apps/web_companion
+
+# unprivileged 变体:默认监听 8080,全部运行时目录已归 nginx 用户,
+# 无需 root(master 也以 nginx 跑)。
+FROM nginxinc/nginx-unprivileged:1.27-alpine
+
+COPY deployments/docker/nginx.conf /etc/nginx/conf.d/default.conf
+COPY --from=build /repo/apps/web_companion/dist /usr/share/nginx/html
+
+EXPOSE 8080
