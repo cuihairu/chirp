@@ -1,10 +1,10 @@
 import ChirpAppCore
 import SwiftUI
 
-/// 会话列表:SessionIndex 派生(最新在前),点击进聊天(DM/群共用键寻址,
-/// P4e);支持任意对端发起新 DM 与新建群组。导航走 path:栈由本视图持有,
-/// 好友面板/新会话入口/建群成功通过 model.pendingChatKey 请求跳转,被踢/
-/// 退群由 chatDismissToken 弹栈。
+/// 会话列表:SessionIndex 派生(最新在前,快照跨启动存活 P6),点击进聊天
+/// (DM/群共用键寻址,P4e);DM 行滑动删除,支持任意对端发起新 DM 与新建
+/// 群组。导航走 path:栈由本视图持有,好友面板/新会话入口/建群成功通过
+/// model.pendingChatKey 请求跳转,被踢/退群由 chatDismissToken 弹栈。
 struct SessionsView: View {
     @EnvironmentObject var model: AppModel
     @State private var newPeer = ""
@@ -56,8 +56,19 @@ struct SessionsView: View {
                             NavigationLink(value: session.key) {
                                 sessionRow(session)
                             }
+                            .swipeActions(edge: .trailing) {
+                                // 只对 DM 行开放:群行删了会被名单引导
+                                // (ensureGroup)在下次刷新重建,删除无效——
+                                // 群的移除走群面板的退群/被踢。
+                                if session.kind == .dm {
+                                    Button(role: .destructive) {
+                                        model.deleteSessionTapped(key: session.key)
+                                    } label: {
+                                        Label("删除", systemImage: "trash")
+                                    }
+                                }
+                            }
                         }
-                        // 会话删除随持久化批次落地(索引是内存态)。
                     }
                 }
             }

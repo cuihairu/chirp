@@ -114,6 +114,7 @@ final class AppModel: ObservableObject {
             deviceId: deviceId,
             chatUrl: host.chatUrl.absoluteString,
             transportFactory: { DarwinWsTransport(url: $0) },
+            sessionSnapshot: Self.sessionSnapshotIO(for: userId),
             emit: { [weak self] event in
                 Task { @MainActor in self?.handle(event) }
             })
@@ -608,6 +609,15 @@ final class AppModel: ObservableObject {
     func requestGroupChat(groupId: String) {
         guard !groupId.isEmpty else { return }
         pendingChatKey = SessionChannel.group(groupId).key
+    }
+
+    /// 会话行删除(P6,列表行滑动删除):数据面摘行,快照同步落盘。只移列表
+    /// 行不清历史(store/服务端都留着),新消息再冒头;群行不开放删除——
+    /// 名单引导(ensureGroup)会在下次刷新重建,群的移除走退群/被踢。
+    func deleteSessionTapped(key: String) {
+        guard let service = service else { return }
+        service.sessions.remove(key: key)
+        refreshSessions()
     }
 
     /// 推送点击深链(P5,AppDelegate.didReceive 经主线程跳入):已登录直接置
@@ -1126,6 +1136,15 @@ final class AppModel: ObservableObject {
     var currentUserId: String {
         if case .loggedIn(let id) = phase { return id }
         return ""
+    }
+
+    /// 会话列表快照的字节面(P6):UserDefaults 按用户分键(载荷小、写频
+    /// 低),编码/校验在 SessionIndex 内——与 DeviceIdentity 同款闭包缝。
+    private static func sessionSnapshotIO(for userId: String) -> SessionIndex.SnapshotIO {
+        let key = "chirp.sessions.\(userId)"
+        return SessionIndex.SnapshotIO(
+            load: { UserDefaults.standard.data(forKey: key) },
+            save: { UserDefaults.standard.set($0, forKey: key) })
     }
 
     private static let deviceIdKey = "chirp.device_id"

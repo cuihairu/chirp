@@ -215,3 +215,19 @@ final class ManualScheduler: Scheduler {
 final class FakeRandom: RandomSource {
     func nextLong(until bound: Int64) -> Int64 { 0 }
 }
+
+/// 内存快照面(P6):SessionIndex 持久化缝的测试双——load 回当前字节、
+/// save 记末次写入与次数(空操作不写靠计数断言);data 可直接投喂线格式。
+final class MemorySnapshotIO {
+    var data: Data?
+    private(set) var saves = 0
+
+    func io() -> SessionIndex.SnapshotIO {
+        SessionIndex.SnapshotIO(
+            load: { self.data },
+            save: {
+                self.data = $0
+                self.saves += 1
+            })
+    }
+}

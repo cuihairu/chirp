@@ -17,7 +17,8 @@ final class ChatSessionServiceTests: XCTestCase {
     }
 
     private func makeService(
-        factory: @escaping (String) -> WsTransport
+        factory: @escaping (String) -> WsTransport,
+        sessionSnapshot: SessionIndex.SnapshotIO? = nil
     ) -> ChatSessionService {
         ChatSessionService(
             userId: "alice",
@@ -27,7 +28,8 @@ final class ChatSessionServiceTests: XCTestCase {
             scheduler: scheduler,
             random: FakeRandom(),
             // now 固定 1000 —— 回执 receivedAt 与发送侧存档时间戳可断言。
-            now: { 1_000 }
+            now: { 1_000 },
+            sessionSnapshot: sessionSnapshot
         ) { [weak self] in self?.events.append($0) }
     }
 
@@ -789,5 +791,24 @@ final class ChatSessionServiceTests: XCTestCase {
         XCTAssertThrowsError(try service.loadServerHistory(key: "garbage").get(timeoutSeconds: 2))
         XCTAssertEqual(t.sent.count, frames, "坏键在本地挡下,不上线")
         service.logout()
+    }
+
+    /// P6 接线:入站消息真实路径记账→落盘;换实例(重启语义)构造即回灌,
+    /// 预览与未读跨实例存活。
+    func testSessionSnapshotPersistsAcrossServiceInstances() throws {
+        let mem = MemorySnapshotIO()
+        let (t1, f1) = singleTransport()
+        let first = makeService(factory: f1, sessionSnapshot: mem.io())
+        try loginOk(first, t1)
+        t1.deliver(try wsNotify(
+            .chatMessageNotify, dmText("bob", "alice", id: "m1", text: "在吗", ts: 900)))
+        XCTAssertEqual(mem.saves, 1, "入站记账即落盘(登录面不动会话索引)")
+
+        let second = makeService(
+            factory: { _ in FakeWsTransport() }, sessionSnapshot: mem.io())
+        let summary = second.sessions.summary(key: "p:alice|bob")
+        XCTAssertEqual(summary?.lastMessage, "在吗")
+        XCTAssertEqual(summary?.unread, 1, "未读跨实例存活")
+        first.logout()
     }
 }

@@ -84,6 +84,7 @@ public final class ChatSessionService {
         scheduler: Scheduler = DispatchScheduler(),
         random: RandomSource = SystemRandomSource(),
         now: @escaping () -> Int64 = { Int64(Date().timeIntervalSince1970 * 1000) },
+        sessionSnapshot: SessionIndex.SnapshotIO? = nil,
         emit: @escaping (ChatServiceEvent) -> Void
     ) {
         self.userId = userId
@@ -108,7 +109,8 @@ public final class ChatSessionService {
         filterSync.start()
         pipe.interceptor = filterSync
 
-        let index = SessionIndex(selfId: userId)
+        // 会话索引带快照缝(P6):构造即回灌上次的预览/未读,变更即落盘。
+        let index = SessionIndex(selfId: userId, snapshotIO: sessionSnapshot)
         let reactionIndex = ReactionIndex()
         let typingIndex = TypingIndex()
         let deviceIndex = OnlineDeviceIndex()

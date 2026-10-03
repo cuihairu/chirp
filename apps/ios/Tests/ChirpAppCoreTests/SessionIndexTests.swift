@@ -102,4 +102,111 @@ final class SessionIndexTests: XCTestCase {
         XCTAssertNil(index.summary(key: "g:g1"))
         XCTAssertEqual(index.unreadTotal(), 0)
     }
+
+    // ---- 快照持久化(P6) ------------------------------------------------------
+
+    /// 构造回灌:预览/未读/时间戳跨「重启」存活;kind/peerId 从键反解
+    /// (线格式不存冗余)。
+    func testSnapshotHydratesSummariesOnInit() {
+        let mem = MemorySnapshotIO()
+        let seed = SessionIndex(selfId: "alice", snapshotIO: mem.io())
+        seed.recordIncoming(dmText("bob", "alice", id: "m1", text: "在吗", ts: 200))
+        seed.recordOutgoing(
+            key: "p:alice|carol", peerId: "carol", content: "hi", timestamp: 300)
+        seed.ensureGroup(groupId: "g1")
+
+        let restored = SessionIndex(selfId: "alice", snapshotIO: mem.io())
+        let summaries = restored.summaries()
+        XCTAssertEqual(
+            summaries.map(\.key), ["p:alice|carol", "p:alice|bob", "g:g1"],
+            "时间戳降序,无预览的群行垫底")
+        XCTAssertEqual(summaries[1].unread, 1, "未读跨启动存活")
+        XCTAssertEqual(summaries[1].lastMessage, "在吗")
+        XCTAssertEqual(summaries[2].kind, .group)
+        XCTAssertEqual(summaries[2].peerId, "g1")
+    }
+
+    /// 线格式直投(v1):坏行丢(畸形键/未知前缀/别人的 DM 对),负未读钳 0
+    /// ——键即身份,载入过 SessionChannel 结构门 + 含自己侧的成员门。
+    func testSnapshotDropsMalformedForeignRowsAndClampsUnread() {
+        let mem = MemorySnapshotIO()
+        mem.data = Data("""
+            {"v":1,"rows":[
+              {"key":"p:a|b|c","lastMessage":"x","lastTimestamp":1,"unread":1},
+              {"key":"x:y","lastMessage":"x","lastTimestamp":1,"unread":1},
+              {"key":"p:carol|dave","lastMessage":"别家","lastTimestamp":2,"unread":5},
+              {"key":"p:alice|bob","lastMessage":"合法","lastTimestamp":3,"unread":-4},
+              {"key":"g:g1","lastMessage":"群","lastTimestamp":4,"unread":2}
+            ]}
+            """.utf8)
+        let index = SessionIndex(selfId: "alice", snapshotIO: mem.io())
+        XCTAssertEqual(
+            index.summaries().map(\.key), ["g:g1", "p:alice|bob"],
+            "只剩合法且含自己侧的行")
+        XCTAssertEqual(index.summary(key: "p:alice|bob")?.unread, 0, "负未读钳 0")
+        XCTAssertEqual(index.summary(key: "g:g1")?.unread, 2)
+    }
+
+    /// 异版本与破损字节:一律当全新开始(预览是可重建的缓存面,不报错)。
+    func testSnapshotVersionGateAndCorruptionYieldFreshIndex() {
+        let mem = MemorySnapshotIO()
+        mem.data = Data("""
+            {"v":2,"rows":[{"key":"p:alice|bob","lastMessage":"x","lastTimestamp":1,"unread":1}]}
+            """.utf8)
+        XCTAssertTrue(
+            SessionIndex(selfId: "alice", snapshotIO: mem.io()).summaries().isEmpty,
+            "异版本不猜格式")
+
+        mem.data = Data("not json".utf8)
+        XCTAssertTrue(
+            SessionIndex(selfId: "alice", snapshotIO: mem.io()).summaries().isEmpty,
+            "破损字节当全新开始")
+    }
+
+    /// markRead/remove 的变更也落盘:清零与摘行都跨重启生效。
+    func testMarkReadAndRemovePersistAcrossRelaunch() {
+        let mem = MemorySnapshotIO()
+        let seed = SessionIndex(selfId: "alice", snapshotIO: mem.io())
+        seed.recordIncoming(dmText("bob", "alice", id: "m1", text: "在吗", ts: 100))
+        seed.markRead(key: "p:alice|bob")
+
+        let restored = SessionIndex(selfId: "alice", snapshotIO: mem.io())
+        XCTAssertEqual(restored.summary(key: "p:alice|bob")?.unread, 0, "清零跨启动")
+        XCTAssertEqual(
+            restored.summary(key: "p:alice|bob")?.lastMessage, "在吗", "预览保留")
+
+        restored.remove(key: "p:alice|bob")
+        let afterDelete = SessionIndex(selfId: "alice", snapshotIO: mem.io())
+        XCTAssertTrue(afterDelete.summaries().isEmpty, "删除跨启动")
+    }
+
+    /// 空操作不落盘:未知键 markRead/remove、已有行 ensureGroup 都不写。
+    func testNoOpMutationsDoNotSave() {
+        let mem = MemorySnapshotIO()
+        let index = SessionIndex(selfId: "alice", snapshotIO: mem.io())
+        XCTAssertEqual(mem.saves, 0, "构造不写(无快照/无变更)")
+
+        index.markRead(key: "p:alice|nobody")
+        index.remove(key: "g:ghost")
+        XCTAssertEqual(mem.saves, 0, "未知键不动不写")
+
+        index.ensureGroup(groupId: "g1")
+        XCTAssertEqual(mem.saves, 1, "新行落一盘")
+        index.ensureGroup(groupId: "g1")
+        XCTAssertEqual(mem.saves, 1, "幂等不再写")
+    }
+
+    /// 名单引导不冲掉回灌的预览(登录后 refreshGroups 的路径)。
+    func testEnsureGroupKeepsHydratedPreview() {
+        let mem = MemorySnapshotIO()
+        let seed = SessionIndex(selfId: "alice", snapshotIO: mem.io())
+        seed.ensureGroup(groupId: "g1")
+        seed.recordIncoming(groupText("bob", groupId: "g1", id: "m1", text: "早", ts: 100))
+
+        let restored = SessionIndex(selfId: "alice", snapshotIO: mem.io())
+        restored.ensureGroup(groupId: "g1")
+        let summary = restored.summary(key: "g:g1")
+        XCTAssertEqual(summary?.lastMessage, "早", "已有行不动预览")
+        XCTAssertEqual(summary?.unread, 1)
+    }
 }
