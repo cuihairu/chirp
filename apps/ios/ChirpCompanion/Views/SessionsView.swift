@@ -54,7 +54,7 @@ struct SessionsView: View {
         }
     }
 
-    private func sessionRow(_ session: SessionSummary) -> some View {
+    private func sessionRow(_ session: SessionIndex.Summary) -> some View {
         HStack {
             VStack(alignment: .leading, spacing: 2) {
                 Text(session.peerId).font(.headline)
