@@ -17,11 +17,12 @@ docs
 ios
 tests
 Testing
+# 只排除根 CMakeLists 不引用的大目录:apps/cli_client(24K)被
+# add_subdirectory 引用,必须留在上下文,否则镜像 cmake 配置失败。
 apps/desktop
 apps/admin_dashboard
 apps/android
 apps/load_tester
-apps/cli_client
 *.md
 *.lcov
 *.csv
