@@ -85,6 +85,7 @@ jobs:
           MYSQL_ROOT_PASSWORD=$(openssl rand -hex 16)
           MYSQL_PASSWORD=$(openssl rand -hex 16)
           AUTH_JWT_SECRET=$(openssl rand -hex 32)
+          DEMO_PASSWORD=Demo-$(openssl rand -hex 12)
           EOF
             echo "PREV_TAG=" >> "$GITHUB_ENV"
           else
@@ -94,6 +95,10 @@ jobs:
             printf 'CHIRP_TAG=%s\nGHCR_OWNER=%s\n' \
               "${tag}" "${{ github.repository_owner }}" >> "$deploy_dir/.env"
             echo "PREV_TAG=${prev}" >> "$GITHUB_ENV"
+          fi
+          # 演示账号口令(README 演示站点行同步)只在缺失时补建,保持幂等。
+          if ! grep -q '^DEMO_PASSWORD=' "$deploy_dir/.env"; then
+            printf 'DEMO_PASSWORD=Demo-%s\n' "$(openssl rand -hex 12)" >> "$deploy_dir/.env"
           fi
           echo "--- deploy_dir/$deploy_dir ---"
           sed -E 's/(PASSWORD|SECRET)=.*/\1=<redacted>/' "$deploy_dir/.env"
@@ -163,11 +168,30 @@ jobs:
             exit 1
           fi
 
+      - name: Ensure demo account (idempotent)
+        timeout-minutes: 6
+        run: |
+          set -euo pipefail
+          deploy_dir="${{ inputs.deploy_dir || '/data/deploy/chirp' }}"
+          compose() { docker compose --env-file "$deploy_dir/.env" -f "$deploy_dir/docker-compose.yml" "$@"; }
+          # auth 只在 compose 网络内可达:借它的容器拿网络名,再起一次性
+          # python 容器跑零依赖注册/登录脚本(scripts/demo_account.py)。
+          auth_container="$(compose ps -q app_auth)"
+          network="$(docker inspect -f \
+            '{{range $k, $v := .NetworkSettings.Networks}}{{$k}}{{end}}' "$auth_container")"
+          demo_password="$(grep -E '^DEMO_PASSWORD=' "$deploy_dir/.env" | tail -1 | cut -d= -f2)"
+          docker run --rm --network "$network" \
+            -v "$PWD/scripts/demo_account.py:/demo_account.py:ro" \
+            python:3.12-slim python3 /demo_account.py \
+            --host app_auth --port 6000 \
+            --username demo --password "$demo_password"
+
       - name: Deploy summary
         if: always()
         timeout-minutes: 3
         run: |
           deploy_dir="${{ inputs.deploy_dir || '/data/deploy/chirp' }}"
+          demo_password="$(grep -E '^DEMO_PASSWORD=' "$deploy_dir/.env" | tail -1 | cut -d= -f2 || true)"
           {
             echo "### chirp 部署完成"
             echo
@@ -175,6 +199,7 @@ jobs:
             echo "- 镜像标签:\`${{ inputs.tag || 'latest' }}\`"
             echo "- 部署目录:\`$deploy_dir\`"
             echo "- 站点:<https://chirp.cuihairu.site/>"
+            echo "- 演示账号:\`demo\` / \`$demo_password\`(README 演示站点行)"
             echo
             echo '```'
             docker compose --env-file "$deploy_dir/.env" -f "$deploy_dir/docker-compose.yml" \
