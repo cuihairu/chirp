@@ -37,6 +37,18 @@ private final class Once {
     }
 }
 
+/// Which RegisterDeviceRequest slot the fetched token lands in. Kotlin only
+/// ever fills `fcm_token` (its sole backend), so this stays a Swift-side
+/// addition: iOS writes the APNs token to `apns_token` — the server has
+/// stored all three slots verbatim since the apns batch (notification
+/// handlers copy them through; UpdateDeviceToken picks first non-empty in
+/// fcm → apns → push_kit order).
+public enum PushTokenSlot {
+    case fcm
+    case apns
+    case pushKit
+}
+
 /// Registers this install as a push target (device plane, app_gateway WS
 /// 5201) — port of dart `device_api.dart#registerSelf` via the Kotlin
 /// DeviceRegistrar, minus the local device-store bookkeeping the shell
@@ -55,6 +67,7 @@ public final class DeviceRegistrar {
     private let osVersion: () -> String
     private let deviceName: () -> String
     private let platform: String
+    private let tokenSlot: PushTokenSlot
 
     public init(
         conn: ChatConnection,
@@ -64,7 +77,8 @@ public final class DeviceRegistrar {
         deviceName: @escaping () -> String = { "" },
         /// Per-device identity (Kotlin reports "android"); no vector
         /// depends on the value beyond its own platform.
-        platform: String = "ios"
+        platform: String = "ios",
+        tokenSlot: PushTokenSlot = .fcm
     ) {
         self.conn = conn
         self.deviceId = deviceId
@@ -72,6 +86,7 @@ public final class DeviceRegistrar {
         self.osVersion = osVersion
         self.deviceName = deviceName
         self.platform = platform
+        self.tokenSlot = tokenSlot
     }
 
     public func register(
@@ -114,9 +129,13 @@ public final class DeviceRegistrar {
         request.userID = userId
         request.deviceID = deviceId()
         request.platform = platform
-        // dart 降级对齐：无 token 也注册（fcm_token 留空，服务端推送降级
-        // 为日志投递），设备清单仍登记。
-        request.fcmToken = fetched ?? ""
+        // dart 降级对齐：无 token 也注册（token 槽留空，服务端推送降级
+        // 为日志投递），设备清单仍登记。槽位由 tokenSlot 决定（iOS=apns）。
+        switch tokenSlot {
+        case .fcm: request.fcmToken = fetched ?? ""
+        case .apns: request.apnsToken = fetched ?? ""
+        case .pushKit: request.pushKitToken = fetched ?? ""
+        }
         request.appVersion = appVersion
         request.osVersion = osVersion()
         request.deviceName = deviceName()

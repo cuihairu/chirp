@@ -2,6 +2,8 @@ import ChirpAppCore
 import ChirpProtos
 import ChirpProtocol
 import SwiftUI
+import UIKit
+import UserNotifications
 
 /// 壳层状态机(P2:真接线)。登录→会话列表→DM 收发全走 ChatSessionService;
 /// 服务事件在连接线程回调,统一 Task { @MainActor } 跳主线程再落 @Published。
@@ -21,6 +23,9 @@ final class AppModel: ObservableObject {
     /// 设备识别(首次生成即持久化);登录面展示用。
     let deviceId: String
     private var service: ChatSessionService?
+    /// 设备面(app_gateway 5201)注册服务与本次登录用的 host 快照。
+    private var devicePlane: DevicePlaneService?
+    private var loginHost: HostConfig?
 
     init() {
         // UserDefaults 闭包对接 DeviceIdentity(key 与 web/android 同位)。
@@ -37,6 +42,7 @@ final class AppModel: ObservableObject {
             let host = HostConfig.resolve(draft.host)
         else { return }
         let userId = draft.normalizedUserId
+        loginHost = host
         connectionBanner = "连接中…"
         // 一次登录一个服务实例(蓝本同款:失败即弃,下次登录新建)。
         let service = ChatSessionService(
@@ -69,11 +75,69 @@ final class AppModel: ObservableObject {
     private func tearDownService() {
         service?.logout()
         service = nil
+        devicePlane?.shutdown()
+        devicePlane = nil
+        AppDelegate.tokenSink = nil
         phase = .loggedOut
         activePeer = nil
         chatMessages = []
         sessionSummaries = []
         connectionBanner = nil
+    }
+
+    // ---- 设备面推送注册(P3) ---------------------------------------------------
+
+    /// 登录成功后:请求通知授权 + 发起 APNs token 注册(token 走 AppDelegate
+    /// 桥进 AwaitedPushTokenSource),并连设备面完成 RegisterDevice——
+    /// 无 entitlement/授权被拒/系统回调失败一律空 token 降级注册(设备清单
+    /// 仍登记,推送退化为服务端日志投递,对齐 android nopush 姿态)。
+    private func startDeviceRegistration() {
+        guard let host = loginHost, let service = service else { return }
+        let userId = service.userId
+        requestNotificationAuthorization()
+        let tokenSource = AwaitedPushTokenSource()
+        AppDelegate.tokenSink = tokenSource
+        let plane = DevicePlaneService(
+            userId: userId,
+            deviceId: deviceId,
+            deviceUrl: host.deviceUrl.absoluteString,
+            osVersion: { ProcessInfo.processInfo.operatingSystemVersionString },
+            deviceName: { UIDevice.current.name },
+            transportFactory: { DarwinWsTransport(url: $0) },
+            emit: { [weak self] event in
+                Task { @MainActor in self?.handleDeviceEvent(event) }
+            })
+        devicePlane = plane
+        plane.register(tokenSource: tokenSource).onComplete { [weak self] outcome in
+            Task { @MainActor in
+                guard let self = self, self.devicePlane === plane else { return }
+                // 终态正常路径经 Event 事件;这里只兜连接层失败。
+                if case .failure(let err) = outcome {
+                    self.toast = "设备面连接失败:\(err.localizedDescription)"
+                }
+            }
+        }
+    }
+
+    private func handleDeviceEvent(_ event: DevicePlaneService.Event) {
+        switch event {
+        case .registered:
+            toast = "设备已登记(推送目标:APNs token 或降级日志投递)"
+        case .rejected(let code):
+            toast = "设备注册被拒:\(codeName(code))"
+        case .failed(let reason):
+            toast = "设备注册失败:\(reason)"
+        }
+    }
+
+    private func requestNotificationAuthorization() {
+        UNUserNotificationCenter.current().requestAuthorization(options: [.alert, .sound, .badge]) {
+            _, _ in
+            // 授权与否都发起远程通知注册:授权只影响展示,token 照取。
+            DispatchQueue.main.async {
+                UIApplication.shared.registerForRemoteNotifications()
+            }
+        }
     }
 
     // ---- 事件落位 --------------------------------------------------------------
@@ -95,6 +159,7 @@ final class AppModel: ObservableObject {
             phase = .loggedIn(userId: service?.userId ?? "")
             connectionBanner = nil
             refreshSessions()
+            startDeviceRegistration()
         case .loginRejected(let code):
             toast = "登录被拒:\(codeName(code))"
             tearDownService()

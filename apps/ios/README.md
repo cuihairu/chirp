@@ -4,8 +4,8 @@ SwiftPM package porting the pure protocol core of the former Flutter app
 (`apps/mobile_companion`, removed 2026-09-29 once both native packages
 carried its full test-vector groups), same migration path the Android
 package took (its M1→M4 batches, minus the app shell). Gate: `swift test`
-on Linux — **112 tests, all green** (Swift 6.4, x86_64 linux; 92 protocol
-core incl. the 11 lexicon-sync vectors + 20 app core).
+on Linux — **119 tests, all green** (Swift 6.4, x86_64 linux; 92 protocol
+core incl. the 11 lexicon-sync vectors + 27 app core).
 
 ## Layout
 
@@ -20,13 +20,13 @@ core incl. the 11 lexicon-sync vectors + 20 app core).
 | `Sources/ChirpProtocol/Hooks.swift` | `Hooks.kt` (Android M4) | pipeline seams: `SendOptions`, `MessageInterceptor`, `AuthProvider`, `MessageStore` + `MemoryMessageStore`, `ChatEventListener`, `CommandHandler`, `ChirpArgumentError` |
 | `Sources/ChirpProtocol/ChatPipeline.swift` | `ChatPipeline.kt` (Android M4) | login token chain (explicit > provider > userId, one AUTH_FAILED renewal), send validation order (connection state first), `/`-command routing, interceptor rewrite/block, archive, push fan-out (KICK delivered once per connection), re-entrant start/stop |
 | `Sources/ChirpProtocol/OfflineSendQueue.swift` | `OfflineSendQueue.kt` (Android M4) | at-least-once replay: any server response confirms; CLOSED/TIMEOUT keeps the entry and stops the batch (tail stays queued in order); BLOCKED/argument errors drop; clientId dedupe; beyond `maxQueued` (50) the oldest is evicted |
-| `Sources/ChirpProtocol/DeviceRegistrar.swift` | `DeviceRegistrar.kt` (Android M3.5) | device-plane registration (app_gateway WS 5201) with the async `PushTokenSource` seam: exactly-once delivery guard, throwing source contained, empty token still registers (dart degradation), server ErrorCode passthrough, connection RequestError passthrough |
+| `Sources/ChirpProtocol/DeviceRegistrar.swift` | `DeviceRegistrar.kt` (Android M3.5) | device-plane registration (app_gateway WS 5201) with the async `PushTokenSource` seam: exactly-once delivery guard, throwing source contained, empty token still registers (dart degradation), server ErrorCode passthrough, connection RequestError passthrough; Swift-side addition `PushTokenSlot` (fcm/apns/pushKit — Kotlin only ever fills fcm; iOS writes `apns_token`, the server stores all slots verbatim) |
 | `Sources/ChirpProtocol/WsTransport.swift` | `lib/protocol/ws_transport.dart` | transport seam: open/onBinary/onClosed/send/close |
 | `Sources/ChirpProtocol/WsTransportDarwin.swift` | `OkHttpTransport.kt` (Android M2) | Darwin real transport: `URLSessionWebSocketTask` adapter; text frames dropped; onClosed announced exactly once after open succeeds; pre-open failure reports through open's result |
 | `Sources/ChirpProtocol/Scheduler.swift` | dart event-loop timers | time seam; tests drive a `ManualScheduler` virtual clock |
 | `Sources/ChirpProtocol/Promise.swift` | dart `Future`/Kotlin `CompletableFuture` | settle-once future; combinators `map`/`flatMap`/`handle` are the thenApply/thenCompose/handle mapping |
 | `Sources/ChirpProtocol/RequestError.swift` | `lib/protocol/errors.dart` | timeout/closed/kicked (+ server/blocked used by the pipeline) |
-| `Tests/ChirpProtocolTests/` | the Kotlin test files | same vector groups — conformance with the Kotlin package (the dart suite was removed with the Flutter app on 2026-09-29; this batch backfilled its four only-there vectors): Frame 6, ChatConnection 16, MsgSpecs table 3, ChatPipeline 27, OfflineSendQueue 9, Hooks 6, WordFilter 7, WordFilterSync 11 (lexicon batch), DeviceRegistrar 7; plus `Tests/ChirpAppCoreTests/` 20 for the app core (SessionIndex 5, ChatSessionService 6, P1 units 9) |
+| `Tests/ChirpProtocolTests/` | the Kotlin test files | same vector groups — conformance with the Kotlin package (the dart suite was removed with the Flutter app on 2026-09-29; this batch backfilled its four only-there vectors): Frame 6, ChatConnection 16, MsgSpecs table 3, ChatPipeline 27, OfflineSendQueue 9, Hooks 6, WordFilter 7, WordFilterSync 11 (lexicon batch), DeviceRegistrar 7; plus `Tests/ChirpAppCoreTests/` 27 for the app core (SessionIndex 5, ChatSessionService 6, AwaitedPushTokenSource 4, DevicePlaneService 3, P1 units 9) |
 
 Dart's single event loop becomes one recursive lock (transport callbacks and
 scheduler ticks arrive on foreign threads; `close()` re-enters through the
@@ -42,7 +42,7 @@ the same vectors stay runnable.
 ## Gate
 
 ```sh
-cd apps/ios && swift test    # 112 tests, XCTest, Linux-native
+cd apps/ios && swift test    # 119 tests, XCTest, Linux-native
 ```
 
 CI: `ios-app.yml` (macos-latest) runs the package tests on the real
@@ -93,7 +93,7 @@ of truth).
 |---|---|
 | `project.yml` | XcodeGen spec → `ChirpCompanion.xcodeproj` (`xcodegen generate`) |
 | `ChirpCompanion/` | SwiftUI shell: `App/` (entry, root observable), `Views/` (login / sessions / chat screens) |
-| `Sources/ChirpAppCore/` | UI-free app logic inside the package: `DeviceIdentity` / `HostConfig` / `LoginDraft` (P1), plus the P2 closed loop — `ChatSessionService` (login→sessions→DM send/receive wiring: acks, offline queue replay, word-filter sync, event stream) and `SessionIndex` (conversation list state) — so `swift test` covers it on Linux **and** macOS |
+| `Sources/ChirpAppCore/` | UI-free app logic inside the package: `DeviceIdentity` / `HostConfig` / `LoginDraft` (P1), the P2 closed loop — `ChatSessionService` (login→sessions→DM send/receive wiring: acks, offline queue replay, word-filter sync, event stream) and `SessionIndex` (conversation list state) — and the P3 push pieces — `AwaitedPushTokenSource` (offer-then-fetch APNs token waiter, timeout degrades to nil) and `DevicePlaneService` (device-plane login → RegisterDevice on 5201) — so `swift test` covers it on Linux **and** macOS |
 | `.github/workflows/ios-app.yml` | CI leg (macos-latest): xcodegen → simulator build (unsigned) → package tests on the real macOS toolchain |
 
 ```bash
@@ -108,10 +108,12 @@ swift test
 |---|---|---|
 | P1 | 工程结构 + CI 构建腿(macos-latest:xcodegen + iOS Simulator 编译证明 + 包测试上 CI);SwiftUI 三屏骨架(登录/会话/聊天,静态);`ChirpAppCore` 入包(DeviceIdentity / HostConfig / LoginDraft) | ✅ 2026-10-03 |
 | P2 | 登录+会话+收发最小闭环:`ChatSessionService`(蓝本 MainActivity.kt 接线——ChatConnection/ChatPipeline/MemoryMessageStore/WordFilterSync 拦截器/OfflineSendQueue/MESSAGE_ACK 回执先于渲染/事件流)+ `SessionIndex` 会话列表 + SwiftUI 三屏真接线(连接横幅/KICK 踢下线/离线入队重放提示);服务级单测 11 例(假 transport+虚拟时钟,对拍协议包手法) | ✅ 2026-10-03 |
-| P3 | 推送 APNs(对齐 herald 口径:ES256 `.p8` provider token 优先、cert 兜底、topic=bundle id):远程通知注册 → token → `PushTokenSource` 真实现 → `DeviceRegistrar`(platform="ios" + apns_token);凭据缺失走空 token 降级注册(对齐 android nopush);服务端投递链核对 | ⬜ |
+| P3 | 推送 APNs 客户端注册链:`AwaitedPushTokenSource`(offer-then-fetch 等待器,10s 超时 nil 降级)+ `DevicePlaneService`(设备面 5201 独连→LOGIN(GetAuthenticatedSession 守卫)→RegisterDevice)+ `DeviceRegistrar` 加 `PushTokenSlot`(iOS 写 `apns_token` 槽,Swift 侧增量)+ 壳层 `UIApplicationDelegateAdaptor` 桥(didRegister→hex token→offer,didFail→nil 降级)+ 通知授权请求;服务端投递链核对(herald ES256 `.p8` provider token/cert 兜底/topic=bundle id——服务端既有,无需改动) | ✅ 2026-10-03 |
 | P4 | 游戏内聊天集成 + 功能面对齐 web_companion:多平面(social/party/voice/device/game_presence)、quick_reactions、好友/群/设备/在线设备/组队/语音面板 | ⬜ |
 
-Out of scope until credentials exist: signing/provisioning for physical
-devices and the real APNs certificate — the P3 structure keeps both
-degradable without them.
+Out of scope until credentials exist: a signed build with the
+aps-environment entitlement (real device token), provisioning for physical
+devices, and the server-side `.p8`/cert in herald — the P3 structure keeps
+all of it degradable without them (empty-token registration, server falls
+back to log delivery).
 
