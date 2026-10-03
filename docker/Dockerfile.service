@@ -6,6 +6,8 @@ ARG SERVICE=game_sdk_gateway
 
 # libmariadb-dev (MariaDB Connector/C): same mysql_* C API and mysql/mysql.h
 # layout as libmysqlclient, with a much lighter dependency footprint.
+# libmariadb-dev-compat 保证 mysql/mysql.h 可被 FindMySQL 发现;
+# libsodium-dev 供 app_auth_enhanced(可选)。
 RUN apt-get update && apt-get install -y --no-install-recommends \
     build-essential \
     ca-certificates \
@@ -13,6 +15,8 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     libasio-dev \
     git \
     libmariadb-dev \
+    libmariadb-dev-compat \
+    libsodium-dev \
     pkg-config \
     protobuf-compiler \
     libprotobuf-dev \
@@ -24,10 +28,20 @@ COPY . .
 
 RUN ./gen_proto.sh
 RUN cmake -S . -B build -DCMAKE_BUILD_TYPE=Release -DENABLE_TESTS=OFF
-RUN cmake --build build --target chirp_${SERVICE} chirp_chat_mysql_exporter -j"$(nproc)"
+# chat_enhanced/app_auth_enhanced 是 ALIAS 目标(需 MySQL/libsodium),否则用基目标
 RUN case "${SERVICE}" in \
-      chat|chat_distributed) cp "/src/build/services/shared/chat/chirp_${SERVICE}" /tmp/chirp_bin ;; \
-      chat_enhanced) cp "/src/build/services/shared/chat/chirp_chat" /tmp/chirp_bin ;; \
+      chat|chat_enhanced|chat_distributed) cmake --build build --target chirp_chat chirp_chat_mysql_exporter -j"$(nproc)" ;; \
+      app_auth|app_auth_enhanced) cmake --build build --target chirp_app_auth chirp_chat_mysql_exporter -j"$(nproc)" ;; \
+      npc_dialog) cmake --build build --target chirp_npc_dialog chirp_chat_mysql_exporter -j"$(nproc)" ;; \
+      game_sdk_gateway) cmake --build build --target chirp_game_sdk_gateway chirp_chat_mysql_exporter -j"$(nproc)" ;; \
+      game_server_gateway) cmake --build build --target chirp_game_server_gateway chirp_chat_mysql_exporter -j"$(nproc)" ;; \
+      app_sdk_gateway) cmake --build build --target chirp_app_sdk_gateway chirp_chat_mysql_exporter -j"$(nproc)" ;; \
+      app_notification) cmake --build build --target chirp_app_notification chirp_chat_mysql_exporter -j"$(nproc)" ;; \
+      social|voice|party|search) cmake --build build --target chirp_${SERVICE} chirp_chat_mysql_exporter -j"$(nproc)" ;; \
+      *) echo "Unsupported service target: ${SERVICE}" >&2; exit 1 ;; \
+    esac
+RUN case "${SERVICE}" in \
+      chat|chat_enhanced|chat_distributed) cp "/src/build/services/shared/chat/chirp_chat" /tmp/chirp_bin ;; \
       app_auth|app_auth_enhanced) cp "/src/build/services/app/auth/chirp_app_auth" /tmp/chirp_bin ;; \
       npc_dialog) cp "/src/build/services/game/npc_dialog/chirp_npc_dialog" /tmp/chirp_bin ;; \
       game_sdk_gateway) cp "/src/build/services/game/sdk_gateway/chirp_game_sdk_gateway" /tmp/chirp_bin ;; \
