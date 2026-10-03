@@ -109,6 +109,33 @@ func dmText(_ sender: String, _ receiver: String, id: String, text: String, ts: 
     return message
 }
 
+/// 群消息构造(频道=群 id,类型 GUILD;对端是群不是发信人)。
+func groupText(_ sender: String, groupId: String, id: String, text: String, ts: Int64)
+    -> Chirp_Chat_ChatMessage
+{
+    var message = Chirp_Chat_ChatMessage()
+    message.messageID = id
+    message.senderID = sender
+    message.channelType = .guild
+    message.channelID = groupId
+    message.msgType = .text
+    message.content = Data(text.utf8)
+    message.timestamp = ts
+    return message
+}
+
+/// GET_USER_GROUPS 应答里的群条目。
+func groupInfo(_ groupId: String, name: String, owner: String, members: Int32 = 2)
+    -> Chirp_Chat_GroupInfo
+{
+    var info = Chirp_Chat_GroupInfo()
+    info.groupID = groupId
+    info.groupName = name
+    info.ownerID = owner
+    info.memberCount = members
+    return info
+}
+
 /// 虚拟时钟(与 ChirpProtocolTests.ManualScheduler 同语义,本目标独立成套):
 /// advance 按到期序在调用线程跑任务;窗口内新排队且仍落窗内的任务也触发。
 /// 非线程安全(仅测试)。

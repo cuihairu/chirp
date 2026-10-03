@@ -38,9 +38,6 @@ final class AppModel: ObservableObject {
     @Published private(set) var myPresence: Chirp_Social_PresenceStatus = .online
     /// 社交面板降级文案(名册/在线状态拉取失败;nil = 无事)。
     @Published private(set) var socialPanelNotice: String?
-    /// 跳转请求:好友面板/新会话入口置位,SessionsView 消费后清空(导航栈
-    /// 归它自己持有,本层只发请求)。
-    @Published var pendingChatPeerId: String?
     /// 组队快照(P4d;nil=未入队,事件驱动刷新)。
     @Published private(set) var partySnapshot: PartyIndex.Snapshot?
     /// 入向我收到的组队邀请(INVITE_NOTIFY 累积,按 inviteId 去重)。
@@ -51,7 +48,23 @@ final class AppModel: ObservableObject {
     @Published private(set) var gamePresenceState: GamePresenceIndex.State?
     /// 组队/语音面降级文案(登录被拒/失败;nil = 无事)。
     @Published private(set) var planesNotice: String?
-    private(set) var activePeer: String?
+    /// 群名单镜像(P4e:GET_USER_GROUPS 整表 + 群 notify 重拉)。
+    @Published private(set) var groupRoster: [GroupIndex.Entry] = []
+    /// 当前群面板的成员清单(P4e:面板打开时拉,动作后重拉)。
+    @Published private(set) var groupMembers: [Chirp_Chat_GroupMember] = []
+    /// 群面板降级文案(成员拉取失败;nil = 无事)。
+    @Published private(set) var groupPanelNotice: String?
+    /// 历史分页(P4e):服务端还有更早一页 / 翻页请求在途。
+    @Published private(set) var chatHasMore = false
+    @Published private(set) var chatHistoryLoading = false
+    /// 当前打开的会话(键寻址;DM 与群共用,web activeChannelKey 同位)。
+    private(set) var activeChannel: SessionChannel?
+    /// 跳转请求(键寻址):好友面板/新会话入口/建群成功置位,SessionsView
+    /// 消费后清空(导航栈归它自己持有,本层只发请求)。
+    @Published var pendingChatKey: String?
+    /// 弹栈请求(被踢/退群关掉打开中的聊天面;chat 视图在导航栈里,本层
+    /// 关不掉栈,SessionsView 消费后弹空)。单调递增,onChange 驱动。
+    @Published private(set) var chatDismissToken = 0
 
     /// typing 上报节流(web ChatWindow 同款:start ≥3s 一次、最后键击 5s
     /// 后自动 stop、发送即 stop、空串不触发)。MainActor 上串行,无锁。
@@ -126,8 +139,8 @@ final class AppModel: ObservableObject {
         voicePlane = nil
         AppDelegate.tokenSink = nil
         phase = .loggedOut
-        activePeer = nil
-        pendingChatPeerId = nil
+        activeChannel = nil
+        pendingChatKey = nil
         chatMessages = []
         sessionSummaries = []
         reactionSummaries = [:]
@@ -144,6 +157,11 @@ final class AppModel: ObservableObject {
         voiceRoom = nil
         gamePresenceState = nil
         planesNotice = nil
+        groupRoster = []
+        groupMembers = []
+        groupPanelNotice = nil
+        chatHasMore = false
+        chatHistoryLoading = false
         clearTypingState()
         connectionBanner = nil
     }
@@ -502,6 +520,7 @@ final class AppModel: ObservableObject {
             phase = .loggedIn(userId: service?.userId ?? "")
             connectionBanner = nil
             refreshSessions()
+            refreshGroupsRoster()
             startDeviceRegistration()
             startAuxiliaryPlanes()
             // 登录即对外在线(好友才能收到 PRESENCE_NOTIFY);被拒静默——
@@ -516,9 +535,19 @@ final class AppModel: ObservableObject {
             tearDownService()
         case .messageReceived(let message):
             refreshSessions()
-            if message.senderID == activePeer {
+            // 按频道路由:群消息归 'g:' 会话,DM 按发信人折 'p:' 键——只有
+            // 落在当前打开会话里的才追加渲染,其余只更新列表预览/未读。
+            let channel: SessionChannel?
+            switch message.channelType {
+            case .guild:
+                channel = message.channelID.isEmpty ? nil : .group(message.channelID)
+            default:
+                channel = message.senderID.isEmpty
+                    ? nil : .dm(selfId: currentUserId, peerId: message.senderID)
+            }
+            if let channel, channel == activeChannel {
                 chatMessages.append(message)
-                service?.markRead(peerId: activePeer ?? "")
+                service?.markRead(key: channel.key)
                 refreshSessions()
             }
         case .offlineQueued(let content):
@@ -536,50 +565,94 @@ final class AppModel: ObservableObject {
             onlineDevices = service?.devices.entries() ?? []
         case .friendsChanged, .presenceChanged:
             rebuildSocial()
+        case .groupsChanged:
+            refreshSessions()
+            refreshGroupsRoster()
+        case .sessionDropped(let key, let reason):
+            // 退群/被踢:数据面已在 service 清掉,这里刷新镜像;若正开着
+            // 该会话,弹栈回列表(被踢给一条提示,退群走动作回执)。
+            refreshSessions()
+            refreshGroupsRoster()
+            if activeChannel?.key == key {
+                chatDismissToken += 1
+                closeChat()
+                if reason == .kicked { toast = "你已被移出该群组" }
+            }
         }
     }
 
     // ---- 会话/聊天面 ------------------------------------------------------------
 
-    /// 请求跳转到某对端的聊天窗口(新会话/好友面板入口)。
+    /// 请求跳转到某对端的 DM 聊天窗口(新会话/好友面板入口)。
     func requestChat(peerId: String) {
         let peer = peerId.trimmingCharacters(in: .whitespacesAndNewlines)
-        guard !peer.isEmpty else { return }
-        pendingChatPeerId = peer
+        guard !peer.isEmpty, !currentUserId.isEmpty else { return }
+        pendingChatKey = SessionChannel.dm(selfId: currentUserId, peerId: peer).key
     }
 
-    func openChat(peerId: String) {
-        activePeer = peerId
+    /// 请求跳转到某个群的聊天窗口(建群成功入口)。键直接落 'g:' 形态。
+    func requestGroupChat(groupId: String) {
+        guard !groupId.isEmpty else { return }
+        pendingChatKey = SessionChannel.group(groupId).key
+    }
+
+    /// 打开会话(键寻址;DM 与群共用)。坏键(登出竞态)直接忽略。
+    func openChat(key: String) {
+        guard let channel = SessionChannel(key: key, selfId: currentUserId) else { return }
+        activeChannel = channel
+        chatHasMore = false
+        chatHistoryLoading = false
         // store 面(本会话内存)最新在前 → 渲染旧→新;服务端历史异步合并。
-        chatMessages = (service?.history(peerId: peerId) ?? []).reversed()
-        service?.markRead(peerId: peerId)
+        chatMessages = (service?.history(key: key) ?? []).reversed()
+        service?.markRead(key: key)
         refreshSessions()
         rebuildReactionSummaries()
         refreshTyping()
-        loadServerHistory(peerId: peerId)
+        loadServerHistory(key: key)
     }
 
     func closeChat() {
-        activePeer = nil
+        activeChannel = nil
         chatMessages = []
         reactionSummaries = [:]
+        chatHasMore = false
+        chatHistoryLoading = false
         clearTypingState()
     }
 
-    /// 服务端 DM 历史(跨设备/重装真相面)按 messageID 去重合并——服务端
-    /// 版本优先(带 id 的真相),本地无 id 的发送侧存档副本保留。
-    private func loadServerHistory(peerId: String) {
+    /// 服务端频道历史(跨设备/重装真相面,DM/群共用)按 messageID 去重
+    /// 合并——服务端版本优先(带 id 的真相),本地无 id 的发送侧存档副本
+    /// 保留。首页拉取还带回 hasMore(更早页存在的真相面)。
+    private func loadServerHistory(key: String, beforeTimestamp: Int64 = 0) {
         guard let service = service else { return }
-        service.loadServerHistory(peerId: peerId).onComplete { [weak self] outcome in
-            Task { @MainActor in
-                guard let self = self, self.activePeer == peerId,
-                    case .success(let resp) = outcome, resp.code == .ok
-                else { return }
-                self.chatMessages = Self.mergedMessages(
-                    local: self.chatMessages, server: resp.messages)
-                self.rebuildReactionSummaries()
+        if beforeTimestamp == 0 { chatHistoryLoading = true }
+        service.loadServerHistory(key: key, beforeTimestamp: beforeTimestamp)
+            .onComplete { [weak self] outcome in
+                Task { @MainActor in
+                    guard let self = self, self.activeChannel?.key == key,
+                        case .success(let resp) = outcome, resp.code == .ok
+                    else {
+                        // 失败/已切走:复位在途旗(打开新会话会重置,这里兜
+                        // 翻页失败后按钮卡死)。
+                        self?.chatHistoryLoading = false
+                        return
+                    }
+                    self.chatMessages = Self.mergedMessages(
+                        local: self.chatMessages, server: resp.messages)
+                    self.chatHasMore = resp.hasMore_p
+                    self.chatHistoryLoading = false
+                    self.rebuildReactionSummaries()
+                }
             }
-        }
+    }
+
+    /// 「加载更早的消息」:以当前展示列表最旧一条的时间戳为游标翻页
+    /// (web loadEarlier 同款)。在途防重入由按钮 disabled/loading 态承担。
+    func loadEarlierTapped() {
+        guard let key = activeChannel?.key, !chatHistoryLoading, let oldest = chatMessages.first
+        else { return }
+        chatHistoryLoading = true
+        loadServerHistory(key: key, beforeTimestamp: oldest.timestamp)
     }
 
     /// 去重合并:同 id 保服务端版本,本地空 id 存档副本保留,时间戳升序。
@@ -613,10 +686,10 @@ final class AppModel: ObservableObject {
     }
 
     func sendTapped(content: String) {
-        guard let peerId = activePeer, let service = service,
+        guard let channel = activeChannel, let service = service,
             phase.isloggedIn, !content.isEmpty
         else { return }
-        service.send(peerId: peerId, content: content).onComplete { [weak self] outcome in
+        service.send(channel: channel, content: content).onComplete { [weak self] outcome in
             Task { @MainActor in
                 guard let self = self else { return }
                 switch outcome {
@@ -626,11 +699,12 @@ final class AppModel: ObservableObject {
                     // 存档副本已在管线内(save 先于响应),补一条本地渲染即可。
                     var message = Chirp_Chat_ChatMessage()
                     message.senderID = service.userId
-                    message.receiverID = peerId
-                    message.channelID = SessionIndex.dmChannelId(service.userId, peerId)
+                    message.channelType = channel.channelType
+                    message.channelID = channel.channelId
+                    if channel.kind == .dm { message.receiverID = channel.peerId }
                     message.content = Data(content.utf8)
                     message.timestamp = Int64(Date().timeIntervalSince1970 * 1000)
-                    if self.activePeer == peerId { self.chatMessages.append(message) }
+                    if self.activeChannel == channel { self.chatMessages.append(message) }
                     self.refreshSessions()
                 case .success(.queuedOffline):
                     break // 离线入队已有 toast 事件
@@ -776,14 +850,165 @@ final class AppModel: ObservableObject {
         pendingOutIds = service.friends.pendingOut()
     }
 
+    // ---- 群面板(P4e,web GroupDialogs 对齐)-----------------------------------
+
+    /// 名单镜像 → @Published(sessions 列行标题也从这里取名)。
+    private func refreshGroupsRoster() {
+        groupRoster = service?.groups.entries() ?? []
+    }
+
+    /// 群设置面板打开:清旧清单再拉当前群成员(web 打开 Dialog 同款)。
+    func openGroupPanel(groupId: String) {
+        groupMembers = []
+        groupPanelNotice = nil
+        loadGroupMembers(groupId: groupId)
+    }
+
+    func loadGroupMembers(groupId: String) {
+        guard let service = service else { return }
+        service.loadGroupMembers(groupId: groupId).onComplete { [weak self] outcome in
+            Task { @MainActor in
+                guard let self = self else { return }
+                switch outcome {
+                case .success(let resp):
+                    if resp.code == .ok {
+                        self.groupMembers = resp.members
+                        self.groupPanelNotice = resp.members.isEmpty ? "尚无成员" : nil
+                    } else {
+                        self.groupPanelNotice = "成员拉取被拒:\(self.codeName(resp.code))"
+                    }
+                case .failure(let err):
+                    self.groupPanelNotice = "成员拉取失败:\(err.localizedDescription)"
+                }
+            }
+        }
+    }
+
+    /// 建群;成功即跳进新群的聊天面(web 创建后进频道同款)。
+    func createGroupTapped(name: String) {
+        let trimmed = name.trimmingCharacters(in: .whitespaces)
+        guard !trimmed.isEmpty, let service = service else { return }
+        service.createGroup(name: trimmed).onComplete { [weak self] outcome in
+            Task { @MainActor in
+                guard let self = self else { return }
+                switch outcome {
+                case .success(let groupId) where !groupId.isEmpty:
+                    self.toast = "群已创建"
+                    self.refreshSessions()
+                    self.refreshGroupsRoster()
+                    self.requestGroupChat(groupId: groupId)
+                case .success:
+                    self.toast = "建群失败(服务端拒绝或断线)"
+                case .failure(let err):
+                    self.toast = "建群失败:\(err.localizedDescription)"
+                }
+            }
+        }
+    }
+
+    /// 邀人进群(INVITE 直接入群,无待确认态——web「添加成员」同款)。
+    /// 成功后重拉成员清单(成员数与名单都是服务端权威)。
+    func inviteToGroupTapped(groupId: String, targetUserId: String) {
+        let target = targetUserId.trimmingCharacters(in: .whitespaces)
+        guard !target.isEmpty, let service = service else { return }
+        service.inviteToGroup(groupId: groupId, targetUserId: target)
+            .onComplete { [weak self] outcome in
+                Task { @MainActor in
+                    guard let self = self else { return }
+                    switch outcome {
+                    case .success(let code) where code == .ok:
+                        self.toast = "已添加 \(target)"
+                        self.loadGroupMembers(groupId: groupId)
+                    case .success(let code):
+                        self.toast = "添加被拒:\(self.codeName(code))"
+                    case .failure(let err):
+                        self.toast = "添加失败:\(err.localizedDescription)"
+                    }
+                }
+            }
+    }
+
+    /// 群主移出成员;成功后重拉成员清单。
+    func kickGroupMemberTapped(groupId: String, targetUserId: String) {
+        guard let service = service else { return }
+        service.kickMember(groupId: groupId, targetUserId: targetUserId)
+            .onComplete { [weak self] outcome in
+                Task { @MainActor in
+                    guard let self = self else { return }
+                    switch outcome {
+                    case .success(let code) where code == .ok:
+                        self.toast = "已移出 \(targetUserId)"
+                        self.loadGroupMembers(groupId: groupId)
+                    case .success(let code):
+                        self.toast = "移出被拒:\(self.codeName(code))"
+                    case .failure(let err):
+                        self.toast = "移出失败:\(err.localizedDescription)"
+                    }
+                }
+            }
+    }
+
+    /// 退群;成功由 sessionDropped 事件弹栈关面板(web onLeft 退导航同款)。
+    func leaveGroupTapped(groupId: String) {
+        guard let service = service else { return }
+        service.leaveGroup(groupId: groupId).onComplete { [weak self] outcome in
+            Task { @MainActor in
+                guard let self = self else { return }
+                switch outcome {
+                case .success(let code) where code == .ok:
+                    self.toast = "已退出群组"
+                case .success(let code):
+                    self.toast = "退群被拒:\(self.codeName(code))"
+                case .failure(let err):
+                    self.toast = "退群失败:\(err.localizedDescription)"
+                }
+            }
+        }
+    }
+
+    /// 会话行/聊天面标题:DM 显示对端 id,群显示群名(名单缺名回落群 id,
+    /// web 同款)。
+    func sessionTitle(_ session: SessionIndex.Summary) -> String {
+        switch session.kind {
+        case .dm: return session.peerId
+        case .group: return groupName(session.peerId)
+        }
+    }
+
+    /// 聊天面标题(键寻址;ChatView navigationTitle 用)。
+    func chatTitle(forKey key: String) -> String {
+        guard let channel = SessionChannel(key: key, selfId: currentUserId) else {
+            return key
+        }
+        switch channel.kind {
+        case .dm: return channel.peerId
+        case .group: return groupName(channel.peerId)
+        }
+    }
+
+    /// 群名(缺名回落群 id);群主判定给设置面板用。
+    func groupName(_ groupId: String) -> String {
+        service?.groups.name(groupId: groupId) ?? groupId
+    }
+
+    var isGroupOwner: Bool {
+        guard let channel = activeChannel, channel.kind == .group,
+            let service = service,
+            let entry = service.groups.entry(groupId: channel.peerId)
+        else { return false }
+        return entry.ownerId == currentUserId
+    }
+
     // ---- typing 上报/展示(P4a) ------------------------------------------------
 
     /// 输入框内容变化(ChatView onChange 驱动;空串不触发——web 语义)。
+    /// 频道类型随当前会话:DM 报 PRIVATE、群报 GUILD(web 同款)。
     func draftChanged(_ text: String) {
-        guard !text.isEmpty, let peerId = activePeer, let service = service,
+        guard !text.isEmpty, let channel = activeChannel, let service = service,
             phase.isloggedIn
         else { return }
-        let channelId = SessionIndex.dmChannelId(service.userId, peerId)
+        let channelType = channel.channelType
+        let channelId = channel.channelId
         let at = Date()
         if let lastStart = typingLastStartAt,
             at.timeIntervalSince(lastStart) < Self.typingStartInterval
@@ -791,16 +1016,17 @@ final class AppModel: ObservableObject {
             // 3s 内不重复上报(服务端本也会对重复 start 降温)。
         } else {
             typingLastStartAt = at
-            service.sendTyping(channelId: channelId, isTyping: true)
+            service.sendTyping(channelType: channelType, channelId: channelId, isTyping: true)
         }
         // 最后键击 5s 后自动 stop。
         typingStopTask?.cancel()
-        typingStopTask = Task { [weak self, channelId] in
+        typingStopTask = Task { [weak self, channelType, channelId] in
             try? await Task.sleep(nanoseconds: 5_000_000_000)
             guard !Task.isCancelled else { return }
             await MainActor.run {
                 self?.typingLastStartAt = nil
-                self?.service?.sendTyping(channelId: channelId, isTyping: false)
+                self?.service?.sendTyping(
+                    channelType: channelType, channelId: channelId, isTyping: false)
             }
         }
     }
@@ -810,9 +1036,11 @@ final class AppModel: ObservableObject {
         typingStopTask?.cancel()
         typingStopTask = nil
         typingLastStartAt = nil
-        if let peerId = activePeer, let service = service, phase.isloggedIn {
+        if let channel = activeChannel, let service = service, phase.isloggedIn {
             service.sendTyping(
-                channelId: SessionIndex.dmChannelId(service.userId, peerId), isTyping: false)
+                channelType: channel.channelType,
+                channelId: channel.channelId,
+                isTyping: false)
         }
     }
 
@@ -828,14 +1056,13 @@ final class AppModel: ObservableObject {
     }
 
     private func refreshTyping() {
-        guard let peerId = activePeer, let service = service else {
+        guard let channel = activeChannel, let service = service else {
             typingPeers = []
             return
         }
-        let channelId = SessionIndex.dmChannelId(service.userId, peerId)
         let nowMs = Int64(Date().timeIntervalSince1970 * 1000)
         typingPeers = service.typists.typists(
-            channelType: .private, channelId: channelId, nowMs: nowMs)
+            channelType: channel.channelType, channelId: channel.channelId, nowMs: nowMs)
     }
 
     private func clearTypingState() {

@@ -2,14 +2,20 @@ import ChirpAppCore
 import ChirpProtos
 import SwiftUI
 
-/// 聊天窗口:该对端 DM 历史 + 实时收发。进页面即 markRead(索引+store)。
-/// P4a:长按气泡快捷反应(八枚固定集)、反应 chips 切换、正在输入横幅、
-/// 输入上报(start 3s 节流/5s idle stop/发送即 stop——服务事件驱动)。
+/// 聊天窗口(键寻址,DM 与群共用):该频道历史 + 实时收发。进页面即
+/// markRead(索引+store)。P4a:长按气泡快捷反应、反应 chips、正在输入
+/// 横幅、输入上报。P4e:顶部「加载更早的消息」翻页(beforeTimestamp
+/// 游标)、群会话的发送者署名行与右上角群设置入口。
 struct ChatView: View {
     @EnvironmentObject var model: AppModel
-    let peerId: String
+    let channelKey: String
     @State private var draft = ""
+    @State private var showGroupSettings = false
     @FocusState private var inputFocused: Bool
+
+    private var isGroup: Bool {
+        model.activeChannel?.kind == .group && model.activeChannel?.key == channelKey
+    }
 
     var body: some View {
         VStack(spacing: 0) {
@@ -17,9 +23,24 @@ struct ChatView: View {
             typingBanner
             inputRow
         }
-        .navigationTitle(peerId)
+        .navigationTitle(model.chatTitle(forKey: channelKey))
         .navigationBarTitleDisplayMode(.inline)
-        .onAppear { model.openChat(peerId: peerId) }
+        .toolbar {
+            if isGroup {
+                ToolbarItem(placement: .topBarTrailing) {
+                    Button { showGroupSettings = true } label: {
+                        Image(systemName: "gearshape")
+                    }
+                    .accessibilityLabel("群设置")
+                }
+            }
+        }
+        .sheet(isPresented: $showGroupSettings) {
+            if let groupId = model.activeChannel?.peerId {
+                GroupSettingsView(groupId: groupId)
+            }
+        }
+        .onAppear { model.openChat(key: channelKey) }
         .onDisappear { model.closeChat() }
     }
 
@@ -27,11 +48,29 @@ struct ChatView: View {
         ScrollViewReader { proxy in
             ScrollView {
                 LazyVStack(spacing: 6) {
+                    if model.chatHasMore {
+                        Button {
+                            model.loadEarlierTapped()
+                        } label: {
+                            if model.chatHistoryLoading {
+                                ProgressView()
+                            } else {
+                                Text("加载更早的消息")
+                                    .font(.subheadline)
+                            }
+                        }
+                        .padding(.vertical, 6)
+                        .disabled(model.chatHistoryLoading)
+                    }
                     if model.chatMessages.isEmpty {
-                        Text("暂无消息,发送第一条吧")
-                            .font(.subheadline)
-                            .foregroundStyle(.secondary)
-                            .padding(.top, 40)
+                        if model.chatHistoryLoading {
+                            ProgressView().padding(.top, 40)
+                        } else {
+                            Text("暂无消息,发送第一条吧")
+                                .font(.subheadline)
+                                .foregroundStyle(.secondary)
+                                .padding(.top, 40)
+                        }
                     }
                     ForEach(Array(model.chatMessages.enumerated()), id: \.offset) { _, message in
                         bubble(message)
@@ -42,11 +81,12 @@ struct ChatView: View {
                 .padding(.vertical, 8)
             }
             .defaultScrollAnchor(.bottom)
-            .onChange(of: model.chatMessages.count) { _, _ in
-                if let last = model.chatMessages.last {
-                    withAnimation {
-                        proxy.scrollTo(messageOffset(last), anchor: .bottom)
-                    }
+            // 只追尾部:键在最后一条消息上——翻页向前补历史不动尾部(内容
+            // 不变),新消息到达才滚到底(按 count 滚会在翻页时误跳底部)。
+            .onChange(of: tailOffset) { _, newTail in
+                guard let newTail else { return }
+                withAnimation {
+                    proxy.scrollTo(newTail, anchor: .bottom)
                 }
             }
         }
@@ -59,9 +99,19 @@ struct ChatView: View {
             : message.messageID
     }
 
+    private var tailOffset: String? {
+        model.chatMessages.last.map(messageOffset)
+    }
+
     private func bubble(_ message: Chirp_Chat_ChatMessage) -> some View {
         let mine = message.senderID == model.currentUserId
         return VStack(alignment: mine ? .trailing : .leading, spacing: 2) {
+            // 群消息的非本人气泡带发送者署名行(web 同款;DM 里是显然的)。
+            if isGroup && !mine && !message.senderID.isEmpty {
+                Text(message.senderID)
+                    .font(.caption2)
+                    .foregroundStyle(.secondary)
+            }
             HStack {
                 if mine { Spacer(minLength: 48) }
                 Text(String(data: message.content, encoding: .utf8) ?? "")
@@ -164,7 +214,7 @@ struct ChatView: View {
 
 #Preview {
     NavigationStack {
-        ChatView(peerId: "peer")
+        ChatView(channelKey: "p:alice|bob")
     }
     .environmentObject(AppModel())
 }

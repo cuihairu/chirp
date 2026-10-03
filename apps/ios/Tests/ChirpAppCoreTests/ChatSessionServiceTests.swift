@@ -100,8 +100,8 @@ final class ChatSessionServiceTests: XCTestCase {
         XCTAssertEqual(ack.userID, "alice")
         XCTAssertEqual(ack.receivedAt, 1_000)
 
-        // 会话索引与事件。
-        XCTAssertEqual(service.sessions.summary(peerId: "bob")?.unread, 1)
+        // 会话索引与事件(入站 DM 折排序对键)。
+        XCTAssertEqual(service.sessions.summary(key: "p:alice|bob")?.unread, 1)
         XCTAssertTrue(events.contains {
             if case .messageReceived(let m) = $0 { return m.messageID == "m1" }
             return false
@@ -127,10 +127,10 @@ final class ChatSessionServiceTests: XCTestCase {
             return XCTFail("expected .sent")
         }
         // 会话预览(发出侧不涨未读)+ 存档可查(store 侧存档副本 messageID 空)。
-        let summary = service.sessions.summary(peerId: "bob")
+        let summary = service.sessions.summary(key: "p:alice|bob")
         XCTAssertEqual(summary?.lastMessage, "你好")
         XCTAssertEqual(summary?.unread, 0)
-        let history = service.history(peerId: "bob")
+        let history = service.history(key: "p:alice|bob")
         XCTAssertEqual(history.count, 1)
         XCTAssertEqual(history.first?.messageID, "")
         XCTAssertEqual(history.first?.channelID, "alice|bob")
@@ -173,7 +173,7 @@ final class ChatSessionServiceTests: XCTestCase {
             if case .offlineReplayed(let count) = $0 { return count == 1 }
             return false
         })
-        XCTAssertEqual(service.sessions.summary(peerId: "bob")?.lastMessage, "离线消息")
+        XCTAssertEqual(service.sessions.summary(key: "p:alice|bob")?.lastMessage, "离线消息")
         service.logout()
     }
 
@@ -386,7 +386,7 @@ final class ChatSessionServiceTests: XCTestCase {
         try loginOk(service, t)
 
         let before = t.sent.count
-        service.sendTyping(channelId: "alice|bob", isTyping: true)
+        service.sendTyping(channelType: .private, channelId: "alice|bob", isTyping: true)
         XCTAssertEqual(t.sent.count, before + 1, "fire-and-forget 直发,无应答")
         XCTAssertEqual(try sentPacket(t).msgID, .typingIndicatorNotify)
         let body = try Chirp_Chat_TypingIndicator(serializedBytes: lastRequestBody(t))
@@ -404,7 +404,7 @@ final class ChatSessionServiceTests: XCTestCase {
         let service = makeService(factory: factory)
         try loginOk(service, t)
 
-        let pending = service.loadServerHistory(peerId: "bob", limit: 50)
+        let pending = service.loadServerHistory(key: "p:alice|bob", limit: 50)
         let seq = try expectRequest(t, .getHistoryReq)
         let request = try Chirp_Chat_GetHistoryRequest(serializedBytes: lastRequestBody(t))
         XCTAssertEqual(request.userID, "alice")
@@ -425,6 +425,369 @@ final class ChatSessionServiceTests: XCTestCase {
         XCTAssertEqual(resp.code, .ok)
         XCTAssertEqual(resp.messages.map(\.messageID), ["m1", "m2"])
         XCTAssertTrue(resp.hasMore_p)
+        service.logout()
+    }
+
+    // ---- P4e:群面 ------------------------------------------------------------
+
+    /// 应答当前最后一条 GET_USER_GROUPS(loginOk 后的引导帧或显式重拉),
+    /// 注入一份名单。
+    private func deliverGroups(
+        _ t: FakeWsTransport, _ groups: [Chirp_Chat_GroupInfo]
+    ) throws {
+        let seq = try expectRequest(t, .getUserGroupsReq)
+        var response = Chirp_Chat_GetUserGroupsResponse()
+        response.code = .ok
+        response.groups = groups
+        t.deliver(try wsResponse(.getUserGroupsResp, seq, response))
+    }
+
+    func testGroupIncomingAcksAndBucketsSession() throws {
+        let (t, factory) = singleTransport()
+        let service = makeService(factory: factory)
+        try loginOk(service, t)
+
+        t.deliver(try wsNotify(
+            .chatMessageNotify, groupText("bob", groupId: "g1", id: "m1", text: "群内早", ts: 900)))
+
+        // 群消息同样先回执。
+        XCTAssertEqual(try sentPacket(t).msgID, .messageAck)
+        // 索引折 'g:' 桶,不折发信人的 DM 行。
+        XCTAssertEqual(service.sessions.summary(key: "g:g1")?.unread, 1)
+        XCTAssertEqual(service.sessions.summary(key: "g:g1")?.kind, .group)
+        XCTAssertNil(service.sessions.summary(key: "p:alice|bob"))
+        XCTAssertTrue(events.contains {
+            if case .messageReceived(let m) = $0 { return m.messageID == "m1" }
+            return false
+        })
+        service.logout()
+    }
+
+    func testGroupSendWireShapeAndSessionPreview() throws {
+        let (t, factory) = singleTransport()
+        let service = makeService(factory: factory)
+        try loginOk(service, t)
+
+        let pending = service.send(channel: .group("g1"), content: "群内早")
+        let seq = try expectRequest(t, .sendMessageReq)
+        let request = try Chirp_Chat_SendMessageRequest(serializedBytes: lastRequestBody(t))
+        XCTAssertEqual(request.channelType, .guild)
+        XCTAssertEqual(request.channelID, "g1")
+        XCTAssertEqual(request.receiverID, "", "群发送 receiver 留空(chat_validation)")
+
+        var ok = Chirp_Chat_SendMessageResponse()
+        ok.code = .ok
+        t.deliver(try wsResponse(.sendMessageResp, seq, ok))
+        guard case .sent = try pending.get(timeoutSeconds: 2) else {
+            return XCTFail("expected .sent")
+        }
+        let summary = service.sessions.summary(key: "g:g1")
+        XCTAssertEqual(summary?.lastMessage, "群内早")
+        XCTAssertEqual(summary?.unread, 0, "发出侧不涨未读")
+        service.logout()
+    }
+
+    /// 登录引导帧消费名单:整表换入 + 每群一行空会话 + groupsChanged;
+    /// 显式重拉的请求体带 0=不分页口径。
+    func testRefreshGroupsRoundTripBootstrapsRows() throws {
+        let (t, factory) = singleTransport()
+        let service = makeService(factory: factory)
+        try loginOk(service, t)
+
+        try deliverGroups(t, [groupInfo("g2", name: "二号", owner: "bob"),
+                              groupInfo("g1", name: "一号", owner: "alice")])
+
+        XCTAssertEqual(service.groups.entries().map(\.groupId), ["g1", "g2"])
+        XCTAssertEqual(service.groups.name(groupId: "g1"), "一号")
+        let bootstrapped = service.sessions.summary(key: "g:g1")
+        XCTAssertEqual(bootstrapped?.kind, .group)
+        XCTAssertEqual(bootstrapped?.lastMessage, "", "空行:预览由消息记账填")
+        XCTAssertTrue(events.contains { if case .groupsChanged = $0 { return true }; return false })
+
+        // 显式重拉:请求体字段 + 整表换入生效(少一群即少一行)。
+        let pending = service.refreshGroups()
+        let seq = try expectRequest(t, .getUserGroupsReq)
+        let request = try Chirp_Chat_GetUserGroupsRequest(serializedBytes: lastRequestBody(t))
+        XCTAssertEqual(request.userID, "alice")
+        XCTAssertEqual(request.limit, 0, "0=不分页(web 同款)")
+        XCTAssertEqual(request.offset, 0)
+        var response = Chirp_Chat_GetUserGroupsResponse()
+        response.code = .ok
+        response.groups = [groupInfo("g1", name: "一号", owner: "alice")]
+        t.deliver(try wsResponse(.getUserGroupsResp, seq, response))
+        XCTAssertEqual(try pending.get(timeoutSeconds: 2), .ok)
+        XCTAssertEqual(service.groups.entries().map(\.groupId), ["g1"])
+        XCTAssertNil(service.sessions.summary(key: "g:g2"), "整表换入不保留旧群行")
+        service.logout()
+    }
+
+    func testCreateGroupReturnsGroupIdAndChainsRefresh() throws {
+        let (t, factory) = singleTransport()
+        let service = makeService(factory: factory)
+        try loginOk(service, t)
+        // 引导帧先答掉,别占着最后一条。
+        try deliverGroups(t, [])
+
+        let pending = service.createGroup(name: "研发群")
+        let seq = try expectRequest(t, .createGroupReq)
+        let request = try Chirp_Chat_CreateGroupRequest(serializedBytes: lastRequestBody(t))
+        XCTAssertEqual(request.creatorID, "alice")
+        XCTAssertEqual(request.groupName, "研发群")
+
+        var response = Chirp_Chat_CreateGroupResponse()
+        response.code = .ok
+        response.groupID = "g9"
+        t.deliver(try wsResponse(.createGroupResp, seq, response))
+        XCTAssertEqual(try pending.get(timeoutSeconds: 2), "g9")
+        // 成功链一次名单重拉(web createGroup 同序)。
+        XCTAssertEqual(try sentPacket(t).msgID, .getUserGroupsReq)
+
+        // 空名短路:不发帧,直接回失败空串(去空白是壳层的活,服务面只挡空串)。
+        let frames = t.sent.count
+        XCTAssertEqual(try service.createGroup(name: "").get(timeoutSeconds: 2), "")
+        XCTAssertEqual(t.sent.count, frames)
+        service.logout()
+    }
+
+    func testInviteAndKickSendFieldShapesAndChainRefresh() throws {
+        let (t, factory) = singleTransport()
+        let service = makeService(factory: factory)
+        try loginOk(service, t)
+        try deliverGroups(t, [groupInfo("g1", name: "一号", owner: "alice")])
+
+        let invite = service.inviteToGroup(groupId: "g1", targetUserId: "bob")
+        let inviteSeq = try expectRequest(t, .inviteToGroupReq)
+        let inviteBody = try Chirp_Chat_InviteToGroupRequest(serializedBytes: lastRequestBody(t))
+        XCTAssertEqual(inviteBody.inviterID, "alice")
+        XCTAssertEqual(inviteBody.groupID, "g1")
+        XCTAssertEqual(inviteBody.targetUserID, "bob")
+        var inviteResp = Chirp_Chat_InviteToGroupResponse()
+        inviteResp.code = .ok
+        t.deliver(try wsResponse(.inviteToGroupResp, inviteSeq, inviteResp))
+        XCTAssertEqual(try invite.get(timeoutSeconds: 2), .ok)
+        XCTAssertEqual(try sentPacket(t).msgID, .getUserGroupsReq, "成功刷名单")
+
+        let kick = service.kickMember(groupId: "g1", targetUserId: "bob")
+        let kickSeq = try expectRequest(t, .kickMemberReq)
+        let kickBody = try Chirp_Chat_KickMemberRequest(serializedBytes: lastRequestBody(t))
+        XCTAssertEqual(kickBody.requesterID, "alice")
+        XCTAssertEqual(kickBody.groupID, "g1")
+        XCTAssertEqual(kickBody.targetUserID, "bob")
+        var kickResp = Chirp_Chat_KickMemberResponse()
+        kickResp.code = .ok
+        t.deliver(try wsResponse(.kickMemberResp, kickSeq, kickResp))
+        XCTAssertEqual(try kick.get(timeoutSeconds: 2), .ok)
+        XCTAssertEqual(try sentPacket(t).msgID, .getUserGroupsReq, "成功刷名单")
+        service.logout()
+    }
+
+    /// 退群:服务端对 actor 不回 notify,成功即本地双删并发
+    /// sessionDropped(.left)——不再发重拉帧(web leaveGroup 同款本地清)。
+    func testLeaveGroupLocalDoubleDeleteWithoutRefetch() throws {
+        let (t, factory) = singleTransport()
+        let service = makeService(factory: factory)
+        try loginOk(service, t)
+        try deliverGroups(t, [groupInfo("g1", name: "一号", owner: "bob")])
+        t.deliver(try wsNotify(
+            .chatMessageNotify, groupText("bob", groupId: "g1", id: "m1", text: "早", ts: 900)))
+        XCTAssertEqual(service.sessions.summary(key: "g:g1")?.unread, 1)
+
+        let pending = service.leaveGroup(groupId: "g1")
+        let seq = try expectRequest(t, .leaveGroupReq)
+        let request = try Chirp_Chat_LeaveGroupRequest(serializedBytes: lastRequestBody(t))
+        XCTAssertEqual(request.userID, "alice")
+        XCTAssertEqual(request.groupID, "g1")
+
+        let framesBeforeResponse = t.sent.count
+        var response = Chirp_Chat_LeaveGroupResponse()
+        response.code = .ok
+        t.deliver(try wsResponse(.leaveGroupResp, seq, response))
+        XCTAssertEqual(try pending.get(timeoutSeconds: 2), .ok)
+        XCTAssertEqual(t.sent.count, framesBeforeResponse, "本地清,不重拉名单")
+        XCTAssertNil(service.groups.entry(groupId: "g1"))
+        XCTAssertNil(service.sessions.summary(key: "g:g1"), "未读随行一并丢弃")
+        XCTAssertTrue(events.contains {
+            if case .sessionDropped(let key, let reason) = $0 {
+                return key == "g:g1" && reason == .left
+            }
+            return false
+        })
+        XCTAssertTrue(events.contains { if case .groupsChanged = $0 { return true }; return false })
+        service.logout()
+    }
+
+    /// 2120 被踢的是我:本地双删 + sessionDropped(.kicked),不重拉。
+    func testKickedSelfNotifyDropsLocallyWithoutRefetch() throws {
+        let (t, factory) = singleTransport()
+        let service = makeService(factory: factory)
+        try loginOk(service, t)
+        try deliverGroups(t, [groupInfo("g1", name: "一号", owner: "bob")])
+
+        var notify = Chirp_Chat_GroupMemberKickedNotify()
+        notify.groupID = "g1"
+        notify.userID = "alice"
+        notify.kickedBy = "bob"
+        notify.timestamp = 1_000
+        let frames = t.sent.count
+        t.deliver(try wsNotify(.groupMemberKickedNotify, notify))
+        XCTAssertEqual(t.sent.count, frames, "自己被踢走本地清,不重拉")
+        XCTAssertNil(service.groups.entry(groupId: "g1"))
+        XCTAssertNil(service.sessions.summary(key: "g:g1"))
+        XCTAssertTrue(events.contains {
+            if case .sessionDropped(let key, let reason) = $0 {
+                return key == "g:g1" && reason == .kicked
+            }
+            return false
+        })
+        service.logout()
+    }
+
+    /// 别人被踢 / JOINED / LEFT / UPDATED:整表重拉一条 GET_USER_GROUPS。
+    func testKickedOtherAndRosterNotifiesTriggerRefresh() throws {
+        let (t, factory) = singleTransport()
+        let service = makeService(factory: factory)
+        try loginOk(service, t)
+        try deliverGroups(t, [])
+
+        var other = Chirp_Chat_GroupMemberKickedNotify()
+        other.groupID = "g1"
+        other.userID = "carol"
+        other.kickedBy = "alice"
+        t.deliver(try wsNotify(.groupMemberKickedNotify, other))
+        XCTAssertEqual(try sentPacket(t).msgID, .getUserGroupsReq)
+
+        // 这三路不看 body(扇出重拉),空 body 也不伤链路。
+        for msgId in [Chirp_Gateway_MsgID.groupMemberJoinedNotify,
+                      .groupMemberLeftNotify,
+                      .groupUpdatedNotify] {
+            t.deliver(try wsNotify(msgId, Chirp_Chat_GroupMemberKickedNotify()))
+            XCTAssertEqual(try sentPacket(t).msgID, .getUserGroupsReq)
+        }
+        service.logout()
+    }
+
+    func testLoadGroupMembersRoundTrip() throws {
+        let (t, factory) = singleTransport()
+        let service = makeService(factory: factory)
+        try loginOk(service, t)
+
+        let pending = service.loadGroupMembers(groupId: "g1")
+        let seq = try expectRequest(t, .getGroupMembersReq)
+        let request = try Chirp_Chat_GetGroupMembersRequest(serializedBytes: lastRequestBody(t))
+        XCTAssertEqual(request.groupID, "g1")
+        XCTAssertEqual(request.limit, 0, "0=不分页(web 同款)")
+        XCTAssertEqual(request.offset, 0)
+
+        var owner = Chirp_Chat_GroupMember()
+        owner.userID = "alice"
+        owner.username = "alice"
+        owner.role = .moderator
+        var member = Chirp_Chat_GroupMember()
+        member.userID = "bob"
+        member.username = "bob"
+        var response = Chirp_Chat_GetGroupMembersResponse()
+        response.code = .ok
+        response.members = [owner, member]
+        response.totalCount = 2
+        t.deliver(try wsResponse(.getGroupMembersResp, seq, response))
+
+        let resp = try pending.get(timeoutSeconds: 2)
+        XCTAssertEqual(resp.code, .ok)
+        XCTAssertEqual(resp.members.map(\.userID), ["alice", "bob"])
+        XCTAssertEqual(resp.members[0].role, .moderator)
+        XCTAssertEqual(resp.totalCount, 2)
+        service.logout()
+    }
+
+    /// 群消息断线入队,重连重放成功后落 'g:' 会话行(离线队列闭包对群生效)。
+    func testGroupOfflineReplayRecordsGroupSession() throws {
+        let first = FakeWsTransport()
+        var second: FakeWsTransport?
+        var factoryCalls = 0
+        let service = makeService { _ in
+            factoryCalls += 1
+            if factoryCalls == 1 { return first }
+            if second == nil { second = FakeWsTransport() }
+            return second!
+        }
+        try loginOk(service, first)
+
+        first.dropLink()
+        scheduler.advance(0)
+
+        let pending = service.send(channel: .group("g1"), content: "离线群消息")
+        guard case .queuedOffline = try pending.get(timeoutSeconds: 2) else {
+            return XCTFail("expected .queuedOffline")
+        }
+
+        scheduler.advance(600)
+        guard let t2 = second else { return XCTFail("no reconnect transport") }
+        let seq = try expectRequest(t2, .sendMessageReq)
+        let request = try Chirp_Chat_SendMessageRequest(serializedBytes: lastRequestBody(t2))
+        XCTAssertEqual(request.channelType, .guild, "重放保真:仍是群帧")
+        XCTAssertEqual(request.channelID, "g1")
+        var ok = Chirp_Chat_SendMessageResponse()
+        ok.code = .ok
+        t2.deliver(try wsResponse(.sendMessageResp, seq, ok))
+        XCTAssertTrue(events.contains {
+            if case .offlineReplayed(let count) = $0 { return count == 1 }
+            return false
+        })
+        XCTAssertEqual(service.sessions.summary(key: "g:g1")?.lastMessage, "离线群消息")
+        service.logout()
+    }
+
+    func testLoadServerHistoryGuildPaginationShape() throws {
+        let (t, factory) = singleTransport()
+        let service = makeService(factory: factory)
+        try loginOk(service, t)
+
+        // beforeTimestamp=翻页游标(上一页最早一条的时间戳)。
+        let pending = service.loadServerHistory(key: "g:g1", limit: 30, beforeTimestamp: 900)
+        let seq = try expectRequest(t, .getHistoryReq)
+        let request = try Chirp_Chat_GetHistoryRequest(serializedBytes: lastRequestBody(t))
+        XCTAssertEqual(request.userID, "alice")
+        XCTAssertEqual(request.channelType, .guild, "'g:' 键折 GUILD 频道")
+        XCTAssertEqual(request.channelID, "g1")
+        XCTAssertEqual(request.limit, 30)
+        XCTAssertEqual(request.beforeTimestamp, 900)
+
+        var response = Chirp_Chat_GetHistoryResponse()
+        response.code = .ok
+        response.messages = [groupText("bob", groupId: "g1", id: "m0", text: "昨天", ts: 800)]
+        response.hasMore_p = false
+        t.deliver(try wsResponse(.getHistoryResp, seq, response))
+        let resp = try pending.get(timeoutSeconds: 2)
+        XCTAssertEqual(resp.messages.map(\.messageID), ["m0"])
+        XCTAssertFalse(resp.hasMore_p)
+        service.logout()
+    }
+
+    func testSendTypingGuildVariant() throws {
+        let (t, factory) = singleTransport()
+        let service = makeService(factory: factory)
+        try loginOk(service, t)
+
+        service.sendTyping(channelType: .guild, channelId: "g1", isTyping: true)
+        XCTAssertEqual(try sentPacket(t).msgID, .typingIndicatorNotify)
+        let body = try Chirp_Chat_TypingIndicator(serializedBytes: lastRequestBody(t))
+        XCTAssertEqual(body.channelID, "g1")
+        XCTAssertEqual(body.channelType, .guild)
+        XCTAssertTrue(body.isTyping)
+        service.logout()
+    }
+
+    /// 坏键(登出竞态/结构破损):历史查询返回空,服务端拉取直接失败,不猜频道。
+    func testBadSessionKeyFailsClosed() throws {
+        let (t, factory) = singleTransport()
+        let service = makeService(factory: factory)
+        try loginOk(service, t)
+
+        let frames = t.sent.count
+        XCTAssertEqual(service.history(key: "garbage"), [])
+        service.markRead(key: "garbage")  // no-op,不发帧
+        XCTAssertThrowsError(try service.loadServerHistory(key: "garbage").get(timeoutSeconds: 2))
+        XCTAssertEqual(t.sent.count, frames, "坏键在本地挡下,不上线")
         service.logout()
     }
 }

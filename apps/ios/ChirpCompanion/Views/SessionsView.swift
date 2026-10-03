@@ -1,12 +1,14 @@
 import ChirpAppCore
 import SwiftUI
 
-/// 会话列表:SessionIndex 派生(最新在前),点击进聊天;支持任意对端发起
-/// 新会话(P2 的 DM 面与 web/android dev 壳同位)。导航走 path:栈由本视图
-/// 持有,好友面板/新会话入口通过 model.pendingChatPeerId 请求跳转。
+/// 会话列表:SessionIndex 派生(最新在前),点击进聊天(DM/群共用键寻址,
+/// P4e);支持任意对端发起新 DM 与新建群组。导航走 path:栈由本视图持有,
+/// 好友面板/新会话入口/建群成功通过 model.pendingChatKey 请求跳转,被踢/
+/// 退群由 chatDismissToken 弹栈。
 struct SessionsView: View {
     @EnvironmentObject var model: AppModel
     @State private var newPeer = ""
+    @State private var newGroupName = ""
     @State private var showDevices = false
     @State private var showFriends = false
     @State private var showPartyVoice = false
@@ -19,7 +21,7 @@ struct SessionsView: View {
                     ContentUnavailableView(
                         "暂无会话",
                         systemImage: "bubble.left.and.bubble.right",
-                        description: Text("在下方输入对端用户 ID 发起聊天")
+                        description: Text("在下方输入对端用户 ID 发起聊天,或新建一个群组")
                     )
                     .listRowBackground(Color.clear)
                 }
@@ -36,15 +38,26 @@ struct SessionsView: View {
                         }
                         .disabled(newPeer.trimmingCharacters(in: .whitespaces).isEmpty)
                     }
+                    HStack {
+                        TextField("群组名称", text: $newGroupName)
+                            .textInputAutocapitalization(.never)
+                            .autocorrectionDisabled()
+                        Button("新建群组") {
+                            let name = newGroupName
+                            newGroupName = ""
+                            model.createGroupTapped(name: name)
+                        }
+                        .disabled(newGroupName.trimmingCharacters(in: .whitespaces).isEmpty)
+                    }
                 }
                 if !model.sessionSummaries.isEmpty {
                     Section("会话") {
-                        ForEach(model.sessionSummaries, id: \.peerId) { session in
-                            NavigationLink(value: session.peerId) {
+                        ForEach(model.sessionSummaries, id: \.key) { session in
+                            NavigationLink(value: session.key) {
                                 sessionRow(session)
                             }
                         }
-                        // 会话删除随持久化批次落地(P2 索引是内存态)。
+                        // 会话删除随持久化批次落地(索引是内存态)。
                     }
                 }
             }
@@ -86,21 +99,28 @@ struct SessionsView: View {
             .sheet(isPresented: $showPartyVoice) {
                 PartyVoiceView()
             }
-            .navigationDestination(for: String.self) { peerId in
-                ChatView(peerId: peerId)
+            .navigationDestination(for: String.self) { key in
+                ChatView(channelKey: key)
             }
         }
-        .onChange(of: model.pendingChatPeerId) { _, peer in
-            guard let peer, !peer.isEmpty else { return }
-            model.pendingChatPeerId = nil
-            path = [peer]
+        .onChange(of: model.pendingChatKey) { _, key in
+            guard let key, !key.isEmpty else { return }
+            model.pendingChatKey = nil
+            path = [key]
+        }
+        .onChange(of: model.chatDismissToken) { _, _ in
+            // 被踢/退群:聊天面在栈顶,本层弹空回列表。
+            path.removeAll()
         }
     }
 
     private func sessionRow(_ session: SessionIndex.Summary) -> some View {
         HStack {
+            Image(systemName: session.kind == .group ? "person.3" : "person")
+                .foregroundStyle(.secondary)
+                .font(.subheadline)
             VStack(alignment: .leading, spacing: 2) {
-                Text(session.peerId).font(.headline)
+                Text(model.sessionTitle(session)).font(.headline)
                 Text(session.lastMessage)
                     .font(.subheadline)
                     .foregroundStyle(.secondary)

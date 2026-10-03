@@ -4,8 +4,8 @@ SwiftPM package porting the pure protocol core of the former Flutter app
 (`apps/mobile_companion`, removed 2026-09-29 once both native packages
 carried its full test-vector groups), same migration path the Android
 package took (its M1→M4 batches, minus the app shell). Gate: `swift test`
-on Linux — **134 tests, all green** (Swift 6.4, x86_64 linux; 92 protocol
-core incl. the 11 lexicon-sync vectors + 42 app core).
+on Linux — **206 tests, all green** (Swift 6.4, x86_64 linux; 92 protocol
+core incl. the 11 lexicon-sync vectors + 114 app core).
 
 ## Layout
 
@@ -13,7 +13,7 @@ core incl. the 11 lexicon-sync vectors + 42 app core).
 |---|---|---|
 | `Sources/ChirpProtos/proto/*.pb.swift` | `proto/*.proto` | committed gencode, `protoc-gen-swift` 1.38.1 with `Visibility=Public` (cross-target access; the runtime dep is pinned to the same 1.38.1). Regenerate: `protoc --plugin=<path>/protoc-gen-swift --swift_out=apps/ios/Sources/ChirpProtos --swift_opt=Visibility=Public -I . proto/*.proto` from the repo root |
 | `Sources/ChirpProtocol/Frame.swift` | `lib/protocol/frame.dart` | u32-BE length-prefix framing, 16 MiB cap, stream decoder, byte-array in/out |
-| `Sources/ChirpProtocol/MessageSpec.swift` | `lib/protocol/msg_map.dart` | all 41 req/resp MsgID↔type pairs with protobuf decoders + the type-erased `all` table (40 + the 2026-10-01 lexicon-fetch pair) |
+| `Sources/ChirpProtocol/MessageSpec.swift` | `lib/protocol/msg_map.dart` | all 48 req/resp MsgID↔type pairs with protobuf decoders + the type-erased `all` table (41 through P4c + the 2026-10-03 voice seven from P4d) |
 | `Sources/ChirpProtocol/ChatConnection.swift` | `lib/protocol/chirp_client.dart` | full state machine (`idle/connecting/connected/waitingReconnect/kicked/closed`), sequence correlation, typed request futures (`Promise`), request deadlines, missed-pong heartbeat (`maxMissedPongs=2`), auto reconnect with jittered exponential backoff, KICK terminal semantics, clock offset |
 | `Sources/ChirpProtocol/WordFilter.swift` | `WordFilter.kt` (Android M3) | server lexicon parsing, ASCII-only case folding, mask spans with adjacent-run collapse, REPLACE/REJECT; matching runs on UTF-16 code units so mask spans line up with the Kotlin/dart ports; `WordFilterLoader` reads the server lexicon wire format (CRLF/LF/CR) |
 | `Sources/ChirpProtocol/WordFilterSync.swift` | `WordFilterSync.kt` (lexicon-download batch 2026-10-01) | WORD_FILTER_FETCH conditional GET (`known_version` hit omits text), version gate drops stale payloads, update-notify swap-in, fetch never throws (failure keeps the local fallback lexicon), server-disabled clears the local pre-check |
@@ -26,7 +26,7 @@ core incl. the 11 lexicon-sync vectors + 42 app core).
 | `Sources/ChirpProtocol/Scheduler.swift` | dart event-loop timers | time seam; tests drive a `ManualScheduler` virtual clock |
 | `Sources/ChirpProtocol/Promise.swift` | dart `Future`/Kotlin `CompletableFuture` | settle-once future; combinators `map`/`flatMap`/`handle` are the thenApply/thenCompose/handle mapping |
 | `Sources/ChirpProtocol/RequestError.swift` | `lib/protocol/errors.dart` | timeout/closed/kicked (+ server/blocked used by the pipeline) |
-| `Tests/ChirpProtocolTests/` | the Kotlin test files | same vector groups — conformance with the Kotlin package (the dart suite was removed with the Flutter app on 2026-09-29; this batch backfilled its four only-there vectors): Frame 6, ChatConnection 16, MsgSpecs table 3, ChatPipeline 27, OfflineSendQueue 9, Hooks 6, WordFilter 7, WordFilterSync 11 (lexicon batch), DeviceRegistrar 7; plus `Tests/ChirpAppCoreTests/` 42 for the app core (SessionIndex 5, ChatSessionService 12, AwaitedPushTokenSource 4, DevicePlaneService 3, ReactionIndex 5, TypingIndex 4, P1 units 9) |
+| `Tests/ChirpProtocolTests/` | the Kotlin test files | same vector groups — conformance with the Kotlin package (the dart suite was removed with the Flutter app on 2026-09-29; this batch backfilled its four only-there vectors): Frame 6, ChatConnection 16, MsgSpecs table 3, ChatPipeline 27, OfflineSendQueue 9, Hooks 6, WordFilter 7, WordFilterSync 11 (lexicon batch), DeviceRegistrar 7; plus `Tests/ChirpAppCoreTests/` 114 for the app core (ChatSessionService 27, SessionIndex 8, SessionChannel 3, GroupIndex 5, FriendIndex 9, PresenceIndex 7, OnlineDeviceIndex 5, ReactionIndex 5, TypingIndex 4, PartyIndex 4, PartyPlaneService 5, VoiceIndex 5, VoicePlaneService 6, ApnsRegistration 12, P1 units 9) |
 
 Dart's single event loop becomes one recursive lock (transport callbacks and
 scheduler ticks arrive on foreign threads; `close()` re-enters through the
@@ -42,7 +42,7 @@ the same vectors stay runnable.
 ## Gate
 
 ```sh
-cd apps/ios && swift test    # 134 tests, XCTest, Linux-native
+cd apps/ios && swift test    # 206 tests, XCTest, Linux-native
 ```
 
 CI: `ios-app.yml` (macos-latest) runs the package tests on the real
@@ -92,8 +92,8 @@ of truth).
 | Path | Role |
 |---|---|
 | `project.yml` | XcodeGen spec → `ChirpCompanion.xcodeproj` (`xcodegen generate`) |
-| `ChirpCompanion/` | SwiftUI shell: `App/` (entry, root observable), `Views/` (login / sessions / chat screens) |
-| `Sources/ChirpAppCore/` | UI-free app logic inside the package: `DeviceIdentity` / `HostConfig` / `LoginDraft` (P1), the P2 closed loop — `ChatSessionService` (login→sessions→DM send/receive wiring: acks, offline queue replay, word-filter sync, event stream) and `SessionIndex` (conversation list state) — and the P3 push pieces — `AwaitedPushTokenSource` (offer-then-fetch APNs token waiter, timeout degrades to nil) and `DevicePlaneService` (device-plane login → RegisterDevice on 5201) — and the P4a pieces — `ReactionIndex` (quick-reaction tallies: notify increments, ADD/REMOVE_RESP aggregate/decrement, empty slots dropped) and `TypingIndex` (per-channel typing TTL 6s, self excluded) — so `swift test` covers it on Linux **and** macOS |
+| `ChirpCompanion/` | SwiftUI shell: `App/` (entry, root observable), `Views/` (login / sessions / chat / group settings / friends / party-voice / devices screens) |
+| `Sources/ChirpAppCore/` | UI-free app logic inside the package: `DeviceIdentity` / `HostConfig` / `LoginDraft` (P1), the P2 closed loop — `ChatSessionService` (login→sessions→DM send/receive wiring: acks, offline queue replay, word-filter sync, event stream) and `SessionIndex` (conversation list state) — the P3 push pieces — `AwaitedPushTokenSource` (offer-then-fetch APNs token waiter, timeout degrades to nil) and `DevicePlaneService` (device-plane login → RegisterDevice on 5201) — the P4a pieces — `ReactionIndex` (quick-reaction tallies: notify increments, ADD/REMOVE_RESP aggregate/decrement, empty slots dropped) and `TypingIndex` (per-channel typing TTL 6s, self excluded) — the P4b-d plane pieces — `OnlineDeviceIndex` / `FriendIndex` / `PresenceIndex` (device mirror, friend roster, presence snapshots with TTL), `PartyIndex` / `PartyPlaneService` (7501 party plane) and `VoiceIndex` / `VoicePlaneService` (9001 voice plane), game presence via `DevicePlaneService` — and the P4e group/session-key pieces — `SessionChannel` ('p:'/'g:' navigation keys, web conversation-key isomorphic) and `GroupIndex` (group-roster mirror: replace-all + stale-row pruning) — so `swift test` covers it on Linux **and** macOS |
 | `.github/workflows/ios-app.yml` | CI leg (macos-latest): xcodegen → simulator build (unsigned) → package tests on the real macOS toolchain |
 
 ```bash
@@ -110,7 +110,11 @@ swift test
 | P2 | 登录+会话+收发最小闭环:`ChatSessionService`(蓝本 MainActivity.kt 接线——ChatConnection/ChatPipeline/MemoryMessageStore/WordFilterSync 拦截器/OfflineSendQueue/MESSAGE_ACK 回执先于渲染/事件流)+ `SessionIndex` 会话列表 + SwiftUI 三屏真接线(连接横幅/KICK 踢下线/离线入队重放提示);服务级单测 11 例(假 transport+虚拟时钟,对拍协议包手法) | ✅ 2026-10-03 |
 | P3 | 推送 APNs 客户端注册链:`AwaitedPushTokenSource`(offer-then-fetch 等待器,10s 超时 nil 降级)+ `DevicePlaneService`(设备面 5201 独连→LOGIN(GetAuthenticatedSession 守卫)→RegisterDevice)+ `DeviceRegistrar` 加 `PushTokenSlot`(iOS 写 `apns_token` 槽,Swift 侧增量)+ 壳层 `UIApplicationDelegateAdaptor` 桥(didRegister→hex token→offer,didFail→nil 降级)+ 通知授权请求;服务端投递链核对(herald ES256 `.p8` provider token/cert 兜底/topic=bundle id——服务端既有,无需改动) | ✅ 2026-10-03 |
 | P4a | 快捷反应 + 输入状态 + 服务端历史:`ReactionIndex`(八枚 QUICK_REACTIONS,notify 增量/应答聚合覆盖,操作者不在 notify 扇出面 web 同款)+ `TypingIndex`(6s TTL,排自己)+ `ChatSessionService` 四方法(add/remove/sendTyping/loadServerHistory)+ 壳层接线(长按快捷反应、chips 切换、正在输入横幅、3s/5s 输入上报节流、打开会话拉服务端历史按 messageID 去重合并) | ✅ 2026-10-03 |
-| P4 | 余下功能面对齐 web_companion:多平面(social/party/voice/device/game_presence)、好友/群/设备/在线设备/组队/语音面板 | ⬜ |
+| P4b | 多端在线镜像 + 设备面板:`OnlineDeviceIndex`(platform 键控/offline 留 last-seen)+ `DEVICES_PRESENCE_NOTIFY` 接线 + `DevicePlaneService.loadDevices` + `DevicesView`(设备面挂只降级不伤聊天) | ✅ 2026-10-03 |
+| P4c | social 好友名册 + 在线状态面:`FriendIndex`/`PresenceIndex` + 请求面六方法(字段逐条对齐 web social_api.ts)+ `FriendsView` + 登录即 `setPresence(.online)` | ✅ 2026-10-03 |
+| P4d | 组队/语音房间/游戏状态面:voice 七对 spec(41→48)+ `PartyIndex`/`PartyPlaneService`(7501)+ `VoiceIndex`/`VoicePlaneService`(9001)+ 游戏状态走设备面 + `PartyVoiceView` 合并面板 | ✅ 2026-10-03 |
+| P4e | 群面板 + 历史分页:`SessionChannel`('p:'/'g:' 导航键)+ `GroupIndex` + 群请求面六方法(refresh/create/invite/kick/leave/members,web chat_api.ts 同款字段与 notify→重拉口径)+ `GroupSettingsView` + 会话行群/DM 分桶 + beforeTimestamp 翻页(顶部「加载更早」+尾锚自动滚动) | ✅ 2026-10-04 |
+| P4 | 余下功能面对齐 web_companion:多平面(social/party/voice/device/game_presence)、好友/群/设备/在线设备/组队/语音面板 | ✅ 2026-10-04(P4a-e 全落地;真机走查随 APNs 凭据项) |
 
 Out of scope until credentials exist: a signed build with the
 aps-environment entitlement (real device token), provisioning for physical
