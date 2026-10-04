@@ -111,6 +111,7 @@ const config = defineConfig({
           { text: 'SDK 引擎兼容性', link: '/design-notes/sdk_compatibility' },
           { text: '战斗最佳实践', link: '/design-notes/game_combat_best_practices' },
           { text: 'NPC 对话系统', link: '/design-notes/npc_dialog_system' },
+          { text: 'Communication Core 模型', link: '/design-notes/communication_core' },
           { text: '集成测试修复', link: '/design-notes/INTEGRATION_TEST_FIXES' },
           { text: '旧版 API 说明', link: '/API' },
           { text: '旧版快速开始', link: '/QUICKSTART' },

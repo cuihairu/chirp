@@ -147,6 +147,9 @@ SDK 引擎兼容性见 [SDK 引擎兼容性](docs/design-notes/sdk_compatibility
 - [x] **定义频道消息协议**：`CHANNEL_MESSAGE_NOTIFY`（5052）/ `PEER_INJECT_MESSAGE_NOTIFY`（5053）proto 定义
 - [x] **能力位定义**：`RELAY_READ_RECEIPTS`、`RELAY_TYPING`、`RELAY_PRESENCE`、`RELAY_OFFLINE_MESSAGES`
 - [x] **版本协商实现**：握手时交换 protocol_version + supported_features（2026-09-22：libs 层 `ChatPeerHub`/`ChatPeerLink` 双向交换并校验，hub 按 `min_peer_version` 拒绝并回 `VERSION_MISMATCH` + min_version，spoke 收非 OK 断线重试；`chat_peer_test` 覆盖 mismatch 重试与 hub 拒绝两向。服务层旧实现连同其 resp 版本回带 bug 已随 9edaca3 删除）
+- [x] **核心抽象收敛为 Communication（2026-10-04 落文档）**：`docs/design-notes/communication_core.md` 定义共享词汇表——Communication = Identity/Channel/Message/Delivery/Pipe/Event；Chat/NPC/Social/Party 是上层应用而非核心实体；Delivery 语义（BEST_EFFORT/AT_LEAST_ONCE/DURABLE + Accepted→Acknowledged 状态链）升格进 `docs/api/overview.md` 投递语义节；「OK 仅服务面受理」从 README 当前边界升格为协议语义并在 overview 展开。同时钉死两处演进约束：Gateway=Transport Edge（不演变为业务路由中心）、Redis=Runtime Coordination（非 Source of Truth）
+- [ ] **request_id 与 sequence 分离（wire 扩展，P1）**：`sequence` 保持连接内请求配对，新增 `request_id`（缺省=连接内生成）作分布式关联 id；`message_id`（已存在）与 `delivery_id`（新增，投递/已读回执的主语）分离，为 AT_MOST_ONCE dedup 与回执提供基础。随 communication_core.md P1 批次落地，向后兼容
+- [ ] **ActorKind 枚举收敛（P1）**：PLAYER/NPC/SYSTEM/SERVICE/BOT/GM 作为 Message 与注入事件的 sender 侧身份；用户凭证与服务凭证不混用的边界已存在（游戏平面自足、app_auth 独立），收敛后注入边界按 ActorKind 声明而非信任客户端传入 kind
 
 ## 构建与验证（P0）
 

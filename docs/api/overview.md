@@ -210,6 +210,22 @@ sequenceDiagram
 
 接收方离线时,Chat 把消息存进离线队列(内存兜底 200 条/用户,可选 Redis)并在 `SEND_MESSAGE_RESP` 回 `TARGET_OFFLINE`;接收方下次登录后补投。以 `--notification_host` 启动 chat 时,离线消息还会经 app_notification 触发一次设备推送(发完即忘;见上文 6xxx 一节)。
 
+## 投递语义 (Delivery Semantics)
+
+发送回码只回答「已受理」,不回答「已送达」。消息生命周期:
+
+```text
+Message ──发送──► Accepted ──► Persisted ──► (Queued | Delivered) ──► Acknowledged
+```
+
+| 语义 | 含义 | 当前对应 |
+| --- | --- | --- |
+| BEST_EFFORT | 尽力而为,不保证送达 | 离线的设备推送桥(发完即忘);`TARGET_OFFLINE` 入队后仅下次登录补投,不保证推送送达 |
+| AT_LEAST_ONCE | 至少一次,重投直到确认 | 服务面注入:hub ack + Redis Streams PEL 重放(NPC/系统消息,见 [服务器平面](../server_plane.md)) |
+| DURABLE | 持久化,重启不丢 | 聊天消息落 MySQL 历史(`messages` 表),补投与历史同源 |
+
+各回码含义:`OK` = 服务面已受理(可能已持久化,不一定送达);`TARGET_OFFLINE` = 受理并进入离线队列;`KICK`/`RATE_LIMITED` 等 = 未受理。玩家侧是否真正 Delivered/Acknowledged 由离线补投与已读回执(`read_receipts`)回答,与发送回码是两条独立链。概念模型出处:[Communication Core 设计笔记](../design-notes/communication_core.md)。
+
 ## WebSocket 用法
 
 用二进制帧,不要发 JSON。
