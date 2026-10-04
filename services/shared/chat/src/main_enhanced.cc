@@ -6,6 +6,7 @@
 #include <cstdlib>
 #include <memory>
 #include <mutex>
+#include <optional>
 #include <string>
 #include <unordered_map>
 #include <unordered_set>
@@ -36,6 +37,9 @@
 #include "push_bridge.h"
 #include "word_filter.h"
 #include "word_filter_push.h"
+
+#include "common/metrics.h"
+#include "common/metrics_http_server.h"
 
 #include "network/chat_peer_hub.h"
 #include "network/chat_peer_link.h"
@@ -106,6 +110,10 @@ struct DistributedChatState {
     if (released && !user_id.empty()) {
       chirp::network::BroadcastDevicePresence(registry, user_id, platform, device_id,
                                               /*online=*/false);
+      // Only a true release retires a bound (user, platform) slot; a displaced
+      // session lands here with released=false and must not dec (its slot
+      // already belongs to the newer login, which skipped the inc).
+      CHIRP_GAUGE_DEC("chirp_chat_sessions");
     }
   }
 
@@ -781,6 +789,15 @@ void HandleLogin(const chirp::auth::LoginRequest& req,
     if (old && old.get() != session.get()) {
       KickSession(old, chirp::network::LoginKickReason(req.platform()));
     }
+    // Slot accounting: a null displaced session means BindAuthenticatedSession
+    // added a new (user, platform) slot; a non-null one means the slot was
+    // replaced (count unchanged - the old session's later release is a no-op
+    // for the gauge). Same-connection relogin keeps the slot, so the single
+    // release at disconnect balances the one inc that admitted it.
+    if (!old) {
+      CHIRP_GAUGE_INC("chirp_chat_sessions");
+    }
+    CHIRP_COUNTER("chirp_chat_logins_total", 1);
     chirp::network::FillOnlineDevices(state->registry, user_id, &resp, session.get());
     chirp::network::BroadcastDevicePresence(state->registry, user_id, req.platform(),
                                             chirp::network::NormalizeDeviceId(req.device_id()),
@@ -994,6 +1011,10 @@ int main(int argc, char** argv) {
   // a null client makes the bridge a no-op.
   const std::string notification_host = chirp::chat::runtime::GetArg(argc, argv, "--notification_host", "");
   const uint16_t notification_port = chirp::chat::runtime::ParseU16Arg(argc, argv, "--notification_port", 5006);
+  // Prometheus scrape endpoint, opt-in: 0 keeps the listening surface
+  // unchanged for existing deployments.
+  const uint16_t metrics_port =
+      chirp::chat::runtime::ParseU16Arg(argc, argv, "--metrics_port", 0);
   std::shared_ptr<chirp::app_notification::NotificationClient> notification;
   if (!notification_host.empty()) {
     notification = std::make_shared<chirp::app_notification::NotificationClient>(
@@ -1739,6 +1760,7 @@ int main(int argc, char** argv) {
                     edit_handlers = recall_runtime.handlers.get()](
                        const std::shared_ptr<chirp::network::Session>& session,
                        const chirp::gateway::Packet& pkt) {
+    CHIRP_COUNTER("chirp_chat_packets_total", 1);
     if (pkt.msg_id() == chirp::gateway::SERVER_AUTH_REQ) {
       HandleServerAuth(pkt, session, gateway_service_secret, trusted_conns.get());
       return;
@@ -1826,6 +1848,22 @@ int main(int argc, char** argv) {
   ws_server->Start();
   acks->Start();
 
+  // Minimal metrics endpoint (chirp_common MetricsHttpServer, default handler
+  // serves SimpleMetrics in Prometheus text format). Declared after io so it
+  // is destroyed first; a failed bind logs and continues without metrics.
+  std::optional<chirp::common::MetricsHttpServer> metrics_server;
+  if (metrics_port > 0) {
+    metrics_server.emplace(io, metrics_port);
+    if (metrics_server->Start()) {
+      Logger::Instance().Info("Metrics endpoint listening on TCP:" +
+                              std::to_string(metrics_port) + " (/metrics)");
+    } else {
+      Logger::Instance().Warn("Metrics endpoint failed to bind TCP:" +
+                              std::to_string(metrics_port) + "; continuing without metrics");
+      metrics_server.reset();
+    }
+  }
+
   Logger::Instance().Info("Enhanced Chat service started, listening on TCP:" + std::to_string(port) +
                           " WS:" + std::to_string(ws_port));
 
@@ -1846,6 +1884,9 @@ int main(int argc, char** argv) {
     router->Stop();
     delivery_tracker->Stop();
     migration_worker->Stop();
+    if (metrics_server) {
+      metrics_server->Stop();
+    }
     io.stop();
   });
   io.run();

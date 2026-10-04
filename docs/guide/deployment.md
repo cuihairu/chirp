@@ -60,7 +60,7 @@ build/services/shared/chat/chirp_chat --port 7000 --ws_port 7001 \
 
 ## 监控
 
-`libs/common` 里有 `MetricsHttpServer`(Prometheus 文本格式,默认端口 9090),有单测覆盖;但当前没有任何服务进程默认启动它——要接 Prometheus 需要自己在服务里实例化并 `Start()`。在此之前,可用指标来自日志和 Redis/MySQL 自身的观测手段。
+`chirp_chat` 支持 `--metrics_port <port>` 打开 `libs/common` 的 `MetricsHttpServer`(Prometheus 文本格式,`/metrics` 端点);默认 0 即不监听。当前导出三个进程指标:`chirp_chat_sessions`(已绑定会话槽位 gauge)、`chirp_chat_logins_total`、`chirp_chat_packets_total`(TCP+WS 合计)。其余服务尚未接线;可用指标也还只有这三个,更细的观测来自日志和 Redis/MySQL 自身的手段。
 
 ## 负载均衡
 
