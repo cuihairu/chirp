@@ -77,6 +77,9 @@ export class ChirpClient {
 
   private _status: ConnStatus = 'idle';
   private seqCounter = 0;
+  // request_id 发送侧生成器(协议 4.3「缺省=连接内生成」;服务端转发链
+  // 原样透传,用于跨服务日志关联)。
+  private requestIdCounter = 0;
   private attempt = 0;
   private missedPongs = 0;
   private _kicked = false;
@@ -291,7 +294,9 @@ export class ChirpClient {
   private rawSend(msgId: MsgID, body: Uint8Array, sequence: number): void {
     const ws = this.ws;
     if (ws === null) throw new RequestError('closed');
-    const packet = Packet.encode(Packet.fromPartial({ msgId, sequence, body })).finish();
+    const packet = Packet.encode(
+      Packet.fromPartial({ msgId, sequence, body, requestId: ++this.requestIdCounter }),
+    ).finish();
     ws.send(encodeFrame(packet));
   }
 

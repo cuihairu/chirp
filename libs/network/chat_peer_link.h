@@ -114,6 +114,8 @@ class ChatPeerLink : public std::enable_shared_from_this<ChatPeerLink> {
   bool stopping_ = false;  // strand-only (the destructor is post-strand)
   int64_t heartbeat_seq_ = 0;
   int64_t uplink_seq_ = 0;
+  // spoke -> hub 出站包的 request_id 生成器(缺省=连接内生成,strand-only)
+  int64_t next_request_id_ = 1;
   int heartbeat_interval_seconds_ = 30;  // reassigned by the hub on register
 };
 

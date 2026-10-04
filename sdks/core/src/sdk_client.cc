@@ -397,6 +397,9 @@ private:
   chirp::gateway::Packet MakePacket(MsgID msg_id, const std::string& body) {
     chirp::gateway::Packet pkt;
     pkt.set_msg_id(msg_id);
+    // request_id:SDK 侧自动生成(io 线程单调,重连不清零),服务端
+    // 转发链可据此做跨服务日志关联;显式覆盖接口留待需要时再开。
+    pkt.set_request_id(next_request_id_++);
     pkt.set_body(body);
     return pkt;
   }
@@ -1401,6 +1404,9 @@ private:
   std::string user_id_;
   std::string session_id_;
   int64_t next_seq_{1};
+  // request_id 发送侧生成器(协议 4.3「缺省=连接内生成」;io 线程专用,
+  // 与 next_seq_ 同一契约)。重连不清零:跨连接也不重发同一关联键。
+  int64_t next_request_id_{1};
 
   // 以下状态全部只在 io 线程触碰。
   std::unordered_map<int64_t, PendingRequest> pending_;

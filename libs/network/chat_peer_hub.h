@@ -134,6 +134,8 @@ class ChatPeerHub : public std::enable_shared_from_this<ChatPeerHub> {
     bool registered = false;
     bool closing = false;  // strand-only
     int64_t uplink_seq = 0;  // strand-only
+    // hub -> spoke 出站包的 request_id 生成器(缺省=连接内生成,strand-only)
+    int64_t next_request_id = 1;  // strand-only
   };
 
   ChatPeerHub(asio::io_context& io, Options options, PeerRegisteredHandler on_registered,

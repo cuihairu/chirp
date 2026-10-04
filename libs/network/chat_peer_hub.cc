@@ -431,6 +431,9 @@ void ChatPeerHub::PeerConn::SendRawPacket(chirp::gateway::MsgID msg_id, int64_t 
   chirp::gateway::Packet pkt;
   pkt.set_msg_id(msg_id);
   pkt.set_sequence(seq);
+  // request_id:hub 出站按连接内单调生成(协议 4.3「缺省=连接内生成」;
+  // 转发面不改写已是此通道的约定——这里只补缺省)。
+  pkt.set_request_id(next_request_id++);
   pkt.set_body(body_str);
   auto framed = chirp::network::ProtobufFraming::Encode(pkt);
   asio::error_code ec;

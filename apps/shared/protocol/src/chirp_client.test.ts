@@ -197,6 +197,24 @@ describe('request/response', () => {
     expect(decoded.userId).toBe('player_1');
   });
 
+  it('stamps a monotonically increasing requestId on outbound packets', async () => {
+    const { client, ws } = await connectedClient();
+    // connect() 本身不发请求包;两笔 request 的 requestId 必须连接内单调。
+    const pending1 = client.request(LOGIN, { token: 't1' });
+    const first = ws.lastSentPacket();
+    expect(first.requestId).toBeGreaterThan(0);
+
+    const pending2 = client.request(LOGIN, { token: 't2' });
+    const second = ws.lastSentPacket();
+    expect(second.requestId).toBeGreaterThan(first.requestId);
+
+    const resp = LoginResponse.encode(LoginResponse.fromPartial({ code: 0 })).finish();
+    ws.serverFrame(MsgID.LOGIN_RESP, first.sequence, resp);
+    ws.serverFrame(MsgID.LOGIN_RESP, second.sequence, resp);
+    await Promise.all([pending1, pending2]);
+    client.disconnect();
+  });
+
   it('rejects with timeout when no response arrives', async () => {
     const { client } = await connectedClient();
     const pending = client.request(LOGIN, { token: 't' });

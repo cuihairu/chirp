@@ -259,6 +259,8 @@ void ChatPeerLink::SendRawPacket(chirp::gateway::MsgID msg_id, int64_t seq,
   chirp::gateway::Packet pkt;
   pkt.set_msg_id(msg_id);
   pkt.set_sequence(seq);
+  // request_id:spoke 出站按连接内单调生成(协议 4.3;hub 侧对称)。
+  pkt.set_request_id(next_request_id_++);
   pkt.set_body(body);
   auto framed = chirp::network::ProtobufFraming::Encode(pkt);
   asio::error_code ec;

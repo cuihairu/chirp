@@ -53,6 +53,12 @@ std::string GenerateSessionId() {
   return "chat_session_" + std::to_string(chirp::chat::runtime::NowMs()) + "_" + std::to_string(counter.fetch_add(1));
 }
 
+// request_id 缺省(=0)兜底生成器:直连入口的裸协议客户端不带 request_id,
+// SDK 与网关会在发送侧生成;这里给每包一个进程级单调键,保证 chat 侧
+// 日志/转发总有可关联值(协议 4.3「缺省=连接内生成」的进程级近似,
+// 避免扩 per-session 状态;显式值一律不改写)。
+std::atomic<int64_t> g_direct_request_id{1};
+
 struct MessageStore {
   static constexpr size_t kMaxHistory = 100;
   static constexpr size_t kMaxOfflineInMemory = 200;
@@ -491,6 +497,10 @@ void HandlePacket(const std::shared_ptr<MessageStore>& store,
   if (!pkt.ParseFromArray(payload.data(), static_cast<int>(payload.size()))) {
     Logger::Instance().Warn("failed to parse Packet from client");
     return;
+  }
+
+  if (pkt.request_id() == 0) {
+    pkt.set_request_id(g_direct_request_id.fetch_add(1, std::memory_order_relaxed));
   }
 
   const auto authenticated = chirp::network::GetAuthenticatedSession(state, session);
