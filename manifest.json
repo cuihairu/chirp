@@ -1,0 +1,1 @@
+{"stamp": "20261004-a691984", "commit": "a6919845c8a24bb5a06eb551785b9d97d0d3fe69", "built": "2026-10-04 00:58 UTC", "components": {"cpp": ["darwin-arm64", "linux-arm64", "linux-x64", "windows-x64"], "desktop": ["darwin-arm64", "linux-arm64", "linux-x64", "windows-x64"], "go": ["any"], "ts": ["any"]}}
