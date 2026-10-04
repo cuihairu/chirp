@@ -213,7 +213,7 @@ sequenceDiagram
     S-->>C: Packet(LOGIN_RESP, LoginResponse)
 ```
 
-Gateway 登录与直连 Chat 登录是**两个独立的会话概念**:SDK(`sdks/core`)直连 chat 主端口,登录一次即完成连接与认证;自研客户端选一种路径接入,不要叠加。
+Gateway 登录与直连 Chat 登录是**两个独立的会话概念**:SDK(`sdks/core`)直连 chat 主端口,登录一次即完成连接与认证;自行开发客户端选一种路径接入,不要叠加。
 
 ## 聊天消息流程
 

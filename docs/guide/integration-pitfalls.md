@@ -108,7 +108,7 @@ title: 接入避坑指南
 
 - 2026-09-27 起顶号键是 `(user_id, platform)`:同 platform 重新登录会顶掉旧会话,旧连接收到 `KICK_NOTIFY`(reason 如 "logged in on another ios";不上报 platform 的 legacy 客户端归一为 "default",保持旧的一用户一会话行为,reason 回退 "logged in on another device"),新连接 `LOGIN_RESP.kick_previous = true`。
 - 同用户**不同 platform** 共存,各自收消息(多端语义);`device_id` 只是会话元数据,不参与顶号判定。
-- **坑 1**:收到 `KICK_NOTIFY` 后不要再重连——顶号是终态,重连+重登会无限互相顶。官方 SDK 对 KICK 不再自动重连,自研客户端要遵守同一约定。
+- **坑 1**:收到 `KICK_NOTIFY` 后不要再重连——顶号是终态,重连+重登会无限互相顶。官方 SDK 对 KICK 不再自动重连,自行开发客户端要遵守同一约定。
 - **坑 2**:web 多标签页共享同一 platform(如都是 "web"),新标签登录会顶掉旧标签——这是平台级顶号的直接后果,不另开特例;需要多标签并存的接入方要给每个标签发不同 platform,或接受互顶。
 - 在线端可见性:登录响应 `LoginResponse.online_devices` 带其余在线端初始清单;之后登录/断开/被顶经 `DEVICES_PRESENCE_NOTIFY`(1020) 广播 `[{platform, device_id, online, ts}]`(registry 本地,不含接收方自身;多节点部署其他实例听不到)。
 
