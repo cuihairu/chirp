@@ -120,34 +120,67 @@ struct MessageStore {
     }
   }
 
-  std::string OfflineKey(const std::string& user_id) { return "chat:offline:" + user_id; }
+  // 离线队列 per-device 拆分(P1-5 余项第二块):桶 slot = 规范化 platform,
+  // 与 SessionRegistry 的 (user, platform) 槽位同单位。default 桶保持拆分前
+  // 的键形(零迁移):发送时接收方无任何在线端 → 目标端未知,副本落共享桶,
+  // 任何端的登录先到先得;命名设备桶只装「明确为某端而存在」的副本(登录
+  // 补投认领后未 ack 的回队重投)。Redis 侧不维护设备花名册(那是 Presence
+  // 邻接面,明确不做)。
+  std::string OfflineKey(const std::string& user_id, const std::string& slot) {
+    if (slot == chirp::chat::kDefaultOfflineSlot) {
+      return "chat:offline:" + user_id;  // 遗留键形 = default 桶
+    }
+    return "chat:offline:" + user_id + ":" + slot;
+  }
 
-  void AddOffline(const std::string& receiver_id, const chirp::chat::ChatMessage& msg) {
+  void AddOffline(const std::string& receiver_id, const std::string& slot,
+                  const chirp::chat::ChatMessage& msg) {
     if (receiver_id.empty()) {
       return;
     }
-    if (redis && redis->RPush(OfflineKey(receiver_id), msg.SerializeAsString())) {
+    if (redis && redis->RPush(OfflineKey(receiver_id, slot), msg.SerializeAsString())) {
       if (offline_ttl_seconds > 0) {
-        redis->Expire(OfflineKey(receiver_id), offline_ttl_seconds);
+        redis->Expire(OfflineKey(receiver_id, slot), offline_ttl_seconds);
       }
       return;
     }
 
-    auto& pending = offline_messages[receiver_id];
+    auto& pending = offline_messages[OfflineKey(receiver_id, slot)];
     pending.push_back(msg);
     if (pending.size() > kMaxOfflineInMemory) {
       pending.erase(pending.begin());
     }
   }
 
-  std::vector<chirp::chat::ChatMessage> PopOffline(const std::string& user_id) {
+  // 补投臂:弹登录端自己的桶 ∪ default 共享桶(本槽优先)。「无主」副本
+  // (入队臂落 default)任何端登录都清,先到先得;其他设备桶里的回队重投
+  // 副本只有对应端登录才领,不被本端截走。
+  std::vector<chirp::chat::ChatMessage> PopOffline(const std::string& user_id,
+                                                   const std::string& slot) {
     std::vector<chirp::chat::ChatMessage> out;
     if (user_id.empty()) {
       return out;
     }
 
+    out = DrainBucket(user_id, slot);
+    if (slot != chirp::chat::kDefaultOfflineSlot) {
+      auto shared = DrainBucket(user_id, chirp::chat::kDefaultOfflineSlot);
+      out.insert(out.end(), std::make_move_iterator(shared.begin()),
+                 std::make_move_iterator(shared.end()));
+    }
+    return out;
+  }
+
+ private:
+  // 弹空一只桶:先 Redis(LRange + Del),空了再翻内存兜底。map 键与 Redis
+  // 键同串,两种桶一个口径。
+  std::vector<chirp::chat::ChatMessage> DrainBucket(const std::string& user_id,
+                                                    const std::string& slot) {
+    std::vector<chirp::chat::ChatMessage> out;
+    const std::string key = OfflineKey(user_id, slot);
+
     if (redis) {
-      auto raw = redis->LRange(OfflineKey(user_id), 0, -1);
+      auto raw = redis->LRange(key, 0, -1);
       if (!raw.empty()) {
         out.reserve(raw.size());
         for (const auto& item : raw) {
@@ -157,13 +190,13 @@ struct MessageStore {
           }
         }
       }
-      redis->Del(OfflineKey(user_id));
+      redis->Del(key);
       if (!out.empty()) {
         return out;
       }
     }
 
-    auto it = offline_messages.find(user_id);
+    auto it = offline_messages.find(key);
     if (it == offline_messages.end()) {
       return out;
     }
@@ -172,21 +205,24 @@ struct MessageStore {
     return out;
   }
 
+ public:
   // Delivery-ack requeue path: pushes the exact bytes that were tracked so a
   // late ack can remove the copy byte-for-byte (no parse/re-serialize).
-  void AddOfflineBytes(const std::string& receiver_id, const std::string& bytes) {
+  // slot 来自 Track 记账:在线首投回 default 共享桶,补投回队回认领端桶。
+  void AddOfflineBytes(const std::string& receiver_id, const std::string& slot,
+                       const std::string& bytes) {
     if (receiver_id.empty()) {
       return;
     }
-    if (redis && redis->RPush(OfflineKey(receiver_id), bytes)) {
+    if (redis && redis->RPush(OfflineKey(receiver_id, slot), bytes)) {
       if (offline_ttl_seconds > 0) {
-        redis->Expire(OfflineKey(receiver_id), offline_ttl_seconds);
+        redis->Expire(OfflineKey(receiver_id, slot), offline_ttl_seconds);
       }
       return;
     }
     chirp::chat::ChatMessage msg;
     if (msg.ParseFromArray(bytes.data(), static_cast<int>(bytes.size()))) {
-      auto& pending = offline_messages[receiver_id];
+      auto& pending = offline_messages[OfflineKey(receiver_id, slot)];
       pending.push_back(std::move(msg));
       if (pending.size() > kMaxOfflineInMemory) {
         pending.erase(pending.begin());
@@ -196,18 +232,19 @@ struct MessageStore {
 
   // Late-ack cleanup: drop the offline copy the client confirmed after it had
   // already been requeued. The Redis entry matches byte-for-byte; the
-  // in-memory fallback matches by message_id.
-  bool RemoveOffline(const std::string& receiver_id, const std::string& bytes) {
+  // in-memory fallback matches by message_id. slot 精确定位回队时的桶。
+  bool RemoveOffline(const std::string& receiver_id, const std::string& slot,
+                     const std::string& bytes) {
     if (receiver_id.empty()) {
       return false;
     }
     bool removed = false;
     if (redis) {
-      removed = redis->LRem(OfflineKey(receiver_id), 1, bytes) > 0;
+      removed = redis->LRem(OfflineKey(receiver_id, slot), 1, bytes) > 0;
     }
     chirp::chat::ChatMessage msg;
     if (msg.ParseFromArray(bytes.data(), static_cast<int>(bytes.size()))) {
-      auto it = offline_messages.find(receiver_id);
+      auto it = offline_messages.find(OfflineKey(receiver_id, slot));
       if (it != offline_messages.end()) {
         auto& pending = it->second;
         for (auto mit = pending.begin(); mit != pending.end(); ++mit) {
@@ -226,6 +263,8 @@ struct MessageStore {
   // 离线接收方没有 live 会话,收不到 MESSAGE_DELETED_NOTIFY,若副本仍在队列里
   // 就会在下次登录时把原文补投出去,撤回等于白做。Redis 侧没有 message_id 索引,
   // 只能扫队列按 message_id 匹配后 LRem(队列有每用户 200 条内存/TTL 上限,代价有界)。
+  // per-device 拆分后副本可能落在任意设备桶:扫 default 桶 + KEYS 前缀全设备桶
+  // + 内存兜底同前缀。message_id 全局唯一,跨桶误删不存在。
   size_t PurgeOfflineByMessageId(const std::string& receiver_id,
                                  const std::string& message_id) {
     if (receiver_id.empty() || message_id.empty()) {
@@ -233,25 +272,38 @@ struct MessageStore {
     }
     size_t removed = 0;
 
-    auto it = offline_messages.find(receiver_id);
-    if (it != offline_messages.end()) {
-      auto& pending = it->second;
-      const size_t before = pending.size();
-      pending.erase(std::remove_if(pending.begin(), pending.end(),
-                                   [&message_id](const chirp::chat::ChatMessage& queued) {
-                                     return queued.message_id() == message_id;
-                                   }),
-                    pending.end());
-      removed += before - pending.size();
+    // 内存兜底:default 桶键精确,设备桶键 = default 键 + ":" 前缀
+    // (前缀刻意带分隔符,不与相邻用户名相撞)。
+    const std::string default_key = OfflineKey(receiver_id, chirp::chat::kDefaultOfflineSlot);
+    const std::string slot_prefix = default_key + ":";
+    for (auto it = offline_messages.begin(); it != offline_messages.end();) {
+      if (it->first == default_key || it->first.compare(0, slot_prefix.size(), slot_prefix) == 0) {
+        auto& pending = it->second;
+        const size_t before = pending.size();
+        pending.erase(std::remove_if(pending.begin(), pending.end(),
+                                     [&message_id](const chirp::chat::ChatMessage& queued) {
+                                       return queued.message_id() == message_id;
+                                     }),
+                      pending.end());
+        removed += before - pending.size();
+        it = pending.empty() ? offline_messages.erase(it) : std::next(it);
+      } else {
+        ++it;
+      }
     }
 
     if (redis) {
-      const std::string key = OfflineKey(receiver_id);
-      for (const auto& item : redis->LRange(key, 0, -1)) {
-        chirp::chat::ChatMessage queued;
-        if (queued.ParseFromArray(item.data(), static_cast<int>(item.size())) &&
-            queued.message_id() == message_id && redis->LRem(key, 1, item) > 0) {
-          ++removed;
+      std::vector<std::string> keys{default_key};
+      for (const auto& key : redis->Keys(slot_prefix + "*")) {
+        keys.push_back(key);
+      }
+      for (const auto& key : keys) {
+        for (const auto& item : redis->LRange(key, 0, -1)) {
+          chirp::chat::ChatMessage queued;
+          if (queued.ParseFromArray(item.data(), static_cast<int>(item.size())) &&
+              queued.message_id() == message_id && redis->LRem(key, 1, item) > 0) {
+            ++removed;
+          }
         }
       }
     }
@@ -390,19 +442,22 @@ std::vector<std::shared_ptr<chirp::network::Session>> HealthyUserSessions(
 // Holds a delivery until MESSAGE_ACK when any target device declared the
 // ack capability. Track is idempotent per delivery subject (delivery_id, or
 // message_id for the first/live delivery), so one capable device is enough;
-// the ack may arrive over a different one.
+// the ack may arrive over a different one. slot 是超时回队要落的离线桶:
+// 在线扇出是「任一端接受即送达」的用户级语义,回队回 default 共享桶,任何
+// 端下次登录都可领;登录补投的认领端则记自己的 slot(见补投臂)。
 void TrackAckIfCapable(chirp::chat::DeliveryAckManager* acks,
                        const std::vector<std::shared_ptr<chirp::network::Session>>& sessions,
                        const std::string& message_id,
                        const std::string& delivery_id,
                        const std::string& receiver_id,
+                       const std::string& slot,
                        const std::string& payload) {
   if (!acks) {
     return;
   }
   for (const auto& recv : sessions) {
     if (acks->IsCapable(recv.get())) {
-      acks->Track(message_id, delivery_id, receiver_id, payload);
+      acks->Track(message_id, delivery_id, receiver_id, slot, payload);
       return;
     }
   }
@@ -629,7 +684,12 @@ void HandlePacket(const std::shared_ptr<MessageStore>& store,
 
     chirp::chat::runtime::SendPacket(session, chirp::gateway::LOGIN_RESP, pkt.sequence(), login_resp.SerializeAsString());
     if (!user_id.empty()) {
-      auto offline = store->PopOffline(user_id);
+      // 补投臂(P1-5 per-device 拆分):弹本端桶 ∪ default 共享桶。本端桶里
+      // 是先前认领过、ack 超时回队的副本;default 桶是无主副本(入队时无任何
+      // 在线端),任何端登录先到先得。
+      const std::string refill_slot =
+          chirp::network::NormalizePlatformId(login_req.platform());
+      auto offline = store->PopOffline(user_id, refill_slot);
       for (const auto& m : offline) {
         // delivery_id(P1-5):补投副本要有自己的投递主语。空(首次补投)
         // 铸新值;ack 超时回队的副本保留原值——同一次投递的重投同 id,
@@ -642,10 +702,11 @@ void HandlePacket(const std::shared_ptr<MessageStore>& store,
         // Refills are tracked like live deliveries: if this session dies
         // before acking, the message returns to the offline queue instead of
         // being consumed by a zombie connection. 序列化在铸 id 之后,
-        // 回队副本带着同一 delivery_id。
+        // 回队副本带着同一 delivery_id。Track 记认领端 slot:超时回队回本端
+        // 桶,重投只找本端,不被其他端的登录截走。
         if (features.acks && features.acks->IsCapable(session.get())) {
           features.acks->Track(delivered.message_id(), delivered.delivery_id(),
-                           user_id, delivered.SerializeAsString());
+                           user_id, refill_slot, delivered.SerializeAsString());
         }
         chirp::chat::runtime::SendChatNotify(session, delivered);
       }
@@ -881,21 +942,26 @@ void HandlePacket(const std::shared_ptr<MessageStore>& store,
       // Deliver to every device of the receiver. A connection that already
       // sent FIN would "consume" the message without ever reading it, so
       // half-closed devices are not written to; the offline decision stays
-      // user-level (the offline queue has no per-device split yet), meaning
-      // any healthy device accepting the message counts as delivered.
-      // Ack-capable devices additionally hold the delivery until
-      // MESSAGE_ACK - no ack before the timeout requeues it instead.
+      // user-level for the queue arm (no device is known when nobody is
+      // online - the copy lands in the shared default bucket and any device's
+      // login drains it first-come-first-served), meaning any healthy device
+      // accepting the message counts as delivered. Per-device fidelity starts
+      // at refill claim time: an unacked refill requeues to the claiming
+      // device's bucket only. Ack-capable devices additionally hold the
+      // delivery until MESSAGE_ACK - no ack before the timeout requeues it
+      // instead (live deliveries requeue to the shared default bucket).
       if (!receivers.empty()) {
         resp.set_code(chirp::common::OK);
         TrackAckIfCapable(features.acks, receivers, msg.message_id(),
                           msg.delivery_id(), req.receiver_id(),
+                          chirp::chat::kDefaultOfflineSlot,
                           msg.SerializeAsString());
         for (const auto& recv : receivers) {
           chirp::chat::runtime::SendChatNotify(recv, msg);
         }
       } else {
         resp.set_code(chirp::common::TARGET_OFFLINE);
-        store->AddOffline(req.receiver_id(), msg);
+        store->AddOffline(req.receiver_id(), chirp::chat::kDefaultOfflineSlot, msg);
         features.push.NotifyOffline(msg, req.receiver_id());
       }
       // Friend-DM relay into the game plane (游戏在线状态): the recipient's
@@ -923,7 +989,7 @@ void HandlePacket(const std::shared_ptr<MessageStore>& store,
         resp.set_code(chirp::common::OK);
         auto offline = features.groups.BroadcastGroupMessage(req.channel_id(), req.sender_id(), msg);
         for (const auto& member_id : offline) {
-          store->AddOffline(member_id, msg);
+          store->AddOffline(member_id, chirp::chat::kDefaultOfflineSlot, msg);
           features.push.NotifyOffline(msg, member_id);
         }
       } else {
@@ -1447,11 +1513,13 @@ int main(int argc, char** argv) {
   ack_config.timeout_ms = ack_timeout_ms;
   auto acks = std::make_shared<chirp::chat::DeliveryAckManager>(
       io, ack_config,
-      [&store](const std::string& receiver_id, const std::string& payload) {
-        store->AddOfflineBytes(receiver_id, payload);
+      [&store](const std::string& receiver_id, const std::string& slot,
+               const std::string& payload) {
+        store->AddOfflineBytes(receiver_id, slot, payload);
       },
-      [&store](const std::string& receiver_id, const std::string& payload) {
-        store->RemoveOffline(receiver_id, payload);
+      [&store](const std::string& receiver_id, const std::string& slot,
+               const std::string& payload) {
+        store->RemoveOffline(receiver_id, slot, payload);
       });
 
   chirp::chat::ChatRateLimiter::Config rate_limit_config;
@@ -1675,12 +1743,13 @@ int main(int argc, char** argv) {
         if (!receivers.empty()) {
           TrackAckIfCapable(features.acks, receivers, copy.message_id(),
                             copy.delivery_id(), player_id,
+                            chirp::chat::kDefaultOfflineSlot,
                             copy.SerializeAsString());
           for (const auto& recv : receivers) {
             chirp::chat::runtime::SendChatNotify(recv, copy);
           }
         } else {
-          store->AddOffline(player_id, copy);
+          store->AddOffline(player_id, chirp::chat::kDefaultOfflineSlot, copy);
           features.push.NotifyOffline(copy, player_id);
         }
       };
@@ -1791,7 +1860,7 @@ int main(int argc, char** argv) {
                 s, chirp::gateway::CHAT_MESSAGE_NOTIFY, 0, msg.SerializeAsString());
           }
           if (receivers.empty()) {
-            store->AddOffline(inject.channel_id(), msg);
+            store->AddOffline(inject.channel_id(), chirp::chat::kDefaultOfflineSlot, msg);
           }
         },
         []() {
@@ -1849,6 +1918,7 @@ int main(int argc, char** argv) {
       // then fanned out to every device of the receiver.
       TrackAckIfCapable(features.acks, receivers, msg.message_id(),
                         msg.delivery_id(), receiver_id,
+                        chirp::chat::kDefaultOfflineSlot,
                         msg.SerializeAsString());
       for (const auto& recv : receivers) {
         chirp::chat::runtime::SendChatNotify(recv, msg);
@@ -1857,7 +1927,8 @@ int main(int argc, char** argv) {
     };
     hooks.queue_offline =
         [&store, &features](const std::string& user_id, const chirp::chat::ChatMessage& msg) {
-          store->AddOffline(user_id, msg);
+          // 入队臂:注入面不知道接收方设备,副本落 default 共享桶。
+          store->AddOffline(user_id, chirp::chat::kDefaultOfflineSlot, msg);
           features.push.NotifyOffline(msg, user_id);
         };
     hooks.broadcast_channel =

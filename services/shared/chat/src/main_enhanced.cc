@@ -148,19 +148,21 @@ std::vector<std::shared_ptr<chirp::network::Session>> HealthyLocalSessions(
 // ack capability. Track is idempotent per delivery subject (delivery_id, or
 // message_id for the first/live delivery), so one capable device is enough;
 // the ack may arrive over a different one. Returns whether the delivery is
-// now held for an ack.
+// now held for an ack. slot 是超时回队要落的离线桶:在线扇出(任一端接受即
+// 送达的用户级语义)回 default 共享桶;登录补投的认领端记自己的 slot。
 bool TrackAckIfCapable(chirp::chat::DeliveryAckManager* acks,
                        const std::vector<std::shared_ptr<chirp::network::Session>>& sessions,
                        const std::string& message_id,
                        const std::string& delivery_id,
                        const std::string& receiver_id,
+                       const std::string& slot,
                        const std::string& payload) {
   if (!acks) {
     return false;
   }
   for (const auto& recv : sessions) {
     if (acks->IsCapable(recv.get())) {
-      acks->Track(message_id, delivery_id, receiver_id, payload);
+      acks->Track(message_id, delivery_id, receiver_id, slot, payload);
       return true;
     }
   }
@@ -320,7 +322,8 @@ void HandleSendMessage(const chirp::chat::SendMessageRequest& req,
         // Ack-capable sessions hold the delivery until MESSAGE_ACK; only
         // legacy sessions keep the write-means-delivered self answer.
         if (!TrackAckIfCapable(acks, healthy, msg.message_id(), msg.delivery_id(),
-                               user_id, msg_bytes)) {
+                               user_id, chirp::chat::kDefaultOfflineSlot,
+                               msg_bytes)) {
           delivery_tracker->Acknowledge(msg.message_id(), user_id);
         }
         for (const auto& recv_session : healthy) {
@@ -334,9 +337,11 @@ void HandleSendMessage(const chirp::chat::SendMessageRequest& req,
     // Nobody received it live (offline here, or on another instance with no
     // Redis pub/sub): enqueue an offline copy. AddOfflineMessage falls back
     // to an in-memory queue when Redis is unavailable, so single-node
-    // deployments without Redis still refill on login.
+    // deployments without Redis still refill on login. 入队臂:无任何在线端,
+    // 目标端未知 → default 共享桶(任何端登录先到先得)。
     if (receivers <= 0) {
-      store->AddOfflineMessage(req.receiver_id(), msg_data.SerializeAsString());
+      store->AddOfflineMessage(req.receiver_id(), chirp::chat::kDefaultOfflineSlot,
+                               msg_data.SerializeAsString());
       Logger::Instance().Info("Message stored offline for " + req.receiver_id());
     }
 
@@ -367,7 +372,8 @@ void HandleSendMessage(const chirp::chat::SendMessageRequest& req,
         group_handlers->IsMember(channel_id, msg.sender_id())) {
       for (const auto& member_id :
            group_handlers->BroadcastGroupMessage(channel_id, msg.sender_id(), msg)) {
-        store->AddOfflineMessage(member_id, msg.SerializeAsString());
+        store->AddOfflineMessage(member_id, chirp::chat::kDefaultOfflineSlot,
+                                 msg.SerializeAsString());
       }
     } else {
       router->BroadcastToGroup(channel_id, msg.SerializeAsString());
@@ -803,8 +809,9 @@ void HandleLogin(const chirp::auth::LoginRequest& req,
       }
       // Cross-instance deliveries are tracked like local ones - this
       // instance owns the receiving sessions, so the ack comes back here.
+      // 在线首投 → 回队回 default 共享桶。
       TrackAckIfCapable(acks, healthy, msg.message_id(), msg.delivery_id(),
-                        user_id, msg_data);
+                        user_id, chirp::chat::kDefaultOfflineSlot, msg_data);
       for (const auto& recv : healthy) {
         chirp::chat::runtime::SendChatNotify(recv, msg);
       }
@@ -822,7 +829,10 @@ void HandleLogin(const chirp::auth::LoginRequest& req,
   // basic build): a refill notify sent first would be swallowed by clients
   // that read exactly one frame as "the login response".
   if (!user_id.empty()) {
-    auto offline_msgs = store->PopOfflineMessages(user_id);
+    // 补投臂(per-device 拆分):弹本端桶 ∪ default 共享桶;Track 记认领端
+    // slot——超时回队回本端桶,重投不被其他端的登录截走。
+    const std::string refill_slot = chirp::network::NormalizePlatformId(req.platform());
+    auto offline_msgs = store->PopOfflineMessages(user_id, refill_slot);
     Logger::Instance().Info("Delivering " + std::to_string(offline_msgs.size()) +
                            " offline messages to " + user_id);
     for (const auto& msg_data : offline_msgs) {
@@ -838,7 +848,7 @@ void HandleLogin(const chirp::auth::LoginRequest& req,
       // Refills are tracked like live deliveries: an unacked refill returns
       // to the offline queue instead of dying with the connection.
       if (acks && acks->IsCapable(session.get())) {
-        acks->Track(msg.message_id(), msg.delivery_id(), user_id,
+        acks->Track(msg.message_id(), msg.delivery_id(), user_id, refill_slot,
                     msg.SerializeAsString());
       }
       chirp::chat::runtime::SendChatNotify(session, msg);
@@ -995,11 +1005,13 @@ int main(int argc, char** argv) {
   ack_config.timeout_ms = ack_timeout_ms;
   auto acks = std::make_shared<chirp::chat::DeliveryAckManager>(
       io, ack_config,
-      [store](const std::string& receiver_id, const std::string& payload) {
-        store->AddOfflineMessage(receiver_id, payload);
+      [store](const std::string& receiver_id, const std::string& slot,
+              const std::string& payload) {
+        store->AddOfflineMessage(receiver_id, slot, payload);
       },
-      [store](const std::string& receiver_id, const std::string& payload) {
-        store->RemoveOfflineMessage(receiver_id, payload);
+      [store](const std::string& receiver_id, const std::string& slot,
+              const std::string& payload) {
+        store->RemoveOfflineMessage(receiver_id, slot, payload);
       });
 
   // Server-plane injection: when --server_gateway_host is set, chat dials the
@@ -1044,7 +1056,8 @@ int main(int argc, char** argv) {
       // Injected private replies are tracked like SEND_MESSAGE deliveries;
       // only legacy sessions keep the write-means-delivered self answer.
       if (!TrackAckIfCapable(acks.get(), healthy, msg.message_id(), msg.delivery_id(),
-                             receiver_id, msg.SerializeAsString())) {
+                             receiver_id, chirp::chat::kDefaultOfflineSlot,
+                             msg.SerializeAsString())) {
         delivery_tracker->Acknowledge(msg.message_id(), receiver_id);
       }
       for (const auto& recv_session : healthy) {
@@ -1056,7 +1069,9 @@ int main(int argc, char** argv) {
     hooks.queue_offline =
         [&store, &push](const std::string& user_id, const chirp::chat::ChatMessage& msg) {
           chirp::chat::MessageData data = ToMessageData(msg);
-          store->AddOfflineMessage(user_id, data.SerializeAsString());
+          // 入队臂:注入面不知道接收方设备 → default 共享桶。
+          store->AddOfflineMessage(user_id, chirp::chat::kDefaultOfflineSlot,
+                                   data.SerializeAsString());
           push.NotifyOffline(msg, user_id);
           Logger::Instance().Info("inject queued offline for " + user_id);
         };
@@ -1171,14 +1186,16 @@ int main(int argc, char** argv) {
         auto healthy = HealthyLocalSessions(state, player_id);
         if (!healthy.empty()) {
           if (!TrackAckIfCapable(acks.get(), healthy, copy.message_id(), copy.delivery_id(),
-                                 player_id, copy.SerializeAsString())) {
+                                 player_id, chirp::chat::kDefaultOfflineSlot,
+                                 copy.SerializeAsString())) {
             delivery_tracker->Acknowledge(copy.message_id(), player_id);
           }
           for (const auto& recv_session : healthy) {
             chirp::chat::runtime::SendChatNotify(recv_session, copy);
           }
         } else {
-          store->AddOfflineMessage(player_id, data.SerializeAsString());
+          store->AddOfflineMessage(player_id, chirp::chat::kDefaultOfflineSlot,
+                                   data.SerializeAsString());
           push.NotifyOffline(copy, player_id);
         }
       };
@@ -1296,7 +1313,8 @@ int main(int argc, char** argv) {
             auto healthy = HealthyLocalSessions(state, inject.channel_id());
             if (!healthy.empty()) {
               if (!TrackAckIfCapable(acks.get(), healthy, msg.message_id(), msg.delivery_id(),
-                                     inject.channel_id(), msg.SerializeAsString())) {
+                                     inject.channel_id(), chirp::chat::kDefaultOfflineSlot,
+                                     msg.SerializeAsString())) {
                 delivery_tracker->Acknowledge(msg.message_id(), inject.channel_id());
               }
               for (const auto& recv_session : healthy) {
@@ -1304,7 +1322,8 @@ int main(int argc, char** argv) {
               }
               Logger::Instance().Info("peer inject delivered live to " + inject.channel_id());
             } else {
-              store->AddOfflineMessage(inject.channel_id(), data.SerializeAsString());
+              store->AddOfflineMessage(inject.channel_id(), chirp::chat::kDefaultOfflineSlot,
+                                       data.SerializeAsString());
               Logger::Instance().Info("peer inject queued offline for " + inject.channel_id());
             }
           },

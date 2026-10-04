@@ -1,6 +1,6 @@
 // Unit tests for the client delivery-ack manager: pending tracking, ack
-// confirmation, timeout requeue into the offline path, and the capability
-// lifecycle of ack-aware sessions.
+// confirmation, timeout requeue into the offline path (with its per-device
+// bucket slot), and the capability lifecycle of ack-aware sessions.
 
 #include <gtest/gtest.h>
 
@@ -14,7 +14,7 @@ namespace chirp::chat {
 namespace {
 
 class FakeSession : public network::Session {
-public:
+ public:
   void Send(std::string) override {}
   void SendAndClose(std::string) override {}
   void Close() override {}
@@ -22,9 +22,17 @@ public:
   std::string RemoteAddress() const override { return "127.0.0.1"; }
 };
 
+// 回队/迟到 ack 事件:(user, slot, payload) 三元组——slot 是这笔投递记账上
+// 的离线桶，回队与清理都按它精确落桶(P1-5 per-device 拆分)。
+struct Event {
+  std::string user;
+  std::string slot;
+  std::string payload;
+};
+
 struct Recorded {
-  std::vector<std::pair<std::string, std::string>> requeued;
-  std::vector<std::pair<std::string, std::string>> late_acked;
+  std::vector<Event> requeued;
+  std::vector<Event> late_acked;
 };
 
 DeliveryAckManager::Config FastConfig() {
@@ -38,15 +46,17 @@ TEST(DeliveryAckTest, AckBeforeTimeoutClearsPendingWithoutRequeue) {
   asio::io_context io;
   Recorded recorded;
   DeliveryAckManager manager(io, FastConfig(),
-                             [&](const std::string& u, const std::string& p) {
-                               recorded.requeued.emplace_back(u, p);
+                             [&](const std::string& u, const std::string& s,
+                                 const std::string& p) {
+                               recorded.requeued.push_back({u, s, p});
                              },
-                             [&](const std::string& u, const std::string& p) {
-                               recorded.late_acked.emplace_back(u, p);
+                             [&](const std::string& u, const std::string& s,
+                                 const std::string& p) {
+                               recorded.late_acked.push_back({u, s, p});
                              });
   manager.Start();
 
-  manager.Track("msg_1", "", "user_2", "payload");
+  manager.Track("msg_1", "", "user_2", kDefaultOfflineSlot, "payload");
   EXPECT_EQ(manager.pending_count(), 1u);
   EXPECT_TRUE(manager.Acknowledge("msg_1", ""));
   EXPECT_EQ(manager.pending_count(), 0u);
@@ -61,18 +71,21 @@ TEST(DeliveryAckTest, TimeoutRequeuesExactlyOnce) {
   asio::io_context io;
   Recorded recorded;
   DeliveryAckManager manager(io, FastConfig(),
-                             [&](const std::string& u, const std::string& p) {
-                               recorded.requeued.emplace_back(u, p);
+                             [&](const std::string& u, const std::string& s,
+                                 const std::string& p) {
+                               recorded.requeued.push_back({u, s, p});
                              },
-                             [&](const std::string&, const std::string&) {});
+                             [](const std::string&, const std::string&,
+                                const std::string&) {});
   manager.Start();
 
-  manager.Track("msg_1", "", "user_2", "the-payload");
+  manager.Track("msg_1", "", "user_2", kDefaultOfflineSlot, "the-payload");
   io.run_for(std::chrono::milliseconds(200));
 
   ASSERT_EQ(recorded.requeued.size(), 1u);
-  EXPECT_EQ(recorded.requeued[0].first, "user_2");
-  EXPECT_EQ(recorded.requeued[0].second, "the-payload");
+  EXPECT_EQ(recorded.requeued[0].user, "user_2");
+  EXPECT_EQ(recorded.requeued[0].slot, kDefaultOfflineSlot);
+  EXPECT_EQ(recorded.requeued[0].payload, "the-payload");
   EXPECT_EQ(manager.pending_count(), 0u);
 }
 
@@ -80,22 +93,25 @@ TEST(DeliveryAckTest, LateAckAfterRequeueInvokesCleanup) {
   asio::io_context io;
   Recorded recorded;
   DeliveryAckManager manager(io, FastConfig(),
-                             [&](const std::string& u, const std::string& p) {
-                               recorded.requeued.emplace_back(u, p);
+                             [&](const std::string& u, const std::string& s,
+                                 const std::string& p) {
+                               recorded.requeued.push_back({u, s, p});
                              },
-                             [&](const std::string& u, const std::string& p) {
-                               recorded.late_acked.emplace_back(u, p);
+                             [&](const std::string& u, const std::string& s,
+                                 const std::string& p) {
+                               recorded.late_acked.push_back({u, s, p});
                              });
   manager.Start();
 
-  manager.Track("msg_1", "", "user_2", "the-payload");
+  manager.Track("msg_1", "", "user_2", kDefaultOfflineSlot, "the-payload");
   io.run_for(std::chrono::milliseconds(200));
   ASSERT_EQ(recorded.requeued.size(), 1u);
 
   EXPECT_TRUE(manager.Acknowledge("msg_1", ""));
   ASSERT_EQ(recorded.late_acked.size(), 1u);
-  EXPECT_EQ(recorded.late_acked[0].first, "user_2");
-  EXPECT_EQ(recorded.late_acked[0].second, "the-payload");
+  EXPECT_EQ(recorded.late_acked[0].user, "user_2");
+  EXPECT_EQ(recorded.late_acked[0].slot, kDefaultOfflineSlot);
+  EXPECT_EQ(recorded.late_acked[0].payload, "the-payload");
 
   // A second ack for the same id is a no-op (offline copy already removed).
   EXPECT_FALSE(manager.Acknowledge("msg_1", ""));
@@ -106,11 +122,13 @@ TEST(DeliveryAckTest, UnknownAckIsANoop) {
   asio::io_context io;
   Recorded recorded;
   DeliveryAckManager manager(io, FastConfig(),
-                             [&](const std::string& u, const std::string& p) {
-                               recorded.requeued.emplace_back(u, p);
+                             [&](const std::string& u, const std::string& s,
+                                 const std::string& p) {
+                               recorded.requeued.push_back({u, s, p});
                              },
-                             [&](const std::string& u, const std::string& p) {
-                               recorded.late_acked.emplace_back(u, p);
+                             [&](const std::string& u, const std::string& s,
+                                 const std::string& p) {
+                               recorded.late_acked.push_back({u, s, p});
                              });
   manager.Start();
 
@@ -124,14 +142,16 @@ TEST(DeliveryAckTest, RetrackingSameMessageRefreshesInsteadOfDuplicating) {
   asio::io_context io;
   Recorded recorded;
   DeliveryAckManager manager(io, FastConfig(),
-                             [&](const std::string& u, const std::string& p) {
-                               recorded.requeued.emplace_back(u, p);
+                             [&](const std::string& u, const std::string& s,
+                                 const std::string& p) {
+                               recorded.requeued.push_back({u, s, p});
                              },
-                             [](const std::string&, const std::string&) {});
+                             [](const std::string&, const std::string&,
+                                const std::string&) {});
   manager.Start();
 
-  manager.Track("msg_1", "", "user_2", "first");
-  manager.Track("msg_1", "", "user_2", "second");
+  manager.Track("msg_1", "", "user_2", kDefaultOfflineSlot, "first");
+  manager.Track("msg_1", "", "user_2", kDefaultOfflineSlot, "second");
   EXPECT_EQ(manager.pending_count(), 1u);
 
   EXPECT_TRUE(manager.Acknowledge("msg_1", ""));
@@ -145,14 +165,16 @@ TEST(DeliveryAckTest, AckMatchesByDeliverySubject) {
   asio::io_context io;
   Recorded recorded;
   DeliveryAckManager manager(io, FastConfig(),
-                             [&](const std::string& u, const std::string& p) {
-                               recorded.requeued.emplace_back(u, p);
+                             [&](const std::string& u, const std::string& s,
+                                 const std::string& p) {
+                               recorded.requeued.push_back({u, s, p});
                              },
-                             [](const std::string&, const std::string&) {});
+                             [](const std::string&, const std::string&,
+                                const std::string&) {});
   manager.Start();
 
-  manager.Track("m1", "", "user_2", "first-delivery");
-  manager.Track("m1", "dlv_refill", "user_2", "refill-copy");
+  manager.Track("m1", "", "user_2", kDefaultOfflineSlot, "first-delivery");
+  manager.Track("m1", "dlv_refill", "user_2", kDefaultOfflineSlot, "refill-copy");
   EXPECT_EQ(manager.pending_count(), 2u);
 
   // 另一笔投递的主语：不命中。
@@ -174,23 +196,26 @@ TEST(DeliveryAckTest, RequeuedCopyIsAckedByDeliverySubject) {
   asio::io_context io;
   Recorded recorded;
   DeliveryAckManager manager(io, FastConfig(),
-                             [&](const std::string& u, const std::string& p) {
-                               recorded.requeued.emplace_back(u, p);
+                             [&](const std::string& u, const std::string& s,
+                                 const std::string& p) {
+                               recorded.requeued.push_back({u, s, p});
                              },
-                             [&](const std::string& u, const std::string& p) {
-                               recorded.late_acked.emplace_back(u, p);
+                             [&](const std::string& u, const std::string& s,
+                                 const std::string& p) {
+                               recorded.late_acked.push_back({u, s, p});
                              });
   manager.Start();
 
-  manager.Track("m_refill", "dlv_kept", "user_2", "kept-copy");
+  manager.Track("m_refill", "dlv_kept", "user_2", kDefaultOfflineSlot, "kept-copy");
   io.run_for(std::chrono::milliseconds(200));
   ASSERT_EQ(recorded.requeued.size(), 1u);
 
   EXPECT_FALSE(manager.Acknowledge("m_refill", ""));
   EXPECT_TRUE(manager.Acknowledge("m_refill", "dlv_kept"));
   ASSERT_EQ(recorded.late_acked.size(), 1u);
-  EXPECT_EQ(recorded.late_acked[0].first, "user_2");
-  EXPECT_EQ(recorded.late_acked[0].second, "kept-copy");
+  EXPECT_EQ(recorded.late_acked[0].user, "user_2");
+  EXPECT_EQ(recorded.late_acked[0].slot, kDefaultOfflineSlot);
+  EXPECT_EQ(recorded.late_acked[0].payload, "kept-copy");
 }
 
 TEST(DeliveryAckTest, RetrackingSameDeliveryIdRefreshesOnly) {
@@ -199,14 +224,16 @@ TEST(DeliveryAckTest, RetrackingSameDeliveryIdRefreshesOnly) {
   asio::io_context io;
   Recorded recorded;
   DeliveryAckManager manager(io, FastConfig(),
-                             [&](const std::string& u, const std::string& p) {
-                               recorded.requeued.emplace_back(u, p);
+                             [&](const std::string& u, const std::string& s,
+                                 const std::string& p) {
+                               recorded.requeued.push_back({u, s, p});
                              },
-                             [](const std::string&, const std::string&) {});
+                             [](const std::string&, const std::string&,
+                                const std::string&) {});
   manager.Start();
 
-  manager.Track("m1", "dlv_re", "user_2", "retry-1");
-  manager.Track("m1", "dlv_re", "user_2", "retry-2");
+  manager.Track("m1", "dlv_re", "user_2", kDefaultOfflineSlot, "retry-1");
+  manager.Track("m1", "dlv_re", "user_2", kDefaultOfflineSlot, "retry-2");
   EXPECT_EQ(manager.pending_count(), 1u);
 
   EXPECT_TRUE(manager.Acknowledge("m1", "dlv_re"));
@@ -215,11 +242,62 @@ TEST(DeliveryAckTest, RetrackingSameDeliveryIdRefreshesOnly) {
   EXPECT_TRUE(recorded.requeued.empty());
 }
 
+TEST(DeliveryAckTest, TimeoutRequeuesToTrackedSlot) {
+  // P1-5 per-device 拆分：补投认领端记自己的 slot，超时回队落该端的设备桶，
+  // 不回 default 共享桶——重投只找认领端，不被其他端的登录截走。
+  asio::io_context io;
+  Recorded recorded;
+  DeliveryAckManager manager(io, FastConfig(),
+                             [&](const std::string& u, const std::string& s,
+                                 const std::string& p) {
+                               recorded.requeued.push_back({u, s, p});
+                             },
+                             [](const std::string&, const std::string&,
+                                const std::string&) {});
+  manager.Start();
+
+  manager.Track("m1", "dlv_web", "user_2", "web", "web-copy");
+  io.run_for(std::chrono::milliseconds(200));
+
+  ASSERT_EQ(recorded.requeued.size(), 1u);
+  EXPECT_EQ(recorded.requeued[0].user, "user_2");
+  EXPECT_EQ(recorded.requeued[0].slot, "web");
+  EXPECT_EQ(recorded.requeued[0].payload, "web-copy");
+}
+
+TEST(DeliveryAckTest, LateAckCleansTrackedSlot) {
+  // 迟到 ack 清理按记账 slot 精确落桶（与回队同桶），不扫别的设备桶。
+  asio::io_context io;
+  Recorded recorded;
+  DeliveryAckManager manager(io, FastConfig(),
+                             [&](const std::string& u, const std::string& s,
+                                 const std::string& p) {
+                               recorded.requeued.push_back({u, s, p});
+                             },
+                             [&](const std::string& u, const std::string& s,
+                                 const std::string& p) {
+                               recorded.late_acked.push_back({u, s, p});
+                             });
+  manager.Start();
+
+  manager.Track("m1", "dlv_ios", "user_2", "ios", "ios-copy");
+  io.run_for(std::chrono::milliseconds(200));
+  ASSERT_EQ(recorded.requeued.size(), 1u);
+
+  EXPECT_TRUE(manager.Acknowledge("m1", "dlv_ios"));
+  ASSERT_EQ(recorded.late_acked.size(), 1u);
+  EXPECT_EQ(recorded.late_acked[0].user, "user_2");
+  EXPECT_EQ(recorded.late_acked[0].slot, "ios");
+  EXPECT_EQ(recorded.late_acked[0].payload, "ios-copy");
+}
+
 TEST(DeliveryAckTest, CapabilityLifecycleTracksLiveSessionsOnly) {
   asio::io_context io;
   DeliveryAckManager manager(io, FastConfig(),
-                             [](const std::string&, const std::string&) {},
-                             [](const std::string&, const std::string&) {});
+                             [](const std::string&, const std::string&,
+                                const std::string&) {},
+                             [](const std::string&, const std::string&,
+                                const std::string&) {});
   manager.Start();
 
   auto session = std::make_shared<FakeSession>();
@@ -243,8 +321,10 @@ TEST(DeliveryAckTest, CapabilityLifecycleTracksLiveSessionsOnly) {
 TEST(DeliveryAckTest, RepeatStartAndNullForgetSessionAreNoops) {
   asio::io_context io;
   DeliveryAckManager manager(io, FastConfig(),
-                             [](const std::string&, const std::string&) {},
-                             [](const std::string&, const std::string&) {});
+                             [](const std::string&, const std::string&,
+                                const std::string&) {},
+                             [](const std::string&, const std::string&,
+                                const std::string&) {});
   manager.Start();
   // A second start while running must not double-book the scan timer.
   manager.Start();
@@ -261,8 +341,10 @@ TEST(DeliveryAckTest, RepeatStartAndNullForgetSessionAreNoops) {
 TEST(DeliveryAckTest, NullSessionCapabilityProbesAreSafe) {
   asio::io_context io;
   DeliveryAckManager manager(io, FastConfig(),
-                             [](const std::string&, const std::string&) {},
-                             [](const std::string&, const std::string&) {});
+                             [](const std::string&, const std::string&,
+                                const std::string&) {},
+                             [](const std::string&, const std::string&,
+                                const std::string&) {});
   manager.Start();
 
   manager.MarkCapable(nullptr);
@@ -273,12 +355,14 @@ TEST(DeliveryAckTest, NullSessionCapabilityProbesAreSafe) {
 TEST(DeliveryAckTest, TrackRejectsEmptyIdentifiers) {
   asio::io_context io;
   DeliveryAckManager manager(io, FastConfig(),
-                             [](const std::string&, const std::string&) {},
-                             [](const std::string&, const std::string&) {});
+                             [](const std::string&, const std::string&,
+                                const std::string&) {},
+                             [](const std::string&, const std::string&,
+                                const std::string&) {});
   manager.Start();
 
-  manager.Track("", "", "user_2", "payload");
-  manager.Track("msg_1", "", "", "payload");
+  manager.Track("", "", "user_2", kDefaultOfflineSlot, "payload");
+  manager.Track("msg_1", "", "", kDefaultOfflineSlot, "payload");
   EXPECT_EQ(manager.pending_count(), 0u);
 }
 
@@ -286,26 +370,28 @@ TEST(DeliveryAckTest, HeapAllocatedIdentifiersTrackAndRequeue) {
   asio::io_context io;
   Recorded recorded;
   DeliveryAckManager manager(io, FastConfig(),
-                             [&](const std::string& u, const std::string& p) {
-                               recorded.requeued.emplace_back(u, p);
+                             [&](const std::string& u, const std::string& s,
+                                 const std::string& p) {
+                               recorded.requeued.push_back({u, s, p});
                              },
-                             [](const std::string&, const std::string&) {});
+                             [](const std::string&, const std::string&,
+                                const std::string&) {});
   manager.Start();
 
   // Long ids/payloads force heap allocation past the SSO buffer.
   const std::string msg(64, 'm');
   const std::string user(64, 'u');
   const std::string payload(128, 'p');
-  manager.Track(msg, "", user, payload);
+  manager.Track(msg, "", user, kDefaultOfflineSlot, payload);
   EXPECT_EQ(manager.pending_count(), 1u);
   EXPECT_TRUE(manager.Acknowledge(msg, ""));
   EXPECT_EQ(manager.pending_count(), 0u);
 
-  manager.Track(msg + "x", "", user, payload);
+  manager.Track(msg + "x", "", user, kDefaultOfflineSlot, payload);
   io.run_for(std::chrono::milliseconds(200));
   ASSERT_EQ(recorded.requeued.size(), 1u);
-  EXPECT_EQ(recorded.requeued[0].first, user);
-  EXPECT_EQ(recorded.requeued[0].second, payload);
+  EXPECT_EQ(recorded.requeued[0].user, user);
+  EXPECT_EQ(recorded.requeued[0].payload, payload);
 }
 
 TEST(DeliveryAckTest, RequeuedRetentionWindowClosesLateAcks) {
@@ -316,15 +402,17 @@ TEST(DeliveryAckTest, RequeuedRetentionWindowClosesLateAcks) {
   config.scan_interval_ms = 10;
   config.requeued_retention_ms = 10;
   DeliveryAckManager manager(io, config,
-                             [&](const std::string& u, const std::string& p) {
-                               recorded.requeued.emplace_back(u, p);
+                             [&](const std::string& u, const std::string& s,
+                                 const std::string& p) {
+                               recorded.requeued.push_back({u, s, p});
                              },
-                             [&](const std::string& u, const std::string& p) {
-                               recorded.late_acked.emplace_back(u, p);
+                             [&](const std::string& u, const std::string& s,
+                                 const std::string& p) {
+                               recorded.late_acked.push_back({u, s, p});
                              });
   manager.Start();
 
-  manager.Track("msg_1", "", "user_2", "the-payload");
+  manager.Track("msg_1", "", "user_2", kDefaultOfflineSlot, "the-payload");
   // Within this window the message times out (~30ms), is requeued, and its
   // requeued_ entry is swept once the 10ms retention lapses.
   io.run_for(std::chrono::milliseconds(300));
@@ -341,17 +429,19 @@ TEST(DeliveryAckTest, DisabledManagerIsInert) {
   DeliveryAckManager::Config config;
   config.timeout_ms = 0;
   DeliveryAckManager manager(io, config,
-                             [&](const std::string& u, const std::string& p) {
-                               recorded.requeued.emplace_back(u, p);
+                             [&](const std::string& u, const std::string& s,
+                                 const std::string& p) {
+                               recorded.requeued.push_back({u, s, p});
                              },
-                             [&](const std::string& u, const std::string& p) {
-                               recorded.late_acked.emplace_back(u, p);
+                             [&](const std::string& u, const std::string& s,
+                                 const std::string& p) {
+                               recorded.late_acked.push_back({u, s, p});
                              });
 
   manager.Start();
   auto session = std::make_shared<FakeSession>();
   manager.MarkCapable(session);
-  manager.Track("msg_1", "", "user_2", "payload");
+  manager.Track("msg_1", "", "user_2", kDefaultOfflineSlot, "payload");
 
   EXPECT_FALSE(manager.IsCapable(session.get()));
   EXPECT_EQ(manager.pending_count(), 0u);

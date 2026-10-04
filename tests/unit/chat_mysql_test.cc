@@ -769,21 +769,49 @@ TEST_F(HybridStoreTest, RecallTombstoneRejectsEmptyArgs) {
 TEST_F(HybridStoreTest, OfflineQueueOperations) {
   ASSERT_TRUE(store_->Initialize());
 
-  EXPECT_TRUE(store_->AddOfflineMessage("r1", MakeMessage("m1", "ch", 1000, "r1").SerializeAsString()));
-  EXPECT_TRUE(store_->AddOfflineMessage("r1", MakeMessage("m2", "ch", 2000, "r1").SerializeAsString()));
+  EXPECT_TRUE(store_->AddOfflineMessage("r1", chirp::chat::kDefaultOfflineSlot, MakeMessage("m1", "ch", 1000, "r1").SerializeAsString()));
+  EXPECT_TRUE(store_->AddOfflineMessage("r1", chirp::chat::kDefaultOfflineSlot, MakeMessage("m2", "ch", 2000, "r1").SerializeAsString()));
 
-  auto messages = store_->GetOfflineMessages("r1");
+  auto messages = store_->GetOfflineMessages("r1", chirp::chat::kDefaultOfflineSlot);
   ASSERT_EQ(messages.size(), 2u);
   EXPECT_EQ(messages[0].message_id, "m1");
   EXPECT_EQ(messages[1].message_id, "m2");
 
-  auto popped = store_->PopOfflineMessages("r1");
+  auto popped = store_->PopOfflineMessages("r1", chirp::chat::kDefaultOfflineSlot);
   EXPECT_EQ(popped.size(), 2u);
-  EXPECT_TRUE(store_->GetOfflineMessages("r1").empty());
+  EXPECT_TRUE(store_->GetOfflineMessages("r1", chirp::chat::kDefaultOfflineSlot).empty());
 
-  EXPECT_TRUE(store_->AddOfflineMessage("r1", MakeMessage("m3", "ch", 3000, "r1").SerializeAsString()));
-  EXPECT_TRUE(store_->ClearOfflineMessages("r1"));
-  EXPECT_TRUE(store_->GetOfflineMessages("r1").empty());
+  EXPECT_TRUE(store_->AddOfflineMessage("r1", chirp::chat::kDefaultOfflineSlot, MakeMessage("m3", "ch", 3000, "r1").SerializeAsString()));
+  EXPECT_TRUE(store_->ClearOfflineMessages("r1", chirp::chat::kDefaultOfflineSlot));
+  EXPECT_TRUE(store_->GetOfflineMessages("r1", chirp::chat::kDefaultOfflineSlot).empty());
+}
+
+TEST_F(HybridStoreTest, OfflineQueueSplitsByDeviceSlot) {
+  // P1-5 余项第二块(per-device 拆分,Hybrid 形态):default 共享桶保持遗留
+  // 键形(零迁移),设备桶 = 遗留键 + ":slot";Get/Pop 弹本端桶 ∪ default;
+  // 撤回清理(PurgeOfflineByMessageId)扫全设备桶。
+  ASSERT_TRUE(store_->Initialize());
+
+  EXPECT_TRUE(store_->AddOfflineMessage("r1", chirp::chat::kDefaultOfflineSlot,
+                                        MakeMessage("m-shared", "ch", 1000, "r1").SerializeAsString()));
+  EXPECT_TRUE(store_->AddOfflineMessage("r1", "ios",
+                                        MakeMessage("m-ios", "ch", 2000, "r1").SerializeAsString()));
+  EXPECT_TRUE(store_->AddOfflineMessage("r1", "web",
+                                        MakeMessage("m-web", "ch", 3000, "r1").SerializeAsString()));
+
+  // ios 端视角:本端桶 + default 共享桶,web 桶不可见。
+  auto ios_view = store_->GetOfflineMessages("r1", "ios");
+  ASSERT_EQ(ios_view.size(), 2u);
+
+  // web 端 Pop:自己的设备桶 + default 共享桶(Get 只读不弹,default 仍在)。
+  auto web_popped = store_->PopOfflineMessages("r1", "web");
+  ASSERT_EQ(web_popped.size(), 2u);
+  EXPECT_EQ(web_popped[0].message_id, "m-web");
+  EXPECT_EQ(web_popped[1].message_id, "m-shared");
+
+  // 撤回清理扫设备桶:message_id 全局唯一,跨桶命中。
+  EXPECT_EQ(store_->PurgeOfflineByMessageId("r1", "m-ios"), 1u);
+  EXPECT_TRUE(store_->GetOfflineMessages("r1", "ios").empty());
 }
 
 TEST_F(HybridStoreTest, OfflineQueueFallsBackToMemoryWhenRedisDown) {
@@ -795,26 +823,38 @@ TEST_F(HybridStoreTest, OfflineQueueFallsBackToMemoryWhenRedisDown) {
 
   // With Redis unreachable, every RPush fails and the message must land
   // in the in-memory fallback instead of being dropped.
-  EXPECT_FALSE(dead_redis.AddOfflineMessage("r1", MakeMessage("m1", "ch", 1000, "r1").SerializeAsString()));
-  EXPECT_FALSE(dead_redis.AddOfflineMessage("r2", MakeMessage("m2", "ch", 2000, "r2").SerializeAsString()));
+  EXPECT_FALSE(dead_redis.AddOfflineMessage("r1", chirp::chat::kDefaultOfflineSlot, MakeMessage("m1", "ch", 1000, "r1").SerializeAsString()));
+  EXPECT_FALSE(dead_redis.AddOfflineMessage("r2", chirp::chat::kDefaultOfflineSlot, MakeMessage("m2", "ch", 2000, "r2").SerializeAsString()));
 
-  auto r1 = dead_redis.GetOfflineMessages("r1");
+  auto r1 = dead_redis.GetOfflineMessages("r1", chirp::chat::kDefaultOfflineSlot);
   ASSERT_EQ(r1.size(), 1u);
   EXPECT_EQ(r1[0].message_id, "m1");
-  auto r2 = dead_redis.GetOfflineMessages("r2");
+  auto r2 = dead_redis.GetOfflineMessages("r2", chirp::chat::kDefaultOfflineSlot);
   ASSERT_EQ(r2.size(), 1u);
   EXPECT_EQ(r2[0].message_id, "m2");
 
   // Pop drains the fallback queue; other users are unaffected.
-  auto popped = dead_redis.PopOfflineMessages("r1");
+  auto popped = dead_redis.PopOfflineMessages("r1", chirp::chat::kDefaultOfflineSlot);
   ASSERT_EQ(popped.size(), 1u);
   EXPECT_EQ(popped[0].message_id, "m1");
-  EXPECT_TRUE(dead_redis.GetOfflineMessages("r1").empty());
-  EXPECT_EQ(dead_redis.GetOfflineMessages("r2").size(), 1u);
+  EXPECT_TRUE(dead_redis.GetOfflineMessages("r1", chirp::chat::kDefaultOfflineSlot).empty());
+  EXPECT_EQ(dead_redis.GetOfflineMessages("r2", chirp::chat::kDefaultOfflineSlot).size(), 1u);
 
   // Clear removes the remaining fallback entry without Redis.
-  EXPECT_FALSE(dead_redis.ClearOfflineMessages("r2"));  // Redis Del still fails...
-  EXPECT_TRUE(dead_redis.GetOfflineMessages("r2").empty());  // ...but fallback is gone.
+  EXPECT_FALSE(dead_redis.ClearOfflineMessages("r2", chirp::chat::kDefaultOfflineSlot));  // Redis Del still fails...
+  EXPECT_TRUE(dead_redis.GetOfflineMessages("r2", chirp::chat::kDefaultOfflineSlot).empty());  // ...but fallback is gone.
+
+  // per-device 拆分:回退内存桶按全键分桶(设备桶与 default 互不干扰),
+  // 撤回清理按前缀扫全设备桶。
+  EXPECT_FALSE(dead_redis.AddOfflineMessage("r3", "ios",
+                                            MakeMessage("mi", "ch", 3, "r3").SerializeAsString()));
+  EXPECT_FALSE(dead_redis.AddOfflineMessage("r3", "web",
+                                            MakeMessage("mw", "ch", 4, "r3").SerializeAsString()));
+  EXPECT_TRUE(dead_redis.GetOfflineMessages("r3", chirp::chat::kDefaultOfflineSlot).empty());
+  EXPECT_EQ(dead_redis.GetOfflineMessages("r3", "ios").size(), 1u);
+  EXPECT_EQ(dead_redis.PurgeOfflineByMessageId("r3", "mw"), 1u);
+  EXPECT_TRUE(dead_redis.GetOfflineMessages("r3", "web").empty());
+  EXPECT_EQ(dead_redis.GetOfflineMessages("r3", "ios").size(), 1u);  // iOS 桶不受牵连
 }
 
 TEST_F(HybridStoreTest, OfflineFallbackQueueIsCappedPerUser) {
@@ -824,14 +864,14 @@ TEST_F(HybridStoreTest, OfflineFallbackQueueIsCappedPerUser) {
   cfg.redis_port = 1;
   HybridMessageStore dead_redis(io_, cfg);
 
-  EXPECT_FALSE(dead_redis.AddOfflineMessage("r1", MakeMessage("m0", "ch", 0, "r1").SerializeAsString()));
+  EXPECT_FALSE(dead_redis.AddOfflineMessage("r1", chirp::chat::kDefaultOfflineSlot, MakeMessage("m0", "ch", 0, "r1").SerializeAsString()));
   for (int i = 1; i <= 1024; ++i) {
     dead_redis.AddOfflineMessage(
         "r1", MakeMessage("m" + std::to_string(i), "ch", i, "r1").SerializeAsString());
   }
 
   // The oldest entry was evicted; exactly the newest 1024 remain.
-  auto remaining = dead_redis.GetOfflineMessages("r1");
+  auto remaining = dead_redis.GetOfflineMessages("r1", chirp::chat::kDefaultOfflineSlot);
   ASSERT_EQ(remaining.size(), 1024u);
   EXPECT_EQ(remaining.front().message_id, "m1");
   EXPECT_EQ(remaining.back().message_id, "m1024");
@@ -842,12 +882,12 @@ TEST_F(HybridStoreTest, RemoveOfflineMessageDropsRedisAndFallbackCopies) {
 
   // Redis-backed copy: the late-ack cleanup removes it via LREM.
   const std::string blob1 = MakeMessage("m1", "ch", 1000, "r1").SerializeAsString();
-  EXPECT_TRUE(store_->AddOfflineMessage("r1", blob1));
-  EXPECT_TRUE(store_->RemoveOfflineMessage("r1", blob1));
-  EXPECT_TRUE(store_->GetOfflineMessages("r1").empty());
+  EXPECT_TRUE(store_->AddOfflineMessage("r1", chirp::chat::kDefaultOfflineSlot, blob1));
+  EXPECT_TRUE(store_->RemoveOfflineMessage("r1", chirp::chat::kDefaultOfflineSlot, blob1));
+  EXPECT_TRUE(store_->GetOfflineMessages("r1", chirp::chat::kDefaultOfflineSlot).empty());
 
   // An unknown payload has nothing to remove.
-  EXPECT_FALSE(store_->RemoveOfflineMessage("r1", "not-stored"));
+  EXPECT_FALSE(store_->RemoveOfflineMessage("r1", chirp::chat::kDefaultOfflineSlot, "not-stored"));
 
   // Fallback copy (Redis down): the in-memory queue is scanned instead, and
   // the user's fallback entry disappears with its last message.
@@ -855,21 +895,21 @@ TEST_F(HybridStoreTest, RemoveOfflineMessageDropsRedisAndFallbackCopies) {
   cfg.redis_port = 1;
   HybridMessageStore dead_redis(io_, cfg);
   const std::string blob2 = MakeMessage("m2", "ch", 2000, "r2").SerializeAsString();
-  EXPECT_FALSE(dead_redis.AddOfflineMessage("r2", blob2));
-  EXPECT_TRUE(dead_redis.RemoveOfflineMessage("r2", blob2));
-  EXPECT_TRUE(dead_redis.GetOfflineMessages("r2").empty());
-  EXPECT_FALSE(dead_redis.RemoveOfflineMessage("r2", blob2));  // already gone
+  EXPECT_FALSE(dead_redis.AddOfflineMessage("r2", chirp::chat::kDefaultOfflineSlot, blob2));
+  EXPECT_TRUE(dead_redis.RemoveOfflineMessage("r2", chirp::chat::kDefaultOfflineSlot, blob2));
+  EXPECT_TRUE(dead_redis.GetOfflineMessages("r2", chirp::chat::kDefaultOfflineSlot).empty());
+  EXPECT_FALSE(dead_redis.RemoveOfflineMessage("r2", chirp::chat::kDefaultOfflineSlot, blob2));  // already gone
 
   // Two fallback copies: a scan that misses the first element still reaches
   // the second (loop-continue arm), then a non-matching remove walks off the
   // end without erasing (loop-exit-without-match arm).
   const std::string a = MakeMessage("ma", "ch", 1, "r3").SerializeAsString();
   const std::string b = MakeMessage("mb", "ch", 2, "r3").SerializeAsString();
-  EXPECT_FALSE(dead_redis.AddOfflineMessage("r3", a));
-  EXPECT_FALSE(dead_redis.AddOfflineMessage("r3", b));
-  EXPECT_TRUE(dead_redis.RemoveOfflineMessage("r3", b));
-  EXPECT_FALSE(dead_redis.RemoveOfflineMessage("r3", "not-in-queue"));
-  EXPECT_TRUE(dead_redis.RemoveOfflineMessage("r3", a));
+  EXPECT_FALSE(dead_redis.AddOfflineMessage("r3", chirp::chat::kDefaultOfflineSlot, a));
+  EXPECT_FALSE(dead_redis.AddOfflineMessage("r3", chirp::chat::kDefaultOfflineSlot, b));
+  EXPECT_TRUE(dead_redis.RemoveOfflineMessage("r3", chirp::chat::kDefaultOfflineSlot, b));
+  EXPECT_FALSE(dead_redis.RemoveOfflineMessage("r3", chirp::chat::kDefaultOfflineSlot, "not-in-queue"));
+  EXPECT_TRUE(dead_redis.RemoveOfflineMessage("r3", chirp::chat::kDefaultOfflineSlot, a));
 }
 
 // 撤回的离线半边：只有 message_id，没有原始字节，所以按 id 扫队列回收。
@@ -877,10 +917,10 @@ TEST_F(HybridStoreTest, PurgeOfflineByMessageIdSweepsRedisAndFallbackCopies) {
   ASSERT_TRUE(store_->Initialize());
 
   // Redis 队列：命中回收一条，非命中的原样留下。
-  EXPECT_TRUE(store_->AddOfflineMessage("r1", MakeMessage("m1", "ch", 1000, "r1").SerializeAsString()));
-  EXPECT_TRUE(store_->AddOfflineMessage("r1", MakeMessage("m2", "ch", 2000, "r1").SerializeAsString()));
+  EXPECT_TRUE(store_->AddOfflineMessage("r1", chirp::chat::kDefaultOfflineSlot, MakeMessage("m1", "ch", 1000, "r1").SerializeAsString()));
+  EXPECT_TRUE(store_->AddOfflineMessage("r1", chirp::chat::kDefaultOfflineSlot, MakeMessage("m2", "ch", 2000, "r1").SerializeAsString()));
   EXPECT_EQ(store_->PurgeOfflineByMessageId("r1", "m1"), 1u);
-  auto remaining = store_->GetOfflineMessages("r1");
+  auto remaining = store_->GetOfflineMessages("r1", chirp::chat::kDefaultOfflineSlot);
   ASSERT_EQ(remaining.size(), 1u);
   EXPECT_EQ(remaining[0].message_id, "m2");
 
@@ -897,14 +937,14 @@ TEST_F(HybridStoreTest, PurgeOfflineByMessageIdSweepsRedisAndFallbackCopies) {
   MessageStoreConfig cfg;
   cfg.redis_port = 1;
   HybridMessageStore dead_redis(io_, cfg);
-  EXPECT_FALSE(dead_redis.AddOfflineMessage("r2", MakeMessage("ma", "ch", 1, "r2").SerializeAsString()));
-  EXPECT_FALSE(dead_redis.AddOfflineMessage("r2", MakeMessage("mb", "ch", 2, "r2").SerializeAsString()));
+  EXPECT_FALSE(dead_redis.AddOfflineMessage("r2", chirp::chat::kDefaultOfflineSlot, MakeMessage("ma", "ch", 1, "r2").SerializeAsString()));
+  EXPECT_FALSE(dead_redis.AddOfflineMessage("r2", chirp::chat::kDefaultOfflineSlot, MakeMessage("mb", "ch", 2, "r2").SerializeAsString()));
   EXPECT_EQ(dead_redis.PurgeOfflineByMessageId("r2", "mb"), 1u);
-  auto left = dead_redis.GetOfflineMessages("r2");
+  auto left = dead_redis.GetOfflineMessages("r2", chirp::chat::kDefaultOfflineSlot);
   ASSERT_EQ(left.size(), 1u);
   EXPECT_EQ(left[0].message_id, "ma");
   EXPECT_EQ(dead_redis.PurgeOfflineByMessageId("r2", "ma"), 1u);
-  EXPECT_TRUE(dead_redis.GetOfflineMessages("r2").empty());
+  EXPECT_TRUE(dead_redis.GetOfflineMessages("r2", chirp::chat::kDefaultOfflineSlot).empty());
   // 队列已空（映射已回收）：再 purge 同一 id 返回 0。
   EXPECT_EQ(dead_redis.PurgeOfflineByMessageId("r2", "ma"), 0u);
 }
@@ -1035,7 +1075,7 @@ TEST_F(HybridStoreTest, PurgeOfflineByMessageIdSkipsCorruptEntries) {
   // Redis 队列：脏字节排在中间，前后各一条正常消息。
   EXPECT_TRUE(store_->AddOfflineMessage("r1",
       MakeMessage("m1", "ch", 1000, "r1").SerializeAsString()));
-  EXPECT_TRUE(store_->AddOfflineMessage("r1", "garbage-not-proto"));
+  EXPECT_TRUE(store_->AddOfflineMessage("r1", chirp::chat::kDefaultOfflineSlot, "garbage-not-proto"));
   EXPECT_TRUE(store_->AddOfflineMessage("r1",
       MakeMessage("m2", "ch", 2000, "r1").SerializeAsString()));
   EXPECT_EQ(store_->PurgeOfflineByMessageId("r1", "m1"), 1u);
@@ -1052,11 +1092,11 @@ TEST_F(HybridStoreTest, PurgeOfflineByMessageIdSkipsCorruptEntries) {
   MessageStoreConfig cfg;
   cfg.redis_port = 1;
   HybridMessageStore dead_redis(io_, cfg);
-  EXPECT_FALSE(dead_redis.AddOfflineMessage("r2", "garbage-not-proto"));
+  EXPECT_FALSE(dead_redis.AddOfflineMessage("r2", chirp::chat::kDefaultOfflineSlot, "garbage-not-proto"));
   EXPECT_FALSE(dead_redis.AddOfflineMessage("r2",
       MakeMessage("mb", "ch", 2, "r2").SerializeAsString()));
   EXPECT_EQ(dead_redis.PurgeOfflineByMessageId("r2", "mb"), 1u);
-  EXPECT_TRUE(dead_redis.GetOfflineMessages("r2").empty());  // 只剩脏条目 → 整体清空
+  EXPECT_TRUE(dead_redis.GetOfflineMessages("r2", chirp::chat::kDefaultOfflineSlot).empty());  // 只剩脏条目 → 整体清空
 }
 
 // 大批过期条目强制 vector 多次扩容（1→2→4→…→256→512），覆盖

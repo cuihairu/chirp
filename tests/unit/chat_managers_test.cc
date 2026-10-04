@@ -1569,7 +1569,9 @@ TEST_F(DistributedInternalsTest, StaleDisconnectKeepsNewerSession) {
 }
 
 TEST_F(DistributedInternalsTest, MessageStoreKeyHelpers) {
-  EXPECT_EQ(store_->OfflineKey("u1"), "chirp:chat:offline:u1");
+  EXPECT_EQ(store_->OfflineKey("u1", chirp::chat::kDefaultOfflineSlot),
+            "chirp:chat:offline:u1");
+  EXPECT_EQ(store_->OfflineKey("u1", "ios"), "chirp:chat:offline:u1:ios");
   EXPECT_EQ(store_->HistoryKey("c1"), "chirp:chat:history:c1");
   EXPECT_EQ(store_->PrivateChannelId("a", "b"), "a|b");
   EXPECT_EQ(store_->PrivateChannelId("b", "a"), "a|b");
@@ -1578,8 +1580,8 @@ TEST_F(DistributedInternalsTest, MessageStoreKeyHelpers) {
 TEST_F(DistributedInternalsTest, MessageStoreWithoutRedisIsNoop) {
   store_->redis = nullptr;  // no Redis configured
 
-  store_->AddOffline("u1", "m");                    // returns early
-  EXPECT_TRUE(store_->PopOffline("u1").empty());    // returns {}
+  store_->AddOffline("u1", chirp::chat::kDefaultOfflineSlot, "m");                    // returns early
+  EXPECT_TRUE(store_->PopOffline("u1", chirp::chat::kDefaultOfflineSlot).empty());    // returns {}
   store_->AddToHistory("c1", "m");                  // returns early
   EXPECT_TRUE(store_->GetHistory("c1", 10).empty());
   SUCCEED();
@@ -1784,10 +1786,10 @@ TEST_F(DistributedInternalsTest, MessageStoreCallsRedis) {
   store_->redis = std::make_shared<chirp::network::RedisClient>("127.0.0.1", fake.port());
   store_->offline_ttl_seconds = 99;
 
-  store_->AddOffline("bob", "msg1");
+  store_->AddOffline("bob", chirp::chat::kDefaultOfflineSlot, "msg1");
   store_->AddToHistory("chan", "h1");
 
-  auto popped = store_->PopOffline("bob");
+  auto popped = store_->PopOffline("bob", chirp::chat::kDefaultOfflineSlot);
   ASSERT_EQ(popped.size(), 2u);
   EXPECT_EQ(popped[0], "m1");
 
@@ -1808,6 +1810,30 @@ TEST_F(DistributedInternalsTest, MessageStoreCallsRedis) {
   EXPECT_NE(std::find(firsts.begin(), firsts.end(), "DEL chirp:chat:offline:bob"), firsts.end());
   EXPECT_NE(std::find(firsts.begin(), firsts.end(), "RPUSH chirp:chat:history:chan"), firsts.end());
   EXPECT_NE(std::find(firsts.begin(), firsts.end(), "LRANGE chirp:chat:history:chan"), firsts.end());
+}
+
+TEST_F(DistributedInternalsTest, OfflineQueueSplitsByDeviceSlot) {
+  // P1-5 余项第二块(per-device 拆分,分布式形态):default 共享桶保持遗留
+  // 键形(零迁移),设备桶 = 遗留键 + ":slot";补投弹本端桶 ∪ default。
+  chirp_test::InMemoryRedis redis;
+  chirp_test::FakeRedisServer fake([&](const std::vector<std::string>& args) {
+    return redis.Handle(args);
+  });
+  store_->redis = std::make_shared<chirp::network::RedisClient>("127.0.0.1", fake.port());
+
+  store_->AddOffline("bob", chirp::chat::kDefaultOfflineSlot, "shared");
+  store_->AddOffline("bob", "ios", "ios-only");
+
+  // ios 登录补投:本端桶 + default 共享桶都弹空。
+  auto ios_popped = store_->PopOffline("bob", "ios");
+  ASSERT_EQ(ios_popped.size(), 2u);
+
+  // 设备桶键形:web 端补投碰不到 ios 桶里新落的回队副本。
+  store_->AddOffline("bob", "web", "web-requeue");
+  EXPECT_TRUE(store_->PopOffline("bob", "ios").empty());
+  auto web_popped = store_->PopOffline("bob", "web");
+  ASSERT_EQ(web_popped.size(), 1u);
+  EXPECT_EQ(web_popped[0], "web-requeue");
 }
 
 TEST_F(DistributedInternalsTest, HandleLoginDeliversOfflineMessages) {
@@ -1930,8 +1956,8 @@ TEST_F(DistributedInternalsTest, HandleGetHistoryWithoutRedisSucceeds) {
 // A no-op ack callback pair: these tests exercise the bookkeeping paths, not
 // the timeout requeue (that is the manager's own suite).
 struct NoopAckCallbacks {
-  static void Requeue(const std::string&, const std::string&) {}
-  static void LateAck(const std::string&, const std::string&) {}
+  static void Requeue(const std::string&, const std::string&, const std::string&) {}
+  static void LateAck(const std::string&, const std::string&, const std::string&) {}
 };
 
 // DeliveryAckManager has a deleted copy ctor, so tests build it in place via
@@ -1959,23 +1985,23 @@ TEST_F(DistributedInternalsTest, OfflineBytesAndLateAckRemoveRoundTrip) {
   ASSERT_TRUE(client->Del("probe:ack"));
 
   // Requeue path: the exact tracked bytes land in the offline queue.
-  store_->AddOfflineBytes("bob", "tracked-bytes");
-  ASSERT_EQ(client->LRange(store_->OfflineKey("bob"), 0, -1),
+  store_->AddOfflineBytes("bob", chirp::chat::kDefaultOfflineSlot, "tracked-bytes");
+  ASSERT_EQ(client->LRange(store_->OfflineKey("bob", chirp::chat::kDefaultOfflineSlot), 0, -1),
             (std::vector<std::string>{"tracked-bytes"}));
 
   // Late-ack cleanup removes the queued copy byte for byte...
-  EXPECT_TRUE(store_->RemoveOffline("bob", "tracked-bytes"));
-  EXPECT_TRUE(client->LRange(store_->OfflineKey("bob"), 0, -1).empty());
+  EXPECT_TRUE(store_->RemoveOffline("bob", chirp::chat::kDefaultOfflineSlot, "tracked-bytes"));
+  EXPECT_TRUE(client->LRange(store_->OfflineKey("bob", chirp::chat::kDefaultOfflineSlot), 0, -1).empty());
   // ...and a mismatched cleanup is a clean miss (nothing removed).
-  store_->AddOfflineBytes("bob", "tracked-bytes");
-  EXPECT_FALSE(store_->RemoveOffline("bob", "other-bytes"));
-  ASSERT_EQ(client->LRange(store_->OfflineKey("bob"), 0, -1).size(), 1u);
+  store_->AddOfflineBytes("bob", chirp::chat::kDefaultOfflineSlot, "tracked-bytes");
+  EXPECT_FALSE(store_->RemoveOffline("bob", chirp::chat::kDefaultOfflineSlot, "other-bytes"));
+  ASSERT_EQ(client->LRange(store_->OfflineKey("bob", chirp::chat::kDefaultOfflineSlot), 0, -1).size(), 1u);
 
   // Guard arms: no redis / empty receiver -> false without touching redis.
   store_->redis = nullptr;
-  EXPECT_FALSE(store_->RemoveOffline("bob", "tracked-bytes"));
+  EXPECT_FALSE(store_->RemoveOffline("bob", chirp::chat::kDefaultOfflineSlot, "tracked-bytes"));
   store_->redis = client;
-  EXPECT_FALSE(store_->RemoveOffline("", "tracked-bytes"));
+  EXPECT_FALSE(store_->RemoveOffline("", chirp::chat::kDefaultOfflineSlot, "tracked-bytes"));
 }
 
 TEST_F(DistributedInternalsTest, HasMessageMissScansFullHistory) {
@@ -2155,10 +2181,10 @@ TEST_F(DistributedInternalsTest, OfflineRefillTracksCapableSession) {
   queued.set_channel_type(chirp::chat::PRIVATE);
   queued.set_channel_id("alice|carol");
   queued.set_content("refill me");
-  store_->AddOffline("alice", queued.SerializeAsString());
+  store_->AddOffline("alice", chirp::chat::kDefaultOfflineSlot, queued.SerializeAsString());
   // Liveness: the refill only proves the tracking arm if the queue really
   // holds the bytes in Redis.
-  ASSERT_EQ(client->LRange(store_->OfflineKey("alice"), 0, -1).size(), 1u);
+  ASSERT_EQ(client->LRange(store_->OfflineKey("alice", chirp::chat::kDefaultOfflineSlot), 0, -1).size(), 1u);
 
   asio::io_context io;
   auto router = std::make_shared<chirp::network::MessageRouter>(io, "127.0.0.1", 1);
@@ -2181,7 +2207,7 @@ TEST_F(DistributedInternalsTest, OfflineRefillTracksCapableSession) {
   EXPECT_EQ(got.content(), "refill me");
   EXPECT_EQ(acks->pending_count(), 1u);
   EXPECT_TRUE(acks->Acknowledge("m-refill", ""));
-  EXPECT_TRUE(store_->PopOffline("alice").empty());  // queue consumed
+  EXPECT_TRUE(store_->PopOffline("alice", chirp::chat::kDefaultOfflineSlot).empty());  // queue consumed
 }
 
 // Full round trip against the real distributed chat main(): a TCP client

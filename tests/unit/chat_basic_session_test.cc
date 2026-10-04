@@ -137,11 +137,13 @@ class BasicChatTest : public ::testing::Test {
     trusted_ = std::make_shared<std::unordered_set<const chirp::network::Session*>>();
     acks_ = std::make_shared<chirp::chat::DeliveryAckManager>(
         io_, ack_config_,
-        [this](const std::string& receiver, const std::string& payload) {
-          store_->AddOfflineBytes(receiver, payload);
+        [this](const std::string& receiver, const std::string& slot,
+               const std::string& payload) {
+          store_->AddOfflineBytes(receiver, slot, payload);
         },
-        [this](const std::string& receiver, const std::string& payload) {
-          store_->RemoveOffline(receiver, payload);
+        [this](const std::string& receiver, const std::string& slot,
+               const std::string& payload) {
+          store_->RemoveOffline(receiver, slot, payload);
         });
     RebuildFeatures();
   }
@@ -470,7 +472,7 @@ TEST_F(BasicChatTest, LoginKicksSamePlatformAndAnnouncesOthers) {
   chirp::chat::ChatMessage pending;
   pending.set_message_id("m-off");
   pending.set_content("offline refill");
-  store_->AddOffline("alice", pending);
+  store_->AddOffline("alice", chirp::chat::kDefaultOfflineSlot, pending);
   auto relogin = std::make_shared<MockSession>();
   chirp::chat::ChatMessage gone;  // 被顶掉的槽位消息作废重发
   ASSERT_EQ(Login(relogin, "alice", "tab-3", "web", /*supports_ack=*/true).code(),
@@ -484,7 +486,7 @@ TEST_F(BasicChatTest, LoginKicksSamePlatformAndAnnouncesOthers) {
   EXPECT_FALSE(refill_msg.delivery_id().empty());
   EXPECT_NE(refill_msg.delivery_id(), "m-off");
   EXPECT_EQ(acks_->pending_count(), 1u);
-  EXPECT_TRUE(store_->PopOffline("alice").empty());  // 已弹空，不会二次补投
+  EXPECT_TRUE(store_->PopOffline("alice", chirp::chat::kDefaultOfflineSlot).empty());  // 已弹空，不会二次补投
 }
 
 // --- 登录拒绝：限流 / 解析 / JWT / 空 token ------------------------------------
@@ -496,7 +498,7 @@ TEST_F(BasicChatTest, OfflineRefillKeepsExistingDeliveryId) {
   kept.set_message_id("m-kept");
   kept.set_delivery_id("dlv_kept");
   kept.set_content("kept id");
-  store_->AddOffline("alice", kept);
+  store_->AddOffline("alice", chirp::chat::kDefaultOfflineSlot, kept);
   auto session = std::make_shared<MockSession>();
   ASSERT_EQ(Login(session, "alice", "tab-1", "web").code(), chirp::common::OK);
   const auto refills = FramesOf(*session, chirp::gateway::CHAT_MESSAGE_NOTIFY);
@@ -514,7 +516,7 @@ TEST_F(BasicChatTest, RefillAckWithDeliveryIdClearsPendingExactly) {
   kept.set_message_id("m-refill");
   kept.set_delivery_id("dlv_refill");
   kept.set_content("refill ack");
-  store_->AddOffline("alice", kept);
+  store_->AddOffline("alice", chirp::chat::kDefaultOfflineSlot, kept);
   auto session = std::make_shared<MockSession>();
   ASSERT_EQ(Login(session, "alice", "tab-2", "web", /*supports_ack=*/true)
                 .code(),
@@ -536,6 +538,98 @@ TEST_F(BasicChatTest, RefillAckWithDeliveryIdClearsPendingExactly) {
   ack.set_user_id("alice");
   DispatchReq(chirp::gateway::MESSAGE_ACK, ack, session);
   EXPECT_EQ(acks_->pending_count(), 0u);
+}
+
+TEST_F(BasicChatTest, OfflineQueueSplitsByDeviceSlot) {
+  // P1-5 余项第二块(per-device 拆分):入队臂(无任何在线端,目标端未知)落
+  // default 共享桶——先登录的端先到先得;设备桶里的副本只有对应端登录才领,
+  // 不被其他端的补投截走。
+  chirp::chat::ChatMessage shared_copy;
+  shared_copy.set_message_id("m-shared");
+  shared_copy.set_content("default bucket");
+  store_->AddOffline("alice", chirp::chat::kDefaultOfflineSlot, shared_copy);
+
+  chirp::chat::ChatMessage ios_copy;
+  ios_copy.set_message_id("m-ios");
+  ios_copy.set_content("ios bucket");
+  store_->AddOffline("alice", "ios", ios_copy);
+
+  // web 登录:领走 default 共享桶,ios 设备桶原封不动。
+  auto web = std::make_shared<MockSession>();
+  ASSERT_EQ(Login(web, "alice", "tab-1", "web").code(), chirp::common::OK);
+  const auto web_refills = FramesOf(*web, chirp::gateway::CHAT_MESSAGE_NOTIFY);
+  ASSERT_EQ(web_refills.size(), 1u);
+  chirp::chat::ChatMessage got;
+  ASSERT_TRUE(got.ParseFromString(web_refills[0].body()));
+  EXPECT_EQ(got.message_id(), "m-shared");
+
+  // ios 登录(跨 platform 共存):只领自己桶里的副本;default 已被 web 领走,
+  // 不会二次补投。
+  auto phone = std::make_shared<MockSession>();
+  ASSERT_EQ(Login(phone, "alice", "p1", "ios").code(), chirp::common::OK);
+  const auto ios_refills = FramesOf(*phone, chirp::gateway::CHAT_MESSAGE_NOTIFY);
+  ASSERT_EQ(ios_refills.size(), 1u);
+  chirp::chat::ChatMessage got_ios;
+  ASSERT_TRUE(got_ios.ParseFromString(ios_refills[0].body()));
+  EXPECT_EQ(got_ios.message_id(), "m-ios");
+}
+
+TEST_F(BasicChatTest, RequeuedRefillReturnsToClaimingSlot) {
+  // 回队臂:补投认领端(web)超时未 ack 的副本回到 web 设备桶,重投只找
+  // web——ios 登录不截走(manager 侧 slot 记账见 chat_delivery_ack_test)。
+  chirp::chat::ChatMessage claimed;
+  claimed.set_message_id("m-claimed");
+  claimed.set_delivery_id("dlv_claimed");
+  claimed.set_content("claimed by web");
+  const std::string claimed_bytes = claimed.SerializeAsString();
+  // 回队回调按 Track 记账的 slot 落桶:fixture 的回调把 slot 透传给 store。
+  store_->AddOfflineBytes("bob", "web", claimed_bytes);
+
+  // ios 先登录:web 桶不动,无补投。
+  auto phone = std::make_shared<MockSession>();
+  ASSERT_EQ(Login(phone, "bob", "p1", "ios", /*supports_ack=*/true).code(),
+            chirp::common::OK);
+  EXPECT_TRUE(FramesOf(*phone, chirp::gateway::CHAT_MESSAGE_NOTIFY).empty());
+
+  // web 登录:领走自己桶里的回队副本,delivery_id 保原值(重投同 id)。
+  auto web = std::make_shared<MockSession>();
+  ASSERT_EQ(Login(web, "bob", "tab-1", "web", /*supports_ack=*/true).code(),
+            chirp::common::OK);
+  const auto refills = FramesOf(*web, chirp::gateway::CHAT_MESSAGE_NOTIFY);
+  ASSERT_EQ(refills.size(), 1u);
+  chirp::chat::ChatMessage got;
+  ASSERT_TRUE(got.ParseFromString(refills[0].body()));
+  EXPECT_EQ(got.message_id(), "m-claimed");
+  EXPECT_EQ(got.delivery_id(), "dlv_claimed");
+  EXPECT_EQ(acks_->pending_count(), 1u);
+}
+
+TEST_F(BasicChatTest, OfflinePurgeAndRedisMirrorCoverDeviceBuckets) {
+  // 撤回清理(PurgeOfflineByMessageId)扫全设备桶;Redis 镜像路径的设备桶
+  // 键形 = 遗留键 + ":slot"(default 保持遗留键形,零迁移)。
+  chirp::chat::ChatMessage stray;
+  stray.set_message_id("m-stray");
+  stray.set_content("in web bucket");
+  store_->AddOffline("alice", "web", stray);
+  EXPECT_EQ(store_->PurgeOfflineByMessageId("alice", "m-stray"), 1u);
+  EXPECT_TRUE(
+      store_->PopOffline("alice", "web").empty());
+
+  chirp_test::InMemoryRedis redis;
+  auto fake = std::make_unique<chirp_test::FakeRedisServer>(
+      [&redis](const std::vector<std::string>& args) { return redis.Handle(args); });
+  MessageStore redis_store(
+      std::make_shared<chirp::network::RedisClient>("127.0.0.1", fake->port()),
+      /*ttl=*/0);
+
+  chirp::chat::ChatMessage m1;
+  m1.set_message_id("m-redis-shared");
+  redis_store.AddOffline("bob", chirp::chat::kDefaultOfflineSlot, m1);
+  redis_store.AddOffline("bob", "ios", m1);  // 同 message_id 双桶并存
+  // default 桶键形不变;设备桶多一段 ":ios"。
+  ASSERT_EQ(redis_store.PopOffline("bob", chirp::chat::kDefaultOfflineSlot).size(), 1u);
+  ASSERT_EQ(redis_store.PopOffline("bob", "ios").size(), 1u);
+  EXPECT_TRUE(redis_store.PopOffline("bob", "ios").empty());
 }
 
 TEST_F(BasicChatTest, LoginRejectionsCoverLimiterParseJwtAndEmpty) {
@@ -642,7 +736,7 @@ TEST_F(BasicChatTest, PrivateSendFansOutTracksAckAndQueuesOffline) {
   bob_tablet->half_closed = true;
   const auto offline_resp = Send(alice, "alice", "bob", "while away");
   EXPECT_EQ(offline_resp.code(), chirp::common::TARGET_OFFLINE);
-  const auto queued = store_->PopOffline("bob");
+  const auto queued = store_->PopOffline("bob", chirp::chat::kDefaultOfflineSlot);
   ASSERT_EQ(queued.size(), 1u);
   EXPECT_EQ(queued[0].content(), "while away");
 
@@ -938,7 +1032,7 @@ TEST_F(BasicChatTest, PrivateSendEdgesBlockedNpcDanglingReplyValidReply) {
   ASSERT_TRUE(delivery_prefs_.BlockUser("bob", "alice"));
   EXPECT_EQ(Send(alice, "alice", "bob", "shadowed").code(), chirp::common::OK);
   EXPECT_EQ(FramesOf(*bob, chirp::gateway::CHAT_MESSAGE_NOTIFY).size(), 0u);
-  EXPECT_TRUE(store_->PopOffline("bob").empty());
+  EXPECT_TRUE(store_->PopOffline("bob", chirp::chat::kDefaultOfflineSlot).empty());
   delivery_prefs_.UnblockUser("bob", "alice");
 
   // NPC 接收方：改道上行为事件（hub peer 未 Start → 发布回调 fail-fast 只留
@@ -950,7 +1044,7 @@ TEST_F(BasicChatTest, PrivateSendEdgesBlockedNpcDanglingReplyValidReply) {
   EXPECT_EQ(Send(alice, "alice", "npc:merchant", "hello smith").code(),
             chirp::common::OK);
   io_.poll();  // strand 上排队的发布回调
-  EXPECT_TRUE(store_->PopOffline("npc:merchant").empty());
+  EXPECT_TRUE(store_->PopOffline("npc:merchant", chirp::chat::kDefaultOfflineSlot).empty());
   features_->hub_peer = nullptr;
   features_->npc_service_id.clear();
 
@@ -1002,7 +1096,7 @@ TEST_F(BasicChatTest, GroupSendBroadcastsToMembersAndRefusesNonMember) {
   const auto resp = Send(alice, "alice", "", "group hello", chirp::chat::TEAM, group_id);
   EXPECT_EQ(resp.code(), chirp::common::OK);
   EXPECT_EQ(FramesOf(*alice, chirp::gateway::CHAT_MESSAGE_NOTIFY).size(), 0u);
-  const auto queued = store_->PopOffline("bob");
+  const auto queued = store_->PopOffline("bob", chirp::chat::kDefaultOfflineSlot);
   ASSERT_EQ(queued.size(), 1u);
   EXPECT_EQ(queued[0].content(), "group hello");
 
@@ -1626,7 +1720,7 @@ TEST_F(BasicChatTest, LogoutDisconnectsAndPurgesPresence) {
   trusted_->insert(web.get());
   chirp::chat::ChatMessage pending;
   pending.set_message_id("m-x");
-  store_->AddOffline("alice", pending);
+  store_->AddOffline("alice", chirp::chat::kDefaultOfflineSlot, pending);
   acks_->MarkCapable(web);
 
   const size_t announces_before =
@@ -1728,18 +1822,18 @@ TEST_F(BasicChatTest, MessageStoreRedisMirrorsHistoryAndQueues) {
   EXPECT_EQ(filtered.size(), 3u);
 
   // 离线队列：入队（带 TTL）→ 弹空（读 + DEL）。
-  redis_store.AddOffline("bob", m1);
-  ASSERT_EQ(redis_store.PopOffline("bob").size(), 1u);
-  EXPECT_TRUE(redis_store.PopOffline("bob").empty());  // DEL 生效
+  redis_store.AddOffline("bob", chirp::chat::kDefaultOfflineSlot, m1);
+  ASSERT_EQ(redis_store.PopOffline("bob", chirp::chat::kDefaultOfflineSlot).size(), 1u);
+  EXPECT_TRUE(redis_store.PopOffline("bob", chirp::chat::kDefaultOfflineSlot).empty());  // DEL 生效
 
   // 字节级回队 + 迟到 ack 的 LRem 清除。
-  redis_store.AddOfflineBytes("bob", m1.SerializeAsString());
-  EXPECT_TRUE(redis_store.RemoveOffline("bob", m1.SerializeAsString()));
-  EXPECT_FALSE(redis_store.RemoveOffline("bob", m1.SerializeAsString()));  // 已无副本
+  redis_store.AddOfflineBytes("bob", chirp::chat::kDefaultOfflineSlot, m1.SerializeAsString());
+  EXPECT_TRUE(redis_store.RemoveOffline("bob", chirp::chat::kDefaultOfflineSlot, m1.SerializeAsString()));
+  EXPECT_FALSE(redis_store.RemoveOffline("bob", chirp::chat::kDefaultOfflineSlot, m1.SerializeAsString()));  // 已无副本
 
   // 按 id 回收（撤回路径）：入队两条同 id 副本 → 全部回收。
-  redis_store.AddOffline("carol", m1);
-  redis_store.AddOfflineBytes("carol", m1.SerializeAsString());
+  redis_store.AddOffline("carol", chirp::chat::kDefaultOfflineSlot, m1);
+  redis_store.AddOfflineBytes("carol", chirp::chat::kDefaultOfflineSlot, m1.SerializeAsString());
   EXPECT_EQ(redis_store.PurgeOfflineByMessageId("carol", "m1"), 2u);
 
   // 撤回墓碑：内存 + Redis 镜像双写。
@@ -1792,24 +1886,24 @@ TEST_F(BasicChatTest, MessageStoreTrimsCapsAndFallbackEdges) {
 
   // 离线回退队列裁剪：kMaxOfflineInMemory=200。
   for (int i = 0; i <= static_cast<int>(MessageStore::kMaxOfflineInMemory) + 1; ++i) {
-    store_->AddOffline("piled", msg);
+    store_->AddOffline("piled", chirp::chat::kDefaultOfflineSlot, msg);
   }
-  auto pending = store_->PopOffline("piled");
+  auto pending = store_->PopOffline("piled", chirp::chat::kDefaultOfflineSlot);
   EXPECT_EQ(pending.size(), MessageStore::kMaxOfflineInMemory);
 
   // 空身份守卫。
-  EXPECT_TRUE(store_->PopOffline("").empty());
+  EXPECT_TRUE(store_->PopOffline("", chirp::chat::kDefaultOfflineSlot).empty());
   chirp::chat::ChatMessage any;
   any.set_message_id("z");
-  store_->AddOffline("", any);  // no-op，不产生键
-  EXPECT_FALSE(store_->RemoveOffline("", any.SerializeAsString()));
+  store_->AddOffline("", chirp::chat::kDefaultOfflineSlot, any);  // no-op，不产生键
+  EXPECT_FALSE(store_->RemoveOffline("", chirp::chat::kDefaultOfflineSlot, any.SerializeAsString()));
   EXPECT_EQ(store_->PurgeOfflineByMessageId("", "z"), 0u);
   EXPECT_EQ(store_->PurgeOfflineByMessageId("piled", ""), 0u);
 
   // 回退队列的字节级入队：坏字节跳过，好字节按消息入队。
-  store_->AddOfflineBytes("bytes", std::string("\xde\xad\xbe\xef", 4));
-  store_->AddOfflineBytes("bytes", any.SerializeAsString());
-  const auto byte_queue = store_->PopOffline("bytes");
+  store_->AddOfflineBytes("bytes", chirp::chat::kDefaultOfflineSlot, std::string("\xde\xad\xbe\xef", 4));
+  store_->AddOfflineBytes("bytes", chirp::chat::kDefaultOfflineSlot, any.SerializeAsString());
+  const auto byte_queue = store_->PopOffline("bytes", chirp::chat::kDefaultOfflineSlot);
   ASSERT_EQ(byte_queue.size(), 1u);
   EXPECT_EQ(byte_queue[0].message_id(), "z");
 
@@ -1817,20 +1911,20 @@ TEST_F(BasicChatTest, MessageStoreTrimsCapsAndFallbackEdges) {
   chirp::chat::ChatMessage trim_msg;
   trim_msg.set_message_id("t0");
   for (int i = 0; i <= static_cast<int>(MessageStore::kMaxOfflineInMemory); ++i) {
-    store_->AddOfflineBytes("trim", trim_msg.SerializeAsString());
+    store_->AddOfflineBytes("trim", chirp::chat::kDefaultOfflineSlot, trim_msg.SerializeAsString());
   }
-  EXPECT_EQ(store_->PopOffline("trim").size(), MessageStore::kMaxOfflineInMemory);
+  EXPECT_EQ(store_->PopOffline("trim", chirp::chat::kDefaultOfflineSlot).size(), MessageStore::kMaxOfflineInMemory);
 
   // 内存路径的迟到 ack 清除：按 message_id 匹配命中即删，重复清除落空。
   chirp::chat::ChatMessage late;
   late.set_message_id("late-1");
-  store_->AddOffline("gone", late);
-  EXPECT_TRUE(store_->RemoveOffline("gone", late.SerializeAsString()));
-  EXPECT_FALSE(store_->RemoveOffline("gone", late.SerializeAsString()));
+  store_->AddOffline("gone", chirp::chat::kDefaultOfflineSlot, late);
+  EXPECT_TRUE(store_->RemoveOffline("gone", chirp::chat::kDefaultOfflineSlot, late.SerializeAsString()));
+  EXPECT_FALSE(store_->RemoveOffline("gone", chirp::chat::kDefaultOfflineSlot, late.SerializeAsString()));
 
   // 内存路径的撤回回收：消息式 + 字节式两条同 id 副本一次清空。
-  store_->AddOffline("carol-mem", late);
-  store_->AddOfflineBytes("carol-mem", late.SerializeAsString());
+  store_->AddOffline("carol-mem", chirp::chat::kDefaultOfflineSlot, late);
+  store_->AddOfflineBytes("carol-mem", chirp::chat::kDefaultOfflineSlot, late.SerializeAsString());
   EXPECT_EQ(store_->PurgeOfflineByMessageId("carol-mem", "late-1"), 2u);
 
   // limit≤0 取默认 50：WORLD 台账 100 条只要最近 50 条。

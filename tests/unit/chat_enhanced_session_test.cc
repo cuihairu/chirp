@@ -649,7 +649,7 @@ TEST_F(EnhancedSessionTest, PrivateSendQueuesOfflineWhenEveryDeviceHalfClosed) {
   // A half-closed connection counts as offline: nothing is written to it.
   EXPECT_TRUE(bob->sent.empty());
 
-  auto offline = store_->PopOfflineMessages("bob");
+  auto offline = store_->PopOfflineMessages("bob", chirp::chat::kDefaultOfflineSlot);
   ASSERT_EQ(offline.size(), 1u);
   EXPECT_EQ(offline[0].content, "hi bob");
 }
@@ -729,12 +729,12 @@ TEST_F(EnhancedSessionTest, RecallPurgesOfflineCopyOfAbsentReceiver) {
   EXPECT_EQ(SendPrivate(alice, "alice", "bob", "offline secret", &mid, live.store,
                         live.recall.handlers.get()),
             chirp::common::OK);
-  ASSERT_EQ(live.store->GetOfflineMessages("bob").size(), 1u);
+  ASSERT_EQ(live.store->GetOfflineMessages("bob", chirp::chat::kDefaultOfflineSlot).size(), 1u);
 
   const chirp::chat::DeleteMessageResponse resp =
       Recall(alice, mid, "alice", /*hard_delete=*/false, live.recall.handlers.get());
   EXPECT_EQ(resp.code(), chirp::common::OK);
-  EXPECT_TRUE(live.store->GetOfflineMessages("bob").empty());
+  EXPECT_TRUE(live.store->GetOfflineMessages("bob", chirp::chat::kDefaultOfflineSlot).empty());
 
   const auto page = live.store->GetHistory("alice|bob", 0, 0, 10);
   ASSERT_EQ(page.size(), 1u);
@@ -890,7 +890,7 @@ TEST_F(EnhancedSessionTest, PrivateSendSilentlyDropsBlockedReceiver) {
   EXPECT_EQ(SendPrivate(alice, "alice", "bob", "shadowed", nullptr), chirp::common::OK);
   EXPECT_EQ(FramesOf(*bob, chirp::gateway::CHAT_MESSAGE_NOTIFY).size(), 0u);
   // 「已投递」的回话阻止离线入队：补投路径也没有副本。
-  EXPECT_TRUE(store_->GetOfflineMessages("bob").empty());
+  EXPECT_TRUE(store_->GetOfflineMessages("bob", chirp::chat::kDefaultOfflineSlot).empty());
 
   // 排空的 io 走到 MySQL 写回调：注入失败（scripted fake 拒 INSERT）时
   // 异步存储的失败分支只留 Warn，不影响发送结果。
@@ -920,7 +920,7 @@ TEST_F(EnhancedSessionTest, NpcReceiverPublishesUtteranceEvent) {
 
   // 回复 OK = 事件受理，NPC 不是用户：本地无投递、离线队列也不留副本。
   io_.poll();  // strand 上排队的发布回调（fail-fast 臂）
-  EXPECT_TRUE(store_->GetOfflineMessages("npc:merchant").empty());
+  EXPECT_TRUE(store_->GetOfflineMessages("npc:merchant", chirp::chat::kDefaultOfflineSlot).empty());
 }
 
 // --- 内部面信任门（SERVER_AUTH_REQ）：无密钥忽略 / 坏密钥拒绝并关 --------
@@ -1032,7 +1032,7 @@ TEST_F(EnhancedSessionTest, LoginMarksAckCapableAndRefillsOfflineTracked) {
 
   // bob 不在线：私聊进离线队列。
   ASSERT_EQ(SendPrivate(alice, "alice", "bob", "offline refill", nullptr), chirp::common::OK);
-  ASSERT_EQ(store_->GetOfflineMessages("bob").size(), 1u);
+  ASSERT_EQ(store_->GetOfflineMessages("bob", chirp::chat::kDefaultOfflineSlot).size(), 1u);
 
   // supports_message_ack 的登录：会话标为 ack-capable（后续投递可挂起），
   // 补投副本同样走 Track——未 ack 的补投会回队而不是随连接消失。
@@ -1049,7 +1049,7 @@ TEST_F(EnhancedSessionTest, LoginMarksAckCapableAndRefillsOfflineTracked) {
   ASSERT_TRUE(msg.ParseFromString(notifies[0].body()));
   EXPECT_EQ(msg.content(), "offline refill");
   EXPECT_EQ(acks.pending_count(), 1u);
-  EXPECT_TRUE(store_->GetOfflineMessages("bob").empty());
+  EXPECT_TRUE(store_->GetOfflineMessages("bob", chirp::chat::kDefaultOfflineSlot).empty());
 }
 
 // --- 跨实例投递（Redis pub/sub 回调）：坏 body / 拉黑 / 无健康会话 / 扇出 ---

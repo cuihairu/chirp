@@ -104,13 +104,14 @@ std::string DeliverySubject(const std::string& message_id,
 void DeliveryAckManager::Track(const std::string& message_id,
                                const std::string& delivery_id,
                                const std::string& receiver_id,
+                               const std::string& slot,
                                const std::string& payload) {
   if (config_.timeout_ms <= 0 || message_id.empty() || receiver_id.empty()) {
     return;
   }
   std::lock_guard<std::mutex> lock(mu_);
   pending_[DeliverySubject(message_id, delivery_id)] =
-      Pending{receiver_id, payload, NowMs() + config_.timeout_ms};
+      Pending{receiver_id, slot, payload, NowMs() + config_.timeout_ms};
 }
 
 bool DeliveryAckManager::Acknowledge(const std::string& message_id,
@@ -120,7 +121,12 @@ bool DeliveryAckManager::Acknowledge(const std::string& message_id,
   }
   const std::string subject = DeliverySubject(message_id, delivery_id);
 
-  std::pair<std::string, std::string> late;
+  struct Late {
+    std::string receiver_id;
+    std::string slot;
+    std::string payload;
+  };
+  Late late;
   bool was_requeued = false;
   {
     std::lock_guard<std::mutex> lock(mu_);
@@ -129,7 +135,7 @@ bool DeliveryAckManager::Acknowledge(const std::string& message_id,
     }
     const auto it = requeued_.find(subject);
     if (it != requeued_.end()) {
-      late = {it->second.receiver_id, it->second.payload};
+      late = {it->second.receiver_id, it->second.slot, it->second.payload};
       requeued_.erase(it);
       was_requeued = true;
     }
@@ -139,9 +145,10 @@ bool DeliveryAckManager::Acknowledge(const std::string& message_id,
     // The client did receive the message (its ack just beat the offline
     // refill); drop the copy that already timed out into the offline queue.
     Logger::Instance().Info("late message ack after requeue: " + subject +
-                            " user=" + late.first);
+                            " user=" + late.receiver_id +
+                            " slot=" + late.slot);
     if (on_late_ack_) {
-      on_late_ack_(late.first, late.second);
+      on_late_ack_(late.receiver_id, late.slot, late.payload);
     }
     return true;
   }
@@ -163,6 +170,7 @@ void DeliveryAckManager::RunCheck() {
   struct Expired {
     std::string subject;  // 投递主语（delivery_id 或首投的 message_id）
     std::string receiver_id;
+    std::string slot;
     std::string payload;
   };
   std::vector<Expired> expired;
@@ -171,9 +179,10 @@ void DeliveryAckManager::RunCheck() {
     std::lock_guard<std::mutex> lock(mu_);
     for (auto it = pending_.begin(); it != pending_.end();) {
       if (it->second.deadline_ms <= now) {
-        expired.push_back(Expired{it->first, it->second.receiver_id, it->second.payload});
+        expired.push_back(Expired{it->first, it->second.receiver_id,
+                                  it->second.slot, it->second.payload});
         requeued_[it->first] =
-            Requeued{it->second.receiver_id, it->second.payload, now};
+            Requeued{it->second.receiver_id, it->second.slot, it->second.payload, now};
         it = pending_.erase(it);
       } else {
         ++it;
@@ -195,9 +204,9 @@ void DeliveryAckManager::RunCheck() {
 
   for (const auto& e : expired) {
     Logger::Instance().Warn("message ack timeout, requeued offline: " + e.subject +
-                            " -> " + e.receiver_id);
+                            " -> " + e.receiver_id + " slot=" + e.slot);
     if (on_requeue_) {
-      on_requeue_(e.receiver_id, e.payload);
+      on_requeue_(e.receiver_id, e.slot, e.payload);
     }
   }
 

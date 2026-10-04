@@ -21,6 +21,7 @@
 #include "network/message_router.h"
 #include "network/redis_client.h"
 #include "network/session.h"
+#include "network/session_registry.h"
 #include "network/tcp_server.h"
 #include "network/websocket_server.h"
 #include "proto/auth.pb.h"
@@ -83,8 +84,16 @@ struct DistributedChatState {
 };
 
 struct DistributedMessageStore {
-  std::string OfflineKey(const std::string& user_id) const {
-    return "chirp:chat:offline:" + user_id;
+  // 离线队列 per-device 拆分(P1-5 余项第二块):桶 slot = 规范化 platform,
+  // 与 SessionRegistry 的 (user, platform) 槽位同单位。default 桶保持拆分前
+  // 的键形(零迁移):入队臂(无任何在线端,目标端未知)落共享桶,任何端的
+  // 登录先到先得;命名设备桶装「登录补投认领后未 ack 回队」的副本,重投只
+  // 找认领端。Redis 侧不维护设备花名册(Presence 邻接面,明确不做)。
+  std::string OfflineKey(const std::string& user_id, const std::string& slot) const {
+    if (slot == chirp::chat::kDefaultOfflineSlot) {
+      return "chirp:chat:offline:" + user_id;  // 遗留键形 = default 桶
+    }
+    return "chirp:chat:offline:" + user_id + ":" + slot;
   }
 
   std::string HistoryKey(const std::string& channel_id) const {
@@ -95,35 +104,45 @@ struct DistributedMessageStore {
     return a < b ? a + "|" + b : b + "|" + a;
   }
 
-  void AddOffline(const std::string& receiver_id, const std::string& message) const {
+  void AddOffline(const std::string& receiver_id, const std::string& slot,
+                  const std::string& message) const {
     if (!redis || receiver_id.empty()) {
       return;
     }
-    redis->RPush(OfflineKey(receiver_id), message);
-    redis->Expire(OfflineKey(receiver_id), offline_ttl_seconds);
+    redis->RPush(OfflineKey(receiver_id, slot), message);
+    redis->Expire(OfflineKey(receiver_id, slot), offline_ttl_seconds);
   }
 
   // Delivery-ack requeue path: pushes the exact bytes that were tracked so a
-  // late ack can remove the copy byte-for-byte.
-  void AddOfflineBytes(const std::string& receiver_id, const std::string& bytes) const {
-    AddOffline(receiver_id, bytes);
+  // late ack can remove the copy byte-for-byte. slot 来自 Track 记账。
+  void AddOfflineBytes(const std::string& receiver_id, const std::string& slot,
+                       const std::string& bytes) const {
+    AddOffline(receiver_id, slot, bytes);
   }
 
   // Late-ack cleanup: drop the offline copy the client confirmed after it had
   // already been requeued (byte-for-byte match against the queued entry).
-  bool RemoveOffline(const std::string& receiver_id, const std::string& bytes) const {
+  bool RemoveOffline(const std::string& receiver_id, const std::string& slot,
+                     const std::string& bytes) const {
     if (!redis || receiver_id.empty()) {
       return false;
     }
-    return redis->LRem(OfflineKey(receiver_id), 1, bytes) > 0;
+    return redis->LRem(OfflineKey(receiver_id, slot), 1, bytes) > 0;
   }
 
-  std::vector<std::string> PopOffline(const std::string& user_id) const {
+  // 补投臂:弹登录端自己的桶 ∪ default 共享桶(本槽优先)。
+  std::vector<std::string> PopOffline(const std::string& user_id,
+                                      const std::string& slot) const {
     if (!redis || user_id.empty()) {
       return {};
     }
-    auto messages = redis->LRange(OfflineKey(user_id), 0, -1);
-    redis->Del(OfflineKey(user_id));
+    std::vector<std::string> messages =
+        DrainBucket(OfflineKey(user_id, slot));
+    if (slot != chirp::chat::kDefaultOfflineSlot) {
+      auto shared = DrainBucket(OfflineKey(user_id, chirp::chat::kDefaultOfflineSlot));
+      messages.insert(messages.end(), std::make_move_iterator(shared.begin()),
+                      std::make_move_iterator(shared.end()));
+    }
     return messages;
   }
 
@@ -160,6 +179,15 @@ struct DistributedMessageStore {
     return false;
   }
 
+ private:
+  // 弹空一只桶(LRange + Del)。
+  std::vector<std::string> DrainBucket(const std::string& key) const {
+    auto messages = redis->LRange(key, 0, -1);
+    redis->Del(key);
+    return messages;
+  }
+
+ public:
   std::shared_ptr<chirp::network::RedisClient> redis;
   int offline_ttl_seconds{0};
 };
@@ -234,7 +262,9 @@ void HandleSendMessage(const chirp::chat::SendMessageRequest& req,
             return false;
           }
           if (acks && acks->IsCapable(recv_session.get())) {
-            acks->Track(msg.message_id(), msg.delivery_id(), user_id, msg_bytes);
+            // 在线投递的用户级语义:任一端接受即送达,回队回 default 共享桶。
+            acks->Track(msg.message_id(), msg.delivery_id(), user_id,
+                        chirp::chat::kDefaultOfflineSlot, msg_bytes);
           }
           chirp::chat::runtime::SendChatNotify(recv_session, msg);
           Logger::Instance().Info("Message delivered locally to " + user_id);
@@ -242,7 +272,10 @@ void HandleSendMessage(const chirp::chat::SendMessageRequest& req,
         });
 
     if (receivers <= 0) {
-      store->AddOffline(req.receiver_id(), msg.SerializeAsString());
+      // 入队臂:无任何在线端,目标端未知 → default 共享桶(任何端登录先到
+      // 先得;per-device 拆分从补投认领开始)。
+      store->AddOffline(req.receiver_id(), chirp::chat::kDefaultOfflineSlot,
+                        msg.SerializeAsString());
       push.NotifyOffline(msg, req.receiver_id());
       Logger::Instance().Info("Message stored offline for " + req.receiver_id());
     }
@@ -297,8 +330,10 @@ void HandleLogin(const chirp::auth::LoginRequest& req,
       if (msg.ParseFromArray(msg_data.data(), static_cast<int>(msg_data.size()))) {
         // Cross-instance deliveries are tracked like local ones - this
         // instance owns the receiving session, so the ack comes back here.
+        // 在线首投 → 回队回 default 共享桶。
         if (acks && acks->IsCapable(session.get())) {
-          acks->Track(msg.message_id(), msg.delivery_id(), user_id, msg_data);
+          acks->Track(msg.message_id(), msg.delivery_id(), user_id,
+                      chirp::chat::kDefaultOfflineSlot, msg_data);
         }
         chirp::chat::runtime::SendChatNotify(session, msg);
       }
@@ -316,7 +351,10 @@ void HandleLogin(const chirp::auth::LoginRequest& req,
   // basic build): a refill notify sent first would be swallowed by clients
   // that read exactly one frame as "the login response".
   if (!user_id.empty()) {
-    const auto offline_msgs = store->PopOffline(user_id);
+    // 补投臂(per-device 拆分):弹本端桶 ∪ default 共享桶;Track 记认领端
+    // slot——超时回队回本端桶,重投不被其他端的登录截走。
+    const std::string refill_slot = chirp::network::NormalizePlatformId(req.platform());
+    const auto offline_msgs = store->PopOffline(user_id, refill_slot);
     Logger::Instance().Info(
         "Delivering " + std::to_string(offline_msgs.size()) + " offline messages to " + user_id);
     for (const auto& msg_data : offline_msgs) {
@@ -325,7 +363,8 @@ void HandleLogin(const chirp::auth::LoginRequest& req,
         // Refills are tracked like live deliveries (payload keeps the exact
         // bytes that were queued, so a late ack can remove them cleanly).
         if (acks && acks->IsCapable(session.get())) {
-          acks->Track(msg.message_id(), msg.delivery_id(), user_id, msg_data);
+          acks->Track(msg.message_id(), msg.delivery_id(), user_id, refill_slot,
+                      msg_data);
         }
         chirp::chat::runtime::SendChatNotify(session, msg);
       }
@@ -413,11 +452,13 @@ int main(int argc, char** argv) {
   ack_config.timeout_ms = ack_timeout_ms;
   auto acks = std::make_shared<chirp::chat::DeliveryAckManager>(
       io, ack_config,
-      [store](const std::string& receiver_id, const std::string& payload) {
-        store->AddOfflineBytes(receiver_id, payload);
+      [store](const std::string& receiver_id, const std::string& slot,
+              const std::string& payload) {
+        store->AddOfflineBytes(receiver_id, slot, payload);
       },
-      [store](const std::string& receiver_id, const std::string& payload) {
-        store->RemoveOffline(receiver_id, payload);
+      [store](const std::string& receiver_id, const std::string& slot,
+              const std::string& payload) {
+        store->RemoveOffline(receiver_id, slot, payload);
       });
 
   auto router = std::make_shared<chirp::network::MessageRouter>(io, redis_host, redis_port);

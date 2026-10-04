@@ -15,11 +15,23 @@
 
 namespace chirp::chat {
 
+/// @brief 离线队列的 default 桶：无设备可知时的共享桶（发送时接收方无任何
+/// 在线端 → 目标端未知，副本落这里，任何端的登录先到先得）。键形与拆分前的
+/// user 级队列一致（零迁移）；命名设备桶 = 同键再拼 ":<slot>"。
+/// slot 本身 = NormalizePlatformId(platform)，与 SessionRegistry 的
+/// (user, platform) 槽位同单位。
+inline constexpr char kDefaultOfflineSlot[] = "default";
+
 /// @brief Tracks live private-message deliveries until the receiving client
 /// acknowledges them (MESSAGE_ACK). A delivery that is not acknowledged within
 /// the timeout is handed back to the owner via on_requeue so it lands in the
 /// offline queue and is refilled on the next login - the recovery path for
 /// messages pushed into a zombie connection.
+///
+/// 每笔在途投递带一个离线桶 slot：在线扇出的首投记 kDefaultOfflineSlot
+/// （回队回共享桶，任何端下次登录可领）；登录补投记认领端自己的 slot
+/// （回队只回该端，重投不再被其他端的登录截走）。迟到 ack 清理按同一
+/// (receiver, slot) 精确落桶。
 ///
 /// Only sessions that declared the capability at login (supports_message_ack)
 /// are tracked; legacy clients keep the send-and-forget behavior because they
@@ -40,9 +52,11 @@ public:
     int64_t requeued_retention_ms = 600000;
   };
 
-  // (receiver_id, payload bytes): payload is exactly the byte string that was
-  // tracked, so offline-queue removal can match it byte for byte.
+  // (receiver_id, offline slot, payload bytes): payload is exactly the byte
+  // string that was tracked, so offline-queue removal can match it byte for
+  // byte; slot 是回队/清理要落的那只离线桶（Track 时记录，见类注释）。
   using PayloadCallback = std::function<void(const std::string& receiver_id,
+                                             const std::string& slot,
                                              const std::string& payload)>;
 
   DeliveryAckManager(asio::io_context& io, Config config,
@@ -65,10 +79,13 @@ public:
   // Pending bookkeeping ----------------------------------------------------
   // 投递主语 = delivery_id 非空时用之（补投/重投各成一笔，精确匹配）；
   // 空 = 首次在线投递，主语即 message_id。Idempotent: 同一主语再 Track
-  // 只是刷新（重投同 id 的场景天然收敛）。
+  // 只是刷新（重投同 id 的场景天然收敛）。slot 是这笔记账对应的离线桶
+  // （在线首投 = kDefaultOfflineSlot；补投 = 认领端 slot），超时回队与
+  // 迟到 ack 清理都落这只桶。
   void Track(const std::string& message_id,
              const std::string& delivery_id,
              const std::string& receiver_id,
+             const std::string& slot,
              const std::string& payload);
   // Returns true when the ack meant something: it cleared a pending entry, or
   // it arrived late and on_late_ack was invoked to clean the offline copy.
@@ -87,11 +104,13 @@ private:
 
   struct Pending {
     std::string receiver_id;
+    std::string slot;  // 回队要落的离线桶（Track 传入，见类注释）
     std::string payload;
     int64_t deadline_ms;
   };
   struct Requeued {
     std::string receiver_id;
+    std::string slot;
     std::string payload;
     int64_t requeued_at_ms;
   };

@@ -109,31 +109,39 @@ public:
   /// Writes to Redis; when Redis is unavailable the message is kept in an
   /// in-memory fallback so single-node deployments (no Redis) still refill
   /// on login. Returns true only when the message landed in Redis.
-  bool AddOfflineMessage(const std::string& user_id,
+  /// slot 是离线桶（per-device 拆分，P1-5 余项第二块）：入队臂（无任何在线
+  /// 端，目标端未知）恒落 kDefaultOfflineSlot 共享桶（键形与拆分前的 user 级
+  /// 队列一致，零迁移）；ack 回队臂落 Track 记账的设备桶。
+  bool AddOfflineMessage(const std::string& user_id, const std::string& slot,
                          const std::string& serialized);
 
   /// @brief Removes one offline copy by its exact serialized bytes (late-ack
   /// cleanup after a delivery timed out and was requeued). Returns true when
   /// a copy was found and removed.
-  bool RemoveOfflineMessage(const std::string& user_id,
+  bool RemoveOfflineMessage(const std::string& user_id, const std::string& slot,
                             const std::string& serialized);
 
   /// @brief 撤回/版主删除后回收离线队列里的副本（game_chat_features P0）：
   /// 离线接收方收不到 MESSAGE_DELETED_NOTIFY，副本若留在队列里就会在下次登录
   /// 时把原文补投出去——撤回等于白做。队列没有 message_id 索引，只能扫队列
   /// 按 message_id 匹配后 LRem（每用户队列有长度/TTL 上限，代价有界）。
-  /// Redis 与 Redis-down 内存回退两个队列都扫。返回删掉的副本数。
+  /// Redis 与 Redis-down 内存回退两个队列都扫。per-device 拆分后副本可能落在
+  /// 任意设备桶：default 桶精确 + KEYS 前缀全设备桶一起扫（message_id 全局
+  /// 唯一，跨桶误删不存在）。返回删掉的副本数。
   size_t PurgeOfflineByMessageId(const std::string& user_id,
                                  const std::string& message_id);
 
   /// @brief Get offline messages for a user (Redis queue + in-memory fallback)
-  std::vector<MessageData> GetOfflineMessages(const std::string& user_id);
+  /// — 该用户 slot 桶 ∪ default 共享桶（与补投臂同口径）。
+  std::vector<MessageData> GetOfflineMessages(const std::string& user_id,
+                                              const std::string& slot);
 
-  /// @brief Pop offline messages (retrieve and delete)
-  std::vector<MessageData> PopOfflineMessages(const std::string& user_id);
+  /// @brief Pop offline messages (retrieve and delete) — 同上，弹空两桶。
+  std::vector<MessageData> PopOfflineMessages(const std::string& user_id,
+                                              const std::string& slot);
 
-  /// @brief Clear offline messages for a user
-  bool ClearOfflineMessages(const std::string& user_id);
+  /// @brief Clear offline messages for a user — 同一只桶范围（slot ∪ default）。
+  bool ClearOfflineMessages(const std::string& user_id, const std::string& slot);
 
   /// @brief Track message delivery
   std::string TrackMessage(const std::string& message_id,
@@ -168,17 +176,20 @@ public:
   static std::string PrivateChannelId(const std::string& a, const std::string& b);
 
 private:
-  std::string OfflineKey(const std::string& user_id);
+  std::string OfflineKey(const std::string& user_id, const std::string& slot);
   std::string HistoryKey(const std::string& channel_id);
   std::string DeliveryKey(const std::string& message_id, const std::string& receiver_id);
   std::string PendingDeliveryKey();
+  // 只读一只离线桶(Redis + 内存回退,不删)——Get/Pop 的桶并集基元。
+  std::vector<MessageData> ReadBucket(const std::string& user_id, const std::string& slot);
 
   asio::io_context& io_;
   MessageStoreConfig config_;
 
-  // In-memory fallback for the offline queue when Redis is down. Keyed by
-  // user_id, holds serialized MessageData payloads; drained together with
-  // the Redis queue by Get/Pop/Clear.
+  // In-memory fallback for the offline queue when Redis is down. Keyed by the
+  // same key string the Redis bucket uses (default 桶 = 遗留 user 级键形，
+  // 设备桶多一段 ":slot")，holds serialized MessageData payloads; drained
+  // together with the Redis queue by Get/Pop/Clear.
   std::mutex offline_fallback_mutex_;
   std::map<std::string, std::deque<std::string>> offline_fallback_;
   std::shared_ptr<network::RedisClient> redis_;

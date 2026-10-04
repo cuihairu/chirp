@@ -6,6 +6,7 @@
 #include <mutex>
 #include <sstream>
 
+#include "delivery_ack_manager.h"
 #include "logger.h"
 #include "message_store_factory.h"
 #include "proto/chat.pb.h"
@@ -311,17 +312,19 @@ bool HybridMessageStore::MarkMessageRecalled(const std::string& channel_id,
 }
 
 bool HybridMessageStore::AddOfflineMessage(const std::string& user_id,
+                                           const std::string& slot,
                                            const std::string& serialized) {
-  std::string offline_key = OfflineKey(user_id);
+  std::string offline_key = OfflineKey(user_id, slot);
   if (redis_->RPush(offline_key, serialized) &&
       redis_->Expire(offline_key, config_.redis_offline_ttl_seconds)) {
     return true;
   }
 
   // Redis unavailable: keep the message in an in-memory fallback so
-  // single-node deployments (no Redis) still refill on login.
+  // single-node deployments (no Redis) still refill on login. 键与 Redis 桶
+  // 同串，两种桶一个口径。
   std::lock_guard<std::mutex> lock(offline_fallback_mutex_);
-  auto& queue = offline_fallback_[user_id];
+  auto& queue = offline_fallback_[offline_key];
   queue.push_back(serialized);
   constexpr size_t kMaxFallbackPerUser = 1024;
   if (queue.size() > kMaxFallbackPerUser) {
@@ -331,15 +334,16 @@ bool HybridMessageStore::AddOfflineMessage(const std::string& user_id,
 }
 
 bool HybridMessageStore::RemoveOfflineMessage(const std::string& user_id,
+                                              const std::string& slot,
                                               const std::string& serialized) {
   // Late-ack cleanup: remove the offline copy the client confirmed after it
   // had already been requeued. The Redis entry matches byte-for-byte; the
   // fallback queue holds serialized strings, so it matches directly too.
-  std::string offline_key = OfflineKey(user_id);
+  std::string offline_key = OfflineKey(user_id, slot);
   bool removed = redis_->LRem(offline_key, 1, serialized) > 0;
 
   std::lock_guard<std::mutex> lock(offline_fallback_mutex_);
-  auto it = offline_fallback_.find(user_id);
+  auto it = offline_fallback_.find(offline_key);
   if (it != offline_fallback_.end()) {
     for (auto elem = it->second.begin(); elem != it->second.end(); ++elem) {
       if (*elem == serialized) {
@@ -364,19 +368,32 @@ size_t HybridMessageStore::PurgeOfflineByMessageId(const std::string& user_id,
   }
   size_t removed = 0;
 
-  const std::string offline_key = OfflineKey(user_id);
-  for (const auto& blob : redis_->LRange(offline_key, 0, -1)) {
-    MessageData msg;
-    if (!msg.ParseFromArray(blob.data(), static_cast<int>(blob.size())) ||
-        msg.message_id != message_id) {
-      continue;
+  const std::string default_key =
+      OfflineKey(user_id, chirp::chat::kDefaultOfflineSlot);
+  const std::string slot_prefix = default_key + ":";
+  // per-device 拆分后副本可能落在任意设备桶:default 精确 + KEYS 前缀全扫。
+  std::vector<std::string> keys{default_key};
+  for (const auto& key : redis_->Keys(slot_prefix + "*")) {
+    keys.push_back(key);
+  }
+  for (const auto& key : keys) {
+    for (const auto& blob : redis_->LRange(key, 0, -1)) {
+      MessageData msg;
+      if (!msg.ParseFromArray(blob.data(), static_cast<int>(blob.size())) ||
+          msg.message_id != message_id) {
+        continue;
+      }
+      removed += static_cast<size_t>(redis_->LRem(key, 1, blob));
     }
-    removed += static_cast<size_t>(redis_->LRem(offline_key, 1, blob));
   }
 
   std::lock_guard<std::mutex> lock(offline_fallback_mutex_);
-  auto it = offline_fallback_.find(user_id);
-  if (it != offline_fallback_.end()) {
+  for (auto it = offline_fallback_.begin(); it != offline_fallback_.end();) {
+    if (it->first != default_key &&
+        it->first.compare(0, slot_prefix.size(), slot_prefix) != 0) {
+      ++it;
+      continue;
+    }
     for (auto elem = it->second.begin(); elem != it->second.end();) {
       MessageData msg;
       if (msg.ParseFromArray(elem->data(), static_cast<int>(elem->size())) &&
@@ -387,62 +404,55 @@ size_t HybridMessageStore::PurgeOfflineByMessageId(const std::string& user_id,
         ++elem;
       }
     }
-    if (it->second.empty()) {
-      offline_fallback_.erase(it);
-    }
+    it = it->second.empty() ? offline_fallback_.erase(it) : std::next(it);
   }
   return removed;
 }
 
-std::vector<MessageData> HybridMessageStore::GetOfflineMessages(const std::string& user_id) {  // GCOVR_EXCL_LINE -- unreachable exit-block line (gcc/NRVO artifact); body is covered
-  std::string offline_key = OfflineKey(user_id);
-  auto redis_messages = redis_->LRange(offline_key, 0, -1);
-
-  std::vector<MessageData> results;
-  results.reserve(redis_messages.size());
-
-  for (const auto& msg_data : redis_messages) {
-    MessageData msg;
-    if (msg.ParseFromArray(msg_data.data(), static_cast<int>(msg_data.size()))) {
-      results.push_back(std::move(msg));
-    }
+std::vector<MessageData> HybridMessageStore::GetOfflineMessages(
+    const std::string& user_id, const std::string& slot) {  // GCOVR_EXCL_LINE -- unreachable exit-block line (gcc/NRVO artifact); body is covered
+  std::vector<MessageData> results = ReadBucket(user_id, slot);
+  if (slot != chirp::chat::kDefaultOfflineSlot) {
+    auto shared = ReadBucket(user_id, chirp::chat::kDefaultOfflineSlot);
+    results.insert(results.end(), std::make_move_iterator(shared.begin()),
+                   std::make_move_iterator(shared.end()));
   }
-
-  // Merge in messages held by the Redis-down fallback.
-  std::lock_guard<std::mutex> lock(offline_fallback_mutex_);
-  auto it = offline_fallback_.find(user_id);
-  if (it != offline_fallback_.end()) {
-    for (const auto& msg_data : it->second) {
-      MessageData msg;
-      if (msg.ParseFromArray(msg_data.data(), static_cast<int>(msg_data.size()))) {
-        results.push_back(std::move(msg));
-      }
-    }
-  }
-
   return results;
 }
 
-std::vector<MessageData> HybridMessageStore::PopOfflineMessages(const std::string& user_id) {
-  auto messages = GetOfflineMessages(user_id);
+std::vector<MessageData> HybridMessageStore::PopOfflineMessages(
+    const std::string& user_id, const std::string& slot) {
+  auto messages = GetOfflineMessages(user_id, slot);
 
   // Clear from Redis
-  std::string offline_key = OfflineKey(user_id);
-  redis_->Del(offline_key);
+  redis_->Del(OfflineKey(user_id, slot));
+  if (slot != chirp::chat::kDefaultOfflineSlot) {
+    redis_->Del(OfflineKey(user_id, chirp::chat::kDefaultOfflineSlot));
+  }
 
   // Drain the Redis-down fallback too.
   std::lock_guard<std::mutex> lock(offline_fallback_mutex_);
-  offline_fallback_.erase(user_id);
+  offline_fallback_.erase(OfflineKey(user_id, slot));
+  if (slot != chirp::chat::kDefaultOfflineSlot) {
+    offline_fallback_.erase(OfflineKey(user_id, chirp::chat::kDefaultOfflineSlot));
+  }
 
   return messages;
 }
 
-bool HybridMessageStore::ClearOfflineMessages(const std::string& user_id) {
-  std::string offline_key = OfflineKey(user_id);
-  bool redis_cleared = redis_->Del(offline_key);
+bool HybridMessageStore::ClearOfflineMessages(const std::string& user_id,
+                                              const std::string& slot) {
+  bool redis_cleared = redis_->Del(OfflineKey(user_id, slot));
+  if (slot != chirp::chat::kDefaultOfflineSlot) {
+    redis_cleared = redis_->Del(OfflineKey(user_id, chirp::chat::kDefaultOfflineSlot)) &&
+                    redis_cleared;
+  }
 
   std::lock_guard<std::mutex> lock(offline_fallback_mutex_);
-  offline_fallback_.erase(user_id);
+  offline_fallback_.erase(OfflineKey(user_id, slot));
+  if (slot != chirp::chat::kDefaultOfflineSlot) {
+    offline_fallback_.erase(OfflineKey(user_id, chirp::chat::kDefaultOfflineSlot));
+  }
 
   return redis_cleared;
 }
@@ -571,8 +581,45 @@ std::string HybridMessageStore::PrivateChannelId(const std::string& a, const std
   return a < b ? a + "|" + b : b + "|" + a;
 }
 
-std::string HybridMessageStore::OfflineKey(const std::string& user_id) {
-  return "chirp:chat:offline:" + user_id;
+std::string HybridMessageStore::OfflineKey(const std::string& user_id,
+                                           const std::string& slot) {
+  // per-device 拆分(P1-5 余项第二块):default 桶保持拆分前的键形(零迁移),
+  // 命名设备桶 = 遗留键 + ":slot"。
+  if (slot == chirp::chat::kDefaultOfflineSlot) {
+    return "chirp:chat:offline:" + user_id;
+  }
+  return "chirp:chat:offline:" + user_id + ":" + slot;
+}
+
+// 只读一只桶:Redis 列表解析 + Redis-down 内存回退同键读取(不删)。
+std::vector<MessageData> HybridMessageStore::ReadBucket(
+    const std::string& user_id, const std::string& slot) {
+  const std::string offline_key = OfflineKey(user_id, slot);
+  auto redis_messages = redis_->LRange(offline_key, 0, -1);
+
+  std::vector<MessageData> results;
+  results.reserve(redis_messages.size());
+
+  for (const auto& msg_data : redis_messages) {
+    MessageData msg;
+    if (msg.ParseFromArray(msg_data.data(), static_cast<int>(msg_data.size()))) {
+      results.push_back(std::move(msg));
+    }
+  }
+
+  // Merge in messages held by the Redis-down fallback.
+  std::lock_guard<std::mutex> lock(offline_fallback_mutex_);
+  auto it = offline_fallback_.find(offline_key);
+  if (it != offline_fallback_.end()) {
+    for (const auto& msg_data : it->second) {
+      MessageData msg;
+      if (msg.ParseFromArray(msg_data.data(), static_cast<int>(msg_data.size()))) {
+        results.push_back(std::move(msg));
+      }
+    }
+  }
+
+  return results;
 }
 
 std::string HybridMessageStore::HistoryKey(const std::string& channel_id) {
