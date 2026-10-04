@@ -51,6 +51,13 @@ std::string GenerateMessageId() {
   return "msg_" + std::to_string(NowMs()) + "_" + std::to_string(counter.fetch_add(1));
 }
 
+// 离线补投副本的投递主语(ChatMessage.delivery_id):进程内单调,与
+// message_id 同型不同前缀——一次发送多次投递各自有 id(P1-5)。
+std::string GenerateDeliveryId() {
+  static std::atomic<uint64_t> counter{1};
+  return "dlv_" + std::to_string(NowMs()) + "_" + std::to_string(counter.fetch_add(1));
+}
+
 void SendPacket(const std::shared_ptr<network::Session>& session,
                 gateway::MsgID msg_id,
                 int64_t seq,

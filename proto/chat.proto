@@ -86,6 +86,12 @@ message ChatMessage {
   SenderKind sender_kind = 12; // 发送者类型
   string reply_to_message_id = 13; // 消息引用（P1）：服务端校验通过后回填，随通知/历史下发
   bool is_recalled = 14;       // 撤回墓碑：发送者撤回/版主软删后置位，随历史下发（客户端渲染"消息已撤回"）
+  // 单次投递的主语（Communication Core P1-5，AT_MOST_ONCE dedup 位）。
+  // 空 = 首次在线投递，投递主语即 message_id；离线补投副本由服务端铸造
+  // 独立值，ack 超时回队重投保留原值（同一次投递的重投同 id）。消费端
+  // 按 message_id 做 UI 幂等、按 delivery_id 做传输层去重；已读回执仍是
+  // 消息级（message_id 主语），不随投递次数变化。
+  string delivery_id = 15;
 }
 
 // Player -> NPC utterance, published as an event payload to the NPC dialog
@@ -419,7 +425,7 @@ message TrackMessageRequest {
 // Message delivery tracking response
 message TrackMessageResponse {
   common.ErrorCode code = 1;
-  string tracking_id = 2;
+  string tracking_id = 2;  // 投递跟踪主语（delivery 跟踪 id，Communication Core P1-5 口径）
   int64 server_time = 3;
 }
 

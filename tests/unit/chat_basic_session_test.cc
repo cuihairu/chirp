@@ -477,11 +477,34 @@ TEST_F(BasicChatTest, LoginKicksSamePlatformAndAnnouncesOthers) {
             chirp::common::OK);
   const auto refills = FramesOf(*relogin, chirp::gateway::CHAT_MESSAGE_NOTIFY);
   ASSERT_EQ(refills.size(), 1u);
+  // P1-5:补投副本自带投递主语——delivery_id 非空且不与 message_id 混同;
+  // Track 的在册副本序列化含同一 delivery_id(回队重投保原值的前提)。
+  chirp::chat::ChatMessage refill_msg;
+  ASSERT_TRUE(refill_msg.ParseFromString(refills[0].body()));
+  EXPECT_FALSE(refill_msg.delivery_id().empty());
+  EXPECT_NE(refill_msg.delivery_id(), "m-off");
   EXPECT_EQ(acks_->pending_count(), 1u);
   EXPECT_TRUE(store_->PopOffline("alice").empty());  // 已弹空，不会二次补投
 }
 
 // --- 登录拒绝：限流 / 解析 / JWT / 空 token ------------------------------------
+
+TEST_F(BasicChatTest, OfflineRefillKeepsExistingDeliveryId) {
+  // P1-5:已带 delivery_id 的副本(ack 回队重投场景)保留原值——同一次
+  // 投递的重投同 id,消费端据此去重;首次补投铸新值见上一用例。
+  chirp::chat::ChatMessage kept;
+  kept.set_message_id("m-kept");
+  kept.set_delivery_id("dlv_kept");
+  kept.set_content("kept id");
+  store_->AddOffline("alice", kept);
+  auto session = std::make_shared<MockSession>();
+  ASSERT_EQ(Login(session, "alice", "tab-1", "web").code(), chirp::common::OK);
+  const auto refills = FramesOf(*session, chirp::gateway::CHAT_MESSAGE_NOTIFY);
+  ASSERT_EQ(refills.size(), 1u);
+  chirp::chat::ChatMessage got;
+  ASSERT_TRUE(got.ParseFromString(refills[0].body()));
+  EXPECT_EQ(got.delivery_id(), "dlv_kept");
+}
 
 TEST_F(BasicChatTest, LoginRejectionsCoverLimiterParseJwtAndEmpty) {
   chirp_test::InMemoryRedis redis;

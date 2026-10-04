@@ -629,13 +629,22 @@ void HandlePacket(const std::shared_ptr<MessageStore>& store,
     if (!user_id.empty()) {
       auto offline = store->PopOffline(user_id);
       for (const auto& m : offline) {
+        // delivery_id(P1-5):补投副本要有自己的投递主语。空(首次补投)
+        // 铸新值;ack 超时回队的副本保留原值——同一次投递的重投同 id,
+        // 消费端按 delivery_id 丢弃重复(AT_MOST_ONCE dedup 位),
+        // UI 层按 message_id 幂等。
+        auto delivered = m;
+        if (delivered.delivery_id().empty()) {
+          delivered.set_delivery_id(chirp::chat::runtime::GenerateDeliveryId());
+        }
         // Refills are tracked like live deliveries: if this session dies
         // before acking, the message returns to the offline queue instead of
-        // being consumed by a zombie connection.
+        // being consumed by a zombie connection. 序列化在铸 id 之后,
+        // 回队副本带着同一 delivery_id。
         if (features.acks && features.acks->IsCapable(session.get())) {
-          features.acks->Track(m.message_id(), user_id, m.SerializeAsString());
+          features.acks->Track(delivered.message_id(), user_id, delivered.SerializeAsString());
         }
-        chirp::chat::runtime::SendChatNotify(session, m);
+        chirp::chat::runtime::SendChatNotify(session, delivered);
       }
     }
     break;

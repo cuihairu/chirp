@@ -93,6 +93,28 @@ TEST(MemoryMessageStoreTest, LoadReturnsNewestFirstWithLimitAndFilter) {
   EXPECT_TRUE(store.Load(chirp::chat::WORLD, "world", 0).empty());
 }
 
+TEST(MemoryMessageStoreTest, SaveDedupsRepeatedMessageIdDelivery) {
+  // P1-5 AT_MOST_ONCE 消费端执行:同一消息的重复投递副本(补投与在线
+  // 竞态、ack 超时重投)按 message_id 丢弃,UI 层不重复入库。
+  chirp::sdk::MemoryMessageStore store;
+  store.Save(MakeStoredMessage("world", 100, "first"));
+  auto dup = MakeStoredMessage("world", 100, "first");  // 同 message_id,不同投递
+  dup.set_delivery_id("dlv_replay");
+  store.Save(dup);
+  auto loaded = store.Load(chirp::chat::WORLD, "world", 10);
+  ASSERT_EQ(loaded.size(), 1u);
+  EXPECT_EQ(loaded[0].delivery_id(), "");  // 保留首投副本,重投副本被丢弃
+
+  // 不同 message_id 照常入库;空 message_id 不参与去重。
+  store.Save(MakeStoredMessage("world", 200, "second"));
+  chirp::chat::ChatMessage anon = dup;
+  anon.clear_message_id();
+  anon.set_delivery_id("dlv_anon");
+  store.Save(anon);
+  loaded = store.Load(chirp::chat::WORLD, "world", 10);
+  ASSERT_EQ(loaded.size(), 3u);
+}
+
 TEST(MemoryMessageStoreTest, ChannelTypeIsolatesBuckets) {
   chirp::sdk::MemoryMessageStore store;
   auto priv = MakeStoredMessage("shared-id", 100, "p");

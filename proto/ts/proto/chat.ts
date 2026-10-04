@@ -605,6 +605,14 @@ export interface ChatMessage {
   replyToMessageId: string;
   /** 撤回墓碑：发送者撤回/版主软删后置位，随历史下发（客户端渲染"消息已撤回"） */
   isRecalled: boolean;
+  /**
+   * 单次投递的主语（Communication Core P1-5，AT_MOST_ONCE dedup 位）。
+   * 空 = 首次在线投递，投递主语即 message_id；离线补投副本由服务端铸造
+   * 独立值，ack 超时回队重投保留原值（同一次投递的重投同 id）。消费端
+   * 按 message_id 做 UI 幂等、按 delivery_id 做传输层去重；已读回执仍是
+   * 消息级（message_id 主语），不随投递次数变化。
+   */
+  deliveryId: string;
 }
 
 /**
@@ -983,6 +991,7 @@ export interface TrackMessageRequest {
 /** Message delivery tracking response */
 export interface TrackMessageResponse {
   code: ErrorCode;
+  /** 投递跟踪主语（delivery 跟踪 id，Communication Core P1-5 口径） */
   trackingId: string;
   serverTime: number;
 }
@@ -1965,6 +1974,7 @@ function createBaseChatMessage(): ChatMessage {
     senderKind: 0,
     replyToMessageId: "",
     isRecalled: false,
+    deliveryId: "",
   };
 }
 
@@ -2011,6 +2021,9 @@ export const ChatMessage = {
     }
     if (message.isRecalled !== false) {
       writer.uint32(112).bool(message.isRecalled);
+    }
+    if (message.deliveryId !== "") {
+      writer.uint32(122).string(message.deliveryId);
     }
     return writer;
   },
@@ -2120,6 +2133,13 @@ export const ChatMessage = {
 
           message.isRecalled = reader.bool();
           continue;
+        case 15:
+          if (tag !== 122) {
+            break;
+          }
+
+          message.deliveryId = reader.string();
+          continue;
       }
       if ((tag & 7) === 4 || tag === 0) {
         break;
@@ -2145,6 +2165,7 @@ export const ChatMessage = {
       senderKind: isSet(object.senderKind) ? senderKindFromJSON(object.senderKind) : 0,
       replyToMessageId: isSet(object.replyToMessageId) ? globalThis.String(object.replyToMessageId) : "",
       isRecalled: isSet(object.isRecalled) ? globalThis.Boolean(object.isRecalled) : false,
+      deliveryId: isSet(object.deliveryId) ? globalThis.String(object.deliveryId) : "",
     };
   },
 
@@ -2192,6 +2213,9 @@ export const ChatMessage = {
     if (message.isRecalled !== false) {
       obj.isRecalled = message.isRecalled;
     }
+    if (message.deliveryId !== "") {
+      obj.deliveryId = message.deliveryId;
+    }
     return obj;
   },
 
@@ -2214,6 +2238,7 @@ export const ChatMessage = {
     message.senderKind = object.senderKind ?? 0;
     message.replyToMessageId = object.replyToMessageId ?? "";
     message.isRecalled = object.isRecalled ?? false;
+    message.deliveryId = object.deliveryId ?? "";
     return message;
   },
 };

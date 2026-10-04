@@ -825,8 +825,14 @@ type ChatMessage struct {
 	SenderKind       SenderKind             `protobuf:"varint,12,opt,name=sender_kind,json=senderKind,proto3,enum=chirp.chat.SenderKind" json:"sender_kind,omitempty"` // 发送者类型
 	ReplyToMessageId string                 `protobuf:"bytes,13,opt,name=reply_to_message_id,json=replyToMessageId,proto3" json:"reply_to_message_id,omitempty"`       // 消息引用（P1）：服务端校验通过后回填，随通知/历史下发
 	IsRecalled       bool                   `protobuf:"varint,14,opt,name=is_recalled,json=isRecalled,proto3" json:"is_recalled,omitempty"`                            // 撤回墓碑：发送者撤回/版主软删后置位，随历史下发（客户端渲染"消息已撤回"）
-	unknownFields    protoimpl.UnknownFields
-	sizeCache        protoimpl.SizeCache
+	// 单次投递的主语（Communication Core P1-5，AT_MOST_ONCE dedup 位）。
+	// 空 = 首次在线投递，投递主语即 message_id；离线补投副本由服务端铸造
+	// 独立值，ack 超时回队重投保留原值（同一次投递的重投同 id）。消费端
+	// 按 message_id 做 UI 幂等、按 delivery_id 做传输层去重；已读回执仍是
+	// 消息级（message_id 主语），不随投递次数变化。
+	DeliveryId    string `protobuf:"bytes,15,opt,name=delivery_id,json=deliveryId,proto3" json:"delivery_id,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
 }
 
 func (x *ChatMessage) Reset() {
@@ -955,6 +961,13 @@ func (x *ChatMessage) GetIsRecalled() bool {
 		return x.IsRecalled
 	}
 	return false
+}
+
+func (x *ChatMessage) GetDeliveryId() string {
+	if x != nil {
+		return x.DeliveryId
+	}
+	return ""
 }
 
 // Player -> NPC utterance, published as an event payload to the NPC dialog
@@ -3653,7 +3666,7 @@ func (x *TrackMessageRequest) GetExpiresAt() int64 {
 type TrackMessageResponse struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	Code          common.ErrorCode       `protobuf:"varint,1,opt,name=code,proto3,enum=chirp.common.ErrorCode" json:"code,omitempty"`
-	TrackingId    string                 `protobuf:"bytes,2,opt,name=tracking_id,json=trackingId,proto3" json:"tracking_id,omitempty"`
+	TrackingId    string                 `protobuf:"bytes,2,opt,name=tracking_id,json=trackingId,proto3" json:"tracking_id,omitempty"` // 投递跟踪主语（delivery 跟踪 id，Communication Core P1-5 口径）
 	ServerTime    int64                  `protobuf:"varint,3,opt,name=server_time,json=serverTime,proto3" json:"server_time,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
@@ -8714,7 +8727,7 @@ const file_proto_chat_proto_rawDesc = "" +
 	"\x04code\x18\x01 \x01(\x0e2\x17.chirp.common.ErrorCodeR\x04code\x12\x1d\n" +
 	"\n" +
 	"message_id\x18\x02 \x01(\tR\tmessageId\x12)\n" +
-	"\x10server_timestamp\x18\x03 \x01(\x03R\x0fserverTimestamp\"\xa5\x04\n" +
+	"\x10server_timestamp\x18\x03 \x01(\x03R\x0fserverTimestamp\"\xc6\x04\n" +
 	"\vChatMessage\x12\x1d\n" +
 	"\n" +
 	"message_id\x18\x01 \x01(\tR\tmessageId\x12\x1b\n" +
@@ -8736,7 +8749,9 @@ const file_proto_chat_proto_rawDesc = "" +
 	"senderKind\x12-\n" +
 	"\x13reply_to_message_id\x18\r \x01(\tR\x10replyToMessageId\x12\x1f\n" +
 	"\vis_recalled\x18\x0e \x01(\bR\n" +
-	"isRecalled\"\x9f\x01\n" +
+	"isRecalled\x12\x1f\n" +
+	"\vdelivery_id\x18\x0f \x01(\tR\n" +
+	"deliveryId\"\x9f\x01\n" +
 	"\x12NpcPlayerUtterance\x12\x1d\n" +
 	"\n" +
 	"message_id\x18\x01 \x01(\tR\tmessageId\x12\x1b\n" +

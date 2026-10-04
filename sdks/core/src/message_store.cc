@@ -20,6 +20,15 @@ MemoryMessageStore::MemoryMessageStore(size_t max_per_channel)
 void MemoryMessageStore::Save(const chirp::chat::ChatMessage& msg) {
   std::lock_guard<std::mutex> lock(mutex_);
   auto& bucket = store_[StoreKey(msg.channel_type(), msg.channel_id())];
+  // 投递幂等(P1-5 AT_MOST_ONCE 消费端执行):同一消息的重复投递副本
+  // (离线补投与在线推送竞态、ack 超时重投)按 message_id 丢弃——UI 层
+  // 主语是 message_id;delivery_id 的传输层去重在回调/上层完成。编辑/
+  // 撤回走独立 notify,不经过 CHAT_MESSAGE_NOTIFY,不会被这里吞掉。
+  for (const auto& existing : bucket) {
+    if (!msg.message_id().empty() && existing.message_id() == msg.message_id()) {
+      return;
+    }
+  }
   bucket.push_back(msg);
   // max_per_channel_ == 0 表示不设上限;超出时淘汰最旧,桶内保持时间正序。
   if (max_per_channel_ > 0 && bucket.size() > max_per_channel_) {
