@@ -158,7 +158,7 @@ SDK 引擎兼容性见 [SDK 引擎兼容性](docs/design-notes/sdk_compatibility
 - [x] **P0-3 social/voice/search 标注非核心**（核查齐：overview 实验服务表 Experimental + 「非核心验证路径」表述 + CAPABILITY_MATRIX Experimental 覆盖；2026-10-04 补 overview 一句 Communication 之外的应用面/插件面口径）
 - [ ] **P1-4 request_id 剩余面**：① chat 直连入口兜底（客户端直连 chat 主端口时缺省包按连接生成）；② peer（hub）转发透传（request_id 穿 ChatPeerHub/link 转发不改写）；③ SDK/客户端发送侧生成（sdks/core `MakePacket`、sdks/ts 与 apps/shared/protocol 构造处）
 - [ ] **P1-5 delivery_id 进投递/回执协议 + dedup（AT_MOST_ONCE）落地**：`message_id` 与 `delivery_id` 分离——一次发送、多次投递（离线补投、多端）各自有 id，为 dedup 与回执提供主语（现状参考：`TrackMessageResponse.tracking_id` 承担单次投递跟踪主语、注入面 `inject_id` 承担幂等键）；dedup 语义随 Deliver/回执协议明确
-- [ ] **P1-6 Identity binding 文档化**：platform player_id ↔ game game_user_id ↔ character 身份链写进文档（现状已实现在 app_chat 玩家目录/server_plane 身份绑定,不扩实现面）
+- [x] **P1-6 Identity binding 文档化**（2026-10-04：communication_core.md 新增 §4.7——platform player_id ↔ game_user_id ↔ character 三层身份链（character 为提案预留位），现状绑定契约（5013-5019、binding_id 幂等、ResolveGameUser 字典序确定性）与凭证边界互链 server_plane「玩家身份绑定」；不扩实现面）
 - [ ] **P2 明确不做（红线）**：Presence 独立服务（现状在线状态附于 chat/Web 侧,不抽服务）、Voice/Search 维持插件面（Voice 不进 core 抽象）
 
 ## 构建与验证（P0）

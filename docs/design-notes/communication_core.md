@@ -100,6 +100,23 @@ Peer Pipe     game_chat ⇄ app_chat、chat ⇄ chat（trusted peer，白名单 
 
 app_chat 现在是 hub-spoke 的 hub，聚合多 game 频道、身份绑定、未读。收敛约束：**app_chat 是 routing hub，不是单点逻辑库**。未来扩容按频道/游戏分片（shard），hub 层只做路由与身份映射，不成为消息存储的唯一真源（消息仍在各平面 chat 的 MySQL）。现在不做分布式 chat：单写者 chat + 水平网关 + 可靠服务面，先把基准（连接数/吞吐）做出来，再谈分片。
 
+### 4.7 Identity binding（文档化，不扩实现面）
+
+身份链三层：
+
+```
+platform player_id   平台账号（app_auth 签发，横跨多款游戏）
+  └─ game_user_id    游戏内用户（游戏后端权威，经 5013 绑定断言）
+       └─ character  角色（提案预留：现状 wire 上 game_user_id 即聊天身份，
+                     角色层未建；引入时在绑定元组上加一层，不改既有键）
+```
+
+现状实现（契约细节见 [服务器平面](../server_plane.md) 「玩家身份绑定」）：
+
+- `player_id ↔ (game_id, game_user_id)` 绑定：5013/5015/5017/5019 四个 RPC，`binding_id` 幂等键（同 id 不同元组 → `INVALID_PARAM`）；一个 `(game_id, game_user_id)` 只绑一个玩家，游戏后端是权威（重绑顶旧）。
+- 跨平面回复经 `ResolveGameUser` 反查发送者游戏身份（一个玩家在同一游戏多条绑定时取字典序最小，保证确定性）。
+- 凭证边界同 4.1：platform `player_id` 只出自 app 平面验证（app_auth / app_gateway 钉死），`game_user_id` 只出自游戏平面断言；注入边界只认绑定结果，不信任客户端自报的身份。
+
 ## 5. 收敛路线
 
 P0（随本文落地，文档/协议说明为主）：
