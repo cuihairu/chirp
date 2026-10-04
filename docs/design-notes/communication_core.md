@@ -75,11 +75,11 @@ Message  ── 发送 ──► Accepted ──► Persisted ──► (Queued 
 
 对应关系必须写清：**`OK` 只回答 Accepted**。玩家侧是否 Delivered/Acknowledged 由补投与已读回执回答，两者都是「受理」之外的第二条链。当前「OK 仅服务面受理」一句话，升格为上述状态机在协议文档中的正式表述。
 
-### 4.3 request_id 与 sequence 分离（[提案]，wire 扩展）
+### 4.3 request_id 与 sequence 分离（Packet 已落地，余项 [提案]）
 
 - `sequence`：连接内单调序号，用于请求-响应配对的本地排序。
-- `request_id`（未来 Packet 扩展字段）：分布式关联 id，跨平面/跨服务日志追踪用。
-- `message_id` 与 `delivery_id` 分离：一条消息一次发送、多次投递（离线补投、多端）各自有 id，为 dedup 与回执提供主语。现状 `message_id` 已存在；`delivery_id` 为提案。
+- `request_id`（`Packet` 字段 4，已落地）：分布式关联 id，跨平面/跨服务日志追踪用。0 = 未提供，网关 ChatBridge 对客户端出站 2xxx 包与服务面出站包按「连接内生成」兜底（单调自增）；显式给出的值沿转发链路原样透传。现状：gateway.proto + server_gateway 出站生成（注入出站日志 `req=`）+ chat 注入入站日志（`inject received ... req=`）。待扩：chat 直连入口兜底、peer（hub）转发透传、SDK/客户端发送侧生成。
+- `message_id` 与 `delivery_id` 分离：一条消息一次发送、多次投递（离线补投、多端）各自有 id，为 dedup 与回执提供主语。现状 `message_id` 已存在；`delivery_id` 为提案（现状参考：`TrackMessageResponse.tracking_id` 承担单次投递跟踪主语，注入面 `inject_id` 承担幂等键）。
 
 ### 4.4 Pipe 分类（[提案] 概念正式化，非新协议）
 
@@ -110,9 +110,9 @@ P0（随本文落地，文档/协议说明为主）：
 
 P1（需要 wire 扩展，独立批次）：
 
-4. `request_id` 进 Packet（向后兼容：缺省 = 连接内生成）。
-5. `delivery_id` 进投递/回执协议；dedup 语义（AT_MOST_ONCE）落地。
-6. Identity binding 文档化（platform player_id ↔ game game_user_id ↔ character），不扩实现面。
+4. `request_id` 进 Packet（✅ 第一步已落地：协议字段 + 服务面出站生成 + 网关桥兜底 + chat 入站日志；待扩——chat 直连兜底、peer 转发透传、SDK 发送侧生成）。
+5. `delivery_id` 进投递/回执协议；dedup 语义（AT_MOST_ONCE）落地（open，见 4.3）。
+6. Identity binding 文档化（platform player_id ↔ game game_user_id ↔ character），不扩实现面（open）。
 
 P2（明确不做成核心）：
 

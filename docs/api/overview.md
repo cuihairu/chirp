@@ -31,10 +31,16 @@ message Packet {
   MsgID msg_id = 1;
   int64 sequence = 2;
   bytes body = 3;
+  int64 request_id = 4;  // 分布式关联 id,0 = 未提供(见下)
 }
 ```
 
 `body` 装的是所选 `msg_id` 对应的序列化 protobuf 消息。
+
+`sequence` 与 `request_id` 语义分离(见 [Communication Core 设计笔记](../design-notes/communication_core.md) 4.3):
+
+- `sequence`:连接内单调序号,请求-响应配对的本地关联键。响应与通知以请求同值返回,客户端用它把 `RESP`/`NOTIFY` 对回请求。**0 = 服务端发起(踢人、通知),不要求配对**。
+- `request_id`:分布式关联 id,跨平面/跨服务日志追踪用,与配对无关。**0 = 调用方未提供**,网关 `ChatBridge` 对客户端出站的 2xxx 包与服务面出站包按「连接内生成」兜底(单调自增);显式给出的值沿转发链路原样透传、不改写。网关不重写客户端已带的 `request_id`,SDK/接入方可直接携带自己的关联键(如游戏服请求单号)。
 
 映射示例:
 

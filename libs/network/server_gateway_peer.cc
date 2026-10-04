@@ -278,7 +278,8 @@ void ServerGatewayPeer::HandlePacket(const chirp::gateway::Packet& pkt) {
     chirp::common::Logger::Instance().Info(
         "inject received from=" + notify.message().sender_id() +
         " to=" + notify.message().receiver_id() +
-        " bytes=" + std::to_string(notify.message().content().size()));
+        " bytes=" + std::to_string(notify.message().content().size()) +
+        (pkt.request_id() != 0 ? " req=" + std::to_string(pkt.request_id()) : ""));
     if (on_inject_) {
       on_inject_(notify);
     }

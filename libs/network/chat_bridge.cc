@@ -69,6 +69,8 @@ struct ChatBridge::InternalConn : std::enable_shared_from_this<InternalConn> {
   bool closing{false};
   bool failed{false};
   int64_t next_seq{1};
+  // request_id 兜底生成器(ForwardToChat 对缺省包补齐,单调、连接内)。
+  int64_t next_request_id{1};
 
   std::array<uint8_t, 4> header{};
   std::string body;
@@ -337,7 +339,14 @@ void ChatBridge::ForwardToChat(const chirp::network::Session* client,
     return;  // handshake already failed; the client is on its way out
   }
   auto& conn = *it->second;
-  auto framed = FramePacket(pkt);
+  // request_id 缺省=0 时按连接内单调值兜底(发送侧 SDK 显式带值时原样
+  // 透传):网关是客户端 2xxx 包的出口,未生成 request_id 的裸协议接入方
+  // 也保证能跨服务关联。
+  auto outbound = pkt;
+  if (outbound.request_id() == 0) {
+    outbound.set_request_id(conn.next_request_id++);
+  }
+  auto framed = FramePacket(outbound);
   if (conn.state == InternalConn::State::kReady) {
     conn.EnqueueFrame(std::move(framed));
     return;

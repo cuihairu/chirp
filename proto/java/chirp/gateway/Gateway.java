@@ -2551,6 +2551,19 @@ public final class Gateway extends com.google.protobuf.GeneratedFile {
      * @return The body.
      */
     com.google.protobuf.ByteString getBody();
+
+    /**
+     * <pre>
+     * 分布式关联 id(Communication Core P1):跨平面/跨服务日志追踪用,与
+     * 连接内请求配对的 sequence 互相独立。0 = 调用方未提供,接收/转发侧按
+     * 「连接内生成」兜底(发送侧 SDK 与服务面出站未显式指定时自动填连接内
+     * 单调值);转发链路(网关 bridge、注入面)原样透传,不改写。
+     * </pre>
+     *
+     * <code>int64 request_id = 4;</code>
+     * @return The requestId.
+     */
+    long getRequestId();
   }
   /**
    * <pre>
@@ -2637,6 +2650,24 @@ public final class Gateway extends com.google.protobuf.GeneratedFile {
       return body_;
     }
 
+    public static final int REQUEST_ID_FIELD_NUMBER = 4;
+    private long requestId_ = 0L;
+    /**
+     * <pre>
+     * 分布式关联 id(Communication Core P1):跨平面/跨服务日志追踪用,与
+     * 连接内请求配对的 sequence 互相独立。0 = 调用方未提供,接收/转发侧按
+     * 「连接内生成」兜底(发送侧 SDK 与服务面出站未显式指定时自动填连接内
+     * 单调值);转发链路(网关 bridge、注入面)原样透传,不改写。
+     * </pre>
+     *
+     * <code>int64 request_id = 4;</code>
+     * @return The requestId.
+     */
+    @java.lang.Override
+    public long getRequestId() {
+      return requestId_;
+    }
+
     private byte memoizedIsInitialized = -1;
     @java.lang.Override
     public final boolean isInitialized() {
@@ -2660,6 +2691,9 @@ public final class Gateway extends com.google.protobuf.GeneratedFile {
       if (!body_.isEmpty()) {
         output.writeBytes(3, body_);
       }
+      if (requestId_ != 0L) {
+        output.writeInt64(4, requestId_);
+      }
       getUnknownFields().writeTo(output);
     }
 
@@ -2681,6 +2715,10 @@ public final class Gateway extends com.google.protobuf.GeneratedFile {
         size += com.google.protobuf.CodedOutputStream
           .computeBytesSize(3, body_);
       }
+      if (requestId_ != 0L) {
+        size += com.google.protobuf.CodedOutputStream
+          .computeInt64Size(4, requestId_);
+      }
       size += getUnknownFields().getSerializedSize();
       memoizedSize = size;
       return size;
@@ -2701,6 +2739,8 @@ public final class Gateway extends com.google.protobuf.GeneratedFile {
           != other.getSequence()) return false;
       if (!getBody()
           .equals(other.getBody())) return false;
+      if (getRequestId()
+          != other.getRequestId()) return false;
       if (!getUnknownFields().equals(other.getUnknownFields())) return false;
       return true;
     }
@@ -2719,6 +2759,9 @@ public final class Gateway extends com.google.protobuf.GeneratedFile {
           getSequence());
       hash = (37 * hash) + BODY_FIELD_NUMBER;
       hash = (53 * hash) + getBody().hashCode();
+      hash = (37 * hash) + REQUEST_ID_FIELD_NUMBER;
+      hash = (53 * hash) + com.google.protobuf.Internal.hashLong(
+          getRequestId());
       hash = (29 * hash) + getUnknownFields().hashCode();
       memoizedHashCode = hash;
       return hash;
@@ -2859,6 +2902,7 @@ public final class Gateway extends com.google.protobuf.GeneratedFile {
         msgId_ = 0;
         sequence_ = 0L;
         body_ = com.google.protobuf.ByteString.EMPTY;
+        requestId_ = 0L;
         return this;
       }
 
@@ -2901,6 +2945,9 @@ public final class Gateway extends com.google.protobuf.GeneratedFile {
         if (((from_bitField0_ & 0x00000004) != 0)) {
           result.body_ = body_;
         }
+        if (((from_bitField0_ & 0x00000008) != 0)) {
+          result.requestId_ = requestId_;
+        }
       }
 
       @java.lang.Override
@@ -2923,6 +2970,9 @@ public final class Gateway extends com.google.protobuf.GeneratedFile {
         }
         if (!other.getBody().isEmpty()) {
           setBody(other.getBody());
+        }
+        if (other.getRequestId() != 0L) {
+          setRequestId(other.getRequestId());
         }
         this.mergeUnknownFields(other.getUnknownFields());
         onChanged();
@@ -2965,6 +3015,11 @@ public final class Gateway extends com.google.protobuf.GeneratedFile {
                 bitField0_ |= 0x00000004;
                 break;
               } // case 26
+              case 32: {
+                requestId_ = input.readInt64();
+                bitField0_ |= 0x00000008;
+                break;
+              } // case 32
               default: {
                 if (!super.parseUnknownField(input, extensionRegistry, tag)) {
                   done = true; // was an endgroup tag
@@ -3093,6 +3148,59 @@ public final class Gateway extends com.google.protobuf.GeneratedFile {
       public Builder clearBody() {
         bitField0_ = (bitField0_ & ~0x00000004);
         body_ = getDefaultInstance().getBody();
+        onChanged();
+        return this;
+      }
+
+      private long requestId_ ;
+      /**
+       * <pre>
+       * 分布式关联 id(Communication Core P1):跨平面/跨服务日志追踪用,与
+       * 连接内请求配对的 sequence 互相独立。0 = 调用方未提供,接收/转发侧按
+       * 「连接内生成」兜底(发送侧 SDK 与服务面出站未显式指定时自动填连接内
+       * 单调值);转发链路(网关 bridge、注入面)原样透传,不改写。
+       * </pre>
+       *
+       * <code>int64 request_id = 4;</code>
+       * @return The requestId.
+       */
+      @java.lang.Override
+      public long getRequestId() {
+        return requestId_;
+      }
+      /**
+       * <pre>
+       * 分布式关联 id(Communication Core P1):跨平面/跨服务日志追踪用,与
+       * 连接内请求配对的 sequence 互相独立。0 = 调用方未提供,接收/转发侧按
+       * 「连接内生成」兜底(发送侧 SDK 与服务面出站未显式指定时自动填连接内
+       * 单调值);转发链路(网关 bridge、注入面)原样透传,不改写。
+       * </pre>
+       *
+       * <code>int64 request_id = 4;</code>
+       * @param value The requestId to set.
+       * @return This builder for chaining.
+       */
+      public Builder setRequestId(long value) {
+
+        requestId_ = value;
+        bitField0_ |= 0x00000008;
+        onChanged();
+        return this;
+      }
+      /**
+       * <pre>
+       * 分布式关联 id(Communication Core P1):跨平面/跨服务日志追踪用,与
+       * 连接内请求配对的 sequence 互相独立。0 = 调用方未提供,接收/转发侧按
+       * 「连接内生成」兜底(发送侧 SDK 与服务面出站未显式指定时自动填连接内
+       * 单调值);转发链路(网关 bridge、注入面)原样透传,不改写。
+       * </pre>
+       *
+       * <code>int64 request_id = 4;</code>
+       * @return This builder for chaining.
+       */
+      public Builder clearRequestId() {
+        bitField0_ = (bitField0_ & ~0x00000008);
+        requestId_ = 0L;
         onChanged();
         return this;
       }
@@ -8598,170 +8706,171 @@ public final class Gateway extends com.google.protobuf.GeneratedFile {
   static {
     java.lang.String[] descriptorData = {
       "\n\023proto/gateway.proto\022\rchirp.gateway\032\022pr" +
-      "oto/common.proto\032\020proto/chat.proto\"N\n\006Pa" +
+      "oto/common.proto\032\020proto/chat.proto\"b\n\006Pa" +
       "cket\022$\n\006msg_id\030\001 \001(\0162\024.chirp.gateway.Msg" +
-      "ID\022\020\n\010sequence\030\002 \001(\003\022\014\n\004body\030\003 \001(\014\"\"\n\rHe" +
-      "artbeatPing\022\021\n\ttimestamp\030\001 \001(\003\"7\n\rHeartb" +
-      "eatPong\022\021\n\ttimestamp\030\001 \001(\003\022\023\n\013server_tim" +
-      "e\030\002 \001(\003\"\243\001\n\017PeerRegisterReq\022\022\n\nservice_i" +
-      "d\030\001 \001(\t\022\026\n\016service_secret\030\002 \001(\t\022\030\n\020proto" +
-      "col_version\030\003 \001(\005\022\017\n\007game_id\030\004 \001(\t\0229\n\022su" +
-      "pported_features\030\005 \003(\0162\035.chirp.gateway.P" +
-      "eerCapability\"\307\001\n\020PeerRegisterResp\022%\n\004co" +
-      "de\030\001 \001(\0162\027.chirp.common.ErrorCode\022\030\n\020pro" +
-      "tocol_version\030\002 \001(\005\022\023\n\013min_version\030\003 \001(\005" +
-      "\022\"\n\032heartbeat_interval_seconds\030\004 \001(\005\0229\n\022" +
-      "supported_features\030\005 \003(\0162\035.chirp.gateway" +
-      ".PeerCapability\"e\n\024ChannelMessageNotify\022" +
-      "\017\n\007game_id\030\001 \001(\t\022\022\n\nchannel_id\030\002 \001(\t\022(\n\007" +
-      "message\030\003 \001(\0132\027.chirp.chat.ChatMessage\"h" +
-      "\n\027PeerInjectMessageNotify\022\022\n\nchannel_id\030" +
-      "\001 \001(\t\022\021\n\tsender_id\030\002 \001(\t\022\017\n\007content\030\003 \001(" +
-      "\014\022\025\n\rclient_msg_id\030\004 \001(\t*\341+\n\005MsgID\022\013\n\007UN" +
-      "KNOWN\020\000\022\023\n\016HEARTBEAT_PING\020\351\007\022\023\n\016HEARTBEA" +
-      "T_PONG\020\352\007\022\016\n\tLOGIN_REQ\020\353\007\022\017\n\nLOGIN_RESP\020" +
-      "\354\007\022\020\n\013KICK_NOTIFY\020\355\007\022\017\n\nLOGOUT_REQ\020\356\007\022\020\n" +
-      "\013LOGOUT_RESP\020\357\007\022\021\n\014REGISTER_REQ\020\360\007\022\022\n\rRE" +
-      "GISTER_RESP\020\361\007\022\027\n\022PASSWORD_LOGIN_REQ\020\362\007\022" +
-      "\030\n\023PASSWORD_LOGIN_RESP\020\363\007\022\026\n\021REFRESH_TOK" +
-      "EN_REQ\020\364\007\022\027\n\022REFRESH_TOKEN_RESP\020\365\007\022\025\n\020GE" +
-      "T_SESSIONS_REQ\020\366\007\022\026\n\021GET_SESSIONS_RESP\020\367" +
-      "\007\022\027\n\022REVOKE_SESSION_REQ\020\370\007\022\030\n\023REVOKE_SES" +
-      "SION_RESP\020\371\007\022\030\n\023CHANGE_PASSWORD_REQ\020\372\007\022\031" +
-      "\n\024CHANGE_PASSWORD_RESP\020\373\007\022\034\n\027DEVICES_PRE" +
-      "SENCE_NOTIFY\020\374\007\022\025\n\020SEND_MESSAGE_REQ\020\321\017\022\026" +
-      "\n\021SEND_MESSAGE_RESP\020\322\017\022\024\n\017GET_HISTORY_RE" +
-      "Q\020\323\017\022\025\n\020GET_HISTORY_RESP\020\324\017\022\030\n\023CHAT_MESS" +
-      "AGE_NOTIFY\020\325\017\022\025\n\020CREATE_GROUP_REQ\020\265\020\022\026\n\021" +
-      "CREATE_GROUP_RESP\020\266\020\022\023\n\016JOIN_GROUP_REQ\020\267" +
-      "\020\022\024\n\017JOIN_GROUP_RESP\020\270\020\022\024\n\017LEAVE_GROUP_R" +
-      "EQ\020\271\020\022\025\n\020LEAVE_GROUP_RESP\020\272\020\022\024\n\017KICK_MEM" +
-      "BER_REQ\020\273\020\022\025\n\020KICK_MEMBER_RESP\020\274\020\022\027\n\022GET" +
-      "_GROUP_INFO_REQ\020\275\020\022\030\n\023GET_GROUP_INFO_RES" +
-      "P\020\276\020\022\032\n\025GET_GROUP_MEMBERS_REQ\020\277\020\022\033\n\026GET_" +
-      "GROUP_MEMBERS_RESP\020\300\020\022\030\n\023GET_USER_GROUPS" +
-      "_REQ\020\301\020\022\031\n\024GET_USER_GROUPS_RESP\020\302\020\022\030\n\023IN" +
-      "VITE_TO_GROUP_REQ\020\303\020\022\031\n\024INVITE_TO_GROUP_" +
-      "RESP\020\304\020\022\031\n\024GROUP_CREATED_NOTIFY\020\305\020\022\037\n\032GR" +
-      "OUP_MEMBER_JOINED_NOTIFY\020\306\020\022\035\n\030GROUP_MEM" +
-      "BER_LEFT_NOTIFY\020\307\020\022\037\n\032GROUP_MEMBER_KICKE" +
-      "D_NOTIFY\020\310\020\022\031\n\024GROUP_UPDATED_NOTIFY\020\311\020\022\022" +
-      "\n\rMARK_READ_REQ\020\231\021\022\023\n\016MARK_READ_RESP\020\232\021\022" +
-      "\032\n\025GET_READ_RECEIPTS_REQ\020\233\021\022\033\n\026GET_READ_" +
-      "RECEIPTS_RESP\020\234\021\022\031\n\024GET_UNREAD_COUNT_REQ" +
-      "\020\235\021\022\032\n\025GET_UNREAD_COUNT_RESP\020\236\021\022\030\n\023MESSA" +
-      "GE_READ_NOTIFY\020\237\021\022\034\n\027TYPING_INDICATOR_NO" +
-      "TIFY\020\240\021\022\020\n\013MESSAGE_ACK\020\241\021\022\021\n\014MESSAGE_NAC" +
-      "K\020\242\021\022\026\n\021TRACK_MESSAGE_REQ\020\243\021\022\027\n\022TRACK_ME" +
-      "SSAGE_RESP\020\244\021\022\027\n\022GET_HISTORY_V2_REQ\020\245\021\022\030" +
-      "\n\023GET_HISTORY_V2_RESP\020\246\021\022\025\n\020ADD_REACTION" +
-      "_REQ\020\247\021\022\026\n\021ADD_REACTION_RESP\020\250\021\022\030\n\023REMOV" +
-      "E_REACTION_REQ\020\251\021\022\031\n\024REMOVE_REACTION_RES" +
-      "P\020\252\021\022\026\n\021GET_REACTIONS_REQ\020\253\021\022\027\n\022GET_REAC" +
-      "TIONS_RESP\020\254\021\022\032\n\025REACTION_ADDED_NOTIFY\020\255" +
-      "\021\022\034\n\027REACTION_REMOVED_NOTIFY\020\256\021\022\031\n\024GET_T" +
-      "YPING_USERS_REQ\020\257\021\022\032\n\025GET_TYPING_USERS_R" +
-      "ESP\020\260\021\022\025\n\020EDIT_MESSAGE_REQ\020\261\021\022\026\n\021EDIT_ME" +
-      "SSAGE_RESP\020\262\021\022\027\n\022DELETE_MESSAGE_REQ\020\263\021\022\030" +
-      "\n\023DELETE_MESSAGE_RESP\020\264\021\022\024\n\017BULK_DELETE_" +
-      "REQ\020\265\021\022\025\n\020BULK_DELETE_RESP\020\266\021\022\032\n\025MESSAGE" +
-      "_EDITED_NOTIFY\020\267\021\022\033\n\026MESSAGE_DELETED_NOT" +
-      "IFY\020\270\021\022 \n\033GET_MENTION_SUGGESTIONS_REQ\020\271\021" +
-      "\022!\n\034GET_MENTION_SUGGESTIONS_RESP\020\272\021\022\031\n\024S" +
-      "ET_CHANNEL_MUTE_REQ\020\273\021\022\032\n\025SET_CHANNEL_MU" +
-      "TE_RESP\020\274\021\022\032\n\025GET_CHANNEL_MUTES_REQ\020\275\021\022\033" +
-      "\n\026GET_CHANNEL_MUTES_RESP\020\276\021\022\035\n\030BLOCK_MES" +
-      "SAGE_SENDER_REQ\020\277\021\022\036\n\031BLOCK_MESSAGE_SEND" +
-      "ER_RESP\020\300\021\022\037\n\032UNBLOCK_MESSAGE_SENDER_REQ" +
-      "\020\301\021\022 \n\033UNBLOCK_MESSAGE_SENDER_RESP\020\302\021\022\034\n" +
-      "\027GET_BLOCKED_SENDERS_REQ\020\303\021\022\035\n\030GET_BLOCK" +
-      "ED_SENDERS_RESP\020\304\021\022\032\n\025WORD_FILTER_FETCH_" +
-      "REQ\020\305\021\022\033\n\026WORD_FILTER_FETCH_RESP\020\306\021\022\036\n\031W" +
-      "ORD_FILTER_UPDATE_NOTIFY\020\307\021\022\023\n\016ADD_FRIEN" +
-      "D_REQ\020\271\027\022\024\n\017ADD_FRIEND_RESP\020\272\027\022\036\n\031FRIEND" +
-      "_REQUEST_ACTION_REQ\020\273\027\022\037\n\032FRIEND_REQUEST" +
-      "_ACTION_RESP\020\274\027\022\026\n\021REMOVE_FRIEND_REQ\020\275\027\022" +
-      "\027\n\022REMOVE_FRIEND_RESP\020\276\027\022\030\n\023GET_FRIEND_L" +
-      "IST_REQ\020\277\027\022\031\n\024GET_FRIEND_LIST_RESP\020\300\027\022\035\n" +
-      "\030GET_PENDING_REQUESTS_REQ\020\301\027\022\036\n\031GET_PEND" +
-      "ING_REQUESTS_RESP\020\302\027\022\023\n\016BLOCK_USER_REQ\020\303" +
-      "\027\022\024\n\017BLOCK_USER_RESP\020\304\027\022\025\n\020UNBLOCK_USER_" +
-      "REQ\020\305\027\022\026\n\021UNBLOCK_USER_RESP\020\306\027\022\031\n\024GET_BL" +
-      "OCKED_LIST_REQ\020\307\027\022\032\n\025GET_BLOCKED_LIST_RE" +
-      "SP\020\310\027\022\025\n\020SET_PRESENCE_REQ\020\311\027\022\026\n\021SET_PRES" +
-      "ENCE_RESP\020\312\027\022\025\n\020GET_PRESENCE_REQ\020\313\027\022\026\n\021G" +
-      "ET_PRESENCE_RESP\020\314\027\022\024\n\017PRESENCE_NOTIFY\020\315" +
-      "\027\022\032\n\025FRIEND_REQUEST_NOTIFY\020\316\027\022\033\n\026FRIEND_" +
-      "ACCEPTED_NOTIFY\020\317\027\022\032\n\025FRIEND_REMOVED_NOT" +
-      "IFY\020\320\027\022\024\n\017CREATE_ROOM_REQ\020\241\037\022\025\n\020CREATE_R" +
-      "OOM_RESP\020\242\037\022\022\n\rJOIN_ROOM_REQ\020\243\037\022\023\n\016JOIN_" +
-      "ROOM_RESP\020\244\037\022\023\n\016LEAVE_ROOM_REQ\020\245\037\022\024\n\017LEA" +
-      "VE_ROOM_RESP\020\246\037\022\026\n\021ICE_CANDIDATE_MSG\020\247\037\022" +
-      "\022\n\rSDP_OFFER_MSG\020\250\037\022\023\n\016SDP_ANSWER_MSG\020\251\037" +
-      "\022\026\n\021GET_ROOM_INFO_REQ\020\252\037\022\027\n\022GET_ROOM_INF" +
-      "O_RESP\020\253\037\022\026\n\021GET_USER_ROOM_REQ\020\254\037\022\027\n\022GET" +
-      "_USER_ROOM_RESP\020\255\037\022\021\n\014SET_MUTE_REQ\020\256\037\022\022\n" +
-      "\rSET_MUTE_RESP\020\257\037\022\023\n\016SET_DEAFEN_REQ\020\260\037\022\024" +
-      "\n\017SET_DEAFEN_RESP\020\261\037\022\036\n\031PARTICIPANT_JOIN" +
-      "ED_NOTIFY\020\262\037\022\034\n\027PARTICIPANT_LEFT_NOTIFY\020" +
-      "\263\037\022%\n PARTICIPANT_STATE_CHANGED_NOTIFY\020\264" +
-      "\037\022\024\n\017SPEAKING_NOTIFY\020\265\037\022\024\n\017SERVER_AUTH_R" +
-      "EQ\020\211\'\022\025\n\020SERVER_AUTH_RESP\020\212\'\022\032\n\025SERVER_H" +
-      "EARTBEAT_PING\020\213\'\022\032\n\025SERVER_HEARTBEAT_PON" +
-      "G\020\214\'\022\027\n\022INJECT_MESSAGE_REQ\020\215\'\022\030\n\023INJECT_" +
-      "MESSAGE_RESP\020\216\'\022\032\n\025INJECT_MESSAGE_NOTIFY" +
-      "\020\217\'\022\026\n\021EVENT_PUBLISH_REQ\020\220\'\022\027\n\022EVENT_PUB" +
-      "LISH_RESP\020\221\'\022\031\n\024EVENT_DELIVER_NOTIFY\020\222\'\022" +
-      "\022\n\rEVENT_ACK_REQ\020\223\'\022\023\n\016EVENT_ACK_RESP\020\224\'" +
-      "\022\035\n\030BIND_PLAYER_IDENTITY_REQ\020\225\'\022\036\n\031BIND_" +
-      "PLAYER_IDENTITY_RESP\020\226\'\022\037\n\032UNBIND_PLAYER" +
-      "_IDENTITY_REQ\020\227\'\022 \n\033UNBIND_PLAYER_IDENTI" +
-      "TY_RESP\020\230\'\022\036\n\031GET_PLAYER_IDENTITIES_REQ\020" +
-      "\231\'\022\037\n\032GET_PLAYER_IDENTITIES_RESP\020\232\'\022\032\n\025R" +
-      "ESOLVE_GAME_USER_REQ\020\233\'\022\033\n\026RESOLVE_GAME_" +
-      "USER_RESP\020\234\'\022!\n\034SUBSCRIBE_PLAYER_CHANNEL" +
-      "_REQ\020\235\'\022\"\n\035SUBSCRIBE_PLAYER_CHANNEL_RESP" +
-      "\020\236\'\022#\n\036UNSUBSCRIBE_PLAYER_CHANNEL_REQ\020\237\'" +
-      "\022$\n\037UNSUBSCRIBE_PLAYER_CHANNEL_RESP\020\240\'\022!" +
-      "\n\034GET_PLAYER_SUBSCRIPTIONS_REQ\020\241\'\022\"\n\035GET" +
-      "_PLAYER_SUBSCRIPTIONS_RESP\020\242\'\022\033\n\026MARK_CH" +
-      "ANNELS_READ_REQ\020\243\'\022\034\n\027MARK_CHANNELS_READ" +
-      "_RESP\020\244\'\022\033\n\026GET_UNREAD_SUMMARY_REQ\020\245\'\022\034\n" +
-      "\027GET_UNREAD_SUMMARY_RESP\020\246\'\022\"\n\035SET_GAME_" +
-      "PRESENCE_ENABLED_REQ\020\247\'\022#\n\036SET_GAME_PRES" +
-      "ENCE_ENABLED_RESP\020\250\'\022\032\n\025GET_GAME_PRESENC" +
-      "E_REQ\020\251\'\022\033\n\026GET_GAME_PRESENCE_RESP\020\252\'\022\026\n" +
-      "\021PEER_REGISTER_REQ\020\272\'\022\027\n\022PEER_REGISTER_R" +
-      "ESP\020\273\'\022\033\n\026CHANNEL_MESSAGE_NOTIFY\020\274\'\022\037\n\032P" +
-      "EER_INJECT_MESSAGE_NOTIFY\020\275\'\022\030\n\023REGISTER" +
-      "_DEVICE_REQ\020\361.\022\031\n\024REGISTER_DEVICE_RESP\020\362" +
-      ".\022\032\n\025UNREGISTER_DEVICE_REQ\020\363.\022\033\n\026UNREGIS" +
-      "TER_DEVICE_RESP\020\364.\022\034\n\027UPDATE_DEVICE_TOKE" +
-      "N_REQ\020\365.\022\035\n\030UPDATE_DEVICE_TOKEN_RESP\020\366.\022" +
-      "\031\n\024GET_USER_DEVICES_REQ\020\367.\022\032\n\025GET_USER_D" +
-      "EVICES_RESP\020\370.\022\032\n\025PUSH_NOTIFICATION_REQ\020" +
-      "\371.\022\033\n\026PUSH_NOTIFICATION_RESP\020\372.\022\025\n\020CREAT" +
-      "E_PARTY_REQ\020\3316\022\026\n\021CREATE_PARTY_RESP\020\3326\022\026" +
-      "\n\021DISBAND_PARTY_REQ\020\3336\022\027\n\022DISBAND_PARTY_" +
-      "RESP\020\3346\022\030\n\023INVITE_TO_PARTY_REQ\020\3356\022\031\n\024INV" +
-      "ITE_TO_PARTY_RESP\020\3366\022\022\n\rINVITE_NOTIFY\020\3376" +
-      "\022\026\n\021ACCEPT_INVITE_REQ\020\3406\022\027\n\022ACCEPT_INVIT" +
-      "E_RESP\020\3416\022\027\n\022DECLINE_INVITE_REQ\020\3426\022\030\n\023DE" +
-      "CLINE_INVITE_RESP\020\3436\022\031\n\024INVITE_RESULT_NO" +
-      "TIFY\020\3446\022\024\n\017LEAVE_PARTY_REQ\020\3456\022\025\n\020LEAVE_P" +
-      "ARTY_RESP\020\3466\022\032\n\025KICK_PARTY_MEMBER_REQ\020\3476" +
-      "\022\033\n\026KICK_PARTY_MEMBER_RESP\020\3506\022\030\n\023TRANSFE" +
-      "R_LEADER_REQ\020\3516\022\031\n\024TRANSFER_LEADER_RESP\020" +
-      "\3526\022\022\n\rSET_READY_REQ\020\3536\022\023\n\016SET_READY_RESP" +
-      "\020\3546\022\030\n\023PARTY_JOINED_NOTIFY\020\3556\022\026\n\021PARTY_L" +
-      "EFT_NOTIFY\020\3566\022\030\n\023PARTY_KICKED_NOTIFY\020\3576\022" +
-      "\037\n\032PARTY_STATE_CHANGED_NOTIFY\020\3606\022\033\n\026PART" +
-      "Y_DISBANDED_NOTIFY\020\3616\022\025\n\020GET_MY_PARTY_RE" +
-      "Q\020\3626\022\026\n\021GET_MY_PARTY_RESP\020\3636*k\n\016PeerCapa" +
-      "bility\022\027\n\023RELAY_READ_RECEIPTS\020\000\022\020\n\014RELAY" +
-      "_TYPING\020\001\022\022\n\016RELAY_PRESENCE\020\002\022\032\n\026RELAY_O" +
-      "FFLINE_MESSAGES\020\003B\'Z%github.com/cui/chir" +
-      "p/proto/go/gatewayb\006proto3"
+      "ID\022\020\n\010sequence\030\002 \001(\003\022\014\n\004body\030\003 \001(\014\022\022\n\nre" +
+      "quest_id\030\004 \001(\003\"\"\n\rHeartbeatPing\022\021\n\ttimes" +
+      "tamp\030\001 \001(\003\"7\n\rHeartbeatPong\022\021\n\ttimestamp" +
+      "\030\001 \001(\003\022\023\n\013server_time\030\002 \001(\003\"\243\001\n\017PeerRegi" +
+      "sterReq\022\022\n\nservice_id\030\001 \001(\t\022\026\n\016service_s" +
+      "ecret\030\002 \001(\t\022\030\n\020protocol_version\030\003 \001(\005\022\017\n" +
+      "\007game_id\030\004 \001(\t\0229\n\022supported_features\030\005 \003" +
+      "(\0162\035.chirp.gateway.PeerCapability\"\307\001\n\020Pe" +
+      "erRegisterResp\022%\n\004code\030\001 \001(\0162\027.chirp.com" +
+      "mon.ErrorCode\022\030\n\020protocol_version\030\002 \001(\005\022" +
+      "\023\n\013min_version\030\003 \001(\005\022\"\n\032heartbeat_interv" +
+      "al_seconds\030\004 \001(\005\0229\n\022supported_features\030\005" +
+      " \003(\0162\035.chirp.gateway.PeerCapability\"e\n\024C" +
+      "hannelMessageNotify\022\017\n\007game_id\030\001 \001(\t\022\022\n\n" +
+      "channel_id\030\002 \001(\t\022(\n\007message\030\003 \001(\0132\027.chir" +
+      "p.chat.ChatMessage\"h\n\027PeerInjectMessageN" +
+      "otify\022\022\n\nchannel_id\030\001 \001(\t\022\021\n\tsender_id\030\002" +
+      " \001(\t\022\017\n\007content\030\003 \001(\014\022\025\n\rclient_msg_id\030\004" +
+      " \001(\t*\341+\n\005MsgID\022\013\n\007UNKNOWN\020\000\022\023\n\016HEARTBEAT" +
+      "_PING\020\351\007\022\023\n\016HEARTBEAT_PONG\020\352\007\022\016\n\tLOGIN_R" +
+      "EQ\020\353\007\022\017\n\nLOGIN_RESP\020\354\007\022\020\n\013KICK_NOTIFY\020\355\007" +
+      "\022\017\n\nLOGOUT_REQ\020\356\007\022\020\n\013LOGOUT_RESP\020\357\007\022\021\n\014R" +
+      "EGISTER_REQ\020\360\007\022\022\n\rREGISTER_RESP\020\361\007\022\027\n\022PA" +
+      "SSWORD_LOGIN_REQ\020\362\007\022\030\n\023PASSWORD_LOGIN_RE" +
+      "SP\020\363\007\022\026\n\021REFRESH_TOKEN_REQ\020\364\007\022\027\n\022REFRESH" +
+      "_TOKEN_RESP\020\365\007\022\025\n\020GET_SESSIONS_REQ\020\366\007\022\026\n" +
+      "\021GET_SESSIONS_RESP\020\367\007\022\027\n\022REVOKE_SESSION_" +
+      "REQ\020\370\007\022\030\n\023REVOKE_SESSION_RESP\020\371\007\022\030\n\023CHAN" +
+      "GE_PASSWORD_REQ\020\372\007\022\031\n\024CHANGE_PASSWORD_RE" +
+      "SP\020\373\007\022\034\n\027DEVICES_PRESENCE_NOTIFY\020\374\007\022\025\n\020S" +
+      "END_MESSAGE_REQ\020\321\017\022\026\n\021SEND_MESSAGE_RESP\020" +
+      "\322\017\022\024\n\017GET_HISTORY_REQ\020\323\017\022\025\n\020GET_HISTORY_" +
+      "RESP\020\324\017\022\030\n\023CHAT_MESSAGE_NOTIFY\020\325\017\022\025\n\020CRE" +
+      "ATE_GROUP_REQ\020\265\020\022\026\n\021CREATE_GROUP_RESP\020\266\020" +
+      "\022\023\n\016JOIN_GROUP_REQ\020\267\020\022\024\n\017JOIN_GROUP_RESP" +
+      "\020\270\020\022\024\n\017LEAVE_GROUP_REQ\020\271\020\022\025\n\020LEAVE_GROUP" +
+      "_RESP\020\272\020\022\024\n\017KICK_MEMBER_REQ\020\273\020\022\025\n\020KICK_M" +
+      "EMBER_RESP\020\274\020\022\027\n\022GET_GROUP_INFO_REQ\020\275\020\022\030" +
+      "\n\023GET_GROUP_INFO_RESP\020\276\020\022\032\n\025GET_GROUP_ME" +
+      "MBERS_REQ\020\277\020\022\033\n\026GET_GROUP_MEMBERS_RESP\020\300" +
+      "\020\022\030\n\023GET_USER_GROUPS_REQ\020\301\020\022\031\n\024GET_USER_" +
+      "GROUPS_RESP\020\302\020\022\030\n\023INVITE_TO_GROUP_REQ\020\303\020" +
+      "\022\031\n\024INVITE_TO_GROUP_RESP\020\304\020\022\031\n\024GROUP_CRE" +
+      "ATED_NOTIFY\020\305\020\022\037\n\032GROUP_MEMBER_JOINED_NO" +
+      "TIFY\020\306\020\022\035\n\030GROUP_MEMBER_LEFT_NOTIFY\020\307\020\022\037" +
+      "\n\032GROUP_MEMBER_KICKED_NOTIFY\020\310\020\022\031\n\024GROUP" +
+      "_UPDATED_NOTIFY\020\311\020\022\022\n\rMARK_READ_REQ\020\231\021\022\023" +
+      "\n\016MARK_READ_RESP\020\232\021\022\032\n\025GET_READ_RECEIPTS" +
+      "_REQ\020\233\021\022\033\n\026GET_READ_RECEIPTS_RESP\020\234\021\022\031\n\024" +
+      "GET_UNREAD_COUNT_REQ\020\235\021\022\032\n\025GET_UNREAD_CO" +
+      "UNT_RESP\020\236\021\022\030\n\023MESSAGE_READ_NOTIFY\020\237\021\022\034\n" +
+      "\027TYPING_INDICATOR_NOTIFY\020\240\021\022\020\n\013MESSAGE_A" +
+      "CK\020\241\021\022\021\n\014MESSAGE_NACK\020\242\021\022\026\n\021TRACK_MESSAG" +
+      "E_REQ\020\243\021\022\027\n\022TRACK_MESSAGE_RESP\020\244\021\022\027\n\022GET" +
+      "_HISTORY_V2_REQ\020\245\021\022\030\n\023GET_HISTORY_V2_RES" +
+      "P\020\246\021\022\025\n\020ADD_REACTION_REQ\020\247\021\022\026\n\021ADD_REACT" +
+      "ION_RESP\020\250\021\022\030\n\023REMOVE_REACTION_REQ\020\251\021\022\031\n" +
+      "\024REMOVE_REACTION_RESP\020\252\021\022\026\n\021GET_REACTION" +
+      "S_REQ\020\253\021\022\027\n\022GET_REACTIONS_RESP\020\254\021\022\032\n\025REA" +
+      "CTION_ADDED_NOTIFY\020\255\021\022\034\n\027REACTION_REMOVE" +
+      "D_NOTIFY\020\256\021\022\031\n\024GET_TYPING_USERS_REQ\020\257\021\022\032" +
+      "\n\025GET_TYPING_USERS_RESP\020\260\021\022\025\n\020EDIT_MESSA" +
+      "GE_REQ\020\261\021\022\026\n\021EDIT_MESSAGE_RESP\020\262\021\022\027\n\022DEL" +
+      "ETE_MESSAGE_REQ\020\263\021\022\030\n\023DELETE_MESSAGE_RES" +
+      "P\020\264\021\022\024\n\017BULK_DELETE_REQ\020\265\021\022\025\n\020BULK_DELET" +
+      "E_RESP\020\266\021\022\032\n\025MESSAGE_EDITED_NOTIFY\020\267\021\022\033\n" +
+      "\026MESSAGE_DELETED_NOTIFY\020\270\021\022 \n\033GET_MENTIO" +
+      "N_SUGGESTIONS_REQ\020\271\021\022!\n\034GET_MENTION_SUGG" +
+      "ESTIONS_RESP\020\272\021\022\031\n\024SET_CHANNEL_MUTE_REQ\020" +
+      "\273\021\022\032\n\025SET_CHANNEL_MUTE_RESP\020\274\021\022\032\n\025GET_CH" +
+      "ANNEL_MUTES_REQ\020\275\021\022\033\n\026GET_CHANNEL_MUTES_" +
+      "RESP\020\276\021\022\035\n\030BLOCK_MESSAGE_SENDER_REQ\020\277\021\022\036" +
+      "\n\031BLOCK_MESSAGE_SENDER_RESP\020\300\021\022\037\n\032UNBLOC" +
+      "K_MESSAGE_SENDER_REQ\020\301\021\022 \n\033UNBLOCK_MESSA" +
+      "GE_SENDER_RESP\020\302\021\022\034\n\027GET_BLOCKED_SENDERS" +
+      "_REQ\020\303\021\022\035\n\030GET_BLOCKED_SENDERS_RESP\020\304\021\022\032" +
+      "\n\025WORD_FILTER_FETCH_REQ\020\305\021\022\033\n\026WORD_FILTE" +
+      "R_FETCH_RESP\020\306\021\022\036\n\031WORD_FILTER_UPDATE_NO" +
+      "TIFY\020\307\021\022\023\n\016ADD_FRIEND_REQ\020\271\027\022\024\n\017ADD_FRIE" +
+      "ND_RESP\020\272\027\022\036\n\031FRIEND_REQUEST_ACTION_REQ\020" +
+      "\273\027\022\037\n\032FRIEND_REQUEST_ACTION_RESP\020\274\027\022\026\n\021R" +
+      "EMOVE_FRIEND_REQ\020\275\027\022\027\n\022REMOVE_FRIEND_RES" +
+      "P\020\276\027\022\030\n\023GET_FRIEND_LIST_REQ\020\277\027\022\031\n\024GET_FR" +
+      "IEND_LIST_RESP\020\300\027\022\035\n\030GET_PENDING_REQUEST" +
+      "S_REQ\020\301\027\022\036\n\031GET_PENDING_REQUESTS_RESP\020\302\027" +
+      "\022\023\n\016BLOCK_USER_REQ\020\303\027\022\024\n\017BLOCK_USER_RESP" +
+      "\020\304\027\022\025\n\020UNBLOCK_USER_REQ\020\305\027\022\026\n\021UNBLOCK_US" +
+      "ER_RESP\020\306\027\022\031\n\024GET_BLOCKED_LIST_REQ\020\307\027\022\032\n" +
+      "\025GET_BLOCKED_LIST_RESP\020\310\027\022\025\n\020SET_PRESENC" +
+      "E_REQ\020\311\027\022\026\n\021SET_PRESENCE_RESP\020\312\027\022\025\n\020GET_" +
+      "PRESENCE_REQ\020\313\027\022\026\n\021GET_PRESENCE_RESP\020\314\027\022" +
+      "\024\n\017PRESENCE_NOTIFY\020\315\027\022\032\n\025FRIEND_REQUEST_" +
+      "NOTIFY\020\316\027\022\033\n\026FRIEND_ACCEPTED_NOTIFY\020\317\027\022\032" +
+      "\n\025FRIEND_REMOVED_NOTIFY\020\320\027\022\024\n\017CREATE_ROO" +
+      "M_REQ\020\241\037\022\025\n\020CREATE_ROOM_RESP\020\242\037\022\022\n\rJOIN_" +
+      "ROOM_REQ\020\243\037\022\023\n\016JOIN_ROOM_RESP\020\244\037\022\023\n\016LEAV" +
+      "E_ROOM_REQ\020\245\037\022\024\n\017LEAVE_ROOM_RESP\020\246\037\022\026\n\021I" +
+      "CE_CANDIDATE_MSG\020\247\037\022\022\n\rSDP_OFFER_MSG\020\250\037\022" +
+      "\023\n\016SDP_ANSWER_MSG\020\251\037\022\026\n\021GET_ROOM_INFO_RE" +
+      "Q\020\252\037\022\027\n\022GET_ROOM_INFO_RESP\020\253\037\022\026\n\021GET_USE" +
+      "R_ROOM_REQ\020\254\037\022\027\n\022GET_USER_ROOM_RESP\020\255\037\022\021" +
+      "\n\014SET_MUTE_REQ\020\256\037\022\022\n\rSET_MUTE_RESP\020\257\037\022\023\n" +
+      "\016SET_DEAFEN_REQ\020\260\037\022\024\n\017SET_DEAFEN_RESP\020\261\037" +
+      "\022\036\n\031PARTICIPANT_JOINED_NOTIFY\020\262\037\022\034\n\027PART" +
+      "ICIPANT_LEFT_NOTIFY\020\263\037\022%\n PARTICIPANT_ST" +
+      "ATE_CHANGED_NOTIFY\020\264\037\022\024\n\017SPEAKING_NOTIFY" +
+      "\020\265\037\022\024\n\017SERVER_AUTH_REQ\020\211\'\022\025\n\020SERVER_AUTH" +
+      "_RESP\020\212\'\022\032\n\025SERVER_HEARTBEAT_PING\020\213\'\022\032\n\025" +
+      "SERVER_HEARTBEAT_PONG\020\214\'\022\027\n\022INJECT_MESSA" +
+      "GE_REQ\020\215\'\022\030\n\023INJECT_MESSAGE_RESP\020\216\'\022\032\n\025I" +
+      "NJECT_MESSAGE_NOTIFY\020\217\'\022\026\n\021EVENT_PUBLISH" +
+      "_REQ\020\220\'\022\027\n\022EVENT_PUBLISH_RESP\020\221\'\022\031\n\024EVEN" +
+      "T_DELIVER_NOTIFY\020\222\'\022\022\n\rEVENT_ACK_REQ\020\223\'\022" +
+      "\023\n\016EVENT_ACK_RESP\020\224\'\022\035\n\030BIND_PLAYER_IDEN" +
+      "TITY_REQ\020\225\'\022\036\n\031BIND_PLAYER_IDENTITY_RESP" +
+      "\020\226\'\022\037\n\032UNBIND_PLAYER_IDENTITY_REQ\020\227\'\022 \n\033" +
+      "UNBIND_PLAYER_IDENTITY_RESP\020\230\'\022\036\n\031GET_PL" +
+      "AYER_IDENTITIES_REQ\020\231\'\022\037\n\032GET_PLAYER_IDE" +
+      "NTITIES_RESP\020\232\'\022\032\n\025RESOLVE_GAME_USER_REQ" +
+      "\020\233\'\022\033\n\026RESOLVE_GAME_USER_RESP\020\234\'\022!\n\034SUBS" +
+      "CRIBE_PLAYER_CHANNEL_REQ\020\235\'\022\"\n\035SUBSCRIBE" +
+      "_PLAYER_CHANNEL_RESP\020\236\'\022#\n\036UNSUBSCRIBE_P" +
+      "LAYER_CHANNEL_REQ\020\237\'\022$\n\037UNSUBSCRIBE_PLAY" +
+      "ER_CHANNEL_RESP\020\240\'\022!\n\034GET_PLAYER_SUBSCRI" +
+      "PTIONS_REQ\020\241\'\022\"\n\035GET_PLAYER_SUBSCRIPTION" +
+      "S_RESP\020\242\'\022\033\n\026MARK_CHANNELS_READ_REQ\020\243\'\022\034" +
+      "\n\027MARK_CHANNELS_READ_RESP\020\244\'\022\033\n\026GET_UNRE" +
+      "AD_SUMMARY_REQ\020\245\'\022\034\n\027GET_UNREAD_SUMMARY_" +
+      "RESP\020\246\'\022\"\n\035SET_GAME_PRESENCE_ENABLED_REQ" +
+      "\020\247\'\022#\n\036SET_GAME_PRESENCE_ENABLED_RESP\020\250\'" +
+      "\022\032\n\025GET_GAME_PRESENCE_REQ\020\251\'\022\033\n\026GET_GAME" +
+      "_PRESENCE_RESP\020\252\'\022\026\n\021PEER_REGISTER_REQ\020\272" +
+      "\'\022\027\n\022PEER_REGISTER_RESP\020\273\'\022\033\n\026CHANNEL_ME" +
+      "SSAGE_NOTIFY\020\274\'\022\037\n\032PEER_INJECT_MESSAGE_N" +
+      "OTIFY\020\275\'\022\030\n\023REGISTER_DEVICE_REQ\020\361.\022\031\n\024RE" +
+      "GISTER_DEVICE_RESP\020\362.\022\032\n\025UNREGISTER_DEVI" +
+      "CE_REQ\020\363.\022\033\n\026UNREGISTER_DEVICE_RESP\020\364.\022\034" +
+      "\n\027UPDATE_DEVICE_TOKEN_REQ\020\365.\022\035\n\030UPDATE_D" +
+      "EVICE_TOKEN_RESP\020\366.\022\031\n\024GET_USER_DEVICES_" +
+      "REQ\020\367.\022\032\n\025GET_USER_DEVICES_RESP\020\370.\022\032\n\025PU" +
+      "SH_NOTIFICATION_REQ\020\371.\022\033\n\026PUSH_NOTIFICAT" +
+      "ION_RESP\020\372.\022\025\n\020CREATE_PARTY_REQ\020\3316\022\026\n\021CR" +
+      "EATE_PARTY_RESP\020\3326\022\026\n\021DISBAND_PARTY_REQ\020" +
+      "\3336\022\027\n\022DISBAND_PARTY_RESP\020\3346\022\030\n\023INVITE_TO" +
+      "_PARTY_REQ\020\3356\022\031\n\024INVITE_TO_PARTY_RESP\020\3366" +
+      "\022\022\n\rINVITE_NOTIFY\020\3376\022\026\n\021ACCEPT_INVITE_RE" +
+      "Q\020\3406\022\027\n\022ACCEPT_INVITE_RESP\020\3416\022\027\n\022DECLINE" +
+      "_INVITE_REQ\020\3426\022\030\n\023DECLINE_INVITE_RESP\020\3436" +
+      "\022\031\n\024INVITE_RESULT_NOTIFY\020\3446\022\024\n\017LEAVE_PAR" +
+      "TY_REQ\020\3456\022\025\n\020LEAVE_PARTY_RESP\020\3466\022\032\n\025KICK" +
+      "_PARTY_MEMBER_REQ\020\3476\022\033\n\026KICK_PARTY_MEMBE" +
+      "R_RESP\020\3506\022\030\n\023TRANSFER_LEADER_REQ\020\3516\022\031\n\024T" +
+      "RANSFER_LEADER_RESP\020\3526\022\022\n\rSET_READY_REQ\020" +
+      "\3536\022\023\n\016SET_READY_RESP\020\3546\022\030\n\023PARTY_JOINED_" +
+      "NOTIFY\020\3556\022\026\n\021PARTY_LEFT_NOTIFY\020\3566\022\030\n\023PAR" +
+      "TY_KICKED_NOTIFY\020\3576\022\037\n\032PARTY_STATE_CHANG" +
+      "ED_NOTIFY\020\3606\022\033\n\026PARTY_DISBANDED_NOTIFY\020\361" +
+      "6\022\025\n\020GET_MY_PARTY_REQ\020\3626\022\026\n\021GET_MY_PARTY" +
+      "_RESP\020\3636*k\n\016PeerCapability\022\027\n\023RELAY_READ" +
+      "_RECEIPTS\020\000\022\020\n\014RELAY_TYPING\020\001\022\022\n\016RELAY_P" +
+      "RESENCE\020\002\022\032\n\026RELAY_OFFLINE_MESSAGES\020\003B\'Z" +
+      "%github.com/cui/chirp/proto/go/gatewayb\006" +
+      "proto3"
     };
     descriptor = com.google.protobuf.Descriptors.FileDescriptor
       .internalBuildGeneratedFileFrom(descriptorData,
@@ -8774,7 +8883,7 @@ public final class Gateway extends com.google.protobuf.GeneratedFile {
     internal_static_chirp_gateway_Packet_fieldAccessorTable = new
       com.google.protobuf.GeneratedMessage.FieldAccessorTable(
         internal_static_chirp_gateway_Packet_descriptor,
-        new java.lang.String[] { "MsgId", "Sequence", "Body", });
+        new java.lang.String[] { "MsgId", "Sequence", "Body", "RequestId", });
     internal_static_chirp_gateway_HeartbeatPing_descriptor =
       getDescriptor().getMessageType(1);
     internal_static_chirp_gateway_HeartbeatPing_fieldAccessorTable = new

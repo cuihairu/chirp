@@ -1292,6 +1292,7 @@ class Packet final : public ::google::protobuf::Message
   enum : int {
     kBodyFieldNumber = 3,
     kSequenceFieldNumber = 2,
+    kRequestIdFieldNumber = 4,
     kMsgIdFieldNumber = 1,
   };
   // bytes body = 3;
@@ -1319,6 +1320,16 @@ class Packet final : public ::google::protobuf::Message
   void _internal_set_sequence(::int64_t value);
 
   public:
+  // int64 request_id = 4;
+  void clear_request_id() ;
+  ::int64_t request_id() const;
+  void set_request_id(::int64_t value);
+
+  private:
+  ::int64_t _internal_request_id() const;
+  void _internal_set_request_id(::int64_t value);
+
+  public:
   // .chirp.gateway.MsgID msg_id = 1;
   void clear_msg_id() ;
   ::chirp::gateway::MsgID msg_id() const;
@@ -1333,7 +1344,7 @@ class Packet final : public ::google::protobuf::Message
  private:
   class _Internal;
   friend class ::google::protobuf::internal::TcParser;
-  static const ::google::protobuf::internal::TcParseTable<2, 3,
+  static const ::google::protobuf::internal::TcParseTable<2, 4,
                                    0, 0,
                                    2>
       _table_;
@@ -1357,6 +1368,7 @@ class Packet final : public ::google::protobuf::Message
     ::google::protobuf::internal::CachedSize _cached_size_;
     ::google::protobuf::internal::ArenaStringPtr body_;
     ::int64_t sequence_;
+    ::int64_t request_id_;
     int msg_id_;
     PROTOBUF_TSAN_DECLARE_MEMBER
   };
@@ -2008,7 +2020,7 @@ inline void Packet::clear_msg_id() {
   ::google::protobuf::internal::TSanWrite(&_impl_);
   _impl_.msg_id_ = 0;
   ClearHasBit(_impl_._has_bits_[0],
-                  0x00000004U);
+                  0x00000008U);
 }
 inline ::chirp::gateway::MsgID Packet::msg_id() const {
   // @@protoc_insertion_point(field_get:chirp.gateway.Packet.msg_id)
@@ -2016,7 +2028,7 @@ inline ::chirp::gateway::MsgID Packet::msg_id() const {
 }
 inline void Packet::set_msg_id(::chirp::gateway::MsgID value) {
   _internal_set_msg_id(value);
-  SetHasBit(_impl_._has_bits_[0], 0x00000004U);
+  SetHasBit(_impl_._has_bits_[0], 0x00000008U);
   // @@protoc_insertion_point(field_set:chirp.gateway.Packet.msg_id)
 }
 inline ::chirp::gateway::MsgID Packet::_internal_msg_id() const {
@@ -2116,6 +2128,31 @@ inline void Packet::set_allocated_body(::std::string* PROTOBUF_NULLABLE value) {
     _impl_.body_.Set("", GetArena());
   }
   // @@protoc_insertion_point(field_set_allocated:chirp.gateway.Packet.body)
+}
+
+// int64 request_id = 4;
+inline void Packet::clear_request_id() {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_.request_id_ = ::int64_t{0};
+  ClearHasBit(_impl_._has_bits_[0],
+                  0x00000004U);
+}
+inline ::int64_t Packet::request_id() const {
+  // @@protoc_insertion_point(field_get:chirp.gateway.Packet.request_id)
+  return _internal_request_id();
+}
+inline void Packet::set_request_id(::int64_t value) {
+  _internal_set_request_id(value);
+  SetHasBit(_impl_._has_bits_[0], 0x00000004U);
+  // @@protoc_insertion_point(field_set:chirp.gateway.Packet.request_id)
+}
+inline ::int64_t Packet::_internal_request_id() const {
+  ::google::protobuf::internal::TSanRead(&_impl_);
+  return _impl_.request_id_;
+}
+inline void Packet::_internal_set_request_id(::int64_t value) {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_.request_id_ = value;
 }
 
 // -------------------------------------------------------------------

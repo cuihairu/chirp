@@ -1469,6 +1469,13 @@ export interface Packet {
   msgId: MsgID;
   sequence: number;
   body: Uint8Array;
+  /**
+   * 分布式关联 id(Communication Core P1):跨平面/跨服务日志追踪用,与
+   * 连接内请求配对的 sequence 互相独立。0 = 调用方未提供,接收/转发侧按
+   * 「连接内生成」兜底(发送侧 SDK 与服务面出站未显式指定时自动填连接内
+   * 单调值);转发链路(网关 bridge、注入面)原样透传,不改写。
+   */
+  requestId: number;
 }
 
 export interface HeartbeatPing {
@@ -1539,7 +1546,7 @@ export interface PeerInjectMessageNotify {
 }
 
 function createBasePacket(): Packet {
-  return { msgId: 0, sequence: 0, body: new Uint8Array(0) };
+  return { msgId: 0, sequence: 0, body: new Uint8Array(0), requestId: 0 };
 }
 
 export const Packet = {
@@ -1552,6 +1559,9 @@ export const Packet = {
     }
     if (message.body.length !== 0) {
       writer.uint32(26).bytes(message.body);
+    }
+    if (message.requestId !== 0) {
+      writer.uint32(32).int64(message.requestId);
     }
     return writer;
   },
@@ -1584,6 +1594,13 @@ export const Packet = {
 
           message.body = reader.bytes();
           continue;
+        case 4:
+          if (tag !== 32) {
+            break;
+          }
+
+          message.requestId = longToNumber(reader.int64() as Long);
+          continue;
       }
       if ((tag & 7) === 4 || tag === 0) {
         break;
@@ -1598,6 +1615,7 @@ export const Packet = {
       msgId: isSet(object.msgId) ? msgIDFromJSON(object.msgId) : 0,
       sequence: isSet(object.sequence) ? globalThis.Number(object.sequence) : 0,
       body: isSet(object.body) ? bytesFromBase64(object.body) : new Uint8Array(0),
+      requestId: isSet(object.requestId) ? globalThis.Number(object.requestId) : 0,
     };
   },
 
@@ -1612,6 +1630,9 @@ export const Packet = {
     if (message.body.length !== 0) {
       obj.body = base64FromBytes(message.body);
     }
+    if (message.requestId !== 0) {
+      obj.requestId = Math.round(message.requestId);
+    }
     return obj;
   },
 
@@ -1623,6 +1644,7 @@ export const Packet = {
     message.msgId = object.msgId ?? 0;
     message.sequence = object.sequence ?? 0;
     message.body = object.body ?? new Uint8Array(0);
+    message.requestId = object.requestId ?? 0;
     return message;
   },
 };

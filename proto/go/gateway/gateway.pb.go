@@ -820,10 +820,15 @@ func (PeerCapability) EnumDescriptor() ([]byte, []int) {
 // Usually we use Length-Prefixed + Raw Bytes for Body,
 // but for simplicity in some SDKs, a full envelope is used.
 type Packet struct {
-	state         protoimpl.MessageState `protogen:"open.v1"`
-	MsgId         MsgID                  `protobuf:"varint,1,opt,name=msg_id,json=msgId,proto3,enum=chirp.gateway.MsgID" json:"msg_id,omitempty"`
-	Sequence      int64                  `protobuf:"varint,2,opt,name=sequence,proto3" json:"sequence,omitempty"`
-	Body          []byte                 `protobuf:"bytes,3,opt,name=body,proto3" json:"body,omitempty"`
+	state    protoimpl.MessageState `protogen:"open.v1"`
+	MsgId    MsgID                  `protobuf:"varint,1,opt,name=msg_id,json=msgId,proto3,enum=chirp.gateway.MsgID" json:"msg_id,omitempty"`
+	Sequence int64                  `protobuf:"varint,2,opt,name=sequence,proto3" json:"sequence,omitempty"`
+	Body     []byte                 `protobuf:"bytes,3,opt,name=body,proto3" json:"body,omitempty"`
+	// 分布式关联 id(Communication Core P1):跨平面/跨服务日志追踪用,与
+	// 连接内请求配对的 sequence 互相独立。0 = 调用方未提供,接收/转发侧按
+	// 「连接内生成」兜底(发送侧 SDK 与服务面出站未显式指定时自动填连接内
+	// 单调值);转发链路(网关 bridge、注入面)原样透传,不改写。
+	RequestId     int64 `protobuf:"varint,4,opt,name=request_id,json=requestId,proto3" json:"request_id,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -877,6 +882,13 @@ func (x *Packet) GetBody() []byte {
 		return x.Body
 	}
 	return nil
+}
+
+func (x *Packet) GetRequestId() int64 {
+	if x != nil {
+		return x.RequestId
+	}
+	return 0
 }
 
 type HeartbeatPing struct {
@@ -1274,11 +1286,13 @@ var File_proto_gateway_proto protoreflect.FileDescriptor
 
 const file_proto_gateway_proto_rawDesc = "" +
 	"\n" +
-	"\x13proto/gateway.proto\x12\rchirp.gateway\x1a\x12proto/common.proto\x1a\x10proto/chat.proto\"e\n" +
+	"\x13proto/gateway.proto\x12\rchirp.gateway\x1a\x12proto/common.proto\x1a\x10proto/chat.proto\"\x84\x01\n" +
 	"\x06Packet\x12+\n" +
 	"\x06msg_id\x18\x01 \x01(\x0e2\x14.chirp.gateway.MsgIDR\x05msgId\x12\x1a\n" +
 	"\bsequence\x18\x02 \x01(\x03R\bsequence\x12\x12\n" +
-	"\x04body\x18\x03 \x01(\fR\x04body\"-\n" +
+	"\x04body\x18\x03 \x01(\fR\x04body\x12\x1d\n" +
+	"\n" +
+	"request_id\x18\x04 \x01(\x03R\trequestId\"-\n" +
 	"\rHeartbeatPing\x12\x1c\n" +
 	"\ttimestamp\x18\x01 \x01(\x03R\ttimestamp\"N\n" +
 	"\rHeartbeatPong\x12\x1c\n" +

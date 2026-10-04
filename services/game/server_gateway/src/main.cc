@@ -71,13 +71,26 @@ class SessionPeerSender : public chirp::game_server_gateway::PeerSender {
     chirp::gateway::Packet pkt;
     pkt.set_msg_id(msg_id);
     pkt.set_sequence(0);  // server-initiated frames carry no request sequence
+    // request_id:「连接内生成」兜底(Packet 缺省=0)——服务面出站包没有上
+    // 游请求可透传,按连接自增填单调值,供接收侧跨进程日志关联;业务侧
+    // 请求若自带 request_id,应在构造出站包时显式 set(见 HandleInject)。
+    const int64_t request_id = next_request_id_++;
+    pkt.set_request_id(request_id);
     pkt.set_body(body.SerializeAsString());
     auto framed = chirp::network::ProtobufFraming::Encode(pkt);
+    // 注入出站记 req,与 chat 侧「inject received ... req=" 日志互相
+    // 关联,跨进程追踪请求出自哪条服务连接。
+    if (msg_id == chirp::gateway::INJECT_MESSAGE_NOTIFY) {
+      chirp::common::Logger::Instance().Info(
+          "inject forwarded req=" + std::to_string(request_id) + " to chat");
+    }
     session->Send(std::string(reinterpret_cast<const char*>(framed.data()), framed.size()));
     return true;
   }
 
  private:
+  // 单连接内单调(仅主 io 线程回调链访问,无需原子)。
+  int64_t next_request_id_{1};
   std::weak_ptr<Session> session_;
 };
 

@@ -655,3 +655,36 @@ TEST(ChatBridgeTest, ChatPushAfterClientDestroyedSkipsSend) {
   EXPECT_EQ(client, nullptr);
   (void)raw;
 }
+
+TEST(ChatBridgeTest, ForwardToChatFillsMissingRequestIdMonotonicAndPassesExplicit) {
+  FakeChatServer chat(chirp::common::OK, chirp::common::OK);
+  asio::io_context io;
+  chirp::gateway::ChatBridge bridge(io, "127.0.0.1", chat.port(), "edge-1", "s3cret");
+  BridgeIoRunner runner(io);
+  auto client = std::make_shared<MockClientSession>();
+  asio::post(io, [&] { bridge.Attach(client, "tok", "dev"); });
+  ASSERT_TRUE(WaitFor([&] { return chat.Count(chirp::gateway::LOGIN_REQ) > 0; },
+                      std::chrono::seconds(5)));
+
+  // 未带 request_id 的出站包:桥按连接内单调值兜底(缺省=连接内生成);
+  // 显式 request_id 的原样透传(不改写)。三包依序进同一条内部连接。
+  asio::post(io, [&] {
+    bridge.ForwardToChat(client.get(),
+                         MakeRawPacket(chirp::gateway::SEND_MESSAGE_REQ, 1, "a"));
+    auto carried = MakeRawPacket(chirp::gateway::SEND_MESSAGE_REQ, 2, "b");
+    carried.set_request_id(7);
+    bridge.ForwardToChat(client.get(), carried);
+    bridge.ForwardToChat(client.get(),
+                         MakeRawPacket(chirp::gateway::SEND_MESSAGE_REQ, 3, "c"));
+  });
+  ASSERT_TRUE(WaitFor([&] { return chat.Count(chirp::gateway::SEND_MESSAGE_REQ) >= 3; },
+                      std::chrono::seconds(5)));
+  const auto got = chat.All(chirp::gateway::SEND_MESSAGE_REQ);
+  ASSERT_EQ(got.size(), 3u);
+  ASSERT_NE(got[0].request_id(), 0);          // 缺省→生成
+  EXPECT_EQ(got[1].request_id(), 7);          // 显式→透传
+  ASSERT_NE(got[2].request_id(), 0);
+  EXPECT_GT(got[2].request_id(), got[0].request_id());  // 连接内单调
+  EXPECT_EQ(got[0].sequence(), 1);
+  EXPECT_EQ(got[2].sequence(), 3);            // sequence 不受影响
+}

@@ -311,6 +311,11 @@ message Packet {
   MsgID msg_id = 1;
   int64 sequence = 2;
   bytes body = 3;
+  // 分布式关联 id(Communication Core P1):跨平面/跨服务日志追踪用,与
+  // 连接内请求配对的 sequence 互相独立。0 = 调用方未提供,接收/转发侧按
+  // 「连接内生成」兜底(发送侧 SDK 与服务面出站未显式指定时自动填连接内
+  // 单调值);转发链路(网关 bridge、注入面)原样透传,不改写。
+  int64 request_id = 4;
 }
 
 message HeartbeatPing {
