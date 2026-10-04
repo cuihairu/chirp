@@ -2,6 +2,7 @@
 #include <functional>
 #include <iostream>
 #include <memory>
+#include <optional>
 #include <string>
 #include <utility>
 
@@ -15,6 +16,9 @@
 #include "notification_handlers.h"
 #include "notification_service.h"
 #include "proto/gateway.pb.h"
+
+#include "common/metrics.h"
+#include "common/metrics_http_server.h"
 
 using namespace chirp;
 
@@ -38,6 +42,7 @@ void HandleNotificationPacket(app_notification::NotificationHandlers& handlers,
         "failed to parse Packet on the notification plane");
     return;
   }
+  CHIRP_COUNTER("chirp_app_notification_packets_total", 1);
   gateway::Packet resp;
   if (handlers.HandlePacket(pkt, &resp)) {
     SendPacket(session, std::move(resp));
@@ -56,6 +61,7 @@ int main(int argc, char* argv[]) {
   std::string host = "0.0.0.0";
   uint16_t port = 5006;
   uint16_t ws_port = 5016;  // 5007 is taken by the search service
+  uint16_t metrics_port = 0;  // 0 = no metrics listener (opt-in)
   std::string fcm_server_key;
   std::string apns_key_path;
   std::string apns_key_id;
@@ -76,6 +82,8 @@ int main(int argc, char* argv[]) {
       port = static_cast<uint16_t>(std::stoi(argv[++i]));
     } else if (arg == "--ws_port" && i + 1 < argc) {
       ws_port = static_cast<uint16_t>(std::stoi(argv[++i]));
+    } else if (arg == "--metrics_port" && i + 1 < argc) {
+      metrics_port = static_cast<uint16_t>(std::stoi(argv[++i]));
     } else if (arg == "--fcm-key" && i + 1 < argc) {
       fcm_server_key = argv[++i];
     } else if (arg == "--fcm-endpoint" && i + 1 < argc) {
@@ -183,6 +191,22 @@ int main(int argc, char* argv[]) {
   server.Start();
   ws_server.Start();
 
+  // Minimal metrics endpoint, opt-in via --metrics_port (0 = off). Declared
+  // after io so it is destroyed first; a failed bind logs and the service
+  // continues without metrics.
+  std::optional<common::MetricsHttpServer> metrics_server;
+  if (metrics_port > 0) {
+    metrics_server.emplace(io, metrics_port);
+    if (metrics_server->Start()) {
+      logger.Info("Metrics endpoint listening on TCP:" + std::to_string(metrics_port) +
+                  " (/metrics)");
+    } else {
+      logger.Warn("Metrics endpoint failed to bind TCP:" + std::to_string(metrics_port) +
+                  "; continuing without metrics");
+      metrics_server.reset();
+    }
+  }
+
   // Periodic device/cooldown cleanup on the io thread.
   asio::steady_timer cleanup_timer(io);
   std::function<void()> schedule_cleanup = [&]() {
@@ -203,6 +227,9 @@ int main(int argc, char* argv[]) {
     logger.Info("shutdown requested");
     server.Stop();
     ws_server.Stop();
+    if (metrics_server) {
+      metrics_server->Stop();
+    }
     io.stop();
   });
 
