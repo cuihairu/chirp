@@ -40,7 +40,7 @@ message Packet {
 `sequence` 与 `request_id` 语义分离(见 [Communication Core 设计笔记](../design-notes/communication_core.md) 4.3):
 
 - `sequence`:连接内单调序号,请求-响应配对的本地关联键。响应与通知以请求同值返回,客户端用它把 `RESP`/`NOTIFY` 对回请求。**0 = 服务端发起(踢人、通知),不要求配对**。
-- `request_id`:分布式关联 id,跨平面/跨服务日志追踪用,与配对无关。**0 = 调用方未提供**,网关 `ChatBridge` 对客户端出站的 2xxx 包与服务面出站包按「连接内生成」兜底(单调自增);显式给出的值沿转发链路原样透传、不改写。网关不重写客户端已带的 `request_id`,SDK/接入方可直接携带自己的关联键(如游戏服请求单号)。
+- `request_id`:分布式关联 id,跨平面/跨服务日志追踪用,与配对无关。**0 = 调用方未提供**——缺省生成沿全链补齐:网关 `ChatBridge` 对客户端出站的 2xxx 包与服务面出站包按「连接内生成」兜底(单调自增);chat 直连入口(裸协议客户端)按进程级单调兜底;peer 面(`ChatPeerHub`/`ChatPeerLink`)出站各自连接内单调生成(hub→spoke 与 spoke→hub 双向);SDK 发送侧(`sdks/core` `MakePacket`、`sdks/ts` 与 `apps/shared/protocol` `rawSend`)自动生成。显式给出的值沿转发链路原样透传、不改写,网关不重写客户端已带的 `request_id`,SDK/接入方可直接携带自己的关联键(如游戏服请求单号)。
 
 映射示例:
 
@@ -228,7 +228,7 @@ sequenceDiagram
     S-->>B: Packet(CHAT_MESSAGE_NOTIFY, ChatMessage)
 ```
 
-接收方离线时,Chat 把消息存进离线队列(内存兜底 200 条/用户,可选 Redis)并在 `SEND_MESSAGE_RESP` 回 `TARGET_OFFLINE`;接收方下次登录后补投。以 `--notification_host` 启动 chat 时,离线消息还会经 app_notification 触发一次设备推送(发完即忘;见上文 6xxx 一节)。
+接收方离线时,Chat 把消息存进离线队列(内存兜底 200 条/桶,可选 Redis)并在 `SEND_MESSAGE_RESP` 回 `TARGET_OFFLINE`;接收方下次登录后补投。以 `--notification_host` 启动 chat 时,离线消息还会经 app_notification 触发一次设备推送(发完即忘;见上文 6xxx 一节)。
 
 离线队列按设备拆桶(slot = 登录 `platform` 归一化,空设备归 `default` 共享桶,键形与拆分前的 user 级队列一致):发送时接收方无任何在线端,副本落 `default` 桶、任何端的登录先到先得;登录补投弹本设备桶 ∪ `default` 桶(本槽优先);ack 超时回队的副本落当初认领补投的那只设备桶,重投不被其他端的登录截走。纯服务端路由语义,协议与客户端无感。
 

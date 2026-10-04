@@ -16,7 +16,7 @@ peer 链路与客户端链路使用同一套二进制帧:
 TCP 流:[uint32_be payload_size][chirp.gateway.Packet protobuf bytes]
 ```
 
-`Packet{msg_id, sequence, body}`,`body` 按下表解析:
+`Packet{msg_id, sequence, request_id, body}`,`body` 按下表解析(peer 出站包缺省 `request_id` 由连接内单调生成器补齐,hub 与 spoke 各自;显式值透传不改写,见 [Communication Core 4.3](../design-notes/communication_core.md)):
 
 | msg_id | 值 | 方向 | body |
 | --- | --- | --- | --- |
