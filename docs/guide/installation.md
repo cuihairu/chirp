@@ -206,6 +206,11 @@ mysql -u root -p -e "GRANT ALL PRIVILEGES ON chirp.* TO 'chirp'@'localhost';"
 mysql -u chirp -pchirp123 chirp < scripts/init_db.sql
 ```
 
+> 存量库升级：`init_db.sql` 只在首次建表时生效；已有库补消息引用/撤回墓碑
+> 两列（`reply_to` / `is_recalled`，缺失时写入 `StoreMessage` 会失败）执行：
+> `mysql -u chirp -pchirp123 chirp < scripts/upgrade_db_reply_recall.sql`
+> （重复执行会报 duplicate column，忽略即可。）
+
 ### Redis 准备
 
 ```bash

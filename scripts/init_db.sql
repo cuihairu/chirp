@@ -34,6 +34,10 @@ CREATE TABLE IF NOT EXISTS sessions (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
 -- Messages table (for Chat service)
+-- 列与 mysql_message_store.cc 的 INSERT/SELECT 对齐：reply_to（消息引用，
+-- P1，空 = 非引用）与 is_recalled（撤回墓碑，P0，0/1）两列与代码同批推进时
+-- init_db.sql 漏跟，2026-10-04 对账补齐；存量库用 scripts/upgrade_db_reply_recall.sql
+-- 升级（本表只新建不重建）。
 CREATE TABLE IF NOT EXISTS messages (
   id BIGINT AUTO_INCREMENT PRIMARY KEY,
   message_id VARCHAR(255) NOT NULL UNIQUE,
@@ -45,6 +49,8 @@ CREATE TABLE IF NOT EXISTS messages (
   content TEXT,
   timestamp BIGINT NOT NULL,
   created_at BIGINT NOT NULL,
+  reply_to VARCHAR(255) NOT NULL DEFAULT '',
+  is_recalled TINYINT(1) NOT NULL DEFAULT 0,
   INDEX idx_channel (channel_id, channel_type, timestamp),
   INDEX idx_receiver (receiver_id, timestamp),
   INDEX idx_timestamp (timestamp),
