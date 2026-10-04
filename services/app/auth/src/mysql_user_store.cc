@@ -174,11 +174,17 @@ UserRegisterResult MySQLUserStore::Register(const UserRegisterRequest& req) {
     return result;
   }
 
+  // 空 email 存 NULL:users.email UNIQUE 列上 NULL 可多行,空串只有一行
+  // ——第二个空 email 注册用户会撞 Duplicate entry '' for key 'users.email'。
+  // (演示栈复现栈实抓;预检 EmailExists 已跳过空 email,这里是 INSERT 侧对齐)
+  std::string email_value =
+      req.email.empty() ? "NULL" : "'" + EscapeString(conn, req.email) + "'";
+
   std::string query = "INSERT INTO users (user_id, username, email, password_hash, "
                       "created_at, updated_at, is_active) VALUES ('" +
                       EscapeString(conn, user_id) + "', '" +
-                      EscapeString(conn, req.username) + "', '" +
-                      EscapeString(conn, req.email) + "', '" +
+                      EscapeString(conn, req.username) + "', " +
+                      email_value + ", '" +
                       EscapeString(conn, password_hash) + "', " +
                       std::to_string(now) + ", " +
                       std::to_string(now) + ", 1)";
