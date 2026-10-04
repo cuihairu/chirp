@@ -46,7 +46,7 @@ graph TD
 - 私聊和历史直接走 `chat`。
 - 不要假设 `gateway` 会转发任意业务包——还不能。
 - 不要假设 Gateway 登录成功就自动认证了一条独立的 Chat 连接——两回事。
-- 游戏面(game plane)和应用面(app plane)是两套独立系统:各自有自己的 chat(`game_chat` / `app_chat`,同一二进制、分开部署)和自己的边缘。游戏面完全自洽:游戏后端签发 token,`game_chat` 本地校验(`--token_secret`),不依赖外部 auth。应用面有自己的 auth(`app_auth`)。跨面通信是 chat 的内建能力:`game_chat` 用原生 peer 注册协议(带白名单与版本协商)注册进 `app_chat`——见 [architecture.md](./architecture.md)。
+- 游戏面(game plane)和应用面(app plane)是两套独立系统:各自有自己的 chat(`game_chat` / `app_chat`,同一二进制、分开部署)和自己的边缘。游戏面自洽:游戏后端签发 token,`game_chat` 本地校验(`--token_secret`),不依赖外部 auth。应用面有自己的 auth(`app_auth`)。跨面通信是 chat 的内建能力:`game_chat` 用原生 peer 注册协议(带白名单与版本协商)注册进 `app_chat`——见 [architecture.md](./architecture.md)。
 - Redis 和 MySQL 路径一律视为可选增强,除非部署明确启用。
 
 ## 协议
@@ -62,10 +62,13 @@ TCP 流和 WebSocket 二进制帧承载同一份应用载荷:
 ```protobuf
 message Packet {
   MsgID msg_id = 1;
-  int64 sequence = 2;
+  int64 sequence = 2;   // 连接内请求配对
   bytes body = 3;
+  int64 request_id = 4; // 分布式关联 id;0 = 未提供,收发两侧按连接内单调值兜底,转发链路原样透传
 }
 ```
+
+`sequence` 负责一问一答的配对;`request_id` 负责跨平面、跨服务的日志关联,两者互相独立(生成与透传规则见 [API 总览](./api/overview.md))。
 
 重要映射:
 
@@ -210,7 +213,7 @@ docker compose up --build
 
 ## 非核心区域
 
-这些区域代码在仓库里,但未经核对当前代码与测试之前,不要当成稳定核心能力来介绍:
+这些区域代码在仓库里,但在核对当前代码与测试之前,不要当成稳定核心能力来介绍:
 
 - `services/social`(社交)
 - `services/voice`(语音)

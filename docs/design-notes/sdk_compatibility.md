@@ -220,7 +220,7 @@ store 降级四条向量，原生包此后独占承载）。
 | 事件监听 | `ChatEventListener`（虚基类） | `IChatEventListener`（interface） | `ChatEventListener`（interface） | signal | `ChatEventListener`（abstract class） |
 | 消息渲染 | `MessageRenderer`（虚基类） | `IMessageRenderer`（interface） | `MessageRenderer`（interface） | signal | `MessageRenderer`（abstract class） |
 
-接口语义完全一致，只是按语言习惯调整命名和调用方式。详见 `sdks/core/include/chirp/` 下的 C++ 头文件定义。
+接口语义一致，只是按语言习惯调整命名和调用方式。详见 `sdks/core/include/chirp/` 下的 C++ 头文件定义。
 
 ## 实现优先级
 

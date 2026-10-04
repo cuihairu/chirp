@@ -4,140 +4,67 @@ title: 部署指南
 
 # 部署指南
 
-> 状态说明:本页是部署指南草稿。当前受支持的路径是 `gateway + auth + chat`;social、voice、notification、search 服务仍是实验性的。命令和端点(endpoint)假设请对照 [总体架构](../architecture.md) 与 [能力矩阵](../CAPABILITY_MATRIX.md) 核实。
+> 状态说明:成熟主线是 `game_sdk_gateway + auth + game_chat`,其余服务为 Experimental。本页只写仓库里实际存在的东西:服务配置以命令行参数为主(完整样例见 `docker-compose.yml`;chat 存储层另有 `CHIRP_*` 环境变量读取点,见 `services/shared/chat/src/message_store_config.cc`),Kubernetes 清单在 `deploy/k8s/`——那是早期模板,env 配置名与当前代码对不上,本仓 CI 也不验证它,不要直接当生产基线;没有 Grafana 仪表盘。各服务能力边界以[能力矩阵](../CAPABILITY_MATRIX.md)为准。
 
-本指南覆盖把 Chirp 部署到生产环境。
+## Docker Compose 部署
 
-## 部署方式
-
-### 1. Docker 部署(推荐)
-
-用 Docker Compose 做多服务部署:
+`docker-compose.yml` 起基础设施(Redis、MySQL)加全部服务;`docker-compose.cluster.yml` 是单机集群形态,额外带 haproxy 和 adminer:
 
 ```bash
-# Build and start all services
-docker-compose up -d
-
-# View logs
-docker-compose logs -f
-
-# Stop services
-docker-compose down
+docker compose up --build -d
+docker compose logs -f
+docker compose down
 ```
 
-### 2. Kubernetes 部署
+第一次部署时,先关注 redis、auth、gateway、chat 四个服务,见 [CORE.md](../CORE.md)。
 
-面向大规模部署:
+`docker-compose.cluster.yml`(单机集群形态,带 haproxy)、`deploy/haproxy.cfg`、`deploy/deploy-cluster.sh`、`deploy/k8s/*.yaml` 和 `scripts/build-cluster.sh` 都在树里;其中 k8s 清单是早期模板(见顶部状态说明),haproxy 配置与集群 compose 脚本与当前服务名/端口的对应关系用前先核对一遍。
+
+## 手动部署
+
+先构建:
 
 ```bash
-# Apply Kubernetes manifests
-kubectl apply -f k8s/
-
-# Check deployment status
-kubectl get pods -l app=chirp
-
-# Scale services
-kubectl scale deployment chirp-gateway --replicas=3
+./gen_proto.sh
+cmake --preset dev
+cmake --build --preset dev
 ```
 
-### 3. 手动部署
-
-逐个部署服务:
+二进制按源码路径落在构建目录里,如 `build/services/shared/chat/chirp_chat`。每个服务的配置都是命令行参数,下面两条取自 `docker-compose.yml` 的原样参数:
 
 ```bash
-# Start each service
-./services/gateway/chirp_gateway &
-./services/chat/chirp_chat &
-./services/social/chirp_social &
-./services/voice/chirp_voice &
-./services/auth/chirp_auth &
-./services/notification/chirp_notification &
+# App 平面认证
+build/services/app/auth/chirp_app_auth \
+  --port 6000 --jwt_secret <共享密钥> --allow_scaffold_login 1
+
+# 聊天服务(Redis + MySQL + 服务器平面全增强路径)
+build/services/shared/chat/chirp_chat --port 7000 --ws_port 7001 \
+  --redis_host redis --redis_port 6379 \
+  --mysql_host mysql --mysql_port 3306 --mysql_database chirp \
+  --mysql_user chirp --mysql_password <密码> \
+  --server_gateway_host game_server_gateway --server_gateway_secret <secret> \
+  --gateway_service_secret <secret> --npc_service_id npc_dialog
 ```
+
+其余服务(`chirp_game_sdk_gateway`、`chirp_game_server_gateway`、`chirp_app_sdk_gateway`、`chirp_app_notification` 等)同法启动,参数与端口见各服务 `main.cc` 顶部的参数解析和 `docker-compose.yml`。
+
+限流开关在 chat 上:`--login_rate_limit_per_min`(默认 30 次/分钟,按客户端 IP)和 `--send_rate_limit_per_min`(默认 120 次/分钟,按用户)。窗口数据放 Redis,Redis 故障时放行(fail-open);完全不配 `--redis_host` 时不启用限流。
 
 ## 生产检查清单
 
-### 安全
+- MySQL 与 Redis 改掉仓库里的示例密码(`chirp_pass` 等),`--jwt_secret` 换成真实密钥
+- 限流按负载调整,注意 fail-open 语义意味着 Redis 挂掉时限流同时失效
+- TLS:`chirp_app_sdk_gateway` 支持 `--tls_port` / `--ws_tls_port` + `--tls_cert` / `--tls_key`;其余边缘服务目前是明文 TCP/WS,外网暴露时前置 TLS 代理
+- 日志级别按需调整;关键错误接告警是部署侧运维,仓库不内置
+- Redis 内存与 MySQL 连接数纳入常规监控
 
-- [ ] MySQL 和 Redis 使用强密码
-- [ ] 所有服务启用 TLS/SSL
-- [ ] 配置防火墙规则
-- [ ] 启用限流(rate limiting)
-- [ ] 设置正确的 CORS 策略
+## 监控
 
-### 监控
+`libs/common` 里有 `MetricsHttpServer`(Prometheus 文本格式,默认端口 9090),有单测覆盖;但当前没有任何服务进程默认启动它——要接 Prometheus 需要自己在服务里实例化并 `Start()`。在此之前,可用指标来自日志和 Redis/MySQL 自身的观测手段。
 
-- [ ] 启用 Prometheus 指标端点
-- [ ] 配置合适级别的日志
-- [ ] 为关键故障设置告警
-- [ ] 监控 Redis 内存用量
-- [ ] 监控 MySQL 连接数
+## 负载均衡
 
-### 可扩展性
-
-- [ ] 配置 Redis 集群实现高可用
-- [ ] 启用 MySQL 主从复制(master-replica replication)
-- [ ] 用 HAProxy/nginx 做负载均衡(load balancing)
-- [ ] 为 pod/容器配置自动扩缩容(autoscaling)
-- [ ] 静态资源启用 CDN
-
-## 服务配置
-
-### Gateway 服务
-
-**环境变量:**
-```bash
-GATEWAY_HOST=0.0.0.0
-GATEWAY_PORT=5000
-GATEWAY_WS_PORT=5001
-REDIS_HOST=redis
-REDIS_PORT=6379
-LOG_LEVEL=info
-```
-
-**Docker Compose 配置:**
-```yaml
-gateway:
-  image: chirp/gateway:latest
-  ports:
-    - "5000:5000"
-    - "5001:5001"
-  environment:
-    - REDIS_HOST=redis
-    - LOG_LEVEL=info
-  depends_on:
-    - redis
-```
-
-### Chat 服务
-
-**环境变量:**
-```bash
-CHAT_HOST=0.0.0.0
-CHAT_PORT=7000
-CHAT_WS_PORT=7001
-MYSQL_HOST=mysql
-MYSQL_PORT=3306
-MYSQL_DATABASE=chirp
-MYSQL_USER=chirp
-MYSQL_PASSWORD=chirp123
-REDIS_HOST=redis
-```
-
-### Auth 服务
-
-**环境变量:**
-```bash
-AUTH_HOST=0.0.0.0
-AUTH_PORT=6000
-JWT_SECRET=your-secret-key
-JWT_EXPIRATION=86400
-REDIS_HOST=redis
-MYSQL_HOST=mysql
-```
-
-## 负载均衡配置
-
-### HAProxy 示例
+TCP 长连接服务用四层负载均衡即可,HAProxy 示例:
 
 ```
 frontend chirp_gateway
@@ -150,147 +77,56 @@ backend gateway_servers
     balance roundrobin
     server gateway1 10.0.1.10:5000 check
     server gateway2 10.0.1.11:5000 check
-    server gateway3 10.0.1.12:5000 check
 ```
 
-### nginx 示例
+多网关实例要配 Redis(`--redis_host`),否则跨实例 kick 和会话共享不生效。
 
-```nginx
-upstream gateway {
-    least_conn;
-    server 10.0.1.10:5000;
-    server 10.0.1.11:5000;
-    server 10.0.1.12:5000;
-}
+## 容量参考
 
-server {
-    listen 5000;
-    proxy_pass gateway;
-    proxy_timeout 3s;
-}
-```
+数据来自 2026-09-27 的[网关容量基准](../design-notes/capacity_benchmark.md),口径是单机实测:
 
-## 监控设置
+- 并发在线连接:12000/12000 登录在线,0 握手超时(200 conn/s 铺开 60 秒的纯容量档)
+- 建连速率:无并发流量时 200 conn/s 干净;建连与消息发送重叠时 50 conn/s 也会打穿(steady500 档 165/500 管道握手超时)
+- 稳态私聊吞吐:受服务端 pacing(私聊 1 秒/用户,硬编码)约束,上限约为 连接数/1.1 条每秒
 
-### Prometheus 配置
+social、party、voice 没有同口径实测,不提供数字。规划新部署时按上述瓶颈项(建连与流量重叠、pacing 上限)估算,并以自己的压测复核。
 
-```yaml
-scrape_configs:
-  - job_name: 'chirp_gateway'
-    static_configs:
-      - targets: ['localhost:9090']
-  - job_name: 'chirp_chat'
-    static_configs:
-      - targets: ['localhost:9091']
-  - job_name: 'chirp_social'
-    static_configs:
-      - targets: ['localhost:9092']
-```
-
-### Grafana 仪表盘
-
-导入提供的仪表盘,监控:
-- 消息吞吐
-- 连接数
-- API 延迟
-- 错误率
-- 资源用量
-
-## 扩容参考
-
-### Gateway 服务
-
-- **单实例**:约 10K 并发连接
-- **建议**:负载均衡后面挂 3-5 个实例
-- **扩容依据**:连接数
-
-### Chat 服务
-
-- **单实例**:约 5K 消息/秒
-- **建议**:2-3 个实例 + Redis pub/sub
-- **扩容依据**:消息队列长度
-
-### Social 服务
-
-- **单实例**:约 10K 在线状态更新/秒
-- **建议**:2 个实例做高可用
-- **扩容依据**:好友列表规模
-
-## 备份策略
-
-### MySQL 备份
+## 备份
 
 ```bash
-# Daily backup
-mysqldump -u chirp -pchirp123 chirp > backup_$(date +%Y%m%d).sql
+# MySQL 每日备份与恢复
+mysqldump -u chirp -p chirp > backup_$(date +%Y%m%d).sql
+mysql -u chirp -p chirp < backup_20240318.sql
 
-# Restore
-mysql -u chirp -pchirp123 chirp < backup_20240318.sql
-```
-
-### Redis 备份
-
-```bash
-# Snapshot
+# Redis 快照
 redis-cli BGSAVE
-
-# Copy dump file
 cp /var/lib/redis/dump.rdb backup/
 ```
 
-## 回滚流程
+schema 升级用 `scripts/` 下的 `upgrade_db_*.sql`(如 `upgrade_db_messages.sql`)。这些文件不是幂等的——MySQL 的 `ALTER TABLE ... ADD COLUMN` 没有 `IF NOT EXISTS`,重复执行会报列已存在,执行前先核对当前表结构。
 
-### 服务回滚
+## 回滚
 
-```bash
-# Stop current version
-docker-compose down
-
-# Deploy previous version
-docker-compose -f docker-compose.v1.yml up -d
-
-# Verify by checking service logs and running the smoke tests again
-docker-compose logs --tail=50
-```
-
-### 数据库回滚
+没有发布版本化镜像的流程时,回滚就是回到上一个提交重新部署:
 
 ```bash
-# Stop MySQL
-sudo systemctl stop mysql
-
-# Restore from backup
-mysql -u chirp -pchirp123 chirp < backup.sql
-
-# Start MySQL
-sudo systemctl start mysql
+docker compose down
+git checkout <上一个可用提交>
+docker compose up --build -d
+docker compose logs --tail=50
 ```
+
+数据库列是新增式的(见升级脚本),旧版本二进制对多出来的列有读端容忍(按 `row.size()` 守卫),因此先回滚二进制、后决定是否回滚数据是可行的;数据回滚只能走备份恢复。
 
 ## 故障排查
 
-### CPU 过高
+- CPU 高:先看连接数和 Redis 内存,再用 perf/FlameGraph 对具体进程采样
+- 内存高:检查 Redis `maxmemory`,MySQL buffer pool,再查进程堆
+- 连接掉线:核对负载均衡健康检查与空闲超时,看服务日志;注意 chat 的私聊 pacing(1 秒/用户)是有意行为,不是故障
+- 限流误伤:确认 Redis 状态(fail-open 不生效说明 Redis 是通的,拒绝来自真实限流)与 `--login_rate_limit_per_min` / `--send_rate_limit_per_min` 阈值
 
-1. 检查各服务连接数
-2. 查看 Redis 内存占用
-3. 在 MySQL 打开查询日志
-4. 用 perf/FlameGraph 采样
-
-### 内存过高
-
-1. 检查 Redis maxmemory 设置
-2. 查看 MySQL buffer pool 大小
-3. 打开堆采样
-4. 排查内存泄漏
-
-### 连接掉线
-
-1. 核对负载均衡健康检查
-2. 看服务日志里的错误
-3. 监控网络延迟
-4. 复查限流配置
-
-## 下一步
+## 相关页面
 
 - [总体架构](../architecture.md)
 - [可扩展性笔记](../design-notes/SCALABILITY.md)
-- [API 参考](../api/overview.md)
+- [API 总览](../api/overview.md)

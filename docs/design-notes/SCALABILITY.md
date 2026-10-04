@@ -93,7 +93,7 @@
 
 ## 扩展性改造方案
 
-### 1. Gateway 层 ( [已支持扩展]
+### 1. Gateway 层（已支持扩展）
 
 **当前状态：** 已实现 Redis 分布式会话管理
 
@@ -110,9 +110,9 @@
 # 多实例部署
 docker compose up --scale gateway=3
 # 或手动指定实例ID
-./chirp_gateway --instance_id gw_1 --port 5000 &
-./chirp_gateway --instance_id gw_2 --port 5001 &
-./chirp_gateway --instance_id gw_3 --port 5002 &
+./build/services/game/sdk_gateway/chirp_game_sdk_gateway --instance_id gw_1 --port 5000 &
+./build/services/game/sdk_gateway/chirp_game_sdk_gateway --instance_id gw_2 --port 5001 &
+./build/services/game/sdk_gateway/chirp_game_sdk_gateway --instance_id gw_3 --port 5002 &
 ```
 
 **负载均衡：**
@@ -135,7 +135,7 @@ upstream gateway_ws {
 
 ---
 
-### 2. Chat/Social/Voice 服务改造 ( [需要改造]
+### 2. Chat/Social/Voice 服务改造（需要改造）
 
 **问题：** 当前使用本地内存存储用户会话映射，多实例时无法互通
 

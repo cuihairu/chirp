@@ -23,12 +23,12 @@ Status: **Experimental** —— 一期已交付:登录、私聊、群组、好�
 ## 运行
 
 ```bash
-# 1. 后端(内存模式即可;设备面需要 app_gateway + notification)
-./build/services/chat/chirp_chat --port 7000 --ws_port 7001 &
+# 1. 后端(内存模式即可;设备面需要 app_sdk_gateway + app_notification)
+./build/services/shared/chat/chirp_chat --port 7000 --ws_port 7001 &
 ./build/services/social/chirp_social --port 8000 --ws_port 8001 &
 ./build/services/party/chirp_party --port 7500 --ws_port 7501 &
-./build/services/notification/chirp_notification --port 5006 --ws_port 5016 &
-./build/services/app_gateway/chirp_app_gateway --port 5200 --ws_port 5201 --notification_host 127.0.0.1 --notification_port 5006 &
+./build/services/app/notification/chirp_app_notification --port 5006 --ws_port 5016 &
+./build/services/app/sdk_gateway/chirp_app_sdk_gateway --port 5200 --ws_port 5201 --notification_host 127.0.0.1 --notification_port 5006 &
 
 # 2. 前端(npm workspaces:仓库根安装依赖)
 npm ci

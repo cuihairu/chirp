@@ -4,7 +4,7 @@ title: SDK 总览
 
 # SDK 总览
 
-chirp 的接入面是纯协议(TCP/WebSocket + Protobuf 小帧),SDK 按"协议核心 + 引擎薄壳"分层:**协议逻辑只实现一份**(C++ core / Unity C# / TS / Go 各一份参考实现),引擎接入要么是壳(Unreal),要么直接搬现成协议栈(Cocos/LayaAir/微信小游戏/Godot)。本页是全部现有 SDK 的索引与测试口径;每一行的文档页有用法与集成细节。
+chirp 的接入面是纯协议(TCP/WebSocket + Protobuf 小帧),SDK 按"协议核心 + 引擎薄壳"分层:**协议逻辑每种语言只实现一份**(C++ core / Unity C# / TS / Go 各一份参考实现),引擎接入要么是壳(Unreal),要么直接搬现成协议栈(Cocos/LayaAir/微信小游戏/Godot)。本页是全部现有 SDK 的索引与测试口径;每一行的文档页有用法与集成细节。
 
 **边界规则(2026-10-02)**:`sdks/` 是**游戏**接入面;伴侣/聊天 app 不依赖 `sdks/`——app 侧协议层放在 `apps/` 内自持(TS 侧 `apps/shared/protocol` `@chirp/app-protocol`,Android `apps/android/.../protocol/`,iOS `apps/ios/Sources/ChirpProtocol/`),与游戏 SDK 靠同一组测试向量对拍锁语义。
 
@@ -22,7 +22,7 @@ chirp 的接入面是纯协议(TCP/WebSocket + Protobuf 小帧),SDK 按"协议�
 
 | 引擎 / 环境 | 接入方式 | 依据 |
 | --- | --- | --- |
-| Unity 2021.2+ | `sdks/unity` 纯 C# 协议栈 + `ChirpManager` | 官方 SDK,覆盖最全 |
+| Unity 2021.2+ | `sdks/unity` 纯 C# 协议栈 + `ChirpManager` | 官方 SDK,覆盖聊天/社交/语音/组队等消息平面 |
 | Unreal Engine | `sdks/unreal` 插件,链接 `libchirp_core_sdk` | C++ core 壳 |
 | Godot 4.x (.NET) | 直接编译 `sdks/unity/Runtime/Chirp/` 源文件(零引擎依赖设计) | 复用 Unity C# 协议栈,`ClientWebSocket` 是 .NET 标准库 |
 | Cocos Creator 3.x | 搬 `sdks/ts/src/` 协议栈,引擎 `WebSocket` 直连 WS 边缘 | 纯协议,与引擎无关 |
@@ -30,7 +30,7 @@ chirp 的接入面是纯协议(TCP/WebSocket + Protobuf 小帧),SDK 按"协议�
 | 微信小游戏 | `@chirp/protocol` + `adapters/wx_socket` 传输工厂 | 无 TCP,必须走 WS 边缘 |
 | 游戏后端(任意语言) | Go SDK,或按 `server_gateway.proto` 直连(Node/Lua/Python 要点见服务端页) | 服务器平面 dial-out |
 
-选型原则:**先看引擎的语言生态**(C# → Unity 协议栈;TS/JS → sdks/ts;C++ → core/Unreal),再对照各文档页的端口拓扑(chat WS 7001 / TCP 5000、server_gateway TCP 8100)。
+选型原则:**先看引擎用什么语言**(C# → Unity 协议栈;TS/JS → sdks/ts;C++ → core/Unreal),再对照各文档页的端口拓扑(chat WS 7001 / TCP 5000、server_gateway TCP 8100)。
 
 ## 每日构建(Nightly)
 

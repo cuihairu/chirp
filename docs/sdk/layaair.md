@@ -4,7 +4,7 @@ title: LayaAir 接入
 
 # LayaAir
 
-**LayaAir 暂无官方 SDK**,接入方式与 Cocos Creator 完全同构:TS/JS 生态 + 引擎原生 `WebSocket` 直连 chirp 的 WS 边缘。chirp 的接入面是纯协议(TCP/WebSocket + Protobuf),与引擎无关。
+**LayaAir 暂无官方 SDK**,接入方式与 Cocos Creator 完全同构:TS/JS 工程 + 引擎原生 `WebSocket` 直连 chirp 的 WS 边缘。chirp 的接入面是纯协议(TCP/WebSocket + Protobuf),与引擎无关。
 
 ## 接入方式
 

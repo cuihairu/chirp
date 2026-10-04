@@ -131,64 +131,32 @@ ctest --output-on-failure
 ### 用 Docker Compose(推荐)
 
 ```bash
-docker-compose up -d
+docker compose up -d
 ```
 
 ### 手动 Docker 构建
 
+单服务镜像走 `docker/Dockerfile.service`,`SERVICE` 构建参数选目标(可用值见 `docker-compose.yml`,如 `game_sdk_gateway`、`chat_enhanced`、`app_auth`):
+
 ```bash
-# Build Gateway image
-docker build -t chirp/gateway:latest -f services/gateway/Dockerfile .
+docker build --build-arg SERVICE=game_sdk_gateway -t chirp/gateway:latest -f docker/Dockerfile.service .
 
 # Build Chat image
-docker build -t chirp/chat:latest -f services/chat/Dockerfile .
+docker build --build-arg SERVICE=chat_enhanced -t chirp/chat:latest -f docker/Dockerfile.service .
 
 # Build all services
-docker-compose build
+docker compose build
 ```
 
 ## 配置
 
 ### 环境变量
 
-在项目根目录建一个 `.env` 文件:
-
-```bash
-# Environment
-CHIRP_ENV=development
-
-# Redis
-REDIS_HOST=localhost
-REDIS_PORT=6379
-REDIS_PASSWORD=
-
-# MySQL
-MYSQL_HOST=localhost
-MYSQL_PORT=3306
-MYSQL_DATABASE=chirp
-MYSQL_USER=chirp
-MYSQL_PASSWORD=chirp123
-```
+只有 chat 的存储层读环境变量,`CHIRP_` 前缀一族(`CHIRP_REDIS_HOST` / `CHIRP_REDIS_PORT` / `CHIRP_MYSQL_HOST` / `CHIRP_MYSQL_PORT` / `CHIRP_MYSQL_DATABASE` / `CHIRP_MYSQL_USER` / `CHIRP_MYSQL_PASSWORD` / `CHIRP_MIGRATION_*` / `CHIRP_DELIVERY_TRACKING_ENABLED`),读取点在 `services/shared/chat/src/message_store_config.cc`。其余服务不读环境变量。
 
 ### 服务配置
 
-每个服务都可以用放在 `config/` 下的 JSON 文件配置:
-
-```json
-{
-  "host": "0.0.0.0",
-  "port": 5000,
-  "workers": 4,
-  "log": {
-    "level": "info",
-    "file": "logs/gateway.log"
-  },
-  "redis": {
-    "host": "localhost",
-    "port": 6379
-  }
-}
-```
+所有服务用命令行参数配置,完整样例见 `docker-compose.yml` 各 `command:`;参数清单以各服务 `main.cc` 的解析代码为准。仓库没有 JSON/配置文件机制。
 
 ## 数据库准备
 
@@ -210,7 +178,7 @@ mysql -u chirp -pchirp123 chirp < scripts/init_db.sql
 > 发送者类型三列（`reply_to` / `is_recalled` / `sender_kind`，缺失时写入
 > `StoreMessage` 会失败）执行：
 > `mysql -u chirp -pchirp123 chirp < scripts/upgrade_db_messages.sql`
-> （重复执行会报 duplicate column，忽略即可。）
+> （脚本非幂等，重复执行会报 duplicate column；执行前先核对表结构。）
 
 ### Redis 准备
 
@@ -228,8 +196,7 @@ redis-cli ping
 ### 测试 Gateway
 
 ```bash
-./build/services/gateway/chirp_gateway
-# Output: Gateway service listening on 0.0.0.0:5000
+./build/services/game/sdk_gateway/chirp_game_sdk_gateway --port 5000 --ws_port 5001
 ```
 
 ### 测试 CLI 客户端

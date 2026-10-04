@@ -4,7 +4,7 @@ title: Unity3D 接入
 
 # Unity3D
 
-Unity 是官方 SDK 覆盖最完整的引擎:仓库里的 `sdks/unity` 是一份**纯 C# 协议栈**(无 UnityEngine 依赖,可独立跑 dotnet 单测),外加一个 `ChirpManager` MonoBehaviour 薄壳负责主线程派发。连接、心跳、重连、踢线、请求超时全部内建,游戏侧只面对 `Task` 与事件。
+Unity 的官方 SDK 覆盖聊天、社交、语音、组队等消息平面:仓库里的 `sdks/unity` 是一份**纯 C# 协议栈**(无 UnityEngine 依赖,可独立跑 dotnet 单测),外加一个 `ChirpManager` MonoBehaviour 薄壳负责主线程派发。连接、心跳、重连、踢线、请求超时全部内建,游戏侧只面对 `Task` 与事件。
 
 完整源码与细节见 [sdks/unity/README.md](https://github.com/cuihairu/chirp/tree/main/sdks/unity)。
 

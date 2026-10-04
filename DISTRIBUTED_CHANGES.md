@@ -1,5 +1,7 @@
 # Chirp 分布式扩展 - 实现总结
 
+> 历史批次记录(分布式扩展落地当时)。文中文件路径是当时的目录结构,后续重构后源码在 `services/shared/chat/src/`、文档移入 `docs/design-notes/`;容量数字当时未压测,本页不再保留估算表,实测口径见 [docs/design-notes/capacity_benchmark.md](docs/design-notes/capacity_benchmark.md)。
+
 ## 本次实现内容
 
 ### 新增文件列表
@@ -51,7 +53,7 @@ services/chat/
 
 **功能：**
 - Redis Pub/Sub 封装
-- 智能本地优先投递
+- 本地优先投递,失败再走 Redis 转发
 - 自动故障转移
 
 **使用示例：**
@@ -149,14 +151,9 @@ kubectl scale deployment chirp-chat -n chirp --replicas=5
 
 ---
 
-## 容量规划
+## 容量
 
-| 指标 | 单实例 | 3实例集群 | 10实例集群 |
-|------|--------|----------|------------|
-| 最大连接数 | 20K | 60K | 200K |
-| 消息QPS | 50K | 150K | 500K |
-| 内存 | 2GB | 6GB | 20GB |
-| CPU | 2核 | 6核 | 20核 |
+本批次当时没有做压测,容量以 [capacity_benchmark.md](docs/design-notes/capacity_benchmark.md) 的实测为准(单机 12000 并发登录在线、稳态私聊吞吐受 pacing 约束),不再维护估算表。
 
 ---
 
@@ -218,11 +215,11 @@ kubectl scale deployment chirp-chat -n chirp --replicas=5
 
 ## 相关文档
 
-- `docs/SCALABILITY.md` - 扩展性设计文档
-- `docs/DISTRIBUTED_DEPLOYMENT.md` - 分布式部署指南
-- `docs/SCALABILITY_SUMMARY.md` - 扩展方案总结
+- `docs/design-notes/SCALABILITY.md` - 扩展性设计文档
+- `docs/design-notes/DISTRIBUTED_DEPLOYMENT.md` - 分布式部署指南
+- `docs/design-notes/SCALABILITY_SUMMARY.md` - 扩展方案总结
 - `deploy/haproxy.cfg` - HAProxy 配置
-- `deploy/k8s/*.yaml` - Kubernetes 部署文件
+- `deploy/k8s/*.yaml` - Kubernetes 部署文件(早期模板,env 配置与当前代码不匹配,未验证)
 
 ---
 

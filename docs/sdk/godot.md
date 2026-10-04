@@ -6,7 +6,7 @@ title: Godot 接入
 
 **Godot 暂无官方 SDK**。Godot 4.x 的 .NET(C#)运行时可以直接复用 [Unity SDK](/sdk/unity3d) 的**纯 C# 部分**——`sdks/unity/Runtime/Chirp/` 从一开始就按零引擎依赖设计(`Chirp.Sdk.asmdef` 的 `noEngineReferences` 在 Unity 侧把这条约束固化成编译期检查),传输层用 `System.Net.WebSockets.ClientWebSocket`,这是 .NET 标准库,Godot .NET 自带,无需任何适配代码。
 
-GDScript 版没有路线:`GDScript` 缺少成熟的 protobuf 生态,复用 C# 是唯一现实的路径。
+GDScript 版没有路线:`GDScript` 缺少成熟的 protobuf 库,复用 C# 是唯一现实的路径。
 
 ## 接入方式
 

@@ -4,7 +4,7 @@ title: Cocos Creator 接入
 
 # Cocos Creator
 
-**Cocos Creator 暂无官方 SDK**。chirp 的接入面是纯协议(TCP/WebSocket + Protobuf),与引擎无关,Cocos Creator(TypeScript 生态)完全可以按协议直连——仓库里的 Web 伴侣 App 就是一份可运行的 TS 参考实现。
+**Cocos Creator 暂无官方 SDK**。chirp 的接入面是纯协议(TCP/WebSocket + Protobuf),与引擎无关,Cocos Creator(TypeScript 项目)按协议直连即可——仓库里的 Web 伴侣 App 就是一份可运行的 TS 参考实现。
 
 ## 接入方式
 

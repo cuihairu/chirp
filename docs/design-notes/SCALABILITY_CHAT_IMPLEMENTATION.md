@@ -5,7 +5,7 @@
 ## 改造后的 Chat 服务主文件
 
 ```cpp
-// services/chat/src/main_distributed.cc
+// services/shared/chat/src/main_distributed.cc
 #include <chrono>
 #include <cstdint>
 #include <cstdlib>
@@ -204,7 +204,7 @@ void HandleSendMessage(const chirp::chat::SendMessageRequest& req,
   resp.set_server_timestamp(msg.timestamp());
   SendPacket(sender_session, chirp::gateway::SEND_MESSAGE_RESP, seq, resp.SerializeAsString());
 
-  // 智能路由消息到接收者
+  // 路由消息到接收者
   router->SendChatMessage(req.receiver_id(), msg.SerializeAsString(),
     [&](const std::string& user_id) -> bool {
       // 尝试本地投递

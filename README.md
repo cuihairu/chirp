@@ -21,14 +21,27 @@
 
 ## 为什么做这个
 
-游戏团队想把"玩家联系"做进自己的游戏时，往往要自己从零搭一套实时通信：登录会话、心跳踢人、私聊群聊、离线消息、推送、再接一个 NPC 对话。这些和玩法逻辑无关，却每个游戏都要重写一遍。
+游戏团队想把"玩家联系"做进自己的游戏时，往往要自己搭一套实时通信：登录会话、心跳踢人、私聊群聊、离线消息、推送、再接一个 NPC 对话。这些和玩法逻辑无关，却每个游戏都要重写一遍。
 
 chirp 想解决的就是这件事，设计目标按优先级排列：
 
-1. **让游戏快速接入** —— 第一目标。客户端走 TCP/WebSocket + Protobuf 长连接，游戏服务端走独立的服务平面（出站长连接 + 服务凭证），不需要暴露回调端口，几条命令起服务即可联调。
-2. **App 与游戏打通** —— 玩家不在游戏里时，通过 App 收发与游戏好友的聊天、语音邀请、组队邀请；游戏侧事件通过服务器平面推到 App（推送桥接规划中）。
-3. **游戏内 NPC AI 聊天** —— 游戏服以非用户身份（SYSTEM / NPC / SERVICE）向频道或个人注入消息，为 NPC 对话、系统公告、交易状态播报留好通道。
-4. **拉近玩家与游戏的关系** —— 聊天、组队、好友这些社交粘性能力不该是每个游戏重复造的轮子；chirp 把它们做成可独立部署、按需启用的服务。
+1. **让游戏快速接入**。客户端走 TCP/WebSocket + Protobuf 长连接，游戏服务端走独立的服务平面（出站长连接 + 服务凭证），不需要暴露回调端口，几条命令起服务即可联调。
+2. **App 与游戏打通**。玩家不在游戏里时，通过 App 收发与游戏好友的聊天、语音邀请、组队邀请；游戏侧事件通过服务器平面推到 App（推送桥接规划中）。
+3. **游戏内 NPC AI 聊天**。游戏服以非用户身份（SYSTEM / NPC / SERVICE）向频道或个人注入消息，为 NPC 对话、系统公告、交易状态播报留好通道。
+4. **社交能力做成独立服务**。聊天、组队、好友不该是每个游戏重复造的轮子；chirp 把它们做成可独立部署、按需启用的服务。
+
+## 技术底座
+
+chirp 基于以下开源组件构建，完整依赖清单见 `vcpkg.json`：
+
+- **网络 I/O**：[asio](https://think-async.com/) 提供 TCP/WebSocket 服务端与客户端；TLS 走 [OpenSSL](https://www.openssl.org/)（`libs/network` 的 TLS server/session，推送通道的 HTTPS 客户端同源）。
+- **线上协议**：[Protocol Buffers](https://protobuf.dev/)。`proto/` 定义，protoc 生成 C++/Go/TypeScript/C#/Java 绑定；TypeScript 运行时用 [protobufjs](https://github.com/protobufjs/protobuf.js)，Go 用 [protobuf-go](https://github.com/protocolbuffers/protobuf-go)。
+- **存储**：MySQL/MariaDB 档案走 [libmariadb](https://github.com/mariadb-corporation/mariadb-connector-c)；Redis 做会话、缓存与离线队列，RESP 客户端在 `libs/network` 自写，不引第三方 Redis SDK。
+- **可选加密**：libsodium（`app_auth` 的认证辅助路径）。
+- **构建与依赖**：CMake + Ninja，依赖管理用 [vcpkg](https://vcpkg.io/)；abseil 随 protobuf 运行时引入。
+- **Web 伴侣 App**：[React](https://react.dev/) 18 + MUI；协议层是本仓库自写的 `@chirp/app-protocol`。
+
+本仓库自己写的是协议定义、网关/认证/聊天等服务实现、各语言 SDK 的接线层，以及全部测试。
 
 ## 当前定位
 
@@ -40,7 +53,7 @@ chirp 想解决的就是这件事，设计目标按优先级排列：
 
 ## 两条平面，一套协议
 
-游戏平面和 App 平面是两套独立部署的系统，各自有独立的边缘和独立的 chat；跨平面通信是 chat 的原生能力——两个 `chirp_chat` 实例直连，通过内置的注册协议、版本协商和白名单机制完成接入，不需要外部桥接进程。游戏平面完全自足，不依赖 App 平面的任何组件。
+游戏平面和 App 平面是两套独立部署的系统，各自有独立的边缘和独立的 chat；跨平面通信是 chat 的原生能力——两个 `chirp_chat` 实例直连，通过内置的注册协议、版本协商和白名单机制完成接入，不需要外部桥接进程。游戏平面自足，不依赖 App 平面的任何组件。
 
 ```mermaid
 flowchart TB
@@ -48,7 +61,7 @@ flowchart TB
     App["伴侣 App"]
     GS["游戏服务端<br/>service_id + secret"]
 
-    subgraph gp["游戏平面（完全自足）"]
+    subgraph gp["游戏平面（自足）"]
         GG["game_sdk_gateway<br/>TCP 5000 / WS 5001"]
         GCHAT["game_chat<br/>本地验证 token"]
         SG["game_server_gateway<br/>TCP 8100 · 仅注入/事件 · 可选"]
@@ -74,7 +87,7 @@ flowchart TB
     ACHAT -->|"玩家回复"| GCHAT
 ```
 
-要点:**平面分离、零依赖**。游戏平面由游戏后端签发 token，game_chat 本地验证，不依赖外部认证服务；App 平面的认证由 `app_auth` 独立负责。跨平面通信使用 chat 原生的 trusted-peer 协议，`app_chat` 作为 hub 通过白名单和版本协商控制接入。详见[整体架构](docs/architecture.md)。
+两个平面互不牵制：游戏平面由游戏后端签发 token，game_chat 本地验证，没有外部认证依赖；App 平面的认证由 `app_auth` 独立负责。跨平面通信使用 chat 原生的 trusted-peer 协议，`app_chat` 作为 hub 通过白名单和版本协商控制接入。详见[整体架构](docs/architecture.md)。
 
 | 服务 | 默认端口 | 状态 | 作用 |
 | --- | --- | --- | --- |
@@ -175,10 +188,10 @@ TCP 和 WebSocket 使用同一套二进制 payload：
 
 已完成的里程碑：
 
-1. ~~chat 作为内部节点接入服务器平面，消费注入消息，打通端到端注入链路~~（已完成，回环级验证 + `--smoke-npc` 进程级 E2E）
-2. ~~服务器平面增加 Redis Streams broker 回退（无法长连接的游戏服走 ack + 重放）~~（已完成，仅上行注入：游戏服 `XADD` → hub 消费组 → 现有注入链路，见 [docs/server_plane.md](docs/server_plane.md)）
-3. ~~`app_gateway` 与推送桥接（APNs/FCM，经 notification 服务）~~（已完成，部分交付：`app_gateway` 5200/5201、notification 协议面 5006/5016、chat 离线消息触发推送；推送 HTTP 层是 `PushTransport` 抽象 + 日志 stub，真实 APNs/FCM 投递待接）
-4. ~~NPC 对话服务落地（依赖注入通道 + 事件通道）~~（已完成：chat 识别 `npc:` 前缀私聊转 `npc.player_message` 事件，`npc_dialog` 服务经关键词规则引擎回复并走注入通道投递；`./test_services.sh --smoke-npc` 进程级验证）
+1. ~~chat 作为内部节点接入服务器平面，消费注入消息，打通端到端注入链路~~（回环级验证 + `--smoke-npc` 进程级 E2E）
+2. ~~服务器平面增加 Redis Streams broker 回退（无法长连接的游戏服走 ack + 重放）~~（仅上行注入：游戏服 `XADD` → hub 消费组 → 现有注入链路，见 [docs/server_plane.md](docs/server_plane.md)）
+3. ~~`app_gateway` 与推送桥接（APNs/FCM，经 notification 服务）~~（部分交付：`app_gateway` 5200/5201、notification 协议面 5006/5016、chat 离线消息触发推送；推送 HTTP 层是 `PushTransport` 抽象 + 日志 stub，真实 APNs/FCM 投递待接）
+4. ~~NPC 对话服务落地（依赖注入通道 + 事件通道）~~（chat 识别 `npc:` 前缀私聊转 `npc.player_message` 事件，`npc_dialog` 服务经关键词规则引擎回复并走注入通道投递；`./test_services.sh --smoke-npc` 进程级验证）
 
 当前焦点与架构债（P0 公共代码沉淀、P1 登录语义统一、两条 smoke 纳入 CI 等）统一维护在 [TODO.md](TODO.md)，本节不再重复。
 
@@ -188,10 +201,9 @@ TCP 和 WebSocket 使用同一套二进制 payload：
 - `libs/common`：日志、JWT/HS256、base64、sha256 等基础工具
 - `libs/network`：ASIO TCP/WS server/session、framing、Redis RESP（未来 I/O 后端封装在这里）
 - `services/game/sdk_gateway/`：游戏客户端边缘入口和会话能力（`game_sdk_gateway`）
-- `services/game/chat/`：游戏内聊天（`game_chat`，本地验证 token）
+- `services/shared/chat/`：聊天服务（同一 `chirp_chat` 二进制按启动参数部署为 `game_chat` 或 `app_chat`；game_chat 本地验证 token）
 - `services/game/server_gateway/`：游戏后端注入枢纽（`game_server_gateway`，可选）
 - `services/app/sdk_gateway/`：App 客户端边缘入口（`app_sdk_gateway`）
-- `services/app/chat/`：App 平面 hub（`app_chat`，跨游戏聚合）
 - `services/app/auth/`：App 平面认证（`app_auth`）
 - `services/app/notification/`：后台推送（`app_notification`）
 - `sdks/core`：C++ 客户端集成实验

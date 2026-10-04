@@ -15,7 +15,7 @@
 | 组件 | 文件 | 说明 |
 |------|------|------|
 | **MessageRouter** | `libs/network/message_router.h/cc` | Redis Pub/Sub 消息路由器，实现跨实例消息转发 |
-| **DistributedChatService** | `services/chat/src/main_distributed.cc` | 分布式版本的 Chat 服务 |
+| **DistributedChatService** | `services/shared/chat/src/main_distributed.cc` | 分布式版本的 Chat 服务 |
 
 ### 2. 架构对比
 
@@ -41,7 +41,7 @@ Client → LB → Gateway-1 ──┐
 ### MessageRouter 消息路由器
 
 ```cpp
-// 智能消息路由
+// 消息路由
 router->SendChatMessage(user_id, message,
     [](const std::string& uid) -> bool {
         // 1. 优先尝试本地投递
@@ -102,17 +102,17 @@ mkdir build && cd build
 cmake .. -DCMAKE_BUILD_TYPE=Release
 cmake --build . --target chirp_chat_distributed
 
-# 启动多个实例
-./services/chat/chirp_chat_distributed \
+# 启动多个实例(端口不冲突才能同机起两个)
+./services/shared/chat/chirp_chat_distributed \
     --port 7000 \
     --ws_port 7001 \
     --redis_host 192.168.1.10 \
     --redis_port 6379 \
     --instance_id chat_1 &
 
-./services/chat/chirp_chat_distributed \
-    --port 7000 \
-    --ws_port 7001 \
+./services/shared/chat/chirp_chat_distributed \
+    --port 7100 \
+    --ws_port 7101 \
     --redis_host 192.168.1.10 \
     --redis_port 6379 \
     --instance_id chat_2 &
