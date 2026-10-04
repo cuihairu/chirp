@@ -209,16 +209,16 @@ KNOWN_UNCOVERABLE = {
     # erased only together with timer->cancel(); a handler already dispatched
     # before the cancel exits at the timer_ec arm above, so the find-miss
     # return is unreachable by construction.
-    ("sdks/core/src/sdk_client.cc", 467),
+    ("sdks/core/src/sdk_client.cc", 470),
     # ChatClient::Impl::SendRequest pending_.emplace: next_seq_ is monotonic,
     # so the red-black insert comparison always walks the greater side; the
     # less/duplicate arms would require a 2^32 sequence wrap.
-    ("sdks/core/src/sdk_client.cc", 476),
+    ("sdks/core/src/sdk_client.cc", 479),
     # SendPacket null-socket arm: every caller is state-guarded via
     # ReadyForRequests(), so socket_ is only null inside the teardown window
     # between DoClose dropping the socket and the state flip - a disconnect
     # race no public-API sequence reaches deterministically.
-    ("sdks/core/src/sdk_client.cc", 761),
+    ("sdks/core/src/sdk_client.cc", 764),
     # HandleFrame pong match: the untaken arm is the throw edge into landing
     # pad block 83 (string/stdexcept during logging).
     ("sdks/core/src/sdk_client.cc", 600),
@@ -278,7 +278,7 @@ KNOWN_UNCOVERABLE = {
     # DeliveryAckManager::RunCheck stop guard: same shape as the tracker
     # above - RunCheck is private and only timer-driven, and cancel() wins
     # the race against a pending tick in every deterministic test loop.
-    ("services/shared/chat/src/delivery_ack_manager.cc", 145),
+    ("services/shared/chat/src/delivery_ack_manager.cc", 158),
     # MetricsHttpServer::Start catch arm: async_accept(ec form) does not
     # throw, so the arm is purely defensive.
     ("libs/common/src/metrics_http_server.cc", 35),
@@ -299,16 +299,16 @@ KNOWN_UNCOVERABLE = {
     # ChatBridge write-error arm: the peer RST always surfaces on the parked
     # header read first, and FailClient then removes the connection, so a
     # later forward can never target the dead socket with an in-flight write.
-    ("libs/network/chat_bridge.cc", 114),
-    ("libs/network/chat_bridge.cc", 115),
+    ("libs/network/chat_bridge.cc", 116),
+    ("libs/network/chat_bridge.cc", 117),
     # ChatBridge kConnecting switch arm: reads start only after the connect
     # handler flips the state, so no frame is ever handled while connecting.
-    ("libs/network/chat_bridge.cc", 215),
-    ("libs/network/chat_bridge.cc", 216),
+    ("libs/network/chat_bridge.cc", 217),
+    ("libs/network/chat_bridge.cc", 218),
     # ChatBridge::FailClient re-entry guard: the failed/closing flags make a
     # second entry unreachable in the single-threaded call graph - the timer,
     # read and write completions all check those flags before calling.
-    ("libs/network/chat_bridge.cc", 364),
+    ("libs/network/chat_bridge.cc", 373),
     # Server-plane registry defensive arms: the by-id map and the
     # tuple/game-user index are only ever mutated together under one lock,
     # so a tuple hit whose by-id record is missing cannot happen. (These
@@ -393,9 +393,9 @@ KNOWN_UNCOVERABLE = {
     # DeliveryAckManager Track/Acknowledge/RunCheck: untaken arms are throw
     # edges into std::string/std::unordered_map landing pads (Pending and
     # requeued_ insertion); reaching them requires bad_alloc during map ops.
-    ("services/shared/chat/src/delivery_ack_manager.cc", 102),
-    ("services/shared/chat/src/delivery_ack_manager.cc", 161),
-    ("services/shared/chat/src/delivery_ack_manager.cc", 163),
+    ("services/shared/chat/src/delivery_ack_manager.cc", 115),
+    ("services/shared/chat/src/delivery_ack_manager.cc", 174),
+    ("services/shared/chat/src/delivery_ack_manager.cc", 176),
     # InstallSignalStop async_wait registration: untaken arms are asio
     # internal signal_set/error_code paths (and the shared_ptr capture's
     # throw edge); the handler itself is covered by the SIGINT probe.
