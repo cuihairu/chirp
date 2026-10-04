@@ -57,7 +57,7 @@ cmake --preset dev && cmake --build --preset dev
 可信服务请求 chirp 投递一条发送者不是用户的消息(公告、NPC 台词、交易状态)。`INJECT_MESSAGE_REQ` 携带 `chirp.server_gateway.MessageInjectRequest`:
 
 - `inject_id`:调用方提供的幂等键(响应中原样回显)
-- `sender_kind`:发送者类型,取 `SENDER_SYSTEM` / `SENDER_NPC` / `SENDER_SERVICE` 之一
+- `sender_kind`:发送者类型,取 `SENDER_SYSTEM` / `SENDER_NPC` / `SENDER_SERVICE` 之一(值域与 chat 侧 `SenderKind` 对齐;UNKNOWN 拒收。该值随后全程透传:落库 `messages.sender_kind`、离线补投、历史下发、跨平面扇出副本都带原值)
 - `sender_id`:如 `npc:blacksmith_01`、`trade`
 - `channel_type` + `channel_id`,或一对一场景的 `receiver_id`
 - `content`:消息体

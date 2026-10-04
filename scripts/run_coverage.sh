@@ -645,7 +645,7 @@ KNOWN_UNCOVERABLE_ARMS = {
     # exempted arms are the residual edges that stayed 0 under every input:
     # post-inline dead blocks / allocation-failure unwind paths that no
     # argument shape can reach.
-    ("services/shared/chat/src/hybrid_message_store.cc", 524): ((8, 9),
+    ("services/shared/chat/src/hybrid_message_store.cc", 528): ((8, 9),
         "GetDeliveryStatus: dead post-inline duplicate of the second "
         "ParseI64 entry block (46->47/46->48 with the never-returning call); "
         "every live edge of both parses is taken across empty, non-numeric, "
@@ -653,14 +653,17 @@ KNOWN_UNCOVERABLE_ARMS = {
         "(7, 8): gcov arm indices shifted after upstream line-count drift; "
         "the dead pair is today's (8, 9) — pinning only 9 let 8 resurface "
         "in the batch-7 gate. Line re-pinned 514->524 for the P1-5 "
-        "per-device split's upstream line drift; block layout unchanged.)"),
-    ("services/shared/chat/src/hybrid_message_store.cc", 556): ((3,),
+        "per-device split's upstream line drift; block layout unchanged. "
+        "Line re-pinned 524->528 for the ActorKind sender_kind +4-line "
+        "upstream drift; block layout unchanged.)"),
+    ("services/shared/chat/src/hybrid_message_store.cc", 560): ((3,),
         "GetPendingDeliveries expiry parse: structurally dead edge in the "
         "inlined ParseI64/substr block layout (12->14); empty, non-numeric, "
         "17-digit heap, overflow and INT64_MAX-exact expiry inputs all "
         "exercise the other five arms. (Line re-pinned 546->556 for the "
-        "P1-5 per-device split's upstream line drift.)"),
-    ("services/shared/chat/src/hybrid_message_store.cc", 581): ((14, 15, 16, 17),
+        "P1-5 per-device split's upstream line drift; 556->560 for the "
+        "ActorKind sender_kind +4-line upstream drift.)"),
+    ("services/shared/chat/src/hybrid_message_store.cc", 585): ((14, 15, 16, 17),
         "PrivateChannelId string-concat fragments attributed to the "
         "push_back line: operator+ allocation-failure blocks (calls with "
         "returned=0, bad_alloc unwind); the live SSO and heap-concat edges "
@@ -668,7 +671,8 @@ KNOWN_UNCOVERABLE_ARMS = {
         "from (10, 11, 12, 13): those live arms are now taken and gcov "
         "renumbered the pad arcs 16->17/16->18 and 20->21/20->22. Line "
         "re-pinned 571->581 for the P1-5 per-device split's upstream "
-        "line drift.)"),
+        "line drift; 581->585 for the ActorKind sender_kind +4-line "
+        "upstream drift.)"),
     ("services/shared/chat/src/player_directory.cc", 194): ((20, 21, 22, 23, 24, 25),
         "Unsubscribe log line: internal arcs of the bad_alloc landing pads "
         "(blocks 72/76/80, the unwind targets of the log-concat operator+ "

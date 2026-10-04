@@ -37,6 +37,10 @@ InjectOutcome InjectConsumer::HandleInject(
   } else {
     msg.set_channel_id(req.channel_id());
   }
+  // SenderKind 网关→chat 按契约直传：两侧枚举数值对齐（gateway UNKNOWN=0 /
+  // SYSTEM=1 / NPC=2 / SERVICE=3 ↔ chat 同值），UNKNOWN 已在上方拒绝。值域
+  // 契约见 chat.proto / game_server_gateway.proto 两侧 SenderKind 注释。
+  msg.set_sender_kind(static_cast<chirp::chat::SenderKind>(req.sender_kind()));
 
   hooks_.store_message(msg);
 

@@ -146,6 +146,7 @@ void MessageMigrationWorker::RunMigration() {
         mysql_msg.timestamp = msg.timestamp;
         mysql_msg.created_at = msg.created_at;
         mysql_msg.reply_to_message_id = msg.reply_to_message_id;
+        mysql_msg.sender_kind = msg.sender_kind;
 
         if (store_->GetMySQLStore()->StoreMessage(mysql_msg)) {
           batch_migrated++;
@@ -179,6 +180,7 @@ void MessageMigrationWorker::RunMigration() {
         mysql_msg.timestamp = msg.timestamp;
         mysql_msg.created_at = msg.created_at;
         mysql_msg.reply_to_message_id = msg.reply_to_message_id;
+        mysql_msg.sender_kind = msg.sender_kind;
 
         // Ensure receiver_id is set for offline messages
         if (mysql_msg.receiver_id.empty()) {

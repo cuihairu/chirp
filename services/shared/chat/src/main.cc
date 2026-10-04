@@ -1737,7 +1737,9 @@ int main(int argc, char** argv) {
         copy.set_receiver_id(player_id);
         copy.set_channel_type(chirp::chat::PRIVATE);
         copy.set_channel_id(store->PrivateChannelId(copy.sender_id(), player_id));
-        copy.set_sender_kind(chirp::chat::SENDER_USER);
+        // 副本保留源消息的发送者类型：NPC/系统公告的逐订阅者私有副本不降级
+        // 成玩家（proto 扇入承诺即 SENDER_SERVICE 副本）；玩家上行走默认 USER。
+        copy.set_sender_kind(notify.message().sender_kind());
         store->AddMessage(copy);
         auto receivers = HealthyUserSessions(state, player_id);
         if (!receivers.empty()) {

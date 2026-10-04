@@ -86,6 +86,8 @@ TEST(InjectConsumerTest, DeliversPrivateToOnlineReceiver) {
   EXPECT_EQ(msg.content(), "hello");
   EXPECT_GT(msg.timestamp(), 0);
   EXPECT_EQ(msg.msg_type(), chirp::chat::TEXT);
+  // ActorKind 收敛：网关 NPC 枚举按值域契约直传到落库消息，不落成玩家。
+  EXPECT_EQ(msg.sender_kind(), chirp::chat::SENDER_NPC);
   ASSERT_EQ(rec.delivered.size(), 1u);
   EXPECT_EQ(rec.delivered[0], "player_1");
   EXPECT_TRUE(rec.queued.empty());
@@ -124,12 +126,28 @@ TEST(InjectConsumerTest, BroadcastsChannelAndQueuesOfflineMembers) {
   ASSERT_EQ(rec.stored.size(), 1u);
   EXPECT_EQ(rec.stored[0].channel_id(), "guild_7");
   EXPECT_EQ(rec.stored[0].channel_type(), chirp::chat::GUILD);
+  EXPECT_EQ(rec.stored[0].sender_kind(), chirp::chat::SENDER_SERVICE);
   ASSERT_EQ(rec.broadcast_calls.size(), 1u);
   EXPECT_EQ(rec.broadcast_calls[0], "guild_7");
   EXPECT_TRUE(rec.delivered.empty());
   ASSERT_EQ(rec.queued.size(), 2u);
   EXPECT_EQ(rec.queued[0], "member_2");
   EXPECT_EQ(rec.queued[1], "member_3");
+}
+
+TEST(InjectConsumerTest, PropagatesSystemSenderKind) {
+  RecordingHooks rec;
+  InjectConsumer consumer(rec.MakeHooks());
+
+  InjectMessageNotify notify = MakeNotify("system", "patch deployed");
+  notify.mutable_message()->set_sender_kind(chirp::game_server_gateway::SENDER_SYSTEM);
+
+  const InjectOutcome out = consumer.HandleInject(notify);
+
+  EXPECT_EQ(out.code, ErrorCode::OK);
+  ASSERT_EQ(rec.stored.size(), 1u);
+  // 值域契约（两枚举同值）：SYSTEM=1 直传，存储/下发/历史全程不降级成玩家。
+  EXPECT_EQ(rec.stored[0].sender_kind(), chirp::chat::SENDER_SYSTEM);
 }
 
 TEST(InjectConsumerTest, BroadcastWithoutMembersStoresOnly) {

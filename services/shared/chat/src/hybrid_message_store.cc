@@ -54,6 +54,7 @@ std::string MessageData::SerializeAsString() const {
   msg.set_timestamp(timestamp);
   msg.set_reply_to_message_id(reply_to_message_id);
   msg.set_is_recalled(is_recalled);
+  msg.set_sender_kind(static_cast<SenderKind>(sender_kind));
   return msg.SerializeAsString();
 }
 
@@ -73,6 +74,7 @@ bool MessageData::ParseFromArray(const void* data, int size) {
   timestamp = msg.timestamp();
   reply_to_message_id = msg.reply_to_message_id();
   is_recalled = msg.is_recalled();
+  sender_kind = static_cast<int>(msg.sender_kind());
   created_at = msg.timestamp();
   return true;
 }
@@ -137,6 +139,7 @@ bool HybridMessageStore::StoreMessage(const MessageData& message) {
   mysql_msg.created_at = message.created_at;
   mysql_msg.reply_to_message_id = message.reply_to_message_id;
   mysql_msg.is_recalled = message.is_recalled;
+  mysql_msg.sender_kind = message.sender_kind;
 
   bool mysql_result = mysql_store_->StoreMessage(mysql_msg);
 
@@ -228,6 +231,7 @@ std::vector<MessageData> HybridMessageStore::GetHistory(const std::string& chann
         converted.created_at = msg.created_at;
         converted.reply_to_message_id = msg.reply_to_message_id;
         converted.is_recalled = msg.is_recalled;
+        converted.sender_kind = msg.sender_kind;
         results.push_back(std::move(converted));
       }
     }

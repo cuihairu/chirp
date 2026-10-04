@@ -23,6 +23,7 @@ struct StoredMessage {
   int64_t created_at{0};
   std::string reply_to_message_id;  // 消息引用（P1）：空 = 非引用
   bool is_recalled{false};          // 撤回墓碑（P0）：发送者撤回/版主软删后置位
+  int sender_kind{0};               // 发送者类型（chat::SenderKind 数值）：随档案行往返
 };
 
 // Read receipt data

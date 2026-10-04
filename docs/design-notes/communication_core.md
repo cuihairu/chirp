@@ -41,17 +41,21 @@ Communication
 
 ## 4. 目标模型（[提案]）
 
-### 4.1 ActorKind
+### 4.1 ActorKind（2026-10-04 收敛落地，形态调整）
 
-把现有的「玩家 / NPC / SYSTEM / SERVICE」sender 语义正式收敛成一个枚举，作为 Message 与注入事件的 sender 侧身份：
+把现有的「玩家 / NPC / SYSTEM / SERVICE」sender 语义正式收敛成一个枚举，作为 Message 与注入事件的 sender 侧身份。**落地形态说明**：没有新造六值 `ACTOR_*` 枚举，而是把既有两侧枚举钉成对齐契约——`chat.proto SenderKind`（USER=0 / SYSTEM / NPC / SERVICE）与 `game_server_gateway.proto SenderKind`（UNKNOWN=0 / SYSTEM / NPC / SERVICE）数值对齐，注释互指；注入边界（`inject_consumer`）按契约直传，UNKNOWN 拒收。已随链路落地：
+
+- **全链持久化**：`MessageData.sender_kind` 随 Redis 镜像序列化往返；`messages` 表 `sender_kind` 列（新建库 `init_db.sql`，存量库 `scripts/upgrade_db_messages.sql`）；migration worker 转换带 kind；`GetHistory` 冷热合并、离线补投、历史下发全程重建 kind。
+- **扇出保真**：跨平面 `deliver_copy` 逐订阅者私有副本保留源 kind（NPC/系统公告不降级成玩家，兑现 proto 扇入「SENDER_SERVICE 副本」承诺）。
+- **防伪造**：`SendMessageRequest` 无 sender_kind 字段，客户端结构上无法声称非玩家身份。
 
 ```
-ACTOR_PLAYER     玩家（客户端边缘验证过的用户）
-ACTOR_NPC        规则/LLM 驱动的对话角色
-ACTOR_SYSTEM     系统公告、状态播报
-ACTOR_SERVICE    游戏服服务面身份（service_id + secret）
-ACTOR_BOT        客服/审核/运营机器人（预留）
-ACTOR_GM         GM（预留）
+ACTOR_PLAYER     玩家（客户端边缘验证过的用户）—— chat.SenderKind.SENDER_USER
+ACTOR_NPC        规则/LLM 驱动的对话角色             —— SENDER_NPC（已贯通）
+ACTOR_SYSTEM     系统公告、状态播报                   —— SENDER_SYSTEM（已贯通）
+ACTOR_SERVICE    游戏服服务面身份（service_id + secret）—— SENDER_SERVICE（已贯通）
+ACTOR_BOT        客服/审核/运营机器人                —— 未实现（无生产者，不加枚举值）
+ACTOR_GM         GM                                  —— 未实现（同上）
 ```
 
 约束：**用户凭证与服务凭证不可混用**——客户端边缘只验用户 token，服务面只验服务凭证，两个平面在注入边界做身份声明而不是信任客户端传入的 kind。

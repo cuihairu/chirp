@@ -206,6 +206,10 @@ func (Priority) EnumDescriptor() ([]byte, []int) {
 }
 
 // 消息发送者类型
+// 发送者类型。值域契约：与 game_server_gateway.SenderKind 对齐（1=SYSTEM /
+// 2=NPC / 3=SERVICE 两侧同值），注入路径（inject_consumer）按此契约直传；
+// 0=USER 仅玩家发送路径使用（SendMessageRequest 无 sender_kind 字段，客户端
+// 结构上不可伪造）。
 type SenderKind int32
 
 const (

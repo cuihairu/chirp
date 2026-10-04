@@ -181,6 +181,7 @@ chirp::chat::MessageData ToMessageData(const chirp::chat::ChatMessage& msg) {
   data.content = msg.content();
   data.timestamp = msg.timestamp();
   data.reply_to_message_id = msg.reply_to_message_id();
+  data.sender_kind = static_cast<int>(msg.sender_kind());
   data.created_at = chirp::chat::runtime::NowMs();
   return data;
 }
@@ -845,6 +846,7 @@ void HandleLogin(const chirp::auth::LoginRequest& req,
       msg.set_msg_type(static_cast<chirp::chat::MsgType>(msg_data.msg_type));
       msg.set_content(msg_data.content);
       msg.set_timestamp(msg_data.timestamp);
+      msg.set_sender_kind(static_cast<chirp::chat::SenderKind>(msg_data.sender_kind));
       // Refills are tracked like live deliveries: an unacked refill returns
       // to the offline queue instead of dying with the connection.
       if (acks && acks->IsCapable(session.get())) {
@@ -880,6 +882,7 @@ void HandleGetHistory(const chirp::chat::GetHistoryRequest& req,
     msg->set_msg_type(static_cast<chirp::chat::MsgType>(msg_data.msg_type));
     msg->set_content(msg_data.content);
     msg->set_timestamp(msg_data.timestamp);
+    msg->set_sender_kind(static_cast<chirp::chat::SenderKind>(msg_data.sender_kind));
     msg->set_reply_to_message_id(msg_data.reply_to_message_id);
     msg->set_is_recalled(msg_data.is_recalled);
   }
@@ -1176,7 +1179,9 @@ int main(int argc, char** argv) {
         copy.set_receiver_id(player_id);
         copy.set_channel_type(chirp::chat::PRIVATE);
         copy.set_channel_id(HybridMessageStore::PrivateChannelId(copy.sender_id(), player_id));
-        copy.set_sender_kind(chirp::chat::SENDER_USER);
+        // 副本保留源消息的发送者类型：NPC/系统公告的逐订阅者私有副本不降级
+        // 成玩家（proto 扇入承诺即 SENDER_SERVICE 副本）；玩家上行走默认 USER。
+        copy.set_sender_kind(notify.message().sender_kind());
         chirp::chat::MessageData data = ToMessageData(copy);
         store->StoreMessageAsync(data, [](bool ok) {
           if (!ok) {

@@ -250,6 +250,8 @@ Message ──发送──► Accepted ──► Persisted ──► (Queued | D
 
 投递去重(P1-5):`ChatMessage.delivery_id` 是单次投递的主语——空 = 首次在线投递(与 `message_id` 同义);离线补投副本由服务端铸造独立值;ack 超时回队重投**保留原值**(同一次投递的重投同 id)。消费端分工:UI 幂等按 `message_id`,传输层去重按 `delivery_id`;已读回执是消息级(`message_id` 主语),不随投递次数变化。**投递 ack 显式携带投递主语**:`MessageAck.delivery_id`(及 `MessageNack.delivery_id`)——非空时服务端按投递主语精确匹配在途投递(同一 `message_id` 的多笔投递互不干扰);空 = 旧客户端/首投场景,按 `message_id` 兼容匹配首投。概念模型出处:[Communication Core 设计笔记](../design-notes/communication_core.md)。
 
+发送者类型(ActorKind 收敛):`ChatMessage.sender_kind`(字段 12)区分 `SENDER_USER`(0,普通玩家)/`SENDER_SYSTEM`(1)/`SENDER_NPC`(2)/`SENDER_SERVICE`(3),值域与 `game_server_gateway.SenderKind` 对齐。**客户端不可伪造**:`SendMessageRequest` 无此字段,玩家发送恒为 USER;非玩家身份只能走服务面注入(见 [服务器平面](../server_plane.md)),注入校验拒 UNKNOWN 并按契约直传。该值全链保真:存储(`messages.sender_kind` 列 + Redis 镜像)、离线补投、历史下发、跨平面扇出副本都带原值。BOT/GM 两类身份未实现(无生产者,协议面未预留枚举值)。
+
 ## WebSocket 用法
 
 用二进制帧,不要发 JSON。

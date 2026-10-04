@@ -62,6 +62,7 @@ StoredMessage ToMySql(const MessageData& msg) {
   out.content = msg.content;
   out.timestamp = msg.timestamp;
   out.created_at = msg.created_at;
+  out.sender_kind = msg.sender_kind;
   return out;
 }
 
@@ -318,13 +319,46 @@ TEST_F(MySqlStoreTest, StoreMessageWritesRecalledColumn) {
   ASSERT_FALSE(queries.empty());
   EXPECT_NE(queries.back().find("INSERT INTO messages"), std::string::npos);
   EXPECT_NE(queries.back().find("is_recalled"), std::string::npos);
-  EXPECT_NE(queries.back().find(", 1)"), std::string::npos);
+  // 尾两列 = is_recalled, sender_kind（ActorKind 收敛后 INSERT 恒带 11 列）。
+  EXPECT_NE(queries.back().find(", 1, 0)"), std::string::npos);
 
-  // 未置位时落库为 0（默认未撤回）。
+  // 未置位时落库为 0（默认未撤回、默认玩家）。
   EXPECT_TRUE(store.StoreMessage(ToMySql(MakeMessage("m2"))));
   queries = fake_mysql::TakeQueries();
   ASSERT_FALSE(queries.empty());
-  EXPECT_NE(queries.back().find(", 0)"), std::string::npos);
+  EXPECT_NE(queries.back().find(", 0, 0)"), std::string::npos);
+}
+
+TEST_F(MySqlStoreTest, StoreMessageWritesSenderKindColumn) {
+  auto pool = std::make_shared<MySQLConnectionPool>(1, "h", 3306, "db", "u", "p");
+  MySQLMessageStore store(pool);
+
+  // ActorKind 收敛：注入的 NPC 消息落档案时带 sender_kind=2。
+  StoredMessage npc = ToMySql(MakeMessage("m1"));
+  npc.sender_kind = 2;
+  EXPECT_TRUE(store.StoreMessage(npc));
+  auto queries = fake_mysql::TakeQueries();
+  ASSERT_FALSE(queries.empty());
+  EXPECT_NE(queries.back().find("INSERT INTO messages"), std::string::npos);
+  EXPECT_NE(queries.back().find("sender_kind"), std::string::npos);
+  EXPECT_NE(queries.back().find(", 0, 2)"), std::string::npos);
+}
+
+TEST_F(MySqlStoreTest, HistoryParsesSenderKindColumnAndToleratesLegacyRows) {
+  auto pool = std::make_shared<MySQLConnectionPool>(1, "h", 3306, "db", "u", "p");
+  MySQLMessageStore store(pool);
+
+  // 新 schema：第 11 列 sender_kind。
+  fake_mysql::PushRows({{"m1", "s", "r", "ch", "0", "1", "c1", "1000", "", "0", "2"}});
+  auto history = store.GetHistory("ch", 0, 0, 10);
+  ASSERT_EQ(history.size(), 1u);
+  EXPECT_EQ(history[0].sender_kind, 2);
+
+  // 旧 schema 行（未回填 sender_kind 列）按普通玩家处理。
+  fake_mysql::PushRows({{"m2", "s", "r", "ch", "0", "1", "c2", "2000"}});
+  auto legacy = store.GetHistory("ch", 0, 0, 10);
+  ASSERT_EQ(legacy.size(), 1u);
+  EXPECT_EQ(legacy[0].sender_kind, 0);
 }
 
 TEST_F(MySqlStoreTest, HistoryParsesRecalledColumnAndToleratesLegacyRows) {
@@ -510,10 +544,15 @@ TEST_F(HybridStoreTest, MessageDataSerializationRoundTrip) {
   EXPECT_EQ(parsed.reply_to_message_id, "m0");
   // 撤回墓碑（P0）：默认未撤回；置位后随序列化往返，历史读回据此渲染墓碑。
   EXPECT_FALSE(parsed.is_recalled);
+  // 发送者类型（ActorKind 收敛）：注入侧的 NPC/SERVICE 值随序列化往返，
+  // Redis 镜像与 MySQL 档案两层读回都不降级成玩家。
+  EXPECT_EQ(parsed.sender_kind, 0);
   msg.is_recalled = true;
+  msg.sender_kind = 2;  // SENDER_NPC
   ASSERT_TRUE(parsed.ParseFromArray(msg.SerializeAsString().data(),
                                     static_cast<int>(msg.SerializeAsString().size())));
   EXPECT_TRUE(parsed.is_recalled);
+  EXPECT_EQ(parsed.sender_kind, 2);
 
   EXPECT_FALSE(parsed.ParseFromArray("garbage", 7));
 }
@@ -654,6 +693,25 @@ TEST_F(HybridStoreTest, GetHistoryMysqlMergeCarriesReply) {
   ASSERT_NE(fresh, nullptr);
   EXPECT_EQ(old->reply_to_message_id, "m0");
   EXPECT_EQ(fresh->reply_to_message_id, "");
+}
+
+TEST_F(HybridStoreTest, GetHistoryMysqlMergeCarriesSenderKind) {
+  ASSERT_TRUE(store_->Initialize());
+
+  // 热层一条玩家消息（Redis blob 全字段往返）；MySQL 冷层一条 NPC 注入
+  // （11 列新 schema）→ 合并页两侧 sender_kind 都不丢。
+  ASSERT_TRUE(store_->StoreMessage(MakeMessage("m2", "ch", 2000)));
+  fake_mysql::PushRows({{"m1", "s", "r", "ch", "0", "0", "hello m1", "1000",
+                         "", "0", "2"}});
+  auto page = store_->GetHistory("ch", 0, 0, 2);
+  ASSERT_EQ(page.size(), 2u);
+  for (const auto& m : page) {
+    if (m.message_id == "m1") {
+      EXPECT_EQ(m.sender_kind, 2);  // NPC，冷层档案带出
+    } else if (m.message_id == "m2") {
+      EXPECT_EQ(m.sender_kind, 0);  // 玩家，热层镜像带出
+    }
+  }
 }
 
 TEST_F(HybridStoreTest, RecallTombstoneRewritesHotTierInPlace) {

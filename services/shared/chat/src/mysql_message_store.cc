@@ -255,7 +255,7 @@ bool MySQLMessageStore::StoreMessage(const StoredMessage& message) {
 
   std::string query = "INSERT INTO messages (message_id, sender_id, receiver_id, channel_id, "
                      "channel_type, msg_type, content, timestamp, created_at, reply_to, "
-                     "is_recalled) VALUES ('" +
+                     "is_recalled, sender_kind) VALUES ('" +
                      conn->Escape(message.message_id) + "', '" +
                      conn->Escape(message.sender_id) + "', '" +
                      conn->Escape(message.receiver_id) + "', '" +
@@ -266,7 +266,8 @@ bool MySQLMessageStore::StoreMessage(const StoredMessage& message) {
                      std::to_string(message.timestamp) + ", " +
                      std::to_string(message.created_at) + ", '" +
                      conn->Escape(message.reply_to_message_id) + "', " +
-                     (message.is_recalled ? "1" : "0") + ")";
+                     (message.is_recalled ? "1" : "0") + ", " +
+                     std::to_string(message.sender_kind) + ")";
 
   bool result = conn->Execute(query);
   pool_->ReturnConnection(std::move(conn));
@@ -283,7 +284,8 @@ std::vector<StoredMessage> MySQLMessageStore::GetHistory(const std::string& chan
   }
 
   std::string query = "SELECT message_id, sender_id, receiver_id, channel_id, "
-                     "channel_type, msg_type, content, timestamp, reply_to, is_recalled FROM messages WHERE "
+                     "channel_type, msg_type, content, timestamp, reply_to, is_recalled, "
+                     "sender_kind FROM messages WHERE "
                      "channel_id = '" + conn->Escape(channel_id) + "' AND "
                      "channel_type = " + std::to_string(channel_type);
 
@@ -318,6 +320,10 @@ std::vector<StoredMessage> MySQLMessageStore::GetHistory(const std::string& chan
     // 老库尚未补 is_recalled 列时按未撤回处理（同 reply_to 的旧 schema 容忍）。
     if (row.size() > 9) {
       msg.is_recalled = row[9] == "1" || row[9] == "true";
+    }
+    // 老库尚未补 sender_kind 列时按普通玩家处理（同上旧 schema 容忍）。
+    if (row.size() > 10) {
+      msg.sender_kind = std::stoi(row[10]);
     }
     messages.push_back(std::move(msg));
   }
