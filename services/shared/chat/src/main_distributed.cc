@@ -234,7 +234,7 @@ void HandleSendMessage(const chirp::chat::SendMessageRequest& req,
             return false;
           }
           if (acks && acks->IsCapable(recv_session.get())) {
-            acks->Track(msg.message_id(), user_id, msg_bytes);
+            acks->Track(msg.message_id(), msg.delivery_id(), user_id, msg_bytes);
           }
           chirp::chat::runtime::SendChatNotify(recv_session, msg);
           Logger::Instance().Info("Message delivered locally to " + user_id);
@@ -298,7 +298,7 @@ void HandleLogin(const chirp::auth::LoginRequest& req,
         // Cross-instance deliveries are tracked like local ones - this
         // instance owns the receiving session, so the ack comes back here.
         if (acks && acks->IsCapable(session.get())) {
-          acks->Track(msg.message_id(), user_id, msg_data);
+          acks->Track(msg.message_id(), msg.delivery_id(), user_id, msg_data);
         }
         chirp::chat::runtime::SendChatNotify(session, msg);
       }
@@ -325,7 +325,7 @@ void HandleLogin(const chirp::auth::LoginRequest& req,
         // Refills are tracked like live deliveries (payload keeps the exact
         // bytes that were queued, so a late ack can remove them cleanly).
         if (acks && acks->IsCapable(session.get())) {
-          acks->Track(msg.message_id(), user_id, msg_data);
+          acks->Track(msg.message_id(), msg.delivery_id(), user_id, msg_data);
         }
         chirp::chat::runtime::SendChatNotify(session, msg);
       }
@@ -463,8 +463,12 @@ int main(int argc, char** argv) {
         (!req.user_id().empty() && req.user_id() != user_id)) {
       return;
     }
-    if (acks->Acknowledge(req.message_id())) {
-      Logger::Instance().Info("message acked id=" + req.message_id() + " user=" + user_id);
+    if (acks->Acknowledge(req.message_id(), req.delivery_id())) {
+      Logger::Instance().Info("message acked id=" + req.message_id() +
+                              (req.delivery_id().empty()
+                                   ? " (first-delivery subject)"
+                                   : " dlv=" + req.delivery_id()) +
+                              " user=" + user_id);
     }
   };
 

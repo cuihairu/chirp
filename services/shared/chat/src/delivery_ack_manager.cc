@@ -92,29 +92,42 @@ void DeliveryAckManager::ForgetSession(const network::Session* session) {
   capable_.erase(session);
 }
 
+namespace {
+// 投递主语：显式 delivery_id（补投/重投）用之，空 = 首投、主语即 message_id。
+// ack 侧同规则（旧客户端不带 delivery_id → 按 message_id 匹配首投）。
+std::string DeliverySubject(const std::string& message_id,
+                            const std::string& delivery_id) {
+  return delivery_id.empty() ? message_id : delivery_id;
+}
+} // namespace
+
 void DeliveryAckManager::Track(const std::string& message_id,
+                               const std::string& delivery_id,
                                const std::string& receiver_id,
                                const std::string& payload) {
   if (config_.timeout_ms <= 0 || message_id.empty() || receiver_id.empty()) {
     return;
   }
   std::lock_guard<std::mutex> lock(mu_);
-  pending_[message_id] = Pending{receiver_id, payload, NowMs() + config_.timeout_ms};
+  pending_[DeliverySubject(message_id, delivery_id)] =
+      Pending{receiver_id, payload, NowMs() + config_.timeout_ms};
 }
 
-bool DeliveryAckManager::Acknowledge(const std::string& message_id) {
+bool DeliveryAckManager::Acknowledge(const std::string& message_id,
+                                     const std::string& delivery_id) {
   if (config_.timeout_ms <= 0 || message_id.empty()) {
     return false;
   }
+  const std::string subject = DeliverySubject(message_id, delivery_id);
 
   std::pair<std::string, std::string> late;
   bool was_requeued = false;
   {
     std::lock_guard<std::mutex> lock(mu_);
-    if (pending_.erase(message_id) > 0) {
+    if (pending_.erase(subject) > 0) {
       return true;
     }
-    const auto it = requeued_.find(message_id);
+    const auto it = requeued_.find(subject);
     if (it != requeued_.end()) {
       late = {it->second.receiver_id, it->second.payload};
       requeued_.erase(it);
@@ -125,7 +138,7 @@ bool DeliveryAckManager::Acknowledge(const std::string& message_id) {
   if (was_requeued) {
     // The client did receive the message (its ack just beat the offline
     // refill); drop the copy that already timed out into the offline queue.
-    Logger::Instance().Info("late message ack after requeue: " + message_id +
+    Logger::Instance().Info("late message ack after requeue: " + subject +
                             " user=" + late.first);
     if (on_late_ack_) {
       on_late_ack_(late.first, late.second);
@@ -148,7 +161,7 @@ void DeliveryAckManager::RunCheck() {
   const int64_t now = NowMs();
 
   struct Expired {
-    std::string message_id;
+    std::string subject;  // 投递主语（delivery_id 或首投的 message_id）
     std::string receiver_id;
     std::string payload;
   };
@@ -181,7 +194,7 @@ void DeliveryAckManager::RunCheck() {
   }
 
   for (const auto& e : expired) {
-    Logger::Instance().Warn("message ack timeout, requeued offline: " + e.message_id +
+    Logger::Instance().Warn("message ack timeout, requeued offline: " + e.subject +
                             " -> " + e.receiver_id);
     if (on_requeue_) {
       on_requeue_(e.receiver_id, e.payload);

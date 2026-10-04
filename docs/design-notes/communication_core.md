@@ -79,7 +79,7 @@ Message  ── 发送 ──► Accepted ──► Persisted ──► (Queued 
 
 - `sequence`：连接内单调序号，用于请求-响应配对的本地排序。
 - `request_id`（`Packet` 字段 4，已落地）：分布式关联 id，跨平面/跨服务日志追踪用。0 = 未提供，网关 ChatBridge 对客户端出站 2xxx 包与服务面出站包按「连接内生成」兜底（单调自增）；显式给出的值沿转发链路原样透传。现状：gateway.proto + server_gateway 出站生成（注入出站日志 `req=`）+ chat 注入入站日志（`inject received ... req=`）。待扩：chat 直连入口兜底、peer（hub）转发透传、SDK/客户端发送侧生成。
-- `message_id` 与 `delivery_id` 分离：一条消息一次发送、多次投递（离线补投、多端）各自有 id，为 dedup 与回执提供主语。**`delivery_id`（`ChatMessage` 字段 15）已落地**：空 = 首次在线投递（投递主语即 `message_id`）；离线补投副本由服务端铸造独立值；ack 超时回队重投保留原值。消费端分工——UI 幂等按 `message_id`，传输层去重按 `delivery_id`；已读回执仍是消息级（`message_id` 主语）。余项：ack/回执协议显式携带 `delivery_id`、离线队列的 per-device 拆分（现状 user 级，见 [服务器平面](../server_plane.md)）。注入面幂等键 `inject_id`、投递跟踪 `TrackMessageResponse.tracking_id` 是同族主语。
+- `message_id` 与 `delivery_id` 分离：一条消息一次发送、多次投递（离线补投、多端）各自有 id，为 dedup 与回执提供主语。**`delivery_id`（`ChatMessage` 字段 15）已落地**：空 = 首次在线投递（投递主语即 `message_id`）；离线补投副本由服务端铸造独立值；ack 超时回队重投保留原值。消费端分工——UI 幂等按 `message_id`，传输层去重按 `delivery_id`；已读回执仍是消息级（`message_id` 主语）。**ack 显式携带投递主语已落地（2026-10-04）**：`MessageAck.delivery_id` / `MessageNack.delivery_id`——服务端 `DeliveryAckManager` 按投递主语（非空 `delivery_id`，空=首投回退 `message_id`）精确匹配在途投递；旧客户端空 `delivery_id` 走兼容匹配，重投同 id 刷新不重复挂起，迟到 ack 按主语清离线副本。余项：离线队列 per-device 拆分（现状 user 级，见 [服务器平面](../server_plane.md)）。注入面幂等键 `inject_id`、投递跟踪 `TrackMessageResponse.tracking_id` 是同族主语。
 
 ### 4.4 Pipe 分类（[提案] 概念正式化，非新协议）
 
@@ -128,7 +128,7 @@ P0（随本文落地，文档/协议说明为主）：
 P1（需要 wire 扩展，独立批次）：
 
 4. `request_id` 进 Packet（✅ 第一步已落地：协议字段 + 服务面出站生成 + 网关桥兜底 + chat 入站日志；待扩——chat 直连兜底、peer 转发透传、SDK 发送侧生成）。
-5. `delivery_id` 进投递/回执协议；dedup 语义（AT_MOST_ONCE）落地（✅ 第一步：`ChatMessage.delivery_id` 字段 + 补投铸造/重投保原值 + SDK store 按 `message_id` 幂等；余项——ack/回执协议带 delivery_id、per-device 离线队列拆分）。
+5. `delivery_id` 进投递/回执协议；dedup 语义（AT_MOST_ONCE）落地（✅ 第一步：`ChatMessage.delivery_id` 字段 + 补投铸造/重投保原值 + SDK store 按 `message_id` 幂等；✅ 余项第一块：`MessageAck`/`MessageNack` 显式携带 `delivery_id`，`DeliveryAckManager` 按投递主语精确匹配；余项——per-device 离线队列拆分）。
 6. Identity binding 文档化（platform player_id ↔ game game_user_id ↔ character），不扩实现面（open）。
 
 P2（明确不做成核心）：

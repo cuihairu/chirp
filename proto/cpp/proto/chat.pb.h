@@ -7209,6 +7209,7 @@ class MessageNack final : public ::google::protobuf::Message
     kMessageIdFieldNumber = 1,
     kUserIdFieldNumber = 2,
     kErrorMessageFieldNumber = 4,
+    kDeliveryIdFieldNumber = 6,
     kFailedAtFieldNumber = 5,
     kErrorCodeFieldNumber = 3,
   };
@@ -7257,6 +7258,21 @@ class MessageNack final : public ::google::protobuf::Message
   ::std::string* PROTOBUF_NONNULL _internal_mutable_error_message();
 
   public:
+  // string delivery_id = 6;
+  void clear_delivery_id() ;
+  const ::std::string& delivery_id() const;
+  template <typename Arg_ = const ::std::string&, typename... Args_>
+  void set_delivery_id(Arg_&& arg, Args_... args);
+  ::std::string* PROTOBUF_NONNULL mutable_delivery_id();
+  [[nodiscard]] ::std::string* PROTOBUF_NULLABLE release_delivery_id();
+  void set_allocated_delivery_id(::std::string* PROTOBUF_NULLABLE value);
+
+  private:
+  const ::std::string& _internal_delivery_id() const;
+  PROTOBUF_ALWAYS_INLINE void _internal_set_delivery_id(const ::std::string& value);
+  ::std::string* PROTOBUF_NONNULL _internal_mutable_delivery_id();
+
+  public:
   // int64 failed_at = 5;
   void clear_failed_at() ;
   ::int64_t failed_at() const;
@@ -7281,8 +7297,8 @@ class MessageNack final : public ::google::protobuf::Message
  private:
   class _Internal;
   friend class ::google::protobuf::internal::TcParser;
-  static const ::google::protobuf::internal::TcParseTable<3, 5,
-                                   0, 61,
+  static const ::google::protobuf::internal::TcParseTable<3, 6,
+                                   0, 72,
                                    2>
       _table_;
 
@@ -7306,6 +7322,7 @@ class MessageNack final : public ::google::protobuf::Message
     ::google::protobuf::internal::ArenaStringPtr message_id_;
     ::google::protobuf::internal::ArenaStringPtr user_id_;
     ::google::protobuf::internal::ArenaStringPtr error_message_;
+    ::google::protobuf::internal::ArenaStringPtr delivery_id_;
     ::int64_t failed_at_;
     int error_code_;
     PROTOBUF_TSAN_DECLARE_MEMBER
@@ -8213,6 +8230,7 @@ class MessageAck final : public ::google::protobuf::Message
   enum : int {
     kMessageIdFieldNumber = 1,
     kUserIdFieldNumber = 2,
+    kDeliveryIdFieldNumber = 4,
     kReceivedAtFieldNumber = 3,
   };
   // string message_id = 1;
@@ -8245,6 +8263,21 @@ class MessageAck final : public ::google::protobuf::Message
   ::std::string* PROTOBUF_NONNULL _internal_mutable_user_id();
 
   public:
+  // string delivery_id = 4;
+  void clear_delivery_id() ;
+  const ::std::string& delivery_id() const;
+  template <typename Arg_ = const ::std::string&, typename... Args_>
+  void set_delivery_id(Arg_&& arg, Args_... args);
+  ::std::string* PROTOBUF_NONNULL mutable_delivery_id();
+  [[nodiscard]] ::std::string* PROTOBUF_NULLABLE release_delivery_id();
+  void set_allocated_delivery_id(::std::string* PROTOBUF_NULLABLE value);
+
+  private:
+  const ::std::string& _internal_delivery_id() const;
+  PROTOBUF_ALWAYS_INLINE void _internal_set_delivery_id(const ::std::string& value);
+  ::std::string* PROTOBUF_NONNULL _internal_mutable_delivery_id();
+
+  public:
   // int64 received_at = 3;
   void clear_received_at() ;
   ::int64_t received_at() const;
@@ -8259,8 +8292,8 @@ class MessageAck final : public ::google::protobuf::Message
  private:
   class _Internal;
   friend class ::google::protobuf::internal::TcParser;
-  static const ::google::protobuf::internal::TcParseTable<2, 3,
-                                   0, 47,
+  static const ::google::protobuf::internal::TcParseTable<2, 4,
+                                   0, 58,
                                    2>
       _table_;
 
@@ -8283,6 +8316,7 @@ class MessageAck final : public ::google::protobuf::Message
     ::google::protobuf::internal::CachedSize _cached_size_;
     ::google::protobuf::internal::ArenaStringPtr message_id_;
     ::google::protobuf::internal::ArenaStringPtr user_id_;
+    ::google::protobuf::internal::ArenaStringPtr delivery_id_;
     ::int64_t received_at_;
     PROTOBUF_TSAN_DECLARE_MEMBER
   };
@@ -36621,7 +36655,7 @@ inline void MessageAck::clear_received_at() {
   ::google::protobuf::internal::TSanWrite(&_impl_);
   _impl_.received_at_ = ::int64_t{0};
   ClearHasBit(_impl_._has_bits_[0],
-                  0x00000004U);
+                  0x00000008U);
 }
 inline ::int64_t MessageAck::received_at() const {
   // @@protoc_insertion_point(field_get:chirp.chat.MessageAck.received_at)
@@ -36629,7 +36663,7 @@ inline ::int64_t MessageAck::received_at() const {
 }
 inline void MessageAck::set_received_at(::int64_t value) {
   _internal_set_received_at(value);
-  SetHasBit(_impl_._has_bits_[0], 0x00000004U);
+  SetHasBit(_impl_._has_bits_[0], 0x00000008U);
   // @@protoc_insertion_point(field_set:chirp.chat.MessageAck.received_at)
 }
 inline ::int64_t MessageAck::_internal_received_at() const {
@@ -36639,6 +36673,71 @@ inline ::int64_t MessageAck::_internal_received_at() const {
 inline void MessageAck::_internal_set_received_at(::int64_t value) {
   ::google::protobuf::internal::TSanWrite(&_impl_);
   _impl_.received_at_ = value;
+}
+
+// string delivery_id = 4;
+inline void MessageAck::clear_delivery_id() {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_.delivery_id_.ClearToEmpty();
+  ClearHasBit(_impl_._has_bits_[0],
+                  0x00000004U);
+}
+inline const ::std::string& MessageAck::delivery_id() const
+    ABSL_ATTRIBUTE_LIFETIME_BOUND {
+  // @@protoc_insertion_point(field_get:chirp.chat.MessageAck.delivery_id)
+  return _internal_delivery_id();
+}
+template <typename Arg_, typename... Args_>
+PROTOBUF_ALWAYS_INLINE void MessageAck::set_delivery_id(Arg_&& arg, Args_... args) {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  SetHasBit(_impl_._has_bits_[0], 0x00000004U);
+  _impl_.delivery_id_.Set(static_cast<Arg_&&>(arg), args..., GetArena());
+  // @@protoc_insertion_point(field_set:chirp.chat.MessageAck.delivery_id)
+}
+inline ::std::string* PROTOBUF_NONNULL MessageAck::mutable_delivery_id()
+    ABSL_ATTRIBUTE_LIFETIME_BOUND {
+  SetHasBit(_impl_._has_bits_[0], 0x00000004U);
+  ::std::string* _s = _internal_mutable_delivery_id();
+  // @@protoc_insertion_point(field_mutable:chirp.chat.MessageAck.delivery_id)
+  return _s;
+}
+inline const ::std::string& MessageAck::_internal_delivery_id() const {
+  ::google::protobuf::internal::TSanRead(&_impl_);
+  return _impl_.delivery_id_.Get();
+}
+inline void MessageAck::_internal_set_delivery_id(const ::std::string& value) {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_.delivery_id_.Set(value, GetArena());
+}
+inline ::std::string* PROTOBUF_NONNULL MessageAck::_internal_mutable_delivery_id() {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  return _impl_.delivery_id_.Mutable( GetArena());
+}
+inline ::std::string* PROTOBUF_NULLABLE MessageAck::release_delivery_id() {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  // @@protoc_insertion_point(field_release:chirp.chat.MessageAck.delivery_id)
+  if (!CheckHasBit(_impl_._has_bits_[0], 0x00000004U)) {
+    return nullptr;
+  }
+  ClearHasBit(_impl_._has_bits_[0], 0x00000004U);
+  auto* released = _impl_.delivery_id_.Release();
+  if (::google::protobuf::internal::DebugHardenForceCopyDefaultString()) {
+    _impl_.delivery_id_.Set("", GetArena());
+  }
+  return released;
+}
+inline void MessageAck::set_allocated_delivery_id(::std::string* PROTOBUF_NULLABLE value) {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  if (value != nullptr) {
+    SetHasBit(_impl_._has_bits_[0], 0x00000004U);
+  } else {
+    ClearHasBit(_impl_._has_bits_[0], 0x00000004U);
+  }
+  _impl_.delivery_id_.SetAllocated(value, GetArena());
+  if (::google::protobuf::internal::DebugHardenForceCopyDefaultString() && _impl_.delivery_id_.IsDefault()) {
+    _impl_.delivery_id_.Set("", GetArena());
+  }
+  // @@protoc_insertion_point(field_set_allocated:chirp.chat.MessageAck.delivery_id)
 }
 
 // -------------------------------------------------------------------
@@ -36780,7 +36879,7 @@ inline void MessageNack::clear_error_code() {
   ::google::protobuf::internal::TSanWrite(&_impl_);
   _impl_.error_code_ = 0;
   ClearHasBit(_impl_._has_bits_[0],
-                  0x00000010U);
+                  0x00000020U);
 }
 inline ::chirp::common::ErrorCode MessageNack::error_code() const {
   // @@protoc_insertion_point(field_get:chirp.chat.MessageNack.error_code)
@@ -36788,7 +36887,7 @@ inline ::chirp::common::ErrorCode MessageNack::error_code() const {
 }
 inline void MessageNack::set_error_code(::chirp::common::ErrorCode value) {
   _internal_set_error_code(value);
-  SetHasBit(_impl_._has_bits_[0], 0x00000010U);
+  SetHasBit(_impl_._has_bits_[0], 0x00000020U);
   // @@protoc_insertion_point(field_set:chirp.chat.MessageNack.error_code)
 }
 inline ::chirp::common::ErrorCode MessageNack::_internal_error_code() const {
@@ -36870,7 +36969,7 @@ inline void MessageNack::clear_failed_at() {
   ::google::protobuf::internal::TSanWrite(&_impl_);
   _impl_.failed_at_ = ::int64_t{0};
   ClearHasBit(_impl_._has_bits_[0],
-                  0x00000008U);
+                  0x00000010U);
 }
 inline ::int64_t MessageNack::failed_at() const {
   // @@protoc_insertion_point(field_get:chirp.chat.MessageNack.failed_at)
@@ -36878,7 +36977,7 @@ inline ::int64_t MessageNack::failed_at() const {
 }
 inline void MessageNack::set_failed_at(::int64_t value) {
   _internal_set_failed_at(value);
-  SetHasBit(_impl_._has_bits_[0], 0x00000008U);
+  SetHasBit(_impl_._has_bits_[0], 0x00000010U);
   // @@protoc_insertion_point(field_set:chirp.chat.MessageNack.failed_at)
 }
 inline ::int64_t MessageNack::_internal_failed_at() const {
@@ -36888,6 +36987,71 @@ inline ::int64_t MessageNack::_internal_failed_at() const {
 inline void MessageNack::_internal_set_failed_at(::int64_t value) {
   ::google::protobuf::internal::TSanWrite(&_impl_);
   _impl_.failed_at_ = value;
+}
+
+// string delivery_id = 6;
+inline void MessageNack::clear_delivery_id() {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_.delivery_id_.ClearToEmpty();
+  ClearHasBit(_impl_._has_bits_[0],
+                  0x00000008U);
+}
+inline const ::std::string& MessageNack::delivery_id() const
+    ABSL_ATTRIBUTE_LIFETIME_BOUND {
+  // @@protoc_insertion_point(field_get:chirp.chat.MessageNack.delivery_id)
+  return _internal_delivery_id();
+}
+template <typename Arg_, typename... Args_>
+PROTOBUF_ALWAYS_INLINE void MessageNack::set_delivery_id(Arg_&& arg, Args_... args) {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  SetHasBit(_impl_._has_bits_[0], 0x00000008U);
+  _impl_.delivery_id_.Set(static_cast<Arg_&&>(arg), args..., GetArena());
+  // @@protoc_insertion_point(field_set:chirp.chat.MessageNack.delivery_id)
+}
+inline ::std::string* PROTOBUF_NONNULL MessageNack::mutable_delivery_id()
+    ABSL_ATTRIBUTE_LIFETIME_BOUND {
+  SetHasBit(_impl_._has_bits_[0], 0x00000008U);
+  ::std::string* _s = _internal_mutable_delivery_id();
+  // @@protoc_insertion_point(field_mutable:chirp.chat.MessageNack.delivery_id)
+  return _s;
+}
+inline const ::std::string& MessageNack::_internal_delivery_id() const {
+  ::google::protobuf::internal::TSanRead(&_impl_);
+  return _impl_.delivery_id_.Get();
+}
+inline void MessageNack::_internal_set_delivery_id(const ::std::string& value) {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_.delivery_id_.Set(value, GetArena());
+}
+inline ::std::string* PROTOBUF_NONNULL MessageNack::_internal_mutable_delivery_id() {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  return _impl_.delivery_id_.Mutable( GetArena());
+}
+inline ::std::string* PROTOBUF_NULLABLE MessageNack::release_delivery_id() {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  // @@protoc_insertion_point(field_release:chirp.chat.MessageNack.delivery_id)
+  if (!CheckHasBit(_impl_._has_bits_[0], 0x00000008U)) {
+    return nullptr;
+  }
+  ClearHasBit(_impl_._has_bits_[0], 0x00000008U);
+  auto* released = _impl_.delivery_id_.Release();
+  if (::google::protobuf::internal::DebugHardenForceCopyDefaultString()) {
+    _impl_.delivery_id_.Set("", GetArena());
+  }
+  return released;
+}
+inline void MessageNack::set_allocated_delivery_id(::std::string* PROTOBUF_NULLABLE value) {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  if (value != nullptr) {
+    SetHasBit(_impl_._has_bits_[0], 0x00000008U);
+  } else {
+    ClearHasBit(_impl_._has_bits_[0], 0x00000008U);
+  }
+  _impl_.delivery_id_.SetAllocated(value, GetArena());
+  if (::google::protobuf::internal::DebugHardenForceCopyDefaultString() && _impl_.delivery_id_.IsDefault()) {
+    _impl_.delivery_id_.Set("", GetArena());
+  }
+  // @@protoc_insertion_point(field_set_allocated:chirp.chat.MessageNack.delivery_id)
 }
 
 // -------------------------------------------------------------------

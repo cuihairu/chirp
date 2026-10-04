@@ -145,12 +145,14 @@ std::vector<std::shared_ptr<chirp::network::Session>> HealthyLocalSessions(
 }
 
 // Holds a delivery until MESSAGE_ACK when any target device declared the
-// ack capability. Track is idempotent per message id, so one capable device
-// is enough; the ack may arrive over a different one. Returns whether the
-// delivery is now held for an ack.
+// ack capability. Track is idempotent per delivery subject (delivery_id, or
+// message_id for the first/live delivery), so one capable device is enough;
+// the ack may arrive over a different one. Returns whether the delivery is
+// now held for an ack.
 bool TrackAckIfCapable(chirp::chat::DeliveryAckManager* acks,
                        const std::vector<std::shared_ptr<chirp::network::Session>>& sessions,
                        const std::string& message_id,
+                       const std::string& delivery_id,
                        const std::string& receiver_id,
                        const std::string& payload) {
   if (!acks) {
@@ -158,7 +160,7 @@ bool TrackAckIfCapable(chirp::chat::DeliveryAckManager* acks,
   }
   for (const auto& recv : sessions) {
     if (acks->IsCapable(recv.get())) {
-      acks->Track(message_id, receiver_id, payload);
+      acks->Track(message_id, delivery_id, receiver_id, payload);
       return true;
     }
   }
@@ -317,7 +319,8 @@ void HandleSendMessage(const chirp::chat::SendMessageRequest& req,
         }
         // Ack-capable sessions hold the delivery until MESSAGE_ACK; only
         // legacy sessions keep the write-means-delivered self answer.
-        if (!TrackAckIfCapable(acks, healthy, msg.message_id(), user_id, msg_bytes)) {
+        if (!TrackAckIfCapable(acks, healthy, msg.message_id(), msg.delivery_id(),
+                               user_id, msg_bytes)) {
           delivery_tracker->Acknowledge(msg.message_id(), user_id);
         }
         for (const auto& recv_session : healthy) {
@@ -800,7 +803,8 @@ void HandleLogin(const chirp::auth::LoginRequest& req,
       }
       // Cross-instance deliveries are tracked like local ones - this
       // instance owns the receiving sessions, so the ack comes back here.
-      TrackAckIfCapable(acks, healthy, msg.message_id(), user_id, msg_data);
+      TrackAckIfCapable(acks, healthy, msg.message_id(), msg.delivery_id(),
+                        user_id, msg_data);
       for (const auto& recv : healthy) {
         chirp::chat::runtime::SendChatNotify(recv, msg);
       }
@@ -834,7 +838,8 @@ void HandleLogin(const chirp::auth::LoginRequest& req,
       // Refills are tracked like live deliveries: an unacked refill returns
       // to the offline queue instead of dying with the connection.
       if (acks && acks->IsCapable(session.get())) {
-        acks->Track(msg.message_id(), user_id, msg.SerializeAsString());
+        acks->Track(msg.message_id(), msg.delivery_id(), user_id,
+                    msg.SerializeAsString());
       }
       chirp::chat::runtime::SendChatNotify(session, msg);
     }
@@ -1038,8 +1043,8 @@ int main(int argc, char** argv) {
       }
       // Injected private replies are tracked like SEND_MESSAGE deliveries;
       // only legacy sessions keep the write-means-delivered self answer.
-      if (!TrackAckIfCapable(acks.get(), healthy, msg.message_id(), receiver_id,
-                             msg.SerializeAsString())) {
+      if (!TrackAckIfCapable(acks.get(), healthy, msg.message_id(), msg.delivery_id(),
+                             receiver_id, msg.SerializeAsString())) {
         delivery_tracker->Acknowledge(msg.message_id(), receiver_id);
       }
       for (const auto& recv_session : healthy) {
@@ -1165,8 +1170,8 @@ int main(int argc, char** argv) {
         });
         auto healthy = HealthyLocalSessions(state, player_id);
         if (!healthy.empty()) {
-          if (!TrackAckIfCapable(acks.get(), healthy, copy.message_id(), player_id,
-                                 copy.SerializeAsString())) {
+          if (!TrackAckIfCapable(acks.get(), healthy, copy.message_id(), copy.delivery_id(),
+                                 player_id, copy.SerializeAsString())) {
             delivery_tracker->Acknowledge(copy.message_id(), player_id);
           }
           for (const auto& recv_session : healthy) {
@@ -1290,8 +1295,8 @@ int main(int argc, char** argv) {
             });
             auto healthy = HealthyLocalSessions(state, inject.channel_id());
             if (!healthy.empty()) {
-              if (!TrackAckIfCapable(acks.get(), healthy, msg.message_id(), inject.channel_id(),
-                                     msg.SerializeAsString())) {
+              if (!TrackAckIfCapable(acks.get(), healthy, msg.message_id(), msg.delivery_id(),
+                                     inject.channel_id(), msg.SerializeAsString())) {
                 delivery_tracker->Acknowledge(msg.message_id(), inject.channel_id());
               }
               for (const auto& recv_session : healthy) {
@@ -1588,10 +1593,14 @@ int main(int argc, char** argv) {
         (!req.user_id().empty() && req.user_id() != user_id)) {
       return;
     }
-    if (acks->Acknowledge(req.message_id())) {
+    if (acks->Acknowledge(req.message_id(), req.delivery_id())) {
       // The real client receipt also settles the delivery tracker's status.
       delivery_tracker->Acknowledge(req.message_id(), user_id);
-      Logger::Instance().Info("message acked id=" + req.message_id() + " user=" + user_id);
+      Logger::Instance().Info("message acked id=" + req.message_id() +
+                              (req.delivery_id().empty()
+                                   ? " (first-delivery subject)"
+                                   : " dlv=" + req.delivery_id()) +
+                              " user=" + user_id);
     }
   };
   // Channel mutes (game_chat_features P0 频道屏蔽): the same contract as the

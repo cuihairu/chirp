@@ -63,13 +63,18 @@ public:
   void ForgetSession(const network::Session* session);
 
   // Pending bookkeeping ----------------------------------------------------
-  // Idempotent: tracking the same message_id again just refreshes it.
+  // 投递主语 = delivery_id 非空时用之（补投/重投各成一笔，精确匹配）；
+  // 空 = 首次在线投递，主语即 message_id。Idempotent: 同一主语再 Track
+  // 只是刷新（重投同 id 的场景天然收敛）。
   void Track(const std::string& message_id,
+             const std::string& delivery_id,
              const std::string& receiver_id,
              const std::string& payload);
   // Returns true when the ack meant something: it cleared a pending entry, or
   // it arrived late and on_late_ack was invoked to clean the offline copy.
-  bool Acknowledge(const std::string& message_id);
+  // delivery_id 空 = 旧客户端，退化按 message_id 匹配首投。
+  bool Acknowledge(const std::string& message_id,
+                   const std::string& delivery_id);
 
   size_t pending_count() const;
 
@@ -90,6 +95,7 @@ private:
     std::string payload;
     int64_t requeued_at_ms;
   };
+  // key = 投递主语：delivery_id（非空）或首投的 message_id（空 id 场景）。
   std::unordered_map<std::string, Pending> pending_;
   // Messages already handed back to the offline queue, remembered so a late
   // ack can still remove the offline copy; swept on requeued_retention_ms.

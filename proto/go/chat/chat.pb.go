@@ -3157,10 +3157,14 @@ func (x *TypingIndicatorState) GetTimestamp() int64 {
 
 // Message acknowledgment
 type MessageAck struct {
-	state         protoimpl.MessageState `protogen:"open.v1"`
-	MessageId     string                 `protobuf:"bytes,1,opt,name=message_id,json=messageId,proto3" json:"message_id,omitempty"`
-	UserId        string                 `protobuf:"bytes,2,opt,name=user_id,json=userId,proto3" json:"user_id,omitempty"`
-	ReceivedAt    int64                  `protobuf:"varint,3,opt,name=received_at,json=receivedAt,proto3" json:"received_at,omitempty"`
+	state      protoimpl.MessageState `protogen:"open.v1"`
+	MessageId  string                 `protobuf:"bytes,1,opt,name=message_id,json=messageId,proto3" json:"message_id,omitempty"`
+	UserId     string                 `protobuf:"bytes,2,opt,name=user_id,json=userId,proto3" json:"user_id,omitempty"`
+	ReceivedAt int64                  `protobuf:"varint,3,opt,name=received_at,json=receivedAt,proto3" json:"received_at,omitempty"`
+	// 单次投递主语（Communication Core P1-5）：客户端确认的是哪一次投递。
+	// 空 = 旧客户端/首投场景，服务端按 message_id 兼容匹配首投的在途投递；
+	// 非空时精确匹配（同一 message_id 的多笔投递互不干扰）。
+	DeliveryId    string `protobuf:"bytes,4,opt,name=delivery_id,json=deliveryId,proto3" json:"delivery_id,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -3216,14 +3220,23 @@ func (x *MessageAck) GetReceivedAt() int64 {
 	return 0
 }
 
+func (x *MessageAck) GetDeliveryId() string {
+	if x != nil {
+		return x.DeliveryId
+	}
+	return ""
+}
+
 // Message negative acknowledgment (delivery failed)
 type MessageNack struct {
-	state         protoimpl.MessageState `protogen:"open.v1"`
-	MessageId     string                 `protobuf:"bytes,1,opt,name=message_id,json=messageId,proto3" json:"message_id,omitempty"`
-	UserId        string                 `protobuf:"bytes,2,opt,name=user_id,json=userId,proto3" json:"user_id,omitempty"`
-	ErrorCode     common.ErrorCode       `protobuf:"varint,3,opt,name=error_code,json=errorCode,proto3,enum=chirp.common.ErrorCode" json:"error_code,omitempty"`
-	ErrorMessage  string                 `protobuf:"bytes,4,opt,name=error_message,json=errorMessage,proto3" json:"error_message,omitempty"`
-	FailedAt      int64                  `protobuf:"varint,5,opt,name=failed_at,json=failedAt,proto3" json:"failed_at,omitempty"`
+	state        protoimpl.MessageState `protogen:"open.v1"`
+	MessageId    string                 `protobuf:"bytes,1,opt,name=message_id,json=messageId,proto3" json:"message_id,omitempty"`
+	UserId       string                 `protobuf:"bytes,2,opt,name=user_id,json=userId,proto3" json:"user_id,omitempty"`
+	ErrorCode    common.ErrorCode       `protobuf:"varint,3,opt,name=error_code,json=errorCode,proto3,enum=chirp.common.ErrorCode" json:"error_code,omitempty"`
+	ErrorMessage string                 `protobuf:"bytes,4,opt,name=error_message,json=errorMessage,proto3" json:"error_message,omitempty"`
+	FailedAt     int64                  `protobuf:"varint,5,opt,name=failed_at,json=failedAt,proto3" json:"failed_at,omitempty"`
+	// 同 MessageAck.delivery_id：负确认携带投递主语，服务端据此定位失败投递。
+	DeliveryId    string `protobuf:"bytes,6,opt,name=delivery_id,json=deliveryId,proto3" json:"delivery_id,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -3291,6 +3304,13 @@ func (x *MessageNack) GetFailedAt() int64 {
 		return x.FailedAt
 	}
 	return 0
+}
+
+func (x *MessageNack) GetDeliveryId() string {
+	if x != nil {
+		return x.DeliveryId
+	}
+	return ""
 }
 
 // Delivery status
@@ -8937,14 +8957,16 @@ const file_proto_chat_proto_rawDesc = "" +
 	"\fchannel_type\x18\x02 \x01(\x0e2\x17.chirp.chat.ChannelTypeR\vchannelType\x12\x17\n" +
 	"\auser_id\x18\x03 \x01(\tR\x06userId\x12\x1b\n" +
 	"\tis_typing\x18\x04 \x01(\bR\bisTyping\x12\x1c\n" +
-	"\ttimestamp\x18\x05 \x01(\x03R\ttimestamp\"e\n" +
+	"\ttimestamp\x18\x05 \x01(\x03R\ttimestamp\"\x86\x01\n" +
 	"\n" +
 	"MessageAck\x12\x1d\n" +
 	"\n" +
 	"message_id\x18\x01 \x01(\tR\tmessageId\x12\x17\n" +
 	"\auser_id\x18\x02 \x01(\tR\x06userId\x12\x1f\n" +
 	"\vreceived_at\x18\x03 \x01(\x03R\n" +
-	"receivedAt\"\xbf\x01\n" +
+	"receivedAt\x12\x1f\n" +
+	"\vdelivery_id\x18\x04 \x01(\tR\n" +
+	"deliveryId\"\xe0\x01\n" +
 	"\vMessageNack\x12\x1d\n" +
 	"\n" +
 	"message_id\x18\x01 \x01(\tR\tmessageId\x12\x17\n" +
@@ -8952,7 +8974,9 @@ const file_proto_chat_proto_rawDesc = "" +
 	"\n" +
 	"error_code\x18\x03 \x01(\x0e2\x17.chirp.common.ErrorCodeR\terrorCode\x12#\n" +
 	"\rerror_message\x18\x04 \x01(\tR\ferrorMessage\x12\x1b\n" +
-	"\tfailed_at\x18\x05 \x01(\x03R\bfailedAt\"\x86\x02\n" +
+	"\tfailed_at\x18\x05 \x01(\x03R\bfailedAt\x12\x1f\n" +
+	"\vdelivery_id\x18\x06 \x01(\tR\n" +
+	"deliveryId\"\x86\x02\n" +
 	"\x0eDeliveryStatus\x12\x1d\n" +
 	"\n" +
 	"message_id\x18\x01 \x01(\tR\tmessageId\x12\x17\n" +

@@ -881,6 +881,12 @@ export interface MessageAck {
   messageId: string;
   userId: string;
   receivedAt: number;
+  /**
+   * 单次投递主语（Communication Core P1-5）：客户端确认的是哪一次投递。
+   * 空 = 旧客户端/首投场景，服务端按 message_id 兼容匹配首投的在途投递；
+   * 非空时精确匹配（同一 message_id 的多笔投递互不干扰）。
+   */
+  deliveryId: string;
 }
 
 /** Message negative acknowledgment (delivery failed) */
@@ -890,6 +896,8 @@ export interface MessageNack {
   errorCode: ErrorCode;
   errorMessage: string;
   failedAt: number;
+  /** 同 MessageAck.delivery_id：负确认携带投递主语，服务端据此定位失败投递。 */
+  deliveryId: string;
 }
 
 /** Delivery status */
@@ -5702,7 +5710,7 @@ export const TypingIndicatorState = {
 };
 
 function createBaseMessageAck(): MessageAck {
-  return { messageId: "", userId: "", receivedAt: 0 };
+  return { messageId: "", userId: "", receivedAt: 0, deliveryId: "" };
 }
 
 export const MessageAck = {
@@ -5715,6 +5723,9 @@ export const MessageAck = {
     }
     if (message.receivedAt !== 0) {
       writer.uint32(24).int64(message.receivedAt);
+    }
+    if (message.deliveryId !== "") {
+      writer.uint32(34).string(message.deliveryId);
     }
     return writer;
   },
@@ -5747,6 +5758,13 @@ export const MessageAck = {
 
           message.receivedAt = longToNumber(reader.int64() as Long);
           continue;
+        case 4:
+          if (tag !== 34) {
+            break;
+          }
+
+          message.deliveryId = reader.string();
+          continue;
       }
       if ((tag & 7) === 4 || tag === 0) {
         break;
@@ -5761,6 +5779,7 @@ export const MessageAck = {
       messageId: isSet(object.messageId) ? globalThis.String(object.messageId) : "",
       userId: isSet(object.userId) ? globalThis.String(object.userId) : "",
       receivedAt: isSet(object.receivedAt) ? globalThis.Number(object.receivedAt) : 0,
+      deliveryId: isSet(object.deliveryId) ? globalThis.String(object.deliveryId) : "",
     };
   },
 
@@ -5775,6 +5794,9 @@ export const MessageAck = {
     if (message.receivedAt !== 0) {
       obj.receivedAt = Math.round(message.receivedAt);
     }
+    if (message.deliveryId !== "") {
+      obj.deliveryId = message.deliveryId;
+    }
     return obj;
   },
 
@@ -5786,12 +5808,13 @@ export const MessageAck = {
     message.messageId = object.messageId ?? "";
     message.userId = object.userId ?? "";
     message.receivedAt = object.receivedAt ?? 0;
+    message.deliveryId = object.deliveryId ?? "";
     return message;
   },
 };
 
 function createBaseMessageNack(): MessageNack {
-  return { messageId: "", userId: "", errorCode: 0, errorMessage: "", failedAt: 0 };
+  return { messageId: "", userId: "", errorCode: 0, errorMessage: "", failedAt: 0, deliveryId: "" };
 }
 
 export const MessageNack = {
@@ -5810,6 +5833,9 @@ export const MessageNack = {
     }
     if (message.failedAt !== 0) {
       writer.uint32(40).int64(message.failedAt);
+    }
+    if (message.deliveryId !== "") {
+      writer.uint32(50).string(message.deliveryId);
     }
     return writer;
   },
@@ -5856,6 +5882,13 @@ export const MessageNack = {
 
           message.failedAt = longToNumber(reader.int64() as Long);
           continue;
+        case 6:
+          if (tag !== 50) {
+            break;
+          }
+
+          message.deliveryId = reader.string();
+          continue;
       }
       if ((tag & 7) === 4 || tag === 0) {
         break;
@@ -5872,6 +5905,7 @@ export const MessageNack = {
       errorCode: isSet(object.errorCode) ? errorCodeFromJSON(object.errorCode) : 0,
       errorMessage: isSet(object.errorMessage) ? globalThis.String(object.errorMessage) : "",
       failedAt: isSet(object.failedAt) ? globalThis.Number(object.failedAt) : 0,
+      deliveryId: isSet(object.deliveryId) ? globalThis.String(object.deliveryId) : "",
     };
   },
 
@@ -5892,6 +5926,9 @@ export const MessageNack = {
     if (message.failedAt !== 0) {
       obj.failedAt = Math.round(message.failedAt);
     }
+    if (message.deliveryId !== "") {
+      obj.deliveryId = message.deliveryId;
+    }
     return obj;
   },
 
@@ -5905,6 +5942,7 @@ export const MessageNack = {
     message.errorCode = object.errorCode ?? 0;
     message.errorMessage = object.errorMessage ?? "";
     message.failedAt = object.failedAt ?? 0;
+    message.deliveryId = object.deliveryId ?? "";
     return message;
   },
 };

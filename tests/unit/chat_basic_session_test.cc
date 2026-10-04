@@ -506,6 +506,38 @@ TEST_F(BasicChatTest, OfflineRefillKeepsExistingDeliveryId) {
   EXPECT_EQ(got.delivery_id(), "dlv_kept");
 }
 
+TEST_F(BasicChatTest, RefillAckWithDeliveryIdClearsPendingExactly) {
+  // P1-5 余项：补投副本的 MESSAGE_ACK 显式携带 delivery_id → 精确命中补投
+  // 挂起（handler 忘传 delivery_id 时 key 还挂在首投主语上，本用例失败）。
+  // 旧客户端空 delivery_id 的兼容匹配见 PrivateSendFansOutTracksAckAnd...。
+  chirp::chat::ChatMessage kept;
+  kept.set_message_id("m-refill");
+  kept.set_delivery_id("dlv_refill");
+  kept.set_content("refill ack");
+  store_->AddOffline("alice", kept);
+  auto session = std::make_shared<MockSession>();
+  ASSERT_EQ(Login(session, "alice", "tab-2", "web", /*supports_ack=*/true)
+                .code(),
+            chirp::common::OK);
+  ASSERT_EQ(FramesOf(*session, chirp::gateway::CHAT_MESSAGE_NOTIFY).size(), 1u);
+  // 补投已挂起，主语 = dlv_refill。
+  EXPECT_EQ(acks_->pending_count(), 1u);
+
+  chirp::chat::MessageAck wrong;
+  wrong.set_message_id("m-refill");
+  wrong.set_delivery_id("dlv_other");  // 另一笔投递的主语：不命中
+  wrong.set_user_id("alice");
+  DispatchReq(chirp::gateway::MESSAGE_ACK, wrong, session);
+  EXPECT_EQ(acks_->pending_count(), 1u);
+
+  chirp::chat::MessageAck ack;
+  ack.set_message_id("m-refill");
+  ack.set_delivery_id("dlv_refill");
+  ack.set_user_id("alice");
+  DispatchReq(chirp::gateway::MESSAGE_ACK, ack, session);
+  EXPECT_EQ(acks_->pending_count(), 0u);
+}
+
 TEST_F(BasicChatTest, LoginRejectionsCoverLimiterParseJwtAndEmpty) {
   chirp_test::InMemoryRedis redis;
   auto fake = std::make_unique<chirp_test::FakeRedisServer>(

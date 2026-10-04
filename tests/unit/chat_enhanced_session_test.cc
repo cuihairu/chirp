@@ -664,11 +664,11 @@ TEST_F(EnhancedSessionTest, TrackAckIfCapableHoldsWhenAnyDeviceIsCapable) {
   auto legacy = std::make_shared<MockSession>();
   auto modern = std::make_shared<MockSession>();
 
-  EXPECT_FALSE(TrackAckIfCapable(&acks, {legacy}, "m1", "bob", "payload-1"));
+  EXPECT_FALSE(TrackAckIfCapable(&acks, {legacy}, "m1", "", "bob", "payload-1"));
   EXPECT_EQ(acks.pending_count(), 0u);
 
   acks.MarkCapable(modern);
-  EXPECT_TRUE(TrackAckIfCapable(&acks, {legacy, modern}, "m2", "bob", "payload-2"));
+  EXPECT_TRUE(TrackAckIfCapable(&acks, {legacy, modern}, "m2", "", "bob", "payload-2"));
   EXPECT_EQ(acks.pending_count(), 1u);
 }
 

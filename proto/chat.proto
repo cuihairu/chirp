@@ -360,6 +360,10 @@ message MessageAck {
   string message_id = 1;
   string user_id = 2;
   int64 received_at = 3;
+  // 单次投递主语（Communication Core P1-5）：客户端确认的是哪一次投递。
+  // 空 = 旧客户端/首投场景，服务端按 message_id 兼容匹配首投的在途投递；
+  // 非空时精确匹配（同一 message_id 的多笔投递互不干扰）。
+  string delivery_id = 4;
 }
 
 // Message negative acknowledgment (delivery failed)
@@ -369,6 +373,8 @@ message MessageNack {
   common.ErrorCode error_code = 3;
   string error_message = 4;
   int64 failed_at = 5;
+  // 同 MessageAck.delivery_id：负确认携带投递主语，服务端据此定位失败投递。
+  string delivery_id = 6;
 }
 
 // Delivery status

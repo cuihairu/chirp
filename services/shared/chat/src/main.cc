@@ -388,11 +388,13 @@ std::vector<std::shared_ptr<chirp::network::Session>> HealthyUserSessions(
 }
 
 // Holds a delivery until MESSAGE_ACK when any target device declared the
-// ack capability. Track is idempotent per message id, so one capable device
-// is enough; the ack may arrive over a different one.
+// ack capability. Track is idempotent per delivery subject (delivery_id, or
+// message_id for the first/live delivery), so one capable device is enough;
+// the ack may arrive over a different one.
 void TrackAckIfCapable(chirp::chat::DeliveryAckManager* acks,
                        const std::vector<std::shared_ptr<chirp::network::Session>>& sessions,
                        const std::string& message_id,
+                       const std::string& delivery_id,
                        const std::string& receiver_id,
                        const std::string& payload) {
   if (!acks) {
@@ -400,7 +402,7 @@ void TrackAckIfCapable(chirp::chat::DeliveryAckManager* acks,
   }
   for (const auto& recv : sessions) {
     if (acks->IsCapable(recv.get())) {
-      acks->Track(message_id, receiver_id, payload);
+      acks->Track(message_id, delivery_id, receiver_id, payload);
       return;
     }
   }
@@ -642,7 +644,8 @@ void HandlePacket(const std::shared_ptr<MessageStore>& store,
         // being consumed by a zombie connection. 序列化在铸 id 之后,
         // 回队副本带着同一 delivery_id。
         if (features.acks && features.acks->IsCapable(session.get())) {
-          features.acks->Track(delivered.message_id(), user_id, delivered.SerializeAsString());
+          features.acks->Track(delivered.message_id(), delivered.delivery_id(),
+                           user_id, delivered.SerializeAsString());
         }
         chirp::chat::runtime::SendChatNotify(session, delivered);
       }
@@ -885,7 +888,8 @@ void HandlePacket(const std::shared_ptr<MessageStore>& store,
       if (!receivers.empty()) {
         resp.set_code(chirp::common::OK);
         TrackAckIfCapable(features.acks, receivers, msg.message_id(),
-                          req.receiver_id(), msg.SerializeAsString());
+                          msg.delivery_id(), req.receiver_id(),
+                          msg.SerializeAsString());
         for (const auto& recv : receivers) {
           chirp::chat::runtime::SendChatNotify(recv, msg);
         }
@@ -950,9 +954,14 @@ void HandlePacket(const std::shared_ptr<MessageStore>& store,
     if (ack.ParseFromArray(pkt.body().data(), static_cast<int>(pkt.body().size())) &&
         !ack.message_id().empty() && !authenticated_user_id.empty() &&
         (ack.user_id().empty() || ack.user_id() == authenticated_user_id)) {
-      if (features.acks && features.acks->Acknowledge(ack.message_id())) {
-        Logger::Instance().Info("message acked id=" + ack.message_id() +
-                                " user=" + authenticated_user_id);
+      if (features.acks &&
+          features.acks->Acknowledge(ack.message_id(), ack.delivery_id())) {
+        Logger::Instance().Info(
+            "message acked id=" + ack.message_id() +
+            (ack.delivery_id().empty()
+                 ? " (first-delivery subject)"
+                 : " dlv=" + ack.delivery_id()) +
+            " user=" + authenticated_user_id);
       }
     }
     break;
@@ -1664,7 +1673,8 @@ int main(int argc, char** argv) {
         store->AddMessage(copy);
         auto receivers = HealthyUserSessions(state, player_id);
         if (!receivers.empty()) {
-          TrackAckIfCapable(features.acks, receivers, copy.message_id(), player_id,
+          TrackAckIfCapable(features.acks, receivers, copy.message_id(),
+                            copy.delivery_id(), player_id,
                             copy.SerializeAsString());
           for (const auto& recv : receivers) {
             chirp::chat::runtime::SendChatNotify(recv, copy);
@@ -1838,7 +1848,8 @@ int main(int argc, char** argv) {
       // Injected private replies are tracked like SEND_MESSAGE deliveries,
       // then fanned out to every device of the receiver.
       TrackAckIfCapable(features.acks, receivers, msg.message_id(),
-                        receiver_id, msg.SerializeAsString());
+                        msg.delivery_id(), receiver_id,
+                        msg.SerializeAsString());
       for (const auto& recv : receivers) {
         chirp::chat::runtime::SendChatNotify(recv, msg);
       }

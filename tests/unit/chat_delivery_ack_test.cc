@@ -46,9 +46,9 @@ TEST(DeliveryAckTest, AckBeforeTimeoutClearsPendingWithoutRequeue) {
                              });
   manager.Start();
 
-  manager.Track("msg_1", "user_2", "payload");
+  manager.Track("msg_1", "", "user_2", "payload");
   EXPECT_EQ(manager.pending_count(), 1u);
-  EXPECT_TRUE(manager.Acknowledge("msg_1"));
+  EXPECT_TRUE(manager.Acknowledge("msg_1", ""));
   EXPECT_EQ(manager.pending_count(), 0u);
 
   io.run_for(std::chrono::milliseconds(200));
@@ -67,7 +67,7 @@ TEST(DeliveryAckTest, TimeoutRequeuesExactlyOnce) {
                              [&](const std::string&, const std::string&) {});
   manager.Start();
 
-  manager.Track("msg_1", "user_2", "the-payload");
+  manager.Track("msg_1", "", "user_2", "the-payload");
   io.run_for(std::chrono::milliseconds(200));
 
   ASSERT_EQ(recorded.requeued.size(), 1u);
@@ -88,17 +88,17 @@ TEST(DeliveryAckTest, LateAckAfterRequeueInvokesCleanup) {
                              });
   manager.Start();
 
-  manager.Track("msg_1", "user_2", "the-payload");
+  manager.Track("msg_1", "", "user_2", "the-payload");
   io.run_for(std::chrono::milliseconds(200));
   ASSERT_EQ(recorded.requeued.size(), 1u);
 
-  EXPECT_TRUE(manager.Acknowledge("msg_1"));
+  EXPECT_TRUE(manager.Acknowledge("msg_1", ""));
   ASSERT_EQ(recorded.late_acked.size(), 1u);
   EXPECT_EQ(recorded.late_acked[0].first, "user_2");
   EXPECT_EQ(recorded.late_acked[0].second, "the-payload");
 
   // A second ack for the same id is a no-op (offline copy already removed).
-  EXPECT_FALSE(manager.Acknowledge("msg_1"));
+  EXPECT_FALSE(manager.Acknowledge("msg_1", ""));
   EXPECT_EQ(recorded.late_acked.size(), 1u);
 }
 
@@ -114,8 +114,8 @@ TEST(DeliveryAckTest, UnknownAckIsANoop) {
                              });
   manager.Start();
 
-  EXPECT_FALSE(manager.Acknowledge("never_tracked"));
-  EXPECT_FALSE(manager.Acknowledge(""));
+  EXPECT_FALSE(manager.Acknowledge("never_tracked", ""));
+  EXPECT_FALSE(manager.Acknowledge("", ""));
   EXPECT_TRUE(recorded.requeued.empty());
   EXPECT_TRUE(recorded.late_acked.empty());
 }
@@ -130,11 +130,87 @@ TEST(DeliveryAckTest, RetrackingSameMessageRefreshesInsteadOfDuplicating) {
                              [](const std::string&, const std::string&) {});
   manager.Start();
 
-  manager.Track("msg_1", "user_2", "first");
-  manager.Track("msg_1", "user_2", "second");
+  manager.Track("msg_1", "", "user_2", "first");
+  manager.Track("msg_1", "", "user_2", "second");
   EXPECT_EQ(manager.pending_count(), 1u);
 
-  EXPECT_TRUE(manager.Acknowledge("msg_1"));
+  EXPECT_TRUE(manager.Acknowledge("msg_1", ""));
+  io.run_for(std::chrono::milliseconds(200));
+  EXPECT_TRUE(recorded.requeued.empty());
+}
+
+TEST(DeliveryAckTest, AckMatchesByDeliverySubject) {
+  // P1-5 余项：同一 message_id 的两笔投递（首投 + 补投副本）在途并存时，
+  // ack 的 delivery_id 精确命中对应投递，互不干扰。
+  asio::io_context io;
+  Recorded recorded;
+  DeliveryAckManager manager(io, FastConfig(),
+                             [&](const std::string& u, const std::string& p) {
+                               recorded.requeued.emplace_back(u, p);
+                             },
+                             [](const std::string&, const std::string&) {});
+  manager.Start();
+
+  manager.Track("m1", "", "user_2", "first-delivery");
+  manager.Track("m1", "dlv_refill", "user_2", "refill-copy");
+  EXPECT_EQ(manager.pending_count(), 2u);
+
+  // 另一笔投递的主语：不命中。
+  EXPECT_FALSE(manager.Acknowledge("m1", "dlv_other"));
+  // 精确命中补投副本。
+  EXPECT_TRUE(manager.Acknowledge("m1", "dlv_refill"));
+  EXPECT_EQ(manager.pending_count(), 1u);
+  // 旧客户端语义：空 delivery_id 退化按 message_id 匹配首投。
+  EXPECT_TRUE(manager.Acknowledge("m1", ""));
+  EXPECT_EQ(manager.pending_count(), 0u);
+
+  io.run_for(std::chrono::milliseconds(200));
+  EXPECT_TRUE(recorded.requeued.empty());
+}
+
+TEST(DeliveryAckTest, RequeuedCopyIsAckedByDeliverySubject) {
+  // 补投副本超时回队后，携带同一 delivery_id 的迟到 ack 精确清离线副本；
+  // 空 delivery_id 的旧客户端不会误清（首投没被 requeue）。
+  asio::io_context io;
+  Recorded recorded;
+  DeliveryAckManager manager(io, FastConfig(),
+                             [&](const std::string& u, const std::string& p) {
+                               recorded.requeued.emplace_back(u, p);
+                             },
+                             [&](const std::string& u, const std::string& p) {
+                               recorded.late_acked.emplace_back(u, p);
+                             });
+  manager.Start();
+
+  manager.Track("m_refill", "dlv_kept", "user_2", "kept-copy");
+  io.run_for(std::chrono::milliseconds(200));
+  ASSERT_EQ(recorded.requeued.size(), 1u);
+
+  EXPECT_FALSE(manager.Acknowledge("m_refill", ""));
+  EXPECT_TRUE(manager.Acknowledge("m_refill", "dlv_kept"));
+  ASSERT_EQ(recorded.late_acked.size(), 1u);
+  EXPECT_EQ(recorded.late_acked[0].first, "user_2");
+  EXPECT_EQ(recorded.late_acked[0].second, "kept-copy");
+}
+
+TEST(DeliveryAckTest, RetrackingSameDeliveryIdRefreshesOnly) {
+  // 重投同 id（ack 超时回队再补投，payload 里的 delivery_id 不变）→ 刷新
+  // 而不是重复挂起——同一次投递的重投同 id，pending 恒为 1。
+  asio::io_context io;
+  Recorded recorded;
+  DeliveryAckManager manager(io, FastConfig(),
+                             [&](const std::string& u, const std::string& p) {
+                               recorded.requeued.emplace_back(u, p);
+                             },
+                             [](const std::string&, const std::string&) {});
+  manager.Start();
+
+  manager.Track("m1", "dlv_re", "user_2", "retry-1");
+  manager.Track("m1", "dlv_re", "user_2", "retry-2");
+  EXPECT_EQ(manager.pending_count(), 1u);
+
+  EXPECT_TRUE(manager.Acknowledge("m1", "dlv_re"));
+  EXPECT_EQ(manager.pending_count(), 0u);
   io.run_for(std::chrono::milliseconds(200));
   EXPECT_TRUE(recorded.requeued.empty());
 }
@@ -201,8 +277,8 @@ TEST(DeliveryAckTest, TrackRejectsEmptyIdentifiers) {
                              [](const std::string&, const std::string&) {});
   manager.Start();
 
-  manager.Track("", "user_2", "payload");
-  manager.Track("msg_1", "", "payload");
+  manager.Track("", "", "user_2", "payload");
+  manager.Track("msg_1", "", "", "payload");
   EXPECT_EQ(manager.pending_count(), 0u);
 }
 
@@ -220,12 +296,12 @@ TEST(DeliveryAckTest, HeapAllocatedIdentifiersTrackAndRequeue) {
   const std::string msg(64, 'm');
   const std::string user(64, 'u');
   const std::string payload(128, 'p');
-  manager.Track(msg, user, payload);
+  manager.Track(msg, "", user, payload);
   EXPECT_EQ(manager.pending_count(), 1u);
-  EXPECT_TRUE(manager.Acknowledge(msg));
+  EXPECT_TRUE(manager.Acknowledge(msg, ""));
   EXPECT_EQ(manager.pending_count(), 0u);
 
-  manager.Track(msg + "x", user, payload);
+  manager.Track(msg + "x", "", user, payload);
   io.run_for(std::chrono::milliseconds(200));
   ASSERT_EQ(recorded.requeued.size(), 1u);
   EXPECT_EQ(recorded.requeued[0].first, user);
@@ -248,14 +324,14 @@ TEST(DeliveryAckTest, RequeuedRetentionWindowClosesLateAcks) {
                              });
   manager.Start();
 
-  manager.Track("msg_1", "user_2", "the-payload");
+  manager.Track("msg_1", "", "user_2", "the-payload");
   // Within this window the message times out (~30ms), is requeued, and its
   // requeued_ entry is swept once the 10ms retention lapses.
   io.run_for(std::chrono::milliseconds(300));
 
   ASSERT_EQ(recorded.requeued.size(), 1u);
   // The retention window has closed: a late ack no longer cleans anything up.
-  EXPECT_FALSE(manager.Acknowledge("msg_1"));
+  EXPECT_FALSE(manager.Acknowledge("msg_1", ""));
   EXPECT_TRUE(recorded.late_acked.empty());
 }
 
@@ -275,11 +351,11 @@ TEST(DeliveryAckTest, DisabledManagerIsInert) {
   manager.Start();
   auto session = std::make_shared<FakeSession>();
   manager.MarkCapable(session);
-  manager.Track("msg_1", "user_2", "payload");
+  manager.Track("msg_1", "", "user_2", "payload");
 
   EXPECT_FALSE(manager.IsCapable(session.get()));
   EXPECT_EQ(manager.pending_count(), 0u);
-  EXPECT_FALSE(manager.Acknowledge("msg_1"));
+  EXPECT_FALSE(manager.Acknowledge("msg_1", ""));
 
   io.run_for(std::chrono::milliseconds(60));
   EXPECT_TRUE(recorded.requeued.empty());

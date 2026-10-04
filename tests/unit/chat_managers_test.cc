@@ -2031,8 +2031,9 @@ TEST_F(DistributedInternalsTest, AckCapableLoginAndLocalDeliveryTracksAck) {
   EXPECT_EQ(got.content(), "tracked hello");
   EXPECT_EQ(acks->pending_count(), 1u);
 
-  // The pending delivery acks out and the bookkeeping drains.
-  EXPECT_TRUE(acks->Acknowledge(got.message_id()));
+  // The pending delivery acks out (by delivery subject) and the bookkeeping
+  // drains.
+  EXPECT_TRUE(acks->Acknowledge(got.message_id(), got.delivery_id()));
   EXPECT_EQ(acks->pending_count(), 0u);
 
   acks->Stop();
@@ -2133,7 +2134,7 @@ TEST_F(DistributedInternalsTest, CrossInstanceDeliveryTracksAndNotifies) {
   // Cross-instance deliveries are tracked like local ones (this instance owns
   // the receiving session, so the ack comes back here).
   EXPECT_EQ(acks->pending_count(), 1u);
-  EXPECT_TRUE(acks->Acknowledge("m-cross"));
+  EXPECT_TRUE(acks->Acknowledge("m-cross", ""));
 
   router->Stop();
 }
@@ -2179,7 +2180,7 @@ TEST_F(DistributedInternalsTest, OfflineRefillTracksCapableSession) {
   ASSERT_TRUE(got.ParseFromString(notify.body()));
   EXPECT_EQ(got.content(), "refill me");
   EXPECT_EQ(acks->pending_count(), 1u);
-  EXPECT_TRUE(acks->Acknowledge("m-refill"));
+  EXPECT_TRUE(acks->Acknowledge("m-refill", ""));
   EXPECT_TRUE(store_->PopOffline("alice").empty());  // queue consumed
 }
 

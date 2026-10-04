@@ -244,11 +244,14 @@ class MainActivity : Activity() {
                 return@onNotify
             }
             // Ack 先于渲染：服务器 10s 收不到 ack 会把投递回滚进离线队列。
+            // deliveryId 是单次投递主语（补投副本各成一笔，服务端精确匹配；
+            // 空 = 首投，服务端按 messageId 兼容）。
             runCatching {
                 conn.send(
                     Gateway.MsgID.MESSAGE_ACK,
                     Chat.MessageAck.newBuilder()
                         .setMessageId(msg.messageId)
+                        .setDeliveryId(msg.deliveryId)
                         .setUserId(selfId ?: "")
                         .setReceivedAt(System.currentTimeMillis())
                         .build()
