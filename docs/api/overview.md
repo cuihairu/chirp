@@ -86,6 +86,20 @@ message Packet {
 | Voice | 9000 | 9001 | Experimental(信令面存在,尚不构成完整媒体后端保证) |
 | Search | 5007 | - | Experimental(代码在树里,不是核心路径) |
 
+按 [Communication Core](../design-notes/communication_core.md) 的口径,social/voice/search 是 Communication 之外的应用面/插件面,不在核心验证路径内。
+
+## Pipe 分类
+
+连接按信任面分三类,凭证校验、限流与日志按类别分流(概念收敛见 [Communication Core 设计笔记](../design-notes/communication_core.md) §4.4):
+
+| Pipe | 连接 | 凭证 | 承担 |
+| --- | --- | --- | --- |
+| Client Pipe | 客户端 → 网关(5000/5200 系) | 用户 token/会话 | 登录、心跳、2xxx 转发 |
+| Service Pipe | 游戏服 → server_gateway(8100) | service_id + secret | 注入、事件、玩家目录 RPC(5013-5030 在 app_chat 主端口) |
+| Peer Pipe | game_chat ⇄ app_chat、chat ⇄ chat | 白名单 + 版本协商 | 跨平面注册/上行/注入(5050-5053) |
+
+**Gateway = Transport Edge**:网关负责连接管理、登录/登出、心跳、踢人、限流、协议适配与转发,不承担 Chat/Social/NPC 业务路由;「聊天包发去 chat」是边界约束,不是待补缺口——网关不会演进为业务路由中心。
+
 ## 核心消息 ID
 
 ### 网关与认证(Gateway/Auth,1xxx)

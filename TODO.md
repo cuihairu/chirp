@@ -148,8 +148,18 @@ SDK 引擎兼容性见 [SDK 引擎兼容性](docs/design-notes/sdk_compatibility
 - [x] **能力位定义**：`RELAY_READ_RECEIPTS`、`RELAY_TYPING`、`RELAY_PRESENCE`、`RELAY_OFFLINE_MESSAGES`
 - [x] **版本协商实现**：握手时交换 protocol_version + supported_features（2026-09-22：libs 层 `ChatPeerHub`/`ChatPeerLink` 双向交换并校验，hub 按 `min_peer_version` 拒绝并回 `VERSION_MISMATCH` + min_version，spoke 收非 OK 断线重试；`chat_peer_test` 覆盖 mismatch 重试与 hub 拒绝两向。服务层旧实现连同其 resp 版本回带 bug 已随 9edaca3 删除）
 - [x] **核心抽象收敛为 Communication（2026-10-04 落文档）**：`docs/design-notes/communication_core.md` 定义共享词汇表——Communication = Identity/Channel/Message/Delivery/Pipe/Event；Chat/NPC/Social/Party 是上层应用而非核心实体；Delivery 语义（BEST_EFFORT/AT_LEAST_ONCE/DURABLE + Accepted→Acknowledged 状态链）升格进 `docs/api/overview.md` 投递语义节；「OK 仅服务面受理」从 README 当前边界升格为协议语义并在 overview 展开。同时钉死两处演进约束：Gateway=Transport Edge（不演变为业务路由中心）、Redis=Runtime Coordination（非 Source of Truth）
-- [ ] **request_id 与 sequence 分离（wire 扩展，P1，部分落地）**：`sequence` 保持连接内请求配对，新增 `request_id`（缺省=连接内生成）作分布式关联 id；`message_id`（已存在）与 `delivery_id`（新增，投递/已读回执的主语）分离，为 AT_MOST_ONCE dedup 与回执提供基础。随 communication_core.md P1 批次落地，向后兼容。**2026-10-04 第一步**：`Packet.request_id=4` 协议落地 + gen_proto 全语言重生成（6 类文件仅 gateway 漂移）；`SessionPeerSender::Send` 出站生成（注入转发 `req=` 日志）、`ChatBridge::ForwardToChat` 对缺省包连接内单调兜底（显式值原样透传）、chat 注入入站日志带 `req=`；单测 `ForwardToChatFillsMissingRequestIdMonotonicAndPassesExplicit`；文档 4.3/overview 落账。待扩：chat 直连兜底、peer(hub) 转发透传、SDK/客户端发送侧生成、delivery_id 与 dedup 语义
+- [x] **request_id 与 sequence 分离（P1，第一步 wire 落地，d70f78b）**：`sequence` 保持连接内请求配对，新增 `request_id`（缺省=连接内生成）作分布式关联 id；`message_id`（已存在）与 `delivery_id`（新增，投递/已读回执的主语）分离，为 AT_MOST_ONCE dedup 与回执提供基础。随 communication_core.md P1 批次落地，向后兼容。**2026-10-04 第一步**：`Packet.request_id=4` 协议落地 + gen_proto 全语言重生成（仅 gateway 漂移）；`SessionPeerSender::Send` 出站生成（注入转发 `req=` 日志）、`ChatBridge::ForwardToChat` 对缺省包连接内单调兜底（显式值原样透传）、chat 注入入站日志带 `req=`；单测 `ForwardToChatFillsMissingRequestIdMonotonicAndPassesExplicit`；文档 4.3/overview 落账。剩余面见「收敛路线任务序」P1-4
 - [ ] **ActorKind 枚举收敛（P1）**：PLAYER/NPC/SYSTEM/SERVICE/BOT/GM 作为 Message 与注入事件的 sender 侧身份；用户凭证与服务凭证不混用的边界已存在（游戏平面自足、app_auth 独立），收敛后注入边界按 ActorKind 声明而非信任客户端传入 kind
+
+### 收敛路线任务序（communication_core.md §5，P0-P2 转正式任务）
+
+- [x] **P0-1 Delivery 语义词汇进 api/overview**（9a2ac4a 已随核心抽象收敛落：「投递语义 (Delivery Semantics)」节 + 状态链 + BEST_EFFORT/AT_LEAST_ONCE/DURABLE 矩阵 + OK=已受理表述）
+- [x] **P0-2 网关边界钉进协议文档**（2026-10-04：api/overview 新增「Pipe 分类」节——Client/Service/Peer 三类连接表 + Gateway=Transport Edge 约束「网关不演进为业务路由中心」；与 communication_core §4.4 互链）
+- [x] **P0-3 social/voice/search 标注非核心**（核查齐：overview 实验服务表 Experimental + 「非核心验证路径」表述 + CAPABILITY_MATRIX Experimental 覆盖；2026-10-04 补 overview 一句 Communication 之外的应用面/插件面口径）
+- [ ] **P1-4 request_id 剩余面**：① chat 直连入口兜底（客户端直连 chat 主端口时缺省包按连接生成）；② peer（hub）转发透传（request_id 穿 ChatPeerHub/link 转发不改写）；③ SDK/客户端发送侧生成（sdks/core `MakePacket`、sdks/ts 与 apps/shared/protocol 构造处）
+- [ ] **P1-5 delivery_id 进投递/回执协议 + dedup（AT_MOST_ONCE）落地**：`message_id` 与 `delivery_id` 分离——一次发送、多次投递（离线补投、多端）各自有 id，为 dedup 与回执提供主语（现状参考：`TrackMessageResponse.tracking_id` 承担单次投递跟踪主语、注入面 `inject_id` 承担幂等键）；dedup 语义随 Deliver/回执协议明确
+- [ ] **P1-6 Identity binding 文档化**：platform player_id ↔ game game_user_id ↔ character 身份链写进文档（现状已实现在 app_chat 玩家目录/server_plane 身份绑定,不扩实现面）
+- [ ] **P2 明确不做（红线）**：Presence 独立服务（现状在线状态附于 chat/Web 侧,不抽服务）、Voice/Search 维持插件面（Voice 不进 core 抽象）
 
 ## 构建与验证（P0）
 
