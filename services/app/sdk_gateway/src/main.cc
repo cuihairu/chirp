@@ -38,6 +38,9 @@
 #include "proto/game_server_gateway.pb.h"
 #include "network/redis_session_manager.h"
 
+#include "common/metrics.h"
+#include "common/metrics_http_server.h"
+
 namespace {
 
 int64_t NowMs() {
@@ -145,6 +148,11 @@ void HandleLogin(const std::shared_ptr<chirp::network::Session>& session,
       if (old && old.get() != session.get()) {
         KickSession(old, chirp::network::LoginKickReason(req.platform()));
       }
+      // Slot accounting (see the auth-backed path below for the reasoning).
+      if (!old) {
+        CHIRP_GAUGE_INC("chirp_app_gateway_sessions");
+      }
+      CHIRP_COUNTER("chirp_app_gateway_logins_total", 1);
       chirp::network::FillOnlineDevices(state, resp.user_id(), &resp, session.get());
       chirp::network::BroadcastDevicePresence(state, resp.user_id(), req.platform(),
                                               chirp::network::NormalizeDeviceId(req.device_id()),
@@ -183,6 +191,13 @@ void HandleLogin(const std::shared_ptr<chirp::network::Session>& session,
                                      : chirp::network::LoginKickReason(req.platform());
       KickSession(old, reason);
     }
+    // Slot accounting: a null displaced session means the (user, platform)
+    // slot is new (gauge inc); a displaced one replaced an existing slot
+    // (count unchanged - the kicked session's release lands as a no-op).
+    if (!old) {
+      CHIRP_GAUGE_INC("chirp_app_gateway_sessions");
+    }
+    CHIRP_COUNTER("chirp_app_gateway_logins_total", 1);
     // 多端在线（P0）：初始在线端清单（不含本会话）随登录响应下发，其余
     // 在线端收到本端上线事件。
     chirp::network::FillOnlineDevices(state, user_id, &resp, session.get());
@@ -254,6 +269,7 @@ void HandleLogout(const std::shared_ptr<chirp::network::Session>& session,
                                                                   &removed_device_id,
                                                                   &removed_platform);
       if (should_release) {
+        CHIRP_GAUGE_DEC("chirp_app_gateway_sessions");
         if (redis_mgr) {
           redis_mgr->AsyncRelease(removed_user_id.empty() ? req.user_id() : removed_user_id,
                                   removed_platform);
@@ -402,6 +418,7 @@ void HandleClientPacket(const std::shared_ptr<chirp::network::Session>& session,
     chirp::common::Logger::Instance().Warn("failed to parse Packet from app client");
     return;
   }
+  CHIRP_COUNTER("chirp_app_gateway_packets_total", 1);
 
   switch (pkt.msg_id()) {
   case chirp::gateway::LOGIN_REQ: {
@@ -558,6 +575,7 @@ void HandleDisconnect(const std::shared_ptr<chirp::network::Session>& session,
   const bool should_release =
       chirp::network::RemoveAuthenticatedSession(state, session, &user_id, &device_id, &platform);
   if (should_release) {
+    CHIRP_GAUGE_DEC("chirp_app_gateway_sessions");
     if (redis_mgr) {
       redis_mgr->AsyncRelease(user_id, platform);
     }
@@ -616,6 +634,7 @@ int main(int argc, char** argv) {
   const uint16_t chat_port = ParseU16Arg(argc, argv, "--chat_port", 7000);
   const std::string chat_service_id = GetArg(argc, argv, "--chat_service_id", "app_gateway");
   const std::string chat_service_secret = GetArg(argc, argv, "--chat_service_secret", "");
+  const uint16_t metrics_port = ParseU16Arg(argc, argv, "--metrics_port", 0);
 
   Logger::Instance().Info("chirp_app_sdk_gateway starting tcp=" + std::to_string(port) +
                           " ws=" + std::to_string(ws_port) +
@@ -719,6 +738,22 @@ int main(int argc, char** argv) {
   server.Start();
   ws_server.Start();
 
+  // Minimal metrics endpoint, opt-in via --metrics_port (0 = off). Declared
+  // after io so it is destroyed first; a failed bind logs and the edge
+  // continues without metrics.
+  std::optional<chirp::common::MetricsHttpServer> metrics_server;
+  if (metrics_port > 0) {
+    metrics_server.emplace(io, metrics_port);
+    if (metrics_server->Start()) {
+      Logger::Instance().Info("Metrics endpoint listening on TCP:" +
+                              std::to_string(metrics_port) + " (/metrics)");
+    } else {
+      Logger::Instance().Warn("Metrics endpoint failed to bind TCP:" +
+                              std::to_string(metrics_port) + "; continuing without metrics");
+      metrics_server.reset();
+    }
+  }
+
   // TLS twins of the same edge: the registry/auth/forwarding paths are
   // stream-agnostic, so the callbacks are shared verbatim.
   std::unique_ptr<chirp::network::TlsTcpServer> tls_server;
@@ -748,6 +783,9 @@ int main(int argc, char** argv) {
     }
     if (wss_server) {
       wss_server->Stop();
+    }
+    if (metrics_server) {
+      metrics_server->Stop();
     }
     io.stop();
   });
