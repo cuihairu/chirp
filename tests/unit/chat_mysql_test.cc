@@ -9,6 +9,7 @@
 
 #include <asio.hpp>
 
+#include "delivery_ack_manager.h"
 #include "fake_mysql.h"
 #include "fake_servers.h"
 #include "hybrid_message_store.h"
@@ -812,6 +813,16 @@ TEST_F(HybridStoreTest, OfflineQueueSplitsByDeviceSlot) {
   // 撤回清理扫设备桶:message_id 全局唯一,跨桶命中。
   EXPECT_EQ(store_->PurgeOfflineByMessageId("r1", "m-ios"), 1u);
   EXPECT_TRUE(store_->GetOfflineMessages("r1", "ios").empty());
+
+  // Clear 同一只桶范围(本端桶 ∪ default):清 ios 连 default 一起清,
+  // 不触其他用户。
+  EXPECT_TRUE(store_->AddOfflineMessage("r1", "ios",
+                                        MakeMessage("m-ios2", "ch", 4000, "r1").SerializeAsString()));
+  EXPECT_TRUE(store_->AddOfflineMessage("r2", chirp::chat::kDefaultOfflineSlot,
+                                        MakeMessage("m-r2", "ch", 5000, "r2").SerializeAsString()));
+  EXPECT_TRUE(store_->ClearOfflineMessages("r1", "ios"));
+  EXPECT_TRUE(store_->GetOfflineMessages("r1", "ios").empty());
+  EXPECT_EQ(store_->GetOfflineMessages("r2", chirp::chat::kDefaultOfflineSlot).size(), 1u);
 }
 
 TEST_F(HybridStoreTest, OfflineQueueFallsBackToMemoryWhenRedisDown) {
@@ -845,7 +856,9 @@ TEST_F(HybridStoreTest, OfflineQueueFallsBackToMemoryWhenRedisDown) {
   EXPECT_TRUE(dead_redis.GetOfflineMessages("r2", chirp::chat::kDefaultOfflineSlot).empty());  // ...but fallback is gone.
 
   // per-device 拆分:回退内存桶按全键分桶(设备桶与 default 互不干扰),
-  // 撤回清理按前缀扫全设备桶。
+  // 撤回清理按前缀扫全设备桶。无关用户(r0)的桶不被牵连。
+  EXPECT_FALSE(dead_redis.AddOfflineMessage("r0", chirp::chat::kDefaultOfflineSlot,
+                                            MakeMessage("m0", "ch", 9, "r0").SerializeAsString()));
   EXPECT_FALSE(dead_redis.AddOfflineMessage("r3", "ios",
                                             MakeMessage("mi", "ch", 3, "r3").SerializeAsString()));
   EXPECT_FALSE(dead_redis.AddOfflineMessage("r3", "web",
@@ -855,6 +868,8 @@ TEST_F(HybridStoreTest, OfflineQueueFallsBackToMemoryWhenRedisDown) {
   EXPECT_EQ(dead_redis.PurgeOfflineByMessageId("r3", "mw"), 1u);
   EXPECT_TRUE(dead_redis.GetOfflineMessages("r3", "web").empty());
   EXPECT_EQ(dead_redis.GetOfflineMessages("r3", "ios").size(), 1u);  // iOS 桶不受牵连
+  EXPECT_EQ(dead_redis.GetOfflineMessages("r0", chirp::chat::kDefaultOfflineSlot).size(),
+            1u);  // 前缀外用户的桶原样
 }
 
 TEST_F(HybridStoreTest, OfflineFallbackQueueIsCappedPerUser) {
@@ -867,7 +882,8 @@ TEST_F(HybridStoreTest, OfflineFallbackQueueIsCappedPerUser) {
   EXPECT_FALSE(dead_redis.AddOfflineMessage("r1", chirp::chat::kDefaultOfflineSlot, MakeMessage("m0", "ch", 0, "r1").SerializeAsString()));
   for (int i = 1; i <= 1024; ++i) {
     dead_redis.AddOfflineMessage(
-        "r1", MakeMessage("m" + std::to_string(i), "ch", i, "r1").SerializeAsString());
+        "r1", chirp::chat::kDefaultOfflineSlot,
+        MakeMessage("m" + std::to_string(i), "ch", i, "r1").SerializeAsString());
   }
 
   // The oldest entry was evicted; exactly the newest 1024 remain.
@@ -1073,10 +1089,10 @@ TEST_F(HybridStoreTest, PurgeOfflineByMessageIdSkipsCorruptEntries) {
   ASSERT_TRUE(store_->Initialize());
 
   // Redis 队列：脏字节排在中间，前后各一条正常消息。
-  EXPECT_TRUE(store_->AddOfflineMessage("r1",
+  EXPECT_TRUE(store_->AddOfflineMessage("r1", chirp::chat::kDefaultOfflineSlot,
       MakeMessage("m1", "ch", 1000, "r1").SerializeAsString()));
   EXPECT_TRUE(store_->AddOfflineMessage("r1", chirp::chat::kDefaultOfflineSlot, "garbage-not-proto"));
-  EXPECT_TRUE(store_->AddOfflineMessage("r1",
+  EXPECT_TRUE(store_->AddOfflineMessage("r1", chirp::chat::kDefaultOfflineSlot,
       MakeMessage("m2", "ch", 2000, "r1").SerializeAsString()));
   EXPECT_EQ(store_->PurgeOfflineByMessageId("r1", "m1"), 1u);
   // 队列原样留下脏条目与未命中的 m2（GetOfflineMessages 会跳过脏字节，
@@ -1093,7 +1109,7 @@ TEST_F(HybridStoreTest, PurgeOfflineByMessageIdSkipsCorruptEntries) {
   cfg.redis_port = 1;
   HybridMessageStore dead_redis(io_, cfg);
   EXPECT_FALSE(dead_redis.AddOfflineMessage("r2", chirp::chat::kDefaultOfflineSlot, "garbage-not-proto"));
-  EXPECT_FALSE(dead_redis.AddOfflineMessage("r2",
+  EXPECT_FALSE(dead_redis.AddOfflineMessage("r2", chirp::chat::kDefaultOfflineSlot,
       MakeMessage("mb", "ch", 2, "r2").SerializeAsString()));
   EXPECT_EQ(dead_redis.PurgeOfflineByMessageId("r2", "mb"), 1u);
   EXPECT_TRUE(dead_redis.GetOfflineMessages("r2", chirp::chat::kDefaultOfflineSlot).empty());  // 只剩脏条目 → 整体清空

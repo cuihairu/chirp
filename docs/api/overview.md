@@ -230,6 +230,8 @@ sequenceDiagram
 
 接收方离线时,Chat 把消息存进离线队列(内存兜底 200 条/用户,可选 Redis)并在 `SEND_MESSAGE_RESP` 回 `TARGET_OFFLINE`;接收方下次登录后补投。以 `--notification_host` 启动 chat 时,离线消息还会经 app_notification 触发一次设备推送(发完即忘;见上文 6xxx 一节)。
 
+离线队列按设备拆桶(slot = 登录 `platform` 归一化,空设备归 `default` 共享桶,键形与拆分前的 user 级队列一致):发送时接收方无任何在线端,副本落 `default` 桶、任何端的登录先到先得;登录补投弹本设备桶 ∪ `default` 桶(本槽优先);ack 超时回队的副本落当初认领补投的那只设备桶,重投不被其他端的登录截走。纯服务端路由语义,协议与客户端无感。
+
 ## 投递语义 (Delivery Semantics)
 
 发送回码只回答「已受理」,不回答「已送达」。消息生命周期:

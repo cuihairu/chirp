@@ -278,7 +278,9 @@ KNOWN_UNCOVERABLE = {
     # DeliveryAckManager::RunCheck stop guard: same shape as the tracker
     # above - RunCheck is private and only timer-driven, and cancel() wins
     # the race against a pending tick in every deterministic test loop.
-    ("services/shared/chat/src/delivery_ack_manager.cc", 158),
+    # (Line re-pinned for the P1-5 per-device split: slot param + Late
+    # struct pushed RunCheck down; guard semantics unchanged.)
+    ("services/shared/chat/src/delivery_ack_manager.cc", 165),
     # MetricsHttpServer::Start catch arm: async_accept(ec form) does not
     # throw, so the arm is purely defensive.
     ("libs/common/src/metrics_http_server.cc", 35),
@@ -393,9 +395,11 @@ KNOWN_UNCOVERABLE = {
     # DeliveryAckManager Track/Acknowledge/RunCheck: untaken arms are throw
     # edges into std::string/std::unordered_map landing pads (Pending and
     # requeued_ insertion); reaching them requires bad_alloc during map ops.
-    ("services/shared/chat/src/delivery_ack_manager.cc", 115),
-    ("services/shared/chat/src/delivery_ack_manager.cc", 174),
-    ("services/shared/chat/src/delivery_ack_manager.cc", 176),
+    # (Lines re-pinned for the P1-5 per-device split: slot param + struct
+    # member insertions shifted the statements; pad semantics unchanged.)
+    ("services/shared/chat/src/delivery_ack_manager.cc", 116),
+    ("services/shared/chat/src/delivery_ack_manager.cc", 182),
+    ("services/shared/chat/src/delivery_ack_manager.cc", 185),
     # InstallSignalStop async_wait registration: untaken arms are asio
     # internal signal_set/error_code paths (and the shared_ptr capture's
     # throw edge); the handler itself is covered by the SIGINT probe.
@@ -641,26 +645,30 @@ KNOWN_UNCOVERABLE_ARMS = {
     # exempted arms are the residual edges that stayed 0 under every input:
     # post-inline dead blocks / allocation-failure unwind paths that no
     # argument shape can reach.
-    ("services/shared/chat/src/hybrid_message_store.cc", 514): ((8, 9),
+    ("services/shared/chat/src/hybrid_message_store.cc", 524): ((8, 9),
         "GetDeliveryStatus: dead post-inline duplicate of the second "
         "ParseI64 entry block (46->47/46->48 with the never-returning call); "
         "every live edge of both parses is taken across empty, non-numeric, "
         "overflow, heap-length and valid status values. (Re-pinned from "
         "(7, 8): gcov arm indices shifted after upstream line-count drift; "
         "the dead pair is today's (8, 9) — pinning only 9 let 8 resurface "
-        "in the batch-7 gate.)"),
-    ("services/shared/chat/src/hybrid_message_store.cc", 546): ((3,),
+        "in the batch-7 gate. Line re-pinned 514->524 for the P1-5 "
+        "per-device split's upstream line drift; block layout unchanged.)"),
+    ("services/shared/chat/src/hybrid_message_store.cc", 556): ((3,),
         "GetPendingDeliveries expiry parse: structurally dead edge in the "
         "inlined ParseI64/substr block layout (12->14); empty, non-numeric, "
         "17-digit heap, overflow and INT64_MAX-exact expiry inputs all "
-        "exercise the other five arms"),
-    ("services/shared/chat/src/hybrid_message_store.cc", 571): ((14, 15, 16, 17),
+        "exercise the other five arms. (Line re-pinned 546->556 for the "
+        "P1-5 per-device split's upstream line drift.)"),
+    ("services/shared/chat/src/hybrid_message_store.cc", 581): ((14, 15, 16, 17),
         "PrivateChannelId string-concat fragments attributed to the "
         "push_back line: operator+ allocation-failure blocks (calls with "
         "returned=0, bad_alloc unwind); the live SSO and heap-concat edges "
         "are exercised by short and >15-char channel-id inputs. (Re-pinned "
         "from (10, 11, 12, 13): those live arms are now taken and gcov "
-        "renumbered the pad arcs 16->17/16->18 and 20->21/20->22.)"),
+        "renumbered the pad arcs 16->17/16->18 and 20->21/20->22. Line "
+        "re-pinned 571->581 for the P1-5 per-device split's upstream "
+        "line drift.)"),
     ("services/shared/chat/src/player_directory.cc", 194): ((20, 21, 22, 23, 24, 25),
         "Unsubscribe log line: internal arcs of the bad_alloc landing pads "
         "(blocks 72/76/80, the unwind targets of the log-concat operator+ "
