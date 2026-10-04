@@ -1,10 +1,13 @@
 name: Nightly Build
 
 # 每日构建:打包当前真产物(C++ core 库 + Go SDK + TS SDK + 桌面 App),
-# 两路分发:
-#   1. Actions artifact——固定名 daily-build,上传时覆盖旧一份
-#      (upload-artifact overwrite),不打 git tag、不发 GitHub Release;
-#   2. nightly-dist 分支镜像——固定文件名 + manifest.json,每次 force 推
+# 三路分发:
+#   1. nightly Release(交付面)——固定 tag `nightly` 的滚动 Release:资产
+#      清旧传新(全平台包 + SHA256SUMS),notes 带最近提交摘要与下载指引
+#      (参照 memex/luna 的 nightly 形态;只 main 分支发);
+#   2. Actions artifact——固定名 daily-build,上传时覆盖旧一份
+#      (upload-artifact overwrite;run 页临时下载,14 天过期);
+#   3. nightly-dist 分支镜像——固定文件名 + manifest.json,每次 force 推
 #      单个孤儿提交覆盖。这是 install.sh / install.ps1 一键安装的下载源:
 #      raw.githubusercontent 匿名可直链,不依赖 Actions API(匿名限流
 #      60 次/小时/IP,共享出口 IP 下不可靠),也不要求登录。
@@ -452,14 +455,22 @@ jobs:
 
   package:
     # 汇总各腿 → daily-build artifact(既有外部契约,run 页可下)+ 推
-    # nightly-dist 镜像分支(一键安装的匿名下载源)。linux-x64 腿必须成功
-    # (go/ts 源头);其余腿失败时降级发布,manifest 如实记录可用面。
+    # nightly-dist 镜像分支(一键安装的匿名下载源)+ 滚动 nightly Release
+    # (交付面)。linux-x64 腿必须成功(go/ts 源头);其余腿失败时降级发布,
+    # manifest 如实记录可用面。
     needs: build
     if: ${{ !cancelled() && (needs.build.result == 'success' || needs.build.result == 'failure') }}
     runs-on: ubuntu-24.04
     permissions:
       contents: write
     steps:
+    # Release notes 的最近提交摘要要走 git log(48h 窗口 + 回落最近 10 条),
+    # 浅取 200 条足够;工作区此前为空,checkout 不与 stage/dist 冲突。
+    - name: Checkout (release notes commit history)
+      uses: actions/checkout@v7
+      with:
+        fetch-depth: 200
+
     - name: Download linux-x64 leg (required)
       uses: actions/download-artifact@v4
       with:
@@ -580,6 +591,7 @@ jobs:
           go/chirp-go-sdk.tar.gz                   Go 服务端 SDK 源码包
           ts/chirp-protocol.tgz                    @chirp/protocol npm 包
           manifest.json                            可用面清单(一键安装读它)
+          SHA256SUMS                               全部资产 sha256(sha256sum -c)
 
         分发(两路):
           - 本 run 页 -> Artifacts -> daily-build(固定名,覆盖旧一份);
@@ -592,6 +604,20 @@ jobs:
         go vet/build + @chirp/protocol 测试套件 + 桌面 App Tauri 构建;完整门禁以仓库 CI 为准。
         README
         find "$dist" -type f | sort
+
+    # 全部资产按文件名(不含目录)出 sha256 清单:Release/ nightly-dist/
+    # artifact 三路同名,下载后同目录 `sha256sum -c SHA256SUMS` 即验。
+    # 生成走临时文件再 mv——目录扫描与清单写入同一管道会自食(SHA256SUMS
+    # 先被重定向建出来,find 再撞见它,shellcheck SC2094 同因)。
+    - name: Generate SHA256SUMS
+      run: |
+        cd dist
+        out="$(mktemp)"
+        find . -type f ! -name SHA256SUMS | sort | while read -r f; do
+          sha256sum "$f" | awk -v f="$f" '{n=split(f,a,"/"); print $1"  "a[n]}'
+        done > "$out"
+        mv "$out" SHA256SUMS
+        cat SHA256SUMS
 
     - uses: actions/upload-artifact@v4
       with:
@@ -615,3 +641,98 @@ jobs:
         git -C mirror push --force \
           "https://x-access-token:${{ github.token }}@github.com/${{ github.repository }}.git" \
           nightly-dist
+
+    # 滚动 nightly Release(交付面,参照 memex 形态):固定 tag,release 长存、
+    # 资产清旧传新、notes 每次重写(--prerelease --latest=false,不抢正式
+    # release 位)。资产 = dist 全部文件(文件名全局唯一,含 SHA256SUMS)。
+    - name: Update rolling nightly Release
+      if: github.ref == 'refs/heads/main'
+      env:
+        GH_TOKEN: ${{ github.token }}
+      run: |
+        set -euo pipefail
+        read -r stamp built <<META
+        $(python3 -c "import json; m=json.load(open('dist/manifest.json')); print(m['stamp'], m['built'])")
+        META
+        comps="$(python3 -c "import json; print(' · '.join(k+': '+'/'.join(v) for k,v in json.load(open('dist/manifest.json'))['components'].items()))")"
+        sha7="${GITHUB_SHA::7}"
+        subject="$(git log -1 --format=%s)"
+        # 最近提交摘要:近 48h(与 schedule 节奏一致);仓库静止期回落最近 10 条。
+        commits="$(git log --since='48 hours ago' --no-merges --pretty=format:'- %h %s')"
+        if [ -z "$commits" ]; then
+          commits="$(git log -10 --no-merges --pretty=format:'- %h %s')"
+        fi
+
+        notes="$(mktemp)"
+        {
+          echo "## chirp Nightly(每日构建)"
+          echo
+          echo "- 构建:${built} · stamp \`${stamp}\`"
+          echo "- 提交:\`${sha7}\` ${subject}(main @ \`${GITHUB_SHA}\`)"
+          echo "- 可用面:${comps}"
+          echo
+          echo "## 最近提交"
+          echo
+          echo "${commits}"
+          echo
+          echo "## 产物"
+          echo
+          echo "| 资产 | 大小 | 说明 |"
+          echo "| --- | --- | --- |"
+          for f in $(find dist -type f | sort); do
+            b="$(basename "$f")"
+            sz="$(du -h "$f" | cut -f1)"
+            case "$b" in
+            SHA256SUMS) note="全部资产 sha256 清单" ;;
+            manifest.json) note="可用面清单(一键安装读它)" ;;
+            README.txt) note="产物说明与逐资产验证命令" ;;
+            chirp-cpp-sdk-*) note="C++ core SDK(库+头+proto 源)" ;;
+            chirp-desktop-*.deb) note="桌面 App(Debian 包)" ;;
+            chirp-desktop-*.dmg) note="桌面 App(磁盘镜像,内含 Chirp.app)" ;;
+            chirp-desktop-*-setup.exe) note="桌面 App(NSIS 安装器)" ;;
+            chirp-go-sdk.tar.gz) note="Go 服务端 SDK 源码包" ;;
+            chirp-protocol.tgz) note="@chirp/protocol npm 包" ;;
+            *) note="" ;;
+            esac
+            echo "| \`${b}\` | ${sz} | ${note} |"
+          done
+          echo
+          echo "## 校验"
+          echo
+          echo "资产与 \`SHA256SUMS\` 放同一目录后:"
+          echo
+          echo "    sha256sum -c SHA256SUMS          # Linux"
+          echo "    shasum -a 256 -c SHA256SUMS      # macOS"
+          echo "    # Windows(PowerShell):Get-Hash 逐资产比对 SHA256SUMS"
+          echo
+          echo "## 一键安装"
+          echo
+          echo "    # Linux / macOS(自动探测平台/架构;直链源 nightly-dist 镜像)"
+          echo "    curl -fsSL https://raw.githubusercontent.com/cuihairu/chirp/main/install.sh | bash"
+          echo "    # Windows(PowerShell)"
+          echo "    irm https://raw.githubusercontent.com/cuihairu/chirp/main/install.ps1 | iex"
+          echo
+          echo "## 说明"
+          echo
+          echo "- 滚动发布:tag 固定 \`nightly\`,资产随最新 main 清旧传新;本页即每日构建交付面(run 页 Artifacts → daily-build 与 nightly-dist 分支镜像同内容,逐资产验证命令见资产内 README.txt)。"
+          echo "- 产物未签名(darwin 首启被 Gatekeeper 拦时右键「打开」);每日构建只证明可构建 + SDK 自身测试通过,完整质量门禁以仓库 CI 为准。"
+        } > "$notes"
+
+        TAG=nightly
+        if ! gh release view "$TAG" --repo "$GITHUB_REPOSITORY" >/dev/null 2>&1; then
+          gh release create "$TAG" --repo "$GITHUB_REPOSITORY" \
+            --target "$GITHUB_SHA" --title "Nightly · 每日构建" \
+            --notes "初始化" --prerelease --latest=false
+        fi
+        gh release view "$TAG" --repo "$GITHUB_REPOSITORY" --json assets \
+          --jq '.assets[].name' | while read -r a; do
+          if [ -n "$a" ]; then
+            gh release delete-asset "$TAG" "$a" \
+              --repo "$GITHUB_REPOSITORY" --yes
+          fi
+        done
+        # shellcheck disable=SC2046  # dist 内文件名受控、无空白
+        gh release upload "$TAG" --repo "$GITHUB_REPOSITORY" $(find dist -type f | sort)
+        gh release edit "$TAG" --repo "$GITHUB_REPOSITORY" \
+          --title "Nightly · 每日构建 ${stamp}" \
+          --notes-file "$notes" --prerelease --latest=false
