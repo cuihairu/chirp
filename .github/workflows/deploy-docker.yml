@@ -173,6 +173,21 @@ jobs:
             exit 1
           fi
 
+      - name: Re-apply DB schema (idempotent repair)
+        timeout-minutes: 3
+        run: |
+          set -euo pipefail
+          deploy_dir="${{ inputs.deploy_dir || '/data/deploy/chirp' }}"
+          compose() { docker compose --env-file "$deploy_dir/.env" -f "$deploy_dir/docker-compose.yml" "$@"; }
+          mysql_password="$(grep -E '^MYSQL_PASSWORD=' "$deploy_dir/.env" | tail -1 | cut -d= -f2)"
+          # init_db.sql 全部 CREATE TABLE IF NOT EXISTS 且无 INSERT:重放对已有
+          # 数据零破坏。MySQL 入口脚本只在空 datadir 跑 init,历史卷上的 schema
+          # 缺表(如 2026-10-03 前 groups 保留字未加反引号导致初始化中止、卷内
+          # 永远缺后半表)不会自愈——每次部署重放一遍 schema,修复历史卷并防
+          # 未来漂移。
+          docker exec -i "$(compose ps -q mysql)" mysql -uchirp -p"$mysql_password" chirp \
+            < "$deploy_dir/init_db.sql"
+
       - name: Ensure demo account (idempotent, reset on rotation)
         timeout-minutes: 6
         run: |

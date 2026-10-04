@@ -158,7 +158,9 @@ def main() -> int:
         if resp["msg_id"] != REGISTER_RESP:
             print(f"unexpected msg_id {resp['msg_id']} for register", file=sys.stderr)
             return 1
-        code = resp["body"].get(1, [1])[0]
+        # proto3 不序列化默认值:成功(code=OK=0)时 field 1 不上线,缺省必须
+        # 取 0——取 1 会把每个成功响应读成 INTERNAL_ERROR 假失败。
+        code = resp["body"].get(1, [0])[0]
         message = _text(resp["body"], 4)
         if code == OK:
             print(f"register: ok user_id={_text(resp['body'], 2)}")
@@ -179,7 +181,7 @@ def main() -> int:
         if resp["msg_id"] != PASSWORD_LOGIN_RESP:
             print(f"unexpected msg_id {resp['msg_id']} for password login", file=sys.stderr)
             return 1
-        code = resp["body"].get(1, [1])[0]
+        code = resp["body"].get(1, [0])[0]
         if code != OK:
             print(
                 f"password login: FAILED code={code} message={_text(resp['body'], 11)}",
