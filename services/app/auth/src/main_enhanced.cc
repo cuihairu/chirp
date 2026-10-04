@@ -5,6 +5,7 @@
 #include <cstdint>
 #include <cstdlib>
 #include <memory>
+#include <optional>
 #include <string>
 
 #include <asio.hpp>
@@ -17,6 +18,9 @@
 #include "proto/auth.pb.h"
 #include "proto/common.pb.h"
 #include "proto/gateway.pb.h"
+
+#include "common/metrics.h"
+#include "common/metrics_http_server.h"
 
 namespace {
 
@@ -82,6 +86,7 @@ void HandleAuthPacket(const std::shared_ptr<AuthService>& auth_service,
     Logger::Instance().Warn("Failed to parse Packet from client");
     return;
   }
+  CHIRP_COUNTER("chirp_app_auth_packets_total", 1);
 
   std::string client_ip = GetClientIp(session);
 
@@ -142,6 +147,9 @@ void HandleAuthPacket(const std::shared_ptr<AuthService>& auth_service,
     resp.set_server_time(NowMs());
     resp.set_kick_previous(result.kick_previous);
     resp.set_error_message(result.error_message);
+    if (result.error_code == chirp::common::OK) {
+      CHIRP_COUNTER("chirp_app_auth_logins_total", 1);
+    }
     SendPacket(session, chirp::gateway::PASSWORD_LOGIN_RESP, pkt.sequence(),
                resp.SerializeAsString());
     break;
@@ -216,6 +224,7 @@ void HandleAuthPacket(const std::shared_ptr<AuthService>& auth_service,
       resp.set_session_id(user_id + "_sess");
       resp.set_kick_previous(true);
       resp.mutable_kick()->set_reason("session validated");
+      CHIRP_COUNTER("chirp_app_auth_logins_total", 1);
     }
     resp.set_server_time(NowMs());
     SendPacket(session, chirp::gateway::LOGIN_RESP, pkt.sequence(),
@@ -357,6 +366,11 @@ int main(int argc, char** argv) {
   const bool allow_scaffold_login =
       ParseIntArg(argc, argv, "--allow_scaffold_login", 0) != 0;
 
+  // Prometheus scrape endpoint, opt-in: 0 keeps the listening surface
+  // unchanged for existing deployments.
+  const uint16_t metrics_port =
+      static_cast<uint16_t>(ParseIntArg(argc, argv, "--metrics_port", 0));
+
   // MySQL configuration
   config.user_store_config.host = GetArg(argc, argv, "--mysql_host", "127.0.0.1");
   config.user_store_config.port = static_cast<uint16_t>(
@@ -419,11 +433,30 @@ int main(int argc, char** argv) {
 
   server.Start();
 
+  // Minimal metrics endpoint, opt-in via --metrics_port (0 = off). Declared
+  // after io so it is destroyed first; a failed bind logs and auth continues
+  // without metrics.
+  std::optional<chirp::common::MetricsHttpServer> metrics_server;
+  if (metrics_port > 0) {
+    metrics_server.emplace(io, metrics_port);
+    if (metrics_server->Start()) {
+      Logger::Instance().Info("Metrics endpoint listening on TCP:" +
+                              std::to_string(metrics_port) + " (/metrics)");
+    } else {
+      Logger::Instance().Warn("Metrics endpoint failed to bind TCP:" +
+                              std::to_string(metrics_port) + "; continuing without metrics");
+      metrics_server.reset();
+    }
+  }
+
   asio::signal_set signals(io, SIGINT, SIGTERM);
   signals.async_wait([&](const std::error_code&, int) {
     Logger::Instance().Info("Shutdown requested");
     server.Stop();
     auth_service->Shutdown();
+    if (metrics_server) {
+      metrics_server->Stop();
+    }
     io.stop();
   });
 

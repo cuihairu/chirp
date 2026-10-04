@@ -60,7 +60,7 @@ build/services/shared/chat/chirp_chat --port 7000 --ws_port 7001 \
 
 ## 监控
 
-`chirp_chat` 支持 `--metrics_port <port>` 打开 `libs/common` 的 `MetricsHttpServer`(Prometheus 文本格式,`/metrics` 端点);默认 0 即不监听。当前导出三个进程指标:`chirp_chat_sessions`(已绑定会话槽位 gauge)、`chirp_chat_logins_total`、`chirp_chat_packets_total`(TCP+WS 合计)。其余服务尚未接线;可用指标也还只有这三个,更细的观测来自日志和 Redis/MySQL 自身的手段。
+`chirp_chat`、`chirp_game_sdk_gateway`、`chirp_app_auth` 支持 `--metrics_port <port>` 打开 `libs/common` 的 `MetricsHttpServer`(Prometheus 文本格式,`/metrics` 端点);默认 0 即不监听,绑口失败只记 Warn 不阻断主服务。当前导出:chat 三个(`chirp_chat_sessions` 会话槽位 gauge / `chirp_chat_logins_total` / `chirp_chat_packets_total`)、gateway 三个(`chirp_game_gateway_sessions/logins_total/packets_total`,口径与 chat 相同)、auth 两个(`chirp_app_auth_logins_total` 仅计成功登录 / `chirp_app_auth_packets_total`)。其余服务尚未接线;更细的观测来自日志和 Redis/MySQL 自身的手段。
 
 ## 负载均衡
 
