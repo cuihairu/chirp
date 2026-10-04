@@ -1,8 +1,10 @@
 # chirp
 
 <p align="center">
-  <img src="docs/public/logo.svg" width="128" height="128" alt="Chirp Logo">
+  <img src="docs/public/logo.svg" width="64" height="64" alt="Chirp Logo">
 </p>
+
+<p align="center">
 
 [![CI](https://github.com/cuihairu/chirp/actions/workflows/ci.yml/badge.svg)](https://github.com/cuihairu/chirp/actions/workflows/ci.yml)
 [![codecov](https://codecov.io/gh/cuihairu/chirp/branch/main/graph/badge.svg)](https://codecov.io/gh/cuihairu/chirp)
@@ -10,6 +12,12 @@
 ![CMake](https://img.shields.io/badge/CMake-3.21%2B-064F8C?logo=cmake&logoColor=white)
 ![Platform](https://img.shields.io/badge/platform-Linux-FCC624?logo=linux&logoColor=black)
 ![License](https://img.shields.io/badge/license-Apache--2.0-green)
+
+</p>
+
+## 演示站点
+
+在线演示（web 端聊天，随 main 自动部署）：**<https://chirp.cuihairu.site/chat>** —— 脚手架登录，任意用户 ID 直入；密码登录面（SDK / 协议联调）的沙箱演示账号：`demo` / `Demo-58610c42c9950348d2234db2`。
 
 ## 为什么做这个
 
