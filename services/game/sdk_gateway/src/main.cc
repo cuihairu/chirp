@@ -23,6 +23,9 @@
 #include "proto/common.pb.h"
 #include "proto/gateway.pb.h"
 
+#include "common/metrics.h"
+#include "common/metrics_http_server.h"
+
 namespace {
 
 int64_t NowMs() {
@@ -131,6 +134,11 @@ void HandleLogin(const std::shared_ptr<chirp::network::Session>& session,
       if (old && old.get() != session.get()) {
         KickSession(old, chirp::network::LoginKickReason(req.platform()));
       }
+      // Slot accounting (see the auth-backed path below for the reasoning).
+      if (!old) {
+        CHIRP_GAUGE_INC("chirp_game_gateway_sessions");
+      }
+      CHIRP_COUNTER("chirp_game_gateway_logins_total", 1);
       chirp::network::FillOnlineDevices(state, resp.user_id(), &resp, session.get());
       chirp::network::BroadcastDevicePresence(state, resp.user_id(), req.platform(),
                                               chirp::network::NormalizeDeviceId(req.device_id()),
@@ -167,6 +175,13 @@ void HandleLogin(const std::shared_ptr<chirp::network::Session>& session,
                                      : chirp::network::LoginKickReason(req.platform());
       KickSession(old, reason);
     }
+    // Slot accounting: a null displaced session means the (user, platform)
+    // slot is new (gauge inc); a displaced one replaced an existing slot
+    // (count unchanged - the kicked session's release lands as a no-op).
+    if (!old) {
+      CHIRP_GAUGE_INC("chirp_game_gateway_sessions");
+    }
+    CHIRP_COUNTER("chirp_game_gateway_logins_total", 1);
     // 多端在线（P0）：初始在线端清单（不含本会话）随登录响应下发，其余
     // 在线端收到本端上线事件。
     chirp::network::FillOnlineDevices(state, user_id, &resp, session.get());
@@ -341,6 +356,7 @@ int main(int argc, char** argv) {
   const std::string redis_host = GetArg(argc, argv, "--redis_host", "");
   const uint16_t redis_port = ParseU16Arg(argc, argv, "--redis_port", 6379);
   const int redis_ttl_seconds = std::atoi(GetArg(argc, argv, "--redis_ttl", "3600").c_str());
+  const uint16_t metrics_port = ParseU16Arg(argc, argv, "--metrics_port", 0);
   std::string instance_id = GetArg(argc, argv, "--instance_id", "");
   if (instance_id.empty()) {
     instance_id = RandomHex(8);
@@ -395,6 +411,7 @@ int main(int argc, char** argv) {
       Logger::Instance().Warn("failed to parse Packet from client");
       return;
     }
+    CHIRP_COUNTER("chirp_game_gateway_packets_total", 1);
     HandleClientPacket(state, auth, redis_mgr, bridge_raw, session, pkt);
   };
   auto on_close = [state, redis_mgr,
@@ -405,6 +422,7 @@ int main(int argc, char** argv) {
     const bool should_release =
         chirp::network::RemoveAuthenticatedSession(state, session, &user_id, &device_id, &platform);
     if (should_release) {
+      CHIRP_GAUGE_DEC("chirp_game_gateway_sessions");
       if (redis_mgr) {
         redis_mgr->AsyncRelease(user_id, platform);
       }
@@ -426,11 +444,30 @@ int main(int argc, char** argv) {
   server.Start();
   ws_server.Start();
 
+  // Minimal metrics endpoint, opt-in via --metrics_port (0 = off; default
+  // keeps the listening surface unchanged). Declared after io so it dies
+  // first; a failed bind logs and the gateway continues without metrics.
+  std::optional<chirp::common::MetricsHttpServer> metrics_server;
+  if (metrics_port > 0) {
+    metrics_server.emplace(io, metrics_port);
+    if (metrics_server->Start()) {
+      Logger::Instance().Info("Metrics endpoint listening on TCP:" +
+                              std::to_string(metrics_port) + " (/metrics)");
+    } else {
+      Logger::Instance().Warn("Metrics endpoint failed to bind TCP:" +
+                              std::to_string(metrics_port) + "; continuing without metrics");
+      metrics_server.reset();
+    }
+  }
+
   asio::signal_set signals(io, SIGINT, SIGTERM);
   signals.async_wait([&](const std::error_code& /*ec*/, int /*sig*/) {
     Logger::Instance().Info("shutdown requested");
     server.Stop();
     ws_server.Stop();
+    if (metrics_server) {
+      metrics_server->Stop();
+    }
     io.stop();
   });
 
