@@ -244,7 +244,9 @@ Message ──发送──► Accepted ──► Persisted ──► (Queued | D
 | AT_LEAST_ONCE | 至少一次,重投直到确认 | 服务面注入:hub ack + Redis Streams PEL 重放(NPC/系统消息,见 [服务器平面](../server_plane.md)) |
 | DURABLE | 持久化,重启不丢 | 聊天消息落 MySQL 历史(`messages` 表),补投与历史同源 |
 
-各回码含义:`OK` = 服务面已受理(可能已持久化,不一定送达);`TARGET_OFFLINE` = 受理并进入离线队列;`KICK`/`RATE_LIMITED` 等 = 未受理。玩家侧是否真正 Delivered/Acknowledged 由离线补投与已读回执(`read_receipts`)回答,与发送回码是两条独立链。概念模型出处:[Communication Core 设计笔记](../design-notes/communication_core.md)。
+各回码含义:`OK` = 服务面已受理(可能已持久化,不一定送达);`TARGET_OFFLINE` = 受理并进入离线队列;`KICK`/`RATE_LIMITED` 等 = 未受理。玩家侧是否真正 Delivered/Acknowledged 由离线补投与已读回执(`read_receipts`)回答,与发送回码是两条独立链。
+
+投递去重(P1-5):`ChatMessage.delivery_id` 是单次投递的主语——空 = 首次在线投递(与 `message_id` 同义);离线补投副本由服务端铸造独立值;ack 超时回队重投**保留原值**(同一次投递的重投同 id)。消费端分工:UI 幂等按 `message_id`,传输层去重按 `delivery_id`;已读回执是消息级(`message_id` 主语),不随投递次数变化。概念模型出处:[Communication Core 设计笔记](../design-notes/communication_core.md)。
 
 ## WebSocket 用法
 
