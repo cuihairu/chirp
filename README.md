@@ -1,8 +1,8 @@
-# chirp
-
 <p align="center">
   <img src="docs/public/logo.svg" width="64" height="64" alt="Chirp Logo">
 </p>
+
+<h1 align="center">chirp</h1>
 
 <p align="center">
 
