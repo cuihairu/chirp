@@ -72,7 +72,7 @@ Message  ── 发送 ──► Accepted ──► Persisted ──► (Queued 
 
 | 语义 | 含义 | [现状] 对应 |
 | --- | --- | --- |
-| BEST_EFFORT | 尽力而为，不保证送达 | 推送桥发完即忘（app_notification HTTP 投递日志 stub） |
+| BEST_EFFORT | 尽力而为，不保证送达 | 推送桥发完即忘（app_notification 默认 logging 传输只记日志；`--push_transport http` 为真实 HTTP POST，仍无送达回执） |
 | AT_LEAST_ONCE | 至少一次，重投直到确认 | 服务面注入：hub ack + Redis Streams PEL 重放 |
 | AT_MOST_ONCE | 至多一次，重复会被丢弃 | 消费端 dedup 已落地（2026-10-04）：`ChatMessage.delivery_id`（补投副本由服务端铸造，ack 回队重投保原值——同一次投递的重投同 id），SDK `MemoryMessageStore` 按 `message_id` 幂等入库；服务面注入幂等键 `inject_id` |
 | DURABLE | 持久化到历史面，重启不丢 | 聊天消息落 MySQL 历史（`messages` 表） |
