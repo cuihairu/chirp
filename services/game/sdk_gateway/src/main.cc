@@ -253,6 +253,7 @@ void HandleLogout(const std::shared_ptr<chirp::network::Session>& session,
                                                                   &removed_device_id,
                                                                   &removed_platform);
       if (should_release) {
+        CHIRP_GAUGE_DEC("chirp_game_gateway_sessions");
         if (redis_mgr) {
           redis_mgr->AsyncRelease(removed_user_id.empty() ? req.user_id() : removed_user_id,
                                   removed_platform);
