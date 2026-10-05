@@ -8,8 +8,11 @@
 #include <csignal>
 #include <functional>
 #include <memory>
+#include <optional>
 #include <string>
 
+#include "common/metrics.h"
+#include "common/metrics_http_server.h"
 #include "logger.h"
 #include "npc_engine.h"
 #include "npc_responder.h"
@@ -65,6 +68,8 @@ int main(int argc, char** argv) {
       chirp::chat::runtime::GetArg(argc, argv, "--server_gateway_secret", "");
   options.reconnect_delay_seconds = chirp::chat::runtime::ParseIntArg(
       argc, argv, "--server_gateway_reconnect", 3);
+  const uint16_t metrics_port = chirp::chat::runtime::ParseU16Arg(
+      argc, argv, "--metrics_port", 0);
 
   // The responder needs the peer (to inject replies and ack) and the peer's
   // event handler needs the responder; break the cycle through the peer
@@ -74,6 +79,7 @@ int main(int argc, char** argv) {
       *engine,
       [&peer](const chirp::game_server_gateway::MessageInjectRequest& req,
               std::function<void(chirp::common::ErrorCode)> cb) {
+        CHIRP_COUNTER("chirp_npc_dialog_replies_total", 1);
         peer->SendInject(req, std::move(cb));
       },
       [&peer](const chirp::game_server_gateway::EventAckRequest& req,
@@ -84,14 +90,34 @@ int main(int argc, char** argv) {
       io, std::move(options),
       [](const chirp::game_server_gateway::InjectMessageNotify&) {},  // consumes events only
       [responder](const chirp::game_server_gateway::EventDeliverNotify& event) {
+        CHIRP_COUNTER("chirp_npc_dialog_events_total", 1);
         responder->OnEvent(event);
       });
   peer->Start();
+
+  // Minimal metrics endpoint, opt-in via --metrics_port (0 = off; default
+  // keeps the listening surface unchanged). Declared after io so it dies
+  // first; a failed bind logs and the service continues without metrics.
+  std::optional<chirp::common::MetricsHttpServer> metrics_server;
+  if (metrics_port > 0) {
+    metrics_server.emplace(io, metrics_port);
+    if (metrics_server->Start()) {
+      Logger::Instance().Info("Metrics endpoint listening on TCP:" +
+                              std::to_string(metrics_port) + " (/metrics)");
+    } else {
+      Logger::Instance().Warn("Metrics endpoint failed to bind TCP:" +
+                              std::to_string(metrics_port) + "; continuing without metrics");
+      metrics_server.reset();
+    }
+  }
 
   asio::signal_set signals(io, SIGINT, SIGTERM);
   signals.async_wait([&](const std::error_code& /*ec*/, int /*sig*/) {
     Logger::Instance().Info("shutdown requested");
     peer->Stop();
+    if (metrics_server) {
+      metrics_server->Stop();
+    }
     io.stop();
   });
 
