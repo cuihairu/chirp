@@ -7,6 +7,7 @@
 #include <cstdlib>
 #include <ctime>
 #include <memory>
+#include <optional>
 #include <string>
 #include <unordered_map>
 #include <utility>
@@ -21,6 +22,8 @@
 
 #include <asio.hpp>
 
+#include "common/metrics.h"
+#include "common/metrics_http_server.h"
 #include "event_queue.h"
 #include "logger.h"
 #include "network/protobuf_framing.h"
@@ -135,6 +138,9 @@ struct GatewayRuntime {
     }
     if (!it->second.service_id.empty()) {
       handlers_.OnPeerDisconnected(it->second.service_id, it->second.sender.get());
+      // Pair with the inc at auth success; the early return above keeps the
+      // disconnect paths (close/deadline/replace) from double-decrementing.
+      CHIRP_GAUGE_DEC("chirp_server_gateway_sessions");
     }
     if (it->second.deadline) {
       it->second.deadline->cancel();
@@ -179,6 +185,7 @@ struct GatewayRuntime {
       Logger::Instance().Warn("failed to parse Packet from server-plane peer");
       return;
     }
+    CHIRP_COUNTER("chirp_server_gateway_packets_total", 1);
 
     const Session* key = session.get();
     if (peers.find(key) == peers.end()) {
@@ -222,6 +229,10 @@ struct GatewayRuntime {
 
       ctx.service_id = out.service_id;
       ctx.authenticated = true;
+      // Authenticated service-plane connections gauge: service_id is set
+      // exactly once here and cleared by nobody - OnDisconnect is the only
+      // place it reads non-empty (see the dec below), so inc/dec pair up.
+      CHIRP_GAUGE_INC("chirp_server_gateway_sessions");
       Logger::Instance().Info("service authenticated: " + out.service_id);
 
       if (out.replaced_peer) {
@@ -316,6 +327,7 @@ int main(int argc, char** argv) {
 
   const uint16_t port = ParseU16Arg(argc, argv, "--port", 8100);
   const int auth_timeout = std::atoi(GetArg(argc, argv, "--auth_timeout", "10").c_str());
+  const uint16_t metrics_port = ParseU16Arg(argc, argv, "--metrics_port", 0);
 
   sg::ServerGatewayConfig config;
   config.chat_service_id = GetArg(argc, argv, "--chat_service_id", "chat");
@@ -391,6 +403,22 @@ int main(int argc, char** argv) {
       [&rt](std::shared_ptr<Session> session) { rt.OnClose(session); });
   server.Start();
 
+  // Minimal metrics endpoint, opt-in via --metrics_port (0 = off; default
+  // keeps the listening surface unchanged). Declared after io so it dies
+  // first; a failed bind logs and the hub continues without metrics.
+  std::optional<chirp::common::MetricsHttpServer> metrics_server;
+  if (metrics_port > 0) {
+    metrics_server.emplace(io, metrics_port);
+    if (metrics_server->Start()) {
+      Logger::Instance().Info("Metrics endpoint listening on TCP:" +
+                              std::to_string(metrics_port) + " (/metrics)");
+    } else {
+      Logger::Instance().Warn("Metrics endpoint failed to bind TCP:" +
+                              std::to_string(metrics_port) + "; continuing without metrics");
+      metrics_server.reset();
+    }
+  }
+
   asio::signal_set signals(io, SIGINT, SIGTERM);
   signals.async_wait([&](const std::error_code& /*ec*/, int /*sig*/) {
     Logger::Instance().Info("shutdown requested");
@@ -398,6 +426,9 @@ int main(int argc, char** argv) {
       broker->Stop();
     }
     server.Stop();
+    if (metrics_server) {
+      metrics_server->Stop();
+    }
     io.stop();
   });
 
