@@ -4,6 +4,7 @@
 #include <sstream>
 #include <algorithm>
 
+#include "common/metrics.h"
 #include "logger.h"
 
 namespace chirp {
@@ -111,6 +112,8 @@ bool NotificationService::RegisterDevice(const DeviceRegistration& registration)
   user_to_devices_[device->user_id].insert(device->device_id);
 
   stats_.devices_registered++;
+  // In-memory stats drive the exit log; the metrics registry drives scrape.
+  CHIRP_COUNTER("chirp_app_notification_devices_registered_total", 1);
 
   return true;
 }
@@ -224,17 +227,25 @@ bool NotificationService::SendNotificationToDevice(const std::string& device_id,
   // Send based on platform
   if (device->platform == kPlatformAndroid || device->platform == kPlatformWeb) {
     success = SendFCM(*device, payload);
-    if (success) stats_.fcm_sent++;
+    if (success) {
+      stats_.fcm_sent++;
+      CHIRP_COUNTER("chirp_app_notification_fcm_sent_total", 1);
+    }
   } else if (device->platform == kPlatformIOS) {
     success = SendAPNs(*device, payload);
-    if (success) stats_.apns_sent++;
+    if (success) {
+      stats_.apns_sent++;
+      CHIRP_COUNTER("chirp_app_notification_apns_sent_total", 1);
+    }
   }
 
   if (success) {
     stats_.notifications_sent++;
     cooldowns_[device->user_id] = GetCurrentTimeMs() + 60000;  // 1 minute default
+    CHIRP_COUNTER("chirp_app_notification_sent_total", 1);
   } else {
     stats_.notifications_failed++;
+    CHIRP_COUNTER("chirp_app_notification_failed_total", 1);
   }
 
   return success;
