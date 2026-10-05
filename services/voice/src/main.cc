@@ -14,6 +14,8 @@
 #include <asio.hpp>
 
 #include "common/login_token_verifier.h"
+#include "common/metrics.h"
+#include "common/metrics_http_server.h"
 #include "logger.h"
 #include "network/protobuf_framing.h"
 #include "network/session.h"
@@ -316,9 +318,20 @@ void RelayToUser(const std::shared_ptr<VoiceRoom>& room,
 void BindSession(const std::shared_ptr<VoiceState>& state,
                  const std::shared_ptr<chirp::network::Session>& session,
                  const std::string& user_id) {
-  std::lock_guard<std::mutex> lock(state->mu);
-  state->session_to_user[session.get()] = user_id;
-  state->user_to_session[user_id] = session;
+  bool newly_bound = false;
+  {
+    std::lock_guard<std::mutex> lock(state->mu);
+    newly_bound = state->session_to_user.count(session.get()) == 0;
+    state->session_to_user[session.get()] = user_id;
+    state->user_to_session[user_id] = session;
+  }
+  // Slot accounting: the gauge counts bound sessions (one per connection in
+  // the one-conn-per-user design). Re-binding an already-bound session
+  // (double LOGIN, join-after-login) leaves the count unchanged; every erase
+  // in HandleDisconnect pairs with exactly one inc here.
+  if (newly_bound) {
+    CHIRP_GAUGE_INC("chirp_voice_sessions");
+  }
 }
 
 // Auth gate for every business handler. Returns the effective user_id (the
@@ -447,6 +460,7 @@ void HandleLogin(const std::shared_ptr<VoiceState>& state,
     std::lock_guard<std::mutex> lock(state->mu);
     state->authenticated_sessions.insert(session.get());
   }
+  CHIRP_COUNTER("chirp_voice_logins_total", 1);
 
   chirp::auth::LoginResponse resp;
   resp.set_code(chirp::common::OK);
@@ -942,18 +956,20 @@ void HandleSdpAnswer(const std::shared_ptr<VoiceState>& state,
 
 void HandleDisconnect(const std::shared_ptr<VoiceState>& state,
                      const std::shared_ptr<chirp::network::Session>& session) {
+  bool released = false;
   std::string user_id;
   std::string room_id;
   {
     std::lock_guard<std::mutex> lock(state->mu);
     auto it = state->session_to_user.find(session.get());
     if (it == state->session_to_user.end()) {
-      return;
+      return;  // never bound (or already released): idempotent re-entry
     }
     user_id = it->second;
     state->session_to_user.erase(it);
     state->authenticated_sessions.erase(session.get());
     state->session_to_last_seen_ms.erase(session.get());
+    released = true;
 
     auto it2 = state->user_to_session.find(user_id);
     if (it2 != state->user_to_session.end()) {
@@ -968,6 +984,9 @@ void HandleDisconnect(const std::shared_ptr<VoiceState>& state,
       room_id = it3->second;
       state->user_to_room.erase(it3);
     }
+  }
+  if (released) {
+    CHIRP_GAUGE_DEC("chirp_voice_sessions");
   }
 
   if (!room_id.empty()) {
@@ -1067,6 +1086,7 @@ void HandlePacket(const std::shared_ptr<VoiceState>& state,
     Logger::Instance().Warn("failed to parse Packet from client");
     return;
   }
+  CHIRP_COUNTER("chirp_voice_packets_total", 1);
 
   // Any traffic counts as liveness for the idle sweep (heartbeats are the
   // expected cadence, but a client busy with signaling should never be
@@ -1143,6 +1163,7 @@ int main(int argc, char** argv) {
       std::atoll(GetArg(argc, argv, "--turn_credential_ttl_seconds", "86400").c_str());
   const int64_t heartbeat_timeout =
       std::atoll(GetArg(argc, argv, "--heartbeat_timeout_ms", "75000").c_str());
+  const uint16_t metrics_port = ParseU16Arg(argc, argv, "--metrics_port", 0);
 
   if (!turn_uri.empty() && turn_secret.empty()) {
     Logger::Instance().Warn(
@@ -1184,6 +1205,22 @@ int main(int argc, char** argv) {
   server.Start();
   ws_server.Start();
 
+  // Minimal metrics endpoint, opt-in via --metrics_port (0 = off; default
+  // keeps the listening surface unchanged). Declared after io so it dies
+  // first; a failed bind logs and the service continues without metrics.
+  std::optional<chirp::common::MetricsHttpServer> metrics_server;
+  if (metrics_port > 0) {
+    metrics_server.emplace(io, metrics_port);
+    if (metrics_server->Start()) {
+      Logger::Instance().Info("Metrics endpoint listening on TCP:" +
+                              std::to_string(metrics_port) + " (/metrics)");
+    } else {
+      Logger::Instance().Warn("Metrics endpoint failed to bind TCP:" +
+                              std::to_string(metrics_port) + "; continuing without metrics");
+      metrics_server.reset();
+    }
+  }
+
   if (state->cfg.heartbeat_timeout_ms > 0) {
     auto sweep_timer = std::make_shared<asio::steady_timer>(io);
     ScheduleHeartbeatSweep(sweep_timer, state);
@@ -1194,6 +1231,9 @@ int main(int argc, char** argv) {
     Logger::Instance().Info("shutdown requested");
     server.Stop();
     ws_server.Stop();
+    if (metrics_server) {
+      metrics_server->Stop();
+    }
     io.stop();
   });
 
