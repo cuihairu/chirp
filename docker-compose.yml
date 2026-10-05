@@ -31,9 +31,10 @@ services:
     # --allow_scaffold_login keeps the dev demo working: the scaffold logins
     # (token == user_id) used by the demo clients are rejected once the auth
     # service enforces real credentials. Production setups drop this flag.
-    command: ["--port", "6000", "--jwt_secret", "dev_secret", "--allow_scaffold_login", "1"]
+    command: ["--port", "6000", "--jwt_secret", "dev_secret", "--allow_scaffold_login", "1", "--metrics_port", "19103"]
     ports:
       - "6000:6000"
+      - "19103:19103"
 
   game_sdk_gateway:
     build:
@@ -50,11 +51,13 @@ services:
         "--redis_host", "redis",
         "--redis_port", "6379",
         "--redis_ttl", "3600",
-        "--instance_id", "gw_1"
+        "--instance_id", "gw_1",
+        "--metrics_port", "19102"
       ]
     ports:
       - "5000:5000"
       - "5001:5001"
+      - "19102:19102"
     depends_on:
       - app_auth
       - redis
@@ -65,10 +68,11 @@ services:
       dockerfile: docker/Dockerfile.service
       args:
         SERVICE: chat_enhanced
-    command: ["--port", "7000", "--ws_port", "7001", "--redis_host", "redis", "--redis_port", "6379", "--mysql_host", "mysql", "--mysql_port", "3306", "--mysql_database", "chirp", "--mysql_user", "chirp", "--mysql_password", "chirp_pass", "--server_gateway_host", "game_server_gateway", "--server_gateway_secret", "chat-secret", "--gateway_service_secret", "edge-secret", "--npc_service_id", "npc_dialog"]
+    command: ["--port", "7000", "--ws_port", "7001", "--redis_host", "redis", "--redis_port", "6379", "--mysql_host", "mysql", "--mysql_port", "3306", "--mysql_database", "chirp", "--mysql_user", "chirp", "--mysql_password", "chirp_pass", "--server_gateway_host", "game_server_gateway", "--server_gateway_secret", "chat-secret", "--gateway_service_secret", "edge-secret", "--npc_service_id", "npc_dialog", "--metrics_port", "19101"]
     ports:
       - "7000:7000"
       - "7001:7001"
+      - "19101:19101"
     depends_on:
       - redis
       - mysql
@@ -80,10 +84,11 @@ services:
       dockerfile: docker/Dockerfile.service
       args:
         SERVICE: social
-    command: ["--port", "8000", "--ws_port", "8001", "--redis_host", "redis", "--redis_port", "6379"]
+    command: ["--port", "8000", "--ws_port", "8001", "--redis_host", "redis", "--redis_port", "6379", "--metrics_port", "19104"]
     ports:
       - "8000:8000"
       - "8001:8001"
+      - "19104:19104"
     depends_on:
       - redis
 
@@ -93,10 +98,11 @@ services:
       dockerfile: docker/Dockerfile.service
       args:
         SERVICE: party
-    command: ["--port", "7500", "--ws_port", "7501", "--redis_host", "redis", "--redis_port", "6379"]
+    command: ["--port", "7500", "--ws_port", "7501", "--redis_host", "redis", "--redis_port", "6379", "--metrics_port", "19105"]
     ports:
       - "7500:7500"
       - "7501:7501"
+      - "19105:19105"
     depends_on:
       - redis
 
@@ -115,11 +121,13 @@ services:
         "--ws_port", "9001",
         "--turn_uri", "turn:coturn:3478?transport=udp,turn:coturn:3478?transport=tcp,stun:coturn:3478",
         "--turn_static_secret", "dev_turn_secret",
-        "--heartbeat_timeout_ms", "75000"
+        "--heartbeat_timeout_ms", "75000",
+        "--metrics_port", "19106"
       ]
     ports:
       - "9000:9000"
       - "9001:9001"
+      - "19106:19106"
     depends_on:
       - coturn
 
@@ -129,10 +137,11 @@ services:
       dockerfile: docker/Dockerfile.service
       args:
         SERVICE: app_notification
-    command: ["--port", "5006", "--ws_port", "5016"]
+    command: ["--port", "5006", "--ws_port", "5016", "--metrics_port", "19107"]
     ports:
       - "5006:5006"
       - "5016:5016"
+      - "19107:19107"
 
   app_sdk_gateway:
     build:
@@ -154,11 +163,13 @@ services:
         "--notification_port", "5006",
         "--chat_host", "chat",
         "--chat_port", "7000",
-        "--chat_service_secret", "edge-secret"
+        "--chat_service_secret", "edge-secret",
+        "--metrics_port", "19108"
       ]
     ports:
       - "5200:5200"
       - "5201:5201"
+      - "19108:19108"
     depends_on:
       - app_auth
       - redis
@@ -186,10 +197,12 @@ services:
         "--port", "8100",
         "--service", "chat=chat-secret",
         "--service", "npc_dialog=npc-secret",
-        "--chat_service_id", "chat"
+        "--chat_service_id", "chat",
+        "--metrics_port", "19109"
       ]
     ports:
       - "8100:8100"
+      - "19109:19109"
 
   npc_dialog:
     build:
@@ -202,8 +215,11 @@ services:
         "--server_gateway_host", "game_server_gateway",
         "--server_gateway_port", "8100",
         "--server_gateway_service", "npc_dialog",
-        "--server_gateway_secret", "npc-secret"
+        "--server_gateway_secret", "npc-secret",
+        "--metrics_port", "19110"
       ]
+    ports:
+      - "19110:19110"
     depends_on:
       - game_server_gateway
 
