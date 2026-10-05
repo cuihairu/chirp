@@ -208,6 +208,11 @@ sequenceDiagram
 > (Android `apps/android/src/main/kotlin/chirp/mobile/protocol/`,iOS
 > `apps/ios/Sources/ChirpProtocol/`)。本节功能面与 web/桌面完全同源,不新增
 > 任何协议能力;实现落地前,不要在能力矩阵或 README 引用本节为已交付。
+>
+> 2026-10-05 起,本节五屏(会话列表/聊天窗/好友与游戏好友/通知/我的)有了
+> 可视 HTML 稿:`design/prototypes/mobile/`(375×812,近黑底+indigo,
+> 中性占位;`index.html` 导览,README.md 逐页设计说明)——同为设计稿非实现,
+> 等用户审核;其余屏仍以本节 ASCII 线框为准。
 
 ### 布局映射:Rail → 底部页签
 

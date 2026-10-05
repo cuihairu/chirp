@@ -1,0 +1,108 @@
+<!DOCTYPE html>
+<!-- chirp 手机端原型 · 05 我的
+     布局:个人卡(大头像占位 + 用户 ID + 复制)→ 在线设备卡(同 OnlineDevicesDialog
+          含顶号警示)→ 设置列表(通知/词库过滤/深色模式/关于)→ 退出登录
+     交互:入口 = 会话列表顶栏头像(不占五页签,页签保持与桌面 Rail 同源);
+          设备行点按看详情;「通知设置」跳通知中心;退出登录二次确认
+     状态:设备行「本机」标记 + 在线 presence;顶号文案明确「踢线是终态,
+          弹回登录页」;词库过滤开关 = WordFilterSync 同款语义
+     同源:设备面与桌面设备对话框同源;不新增任何协议能力 -->
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Chirp 手机原型 · 我的</title>
+<link rel="stylesheet" href="chirp.css">
+<style>
+  .profile-head {
+    display:flex; align-items:center; gap:16px;
+    padding:20px 16px;
+    background:var(--surface);
+    border:1px solid var(--border-soft);
+    border-radius:var(--r-card);
+  }
+  .chev { color:var(--text-3); flex:none; }
+  .chev svg { width:16px; height:16px; }
+</style>
+</head>
+<body>
+
+  <header class="topbar">
+    <div style="flex:1"><div class="title">我的</div></div>
+  </header>
+
+  <div class="content">
+
+    <!-- 个人卡 -->
+    <div class="profile-head">
+      <span class="avatar-wrap">
+        <span class="avatar lg avatar-ring" style="--h:235">a</span>
+        <span class="presence on"></span>
+      </span>
+      <div class="grow">
+        <div style="font-size:19px;font-weight:700">alice</div>
+        <div style="font-size:13px;color:var(--text-2)">ID: alice <span style="color:var(--accent-soft)">复制</span></div>
+      </div>
+    </div>
+
+    <!-- 在线设备(与「设备」页签同源) -->
+    <div class="section-label">在线设备 (2)</div>
+    <div class="card">
+      <div class="row">
+        <span class="icon-btn" style="color:var(--accent-soft)">
+          <svg class="ic" viewBox="0 0 24 24"><rect x="7" y="2.5" width="10" height="19" rx="2.5"/><path d="M11 18.5h2"/></svg>
+        </span>
+        <div class="grow">
+          <div class="name">alice-手机 <span class="chip game" style="margin-left:4px">本机</span></div>
+          <div class="preview">安卓 · 推送已启用</div>
+        </div>
+        <span class="presence on" style="position:static"></span>
+      </div>
+      <div class="row">
+        <span class="icon-btn">
+          <svg class="ic" viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="12" rx="2"/><path d="M8 20h8"/></svg>
+        </span>
+        <div class="grow">
+          <div class="name">alice-桌面</div>
+          <div class="preview">Windows · 在线</div>
+        </div>
+        <span class="presence on" style="position:static"></span>
+      </div>
+      <div class="row" style="background:var(--surface-2)">
+        <div class="preview" style="flex:1;font-size:12px;white-space:normal">
+          同账号在他端登录会顶掉当前会话——踢线是终态,SDK 停止重连并弹回登录页
+        </div>
+      </div>
+    </div>
+
+    <!-- 设置 -->
+    <div class="section-label">设置</div>
+    <div class="card">
+      <div class="row">
+        <div class="grow"><div class="name">通知设置</div></div>
+        <span class="chip">3 条未读</span>
+        <span class="chev"><svg class="ic" viewBox="0 0 24 24"><path d="M9 5l7 7-7 7"/></svg></span>
+      </div>
+      <div class="row">
+        <div class="grow">
+          <div class="name">聊天词库过滤</div>
+          <div class="preview">WordFilterSync · 随 SDK 三端同契约</div>
+        </div>
+        <span class="toggle on"></span>
+      </div>
+      <div class="row">
+        <div class="grow"><div class="name">深色模式</div></div>
+        <span class="chip">跟随系统</span>
+      </div>
+      <div class="row">
+        <div class="grow"><div class="name">关于 Chirp</div></div>
+        <span class="chip">v0.1.0</span>
+        <span class="chev"><svg class="ic" viewBox="0 0 24 24"><path d="M9 5l7 7-7 7"/></svg></span>
+      </div>
+    </div>
+
+    <button class="btn danger-ghost block" type="button" style="margin-top:4px">退出登录</button>
+  </div>
+
+</body>
+</html>

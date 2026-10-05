@@ -1,0 +1,191 @@
+<!DOCTYPE html>
+<!-- chirp 手机端原型 · 03 好友与游戏好友
+     布局:顶栏(标题 + 添加)→ 分段控制[好友|游戏好友] → 好友请求卡 → 列表卡
+     交互:分段点按切换两视图(原型用 #game hash 演示);[发消息]跳私聊并
+          切回聊天页签(同 FriendsDialog 动作集);请求行 [接受][拒绝]
+     状态:● 在线 / ○ 离线 presence 点;「等待对方同意」分组;
+          游戏好友视图附游戏内在线 chip(数据面:chat 服务 game_presence)
+     同源:web FriendsDialog 全动作集,不增不减;游戏好友为好友的关系面
+          视图,不新增协议能力 -->
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Chirp 手机原型 · 好友</title>
+<link rel="stylesheet" href="chirp.css">
+<style>
+  /* 分段切换:#game 时隐藏好友视图、显示游戏好友视图 */
+  .view-friend, .view-game { display: flex; flex-direction: column; gap: 12px; }
+  body[data-seg="friend"]  .view-game   { display: none; }
+  body[data-seg="game"]    .view-friend { display: none; }
+  body[data-seg="friend"]  .seg-friend { background: var(--accent); color: #fff; }
+  body[data-seg="game"]    .seg-game   { background: var(--accent); color: #fff; }
+</style>
+</head>
+<body data-seg="friend">
+
+  <header class="topbar">
+    <div style="flex:1">
+      <div class="title">好友</div>
+    </div>
+    <button class="btn primary sm" type="button">添加</button>
+  </header>
+
+  <div class="content">
+
+    <!-- 分段控制 -->
+    <div class="segmented">
+      <span class="seg seg-friend">好友</span>
+      <span class="seg seg-game">游戏好友</span>
+    </div>
+
+    <!-- ============ 视图 A:好友 ============ -->
+    <div class="view-friend">
+
+      <div class="section-label">好友请求 (1)</div>
+      <div class="card">
+        <div class="row">
+          <span class="avatar" style="--h:10">d</span>
+          <div class="grow">
+            <div class="name">dave</div>
+            <div class="preview">请求加你为好友</div>
+          </div>
+          <button class="btn primary sm" type="button">接受</button>
+          <button class="btn ghost sm" type="button">拒绝</button>
+        </div>
+      </div>
+
+      <div class="section-label">好友 (3)</div>
+      <div class="card">
+        <div class="row">
+          <span class="avatar-wrap"><span class="avatar" style="--h:150">b</span><span class="presence on"></span></span>
+          <div class="grow">
+            <div class="name">bob</div>
+            <div class="preview">在线</div>
+          </div>
+          <button class="btn sm" type="button">发消息</button>
+        </div>
+        <div class="row">
+          <span class="avatar-wrap"><span class="avatar" style="--h:20">c</span><span class="presence on"></span></span>
+          <div class="grow">
+            <div class="name">carol</div>
+            <div class="preview">在线</div>
+          </div>
+          <button class="btn sm" type="button">发消息</button>
+        </div>
+        <div class="row">
+          <span class="avatar-wrap"><span class="avatar" style="--h:285">e</span><span class="presence"></span></span>
+          <div class="grow">
+            <div class="name">erin</div>
+            <div class="preview">离线</div>
+          </div>
+          <button class="btn sm" type="button">发消息</button>
+        </div>
+      </div>
+
+      <div class="section-label">等待对方同意</div>
+      <div class="card">
+        <div class="row">
+          <span class="avatar" style="--h:60">f</span>
+          <div class="grow">
+            <div class="name">frank</div>
+            <div class="preview">已发出请求</div>
+          </div>
+          <span class="chip">待同意</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- ============ 视图 B:游戏好友 ============ -->
+    <div class="view-game">
+
+      <div class="card" style="padding:12px 14px; display:flex; gap:8px; align-items:center">
+        <span class="chip game">游戏平面在线状态</span>
+        <span class="chip">来源:game_presence</span>
+      </div>
+
+      <div class="section-label">游戏好友 (5) · 3 人在线</div>
+      <div class="card">
+        <div class="row">
+          <span class="avatar-wrap"><span class="avatar" style="--h:150">b</span><span class="presence on"></span></span>
+          <div class="grow">
+            <div class="name">bob</div>
+            <div class="preview">
+              <span class="chip live">对局中</span>
+            </div>
+          </div>
+          <button class="btn sm" type="button">发消息</button>
+        </div>
+        <div class="row">
+          <span class="avatar-wrap"><span class="avatar" style="--h:200">g</span><span class="presence on"></span></span>
+          <div class="grow">
+            <div class="name">gina</div>
+            <div class="preview">
+              <span class="chip game">游戏大厅</span>
+            </div>
+          </div>
+          <button class="btn sm" type="button">发消息</button>
+        </div>
+        <div class="row">
+          <span class="avatar-wrap"><span class="avatar" style="--h:40">h</span><span class="presence on"></span></span>
+          <div class="grow">
+            <div class="name">heidi</div>
+            <div class="preview">
+              <span class="chip game">游戏大厅</span>
+            </div>
+          </div>
+          <button class="btn sm" type="button">发消息</button>
+        </div>
+        <div class="row">
+          <span class="avatar-wrap"><span class="avatar" style="--h:20">c</span><span class="presence"></span></span>
+          <div class="grow">
+            <div class="name">carol</div>
+            <div class="preview">离线</div>
+          </div>
+          <button class="btn sm" type="button">发消息</button>
+        </div>
+        <div class="row">
+          <span class="avatar-wrap"><span class="avatar" style="--h:285">e</span><span class="presence"></span></span>
+          <div class="grow">
+            <div class="name">erin</div>
+            <div class="preview">离线</div>
+          </div>
+          <button class="btn sm" type="button">发消息</button>
+        </div>
+      </div>
+
+      <div class="system-note">游戏好友 = 通过游戏内 SDK 结识的关系链;发消息落到同一聊天平面</div>
+    </div>
+  </div>
+
+  <!-- 底部五页签 -->
+  <nav class="tabbar">
+    <span class="tab">
+      <svg class="ic" viewBox="0 0 24 24"><path d="M21 11.5a8.4 8.4 0 0 1-8.5 8.4 8.6 8.6 0 0 1-3.9-.9L3 20l1-5.5a8.3 8.3 0 0 1-1-4A8.4 8.4 0 0 1 11.5 2 8.4 8.4 0 0 1 21 11.5z"/></svg>
+      聊天
+    </span>
+    <span class="tab active">
+      <svg class="ic" viewBox="0 0 24 24"><circle cx="9" cy="8" r="3.5"/><path d="M2.5 20a6.5 6.5 0 0 1 13 0"/><circle cx="17.5" cy="9.5" r="2.5"/><path d="M16 15.5a5 5 0 0 1 5.5 4.5"/></svg>
+      好友
+    </span>
+    <span class="tab">
+      <svg class="ic" viewBox="0 0 24 24"><path d="M9 3a2 2 0 1 1 4 0v1h4a1 1 0 0 1 1 1v4h1a2 2 0 1 1 0 4h-1v4a1 1 0 0 1-1 1h-4v-1a2 2 0 1 0-4 0v1H5a1 1 0 0 1-1-1v-4H3a2 2 0 1 1 0-4h1V5a1 1 0 0 1 1-1h4z"/></svg>
+      组队
+    </span>
+    <span class="tab">
+      <svg class="ic" viewBox="0 0 24 24"><rect x="9" y="2.5" width="6" height="11" rx="3"/><path d="M5 11a7 7 0 0 0 14 0M12 18v3.5"/></svg>
+      语音
+    </span>
+    <span class="tab">
+      <svg class="ic" viewBox="0 0 24 24"><rect x="7" y="2.5" width="10" height="19" rx="2.5"/><path d="M11 18.5h2"/></svg>
+      设备
+    </span>
+  </nav>
+
+  <script>
+    // 原型演示:URL hash #game 切到「游戏好友」分段
+    var seg = location.hash === '#game' ? 'game' : 'friend';
+    document.body.dataset.seg = seg;
+  </script>
+</body>
+</html>

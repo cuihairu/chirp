@@ -1,0 +1,120 @@
+<!DOCTYPE html>
+<!-- chirp 手机端原型 · 封面/导览(设计稿,等用户审核) -->
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Chirp 手机端原型 · 导览</title>
+<style>
+  :root {
+    --bg:#0f1115; --surface:#161923; --surface-2:#1c2030; --border:#2a3046;
+    --text:#f3f4f6; --text-2:#9ca3af; --text-3:#6b7280;
+    --accent:#6366f1; --accent-soft:#a5b4fc; --online:#34d399; --danger:#f87171;
+  }
+  * { margin:0; padding:0; box-sizing:border-box; }
+  body {
+    background:var(--bg); color:var(--text);
+    font-family:system-ui,-apple-system,"Segoe UI",Roboto,"PingFang SC","Microsoft YaHei","Noto Sans CJK SC",sans-serif;
+    max-width:1180px; margin:0 auto; padding:40px 28px 64px; line-height:1.6;
+  }
+  h1 { font-size:26px; margin-bottom:6px; }
+  .sub { color:var(--text-2); margin-bottom:28px; }
+  .banner {
+    border:1px solid rgba(251,191,36,.35); background:rgba(251,191,36,.08);
+    color:#fbbf24; border-radius:12px; padding:12px 16px; font-size:14px; margin-bottom:28px;
+  }
+  h2 { font-size:15px; color:var(--text-3); letter-spacing:.08em; margin:30px 0 12px; }
+  .tokens { display:flex; flex-wrap:wrap; gap:10px; }
+  .token {
+    display:flex; align-items:center; gap:8px; font-size:12.5px; color:var(--text-2);
+    background:var(--surface); border:1px solid var(--border); border-radius:999px; padding:6px 14px 6px 8px;
+  }
+  .sw { width:20px; height:20px; border-radius:50%; }
+  .grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(250px,1fr)); gap:20px; }
+  .page-card {
+    background:var(--surface); border:1px solid var(--border); border-radius:16px;
+    overflow:hidden; text-decoration:none; color:inherit; display:block;
+    transition:transform .15s;
+  }
+  .page-card:hover { transform:translateY(-3px); }
+  .page-card img { width:100%; display:block; border-bottom:1px solid var(--border); }
+  .page-card .cap { padding:12px 14px; }
+  .page-card .cap b { font-size:15px; }
+  .page-card .cap span { display:block; font-size:12.5px; color:var(--text-2); margin-top:3px; }
+  .file { font-size:11px; color:var(--text-3); font-family:ui-monospace,Menlo,monospace; }
+  footer { margin-top:44px; color:var(--text-3); font-size:12.5px; }
+  a { color:var(--accent-soft); }
+</style>
+</head>
+<body>
+
+  <h1>Chirp 手机端原型 <span style="font-size:14px;color:var(--text-3)">移动通用稿 · 375×812</span></h1>
+  <div class="sub">双平面定位:游戏通信 SDK + 玩家聊天 app · 与 <a href="../../../docs/design-notes/app_chat_prototype.md">app_chat_prototype.md</a>「三、手机端原型」同源,不新增协议能力</div>
+
+  <div class="banner">⚠ 设计稿,等用户审核——非实现。审核通过前不进文档站轮播、不在 README/能力矩阵引用。</div>
+
+  <h2>设计 TOKEN</h2>
+  <div class="tokens">
+    <span class="token"><span class="sw" style="background:#0f1115;border:1px solid #2a3046"></span>底 #0f1115</span>
+    <span class="token"><span class="sw" style="background:#161923;border:1px solid #2a3046"></span>面 #161923</span>
+    <span class="token"><span class="sw" style="background:#6366f1"></span>accent #6366f1(与文档站同族)</span>
+    <span class="token"><span class="sw" style="background:#a5b4fc"></span>accent-soft #a5b4fc</span>
+    <span class="token"><span class="sw" style="background:#34d399"></span>在线 #34d399</span>
+    <span class="token"><span class="sw" style="background:#f87171"></span>警示 #f87171</span>
+    <span class="token">胶囊按钮 · 圆形头像 · 中性占位(不伪造 logo)</span>
+  </div>
+
+  <h2>页面(点击进 HTML 原型)</h2>
+  <div class="grid">
+    <a class="page-card" href="01-sessions.html">
+      <img src="shots/01-sessions.png" alt="会话列表">
+      <div class="cap"><b>01 会话列表(首页)</b>
+        <span>五页签骨架 · 未读角标 · 双主操作 · 🔔/头像双顶栏入口</span>
+        <span class="file">01-sessions.html</span></div>
+    </a>
+    <a class="page-card" href="02-chat.html">
+      <img src="shots/02-chat.png" alt="聊天窗口">
+      <div class="cap"><b>02 聊天窗口</b>
+        <span>typing 副标题 · 回应 chip · 已读回执 · 撤回系统行</span>
+        <span class="file">02-chat.html</span></div>
+    </a>
+    <a class="page-card" href="03-friends.html">
+      <img src="shots/03-friends.png" alt="好友">
+      <div class="cap"><b>03 好友</b>
+        <span>请求处理 · 在线/离线 · 待同意态</span>
+        <span class="file">03-friends.html(#game 切第二态)</span></div>
+    </a>
+    <a class="page-card" href="03-friends.html#game">
+      <img src="shots/03-friends-game.png" alt="游戏好友">
+      <div class="cap"><b>03b 游戏好友</b>
+        <span>game_presence 在线 chip(对局中/大厅)· 同一聊天平面</span>
+        <span class="file">03-friends.html#game</span></div>
+    </a>
+    <a class="page-card" href="04-notifications.html">
+      <img src="shots/04-notifications.png" alt="通知">
+      <div class="cap"><b>04 通知</b>
+        <span>四类 chip · 未读高亮 · 推送设置(RegisterDevice 同源)</span>
+        <span class="file">04-notifications.html</span></div>
+    </a>
+    <a class="page-card" href="05-profile.html">
+      <img src="shots/05-profile.png" alt="我的">
+      <div class="cap"><b>05 我的</b>
+        <span>在线设备卡 + 顶号契约 · 词库过滤 · 顶栏头像入口</span>
+        <span class="file">05-profile.html</span></div>
+    </a>
+  </div>
+
+  <h2>导航骨架</h2>
+  <div style="color:var(--text-2);font-size:14px;max-width:760px">
+    底部五页签 = 桌面 Rail 同源映射(聊天/好友/组队/语音/设备);通知中心从会话列表顶栏 🔔 进入,
+    「我的」从顶栏头像进入——两者不占页签。对话框(好友添加/建群/群设置/长按气泡)一律全屏 sheet。
+    本批出用户指定五页;组队/语音/设备/登录等其余屏线框以原型文档 ASCII 稿为准,审核后按同 token 体系补齐。
+  </div>
+
+  <footer>
+    Chirp 手机端原型 · 2026-10-05 · 截图由 chrome-headless-shell 生成(375×812 @2x)·
+    逐页布局/交互/状态说明见同目录 <a href="README.md">README.md</a>
+  </footer>
+
+</body>
+</html>

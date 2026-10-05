@@ -1,0 +1,290 @@
+/* chirp mobile prototype — shared design tokens & primitives
+ *
+ * 设计基调:近黑底(与文档站暗色态同族)+ indigo 单 accent(#6366f1 系,
+ * 取自 docs 站 .vitepress/theme/custom.css)+ 胶囊按钮 + 圆形头像。
+ * 所有 logo/头像均为中性几何占位,不伪造任何真实标识。
+ * 视口基线:375×812(移动优先)。
+ */
+
+:root {
+  --bg: #0f1115;
+  --surface: #161923;
+  --surface-2: #1c2030;
+  --surface-3: #232840;
+  --border: #2a3046;
+  --border-soft: #222741;
+
+  --text: #f3f4f6;
+  --text-2: #9ca3af;
+  --text-3: #6b7280;
+
+  --accent: #6366f1;
+  --accent-strong: #4f46e5;
+  --accent-soft: #a5b4fc;
+  --accent-dim: rgba(99, 102, 241, 0.14);
+
+  --online: #34d399;
+  --danger: #f87171;
+  --warn: #fbbf24;
+
+  --r-card: 16px;
+  --r-row: 12px;
+  --r-pill: 999px;
+
+  --tabbar-h: 64px;
+  --topbar-h: 56px;
+}
+
+* { margin: 0; padding: 0; box-sizing: border-box; }
+
+html, body { height: 100%; }
+
+body {
+  width: 375px;
+  height: 812px;
+  overflow: hidden;
+  background: var(--bg);
+  color: var(--text);
+  font-family: system-ui, -apple-system, "Segoe UI", Roboto, "PingFang SC",
+    "Hiragino Sans GB", "Microsoft YaHei", "Noto Sans CJK SC", sans-serif;
+  font-size: 15px;
+  line-height: 1.45;
+  display: flex;
+  flex-direction: column;
+  -webkit-font-smoothing: antialiased;
+}
+
+/* ---- 顶栏 ---- */
+.topbar {
+  flex: none;
+  height: var(--topbar-h);
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 0 16px;
+  background: rgba(15, 17, 21, 0.92);
+  border-bottom: 1px solid var(--border-soft);
+}
+.topbar .title { font-size: 17px; font-weight: 700; }
+.topbar .subtitle { font-size: 12px; color: var(--text-2); }
+.topbar .spacer { flex: 1; }
+
+/* 应用标识:中性几何占位(声波记号),非真实 logo */
+.logo-mark {
+  width: 28px; height: 28px; border-radius: 8px;
+  background: linear-gradient(135deg, var(--accent) 0%, var(--accent-strong) 100%);
+  display: inline-flex; align-items: center; justify-content: center;
+  flex: none;
+}
+.logo-mark svg { width: 16px; height: 16px; }
+
+.icon-btn {
+  width: 36px; height: 36px; border-radius: 50%;
+  display: inline-flex; align-items: center; justify-content: center;
+  color: var(--text-2); position: relative; flex: none;
+}
+.icon-btn:active { background: var(--surface-2); }
+.icon-btn svg { width: 21px; height: 21px; }
+.badge-dot {
+  position: absolute; top: 5px; right: 5px;
+  min-width: 16px; height: 16px; padding: 0 4px;
+  border-radius: 8px; background: var(--danger);
+  color: #fff; font-size: 10px; font-weight: 700;
+  display: flex; align-items: center; justify-content: center;
+  border: 2px solid var(--bg);
+}
+
+/* ---- 头像:中性占位,色相按名字散列 ---- */
+.avatar {
+  width: 44px; height: 44px; border-radius: 50%;
+  display: inline-flex; align-items: center; justify-content: center;
+  font-weight: 700; font-size: 16px; color: #fff;
+  background: hsl(var(--h, 235), 42%, 46%);
+  flex: none; text-transform: uppercase;
+}
+.avatar.sm { width: 32px; height: 32px; font-size: 12px; }
+.avatar.lg { width: 72px; height: 72px; font-size: 26px; }
+.avatar-ring { box-shadow: 0 0 0 2px var(--bg), 0 0 0 4px var(--accent); }
+
+/* 在线点 */
+.presence {
+  position: absolute; right: -1px; bottom: -1px;
+  width: 12px; height: 12px; border-radius: 50%;
+  background: var(--text-3); border: 2.5px solid var(--bg);
+}
+.presence.on { background: var(--online); }
+.avatar-wrap { position: relative; flex: none; }
+
+/* ---- 内容区 ---- */
+.content {
+  flex: 1;
+  overflow-y: auto;
+  padding: 12px 16px 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+.section-label {
+  font-size: 12px; font-weight: 700; color: var(--text-3);
+  letter-spacing: 0.06em; margin: 4px 2px -4px;
+}
+
+/* 卡片与列表行 */
+.card {
+  background: var(--surface);
+  border: 1px solid var(--border-soft);
+  border-radius: var(--r-card);
+  overflow: hidden;
+}
+.row {
+  display: flex; align-items: center; gap: 12px;
+  padding: 12px 14px;
+  background: var(--surface);
+}
+.row + .row { border-top: 1px solid var(--border-soft); }
+.row .grow { flex: 1; min-width: 0; }
+.row .name { font-weight: 600; font-size: 15px; }
+.row .preview {
+  font-size: 13px; color: var(--text-2);
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+.row .meta { text-align: right; flex: none; }
+.row .time { font-size: 11px; color: var(--text-3); display: block; }
+
+/* 未读角标 */
+.unread {
+  min-width: 20px; height: 20px; padding: 0 6px;
+  border-radius: 10px; background: var(--accent);
+  color: #fff; font-size: 11px; font-weight: 700;
+  display: inline-flex; align-items: center; justify-content: center;
+}
+
+/* ---- 按钮 ---- */
+.btn {
+  display: inline-flex; align-items: center; justify-content: center;
+  gap: 6px; border: none; cursor: pointer;
+  font: inherit; font-weight: 600; font-size: 14px;
+  border-radius: var(--r-pill);
+  padding: 10px 18px;
+  background: var(--surface-2); color: var(--text);
+}
+.btn.primary { background: var(--accent); color: #fff; }
+.btn.ghost { background: transparent; border: 1px solid var(--border); color: var(--text-2); }
+.btn.danger-ghost { background: transparent; border: 1px solid var(--border); color: var(--danger); }
+.btn.sm { padding: 6px 14px; font-size: 13px; }
+.btn.block { width: 100%; }
+.btn-row { display: flex; gap: 10px; }
+.btn-row .btn { flex: 1; }
+
+/* ---- 底部页签(= 桌面 Rail 五项) ---- */
+.tabbar {
+  flex: none;
+  height: var(--tabbar-h);
+  display: flex;
+  background: rgba(15, 17, 21, 0.96);
+  border-top: 1px solid var(--border-soft);
+  padding-bottom: env(safe-area-inset-bottom, 0);
+}
+.tab {
+  flex: 1;
+  display: flex; flex-direction: column;
+  align-items: center; justify-content: center; gap: 3px;
+  color: var(--text-3); font-size: 10.5px; font-weight: 600;
+  position: relative;
+}
+.tab svg { width: 22px; height: 22px; }
+.tab.active { color: var(--accent-soft); }
+
+/* ---- 聊天气泡 ---- */
+.bubble-row { display: flex; gap: 8px; align-items: flex-end; }
+.bubble-row.mine { flex-direction: row-reverse; }
+.bubble {
+  max-width: 72%;
+  padding: 9px 13px;
+  border-radius: 18px;
+  font-size: 15px;
+  background: var(--surface-2);
+  border-bottom-left-radius: 6px;
+}
+.bubble.mine {
+  background: var(--accent-strong);
+  border-bottom-left-radius: 18px;
+  border-bottom-right-radius: 6px;
+}
+.bubble .msg-meta {
+  display: block; font-size: 10.5px; margin-top: 3px;
+  color: rgba(255, 255, 255, 0.55); text-align: right;
+}
+.bubble-row .msg-meta { font-size: 10.5px; color: var(--text-3); flex: none; }
+.reactions { display: flex; gap: 4px; margin-top: 5px; }
+.reaction-chip {
+  font-size: 11.5px; padding: 2px 8px;
+  border-radius: 999px; background: var(--accent-dim);
+  border: 1px solid rgba(99, 102, 241, 0.4); color: var(--accent-soft);
+}
+.day-divider {
+  align-self: center; font-size: 11px; color: var(--text-3);
+  background: var(--surface-2); border-radius: 999px; padding: 3px 12px;
+}
+.system-note {
+  align-self: center; font-size: 11.5px; color: var(--text-3);
+}
+
+/* 输入条 */
+.inputbar {
+  flex: none;
+  display: flex; gap: 10px; align-items: center;
+  padding: 10px 14px calc(10px + env(safe-area-inset-bottom, 0));
+  background: var(--surface);
+  border-top: 1px solid var(--border-soft);
+}
+.inputbar .field {
+  flex: 1; height: 40px; border-radius: 20px;
+  background: var(--surface-2); border: 1px solid var(--border);
+  color: var(--text-3); font-size: 14px;
+  display: flex; align-items: center; padding: 0 16px;
+}
+.send-btn {
+  width: 40px; height: 40px; border-radius: 50%;
+  background: var(--accent); border: none;
+  display: flex; align-items: center; justify-content: center; flex: none;
+}
+.send-btn svg { width: 18px; height: 18px; }
+
+/* ---- 分段控制 ---- */
+.segmented {
+  display: flex; background: var(--surface-2);
+  border-radius: var(--r-pill); padding: 3px;
+}
+.segmented .seg {
+  flex: 1; text-align: center; font-size: 13px; font-weight: 600;
+  padding: 7px 0; border-radius: 999px; color: var(--text-2);
+}
+.segmented .seg.on { background: var(--accent); color: #fff; }
+
+/* ---- 开关 ---- */
+.toggle {
+  width: 46px; height: 27px; border-radius: 999px;
+  background: var(--surface-3); position: relative; flex: none;
+}
+.toggle::after {
+  content: ""; position: absolute; top: 3px; left: 3px;
+  width: 21px; height: 21px; border-radius: 50%;
+  background: #fff; transition: left .18s;
+}
+.toggle.on { background: var(--accent); }
+.toggle.on::after { left: 22px; }
+
+/* ---- 徽章 / 状态 chip ---- */
+.chip {
+  font-size: 11px; font-weight: 600; padding: 2px 9px;
+  border-radius: 999px; display: inline-flex; align-items: center; gap: 4px;
+  background: var(--surface-2); color: var(--text-2);
+}
+.chip.live { background: rgba(52, 211, 153, 0.12); color: var(--online); }
+.chip.game { background: var(--accent-dim); color: var(--accent-soft); }
+.chip.warn { background: rgba(251, 191, 36, 0.12); color: var(--warn); }
+
+/* 通用 svg 图标笔触 */
+svg.ic { fill: none; stroke: currentColor; stroke-width: 1.8;
+  stroke-linecap: round; stroke-linejoin: round; }

@@ -1,0 +1,92 @@
+<!DOCTYPE html>
+<!-- chirp 手机端原型 · 02 聊天窗口(全屏推入)
+     布局:头部(返回 + 群名 + typing 副标题 + ⚙)→ 加载更早消息按钮 →
+          日期分隔 → 气泡流(他人/自己)→ 输入条(圆角输入 + 圆形发送)
+     交互:返回回会话列表;⚙ 进群设置 sheet;点「加载更早」向上翻页;
+          长按气泡 → 操作 sheet(见 index 说明,对应 web 悬停动作集)
+     状态:typing 副标题、他人气泡回应 chip、自己气泡「已读」回执、时间戳
+     同源:气泡解剖与 web 同款——状态行/回应/撤回一致,发送按钮=Enter 语义 -->
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Chirp 手机原型 · 聊天窗口</title>
+<link rel="stylesheet" href="chirp.css">
+</head>
+<body>
+
+  <!-- 头部:返回 + 标题 + typing 副标题 + 群设置 -->
+  <header class="topbar">
+    <span class="icon-btn">
+      <svg class="ic" viewBox="0 0 24 24"><path d="M15 5l-7 7 7 7"/></svg>
+    </span>
+    <div style="flex:1">
+      <div class="title">战队A</div>
+      <div class="subtitle" style="color:var(--accent-soft)">bob 正在输入…</div>
+    </div>
+    <span class="icon-btn">
+      <svg class="ic" viewBox="0 0 24 24"><circle cx="12" cy="5" r="1.4"/><circle cx="12" cy="12" r="1.4"/><circle cx="12" cy="19" r="1.4"/></svg>
+    </span>
+  </header>
+
+  <!-- 消息流 -->
+  <div class="content" style="gap:10px; padding-top:16px">
+
+    <button class="btn ghost sm" type="button" style="align-self:center">加载更早的消息</button>
+
+    <span class="day-divider">今天 20:05</span>
+
+    <!-- 他人消息:带头像 + 昵称 + 回应 chip -->
+    <div class="bubble-row">
+      <span class="avatar sm" style="--h:150">b</span>
+      <div>
+        <div class="bubble">今晚八点集合,打排位</div>
+        <div class="reactions">
+          <span class="reaction-chip"><svg class="ic" style="width:12px;height:12px;vertical-align:-2px" viewBox="0 0 24 24"><path d="M14 9V5a3 3 0 0 0-3-3l-4 9v11h11.28a2 2 0 0 0 2-1.7l1.38-9a2 2 0 0 0-2-2.3zM7 22H4a2 2 0 0 1-2-2v-7a2 2 0 0 1 2-2h3"/></svg> 2</span>
+          <span class="reaction-chip"><svg class="ic" style="width:12px;height:12px;vertical-align:-2px" viewBox="0 0 24 24"><path d="M20.8 4.6a5.5 5.5 0 0 0-7.8 0L12 5.7l-1-1.1a5.5 5.5 0 0 0-7.8 7.8l1 1L12 21l7.8-7.6 1-1a5.5 5.5 0 0 0 0-7.8z"/></svg></span>
+          <span class="reaction-chip" style="opacity:.65">+</span>
+        </div>
+      </div>
+      <span class="msg-meta">20:05</span>
+    </div>
+
+    <div class="bubble-row">
+      <span class="avatar sm" style="--h:330">e</span>
+      <div>
+        <div class="bubble">收到,我先吃个饭</div>
+      </div>
+      <span class="msg-meta">20:07</span>
+    </div>
+
+    <!-- 自己的消息:已读回执 -->
+    <div class="bubble-row mine">
+      <div>
+        <div class="bubble mine">好的,收到
+          <span class="msg-meta">20:14 已读</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- 撤回态(系统提示) -->
+    <span class="system-note">carol 撤回了一条消息</span>
+
+    <!-- 他人正在输入的占位气泡(typing 副标题的具象化) -->
+    <div class="bubble-row">
+      <span class="avatar sm" style="--h:150">b</span>
+      <div class="bubble" style="color:var(--text-3);letter-spacing:3px">•••</div>
+    </div>
+  </div>
+
+  <!-- 输入条 -->
+  <div class="inputbar">
+    <span class="icon-btn" style="width:40px;height:40px">
+      <svg class="ic" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M8.5 14a4.5 4.5 0 0 0 7 0M9 9.5h.01M15 9.5h.01"/></svg>
+    </span>
+    <div class="field">输入消息…</div>
+    <button class="send-btn" type="button" aria-label="发送">
+      <svg class="ic" viewBox="0 0 24 24" style="stroke:#fff"><path d="M20 4L4 12l7 2 2 7z"/></svg>
+    </button>
+  </div>
+
+</body>
+</html>
