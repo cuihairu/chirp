@@ -9,6 +9,8 @@
 
 #include "jwt.h"
 #include "logger.h"
+#include "common/metrics.h"
+#include "common/metrics_http_server.h"
 #include "network/protobuf_framing.h"
 #include "network/session.h"
 #include "network/tcp_server.h"
@@ -92,6 +94,7 @@ void HandleAuthPacket(const std::string& jwt_secret,
     chirp::common::Logger::Instance().Warn("failed to parse Packet from client");
     return;
   }
+  CHIRP_COUNTER("chirp_app_auth_packets_total", 1);
 
   switch (pkt.msg_id()) {
   case chirp::gateway::LOGIN_REQ: {
@@ -130,6 +133,7 @@ void HandleAuthPacket(const std::string& jwt_secret,
       resp.set_session_id(RandomHex(16));
       resp.set_kick_previous(true);
       resp.mutable_kick()->set_reason("login from another device");
+      CHIRP_COUNTER("chirp_app_auth_logins_total", 1);
     }
     resp.set_server_time(NowMs());
     SendPacket(session, chirp::gateway::LOGIN_RESP, pkt.sequence(), resp.SerializeAsString());
@@ -168,6 +172,8 @@ int main(int argc, char** argv) {
   Logger::Instance().SetLevel(Logger::Level::kInfo);
   const uint16_t port = ParsePort(argc, argv);
   const std::string jwt_secret = GetArg(argc, argv, "--jwt_secret", "dev_secret");
+  const uint16_t metrics_port =
+      static_cast<uint16_t>(std::atoi(GetArg(argc, argv, "--metrics_port", "0").c_str()));
   Logger::Instance().Info("chirp_auth starting on port " + std::to_string(port));
 
   asio::io_context io;
@@ -180,10 +186,29 @@ int main(int argc, char** argv) {
 
   server.Start();
 
+  // Minimal metrics endpoint, opt-in via --metrics_port (0 = off; default
+  // keeps the listening surface unchanged). Declared after io so it dies
+  // first; a failed bind logs and the service continues without metrics.
+  std::optional<chirp::common::MetricsHttpServer> metrics_server;
+  if (metrics_port > 0) {
+    metrics_server.emplace(io, metrics_port);
+    if (metrics_server->Start()) {
+      Logger::Instance().Info("Metrics endpoint listening on TCP:" +
+                              std::to_string(metrics_port) + " (/metrics)");
+    } else {
+      Logger::Instance().Warn("Metrics endpoint failed to bind TCP:" +
+                              std::to_string(metrics_port) + "; continuing without metrics");
+      metrics_server.reset();
+    }
+  }
+
   asio::signal_set signals(io, SIGINT, SIGTERM);
   signals.async_wait([&](const std::error_code& /*ec*/, int /*sig*/) {
     Logger::Instance().Info("shutdown requested");
     server.Stop();
+    if (metrics_server) {
+      metrics_server->Stop();
+    }
     io.stop();
   });
 

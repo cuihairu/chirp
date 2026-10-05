@@ -5,6 +5,7 @@
 #include <cstdlib>
 #include <memory>
 #include <mutex>
+#include <optional>
 #include <string>
 #include <unordered_map>
 #include <unordered_set>
@@ -21,6 +22,8 @@
 #include "group_handlers.h"
 #include "inject_consumer.h"
 #include "logger.h"
+#include "common/metrics.h"
+#include "common/metrics_http_server.h"
 #include "message_handlers.h"
 #include "network/protobuf_framing.h"
 #include "network/redis_client.h"
@@ -481,6 +484,7 @@ void HandleDisconnect(const std::shared_ptr<chirp::network::SessionRegistry>& st
   if (chirp::network::RemoveAuthenticatedSession(state, session, &user_id, &device_id,
                                                  &platform) &&
       !user_id.empty()) {
+    CHIRP_GAUGE_DEC("chirp_chat_sessions");
     chirp::common::Logger::Instance().Info("User disconnected: " + user_id);
     // 多端在线（P0）：确认下线才广播清单变更（被顶的旧会话不广播——它没有
     // 赢得这个槽位）。
@@ -555,6 +559,7 @@ void HandlePacket(const std::shared_ptr<MessageStore>& store,
     Logger::Instance().Warn("failed to parse Packet from client");
     return;
   }
+  CHIRP_COUNTER("chirp_chat_packets_total", 1);
 
   if (pkt.request_id() == 0) {
     pkt.set_request_id(g_direct_request_id.fetch_add(1, std::memory_order_relaxed));
@@ -673,6 +678,12 @@ void HandlePacket(const std::shared_ptr<MessageStore>& store,
       if (old && old.get() != session.get()) {
         KickSession(old, chirp::network::LoginKickReason(login_req.platform()));
       }
+      // Slot accounting (same top-kick-safe caliber as the enhanced entry:
+      // only a null displaced session admits a new (user, platform) slot).
+      if (!old) {
+        CHIRP_GAUGE_INC("chirp_chat_sessions");
+      }
+      CHIRP_COUNTER("chirp_chat_logins_total", 1);
       chirp::network::FillOnlineDevices(state, user_id, &login_resp, session.get());
       chirp::network::BroadcastDevicePresence(state, user_id, login_req.platform(),
                                               chirp::network::NormalizeDeviceId(login_req.device_id()),
@@ -1426,6 +1437,7 @@ int main(int argc, char** argv) {
   Logger::Instance().SetLevel(Logger::Level::kInfo);
   const uint16_t port = chirp::chat::runtime::ParseU16Arg(argc, argv, "--port", 7000);
   const uint16_t ws_port = chirp::chat::runtime::ParseU16Arg(argc, argv, "--ws_port", static_cast<uint16_t>(port + 1));
+  const uint16_t metrics_port = chirp::chat::runtime::ParseU16Arg(argc, argv, "--metrics_port", 0);
   const std::string redis_host = chirp::chat::runtime::GetArg(argc, argv, "--redis_host", "");
   const uint16_t redis_port = chirp::chat::runtime::ParseU16Arg(argc, argv, "--redis_port", 6379);
   const int offline_ttl_seconds = chirp::chat::runtime::ParseIntArg(argc, argv, "--offline_ttl", 604800);
@@ -1988,6 +2000,22 @@ int main(int argc, char** argv) {
   ws_server.Start();
   acks->Start();
 
+  // Minimal metrics endpoint, opt-in via --metrics_port (0 = off; default
+  // keeps the listening surface unchanged). Declared after io so it dies
+  // first; a failed bind logs and the service continues without metrics.
+  std::optional<chirp::common::MetricsHttpServer> metrics_server;
+  if (metrics_port > 0) {
+    metrics_server.emplace(io, metrics_port);
+    if (metrics_server->Start()) {
+      Logger::Instance().Info("Metrics endpoint listening on TCP:" +
+                              std::to_string(metrics_port) + " (/metrics)");
+    } else {
+      Logger::Instance().Warn("Metrics endpoint failed to bind TCP:" +
+                              std::to_string(metrics_port) + "; continuing without metrics");
+      metrics_server.reset();
+    }
+  }
+
   asio::signal_set signals(io, SIGINT, SIGTERM);
   signals.async_wait([&](const std::error_code& /*ec*/, int /*sig*/) {
     Logger::Instance().Info("shutdown requested");
@@ -2000,6 +2028,9 @@ int main(int argc, char** argv) {
     }
     server.Stop();
     ws_server.Stop();
+    if (metrics_server) {
+      metrics_server->Stop();
+    }
     io.stop();
   });
 
