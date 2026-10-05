@@ -4,6 +4,7 @@
 #include <cstdlib>
 #include <memory>
 #include <mutex>
+#include <optional>
 #include <random>
 #include <string>
 #include <unordered_map>
@@ -14,6 +15,8 @@
 #include "logger.h"
 #include "delivery_ack_manager.h"
 #include "distributed_dispatch.h"
+#include "common/metrics.h"
+#include "common/metrics_http_server.h"
 #include "login_token_verifier.h"
 #include "network/notification_client.h"
 #include "push_bridge.h"
@@ -35,26 +38,43 @@ using chirp::common::Logger;
 
 struct DistributedChatState {
   void AddSession(const std::string& user_id, const std::shared_ptr<chirp::network::Session>& session) {
-    std::lock_guard<std::mutex> lock(mu);
-    local_sessions[user_id] = session;
-    session_to_user[session.get()] = user_id;
+    bool newly_bound = false;
+    {
+      std::lock_guard<std::mutex> lock(mu);
+      newly_bound = session_to_user.count(session.get()) == 0;
+      local_sessions[user_id] = session;
+      session_to_user[session.get()] = user_id;
+    }
+    // Binding-level accounting: the gauge counts sessions bound here (a
+    // re-login of the same session leaves the count unchanged), and every
+    // RemoveSession that finds an entry pairs with exactly one dec.
+    if (newly_bound) {
+      CHIRP_GAUGE_INC("chirp_chat_distributed_sessions");
+    }
   }
 
   void RemoveSession(chirp::network::Session* session) {
-    std::lock_guard<std::mutex> lock(mu);
-    const auto it = session_to_user.find(session);
-    if (it == session_to_user.end()) {
-      return;
+    bool released = false;
+    {
+      std::lock_guard<std::mutex> lock(mu);
+      const auto it = session_to_user.find(session);
+      if (it == session_to_user.end()) {
+        return;  // never bound (or already released): idempotent re-entry
+      }
+      // Only clear the user slot while it still points at THIS session: a
+      // newer login for the same user may already own it, and a stale
+      // disconnect (e.g. the send client's late FIN) must not unregister
+      // the current session.
+      const auto sit = local_sessions.find(it->second);
+      if (sit != local_sessions.end() && sit->second.lock().get() == session) {
+        local_sessions.erase(sit);
+      }
+      session_to_user.erase(it);
+      released = true;
     }
-    // Only clear the user slot while it still points at THIS session: a
-    // newer login for the same user may already own it, and a stale
-    // disconnect (e.g. the send client's late FIN) must not unregister
-    // the current session.
-    const auto sit = local_sessions.find(it->second);
-    if (sit != local_sessions.end() && sit->second.lock().get() == session) {
-      local_sessions.erase(sit);
+    if (released) {
+      CHIRP_GAUGE_DEC("chirp_chat_distributed_sessions");
     }
-    session_to_user.erase(it);
   }
 
   std::shared_ptr<chirp::network::Session> GetLocalSession(const std::string& user_id) {
@@ -320,6 +340,7 @@ void HandleLogin(const chirp::auth::LoginRequest& req,
     resp.set_session_id(state->instance_id + "_" + std::to_string(chirp::chat::runtime::NowMs()));
 
     state->AddSession(user_id, session);
+    CHIRP_COUNTER("chirp_chat_distributed_logins_total", 1);
 
     if (acks && req.supports_message_ack()) {
       acks->MarkCapable(session);
@@ -411,6 +432,7 @@ int main(int argc, char** argv) {
   if (instance_id.empty()) {
     instance_id = "chat_" + chirp::chat::runtime::RandomHex(8);
   }
+  const uint16_t metrics_port = chirp::chat::runtime::ParseU16Arg(argc, argv, "--metrics_port", 0);
 
   Logger::Instance().Info("chirp_chat_distributed starting");
   Logger::Instance().Info("  instance_id: " + instance_id);
@@ -515,6 +537,7 @@ int main(int argc, char** argv) {
 
   auto on_packet = [handlers](const std::shared_ptr<chirp::network::Session>& session,
                               const chirp::gateway::Packet& pkt) {
+    CHIRP_COUNTER("chirp_chat_distributed_packets_total", 1);
     chirp::chat::runtime::DispatchDistributedPacket(session, pkt, handlers);
   };
 
@@ -551,11 +574,30 @@ int main(int argc, char** argv) {
   Logger::Instance().Info(
       "Chat service started, listening on TCP:" + std::to_string(port) + " WS:" + std::to_string(ws_port));
 
+  // Minimal metrics endpoint, opt-in via --metrics_port (0 = off; default
+  // keeps the listening surface unchanged). Declared after io so it dies
+  // first; a failed bind logs and the service continues without metrics.
+  std::optional<chirp::common::MetricsHttpServer> metrics_server;
+  if (metrics_port > 0) {
+    metrics_server.emplace(io, metrics_port);
+    if (metrics_server->Start()) {
+      Logger::Instance().Info("Metrics endpoint listening on TCP:" +
+                              std::to_string(metrics_port) + " (/metrics)");
+    } else {
+      Logger::Instance().Warn("Metrics endpoint failed to bind TCP:" +
+                              std::to_string(metrics_port) + "; continuing without metrics");
+      metrics_server.reset();
+    }
+  }
+
   chirp::chat::runtime::InstallSignalStop(io, [&]() {
     Logger::Instance().Info("Shutting down chat service...");
     acks->Stop();
     server->Stop();
     ws_server->Stop();
+    if (metrics_server) {
+      metrics_server->Stop();
+    }
     router->Stop();
     io.stop();
   });
