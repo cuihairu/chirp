@@ -8,6 +8,7 @@
 #include <cstdlib>
 #include <memory>
 #include <mutex>
+#include <optional>
 #include <random>
 #include <set>
 #include <string>
@@ -18,6 +19,8 @@
 #include <asio.hpp>
 
 #include "common/login_token_verifier.h"
+#include "common/metrics.h"
+#include "common/metrics_http_server.h"
 #include "logger.h"
 #include "network/protobuf_framing.h"
 #include "network/redis_client.h"
@@ -497,6 +500,13 @@ void HandleLogin(const std::shared_ptr<SocialState>& state,
   if (old && old.get() != session.get()) {
     KickSession(old, chirp::network::LoginKickReason(login_req.platform()));
   }
+  // Slot accounting: a null displaced session means the (user, platform)
+  // slot is new (gauge inc); a displaced one replaced an existing slot
+  // (count unchanged - the kicked session's release lands as a no-op).
+  if (!old) {
+    CHIRP_GAUGE_INC("chirp_social_sessions");
+  }
+  CHIRP_COUNTER("chirp_social_logins_total", 1);
 
   SendPacket(session, chirp::gateway::LOGIN_RESP, pkt.sequence(), login_resp.SerializeAsString());
 
@@ -1084,6 +1094,9 @@ void HandleDisconnect(const std::shared_ptr<SocialState>& state,
   std::string user_id;
   const bool released =
       chirp::network::RemoveAuthenticatedSession(state->registry, session, &user_id);
+  if (released) {
+    CHIRP_GAUGE_DEC("chirp_social_sessions");
+  }
   if (user_id.empty()) {
     return;  // never logged in on this connection
   }
@@ -1130,6 +1143,7 @@ void HandlePacket(const std::shared_ptr<SocialState>& state,
     Logger::Instance().Warn("failed to parse Packet from client");
     return;
   }
+  CHIRP_COUNTER("chirp_social_packets_total", 1);
 
   switch (pkt.msg_id()) {
   case chirp::gateway::LOGIN_REQ:
@@ -1195,6 +1209,7 @@ int main(int argc, char** argv) {
   const std::string redis_host = GetArg(argc, argv, "--redis_host", "");
   const uint16_t redis_port = ParseU16Arg(argc, argv, "--redis_port", 6379);
   const std::string token_secret = GetArg(argc, argv, "--token_secret", "");
+  const uint16_t metrics_port = ParseU16Arg(argc, argv, "--metrics_port", 0);
 
   Logger::Instance().Info("chirp_social starting tcp=" + std::to_string(port) + " ws=" + std::to_string(ws_port) +
                           (redis_host.empty() ? "" : (" redis=" + redis_host + ":" + std::to_string(redis_port))) +
@@ -1245,11 +1260,30 @@ int main(int argc, char** argv) {
   server.Start();
   ws_server.Start();
 
+  // Minimal metrics endpoint, opt-in via --metrics_port (0 = off; default
+  // keeps the listening surface unchanged). Declared after io so it dies
+  // first; a failed bind logs and the service continues without metrics.
+  std::optional<chirp::common::MetricsHttpServer> metrics_server;
+  if (metrics_port > 0) {
+    metrics_server.emplace(io, metrics_port);
+    if (metrics_server->Start()) {
+      Logger::Instance().Info("Metrics endpoint listening on TCP:" +
+                              std::to_string(metrics_port) + " (/metrics)");
+    } else {
+      Logger::Instance().Warn("Metrics endpoint failed to bind TCP:" +
+                              std::to_string(metrics_port) + "; continuing without metrics");
+      metrics_server.reset();
+    }
+  }
+
   asio::signal_set signals(io, SIGINT, SIGTERM);
   signals.async_wait([&](const std::error_code& /*ec*/, int /*sig*/) {
     Logger::Instance().Info("shutdown requested");
     server.Stop();
     ws_server.Stop();
+    if (metrics_server) {
+      metrics_server->Stop();
+    }
     io.stop();
   });
 
