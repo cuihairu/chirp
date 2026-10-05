@@ -1,0 +1,15 @@
+{
+  // entry 模块（HAP 壳）：UI 与平台能力。纯逻辑不落本模块——协议核走
+  // @chirp/app-protocol（apps/shared/protocol，与 web/desktop 同源同测），
+  // 消息编解码走 @chirp/proto（proto/ts 的 ts-proto 产物，全仓单一事实源）。
+  "name": "entry",
+  "version": "0.1.0",
+  "description": "Chirp 鸿蒙伴侣端 HAP：登录/会话/单聊群聊收发/好友/群组/设备/组队/语音房(协议面)",
+  "main": "",
+  "author": "chirp",
+  "license": "UNLICENSED",
+  "dependencies": {
+    "@chirp/app-protocol": "file:../../shared/protocol",
+    "@chirp/proto": "file:../../../proto/ts"
+  }
+}

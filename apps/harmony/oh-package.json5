@@ -1,0 +1,8 @@
+{
+  // 工程级包描述（ohpm 工作区根）。
+  "name": "chirp-harmony",
+  "version": "0.1.0",
+  "description": "Chirp 鸿蒙伴侣端：entry（HAP 壳，ArkUI）消费共享 TS 协议核 @chirp/app-protocol 与 ts-proto 产物 @chirp/proto",
+  "author": "chirp",
+  "license": "UNLICENSED"
+}

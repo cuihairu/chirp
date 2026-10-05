@@ -1,0 +1,12 @@
+{
+  // 应用级配置。bundle 名自定（本端为仓库内第三套原生壳，Android 侧包名
+  // chirp.mobile 是历史遗留命名空间，不照抄）。icon/label 未引用资源文件：
+  // 本机无 OHOS SDK、无资产管线，占位图标由 entry 模块 media 提供，编译腿
+  // 待 OHOS runner 后由 DevEco 生成正式图标回填（同 memex apps/harmony 惯例）。
+  "app": {
+    "bundleName": "com.chirp.companion.harmony",
+    "vendor": "chirp",
+    "versionCode": 1000000,
+    "versionName": "0.1.0"
+  }
+}

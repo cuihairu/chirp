@@ -1,0 +1,11 @@
+// HarmonyOS 工程本地产物（编译腿待 OHOS runner，均不入库）。
+oh_modules/
+.cxx/
+build/
+entry/build/
+.hvigor/
+.ohpm/
+local.properties
+*.hap
+*.har
+AppScope/build/

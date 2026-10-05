@@ -1,0 +1,15 @@
+{
+  // 页面路由表：Index 为唯一 launcher 入口（守卫页），其余按登录态与用户
+  // 操作跳转（对齐 web 端 react-router 两路由 + 双向重定向的最小面）。
+  "src": [
+    "pages/Index",
+    "pages/HostPage",
+    "pages/LoginPage",
+    "pages/SessionsPage",
+    "pages/ChatPage",
+    "pages/FriendsPage",
+    "pages/GroupPage",
+    "pages/DevicesPage",
+    "pages/PartyVoicePage"
+  ]
+}

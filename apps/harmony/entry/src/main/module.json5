@@ -1,0 +1,41 @@
+{
+  // entry 模块清单。唯一入口 Index（守卫页：未配置服务器 → HostPage，
+  // 未登录 → LoginPage，已登录 → SessionsPage，对齐 web 端 RequireAuth/
+  // LoginRoute 双向重定向语义）。五个降级平面（social/party/voice/device/
+  // game-presence）不单独占权限——与 chat 同为 WebSocket 出站，共用 INTERNET。
+  "module": {
+    "name": "entry",
+    "type": "entry",
+    "deviceTypes": [
+      "phone"
+    ],
+    "requestPermissions": [
+      {
+        // chat/social/party/voice/device 五条 WebSocket 长连接出站
+        "name": "ohos.permission.INTERNET"
+      }
+    ],
+    "abilities": [
+      {
+        "name": "EntryAbility",
+        "srcEntry": "./ets/entryability/EntryAbility.ets",
+        "description": "Chirp 鸿蒙伴侣端主入口",
+        "icon": "$media:icon",
+        "label": "$string:EntryAbility_label",
+        "startWindowIcon": "$media:icon",
+        "startWindowBackground": "$color:start_window_background",
+        "exported": true,
+        "skills": [
+          {
+            "entities": [
+              "entity.system.home"
+            ],
+            "actions": [
+              "action.system.home"
+            ]
+          }
+        ]
+      }
+    ]
+  }
+}

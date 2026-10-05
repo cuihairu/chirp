@@ -1,0 +1,10 @@
+{
+  "name": "@chirp/proto",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "Package shim for the committed ts-proto output. Not an npm workspace member: npm/CI consumers resolve @chirp/proto via bundler aliases (apps/desktop vite.config.ts, apps/web_companion) and tsconfig paths (apps/shared/protocol). This file exists so the HarmonyOS app (apps/harmony) can depend on the same directory through ohpm file: resolution without forking the gencode. Regenerate via gen_proto.sh; never edit by hand.",
+  "exports": {
+    "./*": "./proto/*"
+  }
+}
