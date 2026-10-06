@@ -113,7 +113,37 @@ jobs:
         run: |
           set -euo pipefail
           deploy_dir="${{ inputs.deploy_dir || '/data/deploy/chirp' }}"
-          docker compose --env-file "$deploy_dir/.env" -f "$deploy_dir/docker-compose.yml" pull
+          compose() { docker compose --env-file "$deploy_dir/.env" -f "$deploy_dir/docker-compose.yml" "$@"; }
+          # 逐镜像拉取(每镜像 2 次退避重试);注册表不可达且部署机本地已有
+          # 同 tag 缓存时大声回退(记 .pull_fallback,Deploy summary 展示),
+          # 两头落空才失败——注册表抖动不再阻塞部署,缓存代用有据可查。
+          rm -f "$deploy_dir/.pull_fallback"
+          images="$(compose config --images)"
+          failed=0
+          while IFS= read -r img; do
+            [ -n "$img" ] || continue
+            ok=0
+            for attempt in 1 2; do
+              if docker pull "$img"; then ok=1; break; fi
+              echo "pull $img: attempt $attempt failed" >&2
+              [ "$attempt" -lt 2 ] && sleep 10
+            done
+            if [ "$ok" -ne 1 ]; then
+              if docker image inspect "$img" >/dev/null 2>&1; then
+                digest="$(docker image inspect \
+                  --format '{{if .RepoDigests}}{{index .RepoDigests 0}}{{else}}local-image-no-digest{{end}}' "$img")"
+                echo "::warning::pull $img failed (registry unreachable); using cached $digest"
+                echo "$img | $digest" >> "$deploy_dir/.pull_fallback"
+              else
+                echo "image $img: pull failed and not cached locally" >&2
+                failed=1
+              fi
+            fi
+          done < <(printf '%s\n' "$images")
+          if [ "$failed" -ne 0 ]; then
+            echo "one or more images unavailable (pull failed + no local cache)" >&2
+            exit 1
+          fi
 
       - name: Deploy containers
         timeout-minutes: 10
@@ -266,4 +296,10 @@ jobs:
             docker compose --env-file "$deploy_dir/.env" -f "$deploy_dir/docker-compose.yml" \
               ps --format '{{.Name}}\t{{.Image}}\t{{.Status}}' 2>/dev/null || true
             echo '```'
+            if [ -s "$deploy_dir/.pull_fallback" ]; then
+              echo
+              echo "**⚠ 镜像拉取回退——注册表不可达,以下镜像用部署机本地缓存:**"
+              echo
+              while IFS= read -r line; do echo "- \`$line\`"; done < "$deploy_dir/.pull_fallback"
+            fi
           } >> "$GITHUB_STEP_SUMMARY"
