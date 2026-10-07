@@ -105,8 +105,8 @@ jobs:
     - name: Install build dependencies (Linux)
       if: runner.os == 'Linux'
       run: |
-        sudo apt-get update
-        sudo apt-get install -y ninja-build pkg-config autoconf automake libtool libtool-bin autoconf-archive rsync
+        timeout 300 sudo apt-get -o Acquire::Retries=3 -o Acquire::http::Timeout=30 -o Acquire::https::Timeout=30 update
+        timeout 900 sudo apt-get -o Acquire::Retries=3 -o Acquire::http::Timeout=30 -o Acquire::https::Timeout=30 install -y ninja-build pkg-config autoconf automake libtool libtool-bin autoconf-archive rsync
 
     # macOS 镜像自带 cmake/ninja/pkg-config;C++ 依赖全走 vcpkg,brew 只补
     # autotools 族(overlay 的 libsodium 1.0.22 端口走 autotools,还点名
@@ -218,8 +218,8 @@ jobs:
     - name: Install Tauri system dependencies
       if: runner.os == 'Linux'
       run: |
-        sudo apt-get update
-        sudo apt-get install -y libwebkit2gtk-4.1-dev libgtk-3-dev libayatana-appindicator3-dev librsvg2-dev
+        timeout 300 sudo apt-get -o Acquire::Retries=3 -o Acquire::http::Timeout=30 -o Acquire::https::Timeout=30 update
+        timeout 900 sudo apt-get -o Acquire::Retries=3 -o Acquire::http::Timeout=30 -o Acquire::https::Timeout=30 install -y libwebkit2gtk-4.1-dev libgtk-3-dev libayatana-appindicator3-dev librsvg2-dev
 
     # 桌面打包目标按平台自动合并(tauri.{macos,windows}.conf.json):
     # linux .deb / darwin .app+.dmg / windows NSIS -setup.exe。

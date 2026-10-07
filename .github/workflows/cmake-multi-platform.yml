@@ -50,9 +50,10 @@ jobs:
 
     - name: Install system dependencies (Linux)
       if: runner.os == 'Linux'
+      # 限时+重试:防 apt 卡镜像源把 job 挂死(2026-10-08 巡检实证挂 60min+)
       run: |
-        sudo apt-get update
-        sudo apt-get install -y ninja-build protobuf-compiler pkg-config autoconf automake libtool libtool-bin autoconf-archive libtirpc-dev
+        timeout 300 sudo apt-get -o Acquire::Retries=3 -o Acquire::http::Timeout=30 -o Acquire::https::Timeout=30 update
+        timeout 900 sudo apt-get -o Acquire::Retries=3 -o Acquire::http::Timeout=30 -o Acquire::https::Timeout=30 install -y ninja-build protobuf-compiler pkg-config autoconf automake libtool libtool-bin autoconf-archive libtirpc-dev
 
     # macOS 镜像自带 cmake/ninja/pkg-config;C++ 依赖全走 vcpkg,brew 只补
     # autotools 族(vcpkg 个别端口源码构建要)。
