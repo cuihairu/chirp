@@ -284,6 +284,15 @@ body {
 .chip.live { background: rgba(52, 211, 153, 0.12); color: var(--online); }
 .chip.game { background: var(--accent-dim); color: var(--accent-soft); }
 .chip.warn { background: rgba(251, 191, 36, 0.12); color: var(--warn); }
+/* 来源游戏标签(2026-10-07 审核修订):好友卡「来自《XX》认识」,描边弱化不抢 presence */
+.chip.src { background: transparent; border: 1px solid rgba(165, 180, 252, 0.35); color: var(--accent-soft); }
+.fchips { display: flex; gap: 8px; flex-wrap: wrap; }
+.fchip {
+  font-size: 12px; font-weight: 600; padding: 5px 13px;
+  border-radius: 999px; border: 1px solid var(--border);
+  background: var(--surface); color: var(--text-2); cursor: pointer;
+}
+.fchip.on { background: var(--accent-dim); border-color: rgba(165, 180, 252, 0.4); color: var(--accent-soft); }
 
 /* 通用 svg 图标笔触 */
 svg.ic { fill: none; stroke: currentColor; stroke-width: 1.8;

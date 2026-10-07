@@ -1,10 +1,16 @@
 <!DOCTYPE html>
 <!-- chirp 手机端原型 · 03 好友与游戏好友
-     布局:顶栏(标题 + 添加)→ 分段控制[好友|游戏好友] → 好友请求卡 → 列表卡
+     布局:顶栏(标题 + 添加)→ 分段控制[好友|游戏好友] → 来源筛选 chip 行 →
+          好友请求卡 → 列表卡
      交互:分段点按切换两视图(原型用 #game hash 演示);[发消息]跳私聊并
-          切回聊天页签(同 FriendsDialog 动作集);请求行 [接受][拒绝]
+          切回聊天页签(同 FriendsDialog 动作集);请求行 [接受][拒绝];
+          筛选 chip 点按过滤来源(计数标签静态不联动,原型演示口径)
      状态:● 在线 / ○ 离线 presence 点;「等待对方同意」分组;
+          好友卡带「来自《XX》」来源标签——按 ID 添加的好友无来源,不显示;
           游戏好友视图附游戏内在线 chip(数据面:chat 服务 game_presence)
+     数据面注记:来源游戏标签为设计意向(2026-10-07 审核修订)——协议面
+          当前无好友来源字段,落地需在社交面补来源字段或由 game 平面
+          关系链推导,落地形态待拍板,不擅自扩协议
      同源:web FriendsDialog 全动作集,不增不减;游戏好友为好友的关系面
           视图,不新增协议能力 -->
 <html lang="zh-CN">
@@ -42,13 +48,24 @@
     <!-- ============ 视图 A:好友 ============ -->
     <div class="view-friend">
 
+      <!-- 来源筛选(2026-10-07 审核修订):选「分组不选筛选」——好友列表主序
+           是在线优先,presence 排序与按游戏分组正交冲突;筛选 chip 零重排
+           成本,过滤行为对列表序无侵入 -->
+      <div class="fchips">
+        <button class="fchip on" type="button" data-game="">全部</button>
+        <button class="fchip" type="button" data-game="exodus">星际远征</button>
+        <button class="fchip" type="button" data-game="farm">像素农场</button>
+        <button class="fchip" type="button" data-game="racer">竞速之夜</button>
+      </div>
+
       <div class="section-label">好友请求 (1)</div>
       <div class="card">
-        <div class="row">
+        <div class="row" data-game="exodus">
           <span class="avatar" style="--h:10">d</span>
           <div class="grow">
             <div class="name">dave</div>
             <div class="preview">请求加你为好友</div>
+            <div style="margin-top:4px"><span class="chip src">来自《星际远征》</span></div>
           </div>
           <button class="btn primary sm" type="button">接受</button>
           <button class="btn ghost sm" type="button">拒绝</button>
@@ -57,27 +74,27 @@
 
       <div class="section-label">好友 (3)</div>
       <div class="card">
-        <div class="row">
+        <div class="row" data-game="exodus">
           <span class="avatar-wrap"><span class="avatar" style="--h:150">b</span><span class="presence on"></span></span>
           <div class="grow">
             <div class="name">bob</div>
-            <div class="preview">在线</div>
+            <div class="preview">在线 <span class="chip src">来自《星际远征》</span></div>
           </div>
           <button class="btn sm" type="button">发消息</button>
         </div>
-        <div class="row">
+        <div class="row" data-game="farm">
           <span class="avatar-wrap"><span class="avatar" style="--h:20">c</span><span class="presence on"></span></span>
           <div class="grow">
             <div class="name">carol</div>
-            <div class="preview">在线</div>
+            <div class="preview">在线 <span class="chip src">来自《像素农场》</span></div>
           </div>
           <button class="btn sm" type="button">发消息</button>
         </div>
-        <div class="row">
+        <div class="row" data-game="racer">
           <span class="avatar-wrap"><span class="avatar" style="--h:285">e</span><span class="presence"></span></span>
           <div class="grow">
             <div class="name">erin</div>
-            <div class="preview">离线</div>
+            <div class="preview">离线 <span class="chip src">来自《竞速之夜》</span></div>
           </div>
           <button class="btn sm" type="button">发消息</button>
         </div>
@@ -85,11 +102,11 @@
 
       <div class="section-label">等待对方同意</div>
       <div class="card">
-        <div class="row">
+        <div class="row" data-game="">
           <span class="avatar" style="--h:60">f</span>
           <div class="grow">
             <div class="name">frank</div>
-            <div class="preview">已发出请求</div>
+            <div class="preview">已发出请求(按 ID 添加,无来源)</div>
           </div>
           <span class="chip">待同意</span>
         </div>
@@ -111,7 +128,7 @@
           <div class="grow">
             <div class="name">bob</div>
             <div class="preview">
-              <span class="chip live">对局中</span>
+              <span class="chip live">对局中</span> <span class="chip src">来自《星际远征》</span>
             </div>
           </div>
           <button class="btn sm" type="button">发消息</button>
@@ -121,7 +138,7 @@
           <div class="grow">
             <div class="name">gina</div>
             <div class="preview">
-              <span class="chip game">游戏大厅</span>
+              <span class="chip game">游戏大厅</span> <span class="chip src">来自《像素农场》</span>
             </div>
           </div>
           <button class="btn sm" type="button">发消息</button>
@@ -131,7 +148,7 @@
           <div class="grow">
             <div class="name">heidi</div>
             <div class="preview">
-              <span class="chip game">游戏大厅</span>
+              <span class="chip game">游戏大厅</span> <span class="chip src">来自《星际远征》</span>
             </div>
           </div>
           <button class="btn sm" type="button">发消息</button>
@@ -140,7 +157,7 @@
           <span class="avatar-wrap"><span class="avatar" style="--h:20">c</span><span class="presence"></span></span>
           <div class="grow">
             <div class="name">carol</div>
-            <div class="preview">离线</div>
+            <div class="preview">离线 <span class="chip src">来自《像素农场》</span></div>
           </div>
           <button class="btn sm" type="button">发消息</button>
         </div>
@@ -148,7 +165,7 @@
           <span class="avatar-wrap"><span class="avatar" style="--h:285">e</span><span class="presence"></span></span>
           <div class="grow">
             <div class="name">erin</div>
-            <div class="preview">离线</div>
+            <div class="preview">离线 <span class="chip src">来自《竞速之夜》</span></div>
           </div>
           <button class="btn sm" type="button">发消息</button>
         </div>
@@ -186,6 +203,18 @@
     // 原型演示:URL hash #game 切到「游戏好友」分段
     var seg = location.hash === '#game' ? 'game' : 'friend';
     document.body.dataset.seg = seg;
+    // 来源筛选(好友视图):点 chip 过滤带 data-game 的行;空 data-game = 无来源,
+    // 任何具体游戏筛选下都隐藏。计数标签静态不联动(原型演示口径)。
+    document.querySelectorAll('.fchip').forEach(function (c) {
+      c.addEventListener('click', function () {
+        document.querySelectorAll('.fchip').forEach(function (x) { x.classList.remove('on'); });
+        c.classList.add('on');
+        var g = c.dataset.game || '';
+        document.querySelectorAll('.view-friend .row[data-game]').forEach(function (r) {
+          r.style.display = (!g || r.dataset.game === g) ? '' : 'none';
+        });
+      });
+    });
   </script>
 </body>
 </html>
