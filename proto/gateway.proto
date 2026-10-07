@@ -69,6 +69,12 @@ enum MsgID {
   GROUP_MEMBER_LEFT_NOTIFY = 2119;
   GROUP_MEMBER_KICKED_NOTIFY = 2120;
   GROUP_UPDATED_NOTIFY = 2121;
+  // 群昵称（message_search 批 2026-10-08）：成员设置自己在群内的显示别名
+  // （本人或 MODERATOR+ 设他人）。body 见 chat.proto 的 SetMemberAlias* /
+  // GroupMemberAliasUpdatedNotify。
+  SET_MEMBER_ALIAS_REQ = 2122;
+  SET_MEMBER_ALIAS_RESP = 2123;
+  GROUP_MEMBER_ALIAS_UPDATED_NOTIFY = 2124;
 
   // Read receipts
   MARK_READ_REQ = 2201;
@@ -144,6 +150,13 @@ enum MsgID {
   WORD_FILTER_FETCH_REQ = 2245;
   WORD_FILTER_FETCH_RESP = 2246;
   WORD_FILTER_UPDATE_NOTIFY = 2247;
+
+  // 服务端消息搜索（message_search 批 2026-10-08，search 服务转正）：两个
+  // SDK gateway 以 per-client pipe 转发到 chirp_search（TCP 5007，
+  // --search_host 接入；search 桥失败降级不踢客户端，区别于 chat 桥）。
+  // body 见 chat.proto 的 SearchMessageRequest / SearchMessageResponse。
+  SEARCH_MESSAGE_REQ = 2248;
+  SEARCH_MESSAGE_RESP = 2249;
 
   // Social service
   ADD_FRIEND_REQ = 3001;

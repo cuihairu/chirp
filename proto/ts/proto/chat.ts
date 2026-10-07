@@ -697,6 +697,48 @@ export interface GroupMember {
   joinedAt: number;
   /** Last read message timestamp */
   lastReadAt: number;
+  /**
+   * 群昵称（message_search 批 2026-10-08）：成员在群内的显示别名；空 =
+   * 未设置，渲染回退 username。GET_GROUP_MEMBERS_RESP 随成员列表下发；
+   * 变更经 GROUP_MEMBER_ALIAS_UPDATED_NOTIFY(2124) 推送。
+   */
+  alias: string;
+}
+
+/**
+ * 设置群昵称（2122）：operator 设置 target 在 group 内的显示别名。权限：
+ * target == operator（本人改名），或 operator 是该群 MODERATOR/ADMIN/OWNER
+ * （设他人）。alias 上限与用户名一致（服务端校验），空串 = 清除别名。
+ */
+export interface SetMemberAliasRequest {
+  groupId: string;
+  targetUserId: string;
+  alias: string;
+}
+
+export interface SetMemberAliasResponse {
+  /** OK / AUTH_FAILED（无权限或未登录）/ */
+  code: ErrorCode;
+  /**
+   * USER_NOT_FOUND（目标不是群成员）/
+   * INVALID_PARAM（垃圾 body / 超长 alias）
+   */
+  groupId: string;
+  /** 被改的成员 */
+  userId: string;
+  /** 生效后的别名（回显，含清除时的空串） */
+  alias: string;
+}
+
+/**
+ * 2124：别名变更后推给全群在线成员（含操作者自身，多端同步）。sequence 0、
+ * 客户端只读、不要求 ACK。渲染两处消费：成员列表行 + 群聊消息发送者名。
+ */
+export interface GroupMemberAliasUpdatedNotify {
+  groupId: string;
+  userId: string;
+  /** 新别名；空 = 已清除 */
+  alias: string;
 }
 
 /** Join group request */
@@ -1660,6 +1702,53 @@ export interface WordFilterFetchResponse {
 export interface WordFilterUpdateNotify {
   /** 恒带全量新词库 */
   lexicon: WordFilterLexicon | undefined;
+}
+
+export interface SearchMessageRequest {
+  /**
+   * 关键词，必填；UTF-8，服务端按「CJK 单字成 token + 拉丁按词」两侧一致
+   * 地分词后做 FTS5 短语匹配（中文子串命中、拉丁按词命中）。
+   */
+  keyword: string;
+  /** 会话范围；空 = 请求者全可见面（与 GET_HISTORY 现行基线一致的频道集）。 */
+  channelId: string;
+  /** 内容类型过滤（chat.MsgType 值）；空 = 全部类型。 */
+  contentTypes: number[];
+  /**
+   * 复合游标：返回 (timestamp, message_id) 严格小于该键的更早消息，首页
+   * 两者都留零值。排序 timestamp DESC, message_id DESC。
+   */
+  beforeTimestamp: number;
+  beforeMessageId: string;
+  /** 单页上限；0/缺省 = 20，服务端钳到 [1,50]。 */
+  limit: number;
+}
+
+export interface SearchMessageMatch {
+  messageId: string;
+  channelId: string;
+  /** chat.ChannelType */
+  channelType: number;
+  senderId: string;
+  /** chat.SenderKind */
+  senderKind: number;
+  /** chat.MsgType */
+  msgType: number;
+  timestamp: number;
+  /** 原文；高亮由客户端做，服务端不回 snippet */
+  content: string;
+}
+
+export interface SearchMessageResponse {
+  /** OK / AUTH_FAILED（未登录）/ INVALID_PARAM */
+  code: ErrorCode;
+  /**
+   * （空 keyword）/ INTERNAL_ERROR（索引或
+   * MySQL 核对不可用，失败关闭不降级）
+   */
+  matches: SearchMessageMatch[];
+  /** 以本页最后一条的 (timestamp, message_id) */
+  hasMore: boolean;
 }
 
 function createBaseSendMessageRequest(): SendMessageRequest {
@@ -3094,7 +3183,7 @@ export const GroupInfo_MetadataEntry = {
 };
 
 function createBaseGroupMember(): GroupMember {
-  return { userId: "", username: "", avatarUrl: "", role: 0, joinedAt: 0, lastReadAt: 0 };
+  return { userId: "", username: "", avatarUrl: "", role: 0, joinedAt: 0, lastReadAt: 0, alias: "" };
 }
 
 export const GroupMember = {
@@ -3116,6 +3205,9 @@ export const GroupMember = {
     }
     if (message.lastReadAt !== 0) {
       writer.uint32(48).int64(message.lastReadAt);
+    }
+    if (message.alias !== "") {
+      writer.uint32(58).string(message.alias);
     }
     return writer;
   },
@@ -3169,6 +3261,13 @@ export const GroupMember = {
 
           message.lastReadAt = longToNumber(reader.int64() as Long);
           continue;
+        case 7:
+          if (tag !== 58) {
+            break;
+          }
+
+          message.alias = reader.string();
+          continue;
       }
       if ((tag & 7) === 4 || tag === 0) {
         break;
@@ -3186,6 +3285,7 @@ export const GroupMember = {
       role: isSet(object.role) ? groupMemberRoleFromJSON(object.role) : 0,
       joinedAt: isSet(object.joinedAt) ? globalThis.Number(object.joinedAt) : 0,
       lastReadAt: isSet(object.lastReadAt) ? globalThis.Number(object.lastReadAt) : 0,
+      alias: isSet(object.alias) ? globalThis.String(object.alias) : "",
     };
   },
 
@@ -3209,6 +3309,9 @@ export const GroupMember = {
     if (message.lastReadAt !== 0) {
       obj.lastReadAt = Math.round(message.lastReadAt);
     }
+    if (message.alias !== "") {
+      obj.alias = message.alias;
+    }
     return obj;
   },
 
@@ -3223,6 +3326,291 @@ export const GroupMember = {
     message.role = object.role ?? 0;
     message.joinedAt = object.joinedAt ?? 0;
     message.lastReadAt = object.lastReadAt ?? 0;
+    message.alias = object.alias ?? "";
+    return message;
+  },
+};
+
+function createBaseSetMemberAliasRequest(): SetMemberAliasRequest {
+  return { groupId: "", targetUserId: "", alias: "" };
+}
+
+export const SetMemberAliasRequest = {
+  encode(message: SetMemberAliasRequest, writer: _m0.Writer = _m0.Writer.create()): _m0.Writer {
+    if (message.groupId !== "") {
+      writer.uint32(10).string(message.groupId);
+    }
+    if (message.targetUserId !== "") {
+      writer.uint32(18).string(message.targetUserId);
+    }
+    if (message.alias !== "") {
+      writer.uint32(26).string(message.alias);
+    }
+    return writer;
+  },
+
+  decode(input: _m0.Reader | Uint8Array, length?: number): SetMemberAliasRequest {
+    const reader = input instanceof _m0.Reader ? input : _m0.Reader.create(input);
+    let end = length === undefined ? reader.len : reader.pos + length;
+    const message = createBaseSetMemberAliasRequest();
+    while (reader.pos < end) {
+      const tag = reader.uint32();
+      switch (tag >>> 3) {
+        case 1:
+          if (tag !== 10) {
+            break;
+          }
+
+          message.groupId = reader.string();
+          continue;
+        case 2:
+          if (tag !== 18) {
+            break;
+          }
+
+          message.targetUserId = reader.string();
+          continue;
+        case 3:
+          if (tag !== 26) {
+            break;
+          }
+
+          message.alias = reader.string();
+          continue;
+      }
+      if ((tag & 7) === 4 || tag === 0) {
+        break;
+      }
+      reader.skipType(tag & 7);
+    }
+    return message;
+  },
+
+  fromJSON(object: any): SetMemberAliasRequest {
+    return {
+      groupId: isSet(object.groupId) ? globalThis.String(object.groupId) : "",
+      targetUserId: isSet(object.targetUserId) ? globalThis.String(object.targetUserId) : "",
+      alias: isSet(object.alias) ? globalThis.String(object.alias) : "",
+    };
+  },
+
+  toJSON(message: SetMemberAliasRequest): unknown {
+    const obj: any = {};
+    if (message.groupId !== "") {
+      obj.groupId = message.groupId;
+    }
+    if (message.targetUserId !== "") {
+      obj.targetUserId = message.targetUserId;
+    }
+    if (message.alias !== "") {
+      obj.alias = message.alias;
+    }
+    return obj;
+  },
+
+  create<I extends Exact<DeepPartial<SetMemberAliasRequest>, I>>(base?: I): SetMemberAliasRequest {
+    return SetMemberAliasRequest.fromPartial(base ?? ({} as any));
+  },
+  fromPartial<I extends Exact<DeepPartial<SetMemberAliasRequest>, I>>(object: I): SetMemberAliasRequest {
+    const message = createBaseSetMemberAliasRequest();
+    message.groupId = object.groupId ?? "";
+    message.targetUserId = object.targetUserId ?? "";
+    message.alias = object.alias ?? "";
+    return message;
+  },
+};
+
+function createBaseSetMemberAliasResponse(): SetMemberAliasResponse {
+  return { code: 0, groupId: "", userId: "", alias: "" };
+}
+
+export const SetMemberAliasResponse = {
+  encode(message: SetMemberAliasResponse, writer: _m0.Writer = _m0.Writer.create()): _m0.Writer {
+    if (message.code !== 0) {
+      writer.uint32(8).int32(message.code);
+    }
+    if (message.groupId !== "") {
+      writer.uint32(18).string(message.groupId);
+    }
+    if (message.userId !== "") {
+      writer.uint32(26).string(message.userId);
+    }
+    if (message.alias !== "") {
+      writer.uint32(34).string(message.alias);
+    }
+    return writer;
+  },
+
+  decode(input: _m0.Reader | Uint8Array, length?: number): SetMemberAliasResponse {
+    const reader = input instanceof _m0.Reader ? input : _m0.Reader.create(input);
+    let end = length === undefined ? reader.len : reader.pos + length;
+    const message = createBaseSetMemberAliasResponse();
+    while (reader.pos < end) {
+      const tag = reader.uint32();
+      switch (tag >>> 3) {
+        case 1:
+          if (tag !== 8) {
+            break;
+          }
+
+          message.code = reader.int32() as any;
+          continue;
+        case 2:
+          if (tag !== 18) {
+            break;
+          }
+
+          message.groupId = reader.string();
+          continue;
+        case 3:
+          if (tag !== 26) {
+            break;
+          }
+
+          message.userId = reader.string();
+          continue;
+        case 4:
+          if (tag !== 34) {
+            break;
+          }
+
+          message.alias = reader.string();
+          continue;
+      }
+      if ((tag & 7) === 4 || tag === 0) {
+        break;
+      }
+      reader.skipType(tag & 7);
+    }
+    return message;
+  },
+
+  fromJSON(object: any): SetMemberAliasResponse {
+    return {
+      code: isSet(object.code) ? errorCodeFromJSON(object.code) : 0,
+      groupId: isSet(object.groupId) ? globalThis.String(object.groupId) : "",
+      userId: isSet(object.userId) ? globalThis.String(object.userId) : "",
+      alias: isSet(object.alias) ? globalThis.String(object.alias) : "",
+    };
+  },
+
+  toJSON(message: SetMemberAliasResponse): unknown {
+    const obj: any = {};
+    if (message.code !== 0) {
+      obj.code = errorCodeToJSON(message.code);
+    }
+    if (message.groupId !== "") {
+      obj.groupId = message.groupId;
+    }
+    if (message.userId !== "") {
+      obj.userId = message.userId;
+    }
+    if (message.alias !== "") {
+      obj.alias = message.alias;
+    }
+    return obj;
+  },
+
+  create<I extends Exact<DeepPartial<SetMemberAliasResponse>, I>>(base?: I): SetMemberAliasResponse {
+    return SetMemberAliasResponse.fromPartial(base ?? ({} as any));
+  },
+  fromPartial<I extends Exact<DeepPartial<SetMemberAliasResponse>, I>>(object: I): SetMemberAliasResponse {
+    const message = createBaseSetMemberAliasResponse();
+    message.code = object.code ?? 0;
+    message.groupId = object.groupId ?? "";
+    message.userId = object.userId ?? "";
+    message.alias = object.alias ?? "";
+    return message;
+  },
+};
+
+function createBaseGroupMemberAliasUpdatedNotify(): GroupMemberAliasUpdatedNotify {
+  return { groupId: "", userId: "", alias: "" };
+}
+
+export const GroupMemberAliasUpdatedNotify = {
+  encode(message: GroupMemberAliasUpdatedNotify, writer: _m0.Writer = _m0.Writer.create()): _m0.Writer {
+    if (message.groupId !== "") {
+      writer.uint32(10).string(message.groupId);
+    }
+    if (message.userId !== "") {
+      writer.uint32(18).string(message.userId);
+    }
+    if (message.alias !== "") {
+      writer.uint32(26).string(message.alias);
+    }
+    return writer;
+  },
+
+  decode(input: _m0.Reader | Uint8Array, length?: number): GroupMemberAliasUpdatedNotify {
+    const reader = input instanceof _m0.Reader ? input : _m0.Reader.create(input);
+    let end = length === undefined ? reader.len : reader.pos + length;
+    const message = createBaseGroupMemberAliasUpdatedNotify();
+    while (reader.pos < end) {
+      const tag = reader.uint32();
+      switch (tag >>> 3) {
+        case 1:
+          if (tag !== 10) {
+            break;
+          }
+
+          message.groupId = reader.string();
+          continue;
+        case 2:
+          if (tag !== 18) {
+            break;
+          }
+
+          message.userId = reader.string();
+          continue;
+        case 3:
+          if (tag !== 26) {
+            break;
+          }
+
+          message.alias = reader.string();
+          continue;
+      }
+      if ((tag & 7) === 4 || tag === 0) {
+        break;
+      }
+      reader.skipType(tag & 7);
+    }
+    return message;
+  },
+
+  fromJSON(object: any): GroupMemberAliasUpdatedNotify {
+    return {
+      groupId: isSet(object.groupId) ? globalThis.String(object.groupId) : "",
+      userId: isSet(object.userId) ? globalThis.String(object.userId) : "",
+      alias: isSet(object.alias) ? globalThis.String(object.alias) : "",
+    };
+  },
+
+  toJSON(message: GroupMemberAliasUpdatedNotify): unknown {
+    const obj: any = {};
+    if (message.groupId !== "") {
+      obj.groupId = message.groupId;
+    }
+    if (message.userId !== "") {
+      obj.userId = message.userId;
+    }
+    if (message.alias !== "") {
+      obj.alias = message.alias;
+    }
+    return obj;
+  },
+
+  create<I extends Exact<DeepPartial<GroupMemberAliasUpdatedNotify>, I>>(base?: I): GroupMemberAliasUpdatedNotify {
+    return GroupMemberAliasUpdatedNotify.fromPartial(base ?? ({} as any));
+  },
+  fromPartial<I extends Exact<DeepPartial<GroupMemberAliasUpdatedNotify>, I>>(
+    object: I,
+  ): GroupMemberAliasUpdatedNotify {
+    const message = createBaseGroupMemberAliasUpdatedNotify();
+    message.groupId = object.groupId ?? "";
+    message.userId = object.userId ?? "";
+    message.alias = object.alias ?? "";
     return message;
   },
 };
@@ -14307,6 +14695,418 @@ export const WordFilterUpdateNotify = {
     message.lexicon = (object.lexicon !== undefined && object.lexicon !== null)
       ? WordFilterLexicon.fromPartial(object.lexicon)
       : undefined;
+    return message;
+  },
+};
+
+function createBaseSearchMessageRequest(): SearchMessageRequest {
+  return { keyword: "", channelId: "", contentTypes: [], beforeTimestamp: 0, beforeMessageId: "", limit: 0 };
+}
+
+export const SearchMessageRequest = {
+  encode(message: SearchMessageRequest, writer: _m0.Writer = _m0.Writer.create()): _m0.Writer {
+    if (message.keyword !== "") {
+      writer.uint32(10).string(message.keyword);
+    }
+    if (message.channelId !== "") {
+      writer.uint32(18).string(message.channelId);
+    }
+    writer.uint32(26).fork();
+    for (const v of message.contentTypes) {
+      writer.int32(v);
+    }
+    writer.ldelim();
+    if (message.beforeTimestamp !== 0) {
+      writer.uint32(32).int64(message.beforeTimestamp);
+    }
+    if (message.beforeMessageId !== "") {
+      writer.uint32(42).string(message.beforeMessageId);
+    }
+    if (message.limit !== 0) {
+      writer.uint32(48).int32(message.limit);
+    }
+    return writer;
+  },
+
+  decode(input: _m0.Reader | Uint8Array, length?: number): SearchMessageRequest {
+    const reader = input instanceof _m0.Reader ? input : _m0.Reader.create(input);
+    let end = length === undefined ? reader.len : reader.pos + length;
+    const message = createBaseSearchMessageRequest();
+    while (reader.pos < end) {
+      const tag = reader.uint32();
+      switch (tag >>> 3) {
+        case 1:
+          if (tag !== 10) {
+            break;
+          }
+
+          message.keyword = reader.string();
+          continue;
+        case 2:
+          if (tag !== 18) {
+            break;
+          }
+
+          message.channelId = reader.string();
+          continue;
+        case 3:
+          if (tag === 24) {
+            message.contentTypes.push(reader.int32());
+
+            continue;
+          }
+
+          if (tag === 26) {
+            const end2 = reader.uint32() + reader.pos;
+            while (reader.pos < end2) {
+              message.contentTypes.push(reader.int32());
+            }
+
+            continue;
+          }
+
+          break;
+        case 4:
+          if (tag !== 32) {
+            break;
+          }
+
+          message.beforeTimestamp = longToNumber(reader.int64() as Long);
+          continue;
+        case 5:
+          if (tag !== 42) {
+            break;
+          }
+
+          message.beforeMessageId = reader.string();
+          continue;
+        case 6:
+          if (tag !== 48) {
+            break;
+          }
+
+          message.limit = reader.int32();
+          continue;
+      }
+      if ((tag & 7) === 4 || tag === 0) {
+        break;
+      }
+      reader.skipType(tag & 7);
+    }
+    return message;
+  },
+
+  fromJSON(object: any): SearchMessageRequest {
+    return {
+      keyword: isSet(object.keyword) ? globalThis.String(object.keyword) : "",
+      channelId: isSet(object.channelId) ? globalThis.String(object.channelId) : "",
+      contentTypes: globalThis.Array.isArray(object?.contentTypes)
+        ? object.contentTypes.map((e: any) => globalThis.Number(e))
+        : [],
+      beforeTimestamp: isSet(object.beforeTimestamp) ? globalThis.Number(object.beforeTimestamp) : 0,
+      beforeMessageId: isSet(object.beforeMessageId) ? globalThis.String(object.beforeMessageId) : "",
+      limit: isSet(object.limit) ? globalThis.Number(object.limit) : 0,
+    };
+  },
+
+  toJSON(message: SearchMessageRequest): unknown {
+    const obj: any = {};
+    if (message.keyword !== "") {
+      obj.keyword = message.keyword;
+    }
+    if (message.channelId !== "") {
+      obj.channelId = message.channelId;
+    }
+    if (message.contentTypes?.length) {
+      obj.contentTypes = message.contentTypes.map((e) => Math.round(e));
+    }
+    if (message.beforeTimestamp !== 0) {
+      obj.beforeTimestamp = Math.round(message.beforeTimestamp);
+    }
+    if (message.beforeMessageId !== "") {
+      obj.beforeMessageId = message.beforeMessageId;
+    }
+    if (message.limit !== 0) {
+      obj.limit = Math.round(message.limit);
+    }
+    return obj;
+  },
+
+  create<I extends Exact<DeepPartial<SearchMessageRequest>, I>>(base?: I): SearchMessageRequest {
+    return SearchMessageRequest.fromPartial(base ?? ({} as any));
+  },
+  fromPartial<I extends Exact<DeepPartial<SearchMessageRequest>, I>>(object: I): SearchMessageRequest {
+    const message = createBaseSearchMessageRequest();
+    message.keyword = object.keyword ?? "";
+    message.channelId = object.channelId ?? "";
+    message.contentTypes = object.contentTypes?.map((e) => e) || [];
+    message.beforeTimestamp = object.beforeTimestamp ?? 0;
+    message.beforeMessageId = object.beforeMessageId ?? "";
+    message.limit = object.limit ?? 0;
+    return message;
+  },
+};
+
+function createBaseSearchMessageMatch(): SearchMessageMatch {
+  return {
+    messageId: "",
+    channelId: "",
+    channelType: 0,
+    senderId: "",
+    senderKind: 0,
+    msgType: 0,
+    timestamp: 0,
+    content: "",
+  };
+}
+
+export const SearchMessageMatch = {
+  encode(message: SearchMessageMatch, writer: _m0.Writer = _m0.Writer.create()): _m0.Writer {
+    if (message.messageId !== "") {
+      writer.uint32(10).string(message.messageId);
+    }
+    if (message.channelId !== "") {
+      writer.uint32(18).string(message.channelId);
+    }
+    if (message.channelType !== 0) {
+      writer.uint32(24).int32(message.channelType);
+    }
+    if (message.senderId !== "") {
+      writer.uint32(34).string(message.senderId);
+    }
+    if (message.senderKind !== 0) {
+      writer.uint32(40).int32(message.senderKind);
+    }
+    if (message.msgType !== 0) {
+      writer.uint32(48).int32(message.msgType);
+    }
+    if (message.timestamp !== 0) {
+      writer.uint32(56).int64(message.timestamp);
+    }
+    if (message.content !== "") {
+      writer.uint32(66).string(message.content);
+    }
+    return writer;
+  },
+
+  decode(input: _m0.Reader | Uint8Array, length?: number): SearchMessageMatch {
+    const reader = input instanceof _m0.Reader ? input : _m0.Reader.create(input);
+    let end = length === undefined ? reader.len : reader.pos + length;
+    const message = createBaseSearchMessageMatch();
+    while (reader.pos < end) {
+      const tag = reader.uint32();
+      switch (tag >>> 3) {
+        case 1:
+          if (tag !== 10) {
+            break;
+          }
+
+          message.messageId = reader.string();
+          continue;
+        case 2:
+          if (tag !== 18) {
+            break;
+          }
+
+          message.channelId = reader.string();
+          continue;
+        case 3:
+          if (tag !== 24) {
+            break;
+          }
+
+          message.channelType = reader.int32();
+          continue;
+        case 4:
+          if (tag !== 34) {
+            break;
+          }
+
+          message.senderId = reader.string();
+          continue;
+        case 5:
+          if (tag !== 40) {
+            break;
+          }
+
+          message.senderKind = reader.int32();
+          continue;
+        case 6:
+          if (tag !== 48) {
+            break;
+          }
+
+          message.msgType = reader.int32();
+          continue;
+        case 7:
+          if (tag !== 56) {
+            break;
+          }
+
+          message.timestamp = longToNumber(reader.int64() as Long);
+          continue;
+        case 8:
+          if (tag !== 66) {
+            break;
+          }
+
+          message.content = reader.string();
+          continue;
+      }
+      if ((tag & 7) === 4 || tag === 0) {
+        break;
+      }
+      reader.skipType(tag & 7);
+    }
+    return message;
+  },
+
+  fromJSON(object: any): SearchMessageMatch {
+    return {
+      messageId: isSet(object.messageId) ? globalThis.String(object.messageId) : "",
+      channelId: isSet(object.channelId) ? globalThis.String(object.channelId) : "",
+      channelType: isSet(object.channelType) ? globalThis.Number(object.channelType) : 0,
+      senderId: isSet(object.senderId) ? globalThis.String(object.senderId) : "",
+      senderKind: isSet(object.senderKind) ? globalThis.Number(object.senderKind) : 0,
+      msgType: isSet(object.msgType) ? globalThis.Number(object.msgType) : 0,
+      timestamp: isSet(object.timestamp) ? globalThis.Number(object.timestamp) : 0,
+      content: isSet(object.content) ? globalThis.String(object.content) : "",
+    };
+  },
+
+  toJSON(message: SearchMessageMatch): unknown {
+    const obj: any = {};
+    if (message.messageId !== "") {
+      obj.messageId = message.messageId;
+    }
+    if (message.channelId !== "") {
+      obj.channelId = message.channelId;
+    }
+    if (message.channelType !== 0) {
+      obj.channelType = Math.round(message.channelType);
+    }
+    if (message.senderId !== "") {
+      obj.senderId = message.senderId;
+    }
+    if (message.senderKind !== 0) {
+      obj.senderKind = Math.round(message.senderKind);
+    }
+    if (message.msgType !== 0) {
+      obj.msgType = Math.round(message.msgType);
+    }
+    if (message.timestamp !== 0) {
+      obj.timestamp = Math.round(message.timestamp);
+    }
+    if (message.content !== "") {
+      obj.content = message.content;
+    }
+    return obj;
+  },
+
+  create<I extends Exact<DeepPartial<SearchMessageMatch>, I>>(base?: I): SearchMessageMatch {
+    return SearchMessageMatch.fromPartial(base ?? ({} as any));
+  },
+  fromPartial<I extends Exact<DeepPartial<SearchMessageMatch>, I>>(object: I): SearchMessageMatch {
+    const message = createBaseSearchMessageMatch();
+    message.messageId = object.messageId ?? "";
+    message.channelId = object.channelId ?? "";
+    message.channelType = object.channelType ?? 0;
+    message.senderId = object.senderId ?? "";
+    message.senderKind = object.senderKind ?? 0;
+    message.msgType = object.msgType ?? 0;
+    message.timestamp = object.timestamp ?? 0;
+    message.content = object.content ?? "";
+    return message;
+  },
+};
+
+function createBaseSearchMessageResponse(): SearchMessageResponse {
+  return { code: 0, matches: [], hasMore: false };
+}
+
+export const SearchMessageResponse = {
+  encode(message: SearchMessageResponse, writer: _m0.Writer = _m0.Writer.create()): _m0.Writer {
+    if (message.code !== 0) {
+      writer.uint32(8).int32(message.code);
+    }
+    for (const v of message.matches) {
+      SearchMessageMatch.encode(v!, writer.uint32(18).fork()).ldelim();
+    }
+    if (message.hasMore !== false) {
+      writer.uint32(24).bool(message.hasMore);
+    }
+    return writer;
+  },
+
+  decode(input: _m0.Reader | Uint8Array, length?: number): SearchMessageResponse {
+    const reader = input instanceof _m0.Reader ? input : _m0.Reader.create(input);
+    let end = length === undefined ? reader.len : reader.pos + length;
+    const message = createBaseSearchMessageResponse();
+    while (reader.pos < end) {
+      const tag = reader.uint32();
+      switch (tag >>> 3) {
+        case 1:
+          if (tag !== 8) {
+            break;
+          }
+
+          message.code = reader.int32() as any;
+          continue;
+        case 2:
+          if (tag !== 18) {
+            break;
+          }
+
+          message.matches.push(SearchMessageMatch.decode(reader, reader.uint32()));
+          continue;
+        case 3:
+          if (tag !== 24) {
+            break;
+          }
+
+          message.hasMore = reader.bool();
+          continue;
+      }
+      if ((tag & 7) === 4 || tag === 0) {
+        break;
+      }
+      reader.skipType(tag & 7);
+    }
+    return message;
+  },
+
+  fromJSON(object: any): SearchMessageResponse {
+    return {
+      code: isSet(object.code) ? errorCodeFromJSON(object.code) : 0,
+      matches: globalThis.Array.isArray(object?.matches)
+        ? object.matches.map((e: any) => SearchMessageMatch.fromJSON(e))
+        : [],
+      hasMore: isSet(object.hasMore) ? globalThis.Boolean(object.hasMore) : false,
+    };
+  },
+
+  toJSON(message: SearchMessageResponse): unknown {
+    const obj: any = {};
+    if (message.code !== 0) {
+      obj.code = errorCodeToJSON(message.code);
+    }
+    if (message.matches?.length) {
+      obj.matches = message.matches.map((e) => SearchMessageMatch.toJSON(e));
+    }
+    if (message.hasMore !== false) {
+      obj.hasMore = message.hasMore;
+    }
+    return obj;
+  },
+
+  create<I extends Exact<DeepPartial<SearchMessageResponse>, I>>(base?: I): SearchMessageResponse {
+    return SearchMessageResponse.fromPartial(base ?? ({} as any));
+  },
+  fromPartial<I extends Exact<DeepPartial<SearchMessageResponse>, I>>(object: I): SearchMessageResponse {
+    const message = createBaseSearchMessageResponse();
+    message.code = object.code ?? 0;
+    message.matches = object.matches?.map((e) => SearchMessageMatch.fromPartial(e)) || [];
+    message.hasMore = object.hasMore ?? false;
     return message;
   },
 };

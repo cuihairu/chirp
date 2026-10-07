@@ -126,6 +126,7 @@ message Packet {
 | 2003 / 2004 | `GET_HISTORY_REQ` / `RESP` | 客户端 -> Chat | 拉取频道历史 |
 | 2005 | `CHAT_MESSAGE_NOTIFY` | Chat -> 客户端 | 实时消息推送 |
 | 2101-2216 | 群组全套 | 客户端 <-> Chat | 建/进/出/邀/踢/查 + 群事件 notify(2117-2121) |
+| 2122-2124 | 群昵称 alias | 客户端 <-> Chat | `SET_MEMBER_ALIAS_REQ/RESP` + `GROUP_MEMBER_ALIAS_UPDATED_NOTIFY`;本人或 MODERATOR+ 设他人;别名随 `GroupMember.alias` 下发,渲染消费成员列表与消息发送者名两处 |
 | 2201 / 2202 | `MARK_READ_REQ` / `RESP` | 客户端 -> Chat | 标记已读(服务端游标) |
 | 2203 / 2204 | `GET_READ_RECEIPTS_REQ` / `RESP` | 客户端 -> Chat | 消息已读回执查询 |
 | 2205 / 2206 | `GET_UNREAD_COUNT_REQ` / `RESP` | 客户端 -> Chat | 未读数 |
@@ -138,8 +139,10 @@ message Packet {
 | 2233 / 2234 | `GET_MENTION_SUGGESTIONS_REQ` / `RESP` | 客户端 -> Chat | @提及候选 |
 | 2235-2238 | 频道屏蔽(免打扰) | 客户端 <-> Chat | `SET_CHANNEL_MUTE` / `GET_CHANNEL_MUTES`;仅 WORLD/GUILD/TEAM 可屏蔽 |
 | 2239-2244 | 消息黑名单 | 客户端 <-> Chat | `BLOCK/UNBLOCK_MESSAGE_SENDER`、`GET_BLOCKED_SENDERS`;只作用于消息投递,与社交面 3011 黑名单互相独立 |
+| 2245-2247 | 词库下发 | 客户端 <-> Chat | `WORD_FILTER_FETCH` 条件 GET + `WORD_FILTER_UPDATE_NOTIFY` 热更新;body 见 chat.proto `WordFilter*` |
+| 2248 / 2249 | 服务端消息搜索 | 客户端 <-> search | `SEARCH_MESSAGE_REQ` / `RESP`;经 gateway per-client pipe 转发 `chirp_search`(5007),SQLite FTS5 索引,复合游标分页;决策记录见 [design-notes/message_search](../design-notes/message_search.md) |
 
-经 `chirp_game_sdk_gateway` / `chirp_app_sdk_gateway` 接入的客户端,2xxx 消息由 ChatBridge 转发到对应 chat 实例,语义与直连 chat 相同;游戏平面的跨平面拦截(内容前缀)与防线阈值同样生效。
+经 `chirp_game_sdk_gateway` / `chirp_app_sdk_gateway` 接入的客户端,2xxx 消息由 ServiceBridge(原 ChatBridge,search 接线起更名)按目的地转发:业务包到对应 chat 实例,2248 到 search 实例(--search_host 接入;search 桥失败降级不踢客户端),语义与直连相同;游戏平面的跨平面拦截(内容前缀)与防线阈值同样生效。
 
 ### 社交/语音/实验面(3xxx/4xxx)
 

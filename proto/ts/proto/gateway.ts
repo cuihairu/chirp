@@ -74,6 +74,14 @@ export enum MsgID {
   GROUP_MEMBER_LEFT_NOTIFY = 2119,
   GROUP_MEMBER_KICKED_NOTIFY = 2120,
   GROUP_UPDATED_NOTIFY = 2121,
+  /**
+   * SET_MEMBER_ALIAS_REQ - 群昵称（message_search 批 2026-10-08）：成员设置自己在群内的显示别名
+   * （本人或 MODERATOR+ 设他人）。body 见 chat.proto 的 SetMemberAlias* /
+   * GroupMemberAliasUpdatedNotify。
+   */
+  SET_MEMBER_ALIAS_REQ = 2122,
+  SET_MEMBER_ALIAS_RESP = 2123,
+  GROUP_MEMBER_ALIAS_UPDATED_NOTIFY = 2124,
   /** MARK_READ_REQ - Read receipts */
   MARK_READ_REQ = 2201,
   MARK_READ_RESP = 2202,
@@ -142,6 +150,14 @@ export enum MsgID {
   WORD_FILTER_FETCH_REQ = 2245,
   WORD_FILTER_FETCH_RESP = 2246,
   WORD_FILTER_UPDATE_NOTIFY = 2247,
+  /**
+   * SEARCH_MESSAGE_REQ - 服务端消息搜索（message_search 批 2026-10-08，search 服务转正）：两个
+   * SDK gateway 以 per-client pipe 转发到 chirp_search（TCP 5007，
+   * --search_host 接入；search 桥失败降级不踢客户端，区别于 chat 桥）。
+   * body 见 chat.proto 的 SearchMessageRequest / SearchMessageResponse。
+   */
+  SEARCH_MESSAGE_REQ = 2248,
+  SEARCH_MESSAGE_RESP = 2249,
   /** ADD_FRIEND_REQ - Social service */
   ADD_FRIEND_REQ = 3001,
   ADD_FRIEND_RESP = 3002,
@@ -465,6 +481,15 @@ export function msgIDFromJSON(object: any): MsgID {
     case 2121:
     case "GROUP_UPDATED_NOTIFY":
       return MsgID.GROUP_UPDATED_NOTIFY;
+    case 2122:
+    case "SET_MEMBER_ALIAS_REQ":
+      return MsgID.SET_MEMBER_ALIAS_REQ;
+    case 2123:
+    case "SET_MEMBER_ALIAS_RESP":
+      return MsgID.SET_MEMBER_ALIAS_RESP;
+    case 2124:
+    case "GROUP_MEMBER_ALIAS_UPDATED_NOTIFY":
+      return MsgID.GROUP_MEMBER_ALIAS_UPDATED_NOTIFY;
     case 2201:
     case "MARK_READ_REQ":
       return MsgID.MARK_READ_REQ;
@@ -606,6 +631,12 @@ export function msgIDFromJSON(object: any): MsgID {
     case 2247:
     case "WORD_FILTER_UPDATE_NOTIFY":
       return MsgID.WORD_FILTER_UPDATE_NOTIFY;
+    case 2248:
+    case "SEARCH_MESSAGE_REQ":
+      return MsgID.SEARCH_MESSAGE_REQ;
+    case 2249:
+    case "SEARCH_MESSAGE_RESP":
+      return MsgID.SEARCH_MESSAGE_RESP;
     case 3001:
     case "ADD_FRIEND_REQ":
       return MsgID.ADD_FRIEND_REQ;
@@ -1069,6 +1100,12 @@ export function msgIDToJSON(object: MsgID): string {
       return "GROUP_MEMBER_KICKED_NOTIFY";
     case MsgID.GROUP_UPDATED_NOTIFY:
       return "GROUP_UPDATED_NOTIFY";
+    case MsgID.SET_MEMBER_ALIAS_REQ:
+      return "SET_MEMBER_ALIAS_REQ";
+    case MsgID.SET_MEMBER_ALIAS_RESP:
+      return "SET_MEMBER_ALIAS_RESP";
+    case MsgID.GROUP_MEMBER_ALIAS_UPDATED_NOTIFY:
+      return "GROUP_MEMBER_ALIAS_UPDATED_NOTIFY";
     case MsgID.MARK_READ_REQ:
       return "MARK_READ_REQ";
     case MsgID.MARK_READ_RESP:
@@ -1163,6 +1200,10 @@ export function msgIDToJSON(object: MsgID): string {
       return "WORD_FILTER_FETCH_RESP";
     case MsgID.WORD_FILTER_UPDATE_NOTIFY:
       return "WORD_FILTER_UPDATE_NOTIFY";
+    case MsgID.SEARCH_MESSAGE_REQ:
+      return "SEARCH_MESSAGE_REQ";
+    case MsgID.SEARCH_MESSAGE_RESP:
+      return "SEARCH_MESSAGE_RESP";
     case MsgID.ADD_FRIEND_REQ:
       return "ADD_FRIEND_REQ";
     case MsgID.ADD_FRIEND_RESP:

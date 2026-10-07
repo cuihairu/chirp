@@ -172,6 +172,36 @@ message GroupMember {
   GroupMemberRole role = 4;
   int64 joined_at = 5;
   int64 last_read_at = 6;      // Last read message timestamp
+  // 群昵称（message_search 批 2026-10-08）：成员在群内的显示别名；空 =
+  // 未设置，渲染回退 username。GET_GROUP_MEMBERS_RESP 随成员列表下发；
+  // 变更经 GROUP_MEMBER_ALIAS_UPDATED_NOTIFY(2124) 推送。
+  string alias = 7;
+}
+
+// 设置群昵称（2122）：operator 设置 target 在 group 内的显示别名。权限：
+// target == operator（本人改名），或 operator 是该群 MODERATOR/ADMIN/OWNER
+// （设他人）。alias 上限与用户名一致（服务端校验），空串 = 清除别名。
+message SetMemberAliasRequest {
+  string group_id = 1;
+  string target_user_id = 2;
+  string alias = 3;
+}
+
+message SetMemberAliasResponse {
+  common.ErrorCode code = 1;   // OK / AUTH_FAILED（无权限或未登录）/
+                                // USER_NOT_FOUND（目标不是群成员）/
+                                // INVALID_PARAM（垃圾 body / 超长 alias）
+  string group_id = 2;
+  string user_id = 3;          // 被改的成员
+  string alias = 4;            // 生效后的别名（回显，含清除时的空串）
+}
+
+// 2124：别名变更后推给全群在线成员（含操作者自身，多端同步）。sequence 0、
+// 客户端只读、不要求 ACK。渲染两处消费：成员列表行 + 群聊消息发送者名。
+message GroupMemberAliasUpdatedNotify {
+  string group_id = 1;
+  string user_id = 2;
+  string alias = 3;            // 新别名；空 = 已清除
 }
 
 // Join group request
@@ -1062,4 +1092,49 @@ message WordFilterFetchResponse {
 
 message WordFilterUpdateNotify {
   WordFilterLexicon lexicon = 1;  // 恒带全量新词库
+}
+
+// ========== Message search（message_search 批 2026-10-08，2248/2249）==========
+//
+// 服务端消息搜索：chirp_search（TCP 5007）维护 SQLite FTS5 持久索引（MySQL
+// messages 全量回填 + id 游标 tail 增量），SDK gateway 以 per-client pipe
+// 原样转发。连接身份来自 pipe 的 LOGIN_REQ 重放（与 chat 同一信任链）；可
+// 见性：PRIVATE 判请求者是否频道 "userA|userB" 一侧（与 GET_HISTORY 同规
+// 则），其余频道已认证即可见；召回/撤回消息不索引（查询时按候选核对
+// MySQL 自愈）。决策记录：docs/design-notes/message_search.md。
+
+message SearchMessageRequest {
+  // 关键词，必填；UTF-8，服务端按「CJK 单字成 token + 拉丁按词」两侧一致
+  // 地分词后做 FTS5 短语匹配（中文子串命中、拉丁按词命中）。
+  string keyword = 1;
+  // 会话范围；空 = 请求者全可见面（与 GET_HISTORY 现行基线一致的频道集）。
+  string channel_id = 2;
+  // 内容类型过滤（chat.MsgType 值）；空 = 全部类型。
+  repeated int32 content_types = 3;
+  // 复合游标：返回 (timestamp, message_id) 严格小于该键的更早消息，首页
+  // 两者都留零值。排序 timestamp DESC, message_id DESC。
+  int64 before_timestamp = 4;
+  string before_message_id = 5;
+  // 单页上限；0/缺省 = 20，服务端钳到 [1,50]。
+  int32 limit = 6;
+}
+
+message SearchMessageMatch {
+  string message_id = 1;
+  string channel_id = 2;
+  int32 channel_type = 3;      // chat.ChannelType
+  string sender_id = 4;
+  int32 sender_kind = 5;       // chat.SenderKind
+  int32 msg_type = 6;          // chat.MsgType
+  int64 timestamp = 7;
+  string content = 8;          // 原文；高亮由客户端做，服务端不回 snippet
+}
+
+message SearchMessageResponse {
+  common.ErrorCode code = 1;   // OK / AUTH_FAILED（未登录）/ INVALID_PARAM
+                                // （空 keyword）/ INTERNAL_ERROR（索引或
+                                // MySQL 核对不可用，失败关闭不降级）
+  repeated SearchMessageMatch matches = 2;
+  bool has_more = 3;           // 以本页最后一条的 (timestamp, message_id)
+                               // 作为下一页游标继续拉
 }
