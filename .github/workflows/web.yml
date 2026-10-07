@@ -83,7 +83,9 @@ jobs:
     - uses: actions/checkout@v7
 
     - name: Install protobuf compiler
-      run: timeout 300 sudo apt-get -o Acquire::Retries=3 -o Acquire::http::Timeout=30 update && timeout 300 sudo apt-get -o Acquire::Retries=3 -o Acquire::http::Timeout=30 install -y protobuf-compiler
+      run: |
+        timeout 900 sudo apt-get -o Acquire::Retries=1 -o Acquire::http::Timeout=20 update || true
+        timeout 300 sudo apt-get -o Acquire::Retries=3 -o Acquire::http::Timeout=30 install -y protobuf-compiler
 
     - uses: actions/setup-node@v6
       with:

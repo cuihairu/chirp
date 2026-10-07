@@ -50,9 +50,10 @@ jobs:
 
     - name: Install system dependencies (Linux)
       if: runner.os == 'Linux'
-      # 限时+重试:防 apt 卡镜像源把 job 挂死(2026-10-08 巡检实证挂 60min+)
+      # 限时+重试防卡死;update 容忍个别镜像源不可达(azure.archive 实证整段 Ign
+      # 卡死,主源列表拿到即可装包,真缺列表 install 会快速失败)
       run: |
-        timeout 300 sudo apt-get -o Acquire::Retries=3 -o Acquire::http::Timeout=30 -o Acquire::https::Timeout=30 update
+        timeout 900 sudo apt-get -o Acquire::Retries=1 -o Acquire::http::Timeout=20 -o Acquire::https::Timeout=20 update || true
         timeout 900 sudo apt-get -o Acquire::Retries=3 -o Acquire::http::Timeout=30 -o Acquire::https::Timeout=30 install -y ninja-build protobuf-compiler pkg-config autoconf automake libtool libtool-bin autoconf-archive libtirpc-dev
 
     # macOS 镜像自带 cmake/ninja/pkg-config;C++ 依赖全走 vcpkg,brew 只补
