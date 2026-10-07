@@ -708,7 +708,8 @@ export interface GroupMember {
 /**
  * 设置群昵称（2122）：operator 设置 target 在 group 内的显示别名。权限：
  * target == operator（本人改名），或 operator 是该群 MODERATOR/ADMIN/OWNER
- * （设他人）。alias 上限与用户名一致（服务端校验），空串 = 清除别名。
+ * （设他人）。alias 上限 64 码点（服务端校验，超限 INVALID_PARAM），
+ * 空串 = 清除别名。
  */
 export interface SetMemberAliasRequest {
   groupId: string;

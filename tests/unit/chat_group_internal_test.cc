@@ -44,4 +44,20 @@ TEST(GroupManagerInternalTest, GetUserGroupsSkipsGhostMembership) {
   EXPECT_EQ(alice_groups[0].group_id(), gid);
 }
 
+TEST(GroupManagerInternalTest, SetMemberAliasRejectsUnknownGroupAndMember) {
+  chirp::chat::GroupManager mgr;
+  const std::string gid = mgr.CreateGroup("alice", "g", "", "", 0, {});
+
+  // handler 层会先挡掉群不存在/成员不存在，这两个防御分支只可能从
+  // GroupManager 直达。
+  EXPECT_FALSE(mgr.SetMemberAlias("ghost-group", "alice", "x"));
+  EXPECT_FALSE(mgr.SetMemberAlias(gid, "stranger", "x"));
+  EXPECT_TRUE(mgr.SetMemberAlias(gid, "alice", "x"));
+  EXPECT_EQ(mgr.GetMemberAlias(gid, "alice"), "x");
+
+  // 未知群/未设置成员的读取分支：空串。
+  EXPECT_TRUE(mgr.GetMemberAlias("ghost-group", "alice").empty());
+  EXPECT_TRUE(mgr.GetMemberAlias(gid, "stranger").empty());
+}
+
 }  // namespace

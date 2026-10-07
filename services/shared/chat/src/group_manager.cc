@@ -102,6 +102,7 @@ bool GroupManager::RemoveMember(const std::string& group_id, const std::string& 
 
   group->members.erase(user_id);
   group->member_roles.erase(user_id);
+  group->member_aliases.erase(user_id);
 
   auto user_it = user_to_groups_.find(user_id);
   if (user_it != user_to_groups_.end()) {
@@ -133,6 +134,10 @@ std::vector<chirp::chat::GroupMember> GroupManager::GetMembers(const std::string
     // Note: username would come from user service in production
     member.set_role(group->member_roles[member_id]);
     member.set_joined_at(group->created_at);  // Simplified
+    const auto alias_it = group->member_aliases.find(member_id);
+    if (alias_it != group->member_aliases.end()) {
+      member.set_alias(alias_it->second);
+    }
     result.push_back(std::move(member));
   }
 
@@ -203,6 +208,43 @@ bool GroupManager::SetMemberRole(const std::string& group_id, const std::string&
 
   group->member_roles[user_id] = role;
   return true;
+}
+
+bool GroupManager::SetMemberAlias(const std::string& group_id, const std::string& user_id,
+                                  const std::string& alias) {
+  std::lock_guard<std::mutex> lock(mu_);
+  auto it = groups_.find(group_id);
+  if (it == groups_.end()) {
+    return false;
+  }
+
+  auto& group = it->second;
+  std::lock_guard<std::mutex> group_lock(group->mu);
+
+  if (group->members.count(user_id) == 0) {
+    return false;
+  }
+
+  if (alias.empty()) {
+    group->member_aliases.erase(user_id);
+  } else {
+    group->member_aliases[user_id] = alias;
+  }
+  return true;
+}
+
+std::string GroupManager::GetMemberAlias(const std::string& group_id,
+                                         const std::string& user_id) {
+  std::lock_guard<std::mutex> lock(mu_);
+  auto it = groups_.find(group_id);
+  if (it == groups_.end()) {
+    return {};
+  }
+
+  const auto& group = it->second;
+  std::lock_guard<std::mutex> group_lock(group->mu);
+  auto alias_it = group->member_aliases.find(user_id);
+  return alias_it == group->member_aliases.end() ? std::string() : alias_it->second;
 }
 
 } // namespace chat

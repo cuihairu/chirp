@@ -513,3 +513,141 @@ TEST_F(GroupHandlersTest, SameUserRejectsEmptyClaimedIds) {
 }
 
 }  // namespace
+
+// ---- 群昵称 alias（2122-2124，message_search 批）----
+
+namespace {
+
+bool HasNotification(const std::vector<NotificationRecord>& records,
+                     const std::string& user_id, chirp::gateway::MsgID msg_id,
+                     const std::string& group_id, const std::string& target,
+                     const std::string& alias) {
+  for (const auto& record : records) {
+    if (record.user_id != user_id || record.msg_id != msg_id) {
+      continue;
+    }
+    chirp::chat::GroupMemberAliasUpdatedNotify notify;
+    if (!notify.ParseFromString(record.body)) {
+      continue;
+    }
+    if (notify.group_id() == group_id && notify.user_id() == target &&
+        notify.alias() == alias) {
+      return true;
+    }
+  }
+  return false;
+}
+
+}  // namespace
+
+TEST_F(GroupHandlersTest, SetAliasSelfSucceedsAndNotifiesGroup) {
+  const auto group = MakeGroup("alice", {"bob"});
+  notifications_.clear();
+
+  chirp::chat::SetMemberAliasRequest req;
+  req.set_group_id(group.group_id());
+  req.set_target_user_id("alice");
+  req.set_alias("王小明");
+  const auto resp = handlers_->HandleSetMemberAlias(req, "alice");
+  EXPECT_EQ(resp.code(), chirp::common::OK);
+  EXPECT_EQ(resp.alias(), "王小明");
+
+  // 成员列表带出别名；全群（含操作者）收到通知。
+  const auto members = groups_.GetMembers(group.group_id());
+  bool saw_alias = false;
+  for (const auto& member : members) {
+    if (member.user_id() == "alice") {
+      saw_alias = member.alias() == "王小明";
+    }
+  }
+  EXPECT_TRUE(saw_alias);
+  EXPECT_TRUE(HasNotification(notifications_, "alice",
+                              chirp::gateway::GROUP_MEMBER_ALIAS_UPDATED_NOTIFY,
+                              group.group_id(), "alice", "王小明"));
+  EXPECT_TRUE(HasNotification(notifications_, "bob",
+                              chirp::gateway::GROUP_MEMBER_ALIAS_UPDATED_NOTIFY,
+                              group.group_id(), "alice", "王小明"));
+}
+
+TEST_F(GroupHandlersTest, SetAliasOtherRequiresModerator) {
+  const auto group = MakeGroup("alice", {"bob", "carl"});  // alice 是 ADMIN
+
+  chirp::chat::SetMemberAliasRequest peer;
+  peer.set_group_id(group.group_id());
+  peer.set_target_user_id("carl");
+  peer.set_alias("peer-set");
+  // bob 是 MEMBER：改他人被拒。
+  EXPECT_EQ(handlers_->HandleSetMemberAlias(peer, "bob").code(),
+            chirp::common::AUTH_FAILED);
+  // 群主（ADMIN 角色）改他人放行。
+  EXPECT_EQ(handlers_->HandleSetMemberAlias(peer, "alice").code(),
+            chirp::common::OK);
+  EXPECT_EQ(groups_.GetMemberAlias(group.group_id(), "carl"), "peer-set");
+}
+
+TEST_F(GroupHandlersTest, SetAliasClearsAndNotifiesEmpty) {
+  const auto group = MakeGroup("alice", {});
+  chirp::chat::SetMemberAliasRequest set;
+  set.set_group_id(group.group_id());
+  set.set_target_user_id("alice");
+  set.set_alias("temp");
+  EXPECT_EQ(handlers_->HandleSetMemberAlias(set, "alice").code(),
+            chirp::common::OK);
+
+  notifications_.clear();
+  chirp::chat::SetMemberAliasRequest clear;
+  clear.set_group_id(group.group_id());
+  clear.set_target_user_id("alice");
+  EXPECT_EQ(handlers_->HandleSetMemberAlias(clear, "alice").code(),
+            chirp::common::OK);
+  EXPECT_TRUE(groups_.GetMemberAlias(group.group_id(), "alice").empty());
+  EXPECT_TRUE(HasNotification(notifications_, "alice",
+                              chirp::gateway::GROUP_MEMBER_ALIAS_UPDATED_NOTIFY,
+                              group.group_id(), "alice", ""));
+}
+
+TEST_F(GroupHandlersTest, SetAliasRejectsBadTargetsAndParams) {
+  const auto group = MakeGroup("alice", {"bob"});
+
+  chirp::chat::SetMemberAliasRequest missing_group;
+  missing_group.set_target_user_id("alice");
+  EXPECT_EQ(handlers_->HandleSetMemberAlias(missing_group, "alice").code(),
+            chirp::common::INVALID_PARAM);
+
+  chirp::chat::SetMemberAliasRequest unknown_group;
+  unknown_group.set_group_id("nope");
+  unknown_group.set_target_user_id("alice");
+  EXPECT_EQ(handlers_->HandleSetMemberAlias(unknown_group, "alice").code(),
+            chirp::common::USER_NOT_FOUND);
+
+  chirp::chat::SetMemberAliasRequest stranger;
+  stranger.set_group_id(group.group_id());
+  stranger.set_target_user_id("mallory");
+  stranger.set_alias("x");
+  EXPECT_EQ(handlers_->HandleSetMemberAlias(stranger, "alice").code(),
+            chirp::common::USER_NOT_FOUND);
+
+  // 64 码点放行、65 码点拒绝（多字节 UTF-8 按码点计）。
+  chirp::chat::SetMemberAliasRequest long_alias;
+  long_alias.set_group_id(group.group_id());
+  long_alias.set_target_user_id("alice");
+  const std::string cjk_char = "聊";
+  long_alias.set_alias(cjk_char + std::string(63, 'a'));
+  EXPECT_EQ(handlers_->HandleSetMemberAlias(long_alias, "alice").code(),
+            chirp::common::OK);
+  long_alias.set_alias(cjk_char + std::string(64, 'a'));
+  EXPECT_EQ(handlers_->HandleSetMemberAlias(long_alias, "alice").code(),
+            chirp::common::INVALID_PARAM);
+}
+
+TEST_F(GroupHandlersTest, RemoveMemberDropsAlias) {
+  const auto group = MakeGroup("alice", {"bob"});
+  chirp::chat::SetMemberAliasRequest req;
+  req.set_group_id(group.group_id());
+  req.set_target_user_id("bob");
+  req.set_alias("bob-alias");
+  EXPECT_EQ(handlers_->HandleSetMemberAlias(req, "bob").code(),
+            chirp::common::OK);
+  EXPECT_TRUE(groups_.RemoveMember(group.group_id(), "bob"));
+  EXPECT_TRUE(groups_.GetMemberAlias(group.group_id(), "bob").empty());
+}

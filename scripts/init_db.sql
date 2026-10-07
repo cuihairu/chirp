@@ -109,6 +109,10 @@ CREATE TABLE IF NOT EXISTS group_members (
   role INT DEFAULT 0,
   joined_at BIGINT NOT NULL,
   last_read_at BIGINT,
+  -- 群昵称（message_search 批 2026-10-08）：显示别名；'' = 未设置。列先行——
+  -- 当前 chat 的群仍是进程内存态（本表暂无读写方），持久化写入随 chat 群
+  -- 持久化落地；见 docs/design-notes/message_search.md。
+  alias VARCHAR(255) NOT NULL DEFAULT '',
   UNIQUE KEY unique_group_user (group_id, user_id),
   INDEX idx_group_id (group_id),
   INDEX idx_user_id (user_id)

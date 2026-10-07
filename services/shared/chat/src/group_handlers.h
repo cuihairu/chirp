@@ -66,6 +66,12 @@ class GroupHandlers {
       const chirp::chat::InviteToGroupRequest& req,
       std::string_view authenticated_user_id);
 
+  // 群昵称（2122）：本人改自己的，或 MODERATOR+ 改他人的；超 64 码点回
+  // INVALID_PARAM，空串清除。成功后向全群推 GROUP_MEMBER_ALIAS_UPDATED_NOTIFY。
+  chirp::chat::SetMemberAliasResponse HandleSetMemberAlias(
+      const chirp::chat::SetMemberAliasRequest& req,
+      std::string_view authenticated_user_id);
+
   // Fan out one group chat message to every member except the sender.
   // Online members receive CHAT_MESSAGE_NOTIFY through the notifier; the
   // ids of offline members are returned so the transport layer can push

@@ -293,6 +293,60 @@ chirp::chat::InviteToGroupResponse GroupHandlers::HandleInviteToGroup(
   return resp;
 }
 
+chirp::chat::SetMemberAliasResponse GroupHandlers::HandleSetMemberAlias(
+    const chirp::chat::SetMemberAliasRequest& req, std::string_view authenticated_user_id) {
+  chirp::chat::SetMemberAliasResponse resp;
+
+  if (authenticated_user_id.empty() || req.group_id().empty() || req.target_user_id().empty()) {
+    resp.set_code(chirp::common::INVALID_PARAM);
+    return resp;
+  }
+  // 码点计数口径与 chat_validation 的 MaxContentChars 一致：每个非 UTF-8
+  // 续字节都是一个新字符。
+  size_t alias_chars = 0;
+  for (char c : req.alias()) {
+    if ((static_cast<unsigned char>(c) & 0xC0) != 0x80) {
+      ++alias_chars;
+    }
+  }
+  if (alias_chars > GroupManager::kMaxAliasCodePoints) {
+    resp.set_code(chirp::common::INVALID_PARAM);
+    return resp;
+  }
+
+  const std::string operator_id(authenticated_user_id);
+  chirp::chat::GroupInfo group_info;
+  if (!groups_.GetGroup(req.group_id(), &group_info)) {
+    resp.set_code(chirp::common::USER_NOT_FOUND);
+    return resp;
+  }
+  if (!groups_.IsMember(req.group_id(), req.target_user_id())) {
+    resp.set_code(chirp::common::USER_NOT_FOUND);
+    return resp;
+  }
+
+  const std::vector<chirp::chat::GroupMember> members = groups_.GetMembers(req.group_id());
+  const bool self = req.target_user_id() == operator_id;
+  if (!self && !RoleAtLeast(members, operator_id, chirp::chat::MODERATOR)) {
+    resp.set_code(chirp::common::AUTH_FAILED);
+    return resp;
+  }
+
+  groups_.SetMemberAlias(req.group_id(), req.target_user_id(), req.alias());
+
+  resp.set_code(chirp::common::OK);
+  resp.set_group_id(req.group_id());
+  resp.set_user_id(req.target_user_id());
+  resp.set_alias(req.alias());
+
+  chirp::chat::GroupMemberAliasUpdatedNotify notify;
+  notify.set_group_id(req.group_id());
+  notify.set_user_id(req.target_user_id());
+  notify.set_alias(req.alias());
+  NotifyMembers(req.group_id(), chirp::gateway::GROUP_MEMBER_ALIAS_UPDATED_NOTIFY, notify);
+  return resp;
+}
+
 std::vector<std::string> GroupHandlers::BroadcastGroupMessage(
     const std::string& group_id, const std::string& sender_id,
     const chirp::chat::ChatMessage& msg) {

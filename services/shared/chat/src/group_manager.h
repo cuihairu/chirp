@@ -25,6 +25,9 @@ struct GroupData {
 
   std::unordered_set<std::string> members;
   std::unordered_map<std::string, chirp::chat::GroupMemberRole> member_roles;
+  // 群昵称（2122-2124，message_search 批）：成员显示别名；缺省 = 未设置，
+  // 渲染回退 username。与群本体同一内存生命周期。
+  std::unordered_map<std::string, std::string> member_aliases;
   std::mutex mu;
 };
 
@@ -63,6 +66,18 @@ public:
   // Update member role
   bool SetMemberRole(const std::string& group_id, const std::string& user_id,
                     chirp::chat::GroupMemberRole role);
+
+  // 群昵称：设置/清除（空串清除）一名成员的显示别名。群或成员不存在返回
+  // false；权限（本人或 MODERATOR+）由 handler 层判定，这里只管存储。
+  bool SetMemberAlias(const std::string& group_id, const std::string& user_id,
+                      const std::string& alias);
+
+  // 读取一名成员的群昵称；群/成员不存在或未设置返回空串。
+  std::string GetMemberAlias(const std::string& group_id, const std::string& user_id);
+
+  // alias 的服务端上限（码点数，与 chat_validation 的码点计数同口径）；
+  // 超限 handler 层回 INVALID_PARAM。
+  static constexpr size_t kMaxAliasCodePoints = 64;
 
 private:
   // Test access: internal tests befriend this tag to reach private state

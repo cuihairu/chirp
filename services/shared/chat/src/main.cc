@@ -1268,6 +1268,18 @@ void HandlePacket(const std::shared_ptr<MessageStore>& store,
     chirp::chat::runtime::SendPacket(session, chirp::gateway::INVITE_TO_GROUP_RESP, pkt.sequence(), resp.SerializeAsString());
     break;
   }
+  case chirp::gateway::SET_MEMBER_ALIAS_REQ: {
+    chirp::chat::SetMemberAliasRequest req;
+    if (!req.ParseFromArray(pkt.body().data(), static_cast<int>(pkt.body().size()))) {
+      chirp::chat::SetMemberAliasResponse resp;
+      resp.set_code(chirp::common::INVALID_PARAM);
+      chirp::chat::runtime::SendPacket(session, chirp::gateway::SET_MEMBER_ALIAS_RESP, pkt.sequence(), resp.SerializeAsString());
+      return;
+    }
+    auto resp = features.groups.HandleSetMemberAlias(req, authenticated_user_id);
+    chirp::chat::runtime::SendPacket(session, chirp::gateway::SET_MEMBER_ALIAS_RESP, pkt.sequence(), resp.SerializeAsString());
+    break;
+  }
   case chirp::gateway::MARK_READ_REQ: {
     chirp::chat::MarkReadRequest req;
     if (!req.ParseFromArray(pkt.body().data(), static_cast<int>(pkt.body().size()))) {

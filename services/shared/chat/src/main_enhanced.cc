@@ -610,6 +610,18 @@ bool DispatchClientFeaturePacket(
                                        pkt.sequence(), resp.SerializeAsString());
       break;
     }
+    case chirp::gateway::SET_MEMBER_ALIAS_REQ: {
+      chirp::chat::SetMemberAliasRequest req;
+      chirp::chat::SetMemberAliasResponse resp;
+      if (!req.ParseFromArray(pkt.body().data(), static_cast<int>(pkt.body().size()))) {
+        resp.set_code(chirp::common::INVALID_PARAM);
+      } else {
+        resp = group_handlers->HandleSetMemberAlias(req, authenticated_user);
+      }
+      chirp::chat::runtime::SendPacket(session, chirp::gateway::SET_MEMBER_ALIAS_RESP,
+                                       pkt.sequence(), resp.SerializeAsString());
+      break;
+    }
     case chirp::gateway::GET_UNREAD_COUNT_REQ: {
       chirp::chat::GetUnreadCountRequest req;
       chirp::chat::GetUnreadCountResponse resp;
