@@ -459,6 +459,7 @@ TEST_F(SearchServerTest, SearchHonorsContentTypeFilter) {
   MessageSearchIndex::Input typed = {"m2", "world", 1, /*msg_type=*/2, 101, "alpha"};
   ASSERT_TRUE(index_.IndexMessage(typed, &err_)) << err_;
   fake_mysql::PushRows({FactRow("m2", "alice", "0", "alpha")});
+  DoLogin("u1");
 
   chirp::chat::SearchMessageRequest req;
   req.set_keyword("alpha");

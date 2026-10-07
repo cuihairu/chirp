@@ -282,13 +282,14 @@ TEST(SearchIndexOpenFailure, CorruptDatabaseFailsOpen) {
 // 进程会碰，语句族在每个 prepare/step 失败臂上的行为都必须是「报错并回滚，
 // 不留半条文档」。 ----
 
-TEST_F(SearchIndexTest, IndexMessageFailsWhenFtsTableDropped) {
+TEST_F(SearchIndexTest, IndexMessageStepFailureRollsBack) {
+  // 有种子：连接内 schema 缓存是旧的，del 语句 prepare 过、step 期才撞上
+  // 真实缺表——错误从 Run 带 out，事务回滚，映射表不留半条新文档。
   ASSERT_TRUE(index_.IndexMessage(MakeInput("m1", "c", 1, 100, "seed"), &err_));
   RawExec("DROP TABLE message_fts");
   std::string tamper_err;
   EXPECT_FALSE(index_.IndexMessage(MakeInput("m2", "c", 1, 101, "x"), &tamper_err));
-  EXPECT_NE(tamper_err.find("sqlite prepare delete"), std::string::npos) << tamper_err;
-  // 事务回滚：映射表没有半条新文档。
+  EXPECT_NE(tamper_err.find("sqlite step"), std::string::npos) << tamper_err;
   EXPECT_EQ(index_.DocumentCount(), 1);
 }
 
@@ -307,7 +308,10 @@ TEST_F(SearchIndexTest, IndexMessageFailsWhenMapLosesColumn) {
   // del_map 按 PK 删照常编译，ins_map 命名的 fts_row 列已不存在。
   std::string tamper_err;
   EXPECT_FALSE(index_.IndexMessage(MakeInput("m1", "c", 1, 100, "x"), &tamper_err));
-  EXPECT_NE(tamper_err.find("sqlite prepare insert map"), std::string::npos) << tamper_err;
+  // 连接内 schema 缓存在 del 阶段仍旧表：ins_map prepare 过、step 期撞
+  // 「no such column: fts_row」。
+  EXPECT_NE(tamper_err.find("sqlite step"), std::string::npos) << tamper_err;
+  EXPECT_NE(tamper_err.find("no such column"), std::string::npos) << tamper_err;
 }
 
 TEST_F(SearchIndexTest, IndexMessageFailsOnMapConstraint) {
@@ -330,12 +334,13 @@ TEST_F(SearchIndexTest, IndexMessageFailsWhenFtsDataShadowDropped) {
 }
 
 TEST_F(SearchIndexTest, DeleteMessageFailsWhenMapDropped) {
-  ASSERT_TRUE(index_.IndexMessage(MakeInput("m1", "c", 1, 100, "seed"), &err_));
+  // del_fts 的子查询引用 message_map；连接内 schema 缓存使错误落在 step
+  // 期（linked sqlite 的实测行为），删除按失败关闭返回。
   RawExec("DROP TABLE message_map");
-  // del_fts 的子查询引用 message_map，prepare 期即解析失败。
   std::string tamper_err;
   EXPECT_FALSE(index_.DeleteMessage("m1", &tamper_err));
-  EXPECT_NE(tamper_err.find("sqlite prepare delete"), std::string::npos) << tamper_err;
+  EXPECT_NE(tamper_err.find("sqlite step"), std::string::npos) << tamper_err;
+  EXPECT_NE(tamper_err.find("no such table"), std::string::npos) << tamper_err;
 }
 
 TEST_F(SearchIndexTest, SearchFailsOnTamperedFts) {
@@ -351,6 +356,8 @@ TEST_F(SearchIndexTest, SearchFailsOnTamperedFts) {
 }
 
 TEST_F(SearchIndexTest, SearchFailsWhenFtsDropped) {
+  // 虚表本体被删：检索在 step 期报 no such table（连接内 schema 缓存行为），
+  // 结果清空 + 报错，不半答。
   RawExec("DROP TABLE message_fts");
   MessageSearchIndex::Query q;
   q.keyword = "needle";
@@ -358,7 +365,8 @@ TEST_F(SearchIndexTest, SearchFailsWhenFtsDropped) {
   std::string search_err;
   const auto r = index_.Search(q, &search_err);
   EXPECT_TRUE(r.hits.empty());
-  EXPECT_NE(search_err.find("sqlite prepare search"), std::string::npos) << search_err;
+  EXPECT_NE(search_err.find("sqlite search step"), std::string::npos) << search_err;
+  EXPECT_NE(search_err.find("no such table"), std::string::npos) << search_err;
 }
 
 TEST_F(SearchIndexTest, DocumentCountFailsSoftWhenMapDropped) {

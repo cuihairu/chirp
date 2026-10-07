@@ -342,16 +342,33 @@ KNOWN_UNCOVERABLE = {
     # exception-cleanup arcs, but MakeDecodeTable is non-throwing so those
     # arcs can never fire.
     ("libs/common/base64.cc", 21),
-    # Search index (message_search 批) 的三个 I/O 类死臂：sqlite 语句在
-    # prepare 期的失败形态全部有测试覆盖（损坏库 / 外部篡改 shadow 表 /
-    # 列缺失 / NOT NULL 约束），BEGIN/COMMIT/建表语句的 step 期失败只剩
-    # 磁盘 I/O / SQLITE_FULL 一类故障，进程内无注入点。
+    # Search index（message_search 批）的死臂，两类：
+    # ① I/O 类——建表/BEGIN/COMMIT 语句的 step 期失败只剩磁盘 I/O /
+    #   SQLITE_FULL 一类故障，进程内无注入点；prepare 期损坏库形态由
+    #   CorruptDatabaseFailsOpen 在 Open 的 schema 臂覆盖。
+    # ② 二连接篡改下的 prepare 失败臂（del/ins_map/delete/search）——实测
+    #   linked sqlite 在开放事务 + 二连接 DDL 之下错误全部落在 step 期
+    #   （连接内 schema 缓存；篡改测试系列已逐步覆盖各 step 失败臂），同
+    #   语句文本为常量、健康 schema 下 prepare 不会失败。fts5 镜像列缺失
+    #   的 prepare 臂（ins_fts）有测试覆盖，不在此列。
     ("services/search/src/message_search_index.cc", 114),
     ("services/search/src/message_search_index.cc", 115),
     ("services/search/src/message_search_index.cc", 116),
     ("services/search/src/message_search_index.cc", 143),
+    ("services/search/src/message_search_index.cc", 151),
+    ("services/search/src/message_search_index.cc", 153),
+    ("services/search/src/message_search_index.cc", 154),
+    ("services/search/src/message_search_index.cc", 156),
+    ("services/search/src/message_search_index.cc", 157),
+    ("services/search/src/message_search_index.cc", 194),
+    ("services/search/src/message_search_index.cc", 197),
+    ("services/search/src/message_search_index.cc", 198),
     ("services/search/src/message_search_index.cc", 208),
     ("services/search/src/message_search_index.cc", 209),
+    ("services/search/src/message_search_index.cc", 226),
+    ("services/search/src/message_search_index.cc", 229),
+    ("services/search/src/message_search_index.cc", 283),
+    ("services/search/src/message_search_index.cc", 286),
     # CleanupOfflineUsers' purge condition: the erase arm needs last_seen
     # older than 24h (the body is already GCOVR_EXCL_LINE'd); the adjacent
     # short-circuit arm is dropped with it because exclusions are per line.
