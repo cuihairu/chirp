@@ -15,13 +15,8 @@
   --vp-button-brand-hover-bg: #4f46e5;
   --vp-button-brand-active-bg: #4338ca;
 
-  --vp-home-hero-name-color: transparent;
-  --vp-home-hero-name-background: linear-gradient(
-    115deg,
-    #4338ca 8%,
-    #6366f1 52%,
-    #a5b4fc 96%
-  );
+  /* 首页 hero 名用纯品牌色：不设 name-color/name-background,
+   * VitePress 默认即回落 --vp-c-brand-1 纯色(2026-10-07 去渐变字) */
 
   --vp-custom-outline: #6366f1;
 
@@ -43,12 +38,7 @@
   --vp-button-brand-hover-bg: #a5b4fc;
   --vp-button-brand-active-bg: #4f46e5;
 
-  --vp-home-hero-name-background: linear-gradient(
-    115deg,
-    #a5b4fc 8%,
-    #6366f1 52%,
-    #4338ca 96%
-  );
+  /* 暗色 hero 名同 :root——回落 --vp-c-brand-1(#a5b4fc) 纯色 */
 
   --vp-custom-outline: #a5b4fc;
 }
@@ -57,3 +47,10 @@
 code {
   color: var(--vp-c-brand-1);
 }
+
+/* hero 名用纯品牌色,不用 VitePress 默认渐变名 */
+:root {
+  --vp-home-hero-name-color: var(--vp-c-brand-1);
+  --vp-home-hero-name-background: transparent;
+}
+
