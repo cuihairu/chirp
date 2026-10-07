@@ -486,29 +486,6 @@ add_test(NAME notification_main_session_tests COMMAND notification_main_session_
 # with gateway_auth_internal_test.cc; chat_managers_tests compiles
 # group_manager.cc together with chat_group_internal_test.cc.
 
-# Message search service coverage tests (the second TU drives the search
-# main.cc seam: SignalHandler / running directly, main() renamed).
-add_executable(search_tests
-  search_test.cc
-  search_main_session_test.cc
-  ${CMAKE_SOURCE_DIR}/services/search/src/message_search_service.cc
-)
-
-chirp_unit_test_common_links(search_tests)
-target_link_libraries(search_tests PRIVATE chirp_network chirp_common chirp_protos)
-
-target_include_directories(search_tests
-  PRIVATE
-  ${CMAKE_SOURCE_DIR}/services/search/src
-  ${CMAKE_SOURCE_DIR}/libs
-  ${CMAKE_SOURCE_DIR}/libs/common
-  ${CMAKE_SOURCE_DIR}/libs/common/include
-  ${CMAKE_SOURCE_DIR}/proto/cpp
-  ${CMAKE_SOURCE_DIR}/proto/cpp/proto
-)
-
-add_test(NAME search_tests COMMAND search_tests)
-
 # Core SDK (sdk.cc / sdk_client.cc / message_store.cc) coverage tests
 add_executable(sdk_core_tests
   sdk_core_test.cc
@@ -803,6 +780,42 @@ function(chirp_fake_deps_include target)
     ${CMAKE_CURRENT_SOURCE_DIR}/fake_sodium
   )
 endfunction()
+
+# Message search stack (message_search 批): segmenter, FTS5 index, MySQL
+# sync (fake MySQL) and the SearchServer protocol face (fake session).
+find_package(unofficial-sqlite3 CONFIG REQUIRED)
+add_executable(search_tests
+  search_text_segmenter_test.cc
+  search_index_test.cc
+  search_index_sync_test.cc
+  search_server_test.cc
+  fake_mysql.cc
+  ${CMAKE_SOURCE_DIR}/services/search/src/text_segmenter.cc
+  ${CMAKE_SOURCE_DIR}/services/search/src/message_search_index.cc
+  ${CMAKE_SOURCE_DIR}/services/search/src/index_sync.cc
+  ${CMAKE_SOURCE_DIR}/services/search/src/search_server.cc
+  ${CMAKE_SOURCE_DIR}/services/shared/chat/src/chat_validation.cc
+  ${CMAKE_SOURCE_DIR}/services/shared/chat/src/mysql_message_store.cc
+  ${CMAKE_SOURCE_DIR}/services/shared/chat/src/runtime_utils.cc
+)
+
+chirp_unit_test_common_links(search_tests)
+target_link_libraries(search_tests PRIVATE chirp_network chirp_common chirp_protos unofficial::sqlite3::sqlite3)
+
+target_include_directories(search_tests
+  PRIVATE
+  ${CMAKE_SOURCE_DIR}/services/search/src
+  ${CMAKE_SOURCE_DIR}/services/shared/chat/src
+  ${CMAKE_SOURCE_DIR}/libs
+  ${CMAKE_SOURCE_DIR}/libs/common
+  ${CMAKE_SOURCE_DIR}/libs/common/include
+  ${CMAKE_SOURCE_DIR}/libs/network
+  ${CMAKE_SOURCE_DIR}/proto/cpp
+  ${CMAKE_SOURCE_DIR}/proto/cpp/proto
+)
+chirp_fake_deps_include(search_tests)
+
+add_test(NAME search_tests COMMAND search_tests)
 
 # Enhanced auth stores (MySQL UserStore/SessionStore + RedisAuthStore)
 add_executable(auth_stores_tests

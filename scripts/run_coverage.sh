@@ -142,15 +142,18 @@ KNOWN_UNCOVERABLE = {
     # every destination complete the handshake instead, so no
     # environment-independent unit test can hit this arm deterministically.
     # (Lines track ConnectTcpWithDeadline's timer lambda; keep in sync with
-    # the branch-level entry for the same lambda below.)
-    ("services/app/notification/src/http_push_transport.cc", 302),
-    ("services/app/notification/src/http_push_transport.cc", 303),
+    # the branch-level entry for the same lambda below. Re-pinned 302/303 ->
+    # 321/322 for the socket-lifetime fix's +19-line upstream drift
+    # (36e294c); block layout unchanged.)
+    ("services/app/notification/src/http_push_transport.cc", 321),
+    ("services/app/notification/src/http_push_transport.cc", 322),
     # Connect's success-path "new TcpHttpConnection" lines carry only the
     # bad_alloc unwind block of the make_unique call; the live block of the
     # statement sits on the neighbouring return line and is covered by the
     # loopback tests. Same for the SSL factory's plain-scheme fallthrough.
-    ("services/app/notification/src/http_push_transport.cc", 351),
-    ("services/app/notification/src/http_push_transport.cc", 523),
+    # (Re-pinned 351/523 -> 370/542 for the same 36e294c drift.)
+    ("services/app/notification/src/http_push_transport.cc", 370),
+    ("services/app/notification/src/http_push_transport.cc", 542),
     # Frame encoder guards: needs a >4GiB message / a Message whose
     # SerializeToArray disagrees with ByteSizeLong. L12's untaken arms are
     # the >UINT32_MAX / >INT_MAX sides of the size check (same 4GiB wall).
@@ -339,11 +342,16 @@ KNOWN_UNCOVERABLE = {
     # exception-cleanup arcs, but MakeDecodeTable is non-throwing so those
     # arcs can never fire.
     ("libs/common/base64.cc", 21),
-    # Search's orphan-token defense: inverted_index_ is written only inside
-    # IndexDocument (together with documents_) and erased only inside
-    # DeleteDocument (also together with documents_), so a token can never
-    # reference a missing document.
-    ("services/search/src/message_search_service.cc", 180),
+    # Search index (message_search 批) 的三个 I/O 类死臂：sqlite 语句在
+    # prepare 期的失败形态全部有测试覆盖（损坏库 / 外部篡改 shadow 表 /
+    # 列缺失 / NOT NULL 约束），BEGIN/COMMIT/建表语句的 step 期失败只剩
+    # 磁盘 I/O / SQLITE_FULL 一类故障，进程内无注入点。
+    ("services/search/src/message_search_index.cc", 114),
+    ("services/search/src/message_search_index.cc", 115),
+    ("services/search/src/message_search_index.cc", 116),
+    ("services/search/src/message_search_index.cc", 143),
+    ("services/search/src/message_search_index.cc", 208),
+    ("services/search/src/message_search_index.cc", 209),
     # CleanupOfflineUsers' purge condition: the erase arm needs last_seen
     # older than 24h (the body is already GCOVR_EXCL_LINE'd); the adjacent
     # short-circuit arm is dropped with it because exclusions are per line.
@@ -845,10 +853,6 @@ KNOWN_UNCOVERABLE_ARMS = {
     ("services/game/server_gateway/src/stream_broker.cc", 255): ((4, 5),
         "batch-8 migration from a stale whole-line pin; dead arm(s) in every gcda context of the audit run"),
     ("services/game/server_gateway/src/stream_broker.cc", 323): ((8, 9),
-        "batch-8 migration from a stale whole-line pin; dead arm(s) in every gcda context of the audit run"),
-    ("services/search/src/message_search_service.cc", 327): ((1,),
-        "batch-8 migration from a stale whole-line pin; dead arm(s) in every gcda context of the audit run"),
-    ("services/search/src/message_search_service.cc", 403): ((8, 9),
         "batch-8 migration from a stale whole-line pin; dead arm(s) in every gcda context of the audit run"),
     ("services/social/src/presence_manager.cc", 346): ((1,),
         "batch-8 migration from a stale whole-line pin; dead arm(s) in every gcda context of the audit run"),

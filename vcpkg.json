@@ -10,7 +10,11 @@
     "libmariadb",
     "openssl",
     "pkgconf",
-    "asio"
+    "asio",
+    {
+      "name": "sqlite3",
+      "features": ["fts5"]
+    }
   ],
   "builtin-baseline": "05442024c3fda64320bd25d2251cc9807b84fb6f"
 }
