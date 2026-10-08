@@ -376,6 +376,57 @@ namespace Chirp.Sdk
             return resp;
         }
 
+        /// <summary>消息搜索(SEARCH_MESSAGE_REQ/RESP 2248/2249):keyword 必填,
+        /// 其余可选。返回 SearchMessageResponse{Code, Matches[], HasMore}。
+        /// 与 C++ 参考实现对齐:连接态检查先于参数校验,keyword 为空抛
+        /// ArgumentException;非连接态抛 RequestError(Closed)。</summary>
+        public async Task<Chirp.Chat.SearchMessageResponse> SearchMessagesAsync(string keyword,
+            string channelId = "", int[] contentTypes = null, long beforeTimestamp = 0,
+            string beforeMessageId = "", int limit = 20, int? timeoutMs = null)
+        {
+            if (Status != ConnStatus.Connected)
+            {
+                throw new RequestError(RequestErrorKind.Closed);
+            }
+            if (string.IsNullOrEmpty(keyword))
+            {
+                throw new ArgumentException("keyword is required", nameof(keyword));
+            }
+            var request = new Chirp.Chat.SearchMessageRequest
+            {
+                Keyword = keyword,
+                ChannelId = channelId ?? "",
+                BeforeTimestamp = beforeTimestamp,
+                BeforeMessageId = beforeMessageId ?? "",
+                Limit = limit > 0 ? limit : 20,
+            };
+            if (contentTypes != null && contentTypes.Length > 0)
+            {
+                request.ContentTypes.Add(contentTypes);
+            }
+            return await RequestAsync(Specs.SearchMessage, request, timeoutMs).ConfigureAwait(false);
+        }
+
+        /// <summary>设置群昵称(SET_MEMBER_ALIAS_REQ/RESP 2122/2123):operator
+        /// 设置 target 在 group 内的显示别名。alias 空串 = 清除。返回
+        /// SetMemberAliasResponse。连接态检查先于参数校验,非连接态抛
+        /// RequestError(Closed)。</summary>
+        public async Task<Chirp.Chat.SetMemberAliasResponse> SetMemberAliasAsync(string groupId,
+            string targetUserId, string alias, int? timeoutMs = null)
+        {
+            if (Status != ConnStatus.Connected)
+            {
+                throw new RequestError(RequestErrorKind.Closed);
+            }
+            var request = new Chirp.Chat.SetMemberAliasRequest
+            {
+                GroupId = groupId ?? "",
+                TargetUserId = targetUserId ?? "",
+                Alias = alias ?? "",
+            };
+            return await RequestAsync(Specs.SetMemberAlias, request, timeoutMs).ConfigureAwait(false);
+        }
+
         // ----- hook internals -----
 
         private Task<Chirp.Auth.LoginResponse> PostLoginAsync(string token, string deviceId,
@@ -848,6 +899,20 @@ namespace Chirp.Sdk
                     reason = "";
                 }
                 NotifyEventListeners(l => l.OnKicked(reason));
+                return;
+            }
+            if (msgId == MsgID.GroupMemberAliasUpdatedNotify)
+            {
+                Chirp.Chat.GroupMemberAliasUpdatedNotify notify;
+                try
+                {
+                    notify = Chirp.Chat.GroupMemberAliasUpdatedNotify.Parser.ParseFrom(body);
+                }
+                catch (Exception)
+                {
+                    return; // malformed notify: ignore
+                }
+                NotifyEventListeners(l => l.OnGroupMemberAliasUpdated(notify.GroupId, notify.UserId, notify.Alias));
                 return;
             }
             if (msgId == MsgID.ChatMessageNotify && HasChatReceivePipeline())

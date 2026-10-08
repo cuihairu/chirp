@@ -74,6 +74,10 @@ TEST(SearchTextSegmenter, InvalidLeadBytePassesThroughAsOne) {
 TEST(SearchTextSegmenter, MatchPhraseDigitCountsAsToken) {
   // 数字是 token 字符：词法扫描的数字臂。
   EXPECT_EQ(BuildMatchPhrase("v2"), "\"v2\"");
+  // 数字打头：ASCII 判定链必须先走完字母短路再落数字操作数（digit 真臂）。
+  // "v2" 在 'v' 处即短路，到不了该臂——只有扫描到首个字符就是数字时才会
+  // 命中,这里补上（此前缺失导致 BuildMatchPhrase 的 digit 分支裸奔）。
+  EXPECT_EQ(BuildMatchPhrase("2day"), "\"2day\"");
 }
 
 TEST(SearchTextSegmenter, MatchPhraseTwoByteLeadDecodedBeforeToken) {

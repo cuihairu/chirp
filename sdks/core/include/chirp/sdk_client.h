@@ -77,6 +77,10 @@ using MentionSuggestionsCallback =
     std::function<void(const std::error_code& ec, const chirp::chat::GetMentionSuggestionsResponse&)>;
 using BulkDeleteCallback =
     std::function<void(const std::error_code& ec, const chirp::chat::BulkDeleteResponse&)>;
+using SearchMessagesCallback =
+    std::function<void(const std::error_code& ec, const chirp::chat::SearchMessageResponse&)>;
+using SetMemberAliasCallback =
+    std::function<void(const std::error_code& ec, const chirp::chat::SetMemberAliasResponse&)>;
 
 // 聊天客户端 SDK:直连 chat 网关的 TCP 长连接,[u32_be len][Packet protobuf]
 // 帧。sequence 关联请求响应,25s 心跳(pong 回声校验,连续丢失判定死亡),
@@ -234,6 +238,20 @@ public:
   void FetchGroupMembers(const std::string& group_id, int limit, int offset,
                          GroupMembersCallback cb);
   void FetchUserGroups(int limit, int offset, UserGroupsCallback cb);
+
+  // 消息搜索(SEARCH_MESSAGE_REQ/RESP 2248/2249)：keyword 必填,其余可选。
+  // 返回 SearchMessageResponse{code, matches[], has_more}。
+  void SearchMessages(const std::string& keyword, SearchMessagesCallback cb,
+                      const std::string& channel_id = "",
+                      const std::vector<int32_t>& content_types = {},
+                      int64_t before_timestamp = 0,
+                      const std::string& before_message_id = "",
+                      int32_t limit = 20);
+
+  // 设置群昵称(SET_MEMBER_ALIAS_REQ/RESP 2122/2123)：operator 设置 target
+  // 在 group 内的显示别名。alias 空串 = 清除。返回 SetMemberAliasResponse。
+  void SetMemberAlias(const std::string& group_id, const std::string& target_user_id,
+                      const std::string& alias, SetMemberAliasCallback cb);
 
 private:
   class Impl;

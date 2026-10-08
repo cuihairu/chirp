@@ -333,6 +333,22 @@ TEST_F(SearchIndexTest, IndexMessageFailsWhenFtsDataShadowDropped) {
   EXPECT_NE(tamper_err.find("sqlite step"), std::string::npos) << tamper_err;
 }
 
+TEST_F(SearchIndexTest, IndexMessageFailsWhenFtsInsertSteps) {
+  // ins_fts 的 step 期失败臂：把 message_fts 换成列齐备但带 CHECK 约束的
+  // 普通表（INSERT 的命名列全部存在，prepare 必过），bs=101 撞 CHECK——
+  // 与 ins_map 的 NOT NULL 注入（IndexMessageFailsOnMapConstraint）同款。
+  // 有种子：del 按 rowid 走通，错误落在 ins_fts.step，事务回滚不留半条。
+  ASSERT_TRUE(index_.IndexMessage(MakeInput("m1", "c", 1, 100, "seed"), &err_));
+  RawExec("DROP TABLE message_fts");
+  RawExec("CREATE TABLE message_fts(content TEXT, message_id TEXT,"
+          " channel_id TEXT, channel_type INTEGER, msg_type INTEGER,"
+          " timestamp INTEGER, CHECK(timestamp > 1000))");
+  std::string tamper_err;
+  EXPECT_FALSE(index_.IndexMessage(MakeInput("m2", "c", 1, 101, "x"), &tamper_err));
+  EXPECT_NE(tamper_err.find("sqlite step"), std::string::npos) << tamper_err;
+  EXPECT_EQ(index_.DocumentCount(), 1);
+}
+
 TEST_F(SearchIndexTest, DeleteMessageFailsWhenMapDropped) {
   // del_fts 的子查询引用 message_map；连接内 schema 缓存使错误落在 step
   // 期（linked sqlite 的实测行为），删除按失败关闭返回。
@@ -367,6 +383,22 @@ TEST_F(SearchIndexTest, SearchFailsWhenFtsDropped) {
   EXPECT_TRUE(r.hits.empty());
   EXPECT_NE(search_err.find("sqlite search step"), std::string::npos) << search_err;
   EXPECT_NE(search_err.find("no such table"), std::string::npos) << search_err;
+}
+
+TEST_F(SearchIndexTest, SearchFailsWhenFtsLosesColumns) {
+  // 虚表重建只留 content：镜像列在检索的 step 期才解析（连接内 schema 缓
+  // 存下的实测行为——与 INSERT 的 prepare 期列解析不同），报 no such
+  // column，结果清空 + 报错，不半答。
+  RawExec("DROP TABLE message_fts");
+  RawExec("CREATE VIRTUAL TABLE message_fts USING fts5(content)");
+  MessageSearchIndex::Query q;
+  q.keyword = "needle";
+  q.limit = 10;
+  std::string search_err;
+  const auto r = index_.Search(q, &search_err);
+  EXPECT_TRUE(r.hits.empty());
+  EXPECT_NE(search_err.find("sqlite search step"), std::string::npos) << search_err;
+  EXPECT_NE(search_err.find("no such column"), std::string::npos) << search_err;
 }
 
 TEST_F(SearchIndexTest, DocumentCountFailsSoftWhenMapDropped) {

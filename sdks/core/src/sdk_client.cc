@@ -1383,6 +1383,62 @@ public:
     });
   }
 
+  // 消息搜索(SEARCH_MESSAGE_REQ/RESP 2248/2249):keyword 必填,其余可选。
+  void SearchMessages(const std::string& keyword, SearchMessagesCallback cb,
+                      const std::string& channel_id,
+                      const std::vector<int32_t>& content_types,
+                      int64_t before_timestamp,
+                      const std::string& before_message_id,
+                      int32_t limit) {
+    asio::post(io_context_, [this, keyword, channel_id, content_types,
+                             before_timestamp, before_message_id, limit,
+                             cb = std::move(cb)] {
+      if (!ReadyForRequests()) {
+        cb(MakeEc(ChatError::NotConnected), {});
+        return;
+      }
+      if (keyword.empty()) {
+        cb(MakeEc(ChatError::InvalidParam), {});
+        return;
+      }
+      chirp::chat::SearchMessageRequest req;
+      req.set_keyword(keyword);
+      if (!channel_id.empty()) {
+        req.set_channel_id(channel_id);
+      }
+      for (auto t : content_types) {
+        req.add_content_types(t);
+      }
+      if (before_timestamp > 0) {
+        req.set_before_timestamp(before_timestamp);
+      }
+      if (!before_message_id.empty()) {
+        req.set_before_message_id(before_message_id);
+      }
+      if (limit > 0) {
+        req.set_limit(limit);
+      }
+      TypedRequest(MsgID::SEARCH_MESSAGE_REQ, MsgID::SEARCH_MESSAGE_RESP, req, std::move(cb));
+    });
+  }
+
+  // 设置群昵称(SET_MEMBER_ALIAS_REQ/RESP 2122/2123):operator 设置 target
+  // 在 group 内的显示别名。alias 空串 = 清除。返回 SetMemberAliasResponse。
+  void SetMemberAlias(const std::string& group_id, const std::string& target_user_id,
+                      const std::string& alias, SetMemberAliasCallback cb) {
+    asio::post(io_context_, [this, group_id, target_user_id, alias, cb = std::move(cb)] {
+      if (!ReadyForRequests()) {
+        cb(MakeEc(ChatError::NotConnected), {});
+        return;
+      }
+      chirp::chat::SetMemberAliasRequest req;
+      req.set_group_id(group_id);
+      req.set_target_user_id(target_user_id);
+      req.set_alias(alias);
+      TypedRequest(MsgID::SET_MEMBER_ALIAS_REQ, MsgID::SET_MEMBER_ALIAS_RESP, req, std::move(cb));
+    });
+  }
+
 private:
   ChatConfig config_;
   std::atomic<ConnectionState> state_;
@@ -1665,6 +1721,21 @@ void ChatClient::FetchGroupMembers(const std::string& group_id, int limit, int o
 
 void ChatClient::FetchUserGroups(int limit, int offset, UserGroupsCallback cb) {
   impl_->FetchUserGroups(limit, offset, std::move(cb));
+}
+
+void ChatClient::SearchMessages(const std::string& keyword, SearchMessagesCallback cb,
+                                const std::string& channel_id,
+                                const std::vector<int32_t>& content_types,
+                                int64_t before_timestamp,
+                                const std::string& before_message_id,
+                                int32_t limit) {
+  impl_->SearchMessages(keyword, cb, channel_id, content_types, before_timestamp,
+                        before_message_id, limit);
+}
+
+void ChatClient::SetMemberAlias(const std::string& group_id, const std::string& target_user_id,
+                                const std::string& alias, SetMemberAliasCallback cb) {
+  impl_->SetMemberAlias(group_id, target_user_id, alias, std::move(cb));
 }
 
 } // namespace sdk

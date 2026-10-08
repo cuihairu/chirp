@@ -51,6 +51,14 @@ namespace Chirp.Sdk
         public static readonly MessageSpec<Chirp.Chat.WordFilterFetchResponse> WordFilterFetch =
             new(MsgID.WordFilterFetchReq, MsgID.WordFilterFetchResp, Chirp.Chat.WordFilterFetchResponse.Parser);
 
+        // 消息搜索(SEARCH_MESSAGE_REQ/RESP 2248/2249):keyword 必填,其余可选。
+        public static readonly MessageSpec<Chirp.Chat.SearchMessageResponse> SearchMessage =
+            new(MsgID.SearchMessageReq, MsgID.SearchMessageResp, Chirp.Chat.SearchMessageResponse.Parser);
+        // 设置群昵称(SET_MEMBER_ALIAS_REQ/RESP 2122/2123):operator 设置 target
+        // 在 group 内的显示别名。alias 空串 = 清除。
+        public static readonly MessageSpec<Chirp.Chat.SetMemberAliasResponse> SetMemberAlias =
+            new(MsgID.SetMemberAliasReq, MsgID.SetMemberAliasResp, Chirp.Chat.SetMemberAliasResponse.Parser);
+
         // Social plane (WS 8001): friends and presence.
         public static readonly MessageSpec<Chirp.Social.AddFriendResponse> AddFriend =
             new(MsgID.AddFriendReq, MsgID.AddFriendResp, Chirp.Social.AddFriendResponse.Parser);

@@ -348,33 +348,40 @@ KNOWN_UNCOVERABLE = {
     # exception-cleanup arcs, but MakeDecodeTable is non-throwing so those
     # arcs can never fire.
     ("libs/common/base64.cc", 21),
-    # Search index（message_search 批）的死臂，两类：
+    # Search index（message_search 批）的死臂，三类：
     # ① I/O 类——建表/BEGIN/COMMIT 语句的 step 期失败只剩磁盘 I/O /
     #   SQLITE_FULL 一类故障，进程内无注入点；prepare 期损坏库形态由
     #   CorruptDatabaseFailsOpen 在 Open 的 schema 臂覆盖。
     # ② 二连接篡改下的 prepare 失败臂（del/ins_map/delete/search）——实测
     #   linked sqlite 在开放事务 + 二连接 DDL 之下错误全部落在 step 期
     #   （连接内 schema 缓存；篡改测试系列已逐步覆盖各 step 失败臂），同
-    #   语句文本为常量、健康 schema 下 prepare 不会失败。fts5 镜像列缺失
-    #   的 prepare 臂（ins_fts）有测试覆盖，不在此列。
+    #   语句文本为常量、健康 schema 下 prepare 不会失败。del 臂（220 段）
+    #   由 DeleteMessageFailsWhenMapDropped 实测覆盖（map 被篡改后 del_fts
+    #   的子查询 prepare 即失败），不在此列。151-154/194-198 含 152/195：
+    #   gcov 把多字面量拼接的错误消息续行单独记行，需逐行钉。
+    # ③ UpsertMessage 内 ins_fts.Run 失败的回滚臂（187-188）不可达：fts 镜
+    #   像表受损时事务内先行的 del step 必先失败（同②），ins_map 同理。
     ("services/search/src/message_search_index.cc", 114),
     ("services/search/src/message_search_index.cc", 115),
     ("services/search/src/message_search_index.cc", 116),
     ("services/search/src/message_search_index.cc", 143),
     ("services/search/src/message_search_index.cc", 151),
+    ("services/search/src/message_search_index.cc", 152),
     ("services/search/src/message_search_index.cc", 153),
     ("services/search/src/message_search_index.cc", 154),
     ("services/search/src/message_search_index.cc", 156),
     ("services/search/src/message_search_index.cc", 157),
+    ("services/search/src/message_search_index.cc", 187),
+    ("services/search/src/message_search_index.cc", 188),
     ("services/search/src/message_search_index.cc", 194),
+    ("services/search/src/message_search_index.cc", 195),
     ("services/search/src/message_search_index.cc", 197),
     ("services/search/src/message_search_index.cc", 198),
     ("services/search/src/message_search_index.cc", 208),
     ("services/search/src/message_search_index.cc", 209),
-    ("services/search/src/message_search_index.cc", 226),
-    ("services/search/src/message_search_index.cc", 229),
-    ("services/search/src/message_search_index.cc", 283),
-    ("services/search/src/message_search_index.cc", 286),
+    ("services/search/src/message_search_index.cc", 284),
+    ("services/search/src/message_search_index.cc", 285),
+    ("services/search/src/message_search_index.cc", 287),
     # CleanupOfflineUsers' purge condition: the erase arm needs last_seen
     # older than 24h (the body is already GCOVR_EXCL_LINE'd); the adjacent
     # short-circuit arm is dropped with it because exclusions are per line.

@@ -111,6 +111,11 @@ namespace Chirp.Sdk
 
         void OnMessageReceived(Chirp.Chat.ChatMessage message) { }
 
+        /// <summary>群昵称别名变更通知(GROUP_MEMBER_ALIAS_UPDATED_NOTIFY 2124)：
+        /// groupId, userId, alias(空串=已清除)。渲染两处消费：成员列表行 + 群聊消息发送者名。
+        /// </summary>
+        void OnGroupMemberAliasUpdated(string groupId, string userId, string alias) { }
+
         void OnUnreadChanged(Chirp.Chat.ChannelType type, string channelId, int unread) { }
 
         void OnPresenceChanged(string userId, bool online) { }
