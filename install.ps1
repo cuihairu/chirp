@@ -159,6 +159,7 @@ function Install-CppSdk {
     Write-Info "已安装: C++ core SDK ($Target) -> $sdk"
     Write-Info "  接入: 编译加 /I`"$($sdk)\include`",链接 chirp_core_sdk.lib(动态)或"
     Write-Info "        chirp_core_sdk_static.lib(静态);运行时把 $($sdk)\bin 加入 PATH(依赖 dll 都在内)"
+    Write-Info '  注: Windows 包不含 crashpad_handler(Crashpad 崩溃采集当前仅 Linux 接入面)'
 }
 
 function Install-GoSdk {

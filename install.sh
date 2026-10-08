@@ -340,6 +340,21 @@ install_cpp_sdk() {
 		[ -f "$src/NOTE.txt" ] && as_root cp "$src/NOTE.txt" "$datadir/NOTE.txt"
 	fi
 
+	# crashpad handler 平铺进 bin/(仅 Linux cpp 包携带,darwin/windows 包无)
+	# 。消费方把 handler 放到自己服务可执行文件同目录,或用
+	# CHIRP_CRASH_HANDLER 指向 $PREFIX/bin/crashpad_handler——查找序与包
+	# 内 NOTE.txt 同口径(env → exe 同目录 → 上溯 4 级)。
+	if [ -d "$src/bin" ]; then
+		if [ -w "$PREFIX" ]; then
+			mkdir -p "$PREFIX/bin"
+			cp -R "$src/bin/." "$PREFIX/bin/"
+		else
+			as_root mkdir -p "$PREFIX/bin"
+			as_root cp -R "$src/bin/." "$PREFIX/bin/"
+		fi
+		info "  crashpad_handler -> $PREFIX/bin/crashpad_handler(崩溃采集 handler,查找序见包内 NOTE.txt)"
+	fi
+
 	# 动态库加载路径:系统级前缀 → ldconfig 刷新(Linux);否则给导出提示
 	if [ "$PREFIX" = "/usr/local" ] && command -v ldconfig >/dev/null 2>&1; then
 		as_root ldconfig 2>/dev/null || true
