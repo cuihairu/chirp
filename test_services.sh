@@ -216,7 +216,7 @@ if [[ -n "${MYSQL_DATABASE:-}" ]]; then MYSQL_ARGS+=(--mysql_database "${MYSQL_D
 
 if [[ "${1:-}" == "--smoke-game" ]]; then
   # 纯游戏平面端到端（无 app_auth）：game_sdk_gateway 不配 --auth_host
-  # 走 scaffold（token 即 user_id + BindAuthenticatedSession），ChatBridge
+  # 走 scaffold（token 即 user_id + BindAuthenticatedSession），ServiceBridge
   # 把 2xxx 转给 game_chat；chat 开 --gateway_service_secret 信任管道，
   # 不配 --token_secret 走本地 scaffold。离线补投递证明全管道双向。
   CHAT_BIN="${CHAT_BIN:-./build/services/shared/chat/chirp_chat}"
@@ -262,7 +262,7 @@ if [[ "${1:-}" == "--smoke-game" ]]; then
   grep -Eq "send code=(0|6)" "${A_LOG}"
 
   echo ""
-  echo "[game] B login via gateway (offline refill via ChatBridge)"
+  echo "[game] B login via gateway (offline refill via ServiceBridge)"
   set +e
   timeout 30 ./build/tools/benchmark/chirp_login_client --host 127.0.0.1 --port "${GW_PORT}" \
     --token user_b --device dev_b --platform pc --expect_notify_ms 15000 > "${B_LOG}" 2>&1
@@ -954,7 +954,7 @@ elif [[ "${1:-}" == "--smoke-edge" ]]; then
 elif [[ "${1:-}" == "--smoke-jwt" ]]; then
   # 统一登录/会话语义(P1 收尾)进程级 E2E:auth-enhanced 校验 HS256 JWT
   # (--jwt_secret,含强制 exp),chat 用同一个 secret 本地验签(--token_secret),
-  # 客户端原始 token 经 gateway -> ChatBridge -> chat 全链路逐字透传。
+  # 客户端原始 token 经 gateway -> ServiceBridge -> chat 全链路逐字透传。
   # auth 不带 --allow_scaffold_login:scaffold token 必须被拒(AUTH_FAILED=3)。
   #
   # 不需要 redis-server:chat 不配限流器/redis 走内存兜底,auth 的 Redis

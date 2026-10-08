@@ -204,4 +204,137 @@ public class ChirpClientGlueTests
         Assert.Equal(ConnStatus.Kicked, client.Status);
         Assert.True(client.Kicked);
     }
+
+    // ---- search(2248/2249) + 群昵称(2122-2124) 对拍(与 C++ core/TS 同形) ----
+
+    [Fact]
+    public async Task SearchMessagesAsync_RoundTrip_FullOptionSurface()
+    {
+        var transport = new GlueTransport();
+        var client = NewClient(_ => transport);
+        await client.ConnectAsync();
+
+        var pending = client.SearchMessagesAsync("needle", channelId: "c1",
+            contentTypes: new[] { Chirp.Chat.MsgType.Text }, beforeTimestamp: 1234,
+            beforeMessageId: "m-10", limit: 5);
+        var request = transport.LastSentPacket();
+        Assert.Equal(MsgID.SearchMessageReq, request.MsgId);
+        var req = Chirp.Chat.SearchMessageRequest.Parser.ParseFrom(request.Body);
+        Assert.Equal("needle", req.Keyword);
+        Assert.Equal("c1", req.ChannelId);
+        Assert.Equal(new[] { Chirp.Chat.MsgType.Text }, req.ContentTypes);
+        Assert.Equal(1234, req.BeforeTimestamp);
+        Assert.Equal("m-10", req.BeforeMessageId);
+        Assert.Equal(5, req.Limit);
+
+        transport.ServerPacket(new Packet
+        {
+            MsgId = MsgID.SearchMessageResp,
+            Sequence = request.Sequence,
+            Body = ByteString.CopyFrom(new Chirp.Chat.SearchMessageResponse
+            {
+                Code = Chirp.Common.ErrorCode.Ok,
+                Matches = { new Chirp.Chat.SearchMessageMatch { MessageId = "m-9", ChannelId = "c1" } },
+                HasMore = true,
+            }.ToByteArray()),
+        });
+
+        var resp = await pending;
+        Assert.Equal(Chirp.Common.ErrorCode.Ok, resp.Code);
+        Assert.Single(resp.Matches);
+        Assert.Equal("m-9", resp.Matches[0].MessageId);
+        Assert.Equal("c1", resp.Matches[0].ChannelId);
+        Assert.True(resp.HasMore);
+    }
+
+    [Fact]
+    public async Task SetMemberAliasAsync_RoundTrip_AliasAndClearPassthrough()
+    {
+        var transport = new GlueTransport();
+        var client = NewClient(_ => transport);
+        await client.ConnectAsync();
+
+        var pending = client.SetMemberAliasAsync("g1", "u2", "队长");
+        var request = transport.LastSentPacket();
+        Assert.Equal(MsgID.SetMemberAliasReq, request.MsgId);
+        var req = Chirp.Chat.SetMemberAliasRequest.Parser.ParseFrom(request.Body);
+        Assert.Equal("g1", req.GroupId);
+        Assert.Equal("u2", req.TargetUserId);
+        Assert.Equal("队长", req.Alias);
+
+        transport.ServerPacket(new Packet
+        {
+            MsgId = MsgID.SetMemberAliasResp,
+            Sequence = request.Sequence,
+            Body = ByteString.CopyFrom(new Chirp.Chat.SetMemberAliasResponse
+            {
+                Code = Chirp.Common.ErrorCode.Ok,
+                GroupId = "g1",
+                UserId = "u2",
+                Alias = "队长",
+            }.ToByteArray()),
+        });
+        var resp = await pending;
+        Assert.Equal(Chirp.Common.ErrorCode.Ok, resp.Code);
+        Assert.Equal("u2", resp.UserId);
+        Assert.Equal("队长", resp.Alias);
+    }
+
+    [Fact]
+    public async Task SearchMessagesAsync_ValidationOrder_ConnectionThenKeyword()
+    {
+        var transport = new GlueTransport();
+        var client = NewClient(_ => transport);
+        // 连接态检查先于参数校验（与 C++ core/TS 同序）。
+        await Assert.ThrowsAsync<RequestError>(() => client.SearchMessagesAsync("needle"));
+
+        await client.ConnectAsync();
+        await Assert.ThrowsAsync<ArgumentException>(() => client.SearchMessagesAsync(""));
+        Assert.Empty(transport.Sent); // 空 keyword 不发包
+    }
+
+    [Fact]
+    public async Task GroupAliasNotify_DecodesAndDispatchesHook_MalformedIgnored()
+    {
+        var transport = new GlueTransport();
+        var client = NewClient(_ => transport);
+        await client.ConnectAsync();
+
+        var (groupId, userId, alias) = (null as string, null as string, null as string);
+        client.AddListener(new RecordingHookListener
+        {
+            OnAlias = (g, u, a) => { groupId = g; userId = u; alias = a; },
+        });
+
+        transport.ServerPacket(new Packet
+        {
+            MsgId = MsgID.GroupMemberAliasUpdatedNotify,
+            Body = ByteString.CopyFrom(new Chirp.Chat.GroupMemberAliasUpdatedNotify
+            {
+                GroupId = "g1",
+                UserId = "u2",
+                Alias = "nick",
+            }.ToByteArray()),
+        });
+        await FakeTransport.SettleAsync();
+        Assert.Equal(("g1", "u2", "nick"), (groupId, userId, alias));
+
+        // 不可解码体：静默丢弃，监听器不炸。
+        transport.ServerPacket(new Packet
+        {
+            MsgId = MsgID.GroupMemberAliasUpdatedNotify,
+            Body = ByteString.CopyFrom(new byte[] { 0xff, 0x01 }),
+        });
+        await FakeTransport.SettleAsync();
+        Assert.Equal(("g1", "u2", "nick"), (groupId, userId, alias));
+    }
+
+    /// <summary>Hook-surface recorder: only the alias notify is observed.</summary>
+    private sealed class RecordingHookListener : IChatEventListener
+    {
+        public Action<string, string, string>? OnAlias { get; set; }
+
+        public void OnGroupMemberAliasUpdated(string groupId, string userId, string alias) =>
+            OnAlias?.Invoke(groupId, userId, alias);
+    }
 }
