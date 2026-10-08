@@ -137,6 +137,11 @@ def is_excluded(path):
 # Defensive branches that cannot be reached through the public APIs; every
 # entry documents why. Removing one requires a reproducing test.
 KNOWN_UNCOVERABLE = {
+    # crash_handler SelfExeDir: the readlink-failure return line. /proc/self/exe
+    # resolves for every real (and therefore test) process; the branch-level
+    # entry for the same condition (crash_handler.cc arm set, line 70) carries
+    # the full rationale - keep the two in sync.
+    ("libs/common/crash_handler.cc", 71),
     # HttpPushTransport connect-vs-deadline race: the timer arm only fires
     # against a packet-blackhole address. Sandboxes whose gateway SYN-proxies
     # every destination complete the handshake instead, so no
@@ -607,6 +612,38 @@ KNOWN_UNCOVERABLE_FUNCTIONS = {
 # reachable (source edit, compiler upgrade) is visible as a mismatch against
 # this table instead of silently shrinking coverage.
 KNOWN_UNCOVERABLE_ARMS = {
+    # -- crash_handler.cc: crash collection (Crashpad batch) -----------------
+    # The exempted arms are gcc's never-entered bad_alloc unwind pads behind
+    # the inlined std::string constructions, plus two environment-unreachable
+    # condition directions documented per line. Every live edge is exercised
+    # by the crash_handler_test suite (flag/env/default precedence, walk-up
+    # hit/limit, pending-scan, no-op stub degradation).
+    ("libs/common/crash_handler.cc", 62): ((6, 7),
+        "GetEnv: throw-inspection arms of the inlined std::string "
+        "constructions (allocation-failure continuation after the null "
+        "check; the empty-value edge and the value edge are both taken). "
+        "An always-throwing new_handler cannot be scoped to a single "
+        "getenv-shaped helper; allocation-failure unwind, "
+        "environment-unreachable."),
+    ("libs/common/crash_handler.cc", 70): ((0,),
+        "SelfExeDir readlink failure arm: /proc/self/exe always resolves "
+        "for every real (and therefore test) process; the >4095-byte path "
+        "truncation semantics of readlink(2) cannot produce n<=0 here."),
+    ("libs/common/crash_handler.cc", 75): ((1, 7, 8, 9),
+        "SelfExeDir return: has_filename is always true for a resolved "
+        "/proc/self/exe (regular file), so the false direction of the "
+        "ternary is unreachable; the remaining arms are the throw-"
+        "inspection slots of the inlined path/string constructions "
+        "(allocation-failure unwind, environment-unreachable)."),
+    ("libs/common/crash_handler.cc", 115): ((1, 7, 10, 11),
+        "Handler walk-up loop: the has_parent_path false direction never "
+        "fires because the 4-level walk-up limit terminates root-bound "
+        "searches first (deepest tested exe_dir is 5 levels), and the "
+        "remaining arms are throw-inspection slots of the inlined path "
+        "constructions (allocation-failure unwind, environment-"
+        "unreachable). Live edges taken: hit at every walk-up depth "
+        "(0-3), hit beyond the limit -> miss, root break."),
+
     # -- unwind-only edges of inlined construction ---------------------------
     # On every line below the arms with live callers are exercised; the
     # exempted arms are the trailing never-entered block(s) gcc emits for the

@@ -95,3 +95,6 @@ apps/shared/protocol/tsconfig.tsbuildinfo
 # (the spec is the source of truth; never commit the generated project).
 apps/ios/*.xcodeproj
 apps/ios/xcuserdata/
+
+# crashpad 本地落盘目录(数据库布局,不手工管理)
+crash_dumps/

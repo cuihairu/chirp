@@ -150,6 +150,83 @@ if(NOT TARGET chirp_asio)
   endif()
 endif()
 
+# ------------------------------------------------------------------------------
+# Crashpad (crash collection)
+# ------------------------------------------------------------------------------
+# backtrace-labs fork: ships a full per-directory CMake build (client/handler/
+# snapshot/...), pinned to tag v0.3.0. Coverage builds force it off: gcov must
+# not instrument third-party sources, and the StartHandler branch then compiles
+# away (crash::Initialize degrades to a no-op stub).
+set(CHIRP_CRASHPAD_AVAILABLE ON)
+if(APPLE OR WIN32 OR NOT CHIRP_FETCH_DEPS)
+  set(CHIRP_CRASHPAD_AVAILABLE OFF)
+endif()
+option(CHIRP_ENABLE_CRASHPAD "Integrate Crashpad crash reporting (Linux)" ON)
+if(CHIRP_ENABLE_CRASHPAD AND NOT CHIRP_CRASHPAD_AVAILABLE)
+  message(STATUS "Crashpad unavailable here (platform/fetch); crash::Initialize degrades to a no-op stub")
+  set(CHIRP_ENABLE_CRASHPAD OFF)
+endif()
+if(CHIRP_ENABLE_CRASHPAD AND CHIRP_ENABLE_COVERAGE)
+  message(STATUS "Crashpad disabled in coverage builds (third-party sources stay uninstrumented)")
+  set(CHIRP_ENABLE_CRASHPAD OFF)
+endif()
+
+if(CHIRP_ENABLE_CRASHPAD)
+  # The repo-wide -Wall -Wextra -Wpedantic (+ -Werror in CI) and coverage flags
+  # live on the root directory property and would inherit into third-party
+  # sources; detach them for the FetchContent call and restore afterwards.
+  get_directory_property(CHIRP_ROOT_COMPILE_OPTIONS COMPILE_OPTIONS)
+  get_directory_property(CHIRP_ROOT_LINK_OPTIONS LINK_OPTIONS)
+  set_directory_properties(PROPERTIES COMPILE_OPTIONS "" LINK_OPTIONS "")
+  # Crashpad targets cxx_std_17; the repo default (23) is snapshotted per
+  # directory at add_subdirectory() time, so scope the downgrade.
+  set(CHIRP_SAVED_CXX_STANDARD ${CMAKE_CXX_STANDARD})
+  set(CMAKE_CXX_STANDARD 17)
+  # sdks/core builds libchirp_core_sdk.so and pulls chirp_common (and thereby
+  # the crashpad client static lib) into it: everything needs PIC.
+  set(CHIRP_SAVED_PIC ${CMAKE_POSITION_INDEPENDENT_CODE})
+  set(CMAKE_POSITION_INDEPENDENT_CODE ON)
+
+  set(CRASHPAD_BUILD_EXAMPLES OFF CACHE INTERNAL "" FORCE)
+  # Upload is off by default (empty URL => local dumps only); NONE selects the
+  # plain-socket transport so libcurl is not a hard dependency.
+  set(CRASHPAD_HTTPS_TRANSPORT NONE CACHE STRING "" FORCE)
+
+  include(FetchContent)
+  FetchContent_Declare(
+    crashpad
+    GIT_REPOSITORY https://github.com/backtrace-labs/crashpad.git
+    GIT_TAG v0.3.0
+    GIT_SHALLOW TRUE
+    # Only the two submodules the CMake build consumes: mini_chromium (base)
+    # and lss (linux syscall support); zlib resolves from the system/vcpkg.
+    GIT_SUBMODULES "third_party/mini_chromium/mini_chromium;third_party/lss/lss"
+  )
+  FetchContent_MakeAvailable(crashpad)
+
+  set(CMAKE_CXX_STANDARD ${CHIRP_SAVED_CXX_STANDARD})
+  set(CMAKE_POSITION_INDEPENDENT_CODE ${CHIRP_SAVED_PIC})
+  set_directory_properties(PROPERTIES
+    COMPILE_OPTIONS "${CHIRP_ROOT_COMPILE_OPTIONS}"
+    LINK_OPTIONS "${CHIRP_ROOT_LINK_OPTIONS}")
+
+  # 符号表管理(CRASH_COLLECTION.md):构建全程留 -g,Release 产物发布时由
+  # scripts/extract_symbols.sh 分离;Debug/coverage 天然带 -g 不叠加。
+  if(NOT CMAKE_BUILD_TYPE STREQUAL "Debug")
+    add_compile_options(-g)
+  endif()
+
+  # Ship the out-of-process handler as a build-root artifact beside the service
+  # binaries; the runtime lookup walks up from each service exe to find it.
+  # (add_custom_command(TARGET) may only reference targets created in this
+  # directory, so drive the copy with a custom target instead.)
+  add_custom_target(chirp_crashpad_handler_copy ALL
+    COMMAND ${CMAKE_COMMAND} -E copy_if_different
+      $<TARGET_FILE:handler> ${CMAKE_BINARY_DIR}/crashpad_handler
+    DEPENDS handler
+    BYPRODUCTS ${CMAKE_BINARY_DIR}/crashpad_handler)
+endif()
+
 # TLS transport: asio::ssl in libs/network compiles against OpenSSL and the
 # network headers expose ssl types, so this is a hard, PUBLIC dependency.
 find_package(OpenSSL REQUIRED)

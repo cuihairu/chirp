@@ -28,8 +28,10 @@ endfunction()
 # Common library tests
 add_executable(common_tests
   common_test.cc
+  crash_handler_test.cc
   ${CMAKE_SOURCE_DIR}/libs/common/base64.cc
   ${CMAKE_SOURCE_DIR}/libs/common/config.cc
+  ${CMAKE_SOURCE_DIR}/libs/common/crash_handler.cc
   ${CMAKE_SOURCE_DIR}/libs/common/jwt.cc
   ${CMAKE_SOURCE_DIR}/libs/common/logger.cc
   ${CMAKE_SOURCE_DIR}/libs/common/sha256.cc
@@ -41,6 +43,13 @@ target_link_libraries(common_tests
   GTest::gtest_main
   ${absl_pkg_LIBRARIES}
 )
+
+if(TARGET client)
+  # 编译条件与 chirp_common 一致:crashpad-ON 构建下 StartHandler 分支真编进
+  # (拉起 handler 的用例本身仍编译为空,E2E 归 tools/crash_probe)。
+  target_link_libraries(common_tests PRIVATE client)
+  target_compile_definitions(common_tests PRIVATE CHIRP_HAVE_CRASHPAD=1)
+endif()
 
 target_include_directories(common_tests
   PRIVATE
