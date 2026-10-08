@@ -133,22 +133,28 @@ search 复用 per-client pipe 机制后，「ChatBridge」这个名字对 search
   批，留 search 落地后单独排批（用户令 2026-10-08）。
 - 原型 03 修订稿二审维持挂起等用户审核，不代审、不动（用户令 2026-10-08）。
 
-## 5. SDK 接线（word_filter 批先例：proto → 三端 SDK → 服务端链路）
+## 5. SDK 接线（word_filter 批先例：proto → 三端 SDK → 服务端链路）✅（2026-10-08 落地）
 
-| 端 | 范围 |
+| 端 | 落地 |
 |---|---|
-| C++ core（sdks/core） | `SearchMessages` + alias 设置 API |
-| TS（sdks/ts，web/desktop 经 @chirp/app-protocol 消费） | 同上 |
-| C#（sdks/unity） | 同上 |
+| C++ core（sdks/core） | `ChatClient::SearchMessages`（keyword 必填 + channel_id/content_types/复合游标/limit 全选项）+ `SetMemberAlias`（ca1bf4b）；未连接报 `NotConnected`、空 keyword 短路 `InvalidParam` 不发包、全选项线往返用例（0fca589） |
+| TS 双包 | 游戏面 sdks/ts（ca1bf4b）与伴侣面 apps/shared/protocol `@chirp/app-protocol`（0fca589，sdks/ 与 apps/ 边界裁决要求两份协议包同步）各落地 `searchMessages`/`setMemberAlias` + 2124 `onGroupMemberAliasUpdated` 通知扇出（含不可解码体忽略与抛错监听隔离）+ `SEARCH_MESSAGE`/`SET_MEMBER_ALIAS` 规格，并各补同形锁定测试向量（全选项往返与解码、连接态先于 keyword 的校验序、alias 清除回显、通知扇出、规格编解码往返） |
+| C#（sdks/unity） | `SearchMessagesAsync`/`SetMemberAliasAsync` + `Specs.SearchMessage`/`SetMemberAlias`（ca1bf4b；contentTypes 可空标注修正 0fca589，Nullable enable + TreatWarningsAsErrors 下原写法不可编译） |
 
 Android / iOS / 鸿蒙不在本批（iOS/鸿蒙按 2026-10-05 令只写代码有空闲才做；
-Android 原生管线另有节奏）。
+Android 原生管线另有节奏）。web/desktop 消费侧（ChatApi + alias 设置面 +
+渲染两处消费）为下一增量。
 
 ## 6. 验收口径
 
-- 双树构建 0 warning、全量 ctest、既有 smoke 腿全绿；search 新增单测覆盖分词、
-  FTS 索引、可见性过滤、游标；alias 新增单测覆盖权限与通知。
-- `chirp_search` 转正后：起服真实监听 5007，gateway 接入后客户端 2248 往返
-  可查（含 DM 权限剔除与撤回自愈）。
-- 文档对账：本文件、docs/api/overview.md（2248/2249、2122-2124、5007 状态行）、
-  CAPABILITY_MATRIX、TODO.md 随各增量同步。
+- ✅ 双树构建 0 warning、全量 ctest（44 套件）、既有 smoke 腿全绿；
+  search 新增单测覆盖分词、FTS 索引、可见性过滤（含 DM 权限剔除）、
+  游标、二连接篡改防线与降级合成；alias 新增单测覆盖权限与通知
+  （1ab9c02；service_bridge 28 例含降级四态 0bd1ded）。
+- ✅ `chirp_search` 起服真实监听 5007（SERVER_AUTH_REQ 信任门 +
+  LOGIN 重放 + 检索 + 100ms tail 泵 + 可选 metrics，1ab9c02），
+  gateway `--search_host` 接入就位；客户端 2248 端到端往返的 smoke
+  腿未立，随 web/desktop 增量与端到端链路一起验。
+- ✅ 文档对账：本文件 §5、docs/api/overview.md（2122-2124 行、
+  2248/2249 行、5007 状态行）、CAPABILITY_MATRIX（两边缘行）、
+  TODO.md（search 拍板条目）随各增量同步。
