@@ -65,7 +65,7 @@ message Packet {
 | 服务 | 二进制 | TCP | WebSocket | 状态 | 说明 |
 | --- | --- | --- | --- | --- | --- |
 | Game SDK Gateway | `chirp_game_sdk_gateway` | 5000 | 5001 | Supported | 登录、心跳、踢出、会话 claim;2xxx 聊天包经 ServiceBridge 转发到 game_chat |
-| Game Chat | `chirp_game_chat`(由 `services/shared/chat` 构建) | 7000 | 7001 | Supported | 聊天服务端;游戏后端签发 token + `--token_secret` 本地验签,自足闭环 |
+| Game Chat | `chirp_chat`(由 `services/shared/chat` 构建,部署角色由启动参数区分) | 7000 | 7001 | Supported | 聊天服务端;游戏后端签发 token + `--token_secret` 本地验签,自足闭环 |
 | Game Server Gateway | `chirp_game_server_gateway` | 8100 | - | Supported | 游戏后端注入枢纽:消息注入 + 事件下发,`service_id` + secret 信任门 |
 | Chat Peer 口 | (game_chat 的 `--hub_peer_port`) | 8200 | - | Supported | game_chat 作为 spoke 注册到 app_chat hub 的出站目标;见 [peer 协议](./peer_protocol.md) |
 
@@ -74,7 +74,7 @@ message Packet {
 | 服务 | 二进制 | TCP | WebSocket | 状态 | 说明 |
 | --- | --- | --- | --- | --- | --- |
 | App SDK Gateway | `chirp_app_sdk_gateway` | 5200 | 5201 | Supported | 认证/心跳 + 6xxx 设备消息转发;2xxx 转发到 app_chat |
-| App Chat(hub) | `chirp_app_chat`(同 `services/shared/chat` 构建) | 7000 | 7001 | Supported | App 平面聊天 hub:peer 注册、身份映射、频道订阅、跨平面 fan-out/回复、未读账本 |
+| App Chat(hub) | `chirp_chat`(同 `services/shared/chat` 构建,部署角色由启动参数区分) | 7000 | 7001 | Supported | App 平面聊天 hub:peer 注册、身份映射、频道订阅、跨平面 fan-out/回复、未读账本 |
 | App Auth | `chirp_app_auth` | 6000 | - | Supported | App 平面账号/token;游戏平面不依赖它 |
 | App Notification | `chirp_app_notification` | 5006 | 5016 | Supported | 设备注册表 + 推送面(6xxx);`--push_transport http` 启用真实 APNs/FCM HTTP 投递,默认 `logging` 只记日志 |
 
@@ -110,22 +110,22 @@ message Packet {
 | 1002 | `HEARTBEAT_PONG` | Gateway/Chat -> 客户端 | Supported |
 | 1003 | `LOGIN_REQ` | 客户端 -> Gateway/Chat | Supported |
 | 1004 | `LOGIN_RESP` | Gateway/Chat -> 客户端 | Supported |
-| 1005 | `KICK_NOTIFY` | Gateway/Chat -> 客户端 | Supported(同设备重登顶号) |
+| 1005 | `KICK_NOTIFY` | Gateway/Chat -> 客户端 | Supported(同端型 platform 重登顶号) |
 | 1006 / 1007 | `LOGOUT_REQ` / `LOGOUT_RESP` | 客户端 <-> 服务 | Supported |
-| 1008-1019 | 注册/密码登录/刷新 token/会话管理/改密 | 客户端 <-> Auth | App 平面 auth 面 Supported;游戏平面不走这组 |
+| 1008-1019 | 注册/密码登录/刷新 token/会话管理/改密 | 客户端 <-> Auth | App 平面 auth 面 Supported(需 MySQL 增强形态 `chirp_app_auth_enhanced`;basic 形态仅 LOGIN/LOGOUT);游戏平面不走这组 |
 
 两个平面都接受 `LOGIN_REQ`;游戏平面的 token 由游戏后端按 HS256 JWT 签发、chat 以 `--token_secret` 本地验签。
 
 ### 聊天(Chat,2xxx)
 
-发送链路在服务端经过一组顺序固定的防线(细节与默认阈值见 [接入避坑指南](../guide/integration-pitfalls.md)):登录校验 → 模糊限流(`RATE_LIMITED`)→ 内容长度(`CONTENT_TOO_LONG`)→ 发送节奏(`RATE_LIMITED`)→ 重复禁言(`RATE_LIMITED`)→ 敏感词(`WORD_FILTERED` 或静默替换)。
+发送链路在服务端经过一组顺序固定的防线(细节与默认阈值见 [接入避坑指南](../guide/integration-pitfalls.md)):登录校验 → 内容长度(`CONTENT_TOO_LONG`)→ 模糊限流(`RATE_LIMITED`)→ 发送节奏(`RATE_LIMITED`)→ 重复禁言(`RATE_LIMITED`)→ 敏感词(`WORD_FILTERED` 或静默替换)。
 
 | MsgID | 名称 | 方向 | 说明 |
 | --- | --- | --- | --- |
 | 2001 / 2002 | `SEND_MESSAGE_REQ` / `RESP` | 客户端 -> Chat | 发送消息;`RESP` 带服务端 `message_id` 与业务码 |
 | 2003 / 2004 | `GET_HISTORY_REQ` / `RESP` | 客户端 -> Chat | 拉取频道历史 |
 | 2005 | `CHAT_MESSAGE_NOTIFY` | Chat -> 客户端 | 实时消息推送 |
-| 2101-2216 | 群组全套 | 客户端 <-> Chat | 建/进/出/邀/踢/查 + 群事件 notify(2117-2121) |
+| 2101-2116 | 群组全套 | 客户端 <-> Chat | 建/进/出/邀/踢/查 + 群事件 notify(2117-2121) |
 | 2122-2124 | 群昵称 alias | 客户端 <-> Chat | `SET_MEMBER_ALIAS_REQ/RESP` + `GROUP_MEMBER_ALIAS_UPDATED_NOTIFY`;本人或 MODERATOR+ 设他人;别名随 `GroupMember.alias` 下发,渲染消费成员列表与消息发送者名两处 |
 | 2201 / 2202 | `MARK_READ_REQ` / `RESP` | 客户端 -> Chat | 标记已读(服务端游标) |
 | 2203 / 2204 | `GET_READ_RECEIPTS_REQ` / `RESP` | 客户端 -> Chat | 消息已读回执查询 |
@@ -161,6 +161,7 @@ message Packet {
 | 5010 | `EVENT_DELIVER_NOTIFY` | 枢纽 -> 目标服务 |
 | 5011 / 5012 | `EVENT_ACK_REQ` / `RESP` | 服务 <-> 枢纽 |
 | 5013-5030 | 玩家身份绑定 / 频道订阅 / 未读账本 | 服务 <-> app_chat 主端口(已从 server_gateway 迁出,注意拨对端口) |
+| 5031-5034 | 游戏在线状态开关(`SET_GAME_PRESENCE_ENABLED` / `GET_GAME_PRESENCE`) | 服务 <-> app_chat 主端口(与 5013-5030 同链,经 app gateway 边缘分发) |
 | 5050 / 5051 | `PEER_REGISTER_REQ` / `RESP` | game_chat(spoke)-> app_chat(hub) |
 | 5052 | `CHANNEL_MESSAGE_NOTIFY` | spoke -> hub 频道消息上行 |
 | 5053 | `PEER_INJECT_MESSAGE_NOTIFY` | hub -> spoke 跨平面回复注入 |
@@ -198,12 +199,12 @@ sequenceDiagram
     participant S as game_chat
 
     C->>G: Packet(LOGIN_REQ, LoginRequest)
-    G->>S: 内部验证(token_secret 本地验签)
     G-->>C: Packet(LOGIN_RESP, LoginResponse)
-    Note over C,G: 登录后 2xxx 消息经 ServiceBridge 转发到 game_chat
+    G->>S: ServiceBridge 重放 LOGIN_REQ(chat 侧 token_secret 本地验签)
+    Note over C,G: 登录后 2xxx 消息经 ServiceBridge 转发到 game_chat;chat 侧验签拒绝则随后 KICK(chat session rejected)
 ```
 
-同 `(user_id, device_id)` 重复登录会顶掉旧会话:旧连接收到 `KICK_NOTIFY`,新连接的 `LOGIN_RESP.kick_previous = true`。
+同 `(user_id, platform)` 重复登录会顶掉旧会话:旧连接收到 `KICK_NOTIFY`,新连接的 `LOGIN_RESP.kick_previous = true`;跨 platform 多端共存并互发上下线事件。
 
 ### 直连 Chat 登录
 
@@ -216,7 +217,7 @@ sequenceDiagram
     S-->>C: Packet(LOGIN_RESP, LoginResponse)
 ```
 
-Gateway 登录与直连 Chat 登录是**两个独立的会话概念**:SDK(`sdks/core`)直连 chat 主端口,登录一次即完成连接与认证;自行开发客户端选一种路径接入,不要叠加。
+Gateway 登录与直连 Chat 登录是**两个独立的会话概念**:SDK(`sdks/core`)默认连 gateway(`gateway_port` 默认 5000)走网关登录,登录一次即完成连接与认证;直连 chat 主端口(7000)需显式配置端口,属可选路径。自行开发客户端选一种路径接入,不要叠加。
 
 ## 聊天消息流程
 

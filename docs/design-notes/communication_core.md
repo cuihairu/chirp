@@ -36,7 +36,7 @@ Communication
 | Channel | 私聊、群聊（`groups`）、世界频道（batch 消息面）、系统频道前缀（`<game_id>:<频道>` 跨平面寻址）；`npc:` 前缀私聊走 NPC 注入线 |
 | Message | `message_id` 生成、历史存 MySQL（`messages` 表）、离线队列、消息编辑/删除/表情回应/已读回执（`read_receipts`/`read_cursors`）；Sender kind 以 sender 字段区分玩家与非玩家 |
 | Delivery | 接收方离线 → 离线队列（内存兜底 200 条/用户，可选 Redis），`SEND_MESSAGE_RESP` 回 `TARGET_OFFLINE`，下次登录补投；服务面注入 at-least-once（hub ack + Redis Streams PEL 重放）；「`OK` 只代表服务面受理、不代表玩家侧送达」已写进 README 当前边界 |
-| Pipe | 客户端边缘（`game_sdk_gateway` 5200/5000、`app_sdk_gateway` 5201/5200）、服务面出站长连接（`game_server_gateway` 8100）、chat 直连入口与 trusted bridge（`--smoke-edge` 验证的 trusted pipe）、game_chat ↔ app_chat 注册 + 白名单 + 版本协商 |
+| Pipe | 客户端边缘（`game_sdk_gateway` 5000/5001、`app_sdk_gateway` 5200/5201）、服务面出站长连接（`game_server_gateway` 8100）、chat 直连入口与 trusted bridge（`--smoke-edge` 验证的 trusted pipe）、game_chat ↔ app_chat 注册 + 白名单 + 版本协商 |
 | Event | 服务面注入通道（`InjectMessageNotify`）、chat 离线推送桥 → `app_notification`（6xxx）、正在输入/已读事件 |
 
 ## 4. 目标模型（[提案]）

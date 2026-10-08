@@ -94,7 +94,7 @@ title: 接入避坑指南
 - 撤回只作用于**实时链路 + 离线队列**,存档层(Redis 历史/MySQL)没有撤回墓碑,重新 `GET_HISTORY` 仍会拿到原文。要做到"撤回后原文不可再被拉回",客户端自己维护 `message_id` 撤回名单并在拉历史时过滤(服务端墓碑已在后续批次排期)。
 - 撤回(或版主删除)会**顺手回收**接收方离线队列里已入队的副本(按 `message_id`),所以对方下次登录不会再收到这条原文;需要给"已撤回但对方从未见过"的消息留痕的客户端,得自己在撤回成功时记账。
 - `BULK_DELETE` 不受窗口约束:它是治理接口(只删自己的或版主有权删的),不查撤回窗口、也不回收离线副本。需要严格窗口语义的客户端不要用它做撤回。
-- **形态差异**:整个编辑/删除/撤回面(2225-2232)目前只在 **basic 形态**(`services/shared/chat/src/main.cc` 的直连入口)接线;enhanced 形态(`main_enhanced.cc` 走 `DispatchDistributedPacket`)没有这些 handler,请求会**超时**而不是回错码。跑 MySQL/Redis 的增强部署前先确认这一点(或把撤回挪到别的 RPC 面)。
+- **形态差异**:编辑/删除/撤回(2225-2228/2231-2232)已随 2026-10-02 批补进 **enhanced 形态**(`main_enhanced.cc`);仍只在 **basic 分发表**(`services/shared/chat/src/main.cc` 的直连入口)接线的是 `BULK_DELETE`(2229)——enhanced 侧没有该 handler,请求会**静默悬死**。跑 MySQL/Redis 的增强部署前先确认这一点(或把批量删除挪到别的 RPC 面)。
 
 ## 会话与连接
 

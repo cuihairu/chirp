@@ -47,7 +47,7 @@ npm test -- --coverage        # 门槛:全局 ≥70%(协议核心连同 ≥90% �
 npm run build
 
 # E2E:脚本起真实 chirp_chat + chirp_social(有 app_gateway+notification 二进制时一并起,
-#    设备面 3 例才跑,否则自动跳过)再跑集成套件(14 例)
+#    设备面 3 例才跑,否则自动跳过)再跑集成套件(18 例:chat 6 + device 3 + social 5 + voice 4)
 bash scripts/web_smoke.sh
 ```
 
@@ -55,14 +55,13 @@ bash scripts/web_smoke.sh
 
 ```
 src/
-├── protocol/    # 与框架无关:帧编解码 / msg_id↔消息映射 / 错误码 / ChirpClient 状态机
 ├── api/         # chat_api.ts、social_api.ts、party_api.ts、device_api.ts:各持一条连接,把 notify/resp 翻译成 store 操作
 ├── state/       # createStore + useSyncExternalStore 的薄 store(auth/conversation/message/typing/presence/friend/party/device)
 ├── pages/       # LoginPage、ChatPage
 └── components/  # ConversationList、ChatWindow、MessageBubble、FriendsDialog、GroupDialogs…
 ```
 
-`protocol/` 刻意保持零 React 依赖——移动端曾按此蓝本落地 Flutter 版(`apps/mobile_companion`,2026-09-19),2026-09-29 随原生迁移移除,协议核现由 `apps/android`(Kotlin)与 `apps/ios`(Swift)原生包承载并沿用同一组测试向量。proto 生成物提交在 `proto/ts/`(ts-proto,`gen_proto.sh` 生成),运行时零工具链依赖;CI 有 proto-sync job 防 `.proto` 与生成物漂移。
+协议核(帧编解码 / msg_id↔消息映射 / 错误码 / ChirpClient 状态机,与框架无关)不在本应用的 `src/` 里——它住在 `apps/shared/protocol`(`@chirp/app-protocol`,file 依赖,见 `package.json`),web 与 desktop 共用同一份;该包刻意保持零 React 依赖。移动端曾按此蓝本落地 Flutter 版(`apps/mobile_companion`,2026-09-19),2026-09-29 随原生迁移移除,协议核现由 `apps/android`(Kotlin)与 `apps/ios`(Swift)原生包承载并沿用同一组测试向量。proto 生成物提交在 `proto/ts/`(ts-proto,`gen_proto.sh` 生成),运行时零工具链依赖;CI 有 proto-sync job 防 `.proto` 与生成物漂移。
 
 ## 必须知道的协议语义(代码注释里也有)
 

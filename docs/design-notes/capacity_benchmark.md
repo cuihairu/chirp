@@ -27,7 +27,7 @@ chirp_load_client ──TCP──> chirp_game_sdk_gateway ──每客户端一�
 
 - 客户端线协议与生产一致：`[u32_be len][chirp.gateway.Packet]`；登录走网关 scaffold（token=user_id）。
 - chat 与 gateway 各自是**单线程 `io_context::run()`**（`services/shared/chat/src/main.cc`、`services/game/sdk_gateway/src/main.cc`）。
-- 网关对每个客户端向 chat 建一条管道，管道经 `SERVER_AUTH_REQ`（`--gateway_service_secret`）认证；管道握手超时硬编码 5s（`libs/network/chat_bridge.cc:24`）。
+- 网关对每个客户端向 chat 建一条管道，管道经 `SERVER_AUTH_REQ`（`--gateway_service_secret`）认证；管道握手超时硬编码 5s（`libs/network/service_bridge.cc:25`）。
 
 ### 依赖形态（关键）
 
@@ -36,7 +36,7 @@ chirp_load_client ──TCP──> chirp_game_sdk_gateway ──每客户端一�
 - 专属 redis：`redis-server --port 16379 --save "" --appendonly no`
 - 专属 MariaDB：`mariadbd --datadir=… --port=13306 --skip-grant-tables`（store 自动 `CREATE TABLE IF NOT EXISTS`），`CREATE DATABASE chirp` 即可
 
-已知无害噪声：`HybridMessageStore` 启动自检用 `GET ping`，把「key 不存在」的 nil 回复误判为连接失败打一行 WARN（`hybrid_message_store.cc:105`）；实际读写照常（且 `RedisClient` 每条命令新建短连接，见[瓶颈](#瓶颈与边界)）。
+已知无害噪声：`HybridMessageStore` 启动自检用 `GET ping`，把「key 不存在」的 nil 回复误判为连接失败打一行 WARN（`hybrid_message_store.cc:109-111`）；实际读写照常（且 `RedisClient` 每条命令新建短连接，见[瓶颈](#瓶颈与边界)）。
 
 ## 工具与方法
 

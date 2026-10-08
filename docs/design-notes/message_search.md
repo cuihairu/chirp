@@ -109,7 +109,7 @@ search 复用 per-client pipe 机制后，「ChatBridge」这个名字对 search
 - chat 实例路径逐字节保持旧行为（踢人 reason 字符串含在内：`chat
   unavailable`/`chat session lost`/`chat session rejected`）。
 
-单测：`tests/unit/service_bridge_test.cc`（28 例，含降级四态：不可达回码、
+单测：`tests/unit/service_bridge_test.cc`（29 例，含降级四态：不可达回码、
 断管排空挂起+重拨、队列满整管降级、握手被拒不踢），原 chat 桥用例原样迁入。
 
 ## 3. 同批项：群昵称 alias（与 search 同批，同属检索/展示面）

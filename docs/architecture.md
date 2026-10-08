@@ -4,7 +4,7 @@ title: 整体架构
 
 # Chirp 整体架构
 
-最后审查：2026-09-21
+最后审查：2026-10-08
 
 Chirp 是面向游戏的实时通信后端。游戏平面和 App 平面是两套独立系统，各自有独立的边缘和独立的 chat 服务。跨平面通信是 chat 的原生能力——两个 chirp_chat 实例直连，通过内置的注册协议、版本协商和访问控制完成接入。
 
@@ -13,6 +13,7 @@ Chirp 是面向游戏的实时通信后端。游戏平面和 App 平面是两套
 - 两个平面，两个 chat 实例。`game_chat` 服务游戏客户端；`app_chat` 服务伴侣 App。同一个二进制，不同部署。
 - `app_chat` 是 hub。`game_chat` 实例通过内置的对等注册协议接入，支持白名单和版本协商。
 - `game_server_gateway` 是轻量的游戏后端注入枢纽。
+- 检索是独立服务 `chirp_search`（TCP 5007，SQLite FTS5）：两个网关经第二 ServiceBridge（`--search_host`）把 2248 查询转发给它（凭证复用 chat 的 service_id/secret），search 桥失败降级回 `SERVER_UNAVAILABLE` 不踢客户端；未配置 `--search_host` 时 2248 落回 chat 通配。
 - 边缘（`game_sdk_gateway`、`app_sdk_gateway`）是无状态连接管理器。
 - 游戏平面自足，不依赖 App 平面的任何组件。单独部署"只做游戏聊天"是一等公民。
 - 两个平面的认证彼此隔离：游戏平面由游戏后端签发 token，game_chat 本地验证；App 平面由 `app_auth` 签发/验证平台用户令牌。
@@ -248,7 +249,7 @@ sequenceDiagram
 
 | 种类 | 标识 | 生命周期 | 使用位置 |
 | --- | --- | --- | --- |
-| 服务凭证（`service_id` + secret） | 后端组件 | 长期 | `game_server_gateway` peer、`game_chat → app_chat` 注册、gateway → chat trusted pipes |
+| 服务凭证（`service_id` + secret） | 后端组件 | 长期 | `game_server_gateway` peer、`game_chat → app_chat` 注册、gateway → chat trusted pipes、gateway → search 管道（复用 chat 的 service_id/secret） |
 | 用户令牌（HS256 JWT） | 单个用户会话 | 短期 | 游戏客户端 → `game_sdk_gateway`（游戏后端签发，game_chat 本地验证）、App → `app_sdk_gateway`（`app_auth` 签发） |
 
 规则：
@@ -270,6 +271,7 @@ sequenceDiagram
 | `app_chat` | App 平面消息停止。游戏平面不受影响。`game_chat` peer 检测到连接断开，带退避重试注册。 |
 | `app_auth` | App 平面新登录被阻断。已有会话不受影响（JWT 本地验证）。游戏平面不受影响。 |
 | `app_notification` | 离线推送停止。在线消息不受影响。 |
+| `chirp_search` | 2248 查询即时降级：网关回 `SERVER_UNAVAILABLE`，不踢客户端、不动连接，下一条查询自动重拨。聊天不受影响。 |
 | Redis（游戏平面） | 会话 claim 降级为单实例（无跨实例踢出）。 |
 | Redis（App 平面） | `app_chat` 的身份绑定/订阅/未读数据不可用。会话 claim 降级。 |
 
@@ -291,6 +293,7 @@ sequenceDiagram
 | 公共库 | `libs/common` | 日志、JWT、base64、指标 |
 | 网络库 | `libs/network` | ASIO TCP/WS 会话、帧协议、Redis 客户端、trusted-peer 辅助 |
 | 共享服务 | `services/shared/chat/` | 聊天服务：同一 `chirp_chat` 二进制按启动参数部署为 `game_chat` / `app_chat` / 分布式形态 |
+| 检索服务 | `services/search/` | 服务端消息搜索（`chirp_search`，SQLite FTS5，2248/2249） |
 | 游戏平面 | `services/game/` | |
 | | `services/game/sdk_gateway/` | 游戏客户端边缘（`game_sdk_gateway`） |
 | | `services/game/server_gateway/` | 游戏后端注入枢纽（`game_server_gateway`，可选） |
@@ -316,7 +319,7 @@ WebSocket: binary frame payload = [uint32_be payload_size][chirp.gateway.Packet 
 | 块 | 平面 | 用途 |
 | --- | --- | --- |
 | 1xxx | 双方 | 认证 / 会话 / 心跳 |
-| 2xxx | 双方 | 聊天（客户端 ↔ chat 业务消息） |
+| 2xxx | 双方 | 聊天/检索（客户端 ↔ chat/search 业务消息；2248/2249 归 search，其余归 chat） |
 | 3xxx | 游戏 | 社交 |
 | 4xxx | 游戏 | 语音 |
 | 5xxx | 可信 | 服务平面（`game_server_gateway`、chat 对等注册） |
