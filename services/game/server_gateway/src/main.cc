@@ -24,6 +24,7 @@
 
 #include "common/metrics.h"
 #include "common/metrics_http_server.h"
+#include "common/crash_handler.h"
 #include "event_queue.h"
 #include "logger.h"
 #include "network/protobuf_framing.h"
@@ -323,6 +324,8 @@ struct GatewayRuntime {
 }  // namespace
 
 int main(int argc, char** argv) {
+  // 崩溃采集:main 首条语句,早于一切 flag/日志初始化(见 CRASH_COLLECTION.md)。
+  chirp::common::crash::Initialize(argc, argv);
   Logger::Instance().SetLevel(Logger::Level::kInfo);
 
   const uint16_t port = ParseU16Arg(argc, argv, "--port", 8100);

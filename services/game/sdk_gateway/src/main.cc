@@ -25,6 +25,7 @@
 
 #include "common/metrics.h"
 #include "common/metrics_http_server.h"
+#include "common/crash_handler.h"
 
 namespace {
 
@@ -372,6 +373,8 @@ void HandleClientPacket(const std::shared_ptr<chirp::network::SessionRegistry>& 
 } // namespace
 
 int main(int argc, char** argv) {
+  // 崩溃采集:main 首条语句,早于一切 flag/日志初始化(见 CRASH_COLLECTION.md)。
+  chirp::common::crash::Initialize(argc, argv);
   using chirp::common::Logger;
 
   Logger::Instance().SetLevel(Logger::Level::kInfo);

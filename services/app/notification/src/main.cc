@@ -19,6 +19,7 @@
 
 #include "common/metrics.h"
 #include "common/metrics_http_server.h"
+#include "common/crash_handler.h"
 
 using namespace chirp;
 
@@ -52,6 +53,8 @@ void HandleNotificationPacket(app_notification::NotificationHandlers& handlers,
 }  // namespace
 
 int main(int argc, char* argv[]) {
+  // 崩溃采集:main 首条语句,早于一切 flag/日志初始化(见 CRASH_COLLECTION.md)。
+  chirp::common::crash::Initialize(argc, argv);
   auto& logger = common::Logger::Instance();
   logger.SetLevel(common::Logger::Level::kInfo);
 

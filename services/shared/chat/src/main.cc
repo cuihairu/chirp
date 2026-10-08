@@ -24,6 +24,7 @@
 #include "logger.h"
 #include "common/metrics.h"
 #include "common/metrics_http_server.h"
+#include "common/crash_handler.h"
 #include "message_handlers.h"
 #include "network/protobuf_framing.h"
 #include "network/redis_client.h"
@@ -1444,6 +1445,8 @@ void HandlePacket(const std::shared_ptr<MessageStore>& store,
 } // namespace
 
 int main(int argc, char** argv) {
+  // 崩溃采集:main 首条语句,早于一切 flag/日志初始化(见 CRASH_COLLECTION.md)。
+  chirp::common::crash::Initialize(argc, argv);
   using chirp::common::Logger;
 
   Logger::Instance().SetLevel(Logger::Level::kInfo);
