@@ -160,12 +160,18 @@ jobs:
         cmake "${ARGS[@]}"
 
     # --parallel 由 cmake 自算逻辑核数(-j$(nproc) 的可移植等价:mac/win 无
-    # nproc);--config 对单配置生成器无害。
+    # nproc);--config 对单配置生成器无害。Linux 腿加编 crashpad handler
+    # 复制目标(CHIRP_ENABLE_CRASHPAD 仅 Linux 开,build/crashpad_handler
+    # 平铺进 cpp 包 bin/;darwin/windows 无此目标)。
     - name: Build chirp_core_sdk (shared + static)
       shell: bash
-      run: >
-        cmake --build build --target chirp_core_sdk chirp_core_sdk_static
-        --config Release --parallel
+      # shellcheck disable=SC2086  # targets 是受控词表,需要分词
+      run: |
+        targets="chirp_core_sdk chirp_core_sdk_static"
+        if [ "${{ runner.os }}" = "Linux" ]; then
+          targets="$targets chirp_crashpad_handler_copy"
+        fi
+        cmake --build build --target $targets --config Release --parallel
 
     - name: Setup Go
       if: matrix.host_sdks
@@ -259,13 +265,26 @@ jobs:
         # vcpkg 运行时依赖(protobuf/abseil 动态族)一起进 bin/——dll 不
         # 随包走,消费者链接 chirp_core_sdk.lib 后运行期找不到依赖是
         # Windows 上最典型的暗坑。
+        cpp_handler_note=""
         case "$(uname -s)" in
         Linux)
           cp -v build/sdks/core/libchirp_core_sdk.so "$cpp/lib/"
           cp -v build/sdks/core/libchirp_core_sdk_static.a "$cpp/lib/"
+          # crashpad handler 平铺进 bin/:运行时查找序(exe 同目录 → 上溯
+          # 4 级)与安装面一致,消费方把 handler 放到自己服务 exe 旁即可
+          # 命中;CHIRP_ENABLE_CRASHPAD 仅 Linux,构建步已加编复制目标。
+          mkdir -p "$cpp/bin"
+          cp -v build/crashpad_handler "$cpp/bin/"
           cpp_files="lib/libchirp_core_sdk.so  共享库
-          lib/libchirp_core_sdk_static.a  静态库(协议对象已并入)"
+          lib/libchirp_core_sdk_static.a  静态库(协议对象已并入)
+          bin/crashpad_handler  独立崩溃采集 handler(Crashpad)"
           cpp_verify="nm -C lib/libchirp_core_sdk_static.a | grep -m3 'chirp::sdk'"
+          cpp_handler_note="
+        崩溃采集: bin/crashpad_handler 为独立 Crashpad handler 进程(仅 Linux)。
+          运行时查找序: 环境变量 CHIRP_CRASH_HANDLER → 可执行文件同目录 →
+          从可执行文件位置上溯 4 级。把它放到你的服务可执行文件同目录,或用
+          CHIRP_CRASH_HANDLER 指向它;dump 缺省落 ./crash_dumps(--crash_dir
+          可改),上传缺省关闭(--crash_upload_url 为空)。"
           ;;
         Darwin)
           cp -v build/sdks/core/libchirp_core_sdk.dylib "$cpp/lib/"
@@ -340,7 +359,7 @@ jobs:
                                           依赖的 libs 头与 protobuf 生成头
                                           (chirp_core_sdk 的 PUBLIC include 面)
           proto/*.proto                   协议源文件(可用其他语言插件再生成)
-
+        $cpp_handler_note
         链接: 编译加 -I include,静态/动态二选一;编译/运行依赖
         protobuf、abseil 与 header-only 的 asio(vcpkg.json baseline
         提供的版本;windows 包的 bin/ 已附运行时 dll)。
@@ -585,7 +604,7 @@ jobs:
         built:  $built (GitHub Actions nightly)
 
         内容:
-          cpp/<arch>/chirp-cpp-sdk-<arch>.tar.gz   C++ core SDK(库+头+proto 源)
+          cpp/<arch>/chirp-cpp-sdk-<arch>.tar.gz   C++ core SDK(库+头+proto 源,Linux 含 crashpad_handler)
           desktop/<arch>/chirp-desktop-<arch>.*    桌面聊天 App
               linux: .deb / darwin: .dmg / windows: -setup.exe
           go/chirp-go-sdk.tar.gz                   Go 服务端 SDK 源码包
@@ -686,7 +705,7 @@ jobs:
             SHA256SUMS) note="全部资产 sha256 清单" ;;
             manifest.json) note="可用面清单(一键安装读它)" ;;
             README.txt) note="产物说明与逐资产验证命令" ;;
-            chirp-cpp-sdk-*) note="C++ core SDK(库+头+proto 源)" ;;
+            chirp-cpp-sdk-*) note="C++ core SDK(库+头+proto 源,Linux 含 crashpad_handler)" ;;
             chirp-desktop-*.deb) note="桌面 App(Debian 包)" ;;
             chirp-desktop-*.dmg) note="桌面 App(磁盘镜像,内含 Chirp.app)" ;;
             chirp-desktop-*-setup.exe) note="桌面 App(NSIS 安装器)" ;;
