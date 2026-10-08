@@ -98,6 +98,7 @@ flowchart TB
 | app_sdk_gateway | TCP 5200 / WS 5201 | Experimental | App 接入边缘：登录/心跳/会话绑定 + 设备消息转发到 app_notification |
 | app_chat | — | Experimental | App 平面 hub：接受 game_chat 注册，聚合跨游戏频道，身份绑定、频道订阅、未读计数 |
 | app_notification | TCP 5006 / WS 5016 | Experimental | 后台推送：设备注册/注销/token 更新/查询（6xxx）、APNs/FCM 离线推送 |
+| chirp_search | TCP 5007 | Supported | 消息搜索服务：SQLite FTS5 索引,MySQL 全量回填+id 游标增量,2248/2249 复合游标分页,降级不踢 |
 
 ## 先读什么
 

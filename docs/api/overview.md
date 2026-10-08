@@ -84,7 +84,7 @@ message Packet {
 | --- | --- | --- | --- |
 | Social | 8000 | 8001 | Experimental(好友/在线状态/黑名单,不在最小验证路径内) |
 | Voice | 9000 | 9001 | Experimental(信令面存在,尚不构成完整媒体后端保证) |
-| Search | 5007 | - | Experimental(代码在树里,不是核心路径) |
+| Search | 5007 | - | Supported(SQLite FTS5 索引,per-client pipe 经 gateway,2248/2249,降级不踢) |
 
 按 [Communication Core](../design-notes/communication_core.md) 的口径,social/voice/search 是 Communication 之外的应用面/插件面,不在核心验证路径内。
 
