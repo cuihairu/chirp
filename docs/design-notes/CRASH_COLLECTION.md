@@ -64,23 +64,33 @@
      → `build/`）。
 - 产物面：CMake 构建收尾把 handler 复制为 **build 根产物**
   （`build/crashpad_handler`），与 `test_services.sh` 的 `build/` 布局同处一级。
-- 安装/nightly 打包面把 handler 平铺进包（`install.sh` / nightly manifest）：
-  **本批不做，留 TODO 跟进**——本批「产物带 handler」以 build 树 + 查找序验收。
+- 安装/nightly 打包面（已落地）：nightly Linux 腿构建步加编 handler 复制
+  目标（`chirp_crashpad_handler_copy`），装配把 `build/crashpad_handler`
+  平铺进 `cpp/<arch>/bin/`，package job 经既有 `bin/` 目录探测带进
+  tarball；`install.sh --component cpp` 把包内 `bin/` 平铺进
+  `$PREFIX/bin`。darwin/windows 腿 crashpad 关（平台门），包内如实不含
+  handler（`install.ps1` 有注记）。安装后查找序命中已实测：probe 与
+  handler 同目录、子目录上溯一级均命中 `$PREFIX/bin/crashpad_handler`。
 
 ## 符号表管理
 
 - **构建全程留 `-g`**：dev/coverage preset 是 Debug 天然带；ci/minimal 是
   Release，靠分离符号流程：
-  1. `scripts/extract_symbols.sh <binary>`：
-     `objcopy --only-keep-debug <bin> symbols/<name>.debug`（分离符号表）→
-     `strip --strip-debug <bin>`（可发布二进制，保留 build-id 与行号表）；
-  2. `dump_syms symbols/<name>.debug > symbols/<name>.sym`
-     （breakpad 格式符号文件，文件名按 build-id/UUID 归档）。
-- **还原栈**：`minidump-stackwalk <dump> symbols/`（`--symbols` 指定 .sym 搜索
-  目录），输出带 `file:line` 与函数名的调用栈。
+  1. `scripts/extract_symbols.sh <binary> [symbols_dir]`：
+     `objcopy --only-keep-debug`（分离符号归档）→ `dump_syms <bin>` 生成
+     breakpad `.sym` → 按符号服务器布局 `<name>/<debug-id>/<name>.sym`
+     摆放；**原二进制不动**，发布面需要瘦身时另跑 `strip --strip-debug`。
+- **还原栈**：`minidump-stackwalk <dump> --symbols-path symbols/`，输出带
+  `file:line` 与函数名的调用栈。
 - 工具依赖（如实声明，不入仓）：`dump_syms` 与 `minidump-stackwalk` 均为
   rust-minidump 套件，`cargo install dump_syms minidump-stackwalk` 安装。
   （Breakpad 语义的 `.sym` 格式是两者共同的中间格式；不引入 Breakpad 源码。）
+- **nightly 符号包归档（已落地）**：Linux 腿 `cargo install dump_syms`
+  （cargo 由既有 Setup Rust 步提供）后对 `libchirp_core_sdk.so` 与
+  `crashpad_handler` 跑 `extract_symbols.sh`，产
+  `symbols/<arch>/chirp-cpp-symbols-<arch>.tar.gz` **独立成件**（不进主
+  安装包），随 nightly-dist 分支镜像与滚动 Release 归档，manifest 单列
+  `symbols` 组件；静态库无运行时符号面不产。
 
 ## 上传留位（默认关）
 
@@ -125,7 +135,6 @@
 
 ## 范围外（如实）
 
-- `install.sh` / nightly 包含 handler、符号包上库：留 TODO 跟进（打包面
-  独立批次）。
 - 上传端点、多机集中检索、alert 联动：外发面默认关，另批评估。
-- 非 Linux 平台（Windows/macOS/鸿蒙）：本批只做 Linux（与仓内 CI 一致）。
+- 非 Linux 平台（Windows/macOS/鸿蒙）：crashpad 只接 Linux（与仓内 CI
+  一致），darwin/windows 包如实不含 handler。
