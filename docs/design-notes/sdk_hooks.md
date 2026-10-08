@@ -295,7 +295,7 @@ class SqliteMessageStore : public chirp::sdk::MessageStore {
 | 命令 | `CommandHandler` 虚基类 | `ICommandHandler` interface | `CommandHandler` interface | signal | `CommandHandler` abstract class |
 | 存储 | `MessageStore` 虚基类 | `IMessageStore` interface | `MessageStore` interface | Resource | `MessageStore` abstract class |
 
-> C#/TypeScript/Dart 列均已落地（GDScript 列为计划形态，Godot 走 C# 复用路线，见 `docs/sdk/godot.md`）。跨语言内置实现还包括四语言的 `WordFilterInterceptor`（敏感词预检，语义对齐服务端，见 `docs/design-notes/sdk_compatibility.md`）。
+> C#/TypeScript 列均已落地（GDScript 列为计划形态，Godot 走 C# 复用路线，见 `docs/sdk/godot.md`；Dart/Flutter SDK 已随 2026-09-29 移除）。跨语言内置实现还包括 C++/C#/TS 三语言的 `WordFilterInterceptor`（敏感词预检，语义对齐服务端，见 `docs/design-notes/sdk_compatibility.md`）。
 
 ## SDK 注册入口
 

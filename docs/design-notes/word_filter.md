@@ -13,9 +13,10 @@
 | Kotlin (Android 原生) | `apps/android/src/main/kotlin/chirp/mobile/protocol/WordFilter.kt` | 发送侧预检（双门禁共用：JVM make 腿 + Gradle 腿） |
 | Swift (iOS) | `apps/ios/Sources/ChirpProtocol/WordFilter.swift` | 发送侧预检（匹配按 UTF-16 code unit 与 Kotlin 对齐） |
 
-测试对拍约定：各端测试使用**同一组向量**（见各端 `WordFilterTest`，
-Kotlin 版注释标明「与 word_filter_test.dart 同组测试向量对拍」）。改语义先改
-本文，再四处同步实现与向量。
+测试对拍约定：各端测试使用**同一组向量**（Kotlin
+`apps/android/src/test/kotlin/chirp/mobile/protocol/WordFilterTest.kt`、Swift
+`apps/ios/Tests/ChirpProtocolTests/WordFilterTests.swift` 等；Dart/Flutter SDK
+已随 2026-09-29 移除，其 `word_filter_test.dart` 不复存在）。改语义先改本文，再各端同步实现与向量。
 
 ## 算法
 

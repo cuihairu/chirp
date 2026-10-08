@@ -4,7 +4,7 @@ title: Unreal 接入
 
 # Unreal Engine
 
-Unreal 侧的官方支持形态是**插件壳 + native 核心**:`sdks/unreal` 提供 `UChirpClientSubsystem`(GameInstance Subsystem)与 Blueprint 化的事件,协议逻辑(帧、心跳、指数退避重连、KICK 终态、请求超时)全部在 native 核心 `chirp::sdk::ChatClient`(`sdks/core`,与桌面 C++ SDK 同一份代码)里,由 chirp CI 的 `sdk_core_tests` 覆盖(123 例,其中 57 例环回,`tests/unit/sdk_core_test.cc`;走 ctest 与 100% 行覆盖门禁)。
+Unreal 侧的官方支持形态是**插件壳 + native 核心**:`sdks/unreal` 提供 `UChirpClientSubsystem`(GameInstance Subsystem)与 Blueprint 化的事件,协议逻辑(帧、心跳、指数退避重连、KICK 终态、请求超时)全部在 native 核心 `chirp::sdk::ChatClient`(`sdks/core`;桌面 app 不依赖 `sdks/`,app 协议层走 `apps/shared/protocol`)里,由 chirp CI 的 `sdk_core_tests` 覆盖(127 例,其中 57 例环回,`tests/unit/sdk_core_test.cc`;走 ctest 与 100% 行覆盖门禁)。
 
 插件只做两件事:
 
@@ -44,7 +44,7 @@ OnKicked:终态,核心不再自动重连,需重新 Connect + Login
 
 - **没有 OnConnected 事件**(故意的):用 `GetState()` 轮询或等 `OnLoginResult`。
 - **KICK 是终态**:核心不再自动重连,`GetState() == Kicked`,需要重新 `Connect` + `Login`。
-- **端口**:开发拓扑 chat TCP **5000**(WS 5001 是 web/unity 走的入口,Unreal 用 TCP 帧——帧协议与 WS 消息体一致)。
+- **端口**:开发拓扑游戏面网关(game_sdk_gateway)TCP **5000**;WS 5001 是同一网关的 WS 边缘,web/Unity 不走这条(它们连 chat WS 7001)。Unreal 用 TCP 帧——帧协议与 WS 消息体一致。
 - 事件都在游戏线程。
 
 ## Blueprint 用法
@@ -74,6 +74,6 @@ SendChatMessage("peer-7", "hello")
 
 ## 现状与边界
 
-- Unreal 与桌面 C++ 共享 native 核心(`sdks/core`,123 例单测);其余客户端实现为 Unity C#(96 例)与 TS 协议栈(web/小游戏/Cocos/Laya/Godot 经 C#,110 例),移动端为原生双包(Android Kotlin / iOS Swift 壳)。各端语义(sequence 关联、心跳、退避、踢线)逐一对齐,测试矩阵见 [sdks/core/README.md](https://github.com/cuihairu/chirp/tree/main/sdks/core)。
+- Unreal 插件壳消费 native 核心(`sdks/core`,127 例单测);桌面 app 不依赖 `sdks/`,app 协议层在 `apps/shared/protocol`(`@chirp/app-protocol`)。其余客户端实现为 Unity C#(107 例)与 TS 协议栈(web/小游戏/Cocos/Laya/Godot 经 C#,122 例),移动端为原生双包(Android Kotlin / iOS Swift 壳)。各端语义(sequence 关联、心跳、退避、踢线)逐一对齐,测试矩阵见 [sdks/core/README.md](https://github.com/cuihairu/chirp/tree/main/sdks/core)。
 - 每日构建:Actions nightly 的 `daily-build` artifact 打包含 `libchirp_core_sdk` 多平台库与头文件(即本页接入步骤 1/3 需要的 native 产物,未签名),入口见 [SDK 总览](/sdk/)。
 - 语音/组队/社交平面在 Unreal 侧暂无现成封装;可经 native 核心的通用请求接口或 `WatchNotify` 自行扩展。

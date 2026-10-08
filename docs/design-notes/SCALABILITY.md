@@ -98,7 +98,7 @@
 **当前状态：** 已实现 Redis 分布式会话管理
 
 ```cpp
-// gateway/src/redis_session_manager.cc
+// libs/network/redis_session_manager.cc
 // - 每个实例有唯一 instance_id
 // - Redis 存储 user_id -> instance_id 映射
 // - Pub/Sub 机制实现跨实例踢人
@@ -428,17 +428,17 @@ spec:
 ## 下一步工作
 
 1. **立即实施**
-   - [ ] 添加 MessageRouter 组件
-   - [ ] Chat 服务改造支持 Redis Pub/Sub
-   - [ ] 添加服务发现模块
+   - [x] 添加 MessageRouter 组件——已落地（2026-10-08 核实：`libs/network/message_router.{h,cc}`）
+   - [x] Chat 服务改造支持 Redis Pub/Sub——已落地（2026-10-08 核实：`services/shared/chat/src/main_distributed.cc`，CMake target `chirp_chat_distributed`；路由经 Redis Pub/Sub，跨实例踢人在 `libs/network/redis_session_manager.cc`）
+   - [ ] 添加服务发现模块——待做（仓库内未见 consul/etcd 类实现）
 
 2. **短期优化**
-   - [ ] Social/Voice 服务改造
-   - [ ] HAProxy 负载均衡配置
-   - [ ] 健康检查和自动故障转移
+   - [ ] Social/Voice 服务改造——待做
+   - [x] HAProxy 负载均衡配置——已落地（2026-10-08 核实：`deploy/haproxy.cfg`）
+   - [ ] 健康检查和自动故障转移——部分落地（`deploy/haproxy.cfg` 已含 `tcp-check` 健康检查；backup 备节点仍注释未启用）
 
 3. **长期规划**
-   - [ ] Redis Cluster 支持
-   - [ ] MySQL 分库分表
-   - [ ] Kubernetes 部署方案
-   - [ ] 监控和告警系统
+   - [ ] Redis Cluster 支持——部分落地（部署编排 `deploy/k8s/redis-cluster.yaml`（Redis Operator）已落，客户端集群协议接入待做）
+   - [ ] MySQL 分库分表——待做
+   - [x] Kubernetes 部署方案——已落地（2026-10-08 核实：`deploy/k8s/`）
+   - [ ] 监控和告警系统——待做（`tools/benchmark` 已有 `chirp_chat_mysql_exporter` 导出器，整体监控告警未建）

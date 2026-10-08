@@ -4,7 +4,7 @@ title: Cocos Creator 接入
 
 # Cocos Creator
 
-**Cocos Creator 暂无官方 SDK**。chirp 的接入面是纯协议(TCP/WebSocket + Protobuf),与引擎无关,Cocos Creator(TypeScript 项目)按协议直连即可——仓库里的 Web 伴侣 App 就是一份可运行的 TS 参考实现。
+**Cocos Creator 暂无官方 SDK**。chirp 的接入面是纯协议(TCP/WebSocket + Protobuf),与引擎无关,Cocos Creator(TypeScript 项目)按协议直连即可——仓库里的 `sdks/ts` 协议栈就是一份可运行的 TS 参考实现。
 
 ## 接入方式
 
@@ -29,7 +29,7 @@ ws.binaryType = "arraybuffer";
 | `msg_map.ts` | 消息 ID ↔ 请求/响应类型映射表 |
 | `chirp_client.ts` | 客户端状态机(连接/心跳/重连/序列号关联) |
 
-该实现有 110 例 vitest 单测(`*.test.ts`,行覆盖 100%)兜底,语义与 unity 端逐项对齐。
+该实现有 122 例 vitest 单测(`*.test.ts`,行覆盖 99.8%)兜底,语义与 unity 端逐项对齐。
 
 ## 生命周期
 
@@ -55,5 +55,5 @@ connect → LOGIN(1003/1004) → 收发(2001 发送 / 2005 推送) → 心跳(10
 
 ## 现状与边界
 
-- 官方维护的 SDK 只有 Unity(C#)、Unreal(C++ 壳)、Go(服务端)与 C++ 核心;Cocos/LayaAir/微信小游戏按协议接入,TS 层直接复用 web_companion 的协议栈即可。
+- 官方维护的 SDK 只有 Unity(C#)、Unreal(C++ 壳)、Go(服务端)与 C++ 核心;Cocos/LayaAir/微信小游戏按协议接入,TS 层直接复用 `sdks/ts` 协议栈即可。
 - 社交(WS 8001)、语音(WS 9001)、组队(WS 7501)是独立 WS 服务,各开一条连接;按需再接,聊天主链路只需要 chat 一条。

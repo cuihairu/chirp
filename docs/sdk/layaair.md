@@ -21,7 +21,7 @@ ws.binaryType = "arraybuffer";
 2. **protobuf**:用 [protobuf.js](https://github.com/protobufjs/protobuf.js) 加载 `proto/gateway.proto` 编译产物;
 3. **客户端状态机**:登录往返、心跳、重连、KICK 终态。
 
-**参考实现**:仓库 `sdks/ts/src/` 是一份带 110 例 vitest 单测的完整 TS 协议栈(`frame.ts` 帧编解码、`msg_map.ts` 消息映射表、`chirp_client.ts` 状态机,行覆盖 100%),可直接搬进 LayaAir 工程,语义与 unity 端对齐;微信小游戏目标用 `@chirp/protocol/adapters/wx_socket` 的 `createWxSocketFactory(wx)` 作为 ChirpClient 的传输工厂。
+**参考实现**:仓库 `sdks/ts/src/` 是一份带 122 例 vitest 单测的完整 TS 协议栈(`frame.ts` 帧编解码、`msg_map.ts` 消息映射表、`chirp_client.ts` 状态机,行覆盖 99.8%),可直接搬进 LayaAir 工程,语义与 unity 端对齐;微信小游戏目标用 `@chirp/protocol/adapters/wx_socket` 的 `createWxSocketFactory(wx)` 作为 ChirpClient 的传输工厂。
 
 ## 生命周期
 
@@ -45,5 +45,5 @@ connect → LOGIN(1003/1004) → 收发(2001 发送 / 2005 推送) → 心跳(10
 
 ## 现状与边界
 
-- 与 Cocos Creator 同:官方 SDK 只有 Unity/Unreal/Go/C++ 核心,LayaAir 按协议接入,TS 层复用 web_companion 协议栈。
+- 与 Cocos Creator 同:官方 SDK 只有 Unity/Unreal/Go/C++ 核心,LayaAir 按协议接入,TS 层复用 `sdks/ts` 协议栈。
 - 聊天主链路只需要 chat 一条连接;社交(WS 8001)、语音(WS 9001)、组队(WS 7501)独立服务,按需再接。

@@ -61,7 +61,8 @@ Chirp 目前是“可运行的核心通信骨架 + 一批实验性扩展”，�
 | Chat | TCP 7000 / WS 7001 | Supported | 私聊、历史、离线队列（offline queue）；依赖满足时构建增强存储路径 |
 | Server Gateway | TCP 8100 | Experimental | 服务平面枢纽：游戏服出站长连接（persistent connection）+ `service_id`+secret 凭证，消息注入、事件离线排队重投，见[服务器平面](/server_plane) |
 | NPC Dialog | 无监听端口 | Experimental | 纯服务器平面客户端：消费 `npc.player_message` 事件，按关键词规则回复并注入 chat，见[服务器平面](/server_plane) |
+| Search | TCP 5007 | Supported | 消息搜索：SQLite FTS5 索引，2248/2249 复合游标分页；两个 SDK gateway 经 `--search_host` 转发（降级不踢） |
 
 ## 关键边界
 
-当前架构对“游戏聊天后端骨架、本地验证、协议接入和二次开发”是合理的。它还不是生产级统一通信平台：`gateway` 尚未转发聊天等业务包，`chat` 仍是独立接入口，服务器平面的注入链路已在回环级打通（chat 侧消费注入消息，NPC 对话环路有进程级冒烟测试 `--smoke-npc`），部分高级能力缺少统一会话和验证链路。
+当前架构对“游戏聊天后端骨架、本地验证、协议接入和二次开发”是合理的。它还不是生产级统一通信平台：SDK gateway 配置 `--chat_host` 后将聊天业务包(2xxx)经每客户端管道转发给 chat（chat 侧重放登录鉴权），2248 检索包可经 `--search_host`（默认 5007）转发 search 服务，social/voice 等平面仍各自独立接入；服务器平面的注入链路已在回环级打通（chat 侧消费注入消息，NPC 对话环路有进程级冒烟测试 `--smoke-npc`），部分高级能力缺少统一会话和验证链路。

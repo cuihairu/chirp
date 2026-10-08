@@ -155,12 +155,18 @@ kubectl scale deployment chirp-chat -n chirp --replicas=5
 export CHIRP_REDIS_HOST=redis-cluster
 export CHIRP_REDIS_PORT=6379
 
-# 实例配置
-export CHIRP_INSTANCE_ID=chat_$(hostname)
+# 消息存储(MySQL)配置(见 services/shared/chat/src/message_store_config.cc)
+export CHIRP_MYSQL_HOST=mysql
+export CHIRP_MYSQL_PORT=3306
+export CHIRP_MYSQL_DATABASE=chirp
+export CHIRP_MYSQL_USER=chirp
+export CHIRP_MYSQL_PASSWORD=changeme
 
-# 日志级别
-export CHIRP_LOG_LEVEL=info
+# 历史消息迁移
+export CHIRP_MIGRATION_ENABLED=1
 ```
+
+> 注:实例 ID 无对应环境变量,用 Chat 服务启动参数 `--instance_id` 指定(缺省随机生成 `chat_<hex>`),见 `services/shared/chat/src/main_distributed.cc`。
 
 ---
 
@@ -201,13 +207,13 @@ nc localhost 5000
 ### 使用测试客户端
 
 ```bash
-# 编译测试客户端
-cd tools/benchmark
-make
+# 编译测试客户端(随主工程 CMake 构建,目标名带 chirp_ 前缀)
+cmake -S . -B build-rel -DCMAKE_BUILD_TYPE=Release
+cmake --build build-rel --target chirp_chat_send_client
 
 # 测试多个用户连接
 for i in {1..100}; do
-    ./chat_send_client --host localhost --port 7000 --user user_$i &
+    ./build-rel/tools/benchmark/chirp_chat_send_client --host localhost --port 7000 --user user_$i &
 done
 ```
 

@@ -6,7 +6,7 @@ title: 服务端 SDK
 
 游戏后端(trade、matchmaking、NPC 引擎等)不扮演玩家,而是以**服务身份**接入 chirp 的服务器平面:出站长连接(dial-out,游戏服不暴露端口)、`service_id` + 共享 secret 过信任门,然后向 chat 注入非玩家消息(SYSTEM/NPC/SERVICE)、向其他服务发布可靠事件。
 
-wire 契约见 `proto/server_gateway.proto`,完整接入语义(凭证、注入、事件、幂等键)见[服务器平面](/server_plane)。
+wire 契约见 `proto/game_server_gateway.proto`,完整接入语义(凭证、注入、事件、幂等键)见[服务器平面](/server_plane)。
 
 ## 连接拓扑(重要)
 
@@ -19,7 +19,7 @@ wire 契约见 `proto/server_gateway.proto`,完整接入语义(凭证、注入�
 
 ## Go(官方 SDK)
 
-`sdks/go` 是官方维护的 Go 参考客户端,语义逐项对齐 C++ 参考实现 `libs/network/server_gateway_peer.cc`,CI(`go-sdk.yml`)用 31 例进程内 fake-hub 环回单测 + proto/go 重生成漂移检查 + `go vet` + `-race` 兜底;client.go 语句覆盖 100%(批 3026896 后,不可自然触发的 2 臂经注入/竞态用例覆盖)。
+`sdks/go` 是官方维护的 Go 参考客户端,语义逐项对齐 C++ 参考实现 `libs/network/server_gateway_peer.cc`,CI(`go-sdk.yml`)用 33 例进程内 fake-hub 环回单测 + proto/go 重生成漂移检查 + `go vet` + `-race` 兜底;client.go 语句覆盖 100%(批 3026896 后,不可自然触发的 2 臂经注入/竞态用例覆盖)。
 
 能力面:
 
@@ -53,7 +53,7 @@ c.InjectMessage(ctx, &pbsg.MessageInjectRequest{
 
 ## Node.js
 
-**暂无官方 SDK**,按 `server_gateway.proto` 直接接入:Node 的 `net` 模块建 TCP 长连接,自己实现三层——帧编解码(`[uint32_be][Packet]`)、protobuf(`protobufjs` 加载 `proto/server_gateway.proto`)、状态机(首帧 `SERVER_AUTH_REQ`、心跳、sequence 关联、断线重连、事件 ack)。
+**暂无官方 SDK**,按 `game_server_gateway.proto` 直接接入:Node 的 `net` 模块建 TCP 长连接,自己实现三层——帧编解码(`[uint32_be][Packet]`)、protobuf(`protobufjs` 加载 `proto/game_server_gateway.proto`)、状态机(首帧 `SERVER_AUTH_REQ`、心跳、sequence 关联、断线重连、事件 ack)。
 
 要点:
 
@@ -63,7 +63,7 @@ c.InjectMessage(ctx, &pbsg.MessageInjectRequest{
 
 ## Lua
 
-**暂无官方 SDK**。skynet 等常见游戏服框架按协议接入,要点与 Node.js 相同:TCP 长连接 + `SERVER_AUTH_REQ` 首帧 + 帧编解码 + 心跳 + ack。Lua 侧可用 `lua-protobuf` / `pb` 库处理 `server_gateway.proto`。
+**暂无官方 SDK**。skynet 等常见游戏服框架按协议接入,要点与 Node.js 相同:TCP 长连接 + `SERVER_AUTH_REQ` 首帧 + 帧编解码 + 心跳 + ack。Lua 侧可用 `lua-protobuf` / `pb` 库处理 `game_server_gateway.proto`。
 
 ## Python
 
@@ -73,7 +73,7 @@ c.InjectMessage(ctx, &pbsg.MessageInjectRequest{
 
 - 服务器平面契约(凭证模型、注入语义、事件、跨平面回复):[服务器平面](/server_plane)
 - 玩家身份绑定 / 频道订阅 / 统一未读的 RPC 全表:`docs/server_plane.md` 对应章节
-- `proto/server_gateway.proto`(仓内)定义全部请求/响应消息
+- `proto/game_server_gateway.proto`(仓内)定义全部请求/响应消息
 - NPC 对话(注入通道的消费方示例):[NPC 对话系统](/design-notes/npc_dialog_system)
 
 ## 现状与边界

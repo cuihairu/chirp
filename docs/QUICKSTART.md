@@ -18,7 +18,12 @@ ctest --preset dev
 ./test_services.sh --smoke-chat
 ./test_services.sh --smoke-sdk
 ./test_services.sh --smoke-npc
+./test_services.sh --smoke-edge
+./test_services.sh --smoke-jwt
 ./test_services.sh --smoke-redis
+./test_services.sh --smoke-game
+./test_services.sh --smoke-voice
+./test_services.sh --smoke-party
 ```
 
 启用非核心服务前,先读 [Core](./CORE.md) 和 [Capability Matrix(能力矩阵)](./CAPABILITY_MATRIX.md)。

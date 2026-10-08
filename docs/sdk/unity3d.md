@@ -58,9 +58,9 @@ scaffold 网关直接 `LoginAsync(userId, deviceId)`;对接 JWT 认证(`app_auth
 
 | 平面 | 消息段 | 入口 |
 | --- | --- | --- |
-| 聊天 | 2001-2234 | chat WS 7001 |
+| 聊天 | 2001-2249 | chat WS 7001 |
 | 社交(好友/拉黑/在线状态) | 3001-3024 | social WS 8001(第二连接) |
-| 语音(WebRTC 信令) | 4001-4020 | voice WS 9001(第二连接) |
+| 语音(WebRTC 信令) | 4001-4021 | voice WS 9001(第二连接) |
 | 组队 | 7001-7027 | party WS 7501(第二连接) |
 | 设备推送注册 | 6001-6008 | app_gateway WS 5201(第二连接) |
 
@@ -75,7 +75,7 @@ scaffold 网关直接 `LoginAsync(userId, deviceId)`;对接 JWT 认证(`app_auth
 
 ## 现状与边界
 
-- CI(`.github/workflows/unity-sdk.yml`)用 .NET 10 跑 `dotnet/ChirpSdkTests` 单测套件,当前 **96 例**全绿:帧编解码、序列号关联、超时、踢线终态、心跳回声、重连生命周期、钩子接线、FileMessageStore、敏感词预检,外加边缘故障注入(钩子抛异常容错、陈旧 transport 替换、畸形帧/PONG/踢线垃圾 body、损坏日志回放)与 `ClientWebSocketTransport` 对回环真实 WebSocket 的传输测试(分片聚合、17MB 上限、双向关闭握手);并校验 `proto/csharp` 无漂移。
-- 覆盖率口径:coverlet cobertura 剔除 `proto/csharp` 生成代码后按文件行去重,运行时行覆盖 **97.8%**(1393/1425);残余缺口集中在 `ChirpTransport.cs` 的 OS 级 socket 异常路径。
+- CI(`.github/workflows/unity-sdk.yml`)用 .NET 10 跑 `dotnet/ChirpSdkTests` 单测套件,当前 **107 例**全绿:帧编解码、序列号关联、超时、踢线终态、心跳回声、重连生命周期、钩子接线、FileMessageStore、敏感词预检,外加边缘故障注入(钩子抛异常容错、陈旧 transport 替换、畸形帧/PONG/踢线垃圾 body、损坏日志回放)与 `ClientWebSocketTransport` 对回环真实 WebSocket 的传输测试(分片聚合、17MB 上限、双向关闭握手);并校验 `proto/csharp` 无漂移。
+- 覆盖率口径:coverlet cobertura 剔除 `proto/csharp` 生成代码后按文件行去重,运行时行覆盖 **89.2%**(1436/1609);残余缺口集中在 `ChirpTransport.cs` 的 OS 级 socket 异常路径。
 - Unity 侧不从每日构建分发(SDK 以源码集成,见上文接入方式);native C++ core 的每日产物见 [Unreal](/sdk/unreal)。
 - 社交/组队的高级封装(好友面板、组队大厅之类 UI 组件)尚未提供,按游戏需求再补;iOS/Android 原生构建脚本属于旧桥方案,已随桥一并移除。

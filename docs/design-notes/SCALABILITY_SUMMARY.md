@@ -165,10 +165,10 @@ kubectl scale deployment chirp-chat --replicas=5
 ## 下一步工作
 
 ### 立即可做
-1. [添加 `MessageRouter` 组件]
-2. [改造 Chat 服务支持分布式]
-3. [创建 HAProxy 负载均衡配置]
-4. [创建 Kubernetes 部署文件]
+1. [x] 添加 `MessageRouter` 组件——已落地（2026-10-08 核实：`libs/network/message_router.{h,cc}`）
+2. [x] 改造 Chat 服务支持分布式——已落地（2026-10-08 核实：`services/shared/chat/src/main_distributed.cc`，CMake target `chirp_chat_distributed`）
+3. [x] 创建 HAProxy 负载均衡配置——已落地（2026-10-08 核实：`deploy/haproxy.cfg`）
+4. [x] 创建 Kubernetes 部署文件——已落地（2026-10-08 核实：`deploy/k8s/`）
 
 ### 短期优化
 1. [Social/Voice 服务改造]
@@ -189,8 +189,8 @@ kubectl scale deployment chirp-chat --replicas=5
 
 | 文件 | 说明 |
 |------|------|
-| `docs/SCALABILITY.md` | 扩展性设计文档 |
-| `docs/SCALABILITY_CHAT_IMPLEMENTATION.md` | Chat 服务改造实现 |
+| `docs/design-notes/SCALABILITY.md` | 扩展性设计文档 |
+| `docs/design-notes/SCALABILITY_CHAT_IMPLEMENTATION.md` | Chat 服务改造实现 |
 | `libs/network/message_router.h/cc` | 消息路由器组件 |
 | `deploy/haproxy.cfg` | HAProxy 负载均衡配置 |
 | `deploy/k8s/gateway-deployment.yaml` | Gateway K8s 部署 |

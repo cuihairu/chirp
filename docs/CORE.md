@@ -13,7 +13,8 @@
 | Chat | TCP 7000 / WS 7001 | Supported | 私聊、群组、历史、离线队列,可选的 Redis/MySQL 增强路径 |
 | Server Gateway | TCP 8100 | Experimental | 可信服务面枢纽:游戏后端用 `service_id` + secret 认证,注入系统/NPC 消息,并接收排队到 ack 为止的事件 |
 | NPC Dialog | 无监听 | Experimental | server plane 客户端:用关键词规则回复 `npc.player_message` 事件,并把回复注回 chat(见 [server_plane.md](./server_plane.md)) |
-| Notification | TCP 5006 / WS 5016 | Experimental | 设备注册表与推送面(6xxx);provider HTTP 投递目前是记日志的 `PushTransport` 占位 |
+| Search | TCP 5007 | Supported | 消息搜索:SQLite FTS5 索引,2248/2249 复合游标分页;两个 SDK gateway 配 `--search_host`(默认 5007)转发,降级不踢 |
+| Notification | TCP 5006 / WS 5016 | Experimental | 设备注册表与推送面(6xxx);provider 投递默认记日志(`--push_transport logging`),`--push_transport http` 打开真实 HTTP(S) provider POST(`HttpPushTransport`,https 端点 TLS 1.2+ 证书校验;APNs 官方端点要求 HTTP/2,生产部署需前置协议转换) |
 | App Gateway | TCP 5200 / WS 5201 | Experimental | 伴侣应用边缘:登录/心跳/会话绑定,外加设备消息转发到 Notification(仅限已认证会话)。今天只有连接骨架——目标是**玩家聚合面**:一个玩家身份关联多个游戏(跨游戏频道订阅、聚合的游戏内聊天、跨游戏语音组队);见 [architecture.md](./architecture.md) 的"Game-facing plane vs player aggregation plane" |
 
 最小可用拓扑:
@@ -44,8 +45,8 @@ graph TD
 
 - 登录、登出、心跳和会话级校验走 `gateway`。
 - 私聊和历史直接走 `chat`。
-- 不要假设 `gateway` 会转发任意业务包——还不能。
-- 不要假设 Gateway 登录成功就自动认证了一条独立的 Chat 连接——两回事。
+- SDK gateway 配置 `--chat_host` 后把客户端 2xxx 业务包经每客户端 `ServiceBridge` 管道逐帧转发给 chat(chat 侧重放登录鉴权;chat 桥断开按既有语义踢下线)。2248 在 2xxx 通配前先行拦截:配置 `--search_host`(默认 5007)转发 search 服务,search 桥失败降级回 `SERVER_UNAVAILABLE` 不踢客户端,未配置时落回 chat 通配。
+- social(3xxx)/voice(4xxx) 不在转发路径;未配置 `--chat_host` 时 2xxx 不转发。gateway 登录与 chat 侧鉴权是两道独立的门。
 - 游戏面(game plane)和应用面(app plane)是两套独立系统:各自有自己的 chat(`game_chat` / `app_chat`,同一二进制、分开部署)和自己的边缘。游戏面自洽:游戏后端签发 token,`game_chat` 本地校验(`--token_secret`),不依赖外部 auth。应用面有自己的 auth(`app_auth`)。跨面通信是 chat 的内建能力:`game_chat` 用原生 peer 注册协议(带白名单与版本协商)注册进 `app_chat`——见 [architecture.md](./architecture.md)。
 - Redis 和 MySQL 路径一律视为可选增强,除非部署明确启用。
 
@@ -143,16 +144,16 @@ peer 是游戏后端和内部服务,以 `service_id` + secret 认证——从来
 
 | Packet 的 `msg_id` | Packet 的 `body` |
 | --- | --- |
-| `SERVER_AUTH_REQ` | `chirp.server_gateway.ServerAuthRequest`(服务认证请求) |
-| `SERVER_AUTH_RESP` | `chirp.server_gateway.ServerAuthResponse`(服务认证应答) |
-| `SERVER_HEARTBEAT_PING` / `PONG` | `chirp.server_gateway.ServerHeartbeatPing` / `Pong`(服务心跳请求/应答) |
-| `INJECT_MESSAGE_REQ` | `chirp.server_gateway.MessageInjectRequest`(消息注入请求) |
-| `INJECT_MESSAGE_RESP` | `chirp.server_gateway.MessageInjectResponse`(消息注入应答) |
-| `INJECT_MESSAGE_NOTIFY` | `chirp.server_gateway.InjectMessageNotify`(注入通知,hub -> chat) |
-| `EVENT_PUBLISH_REQ` | `chirp.server_gateway.EventPublishRequest`(事件发布请求) |
-| `EVENT_PUBLISH_RESP` | `chirp.server_gateway.EventPublishResponse`(事件发布应答) |
-| `EVENT_DELIVER_NOTIFY` | `chirp.server_gateway.EventDeliverNotify`(事件投递通知,hub -> 目标服务) |
-| `EVENT_ACK_REQ` / `RESP` | `chirp.server_gateway.EventAckRequest` / `Response`(事件确认请求/应答) |
+| `SERVER_AUTH_REQ` | `chirp.game_server_gateway.ServerAuthRequest`(服务认证请求) |
+| `SERVER_AUTH_RESP` | `chirp.game_server_gateway.ServerAuthResponse`(服务认证应答) |
+| `SERVER_HEARTBEAT_PING` / `PONG` | `chirp.game_server_gateway.ServerHeartbeatPing` / `Pong`(服务心跳请求/应答) |
+| `INJECT_MESSAGE_REQ` | `chirp.game_server_gateway.MessageInjectRequest`(消息注入请求) |
+| `INJECT_MESSAGE_RESP` | `chirp.game_server_gateway.MessageInjectResponse`(消息注入应答) |
+| `INJECT_MESSAGE_NOTIFY` | `chirp.game_server_gateway.InjectMessageNotify`(注入通知,hub -> chat) |
+| `EVENT_PUBLISH_REQ` | `chirp.game_server_gateway.EventPublishRequest`(事件发布请求) |
+| `EVENT_PUBLISH_RESP` | `chirp.game_server_gateway.EventPublishResponse`(事件发布应答) |
+| `EVENT_DELIVER_NOTIFY` | `chirp.game_server_gateway.EventDeliverNotify`(事件投递通知,hub -> 目标服务) |
+| `EVENT_ACK_REQ` / `RESP` | `chirp.game_server_gateway.EventAckRequest` / `Response`(事件确认请求/应答) |
 
 状态:Experimental——处理器与 chat 侧对 `INJECT_MESSAGE_NOTIFY` 的消费已有单测
 验证,NPC 闭环另有进程级 E2E 冒烟(`./test_services.sh --smoke-npc`)。事件是
@@ -166,15 +167,16 @@ peer 是游戏后端和内部服务,以 `service_id` + secret 认证——从来
 
 | Packet 的 `msg_id` | Packet 的 `body` |
 | --- | --- |
-| `REGISTER_DEVICE_REQ` / `RESP` | `chirp.notification.RegisterDeviceRequest` / `RegisterDeviceResponse`(设备注册请求/应答) |
-| `UNREGISTER_DEVICE_REQ` / `RESP` | `chirp.notification.UnregisterDeviceRequest` / `UnregisterDeviceResponse`(设备注销请求/应答) |
-| `UPDATE_DEVICE_TOKEN_REQ` / `RESP` | `chirp.notification.UpdateDeviceTokenRequest` / `UpdateDeviceTokenResponse`(推送 token 更新请求/应答) |
-| `GET_USER_DEVICES_REQ` / `RESP` | `chirp.notification.GetUserDevicesRequest` / `GetUserDevicesResponse`(用户设备列表查询请求/应答) |
-| `PUSH_NOTIFICATION_REQ` / `RESP` | `chirp.notification.PushNotificationRequest` / `PushNotificationResponse`(推送请求/应答) |
+| `REGISTER_DEVICE_REQ` / `RESP` | `chirp.app_notification.RegisterDeviceRequest` / `RegisterDeviceResponse`(设备注册请求/应答) |
+| `UNREGISTER_DEVICE_REQ` / `RESP` | `chirp.app_notification.UnregisterDeviceRequest` / `UnregisterDeviceResponse`(设备注销请求/应答) |
+| `UPDATE_DEVICE_TOKEN_REQ` / `RESP` | `chirp.app_notification.UpdateDeviceTokenRequest` / `UpdateDeviceTokenResponse`(推送 token 更新请求/应答) |
+| `GET_USER_DEVICES_REQ` / `RESP` | `chirp.app_notification.GetUserDevicesRequest` / `GetUserDevicesResponse`(用户设备列表查询请求/应答) |
+| `PUSH_NOTIFICATION_REQ` / `RESP` | `chirp.app_notification.PushNotificationRequest` / `PushNotificationResponse`(推送请求/应答) |
 
 6011+ 的 id 预留(角标 / 静默 / 偏好设置)。provider HTTP 投递(APNs HTTP/2 /
-FCM HTTP)藏在 `PushTransport` 接缝后面,当前由日志占位支撑;chat 只在默认
-`chirp_chat` 构建中经这个面为离线消息入队推送。
+FCM HTTP)藏在 `PushTransport` 接缝后面,默认日志传输,`--push_transport http`
+切真实 HTTP(S) 投递;chat 的三个 main 构建(默认 / distributed / MySQL 增强)
+都经这个面为离线消息入队推送。
 
 ## 本地验证
 
@@ -185,7 +187,7 @@ cmake --build --preset dev
 ctest --preset dev
 ```
 
-行覆盖(重建 `build-cov`,跑全部套件,任一包低于 98% 即失败):
+行覆盖(重建 `build-cov`,跑全部套件,任一包低于 100%(登记豁免除外)即失败):
 
 ```bash
 scripts/run_coverage.sh
@@ -201,6 +203,9 @@ scripts/run_coverage.sh
 ./test_services.sh --smoke-edge
 ./test_services.sh --smoke-jwt
 ./test_services.sh --smoke-redis
+./test_services.sh --smoke-game
+./test_services.sh --smoke-voice
+./test_services.sh --smoke-party
 ```
 
 用 Docker Compose:
@@ -217,13 +222,12 @@ docker compose up --build
 
 - `services/social`(社交)
 - `services/voice`(语音)
-- `services/notification`(通知)
-- `services/search`(搜索)
+- `services/app/notification`(通知)
 - `services/game/server_gateway`(协议已单测验证,含 chat 侧注入消费;NPC 对话闭环有进程级冒烟)
 - `sdks/core`, `sdks/unity`, `sdks/unreal`(各端 SDK)
 - `apps/android` / `apps/ios`(原生移动端协议核;2026-09-29 起替代已移除的 Flutter 应用 `apps/mobile_companion`)
 - `apps/admin_dashboard`(管理后台)
-- NPC 对话系统设计(`services/npc_dialog` 落地的关键词规则服务范围更窄;设计笔记描述的是更完整的愿景)
+- NPC 对话系统设计(`services/game/npc_dialog` 落地的关键词规则服务范围更窄;设计笔记描述的是更完整的愿景)
 - 分布式聊天的替代目标与可扩展性示例
 
 现状以 [能力矩阵](./CAPABILITY_MATRIX.md) 为准。

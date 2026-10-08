@@ -70,8 +70,9 @@ git clone https://github.com/Microsoft/vcpkg.git C:\vcpkg
 .\vcpkg\bootstrap-vcpkg.bat
 .\vcpkg\integrate install
 
-# Install dependencies
-vcpkg install protobuf absl openssl libmariadb redis-plus asio
+# 依赖走仓库根的 vcpkg.json manifest 模式(protobuf、abseil、libsodium、
+# libmariadb、openssl、asio、sqlite3[fts5 内建]),CMake 配置时自动安装,
+# 不需要手工 vcpkg install 清单。
 ```
 
 ## 从源码构建
@@ -97,15 +98,15 @@ chmod +x gen_proto.sh
 ```bash
 mkdir build && cd build
 
-# Debug build
+# Debug build(VCPKG_ROOT 指向 vcpkg 检出目录,如 Windows 上的 C:\vcpkg)
 cmake -G Ninja -DCMAKE_BUILD_TYPE=Debug \
     -DENABLE_TESTS=ON \
-    -DCMAKE_TOOLCHAIN_FILE=../vcpkg/scripts/buildsystems/vcpkg.cmake ..
+    -DCMAKE_TOOLCHAIN_FILE=$VCPKG_ROOT/scripts/buildsystems/vcpkg.cmake ..
 
 # Release build
 cmake -G Ninja -DCMAKE_BUILD_TYPE=Release \
     -DENABLE_TESTS=OFF \
-    -DCMAKE_TOOLCHAIN_FILE=../vcpkg/scripts/buildsystems/vcpkg.cmake ..
+    -DCMAKE_TOOLCHAIN_FILE=$VCPKG_ROOT/scripts/buildsystems/vcpkg.cmake ..
 ```
 
 ### 4. 构建
@@ -211,7 +212,7 @@ redis-cli ping
 # Test all services at once
 ./build/apps/load_tester/chirp_load_tester \
     --connections 100 \
-    --messages 1000 \
+    --msg-per-sec 20 \
     --duration 60
 ```
 

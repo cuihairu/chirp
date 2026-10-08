@@ -218,6 +218,7 @@ SDK 引擎兼容性见 [SDK 引擎兼容性](docs/design-notes/sdk_compatibility
 - [x] 设计并集成 logo
 - [x] CAPABILITY_MATRIX.md 更新服务名和路径（2026-09-22：`chirp_game_sdk_gateway` / `chirp_app_auth` / `chirp_app_sdk_gateway` / `chirp_app_notification` / `chirp_game_server_gateway` 全部对齐，补充二进制命名约定段）
 - [x] 补充 peer 注册协议的详细文档（2026-09-22：新增 `docs/api/peer_protocol.md`，覆盖握手、字段、错误码、能力位、白名单、CLI、部署示例与实现状态；vitepress sidebar 与 architecture.md 已交叉引用）
+- [x] 文档与源码一致性审计(2026-10-08 批次,按《文档与源码一致性审计规范》五路切片并行对码):README+根级四文档、API 面、architecture/guide 面、docs/sdk 八页、design-notes 十三篇,约 900 条主张逐条 file:line 取证,差异 91 条(P0×3、P1×40、P2×48;超前 2/缺失 16/不符 73)全部以源码为真相修复——P0:API.md 网关转发描述与码相反、deployment.md search「尚未接线」、integration-pitfalls.md enhanced 编辑面误标 basic-only。审计表落 `docs/审计-文档一致性.md`(三类差异+证据+修法+范围外注记)。
 
 ## 覆盖率缺口审计（2026-09-27 批次，#4）
 
