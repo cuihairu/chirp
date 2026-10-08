@@ -215,14 +215,14 @@ public class ChirpClientGlueTests
         await client.ConnectAsync();
 
         var pending = client.SearchMessagesAsync("needle", channelId: "c1",
-            contentTypes: new[] { Chirp.Chat.MsgType.Text }, beforeTimestamp: 1234,
+            contentTypes: new[] { (int)Chirp.Chat.MsgType.Text }, beforeTimestamp: 1234,
             beforeMessageId: "m-10", limit: 5);
         var request = transport.LastSentPacket();
         Assert.Equal(MsgID.SearchMessageReq, request.MsgId);
         var req = Chirp.Chat.SearchMessageRequest.Parser.ParseFrom(request.Body);
         Assert.Equal("needle", req.Keyword);
         Assert.Equal("c1", req.ChannelId);
-        Assert.Equal(new[] { Chirp.Chat.MsgType.Text }, req.ContentTypes);
+        Assert.Equal(new[] { (int)Chirp.Chat.MsgType.Text }, req.ContentTypes);
         Assert.Equal(1234, req.BeforeTimestamp);
         Assert.Equal("m-10", req.BeforeMessageId);
         Assert.Equal(5, req.Limit);
