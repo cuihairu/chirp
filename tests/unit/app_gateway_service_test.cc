@@ -460,19 +460,19 @@ class AppGatewayServiceTest : public ::testing::Test {
   std::shared_ptr<chirp::network::SessionRegistry> state_ =
       std::make_shared<chirp::network::SessionRegistry>();
   std::shared_ptr<MockSession> session_ = std::make_shared<MockSession>();
-  // Lives on the fixture so chat-bridge tests can pump it through WaitForIo;
-  // the bridge is created on demand via AttachChatBridge().
+  // Lives on the fixture so service-bridge tests can pump it through
+  // WaitForIo; the bridge is created on demand via AttachServiceBridge().
   asio::io_context io_;
-  std::unique_ptr<chirp::gateway::ChatBridge> bridge_;
+  std::unique_ptr<chirp::gateway::ServiceBridge> bridge_;
 
-  // Points the edge's chat pipeline at a loopback fake chat server. The
+  // Points the edge's chat pipeline at a loopback fake backend. The
   // handshake result codes are scriptable (default both OK); the returned
   // server outlives the bridge (destructor order in the fixture).
-  chirp_test::FakeChatServer& AttachChatBridge(
+  chirp_test::FakeChatServer& AttachServiceBridge(
       chirp::common::ErrorCode auth_code = chirp::common::OK,
       chirp::common::ErrorCode login_code = chirp::common::OK) {
     chat_ = std::make_unique<chirp_test::FakeChatServer>(auth_code, login_code);
-    bridge_ = std::make_unique<chirp::gateway::ChatBridge>(io_, "127.0.0.1", chat_->port(),
+    bridge_ = std::make_unique<chirp::gateway::ServiceBridge>(io_, "127.0.0.1", chat_->port(),
                                                            "app_gateway", "edge-secret");
     return *chat_;
   }
@@ -480,18 +480,18 @@ class AppGatewayServiceTest : public ::testing::Test {
   // auth=null: the scaffold login path (no auth service configured).
   void SendFrame(chirp::gateway::MsgID id, int64_t seq, const std::string& body,
                  chirp::network::ServerGatewayPeer* sg = nullptr,
-                 chirp::gateway::ChatBridge* bridge = nullptr) {
+                 chirp::gateway::ServiceBridge* bridge = nullptr) {
     HandleClientPacket(session_, MakePacket(id, seq, body).SerializeAsString(),
-                       state_, nullptr, nullptr, nullptr, sg, bridge);
+                       state_, nullptr, nullptr, nullptr, sg, bridge, nullptr);
   }
 
   // Scaffold-login `user` on `session` and return the assigned session_id.
   std::string Login(const std::shared_ptr<MockSession>& session, const std::string& user,
-                    chirp::gateway::ChatBridge* bridge = nullptr) {
+                    chirp::gateway::ServiceBridge* bridge = nullptr) {
     chirp::auth::LoginRequest req;
     req.set_token(user);
     HandleClientPacket(session, MakePacket(chirp::gateway::LOGIN_REQ, 1, req.SerializeAsString()).SerializeAsString(),
-                       state_, nullptr, nullptr, nullptr, nullptr, bridge);
+                       state_, nullptr, nullptr, nullptr, nullptr, bridge, nullptr);
     chirp::auth::LoginResponse resp;
     EXPECT_FALSE(session->sent.empty());
     if (!session->sent.empty()) {
@@ -561,7 +561,7 @@ TEST_F(AppGatewayServiceTest, ReLoginKicksPreviousSession) {
 
   // The kicked session keeps its registration until the connection actually
   // closes; disconnect is what releases it.
-  HandleDisconnect(s1, state_, nullptr, nullptr);
+  HandleDisconnect(s1, state_, nullptr, nullptr, nullptr);
   EXPECT_TRUE(chirp::network::GetAuthenticatedSession(state_, s1).user_id.empty());
   // s2 must be untouched by s1's disconnect.
   EXPECT_EQ(chirp::network::GetAuthenticatedSession(state_, s2).user_id, "alice");
@@ -653,7 +653,7 @@ TEST_F(AppGatewayServiceTest, ChatBusinessPacketIgnoredWithoutBridge) {
 }
 
 TEST_F(AppGatewayServiceTest, ChatBusinessPacketIgnoredWhenUnauthenticated) {
-  AttachChatBridge();
+  AttachServiceBridge();
   // Bridge configured but the client never logged in: still ignored, and
   // nothing reaches chat (the pipeline only carries authenticated traffic).
   SendFrame(chirp::gateway::SEND_MESSAGE_REQ, 5, "", nullptr, bridge_.get());
@@ -707,7 +707,7 @@ TEST_F(AppGatewayServiceTest, RegisterDeviceForwardedWithPinnedUserId) {
 
   HandleClientPacket(session_,
                      MakePacket(chirp::gateway::REGISTER_DEVICE_REQ, 9, req.SerializeAsString()).SerializeAsString(),
-                     state_, nullptr, nullptr, notification.get(), nullptr, nullptr);
+                     state_, nullptr, nullptr, notification.get(), nullptr, nullptr, nullptr);;
 
   // The response delivery is posted to the main io_context; pump until the
   // REGISTER_DEVICE_RESP frame lands. Waiting on sent.empty() is wrong here:
@@ -757,7 +757,7 @@ TEST_F(AppGatewayServiceTest, UpdateDeviceTokenForwardedByDeviceIdOnly) {
 
   HandleClientPacket(session_,
                      MakePacket(chirp::gateway::UPDATE_DEVICE_TOKEN_REQ, 10, req.SerializeAsString()).SerializeAsString(),
-                     state_, nullptr, nullptr, notification.get(), nullptr, nullptr);
+                     state_, nullptr, nullptr, notification.get(), nullptr, nullptr, nullptr);;
 
   // Same specific-frame wait as the register test: sent.empty() is already
   // false from the login response.
@@ -842,7 +842,7 @@ TEST_F(AppGatewayServiceTest, SubscriptionForwardedWithPinnedPlayerId) {
   HandleClientPacket(session_,
                      MakePacket(chirp::gateway::SUBSCRIBE_PLAYER_CHANNEL_REQ, 11,
                                 req.SerializeAsString()).SerializeAsString(),
-                     state_, nullptr, nullptr, nullptr, sg.get(), nullptr);
+                     state_, nullptr, nullptr, nullptr, sg.get(), nullptr, nullptr);;
 
   // The hub's OK response (with the minted id) must reach the session. Wait
   // on the specific response frame, not on sent.empty(): the login response
@@ -911,7 +911,7 @@ TEST_F(AppGatewayServiceTest, GamePresenceForwardedWithPinnedPlayerId) {
   HandleClientPacket(session_,
                      MakePacket(chirp::gateway::SET_GAME_PRESENCE_ENABLED_REQ, 21,
                                 set_req.SerializeAsString()).SerializeAsString(),
-                     state_, nullptr, nullptr, nullptr, sg.get(), nullptr);
+                     state_, nullptr, nullptr, nullptr, sg.get(), nullptr, nullptr);;
   // Wait on the specific response frame, not on sent.empty(): the login
   // response is already sitting there (the same trap the subscription test
   // documents), and frames arrive length-prefixed so they must be decoded.
@@ -936,7 +936,7 @@ TEST_F(AppGatewayServiceTest, GamePresenceForwardedWithPinnedPlayerId) {
   HandleClientPacket(session_,
                      MakePacket(chirp::gateway::GET_GAME_PRESENCE_REQ, 22,
                                 get_req.SerializeAsString()).SerializeAsString(),
-                     state_, nullptr, nullptr, nullptr, sg.get(), nullptr);
+                     state_, nullptr, nullptr, nullptr, sg.get(), nullptr, nullptr);;
   const auto got_presence = [&] {
     for (const auto& framed : session_->sent) {
       Packet p;
@@ -1001,7 +1001,7 @@ TEST_F(AppGatewayServiceTest, UnreadMarkForwardedWithPinnedPlayerId) {
   HandleClientPacket(session_,
                      MakePacket(chirp::gateway::MARK_CHANNELS_READ_REQ, 12,
                                 req.SerializeAsString()).SerializeAsString(),
-                     state_, nullptr, nullptr, nullptr, sg.get(), nullptr);
+                     state_, nullptr, nullptr, nullptr, sg.get(), nullptr, nullptr);;
 
   const auto got_mark_resp = [&] {
     for (const auto& framed : session_->sent) {
@@ -1062,7 +1062,7 @@ TEST_F(AppGatewayServiceTest, UnreadSummaryForwardedAndRelayed) {
   HandleClientPacket(session_,
                      MakePacket(chirp::gateway::GET_UNREAD_SUMMARY_REQ, 13,
                                 req.SerializeAsString()).SerializeAsString(),
-                     state_, nullptr, nullptr, nullptr, sg.get(), nullptr);
+                     state_, nullptr, nullptr, nullptr, sg.get(), nullptr, nullptr);;
 
   const auto got_summary_resp = [&] {
     for (const auto& framed : session_->sent) {
@@ -1104,30 +1104,30 @@ TEST_F(AppGatewayServiceTest, UnreadSummaryForwardedAndRelayed) {
 TEST_F(AppGatewayServiceTest, DisconnectUnbindsSession) {
   Login(session_, "alice");
 
-  HandleDisconnect(session_, state_, nullptr, nullptr);
+  HandleDisconnect(session_, state_, nullptr, nullptr, nullptr);
 
   EXPECT_TRUE(chirp::network::GetAuthenticatedSession(state_, session_).user_id.empty());
 
   // A second disconnect is a no-op (no crash, no double release).
-  HandleDisconnect(session_, state_, nullptr, nullptr);
+  HandleDisconnect(session_, state_, nullptr, nullptr, nullptr);
   EXPECT_TRUE(chirp::network::GetAuthenticatedSession(state_, session_).user_id.empty());
 }
 
 TEST_F(AppGatewayServiceTest, DisconnectUnboundSessionIsNoop) {
   auto s = std::make_shared<MockSession>();
-  HandleDisconnect(s, state_, nullptr, nullptr);
+  HandleDisconnect(s, state_, nullptr, nullptr, nullptr);
   EXPECT_TRUE(s->sent.empty());
 }
 
-// ---- Chat pipeline (ChatBridge) ----
+// ---- Chat pipeline (ServiceBridge) ----
 //
 // The edge relays chat business packets (2xxx) through a per-client internal
 // connection to chirp_chat once the client is authenticated. The fake chat
 // runs on its own io thread; the bridge lives on the fixture's io_, pumped
-// by WaitForIo - the same loopback shape as chat_bridge_test.cc.
+// by WaitForIo - the same loopback shape as service_bridge_test.cc.
 
 TEST_F(AppGatewayServiceTest, ChatHandshakeReplaysLoginWithServiceAuth) {
-  auto& chat = AttachChatBridge();
+  auto& chat = AttachServiceBridge();
   Login(session_, "alice", bridge_.get());
 
   // The pipeline authenticates itself as a trusted service first, then
@@ -1154,7 +1154,7 @@ TEST_F(AppGatewayServiceTest, ChatHandshakeReplaysLoginWithServiceAuth) {
 }
 
 TEST_F(AppGatewayServiceTest, ChatBusinessPacketForwardedVerbatimWhenReady) {
-  auto& chat = AttachChatBridge();
+  auto& chat = AttachServiceBridge();
   Login(session_, "alice", bridge_.get());
   ASSERT_TRUE(WaitForIo(io_, [&] { return chat.Count(chirp::gateway::LOGIN_REQ) > 0; },
                         std::chrono::seconds(5)));
@@ -1170,7 +1170,7 @@ TEST_F(AppGatewayServiceTest, ChatBusinessPacketForwardedVerbatimWhenReady) {
 }
 
 TEST_F(AppGatewayServiceTest, ChatPushRelayedBackToClient) {
-  auto& chat = AttachChatBridge();
+  auto& chat = AttachServiceBridge();
   Login(session_, "alice", bridge_.get());
   ASSERT_TRUE(WaitForIo(io_, [&] { return chat.Count(chirp::gateway::LOGIN_REQ) > 0; },
                         std::chrono::seconds(5)));
@@ -1206,7 +1206,7 @@ TEST_F(AppGatewayServiceTest, ChatPushRelayedBackToClient) {
 }
 
 TEST_F(AppGatewayServiceTest, ChatHandshakeFailureKicksClient) {
-  AttachChatBridge(chirp::common::AUTH_FAILED);
+  AttachServiceBridge(chirp::common::AUTH_FAILED);
   Login(session_, "alice", bridge_.get());
 
   // A rejected service-auth kicks the real client so it reconnects cleanly.
@@ -1234,7 +1234,7 @@ TEST_F(AppGatewayServiceTest, ChatHandshakeFailureKicksClient) {
 }
 
 TEST_F(AppGatewayServiceTest, ChatPipeLostKicksClient) {
-  auto& chat = AttachChatBridge();
+  auto& chat = AttachServiceBridge();
   Login(session_, "alice", bridge_.get());
   ASSERT_TRUE(WaitForIo(io_, [&] { return chat.Count(chirp::gateway::LOGIN_REQ) > 0; },
                         std::chrono::seconds(5)));
@@ -1258,14 +1258,14 @@ TEST_F(AppGatewayServiceTest, ChatPipeLostKicksClient) {
 }
 
 TEST_F(AppGatewayServiceTest, DisconnectDetachesInternalConnectionWithoutKick) {
-  auto& chat = AttachChatBridge();
+  auto& chat = AttachServiceBridge();
   Login(session_, "alice", bridge_.get());
   ASSERT_TRUE(WaitForIo(io_, [&] { return chat.Count(chirp::gateway::LOGIN_REQ) > 0; },
                         std::chrono::seconds(5)));
 
   // Client gone: the internal side closes quietly - an EOF on chat, no kick
   // to a session that is already going away.
-  HandleDisconnect(session_, state_, nullptr, bridge_.get());
+  HandleDisconnect(session_, state_, nullptr, bridge_.get(), nullptr);
   ASSERT_TRUE(WaitForIo(io_, [&] { return chat.EofCount() >= 1; }, std::chrono::seconds(5)));
   EXPECT_TRUE(chirp::network::GetAuthenticatedSession(state_, session_).user_id.empty());
   const auto frames = ReceivedPackets(*session_);
@@ -1564,7 +1564,7 @@ TEST_F(AppGatewayServiceTest, AuthBackedLoginFailureRelaysErrorCode) {
   req.set_token("tok");
   HandleClientPacket(session_,
                      MakePacket(chirp::gateway::LOGIN_REQ, 9, req.SerializeAsString()).SerializeAsString(),
-                     state_, auth, nullptr, nullptr, nullptr, nullptr);
+                     state_, auth, nullptr, nullptr, nullptr, nullptr, nullptr);;
   ASSERT_TRUE(WaitForIo(io, [&] { return HasFrame(*session_, chirp::gateway::LOGIN_RESP, 9); },
                         std::chrono::seconds(5)));
   chirp::auth::LoginResponse resp;
@@ -1584,7 +1584,7 @@ TEST_F(AppGatewayServiceTest, AuthBackedLoginEmptyIdentityRejected) {
   chirp::auth::LoginRequest req;  // empty token
   HandleClientPacket(session_,
                      MakePacket(chirp::gateway::LOGIN_REQ, 1, req.SerializeAsString()).SerializeAsString(),
-                     state_, auth, nullptr, nullptr, nullptr, nullptr);
+                     state_, auth, nullptr, nullptr, nullptr, nullptr, nullptr);;
   ASSERT_TRUE(WaitForIo(io, [&] { return HasFrame(*session_, chirp::gateway::LOGIN_RESP, 1); },
                         std::chrono::seconds(5)));
   chirp::auth::LoginResponse resp;
@@ -1607,7 +1607,7 @@ TEST_F(AppGatewayServiceTest, AuthBackedLoginBindsAndKicksWithAuthReason) {
   auto s1 = std::make_shared<MockSession>();
   HandleClientPacket(s1,
                      MakePacket(chirp::gateway::LOGIN_REQ, 1, req.SerializeAsString()).SerializeAsString(),
-                     state_, auth, nullptr, nullptr, nullptr, nullptr);
+                     state_, auth, nullptr, nullptr, nullptr, nullptr, nullptr);;
   ASSERT_TRUE(WaitForIo(io, [&] { return HasFrame(*s1, chirp::gateway::LOGIN_RESP, 1); },
                         std::chrono::seconds(5)));
   chirp::auth::LoginResponse first;
@@ -1619,7 +1619,7 @@ TEST_F(AppGatewayServiceTest, AuthBackedLoginBindsAndKicksWithAuthReason) {
   auto s2 = std::make_shared<MockSession>();
   HandleClientPacket(s2,
                      MakePacket(chirp::gateway::LOGIN_REQ, 2, req.SerializeAsString()).SerializeAsString(),
-                     state_, auth, nullptr, nullptr, nullptr, nullptr);
+                     state_, auth, nullptr, nullptr, nullptr, nullptr, nullptr);;
   ASSERT_TRUE(WaitForIo(io, [&] { return HasFrame(*s2, chirp::gateway::LOGIN_RESP, 2); },
                         std::chrono::seconds(5)));
 
@@ -1649,14 +1649,14 @@ TEST_F(AppGatewayServiceTest, AuthBackedLoginKickFallsBackToPlatformReason) {
   auto s1 = std::make_shared<MockSession>();
   HandleClientPacket(s1,
                      MakePacket(chirp::gateway::LOGIN_REQ, 1, req.SerializeAsString()).SerializeAsString(),
-                     state_, auth, nullptr, nullptr, nullptr, nullptr);
+                     state_, auth, nullptr, nullptr, nullptr, nullptr, nullptr);;
   ASSERT_TRUE(WaitForIo(io, [&] { return HasFrame(*s1, chirp::gateway::LOGIN_RESP, 1); },
                         std::chrono::seconds(5)));
 
   auto s2 = std::make_shared<MockSession>();
   HandleClientPacket(s2,
                      MakePacket(chirp::gateway::LOGIN_REQ, 2, req.SerializeAsString()).SerializeAsString(),
-                     state_, auth, nullptr, nullptr, nullptr, nullptr);
+                     state_, auth, nullptr, nullptr, nullptr, nullptr, nullptr);;
   ASSERT_TRUE(WaitForIo(io, [&] { return HasFrame(*s2, chirp::gateway::LOGIN_RESP, 2); },
                         std::chrono::seconds(5)));
 
@@ -1673,7 +1673,7 @@ TEST_F(AppGatewayServiceTest, AuthBackedLoginKickFallsBackToPlatformReason) {
 // after the cross-instance claim callback fires (even a refused redis still
 // delivers the callback with an empty previous owner).
 TEST_F(AppGatewayServiceTest, AuthBackedLoginWithRedisManagerRespondsAfterClaim) {
-  auto& chat = AttachChatBridge();
+  auto& chat = AttachServiceBridge();
   FakeAuthServer auth_srv;
   auto auth = std::make_shared<chirp::gateway::AuthClient>(io_, "127.0.0.1", auth_srv.port());
   auto redis = std::make_shared<chirp::gateway::RedisSessionManager>(
@@ -1683,7 +1683,7 @@ TEST_F(AppGatewayServiceTest, AuthBackedLoginWithRedisManagerRespondsAfterClaim)
   req.set_token("tok");
   HandleClientPacket(session_,
                      MakePacket(chirp::gateway::LOGIN_REQ, 3, req.SerializeAsString()).SerializeAsString(),
-                     state_, auth, redis, nullptr, nullptr, bridge_.get());
+                     state_, auth, redis, nullptr, nullptr, bridge_.get(), nullptr);;
   ASSERT_TRUE(WaitForIo(io_, [&] { return HasFrame(*session_, chirp::gateway::LOGIN_RESP, 3); },
                         std::chrono::seconds(5)));
   // The chat pipe attaches inside the claim callback, after the
@@ -1719,7 +1719,7 @@ TEST_F(AppGatewayServiceTest, GetPlayerSubscriptionsForwardedPinned) {
   HandleClientPacket(session_,
                      MakePacket(chirp::gateway::GET_PLAYER_SUBSCRIPTIONS_REQ, 34,
                                 req.SerializeAsString()).SerializeAsString(),
-                     state_, nullptr, nullptr, nullptr, sg.get(), nullptr);
+                     state_, nullptr, nullptr, nullptr, sg.get(), nullptr, nullptr);;
   ASSERT_TRUE(WaitForIo(io,
                         [&] { return HasFrame(*session_, chirp::gateway::GET_PLAYER_SUBSCRIPTIONS_RESP, 34); },
                         std::chrono::seconds(5)));
@@ -1745,7 +1745,7 @@ TEST_F(AppGatewayServiceTest, GetPlayerSubscriptionsForwardedPinned) {
 
 // The auth-backed login must attach the chat pipe too (inline, no redis).
 TEST_F(AppGatewayServiceTest, AuthBackedLoginAttachesBridgePipe) {
-  auto& chat = AttachChatBridge();
+  auto& chat = AttachServiceBridge();
   FakeAuthServer auth_srv;
   auto auth = std::make_shared<chirp::gateway::AuthClient>(io_, "127.0.0.1", auth_srv.port());
 
@@ -1753,7 +1753,7 @@ TEST_F(AppGatewayServiceTest, AuthBackedLoginAttachesBridgePipe) {
   req.set_token("tok");
   HandleClientPacket(session_,
                      MakePacket(chirp::gateway::LOGIN_REQ, 4, req.SerializeAsString()).SerializeAsString(),
-                     state_, auth, nullptr, nullptr, nullptr, bridge_.get());
+                     state_, auth, nullptr, nullptr, nullptr, bridge_.get(), nullptr);;
   ASSERT_TRUE(WaitForIo(io_, [&] { return HasFrame(*session_, chirp::gateway::LOGIN_RESP, 4); },
                         std::chrono::seconds(5)));
   ASSERT_TRUE(WaitForIo(io_, [&] { return chat.Count(chirp::gateway::LOGIN_REQ) > 0; },
@@ -1774,7 +1774,7 @@ TEST_F(AppGatewayServiceTest, AuthBackedLogoutFailureKeepsBinding) {
   req.set_user_id("alice");
   HandleClientPacket(session_,
                      MakePacket(chirp::gateway::LOGOUT_REQ, 6, req.SerializeAsString()).SerializeAsString(),
-                     state_, auth, nullptr, nullptr, nullptr, nullptr);
+                     state_, auth, nullptr, nullptr, nullptr, nullptr, nullptr);;
   ASSERT_TRUE(WaitForIo(io, [&] { return HasFrame(*session_, chirp::gateway::LOGOUT_RESP, 6); },
                         std::chrono::seconds(5)));
   chirp::auth::LogoutResponse resp;
@@ -1794,7 +1794,7 @@ TEST_F(AppGatewayServiceTest, AuthBackedLogoutOkCloses) {
   req.set_user_id("alice");
   HandleClientPacket(session_,
                      MakePacket(chirp::gateway::LOGOUT_REQ, 7, req.SerializeAsString()).SerializeAsString(),
-                     state_, auth, nullptr, nullptr, nullptr, nullptr);
+                     state_, auth, nullptr, nullptr, nullptr, nullptr, nullptr);;
   ASSERT_TRUE(WaitForIo(io, [&] { return session_->close_after_send; }, std::chrono::seconds(5)));
   chirp::auth::LogoutResponse resp;
   ASSERT_TRUE(LastBody(*session_, &resp));
@@ -1818,7 +1818,7 @@ TEST_F(AppGatewayServiceTest, UnregisterAndGetUserDevicesForwardedPinned) {
   HandleClientPacket(session_,
                      MakePacket(chirp::gateway::UNREGISTER_DEVICE_REQ, 21,
                                 unreg.SerializeAsString()).SerializeAsString(),
-                     state_, nullptr, nullptr, notification.get(), nullptr, nullptr);
+                     state_, nullptr, nullptr, notification.get(), nullptr, nullptr, nullptr);;
   ASSERT_TRUE(WaitForIo(io,
                         [&] { return HasFrame(*session_, chirp::gateway::UNREGISTER_DEVICE_RESP, 21); },
                         std::chrono::seconds(5)));
@@ -1828,7 +1828,7 @@ TEST_F(AppGatewayServiceTest, UnregisterAndGetUserDevicesForwardedPinned) {
   HandleClientPacket(session_,
                      MakePacket(chirp::gateway::GET_USER_DEVICES_REQ, 22,
                                 list.SerializeAsString()).SerializeAsString(),
-                     state_, nullptr, nullptr, notification.get(), nullptr, nullptr);
+                     state_, nullptr, nullptr, notification.get(), nullptr, nullptr, nullptr);;
   ASSERT_TRUE(WaitForIo(io,
                         [&] { return HasFrame(*session_, chirp::gateway::GET_USER_DEVICES_RESP, 22); },
                         std::chrono::seconds(5)));
@@ -1878,7 +1878,7 @@ TEST_F(AppGatewayServiceTest, SubscriptionGarbageHubBodyReportsInternalError) {
   HandleClientPacket(session_,
                      MakePacket(chirp::gateway::SUBSCRIBE_PLAYER_CHANNEL_REQ, 31,
                                 req.SerializeAsString()).SerializeAsString(),
-                     state_, nullptr, nullptr, nullptr, sg.get(), nullptr);
+                     state_, nullptr, nullptr, nullptr, sg.get(), nullptr, nullptr);;
   ASSERT_TRUE(WaitForIo(io,
                         [&] { return HasFrame(*session_, chirp::gateway::SUBSCRIBE_PLAYER_CHANNEL_RESP, 31); },
                         std::chrono::seconds(5)));
@@ -1910,7 +1910,7 @@ TEST_F(AppGatewayServiceTest, SubscriptionUnstartedPeerFailsFastUnavailable) {
   HandleClientPacket(session_,
                      MakePacket(chirp::gateway::UNSUBSCRIBE_PLAYER_CHANNEL_REQ, 32,
                                 req.SerializeAsString()).SerializeAsString(),
-                     state_, nullptr, nullptr, nullptr, sg.get(), nullptr);
+                     state_, nullptr, nullptr, nullptr, sg.get(), nullptr, nullptr);;
   ASSERT_TRUE(WaitForIo(io,
                         [&] { return HasFrame(*session_, chirp::gateway::UNSUBSCRIBE_PLAYER_CHANNEL_RESP, 32); },
                         std::chrono::seconds(5)));
@@ -1960,7 +1960,7 @@ TEST_F(AppGatewayServiceTest, HeartbeatEchoesTimestampAndToleratesGarbageBody) {
 // a warning - no reply, no close.
 TEST_F(AppGatewayServiceTest, DispatchToleratesNonPacketPayload) {
   HandleClientPacket(session_, std::string("\xff\xfe\xfd not a Packet"),
-                     state_, nullptr, nullptr, nullptr, nullptr, nullptr);
+                     state_, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr);;
   EXPECT_TRUE(session_->sent.empty());
   EXPECT_FALSE(session_->closed);
 }
@@ -1974,7 +1974,7 @@ TEST_F(AppGatewayServiceTest, DisconnectWithRedisManagerReleasesClaim) {
       io, "127.0.0.1", 1, "inst-test", 60, nullptr);
   Login(session_, "alice");
 
-  HandleDisconnect(session_, state_, redis, nullptr);
+  HandleDisconnect(session_, state_, redis, nullptr, nullptr);
   EXPECT_TRUE(chirp::network::GetAuthenticatedSession(state_, session_).user_id.empty());
   io.poll();
   io.restart();

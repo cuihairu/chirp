@@ -53,7 +53,7 @@ const (
 	// sequence 0、客户端只读、不要求 ACK）。
 	MsgID_DEVICES_PRESENCE_NOTIFY MsgID = 1020
 	// Chat service. Both gateways relay these verbatim through the per-client
-	// ChatBridge pipeline (gateway and app_gateway, each with --chat_host);
+	// ServiceBridge pipeline (gateway and app_gateway, each with --chat_host);
 	// chat answers on the same internal connection, so no edge synthesizes
 	// these responses.
 	MsgID_SEND_MESSAGE_REQ    MsgID = 2001

@@ -1,7 +1,9 @@
-// Loopback tests for the gateway -> chat bridge: a real in-process TCP chat
-// (framed chirp.gateway.Packet on the wire) drives the service-auth +
-// login-replay handshake, the verbatim relay, the pre-ready queue, and every
-// kick path. All chat-side socket work runs on its own io thread, mirroring
+// Loopback tests for the gateway service bridge: a real in-process TCP fake
+// backend (framed chirp.gateway.Packet on the wire) drives the service-auth +
+// login-replay handshake, the verbatim relay, the pre-ready queue, every kick
+// path (chat instance), and the degrade semantics (search instance: 2248 ->
+// SERVER_UNAVAILABLE without touching the client, auto re-dial on the next
+// query). All backend-side socket work runs on its own io thread, mirroring
 // chat_hub_peer_test.cc.
 #include <gtest/gtest.h>
 
@@ -15,7 +17,7 @@
 #include <thread>
 #include <vector>
 
-#include "network/chat_bridge.h"
+#include "network/service_bridge.h"
 #include "fake_chat_server.h"
 #include "logger.h"
 #include "proto/auth.pb.h"
@@ -127,10 +129,10 @@ chirp::auth::KickNotify AsKick(const Packet& pkt) {
 
 } // namespace
 
-TEST(ChatBridgeTest, AttachAuthenticatesThenLoginWithTokenAndDevice) {
+TEST(ServiceBridgeTest, AttachAuthenticatesThenLoginWithTokenAndDevice) {
   FakeChatServer chat(chirp::common::OK, chirp::common::OK);
   asio::io_context io;
-  chirp::gateway::ChatBridge bridge(io, "127.0.0.1", chat.port(), "edge-1", "s3cret");
+  chirp::gateway::ServiceBridge bridge(io, "127.0.0.1", chat.port(), "edge-1", "s3cret");
   BridgeIoRunner runner(io);
 
   auto client = std::make_shared<MockClientSession>();
@@ -160,7 +162,7 @@ TEST(ChatBridgeTest, AttachAuthenticatesThenLoginWithTokenAndDevice) {
   // Once ready, a forwarded 2xxx packet reaches chat with its identity
   // intact (msg_id, sequence, body - the bridge never rewrites them).
   Packet fwd = MakeRawPacket(chirp::gateway::SEND_MESSAGE_REQ, 42, "body-bytes");
-  asio::post(io, [&] { bridge.ForwardToChat(client.get(), fwd); });
+  asio::post(io, [&] { bridge.ForwardPacket(client.get(), fwd, chirp::gateway::SEND_MESSAGE_REQ); });
   ASSERT_TRUE(WaitFor([&] { return chat.Count(chirp::gateway::SEND_MESSAGE_REQ) > 0; },
                       std::chrono::seconds(5)));
   const auto sent = chat.All(chirp::gateway::SEND_MESSAGE_REQ);
@@ -168,10 +170,10 @@ TEST(ChatBridgeTest, AttachAuthenticatesThenLoginWithTokenAndDevice) {
   EXPECT_EQ(sent.back().body(), "body-bytes");
 }
 
-TEST(ChatBridgeTest, AuthFailureKicksClient) {
+TEST(ServiceBridgeTest, AuthFailureKicksClient) {
   FakeChatServer chat(chirp::common::AUTH_FAILED, chirp::common::OK);
   asio::io_context io;
-  chirp::gateway::ChatBridge bridge(io, "127.0.0.1", chat.port(), "gateway", "");
+  chirp::gateway::ServiceBridge bridge(io, "127.0.0.1", chat.port(), "gateway", "");
   BridgeIoRunner runner(io);
 
   auto client = std::make_shared<MockClientSession>();
@@ -185,10 +187,10 @@ TEST(ChatBridgeTest, AuthFailureKicksClient) {
   EXPECT_TRUE(client->CloseAfterSend());
 }
 
-TEST(ChatBridgeTest, LoginRejectedKicksClient) {
+TEST(ServiceBridgeTest, LoginRejectedKicksClient) {
   FakeChatServer chat(chirp::common::OK, chirp::common::AUTH_FAILED);
   asio::io_context io;
-  chirp::gateway::ChatBridge bridge(io, "127.0.0.1", chat.port(), "gateway", "");
+  chirp::gateway::ServiceBridge bridge(io, "127.0.0.1", chat.port(), "gateway", "");
   BridgeIoRunner runner(io);
 
   auto client = std::make_shared<MockClientSession>();
@@ -202,10 +204,10 @@ TEST(ChatBridgeTest, LoginRejectedKicksClient) {
   EXPECT_TRUE(client->CloseAfterSend());
 }
 
-TEST(ChatBridgeTest, InternalDisconnectKicksClient) {
+TEST(ServiceBridgeTest, InternalDisconnectKicksClient) {
   FakeChatServer chat(chirp::common::OK, chirp::common::OK);
   asio::io_context io;
-  chirp::gateway::ChatBridge bridge(io, "127.0.0.1", chat.port(), "gateway", "");
+  chirp::gateway::ServiceBridge bridge(io, "127.0.0.1", chat.port(), "gateway", "");
   BridgeIoRunner runner(io);
 
   auto client = std::make_shared<MockClientSession>();
@@ -223,10 +225,10 @@ TEST(ChatBridgeTest, InternalDisconnectKicksClient) {
   EXPECT_TRUE(client->CloseAfterSend());
 }
 
-TEST(ChatBridgeTest, DetachClosesInternalConnection) {
+TEST(ServiceBridgeTest, DetachClosesInternalConnection) {
   FakeChatServer chat(chirp::common::OK, chirp::common::OK);
   asio::io_context io;
-  chirp::gateway::ChatBridge bridge(io, "127.0.0.1", chat.port(), "gateway", "");
+  chirp::gateway::ServiceBridge bridge(io, "127.0.0.1", chat.port(), "gateway", "");
   BridgeIoRunner runner(io);
 
   auto client = std::make_shared<MockClientSession>();
@@ -246,10 +248,10 @@ TEST(ChatBridgeTest, DetachClosesInternalConnection) {
                       std::chrono::seconds(5)));
 }
 
-TEST(ChatBridgeTest, QueuedPacketsFlushOnReadyAndOverflowDrops) {
+TEST(ServiceBridgeTest, QueuedPacketsFlushOnReadyAndOverflowDrops) {
   FakeChatServer chat(chirp::common::OK, chirp::common::OK);
   asio::io_context io;
-  chirp::gateway::ChatBridge bridge(io, "127.0.0.1", chat.port(), "gateway", "");
+  chirp::gateway::ServiceBridge bridge(io, "127.0.0.1", chat.port(), "gateway", "");
   BridgeIoRunner runner(io);
 
   auto client = std::make_shared<MockClientSession>();
@@ -263,8 +265,9 @@ TEST(ChatBridgeTest, QueuedPacketsFlushOnReadyAndOverflowDrops) {
   const int kOverflowTotal = 70;
   asio::post(io, [&] {
     for (int i = 0; i < kOverflowTotal; i++) {
-      bridge.ForwardToChat(client.get(),
-                           MakeRawPacket(chirp::gateway::SEND_MESSAGE_REQ, i, "m"));
+      bridge.ForwardPacket(client.get(),
+                           MakeRawPacket(chirp::gateway::SEND_MESSAGE_REQ, i, "m"),
+                           chirp::gateway::SEND_MESSAGE_REQ);
     }
   });
 
@@ -280,18 +283,19 @@ TEST(ChatBridgeTest, QueuedPacketsFlushOnReadyAndOverflowDrops) {
   }
 }
 
-TEST(ChatBridgeTest, InternalFramesForwardedToClientExceptHandshake) {
+TEST(ServiceBridgeTest, InternalFramesForwardedToClientExceptHandshake) {
   FakeChatServer chat(chirp::common::OK, chirp::common::OK);
   asio::io_context io;
-  chirp::gateway::ChatBridge bridge(io, "127.0.0.1", chat.port(), "gateway", "");
+  chirp::gateway::ServiceBridge bridge(io, "127.0.0.1", chat.port(), "gateway", "");
   BridgeIoRunner runner(io);
 
   auto client = std::make_shared<MockClientSession>();
   asio::post(io, [&] { bridge.Attach(client, "tok", "dev"); });
   // Prove readiness by round-tripping one business packet.
   asio::post(io, [&] {
-    bridge.ForwardToChat(client.get(),
-                         MakeRawPacket(chirp::gateway::SEND_MESSAGE_REQ, 1, "m"));
+    bridge.ForwardPacket(client.get(),
+                         MakeRawPacket(chirp::gateway::SEND_MESSAGE_REQ, 1, "m"),
+                         chirp::gateway::SEND_MESSAGE_REQ);
   });
   ASSERT_TRUE(WaitFor([&] { return chat.Count(chirp::gateway::SEND_MESSAGE_REQ) > 0; },
                       std::chrono::seconds(5)));
@@ -321,17 +325,18 @@ TEST(ChatBridgeTest, InternalFramesForwardedToClientExceptHandshake) {
   EXPECT_TRUE(saw_notify);
 }
 
-TEST(ChatBridgeTest, DisabledBridgeIsNoOp) {
+TEST(ServiceBridgeTest, DisabledBridgeIsNoOp) {
   asio::io_context io;
-  chirp::gateway::ChatBridge bridge(io, "", 0, "gateway", "");
+  chirp::gateway::ServiceBridge bridge(io, "", 0, "gateway", "");
   BridgeIoRunner runner(io);
   EXPECT_FALSE(bridge.enabled());
 
   auto client = std::make_shared<MockClientSession>();
   asio::post(io, [&] { bridge.Attach(client, "tok", "dev"); });
   asio::post(io, [&] {
-    bridge.ForwardToChat(client.get(),
-                         MakeRawPacket(chirp::gateway::SEND_MESSAGE_REQ, 1, "m"));
+    bridge.ForwardPacket(client.get(),
+                         MakeRawPacket(chirp::gateway::SEND_MESSAGE_REQ, 1, "m"),
+                         chirp::gateway::SEND_MESSAGE_REQ);
   });
   asio::post(io, [&] { bridge.Detach(client.get()); });
   // Nothing dialed, nothing sent: the historical silent-drop behavior.
@@ -354,10 +359,10 @@ uint16_t ClosedLoopbackPort() {
 
 } // namespace
 
-TEST(ChatBridgeTest, ConnectFailureKicksClient) {
+TEST(ServiceBridgeTest, ConnectFailureKicksClient) {
   asio::io_context io;
   const uint16_t dead_port = ClosedLoopbackPort();
-  chirp::gateway::ChatBridge bridge(io, "127.0.0.1", dead_port, "gateway", "");
+  chirp::gateway::ServiceBridge bridge(io, "127.0.0.1", dead_port, "gateway", "");
   BridgeIoRunner runner(io);
 
   auto client = std::make_shared<MockClientSession>();
@@ -371,9 +376,9 @@ TEST(ChatBridgeTest, ConnectFailureKicksClient) {
   EXPECT_TRUE(client->CloseAfterSend());
 }
 
-TEST(ChatBridgeTest, ResolveFailureKicksClient) {
+TEST(ServiceBridgeTest, ResolveFailureKicksClient) {
   asio::io_context io;
-  chirp::gateway::ChatBridge bridge(io, "no such host for chirp test", 7000,
+  chirp::gateway::ServiceBridge bridge(io, "no such host for chirp test", 7000,
                                    "gateway", "");
   BridgeIoRunner runner(io);
 
@@ -388,9 +393,9 @@ TEST(ChatBridgeTest, ResolveFailureKicksClient) {
   EXPECT_TRUE(client->CloseAfterSend());
 }
 
-TEST(ChatBridgeTest, DetachDuringResolveIsQuiet) {
+TEST(ServiceBridgeTest, DetachDuringResolveIsQuiet) {
   asio::io_context io;
-  chirp::gateway::ChatBridge bridge(io, "no such host for chirp test", 7000,
+  chirp::gateway::ServiceBridge bridge(io, "no such host for chirp test", 7000,
                                    "gateway", "");
   BridgeIoRunner runner(io);
 
@@ -404,10 +409,10 @@ TEST(ChatBridgeTest, DetachDuringResolveIsQuiet) {
   EXPECT_EQ(client->SentCount(), 0u);
 }
 
-TEST(ChatBridgeTest, HandshakeTimeoutKicksClient) {
+TEST(ServiceBridgeTest, HandshakeTimeoutKicksClient) {
   FakeChatServer chat(chirp::common::OK, chirp::common::OK);
   asio::io_context io;
-  chirp::gateway::ChatBridge bridge(io, "127.0.0.1", chat.port(), "gateway", "");
+  chirp::gateway::ServiceBridge bridge(io, "127.0.0.1", chat.port(), "gateway", "");
   BridgeIoRunner runner(io);
 
   chat.hold_handshake();
@@ -426,10 +431,10 @@ TEST(ChatBridgeTest, HandshakeTimeoutKicksClient) {
   EXPECT_TRUE(client->CloseAfterSend());
 }
 
-TEST(ChatBridgeTest, InvalidFrameSizeDropsConnection) {
+TEST(ServiceBridgeTest, InvalidFrameSizeDropsConnection) {
   FakeChatServer chat(chirp::common::OK, chirp::common::OK);
   asio::io_context io;
-  chirp::gateway::ChatBridge bridge(io, "127.0.0.1", chat.port(), "gateway", "");
+  chirp::gateway::ServiceBridge bridge(io, "127.0.0.1", chat.port(), "gateway", "");
   BridgeIoRunner runner(io);
 
   chat.hold_handshake();
@@ -448,10 +453,10 @@ TEST(ChatBridgeTest, InvalidFrameSizeDropsConnection) {
   EXPECT_EQ(AsKick(frames.back()).reason(), "chat unavailable");
 }
 
-TEST(ChatBridgeTest, MalformedFrameBodyDropsConnection) {
+TEST(ServiceBridgeTest, MalformedFrameBodyDropsConnection) {
   FakeChatServer chat(chirp::common::OK, chirp::common::OK);
   asio::io_context io;
-  chirp::gateway::ChatBridge bridge(io, "127.0.0.1", chat.port(), "gateway", "");
+  chirp::gateway::ServiceBridge bridge(io, "127.0.0.1", chat.port(), "gateway", "");
   BridgeIoRunner runner(io);
 
   chat.hold_handshake();
@@ -470,10 +475,10 @@ TEST(ChatBridgeTest, MalformedFrameBodyDropsConnection) {
   EXPECT_EQ(AsKick(frames.back()).reason(), "chat unavailable");
 }
 
-TEST(ChatBridgeTest, PartialFrameBodyDisconnectKicksClient) {
+TEST(ServiceBridgeTest, PartialFrameBodyDisconnectKicksClient) {
   FakeChatServer chat(chirp::common::OK, chirp::common::OK);
   asio::io_context io;
-  chirp::gateway::ChatBridge bridge(io, "127.0.0.1", chat.port(), "gateway", "");
+  chirp::gateway::ServiceBridge bridge(io, "127.0.0.1", chat.port(), "gateway", "");
   BridgeIoRunner runner(io);
 
   chat.hold_handshake();
@@ -493,11 +498,11 @@ TEST(ChatBridgeTest, PartialFrameBodyDisconnectKicksClient) {
   EXPECT_EQ(AsKick(frames.back()).reason(), "chat unavailable");
 }
 
-TEST(ChatBridgeTest, UnexpectedFrameDuringAuthKicksClient) {
+TEST(ServiceBridgeTest, UnexpectedFrameDuringAuthKicksClient) {
   FakeChatServer chat(chirp::common::OK, chirp::common::OK);
   chat.set_auth_reply_id(chirp::gateway::CHAT_MESSAGE_NOTIFY);
   asio::io_context io;
-  chirp::gateway::ChatBridge bridge(io, "127.0.0.1", chat.port(), "gateway", "");
+  chirp::gateway::ServiceBridge bridge(io, "127.0.0.1", chat.port(), "gateway", "");
   BridgeIoRunner runner(io);
 
   auto client = std::make_shared<MockClientSession>();
@@ -510,11 +515,11 @@ TEST(ChatBridgeTest, UnexpectedFrameDuringAuthKicksClient) {
   EXPECT_EQ(AsKick(frames.back()).reason(), "chat unavailable");
 }
 
-TEST(ChatBridgeTest, UnexpectedFrameDuringLoginKicksClient) {
+TEST(ServiceBridgeTest, UnexpectedFrameDuringLoginKicksClient) {
   FakeChatServer chat(chirp::common::OK, chirp::common::OK);
   chat.set_login_reply_id(chirp::gateway::CHAT_MESSAGE_NOTIFY);
   asio::io_context io;
-  chirp::gateway::ChatBridge bridge(io, "127.0.0.1", chat.port(), "gateway", "");
+  chirp::gateway::ServiceBridge bridge(io, "127.0.0.1", chat.port(), "gateway", "");
   BridgeIoRunner runner(io);
 
   auto client = std::make_shared<MockClientSession>();
@@ -532,10 +537,10 @@ TEST(ChatBridgeTest, UnexpectedFrameDuringLoginKicksClient) {
   EXPECT_TRUE(client->CloseAfterSend());
 }
 
-TEST(ChatBridgeTest, ForwardAfterHandshakeFailureIsDropped) {
+TEST(ServiceBridgeTest, ForwardAfterHandshakeFailureIsDropped) {
   FakeChatServer chat(chirp::common::AUTH_FAILED, chirp::common::OK);
   asio::io_context io;
-  chirp::gateway::ChatBridge bridge(io, "127.0.0.1", chat.port(), "gateway", "");
+  chirp::gateway::ServiceBridge bridge(io, "127.0.0.1", chat.port(), "gateway", "");
   BridgeIoRunner runner(io);
 
   auto client = std::make_shared<MockClientSession>();
@@ -546,17 +551,18 @@ TEST(ChatBridgeTest, ForwardAfterHandshakeFailureIsDropped) {
   // schedule): business packets that still arrive find no connection and are
   // dropped silently - no second kick, no crash.
   asio::post(io, [&] {
-    bridge.ForwardToChat(client.get(),
-                         MakeRawPacket(chirp::gateway::SEND_MESSAGE_REQ, 1, "m"));
+    bridge.ForwardPacket(client.get(),
+                         MakeRawPacket(chirp::gateway::SEND_MESSAGE_REQ, 1, "m"),
+                         chirp::gateway::SEND_MESSAGE_REQ);
   });
   std::this_thread::sleep_for(std::chrono::milliseconds(100));
   EXPECT_EQ(client->SentCount(), 1u);  // only the original kick
 }
 
-TEST(ChatBridgeTest, SecondAttachReplacesOldPipe) {
+TEST(ServiceBridgeTest, SecondAttachReplacesOldPipe) {
   FakeChatServer chat(chirp::common::OK, chirp::common::OK);
   asio::io_context io;
-  chirp::gateway::ChatBridge bridge(io, "127.0.0.1", chat.port(), "gateway", "");
+  chirp::gateway::ServiceBridge bridge(io, "127.0.0.1", chat.port(), "gateway", "");
   BridgeIoRunner runner(io);
 
   auto client = std::make_shared<MockClientSession>();
@@ -573,11 +579,11 @@ TEST(ChatBridgeTest, SecondAttachReplacesOldPipe) {
   EXPECT_EQ(client->SentCount(), 0u);
 }
 
-TEST(ChatBridgeTest, GarbageAuthResponseBodyKicksClient) {
+TEST(ServiceBridgeTest, GarbageAuthResponseBodyKicksClient) {
   FakeChatServer chat(chirp::common::OK, chirp::common::OK);
   chat.set_auth_reply_body("not-a-proto");
   asio::io_context io;
-  chirp::gateway::ChatBridge bridge(io, "127.0.0.1", chat.port(), "gateway", "");
+  chirp::gateway::ServiceBridge bridge(io, "127.0.0.1", chat.port(), "gateway", "");
   BridgeIoRunner runner(io);
 
   auto client = std::make_shared<MockClientSession>();
@@ -589,11 +595,11 @@ TEST(ChatBridgeTest, GarbageAuthResponseBodyKicksClient) {
   EXPECT_EQ(AsKick(frames.back()).reason(), "chat unavailable");
 }
 
-TEST(ChatBridgeTest, GarbageLoginResponseBodyKicksClient) {
+TEST(ServiceBridgeTest, GarbageLoginResponseBodyKicksClient) {
   FakeChatServer chat(chirp::common::OK, chirp::common::OK);
   chat.set_login_reply_body("not-a-login");
   asio::io_context io;
-  chirp::gateway::ChatBridge bridge(io, "127.0.0.1", chat.port(), "gateway", "");
+  chirp::gateway::ServiceBridge bridge(io, "127.0.0.1", chat.port(), "gateway", "");
   BridgeIoRunner runner(io);
 
   auto client = std::make_shared<MockClientSession>();
@@ -605,11 +611,11 @@ TEST(ChatBridgeTest, GarbageLoginResponseBodyKicksClient) {
   EXPECT_EQ(AsKick(frames.back()).reason(), "chat session rejected");
 }
 
-TEST(ChatBridgeTest, ClientDestroyedBeforeFailClientSkipsKick) {
+TEST(ServiceBridgeTest, ClientDestroyedBeforeFailClientSkipsKick) {
   FakeChatServer chat(chirp::common::AUTH_FAILED, chirp::common::OK);
   chat.hold_handshake();
   asio::io_context io;
-  chirp::gateway::ChatBridge bridge(io, "127.0.0.1", chat.port(), "gateway", "");
+  chirp::gateway::ServiceBridge bridge(io, "127.0.0.1", chat.port(), "gateway", "");
   BridgeIoRunner runner(io);
 
   auto client = std::make_shared<MockClientSession>();
@@ -618,22 +624,22 @@ TEST(ChatBridgeTest, ClientDestroyedBeforeFailClientSkipsKick) {
   ASSERT_TRUE(WaitFor([&] { return chat.Count(chirp::gateway::SERVER_AUTH_REQ) > 0; },
                       std::chrono::seconds(5)));
   // Drop the gateway's last strong ref while the auth reply is still held:
-  // FailClient's weak_ptr expires (no kick erase), and a late ForwardToChat
+  // FailClient's weak_ptr expires (no kick erase), and a late ForwardPacket
   // still finds the map entry with closing=true.
   client.reset();
   chat.release_handshake();
   std::this_thread::sleep_for(std::chrono::milliseconds(300));
   asio::post(io, [&] {
-    bridge.ForwardToChat(raw, MakeRawPacket(chirp::gateway::SEND_MESSAGE_REQ, 1, "m"));
+    bridge.ForwardPacket(raw, MakeRawPacket(chirp::gateway::SEND_MESSAGE_REQ, 1, "m"), chirp::gateway::SEND_MESSAGE_REQ);
   });
   std::this_thread::sleep_for(std::chrono::milliseconds(100));
   EXPECT_EQ(client, nullptr);
 }
 
-TEST(ChatBridgeTest, ChatPushAfterClientDestroyedSkipsSend) {
+TEST(ServiceBridgeTest, ChatPushAfterClientDestroyedSkipsSend) {
   FakeChatServer chat(chirp::common::OK, chirp::common::OK);
   asio::io_context io;
-  chirp::gateway::ChatBridge bridge(io, "127.0.0.1", chat.port(), "gateway", "");
+  chirp::gateway::ServiceBridge bridge(io, "127.0.0.1", chat.port(), "gateway", "");
   BridgeIoRunner runner(io);
 
   auto client = std::make_shared<MockClientSession>();
@@ -656,10 +662,10 @@ TEST(ChatBridgeTest, ChatPushAfterClientDestroyedSkipsSend) {
   (void)raw;
 }
 
-TEST(ChatBridgeTest, ForwardToChatFillsMissingRequestIdMonotonicAndPassesExplicit) {
+TEST(ServiceBridgeTest, ForwardPacketFillsMissingRequestIdMonotonicAndPassesExplicit) {
   FakeChatServer chat(chirp::common::OK, chirp::common::OK);
   asio::io_context io;
-  chirp::gateway::ChatBridge bridge(io, "127.0.0.1", chat.port(), "edge-1", "s3cret");
+  chirp::gateway::ServiceBridge bridge(io, "127.0.0.1", chat.port(), "edge-1", "s3cret");
   BridgeIoRunner runner(io);
   auto client = std::make_shared<MockClientSession>();
   asio::post(io, [&] { bridge.Attach(client, "tok", "dev"); });
@@ -669,13 +675,15 @@ TEST(ChatBridgeTest, ForwardToChatFillsMissingRequestIdMonotonicAndPassesExplici
   // 未带 request_id 的出站包:桥按连接内单调值兜底(缺省=连接内生成);
   // 显式 request_id 的原样透传(不改写)。三包依序进同一条内部连接。
   asio::post(io, [&] {
-    bridge.ForwardToChat(client.get(),
-                         MakeRawPacket(chirp::gateway::SEND_MESSAGE_REQ, 1, "a"));
+    bridge.ForwardPacket(client.get(),
+                         MakeRawPacket(chirp::gateway::SEND_MESSAGE_REQ, 1, "a"),
+                         chirp::gateway::SEND_MESSAGE_REQ);
     auto carried = MakeRawPacket(chirp::gateway::SEND_MESSAGE_REQ, 2, "b");
     carried.set_request_id(7);
-    bridge.ForwardToChat(client.get(), carried);
-    bridge.ForwardToChat(client.get(),
-                         MakeRawPacket(chirp::gateway::SEND_MESSAGE_REQ, 3, "c"));
+    bridge.ForwardPacket(client.get(), carried, chirp::gateway::SEND_MESSAGE_REQ);
+    bridge.ForwardPacket(client.get(),
+                         MakeRawPacket(chirp::gateway::SEND_MESSAGE_REQ, 3, "c"),
+                         chirp::gateway::SEND_MESSAGE_REQ);
   });
   ASSERT_TRUE(WaitFor([&] { return chat.Count(chirp::gateway::SEND_MESSAGE_REQ) >= 3; },
                       std::chrono::seconds(5)));
@@ -687,4 +695,214 @@ TEST(ChatBridgeTest, ForwardToChatFillsMissingRequestIdMonotonicAndPassesExplici
   EXPECT_GT(got[2].request_id(), got[0].request_id());  // 连接内单调
   EXPECT_EQ(got[0].sequence(), 1);
   EXPECT_EQ(got[2].sequence(), 3);            // sequence 不受影响
+}
+
+// ---- search 降级语义（search_degrade=true 的第二实例）：断管不踢、2248
+// 以请求 sequence 回 SERVER_UNAVAILABLE、凭据留存驱动下一条查询自动重拨。----
+
+chirp::chat::SearchMessageRequest MakeSearchReq(const std::string& keyword) {
+  chirp::chat::SearchMessageRequest req;
+  req.set_keyword(keyword);
+  return req;
+}
+
+TEST(ServiceBridgeTest, SearchDegradedAnswersServerUnavailableWhenUnreachable) {
+  asio::io_context io;
+  const uint16_t dead_port = ClosedLoopbackPort();
+  chirp::gateway::ServiceBridge bridge(io, "127.0.0.1", dead_port, "gateway", "",
+                                       /*search_degrade=*/true);
+  BridgeIoRunner runner(io);
+
+  auto client = std::make_shared<MockClientSession>();
+  asio::post(io, [&] { bridge.Attach(client, "tok", "dev"); });
+  // 拨号失败进降级态：客户端不被踢、不收任何帧（对比 chat 实例同路径的
+  // ConnectFailureKicksClient）。
+  std::this_thread::sleep_for(std::chrono::milliseconds(300));
+  EXPECT_EQ(client->SentCount(), 0u);
+  EXPECT_FALSE(client->CloseAfterSend());
+
+  // 无管道的 2248：合成 SEARCH_MESSAGE_RESP(SERVER_UNAVAILABLE)，sequence
+  // 沿用请求，客户端连接原样保留。
+  asio::post(io, [&] {
+    bridge.ForwardPacket(client.get(), MakePacket(chirp::gateway::SEARCH_MESSAGE_REQ, 77,
+                                                  MakeSearchReq("hi")),
+                         chirp::gateway::SEARCH_MESSAGE_REQ);
+  });
+  ASSERT_TRUE(WaitFor([&] { return client->SentCount() > 0; }, std::chrono::seconds(5)));
+  const auto frames = client->SentPackets();
+  ASSERT_EQ(frames.size(), 1u);
+  EXPECT_EQ(frames[0].msg_id(), chirp::gateway::SEARCH_MESSAGE_RESP);
+  EXPECT_EQ(frames[0].sequence(), 77);
+  chirp::chat::SearchMessageResponse resp;
+  ASSERT_TRUE(resp.ParseFromString(frames[0].body()));
+  EXPECT_EQ(resp.code(), chirp::common::SERVER_UNAVAILABLE);
+  EXPECT_FALSE(client->CloseAfterSend());
+}
+
+TEST(ServiceBridgeTest, SearchPendingOverflowDegradesWholePipe) {
+  // 握手被扣住，灌满挂起队列再溢出一条：第 65 条触发整管降级——已挂起的
+  // 64 条逐条补 SERVER_UNAVAILABLE，溢出的这条也当场回码，客户端零踢零断。
+  FakeChatServer chat(chirp::common::OK, chirp::common::OK);
+  asio::io_context io;
+  chirp::gateway::ServiceBridge bridge(io, "127.0.0.1", chat.port(), "gateway", "",
+                                       /*search_degrade=*/true);
+  BridgeIoRunner runner(io);
+
+  auto client = std::make_shared<MockClientSession>();
+  chat.hold_handshake();
+  asio::post(io, [&] { bridge.Attach(client, "tok", "dev"); });
+  ASSERT_TRUE(WaitFor([&] { return chat.Count(chirp::gateway::SERVER_AUTH_REQ) > 0; },
+                      std::chrono::seconds(5)));
+
+  const int kOverflowTotal = 65;  // kMaxPendingPackets(64) + 1
+  asio::post(io, [&] {
+    for (int i = 0; i < kOverflowTotal; i++) {
+      bridge.ForwardPacket(client.get(),
+                           MakePacket(chirp::gateway::SEARCH_MESSAGE_REQ, i, MakeSearchReq("q")),
+                           chirp::gateway::SEARCH_MESSAGE_REQ);
+    }
+  });
+  ASSERT_TRUE(WaitFor([&] { return client->SentCount() >= kOverflowTotal; },
+                      std::chrono::seconds(5)));
+  const auto frames = client->SentPackets();
+  ASSERT_EQ(frames.size(), static_cast<size_t>(kOverflowTotal));
+  for (int i = 0; i < kOverflowTotal; i++) {
+    EXPECT_EQ(frames[i].msg_id(), chirp::gateway::SEARCH_MESSAGE_RESP);
+    EXPECT_EQ(frames[i].sequence(), i);
+    chirp::chat::SearchMessageResponse resp;
+    ASSERT_TRUE(resp.ParseFromString(frames[i].body()));
+    EXPECT_EQ(resp.code(), chirp::common::SERVER_UNAVAILABLE);
+  }
+  EXPECT_FALSE(client->CloseAfterSend());
+  EXPECT_FALSE(client->IsClosed());
+}
+
+TEST(ServiceBridgeTest, SearchQueryFromUnattachedClientStillGetsDegradeAnswer) {
+  // 真实竞态窗口：redis claim 异步回调里才 Attach，客户端在 LOGIN_RESP
+  // 之后立刻流水线一条 2248 就会先于 Attach 到达。降级语义对未建管的
+  // 查询同样回码（无凭据则不重拨），不踢不崩。
+  asio::io_context io;
+  const uint16_t dead_port = ClosedLoopbackPort();
+  chirp::gateway::ServiceBridge bridge(io, "127.0.0.1", dead_port, "gateway", "",
+                                       /*search_degrade=*/true);
+  BridgeIoRunner runner(io);
+
+  auto client = std::make_shared<MockClientSession>();
+  asio::post(io, [&] {
+    bridge.ForwardPacket(client.get(),
+                         MakePacket(chirp::gateway::SEARCH_MESSAGE_REQ, 5, MakeSearchReq("q")),
+                         chirp::gateway::SEARCH_MESSAGE_REQ);
+  });
+  ASSERT_TRUE(WaitFor([&] { return client->SentCount() > 0; }, std::chrono::seconds(5)));
+  const auto frames = client->SentPackets();
+  ASSERT_EQ(frames.size(), 1u);
+  EXPECT_EQ(frames[0].msg_id(), chirp::gateway::SEARCH_MESSAGE_RESP);
+  EXPECT_EQ(frames[0].sequence(), 5);
+  chirp::chat::SearchMessageResponse resp;
+  ASSERT_TRUE(resp.ParseFromString(frames[0].body()));
+  EXPECT_EQ(resp.code(), chirp::common::SERVER_UNAVAILABLE);
+  EXPECT_FALSE(client->CloseAfterSend());
+}
+
+TEST(ServiceBridgeTest, SearchPipeLossDegradesPendingQueriesAndRedials) {
+  FakeChatServer chat(chirp::common::OK, chirp::common::OK);
+  asio::io_context io;
+  chirp::gateway::ServiceBridge bridge(io, "127.0.0.1", chat.port(), "gateway", "",
+                                       /*search_degrade=*/true);
+  BridgeIoRunner runner(io);
+
+  auto client = std::make_shared<MockClientSession>();
+  chat.hold_handshake();
+  asio::post(io, [&] { bridge.Attach(client, "tok", "dev"); });
+  ASSERT_TRUE(WaitFor([&] { return chat.Count(chirp::gateway::SERVER_AUTH_REQ) > 0; },
+                      std::chrono::seconds(5)));
+
+  // 握手在飞，两条 2248 进挂起队列；此时管道被掐断：挂起查询逐条补
+  // SERVER_UNAVAILABLE（顺序保持），客户端连接不被触碰。
+  asio::post(io, [&] {
+    bridge.ForwardPacket(client.get(),
+                         MakePacket(chirp::gateway::SEARCH_MESSAGE_REQ, 1, MakeSearchReq("a")),
+                         chirp::gateway::SEARCH_MESSAGE_REQ);
+    bridge.ForwardPacket(client.get(),
+                         MakePacket(chirp::gateway::SEARCH_MESSAGE_REQ, 2, MakeSearchReq("b")),
+                         chirp::gateway::SEARCH_MESSAGE_REQ);
+  });
+  std::this_thread::sleep_for(std::chrono::milliseconds(100));
+  chat.CloseLatest();
+  ASSERT_TRUE(WaitFor([&] { return client->SentCount() >= 2; }, std::chrono::seconds(5)));
+  const auto frames = client->SentPackets();
+  ASSERT_EQ(frames.size(), 2u);
+  for (int i = 0; i < 2; ++i) {
+    EXPECT_EQ(frames[i].msg_id(), chirp::gateway::SEARCH_MESSAGE_RESP);
+    EXPECT_EQ(frames[i].sequence(), i + 1);
+    chirp::chat::SearchMessageResponse resp;
+    ASSERT_TRUE(resp.ParseFromString(frames[i].body()));
+    EXPECT_EQ(resp.code(), chirp::common::SERVER_UNAVAILABLE);
+  }
+  EXPECT_FALSE(client->CloseAfterSend());
+  EXPECT_FALSE(client->IsClosed());
+
+  // 下一条 2248 触发凭据重拨（Attach 留存的 token/device 原样重放），
+  // search 侧重新见到完整握手。
+  asio::post(io, [&] {
+    bridge.ForwardPacket(client.get(),
+                         MakePacket(chirp::gateway::SEARCH_MESSAGE_REQ, 3, MakeSearchReq("c")),
+                         chirp::gateway::SEARCH_MESSAGE_REQ);
+  });
+  EXPECT_TRUE(WaitFor([&] { return chat.Count(chirp::gateway::SERVER_AUTH_REQ) >= 2; },
+                      std::chrono::seconds(5)));
+  chat.release_handshake();
+  ASSERT_TRUE(WaitFor([&] { return chat.Count(chirp::gateway::LOGIN_REQ) >= 2; },
+                      std::chrono::seconds(5)));
+  const auto logins = chat.All(chirp::gateway::LOGIN_REQ);
+  chirp::auth::LoginRequest replay;
+  ASSERT_TRUE(replay.ParseFromString(logins.back().body()));
+  EXPECT_EQ(replay.token(), "tok");
+  EXPECT_EQ(replay.device_id(), "dev");
+
+  // 新管道就绪后，再一条 2248 原样进后端（健康路径透传，sequence 不改写）。
+  asio::post(io, [&] {
+    bridge.ForwardPacket(client.get(),
+                         MakePacket(chirp::gateway::SEARCH_MESSAGE_REQ, 4, MakeSearchReq("d")),
+                         chirp::gateway::SEARCH_MESSAGE_REQ);
+  });
+  ASSERT_TRUE(WaitFor([&] { return chat.Count(chirp::gateway::SEARCH_MESSAGE_REQ) >= 1; },
+                      std::chrono::seconds(5)));
+  const auto searched = chat.All(chirp::gateway::SEARCH_MESSAGE_REQ);
+  EXPECT_EQ(searched.back().sequence(), 4);
+  EXPECT_EQ(searched.back().body(), MakeSearchReq("d").SerializeAsString());
+}
+
+TEST(ServiceBridgeTest, SearchDegradeDoesNotKickOnHandshakeRejection) {
+  // 对照组：同样的 auth 拒绝，chat 实例踢客户端（AuthFailureKicksClient），
+  // search 实例静默进降级态——secret 配错也只影响检索可用性，不波及会话；
+  // 后续 2248 照样拿到 SERVER_UNAVAILABLE。
+  FakeChatServer chat(chirp::common::AUTH_FAILED, chirp::common::OK);
+  asio::io_context io;
+  chirp::gateway::ServiceBridge bridge(io, "127.0.0.1", chat.port(), "gateway", "",
+                                       /*search_degrade=*/true);
+  BridgeIoRunner runner(io);
+
+  auto client = std::make_shared<MockClientSession>();
+  asio::post(io, [&] { bridge.Attach(client, "tok", "dev"); });
+  // 握手被拒：降级抹掉管道，客户端零帧、连接保留。
+  ASSERT_TRUE(WaitFor([&] { return chat.Count(chirp::gateway::SERVER_AUTH_REQ) > 0; },
+                      std::chrono::seconds(5)));
+  std::this_thread::sleep_for(std::chrono::milliseconds(300));
+  EXPECT_EQ(client->SentCount(), 0u);
+  EXPECT_FALSE(client->CloseAfterSend());
+
+  asio::post(io, [&] {
+    bridge.ForwardPacket(client.get(),
+                         MakePacket(chirp::gateway::SEARCH_MESSAGE_REQ, 9, MakeSearchReq("q")),
+                         chirp::gateway::SEARCH_MESSAGE_REQ);
+  });
+  ASSERT_TRUE(WaitFor([&] { return client->SentCount() > 0; }, std::chrono::seconds(5)));
+  const auto frames = client->SentPackets();
+  ASSERT_EQ(frames.size(), 1u);
+  EXPECT_EQ(frames[0].msg_id(), chirp::gateway::SEARCH_MESSAGE_RESP);
+  EXPECT_EQ(frames[0].sequence(), 9);
+  chirp::chat::SearchMessageResponse resp;
+  ASSERT_TRUE(resp.ParseFromString(frames[0].body()));
+  EXPECT_EQ(resp.code(), chirp::common::SERVER_UNAVAILABLE);
 }

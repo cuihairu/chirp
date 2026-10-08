@@ -1,4 +1,4 @@
-#include "network/chat_bridge.h"
+#include "network/service_bridge.h"
 
 #include <array>
 #include <chrono>
@@ -10,6 +10,7 @@
 #include "network/byte_order.h"
 #include "network/protobuf_framing.h"
 #include "proto/auth.pb.h"
+#include "proto/chat.pb.h"
 #include "proto/common.pb.h"
 #include "proto/gateway.pb.h"
 #include "proto/game_server_gateway.pb.h"
@@ -46,10 +47,10 @@ void SendKickAndClose(const std::shared_ptr<chirp::network::Session>& client,
 
 } // namespace
 
-struct ChatBridge::InternalConn : std::enable_shared_from_this<InternalConn> {
+struct ServiceBridge::InternalConn : std::enable_shared_from_this<InternalConn> {
   enum class State { kConnecting, kAuthenticating, kLoggingIn, kReady };
 
-  InternalConn(asio::io_context& io, ChatBridge* bridge,
+  InternalConn(asio::io_context& io, ServiceBridge* bridge,
                std::shared_ptr<chirp::network::Session> client_in)
       : socket(io),
         handshake_timer(io),
@@ -58,18 +59,18 @@ struct ChatBridge::InternalConn : std::enable_shared_from_this<InternalConn> {
 
   asio::ip::tcp::socket socket;
   asio::steady_timer handshake_timer;
-  ChatBridge* owner;
+  ServiceBridge* owner;
   std::weak_ptr<chirp::network::Session> client;
 
   State state{State::kConnecting};
   // closing: the internal side is down (Detach / failure); in-flight
   // completion handlers must neither fail the client nor re-close.
   // failed: FailClient has already run for this connection - the map entry
-  // is gone and the real client has been kicked exactly once.
+  // is gone and the real client has been kicked exactly once (kick mode).
   bool closing{false};
   bool failed{false};
   int64_t next_seq{1};
-  // request_id 兜底生成器(ForwardToChat 对缺省包补齐,单调、连接内)。
+  // request_id 兜底生成器(ForwardPacket 对缺省包补齐,单调、连接内)。
   int64_t next_request_id{1};
 
   std::array<uint8_t, 4> header{};
@@ -130,7 +131,7 @@ struct ChatBridge::InternalConn : std::enable_shared_from_this<InternalConn> {
       }
       const uint32_t size = chirp::network::ReadU32BE(self->header.data());
       if (size == 0 || size > kMaxFrameBytes) {
-        chirp::common::Logger::Instance().Warn("chat bridge: invalid frame size from chat");
+        chirp::common::Logger::Instance().Warn("service bridge: invalid frame size from backend");
         self->OnConnectionLost();
         return;
       }
@@ -151,7 +152,7 @@ struct ChatBridge::InternalConn : std::enable_shared_from_this<InternalConn> {
                        if (!pkt.ParseFromArray(self->body.data(),
                                                static_cast<int>(self->body.size()))) {
                          chirp::common::Logger::Instance().Warn(
-                             "chat bridge: failed to parse Packet from chat");
+                             "service bridge: failed to parse Packet from backend");
                          self->OnConnectionLost();
                          return;
                        }
@@ -167,14 +168,14 @@ struct ChatBridge::InternalConn : std::enable_shared_from_this<InternalConn> {
     case State::kAuthenticating: {
       if (pkt.msg_id() != chirp::gateway::SERVER_AUTH_RESP) {
         chirp::common::Logger::Instance().Warn(
-            "chat bridge: unexpected first frame from chat, msg_id=" +
+            "service bridge: unexpected first frame from backend, msg_id=" +
             std::to_string(static_cast<int>(pkt.msg_id())));
         owner->FailClient(*this, "chat unavailable");
         return;
       }
       chirp::game_server_gateway::ServerAuthResponse resp;
       if (!resp.ParseFromString(pkt.body()) || resp.code() != chirp::common::OK) {
-        chirp::common::Logger::Instance().Warn("chat bridge: chat rejected the service auth");
+        chirp::common::Logger::Instance().Warn("service bridge: backend rejected the service auth");
         owner->FailClient(*this, "chat unavailable");
         return;
       }
@@ -186,14 +187,14 @@ struct ChatBridge::InternalConn : std::enable_shared_from_this<InternalConn> {
     case State::kLoggingIn: {
       if (pkt.msg_id() != chirp::gateway::LOGIN_RESP) {
         chirp::common::Logger::Instance().Warn(
-            "chat bridge: unexpected frame while logging in, msg_id=" +
+            "service bridge: unexpected frame while logging in, msg_id=" +
             std::to_string(static_cast<int>(pkt.msg_id())));
         owner->FailClient(*this, "chat unavailable");
         return;
       }
       chirp::auth::LoginResponse resp;
       if (!resp.ParseFromString(pkt.body()) || resp.code() != chirp::common::OK) {
-        chirp::common::Logger::Instance().Warn("chat bridge: chat rejected the login replay");
+        chirp::common::Logger::Instance().Warn("service bridge: backend rejected the login replay");
         owner->FailClient(*this, "chat session rejected");
         return;
       }
@@ -206,8 +207,9 @@ struct ChatBridge::InternalConn : std::enable_shared_from_this<InternalConn> {
       break;
     }
     case State::kReady: {
-      // Verbatim pipe: responses and every push chat emits for this user go
-      // straight back to the one client behind this connection.
+      // Verbatim pipe: responses and every push backend emits for this user go
+      // straight back to the one client behind this connection. 2249
+      // SEARCH_MESSAGE_RESP arrives here for the search instance.
       if (auto c = client.lock()) {
         auto framed = FramePacket(pkt);
         c->Send(std::string(reinterpret_cast<const char*>(framed.data()), framed.size()));
@@ -227,22 +229,24 @@ struct ChatBridge::InternalConn : std::enable_shared_from_this<InternalConn> {
   }
 };
 
-ChatBridge::ChatBridge(asio::io_context& io, std::string host, uint16_t port,
-                       std::string service_id, std::string service_secret)
+ServiceBridge::ServiceBridge(asio::io_context& io, std::string host, uint16_t port,
+                             std::string service_id, std::string service_secret,
+                             bool search_degrade)
     : io_(io),
       enabled_(!host.empty()),
       host_(std::move(host)),
       port_(port),
       service_id_(std::move(service_id)),
-      service_secret_(std::move(service_secret)) {}
+      service_secret_(std::move(service_secret)),
+      search_degrade_(search_degrade) {}
 
-ChatBridge::~ChatBridge() {
+ServiceBridge::~ServiceBridge() {
   for (auto& entry : conns_) {
     entry.second->Close();
   }
 }
 
-ChatBridge::InternalConn& ChatBridge::StartConn(
+ServiceBridge::InternalConn& ServiceBridge::StartConn(
     const std::shared_ptr<chirp::network::Session>& client, const std::string& token,
     const std::string& device_id) {
   auto conn = std::make_shared<InternalConn>(io_, this, client);
@@ -253,8 +257,8 @@ ChatBridge::InternalConn& ChatBridge::StartConn(
     it->second = conn;
   }
 
-  // Bounded handshake: if chat never answers, the client is kicked with a
-  // reason instead of leaking a half-open pipe.
+  // Bounded handshake: if backend never answers, the client is kicked with a
+  // reason (kick mode) or the pipe is dropped for a later re-dial (degrade).
   conn->handshake_timer.expires_after(kHandshakeTimeout);
   std::weak_ptr<InternalConn> weak = conn;
   conn->handshake_timer.async_wait([weak](const std::error_code& ec) {
@@ -263,7 +267,7 @@ ChatBridge::InternalConn& ChatBridge::StartConn(
         conn->state == InternalConn::State::kReady) {
       return;
     }
-    chirp::common::Logger::Instance().Warn("chat bridge: handshake timed out");
+    chirp::common::Logger::Instance().Warn("service bridge: handshake timed out");
     conn->owner->FailClient(*conn, "chat unavailable");
   });
 
@@ -277,7 +281,7 @@ ChatBridge::InternalConn& ChatBridge::StartConn(
                             }
                             if (ec) {
                               chirp::common::Logger::Instance().Warn(
-                                  "chat bridge: resolve failed: " + ec.message());
+                                  "service bridge: resolve failed: " + ec.message());
                               FailClient(*conn, "chat unavailable");
                               return;
                             }
@@ -291,7 +295,7 @@ ChatBridge::InternalConn& ChatBridge::StartConn(
                                   }
                                   if (ec2) {
                                     chirp::common::Logger::Instance().Warn(
-                                        "chat bridge: connect failed: " + ec2.message());
+                                        "service bridge: connect failed: " + ec2.message());
                                     FailClient(*conn, "chat unavailable");
                                     return;
                                   }
@@ -321,22 +325,35 @@ ChatBridge::InternalConn& ChatBridge::StartConn(
   return *conn;
 }
 
-void ChatBridge::Attach(const std::shared_ptr<chirp::network::Session>& client,
-                        const std::string& token, const std::string& device_id) {
+void ServiceBridge::Attach(const std::shared_ptr<chirp::network::Session>& client,
+                           const std::string& token, const std::string& device_id) {
   if (!enabled_) {
     return;
   }
+  // 凭据留存：降级模式下断管后的下一条查询据此自动重拨（kick 模式不需要,
+  // 但多存一份无副作用,两种模式共用一条 Attach 路径）。
+  ClientCreds& creds = creds_[client.get()];
+  creds.client = client;
+  creds.token = token;
+  creds.device_id = device_id;
   StartConn(client, token, device_id);
 }
 
-void ChatBridge::ForwardToChat(const chirp::network::Session* client,
-                               const chirp::gateway::Packet& pkt) {
+void ServiceBridge::ForwardPacket(chirp::network::Session* client,
+                                  const chirp::gateway::Packet& pkt, int msg_id) {
   if (!enabled_) {
     return;
   }
   const auto it = conns_.find(client);
   if (it == conns_.end() || it->second->closing) {
-    return;  // handshake already failed; the client is on its way out
+    // 无可用管道（未拨/已断/握手失败已清）。kick 模式下客户端已被踢或
+    // 即将被踢,这里无事可做;search 降级模式回 SERVER_UNAVAILABLE 并就地
+    // 重拨——search 恢复后,客户端的下一条查询自动拿到新管道。
+    if (search_degrade_ && msg_id == static_cast<int>(chirp::gateway::SEARCH_MESSAGE_REQ)) {
+      DegradeSearch(*client, pkt);
+      ReattachForDegrade(client);
+    }
+    return;
   }
   auto& conn = *it->second;
   // request_id 缺省=0 时按连接内单调值兜底(发送侧 SDK 显式带值时原样
@@ -352,32 +369,90 @@ void ChatBridge::ForwardToChat(const chirp::network::Session* client,
     return;
   }
   if (conn.pending.size() >= kMaxPendingPackets) {
+    if (search_degrade_) {
+      // 队列打满=后端持续无响应：整管降级（挂起的查询逐条补降级回码），
+      // 当前这条也回码，凭据留存待下一条查询重拨。search 实例按 gateway
+      // 契约只收 2248（拦截在边缘完成），无需再按 msg_id 分流。
+      FailClient(conn, "pending queue full");
+      DegradeSearch(*client, pkt);
+      return;
+    }
     chirp::common::Logger::Instance().Warn(
-        "chat bridge: pending queue full, dropping a 2xxx packet");
+        "service bridge: pending queue full, dropping a 2xxx packet");
     return;
   }
   conn.pending.push_back(std::move(framed));
 }
 
-void ChatBridge::Detach(const chirp::network::Session* client) {
+void ServiceBridge::Detach(const chirp::network::Session* client) {
   const auto it = conns_.find(client);
-  if (it == conns_.end()) {
-    return;
+  if (it != conns_.end()) {
+    it->second->Close();
+    conns_.erase(it);
   }
-  it->second->Close();
-  conns_.erase(it);
+  creds_.erase(client);
 }
 
-void ChatBridge::FailClient(InternalConn& conn, const std::string& reason) {
+void ServiceBridge::FailClient(InternalConn& conn, const std::string& reason) {
   if (conn.failed || conn.closing) {
     return;
   }
+  // 本函数会从 conns_ 抹掉自身：先持有共享副本，调用方的 conn 引用在
+  // erase 之后不得再触碰。
+  auto keep = conn.shared_from_this();
   conn.failed = true;
   conn.Close();
-  if (auto client = conn.client.lock()) {
-    conns_.erase(client.get());
-    SendKickAndClose(client, reason);
+  auto client = conn.client.lock();
+  if (client == nullptr) {
+    return;
   }
+  conns_.erase(client.get());
+  if (!search_degrade_) {
+    SendKickAndClose(client, reason);
+    return;
+  }
+  // search 降级语义：不踢客户端、不动客户端连接。挂起中的查询逐条补
+  // SERVER_UNAVAILABLE，凭据留在 creds_ 里——客户端下一条查询自动重拨。
+  // （挂起帧全部是 gateway 拦截转发进来的 2248，逐帧直接回码即可。）
+  chirp::common::Logger::Instance().Warn(
+      "service bridge: search pipe lost, degrading 2248 to SERVER_UNAVAILABLE: " + reason);
+  while (!conn.pending.empty()) {
+    const auto& framed = conn.pending.front();
+    chirp::gateway::Packet pending_pkt;
+    if (framed.size() > 4 &&
+        pending_pkt.ParseFromArray(framed.data() + 4,
+                                   static_cast<int>(framed.size() - 4))) {
+      DegradeSearch(*client, pending_pkt);
+    }
+    conn.pending.pop_front();
+  }
+}
+
+void ServiceBridge::DegradeSearch(chirp::network::Session& client,
+                                  const chirp::gateway::Packet& pkt) {
+  chirp::chat::SearchMessageResponse resp;
+  resp.set_code(chirp::common::SERVER_UNAVAILABLE);
+
+  chirp::gateway::Packet out;
+  out.set_msg_id(chirp::gateway::SEARCH_MESSAGE_RESP);
+  out.set_sequence(pkt.sequence());
+  out.set_body(resp.SerializeAsString());
+
+  auto framed = FramePacket(out);
+  client.Send(std::string(reinterpret_cast<const char*>(framed.data()), framed.size()));
+}
+
+void ServiceBridge::ReattachForDegrade(const chirp::network::Session* client) {
+  const auto it = creds_.find(client);
+  if (it == creds_.end()) {
+    return;
+  }
+  auto client_ptr = it->second.client.lock();
+  if (client_ptr == nullptr) {
+    creds_.erase(it);
+    return;
+  }
+  StartConn(client_ptr, it->second.token, it->second.device_id);
 }
 
 } // namespace chirp::gateway

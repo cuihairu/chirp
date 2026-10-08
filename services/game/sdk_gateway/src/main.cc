@@ -12,7 +12,7 @@
 #include "network/auth_client.h"
 #include "network/session_registry.h"
 #include "network/device_presence.h"
-#include "network/chat_bridge.h"
+#include "network/service_bridge.h"
 #include "logger.h"
 #include "network/protobuf_framing.h"
 #include "network/redis_session_manager.h"
@@ -104,7 +104,8 @@ void HandleLogin(const std::shared_ptr<chirp::network::Session>& session,
                  const std::shared_ptr<chirp::network::SessionRegistry>& state,
                  const std::shared_ptr<chirp::gateway::AuthClient>& auth,
                  const std::shared_ptr<chirp::gateway::RedisSessionManager>& redis_mgr,
-                 chirp::gateway::ChatBridge* bridge) {
+                 chirp::gateway::ServiceBridge* bridge,
+                 chirp::gateway::ServiceBridge* search_bridge) {
   const int64_t seq = pkt.sequence();
   auto send_err = [session, seq](chirp::common::ErrorCode code) {
     chirp::auth::LoginResponse resp;
@@ -148,11 +149,14 @@ void HandleLogin(const std::shared_ptr<chirp::network::Session>& session,
     if (bridge) {
       bridge->Attach(session, req.token(), req.device_id());
     }
+    if (search_bridge) {
+      search_bridge->Attach(session, req.token(), req.device_id());
+    }
     return;
   }
 
   auth->AsyncLogin(req, seq,
-                   [session, seq, req, state, redis_mgr, bridge, send_err](const chirp::auth::LoginResponse& auth_resp) {
+                   [session, seq, req, state, redis_mgr, bridge, search_bridge, send_err](const chirp::auth::LoginResponse& auth_resp) {
     chirp::auth::LoginResponse resp = auth_resp;
     if (resp.code() != chirp::common::OK) {
       SendPacket(session, chirp::gateway::LOGIN_RESP, seq, resp.SerializeAsString());
@@ -191,16 +195,22 @@ void HandleLogin(const std::shared_ptr<chirp::network::Session>& session,
 
     if (redis_mgr) {
       redis_mgr->AsyncClaim(user_id, req.platform(),
-                            [session, seq, resp, bridge, req](std::optional<std::string> /*prev_owner*/) mutable {
+                            [session, seq, resp, bridge, search_bridge, req](std::optional<std::string> /*prev_owner*/) mutable {
           SendPacket(session, chirp::gateway::LOGIN_RESP, seq, resp.SerializeAsString());
           if (bridge) {
             bridge->Attach(session, req.token(), req.device_id());
+          }
+          if (search_bridge) {
+            search_bridge->Attach(session, req.token(), req.device_id());
           }
         });
     } else {
       SendPacket(session, chirp::gateway::LOGIN_RESP, seq, resp.SerializeAsString());
       if (bridge) {
         bridge->Attach(session, req.token(), req.device_id());
+      }
+      if (search_bridge) {
+        search_bridge->Attach(session, req.token(), req.device_id());
       }
     }
   });
@@ -282,12 +292,14 @@ void HandleLogout(const std::shared_ptr<chirp::network::Session>& session,
 
 // Single dispatch shared by the TCP and WS entry points (they used to be two
 // copy-pasted switches). Chat business packets (2xxx) are piped to chat
-// through the bridge when one is configured; unauthenticated 2xxx and every
+// through the bridge when one is configured, 2248 goes to the search bridge
+// (degrade semantics live in the bridge); unauthenticated 2xxx and every
 // other unknown msg_id keep the historical silent-drop behavior.
 void HandleClientPacket(const std::shared_ptr<chirp::network::SessionRegistry>& state,
                         const std::shared_ptr<chirp::gateway::AuthClient>& auth,
                         const std::shared_ptr<chirp::gateway::RedisSessionManager>& redis_mgr,
-                        chirp::gateway::ChatBridge* bridge,
+                        chirp::gateway::ServiceBridge* bridge,
+                        chirp::gateway::ServiceBridge* search_bridge,
                         const std::shared_ptr<chirp::network::Session>& session,
                         const chirp::gateway::Packet& pkt) {
   switch (pkt.msg_id()) {
@@ -300,7 +312,7 @@ void HandleClientPacket(const std::shared_ptr<chirp::network::SessionRegistry>& 
       SendPacket(session, chirp::gateway::LOGIN_RESP, pkt.sequence(), resp.SerializeAsString());
       return;
     }
-    HandleLogin(session, pkt, req, state, auth, redis_mgr, bridge);
+    HandleLogin(session, pkt, req, state, auth, redis_mgr, bridge, search_bridge);
     break;
   }
   case chirp::gateway::LOGOUT_REQ: {
@@ -331,9 +343,23 @@ void HandleClientPacket(const std::shared_ptr<chirp::network::SessionRegistry>& 
   }
   default: {
     const auto id = static_cast<int>(pkt.msg_id());
+    // 2248（SEARCH_MESSAGE_REQ）先于 chat 2xxx 通配路由：检索走 search 桥
+    // 的 per-client 管道，降级语义（不踢、断管回 SERVER_UNAVAILABLE、自动
+    // 重拨）都在桥内。search 未配置（search_bridge 为空）时落回 chat 通配，
+    // 与接 search 之前的边界行为字节一致。
+    if (search_bridge != nullptr && id == chirp::gateway::SEARCH_MESSAGE_REQ) {
+      if (!chirp::network::GetAuthenticatedSession(state, session).user_id.empty()) {
+        search_bridge->ForwardPacket(session.get(), pkt, id);
+      }
+      break;
+    }
+    // Chat business packets relay through the per-client pipeline once the
+    // client is authenticated; chat answers on the same connection, so the
+    // edge never synthesizes responses for them. Without a bridge (or before
+    // login) they stay ignored, matching the pre-bridge edge behavior.
     if (bridge != nullptr && id >= 2001 && id <= 2999) {
       if (!chirp::network::GetAuthenticatedSession(state, session).user_id.empty()) {
-        bridge->ForwardToChat(session.get(), pkt);
+        bridge->ForwardPacket(session.get(), pkt, id);
       }
       break;
     }
@@ -367,12 +393,18 @@ int main(int argc, char** argv) {
   const uint16_t chat_port = ParseU16Arg(argc, argv, "--chat_port", 7000);
   const std::string chat_service_id = GetArg(argc, argv, "--chat_service_id", "gateway");
   const std::string chat_service_secret = GetArg(argc, argv, "--chat_service_secret", "");
+  // Search pipeline: 2248 only, degrade failure mode (bridge-internal).
+  // Empty --search_host leaves 2248 falling through to the chat catch-all,
+  // matching the pre-search edge behavior.
+  const std::string search_host = GetArg(argc, argv, "--search_host", "");
+  const uint16_t search_port = ParseU16Arg(argc, argv, "--search_port", 5007);
 
   Logger::Instance().Info("chirp_game_sdk_gateway starting tcp=" + std::to_string(port) + " ws=" + std::to_string(ws_port) +
                           (auth_host.empty() ? "" : (" auth=" + auth_host + ":" + std::to_string(auth_port))) +
                           (redis_host.empty() ? "" : (" redis=" + redis_host + ":" + std::to_string(redis_port) +
                                                       " instance=" + instance_id)) +
-                          (chat_host.empty() ? "" : (" chat=" + chat_host + ":" + std::to_string(chat_port))));
+                          (chat_host.empty() ? "" : (" chat=" + chat_host + ":" + std::to_string(chat_port))) +
+                          (search_host.empty() ? "" : (" search=" + search_host + ":" + std::to_string(search_port))));
 
   asio::io_context io;
 
@@ -382,10 +414,18 @@ int main(int argc, char** argv) {
     auth = std::make_shared<chirp::gateway::AuthClient>(io, auth_host, auth_port);
   }
 
-  std::unique_ptr<chirp::gateway::ChatBridge> bridge;
+  std::unique_ptr<chirp::gateway::ServiceBridge> bridge;
   if (!chat_host.empty()) {
-    bridge = std::make_unique<chirp::gateway::ChatBridge>(io, chat_host, chat_port,
-                                                          chat_service_id, chat_service_secret);
+    bridge = std::make_unique<chirp::gateway::ServiceBridge>(io, chat_host, chat_port,
+                                                             chat_service_id, chat_service_secret);
+  }
+  // 检索管道（2248 专用，降级失败语义）：与 chat 桥同门（service_id/
+  // secret 复用 chat 配置，search 侧 --gateway_service_secret 相同即可）。
+  std::unique_ptr<chirp::gateway::ServiceBridge> search_bridge;
+  if (!search_host.empty()) {
+    search_bridge = std::make_unique<chirp::gateway::ServiceBridge>(
+        io, search_host, search_port, chat_service_id, chat_service_secret,
+        /*search_degrade=*/true);
   }
 
   std::shared_ptr<chirp::gateway::RedisSessionManager> redis_mgr;
@@ -405,18 +445,20 @@ int main(int argc, char** argv) {
   // One dispatch pair shared by TCP and WS (the two on_frame switches used
   // to be copy-pasted copies of each other).
   auto on_frame = [state, auth, redis_mgr,
-                   bridge_raw = bridge.get()](std::shared_ptr<chirp::network::Session> session,
-                                              std::string&& payload) {
+                   bridge_raw = bridge.get(),
+                   search_bridge_raw = search_bridge.get()](std::shared_ptr<chirp::network::Session> session,
+                                                            std::string&& payload) {
     chirp::gateway::Packet pkt;
     if (!pkt.ParseFromArray(payload.data(), static_cast<int>(payload.size()))) {
       Logger::Instance().Warn("failed to parse Packet from client");
       return;
     }
     CHIRP_COUNTER("chirp_game_gateway_packets_total", 1);
-    HandleClientPacket(state, auth, redis_mgr, bridge_raw, session, pkt);
+    HandleClientPacket(state, auth, redis_mgr, bridge_raw, search_bridge_raw, session, pkt);
   };
   auto on_close = [state, redis_mgr,
-                   bridge_raw = bridge.get()](std::shared_ptr<chirp::network::Session> session) {
+                   bridge_raw = bridge.get(),
+                   search_bridge_raw = search_bridge.get()](std::shared_ptr<chirp::network::Session> session) {
     std::string user_id;
     std::string device_id;
     std::string platform;
@@ -435,6 +477,9 @@ int main(int argc, char** argv) {
     }
     if (bridge_raw) {
       bridge_raw->Detach(session.get());
+    }
+    if (search_bridge_raw) {
+      search_bridge_raw->Detach(session.get());
     }
   };
 

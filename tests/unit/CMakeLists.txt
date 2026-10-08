@@ -333,7 +333,7 @@ add_test(NAME app_sdk_gateway_tests COMMAND app_sdk_gateway_tests)
 
 # Game gateway edge tests: scaffold login binding (the 2c08a21 fix — without
 # --auth_host the registry must still be bound or 2xxx chat packets are
-# silently dropped) plus 2xxx forwarding through a real ChatBridge against
+# silently dropped) plus 2xxx forwarding through a real ServiceBridge against
 # the shared loopback fake chat server
 add_executable(game_sdk_gateway_tests
   game_sdk_gateway_test.cc
@@ -354,17 +354,18 @@ target_include_directories(game_sdk_gateway_tests
 
 add_test(NAME game_sdk_gateway_tests COMMAND game_sdk_gateway_tests)
 
-# Gateway chat-bridge loopback tests against a scripted in-process fake chat
-# server (shared with the app_sdk_gateway tests via fake_chat_server.h). The
-# bridge itself comes from chirp_network.
-add_executable(chat_bridge_tests
-  chat_bridge_test.cc
+# Gateway service-bridge loopback tests against a scripted in-process fake
+# backend (fake_chat_server.h, shared with the app_sdk_gateway tests). Covers
+# both failure modes: chat kick and search degrade (2248 -> SERVER_UNAVAILABLE,
+# auto re-dial). The bridge itself comes from chirp_network.
+add_executable(service_bridge_tests
+  service_bridge_test.cc
 )
 
-chirp_unit_test_common_links(chat_bridge_tests)
-target_link_libraries(chat_bridge_tests PRIVATE chirp_network chirp_common chirp_protos)
+chirp_unit_test_common_links(service_bridge_tests)
+target_link_libraries(service_bridge_tests PRIVATE chirp_network chirp_common chirp_protos)
 
-target_include_directories(chat_bridge_tests
+target_include_directories(service_bridge_tests
   PRIVATE
   ${CMAKE_SOURCE_DIR}/libs
   ${CMAKE_SOURCE_DIR}/libs/common
@@ -374,7 +375,7 @@ target_include_directories(chat_bridge_tests
   ${CMAKE_SOURCE_DIR}/proto/cpp/proto
 )
 
-add_test(NAME chat_bridge_tests COMMAND chat_bridge_tests)
+add_test(NAME service_bridge_tests COMMAND service_bridge_tests)
 
 # Notification service coverage tests (internal access tests are compiled
 # into the same binary: the implementation is compiled exactly once).

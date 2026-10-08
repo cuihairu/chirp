@@ -1,6 +1,6 @@
 #pragma once
 
-// Shared loopback fake chat for tests that drive the ChatBridge pipeline:
+// Shared loopback fake chat for tests that drive the ServiceBridge pipeline:
 // a real in-process TCP server speaking framed chirp.gateway.Packet, with a
 // scripted service-auth + login handshake. Own io thread, mirroring the
 // other loopback test doubles (fake_servers.h, chat_hub_peer_test.cc).

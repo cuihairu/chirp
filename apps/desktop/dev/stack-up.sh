@@ -30,7 +30,7 @@ echo $! > "${RUN_DIR}/auth.pid"
   > "${RUN_DIR}/chat.log" 2>&1 &
 echo $! > "${RUN_DIR}/chat.pid"
 
-# 4) App 平面边缘网关（登录转发 auth、2xxx 经 ChatBridge 中继 chat、
+# 4) App 平面边缘网关（登录转发 auth、2xxx 经 ServiceBridge 中继 chat、
 #    WP-8 自服务经 ServerGatewayPeer 直发 hub）
 "${BUILD}/services/app/sdk_gateway/chirp_app_sdk_gateway" \
   --port 5320 --ws_port 5201 \

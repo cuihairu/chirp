@@ -177,13 +177,13 @@ KNOWN_UNCOVERABLE = {
     ("libs/network/chat_peer_link.cc", 78),
     ("libs/network/chat_peer_link.cc", 90),
     # message_router / redis_session_manager / notification_client /
-    # chat_bridge request lambdas: asio::post capture EH pads.
+    # service_bridge request lambdas: asio::post capture EH pads.
     ("libs/network/message_router.cc", 68),
     ("libs/network/redis_session_manager.cc", 97),
     ("libs/network/redis_session_manager.cc", 147),
     ("libs/network/notification_client.cc", 108),
-    ("libs/network/chat_bridge.cc", 270),
-    ("libs/network/chat_bridge.cc", 284),
+    ("libs/network/service_bridge.cc", 274),
+    ("libs/network/service_bridge.cc", 288),
     ("libs/network/server_gateway_peer.cc", 113),
     # WebSocket FindHeaderValue: untaken arms need a header line without
     # trailing \r (fragmented/odd handshake) or getline throwing.
@@ -201,7 +201,7 @@ KNOWN_UNCOVERABLE = {
     ("libs/network/chat_peer_link.cc", 115),
     # SendKickAndClose reason.empty() ? "kicked" : reason — every FailClient
     # call site passes a non-empty literal; empty-reason is dead.
-    ("libs/network/chat_bridge.cc", 36),
+    ("libs/network/service_bridge.cc", 37),
     # notification_service/handlers defensive arms: deferred by decision
     # (other session owns those files).
     ("services/app/notification/src/notification_handlers.cc", 94),
@@ -301,19 +301,25 @@ KNOWN_UNCOVERABLE = {
     # PresenceManager CleanupOfflineUsers erase: last_seen is written only
     # from the internal clock, so no test can age an entry past the 24h cutoff.
     ("services/social/src/presence_manager.cc", 408),
-    # ChatBridge write-error arm: the peer RST always surfaces on the parked
+    # ServiceBridge write-error arm: the peer RST always surfaces on the parked
     # header read first, and FailClient then removes the connection, so a
     # later forward can never target the dead socket with an in-flight write.
-    ("libs/network/chat_bridge.cc", 116),
-    ("libs/network/chat_bridge.cc", 117),
-    # ChatBridge kConnecting switch arm: reads start only after the connect
+    ("libs/network/service_bridge.cc", 117),
+    ("libs/network/service_bridge.cc", 118),
+    # ServiceBridge kConnecting switch arm: reads start only after the connect
     # handler flips the state, so no frame is ever handled while connecting.
-    ("libs/network/chat_bridge.cc", 217),
-    ("libs/network/chat_bridge.cc", 218),
-    # ChatBridge::FailClient re-entry guard: the failed/closing flags make a
+    ("libs/network/service_bridge.cc", 219),
+    ("libs/network/service_bridge.cc", 220),
+    # ServiceBridge::FailClient re-entry guard: the failed/closing flags make a
     # second entry unreachable in the single-threaded call graph - the timer,
     # read and write completions all check those flags before calling.
-    ("libs/network/chat_bridge.cc", 373),
+    ("libs/network/service_bridge.cc", 398),
+    # ServiceBridge::ReattachForDegrade expired-credential erase: a forward
+    # for a session whose weak ref already expired dereferences the session
+    # in DegradeSearch first, so reaching this arm would already be
+    # use-after-free - unreachable in the single-threaded gateway graph.
+    ("libs/network/service_bridge.cc", 452),
+    ("libs/network/service_bridge.cc", 453),
     # Server-plane registry defensive arms: the by-id map and the
     # tuple/game-user index are only ever mutated together under one lock,
     # so a tuple hit whose by-id record is missing cannot happen. (These
@@ -793,11 +799,11 @@ KNOWN_UNCOVERABLE_ARMS = {
         "batch-8 migration from a stale whole-line pin; dead arm(s) in every gcda context of the audit run"),
     ("libs/network/auth_client.cc", 149): ((2, 4, 5),
         "batch-8 migration from a stale whole-line pin; dead arm(s) in every gcda context of the audit run"),
-    ("libs/network/chat_bridge.cc", 130): ((2,),
+    ("libs/network/service_bridge.cc", 131): ((2,),
         "batch-8 migration from a stale whole-line pin; dead arm(s) in every gcda context of the audit run"),
-    ("libs/network/chat_bridge.cc", 260): ((3, 5, 7),
+    ("libs/network/service_bridge.cc", 264): ((3, 5, 7),
         "batch-8 migration from a stale whole-line pin; dead arm(s) in every gcda context of the audit run"),
-    ("libs/network/chat_bridge.cc", 261): ((0,),
+    ("libs/network/service_bridge.cc", 265): ((0,),
         "batch-8 migration from a stale whole-line pin; dead arm(s) in every gcda context of the audit run"),
     ("libs/network/chat_peer_link.cc", 150): ((2,),
         "batch-8 migration from a stale whole-line pin; dead arm(s) in every gcda context of the audit run"),

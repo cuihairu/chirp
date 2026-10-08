@@ -121,17 +121,17 @@ class GameSdkGatewayTest : public ::testing::Test {
       std::make_shared<chirp::network::SessionRegistry>();
   std::shared_ptr<MockSession> session_ = std::make_shared<MockSession>();
   // Lives on the fixture so chat-bridge tests can pump it through WaitForIo;
-  // the bridge is created on demand via AttachChatBridge().
+  // the bridge is created on demand via AttachServiceBridge().
   asio::io_context io_;
-  std::unique_ptr<chirp::gateway::ChatBridge> bridge_;
+  std::unique_ptr<chirp::gateway::ServiceBridge> bridge_;
   std::unique_ptr<chirp_test::FakeChatServer> chat_;
 
   // Points the edge's chat pipeline at a loopback fake chat server (same
   // helper the app_sdk_gateway tests use). The default service id matches
   // the game gateway's --chat_service_id default.
-  chirp_test::FakeChatServer& AttachChatBridge() {
+  chirp_test::FakeChatServer& AttachServiceBridge() {
     chat_ = std::make_unique<chirp_test::FakeChatServer>(chirp::common::OK, chirp::common::OK);
-    bridge_ = std::make_unique<chirp::gateway::ChatBridge>(io_, "127.0.0.1", chat_->port(),
+    bridge_ = std::make_unique<chirp::gateway::ServiceBridge>(io_, "127.0.0.1", chat_->port(),
                                                            "gateway", "edge-secret");
     return *chat_;
   }
@@ -140,20 +140,21 @@ class GameSdkGatewayTest : public ::testing::Test {
   // configured) — exactly the shape the binding fix targets. Batch-17 tests
   // pass real (loopback or refused-port) doubles for the auth-backed arms.
   void SendFrame(chirp::gateway::MsgID id, int64_t seq, const std::string& body,
-                 chirp::gateway::ChatBridge* bridge = nullptr,
+                 chirp::gateway::ServiceBridge* bridge = nullptr,
                  const std::shared_ptr<chirp::gateway::AuthClient>& auth = nullptr,
                  const std::shared_ptr<chirp::gateway::RedisSessionManager>& redis = nullptr,
-                 const std::shared_ptr<MockSession>& to = nullptr) {
-    HandleClientPacket(state_, auth, redis, bridge, to ? to : session_,
+                 const std::shared_ptr<MockSession>& to = nullptr,
+                 chirp::gateway::ServiceBridge* search_bridge = nullptr) {
+    HandleClientPacket(state_, auth, redis, bridge, search_bridge, to ? to : session_,
                        MakePacket(id, seq, body));
   }
 
   // Scaffold-login `user` on `session` and return the assigned session_id.
   std::string Login(const std::shared_ptr<MockSession>& session, const std::string& user,
-                    chirp::gateway::ChatBridge* bridge = nullptr) {
+                    chirp::gateway::ServiceBridge* bridge = nullptr) {
     chirp::auth::LoginRequest req;
     req.set_token(user);
-    HandleClientPacket(state_, nullptr, nullptr, bridge, session,
+    HandleClientPacket(state_, nullptr, nullptr, bridge, nullptr, session,
                        MakePacket(chirp::gateway::LOGIN_REQ, 1, req.SerializeAsString()));
     chirp::auth::LoginResponse resp;
     EXPECT_FALSE(session->sent.empty());
@@ -221,7 +222,7 @@ TEST_F(GameSdkGatewayTest, ReLoginKicksPreviousSession) {
 // attached. A scaffold login must open the 2xxx gate — before the fix the
 // packet was silently dropped after a successful LOGIN_RESP.
 TEST_F(GameSdkGatewayTest, ChatPacketAfterScaffoldLoginReachesChatPipe) {
-  auto& chat = AttachChatBridge();
+  auto& chat = AttachServiceBridge();
   Login(session_, "alice", bridge_.get());
   ASSERT_TRUE(WaitForIo(io_, [&] { return chat.Count(chirp::gateway::LOGIN_REQ) > 0; },
                         std::chrono::seconds(5)));
@@ -239,7 +240,7 @@ TEST_F(GameSdkGatewayTest, ChatPacketAfterScaffoldLoginReachesChatPipe) {
 // Unauthenticated 2xxx stays dropped even while another session holds a live
 // bridge pipe: the gate is the session binding, not the bridge's existence.
 TEST_F(GameSdkGatewayTest, UnauthenticatedChatPacketNotForwarded) {
-  auto& chat = AttachChatBridge();
+  auto& chat = AttachServiceBridge();
   auto authed = std::make_shared<MockSession>();
   Login(authed, "alice", bridge_.get());
   ASSERT_TRUE(WaitForIo(io_, [&] { return chat.Count(chirp::gateway::LOGIN_REQ) > 0; },
@@ -552,7 +553,7 @@ TEST_F(GameSdkGatewayTest, AuthBackedLoginWithRedisManagerRespondsAfterClaim) {
 // The auth-backed login must attach the chat pipe too (not only the
 // scaffold path): with no redis manager the attach happens inline.
 TEST_F(GameSdkGatewayTest, AuthBackedLoginAttachesBridgePipe) {
-  auto& chat = AttachChatBridge();
+  auto& chat = AttachServiceBridge();
   FakeAuthServer auth_srv;
   auto auth = std::make_shared<chirp::gateway::AuthClient>(io_, "127.0.0.1", auth_srv.port());
 
@@ -571,7 +572,7 @@ TEST_F(GameSdkGatewayTest, AuthBackedLoginAttachesBridgePipe) {
 // Same with a redis manager: the attach runs inside the claim callback,
 // after the cross-instance claim settles.
 TEST_F(GameSdkGatewayTest, AuthBackedLoginAttachesBridgePipeAfterClaim) {
-  auto& chat = AttachChatBridge();
+  auto& chat = AttachServiceBridge();
   FakeAuthServer auth_srv;
   auto auth = std::make_shared<chirp::gateway::AuthClient>(io_, "127.0.0.1", auth_srv.port());
   auto redis = std::make_shared<chirp::gateway::RedisSessionManager>(

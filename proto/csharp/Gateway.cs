@@ -226,7 +226,7 @@ namespace Chirp.Gateway {
     [pbr::OriginalName("DEVICES_PRESENCE_NOTIFY")] DevicesPresenceNotify = 1020,
     /// <summary>
     /// Chat service. Both gateways relay these verbatim through the per-client
-    /// ChatBridge pipeline (gateway and app_gateway, each with --chat_host);
+    /// ServiceBridge pipeline (gateway and app_gateway, each with --chat_host);
     /// chat answers on the same internal connection, so no edge synthesizes
     /// these responses.
     /// </summary>

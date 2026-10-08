@@ -22,7 +22,7 @@
 
 ```
 chirp_load_client ──TCP──> chirp_game_sdk_gateway ──每客户端一条管道──> chirp_chat
-   N 连接                   (端口 G/WS)        ChatBridge 2xxx 转发      (端口 P/WS)
+   N 连接                   (端口 G/WS)        ServiceBridge 2xxx 转发      (端口 P/WS)
 ```
 
 - 客户端线协议与生产一致：`[u32_be len][chirp.gateway.Packet]`；登录走网关 scaffold（token=user_id）。

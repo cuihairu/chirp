@@ -57,7 +57,7 @@ public nonisolated enum Chirp_Gateway_MsgID: SwiftProtobuf.Enum, Swift.CaseItera
   case devicesPresenceNotify // = 1020
 
   /// Chat service. Both gateways relay these verbatim through the per-client
-  /// ChatBridge pipeline (gateway and app_gateway, each with --chat_host);
+  /// ServiceBridge pipeline (gateway and app_gateway, each with --chat_host);
   /// chat answers on the same internal connection, so no edge synthesizes
   /// these responses.
   case sendMessageReq // = 2001

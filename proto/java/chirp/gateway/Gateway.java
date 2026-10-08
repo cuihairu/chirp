@@ -132,7 +132,7 @@ public final class Gateway extends com.google.protobuf.GeneratedFile {
     /**
      * <pre>
      * Chat service. Both gateways relay these verbatim through the per-client
-     * ChatBridge pipeline (gateway and app_gateway, each with --chat_host);
+     * ServiceBridge pipeline (gateway and app_gateway, each with --chat_host);
      * chat answers on the same internal connection, so no edge synthesizes
      * these responses.
      * </pre>
@@ -1197,7 +1197,7 @@ public final class Gateway extends com.google.protobuf.GeneratedFile {
     /**
      * <pre>
      * Chat service. Both gateways relay these verbatim through the per-client
-     * ChatBridge pipeline (gateway and app_gateway, each with --chat_host);
+     * ServiceBridge pipeline (gateway and app_gateway, each with --chat_host);
      * chat answers on the same internal connection, so no edge synthesizes
      * these responses.
      * </pre>

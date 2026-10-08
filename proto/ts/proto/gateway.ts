@@ -43,7 +43,7 @@ export enum MsgID {
   DEVICES_PRESENCE_NOTIFY = 1020,
   /**
    * SEND_MESSAGE_REQ - Chat service. Both gateways relay these verbatim through the per-client
-   * ChatBridge pipeline (gateway and app_gateway, each with --chat_host);
+   * ServiceBridge pipeline (gateway and app_gateway, each with --chat_host);
    * chat answers on the same internal connection, so no edge synthesizes
    * these responses.
    */

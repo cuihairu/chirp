@@ -22,9 +22,14 @@
 
 - search 服务监听 TCP 5007（端口归位，与 docs/api/overview.md 端口表一致）。
 - 两个客户端边缘（`chirp_game_sdk_gateway` / `chirp_app_sdk_gateway`）各以
-  `--search_host` 接入；接线复用 ChatBridge 的 per-client pipe 机制（见 ⑤
-  ServiceBridge）：每客户端一条内部连接，SERVER_AUTH_REQ 服务信任门 +
-  LOGIN_REQ 原样重放，2248 原样转发、应答原样回流。
+  `--search_host` 接入；接线复用 ServiceBridge 的 per-client pipe 机制（见
+  ⑤）：每客户端一条内部连接，SERVER_AUTH_REQ 服务信任门 + LOGIN_REQ 原样
+  重放，2248 原样转发、应答原样回流。**已落地（2026-10-08，✅）**：两个
+  gateway 的默认分支在 chat 2xxx 通配之前拦截
+  2248（`id == SEARCH_MESSAGE_REQ` 优先判 search 桥），`--search_host` 留空
+  时落回 chat 通配，与接 search 之前的边界行为字节一致；service_id/secret
+  与 chat 桥同门（复用 `--chat_service_id`/`--chat_service_secret` 配置，
+  search 侧 `--gateway_service_secret` 配同值即可）。
 - **与 chat 桥的一个行为差异**：chat 桥失败 = 踢客户端（chat 流量全死，踢了
   重连最干净）；search 桥失败 = **降级不踢**——客户端保持在线，2248 得到
   `SERVER_UNAVAILABLE`，search 恢复后下一条查询自动重建管道。搜索是可选增强
@@ -83,12 +88,29 @@ PRIVATE 门槛），而 2248 的翻页游标按「返回的命中」推进——
 否决记录：客户端本地搜（无可达成本，见 §1）、ES 外置（运维面不匹配）、经
 hub 事件面查询（req/resp 语义不符）。
 
-### ⑤ 顺手把 ChatBridge 更名 ServiceBridge
+### ⑤ 顺手把 ChatBridge 更名 ServiceBridge ✅（2026-10-08 落地）
 
 search 复用 per-client pipe 机制后，「ChatBridge」这个名字对 search 管道就
 是错的。更名 `ServiceBridge`（`libs/network/service_bridge.{h,cc}`），chat
 与 search 各一个实例；chat 实例保持既有踢人语义（`kKickClient`），search 实
 例用降级语义（`kDegrade`）。协议语义零变化。
+
+**落地补充（按实际实现记录）**：两种失败语义由同一个类的构造开关
+`search_degrade`（bool，非枚举）区分。降级的完整链路全部收在桥内，gateway
+边缘零合成逻辑：
+
+- `Attach` 留存每客户端登录凭据（token/device + 客户端弱引用）；
+- 无管道的 2248 → 当场合成 `SEARCH_MESSAGE_RESP(SERVER_UNAVAILABLE)`（sequence
+  沿用请求）发回客户端，不触碰连接，并按凭据就地重拨；
+- 握手期间 2248 进有界挂起队列（64），队列打满 = 后端持续无响应 → 整管降级
+  （挂起查询逐条补降级回码），当前这条也回码；
+- 管道中途断开（含握手被拒/超时）→ 挂起查询逐条补 `SERVER_UNAVAILABLE`、
+  凭据留存，客户端下一条查询自动重拨（重放原 token/device）；
+- chat 实例路径逐字节保持旧行为（踢人 reason 字符串含在内：`chat
+  unavailable`/`chat session lost`/`chat session rejected`）。
+
+单测：`tests/unit/service_bridge_test.cc`（28 例，含降级四态：不可达回码、
+断管排空挂起+重拨、队列满整管降级、握手被拒不踢），原 chat 桥用例原样迁入。
 
 ## 3. 同批项：群昵称 alias（与 search 同批，同属检索/展示面）
 

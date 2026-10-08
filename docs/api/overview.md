@@ -40,7 +40,7 @@ message Packet {
 `sequence` 与 `request_id` 语义分离(见 [Communication Core 设计笔记](../design-notes/communication_core.md) 4.3):
 
 - `sequence`:连接内单调序号,请求-响应配对的本地关联键。响应与通知以请求同值返回,客户端用它把 `RESP`/`NOTIFY` 对回请求。**0 = 服务端发起(踢人、通知),不要求配对**。
-- `request_id`:分布式关联 id,跨平面/跨服务日志追踪用,与配对无关。**0 = 调用方未提供**——缺省生成沿全链补齐:网关 `ChatBridge` 对客户端出站的 2xxx 包与服务面出站包按「连接内生成」兜底(单调自增);chat 直连入口(裸协议客户端)按进程级单调兜底;peer 面(`ChatPeerHub`/`ChatPeerLink`)出站各自连接内单调生成(hub→spoke 与 spoke→hub 双向);SDK 发送侧(`sdks/core` `MakePacket`、`sdks/ts` 与 `apps/shared/protocol` `rawSend`)自动生成。显式给出的值沿转发链路原样透传、不改写,网关不重写客户端已带的 `request_id`,SDK/接入方可直接携带自己的关联键(如游戏服请求单号)。
+- `request_id`:分布式关联 id,跨平面/跨服务日志追踪用,与配对无关。**0 = 调用方未提供**——缺省生成沿全链补齐:网关 `ServiceBridge` 对客户端出站的 2xxx 包与服务面出站包按「连接内生成」兜底(单调自增);chat 直连入口(裸协议客户端)按进程级单调兜底;peer 面(`ChatPeerHub`/`ChatPeerLink`)出站各自连接内单调生成(hub→spoke 与 spoke→hub 双向);SDK 发送侧(`sdks/core` `MakePacket`、`sdks/ts` 与 `apps/shared/protocol` `rawSend`)自动生成。显式给出的值沿转发链路原样透传、不改写,网关不重写客户端已带的 `request_id`,SDK/接入方可直接携带自己的关联键(如游戏服请求单号)。
 
 映射示例:
 
@@ -64,7 +64,7 @@ message Packet {
 
 | 服务 | 二进制 | TCP | WebSocket | 状态 | 说明 |
 | --- | --- | --- | --- | --- | --- |
-| Game SDK Gateway | `chirp_game_sdk_gateway` | 5000 | 5001 | Supported | 登录、心跳、踢出、会话 claim;2xxx 聊天包经 ChatBridge 转发到 game_chat |
+| Game SDK Gateway | `chirp_game_sdk_gateway` | 5000 | 5001 | Supported | 登录、心跳、踢出、会话 claim;2xxx 聊天包经 ServiceBridge 转发到 game_chat |
 | Game Chat | `chirp_game_chat`(由 `services/shared/chat` 构建) | 7000 | 7001 | Supported | 聊天服务端;游戏后端签发 token + `--token_secret` 本地验签,自足闭环 |
 | Game Server Gateway | `chirp_game_server_gateway` | 8100 | - | Supported | 游戏后端注入枢纽:消息注入 + 事件下发,`service_id` + secret 信任门 |
 | Chat Peer 口 | (game_chat 的 `--hub_peer_port`) | 8200 | - | Supported | game_chat 作为 spoke 注册到 app_chat hub 的出站目标;见 [peer 协议](./peer_protocol.md) |
@@ -200,7 +200,7 @@ sequenceDiagram
     C->>G: Packet(LOGIN_REQ, LoginRequest)
     G->>S: 内部验证(token_secret 本地验签)
     G-->>C: Packet(LOGIN_RESP, LoginResponse)
-    Note over C,G: 登录后 2xxx 消息经 ChatBridge 转发到 game_chat
+    Note over C,G: 登录后 2xxx 消息经 ServiceBridge 转发到 game_chat
 ```
 
 同 `(user_id, device_id)` 重复登录会顶掉旧会话:旧连接收到 `KICK_NOTIFY`,新连接的 `LOGIN_RESP.kick_previous = true`。
