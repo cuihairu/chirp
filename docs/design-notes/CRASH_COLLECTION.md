@@ -111,11 +111,17 @@
 - `libs/common/crash_handler.cc` 在门禁 universe（`libs/**`）内：可测面——
   目录查找序（argv/env/缺省）、目录创建、URL 缺省关、数据库扫描出 Warn、
   handler 缺失时的失败降级——全部用单测覆盖。
-- `StartHandler` 真拉起 handler 的少量行（派生独立进程，单测不 spawn 进程）
-  按既有惯例记 `KNOWN_UNCOVERABLE`，E2E 责任归 `crash_probe` 验收腿。
-- crashpad 第三方源不在 universe（gcov 聚合只认 `libs/` `services/`
-  `sdks/core/src` 前缀），且已隔离插桩。
-- CI `-Werror`：第三方源已隔离（见接入方式），本仓新增源照常受约束。
+- **覆盖率构建（`CHIRP_ENABLE_COVERAGE=ON`）强制关 crashpad**：第三方源
+  既不入 universe（gcov 聚合只认 `libs/` `services/` `sdks/core/src`
+  前缀）也不参与插桩（省时）；此时 `StartHandler` 分支整体不编译
+  （`CHIRP_HAVE_CRASHPAD` 未定义），无 uncovered 行、无需豁免钉——
+  `Initialize` 编为短路径桩（建目录 + 遗留 Warn + `return false`），
+  单测安全断言。真拉起 handler 的 E2E 责任归 `crash_probe` 验收腿。
+- 本仓源 include 的 crashpad 头带 GCC 扩展（`#include_next`），
+  `crash_handler.cc` 在 include 点局部压 `-Wpedantic`，自身代码照常受
+  `-Wall -Wextra -Wpedantic`（CI 叠 `-Werror`）约束。
+- `sdks/core` 的 `libchirp_core_sdk.so` 链入 crashpad 静态库：FetchContent
+  作用域内全局 `CMAKE_POSITION_INDEPENDENT_CODE=ON`。
 
 ## 范围外（如实）
 

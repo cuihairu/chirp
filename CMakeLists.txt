@@ -279,6 +279,7 @@ add_subdirectory(apps/cli_client)
 
 # 5. Tools / Tests
 add_subdirectory(tools/benchmark)
+add_subdirectory(tools/crash_probe)
 
 # 6. Unit Tests (optional, requires GTest)
 if(EXISTS ${CMAKE_SOURCE_DIR}/tests/CMakeLists.txt)
