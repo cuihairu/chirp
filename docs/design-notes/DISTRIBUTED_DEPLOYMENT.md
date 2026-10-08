@@ -164,9 +164,13 @@ export CHIRP_MYSQL_PASSWORD=changeme
 
 # 历史消息迁移
 export CHIRP_MIGRATION_ENABLED=1
+export CHIRP_MIGRATION_BATCH_SIZE=100
+
+# 投递追踪(ACK 台账)
+export CHIRP_DELIVERY_TRACKING_ENABLED=1
 ```
 
-> 注:实例 ID 无对应环境变量,用 Chat 服务启动参数 `--instance_id` 指定(缺省随机生成 `chat_<hex>`),见 `services/shared/chat/src/main_distributed.cc`。
+> 注:实例 ID 无对应环境变量,用 Chat 服务启动参数 `--instance_id` 指定(缺省随机生成 `chat_<hex>`),见 `services/shared/chat/src/main_distributed.cc`。`CHIRP_INSTANCE_ID`/`CHIRP_LOG_LEVEL` 等变量在源码中不存在(幽灵配置),请勿使用。
 
 ---
 

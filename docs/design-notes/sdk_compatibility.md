@@ -43,7 +43,7 @@ title: SDK 引擎兼容性
 
 待补：
 - [x] Hook 接口（MessageInterceptor/AuthProvider/MessageStore/ChatEventListener/CommandHandler 五件套）——C++ core(2026-09)与 .NET/Unity(2026-09,`ChirpHooks.cs`,interface + 默认方法)均已对齐
-- [x] 历史消息本地存储——.NET/Unity 侧为 `FileMessageStore`(2026-09,零依赖文件持久化:append-only 日志 + 启动重放 + 已读游标,`Compact()` 原子重写;不绑 SQLite,工程需要可自行接第三方 SQLite 实现同一 `IMessageStore`);C++ core 同款 `file_message_store.h`(2026-09-24,header-only,与 C# 版**同一文件格式** `CHIRPLOG1`,存档可互换读取;TS/Dart 走内存实现,Web/移动端持久化属宿主存储层职责)
+- [x] 历史消息本地存储——.NET/Unity 侧为 `FileMessageStore`(2026-09,零依赖文件持久化:append-only 日志 + 启动重放 + 已读游标,`Compact()` 原子重写;不绑 SQLite,工程需要可自行接第三方 SQLite 实现同一 `IMessageStore`);C++ core 同款 `file_message_store.h`(2026-09-24,header-only,与 C# 版**同一文件格式** `CHIRPLOG1`,存档可互换读取;TS 走内存实现,Web/移动端持久化属宿主存储层职责)
 - [x] 敏感词过滤客户端预检——三语言同款 `WordFilterInterceptor`(2026-09:C++ `word_filter.h`、C# `WordFilterInterceptor.cs`、TS protocol 层 `word_filter`;Dart/Flutter SDK 已随 2026-09-29 移除):词库格式、ASCII 大小写不敏感子串匹配、mask 后重建的替换语义全部对齐服务端 `chirp::chat::WordFilter`,客户端与服务端可共用同一词库文件;Replace(改写,连续命中塌缩)/Reject(拦截 = blocked)两档,无 Record(审计是服务端职责);只滤发送侧
 - [x] Unity Package 发布配置——UPM 布局就绪(2026-09:`package.json` `com.chirp.unity@0.1.0` + `Chirp.Sdk`/`Chirp.Manager` 两个 asmdef,`Chirp/` 零引擎依赖由 `noEngineReferences` 编译期固化);支持 manifest `file:` 引用或 tarball 本地导入;registry 发布按"不发版"红线不做,待游戏工程接入后按需自办
 
@@ -211,14 +211,14 @@ store 降级四条向量，原生包此后独占承载）。
 
 所有 SDK 实现相同的钩子接口（按语言惯用方式）：
 
-| 钩子 | C++ | C# | TypeScript | GDScript | Dart |
-|---|---|---|---|---|---|
-| 消息拦截 | `MessageInterceptor`（虚基类） | `IMessageInterceptor`（interface） | `MessageInterceptor`（interface） | signal + callback | `MessageInterceptor`（abstract class） |
-| 认证提供 | `AuthProvider`（虚基类） | `IAuthProvider`（interface） | `AuthProvider`（interface） | callback | `AuthProvider`（abstract class） |
-| 命令处理 | `CommandHandler`（虚基类） | `ICommandHandler`（interface） | `CommandHandler`（interface） | signal | `CommandHandler`（abstract class） |
-| 消息存储 | `MessageStore`（虚基类） | `IMessageStore`（interface） | `MessageStore`（interface） | Resource | `MessageStore`（abstract class） |
-| 事件监听 | `ChatEventListener`（虚基类） | `IChatEventListener`（interface） | `ChatEventListener`（interface） | signal | `ChatEventListener`（abstract class） |
-| 消息渲染 | `MessageRenderer`（虚基类） | `IMessageRenderer`（interface） | `MessageRenderer`（interface） | signal | `MessageRenderer`（abstract class） |
+| 钩子 | C++ | C# | TypeScript | GDScript |
+|---|---|---|---|---|
+| 消息拦截 | `MessageInterceptor`（虚基类） | `IMessageInterceptor`（interface） | `MessageInterceptor`（interface） | signal + callback |
+| 认证提供 | `AuthProvider`（虚基类） | `IAuthProvider`（interface） | `AuthProvider`（interface） | callback |
+| 命令处理 | `CommandHandler`（虚基类） | `ICommandHandler`（interface） | `CommandHandler`（interface） | signal |
+| 消息存储 | `MessageStore`（虚基类） | `IMessageStore`（interface） | `MessageStore`（interface） | Resource |
+| 事件监听 | `ChatEventListener`（虚基类） | `IChatEventListener`（interface） | `ChatEventListener`（interface） | signal |
+| 消息渲染 | `MessageRenderer`（虚基类） | `IMessageRenderer`（interface） | `MessageRenderer`（interface） | signal |
 
 接口语义一致，只是按语言习惯调整命名和调用方式。详见 `sdks/core/include/chirp/` 下的 C++ 头文件定义。
 
