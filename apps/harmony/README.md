@@ -11,7 +11,9 @@ HarmonyOS NEXT（stage 模型）第三套原生壳，消费共享 TS 协议核�
 entry/src/main/ets/
   code/api/      .ts  API 层（web_companion api/ 的框架无关移植，React 面不搬）
   code/state/    .ts  stores（web_companion state/ 的逐文件移植，快照语义不变）
-  common/        .ets 平台适配层（WebSocket 传输、地址持久化、设备指纹、通知）
+  common/        .ts+ets 平台适配层（.ts：WebSocket 传输、地址持久化、设备
+                      指纹、通知、服务面组装；widgets.ets：头像/顶栏/页签
+                      等 @Component 小件——@Component 只能落 .ets）
   pages/         .ets ArkUI 页面（Index 守卫 + Host/Login/Sessions/Chat/
                       Friends/Group/Devices/PartyVoice）
 ```
