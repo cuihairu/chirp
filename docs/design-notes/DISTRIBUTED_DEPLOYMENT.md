@@ -17,23 +17,6 @@
 | **MessageRouter** | `libs/network/message_router.h/cc` | Redis Pub/Sub 消息路由器，实现跨实例消息转发 |
 | **DistributedChatService** | `services/shared/chat/src/main_distributed.cc` | 分布式版本的 Chat 服务 |
 
-### 2. 架构对比
-
-**单机架构：**
-```
-Client → Gateway → Chat (本地状态) → Redis/MySQL
-                  ↑
-             所有连接在同一实例
-```
-
-**分布式架构：**
-```
-Client → LB → Gateway-1 ──┐
-         │   Gateway-2 ───┼→ Redis Pub/Sub ─→ Chat-1/2/3
-         │   Gateway-N ──┘                         ↓
-                                                 Redis/MySQL
-```
-
 ---
 
 ## 核心设计
@@ -170,7 +153,7 @@ export CHIRP_MIGRATION_BATCH_SIZE=100
 export CHIRP_DELIVERY_TRACKING_ENABLED=1
 ```
 
-> 注:实例 ID 无对应环境变量,用 Chat 服务启动参数 `--instance_id` 指定(缺省随机生成 `chat_<hex>`),见 `services/shared/chat/src/main_distributed.cc`。`CHIRP_INSTANCE_ID`/`CHIRP_LOG_LEVEL` 等变量在源码中不存在(幽灵配置),请勿使用。
+> 注: 实例 ID 通过 Chat 服务启动参数 `--instance_id` 指定(缺省随机生成 `chat_<hex>`),见 `services/shared/chat/src/main_distributed.cc`。`CHIRP_INSTANCE_ID`/`CHIRP_LOG_LEVEL` 等环境变量在源码中不存在(幽灵配置),请勿使用也无法通过环境变量启动。
 
 ---
 
@@ -240,7 +223,6 @@ done
 
    # 验证消息仍可路由到 chat_2
    ```
-
 ---
 
 ## 故障排查
