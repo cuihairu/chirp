@@ -37,7 +37,7 @@ echo "  ./build/services/game/sdk_gateway/chirp_game_sdk_gateway --port 5000 --w
 echo "  ./build/services/app/auth/chirp_app_auth --port 6000"
 echo "  ./build/services/shared/chat/chirp_chat --port 7000 --ws_port 7001"
 
-SMOKE_ARGS="--smoke --smoke-chat --smoke-redis --smoke-npc --smoke-sdk --smoke-edge --smoke-jwt --smoke-game --smoke-voice --smoke-party"
+SMOKE_ARGS="--smoke --smoke-chat --smoke-redis --smoke-npc --smoke-sdk --smoke-edge --smoke-jwt --smoke-game --smoke-voice --smoke-party --smoke-search"
 is_smoke=0
 for a in ${SMOKE_ARGS}; do
   if [[ "${1:-}" == "${a}" ]]; then
@@ -94,6 +94,10 @@ case "${1}" in
     require_bin "./build/services/party/chirp_party"
     require_bin "./build/tools/benchmark/chirp_party_smoke_client"
     ;;
+  --smoke-search)
+    require_bin "./build/services/search/chirp_search"
+    # TODO: search smoke client (chirp_search_smoke_client) when available
+    ;;
 esac
 
 echo ""
@@ -115,6 +119,8 @@ elif [[ "${1:-}" == "--smoke-voice" ]]; then
   echo "=== Smoke Test (voice plane: room lifecycle over real chirp_voice) ==="
 elif [[ "${1:-}" == "--smoke-party" ]]; then
   echo "=== Smoke Test (party plane: snapshot lifecycle over real chirp_party) ==="
+elif [[ "${1:-}" == "--smoke-search" ]]; then
+  echo "=== Smoke Test (search plane: SQLite FTS5 index + per-client pipe, 2248/2249) ==="
 else
   echo "=== Smoke Test (chat + clients) ==="
 fi
