@@ -247,6 +247,14 @@ jobs:
           ;;
         esac
 
+    # 符号包工具:dump_syms(rust-minidump 套件,scripts/extract_symbols.sh
+    # 的既有依赖)。仅 Linux 腿产符号包(cpp 包面的 SDK 共享库 +
+    # crashpad_handler);cargo 由上方 Setup Rust 步提供。--locked 钉依赖
+    # 解析,避免上游 semver 漂移改坏符号产出。
+    - name: Install dump_syms
+      if: runner.os == 'Linux'
+      run: cargo install dump_syms --locked
+
     - name: Assemble leg tree
       shell: bash
       run: |
@@ -370,6 +378,18 @@ jobs:
         警示: 产物未签名;每日构建只证明"能编译+SDK 自身测试通过",
         完整质量门禁以仓库 CI(ci.yml 等)为准。仅供集成联调。
         NOTE
+
+        # ---- symbols/<arch> ------------------------------------------------
+        # 符号包独立成件(不进 cpp 主安装包):SDK 共享库与 crashpad_handler
+        # 的 breakpad .sym,按符号服务器布局 <name>/<debug-id>/<name>.sym
+        # 摆放(scripts/extract_symbols.sh 口径),minidump-stackwalk
+        # --symbols-path 直指即可还原崩溃栈。原二进制不动,objcopy 分离的
+        # .debug 全量调试件随符号包归档;静态库无运行时符号面不产。
+        if [ "${{ runner.os }}" = "Linux" ]; then
+          sym="$leg/symbols/$arch"
+          bash scripts/extract_symbols.sh build/sdks/core/libchirp_core_sdk.so "$sym"
+          bash scripts/extract_symbols.sh build/crashpad_handler "$sym"
+        fi
 
         # ---- desktop/<arch> ------------------------------------------------
         desktop="$leg/desktop/$arch"
@@ -561,6 +581,16 @@ jobs:
             ;;
           esac
         done
+        # 符号包:独立成件(不进 cpp 主安装包),按架构平铺 tarball;manifest
+        # 单列 symbols 组件(一键安装不消费它,归档给崩溃栈还原用)。
+        if [ -d "stage/symbols" ]; then
+          mkdir -p "$dist/symbols"
+          for arch_dir in stage/symbols/*/; do
+            if [ ! -d "$arch_dir" ]; then continue; fi
+            arch="$(basename "$arch_dir")"
+            tar czf "$dist/symbols/chirp-cpp-symbols-$arch.tar.gz" -C "stage/symbols/$arch" .
+          done
+        fi
         if [ -d "stage/go" ]; then
           mkdir -p "$dist/go"
           tar czf "$dist/go/chirp-go-sdk.tar.gz" -C stage/go sdks proto go.mod go.sum NOTE.txt
@@ -582,11 +612,17 @@ jobs:
         if [ -d "$dist/desktop" ]; then
           desktop_archs="$(for d in "$dist/desktop"/*/; do basename "$d"; done | sort | tr '\n' ' ')"
         fi
+        symbols_archs=""
+        if [ -d "$dist/symbols" ]; then
+          symbols_archs="$(find "$dist/symbols" -name '*.tar.gz' -printf '%f\n' \
+            | sed 's/chirp-cpp-symbols-//; s/\.tar\.gz//' | sort | tr '\n' ' ')"
+        fi
         python3 - "$dist/manifest.json" <<PY
         import json, sys
         cpp = "${cpp_archs}".split()
         desktop = "${desktop_archs}".split()
-        comps = {"cpp": cpp, "desktop": desktop, "go": ["any"], "ts": ["any"]}
+        symbols = "${symbols_archs}".split()
+        comps = {"cpp": cpp, "symbols": symbols, "desktop": desktop, "go": ["any"], "ts": ["any"]}
         comps = {k: v for k, v in comps.items() if v}
         json.dump({
             "stamp": "$stamp",
@@ -607,6 +643,8 @@ jobs:
           cpp/<arch>/chirp-cpp-sdk-<arch>.tar.gz   C++ core SDK(库+头+proto 源,Linux 含 crashpad_handler)
           desktop/<arch>/chirp-desktop-<arch>.*    桌面聊天 App
               linux: .deb / darwin: .dmg / windows: -setup.exe
+          symbols/<arch>/chirp-cpp-symbols-<arch>.tar.gz
+                                                   C++ 符号包(breakpad .sym,崩溃栈符号化用,独立成件)
           go/chirp-go-sdk.tar.gz                   Go 服务端 SDK 源码包
           ts/chirp-protocol.tgz                    @chirp/protocol npm 包
           manifest.json                            可用面清单(一键安装读它)
@@ -706,6 +744,7 @@ jobs:
             manifest.json) note="可用面清单(一键安装读它)" ;;
             README.txt) note="产物说明与逐资产验证命令" ;;
             chirp-cpp-sdk-*) note="C++ core SDK(库+头+proto 源,Linux 含 crashpad_handler)" ;;
+            chirp-cpp-symbols-*) note="C++ 符号包(breakpad .sym,崩溃栈符号化;独立成件不进安装包)" ;;
             chirp-desktop-*.deb) note="桌面 App(Debian 包)" ;;
             chirp-desktop-*.dmg) note="桌面 App(磁盘镜像,内含 Chirp.app)" ;;
             chirp-desktop-*-setup.exe) note="桌面 App(NSIS 安装器)" ;;
