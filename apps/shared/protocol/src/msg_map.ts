@@ -365,3 +365,20 @@ export const WORD_FILTER_FETCH = defineSpec(
   Chat.WordFilterFetchRequest,
   Chat.WordFilterFetchResponse,
 );
+
+// 消息搜索(SEARCH_MESSAGE_REQ/RESP 2248/2249):keyword 必填,其余可选。
+export const SEARCH_MESSAGE = defineSpec(
+  MsgID.SEARCH_MESSAGE_REQ,
+  MsgID.SEARCH_MESSAGE_RESP,
+  Chat.SearchMessageRequest,
+  Chat.SearchMessageResponse,
+);
+
+// 设置群昵称(SET_MEMBER_ALIAS_REQ/RESP 2122/2123):operator 设置 target
+// 在 group 内的显示别名。alias 空串 = 清除。
+export const SET_MEMBER_ALIAS = defineSpec(
+  MsgID.SET_MEMBER_ALIAS_REQ,
+  MsgID.SET_MEMBER_ALIAS_RESP,
+  Chat.SetMemberAliasRequest,
+  Chat.SetMemberAliasResponse,
+);

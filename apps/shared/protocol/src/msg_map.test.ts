@@ -1,9 +1,24 @@
 import { LoginResponse, LogoutResponse } from '@chirp/proto/auth';
-import { GetHistoryResponse, SendMessageResponse } from '@chirp/proto/chat';
+import {
+  GetHistoryResponse,
+  SearchMessageResponse,
+  SendMessageResponse,
+  SetMemberAliasResponse,
+} from '@chirp/proto/chat';
 import { MsgID } from '@chirp/proto/gateway';
 import { GetRoomInfoResponse, JoinRoomResponse, RoomType } from '@chirp/proto/voice';
 import { describe, expect, it } from 'vitest';
-import { CREATE_ROOM, GET_ROOM_INFO, JOIN_ROOM, GET_HISTORY, LOGIN, LOGOUT, SEND_MESSAGE } from './msg_map';
+import {
+  CREATE_ROOM,
+  GET_HISTORY,
+  GET_ROOM_INFO,
+  JOIN_ROOM,
+  LOGIN,
+  LOGOUT,
+  SEARCH_MESSAGE,
+  SEND_MESSAGE,
+  SET_MEMBER_ALIAS,
+} from './msg_map';
 
 describe('message specs', () => {
   it('pins the request/response id pairs the server dispatches on', () => {
@@ -82,5 +97,32 @@ describe('message specs', () => {
     expect(GET_HISTORY.decodeResponse(resp).code).toBe(0);
     const logout = LogoutResponse.encode(LogoutResponse.fromPartial({})).finish();
     expect(LOGOUT.decodeResponse(logout).code).toBe(0);
+  });
+
+  it('roundtrips the search and member-alias specs', () => {
+    const search = SEARCH_MESSAGE.encodeRequest({
+      keyword: '天气',
+      channelId: 'world',
+      contentTypes: [1],
+      beforeTimestamp: 100,
+      beforeMessageId: 'm9',
+      limit: 5,
+    });
+    expect(search.length).toBeGreaterThan(0);
+    const searchResp = SearchMessageResponse.encode(
+      SearchMessageResponse.fromPartial({ code: 0, hasMore: true }),
+    ).finish();
+    expect(SEARCH_MESSAGE.decodeResponse(searchResp).hasMore).toBe(true);
+
+    const alias = SET_MEMBER_ALIAS.encodeRequest({
+      groupId: 'g1',
+      targetUserId: 'u9',
+      alias: '阿九',
+    });
+    expect(alias.length).toBeGreaterThan(0);
+    const aliasResp = SetMemberAliasResponse.encode(
+      SetMemberAliasResponse.fromPartial({ code: 0, alias: '阿九' }),
+    ).finish();
+    expect(SET_MEMBER_ALIAS.decodeResponse(aliasResp).alias).toBe('阿九');
   });
 });

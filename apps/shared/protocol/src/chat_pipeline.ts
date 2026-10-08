@@ -28,8 +28,15 @@ import type { DevicePresence } from '@chirp/proto/auth';
 import { MsgID } from '@chirp/proto/gateway';
 import type { ConnStatus } from './chirp_client';
 import { RequestError } from './errors';
-import { LOGIN, SEND_MESSAGE } from './msg_map';
+import { LOGIN, SEND_MESSAGE, SEARCH_MESSAGE, SET_MEMBER_ALIAS } from './msg_map';
 import type { MessageSpec } from './msg_map';
+import {
+  SearchMessageRequest,
+  SearchMessageResponse,
+  SetMemberAliasRequest,
+  SetMemberAliasResponse,
+  GroupMemberAliasUpdatedNotify,
+} from '@chirp/proto/chat';
 import type {
   AuthProvider,
   ChatEventListener,
@@ -128,6 +135,8 @@ export class ChatPipeline {
       this.conn.onNotify(MsgID.CHAT_MESSAGE_NOTIFY, (body) => this.onIncoming(body)),
       this.conn.onNotify(MsgID.KICK_NOTIFY, (body) => this.onKickBody(body)),
       this.conn.onNotify(MsgID.DEVICES_PRESENCE_NOTIFY, (body) => this.onDevicesPresenceBody(body)),
+      this.conn.onNotify(MsgID.GROUP_MEMBER_ALIAS_UPDATED_NOTIFY, (body) =>
+        this.onGroupMemberAliasUpdated(body)),
       this.conn.onStatus((status) => {
         for (const { listener } of this.snapshotListeners()) {
           try {
@@ -267,7 +276,54 @@ export class ChatPipeline {
     this.store?.cleanup?.(olderThanMs);
   }
 
-  // ---- internals -----------------------------------------------------------
+  // ---- 消息搜索(SEARCH_MESSAGE_REQ/RESP 2248/2249) ----
+  // keyword 必填,其余可选。返回 SearchMessageResponse{code, matches[], has_more}。
+  async searchMessages(
+    keyword: string,
+    options: {
+      channelId?: string;
+      contentTypes?: number[];
+      beforeTimestamp?: number;
+      beforeMessageId?: string;
+      limit?: number;
+    } = {},
+  ): Promise<SearchMessageResponse> {
+    if (this.conn.status !== 'connected') {
+      throw new RequestError('closed');
+    }
+    if (!keyword) {
+      throw new RangeError('keyword is required');
+    }
+    const request: SearchMessageRequest = SearchMessageRequest.fromPartial({
+      keyword,
+      channelId: options.channelId ?? '',
+      contentTypes: options.contentTypes ?? [],
+      beforeTimestamp: options.beforeTimestamp ?? 0,
+      beforeMessageId: options.beforeMessageId ?? '',
+      limit: options.limit ?? 20,
+    });
+    return this.conn.request(SEARCH_MESSAGE, request);
+  }
+
+  // ---- 设置群昵称(SET_MEMBER_ALIAS_REQ/RESP 2122/2123) ----
+  // operator 设置 target 在 group 内的显示别名。alias 空串 = 清除。
+  async setMemberAlias(
+    groupId: string,
+    targetUserId: string,
+    alias: string,
+  ): Promise<SetMemberAliasResponse> {
+    if (this.conn.status !== 'connected') {
+      throw new RequestError('closed');
+    }
+    const request: SetMemberAliasRequest = SetMemberAliasRequest.fromPartial({
+      groupId,
+      targetUserId,
+      alias,
+    });
+    return this.conn.request(SET_MEMBER_ALIAS, request);
+  }
+
+  // ---- 内部 -----------------------------------------------------------
 
   /** null = pass through (no handlers); a string = the blocked reason. */
   private routeCommand(content: string, senderId: string): string | null {
@@ -392,6 +448,22 @@ export class ChatPipeline {
     for (const { listener } of this.snapshotListeners()) {
       try {
         listener.onKicked?.(kick.reason);
+      } catch {
+        // Same isolation rule.
+      }
+    }
+  }
+
+  private onGroupMemberAliasUpdated(body: Uint8Array): void {
+    let notify: GroupMemberAliasUpdatedNotify;
+    try {
+      notify = GroupMemberAliasUpdatedNotify.decode(body);
+    } catch {
+      return; // malformed notify: ignore
+    }
+    for (const { listener } of this.snapshotListeners()) {
+      try {
+        listener.onGroupMemberAliasUpdated?.(notify.groupId, notify.userId, notify.alias);
       } catch {
         // Same isolation rule.
       }

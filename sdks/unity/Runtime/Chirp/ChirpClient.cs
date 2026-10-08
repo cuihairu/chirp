@@ -381,7 +381,7 @@ namespace Chirp.Sdk
         /// 与 C++ 参考实现对齐:连接态检查先于参数校验,keyword 为空抛
         /// ArgumentException;非连接态抛 RequestError(Closed)。</summary>
         public async Task<Chirp.Chat.SearchMessageResponse> SearchMessagesAsync(string keyword,
-            string channelId = "", int[] contentTypes = null, long beforeTimestamp = 0,
+            string channelId = "", int[]? contentTypes = null, long beforeTimestamp = 0,
             string beforeMessageId = "", int limit = 20, int? timeoutMs = null)
         {
             if (Status != ConnStatus.Connected)

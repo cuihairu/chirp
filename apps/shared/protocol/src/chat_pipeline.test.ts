@@ -1,5 +1,16 @@
 import { DevicesPresenceNotify, LoginRequest, LoginResponse } from '@chirp/proto/auth';
-import { ChannelType, ChatMessage, MsgType, SendMessageRequest, SendMessageResponse } from '@chirp/proto/chat';
+import {
+  ChannelType,
+  ChatMessage,
+  GroupMemberAliasUpdatedNotify,
+  MsgType,
+  SearchMessageRequest,
+  SearchMessageResponse,
+  SendMessageRequest,
+  SendMessageResponse,
+  SetMemberAliasRequest,
+  SetMemberAliasResponse,
+} from '@chirp/proto/chat';
 import { ErrorCode } from '@chirp/proto/common';
 import { KickNotify } from '@chirp/proto/auth';
 import { MsgID, Packet } from '@chirp/proto/gateway';
@@ -249,6 +260,82 @@ describe('ChatPipeline send pipeline', () => {
       await expect(
         pipeline.send({ channelType: ChannelType.PRIVATE }, ''),
       ).rejects.toMatchObject({ kind: 'closed' });
+    });
+  });
+
+  it('searchMessages: wire round-trip with the full option surface', async () => {
+    await makeHarness(async (_client, pipeline, ws) => {
+      const pending = pipeline.searchMessages('天气', {
+        channelId: 'world',
+        contentTypes: [1],
+        beforeTimestamp: 100,
+        beforeMessageId: 'm9',
+        limit: 5,
+      });
+      expect(ws.lastSentPacket().msgId).toBe(MsgID.SEARCH_MESSAGE_REQ);
+      const req = SearchMessageRequest.decode(ws.lastSentPacket().body);
+      expect(req.keyword).toBe('天气');
+      expect(req.channelId).toBe('world');
+      expect(req.contentTypes).toEqual([1]);
+      expect(req.beforeTimestamp).toBe(100);
+      expect(req.beforeMessageId).toBe('m9');
+      expect(req.limit).toBe(5);
+
+      settle(ws, MsgID.SEARCH_MESSAGE_RESP, SearchMessageResponse.encode(
+        SearchMessageResponse.fromPartial({
+          code: ErrorCode.OK,
+          matches: [{
+            messageId: 'm1',
+            channelId: 'world',
+            senderId: 'u9',
+            msgType: 1,
+            timestamp: 100,
+            content: '今天天气不错',
+          }],
+          hasMore: true,
+        }),
+      ).finish());
+      const resp = await pending;
+      expect(resp.code).toBe(ErrorCode.OK);
+      expect(resp.matches.length).toBe(1);
+      expect(resp.matches[0].messageId).toBe('m1');
+      expect(resp.matches[0].content).toBe('今天天气不错');
+      expect(resp.hasMore).toBe(true);
+    });
+  });
+
+  it('searchMessages validates connection first, then keyword (C++ order)', async () => {
+    await makeHarness(async (client, pipeline) => {
+      // Argument check fires while connected (C++ RangeError parity).
+      await expect(pipeline.searchMessages('')).rejects.toThrow(RangeError);
+
+      client.disconnect(); // …but the status check wins over it
+      await expect(
+        pipeline.searchMessages('天气'),
+      ).rejects.toMatchObject({ kind: 'closed' });
+    });
+  });
+
+  it('setMemberAlias: wire round-trip; empty alias = clear passthrough', async () => {
+    await makeHarness(async (_client, pipeline, ws) => {
+      const pending = pipeline.setMemberAlias('g1', 'u9', '');
+      expect(ws.lastSentPacket().msgId).toBe(MsgID.SET_MEMBER_ALIAS_REQ);
+      const req = SetMemberAliasRequest.decode(ws.lastSentPacket().body);
+      expect(req.groupId).toBe('g1');
+      expect(req.targetUserId).toBe('u9');
+      expect(req.alias).toBe(''); // clear-alias passthrough
+
+      settle(ws, MsgID.SET_MEMBER_ALIAS_RESP, SetMemberAliasResponse.encode(
+        SetMemberAliasResponse.fromPartial({
+          code: ErrorCode.OK,
+          groupId: 'g1',
+          userId: 'u9',
+          alias: '',
+        }),
+      ).finish());
+      const resp = await pending;
+      expect(resp.code).toBe(ErrorCode.OK);
+      expect(resp.alias).toBe(''); // echo of the cleared alias
     });
   });
 
@@ -657,6 +744,32 @@ describe('ChatPipeline inbound edges', () => {
       ws.serverFrame(MsgID.DEVICES_PRESENCE_NOTIFY, 0,
         DevicesPresenceNotify.encode(DevicesPresenceNotify.fromPartial({})).finish());
       expect(seen).toEqual([[1, 0]]); // garbage -> empty list -> early return both times
+    });
+  });
+
+  it('fans group-member-alias notifies out; garbage bodies are no-ops', async () => {
+    await makeHarness(async (_client, pipeline, ws) => {
+      const seen: Array<[string, string, string]> = [];
+      pipeline.addListener({
+        onGroupMemberAliasUpdated: (groupId, userId, alias) =>
+          seen.push([groupId, userId, alias]),
+      });
+      pipeline.addListener({
+        onGroupMemberAliasUpdated: () => {
+          throw new Error('bad listener');
+        },
+      });
+
+      ws.serverFrame(MsgID.GROUP_MEMBER_ALIAS_UPDATED_NOTIFY, 0,
+        GroupMemberAliasUpdatedNotify.encode(GroupMemberAliasUpdatedNotify.fromPartial({
+          groupId: 'g1',
+          userId: 'u9',
+          alias: '阿九',
+        })).finish());
+      expect(seen).toEqual([['g1', 'u9', '阿九']]); // the throwing listener was contained
+
+      ws.serverFrame(MsgID.GROUP_MEMBER_ALIAS_UPDATED_NOTIFY, 0, new Uint8Array([0xff])); // undecodable
+      expect(seen.length).toBe(1);
     });
   });
 

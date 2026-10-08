@@ -972,6 +972,27 @@ TEST_F(SdkClientTest, IdleLogoutAndSendPostsAreExecuted) {
   EXPECT_EQ(client.GetState(), ConnectionState::Disconnected);
 }
 
+TEST_F(SdkClientTest, SearchAndAliasWithoutConnectionReportNotConnected) {
+  ChatClient client(TcpConfig());
+  std::promise<std::error_code> search_done, alias_done;
+  client.SearchMessages("kw",
+      [&](const std::error_code& ec, const chirp::chat::SearchMessageResponse&) {
+        search_done.set_value(ec);
+      });
+  client.SetMemberAlias("g", "u", "a",
+      [&](const std::error_code& ec, const chirp::chat::SetMemberAliasResponse&) {
+        alias_done.set_value(ec);
+      });
+  auto search_future = search_done.get_future();
+  auto alias_future = alias_done.get_future();
+  ASSERT_EQ(search_future.wait_for(std::chrono::milliseconds(5000)),
+            std::future_status::ready);
+  EXPECT_EQ(search_future.get(), make_error_code(ChatError::NotConnected));
+  ASSERT_EQ(alias_future.wait_for(std::chrono::milliseconds(5000)),
+            std::future_status::ready);
+  EXPECT_EQ(alias_future.get(), make_error_code(ChatError::NotConnected));
+}
+
 TEST_F(ChatClientLoopbackTest, ConnectWhileAlreadyConnectedIsIgnored) {
   // Connect to a gateway that never answers LOGIN so the client stays in the
   // Connected state; a second Connect() must hit the state guard.
@@ -4054,6 +4075,60 @@ TEST_F(ConvenienceApiTest, BulkDeleteAndMentionSuggestionsRoundTrip) {
     client_->FetchMentionSuggestions("ch-9", "bo", cb);
   }, ec);
   EXPECT_FALSE(ec);
+}
+
+TEST_F(ConvenienceApiTest, SearchMessagesAndSetMemberAliasRoundTrip) {
+  StartGateway([&](const chirp::gateway::Packet& pkt, auto send) {
+    if (pkt.msg_id() == chirp::gateway::SEARCH_MESSAGE_REQ) {
+      chirp::chat::SearchMessageRequest req;
+      ASSERT_TRUE(req.ParseFromString(pkt.body()));
+      EXPECT_EQ(req.keyword(), "天气");
+      EXPECT_EQ(req.channel_id(), "world");
+      ASSERT_EQ(req.content_types_size(), 1);
+      EXPECT_EQ(req.content_types(0), 1);
+      EXPECT_EQ(req.before_timestamp(), 99);
+      EXPECT_EQ(req.before_message_id(), "m-1");
+      EXPECT_EQ(req.limit(), 5);
+      chirp::chat::SearchMessageResponse resp;
+      resp.set_code(chirp::common::OK);
+      resp.set_has_more(false);
+      send(RespFor(pkt, chirp::gateway::SEARCH_MESSAGE_RESP, resp.SerializeAsString()));
+      return;
+    }
+    if (pkt.msg_id() == chirp::gateway::SET_MEMBER_ALIAS_REQ) {
+      chirp::chat::SetMemberAliasRequest req;
+      ASSERT_TRUE(req.ParseFromString(pkt.body()));
+      EXPECT_EQ(req.group_id(), "g-1");
+      EXPECT_EQ(req.target_user_id(), "u-2");
+      EXPECT_EQ(req.alias(), "队长");
+      chirp::chat::SetMemberAliasResponse resp;
+      resp.set_code(chirp::common::OK);
+      send(RespFor(pkt, chirp::gateway::SET_MEMBER_ALIAS_RESP, resp.SerializeAsString()));
+      return;
+    }
+  });
+  ConnectAndLogin();
+
+  std::error_code ec;
+  const auto search = WaitRpc<chirp::chat::SearchMessageResponse>([&](auto cb) {
+    client_->SearchMessages("天气", cb, "world", {1}, 99, "m-1", 5);
+  }, ec);
+  EXPECT_FALSE(ec);
+  EXPECT_EQ(search.code(), chirp::common::OK);
+  EXPECT_FALSE(search.has_more());
+  // 词缺省短路：keyword 为空直接 InvalidParam，不发包。
+  const auto invalid = chirp::sdk::make_error_code(chirp::sdk::ChatError::InvalidParam);
+  (void)WaitRpc<chirp::chat::SearchMessageResponse>([&](auto cb) {
+    client_->SearchMessages("", cb);
+  }, ec);
+  EXPECT_EQ(ec, invalid);
+
+  ec.clear();
+  const auto alias = WaitRpc<chirp::chat::SetMemberAliasResponse>([&](auto cb) {
+    client_->SetMemberAlias("g-1", "u-2", "队长", cb);
+  }, ec);
+  EXPECT_FALSE(ec);
+  EXPECT_EQ(alias.code(), chirp::common::OK);
 }
 
 TEST_F(ConvenienceApiTest, GroupLifecycleRoundTrip) {
