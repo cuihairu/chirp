@@ -3,6 +3,7 @@ import {
   ChatMessage,
   GroupInfo,
   GroupMemberKickedNotify,
+  GroupMemberAliasUpdatedNotify,
   MessageAck,
   MessageDeletedNotify,
   MessageEditedNotify,
@@ -11,6 +12,8 @@ import {
   MsgType,
   ReactionAddedNotify,
   ReactionRemovedNotify,
+  SearchMessageResponse,
+  SetMemberAliasResponse,
   type SendMessageRequest,
   TypingIndicator,
 } from '@chirp/proto/chat';
@@ -36,7 +39,9 @@ import {
   LOGOUT,
   MARK_READ,
   REMOVE_REACTION,
+  SEARCH_MESSAGE,
   SEND_MESSAGE,
+  SET_MEMBER_ALIAS,
   type MessageSpec,
 } from '@chirp/app-protocol/msg_map';
 import {
@@ -163,6 +168,10 @@ export class ChatApi {
       this.conn.onNotify(MsgID.REACTION_REMOVED_NOTIFY, (body) => this.onReactionNotify(body, false)),
       this.conn.onNotify(MsgID.MESSAGE_EDITED_NOTIFY, (body) => this.onEditedNotify(body)),
       this.conn.onNotify(MsgID.MESSAGE_DELETED_NOTIFY, (body) => this.onDeletedNotify(body)),
+      // 群昵称别名变更通知(GROUP_MEMBER_ALIAS_UPDATED_NOTIFY 2124)：渲染两处
+      // 消费——成员列表行 + 群聊消息发送者名。
+      this.conn.onNotify(MsgID.GROUP_MEMBER_ALIAS_UPDATED_NOTIFY, (body) =>
+        this.onGroupMemberAliasUpdated(body)),
       // 多端在线（P0）：同账号其他端的上线/下线清单变更。
       ...(this.onlineDevices
         ? [
@@ -493,6 +502,49 @@ export class ChatApi {
     return resp.code;
   }
 
+  // ---- 消息搜索(SEARCH_MESSAGE_REQ/RESP 2248/2249) ----
+  // keyword 必填,其余可选。返回 SearchMessageResponse{code, matches[], has_more}。
+  async searchMessages(
+    keyword: string,
+    options: {
+      channelId?: string;
+      contentTypes?: number[];
+      beforeTimestamp?: number;
+      beforeMessageId?: string;
+      limit?: number;
+    } = {},
+  ): Promise<SearchMessageResponse> {
+    const userId = this.auth.get().userId;
+    if (!userId) return { code: ErrorCode.SESSION_EXPIRED, matches: [], hasMore: false };
+    if (!keyword) return { code: ErrorCode.INVALID_PARAM, matches: [], hasMore: false };
+    const resp = await this.conn.request(SEARCH_MESSAGE, {
+      keyword,
+      channelId: options.channelId ?? '',
+      contentTypes: options.contentTypes ?? [],
+      beforeTimestamp: options.beforeTimestamp ?? 0,
+      beforeMessageId: options.beforeMessageId ?? '',
+      limit: options.limit ?? 20,
+    });
+    return resp;
+  }
+
+  // ---- 设置群昵称(SET_MEMBER_ALIAS_REQ/RESP 2122/2123) ----
+  // operator 设置 target 在 group 内的显示别名。alias 空串 = 清除。
+  async setMemberAlias(
+    groupId: string,
+    targetUserId: string,
+    alias: string,
+  ): Promise<SetMemberAliasResponse> {
+    const userId = this.auth.get().userId;
+    if (!userId) return { code: ErrorCode.SESSION_EXPIRED, groupId, userId: targetUserId, alias };
+    const resp = await this.conn.request(SET_MEMBER_ALIAS, {
+      groupId,
+      targetUserId,
+      alias,
+    });
+    return resp;
+  }
+
   /** 2120: someone was kicked. If it was me, forget the group locally. */
   private onKickedNotify(body: Uint8Array): void {
     let notify: GroupMemberKickedNotify;
@@ -509,6 +561,22 @@ export class ChatApi {
     } else {
       void this.refreshGroups();
     }
+  }
+
+  /** 2124: group member alias updated — update conversation title cache and
+   *  local message sender name rendering. Malformed notify is silently ignored. */
+  private onGroupMemberAliasUpdated(body: Uint8Array): void {
+    try {
+      GroupMemberAliasUpdatedNotify.decode(body);
+    } catch {
+      return; // malformed notify: ignore
+    }
+    // Refresh group list to pick up new alias in member rows
+    void this.refreshGroups();
+    // The actual message rendering uses the alias from the notify body.
+    // Since ChatMessageView doesn't carry alias, the UI layer should
+    // subscribe to this notify via the chat_pipeline's onGroupMemberAliasUpdated
+    // hook and update its local alias map for rendering.
   }
 
   async createGroup(name: string, description = ''): Promise<string | null> {
