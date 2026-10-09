@@ -24,6 +24,17 @@ describe('MessageBubble', () => {
     expect(screen.getByText(/发送失败/)).toBeTruthy();
   });
 
+  it('shows the mute hint for own MUTED rejections', () => {
+    render(
+      <MessageBubble
+        message={message({ senderId: 'user_a', failed: true, failureReason: 'muted' })}
+        selfId="user_a"
+        onToggleReaction={noop}
+      />,
+    );
+    expect(screen.getByText(/禁言中,消息未发送/)).toBeTruthy();
+  });
+
   it('shows the queued note for offline deliveries', () => {
     render(
       <MessageBubble message={message({ senderId: 'user_a', queuedOffline: true })} selfId="user_a" onToggleReaction={noop} />,

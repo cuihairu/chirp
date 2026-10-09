@@ -94,3 +94,136 @@ describe('GroupSettingsDialog', () => {
     confirmSpy.mockRestore();
   });
 });
+
+describe('GroupSettingsDialog mute', () => {
+  /** user_a = MODERATOR(self), user_b = plain member currently muted. */
+  const moderatorResponder = async (msgId: MsgID, _req?: unknown): Promise<unknown> => {
+    void _req;
+    if (msgId === MsgID.GET_GROUP_MEMBERS_REQ) {
+      return {
+        code: 0,
+        members: [
+          { userId: 'user_a', username: 'user_a', role: 1 },
+          { userId: 'user_b', username: 'user_b', mutedUntilTs: Date.now() + 60_000 },
+        ],
+      };
+    }
+    return { code: 0, groups: [] };
+  };
+
+  /** Same roster but user_b is NOT muted — the mute entry reads 禁言. */
+  const unmutedModeratorResponder = async (msgId: MsgID, req?: unknown): Promise<unknown> => {
+    if (msgId === MsgID.GET_GROUP_MEMBERS_REQ) {
+      return {
+        code: 0,
+        members: [
+          { userId: 'user_a', username: 'user_a', role: 1 },
+          { userId: 'user_b', username: 'user_b' },
+        ],
+      };
+    }
+    return membersResponder(msgId, req);
+  };
+
+  it('shows the muted badge and an unmute entry to a moderator', async () => {
+    await renderDialog({ responder: moderatorResponder });
+    await waitFor(() => expect(screen.getByText('user_b (禁言中)')).toBeTruthy());
+    expect(screen.getByTestId('mute-user_b').textContent).toBe(zh.chat.unmute);
+    // Self (moderator) carries no mute entry on their own row.
+    expect(screen.queryByTestId('mute-user_a')).toBeNull();
+  });
+
+  it('hides mute entries from plain members', async () => {
+    const plainResponder = async (msgId: MsgID, req?: unknown): Promise<unknown> => {
+      if (msgId === MsgID.GET_GROUP_MEMBERS_REQ) {
+        return {
+          code: 0,
+          members: [
+            { userId: 'user_a', username: 'user_a' },
+            { userId: 'user_b', username: 'user_b', mutedUntilTs: Date.now() + 60_000 },
+          ],
+        };
+      }
+      return membersResponder(msgId, req);
+    };
+    await renderDialog({ responder: plainResponder });
+    await waitFor(() => expect(screen.getByText('user_b (禁言中)')).toBeTruthy());
+    expect(screen.queryByTestId('mute-user_b')).toBeNull();
+  });
+
+  it('mutes via the duration prompt (minutes -> seconds)', async () => {
+    const seen: Array<{ msgId: MsgID; req: unknown }> = [];
+    const promptSpy = vi.spyOn(window, 'prompt').mockReturnValue('10');
+    await renderDialog({
+      responder: async (msgId, req) => {
+        seen.push({ msgId, req });
+        if (msgId === MsgID.SET_GROUP_MUTE_REQ) return { code: 0, mutedUntilTs: 1 };
+        return unmutedModeratorResponder(msgId);
+      },
+    });
+    await waitFor(() => expect(screen.getByTestId('mute-user_b')).toBeTruthy());
+    fireEvent.click(screen.getByTestId('mute-user_b'));
+    await waitFor(() =>
+      expect(
+        seen.some(
+          (r) =>
+            r.msgId === MsgID.SET_GROUP_MUTE_REQ &&
+            (r.req as { targetUserId: string }).targetUserId === 'user_b' &&
+            (r.req as { durationSec: number }).durationSec === 600,
+        ),
+      ).toBe(true),
+    );
+    promptSpy.mockRestore();
+  });
+
+  it('cancels the mute when the prompt is dismissed or zero', async () => {
+    const seen: Array<{ msgId: MsgID; req: unknown }> = [];
+    const promptSpy = vi.spyOn(window, 'prompt').mockReturnValue('0');
+    await renderDialog({
+      responder: async (msgId, req) => {
+        seen.push({ msgId, req });
+        return unmutedModeratorResponder(msgId, req);
+      },
+    });
+    await waitFor(() => expect(screen.getByTestId('mute-user_b')).toBeTruthy());
+    fireEvent.click(screen.getByTestId('mute-user_b'));
+    expect(seen.some((r) => r.msgId === MsgID.SET_GROUP_MUTE_REQ)).toBe(false);
+    promptSpy.mockRestore();
+  });
+
+  it('unmutes a muted member without prompting', async () => {
+    const seen: Array<{ msgId: MsgID; req: unknown }> = [];
+    await renderDialog({
+      responder: async (msgId, req) => {
+        seen.push({ msgId, req });
+        if (msgId === MsgID.SET_GROUP_MUTE_REQ) return { code: 0, mutedUntilTs: 0 };
+        return moderatorResponder(msgId);
+      },
+    });
+    await waitFor(() => expect(screen.getByTestId('mute-user_b')).toBeTruthy());
+    fireEvent.click(screen.getByTestId('mute-user_b'));
+    await waitFor(() =>
+      expect(
+        seen.some(
+          (r) =>
+            r.msgId === MsgID.SET_GROUP_MUTE_REQ &&
+            (r.req as { durationSec: number }).durationSec === 0,
+        ),
+      ).toBe(true),
+    );
+  });
+
+  it('surfaces a failure hint when the server rejects the mute', async () => {
+    const promptSpy = vi.spyOn(window, 'prompt').mockReturnValue('10');
+    await renderDialog({
+      responder: async (msgId, req) => {
+        if (msgId === MsgID.SET_GROUP_MUTE_REQ) return { code: 3 };
+        return unmutedModeratorResponder(msgId, req);
+      },
+    });
+    await waitFor(() => expect(screen.getByTestId('mute-user_b')).toBeTruthy());
+    fireEvent.click(screen.getByTestId('mute-user_b'));
+    await waitFor(() => expect(screen.getByText(zh.chat.muteFailed)).toBeTruthy());
+    promptSpy.mockRestore();
+  });
+});

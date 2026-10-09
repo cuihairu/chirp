@@ -4,6 +4,7 @@ import {
   GroupInfo,
   GroupMemberAliasUpdatedNotify,
   GroupMemberKickedNotify,
+  GroupMemberMutedNotify,
   MessageAck,
   MessageDeletedNotify,
   MessageEditedNotify,
@@ -13,6 +14,7 @@ import {
   ReactionAddedNotify,
   ReactionRemovedNotify,
   SearchMessageResponse,
+  SetGroupMuteResponse,
   SetMemberAliasResponse,
   type SendMessageRequest,
   TypingIndicator,
@@ -41,6 +43,7 @@ import {
   REMOVE_REACTION,
   SEARCH_MESSAGE,
   SEND_MESSAGE,
+  SET_GROUP_MUTE,
   SET_MEMBER_ALIAS,
   type MessageSpec,
 } from '@chirp/app-protocol/msg_map';
@@ -172,6 +175,10 @@ export class ChatApi {
       // 消费——成员列表行 + 群聊消息发送者名。
       this.conn.onNotify(MsgID.GROUP_MEMBER_ALIAS_UPDATED_NOTIFY, (body) =>
         this.onGroupMemberAliasUpdated(body)),
+      // 群禁言态变更通知(GROUP_MEMBER_MUTED_NOTIFY 2252):刷新群列表,
+      // 成员行据此渲染禁言徽章(GroupMember.mutedUntilTs 随名册下发)。
+      this.conn.onNotify(MsgID.GROUP_MEMBER_MUTED_NOTIFY, (body) =>
+        this.onGroupMemberMutedUpdated(body)),
       // 多端在线（P0）：同账号其他端的上线/下线清单变更。
       ...(this.onlineDevices
         ? [
@@ -319,7 +326,13 @@ export class ChatApi {
       this.ensureConversation(channel, channel.kind === 'private' ? channel.peerId : channel.channelId);
       touchConversation(this.conversations, channel.key, text, confirmed.timestamp);
     } else {
-      failPendingMessage(this.messages, channel.key, clientId);
+      // 禁言拒发(MUTED)单独标注,气泡给禁言专属提示而非笼统「发送失败」。
+      failPendingMessage(
+        this.messages,
+        channel.key,
+        clientId,
+        resp.code === ErrorCode.MUTED ? 'muted' : undefined,
+      );
     }
   }
 
@@ -545,6 +558,26 @@ export class ChatApi {
     return resp;
   }
 
+  // ---- 群禁言(SET_GROUP_MUTE_REQ/RESP 2250/2251) ----
+  // MODERATOR+ 禁言/解禁本群成员。seconds=0 解禁,上限 30 天(30*24*3600);
+  // 服务端回 PERMISSION_DENIED 时本端不做二次判定,由 UI 层按角色收入口。
+  async setGroupMute(
+    groupId: string,
+    targetUserId: string,
+    seconds: number,
+  ): Promise<SetGroupMuteResponse> {
+    const userId = this.auth.get().userId;
+    if (!userId) {
+      return { code: ErrorCode.SESSION_EXPIRED, groupId, userId: targetUserId, mutedUntilTs: 0 };
+    }
+    const resp = await this.conn.request(SET_GROUP_MUTE, {
+      groupId,
+      targetUserId,
+      durationSec: seconds,
+    });
+    return resp;
+  }
+
   /** 2120: someone was kicked. If it was me, forget the group locally. */
   private onKickedNotify(body: Uint8Array): void {
     let notify: GroupMemberKickedNotify;
@@ -570,6 +603,18 @@ export class ChatApi {
   private onGroupMemberAliasUpdated(body: Uint8Array): void {
     try {
       GroupMemberAliasUpdatedNotify.decode(body);
+    } catch {
+      return; // malformed notify: ignore
+    }
+    void this.refreshGroups();
+  }
+
+  /** 2252: a member's mute state changed — refresh the roster so member rows
+   *  re-render the muted badge / unmute entry. Malformed notify is silently
+   *  ignored (same shape as the 2124 alias notify). */
+  private onGroupMemberMutedUpdated(body: Uint8Array): void {
+    try {
+      GroupMemberMutedNotify.decode(body);
     } catch {
       return; // malformed notify: ignore
     }

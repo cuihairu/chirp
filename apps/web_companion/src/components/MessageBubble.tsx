@@ -56,7 +56,9 @@ export default function MessageBubble({
       <Typography variant="caption" sx={{ opacity: 0.75 }}>
         {timeLabel(message.timestamp)}
         {mine && message.pending && ` · ${zh.chat.statusPending}`}
-        {mine && message.failed && ` · ${zh.chat.statusFailed}`}
+        {mine &&
+          message.failed &&
+          ` · ${message.failureReason === 'muted' ? zh.chat.statusMuted : zh.chat.statusFailed}`}
         {mine && message.queuedOffline && ` · ${zh.chat.statusQueued}`}
         {mine && read && ` · ${zh.chat.read}`}
         {!mine && message.edited && ` ${zh.chat.edited}`}

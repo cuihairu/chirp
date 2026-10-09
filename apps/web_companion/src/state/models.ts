@@ -50,6 +50,8 @@ export interface ChatMessageView {
   pending: boolean;
   /** Server rejected the send (RESP code != OK). */
   failed?: boolean;
+  /** Rejection reason detail: 'muted' surfaces the mute-specific bubble hint. */
+  failureReason?: 'muted';
   /** TARGET_OFFLINE is still a delivery: queued server-side. */
   queuedOffline?: boolean;
   edited?: boolean;

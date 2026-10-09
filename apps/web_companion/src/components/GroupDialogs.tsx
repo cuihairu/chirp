@@ -15,13 +15,21 @@ import {
 import { useServices } from '../api/services';
 import { useStoreValue } from '../state/store';
 import { ErrorCode } from '@chirp/proto/common';
+import { GroupMemberRole } from '@chirp/proto/chat';
 import type { GroupMember } from '@chirp/proto/chat';
 import { zh } from '../i18n/zh';
 
+/** MODERATOR 及以上(含 ADMIN/OWNER)可执行群禁言;与 GroupManager 台账同口径。 */
+function isModeratorPlus(role: GroupMemberRole | undefined): boolean {
+  return role === GroupMemberRole.MODERATOR || role === GroupMemberRole.ADMIN
+    || role === GroupMemberRole.OWNER;
+}
+
 /**
  * Group management: roster, direct "invite" (the server adds members without
- * a pending state), owner-only kick, and leaving. Own leave / being kicked
- * drops the conversation locally, so the parent navigates away via onLeft.
+ * a pending state), owner-only kick, moderator+ mute/unmute, and leaving.
+ * Own leave / being kicked drops the conversation locally, so the parent
+ * navigates away via onLeft.
  */
 export default function GroupSettingsDialog({
   groupId,
@@ -54,6 +62,10 @@ export default function GroupSettingsDialog({
     if (open) void reload();
   }, [open, reload]);
 
+  // 禁言入口按名册角色放行:名册未载入时回退 ownerId 判定(群主恒可)。
+  const selfRole = members.find((m) => m.userId === selfId)?.role;
+  const canMute = members.length > 0 ? isModeratorPlus(selfRole) : isOwner;
+
   const invite = async (): Promise<void> => {
     const target = inviteId.trim();
     if (!target) return;
@@ -71,6 +83,24 @@ export default function GroupSettingsDialog({
   const kick = async (target: string): Promise<void> => {
     const code = await api.kickMember(groupId, target);
     if (code !== 0) return;
+    await reload();
+  };
+
+  /** target 未禁言时弹时长输入(分钟);已禁言则解禁(seconds=0)。 */
+  const setMute = async (target: string, currentlyMutedUntil: number): Promise<void> => {
+    let seconds = 0;
+    if (currentlyMutedUntil === 0) {
+      const input = window.prompt(zh.chat.mutePrompt(target));
+      if (input === null) return;
+      seconds = Math.max(0, Math.floor(Number(input) * 60) || 0);
+      if (seconds === 0) return;
+    }
+    const resp = await api.setGroupMute(groupId, target, seconds);
+    if (resp.code !== 0) {
+      setError(zh.chat.muteFailed);
+      return;
+    }
+    setError(null);
     await reload();
   };
 
@@ -104,30 +134,44 @@ export default function GroupSettingsDialog({
           </Button>
         </Stack>
         <List dense data-testid="member-list">
-          {members.map((member) => (
-            <ListItem
-              key={member.userId}
-              secondaryAction={
-                isOwner && member.userId !== selfId && (
-                  <Button
-                    size="small"
-                    onClick={() => void kick(member.userId)}
-                    data-testid={`kick-${member.userId}`}
-                  >
-                    {zh.chat.kick}
-                  </Button>
-                )
-              }
-            >
-              <ListItemText
-                primary={
-                  member.userId === ownerId
-                    ? `${member.username || member.userId} (${zh.chat.ownerTag})`
-                    : member.username || member.userId
+          {members.map((member) => {
+            const muted = member.mutedUntilTs > Date.now();
+            return (
+              <ListItem
+                key={member.userId}
+                secondaryAction={
+                  <>
+                    {isOwner && member.userId !== selfId && (
+                      <Button
+                        size="small"
+                        onClick={() => void kick(member.userId)}
+                        data-testid={`kick-${member.userId}`}
+                      >
+                        {zh.chat.kick}
+                      </Button>
+                    )}
+                    {canMute && member.userId !== selfId && (
+                      <Button
+                        size="small"
+                        onClick={() => void setMute(member.userId, muted ? member.mutedUntilTs : 0)}
+                        data-testid={`mute-${member.userId}`}
+                      >
+                        {muted ? zh.chat.unmute : zh.chat.mute}
+                      </Button>
+                    )}
+                  </>
                 }
-              />
-            </ListItem>
-          ))}
+              >
+                <ListItemText
+                  primary={
+                    (member.userId === ownerId
+                      ? `${member.username || member.userId} (${zh.chat.ownerTag})`
+                      : member.username || member.userId) + (muted ? ` (${zh.chat.mutedTag})` : '')
+                  }
+                />
+              </ListItem>
+            );
+          })}
           {members.length === 0 && (
             <Typography variant="caption" color="text.secondary">
               {zh.chat.loading}

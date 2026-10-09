@@ -4,6 +4,7 @@ import {
   ChatMessage,
   GroupMemberAliasUpdatedNotify,
   GroupMemberKickedNotify,
+  GroupMemberMutedNotify,
   MessageAck,
   MessageDeletedNotify,
   MessageEditedNotify,
@@ -157,7 +158,23 @@ describe('ChatApi.sendMessage (optimistic)', () => {
     await login(h);
     h.conn.setResponder(async () => ({ code: 8 })); // RATE_LIMITED
     await h.api.sendMessage(channel, 'spam');
-    expect(h.messages.get().byChannel[channel.key][0]).toMatchObject({ failed: true, pending: false });
+    expect(h.messages.get().byChannel[channel.key][0]).toMatchObject({
+      failed: true,
+      pending: false,
+      failureReason: undefined,
+    });
+  });
+
+  it('tags a MUTED rejection with the mute failure reason', async () => {
+    const h = makeHarness();
+    await login(h);
+    h.conn.setResponder(async () => ({ code: 12 })); // MUTED
+    await h.api.sendMessage(channel, 'while muted');
+    expect(h.messages.get().byChannel[channel.key][0]).toMatchObject({
+      failed: true,
+      pending: false,
+      failureReason: 'muted',
+    });
   });
 
   it('marks the message failed when the connection drops', async () => {
@@ -899,6 +916,60 @@ describe('ChatApi group alias notify', () => {
     await login(h);
     const before = h.conn.requests.length;
     h.conn.emit(MsgID.GROUP_MEMBER_ALIAS_UPDATED_NOTIFY, new Uint8Array([0xff, 0x00, 0x01]));
+    expect(h.conn.requests.length).toBe(before);
+  });
+});
+
+describe('ChatApi.setGroupMute', () => {
+  it('short-circuits without login, echoing the request fields', async () => {
+    const h = makeHarness();
+    const resp = await h.api.setGroupMute('guild-1', PEER, 600);
+    expect(resp).toMatchObject({
+      code: ErrorCode.SESSION_EXPIRED,
+      groupId: 'guild-1',
+      userId: PEER,
+      mutedUntilTs: 0,
+    });
+    expect(h.conn.requests).toHaveLength(0);
+  });
+
+  it('sends SET_GROUP_MUTE_REQ with durationSec and passes the response through', async () => {
+    const h = makeHarness();
+    await login(h);
+    h.conn.setResponder(async (msgId, req) => {
+      expect(msgId).toBe(MsgID.SET_GROUP_MUTE_REQ);
+      expect(req).toMatchObject({ groupId: 'guild-1', targetUserId: PEER, durationSec: 600 });
+      return { code: 0, groupId: 'guild-1', userId: PEER, mutedUntilTs: 12345 };
+    });
+    expect(await h.api.setGroupMute('guild-1', PEER, 600)).toMatchObject({ code: 0 });
+  });
+});
+
+describe('ChatApi group mute notify', () => {
+  it('refreshes groups on a well-formed 2252 notify', async () => {
+    const h = makeHarness();
+    await login(h);
+    const before = h.conn.requests.length;
+    const notify = GroupMemberMutedNotify.encode(
+      GroupMemberMutedNotify.fromPartial({
+        groupId: 'guild-1',
+        userId: PEER,
+        mutedUntilTs: 12345,
+        operatorId: SELF,
+      }),
+    ).finish();
+    h.conn.emit(MsgID.GROUP_MEMBER_MUTED_NOTIFY, notify);
+    await vi.waitFor(() => {
+      expect(h.conn.requests.length).toBeGreaterThan(before);
+    });
+    expect(h.conn.requests.at(-1)?.msgId).toBe(MsgID.GET_USER_GROUPS_REQ);
+  });
+
+  it('ignores a malformed 2252 body without touching groups', async () => {
+    const h = makeHarness();
+    await login(h);
+    const before = h.conn.requests.length;
+    h.conn.emit(MsgID.GROUP_MEMBER_MUTED_NOTIFY, new Uint8Array([0xff, 0x00, 0x01]));
     expect(h.conn.requests.length).toBe(before);
   });
 });
