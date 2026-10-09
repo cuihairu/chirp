@@ -186,6 +186,7 @@ bool MySQLMessageStore::Initialize() {
       created_at BIGINT NOT NULL,
       reply_to VARCHAR(255),
       is_recalled TINYINT NOT NULL DEFAULT 0,
+      sender_kind INT NOT NULL DEFAULT 0,
       INDEX idx_channel (channel_id, channel_type, timestamp),
       INDEX idx_receiver (receiver_id, timestamp),
       INDEX idx_timestamp (timestamp)
@@ -207,6 +208,15 @@ bool MySQLMessageStore::Initialize() {
   if (!conn->Execute(
           "ALTER TABLE messages ADD COLUMN is_recalled TINYINT NOT NULL DEFAULT 0")) {
     Logger::Instance().Info("messages.is_recalled column already present (or ALTER unsupported); keeping schema as-is");
+  }
+
+  // 发送者类型（ActorKind 收敛，0=玩家）：同幂等补列模式。漏这列时
+  // StoreMessage 的 INSERT 报 Unknown column 'sender_kind'，消息永不落库
+  // （CI run 37999931716 实证：同 job 先跑的 --smoke-chat 用本 EnsureSchema
+  // 建出的表缺列，--smoke-search 的 init_db.sql 因 IF NOT EXISTS 成了 no-op）。
+  if (!conn->Execute(
+          "ALTER TABLE messages ADD COLUMN sender_kind INT NOT NULL DEFAULT 0")) {
+    Logger::Instance().Info("messages.sender_kind column already present (or ALTER unsupported); keeping schema as-is");
   }
 
   // Create read_receipts table
