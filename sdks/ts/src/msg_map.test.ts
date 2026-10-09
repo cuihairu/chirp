@@ -3,6 +3,7 @@ import {
   GetHistoryResponse,
   SearchMessageResponse,
   SendMessageResponse,
+  SetGroupMuteResponse,
   SetMemberAliasResponse,
 } from '@chirp/proto/chat';
 import { MsgID } from '@chirp/proto/gateway';
@@ -17,6 +18,7 @@ import {
   LOGOUT,
   SEARCH_MESSAGE,
   SEND_MESSAGE,
+  SET_GROUP_MUTE,
   SET_MEMBER_ALIAS,
 } from './msg_map';
 
@@ -124,5 +126,16 @@ describe('message specs', () => {
       SetMemberAliasResponse.fromPartial({ code: 0, alias: '阿九' }),
     ).finish();
     expect(SET_MEMBER_ALIAS.decodeResponse(aliasResp).alias).toBe('阿九');
+
+    const mute = SET_GROUP_MUTE.encodeRequest({
+      groupId: 'g1',
+      targetUserId: 'u9',
+      durationSec: 3600,
+    });
+    expect(mute.length).toBeGreaterThan(0);
+    const muteResp = SetGroupMuteResponse.encode(
+      SetGroupMuteResponse.fromPartial({ code: 0, mutedUntilTs: 1700000000000 }),
+    ).finish();
+    expect(SET_GROUP_MUTE.decodeResponse(muteResp).mutedUntilTs).toBe(1700000000000);
   });
 });

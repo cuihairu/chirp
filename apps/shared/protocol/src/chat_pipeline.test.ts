@@ -3,11 +3,14 @@ import {
   ChannelType,
   ChatMessage,
   GroupMemberAliasUpdatedNotify,
+  GroupMemberMutedNotify,
   MsgType,
   SearchMessageRequest,
   SearchMessageResponse,
   SendMessageRequest,
   SendMessageResponse,
+  SetGroupMuteRequest,
+  SetGroupMuteResponse,
   SetMemberAliasRequest,
   SetMemberAliasResponse,
 } from '@chirp/proto/chat';
@@ -336,6 +339,36 @@ describe('ChatPipeline send pipeline', () => {
       const resp = await pending;
       expect(resp.code).toBe(ErrorCode.OK);
       expect(resp.alias).toBe(''); // echo of the cleared alias
+    });
+  });
+
+  it('setGroupMute: wire round-trip; duration 0 = unmute passthrough', async () => {
+    await makeHarness(async (_client, pipeline, ws) => {
+      const pending = pipeline.setGroupMute('g1', 'u9', 3600);
+      expect(ws.lastSentPacket().msgId).toBe(MsgID.SET_GROUP_MUTE_REQ);
+      const req = SetGroupMuteRequest.decode(ws.lastSentPacket().body);
+      expect(req.groupId).toBe('g1');
+      expect(req.targetUserId).toBe('u9');
+      expect(req.durationSec).toBe(3600);
+
+      settle(ws, MsgID.SET_GROUP_MUTE_RESP, SetGroupMuteResponse.encode(
+        SetGroupMuteResponse.fromPartial({
+          code: ErrorCode.OK,
+          groupId: 'g1',
+          userId: 'u9',
+          mutedUntilTs: 1700000000000,
+        }),
+      ).finish());
+      const resp = await pending;
+      expect(resp.code).toBe(ErrorCode.OK);
+      expect(resp.mutedUntilTs).toBe(1700000000000);
+
+      // unmute: duration 0 rides the same spec
+      const unmute = pipeline.setGroupMute('g1', 'u9', 0);
+      settle(ws, MsgID.SET_GROUP_MUTE_RESP, SetGroupMuteResponse.encode(
+        SetGroupMuteResponse.fromPartial({ code: ErrorCode.OK, mutedUntilTs: 0 }),
+      ).finish());
+      expect((await unmute).mutedUntilTs).toBe(0);
     });
   });
 
@@ -769,6 +802,33 @@ describe('ChatPipeline inbound edges', () => {
       expect(seen).toEqual([['g1', 'u9', '阿九']]); // the throwing listener was contained
 
       ws.serverFrame(MsgID.GROUP_MEMBER_ALIAS_UPDATED_NOTIFY, 0, new Uint8Array([0xff])); // undecodable
+      expect(seen.length).toBe(1);
+    });
+  });
+
+  it('fans group-mute notifies out; garbage bodies are no-ops', async () => {
+    await makeHarness(async (_client, pipeline, ws) => {
+      const seen: Array<[string, string, number, string]> = [];
+      pipeline.addListener({
+        onGroupMemberMutedUpdated: (groupId, userId, mutedUntilTs, operatorId) =>
+          seen.push([groupId, userId, mutedUntilTs, operatorId]),
+      });
+      pipeline.addListener({
+        onGroupMemberMutedUpdated: () => {
+          throw new Error('bad listener');
+        },
+      });
+
+      ws.serverFrame(MsgID.GROUP_MEMBER_MUTED_NOTIFY, 0,
+        GroupMemberMutedNotify.encode(GroupMemberMutedNotify.fromPartial({
+          groupId: 'g1',
+          userId: 'u9',
+          mutedUntilTs: 1700000000000,
+          operatorId: 'mod1',
+        })).finish());
+      expect(seen).toEqual([['g1', 'u9', 1700000000000, 'mod1']]); // thrower contained
+
+      ws.serverFrame(MsgID.GROUP_MEMBER_MUTED_NOTIFY, 0, new Uint8Array([0xff])); // undecodable
       expect(seen.length).toBe(1);
     });
   });

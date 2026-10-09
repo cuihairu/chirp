@@ -427,6 +427,26 @@ namespace Chirp.Sdk
             return await RequestAsync(Specs.SetMemberAlias, request, timeoutMs).ConfigureAwait(false);
         }
 
+        /// <summary>群管理员禁言(SET_GROUP_MUTE_REQ/RESP 2250/2251):MODERATOR+
+        /// 禁言/解禁 target。durationSec=0 解禁,上限 30 天。返回
+        /// SetGroupMuteResponse。连接态检查先于参数校验,非连接态抛
+        /// RequestError(Closed)。</summary>
+        public async Task<Chirp.Chat.SetGroupMuteResponse> SetGroupMuteAsync(string groupId,
+            string targetUserId, long durationSec, int? timeoutMs = null)
+        {
+            if (Status != ConnStatus.Connected)
+            {
+                throw new RequestError(RequestErrorKind.Closed);
+            }
+            var request = new Chirp.Chat.SetGroupMuteRequest
+            {
+                GroupId = groupId ?? "",
+                TargetUserId = targetUserId ?? "",
+                DurationSec = durationSec,
+            };
+            return await RequestAsync(Specs.SetGroupMute, request, timeoutMs).ConfigureAwait(false);
+        }
+
         // ----- hook internals -----
 
         private Task<Chirp.Auth.LoginResponse> PostLoginAsync(string token, string deviceId,
@@ -913,6 +933,21 @@ namespace Chirp.Sdk
                     return; // malformed notify: ignore
                 }
                 NotifyEventListeners(l => l.OnGroupMemberAliasUpdated(notify.GroupId, notify.UserId, notify.Alias));
+                return;
+            }
+            if (msgId == MsgID.GroupMemberMutedNotify)
+            {
+                Chirp.Chat.GroupMemberMutedNotify notify;
+                try
+                {
+                    notify = Chirp.Chat.GroupMemberMutedNotify.Parser.ParseFrom(body);
+                }
+                catch (Exception)
+                {
+                    return; // malformed notify: ignore
+                }
+                NotifyEventListeners(l => l.OnGroupMemberMutedUpdated(
+                    notify.GroupId, notify.UserId, notify.MutedUntilTs, notify.OperatorId));
                 return;
             }
             if (msgId == MsgID.ChatMessageNotify && HasChatReceivePipeline())

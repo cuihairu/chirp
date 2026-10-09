@@ -147,6 +147,17 @@ export interface ChatEventListener {
    * groupId, userId, alias(空串=已清除)。渲染两处消费：成员列表行 + 群聊消息发送者名。
    */
   onGroupMemberAliasUpdated?(groupId: string, userId: string, alias: string): void;
+  /**
+   * 群禁言态变更通知(GROUP_MEMBER_MUTED_NOTIFY 2252)：groupId, userId,
+   * mutedUntilTs(epoch 毫秒,0=已解禁), operatorId。消费：成员列表徽章 +
+   * 群聊发送被拒(MUTED)时的提示态。
+   */
+  onGroupMemberMutedUpdated?(
+    groupId: string,
+    userId: string,
+    mutedUntilTs: number,
+    operatorId: string,
+  ): void;
 }
 
 export interface CommandHandler {

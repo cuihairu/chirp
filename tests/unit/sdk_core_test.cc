@@ -974,7 +974,7 @@ TEST_F(SdkClientTest, IdleLogoutAndSendPostsAreExecuted) {
 
 TEST_F(SdkClientTest, SearchAndAliasWithoutConnectionReportNotConnected) {
   ChatClient client(TcpConfig());
-  std::promise<std::error_code> search_done, alias_done;
+  std::promise<std::error_code> search_done, alias_done, mute_done;
   client.SearchMessages("kw",
       [&](const std::error_code& ec, const chirp::chat::SearchMessageResponse&) {
         search_done.set_value(ec);
@@ -983,14 +983,22 @@ TEST_F(SdkClientTest, SearchAndAliasWithoutConnectionReportNotConnected) {
       [&](const std::error_code& ec, const chirp::chat::SetMemberAliasResponse&) {
         alias_done.set_value(ec);
       });
+  client.SetGroupMute("g", "u", 60,
+      [&](const std::error_code& ec, const chirp::chat::SetGroupMuteResponse&) {
+        mute_done.set_value(ec);
+      });
   auto search_future = search_done.get_future();
   auto alias_future = alias_done.get_future();
+  auto mute_future = mute_done.get_future();
   ASSERT_EQ(search_future.wait_for(std::chrono::milliseconds(5000)),
             std::future_status::ready);
   EXPECT_EQ(search_future.get(), make_error_code(ChatError::NotConnected));
   ASSERT_EQ(alias_future.wait_for(std::chrono::milliseconds(5000)),
             std::future_status::ready);
   EXPECT_EQ(alias_future.get(), make_error_code(ChatError::NotConnected));
+  ASSERT_EQ(mute_future.wait_for(std::chrono::milliseconds(5000)),
+            std::future_status::ready);
+  EXPECT_EQ(mute_future.get(), make_error_code(ChatError::NotConnected));
 }
 
 TEST_F(ChatClientLoopbackTest, ConnectWhileAlreadyConnectedIsIgnored) {
@@ -4129,6 +4137,45 @@ TEST_F(ConvenienceApiTest, SearchMessagesAndSetMemberAliasRoundTrip) {
   }, ec);
   EXPECT_FALSE(ec);
   EXPECT_EQ(alias.code(), chirp::common::OK);
+}
+
+TEST_F(ConvenienceApiTest, SetGroupMuteRoundTrip) {
+  int mute_calls = 0;
+  StartGateway([&](const chirp::gateway::Packet& pkt, auto send) {
+    if (pkt.msg_id() == chirp::gateway::SET_GROUP_MUTE_REQ) {
+      chirp::chat::SetGroupMuteRequest req;
+      ASSERT_TRUE(req.ParseFromString(pkt.body()));
+      EXPECT_EQ(req.group_id(), "g-1");
+      EXPECT_EQ(req.target_user_id(), "u-2");
+      // 首次禁言 3600,再次调用为解禁(duration 0),同一 msg_id 分支按序断言
+      ++mute_calls;
+      EXPECT_EQ(req.duration_sec(), mute_calls == 1 ? 3600 : 0);
+      chirp::chat::SetGroupMuteResponse resp;
+      resp.set_code(chirp::common::OK);
+      resp.set_group_id("g-1");
+      resp.set_user_id("u-2");
+      resp.set_muted_until_ts(mute_calls == 1 ? 1700000000000LL : 0);
+      send(RespFor(pkt, chirp::gateway::SET_GROUP_MUTE_RESP, resp.SerializeAsString()));
+      return;
+    }
+  });
+  ConnectAndLogin();
+
+  std::error_code ec;
+  const auto mute = WaitRpc<chirp::chat::SetGroupMuteResponse>([&](auto cb) {
+    client_->SetGroupMute("g-1", "u-2", 3600, cb);
+  }, ec);
+  EXPECT_FALSE(ec);
+  EXPECT_EQ(mute.code(), chirp::common::OK);
+  EXPECT_EQ(mute.muted_until_ts(), 1700000000000LL);
+
+  // 解禁（duration_sec=0）原样透传。
+  ec.clear();
+  const auto unmute = WaitRpc<chirp::chat::SetGroupMuteResponse>([&](auto cb) {
+    client_->SetGroupMute("g-1", "u-2", 0, cb);
+  }, ec);
+  EXPECT_FALSE(ec);
+  EXPECT_EQ(unmute.code(), chirp::common::OK);
 }
 
 TEST_F(ConvenienceApiTest, GroupLifecycleRoundTrip) {

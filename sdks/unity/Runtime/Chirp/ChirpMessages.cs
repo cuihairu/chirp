@@ -58,6 +58,10 @@ namespace Chirp.Sdk
         // 在 group 内的显示别名。alias 空串 = 清除。
         public static readonly MessageSpec<Chirp.Chat.SetMemberAliasResponse> SetMemberAlias =
             new(MsgID.SetMemberAliasReq, MsgID.SetMemberAliasResp, Chirp.Chat.SetMemberAliasResponse.Parser);
+        // 群管理员禁言(SET_GROUP_MUTE_REQ/RESP 2250/2251):MODERATOR+ 禁言/解禁
+        // target。duration_sec=0 解禁,上限 30 天;2252 全群通知禁言态变更。
+        public static readonly MessageSpec<Chirp.Chat.SetGroupMuteResponse> SetGroupMute =
+            new(MsgID.SetGroupMuteReq, MsgID.SetGroupMuteResp, Chirp.Chat.SetGroupMuteResponse.Parser);
 
         // Social plane (WS 8001): friends and presence.
         public static readonly MessageSpec<Chirp.Social.AddFriendResponse> AddFriend =

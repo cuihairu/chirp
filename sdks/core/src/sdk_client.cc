@@ -1439,6 +1439,24 @@ public:
     });
   }
 
+  // 群管理员禁言(SET_GROUP_MUTE_REQ/RESP 2250/2251):MODERATOR+ 禁言/解禁
+  // target。duration_sec=0 解禁,上限 30 天(服务端校验,超限回 INVALID_PARAM)。
+  void SetGroupMute(const std::string& group_id, const std::string& target_user_id,
+                    int64_t duration_sec, SetGroupMuteCallback cb) {
+    asio::post(io_context_, [this, group_id, target_user_id, duration_sec,
+                             cb = std::move(cb)] {
+      if (!ReadyForRequests()) {
+        cb(MakeEc(ChatError::NotConnected), {});
+        return;
+      }
+      chirp::chat::SetGroupMuteRequest req;
+      req.set_group_id(group_id);
+      req.set_target_user_id(target_user_id);
+      req.set_duration_sec(duration_sec);
+      TypedRequest(MsgID::SET_GROUP_MUTE_REQ, MsgID::SET_GROUP_MUTE_RESP, req, std::move(cb));
+    });
+  }
+
 private:
   ChatConfig config_;
   std::atomic<ConnectionState> state_;
@@ -1736,6 +1754,11 @@ void ChatClient::SearchMessages(const std::string& keyword, SearchMessagesCallba
 void ChatClient::SetMemberAlias(const std::string& group_id, const std::string& target_user_id,
                                 const std::string& alias, SetMemberAliasCallback cb) {
   impl_->SetMemberAlias(group_id, target_user_id, alias, std::move(cb));
+}
+
+void ChatClient::SetGroupMute(const std::string& group_id, const std::string& target_user_id,
+                              int64_t duration_sec, SetGroupMuteCallback cb) {
+  impl_->SetGroupMute(group_id, target_user_id, duration_sec, std::move(cb));
 }
 
 } // namespace sdk

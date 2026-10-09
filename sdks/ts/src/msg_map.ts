@@ -382,3 +382,12 @@ export const SET_MEMBER_ALIAS = defineSpec(
   Chat.SetMemberAliasRequest,
   Chat.SetMemberAliasResponse,
 );
+
+// 群管理员禁言(SET_GROUP_MUTE_REQ/RESP 2250/2251):MODERATOR+ 禁言/解禁
+// target。duration_sec=0 解禁,上限 30 天;2252 全群通知禁言态变更。
+export const SET_GROUP_MUTE = defineSpec(
+  MsgID.SET_GROUP_MUTE_REQ,
+  MsgID.SET_GROUP_MUTE_RESP,
+  Chat.SetGroupMuteRequest,
+  Chat.SetGroupMuteResponse,
+);

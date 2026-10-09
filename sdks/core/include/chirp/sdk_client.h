@@ -81,6 +81,8 @@ using SearchMessagesCallback =
     std::function<void(const std::error_code& ec, const chirp::chat::SearchMessageResponse&)>;
 using SetMemberAliasCallback =
     std::function<void(const std::error_code& ec, const chirp::chat::SetMemberAliasResponse&)>;
+using SetGroupMuteCallback =
+    std::function<void(const std::error_code& ec, const chirp::chat::SetGroupMuteResponse&)>;
 
 // 聊天客户端 SDK:直连 chat 网关的 TCP 长连接,[u32_be len][Packet protobuf]
 // 帧。sequence 关联请求响应,25s 心跳(pong 回声校验,连续丢失判定死亡),
@@ -252,6 +254,12 @@ public:
   // 在 group 内的显示别名。alias 空串 = 清除。返回 SetMemberAliasResponse。
   void SetMemberAlias(const std::string& group_id, const std::string& target_user_id,
                       const std::string& alias, SetMemberAliasCallback cb);
+
+  // 群管理员禁言(SET_GROUP_MUTE_REQ/RESP 2250/2251)：operator 是该群
+  // MODERATOR+ 时禁言/解禁 target（duration_sec=0 解禁，上限 30 天）。
+  // 返回 SetGroupMuteResponse{code, group_id, user_id, muted_until_ts}。
+  void SetGroupMute(const std::string& group_id, const std::string& target_user_id,
+                    int64_t duration_sec, SetGroupMuteCallback cb);
 
 private:
   class Impl;

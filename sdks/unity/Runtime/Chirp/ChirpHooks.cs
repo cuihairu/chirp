@@ -116,6 +116,12 @@ namespace Chirp.Sdk
         /// </summary>
         void OnGroupMemberAliasUpdated(string groupId, string userId, string alias) { }
 
+        /// <summary>群禁言态变更通知(GROUP_MEMBER_MUTED_NOTIFY 2252)：groupId,
+        /// userId, mutedUntilTs(epoch 毫秒,0=已解禁), operatorId。消费：成员
+        /// 列表徽章 + 群聊发送被拒(MUTED)时的提示态。</summary>
+        void OnGroupMemberMutedUpdated(string groupId, string userId, long mutedUntilTs,
+            string operatorId) { }
+
         void OnUnreadChanged(Chirp.Chat.ChannelType type, string channelId, int unread) { }
 
         void OnPresenceChanged(string userId, bool online) { }

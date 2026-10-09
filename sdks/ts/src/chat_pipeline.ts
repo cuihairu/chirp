@@ -28,7 +28,7 @@ import type { DevicePresence } from '@chirp/proto/auth';
 import { MsgID } from '@chirp/proto/gateway';
 import type { ConnStatus } from './chirp_client';
 import { RequestError } from './errors';
-import { LOGIN, SEND_MESSAGE, SEARCH_MESSAGE, SET_MEMBER_ALIAS } from './msg_map';
+import { LOGIN, SEND_MESSAGE, SEARCH_MESSAGE, SET_MEMBER_ALIAS, SET_GROUP_MUTE } from './msg_map';
 import type { MessageSpec } from './msg_map';
 import {
   SearchMessageRequest,
@@ -36,6 +36,9 @@ import {
   SetMemberAliasRequest,
   SetMemberAliasResponse,
   GroupMemberAliasUpdatedNotify,
+  SetGroupMuteRequest,
+  SetGroupMuteResponse,
+  GroupMemberMutedNotify,
 } from '@chirp/proto/chat';
 import type {
   AuthProvider,
@@ -137,6 +140,8 @@ export class ChatPipeline {
       this.conn.onNotify(MsgID.DEVICES_PRESENCE_NOTIFY, (body) => this.onDevicesPresenceBody(body)),
       this.conn.onNotify(MsgID.GROUP_MEMBER_ALIAS_UPDATED_NOTIFY, (body) =>
         this.onGroupMemberAliasUpdated(body)),
+      this.conn.onNotify(MsgID.GROUP_MEMBER_MUTED_NOTIFY, (body) =>
+        this.onGroupMemberMutedUpdated(body)),
       this.conn.onStatus((status) => {
         for (const { listener } of this.snapshotListeners()) {
           try {
@@ -323,6 +328,24 @@ export class ChatPipeline {
     return this.conn.request(SET_MEMBER_ALIAS, request);
   }
 
+  // ---- 群管理员禁言(SET_GROUP_MUTE_REQ/RESP 2250/2251) ----
+  // MODERATOR+ 禁言/解禁 target。durationSec=0 解禁,上限 30 天。
+  async setGroupMute(
+    groupId: string,
+    targetUserId: string,
+    durationSec: number,
+  ): Promise<SetGroupMuteResponse> {
+    if (this.conn.status !== 'connected') {
+      throw new RequestError('closed');
+    }
+    const request: SetGroupMuteRequest = SetGroupMuteRequest.fromPartial({
+      groupId,
+      targetUserId,
+      durationSec,
+    });
+    return this.conn.request(SET_GROUP_MUTE, request);
+  }
+
   // ---- 内部 -----------------------------------------------------------
 
   /** null = pass through (no handlers); a string = the blocked reason. */
@@ -464,6 +487,27 @@ export class ChatPipeline {
     for (const { listener } of this.snapshotListeners()) {
       try {
         listener.onGroupMemberAliasUpdated?.(notify.groupId, notify.userId, notify.alias);
+      } catch {
+        // Same isolation rule.
+      }
+    }
+  }
+
+  private onGroupMemberMutedUpdated(body: Uint8Array): void {
+    let notify: GroupMemberMutedNotify;
+    try {
+      notify = GroupMemberMutedNotify.decode(body);
+    } catch {
+      return; // malformed notify: ignore
+    }
+    for (const { listener } of this.snapshotListeners()) {
+      try {
+        listener.onGroupMemberMutedUpdated?.(
+          notify.groupId,
+          notify.userId,
+          notify.mutedUntilTs,
+          notify.operatorId,
+        );
       } catch {
         // Same isolation rule.
       }

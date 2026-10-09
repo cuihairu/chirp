@@ -281,6 +281,56 @@ public class ChirpClientGlueTests
     }
 
     [Fact]
+    public async Task SetGroupMuteAsync_RoundTrip_MuteAndUnmutePassthrough()
+    {
+        var transport = new GlueTransport();
+        var client = NewClient(_ => transport);
+        await client.ConnectAsync();
+
+        var pending = client.SetGroupMuteAsync("g1", "u2", 3600);
+        var request = transport.LastSentPacket();
+        Assert.Equal(MsgID.SetGroupMuteReq, request.MsgId);
+        var req = Chirp.Chat.SetGroupMuteRequest.Parser.ParseFrom(request.Body);
+        Assert.Equal("g1", req.GroupId);
+        Assert.Equal("u2", req.TargetUserId);
+        Assert.Equal(3600, req.DurationSec);
+
+        transport.ServerPacket(new Packet
+        {
+            MsgId = MsgID.SetGroupMuteResp,
+            Sequence = request.Sequence,
+            Body = ByteString.CopyFrom(new Chirp.Chat.SetGroupMuteResponse
+            {
+                Code = Chirp.Common.ErrorCode.Ok,
+                GroupId = "g1",
+                UserId = "u2",
+                MutedUntilTs = 1700000000000,
+            }.ToByteArray()),
+        });
+        var resp = await pending;
+        Assert.Equal(Chirp.Common.ErrorCode.Ok, resp.Code);
+        Assert.Equal("u2", resp.UserId);
+        Assert.Equal(1700000000000, resp.MutedUntilTs);
+
+        // 解禁（durationSec=0）原样透传。
+        var unmute = client.SetGroupMuteAsync("g1", "u2", 0);
+        var unmuteReq = Chirp.Chat.SetGroupMuteRequest.Parser.ParseFrom(
+            transport.LastSentPacket().Body);
+        Assert.Equal(0, unmuteReq.DurationSec);
+        transport.ServerPacket(new Packet
+        {
+            MsgId = MsgID.SetGroupMuteResp,
+            Sequence = transport.LastSentPacket().Sequence,
+            Body = ByteString.CopyFrom(new Chirp.Chat.SetGroupMuteResponse
+            {
+                Code = Chirp.Common.ErrorCode.Ok,
+                MutedUntilTs = 0,
+            }.ToByteArray()),
+        });
+        Assert.Equal(Chirp.Common.ErrorCode.Ok, (await unmute).Code);
+    }
+
+    [Fact]
     public async Task SearchMessagesAsync_ValidationOrder_ConnectionThenKeyword()
     {
         var transport = new GlueTransport();
@@ -329,12 +379,55 @@ public class ChirpClientGlueTests
         Assert.Equal(("g1", "u2", "nick"), (groupId, userId, alias));
     }
 
-    /// <summary>Hook-surface recorder: only the alias notify is observed.</summary>
+    [Fact]
+    public async Task GroupMemberMutedNotify_DecodesAndDispatchesHook_MalformedIgnored()
+    {
+        var transport = new GlueTransport();
+        var client = NewClient(_ => transport);
+        await client.ConnectAsync();
+
+        var (groupId, userId, mutedUntilTs, operatorId) =
+            (null as string, null as string, 0L, null as string);
+        client.AddListener(new RecordingHookListener
+        {
+            OnMute = (g, u, until, op) => { groupId = g; userId = u; mutedUntilTs = until; operatorId = op; },
+        });
+
+        transport.ServerPacket(new Packet
+        {
+            MsgId = MsgID.GroupMemberMutedNotify,
+            Body = ByteString.CopyFrom(new Chirp.Chat.GroupMemberMutedNotify
+            {
+                GroupId = "g1",
+                UserId = "u2",
+                MutedUntilTs = 1700000000000,
+                OperatorId = "mod1",
+            }.ToByteArray()),
+        });
+        await FakeTransport.SettleAsync();
+        Assert.Equal(("g1", "u2", 1700000000000L, "mod1"), (groupId, userId, mutedUntilTs, operatorId));
+
+        // 不可解码体：静默丢弃，监听器不炸。
+        transport.ServerPacket(new Packet
+        {
+            MsgId = MsgID.GroupMemberMutedNotify,
+            Body = ByteString.CopyFrom(new byte[] { 0xff, 0x01 }),
+        });
+        await FakeTransport.SettleAsync();
+        Assert.Equal(("g1", "u2", 1700000000000L, "mod1"), (groupId, userId, mutedUntilTs, operatorId));
+    }
+
+    /// <summary>Hook-surface recorder: alias and mute notifies are observed.</summary>
     private sealed class RecordingHookListener : IChatEventListener
     {
         public Action<string, string, string>? OnAlias { get; set; }
+        public Action<string, string, long, string>? OnMute { get; set; }
 
         public void OnGroupMemberAliasUpdated(string groupId, string userId, string alias) =>
             OnAlias?.Invoke(groupId, userId, alias);
+
+        public void OnGroupMemberMutedUpdated(string groupId, string userId, long mutedUntilTs,
+            string operatorId) =>
+            OnMute?.Invoke(groupId, userId, mutedUntilTs, operatorId);
     }
 }
