@@ -6,7 +6,14 @@
 
 find_package(Threads REQUIRED)
 find_package(MySQL QUIET)
-find_package(unofficial-sqlite3 CONFIG REQUIRED)
+# unofficial-sqlite3 是 vcpkg 端口，apt-only 环境（演示镜像等）没有该配置包；
+# search 不在演示栈（deployments/docker/docker-compose.deploy.yml），缺依赖时
+# 跳过本目录而不是让整个 configure 炸掉。
+find_package(unofficial-sqlite3 CONFIG QUIET)
+if(NOT unofficial-sqlite3_FOUND)
+    message(STATUS "unofficial-sqlite3 not found (vcpkg port); skipping chirp_search")
+    return()
+endif()
 
 file(GLOB_RECURSE SERVICE_SRCS "src/*.cc")
 list(FILTER SERVICE_SRCS EXCLUDE REGEX ".*main\\.cc$")
