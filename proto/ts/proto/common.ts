@@ -42,6 +42,12 @@ export enum ErrorCode {
    * the message exceeded MaxContentChars for its channel type.
    */
   CONTENT_TOO_LONG = 11,
+  /**
+   * MUTED - Game-plane group mute (game_chat_features P1 专码): the sender is muted
+   * in the target group by a MODERATOR+ (SET_GROUP_MUTE_REQ 2250). The send
+   * is refused without touching any store; other channels are unaffected.
+   */
+  MUTED = 12,
   UNRECOGNIZED = -1,
 }
 
@@ -83,6 +89,9 @@ export function errorCodeFromJSON(object: any): ErrorCode {
     case 11:
     case "CONTENT_TOO_LONG":
       return ErrorCode.CONTENT_TOO_LONG;
+    case 12:
+    case "MUTED":
+      return ErrorCode.MUTED;
     case -1:
     case "UNRECOGNIZED":
     default:
@@ -116,6 +125,8 @@ export function errorCodeToJSON(object: ErrorCode): string {
       return "WORD_FILTERED";
     case ErrorCode.CONTENT_TOO_LONG:
       return "CONTENT_TOO_LONG";
+    case ErrorCode.MUTED:
+      return "MUTED";
     case ErrorCode.UNRECOGNIZED:
     default:
       return "UNRECOGNIZED";

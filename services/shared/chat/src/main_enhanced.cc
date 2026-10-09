@@ -253,6 +253,22 @@ void HandleSendMessage(const chirp::chat::SendMessageRequest& req,
   }
   msg.set_reply_to_message_id(req.reply_to_message_id());
 
+  // 群管理员禁言（game_chat_features P1，与 basic 同一门）：群频道发送前查
+  // GroupManager 台账，禁言中的成员回 MUTED、消息不进 Redis/MySQL 任何一层。
+  // 判定与投递侧群扇出同构（非 PRIVATE 且 channel_id 命中台账）——台账外
+  // 频道（Redis 扇出路径）与群外成员不走此门。
+  if (group_handlers != nullptr && req.channel_type() != chirp::chat::PRIVATE &&
+      group_handlers->IsMember(channel_id, req.sender_id()) &&
+      group_handlers->IsMuted(channel_id, req.sender_id(),
+                              chirp::chat::runtime::NowMs())) {
+    chirp::chat::SendMessageResponse resp;
+    resp.set_code(chirp::common::MUTED);
+    resp.set_server_timestamp(chirp::chat::runtime::NowMs());
+    chirp::chat::runtime::SendPacket(sender_session, chirp::gateway::SEND_MESSAGE_RESP,
+                                     seq, resp.SerializeAsString());
+    return;
+  }
+
   // Store in hybrid store (Redis + MySQL)
   chirp::chat::MessageData msg_data = ToMessageData(msg);
 
@@ -620,6 +636,18 @@ bool DispatchClientFeaturePacket(
         resp = group_handlers->HandleSetMemberAlias(req, authenticated_user);
       }
       chirp::chat::runtime::SendPacket(session, chirp::gateway::SET_MEMBER_ALIAS_RESP,
+                                       pkt.sequence(), resp.SerializeAsString());
+      break;
+    }
+    case chirp::gateway::SET_GROUP_MUTE_REQ: {
+      chirp::chat::SetGroupMuteRequest req;
+      chirp::chat::SetGroupMuteResponse resp;
+      if (!req.ParseFromArray(pkt.body().data(), static_cast<int>(pkt.body().size()))) {
+        resp.set_code(chirp::common::INVALID_PARAM);
+      } else {
+        resp = group_handlers->HandleSetGroupMute(req, authenticated_user);
+      }
+      chirp::chat::runtime::SendPacket(session, chirp::gateway::SET_GROUP_MUTE_RESP,
                                        pkt.sequence(), resp.SerializeAsString());
       break;
     }

@@ -158,6 +158,14 @@ export enum MsgID {
    */
   SEARCH_MESSAGE_REQ = 2248,
   SEARCH_MESSAGE_RESP = 2249,
+  /**
+   * SET_GROUP_MUTE_REQ - 群管理员手动禁言（game_chat_features P1，2026-10-10）：MODERATOR+ 禁言/
+   * 解禁本群成员，禁言中成员的本群频道发言被拒（MUTED）。body 见 chat.proto
+   * 的 SetGroupMuteRequest / SetGroupMuteResponse / GroupMemberMutedNotify。
+   */
+  SET_GROUP_MUTE_REQ = 2250,
+  SET_GROUP_MUTE_RESP = 2251,
+  GROUP_MEMBER_MUTED_NOTIFY = 2252,
   /** ADD_FRIEND_REQ - Social service */
   ADD_FRIEND_REQ = 3001,
   ADD_FRIEND_RESP = 3002,
@@ -637,6 +645,15 @@ export function msgIDFromJSON(object: any): MsgID {
     case 2249:
     case "SEARCH_MESSAGE_RESP":
       return MsgID.SEARCH_MESSAGE_RESP;
+    case 2250:
+    case "SET_GROUP_MUTE_REQ":
+      return MsgID.SET_GROUP_MUTE_REQ;
+    case 2251:
+    case "SET_GROUP_MUTE_RESP":
+      return MsgID.SET_GROUP_MUTE_RESP;
+    case 2252:
+    case "GROUP_MEMBER_MUTED_NOTIFY":
+      return MsgID.GROUP_MEMBER_MUTED_NOTIFY;
     case 3001:
     case "ADD_FRIEND_REQ":
       return MsgID.ADD_FRIEND_REQ;
@@ -1204,6 +1221,12 @@ export function msgIDToJSON(object: MsgID): string {
       return "SEARCH_MESSAGE_REQ";
     case MsgID.SEARCH_MESSAGE_RESP:
       return "SEARCH_MESSAGE_RESP";
+    case MsgID.SET_GROUP_MUTE_REQ:
+      return "SET_GROUP_MUTE_REQ";
+    case MsgID.SET_GROUP_MUTE_RESP:
+      return "SET_GROUP_MUTE_RESP";
+    case MsgID.GROUP_MEMBER_MUTED_NOTIFY:
+      return "GROUP_MEMBER_MUTED_NOTIFY";
     case MsgID.ADD_FRIEND_REQ:
       return "ADD_FRIEND_REQ";
     case MsgID.ADD_FRIEND_RESP:

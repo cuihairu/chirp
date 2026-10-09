@@ -72,6 +72,12 @@ class GroupHandlers {
       const chirp::chat::SetMemberAliasRequest& req,
       std::string_view authenticated_user_id);
 
+  // 群禁言（2250）：MODERATOR+ 禁言/解禁本群成员；duration_sec 上限 30 天，
+  // 0 = 解禁。成功后向全群推 GROUP_MEMBER_MUTED_NOTIFY(2252)。
+  chirp::chat::SetGroupMuteResponse HandleSetGroupMute(
+      const chirp::chat::SetGroupMuteRequest& req,
+      std::string_view authenticated_user_id);
+
   // Fan out one group chat message to every member except the sender.
   // Online members receive CHAT_MESSAGE_NOTIFY through the notifier; the
   // ids of offline members are returned so the transport layer can push
@@ -82,6 +88,13 @@ class GroupHandlers {
 
   bool IsMember(const std::string& group_id, const std::string& user_id) {
     return groups_.IsMember(group_id, user_id);
+  }
+
+  // 发送门（SEND_MESSAGE 的 GUILD 分支）用：成员在 now_ms 时刻是否处于
+  // 禁言中。false = 未禁言/已到点/不在台账。
+  bool IsMuted(const std::string& group_id, const std::string& user_id,
+               int64_t now_ms) {
+    return groups_.MutedUntil(group_id, user_id, now_ms) > 0;
   }
 
  private:

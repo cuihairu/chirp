@@ -347,6 +347,60 @@ chirp::chat::SetMemberAliasResponse GroupHandlers::HandleSetMemberAlias(
   return resp;
 }
 
+chirp::chat::SetGroupMuteResponse GroupHandlers::HandleSetGroupMute(
+    const chirp::chat::SetGroupMuteRequest& req, std::string_view authenticated_user_id) {
+  chirp::chat::SetGroupMuteResponse resp;
+
+  if (authenticated_user_id.empty() || req.group_id().empty() || req.target_user_id().empty() ||
+      req.duration_sec() < 0) {
+    resp.set_code(chirp::common::INVALID_PARAM);
+    return resp;
+  }
+  // game_chat_features「按分钟/小时/天」：30 天封顶，既挡荒谬值也保
+  // until_ms = now + duration*1000 不溢出 int64。
+  constexpr int64_t kMaxMuteDurationSec = 30LL * 24 * 60 * 60;
+  if (req.duration_sec() > kMaxMuteDurationSec) {
+    resp.set_code(chirp::common::INVALID_PARAM);
+    return resp;
+  }
+
+  const std::string operator_id(authenticated_user_id);
+  chirp::chat::GroupInfo group_info;
+  if (!groups_.GetGroup(req.group_id(), &group_info)) {
+    resp.set_code(chirp::common::USER_NOT_FOUND);
+    return resp;
+  }
+  if (!groups_.IsMember(req.group_id(), req.target_user_id())) {
+    resp.set_code(chirp::common::USER_NOT_FOUND);
+    return resp;
+  }
+  // 禁言是管理动作，没有"本人禁言自己"的自助分支（区别于 2122 alias）。
+  const std::vector<chirp::chat::GroupMember> members = groups_.GetMembers(req.group_id());
+  if (!RoleAtLeast(members, operator_id, chirp::chat::MODERATOR)) {
+    resp.set_code(chirp::common::AUTH_FAILED);
+    return resp;
+  }
+
+  const int64_t now_ms = chirp::chat::runtime::NowMs();
+  const int64_t until_ms =
+      req.duration_sec() == 0 ? 0 : now_ms + req.duration_sec() * 1000;
+  groups_.SetMemberMute(req.group_id(), req.target_user_id(), until_ms);
+
+  resp.set_code(chirp::common::OK);
+  resp.set_group_id(req.group_id());
+  resp.set_user_id(req.target_user_id());
+  resp.set_muted_until_ts(until_ms);
+
+  chirp::chat::GroupMemberMutedNotify notify;
+  notify.set_group_id(req.group_id());
+  notify.set_user_id(req.target_user_id());
+  notify.set_muted_until_ts(until_ms);
+  notify.set_operator_id(operator_id);
+  notify.set_timestamp(now_ms);
+  NotifyMembers(req.group_id(), chirp::gateway::GROUP_MEMBER_MUTED_NOTIFY, notify);
+  return resp;
+}
+
 std::vector<std::string> GroupHandlers::BroadcastGroupMessage(
     const std::string& group_id, const std::string& sender_id,
     const chirp::chat::ChatMessage& msg) {

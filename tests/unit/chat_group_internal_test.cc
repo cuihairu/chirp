@@ -60,4 +60,42 @@ TEST(GroupManagerInternalTest, SetMemberAliasRejectsUnknownGroupAndMember) {
   EXPECT_TRUE(mgr.GetMemberAlias(gid, "stranger").empty());
 }
 
+TEST(GroupManagerInternalTest, MemberMuteRoundTripAndLazyExpiry) {
+  chirp::chat::GroupManager mgr;
+  const std::string gid = mgr.CreateGroup("alice", "g", "", "", 0, {"bob"});
+
+  // handler 层会先挡掉群不存在/成员不存在，这两个防御分支只可能从
+  // GroupManager 直达。
+  EXPECT_FALSE(mgr.SetMemberMute("ghost-group", "bob", 1000));
+  EXPECT_FALSE(mgr.SetMemberMute(gid, "stranger", 1000));
+
+  // 未禁言/未知群/未知成员：0。
+  EXPECT_EQ(mgr.MutedUntil(gid, "bob", 0), 0);
+  EXPECT_EQ(mgr.MutedUntil("ghost-group", "bob", 0), 0);
+  EXPECT_EQ(mgr.MutedUntil(gid, "stranger", 0), 0);
+
+  // 写入后未到期可读回；到点即惰性过期（读到 0 且条目被清，再读仍 0）。
+  EXPECT_TRUE(mgr.SetMemberMute(gid, "bob", 5'000));
+  EXPECT_EQ(mgr.MutedUntil(gid, "bob", 4'999), 5'000);
+  EXPECT_EQ(mgr.MutedUntil(gid, "bob", 5'000), 0);
+  EXPECT_EQ(mgr.MutedUntil(gid, "bob", 6'000), 0);
+
+  // 解禁（until_ms <= 0 清除）：清除后再读 0。
+  EXPECT_TRUE(mgr.SetMemberMute(gid, "bob", 9'000));
+  EXPECT_TRUE(mgr.SetMemberMute(gid, "bob", 0));
+  EXPECT_EQ(mgr.MutedUntil(gid, "bob", 9'000), 0);
+
+  // GetMembers 随成员列表下发 muted_until_ts；过期项不出现（惰性清理已移除），
+  // 在禁项原值下发。
+  EXPECT_TRUE(mgr.SetMemberMute(gid, "bob", 20'000));
+  bool seen = false;
+  for (const auto& member : mgr.GetMembers(gid)) {
+    if (member.user_id() == "bob") {
+      seen = true;
+      EXPECT_EQ(member.muted_until_ts(), 20'000);
+    }
+  }
+  EXPECT_TRUE(seen);
+}
+
 }  // namespace

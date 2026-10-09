@@ -1105,6 +1105,72 @@ TEST_F(BasicChatTest, GroupSendBroadcastsToMembersAndRefusesNonMember) {
             chirp::common::AUTH_FAILED);
 }
 
+// --- 群管理员禁言：禁言成员群发被拒（MUTED），解禁恢复，权限 MODERATOR+ ----------
+
+TEST_F(BasicChatTest, GroupMuteBlocksMemberSendUntilUnmute) {
+  auto alice = std::make_shared<MockSession>();
+  auto bob = std::make_shared<MockSession>();
+  ASSERT_EQ(Login(alice, "alice").code(), chirp::common::OK);
+  ASSERT_EQ(Login(bob, "bob").code(), chirp::common::OK);
+
+  chirp::chat::CreateGroupRequest create;
+  create.set_creator_id("alice");
+  create.set_group_name("moderated");
+  create.add_initial_members("alice");
+  create.add_initial_members("bob");
+  DispatchReq(chirp::gateway::CREATE_GROUP_REQ, create, alice);
+  const auto created = FramesOf(*alice, chirp::gateway::CREATE_GROUP_RESP);
+  ASSERT_EQ(created.size(), 1u);
+  chirp::chat::CreateGroupResponse create_resp;
+  ASSERT_TRUE(create_resp.ParseFromString(created[0].body()));
+  ASSERT_EQ(create_resp.code(), chirp::common::OK);
+  const std::string group_id = create_resp.group_id();
+
+  auto MuteOnce = [&](const std::shared_ptr<MockSession>& caller,
+                      const std::string& target, int64_t duration_sec) {
+    chirp::chat::SetGroupMuteRequest req;
+    req.set_group_id(group_id);
+    req.set_target_user_id(target);
+    req.set_duration_sec(duration_sec);
+    DispatchReq(chirp::gateway::SET_GROUP_MUTE_REQ, req, caller);
+    chirp::chat::SetGroupMuteResponse resp;
+    const auto frames = FramesOf(*caller, chirp::gateway::SET_GROUP_MUTE_RESP);
+    EXPECT_FALSE(frames.empty());
+    if (!frames.empty()) {
+      EXPECT_TRUE(resp.ParseFromString(frames.back().body()));
+    }
+    return resp;
+  };
+
+  // MEMBER 调禁言：AUTH_FAILED（禁言是管理动作，无自助分支）。
+  EXPECT_EQ(MuteOnce(bob, "alice", 60).code(), chirp::common::AUTH_FAILED);
+
+  // 群主禁言 bob：回显截止时刻，全群收到 2252（含操作者多端同步）。
+  alice->sent.clear();
+  bob->sent.clear();
+  const auto muted = MuteOnce(alice, "bob", 600);
+  EXPECT_EQ(muted.code(), chirp::common::OK);
+  EXPECT_GT(muted.muted_until_ts(), 0);
+  EXPECT_EQ(FramesOf(*alice, chirp::gateway::GROUP_MEMBER_MUTED_NOTIFY).size(), 1u);
+  EXPECT_EQ(FramesOf(*bob, chirp::gateway::GROUP_MEMBER_MUTED_NOTIFY).size(), 1u);
+
+  // 禁言中的 bob 群发被拒 MUTED；消息不落任何存储（离线队列为空）。
+  EXPECT_EQ(Send(bob, "bob", "", "still here", chirp::chat::TEAM, group_id).code(),
+            chirp::common::MUTED);
+  EXPECT_TRUE(store_->PopOffline("alice", chirp::chat::kDefaultOfflineSlot).empty());
+
+  // 私聊不受群禁言影响。
+  EXPECT_EQ(Send(bob, "bob", "alice", "dm ok", chirp::chat::PRIVATE).code(),
+            chirp::common::OK);
+
+  // 解禁：回显 0，群发恢复。
+  const auto unmuted = MuteOnce(alice, "bob", 0);
+  EXPECT_EQ(unmuted.code(), chirp::common::OK);
+  EXPECT_EQ(unmuted.muted_until_ts(), 0);
+  EXPECT_EQ(Send(bob, "bob", "", "back again", chirp::chat::TEAM, group_id).code(),
+            chirp::common::OK);
+}
+
 // --- 跨平面：游戏前缀回复 + 好友私聊镜像 + spoke 上行（真 hub/link） ------------
 
 TEST_F(BasicChatTest, CrossPlaneReplyFriendRelayAndSpokeUplink) {

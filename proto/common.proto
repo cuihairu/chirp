@@ -27,6 +27,10 @@ enum ErrorCode {
   // Game-plane per-channel content-length cap (game_chat_features P1 专码):
   // the message exceeded MaxContentChars for its channel type.
   CONTENT_TOO_LONG = 11;
+  // Game-plane group mute (game_chat_features P1 专码): the sender is muted
+  // in the target group by a MODERATOR+ (SET_GROUP_MUTE_REQ 2250). The send
+  // is refused without touching any store; other channels are unaffected.
+  MUTED = 12;
 }
 
 message Empty {}

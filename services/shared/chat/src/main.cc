@@ -906,6 +906,23 @@ void HandlePacket(const std::shared_ptr<MessageStore>& store,
       return;
     }
 
+    // 群管理员禁言（game_chat_features P1）：群频道发送前查 GroupManager
+    // 台账的禁言态，禁言中的成员回 MUTED、消息不落任何存储。判定与下方群
+    // 扇出同构（非 PRIVATE 且 channel_id 命中台账 = 群频道发送，桌面侧用
+    // GUILD 型、既有用例走 TEAM 型），非成员发送仍由群分支回 AUTH_FAILED，
+    // 优先级不变。
+    if (req.channel_type() != chirp::chat::PRIVATE &&
+        features.groups.IsMember(req.channel_id(), req.sender_id()) &&
+        features.groups.IsMuted(req.channel_id(), req.sender_id(),
+                                chirp::chat::runtime::NowMs())) {
+      chirp::chat::SendMessageResponse resp;
+      resp.set_code(chirp::common::MUTED);
+      resp.set_server_timestamp(chirp::chat::runtime::NowMs());
+      chirp::chat::runtime::SendPacket(session, chirp::gateway::SEND_MESSAGE_RESP,
+                                       pkt.sequence(), resp.SerializeAsString());
+      return;
+    }
+
     store->AddMessage(msg);
     // Let the receipt/reaction/edit features resolve the channel of this
     // message later (their requests only carry a message_id).
@@ -1279,6 +1296,18 @@ void HandlePacket(const std::shared_ptr<MessageStore>& store,
     }
     auto resp = features.groups.HandleSetMemberAlias(req, authenticated_user_id);
     chirp::chat::runtime::SendPacket(session, chirp::gateway::SET_MEMBER_ALIAS_RESP, pkt.sequence(), resp.SerializeAsString());
+    break;
+  }
+  case chirp::gateway::SET_GROUP_MUTE_REQ: {
+    chirp::chat::SetGroupMuteRequest req;
+    if (!req.ParseFromArray(pkt.body().data(), static_cast<int>(pkt.body().size()))) {
+      chirp::chat::SetGroupMuteResponse resp;
+      resp.set_code(chirp::common::INVALID_PARAM);
+      chirp::chat::runtime::SendPacket(session, chirp::gateway::SET_GROUP_MUTE_RESP, pkt.sequence(), resp.SerializeAsString());
+      return;
+    }
+    auto resp = features.groups.HandleSetGroupMute(req, authenticated_user_id);
+    chirp::chat::runtime::SendPacket(session, chirp::gateway::SET_GROUP_MUTE_RESP, pkt.sequence(), resp.SerializeAsString());
     break;
   }
   case chirp::gateway::MARK_READ_REQ: {

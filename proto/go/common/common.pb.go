@@ -46,6 +46,10 @@ const (
 	// Game-plane per-channel content-length cap (game_chat_features P1 专码):
 	// the message exceeded MaxContentChars for its channel type.
 	ErrorCode_CONTENT_TOO_LONG ErrorCode = 11
+	// Game-plane group mute (game_chat_features P1 专码): the sender is muted
+	// in the target group by a MODERATOR+ (SET_GROUP_MUTE_REQ 2250). The send
+	// is refused without touching any store; other channels are unaffected.
+	ErrorCode_MUTED ErrorCode = 12
 )
 
 // Enum value maps for ErrorCode.
@@ -63,6 +67,7 @@ var (
 		9:  "VERSION_MISMATCH",
 		10: "WORD_FILTERED",
 		11: "CONTENT_TOO_LONG",
+		12: "MUTED",
 	}
 	ErrorCode_value = map[string]int32{
 		"OK":                 0,
@@ -77,6 +82,7 @@ var (
 		"VERSION_MISMATCH":   9,
 		"WORD_FILTERED":      10,
 		"CONTENT_TOO_LONG":   11,
+		"MUTED":              12,
 	}
 )
 
@@ -148,7 +154,7 @@ var File_proto_common_proto protoreflect.FileDescriptor
 const file_proto_common_proto_rawDesc = "" +
 	"\n" +
 	"\x12proto/common.proto\x12\fchirp.common\"\a\n" +
-	"\x05Empty*\xf1\x01\n" +
+	"\x05Empty*\xfc\x01\n" +
 	"\tErrorCode\x12\x06\n" +
 	"\x02OK\x10\x00\x12\x12\n" +
 	"\x0eINTERNAL_ERROR\x10\x01\x12\x11\n" +
@@ -162,7 +168,8 @@ const file_proto_common_proto_rawDesc = "" +
 	"\x10VERSION_MISMATCH\x10\t\x12\x11\n" +
 	"\rWORD_FILTERED\x10\n" +
 	"\x12\x14\n" +
-	"\x10CONTENT_TOO_LONG\x10\vB&Z$github.com/cui/chirp/proto/go/commonb\x06proto3"
+	"\x10CONTENT_TOO_LONG\x10\v\x12\t\n" +
+	"\x05MUTED\x10\fB&Z$github.com/cui/chirp/proto/go/commonb\x06proto3"
 
 var (
 	file_proto_common_proto_rawDescOnce sync.Once

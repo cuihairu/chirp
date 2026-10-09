@@ -138,6 +138,10 @@ std::vector<chirp::chat::GroupMember> GroupManager::GetMembers(const std::string
     if (alias_it != group->member_aliases.end()) {
       member.set_alias(alias_it->second);
     }
+    const auto mute_it = group->member_mutes.find(member_id);
+    if (mute_it != group->member_mutes.end()) {
+      member.set_muted_until_ts(mute_it->second);
+    }
     result.push_back(std::move(member));
   }
 
@@ -245,6 +249,51 @@ std::string GroupManager::GetMemberAlias(const std::string& group_id,
   std::lock_guard<std::mutex> group_lock(group->mu);
   auto alias_it = group->member_aliases.find(user_id);
   return alias_it == group->member_aliases.end() ? std::string() : alias_it->second;
+}
+
+bool GroupManager::SetMemberMute(const std::string& group_id,
+                                 const std::string& user_id, int64_t until_ms) {
+  std::lock_guard<std::mutex> lock(mu_);
+  auto it = groups_.find(group_id);
+  if (it == groups_.end()) {
+    return false;
+  }
+
+  auto& group = it->second;
+  std::lock_guard<std::mutex> group_lock(group->mu);
+
+  if (group->members.count(user_id) == 0) {
+    return false;
+  }
+
+  if (until_ms <= 0) {
+    group->member_mutes.erase(user_id);
+  } else {
+    group->member_mutes[user_id] = until_ms;
+  }
+  return true;
+}
+
+int64_t GroupManager::MutedUntil(const std::string& group_id,
+                                 const std::string& user_id, int64_t now_ms) {
+  std::lock_guard<std::mutex> lock(mu_);
+  auto it = groups_.find(group_id);
+  if (it == groups_.end()) {
+    return 0;
+  }
+
+  const auto& group = it->second;
+  std::lock_guard<std::mutex> group_lock(group->mu);
+  auto mute_it = group->member_mutes.find(user_id);
+  if (mute_it == group->member_mutes.end()) {
+    return 0;
+  }
+  if (mute_it->second <= now_ms) {
+    // 惰性过期：到点后的第一次读取清掉过期项，返回未禁言。
+    group->member_mutes.erase(mute_it);
+    return 0;
+  }
+  return mute_it->second;
 }
 
 } // namespace chat

@@ -651,3 +651,128 @@ TEST_F(GroupHandlersTest, RemoveMemberDropsAlias) {
   EXPECT_TRUE(groups_.RemoveMember(group.group_id(), "bob"));
   EXPECT_TRUE(groups_.GetMemberAlias(group.group_id(), "bob").empty());
 }
+
+namespace {
+// 禁言通知的定向匹配（GroupMemberMutedNotify 全字段比对）。
+bool HasMuteNotification(const std::vector<NotificationRecord>& records,
+                         const std::string& user_id, chirp::gateway::MsgID msg_id,
+                         const std::string& group_id, const std::string& target,
+                         int64_t muted_until, const std::string& operator_id) {
+  for (const auto& record : records) {
+    if (record.user_id != user_id || record.msg_id != msg_id) {
+      continue;
+    }
+    chirp::chat::GroupMemberMutedNotify notify;
+    if (!notify.ParseFromString(record.body)) {
+      continue;
+    }
+    if (notify.group_id() == group_id && notify.user_id() == target &&
+        notify.muted_until_ts() == muted_until &&
+        notify.operator_id() == operator_id) {
+      return true;
+    }
+  }
+  return false;
+}
+}  // namespace
+
+TEST_F(GroupHandlersTest, SetGroupMuteRequiresModeratorAndNotifiesGroup) {
+  const auto group = MakeGroup("alice", {"bob", "carl"});
+
+  chirp::chat::SetGroupMuteRequest req;
+  req.set_group_id(group.group_id());
+  req.set_target_user_id("carl");
+  req.set_duration_sec(600);
+
+  // 未登录 / MEMBER 操作者被拒（禁言是管理动作，无自助分支）。
+  EXPECT_EQ(handlers_->HandleSetGroupMute(req, "").code(),
+            chirp::common::INVALID_PARAM);
+  EXPECT_EQ(handlers_->HandleSetGroupMute(req, "bob").code(),
+            chirp::common::AUTH_FAILED);
+
+  notifications_.clear();
+  const auto resp = handlers_->HandleSetGroupMute(req, "alice");
+  EXPECT_EQ(resp.code(), chirp::common::OK);
+  EXPECT_GT(resp.muted_until_ts(), 0);
+  EXPECT_EQ(resp.group_id(), group.group_id());
+  EXPECT_EQ(resp.user_id(), "carl");
+
+  // 成员列表带出禁言截止时刻；全群（含操作者与被禁者）收到通知。
+  bool saw_mute = false;
+  for (const auto& member : groups_.GetMembers(group.group_id())) {
+    if (member.user_id() == "carl") {
+      saw_mute = member.muted_until_ts() == resp.muted_until_ts();
+    }
+  }
+  EXPECT_TRUE(saw_mute);
+  for (const char* member_id : {"alice", "bob", "carl"}) {
+    EXPECT_TRUE(HasMuteNotification(notifications_, member_id,
+                                    chirp::gateway::GROUP_MEMBER_MUTED_NOTIFY,
+                                    group.group_id(), "carl",
+                                    resp.muted_until_ts(), "alice"));
+  }
+}
+
+TEST_F(GroupHandlersTest, SetGroupMuteUnmuteClearsAndEchoesZero) {
+  const auto group = MakeGroup("alice", {"bob"});
+
+  chirp::chat::SetGroupMuteRequest mute;
+  mute.set_group_id(group.group_id());
+  mute.set_target_user_id("bob");
+  mute.set_duration_sec(300);
+  EXPECT_EQ(handlers_->HandleSetGroupMute(mute, "alice").code(),
+            chirp::common::OK);
+
+  notifications_.clear();
+  chirp::chat::SetGroupMuteRequest unmute;
+  unmute.set_group_id(group.group_id());
+  unmute.set_target_user_id("bob");
+  const auto resp = handlers_->HandleSetGroupMute(unmute, "alice");
+  EXPECT_EQ(resp.code(), chirp::common::OK);
+  EXPECT_EQ(resp.muted_until_ts(), 0);
+  EXPECT_EQ(groups_.MutedUntil(group.group_id(), "bob", 1LL << 40), 0);
+  EXPECT_TRUE(HasMuteNotification(notifications_, "bob",
+                                  chirp::gateway::GROUP_MEMBER_MUTED_NOTIFY,
+                                  group.group_id(), "bob", 0, "alice"));
+}
+
+TEST_F(GroupHandlersTest, SetGroupMuteRejectsBadTargetsAndParams) {
+  const auto group = MakeGroup("alice", {"bob"});
+
+  chirp::chat::SetGroupMuteRequest missing_group;
+  missing_group.set_target_user_id("bob");
+  missing_group.set_duration_sec(60);
+  EXPECT_EQ(handlers_->HandleSetGroupMute(missing_group, "alice").code(),
+            chirp::common::INVALID_PARAM);
+
+  chirp::chat::SetGroupMuteRequest unknown_group;
+  unknown_group.set_group_id("nope");
+  unknown_group.set_target_user_id("bob");
+  EXPECT_EQ(handlers_->HandleSetGroupMute(unknown_group, "alice").code(),
+            chirp::common::USER_NOT_FOUND);
+
+  chirp::chat::SetGroupMuteRequest stranger;
+  stranger.set_group_id(group.group_id());
+  stranger.set_target_user_id("mallory");
+  stranger.set_duration_sec(60);
+  EXPECT_EQ(handlers_->HandleSetGroupMute(stranger, "alice").code(),
+            chirp::common::USER_NOT_FOUND);
+
+  // 负时长与超 30 天上限拒绝；恰好 30 天放行。
+  chirp::chat::SetGroupMuteRequest negative = stranger;
+  negative.set_target_user_id("bob");
+  negative.set_duration_sec(-1);
+  EXPECT_EQ(handlers_->HandleSetGroupMute(negative, "alice").code(),
+            chirp::common::INVALID_PARAM);
+
+  chirp::chat::SetGroupMuteRequest over_cap = stranger;
+  over_cap.set_duration_sec(30LL * 24 * 60 * 60 + 1);
+  EXPECT_EQ(handlers_->HandleSetGroupMute(over_cap, "alice").code(),
+            chirp::common::INVALID_PARAM);
+
+  chirp::chat::SetGroupMuteRequest at_cap = stranger;
+  at_cap.set_target_user_id("bob");
+  at_cap.set_duration_sec(30LL * 24 * 60 * 60);
+  EXPECT_EQ(handlers_->HandleSetGroupMute(at_cap, "alice").code(),
+            chirp::common::OK);
+}

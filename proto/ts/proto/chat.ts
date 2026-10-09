@@ -703,6 +703,13 @@ export interface GroupMember {
    * 变更经 GROUP_MEMBER_ALIAS_UPDATED_NOTIFY(2124) 推送。
    */
   alias: string;
+  /**
+   * 群禁言（game_chat_features P1，2026-10-10）：禁言截止时刻（epoch 毫秒）；
+   * 0 = 未禁言。GET_GROUP_MEMBERS_RESP 随成员列表下发；变更经
+   * GROUP_MEMBER_MUTED_NOTIFY(2252) 推送。服务端惰性过期：到点后读取即视为
+   * 未禁言。
+   */
+  mutedUntilTs: number;
 }
 
 /**
@@ -740,6 +747,50 @@ export interface GroupMemberAliasUpdatedNotify {
   userId: string;
   /** 新别名；空 = 已清除 */
   alias: string;
+}
+
+/**
+ * 群管理员手动禁言（2250）：operator 是该群 MODERATOR/ADMIN/OWNER 时，禁言/
+ * 解禁 target（本群成员）。duration_sec = 0 表示解禁；上限 30 天
+ * （2,592,000 秒，超限 INVALID_PARAM）。禁言期间 target 在本群频道
+ * （GUILD，channel_id=群 id）的 SEND_MESSAGE 被拒（MUTED，消息不落任何
+ * 存储）；私聊/其他频道不受影响。chirp 无全局管理员身份，故为群域禁言；
+ * 全局禁言待全局管理员身份出现时另批。
+ */
+export interface SetGroupMuteRequest {
+  groupId: string;
+  targetUserId: string;
+  /** 0 = 解禁；>0 = 禁言时长；上限 30 天 */
+  durationSec: number;
+}
+
+export interface SetGroupMuteResponse {
+  /** OK / AUTH_FAILED（操作者无 MODERATOR+ 权限 */
+  code: ErrorCode;
+  /**
+   * 或未登录）/ USER_NOT_FOUND（群不存在或目标
+   * 不是成员）/ INVALID_PARAM（垃圾 body / 超上限）
+   */
+  groupId: string;
+  /** 被禁言/解禁的成员 */
+  userId: string;
+  /** 生效后的截止时刻；0 = 未禁言（回显） */
+  mutedUntilTs: number;
+}
+
+/**
+ * 2252：禁言态变更后推给全群在线成员（含操作者自身，多端同步）。sequence 0、
+ * 客户端只读、不要求 ACK。消费：成员列表行徽章 + 群聊发送被拒时的提示态。
+ */
+export interface GroupMemberMutedNotify {
+  groupId: string;
+  /** 被禁言/解禁的成员 */
+  userId: string;
+  /** 新的截止时刻；0 = 已解禁 */
+  mutedUntilTs: number;
+  /** 执行禁言/解禁的操作者 */
+  operatorId: string;
+  timestamp: number;
 }
 
 /** Join group request */
@@ -3184,7 +3235,7 @@ export const GroupInfo_MetadataEntry = {
 };
 
 function createBaseGroupMember(): GroupMember {
-  return { userId: "", username: "", avatarUrl: "", role: 0, joinedAt: 0, lastReadAt: 0, alias: "" };
+  return { userId: "", username: "", avatarUrl: "", role: 0, joinedAt: 0, lastReadAt: 0, alias: "", mutedUntilTs: 0 };
 }
 
 export const GroupMember = {
@@ -3209,6 +3260,9 @@ export const GroupMember = {
     }
     if (message.alias !== "") {
       writer.uint32(58).string(message.alias);
+    }
+    if (message.mutedUntilTs !== 0) {
+      writer.uint32(64).int64(message.mutedUntilTs);
     }
     return writer;
   },
@@ -3269,6 +3323,13 @@ export const GroupMember = {
 
           message.alias = reader.string();
           continue;
+        case 8:
+          if (tag !== 64) {
+            break;
+          }
+
+          message.mutedUntilTs = longToNumber(reader.int64() as Long);
+          continue;
       }
       if ((tag & 7) === 4 || tag === 0) {
         break;
@@ -3287,6 +3348,7 @@ export const GroupMember = {
       joinedAt: isSet(object.joinedAt) ? globalThis.Number(object.joinedAt) : 0,
       lastReadAt: isSet(object.lastReadAt) ? globalThis.Number(object.lastReadAt) : 0,
       alias: isSet(object.alias) ? globalThis.String(object.alias) : "",
+      mutedUntilTs: isSet(object.mutedUntilTs) ? globalThis.Number(object.mutedUntilTs) : 0,
     };
   },
 
@@ -3313,6 +3375,9 @@ export const GroupMember = {
     if (message.alias !== "") {
       obj.alias = message.alias;
     }
+    if (message.mutedUntilTs !== 0) {
+      obj.mutedUntilTs = Math.round(message.mutedUntilTs);
+    }
     return obj;
   },
 
@@ -3328,6 +3393,7 @@ export const GroupMember = {
     message.joinedAt = object.joinedAt ?? 0;
     message.lastReadAt = object.lastReadAt ?? 0;
     message.alias = object.alias ?? "";
+    message.mutedUntilTs = object.mutedUntilTs ?? 0;
     return message;
   },
 };
@@ -3612,6 +3678,318 @@ export const GroupMemberAliasUpdatedNotify = {
     message.groupId = object.groupId ?? "";
     message.userId = object.userId ?? "";
     message.alias = object.alias ?? "";
+    return message;
+  },
+};
+
+function createBaseSetGroupMuteRequest(): SetGroupMuteRequest {
+  return { groupId: "", targetUserId: "", durationSec: 0 };
+}
+
+export const SetGroupMuteRequest = {
+  encode(message: SetGroupMuteRequest, writer: _m0.Writer = _m0.Writer.create()): _m0.Writer {
+    if (message.groupId !== "") {
+      writer.uint32(10).string(message.groupId);
+    }
+    if (message.targetUserId !== "") {
+      writer.uint32(18).string(message.targetUserId);
+    }
+    if (message.durationSec !== 0) {
+      writer.uint32(24).int64(message.durationSec);
+    }
+    return writer;
+  },
+
+  decode(input: _m0.Reader | Uint8Array, length?: number): SetGroupMuteRequest {
+    const reader = input instanceof _m0.Reader ? input : _m0.Reader.create(input);
+    let end = length === undefined ? reader.len : reader.pos + length;
+    const message = createBaseSetGroupMuteRequest();
+    while (reader.pos < end) {
+      const tag = reader.uint32();
+      switch (tag >>> 3) {
+        case 1:
+          if (tag !== 10) {
+            break;
+          }
+
+          message.groupId = reader.string();
+          continue;
+        case 2:
+          if (tag !== 18) {
+            break;
+          }
+
+          message.targetUserId = reader.string();
+          continue;
+        case 3:
+          if (tag !== 24) {
+            break;
+          }
+
+          message.durationSec = longToNumber(reader.int64() as Long);
+          continue;
+      }
+      if ((tag & 7) === 4 || tag === 0) {
+        break;
+      }
+      reader.skipType(tag & 7);
+    }
+    return message;
+  },
+
+  fromJSON(object: any): SetGroupMuteRequest {
+    return {
+      groupId: isSet(object.groupId) ? globalThis.String(object.groupId) : "",
+      targetUserId: isSet(object.targetUserId) ? globalThis.String(object.targetUserId) : "",
+      durationSec: isSet(object.durationSec) ? globalThis.Number(object.durationSec) : 0,
+    };
+  },
+
+  toJSON(message: SetGroupMuteRequest): unknown {
+    const obj: any = {};
+    if (message.groupId !== "") {
+      obj.groupId = message.groupId;
+    }
+    if (message.targetUserId !== "") {
+      obj.targetUserId = message.targetUserId;
+    }
+    if (message.durationSec !== 0) {
+      obj.durationSec = Math.round(message.durationSec);
+    }
+    return obj;
+  },
+
+  create<I extends Exact<DeepPartial<SetGroupMuteRequest>, I>>(base?: I): SetGroupMuteRequest {
+    return SetGroupMuteRequest.fromPartial(base ?? ({} as any));
+  },
+  fromPartial<I extends Exact<DeepPartial<SetGroupMuteRequest>, I>>(object: I): SetGroupMuteRequest {
+    const message = createBaseSetGroupMuteRequest();
+    message.groupId = object.groupId ?? "";
+    message.targetUserId = object.targetUserId ?? "";
+    message.durationSec = object.durationSec ?? 0;
+    return message;
+  },
+};
+
+function createBaseSetGroupMuteResponse(): SetGroupMuteResponse {
+  return { code: 0, groupId: "", userId: "", mutedUntilTs: 0 };
+}
+
+export const SetGroupMuteResponse = {
+  encode(message: SetGroupMuteResponse, writer: _m0.Writer = _m0.Writer.create()): _m0.Writer {
+    if (message.code !== 0) {
+      writer.uint32(8).int32(message.code);
+    }
+    if (message.groupId !== "") {
+      writer.uint32(18).string(message.groupId);
+    }
+    if (message.userId !== "") {
+      writer.uint32(26).string(message.userId);
+    }
+    if (message.mutedUntilTs !== 0) {
+      writer.uint32(32).int64(message.mutedUntilTs);
+    }
+    return writer;
+  },
+
+  decode(input: _m0.Reader | Uint8Array, length?: number): SetGroupMuteResponse {
+    const reader = input instanceof _m0.Reader ? input : _m0.Reader.create(input);
+    let end = length === undefined ? reader.len : reader.pos + length;
+    const message = createBaseSetGroupMuteResponse();
+    while (reader.pos < end) {
+      const tag = reader.uint32();
+      switch (tag >>> 3) {
+        case 1:
+          if (tag !== 8) {
+            break;
+          }
+
+          message.code = reader.int32() as any;
+          continue;
+        case 2:
+          if (tag !== 18) {
+            break;
+          }
+
+          message.groupId = reader.string();
+          continue;
+        case 3:
+          if (tag !== 26) {
+            break;
+          }
+
+          message.userId = reader.string();
+          continue;
+        case 4:
+          if (tag !== 32) {
+            break;
+          }
+
+          message.mutedUntilTs = longToNumber(reader.int64() as Long);
+          continue;
+      }
+      if ((tag & 7) === 4 || tag === 0) {
+        break;
+      }
+      reader.skipType(tag & 7);
+    }
+    return message;
+  },
+
+  fromJSON(object: any): SetGroupMuteResponse {
+    return {
+      code: isSet(object.code) ? errorCodeFromJSON(object.code) : 0,
+      groupId: isSet(object.groupId) ? globalThis.String(object.groupId) : "",
+      userId: isSet(object.userId) ? globalThis.String(object.userId) : "",
+      mutedUntilTs: isSet(object.mutedUntilTs) ? globalThis.Number(object.mutedUntilTs) : 0,
+    };
+  },
+
+  toJSON(message: SetGroupMuteResponse): unknown {
+    const obj: any = {};
+    if (message.code !== 0) {
+      obj.code = errorCodeToJSON(message.code);
+    }
+    if (message.groupId !== "") {
+      obj.groupId = message.groupId;
+    }
+    if (message.userId !== "") {
+      obj.userId = message.userId;
+    }
+    if (message.mutedUntilTs !== 0) {
+      obj.mutedUntilTs = Math.round(message.mutedUntilTs);
+    }
+    return obj;
+  },
+
+  create<I extends Exact<DeepPartial<SetGroupMuteResponse>, I>>(base?: I): SetGroupMuteResponse {
+    return SetGroupMuteResponse.fromPartial(base ?? ({} as any));
+  },
+  fromPartial<I extends Exact<DeepPartial<SetGroupMuteResponse>, I>>(object: I): SetGroupMuteResponse {
+    const message = createBaseSetGroupMuteResponse();
+    message.code = object.code ?? 0;
+    message.groupId = object.groupId ?? "";
+    message.userId = object.userId ?? "";
+    message.mutedUntilTs = object.mutedUntilTs ?? 0;
+    return message;
+  },
+};
+
+function createBaseGroupMemberMutedNotify(): GroupMemberMutedNotify {
+  return { groupId: "", userId: "", mutedUntilTs: 0, operatorId: "", timestamp: 0 };
+}
+
+export const GroupMemberMutedNotify = {
+  encode(message: GroupMemberMutedNotify, writer: _m0.Writer = _m0.Writer.create()): _m0.Writer {
+    if (message.groupId !== "") {
+      writer.uint32(10).string(message.groupId);
+    }
+    if (message.userId !== "") {
+      writer.uint32(18).string(message.userId);
+    }
+    if (message.mutedUntilTs !== 0) {
+      writer.uint32(24).int64(message.mutedUntilTs);
+    }
+    if (message.operatorId !== "") {
+      writer.uint32(34).string(message.operatorId);
+    }
+    if (message.timestamp !== 0) {
+      writer.uint32(40).int64(message.timestamp);
+    }
+    return writer;
+  },
+
+  decode(input: _m0.Reader | Uint8Array, length?: number): GroupMemberMutedNotify {
+    const reader = input instanceof _m0.Reader ? input : _m0.Reader.create(input);
+    let end = length === undefined ? reader.len : reader.pos + length;
+    const message = createBaseGroupMemberMutedNotify();
+    while (reader.pos < end) {
+      const tag = reader.uint32();
+      switch (tag >>> 3) {
+        case 1:
+          if (tag !== 10) {
+            break;
+          }
+
+          message.groupId = reader.string();
+          continue;
+        case 2:
+          if (tag !== 18) {
+            break;
+          }
+
+          message.userId = reader.string();
+          continue;
+        case 3:
+          if (tag !== 24) {
+            break;
+          }
+
+          message.mutedUntilTs = longToNumber(reader.int64() as Long);
+          continue;
+        case 4:
+          if (tag !== 34) {
+            break;
+          }
+
+          message.operatorId = reader.string();
+          continue;
+        case 5:
+          if (tag !== 40) {
+            break;
+          }
+
+          message.timestamp = longToNumber(reader.int64() as Long);
+          continue;
+      }
+      if ((tag & 7) === 4 || tag === 0) {
+        break;
+      }
+      reader.skipType(tag & 7);
+    }
+    return message;
+  },
+
+  fromJSON(object: any): GroupMemberMutedNotify {
+    return {
+      groupId: isSet(object.groupId) ? globalThis.String(object.groupId) : "",
+      userId: isSet(object.userId) ? globalThis.String(object.userId) : "",
+      mutedUntilTs: isSet(object.mutedUntilTs) ? globalThis.Number(object.mutedUntilTs) : 0,
+      operatorId: isSet(object.operatorId) ? globalThis.String(object.operatorId) : "",
+      timestamp: isSet(object.timestamp) ? globalThis.Number(object.timestamp) : 0,
+    };
+  },
+
+  toJSON(message: GroupMemberMutedNotify): unknown {
+    const obj: any = {};
+    if (message.groupId !== "") {
+      obj.groupId = message.groupId;
+    }
+    if (message.userId !== "") {
+      obj.userId = message.userId;
+    }
+    if (message.mutedUntilTs !== 0) {
+      obj.mutedUntilTs = Math.round(message.mutedUntilTs);
+    }
+    if (message.operatorId !== "") {
+      obj.operatorId = message.operatorId;
+    }
+    if (message.timestamp !== 0) {
+      obj.timestamp = Math.round(message.timestamp);
+    }
+    return obj;
+  },
+
+  create<I extends Exact<DeepPartial<GroupMemberMutedNotify>, I>>(base?: I): GroupMemberMutedNotify {
+    return GroupMemberMutedNotify.fromPartial(base ?? ({} as any));
+  },
+  fromPartial<I extends Exact<DeepPartial<GroupMemberMutedNotify>, I>>(object: I): GroupMemberMutedNotify {
+    const message = createBaseGroupMemberMutedNotify();
+    message.groupId = object.groupId ?? "";
+    message.userId = object.userId ?? "";
+    message.mutedUntilTs = object.mutedUntilTs ?? 0;
+    message.operatorId = object.operatorId ?? "";
+    message.timestamp = object.timestamp ?? 0;
     return message;
   },
 };

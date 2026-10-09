@@ -176,6 +176,11 @@ message GroupMember {
   // 未设置，渲染回退 username。GET_GROUP_MEMBERS_RESP 随成员列表下发；
   // 变更经 GROUP_MEMBER_ALIAS_UPDATED_NOTIFY(2124) 推送。
   string alias = 7;
+  // 群禁言（game_chat_features P1，2026-10-10）：禁言截止时刻（epoch 毫秒）；
+  // 0 = 未禁言。GET_GROUP_MEMBERS_RESP 随成员列表下发；变更经
+  // GROUP_MEMBER_MUTED_NOTIFY(2252) 推送。服务端惰性过期：到点后读取即视为
+  // 未禁言。
+  int64 muted_until_ts = 8;
 }
 
 // 设置群昵称（2122）：operator 设置 target 在 group 内的显示别名。权限：
@@ -203,6 +208,37 @@ message GroupMemberAliasUpdatedNotify {
   string group_id = 1;
   string user_id = 2;
   string alias = 3;            // 新别名；空 = 已清除
+}
+
+// 群管理员手动禁言（2250）：operator 是该群 MODERATOR/ADMIN/OWNER 时，禁言/
+// 解禁 target（本群成员）。duration_sec = 0 表示解禁；上限 30 天
+// （2,592,000 秒，超限 INVALID_PARAM）。禁言期间 target 在本群频道
+// （GUILD，channel_id=群 id）的 SEND_MESSAGE 被拒（MUTED，消息不落任何
+// 存储）；私聊/其他频道不受影响。chirp 无全局管理员身份，故为群域禁言；
+// 全局禁言待全局管理员身份出现时另批。
+message SetGroupMuteRequest {
+  string group_id = 1;
+  string target_user_id = 2;
+  int64 duration_sec = 3;      // 0 = 解禁；>0 = 禁言时长；上限 30 天
+}
+
+message SetGroupMuteResponse {
+  common.ErrorCode code = 1;   // OK / AUTH_FAILED（操作者无 MODERATOR+ 权限
+                                // 或未登录）/ USER_NOT_FOUND（群不存在或目标
+                                // 不是成员）/ INVALID_PARAM（垃圾 body / 超上限）
+  string group_id = 2;
+  string user_id = 3;          // 被禁言/解禁的成员
+  int64 muted_until_ts = 4;    // 生效后的截止时刻；0 = 未禁言（回显）
+}
+
+// 2252：禁言态变更后推给全群在线成员（含操作者自身，多端同步）。sequence 0、
+// 客户端只读、不要求 ACK。消费：成员列表行徽章 + 群聊发送被拒时的提示态。
+message GroupMemberMutedNotify {
+  string group_id = 1;
+  string user_id = 2;          // 被禁言/解禁的成员
+  int64 muted_until_ts = 3;    // 新的截止时刻；0 = 已解禁
+  string operator_id = 4;      // 执行禁言/解禁的操作者
+  int64 timestamp = 5;
 }
 
 // Join group request

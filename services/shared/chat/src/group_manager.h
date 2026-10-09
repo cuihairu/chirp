@@ -28,6 +28,9 @@ struct GroupData {
   // 群昵称（2122-2124，message_search 批）：成员显示别名；缺省 = 未设置，
   // 渲染回退 username。与群本体同一内存生命周期。
   std::unordered_map<std::string, std::string> member_aliases;
+  // 群禁言（2250-2252，game_chat_features P1）：成员禁言截止时刻（epoch
+  // 毫秒）；缺省/0 = 未禁言。与群本体同一内存生命周期。
+  std::unordered_map<std::string, int64_t> member_mutes;
   std::mutex mu;
 };
 
@@ -74,6 +77,17 @@ public:
 
   // 读取一名成员的群昵称；群/成员不存在或未设置返回空串。
   std::string GetMemberAlias(const std::string& group_id, const std::string& user_id);
+
+  // 群禁言：写入/清除（until_ms <= now 或 <= 0 清除）一名成员的禁言截止
+  // 时刻。群或成员不存在返回 false；权限（MODERATOR+）由 handler 层判定，
+  // 这里只管存储。duration 的上限（30 天）同样在 handler 层。
+  bool SetMemberMute(const std::string& group_id, const std::string& user_id,
+                     int64_t until_ms);
+
+  // 读取一名成员的禁言截止时刻；未禁言、已到点（惰性过期：读到过期项顺手
+  // 删除）或群/成员不存在返回 0。
+  int64_t MutedUntil(const std::string& group_id, const std::string& user_id,
+                     int64_t now_ms);
 
   // alias 的服务端上限（码点数，与 chat_validation 的码点计数同口径）；
   // 超限 handler 层回 INVALID_PARAM。

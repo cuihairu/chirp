@@ -127,6 +127,7 @@ message Packet {
 | 2005 | `CHAT_MESSAGE_NOTIFY` | Chat -> 客户端 | 实时消息推送 |
 | 2101-2116 | 群组全套 | 客户端 <-> Chat | 建/进/出/邀/踢/查 + 群事件 notify(2117-2121) |
 | 2122-2124 | 群昵称 alias | 客户端 <-> Chat | `SET_MEMBER_ALIAS_REQ/RESP` + `GROUP_MEMBER_ALIAS_UPDATED_NOTIFY`;本人或 MODERATOR+ 设他人;别名随 `GroupMember.alias` 下发,渲染消费成员列表与消息发送者名两处 |
+| 2250-2252 | 群管理员禁言 | 客户端 <-> Chat | `SET_GROUP_MUTE_REQ/RESP` + `GROUP_MEMBER_MUTED_NOTIFY`;MODERATOR+ 禁言/解禁本群成员(秒数,0=解禁,上限 30 天);禁言中成员群频道发言被拒 `MUTED`,禁言态随 `GroupMember.muted_until_ts` 下发 |
 | 2201 / 2202 | `MARK_READ_REQ` / `RESP` | 客户端 -> Chat | 标记已读(服务端游标) |
 | 2203 / 2204 | `GET_READ_RECEIPTS_REQ` / `RESP` | 客户端 -> Chat | 消息已读回执查询 |
 | 2205 / 2206 | `GET_UNREAD_COUNT_REQ` / `RESP` | 客户端 -> Chat | 未读数 |

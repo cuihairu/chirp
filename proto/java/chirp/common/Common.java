@@ -104,6 +104,16 @@ public final class Common extends com.google.protobuf.GeneratedFile {
      * <code>CONTENT_TOO_LONG = 11;</code>
      */
     CONTENT_TOO_LONG(11),
+    /**
+     * <pre>
+     * Game-plane group mute (game_chat_features P1 专码): the sender is muted
+     * in the target group by a MODERATOR+ (SET_GROUP_MUTE_REQ 2250). The send
+     * is refused without touching any store; other channels are unaffected.
+     * </pre>
+     *
+     * <code>MUTED = 12;</code>
+     */
+    MUTED(12),
     UNRECOGNIZED(-1),
     ;
 
@@ -189,6 +199,16 @@ public final class Common extends com.google.protobuf.GeneratedFile {
      * <code>CONTENT_TOO_LONG = 11;</code>
      */
     public static final int CONTENT_TOO_LONG_VALUE = 11;
+    /**
+     * <pre>
+     * Game-plane group mute (game_chat_features P1 专码): the sender is muted
+     * in the target group by a MODERATOR+ (SET_GROUP_MUTE_REQ 2250). The send
+     * is refused without touching any store; other channels are unaffected.
+     * </pre>
+     *
+     * <code>MUTED = 12;</code>
+     */
+    public static final int MUTED_VALUE = 12;
 
 
     public final int getNumber() {
@@ -227,6 +247,7 @@ public final class Common extends com.google.protobuf.GeneratedFile {
         case 9: return VERSION_MISMATCH;
         case 10: return WORD_FILTERED;
         case 11: return CONTENT_TOO_LONG;
+        case 12: return MUTED;
         default: return null;
       }
     }
@@ -653,14 +674,14 @@ public final class Common extends com.google.protobuf.GeneratedFile {
   static {
     java.lang.String[] descriptorData = {
       "\n\022proto/common.proto\022\014chirp.common\"\007\n\005Em" +
-      "pty*\361\001\n\tErrorCode\022\006\n\002OK\020\000\022\022\n\016INTERNAL_ER" +
+      "pty*\374\001\n\tErrorCode\022\006\n\002OK\020\000\022\022\n\016INTERNAL_ER" +
       "ROR\020\001\022\021\n\rINVALID_PARAM\020\002\022\017\n\013AUTH_FAILED\020" +
       "\003\022\023\n\017SESSION_EXPIRED\020\004\022\022\n\016USER_NOT_FOUND" +
       "\020\005\022\022\n\016TARGET_OFFLINE\020\006\022\026\n\022SERVER_UNAVAIL" +
       "ABLE\020\007\022\020\n\014RATE_LIMITED\020\010\022\024\n\020VERSION_MISM" +
       "ATCH\020\t\022\021\n\rWORD_FILTERED\020\n\022\024\n\020CONTENT_TOO" +
-      "_LONG\020\013B&Z$github.com/cui/chirp/proto/go" +
-      "/commonb\006proto3"
+      "_LONG\020\013\022\t\n\005MUTED\020\014B&Z$github.com/cui/chi" +
+      "rp/proto/go/commonb\006proto3"
     };
     descriptor = com.google.protobuf.Descriptors.FileDescriptor
       .internalBuildGeneratedFileFrom(descriptorData,

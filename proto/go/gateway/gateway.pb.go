@@ -159,6 +159,12 @@ const (
 	// body 见 chat.proto 的 SearchMessageRequest / SearchMessageResponse。
 	MsgID_SEARCH_MESSAGE_REQ  MsgID = 2248
 	MsgID_SEARCH_MESSAGE_RESP MsgID = 2249
+	// 群管理员手动禁言（game_chat_features P1，2026-10-10）：MODERATOR+ 禁言/
+	// 解禁本群成员，禁言中成员的本群频道发言被拒（MUTED）。body 见 chat.proto
+	// 的 SetGroupMuteRequest / SetGroupMuteResponse / GroupMemberMutedNotify。
+	MsgID_SET_GROUP_MUTE_REQ        MsgID = 2250
+	MsgID_SET_GROUP_MUTE_RESP       MsgID = 2251
+	MsgID_GROUP_MEMBER_MUTED_NOTIFY MsgID = 2252
 	// Social service
 	MsgID_ADD_FRIEND_REQ             MsgID = 3001
 	MsgID_ADD_FRIEND_RESP            MsgID = 3002
@@ -411,6 +417,9 @@ var (
 		2247: "WORD_FILTER_UPDATE_NOTIFY",
 		2248: "SEARCH_MESSAGE_REQ",
 		2249: "SEARCH_MESSAGE_RESP",
+		2250: "SET_GROUP_MUTE_REQ",
+		2251: "SET_GROUP_MUTE_RESP",
+		2252: "GROUP_MEMBER_MUTED_NOTIFY",
 		3001: "ADD_FRIEND_REQ",
 		3002: "ADD_FRIEND_RESP",
 		3003: "FRIEND_REQUEST_ACTION_REQ",
@@ -632,6 +641,9 @@ var (
 		"WORD_FILTER_UPDATE_NOTIFY":         2247,
 		"SEARCH_MESSAGE_REQ":                2248,
 		"SEARCH_MESSAGE_RESP":               2249,
+		"SET_GROUP_MUTE_REQ":                2250,
+		"SET_GROUP_MUTE_RESP":               2251,
+		"GROUP_MEMBER_MUTED_NOTIFY":         2252,
 		"ADD_FRIEND_REQ":                    3001,
 		"ADD_FRIEND_RESP":                   3002,
 		"FRIEND_REQUEST_ACTION_REQ":         3003,
@@ -1345,7 +1357,7 @@ const file_proto_gateway_proto_rawDesc = "" +
 	"channel_id\x18\x01 \x01(\tR\tchannelId\x12\x1b\n" +
 	"\tsender_id\x18\x02 \x01(\tR\bsenderId\x12\x18\n" +
 	"\acontent\x18\x03 \x01(\fR\acontent\x12\"\n" +
-	"\rclient_msg_id\x18\x04 \x01(\tR\vclientMsgId*\xf3,\n" +
+	"\rclient_msg_id\x18\x04 \x01(\tR\vclientMsgId*\xc6-\n" +
 	"\x05MsgID\x12\v\n" +
 	"\aUNKNOWN\x10\x00\x12\x13\n" +
 	"\x0eHEARTBEAT_PING\x10\xe9\a\x12\x13\n" +
@@ -1447,7 +1459,10 @@ const file_proto_gateway_proto_rawDesc = "" +
 	"\x16WORD_FILTER_FETCH_RESP\x10\xc6\x11\x12\x1e\n" +
 	"\x19WORD_FILTER_UPDATE_NOTIFY\x10\xc7\x11\x12\x17\n" +
 	"\x12SEARCH_MESSAGE_REQ\x10\xc8\x11\x12\x18\n" +
-	"\x13SEARCH_MESSAGE_RESP\x10\xc9\x11\x12\x13\n" +
+	"\x13SEARCH_MESSAGE_RESP\x10\xc9\x11\x12\x17\n" +
+	"\x12SET_GROUP_MUTE_REQ\x10\xca\x11\x12\x18\n" +
+	"\x13SET_GROUP_MUTE_RESP\x10\xcb\x11\x12\x1e\n" +
+	"\x19GROUP_MEMBER_MUTED_NOTIFY\x10\xcc\x11\x12\x13\n" +
 	"\x0eADD_FRIEND_REQ\x10\xb9\x17\x12\x14\n" +
 	"\x0fADD_FRIEND_RESP\x10\xba\x17\x12\x1e\n" +
 	"\x19FRIEND_REQUEST_ACTION_REQ\x10\xbb\x17\x12\x1f\n" +

@@ -408,6 +408,69 @@ struct SetMemberAliasRequestDefaultTypeInternal {
 PROTOBUF_ATTRIBUTE_NO_DESTROY PROTOBUF_CONSTINIT
     PROTOBUF_ATTRIBUTE_INIT_PRIORITY1 SetMemberAliasRequestDefaultTypeInternal _SetMemberAliasRequest_default_instance_;
 
+inline constexpr SetGroupMuteResponse::Impl_::Impl_(
+    ::_pbi::ConstantInitialized) noexcept
+      : _cached_size_{0},
+        group_id_(
+            &::google::protobuf::internal::fixed_address_empty_string,
+            ::_pbi::ConstantInitialized()),
+        user_id_(
+            &::google::protobuf::internal::fixed_address_empty_string,
+            ::_pbi::ConstantInitialized()),
+        muted_until_ts_{::int64_t{0}},
+        code_{static_cast< ::chirp::common::ErrorCode >(0)} {}
+
+template <typename>
+PROTOBUF_CONSTEXPR SetGroupMuteResponse::SetGroupMuteResponse(::_pbi::ConstantInitialized)
+#if defined(PROTOBUF_CUSTOM_VTABLE)
+    : ::google::protobuf::Message(SetGroupMuteResponse_class_data_.base()),
+#else   // PROTOBUF_CUSTOM_VTABLE
+    : ::google::protobuf::Message(),
+#endif  // PROTOBUF_CUSTOM_VTABLE
+      _impl_(::_pbi::ConstantInitialized()) {
+}
+struct SetGroupMuteResponseDefaultTypeInternal {
+  PROTOBUF_CONSTEXPR SetGroupMuteResponseDefaultTypeInternal() : _instance(::_pbi::ConstantInitialized{}) {}
+  ~SetGroupMuteResponseDefaultTypeInternal() {}
+  union {
+    SetGroupMuteResponse _instance;
+  };
+};
+
+PROTOBUF_ATTRIBUTE_NO_DESTROY PROTOBUF_CONSTINIT
+    PROTOBUF_ATTRIBUTE_INIT_PRIORITY1 SetGroupMuteResponseDefaultTypeInternal _SetGroupMuteResponse_default_instance_;
+
+inline constexpr SetGroupMuteRequest::Impl_::Impl_(
+    ::_pbi::ConstantInitialized) noexcept
+      : _cached_size_{0},
+        group_id_(
+            &::google::protobuf::internal::fixed_address_empty_string,
+            ::_pbi::ConstantInitialized()),
+        target_user_id_(
+            &::google::protobuf::internal::fixed_address_empty_string,
+            ::_pbi::ConstantInitialized()),
+        duration_sec_{::int64_t{0}} {}
+
+template <typename>
+PROTOBUF_CONSTEXPR SetGroupMuteRequest::SetGroupMuteRequest(::_pbi::ConstantInitialized)
+#if defined(PROTOBUF_CUSTOM_VTABLE)
+    : ::google::protobuf::Message(SetGroupMuteRequest_class_data_.base()),
+#else   // PROTOBUF_CUSTOM_VTABLE
+    : ::google::protobuf::Message(),
+#endif  // PROTOBUF_CUSTOM_VTABLE
+      _impl_(::_pbi::ConstantInitialized()) {
+}
+struct SetGroupMuteRequestDefaultTypeInternal {
+  PROTOBUF_CONSTEXPR SetGroupMuteRequestDefaultTypeInternal() : _instance(::_pbi::ConstantInitialized{}) {}
+  ~SetGroupMuteRequestDefaultTypeInternal() {}
+  union {
+    SetGroupMuteRequest _instance;
+  };
+};
+
+PROTOBUF_ATTRIBUTE_NO_DESTROY PROTOBUF_CONSTINIT
+    PROTOBUF_ATTRIBUTE_INIT_PRIORITY1 SetGroupMuteRequestDefaultTypeInternal _SetGroupMuteRequest_default_instance_;
+
 inline constexpr SetChannelMuteResponse::Impl_::Impl_(
     ::_pbi::ConstantInitialized) noexcept
       : _cached_size_{0},
@@ -1533,6 +1596,41 @@ struct InviteToGroupRequestDefaultTypeInternal {
 PROTOBUF_ATTRIBUTE_NO_DESTROY PROTOBUF_CONSTINIT
     PROTOBUF_ATTRIBUTE_INIT_PRIORITY1 InviteToGroupRequestDefaultTypeInternal _InviteToGroupRequest_default_instance_;
 
+inline constexpr GroupMemberMutedNotify::Impl_::Impl_(
+    ::_pbi::ConstantInitialized) noexcept
+      : _cached_size_{0},
+        group_id_(
+            &::google::protobuf::internal::fixed_address_empty_string,
+            ::_pbi::ConstantInitialized()),
+        user_id_(
+            &::google::protobuf::internal::fixed_address_empty_string,
+            ::_pbi::ConstantInitialized()),
+        operator_id_(
+            &::google::protobuf::internal::fixed_address_empty_string,
+            ::_pbi::ConstantInitialized()),
+        muted_until_ts_{::int64_t{0}},
+        timestamp_{::int64_t{0}} {}
+
+template <typename>
+PROTOBUF_CONSTEXPR GroupMemberMutedNotify::GroupMemberMutedNotify(::_pbi::ConstantInitialized)
+#if defined(PROTOBUF_CUSTOM_VTABLE)
+    : ::google::protobuf::Message(GroupMemberMutedNotify_class_data_.base()),
+#else   // PROTOBUF_CUSTOM_VTABLE
+    : ::google::protobuf::Message(),
+#endif  // PROTOBUF_CUSTOM_VTABLE
+      _impl_(::_pbi::ConstantInitialized()) {
+}
+struct GroupMemberMutedNotifyDefaultTypeInternal {
+  PROTOBUF_CONSTEXPR GroupMemberMutedNotifyDefaultTypeInternal() : _instance(::_pbi::ConstantInitialized{}) {}
+  ~GroupMemberMutedNotifyDefaultTypeInternal() {}
+  union {
+    GroupMemberMutedNotify _instance;
+  };
+};
+
+PROTOBUF_ATTRIBUTE_NO_DESTROY PROTOBUF_CONSTINIT
+    PROTOBUF_ATTRIBUTE_INIT_PRIORITY1 GroupMemberMutedNotifyDefaultTypeInternal _GroupMemberMutedNotify_default_instance_;
+
 inline constexpr GroupMemberLeftNotify::Impl_::Impl_(
     ::_pbi::ConstantInitialized) noexcept
       : _cached_size_{0},
@@ -1648,6 +1746,7 @@ inline constexpr GroupMember::Impl_::Impl_(
             ::_pbi::ConstantInitialized()),
         joined_at_{::int64_t{0}},
         last_read_at_{::int64_t{0}},
+        muted_until_ts_{::int64_t{0}},
         role_{static_cast< ::chirp::chat::GroupMemberRole >(0)} {}
 
 template <typename>
@@ -4198,7 +4297,7 @@ const ::uint32_t
         8,
         0x081, // bitmap
         PROTOBUF_FIELD_OFFSET(::chirp::chat::GroupMember, _impl_._has_bits_),
-        10, // hasbit index offset
+        11, // hasbit index offset
         PROTOBUF_FIELD_OFFSET(::chirp::chat::GroupMember, _impl_.user_id_),
         PROTOBUF_FIELD_OFFSET(::chirp::chat::GroupMember, _impl_.username_),
         PROTOBUF_FIELD_OFFSET(::chirp::chat::GroupMember, _impl_.avatar_url_),
@@ -4206,13 +4305,15 @@ const ::uint32_t
         PROTOBUF_FIELD_OFFSET(::chirp::chat::GroupMember, _impl_.joined_at_),
         PROTOBUF_FIELD_OFFSET(::chirp::chat::GroupMember, _impl_.last_read_at_),
         PROTOBUF_FIELD_OFFSET(::chirp::chat::GroupMember, _impl_.alias_),
+        PROTOBUF_FIELD_OFFSET(::chirp::chat::GroupMember, _impl_.muted_until_ts_),
         0,
         1,
         2,
-        6,
+        7,
         4,
         5,
         3,
+        6,
         0x081, // bitmap
         PROTOBUF_FIELD_OFFSET(::chirp::chat::SetMemberAliasRequest, _impl_._has_bits_),
         6, // hasbit index offset
@@ -4242,6 +4343,39 @@ const ::uint32_t
         0,
         1,
         2,
+        0x081, // bitmap
+        PROTOBUF_FIELD_OFFSET(::chirp::chat::SetGroupMuteRequest, _impl_._has_bits_),
+        6, // hasbit index offset
+        PROTOBUF_FIELD_OFFSET(::chirp::chat::SetGroupMuteRequest, _impl_.group_id_),
+        PROTOBUF_FIELD_OFFSET(::chirp::chat::SetGroupMuteRequest, _impl_.target_user_id_),
+        PROTOBUF_FIELD_OFFSET(::chirp::chat::SetGroupMuteRequest, _impl_.duration_sec_),
+        0,
+        1,
+        2,
+        0x081, // bitmap
+        PROTOBUF_FIELD_OFFSET(::chirp::chat::SetGroupMuteResponse, _impl_._has_bits_),
+        7, // hasbit index offset
+        PROTOBUF_FIELD_OFFSET(::chirp::chat::SetGroupMuteResponse, _impl_.code_),
+        PROTOBUF_FIELD_OFFSET(::chirp::chat::SetGroupMuteResponse, _impl_.group_id_),
+        PROTOBUF_FIELD_OFFSET(::chirp::chat::SetGroupMuteResponse, _impl_.user_id_),
+        PROTOBUF_FIELD_OFFSET(::chirp::chat::SetGroupMuteResponse, _impl_.muted_until_ts_),
+        3,
+        0,
+        1,
+        2,
+        0x081, // bitmap
+        PROTOBUF_FIELD_OFFSET(::chirp::chat::GroupMemberMutedNotify, _impl_._has_bits_),
+        8, // hasbit index offset
+        PROTOBUF_FIELD_OFFSET(::chirp::chat::GroupMemberMutedNotify, _impl_.group_id_),
+        PROTOBUF_FIELD_OFFSET(::chirp::chat::GroupMemberMutedNotify, _impl_.user_id_),
+        PROTOBUF_FIELD_OFFSET(::chirp::chat::GroupMemberMutedNotify, _impl_.muted_until_ts_),
+        PROTOBUF_FIELD_OFFSET(::chirp::chat::GroupMemberMutedNotify, _impl_.operator_id_),
+        PROTOBUF_FIELD_OFFSET(::chirp::chat::GroupMemberMutedNotify, _impl_.timestamp_),
+        0,
+        1,
+        3,
+        2,
+        4,
         0x081, // bitmap
         PROTOBUF_FIELD_OFFSET(::chirp::chat::JoinGroupRequest, _impl_._has_bits_),
         6, // hasbit index offset
@@ -5428,124 +5562,127 @@ static const ::_pbi::MigrationSchema
         {126, sizeof(::chirp::chat::GroupInfo_MetadataEntry_DoNotUse)},
         {133, sizeof(::chirp::chat::GroupInfo)},
         {154, sizeof(::chirp::chat::GroupMember)},
-        {171, sizeof(::chirp::chat::SetMemberAliasRequest)},
-        {180, sizeof(::chirp::chat::SetMemberAliasResponse)},
-        {191, sizeof(::chirp::chat::GroupMemberAliasUpdatedNotify)},
-        {200, sizeof(::chirp::chat::JoinGroupRequest)},
-        {209, sizeof(::chirp::chat::JoinGroupResponse)},
-        {218, sizeof(::chirp::chat::LeaveGroupRequest)},
-        {225, sizeof(::chirp::chat::LeaveGroupResponse)},
-        {232, sizeof(::chirp::chat::KickMemberRequest)},
-        {241, sizeof(::chirp::chat::KickMemberResponse)},
-        {248, sizeof(::chirp::chat::GetGroupInfoRequest)},
-        {253, sizeof(::chirp::chat::GetGroupInfoResponse)},
-        {260, sizeof(::chirp::chat::GetGroupMembersRequest)},
-        {269, sizeof(::chirp::chat::GetGroupMembersResponse)},
-        {278, sizeof(::chirp::chat::GetUserGroupsRequest)},
-        {287, sizeof(::chirp::chat::GetUserGroupsResponse)},
-        {296, sizeof(::chirp::chat::InviteToGroupRequest)},
-        {305, sizeof(::chirp::chat::InviteToGroupResponse)},
-        {312, sizeof(::chirp::chat::GroupCreatedNotify)},
-        {319, sizeof(::chirp::chat::GroupMemberJoinedNotify)},
-        {328, sizeof(::chirp::chat::GroupMemberLeftNotify)},
-        {337, sizeof(::chirp::chat::GroupMemberKickedNotify)},
-        {348, sizeof(::chirp::chat::GroupUpdatedNotify)},
-        {355, sizeof(::chirp::chat::MarkReadRequest)},
-        {368, sizeof(::chirp::chat::MarkReadResponse)},
-        {375, sizeof(::chirp::chat::ReadReceipt)},
-        {384, sizeof(::chirp::chat::GetReadReceiptsRequest)},
-        {389, sizeof(::chirp::chat::GetReadReceiptsResponse)},
-        {396, sizeof(::chirp::chat::GetUnreadCountRequest)},
-        {401, sizeof(::chirp::chat::GetUnreadCountResponse_ChannelUnread)},
-        {412, sizeof(::chirp::chat::GetUnreadCountResponse)},
-        {421, sizeof(::chirp::chat::MessageReadNotify)},
-        {434, sizeof(::chirp::chat::TypingIndicatorState)},
-        {447, sizeof(::chirp::chat::MessageAck)},
-        {458, sizeof(::chirp::chat::MessageNack)},
-        {473, sizeof(::chirp::chat::DeliveryStatus)},
-        {486, sizeof(::chirp::chat::PaginationToken)},
-        {495, sizeof(::chirp::chat::GetHistoryRequestV2)},
-        {512, sizeof(::chirp::chat::GetHistoryResponseV2)},
-        {525, sizeof(::chirp::chat::TrackMessageRequest)},
-        {534, sizeof(::chirp::chat::TrackMessageResponse)},
-        {543, sizeof(::chirp::chat::ChannelPermissions)},
-        {556, sizeof(::chirp::chat::PermissionOverrideEntry)},
-        {569, sizeof(::chirp::chat::ChannelCategory)},
-        {584, sizeof(::chirp::chat::Channel)},
-        {615, sizeof(::chirp::chat::CreateChannelRequest)},
-        {634, sizeof(::chirp::chat::CreateChannelResponse)},
-        {643, sizeof(::chirp::chat::UpdateChannelRequest)},
-        {660, sizeof(::chirp::chat::UpdateChannelResponse)},
-        {669, sizeof(::chirp::chat::DeleteChannelRequest)},
-        {676, sizeof(::chirp::chat::DeleteChannelResponse)},
-        {683, sizeof(::chirp::chat::GetChannelsRequest)},
-        {690, sizeof(::chirp::chat::GetChannelsResponse)},
-        {699, sizeof(::chirp::chat::CreateCategoryRequest)},
-        {710, sizeof(::chirp::chat::CreateCategoryResponse)},
-        {719, sizeof(::chirp::chat::ChannelCreatedNotify)},
-        {726, sizeof(::chirp::chat::ChannelUpdatedNotify)},
-        {733, sizeof(::chirp::chat::ChannelDeletedNotify)},
-        {742, sizeof(::chirp::chat::MessageReaction)},
-        {755, sizeof(::chirp::chat::AddReactionRequest)},
-        {764, sizeof(::chirp::chat::AddReactionResponse)},
-        {773, sizeof(::chirp::chat::RemoveReactionRequest)},
-        {782, sizeof(::chirp::chat::RemoveReactionResponse)},
-        {789, sizeof(::chirp::chat::GetReactionsRequest)},
-        {796, sizeof(::chirp::chat::GetReactionsResponse)},
-        {803, sizeof(::chirp::chat::ReactionAddedNotify)},
-        {816, sizeof(::chirp::chat::ReactionRemovedNotify)},
-        {829, sizeof(::chirp::chat::Mention)},
-        {840, sizeof(::chirp::chat::ChatMessageEx)},
-        {853, sizeof(::chirp::chat::MentionSuggestion)},
-        {864, sizeof(::chirp::chat::GetMentionSuggestionsRequest)},
-        {873, sizeof(::chirp::chat::GetMentionSuggestionsResponse)},
-        {880, sizeof(::chirp::chat::MessageEdit)},
-        {891, sizeof(::chirp::chat::ChatMessageFull)},
-        {932, sizeof(::chirp::chat::EditMessageRequest)},
-        {943, sizeof(::chirp::chat::EditMessageResponse)},
-        {952, sizeof(::chirp::chat::DeleteMessageRequest)},
-        {961, sizeof(::chirp::chat::DeleteMessageResponse)},
-        {970, sizeof(::chirp::chat::BulkDeleteRequest)},
-        {979, sizeof(::chirp::chat::BulkDeleteResponse)},
-        {990, sizeof(::chirp::chat::MessageEditedNotify)},
-        {1003, sizeof(::chirp::chat::MessageDeletedNotify)},
-        {1016, sizeof(::chirp::chat::TypingIndicator)},
-        {1031, sizeof(::chirp::chat::GetTypingUsersRequest)},
-        {1038, sizeof(::chirp::chat::GetTypingUsersResponse)},
-        {1047, sizeof(::chirp::chat::FileInfo)},
-        {1072, sizeof(::chirp::chat::PrepareFileUploadRequest)},
-        {1089, sizeof(::chirp::chat::PrepareFileUploadResponse_HeadersEntry_DoNotUse)},
-        {1096, sizeof(::chirp::chat::PrepareFileUploadResponse)},
-        {1111, sizeof(::chirp::chat::ConfirmFileUploadRequest)},
-        {1120, sizeof(::chirp::chat::ConfirmFileUploadResponse)},
-        {1129, sizeof(::chirp::chat::GetFileDownloadRequest)},
-        {1136, sizeof(::chirp::chat::GetFileDownloadResponse)},
-        {1147, sizeof(::chirp::chat::FileAttachment)},
-        {1156, sizeof(::chirp::chat::FileMessage)},
-        {1163, sizeof(::chirp::chat::ItemMetadata_AttrsEntry_DoNotUse)},
-        {1170, sizeof(::chirp::chat::ItemMetadata)},
-        {1185, sizeof(::chirp::chat::SkillMetadata)},
-        {1198, sizeof(::chirp::chat::AchievementMetadata)},
-        {1211, sizeof(::chirp::chat::TradeMetadata)},
-        {1224, sizeof(::chirp::chat::NpcDialogMetadata)},
-        {1235, sizeof(::chirp::chat::SetChannelMuteRequest)},
-        {1242, sizeof(::chirp::chat::SetChannelMuteResponse)},
-        {1251, sizeof(::chirp::chat::ChannelMuteState)},
-        {1258, sizeof(::chirp::chat::GetChannelMutesRequest)},
-        {1259, sizeof(::chirp::chat::GetChannelMutesResponse)},
-        {1266, sizeof(::chirp::chat::BlockMessageSenderRequest)},
-        {1271, sizeof(::chirp::chat::BlockMessageSenderResponse)},
-        {1278, sizeof(::chirp::chat::UnblockMessageSenderRequest)},
-        {1283, sizeof(::chirp::chat::UnblockMessageSenderResponse)},
-        {1290, sizeof(::chirp::chat::GetBlockedSendersRequest)},
-        {1291, sizeof(::chirp::chat::GetBlockedSendersResponse)},
-        {1298, sizeof(::chirp::chat::WordFilterFetchRequest)},
-        {1303, sizeof(::chirp::chat::WordFilterLexicon)},
-        {1316, sizeof(::chirp::chat::WordFilterFetchResponse)},
-        {1323, sizeof(::chirp::chat::WordFilterUpdateNotify)},
-        {1328, sizeof(::chirp::chat::SearchMessageRequest)},
-        {1343, sizeof(::chirp::chat::SearchMessageMatch)},
-        {1362, sizeof(::chirp::chat::SearchMessageResponse)},
+        {173, sizeof(::chirp::chat::SetMemberAliasRequest)},
+        {182, sizeof(::chirp::chat::SetMemberAliasResponse)},
+        {193, sizeof(::chirp::chat::GroupMemberAliasUpdatedNotify)},
+        {202, sizeof(::chirp::chat::SetGroupMuteRequest)},
+        {211, sizeof(::chirp::chat::SetGroupMuteResponse)},
+        {222, sizeof(::chirp::chat::GroupMemberMutedNotify)},
+        {235, sizeof(::chirp::chat::JoinGroupRequest)},
+        {244, sizeof(::chirp::chat::JoinGroupResponse)},
+        {253, sizeof(::chirp::chat::LeaveGroupRequest)},
+        {260, sizeof(::chirp::chat::LeaveGroupResponse)},
+        {267, sizeof(::chirp::chat::KickMemberRequest)},
+        {276, sizeof(::chirp::chat::KickMemberResponse)},
+        {283, sizeof(::chirp::chat::GetGroupInfoRequest)},
+        {288, sizeof(::chirp::chat::GetGroupInfoResponse)},
+        {295, sizeof(::chirp::chat::GetGroupMembersRequest)},
+        {304, sizeof(::chirp::chat::GetGroupMembersResponse)},
+        {313, sizeof(::chirp::chat::GetUserGroupsRequest)},
+        {322, sizeof(::chirp::chat::GetUserGroupsResponse)},
+        {331, sizeof(::chirp::chat::InviteToGroupRequest)},
+        {340, sizeof(::chirp::chat::InviteToGroupResponse)},
+        {347, sizeof(::chirp::chat::GroupCreatedNotify)},
+        {354, sizeof(::chirp::chat::GroupMemberJoinedNotify)},
+        {363, sizeof(::chirp::chat::GroupMemberLeftNotify)},
+        {372, sizeof(::chirp::chat::GroupMemberKickedNotify)},
+        {383, sizeof(::chirp::chat::GroupUpdatedNotify)},
+        {390, sizeof(::chirp::chat::MarkReadRequest)},
+        {403, sizeof(::chirp::chat::MarkReadResponse)},
+        {410, sizeof(::chirp::chat::ReadReceipt)},
+        {419, sizeof(::chirp::chat::GetReadReceiptsRequest)},
+        {424, sizeof(::chirp::chat::GetReadReceiptsResponse)},
+        {431, sizeof(::chirp::chat::GetUnreadCountRequest)},
+        {436, sizeof(::chirp::chat::GetUnreadCountResponse_ChannelUnread)},
+        {447, sizeof(::chirp::chat::GetUnreadCountResponse)},
+        {456, sizeof(::chirp::chat::MessageReadNotify)},
+        {469, sizeof(::chirp::chat::TypingIndicatorState)},
+        {482, sizeof(::chirp::chat::MessageAck)},
+        {493, sizeof(::chirp::chat::MessageNack)},
+        {508, sizeof(::chirp::chat::DeliveryStatus)},
+        {521, sizeof(::chirp::chat::PaginationToken)},
+        {530, sizeof(::chirp::chat::GetHistoryRequestV2)},
+        {547, sizeof(::chirp::chat::GetHistoryResponseV2)},
+        {560, sizeof(::chirp::chat::TrackMessageRequest)},
+        {569, sizeof(::chirp::chat::TrackMessageResponse)},
+        {578, sizeof(::chirp::chat::ChannelPermissions)},
+        {591, sizeof(::chirp::chat::PermissionOverrideEntry)},
+        {604, sizeof(::chirp::chat::ChannelCategory)},
+        {619, sizeof(::chirp::chat::Channel)},
+        {650, sizeof(::chirp::chat::CreateChannelRequest)},
+        {669, sizeof(::chirp::chat::CreateChannelResponse)},
+        {678, sizeof(::chirp::chat::UpdateChannelRequest)},
+        {695, sizeof(::chirp::chat::UpdateChannelResponse)},
+        {704, sizeof(::chirp::chat::DeleteChannelRequest)},
+        {711, sizeof(::chirp::chat::DeleteChannelResponse)},
+        {718, sizeof(::chirp::chat::GetChannelsRequest)},
+        {725, sizeof(::chirp::chat::GetChannelsResponse)},
+        {734, sizeof(::chirp::chat::CreateCategoryRequest)},
+        {745, sizeof(::chirp::chat::CreateCategoryResponse)},
+        {754, sizeof(::chirp::chat::ChannelCreatedNotify)},
+        {761, sizeof(::chirp::chat::ChannelUpdatedNotify)},
+        {768, sizeof(::chirp::chat::ChannelDeletedNotify)},
+        {777, sizeof(::chirp::chat::MessageReaction)},
+        {790, sizeof(::chirp::chat::AddReactionRequest)},
+        {799, sizeof(::chirp::chat::AddReactionResponse)},
+        {808, sizeof(::chirp::chat::RemoveReactionRequest)},
+        {817, sizeof(::chirp::chat::RemoveReactionResponse)},
+        {824, sizeof(::chirp::chat::GetReactionsRequest)},
+        {831, sizeof(::chirp::chat::GetReactionsResponse)},
+        {838, sizeof(::chirp::chat::ReactionAddedNotify)},
+        {851, sizeof(::chirp::chat::ReactionRemovedNotify)},
+        {864, sizeof(::chirp::chat::Mention)},
+        {875, sizeof(::chirp::chat::ChatMessageEx)},
+        {888, sizeof(::chirp::chat::MentionSuggestion)},
+        {899, sizeof(::chirp::chat::GetMentionSuggestionsRequest)},
+        {908, sizeof(::chirp::chat::GetMentionSuggestionsResponse)},
+        {915, sizeof(::chirp::chat::MessageEdit)},
+        {926, sizeof(::chirp::chat::ChatMessageFull)},
+        {967, sizeof(::chirp::chat::EditMessageRequest)},
+        {978, sizeof(::chirp::chat::EditMessageResponse)},
+        {987, sizeof(::chirp::chat::DeleteMessageRequest)},
+        {996, sizeof(::chirp::chat::DeleteMessageResponse)},
+        {1005, sizeof(::chirp::chat::BulkDeleteRequest)},
+        {1014, sizeof(::chirp::chat::BulkDeleteResponse)},
+        {1025, sizeof(::chirp::chat::MessageEditedNotify)},
+        {1038, sizeof(::chirp::chat::MessageDeletedNotify)},
+        {1051, sizeof(::chirp::chat::TypingIndicator)},
+        {1066, sizeof(::chirp::chat::GetTypingUsersRequest)},
+        {1073, sizeof(::chirp::chat::GetTypingUsersResponse)},
+        {1082, sizeof(::chirp::chat::FileInfo)},
+        {1107, sizeof(::chirp::chat::PrepareFileUploadRequest)},
+        {1124, sizeof(::chirp::chat::PrepareFileUploadResponse_HeadersEntry_DoNotUse)},
+        {1131, sizeof(::chirp::chat::PrepareFileUploadResponse)},
+        {1146, sizeof(::chirp::chat::ConfirmFileUploadRequest)},
+        {1155, sizeof(::chirp::chat::ConfirmFileUploadResponse)},
+        {1164, sizeof(::chirp::chat::GetFileDownloadRequest)},
+        {1171, sizeof(::chirp::chat::GetFileDownloadResponse)},
+        {1182, sizeof(::chirp::chat::FileAttachment)},
+        {1191, sizeof(::chirp::chat::FileMessage)},
+        {1198, sizeof(::chirp::chat::ItemMetadata_AttrsEntry_DoNotUse)},
+        {1205, sizeof(::chirp::chat::ItemMetadata)},
+        {1220, sizeof(::chirp::chat::SkillMetadata)},
+        {1233, sizeof(::chirp::chat::AchievementMetadata)},
+        {1246, sizeof(::chirp::chat::TradeMetadata)},
+        {1259, sizeof(::chirp::chat::NpcDialogMetadata)},
+        {1270, sizeof(::chirp::chat::SetChannelMuteRequest)},
+        {1277, sizeof(::chirp::chat::SetChannelMuteResponse)},
+        {1286, sizeof(::chirp::chat::ChannelMuteState)},
+        {1293, sizeof(::chirp::chat::GetChannelMutesRequest)},
+        {1294, sizeof(::chirp::chat::GetChannelMutesResponse)},
+        {1301, sizeof(::chirp::chat::BlockMessageSenderRequest)},
+        {1306, sizeof(::chirp::chat::BlockMessageSenderResponse)},
+        {1313, sizeof(::chirp::chat::UnblockMessageSenderRequest)},
+        {1318, sizeof(::chirp::chat::UnblockMessageSenderResponse)},
+        {1325, sizeof(::chirp::chat::GetBlockedSendersRequest)},
+        {1326, sizeof(::chirp::chat::GetBlockedSendersResponse)},
+        {1333, sizeof(::chirp::chat::WordFilterFetchRequest)},
+        {1338, sizeof(::chirp::chat::WordFilterLexicon)},
+        {1351, sizeof(::chirp::chat::WordFilterFetchResponse)},
+        {1358, sizeof(::chirp::chat::WordFilterUpdateNotify)},
+        {1363, sizeof(::chirp::chat::SearchMessageRequest)},
+        {1378, sizeof(::chirp::chat::SearchMessageMatch)},
+        {1397, sizeof(::chirp::chat::SearchMessageResponse)},
 };
 static const ::_pb::Message* PROTOBUF_NONNULL const file_default_instances[] = {
     &::chirp::chat::_SendMessageRequest_default_instance_._instance,
@@ -5562,6 +5699,9 @@ static const ::_pb::Message* PROTOBUF_NONNULL const file_default_instances[] = {
     &::chirp::chat::_SetMemberAliasRequest_default_instance_._instance,
     &::chirp::chat::_SetMemberAliasResponse_default_instance_._instance,
     &::chirp::chat::_GroupMemberAliasUpdatedNotify_default_instance_._instance,
+    &::chirp::chat::_SetGroupMuteRequest_default_instance_._instance,
+    &::chirp::chat::_SetGroupMuteResponse_default_instance_._instance,
+    &::chirp::chat::_GroupMemberMutedNotify_default_instance_._instance,
     &::chirp::chat::_JoinGroupRequest_default_instance_._instance,
     &::chirp::chat::_JoinGroupResponse_default_instance_._instance,
     &::chirp::chat::_LeaveGroupRequest_default_instance_._instance,
@@ -5725,377 +5865,386 @@ const char descriptor_table_protodef_proto_2fchat_2eproto[] ABSL_ATTRIBUTE_SECTI
     "\n\ncreated_at\030\010 \001(\003\0225\n\010metadata\030\t \003(\0132#.c"
     "hirp.chat.GroupInfo.MetadataEntry\032/\n\rMet"
     "adataEntry\022\013\n\003key\030\001 \001(\t\022\r\n\005value\030\002 \001(\t:\002"
-    "8\001\"\247\001\n\013GroupMember\022\017\n\007user_id\030\001 \001(\t\022\020\n\010u"
+    "8\001\"\277\001\n\013GroupMember\022\017\n\007user_id\030\001 \001(\t\022\020\n\010u"
     "sername\030\002 \001(\t\022\022\n\navatar_url\030\003 \001(\t\022)\n\004rol"
     "e\030\004 \001(\0162\033.chirp.chat.GroupMemberRole\022\021\n\t"
     "joined_at\030\005 \001(\003\022\024\n\014last_read_at\030\006 \001(\003\022\r\n"
-    "\005alias\030\007 \001(\t\"P\n\025SetMemberAliasRequest\022\020\n"
-    "\010group_id\030\001 \001(\t\022\026\n\016target_user_id\030\002 \001(\t\022"
-    "\r\n\005alias\030\003 \001(\t\"q\n\026SetMemberAliasResponse"
-    "\022%\n\004code\030\001 \001(\0162\027.chirp.common.ErrorCode\022"
-    "\020\n\010group_id\030\002 \001(\t\022\017\n\007user_id\030\003 \001(\t\022\r\n\005al"
-    "ias\030\004 \001(\t\"Q\n\035GroupMemberAliasUpdatedNoti"
-    "fy\022\020\n\010group_id\030\001 \001(\t\022\017\n\007user_id\030\002 \001(\t\022\r\n"
-    "\005alias\030\003 \001(\t\"J\n\020JoinGroupRequest\022\017\n\007user"
-    "_id\030\001 \001(\t\022\020\n\010group_id\030\002 \001(\t\022\023\n\013invite_co"
-    "de\030\003 \001(\t\"u\n\021JoinGroupResponse\022%\n\004code\030\001 "
-    "\001(\0162\027.chirp.common.ErrorCode\022$\n\005group\030\002 "
-    "\001(\0132\025.chirp.chat.GroupInfo\022\023\n\013server_tim"
-    "e\030\003 \001(\003\"6\n\021LeaveGroupRequest\022\017\n\007user_id\030"
-    "\001 \001(\t\022\020\n\010group_id\030\002 \001(\t\"P\n\022LeaveGroupRes"
-    "ponse\022%\n\004code\030\001 \001(\0162\027.chirp.common.Error"
-    "Code\022\023\n\013server_time\030\002 \001(\003\"S\n\021KickMemberR"
-    "equest\022\024\n\014requester_id\030\001 \001(\t\022\020\n\010group_id"
-    "\030\002 \001(\t\022\026\n\016target_user_id\030\003 \001(\t\"P\n\022KickMe"
-    "mberResponse\022%\n\004code\030\001 \001(\0162\027.chirp.commo"
-    "n.ErrorCode\022\023\n\013server_time\030\002 \001(\003\"\'\n\023GetG"
-    "roupInfoRequest\022\020\n\010group_id\030\001 \001(\t\"c\n\024Get"
-    "GroupInfoResponse\022%\n\004code\030\001 \001(\0162\027.chirp."
-    "common.ErrorCode\022$\n\005group\030\002 \001(\0132\025.chirp."
-    "chat.GroupInfo\"I\n\026GetGroupMembersRequest"
-    "\022\020\n\010group_id\030\001 \001(\t\022\r\n\005limit\030\002 \001(\005\022\016\n\006off"
-    "set\030\003 \001(\005\"\177\n\027GetGroupMembersResponse\022%\n\004"
-    "code\030\001 \001(\0162\027.chirp.common.ErrorCode\022(\n\007m"
-    "embers\030\002 \003(\0132\027.chirp.chat.GroupMember\022\023\n"
-    "\013total_count\030\003 \001(\005\"F\n\024GetUserGroupsReque"
-    "st\022\017\n\007user_id\030\001 \001(\t\022\r\n\005limit\030\002 \001(\005\022\016\n\006of"
-    "fset\030\003 \001(\005\"z\n\025GetUserGroupsResponse\022%\n\004c"
-    "ode\030\001 \001(\0162\027.chirp.common.ErrorCode\022%\n\006gr"
-    "oups\030\002 \003(\0132\025.chirp.chat.GroupInfo\022\023\n\013tot"
-    "al_count\030\003 \001(\005\"T\n\024InviteToGroupRequest\022\022"
-    "\n\ninviter_id\030\001 \001(\t\022\020\n\010group_id\030\002 \001(\t\022\026\n\016"
-    "target_user_id\030\003 \001(\t\"S\n\025InviteToGroupRes"
-    "ponse\022%\n\004code\030\001 \001(\0162\027.chirp.common.Error"
-    "Code\022\023\n\013server_time\030\002 \001(\003\"M\n\022GroupCreate"
-    "dNotify\022$\n\005group\030\001 \001(\0132\025.chirp.chat.Grou"
-    "pInfo\022\021\n\ttimestamp\030\002 \001(\003\"g\n\027GroupMemberJ"
-    "oinedNotify\022\020\n\010group_id\030\001 \001(\t\022\'\n\006member\030"
-    "\002 \001(\0132\027.chirp.chat.GroupMember\022\021\n\ttimest"
-    "amp\030\003 \001(\003\"M\n\025GroupMemberLeftNotify\022\020\n\010gr"
-    "oup_id\030\001 \001(\t\022\017\n\007user_id\030\002 \001(\t\022\021\n\ttimesta"
-    "mp\030\003 \001(\003\"b\n\027GroupMemberKickedNotify\022\020\n\010g"
-    "roup_id\030\001 \001(\t\022\017\n\007user_id\030\002 \001(\t\022\021\n\tkicked"
-    "_by\030\003 \001(\t\022\021\n\ttimestamp\030\004 \001(\003\"M\n\022GroupUpd"
-    "atedNotify\022$\n\005group\030\001 \001(\0132\025.chirp.chat.G"
-    "roupInfo\022\021\n\ttimestamp\030\002 \001(\003\"\221\001\n\017MarkRead"
-    "Request\022\017\n\007user_id\030\001 \001(\t\022\022\n\nchannel_id\030\002"
-    " \001(\t\022-\n\014channel_type\030\003 \001(\0162\027.chirp.chat."
-    "ChannelType\022\022\n\nmessage_id\030\004 \001(\t\022\026\n\016read_"
-    "timestamp\030\005 \001(\003\"N\n\020MarkReadResponse\022%\n\004c"
-    "ode\030\001 \001(\0162\027.chirp.common.ErrorCode\022\023\n\013se"
-    "rver_time\030\002 \001(\003\"C\n\013ReadReceipt\022\017\n\007user_i"
-    "d\030\001 \001(\t\022\022\n\nmessage_id\030\002 \001(\t\022\017\n\007read_at\030\003"
-    " \001(\003\",\n\026GetReadReceiptsRequest\022\022\n\nmessag"
-    "e_id\030\001 \001(\t\"k\n\027GetReadReceiptsResponse\022%\n"
-    "\004code\030\001 \001(\0162\027.chirp.common.ErrorCode\022)\n\010"
-    "receipts\030\002 \003(\0132\027.chirp.chat.ReadReceipt\""
-    "(\n\025GetUnreadCountRequest\022\017\n\007user_id\030\001 \001("
-    "\t\"\225\002\n\026GetUnreadCountResponse\022%\n\004code\030\001 \001"
-    "(\0162\027.chirp.common.ErrorCode\022\024\n\014total_unr"
-    "ead\030\002 \001(\005\022B\n\010channels\030\003 \003(\01320.chirp.chat"
-    ".GetUnreadCountResponse.ChannelUnread\032z\n"
-    "\rChannelUnread\022\022\n\nchannel_id\030\001 \001(\t\022-\n\014ch"
-    "annel_type\030\002 \001(\0162\027.chirp.chat.ChannelTyp"
-    "e\022\r\n\005count\030\003 \001(\005\022\027\n\017last_message_id\030\004 \001("
-    "\t\"\223\001\n\021MessageReadNotify\022\022\n\nchannel_id\030\001 "
-    "\001(\t\022-\n\014channel_type\030\002 \001(\0162\027.chirp.chat.C"
-    "hannelType\022\022\n\nmessage_id\030\003 \001(\t\022\026\n\016reader"
-    "_user_id\030\004 \001(\t\022\017\n\007read_at\030\005 \001(\003\"\220\001\n\024Typi"
-    "ngIndicatorState\022\022\n\nchannel_id\030\001 \001(\t\022-\n\014"
-    "channel_type\030\002 \001(\0162\027.chirp.chat.ChannelT"
-    "ype\022\017\n\007user_id\030\003 \001(\t\022\021\n\tis_typing\030\004 \001(\010\022"
-    "\021\n\ttimestamp\030\005 \001(\003\"[\n\nMessageAck\022\022\n\nmess"
-    "age_id\030\001 \001(\t\022\017\n\007user_id\030\002 \001(\t\022\023\n\013receive"
-    "d_at\030\003 \001(\003\022\023\n\013delivery_id\030\004 \001(\t\"\236\001\n\013Mess"
-    "ageNack\022\022\n\nmessage_id\030\001 \001(\t\022\017\n\007user_id\030\002"
-    " \001(\t\022+\n\nerror_code\030\003 \001(\0162\027.chirp.common."
-    "ErrorCode\022\025\n\rerror_message\030\004 \001(\t\022\021\n\tfail"
-    "ed_at\030\005 \001(\003\022\023\n\013delivery_id\030\006 \001(\t\"\324\001\n\016Del"
-    "iveryStatus\022\022\n\nmessage_id\030\001 \001(\t\022\017\n\007user_"
-    "id\030\002 \001(\t\0221\n\006status\030\003 \001(\0162!.chirp.chat.De"
-    "liveryStatus.Status\022\021\n\ttimestamp\030\004 \001(\003\022\023"
-    "\n\013retry_count\030\005 \001(\005\"B\n\006Status\022\013\n\007PENDING"
-    "\020\000\022\r\n\tDELIVERED\020\001\022\n\n\006FAILED\020\002\022\020\n\014ACKNOWL"
-    "EDGED\020\003\"G\n\017PaginationToken\022\016\n\006cursor\030\001 \001"
-    "(\t\022\021\n\ttimestamp\030\002 \001(\003\022\021\n\tpage_size\030\003 \001(\005"
-    "\"\333\001\n\023GetHistoryRequestV2\022\017\n\007user_id\030\001 \001("
-    "\t\022-\n\014channel_type\030\002 \001(\0162\027.chirp.chat.Cha"
-    "nnelType\022\022\n\nchannel_id\030\003 \001(\t\022/\n\npaginati"
-    "on\030\004 \001(\0132\033.chirp.chat.PaginationToken\022\r\n"
-    "\005limit\030\005 \001(\005\022\027\n\017include_deleted\030\006 \001(\010\022\027\n"
-    "\017since_timestamp\030\007 \001(\003\"\277\001\n\024GetHistoryRes"
-    "ponseV2\022%\n\004code\030\001 \001(\0162\027.chirp.common.Err"
-    "orCode\022)\n\010messages\030\002 \003(\0132\027.chirp.chat.Ch"
-    "atMessage\022.\n\tnext_page\030\003 \001(\0132\033.chirp.cha"
-    "t.PaginationToken\022\020\n\010has_more\030\004 \001(\010\022\023\n\013t"
-    "otal_count\030\005 \001(\005\"R\n\023TrackMessageRequest\022"
-    "\022\n\nmessage_id\030\001 \001(\t\022\023\n\013receiver_id\030\002 \001(\t"
-    "\022\022\n\nexpires_at\030\003 \001(\003\"g\n\024TrackMessageResp"
-    "onse\022%\n\004code\030\001 \001(\0162\027.chirp.common.ErrorC"
-    "ode\022\023\n\013tracking_id\030\002 \001(\t\022\023\n\013server_time\030"
-    "\003 \001(\003\"r\n\022ChannelPermissions\022\020\n\010can_read\030"
-    "\001 \001(\010\022\021\n\tcan_write\030\002 \001(\010\022\021\n\tcan_speak\030\003 "
-    "\001(\010\022\020\n\010can_join\030\004 \001(\010\022\022\n\ncan_manage\030\005 \001("
-    "\010\"\341\001\n\027PermissionOverrideEntry\022(\n\004type\030\001 "
-    "\001(\0162\032.chirp.chat.PermissionType\022\n\n\002id\030\002 "
-    "\001(\t\0223\n\013permissions\030\003 \001(\0132\036.chirp.chat.Ch"
-    "annelPermissions\022-\n\005allow\030\004 \001(\0162\036.chirp."
-    "chat.PermissionOverride\022,\n\004deny\030\005 \001(\0162\036."
-    "chirp.chat.PermissionOverride\"\202\001\n\017Channe"
-    "lCategory\022\023\n\013category_id\030\001 \001(\t\022\020\n\010group_"
-    "id\030\002 \001(\t\022\014\n\004name\030\003 \001(\t\022\020\n\010position\030\004 \001(\005"
-    "\022\024\n\014is_collapsed\030\005 \001(\010\022\022\n\ncreated_at\030\006 \001"
-    "(\003\"\333\002\n\007Channel\022\022\n\nchannel_id\030\001 \001(\t\022\020\n\010gr"
-    "oup_id\030\002 \001(\t\022\023\n\013category_id\030\003 \001(\t\022\014\n\004nam"
-    "e\030\004 \001(\t\022%\n\004kind\030\005 \001(\0162\027.chirp.chat.Chann"
-    "elKind\022\020\n\010position\030\006 \001(\005\022\023\n\013description\030"
-    "\007 \001(\t\022\017\n\007is_nsfw\030\010 \001(\010\022\022\n\ncreated_at\030\t \001"
-    "(\003\022\030\n\020slowmode_seconds\030\n \001(\003\022A\n\024permissi"
-    "on_overrides\030\013 \003(\0132#.chirp.chat.Permissi"
-    "onOverrideEntry\022\017\n\007bitrate\030\014 \001(\005\022\022\n\nuser"
-    "_limit\030\r \001(\005\022\022\n\nrtc_region\030\016 \001(\t\"\362\001\n\024Cre"
-    "ateChannelRequest\022\020\n\010group_id\030\001 \001(\t\022\024\n\014r"
-    "equester_id\030\002 \001(\t\022\014\n\004name\030\003 \001(\t\022%\n\004kind\030"
-    "\004 \001(\0162\027.chirp.chat.ChannelKind\022\023\n\013catego"
-    "ry_id\030\005 \001(\t\022\023\n\013description\030\006 \001(\t\022A\n\024perm"
-    "ission_overrides\030\007 \003(\0132#.chirp.chat.Perm"
-    "issionOverrideEntry\022\020\n\010position\030\010 \001(\005\"y\n"
-    "\025CreateChannelResponse\022%\n\004code\030\001 \001(\0162\027.c"
-    "hirp.common.ErrorCode\022$\n\007channel\030\002 \001(\0132\023"
-    ".chirp.chat.Channel\022\023\n\013server_time\030\003 \001(\003"
-    "\"\227\002\n\024UpdateChannelRequest\022\022\n\nchannel_id\030"
-    "\001 \001(\t\022\024\n\014requester_id\030\002 \001(\t\022\021\n\004name\030\003 \001("
-    "\tH\000\210\001\001\022\030\n\013description\030\004 \001(\tH\001\210\001\001\022\025\n\010posi"
-    "tion\030\005 \001(\005H\002\210\001\001\022\030\n\013category_id\030\006 \001(\tH\003\210\001"
-    "\001\022A\n\024permission_overrides\030\007 \003(\0132#.chirp."
-    "chat.PermissionOverrideEntryB\007\n\005_nameB\016\n"
-    "\014_descriptionB\013\n\t_positionB\016\n\014_category_"
-    "id\"y\n\025UpdateChannelResponse\022%\n\004code\030\001 \001("
-    "\0162\027.chirp.common.ErrorCode\022$\n\007channel\030\002 "
-    "\001(\0132\023.chirp.chat.Channel\022\023\n\013server_time\030"
-    "\003 \001(\003\"@\n\024DeleteChannelRequest\022\022\n\nchannel"
-    "_id\030\001 \001(\t\022\024\n\014requester_id\030\002 \001(\t\"S\n\025Delet"
-    "eChannelResponse\022%\n\004code\030\001 \001(\0162\027.chirp.c"
-    "ommon.ErrorCode\022\023\n\013server_time\030\002 \001(\003\"7\n\022"
-    "GetChannelsRequest\022\020\n\010group_id\030\001 \001(\t\022\017\n\007"
-    "user_id\030\002 \001(\t\"\224\001\n\023GetChannelsResponse\022%\n"
-    "\004code\030\001 \001(\0162\027.chirp.common.ErrorCode\022%\n\010"
-    "channels\030\002 \003(\0132\023.chirp.chat.Channel\022/\n\nc"
-    "ategories\030\003 \003(\0132\033.chirp.chat.ChannelCate"
-    "gory\"_\n\025CreateCategoryRequest\022\020\n\010group_i"
-    "d\030\001 \001(\t\022\024\n\014requester_id\030\002 \001(\t\022\014\n\004name\030\003 "
-    "\001(\t\022\020\n\010position\030\004 \001(\005\"\203\001\n\026CreateCategory"
-    "Response\022%\n\004code\030\001 \001(\0162\027.chirp.common.Er"
-    "rorCode\022-\n\010category\030\002 \001(\0132\033.chirp.chat.C"
-    "hannelCategory\022\023\n\013server_time\030\003 \001(\003\"O\n\024C"
-    "hannelCreatedNotify\022$\n\007channel\030\001 \001(\0132\023.c"
-    "hirp.chat.Channel\022\021\n\ttimestamp\030\002 \001(\003\"O\n\024"
-    "ChannelUpdatedNotify\022$\n\007channel\030\001 \001(\0132\023."
-    "chirp.chat.Channel\022\021\n\ttimestamp\030\002 \001(\003\"O\n"
-    "\024ChannelDeletedNotify\022\022\n\nchannel_id\030\001 \001("
-    "\t\022\020\n\010group_id\030\002 \001(\t\022\021\n\ttimestamp\030\003 \001(\003\"l"
-    "\n\017MessageReaction\022\022\n\nmessage_id\030\001 \001(\t\022\r\n"
-    "\005emoji\030\002 \001(\t\022\r\n\005count\030\003 \001(\005\022\020\n\010user_ids\030"
-    "\004 \003(\t\022\025\n\rreacted_by_me\030\005 \001(\010\"H\n\022AddReact"
-    "ionRequest\022\022\n\nmessage_id\030\001 \001(\t\022\017\n\007user_i"
-    "d\030\002 \001(\t\022\r\n\005emoji\030\003 \001(\t\"\200\001\n\023AddReactionRe"
-    "sponse\022%\n\004code\030\001 \001(\0162\027.chirp.common.Erro"
-    "rCode\022-\n\010reaction\030\002 \001(\0132\033.chirp.chat.Mes"
-    "sageReaction\022\023\n\013server_time\030\003 \001(\003\"K\n\025Rem"
-    "oveReactionRequest\022\022\n\nmessage_id\030\001 \001(\t\022\017"
-    "\n\007user_id\030\002 \001(\t\022\r\n\005emoji\030\003 \001(\t\"T\n\026Remove"
-    "ReactionResponse\022%\n\004code\030\001 \001(\0162\027.chirp.c"
-    "ommon.ErrorCode\022\023\n\013server_time\030\002 \001(\003\"8\n\023"
-    "GetReactionsRequest\022\022\n\nmessage_id\030\001 \001(\t\022"
-    "\r\n\005emoji\030\002 \001(\t\"m\n\024GetReactionsResponse\022%"
-    "\n\004code\030\001 \001(\0162\027.chirp.common.ErrorCode\022.\n"
-    "\treactions\030\002 \003(\0132\033.chirp.chat.MessageRea"
-    "ction\"p\n\023ReactionAddedNotify\022\022\n\nmessage_"
-    "id\030\001 \001(\t\022\022\n\nchannel_id\030\002 \001(\t\022\r\n\005emoji\030\003 "
-    "\001(\t\022\017\n\007user_id\030\004 \001(\t\022\021\n\ttimestamp\030\005 \001(\003\""
-    "r\n\025ReactionRemovedNotify\022\022\n\nmessage_id\030\001"
-    " \001(\t\022\022\n\nchannel_id\030\002 \001(\t\022\r\n\005emoji\030\003 \001(\t\022"
-    "\017\n\007user_id\030\004 \001(\t\022\021\n\ttimestamp\030\005 \001(\003\"a\n\007M"
-    "ention\022%\n\004type\030\001 \001(\0162\027.chirp.chat.Mentio"
-    "nType\022\n\n\002id\030\002 \001(\t\022\023\n\013start_index\030\003 \001(\005\022\016"
-    "\n\006length\030\004 \001(\005\"\263\001\n\rChatMessageEx\022-\n\014base"
-    "_message\030\001 \001(\0132\027.chirp.chat.ChatMessage\022"
-    "%\n\010mentions\030\002 \003(\0132\023.chirp.chat.Mention\022\032"
-    "\n\022mentioned_user_ids\030\003 \003(\t\022\031\n\021mentions_e"
-    "veryone\030\004 \001(\010\022\025\n\rmentions_here\030\005 \001(\010\"n\n\021"
-    "MentionSuggestion\022\024\n\014display_text\030\001 \001(\t\022"
-    "\n\n\002id\030\002 \001(\t\022%\n\004type\030\003 \001(\0162\027.chirp.chat.M"
-    "entionType\022\020\n\010icon_url\030\004 \001(\t\"R\n\034GetMenti"
-    "onSuggestionsRequest\022\017\n\007user_id\030\001 \001(\t\022\022\n"
-    "\nchannel_id\030\002 \001(\t\022\r\n\005query\030\003 \001(\t\"z\n\035GetM"
-    "entionSuggestionsResponse\022%\n\004code\030\001 \001(\0162"
-    "\027.chirp.common.ErrorCode\0222\n\013suggestions\030"
-    "\002 \003(\0132\035.chirp.chat.MentionSuggestion\"]\n\013"
-    "MessageEdit\022\023\n\013old_content\030\001 \001(\014\022\023\n\013new_"
-    "content\030\002 \001(\014\022\021\n\tedited_at\030\003 \001(\003\022\021\n\tedit"
-    "ed_by\030\004 \001(\t\"\211\004\n\017ChatMessageFull\022\022\n\nmessa"
-    "ge_id\030\001 \001(\t\022\021\n\tsender_id\030\002 \001(\t\022\023\n\013receiv"
-    "er_id\030\003 \001(\t\022-\n\014channel_type\030\004 \001(\0162\027.chir"
-    "p.chat.ChannelType\022\022\n\nchannel_id\030\005 \001(\t\022%"
-    "\n\010msg_type\030\006 \001(\0162\023.chirp.chat.MsgType\022\017\n"
-    "\007content\030\007 \001(\014\022\021\n\ttimestamp\030\010 \001(\003\022\022\n\nis_"
-    "deleted\030\t \001(\010\022\022\n\ndeleted_at\030\n \001(\003\022\022\n\ndel"
-    "eted_by\030\013 \001(\t\022\021\n\tis_edited\030\014 \001(\010\022\021\n\tedit"
-    "ed_at\030\r \001(\003\022\022\n\nedit_count\030\016 \001(\005\022-\n\014edit_"
-    "history\030\017 \003(\0132\027.chirp.chat.MessageEdit\022\033"
-    "\n\023reply_to_message_id\030\020 \001(\t\022\023\n\013reply_cou"
-    "nt\030\021 \001(\005\022.\n\treactions\030\022 \003(\0132\033.chirp.chat"
-    ".MessageReaction\022%\n\010mentions\030\023 \003(\0132\023.chi"
-    "rp.chat.Mention\"f\n\022EditMessageRequest\022\022\n"
-    "\nmessage_id\030\001 \001(\t\022\017\n\007user_id\030\002 \001(\t\022\023\n\013ne"
-    "w_content\030\003 \001(\014\022\026\n\016edit_timestamp\030\004 \001(\003\""
-    "\177\n\023EditMessageResponse\022%\n\004code\030\001 \001(\0162\027.c"
-    "hirp.common.ErrorCode\022,\n\007message\030\002 \001(\0132\033"
-    ".chirp.chat.ChatMessageFull\022\023\n\013server_ti"
-    "me\030\003 \001(\003\"S\n\024DeleteMessageRequest\022\022\n\nmess"
-    "age_id\030\001 \001(\t\022\017\n\007user_id\030\002 \001(\t\022\026\n\016is_hard"
-    "_delete\030\003 \001(\010\"t\n\025DeleteMessageResponse\022%"
-    "\n\004code\030\001 \001(\0162\027.chirp.common.ErrorCode\022\023\n"
-    "\013server_time\030\002 \001(\003\022\037\n\027was_permanently_de"
-    "leted\030\003 \001(\010\"R\n\021BulkDeleteRequest\022\023\n\013mess"
-    "age_ids\030\001 \003(\t\022\024\n\014requester_id\030\002 \001(\t\022\022\n\nc"
-    "hannel_id\030\003 \001(\t\"\203\001\n\022BulkDeleteResponse\022%"
-    "\n\004code\030\001 \001(\0162\027.chirp.common.ErrorCode\022\025\n"
-    "\rdeleted_count\030\002 \001(\005\022\032\n\022failed_message_i"
-    "ds\030\003 \003(\t\022\023\n\013server_time\030\004 \001(\003\"x\n\023Message"
-    "EditedNotify\022\022\n\nmessage_id\030\001 \001(\t\022\022\n\nchan"
-    "nel_id\030\002 \001(\t\022\023\n\013new_content\030\003 \001(\014\022\021\n\tedi"
-    "ted_at\030\004 \001(\003\022\021\n\tedited_by\030\005 \001(\t\"~\n\024Messa"
-    "geDeletedNotify\022\022\n\nmessage_id\030\001 \001(\t\022\022\n\nc"
-    "hannel_id\030\002 \001(\t\022\026\n\016is_hard_delete\030\003 \001(\010\022"
-    "\022\n\ndeleted_by\030\004 \001(\t\022\022\n\ndeleted_at\030\005 \001(\003\""
-    "\235\001\n\017TypingIndicator\022\022\n\nchannel_id\030\001 \001(\t\022"
-    "-\n\014channel_type\030\002 \001(\0162\027.chirp.chat.Chann"
-    "elType\022\017\n\007user_id\030\003 \001(\t\022\020\n\010username\030\004 \001("
-    "\t\022\021\n\tis_typing\030\005 \001(\010\022\021\n\ttimestamp\030\006 \001(\003\""
-    "Z\n\025GetTypingUsersRequest\022\022\n\nchannel_id\030\001"
-    " \001(\t\022-\n\014channel_type\030\002 \001(\0162\027.chirp.chat."
-    "ChannelType\"k\n\026GetTypingUsersResponse\022%\n"
-    "\004code\030\001 \001(\0162\027.chirp.common.ErrorCode\022\027\n\017"
-    "typing_user_ids\030\002 \003(\t\022\021\n\tusernames\030\003 \003(\t"
-    "\"\325\001\n\010FileInfo\022\017\n\007file_id\030\001 \001(\t\022\020\n\010filena"
-    "me\030\002 \001(\t\022\021\n\tfile_size\030\003 \001(\003\022\021\n\tmime_type"
-    "\030\004 \001(\t\022\020\n\010checksum\030\005 \001(\t\022\023\n\013storage_url\030"
-    "\006 \001(\t\022\023\n\013uploaded_at\030\007 \001(\003\022\023\n\013uploaded_b"
-    "y\030\010 \001(\t\022\r\n\005width\030\t \001(\005\022\016\n\006height\030\n \001(\005\022\020"
-    "\n\010duration\030\013 \001(\005\"\270\001\n\030PrepareFileUploadRe"
+    "\005alias\030\007 \001(\t\022\026\n\016muted_until_ts\030\010 \001(\003\"P\n\025"
+    "SetMemberAliasRequest\022\020\n\010group_id\030\001 \001(\t\022"
+    "\026\n\016target_user_id\030\002 \001(\t\022\r\n\005alias\030\003 \001(\t\"q"
+    "\n\026SetMemberAliasResponse\022%\n\004code\030\001 \001(\0162\027"
+    ".chirp.common.ErrorCode\022\020\n\010group_id\030\002 \001("
+    "\t\022\017\n\007user_id\030\003 \001(\t\022\r\n\005alias\030\004 \001(\t\"Q\n\035Gro"
+    "upMemberAliasUpdatedNotify\022\020\n\010group_id\030\001"
+    " \001(\t\022\017\n\007user_id\030\002 \001(\t\022\r\n\005alias\030\003 \001(\t\"U\n\023"
+    "SetGroupMuteRequest\022\020\n\010group_id\030\001 \001(\t\022\026\n"
+    "\016target_user_id\030\002 \001(\t\022\024\n\014duration_sec\030\003 "
+    "\001(\003\"x\n\024SetGroupMuteResponse\022%\n\004code\030\001 \001("
+    "\0162\027.chirp.common.ErrorCode\022\020\n\010group_id\030\002"
+    " \001(\t\022\017\n\007user_id\030\003 \001(\t\022\026\n\016muted_until_ts\030"
+    "\004 \001(\003\"{\n\026GroupMemberMutedNotify\022\020\n\010group"
+    "_id\030\001 \001(\t\022\017\n\007user_id\030\002 \001(\t\022\026\n\016muted_unti"
+    "l_ts\030\003 \001(\003\022\023\n\013operator_id\030\004 \001(\t\022\021\n\ttimes"
+    "tamp\030\005 \001(\003\"J\n\020JoinGroupRequest\022\017\n\007user_i"
+    "d\030\001 \001(\t\022\020\n\010group_id\030\002 \001(\t\022\023\n\013invite_code"
+    "\030\003 \001(\t\"u\n\021JoinGroupResponse\022%\n\004code\030\001 \001("
+    "\0162\027.chirp.common.ErrorCode\022$\n\005group\030\002 \001("
+    "\0132\025.chirp.chat.GroupInfo\022\023\n\013server_time\030"
+    "\003 \001(\003\"6\n\021LeaveGroupRequest\022\017\n\007user_id\030\001 "
+    "\001(\t\022\020\n\010group_id\030\002 \001(\t\"P\n\022LeaveGroupRespo"
+    "nse\022%\n\004code\030\001 \001(\0162\027.chirp.common.ErrorCo"
+    "de\022\023\n\013server_time\030\002 \001(\003\"S\n\021KickMemberReq"
+    "uest\022\024\n\014requester_id\030\001 \001(\t\022\020\n\010group_id\030\002"
+    " \001(\t\022\026\n\016target_user_id\030\003 \001(\t\"P\n\022KickMemb"
+    "erResponse\022%\n\004code\030\001 \001(\0162\027.chirp.common."
+    "ErrorCode\022\023\n\013server_time\030\002 \001(\003\"\'\n\023GetGro"
+    "upInfoRequest\022\020\n\010group_id\030\001 \001(\t\"c\n\024GetGr"
+    "oupInfoResponse\022%\n\004code\030\001 \001(\0162\027.chirp.co"
+    "mmon.ErrorCode\022$\n\005group\030\002 \001(\0132\025.chirp.ch"
+    "at.GroupInfo\"I\n\026GetGroupMembersRequest\022\020"
+    "\n\010group_id\030\001 \001(\t\022\r\n\005limit\030\002 \001(\005\022\016\n\006offse"
+    "t\030\003 \001(\005\"\177\n\027GetGroupMembersResponse\022%\n\004co"
+    "de\030\001 \001(\0162\027.chirp.common.ErrorCode\022(\n\007mem"
+    "bers\030\002 \003(\0132\027.chirp.chat.GroupMember\022\023\n\013t"
+    "otal_count\030\003 \001(\005\"F\n\024GetUserGroupsRequest"
+    "\022\017\n\007user_id\030\001 \001(\t\022\r\n\005limit\030\002 \001(\005\022\016\n\006offs"
+    "et\030\003 \001(\005\"z\n\025GetUserGroupsResponse\022%\n\004cod"
+    "e\030\001 \001(\0162\027.chirp.common.ErrorCode\022%\n\006grou"
+    "ps\030\002 \003(\0132\025.chirp.chat.GroupInfo\022\023\n\013total"
+    "_count\030\003 \001(\005\"T\n\024InviteToGroupRequest\022\022\n\n"
+    "inviter_id\030\001 \001(\t\022\020\n\010group_id\030\002 \001(\t\022\026\n\016ta"
+    "rget_user_id\030\003 \001(\t\"S\n\025InviteToGroupRespo"
+    "nse\022%\n\004code\030\001 \001(\0162\027.chirp.common.ErrorCo"
+    "de\022\023\n\013server_time\030\002 \001(\003\"M\n\022GroupCreatedN"
+    "otify\022$\n\005group\030\001 \001(\0132\025.chirp.chat.GroupI"
+    "nfo\022\021\n\ttimestamp\030\002 \001(\003\"g\n\027GroupMemberJoi"
+    "nedNotify\022\020\n\010group_id\030\001 \001(\t\022\'\n\006member\030\002 "
+    "\001(\0132\027.chirp.chat.GroupMember\022\021\n\ttimestam"
+    "p\030\003 \001(\003\"M\n\025GroupMemberLeftNotify\022\020\n\010grou"
+    "p_id\030\001 \001(\t\022\017\n\007user_id\030\002 \001(\t\022\021\n\ttimestamp"
+    "\030\003 \001(\003\"b\n\027GroupMemberKickedNotify\022\020\n\010gro"
+    "up_id\030\001 \001(\t\022\017\n\007user_id\030\002 \001(\t\022\021\n\tkicked_b"
+    "y\030\003 \001(\t\022\021\n\ttimestamp\030\004 \001(\003\"M\n\022GroupUpdat"
+    "edNotify\022$\n\005group\030\001 \001(\0132\025.chirp.chat.Gro"
+    "upInfo\022\021\n\ttimestamp\030\002 \001(\003\"\221\001\n\017MarkReadRe"
     "quest\022\017\n\007user_id\030\001 \001(\t\022\022\n\nchannel_id\030\002 \001"
     "(\t\022-\n\014channel_type\030\003 \001(\0162\027.chirp.chat.Ch"
-    "annelType\022\020\n\010filename\030\004 \001(\t\022\021\n\tfile_size"
-    "\030\005 \001(\003\022\021\n\tmime_type\030\006 \001(\t\022\020\n\010checksum\030\007 "
-    "\001(\t\"\203\002\n\031PrepareFileUploadResponse\022%\n\004cod"
-    "e\030\001 \001(\0162\027.chirp.common.ErrorCode\022\021\n\tuplo"
-    "ad_id\030\002 \001(\t\022\022\n\nupload_url\030\003 \001(\t\022\022\n\nexpir"
-    "es_at\030\004 \001(\003\022\017\n\007file_id\030\005 \001(\t\022C\n\007headers\030"
-    "\006 \003(\01322.chirp.chat.PrepareFileUploadResp"
-    "onse.HeadersEntry\032.\n\014HeadersEntry\022\013\n\003key"
-    "\030\001 \001(\t\022\r\n\005value\030\002 \001(\t:\0028\001\"R\n\030ConfirmFile"
-    "UploadRequest\022\021\n\tupload_id\030\001 \001(\t\022\017\n\007file"
-    "_id\030\002 \001(\t\022\022\n\nmessage_id\030\003 \001(\t\"\200\001\n\031Confir"
-    "mFileUploadResponse\022%\n\004code\030\001 \001(\0162\027.chir"
-    "p.common.ErrorCode\022\'\n\tfile_info\030\002 \001(\0132\024."
-    "chirp.chat.FileInfo\022\023\n\013server_time\030\003 \001(\003"
-    "\":\n\026GetFileDownloadRequest\022\017\n\007file_id\030\001 "
-    "\001(\t\022\017\n\007user_id\030\002 \001(\t\"\223\001\n\027GetFileDownload"
-    "Response\022%\n\004code\030\001 \001(\0162\027.chirp.common.Er"
-    "rorCode\022\024\n\014download_url\030\002 \001(\t\022\022\n\nexpires"
-    "_at\030\003 \001(\003\022\'\n\tfile_info\030\004 \001(\0132\024.chirp.cha"
-    "t.FileInfo\"Z\n\016FileAttachment\022\"\n\004file\030\001 \001"
-    "(\0132\024.chirp.chat.FileInfo\022\022\n\nis_spoiler\030\002"
-    " \001(\010\022\020\n\010alt_text\030\003 \001(\t\"m\n\013FileMessage\022-\n"
-    "\014base_message\030\001 \001(\0132\027.chirp.chat.ChatMes"
-    "sage\022/\n\013attachments\030\002 \003(\0132\032.chirp.chat.F"
-    "ileAttachment\"\306\001\n\014ItemMetadata\022\017\n\007item_i"
-    "d\030\001 \001(\t\022\021\n\titem_name\030\002 \001(\t\022\017\n\007quality\030\003 "
-    "\001(\005\022\020\n\010icon_url\030\004 \001(\t\022\r\n\005count\030\005 \001(\005\0222\n\005"
-    "attrs\030\006 \003(\0132#.chirp.chat.ItemMetadata.At"
-    "trsEntry\032,\n\nAttrsEntry\022\013\n\003key\030\001 \001(\t\022\r\n\005v"
-    "alue\030\002 \001(\t:\0028\001\"k\n\rSkillMetadata\022\020\n\010skill"
-    "_id\030\001 \001(\t\022\022\n\nskill_name\030\002 \001(\t\022\r\n\005level\030\003"
-    " \001(\005\022\020\n\010icon_url\030\004 \001(\t\022\023\n\013description\030\005 "
-    "\001(\t\"~\n\023AchievementMetadata\022\026\n\016achievemen"
-    "t_id\030\001 \001(\t\022\030\n\020achievement_name\030\002 \001(\t\022\023\n\013"
-    "description\030\003 \001(\t\022\020\n\010icon_url\030\004 \001(\t\022\016\n\006r"
-    "arity\030\005 \001(\005\"h\n\rTradeMetadata\022\020\n\010trade_id"
-    "\030\001 \001(\t\022\016\n\006status\030\002 \001(\t\022\016\n\006amount\030\003 \001(\003\022\021"
-    "\n\titem_name\030\004 \001(\t\022\022\n\nitem_count\030\005 \001(\005\"Y\n"
-    "\021NpcDialogMetadata\022\016\n\006npc_id\030\001 \001(\t\022\020\n\010np"
-    "c_name\030\002 \001(\t\022\021\n\tdialog_id\030\003 \001(\t\022\017\n\007optio"
-    "ns\030\004 \003(\t\"U\n\025SetChannelMuteRequest\022-\n\014cha"
-    "nnel_type\030\001 \001(\0162\027.chirp.chat.ChannelType"
-    "\022\r\n\005muted\030\002 \001(\010\"}\n\026SetChannelMuteRespons"
-    "e\022%\n\004code\030\001 \001(\0162\027.chirp.common.ErrorCode"
-    "\022-\n\014channel_type\030\002 \001(\0162\027.chirp.chat.Chan"
-    "nelType\022\r\n\005muted\030\003 \001(\010\"P\n\020ChannelMuteSta"
-    "te\022-\n\014channel_type\030\001 \001(\0162\027.chirp.chat.Ch"
-    "annelType\022\r\n\005muted\030\002 \001(\010\"\030\n\026GetChannelMu"
-    "tesRequest\"n\n\027GetChannelMutesResponse\022%\n"
-    "\004code\030\001 \001(\0162\027.chirp.common.ErrorCode\022,\n\006"
-    "states\030\002 \003(\0132\034.chirp.chat.ChannelMuteSta"
-    "te\"3\n\031BlockMessageSenderRequest\022\026\n\016targe"
-    "t_user_id\030\001 \001(\t\"[\n\032BlockMessageSenderRes"
-    "ponse\022%\n\004code\030\001 \001(\0162\027.chirp.common.Error"
-    "Code\022\026\n\016target_user_id\030\002 \001(\t\"5\n\033UnblockM"
-    "essageSenderRequest\022\026\n\016target_user_id\030\001 "
-    "\001(\t\"]\n\034UnblockMessageSenderResponse\022%\n\004c"
-    "ode\030\001 \001(\0162\027.chirp.common.ErrorCode\022\026\n\016ta"
-    "rget_user_id\030\002 \001(\t\"\032\n\030GetBlockedSendersR"
-    "equest\"[\n\031GetBlockedSendersResponse\022%\n\004c"
-    "ode\030\001 \001(\0162\027.chirp.common.ErrorCode\022\027\n\017ta"
-    "rget_user_ids\030\002 \003(\t\"/\n\026WordFilterFetchRe"
-    "quest\022\025\n\rknown_version\030\001 \001(\003\"\221\001\n\021WordFil"
-    "terLexicon\022\017\n\007version\030\001 \001(\003\022\017\n\007enabled\030\002"
-    " \001(\010\0224\n\006policy\030\003 \001(\0162$.chirp.chat.WordFi"
-    "lterDeliveryPolicy\022\023\n\013replacement\030\004 \001(\t\022"
-    "\017\n\007lexicon\030\005 \001(\t\"p\n\027WordFilterFetchRespo"
-    "nse\022%\n\004code\030\001 \001(\0162\027.chirp.common.ErrorCo"
-    "de\022.\n\007lexicon\030\002 \001(\0132\035.chirp.chat.WordFil"
-    "terLexicon\"H\n\026WordFilterUpdateNotify\022.\n\007"
-    "lexicon\030\001 \001(\0132\035.chirp.chat.WordFilterLex"
-    "icon\"\226\001\n\024SearchMessageRequest\022\017\n\007keyword"
-    "\030\001 \001(\t\022\022\n\nchannel_id\030\002 \001(\t\022\025\n\rcontent_ty"
-    "pes\030\003 \003(\005\022\030\n\020before_timestamp\030\004 \001(\003\022\031\n\021b"
-    "efore_message_id\030\005 \001(\t\022\r\n\005limit\030\006 \001(\005\"\260\001"
-    "\n\022SearchMessageMatch\022\022\n\nmessage_id\030\001 \001(\t"
-    "\022\022\n\nchannel_id\030\002 \001(\t\022\024\n\014channel_type\030\003 \001"
-    "(\005\022\021\n\tsender_id\030\004 \001(\t\022\023\n\013sender_kind\030\005 \001"
-    "(\005\022\020\n\010msg_type\030\006 \001(\005\022\021\n\ttimestamp\030\007 \001(\003\022"
-    "\017\n\007content\030\010 \001(\t\"\201\001\n\025SearchMessageRespon"
+    "annelType\022\022\n\nmessage_id\030\004 \001(\t\022\026\n\016read_ti"
+    "mestamp\030\005 \001(\003\"N\n\020MarkReadResponse\022%\n\004cod"
+    "e\030\001 \001(\0162\027.chirp.common.ErrorCode\022\023\n\013serv"
+    "er_time\030\002 \001(\003\"C\n\013ReadReceipt\022\017\n\007user_id\030"
+    "\001 \001(\t\022\022\n\nmessage_id\030\002 \001(\t\022\017\n\007read_at\030\003 \001"
+    "(\003\",\n\026GetReadReceiptsRequest\022\022\n\nmessage_"
+    "id\030\001 \001(\t\"k\n\027GetReadReceiptsResponse\022%\n\004c"
+    "ode\030\001 \001(\0162\027.chirp.common.ErrorCode\022)\n\010re"
+    "ceipts\030\002 \003(\0132\027.chirp.chat.ReadReceipt\"(\n"
+    "\025GetUnreadCountRequest\022\017\n\007user_id\030\001 \001(\t\""
+    "\225\002\n\026GetUnreadCountResponse\022%\n\004code\030\001 \001(\016"
+    "2\027.chirp.common.ErrorCode\022\024\n\014total_unrea"
+    "d\030\002 \001(\005\022B\n\010channels\030\003 \003(\01320.chirp.chat.G"
+    "etUnreadCountResponse.ChannelUnread\032z\n\rC"
+    "hannelUnread\022\022\n\nchannel_id\030\001 \001(\t\022-\n\014chan"
+    "nel_type\030\002 \001(\0162\027.chirp.chat.ChannelType\022"
+    "\r\n\005count\030\003 \001(\005\022\027\n\017last_message_id\030\004 \001(\t\""
+    "\223\001\n\021MessageReadNotify\022\022\n\nchannel_id\030\001 \001("
+    "\t\022-\n\014channel_type\030\002 \001(\0162\027.chirp.chat.Cha"
+    "nnelType\022\022\n\nmessage_id\030\003 \001(\t\022\026\n\016reader_u"
+    "ser_id\030\004 \001(\t\022\017\n\007read_at\030\005 \001(\003\"\220\001\n\024Typing"
+    "IndicatorState\022\022\n\nchannel_id\030\001 \001(\t\022-\n\014ch"
+    "annel_type\030\002 \001(\0162\027.chirp.chat.ChannelTyp"
+    "e\022\017\n\007user_id\030\003 \001(\t\022\021\n\tis_typing\030\004 \001(\010\022\021\n"
+    "\ttimestamp\030\005 \001(\003\"[\n\nMessageAck\022\022\n\nmessag"
+    "e_id\030\001 \001(\t\022\017\n\007user_id\030\002 \001(\t\022\023\n\013received_"
+    "at\030\003 \001(\003\022\023\n\013delivery_id\030\004 \001(\t\"\236\001\n\013Messag"
+    "eNack\022\022\n\nmessage_id\030\001 \001(\t\022\017\n\007user_id\030\002 \001"
+    "(\t\022+\n\nerror_code\030\003 \001(\0162\027.chirp.common.Er"
+    "rorCode\022\025\n\rerror_message\030\004 \001(\t\022\021\n\tfailed"
+    "_at\030\005 \001(\003\022\023\n\013delivery_id\030\006 \001(\t\"\324\001\n\016Deliv"
+    "eryStatus\022\022\n\nmessage_id\030\001 \001(\t\022\017\n\007user_id"
+    "\030\002 \001(\t\0221\n\006status\030\003 \001(\0162!.chirp.chat.Deli"
+    "veryStatus.Status\022\021\n\ttimestamp\030\004 \001(\003\022\023\n\013"
+    "retry_count\030\005 \001(\005\"B\n\006Status\022\013\n\007PENDING\020\000"
+    "\022\r\n\tDELIVERED\020\001\022\n\n\006FAILED\020\002\022\020\n\014ACKNOWLED"
+    "GED\020\003\"G\n\017PaginationToken\022\016\n\006cursor\030\001 \001(\t"
+    "\022\021\n\ttimestamp\030\002 \001(\003\022\021\n\tpage_size\030\003 \001(\005\"\333"
+    "\001\n\023GetHistoryRequestV2\022\017\n\007user_id\030\001 \001(\t\022"
+    "-\n\014channel_type\030\002 \001(\0162\027.chirp.chat.Chann"
+    "elType\022\022\n\nchannel_id\030\003 \001(\t\022/\n\npagination"
+    "\030\004 \001(\0132\033.chirp.chat.PaginationToken\022\r\n\005l"
+    "imit\030\005 \001(\005\022\027\n\017include_deleted\030\006 \001(\010\022\027\n\017s"
+    "ince_timestamp\030\007 \001(\003\"\277\001\n\024GetHistoryRespo"
+    "nseV2\022%\n\004code\030\001 \001(\0162\027.chirp.common.Error"
+    "Code\022)\n\010messages\030\002 \003(\0132\027.chirp.chat.Chat"
+    "Message\022.\n\tnext_page\030\003 \001(\0132\033.chirp.chat."
+    "PaginationToken\022\020\n\010has_more\030\004 \001(\010\022\023\n\013tot"
+    "al_count\030\005 \001(\005\"R\n\023TrackMessageRequest\022\022\n"
+    "\nmessage_id\030\001 \001(\t\022\023\n\013receiver_id\030\002 \001(\t\022\022"
+    "\n\nexpires_at\030\003 \001(\003\"g\n\024TrackMessageRespon"
     "se\022%\n\004code\030\001 \001(\0162\027.chirp.common.ErrorCod"
-    "e\022/\n\007matches\030\002 \003(\0132\036.chirp.chat.SearchMe"
-    "ssageMatch\022\020\n\010has_more\030\003 \001(\010*\222\001\n\007MsgType"
-    "\022\010\n\004TEXT\020\000\022\t\n\005EMOJI\020\001\022\t\n\005VOICE\020\002\022\t\n\005IMAG"
-    "E\020\003\022\r\n\tITEM_LINK\020\n\022\016\n\nSKILL_LINK\020\013\022\017\n\013AC"
-    "HIEVEMENT\020\014\022\016\n\nNPC_DIALOG\020\r\022\020\n\014TRADE_STA"
-    "TUS\020\016\022\n\n\006SYSTEM\020c*[\n\013ChannelType\022\013\n\007PRIV"
-    "ATE\020\000\022\010\n\004TEAM\020\001\022\t\n\005GUILD\020\002\022\t\n\005WORLD\020\003\022\022\n"
-    "\016SYSTEM_CHANNEL\020\004\022\013\n\007MARQUEE\020\005*Y\n\010Priori"
-    "ty\022\020\n\014PRIORITY_LOW\020\000\022\023\n\017PRIORITY_NORMAL\020"
-    "\001\022\021\n\rPRIORITY_HIGH\020\002\022\023\n\017PRIORITY_URGENT\020"
-    "\003*T\n\nSenderKind\022\017\n\013SENDER_USER\020\000\022\021\n\rSEND"
-    "ER_SYSTEM\020\001\022\016\n\nSENDER_NPC\020\002\022\022\n\016SENDER_SE"
-    "RVICE\020\003*B\n\017GroupMemberRole\022\n\n\006MEMBER\020\000\022\r"
-    "\n\tMODERATOR\020\001\022\t\n\005ADMIN\020\002\022\t\n\005OWNER\020\003*\213\001\n\013"
-    "ChannelKind\022\025\n\021CHANNEL_KIND_TEXT\020\000\022\026\n\022CH"
-    "ANNEL_KIND_VOICE\020\001\022\035\n\031CHANNEL_KIND_ANNOU"
-    "NCEMENT\020\002\022\026\n\022CHANNEL_KIND_STAGE\020\003\022\026\n\022CHA"
-    "NNEL_KIND_FORUM\020\004*D\n\016PermissionType\022\030\n\024P"
-    "ERMISSION_TYPE_ROLE\020\000\022\030\n\024PERMISSION_TYPE"
-    "_USER\020\001*6\n\022PermissionOverride\022\013\n\007INHERIT"
-    "\020\000\022\t\n\005ALLOW\020\001\022\010\n\004DENY\020\002*\207\001\n\013MentionType\022"
-    "\025\n\021MENTION_TYPE_USER\020\000\022\025\n\021MENTION_TYPE_R"
-    "OLE\020\001\022\030\n\024MENTION_TYPE_CHANNEL\020\002\022\031\n\025MENTI"
-    "ON_TYPE_EVERYONE\020\003\022\025\n\021MENTION_TYPE_HERE\020"
-    "\004*x\n\030WordFilterDeliveryPolicy\022\036\n\032WORD_FI"
-    "LTER_POLICY_REPLACE\020\000\022\035\n\031WORD_FILTER_POL"
-    "ICY_REJECT\020\001\022\035\n\031WORD_FILTER_POLICY_RECOR"
-    "D\020\002B$Z\"github.com/cui/chirp/proto/go/cha"
-    "tb\006proto3"
+    "e\022\023\n\013tracking_id\030\002 \001(\t\022\023\n\013server_time\030\003 "
+    "\001(\003\"r\n\022ChannelPermissions\022\020\n\010can_read\030\001 "
+    "\001(\010\022\021\n\tcan_write\030\002 \001(\010\022\021\n\tcan_speak\030\003 \001("
+    "\010\022\020\n\010can_join\030\004 \001(\010\022\022\n\ncan_manage\030\005 \001(\010\""
+    "\341\001\n\027PermissionOverrideEntry\022(\n\004type\030\001 \001("
+    "\0162\032.chirp.chat.PermissionType\022\n\n\002id\030\002 \001("
+    "\t\0223\n\013permissions\030\003 \001(\0132\036.chirp.chat.Chan"
+    "nelPermissions\022-\n\005allow\030\004 \001(\0162\036.chirp.ch"
+    "at.PermissionOverride\022,\n\004deny\030\005 \001(\0162\036.ch"
+    "irp.chat.PermissionOverride\"\202\001\n\017ChannelC"
+    "ategory\022\023\n\013category_id\030\001 \001(\t\022\020\n\010group_id"
+    "\030\002 \001(\t\022\014\n\004name\030\003 \001(\t\022\020\n\010position\030\004 \001(\005\022\024"
+    "\n\014is_collapsed\030\005 \001(\010\022\022\n\ncreated_at\030\006 \001(\003"
+    "\"\333\002\n\007Channel\022\022\n\nchannel_id\030\001 \001(\t\022\020\n\010grou"
+    "p_id\030\002 \001(\t\022\023\n\013category_id\030\003 \001(\t\022\014\n\004name\030"
+    "\004 \001(\t\022%\n\004kind\030\005 \001(\0162\027.chirp.chat.Channel"
+    "Kind\022\020\n\010position\030\006 \001(\005\022\023\n\013description\030\007 "
+    "\001(\t\022\017\n\007is_nsfw\030\010 \001(\010\022\022\n\ncreated_at\030\t \001(\003"
+    "\022\030\n\020slowmode_seconds\030\n \001(\003\022A\n\024permission"
+    "_overrides\030\013 \003(\0132#.chirp.chat.Permission"
+    "OverrideEntry\022\017\n\007bitrate\030\014 \001(\005\022\022\n\nuser_l"
+    "imit\030\r \001(\005\022\022\n\nrtc_region\030\016 \001(\t\"\362\001\n\024Creat"
+    "eChannelRequest\022\020\n\010group_id\030\001 \001(\t\022\024\n\014req"
+    "uester_id\030\002 \001(\t\022\014\n\004name\030\003 \001(\t\022%\n\004kind\030\004 "
+    "\001(\0162\027.chirp.chat.ChannelKind\022\023\n\013category"
+    "_id\030\005 \001(\t\022\023\n\013description\030\006 \001(\t\022A\n\024permis"
+    "sion_overrides\030\007 \003(\0132#.chirp.chat.Permis"
+    "sionOverrideEntry\022\020\n\010position\030\010 \001(\005\"y\n\025C"
+    "reateChannelResponse\022%\n\004code\030\001 \001(\0162\027.chi"
+    "rp.common.ErrorCode\022$\n\007channel\030\002 \001(\0132\023.c"
+    "hirp.chat.Channel\022\023\n\013server_time\030\003 \001(\003\"\227"
+    "\002\n\024UpdateChannelRequest\022\022\n\nchannel_id\030\001 "
+    "\001(\t\022\024\n\014requester_id\030\002 \001(\t\022\021\n\004name\030\003 \001(\tH"
+    "\000\210\001\001\022\030\n\013description\030\004 \001(\tH\001\210\001\001\022\025\n\010positi"
+    "on\030\005 \001(\005H\002\210\001\001\022\030\n\013category_id\030\006 \001(\tH\003\210\001\001\022"
+    "A\n\024permission_overrides\030\007 \003(\0132#.chirp.ch"
+    "at.PermissionOverrideEntryB\007\n\005_nameB\016\n\014_"
+    "descriptionB\013\n\t_positionB\016\n\014_category_id"
+    "\"y\n\025UpdateChannelResponse\022%\n\004code\030\001 \001(\0162"
+    "\027.chirp.common.ErrorCode\022$\n\007channel\030\002 \001("
+    "\0132\023.chirp.chat.Channel\022\023\n\013server_time\030\003 "
+    "\001(\003\"@\n\024DeleteChannelRequest\022\022\n\nchannel_i"
+    "d\030\001 \001(\t\022\024\n\014requester_id\030\002 \001(\t\"S\n\025DeleteC"
+    "hannelResponse\022%\n\004code\030\001 \001(\0162\027.chirp.com"
+    "mon.ErrorCode\022\023\n\013server_time\030\002 \001(\003\"7\n\022Ge"
+    "tChannelsRequest\022\020\n\010group_id\030\001 \001(\t\022\017\n\007us"
+    "er_id\030\002 \001(\t\"\224\001\n\023GetChannelsResponse\022%\n\004c"
+    "ode\030\001 \001(\0162\027.chirp.common.ErrorCode\022%\n\010ch"
+    "annels\030\002 \003(\0132\023.chirp.chat.Channel\022/\n\ncat"
+    "egories\030\003 \003(\0132\033.chirp.chat.ChannelCatego"
+    "ry\"_\n\025CreateCategoryRequest\022\020\n\010group_id\030"
+    "\001 \001(\t\022\024\n\014requester_id\030\002 \001(\t\022\014\n\004name\030\003 \001("
+    "\t\022\020\n\010position\030\004 \001(\005\"\203\001\n\026CreateCategoryRe"
+    "sponse\022%\n\004code\030\001 \001(\0162\027.chirp.common.Erro"
+    "rCode\022-\n\010category\030\002 \001(\0132\033.chirp.chat.Cha"
+    "nnelCategory\022\023\n\013server_time\030\003 \001(\003\"O\n\024Cha"
+    "nnelCreatedNotify\022$\n\007channel\030\001 \001(\0132\023.chi"
+    "rp.chat.Channel\022\021\n\ttimestamp\030\002 \001(\003\"O\n\024Ch"
+    "annelUpdatedNotify\022$\n\007channel\030\001 \001(\0132\023.ch"
+    "irp.chat.Channel\022\021\n\ttimestamp\030\002 \001(\003\"O\n\024C"
+    "hannelDeletedNotify\022\022\n\nchannel_id\030\001 \001(\t\022"
+    "\020\n\010group_id\030\002 \001(\t\022\021\n\ttimestamp\030\003 \001(\003\"l\n\017"
+    "MessageReaction\022\022\n\nmessage_id\030\001 \001(\t\022\r\n\005e"
+    "moji\030\002 \001(\t\022\r\n\005count\030\003 \001(\005\022\020\n\010user_ids\030\004 "
+    "\003(\t\022\025\n\rreacted_by_me\030\005 \001(\010\"H\n\022AddReactio"
+    "nRequest\022\022\n\nmessage_id\030\001 \001(\t\022\017\n\007user_id\030"
+    "\002 \001(\t\022\r\n\005emoji\030\003 \001(\t\"\200\001\n\023AddReactionResp"
+    "onse\022%\n\004code\030\001 \001(\0162\027.chirp.common.ErrorC"
+    "ode\022-\n\010reaction\030\002 \001(\0132\033.chirp.chat.Messa"
+    "geReaction\022\023\n\013server_time\030\003 \001(\003\"K\n\025Remov"
+    "eReactionRequest\022\022\n\nmessage_id\030\001 \001(\t\022\017\n\007"
+    "user_id\030\002 \001(\t\022\r\n\005emoji\030\003 \001(\t\"T\n\026RemoveRe"
+    "actionResponse\022%\n\004code\030\001 \001(\0162\027.chirp.com"
+    "mon.ErrorCode\022\023\n\013server_time\030\002 \001(\003\"8\n\023Ge"
+    "tReactionsRequest\022\022\n\nmessage_id\030\001 \001(\t\022\r\n"
+    "\005emoji\030\002 \001(\t\"m\n\024GetReactionsResponse\022%\n\004"
+    "code\030\001 \001(\0162\027.chirp.common.ErrorCode\022.\n\tr"
+    "eactions\030\002 \003(\0132\033.chirp.chat.MessageReact"
+    "ion\"p\n\023ReactionAddedNotify\022\022\n\nmessage_id"
+    "\030\001 \001(\t\022\022\n\nchannel_id\030\002 \001(\t\022\r\n\005emoji\030\003 \001("
+    "\t\022\017\n\007user_id\030\004 \001(\t\022\021\n\ttimestamp\030\005 \001(\003\"r\n"
+    "\025ReactionRemovedNotify\022\022\n\nmessage_id\030\001 \001"
+    "(\t\022\022\n\nchannel_id\030\002 \001(\t\022\r\n\005emoji\030\003 \001(\t\022\017\n"
+    "\007user_id\030\004 \001(\t\022\021\n\ttimestamp\030\005 \001(\003\"a\n\007Men"
+    "tion\022%\n\004type\030\001 \001(\0162\027.chirp.chat.MentionT"
+    "ype\022\n\n\002id\030\002 \001(\t\022\023\n\013start_index\030\003 \001(\005\022\016\n\006"
+    "length\030\004 \001(\005\"\263\001\n\rChatMessageEx\022-\n\014base_m"
+    "essage\030\001 \001(\0132\027.chirp.chat.ChatMessage\022%\n"
+    "\010mentions\030\002 \003(\0132\023.chirp.chat.Mention\022\032\n\022"
+    "mentioned_user_ids\030\003 \003(\t\022\031\n\021mentions_eve"
+    "ryone\030\004 \001(\010\022\025\n\rmentions_here\030\005 \001(\010\"n\n\021Me"
+    "ntionSuggestion\022\024\n\014display_text\030\001 \001(\t\022\n\n"
+    "\002id\030\002 \001(\t\022%\n\004type\030\003 \001(\0162\027.chirp.chat.Men"
+    "tionType\022\020\n\010icon_url\030\004 \001(\t\"R\n\034GetMention"
+    "SuggestionsRequest\022\017\n\007user_id\030\001 \001(\t\022\022\n\nc"
+    "hannel_id\030\002 \001(\t\022\r\n\005query\030\003 \001(\t\"z\n\035GetMen"
+    "tionSuggestionsResponse\022%\n\004code\030\001 \001(\0162\027."
+    "chirp.common.ErrorCode\0222\n\013suggestions\030\002 "
+    "\003(\0132\035.chirp.chat.MentionSuggestion\"]\n\013Me"
+    "ssageEdit\022\023\n\013old_content\030\001 \001(\014\022\023\n\013new_co"
+    "ntent\030\002 \001(\014\022\021\n\tedited_at\030\003 \001(\003\022\021\n\tedited"
+    "_by\030\004 \001(\t\"\211\004\n\017ChatMessageFull\022\022\n\nmessage"
+    "_id\030\001 \001(\t\022\021\n\tsender_id\030\002 \001(\t\022\023\n\013receiver"
+    "_id\030\003 \001(\t\022-\n\014channel_type\030\004 \001(\0162\027.chirp."
+    "chat.ChannelType\022\022\n\nchannel_id\030\005 \001(\t\022%\n\010"
+    "msg_type\030\006 \001(\0162\023.chirp.chat.MsgType\022\017\n\007c"
+    "ontent\030\007 \001(\014\022\021\n\ttimestamp\030\010 \001(\003\022\022\n\nis_de"
+    "leted\030\t \001(\010\022\022\n\ndeleted_at\030\n \001(\003\022\022\n\ndelet"
+    "ed_by\030\013 \001(\t\022\021\n\tis_edited\030\014 \001(\010\022\021\n\tedited"
+    "_at\030\r \001(\003\022\022\n\nedit_count\030\016 \001(\005\022-\n\014edit_hi"
+    "story\030\017 \003(\0132\027.chirp.chat.MessageEdit\022\033\n\023"
+    "reply_to_message_id\030\020 \001(\t\022\023\n\013reply_count"
+    "\030\021 \001(\005\022.\n\treactions\030\022 \003(\0132\033.chirp.chat.M"
+    "essageReaction\022%\n\010mentions\030\023 \003(\0132\023.chirp"
+    ".chat.Mention\"f\n\022EditMessageRequest\022\022\n\nm"
+    "essage_id\030\001 \001(\t\022\017\n\007user_id\030\002 \001(\t\022\023\n\013new_"
+    "content\030\003 \001(\014\022\026\n\016edit_timestamp\030\004 \001(\003\"\177\n"
+    "\023EditMessageResponse\022%\n\004code\030\001 \001(\0162\027.chi"
+    "rp.common.ErrorCode\022,\n\007message\030\002 \001(\0132\033.c"
+    "hirp.chat.ChatMessageFull\022\023\n\013server_time"
+    "\030\003 \001(\003\"S\n\024DeleteMessageRequest\022\022\n\nmessag"
+    "e_id\030\001 \001(\t\022\017\n\007user_id\030\002 \001(\t\022\026\n\016is_hard_d"
+    "elete\030\003 \001(\010\"t\n\025DeleteMessageResponse\022%\n\004"
+    "code\030\001 \001(\0162\027.chirp.common.ErrorCode\022\023\n\013s"
+    "erver_time\030\002 \001(\003\022\037\n\027was_permanently_dele"
+    "ted\030\003 \001(\010\"R\n\021BulkDeleteRequest\022\023\n\013messag"
+    "e_ids\030\001 \003(\t\022\024\n\014requester_id\030\002 \001(\t\022\022\n\ncha"
+    "nnel_id\030\003 \001(\t\"\203\001\n\022BulkDeleteResponse\022%\n\004"
+    "code\030\001 \001(\0162\027.chirp.common.ErrorCode\022\025\n\rd"
+    "eleted_count\030\002 \001(\005\022\032\n\022failed_message_ids"
+    "\030\003 \003(\t\022\023\n\013server_time\030\004 \001(\003\"x\n\023MessageEd"
+    "itedNotify\022\022\n\nmessage_id\030\001 \001(\t\022\022\n\nchanne"
+    "l_id\030\002 \001(\t\022\023\n\013new_content\030\003 \001(\014\022\021\n\tedite"
+    "d_at\030\004 \001(\003\022\021\n\tedited_by\030\005 \001(\t\"~\n\024Message"
+    "DeletedNotify\022\022\n\nmessage_id\030\001 \001(\t\022\022\n\ncha"
+    "nnel_id\030\002 \001(\t\022\026\n\016is_hard_delete\030\003 \001(\010\022\022\n"
+    "\ndeleted_by\030\004 \001(\t\022\022\n\ndeleted_at\030\005 \001(\003\"\235\001"
+    "\n\017TypingIndicator\022\022\n\nchannel_id\030\001 \001(\t\022-\n"
+    "\014channel_type\030\002 \001(\0162\027.chirp.chat.Channel"
+    "Type\022\017\n\007user_id\030\003 \001(\t\022\020\n\010username\030\004 \001(\t\022"
+    "\021\n\tis_typing\030\005 \001(\010\022\021\n\ttimestamp\030\006 \001(\003\"Z\n"
+    "\025GetTypingUsersRequest\022\022\n\nchannel_id\030\001 \001"
+    "(\t\022-\n\014channel_type\030\002 \001(\0162\027.chirp.chat.Ch"
+    "annelType\"k\n\026GetTypingUsersResponse\022%\n\004c"
+    "ode\030\001 \001(\0162\027.chirp.common.ErrorCode\022\027\n\017ty"
+    "ping_user_ids\030\002 \003(\t\022\021\n\tusernames\030\003 \003(\t\"\325"
+    "\001\n\010FileInfo\022\017\n\007file_id\030\001 \001(\t\022\020\n\010filename"
+    "\030\002 \001(\t\022\021\n\tfile_size\030\003 \001(\003\022\021\n\tmime_type\030\004"
+    " \001(\t\022\020\n\010checksum\030\005 \001(\t\022\023\n\013storage_url\030\006 "
+    "\001(\t\022\023\n\013uploaded_at\030\007 \001(\003\022\023\n\013uploaded_by\030"
+    "\010 \001(\t\022\r\n\005width\030\t \001(\005\022\016\n\006height\030\n \001(\005\022\020\n\010"
+    "duration\030\013 \001(\005\"\270\001\n\030PrepareFileUploadRequ"
+    "est\022\017\n\007user_id\030\001 \001(\t\022\022\n\nchannel_id\030\002 \001(\t"
+    "\022-\n\014channel_type\030\003 \001(\0162\027.chirp.chat.Chan"
+    "nelType\022\020\n\010filename\030\004 \001(\t\022\021\n\tfile_size\030\005"
+    " \001(\003\022\021\n\tmime_type\030\006 \001(\t\022\020\n\010checksum\030\007 \001("
+    "\t\"\203\002\n\031PrepareFileUploadResponse\022%\n\004code\030"
+    "\001 \001(\0162\027.chirp.common.ErrorCode\022\021\n\tupload"
+    "_id\030\002 \001(\t\022\022\n\nupload_url\030\003 \001(\t\022\022\n\nexpires"
+    "_at\030\004 \001(\003\022\017\n\007file_id\030\005 \001(\t\022C\n\007headers\030\006 "
+    "\003(\01322.chirp.chat.PrepareFileUploadRespon"
+    "se.HeadersEntry\032.\n\014HeadersEntry\022\013\n\003key\030\001"
+    " \001(\t\022\r\n\005value\030\002 \001(\t:\0028\001\"R\n\030ConfirmFileUp"
+    "loadRequest\022\021\n\tupload_id\030\001 \001(\t\022\017\n\007file_i"
+    "d\030\002 \001(\t\022\022\n\nmessage_id\030\003 \001(\t\"\200\001\n\031ConfirmF"
+    "ileUploadResponse\022%\n\004code\030\001 \001(\0162\027.chirp."
+    "common.ErrorCode\022\'\n\tfile_info\030\002 \001(\0132\024.ch"
+    "irp.chat.FileInfo\022\023\n\013server_time\030\003 \001(\003\":"
+    "\n\026GetFileDownloadRequest\022\017\n\007file_id\030\001 \001("
+    "\t\022\017\n\007user_id\030\002 \001(\t\"\223\001\n\027GetFileDownloadRe"
+    "sponse\022%\n\004code\030\001 \001(\0162\027.chirp.common.Erro"
+    "rCode\022\024\n\014download_url\030\002 \001(\t\022\022\n\nexpires_a"
+    "t\030\003 \001(\003\022\'\n\tfile_info\030\004 \001(\0132\024.chirp.chat."
+    "FileInfo\"Z\n\016FileAttachment\022\"\n\004file\030\001 \001(\013"
+    "2\024.chirp.chat.FileInfo\022\022\n\nis_spoiler\030\002 \001"
+    "(\010\022\020\n\010alt_text\030\003 \001(\t\"m\n\013FileMessage\022-\n\014b"
+    "ase_message\030\001 \001(\0132\027.chirp.chat.ChatMessa"
+    "ge\022/\n\013attachments\030\002 \003(\0132\032.chirp.chat.Fil"
+    "eAttachment\"\306\001\n\014ItemMetadata\022\017\n\007item_id\030"
+    "\001 \001(\t\022\021\n\titem_name\030\002 \001(\t\022\017\n\007quality\030\003 \001("
+    "\005\022\020\n\010icon_url\030\004 \001(\t\022\r\n\005count\030\005 \001(\005\0222\n\005at"
+    "trs\030\006 \003(\0132#.chirp.chat.ItemMetadata.Attr"
+    "sEntry\032,\n\nAttrsEntry\022\013\n\003key\030\001 \001(\t\022\r\n\005val"
+    "ue\030\002 \001(\t:\0028\001\"k\n\rSkillMetadata\022\020\n\010skill_i"
+    "d\030\001 \001(\t\022\022\n\nskill_name\030\002 \001(\t\022\r\n\005level\030\003 \001"
+    "(\005\022\020\n\010icon_url\030\004 \001(\t\022\023\n\013description\030\005 \001("
+    "\t\"~\n\023AchievementMetadata\022\026\n\016achievement_"
+    "id\030\001 \001(\t\022\030\n\020achievement_name\030\002 \001(\t\022\023\n\013de"
+    "scription\030\003 \001(\t\022\020\n\010icon_url\030\004 \001(\t\022\016\n\006rar"
+    "ity\030\005 \001(\005\"h\n\rTradeMetadata\022\020\n\010trade_id\030\001"
+    " \001(\t\022\016\n\006status\030\002 \001(\t\022\016\n\006amount\030\003 \001(\003\022\021\n\t"
+    "item_name\030\004 \001(\t\022\022\n\nitem_count\030\005 \001(\005\"Y\n\021N"
+    "pcDialogMetadata\022\016\n\006npc_id\030\001 \001(\t\022\020\n\010npc_"
+    "name\030\002 \001(\t\022\021\n\tdialog_id\030\003 \001(\t\022\017\n\007options"
+    "\030\004 \003(\t\"U\n\025SetChannelMuteRequest\022-\n\014chann"
+    "el_type\030\001 \001(\0162\027.chirp.chat.ChannelType\022\r"
+    "\n\005muted\030\002 \001(\010\"}\n\026SetChannelMuteResponse\022"
+    "%\n\004code\030\001 \001(\0162\027.chirp.common.ErrorCode\022-"
+    "\n\014channel_type\030\002 \001(\0162\027.chirp.chat.Channe"
+    "lType\022\r\n\005muted\030\003 \001(\010\"P\n\020ChannelMuteState"
+    "\022-\n\014channel_type\030\001 \001(\0162\027.chirp.chat.Chan"
+    "nelType\022\r\n\005muted\030\002 \001(\010\"\030\n\026GetChannelMute"
+    "sRequest\"n\n\027GetChannelMutesResponse\022%\n\004c"
+    "ode\030\001 \001(\0162\027.chirp.common.ErrorCode\022,\n\006st"
+    "ates\030\002 \003(\0132\034.chirp.chat.ChannelMuteState"
+    "\"3\n\031BlockMessageSenderRequest\022\026\n\016target_"
+    "user_id\030\001 \001(\t\"[\n\032BlockMessageSenderRespo"
+    "nse\022%\n\004code\030\001 \001(\0162\027.chirp.common.ErrorCo"
+    "de\022\026\n\016target_user_id\030\002 \001(\t\"5\n\033UnblockMes"
+    "sageSenderRequest\022\026\n\016target_user_id\030\001 \001("
+    "\t\"]\n\034UnblockMessageSenderResponse\022%\n\004cod"
+    "e\030\001 \001(\0162\027.chirp.common.ErrorCode\022\026\n\016targ"
+    "et_user_id\030\002 \001(\t\"\032\n\030GetBlockedSendersReq"
+    "uest\"[\n\031GetBlockedSendersResponse\022%\n\004cod"
+    "e\030\001 \001(\0162\027.chirp.common.ErrorCode\022\027\n\017targ"
+    "et_user_ids\030\002 \003(\t\"/\n\026WordFilterFetchRequ"
+    "est\022\025\n\rknown_version\030\001 \001(\003\"\221\001\n\021WordFilte"
+    "rLexicon\022\017\n\007version\030\001 \001(\003\022\017\n\007enabled\030\002 \001"
+    "(\010\0224\n\006policy\030\003 \001(\0162$.chirp.chat.WordFilt"
+    "erDeliveryPolicy\022\023\n\013replacement\030\004 \001(\t\022\017\n"
+    "\007lexicon\030\005 \001(\t\"p\n\027WordFilterFetchRespons"
+    "e\022%\n\004code\030\001 \001(\0162\027.chirp.common.ErrorCode"
+    "\022.\n\007lexicon\030\002 \001(\0132\035.chirp.chat.WordFilte"
+    "rLexicon\"H\n\026WordFilterUpdateNotify\022.\n\007le"
+    "xicon\030\001 \001(\0132\035.chirp.chat.WordFilterLexic"
+    "on\"\226\001\n\024SearchMessageRequest\022\017\n\007keyword\030\001"
+    " \001(\t\022\022\n\nchannel_id\030\002 \001(\t\022\025\n\rcontent_type"
+    "s\030\003 \003(\005\022\030\n\020before_timestamp\030\004 \001(\003\022\031\n\021bef"
+    "ore_message_id\030\005 \001(\t\022\r\n\005limit\030\006 \001(\005\"\260\001\n\022"
+    "SearchMessageMatch\022\022\n\nmessage_id\030\001 \001(\t\022\022"
+    "\n\nchannel_id\030\002 \001(\t\022\024\n\014channel_type\030\003 \001(\005"
+    "\022\021\n\tsender_id\030\004 \001(\t\022\023\n\013sender_kind\030\005 \001(\005"
+    "\022\020\n\010msg_type\030\006 \001(\005\022\021\n\ttimestamp\030\007 \001(\003\022\017\n"
+    "\007content\030\010 \001(\t\"\201\001\n\025SearchMessageResponse"
+    "\022%\n\004code\030\001 \001(\0162\027.chirp.common.ErrorCode\022"
+    "/\n\007matches\030\002 \003(\0132\036.chirp.chat.SearchMess"
+    "ageMatch\022\020\n\010has_more\030\003 \001(\010*\222\001\n\007MsgType\022\010"
+    "\n\004TEXT\020\000\022\t\n\005EMOJI\020\001\022\t\n\005VOICE\020\002\022\t\n\005IMAGE\020"
+    "\003\022\r\n\tITEM_LINK\020\n\022\016\n\nSKILL_LINK\020\013\022\017\n\013ACHI"
+    "EVEMENT\020\014\022\016\n\nNPC_DIALOG\020\r\022\020\n\014TRADE_STATU"
+    "S\020\016\022\n\n\006SYSTEM\020c*[\n\013ChannelType\022\013\n\007PRIVAT"
+    "E\020\000\022\010\n\004TEAM\020\001\022\t\n\005GUILD\020\002\022\t\n\005WORLD\020\003\022\022\n\016S"
+    "YSTEM_CHANNEL\020\004\022\013\n\007MARQUEE\020\005*Y\n\010Priority"
+    "\022\020\n\014PRIORITY_LOW\020\000\022\023\n\017PRIORITY_NORMAL\020\001\022"
+    "\021\n\rPRIORITY_HIGH\020\002\022\023\n\017PRIORITY_URGENT\020\003*"
+    "T\n\nSenderKind\022\017\n\013SENDER_USER\020\000\022\021\n\rSENDER"
+    "_SYSTEM\020\001\022\016\n\nSENDER_NPC\020\002\022\022\n\016SENDER_SERV"
+    "ICE\020\003*B\n\017GroupMemberRole\022\n\n\006MEMBER\020\000\022\r\n\t"
+    "MODERATOR\020\001\022\t\n\005ADMIN\020\002\022\t\n\005OWNER\020\003*\213\001\n\013Ch"
+    "annelKind\022\025\n\021CHANNEL_KIND_TEXT\020\000\022\026\n\022CHAN"
+    "NEL_KIND_VOICE\020\001\022\035\n\031CHANNEL_KIND_ANNOUNC"
+    "EMENT\020\002\022\026\n\022CHANNEL_KIND_STAGE\020\003\022\026\n\022CHANN"
+    "EL_KIND_FORUM\020\004*D\n\016PermissionType\022\030\n\024PER"
+    "MISSION_TYPE_ROLE\020\000\022\030\n\024PERMISSION_TYPE_U"
+    "SER\020\001*6\n\022PermissionOverride\022\013\n\007INHERIT\020\000"
+    "\022\t\n\005ALLOW\020\001\022\010\n\004DENY\020\002*\207\001\n\013MentionType\022\025\n"
+    "\021MENTION_TYPE_USER\020\000\022\025\n\021MENTION_TYPE_ROL"
+    "E\020\001\022\030\n\024MENTION_TYPE_CHANNEL\020\002\022\031\n\025MENTION"
+    "_TYPE_EVERYONE\020\003\022\025\n\021MENTION_TYPE_HERE\020\004*"
+    "x\n\030WordFilterDeliveryPolicy\022\036\n\032WORD_FILT"
+    "ER_POLICY_REPLACE\020\000\022\035\n\031WORD_FILTER_POLIC"
+    "Y_REJECT\020\001\022\035\n\031WORD_FILTER_POLICY_RECORD\020"
+    "\002B$Z\"github.com/cui/chirp/proto/go/chatb"
+    "\006proto3"
 };
 static const ::_pbi::DescriptorTable* PROTOBUF_NONNULL const
     descriptor_table_proto_2fchat_2eproto_deps[1] = {
@@ -6105,13 +6254,13 @@ static ::absl::once_flag descriptor_table_proto_2fchat_2eproto_once;
 PROTOBUF_CONSTINIT const ::_pbi::DescriptorTable descriptor_table_proto_2fchat_2eproto = {
     false,
     false,
-    16609,
+    16967,
     descriptor_table_protodef_proto_2fchat_2eproto,
     "proto/chat.proto",
     &descriptor_table_proto_2fchat_2eproto_once,
     descriptor_table_proto_2fchat_2eproto_deps,
     1,
-    129,
+    132,
     schemas,
     file_default_instances,
     TableStruct_proto_2fchat_2eproto::offsets,
@@ -10873,16 +11022,16 @@ GroupMember::GetClassData() const {
   return GroupMember_class_data_.base();
 }
 PROTOBUF_CONSTINIT PROTOBUF_ATTRIBUTE_INIT_PRIORITY1
-const ::_pbi::TcParseTable<3, 7, 0, 61, 2>
+const ::_pbi::TcParseTable<3, 8, 0, 69, 2>
 GroupMember::_table_ = {
   {
     PROTOBUF_FIELD_OFFSET(GroupMember, _impl_._has_bits_),
     0, // no _extensions_
-    7, 56,  // max_field_number, fast_idx_mask
+    8, 56,  // max_field_number, fast_idx_mask
     offsetof(decltype(_table_), field_lookup_table),
-    4294967168,  // skipmap
+    4294967040,  // skipmap
     offsetof(decltype(_table_), field_entries),
-    7,  // num_field_entries
+    8,  // num_field_entries
     0,  // num_aux_entries
     offsetof(decltype(_table_), field_names),  // no aux_entries
     GroupMember_class_data_.base(),
@@ -10892,7 +11041,10 @@ GroupMember::_table_ = {
     ::_pbi::TcParser::GetTable<::chirp::chat::GroupMember>(),  // to_prefetch
     #endif  // PROTOBUF_PREFETCH_PARSE_TABLE
   }, {{
-    {::_pbi::TcParser::MiniParse, {}},
+    // int64 muted_until_ts = 8;
+    {::_pbi::TcParser::SingularVarintNoZag1<::uint64_t, offsetof(GroupMember, _impl_.muted_until_ts_), 6>(),
+     {64, 6, 0,
+      PROTOBUF_FIELD_OFFSET(GroupMember, _impl_.muted_until_ts_)}},
     // string user_id = 1;
     {::_pbi::TcParser::FastUS1,
      {10, 0, 0,
@@ -10906,8 +11058,8 @@ GroupMember::_table_ = {
      {26, 2, 0,
       PROTOBUF_FIELD_OFFSET(GroupMember, _impl_.avatar_url_)}},
     // .chirp.chat.GroupMemberRole role = 4;
-    {::_pbi::TcParser::SingularVarintNoZag1<::uint32_t, offsetof(GroupMember, _impl_.role_), 6>(),
-     {32, 6, 0,
+    {::_pbi::TcParser::SingularVarintNoZag1<::uint32_t, offsetof(GroupMember, _impl_.role_), 7>(),
+     {32, 7, 0,
       PROTOBUF_FIELD_OFFSET(GroupMember, _impl_.role_)}},
     // int64 joined_at = 5;
     {::_pbi::TcParser::SingularVarintNoZag1<::uint64_t, offsetof(GroupMember, _impl_.joined_at_), 4>(),
@@ -10931,17 +11083,19 @@ GroupMember::_table_ = {
     // string avatar_url = 3;
     {PROTOBUF_FIELD_OFFSET(GroupMember, _impl_.avatar_url_), _Internal::kHasBitsOffset + 2, 0, (0 | ::_fl::kFcOptional | ::_fl::kUtf8String | ::_fl::kRepAString)},
     // .chirp.chat.GroupMemberRole role = 4;
-    {PROTOBUF_FIELD_OFFSET(GroupMember, _impl_.role_), _Internal::kHasBitsOffset + 6, 0, (0 | ::_fl::kFcOptional | ::_fl::kOpenEnum)},
+    {PROTOBUF_FIELD_OFFSET(GroupMember, _impl_.role_), _Internal::kHasBitsOffset + 7, 0, (0 | ::_fl::kFcOptional | ::_fl::kOpenEnum)},
     // int64 joined_at = 5;
     {PROTOBUF_FIELD_OFFSET(GroupMember, _impl_.joined_at_), _Internal::kHasBitsOffset + 4, 0, (0 | ::_fl::kFcOptional | ::_fl::kInt64)},
     // int64 last_read_at = 6;
     {PROTOBUF_FIELD_OFFSET(GroupMember, _impl_.last_read_at_), _Internal::kHasBitsOffset + 5, 0, (0 | ::_fl::kFcOptional | ::_fl::kInt64)},
     // string alias = 7;
     {PROTOBUF_FIELD_OFFSET(GroupMember, _impl_.alias_), _Internal::kHasBitsOffset + 3, 0, (0 | ::_fl::kFcOptional | ::_fl::kUtf8String | ::_fl::kRepAString)},
+    // int64 muted_until_ts = 8;
+    {PROTOBUF_FIELD_OFFSET(GroupMember, _impl_.muted_until_ts_), _Internal::kHasBitsOffset + 6, 0, (0 | ::_fl::kFcOptional | ::_fl::kInt64)},
   }},
   // no aux_entries
   {{
-    "\26\7\10\12\0\0\0\5"
+    "\26\7\10\12\0\0\0\5\0\0\0\0\0\0\0\0"
     "chirp.chat.GroupMember"
     "user_id"
     "username"
@@ -10971,7 +11125,7 @@ PROTOBUF_NOINLINE void GroupMember::Clear() {
       _impl_.alias_.ClearNonDefaultToEmpty();
     }
   }
-  if (BatchCheckHasBit(cached_has_bits, 0x00000070U)) {
+  if (BatchCheckHasBit(cached_has_bits, 0x000000f0U)) {
     ::memset(&_impl_.joined_at_, 0, static_cast<::size_t>(
         reinterpret_cast<char*>(&_impl_.role_) -
         reinterpret_cast<char*>(&_impl_.joined_at_)) + sizeof(_impl_.role_));
@@ -11030,7 +11184,7 @@ PROTOBUF_NOINLINE void GroupMember::Clear() {
   }
 
   // .chirp.chat.GroupMemberRole role = 4;
-  if (CheckHasBit(cached_has_bits, 0x00000040U)) {
+  if (CheckHasBit(cached_has_bits, 0x00000080U)) {
     if (this_._internal_role() != 0) {
       target = stream->EnsureSpace(target);
       target = ::_pbi::WireFormatLite::WriteEnumToArray(
@@ -11066,6 +11220,15 @@ PROTOBUF_NOINLINE void GroupMember::Clear() {
     }
   }
 
+  // int64 muted_until_ts = 8;
+  if (CheckHasBit(cached_has_bits, 0x00000040U)) {
+    if (this_._internal_muted_until_ts() != 0) {
+      target =
+          ::google::protobuf::internal::WireFormatLite::WriteInt64ToArrayWithField<8>(
+              stream, this_._internal_muted_until_ts(), target);
+    }
+  }
+
   if (ABSL_PREDICT_FALSE(this_._internal_metadata_.have_unknown_fields())) {
     target =
         ::_pbi::WireFormat::InternalSerializeUnknownFieldsToArray(
@@ -11091,7 +11254,7 @@ PROTOBUF_NOINLINE void GroupMember::Clear() {
 
   ::_pbi::Prefetch5LinesFrom7Lines(&this_);
   cached_has_bits = this_._impl_._has_bits_[0];
-  if (BatchCheckHasBit(cached_has_bits, 0x0000007fU)) {
+  if (BatchCheckHasBit(cached_has_bits, 0x000000ffU)) {
     // string user_id = 1;
     if (CheckHasBit(cached_has_bits, 0x00000001U)) {
       if (!this_._internal_user_id().empty()) {
@@ -11134,8 +11297,15 @@ PROTOBUF_NOINLINE void GroupMember::Clear() {
             this_._internal_last_read_at());
       }
     }
-    // .chirp.chat.GroupMemberRole role = 4;
+    // int64 muted_until_ts = 8;
     if (CheckHasBit(cached_has_bits, 0x00000040U)) {
+      if (this_._internal_muted_until_ts() != 0) {
+        total_size += ::_pbi::WireFormatLite::Int64SizePlusOne(
+            this_._internal_muted_until_ts());
+      }
+    }
+    // .chirp.chat.GroupMemberRole role = 4;
+    if (CheckHasBit(cached_has_bits, 0x00000080U)) {
       if (this_._internal_role() != 0) {
         total_size += 1 +
                       ::_pbi::WireFormatLite::EnumSize(this_._internal_role());
@@ -11160,7 +11330,7 @@ void GroupMember::MergeImpl(::google::protobuf::MessageLite& to_msg,
   (void)cached_has_bits;
 
   cached_has_bits = from._impl_._has_bits_[0];
-  if (BatchCheckHasBit(cached_has_bits, 0x0000007fU)) {
+  if (BatchCheckHasBit(cached_has_bits, 0x000000ffU)) {
     if (CheckHasBit(cached_has_bits, 0x00000001U)) {
       if (!from._internal_user_id().empty()) {
         _this->_internal_set_user_id(from._internal_user_id());
@@ -11208,6 +11378,11 @@ void GroupMember::MergeImpl(::google::protobuf::MessageLite& to_msg,
       }
     }
     if (CheckHasBit(cached_has_bits, 0x00000040U)) {
+      if (from._internal_muted_until_ts() != 0) {
+        _this->_impl_.muted_until_ts_ = from._impl_.muted_until_ts_;
+      }
+    }
+    if (CheckHasBit(cached_has_bits, 0x00000080U)) {
       if (from._internal_role() != 0) {
         _this->_impl_.role_ = from._impl_.role_;
       }
@@ -12358,6 +12533,1197 @@ void GroupMemberAliasUpdatedNotify::InternalSwap(GroupMemberAliasUpdatedNotify* 
 }
 
 ::google::protobuf::Metadata GroupMemberAliasUpdatedNotify::GetMetadata() const {
+  return ::google::protobuf::Message::GetMetadataImpl(GetClassData()->full());
+}
+// ===================================================================
+
+class SetGroupMuteRequest::_Internal {
+ public:
+  using HasBits =
+      decltype(::std::declval<SetGroupMuteRequest>()._impl_._has_bits_);
+  static constexpr ::int32_t kHasBitsOffset =
+      8 * PROTOBUF_FIELD_OFFSET(SetGroupMuteRequest, _impl_._has_bits_);
+};
+
+SetGroupMuteRequest::SetGroupMuteRequest(::google::protobuf::Arena* PROTOBUF_NULLABLE arena)
+#if defined(PROTOBUF_CUSTOM_VTABLE)
+    : ::google::protobuf::Message(arena, SetGroupMuteRequest_class_data_.base()) {
+#else   // PROTOBUF_CUSTOM_VTABLE
+    : ::google::protobuf::Message(arena) {
+#endif  // PROTOBUF_CUSTOM_VTABLE
+  SharedCtor(arena);
+  // @@protoc_insertion_point(arena_constructor:chirp.chat.SetGroupMuteRequest)
+}
+PROTOBUF_NDEBUG_INLINE SetGroupMuteRequest::Impl_::Impl_(
+    [[maybe_unused]] ::google::protobuf::internal::InternalVisibility visibility,
+    [[maybe_unused]] ::google::protobuf::Arena* PROTOBUF_NULLABLE arena, const Impl_& from,
+    [[maybe_unused]] const ::chirp::chat::SetGroupMuteRequest& from_msg)
+      : _has_bits_{from._has_bits_},
+        _cached_size_{0},
+        group_id_(arena, from.group_id_),
+        target_user_id_(arena, from.target_user_id_) {}
+
+SetGroupMuteRequest::SetGroupMuteRequest(
+    ::google::protobuf::Arena* PROTOBUF_NULLABLE arena,
+    const SetGroupMuteRequest& from)
+#if defined(PROTOBUF_CUSTOM_VTABLE)
+    : ::google::protobuf::Message(arena, SetGroupMuteRequest_class_data_.base()) {
+#else   // PROTOBUF_CUSTOM_VTABLE
+    : ::google::protobuf::Message(arena) {
+#endif  // PROTOBUF_CUSTOM_VTABLE
+  SetGroupMuteRequest* const _this = this;
+  (void)_this;
+  _internal_metadata_.MergeFrom<::google::protobuf::UnknownFieldSet>(
+      from._internal_metadata_);
+  new (&_impl_) Impl_(internal_visibility(), arena, from._impl_, from);
+  _impl_.duration_sec_ = from._impl_.duration_sec_;
+
+  // @@protoc_insertion_point(copy_constructor:chirp.chat.SetGroupMuteRequest)
+}
+PROTOBUF_NDEBUG_INLINE SetGroupMuteRequest::Impl_::Impl_(
+    [[maybe_unused]] ::google::protobuf::internal::InternalVisibility visibility,
+    [[maybe_unused]] ::google::protobuf::Arena* PROTOBUF_NULLABLE arena)
+      : _cached_size_{0},
+        group_id_(arena),
+        target_user_id_(arena) {}
+
+inline void SetGroupMuteRequest::SharedCtor(::_pb::Arena* PROTOBUF_NULLABLE arena) {
+  new (&_impl_) Impl_(internal_visibility(), arena);
+  _impl_.duration_sec_ = {};
+}
+SetGroupMuteRequest::~SetGroupMuteRequest() {
+  // @@protoc_insertion_point(destructor:chirp.chat.SetGroupMuteRequest)
+  SharedDtor(*this);
+}
+inline void SetGroupMuteRequest::SharedDtor(MessageLite& self) {
+  SetGroupMuteRequest& this_ = static_cast<SetGroupMuteRequest&>(self);
+  if constexpr (::_pbi::DebugHardenCheckHasBitConsistency()) {
+    this_.CheckHasBitConsistency();
+  }
+  this_._internal_metadata_.Delete<::google::protobuf::UnknownFieldSet>();
+  ABSL_DCHECK(this_.GetArena() == nullptr);
+  this_._impl_.group_id_.Destroy();
+  this_._impl_.target_user_id_.Destroy();
+  this_._impl_.~Impl_();
+}
+
+inline void* PROTOBUF_NONNULL SetGroupMuteRequest::PlacementNew_(
+    const void* PROTOBUF_NONNULL, void* PROTOBUF_NONNULL mem,
+    ::google::protobuf::Arena* PROTOBUF_NULLABLE arena) {
+  return ::new (mem) SetGroupMuteRequest(arena);
+}
+constexpr auto SetGroupMuteRequest::InternalNewImpl_() {
+  return ::google::protobuf::internal::MessageCreator::CopyInit(sizeof(SetGroupMuteRequest),
+                                            alignof(SetGroupMuteRequest));
+}
+constexpr auto SetGroupMuteRequest::InternalGenerateClassData_() {
+  return ::google::protobuf::internal::ClassDataFull{
+      ::google::protobuf::internal::ClassData{
+          &_SetGroupMuteRequest_default_instance_._instance,
+          &_table_.header,
+          nullptr,  // OnDemandRegisterArenaDtor
+          nullptr,  // IsInitialized
+          &SetGroupMuteRequest::MergeImpl,
+          ::google::protobuf::Message::GetNewImpl<SetGroupMuteRequest>(),
+#if defined(PROTOBUF_CUSTOM_VTABLE)
+          &SetGroupMuteRequest::SharedDtor,
+          ::google::protobuf::Message::GetClearImpl<SetGroupMuteRequest>(), &SetGroupMuteRequest::ByteSizeLong,
+              &SetGroupMuteRequest::_InternalSerialize,
+#endif  // PROTOBUF_CUSTOM_VTABLE
+          PROTOBUF_FIELD_OFFSET(SetGroupMuteRequest, _impl_._cached_size_),
+          false,
+      },
+      &SetGroupMuteRequest::kDescriptorMethods,
+      &descriptor_table_proto_2fchat_2eproto,
+      nullptr,  // tracker
+  };
+}
+
+PROTOBUF_CONSTINIT PROTOBUF_ATTRIBUTE_INIT_PRIORITY1 const
+    ::google::protobuf::internal::ClassDataFull SetGroupMuteRequest_class_data_ =
+        SetGroupMuteRequest::InternalGenerateClassData_();
+
+PROTOBUF_ATTRIBUTE_WEAK const ::google::protobuf::internal::ClassData* PROTOBUF_NONNULL
+SetGroupMuteRequest::GetClassData() const {
+  ::google::protobuf::internal::PrefetchToLocalCache(&SetGroupMuteRequest_class_data_);
+  ::google::protobuf::internal::PrefetchToLocalCache(SetGroupMuteRequest_class_data_.tc_table);
+  return SetGroupMuteRequest_class_data_.base();
+}
+PROTOBUF_CONSTINIT PROTOBUF_ATTRIBUTE_INIT_PRIORITY1
+const ::_pbi::TcParseTable<2, 3, 0, 61, 2>
+SetGroupMuteRequest::_table_ = {
+  {
+    PROTOBUF_FIELD_OFFSET(SetGroupMuteRequest, _impl_._has_bits_),
+    0, // no _extensions_
+    3, 24,  // max_field_number, fast_idx_mask
+    offsetof(decltype(_table_), field_lookup_table),
+    4294967288,  // skipmap
+    offsetof(decltype(_table_), field_entries),
+    3,  // num_field_entries
+    0,  // num_aux_entries
+    offsetof(decltype(_table_), field_names),  // no aux_entries
+    SetGroupMuteRequest_class_data_.base(),
+    nullptr,  // post_loop_handler
+    ::_pbi::TcParser::GenericFallback,  // fallback
+    #ifdef PROTOBUF_PREFETCH_PARSE_TABLE
+    ::_pbi::TcParser::GetTable<::chirp::chat::SetGroupMuteRequest>(),  // to_prefetch
+    #endif  // PROTOBUF_PREFETCH_PARSE_TABLE
+  }, {{
+    {::_pbi::TcParser::MiniParse, {}},
+    // string group_id = 1;
+    {::_pbi::TcParser::FastUS1,
+     {10, 0, 0,
+      PROTOBUF_FIELD_OFFSET(SetGroupMuteRequest, _impl_.group_id_)}},
+    // string target_user_id = 2;
+    {::_pbi::TcParser::FastUS1,
+     {18, 1, 0,
+      PROTOBUF_FIELD_OFFSET(SetGroupMuteRequest, _impl_.target_user_id_)}},
+    // int64 duration_sec = 3;
+    {::_pbi::TcParser::SingularVarintNoZag1<::uint64_t, offsetof(SetGroupMuteRequest, _impl_.duration_sec_), 2>(),
+     {24, 2, 0,
+      PROTOBUF_FIELD_OFFSET(SetGroupMuteRequest, _impl_.duration_sec_)}},
+  }}, {{
+    65535, 65535
+  }}, {{
+    // string group_id = 1;
+    {PROTOBUF_FIELD_OFFSET(SetGroupMuteRequest, _impl_.group_id_), _Internal::kHasBitsOffset + 0, 0, (0 | ::_fl::kFcOptional | ::_fl::kUtf8String | ::_fl::kRepAString)},
+    // string target_user_id = 2;
+    {PROTOBUF_FIELD_OFFSET(SetGroupMuteRequest, _impl_.target_user_id_), _Internal::kHasBitsOffset + 1, 0, (0 | ::_fl::kFcOptional | ::_fl::kUtf8String | ::_fl::kRepAString)},
+    // int64 duration_sec = 3;
+    {PROTOBUF_FIELD_OFFSET(SetGroupMuteRequest, _impl_.duration_sec_), _Internal::kHasBitsOffset + 2, 0, (0 | ::_fl::kFcOptional | ::_fl::kInt64)},
+  }},
+  // no aux_entries
+  {{
+    "\36\10\16\0\0\0\0\0"
+    "chirp.chat.SetGroupMuteRequest"
+    "group_id"
+    "target_user_id"
+  }},
+};
+PROTOBUF_NOINLINE void SetGroupMuteRequest::Clear() {
+// @@protoc_insertion_point(message_clear_start:chirp.chat.SetGroupMuteRequest)
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  ::uint32_t cached_has_bits = 0;
+  // Prevent compiler warnings about cached_has_bits being unused
+  (void) cached_has_bits;
+
+  cached_has_bits = _impl_._has_bits_[0];
+  if (BatchCheckHasBit(cached_has_bits, 0x00000003U)) {
+    if (CheckHasBit(cached_has_bits, 0x00000001U)) {
+      _impl_.group_id_.ClearNonDefaultToEmpty();
+    }
+    if (CheckHasBit(cached_has_bits, 0x00000002U)) {
+      _impl_.target_user_id_.ClearNonDefaultToEmpty();
+    }
+  }
+  _impl_.duration_sec_ = ::int64_t{0};
+  _impl_._has_bits_.Clear();
+  _internal_metadata_.Clear<::google::protobuf::UnknownFieldSet>();
+}
+
+#if defined(PROTOBUF_CUSTOM_VTABLE)
+::uint8_t* PROTOBUF_NONNULL SetGroupMuteRequest::_InternalSerialize(
+    const ::google::protobuf::MessageLite& base, ::uint8_t* PROTOBUF_NONNULL target,
+    ::google::protobuf::io::EpsCopyOutputStream* PROTOBUF_NONNULL stream) {
+  const SetGroupMuteRequest& this_ = static_cast<const SetGroupMuteRequest&>(base);
+#else   // PROTOBUF_CUSTOM_VTABLE
+::uint8_t* PROTOBUF_NONNULL SetGroupMuteRequest::_InternalSerialize(
+    ::uint8_t* PROTOBUF_NONNULL target,
+    ::google::protobuf::io::EpsCopyOutputStream* PROTOBUF_NONNULL stream) const {
+  const SetGroupMuteRequest& this_ = *this;
+#endif  // PROTOBUF_CUSTOM_VTABLE
+  if constexpr (::_pbi::DebugHardenCheckHasBitConsistency()) {
+    this_.CheckHasBitConsistency();
+  }
+  // @@protoc_insertion_point(serialize_to_array_start:chirp.chat.SetGroupMuteRequest)
+  ::uint32_t cached_has_bits = 0;
+  (void)cached_has_bits;
+
+  cached_has_bits = this_._impl_._has_bits_[0];
+  // string group_id = 1;
+  if (CheckHasBit(cached_has_bits, 0x00000001U)) {
+    if (!this_._internal_group_id().empty()) {
+      const ::std::string& _s = this_._internal_group_id();
+      ::google::protobuf::internal::WireFormatLite::VerifyUtf8String(
+          _s.data(), static_cast<int>(_s.length()), ::google::protobuf::internal::WireFormatLite::SERIALIZE, "chirp.chat.SetGroupMuteRequest.group_id");
+      target = stream->WriteStringMaybeAliased(1, _s, target);
+    }
+  }
+
+  // string target_user_id = 2;
+  if (CheckHasBit(cached_has_bits, 0x00000002U)) {
+    if (!this_._internal_target_user_id().empty()) {
+      const ::std::string& _s = this_._internal_target_user_id();
+      ::google::protobuf::internal::WireFormatLite::VerifyUtf8String(
+          _s.data(), static_cast<int>(_s.length()), ::google::protobuf::internal::WireFormatLite::SERIALIZE, "chirp.chat.SetGroupMuteRequest.target_user_id");
+      target = stream->WriteStringMaybeAliased(2, _s, target);
+    }
+  }
+
+  // int64 duration_sec = 3;
+  if (CheckHasBit(cached_has_bits, 0x00000004U)) {
+    if (this_._internal_duration_sec() != 0) {
+      target =
+          ::google::protobuf::internal::WireFormatLite::WriteInt64ToArrayWithField<3>(
+              stream, this_._internal_duration_sec(), target);
+    }
+  }
+
+  if (ABSL_PREDICT_FALSE(this_._internal_metadata_.have_unknown_fields())) {
+    target =
+        ::_pbi::WireFormat::InternalSerializeUnknownFieldsToArray(
+            this_._internal_metadata_.unknown_fields<::google::protobuf::UnknownFieldSet>(::google::protobuf::UnknownFieldSet::default_instance), target, stream);
+  }
+  // @@protoc_insertion_point(serialize_to_array_end:chirp.chat.SetGroupMuteRequest)
+  return target;
+}
+
+#if defined(PROTOBUF_CUSTOM_VTABLE)
+::size_t SetGroupMuteRequest::ByteSizeLong(const MessageLite& base) {
+  const SetGroupMuteRequest& this_ = static_cast<const SetGroupMuteRequest&>(base);
+#else   // PROTOBUF_CUSTOM_VTABLE
+::size_t SetGroupMuteRequest::ByteSizeLong() const {
+  const SetGroupMuteRequest& this_ = *this;
+#endif  // PROTOBUF_CUSTOM_VTABLE
+  // @@protoc_insertion_point(message_byte_size_start:chirp.chat.SetGroupMuteRequest)
+  ::size_t total_size = 0;
+
+  ::uint32_t cached_has_bits = 0;
+  // Prevent compiler warnings about cached_has_bits being unused
+  (void)cached_has_bits;
+
+  ::_pbi::Prefetch5LinesFrom7Lines(&this_);
+  cached_has_bits = this_._impl_._has_bits_[0];
+  if (BatchCheckHasBit(cached_has_bits, 0x00000007U)) {
+    // string group_id = 1;
+    if (CheckHasBit(cached_has_bits, 0x00000001U)) {
+      if (!this_._internal_group_id().empty()) {
+        total_size += 1 + ::google::protobuf::internal::WireFormatLite::StringSize(
+                                        this_._internal_group_id());
+      }
+    }
+    // string target_user_id = 2;
+    if (CheckHasBit(cached_has_bits, 0x00000002U)) {
+      if (!this_._internal_target_user_id().empty()) {
+        total_size += 1 + ::google::protobuf::internal::WireFormatLite::StringSize(
+                                        this_._internal_target_user_id());
+      }
+    }
+    // int64 duration_sec = 3;
+    if (CheckHasBit(cached_has_bits, 0x00000004U)) {
+      if (this_._internal_duration_sec() != 0) {
+        total_size += ::_pbi::WireFormatLite::Int64SizePlusOne(
+            this_._internal_duration_sec());
+      }
+    }
+  }
+  return this_.MaybeComputeUnknownFieldsSize(total_size,
+                                             &this_._impl_._cached_size_);
+}
+
+void SetGroupMuteRequest::MergeImpl(::google::protobuf::MessageLite& to_msg,
+                            const ::google::protobuf::MessageLite& from_msg) {
+   auto* const _this =
+      static_cast<SetGroupMuteRequest*>(&to_msg);
+  auto& from = static_cast<const SetGroupMuteRequest&>(from_msg);
+  if constexpr (::_pbi::DebugHardenCheckHasBitConsistency()) {
+    from.CheckHasBitConsistency();
+  }
+  // @@protoc_insertion_point(class_specific_merge_from_start:chirp.chat.SetGroupMuteRequest)
+  ABSL_DCHECK_NE(&from, _this);
+  ::uint32_t cached_has_bits = 0;
+  (void)cached_has_bits;
+
+  cached_has_bits = from._impl_._has_bits_[0];
+  if (BatchCheckHasBit(cached_has_bits, 0x00000007U)) {
+    if (CheckHasBit(cached_has_bits, 0x00000001U)) {
+      if (!from._internal_group_id().empty()) {
+        _this->_internal_set_group_id(from._internal_group_id());
+      } else {
+        if (_this->_impl_.group_id_.IsDefault()) {
+          _this->_internal_set_group_id("");
+        }
+      }
+    }
+    if (CheckHasBit(cached_has_bits, 0x00000002U)) {
+      if (!from._internal_target_user_id().empty()) {
+        _this->_internal_set_target_user_id(from._internal_target_user_id());
+      } else {
+        if (_this->_impl_.target_user_id_.IsDefault()) {
+          _this->_internal_set_target_user_id("");
+        }
+      }
+    }
+    if (CheckHasBit(cached_has_bits, 0x00000004U)) {
+      if (from._internal_duration_sec() != 0) {
+        _this->_impl_.duration_sec_ = from._impl_.duration_sec_;
+      }
+    }
+  }
+  _this->_impl_._has_bits_[0] |= cached_has_bits;
+  _this->_internal_metadata_.MergeFrom<::google::protobuf::UnknownFieldSet>(
+      from._internal_metadata_);
+}
+
+void SetGroupMuteRequest::CopyFrom(const SetGroupMuteRequest& from) {
+  // @@protoc_insertion_point(class_specific_copy_from_start:chirp.chat.SetGroupMuteRequest)
+  if (&from == this) return;
+  Clear();
+  MergeFrom(from);
+}
+
+
+void SetGroupMuteRequest::InternalSwap(SetGroupMuteRequest* PROTOBUF_RESTRICT PROTOBUF_NONNULL other) {
+  using ::std::swap;
+  auto* arena = GetArena();
+  ABSL_DCHECK_EQ(arena, other->GetArena());
+  _internal_metadata_.InternalSwap(&other->_internal_metadata_);
+  swap(_impl_._has_bits_[0], other->_impl_._has_bits_[0]);
+  ::_pbi::ArenaStringPtr::InternalSwap(&_impl_.group_id_, &other->_impl_.group_id_, arena);
+  ::_pbi::ArenaStringPtr::InternalSwap(&_impl_.target_user_id_, &other->_impl_.target_user_id_, arena);
+  swap(_impl_.duration_sec_, other->_impl_.duration_sec_);
+}
+
+::google::protobuf::Metadata SetGroupMuteRequest::GetMetadata() const {
+  return ::google::protobuf::Message::GetMetadataImpl(GetClassData()->full());
+}
+// ===================================================================
+
+class SetGroupMuteResponse::_Internal {
+ public:
+  using HasBits =
+      decltype(::std::declval<SetGroupMuteResponse>()._impl_._has_bits_);
+  static constexpr ::int32_t kHasBitsOffset =
+      8 * PROTOBUF_FIELD_OFFSET(SetGroupMuteResponse, _impl_._has_bits_);
+};
+
+SetGroupMuteResponse::SetGroupMuteResponse(::google::protobuf::Arena* PROTOBUF_NULLABLE arena)
+#if defined(PROTOBUF_CUSTOM_VTABLE)
+    : ::google::protobuf::Message(arena, SetGroupMuteResponse_class_data_.base()) {
+#else   // PROTOBUF_CUSTOM_VTABLE
+    : ::google::protobuf::Message(arena) {
+#endif  // PROTOBUF_CUSTOM_VTABLE
+  SharedCtor(arena);
+  // @@protoc_insertion_point(arena_constructor:chirp.chat.SetGroupMuteResponse)
+}
+PROTOBUF_NDEBUG_INLINE SetGroupMuteResponse::Impl_::Impl_(
+    [[maybe_unused]] ::google::protobuf::internal::InternalVisibility visibility,
+    [[maybe_unused]] ::google::protobuf::Arena* PROTOBUF_NULLABLE arena, const Impl_& from,
+    [[maybe_unused]] const ::chirp::chat::SetGroupMuteResponse& from_msg)
+      : _has_bits_{from._has_bits_},
+        _cached_size_{0},
+        group_id_(arena, from.group_id_),
+        user_id_(arena, from.user_id_) {}
+
+SetGroupMuteResponse::SetGroupMuteResponse(
+    ::google::protobuf::Arena* PROTOBUF_NULLABLE arena,
+    const SetGroupMuteResponse& from)
+#if defined(PROTOBUF_CUSTOM_VTABLE)
+    : ::google::protobuf::Message(arena, SetGroupMuteResponse_class_data_.base()) {
+#else   // PROTOBUF_CUSTOM_VTABLE
+    : ::google::protobuf::Message(arena) {
+#endif  // PROTOBUF_CUSTOM_VTABLE
+  SetGroupMuteResponse* const _this = this;
+  (void)_this;
+  _internal_metadata_.MergeFrom<::google::protobuf::UnknownFieldSet>(
+      from._internal_metadata_);
+  new (&_impl_) Impl_(internal_visibility(), arena, from._impl_, from);
+  ::memcpy(reinterpret_cast<char*>(&_impl_) +
+               offsetof(Impl_, muted_until_ts_),
+           reinterpret_cast<const char*>(&from._impl_) +
+               offsetof(Impl_, muted_until_ts_),
+           offsetof(Impl_, code_) -
+               offsetof(Impl_, muted_until_ts_) +
+               sizeof(Impl_::code_));
+
+  // @@protoc_insertion_point(copy_constructor:chirp.chat.SetGroupMuteResponse)
+}
+PROTOBUF_NDEBUG_INLINE SetGroupMuteResponse::Impl_::Impl_(
+    [[maybe_unused]] ::google::protobuf::internal::InternalVisibility visibility,
+    [[maybe_unused]] ::google::protobuf::Arena* PROTOBUF_NULLABLE arena)
+      : _cached_size_{0},
+        group_id_(arena),
+        user_id_(arena) {}
+
+inline void SetGroupMuteResponse::SharedCtor(::_pb::Arena* PROTOBUF_NULLABLE arena) {
+  new (&_impl_) Impl_(internal_visibility(), arena);
+  ::memset(reinterpret_cast<char*>(&_impl_) +
+               offsetof(Impl_, muted_until_ts_),
+           0,
+           offsetof(Impl_, code_) -
+               offsetof(Impl_, muted_until_ts_) +
+               sizeof(Impl_::code_));
+}
+SetGroupMuteResponse::~SetGroupMuteResponse() {
+  // @@protoc_insertion_point(destructor:chirp.chat.SetGroupMuteResponse)
+  SharedDtor(*this);
+}
+inline void SetGroupMuteResponse::SharedDtor(MessageLite& self) {
+  SetGroupMuteResponse& this_ = static_cast<SetGroupMuteResponse&>(self);
+  if constexpr (::_pbi::DebugHardenCheckHasBitConsistency()) {
+    this_.CheckHasBitConsistency();
+  }
+  this_._internal_metadata_.Delete<::google::protobuf::UnknownFieldSet>();
+  ABSL_DCHECK(this_.GetArena() == nullptr);
+  this_._impl_.group_id_.Destroy();
+  this_._impl_.user_id_.Destroy();
+  this_._impl_.~Impl_();
+}
+
+inline void* PROTOBUF_NONNULL SetGroupMuteResponse::PlacementNew_(
+    const void* PROTOBUF_NONNULL, void* PROTOBUF_NONNULL mem,
+    ::google::protobuf::Arena* PROTOBUF_NULLABLE arena) {
+  return ::new (mem) SetGroupMuteResponse(arena);
+}
+constexpr auto SetGroupMuteResponse::InternalNewImpl_() {
+  return ::google::protobuf::internal::MessageCreator::CopyInit(sizeof(SetGroupMuteResponse),
+                                            alignof(SetGroupMuteResponse));
+}
+constexpr auto SetGroupMuteResponse::InternalGenerateClassData_() {
+  return ::google::protobuf::internal::ClassDataFull{
+      ::google::protobuf::internal::ClassData{
+          &_SetGroupMuteResponse_default_instance_._instance,
+          &_table_.header,
+          nullptr,  // OnDemandRegisterArenaDtor
+          nullptr,  // IsInitialized
+          &SetGroupMuteResponse::MergeImpl,
+          ::google::protobuf::Message::GetNewImpl<SetGroupMuteResponse>(),
+#if defined(PROTOBUF_CUSTOM_VTABLE)
+          &SetGroupMuteResponse::SharedDtor,
+          ::google::protobuf::Message::GetClearImpl<SetGroupMuteResponse>(), &SetGroupMuteResponse::ByteSizeLong,
+              &SetGroupMuteResponse::_InternalSerialize,
+#endif  // PROTOBUF_CUSTOM_VTABLE
+          PROTOBUF_FIELD_OFFSET(SetGroupMuteResponse, _impl_._cached_size_),
+          false,
+      },
+      &SetGroupMuteResponse::kDescriptorMethods,
+      &descriptor_table_proto_2fchat_2eproto,
+      nullptr,  // tracker
+  };
+}
+
+PROTOBUF_CONSTINIT PROTOBUF_ATTRIBUTE_INIT_PRIORITY1 const
+    ::google::protobuf::internal::ClassDataFull SetGroupMuteResponse_class_data_ =
+        SetGroupMuteResponse::InternalGenerateClassData_();
+
+PROTOBUF_ATTRIBUTE_WEAK const ::google::protobuf::internal::ClassData* PROTOBUF_NONNULL
+SetGroupMuteResponse::GetClassData() const {
+  ::google::protobuf::internal::PrefetchToLocalCache(&SetGroupMuteResponse_class_data_);
+  ::google::protobuf::internal::PrefetchToLocalCache(SetGroupMuteResponse_class_data_.tc_table);
+  return SetGroupMuteResponse_class_data_.base();
+}
+PROTOBUF_CONSTINIT PROTOBUF_ATTRIBUTE_INIT_PRIORITY1
+const ::_pbi::TcParseTable<2, 4, 0, 55, 2>
+SetGroupMuteResponse::_table_ = {
+  {
+    PROTOBUF_FIELD_OFFSET(SetGroupMuteResponse, _impl_._has_bits_),
+    0, // no _extensions_
+    4, 24,  // max_field_number, fast_idx_mask
+    offsetof(decltype(_table_), field_lookup_table),
+    4294967280,  // skipmap
+    offsetof(decltype(_table_), field_entries),
+    4,  // num_field_entries
+    0,  // num_aux_entries
+    offsetof(decltype(_table_), field_names),  // no aux_entries
+    SetGroupMuteResponse_class_data_.base(),
+    nullptr,  // post_loop_handler
+    ::_pbi::TcParser::GenericFallback,  // fallback
+    #ifdef PROTOBUF_PREFETCH_PARSE_TABLE
+    ::_pbi::TcParser::GetTable<::chirp::chat::SetGroupMuteResponse>(),  // to_prefetch
+    #endif  // PROTOBUF_PREFETCH_PARSE_TABLE
+  }, {{
+    // int64 muted_until_ts = 4;
+    {::_pbi::TcParser::SingularVarintNoZag1<::uint64_t, offsetof(SetGroupMuteResponse, _impl_.muted_until_ts_), 2>(),
+     {32, 2, 0,
+      PROTOBUF_FIELD_OFFSET(SetGroupMuteResponse, _impl_.muted_until_ts_)}},
+    // .chirp.common.ErrorCode code = 1;
+    {::_pbi::TcParser::SingularVarintNoZag1<::uint32_t, offsetof(SetGroupMuteResponse, _impl_.code_), 3>(),
+     {8, 3, 0,
+      PROTOBUF_FIELD_OFFSET(SetGroupMuteResponse, _impl_.code_)}},
+    // string group_id = 2;
+    {::_pbi::TcParser::FastUS1,
+     {18, 0, 0,
+      PROTOBUF_FIELD_OFFSET(SetGroupMuteResponse, _impl_.group_id_)}},
+    // string user_id = 3;
+    {::_pbi::TcParser::FastUS1,
+     {26, 1, 0,
+      PROTOBUF_FIELD_OFFSET(SetGroupMuteResponse, _impl_.user_id_)}},
+  }}, {{
+    65535, 65535
+  }}, {{
+    // .chirp.common.ErrorCode code = 1;
+    {PROTOBUF_FIELD_OFFSET(SetGroupMuteResponse, _impl_.code_), _Internal::kHasBitsOffset + 3, 0, (0 | ::_fl::kFcOptional | ::_fl::kOpenEnum)},
+    // string group_id = 2;
+    {PROTOBUF_FIELD_OFFSET(SetGroupMuteResponse, _impl_.group_id_), _Internal::kHasBitsOffset + 0, 0, (0 | ::_fl::kFcOptional | ::_fl::kUtf8String | ::_fl::kRepAString)},
+    // string user_id = 3;
+    {PROTOBUF_FIELD_OFFSET(SetGroupMuteResponse, _impl_.user_id_), _Internal::kHasBitsOffset + 1, 0, (0 | ::_fl::kFcOptional | ::_fl::kUtf8String | ::_fl::kRepAString)},
+    // int64 muted_until_ts = 4;
+    {PROTOBUF_FIELD_OFFSET(SetGroupMuteResponse, _impl_.muted_until_ts_), _Internal::kHasBitsOffset + 2, 0, (0 | ::_fl::kFcOptional | ::_fl::kInt64)},
+  }},
+  // no aux_entries
+  {{
+    "\37\0\10\7\0\0\0\0"
+    "chirp.chat.SetGroupMuteResponse"
+    "group_id"
+    "user_id"
+  }},
+};
+PROTOBUF_NOINLINE void SetGroupMuteResponse::Clear() {
+// @@protoc_insertion_point(message_clear_start:chirp.chat.SetGroupMuteResponse)
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  ::uint32_t cached_has_bits = 0;
+  // Prevent compiler warnings about cached_has_bits being unused
+  (void) cached_has_bits;
+
+  cached_has_bits = _impl_._has_bits_[0];
+  if (BatchCheckHasBit(cached_has_bits, 0x00000003U)) {
+    if (CheckHasBit(cached_has_bits, 0x00000001U)) {
+      _impl_.group_id_.ClearNonDefaultToEmpty();
+    }
+    if (CheckHasBit(cached_has_bits, 0x00000002U)) {
+      _impl_.user_id_.ClearNonDefaultToEmpty();
+    }
+  }
+  if (BatchCheckHasBit(cached_has_bits, 0x0000000cU)) {
+    ::memset(&_impl_.muted_until_ts_, 0, static_cast<::size_t>(
+        reinterpret_cast<char*>(&_impl_.code_) -
+        reinterpret_cast<char*>(&_impl_.muted_until_ts_)) + sizeof(_impl_.code_));
+  }
+  _impl_._has_bits_.Clear();
+  _internal_metadata_.Clear<::google::protobuf::UnknownFieldSet>();
+}
+
+#if defined(PROTOBUF_CUSTOM_VTABLE)
+::uint8_t* PROTOBUF_NONNULL SetGroupMuteResponse::_InternalSerialize(
+    const ::google::protobuf::MessageLite& base, ::uint8_t* PROTOBUF_NONNULL target,
+    ::google::protobuf::io::EpsCopyOutputStream* PROTOBUF_NONNULL stream) {
+  const SetGroupMuteResponse& this_ = static_cast<const SetGroupMuteResponse&>(base);
+#else   // PROTOBUF_CUSTOM_VTABLE
+::uint8_t* PROTOBUF_NONNULL SetGroupMuteResponse::_InternalSerialize(
+    ::uint8_t* PROTOBUF_NONNULL target,
+    ::google::protobuf::io::EpsCopyOutputStream* PROTOBUF_NONNULL stream) const {
+  const SetGroupMuteResponse& this_ = *this;
+#endif  // PROTOBUF_CUSTOM_VTABLE
+  if constexpr (::_pbi::DebugHardenCheckHasBitConsistency()) {
+    this_.CheckHasBitConsistency();
+  }
+  // @@protoc_insertion_point(serialize_to_array_start:chirp.chat.SetGroupMuteResponse)
+  ::uint32_t cached_has_bits = 0;
+  (void)cached_has_bits;
+
+  cached_has_bits = this_._impl_._has_bits_[0];
+  // .chirp.common.ErrorCode code = 1;
+  if (CheckHasBit(cached_has_bits, 0x00000008U)) {
+    if (this_._internal_code() != 0) {
+      target = stream->EnsureSpace(target);
+      target = ::_pbi::WireFormatLite::WriteEnumToArray(
+          1, this_._internal_code(), target);
+    }
+  }
+
+  // string group_id = 2;
+  if (CheckHasBit(cached_has_bits, 0x00000001U)) {
+    if (!this_._internal_group_id().empty()) {
+      const ::std::string& _s = this_._internal_group_id();
+      ::google::protobuf::internal::WireFormatLite::VerifyUtf8String(
+          _s.data(), static_cast<int>(_s.length()), ::google::protobuf::internal::WireFormatLite::SERIALIZE, "chirp.chat.SetGroupMuteResponse.group_id");
+      target = stream->WriteStringMaybeAliased(2, _s, target);
+    }
+  }
+
+  // string user_id = 3;
+  if (CheckHasBit(cached_has_bits, 0x00000002U)) {
+    if (!this_._internal_user_id().empty()) {
+      const ::std::string& _s = this_._internal_user_id();
+      ::google::protobuf::internal::WireFormatLite::VerifyUtf8String(
+          _s.data(), static_cast<int>(_s.length()), ::google::protobuf::internal::WireFormatLite::SERIALIZE, "chirp.chat.SetGroupMuteResponse.user_id");
+      target = stream->WriteStringMaybeAliased(3, _s, target);
+    }
+  }
+
+  // int64 muted_until_ts = 4;
+  if (CheckHasBit(cached_has_bits, 0x00000004U)) {
+    if (this_._internal_muted_until_ts() != 0) {
+      target =
+          ::google::protobuf::internal::WireFormatLite::WriteInt64ToArrayWithField<4>(
+              stream, this_._internal_muted_until_ts(), target);
+    }
+  }
+
+  if (ABSL_PREDICT_FALSE(this_._internal_metadata_.have_unknown_fields())) {
+    target =
+        ::_pbi::WireFormat::InternalSerializeUnknownFieldsToArray(
+            this_._internal_metadata_.unknown_fields<::google::protobuf::UnknownFieldSet>(::google::protobuf::UnknownFieldSet::default_instance), target, stream);
+  }
+  // @@protoc_insertion_point(serialize_to_array_end:chirp.chat.SetGroupMuteResponse)
+  return target;
+}
+
+#if defined(PROTOBUF_CUSTOM_VTABLE)
+::size_t SetGroupMuteResponse::ByteSizeLong(const MessageLite& base) {
+  const SetGroupMuteResponse& this_ = static_cast<const SetGroupMuteResponse&>(base);
+#else   // PROTOBUF_CUSTOM_VTABLE
+::size_t SetGroupMuteResponse::ByteSizeLong() const {
+  const SetGroupMuteResponse& this_ = *this;
+#endif  // PROTOBUF_CUSTOM_VTABLE
+  // @@protoc_insertion_point(message_byte_size_start:chirp.chat.SetGroupMuteResponse)
+  ::size_t total_size = 0;
+
+  ::uint32_t cached_has_bits = 0;
+  // Prevent compiler warnings about cached_has_bits being unused
+  (void)cached_has_bits;
+
+  ::_pbi::Prefetch5LinesFrom7Lines(&this_);
+  cached_has_bits = this_._impl_._has_bits_[0];
+  if (BatchCheckHasBit(cached_has_bits, 0x0000000fU)) {
+    // string group_id = 2;
+    if (CheckHasBit(cached_has_bits, 0x00000001U)) {
+      if (!this_._internal_group_id().empty()) {
+        total_size += 1 + ::google::protobuf::internal::WireFormatLite::StringSize(
+                                        this_._internal_group_id());
+      }
+    }
+    // string user_id = 3;
+    if (CheckHasBit(cached_has_bits, 0x00000002U)) {
+      if (!this_._internal_user_id().empty()) {
+        total_size += 1 + ::google::protobuf::internal::WireFormatLite::StringSize(
+                                        this_._internal_user_id());
+      }
+    }
+    // int64 muted_until_ts = 4;
+    if (CheckHasBit(cached_has_bits, 0x00000004U)) {
+      if (this_._internal_muted_until_ts() != 0) {
+        total_size += ::_pbi::WireFormatLite::Int64SizePlusOne(
+            this_._internal_muted_until_ts());
+      }
+    }
+    // .chirp.common.ErrorCode code = 1;
+    if (CheckHasBit(cached_has_bits, 0x00000008U)) {
+      if (this_._internal_code() != 0) {
+        total_size += 1 +
+                      ::_pbi::WireFormatLite::EnumSize(this_._internal_code());
+      }
+    }
+  }
+  return this_.MaybeComputeUnknownFieldsSize(total_size,
+                                             &this_._impl_._cached_size_);
+}
+
+void SetGroupMuteResponse::MergeImpl(::google::protobuf::MessageLite& to_msg,
+                            const ::google::protobuf::MessageLite& from_msg) {
+   auto* const _this =
+      static_cast<SetGroupMuteResponse*>(&to_msg);
+  auto& from = static_cast<const SetGroupMuteResponse&>(from_msg);
+  if constexpr (::_pbi::DebugHardenCheckHasBitConsistency()) {
+    from.CheckHasBitConsistency();
+  }
+  // @@protoc_insertion_point(class_specific_merge_from_start:chirp.chat.SetGroupMuteResponse)
+  ABSL_DCHECK_NE(&from, _this);
+  ::uint32_t cached_has_bits = 0;
+  (void)cached_has_bits;
+
+  cached_has_bits = from._impl_._has_bits_[0];
+  if (BatchCheckHasBit(cached_has_bits, 0x0000000fU)) {
+    if (CheckHasBit(cached_has_bits, 0x00000001U)) {
+      if (!from._internal_group_id().empty()) {
+        _this->_internal_set_group_id(from._internal_group_id());
+      } else {
+        if (_this->_impl_.group_id_.IsDefault()) {
+          _this->_internal_set_group_id("");
+        }
+      }
+    }
+    if (CheckHasBit(cached_has_bits, 0x00000002U)) {
+      if (!from._internal_user_id().empty()) {
+        _this->_internal_set_user_id(from._internal_user_id());
+      } else {
+        if (_this->_impl_.user_id_.IsDefault()) {
+          _this->_internal_set_user_id("");
+        }
+      }
+    }
+    if (CheckHasBit(cached_has_bits, 0x00000004U)) {
+      if (from._internal_muted_until_ts() != 0) {
+        _this->_impl_.muted_until_ts_ = from._impl_.muted_until_ts_;
+      }
+    }
+    if (CheckHasBit(cached_has_bits, 0x00000008U)) {
+      if (from._internal_code() != 0) {
+        _this->_impl_.code_ = from._impl_.code_;
+      }
+    }
+  }
+  _this->_impl_._has_bits_[0] |= cached_has_bits;
+  _this->_internal_metadata_.MergeFrom<::google::protobuf::UnknownFieldSet>(
+      from._internal_metadata_);
+}
+
+void SetGroupMuteResponse::CopyFrom(const SetGroupMuteResponse& from) {
+  // @@protoc_insertion_point(class_specific_copy_from_start:chirp.chat.SetGroupMuteResponse)
+  if (&from == this) return;
+  Clear();
+  MergeFrom(from);
+}
+
+
+void SetGroupMuteResponse::InternalSwap(SetGroupMuteResponse* PROTOBUF_RESTRICT PROTOBUF_NONNULL other) {
+  using ::std::swap;
+  auto* arena = GetArena();
+  ABSL_DCHECK_EQ(arena, other->GetArena());
+  _internal_metadata_.InternalSwap(&other->_internal_metadata_);
+  swap(_impl_._has_bits_[0], other->_impl_._has_bits_[0]);
+  ::_pbi::ArenaStringPtr::InternalSwap(&_impl_.group_id_, &other->_impl_.group_id_, arena);
+  ::_pbi::ArenaStringPtr::InternalSwap(&_impl_.user_id_, &other->_impl_.user_id_, arena);
+  ::google::protobuf::internal::memswap<
+      PROTOBUF_FIELD_OFFSET(SetGroupMuteResponse, _impl_.code_)
+      + sizeof(SetGroupMuteResponse::_impl_.code_)
+      - PROTOBUF_FIELD_OFFSET(SetGroupMuteResponse, _impl_.muted_until_ts_)>(
+          reinterpret_cast<char*>(&_impl_.muted_until_ts_),
+          reinterpret_cast<char*>(&other->_impl_.muted_until_ts_));
+}
+
+::google::protobuf::Metadata SetGroupMuteResponse::GetMetadata() const {
+  return ::google::protobuf::Message::GetMetadataImpl(GetClassData()->full());
+}
+// ===================================================================
+
+class GroupMemberMutedNotify::_Internal {
+ public:
+  using HasBits =
+      decltype(::std::declval<GroupMemberMutedNotify>()._impl_._has_bits_);
+  static constexpr ::int32_t kHasBitsOffset =
+      8 * PROTOBUF_FIELD_OFFSET(GroupMemberMutedNotify, _impl_._has_bits_);
+};
+
+GroupMemberMutedNotify::GroupMemberMutedNotify(::google::protobuf::Arena* PROTOBUF_NULLABLE arena)
+#if defined(PROTOBUF_CUSTOM_VTABLE)
+    : ::google::protobuf::Message(arena, GroupMemberMutedNotify_class_data_.base()) {
+#else   // PROTOBUF_CUSTOM_VTABLE
+    : ::google::protobuf::Message(arena) {
+#endif  // PROTOBUF_CUSTOM_VTABLE
+  SharedCtor(arena);
+  // @@protoc_insertion_point(arena_constructor:chirp.chat.GroupMemberMutedNotify)
+}
+PROTOBUF_NDEBUG_INLINE GroupMemberMutedNotify::Impl_::Impl_(
+    [[maybe_unused]] ::google::protobuf::internal::InternalVisibility visibility,
+    [[maybe_unused]] ::google::protobuf::Arena* PROTOBUF_NULLABLE arena, const Impl_& from,
+    [[maybe_unused]] const ::chirp::chat::GroupMemberMutedNotify& from_msg)
+      : _has_bits_{from._has_bits_},
+        _cached_size_{0},
+        group_id_(arena, from.group_id_),
+        user_id_(arena, from.user_id_),
+        operator_id_(arena, from.operator_id_) {}
+
+GroupMemberMutedNotify::GroupMemberMutedNotify(
+    ::google::protobuf::Arena* PROTOBUF_NULLABLE arena,
+    const GroupMemberMutedNotify& from)
+#if defined(PROTOBUF_CUSTOM_VTABLE)
+    : ::google::protobuf::Message(arena, GroupMemberMutedNotify_class_data_.base()) {
+#else   // PROTOBUF_CUSTOM_VTABLE
+    : ::google::protobuf::Message(arena) {
+#endif  // PROTOBUF_CUSTOM_VTABLE
+  GroupMemberMutedNotify* const _this = this;
+  (void)_this;
+  _internal_metadata_.MergeFrom<::google::protobuf::UnknownFieldSet>(
+      from._internal_metadata_);
+  new (&_impl_) Impl_(internal_visibility(), arena, from._impl_, from);
+  ::memcpy(reinterpret_cast<char*>(&_impl_) +
+               offsetof(Impl_, muted_until_ts_),
+           reinterpret_cast<const char*>(&from._impl_) +
+               offsetof(Impl_, muted_until_ts_),
+           offsetof(Impl_, timestamp_) -
+               offsetof(Impl_, muted_until_ts_) +
+               sizeof(Impl_::timestamp_));
+
+  // @@protoc_insertion_point(copy_constructor:chirp.chat.GroupMemberMutedNotify)
+}
+PROTOBUF_NDEBUG_INLINE GroupMemberMutedNotify::Impl_::Impl_(
+    [[maybe_unused]] ::google::protobuf::internal::InternalVisibility visibility,
+    [[maybe_unused]] ::google::protobuf::Arena* PROTOBUF_NULLABLE arena)
+      : _cached_size_{0},
+        group_id_(arena),
+        user_id_(arena),
+        operator_id_(arena) {}
+
+inline void GroupMemberMutedNotify::SharedCtor(::_pb::Arena* PROTOBUF_NULLABLE arena) {
+  new (&_impl_) Impl_(internal_visibility(), arena);
+  ::memset(reinterpret_cast<char*>(&_impl_) +
+               offsetof(Impl_, muted_until_ts_),
+           0,
+           offsetof(Impl_, timestamp_) -
+               offsetof(Impl_, muted_until_ts_) +
+               sizeof(Impl_::timestamp_));
+}
+GroupMemberMutedNotify::~GroupMemberMutedNotify() {
+  // @@protoc_insertion_point(destructor:chirp.chat.GroupMemberMutedNotify)
+  SharedDtor(*this);
+}
+inline void GroupMemberMutedNotify::SharedDtor(MessageLite& self) {
+  GroupMemberMutedNotify& this_ = static_cast<GroupMemberMutedNotify&>(self);
+  if constexpr (::_pbi::DebugHardenCheckHasBitConsistency()) {
+    this_.CheckHasBitConsistency();
+  }
+  this_._internal_metadata_.Delete<::google::protobuf::UnknownFieldSet>();
+  ABSL_DCHECK(this_.GetArena() == nullptr);
+  this_._impl_.group_id_.Destroy();
+  this_._impl_.user_id_.Destroy();
+  this_._impl_.operator_id_.Destroy();
+  this_._impl_.~Impl_();
+}
+
+inline void* PROTOBUF_NONNULL GroupMemberMutedNotify::PlacementNew_(
+    const void* PROTOBUF_NONNULL, void* PROTOBUF_NONNULL mem,
+    ::google::protobuf::Arena* PROTOBUF_NULLABLE arena) {
+  return ::new (mem) GroupMemberMutedNotify(arena);
+}
+constexpr auto GroupMemberMutedNotify::InternalNewImpl_() {
+  return ::google::protobuf::internal::MessageCreator::CopyInit(sizeof(GroupMemberMutedNotify),
+                                            alignof(GroupMemberMutedNotify));
+}
+constexpr auto GroupMemberMutedNotify::InternalGenerateClassData_() {
+  return ::google::protobuf::internal::ClassDataFull{
+      ::google::protobuf::internal::ClassData{
+          &_GroupMemberMutedNotify_default_instance_._instance,
+          &_table_.header,
+          nullptr,  // OnDemandRegisterArenaDtor
+          nullptr,  // IsInitialized
+          &GroupMemberMutedNotify::MergeImpl,
+          ::google::protobuf::Message::GetNewImpl<GroupMemberMutedNotify>(),
+#if defined(PROTOBUF_CUSTOM_VTABLE)
+          &GroupMemberMutedNotify::SharedDtor,
+          ::google::protobuf::Message::GetClearImpl<GroupMemberMutedNotify>(), &GroupMemberMutedNotify::ByteSizeLong,
+              &GroupMemberMutedNotify::_InternalSerialize,
+#endif  // PROTOBUF_CUSTOM_VTABLE
+          PROTOBUF_FIELD_OFFSET(GroupMemberMutedNotify, _impl_._cached_size_),
+          false,
+      },
+      &GroupMemberMutedNotify::kDescriptorMethods,
+      &descriptor_table_proto_2fchat_2eproto,
+      nullptr,  // tracker
+  };
+}
+
+PROTOBUF_CONSTINIT PROTOBUF_ATTRIBUTE_INIT_PRIORITY1 const
+    ::google::protobuf::internal::ClassDataFull GroupMemberMutedNotify_class_data_ =
+        GroupMemberMutedNotify::InternalGenerateClassData_();
+
+PROTOBUF_ATTRIBUTE_WEAK const ::google::protobuf::internal::ClassData* PROTOBUF_NONNULL
+GroupMemberMutedNotify::GetClassData() const {
+  ::google::protobuf::internal::PrefetchToLocalCache(&GroupMemberMutedNotify_class_data_);
+  ::google::protobuf::internal::PrefetchToLocalCache(GroupMemberMutedNotify_class_data_.tc_table);
+  return GroupMemberMutedNotify_class_data_.base();
+}
+PROTOBUF_CONSTINIT PROTOBUF_ATTRIBUTE_INIT_PRIORITY1
+const ::_pbi::TcParseTable<3, 5, 0, 68, 2>
+GroupMemberMutedNotify::_table_ = {
+  {
+    PROTOBUF_FIELD_OFFSET(GroupMemberMutedNotify, _impl_._has_bits_),
+    0, // no _extensions_
+    5, 56,  // max_field_number, fast_idx_mask
+    offsetof(decltype(_table_), field_lookup_table),
+    4294967264,  // skipmap
+    offsetof(decltype(_table_), field_entries),
+    5,  // num_field_entries
+    0,  // num_aux_entries
+    offsetof(decltype(_table_), field_names),  // no aux_entries
+    GroupMemberMutedNotify_class_data_.base(),
+    nullptr,  // post_loop_handler
+    ::_pbi::TcParser::GenericFallback,  // fallback
+    #ifdef PROTOBUF_PREFETCH_PARSE_TABLE
+    ::_pbi::TcParser::GetTable<::chirp::chat::GroupMemberMutedNotify>(),  // to_prefetch
+    #endif  // PROTOBUF_PREFETCH_PARSE_TABLE
+  }, {{
+    {::_pbi::TcParser::MiniParse, {}},
+    // string group_id = 1;
+    {::_pbi::TcParser::FastUS1,
+     {10, 0, 0,
+      PROTOBUF_FIELD_OFFSET(GroupMemberMutedNotify, _impl_.group_id_)}},
+    // string user_id = 2;
+    {::_pbi::TcParser::FastUS1,
+     {18, 1, 0,
+      PROTOBUF_FIELD_OFFSET(GroupMemberMutedNotify, _impl_.user_id_)}},
+    // int64 muted_until_ts = 3;
+    {::_pbi::TcParser::SingularVarintNoZag1<::uint64_t, offsetof(GroupMemberMutedNotify, _impl_.muted_until_ts_), 3>(),
+     {24, 3, 0,
+      PROTOBUF_FIELD_OFFSET(GroupMemberMutedNotify, _impl_.muted_until_ts_)}},
+    // string operator_id = 4;
+    {::_pbi::TcParser::FastUS1,
+     {34, 2, 0,
+      PROTOBUF_FIELD_OFFSET(GroupMemberMutedNotify, _impl_.operator_id_)}},
+    // int64 timestamp = 5;
+    {::_pbi::TcParser::SingularVarintNoZag1<::uint64_t, offsetof(GroupMemberMutedNotify, _impl_.timestamp_), 4>(),
+     {40, 4, 0,
+      PROTOBUF_FIELD_OFFSET(GroupMemberMutedNotify, _impl_.timestamp_)}},
+    {::_pbi::TcParser::MiniParse, {}},
+    {::_pbi::TcParser::MiniParse, {}},
+  }}, {{
+    65535, 65535
+  }}, {{
+    // string group_id = 1;
+    {PROTOBUF_FIELD_OFFSET(GroupMemberMutedNotify, _impl_.group_id_), _Internal::kHasBitsOffset + 0, 0, (0 | ::_fl::kFcOptional | ::_fl::kUtf8String | ::_fl::kRepAString)},
+    // string user_id = 2;
+    {PROTOBUF_FIELD_OFFSET(GroupMemberMutedNotify, _impl_.user_id_), _Internal::kHasBitsOffset + 1, 0, (0 | ::_fl::kFcOptional | ::_fl::kUtf8String | ::_fl::kRepAString)},
+    // int64 muted_until_ts = 3;
+    {PROTOBUF_FIELD_OFFSET(GroupMemberMutedNotify, _impl_.muted_until_ts_), _Internal::kHasBitsOffset + 3, 0, (0 | ::_fl::kFcOptional | ::_fl::kInt64)},
+    // string operator_id = 4;
+    {PROTOBUF_FIELD_OFFSET(GroupMemberMutedNotify, _impl_.operator_id_), _Internal::kHasBitsOffset + 2, 0, (0 | ::_fl::kFcOptional | ::_fl::kUtf8String | ::_fl::kRepAString)},
+    // int64 timestamp = 5;
+    {PROTOBUF_FIELD_OFFSET(GroupMemberMutedNotify, _impl_.timestamp_), _Internal::kHasBitsOffset + 4, 0, (0 | ::_fl::kFcOptional | ::_fl::kInt64)},
+  }},
+  // no aux_entries
+  {{
+    "\41\10\7\0\13\0\0\0"
+    "chirp.chat.GroupMemberMutedNotify"
+    "group_id"
+    "user_id"
+    "operator_id"
+  }},
+};
+PROTOBUF_NOINLINE void GroupMemberMutedNotify::Clear() {
+// @@protoc_insertion_point(message_clear_start:chirp.chat.GroupMemberMutedNotify)
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  ::uint32_t cached_has_bits = 0;
+  // Prevent compiler warnings about cached_has_bits being unused
+  (void) cached_has_bits;
+
+  cached_has_bits = _impl_._has_bits_[0];
+  if (BatchCheckHasBit(cached_has_bits, 0x00000007U)) {
+    if (CheckHasBit(cached_has_bits, 0x00000001U)) {
+      _impl_.group_id_.ClearNonDefaultToEmpty();
+    }
+    if (CheckHasBit(cached_has_bits, 0x00000002U)) {
+      _impl_.user_id_.ClearNonDefaultToEmpty();
+    }
+    if (CheckHasBit(cached_has_bits, 0x00000004U)) {
+      _impl_.operator_id_.ClearNonDefaultToEmpty();
+    }
+  }
+  if (BatchCheckHasBit(cached_has_bits, 0x00000018U)) {
+    ::memset(&_impl_.muted_until_ts_, 0, static_cast<::size_t>(
+        reinterpret_cast<char*>(&_impl_.timestamp_) -
+        reinterpret_cast<char*>(&_impl_.muted_until_ts_)) + sizeof(_impl_.timestamp_));
+  }
+  _impl_._has_bits_.Clear();
+  _internal_metadata_.Clear<::google::protobuf::UnknownFieldSet>();
+}
+
+#if defined(PROTOBUF_CUSTOM_VTABLE)
+::uint8_t* PROTOBUF_NONNULL GroupMemberMutedNotify::_InternalSerialize(
+    const ::google::protobuf::MessageLite& base, ::uint8_t* PROTOBUF_NONNULL target,
+    ::google::protobuf::io::EpsCopyOutputStream* PROTOBUF_NONNULL stream) {
+  const GroupMemberMutedNotify& this_ = static_cast<const GroupMemberMutedNotify&>(base);
+#else   // PROTOBUF_CUSTOM_VTABLE
+::uint8_t* PROTOBUF_NONNULL GroupMemberMutedNotify::_InternalSerialize(
+    ::uint8_t* PROTOBUF_NONNULL target,
+    ::google::protobuf::io::EpsCopyOutputStream* PROTOBUF_NONNULL stream) const {
+  const GroupMemberMutedNotify& this_ = *this;
+#endif  // PROTOBUF_CUSTOM_VTABLE
+  if constexpr (::_pbi::DebugHardenCheckHasBitConsistency()) {
+    this_.CheckHasBitConsistency();
+  }
+  // @@protoc_insertion_point(serialize_to_array_start:chirp.chat.GroupMemberMutedNotify)
+  ::uint32_t cached_has_bits = 0;
+  (void)cached_has_bits;
+
+  cached_has_bits = this_._impl_._has_bits_[0];
+  // string group_id = 1;
+  if (CheckHasBit(cached_has_bits, 0x00000001U)) {
+    if (!this_._internal_group_id().empty()) {
+      const ::std::string& _s = this_._internal_group_id();
+      ::google::protobuf::internal::WireFormatLite::VerifyUtf8String(
+          _s.data(), static_cast<int>(_s.length()), ::google::protobuf::internal::WireFormatLite::SERIALIZE, "chirp.chat.GroupMemberMutedNotify.group_id");
+      target = stream->WriteStringMaybeAliased(1, _s, target);
+    }
+  }
+
+  // string user_id = 2;
+  if (CheckHasBit(cached_has_bits, 0x00000002U)) {
+    if (!this_._internal_user_id().empty()) {
+      const ::std::string& _s = this_._internal_user_id();
+      ::google::protobuf::internal::WireFormatLite::VerifyUtf8String(
+          _s.data(), static_cast<int>(_s.length()), ::google::protobuf::internal::WireFormatLite::SERIALIZE, "chirp.chat.GroupMemberMutedNotify.user_id");
+      target = stream->WriteStringMaybeAliased(2, _s, target);
+    }
+  }
+
+  // int64 muted_until_ts = 3;
+  if (CheckHasBit(cached_has_bits, 0x00000008U)) {
+    if (this_._internal_muted_until_ts() != 0) {
+      target =
+          ::google::protobuf::internal::WireFormatLite::WriteInt64ToArrayWithField<3>(
+              stream, this_._internal_muted_until_ts(), target);
+    }
+  }
+
+  // string operator_id = 4;
+  if (CheckHasBit(cached_has_bits, 0x00000004U)) {
+    if (!this_._internal_operator_id().empty()) {
+      const ::std::string& _s = this_._internal_operator_id();
+      ::google::protobuf::internal::WireFormatLite::VerifyUtf8String(
+          _s.data(), static_cast<int>(_s.length()), ::google::protobuf::internal::WireFormatLite::SERIALIZE, "chirp.chat.GroupMemberMutedNotify.operator_id");
+      target = stream->WriteStringMaybeAliased(4, _s, target);
+    }
+  }
+
+  // int64 timestamp = 5;
+  if (CheckHasBit(cached_has_bits, 0x00000010U)) {
+    if (this_._internal_timestamp() != 0) {
+      target =
+          ::google::protobuf::internal::WireFormatLite::WriteInt64ToArrayWithField<5>(
+              stream, this_._internal_timestamp(), target);
+    }
+  }
+
+  if (ABSL_PREDICT_FALSE(this_._internal_metadata_.have_unknown_fields())) {
+    target =
+        ::_pbi::WireFormat::InternalSerializeUnknownFieldsToArray(
+            this_._internal_metadata_.unknown_fields<::google::protobuf::UnknownFieldSet>(::google::protobuf::UnknownFieldSet::default_instance), target, stream);
+  }
+  // @@protoc_insertion_point(serialize_to_array_end:chirp.chat.GroupMemberMutedNotify)
+  return target;
+}
+
+#if defined(PROTOBUF_CUSTOM_VTABLE)
+::size_t GroupMemberMutedNotify::ByteSizeLong(const MessageLite& base) {
+  const GroupMemberMutedNotify& this_ = static_cast<const GroupMemberMutedNotify&>(base);
+#else   // PROTOBUF_CUSTOM_VTABLE
+::size_t GroupMemberMutedNotify::ByteSizeLong() const {
+  const GroupMemberMutedNotify& this_ = *this;
+#endif  // PROTOBUF_CUSTOM_VTABLE
+  // @@protoc_insertion_point(message_byte_size_start:chirp.chat.GroupMemberMutedNotify)
+  ::size_t total_size = 0;
+
+  ::uint32_t cached_has_bits = 0;
+  // Prevent compiler warnings about cached_has_bits being unused
+  (void)cached_has_bits;
+
+  ::_pbi::Prefetch5LinesFrom7Lines(&this_);
+  cached_has_bits = this_._impl_._has_bits_[0];
+  if (BatchCheckHasBit(cached_has_bits, 0x0000001fU)) {
+    // string group_id = 1;
+    if (CheckHasBit(cached_has_bits, 0x00000001U)) {
+      if (!this_._internal_group_id().empty()) {
+        total_size += 1 + ::google::protobuf::internal::WireFormatLite::StringSize(
+                                        this_._internal_group_id());
+      }
+    }
+    // string user_id = 2;
+    if (CheckHasBit(cached_has_bits, 0x00000002U)) {
+      if (!this_._internal_user_id().empty()) {
+        total_size += 1 + ::google::protobuf::internal::WireFormatLite::StringSize(
+                                        this_._internal_user_id());
+      }
+    }
+    // string operator_id = 4;
+    if (CheckHasBit(cached_has_bits, 0x00000004U)) {
+      if (!this_._internal_operator_id().empty()) {
+        total_size += 1 + ::google::protobuf::internal::WireFormatLite::StringSize(
+                                        this_._internal_operator_id());
+      }
+    }
+    // int64 muted_until_ts = 3;
+    if (CheckHasBit(cached_has_bits, 0x00000008U)) {
+      if (this_._internal_muted_until_ts() != 0) {
+        total_size += ::_pbi::WireFormatLite::Int64SizePlusOne(
+            this_._internal_muted_until_ts());
+      }
+    }
+    // int64 timestamp = 5;
+    if (CheckHasBit(cached_has_bits, 0x00000010U)) {
+      if (this_._internal_timestamp() != 0) {
+        total_size += ::_pbi::WireFormatLite::Int64SizePlusOne(
+            this_._internal_timestamp());
+      }
+    }
+  }
+  return this_.MaybeComputeUnknownFieldsSize(total_size,
+                                             &this_._impl_._cached_size_);
+}
+
+void GroupMemberMutedNotify::MergeImpl(::google::protobuf::MessageLite& to_msg,
+                            const ::google::protobuf::MessageLite& from_msg) {
+   auto* const _this =
+      static_cast<GroupMemberMutedNotify*>(&to_msg);
+  auto& from = static_cast<const GroupMemberMutedNotify&>(from_msg);
+  if constexpr (::_pbi::DebugHardenCheckHasBitConsistency()) {
+    from.CheckHasBitConsistency();
+  }
+  // @@protoc_insertion_point(class_specific_merge_from_start:chirp.chat.GroupMemberMutedNotify)
+  ABSL_DCHECK_NE(&from, _this);
+  ::uint32_t cached_has_bits = 0;
+  (void)cached_has_bits;
+
+  cached_has_bits = from._impl_._has_bits_[0];
+  if (BatchCheckHasBit(cached_has_bits, 0x0000001fU)) {
+    if (CheckHasBit(cached_has_bits, 0x00000001U)) {
+      if (!from._internal_group_id().empty()) {
+        _this->_internal_set_group_id(from._internal_group_id());
+      } else {
+        if (_this->_impl_.group_id_.IsDefault()) {
+          _this->_internal_set_group_id("");
+        }
+      }
+    }
+    if (CheckHasBit(cached_has_bits, 0x00000002U)) {
+      if (!from._internal_user_id().empty()) {
+        _this->_internal_set_user_id(from._internal_user_id());
+      } else {
+        if (_this->_impl_.user_id_.IsDefault()) {
+          _this->_internal_set_user_id("");
+        }
+      }
+    }
+    if (CheckHasBit(cached_has_bits, 0x00000004U)) {
+      if (!from._internal_operator_id().empty()) {
+        _this->_internal_set_operator_id(from._internal_operator_id());
+      } else {
+        if (_this->_impl_.operator_id_.IsDefault()) {
+          _this->_internal_set_operator_id("");
+        }
+      }
+    }
+    if (CheckHasBit(cached_has_bits, 0x00000008U)) {
+      if (from._internal_muted_until_ts() != 0) {
+        _this->_impl_.muted_until_ts_ = from._impl_.muted_until_ts_;
+      }
+    }
+    if (CheckHasBit(cached_has_bits, 0x00000010U)) {
+      if (from._internal_timestamp() != 0) {
+        _this->_impl_.timestamp_ = from._impl_.timestamp_;
+      }
+    }
+  }
+  _this->_impl_._has_bits_[0] |= cached_has_bits;
+  _this->_internal_metadata_.MergeFrom<::google::protobuf::UnknownFieldSet>(
+      from._internal_metadata_);
+}
+
+void GroupMemberMutedNotify::CopyFrom(const GroupMemberMutedNotify& from) {
+  // @@protoc_insertion_point(class_specific_copy_from_start:chirp.chat.GroupMemberMutedNotify)
+  if (&from == this) return;
+  Clear();
+  MergeFrom(from);
+}
+
+
+void GroupMemberMutedNotify::InternalSwap(GroupMemberMutedNotify* PROTOBUF_RESTRICT PROTOBUF_NONNULL other) {
+  using ::std::swap;
+  auto* arena = GetArena();
+  ABSL_DCHECK_EQ(arena, other->GetArena());
+  _internal_metadata_.InternalSwap(&other->_internal_metadata_);
+  swap(_impl_._has_bits_[0], other->_impl_._has_bits_[0]);
+  ::_pbi::ArenaStringPtr::InternalSwap(&_impl_.group_id_, &other->_impl_.group_id_, arena);
+  ::_pbi::ArenaStringPtr::InternalSwap(&_impl_.user_id_, &other->_impl_.user_id_, arena);
+  ::_pbi::ArenaStringPtr::InternalSwap(&_impl_.operator_id_, &other->_impl_.operator_id_, arena);
+  ::google::protobuf::internal::memswap<
+      PROTOBUF_FIELD_OFFSET(GroupMemberMutedNotify, _impl_.timestamp_)
+      + sizeof(GroupMemberMutedNotify::_impl_.timestamp_)
+      - PROTOBUF_FIELD_OFFSET(GroupMemberMutedNotify, _impl_.muted_until_ts_)>(
+          reinterpret_cast<char*>(&_impl_.muted_until_ts_),
+          reinterpret_cast<char*>(&other->_impl_.muted_until_ts_));
+}
+
+::google::protobuf::Metadata GroupMemberMutedNotify::GetMetadata() const {
   return ::google::protobuf::Message::GetMetadataImpl(GetClassData()->full());
 }
 // ===================================================================

@@ -1497,4 +1497,75 @@ TEST_F(EnhancedSessionTest, WordFilterBroadcastSkipsExpiredSessionsAndEmptyRegis
   EXPECT_FALSE(notify.lexicon().enabled());
 }
 
+// --- 群管理员禁言：enhanced 发送门（与 basic 同语义，消息不进任何存储层） --------
+
+TEST_F(EnhancedSessionTest, GroupMuteBlocksGuildSendBeforeStore) {
+  chirp::chat::GroupManager groups;
+  std::vector<std::string> mute_notifies;
+  chirp::chat::GroupHandlers handlers(
+      groups,
+      [&mute_notifies](const std::string& user_id, chirp::gateway::MsgID msg_id,
+                       const google::protobuf::Message& /*body*/) {
+        if (msg_id == chirp::gateway::GROUP_MEMBER_MUTED_NOTIFY) {
+          mute_notifies.push_back(user_id);
+        }
+        return true;
+      });
+  const std::string gid = groups.CreateGroup("alice", "g", "", "", 0, {"alice", "bob"});
+  chirp::chat::SetGroupMuteRequest mute;
+  mute.set_group_id(gid);
+  mute.set_target_user_id("bob");
+  mute.set_duration_sec(600);
+  ASSERT_EQ(handlers.HandleSetGroupMute(mute, "alice").code(), chirp::common::OK);
+  EXPECT_EQ(mute_notifies.size(), 2u);  // 全群在线成员（alice+bob）
+
+  auto sender = std::make_shared<MockSession>();
+  chirp::chat::SendMessageRequest req;
+  req.set_sender_id("bob");
+  req.set_channel_type(chirp::chat::GUILD);
+  req.set_channel_id(gid);
+  req.set_content("muted words");
+  InvokeSendMessage(req, sender, state_, store_, tracker_, /*acks=*/nullptr,
+                    &delivery_prefs_, router_, /*hub_peer=*/nullptr, /*npc_service_id=*/"",
+                    /*npc_prefix=*/"npc:", /*spoke_link=*/nullptr, /*spoke_game_id=*/"",
+                    /*edits=*/nullptr, /*directory=*/nullptr, /*hub=*/nullptr, /*groups=*/&handlers,
+                    /*reactions=*/nullptr, /*seq=*/1);
+  const auto resps = FramesOf(*sender, chirp::gateway::SEND_MESSAGE_RESP);
+  ASSERT_EQ(resps.size(), 1u);
+  chirp::chat::SendMessageResponse resp;
+  ASSERT_TRUE(resp.ParseFromString(resps[0].body()));
+  EXPECT_EQ(resp.code(), chirp::common::MUTED);
+  EXPECT_TRUE(resp.message_id().empty());  // 不铸消息 id：门在存储之前
+
+  // 台账外频道（Redis 扇出路径）不走此门：同发送者非台账频道照常受理。
+  chirp::chat::SendMessageRequest world = req;
+  world.set_channel_id("world-1");
+  InvokeSendMessage(world, sender, state_, store_, tracker_, /*acks=*/nullptr,
+                    &delivery_prefs_, router_, /*hub_peer=*/nullptr, /*npc_service_id=*/"",
+                    /*npc_prefix=*/"npc:", /*spoke_link=*/nullptr, /*spoke_game_id=*/"",
+                    /*edits=*/nullptr, /*directory=*/nullptr, /*hub=*/nullptr, /*groups=*/&handlers,
+                    /*reactions=*/nullptr, /*seq=*/2);
+  const auto world_resps = FramesOf(*sender, chirp::gateway::SEND_MESSAGE_RESP);
+  ASSERT_EQ(world_resps.size(), 2u);
+  chirp::chat::SendMessageResponse world_resp;
+  ASSERT_TRUE(world_resp.ParseFromString(world_resps[1].body()));
+  EXPECT_EQ(world_resp.code(), chirp::common::OK);
+
+  // 解禁后同频道恢复。
+  chirp::chat::SetGroupMuteRequest unmute;
+  unmute.set_group_id(gid);
+  unmute.set_target_user_id("bob");
+  ASSERT_EQ(handlers.HandleSetGroupMute(unmute, "alice").code(), chirp::common::OK);
+  InvokeSendMessage(req, sender, state_, store_, tracker_, /*acks=*/nullptr,
+                    &delivery_prefs_, router_, /*hub_peer=*/nullptr, /*npc_service_id=*/"",
+                    /*npc_prefix=*/"npc:", /*spoke_link=*/nullptr, /*spoke_game_id=*/"",
+                    /*edits=*/nullptr, /*directory=*/nullptr, /*hub=*/nullptr, /*groups=*/&handlers,
+                    /*reactions=*/nullptr, /*seq=*/3);
+  const auto resumed = FramesOf(*sender, chirp::gateway::SEND_MESSAGE_RESP);
+  ASSERT_EQ(resumed.size(), 3u);
+  chirp::chat::SendMessageResponse resumed_resp;
+  ASSERT_TRUE(resumed_resp.ParseFromString(resumed[2].body()));
+  EXPECT_EQ(resumed_resp.code(), chirp::common::OK);
+}
+
 }  // namespace

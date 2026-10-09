@@ -371,6 +371,10 @@ class GroupMemberLeftNotify;
 struct GroupMemberLeftNotifyDefaultTypeInternal;
 extern GroupMemberLeftNotifyDefaultTypeInternal _GroupMemberLeftNotify_default_instance_;
 extern const ::google::protobuf::internal::ClassDataFull GroupMemberLeftNotify_class_data_;
+class GroupMemberMutedNotify;
+struct GroupMemberMutedNotifyDefaultTypeInternal;
+extern GroupMemberMutedNotifyDefaultTypeInternal _GroupMemberMutedNotify_default_instance_;
+extern const ::google::protobuf::internal::ClassDataFull GroupMemberMutedNotify_class_data_;
 class GroupUpdatedNotify;
 struct GroupUpdatedNotifyDefaultTypeInternal;
 extern GroupUpdatedNotifyDefaultTypeInternal _GroupUpdatedNotify_default_instance_;
@@ -535,6 +539,14 @@ class SetChannelMuteResponse;
 struct SetChannelMuteResponseDefaultTypeInternal;
 extern SetChannelMuteResponseDefaultTypeInternal _SetChannelMuteResponse_default_instance_;
 extern const ::google::protobuf::internal::ClassDataFull SetChannelMuteResponse_class_data_;
+class SetGroupMuteRequest;
+struct SetGroupMuteRequestDefaultTypeInternal;
+extern SetGroupMuteRequestDefaultTypeInternal _SetGroupMuteRequest_default_instance_;
+extern const ::google::protobuf::internal::ClassDataFull SetGroupMuteRequest_class_data_;
+class SetGroupMuteResponse;
+struct SetGroupMuteResponseDefaultTypeInternal;
+extern SetGroupMuteResponseDefaultTypeInternal _SetGroupMuteResponse_default_instance_;
+extern const ::google::protobuf::internal::ClassDataFull SetGroupMuteResponse_class_data_;
 class SetMemberAliasRequest;
 struct SetMemberAliasRequestDefaultTypeInternal;
 extern SetMemberAliasRequestDefaultTypeInternal _SetMemberAliasRequest_default_instance_;
@@ -1121,7 +1133,7 @@ class WordFilterLexicon final : public ::google::protobuf::Message
     return *reinterpret_cast<const WordFilterLexicon*>(
         &_WordFilterLexicon_default_instance_);
   }
-  static constexpr int kIndexInFileMessages = 123;
+  static constexpr int kIndexInFileMessages = 126;
   friend void swap(WordFilterLexicon& a, WordFilterLexicon& b) { a.Swap(&b); }
   inline void Swap(WordFilterLexicon* PROTOBUF_NONNULL other) {
     if (other == this) return;
@@ -1369,7 +1381,7 @@ class WordFilterFetchRequest final : public ::google::protobuf::Message
     return *reinterpret_cast<const WordFilterFetchRequest*>(
         &_WordFilterFetchRequest_default_instance_);
   }
-  static constexpr int kIndexInFileMessages = 122;
+  static constexpr int kIndexInFileMessages = 125;
   friend void swap(WordFilterFetchRequest& a, WordFilterFetchRequest& b) { a.Swap(&b); }
   inline void Swap(WordFilterFetchRequest* PROTOBUF_NONNULL other) {
     if (other == this) return;
@@ -1559,7 +1571,7 @@ class UnblockMessageSenderResponse final : public ::google::protobuf::Message
     return *reinterpret_cast<const UnblockMessageSenderResponse*>(
         &_UnblockMessageSenderResponse_default_instance_);
   }
-  static constexpr int kIndexInFileMessages = 119;
+  static constexpr int kIndexInFileMessages = 122;
   friend void swap(UnblockMessageSenderResponse& a, UnblockMessageSenderResponse& b) { a.Swap(&b); }
   inline void Swap(UnblockMessageSenderResponse* PROTOBUF_NONNULL other) {
     if (other == this) return;
@@ -1766,7 +1778,7 @@ class UnblockMessageSenderRequest final : public ::google::protobuf::Message
     return *reinterpret_cast<const UnblockMessageSenderRequest*>(
         &_UnblockMessageSenderRequest_default_instance_);
   }
-  static constexpr int kIndexInFileMessages = 118;
+  static constexpr int kIndexInFileMessages = 121;
   friend void swap(UnblockMessageSenderRequest& a, UnblockMessageSenderRequest& b) { a.Swap(&b); }
   inline void Swap(UnblockMessageSenderRequest* PROTOBUF_NONNULL other) {
     if (other == this) return;
@@ -1961,7 +1973,7 @@ class TypingIndicatorState final : public ::google::protobuf::Message
     return *reinterpret_cast<const TypingIndicatorState*>(
         &_TypingIndicatorState_default_instance_);
   }
-  static constexpr int kIndexInFileMessages = 42;
+  static constexpr int kIndexInFileMessages = 45;
   friend void swap(TypingIndicatorState& a, TypingIndicatorState& b) { a.Swap(&b); }
   inline void Swap(TypingIndicatorState* PROTOBUF_NONNULL other) {
     if (other == this) return;
@@ -2209,7 +2221,7 @@ class TypingIndicator final : public ::google::protobuf::Message
     return *reinterpret_cast<const TypingIndicator*>(
         &_TypingIndicator_default_instance_);
   }
-  static constexpr int kIndexInFileMessages = 92;
+  static constexpr int kIndexInFileMessages = 95;
   friend void swap(TypingIndicator& a, TypingIndicator& b) { a.Swap(&b); }
   inline void Swap(TypingIndicator* PROTOBUF_NONNULL other) {
     if (other == this) return;
@@ -2474,7 +2486,7 @@ class TradeMetadata final : public ::google::protobuf::Message
     return *reinterpret_cast<const TradeMetadata*>(
         &_TradeMetadata_default_instance_);
   }
-  static constexpr int kIndexInFileMessages = 109;
+  static constexpr int kIndexInFileMessages = 112;
   friend void swap(TradeMetadata& a, TradeMetadata& b) { a.Swap(&b); }
   inline void Swap(TradeMetadata* PROTOBUF_NONNULL other) {
     if (other == this) return;
@@ -2727,7 +2739,7 @@ class TrackMessageResponse final : public ::google::protobuf::Message
     return *reinterpret_cast<const TrackMessageResponse*>(
         &_TrackMessageResponse_default_instance_);
   }
-  static constexpr int kIndexInFileMessages = 50;
+  static constexpr int kIndexInFileMessages = 53;
   friend void swap(TrackMessageResponse& a, TrackMessageResponse& b) { a.Swap(&b); }
   inline void Swap(TrackMessageResponse* PROTOBUF_NONNULL other) {
     if (other == this) return;
@@ -2946,7 +2958,7 @@ class TrackMessageRequest final : public ::google::protobuf::Message
     return *reinterpret_cast<const TrackMessageRequest*>(
         &_TrackMessageRequest_default_instance_);
   }
-  static constexpr int kIndexInFileMessages = 49;
+  static constexpr int kIndexInFileMessages = 52;
   friend void swap(TrackMessageRequest& a, TrackMessageRequest& b) { a.Swap(&b); }
   inline void Swap(TrackMessageRequest* PROTOBUF_NONNULL other) {
     if (other == this) return;
@@ -3170,7 +3182,7 @@ class SkillMetadata final : public ::google::protobuf::Message
     return *reinterpret_cast<const SkillMetadata*>(
         &_SkillMetadata_default_instance_);
   }
-  static constexpr int kIndexInFileMessages = 107;
+  static constexpr int kIndexInFileMessages = 110;
   friend void swap(SkillMetadata& a, SkillMetadata& b) { a.Swap(&b); }
   inline void Swap(SkillMetadata* PROTOBUF_NONNULL other) {
     if (other == this) return;
@@ -3843,6 +3855,466 @@ class SetMemberAliasRequest final : public ::google::protobuf::Message
 extern const ::google::protobuf::internal::ClassDataFull SetMemberAliasRequest_class_data_;
 // -------------------------------------------------------------------
 
+class SetGroupMuteResponse final : public ::google::protobuf::Message
+/* @@protoc_insertion_point(class_definition:chirp.chat.SetGroupMuteResponse) */ {
+ public:
+  inline SetGroupMuteResponse() : SetGroupMuteResponse(nullptr) {}
+  ~SetGroupMuteResponse() PROTOBUF_FINAL;
+
+#if defined(PROTOBUF_CUSTOM_VTABLE)
+  void operator delete(SetGroupMuteResponse* PROTOBUF_NONNULL msg, ::std::destroying_delete_t) {
+    SharedDtor(*msg);
+    ::google::protobuf::internal::SizedDelete(msg, sizeof(SetGroupMuteResponse));
+  }
+#endif
+
+  template <typename = void>
+  explicit PROTOBUF_CONSTEXPR SetGroupMuteResponse(::google::protobuf::internal::ConstantInitialized);
+
+  inline SetGroupMuteResponse(const SetGroupMuteResponse& from) : SetGroupMuteResponse(nullptr, from) {}
+  inline SetGroupMuteResponse(SetGroupMuteResponse&& from) noexcept
+      : SetGroupMuteResponse(nullptr, ::std::move(from)) {}
+  inline SetGroupMuteResponse& operator=(const SetGroupMuteResponse& from) {
+    CopyFrom(from);
+    return *this;
+  }
+  inline SetGroupMuteResponse& operator=(SetGroupMuteResponse&& from) noexcept {
+    if (this == &from) return *this;
+    if (::google::protobuf::internal::CanMoveWithInternalSwap(GetArena(), from.GetArena())) {
+      InternalSwap(&from);
+    } else {
+      CopyFrom(from);
+    }
+    return *this;
+  }
+
+  inline const ::google::protobuf::UnknownFieldSet& unknown_fields() const
+      ABSL_ATTRIBUTE_LIFETIME_BOUND {
+    return _internal_metadata_.unknown_fields<::google::protobuf::UnknownFieldSet>(::google::protobuf::UnknownFieldSet::default_instance);
+  }
+  inline ::google::protobuf::UnknownFieldSet* PROTOBUF_NONNULL mutable_unknown_fields()
+      ABSL_ATTRIBUTE_LIFETIME_BOUND {
+    return _internal_metadata_.mutable_unknown_fields<::google::protobuf::UnknownFieldSet>();
+  }
+
+  static const ::google::protobuf::Descriptor* PROTOBUF_NONNULL descriptor() {
+    return GetDescriptor();
+  }
+  static const ::google::protobuf::Descriptor* PROTOBUF_NONNULL GetDescriptor() {
+    return default_instance().GetMetadata().descriptor;
+  }
+  static const ::google::protobuf::Reflection* PROTOBUF_NONNULL GetReflection() {
+    return default_instance().GetMetadata().reflection;
+  }
+  static const SetGroupMuteResponse& default_instance() {
+    return *reinterpret_cast<const SetGroupMuteResponse*>(
+        &_SetGroupMuteResponse_default_instance_);
+  }
+  static constexpr int kIndexInFileMessages = 15;
+  friend void swap(SetGroupMuteResponse& a, SetGroupMuteResponse& b) { a.Swap(&b); }
+  inline void Swap(SetGroupMuteResponse* PROTOBUF_NONNULL other) {
+    if (other == this) return;
+    if (::google::protobuf::internal::CanUseInternalSwap(GetArena(), other->GetArena())) {
+      InternalSwap(other);
+    } else {
+      ::google::protobuf::internal::GenericSwap(this, other);
+    }
+  }
+  void UnsafeArenaSwap(SetGroupMuteResponse* PROTOBUF_NONNULL other) {
+    if (other == this) return;
+    ABSL_DCHECK(GetArena() == other->GetArena());
+    InternalSwap(other);
+  }
+
+  // implements Message ----------------------------------------------
+
+  SetGroupMuteResponse* PROTOBUF_NONNULL New(::google::protobuf::Arena* PROTOBUF_NULLABLE arena = nullptr) const {
+    return ::google::protobuf::Message::DefaultConstruct<SetGroupMuteResponse>(arena);
+  }
+  using ::google::protobuf::Message::CopyFrom;
+  void CopyFrom(const SetGroupMuteResponse& from);
+  using ::google::protobuf::Message::MergeFrom;
+  void MergeFrom(const SetGroupMuteResponse& from) { SetGroupMuteResponse::MergeImpl(*this, from); }
+
+  private:
+  static void MergeImpl(::google::protobuf::MessageLite& to_msg,
+                        const ::google::protobuf::MessageLite& from_msg);
+
+  public:
+  bool IsInitialized() const {
+    return true;
+  }
+  ABSL_ATTRIBUTE_REINITIALIZES void Clear() PROTOBUF_FINAL;
+  #if defined(PROTOBUF_CUSTOM_VTABLE)
+  private:
+  static ::size_t ByteSizeLong(const ::google::protobuf::MessageLite& msg);
+  static ::uint8_t* PROTOBUF_NONNULL _InternalSerialize(
+      const ::google::protobuf::MessageLite& msg, ::uint8_t* PROTOBUF_NONNULL target,
+      ::google::protobuf::io::EpsCopyOutputStream* PROTOBUF_NONNULL stream);
+
+  public:
+  ::size_t ByteSizeLong() const { return ByteSizeLong(*this); }
+  ::uint8_t* PROTOBUF_NONNULL _InternalSerialize(
+      ::uint8_t* PROTOBUF_NONNULL target,
+      ::google::protobuf::io::EpsCopyOutputStream* PROTOBUF_NONNULL stream) const {
+    return _InternalSerialize(*this, target, stream);
+  }
+  #else   // PROTOBUF_CUSTOM_VTABLE
+  ::size_t ByteSizeLong() const final;
+  ::uint8_t* PROTOBUF_NONNULL _InternalSerialize(
+      ::uint8_t* PROTOBUF_NONNULL target,
+      ::google::protobuf::io::EpsCopyOutputStream* PROTOBUF_NONNULL stream) const final;
+  #endif  // PROTOBUF_CUSTOM_VTABLE
+  int GetCachedSize() const { return _impl_._cached_size_.Get(); }
+
+  private:
+  void SharedCtor(::google::protobuf::Arena* PROTOBUF_NULLABLE arena);
+  static void SharedDtor(MessageLite& self);
+  void InternalSwap(SetGroupMuteResponse* PROTOBUF_NONNULL other);
+ private:
+  template <typename T>
+  friend ::absl::string_view(::google::protobuf::internal::GetAnyMessageName)();
+  static ::absl::string_view FullMessageName() { return "chirp.chat.SetGroupMuteResponse"; }
+
+  explicit SetGroupMuteResponse(::google::protobuf::Arena* PROTOBUF_NULLABLE arena);
+  SetGroupMuteResponse(::google::protobuf::Arena* PROTOBUF_NULLABLE arena, const SetGroupMuteResponse& from);
+  SetGroupMuteResponse(
+      ::google::protobuf::Arena* PROTOBUF_NULLABLE arena, SetGroupMuteResponse&& from) noexcept
+      : SetGroupMuteResponse(arena) {
+    *this = ::std::move(from);
+  }
+  const ::google::protobuf::internal::ClassData* PROTOBUF_NONNULL GetClassData() const PROTOBUF_FINAL;
+  static void* PROTOBUF_NONNULL PlacementNew_(
+      const void* PROTOBUF_NONNULL, void* PROTOBUF_NONNULL mem,
+      ::google::protobuf::Arena* PROTOBUF_NULLABLE arena);
+  static constexpr auto InternalNewImpl_();
+
+ public:
+  static constexpr auto InternalGenerateClassData_();
+
+  ::google::protobuf::Metadata GetMetadata() const;
+  // nested types ----------------------------------------------------
+
+  // accessors -------------------------------------------------------
+  enum : int {
+    kGroupIdFieldNumber = 2,
+    kUserIdFieldNumber = 3,
+    kMutedUntilTsFieldNumber = 4,
+    kCodeFieldNumber = 1,
+  };
+  // string group_id = 2;
+  void clear_group_id() ;
+  const ::std::string& group_id() const;
+  template <typename Arg_ = const ::std::string&, typename... Args_>
+  void set_group_id(Arg_&& arg, Args_... args);
+  ::std::string* PROTOBUF_NONNULL mutable_group_id();
+  [[nodiscard]] ::std::string* PROTOBUF_NULLABLE release_group_id();
+  void set_allocated_group_id(::std::string* PROTOBUF_NULLABLE value);
+
+  private:
+  const ::std::string& _internal_group_id() const;
+  PROTOBUF_ALWAYS_INLINE void _internal_set_group_id(const ::std::string& value);
+  ::std::string* PROTOBUF_NONNULL _internal_mutable_group_id();
+
+  public:
+  // string user_id = 3;
+  void clear_user_id() ;
+  const ::std::string& user_id() const;
+  template <typename Arg_ = const ::std::string&, typename... Args_>
+  void set_user_id(Arg_&& arg, Args_... args);
+  ::std::string* PROTOBUF_NONNULL mutable_user_id();
+  [[nodiscard]] ::std::string* PROTOBUF_NULLABLE release_user_id();
+  void set_allocated_user_id(::std::string* PROTOBUF_NULLABLE value);
+
+  private:
+  const ::std::string& _internal_user_id() const;
+  PROTOBUF_ALWAYS_INLINE void _internal_set_user_id(const ::std::string& value);
+  ::std::string* PROTOBUF_NONNULL _internal_mutable_user_id();
+
+  public:
+  // int64 muted_until_ts = 4;
+  void clear_muted_until_ts() ;
+  ::int64_t muted_until_ts() const;
+  void set_muted_until_ts(::int64_t value);
+
+  private:
+  ::int64_t _internal_muted_until_ts() const;
+  void _internal_set_muted_until_ts(::int64_t value);
+
+  public:
+  // .chirp.common.ErrorCode code = 1;
+  void clear_code() ;
+  ::chirp::common::ErrorCode code() const;
+  void set_code(::chirp::common::ErrorCode value);
+
+  private:
+  ::chirp::common::ErrorCode _internal_code() const;
+  void _internal_set_code(::chirp::common::ErrorCode value);
+
+  public:
+  // @@protoc_insertion_point(class_scope:chirp.chat.SetGroupMuteResponse)
+ private:
+  class _Internal;
+  friend class ::google::protobuf::internal::TcParser;
+  static const ::google::protobuf::internal::TcParseTable<2, 4,
+                                   0, 55,
+                                   2>
+      _table_;
+
+  friend class ::google::protobuf::MessageLite;
+  friend class ::google::protobuf::Arena;
+  template <typename T>
+  friend class ::google::protobuf::Arena::InternalHelper;
+  using InternalArenaConstructable_ = void;
+  using DestructorSkippable_ = void;
+  struct Impl_ {
+    inline explicit constexpr Impl_(::google::protobuf::internal::ConstantInitialized) noexcept;
+    inline explicit Impl_(
+        ::google::protobuf::internal::InternalVisibility visibility,
+        ::google::protobuf::Arena* PROTOBUF_NULLABLE arena);
+    inline explicit Impl_(
+        ::google::protobuf::internal::InternalVisibility visibility,
+        ::google::protobuf::Arena* PROTOBUF_NULLABLE arena, const Impl_& from,
+        const SetGroupMuteResponse& from_msg);
+    ::google::protobuf::internal::HasBits<1> _has_bits_;
+    ::google::protobuf::internal::CachedSize _cached_size_;
+    ::google::protobuf::internal::ArenaStringPtr group_id_;
+    ::google::protobuf::internal::ArenaStringPtr user_id_;
+    ::int64_t muted_until_ts_;
+    int code_;
+    PROTOBUF_TSAN_DECLARE_MEMBER
+  };
+  union { Impl_ _impl_; };
+  friend struct ::TableStruct_proto_2fchat_2eproto;
+};
+
+extern const ::google::protobuf::internal::ClassDataFull SetGroupMuteResponse_class_data_;
+// -------------------------------------------------------------------
+
+class SetGroupMuteRequest final : public ::google::protobuf::Message
+/* @@protoc_insertion_point(class_definition:chirp.chat.SetGroupMuteRequest) */ {
+ public:
+  inline SetGroupMuteRequest() : SetGroupMuteRequest(nullptr) {}
+  ~SetGroupMuteRequest() PROTOBUF_FINAL;
+
+#if defined(PROTOBUF_CUSTOM_VTABLE)
+  void operator delete(SetGroupMuteRequest* PROTOBUF_NONNULL msg, ::std::destroying_delete_t) {
+    SharedDtor(*msg);
+    ::google::protobuf::internal::SizedDelete(msg, sizeof(SetGroupMuteRequest));
+  }
+#endif
+
+  template <typename = void>
+  explicit PROTOBUF_CONSTEXPR SetGroupMuteRequest(::google::protobuf::internal::ConstantInitialized);
+
+  inline SetGroupMuteRequest(const SetGroupMuteRequest& from) : SetGroupMuteRequest(nullptr, from) {}
+  inline SetGroupMuteRequest(SetGroupMuteRequest&& from) noexcept
+      : SetGroupMuteRequest(nullptr, ::std::move(from)) {}
+  inline SetGroupMuteRequest& operator=(const SetGroupMuteRequest& from) {
+    CopyFrom(from);
+    return *this;
+  }
+  inline SetGroupMuteRequest& operator=(SetGroupMuteRequest&& from) noexcept {
+    if (this == &from) return *this;
+    if (::google::protobuf::internal::CanMoveWithInternalSwap(GetArena(), from.GetArena())) {
+      InternalSwap(&from);
+    } else {
+      CopyFrom(from);
+    }
+    return *this;
+  }
+
+  inline const ::google::protobuf::UnknownFieldSet& unknown_fields() const
+      ABSL_ATTRIBUTE_LIFETIME_BOUND {
+    return _internal_metadata_.unknown_fields<::google::protobuf::UnknownFieldSet>(::google::protobuf::UnknownFieldSet::default_instance);
+  }
+  inline ::google::protobuf::UnknownFieldSet* PROTOBUF_NONNULL mutable_unknown_fields()
+      ABSL_ATTRIBUTE_LIFETIME_BOUND {
+    return _internal_metadata_.mutable_unknown_fields<::google::protobuf::UnknownFieldSet>();
+  }
+
+  static const ::google::protobuf::Descriptor* PROTOBUF_NONNULL descriptor() {
+    return GetDescriptor();
+  }
+  static const ::google::protobuf::Descriptor* PROTOBUF_NONNULL GetDescriptor() {
+    return default_instance().GetMetadata().descriptor;
+  }
+  static const ::google::protobuf::Reflection* PROTOBUF_NONNULL GetReflection() {
+    return default_instance().GetMetadata().reflection;
+  }
+  static const SetGroupMuteRequest& default_instance() {
+    return *reinterpret_cast<const SetGroupMuteRequest*>(
+        &_SetGroupMuteRequest_default_instance_);
+  }
+  static constexpr int kIndexInFileMessages = 14;
+  friend void swap(SetGroupMuteRequest& a, SetGroupMuteRequest& b) { a.Swap(&b); }
+  inline void Swap(SetGroupMuteRequest* PROTOBUF_NONNULL other) {
+    if (other == this) return;
+    if (::google::protobuf::internal::CanUseInternalSwap(GetArena(), other->GetArena())) {
+      InternalSwap(other);
+    } else {
+      ::google::protobuf::internal::GenericSwap(this, other);
+    }
+  }
+  void UnsafeArenaSwap(SetGroupMuteRequest* PROTOBUF_NONNULL other) {
+    if (other == this) return;
+    ABSL_DCHECK(GetArena() == other->GetArena());
+    InternalSwap(other);
+  }
+
+  // implements Message ----------------------------------------------
+
+  SetGroupMuteRequest* PROTOBUF_NONNULL New(::google::protobuf::Arena* PROTOBUF_NULLABLE arena = nullptr) const {
+    return ::google::protobuf::Message::DefaultConstruct<SetGroupMuteRequest>(arena);
+  }
+  using ::google::protobuf::Message::CopyFrom;
+  void CopyFrom(const SetGroupMuteRequest& from);
+  using ::google::protobuf::Message::MergeFrom;
+  void MergeFrom(const SetGroupMuteRequest& from) { SetGroupMuteRequest::MergeImpl(*this, from); }
+
+  private:
+  static void MergeImpl(::google::protobuf::MessageLite& to_msg,
+                        const ::google::protobuf::MessageLite& from_msg);
+
+  public:
+  bool IsInitialized() const {
+    return true;
+  }
+  ABSL_ATTRIBUTE_REINITIALIZES void Clear() PROTOBUF_FINAL;
+  #if defined(PROTOBUF_CUSTOM_VTABLE)
+  private:
+  static ::size_t ByteSizeLong(const ::google::protobuf::MessageLite& msg);
+  static ::uint8_t* PROTOBUF_NONNULL _InternalSerialize(
+      const ::google::protobuf::MessageLite& msg, ::uint8_t* PROTOBUF_NONNULL target,
+      ::google::protobuf::io::EpsCopyOutputStream* PROTOBUF_NONNULL stream);
+
+  public:
+  ::size_t ByteSizeLong() const { return ByteSizeLong(*this); }
+  ::uint8_t* PROTOBUF_NONNULL _InternalSerialize(
+      ::uint8_t* PROTOBUF_NONNULL target,
+      ::google::protobuf::io::EpsCopyOutputStream* PROTOBUF_NONNULL stream) const {
+    return _InternalSerialize(*this, target, stream);
+  }
+  #else   // PROTOBUF_CUSTOM_VTABLE
+  ::size_t ByteSizeLong() const final;
+  ::uint8_t* PROTOBUF_NONNULL _InternalSerialize(
+      ::uint8_t* PROTOBUF_NONNULL target,
+      ::google::protobuf::io::EpsCopyOutputStream* PROTOBUF_NONNULL stream) const final;
+  #endif  // PROTOBUF_CUSTOM_VTABLE
+  int GetCachedSize() const { return _impl_._cached_size_.Get(); }
+
+  private:
+  void SharedCtor(::google::protobuf::Arena* PROTOBUF_NULLABLE arena);
+  static void SharedDtor(MessageLite& self);
+  void InternalSwap(SetGroupMuteRequest* PROTOBUF_NONNULL other);
+ private:
+  template <typename T>
+  friend ::absl::string_view(::google::protobuf::internal::GetAnyMessageName)();
+  static ::absl::string_view FullMessageName() { return "chirp.chat.SetGroupMuteRequest"; }
+
+  explicit SetGroupMuteRequest(::google::protobuf::Arena* PROTOBUF_NULLABLE arena);
+  SetGroupMuteRequest(::google::protobuf::Arena* PROTOBUF_NULLABLE arena, const SetGroupMuteRequest& from);
+  SetGroupMuteRequest(
+      ::google::protobuf::Arena* PROTOBUF_NULLABLE arena, SetGroupMuteRequest&& from) noexcept
+      : SetGroupMuteRequest(arena) {
+    *this = ::std::move(from);
+  }
+  const ::google::protobuf::internal::ClassData* PROTOBUF_NONNULL GetClassData() const PROTOBUF_FINAL;
+  static void* PROTOBUF_NONNULL PlacementNew_(
+      const void* PROTOBUF_NONNULL, void* PROTOBUF_NONNULL mem,
+      ::google::protobuf::Arena* PROTOBUF_NULLABLE arena);
+  static constexpr auto InternalNewImpl_();
+
+ public:
+  static constexpr auto InternalGenerateClassData_();
+
+  ::google::protobuf::Metadata GetMetadata() const;
+  // nested types ----------------------------------------------------
+
+  // accessors -------------------------------------------------------
+  enum : int {
+    kGroupIdFieldNumber = 1,
+    kTargetUserIdFieldNumber = 2,
+    kDurationSecFieldNumber = 3,
+  };
+  // string group_id = 1;
+  void clear_group_id() ;
+  const ::std::string& group_id() const;
+  template <typename Arg_ = const ::std::string&, typename... Args_>
+  void set_group_id(Arg_&& arg, Args_... args);
+  ::std::string* PROTOBUF_NONNULL mutable_group_id();
+  [[nodiscard]] ::std::string* PROTOBUF_NULLABLE release_group_id();
+  void set_allocated_group_id(::std::string* PROTOBUF_NULLABLE value);
+
+  private:
+  const ::std::string& _internal_group_id() const;
+  PROTOBUF_ALWAYS_INLINE void _internal_set_group_id(const ::std::string& value);
+  ::std::string* PROTOBUF_NONNULL _internal_mutable_group_id();
+
+  public:
+  // string target_user_id = 2;
+  void clear_target_user_id() ;
+  const ::std::string& target_user_id() const;
+  template <typename Arg_ = const ::std::string&, typename... Args_>
+  void set_target_user_id(Arg_&& arg, Args_... args);
+  ::std::string* PROTOBUF_NONNULL mutable_target_user_id();
+  [[nodiscard]] ::std::string* PROTOBUF_NULLABLE release_target_user_id();
+  void set_allocated_target_user_id(::std::string* PROTOBUF_NULLABLE value);
+
+  private:
+  const ::std::string& _internal_target_user_id() const;
+  PROTOBUF_ALWAYS_INLINE void _internal_set_target_user_id(const ::std::string& value);
+  ::std::string* PROTOBUF_NONNULL _internal_mutable_target_user_id();
+
+  public:
+  // int64 duration_sec = 3;
+  void clear_duration_sec() ;
+  ::int64_t duration_sec() const;
+  void set_duration_sec(::int64_t value);
+
+  private:
+  ::int64_t _internal_duration_sec() const;
+  void _internal_set_duration_sec(::int64_t value);
+
+  public:
+  // @@protoc_insertion_point(class_scope:chirp.chat.SetGroupMuteRequest)
+ private:
+  class _Internal;
+  friend class ::google::protobuf::internal::TcParser;
+  static const ::google::protobuf::internal::TcParseTable<2, 3,
+                                   0, 61,
+                                   2>
+      _table_;
+
+  friend class ::google::protobuf::MessageLite;
+  friend class ::google::protobuf::Arena;
+  template <typename T>
+  friend class ::google::protobuf::Arena::InternalHelper;
+  using InternalArenaConstructable_ = void;
+  using DestructorSkippable_ = void;
+  struct Impl_ {
+    inline explicit constexpr Impl_(::google::protobuf::internal::ConstantInitialized) noexcept;
+    inline explicit Impl_(
+        ::google::protobuf::internal::InternalVisibility visibility,
+        ::google::protobuf::Arena* PROTOBUF_NULLABLE arena);
+    inline explicit Impl_(
+        ::google::protobuf::internal::InternalVisibility visibility,
+        ::google::protobuf::Arena* PROTOBUF_NULLABLE arena, const Impl_& from,
+        const SetGroupMuteRequest& from_msg);
+    ::google::protobuf::internal::HasBits<1> _has_bits_;
+    ::google::protobuf::internal::CachedSize _cached_size_;
+    ::google::protobuf::internal::ArenaStringPtr group_id_;
+    ::google::protobuf::internal::ArenaStringPtr target_user_id_;
+    ::int64_t duration_sec_;
+    PROTOBUF_TSAN_DECLARE_MEMBER
+  };
+  union { Impl_ _impl_; };
+  friend struct ::TableStruct_proto_2fchat_2eproto;
+};
+
+extern const ::google::protobuf::internal::ClassDataFull SetGroupMuteRequest_class_data_;
+// -------------------------------------------------------------------
+
 class SetChannelMuteResponse final : public ::google::protobuf::Message
 /* @@protoc_insertion_point(class_definition:chirp.chat.SetChannelMuteResponse) */ {
  public:
@@ -3898,7 +4370,7 @@ class SetChannelMuteResponse final : public ::google::protobuf::Message
     return *reinterpret_cast<const SetChannelMuteResponse*>(
         &_SetChannelMuteResponse_default_instance_);
   }
-  static constexpr int kIndexInFileMessages = 112;
+  static constexpr int kIndexInFileMessages = 115;
   friend void swap(SetChannelMuteResponse& a, SetChannelMuteResponse& b) { a.Swap(&b); }
   inline void Swap(SetChannelMuteResponse* PROTOBUF_NONNULL other) {
     if (other == this) return;
@@ -4112,7 +4584,7 @@ class SetChannelMuteRequest final : public ::google::protobuf::Message
     return *reinterpret_cast<const SetChannelMuteRequest*>(
         &_SetChannelMuteRequest_default_instance_);
   }
-  static constexpr int kIndexInFileMessages = 111;
+  static constexpr int kIndexInFileMessages = 114;
   friend void swap(SetChannelMuteRequest& a, SetChannelMuteRequest& b) { a.Swap(&b); }
   inline void Swap(SetChannelMuteRequest* PROTOBUF_NONNULL other) {
     if (other == this) return;
@@ -4873,7 +5345,7 @@ class SearchMessageRequest final : public ::google::protobuf::Message
     return *reinterpret_cast<const SearchMessageRequest*>(
         &_SearchMessageRequest_default_instance_);
   }
-  static constexpr int kIndexInFileMessages = 126;
+  static constexpr int kIndexInFileMessages = 129;
   friend void swap(SearchMessageRequest& a, SearchMessageRequest& b) { a.Swap(&b); }
   inline void Swap(SearchMessageRequest* PROTOBUF_NONNULL other) {
     if (other == this) return;
@@ -5147,7 +5619,7 @@ class SearchMessageMatch final : public ::google::protobuf::Message
     return *reinterpret_cast<const SearchMessageMatch*>(
         &_SearchMessageMatch_default_instance_);
   }
-  static constexpr int kIndexInFileMessages = 127;
+  static constexpr int kIndexInFileMessages = 130;
   friend void swap(SearchMessageMatch& a, SearchMessageMatch& b) { a.Swap(&b); }
   inline void Swap(SearchMessageMatch* PROTOBUF_NONNULL other) {
     if (other == this) return;
@@ -5441,7 +5913,7 @@ class RemoveReactionResponse final : public ::google::protobuf::Message
     return *reinterpret_cast<const RemoveReactionResponse*>(
         &_RemoveReactionResponse_default_instance_);
   }
-  static constexpr int kIndexInFileMessages = 72;
+  static constexpr int kIndexInFileMessages = 75;
   friend void swap(RemoveReactionResponse& a, RemoveReactionResponse& b) { a.Swap(&b); }
   inline void Swap(RemoveReactionResponse* PROTOBUF_NONNULL other) {
     if (other == this) return;
@@ -5643,7 +6115,7 @@ class RemoveReactionRequest final : public ::google::protobuf::Message
     return *reinterpret_cast<const RemoveReactionRequest*>(
         &_RemoveReactionRequest_default_instance_);
   }
-  static constexpr int kIndexInFileMessages = 71;
+  static constexpr int kIndexInFileMessages = 74;
   friend void swap(RemoveReactionRequest& a, RemoveReactionRequest& b) { a.Swap(&b); }
   inline void Swap(RemoveReactionRequest* PROTOBUF_NONNULL other) {
     if (other == this) return;
@@ -5872,7 +6344,7 @@ class ReadReceipt final : public ::google::protobuf::Message
     return *reinterpret_cast<const ReadReceipt*>(
         &_ReadReceipt_default_instance_);
   }
-  static constexpr int kIndexInFileMessages = 35;
+  static constexpr int kIndexInFileMessages = 38;
   friend void swap(ReadReceipt& a, ReadReceipt& b) { a.Swap(&b); }
   inline void Swap(ReadReceipt* PROTOBUF_NONNULL other) {
     if (other == this) return;
@@ -6096,7 +6568,7 @@ class ReactionRemovedNotify final : public ::google::protobuf::Message
     return *reinterpret_cast<const ReactionRemovedNotify*>(
         &_ReactionRemovedNotify_default_instance_);
   }
-  static constexpr int kIndexInFileMessages = 76;
+  static constexpr int kIndexInFileMessages = 79;
   friend void swap(ReactionRemovedNotify& a, ReactionRemovedNotify& b) { a.Swap(&b); }
   inline void Swap(ReactionRemovedNotify* PROTOBUF_NONNULL other) {
     if (other == this) return;
@@ -6354,7 +6826,7 @@ class ReactionAddedNotify final : public ::google::protobuf::Message
     return *reinterpret_cast<const ReactionAddedNotify*>(
         &_ReactionAddedNotify_default_instance_);
   }
-  static constexpr int kIndexInFileMessages = 75;
+  static constexpr int kIndexInFileMessages = 78;
   friend void swap(ReactionAddedNotify& a, ReactionAddedNotify& b) { a.Swap(&b); }
   inline void Swap(ReactionAddedNotify* PROTOBUF_NONNULL other) {
     if (other == this) return;
@@ -6651,7 +7123,7 @@ class PrepareFileUploadRequest final : public ::google::protobuf::Message
     return *reinterpret_cast<const PrepareFileUploadRequest*>(
         &_PrepareFileUploadRequest_default_instance_);
   }
-  static constexpr int kIndexInFileMessages = 96;
+  static constexpr int kIndexInFileMessages = 99;
   friend void swap(PrepareFileUploadRequest& a, PrepareFileUploadRequest& b) { a.Swap(&b); }
   inline void Swap(PrepareFileUploadRequest* PROTOBUF_NONNULL other) {
     if (other == this) return;
@@ -6938,7 +7410,7 @@ class PaginationToken final : public ::google::protobuf::Message
     return *reinterpret_cast<const PaginationToken*>(
         &_PaginationToken_default_instance_);
   }
-  static constexpr int kIndexInFileMessages = 46;
+  static constexpr int kIndexInFileMessages = 49;
   friend void swap(PaginationToken& a, PaginationToken& b) { a.Swap(&b); }
   inline void Swap(PaginationToken* PROTOBUF_NONNULL other) {
     if (other == this) return;
@@ -7415,7 +7887,7 @@ class NpcDialogMetadata final : public ::google::protobuf::Message
     return *reinterpret_cast<const NpcDialogMetadata*>(
         &_NpcDialogMetadata_default_instance_);
   }
-  static constexpr int kIndexInFileMessages = 110;
+  static constexpr int kIndexInFileMessages = 113;
   friend void swap(NpcDialogMetadata& a, NpcDialogMetadata& b) { a.Swap(&b); }
   inline void Swap(NpcDialogMetadata* PROTOBUF_NONNULL other) {
     if (other == this) return;
@@ -7668,7 +8140,7 @@ class MessageReadNotify final : public ::google::protobuf::Message
     return *reinterpret_cast<const MessageReadNotify*>(
         &_MessageReadNotify_default_instance_);
   }
-  static constexpr int kIndexInFileMessages = 41;
+  static constexpr int kIndexInFileMessages = 44;
   friend void swap(MessageReadNotify& a, MessageReadNotify& b) { a.Swap(&b); }
   inline void Swap(MessageReadNotify* PROTOBUF_NONNULL other) {
     if (other == this) return;
@@ -7921,7 +8393,7 @@ class MessageReaction final : public ::google::protobuf::Message
     return *reinterpret_cast<const MessageReaction*>(
         &_MessageReaction_default_instance_);
   }
-  static constexpr int kIndexInFileMessages = 68;
+  static constexpr int kIndexInFileMessages = 71;
   friend void swap(MessageReaction& a, MessageReaction& b) { a.Swap(&b); }
   inline void Swap(MessageReaction* PROTOBUF_NONNULL other) {
     if (other == this) return;
@@ -8181,7 +8653,7 @@ class MessageNack final : public ::google::protobuf::Message
     return *reinterpret_cast<const MessageNack*>(
         &_MessageNack_default_instance_);
   }
-  static constexpr int kIndexInFileMessages = 44;
+  static constexpr int kIndexInFileMessages = 47;
   friend void swap(MessageNack& a, MessageNack& b) { a.Swap(&b); }
   inline void Swap(MessageNack* PROTOBUF_NONNULL other) {
     if (other == this) return;
@@ -8451,7 +8923,7 @@ class MessageEditedNotify final : public ::google::protobuf::Message
     return *reinterpret_cast<const MessageEditedNotify*>(
         &_MessageEditedNotify_default_instance_);
   }
-  static constexpr int kIndexInFileMessages = 90;
+  static constexpr int kIndexInFileMessages = 93;
   friend void swap(MessageEditedNotify& a, MessageEditedNotify& b) { a.Swap(&b); }
   inline void Swap(MessageEditedNotify* PROTOBUF_NONNULL other) {
     if (other == this) return;
@@ -8709,7 +9181,7 @@ class MessageEdit final : public ::google::protobuf::Message
     return *reinterpret_cast<const MessageEdit*>(
         &_MessageEdit_default_instance_);
   }
-  static constexpr int kIndexInFileMessages = 82;
+  static constexpr int kIndexInFileMessages = 85;
   friend void swap(MessageEdit& a, MessageEdit& b) { a.Swap(&b); }
   inline void Swap(MessageEdit* PROTOBUF_NONNULL other) {
     if (other == this) return;
@@ -8950,7 +9422,7 @@ class MessageDeletedNotify final : public ::google::protobuf::Message
     return *reinterpret_cast<const MessageDeletedNotify*>(
         &_MessageDeletedNotify_default_instance_);
   }
-  static constexpr int kIndexInFileMessages = 91;
+  static constexpr int kIndexInFileMessages = 94;
   friend void swap(MessageDeletedNotify& a, MessageDeletedNotify& b) { a.Swap(&b); }
   inline void Swap(MessageDeletedNotify* PROTOBUF_NONNULL other) {
     if (other == this) return;
@@ -9203,7 +9675,7 @@ class MessageAck final : public ::google::protobuf::Message
     return *reinterpret_cast<const MessageAck*>(
         &_MessageAck_default_instance_);
   }
-  static constexpr int kIndexInFileMessages = 43;
+  static constexpr int kIndexInFileMessages = 46;
   friend void swap(MessageAck& a, MessageAck& b) { a.Swap(&b); }
   inline void Swap(MessageAck* PROTOBUF_NONNULL other) {
     if (other == this) return;
@@ -9444,7 +9916,7 @@ class MentionSuggestion final : public ::google::protobuf::Message
     return *reinterpret_cast<const MentionSuggestion*>(
         &_MentionSuggestion_default_instance_);
   }
-  static constexpr int kIndexInFileMessages = 79;
+  static constexpr int kIndexInFileMessages = 82;
   friend void swap(MentionSuggestion& a, MentionSuggestion& b) { a.Swap(&b); }
   inline void Swap(MentionSuggestion* PROTOBUF_NONNULL other) {
     if (other == this) return;
@@ -9685,7 +10157,7 @@ class Mention final : public ::google::protobuf::Message
     return *reinterpret_cast<const Mention*>(
         &_Mention_default_instance_);
   }
-  static constexpr int kIndexInFileMessages = 77;
+  static constexpr int kIndexInFileMessages = 80;
   friend void swap(Mention& a, Mention& b) { a.Swap(&b); }
   inline void Swap(Mention* PROTOBUF_NONNULL other) {
     if (other == this) return;
@@ -9916,7 +10388,7 @@ class MarkReadResponse final : public ::google::protobuf::Message
     return *reinterpret_cast<const MarkReadResponse*>(
         &_MarkReadResponse_default_instance_);
   }
-  static constexpr int kIndexInFileMessages = 34;
+  static constexpr int kIndexInFileMessages = 37;
   friend void swap(MarkReadResponse& a, MarkReadResponse& b) { a.Swap(&b); }
   inline void Swap(MarkReadResponse* PROTOBUF_NONNULL other) {
     if (other == this) return;
@@ -10118,7 +10590,7 @@ class MarkReadRequest final : public ::google::protobuf::Message
     return *reinterpret_cast<const MarkReadRequest*>(
         &_MarkReadRequest_default_instance_);
   }
-  static constexpr int kIndexInFileMessages = 33;
+  static constexpr int kIndexInFileMessages = 36;
   friend void swap(MarkReadRequest& a, MarkReadRequest& b) { a.Swap(&b); }
   inline void Swap(MarkReadRequest* PROTOBUF_NONNULL other) {
     if (other == this) return;
@@ -10371,7 +10843,7 @@ class LeaveGroupResponse final : public ::google::protobuf::Message
     return *reinterpret_cast<const LeaveGroupResponse*>(
         &_LeaveGroupResponse_default_instance_);
   }
-  static constexpr int kIndexInFileMessages = 17;
+  static constexpr int kIndexInFileMessages = 20;
   friend void swap(LeaveGroupResponse& a, LeaveGroupResponse& b) { a.Swap(&b); }
   inline void Swap(LeaveGroupResponse* PROTOBUF_NONNULL other) {
     if (other == this) return;
@@ -10573,7 +11045,7 @@ class LeaveGroupRequest final : public ::google::protobuf::Message
     return *reinterpret_cast<const LeaveGroupRequest*>(
         &_LeaveGroupRequest_default_instance_);
   }
-  static constexpr int kIndexInFileMessages = 16;
+  static constexpr int kIndexInFileMessages = 19;
   friend void swap(LeaveGroupRequest& a, LeaveGroupRequest& b) { a.Swap(&b); }
   inline void Swap(LeaveGroupRequest* PROTOBUF_NONNULL other) {
     if (other == this) return;
@@ -10785,7 +11257,7 @@ class KickMemberResponse final : public ::google::protobuf::Message
     return *reinterpret_cast<const KickMemberResponse*>(
         &_KickMemberResponse_default_instance_);
   }
-  static constexpr int kIndexInFileMessages = 19;
+  static constexpr int kIndexInFileMessages = 22;
   friend void swap(KickMemberResponse& a, KickMemberResponse& b) { a.Swap(&b); }
   inline void Swap(KickMemberResponse* PROTOBUF_NONNULL other) {
     if (other == this) return;
@@ -10987,7 +11459,7 @@ class KickMemberRequest final : public ::google::protobuf::Message
     return *reinterpret_cast<const KickMemberRequest*>(
         &_KickMemberRequest_default_instance_);
   }
-  static constexpr int kIndexInFileMessages = 18;
+  static constexpr int kIndexInFileMessages = 21;
   friend void swap(KickMemberRequest& a, KickMemberRequest& b) { a.Swap(&b); }
   inline void Swap(KickMemberRequest* PROTOBUF_NONNULL other) {
     if (other == this) return;
@@ -11216,7 +11688,7 @@ class JoinGroupRequest final : public ::google::protobuf::Message
     return *reinterpret_cast<const JoinGroupRequest*>(
         &_JoinGroupRequest_default_instance_);
   }
-  static constexpr int kIndexInFileMessages = 14;
+  static constexpr int kIndexInFileMessages = 17;
   friend void swap(JoinGroupRequest& a, JoinGroupRequest& b) { a.Swap(&b); }
   inline void Swap(JoinGroupRequest* PROTOBUF_NONNULL other) {
     if (other == this) return;
@@ -11484,7 +11956,7 @@ class InviteToGroupResponse final : public ::google::protobuf::Message
     return *reinterpret_cast<const InviteToGroupResponse*>(
         &_InviteToGroupResponse_default_instance_);
   }
-  static constexpr int kIndexInFileMessages = 27;
+  static constexpr int kIndexInFileMessages = 30;
   friend void swap(InviteToGroupResponse& a, InviteToGroupResponse& b) { a.Swap(&b); }
   inline void Swap(InviteToGroupResponse* PROTOBUF_NONNULL other) {
     if (other == this) return;
@@ -11686,7 +12158,7 @@ class InviteToGroupRequest final : public ::google::protobuf::Message
     return *reinterpret_cast<const InviteToGroupRequest*>(
         &_InviteToGroupRequest_default_instance_);
   }
-  static constexpr int kIndexInFileMessages = 26;
+  static constexpr int kIndexInFileMessages = 29;
   friend void swap(InviteToGroupRequest& a, InviteToGroupRequest& b) { a.Swap(&b); }
   inline void Swap(InviteToGroupRequest* PROTOBUF_NONNULL other) {
     if (other == this) return;
@@ -11860,6 +12332,259 @@ class InviteToGroupRequest final : public ::google::protobuf::Message
 extern const ::google::protobuf::internal::ClassDataFull InviteToGroupRequest_class_data_;
 // -------------------------------------------------------------------
 
+class GroupMemberMutedNotify final : public ::google::protobuf::Message
+/* @@protoc_insertion_point(class_definition:chirp.chat.GroupMemberMutedNotify) */ {
+ public:
+  inline GroupMemberMutedNotify() : GroupMemberMutedNotify(nullptr) {}
+  ~GroupMemberMutedNotify() PROTOBUF_FINAL;
+
+#if defined(PROTOBUF_CUSTOM_VTABLE)
+  void operator delete(GroupMemberMutedNotify* PROTOBUF_NONNULL msg, ::std::destroying_delete_t) {
+    SharedDtor(*msg);
+    ::google::protobuf::internal::SizedDelete(msg, sizeof(GroupMemberMutedNotify));
+  }
+#endif
+
+  template <typename = void>
+  explicit PROTOBUF_CONSTEXPR GroupMemberMutedNotify(::google::protobuf::internal::ConstantInitialized);
+
+  inline GroupMemberMutedNotify(const GroupMemberMutedNotify& from) : GroupMemberMutedNotify(nullptr, from) {}
+  inline GroupMemberMutedNotify(GroupMemberMutedNotify&& from) noexcept
+      : GroupMemberMutedNotify(nullptr, ::std::move(from)) {}
+  inline GroupMemberMutedNotify& operator=(const GroupMemberMutedNotify& from) {
+    CopyFrom(from);
+    return *this;
+  }
+  inline GroupMemberMutedNotify& operator=(GroupMemberMutedNotify&& from) noexcept {
+    if (this == &from) return *this;
+    if (::google::protobuf::internal::CanMoveWithInternalSwap(GetArena(), from.GetArena())) {
+      InternalSwap(&from);
+    } else {
+      CopyFrom(from);
+    }
+    return *this;
+  }
+
+  inline const ::google::protobuf::UnknownFieldSet& unknown_fields() const
+      ABSL_ATTRIBUTE_LIFETIME_BOUND {
+    return _internal_metadata_.unknown_fields<::google::protobuf::UnknownFieldSet>(::google::protobuf::UnknownFieldSet::default_instance);
+  }
+  inline ::google::protobuf::UnknownFieldSet* PROTOBUF_NONNULL mutable_unknown_fields()
+      ABSL_ATTRIBUTE_LIFETIME_BOUND {
+    return _internal_metadata_.mutable_unknown_fields<::google::protobuf::UnknownFieldSet>();
+  }
+
+  static const ::google::protobuf::Descriptor* PROTOBUF_NONNULL descriptor() {
+    return GetDescriptor();
+  }
+  static const ::google::protobuf::Descriptor* PROTOBUF_NONNULL GetDescriptor() {
+    return default_instance().GetMetadata().descriptor;
+  }
+  static const ::google::protobuf::Reflection* PROTOBUF_NONNULL GetReflection() {
+    return default_instance().GetMetadata().reflection;
+  }
+  static const GroupMemberMutedNotify& default_instance() {
+    return *reinterpret_cast<const GroupMemberMutedNotify*>(
+        &_GroupMemberMutedNotify_default_instance_);
+  }
+  static constexpr int kIndexInFileMessages = 16;
+  friend void swap(GroupMemberMutedNotify& a, GroupMemberMutedNotify& b) { a.Swap(&b); }
+  inline void Swap(GroupMemberMutedNotify* PROTOBUF_NONNULL other) {
+    if (other == this) return;
+    if (::google::protobuf::internal::CanUseInternalSwap(GetArena(), other->GetArena())) {
+      InternalSwap(other);
+    } else {
+      ::google::protobuf::internal::GenericSwap(this, other);
+    }
+  }
+  void UnsafeArenaSwap(GroupMemberMutedNotify* PROTOBUF_NONNULL other) {
+    if (other == this) return;
+    ABSL_DCHECK(GetArena() == other->GetArena());
+    InternalSwap(other);
+  }
+
+  // implements Message ----------------------------------------------
+
+  GroupMemberMutedNotify* PROTOBUF_NONNULL New(::google::protobuf::Arena* PROTOBUF_NULLABLE arena = nullptr) const {
+    return ::google::protobuf::Message::DefaultConstruct<GroupMemberMutedNotify>(arena);
+  }
+  using ::google::protobuf::Message::CopyFrom;
+  void CopyFrom(const GroupMemberMutedNotify& from);
+  using ::google::protobuf::Message::MergeFrom;
+  void MergeFrom(const GroupMemberMutedNotify& from) { GroupMemberMutedNotify::MergeImpl(*this, from); }
+
+  private:
+  static void MergeImpl(::google::protobuf::MessageLite& to_msg,
+                        const ::google::protobuf::MessageLite& from_msg);
+
+  public:
+  bool IsInitialized() const {
+    return true;
+  }
+  ABSL_ATTRIBUTE_REINITIALIZES void Clear() PROTOBUF_FINAL;
+  #if defined(PROTOBUF_CUSTOM_VTABLE)
+  private:
+  static ::size_t ByteSizeLong(const ::google::protobuf::MessageLite& msg);
+  static ::uint8_t* PROTOBUF_NONNULL _InternalSerialize(
+      const ::google::protobuf::MessageLite& msg, ::uint8_t* PROTOBUF_NONNULL target,
+      ::google::protobuf::io::EpsCopyOutputStream* PROTOBUF_NONNULL stream);
+
+  public:
+  ::size_t ByteSizeLong() const { return ByteSizeLong(*this); }
+  ::uint8_t* PROTOBUF_NONNULL _InternalSerialize(
+      ::uint8_t* PROTOBUF_NONNULL target,
+      ::google::protobuf::io::EpsCopyOutputStream* PROTOBUF_NONNULL stream) const {
+    return _InternalSerialize(*this, target, stream);
+  }
+  #else   // PROTOBUF_CUSTOM_VTABLE
+  ::size_t ByteSizeLong() const final;
+  ::uint8_t* PROTOBUF_NONNULL _InternalSerialize(
+      ::uint8_t* PROTOBUF_NONNULL target,
+      ::google::protobuf::io::EpsCopyOutputStream* PROTOBUF_NONNULL stream) const final;
+  #endif  // PROTOBUF_CUSTOM_VTABLE
+  int GetCachedSize() const { return _impl_._cached_size_.Get(); }
+
+  private:
+  void SharedCtor(::google::protobuf::Arena* PROTOBUF_NULLABLE arena);
+  static void SharedDtor(MessageLite& self);
+  void InternalSwap(GroupMemberMutedNotify* PROTOBUF_NONNULL other);
+ private:
+  template <typename T>
+  friend ::absl::string_view(::google::protobuf::internal::GetAnyMessageName)();
+  static ::absl::string_view FullMessageName() { return "chirp.chat.GroupMemberMutedNotify"; }
+
+  explicit GroupMemberMutedNotify(::google::protobuf::Arena* PROTOBUF_NULLABLE arena);
+  GroupMemberMutedNotify(::google::protobuf::Arena* PROTOBUF_NULLABLE arena, const GroupMemberMutedNotify& from);
+  GroupMemberMutedNotify(
+      ::google::protobuf::Arena* PROTOBUF_NULLABLE arena, GroupMemberMutedNotify&& from) noexcept
+      : GroupMemberMutedNotify(arena) {
+    *this = ::std::move(from);
+  }
+  const ::google::protobuf::internal::ClassData* PROTOBUF_NONNULL GetClassData() const PROTOBUF_FINAL;
+  static void* PROTOBUF_NONNULL PlacementNew_(
+      const void* PROTOBUF_NONNULL, void* PROTOBUF_NONNULL mem,
+      ::google::protobuf::Arena* PROTOBUF_NULLABLE arena);
+  static constexpr auto InternalNewImpl_();
+
+ public:
+  static constexpr auto InternalGenerateClassData_();
+
+  ::google::protobuf::Metadata GetMetadata() const;
+  // nested types ----------------------------------------------------
+
+  // accessors -------------------------------------------------------
+  enum : int {
+    kGroupIdFieldNumber = 1,
+    kUserIdFieldNumber = 2,
+    kOperatorIdFieldNumber = 4,
+    kMutedUntilTsFieldNumber = 3,
+    kTimestampFieldNumber = 5,
+  };
+  // string group_id = 1;
+  void clear_group_id() ;
+  const ::std::string& group_id() const;
+  template <typename Arg_ = const ::std::string&, typename... Args_>
+  void set_group_id(Arg_&& arg, Args_... args);
+  ::std::string* PROTOBUF_NONNULL mutable_group_id();
+  [[nodiscard]] ::std::string* PROTOBUF_NULLABLE release_group_id();
+  void set_allocated_group_id(::std::string* PROTOBUF_NULLABLE value);
+
+  private:
+  const ::std::string& _internal_group_id() const;
+  PROTOBUF_ALWAYS_INLINE void _internal_set_group_id(const ::std::string& value);
+  ::std::string* PROTOBUF_NONNULL _internal_mutable_group_id();
+
+  public:
+  // string user_id = 2;
+  void clear_user_id() ;
+  const ::std::string& user_id() const;
+  template <typename Arg_ = const ::std::string&, typename... Args_>
+  void set_user_id(Arg_&& arg, Args_... args);
+  ::std::string* PROTOBUF_NONNULL mutable_user_id();
+  [[nodiscard]] ::std::string* PROTOBUF_NULLABLE release_user_id();
+  void set_allocated_user_id(::std::string* PROTOBUF_NULLABLE value);
+
+  private:
+  const ::std::string& _internal_user_id() const;
+  PROTOBUF_ALWAYS_INLINE void _internal_set_user_id(const ::std::string& value);
+  ::std::string* PROTOBUF_NONNULL _internal_mutable_user_id();
+
+  public:
+  // string operator_id = 4;
+  void clear_operator_id() ;
+  const ::std::string& operator_id() const;
+  template <typename Arg_ = const ::std::string&, typename... Args_>
+  void set_operator_id(Arg_&& arg, Args_... args);
+  ::std::string* PROTOBUF_NONNULL mutable_operator_id();
+  [[nodiscard]] ::std::string* PROTOBUF_NULLABLE release_operator_id();
+  void set_allocated_operator_id(::std::string* PROTOBUF_NULLABLE value);
+
+  private:
+  const ::std::string& _internal_operator_id() const;
+  PROTOBUF_ALWAYS_INLINE void _internal_set_operator_id(const ::std::string& value);
+  ::std::string* PROTOBUF_NONNULL _internal_mutable_operator_id();
+
+  public:
+  // int64 muted_until_ts = 3;
+  void clear_muted_until_ts() ;
+  ::int64_t muted_until_ts() const;
+  void set_muted_until_ts(::int64_t value);
+
+  private:
+  ::int64_t _internal_muted_until_ts() const;
+  void _internal_set_muted_until_ts(::int64_t value);
+
+  public:
+  // int64 timestamp = 5;
+  void clear_timestamp() ;
+  ::int64_t timestamp() const;
+  void set_timestamp(::int64_t value);
+
+  private:
+  ::int64_t _internal_timestamp() const;
+  void _internal_set_timestamp(::int64_t value);
+
+  public:
+  // @@protoc_insertion_point(class_scope:chirp.chat.GroupMemberMutedNotify)
+ private:
+  class _Internal;
+  friend class ::google::protobuf::internal::TcParser;
+  static const ::google::protobuf::internal::TcParseTable<3, 5,
+                                   0, 68,
+                                   2>
+      _table_;
+
+  friend class ::google::protobuf::MessageLite;
+  friend class ::google::protobuf::Arena;
+  template <typename T>
+  friend class ::google::protobuf::Arena::InternalHelper;
+  using InternalArenaConstructable_ = void;
+  using DestructorSkippable_ = void;
+  struct Impl_ {
+    inline explicit constexpr Impl_(::google::protobuf::internal::ConstantInitialized) noexcept;
+    inline explicit Impl_(
+        ::google::protobuf::internal::InternalVisibility visibility,
+        ::google::protobuf::Arena* PROTOBUF_NULLABLE arena);
+    inline explicit Impl_(
+        ::google::protobuf::internal::InternalVisibility visibility,
+        ::google::protobuf::Arena* PROTOBUF_NULLABLE arena, const Impl_& from,
+        const GroupMemberMutedNotify& from_msg);
+    ::google::protobuf::internal::HasBits<1> _has_bits_;
+    ::google::protobuf::internal::CachedSize _cached_size_;
+    ::google::protobuf::internal::ArenaStringPtr group_id_;
+    ::google::protobuf::internal::ArenaStringPtr user_id_;
+    ::google::protobuf::internal::ArenaStringPtr operator_id_;
+    ::int64_t muted_until_ts_;
+    ::int64_t timestamp_;
+    PROTOBUF_TSAN_DECLARE_MEMBER
+  };
+  union { Impl_ _impl_; };
+  friend struct ::TableStruct_proto_2fchat_2eproto;
+};
+
+extern const ::google::protobuf::internal::ClassDataFull GroupMemberMutedNotify_class_data_;
+// -------------------------------------------------------------------
+
 class GroupMemberLeftNotify final : public ::google::protobuf::Message
 /* @@protoc_insertion_point(class_definition:chirp.chat.GroupMemberLeftNotify) */ {
  public:
@@ -11915,7 +12640,7 @@ class GroupMemberLeftNotify final : public ::google::protobuf::Message
     return *reinterpret_cast<const GroupMemberLeftNotify*>(
         &_GroupMemberLeftNotify_default_instance_);
   }
-  static constexpr int kIndexInFileMessages = 30;
+  static constexpr int kIndexInFileMessages = 33;
   friend void swap(GroupMemberLeftNotify& a, GroupMemberLeftNotify& b) { a.Swap(&b); }
   inline void Swap(GroupMemberLeftNotify* PROTOBUF_NONNULL other) {
     if (other == this) return;
@@ -12139,7 +12864,7 @@ class GroupMemberKickedNotify final : public ::google::protobuf::Message
     return *reinterpret_cast<const GroupMemberKickedNotify*>(
         &_GroupMemberKickedNotify_default_instance_);
   }
-  static constexpr int kIndexInFileMessages = 31;
+  static constexpr int kIndexInFileMessages = 34;
   friend void swap(GroupMemberKickedNotify& a, GroupMemberKickedNotify& b) { a.Swap(&b); }
   inline void Swap(GroupMemberKickedNotify* PROTOBUF_NONNULL other) {
     if (other == this) return;
@@ -12702,6 +13427,7 @@ class GroupMember final : public ::google::protobuf::Message
     kAliasFieldNumber = 7,
     kJoinedAtFieldNumber = 5,
     kLastReadAtFieldNumber = 6,
+    kMutedUntilTsFieldNumber = 8,
     kRoleFieldNumber = 4,
   };
   // string user_id = 1;
@@ -12784,6 +13510,16 @@ class GroupMember final : public ::google::protobuf::Message
   void _internal_set_last_read_at(::int64_t value);
 
   public:
+  // int64 muted_until_ts = 8;
+  void clear_muted_until_ts() ;
+  ::int64_t muted_until_ts() const;
+  void set_muted_until_ts(::int64_t value);
+
+  private:
+  ::int64_t _internal_muted_until_ts() const;
+  void _internal_set_muted_until_ts(::int64_t value);
+
+  public:
   // .chirp.chat.GroupMemberRole role = 4;
   void clear_role() ;
   ::chirp::chat::GroupMemberRole role() const;
@@ -12798,8 +13534,8 @@ class GroupMember final : public ::google::protobuf::Message
  private:
   class _Internal;
   friend class ::google::protobuf::internal::TcParser;
-  static const ::google::protobuf::internal::TcParseTable<3, 7,
-                                   0, 61,
+  static const ::google::protobuf::internal::TcParseTable<3, 8,
+                                   0, 69,
                                    2>
       _table_;
 
@@ -12826,6 +13562,7 @@ class GroupMember final : public ::google::protobuf::Message
     ::google::protobuf::internal::ArenaStringPtr alias_;
     ::int64_t joined_at_;
     ::int64_t last_read_at_;
+    ::int64_t muted_until_ts_;
     int role_;
     PROTOBUF_TSAN_DECLARE_MEMBER
   };
@@ -12930,7 +13667,7 @@ class GetUserGroupsRequest final : public ::google::protobuf::Message
     return *reinterpret_cast<const GetUserGroupsRequest*>(
         &_GetUserGroupsRequest_default_instance_);
   }
-  static constexpr int kIndexInFileMessages = 24;
+  static constexpr int kIndexInFileMessages = 27;
   friend void swap(GetUserGroupsRequest& a, GetUserGroupsRequest& b) { a.Swap(&b); }
   inline void Swap(GetUserGroupsRequest* PROTOBUF_NONNULL other) {
     if (other == this) return;
@@ -13149,7 +13886,7 @@ class GetUnreadCountResponse_ChannelUnread final : public ::google::protobuf::Me
     return *reinterpret_cast<const GetUnreadCountResponse_ChannelUnread*>(
         &_GetUnreadCountResponse_ChannelUnread_default_instance_);
   }
-  static constexpr int kIndexInFileMessages = 39;
+  static constexpr int kIndexInFileMessages = 42;
   friend void swap(GetUnreadCountResponse_ChannelUnread& a, GetUnreadCountResponse_ChannelUnread& b) { a.Swap(&b); }
   inline void Swap(GetUnreadCountResponse_ChannelUnread* PROTOBUF_NONNULL other) {
     if (other == this) return;
@@ -13385,7 +14122,7 @@ class GetUnreadCountRequest final : public ::google::protobuf::Message
     return *reinterpret_cast<const GetUnreadCountRequest*>(
         &_GetUnreadCountRequest_default_instance_);
   }
-  static constexpr int kIndexInFileMessages = 38;
+  static constexpr int kIndexInFileMessages = 41;
   friend void swap(GetUnreadCountRequest& a, GetUnreadCountRequest& b) { a.Swap(&b); }
   inline void Swap(GetUnreadCountRequest* PROTOBUF_NONNULL other) {
     if (other == this) return;
@@ -13580,7 +14317,7 @@ class GetTypingUsersResponse final : public ::google::protobuf::Message
     return *reinterpret_cast<const GetTypingUsersResponse*>(
         &_GetTypingUsersResponse_default_instance_);
   }
-  static constexpr int kIndexInFileMessages = 94;
+  static constexpr int kIndexInFileMessages = 97;
   friend void swap(GetTypingUsersResponse& a, GetTypingUsersResponse& b) { a.Swap(&b); }
   inline void Swap(GetTypingUsersResponse* PROTOBUF_NONNULL other) {
     if (other == this) return;
@@ -13818,7 +14555,7 @@ class GetTypingUsersRequest final : public ::google::protobuf::Message
     return *reinterpret_cast<const GetTypingUsersRequest*>(
         &_GetTypingUsersRequest_default_instance_);
   }
-  static constexpr int kIndexInFileMessages = 93;
+  static constexpr int kIndexInFileMessages = 96;
   friend void swap(GetTypingUsersRequest& a, GetTypingUsersRequest& b) { a.Swap(&b); }
   inline void Swap(GetTypingUsersRequest* PROTOBUF_NONNULL other) {
     if (other == this) return;
@@ -14025,7 +14762,7 @@ class GetReadReceiptsRequest final : public ::google::protobuf::Message
     return *reinterpret_cast<const GetReadReceiptsRequest*>(
         &_GetReadReceiptsRequest_default_instance_);
   }
-  static constexpr int kIndexInFileMessages = 36;
+  static constexpr int kIndexInFileMessages = 39;
   friend void swap(GetReadReceiptsRequest& a, GetReadReceiptsRequest& b) { a.Swap(&b); }
   inline void Swap(GetReadReceiptsRequest* PROTOBUF_NONNULL other) {
     if (other == this) return;
@@ -14220,7 +14957,7 @@ class GetReactionsRequest final : public ::google::protobuf::Message
     return *reinterpret_cast<const GetReactionsRequest*>(
         &_GetReactionsRequest_default_instance_);
   }
-  static constexpr int kIndexInFileMessages = 73;
+  static constexpr int kIndexInFileMessages = 76;
   friend void swap(GetReactionsRequest& a, GetReactionsRequest& b) { a.Swap(&b); }
   inline void Swap(GetReactionsRequest* PROTOBUF_NONNULL other) {
     if (other == this) return;
@@ -14432,7 +15169,7 @@ class GetMentionSuggestionsRequest final : public ::google::protobuf::Message
     return *reinterpret_cast<const GetMentionSuggestionsRequest*>(
         &_GetMentionSuggestionsRequest_default_instance_);
   }
-  static constexpr int kIndexInFileMessages = 80;
+  static constexpr int kIndexInFileMessages = 83;
   friend void swap(GetMentionSuggestionsRequest& a, GetMentionSuggestionsRequest& b) { a.Swap(&b); }
   inline void Swap(GetMentionSuggestionsRequest* PROTOBUF_NONNULL other) {
     if (other == this) return;
@@ -14909,7 +15646,7 @@ class GetGroupMembersRequest final : public ::google::protobuf::Message
     return *reinterpret_cast<const GetGroupMembersRequest*>(
         &_GetGroupMembersRequest_default_instance_);
   }
-  static constexpr int kIndexInFileMessages = 22;
+  static constexpr int kIndexInFileMessages = 25;
   friend void swap(GetGroupMembersRequest& a, GetGroupMembersRequest& b) { a.Swap(&b); }
   inline void Swap(GetGroupMembersRequest* PROTOBUF_NONNULL other) {
     if (other == this) return;
@@ -15128,7 +15865,7 @@ class GetGroupInfoRequest final : public ::google::protobuf::Message
     return *reinterpret_cast<const GetGroupInfoRequest*>(
         &_GetGroupInfoRequest_default_instance_);
   }
-  static constexpr int kIndexInFileMessages = 20;
+  static constexpr int kIndexInFileMessages = 23;
   friend void swap(GetGroupInfoRequest& a, GetGroupInfoRequest& b) { a.Swap(&b); }
   inline void Swap(GetGroupInfoRequest* PROTOBUF_NONNULL other) {
     if (other == this) return;
@@ -15323,7 +16060,7 @@ class GetFileDownloadRequest final : public ::google::protobuf::Message
     return *reinterpret_cast<const GetFileDownloadRequest*>(
         &_GetFileDownloadRequest_default_instance_);
   }
-  static constexpr int kIndexInFileMessages = 101;
+  static constexpr int kIndexInFileMessages = 104;
   friend void swap(GetFileDownloadRequest& a, GetFileDownloadRequest& b) { a.Swap(&b); }
   inline void Swap(GetFileDownloadRequest* PROTOBUF_NONNULL other) {
     if (other == this) return;
@@ -15535,7 +16272,7 @@ class GetChannelsRequest final : public ::google::protobuf::Message
     return *reinterpret_cast<const GetChannelsRequest*>(
         &_GetChannelsRequest_default_instance_);
   }
-  static constexpr int kIndexInFileMessages = 61;
+  static constexpr int kIndexInFileMessages = 64;
   friend void swap(GetChannelsRequest& a, GetChannelsRequest& b) { a.Swap(&b); }
   inline void Swap(GetChannelsRequest* PROTOBUF_NONNULL other) {
     if (other == this) return;
@@ -15746,7 +16483,7 @@ class GetChannelMutesRequest final : public ::google::protobuf::internal::ZeroFi
     return *reinterpret_cast<const GetChannelMutesRequest*>(
         &_GetChannelMutesRequest_default_instance_);
   }
-  static constexpr int kIndexInFileMessages = 114;
+  static constexpr int kIndexInFileMessages = 117;
   friend void swap(GetChannelMutesRequest& a, GetChannelMutesRequest& b) { a.Swap(&b); }
   inline void Swap(GetChannelMutesRequest* PROTOBUF_NONNULL other) {
     if (other == this) return;
@@ -15881,7 +16618,7 @@ class GetBlockedSendersResponse final : public ::google::protobuf::Message
     return *reinterpret_cast<const GetBlockedSendersResponse*>(
         &_GetBlockedSendersResponse_default_instance_);
   }
-  static constexpr int kIndexInFileMessages = 121;
+  static constexpr int kIndexInFileMessages = 124;
   friend void swap(GetBlockedSendersResponse& a, GetBlockedSendersResponse& b) { a.Swap(&b); }
   inline void Swap(GetBlockedSendersResponse* PROTOBUF_NONNULL other) {
     if (other == this) return;
@@ -16094,7 +16831,7 @@ class GetBlockedSendersRequest final : public ::google::protobuf::internal::Zero
     return *reinterpret_cast<const GetBlockedSendersRequest*>(
         &_GetBlockedSendersRequest_default_instance_);
   }
-  static constexpr int kIndexInFileMessages = 120;
+  static constexpr int kIndexInFileMessages = 123;
   friend void swap(GetBlockedSendersRequest& a, GetBlockedSendersRequest& b) { a.Swap(&b); }
   inline void Swap(GetBlockedSendersRequest* PROTOBUF_NONNULL other) {
     if (other == this) return;
@@ -16229,7 +16966,7 @@ class FileInfo final : public ::google::protobuf::Message
     return *reinterpret_cast<const FileInfo*>(
         &_FileInfo_default_instance_);
   }
-  static constexpr int kIndexInFileMessages = 95;
+  static constexpr int kIndexInFileMessages = 98;
   friend void swap(FileInfo& a, FileInfo& b) { a.Swap(&b); }
   inline void Swap(FileInfo* PROTOBUF_NONNULL other) {
     if (other == this) return;
@@ -16569,7 +17306,7 @@ class EditMessageRequest final : public ::google::protobuf::Message
     return *reinterpret_cast<const EditMessageRequest*>(
         &_EditMessageRequest_default_instance_);
   }
-  static constexpr int kIndexInFileMessages = 84;
+  static constexpr int kIndexInFileMessages = 87;
   friend void swap(EditMessageRequest& a, EditMessageRequest& b) { a.Swap(&b); }
   inline void Swap(EditMessageRequest* PROTOBUF_NONNULL other) {
     if (other == this) return;
@@ -16810,7 +17547,7 @@ class DeliveryStatus final : public ::google::protobuf::Message
     return *reinterpret_cast<const DeliveryStatus*>(
         &_DeliveryStatus_default_instance_);
   }
-  static constexpr int kIndexInFileMessages = 45;
+  static constexpr int kIndexInFileMessages = 48;
   friend void swap(DeliveryStatus& a, DeliveryStatus& b) { a.Swap(&b); }
   inline void Swap(DeliveryStatus* PROTOBUF_NONNULL other) {
     if (other == this) return;
@@ -17080,7 +17817,7 @@ class DeleteMessageResponse final : public ::google::protobuf::Message
     return *reinterpret_cast<const DeleteMessageResponse*>(
         &_DeleteMessageResponse_default_instance_);
   }
-  static constexpr int kIndexInFileMessages = 87;
+  static constexpr int kIndexInFileMessages = 90;
   friend void swap(DeleteMessageResponse& a, DeleteMessageResponse& b) { a.Swap(&b); }
   inline void Swap(DeleteMessageResponse* PROTOBUF_NONNULL other) {
     if (other == this) return;
@@ -17294,7 +18031,7 @@ class DeleteMessageRequest final : public ::google::protobuf::Message
     return *reinterpret_cast<const DeleteMessageRequest*>(
         &_DeleteMessageRequest_default_instance_);
   }
-  static constexpr int kIndexInFileMessages = 86;
+  static constexpr int kIndexInFileMessages = 89;
   friend void swap(DeleteMessageRequest& a, DeleteMessageRequest& b) { a.Swap(&b); }
   inline void Swap(DeleteMessageRequest* PROTOBUF_NONNULL other) {
     if (other == this) return;
@@ -17518,7 +18255,7 @@ class DeleteChannelResponse final : public ::google::protobuf::Message
     return *reinterpret_cast<const DeleteChannelResponse*>(
         &_DeleteChannelResponse_default_instance_);
   }
-  static constexpr int kIndexInFileMessages = 60;
+  static constexpr int kIndexInFileMessages = 63;
   friend void swap(DeleteChannelResponse& a, DeleteChannelResponse& b) { a.Swap(&b); }
   inline void Swap(DeleteChannelResponse* PROTOBUF_NONNULL other) {
     if (other == this) return;
@@ -17720,7 +18457,7 @@ class DeleteChannelRequest final : public ::google::protobuf::Message
     return *reinterpret_cast<const DeleteChannelRequest*>(
         &_DeleteChannelRequest_default_instance_);
   }
-  static constexpr int kIndexInFileMessages = 59;
+  static constexpr int kIndexInFileMessages = 62;
   friend void swap(DeleteChannelRequest& a, DeleteChannelRequest& b) { a.Swap(&b); }
   inline void Swap(DeleteChannelRequest* PROTOBUF_NONNULL other) {
     if (other == this) return;
@@ -18433,7 +19170,7 @@ class CreateCategoryRequest final : public ::google::protobuf::Message
     return *reinterpret_cast<const CreateCategoryRequest*>(
         &_CreateCategoryRequest_default_instance_);
   }
-  static constexpr int kIndexInFileMessages = 63;
+  static constexpr int kIndexInFileMessages = 66;
   friend void swap(CreateCategoryRequest& a, CreateCategoryRequest& b) { a.Swap(&b); }
   inline void Swap(CreateCategoryRequest* PROTOBUF_NONNULL other) {
     if (other == this) return;
@@ -18674,7 +19411,7 @@ class ConfirmFileUploadRequest final : public ::google::protobuf::Message
     return *reinterpret_cast<const ConfirmFileUploadRequest*>(
         &_ConfirmFileUploadRequest_default_instance_);
   }
-  static constexpr int kIndexInFileMessages = 99;
+  static constexpr int kIndexInFileMessages = 102;
   friend void swap(ConfirmFileUploadRequest& a, ConfirmFileUploadRequest& b) { a.Swap(&b); }
   inline void Swap(ConfirmFileUploadRequest* PROTOBUF_NONNULL other) {
     if (other == this) return;
@@ -19301,7 +20038,7 @@ class ChannelPermissions final : public ::google::protobuf::Message
     return *reinterpret_cast<const ChannelPermissions*>(
         &_ChannelPermissions_default_instance_);
   }
-  static constexpr int kIndexInFileMessages = 51;
+  static constexpr int kIndexInFileMessages = 54;
   friend void swap(ChannelPermissions& a, ChannelPermissions& b) { a.Swap(&b); }
   inline void Swap(ChannelPermissions* PROTOBUF_NONNULL other) {
     if (other == this) return;
@@ -19539,7 +20276,7 @@ class ChannelMuteState final : public ::google::protobuf::Message
     return *reinterpret_cast<const ChannelMuteState*>(
         &_ChannelMuteState_default_instance_);
   }
-  static constexpr int kIndexInFileMessages = 113;
+  static constexpr int kIndexInFileMessages = 116;
   friend void swap(ChannelMuteState& a, ChannelMuteState& b) { a.Swap(&b); }
   inline void Swap(ChannelMuteState* PROTOBUF_NONNULL other) {
     if (other == this) return;
@@ -19741,7 +20478,7 @@ class ChannelDeletedNotify final : public ::google::protobuf::Message
     return *reinterpret_cast<const ChannelDeletedNotify*>(
         &_ChannelDeletedNotify_default_instance_);
   }
-  static constexpr int kIndexInFileMessages = 67;
+  static constexpr int kIndexInFileMessages = 70;
   friend void swap(ChannelDeletedNotify& a, ChannelDeletedNotify& b) { a.Swap(&b); }
   inline void Swap(ChannelDeletedNotify* PROTOBUF_NONNULL other) {
     if (other == this) return;
@@ -19965,7 +20702,7 @@ class ChannelCategory final : public ::google::protobuf::Message
     return *reinterpret_cast<const ChannelCategory*>(
         &_ChannelCategory_default_instance_);
   }
-  static constexpr int kIndexInFileMessages = 53;
+  static constexpr int kIndexInFileMessages = 56;
   friend void swap(ChannelCategory& a, ChannelCategory& b) { a.Swap(&b); }
   inline void Swap(ChannelCategory* PROTOBUF_NONNULL other) {
     if (other == this) return;
@@ -20230,7 +20967,7 @@ class BulkDeleteResponse final : public ::google::protobuf::Message
     return *reinterpret_cast<const BulkDeleteResponse*>(
         &_BulkDeleteResponse_default_instance_);
   }
-  static constexpr int kIndexInFileMessages = 89;
+  static constexpr int kIndexInFileMessages = 92;
   friend void swap(BulkDeleteResponse& a, BulkDeleteResponse& b) { a.Swap(&b); }
   inline void Swap(BulkDeleteResponse* PROTOBUF_NONNULL other) {
     if (other == this) return;
@@ -20468,7 +21205,7 @@ class BulkDeleteRequest final : public ::google::protobuf::Message
     return *reinterpret_cast<const BulkDeleteRequest*>(
         &_BulkDeleteRequest_default_instance_);
   }
-  static constexpr int kIndexInFileMessages = 88;
+  static constexpr int kIndexInFileMessages = 91;
   friend void swap(BulkDeleteRequest& a, BulkDeleteRequest& b) { a.Swap(&b); }
   inline void Swap(BulkDeleteRequest* PROTOBUF_NONNULL other) {
     if (other == this) return;
@@ -20704,7 +21441,7 @@ class BlockMessageSenderResponse final : public ::google::protobuf::Message
     return *reinterpret_cast<const BlockMessageSenderResponse*>(
         &_BlockMessageSenderResponse_default_instance_);
   }
-  static constexpr int kIndexInFileMessages = 117;
+  static constexpr int kIndexInFileMessages = 120;
   friend void swap(BlockMessageSenderResponse& a, BlockMessageSenderResponse& b) { a.Swap(&b); }
   inline void Swap(BlockMessageSenderResponse* PROTOBUF_NONNULL other) {
     if (other == this) return;
@@ -20911,7 +21648,7 @@ class BlockMessageSenderRequest final : public ::google::protobuf::Message
     return *reinterpret_cast<const BlockMessageSenderRequest*>(
         &_BlockMessageSenderRequest_default_instance_);
   }
-  static constexpr int kIndexInFileMessages = 116;
+  static constexpr int kIndexInFileMessages = 119;
   friend void swap(BlockMessageSenderRequest& a, BlockMessageSenderRequest& b) { a.Swap(&b); }
   inline void Swap(BlockMessageSenderRequest* PROTOBUF_NONNULL other) {
     if (other == this) return;
@@ -21106,7 +21843,7 @@ class AddReactionRequest final : public ::google::protobuf::Message
     return *reinterpret_cast<const AddReactionRequest*>(
         &_AddReactionRequest_default_instance_);
   }
-  static constexpr int kIndexInFileMessages = 69;
+  static constexpr int kIndexInFileMessages = 72;
   friend void swap(AddReactionRequest& a, AddReactionRequest& b) { a.Swap(&b); }
   inline void Swap(AddReactionRequest* PROTOBUF_NONNULL other) {
     if (other == this) return;
@@ -21335,7 +22072,7 @@ class AchievementMetadata final : public ::google::protobuf::Message
     return *reinterpret_cast<const AchievementMetadata*>(
         &_AchievementMetadata_default_instance_);
   }
-  static constexpr int kIndexInFileMessages = 108;
+  static constexpr int kIndexInFileMessages = 111;
   friend void swap(AchievementMetadata& a, AchievementMetadata& b) { a.Swap(&b); }
   inline void Swap(AchievementMetadata* PROTOBUF_NONNULL other) {
     if (other == this) return;
@@ -21593,7 +22330,7 @@ class WordFilterUpdateNotify final : public ::google::protobuf::Message
     return *reinterpret_cast<const WordFilterUpdateNotify*>(
         &_WordFilterUpdateNotify_default_instance_);
   }
-  static constexpr int kIndexInFileMessages = 125;
+  static constexpr int kIndexInFileMessages = 128;
   friend void swap(WordFilterUpdateNotify& a, WordFilterUpdateNotify& b) { a.Swap(&b); }
   inline void Swap(WordFilterUpdateNotify* PROTOBUF_NONNULL other) {
     if (other == this) return;
@@ -21788,7 +22525,7 @@ class WordFilterFetchResponse final : public ::google::protobuf::Message
     return *reinterpret_cast<const WordFilterFetchResponse*>(
         &_WordFilterFetchResponse_default_instance_);
   }
-  static constexpr int kIndexInFileMessages = 124;
+  static constexpr int kIndexInFileMessages = 127;
   friend void swap(WordFilterFetchResponse& a, WordFilterFetchResponse& b) { a.Swap(&b); }
   inline void Swap(WordFilterFetchResponse* PROTOBUF_NONNULL other) {
     if (other == this) return;
@@ -21995,7 +22732,7 @@ class SearchMessageResponse final : public ::google::protobuf::Message
     return *reinterpret_cast<const SearchMessageResponse*>(
         &_SearchMessageResponse_default_instance_);
   }
-  static constexpr int kIndexInFileMessages = 128;
+  static constexpr int kIndexInFileMessages = 131;
   friend void swap(SearchMessageResponse& a, SearchMessageResponse& b) { a.Swap(&b); }
   inline void Swap(SearchMessageResponse* PROTOBUF_NONNULL other) {
     if (other == this) return;
@@ -22216,7 +22953,7 @@ class PrepareFileUploadResponse final : public ::google::protobuf::Message
     return *reinterpret_cast<const PrepareFileUploadResponse*>(
         &_PrepareFileUploadResponse_default_instance_);
   }
-  static constexpr int kIndexInFileMessages = 98;
+  static constexpr int kIndexInFileMessages = 101;
   friend void swap(PrepareFileUploadResponse& a, PrepareFileUploadResponse& b) { a.Swap(&b); }
   inline void Swap(PrepareFileUploadResponse* PROTOBUF_NONNULL other) {
     if (other == this) return;
@@ -22489,7 +23226,7 @@ class PermissionOverrideEntry final : public ::google::protobuf::Message
     return *reinterpret_cast<const PermissionOverrideEntry*>(
         &_PermissionOverrideEntry_default_instance_);
   }
-  static constexpr int kIndexInFileMessages = 52;
+  static constexpr int kIndexInFileMessages = 55;
   friend void swap(PermissionOverrideEntry& a, PermissionOverrideEntry& b) { a.Swap(&b); }
   inline void Swap(PermissionOverrideEntry* PROTOBUF_NONNULL other) {
     if (other == this) return;
@@ -22737,7 +23474,7 @@ class ItemMetadata final : public ::google::protobuf::Message
     return *reinterpret_cast<const ItemMetadata*>(
         &_ItemMetadata_default_instance_);
   }
-  static constexpr int kIndexInFileMessages = 106;
+  static constexpr int kIndexInFileMessages = 109;
   friend void swap(ItemMetadata& a, ItemMetadata& b) { a.Swap(&b); }
   inline void Swap(ItemMetadata* PROTOBUF_NONNULL other) {
     if (other == this) return;
@@ -23010,7 +23747,7 @@ class GroupMemberJoinedNotify final : public ::google::protobuf::Message
     return *reinterpret_cast<const GroupMemberJoinedNotify*>(
         &_GroupMemberJoinedNotify_default_instance_);
   }
-  static constexpr int kIndexInFileMessages = 29;
+  static constexpr int kIndexInFileMessages = 32;
   friend void swap(GroupMemberJoinedNotify& a, GroupMemberJoinedNotify& b) { a.Swap(&b); }
   inline void Swap(GroupMemberJoinedNotify* PROTOBUF_NONNULL other) {
     if (other == this) return;
@@ -23553,7 +24290,7 @@ class GetUnreadCountResponse final : public ::google::protobuf::Message
     return *reinterpret_cast<const GetUnreadCountResponse*>(
         &_GetUnreadCountResponse_default_instance_);
   }
-  static constexpr int kIndexInFileMessages = 40;
+  static constexpr int kIndexInFileMessages = 43;
   friend void swap(GetUnreadCountResponse& a, GetUnreadCountResponse& b) { a.Swap(&b); }
   inline void Swap(GetUnreadCountResponse* PROTOBUF_NONNULL other) {
     if (other == this) return;
@@ -23775,7 +24512,7 @@ class GetReadReceiptsResponse final : public ::google::protobuf::Message
     return *reinterpret_cast<const GetReadReceiptsResponse*>(
         &_GetReadReceiptsResponse_default_instance_);
   }
-  static constexpr int kIndexInFileMessages = 37;
+  static constexpr int kIndexInFileMessages = 40;
   friend void swap(GetReadReceiptsResponse& a, GetReadReceiptsResponse& b) { a.Swap(&b); }
   inline void Swap(GetReadReceiptsResponse* PROTOBUF_NONNULL other) {
     if (other == this) return;
@@ -23984,7 +24721,7 @@ class GetReactionsResponse final : public ::google::protobuf::Message
     return *reinterpret_cast<const GetReactionsResponse*>(
         &_GetReactionsResponse_default_instance_);
   }
-  static constexpr int kIndexInFileMessages = 74;
+  static constexpr int kIndexInFileMessages = 77;
   friend void swap(GetReactionsResponse& a, GetReactionsResponse& b) { a.Swap(&b); }
   inline void Swap(GetReactionsResponse* PROTOBUF_NONNULL other) {
     if (other == this) return;
@@ -24193,7 +24930,7 @@ class GetMentionSuggestionsResponse final : public ::google::protobuf::Message
     return *reinterpret_cast<const GetMentionSuggestionsResponse*>(
         &_GetMentionSuggestionsResponse_default_instance_);
   }
-  static constexpr int kIndexInFileMessages = 81;
+  static constexpr int kIndexInFileMessages = 84;
   friend void swap(GetMentionSuggestionsResponse& a, GetMentionSuggestionsResponse& b) { a.Swap(&b); }
   inline void Swap(GetMentionSuggestionsResponse* PROTOBUF_NONNULL other) {
     if (other == this) return;
@@ -24402,7 +25139,7 @@ class GetHistoryResponseV2 final : public ::google::protobuf::Message
     return *reinterpret_cast<const GetHistoryResponseV2*>(
         &_GetHistoryResponseV2_default_instance_);
   }
-  static constexpr int kIndexInFileMessages = 48;
+  static constexpr int kIndexInFileMessages = 51;
   friend void swap(GetHistoryResponseV2& a, GetHistoryResponseV2& b) { a.Swap(&b); }
   inline void Swap(GetHistoryResponseV2* PROTOBUF_NONNULL other) {
     if (other == this) return;
@@ -24873,7 +25610,7 @@ class GetHistoryRequestV2 final : public ::google::protobuf::Message
     return *reinterpret_cast<const GetHistoryRequestV2*>(
         &_GetHistoryRequestV2_default_instance_);
   }
-  static constexpr int kIndexInFileMessages = 47;
+  static constexpr int kIndexInFileMessages = 50;
   friend void swap(GetHistoryRequestV2& a, GetHistoryRequestV2& b) { a.Swap(&b); }
   inline void Swap(GetHistoryRequestV2* PROTOBUF_NONNULL other) {
     if (other == this) return;
@@ -25150,7 +25887,7 @@ class GetGroupMembersResponse final : public ::google::protobuf::Message
     return *reinterpret_cast<const GetGroupMembersResponse*>(
         &_GetGroupMembersResponse_default_instance_);
   }
-  static constexpr int kIndexInFileMessages = 23;
+  static constexpr int kIndexInFileMessages = 26;
   friend void swap(GetGroupMembersResponse& a, GetGroupMembersResponse& b) { a.Swap(&b); }
   inline void Swap(GetGroupMembersResponse* PROTOBUF_NONNULL other) {
     if (other == this) return;
@@ -25371,7 +26108,7 @@ class GetFileDownloadResponse final : public ::google::protobuf::Message
     return *reinterpret_cast<const GetFileDownloadResponse*>(
         &_GetFileDownloadResponse_default_instance_);
   }
-  static constexpr int kIndexInFileMessages = 102;
+  static constexpr int kIndexInFileMessages = 105;
   friend void swap(GetFileDownloadResponse& a, GetFileDownloadResponse& b) { a.Swap(&b); }
   inline void Swap(GetFileDownloadResponse* PROTOBUF_NONNULL other) {
     if (other == this) return;
@@ -25607,7 +26344,7 @@ class GetChannelMutesResponse final : public ::google::protobuf::Message
     return *reinterpret_cast<const GetChannelMutesResponse*>(
         &_GetChannelMutesResponse_default_instance_);
   }
-  static constexpr int kIndexInFileMessages = 115;
+  static constexpr int kIndexInFileMessages = 118;
   friend void swap(GetChannelMutesResponse& a, GetChannelMutesResponse& b) { a.Swap(&b); }
   inline void Swap(GetChannelMutesResponse* PROTOBUF_NONNULL other) {
     if (other == this) return;
@@ -25816,7 +26553,7 @@ class FileAttachment final : public ::google::protobuf::Message
     return *reinterpret_cast<const FileAttachment*>(
         &_FileAttachment_default_instance_);
   }
-  static constexpr int kIndexInFileMessages = 103;
+  static constexpr int kIndexInFileMessages = 106;
   friend void swap(FileAttachment& a, FileAttachment& b) { a.Swap(&b); }
   inline void Swap(FileAttachment* PROTOBUF_NONNULL other) {
     if (other == this) return;
@@ -26040,7 +26777,7 @@ class CreateCategoryResponse final : public ::google::protobuf::Message
     return *reinterpret_cast<const CreateCategoryResponse*>(
         &_CreateCategoryResponse_default_instance_);
   }
-  static constexpr int kIndexInFileMessages = 64;
+  static constexpr int kIndexInFileMessages = 67;
   friend void swap(CreateCategoryResponse& a, CreateCategoryResponse& b) { a.Swap(&b); }
   inline void Swap(CreateCategoryResponse* PROTOBUF_NONNULL other) {
     if (other == this) return;
@@ -26259,7 +26996,7 @@ class ConfirmFileUploadResponse final : public ::google::protobuf::Message
     return *reinterpret_cast<const ConfirmFileUploadResponse*>(
         &_ConfirmFileUploadResponse_default_instance_);
   }
-  static constexpr int kIndexInFileMessages = 100;
+  static constexpr int kIndexInFileMessages = 103;
   friend void swap(ConfirmFileUploadResponse& a, ConfirmFileUploadResponse& b) { a.Swap(&b); }
   inline void Swap(ConfirmFileUploadResponse* PROTOBUF_NONNULL other) {
     if (other == this) return;
@@ -26478,7 +27215,7 @@ class ChatMessageFull final : public ::google::protobuf::Message
     return *reinterpret_cast<const ChatMessageFull*>(
         &_ChatMessageFull_default_instance_);
   }
-  static constexpr int kIndexInFileMessages = 83;
+  static constexpr int kIndexInFileMessages = 86;
   friend void swap(ChatMessageFull& a, ChatMessageFull& b) { a.Swap(&b); }
   inline void Swap(ChatMessageFull* PROTOBUF_NONNULL other) {
     if (other == this) return;
@@ -26940,7 +27677,7 @@ class ChatMessageEx final : public ::google::protobuf::Message
     return *reinterpret_cast<const ChatMessageEx*>(
         &_ChatMessageEx_default_instance_);
   }
-  static constexpr int kIndexInFileMessages = 78;
+  static constexpr int kIndexInFileMessages = 81;
   friend void swap(ChatMessageEx& a, ChatMessageEx& b) { a.Swap(&b); }
   inline void Swap(ChatMessageEx* PROTOBUF_NONNULL other) {
     if (other == this) return;
@@ -27202,7 +27939,7 @@ class AddReactionResponse final : public ::google::protobuf::Message
     return *reinterpret_cast<const AddReactionResponse*>(
         &_AddReactionResponse_default_instance_);
   }
-  static constexpr int kIndexInFileMessages = 70;
+  static constexpr int kIndexInFileMessages = 73;
   friend void swap(AddReactionResponse& a, AddReactionResponse& b) { a.Swap(&b); }
   inline void Swap(AddReactionResponse* PROTOBUF_NONNULL other) {
     if (other == this) return;
@@ -27421,7 +28158,7 @@ class UpdateChannelRequest final : public ::google::protobuf::Message
     return *reinterpret_cast<const UpdateChannelRequest*>(
         &_UpdateChannelRequest_default_instance_);
   }
-  static constexpr int kIndexInFileMessages = 57;
+  static constexpr int kIndexInFileMessages = 60;
   friend void swap(UpdateChannelRequest& a, UpdateChannelRequest& b) { a.Swap(&b); }
   inline void Swap(UpdateChannelRequest* PROTOBUF_NONNULL other) {
     if (other == this) return;
@@ -27719,7 +28456,7 @@ class JoinGroupResponse final : public ::google::protobuf::Message
     return *reinterpret_cast<const JoinGroupResponse*>(
         &_JoinGroupResponse_default_instance_);
   }
-  static constexpr int kIndexInFileMessages = 15;
+  static constexpr int kIndexInFileMessages = 18;
   friend void swap(JoinGroupResponse& a, JoinGroupResponse& b) { a.Swap(&b); }
   inline void Swap(JoinGroupResponse* PROTOBUF_NONNULL other) {
     if (other == this) return;
@@ -27938,7 +28675,7 @@ class GroupUpdatedNotify final : public ::google::protobuf::Message
     return *reinterpret_cast<const GroupUpdatedNotify*>(
         &_GroupUpdatedNotify_default_instance_);
   }
-  static constexpr int kIndexInFileMessages = 32;
+  static constexpr int kIndexInFileMessages = 35;
   friend void swap(GroupUpdatedNotify& a, GroupUpdatedNotify& b) { a.Swap(&b); }
   inline void Swap(GroupUpdatedNotify* PROTOBUF_NONNULL other) {
     if (other == this) return;
@@ -28145,7 +28882,7 @@ class GroupCreatedNotify final : public ::google::protobuf::Message
     return *reinterpret_cast<const GroupCreatedNotify*>(
         &_GroupCreatedNotify_default_instance_);
   }
-  static constexpr int kIndexInFileMessages = 28;
+  static constexpr int kIndexInFileMessages = 31;
   friend void swap(GroupCreatedNotify& a, GroupCreatedNotify& b) { a.Swap(&b); }
   inline void Swap(GroupCreatedNotify* PROTOBUF_NONNULL other) {
     if (other == this) return;
@@ -28352,7 +29089,7 @@ class GetUserGroupsResponse final : public ::google::protobuf::Message
     return *reinterpret_cast<const GetUserGroupsResponse*>(
         &_GetUserGroupsResponse_default_instance_);
   }
-  static constexpr int kIndexInFileMessages = 25;
+  static constexpr int kIndexInFileMessages = 28;
   friend void swap(GetUserGroupsResponse& a, GetUserGroupsResponse& b) { a.Swap(&b); }
   inline void Swap(GetUserGroupsResponse* PROTOBUF_NONNULL other) {
     if (other == this) return;
@@ -28573,7 +29310,7 @@ class GetGroupInfoResponse final : public ::google::protobuf::Message
     return *reinterpret_cast<const GetGroupInfoResponse*>(
         &_GetGroupInfoResponse_default_instance_);
   }
-  static constexpr int kIndexInFileMessages = 21;
+  static constexpr int kIndexInFileMessages = 24;
   friend void swap(GetGroupInfoResponse& a, GetGroupInfoResponse& b) { a.Swap(&b); }
   inline void Swap(GetGroupInfoResponse* PROTOBUF_NONNULL other) {
     if (other == this) return;
@@ -28780,7 +29517,7 @@ class FileMessage final : public ::google::protobuf::Message
     return *reinterpret_cast<const FileMessage*>(
         &_FileMessage_default_instance_);
   }
-  static constexpr int kIndexInFileMessages = 104;
+  static constexpr int kIndexInFileMessages = 107;
   friend void swap(FileMessage& a, FileMessage& b) { a.Swap(&b); }
   inline void Swap(FileMessage* PROTOBUF_NONNULL other) {
     if (other == this) return;
@@ -28994,7 +29731,7 @@ class EditMessageResponse final : public ::google::protobuf::Message
     return *reinterpret_cast<const EditMessageResponse*>(
         &_EditMessageResponse_default_instance_);
   }
-  static constexpr int kIndexInFileMessages = 85;
+  static constexpr int kIndexInFileMessages = 88;
   friend void swap(EditMessageResponse& a, EditMessageResponse& b) { a.Swap(&b); }
   inline void Swap(EditMessageResponse* PROTOBUF_NONNULL other) {
     if (other == this) return;
@@ -29213,7 +29950,7 @@ class CreateChannelRequest final : public ::google::protobuf::Message
     return *reinterpret_cast<const CreateChannelRequest*>(
         &_CreateChannelRequest_default_instance_);
   }
-  static constexpr int kIndexInFileMessages = 55;
+  static constexpr int kIndexInFileMessages = 58;
   friend void swap(CreateChannelRequest& a, CreateChannelRequest& b) { a.Swap(&b); }
   inline void Swap(CreateChannelRequest* PROTOBUF_NONNULL other) {
     if (other == this) return;
@@ -29519,7 +30256,7 @@ class Channel final : public ::google::protobuf::Message
     return *reinterpret_cast<const Channel*>(
         &_Channel_default_instance_);
   }
-  static constexpr int kIndexInFileMessages = 54;
+  static constexpr int kIndexInFileMessages = 57;
   friend void swap(Channel& a, Channel& b) { a.Swap(&b); }
   inline void Swap(Channel* PROTOBUF_NONNULL other) {
     if (other == this) return;
@@ -29902,7 +30639,7 @@ class UpdateChannelResponse final : public ::google::protobuf::Message
     return *reinterpret_cast<const UpdateChannelResponse*>(
         &_UpdateChannelResponse_default_instance_);
   }
-  static constexpr int kIndexInFileMessages = 58;
+  static constexpr int kIndexInFileMessages = 61;
   friend void swap(UpdateChannelResponse& a, UpdateChannelResponse& b) { a.Swap(&b); }
   inline void Swap(UpdateChannelResponse* PROTOBUF_NONNULL other) {
     if (other == this) return;
@@ -30121,7 +30858,7 @@ class GetChannelsResponse final : public ::google::protobuf::Message
     return *reinterpret_cast<const GetChannelsResponse*>(
         &_GetChannelsResponse_default_instance_);
   }
-  static constexpr int kIndexInFileMessages = 62;
+  static constexpr int kIndexInFileMessages = 65;
   friend void swap(GetChannelsResponse& a, GetChannelsResponse& b) { a.Swap(&b); }
   inline void Swap(GetChannelsResponse* PROTOBUF_NONNULL other) {
     if (other == this) return;
@@ -30349,7 +31086,7 @@ class CreateChannelResponse final : public ::google::protobuf::Message
     return *reinterpret_cast<const CreateChannelResponse*>(
         &_CreateChannelResponse_default_instance_);
   }
-  static constexpr int kIndexInFileMessages = 56;
+  static constexpr int kIndexInFileMessages = 59;
   friend void swap(CreateChannelResponse& a, CreateChannelResponse& b) { a.Swap(&b); }
   inline void Swap(CreateChannelResponse* PROTOBUF_NONNULL other) {
     if (other == this) return;
@@ -30568,7 +31305,7 @@ class ChannelUpdatedNotify final : public ::google::protobuf::Message
     return *reinterpret_cast<const ChannelUpdatedNotify*>(
         &_ChannelUpdatedNotify_default_instance_);
   }
-  static constexpr int kIndexInFileMessages = 66;
+  static constexpr int kIndexInFileMessages = 69;
   friend void swap(ChannelUpdatedNotify& a, ChannelUpdatedNotify& b) { a.Swap(&b); }
   inline void Swap(ChannelUpdatedNotify* PROTOBUF_NONNULL other) {
     if (other == this) return;
@@ -30775,7 +31512,7 @@ class ChannelCreatedNotify final : public ::google::protobuf::Message
     return *reinterpret_cast<const ChannelCreatedNotify*>(
         &_ChannelCreatedNotify_default_instance_);
   }
-  static constexpr int kIndexInFileMessages = 65;
+  static constexpr int kIndexInFileMessages = 68;
   friend void swap(ChannelCreatedNotify& a, ChannelCreatedNotify& b) { a.Swap(&b); }
   inline void Swap(ChannelCreatedNotify* PROTOBUF_NONNULL other) {
     if (other == this) return;
@@ -34005,7 +34742,7 @@ inline void GroupMember::clear_role() {
   ::google::protobuf::internal::TSanWrite(&_impl_);
   _impl_.role_ = 0;
   ClearHasBit(_impl_._has_bits_[0],
-                  0x00000040U);
+                  0x00000080U);
 }
 inline ::chirp::chat::GroupMemberRole GroupMember::role() const {
   // @@protoc_insertion_point(field_get:chirp.chat.GroupMember.role)
@@ -34013,7 +34750,7 @@ inline ::chirp::chat::GroupMemberRole GroupMember::role() const {
 }
 inline void GroupMember::set_role(::chirp::chat::GroupMemberRole value) {
   _internal_set_role(value);
-  SetHasBit(_impl_._has_bits_[0], 0x00000040U);
+  SetHasBit(_impl_._has_bits_[0], 0x00000080U);
   // @@protoc_insertion_point(field_set:chirp.chat.GroupMember.role)
 }
 inline ::chirp::chat::GroupMemberRole GroupMember::_internal_role() const {
@@ -34138,6 +34875,31 @@ inline void GroupMember::set_allocated_alias(::std::string* PROTOBUF_NULLABLE va
     _impl_.alias_.Set("", GetArena());
   }
   // @@protoc_insertion_point(field_set_allocated:chirp.chat.GroupMember.alias)
+}
+
+// int64 muted_until_ts = 8;
+inline void GroupMember::clear_muted_until_ts() {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_.muted_until_ts_ = ::int64_t{0};
+  ClearHasBit(_impl_._has_bits_[0],
+                  0x00000040U);
+}
+inline ::int64_t GroupMember::muted_until_ts() const {
+  // @@protoc_insertion_point(field_get:chirp.chat.GroupMember.muted_until_ts)
+  return _internal_muted_until_ts();
+}
+inline void GroupMember::set_muted_until_ts(::int64_t value) {
+  _internal_set_muted_until_ts(value);
+  SetHasBit(_impl_._has_bits_[0], 0x00000040U);
+  // @@protoc_insertion_point(field_set:chirp.chat.GroupMember.muted_until_ts)
+}
+inline ::int64_t GroupMember::_internal_muted_until_ts() const {
+  ::google::protobuf::internal::TSanRead(&_impl_);
+  return _impl_.muted_until_ts_;
+}
+inline void GroupMember::_internal_set_muted_until_ts(::int64_t value) {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_.muted_until_ts_ = value;
 }
 
 // -------------------------------------------------------------------
@@ -34760,6 +35522,598 @@ inline void GroupMemberAliasUpdatedNotify::set_allocated_alias(::std::string* PR
     _impl_.alias_.Set("", GetArena());
   }
   // @@protoc_insertion_point(field_set_allocated:chirp.chat.GroupMemberAliasUpdatedNotify.alias)
+}
+
+// -------------------------------------------------------------------
+
+// SetGroupMuteRequest
+
+// string group_id = 1;
+inline void SetGroupMuteRequest::clear_group_id() {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_.group_id_.ClearToEmpty();
+  ClearHasBit(_impl_._has_bits_[0],
+                  0x00000001U);
+}
+inline const ::std::string& SetGroupMuteRequest::group_id() const
+    ABSL_ATTRIBUTE_LIFETIME_BOUND {
+  // @@protoc_insertion_point(field_get:chirp.chat.SetGroupMuteRequest.group_id)
+  return _internal_group_id();
+}
+template <typename Arg_, typename... Args_>
+PROTOBUF_ALWAYS_INLINE void SetGroupMuteRequest::set_group_id(Arg_&& arg, Args_... args) {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  SetHasBit(_impl_._has_bits_[0], 0x00000001U);
+  _impl_.group_id_.Set(static_cast<Arg_&&>(arg), args..., GetArena());
+  // @@protoc_insertion_point(field_set:chirp.chat.SetGroupMuteRequest.group_id)
+}
+inline ::std::string* PROTOBUF_NONNULL SetGroupMuteRequest::mutable_group_id()
+    ABSL_ATTRIBUTE_LIFETIME_BOUND {
+  SetHasBit(_impl_._has_bits_[0], 0x00000001U);
+  ::std::string* _s = _internal_mutable_group_id();
+  // @@protoc_insertion_point(field_mutable:chirp.chat.SetGroupMuteRequest.group_id)
+  return _s;
+}
+inline const ::std::string& SetGroupMuteRequest::_internal_group_id() const {
+  ::google::protobuf::internal::TSanRead(&_impl_);
+  return _impl_.group_id_.Get();
+}
+inline void SetGroupMuteRequest::_internal_set_group_id(const ::std::string& value) {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_.group_id_.Set(value, GetArena());
+}
+inline ::std::string* PROTOBUF_NONNULL SetGroupMuteRequest::_internal_mutable_group_id() {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  return _impl_.group_id_.Mutable( GetArena());
+}
+inline ::std::string* PROTOBUF_NULLABLE SetGroupMuteRequest::release_group_id() {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  // @@protoc_insertion_point(field_release:chirp.chat.SetGroupMuteRequest.group_id)
+  if (!CheckHasBit(_impl_._has_bits_[0], 0x00000001U)) {
+    return nullptr;
+  }
+  ClearHasBit(_impl_._has_bits_[0], 0x00000001U);
+  auto* released = _impl_.group_id_.Release();
+  if (::google::protobuf::internal::DebugHardenForceCopyDefaultString()) {
+    _impl_.group_id_.Set("", GetArena());
+  }
+  return released;
+}
+inline void SetGroupMuteRequest::set_allocated_group_id(::std::string* PROTOBUF_NULLABLE value) {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  if (value != nullptr) {
+    SetHasBit(_impl_._has_bits_[0], 0x00000001U);
+  } else {
+    ClearHasBit(_impl_._has_bits_[0], 0x00000001U);
+  }
+  _impl_.group_id_.SetAllocated(value, GetArena());
+  if (::google::protobuf::internal::DebugHardenForceCopyDefaultString() && _impl_.group_id_.IsDefault()) {
+    _impl_.group_id_.Set("", GetArena());
+  }
+  // @@protoc_insertion_point(field_set_allocated:chirp.chat.SetGroupMuteRequest.group_id)
+}
+
+// string target_user_id = 2;
+inline void SetGroupMuteRequest::clear_target_user_id() {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_.target_user_id_.ClearToEmpty();
+  ClearHasBit(_impl_._has_bits_[0],
+                  0x00000002U);
+}
+inline const ::std::string& SetGroupMuteRequest::target_user_id() const
+    ABSL_ATTRIBUTE_LIFETIME_BOUND {
+  // @@protoc_insertion_point(field_get:chirp.chat.SetGroupMuteRequest.target_user_id)
+  return _internal_target_user_id();
+}
+template <typename Arg_, typename... Args_>
+PROTOBUF_ALWAYS_INLINE void SetGroupMuteRequest::set_target_user_id(Arg_&& arg, Args_... args) {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  SetHasBit(_impl_._has_bits_[0], 0x00000002U);
+  _impl_.target_user_id_.Set(static_cast<Arg_&&>(arg), args..., GetArena());
+  // @@protoc_insertion_point(field_set:chirp.chat.SetGroupMuteRequest.target_user_id)
+}
+inline ::std::string* PROTOBUF_NONNULL SetGroupMuteRequest::mutable_target_user_id()
+    ABSL_ATTRIBUTE_LIFETIME_BOUND {
+  SetHasBit(_impl_._has_bits_[0], 0x00000002U);
+  ::std::string* _s = _internal_mutable_target_user_id();
+  // @@protoc_insertion_point(field_mutable:chirp.chat.SetGroupMuteRequest.target_user_id)
+  return _s;
+}
+inline const ::std::string& SetGroupMuteRequest::_internal_target_user_id() const {
+  ::google::protobuf::internal::TSanRead(&_impl_);
+  return _impl_.target_user_id_.Get();
+}
+inline void SetGroupMuteRequest::_internal_set_target_user_id(const ::std::string& value) {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_.target_user_id_.Set(value, GetArena());
+}
+inline ::std::string* PROTOBUF_NONNULL SetGroupMuteRequest::_internal_mutable_target_user_id() {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  return _impl_.target_user_id_.Mutable( GetArena());
+}
+inline ::std::string* PROTOBUF_NULLABLE SetGroupMuteRequest::release_target_user_id() {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  // @@protoc_insertion_point(field_release:chirp.chat.SetGroupMuteRequest.target_user_id)
+  if (!CheckHasBit(_impl_._has_bits_[0], 0x00000002U)) {
+    return nullptr;
+  }
+  ClearHasBit(_impl_._has_bits_[0], 0x00000002U);
+  auto* released = _impl_.target_user_id_.Release();
+  if (::google::protobuf::internal::DebugHardenForceCopyDefaultString()) {
+    _impl_.target_user_id_.Set("", GetArena());
+  }
+  return released;
+}
+inline void SetGroupMuteRequest::set_allocated_target_user_id(::std::string* PROTOBUF_NULLABLE value) {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  if (value != nullptr) {
+    SetHasBit(_impl_._has_bits_[0], 0x00000002U);
+  } else {
+    ClearHasBit(_impl_._has_bits_[0], 0x00000002U);
+  }
+  _impl_.target_user_id_.SetAllocated(value, GetArena());
+  if (::google::protobuf::internal::DebugHardenForceCopyDefaultString() && _impl_.target_user_id_.IsDefault()) {
+    _impl_.target_user_id_.Set("", GetArena());
+  }
+  // @@protoc_insertion_point(field_set_allocated:chirp.chat.SetGroupMuteRequest.target_user_id)
+}
+
+// int64 duration_sec = 3;
+inline void SetGroupMuteRequest::clear_duration_sec() {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_.duration_sec_ = ::int64_t{0};
+  ClearHasBit(_impl_._has_bits_[0],
+                  0x00000004U);
+}
+inline ::int64_t SetGroupMuteRequest::duration_sec() const {
+  // @@protoc_insertion_point(field_get:chirp.chat.SetGroupMuteRequest.duration_sec)
+  return _internal_duration_sec();
+}
+inline void SetGroupMuteRequest::set_duration_sec(::int64_t value) {
+  _internal_set_duration_sec(value);
+  SetHasBit(_impl_._has_bits_[0], 0x00000004U);
+  // @@protoc_insertion_point(field_set:chirp.chat.SetGroupMuteRequest.duration_sec)
+}
+inline ::int64_t SetGroupMuteRequest::_internal_duration_sec() const {
+  ::google::protobuf::internal::TSanRead(&_impl_);
+  return _impl_.duration_sec_;
+}
+inline void SetGroupMuteRequest::_internal_set_duration_sec(::int64_t value) {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_.duration_sec_ = value;
+}
+
+// -------------------------------------------------------------------
+
+// SetGroupMuteResponse
+
+// .chirp.common.ErrorCode code = 1;
+inline void SetGroupMuteResponse::clear_code() {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_.code_ = 0;
+  ClearHasBit(_impl_._has_bits_[0],
+                  0x00000008U);
+}
+inline ::chirp::common::ErrorCode SetGroupMuteResponse::code() const {
+  // @@protoc_insertion_point(field_get:chirp.chat.SetGroupMuteResponse.code)
+  return _internal_code();
+}
+inline void SetGroupMuteResponse::set_code(::chirp::common::ErrorCode value) {
+  _internal_set_code(value);
+  SetHasBit(_impl_._has_bits_[0], 0x00000008U);
+  // @@protoc_insertion_point(field_set:chirp.chat.SetGroupMuteResponse.code)
+}
+inline ::chirp::common::ErrorCode SetGroupMuteResponse::_internal_code() const {
+  ::google::protobuf::internal::TSanRead(&_impl_);
+  return static_cast<::chirp::common::ErrorCode>(_impl_.code_);
+}
+inline void SetGroupMuteResponse::_internal_set_code(::chirp::common::ErrorCode value) {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_.code_ = value;
+}
+
+// string group_id = 2;
+inline void SetGroupMuteResponse::clear_group_id() {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_.group_id_.ClearToEmpty();
+  ClearHasBit(_impl_._has_bits_[0],
+                  0x00000001U);
+}
+inline const ::std::string& SetGroupMuteResponse::group_id() const
+    ABSL_ATTRIBUTE_LIFETIME_BOUND {
+  // @@protoc_insertion_point(field_get:chirp.chat.SetGroupMuteResponse.group_id)
+  return _internal_group_id();
+}
+template <typename Arg_, typename... Args_>
+PROTOBUF_ALWAYS_INLINE void SetGroupMuteResponse::set_group_id(Arg_&& arg, Args_... args) {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  SetHasBit(_impl_._has_bits_[0], 0x00000001U);
+  _impl_.group_id_.Set(static_cast<Arg_&&>(arg), args..., GetArena());
+  // @@protoc_insertion_point(field_set:chirp.chat.SetGroupMuteResponse.group_id)
+}
+inline ::std::string* PROTOBUF_NONNULL SetGroupMuteResponse::mutable_group_id()
+    ABSL_ATTRIBUTE_LIFETIME_BOUND {
+  SetHasBit(_impl_._has_bits_[0], 0x00000001U);
+  ::std::string* _s = _internal_mutable_group_id();
+  // @@protoc_insertion_point(field_mutable:chirp.chat.SetGroupMuteResponse.group_id)
+  return _s;
+}
+inline const ::std::string& SetGroupMuteResponse::_internal_group_id() const {
+  ::google::protobuf::internal::TSanRead(&_impl_);
+  return _impl_.group_id_.Get();
+}
+inline void SetGroupMuteResponse::_internal_set_group_id(const ::std::string& value) {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_.group_id_.Set(value, GetArena());
+}
+inline ::std::string* PROTOBUF_NONNULL SetGroupMuteResponse::_internal_mutable_group_id() {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  return _impl_.group_id_.Mutable( GetArena());
+}
+inline ::std::string* PROTOBUF_NULLABLE SetGroupMuteResponse::release_group_id() {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  // @@protoc_insertion_point(field_release:chirp.chat.SetGroupMuteResponse.group_id)
+  if (!CheckHasBit(_impl_._has_bits_[0], 0x00000001U)) {
+    return nullptr;
+  }
+  ClearHasBit(_impl_._has_bits_[0], 0x00000001U);
+  auto* released = _impl_.group_id_.Release();
+  if (::google::protobuf::internal::DebugHardenForceCopyDefaultString()) {
+    _impl_.group_id_.Set("", GetArena());
+  }
+  return released;
+}
+inline void SetGroupMuteResponse::set_allocated_group_id(::std::string* PROTOBUF_NULLABLE value) {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  if (value != nullptr) {
+    SetHasBit(_impl_._has_bits_[0], 0x00000001U);
+  } else {
+    ClearHasBit(_impl_._has_bits_[0], 0x00000001U);
+  }
+  _impl_.group_id_.SetAllocated(value, GetArena());
+  if (::google::protobuf::internal::DebugHardenForceCopyDefaultString() && _impl_.group_id_.IsDefault()) {
+    _impl_.group_id_.Set("", GetArena());
+  }
+  // @@protoc_insertion_point(field_set_allocated:chirp.chat.SetGroupMuteResponse.group_id)
+}
+
+// string user_id = 3;
+inline void SetGroupMuteResponse::clear_user_id() {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_.user_id_.ClearToEmpty();
+  ClearHasBit(_impl_._has_bits_[0],
+                  0x00000002U);
+}
+inline const ::std::string& SetGroupMuteResponse::user_id() const
+    ABSL_ATTRIBUTE_LIFETIME_BOUND {
+  // @@protoc_insertion_point(field_get:chirp.chat.SetGroupMuteResponse.user_id)
+  return _internal_user_id();
+}
+template <typename Arg_, typename... Args_>
+PROTOBUF_ALWAYS_INLINE void SetGroupMuteResponse::set_user_id(Arg_&& arg, Args_... args) {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  SetHasBit(_impl_._has_bits_[0], 0x00000002U);
+  _impl_.user_id_.Set(static_cast<Arg_&&>(arg), args..., GetArena());
+  // @@protoc_insertion_point(field_set:chirp.chat.SetGroupMuteResponse.user_id)
+}
+inline ::std::string* PROTOBUF_NONNULL SetGroupMuteResponse::mutable_user_id()
+    ABSL_ATTRIBUTE_LIFETIME_BOUND {
+  SetHasBit(_impl_._has_bits_[0], 0x00000002U);
+  ::std::string* _s = _internal_mutable_user_id();
+  // @@protoc_insertion_point(field_mutable:chirp.chat.SetGroupMuteResponse.user_id)
+  return _s;
+}
+inline const ::std::string& SetGroupMuteResponse::_internal_user_id() const {
+  ::google::protobuf::internal::TSanRead(&_impl_);
+  return _impl_.user_id_.Get();
+}
+inline void SetGroupMuteResponse::_internal_set_user_id(const ::std::string& value) {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_.user_id_.Set(value, GetArena());
+}
+inline ::std::string* PROTOBUF_NONNULL SetGroupMuteResponse::_internal_mutable_user_id() {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  return _impl_.user_id_.Mutable( GetArena());
+}
+inline ::std::string* PROTOBUF_NULLABLE SetGroupMuteResponse::release_user_id() {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  // @@protoc_insertion_point(field_release:chirp.chat.SetGroupMuteResponse.user_id)
+  if (!CheckHasBit(_impl_._has_bits_[0], 0x00000002U)) {
+    return nullptr;
+  }
+  ClearHasBit(_impl_._has_bits_[0], 0x00000002U);
+  auto* released = _impl_.user_id_.Release();
+  if (::google::protobuf::internal::DebugHardenForceCopyDefaultString()) {
+    _impl_.user_id_.Set("", GetArena());
+  }
+  return released;
+}
+inline void SetGroupMuteResponse::set_allocated_user_id(::std::string* PROTOBUF_NULLABLE value) {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  if (value != nullptr) {
+    SetHasBit(_impl_._has_bits_[0], 0x00000002U);
+  } else {
+    ClearHasBit(_impl_._has_bits_[0], 0x00000002U);
+  }
+  _impl_.user_id_.SetAllocated(value, GetArena());
+  if (::google::protobuf::internal::DebugHardenForceCopyDefaultString() && _impl_.user_id_.IsDefault()) {
+    _impl_.user_id_.Set("", GetArena());
+  }
+  // @@protoc_insertion_point(field_set_allocated:chirp.chat.SetGroupMuteResponse.user_id)
+}
+
+// int64 muted_until_ts = 4;
+inline void SetGroupMuteResponse::clear_muted_until_ts() {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_.muted_until_ts_ = ::int64_t{0};
+  ClearHasBit(_impl_._has_bits_[0],
+                  0x00000004U);
+}
+inline ::int64_t SetGroupMuteResponse::muted_until_ts() const {
+  // @@protoc_insertion_point(field_get:chirp.chat.SetGroupMuteResponse.muted_until_ts)
+  return _internal_muted_until_ts();
+}
+inline void SetGroupMuteResponse::set_muted_until_ts(::int64_t value) {
+  _internal_set_muted_until_ts(value);
+  SetHasBit(_impl_._has_bits_[0], 0x00000004U);
+  // @@protoc_insertion_point(field_set:chirp.chat.SetGroupMuteResponse.muted_until_ts)
+}
+inline ::int64_t SetGroupMuteResponse::_internal_muted_until_ts() const {
+  ::google::protobuf::internal::TSanRead(&_impl_);
+  return _impl_.muted_until_ts_;
+}
+inline void SetGroupMuteResponse::_internal_set_muted_until_ts(::int64_t value) {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_.muted_until_ts_ = value;
+}
+
+// -------------------------------------------------------------------
+
+// GroupMemberMutedNotify
+
+// string group_id = 1;
+inline void GroupMemberMutedNotify::clear_group_id() {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_.group_id_.ClearToEmpty();
+  ClearHasBit(_impl_._has_bits_[0],
+                  0x00000001U);
+}
+inline const ::std::string& GroupMemberMutedNotify::group_id() const
+    ABSL_ATTRIBUTE_LIFETIME_BOUND {
+  // @@protoc_insertion_point(field_get:chirp.chat.GroupMemberMutedNotify.group_id)
+  return _internal_group_id();
+}
+template <typename Arg_, typename... Args_>
+PROTOBUF_ALWAYS_INLINE void GroupMemberMutedNotify::set_group_id(Arg_&& arg, Args_... args) {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  SetHasBit(_impl_._has_bits_[0], 0x00000001U);
+  _impl_.group_id_.Set(static_cast<Arg_&&>(arg), args..., GetArena());
+  // @@protoc_insertion_point(field_set:chirp.chat.GroupMemberMutedNotify.group_id)
+}
+inline ::std::string* PROTOBUF_NONNULL GroupMemberMutedNotify::mutable_group_id()
+    ABSL_ATTRIBUTE_LIFETIME_BOUND {
+  SetHasBit(_impl_._has_bits_[0], 0x00000001U);
+  ::std::string* _s = _internal_mutable_group_id();
+  // @@protoc_insertion_point(field_mutable:chirp.chat.GroupMemberMutedNotify.group_id)
+  return _s;
+}
+inline const ::std::string& GroupMemberMutedNotify::_internal_group_id() const {
+  ::google::protobuf::internal::TSanRead(&_impl_);
+  return _impl_.group_id_.Get();
+}
+inline void GroupMemberMutedNotify::_internal_set_group_id(const ::std::string& value) {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_.group_id_.Set(value, GetArena());
+}
+inline ::std::string* PROTOBUF_NONNULL GroupMemberMutedNotify::_internal_mutable_group_id() {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  return _impl_.group_id_.Mutable( GetArena());
+}
+inline ::std::string* PROTOBUF_NULLABLE GroupMemberMutedNotify::release_group_id() {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  // @@protoc_insertion_point(field_release:chirp.chat.GroupMemberMutedNotify.group_id)
+  if (!CheckHasBit(_impl_._has_bits_[0], 0x00000001U)) {
+    return nullptr;
+  }
+  ClearHasBit(_impl_._has_bits_[0], 0x00000001U);
+  auto* released = _impl_.group_id_.Release();
+  if (::google::protobuf::internal::DebugHardenForceCopyDefaultString()) {
+    _impl_.group_id_.Set("", GetArena());
+  }
+  return released;
+}
+inline void GroupMemberMutedNotify::set_allocated_group_id(::std::string* PROTOBUF_NULLABLE value) {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  if (value != nullptr) {
+    SetHasBit(_impl_._has_bits_[0], 0x00000001U);
+  } else {
+    ClearHasBit(_impl_._has_bits_[0], 0x00000001U);
+  }
+  _impl_.group_id_.SetAllocated(value, GetArena());
+  if (::google::protobuf::internal::DebugHardenForceCopyDefaultString() && _impl_.group_id_.IsDefault()) {
+    _impl_.group_id_.Set("", GetArena());
+  }
+  // @@protoc_insertion_point(field_set_allocated:chirp.chat.GroupMemberMutedNotify.group_id)
+}
+
+// string user_id = 2;
+inline void GroupMemberMutedNotify::clear_user_id() {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_.user_id_.ClearToEmpty();
+  ClearHasBit(_impl_._has_bits_[0],
+                  0x00000002U);
+}
+inline const ::std::string& GroupMemberMutedNotify::user_id() const
+    ABSL_ATTRIBUTE_LIFETIME_BOUND {
+  // @@protoc_insertion_point(field_get:chirp.chat.GroupMemberMutedNotify.user_id)
+  return _internal_user_id();
+}
+template <typename Arg_, typename... Args_>
+PROTOBUF_ALWAYS_INLINE void GroupMemberMutedNotify::set_user_id(Arg_&& arg, Args_... args) {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  SetHasBit(_impl_._has_bits_[0], 0x00000002U);
+  _impl_.user_id_.Set(static_cast<Arg_&&>(arg), args..., GetArena());
+  // @@protoc_insertion_point(field_set:chirp.chat.GroupMemberMutedNotify.user_id)
+}
+inline ::std::string* PROTOBUF_NONNULL GroupMemberMutedNotify::mutable_user_id()
+    ABSL_ATTRIBUTE_LIFETIME_BOUND {
+  SetHasBit(_impl_._has_bits_[0], 0x00000002U);
+  ::std::string* _s = _internal_mutable_user_id();
+  // @@protoc_insertion_point(field_mutable:chirp.chat.GroupMemberMutedNotify.user_id)
+  return _s;
+}
+inline const ::std::string& GroupMemberMutedNotify::_internal_user_id() const {
+  ::google::protobuf::internal::TSanRead(&_impl_);
+  return _impl_.user_id_.Get();
+}
+inline void GroupMemberMutedNotify::_internal_set_user_id(const ::std::string& value) {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_.user_id_.Set(value, GetArena());
+}
+inline ::std::string* PROTOBUF_NONNULL GroupMemberMutedNotify::_internal_mutable_user_id() {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  return _impl_.user_id_.Mutable( GetArena());
+}
+inline ::std::string* PROTOBUF_NULLABLE GroupMemberMutedNotify::release_user_id() {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  // @@protoc_insertion_point(field_release:chirp.chat.GroupMemberMutedNotify.user_id)
+  if (!CheckHasBit(_impl_._has_bits_[0], 0x00000002U)) {
+    return nullptr;
+  }
+  ClearHasBit(_impl_._has_bits_[0], 0x00000002U);
+  auto* released = _impl_.user_id_.Release();
+  if (::google::protobuf::internal::DebugHardenForceCopyDefaultString()) {
+    _impl_.user_id_.Set("", GetArena());
+  }
+  return released;
+}
+inline void GroupMemberMutedNotify::set_allocated_user_id(::std::string* PROTOBUF_NULLABLE value) {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  if (value != nullptr) {
+    SetHasBit(_impl_._has_bits_[0], 0x00000002U);
+  } else {
+    ClearHasBit(_impl_._has_bits_[0], 0x00000002U);
+  }
+  _impl_.user_id_.SetAllocated(value, GetArena());
+  if (::google::protobuf::internal::DebugHardenForceCopyDefaultString() && _impl_.user_id_.IsDefault()) {
+    _impl_.user_id_.Set("", GetArena());
+  }
+  // @@protoc_insertion_point(field_set_allocated:chirp.chat.GroupMemberMutedNotify.user_id)
+}
+
+// int64 muted_until_ts = 3;
+inline void GroupMemberMutedNotify::clear_muted_until_ts() {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_.muted_until_ts_ = ::int64_t{0};
+  ClearHasBit(_impl_._has_bits_[0],
+                  0x00000008U);
+}
+inline ::int64_t GroupMemberMutedNotify::muted_until_ts() const {
+  // @@protoc_insertion_point(field_get:chirp.chat.GroupMemberMutedNotify.muted_until_ts)
+  return _internal_muted_until_ts();
+}
+inline void GroupMemberMutedNotify::set_muted_until_ts(::int64_t value) {
+  _internal_set_muted_until_ts(value);
+  SetHasBit(_impl_._has_bits_[0], 0x00000008U);
+  // @@protoc_insertion_point(field_set:chirp.chat.GroupMemberMutedNotify.muted_until_ts)
+}
+inline ::int64_t GroupMemberMutedNotify::_internal_muted_until_ts() const {
+  ::google::protobuf::internal::TSanRead(&_impl_);
+  return _impl_.muted_until_ts_;
+}
+inline void GroupMemberMutedNotify::_internal_set_muted_until_ts(::int64_t value) {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_.muted_until_ts_ = value;
+}
+
+// string operator_id = 4;
+inline void GroupMemberMutedNotify::clear_operator_id() {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_.operator_id_.ClearToEmpty();
+  ClearHasBit(_impl_._has_bits_[0],
+                  0x00000004U);
+}
+inline const ::std::string& GroupMemberMutedNotify::operator_id() const
+    ABSL_ATTRIBUTE_LIFETIME_BOUND {
+  // @@protoc_insertion_point(field_get:chirp.chat.GroupMemberMutedNotify.operator_id)
+  return _internal_operator_id();
+}
+template <typename Arg_, typename... Args_>
+PROTOBUF_ALWAYS_INLINE void GroupMemberMutedNotify::set_operator_id(Arg_&& arg, Args_... args) {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  SetHasBit(_impl_._has_bits_[0], 0x00000004U);
+  _impl_.operator_id_.Set(static_cast<Arg_&&>(arg), args..., GetArena());
+  // @@protoc_insertion_point(field_set:chirp.chat.GroupMemberMutedNotify.operator_id)
+}
+inline ::std::string* PROTOBUF_NONNULL GroupMemberMutedNotify::mutable_operator_id()
+    ABSL_ATTRIBUTE_LIFETIME_BOUND {
+  SetHasBit(_impl_._has_bits_[0], 0x00000004U);
+  ::std::string* _s = _internal_mutable_operator_id();
+  // @@protoc_insertion_point(field_mutable:chirp.chat.GroupMemberMutedNotify.operator_id)
+  return _s;
+}
+inline const ::std::string& GroupMemberMutedNotify::_internal_operator_id() const {
+  ::google::protobuf::internal::TSanRead(&_impl_);
+  return _impl_.operator_id_.Get();
+}
+inline void GroupMemberMutedNotify::_internal_set_operator_id(const ::std::string& value) {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_.operator_id_.Set(value, GetArena());
+}
+inline ::std::string* PROTOBUF_NONNULL GroupMemberMutedNotify::_internal_mutable_operator_id() {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  return _impl_.operator_id_.Mutable( GetArena());
+}
+inline ::std::string* PROTOBUF_NULLABLE GroupMemberMutedNotify::release_operator_id() {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  // @@protoc_insertion_point(field_release:chirp.chat.GroupMemberMutedNotify.operator_id)
+  if (!CheckHasBit(_impl_._has_bits_[0], 0x00000004U)) {
+    return nullptr;
+  }
+  ClearHasBit(_impl_._has_bits_[0], 0x00000004U);
+  auto* released = _impl_.operator_id_.Release();
+  if (::google::protobuf::internal::DebugHardenForceCopyDefaultString()) {
+    _impl_.operator_id_.Set("", GetArena());
+  }
+  return released;
+}
+inline void GroupMemberMutedNotify::set_allocated_operator_id(::std::string* PROTOBUF_NULLABLE value) {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  if (value != nullptr) {
+    SetHasBit(_impl_._has_bits_[0], 0x00000004U);
+  } else {
+    ClearHasBit(_impl_._has_bits_[0], 0x00000004U);
+  }
+  _impl_.operator_id_.SetAllocated(value, GetArena());
+  if (::google::protobuf::internal::DebugHardenForceCopyDefaultString() && _impl_.operator_id_.IsDefault()) {
+    _impl_.operator_id_.Set("", GetArena());
+  }
+  // @@protoc_insertion_point(field_set_allocated:chirp.chat.GroupMemberMutedNotify.operator_id)
+}
+
+// int64 timestamp = 5;
+inline void GroupMemberMutedNotify::clear_timestamp() {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_.timestamp_ = ::int64_t{0};
+  ClearHasBit(_impl_._has_bits_[0],
+                  0x00000010U);
+}
+inline ::int64_t GroupMemberMutedNotify::timestamp() const {
+  // @@protoc_insertion_point(field_get:chirp.chat.GroupMemberMutedNotify.timestamp)
+  return _internal_timestamp();
+}
+inline void GroupMemberMutedNotify::set_timestamp(::int64_t value) {
+  _internal_set_timestamp(value);
+  SetHasBit(_impl_._has_bits_[0], 0x00000010U);
+  // @@protoc_insertion_point(field_set:chirp.chat.GroupMemberMutedNotify.timestamp)
+}
+inline ::int64_t GroupMemberMutedNotify::_internal_timestamp() const {
+  ::google::protobuf::internal::TSanRead(&_impl_);
+  return _impl_.timestamp_;
+}
+inline void GroupMemberMutedNotify::_internal_set_timestamp(::int64_t value) {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_.timestamp_ = value;
 }
 
 // -------------------------------------------------------------------

@@ -24,14 +24,14 @@ namespace Chirp.Common {
     static CommonReflection() {
       byte[] descriptorData = global::System.Convert.FromBase64String(
           string.Concat(
-            "ChJwcm90by9jb21tb24ucHJvdG8SDGNoaXJwLmNvbW1vbiIHCgVFbXB0eSrx",
+            "ChJwcm90by9jb21tb24ucHJvdG8SDGNoaXJwLmNvbW1vbiIHCgVFbXB0eSr8",
             "AQoJRXJyb3JDb2RlEgYKAk9LEAASEgoOSU5URVJOQUxfRVJST1IQARIRCg1J",
             "TlZBTElEX1BBUkFNEAISDwoLQVVUSF9GQUlMRUQQAxITCg9TRVNTSU9OX0VY",
             "UElSRUQQBBISCg5VU0VSX05PVF9GT1VORBAFEhIKDlRBUkdFVF9PRkZMSU5F",
             "EAYSFgoSU0VSVkVSX1VOQVZBSUxBQkxFEAcSEAoMUkFURV9MSU1JVEVEEAgS",
             "FAoQVkVSU0lPTl9NSVNNQVRDSBAJEhEKDVdPUkRfRklMVEVSRUQQChIUChBD",
-            "T05URU5UX1RPT19MT05HEAtCJlokZ2l0aHViLmNvbS9jdWkvY2hpcnAvcHJv",
-            "dG8vZ28vY29tbW9uYgZwcm90bzM="));
+            "T05URU5UX1RPT19MT05HEAsSCQoFTVVURUQQDEImWiRnaXRodWIuY29tL2N1",
+            "aS9jaGlycC9wcm90by9nby9jb21tb25iBnByb3RvMw=="));
       descriptor = pbr::FileDescriptor.FromGeneratedCode(descriptorData,
           new pbr::FileDescriptor[] { },
           new pbr::GeneratedClrTypeInfo(new[] {typeof(global::Chirp.Common.ErrorCode), }, null, new pbr::GeneratedClrTypeInfo[] {
@@ -75,6 +75,12 @@ namespace Chirp.Common {
     /// the message exceeded MaxContentChars for its channel type.
     /// </summary>
     [pbr::OriginalName("CONTENT_TOO_LONG")] ContentTooLong = 11,
+    /// <summary>
+    /// Game-plane group mute (game_chat_features P1 专码): the sender is muted
+    /// in the target group by a MODERATOR+ (SET_GROUP_MUTE_REQ 2250). The send
+    /// is refused without touching any store; other channels are unaffected.
+    /// </summary>
+    [pbr::OriginalName("MUTED")] Muted = 12,
   }
 
   #endregion
