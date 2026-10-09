@@ -1,6 +1,7 @@
 #include "common/crash_handler.h"
 
 #include <algorithm>
+#include <atomic>
 #include <cstddef>
 #include <cstdlib>
 #include <filesystem>
@@ -189,6 +190,15 @@ bool Initialize(int argc, char** argv) {
   if (opts.handler_path.empty()) {
     Logger::Instance().Warn("crashpad_handler not found; crash collection disabled");
     return false;
+  }
+
+  // 进程内二次驱动 main() 的测试路径(如 chat_basic_session_tests 用
+  // #define main 直驱改名 main)会二次进入;crashpad 客户端一进程一实例,
+  // 二次 StartHandler 命中其 Debug CHECK(!handler_) 直接 trap。已有
+  // handler 在管时跳过重启,返回 true(采集视为在管)。
+  static std::atomic<bool> handler_started{false};
+  if (handler_started.exchange(true)) {
+    return true;
   }
 
   std::map<std::string, std::string> annotations;

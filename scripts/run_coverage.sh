@@ -139,9 +139,9 @@ def is_excluded(path):
 KNOWN_UNCOVERABLE = {
     # crash_handler SelfExeDir: the readlink-failure return line. /proc/self/exe
     # resolves for every real (and therefore test) process; the branch-level
-    # entry for the same condition (crash_handler.cc arm set, line 91) carries
+    # entry for the same condition (crash_handler.cc arm set, line 92) carries
     # the full rationale - keep the two in sync.
-    ("libs/common/crash_handler.cc", 92),
+    ("libs/common/crash_handler.cc", 93),
     # HttpPushTransport connect-vs-deadline race: the timer arm only fires
     # against a packet-blackhole address. Sandboxes whose gateway SYN-proxies
     # every destination complete the handshake instead, so no
@@ -618,24 +618,24 @@ KNOWN_UNCOVERABLE_ARMS = {
     # condition directions documented per line. Every live edge is exercised
     # by the crash_handler_test suite (flag/env/default precedence, walk-up
     # hit/limit, pending-scan, no-op stub degradation).
-    ("libs/common/crash_handler.cc", 76): ((6, 7),
+    ("libs/common/crash_handler.cc", 77): ((6, 7),
         "GetEnv: throw-inspection arms of the inlined std::string "
         "constructions (allocation-failure continuation after the null "
         "check; the empty-value edge and the value edge are both taken). "
         "An always-throwing new_handler cannot be scoped to a single "
         "getenv-shaped helper; allocation-failure unwind, "
         "environment-unreachable."),
-    ("libs/common/crash_handler.cc", 91): ((0,),
+    ("libs/common/crash_handler.cc", 92): ((0,),
         "SelfExeDir readlink failure arm: /proc/self/exe always resolves "
         "for every real (and therefore test) process; the >4095-byte path "
         "truncation semantics of readlink(2) cannot produce n<=0 here."),
-    ("libs/common/crash_handler.cc", 97): ((1, 7, 8, 9),
+    ("libs/common/crash_handler.cc", 98): ((1, 7, 8, 9),
         "SelfExeDir return: has_filename is always true for a resolved "
         "/proc/self/exe (regular file), so the false direction of the "
         "ternary is unreachable; the remaining arms are the throw-"
         "inspection slots of the inlined path/string constructions "
         "(allocation-failure unwind, environment-unreachable)."),
-    ("libs/common/crash_handler.cc", 137): ((1, 7, 10, 11),
+    ("libs/common/crash_handler.cc", 138): ((1, 7, 10, 11),
         "Handler walk-up loop: the has_parent_path false direction never "
         "fires because the 4-level walk-up limit terminates root-bound "
         "searches first (deepest tested exe_dir is 5 levels), and the "
