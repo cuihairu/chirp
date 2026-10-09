@@ -1267,6 +1267,16 @@ elif [[ "${1:-}" == "--smoke-search" ]]; then
     --host 127.0.0.1 --port "${GW_PORT}" --sender smoke_a --receiver smoke_b \
     --text "${KEYWORD} hello" || { echo "错误: 种子消息发送失败"; exit 1; }
 
+  # 种子落库核对:chat 的 MySQL 写入失败只在 WARN 里留一行(无错误详情),
+  # 这里直接数 messages 行数,把「chat 没写进去」与「search 没索引」分开。
+  if command -v mysql >/dev/null 2>&1; then
+    seed_rows=$(MYSQL_PWD="${MYSQL_PASSWORD:-chirp_password}" mysql \
+      -h "${SM_SEARCH_MYSQL_HOST}" -P "${SM_SEARCH_MYSQL_PORT}" \
+      -u "${MYSQL_USER:-chirp}" "${MYSQL_DATABASE:-chirp}" \
+      -N -e "SELECT COUNT(*) FROM messages" 2>/dev/null | tail -1) || seed_rows="?"
+    echo "[search] messages rows after seed: ${seed_rows:-0}"
+  fi
+
   # search 的 100ms tail 泵需要时间把新消息推进 FTS5 索引;重试直到 2248 命中,
   # 最多 10s(容忍 MySQL 索引回填+tail 首拍延迟)。每轮重查,FTS 命中即停。
   echo ""

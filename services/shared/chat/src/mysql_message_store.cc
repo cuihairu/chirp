@@ -250,6 +250,7 @@ bool MySQLMessageStore::Initialize() {
 bool MySQLMessageStore::StoreMessage(const StoredMessage& message) {
   auto conn = pool_->GetConnection();
   if (!conn) {
+    Logger::Instance().Warn("MySQLMessageStore::StoreMessage: no pooled connection");
     return false;
   }
 
@@ -270,6 +271,10 @@ bool MySQLMessageStore::StoreMessage(const StoredMessage& message) {
                      std::to_string(message.sender_kind) + ")";
 
   bool result = conn->Execute(query);
+  if (!result) {
+    Logger::Instance().Warn("MySQLMessageStore::StoreMessage failed: " +
+                            std::string(mysql_error(conn->GetMySQL())));
+  }
   pool_->ReturnConnection(std::move(conn));
   return result;
 }
