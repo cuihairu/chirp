@@ -8,8 +8,22 @@
 #include <string>
 #include <string_view>
 #include <system_error>
-#include <unistd.h>
 #include <vector>
+
+// 平台头:exe 目录探测,Linux/macOS 用 readlink(/proc/self/exe),Windows 用
+// GetModuleFileNameA;pid 同理 getpid/_getpid。NOMINMAX 防 windows.h 的
+// min/max 宏污染本 TU。
+#if defined(_WIN32)
+#ifndef NOMINMAX
+#define NOMINMAX
+#endif
+#include <windows.h>
+#include <process.h>
+#define CHIRP_GETPID _getpid
+#else
+#include <unistd.h>
+#define CHIRP_GETPID getpid
+#endif
 
 #include "common/logger.h"
 
@@ -65,11 +79,19 @@ std::string GetEnv(const char* name) {
 }  // namespace
 
 std::string SelfExeDir() {
+#if defined(_WIN32)
+  char buf[MAX_PATH];
+  const DWORD n = ::GetModuleFileNameA(nullptr, buf, static_cast<DWORD>(sizeof(buf)));
+  if (n == 0 || n >= sizeof(buf)) {
+    return std::string();
+  }
+#else
   char buf[4096];
   const ssize_t n = ::readlink("/proc/self/exe", buf, sizeof(buf) - 1);
   if (n <= 0) {
     return std::string();
   }
+#endif
   buf[n] = '\0';
   const fs::path exe(buf);
   return exe.has_filename() ? exe.parent_path().string() : std::string();
@@ -171,7 +193,7 @@ bool Initialize(int argc, char** argv) {
 
   std::map<std::string, std::string> annotations;
   annotations["binary"] = argv[0] == nullptr ? std::string() : std::string(argv[0]);
-  annotations["pid"] = std::to_string(::getpid());
+  annotations["pid"] = std::to_string(CHIRP_GETPID());
   std::string cmd;
   for (int i = 0; i < argc && cmd.size() < kCmdAnnotationLimit; ++i) {
     if (argv[i] == nullptr) {

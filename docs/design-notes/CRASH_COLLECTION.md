@@ -135,6 +135,9 @@
 
 ## 范围外（如实）
 
+- 崩溃**采集**目前只在 Linux 生效：`CHIRP_ENABLE_CRASHPAD` 被平台门限制在
+  Linux（与仓内 CI 一致），darwin/windows 包如实不含 handler。但
+  `libs/common/crash_handler.*` 本身可跨平台编译（exe 目录探测按
+  `_WIN32` 分支到 `GetModuleFileNameA`，pid 用 `_getpid`），非 Linux 平台
+  上是无采集的降级桩，不阻断 SDK 构建。
 - 上传端点、多机集中检索、alert 联动：外发面默认关，另批评估。
-- 非 Linux 平台（Windows/macOS/鸿蒙）：crashpad 只接 Linux（与仓内 CI
-  一致），darwin/windows 包如实不含 handler。

@@ -32,7 +32,7 @@ bool MetricsHttpServer::Start() {
     AcceptConnection();
     running_ = true;
     return true;
-  } catch (const std::exception& e) {  // GCOVR_EXCL_LINE -- async_accept(ec form) does not throw; catch arm is defensive
+  } catch (const std::exception&) {  // GCOVR_EXCL_LINE -- async_accept(ec form) does not throw; catch arm is defensive
     return false;  // GCOVR_EXCL_LINE -- async_accept(ec form) does not throw; catch arm is defensive
   }  // GCOVR_EXCL_LINE -- async_accept(ec form) does not throw; catch arm is defensive
 }
