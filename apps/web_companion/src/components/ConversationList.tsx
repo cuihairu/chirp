@@ -24,6 +24,7 @@ import PartyDialog, { PartyButton } from './PartyDialog';
 import VoiceDialog, { VoiceButton } from './VoiceDialog';
 import DevicesDialog, { DevicesButton } from './DevicesDialog';
 import OnlineDevicesDialog, { OnlineDevicesButton } from './OnlineDevicesDialog';
+import SearchDialog from './SearchDialog';
 import { zh } from '../i18n/zh';
 
 /** Left pane: conversations, newest first, plus the start-private-chat entry. */
@@ -49,6 +50,7 @@ export default function ConversationList({
   const [voiceOpen, setVoiceOpen] = useState(false);
   const [devicesOpen, setDevicesOpen] = useState(false);
   const [onlineDevicesOpen, setOnlineDevicesOpen] = useState(false);
+  const [searchOpen, setSearchOpen] = useState(false);
 
   const startChat = (): void => {
     const peer = peerId.trim();
@@ -97,6 +99,9 @@ export default function ConversationList({
         </Button>
         <Button variant="outlined" fullWidth onClick={() => setGroupOpen(true)}>
           {zh.chat.newGroup}
+        </Button>
+        <Button variant="text" fullWidth onClick={() => setSearchOpen(true)} data-testid="search-entry">
+          {zh.search.title}
         </Button>
         {socialApi && (
           <Button variant="text" fullWidth onClick={() => setFriendsOpen(true)}>
@@ -215,6 +220,13 @@ export default function ConversationList({
       {voiceApi && <VoiceDialog open={voiceOpen} onClose={() => setVoiceOpen(false)} />}
       {deviceApi && <DevicesDialog open={devicesOpen} onClose={() => setDevicesOpen(false)} />}
       <OnlineDevicesDialog open={onlineDevicesOpen} onClose={() => setOnlineDevicesOpen(false)} />
+      {api && (
+        <SearchDialog
+          open={searchOpen}
+          onClose={() => setSearchOpen(false)}
+          onOpenChannel={onOpen}
+        />
+      )}
     </Box>
   );
 }

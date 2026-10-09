@@ -146,8 +146,14 @@ Android 原生管线另有节奏）。web/desktop 消费侧（ChatApi + alias �
 渲染两处消费）为下一增量：ChatApi 层两端已就位（desktop 226d912；
 web 补齐 `searchMessages`/`setMemberAlias` + start() 订阅 2124 扇出
 `onGroupMemberAliasUpdated` 刷新群列表，畸形体静默丢弃，vitest 7 例——
-搜索三态短路/透传、alias 短路回显、2124 合法刷新/畸形忽略），UI 消费
-（搜索界面、alias 设置面、渲染两处）仍为后续增量。
+搜索三态短路/透传、alias 短路回显、2124 合法刷新/畸形忽略）。**web 搜索
+界面已落地（2026-10-09）**：`SearchDialog`（侧栏入口）——关键词必填、
+「加载更多」携带本页末条 (timestamp, message_id) 游标；私聊命中本地补会话
+后跳转、群命中本地有会话才可跳、其余频道（世界/系统等 web 无会话面）只读
+展示；SERVER_UNAVAILABLE 显示「搜索服务未连接」；高亮按决策记录客户端做，
+首版从简未做。vitest 5 例（空态禁用/命中渲染与私聊跳转/游标翻页/降级文案/
+空结果）。alias 设置面与渲染两处、desktop 搜索界面、2248 端到端 smoke 腿
+仍为后续增量。
 
 ## 6. 验收口径
 

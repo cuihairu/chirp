@@ -158,4 +158,17 @@ export const zh = {
     privateTitle: (user: string) => `${user} 发来私信`,
     groupTitle: (group: string, user: string) => `${group} · ${user}`,
   },
+  search: {
+    title: '消息搜索',
+    placeholder: '输入关键词搜索聊天历史',
+    action: '搜索',
+    more: '加载更多',
+    empty: '没有匹配的消息。',
+    prompt: '输入关键词后搜索。',
+    failed: '搜索失败,请稍后重试。',
+    unavailable: '搜索服务未连接。',
+    privateChannel: (peer: string) => `私聊 · ${peer}`,
+    groupChannel: (id: string) => `群 · ${id}`,
+    otherChannel: (id: string) => `频道 · ${id}`,
+  },
 } as const;
