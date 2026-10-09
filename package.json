@@ -6,6 +6,9 @@
     "apps/web_companion",
     "sdks/ts"
   ],
+  "overrides": {
+    "source-map-js": "^1.2.2"
+  },
   "scripts": {
     "docs:dev": "npm --prefix docs run dev",
     "docs:build": "npm --prefix docs run build",
