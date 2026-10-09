@@ -1183,6 +1183,10 @@ elif [[ "${1:-}" == "--smoke-search" ]]; then
   # authoritative source otherwise). Probe the EFFECTIVE coordinates (env or
   # the binaries' defaults — CI's service container is reached through the
   # defaults with no env at all); unreachable → skip instead of asserting.
+  # search gets the coordinates passed EXPLICITLY: unlike chat, its
+  # --mysql_host has no default (empty = refuse to start), so an empty
+  # MYSQL_ARGS (CI sets no MYSQL_* env) would exit at startup — the 2248
+  # leg red on 6c93d93's first CI run. Credentials mirror chat's defaults.
   SM_SEARCH_MYSQL_HOST="${MYSQL_HOST:-127.0.0.1}"
   SM_SEARCH_MYSQL_PORT="${MYSQL_PORT:-3306}"
   if ! (exec 3<>"/dev/tcp/${SM_SEARCH_MYSQL_HOST}/${SM_SEARCH_MYSQL_PORT}") 2>/dev/null; then
@@ -1209,7 +1213,10 @@ elif [[ "${1:-}" == "--smoke-search" ]]; then
   # 索引文件每轮全新:启动回填按 id 游标扫全表,旧索引不省时间反而引入陈旧态。
   rm -f /tmp/chirp_search_smoke_search.db
   ./build/services/search/chirp_search --port "${SEARCH_PORT}" \
-    --gateway_service_secret game-secret "${MYSQL_ARGS[@]+"${MYSQL_ARGS[@]}"}" \
+    --gateway_service_secret game-secret \
+    --mysql_host "${SM_SEARCH_MYSQL_HOST}" --mysql_port "${SM_SEARCH_MYSQL_PORT}" \
+    --mysql_user "${MYSQL_USER:-chirp}" --mysql_password "${MYSQL_PASSWORD:-chirp_password}" \
+    --mysql_database "${MYSQL_DATABASE:-chirp}" \
     --db_path /tmp/chirp_search_smoke_search.db \
     > "${SEARCH_LOG}" 2>&1 &
   SEARCH_PID=$!
