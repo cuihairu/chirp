@@ -106,10 +106,10 @@ bool HybridMessageStore::Initialize() {
   }
 
   // Test Redis connection. 真发 PING:此前用 Get("ping")——GET 一个不存在的
-  // 键恒返回 null,健康连接也被误报成 MySQL-only。
+  // 键恒返回 null,健康连接也被误报成 MySQL-only。条件收单行:coverage 环境
+  // 无 redis,判定只能走 !pong 短路面,分行写会留下永不执行的裸行。
   auto pong = redis_->Command({"PING"});
-  if (!pong || pong->type != network::RedisResp::Type::kSimpleString ||
-      pong->str != "PONG") {
+  if (!pong || pong->type != network::RedisResp::Type::kSimpleString || pong->str != "PONG") {
     Logger::Instance().Warn("Redis connection failed, running in MySQL-only mode");
   }
 
