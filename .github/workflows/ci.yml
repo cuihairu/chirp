@@ -140,6 +140,9 @@ jobs:
     - name: "Smoke: party snapshot lifecycle"
       run: timeout 600 bash test_services.sh --smoke-party
 
+    - name: "Smoke: search 2248 end to end (gateway dual pipe + FTS5)"
+      run: timeout 600 bash test_services.sh --smoke-search
+
     # Smoke 死进程的现场回收:crashpad 把 SIGABRT dump 落在工作区
     # crash_dumps/,各服务日志在 /tmp/chirp_*.log,失败时都传上来,
     # 否则 runner 回收后现场全丢(2026-10-09 smoke-edge chirp_chat

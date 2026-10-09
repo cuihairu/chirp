@@ -250,6 +250,17 @@ int main(int argc, char** argv) {
       body = req.SerializeAsString();
       req_id = chirp::gateway::GET_MENTION_SUGGESTIONS_REQ;
       resp_id = chirp::gateway::GET_MENTION_SUGGESTIONS_RESP;
+    } else if (act == "search") {
+      // Server-side message search (SEARCH_MESSAGE_REQ/RESP 2248/2249). The
+      // gateway intercepts 2248 before the chat catch-all when --search_host
+      // is set; rc 0 only when the service accepted the query (code=OK) —
+      // the smoke leg greps the printed matches, retries drive the
+      // migration+pump tail latency.
+      chirp::chat::SearchMessageRequest req;
+      req.set_keyword(GetArg(argc, argv, "--query", ""));
+      body = req.SerializeAsString();
+      req_id = chirp::gateway::SEARCH_MESSAGE_REQ;
+      resp_id = chirp::gateway::SEARCH_MESSAGE_RESP;
     } else if (act == "get_typing") {
       chirp::chat::GetTypingUsersRequest req;
       req.set_channel_id(channel);
@@ -309,6 +320,18 @@ int main(int argc, char** argv) {
         std::cout << " [" << s.display_text() << "]";
       }
       std::cout << "\n";
+    } else if (resp_id == chirp::gateway::SEARCH_MESSAGE_RESP) {
+      chirp::chat::SearchMessageResponse r;
+      if (!r.ParseFromArray(resp_pkt.body().data(), static_cast<int>(resp_pkt.body().size()))) {
+        std::cerr << "failed to parse SearchMessageResponse\n";
+        return 1;
+      }
+      std::cout << "code=" << r.code() << " matches=" << r.matches_size();
+      for (const auto& m : r.matches()) {
+        std::cout << " [" << m.channel_id() << "] " << m.content();
+      }
+      std::cout << "\n";
+      return r.code() == chirp::common::OK ? 0 : 1;
     } else {
       std::cout << act << " ok\n";
     }

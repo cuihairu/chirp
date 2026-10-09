@@ -96,7 +96,8 @@ case "${1}" in
     ;;
   --smoke-search)
     require_bin "./build/services/search/chirp_search"
-    # TODO: search smoke client (chirp_search_smoke_client) when available
+    require_bin "./build/tools/benchmark/chirp_chat_send_client"
+    require_bin "./build/services/game/sdk_gateway/chirp_game_sdk_gateway"
     ;;
 esac
 
@@ -1173,6 +1174,111 @@ elif [[ "${1:-}" == "--smoke-party" ]]; then
   echo ""
   echo "party log: ${PARTY_LOG}"
   tail -n 10 "${PARTY_LOG}" || true
+
+elif [[ "${1:-}" == "--smoke-search" ]]; then
+  # Search plane end to end: send a message through the chat→gateway pipe so
+  # the FTS5 index picks it up via the MySQL tail, then SEARCH_MESSAGE_REQ
+  # (2248) through the gateway's --search_host pipe must return the match.
+  # MySQL is mandatory (search exits without --mysql_host; the index has no
+  # authoritative source otherwise). Probe the EFFECTIVE coordinates (env or
+  # the binaries' defaults — CI's service container is reached through the
+  # defaults with no env at all); unreachable → skip instead of asserting.
+  SM_SEARCH_MYSQL_HOST="${MYSQL_HOST:-127.0.0.1}"
+  SM_SEARCH_MYSQL_PORT="${MYSQL_PORT:-3306}"
+  if ! (exec 3<>"/dev/tcp/${SM_SEARCH_MYSQL_HOST}/${SM_SEARCH_MYSQL_PORT}") 2>/dev/null; then
+    echo "提示: --smoke-search 需要 MySQL(${SM_SEARCH_MYSQL_HOST}:${SM_SEARCH_MYSQL_PORT} 不可达),跳过"
+    exit 0
+  fi
+
+  CHAT_PORT="${CHAT_PORT:-$(pick_port)}"
+  CHAT_WS_PORT="${CHAT_WS_PORT:-$(pick_port)}"
+  GW_PORT="${GW_PORT:-$(pick_port)}"
+  GW_WS_PORT="${GW_WS_PORT:-$(pick_port)}"
+  SEARCH_PORT="${SEARCH_PORT:-$(pick_port)}"
+
+  CHAT_LOG="${CHAT_LOG:-/tmp/chirp_chat_smoke_search.log}"
+  GW_LOG="${GW_LOG:-/tmp/chirp_game_sdk_gateway_smoke_search.log}"
+  SEARCH_LOG="${SEARCH_LOG:-/tmp/chirp_search_smoke_search.log}"
+
+  # 同 chat 桥的信任门:gateway 转发 2xxx 到 chat,search 用同一 service_id/secret。
+  ./build/services/shared/chat/chirp_chat --port "${CHAT_PORT}" --ws_port "${CHAT_WS_PORT}" \
+    --gateway_service_secret game-secret "${MYSQL_ARGS[@]+"${MYSQL_ARGS[@]}"}" > "${CHAT_LOG}" 2>&1 &
+  CHAT_PID=$!
+
+  # search 与 chat 同库直读(MySQL),信任门与 chat 桥同口径(--gateway_service_secret)。
+  # 索引文件每轮全新:启动回填按 id 游标扫全表,旧索引不省时间反而引入陈旧态。
+  rm -f /tmp/chirp_search_smoke_search.db
+  ./build/services/search/chirp_search --port "${SEARCH_PORT}" \
+    --gateway_service_secret game-secret "${MYSQL_ARGS[@]+"${MYSQL_ARGS[@]}"}" \
+    --db_path /tmp/chirp_search_smoke_search.db \
+    > "${SEARCH_LOG}" 2>&1 &
+  SEARCH_PID=$!
+
+  ./build/services/game/sdk_gateway/chirp_game_sdk_gateway --port "${GW_PORT}" --ws_port "${GW_WS_PORT}" \
+    --chat_host 127.0.0.1 --chat_port "${CHAT_PORT}" --chat_service_secret game-secret \
+    --search_host 127.0.0.1 --search_port "${SEARCH_PORT}" > "${GW_LOG}" 2>&1 &
+  GW_PID=$!
+
+  cleanup() {
+    stop_proc "${GW_PID}" "${SEARCH_PID}" "${CHAT_PID}"
+  }
+  trap cleanup EXIT
+
+  wait_port "${CHAT_PORT}" chirp_chat "${CHAT_LOG}"
+  # 启动回填扫全量 MySQL 消息后才监听:本地树消息表常有十万行积压,Debug 构建
+  # 回填要一两分钟;CI 是空表,瞬时。给 300s 上限,wait_port 打日志暴露卡死。
+  wait_port "${SEARCH_PORT}" chirp_search "${SEARCH_LOG}" 300
+  wait_port "${GW_PORT}" chirp_game_sdk_gateway "${GW_LOG}"
+
+  # 服务认证:search 与 chat 都向 gateway 注册;search 桥就绪才能转 2248。
+  for _ in {1..100}; do
+    if grep -q "search connected\|search registered\|service authenticated: search" "${GW_LOG}" 2>/dev/null; then
+      break
+    fi
+    sleep 0.1
+  done
+
+  # 种一条带固定关键词的私聊消息,内容唯一避开重复禁言,正文含易搜关键词。
+  KEYWORD="smoke_search_fixture_$$"
+  echo ""
+  echo "[search] seed message with keyword '${KEYWORD}'"
+  timeout 30 ./build/tools/benchmark/chirp_chat_send_client \
+    --host 127.0.0.1 --port "${GW_PORT}" --sender smoke_a --receiver smoke_b \
+    --text "${KEYWORD} hello" || { echo "错误: 种子消息发送失败"; exit 1; }
+
+  # search 的 100ms tail 泵需要时间把新消息推进 FTS5 索引;重试直到 2248 命中,
+  # 最多 10s(容忍 MySQL 索引回填+tail 首拍延迟)。每轮重查,FTS 命中即停。
+  echo ""
+  echo "[search] query 2248 through gateway, expect the seeded match"
+  found=0
+  for i in $(seq 1 50); do
+    out=$(timeout 30 ./build/tools/benchmark/chirp_chat_send_client \
+      --host 127.0.0.1 --port "${GW_PORT}" --sender smoke_a --receiver smoke_b \
+      --act search --query "${KEYWORD}" 2>&1) || true
+    echo "${out}"
+    if echo "${out}" | grep -q "code=0 matches=1\|matches=1 .*${KEYWORD}"; then
+      if echo "${out}" | grep -q "${KEYWORD}"; then
+        found=1
+        break
+      fi
+    fi
+    sleep 0.2
+  done
+
+  if [[ "${found}" != "1" ]]; then
+    echo "错误: 2248 检索未在 10s 内命中种子消息"
+    echo "---- search log tail (${SEARCH_LOG}) ----"
+    tail -n 40 "${SEARCH_LOG}" 2>/dev/null || true
+    echo "---- chat log tail (${CHAT_LOG}) ----"
+    tail -n 20 "${CHAT_LOG}" 2>/dev/null || true
+    echo "---- gateway log tail (${GW_LOG}) ----"
+    tail -n 20 "${GW_LOG}" 2>/dev/null || true
+    exit 1
+  fi
+
+  echo ""
+  echo "search log: ${SEARCH_LOG}"
+  tail -n 12 "${SEARCH_LOG}" || true
 
 else
   CHAT_PORT="${CHAT_PORT:-$(pick_port)}"

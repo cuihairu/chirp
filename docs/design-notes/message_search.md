@@ -163,8 +163,14 @@ web 补齐 `searchMessages`/`setMemberAlias` + start() 订阅 2124 扇出
   （1ab9c02；service_bridge 28 例含降级四态 0bd1ded）。
 - ✅ `chirp_search` 起服真实监听 5007（SERVER_AUTH_REQ 信任门 +
   LOGIN 重放 + 检索 + 100ms tail 泵 + 可选 metrics，1ab9c02），
-  gateway `--search_host` 接入就位；客户端 2248 端到端往返的 smoke
-  腿未立，随 web/desktop 增量与端到端链路一起验。
+  gateway `--search_host` 接入就位；**客户端 2248 端到端往返 smoke 腿已立
+  （2026-10-09）**：`--smoke-search`（test_services.sh）——chat(MySQL) +
+  chirp_search + game_sdk_gateway 双桥真实进程，种子私聊消息经 chat 桥落
+  MySQL，`chirp_chat_send_client --act search` 经 gateway search 桥发 2248
+  重试命中（tail 泵延迟吸收，上限 10s）；MySQL 按生效坐标探测不可达即跳过
+  （CI service 容器走二进制默认值接入）；CI smoke job 增同名步骤；本地实跑
+  命中 `code=0 matches=1`。注意：存量库需 `scripts/upgrade_db_messages.sql`
+  补 sender_kind 列，否则 StoreMessage 静默失败（本地库踩过）。
 - ✅ 文档对账：本文件 §5、docs/api/overview.md（2122-2124 行、
   2248/2249 行、5007 状态行）、CAPABILITY_MATRIX（两边缘行）、
   TODO.md（search 拍板条目）随各增量同步。
