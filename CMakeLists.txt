@@ -204,6 +204,36 @@ if(CHIRP_ENABLE_CRASHPAD)
   )
   FetchContent_MakeAvailable(crashpad)
 
+  # Consumer-facing isolation: the five targets whose headers chirp_common
+  # pulls in declare their interface dirs as plain (non-SYSTEM), so
+  # third-party headers land on the -I line and crashpad's GCC-extension
+  # idioms (#include_next in compat/linux/signal.h) trip -Wpedantic ->
+  # -Werror. Re-propagate them as SYSTEM (-isystem): system-header semantics
+  # silence the pedantic diagnostics inside on every toolchain, where the
+  # pragma in crash_handler.cc alone proved insufficient (gcc 13).
+  foreach(_cp_target IN ITEMS client util compat compat_incl mini_chromium)
+    if(NOT TARGET ${_cp_target})
+      continue()
+    endif()
+    get_target_property(_cp_dirs ${_cp_target} INTERFACE_INCLUDE_DIRECTORIES)
+    if(_cp_dirs STREQUAL "_cp_dirs-NOTFOUND")
+      continue()
+    endif()
+    get_target_property(_cp_src ${_cp_target} SOURCE_DIR)
+    set(_cp_abs_dirs "")
+    foreach(_cp_dir IN LISTS _cp_dirs)
+      if(NOT IS_ABSOLUTE "${_cp_dir}")
+        # Relative entries resolve against the declaring target's source dir
+        # (the crashpad tree), matching CMake's own interpretation.
+        cmake_path(ABSOLUTE_PATH _cp_dir BASE_DIR "${_cp_src}" OUTPUT_VARIABLE _cp_dir)
+        cmake_path(NORMAL_PATH _cp_dir OUTPUT_VARIABLE _cp_dir)
+      endif()
+      list(APPEND _cp_abs_dirs "${_cp_dir}")
+    endforeach()
+    set_target_properties(${_cp_target} PROPERTIES INTERFACE_INCLUDE_DIRECTORIES "")
+    target_include_directories(${_cp_target} SYSTEM INTERFACE ${_cp_abs_dirs})
+  endforeach()
+
   set(CMAKE_CXX_STANDARD ${CHIRP_SAVED_CXX_STANDARD})
   set(CMAKE_POSITION_INDEPENDENT_CODE ${CHIRP_SAVED_PIC})
   set_directory_properties(PROPERTIES
