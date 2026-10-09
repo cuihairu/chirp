@@ -1194,6 +1194,20 @@ elif [[ "${1:-}" == "--smoke-search" ]]; then
     exit 0
   fi
 
+  # CI 的 service 容器是空库(init_db.sql 从未应用,ci.yml 注释明说 smoke 不
+  # 需要表)——chat 的消息写入与 search 的回填/tail 都要求 messages 表存在,
+  # 没有 talk 的腿 2248 永远 matches=0(run 37971910316 实证)。init_db.sql
+  # 全程 IF NOT EXISTS,幂等;有 mysql 客户端才应用(本地存量库已有表,客户端
+  # 缺席不挡腿)。
+  if command -v mysql >/dev/null 2>&1; then
+    MYSQL_PWD="${MYSQL_PASSWORD:-chirp_password}" mysql \
+      -h "${SM_SEARCH_MYSQL_HOST}" -P "${SM_SEARCH_MYSQL_PORT}" \
+      -u "${MYSQL_USER:-chirp}" "${MYSQL_DATABASE:-chirp}" \
+      < scripts/init_db.sql || { echo "错误: init_db.sql 应用失败"; exit 1; }
+  else
+    echo "提示: 无 mysql 客户端,跳过 schema 应用(假定库已建表)"
+  fi
+
   CHAT_PORT="${CHAT_PORT:-$(pick_port)}"
   CHAT_WS_PORT="${CHAT_WS_PORT:-$(pick_port)}"
   GW_PORT="${GW_PORT:-$(pick_port)}"
