@@ -143,7 +143,11 @@ search 复用 per-client pipe 机制后，「ChatBridge」这个名字对 search
 
 Android / iOS / 鸿蒙不在本批（iOS/鸿蒙按 2026-10-05 令只写代码有空闲才做；
 Android 原生管线另有节奏）。web/desktop 消费侧（ChatApi + alias 设置面 +
-渲染两处消费）为下一增量。
+渲染两处消费）为下一增量：ChatApi 层两端已就位（desktop 226d912；
+web 补齐 `searchMessages`/`setMemberAlias` + start() 订阅 2124 扇出
+`onGroupMemberAliasUpdated` 刷新群列表，畸形体静默丢弃，vitest 7 例——
+搜索三态短路/透传、alias 短路回显、2124 合法刷新/畸形忽略），UI 消费
+（搜索界面、alias 设置面、渲染两处）仍为后续增量。
 
 ## 6. 验收口径
 

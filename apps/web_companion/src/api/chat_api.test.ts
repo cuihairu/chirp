@@ -2,6 +2,7 @@ import { describe, expect, it, vi } from 'vitest';
 import {
   ChannelType,
   ChatMessage,
+  GroupMemberAliasUpdatedNotify,
   GroupMemberKickedNotify,
   MessageAck,
   MessageDeletedNotify,
@@ -13,6 +14,7 @@ import {
   ReactionRemovedNotify,
   TypingIndicator,
 } from '@chirp/proto/chat';
+import { ErrorCode } from '@chirp/proto/common';
 import { MsgID } from '@chirp/proto/gateway';
 import { ChatApi, channelRefOf, type ChannelRef } from './chat_api';
 import { createStore } from '../state/store';
@@ -778,5 +780,125 @@ describe('channel helpers', () => {
       channelId: 'guild-1',
       peerId: 'guild-1',
     });
+  });
+});
+
+describe('ChatApi.searchMessages', () => {
+  it('short-circuits without login or empty keyword, sending nothing', async () => {
+    const h = makeHarness();
+    const expired = await h.api.searchMessages('boss');
+    expect(expired).toMatchObject({ code: ErrorCode.SESSION_EXPIRED, matches: [], hasMore: false });
+    expect(h.conn.requests).toHaveLength(0); // nothing sent while logged out
+
+    await login(h);
+    const loggedInRequests = h.conn.requests.length;
+    const empty = await h.api.searchMessages('');
+    expect(empty).toMatchObject({ code: ErrorCode.INVALID_PARAM, matches: [], hasMore: false });
+    expect(h.conn.requests.length).toBe(loggedInRequests); // no packet for empty keyword
+  });
+
+  it('sends SEARCH_MESSAGE_REQ with defaults and passes the response through', async () => {
+    const h = makeHarness();
+    await login(h);
+    const match = {
+      messageId: 'm9',
+      channelId: 'world',
+      channelType: ChannelType.WORLD,
+      senderId: PEER,
+      senderKind: 0,
+      msgType: MsgType.TEXT,
+      timestamp: 1234,
+      content: 'boss is up',
+    };
+    h.conn.setResponder(async (msgId, req) => {
+      expect(msgId).toBe(MsgID.SEARCH_MESSAGE_REQ);
+      expect(req).toMatchObject({
+        keyword: 'boss',
+        channelId: '',
+        contentTypes: [],
+        beforeTimestamp: 0,
+        beforeMessageId: '',
+        limit: 20,
+      });
+      return { code: 0, matches: [match], hasMore: true };
+    });
+    const resp = await h.api.searchMessages('boss');
+    expect(resp).toMatchObject({ code: 0, hasMore: true });
+    expect(resp.matches).toHaveLength(1);
+    expect(resp.matches[0]).toMatchObject(match);
+  });
+
+  it('forwards full options in one packet', async () => {
+    const h = makeHarness();
+    await login(h);
+    h.conn.setResponder(async (msgId, req) => {
+      expect(msgId).toBe(MsgID.SEARCH_MESSAGE_REQ);
+      expect(req).toMatchObject({
+        keyword: 'loot',
+        channelId: 'g:guild-1',
+        contentTypes: [MsgType.TEXT, MsgType.ITEM_LINK],
+        beforeTimestamp: 42,
+        beforeMessageId: 'm8',
+        limit: 5,
+      });
+      return { code: 0, matches: [], hasMore: false };
+    });
+    const resp = await h.api.searchMessages('loot', {
+      channelId: 'g:guild-1',
+      contentTypes: [MsgType.TEXT, MsgType.ITEM_LINK],
+      beforeTimestamp: 42,
+      beforeMessageId: 'm8',
+      limit: 5,
+    });
+    expect(resp.matches).toEqual([]);
+  });
+});
+
+describe('ChatApi.setMemberAlias', () => {
+  it('short-circuits without login, echoing the request fields', async () => {
+    const h = makeHarness();
+    const resp = await h.api.setMemberAlias('guild-1', PEER, '苍老师');
+    expect(resp).toMatchObject({
+      code: ErrorCode.SESSION_EXPIRED,
+      groupId: 'guild-1',
+      userId: PEER,
+      alias: '苍老师',
+    });
+    expect(h.conn.requests).toHaveLength(0);
+  });
+
+  it('sends SET_MEMBER_ALIAS_REQ and passes the response through', async () => {
+    const h = makeHarness();
+    await login(h);
+    h.conn.setResponder(async (msgId, req) => {
+      expect(msgId).toBe(MsgID.SET_MEMBER_ALIAS_REQ);
+      expect(req).toMatchObject({ groupId: 'guild-1', targetUserId: PEER, alias: '苍老师' });
+      return { code: 0, groupId: 'guild-1', userId: PEER, alias: '苍老师' };
+    });
+    expect(await h.api.setMemberAlias('guild-1', PEER, '苍老师')).toMatchObject({ code: 0 });
+  });
+});
+
+describe('ChatApi group alias notify', () => {
+  it('refreshes groups on a well-formed 2124 notify', async () => {
+    const h = makeHarness();
+    await login(h);
+    const before = h.conn.requests.length;
+    const notify = GroupMemberAliasUpdatedNotify.encode(
+      GroupMemberAliasUpdatedNotify.fromPartial({ groupId: 'guild-1', userId: PEER, alias: '苍' }),
+    ).finish();
+    h.conn.emit(MsgID.GROUP_MEMBER_ALIAS_UPDATED_NOTIFY, notify);
+    await vi.waitFor(() => {
+      expect(h.conn.requests.length).toBeGreaterThan(before);
+    });
+    expect(h.conn.requests.at(-1)?.msgId).toBe(MsgID.GET_USER_GROUPS_REQ);
+  });
+
+  it('ignores a malformed 2124 body without touching groups', async () => {
+    const h = makeHarness();
+    await login(h);
+    const before = h.conn.requests.length;
+    h.conn.emit(MsgID.GROUP_MEMBER_ALIAS_UPDATED_NOTIFY, new Uint8Array([0xff, 0x00, 0x01]));
+    expect(h.conn.requests.length).toBe(before);
   });
 });
