@@ -15,6 +15,7 @@ import { useStoreValue } from '../state/store';
 import type { Services } from '../api/services';
 import ChatPanel from './ChatPanel';
 import Rail from './Rail';
+import SearchDialog from './SearchDialog';
 import {
   CreateGroupDialog,
   DevicesDialog,
@@ -44,6 +45,7 @@ export default function MainWindow(props: {
   const [partyOpen, setPartyOpen] = useState(false);
   const [voiceOpen, setVoiceOpen] = useState(false);
   const [devicesOpen, setDevicesOpen] = useState(false);
+  const [searchOpen, setSearchOpen] = useState(false);
   const [planeUp, setPlaneUp] = useState({ social: false, party: false, voice: false });
   const friends = useStoreValue(services.friends);
 
@@ -163,6 +165,9 @@ export default function MainWindow(props: {
         </Typography>
         <Box sx={{ flex: 1 }} />
         <Stack direction="row" spacing={1}>
+          <Button size="small" onClick={() => setSearchOpen(true)} data-testid="search-open">
+            搜索
+          </Button>
           <Tooltip title={notifyOn ? '桌面通知已开启' : '开启桌面通知'}>
             <Button size="small" variant={notifyOn ? 'contained' : 'outlined'} onClick={() => void toggleNotify()}>
               通知
@@ -256,6 +261,17 @@ export default function MainWindow(props: {
         selfId={selfId}
         open={devicesOpen}
         onClose={() => setDevicesOpen(false)}
+      />
+      <SearchDialog
+        api={api}
+        conversations={services.conversations}
+        selfId={selfId}
+        open={searchOpen}
+        onClose={() => setSearchOpen(false)}
+        onOpenChannel={(key) => {
+          clearUnread(services.conversations, key);
+          setActiveKey(key);
+        }}
       />
     </Box>
   );
