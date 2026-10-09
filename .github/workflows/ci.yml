@@ -140,6 +140,21 @@ jobs:
     - name: "Smoke: party snapshot lifecycle"
       run: timeout 600 bash test_services.sh --smoke-party
 
+    # Smoke 死进程的现场回收:crashpad 把 SIGABRT dump 落在工作区
+    # crash_dumps/,各服务日志在 /tmp/chirp_*.log,失败时都传上来,
+    # 否则 runner 回收后现场全丢(2026-10-09 smoke-edge chirp_chat
+    # SIGABRT 定位即因缺 dump 多耗一轮)。
+    - name: Upload smoke diagnostics on failure
+      if: failure()
+      uses: actions/upload-artifact@v4
+      with:
+        name: smoke-diagnostics-${{ github.run_id }}
+        path: |
+          crash_dumps/
+          /tmp/chirp_*.log
+        if-no-files-found: ignore
+        retention-days: 7
+
   build-and-test:
     runs-on: ubuntu-22.04
     strategy:
