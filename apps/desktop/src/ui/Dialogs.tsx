@@ -139,26 +139,50 @@ export function GroupManageDialog(props: {
     selfRole === GroupMemberRole.ADMIN ||
     selfRole === GroupMemberRole.OWNER;
 
-  /** target 未禁言时弹时长输入(分钟)；已禁言则解禁(seconds=0)。 */
-  const setMute = async (target: string, currentlyMutedUntil: number): Promise<void> => {
-    let seconds = 0;
-    if (currentlyMutedUntil === 0) {
-      const input = window.prompt(`禁言 ${target} 多少分钟?(留空或 0 取消)`);
-      if (input === null) return;
-      seconds = Math.max(0, Math.floor(Number(input) * 60) || 0);
-      if (seconds === 0) return;
+  // 禁言时长走行内输入而非 window.prompt——Tauri(wry) WebView 不实现
+  // prompt/confirm/alert，弹窗会静默返回 null，按钮看起来没反应。
+  const [muteTarget, setMuteTarget] = useState<string | null>(null);
+  const [muteMinutes, setMuteMinutes] = useState('10');
+
+  const confirmMute = async (): Promise<void> => {
+    if (!muteTarget) return;
+    const seconds = Math.max(0, Math.floor(Number(muteMinutes) * 60) || 0);
+    if (seconds === 0) {
+      setMuteTarget(null);
+      return;
     }
     setError(null);
     try {
-      const resp = await props.api.setGroupMute(props.groupId, target, seconds);
+      const resp = await props.api.setGroupMute(props.groupId, muteTarget, seconds);
       if (resp.code !== 0) {
         setError(`禁言操作失败（code ${resp.code}）`);
         return;
       }
+      setMuteTarget(null);
       void refresh();
     } catch {
       setError('禁言操作失败（服务端拒绝或断线）');
     }
+  };
+
+  /** 已禁言成员点击按钮直接解禁(seconds=0)；未禁言成员展开行内时长输入。 */
+  const toggleMute = async (target: string, mutedUntilTs: number): Promise<void> => {
+    if (mutedUntilTs > Date.now()) {
+      setError(null);
+      try {
+        const resp = await props.api.setGroupMute(props.groupId, target, 0);
+        if (resp.code !== 0) {
+          setError(`禁言操作失败（code ${resp.code}）`);
+          return;
+        }
+        void refresh();
+      } catch {
+        setError('禁言操作失败（服务端拒绝或断线）');
+      }
+      return;
+    }
+    setMuteMinutes('10');
+    setMuteTarget(target);
   };
 
   const invite = async (): Promise<void> => {
@@ -212,6 +236,27 @@ export function GroupManageDialog(props: {
           </Button>
         </Stack>
         {error ? <Alert severity="error">{error}</Alert> : null}
+        {muteTarget ? (
+          <Stack direction="row" spacing={1} alignItems="center">
+            <Typography variant="body2" sx={{ whiteSpace: 'nowrap' }}>
+              禁言 {muteTarget}（分钟）
+            </Typography>
+            <TextField
+              size="small"
+              value={muteMinutes}
+              onChange={(e) => setMuteMinutes(e.target.value)}
+              sx={{ width: 90 }}
+              autoFocus
+              data-testid="mute-minutes"
+            />
+            <Button variant="contained" size="small" onClick={() => void confirmMute()} data-testid="mute-confirm">
+              确认
+            </Button>
+            <Button size="small" onClick={() => setMuteTarget(null)}>
+              取消
+            </Button>
+          </Stack>
+        ) : null}
         <Box>
           <Typography variant="caption" color="text.secondary">
             成员（{members.length}）
@@ -226,7 +271,7 @@ export function GroupManageDialog(props: {
                       {canMute ? (
                         <Button
                           size="small"
-                          onClick={() => void setMute(m.userId, muted ? m.mutedUntilTs : 0)}
+                          onClick={() => void toggleMute(m.userId, m.mutedUntilTs)}
                           data-testid={`mute-${m.userId}`}
                         >
                           {muted ? '解除禁言' : '禁言'}
