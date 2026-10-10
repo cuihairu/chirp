@@ -126,13 +126,49 @@ else
   echo "=== Smoke Test (chat + clients) ==="
 fi
 
+# pick_port 去重 + 占用探针:bind(0)→close 的端口在 close 后立即回到内核
+# 临时端口池,连调可能拿到同一端口(本机实测 500 连摇 9 个重复,edge 腿 7 次
+# 选取单腿撞车率约 12%,故 CI 偶发一腿红)。CI run 38021358618 实证:edge 腿
+# CHAT_WS_PORT 与 REDIS_PORT 同得 42171,redis 先占,chirp_chat 的 WS 监听
+# 再绑撞 Address already in use → std::system_error → terminate/Aborted,
+# C1 直连登录随之失败。已发出端口记入每进程独占文件($$ 后缀)去重;connect
+# 探活命中(已有进程在听)同样重摇。
+PICK_PORT_FILE="/tmp/chirp_pick_ports.$$"
 pick_port() {
-  python3 - <<'PY'
-import socket
-s = socket.socket()
-s.bind(("127.0.0.1", 0))
-print(s.getsockname()[1])
-s.close()
+  python3 - "${PICK_PORT_FILE}" <<'PY'
+import socket, sys
+issued = set()
+try:
+    with open(sys.argv[1]) as f:
+        for line in f:
+            line = line.strip()
+            if line:
+                issued.add(int(line))
+except FileNotFoundError:
+    pass
+for _ in range(200):
+    s = socket.socket()
+    s.bind(("127.0.0.1", 0))
+    port = s.getsockname()[1]
+    s.close()
+    if port in issued:
+        continue
+    # 端口若已有进程在听(外部占用)则重摇;connect 被拒=无人听
+    probe = socket.socket()
+    probe.settimeout(0.2)
+    try:
+        probe.connect(("127.0.0.1", port))
+        continue
+    except OSError:
+        pass
+    finally:
+        probe.close()
+    with open(sys.argv[1], "a") as f:
+        f.write(f"{port}\n")
+    print(port)
+    break
+else:
+    raise SystemExit("pick_port: 200 次重摇仍无唯一空闲端口")
 PY
 }
 
