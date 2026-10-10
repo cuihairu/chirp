@@ -227,3 +227,133 @@ describe('GroupSettingsDialog mute', () => {
     promptSpy.mockRestore();
   });
 });
+
+describe('GroupSettingsDialog alias', () => {
+  /** user_a = MODERATOR(self) with no alias; user_b = plain member aliased. */
+  const aliasResponder = async (msgId: MsgID, _req?: unknown): Promise<unknown> => {
+    void _req;
+    if (msgId === MsgID.GET_GROUP_MEMBERS_REQ) {
+      return {
+        code: 0,
+        members: [
+          { userId: 'user_a', username: 'user_a', role: 1 },
+          { userId: 'user_b', username: 'user_b', alias: '苍老师' },
+        ],
+      };
+    }
+    return { code: 0, groups: [] };
+  };
+
+  it('shows the alias in the roster with the real name underneath', async () => {
+    await renderDialog({ responder: aliasResponder });
+    await waitFor(() => expect(screen.getByText('苍老师')).toBeTruthy());
+    expect(screen.getByText('user_b')).toBeTruthy();
+  });
+
+  it('lets a member set their own alias via the prompt', async () => {
+    const seen: Array<{ msgId: MsgID; req: unknown }> = [];
+    const promptSpy = vi.spyOn(window, 'prompt').mockReturnValue('新昵称');
+    await renderDialog({
+      responder: async (msgId, req) => {
+        seen.push({ msgId, req });
+        return aliasResponder(msgId, req);
+      },
+    });
+    await waitFor(() => expect(screen.getByTestId('alias-user_a')).toBeTruthy());
+    fireEvent.click(screen.getByTestId('alias-user_a'));
+    expect(promptSpy).toHaveBeenCalledWith(zh.chat.aliasPrompt('user_a'), '');
+    await waitFor(() =>
+      expect(
+        seen.some(
+          (r) =>
+            r.msgId === MsgID.SET_MEMBER_ALIAS_REQ &&
+            (r.req as { targetUserId: string }).targetUserId === 'user_a' &&
+            (r.req as { alias: string }).alias === '新昵称',
+        ),
+      ).toBe(true),
+    );
+    promptSpy.mockRestore();
+  });
+
+  it('lets a moderator set another member alias', async () => {
+    const seen: Array<{ msgId: MsgID; req: unknown }> = [];
+    const promptSpy = vi.spyOn(window, 'prompt').mockReturnValue('苍老师二号');
+    await renderDialog({
+      responder: async (msgId, req) => {
+        seen.push({ msgId, req });
+        return aliasResponder(msgId, req);
+      },
+    });
+    await waitFor(() => expect(screen.getByTestId('alias-user_b')).toBeTruthy());
+    fireEvent.click(screen.getByTestId('alias-user_b'));
+    // The current alias is prefilled into the prompt.
+    expect(promptSpy).toHaveBeenCalledWith(zh.chat.aliasPrompt('user_b'), '苍老师');
+    await waitFor(() =>
+      expect(
+        seen.some(
+          (r) =>
+            r.msgId === MsgID.SET_MEMBER_ALIAS_REQ &&
+            (r.req as { alias: string }).alias === '苍老师二号',
+        ),
+      ).toBe(true),
+    );
+    promptSpy.mockRestore();
+  });
+
+  it('hides alias entries for others from plain members', async () => {
+    const plainResponder = async (msgId: MsgID, _req?: unknown): Promise<unknown> => {
+      void _req;
+      if (msgId === MsgID.GET_GROUP_MEMBERS_REQ) {
+        return {
+          code: 0,
+          members: [
+            { userId: 'user_a', username: 'user_a' },
+            { userId: 'user_b', username: 'user_b', alias: '苍老师' },
+          ],
+        };
+      }
+      return { code: 0, groups: [] };
+    };
+    await renderDialog({ responder: plainResponder });
+    await waitFor(() => expect(screen.getByText('苍老师')).toBeTruthy());
+    // Own row still carries the entry (permission = 本人); others' does not.
+    expect(screen.getByTestId('alias-user_a')).toBeTruthy();
+    expect(screen.queryByTestId('alias-user_b')).toBeNull();
+  });
+
+  it('clears the alias when the prompt returns empty', async () => {
+    const seen: Array<{ msgId: MsgID; req: unknown }> = [];
+    const promptSpy = vi.spyOn(window, 'prompt').mockReturnValue('');
+    await renderDialog({
+      responder: async (msgId, req) => {
+        seen.push({ msgId, req });
+        return aliasResponder(msgId, req);
+      },
+    });
+    await waitFor(() => expect(screen.getByTestId('alias-user_b')).toBeTruthy());
+    fireEvent.click(screen.getByTestId('alias-user_b'));
+    await waitFor(() =>
+      expect(
+        seen.some(
+          (r) =>
+            r.msgId === MsgID.SET_MEMBER_ALIAS_REQ && (r.req as { alias: string }).alias === '',
+        ),
+      ).toBe(true),
+    );
+    promptSpy.mockRestore();
+  });
+
+  it('surfaces a failure hint when the server rejects the alias', async () => {
+    const promptSpy = vi.spyOn(window, 'prompt').mockReturnValue('新昵称');
+    await renderDialog({
+      responder: async (msgId, req) => {
+        if (msgId === MsgID.SET_MEMBER_ALIAS_REQ) return { code: 3 };
+        return aliasResponder(msgId, req);
+      },
+    });
+    await waitFor(() => expect(screen.getByTestId('alias-user_a')).toBeTruthy());
+    fireEvent.click(screen.getByTestId('alias-user_a'));
+    await waitFor(() => expect(screen.getByText(zh.chat.aliasFailed)).toBeTruthy());
+    promptSpy.mockRestore();
+  });
+});

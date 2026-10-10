@@ -1,7 +1,13 @@
 import { describe, expect, it, vi } from 'vitest';
 import { fireEvent, screen, waitFor } from '@testing-library/react';
 import { MsgID } from '@chirp/proto/gateway';
-import { ChannelType, ChatMessage, MsgType, TypingIndicator } from '@chirp/proto/chat';
+import {
+  ChannelType,
+  ChatMessage,
+  GroupMemberAliasUpdatedNotify,
+  MsgType,
+  TypingIndicator,
+} from '@chirp/proto/chat';
 import { renderLoggedIn } from '../test-utils';
 import ChatWindow from './ChatWindow';
 import { zh } from '../i18n/zh';
@@ -209,6 +215,60 @@ describe('ChatWindow C8', () => {
     fireEvent.click(screen.getByTestId('group-settings'));
     await waitFor(() => expect(screen.getByText(zh.chat.groupSettings('Raiders'))).toBeTruthy());
     await waitFor(() => expect(screen.getByTestId('kick-user_b')).toBeTruthy());
+  });
+
+  it('renders group sender names with alias precedence, falling back on clear', async () => {
+    const groupKey = 'g:guild-1';
+    const { conn } = await renderLoggedIn(<ChatWindow channelKey={groupKey} />, {
+      responder: async (msgId) =>
+        msgId === MsgID.GET_HISTORY_REQ
+          ? {
+              code: 0,
+              hasMore: false,
+              messages: [
+                {
+                  messageId: 'm1',
+                  senderId: 'user_b',
+                  channelType: ChannelType.GUILD,
+                  channelId: 'guild-1',
+                  content: enc('hi guild'),
+                  timestamp: 100,
+                },
+              ],
+            }
+          : msgId === MsgID.GET_GROUP_MEMBERS_REQ
+            ? {
+                code: 0,
+                members: [
+                  { userId: 'user_a', username: 'user_a' },
+                  { userId: 'user_b', username: 'user_b', alias: '苍老师' },
+                ],
+              }
+            : { code: 0, groups: [{ groupId: 'guild-1', groupName: 'Raiders', ownerId: 'user_a' }] },
+      prepare: ({ services: s }) =>
+        upsertConversation(s.conversations, {
+          kind: 'group',
+          key: groupKey,
+          channelId: 'guild-1',
+          peerId: 'guild-1',
+          title: 'Raiders',
+          ownerId: 'user_a',
+          unreadLocal: 0,
+        }),
+    });
+    await waitFor(() => expect(screen.getByText('hi guild')).toBeTruthy());
+    // The roster lands after the history: the peer bubble shows the alias.
+    await waitFor(() => expect(screen.getByText('苍老师')).toBeTruthy());
+
+    // 2124 clearing the alias drops the bubble back to the raw user id.
+    conn.emit(
+      MsgID.GROUP_MEMBER_ALIAS_UPDATED_NOTIFY,
+      GroupMemberAliasUpdatedNotify.encode(
+        GroupMemberAliasUpdatedNotify.fromPartial({ groupId: 'guild-1', userId: 'user_b', alias: '' }),
+      ).finish(),
+    );
+    await waitFor(() => expect(screen.getByText('user_b')).toBeTruthy());
+    expect(screen.queryByText('苍老师')).toBeNull();
   });
 });
 

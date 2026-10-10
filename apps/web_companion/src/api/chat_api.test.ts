@@ -920,6 +920,73 @@ describe('ChatApi group alias notify', () => {
   });
 });
 
+describe('ChatApi group alias snapshot', () => {
+  it('seeds aliases from the roster and notifies subscribers', async () => {
+    const h = makeHarness();
+    await login(h);
+    const bumps: number[] = [];
+    h.api.subscribeGroupAlias(() => bumps.push(bumps.length));
+    h.conn.setResponder(async (msgId) => {
+      if (msgId === MsgID.GET_GROUP_MEMBERS_REQ) {
+        return {
+          code: 0,
+          members: [
+            { userId: PEER, username: PEER, alias: '苍' },
+            { userId: SELF, username: SELF },
+          ],
+        };
+      }
+      return { code: 0 };
+    });
+    expect(await h.api.loadGroupMembers('guild-1')).toHaveLength(2);
+    expect(h.api.groupAliasOf('guild-1', PEER)).toBe('苍');
+    expect(h.api.groupAliasOf('guild-1', SELF)).toBe('');
+    expect(h.api.groupAliasOf('guild-2', PEER)).toBe('');
+    expect(bumps).toEqual([0]);
+  });
+
+  it('applies 2124 notifies to the snapshot, clearing on empty alias', async () => {
+    const h = makeHarness();
+    await login(h);
+    const bumps: number[] = [];
+    h.api.subscribeGroupAlias(() => bumps.push(bumps.length));
+    h.conn.setResponder(async (msgId) => {
+      if (msgId === MsgID.GET_GROUP_MEMBERS_REQ) {
+        return { code: 0, members: [{ userId: PEER, username: PEER, alias: '苍' }] };
+      }
+      return { code: 0 };
+    });
+    await h.api.loadGroupMembers('guild-1');
+    const emitAlias = (alias: string): void =>
+      h.conn.emit(
+        MsgID.GROUP_MEMBER_ALIAS_UPDATED_NOTIFY,
+        GroupMemberAliasUpdatedNotify.encode(
+          GroupMemberAliasUpdatedNotify.fromPartial({ groupId: 'guild-1', userId: PEER, alias }),
+        ).finish(),
+      );
+    emitAlias('苍老师');
+    expect(h.api.groupAliasOf('guild-1', PEER)).toBe('苍老师');
+    emitAlias('');
+    expect(h.api.groupAliasOf('guild-1', PEER)).toBe('');
+    expect(bumps).toEqual([0, 1, 2]);
+  });
+
+  it('skips snapshot updates for groups without a loaded roster', async () => {
+    const h = makeHarness();
+    await login(h);
+    const bumps: number[] = [];
+    h.api.subscribeGroupAlias(() => bumps.push(bumps.length));
+    h.conn.emit(
+      MsgID.GROUP_MEMBER_ALIAS_UPDATED_NOTIFY,
+      GroupMemberAliasUpdatedNotify.encode(
+        GroupMemberAliasUpdatedNotify.fromPartial({ groupId: 'guild-1', userId: PEER, alias: '苍' }),
+      ).finish(),
+    );
+    expect(h.api.groupAliasOf('guild-1', PEER)).toBe('');
+    expect(bumps).toEqual([]);
+  });
+});
+
 describe('ChatApi.setGroupMute', () => {
   it('short-circuits without login, echoing the request fields', async () => {
     const h = makeHarness();

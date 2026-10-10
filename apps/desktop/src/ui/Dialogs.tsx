@@ -144,6 +144,11 @@ export function GroupManageDialog(props: {
   const [muteTarget, setMuteTarget] = useState<string | null>(null);
   const [muteMinutes, setMuteMinutes] = useState('10');
 
+  // 群昵称(2122/2123)：行内输入而非 window.prompt（同禁言——Tauri(wry)
+  // WebView 不实现 prompt）。本人随时可设；MODERATOR+ 可设他人。空串 = 清除。
+  const [aliasTarget, setAliasTarget] = useState<string | null>(null);
+  const [aliasText, setAliasText] = useState('');
+
   const confirmMute = async (): Promise<void> => {
     if (!muteTarget) return;
     const seconds = Math.max(0, Math.floor(Number(muteMinutes) * 60) || 0);
@@ -183,6 +188,27 @@ export function GroupManageDialog(props: {
     }
     setMuteMinutes('10');
     setMuteTarget(target);
+  };
+
+  const startAlias = (target: string, current: string): void => {
+    setAliasText(current);
+    setAliasTarget(target);
+  };
+
+  const confirmAlias = async (): Promise<void> => {
+    if (!aliasTarget) return;
+    setError(null);
+    try {
+      const resp = await props.api.setMemberAlias(props.groupId, aliasTarget, aliasText.trim());
+      if (resp.code !== 0) {
+        setError(`群昵称设置失败（code ${resp.code}）`);
+        return;
+      }
+      setAliasTarget(null);
+      void refresh();
+    } catch {
+      setError('群昵称设置失败（服务端拒绝或断线）');
+    }
   };
 
   const invite = async (): Promise<void> => {
@@ -257,6 +283,32 @@ export function GroupManageDialog(props: {
             </Button>
           </Stack>
         ) : null}
+        {aliasTarget ? (
+          <Stack direction="row" spacing={1} alignItems="center">
+            <Typography variant="body2" sx={{ whiteSpace: 'nowrap' }}>
+              群昵称 {aliasTarget}（留空清除）
+            </Typography>
+            <TextField
+              size="small"
+              value={aliasText}
+              onChange={(e) => setAliasText(e.target.value)}
+              sx={{ width: 140 }}
+              autoFocus
+              data-testid="alias-input"
+            />
+            <Button
+              variant="contained"
+              size="small"
+              onClick={() => void confirmAlias()}
+              data-testid="alias-confirm"
+            >
+              确认
+            </Button>
+            <Button size="small" onClick={() => setAliasTarget(null)}>
+              取消
+            </Button>
+          </Stack>
+        ) : null}
         <Box>
           <Typography variant="caption" color="text.secondary">
             成员（{members.length}）
@@ -266,17 +318,27 @@ export function GroupManageDialog(props: {
               const muted = m.mutedUntilTs > Date.now();
               return (
                 <ListItem key={m.userId} secondaryAction={
-                  m.userId !== props.selfId ? (
-                    <Stack direction="row" spacing={0.5}>
-                      {canMute ? (
-                        <Button
-                          size="small"
-                          onClick={() => void toggleMute(m.userId, m.mutedUntilTs)}
-                          data-testid={`mute-${m.userId}`}
-                        >
-                          {muted ? '解除禁言' : '禁言'}
-                        </Button>
-                      ) : null}
+                  <Stack direction="row" spacing={0.5} alignItems="center">
+                    {m.userId === props.selfId ? <Chip size="small" label="我" /> : null}
+                    {m.userId === props.selfId || canMute ? (
+                      <Button
+                        size="small"
+                        onClick={() => startAlias(m.userId, m.alias)}
+                        data-testid={`alias-${m.userId}`}
+                      >
+                        群昵称
+                      </Button>
+                    ) : null}
+                    {m.userId !== props.selfId && canMute ? (
+                      <Button
+                        size="small"
+                        onClick={() => void toggleMute(m.userId, m.mutedUntilTs)}
+                        data-testid={`mute-${m.userId}`}
+                      >
+                        {muted ? '解除禁言' : '禁言'}
+                      </Button>
+                    ) : null}
+                    {m.userId !== props.selfId ? (
                       <Button
                         size="small"
                         color="error"
@@ -288,13 +350,11 @@ export function GroupManageDialog(props: {
                       >
                         踢出
                       </Button>
-                    </Stack>
-                  ) : (
-                    <Chip size="small" label="我" />
-                  )
+                    ) : null}
+                  </Stack>
                 }>
                   <ListItemText
-                    primary={m.userId + (muted ? '（禁言中）' : '')}
+                    primary={(m.alias ? `${m.alias}（${m.userId}）` : m.userId) + (muted ? '（禁言中）' : '')}
                     secondary={m.role === GroupMemberRole.OWNER ? '群主' : undefined}
                   />
                 </ListItem>

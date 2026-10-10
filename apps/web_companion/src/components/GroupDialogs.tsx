@@ -104,6 +104,21 @@ export default function GroupSettingsDialog({
     await reload();
   };
 
+  /** 群昵称(2122/2123):本人设自己;MODERATOR+ 设他人(权限口径与禁言一致)。
+   *  预填当前值,空串提交 = 清除。 */
+  const setAlias = async (target: string): Promise<void> => {
+    const current = members.find((m) => m.userId === target)?.alias ?? '';
+    const input = window.prompt(zh.chat.aliasPrompt(target), current);
+    if (input === null) return;
+    const resp = await api.setMemberAlias(groupId, target, input.trim());
+    if (resp.code !== 0) {
+      setError(zh.chat.aliasFailed);
+      return;
+    }
+    setError(null);
+    await reload();
+  };
+
   const leave = async (): Promise<void> => {
     if (!window.confirm(zh.chat.leaveConfirm)) return;
     await api.leaveGroup(groupId);
@@ -136,11 +151,21 @@ export default function GroupSettingsDialog({
         <List dense data-testid="member-list">
           {members.map((member) => {
             const muted = member.mutedUntilTs > Date.now();
+            const displayName = member.alias || member.username || member.userId;
             return (
               <ListItem
                 key={member.userId}
                 secondaryAction={
                   <>
+                    {(member.userId === selfId || canMute) && (
+                      <Button
+                        size="small"
+                        onClick={() => void setAlias(member.userId)}
+                        data-testid={`alias-${member.userId}`}
+                      >
+                        {zh.chat.alias}
+                      </Button>
+                    )}
                     {isOwner && member.userId !== selfId && (
                       <Button
                         size="small"
@@ -165,9 +190,10 @@ export default function GroupSettingsDialog({
                 <ListItemText
                   primary={
                     (member.userId === ownerId
-                      ? `${member.username || member.userId} (${zh.chat.ownerTag})`
-                      : member.username || member.userId) + (muted ? ` (${zh.chat.mutedTag})` : '')
+                      ? `${displayName} (${zh.chat.ownerTag})`
+                      : displayName) + (muted ? ` (${zh.chat.mutedTag})` : '')
                   }
+                  secondary={member.alias ? (member.username || member.userId) : undefined}
                 />
               </ListItem>
             );

@@ -142,6 +142,12 @@ export class ChatApi {
   private messageListeners = new Set<
     (message: { channel: ChannelRef; fromUserId: string; content: string; messageId: string }) => void
   >();
+  // ---- 群昵称快照（渲染两处消费：成员列表行 + 群聊消息发送者名） ----
+  // groupId → userId → alias；缺键 = 未设或已清除。名册拉取与 2124 通知双路
+  // 维护，订阅者（群会话发送者名映射）在变更后重渲。ChatMessageView 无 alias
+  // 字段，故映射走这份本地快照而非改协议。
+  private aliasByGroup = new Map<string, Map<string, string>>();
+  private aliasListeners = new Set<() => void>();
 
   constructor(deps: ChatApiDeps) {
     this.conn = deps.conn;
@@ -471,9 +477,30 @@ export class ChatApi {
     return conversations;
   }
 
+  /** 读群内昵称；未设或已清除返回空串（发送者名映射按此回退本名）。 */
+  groupAliasOf(groupId: string, userId: string): string {
+    return this.aliasByGroup.get(groupId)?.get(userId) ?? '';
+  }
+
+  /** 群昵称快照变更订阅（名册刷新或 2124 落地后触发）；返回退订函数。 */
+  subscribeGroupAlias(listener: () => void): () => void {
+    this.aliasListeners.add(listener);
+    return () => this.aliasListeners.delete(listener);
+  }
+
+  private bumpAliasListeners(): void {
+    for (const fn of this.aliasListeners) fn();
+  }
+
   async loadGroupMembers(groupId: string) {
     const resp = await this.conn.request(GET_GROUP_MEMBERS, { groupId });
-    return resp.code === 0 ? resp.members : [];
+    const members = resp.code === 0 ? resp.members ?? [] : [];
+    // 名册为准重建该群昵称快照，并通知群会话重渲发送者名。
+    const aliases = new Map<string, string>();
+    for (const m of members) if (m.alias) aliases.set(m.userId, m.alias);
+    this.aliasByGroup.set(groupId, aliases);
+    this.bumpAliasListeners();
+    return members;
   }
 
   /** INVITE adds directly server-side (no pending state) — "添加成员". */
@@ -596,15 +623,22 @@ export class ChatApi {
     }
   }
 
-  /** 2124: group member alias updated — refresh group list so member rows pick
-   *  up the new alias. Malformed notify is silently ignored. The message sender
-   *  name rendering consumes the notify via the chat_pipeline hook and updates
-   *  its local alias map (ChatMessageView carries no alias). */
+  /** 2124: group member alias updated — fold the change into the alias
+   *  snapshot (sender-name mapping) and refresh the group list (member rows).
+   *  Malformed notify is silently ignored. */
   private onGroupMemberAliasUpdated(body: Uint8Array): void {
+    let notify: GroupMemberAliasUpdatedNotify;
     try {
-      GroupMemberAliasUpdatedNotify.decode(body);
+      notify = GroupMemberAliasUpdatedNotify.decode(body);
     } catch {
       return; // malformed notify: ignore
+    }
+    const aliases = this.aliasByGroup.get(notify.groupId);
+    if (aliases) {
+      // 空串 = 清除：移出快照，群聊发送者名回退本名。名册未载入的群不落快照。
+      if (notify.alias) aliases.set(notify.userId, notify.alias);
+      else aliases.delete(notify.userId);
+      this.bumpAliasListeners();
     }
     void this.refreshGroups();
   }

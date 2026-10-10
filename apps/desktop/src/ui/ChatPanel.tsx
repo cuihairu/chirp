@@ -13,7 +13,7 @@ import {
   Tooltip,
   Typography,
 } from '@mui/material';
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useReducer, useRef, useState } from 'react';
 import type { KeyboardEvent as ReactKeyboardEvent } from 'react';
 import type { ChatApi, ChannelRef } from '../api/chat_api';
 import type { Conversation } from '../state/models';
@@ -32,6 +32,8 @@ const fmtTime = (ts: number): string => {
 function MessageRow(props: {
   mine: boolean;
   senderId: string;
+  /** 群聊归属名（群昵称优先，回退本名）；私聊不传。 */
+  senderName?: string;
   content: string;
   timestamp: number;
   pending: boolean;
@@ -46,7 +48,7 @@ function MessageRow(props: {
       <Box sx={{ maxWidth: '72%' }}>
         {!props.mine ? (
           <Typography variant="caption" color="text.secondary">
-            {props.senderId}
+            {props.senderName ?? props.senderId}
           </Typography>
         ) : null}
         <Paper
@@ -144,6 +146,15 @@ export default function ChatPanel(props: {
     void api.markRead(channel, newest.messageId);
   }, [api, channel, selfId, list]);
 
+  // 群会话：名册随群打开拉一次（昵称快照由此建立）；2124/名册刷新即重渲发送者名。
+  const [, bumpAlias] = useReducer((n: number) => n + 1, 0);
+  useEffect(() => {
+    if (channel.kind !== 'group') return;
+    void api.loadGroupMembers(channel.channelId);
+    return api.subscribeGroupAlias(bumpAlias);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [channel.kind, channel.channelId]);
+
   // 新消息自动滚底（v1 从简：总是滚）。
   useEffect(() => {
     bottomRef.current?.scrollIntoView({ block: 'end' });
@@ -231,6 +242,11 @@ export default function ChatPanel(props: {
             key={m.messageId}
             mine={m.senderId === selfId}
             senderId={m.senderId}
+            senderName={
+              channel.kind === 'group'
+                ? api.groupAliasOf(channel.channelId, m.senderId) || m.senderId
+                : undefined
+            }
             content={m.content}
             timestamp={m.timestamp}
             pending={m.pending}

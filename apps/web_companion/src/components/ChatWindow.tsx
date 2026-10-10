@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useReducer, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Box, Button, CircularProgress, Dialog, DialogActions, DialogContent, DialogTitle, IconButton, TextField, Typography } from '@mui/material';
 import SettingsIcon from '@mui/icons-material/Settings';
@@ -74,6 +74,19 @@ export default function ChatWindow({ channelKey }: { channelKey: string }) {
     void api.markRead(channel, newest.messageId);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [selfId, newest?.messageId]);
+
+  // Group channels: pull the roster once on open (the alias snapshot is built
+  // from it) and re-render sender names on roster refresh / 2124 notifies.
+  const [, bumpAlias] = useReducer((n: number) => n + 1, 0);
+  useEffect(() => {
+    if (channel.kind !== 'group') return;
+    void api.loadGroupMembers(channel.channelId);
+    return api.subscribeGroupAlias(bumpAlias);
+  }, [channel.kind, channel.channelId, api]);
+
+  /** Group sender attribution: alias wins, fall back to the raw user id. */
+  const senderName = (uid: string): string =>
+    channel.kind === 'group' ? api.groupAliasOf(channel.channelId, uid) || uid : uid;
 
   useEffect(() => {
     const timer = setInterval(() => setNow(Date.now()), TYPING_TICK_MS);
@@ -168,6 +181,9 @@ export default function ChatWindow({ channelKey }: { channelKey: string }) {
             key={m.messageId}
             message={m}
             selfId={selfId}
+            senderName={
+              channel.kind === 'group' && m.senderId !== selfId ? senderName(m.senderId) : undefined
+            }
             peerReadMessageId={
               channel.kind === 'private'
                 ? readCursorOf(messageState, channelKey, channel.peerId)

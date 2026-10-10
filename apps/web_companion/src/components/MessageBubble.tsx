@@ -13,6 +13,8 @@ export interface MessageBubbleProps {
   selfId: string;
   /** Last message id the peer read; own messages at/below it show 已读. */
   peerReadMessageId?: string;
+  /** Group sender attribution (alias, else raw id); private chats pass none. */
+  senderName?: string;
   onToggleReaction: (message: ChatMessageView, emoji: string) => void;
   onEdit?: (message: ChatMessageView) => void;
   onDelete?: (message: ChatMessageView) => void;
@@ -21,11 +23,13 @@ export interface MessageBubbleProps {
 /**
  * One chat bubble. Mine float right in primary, theirs left in paper, with
  * reaction chips and (for own messages) edit/delete actions underneath.
+ * Group chats show a sender-name caption above peers' bubbles.
  */
 export default function MessageBubble({
   message,
   selfId,
   peerReadMessageId,
+  senderName,
   onToggleReaction,
   onEdit,
   onDelete,
@@ -50,6 +54,11 @@ export default function MessageBubble({
         opacity: message.pending ? 0.6 : 1,
       }}
     >
+      {senderName !== undefined && (
+        <Typography variant="caption" sx={{ display: 'block', opacity: 0.75 }}>
+          {senderName}
+        </Typography>
+      )}
       <Typography variant="body2" sx={{ wordBreak: 'break-word', whiteSpace: 'pre-wrap' }}>
         {message.deleted ? zh.chat.deleted : message.content}
       </Typography>
