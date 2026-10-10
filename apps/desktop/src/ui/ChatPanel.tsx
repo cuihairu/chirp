@@ -36,6 +36,7 @@ function MessageRow(props: {
   timestamp: number;
   pending: boolean;
   failed?: boolean;
+  failureReason?: 'muted';
   queuedOffline?: boolean;
   edited?: boolean;
   readByPeer: boolean;
@@ -80,7 +81,7 @@ function MessageRow(props: {
           ) : null}
           {props.failed ? (
             <Typography variant="caption" color="error">
-              发送失败
+              {props.failureReason === 'muted' ? '禁言中，消息未发送' : '发送失败'}
             </Typography>
           ) : null}
           {props.queuedOffline ? (
@@ -234,6 +235,7 @@ export default function ChatPanel(props: {
             timestamp={m.timestamp}
             pending={m.pending}
             failed={m.failed}
+            failureReason={m.failureReason}
             queuedOffline={m.queuedOffline}
             edited={m.edited}
             readByPeer={peerRead}

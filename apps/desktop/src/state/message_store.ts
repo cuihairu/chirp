@@ -48,17 +48,22 @@ export function addPendingMessage(store: Store<MessageState>, message: ChatMessa
 }
 
 /** Flip a pending send to failed (RESP error or timeout). */
+/** Flip a pending send to failed (RESP error or timeout); reason carries the
+ *  mute-specific hint when the server rejected with MUTED. */
 export function failPendingMessage(
   store: Store<MessageState>,
   channelKey: string,
   clientId: string,
+  reason?: 'muted',
 ): void {
   store.set((prev) => ({
     ...prev,
     byChannel: {
       ...prev.byChannel,
       [channelKey]: (prev.byChannel[channelKey] ?? []).map((m) =>
-        m.clientId === clientId ? { ...m, pending: false, failed: true } : m,
+        m.clientId === clientId
+          ? { ...m, pending: false, failed: true, failureReason: reason }
+          : m,
       ),
     },
   }));

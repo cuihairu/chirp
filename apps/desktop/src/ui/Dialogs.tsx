@@ -132,6 +132,35 @@ export function GroupManageDialog(props: {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
+  // 禁言入口按名册角色放行（MODERATOR 及以上）；名册未载入时不放行。
+  const selfRole = members.find((m) => m.userId === props.selfId)?.role;
+  const canMute =
+    selfRole === GroupMemberRole.MODERATOR ||
+    selfRole === GroupMemberRole.ADMIN ||
+    selfRole === GroupMemberRole.OWNER;
+
+  /** target 未禁言时弹时长输入(分钟)；已禁言则解禁(seconds=0)。 */
+  const setMute = async (target: string, currentlyMutedUntil: number): Promise<void> => {
+    let seconds = 0;
+    if (currentlyMutedUntil === 0) {
+      const input = window.prompt(`禁言 ${target} 多少分钟?(留空或 0 取消)`);
+      if (input === null) return;
+      seconds = Math.max(0, Math.floor(Number(input) * 60) || 0);
+      if (seconds === 0) return;
+    }
+    setError(null);
+    try {
+      const resp = await props.api.setGroupMute(props.groupId, target, seconds);
+      if (resp.code !== 0) {
+        setError(`禁言操作失败（code ${resp.code}）`);
+        return;
+      }
+      void refresh();
+    } catch {
+      setError('禁言操作失败（服务端拒绝或断线）');
+    }
+  };
+
   const invite = async (): Promise<void> => {
     setError(null);
     try {
@@ -188,27 +217,44 @@ export function GroupManageDialog(props: {
             成员（{members.length}）
           </Typography>
           <List dense>
-            {members.map((m) => (
-              <ListItem key={m.userId} secondaryAction={
-                m.userId !== props.selfId ? (
-                  <Button
-                    size="small"
-                    color="error"
-                    startIcon={<DeleteIcon />}
-                    onClick={async () => {
-                      await props.api.kickMember(props.groupId, m.userId);
-                      void refresh();
-                    }}
-                  >
-                    踢出
-                  </Button>
-                ) : (
-                  <Chip size="small" label="我" />
-                )
-              }>
-                <ListItemText primary={m.userId} secondary={m.role === GroupMemberRole.OWNER ? '群主' : undefined} />
-              </ListItem>
-            ))}
+            {members.map((m) => {
+              const muted = m.mutedUntilTs > Date.now();
+              return (
+                <ListItem key={m.userId} secondaryAction={
+                  m.userId !== props.selfId ? (
+                    <Stack direction="row" spacing={0.5}>
+                      {canMute ? (
+                        <Button
+                          size="small"
+                          onClick={() => void setMute(m.userId, muted ? m.mutedUntilTs : 0)}
+                          data-testid={`mute-${m.userId}`}
+                        >
+                          {muted ? '解除禁言' : '禁言'}
+                        </Button>
+                      ) : null}
+                      <Button
+                        size="small"
+                        color="error"
+                        startIcon={<DeleteIcon />}
+                        onClick={async () => {
+                          await props.api.kickMember(props.groupId, m.userId);
+                          void refresh();
+                        }}
+                      >
+                        踢出
+                      </Button>
+                    </Stack>
+                  ) : (
+                    <Chip size="small" label="我" />
+                  )
+                }>
+                  <ListItemText
+                    primary={m.userId + (muted ? '（禁言中）' : '')}
+                    secondary={m.role === GroupMemberRole.OWNER ? '群主' : undefined}
+                  />
+                </ListItem>
+              );
+            })}
           </List>
         </Box>
       </Stack>
