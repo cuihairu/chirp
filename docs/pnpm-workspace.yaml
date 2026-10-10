@@ -14,6 +14,14 @@ overrides:
   # （indexed source map 的分节偏移行值未校验，巨值同步阻塞事件循环 DoS，
   # 修复 1.2.2）。postcss/magicast(vitest 覆盖链) 传递声明 ^1.2.1。
   source-map-js: ^1.2.2
+  # katex <0.18.2 有 low GHSA-238p-pmpm-9mq7/CVE-2026-103923（原型污染
+  # 绕过 trust 限制，修复 0.18.2）。mermaid 11.17.2 传递声明 ^0.16.47，
+  # 上游未放宽依赖域（2026-10-10 复核：mermaid registry 最新 12.1.0 仍
+  # ^0.16.47），override 硬抬到 0.19.0（维护者推荐目标；0.18.11 为误
+  # 发布破坏版已弃用，0.18 线不取）。可验证性：docs 全库 0 个 $$ 数学块
+  # （grep 实证），mermaid 不路由任何输入进 katex——站点运行时死代码面，
+  # 构建绿 + mermaid 页面照常渲染即闭环。构建失败即回滚。
+  katex: ^0.19.0
 # pnpm 12 默认不跑依赖的生命周期脚本,未显式决定时 CI 里直接报错退出
 # (ERR_PNPM_IGNORED_BUILDS)。esbuild 的 postinstall 校验平台二进制,放行。
 allowBuilds:
