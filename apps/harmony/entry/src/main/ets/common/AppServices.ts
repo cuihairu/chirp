@@ -42,12 +42,25 @@ class AppServices {
     bindNotifyContext(context);
   }
 
-  /** 预载 HostConfig（幂等）：deviceId 落盘、deviceName 归纳。 */
+  /**
+   * 预载 HostConfig（幂等）：deviceId 落盘、deviceName 归纳；冷启动带着已存
+   * 地址时同时重建服务面——configure 只由 HostPage 触发，重启后守卫页直达
+   * 登录页，loginAll 需要已就绪的连接面，否则恒返回 1。
+   */
   prewarm(): Promise<HostConfigData> {
     if (!this.prewarmPromise) {
-      this.prewarmPromise = loadHostConfig(this.requireContext());
+      this.prewarmPromise = this.prewarmAndBuild();
     }
     return this.prewarmPromise;
+  }
+
+  private async prewarmAndBuild(): Promise<HostConfigData> {
+    const config = await loadHostConfig(this.requireContext());
+    if (config.baseUrl !== '' && this.servicesRef === null) {
+      this.servicesRef = this.buildServices(config);
+      void this.loadNotifySettings();
+    }
+    return config;
   }
 
   get configured(): boolean {
@@ -92,13 +105,17 @@ class AppServices {
     await saveBaseUrl(ctx, baseUrl);
     this.teardownServices();
     const config = await this.prewarm();
-    this.servicesRef = createServices({
+    this.servicesRef = this.buildServices(config);
+    void this.loadNotifySettings();
+  }
+
+  private buildServices(config: HostConfigData): Services {
+    return createServices({
       wsFactory: wsFactory,
       deviceId: config.deviceId,
       deviceName: config.deviceName,
       ...planeUrls(config.baseUrl),
     });
-    void this.loadNotifySettings();
   }
 
   /** 推送偏好（通知中心设置卡读写）：内存镜像同步 Notify.ts 的判定面。 */
