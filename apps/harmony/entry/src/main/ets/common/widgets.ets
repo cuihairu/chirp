@@ -28,7 +28,8 @@ export struct Avatar {
 
 /**
  * 顶栏（56，token topbar）：标题 + 可选返回 + 可选右侧动作。
- * onBack 为空时不渲染返回键（主页签页）。
+ * onBack 为空时不渲染返回键（主页签页）。右侧支持三元组：头像（我的入口）
+ * + 铃铛图标（通知入口）+ 文字按钮——三者按需渲染，互不影响。
  */
 @Component
 export struct TopBar {
@@ -38,6 +39,12 @@ export struct TopBar {
   showBack: boolean = false;
   rightText: string = '';
   onRight: () => void = () => {};
+  /** 渲染头像（会话页「我的」入口）；空串不渲染。 */
+  avatarName: string = '';
+  onAvatar: () => void = () => {};
+  /** 渲染铃铛图标（会话页「通知」入口）；false 不渲染。 */
+  showBell: boolean = false;
+  onBell: () => void = () => {};
 
   build() {
     Row({ space: 10 }) {
@@ -69,6 +76,20 @@ export struct TopBar {
       }
       .alignItems(HorizontalAlign.Start)
       .layoutWeight(1)
+      if (this.showBell) {
+        Text('🔔')
+          .fontSize(18)
+          .width(34)
+          .height(34)
+          .textAlign(TextAlign.Center)
+          .borderRadius(17)
+          .backgroundColor(C.surface2)
+          .onClick(() => this.onBell())
+      }
+      if (this.avatarName !== '') {
+        Avatar({ name: this.avatarName, size: 34 })
+          .onClick(() => this.onAvatar())
+      }
       if (this.rightText !== '') {
         Text(this.rightText)
           .fontSize(14)

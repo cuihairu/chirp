@@ -10,6 +10,8 @@
     "pages/FriendsPage",
     "pages/GroupPage",
     "pages/DevicesPage",
-    "pages/PartyVoicePage"
+    "pages/PartyVoicePage",
+    "pages/NotificationsPage",
+    "pages/ProfilePage"
   ]
 }

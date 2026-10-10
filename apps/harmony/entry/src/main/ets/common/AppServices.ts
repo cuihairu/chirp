@@ -13,7 +13,14 @@ import {
   bindNotifyContext,
   ensureNotificationPermission,
   notifyIfUnattended,
+  applyNotifySettings,
 } from './Notify';
+import {
+  loadNotifySettings,
+  saveNotifySettings,
+  DEFAULT_NOTIFY_SETTINGS,
+  type NotifySettings,
+} from './NotifySettings';
 
 /**
  * 应用级单例（EntryAbility 与各页面共用的服务面）：组装五连接 + stores +
@@ -25,6 +32,7 @@ class AppServices {
   private context: common.UIAbilityContext | null = null;
   private servicesRef: Services | null = null;
   private prewarmPromise: Promise<HostConfigData> | null = null;
+  private notifySettingsRef: NotifySettings | null = null;
   private foreground = true;
   private unsubs: Array<() => void> = [];
 
@@ -90,6 +98,35 @@ class AppServices {
       deviceName: config.deviceName,
       ...planeUrls(config.baseUrl),
     });
+    void this.loadNotifySettings();
+  }
+
+  /** 推送偏好（通知中心设置卡读写）：内存镜像同步 Notify.ts 的判定面。 */
+  get notifySettings(): NotifySettings | null {
+    return this.notifySettingsRef;
+  }
+
+  /** 从 preferences 预载推送偏好并落地系统通知开关；失败取默认值。 */
+  async loadNotifySettings(): Promise<NotifySettings> {
+    try {
+      const ctx = this.requireContext();
+      const settings = await loadNotifySettings(ctx);
+      this.notifySettingsRef = settings;
+      applyNotifySettings(settings);
+      return settings;
+    } catch {
+      this.notifySettingsRef = DEFAULT_NOTIFY_SETTINGS;
+      applyNotifySettings(DEFAULT_NOTIFY_SETTINGS);
+      return DEFAULT_NOTIFY_SETTINGS;
+    }
+  }
+
+  /** 设置卡写入：落盘 + 更新内存镜像 + 落地系统通知开关。 */
+  async setNotifySettings(settings: NotifySettings): Promise<void> {
+    const ctx = this.requireContext();
+    await saveNotifySettings(ctx, settings);
+    applyNotifySettings(settings);
+    this.notifySettingsRef = settings;
   }
 
   /**
@@ -105,6 +142,8 @@ class AppServices {
     }
     const code = await services.api.login(userId);
     if (code !== 0) return code;
+    // 登录成功后预载推送偏好（与通知权限申请同节奏）；失败走默认值，不阻断。
+    void this.loadNotifySettings();
     this.wireNotifications();
     void ensureNotificationPermission();
 
@@ -187,6 +226,8 @@ class AppServices {
           fromUserId: message.fromUserId,
           content: message.content,
           channelKey: message.channel.key,
+          groupChannel: message.channel.kind === 'group',
+          selfUserId: services.auth.get().userId ?? '',
         });
       }),
     ];

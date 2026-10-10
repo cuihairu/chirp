@@ -40,6 +40,10 @@ struct SessionsPage {
         TopBar({
           title: 'Chirp 伴侣',
           subtitle: this.selfId === '' ? '' : `欢迎,${this.selfId}`,
+          showBell: true,
+          onBell: () => router.pushUrl({ url: 'pages/NotificationsPage' }).catch(() => {}),
+          avatarName: this.selfId,
+          onAvatar: () => router.pushUrl({ url: 'pages/ProfilePage' }).catch(() => {}),
           rightText: '退出登录',
           onRight: () => void this.onSignOut(),
         })
