@@ -152,8 +152,15 @@ web 补齐 `searchMessages`/`setMemberAlias` + start() 订阅 2124 扇出
 后跳转、群命中本地有会话才可跳、其余频道（世界/系统等 web 无会话面）只读
 展示；SERVER_UNAVAILABLE 显示「搜索服务未连接」；高亮按决策记录客户端做，
 首版从简未做。vitest 5 例（空态禁用/命中渲染与私聊跳转/游标翻页/降级文案/
-空结果）。alias 设置面与渲染两处、desktop 搜索界面、2248 端到端 smoke 腿
-仍为后续增量。
+空结果）。desktop 搜索界面（9310b7f）与 2248 端到端 smoke 腿均已落地；
+alias 设置面与渲染两处亦收口（2026-10-10）：两端 ChatApi 增群昵称快照
+（`groupAliasOf` + `subscribeGroupAlias`；名册拉取与 2124 通知双路维护，
+空串=清除移出）；设置面——web 群设置成员行 prompt（本人随时可设、
+MODERATOR+ 设他人，权限口径同禁言；预填当前值、空串清除），desktop 行内
+输入（wry WebView 无 prompt，同禁言时长输入先例）；渲染两处——成员列表行
+昵称优先（web 真实名作从属行、desktop 括注本名），群聊消息发送者名按快照
+映射、回退本名，2124 即时重渲。web vitest 258/258、双端 typecheck 绿。
+search 批的 web/desktop 消费链至此全部收口。
 
 ## 6. 验收口径
 
