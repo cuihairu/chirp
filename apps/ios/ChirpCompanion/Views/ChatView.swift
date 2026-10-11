@@ -5,11 +5,14 @@ import SwiftUI
 /// 聊天窗口(键寻址,DM 与群共用):该频道历史 + 实时收发。进页面即
 /// markRead(索引+store)。P4a:长按气泡快捷反应、反应 chips、正在输入
 /// 横幅、输入上报。P4e:顶部「加载更早的消息」翻页(beforeTimestamp
-/// 游标)、群会话的发送者署名行与右上角群设置入口。
+/// 游标)、群会话的发送者署名行与右上角群设置入口。消息引用(消息引用
+/// P1,web/desktop 同款):长按「回复」挂引用,气泡上方渲染被引摘要
+/// (仅本地已加载消息可解;已撤回/不在列表即「原消息已删除或不可见」)。
 struct ChatView: View {
     @EnvironmentObject var model: AppModel
     let channelKey: String
     @State private var draft = ""
+    @State private var replying: Chirp_Chat_ChatMessage?
     @State private var showGroupSettings = false
     @FocusState private var inputFocused: Bool
 
@@ -21,6 +24,7 @@ struct ChatView: View {
         VStack(spacing: 0) {
             messageList
             typingBanner
+            replyPreview
             inputRow
         }
         .navigationTitle(model.chatTitle(forKey: channelKey))
@@ -103,6 +107,56 @@ struct ChatView: View {
         model.chatMessages.last.map(messageOffset)
     }
 
+    /// 引用行的署名:群聊=发送者 id(本壳无别名面,与署名行同口径);DM=你/对方 id。
+    private func displayName(_ uid: String) -> String {
+        if isGroup { return uid }
+        return uid == model.currentUserId ? "你" : uid
+    }
+
+    /// 被引消息摘要:仅本地已加载列表可解;已撤回视为不可见(web 同款)。
+    private func quotedSummary(id: String) -> (senderName: String, content: String)? {
+        guard let src = model.chatMessages.first(where: { $0.messageID == id }),
+            !src.isRecalled
+        else { return nil }
+        return (
+            displayName(src.senderID),
+            String(data: src.content, encoding: .utf8) ?? ""
+        )
+    }
+
+    /// 引用块:左竖线 + 「回复 · 署名」+ 两行钳制摘要;不可解即占位行。
+    @ViewBuilder
+    private func quotedBlock(_ message: Chirp_Chat_ChatMessage, mine: Bool) -> some View {
+        if !message.replyToMessageID.isEmpty {
+            if let quoted = quotedSummary(id: message.replyToMessageID) {
+                HStack(alignment: .top, spacing: 5) {
+                    Rectangle()
+                        .fill(mine ? Color.accentColor : Color.secondary.opacity(0.6))
+                        .frame(width: 2.5)
+                    VStack(alignment: .leading, spacing: 1) {
+                        Text("回复 · \(quoted.senderName)")
+                            .font(.caption2)
+                            .fontWeight(.semibold)
+                            .foregroundStyle(.secondary)
+                        Text(quoted.content)
+                            .font(.caption2)
+                            .lineLimit(2)
+                            .foregroundStyle(.secondary)
+                    }
+                    Spacer(minLength: 0)
+                }
+                .frame(maxWidth: 260)
+                .padding(.horizontal, 8)
+            } else {
+                Text("原消息已删除或不可见")
+                    .font(.caption2)
+                    .foregroundStyle(.secondary)
+                    .frame(maxWidth: 260, alignment: .leading)
+                    .padding(.horizontal, 8)
+            }
+        }
+    }
+
     private func bubble(_ message: Chirp_Chat_ChatMessage) -> some View {
         let mine = message.senderID == model.currentUserId
         return VStack(alignment: mine ? .trailing : .leading, spacing: 2) {
@@ -112,6 +166,7 @@ struct ChatView: View {
                     .font(.caption2)
                     .foregroundStyle(.secondary)
             }
+            quotedBlock(message, mine: mine)
             HStack {
                 if mine { Spacer(minLength: 48) }
                 Text(String(data: message.content, encoding: .utf8) ?? "")
@@ -138,6 +193,14 @@ struct ChatView: View {
                         model.toggleReaction(messageId: message.messageID, emoji: emoji)
                     } label: {
                         Text(emoji)
+                    }
+                }
+                // 已撤回不可作为引用源(web 同款:删除态无操作行)。
+                if !message.isRecalled {
+                    Button {
+                        replying = message
+                    } label: {
+                        Label("回复", systemImage: "arrowshape.turn.up.left")
                     }
                 }
             }
@@ -187,6 +250,44 @@ struct ChatView: View {
         }
     }
 
+    /// 待发送引用条:被引摘要(引用源已撤回/不可解时降级显示占位)+ 取消。
+    @ViewBuilder
+    private var replyPreview: some View {
+        if let replying {
+            let quoted = quotedSummary(id: replying.messageID)
+            HStack(alignment: .top, spacing: 6) {
+                Rectangle()
+                    .fill(Color.accentColor)
+                    .frame(width: 2.5)
+                VStack(alignment: .leading, spacing: 1) {
+                    Text("回复 · \(quoted?.senderName ?? displayName(replying.senderID))")
+                        .font(.caption2)
+                        .fontWeight(.semibold)
+                    if let quoted {
+                        Text(quoted.content)
+                            .font(.caption2)
+                            .lineLimit(1)
+                            .foregroundStyle(.secondary)
+                    } else {
+                        Text("原消息已删除或不可见")
+                            .font(.caption2)
+                            .foregroundStyle(.secondary)
+                    }
+                }
+                Spacer()
+                Button {
+                    self.replying = nil
+                } label: {
+                    Image(systemName: "xmark")
+                        .font(.caption2)
+                }
+                .accessibilityLabel("取消回复")
+            }
+            .padding(.horizontal, 12)
+            .padding(.bottom, 4)
+        }
+    }
+
     private var inputRow: some View {
         HStack(spacing: 8) {
             TextField("消息", text: $draft, axis: .vertical)
@@ -206,8 +307,10 @@ struct ChatView: View {
     private func send() {
         let content = draft.trimmingCharacters(in: .whitespacesAndNewlines)
         guard !content.isEmpty else { return }
+        let replyToMessageId = replying?.messageID ?? ""
         draft = ""
-        model.sendTapped(content: content)
+        replying = nil
+        model.sendTapped(content: content, replyToMessageId: replyToMessageId)
         inputFocused = true
     }
 }

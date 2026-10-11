@@ -720,11 +720,13 @@ final class AppModel: ObservableObject {
         reactionSummaries = next
     }
 
-    func sendTapped(content: String) {
+    func sendTapped(content: String, replyToMessageId: String = "") {
         guard let channel = activeChannel, let service = service,
             phase.isloggedIn, !content.isEmpty
         else { return }
-        service.send(channel: channel, content: content).onComplete { [weak self] outcome in
+        service.send(
+            channel: channel, content: content, replyToMessageId: replyToMessageId
+        ).onComplete { [weak self] outcome in
             Task { @MainActor in
                 guard let self = self else { return }
                 switch outcome {
@@ -739,6 +741,8 @@ final class AppModel: ObservableObject {
                     if channel.kind == .dm { message.receiverID = channel.peerId }
                     message.content = Data(content.utf8)
                     message.timestamp = Int64(Date().timeIntervalSince1970 * 1000)
+                    // 引用随本地副本渲染(服务端校验回填后同值)。
+                    if !replyToMessageId.isEmpty { message.replyToMessageID = replyToMessageId }
                     if self.activeChannel == channel { self.chatMessages.append(message) }
                     self.refreshSessions()
                 case .success(.queuedOffline):
