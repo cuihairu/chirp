@@ -25,7 +25,7 @@ dotnet/            纯 .NET 测试工程(CI 里跑真单测,不需要 Unity)
 
 | 平面 | 消息对 | 入口 |
 | --- | --- | --- |
-| 聊天(2001-2234) | 发送/历史/已读、群组管理、回应、编辑/删除 | chat WS 7001,`ChirpManager` 便捷方法或 `RequestAsync` |
+| 聊天(2001-2252) | 发送/历史/已读、群组管理、回应、编辑/删除、搜索、群昵称、群禁言、敏感词预检与词库下发 | chat WS 7001,`ChirpManager` 便捷方法或 `RequestAsync` |
 | 社交(3001-3024) | 好友/拉黑/在线状态 | social WS 8001(第二连接) |
 | 语音(4001-4020) | 建房/进房/退房/房间信息/静音/闭麦(join 带 SDP offer,响应带 TURN 短期凭证) | voice WS 9001(第二连接) |
 | 组队(7001-7027) | 建队/邀请-接受/就绪/踢人/转让/快照同步 | party WS 7501(第二连接) |
@@ -180,7 +180,7 @@ voice.OnNotify(MsgID.IceCandidateMsg, body => /* candidate → RunOnMainThread *
 
 ## 持续集成(CI)
 
-`.github/workflows/unity-sdk.yml` 在每次 push/PR 时用 .NET 10 跑 `dotnet test dotnet/ChirpSdkTests`(当前 96 例;用例覆盖:帧编解码、序列号关联、超时、通知订阅、踢线终态与恢复、心跳回声、重连生命周期(Reconnecting/Reconnected 事件)、断线 pending 拒绝、语音 spec 往返、钩子接线(拦截改写/拦截丢弃/命令路由/本地存档/登录续期/监听扇出)、reply 引用与私聊归一化、FileMessageStore、敏感词预检,另含边缘故障注入(钩子抛异常容错、陈旧 transport 替换、畸形帧/PONG/踢线垃圾 body、损坏日志回放前缀、Compact 死读标清扫)与 `ClientWebSocketTransport` 对回环真实 WebSocket 的传输测试(分片聚合、17MB 上限、双向关闭握手)),并校验 `proto/csharp` 与 `gen_proto.sh` 无漂移。本地覆盖率:`dotnet test dotnet/ChirpSdkTests --collect:"XPlat Code Coverage"`,coverlet cobertura 剔除 `proto/csharp` 生成代码后按文件行去重,运行时行覆盖 97.8%(1393/1425)。
+`.github/workflows/unity-sdk.yml` 在每次 push/PR 时用 .NET 10 跑 `dotnet test dotnet/ChirpSdkTests`(当前 124 例;用例覆盖:帧编解码、序列号关联、超时、通知订阅、踢线终态与恢复、心跳回声、重连生命周期(Reconnecting/Reconnected 事件)、断线 pending 拒绝、语音 spec 往返、钩子接线(拦截改写/拦截丢弃/命令路由/本地存档/登录续期/监听扇出)、reply 引用与私聊归一化、FileMessageStore、敏感词预检、词库下发同步(条件 GET、通知热替换与陈旧忽略、本地兜底、Record/Reject 策略),另含边缘故障注入(钩子抛异常容错、陈旧 transport 替换、畸形帧/PONG/踢线垃圾 body、损坏日志回放前缀、Compact 死读标清扫)与 `ClientWebSocketTransport` 对回环真实 WebSocket 的传输测试(分片聚合、17MB 上限、双向关闭握手)),并校验 `proto/csharp` 与 `gen_proto.sh` 无漂移。本地覆盖率:`dotnet test dotnet/ChirpSdkTests --collect:"XPlat Code Coverage"`,coverlet cobertura 剔除 `proto/csharp` 生成代码后按文件行去重,运行时行覆盖 98.7%(1614/1635)。
 
 ## 路线
 
