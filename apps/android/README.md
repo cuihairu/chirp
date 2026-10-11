@@ -32,9 +32,10 @@ backoff/heartbeat/deadline test is deterministic.
 
 | File | Ported from | Role |
 |---|---|---|
-| `MainActivity.kt` | `lib/api/chat_api.dart` login/send + notify ack | dev shell, M4-rewired onto `ChatPipeline`: login via `pipeline.login` (provider-less dev token = user id), DM a peer through `pipeline.send` (sorted-pair channelId), interceptor-installed send-side word filter, `MemoryMessageStore` archive, mandatory MESSAGE_ACK stays at the shell layer (pipeline doesn't ack, matching dart layering), `OfflineSendQueue` flushed from `onReconnected`, device registration (`DeviceRegistrar` + `PlatformPushTokenSource`) on login success |
-| `src/push` / `src/nopush` (`chirp.mobile.push.PlatformPushTokenSource`) | — | same-FQCN token-source pair picked by the `-PchirpPush` switch: the Firebase one (25.1.3, google-services plugin 4.5.0) fetches the FCM token with a 10s bound, the no-op one always reports `null` |
-| `AndroidManifest.xml` + `res/` | — | framework-Views UI only (no androidx/Compose — minimal version-coupling surface); cleartext `ws://` enabled for dev gateways |
+| `MainActivity.kt` | `lib/api/chat_api.dart` login/send + notify ack | dev shell, M4-rewired onto `ChatPipeline`: login via `pipeline.login` (provider-less dev token = user id), DM a peer through `pipeline.send` (sorted-pair channelId), interceptor-installed send-side word filter, `MemoryMessageStore` archive, mandatory MESSAGE_ACK stays at the shell layer (pipeline doesn't ack, matching dart layering), `OfflineSendQueue` flushed from `onReconnected`, device registration (`DeviceRegistrar` + `PlatformPushTokenSource`) on login success. Push receive side (P5): tracks the viewed conversation for the foreground policy, opens the deep-linked DM on notification tap (`singleTask` + `onNewIntent`), requests POST_NOTIFICATIONS (API 33+) |
+| `ChirpNotifications.kt` / `ActiveChannel.kt` | — | notification surface (idempotent `chirp_messages` channel, stack-by-conversation ids, tap PendingIntent carrying the route key) + the viewed-conversation slot the push service reads |
+| `src/push` / `src/nopush` (`chirp.mobile.push.PlatformPushTokenSource`, `push.ChirpFirebaseService`) | — | same-FQCN token-source pair picked by the `-PchirpPush` switch: the Firebase one (25.1.3, google-services plugin 4.5.0) fetches the FCM token with a 10s bound, the no-op one always reports `null`. The push build additionally compiles `ChirpFirebaseService` — the FCM receive side (see Push section) |
+| `AndroidManifest.xml` + `res/` | — | framework-Views UI only (no androidx/Compose — minimal version-coupling surface); cleartext `ws://` enabled for dev gateways; POST_NOTIFICATIONS declared; the FCM service entry is inert in the default build (the class only exists in the push source set) |
 
 Host is fixed to `ws://10.0.2.2:7001` (emulator host-loopback alias, same as
 the dart dev default); configurable host comes with real-device work.
@@ -71,20 +72,37 @@ exactly the degrade path above. Real enablement = replace that one file
 (package_name must stay `chirp.mobile`); zero code changes. The switch
 stays off in the default gate so the build stays deterministic.
 
+### Receive side (P5 — FCM messages in, notification out)
+
+`ChirpFirebaseService` (push build only) routes `remoteMessage.data`
+through `protocol/PushRoute.kt` — `PushRouteParser` (pure Kotlin,
+JVM-tested, iOS `PushRouteParser` same-semantics port: type ∈
+{message, mention} only, guild/private key mapping, DM pair-marker
+inference for the server's emitters that omit `channel_type`,
+team/world/unknown rejected, malformed-key structural gate) +
+`PushForegroundPolicy` (suppress the banner only while the shell is
+viewing that conversation — `ActiveChannel` tracks it onResume/onPause;
+everything else presents, never guess). Presentable pushes post on the
+`chirp_messages` channel; tapping carries the conversation key back into
+`MainActivity`, which re-opens the DM (the dev shell has no group screen
+— group keys log only). FCM token refresh (`onNewToken`) logs only;
+re-registration rides the existing login-time `DeviceRegistrar` path.
+
 ## Gate
 
 Two legs, both must stay green:
 
 ```sh
 make test    # leg 1 (SDK-free): JDK 21 + kotlinc; compiles src/main/kotlin +
-             #   src/test/kotlin against pinned jars, runs the 84 tests
+             #   src/test/kotlin against pinned jars, runs the 103 tests
 make clean
 
 ./gradlew assembleDebug        # leg 2: AGP 9.4.1 app shell → debug APK
-./gradlew testDebugUnitTest    #   the same 84 tests through Gradle
-#   (+ the push variant once: ./gradlew clean assembleDebug testDebugUnitTest
-#    -PchirpPush=true — fetches Firebase, exercises the placeholder
-#    google-services.json through the plugin; verified green 2026-09-28)
+./gradlew testDebugUnitTest    #   the same 103 tests through Gradle
+#   (+ the push variant: ./gradlew clean assembleDebug testDebugUnitTest
+#    -PchirpPush=true — fetches Firebase, compiles the FCM receive side
+#    (ChirpFirebaseService) which the default build never sees, exercises
+#    the placeholder google-services.json through the plugin)
 ```
 
 Leg 1 needs no Android SDK. Leg 2 needs `ANDROID_HOME`/`local.properties`
@@ -135,12 +153,15 @@ nested classes of the outer files).
   local-file lexicon into the shell's filter seam. Still open: real
   navigation beyond the single-activity dev shell (M4 shipped the pipeline
   without new screens).
-- **Push (M3.5)**: the server plane already exists —
+- **Push (M3.5 + P5 receive)**: the server plane already exists —
   `services/app/notification` registers devices with
   `fcm_token`/`apns_token` (plus Push Kit order) and fans out
   `PushNotificationRequest` (badge/click_action fields for iOS/Android
   deep links). Android side = firebase-messaging SDK + google-services.json
-  (needs Firebase project credentials). Registering the WS device plane
+  (needs Firebase project credentials); the receive side (notification
+  rendering, tap deep link, foreground suppression) shipped with
+  `ChirpFirebaseService` + `PushRoute.kt` — real end-to-end delivery still
+  needs the real Firebase credentials. Registering the WS device plane
   (`registerDevice`, app_gateway 5201) is already possible from the shell.
 - **CI gate job**: none of the two legs runs in CI yet (see Gate).
 - **iOS**: Swift port of the same files (`apps/ios`, URLSessionWebSocketTask

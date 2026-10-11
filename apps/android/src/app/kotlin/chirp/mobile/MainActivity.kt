@@ -1,6 +1,7 @@
 package chirp.mobile
 
 import android.app.Activity
+import android.content.Intent
 import android.os.Bundle
 import android.os.Handler
 import android.os.Looper
@@ -100,6 +101,57 @@ class MainActivity : Activity() {
 
         loginBtn.setOnClickListener { login() }
         sendBtn.setOnClickListener { send() }
+
+        // 推送接收侧（P5）：通知 channel 幂等建立 + API 33+ 运行时权限 +
+        // 冷启动带深链（通知点击在进程被杀后走 onCreate）。
+        ChirpNotifications.ensureChannel(this)
+        ChirpNotifications.requestPermission(this)
+        handleRouteIntent(intent)
+    }
+
+    override fun onNewIntent(intent: Intent) {
+        super.onNewIntent(intent)
+        // singleTask：应用活着时点通知走这里（不重建实例）。
+        handleRouteIntent(intent)
+    }
+
+    override fun onResume() {
+        super.onResume()
+        ActiveChannel.key = activeChannelKey()
+    }
+
+    override fun onPause() {
+        super.onPause()
+        // 前台裁决只认「正在看」：退后台即清，横幅交还系统照常呈现。
+        ActiveChannel.key = null
+    }
+
+    /** 当前打开的会话键：本壳只有私聊面，peer 非空即视为在看该 DM。 */
+    private fun activeChannelKey(): String? {
+        val self = selfId ?: return null
+        val peer = peerInput.text.toString().trim()
+        if (peer.isEmpty() || peer == self) return null
+        return "p:" + listOf(self, peer).sorted().joinToString("|")
+    }
+
+    /**
+     * 通知点击深链：键已过 [chirp.mobile.protocol.PushRouteParser] 结构门，
+     * 这里只做导航。本壳只有私聊面——DM 键把 peer 回填进输入框（下次发送
+     * 即进该会话）；群键无会话面，只落日志不猜导航。
+     */
+    private fun handleRouteIntent(intent: Intent?) {
+        val key = intent?.getStringExtra(ChirpNotifications.EXTRA_ROUTE_KEY) ?: return
+        if (key.startsWith("g:")) {
+            appendLine("[push] 群消息 $key（本壳无群会话面）")
+            return
+        }
+        val peer = key.removePrefix("p:").split('|')
+            .firstOrNull { it != (selfId ?: "") }
+        if (peer != null) {
+            peerInput.setText(peer)
+            appendLine("[push] 打开会话 $peer")
+        }
+        ActiveChannel.key = activeChannelKey()
     }
 
     override fun onDestroy() {

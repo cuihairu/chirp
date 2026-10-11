@@ -4,19 +4,34 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android">
 
     <uses-permission android:name="android.permission.INTERNET" />
+    <!-- API 33+ 通知运行时权限（老版本隐式授予；targetSdk 36 必须声明）。 -->
+    <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
 
     <application
         android:label="chirp"
         android:usesCleartextTraffic="true"
         android:theme="@android:style/Theme.Material.Light.DarkActionBar">
+        <!-- singleTask：通知点击的深链在应用活着时走 onNewIntent，不叠新实例。 -->
         <activity
             android:name=".MainActivity"
-            android:exported="true">
+            android:exported="true"
+            android:launchMode="singleTask">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
         </activity>
+
+        <!-- FCM 接收面（P5）：仅 -PchirpPush=true 构建编译出
+             .push.ChirpFirebaseService（firebase-messaging 只在该构建上
+             classpath）；默认构建下本条目惰性不生效。 -->
+        <service
+            android:name=".push.ChirpFirebaseService"
+            android:exported="false">
+            <intent-filter>
+                <action android:name="com.google.firebase.MESSAGING_EVENT" />
+            </intent-filter>
+        </service>
     </application>
 
 </manifest>
