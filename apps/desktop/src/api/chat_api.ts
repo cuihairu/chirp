@@ -221,10 +221,12 @@ export class ChatApi {
     this.activeChannelKey = key;
   }
 
-  async login(userId: string): Promise<ErrorCode> {
+  async login(userId: string, level = 0): Promise<ErrorCode> {
     // First entry (or a dead socket) must open the connection; already-open
     // sockets are left alone. The fake resolves instantly, the real client
-    // goes idle → connecting → connected.
+    // goes idle → connecting → connected. level: client-declared game level
+    // for the world-channel gate (game_chat_features P1); 0 = undeclared,
+    // which is what app/companion faces stay at.
     if (this.conn.status !== 'connected') {
       await this.conn.connect();
     }
@@ -233,6 +235,7 @@ export class ChatApi {
       deviceId: this.auth.get().deviceId,
       platform: 'web',
       supportsMessageAck: true,
+      level,
     });
     if (resp.code === 0) {
       patch(this.auth, { userId, loggedIn: true, kicked: false });

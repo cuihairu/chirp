@@ -103,8 +103,8 @@ public:
     });
   }
 
-  void Login(const std::string& token, LoginCallback cb) {
-    asio::post(io_context_, [this, token, cb = std::move(cb)]() mutable {
+  void Login(const std::string& token, LoginCallback cb, int32_t level) {
+    asio::post(io_context_, [this, token, cb = std::move(cb), level]() mutable {
       // 注册了 AuthProvider 时空 token 由 provider 签发;显式 token 优先。
       std::string effective = token;
       if (effective.empty()) {
@@ -112,6 +112,8 @@ public:
           effective = provider->GetToken();
         }
       }
+      // 留在 io 线程成员里:续期重登(IssueLogin 复用)沿用同一声明等级。
+      login_level_ = level;
       if (effective.empty()) {
         cb(MakeEc(ChatError::InvalidParam), "");
         return;
@@ -141,6 +143,7 @@ public:
     req.set_token(token);
     req.set_device_id("sdk_device");
     req.set_platform("pc");
+    req.set_level(login_level_);
     SendRequest(MsgID::LOGIN_REQ, MsgID::LOGIN_RESP, req.SerializeAsString(),
         [this, cb = std::move(cb)](const std::error_code& ec, const std::string& body) mutable {
           if (ec) {
@@ -1477,6 +1480,9 @@ private:
 
   std::string user_id_;
   std::string session_id_;
+  // 登录声明的游戏等级(Login 传入,io 线程成员):IssueLogin 每次构建
+  // LOGIN_REQ 时带上,续期重登沿用;0 = 未声明。
+  int32_t login_level_{0};
   int64_t next_seq_{1};
   // request_id 发送侧生成器(协议 4.3「缺省=连接内生成」;io 线程专用,
   // 与 next_seq_ 同一契约)。重连不清零:跨连接也不重发同一关联键。
@@ -1531,8 +1537,8 @@ ConnectionState ChatClient::GetState() const {
   return impl_->GetState();
 }
 
-void ChatClient::Login(const std::string& token, LoginCallback cb) {
-  impl_->Login(token, std::move(cb));
+void ChatClient::Login(const std::string& token, LoginCallback cb, int32_t level) {
+  impl_->Login(token, std::move(cb), level);
 }
 
 void ChatClient::Logout() {

@@ -4,6 +4,7 @@
 #include "proto/chat.pb.h"
 
 #include <atomic>
+#include <cstdint>
 #include <memory>
 #include <mutex>
 #include <string>
@@ -105,8 +106,11 @@ public:
   void Disconnect();
   ConnectionState GetState() const;
 
-  // 认证(LOGIN_REQ/LOGIN_RESP 的便捷封装)
-  void Login(const std::string& token, LoginCallback cb);
+  // 认证(LOGIN_REQ/LOGIN_RESP 的便捷封装)。level 是客户端声明的游戏等级
+  // (game_chat_features P1 世界频道等级门槛):聊天面无等级数据源,门槛按声明值
+  // 判,与登录身份同一可信级别;0 = 未声明,服务端 --world_channel_min_level
+  // 缺省关闭,故不声明也不影响既有部署。
+  void Login(const std::string& token, LoginCallback cb, int32_t level = 0);
   void Logout();
 
   // 消息:私聊文本便捷封装(fire-and-forget;要服务端 message id 用

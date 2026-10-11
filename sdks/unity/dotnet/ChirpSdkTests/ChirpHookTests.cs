@@ -689,6 +689,45 @@ public class ChirpHookTests
     }
 
     [Fact]
+    public async Task Login_CarriesDeclaredLevel_OnBothRounds()
+    {
+        // World-channel level gate (game_chat_features P1): the declared
+        // level rides LOGIN and survives the provider renewal round;
+        // omitting it declares 0 (no level claimed).
+        var transport = new FakeTransport();
+        var client = await ConnectAsync(transport);
+        var provider = new RecordingProvider { Token = "stale", RenewWith = "fresh" };
+        client.SetAuthProvider(provider);
+
+        var pending = client.LoginAsync("u1", "d1", level: 42);
+        await Settle();
+        var first = transport.LastSentPacket();
+        Assert.Equal(42,
+            Chirp.Auth.LoginRequest.Parser.ParseFrom(first.Body.ToByteArray()).Level);
+        transport.ServerPacket(RespPacket(first.Sequence, MsgID.LoginResp,
+            new Chirp.Auth.LoginResponse { Code = Chirp.Common.ErrorCode.AuthFailed }));
+        await Settle();
+
+        var second = transport.LastSentPacket();
+        transport.ServerPacket(RespPacket(second.Sequence, MsgID.LoginResp,
+            new Chirp.Auth.LoginResponse { Code = Chirp.Common.ErrorCode.Ok, UserId = "u1" }));
+        await pending;
+        Assert.Equal(42,
+            Chirp.Auth.LoginRequest.Parser.ParseFrom(second.Body.ToByteArray()).Level);
+
+        var plain = new FakeTransport();
+        var bare = await ConnectAsync(plain);
+        var pending2 = bare.LoginAsync("u1", "d1");
+        await Settle();
+        var req2 = plain.LastSentPacket();
+        Assert.Equal(0,
+            Chirp.Auth.LoginRequest.Parser.ParseFrom(req2.Body.ToByteArray()).Level);
+        plain.ServerPacket(RespPacket(req2.Sequence, MsgID.LoginResp,
+            new Chirp.Auth.LoginResponse { Code = Chirp.Common.ErrorCode.Ok, UserId = "u1" }));
+        await pending2;
+    }
+
+    [Fact]
     public async Task Login_RenewsExactlyOnce_OnAuthFailed()
     {
         var transport = new FakeTransport();

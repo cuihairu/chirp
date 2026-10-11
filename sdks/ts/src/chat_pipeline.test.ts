@@ -69,7 +69,10 @@ class FakeSocket implements WebSocketLike {
   }
 }
 
-async function makeHarness(run: (client: ChirpClient, pipeline: ChatPipeline, ws: FakeSocket) => Promise<void>): Promise<void> {
+async function makeHarness(
+  run: (client: ChirpClient, pipeline: ChatPipeline, ws: FakeSocket) => Promise<void>,
+  level?: () => number,
+): Promise<void> {
   const client = new ChirpClient({
     url: 'ws://chat.test/ws',
     wsFactory: (url) => new FakeSocket(url),
@@ -80,6 +83,7 @@ async function makeHarness(run: (client: ChirpClient, pipeline: ChatPipeline, ws
     conn: client,
     selfId: () => 'u1',
     deviceId: () => 'dev-web',
+    level,
   });
   pipeline.setStore(new MemoryMessageStore());
   pipeline.start();
@@ -413,6 +417,26 @@ describe('ChatPipeline send pipeline', () => {
 
       off();
       offRaw();
+    });
+  });
+});
+
+describe('ChatPipeline level declaration', () => {
+  it('carries the declared level on the LOGIN round', async () => {
+    await makeHarness(async (_client, pipeline, ws) => {
+      const pending = pipeline.login('u1');
+      settle(ws, MsgID.LOGIN_RESP, loginResp(ErrorCode.OK, 'u1'));
+      await pending;
+      expect(LoginRequest.decode(ws.lastSentPacket().body).level).toBe(7);
+    }, () => 7);
+  });
+
+  it('declares 0 when the face provides no level getter', async () => {
+    await makeHarness(async (_client, pipeline, ws) => {
+      const pending = pipeline.login('u1');
+      settle(ws, MsgID.LOGIN_RESP, loginResp(ErrorCode.OK, 'u1'));
+      await pending;
+      expect(LoginRequest.decode(ws.lastSentPacket().body).level).toBe(0);
     });
   });
 });

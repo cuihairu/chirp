@@ -74,6 +74,12 @@ export interface ChatPipelineDeps {
   selfId: () => string;
   /** Device id for LOGIN (auth store getter). */
   deviceId: () => string;
+  /**
+   * Client-declared game level for LOGIN (world-channel level gate,
+   * game_chat_features P1). Re-read on every round (renewal included);
+   * omit for app/companion faces — 0 means "no level claimed".
+   */
+  level?: () => number;
 }
 
 interface ListenerRecord {
@@ -86,6 +92,7 @@ export class ChatPipeline {
   private readonly conn: PipelineConnection;
   private readonly selfId: () => string;
   private readonly deviceId: () => string;
+  private readonly level: (() => number) | null;
 
   private interceptor: MessageInterceptor | null = null;
   private provider: AuthProvider | null = null;
@@ -98,6 +105,7 @@ export class ChatPipeline {
     this.conn = deps.conn;
     this.selfId = deps.selfId;
     this.deviceId = deps.deviceId;
+    this.level = deps.level ?? null;
   }
 
   // ---- hook registration (C++/C# setter parity) ---------------------------
@@ -519,6 +527,7 @@ export class ChatPipeline {
       token,
       deviceId: this.deviceId(),
       platform: 'web',
+      level: this.level?.() ?? 0,
     });
     if (resp.code === 0) {
       this.conn.resetBackoff();

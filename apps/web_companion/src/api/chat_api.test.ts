@@ -113,6 +113,20 @@ describe('ChatApi.login', () => {
     h.conn.emit(MsgID.CHAT_MESSAGE_NOTIFY, chatBody({}));
     expect(h.messages.get().byChannel['p:user_a|user_b']).toBeUndefined();
   });
+
+  it('declares the login level on the wire request', async () => {
+    // 世界频道等级门槛（game_chat_features P1）：level 随 LOGIN 上行；
+    // 伴侣面缺省 0 = 未声明。
+    const h = makeHarness();
+    await h.api.login(SELF, 9);
+    const req = h.conn.requests.find((r) => r.msgId === MsgID.LOGIN_REQ);
+    expect((req!.req as { level?: number }).level).toBe(9);
+
+    const plain = makeHarness();
+    await plain.api.login(SELF);
+    const req2 = plain.conn.requests.find((r) => r.msgId === MsgID.LOGIN_REQ);
+    expect((req2!.req as { level?: number }).level).toBe(0);
+  });
 });
 
 describe('ChatApi.sendMessage (optimistic)', () => {

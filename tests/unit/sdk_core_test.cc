@@ -701,6 +701,78 @@ TEST_F(ChatClientLoopbackTest, ConnectLoginSendMessageAndReceiveNotify) {
   EXPECT_EQ(client.GetState(), ConnectionState::Disconnected);
 }
 
+TEST_F(ChatClientLoopbackTest, LoginCarriesDeclaredLevel) {
+  // 登录声明的等级(世界频道门槛,game_chat_features P1)原样上 LOGIN_REQ。
+  // 响应只在 handler 写完 seen 之后才回来,测试线程读 seen 经 socket 往返 +
+  // promise 两次同步,无竞态。
+  chirp::auth::LoginRequest seen;
+  FakeGateway gateway([&](const chirp::gateway::Packet& pkt, auto send) {
+    if (pkt.msg_id() == chirp::gateway::LOGIN_REQ) {
+      seen.ParseFromArray(pkt.body().data(), static_cast<int>(pkt.body().size()));
+      chirp::auth::LoginResponse resp;
+      resp.set_code(chirp::common::OK);
+      resp.set_user_id("user-1");
+      chirp::gateway::Packet out;
+      out.set_msg_id(chirp::gateway::LOGIN_RESP);
+      out.set_sequence(pkt.sequence());
+      out.set_body(resp.SerializeAsString());
+      send(out);
+    }
+  });
+
+  ChatClient client(LoopbackConfig(gateway.port()));
+  client.Connect();
+  for (int i = 0; i < 2500 && client.GetState() != ConnectionState::Connected; ++i) {
+    std::this_thread::sleep_for(std::chrono::milliseconds(2));
+  }
+  ASSERT_EQ(client.GetState(), ConnectionState::Connected);
+
+  std::promise<std::error_code> done;
+  auto future = done.get_future();
+  client.Login("token-1", [&done](const std::error_code& ec, const std::string&) {
+    done.set_value(ec);
+  }, 42);
+  ASSERT_EQ(future.wait_for(std::chrono::milliseconds(5000)), std::future_status::ready);
+  EXPECT_FALSE(future.get());
+  EXPECT_EQ(seen.level(), 42);
+  client.Disconnect();
+}
+
+TEST_F(ChatClientLoopbackTest, LoginDefaultsToUndeclaredLevel) {
+  // 缺省臂:不带 level 的登录声明 0(未声明),服务端门槛关闭路径不受影响。
+  chirp::auth::LoginRequest seen;
+  FakeGateway gateway([&](const chirp::gateway::Packet& pkt, auto send) {
+    if (pkt.msg_id() == chirp::gateway::LOGIN_REQ) {
+      seen.ParseFromArray(pkt.body().data(), static_cast<int>(pkt.body().size()));
+      chirp::auth::LoginResponse resp;
+      resp.set_code(chirp::common::OK);
+      resp.set_user_id("user-1");
+      chirp::gateway::Packet out;
+      out.set_msg_id(chirp::gateway::LOGIN_RESP);
+      out.set_sequence(pkt.sequence());
+      out.set_body(resp.SerializeAsString());
+      send(out);
+    }
+  });
+
+  ChatClient client(LoopbackConfig(gateway.port()));
+  client.Connect();
+  for (int i = 0; i < 2500 && client.GetState() != ConnectionState::Connected; ++i) {
+    std::this_thread::sleep_for(std::chrono::milliseconds(2));
+  }
+  ASSERT_EQ(client.GetState(), ConnectionState::Connected);
+
+  std::promise<std::error_code> done;
+  auto future = done.get_future();
+  client.Login("token-1", [&done](const std::error_code& ec, const std::string&) {
+    done.set_value(ec);
+  });
+  ASSERT_EQ(future.wait_for(std::chrono::milliseconds(5000)), std::future_status::ready);
+  EXPECT_FALSE(future.get());
+  EXPECT_EQ(seen.level(), 0);
+  client.Disconnect();
+}
+
 TEST_F(ChatClientLoopbackTest, LoginRejectedByServerFailsWithLoginFailed) {
   FakeGateway gateway([](const chirp::gateway::Packet& pkt, auto send) {
     if (pkt.msg_id() == chirp::gateway::LOGIN_REQ) {

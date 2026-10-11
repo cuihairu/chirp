@@ -237,15 +237,17 @@ namespace Chirp.Sdk
         /// provider.OnAuthResult; transport errors (RequestError
         /// Closed/Timeout) surface directly and are not auth results.
         /// Throws RequestError(Server) on a non-OK code; resets the
-        /// reconnect backoff on success.</summary>
+        /// reconnect backoff on success. <paramref name="level"/> is the
+        /// client-declared game level for the world-channel gate
+        /// (game_chat_features P1); 0 = undeclared.</summary>
         public async Task<Chirp.Auth.LoginResponse> LoginAsync(string userId, string deviceId,
-            string? token = null, int? timeoutMs = null)
+            string? token = null, int? timeoutMs = null, int level = 0)
         {
             var provider = SnapshotProvider();
             var issued = !string.IsNullOrEmpty(token) ? token
                 : provider != null ? provider.GetToken()
                 : userId;
-            var resp = await PostLoginAsync(issued, deviceId, timeoutMs).ConfigureAwait(false);
+            var resp = await PostLoginAsync(issued, deviceId, timeoutMs, level).ConfigureAwait(false);
             if (resp.Code == Chirp.Common.ErrorCode.AuthFailed && provider != null)
             {
                 string? renewed = null;
@@ -259,7 +261,7 @@ namespace Chirp.Sdk
                 }
                 if (!string.IsNullOrEmpty(renewed))
                 {
-                    resp = await PostLoginAsync(renewed!, deviceId, timeoutMs).ConfigureAwait(false);
+                    resp = await PostLoginAsync(renewed!, deviceId, timeoutMs, level).ConfigureAwait(false);
                 }
             }
             NotifyEventListeners(l => l.OnLoginResult(resp.Code, userId));
@@ -449,8 +451,11 @@ namespace Chirp.Sdk
 
         // ----- hook internals -----
 
+        // level: client-declared game level (world-channel level gate,
+        // game_chat_features P1). Same trust class as the login token; 0 =
+        // undeclared (server gate defaults off).
         private Task<Chirp.Auth.LoginResponse> PostLoginAsync(string token, string deviceId,
-            int? timeoutMs)
+            int? timeoutMs, int level)
         {
             return RequestAsync(Specs.Login, new Chirp.Auth.LoginRequest
             {
@@ -458,6 +463,7 @@ namespace Chirp.Sdk
                 DeviceId = deviceId,
                 Platform = "unity",
                 SupportsMessageAck = true,
+                Level = level,
             }, timeoutMs);
         }
 
