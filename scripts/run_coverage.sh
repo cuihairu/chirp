@@ -217,19 +217,19 @@ KNOWN_UNCOVERABLE = {
     # erased only together with timer->cancel(); a handler already dispatched
     # before the cancel exits at the timer_ec arm above, so the find-miss
     # return is unreachable by construction.
-    ("sdks/core/src/sdk_client.cc", 470),
+    ("sdks/core/src/sdk_client.cc", 473),
     # ChatClient::Impl::SendRequest pending_.emplace: next_seq_ is monotonic,
     # so the red-black insert comparison always walks the greater side; the
     # less/duplicate arms would require a 2^32 sequence wrap.
-    ("sdks/core/src/sdk_client.cc", 479),
+    ("sdks/core/src/sdk_client.cc", 482),
     # SendPacket null-socket arm: every caller is state-guarded via
     # ReadyForRequests(), so socket_ is only null inside the teardown window
     # between DoClose dropping the socket and the state flip - a disconnect
     # race no public-API sequence reaches deterministically.
-    ("sdks/core/src/sdk_client.cc", 764),
+    ("sdks/core/src/sdk_client.cc", 767),
     # HandleFrame pong match: the untaken arm is the throw edge into landing
     # pad block 83 (string/stdexcept during logging).
-    ("sdks/core/src/sdk_client.cc", 600),
+    ("sdks/core/src/sdk_client.cc", 603),
     # Login/Request/SendMessage asio::post lines: untaken arms are (a) throw
     # edges, (b) the out-edges of pad blocks 13/11 which have no in-edges,
     # and (c) the fall arm of the same-destination merge emitted for the
@@ -239,12 +239,12 @@ KNOWN_UNCOVERABLE = {
     # the untaken half of an always-equal allocator/equality check (same
     # shape as the asio chrono_time_traits comparisons excluded above).
     ("sdks/core/src/sdk_client.cc", 107),
-    ("sdks/core/src/sdk_client.cc", 247),
-    ("sdks/core/src/sdk_client.cc", 292),
+    ("sdks/core/src/sdk_client.cc", 250),
+    ("sdks/core/src/sdk_client.cc", 295),
     # ChatClient::Impl::SendPacket socket guard: every caller checks the
     # connection state on the same io thread immediately before sending, and
     # only DoClose (same thread) clears socket_.
-    ("sdks/core/src/sdk_client.cc", 758),
+    ("sdks/core/src/sdk_client.cc", 761),
     # Logger::LevelToString fallthrough: every enumerator has a case; the
     # trailing return only exists to satisfy the compiler.
     ("libs/common/logger.cc", 40),
@@ -432,7 +432,7 @@ KNOWN_UNCOVERABLE = {
     ("services/shared/chat/src/channel_manager.cc", 590),
     # ChatRateLimiter CheckLogin/CheckSend identity ternary: untaken arms are
     # the always-equal allocator/SSO half of the string concat emitted for
-    # `prefix + identity` (same shape as sdk_client.cc:107/247/292).
+    # `prefix + identity` (same shape as sdk_client.cc:107/250/295).
     ("services/shared/chat/src/chat_rate_limiter.cc", 20),
     ("services/shared/chat/src/chat_rate_limiter.cc", 26),
     # DeliveryAckManager Track/Acknowledge/RunCheck: untaken arms are throw
@@ -534,40 +534,40 @@ KNOWN_UNCOVERABLE = {
     # plus the always-equal allocator half of inlined moves inside the
     # closure. Semantic arms (NotConnected guard, connected path) are covered
     # by AllConvenienceMethodsFailFastWhenNotConnected + the per-API matrix.
-    ("sdks/core/src/sdk_client.cc", 946),
-    ("sdks/core/src/sdk_client.cc", 1015),
-    ("sdks/core/src/sdk_client.cc", 1043),
-    ("sdks/core/src/sdk_client.cc", 1056),
-    ("sdks/core/src/sdk_client.cc", 1106),
-    ("sdks/core/src/sdk_client.cc", 1124),
-    ("sdks/core/src/sdk_client.cc", 1138),
-    ("sdks/core/src/sdk_client.cc", 1154),
-    ("sdks/core/src/sdk_client.cc", 1184),
-    ("sdks/core/src/sdk_client.cc", 1199),
-    ("sdks/core/src/sdk_client.cc", 1225),
-    ("sdks/core/src/sdk_client.cc", 1272),
-    ("sdks/core/src/sdk_client.cc", 1285),
-    ("sdks/core/src/sdk_client.cc", 1314),
-    ("sdks/core/src/sdk_client.cc", 1328),
-    ("sdks/core/src/sdk_client.cc", 1341),
+    ("sdks/core/src/sdk_client.cc", 949),
+    ("sdks/core/src/sdk_client.cc", 1018),
+    ("sdks/core/src/sdk_client.cc", 1046),
+    ("sdks/core/src/sdk_client.cc", 1059),
+    ("sdks/core/src/sdk_client.cc", 1109),
+    ("sdks/core/src/sdk_client.cc", 1127),
+    ("sdks/core/src/sdk_client.cc", 1141),
+    ("sdks/core/src/sdk_client.cc", 1157),
+    ("sdks/core/src/sdk_client.cc", 1187),
+    ("sdks/core/src/sdk_client.cc", 1202),
+    ("sdks/core/src/sdk_client.cc", 1228),
+    ("sdks/core/src/sdk_client.cc", 1275),
+    ("sdks/core/src/sdk_client.cc", 1288),
+    ("sdks/core/src/sdk_client.cc", 1317),
+    ("sdks/core/src/sdk_client.cc", 1331),
+    ("sdks/core/src/sdk_client.cc", 1344),
     # RecallMessage (the recall alias) repeats the closure shape of
     # DeleteMessage above, plus the always-equal comparison half of the bool
     # setter on the shared request message. Both semantic paths (NotConnected
     # fail-fast and the typed round trip) are asserted by
     # AllConvenienceMethodsFailFastWhenNotConnected +
     # RecallSendsSoftDeleteForTheAuthor.
-    ("sdks/core/src/sdk_client.cc", 1168),
+    ("sdks/core/src/sdk_client.cc", 1171),
     # TypedRequest lambda: untaken arms are EH pads for Resp{}/
     # ParseFromString failure construction and the std::function invoke
     # landing pads; ec-ok, BadResponse and success arms are covered by
     # UnparseableResponseReportsBadResponse + the typed-request matrix.
-    ("sdks/core/src/sdk_client.cc", 930),
-    ("sdks/core/src/sdk_client.cc", 935),
+    ("sdks/core/src/sdk_client.cc", 933),
+    ("sdks/core/src/sdk_client.cc", 938),
     # SendMessage private channel_id ternary string concat: untaken arms
     # are throw edges into the `a + "|" + b` landing pads (bad_alloc); both
     # orderings (user<=peer and peer<user) are covered by the SSO/heap
     # receiver probes.
-    ("sdks/core/src/sdk_client.cc", 963),
+    ("sdks/core/src/sdk_client.cc", 966),
 }
 
 # Whole functions tests can never execute: deleting-dtors of abstract
@@ -694,25 +694,25 @@ KNOWN_UNCOVERABLE_ARMS = {
         "UNSUBSCRIBE command-argument construction unwind edges"),
     ("libs/network/session_registry.cc", 39): ((8, 9),
         "NormalizePlatformId ternary result construction unwind edges"),
-    ("sdks/core/src/sdk_client.cc", 1214): ((6, 8, 10, 11, 12, 13),
+    ("sdks/core/src/sdk_client.cc", 1217): ((6, 8, 10, 11, 12, 13),
         "FetchReactions post-closure construction unwind edges"),
-    ("sdks/core/src/sdk_client.cc", 1227): ((4, 6, 7),
+    ("sdks/core/src/sdk_client.cc", 1230): ((4, 6, 7),
         "FetchReadReceipts post-closure construction unwind edges"),
-    ("sdks/core/src/sdk_client.cc", 1240): ((6, 8, 10, 11, 12, 13),
+    ("sdks/core/src/sdk_client.cc", 1243): ((6, 8, 10, 11, 12, 13),
         "BulkDeleteMessages post-closure construction unwind edges"),
-    ("sdks/core/src/sdk_client.cc", 1257): ((6, 8, 10, 11, 12, 13),
+    ("sdks/core/src/sdk_client.cc", 1260): ((6, 8, 10, 11, 12, 13),
         "FetchMentionSuggestions post-closure construction unwind edges"),
-    ("sdks/core/src/sdk_client.cc", 1273): ((6, 8, 10, 11, 12, 13),
+    ("sdks/core/src/sdk_client.cc", 1276): ((6, 8, 10, 11, 12, 13),
         "CreateGroup post-closure construction unwind edges"),
-    ("sdks/core/src/sdk_client.cc", 1287): ((4, 6, 7),
+    ("sdks/core/src/sdk_client.cc", 1290): ((4, 6, 7),
         "JoinGroup post-closure construction unwind edges"),
-    ("sdks/core/src/sdk_client.cc", 1300): ((4, 6, 7),
+    ("sdks/core/src/sdk_client.cc", 1303): ((4, 6, 7),
         "LeaveGroup post-closure construction unwind edges"),
-    ("sdks/core/src/sdk_client.cc", 1329): ((6, 8, 10, 11, 12, 13),
+    ("sdks/core/src/sdk_client.cc", 1332): ((6, 8, 10, 11, 12, 13),
         "InviteToGroup post-closure construction unwind edges"),
-    ("sdks/core/src/sdk_client.cc", 1343): ((4, 6, 7),
+    ("sdks/core/src/sdk_client.cc", 1346): ((4, 6, 7),
         "KickMember post-closure construction unwind edges"),
-    ("sdks/core/src/sdk_client.cc", 1356): ((4, 6, 7),
+    ("sdks/core/src/sdk_client.cc", 1359): ((4, 6, 7),
         "FetchGroupInfo post-closure construction unwind edges"),
     # -- 覆盖率批次5（hybrid_message_store.cc 逐臂审计）----------------------
     # All semantic input classes are exercised for each of the lines below
@@ -895,19 +895,19 @@ KNOWN_UNCOVERABLE_ARMS = {
         "batch-8 migration from a stale whole-line pin; dead arm(s) in every gcda context of the audit run"),
     ("sdks/core/src/sdk.cc", 41): ((3,),
         "batch-8 migration from a stale whole-line pin; dead arm(s) in every gcda context of the audit run"),
-    ("sdks/core/src/sdk_client.cc", 209): ((2,),
+    ("sdks/core/src/sdk_client.cc", 212): ((2,),
         "batch-8 migration from a stale whole-line pin; dead arm(s) in every gcda context of the audit run"),
-    ("sdks/core/src/sdk_client.cc", 268): ((14, 15, 16, 17),
+    ("sdks/core/src/sdk_client.cc", 271): ((14, 15, 16, 17),
         "batch-8 migration from a stale whole-line pin; dead arm(s) in every gcda context of the audit run"),
-    ("sdks/core/src/sdk_client.cc", 418): ((8, 9),
+    ("sdks/core/src/sdk_client.cc", 421): ((8, 9),
         "batch-8 migration from a stale whole-line pin; dead arm(s) in every gcda context of the audit run"),
-    ("sdks/core/src/sdk_client.cc", 426): ((10, 11),
+    ("sdks/core/src/sdk_client.cc", 429): ((10, 11),
         "batch-8 migration from a stale whole-line pin; dead arm(s) in every gcda context of the audit run"),
-    ("sdks/core/src/sdk_client.cc", 466): ((0,),
+    ("sdks/core/src/sdk_client.cc", 469): ((0,),
         "batch-8 migration from a stale whole-line pin; dead arm(s) in every gcda context of the audit run"),
-    ("sdks/core/src/sdk_client.cc", 920): ((1,),
+    ("sdks/core/src/sdk_client.cc", 923): ((1,),
         "batch-8 migration from a stale whole-line pin; dead arm(s) in every gcda context of the audit run"),
-    ("sdks/core/src/sdk_client.cc", 964): ((3, 4, 6, 7),
+    ("sdks/core/src/sdk_client.cc", 967): ((3, 4, 6, 7),
         "batch-8 migration from a stale whole-line pin; dead arm(s) in every gcda context of the audit run"),
     ("services/app/auth/src/auth_service.cc", 76): ((0, 1),
         "batch-8 migration from a stale whole-line pin; dead arm(s) in every gcda context of the audit run"),
