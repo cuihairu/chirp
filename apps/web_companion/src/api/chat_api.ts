@@ -274,9 +274,10 @@ export class ChatApi {
   /**
    * Optimistic send: the message goes on screen immediately and is replaced
    * (or failed) by the SEND_MESSAGE_RESP. TARGET_OFFLINE is NOT a failure —
-   * the server already queued the message for the recipient.
+   * the server already queued the message for the recipient. A reply carries
+   * the quoted parent id (empty = not a reply, field stays off the wire).
    */
-  async sendMessage(channel: ChannelRef, text: string): Promise<void> {
+  async sendMessage(channel: ChannelRef, text: string, replyToMessageId?: string): Promise<void> {
     const senderId = this.auth.get().userId;
     if (!senderId) return;
     // 发送侧预检（词库下发同步）：REPLACE 在上线前就地改写，REJECT 拦下。
@@ -293,6 +294,7 @@ export class ChatApi {
       content: contentBytes,
       clientTimestamp: Date.now(),
     };
+    if (replyToMessageId) wire.replyToMessageId = replyToMessageId;
     // 预检只读写 content（两面在我们手上非缺省），断言为完整消息面。
     const blocked = !this.wordFilter.onBeforeSend(wire as SendMessageRequest);
     const clientId = `pending-${Date.now().toString(36)}-${pendingCounter++}`;
@@ -306,6 +308,7 @@ export class ChatApi {
       content: new TextDecoder().decode(wire.content ?? contentBytes),
       timestamp: Date.now(),
       pending: true,
+      replyToMessageId: wire.replyToMessageId || undefined,
     };
     addPendingMessage(this.messages, optimistic);
 
@@ -822,6 +825,7 @@ const toView = (msg: ChatMessage, channel: ChannelRef): ChatMessageView => ({
   content: decodeText(msg.content),
   timestamp: msg.timestamp,
   pending: false,
+  replyToMessageId: msg.replyToMessageId || undefined,
 });
 
 const toReactionView = (reaction: MessageReaction, selfId: string): MessageReactionView => ({

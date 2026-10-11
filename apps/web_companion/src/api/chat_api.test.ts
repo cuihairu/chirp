@@ -200,6 +200,30 @@ describe('ChatApi.sendMessage (optimistic)', () => {
     await h.api.sendMessage(channel, 'ghost');
     expect(h.conn.requests).toHaveLength(0);
   });
+
+  it('carries the quoted id on the wire and through the views', async () => {
+    const h = makeHarness();
+    await login(h);
+    h.conn.setResponder(async (_msgId, req) => {
+      expect(req).toMatchObject({ replyToMessageId: 'm-9' });
+      return { code: 0, messageId: 'srv-r1' };
+    });
+    await h.api.sendMessage(channel, 'a reply', 'm-9');
+    const list = h.messages.get().byChannel[channel.key];
+    expect(list[0]).toMatchObject({ messageId: 'srv-r1', replyToMessageId: 'm-9' });
+  });
+
+  it('leaves the reply field off the wire for plain sends', async () => {
+    const h = makeHarness();
+    await login(h);
+    h.conn.setResponder(async (_msgId, req) => {
+      expect((req as { replyToMessageId?: string }).replyToMessageId).toBeUndefined();
+      return { code: 0, messageId: 'srv-p1' };
+    });
+    await h.api.sendMessage(channel, 'plain');
+    const list = h.messages.get().byChannel[channel.key];
+    expect(list[0].replyToMessageId).toBeUndefined();
+  });
 });
 
 describe('ChatApi incoming notifies', () => {
@@ -234,6 +258,18 @@ describe('ChatApi incoming notifies', () => {
     h.api.setActiveChannel('p:user_a|user_b');
     h.conn.emit(MsgID.CHAT_MESSAGE_NOTIFY, chatBody({}));
     expect(h.conversations.get().conversations[0].unreadLocal).toBe(0);
+  });
+
+  it('maps the quoted id from notifies into the view', async () => {
+    const h = makeHarness();
+    await login(h);
+    h.conn.emit(MsgID.CHAT_MESSAGE_NOTIFY, chatBody({ replyToMessageId: 'm-0' }));
+    expect(h.messages.get().byChannel['p:user_a|user_b'][0]).toMatchObject({
+      replyToMessageId: 'm-0',
+    });
+    // Empty on the wire = not a reply: absent from the view.
+    h.conn.emit(MsgID.CHAT_MESSAGE_NOTIFY, chatBody({ messageId: 'm2' }));
+    expect(h.messages.get().byChannel['p:user_a|user_b'][1].replyToMessageId).toBeUndefined();
   });
 
   it('routes group messages under g: keys', async () => {

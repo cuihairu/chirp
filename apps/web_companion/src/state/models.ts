@@ -56,6 +56,8 @@ export interface ChatMessageView {
   queuedOffline?: boolean;
   edited?: boolean;
   deleted?: boolean;
+  /** Quoted parent message id (P1 reply); absent = not a reply. */
+  replyToMessageId?: string;
   /** Emoji → aggregate, updated by reaction RESP/notify. */
   reactions?: Record<string, MessageReactionView>;
 }
