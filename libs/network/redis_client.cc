@@ -15,7 +15,10 @@
 namespace chirp::network {
 namespace {
 
-std::optional<RedisResp> SendAndReadOne(asio::ip::tcp::socket& sock, const std::string& cmd) {
+// One command, one reply, on the caller's thread. No timeout — same blocking
+// posture the per-command short connections always had; the pool changes
+// *where the round-trip cost goes*, not how long a hung peer can block.
+std::optional<RedisResp> SendOne(asio::ip::tcp::socket& sock, const std::string& cmd) {
   asio::write(sock, asio::buffer(cmd));
 
   RedisRespParser parser;
@@ -34,30 +37,101 @@ std::optional<RedisResp> SendAndReadOne(asio::ip::tcp::socket& sock, const std::
   }
 }
 
-std::optional<RedisResp> SendCmd(const std::string& host, uint16_t port, const std::vector<std::string>& args) {
-  try {
-    asio::io_context io;
-    asio::ip::tcp::resolver resolver(io);
-    asio::ip::tcp::socket sock(io);
-    auto endpoints = resolver.resolve(host, std::to_string(port));
-    asio::connect(sock, endpoints);
-    const std::string cmd = BuildRedisCommand(args);
-    return SendAndReadOne(sock, cmd);
-  } catch (...) {
+} // namespace
+
+RedisClient::RedisClient(std::string host, uint16_t port, size_t max_idle)
+    : host_(std::move(host)), port_(port), max_idle_(max_idle) {}
+
+std::optional<RedisResp> RedisClient::Command(const std::vector<std::string>& args) {
+  std::unique_ptr<Connection> conn = Checkout();
+  if (!conn) {
     return std::nullopt;
+  }
+  std::optional<RedisResp> reply;
+  // 传输异常（write 抛出）与读失败同型：reply 保持空 → 弃用该连接。
+  try {
+    reply = SendOne(conn->socket, BuildRedisCommand(args));
+  } catch (...) {
+  }
+  if (!reply) {
+    // 失败即弃，不重试：写类命令（RPUSH 等）盲重试可能二次生效，保持
+    // 与短连接时代一致的至多一次语义。
+    CloseConnection(std::move(conn));
+    return std::nullopt;
+  }
+  Retire(std::move(conn));
+  return reply;
+}
+
+std::unique_ptr<RedisClient::Connection> RedisClient::Connect() {
+  try {
+    auto conn = std::make_unique<Connection>();
+    asio::ip::tcp::resolver resolver(conn->io);
+    auto endpoints = resolver.resolve(host_, std::to_string(port_));
+    asio::connect(conn->socket, endpoints);
+    return conn;
+  } catch (...) {
+    return nullptr;
   }
 }
 
-} // namespace
+bool RedisClient::IsAlive(Connection& conn) {
+  asio::error_code ec;
+  conn.socket.non_blocking(true, ec);
+  size_t n = 0;
+  uint8_t probe;
+  asio::error_code read_ec;
+  if (!ec) {
+    n = conn.socket.read_some(asio::buffer(&probe, 1), read_ec);
+  }
+  asio::error_code clear_ec;
+  conn.socket.non_blocking(false, clear_ec);
+  if (read_ec == asio::error::would_block) {
+    return n == 0; // 无待读数据且连接健在
+  }
+  return false; // EOF/RST、非阻塞切换失败，或对端多塞了字节（协议失步）——一律不复用
+}
 
-RedisClient::RedisClient(std::string host, uint16_t port) : host_(std::move(host)), port_(port) {}
+std::unique_ptr<RedisClient::Connection> RedisClient::Checkout() {
+  for (;;) {
+    std::unique_ptr<Connection> idle_conn;
+    {
+      std::lock_guard<std::mutex> lock(pool_mu_);
+      if (idle_.empty()) {
+        break;
+      }
+      idle_conn = std::move(idle_.back());
+      idle_.pop_back();
+    }
+    if (IsAlive(*idle_conn)) {
+      return idle_conn;
+    }
+    CloseConnection(std::move(idle_conn));
+  }
+  return Connect();
+}
 
-std::optional<RedisResp> RedisClient::Command(const std::vector<std::string>& args) {
-  return SendCmd(host_, port_, args);
+void RedisClient::Retire(std::unique_ptr<Connection> conn) {
+  bool pooled = false;
+  if (conn->socket.is_open()) {
+    std::lock_guard<std::mutex> lock(pool_mu_);
+    if (idle_.size() < max_idle_) {
+      idle_.push_back(std::move(conn));
+      pooled = true;
+    }
+  }
+  if (!pooled) {
+    CloseConnection(std::move(conn));
+  }
+}
+
+void RedisClient::CloseConnection(std::unique_ptr<Connection> conn) {
+  asio::error_code ec;
+  conn->socket.close(ec);
 }
 
 std::optional<std::string> RedisClient::Get(const std::string& key) {
-  auto r = SendCmd(host_, port_, {"GET", key});
+  auto r = Command({"GET", key});
   if (!r) {
     return std::nullopt;
   }
@@ -71,17 +145,17 @@ std::optional<std::string> RedisClient::Get(const std::string& key) {
 }
 
 bool RedisClient::SetEx(const std::string& key, const std::string& value, int ttl_seconds) {
-  auto r = SendCmd(host_, port_, {"SET", key, value, "EX", std::to_string(ttl_seconds)});
+  auto r = Command({"SET", key, value, "EX", std::to_string(ttl_seconds)});
   return r && r->type == RedisResp::Type::kSimpleString && r->str == "OK";
 }
 
 bool RedisClient::Set(const std::string& key, const std::string& value) {
-  auto r = SendCmd(host_, port_, {"SET", key, value});
+  auto r = Command({"SET", key, value});
   return r && r->type == RedisResp::Type::kSimpleString && r->str == "OK";
 }
 
 bool RedisClient::Del(const std::string& key) {
-  auto r = SendCmd(host_, port_, {"DEL", key});
+  auto r = Command({"DEL", key});
   return r && r->type == RedisResp::Type::kInteger;
 }
 
@@ -90,33 +164,33 @@ bool RedisClient::Publish(const std::string& channel, const std::string& message
 }
 
 int64_t RedisClient::PublishCount(const std::string& channel, const std::string& message) {
-  auto r = SendCmd(host_, port_, {"PUBLISH", channel, message});
+  auto r = Command({"PUBLISH", channel, message});
   return (r && r->type == RedisResp::Type::kInteger) ? r->integer : -1;
 }
 
 bool RedisClient::RPush(const std::string& key, const std::string& value) {
-  auto r = SendCmd(host_, port_, {"RPUSH", key, value});
+  auto r = Command({"RPUSH", key, value});
   return r && r->type == RedisResp::Type::kInteger;
 }
 
 int64_t RedisClient::LRem(const std::string& key, int64_t count, const std::string& value) {
-  auto r = SendCmd(host_, port_, {"LREM", key, std::to_string(count), value});
+  auto r = Command({"LREM", key, std::to_string(count), value});
   return (r && r->type == RedisResp::Type::kInteger) ? r->integer : -1;
 }
 
 bool RedisClient::LSet(const std::string& key, int64_t index, const std::string& value) {
-  auto r = SendCmd(host_, port_, {"LSET", key, std::to_string(index), value});
+  auto r = Command({"LSET", key, std::to_string(index), value});
   return r && r->type == RedisResp::Type::kSimpleString && r->str == "OK";
 }
 
 bool RedisClient::Expire(const std::string& key, int ttl_seconds) {
-  auto r = SendCmd(host_, port_, {"EXPIRE", key, std::to_string(ttl_seconds)});
+  auto r = Command({"EXPIRE", key, std::to_string(ttl_seconds)});
   return r && r->type == RedisResp::Type::kInteger && r->integer > 0;
 }
 
 std::vector<std::string> RedisClient::LRange(const std::string& key, int64_t start, int64_t stop) {
   std::vector<std::string> out;
-  auto r = SendCmd(host_, port_, {"LRANGE", key, std::to_string(start), std::to_string(stop)});
+  auto r = Command({"LRANGE", key, std::to_string(start), std::to_string(stop)});
   if (!r || r->type != RedisResp::Type::kArray) {
     return out;
   }
@@ -131,7 +205,7 @@ std::vector<std::string> RedisClient::LRange(const std::string& key, int64_t sta
 
 std::vector<std::string> RedisClient::Keys(const std::string& pattern) {
   std::vector<std::string> out;
-  auto r = SendCmd(host_, port_, {"KEYS", pattern});
+  auto r = Command({"KEYS", pattern});
   if (!r || r->type != RedisResp::Type::kArray) {
     return out;
   }

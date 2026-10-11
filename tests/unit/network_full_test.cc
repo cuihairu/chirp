@@ -150,17 +150,12 @@ public:
     });
   }
 
-  // Shuts down the read side only: any subsequent bytes written by the peer
-  // are answered with a TCP reset (deterministic ECONNRESET at the peer).
-  void ShutdownReceive() {
+  // Closes the listener: new connects are refused, existing connections keep
+  // being served (redis-server process gone would refuse connects too).
+  void StopAccepting() {
     asio::post(io_, [this] {
-      std::lock_guard<std::mutex> lock(mu_);
-      for (auto& c : conns_) {
-        if (c->sock.is_open()) {
-          std::error_code ec;
-          c->sock.shutdown(asio::ip::tcp::socket::shutdown_receive, ec);
-        }
-      }
+      std::error_code ec;
+      acceptor_.close(ec);
     });
   }
 
@@ -637,15 +632,17 @@ protected:
         {"LRANGE", "*3\r\n$3\r\nabc\r\n$3\r\ndef\r\n:9\r\n"},
         {"KEYS", "*2\r\n$2\r\nk1\r\n+ok2\r\n"},
     });
+    // 连接池化后 RedisClient 不可拷贝；client 在 SetUp 里按 mock 端口构造，
+    // 用例内改挂其他 mock 时 reset(new ...) 换新实例。
+    client_.reset(new RedisClient("127.0.0.1", server_.port()));
   }
 
   MockRedisServer server_;
-  RedisClient client{"127.0.0.1", 0};
+  std::unique_ptr<RedisClient> client_;
 };
 
 TEST_F(RedisClientTest, GetReturnsBulkStringValue) {
-  client = RedisClient("127.0.0.1", server_.port());
-  auto v = client.Get("greeting");
+  auto v = client_->Get("greeting");
   ASSERT_TRUE(v.has_value());
   EXPECT_EQ(*v, "hello");
   auto cmds = server_.Commands();
@@ -666,12 +663,11 @@ TEST_F(RedisClientTest, GetHandlesNullAndErrorReplies) {
 }
 
 TEST_F(RedisClientTest, BooleanCommands) {
-  client = RedisClient("127.0.0.1", server_.port());
-  EXPECT_TRUE(client.SetEx("k", "v", 60));
-  EXPECT_TRUE(client.Del("k"));
-  EXPECT_TRUE(client.Publish("chan", "msg"));
-  EXPECT_TRUE(client.RPush("list", "item"));
-  EXPECT_TRUE(client.Expire("k", 30));
+  EXPECT_TRUE(client_->SetEx("k", "v", 60));
+  EXPECT_TRUE(client_->Del("k"));
+  EXPECT_TRUE(client_->Publish("chan", "msg"));
+  EXPECT_TRUE(client_->RPush("list", "item"));
+  EXPECT_TRUE(client_->Expire("k", 30));
 
   MockRedisServer wrong_types;
   wrong_types.Start({
@@ -686,22 +682,21 @@ TEST_F(RedisClientTest, BooleanCommands) {
 }
 
 TEST_F(RedisClientTest, ListAndKeysCommands) {
-  client = RedisClient("127.0.0.1", server_.port());
   // LRANGE mixes bulk and integer elements; only strings are returned.
-  EXPECT_EQ(client.LRange("list", 0, -1), (std::vector<std::string>{"abc", "def"}));
+  EXPECT_EQ(client_->LRange("list", 0, -1), (std::vector<std::string>{"abc", "def"}));
   // KEYS mixes bulk and simple strings; both are returned.
-  EXPECT_EQ(client.Keys("k*"), (std::vector<std::string>{"k1", "ok2"}));
+  EXPECT_EQ(client_->Keys("k*"), (std::vector<std::string>{"k1", "ok2"}));
 
   // The int64 extremes produce >15-char to_string results and the long
   // keys/pattern force heap construction of the command-argument strings
   // (short ones stay in the SSO buffer). The mock answers with the same
   // scripted reply regardless of the argument.
-  EXPECT_EQ(client.LRange("list-with-a-longer-than-15-char-key",
-                          std::numeric_limits<int64_t>::min(),
-                          std::numeric_limits<int64_t>::max()),
+  EXPECT_EQ(client_->LRange("list-with-a-longer-than-15-char-key",
+                            std::numeric_limits<int64_t>::min(),
+                            std::numeric_limits<int64_t>::max()),
             (std::vector<std::string>{"abc", "def"}));
-  EXPECT_TRUE(client.Expire("expire-key-longer-than-fifteen-chars", 1));
-  EXPECT_EQ(client.Keys(std::string("pat-").append(20, 'x')),
+  EXPECT_TRUE(client_->Expire("expire-key-longer-than-fifteen-chars", 1));
+  EXPECT_EQ(client_->Keys(std::string("pat-").append(20, 'x')),
             (std::vector<std::string>{"k1", "ok2"}));
 
   MockRedisServer not_array;
@@ -801,6 +796,103 @@ TEST_F(RedisClientTest, ListAndKeysAcceptStringAndSkipNonStringElements) {
   ints.Start({{"KEYS", "*2\r\n:5\r\n$2\r\nk1\r\n"}});
   RedisClient k("127.0.0.1", ints.port());
   EXPECT_EQ(k.Keys("*"), (std::vector<std::string>{"k1"}));
+}
+
+TEST_F(RedisClientTest, PooledSocketReusedAcrossWrappers) {
+  // 连接池核心性质：不同包装器都走同一 Command 池，连续命令只建一根
+  // 连接——短连接时代这里是每命令一根。
+  EXPECT_TRUE(client_->Set("k", "v"));
+  EXPECT_EQ(client_->Get("k"), std::optional<std::string>("hello"));
+  EXPECT_TRUE(client_->RPush("list", "item"));
+  EXPECT_EQ(client_->LRange("list", 0, -1), (std::vector<std::string>{"abc", "def"}));
+  EXPECT_EQ(client_->Keys("k*"), (std::vector<std::string>{"k1", "ok2"}));
+  EXPECT_TRUE(client_->Expire("k", 5));
+  EXPECT_TRUE(client_->Del("k"));
+  EXPECT_EQ(client_->PublishCount("ch", "m"), 1);
+  EXPECT_EQ(server_.Commands().size(), 8u);
+  EXPECT_EQ(server_.ConnectionCount(), 1u);
+}
+
+TEST_F(RedisClientTest, ProbeDetectsResetPooledSocketAndReconnects) {
+  EXPECT_TRUE(client_->Set("k", "v"));
+  EXPECT_EQ(server_.ConnectionCount(), 1u);
+  // 服务端 RST 掉池中连接（redis 进程重启的近真形态）。RST 送达本端内核
+  // 是异步的（毫秒级窗口）：探活吃到它则本命令直接走新连；没吃到则本
+  // 命令失败、连接弃用、重试走新连——两条路都收敛到「成功 + 恰两根」。
+  server_.ResetConnections();
+  bool ok = false;
+  for (int i = 0; i < 100; ++i) {
+    if (client_->Set("k2", "v")) {
+      ok = true;
+      break;
+    }
+    std::this_thread::sleep_for(std::chrono::milliseconds(10));
+  }
+  EXPECT_TRUE(ok);
+  EXPECT_EQ(server_.Commands().size(), 2u);
+  EXPECT_EQ(server_.ConnectionCount(), 2u);
+}
+
+TEST_F(RedisClientTest, ProbeDetectsClosedPooledSocketAndReconnects) {
+  EXPECT_TRUE(client_->Set("k", "v"));
+  EXPECT_EQ(server_.ConnectionCount(), 1u);
+  // 服务端优雅关连接（redis timeout / restart 形态）：EOF 同样被探活吃掉，
+  // 收敛语义与 RST 臂一致。
+  server_.CloseConnections();
+  bool ok = false;
+  for (int i = 0; i < 100; ++i) {
+    if (client_->Set("k2", "v")) {
+      ok = true;
+      break;
+    }
+    std::this_thread::sleep_for(std::chrono::milliseconds(10));
+  }
+  EXPECT_TRUE(ok);
+  EXPECT_EQ(server_.Commands().size(), 2u);
+  EXPECT_EQ(server_.ConnectionCount(), 2u);
+}
+
+TEST_F(RedisClientTest, FailedCommandReturnsFalseOnceWithoutRetry) {
+  EXPECT_TRUE(client_->Set("k", "v"));
+  // redis 进程消失形态：池中连接被 RST、新连接被拒。下一条命令必须恰好
+  // 失败一次——Command 内部不重试（写类命令盲重试可能二次生效，至多
+  // 一次语义不因池化改变），服务端也只见过成功的那一条命令。
+  server_.ResetConnections();
+  server_.StopAccepting();
+  std::this_thread::sleep_for(std::chrono::milliseconds(50));  // RST 落地
+  EXPECT_FALSE(client_->Set("k2", "v"));
+  EXPECT_EQ(server_.Commands().size(), 1u);
+  EXPECT_EQ(server_.ConnectionCount(), 1u);
+}
+
+TEST_F(RedisClientTest, ConcurrentCheckoutsStayExclusiveAndRecovered) {
+  // 两线程从空池并发取用：unique_ptr 交接保证一根 socket 永不同时借给两
+  // 个线程（RESP 应答不会串线）；并发窗口各建一根，后续互相回池复用。
+  std::atomic<int> arrived{0};
+  auto worker = [&] {
+    arrived.fetch_add(1);
+    while (arrived.load() < 2) {
+      std::this_thread::yield();
+    }
+    for (int i = 0; i < 8; ++i) {
+      EXPECT_TRUE(client_->SetEx("k", "v", 1));
+    }
+  };
+  std::thread a(worker), b(worker);
+  a.join();
+  b.join();
+  EXPECT_EQ(server_.Commands().size(), 16u);
+  EXPECT_LE(server_.ConnectionCount(), 2u);
+}
+
+TEST_F(RedisClientTest, ZeroMaxIdleDisablesPooling) {
+  // max_idle=0：归还永不回池，等同短连接时代的每命令一根——池化开关的
+  // 回归面，同时覆盖归还侧超额弃用臂（此形态下恒超额）。
+  client_.reset(new RedisClient("127.0.0.1", server_.port(), 0));
+  EXPECT_TRUE(client_->Set("a", "v"));
+  EXPECT_TRUE(client_->Set("b", "v"));
+  EXPECT_EQ(server_.Commands().size(), 2u);
+  EXPECT_EQ(server_.ConnectionCount(), 2u);
 }
 
 // ---------------------------------------------------------------------------

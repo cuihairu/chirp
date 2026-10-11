@@ -36,7 +36,7 @@ chirp_load_client ──TCP──> chirp_game_sdk_gateway ──每客户端一�
 - 专属 redis：`redis-server --port 16379 --save "" --appendonly no`
 - 专属 MariaDB：`mariadbd --datadir=… --port=13306 --skip-grant-tables`（store 自动 `CREATE TABLE IF NOT EXISTS`），`CREATE DATABASE chirp` 即可
 
-已知无害噪声：`HybridMessageStore` 启动自检用 `GET ping`，把「key 不存在」的 nil 回复误判为连接失败打一行 WARN（`hybrid_message_store.cc:109-111`）；实际读写照常（且 `RedisClient` 每条命令新建短连接，见[瓶颈](#瓶颈与边界)）。
+已知无害噪声：`HybridMessageStore` 启动自检用 `GET ping`，把「key 不存在」的 nil 回复误判为连接失败打一行 WARN（`hybrid_message_store.cc:109-111`）；实际读写照常（`RedisClient` 现为连接池复用，见[瓶颈](#瓶颈与边界)第 4 条）。
 
 ## 工具与方法
 
@@ -89,7 +89,7 @@ BIN_DIR=./build-rel bash tools/benchmark/run_capacity_bench.sh 12000 0 1100 6000
 1. **chat 单 io 线程把建连与消息处理串行化**。纯建连 200/s 全绿；但建连斜坡与消息发送重叠时（steady500/1000 档），消息处理挤占 io 线程，管道握手的 5s 硬截止被打穿（50 conn/s 也 165/500 超时）。生产含义：**高峰期登录风暴会与消息流量互相放大**。缓解方向：管道握手超时可配化、握手与消息处理分线程/分优先级。
 2. **栅栏同步风暴**（`--barrier on`）：全员会合后锁相轮发，2k 连接时每轮都是 2000 条齐发，RTT 尾部到 60s（排队排水时间）。这是测量方法要避开的坑，也是真实「同刻齐发」场景的预期行为。
 3. **吞吐结构上限 = pacing**：私聊 1s/用户硬编码（`ChannelPacer`，进程内），多实例部署下每实例独立计数；Redis 模糊闸（120/min/用户）与登录 IP 限流需 `--redis_host` 才生效。
-4. **`RedisClient` 每命令新建 TCP 短连接**（`redis_client.cc` `SendCmd`），无连接池/管道复用——消息路径上每次 RPush 都是一次 connect+命令+close，这是单线程 CPU 的重要去向，也是吞吐抬升的明显优化点。
+4. ~~**`RedisClient` 每命令新建 TCP 短连接**~~ **已落地同步连接池（2026-10-11）**：`redis_client.cc` 的 `SendCmd` 每命令短连接改为空闲连接池复用（上限 `kDefaultMaxIdle=8`，取用探活、失败弃用不重试），消息路径上的 RPush 不再每次付 connect+close 握手。此项即本基准点名的吞吐抬升优化点；异步化/协程化按 `asio_coroutine_adoption.md` 口径另行立项。管道复用仍不做。
 5. **MySQL 必须配好**：落库失败是同步重试，坏依赖会让 chat 单线程卡死（见[依赖形态](#依赖形态关键)）。
 6. 客户端为线程/连接模型：万级线程自身抢核会抬高 RTT（曾实测轮询栅栏把 loadavg 打到 1181），故分核 taskset + 条件变量栅栏；万级以上建议改事件驱动客户端再测。
 

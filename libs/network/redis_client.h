@@ -18,10 +18,35 @@ namespace chirp::network {
 
 /// @brief Synchronous Redis client for command operations.
 /// Methods are virtual so tests can substitute throwing/misbehaving doubles.
+///
+/// Sockets are pooled and reused: up to [kDefaultMaxIdle] recently used
+/// connections stay open, so a command round-trip no longer pays the
+/// connect+close handshake every time (capacity_benchmark.md: the per-command
+/// short connection is a primary single-thread CPU sink on the message path).
+/// Checkout probes a pooled socket first — a dead peer (EOF / RST) or
+/// unexpected bytes are discarded, a fresh connect is opened otherwise — so a
+/// recycled socket is never handed out half-closed. A failed command discards
+/// its socket rather than retrying, keeping today's at-most-once semantics for
+/// writes such as RPUSH (a blind retry could apply a write twice).
+///
+/// Each connection owns its own io_context: every operation is synchronous
+/// on the calling thread and no io loop is ever run. Asynchronous/coroutine
+/// transports are deliberately out of scope here (see
+/// docs/design-notes/asio_coroutine_adoption.md).
+///
+/// Not copyable/movable: the idle sockets are owned, exclusively used
+/// connections guarded by one mutex.
 class RedisClient {
 public:
-  RedisClient(std::string host, uint16_t port);
+  static constexpr size_t kDefaultMaxIdle = 8;
+
+  RedisClient(std::string host, uint16_t port, size_t max_idle = kDefaultMaxIdle);
   virtual ~RedisClient() = default;
+
+  RedisClient(const RedisClient&) = delete;
+  RedisClient& operator=(const RedisClient&) = delete;
+  RedisClient(RedisClient&&) = delete;
+  RedisClient& operator=(RedisClient&&) = delete;
 
   // Generic escape hatch for commands without a dedicated wrapper (e.g.
   // streams). Returns std::nullopt on connection or transport failure.
@@ -62,8 +87,27 @@ public:
   virtual std::vector<std::string> Keys(const std::string& pattern);
 
 private:
+  struct Connection {
+    asio::io_context io;
+    asio::ip::tcp::socket socket{io};
+  };
+
+  // Opens a new socket (resolver + connect). nullptr on any failure.
+  std::unique_ptr<Connection> Connect();
+  // Non-blocking liveness probe: would_block = open and idle, EOF/RST or
+  // already-buffered bytes (protocol desync) = do not reuse.
+  bool IsAlive(Connection& conn);
+  // Pops a live pooled socket, or opens a new one.
+  std::unique_ptr<Connection> Checkout();
+  void Retire(std::unique_ptr<Connection> conn);
+  void CloseConnection(std::unique_ptr<Connection> conn);
+
   std::string host_;
   uint16_t port_;
+  size_t max_idle_;
+
+  std::mutex pool_mu_;
+  std::vector<std::unique_ptr<Connection>> idle_;
 };
 
 /// @brief Redis subscriber with multi-channel support.
