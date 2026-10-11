@@ -100,6 +100,7 @@ public class GameChat : MonoBehaviour
 - **回调线程**:`On*` 事件已由 `ChirpManager` 派发回主线程(内部队列,`Update()` 排空),可以直接调 Unity API。直接用 `ChirpClient` 时回调在收包线程上。
 - **请求-响应**:除便捷方法外,任意消息用 spec 走 `RequestAsync`,如 `await client.RequestAsync(Specs.GetHistory, new GetHistoryRequest { ... })`(超时 10s 抛 `RequestError`,Kind=Timeout)。被动等待用 `client.OnNotify(MsgID.XxxNotify, body => ...)` 返回的退订委托。
 - **增强鉴权边缘**:scaffold 网关直接 `LoginAsync(userId, deviceId)`;对接 JWT 认证(`app_auth`)时传第三个参数 `LoginAsync(userId, deviceId, token: jwt)`。
+- **等级声明**(游戏面可选):`LoginAsync(..., level: N)` 在登录时声明玩家等级,服务端 `--world_channel_min_level` 开启时据此放行世界频道发言(缺省 0 = 未声明;聊天面无等级数据源,声明与登录身份同一可信级别,续期重登沿用)。app/伴侣面不需要传。
 - **AutoRelogin**:自动重连只恢复 socket,不恢复会话(与 web/mobile 一致)。勾上 `AutoRelogin` 后,重连成功会自动重放最后一次 LOGIN;失败走 `OnReloginFailed`。
 - **离线投递**:`TargetOffline` 不是发送失败——服务端已把消息滚进对方离线队列,上线后补投。错误码中文文案见 `ChirpErrorText.Of`。
 - **踢线是终态**:被顶号后客户端不再自动重连(`Status == ConnStatus.Kicked`),需要玩家重新登录;显式再调 `ConnectAsync()` 会清掉终态。
