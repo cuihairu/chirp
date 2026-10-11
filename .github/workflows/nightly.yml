@@ -24,8 +24,7 @@ name: Nightly Build
 # 也不会产生重复构建);workflow_dispatch 永远构建,不受该门控约束。
 
 on:
-  schedule:
-    - cron: '23 19 * * *'
+# 2026-10-11 版本发布红线（用户令）：版本只能用户手动触发，schedule 自动发版已移除。
   workflow_dispatch:
 
 permissions:
