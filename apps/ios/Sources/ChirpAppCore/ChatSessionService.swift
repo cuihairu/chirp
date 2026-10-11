@@ -203,14 +203,24 @@ public final class ChatSessionService {
 
     /// 向任意会话频道发一条(DM/群共用的唯一发送入口)。断线(CLOSED)进
     /// 离线队列、重连后自动重放;返回终态 Promise(管线回调线程上 settle)。
-    public func send(channel: SessionChannel, content: String) -> Promise<SendOutcome> {
+    /// `replyToMessageId` 非空时按引用消息上行(消息引用 P1);离线重放
+    /// 同携——队列条目存的就是 options 本体。空串=非引用(proto3 缺省)。
+    public func send(
+        channel: SessionChannel,
+        content: String,
+        replyToMessageId: String = ""
+    ) -> Promise<SendOutcome> {
         let options: SendOptions
         switch channel.kind {
         case .dm:
-            options = SendOptions(channelType: .private, receiverId: channel.peerId)
+            options = SendOptions(
+                channelType: .private, receiverId: channel.peerId,
+                replyToMessageId: replyToMessageId)
         case .group:
             // 群发送只带频道,receiver 留空(chat_validation 对群的要求)。
-            options = SendOptions(channelType: .guild, channelId: channel.channelId)
+            options = SendOptions(
+                channelType: .guild, channelId: channel.channelId,
+                replyToMessageId: replyToMessageId)
         }
         lock.lock()
         sendSeq += 1

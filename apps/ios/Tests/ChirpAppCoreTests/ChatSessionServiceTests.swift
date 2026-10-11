@@ -139,6 +139,49 @@ final class ChatSessionServiceTests: XCTestCase {
         service.logout()
     }
 
+    func testSendCarriesReplyIdOnDmAndGroupAndEmptyOnPlain() throws {
+        let (t, factory) = singleTransport()
+        let service = makeService(factory: factory)
+        try loginOk(service, t)
+
+        // DM 引用:replyToMessageID 随线上行。
+        let reply = service.send(
+            channel: .dm(selfId: "alice", peerId: "bob"), content: "回复你", replyToMessageId: "m-7")
+        var seq = try expectRequest(t, .sendMessageReq)
+        var request = try Chirp_Chat_SendMessageRequest(serializedBytes: lastRequestBody(t))
+        XCTAssertEqual(request.receiverID, "bob")
+        XCTAssertEqual(request.replyToMessageID, "m-7")
+        var ok = Chirp_Chat_SendMessageResponse()
+        ok.code = .ok
+        t.deliver(try wsResponse(.sendMessageResp, seq, ok))
+        guard case .sent = try reply.get(timeoutSeconds: 2) else {
+            return XCTFail("expected .sent")
+        }
+
+        // 群引用:群频道同样携带。
+        let groupReply = service.send(
+            channel: .group("g1"), content: "群内引用", replyToMessageId: "m-8")
+        seq = try expectRequest(t, .sendMessageReq)
+        request = try Chirp_Chat_SendMessageRequest(serializedBytes: lastRequestBody(t))
+        XCTAssertEqual(request.channelID, "g1")
+        XCTAssertEqual(request.replyToMessageID, "m-8")
+        t.deliver(try wsResponse(.sendMessageResp, seq, ok))
+        guard case .sent = try groupReply.get(timeoutSeconds: 2) else {
+            return XCTFail("expected .sent")
+        }
+
+        // 普通发送(缺省参数):引用字段为空串=非引用,既有面不变。
+        let plain = service.send(channel: .dm(selfId: "alice", peerId: "bob"), content: "普通")
+        seq = try expectRequest(t, .sendMessageReq)
+        request = try Chirp_Chat_SendMessageRequest(serializedBytes: lastRequestBody(t))
+        XCTAssertEqual(request.replyToMessageID, "")
+        t.deliver(try wsResponse(.sendMessageResp, seq, ok))
+        guard case .sent = try plain.get(timeoutSeconds: 2) else {
+            return XCTFail("expected .sent")
+        }
+        service.logout()
+    }
+
     func testSendWhileOfflineQueuesAndReplaysAfterReconnect() throws {
         let first = FakeWsTransport()
         var second: FakeWsTransport?

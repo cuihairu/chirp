@@ -17,7 +17,7 @@ title: SDK 引擎兼容性
 | Cocos Creator | TypeScript | `sdks/cocos/`（规划，目录未建） | 3.8 | P2 | 待开发 |
 | Web | TypeScript | `apps/web_companion/` | — | P0 | 已有基础 |
 | Android | Kotlin | `apps/android/` | minSdk 26 | P1 | 原生协议核已交付 |
-| iOS | Swift | `apps/ios/` | Swift 5.9+ | P1 | 原生协议核已交付; `swift test` 221 例（ChirpProtocolTests 92 + ChirpAppCoreTests 129） |
+| iOS | Swift | `apps/ios/` | Swift 5.9+ | P1 | 原生协议核已交付; `swift test` 222 例（ChirpProtocolTests 92 + ChirpAppCoreTests 130） |
 | C++ 桌面 | C++ | `sdks/core/` | C++17 | P0 | 已有基础 |
 | Go 服务端 | Go | `sdks/go/` | 1.21 | P0 | 已有基础 |
 
@@ -160,7 +160,7 @@ store 降级四条向量，原生包此后独占承载）。
 | 语言 | Kotlin（AGP 9 内建编译器） | Swift（SwiftPM，Linux 上 `swift test` 门禁） |
 | 传输层 | OkHttp WebSocket | URLSessionWebSocketTask（Darwin）/脚本化 fake（Linux 门禁） |
 | 协议核 | Frame/MessageSpec/ChatConnection/WordFilter/ChatPipeline/OfflineSendQueue/DeviceRegistrar/PushRoute | 同左（同组向量） |
-| 门禁 | `make test` 103 例 + `gradlew testDebugUnitTest` | `swift test` 221 例（ChirpProtocolTests 92 + ChirpAppCoreTests 129） |
+| 门禁 | `make test` 103 例 + `gradlew testDebugUnitTest` | `swift test` 222 例（ChirpProtocolTests 92 + ChirpAppCoreTests 130） |
 
 已有：
 - 五钩子接口（MessageInterceptor/AuthProvider/MessageStore/ChatEventListener/CommandHandler）
