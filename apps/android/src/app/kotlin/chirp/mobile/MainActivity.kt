@@ -19,6 +19,8 @@ import chirp.mobile.protocol.DeviceRegistrar
 import chirp.mobile.protocol.MemoryMessageStore
 import chirp.mobile.protocol.OkHttpTransport
 import chirp.mobile.protocol.OfflineSendQueue
+import chirp.mobile.protocol.PushTokenHub
+import chirp.mobile.protocol.PushTokenSource
 import chirp.mobile.protocol.RequestError
 import chirp.mobile.protocol.SendOptions
 import chirp.mobile.protocol.WordFilterSync
@@ -52,6 +54,18 @@ class MainActivity : Activity() {
     private var pipeline: ChatPipeline? = null
     private var offlineQueue: OfflineSendQueue? = null
     private var wordFilterSync: WordFilterSync? = null
+    private var pushRegistrar: DeviceRegistrar? = null
+
+    /**
+     * FCM token 刷新臂：push 腿 onNewToken → [PushTokenHub] 扇出到这里，
+     * 登录期间用新 token 在既有连接上重注册（服务端 RegisterDevice 按
+     * device_id create-or-update，同键覆盖即换 token）。回主线程串行化，
+     * 避免与登录换连接竞争 registrar；未登录时无监听，下次登录本就会注册
+     * 最新 token。
+     */
+    private val pushTokenRefresh = PushTokenHub.Listener { token ->
+        main.post { reRegisterForPush(token) }
+    }
 
     /**
      * 发送侧词库预检：下发源（词库下发协议，登录成功后 fetch + UPDATE_NOTIFY
@@ -156,6 +170,8 @@ class MainActivity : Activity() {
 
     override fun onDestroy() {
         super.onDestroy()
+        PushTokenHub.removeListener(pushTokenRefresh)
+        pushRegistrar = null
         pipeline?.stop()
         wordFilterSync?.stop()
         conn?.disconnect()
@@ -239,7 +255,8 @@ class MainActivity : Activity() {
      * M3.5：登录成功后注册推送目标（设备面 app_gateway 5201）。token 由构建
      * 开关决定真假（-PchirpPush=true 走 Firebase，默认构建恒 null），注册本
      * 身始终执行——dart device_api 降级对齐：空 token 也登记，推送退化为服
-     * 务端日志投递。
+     * 务端日志投递。登录成功同时挂上 [pushTokenRefresh] 监听：FCM token 在
+     * 会话期间刷新即用新 token 重注册（见 [reRegisterForPush]）。
      */
     private fun registerForPush(conn: ChatConnection, userId: String) {
         val registrar = DeviceRegistrar(
@@ -251,6 +268,10 @@ class MainActivity : Activity() {
             osVersion = { android.os.Build.VERSION.RELEASE },
             deviceName = { "${android.os.Build.MANUFACTURER} ${android.os.Build.MODEL}" },
         )
+        pushRegistrar = registrar
+        // 重登录换 registrar：先摘旧监听再挂，避免双份扇出。
+        PushTokenHub.removeListener(pushTokenRefresh)
+        PushTokenHub.addListener(pushTokenRefresh)
         registrar.register(userId, PlatformPushTokenSource(this))
             .whenComplete { code, err ->
                 main.post {
@@ -258,6 +279,22 @@ class MainActivity : Activity() {
                         err != null -> appendLine("[device reg] failed: $err")
                         code != Common.ErrorCode.OK -> appendLine("[device reg] rejected: $code")
                         else -> appendLine("[device reg] registered for push")
+                    }
+                }
+            }
+    }
+
+    /** token 刷新重注册：只在登录中生效（[pushRegistrar] 仅登录后非空）。 */
+    private fun reRegisterForPush(token: String) {
+        val registrar = pushRegistrar ?: return
+        val user = selfId ?: return
+        registrar.register(user, PushTokenSource { onResult -> onResult(token) })
+            .whenComplete { code, err ->
+                main.post {
+                    when {
+                        err != null -> appendLine("[device reg] refresh failed: $err")
+                        code != Common.ErrorCode.OK -> appendLine("[device reg] refresh rejected: $code")
+                        else -> appendLine("[device reg] token refreshed")
                     }
                 }
             }

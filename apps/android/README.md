@@ -32,7 +32,7 @@ backoff/heartbeat/deadline test is deterministic.
 
 | File | Ported from | Role |
 |---|---|---|
-| `MainActivity.kt` | `lib/api/chat_api.dart` login/send + notify ack | dev shell, M4-rewired onto `ChatPipeline`: login via `pipeline.login` (provider-less dev token = user id), DM a peer through `pipeline.send` (sorted-pair channelId), interceptor-installed send-side word filter, `MemoryMessageStore` archive, mandatory MESSAGE_ACK stays at the shell layer (pipeline doesn't ack, matching dart layering), `OfflineSendQueue` flushed from `onReconnected`, device registration (`DeviceRegistrar` + `PlatformPushTokenSource`) on login success. Push receive side (P5): tracks the viewed conversation for the foreground policy, opens the deep-linked DM on notification tap (`singleTask` + `onNewIntent`), requests POST_NOTIFICATIONS (API 33+) |
+| `MainActivity.kt` | `lib/api/chat_api.dart` login/send + notify ack | dev shell, M4-rewired onto `ChatPipeline`: login via `pipeline.login` (provider-less dev token = user id), DM a peer through `pipeline.send` (sorted-pair channelId), interceptor-installed send-side word filter, `MemoryMessageStore` archive, mandatory MESSAGE_ACK stays at the shell layer (pipeline doesn't ack, matching dart layering), `OfflineSendQueue` flushed from `onReconnected`, device registration (`DeviceRegistrar` + `PlatformPushTokenSource`) on login success. Push receive side (P5): tracks the viewed conversation for the foreground policy, opens the deep-linked DM on notification tap (`singleTask` + `onNewIntent`), requests POST_NOTIFICATIONS (API 33+), re-registers the device when the FCM token refreshes mid-session (`PushTokenHub` listener → same `DeviceRegistrar` path, detached on destroy) |
 | `ChirpNotifications.kt` / `ActiveChannel.kt` | — | notification surface (idempotent `chirp_messages` channel, stack-by-conversation ids, tap PendingIntent carrying the route key) + the viewed-conversation slot the push service reads |
 | `src/push` / `src/nopush` (`chirp.mobile.push.PlatformPushTokenSource`, `push.ChirpFirebaseService`) | — | same-FQCN token-source pair picked by the `-PchirpPush` switch: the Firebase one (25.1.3, google-services plugin 4.5.0) fetches the FCM token with a 10s bound, the no-op one always reports `null`. The push build additionally compiles `ChirpFirebaseService` — the FCM receive side (see Push section) |
 | `AndroidManifest.xml` + `res/` | — | framework-Views UI only (no androidx/Compose — minimal version-coupling surface); cleartext `ws://` enabled for dev gateways; POST_NOTIFICATIONS declared; the FCM service entry is inert in the default build (the class only exists in the push source set) |
@@ -85,8 +85,16 @@ viewing that conversation — `ActiveChannel` tracks it onResume/onPause;
 everything else presents, never guess). Presentable pushes post on the
 `chirp_messages` channel; tapping carries the conversation key back into
 `MainActivity`, which re-opens the DM (the dev shell has no group screen
-— group keys log only). FCM token refresh (`onNewToken`) logs only;
-re-registration rides the existing login-time `DeviceRegistrar` path.
+— group keys log only). FCM token refresh (`onNewToken`) lands in
+`protocol/PushTokenHub.kt` (pure Kotlin, JVM-tested: process-latest token
+memory + listener fan-out — blank/unchanged token no-op, a throwing
+listener isolated); while logged in the shell re-registers on the live
+connection with the fresh token (server `RegisterDevice` is
+create-or-update keyed by device_id, so the same-key overwrite swaps the
+token slot); while logged out only `latest` moves — the next login
+registers the newest token anyway. Known boundary: the server's device
+registry is in-memory, so a server restart mid-session still needs a
+re-login to restore push targets.
 
 ## Gate
 
@@ -94,11 +102,11 @@ Two legs, both must stay green:
 
 ```sh
 make test    # leg 1 (SDK-free): JDK 21 + kotlinc; compiles src/main/kotlin +
-             #   src/test/kotlin against pinned jars, runs the 103 tests
+             #   src/test/kotlin against pinned jars, runs the 109 tests
 make clean
 
 ./gradlew assembleDebug        # leg 2: AGP 9.4.1 app shell → debug APK
-./gradlew testDebugUnitTest    #   the same 103 tests through Gradle
+./gradlew testDebugUnitTest    #   the same 109 tests through Gradle
 #   (+ the push variant: ./gradlew clean assembleDebug testDebugUnitTest
 #    -PchirpPush=true — fetches Firebase, compiles the FCM receive side
 #    (ChirpFirebaseService) which the default build never sees, exercises
@@ -160,7 +168,8 @@ nested classes of the outer files).
   deep links). Android side = firebase-messaging SDK + google-services.json
   (needs Firebase project credentials); the receive side (notification
   rendering, tap deep link, foreground suppression) shipped with
-  `ChirpFirebaseService` + `PushRoute.kt` — real end-to-end delivery still
+  `ChirpFirebaseService` + `PushRoute.kt`, token-refresh re-registration via
+  `PushTokenHub` — real end-to-end delivery still
   needs the real Firebase credentials. Registering the WS device plane
   (`registerDevice`, app_gateway 5201) is already possible from the shell.
 - **CI gate job**: none of the two legs runs in CI yet (see Gate).

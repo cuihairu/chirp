@@ -160,7 +160,7 @@ store 降级四条向量，原生包此后独占承载）。
 | 语言 | Kotlin（AGP 9 内建编译器） | Swift（SwiftPM，Linux 上 `swift test` 门禁） |
 | 传输层 | OkHttp WebSocket | URLSessionWebSocketTask（Darwin）/脚本化 fake（Linux 门禁） |
 | 协议核 | Frame/MessageSpec/ChatConnection/WordFilter/ChatPipeline/OfflineSendQueue/DeviceRegistrar/PushRoute | 同左（同组向量） |
-| 门禁 | `make test` 103 例 + `gradlew testDebugUnitTest` | `swift test` 222 例（ChirpProtocolTests 92 + ChirpAppCoreTests 130） |
+| 门禁 | `make test` 109 例 + `gradlew testDebugUnitTest` | `swift test` 222 例（ChirpProtocolTests 92 + ChirpAppCoreTests 130） |
 
 已有：
 - 五钩子接口（MessageInterceptor/AuthProvider/MessageStore/ChatEventListener/CommandHandler）
@@ -172,6 +172,7 @@ store 降级四条向量，原生包此后独占承载）。
 
 待补：
 - [x] Android 接收侧通知渲染/点击深链（2026-10-11：`PushRoute.kt` 协议核——`PushRouteParser`/`PushForegroundPolicy` iOS P5 同语义移植，8 测与 Swift 同组向量对拍；壳层 `ChirpNotifications`（chirp_messages channel、按会话堆叠、点击 PendingIntent 带会话键）+ `MainActivity`（singleTask+onNewIntent 深链开 DM、POST_NOTIFICATIONS API 33+ 运行时权限、onResume/onPause 维护 ActiveChannel）+ `ChirpFirebaseService`（仅 -PchirpPush 构建编译，data 反解路由、正看该会话抑制横幅）；端到端真投递仍需真 Firebase 凭据）
+- [x] Android token 刷新重注册（2026-10-11：`PushTokenHub.kt` 协议核——进程级 latest + 监听扇出，空/同 token 幂等、抛异常监听者隔离，6 测；push 腿 `onNewToken` 记入 hub，登录中的壳层即在既有连接重注册（服务端 RegisterDevice 按 device_id create-or-update 同键覆盖换 token），未登录只记 latest、下次登录本就注册最新 token）
 - [ ] iOS 壳层 UI、APNs 真凭据
 - [ ] HarmonyOS（ArkTS，工具链未决）
 
