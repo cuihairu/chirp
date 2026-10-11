@@ -1,12 +1,19 @@
-import { Paper, Typography } from '@mui/material';
+import { Box, Paper, Typography } from '@mui/material';
 import DeleteIcon from '@mui/icons-material/DeleteOutline';
 import EditIcon from '@mui/icons-material/EditOutlined';
+import ReplyIcon from '@mui/icons-material/ReplyOutlined';
 import { QUICK_REACTIONS } from './quick_reactions';
 import type { ChatMessageView } from '../state/models';
 import { zh } from '../i18n/zh';
 
 const timeLabel = (timestamp: number): string =>
   new Date(timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+
+/** Resolved display face of the quoted parent (ChatWindow resolves the id). */
+export interface QuotedSummary {
+  senderName: string;
+  content: string;
+}
 
 export interface MessageBubbleProps {
   message: ChatMessageView;
@@ -15,7 +22,10 @@ export interface MessageBubbleProps {
   peerReadMessageId?: string;
   /** Group sender attribution (alias, else raw id); private chats pass none. */
   senderName?: string;
+  /** Present when the quoted parent is loaded; null = id set but unavailable. */
+  quoted?: QuotedSummary | null;
   onToggleReaction: (message: ChatMessageView, emoji: string) => void;
+  onReply?: (message: ChatMessageView) => void;
   onEdit?: (message: ChatMessageView) => void;
   onDelete?: (message: ChatMessageView) => void;
 }
@@ -30,7 +40,9 @@ export default function MessageBubble({
   selfId,
   peerReadMessageId,
   senderName,
+  quoted,
   onToggleReaction,
+  onReply,
   onEdit,
   onDelete,
 }: MessageBubbleProps) {
@@ -58,6 +70,35 @@ export default function MessageBubble({
         <Typography variant="caption" sx={{ display: 'block', opacity: 0.75 }}>
           {senderName}
         </Typography>
+      )}
+      {message.replyToMessageId && (
+        <Box
+          sx={{
+            borderLeft: 3,
+            borderColor: mine ? 'primary.contrastText' : 'divider',
+            pl: 1,
+            mb: 0.5,
+            opacity: 0.85,
+          }}
+          data-testid={`quoted-${message.messageId}`}
+        >
+          <Typography variant="caption" sx={{ display: 'block', fontWeight: 600 }}>
+            {quoted ? `${zh.chat.reply} · ${quoted.senderName}` : zh.chat.quotedUnavailable}
+          </Typography>
+          {quoted && (
+            <Typography
+              variant="caption"
+              sx={{
+                display: '-webkit-box',
+                WebkitLineClamp: 2,
+                WebkitBoxOrient: 'vertical',
+                overflow: 'hidden',
+              }}
+            >
+              {quoted.content}
+            </Typography>
+          )}
+        </Box>
       )}
       <Typography variant="body2" sx={{ wordBreak: 'break-word', whiteSpace: 'pre-wrap' }}>
         {message.deleted ? zh.chat.deleted : message.content}
@@ -112,6 +153,17 @@ export default function MessageBubble({
                 {emoji}
               </Typography>
             ))}
+            {onReply && (
+              <Typography
+                component="button"
+                aria-label={zh.chat.reply}
+                data-testid={`reply-${message.messageId}`}
+                onClick={() => onReply(message)}
+                sx={{ background: 'transparent', border: 'none', cursor: 'pointer', fontSize: 11, p: 0 }}
+              >
+                <ReplyIcon sx={{ fontSize: 13 }} />
+              </Typography>
+            )}
             {mine && onEdit && (
               <Typography
                 component="button"

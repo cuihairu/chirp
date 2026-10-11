@@ -42,6 +42,8 @@ export const zh = {
     addReaction: '添加表情',
     edit: '编辑',
     delete: '删除',
+    reply: '回复',
+    quotedUnavailable: '原消息已删除或不可见',
     editTitle: '编辑消息',
     save: '保存',
     deleteConfirm: '撤回这条消息?',

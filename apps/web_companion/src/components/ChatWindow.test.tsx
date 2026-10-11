@@ -306,6 +306,77 @@ describe('ChatWindow', () => {
     expect(send!.req).toMatchObject({ senderId: 'user_a', receiverId: 'user_b' });
   });
 
+  it('replies to a message: the send carries the quoted id and the strip clears', async () => {
+    const { conn } = await renderLoggedIn(<ChatWindow channelKey={KEY} />, {
+      responder: historyResponder,
+    });
+
+    fireEvent.click(await waitFor(() => screen.getByTestId('reply-m1')));
+    expect(screen.getByTestId('reply-preview').textContent).toContain('user_b');
+    expect(screen.getByTestId('reply-preview').textContent).toContain('hello from b');
+
+    const input = await waitFor(() => {
+      const box = screen.getByTestId('message-input').querySelector('textarea');
+      expect(box).toBeTruthy();
+      return box as HTMLTextAreaElement;
+    });
+    fireEvent.change(input, { target: { value: 'a reply' } });
+    fireEvent.keyDown(input, { key: 'Enter' });
+
+    const send = conn.requests.find((r) => r.msgId === MsgID.SEND_MESSAGE_REQ);
+    expect(send).toBeTruthy();
+    expect(send!.req).toMatchObject({ replyToMessageId: 'm1' });
+    await waitFor(() => expect(screen.queryByTestId('reply-preview')).toBeNull());
+  });
+
+  it('cancels the pending reply and sends unquoted afterwards', async () => {
+    const { conn } = await renderLoggedIn(<ChatWindow channelKey={KEY} />, {
+      responder: historyResponder,
+    });
+
+    fireEvent.click(await waitFor(() => screen.getByTestId('reply-m1')));
+    fireEvent.click(screen.getByTestId('cancel-reply'));
+    await waitFor(() => expect(screen.queryByTestId('reply-preview')).toBeNull());
+
+    const input = await waitFor(() => {
+      const box = screen.getByTestId('message-input').querySelector('textarea');
+      expect(box).toBeTruthy();
+      return box as HTMLTextAreaElement;
+    });
+    fireEvent.change(input, { target: { value: 'plain again' } });
+    fireEvent.keyDown(input, { key: 'Enter' });
+
+    const send = conn.requests.find((r) => r.msgId === MsgID.SEND_MESSAGE_REQ);
+    expect(send).toBeTruthy();
+    expect((send!.req as { replyToMessageId?: string }).replyToMessageId).toBeUndefined();
+  });
+
+  it('renders the unavailable placeholder for replies to unknown parents', async () => {
+    await renderLoggedIn(<ChatWindow channelKey={KEY} />, {
+      responder: async (msgId) => {
+        if (msgId === MsgID.GET_HISTORY_REQ) {
+          return {
+            code: 0,
+            hasMore: false,
+            messages: [
+              {
+                messageId: 'm1',
+                senderId: 'user_b',
+                channelType: ChannelType.PRIVATE,
+                channelId: 'user_a|user_b',
+                content: enc('orphan reply'),
+                timestamp: 100,
+                replyToMessageId: 'm-never-loaded',
+              },
+            ],
+          };
+        }
+        return { code: 0 };
+      },
+    });
+    await waitFor(() => expect(screen.getByTestId('quoted-m1').textContent).toContain(zh.chat.quotedUnavailable));
+  });
+
   it('marks incoming live messages read while the channel stays open', async () => {
     const { conn } = await renderLoggedIn(<ChatWindow channelKey={KEY} />, {
       responder: historyResponder,

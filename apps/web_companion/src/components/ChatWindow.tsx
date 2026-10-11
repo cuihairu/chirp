@@ -10,6 +10,7 @@ import { clearUnread } from '../state/conversation_store';
 import { typingUsersOf } from '../state/typing_store';
 import type { ChatMessageView } from '../state/models';
 import MessageBubble from './MessageBubble';
+import type { QuotedSummary } from './MessageBubble';
 import MessageInput from './MessageInput';
 import GroupSettingsDialog from './GroupDialogs';
 import { zh } from '../i18n/zh';
@@ -36,6 +37,7 @@ export default function ChatWindow({ channelKey }: { channelKey: string }) {
   const [now, setNow] = useState(Date.now());
   const [editing, setEditing] = useState<ChatMessageView | null>(null);
   const [editText, setEditText] = useState('');
+  const [replying, setReplying] = useState<ChatMessageView | null>(null);
   const [settingsOpen, setSettingsOpen] = useState(false);
   const navigate = useNavigate();
 
@@ -56,6 +58,7 @@ export default function ChatWindow({ channelKey }: { channelKey: string }) {
     api.setActiveChannel(channelKey);
     clearUnread(conversations, channelKey);
     clearTypingTimer(typingRef);
+    setReplying(null);
     if (historyLoadedFor.current !== channelKey) {
       historyLoadedFor.current = channelKey;
       void api.loadHistory(channel).then(() => {
@@ -88,6 +91,17 @@ export default function ChatWindow({ channelKey }: { channelKey: string }) {
   const senderName = (uid: string): string =>
     channel.kind === 'group' ? api.groupAliasOf(channel.channelId, uid) || uid : uid;
 
+  /** Reply-strip naming: groups show aliases, private shows 我 for own lines. */
+  const displayName = (uid: string): string =>
+    channel.kind === 'group' ? senderName(uid) : uid === selfId ? zh.chat.you : uid;
+
+  /** Resolve the quoted parent into a display face; unavailable → null. */
+  const quotedSummary = (id: string): QuotedSummary | null => {
+    const src = list.find((m) => m.messageId === id);
+    if (!src || src.deleted) return null;
+    return { senderName: displayName(src.senderId), content: src.content };
+  };
+
   useEffect(() => {
     const timer = setInterval(() => setNow(Date.now()), TYPING_TICK_MS);
     return () => {
@@ -109,7 +123,8 @@ export default function ChatWindow({ channelKey }: { channelKey: string }) {
   const send = (text: string): void => {
     clearTypingTimer(typingRef);
     void api.sendTyping(channel, false);
-    void api.sendMessage(channel, text);
+    void api.sendMessage(channel, text, replying?.messageId || undefined);
+    setReplying(null);
   };
 
   // Throttled typing sender: at most one start per 3s (the server cools
@@ -189,7 +204,9 @@ export default function ChatWindow({ channelKey }: { channelKey: string }) {
                 ? readCursorOf(messageState, channelKey, channel.peerId)
                 : undefined
             }
+            quoted={m.replyToMessageId ? quotedSummary(m.replyToMessageId) : undefined}
             onToggleReaction={toggleReaction}
+            onReply={setReplying}
             onEdit={openEdit}
             onDelete={(message) => {
               if (window.confirm(zh.chat.deleteConfirm)) void api.deleteMessage(message.messageId);
@@ -202,7 +219,15 @@ export default function ChatWindow({ channelKey }: { channelKey: string }) {
         {loading && !list.length ? (
           <CircularProgress size={20} />
         ) : (
-          <MessageInput onSend={send} onTyping={onTyping} disabled={selfId === ''} />
+          <MessageInput
+            onSend={send}
+            onTyping={onTyping}
+            disabled={selfId === ''}
+            replyPreview={
+              replying ? { senderName: displayName(replying.senderId), content: replying.content } : null
+            }
+            onCancelReply={() => setReplying(null)}
+          />
         )}
       </Box>
 

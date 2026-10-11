@@ -116,4 +116,55 @@ describe('MessageBubble', () => {
     );
     expect(screen.queryByText(new RegExp(zh.chat.read))).toBeNull();
   });
+
+  it('renders the quoted parent summary when resolved', () => {
+    render(
+      <MessageBubble
+        message={message({ replyToMessageId: 'm0' })}
+        selfId="user_a"
+        quoted={{ senderName: 'user_b', content: 'earlier line' }}
+        onToggleReaction={noop}
+      />,
+    );
+    expect(screen.getByTestId('quoted-m1').textContent).toContain(zh.chat.reply);
+    expect(screen.getByTestId('quoted-m1').textContent).toContain('user_b');
+    expect(screen.getByTestId('quoted-m1').textContent).toContain('earlier line');
+  });
+
+  it('shows the unavailable placeholder when the quoted parent is missing', () => {
+    render(
+      <MessageBubble
+        message={message({ replyToMessageId: 'm-gone' })}
+        selfId="user_a"
+        quoted={null}
+        onToggleReaction={noop}
+      />,
+    );
+    expect(screen.getByTestId('quoted-m1').textContent).toContain(zh.chat.quotedUnavailable);
+  });
+
+  it('renders no quote block without a reply id', () => {
+    render(<MessageBubble message={message({})} selfId="user_a" onToggleReaction={noop} />);
+    expect(screen.queryByTestId('quoted-m1')).toBeNull();
+  });
+
+  it('fires the reply action with the message', () => {
+    const onReply = vi.fn();
+    render(<MessageBubble message={message({})} selfId="user_a" onToggleReaction={noop} onReply={onReply} />);
+    fireEvent.click(screen.getByTestId('reply-m1'));
+    expect(onReply).toHaveBeenCalledWith(expect.objectContaining({ messageId: 'm1' }));
+  });
+
+  it('hides the reply action on deleted messages', () => {
+    const onReply = vi.fn();
+    render(
+      <MessageBubble
+        message={message({ deleted: true, content: '' })}
+        selfId="user_a"
+        onToggleReaction={noop}
+        onReply={onReply}
+      />,
+    );
+    expect(screen.queryByTestId('reply-m1')).toBeNull();
+  });
 });
