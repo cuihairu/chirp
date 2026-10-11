@@ -84,6 +84,12 @@ struct DistributedChatState {
   // Current instance ID
   std::string instance_id;
 
+  // World-channel level gate (game_chat_features P1, 2026-10-11 拍板形态①
+  // 登录声明): 0 = off (default); N >= 1 rejects world sends from sessions
+  // whose declared level is lower, with LEVEL_REQUIRED, before any budget
+  // or store is touched. Assigned from --world_channel_min_level in main().
+  int32_t world_channel_min_level = 0;
+
   // Returns the session previously bound to the same (user, platform) pair
   // so the caller can kick it (多端在线顶号：同 platform 新登录顶旧，跨
   // platform 共存)；null when the slot was free, stale, or this very
@@ -92,9 +98,10 @@ struct DistributedChatState {
       const std::string& user_id, const std::string& device_id,
       const std::string& session_id,
       const std::shared_ptr<chirp::network::Session>& session,
-      const std::string& platform) {
+      const std::string& platform, int32_t level = 0) {
     return chirp::network::BindAuthenticatedSession(registry, user_id, session_id,
-                                                    device_id, session, platform);
+                                                    device_id, session, platform,
+                                                    level);
   }
 
   // Only releases the (user, platform) slot while it still points at THIS
@@ -120,6 +127,12 @@ struct DistributedChatState {
 
   std::string GetUserId(const std::shared_ptr<chirp::network::Session>& session) {
     return chirp::network::GetAuthenticatedSession(registry, session).user_id;
+  }
+
+  // Declared game level (LoginRequest.level, 0 when unset) — world-channel
+  // gate input only, never an identity fact.
+  int32_t GetLevel(const std::shared_ptr<chirp::network::Session>& session) {
+    return chirp::network::GetAuthenticatedSession(registry, session).level;
   }
 };
 
@@ -826,7 +839,7 @@ void HandleLogin(const chirp::auth::LoginRequest& req,
     // listing (self excluded) rides in the response, and the user's other
     // devices learn this device came online.
     auto old = state->AddSession(user_id, req.device_id(), resp.session_id(), session,
-                                 req.platform());
+                                 req.platform(), req.level());
     if (old && old.get() != session.get()) {
       KickSession(old, chirp::network::LoginKickReason(req.platform()));
     }
@@ -998,6 +1011,11 @@ int main(int argc, char** argv) {
       chirp::chat::runtime::ParseIntArg(argc, argv, "--recall_window_sec", 120);
   const std::string recall_channels =
       chirp::chat::runtime::GetArg(argc, argv, "--recall_channels", "private,guild");
+  // World-channel level gate (game_chat_features P1, 拍板形态①): off by
+  // default so app/companion deployments are unaffected; game deployments
+  // opt in (documented recommendation: 10).
+  const int world_channel_min_level =
+      chirp::chat::runtime::ParseIntArg(argc, argv, "--world_channel_min_level", 0);
 
   std::string instance_id = chirp::chat::runtime::GetArg(argc, argv, "--instance_id", "");
   if (instance_id.empty()) {
@@ -1029,6 +1047,7 @@ int main(int argc, char** argv) {
   // Initialize components
   auto state = std::make_shared<DistributedChatState>();
   state->instance_id = instance_id;
+  state->world_channel_min_level = world_channel_min_level;
 
   auto store = std::make_shared<HybridMessageStore>(io, store_config);
   if (!store->Initialize()) {
@@ -1553,6 +1572,21 @@ int main(int argc, char** argv) {
       return;
     }
     const std::string authenticated_user = state->GetUserId(session);
+    // World-channel level gate (game_chat_features P1, 拍板形态① 登录声明):
+    // declared level must reach --world_channel_min_level (0 = off). Sits
+    // with the identity-class gates — a below-level send consumes neither
+    // send budget, pacing slot, repeat-guard state nor filter work, and
+    // unauthenticated sessions keep their AUTH_FAILED path untouched.
+    if (!authenticated_user.empty() && state->world_channel_min_level > 0 &&
+        req.channel_type() == chirp::chat::WORLD &&
+        state->GetLevel(session) < state->world_channel_min_level) {
+      chirp::chat::SendMessageResponse resp;
+      resp.set_code(chirp::common::LEVEL_REQUIRED);
+      resp.set_server_timestamp(chirp::chat::runtime::NowMs());
+      chirp::chat::runtime::SendPacket(session, chirp::gateway::SEND_MESSAGE_RESP, seq,
+                                       resp.SerializeAsString());
+      return;
+    }
     // Direct-entry abuse gate (basic-build parity): the per-user send window
     // counts only authenticated sends. Inert without --send_rate_limit_per_min
     // (or without Redis), mirroring the basic build's fail-open contract.

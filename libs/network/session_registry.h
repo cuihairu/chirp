@@ -1,5 +1,6 @@
 #pragma once
 
+#include <cstdint>
 #include <memory>
 #include <mutex>
 #include <string>
@@ -34,6 +35,11 @@ struct SessionRegistry {
   std::unordered_map<void*, std::string> session_to_platform;
   std::unordered_map<void*, std::string> session_to_device;
   std::unordered_map<void*, std::string> session_to_session_id;
+  // Client-declared game level (LoginRequest.level), chat-plane metadata the
+  // world-channel send gate reads. Not identity metadata: never consulted for
+  // authorization beyond that gate, and 0 for everyone who does not declare
+  // one (app/companion logins, other services' clients).
+  std::unordered_map<void*, int32_t> session_to_level;
 };
 
 /// @brief The authenticated identity recorded for a session.
@@ -42,6 +48,7 @@ struct AuthenticatedSession {
   std::string platform;
   std::string device_id;
   std::string session_id;
+  int32_t level = 0;
 };
 
 /// @brief Device ids normalize to "default" when empty so legacy clients
@@ -64,7 +71,8 @@ std::shared_ptr<Session> BindAuthenticatedSession(const std::shared_ptr<SessionR
                                                   const std::string& session_id,
                                                   const std::string& device_id,
                                                   const std::shared_ptr<Session>& session,
-                                                  const std::string& platform = "");
+                                                  const std::string& platform = "",
+                                                  int32_t level = 0);
 
 /// @brief Looks up the authenticated identity recorded for a session.
 AuthenticatedSession GetAuthenticatedSession(const std::shared_ptr<SessionRegistry>& state,

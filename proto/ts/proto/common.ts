@@ -48,6 +48,13 @@ export enum ErrorCode {
    * is refused without touching any store; other channels are unaffected.
    */
   MUTED = 12,
+  /**
+   * LEVEL_REQUIRED - Game-plane world-channel level gate (game_chat_features P1 专码): the
+   * sender's declared level (LoginRequest.level) is below the configured
+   * --world_channel_min_level. The send is refused before any budget or
+   * store is touched; other channels are unaffected.
+   */
+  LEVEL_REQUIRED = 13,
   UNRECOGNIZED = -1,
 }
 
@@ -92,6 +99,9 @@ export function errorCodeFromJSON(object: any): ErrorCode {
     case 12:
     case "MUTED":
       return ErrorCode.MUTED;
+    case 13:
+    case "LEVEL_REQUIRED":
+      return ErrorCode.LEVEL_REQUIRED;
     case -1:
     case "UNRECOGNIZED":
     default:
@@ -127,6 +137,8 @@ export function errorCodeToJSON(object: ErrorCode): string {
       return "CONTENT_TOO_LONG";
     case ErrorCode.MUTED:
       return "MUTED";
+    case ErrorCode.LEVEL_REQUIRED:
+      return "LEVEL_REQUIRED";
     case ErrorCode.UNRECOGNIZED:
     default:
       return "UNRECOGNIZED";

@@ -15,6 +15,14 @@ message LoginRequest {
   // MESSAGE_ACK. The server only tracks unacknowledged deliveries for
   // capable sessions; legacy clients keep the send-and-forget behavior.
   bool supports_message_ack = 4;
+
+  // Client-declared game level (game_chat_features P1 世界频道等级门槛,
+  // 2026-10-11 拍板形态①). Same trust class as the scaffolding identity
+  // itself: the chat plane has no level data source, so the declaring
+  // client is trusted at the same level as the login token it presented.
+  // Consumed only by the world-channel send gate (--world_channel_min_level,
+  // 0 = gate disabled); unset / 0 means "no level claimed".
+  int32 level = 5;
 }
 
 message KickNotify {

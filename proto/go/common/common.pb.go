@@ -50,6 +50,11 @@ const (
 	// in the target group by a MODERATOR+ (SET_GROUP_MUTE_REQ 2250). The send
 	// is refused without touching any store; other channels are unaffected.
 	ErrorCode_MUTED ErrorCode = 12
+	// Game-plane world-channel level gate (game_chat_features P1 专码): the
+	// sender's declared level (LoginRequest.level) is below the configured
+	// --world_channel_min_level. The send is refused before any budget or
+	// store is touched; other channels are unaffected.
+	ErrorCode_LEVEL_REQUIRED ErrorCode = 13
 )
 
 // Enum value maps for ErrorCode.
@@ -68,6 +73,7 @@ var (
 		10: "WORD_FILTERED",
 		11: "CONTENT_TOO_LONG",
 		12: "MUTED",
+		13: "LEVEL_REQUIRED",
 	}
 	ErrorCode_value = map[string]int32{
 		"OK":                 0,
@@ -83,6 +89,7 @@ var (
 		"WORD_FILTERED":      10,
 		"CONTENT_TOO_LONG":   11,
 		"MUTED":              12,
+		"LEVEL_REQUIRED":     13,
 	}
 )
 
@@ -154,7 +161,7 @@ var File_proto_common_proto protoreflect.FileDescriptor
 const file_proto_common_proto_rawDesc = "" +
 	"\n" +
 	"\x12proto/common.proto\x12\fchirp.common\"\a\n" +
-	"\x05Empty*\xfc\x01\n" +
+	"\x05Empty*\x90\x02\n" +
 	"\tErrorCode\x12\x06\n" +
 	"\x02OK\x10\x00\x12\x12\n" +
 	"\x0eINTERNAL_ERROR\x10\x01\x12\x11\n" +
@@ -169,7 +176,8 @@ const file_proto_common_proto_rawDesc = "" +
 	"\rWORD_FILTERED\x10\n" +
 	"\x12\x14\n" +
 	"\x10CONTENT_TOO_LONG\x10\v\x12\t\n" +
-	"\x05MUTED\x10\fB&Z$github.com/cui/chirp/proto/go/commonb\x06proto3"
+	"\x05MUTED\x10\f\x12\x12\n" +
+	"\x0eLEVEL_REQUIRED\x10\rB&Z$github.com/cui/chirp/proto/go/commonb\x06proto3"
 
 var (
 	file_proto_common_proto_rawDescOnce sync.Once

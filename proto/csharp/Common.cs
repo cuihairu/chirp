@@ -24,14 +24,15 @@ namespace Chirp.Common {
     static CommonReflection() {
       byte[] descriptorData = global::System.Convert.FromBase64String(
           string.Concat(
-            "ChJwcm90by9jb21tb24ucHJvdG8SDGNoaXJwLmNvbW1vbiIHCgVFbXB0eSr8",
-            "AQoJRXJyb3JDb2RlEgYKAk9LEAASEgoOSU5URVJOQUxfRVJST1IQARIRCg1J",
+            "ChJwcm90by9jb21tb24ucHJvdG8SDGNoaXJwLmNvbW1vbiIHCgVFbXB0eSqQ",
+            "AgoJRXJyb3JDb2RlEgYKAk9LEAASEgoOSU5URVJOQUxfRVJST1IQARIRCg1J",
             "TlZBTElEX1BBUkFNEAISDwoLQVVUSF9GQUlMRUQQAxITCg9TRVNTSU9OX0VY",
             "UElSRUQQBBISCg5VU0VSX05PVF9GT1VORBAFEhIKDlRBUkdFVF9PRkZMSU5F",
             "EAYSFgoSU0VSVkVSX1VOQVZBSUxBQkxFEAcSEAoMUkFURV9MSU1JVEVEEAgS",
             "FAoQVkVSU0lPTl9NSVNNQVRDSBAJEhEKDVdPUkRfRklMVEVSRUQQChIUChBD",
-            "T05URU5UX1RPT19MT05HEAsSCQoFTVVURUQQDEImWiRnaXRodWIuY29tL2N1",
-            "aS9jaGlycC9wcm90by9nby9jb21tb25iBnByb3RvMw=="));
+            "T05URU5UX1RPT19MT05HEAsSCQoFTVVURUQQDBISCg5MRVZFTF9SRVFVSVJF",
+            "RBANQiZaJGdpdGh1Yi5jb20vY3VpL2NoaXJwL3Byb3RvL2dvL2NvbW1vbmIG",
+            "cHJvdG8z"));
       descriptor = pbr::FileDescriptor.FromGeneratedCode(descriptorData,
           new pbr::FileDescriptor[] { },
           new pbr::GeneratedClrTypeInfo(new[] {typeof(global::Chirp.Common.ErrorCode), }, null, new pbr::GeneratedClrTypeInfo[] {
@@ -81,6 +82,13 @@ namespace Chirp.Common {
     /// is refused without touching any store; other channels are unaffected.
     /// </summary>
     [pbr::OriginalName("MUTED")] Muted = 12,
+    /// <summary>
+    /// Game-plane world-channel level gate (game_chat_features P1 专码): the
+    /// sender's declared level (LoginRequest.level) is below the configured
+    /// --world_channel_min_level. The send is refused before any budget or
+    /// store is touched; other channels are unaffected.
+    /// </summary>
+    [pbr::OriginalName("LEVEL_REQUIRED")] LevelRequired = 13,
   }
 
   #endregion

@@ -118,7 +118,7 @@ message Packet {
 
 ### 聊天(Chat,2xxx)
 
-发送链路在服务端经过一组顺序固定的防线(细节与默认阈值见 [接入避坑指南](../guide/integration-pitfalls.md)):登录校验 → 内容长度(`CONTENT_TOO_LONG`)→ 模糊限流(`RATE_LIMITED`)→ 发送节奏(`RATE_LIMITED`)→ 重复禁言(`RATE_LIMITED`)→ 敏感词(`WORD_FILTERED` 或静默替换)。
+发送链路在服务端经过一组顺序固定的防线(细节与默认阈值见 [接入避坑指南](../guide/integration-pitfalls.md)):登录校验 → 内容长度(`CONTENT_TOO_LONG`)→ 世界频道等级门槛(`LEVEL_REQUIRED`,`--world_channel_min_level` 缺省 0 关闭)→ 模糊限流(`RATE_LIMITED`)→ 发送节奏(`RATE_LIMITED`)→ 重复禁言(`RATE_LIMITED`)→ 敏感词(`WORD_FILTERED` 或静默替换)。
 
 | MsgID | 名称 | 方向 | 说明 |
 | --- | --- | --- | --- |
@@ -299,6 +299,8 @@ ws.send(concat(uint32be(packet.length), packet))
 | 9 | `VERSION_MISMATCH` | peer 注册协议版本低于 hub 的 `min_peer_version` |
 | 10 | `WORD_FILTERED` | 敏感词策略为 reject 时拒收(replace 策略静默替换后放行) |
 | 11 | `CONTENT_TOO_LONG` | 内容超过频道码点上限(私聊 200 / 世界 100 / 系统公告 500) |
+| 12 | `MUTED` | 发送者在目标群被 MODERATOR+ 禁言(群频道发送被拒,其他频道不受影响) |
+| 13 | `LEVEL_REQUIRED` | 声明等级(`LoginRequest.level`)低于 `--world_channel_min_level`,世界频道发送被拒(0=门槛关闭,其他频道不受影响) |
 
 SDK 的传输层错误(`NotConnected`/`Timeout`/`Closed`/`Kicked`/`BadResponse`)与上表互相独立:`ec == OK` 不代表业务成功,必须再读 `resp.code()`。
 

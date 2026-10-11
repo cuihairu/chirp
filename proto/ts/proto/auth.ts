@@ -22,6 +22,15 @@ export interface LoginRequest {
    * capable sessions; legacy clients keep the send-and-forget behavior.
    */
   supportsMessageAck: boolean;
+  /**
+   * Client-declared game level (game_chat_features P1 世界频道等级门槛,
+   * 2026-10-11 拍板形态①). Same trust class as the scaffolding identity
+   * itself: the chat plane has no level data source, so the declaring
+   * client is trusted at the same level as the login token it presented.
+   * Consumed only by the world-channel send gate (--world_channel_min_level,
+   * 0 = gate disabled); unset / 0 means "no level claimed".
+   */
+  level: number;
 }
 
 export interface KickNotify {
@@ -178,7 +187,7 @@ export interface ChangePasswordResponse {
 }
 
 function createBaseLoginRequest(): LoginRequest {
-  return { token: "", deviceId: "", platform: "", supportsMessageAck: false };
+  return { token: "", deviceId: "", platform: "", supportsMessageAck: false, level: 0 };
 }
 
 export const LoginRequest = {
@@ -194,6 +203,9 @@ export const LoginRequest = {
     }
     if (message.supportsMessageAck !== false) {
       writer.uint32(32).bool(message.supportsMessageAck);
+    }
+    if (message.level !== 0) {
+      writer.uint32(40).int32(message.level);
     }
     return writer;
   },
@@ -233,6 +245,13 @@ export const LoginRequest = {
 
           message.supportsMessageAck = reader.bool();
           continue;
+        case 5:
+          if (tag !== 40) {
+            break;
+          }
+
+          message.level = reader.int32();
+          continue;
       }
       if ((tag & 7) === 4 || tag === 0) {
         break;
@@ -248,6 +267,7 @@ export const LoginRequest = {
       deviceId: isSet(object.deviceId) ? globalThis.String(object.deviceId) : "",
       platform: isSet(object.platform) ? globalThis.String(object.platform) : "",
       supportsMessageAck: isSet(object.supportsMessageAck) ? globalThis.Boolean(object.supportsMessageAck) : false,
+      level: isSet(object.level) ? globalThis.Number(object.level) : 0,
     };
   },
 
@@ -265,6 +285,9 @@ export const LoginRequest = {
     if (message.supportsMessageAck !== false) {
       obj.supportsMessageAck = message.supportsMessageAck;
     }
+    if (message.level !== 0) {
+      obj.level = Math.round(message.level);
+    }
     return obj;
   },
 
@@ -277,6 +300,7 @@ export const LoginRequest = {
     message.deviceId = object.deviceId ?? "";
     message.platform = object.platform ?? "";
     message.supportsMessageAck = object.supportsMessageAck ?? false;
+    message.level = object.level ?? 0;
     return message;
   },
 };

@@ -278,12 +278,14 @@ class BasicChatTest : public ::testing::Test {
                                    const std::string& token,
                                    const std::string& device_id = "d1",
                                    const std::string& platform = "web",
-                                   bool supports_ack = false, int64_t seq = 1) {
+                                   bool supports_ack = false, int64_t seq = 1,
+                                   int32_t level = 0) {
     chirp::auth::LoginRequest req;
     req.set_token(token);
     req.set_device_id(device_id);
     req.set_platform(platform);
     req.set_supports_message_ack(supports_ack);
+    req.set_level(level);
     DispatchReq(chirp::gateway::LOGIN_REQ, req, session, seq);
     chirp::auth::LoginResponse resp;
     const auto frames = FramesOf(*session, chirp::gateway::LOGIN_RESP);
@@ -821,6 +823,37 @@ TEST_F(BasicChatTest, SendGuardChainRejectsInOrder) {
       EXPECT_EQ(code, chirp::common::RATE_LIMITED);  // 第 3 条撞禁言
     }
   }
+}
+
+// --- 世界频道等级门槛：LoginRequest.level 声明 + --world_channel_min_level ----
+
+TEST_F(BasicChatTest, WorldChannelLevelGate) {
+  // 默认关（flag 缺省 0）：零级声明不影响既有行为，WORLD 非群成员仍走
+  // 成员墙 AUTH_FAILED，绝不冒出 LEVEL_REQUIRED（app/companion 部署零感知）。
+  auto carl = std::make_shared<MockSession>();
+  ASSERT_EQ(Login(carl, "carl").code(), chirp::common::OK);
+  EXPECT_EQ(Send(carl, "carl", "", "world", chirp::chat::WORLD, "world").code(),
+            chirp::common::AUTH_FAILED);
+
+  auto alice = std::make_shared<MockSession>();
+  ASSERT_EQ(Login(alice, "alice").code(), chirp::common::OK);
+
+  features_->world_channel_min_level = 10;
+
+  // 声明 5 级：世界发送在预算/节奏/过滤器之前被拒（LEVEL_REQUIRED 专码），
+  // 同一会话的私聊不受门槛影响。
+  auto low = std::make_shared<MockSession>();
+  ASSERT_EQ(Login(low, "low", "d1", "web", false, 1, 5).code(), chirp::common::OK);
+  EXPECT_EQ(Send(low, "low", "", "world", chirp::chat::WORLD, "world").code(),
+            chirp::common::LEVEL_REQUIRED);
+  EXPECT_EQ(Send(low, "low", "alice", "private unaffected").code(), chirp::common::OK);
+
+  // 声明达标：门槛放行，继续撞 WORLD 成员墙（AUTH_FAILED）——区分"门槛拒"
+  // 与"成员校验拒"两种拒绝来源。
+  auto high = std::make_shared<MockSession>();
+  ASSERT_EQ(Login(high, "high", "d1", "web", false, 1, 10).code(), chirp::common::OK);
+  EXPECT_EQ(Send(high, "high", "", "world", chirp::chat::WORLD, "world").code(),
+            chirp::common::AUTH_FAILED);
 }
 
 // --- 敏感词：replace 改写投递 / reject 专码拒收 --------------------------------

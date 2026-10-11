@@ -31,6 +31,11 @@ enum ErrorCode {
   // in the target group by a MODERATOR+ (SET_GROUP_MUTE_REQ 2250). The send
   // is refused without touching any store; other channels are unaffected.
   MUTED = 12;
+  // Game-plane world-channel level gate (game_chat_features P1 专码): the
+  // sender's declared level (LoginRequest.level) is below the configured
+  // --world_channel_min_level. The send is refused before any budget or
+  // store is touched; other channels are unaffected.
+  LEVEL_REQUIRED = 13;
 }
 
 message Empty {}

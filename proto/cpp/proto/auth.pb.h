@@ -2900,6 +2900,7 @@ class LoginRequest final : public ::google::protobuf::Message
     kDeviceIdFieldNumber = 2,
     kPlatformFieldNumber = 3,
     kSupportsMessageAckFieldNumber = 4,
+    kLevelFieldNumber = 5,
   };
   // string token = 1;
   void clear_token() ;
@@ -2956,11 +2957,21 @@ class LoginRequest final : public ::google::protobuf::Message
   void _internal_set_supports_message_ack(bool value);
 
   public:
+  // int32 level = 5;
+  void clear_level() ;
+  ::int32_t level() const;
+  void set_level(::int32_t value);
+
+  private:
+  ::int32_t _internal_level() const;
+  void _internal_set_level(::int32_t value);
+
+  public:
   // @@protoc_insertion_point(class_scope:chirp.auth.LoginRequest)
  private:
   class _Internal;
   friend class ::google::protobuf::internal::TcParser;
-  static const ::google::protobuf::internal::TcParseTable<2, 4,
+  static const ::google::protobuf::internal::TcParseTable<3, 5,
                                    0, 54,
                                    2>
       _table_;
@@ -2986,6 +2997,7 @@ class LoginRequest final : public ::google::protobuf::Message
     ::google::protobuf::internal::ArenaStringPtr device_id_;
     ::google::protobuf::internal::ArenaStringPtr platform_;
     bool supports_message_ack_;
+    ::int32_t level_;
     PROTOBUF_TSAN_DECLARE_MEMBER
   };
   union { Impl_ _impl_; };
@@ -5004,6 +5016,31 @@ inline bool LoginRequest::_internal_supports_message_ack() const {
 inline void LoginRequest::_internal_set_supports_message_ack(bool value) {
   ::google::protobuf::internal::TSanWrite(&_impl_);
   _impl_.supports_message_ack_ = value;
+}
+
+// int32 level = 5;
+inline void LoginRequest::clear_level() {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_.level_ = 0;
+  ClearHasBit(_impl_._has_bits_[0],
+                  0x00000010U);
+}
+inline ::int32_t LoginRequest::level() const {
+  // @@protoc_insertion_point(field_get:chirp.auth.LoginRequest.level)
+  return _internal_level();
+}
+inline void LoginRequest::set_level(::int32_t value) {
+  _internal_set_level(value);
+  SetHasBit(_impl_._has_bits_[0], 0x00000010U);
+  // @@protoc_insertion_point(field_set:chirp.auth.LoginRequest.level)
+}
+inline ::int32_t LoginRequest::_internal_level() const {
+  ::google::protobuf::internal::TSanRead(&_impl_);
+  return _impl_.level_;
+}
+inline void LoginRequest::_internal_set_level(::int32_t value) {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_.level_ = value;
 }
 
 // -------------------------------------------------------------------

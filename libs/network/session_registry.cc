@@ -44,7 +44,8 @@ std::shared_ptr<Session> BindAuthenticatedSession(const std::shared_ptr<SessionR
                                                   const std::string& session_id,
                                                   const std::string& device_id,
                                                   const std::shared_ptr<Session>& session,
-                                                  const std::string& platform) {
+                                                  const std::string& platform,
+                                                  int32_t level) {
   const std::string normalized_device = NormalizeDeviceId(device_id);
   const std::string normalized_platform = NormalizePlatformId(platform);
   std::shared_ptr<Session> old_pair_session;
@@ -78,6 +79,7 @@ std::shared_ptr<Session> BindAuthenticatedSession(const std::shared_ptr<SessionR
   state->session_to_platform[session.get()] = normalized_platform;
   state->session_to_device[session.get()] = normalized_device;
   state->session_to_session_id[session.get()] = session_id;
+  state->session_to_level[session.get()] = level;
 
   return old_pair_session;
 }
@@ -102,6 +104,10 @@ AuthenticatedSession GetAuthenticatedSession(const std::shared_ptr<SessionRegist
   auto it4 = state->session_to_session_id.find(session.get());
   if (it4 != state->session_to_session_id.end()) {
     result.session_id = it4->second;
+  }
+  auto it5 = state->session_to_level.find(session.get());
+  if (it5 != state->session_to_level.end()) {
+    result.level = it5->second;
   }
 
   return result;
@@ -129,6 +135,7 @@ bool RemoveAuthenticatedSession(const std::shared_ptr<SessionRegistry>& state,
   state->session_to_platform.erase(session.get());
   state->session_to_device.erase(session.get());
   state->session_to_session_id.erase(session.get());
+  state->session_to_level.erase(session.get());
 
   // Only report a release when this session owned the slot (or it was
   // stale): a newer session of the same pair keeps its claim.

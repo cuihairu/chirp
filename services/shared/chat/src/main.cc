@@ -546,6 +546,13 @@ struct FeatureHandlers {
   // null when hub mode is off. The cross-plane reply path resolves the
   // channel's "<game_id>:" prefix against its registrations.
   chirp::network::ChatPeerHub* hub = nullptr;
+  // World-channel level gate (game_chat_features P1, 2026-10-11 拍板形态①
+  // 登录声明): 0 keeps the gate off (default — app/无等级部署不受影响);
+  // N >= 1 rejects world-channel sends from sessions whose LoginRequest
+  // declared a lower level with LEVEL_REQUIRED. The declared level rides
+  // the session registry (session_to_level), same trust class as the
+  // scaffolding identity.
+  int world_channel_min_level = 0;
 };
 
 void HandlePacket(const std::shared_ptr<MessageStore>& store,
@@ -675,7 +682,8 @@ void HandlePacket(const std::shared_ptr<MessageStore>& store,
       auto old =
           chirp::network::BindAuthenticatedSession(state, user_id, login_resp.session_id(),
                                                    login_req.device_id(), session,
-                                                   login_req.platform());
+                                                   login_req.platform(),
+                                                   login_req.level());
       if (old && old.get() != session.get()) {
         KickSession(old, chirp::network::LoginKickReason(login_req.platform()));
       }
@@ -761,6 +769,21 @@ void HandlePacket(const std::shared_ptr<MessageStore>& store,
       resp.set_code(validation);
       resp.set_server_timestamp(chirp::chat::runtime::NowMs());
       chirp::chat::runtime::SendPacket(session, chirp::gateway::SEND_MESSAGE_RESP, pkt.sequence(), resp.SerializeAsString());
+      return;
+    }
+
+    // World-channel level gate (game_chat_features P1, 拍板形态① 登录声明):
+    // the sender's LoginRequest-declared level must reach
+    // --world_channel_min_level (0 = off). Sits with the auth/param class of
+    // gates — a below-level send consumes neither send budget, pacing slot,
+    // repeat-guard state nor filter work.
+    if (features.world_channel_min_level > 0 && req.channel_type() == chirp::chat::WORLD &&
+        authenticated.level < features.world_channel_min_level) {
+      chirp::chat::SendMessageResponse resp;
+      resp.set_code(chirp::common::LEVEL_REQUIRED);
+      resp.set_server_timestamp(chirp::chat::runtime::NowMs());
+      chirp::chat::runtime::SendPacket(session, chirp::gateway::SEND_MESSAGE_RESP,
+                                       pkt.sequence(), resp.SerializeAsString());
       return;
     }
 
@@ -1509,6 +1532,11 @@ int main(int argc, char** argv) {
       chirp::chat::runtime::ParseIntArg(argc, argv, "--recall_window_sec", 120);
   const std::string recall_channels =
       chirp::chat::runtime::GetArg(argc, argv, "--recall_channels", "private,guild");
+  // World-channel level gate (game_chat_features P1, 拍板形态①): the gate
+  // is off by default so app/companion deployments (no level data) are
+  // unaffected; game deployments opt in (documented recommendation: 10).
+  const int world_channel_min_level =
+      chirp::chat::runtime::ParseIntArg(argc, argv, "--world_channel_min_level", 0);
   const std::string token_secret = chirp::chat::runtime::GetArg(argc, argv, "--token_secret", "");
   // Internal-plane trust gate: when set, edge gateways that dial in with this
   // secret (SERVER_AUTH_REQ) get per-client pipes that skip the per-IP login
@@ -1730,6 +1758,7 @@ int main(int argc, char** argv) {
   features.gateway_secret = gateway_service_secret;
   features.trusted_conns =
       std::make_shared<std::unordered_set<const chirp::network::Session*>>();
+  features.world_channel_min_level = world_channel_min_level;
 
   // App-plane player directory (WP-8): the identity/subscription/unread
   // registries relocated from game_server_gateway, plus the hub fan-out

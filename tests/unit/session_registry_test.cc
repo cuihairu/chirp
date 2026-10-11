@@ -68,6 +68,24 @@ TEST(SessionRegistryTest, SessionToUserWithoutDeviceMapRebindsCleanly) {
   EXPECT_EQ(GetAuthenticatedSession(state, session).user_id, "bob");
 }
 
+TEST(SessionRegistryTest, DeclaredLevelRidesBindGetAndRemove) {
+  // LoginRequest.level (game_chat_features P1 拍板形态①) rides the registry
+  // like the other per-session metadata: bound at login, read by the
+  // world-channel send gate, wiped together with the session.
+  auto state = std::make_shared<SessionRegistry>();
+  auto session = std::make_shared<FakeSession>();
+
+  EXPECT_FALSE(BindAuthenticatedSession(state, "alice", "s1", "phone-a", session, "web", 42));
+  EXPECT_EQ(GetAuthenticatedSession(state, session).level, 42);
+
+  // Rebind without a declaration (app/companion login shape) resets to 0.
+  EXPECT_FALSE(BindAuthenticatedSession(state, "bob", "s2", "phone-a", session, "web"));
+  EXPECT_EQ(GetAuthenticatedSession(state, session).level, 0);
+
+  EXPECT_TRUE(RemoveAuthenticatedSession(state, session));
+  EXPECT_EQ(GetAuthenticatedSession(state, session).level, 0);
+}
+
 TEST(SessionRegistryTest, RebindingSameConnectionRemovesPreviousUserMapping) {
   auto state = std::make_shared<SessionRegistry>();
   auto session = std::make_shared<FakeSession>();
