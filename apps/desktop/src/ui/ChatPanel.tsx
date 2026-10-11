@@ -1,4 +1,6 @@
 import ArrowUpwardIcon from '@mui/icons-material/ArrowUpward';
+import CloseIcon from '@mui/icons-material/Close';
+import ReplyIcon from '@mui/icons-material/ReplyOutlined';
 import SendIcon from '@mui/icons-material/Send';
 import {
   Box,
@@ -16,7 +18,7 @@ import {
 import { useEffect, useReducer, useRef, useState } from 'react';
 import type { KeyboardEvent as ReactKeyboardEvent } from 'react';
 import type { ChatApi, ChannelRef } from '../api/chat_api';
-import type { Conversation } from '../state/models';
+import type { ChatMessageView, Conversation } from '../state/models';
 import type { MessageState } from '../state/message_store';
 import { useStoreValue, type Store } from '../state/store';
 import { TYPING_TTL_MS, type TypingState } from '../state/typing_store';
@@ -28,7 +30,7 @@ const fmtTime = (ts: number): string => {
   return `${hh}:${mm}`;
 };
 
-/** 单条消息行：发送者 + 时间 + 正文 + 本地状态标记。 */
+/** 单条消息行：发送者 + 时间 + 正文 + 本地状态标记 + 引用块/回复入口。 */
 function MessageRow(props: {
   mine: boolean;
   senderId: string;
@@ -42,6 +44,10 @@ function MessageRow(props: {
   queuedOffline?: boolean;
   edited?: boolean;
   readByPeer: boolean;
+  /** 被引用父消息的展示面（ChatPanel 解析 id）；null = 引用目标不可见。 */
+  quoted?: { senderName: string; content: string } | null;
+  replyToMessageId?: string;
+  onReply?: () => void;
 }) {
   return (
     <Box sx={{ display: 'flex', justifyContent: props.mine ? 'flex-end' : 'flex-start', mb: 1 }}>
@@ -63,6 +69,34 @@ function MessageRow(props: {
             mt: props.mine ? 0 : 0.25,
           }}
         >
+          {props.replyToMessageId ? (
+            <Box
+              sx={{
+                borderLeft: 3,
+                borderColor: props.mine ? 'primary.contrastText' : 'divider',
+                pl: 1,
+                mb: 0.5,
+                opacity: 0.85,
+              }}
+            >
+              <Typography variant="caption" fontWeight={600} component="div">
+                {props.quoted ? `回复 · ${props.quoted.senderName}` : '原消息已删除或不可见'}
+              </Typography>
+              {props.quoted ? (
+                <Typography
+                  variant="caption"
+                  sx={{
+                    display: '-webkit-box',
+                    WebkitLineClamp: 2,
+                    WebkitBoxOrient: 'vertical',
+                    overflow: 'hidden',
+                  }}
+                >
+                  {props.quoted.content}
+                </Typography>
+              ) : null}
+            </Box>
+          ) : null}
           <Typography variant="body2" sx={{ whiteSpace: 'pre-wrap', wordBreak: 'break-word' }}>
             {props.content}
           </Typography>
@@ -70,12 +104,19 @@ function MessageRow(props: {
         <Stack
           direction="row"
           spacing={0.5}
-          sx={{ justifyContent: props.mine ? 'flex-end' : 'flex-start', mt: 0.25 }}
+          sx={{ justifyContent: props.mine ? 'flex-end' : 'flex-start', mt: 0.25, alignItems: 'center' }}
         >
           <Typography variant="caption" color="text.disabled">
             {fmtTime(props.timestamp)}
             {props.edited ? ' · 已编辑' : ''}
           </Typography>
+          {props.onReply ? (
+            <Tooltip title="回复">
+              <IconButton size="small" aria-label="回复" onClick={props.onReply} sx={{ p: 0.25 }}>
+                <ReplyIcon sx={{ fontSize: 14 }} />
+              </IconButton>
+            </Tooltip>
+          ) : null}
           {props.pending ? (
             <Typography variant="caption" color="text.disabled">
               发送中
@@ -123,6 +164,7 @@ export default function ChatPanel(props: {
   const loading = messages.loadingHistory[conversation.key] ?? false;
   const [draft, setDraft] = useState('');
   const [error, setError] = useState<string | null>(null);
+  const [replying, setReplying] = useState<ChatMessageView | null>(null);
   const bottomRef = useRef<HTMLDivElement | null>(null);
   const cursors = messages.readCursors[conversation.key] ?? {};
 
@@ -130,6 +172,7 @@ export default function ChatPanel(props: {
   // 离开会话时清 activeChannel（免得本会话外的消息再涨本地未读红点）。
   useEffect(() => {
     setError(null);
+    setReplying(null);
     void api.loadHistory(channel).then(() => {
       const fresh = props.messages.get().byChannel[conversation.key] ?? [];
       const latest = fresh[fresh.length - 1];
@@ -160,13 +203,29 @@ export default function ChatPanel(props: {
     bottomRef.current?.scrollIntoView({ block: 'end' });
   }, [list.length]);
 
+  /** 回复条/引用块的归属名：群聊昵称优先；私聊自己显示「我」。 */
+  const displayName = (uid: string): string =>
+    channel.kind === 'group'
+      ? api.groupAliasOf(channel.channelId, uid) || uid
+      : uid === selfId
+        ? '我'
+        : uid;
+
+  /** 解析被引用父消息为展示面；不存在或已撤回 → null（显示不可见兜底）。 */
+  const quotedSummary = (id: string): { senderName: string; content: string } | null => {
+    const src = list.find((m) => m.messageId === id);
+    if (!src || src.deleted) return null;
+    return { senderName: displayName(src.senderId), content: src.content };
+  };
+
   const send = async (): Promise<void> => {
     const text = draft.trim();
     if (!text) return;
     setDraft('');
     setError(null);
     try {
-      await api.sendMessage(channel, text);
+      await api.sendMessage(channel, text, replying?.messageId || undefined);
+      setReplying(null);
     } catch (err) {
       setError(err instanceof Error ? err.message : String(err));
     }
@@ -255,6 +314,9 @@ export default function ChatPanel(props: {
             queuedOffline={m.queuedOffline}
             edited={m.edited}
             readByPeer={peerRead}
+            quoted={m.replyToMessageId ? quotedSummary(m.replyToMessageId) : undefined}
+            replyToMessageId={m.replyToMessageId}
+            onReply={m.deleted ? undefined : () => setReplying(m)}
           />
         ))}
         <div ref={bottomRef} />
@@ -274,6 +336,26 @@ export default function ChatPanel(props: {
 
       <Divider />
       <Box sx={{ p: 1.5, bgcolor: 'background.paper' }}>
+        {replying ? (
+          <Stack
+            direction="row"
+            alignItems="center"
+            spacing={0.5}
+            sx={{ mb: 0.5, px: 1, py: 0.25, bgcolor: 'action.hover', borderRadius: 1 }}
+          >
+            <Typography
+              variant="caption"
+              color="text.secondary"
+              noWrap
+              sx={{ flex: 1, minWidth: 0 }}
+            >
+              回复 · {displayName(replying.senderId)}: {replying.content}
+            </Typography>
+            <IconButton size="small" aria-label="取消回复" onClick={() => setReplying(null)} sx={{ p: 0.25 }}>
+              <CloseIcon sx={{ fontSize: 14 }} />
+            </IconButton>
+          </Stack>
+        ) : null}
         <Stack direction="row" spacing={1} alignItems="flex-end">
           <InputBase
             fullWidth
