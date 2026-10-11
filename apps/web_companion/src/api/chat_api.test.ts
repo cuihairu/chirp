@@ -118,11 +118,13 @@ describe('ChatApi.login', () => {
     // 世界频道等级门槛（game_chat_features P1）：level 随 LOGIN 上行；
     // 伴侣面缺省 0 = 未声明。
     const h = makeHarness();
+    h.conn.setResponder(async () => ({ code: 0 }));
     await h.api.login(SELF, 9);
     const req = h.conn.requests.find((r) => r.msgId === MsgID.LOGIN_REQ);
     expect((req!.req as { level?: number }).level).toBe(9);
 
     const plain = makeHarness();
+    plain.conn.setResponder(async () => ({ code: 0 }));
     await plain.api.login(SELF);
     const req2 = plain.conn.requests.find((r) => r.msgId === MsgID.LOGIN_REQ);
     expect((req2!.req as { level?: number }).level).toBe(0);
