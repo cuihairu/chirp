@@ -31,7 +31,7 @@ chirp_load_client ──TCP──> chirp_game_sdk_gateway ──每客户端一�
 
 ### 依赖形态（关键）
 
-`chirp_chat`（enhanced 主程序）的 Redis/MySQL 参数**默认指向 127.0.0.1**（`main_enhanced.cc`），不显式配置就会连共享实例；共享 MySQL 若凭据不符，每条消息都触发**同步**落库重试，把 chat 单线程拖死——实测 200 连接档因 此 9 分钟不退出、65% 管道握手超时。因此正式测量使用专属一次性依赖：
+`chirp_chat`（enhanced 主程序）的 Redis/MySQL 参数**默认指向 127.0.0.1**（`main_enhanced.cc`），不显式配置就会连共享实例；共享 MySQL 若凭据不符，每条消息的落库都在后台线程**单次尝试失败后仅告警**（`hybrid_message_store.cc` `StoreMessageAsync`，无重试），但历史层失步会随读写放大拖慢应答——实测 200 连接档因此 9 分钟不退出、65% 管道握手超时。因此正式测量使用专属一次性依赖：
 
 - 专属 redis：`redis-server --port 16379 --save "" --appendonly no`
 - 专属 MariaDB：`mariadbd --datadir=… --port=13306 --skip-grant-tables`（store 自动 `CREATE TABLE IF NOT EXISTS`），`CREATE DATABASE chirp` 即可
@@ -90,7 +90,7 @@ BIN_DIR=./build-rel bash tools/benchmark/run_capacity_bench.sh 12000 0 1100 6000
 2. **栅栏同步风暴**（`--barrier on`）：全员会合后锁相轮发，2k 连接时每轮都是 2000 条齐发，RTT 尾部到 60s（排队排水时间）。这是测量方法要避开的坑，也是真实「同刻齐发」场景的预期行为。
 3. **吞吐结构上限 = pacing**：私聊 1s/用户硬编码（`ChannelPacer`，进程内），多实例部署下每实例独立计数；Redis 模糊闸（120/min/用户）与登录 IP 限流需 `--redis_host` 才生效。
 4. ~~**`RedisClient` 每命令新建 TCP 短连接**~~ **已落地同步连接池（2026-10-11）**：`redis_client.cc` 的 `SendCmd` 每命令短连接改为空闲连接池复用（上限 `kDefaultMaxIdle=8`，取用探活、失败弃用不重试），消息路径上的 RPush 不再每次付 connect+close 握手。此项即本基准点名的吞吐抬升优化点；异步化/协程化按 `asio_coroutine_adoption.md` 口径另行立项。管道复用仍不做。
-5. **MySQL 必须配好**：落库失败是同步重试，坏依赖会让 chat 单线程卡死（见[依赖形态](#依赖形态关键)）。
+5. **MySQL 必须配好**：落库在后台线程单次尝试、失败仅告警无重试（`StoreMessageAsync`），坏依赖会让热/冷历史层失步并拖慢应答（见[依赖形态](#依赖形态关键)；投递契约口径见[专项审计](/审计-专项审查-投递认证与状态一致性) D2）。
 6. 客户端为线程/连接模型：万级线程自身抢核会抬高 RTT（曾实测轮询栅栏把 loadavg 打到 1181），故分核 taskset + 条件变量栅栏；万级以上建议改事件驱动客户端再测。
 
 ## 局限与适用范围

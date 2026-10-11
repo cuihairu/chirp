@@ -619,6 +619,27 @@ TEST_F(HybridStoreTest, StoreMessageAsyncDeliversCallback) {
   EXPECT_EQ(redis_->ListDirect("chirp:chat:history:ch1").size(), 1u);
 }
 
+TEST_F(HybridStoreTest, StoreMessageAsyncCarriesSenderKindToColdTier) {
+  ASSERT_TRUE(store_->Initialize());
+
+  // 异步路径的 StoredMessage 组装曾漏 sender_kind：NPC 注入经
+  // StoreMessageAsync 落库时该列恒为默认 0，冷层读回丢种类。
+  MessageData npc = MakeMessage("m1", "ch1", 1000, "r1");
+  npc.sender_kind = 2;
+
+  std::promise<bool> done;
+  auto future = done.get_future();
+  store_->StoreMessageAsync(npc, [&](bool ok) { done.set_value(ok); });
+  io_.run();
+  ASSERT_EQ(future.wait_for(std::chrono::seconds(2)), std::future_status::ready);
+  EXPECT_TRUE(future.get());
+
+  auto queries = fake_mysql::TakeQueries();
+  ASSERT_FALSE(queries.empty());
+  EXPECT_NE(queries.back().find("INSERT INTO messages"), std::string::npos);
+  EXPECT_NE(queries.back().find(", 0, 2)"), std::string::npos);
+}
+
 TEST_F(HybridStoreTest, GetHistoryMergesRedisAndMysqlWithoutDuplicates) {
   ASSERT_TRUE(store_->Initialize());
 

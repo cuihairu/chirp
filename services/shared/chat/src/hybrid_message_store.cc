@@ -174,6 +174,9 @@ void HybridMessageStore::StoreMessageAsync(const MessageData& message,
     mysql_msg.created_at = message.created_at;
     mysql_msg.reply_to_message_id = message.reply_to_message_id;
     mysql_msg.is_recalled = message.is_recalled;
+    // 与同步 StoreMessage 同一字段集：漏拷会把异步路径落库的
+    // sender_kind 恒写成默认值，冷层读回丢 NPC/SYSTEM 种类。
+    mysql_msg.sender_kind = message.sender_kind;
 
     bool result = mysql_store_->StoreMessage(mysql_msg);
 
