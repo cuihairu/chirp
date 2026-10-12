@@ -258,6 +258,23 @@ final class ChatPipelineTests: XCTestCase {
         XCTAssertEqual([Chirp_Common_ErrorCode.ok], provider.outcomes)
     }
 
+    func testLoginCarriesDeclaredLevelAcrossRenewal() throws {
+        let (pipeline, transport) = try connectedPipeline()
+        pipeline.provider = RenewingProvider()
+        // The client-declared level rides on the first round...
+        let first = pipeline.login(userId: "user-1", level: 7)
+        var sent = try sentPacket(transport)
+        XCTAssertEqual(7, try Chirp_Auth_LoginRequest(serializedBytes: sent.body).level)
+        transport.deliverWsMessage(try wsMessage(.loginResp, 1, loginResponse(.authFailed)))
+        // ...and the renewed round carries the same declared level.
+        sent = try sentPacket(transport)
+        let renewed = try Chirp_Auth_LoginRequest(serializedBytes: sent.body)
+        XCTAssertEqual("fresh-token", renewed.token)
+        XCTAssertEqual(7, renewed.level)
+        transport.deliverWsMessage(try wsMessage(.loginResp, 2, loginResponse(.ok)))
+        XCTAssertEqual(Chirp_Common_ErrorCode.ok, try first.get())
+    }
+
     func testAuthFailedWithoutProviderOrRenewalIsTerminal() throws {
         let (pipeline, transport) = try connectedPipeline()
         let collector = LoginResultCollector()

@@ -4,8 +4,8 @@ SwiftPM package porting the pure protocol core of the former Flutter app
 (`apps/mobile_companion`, removed 2026-09-29 once both native packages
 carried its full test-vector groups), same migration path the Android
 package took (its M1→M4 batches, minus the app shell). Gate: `swift test`
-— **221 tests, all green** (92 protocol core incl. the 11 lexicon-sync
-vectors + 129 app core; verified on the CI macOS runner since the P5 batch
+— **223 tests, all green** (93 protocol core incl. the 11 lexicon-sync
+vectors + 130 app core; verified on the CI macOS runner since the P5 batch
 — no local iOS verification, see the companion-app section).
 
 ## Layout
@@ -19,7 +19,7 @@ vectors + 129 app core; verified on the CI macOS runner since the P5 batch
 | `Sources/ChirpProtocol/WordFilter.swift` | `WordFilter.kt` (Android M3) | server lexicon parsing, ASCII-only case folding, mask spans with adjacent-run collapse, REPLACE/REJECT; matching runs on UTF-16 code units so mask spans line up with the Kotlin/dart ports; `WordFilterLoader` reads the server lexicon wire format (CRLF/LF/CR) |
 | `Sources/ChirpProtocol/WordFilterSync.swift` | `WordFilterSync.kt` (lexicon-download batch 2026-10-01) | WORD_FILTER_FETCH conditional GET (`known_version` hit omits text), version gate drops stale payloads, update-notify swap-in, fetch never throws (failure keeps the local fallback lexicon), server-disabled clears the local pre-check |
 | `Sources/ChirpProtocol/Hooks.swift` | `Hooks.kt` (Android M4) | pipeline seams: `SendOptions`, `MessageInterceptor`, `AuthProvider`, `MessageStore` + `MemoryMessageStore`, `ChatEventListener`, `CommandHandler`, `ChirpArgumentError` |
-| `Sources/ChirpProtocol/ChatPipeline.swift` | `ChatPipeline.kt` (Android M4) | login token chain (explicit > provider > userId, one AUTH_FAILED renewal), send validation order (connection state first), `/`-command routing, interceptor rewrite/block, archive, push fan-out (KICK delivered once per connection), re-entrant start/stop |
+| `Sources/ChirpProtocol/ChatPipeline.swift` | `ChatPipeline.kt` (Android M4) | login token chain (explicit > provider > userId, one AUTH_FAILED renewal, client-declared level riding every round), send validation order (connection state first), `/`-command routing, interceptor rewrite/block, archive, push fan-out (KICK delivered once per connection), re-entrant start/stop |
 | `Sources/ChirpProtocol/OfflineSendQueue.swift` | `OfflineSendQueue.kt` (Android M4) | at-least-once replay: any server response confirms; CLOSED/TIMEOUT keeps the entry and stops the batch (tail stays queued in order); BLOCKED/argument errors drop; clientId dedupe; beyond `maxQueued` (50) the oldest is evicted |
 | `Sources/ChirpProtocol/DeviceRegistrar.swift` | `DeviceRegistrar.kt` (Android M3.5) | device-plane registration (app_gateway WS 5201) with the async `PushTokenSource` seam: exactly-once delivery guard, throwing source contained, empty token still registers (dart degradation), server ErrorCode passthrough, connection RequestError passthrough; Swift-side addition `PushTokenSlot` (fcm/apns/pushKit — Kotlin only ever fills fcm; iOS writes `apns_token`, the server stores all slots verbatim) |
 | `Sources/ChirpProtocol/WsTransport.swift` | `lib/protocol/ws_transport.dart` | transport seam: open/onBinary/onClosed/send/close |

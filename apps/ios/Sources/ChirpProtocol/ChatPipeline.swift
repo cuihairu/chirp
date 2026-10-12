@@ -136,18 +136,22 @@ public final class ChatPipeline {
 
     /// Login chain: explicit token → provider token → userId as guest token;
     /// one AUTH_FAILED renewal chance through the provider; the terminal code
-    /// fans out to listeners and the provider. Completes with the final
+    /// fans out to listeners and the provider. `level` is the client-declared
+    /// game level for the world-channel gate (server-side P1); it rides on
+    /// every round, including the post-renewal retry. Completes with the final
     /// ErrorCode (never errors).
-    public func login(userId: String, token: String? = nil) -> Promise<Chirp_Common_ErrorCode> {
+    public func login(
+        userId: String, token: String? = nil, level: Int32 = 0
+    ) -> Promise<Chirp_Common_ErrorCode> {
         let firstToken = token ?? provider?.getToken() ?? userId
-        return loginRound(firstToken)
+        return loginRound(firstToken, level: level)
             .flatMap { [weak self] code -> Promise<Chirp_Common_ErrorCode> in
                 guard let self = self, code == .authFailed,
                     let fresh = self.provider?.renewToken()
                 else {
                     return Promise<Chirp_Common_ErrorCode>.completed(code)
                 }
-                return self.loginRound(fresh)
+                return self.loginRound(fresh, level: level)
             }
             .map { [weak self] code in
                 self?.terminalAuth(code, userId: userId)
@@ -164,12 +168,13 @@ public final class ChatPipeline {
         }
     }
 
-    private func loginRound(_ token: String) -> Promise<Chirp_Common_ErrorCode> {
+    private func loginRound(_ token: String, level: Int32) -> Promise<Chirp_Common_ErrorCode> {
         var request = Chirp_Auth_LoginRequest()
         request.token = token
         request.deviceID = deviceId()
         // Kotlin reports "android"; this port runs on iOS.
         request.platform = "ios"
+        request.level = level
         return conn.request(spec: MsgSpecs.login, body: request).map { [weak self] response in
             if response.code == .ok {
                 // Login success is what proves the route: reset the reconnect
