@@ -26,6 +26,8 @@ export const C = {
   accentDim: 'rgba(99,102,241,0.14)',
   online: '#34d399',
   danger: '#f87171',
+  /** 危险弱化底（禁言徽章） */
+  dangerDim: 'rgba(248,113,113,0.14)',
   warn: '#fbbf24',
 } as const;
 

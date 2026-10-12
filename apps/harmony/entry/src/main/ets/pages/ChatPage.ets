@@ -164,6 +164,16 @@ struct ChatPage {
     .backgroundColor(C.bg)
   }
 
+  /** 群聊署名:群昵称优先(aliasByGroup 快照,2124 通知双路维护),空则
+   *  回退 senderId(web sender-name 映射同款);别名变更在下一次行重建
+   *  (重进页/新消息)时生效,不为此常驻订阅。 */
+  private senderName(senderId: string): string {
+    if (this.kind !== 'group') return senderId;
+    const services = appServices.services;
+    if (!services) return senderId;
+    return services.api.groupAliasOf(this.channelId, senderId) || senderId;
+  }
+
   @Builder
   private MessageRow(m: ChatMessageView, prev: ChatMessageView | null) {
     if (m.deleted) {
@@ -176,14 +186,14 @@ struct ChatPage {
     } else {
       Column({ space: 3 }) {
         if (this.kind === 'group' && m.senderId !== this.selfId && prev?.senderId !== m.senderId) {
-          Text(m.senderId)
+          Text(this.senderName(m.senderId))
             .fontSize(11)
             .fontColor(C.text3)
             .margin({ left: 12 })
         }
         Row() {
           if (m.senderId !== this.selfId && (prev === null || prev.senderId !== m.senderId)) {
-            Avatar({ name: m.senderId, size: S.avatarSm })
+            Avatar({ name: this.senderName(m.senderId), size: S.avatarSm })
               .margin({ right: 6 })
           } else if (m.senderId !== this.selfId) {
             Blank().width(S.avatarSm + 6)
