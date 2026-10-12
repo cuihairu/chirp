@@ -583,6 +583,10 @@ final class AppModel: ObservableObject {
         case .groupsChanged:
             refreshSessions()
             refreshGroupsRoster()
+        case .groupAliasChanged:
+            // 快照折叠与成员行重拉已在 service 层完成(2124 双路);本壳暂无
+            // 别名渲染面(署名行仍显示 id),此处仅保 switch 穷尽。
+            break
         case .sessionDropped(let key, let reason):
             // 退群/被踢:数据面已在 service 清掉,这里刷新镜像;若正开着
             // 该会话,弹栈回列表(被踢给一条提示,退群走动作回执)。
