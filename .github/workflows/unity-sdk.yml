@@ -46,7 +46,7 @@ jobs:
         git diff --exit-code -- proto/csharp \
           || (echo "::error::proto/csharp is stale — run gen_proto.sh and commit" && exit 1)
 
-    - uses: actions/setup-dotnet@v4
+    - uses: actions/setup-dotnet@v6
       with:
         dotnet-version: 10.x
 
