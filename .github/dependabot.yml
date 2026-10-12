@@ -12,3 +12,74 @@ updates:
     ignore:
       - dependency-name: vite
       - dependency-name: esbuild
+
+  # Root npm workspace (apps/shared/protocol, apps/web_companion, sdks/ts).
+  - package-ecosystem: npm
+    directory: /
+    schedule:
+      interval: weekly
+    groups:
+      workspace-npm:
+        update-types:
+          - minor
+          - patch
+
+  - package-ecosystem: npm
+    directory: /apps/desktop
+    schedule:
+      interval: weekly
+    groups:
+      desktop-npm:
+        update-types:
+          - minor
+          - patch
+
+  - package-ecosystem: npm
+    directory: /apps/admin_dashboard
+    schedule:
+      interval: weekly
+    groups:
+      admin-npm:
+        update-types:
+          - minor
+          - patch
+
+  - package-ecosystem: cargo
+    directory: /apps/desktop/src-tauri
+    schedule:
+      interval: weekly
+    groups:
+      desktop-cargo:
+        update-types:
+          - minor
+          - patch
+
+  - package-ecosystem: gomod
+    directory: /
+    schedule:
+      interval: monthly
+
+  - package-ecosystem: docker
+    directory: /docker
+    schedule:
+      interval: monthly
+
+  - package-ecosystem: docker
+    directory: /deployments/docker
+    schedule:
+      interval: monthly
+
+  - package-ecosystem: github-actions
+    directory: /
+    schedule:
+      interval: monthly
+    groups:
+      actions:
+        update-types:
+          - minor
+          - patch
+
+  # Deliberately no gradle entry for /apps/android: the Android stack is
+  # hand-pinned (AGP 9 built-in Kotlin, no KGP plugin, kotlin-test locked to
+  # 2.2.20); automated bumps would fight those gates. Revisit when the pins
+  # move.
