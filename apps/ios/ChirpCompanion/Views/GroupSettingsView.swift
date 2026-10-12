@@ -82,9 +82,18 @@ struct GroupSettingsView: View {
     private func memberRow(_ member: Chirp_Chat_GroupMember) -> some View {
         HStack {
             VStack(alignment: .leading, spacing: 2) {
-                Text(member.username.isEmpty ? member.userID : member.username)
+                // 显示名:群昵称 > 用户名 > 用户 ID(web displayName 同口径)。
+                Text(member.alias.isEmpty
+                    ? (member.username.isEmpty ? member.userID : member.username)
+                    : member.alias)
                 if member.userID == ownerId {
                     Text("群主")
+                        .font(.caption2)
+                        .foregroundStyle(.secondary)
+                }
+                if !member.alias.isEmpty {
+                    // 设了群昵称时副行回显真实身份(web secondary 同款)。
+                    Text(member.username.isEmpty ? member.userID : member.username)
                         .font(.caption2)
                         .foregroundStyle(.secondary)
                 }

@@ -54,6 +54,10 @@ final class AppModel: ObservableObject {
     @Published private(set) var groupMembers: [Chirp_Chat_GroupMember] = []
     /// 群面板降级文案(成员拉取失败;nil = 无事)。
     @Published private(set) var groupPanelNotice: String?
+    /// 群昵称快照修订号:.groupAliasChanged 落主线程后自增。修订号无读者,
+    /// 是纯粹的重渲信号——@Published 变更触发 objectWillChange,订阅壳层
+    /// 视图 body 重估后从 service.aliases 快照读到新署名。
+    @Published private(set) var aliasRevision = 0
     /// 历史分页(P4e):服务端还有更早一页 / 翻页请求在途。
     @Published private(set) var chatHasMore = false
     @Published private(set) var chatHistoryLoading = false
@@ -584,9 +588,10 @@ final class AppModel: ObservableObject {
             refreshSessions()
             refreshGroupsRoster()
         case .groupAliasChanged:
-            // 快照折叠与成员行重拉已在 service 层完成(2124 双路);本壳暂无
-            // 别名渲染面(署名行仍显示 id),此处仅保 switch 穷尽。
-            break
+            // 快照折叠与成员行重拉已在 service 层完成(2124 双路);壳层别名
+            // 渲染(署名行/引用摘要/成员行)读 service.aliases 快照,这里自增
+            // 修订号借 objectWillChange 触发重渲,署名变更即刻生效。
+            aliasRevision += 1
         case .sessionDropped(let key, let reason):
             // 退群/被踢:数据面已在 service 清掉,这里刷新镜像;若正开着
             // 该会话,弹栈回列表(被踢给一条提示,退群走动作回执)。
@@ -1007,6 +1012,14 @@ final class AppModel: ObservableObject {
                 }
             }
         }
+    }
+
+    /// 群聊署名读数:活跃会话为群时读 aliases 快照(空=未设),其余回退空串
+    /// 由调用方回退本名/ID(web groupAliasOf 同位)。
+    func groupAlias(of userId: String) -> String {
+        guard let channel = activeChannel, channel.kind == .group, let service = self.service
+        else { return "" }
+        return service.aliases.aliasOf(groupId: channel.channelId, userId: userId)
     }
 
     /// 会话行/聊天面标题:DM 显示对端 id,群显示群名(名单缺名回落群 id,

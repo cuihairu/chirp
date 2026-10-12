@@ -107,9 +107,14 @@ struct ChatView: View {
         model.chatMessages.last.map(messageOffset)
     }
 
-    /// 引用行的署名:群聊=发送者 id(本壳无别名面,与署名行同口径);DM=你/对方 id。
+    /// 署名(消息行/引用摘要/回复条共用):群聊=群昵称优先(aliases 快照,
+    /// 2124 双路维护;空回退 ID,web sender-name 映射同款;修订号触发重渲,
+    /// 变更即刻生效);DM=你/对方 id。
     private func displayName(_ uid: String) -> String {
-        if isGroup { return uid }
+        if isGroup {
+            let alias = model.groupAlias(of: uid)
+            return alias.isEmpty ? uid : alias
+        }
         return uid == model.currentUserId ? "你" : uid
     }
 
