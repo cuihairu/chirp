@@ -37,6 +37,14 @@ public nonisolated struct Chirp_Auth_LoginRequest: Sendable {
   /// capable sessions; legacy clients keep the send-and-forget behavior.
   public var supportsMessageAck: Bool = false
 
+  /// Client-declared game level (game_chat_features P1 世界频道等级门槛,
+  /// 2026-10-11 拍板形态①). Same trust class as the scaffolding identity
+  /// itself: the chat plane has no level data source, so the declaring
+  /// client is trusted at the same level as the login token it presented.
+  /// Consumed only by the world-channel send gate (--world_channel_min_level,
+  /// 0 = gate disabled); unset / 0 means "no level claimed".
+  public var level: Int32 = 0
+
   public var unknownFields = SwiftProtobuf.UnknownStorage()
 
   public init() {}
@@ -403,7 +411,7 @@ fileprivate nonisolated let _protobuf_package = "chirp.auth"
 
 nonisolated extension Chirp_Auth_LoginRequest: SwiftProtobuf.Message, SwiftProtobuf._MessageImplementationBase, SwiftProtobuf._ProtoNameProviding {
   public static let protoMessageName: String = _protobuf_package + ".LoginRequest"
-  public static let _protobuf_nameMap = SwiftProtobuf._NameMap(bytecode: "\0\u{1}token\0\u{3}device_id\0\u{1}platform\0\u{3}supports_message_ack\0")
+  public static let _protobuf_nameMap = SwiftProtobuf._NameMap(bytecode: "\0\u{1}token\0\u{3}device_id\0\u{1}platform\0\u{3}supports_message_ack\0\u{1}level\0")
 
   public mutating func decodeMessage<D: SwiftProtobuf.Decoder>(decoder: inout D) throws {
     while let fieldNumber = try decoder.nextFieldNumber() {
@@ -415,6 +423,7 @@ nonisolated extension Chirp_Auth_LoginRequest: SwiftProtobuf.Message, SwiftProto
       case 2: try { try decoder.decodeSingularStringField(value: &self.deviceID) }()
       case 3: try { try decoder.decodeSingularStringField(value: &self.platform) }()
       case 4: try { try decoder.decodeSingularBoolField(value: &self.supportsMessageAck) }()
+      case 5: try { try decoder.decodeSingularInt32Field(value: &self.level) }()
       default: break
       }
     }
@@ -433,6 +442,9 @@ nonisolated extension Chirp_Auth_LoginRequest: SwiftProtobuf.Message, SwiftProto
     if self.supportsMessageAck != false {
       try visitor.visitSingularBoolField(value: self.supportsMessageAck, fieldNumber: 4)
     }
+    if self.level != 0 {
+      try visitor.visitSingularInt32Field(value: self.level, fieldNumber: 5)
+    }
     try unknownFields.traverse(visitor: &visitor)
   }
 
@@ -441,6 +453,7 @@ nonisolated extension Chirp_Auth_LoginRequest: SwiftProtobuf.Message, SwiftProto
     if lhs.deviceID != rhs.deviceID {return false}
     if lhs.platform != rhs.platform {return false}
     if lhs.supportsMessageAck != rhs.supportsMessageAck {return false}
+    if lhs.level != rhs.level {return false}
     if lhs.unknownFields != rhs.unknownFields {return false}
     return true
   }

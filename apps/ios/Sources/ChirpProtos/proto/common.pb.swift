@@ -49,6 +49,17 @@ public nonisolated enum Chirp_Common_ErrorCode: SwiftProtobuf.Enum, Swift.CaseIt
   /// Game-plane per-channel content-length cap (game_chat_features P1 专码):
   /// the message exceeded MaxContentChars for its channel type.
   case contentTooLong // = 11
+
+  /// Game-plane group mute (game_chat_features P1 专码): the sender is muted
+  /// in the target group by a MODERATOR+ (SET_GROUP_MUTE_REQ 2250). The send
+  /// is refused without touching any store; other channels are unaffected.
+  case muted // = 12
+
+  /// Game-plane world-channel level gate (game_chat_features P1 专码): the
+  /// sender's declared level (LoginRequest.level) is below the configured
+  /// --world_channel_min_level. The send is refused before any budget or
+  /// store is touched; other channels are unaffected.
+  case levelRequired // = 13
   case UNRECOGNIZED(Int)
 
   public init() {
@@ -69,6 +80,8 @@ public nonisolated enum Chirp_Common_ErrorCode: SwiftProtobuf.Enum, Swift.CaseIt
     case 9: self = .versionMismatch
     case 10: self = .wordFiltered
     case 11: self = .contentTooLong
+    case 12: self = .muted
+    case 13: self = .levelRequired
     default: self = .UNRECOGNIZED(rawValue)
     }
   }
@@ -87,6 +100,8 @@ public nonisolated enum Chirp_Common_ErrorCode: SwiftProtobuf.Enum, Swift.CaseIt
     case .versionMismatch: return 9
     case .wordFiltered: return 10
     case .contentTooLong: return 11
+    case .muted: return 12
+    case .levelRequired: return 13
     case .UNRECOGNIZED(let i): return i
     }
   }
@@ -105,6 +120,8 @@ public nonisolated enum Chirp_Common_ErrorCode: SwiftProtobuf.Enum, Swift.CaseIt
     .versionMismatch,
     .wordFiltered,
     .contentTooLong,
+    .muted,
+    .levelRequired,
   ]
 
 }
@@ -124,7 +141,7 @@ public nonisolated struct Chirp_Common_Empty: Sendable {
 fileprivate nonisolated let _protobuf_package = "chirp.common"
 
 nonisolated extension Chirp_Common_ErrorCode: SwiftProtobuf._ProtoNameProviding {
-  public static let _protobuf_nameMap = SwiftProtobuf._NameMap(bytecode: "\0\u{2}\0OK\0\u{1}INTERNAL_ERROR\0\u{1}INVALID_PARAM\0\u{1}AUTH_FAILED\0\u{1}SESSION_EXPIRED\0\u{1}USER_NOT_FOUND\0\u{1}TARGET_OFFLINE\0\u{1}SERVER_UNAVAILABLE\0\u{1}RATE_LIMITED\0\u{1}VERSION_MISMATCH\0\u{1}WORD_FILTERED\0\u{1}CONTENT_TOO_LONG\0")
+  public static let _protobuf_nameMap = SwiftProtobuf._NameMap(bytecode: "\0\u{2}\0OK\0\u{1}INTERNAL_ERROR\0\u{1}INVALID_PARAM\0\u{1}AUTH_FAILED\0\u{1}SESSION_EXPIRED\0\u{1}USER_NOT_FOUND\0\u{1}TARGET_OFFLINE\0\u{1}SERVER_UNAVAILABLE\0\u{1}RATE_LIMITED\0\u{1}VERSION_MISMATCH\0\u{1}WORD_FILTERED\0\u{1}CONTENT_TOO_LONG\0\u{1}MUTED\0\u{1}LEVEL_REQUIRED\0")
 }
 
 nonisolated extension Chirp_Common_Empty: SwiftProtobuf.Message, SwiftProtobuf._MessageImplementationBase, SwiftProtobuf._ProtoNameProviding {

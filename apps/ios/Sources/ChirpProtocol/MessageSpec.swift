@@ -61,6 +61,17 @@ public enum MsgSpecs {
         .getGroupMembersReq, .getGroupMembersResp
     ) { try Chirp_Chat_GetGroupMembersResponse(serializedBytes: $0) }
 
+    // Group-domain moderation/search (P1: alias, history search, mute).
+    public static let setMemberAlias = MessageSpec(
+        .setMemberAliasReq, .setMemberAliasResp
+    ) { try Chirp_Chat_SetMemberAliasResponse(serializedBytes: $0) }
+    public static let searchMessages = MessageSpec(
+        .searchMessageReq, .searchMessageResp
+    ) { try Chirp_Chat_SearchMessageResponse(serializedBytes: $0) }
+    public static let setGroupMute = MessageSpec(
+        .setGroupMuteReq, .setGroupMuteResp
+    ) { try Chirp_Chat_SetGroupMuteResponse(serializedBytes: $0) }
+
     // Reactions, edit/delete (typing has no REQ: it is fire-and-forget 2208).
     public static let addReaction = MessageSpec(
         .addReactionReq, .addReactionResp
@@ -202,6 +213,7 @@ public enum MsgSpecs {
         AnyMessageSpec(sendMessage), AnyMessageSpec(getHistory), AnyMessageSpec(markRead),
         AnyMessageSpec(getUserGroups), AnyMessageSpec(createGroup), AnyMessageSpec(inviteToGroup),
         AnyMessageSpec(leaveGroup), AnyMessageSpec(kickMember), AnyMessageSpec(getGroupMembers),
+        AnyMessageSpec(setMemberAlias), AnyMessageSpec(searchMessages), AnyMessageSpec(setGroupMute),
         AnyMessageSpec(addReaction), AnyMessageSpec(removeReaction), AnyMessageSpec(editMessage),
         AnyMessageSpec(deleteMessage),
         AnyMessageSpec(addFriend), AnyMessageSpec(friendRequestAction),

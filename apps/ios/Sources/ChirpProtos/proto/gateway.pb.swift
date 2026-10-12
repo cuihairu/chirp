@@ -89,6 +89,13 @@ public nonisolated enum Chirp_Gateway_MsgID: SwiftProtobuf.Enum, Swift.CaseItera
   case groupMemberKickedNotify // = 2120
   case groupUpdatedNotify // = 2121
 
+  /// 群昵称（message_search 批 2026-10-08）：成员设置自己在群内的显示别名
+  /// （本人或 MODERATOR+ 设他人）。body 见 chat.proto 的 SetMemberAlias* /
+  /// GroupMemberAliasUpdatedNotify。
+  case setMemberAliasReq // = 2122
+  case setMemberAliasResp // = 2123
+  case groupMemberAliasUpdatedNotify // = 2124
+
   /// Read receipts
   case markReadReq // = 2201
   case markReadResp // = 2202
@@ -163,6 +170,20 @@ public nonisolated enum Chirp_Gateway_MsgID: SwiftProtobuf.Enum, Swift.CaseItera
   case wordFilterFetchReq // = 2245
   case wordFilterFetchResp // = 2246
   case wordFilterUpdateNotify // = 2247
+
+  /// 服务端消息搜索（message_search 批 2026-10-08，search 服务转正）：两个
+  /// SDK gateway 以 per-client pipe 转发到 chirp_search（TCP 5007，
+  /// --search_host 接入；search 桥失败降级不踢客户端，区别于 chat 桥）。
+  /// body 见 chat.proto 的 SearchMessageRequest / SearchMessageResponse。
+  case searchMessageReq // = 2248
+  case searchMessageResp // = 2249
+
+  /// 群管理员手动禁言（game_chat_features P1，2026-10-10）：MODERATOR+ 禁言/
+  /// 解禁本群成员，禁言中成员的本群频道发言被拒（MUTED）。body 见 chat.proto
+  /// 的 SetGroupMuteRequest / SetGroupMuteResponse / GroupMemberMutedNotify。
+  case setGroupMuteReq // = 2250
+  case setGroupMuteResp // = 2251
+  case groupMemberMutedNotify // = 2252
 
   /// Social service
   case addFriendReq // = 3001
@@ -395,6 +416,9 @@ public nonisolated enum Chirp_Gateway_MsgID: SwiftProtobuf.Enum, Swift.CaseItera
     case 2119: self = .groupMemberLeftNotify
     case 2120: self = .groupMemberKickedNotify
     case 2121: self = .groupUpdatedNotify
+    case 2122: self = .setMemberAliasReq
+    case 2123: self = .setMemberAliasResp
+    case 2124: self = .groupMemberAliasUpdatedNotify
     case 2201: self = .markReadReq
     case 2202: self = .markReadResp
     case 2203: self = .getReadReceiptsReq
@@ -442,6 +466,11 @@ public nonisolated enum Chirp_Gateway_MsgID: SwiftProtobuf.Enum, Swift.CaseItera
     case 2245: self = .wordFilterFetchReq
     case 2246: self = .wordFilterFetchResp
     case 2247: self = .wordFilterUpdateNotify
+    case 2248: self = .searchMessageReq
+    case 2249: self = .searchMessageResp
+    case 2250: self = .setGroupMuteReq
+    case 2251: self = .setGroupMuteResp
+    case 2252: self = .groupMemberMutedNotify
     case 3001: self = .addFriendReq
     case 3002: self = .addFriendResp
     case 3003: self = .friendRequestActionReq
@@ -615,6 +644,9 @@ public nonisolated enum Chirp_Gateway_MsgID: SwiftProtobuf.Enum, Swift.CaseItera
     case .groupMemberLeftNotify: return 2119
     case .groupMemberKickedNotify: return 2120
     case .groupUpdatedNotify: return 2121
+    case .setMemberAliasReq: return 2122
+    case .setMemberAliasResp: return 2123
+    case .groupMemberAliasUpdatedNotify: return 2124
     case .markReadReq: return 2201
     case .markReadResp: return 2202
     case .getReadReceiptsReq: return 2203
@@ -662,6 +694,11 @@ public nonisolated enum Chirp_Gateway_MsgID: SwiftProtobuf.Enum, Swift.CaseItera
     case .wordFilterFetchReq: return 2245
     case .wordFilterFetchResp: return 2246
     case .wordFilterUpdateNotify: return 2247
+    case .searchMessageReq: return 2248
+    case .searchMessageResp: return 2249
+    case .setGroupMuteReq: return 2250
+    case .setGroupMuteResp: return 2251
+    case .groupMemberMutedNotify: return 2252
     case .addFriendReq: return 3001
     case .addFriendResp: return 3002
     case .friendRequestActionReq: return 3003
@@ -835,6 +872,9 @@ public nonisolated enum Chirp_Gateway_MsgID: SwiftProtobuf.Enum, Swift.CaseItera
     .groupMemberLeftNotify,
     .groupMemberKickedNotify,
     .groupUpdatedNotify,
+    .setMemberAliasReq,
+    .setMemberAliasResp,
+    .groupMemberAliasUpdatedNotify,
     .markReadReq,
     .markReadResp,
     .getReadReceiptsReq,
@@ -882,6 +922,11 @@ public nonisolated enum Chirp_Gateway_MsgID: SwiftProtobuf.Enum, Swift.CaseItera
     .wordFilterFetchReq,
     .wordFilterFetchResp,
     .wordFilterUpdateNotify,
+    .searchMessageReq,
+    .searchMessageResp,
+    .setGroupMuteReq,
+    .setGroupMuteResp,
+    .groupMemberMutedNotify,
     .addFriendReq,
     .addFriendResp,
     .friendRequestActionReq,
@@ -1066,6 +1111,12 @@ public nonisolated struct Chirp_Gateway_Packet: Sendable {
 
   public var body: Data = Data()
 
+  /// 分布式关联 id(Communication Core P1):跨平面/跨服务日志追踪用,与
+  /// 连接内请求配对的 sequence 互相独立。0 = 调用方未提供,接收/转发侧按
+  /// 「连接内生成」兜底(发送侧 SDK 与服务面出站未显式指定时自动填连接内
+  /// 单调值);转发链路(网关 bridge、注入面)原样透传,不改写。
+  public var requestID: Int64 = 0
+
   public var unknownFields = SwiftProtobuf.UnknownStorage()
 
   public init() {}
@@ -1152,30 +1203,36 @@ public nonisolated struct Chirp_Gateway_PeerRegisterResp: Sendable {
 /// subscribed App player as an injected private copy named
 /// "<game_id>:<channel_id>". The message body is the game-side ChatMessage
 /// verbatim; channel_id stays bare (the hub adds the prefix).
-public nonisolated struct Chirp_Gateway_ChannelMessageNotify: Sendable {
+public nonisolated struct Chirp_Gateway_ChannelMessageNotify: @unchecked Sendable {
   // SwiftProtobuf.Message conformance is added in an extension below. See the
   // `Message` and `Message+*Additions` files in the SwiftProtobuf library for
   // methods supported on all messages.
 
   /// redundant with the registration for validation
-  public var gameID: String = String()
+  public var gameID: String {
+    get {_storage._gameID}
+    set {_uniqueStorage()._gameID = newValue}
+  }
 
-  public var channelID: String = String()
+  public var channelID: String {
+    get {_storage._channelID}
+    set {_uniqueStorage()._channelID = newValue}
+  }
 
   public var message: Chirp_Chat_ChatMessage {
-    get {_message ?? Chirp_Chat_ChatMessage()}
-    set {_message = newValue}
+    get {_storage._message ?? Chirp_Chat_ChatMessage()}
+    set {_uniqueStorage()._message = newValue}
   }
   /// Returns true if `message` has been explicitly set.
-  public var hasMessage: Bool {self._message != nil}
+  public var hasMessage: Bool {_storage._message != nil}
   /// Clears the value of `message`. Subsequent reads from it will return its default value.
-  public mutating func clearMessage() {self._message = nil}
+  public mutating func clearMessage() {_uniqueStorage()._message = nil}
 
   public var unknownFields = SwiftProtobuf.UnknownStorage()
 
   public init() {}
 
-  fileprivate var _message: Chirp_Chat_ChatMessage? = nil
+  fileprivate var _storage = _StorageClass.defaultInstance
 }
 
 /// Hub -> spoke: an App player's reply to a "<game_id>:<channel_id>" channel,
@@ -1208,7 +1265,7 @@ public nonisolated struct Chirp_Gateway_PeerInjectMessageNotify: Sendable {
 fileprivate nonisolated let _protobuf_package = "chirp.gateway"
 
 nonisolated extension Chirp_Gateway_MsgID: SwiftProtobuf._ProtoNameProviding {
-  public static let _protobuf_nameMap = SwiftProtobuf._NameMap(bytecode: "\0\u{2}\0UNKNOWN\0\u{2}i\u{f}HEARTBEAT_PING\0\u{1}HEARTBEAT_PONG\0\u{1}LOGIN_REQ\0\u{1}LOGIN_RESP\0\u{1}KICK_NOTIFY\0\u{1}LOGOUT_REQ\0\u{1}LOGOUT_RESP\0\u{1}REGISTER_REQ\0\u{1}REGISTER_RESP\0\u{1}PASSWORD_LOGIN_REQ\0\u{1}PASSWORD_LOGIN_RESP\0\u{1}REFRESH_TOKEN_REQ\0\u{1}REFRESH_TOKEN_RESP\0\u{1}GET_SESSIONS_REQ\0\u{1}GET_SESSIONS_RESP\0\u{1}REVOKE_SESSION_REQ\0\u{1}REVOKE_SESSION_RESP\0\u{1}CHANGE_PASSWORD_REQ\0\u{1}CHANGE_PASSWORD_RESP\0\u{1}DEVICES_PRESENCE_NOTIFY\0\u{2}U\u{f}SEND_MESSAGE_REQ\0\u{1}SEND_MESSAGE_RESP\0\u{1}GET_HISTORY_REQ\0\u{1}GET_HISTORY_RESP\0\u{1}CHAT_MESSAGE_NOTIFY\0\u{2}`\u{1}CREATE_GROUP_REQ\0\u{1}CREATE_GROUP_RESP\0\u{1}JOIN_GROUP_REQ\0\u{1}JOIN_GROUP_RESP\0\u{1}LEAVE_GROUP_REQ\0\u{1}LEAVE_GROUP_RESP\0\u{1}KICK_MEMBER_REQ\0\u{1}KICK_MEMBER_RESP\0\u{1}GET_GROUP_INFO_REQ\0\u{1}GET_GROUP_INFO_RESP\0\u{1}GET_GROUP_MEMBERS_REQ\0\u{1}GET_GROUP_MEMBERS_RESP\0\u{1}GET_USER_GROUPS_REQ\0\u{1}GET_USER_GROUPS_RESP\0\u{1}INVITE_TO_GROUP_REQ\0\u{1}INVITE_TO_GROUP_RESP\0\u{1}GROUP_CREATED_NOTIFY\0\u{1}GROUP_MEMBER_JOINED_NOTIFY\0\u{1}GROUP_MEMBER_LEFT_NOTIFY\0\u{1}GROUP_MEMBER_KICKED_NOTIFY\0\u{1}GROUP_UPDATED_NOTIFY\0\u{2}P\u{1}MARK_READ_REQ\0\u{1}MARK_READ_RESP\0\u{1}GET_READ_RECEIPTS_REQ\0\u{1}GET_READ_RECEIPTS_RESP\0\u{1}GET_UNREAD_COUNT_REQ\0\u{1}GET_UNREAD_COUNT_RESP\0\u{1}MESSAGE_READ_NOTIFY\0\u{1}TYPING_INDICATOR_NOTIFY\0\u{1}MESSAGE_ACK\0\u{1}MESSAGE_NACK\0\u{1}TRACK_MESSAGE_REQ\0\u{1}TRACK_MESSAGE_RESP\0\u{1}GET_HISTORY_V2_REQ\0\u{1}GET_HISTORY_V2_RESP\0\u{1}ADD_REACTION_REQ\0\u{1}ADD_REACTION_RESP\0\u{1}REMOVE_REACTION_REQ\0\u{1}REMOVE_REACTION_RESP\0\u{1}GET_REACTIONS_REQ\0\u{1}GET_REACTIONS_RESP\0\u{1}REACTION_ADDED_NOTIFY\0\u{1}REACTION_REMOVED_NOTIFY\0\u{1}GET_TYPING_USERS_REQ\0\u{1}GET_TYPING_USERS_RESP\0\u{1}EDIT_MESSAGE_REQ\0\u{1}EDIT_MESSAGE_RESP\0\u{1}DELETE_MESSAGE_REQ\0\u{1}DELETE_MESSAGE_RESP\0\u{1}BULK_DELETE_REQ\0\u{1}BULK_DELETE_RESP\0\u{1}MESSAGE_EDITED_NOTIFY\0\u{1}MESSAGE_DELETED_NOTIFY\0\u{1}GET_MENTION_SUGGESTIONS_REQ\0\u{1}GET_MENTION_SUGGESTIONS_RESP\0\u{1}SET_CHANNEL_MUTE_REQ\0\u{1}SET_CHANNEL_MUTE_RESP\0\u{1}GET_CHANNEL_MUTES_REQ\0\u{1}GET_CHANNEL_MUTES_RESP\0\u{1}BLOCK_MESSAGE_SENDER_REQ\0\u{1}BLOCK_MESSAGE_SENDER_RESP\0\u{1}UNBLOCK_MESSAGE_SENDER_REQ\0\u{1}UNBLOCK_MESSAGE_SENDER_RESP\0\u{1}GET_BLOCKED_SENDERS_REQ\0\u{1}GET_BLOCKED_SENDERS_RESP\0\u{1}WORD_FILTER_FETCH_REQ\0\u{1}WORD_FILTER_FETCH_RESP\0\u{1}WORD_FILTER_UPDATE_NOTIFY\0\u{2}r\u{b}ADD_FRIEND_REQ\0\u{1}ADD_FRIEND_RESP\0\u{1}FRIEND_REQUEST_ACTION_REQ\0\u{1}FRIEND_REQUEST_ACTION_RESP\0\u{1}REMOVE_FRIEND_REQ\0\u{1}REMOVE_FRIEND_RESP\0\u{1}GET_FRIEND_LIST_REQ\0\u{1}GET_FRIEND_LIST_RESP\0\u{1}GET_PENDING_REQUESTS_REQ\0\u{1}GET_PENDING_REQUESTS_RESP\0\u{1}BLOCK_USER_REQ\0\u{1}BLOCK_USER_RESP\0\u{1}UNBLOCK_USER_REQ\0\u{1}UNBLOCK_USER_RESP\0\u{1}GET_BLOCKED_LIST_REQ\0\u{1}GET_BLOCKED_LIST_RESP\0\u{1}SET_PRESENCE_REQ\0\u{1}SET_PRESENCE_RESP\0\u{1}GET_PRESENCE_REQ\0\u{1}GET_PRESENCE_RESP\0\u{1}PRESENCE_NOTIFY\0\u{1}FRIEND_REQUEST_NOTIFY\0\u{1}FRIEND_ACCEPTED_NOTIFY\0\u{1}FRIEND_REMOVED_NOTIFY\0\u{2}Q\u{f}CREATE_ROOM_REQ\0\u{1}CREATE_ROOM_RESP\0\u{1}JOIN_ROOM_REQ\0\u{1}JOIN_ROOM_RESP\0\u{1}LEAVE_ROOM_REQ\0\u{1}LEAVE_ROOM_RESP\0\u{1}ICE_CANDIDATE_MSG\0\u{1}SDP_OFFER_MSG\0\u{1}SDP_ANSWER_MSG\0\u{1}GET_ROOM_INFO_REQ\0\u{1}GET_ROOM_INFO_RESP\0\u{1}GET_USER_ROOM_REQ\0\u{1}GET_USER_ROOM_RESP\0\u{1}SET_MUTE_REQ\0\u{1}SET_MUTE_RESP\0\u{1}SET_DEAFEN_REQ\0\u{1}SET_DEAFEN_RESP\0\u{1}PARTICIPANT_JOINED_NOTIFY\0\u{1}PARTICIPANT_LEFT_NOTIFY\0\u{1}PARTICIPANT_STATE_CHANGED_NOTIFY\0\u{1}SPEAKING_NOTIFY\0\u{2}T\u{f}SERVER_AUTH_REQ\0\u{1}SERVER_AUTH_RESP\0\u{1}SERVER_HEARTBEAT_PING\0\u{1}SERVER_HEARTBEAT_PONG\0\u{1}INJECT_MESSAGE_REQ\0\u{1}INJECT_MESSAGE_RESP\0\u{1}INJECT_MESSAGE_NOTIFY\0\u{1}EVENT_PUBLISH_REQ\0\u{1}EVENT_PUBLISH_RESP\0\u{1}EVENT_DELIVER_NOTIFY\0\u{1}EVENT_ACK_REQ\0\u{1}EVENT_ACK_RESP\0\u{1}BIND_PLAYER_IDENTITY_REQ\0\u{1}BIND_PLAYER_IDENTITY_RESP\0\u{1}UNBIND_PLAYER_IDENTITY_REQ\0\u{1}UNBIND_PLAYER_IDENTITY_RESP\0\u{1}GET_PLAYER_IDENTITIES_REQ\0\u{1}GET_PLAYER_IDENTITIES_RESP\0\u{1}RESOLVE_GAME_USER_REQ\0\u{1}RESOLVE_GAME_USER_RESP\0\u{1}SUBSCRIBE_PLAYER_CHANNEL_REQ\0\u{1}SUBSCRIBE_PLAYER_CHANNEL_RESP\0\u{1}UNSUBSCRIBE_PLAYER_CHANNEL_REQ\0\u{1}UNSUBSCRIBE_PLAYER_CHANNEL_RESP\0\u{1}GET_PLAYER_SUBSCRIPTIONS_REQ\0\u{1}GET_PLAYER_SUBSCRIPTIONS_RESP\0\u{1}MARK_CHANNELS_READ_REQ\0\u{1}MARK_CHANNELS_READ_RESP\0\u{1}GET_UNREAD_SUMMARY_REQ\0\u{1}GET_UNREAD_SUMMARY_RESP\0\u{1}SET_GAME_PRESENCE_ENABLED_REQ\0\u{1}SET_GAME_PRESENCE_ENABLED_RESP\0\u{1}GET_GAME_PRESENCE_REQ\0\u{1}GET_GAME_PRESENCE_RESP\0\u{2}\u{10}PEER_REGISTER_REQ\0\u{1}PEER_REGISTER_RESP\0\u{1}CHANNEL_MESSAGE_NOTIFY\0\u{1}PEER_INJECT_MESSAGE_NOTIFY\0\u{2}t\u{e}REGISTER_DEVICE_REQ\0\u{1}REGISTER_DEVICE_RESP\0\u{1}UNREGISTER_DEVICE_REQ\0\u{1}UNREGISTER_DEVICE_RESP\0\u{1}UPDATE_DEVICE_TOKEN_REQ\0\u{1}UPDATE_DEVICE_TOKEN_RESP\0\u{1}GET_USER_DEVICES_REQ\0\u{1}GET_USER_DEVICES_RESP\0\u{1}PUSH_NOTIFICATION_REQ\0\u{1}PUSH_NOTIFICATION_RESP\0\u{2}_\u{f}CREATE_PARTY_REQ\0\u{1}CREATE_PARTY_RESP\0\u{1}DISBAND_PARTY_REQ\0\u{1}DISBAND_PARTY_RESP\0\u{1}INVITE_TO_PARTY_REQ\0\u{1}INVITE_TO_PARTY_RESP\0\u{1}INVITE_NOTIFY\0\u{1}ACCEPT_INVITE_REQ\0\u{1}ACCEPT_INVITE_RESP\0\u{1}DECLINE_INVITE_REQ\0\u{1}DECLINE_INVITE_RESP\0\u{1}INVITE_RESULT_NOTIFY\0\u{1}LEAVE_PARTY_REQ\0\u{1}LEAVE_PARTY_RESP\0\u{1}KICK_PARTY_MEMBER_REQ\0\u{1}KICK_PARTY_MEMBER_RESP\0\u{1}TRANSFER_LEADER_REQ\0\u{1}TRANSFER_LEADER_RESP\0\u{1}SET_READY_REQ\0\u{1}SET_READY_RESP\0\u{1}PARTY_JOINED_NOTIFY\0\u{1}PARTY_LEFT_NOTIFY\0\u{1}PARTY_KICKED_NOTIFY\0\u{1}PARTY_STATE_CHANGED_NOTIFY\0\u{1}PARTY_DISBANDED_NOTIFY\0\u{1}GET_MY_PARTY_REQ\0\u{1}GET_MY_PARTY_RESP\0")
+  public static let _protobuf_nameMap = SwiftProtobuf._NameMap(bytecode: "\0\u{2}\0UNKNOWN\0\u{2}i\u{f}HEARTBEAT_PING\0\u{1}HEARTBEAT_PONG\0\u{1}LOGIN_REQ\0\u{1}LOGIN_RESP\0\u{1}KICK_NOTIFY\0\u{1}LOGOUT_REQ\0\u{1}LOGOUT_RESP\0\u{1}REGISTER_REQ\0\u{1}REGISTER_RESP\0\u{1}PASSWORD_LOGIN_REQ\0\u{1}PASSWORD_LOGIN_RESP\0\u{1}REFRESH_TOKEN_REQ\0\u{1}REFRESH_TOKEN_RESP\0\u{1}GET_SESSIONS_REQ\0\u{1}GET_SESSIONS_RESP\0\u{1}REVOKE_SESSION_REQ\0\u{1}REVOKE_SESSION_RESP\0\u{1}CHANGE_PASSWORD_REQ\0\u{1}CHANGE_PASSWORD_RESP\0\u{1}DEVICES_PRESENCE_NOTIFY\0\u{2}U\u{f}SEND_MESSAGE_REQ\0\u{1}SEND_MESSAGE_RESP\0\u{1}GET_HISTORY_REQ\0\u{1}GET_HISTORY_RESP\0\u{1}CHAT_MESSAGE_NOTIFY\0\u{2}`\u{1}CREATE_GROUP_REQ\0\u{1}CREATE_GROUP_RESP\0\u{1}JOIN_GROUP_REQ\0\u{1}JOIN_GROUP_RESP\0\u{1}LEAVE_GROUP_REQ\0\u{1}LEAVE_GROUP_RESP\0\u{1}KICK_MEMBER_REQ\0\u{1}KICK_MEMBER_RESP\0\u{1}GET_GROUP_INFO_REQ\0\u{1}GET_GROUP_INFO_RESP\0\u{1}GET_GROUP_MEMBERS_REQ\0\u{1}GET_GROUP_MEMBERS_RESP\0\u{1}GET_USER_GROUPS_REQ\0\u{1}GET_USER_GROUPS_RESP\0\u{1}INVITE_TO_GROUP_REQ\0\u{1}INVITE_TO_GROUP_RESP\0\u{1}GROUP_CREATED_NOTIFY\0\u{1}GROUP_MEMBER_JOINED_NOTIFY\0\u{1}GROUP_MEMBER_LEFT_NOTIFY\0\u{1}GROUP_MEMBER_KICKED_NOTIFY\0\u{1}GROUP_UPDATED_NOTIFY\0\u{1}SET_MEMBER_ALIAS_REQ\0\u{1}SET_MEMBER_ALIAS_RESP\0\u{1}GROUP_MEMBER_ALIAS_UPDATED_NOTIFY\0\u{2}M\u{1}MARK_READ_REQ\0\u{1}MARK_READ_RESP\0\u{1}GET_READ_RECEIPTS_REQ\0\u{1}GET_READ_RECEIPTS_RESP\0\u{1}GET_UNREAD_COUNT_REQ\0\u{1}GET_UNREAD_COUNT_RESP\0\u{1}MESSAGE_READ_NOTIFY\0\u{1}TYPING_INDICATOR_NOTIFY\0\u{1}MESSAGE_ACK\0\u{1}MESSAGE_NACK\0\u{1}TRACK_MESSAGE_REQ\0\u{1}TRACK_MESSAGE_RESP\0\u{1}GET_HISTORY_V2_REQ\0\u{1}GET_HISTORY_V2_RESP\0\u{1}ADD_REACTION_REQ\0\u{1}ADD_REACTION_RESP\0\u{1}REMOVE_REACTION_REQ\0\u{1}REMOVE_REACTION_RESP\0\u{1}GET_REACTIONS_REQ\0\u{1}GET_REACTIONS_RESP\0\u{1}REACTION_ADDED_NOTIFY\0\u{1}REACTION_REMOVED_NOTIFY\0\u{1}GET_TYPING_USERS_REQ\0\u{1}GET_TYPING_USERS_RESP\0\u{1}EDIT_MESSAGE_REQ\0\u{1}EDIT_MESSAGE_RESP\0\u{1}DELETE_MESSAGE_REQ\0\u{1}DELETE_MESSAGE_RESP\0\u{1}BULK_DELETE_REQ\0\u{1}BULK_DELETE_RESP\0\u{1}MESSAGE_EDITED_NOTIFY\0\u{1}MESSAGE_DELETED_NOTIFY\0\u{1}GET_MENTION_SUGGESTIONS_REQ\0\u{1}GET_MENTION_SUGGESTIONS_RESP\0\u{1}SET_CHANNEL_MUTE_REQ\0\u{1}SET_CHANNEL_MUTE_RESP\0\u{1}GET_CHANNEL_MUTES_REQ\0\u{1}GET_CHANNEL_MUTES_RESP\0\u{1}BLOCK_MESSAGE_SENDER_REQ\0\u{1}BLOCK_MESSAGE_SENDER_RESP\0\u{1}UNBLOCK_MESSAGE_SENDER_REQ\0\u{1}UNBLOCK_MESSAGE_SENDER_RESP\0\u{1}GET_BLOCKED_SENDERS_REQ\0\u{1}GET_BLOCKED_SENDERS_RESP\0\u{1}WORD_FILTER_FETCH_REQ\0\u{1}WORD_FILTER_FETCH_RESP\0\u{1}WORD_FILTER_UPDATE_NOTIFY\0\u{1}SEARCH_MESSAGE_REQ\0\u{1}SEARCH_MESSAGE_RESP\0\u{1}SET_GROUP_MUTE_REQ\0\u{1}SET_GROUP_MUTE_RESP\0\u{1}GROUP_MEMBER_MUTED_NOTIFY\0\u{2}m\u{b}ADD_FRIEND_REQ\0\u{1}ADD_FRIEND_RESP\0\u{1}FRIEND_REQUEST_ACTION_REQ\0\u{1}FRIEND_REQUEST_ACTION_RESP\0\u{1}REMOVE_FRIEND_REQ\0\u{1}REMOVE_FRIEND_RESP\0\u{1}GET_FRIEND_LIST_REQ\0\u{1}GET_FRIEND_LIST_RESP\0\u{1}GET_PENDING_REQUESTS_REQ\0\u{1}GET_PENDING_REQUESTS_RESP\0\u{1}BLOCK_USER_REQ\0\u{1}BLOCK_USER_RESP\0\u{1}UNBLOCK_USER_REQ\0\u{1}UNBLOCK_USER_RESP\0\u{1}GET_BLOCKED_LIST_REQ\0\u{1}GET_BLOCKED_LIST_RESP\0\u{1}SET_PRESENCE_REQ\0\u{1}SET_PRESENCE_RESP\0\u{1}GET_PRESENCE_REQ\0\u{1}GET_PRESENCE_RESP\0\u{1}PRESENCE_NOTIFY\0\u{1}FRIEND_REQUEST_NOTIFY\0\u{1}FRIEND_ACCEPTED_NOTIFY\0\u{1}FRIEND_REMOVED_NOTIFY\0\u{2}Q\u{f}CREATE_ROOM_REQ\0\u{1}CREATE_ROOM_RESP\0\u{1}JOIN_ROOM_REQ\0\u{1}JOIN_ROOM_RESP\0\u{1}LEAVE_ROOM_REQ\0\u{1}LEAVE_ROOM_RESP\0\u{1}ICE_CANDIDATE_MSG\0\u{1}SDP_OFFER_MSG\0\u{1}SDP_ANSWER_MSG\0\u{1}GET_ROOM_INFO_REQ\0\u{1}GET_ROOM_INFO_RESP\0\u{1}GET_USER_ROOM_REQ\0\u{1}GET_USER_ROOM_RESP\0\u{1}SET_MUTE_REQ\0\u{1}SET_MUTE_RESP\0\u{1}SET_DEAFEN_REQ\0\u{1}SET_DEAFEN_RESP\0\u{1}PARTICIPANT_JOINED_NOTIFY\0\u{1}PARTICIPANT_LEFT_NOTIFY\0\u{1}PARTICIPANT_STATE_CHANGED_NOTIFY\0\u{1}SPEAKING_NOTIFY\0\u{2}T\u{f}SERVER_AUTH_REQ\0\u{1}SERVER_AUTH_RESP\0\u{1}SERVER_HEARTBEAT_PING\0\u{1}SERVER_HEARTBEAT_PONG\0\u{1}INJECT_MESSAGE_REQ\0\u{1}INJECT_MESSAGE_RESP\0\u{1}INJECT_MESSAGE_NOTIFY\0\u{1}EVENT_PUBLISH_REQ\0\u{1}EVENT_PUBLISH_RESP\0\u{1}EVENT_DELIVER_NOTIFY\0\u{1}EVENT_ACK_REQ\0\u{1}EVENT_ACK_RESP\0\u{1}BIND_PLAYER_IDENTITY_REQ\0\u{1}BIND_PLAYER_IDENTITY_RESP\0\u{1}UNBIND_PLAYER_IDENTITY_REQ\0\u{1}UNBIND_PLAYER_IDENTITY_RESP\0\u{1}GET_PLAYER_IDENTITIES_REQ\0\u{1}GET_PLAYER_IDENTITIES_RESP\0\u{1}RESOLVE_GAME_USER_REQ\0\u{1}RESOLVE_GAME_USER_RESP\0\u{1}SUBSCRIBE_PLAYER_CHANNEL_REQ\0\u{1}SUBSCRIBE_PLAYER_CHANNEL_RESP\0\u{1}UNSUBSCRIBE_PLAYER_CHANNEL_REQ\0\u{1}UNSUBSCRIBE_PLAYER_CHANNEL_RESP\0\u{1}GET_PLAYER_SUBSCRIPTIONS_REQ\0\u{1}GET_PLAYER_SUBSCRIPTIONS_RESP\0\u{1}MARK_CHANNELS_READ_REQ\0\u{1}MARK_CHANNELS_READ_RESP\0\u{1}GET_UNREAD_SUMMARY_REQ\0\u{1}GET_UNREAD_SUMMARY_RESP\0\u{1}SET_GAME_PRESENCE_ENABLED_REQ\0\u{1}SET_GAME_PRESENCE_ENABLED_RESP\0\u{1}GET_GAME_PRESENCE_REQ\0\u{1}GET_GAME_PRESENCE_RESP\0\u{2}\u{10}PEER_REGISTER_REQ\0\u{1}PEER_REGISTER_RESP\0\u{1}CHANNEL_MESSAGE_NOTIFY\0\u{1}PEER_INJECT_MESSAGE_NOTIFY\0\u{2}t\u{e}REGISTER_DEVICE_REQ\0\u{1}REGISTER_DEVICE_RESP\0\u{1}UNREGISTER_DEVICE_REQ\0\u{1}UNREGISTER_DEVICE_RESP\0\u{1}UPDATE_DEVICE_TOKEN_REQ\0\u{1}UPDATE_DEVICE_TOKEN_RESP\0\u{1}GET_USER_DEVICES_REQ\0\u{1}GET_USER_DEVICES_RESP\0\u{1}PUSH_NOTIFICATION_REQ\0\u{1}PUSH_NOTIFICATION_RESP\0\u{2}_\u{f}CREATE_PARTY_REQ\0\u{1}CREATE_PARTY_RESP\0\u{1}DISBAND_PARTY_REQ\0\u{1}DISBAND_PARTY_RESP\0\u{1}INVITE_TO_PARTY_REQ\0\u{1}INVITE_TO_PARTY_RESP\0\u{1}INVITE_NOTIFY\0\u{1}ACCEPT_INVITE_REQ\0\u{1}ACCEPT_INVITE_RESP\0\u{1}DECLINE_INVITE_REQ\0\u{1}DECLINE_INVITE_RESP\0\u{1}INVITE_RESULT_NOTIFY\0\u{1}LEAVE_PARTY_REQ\0\u{1}LEAVE_PARTY_RESP\0\u{1}KICK_PARTY_MEMBER_REQ\0\u{1}KICK_PARTY_MEMBER_RESP\0\u{1}TRANSFER_LEADER_REQ\0\u{1}TRANSFER_LEADER_RESP\0\u{1}SET_READY_REQ\0\u{1}SET_READY_RESP\0\u{1}PARTY_JOINED_NOTIFY\0\u{1}PARTY_LEFT_NOTIFY\0\u{1}PARTY_KICKED_NOTIFY\0\u{1}PARTY_STATE_CHANGED_NOTIFY\0\u{1}PARTY_DISBANDED_NOTIFY\0\u{1}GET_MY_PARTY_REQ\0\u{1}GET_MY_PARTY_RESP\0")
 }
 
 nonisolated extension Chirp_Gateway_PeerCapability: SwiftProtobuf._ProtoNameProviding {
@@ -1217,7 +1274,7 @@ nonisolated extension Chirp_Gateway_PeerCapability: SwiftProtobuf._ProtoNameProv
 
 nonisolated extension Chirp_Gateway_Packet: SwiftProtobuf.Message, SwiftProtobuf._MessageImplementationBase, SwiftProtobuf._ProtoNameProviding {
   public static let protoMessageName: String = _protobuf_package + ".Packet"
-  public static let _protobuf_nameMap = SwiftProtobuf._NameMap(bytecode: "\0\u{3}msg_id\0\u{1}sequence\0\u{1}body\0")
+  public static let _protobuf_nameMap = SwiftProtobuf._NameMap(bytecode: "\0\u{3}msg_id\0\u{1}sequence\0\u{1}body\0\u{3}request_id\0")
 
   public mutating func decodeMessage<D: SwiftProtobuf.Decoder>(decoder: inout D) throws {
     while let fieldNumber = try decoder.nextFieldNumber() {
@@ -1228,6 +1285,7 @@ nonisolated extension Chirp_Gateway_Packet: SwiftProtobuf.Message, SwiftProtobuf
       case 1: try { try decoder.decodeSingularEnumField(value: &self.msgID) }()
       case 2: try { try decoder.decodeSingularInt64Field(value: &self.sequence) }()
       case 3: try { try decoder.decodeSingularBytesField(value: &self.body) }()
+      case 4: try { try decoder.decodeSingularInt64Field(value: &self.requestID) }()
       default: break
       }
     }
@@ -1243,6 +1301,9 @@ nonisolated extension Chirp_Gateway_Packet: SwiftProtobuf.Message, SwiftProtobuf
     if !self.body.isEmpty {
       try visitor.visitSingularBytesField(value: self.body, fieldNumber: 3)
     }
+    if self.requestID != 0 {
+      try visitor.visitSingularInt64Field(value: self.requestID, fieldNumber: 4)
+    }
     try unknownFields.traverse(visitor: &visitor)
   }
 
@@ -1250,6 +1311,7 @@ nonisolated extension Chirp_Gateway_Packet: SwiftProtobuf.Message, SwiftProtobuf
     if lhs.msgID != rhs.msgID {return false}
     if lhs.sequence != rhs.sequence {return false}
     if lhs.body != rhs.body {return false}
+    if lhs.requestID != rhs.requestID {return false}
     if lhs.unknownFields != rhs.unknownFields {return false}
     return true
   }
@@ -1424,41 +1486,81 @@ nonisolated extension Chirp_Gateway_ChannelMessageNotify: SwiftProtobuf.Message,
   public static let protoMessageName: String = _protobuf_package + ".ChannelMessageNotify"
   public static let _protobuf_nameMap = SwiftProtobuf._NameMap(bytecode: "\0\u{3}game_id\0\u{3}channel_id\0\u{1}message\0")
 
+  fileprivate class _StorageClass {
+    var _gameID: String = String()
+    var _channelID: String = String()
+    var _message: Chirp_Chat_ChatMessage? = nil
+
+      // This property is used as the initial default value for new instances of the type.
+      // The type itself is protecting the reference to its storage via CoW semantics.
+      // This will force a copy to be made of this reference when the first mutation occurs;
+      // hence, it is safe to mark this as `nonisolated(unsafe)`.
+      static nonisolated(unsafe) let defaultInstance = _StorageClass()
+
+    private init() {}
+
+    init(copying source: _StorageClass) {
+      _gameID = source._gameID
+      _channelID = source._channelID
+      _message = source._message
+    }
+  }
+
+  fileprivate mutating func _uniqueStorage() -> _StorageClass {
+    if !isKnownUniquelyReferenced(&_storage) {
+      _storage = _StorageClass(copying: _storage)
+    }
+    return _storage
+  }
+
   public mutating func decodeMessage<D: SwiftProtobuf.Decoder>(decoder: inout D) throws {
-    while let fieldNumber = try decoder.nextFieldNumber() {
-      // The use of inline closures is to circumvent an issue where the compiler
-      // allocates stack space for every case branch when no optimizations are
-      // enabled. https://github.com/apple/swift-protobuf/issues/1034
-      switch fieldNumber {
-      case 1: try { try decoder.decodeSingularStringField(value: &self.gameID) }()
-      case 2: try { try decoder.decodeSingularStringField(value: &self.channelID) }()
-      case 3: try { try decoder.decodeSingularMessageField(value: &self._message) }()
-      default: break
+    _ = _uniqueStorage()
+    try withExtendedLifetime(_storage) { (_storage: _StorageClass) in
+      while let fieldNumber = try decoder.nextFieldNumber() {
+        // The use of inline closures is to circumvent an issue where the compiler
+        // allocates stack space for every case branch when no optimizations are
+        // enabled. https://github.com/apple/swift-protobuf/issues/1034
+        switch fieldNumber {
+        case 1: try { try decoder.decodeSingularStringField(value: &_storage._gameID) }()
+        case 2: try { try decoder.decodeSingularStringField(value: &_storage._channelID) }()
+        case 3: try { try decoder.decodeSingularMessageField(value: &_storage._message) }()
+        default: break
+        }
       }
     }
   }
 
   public func traverse<V: SwiftProtobuf.Visitor>(visitor: inout V) throws {
-    // The use of inline closures is to circumvent an issue where the compiler
-    // allocates stack space for every if/case branch local when no optimizations
-    // are enabled. https://github.com/apple/swift-protobuf/issues/1034 and
-    // https://github.com/apple/swift-protobuf/issues/1182
-    if !self.gameID.isEmpty {
-      try visitor.visitSingularStringField(value: self.gameID, fieldNumber: 1)
+    try withExtendedLifetime(_storage) { (_storage: _StorageClass) in
+      // The use of inline closures is to circumvent an issue where the compiler
+      // allocates stack space for every if/case branch local when no optimizations
+      // are enabled. https://github.com/apple/swift-protobuf/issues/1034 and
+      // https://github.com/apple/swift-protobuf/issues/1182
+      if !_storage._gameID.isEmpty {
+        try visitor.visitSingularStringField(value: _storage._gameID, fieldNumber: 1)
+      }
+      if !_storage._channelID.isEmpty {
+        try visitor.visitSingularStringField(value: _storage._channelID, fieldNumber: 2)
+      }
+      try { if let v = _storage._message {
+        try visitor.visitSingularMessageField(value: v, fieldNumber: 3)
+      } }()
     }
-    if !self.channelID.isEmpty {
-      try visitor.visitSingularStringField(value: self.channelID, fieldNumber: 2)
-    }
-    try { if let v = self._message {
-      try visitor.visitSingularMessageField(value: v, fieldNumber: 3)
-    } }()
     try unknownFields.traverse(visitor: &visitor)
   }
 
   public static func ==(lhs: Chirp_Gateway_ChannelMessageNotify, rhs: Chirp_Gateway_ChannelMessageNotify) -> Bool {
-    if lhs.gameID != rhs.gameID {return false}
-    if lhs.channelID != rhs.channelID {return false}
-    if lhs._message != rhs._message {return false}
+    if lhs._storage !== rhs._storage {
+      let storagesAreEqual: Bool = withExtendedLifetime((lhs._storage, rhs._storage)) { (_args: (_StorageClass, _StorageClass)) in
+        let _storage = _args.0
+        let rhs_storage = _args.1
+        if _storage._gameID != rhs_storage._gameID {return false}
+        if _storage._channelID != rhs_storage._channelID {return false}
+        if _storage._message != rhs_storage._message {return false}
+        return true
+      }
+      if !storagesAreEqual {return false}
+    }
     if lhs.unknownFields != rhs.unknownFields {return false}
     return true
   }

@@ -27,6 +27,10 @@ fileprivate nonisolated struct _GeneratedWithProtocGenSwiftVersion: SwiftProtobu
 
 /// Identity of an injected message's sender. Server-plane senders are not user
 /// accounts; chat applies permission rules distinct from user accounts to them.
+/// 发送者类型。值域契约：与 chat.SenderKind 对齐（1=SYSTEM / 2=NPC /
+/// 3=SERVICE 两侧同值），注入消息经 chat 存储、离线补投与历史读回时按此
+/// 契约直传；UNKNOWN=0 非法（inject_consumer 拒收）。chat 侧另有 USER=0
+/// 供玩家发送路径使用。
 public nonisolated enum Chirp_GameServerGateway_SenderKind: SwiftProtobuf.Enum, Swift.CaseIterable {
   public typealias RawValue = Int
   case senderUnknown // = 0

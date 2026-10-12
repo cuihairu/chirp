@@ -14,10 +14,17 @@ final class MsgSpecsTableTests: XCTestCase {
         XCTAssertEqual(Chirp_Gateway_MsgID.kickNotify.rawValue, 1005)
         XCTAssertEqual(Chirp_Gateway_MsgID.devicesPresenceNotify.rawValue, 1020)
         XCTAssertEqual(Chirp_Gateway_MsgID.chatMessageNotify.rawValue, 2005)
+        XCTAssertEqual(Chirp_Gateway_MsgID.setMemberAliasReq.rawValue, 2122)
+        XCTAssertEqual(Chirp_Gateway_MsgID.setMemberAliasResp.rawValue, 2123)
+        XCTAssertEqual(Chirp_Gateway_MsgID.searchMessageReq.rawValue, 2248)
+        XCTAssertEqual(Chirp_Gateway_MsgID.searchMessageResp.rawValue, 2249)
+        XCTAssertEqual(Chirp_Gateway_MsgID.setGroupMuteReq.rawValue, 2250)
+        XCTAssertEqual(Chirp_Gateway_MsgID.setGroupMuteResp.rawValue, 2251)
+        XCTAssertEqual(Chirp_Gateway_MsgID.groupMemberMutedNotify.rawValue, 2252)
     }
 
     func testSpecTableIsCompleteAndPairsStayDistinct() {
-        XCTAssertEqual(MsgSpecs.all.count, 48)
+        XCTAssertEqual(MsgSpecs.all.count, 51)
         for spec in MsgSpecs.all {
             XCTAssertNotEqual(spec.reqMsgId, spec.respMsgId, "req/resp ids must differ for \(spec.reqMsgId)")
         }
@@ -36,6 +43,12 @@ final class MsgSpecsTableTests: XCTestCase {
             try MsgSpecs.setGamePresenceEnabled.decodeResponse([]) is Chirp_GameServerGateway_SetGamePresenceEnabledResponse)
         XCTAssertTrue(
             try MsgSpecs.wordFilterFetch.decodeResponse([]) is Chirp_Chat_WordFilterFetchResponse)
+        XCTAssertTrue(
+            try MsgSpecs.setMemberAlias.decodeResponse([]) is Chirp_Chat_SetMemberAliasResponse)
+        XCTAssertTrue(
+            try MsgSpecs.searchMessages.decodeResponse([]) is Chirp_Chat_SearchMessageResponse)
+        XCTAssertTrue(
+            try MsgSpecs.setGroupMute.decodeResponse([]) is Chirp_Chat_SetGroupMuteResponse)
         for spec in MsgSpecs.all {
             try spec.decodeEmpty() // must not throw for any spec
         }
