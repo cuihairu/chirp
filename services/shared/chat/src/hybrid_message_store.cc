@@ -5,6 +5,7 @@
 #include <cstdlib>
 #include <mutex>
 #include <sstream>
+#include <thread>
 
 #include "delivery_ack_manager.h"
 #include "logger.h"
@@ -106,10 +107,23 @@ bool HybridMessageStore::Initialize() {
   }
 
   // Test Redis connection. 真发 PING:此前用 Get("ping")——GET 一个不存在的
-  // 键恒返回 null,健康连接也被误报成 MySQL-only。条件收单行:coverage 环境
-  // 无 redis,判定只能走 !pong 短路面,分行写会留下永不执行的裸行。
-  auto pong = redis_->Command({"PING"});
-  if (!pong || pong->type != network::RedisResp::Type::kSimpleString || pong->str != "PONG") {
+  // 键恒返回 null,健康连接也被误报成 MySQL-only。判定收单行:coverage 环境
+  // 无 redis,前两次尝试必走失败分支,所有行都可覆盖。
+  //
+  // 首发失败并不立即降级告警:高负载下启动竞态会让首次 PING 撞在 Redis
+  // 就绪前,旧单发探针随即 Warn "MySQL-only mode",而 RedisClient 每条
+  // 命令都按需重连、实际自愈——告警是误导。有限重试(3 次,间隔 100ms)
+  // 把告警推迟到确实探不通之后;重试耗尽行为与旧单发一致(fail-open,
+  // 不硬依赖 Redis)。
+  bool redis_ok = false;
+  for (int attempt = 0; attempt < 3 && !redis_ok; ++attempt) {
+    if (attempt > 0) {
+      std::this_thread::sleep_for(std::chrono::milliseconds(100));
+    }
+    auto pong = redis_->Command({"PING"});
+    redis_ok = pong && pong->type == network::RedisResp::Type::kSimpleString && pong->str == "PONG";
+  }
+  if (!redis_ok) {
     Logger::Instance().Warn("Redis connection failed, running in MySQL-only mode");
   }
 

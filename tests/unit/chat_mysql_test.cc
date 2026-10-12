@@ -572,10 +572,11 @@ TEST_F(HybridStoreTest, InitializeToleratesDeadRedisAndMysqlFailures) {
     }());
   EXPECT_FALSE(dead_redis.Initialize());
 
-  // 真 PING 探针后的 MySQL-only 降级路径:mysql 可连(fake 恢复正常)+ redis
-  // 死端口 → Initialize 仍返回 true,只打一行 Warn。旧探针 Get("ping") 是
-  // GET 恒空键,无论 redis 死活都走 Warn,这行曾被无意覆盖;探针修正后由
-  // 本用例确定性钉住(不依赖环境里有没有真 redis)。
+  // 真 PING 探针(有限重试后)的 MySQL-only 降级路径:mysql 可连(fake 恢
+  // 复正常)+ redis 死端口 → 重试 3 次全失败,Initialize 仍返回 true,只打
+  // 一行 Warn。旧探针 Get("ping") 是 GET 恒空键,无论 redis 死活都走 Warn,
+  // 这行曾被无意覆盖;探针修正后由本用例确定性钉住(不依赖环境里有没有真
+  // redis)。
   fake_mysql::SetConnectShouldFail(false);
   HybridMessageStore redis_dead_mysql_ok(io_, [] {
     MessageStoreConfig cfg;
