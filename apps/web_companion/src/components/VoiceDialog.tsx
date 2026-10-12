@@ -117,7 +117,7 @@ export default function VoiceDialog({ open, onClose }: { open: boolean; onClose:
           </>
         ) : (
           <>
-            <Typography variant="caption" color="text.secondary" display="block" sx={{ mb: 1 }}>
+            <Typography variant="caption" color="text.secondary" sx={{ display: 'block', mb: 1 }}>
               {zh.voice.participants(room.participants.length, room.maxParticipants)}
             </Typography>
             {self && (

@@ -84,14 +84,16 @@ export default function MessageInput({
         size="small"
         disabled={disabled}
         data-testid="message-input"
-        InputProps={{
-          endAdornment: (
-            <InputAdornment position="end">
-              <IconButton onClick={submit} disabled={disabled || text.trim() === ''} aria-label="send">
-                <SendIcon />
-              </IconButton>
-            </InputAdornment>
-          ),
+        slotProps={{
+          input: {
+            endAdornment: (
+              <InputAdornment position="end">
+                <IconButton onClick={submit} disabled={disabled || text.trim() === ''} aria-label="send">
+                  <SendIcon />
+                </IconButton>
+              </InputAdornment>
+            ),
+          },
         }}
       />
     </Box>

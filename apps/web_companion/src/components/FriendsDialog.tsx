@@ -130,7 +130,7 @@ export default function FriendsDialog({
             >
               <ListItemText
                 primary={zh.social.requestFrom(request.fromUserId)}
-                primaryTypographyProps={{ variant: 'body2' }}
+                slotProps={{ primary: { variant: 'body2' } }}
               />
             </ListItem>
           ))}
@@ -163,7 +163,7 @@ export default function FriendsDialog({
                   >
                     <ListItemText
                       primary={friend}
-                      primaryTypographyProps={{ variant: 'body2' }}
+                      slotProps={{ primary: { variant: 'body2' } }}
                       secondary={online ? zh.social.online : undefined}
                     />
                   </Badge>

@@ -85,7 +85,7 @@ describe('OnlineDevicesDialog 游戏在线状态开关', () => {
       deviceConn,
     });
     await waitFor(() => expect(services.gamePresence.get().loaded).toBe(true));
-    expect(screen.getByRole('checkbox')).toHaveProperty('checked', true);
+    expect(screen.getByRole('switch')).toHaveProperty('checked', true);
     expect(screen.getByTestId('game-presence-state').textContent).toContain('game_a');
   });
 
@@ -97,7 +97,7 @@ describe('OnlineDevicesDialog 游戏在线状态开关', () => {
     });
     await waitFor(() => expect(services.gamePresence.get().loaded).toBe(true));
     // 从未绑定/从未设置:开关开着,但提示还没有生效的游戏。
-    expect(screen.getByRole('checkbox')).toHaveProperty('checked', true);
+    expect(screen.getByRole('switch')).toHaveProperty('checked', true);
     expect(screen.getByTestId('game-presence-state').textContent).toBe(
       zh.gamePresence.noGames,
     );
@@ -108,7 +108,7 @@ describe('OnlineDevicesDialog 游戏在线状态开关', () => {
     deviceConn.setResponder(async () => ({ code: 0, enabled: false, entries: [] }));
     await renderLoggedIn(<OnlineDevicesDialog open onClose={vi.fn()} />, { deviceConn });
     await waitFor(() => expect(screen.getByTestId('game-presence-state')).toBeTruthy());
-    expect(screen.getByRole('checkbox')).toHaveProperty('checked', false);
+    expect(screen.getByRole('switch')).toHaveProperty('checked', false);
     expect(screen.getByTestId('game-presence-state').textContent).toBe(zh.gamePresence.off);
   });
 
@@ -127,8 +127,8 @@ describe('OnlineDevicesDialog 游戏在线状态开关', () => {
       deviceConn,
     });
     await waitFor(() => expect(services.gamePresence.get().loaded).toBe(true));
-    fireEvent.click(screen.getByRole('checkbox'));
-    await waitFor(() => expect(screen.getByRole('checkbox')).toHaveProperty('checked', false));
+    fireEvent.click(screen.getByRole('switch'));
+    await waitFor(() => expect(screen.getByRole('switch')).toHaveProperty('checked', false));
     expect(services.gamePresence.get()).toMatchObject({ enabled: false, games: [] });
     expect(screen.getByTestId('game-presence-state').textContent).toBe(zh.gamePresence.off);
   });
@@ -144,9 +144,9 @@ describe('OnlineDevicesDialog 游戏在线状态开关', () => {
       deviceConn,
     });
     await waitFor(() => expect(services.gamePresence.get().loaded).toBe(true));
-    fireEvent.click(screen.getByRole('checkbox'));
+    fireEvent.click(screen.getByRole('switch'));
     await waitFor(() => expect(screen.getByTestId('game-presence-failed')).toBeTruthy());
-    expect(screen.getByRole('checkbox')).toHaveProperty('checked', true);
+    expect(screen.getByRole('switch')).toHaveProperty('checked', true);
   });
 
 });
