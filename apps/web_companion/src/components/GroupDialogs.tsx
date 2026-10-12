@@ -18,6 +18,7 @@ import { ErrorCode } from '@chirp/proto/common';
 import { GroupMemberRole } from '@chirp/proto/chat';
 import type { GroupMember } from '@chirp/proto/chat';
 import { zh } from '../i18n/zh';
+import { useNow } from '../state/useNow';
 
 /** MODERATOR 及以上(含 ADMIN/OWNER)可执行群禁言;与 GroupManager 台账同口径。 */
 function isModeratorPlus(role: GroupMemberRole | undefined): boolean {
@@ -59,8 +60,13 @@ export default function GroupSettingsDialog({
   }, [api, groupId]);
 
   useEffect(() => {
-    if (open) void reload();
-  }, [open, reload]);
+    // 打开面板拉一次名册;setState 走 promise 续延(effect 体内同步
+    // setState 会被 react-hooks/set-state-in-effect 拦下)。
+    if (open) void api.loadGroupMembers(groupId).then(setMembers);
+  }, [open, api, groupId]);
+
+  // 禁言徽章的到期判定用墙上时钟;时钟走状态(渲染期禁 Date.now())。
+  const now = useNow(15_000);
 
   // 禁言入口按名册角色放行:名册未载入时回退 ownerId 判定(群主恒可)。
   const selfRole = members.find((m) => m.userId === selfId)?.role;
@@ -150,7 +156,7 @@ export default function GroupSettingsDialog({
         </Stack>
         <List dense data-testid="member-list">
           {members.map((member) => {
-            const muted = member.mutedUntilTs > Date.now();
+            const muted = member.mutedUntilTs > now;
             const displayName = member.alias || member.username || member.userId;
             return (
               <ListItem
