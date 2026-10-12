@@ -7,6 +7,7 @@
 #include <optional>
 #include <string>
 #include <unordered_map>
+#include <utility>
 
 #include <asio.hpp>
 
@@ -133,6 +134,14 @@ public:
   /// @brief Complete password reset with token
   bool CompletePasswordReset(const std::string& token, std::string_view new_password);
 
+  /// @brief Install the out-of-band channel that delivers password-reset
+  /// tokens (SMTP/email in production). When unset, the raw token has no
+  /// channel at all: the log deliberately carries only a hash prefix.
+  void SetPasswordResetDelivery(
+      std::function<void(const std::string& user_id, const std::string& token)> hook) {
+    password_reset_delivery_ = std::move(hook);
+  }
+
   /// @brief Change password (requires old password)
   bool ChangePassword(const std::string& user_id,
                      std::string_view old_password,
@@ -161,6 +170,9 @@ private:
   };
   std::unordered_map<std::string, PasswordResetToken> password_reset_tokens_;
   std::mutex password_reset_mutex_;
+  // Out-of-band reset-token delivery (email hook); the token never goes to
+  // the log.
+  std::function<void(const std::string&, const std::string&)> password_reset_delivery_;
 };
 
 } // namespace chirp::auth

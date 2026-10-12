@@ -394,10 +394,15 @@ bool AuthService::InitiatePasswordReset(const std::string& identifier) {
     };
   }
 
-  // In production, send email with reset_token
-  // For now, just log the token (for testing)
+  // In production, send email with reset_token via the delivery hook. The raw
+  // token never goes to the log: anyone who can read the log could reset the
+  // password within the hour. Log a short hash prefix for correlation.
   Logger::Instance().Info("Password reset initiated for: " + user_data->user_id +
-                         " token: " + reset_token + " (valid for 1 hour)");
+                         " token_hash_prefix: " + token_hash.substr(0, 12) +
+                         " (valid for 1 hour)");
+  if (password_reset_delivery_) {
+    password_reset_delivery_(user_data->user_id, reset_token);
+  }
 
   return true;
 }

@@ -412,6 +412,11 @@ class AuthServiceTest : public ::testing::Test {
     cfg.rate_limiter_config.max_login_attempts_per_hour = 100;
     cfg.rate_limiter_config.max_registration_attempts_per_ip_per_hour = 100;
     service_ = std::make_unique<AuthService>(io_, cfg);
+    // Password-reset tests read the token from this delivery hook instead of
+    // scraping the log: production delivers out of band (SMTP), and the log
+    // only ever carries a hash prefix.
+    service_->SetPasswordResetDelivery(
+        [this](const std::string&, const std::string& token) { reset_tokens_.push_back(token); });
   }
 
   void TearDown() override {
@@ -479,13 +484,13 @@ class AuthServiceTest : public ::testing::Test {
     bool active_{false};
   };
 
-  // Extracts the raw password-reset token from a captured log blob.
-  static std::string TokenFromLog(const std::string& logged) {
-    auto pos = logged.find("token: ");
-    if (pos == std::string::npos) return "";
-    const size_t start = pos + 7;
-    const size_t end = logged.find(' ', start);
-    return logged.substr(start, end == std::string::npos ? std::string::npos : end - start);
+  // Delivered password-reset tokens queue in order; tests pop one per
+  // initiated reset.
+  std::string TakeResetToken() {
+    if (reset_tokens_.empty()) return "";
+    const std::string token = reset_tokens_.front();
+    reset_tokens_.erase(reset_tokens_.begin());
+    return token;
   }
 
   asio::io_context io_;
@@ -495,6 +500,7 @@ class AuthServiceTest : public ::testing::Test {
   // Explicit secret so the JWT tests below do not depend on the default
   // constant in AuthService::Config.
   std::string jwt_secret_ = "test_jwt_secret";
+  std::vector<std::string> reset_tokens_;
 };
 
 TEST_F(AuthServiceTest, InitializeAndShutdownLifecycle) {
@@ -822,11 +828,10 @@ TEST_F(AuthServiceTest, PasswordResetFlow) {
   fake_mysql::PushRows({});
   EXPECT_TRUE(service_->InitiatePasswordReset("ghost"));
 
-  // Known user: rate check passes, token generated and logged.
+  // Known user: rate check passes, token generated and delivered.
   fake_mysql::PushRows({{"5", "user_1", "alice", "a@b.c", "h", "1", "2", "3", "1"}});
-  StderrCapture capture;
   ASSERT_TRUE(service_->InitiatePasswordReset("alice"));
-  const std::string token = TokenFromLog(capture.Take());
+  const std::string token = TakeResetToken();
   ASSERT_FALSE(token.empty());
 
   // Completing with a bogus or empty token fails.
@@ -845,9 +850,8 @@ TEST_F(AuthServiceTest, PasswordResetConsumesValidTokenAndUpdatesPassword) {
   ASSERT_TRUE(service_->Initialize());
 
   fake_mysql::PushRows({{"5", "user_1", "alice", "a@b.c", "h", "1", "2", "3", "1"}});
-  StderrCapture capture;
   ASSERT_TRUE(service_->InitiatePasswordReset("alice"));
-  const std::string token = TokenFromLog(capture.Take());
+  const std::string token = TakeResetToken();
   ASSERT_FALSE(token.empty());
 
   // Hashing failure aborts the reset.
@@ -857,9 +861,8 @@ TEST_F(AuthServiceTest, PasswordResetConsumesValidTokenAndUpdatesPassword) {
 
   // Fresh token for the remaining paths.
   fake_mysql::PushRows({{"5", "user_1", "alice", "a@b.c", "h", "1", "2", "3", "1"}});
-  StderrCapture capture2;
   ASSERT_TRUE(service_->InitiatePasswordReset("alice"));
-  const std::string token2 = TokenFromLog(capture2.Take());
+  const std::string token2 = TakeResetToken();
   ASSERT_FALSE(token2.empty());
 
   // ChangePassword DB failure propagates as failure.
@@ -868,9 +871,8 @@ TEST_F(AuthServiceTest, PasswordResetConsumesValidTokenAndUpdatesPassword) {
 
   // Full success requires a third fresh token.
   fake_mysql::PushRows({{"5", "user_1", "alice", "a@b.c", "h", "1", "2", "3", "1"}});
-  StderrCapture capture3;
   ASSERT_TRUE(service_->InitiatePasswordReset("alice"));
-  const std::string token3 = TokenFromLog(capture3.Take());
+  const std::string token3 = TakeResetToken();
   ASSERT_FALSE(token3.empty());
   EXPECT_TRUE(service_->CompletePasswordReset(token3, "Str0ng!pass3"));
 }
