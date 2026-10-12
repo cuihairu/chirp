@@ -27,6 +27,8 @@ public enum ChatServiceEvent {
     /// 群名单变化(整表拉取、群 notify 或退群/被踢的本地移除;
     /// 数据在 service.groups)。
     case groupsChanged
+    /// 群昵称快照变化(名册拉取折叠或 2124 notify;数据在 service.aliases)。
+    case groupAliasChanged(groupId: String)
     /// 一个会话已被移出(退群成功或自己被踢;数据面已清)。壳层据此关
     /// 打开中的聊天面并刷新列表。
     case sessionDropped(key: String, reason: SessionDropReason)
@@ -117,6 +119,7 @@ public final class ChatSessionService {
         let friendIndex = FriendIndex()
         let presenceIndex = PresenceIndex()
         let groupIndex = GroupIndex()
+        let aliasIndex = GroupAliasIndex()
         // 队列重放不经过 service.send(),成功记账在这里补——会话预览对直发
         // 与重放一致(存档侧管线已落,索引侧是应用态)。按 options 的频道
         // 形态折键:私聊走接收方折 'p:' 键,群走频道 id 折 'g:' 键。
@@ -153,6 +156,7 @@ public final class ChatSessionService {
         friends = friendIndex
         presence = presenceIndex
         groups = groupIndex
+        aliases = aliasIndex
 
         unsubs = [
             pipe.addListener(self),
@@ -189,6 +193,7 @@ public final class ChatSessionService {
         friends.reset()
         presence.reset()
         groups.reset()
+        aliases.reset()
         pipeline.stop()
         sync.stop()
         conn.disconnect()
@@ -297,6 +302,9 @@ public final class ChatSessionService {
     public let presence: PresenceIndex
     /// 群名单数据面(P4e):服务端权威,GET_USER_GROUPS 整表 + 群 notify 重拉。
     public let groups: GroupIndex
+    /// 群昵称快照(alias 批):名册行整群重建 + 2124 notify 单点折叠;
+    /// 成员行与群聊发送者名两处渲染消费。
+    public let aliases: GroupAliasIndex
 
     // ---- 反应/输入状态/服务端历史(P4a)--------------------------------------
 
@@ -507,6 +515,7 @@ public final class ChatSessionService {
             // 打开中的聊天面(web onKickedNotify 同款)。
             let key = SessionChannel.group(notify.groupID).key
             self.groups.remove(groupId: notify.groupID)
+            self.aliases.remove(groupId: notify.groupID)
             self.sessions.remove(key: key)
             self.emit(.sessionDropped(key: key, reason: .kicked))
             self.emit(.groupsChanged)
@@ -519,12 +528,23 @@ public final class ChatSessionService {
             else { return }
             _ = self.refreshGroups()
         }
+        // 2124 群昵称变更:坏 body 丢弃;有效则折叠快照(空串 = 清除)发事件,
+        // 再整表重拉成员行(web onGroupMemberAliasUpdated 同款双路)。
+        let offAlias = conn.onNotify(msgId: .groupMemberAliasUpdatedNotify) { [weak self] body in
+            guard let self = self,
+                let notify = try? Chirp_Chat_GroupMemberAliasUpdatedNotify(serializedBytes: Data(body))
+            else { return }
+            self.aliases.fold(groupId: notify.groupID, userId: notify.userID, alias: notify.alias)
+            self.emit(.groupAliasChanged(groupId: notify.groupID))
+            _ = self.refreshGroups()
+        }
         return {
             offJoined()
             offLeft()
             offUpdated()
             offKicked()
             offMuted()
+            offAlias()
         }
     }
 
@@ -789,6 +809,7 @@ public final class ChatSessionService {
                 }
                 let key = SessionChannel.group(groupId).key
                 self.groups.remove(groupId: groupId)
+                self.aliases.remove(groupId: groupId)
                 self.sessions.remove(key: key)
                 self.emit(.sessionDropped(key: key, reason: .left))
                 self.emit(.groupsChanged)
@@ -812,7 +833,8 @@ public final class ChatSessionService {
     }
 
     /// 群成员名单(面板用;0=不分页同 web)。返回原始应答——壳层按
-    /// code 分流文案。
+    /// code 分流文案。ok 应答顺带以名册为准重建该群昵称快照并发事件
+    /// (web loadGroupMembers 同款折叠;发送者名映射数据在此)。
     public func loadGroupMembers(
         groupId: String
     ) -> Promise<Chirp_Chat_GetGroupMembersResponse> {
@@ -821,7 +843,56 @@ public final class ChatSessionService {
             $0.limit = 0
             $0.offset = 0
         }
-        return conn.request(spec: MsgSpecs.getGroupMembers, body: request)
+        return conn.request(spec: MsgSpecs.getGroupMembers, body: request).map { [weak self] resp in
+            if resp.code == .ok {
+                self?.aliases.replace(
+                    groupId: groupId,
+                    members: resp.members.map { ($0.userID, $0.alias) })
+                self?.emit(.groupAliasChanged(groupId: groupId))
+            }
+            return resp
+        }
+    }
+
+    /// 设置群昵称(2122/2123):operator 设置 target 在群内显示别名,
+    /// 空串 = 清除。回原始应答——成功后快照经 2124 notify 折叠刷新
+    /// (操作者也在扇出名里,此处不本地改,web setMemberAlias 同款)。
+    public func setMemberAlias(
+        groupId: String, targetUserId: String, alias: String
+    ) -> Promise<Chirp_Chat_SetMemberAliasResponse> {
+        let request = Chirp_Chat_SetMemberAliasRequest.with {
+            $0.groupID = groupId
+            $0.targetUserID = targetUserId
+            $0.alias = alias
+        }
+        return conn.request(spec: MsgSpecs.setMemberAlias, body: request)
+    }
+
+    /// 消息搜索(2248/2249):keyword 必填(空串短路 INVALID_PARAM 不发帧,
+    /// web 同款);channelId 空 = 请求者全可见面;limit 0/缺省 = 20 服务端
+    /// 钳 [1,50]。回原始应答(matches/hasMore 供壳层分页渲染)。
+    public func searchMessages(
+        keyword: String,
+        channelId: String = "",
+        contentTypes: [Int32] = [],
+        beforeTimestamp: Int64 = 0,
+        beforeMessageId: String = "",
+        limit: Int32 = 20
+    ) -> Promise<Chirp_Chat_SearchMessageResponse> {
+        guard !keyword.isEmpty else {
+            var rejected = Chirp_Chat_SearchMessageResponse()
+            rejected.code = .invalidParam
+            return Promise.completed(rejected)
+        }
+        let request = Chirp_Chat_SearchMessageRequest.with {
+            $0.keyword = keyword
+            $0.channelID = channelId
+            $0.contentTypes = contentTypes
+            $0.beforeTimestamp = beforeTimestamp
+            $0.beforeMessageID = beforeMessageId
+            $0.limit = limit
+        }
+        return conn.request(spec: MsgSpecs.searchMessages, body: request)
     }
 
     /// CHAT_MESSAGE_NOTIFY → MESSAGE_ACK(服务端 10s 收不到回执会把投递

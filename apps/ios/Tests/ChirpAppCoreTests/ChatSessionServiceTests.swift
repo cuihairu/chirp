@@ -766,6 +766,128 @@ final class ChatSessionServiceTests: XCTestCase {
         service.logout()
     }
 
+    /// 2122 群昵称请求:字段形状 + 原始应答透传;成功不本地改快照——
+    /// 刷新走 2124 notify(操作者也在扇出名里),web setMemberAlias 同款。
+    func testSetMemberAliasSendsFieldShapeAndPassesThrough() throws {
+        let (t, factory) = singleTransport()
+        let service = makeService(factory: factory)
+        try loginOk(service, t)
+        try deliverGroups(t, [groupInfo("g1", name: "一号", owner: "alice")])
+
+        let pending = service.setMemberAlias(groupId: "g1", targetUserId: "bob", alias: "包大人")
+        let seq = try expectRequest(t, .setMemberAliasReq)
+        let body = try Chirp_Chat_SetMemberAliasRequest(serializedBytes: lastRequestBody(t))
+        XCTAssertEqual(body.groupID, "g1")
+        XCTAssertEqual(body.targetUserID, "bob")
+        XCTAssertEqual(body.alias, "包大人")
+
+        var response = Chirp_Chat_SetMemberAliasResponse()
+        response.code = .ok
+        response.groupID = "g1"
+        response.userID = "bob"
+        response.alias = "包大人"
+        t.deliver(try wsResponse(.setMemberAliasResp, seq, response))
+        let resp = try pending.get(timeoutSeconds: 2)
+        XCTAssertEqual(resp.code, .ok)
+        XCTAssertEqual(resp.alias, "包大人")
+        XCTAssertEqual(service.aliases.aliasOf(groupId: "g1", userId: "bob"), "",
+                       "快照等 2124 notify 折叠,请求面不本地改")
+        service.logout()
+    }
+
+    /// 2124 群昵称变更:折叠快照(空串 = 清除)发事件再整表重拉;名册未
+    /// 载入的群忽略折叠;坏 body 静默丢弃(web onGroupMemberAliasUpdated 同款)。
+    func testAliasUpdatedNotifyFoldsSnapshotAndRefreshes() throws {
+        let (t, factory) = singleTransport()
+        let service = makeService(factory: factory)
+        try loginOk(service, t)
+        try deliverGroups(t, [])
+
+        // 名册未载入:2124 先到,不落快照但照常重拉成员行。
+        var early = Chirp_Chat_GroupMemberAliasUpdatedNotify()
+        early.groupID = "g9"
+        early.userID = "bob"
+        early.alias = "九爷"
+        t.deliver(try wsNotify(.groupMemberAliasUpdatedNotify, early))
+        XCTAssertEqual(try sentPacket(t).msgID, .getUserGroupsReq)
+        XCTAssertEqual(service.aliases.aliasOf(groupId: "g9", userId: "bob"), "")
+
+        // 名册已载入的群:折叠生效 + 事件 + 重拉。
+        service.aliases.replace(groupId: "g1", members: [("bob", "老包")])
+        var updated = Chirp_Chat_GroupMemberAliasUpdatedNotify()
+        updated.groupID = "g1"
+        updated.userID = "bob"
+        updated.alias = "包大人"
+        t.deliver(try wsNotify(.groupMemberAliasUpdatedNotify, updated))
+        XCTAssertEqual(try sentPacket(t).msgID, .getUserGroupsReq)
+        XCTAssertEqual(service.aliases.aliasOf(groupId: "g1", userId: "bob"), "包大人")
+        XCTAssertTrue(events.contains {
+            if case .groupAliasChanged(let groupId) = $0 { return groupId == "g1" }
+            return false
+        })
+
+        // 空串 = 清除,回退本名;坏 body 不折叠不重拉。
+        var cleared = Chirp_Chat_GroupMemberAliasUpdatedNotify()
+        cleared.groupID = "g1"
+        cleared.userID = "bob"
+        t.deliver(try wsNotify(.groupMemberAliasUpdatedNotify, cleared))
+        XCTAssertEqual(service.aliases.aliasOf(groupId: "g1", userId: "bob"), "")
+
+        let frames = t.sent.count
+        var garbage = Chirp_Gateway_Packet()
+        garbage.msgID = .groupMemberAliasUpdatedNotify
+        garbage.body = Data([0x0f, 0x70])  // wire type 7 不存在,protobuf 必拒
+        t.deliver(try encodeFrame(payload: [UInt8](garbage.serializedData())))
+        XCTAssertEqual(t.sent.count, frames, "坏 body 丢弃,不重拉")
+        service.logout()
+    }
+
+    /// 2248 消息搜索:字段形状(缺省值) + 原始应答透传;空关键词短路
+    /// INVALID_PARAM 不发帧(web searchMessages 同款)。
+    func testSearchMessagesSendsFieldShapeAndShortCircuitsEmptyKeyword() throws {
+        let (t, factory) = singleTransport()
+        let service = makeService(factory: factory)
+        try loginOk(service, t)
+
+        let pending = service.searchMessages(keyword: "副本")
+        let seq = try expectRequest(t, .searchMessageReq)
+        let body = try Chirp_Chat_SearchMessageRequest(serializedBytes: lastRequestBody(t))
+        XCTAssertEqual(body.keyword, "副本")
+        XCTAssertEqual(body.channelID, "", "空 = 请求者全可见面")
+        XCTAssertTrue(body.contentTypes.isEmpty)
+        XCTAssertEqual(body.beforeTimestamp, 0)
+        XCTAssertEqual(body.beforeMessageID, "")
+        XCTAssertEqual(body.limit, 20, "缺省 20,服务端钳 [1,50]")
+
+        // 全参形状逐字段透传。
+        let scoped = service.searchMessages(
+            keyword: "loot", channelId: "g:g1", contentTypes: [1, 3],
+            beforeTimestamp: 5_000, beforeMessageId: "m42", limit: 7)
+        let seq2 = try expectRequest(t, .searchMessageReq)
+        let full = try Chirp_Chat_SearchMessageRequest(serializedBytes: lastRequestBody(t))
+        XCTAssertEqual(full.keyword, "loot")
+        XCTAssertEqual(full.channelID, "g:g1")
+        XCTAssertEqual(full.contentTypes, [1, 3])
+        XCTAssertEqual(full.beforeTimestamp, 5_000)
+        XCTAssertEqual(full.beforeMessageID, "m42")
+        XCTAssertEqual(full.limit, 7)
+
+        var response = Chirp_Chat_SearchMessageResponse()
+        response.code = .ok
+        response.hasMore_p = true
+        t.deliver(try wsResponse(.searchMessageResp, seq2, response))
+        let resp = try scoped.get(timeoutSeconds: 2)
+        XCTAssertEqual(resp.code, .ok)
+        XCTAssertTrue(resp.hasMore_p)
+
+        // 空关键词:短路回 INVALID_PARAM,不发帧。
+        let frames = t.sent.count
+        let rejected = try service.searchMessages(keyword: "").get(timeoutSeconds: 2)
+        XCTAssertEqual(rejected.code, .invalidParam)
+        XCTAssertEqual(t.sent.count, frames, "空关键词不发帧")
+        service.logout()
+    }
+
     func testLoadGroupMembersRoundTrip() throws {
         let (t, factory) = singleTransport()
         let service = makeService(factory: factory)
@@ -781,6 +903,7 @@ final class ChatSessionServiceTests: XCTestCase {
         var owner = Chirp_Chat_GroupMember()
         owner.userID = "alice"
         owner.username = "alice"
+        owner.alias = "群主大人"
         owner.role = .moderator
         var member = Chirp_Chat_GroupMember()
         member.userID = "bob"
@@ -796,6 +919,13 @@ final class ChatSessionServiceTests: XCTestCase {
         XCTAssertEqual(resp.members.map(\.userID), ["alice", "bob"])
         XCTAssertEqual(resp.members[0].role, .moderator)
         XCTAssertEqual(resp.totalCount, 2)
+        // 名册行顺带重建该群昵称快照:非空行落,空行不落(web 同款)。
+        XCTAssertEqual(service.aliases.aliasOf(groupId: "g1", userId: "alice"), "群主大人")
+        XCTAssertEqual(service.aliases.aliasOf(groupId: "g1", userId: "bob"), "")
+        XCTAssertTrue(events.contains {
+            if case .groupAliasChanged(let groupId) = $0 { return groupId == "g1" }
+            return false
+        })
         service.logout()
     }
 
