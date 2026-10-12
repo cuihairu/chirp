@@ -2,7 +2,9 @@ import {
   ChannelType,
   ChatMessage,
   GroupInfo,
+  GroupMemberAliasUpdatedNotify,
   GroupMemberKickedNotify,
+  GroupMemberMutedNotify,
   MessageAck,
   MessageDeletedNotify,
   MessageEditedNotify,
@@ -36,7 +38,10 @@ import {
   LOGOUT,
   MARK_READ,
   REMOVE_REACTION,
+  SEARCH_MESSAGE,
   SEND_MESSAGE,
+  SET_GROUP_MUTE,
+  SET_MEMBER_ALIAS,
   type MessageSpec,
 } from '@chirp/app-protocol/msg_map';
 import {
@@ -134,6 +139,10 @@ export class ChatApi {
   private messageListeners = new Set<
     (message: { channel: ChannelRef; fromUserId: string; content: string; messageId: string }) => void
   >();
+  // ---- 群昵称快照（渲染两处消费：成员列表行 + 群聊消息发送者名） ----
+  // groupId → userId → alias；缺键 = 未设或已清除。名册拉取与 2124 通知双路
+  // 维护；ChatMessage 无 alias 字段，映射走这份快照而非改协议（web 同款）。
+  private aliasByGroup = new Map<string, Map<string, string>>();
 
   constructor(deps: ChatApiDeps) {
     this.conn = deps.conn;
@@ -157,6 +166,16 @@ export class ChatApi {
       this.conn.onNotify(MsgID.GROUP_MEMBER_LEFT_NOTIFY, () => void this.refreshGroups()),
       this.conn.onNotify(MsgID.GROUP_MEMBER_KICKED_NOTIFY, (body) => this.onKickedNotify(body)),
       this.conn.onNotify(MsgID.GROUP_UPDATED_NOTIFY, () => void this.refreshGroups()),
+      // 群昵称别名变更通知(GROUP_MEMBER_ALIAS_UPDATED_NOTIFY 2124)：折叠
+      // 快照 + 刷新群列表（渲染两处消费——成员列表行 + 发送者名）。
+      this.conn.onNotify(MsgID.GROUP_MEMBER_ALIAS_UPDATED_NOTIFY, (body) =>
+        this.onGroupMemberAliasUpdated(body),
+      ),
+      // 群禁言态变更通知(GROUP_MEMBER_MUTED_NOTIFY 2252)：刷新群列表，
+      // 成员行据此渲染禁言徽章(GroupMember.mutedUntilTs 随名册下发)。
+      this.conn.onNotify(MsgID.GROUP_MEMBER_MUTED_NOTIFY, (body) =>
+        this.onGroupMemberMutedUpdated(body),
+      ),
       this.conn.onNotify(MsgID.MESSAGE_READ_NOTIFY, (body) => this.onReadNotify(body)),
       this.conn.onNotify(MsgID.TYPING_INDICATOR_NOTIFY, (body) => this.onTypingNotify(body)),
       this.conn.onNotify(MsgID.REACTION_ADDED_NOTIFY, (body) => this.onReactionNotify(body, true)),
@@ -449,9 +468,19 @@ export class ChatApi {
     return conversations;
   }
 
+  /** 读群内昵称；未设或已清除返回空串（发送者名映射按此回退本名）。 */
+  groupAliasOf(groupId: string, userId: string): string {
+    return this.aliasByGroup.get(groupId)?.get(userId) ?? '';
+  }
+
   async loadGroupMembers(groupId: string) {
     const resp = await this.conn.request(GET_GROUP_MEMBERS, { groupId });
-    return resp.code === 0 ? resp.members : [];
+    if (resp.code !== 0) return [];
+    // 名册为准重建该群昵称快照（群聊发送者名映射的数据源，web 同款）。
+    const aliases = new Map<string, string>();
+    for (const m of resp.members ?? []) if (m.alias) aliases.set(m.userId, m.alias);
+    this.aliasByGroup.set(groupId, aliases);
+    return resp.members;
   }
 
   /** INVITE adds directly server-side (no pending state) — "添加成员". */
@@ -477,6 +506,51 @@ export class ChatApi {
     });
     if (resp.code === 0) await this.refreshGroups();
     return resp.code;
+  }
+
+  // ---- 消息搜索(SEARCH_MESSAGE_REQ/RESP 2248/2249) ----
+  // keyword 必填,其余可选。返回 SearchMessageResponse{code, matches[], hasMore}。
+  async searchMessages(
+    keyword: string,
+    options: {
+      channelId?: string;
+      contentTypes?: number[];
+      beforeTimestamp?: number;
+      beforeMessageId?: string;
+      limit?: number;
+    } = {},
+  ) {
+    if (!this.auth.get().userId) {
+      return { code: ErrorCode.SESSION_EXPIRED, matches: [], hasMore: false };
+    }
+    if (!keyword) return { code: ErrorCode.INVALID_PARAM, matches: [], hasMore: false };
+    return this.conn.request(SEARCH_MESSAGE, {
+      keyword,
+      channelId: options.channelId ?? '',
+      contentTypes: options.contentTypes ?? [],
+      beforeTimestamp: options.beforeTimestamp ?? 0,
+      beforeMessageId: options.beforeMessageId ?? '',
+      limit: options.limit ?? 20,
+    });
+  }
+
+  // ---- 设置群昵称(SET_MEMBER_ALIAS_REQ/RESP 2122/2123) ----
+  // operator 设置 target 在 group 内的显示别名。alias 空串 = 清除。
+  async setMemberAlias(groupId: string, targetUserId: string, alias: string) {
+    const userId = this.auth.get().userId;
+    if (!userId) return { code: ErrorCode.SESSION_EXPIRED, groupId, userId: targetUserId, alias };
+    return this.conn.request(SET_MEMBER_ALIAS, { groupId, targetUserId, alias });
+  }
+
+  // ---- 群禁言(SET_GROUP_MUTE_REQ/RESP 2250/2251) ----
+  // MODERATOR+ 禁言/解禁本群成员。seconds=0 解禁,上限 30 天(30*24*3600);
+  // 服务端回 PERMISSION_DENIED 时本端不做二次判定,由 UI 层按角色收入口。
+  async setGroupMute(groupId: string, targetUserId: string, seconds: number) {
+    const userId = this.auth.get().userId;
+    if (!userId) {
+      return { code: ErrorCode.SESSION_EXPIRED, groupId, userId: targetUserId, mutedUntilTs: 0 };
+    }
+    return this.conn.request(SET_GROUP_MUTE, { groupId, targetUserId, durationSec: seconds });
   }
 
   /** Leave and drop the local cache: the MEMBER_LEFT notify excludes the actor. */
@@ -509,6 +583,37 @@ export class ChatApi {
     } else {
       void this.refreshGroups();
     }
+  }
+
+  /** 2124: group member alias updated — fold the change into the alias
+   *  snapshot (sender-name mapping) and refresh the group list (member rows).
+   *  Malformed notify is silently ignored. */
+  private onGroupMemberAliasUpdated(body: Uint8Array): void {
+    let notify: GroupMemberAliasUpdatedNotify;
+    try {
+      notify = GroupMemberAliasUpdatedNotify.decode(body);
+    } catch {
+      return; // malformed notify: ignore
+    }
+    const aliases = this.aliasByGroup.get(notify.groupId);
+    if (aliases) {
+      // 空串 = 清除：移出快照，群聊发送者名回退本名。名册未载入的群不落快照。
+      if (notify.alias) aliases.set(notify.userId, notify.alias);
+      else aliases.delete(notify.userId);
+    }
+    void this.refreshGroups();
+  }
+
+  /** 2252: a member's mute state changed — refresh the roster so member rows
+   *  re-render the muted badge (GroupMember.mutedUntilTs rides the roster).
+   *  Malformed notify is silently ignored. */
+  private onGroupMemberMutedUpdated(body: Uint8Array): void {
+    try {
+      GroupMemberMutedNotify.decode(body);
+    } catch {
+      return; // malformed notify: ignore
+    }
+    void this.refreshGroups();
   }
 
   async createGroup(name: string, description = ''): Promise<string | null> {
