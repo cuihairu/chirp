@@ -300,9 +300,9 @@ KNOWN_UNCOVERABLE = {
     ("libs/common/src/metrics_http_server.cc", 145),
     # AuthService ConfirmPasswordReset expired-token branch: tokens live 1h
     # and there is no injectable clock to age one past its expiry.
-    ("services/app/auth/src/auth_service.cc", 424),
-    ("services/app/auth/src/auth_service.cc", 425),
-    ("services/app/auth/src/auth_service.cc", 426),
+    ("services/app/auth/src/auth_service.cc", 429),
+    ("services/app/auth/src/auth_service.cc", 430),
+    ("services/app/auth/src/auth_service.cc", 431),
     # PresenceManager CleanupOfflineUsers erase: last_seen is written only
     # from the internal clock, so no test can age an entry past the 24h cutoff.
     ("services/social/src/presence_manager.cc", 408),
@@ -723,7 +723,7 @@ KNOWN_UNCOVERABLE_ARMS = {
     # exempted arms are the residual edges that stayed 0 under every input:
     # post-inline dead blocks / allocation-failure unwind paths that no
     # argument shape can reach.
-    ("services/shared/chat/src/hybrid_message_store.cc", 528): ((8, 9),
+    ("services/shared/chat/src/hybrid_message_store.cc", 542): ((8, 9),
         "GetDeliveryStatus: dead post-inline duplicate of the second "
         "ParseI64 entry block (46->47/46->48 with the never-returning call); "
         "every live edge of both parses is taken across empty, non-numeric, "
@@ -733,15 +733,17 @@ KNOWN_UNCOVERABLE_ARMS = {
         "in the batch-7 gate. Line re-pinned 514->524 for the P1-5 "
         "per-device split's upstream line drift; block layout unchanged. "
         "Line re-pinned 524->528 for the ActorKind sender_kind +4-line "
+        "upstream drift; 528->542 for the redis-probe retry +14-line "
         "upstream drift; block layout unchanged.)"),
-    ("services/shared/chat/src/hybrid_message_store.cc", 560): ((3,),
+    ("services/shared/chat/src/hybrid_message_store.cc", 574): ((3,),
         "GetPendingDeliveries expiry parse: structurally dead edge in the "
         "inlined ParseI64/substr block layout (12->14); empty, non-numeric, "
         "17-digit heap, overflow and INT64_MAX-exact expiry inputs all "
         "exercise the other five arms. (Line re-pinned 546->556 for the "
         "P1-5 per-device split's upstream line drift; 556->560 for the "
-        "ActorKind sender_kind +4-line upstream drift.)"),
-    ("services/shared/chat/src/hybrid_message_store.cc", 585): ((14, 15, 16, 17),
+        "ActorKind sender_kind +4-line upstream drift; 560->574 for the "
+        "redis-probe retry +14-line upstream drift.)"),
+    ("services/shared/chat/src/hybrid_message_store.cc", 599): ((14, 15, 16, 17),
         "PrivateChannelId string-concat fragments attributed to the "
         "push_back line: operator+ allocation-failure blocks (calls with "
         "returned=0, bad_alloc unwind); the live SSO and heap-concat edges "
@@ -750,6 +752,7 @@ KNOWN_UNCOVERABLE_ARMS = {
         "renumbered the pad arcs 16->17/16->18 and 20->21/20->22. Line "
         "re-pinned 571->581 for the P1-5 per-device split's upstream "
         "line drift; 581->585 for the ActorKind sender_kind +4-line "
+        "upstream drift; 585->599 for the redis-probe retry +14-line "
         "upstream drift.)"),
     ("services/shared/chat/src/player_directory.cc", 194): ((20, 21, 22, 23, 24, 25),
         "Unsubscribe log line: internal arcs of the bad_alloc landing pads "
@@ -913,7 +916,7 @@ KNOWN_UNCOVERABLE_ARMS = {
         "batch-8 migration from a stale whole-line pin; dead arm(s) in every gcda context of the audit run"),
     ("services/app/auth/src/auth_service.cc", 80): ((0,),
         "batch-8 migration from a stale whole-line pin; dead arm(s) in every gcda context of the audit run"),
-    ("services/app/auth/src/auth_service.cc", 423): ((2,),
+    ("services/app/auth/src/auth_service.cc", 428): ((2,),
         "batch-8 migration from a stale whole-line pin; dead arm(s) in every gcda context of the audit run"),
     ("services/app/auth/src/mysql_session_store.cc", 180): ((12, 13, 14, 15),
         "batch-8 migration from a stale whole-line pin; dead arm(s) in every gcda context of the audit run"),
