@@ -108,6 +108,13 @@ export interface ChatApiDeps {
   typing: Store<TypingState>;
   /** 多端在线（P0）；optional so older constructions stay source-compatible. */
   onlineDevices?: Store<OnlineDevicesState>;
+  /**
+   * 发送侧词库预检开关（ProfilePage 设置行，AppServices 供偏好镜像读取；
+   * optional so older constructions stay source-compatible）。缺省恒开。
+   * 注入 getter 而非布尔值：common/ 的偏好镜像有 @ohos 依赖，code/ 层保持
+   * framework-free，由组合根把镜像读法接进来。
+   */
+  wordFilterEnabled?: () => boolean;
 }
 
 export interface ChannelRef {
@@ -132,6 +139,8 @@ export class ChatApi {
   private readonly onlineDevices: Store<OnlineDevicesState> | null;
   /** 词库下发同步（MsgID 2245-2247）：发送侧预检跟随服务端词库。 */
   private readonly wordFilter: WordFilterSync;
+  /** 发送侧预检开关（设置行）：关闭只跳过预检，词库同步照常。 */
+  private readonly wordFilterEnabled: () => boolean;
   /** The channel currently open on screen; it never accumulates local unread. */
   private activeChannelKey: string | null = null;
   private unsubs: Array<() => void> = [];
@@ -155,6 +164,7 @@ export class ChatApi {
     // onReconnecting/onReconnected（真实现 ChirpClient 都有，测试桩没有，
     // 也用不到），故经 unknown 收窄 cast。
     this.wordFilter = new WordFilterSync(deps.conn as unknown as PipelineConnection);
+    this.wordFilterEnabled = deps.wordFilterEnabled ?? (() => true);
   }
 
   /** Subscribe to server pushes. Idempotent; call again after stop(). */
@@ -291,7 +301,9 @@ export class ChatApi {
       clientTimestamp: Date.now(),
     };
     // 预检只读写 content（两面在我们手上非缺省），断言为完整消息面。
-    const blocked = !this.wordFilter.onBeforeSend(wire as SendMessageRequest);
+    // 设置行关闭时跳过本地预检：词库同步照常，重新打开即时生效。
+    const blocked =
+      !this.wordFilterEnabled() || !this.wordFilter.onBeforeSend(wire as SendMessageRequest);
     const clientId = `pending-${Date.now().toString(36)}-${pendingCounter++}`;
     const optimistic: ChatMessageView = {
       messageId: clientId,

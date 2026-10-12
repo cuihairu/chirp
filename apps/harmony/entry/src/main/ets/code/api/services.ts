@@ -85,6 +85,8 @@ export interface CreateServicesOptions {
   partyUrl?: string;
   voiceUrl?: string;
   deviceUrl?: string;
+  /** 发送侧词库预检开关（ProfilePage 设置行，AppServices 供偏好镜像读取）。 */
+  wordFilterEnabled?: () => boolean;
 }
 
 export function createServices(options: CreateServicesOptions): Services {
@@ -110,6 +112,7 @@ export function createServices(options: CreateServicesOptions): Services {
     messages,
     typing,
     onlineDevices,
+    wordFilterEnabled: options.wordFilterEnabled,
   });
 
   // 与 web 端同口径：四个附属平面只有拿到显式 URL 才建（设备上没有 vite

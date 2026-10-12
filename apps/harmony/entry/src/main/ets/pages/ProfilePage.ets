@@ -28,6 +28,7 @@ struct ProfilePage {
   @State userId: string = '';
   @State online: DeviceRow[] = [];
   @State unreadCount: number = 0;
+  @State filterOn: boolean = true;
   private unsubsHolder: Array<() => void> = [];
 
   build() {
@@ -223,6 +224,25 @@ struct ProfilePage {
         .padding({ top: 12, bottom: 12 })
         .onClick(() => router.pushUrl({ url: 'pages/NotificationsPage' }).catch(() => {}))
 
+        // 聊天词库过滤：发送侧本地预检总开关（关闭只跳过预检，词库同步
+        // 照常，重开即时生效）；落盘与判定见 common/WordFilterSettings.ts。
+        Row({ space: 10 }) {
+          Column({ space: 2 }) {
+            Text('聊天词库过滤').fontSize(14).fontColor(C.text)
+            Text('发送前按服务端词库预检').fontSize(11).fontColor(C.text3)
+          }
+          .alignItems(HorizontalAlign.Start)
+          .layoutWeight(1)
+          Toggle({ type: ToggleType.Switch, isOn: this.filterOn })
+            .selectedColor(C.accent)
+            .onChange((on: boolean) => {
+              this.filterOn = on
+              void appServices.setWordFilterEnabled(on)
+            })
+        }
+        .width('100%')
+        .padding({ top: 12, bottom: 12 })
+
         // 深色模式（固定深色 token 体系，无浅色变体）
         Row({ space: 10 }) {
           Text('深色模式').fontSize(14).fontColor(C.text).layoutWeight(1)
@@ -342,6 +362,8 @@ struct ProfilePage {
       return
     }
     this.refresh()
+    // 开关镜像同步读：偏好预载在 AppServices prewarm/configure 已起。
+    this.filterOn = appServices.wordFilterEnabled
     this.unsubsHolder = [
       services.conversations.subscribe(() => this.refresh()),
       services.devices.subscribe(() => this.refresh()),

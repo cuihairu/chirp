@@ -21,6 +21,12 @@ import {
   DEFAULT_NOTIFY_SETTINGS,
   type NotifySettings,
 } from './NotifySettings';
+import {
+  loadWordFilterSettings,
+  saveWordFilterEnabled,
+  wordFilterEnabledCache,
+  setWordFilterEnabledCache,
+} from './WordFilterSettings';
 
 /**
  * 应用级单例（EntryAbility 与各页面共用的服务面）：组装五连接 + stores +
@@ -59,6 +65,7 @@ class AppServices {
     if (config.baseUrl !== '' && this.servicesRef === null) {
       this.servicesRef = this.buildServices(config);
       void this.loadNotifySettings();
+      void this.loadWordFilterSettings();
     }
     return config;
   }
@@ -107,6 +114,7 @@ class AppServices {
     const config = await this.prewarm();
     this.servicesRef = this.buildServices(config);
     void this.loadNotifySettings();
+    void this.loadWordFilterSettings();
   }
 
   private buildServices(config: HostConfigData): Services {
@@ -115,6 +123,8 @@ class AppServices {
       deviceId: config.deviceId,
       deviceName: config.deviceName,
       ...planeUrls(config.baseUrl),
+      // code/ 层 framework-free：把偏好镜像的读法作为 getter 注入。
+      wordFilterEnabled: () => wordFilterEnabledCache(),
     });
   }
 
@@ -144,6 +154,27 @@ class AppServices {
     await saveNotifySettings(ctx, settings);
     applyNotifySettings(settings);
     this.notifySettingsRef = settings;
+  }
+
+  /** 词库过滤开关（ProfilePage 设置卡读写）：读走内存镜像（同步路径）。 */
+  get wordFilterEnabled(): boolean {
+    return wordFilterEnabledCache();
+  }
+
+  /** 从 preferences 预载词库过滤开关；失败取默认值（开）。 */
+  async loadWordFilterSettings(): Promise<boolean> {
+    try {
+      return await loadWordFilterSettings(this.requireContext());
+    } catch {
+      setWordFilterEnabledCache(true);
+      return true;
+    }
+  }
+
+  /** 设置卡写入：落盘 + 更新内存镜像（ChatApi 下一次发送即生效）。 */
+  async setWordFilterEnabled(enabled: boolean): Promise<void> {
+    const ctx = this.requireContext();
+    await saveWordFilterEnabled(ctx, enabled);
   }
 
   /**
