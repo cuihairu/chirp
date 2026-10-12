@@ -1,4 +1,5 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
+import { act } from 'react';
 import { render, screen, fireEvent } from '@testing-library/react';
 import App from './App';
 import { jsonResponse, stubFetch } from './test-utils';
@@ -13,7 +14,9 @@ const USERS = [
 // and re-polls /api/stats every 5s — fake timers keep both deterministic.
 async function renderAppPastIntroGate() {
   const utils = render(<App />);
-  await vi.advanceTimersByTimeAsync(500);
+  await act(async () => {
+    await vi.advanceTimersByTimeAsync(500);
+  });
   return utils;
 }
 
@@ -45,7 +48,9 @@ describe('App shell', () => {
     const callsAfterMount = fetchMock.mock.calls.filter(([u]) => String(u) === '/api/stats').length;
     expect(callsAfterMount).toBeGreaterThanOrEqual(1);
 
-    await vi.advanceTimersByTimeAsync(5000);
+    await act(async () => {
+      await vi.advanceTimersByTimeAsync(5000);
+    });
     expect(fetchMock.mock.calls.filter(([u]) => String(u) === '/api/stats').length)
       .toBeGreaterThanOrEqual(callsAfterMount + 1);
   });
@@ -70,7 +75,9 @@ describe('App shell', () => {
     await renderAppPastIntroGate();
 
     fireEvent.click(screen.getAllByText('Users')[0]);
-    await vi.advanceTimersByTimeAsync(0);
+    await act(async () => {
+      await vi.advanceTimersByTimeAsync(0);
+    });
 
     expect(screen.getByText('Ada')).toBeTruthy();
     expect(screen.getByText('Bob')).toBeTruthy();

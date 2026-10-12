@@ -45,7 +45,7 @@ export default function LoginPage(props: {
       }}
     >
       <Paper elevation={6} sx={{ p: 4, width: 380 }}>
-        <Typography variant="h5" fontWeight={700}>
+        <Typography variant="h5" sx={{ fontWeight: 700 }}>
           Chirp
         </Typography>
         <Typography variant="body2" color="text.secondary" sx={{ mt: 0.5 }}>

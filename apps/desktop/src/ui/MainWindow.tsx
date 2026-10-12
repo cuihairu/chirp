@@ -156,7 +156,7 @@ export default function MainWindow(props: {
   return (
     <Box sx={{ display: 'flex', flexDirection: 'column', height: '100vh' }}>
       <Toolbar variant="dense" sx={{ bgcolor: 'background.paper', borderBottom: '1px solid', borderColor: 'divider' }}>
-        <Typography variant="h6" fontWeight={700} sx={{ mr: 2 }}>
+        <Typography variant="h6" sx={{ mr: 2, fontWeight: 700 }}>
           Chirp
         </Typography>
         <Typography variant="body2" color="text.secondary">
