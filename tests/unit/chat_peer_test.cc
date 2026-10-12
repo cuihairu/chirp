@@ -1845,13 +1845,16 @@ TEST(ChatPeerHubTest, HeartbeatKeepsIdlePeerAlive) {
   ASSERT_TRUE(RegisterAndGetResp(client, MakeRegisterReq(), resp));
   EXPECT_EQ(resp.code(), chirp::common::OK);
 
-  // Pinging every ~700ms keeps the connection past several idle windows.
-  for (int i = 0; i < 4; ++i) {
-    std::this_thread::sleep_for(std::chrono::milliseconds(700));
+  // Pinging every ~250ms keeps the connection across several idle windows.
+  // Short sleeps leave headroom before the 1s idle window even when the
+  // scheduler oversleeps, and the generous read timeout rides out slow
+  // machines (a 3s default was hit under build load).
+  for (int i = 0; i < 12; ++i) {
+    std::this_thread::sleep_for(std::chrono::milliseconds(250));
     chirp::gateway::HeartbeatPing ping;
     client.Send(MakePacket(chirp::gateway::HEARTBEAT_PING, i + 1, ping));
     Packet pkt;
-    ASSERT_TRUE(client.Read(pkt));
+    ASSERT_TRUE(client.Read(pkt, std::chrono::seconds(5)));
     EXPECT_EQ(pkt.msg_id(), chirp::gateway::HEARTBEAT_PONG);
   }
 
