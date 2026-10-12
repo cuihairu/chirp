@@ -41,7 +41,7 @@ jobs:
         unzip -q -o /tmp/protoc.zip -d "$RUNNER_TEMP/protoc33"
         "$RUNNER_TEMP/protoc33/bin/protoc" --version
 
-    - uses: actions/setup-go@v5
+    - uses: actions/setup-go@v7
       with:
         go-version: 'stable'
 
