@@ -7,6 +7,7 @@ import chirp.game_server_gateway.GameServerGateway
 import chirp.gateway.Gateway
 import chirp.party.Party
 import chirp.social.Social
+import chirp.voice.Voice
 import com.google.protobuf.MessageLite
 
 /**
@@ -58,6 +59,17 @@ object MsgSpecs {
     )
     val getGroupMembers = MessageSpec(
         Gateway.MsgID.GET_GROUP_MEMBERS_REQ, Gateway.MsgID.GET_GROUP_MEMBERS_RESP, Chat.GetGroupMembersResponse::parseFrom,
+    )
+
+    // Group-domain moderation/search (alias 2122/2123, search 2248/2249, mute 2250/2251).
+    val setMemberAlias = MessageSpec(
+        Gateway.MsgID.SET_MEMBER_ALIAS_REQ, Gateway.MsgID.SET_MEMBER_ALIAS_RESP, Chat.SetMemberAliasResponse::parseFrom,
+    )
+    val searchMessages = MessageSpec(
+        Gateway.MsgID.SEARCH_MESSAGE_REQ, Gateway.MsgID.SEARCH_MESSAGE_RESP, Chat.SearchMessageResponse::parseFrom,
+    )
+    val setGroupMute = MessageSpec(
+        Gateway.MsgID.SET_GROUP_MUTE_REQ, Gateway.MsgID.SET_GROUP_MUTE_RESP, Chat.SetGroupMuteResponse::parseFrom,
     )
 
     // Reactions, edit/delete (typing has no REQ: it is fire-and-forget 2208).
@@ -141,6 +153,31 @@ object MsgSpecs {
         Gateway.MsgID.GET_MY_PARTY_REQ, Gateway.MsgID.GET_MY_PARTY_RESP, Party.GetMyPartyResponse::parseFrom,
     )
 
+    // Voice plane (WS 9001): room roster signalling only — the SDP/ICE relay
+    // (4007-4009) and SPEAKING_NOTIFY (4021) are a WebRTC media plane the
+    // companion does not ship; join carries an empty sdp_offer (web 同口径).
+    val createRoom = MessageSpec(
+        Gateway.MsgID.CREATE_ROOM_REQ, Gateway.MsgID.CREATE_ROOM_RESP, Voice.CreateRoomResponse::parseFrom,
+    )
+    val joinRoom = MessageSpec(
+        Gateway.MsgID.JOIN_ROOM_REQ, Gateway.MsgID.JOIN_ROOM_RESP, Voice.JoinRoomResponse::parseFrom,
+    )
+    val leaveRoom = MessageSpec(
+        Gateway.MsgID.LEAVE_ROOM_REQ, Gateway.MsgID.LEAVE_ROOM_RESP, Voice.LeaveRoomResponse::parseFrom,
+    )
+    val getRoomInfo = MessageSpec(
+        Gateway.MsgID.GET_ROOM_INFO_REQ, Gateway.MsgID.GET_ROOM_INFO_RESP, Voice.GetRoomInfoResponse::parseFrom,
+    )
+    val getUserRoom = MessageSpec(
+        Gateway.MsgID.GET_USER_ROOM_REQ, Gateway.MsgID.GET_USER_ROOM_RESP, Voice.GetUserRoomResponse::parseFrom,
+    )
+    val setMute = MessageSpec(
+        Gateway.MsgID.SET_MUTE_REQ, Gateway.MsgID.SET_MUTE_RESP, Voice.SetMuteResponse::parseFrom,
+    )
+    val setDeafen = MessageSpec(
+        Gateway.MsgID.SET_DEAFEN_REQ, Gateway.MsgID.SET_DEAFEN_RESP, Voice.SetDeafenResponse::parseFrom,
+    )
+
     // Device plane (app_gateway WS 5201): registration / listing of the push
     // targets for our account. app_gateway authenticates the session and pins
     // user_id server-side; 6009 PUSH_NOTIFICATION is deliberately absent —
@@ -183,11 +220,14 @@ object MsgSpecs {
         login, logout,
         sendMessage, getHistory, markRead, getUserGroups, createGroup, inviteToGroup,
         leaveGroup, kickMember, getGroupMembers,
+        setMemberAlias, searchMessages, setGroupMute,
         addReaction, removeReaction, editMessage, deleteMessage,
         addFriend, friendRequestAction, removeFriend, getFriendList, getPendingRequests,
         blockUser, unblockUser, getBlockedList, setPresence, getPresence,
         createParty, disbandParty, inviteToParty, acceptPartyInvite, declinePartyInvite,
         leaveParty, kickPartyMember, transferPartyLeader, setPartyReady, getMyParty,
+        createRoom, joinRoom, leaveRoom, getRoomInfo,
+        getUserRoom, setMute, setDeafen,
         registerDevice, unregisterDevice, getUserDevices,
         setGamePresenceEnabled, getGamePresence,
         wordFilterFetch,

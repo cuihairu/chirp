@@ -23,11 +23,18 @@ class MsgSpecsTest {
         assertEquals(1005, Gateway.MsgID.KICK_NOTIFY_VALUE)
         assertEquals(1020, Gateway.MsgID.DEVICES_PRESENCE_NOTIFY_VALUE)
         assertEquals(2005, Gateway.MsgID.CHAT_MESSAGE_NOTIFY_VALUE)
+        assertEquals(2122, Gateway.MsgID.SET_MEMBER_ALIAS_REQ_VALUE)
+        assertEquals(2123, Gateway.MsgID.SET_MEMBER_ALIAS_RESP_VALUE)
+        assertEquals(2248, Gateway.MsgID.SEARCH_MESSAGE_REQ_VALUE)
+        assertEquals(2249, Gateway.MsgID.SEARCH_MESSAGE_RESP_VALUE)
+        assertEquals(2250, Gateway.MsgID.SET_GROUP_MUTE_REQ_VALUE)
+        assertEquals(2251, Gateway.MsgID.SET_GROUP_MUTE_RESP_VALUE)
+        assertEquals(2252, Gateway.MsgID.GROUP_MEMBER_MUTED_NOTIFY_VALUE)
     }
 
     @Test
     fun specTableIsCompleteAndPairsStayDistinct() {
-        assertEquals(41, MsgSpecs.all.size)
+        assertEquals(51, MsgSpecs.all.size)
         for (spec in MsgSpecs.all) {
             assertTrue(
                 spec.reqMsgId != spec.respMsgId,
@@ -43,6 +50,9 @@ class MsgSpecsTest {
         assertTrue(MsgSpecs.login.decodeResponse(ByteArray(0)) is Auth.LoginResponse)
         assertTrue(MsgSpecs.sendMessage.decodeResponse(ByteArray(0)) is Chat.SendMessageResponse)
         assertTrue(MsgSpecs.wordFilterFetch.decodeResponse(ByteArray(0)) is Chat.WordFilterFetchResponse)
+        assertTrue(MsgSpecs.setMemberAlias.decodeResponse(ByteArray(0)) is Chat.SetMemberAliasResponse)
+        assertTrue(MsgSpecs.searchMessages.decodeResponse(ByteArray(0)) is Chat.SearchMessageResponse)
+        assertTrue(MsgSpecs.setGroupMute.decodeResponse(ByteArray(0)) is Chat.SetGroupMuteResponse)
         assertTrue(MsgSpecs.getHistory.decodeResponse(ByteArray(0)) is Chat.GetHistoryResponse)
         assertTrue(MsgSpecs.addFriend.decodeResponse(ByteArray(0)) is Social.AddFriendResponse)
         assertTrue(MsgSpecs.createParty.decodeResponse(ByteArray(0)) is Party.CreatePartyResponse)

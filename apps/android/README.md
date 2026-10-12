@@ -102,11 +102,11 @@ Two legs, both must stay green:
 
 ```sh
 make test    # leg 1 (SDK-free): JDK 21 + kotlinc; compiles src/main/kotlin +
-             #   src/test/kotlin against pinned jars, runs the 109 tests
+             #   src/test/kotlin against pinned jars, runs the 110 tests
 make clean
 
 ./gradlew assembleDebug        # leg 2: AGP 9.4.1 app shell → debug APK
-./gradlew testDebugUnitTest    #   the same 109 tests through Gradle
+./gradlew testDebugUnitTest    #   the same 110 tests through Gradle
 #   (+ the push variant: ./gradlew clean assembleDebug testDebugUnitTest
 #    -PchirpPush=true — fetches Firebase, compiles the FCM receive side
 #    (ChirpFirebaseService) which the default build never sees, exercises

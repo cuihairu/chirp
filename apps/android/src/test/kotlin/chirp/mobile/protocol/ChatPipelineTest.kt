@@ -165,6 +165,36 @@ class ChatPipelineTest {
     }
 
     @Test
+    fun loginCarriesDeclaredLevelAcrossRenewal() {
+        val (pipeline, transport) = connectedPipeline()
+        pipeline.provider = object : AuthProvider {
+            override fun getToken(): String = "stale-token"
+            override fun renewToken(): String? = "fresh-token"
+        }
+        // The client-declared level rides on the first round...
+        val first = pipeline.login("user-1", level = 7)
+        val sent = Gateway.Packet.parseFrom(transport.lastSentPayload())
+        assertEquals(7, Auth.LoginRequest.parseFrom(sent.body).level)
+        transport.deliverWsMessage(
+            wsMessage(
+                Gateway.MsgID.LOGIN_RESP, 1,
+                Auth.LoginResponse.newBuilder().setCode(Common.ErrorCode.AUTH_FAILED).build(),
+            ),
+        )
+        // ...and the renewed round carries the same declared level.
+        val second = Gateway.Packet.parseFrom(transport.lastSentPayload())
+        assertEquals("fresh-token", Auth.LoginRequest.parseFrom(second.body).token)
+        assertEquals(7, Auth.LoginRequest.parseFrom(second.body).level)
+        transport.deliverWsMessage(
+            wsMessage(
+                Gateway.MsgID.LOGIN_RESP, 2,
+                Auth.LoginResponse.newBuilder().setCode(Common.ErrorCode.OK).build(),
+            ),
+        )
+        assertEquals(Common.ErrorCode.OK, unwrapped(first))
+    }
+
+    @Test
     fun authFailedWithoutProviderOrRenewalIsTerminal() {
         val (pipeline, transport) = connectedPipeline()
         val loginResults = ArrayList<Common.ErrorCode>()

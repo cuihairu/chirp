@@ -102,14 +102,19 @@ class ChatPipeline(
      * provider.getToken(), then userId itself (scaffold mode). AUTH_FAILED
      * gives the provider one renewal chance (renewToken → a second LOGIN
      * round); at most one renewal per login chain. The terminal outcome fans
-     * out onLoginResult + onAuthResult. Completes with the final code
-     * (OK = logged in).
+     * out onLoginResult + onAuthResult. `level` is the client-declared game
+     * level for the world-channel gate; it rides on every round, including
+     * the post-renewal retry. Completes with the final code (OK = logged in).
      */
-    fun login(userId: String, token: String? = null): CompletableFuture<Common.ErrorCode> {
-        val first = loginRound(token ?: provider?.getToken() ?: userId)
+    fun login(
+        userId: String,
+        token: String? = null,
+        level: Int = 0,
+    ): CompletableFuture<Common.ErrorCode> {
+        val first = loginRound(token ?: provider?.getToken() ?: userId, level)
         return first.thenCompose { code ->
             val fresh = if (code == Common.ErrorCode.AUTH_FAILED) provider?.renewToken() else null
-            if (fresh != null) loginRound(fresh) else CompletableFuture.completedFuture(code)
+            if (fresh != null) loginRound(fresh, level) else CompletableFuture.completedFuture(code)
         }.thenApply { code ->
             terminalAuth(code, userId)
             code
@@ -312,13 +317,14 @@ class ChatPipeline(
         snapshotListeners().forEach { l -> runCatching { l.onKicked(reason) } }
     }
 
-    private fun loginRound(token: String): CompletableFuture<Common.ErrorCode> =
+    private fun loginRound(token: String, level: Int): CompletableFuture<Common.ErrorCode> =
         conn.request(
             MsgSpecs.login,
             Auth.LoginRequest.newBuilder()
                 .setToken(token)
                 .setDeviceId(deviceId())
                 .setPlatform("android")
+                .setLevel(level)
                 .build(),
         ).thenApply { resp ->
             if (resp.code == Common.ErrorCode.OK) {
