@@ -996,6 +996,48 @@ final class AppModel: ObservableObject {
             }
     }
 
+    /// 设置群昵称(本人或 MODERATOR+ 可改):空串=清除。回原始应答,壳层按
+    /// code 分流文案;快照经 2124 notify 折叠刷新(操作者自身在扇出名里,
+    /// 不本地改),memberRow 与消息署名随 aliases 快照重渲。
+    func setGroupAliasTapped(groupId: String, targetUserId: String, alias: String) {
+        guard let service = service else { return }
+        service.setMemberAlias(groupId: groupId, targetUserId: targetUserId, alias: alias)
+            .onComplete { [weak self] outcome in
+                Task { @MainActor in
+                    guard let self = self else { return }
+                    switch outcome {
+                    case .success(let resp) where resp.code == .ok:
+                        self.toast = alias.isEmpty ? "已清除群昵称" : "已设置群昵称"
+                    case .success(let resp):
+                        self.toast = "群昵称被拒:\(self.codeName(resp.code))"
+                    case .failure(let err):
+                        self.toast = "群昵称失败:\(err.localizedDescription)"
+                    }
+                }
+            }
+    }
+
+    /// 群禁言(MODERATOR+,seconds=0 解禁):回原始应答按 code 分流;
+    /// 成员行徽章与发送门都读服务端 muted_until_ts,经 2252 notify→重拉
+    /// 名册刷新,此处不再重拉(与 web/harmony 同款)。
+    func setGroupMuteTapped(groupId: String, targetUserId: String, seconds: Int64) {
+        guard let service = service else { return }
+        service.setGroupMute(groupId: groupId, targetUserId: targetUserId, seconds: seconds)
+            .onComplete { [weak self] outcome in
+                Task { @MainActor in
+                    guard let self = self else { return }
+                    switch outcome {
+                    case .success(let resp) where resp.code == .ok:
+                        self.toast = seconds == 0 ? "已解除禁言" : "已禁言"
+                    case .success(let resp):
+                        self.toast = "禁言被拒:\(self.codeName(resp.code))"
+                    case .failure(let err):
+                        self.toast = "禁言失败:\(err.localizedDescription)"
+                    }
+                }
+            }
+    }
+
     /// 退群;成功由 sessionDropped 事件弹栈关面板(web onLeft 退导航同款)。
     func leaveGroupTapped(groupId: String) {
         guard let service = service else { return }

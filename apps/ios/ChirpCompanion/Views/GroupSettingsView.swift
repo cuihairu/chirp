@@ -3,14 +3,19 @@ import ChirpProtos
 import SwiftUI
 
 /// 群设置面板(P4e,web GroupSettingsDialog 对齐):添加成员(INVITE
-/// 直接入群)、成员清单(群主标识、群主可移出他人)、退出群组(确认后
-/// 退,sessionDropped 事件把聊天面弹回列表)。sheet 形态,完成即关。
+/// 直接入群)、成员清单(群主标识、群主可移出他人、MODERATOR+ 长按
+/// 禁言/改群昵称)、退出群组(确认后退,sessionDropped 事件把聊天面
+/// 弹回列表)。sheet 形态,完成即关。
 struct GroupSettingsView: View {
     @EnvironmentObject var model: AppModel
     @Environment(\.dismiss) private var dismiss
     let groupId: String
     @State private var inviteTarget = ""
     @State private var confirmLeave = false
+    @State private var aliasTarget: String?
+    @State private var aliasInput = ""
+    @State private var muteTarget: String?
+    @State private var muteInput = ""
 
     private var ownerId: String? {
         model.groupRoster.first { $0.groupId == groupId }?.ownerId
@@ -18,6 +23,20 @@ struct GroupSettingsView: View {
 
     private var amOwner: Bool {
         ownerId == model.currentUserId
+    }
+
+    /// MODERATOR+ 可禁言他人/改群昵称(角色以名册下发为准,web
+    /// isModeratorPlus 同口径);名册未载时以群主身份兜底。
+    private var canModerate: Bool {
+        if let mine = model.groupMembers.first(where: { $0.userID == model.currentUserId }) {
+            return mine.role.rawValue >= Chirp_Chat_GroupMemberRole.moderator.rawValue
+        }
+        return amOwner
+    }
+
+    /// 禁言徽章看服务端时间戳,本地时钟到点自动熄(不持久化本地状态)。
+    private func isMuted(_ member: Chirp_Chat_GroupMember) -> Bool {
+        member.mutedUntilTs > Int64(Date.now.timeIntervalSince1970 * 1000)
     }
 
     var body: some View {
@@ -75,6 +94,45 @@ struct GroupSettingsView: View {
                 }
                 Button("取消", role: .cancel) {}
             }
+            .alert(
+                "群昵称", isPresented: Binding(
+                    get: { aliasTarget != nil },
+                    set: { if !$0 { aliasTarget = nil } })
+            ) {
+                TextField("留空清除", text: $aliasInput)
+                Button("确定") {
+                    guard let target = aliasTarget else { return }
+                    aliasTarget = nil
+                    model.setGroupAliasTapped(
+                        groupId: groupId, targetUserId: target,
+                        alias: aliasInput.trimmingCharacters(in: .whitespaces))
+                }
+                Button("取消", role: .cancel) { aliasTarget = nil }
+            } message: {
+                Text("设置该成员在本群的显示名,留空即清除。")
+            }
+            .alert(
+                "禁言(分钟)", isPresented: Binding(
+                    get: { muteTarget != nil },
+                    set: { if !$0 { muteTarget = nil } })
+            ) {
+                TextField("如 30(上限 43200)", text: $muteInput)
+                    .keyboardType(.numberPad)
+                Button("确定") {
+                    guard let target = muteTarget else { return }
+                    muteTarget = nil
+                    // 0/非数字/超上限直接放弃(web/harmony 同款静默门)。
+                    guard let minutes = Int(muteInput.trimmingCharacters(in: .whitespaces)),
+                        minutes > 0, minutes <= 43200
+                    else { return }
+                    model.setGroupMuteTapped(
+                        groupId: groupId, targetUserId: target,
+                        seconds: Int64(minutes) * 60)
+                }
+                Button("取消", role: .cancel) { muteTarget = nil }
+            } message: {
+                Text("到期自动解禁;填 0 之外的超上限值将被拒绝。")
+            }
             .onAppear { model.openGroupPanel(groupId: groupId) }
         }
     }
@@ -99,6 +157,12 @@ struct GroupSettingsView: View {
                 }
             }
             Spacer()
+            if isMuted(member) {
+                // 徽章只反映服务端 muted_until_ts,不落本地状态。
+                Text("已禁言")
+                    .font(.caption2)
+                    .foregroundStyle(.red)
+            }
             // 只有群主能移出成员,且不指向自己(web 同款)。
             if amOwner && member.userID != model.currentUserId {
                 Button("移出", role: .destructive) {
@@ -106,6 +170,35 @@ struct GroupSettingsView: View {
                         groupId: groupId, targetUserId: member.userID)
                 }
                 .font(.subheadline)
+            }
+        }
+        // 长按菜单:改群昵称(本人或 MODERATOR+,web/harmony 同门);禁言
+        // /解禁仅 MODERATOR+ 且不指向自己——解禁直接走 seconds=0。
+        .contextMenu {
+            if member.userID == model.currentUserId || canModerate {
+                Button {
+                    aliasInput = member.alias
+                    aliasTarget = member.userID
+                } label: {
+                    Label("改群昵称", systemImage: "pencil")
+                }
+            }
+            if canModerate && member.userID != model.currentUserId {
+                if isMuted(member) {
+                    Button {
+                        model.setGroupMuteTapped(
+                            groupId: groupId, targetUserId: member.userID, seconds: 0)
+                    } label: {
+                        Label("解除禁言", systemImage: "mic")
+                    }
+                } else {
+                    Button {
+                        muteInput = ""
+                        muteTarget = member.userID
+                    } label: {
+                        Label("禁言…", systemImage: "mic.slash")
+                    }
+                }
             }
         }
     }
