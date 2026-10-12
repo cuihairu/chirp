@@ -4,8 +4,8 @@ SwiftPM package porting the pure protocol core of the former Flutter app
 (`apps/mobile_companion`, removed 2026-09-29 once both native packages
 carried its full test-vector groups), same migration path the Android
 package took (its M1→M4 batches, minus the app shell). Gate: `swift test`
-— **223 tests, all green** (93 protocol core incl. the 11 lexicon-sync
-vectors + 130 app core; verified on the CI macOS runner since the P5 batch
+— **225 tests, all green** (93 protocol core incl. the 11 lexicon-sync
+vectors + 132 app core; verified on the CI macOS runner since the P5 batch
 — no local iOS verification, see the companion-app section).
 
 ## Layout

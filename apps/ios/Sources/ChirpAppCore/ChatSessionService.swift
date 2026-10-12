@@ -511,11 +511,20 @@ public final class ChatSessionService {
             self.emit(.sessionDropped(key: key, reason: .kicked))
             self.emit(.groupsChanged)
         }
+        // 2252 禁言态变更:坏 body 丢弃不伤链路,有效则整表重拉(成员行
+        // mutedUntilTs 随名册下发,web onGroupMemberMutedUpdated 同款)。
+        let offMuted = conn.onNotify(msgId: .groupMemberMutedNotify) { [weak self] body in
+            guard let self = self,
+                (try? Chirp_Chat_GroupMemberMutedNotify(serializedBytes: Data(body))) != nil
+            else { return }
+            _ = self.refreshGroups()
+        }
         return {
             offJoined()
             offLeft()
             offUpdated()
             offKicked()
+            offMuted()
         }
     }
 
@@ -785,6 +794,21 @@ public final class ChatSessionService {
                 self.emit(.groupsChanged)
                 return resp.code
             }
+    }
+
+    /// 群禁言(MODERATOR+,2250/2251):seconds=0 解禁,30 天上限由服务端把关。
+    /// 回原始应答——壳层按 code 分流文案(loadGroupMembers 同款);成功后
+    /// 成员行 mutedUntilTs 徽章经 2252 notify→重拉路径刷新,操作者自身也在
+    /// 扇出名里,此处不再重拉(web setGroupMute 同款)。
+    public func setGroupMute(
+        groupId: String, targetUserId: String, seconds: Int64
+    ) -> Promise<Chirp_Chat_SetGroupMuteResponse> {
+        let request = Chirp_Chat_SetGroupMuteRequest.with {
+            $0.groupID = groupId
+            $0.targetUserID = targetUserId
+            $0.durationSec = seconds
+        }
+        return conn.request(spec: MsgSpecs.setGroupMute, body: request)
     }
 
     /// 群成员名单(面板用;0=不分页同 web)。返回原始应答——壳层按

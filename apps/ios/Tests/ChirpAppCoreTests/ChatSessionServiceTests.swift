@@ -711,6 +711,61 @@ final class ChatSessionServiceTests: XCTestCase {
         service.logout()
     }
 
+    /// 2250 禁言请求:字段形状 + 原始应答透传;成功后不在此重拉——
+    /// 成员行徽章刷新走 2252 notify(操作者也在扇出名里),web 同款。
+    func testSetGroupMuteSendsFieldShapeAndPassesResponseThrough() throws {
+        let (t, factory) = singleTransport()
+        let service = makeService(factory: factory)
+        try loginOk(service, t)
+        try deliverGroups(t, [groupInfo("g1", name: "一号", owner: "alice")])
+
+        let pending = service.setGroupMute(groupId: "g1", targetUserId: "bob", seconds: 600)
+        let seq = try expectRequest(t, .setGroupMuteReq)
+        let body = try Chirp_Chat_SetGroupMuteRequest(serializedBytes: lastRequestBody(t))
+        XCTAssertEqual(body.groupID, "g1")
+        XCTAssertEqual(body.targetUserID, "bob")
+        XCTAssertEqual(body.durationSec, 600)
+
+        var response = Chirp_Chat_SetGroupMuteResponse()
+        response.code = .ok
+        response.groupID = "g1"
+        response.userID = "bob"
+        response.mutedUntilTs = 2_600
+        let frames = t.sent.count
+        t.deliver(try wsResponse(.setGroupMuteResp, seq, response))
+        let resp = try pending.get(timeoutSeconds: 2)
+        XCTAssertEqual(resp.code, .ok)
+        XCTAssertEqual(resp.mutedUntilTs, 2_600)
+        XCTAssertEqual(t.sent.count, frames, "成功不在此重拉,刷新走 2252 notify")
+        service.logout()
+    }
+
+    /// 2252 禁言态变更:有效 notify → 整表重拉;坏 body 静默丢弃不发帧
+    /// (web onGroupMemberMutedUpdated 同款)。
+    func testGroupMemberMutedNotifyRefreshesAndIgnoresGarbage() throws {
+        let (t, factory) = singleTransport()
+        let service = makeService(factory: factory)
+        try loginOk(service, t)
+        try deliverGroups(t, [])
+
+        var muted = Chirp_Chat_GroupMemberMutedNotify()
+        muted.groupID = "g1"
+        muted.userID = "bob"
+        muted.mutedUntilTs = 2_000
+        muted.operatorID = "alice"
+        muted.timestamp = 1_500
+        t.deliver(try wsNotify(.groupMemberMutedNotify, muted))
+        XCTAssertEqual(try sentPacket(t).msgID, .getUserGroupsReq)
+
+        let frames = t.sent.count
+        var garbage = Chirp_Gateway_Packet()
+        garbage.msgID = .groupMemberMutedNotify
+        garbage.body = Data([0xff, 0x00, 0x7f])  // wire type 7 不存在,protobuf 必拒
+        t.deliver(try encodeFrame(payload: [UInt8](garbage.serializedData())))
+        XCTAssertEqual(t.sent.count, frames, "坏 body 丢弃,不重拉")
+        service.logout()
+    }
+
     func testLoadGroupMembersRoundTrip() throws {
         let (t, factory) = singleTransport()
         let service = makeService(factory: factory)
