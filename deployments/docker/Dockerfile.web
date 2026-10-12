@@ -1,7 +1,7 @@
 # chirp web 伴侣镜像:根 npm workspaces 构建 vite 产物 → nginx 托管并
 # 同源反代 /ws/* 到各后端(浏览器侧默认 wss://<host>/ws/<plane>)。
 # nginx 以非 root 用户跑(listen 8080,>1024 无需特权)。
-FROM node:20-alpine AS build
+FROM node:26-alpine AS build
 
 WORKDIR /repo
 # 先只拷 package.json 集合让 npm ci 吃层缓存(workspaces 缺一不可)。
