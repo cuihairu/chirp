@@ -32,13 +32,46 @@ if [ ! -f "${SOCIAL_BIN}" ]; then
   exit 1
 fi
 
+# Same dedup + occupancy probe as test_services.sh: bind(0)->close returns the
+# port to the kernel pool immediately, so back-to-back picks can collide (the
+# smoke script takes up to 10 ports; test_services.sh measured ~12% single-leg
+# collision before the fix). Issued ports go to a per-process file; a port
+# already listened on by another process is redrawn too.
+PICK_PORT_FILE="/tmp/chirp_web_smoke_ports.$$"
 pick_port() {
-  python3 - <<'PY'
-import socket
-s = socket.socket()
-s.bind(("127.0.0.1", 0))
-print(s.getsockname()[1])
-s.close()
+  python3 - "${PICK_PORT_FILE}" <<'PY'
+import socket, sys
+issued = set()
+try:
+    with open(sys.argv[1]) as f:
+        for line in f:
+            line = line.strip()
+            if line:
+                issued.add(int(line))
+except FileNotFoundError:
+    pass
+for _ in range(200):
+    s = socket.socket()
+    s.bind(("127.0.0.1", 0))
+    port = s.getsockname()[1]
+    s.close()
+    if port in issued:
+        continue
+    probe = socket.socket()
+    probe.settimeout(0.2)
+    try:
+        probe.connect(("127.0.0.1", port))
+        continue
+    except OSError:
+        pass
+    finally:
+        probe.close()
+    with open(sys.argv[1], "a") as f:
+        f.write(f"{port}\n")
+    print(port)
+    break
+else:
+    raise SystemExit("pick_port: no unique free port after 200 redraws")
 PY
 }
 
