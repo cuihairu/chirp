@@ -152,6 +152,8 @@ export class ChatApi {
   // groupId → userId → alias；缺键 = 未设或已清除。名册拉取与 2124 通知双路
   // 维护；ChatMessage 无 alias 字段，映射走这份快照而非改协议（web 同款）。
   private aliasByGroup = new Map<string, Map<string, string>>();
+  /** 群昵称快照变更订阅（名册刷新或 2124 落地后触发；web 同款）。 */
+  private aliasListeners = new Set<() => void>();
 
   constructor(deps: ChatApiDeps) {
     this.conn = deps.conn;
@@ -485,6 +487,16 @@ export class ChatApi {
     return this.aliasByGroup.get(groupId)?.get(userId) ?? '';
   }
 
+  /** 群昵称快照变更订阅（名册刷新或 2124 落地后触发）；返回退订函数。 */
+  subscribeGroupAlias(listener: () => void): () => void {
+    this.aliasListeners.add(listener);
+    return () => this.aliasListeners.delete(listener);
+  }
+
+  private bumpAliasListeners(): void {
+    for (const fn of this.aliasListeners) fn();
+  }
+
   async loadGroupMembers(groupId: string) {
     const resp = await this.conn.request(GET_GROUP_MEMBERS, { groupId });
     if (resp.code !== 0) return [];
@@ -492,6 +504,7 @@ export class ChatApi {
     const aliases = new Map<string, string>();
     for (const m of resp.members ?? []) if (m.alias) aliases.set(m.userId, m.alias);
     this.aliasByGroup.set(groupId, aliases);
+    this.bumpAliasListeners();
     return resp.members;
   }
 
@@ -612,6 +625,7 @@ export class ChatApi {
       // 空串 = 清除：移出快照，群聊发送者名回退本名。名册未载入的群不落快照。
       if (notify.alias) aliases.set(notify.userId, notify.alias);
       else aliases.delete(notify.userId);
+      this.bumpAliasListeners();
     }
     void this.refreshGroups();
   }

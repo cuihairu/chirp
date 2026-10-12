@@ -84,7 +84,7 @@ struct ChatPage {
             }
             ForEach(this.messages, (m: ChatMessageView, index: number) => {
               this.MessageRow(m, index > 0 ? this.messages[index - 1] : null)
-            }, (m: ChatMessageView) => m.messageId)
+            }, (m: ChatMessageView) => `${m.messageId}:${this.senderName(m.senderId)}`)
           }
           .width('100%')
           .padding({ left: 12, right: 12, top: 8, bottom: 12 })
@@ -165,8 +165,8 @@ struct ChatPage {
   }
 
   /** 群聊署名:群昵称优先(aliasByGroup 快照,2124 通知双路维护),空则
-   *  回退 senderId(web sender-name 映射同款);别名变更在下一次行重建
-   *  (重进页/新消息)时生效,不为此常驻订阅。 */
+   *  回退 senderId(web sender-name 映射同款);快照变更经
+   *  subscribeGroupAlias 活刷新(行键含署名,变更即重渲,web 活重渲同款)。 */
   private senderName(senderId: string): string {
     if (this.kind !== 'group') return senderId;
     const services = appServices.services;
@@ -298,6 +298,8 @@ struct ChatPage {
       services.messages.subscribe(() => this.refreshMessages()),
       services.typing.subscribe(() => this.refreshTyping()),
       services.conversations.subscribe(() => this.refreshHeader()),
+      // 群昵称快照变更 → 重切消息数组触发行重建(行键含署名,变更行即重渲)。
+      services.api.subscribeGroupAlias(() => this.refreshMessages()),
     ];
     this.tickTimer = setInterval(() => {
       this.now = Date.now();
