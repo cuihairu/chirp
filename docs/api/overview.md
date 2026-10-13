@@ -118,7 +118,7 @@ message Packet {
 
 ### 聊天(Chat,2xxx)
 
-发送链路在服务端经过一组顺序固定的防线(细节与默认阈值见 [接入避坑指南](../guide/integration-pitfalls.md)):登录校验 → 内容长度(`CONTENT_TOO_LONG`)→ 世界频道等级门槛(`LEVEL_REQUIRED`,`--world_channel_min_level` 缺省 0 关闭)→ 模糊限流(`RATE_LIMITED`)→ 发送节奏(`RATE_LIMITED`)→ 重复禁言(`RATE_LIMITED`)→ 敏感词(`WORD_FILTERED` 或静默替换)。
+发送链路在服务端经过一组顺序固定的防线(细节与默认阈值见 [接入避坑指南](../guide/integration-pitfalls.md)):登录校验 → 内容长度(`CONTENT_TOO_LONG`)→ 世界频道等级门槛(`LEVEL_REQUIRED`,`--world_channel_min_level` 缺省 0 关闭)→ 模糊限流(`RATE_LIMITED`)→ 发送节奏(`RATE_LIMITED`)→ 重复禁言(`RATE_LIMITED`)→ 敏感词(`WORD_FILTERED` 或静默替换)→ 群频道门(命中群台账的频道:非成员 `AUTH_FAILED`、被禁言成员 `MUTED`;台账外频道不经此门)。
 
 | MsgID | 名称 | 方向 | 说明 |
 | --- | --- | --- | --- |

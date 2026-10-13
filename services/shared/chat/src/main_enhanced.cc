@@ -266,6 +266,21 @@ void HandleSendMessage(const chirp::chat::SendMessageRequest& req,
   }
   msg.set_reply_to_message_id(req.reply_to_message_id());
 
+  // 群频道成员门（web e2e 权限回码契约，与 basic 群分支同语义）：频道命中
+  // 群台账而发送者不在名册，回 AUTH_FAILED、不落任何存储。台账外频道
+  // （Redis 扇出路径）不经此门——分布式形态承接游戏平面自管频道的扇出，
+  // 不能一刀切。放在禁言门之前：禁言门只看成员，非成员在此先拦。
+  if (group_handlers != nullptr && req.channel_type() != chirp::chat::PRIVATE &&
+      group_handlers->HasGroup(channel_id) &&
+      !group_handlers->IsMember(channel_id, req.sender_id())) {
+    chirp::chat::SendMessageResponse resp;
+    resp.set_code(chirp::common::AUTH_FAILED);
+    resp.set_server_timestamp(chirp::chat::runtime::NowMs());
+    chirp::chat::runtime::SendPacket(sender_session, chirp::gateway::SEND_MESSAGE_RESP,
+                                     seq, resp.SerializeAsString());
+    return;
+  }
+
   // 群管理员禁言（game_chat_features P1，与 basic 同一门）：群频道发送前查
   // GroupManager 台账，禁言中的成员回 MUTED、消息不进 Redis/MySQL 任何一层。
   // 判定与投递侧群扇出同构（非 PRIVATE 且 channel_id 命中台账）——台账外

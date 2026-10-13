@@ -1568,4 +1568,48 @@ TEST_F(EnhancedSessionTest, GroupMuteBlocksGuildSendBeforeStore) {
   EXPECT_EQ(resumed_resp.code(), chirp::common::OK);
 }
 
+// --- 群频道成员门：台账内频道拒非成员发送（web e2e 权限回码契约） --------
+
+TEST_F(EnhancedSessionTest, GroupChannelRejectsNonMemberSend) {
+  chirp::chat::GroupManager groups;
+  chirp::chat::GroupHandlers handlers(
+      groups,
+      [](const std::string&, chirp::gateway::MsgID, const google::protobuf::Message&) {
+        return true;
+      });
+  const std::string gid = groups.CreateGroup("alice", "g", "", "", 0, {"alice"});
+
+  auto sender = std::make_shared<MockSession>();
+  chirp::chat::SendMessageRequest req;
+  req.set_sender_id("carol");
+  req.set_channel_type(chirp::chat::GUILD);
+  req.set_channel_id(gid);
+  req.set_content("outsider words");
+  InvokeSendMessage(req, sender, state_, store_, tracker_, /*acks=*/nullptr,
+                    &delivery_prefs_, router_, /*hub_peer=*/nullptr, /*npc_service_id=*/"",
+                    /*npc_prefix=*/"npc:", /*spoke_link=*/nullptr, /*spoke_game_id=*/"",
+                    /*edits=*/nullptr, /*directory=*/nullptr, /*hub=*/nullptr, /*groups=*/&handlers,
+                    /*reactions=*/nullptr, /*seq=*/1);
+  const auto resps = FramesOf(*sender, chirp::gateway::SEND_MESSAGE_RESP);
+  ASSERT_EQ(resps.size(), 1u);
+  chirp::chat::SendMessageResponse resp;
+  ASSERT_TRUE(resp.ParseFromString(resps[0].body()));
+  EXPECT_EQ(resp.code(), chirp::common::AUTH_FAILED);
+  EXPECT_TRUE(resp.message_id().empty());  // 门在存储之前：不铸消息 id
+
+  // 成员照常受理（对照组：门只打台账内频道的非成员）。
+  chirp::chat::SendMessageRequest member = req;
+  member.set_sender_id("alice");
+  InvokeSendMessage(member, sender, state_, store_, tracker_, /*acks=*/nullptr,
+                    &delivery_prefs_, router_, /*hub_peer=*/nullptr, /*npc_service_id=*/"",
+                    /*npc_prefix=*/"npc:", /*spoke_link=*/nullptr, /*spoke_game_id=*/"",
+                    /*edits=*/nullptr, /*directory=*/nullptr, /*hub=*/nullptr, /*groups=*/&handlers,
+                    /*reactions=*/nullptr, /*seq=*/2);
+  const auto member_resps = FramesOf(*sender, chirp::gateway::SEND_MESSAGE_RESP);
+  ASSERT_EQ(member_resps.size(), 2u);
+  chirp::chat::SendMessageResponse member_resp;
+  ASSERT_TRUE(member_resp.ParseFromString(member_resps[1].body()));
+  EXPECT_EQ(member_resp.code(), chirp::common::OK);
+}
+
 }  // namespace
