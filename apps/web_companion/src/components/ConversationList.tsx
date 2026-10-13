@@ -18,6 +18,7 @@ import { useStoreValue } from '../state/store';
 import { privateKey, groupKey, type Conversation } from '../state/models';
 import { upsertConversation } from '../state/conversation_store';
 import { presenceFresh, presenceOf } from '../state/presence_store';
+import { useNow } from '../state/useNow';
 import { PresenceStatus } from '@chirp/proto/social';
 import FriendsDialog from './FriendsDialog';
 import PartyDialog, { PartyButton } from './PartyDialog';
@@ -40,6 +41,9 @@ export default function ConversationList({
   const selfId = useStoreValue(auth).userId ?? '';
   const { conversations: list } = useStoreValue(conversations);
   const presenceState = useStoreValue(presence);
+  // 在线新鲜度按墙上时钟判 TTL 过期;时钟走状态(渲染期禁 Date.now()),
+  // 15s 一跳,过期徽标下次跳变即灭。
+  const now = useNow(15_000);
   const [dialogOpen, setDialogOpen] = useState(false);
   const [peerId, setPeerId] = useState('');
   const [error, setError] = useState<string | null>(null);
@@ -117,7 +121,7 @@ export default function ConversationList({
         {list.map((conversation: Conversation) => {
           const online =
             conversation.kind === 'private' &&
-            presenceFresh(presenceState, conversation.peerId, Date.now()) &&
+            presenceFresh(presenceState, conversation.peerId, now) &&
             presenceOf(presenceState, conversation.peerId)?.status === PresenceStatus.ONLINE;
           return (
             <ListItemButton

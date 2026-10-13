@@ -18,6 +18,7 @@ import {
 import { useServices } from '../api/services';
 import { useStoreValue } from '../state/store';
 import { presenceFresh, presenceOf } from '../state/presence_store';
+import { useNow } from '../state/useNow';
 import { privateKey } from '../state/models';
 import { upsertConversation } from '../state/conversation_store';
 import { PresenceStatus } from '@chirp/proto/social';
@@ -42,6 +43,8 @@ export default function FriendsDialog({
   const selfId = useStoreValue(auth).userId ?? '';
   const friendState = useStoreValue(friends);
   const presenceState = useStoreValue(presence);
+  // 在线新鲜度按墙上时钟判 TTL 过期;时钟走状态(渲染期禁 Date.now())。
+  const now = useNow(15_000);
   const [addId, setAddId] = useState('');
   const [error, setError] = useState<string | null>(null);
   // 好友上线通知开关(3025/3027):打开面板拉当前偏好,切换即 SET。社交面
@@ -168,7 +171,7 @@ export default function FriendsDialog({
             const entry = presenceOf(presenceState, friend);
             // A stale snapshot (missed disconnect notify) renders offline.
             const online =
-              presenceFresh(presenceState, friend, Date.now()) &&
+              presenceFresh(presenceState, friend, now) &&
               entry?.status === PresenceStatus.ONLINE;
             return (
               <ListItem
