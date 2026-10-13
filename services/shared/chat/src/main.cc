@@ -502,6 +502,7 @@ struct FeatureHandlers {
   chirp::chat::ReactionHandlers& reactions;
   chirp::chat::MessageEditHandlers& edits;
   chirp::chat::MentionHandlers& mentions;
+  chirp::chat::ReportHandlers& reports;
   chirp::chat::PushBridge& push;
   // NPC uplink: peer is null unless --server_gateway_host is set; an empty
   // npc_service_id keeps the feature off even with a live peer.
@@ -1333,6 +1334,18 @@ void HandlePacket(const std::shared_ptr<MessageStore>& store,
     chirp::chat::runtime::SendPacket(session, chirp::gateway::SET_GROUP_MUTE_RESP, pkt.sequence(), resp.SerializeAsString());
     break;
   }
+  case chirp::gateway::REPORT_MESSAGE_REQ: {
+    chirp::chat::ReportMessageRequest req;
+    if (!req.ParseFromArray(pkt.body().data(), static_cast<int>(pkt.body().size()))) {
+      chirp::chat::ReportMessageResponse resp;
+      resp.set_code(chirp::common::INVALID_PARAM);
+      chirp::chat::runtime::SendPacket(session, chirp::gateway::REPORT_MESSAGE_RESP, pkt.sequence(), resp.SerializeAsString());
+      return;
+    }
+    auto resp = features.reports.HandleReportMessage(req, authenticated_user_id);
+    chirp::chat::runtime::SendPacket(session, chirp::gateway::REPORT_MESSAGE_RESP, pkt.sequence(), resp.SerializeAsString());
+    break;
+  }
   case chirp::gateway::MARK_READ_REQ: {
     chirp::chat::MarkReadRequest req;
     if (!req.ParseFromArray(pkt.body().data(), static_cast<int>(pkt.body().size()))) {
@@ -1730,6 +1743,10 @@ int main(int argc, char** argv) {
                                                  notify_member, purge_offline,
                                                  mark_recalled);
   chirp::chat::MentionHandlers mention_handlers(mentions, is_moderator);
+  // 举报台账（game_chat_features P1「举报」）：存在性校验借编辑台账（只可举报
+  // 本实例投递过的消息），记录进进程内存举报台账（按举报人去重）。
+  chirp::chat::ReportLedger report_ledger;
+  chirp::chat::ReportHandlers report_handlers(report_ledger, edits);
 
   chirp::chat::WordFilterOptions word_filter_options;
   word_filter_options.lexicon_path = word_filter_file;
@@ -1746,6 +1763,7 @@ int main(int argc, char** argv) {
   FeatureHandlers features{.groups = group_handlers, .receipts = receipt_handlers,
                            .typing = typing_handlers, .reactions = reaction_handlers,
                            .edits = edit_handlers, .mentions = mention_handlers,
+                           .reports = report_handlers,
                            .push = push, .npc_service_id = {},
                            .gateway_secret = {}, .trusted_conns = nullptr};
   features.rate_limiter = rate_limiter.get();

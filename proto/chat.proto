@@ -241,6 +241,26 @@ message GroupMemberMutedNotify {
   int64 timestamp = 5;
 }
 
+// 举报（2253）：玩家举报一条消息。服务端内存台账按 (message_id, reporter_id)
+// 去重幂等——同一玩家重复举报同一消息不重复计数，响应回显去重后的累计数。
+// 被举报消息必须在本进程编辑台账里（即本实例实际投递过的消息），台账外回
+// USER_NOT_FOUND：与撤回的「台账外消息」同一语义，也挡住垃圾 message_id 刷
+// 台账的内存增长。管理后台审核队列待全局管理员面另批（同群域禁言范围裁决），
+// 台账按时间留痕（每消息封顶 100 条理由）供其消费。
+message ReportMessageRequest {
+  string message_id = 1;
+  string reason = 2;           // 可选；上限 500 码点（服务端校验，超限
+                               // INVALID_PARAM）
+}
+
+message ReportMessageResponse {
+  common.ErrorCode code = 1;   // OK / AUTH_FAILED（未登录）/ USER_NOT_FOUND
+                               // （消息不在本进程台账）/ INVALID_PARAM（垃圾
+                               // body / 空 message_id / 理由超长）
+  string message_id = 2;
+  int32 report_count = 3;      // 去重后的累计举报数（重复举报幂等回显）
+}
+
 // Join group request
 message JoinGroupRequest {
   string user_id = 1;

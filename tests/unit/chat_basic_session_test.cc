@@ -229,6 +229,7 @@ class BasicChatTest : public ::testing::Test {
         mark_recalled_);
     mention_handlers_ =
         std::make_unique<chirp::chat::MentionHandlers>(mentions_, is_moderator_);
+    report_handlers_ = std::make_unique<chirp::chat::ReportHandlers>(report_ledger_, edits_);
 
     features_ = std::make_unique<FeatureHandlers>(FeatureHandlers{
         .groups = *group_handlers_,
@@ -237,6 +238,7 @@ class BasicChatTest : public ::testing::Test {
         .reactions = *reaction_handlers_,
         .edits = *edit_handlers_,
         .mentions = mentions_override ? *mentions_override : *mention_handlers_,
+        .reports = *report_handlers_,
         .push = push_,
         .npc_service_id = {},
         .gateway_secret = {},
@@ -337,6 +339,7 @@ class BasicChatTest : public ::testing::Test {
   chirp::chat::ReactionManager reactions_;
   chirp::chat::EditConfig edit_config_;
   chirp::chat::MessageEditManager edits_{edit_config_};
+  chirp::chat::ReportLedger report_ledger_;
   chirp::chat::MentionManager mentions_;
 
   chirp::chat::PushBridge push_{nullptr};
@@ -359,6 +362,7 @@ class BasicChatTest : public ::testing::Test {
   std::unique_ptr<chirp::chat::ReactionHandlers> reaction_handlers_;
   std::unique_ptr<chirp::chat::MessageEditHandlers> edit_handlers_;
   std::unique_ptr<chirp::chat::MentionHandlers> mention_handlers_;
+  std::unique_ptr<chirp::chat::ReportHandlers> report_handlers_;
   std::unique_ptr<FeatureHandlers> features_;
 };
 
@@ -1202,6 +1206,53 @@ TEST_F(BasicChatTest, GroupMuteBlocksMemberSendUntilUnmute) {
   EXPECT_EQ(unmuted.muted_until_ts(), 0);
   EXPECT_EQ(Send(bob, "bob", "", "back again", chirp::chat::TEAM, group_id).code(),
             chirp::common::OK);
+}
+
+// --- 举报：玩家举报消息（去重幂等，台账外消息拒收） --------------------------
+
+TEST_F(BasicChatTest, ReportMessageDedupsAndRefusesUnknownMessage) {
+  auto alice = std::make_shared<MockSession>();
+  auto bob = std::make_shared<MockSession>();
+  ASSERT_EQ(Login(alice, "alice").code(), chirp::common::OK);
+  ASSERT_EQ(Login(bob, "bob").code(), chirp::common::OK);
+
+  const auto sent = Send(bob, "bob", "alice", "report me");
+  ASSERT_EQ(sent.code(), chirp::common::OK);
+  const std::string message_id = sent.message_id();
+  ASSERT_FALSE(message_id.empty());
+
+  auto ReportOnce = [&](const std::shared_ptr<MockSession>& caller,
+                        const std::string& target, const std::string& reason = "") {
+    chirp::chat::ReportMessageRequest req;
+    req.set_message_id(target);
+    req.set_reason(reason);
+    DispatchReq(chirp::gateway::REPORT_MESSAGE_REQ, req, caller);
+    const auto frames = FramesOf(*caller, chirp::gateway::REPORT_MESSAGE_RESP);
+    chirp::chat::ReportMessageResponse resp;
+    if (!frames.empty()) {
+      resp.ParseFromString(frames.back().body());
+    }
+    return resp;
+  };
+
+  // alice 举报：OK，计数 1；重复举报幂等，计数仍 1。
+  alice->sent.clear();
+  const auto reported = ReportOnce(alice, message_id, "spam");
+  EXPECT_EQ(reported.code(), chirp::common::OK);
+  EXPECT_EQ(reported.message_id(), message_id);
+  EXPECT_EQ(reported.report_count(), 1);
+  const auto again = ReportOnce(alice, message_id);
+  EXPECT_EQ(again.code(), chirp::common::OK);
+  EXPECT_EQ(again.report_count(), 1);
+
+  // 另一举报人计入。
+  const auto by_bob = ReportOnce(bob, message_id);
+  EXPECT_EQ(by_bob.code(), chirp::common::OK);
+  EXPECT_EQ(by_bob.report_count(), 2);
+
+  // 台账外 message_id 拒收（USER_NOT_FOUND）。
+  const auto garbage = ReportOnce(alice, "never-delivered");
+  EXPECT_EQ(garbage.code(), chirp::common::USER_NOT_FOUND);
 }
 
 // --- 跨平面：游戏前缀回复 + 好友私聊镜像 + spoke 上行（真 hub/link） ------------

@@ -165,6 +165,13 @@ enum MsgID {
   SET_GROUP_MUTE_RESP = 2251;
   GROUP_MEMBER_MUTED_NOTIFY = 2252;
 
+  // 举报（game_chat_features P1，2026-10-13）：玩家举报一条消息。服务端内存
+  // 台账按 (message_id, reporter_id) 去重幂等，回该消息去重后的累计举报数；
+  // 管理后台审核队列待全局管理员面另批（同群域禁言范围裁决）。body 见
+  // chat.proto 的 ReportMessageRequest / ReportMessageResponse。
+  REPORT_MESSAGE_REQ = 2253;
+  REPORT_MESSAGE_RESP = 2254;
+
   // Social service
   ADD_FRIEND_REQ = 3001;
   ADD_FRIEND_RESP = 3002;

@@ -211,6 +211,11 @@ export default function ChatWindow({ channelKey }: { channelKey: string }) {
             onDelete={(message) => {
               if (window.confirm(zh.chat.deleteConfirm)) void api.deleteMessage(message.messageId);
             }}
+            onReport={(message) => {
+              if (window.confirm(zh.chat.reportConfirm)) {
+                void api.reportMessage(message.messageId);
+              }
+            }}
           />
         ))}
         <div ref={bottomRef} />

@@ -5,6 +5,7 @@ import {
 } from '@chirp/proto/social';
 import {
   GetHistoryResponse,
+  ReportMessageResponse,
   SearchMessageResponse,
   SendMessageResponse,
   SetGroupMuteResponse,
@@ -21,6 +22,7 @@ import {
   JOIN_ROOM,
   LOGIN,
   LOGOUT,
+  REPORT_MESSAGE,
   SEARCH_MESSAGE,
   SEND_MESSAGE,
   SET_GROUP_MUTE,
@@ -143,6 +145,20 @@ describe('message specs', () => {
       SetGroupMuteResponse.fromPartial({ code: 0, mutedUntilTs: 1700000000000 }),
     ).finish();
     expect(SET_GROUP_MUTE.decodeResponse(muteResp).mutedUntilTs).toBe(1700000000000);
+  });
+
+  it('roundtrips the report spec (2253/2254)', () => {
+    expect(REPORT_MESSAGE.reqMsgId).toBe(MsgID.REPORT_MESSAGE_REQ);
+    expect(REPORT_MESSAGE.respMsgId).toBe(MsgID.REPORT_MESSAGE_RESP);
+    const report = REPORT_MESSAGE.encodeRequest({
+      messageId: 'm1',
+      reason: 'spam',
+    });
+    expect(report.length).toBeGreaterThan(0);
+    const reportResp = ReportMessageResponse.encode(
+      ReportMessageResponse.fromPartial({ code: 0, reportCount: 2 }),
+    ).finish();
+    expect(REPORT_MESSAGE.decodeResponse(reportResp).reportCount).toBe(2);
   });
 
   it('roundtrips the friend-online notify prefs specs (3025-3028)', () => {

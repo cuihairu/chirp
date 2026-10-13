@@ -166,6 +166,14 @@ export enum MsgID {
   SET_GROUP_MUTE_REQ = 2250,
   SET_GROUP_MUTE_RESP = 2251,
   GROUP_MEMBER_MUTED_NOTIFY = 2252,
+  /**
+   * REPORT_MESSAGE_REQ - 举报（game_chat_features P1，2026-10-13）：玩家举报一条消息。服务端内存
+   * 台账按 (message_id, reporter_id) 去重幂等，回该消息去重后的累计举报数；
+   * 管理后台审核队列待全局管理员面另批（同群域禁言范围裁决）。body 见
+   * chat.proto 的 ReportMessageRequest / ReportMessageResponse。
+   */
+  REPORT_MESSAGE_REQ = 2253,
+  REPORT_MESSAGE_RESP = 2254,
   /** ADD_FRIEND_REQ - Social service */
   ADD_FRIEND_REQ = 3001,
   ADD_FRIEND_RESP = 3002,
@@ -666,6 +674,12 @@ export function msgIDFromJSON(object: any): MsgID {
     case 2252:
     case "GROUP_MEMBER_MUTED_NOTIFY":
       return MsgID.GROUP_MEMBER_MUTED_NOTIFY;
+    case 2253:
+    case "REPORT_MESSAGE_REQ":
+      return MsgID.REPORT_MESSAGE_REQ;
+    case 2254:
+    case "REPORT_MESSAGE_RESP":
+      return MsgID.REPORT_MESSAGE_RESP;
     case 3001:
     case "ADD_FRIEND_REQ":
       return MsgID.ADD_FRIEND_REQ;
@@ -1254,6 +1268,10 @@ export function msgIDToJSON(object: MsgID): string {
       return "SET_GROUP_MUTE_RESP";
     case MsgID.GROUP_MEMBER_MUTED_NOTIFY:
       return "GROUP_MEMBER_MUTED_NOTIFY";
+    case MsgID.REPORT_MESSAGE_REQ:
+      return "REPORT_MESSAGE_REQ";
+    case MsgID.REPORT_MESSAGE_RESP:
+      return "REPORT_MESSAGE_RESP";
     case MsgID.ADD_FRIEND_REQ:
       return "ADD_FRIEND_REQ";
     case MsgID.ADD_FRIEND_RESP:

@@ -1064,6 +1064,37 @@ describe('ChatApi.setGroupMute', () => {
   });
 });
 
+describe('ChatApi.reportMessage', () => {
+  it('short-circuits an empty messageId without a network call', async () => {
+    const h = makeHarness();
+    const resp = await h.api.reportMessage('');
+    expect(resp).toMatchObject({ code: ErrorCode.INVALID_PARAM, messageId: '', reportCount: 0 });
+    expect(h.conn.requests).toHaveLength(0);
+  });
+
+  it('sends REPORT_MESSAGE_REQ with the reason and passes the count through', async () => {
+    const h = makeHarness();
+    await login(h);
+    h.conn.setResponder(async (msgId, req) => {
+      expect(msgId).toBe(MsgID.REPORT_MESSAGE_REQ);
+      expect(req).toMatchObject({ messageId: 'm1', reason: 'spam' });
+      return { code: 0, messageId: 'm1', reportCount: 2 };
+    });
+    const resp = await h.api.reportMessage('m1', 'spam');
+    expect(resp).toMatchObject({ code: 0, messageId: 'm1', reportCount: 2 });
+  });
+
+  it('leaves reason empty by default', async () => {
+    const h = makeHarness();
+    await login(h);
+    h.conn.setResponder(async (_msgId, req) => {
+      expect(req.reason).toBe('');
+      return { code: 0, messageId: 'm2', reportCount: 1 };
+    });
+    expect(await h.api.reportMessage('m2')).toMatchObject({ reportCount: 1 });
+  });
+});
+
 describe('ChatApi group mute notify', () => {
   it('refreshes groups on a well-formed 2252 notify', async () => {
     const h = makeHarness();

@@ -1460,6 +1460,22 @@ public:
     });
   }
 
+  // 举报消息(REPORT_MESSAGE_REQ/RESP 2253/2254):内存台账按
+  // (message_id, reporter_id) 去重幂等,回去重后的累计举报数。
+  void ReportMessage(const std::string& message_id, const std::string& reason,
+                     ReportMessageCallback cb) {
+    asio::post(io_context_, [this, message_id, reason, cb = std::move(cb)] {
+      if (!ReadyForRequests()) {
+        cb(MakeEc(ChatError::NotConnected), {});
+        return;
+      }
+      chirp::chat::ReportMessageRequest req;
+      req.set_message_id(message_id);
+      req.set_reason(reason);
+      TypedRequest(MsgID::REPORT_MESSAGE_REQ, MsgID::REPORT_MESSAGE_RESP, req, std::move(cb));
+    });
+  }
+
 private:
   ChatConfig config_;
   std::atomic<ConnectionState> state_;
@@ -1765,6 +1781,11 @@ void ChatClient::SetMemberAlias(const std::string& group_id, const std::string& 
 void ChatClient::SetGroupMute(const std::string& group_id, const std::string& target_user_id,
                               int64_t duration_sec, SetGroupMuteCallback cb) {
   impl_->SetGroupMute(group_id, target_user_id, duration_sec, std::move(cb));
+}
+
+void ChatClient::ReportMessage(const std::string& message_id, const std::string& reason,
+                               ReportMessageCallback cb) {
+  impl_->ReportMessage(message_id, reason, std::move(cb));
 }
 
 } // namespace sdk

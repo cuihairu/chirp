@@ -1,5 +1,6 @@
 import ArrowUpwardIcon from '@mui/icons-material/ArrowUpward';
 import CloseIcon from '@mui/icons-material/Close';
+import FlagIcon from '@mui/icons-material/FlagOutlined';
 import ReplyIcon from '@mui/icons-material/ReplyOutlined';
 import SendIcon from '@mui/icons-material/Send';
 import {
@@ -48,6 +49,8 @@ function MessageRow(props: {
   quoted?: { senderName: string; content: string } | null;
   replyToMessageId?: string;
   onReply?: () => void;
+  /** 举报对方消息（REPORT_MESSAGE 2253）；自己的消息不可举报。 */
+  onReport?: () => void;
 }) {
   return (
     <Box sx={{ display: 'flex', justifyContent: props.mine ? 'flex-end' : 'flex-start', mb: 1 }}>
@@ -114,6 +117,13 @@ function MessageRow(props: {
             <Tooltip title="回复">
               <IconButton size="small" aria-label="回复" onClick={props.onReply} sx={{ p: 0.25 }}>
                 <ReplyIcon sx={{ fontSize: 14 }} />
+              </IconButton>
+            </Tooltip>
+          ) : null}
+          {!props.mine && props.onReport ? (
+            <Tooltip title="举报">
+              <IconButton size="small" aria-label="举报" onClick={props.onReport} sx={{ p: 0.25 }}>
+                <FlagIcon sx={{ fontSize: 14 }} />
               </IconButton>
             </Tooltip>
           ) : null}
@@ -317,6 +327,9 @@ export default function ChatPanel(props: {
             quoted={m.replyToMessageId ? quotedSummary(m.replyToMessageId) : undefined}
             replyToMessageId={m.replyToMessageId}
             onReply={m.deleted ? undefined : () => setReplying(m)}
+            onReport={m.deleted || m.senderId === selfId ? undefined : () => {
+              if (window.confirm('举报这条消息?')) void api.reportMessage(m.messageId);
+            }}
           />
         ))}
         <div ref={bottomRef} />

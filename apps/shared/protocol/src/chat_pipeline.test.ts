@@ -5,6 +5,8 @@ import {
   GroupMemberAliasUpdatedNotify,
   GroupMemberMutedNotify,
   MsgType,
+  ReportMessageRequest,
+  ReportMessageResponse,
   SearchMessageRequest,
   SearchMessageResponse,
   SendMessageRequest,
@@ -374,6 +376,33 @@ describe('ChatPipeline send pipeline', () => {
         SetGroupMuteResponse.fromPartial({ code: ErrorCode.OK, mutedUntilTs: 0 }),
       ).finish());
       expect((await unmute).mutedUntilTs).toBe(0);
+    });
+  });
+
+  it('reportMessage: wire round-trip; empty messageId is a client-side RangeError', async () => {
+    await makeHarness(async (_client, pipeline, ws) => {
+      // Argument check fires while connected (C++ INVALID_PARAM parity).
+      await expect(pipeline.reportMessage('')).rejects.toThrow(RangeError);
+
+      const pending = pipeline.reportMessage('m1', 'spam');
+      expect(ws.lastSentPacket().msgId).toBe(MsgID.REPORT_MESSAGE_REQ);
+      const req = ReportMessageRequest.decode(ws.lastSentPacket().body);
+      expect(req.messageId).toBe('m1');
+      expect(req.reason).toBe('spam');
+
+      settle(ws, MsgID.REPORT_MESSAGE_RESP, ReportMessageResponse.encode(
+        ReportMessageResponse.fromPartial({ code: ErrorCode.OK, reportCount: 2 }),
+      ).finish());
+      const resp = await pending;
+      expect(resp.code).toBe(ErrorCode.OK);
+      expect(resp.reportCount).toBe(2);
+
+      // reason is optional: the default empty string rides the same spec.
+      const plain = pipeline.reportMessage('m2');
+      settle(ws, MsgID.REPORT_MESSAGE_RESP, ReportMessageResponse.encode(
+        ReportMessageResponse.fromPartial({ code: ErrorCode.OK, reportCount: 1 }),
+      ).finish());
+      expect((await plain).reportCount).toBe(1);
     });
   });
 

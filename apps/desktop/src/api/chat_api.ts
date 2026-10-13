@@ -13,6 +13,7 @@ import {
   MsgType,
   ReactionAddedNotify,
   ReactionRemovedNotify,
+  ReportMessageResponse,
   SearchMessageResponse,
   SetGroupMuteResponse,
   SetMemberAliasResponse,
@@ -41,6 +42,7 @@ import {
   LOGOUT,
   MARK_READ,
   REMOVE_REACTION,
+  REPORT_MESSAGE,
   SEARCH_MESSAGE,
   SEND_MESSAGE,
   SET_GROUP_MUTE,
@@ -608,6 +610,15 @@ export class ChatApi {
       targetUserId,
       durationSec: seconds,
     });
+    return resp;
+  }
+
+  // ---- 举报(REPORT_MESSAGE_REQ/RESP 2253/2254) ----
+  // 按 (message_id, reporter_id) 去重幂等;reason 可选,上限 500 码点。
+  // 响应回显该消息去重后的累计举报数 reportCount。
+  async reportMessage(messageId: string, reason = ''): Promise<ReportMessageResponse> {
+    if (!messageId) return { code: ErrorCode.INVALID_PARAM, messageId, reportCount: 0 };
+    const resp = await this.conn.request(REPORT_MESSAGE, { messageId, reason });
     return resp;
   }
 

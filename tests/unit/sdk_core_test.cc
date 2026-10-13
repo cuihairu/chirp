@@ -1044,9 +1044,9 @@ TEST_F(SdkClientTest, IdleLogoutAndSendPostsAreExecuted) {
   EXPECT_EQ(client.GetState(), ConnectionState::Disconnected);
 }
 
-TEST_F(SdkClientTest, SearchAndAliasWithoutConnectionReportNotConnected) {
+TEST_F(SdkClientTest, RequestsWithoutConnectionReportNotConnected) {
   ChatClient client(TcpConfig());
-  std::promise<std::error_code> search_done, alias_done, mute_done;
+  std::promise<std::error_code> search_done, alias_done, mute_done, report_done;
   client.SearchMessages("kw",
       [&](const std::error_code& ec, const chirp::chat::SearchMessageResponse&) {
         search_done.set_value(ec);
@@ -1059,9 +1059,14 @@ TEST_F(SdkClientTest, SearchAndAliasWithoutConnectionReportNotConnected) {
       [&](const std::error_code& ec, const chirp::chat::SetGroupMuteResponse&) {
         mute_done.set_value(ec);
       });
+  client.ReportMessage("m", "spam",
+      [&](const std::error_code& ec, const chirp::chat::ReportMessageResponse&) {
+        report_done.set_value(ec);
+      });
   auto search_future = search_done.get_future();
   auto alias_future = alias_done.get_future();
   auto mute_future = mute_done.get_future();
+  auto report_future = report_done.get_future();
   ASSERT_EQ(search_future.wait_for(std::chrono::milliseconds(5000)),
             std::future_status::ready);
   EXPECT_EQ(search_future.get(), make_error_code(ChatError::NotConnected));
@@ -1071,6 +1076,9 @@ TEST_F(SdkClientTest, SearchAndAliasWithoutConnectionReportNotConnected) {
   ASSERT_EQ(mute_future.wait_for(std::chrono::milliseconds(5000)),
             std::future_status::ready);
   EXPECT_EQ(mute_future.get(), make_error_code(ChatError::NotConnected));
+  ASSERT_EQ(report_future.wait_for(std::chrono::milliseconds(5000)),
+            std::future_status::ready);
+  EXPECT_EQ(report_future.get(), make_error_code(ChatError::NotConnected));
 }
 
 TEST_F(ChatClientLoopbackTest, ConnectWhileAlreadyConnectedIsIgnored) {
@@ -4248,6 +4256,43 @@ TEST_F(ConvenienceApiTest, SetGroupMuteRoundTrip) {
   }, ec);
   EXPECT_FALSE(ec);
   EXPECT_EQ(unmute.code(), chirp::common::OK);
+}
+
+TEST_F(ConvenienceApiTest, ReportMessageRoundTrip) {
+  int report_calls = 0;
+  StartGateway([&](const chirp::gateway::Packet& pkt, auto send) {
+    if (pkt.msg_id() == chirp::gateway::REPORT_MESSAGE_REQ) {
+      chirp::chat::ReportMessageRequest req;
+      ASSERT_TRUE(req.ParseFromString(pkt.body()));
+      EXPECT_EQ(req.message_id(), "m-1");
+      // 首次带理由,再次调用理由为空,同一 msg_id 分支按序断言
+      ++report_calls;
+      EXPECT_EQ(req.reason(), report_calls == 1 ? "spam" : "");
+      chirp::chat::ReportMessageResponse resp;
+      resp.set_code(chirp::common::OK);
+      resp.set_message_id("m-1");
+      resp.set_report_count(report_calls);
+      send(RespFor(pkt, chirp::gateway::REPORT_MESSAGE_RESP, resp.SerializeAsString()));
+      return;
+    }
+  });
+  ConnectAndLogin();
+
+  std::error_code ec;
+  const auto report = WaitRpc<chirp::chat::ReportMessageResponse>([&](auto cb) {
+    client_->ReportMessage("m-1", "spam", cb);
+  }, ec);
+  EXPECT_FALSE(ec);
+  EXPECT_EQ(report.code(), chirp::common::OK);
+  EXPECT_EQ(report.report_count(), 1);
+
+  // 再次调用原样透传(去重幂等语义由服务端单测覆盖)。
+  ec.clear();
+  const auto again = WaitRpc<chirp::chat::ReportMessageResponse>([&](auto cb) {
+    client_->ReportMessage("m-1", "", cb);
+  }, ec);
+  EXPECT_FALSE(ec);
+  EXPECT_EQ(again.report_count(), 2);
 }
 
 TEST_F(ConvenienceApiTest, GroupLifecycleRoundTrip) {

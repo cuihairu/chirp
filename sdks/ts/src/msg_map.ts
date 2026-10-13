@@ -407,3 +407,12 @@ export const SET_GROUP_MUTE = defineSpec(
   Chat.SetGroupMuteRequest,
   Chat.SetGroupMuteResponse,
 );
+
+// 举报(REPORT_MESSAGE_REQ/RESP 2253/2254):按 (message_id, reporter_id)
+// 去重幂等,重复举报不重复计数,响应回显 reportCount。理由上限 500 码点。
+export const REPORT_MESSAGE = defineSpec(
+  MsgID.REPORT_MESSAGE_REQ,
+  MsgID.REPORT_MESSAGE_RESP,
+  Chat.ReportMessageRequest,
+  Chat.ReportMessageResponse,
+);

@@ -572,5 +572,51 @@ MentionHandlers::HandleGetMentionSuggestions(
 // GCOVR_EXCL_LINE -- unreachable exit-block line (gcc/NRVO artifact); body is covered
 }
 
+// ---------------------------------------------------------------------------
+// Message reports
+// ---------------------------------------------------------------------------
+
+chirp::chat::ReportMessageResponse ReportHandlers::HandleReportMessage(
+    const chirp::chat::ReportMessageRequest& req,
+    std::string_view authenticated_user_id) {
+  chirp::chat::ReportMessageResponse resp;
+  resp.set_message_id(req.message_id());
+
+  if (authenticated_user_id.empty()) {
+    resp.set_code(chirp::common::AUTH_FAILED);
+    return resp;
+  }
+  if (req.message_id().empty()) {
+    resp.set_code(chirp::common::INVALID_PARAM);
+    return resp;
+  }
+  // 理由按码点计（与 alias 上限同一套口径）：每个非 UTF-8 续字节都是一个
+  // 新字符。
+  size_t reason_chars = 0;
+  for (char c : req.reason()) {
+    if ((static_cast<unsigned char>(c) & 0xC0) != 0x80) {
+      ++reason_chars;
+    }
+  }
+  if (reason_chars > kMaxReasonCodePoints) {
+    resp.set_code(chirp::common::INVALID_PARAM);
+    return resp;
+  }
+  // 台账外消息拒收（USER_NOT_FOUND，与撤回的 kNotFound 同语义）：只允许举报
+  // 本实例实际投递过的消息，垃圾 message_id 进不了举报台账。
+  chirp::chat::ChatMessageFull full;
+  if (!edits_.GetFullMessage(req.message_id(), &full)) {
+    resp.set_code(chirp::common::USER_NOT_FOUND);
+    return resp;
+  }
+
+  const auto outcome = reports_.Report(req.message_id(),
+                                       std::string(authenticated_user_id),
+                                       req.reason());
+  resp.set_code(chirp::common::OK);
+  resp.set_report_count(outcome.report_count);
+  return resp;
+}
+
 }  // namespace chat
 }  // namespace chirp

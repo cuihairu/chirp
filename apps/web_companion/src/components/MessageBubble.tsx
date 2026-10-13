@@ -1,6 +1,7 @@
 import { Box, Paper, Typography } from '@mui/material';
 import DeleteIcon from '@mui/icons-material/DeleteOutline';
 import EditIcon from '@mui/icons-material/EditOutlined';
+import FlagIcon from '@mui/icons-material/FlagOutlined';
 import ReplyIcon from '@mui/icons-material/ReplyOutlined';
 import { QUICK_REACTIONS } from './quick_reactions';
 import type { ChatMessageView } from '../state/models';
@@ -28,6 +29,8 @@ export interface MessageBubbleProps {
   onReply?: (message: ChatMessageView) => void;
   onEdit?: (message: ChatMessageView) => void;
   onDelete?: (message: ChatMessageView) => void;
+  /** Report a peer's message (REPORT_MESSAGE 2253); own messages are never reportable. */
+  onReport?: (message: ChatMessageView) => void;
 }
 
 /**
@@ -45,6 +48,7 @@ export default function MessageBubble({
   onReply,
   onEdit,
   onDelete,
+  onReport,
 }: MessageBubbleProps) {
   const mine = message.senderId === selfId;
   // Server message ids are "msg_<ms>_<n>" and monotonic, so string compare
@@ -184,6 +188,17 @@ export default function MessageBubble({
                 sx={{ background: 'transparent', border: 'none', cursor: 'pointer', fontSize: 11, p: 0 }}
               >
                 <DeleteIcon sx={{ fontSize: 13 }} />
+              </Typography>
+            )}
+            {!mine && !message.deleted && onReport && (
+              <Typography
+                component="button"
+                aria-label={zh.chat.report}
+                data-testid={`report-${message.messageId}`}
+                onClick={() => onReport(message)}
+                sx={{ background: 'transparent', border: 'none', cursor: 'pointer', fontSize: 11, p: 0 }}
+              >
+                <FlagIcon sx={{ fontSize: 13 }} />
               </Typography>
             )}
           </Typography>

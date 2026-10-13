@@ -167,4 +167,41 @@ describe('MessageBubble', () => {
     );
     expect(screen.queryByTestId('reply-m1')).toBeNull();
   });
+
+  it('fires the report action on a peer message', () => {
+    const onReport = vi.fn();
+    render(<MessageBubble message={message({})} selfId="user_a" onToggleReaction={noop} onReport={onReport} />);
+    fireEvent.click(screen.getByTestId('report-m1'));
+    expect(onReport).toHaveBeenCalledWith(expect.objectContaining({ messageId: 'm1' }));
+  });
+
+  it('never offers the report action on own messages', () => {
+    render(
+      <MessageBubble
+        message={message({ senderId: 'user_a' })}
+        selfId="user_a"
+        onToggleReaction={noop}
+        onReport={noop}
+      />,
+    );
+    expect(screen.queryByTestId('report-m1')).toBeNull();
+  });
+
+  it('hides the report action on deleted messages', () => {
+    const onReport = vi.fn();
+    render(
+      <MessageBubble
+        message={message({ deleted: true, content: '' })}
+        selfId="user_a"
+        onToggleReaction={noop}
+        onReport={onReport}
+      />,
+    );
+    expect(screen.queryByTestId('report-m1')).toBeNull();
+  });
+
+  it('renders no report action without a handler', () => {
+    render(<MessageBubble message={message({})} selfId="user_a" onToggleReaction={noop} />);
+    expect(screen.queryByTestId('report-m1')).toBeNull();
+  });
 });

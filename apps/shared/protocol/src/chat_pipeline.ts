@@ -29,7 +29,7 @@ import type { DevicePresence } from '@chirp/proto/auth';
 import { MsgID } from '@chirp/proto/gateway';
 import type { ConnStatus } from './chirp_client';
 import { RequestError } from './errors';
-import { LOGIN, SEND_MESSAGE, SEARCH_MESSAGE, SET_MEMBER_ALIAS, SET_GROUP_MUTE } from './msg_map';
+import { LOGIN, SEND_MESSAGE, SEARCH_MESSAGE, SET_MEMBER_ALIAS, SET_GROUP_MUTE, REPORT_MESSAGE } from './msg_map';
 import type { MessageSpec } from './msg_map';
 import {
   SearchMessageRequest,
@@ -39,6 +39,8 @@ import {
   GroupMemberAliasUpdatedNotify,
   SetGroupMuteRequest,
   SetGroupMuteResponse,
+  ReportMessageRequest,
+  ReportMessageResponse,
   GroupMemberMutedNotify,
 } from '@chirp/proto/chat';
 import type {
@@ -354,6 +356,26 @@ export class ChatPipeline {
       durationSec,
     });
     return this.conn.request(SET_GROUP_MUTE, request);
+  }
+
+  // ---- 举报(REPORT_MESSAGE_REQ/RESP 2253/2254) ----
+  // 按 (message_id, reporter_id) 去重幂等;reason 可选,上限 500 码点。
+  // 响应回显该消息去重后的累计举报数 reportCount。
+  async reportMessage(
+    messageId: string,
+    reason = '',
+  ): Promise<ReportMessageResponse> {
+    if (this.conn.status !== 'connected') {
+      throw new RequestError('closed');
+    }
+    if (!messageId) {
+      throw new RangeError('messageId is required');
+    }
+    const request: ReportMessageRequest = ReportMessageRequest.fromPartial({
+      messageId,
+      reason,
+    });
+    return this.conn.request(REPORT_MESSAGE, request);
   }
 
   // ---- 内部 -----------------------------------------------------------
