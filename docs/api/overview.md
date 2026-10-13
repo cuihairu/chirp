@@ -149,6 +149,12 @@ message Packet {
 
 3001-3024(社交:好友/黑名单/在线状态)与 4001+(语音房)由实验性服务提供,不在受支持路径内;接入前先核对 [能力矩阵](../CAPABILITY_MATRIX.md)。
 
+| MsgID | 名称 | 方向 | 语义 |
+| --- | --- | --- | --- |
+| 3025 / 3026 | `SET_NOTIFY_PREFS_REQ` / `RESP` | 客户端 <-> Social | 好友上线通知开关(按用户存,缺省全开);`prefs` 子消息必带,缺省回 `INVALID_PARAM` |
+| 3027 / 3028 | `GET_NOTIFY_PREFS_REQ` / `RESP` | 客户端 <-> Social | 读取开关;无记录时回全开 |
+| 3029 | `FRIEND_ONLINE_NOTIFY` | Social -> 客户端 | 好友有效状态 OFFLINE→非 OFFLINE 跃迁时的显式上线通知(body 复用 `PresenceNotify`),逐收件人过 3025 开关;花名册 `PRESENCE_NOTIFY`(3021)不受开关影响,登录/SET_PRESENCE/游戏断言三条链路都会触发 |
+
 ### 服务面(Server plane,5xxx)
 
 `chirp_game_server_gateway`(TCP 8100)在另一个信任面上用同一套 Packet 帧。peer 是游戏后端和内部服务,以 `service_id` + 共享 secret 认证——从来不是用户账号。

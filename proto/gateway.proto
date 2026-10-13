@@ -191,6 +191,17 @@ enum MsgID {
   FRIEND_ACCEPTED_NOTIFY = 3023;
   FRIEND_REMOVED_NOTIFY = 3024;
 
+  // 好友上线通知偏好与显式上线通知（P1，可关闭）。prefs 按用户存、缺省全开；
+  // FRIEND_ONLINE_NOTIFY 只在有效状态 OFFLINE→非 OFFLINE 跃迁时补发（逐好友
+  // 过 SET_NOTIFY_PREFS 开关），body 复用 social.proto 的 PresenceNotify
+  // （同形负载：谁/什么状态/状态文案/时间戳），靠 msgid 区分于花名册更新
+  // 用的 PRESENCE_NOTIFY(3021)——花名册链路不受开关影响。
+  SET_NOTIFY_PREFS_REQ = 3025;
+  SET_NOTIFY_PREFS_RESP = 3026;
+  GET_NOTIFY_PREFS_REQ = 3027;
+  GET_NOTIFY_PREFS_RESP = 3028;
+  FRIEND_ONLINE_NOTIFY = 3029;
+
   // Voice service
   CREATE_ROOM_REQ = 4001;
   CREATE_ROOM_RESP = 4002;

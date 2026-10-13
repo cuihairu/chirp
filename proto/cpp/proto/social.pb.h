@@ -124,6 +124,14 @@ class GetFriendListResponse;
 struct GetFriendListResponseDefaultTypeInternal;
 extern GetFriendListResponseDefaultTypeInternal _GetFriendListResponse_default_instance_;
 extern const ::google::protobuf::internal::ClassDataFull GetFriendListResponse_class_data_;
+class GetNotifyPrefsRequest;
+struct GetNotifyPrefsRequestDefaultTypeInternal;
+extern GetNotifyPrefsRequestDefaultTypeInternal _GetNotifyPrefsRequest_default_instance_;
+extern const ::google::protobuf::internal::ClassDataFull GetNotifyPrefsRequest_class_data_;
+class GetNotifyPrefsResponse;
+struct GetNotifyPrefsResponseDefaultTypeInternal;
+extern GetNotifyPrefsResponseDefaultTypeInternal _GetNotifyPrefsResponse_default_instance_;
+extern const ::google::protobuf::internal::ClassDataFull GetNotifyPrefsResponse_class_data_;
 class GetPendingRequestsRequest;
 struct GetPendingRequestsRequestDefaultTypeInternal;
 extern GetPendingRequestsRequestDefaultTypeInternal _GetPendingRequestsRequest_default_instance_;
@@ -140,6 +148,10 @@ class GetPresenceResponse;
 struct GetPresenceResponseDefaultTypeInternal;
 extern GetPresenceResponseDefaultTypeInternal _GetPresenceResponse_default_instance_;
 extern const ::google::protobuf::internal::ClassDataFull GetPresenceResponse_class_data_;
+class NotifyPrefs;
+struct NotifyPrefsDefaultTypeInternal;
+extern NotifyPrefsDefaultTypeInternal _NotifyPrefs_default_instance_;
+extern const ::google::protobuf::internal::ClassDataFull NotifyPrefs_class_data_;
 class PresenceInfo;
 struct PresenceInfoDefaultTypeInternal;
 extern PresenceInfoDefaultTypeInternal _PresenceInfo_default_instance_;
@@ -164,6 +176,14 @@ class RemoveFriendResponse;
 struct RemoveFriendResponseDefaultTypeInternal;
 extern RemoveFriendResponseDefaultTypeInternal _RemoveFriendResponse_default_instance_;
 extern const ::google::protobuf::internal::ClassDataFull RemoveFriendResponse_class_data_;
+class SetNotifyPrefsRequest;
+struct SetNotifyPrefsRequestDefaultTypeInternal;
+extern SetNotifyPrefsRequestDefaultTypeInternal _SetNotifyPrefsRequest_default_instance_;
+extern const ::google::protobuf::internal::ClassDataFull SetNotifyPrefsRequest_class_data_;
+class SetNotifyPrefsResponse;
+struct SetNotifyPrefsResponseDefaultTypeInternal;
+extern SetNotifyPrefsResponseDefaultTypeInternal _SetNotifyPrefsResponse_default_instance_;
+extern const ::google::protobuf::internal::ClassDataFull SetNotifyPrefsResponse_class_data_;
 class SetPresenceRequest;
 struct SetPresenceRequestDefaultTypeInternal;
 extern SetPresenceRequestDefaultTypeInternal _SetPresenceRequest_default_instance_;
@@ -184,6 +204,10 @@ class StoredFriendList;
 struct StoredFriendListDefaultTypeInternal;
 extern StoredFriendListDefaultTypeInternal _StoredFriendList_default_instance_;
 extern const ::google::protobuf::internal::ClassDataFull StoredFriendList_class_data_;
+class StoredNotifyPrefs;
+struct StoredNotifyPrefsDefaultTypeInternal;
+extern StoredNotifyPrefsDefaultTypeInternal _StoredNotifyPrefs_default_instance_;
+extern const ::google::protobuf::internal::ClassDataFull StoredNotifyPrefs_class_data_;
 class StoredPendingRequests;
 struct StoredPendingRequestsDefaultTypeInternal;
 extern StoredPendingRequestsDefaultTypeInternal _StoredPendingRequests_default_instance_;
@@ -713,6 +737,196 @@ class UnblockUserRequest final : public ::google::protobuf::Message
 extern const ::google::protobuf::internal::ClassDataFull UnblockUserRequest_class_data_;
 // -------------------------------------------------------------------
 
+class StoredNotifyPrefs final : public ::google::protobuf::Message
+/* @@protoc_insertion_point(class_definition:chirp.social.StoredNotifyPrefs) */ {
+ public:
+  inline StoredNotifyPrefs() : StoredNotifyPrefs(nullptr) {}
+  ~StoredNotifyPrefs() PROTOBUF_FINAL;
+
+#if defined(PROTOBUF_CUSTOM_VTABLE)
+  void operator delete(StoredNotifyPrefs* PROTOBUF_NONNULL msg, ::std::destroying_delete_t) {
+    SharedDtor(*msg);
+    ::google::protobuf::internal::SizedDelete(msg, sizeof(StoredNotifyPrefs));
+  }
+#endif
+
+  template <typename = void>
+  explicit PROTOBUF_CONSTEXPR StoredNotifyPrefs(::google::protobuf::internal::ConstantInitialized);
+
+  inline StoredNotifyPrefs(const StoredNotifyPrefs& from) : StoredNotifyPrefs(nullptr, from) {}
+  inline StoredNotifyPrefs(StoredNotifyPrefs&& from) noexcept
+      : StoredNotifyPrefs(nullptr, ::std::move(from)) {}
+  inline StoredNotifyPrefs& operator=(const StoredNotifyPrefs& from) {
+    CopyFrom(from);
+    return *this;
+  }
+  inline StoredNotifyPrefs& operator=(StoredNotifyPrefs&& from) noexcept {
+    if (this == &from) return *this;
+    if (::google::protobuf::internal::CanMoveWithInternalSwap(GetArena(), from.GetArena())) {
+      InternalSwap(&from);
+    } else {
+      CopyFrom(from);
+    }
+    return *this;
+  }
+
+  inline const ::google::protobuf::UnknownFieldSet& unknown_fields() const
+      ABSL_ATTRIBUTE_LIFETIME_BOUND {
+    return _internal_metadata_.unknown_fields<::google::protobuf::UnknownFieldSet>(::google::protobuf::UnknownFieldSet::default_instance);
+  }
+  inline ::google::protobuf::UnknownFieldSet* PROTOBUF_NONNULL mutable_unknown_fields()
+      ABSL_ATTRIBUTE_LIFETIME_BOUND {
+    return _internal_metadata_.mutable_unknown_fields<::google::protobuf::UnknownFieldSet>();
+  }
+
+  static const ::google::protobuf::Descriptor* PROTOBUF_NONNULL descriptor() {
+    return GetDescriptor();
+  }
+  static const ::google::protobuf::Descriptor* PROTOBUF_NONNULL GetDescriptor() {
+    return default_instance().GetMetadata().descriptor;
+  }
+  static const ::google::protobuf::Reflection* PROTOBUF_NONNULL GetReflection() {
+    return default_instance().GetMetadata().reflection;
+  }
+  static const StoredNotifyPrefs& default_instance() {
+    return *reinterpret_cast<const StoredNotifyPrefs*>(
+        &_StoredNotifyPrefs_default_instance_);
+  }
+  static constexpr int kIndexInFileMessages = 38;
+  friend void swap(StoredNotifyPrefs& a, StoredNotifyPrefs& b) { a.Swap(&b); }
+  inline void Swap(StoredNotifyPrefs* PROTOBUF_NONNULL other) {
+    if (other == this) return;
+    if (::google::protobuf::internal::CanUseInternalSwap(GetArena(), other->GetArena())) {
+      InternalSwap(other);
+    } else {
+      ::google::protobuf::internal::GenericSwap(this, other);
+    }
+  }
+  void UnsafeArenaSwap(StoredNotifyPrefs* PROTOBUF_NONNULL other) {
+    if (other == this) return;
+    ABSL_DCHECK(GetArena() == other->GetArena());
+    InternalSwap(other);
+  }
+
+  // implements Message ----------------------------------------------
+
+  StoredNotifyPrefs* PROTOBUF_NONNULL New(::google::protobuf::Arena* PROTOBUF_NULLABLE arena = nullptr) const {
+    return ::google::protobuf::Message::DefaultConstruct<StoredNotifyPrefs>(arena);
+  }
+  using ::google::protobuf::Message::CopyFrom;
+  void CopyFrom(const StoredNotifyPrefs& from);
+  using ::google::protobuf::Message::MergeFrom;
+  void MergeFrom(const StoredNotifyPrefs& from) { StoredNotifyPrefs::MergeImpl(*this, from); }
+
+  private:
+  static void MergeImpl(::google::protobuf::MessageLite& to_msg,
+                        const ::google::protobuf::MessageLite& from_msg);
+
+  public:
+  bool IsInitialized() const {
+    return true;
+  }
+  ABSL_ATTRIBUTE_REINITIALIZES void Clear() PROTOBUF_FINAL;
+  #if defined(PROTOBUF_CUSTOM_VTABLE)
+  private:
+  static ::size_t ByteSizeLong(const ::google::protobuf::MessageLite& msg);
+  static ::uint8_t* PROTOBUF_NONNULL _InternalSerialize(
+      const ::google::protobuf::MessageLite& msg, ::uint8_t* PROTOBUF_NONNULL target,
+      ::google::protobuf::io::EpsCopyOutputStream* PROTOBUF_NONNULL stream);
+
+  public:
+  ::size_t ByteSizeLong() const { return ByteSizeLong(*this); }
+  ::uint8_t* PROTOBUF_NONNULL _InternalSerialize(
+      ::uint8_t* PROTOBUF_NONNULL target,
+      ::google::protobuf::io::EpsCopyOutputStream* PROTOBUF_NONNULL stream) const {
+    return _InternalSerialize(*this, target, stream);
+  }
+  #else   // PROTOBUF_CUSTOM_VTABLE
+  ::size_t ByteSizeLong() const final;
+  ::uint8_t* PROTOBUF_NONNULL _InternalSerialize(
+      ::uint8_t* PROTOBUF_NONNULL target,
+      ::google::protobuf::io::EpsCopyOutputStream* PROTOBUF_NONNULL stream) const final;
+  #endif  // PROTOBUF_CUSTOM_VTABLE
+  int GetCachedSize() const { return _impl_._cached_size_.Get(); }
+
+  private:
+  void SharedCtor(::google::protobuf::Arena* PROTOBUF_NULLABLE arena);
+  static void SharedDtor(MessageLite& self);
+  void InternalSwap(StoredNotifyPrefs* PROTOBUF_NONNULL other);
+ private:
+  template <typename T>
+  friend ::absl::string_view(::google::protobuf::internal::GetAnyMessageName)();
+  static ::absl::string_view FullMessageName() { return "chirp.social.StoredNotifyPrefs"; }
+
+  explicit StoredNotifyPrefs(::google::protobuf::Arena* PROTOBUF_NULLABLE arena);
+  StoredNotifyPrefs(::google::protobuf::Arena* PROTOBUF_NULLABLE arena, const StoredNotifyPrefs& from);
+  StoredNotifyPrefs(
+      ::google::protobuf::Arena* PROTOBUF_NULLABLE arena, StoredNotifyPrefs&& from) noexcept
+      : StoredNotifyPrefs(arena) {
+    *this = ::std::move(from);
+  }
+  const ::google::protobuf::internal::ClassData* PROTOBUF_NONNULL GetClassData() const PROTOBUF_FINAL;
+  static void* PROTOBUF_NONNULL PlacementNew_(
+      const void* PROTOBUF_NONNULL, void* PROTOBUF_NONNULL mem,
+      ::google::protobuf::Arena* PROTOBUF_NULLABLE arena);
+  static constexpr auto InternalNewImpl_();
+
+ public:
+  static constexpr auto InternalGenerateClassData_();
+
+  ::google::protobuf::Metadata GetMetadata() const;
+  // nested types ----------------------------------------------------
+
+  // accessors -------------------------------------------------------
+  enum : int {
+    kFriendOnlineNotifyFieldNumber = 1,
+  };
+  // bool friend_online_notify = 1;
+  void clear_friend_online_notify() ;
+  bool friend_online_notify() const;
+  void set_friend_online_notify(bool value);
+
+  private:
+  bool _internal_friend_online_notify() const;
+  void _internal_set_friend_online_notify(bool value);
+
+  public:
+  // @@protoc_insertion_point(class_scope:chirp.social.StoredNotifyPrefs)
+ private:
+  class _Internal;
+  friend class ::google::protobuf::internal::TcParser;
+  static const ::google::protobuf::internal::TcParseTable<0, 1,
+                                   0, 0,
+                                   2>
+      _table_;
+
+  friend class ::google::protobuf::MessageLite;
+  friend class ::google::protobuf::Arena;
+  template <typename T>
+  friend class ::google::protobuf::Arena::InternalHelper;
+  using InternalArenaConstructable_ = void;
+  using DestructorSkippable_ = void;
+  struct Impl_ {
+    inline explicit constexpr Impl_(::google::protobuf::internal::ConstantInitialized) noexcept;
+    inline explicit Impl_(
+        ::google::protobuf::internal::InternalVisibility visibility,
+        ::google::protobuf::Arena* PROTOBUF_NULLABLE arena);
+    inline explicit Impl_(
+        ::google::protobuf::internal::InternalVisibility visibility,
+        ::google::protobuf::Arena* PROTOBUF_NULLABLE arena, const Impl_& from,
+        const StoredNotifyPrefs& from_msg);
+    ::google::protobuf::internal::HasBits<1> _has_bits_;
+    ::google::protobuf::internal::CachedSize _cached_size_;
+    bool friend_online_notify_;
+    PROTOBUF_TSAN_DECLARE_MEMBER
+  };
+  union { Impl_ _impl_; };
+  friend struct ::TableStruct_proto_2fsocial_2eproto;
+};
+
+extern const ::google::protobuf::internal::ClassDataFull StoredNotifyPrefs_class_data_;
+// -------------------------------------------------------------------
+
 class StoredFriendList final : public ::google::protobuf::Message
 /* @@protoc_insertion_point(class_definition:chirp.social.StoredFriendList) */ {
  public:
@@ -768,7 +982,7 @@ class StoredFriendList final : public ::google::protobuf::Message
     return *reinterpret_cast<const StoredFriendList*>(
         &_StoredFriendList_default_instance_);
   }
-  static constexpr int kIndexInFileMessages = 30;
+  static constexpr int kIndexInFileMessages = 35;
   friend void swap(StoredFriendList& a, StoredFriendList& b) { a.Swap(&b); }
   inline void Swap(StoredFriendList* PROTOBUF_NONNULL other) {
     if (other == this) return;
@@ -970,7 +1184,7 @@ class StoredBlockedList final : public ::google::protobuf::Message
     return *reinterpret_cast<const StoredBlockedList*>(
         &_StoredBlockedList_default_instance_);
   }
-  static constexpr int kIndexInFileMessages = 33;
+  static constexpr int kIndexInFileMessages = 39;
   friend void swap(StoredBlockedList& a, StoredBlockedList& b) { a.Swap(&b); }
   inline void Swap(StoredBlockedList* PROTOBUF_NONNULL other) {
     if (other == this) return;
@@ -1850,6 +2064,196 @@ class PresenceInfo_MetadataEntry_DoNotUse final
 extern const ::google::protobuf::internal::ClassDataFull PresenceInfo_MetadataEntry_DoNotUse_class_data_;
 // -------------------------------------------------------------------
 
+class NotifyPrefs final : public ::google::protobuf::Message
+/* @@protoc_insertion_point(class_definition:chirp.social.NotifyPrefs) */ {
+ public:
+  inline NotifyPrefs() : NotifyPrefs(nullptr) {}
+  ~NotifyPrefs() PROTOBUF_FINAL;
+
+#if defined(PROTOBUF_CUSTOM_VTABLE)
+  void operator delete(NotifyPrefs* PROTOBUF_NONNULL msg, ::std::destroying_delete_t) {
+    SharedDtor(*msg);
+    ::google::protobuf::internal::SizedDelete(msg, sizeof(NotifyPrefs));
+  }
+#endif
+
+  template <typename = void>
+  explicit PROTOBUF_CONSTEXPR NotifyPrefs(::google::protobuf::internal::ConstantInitialized);
+
+  inline NotifyPrefs(const NotifyPrefs& from) : NotifyPrefs(nullptr, from) {}
+  inline NotifyPrefs(NotifyPrefs&& from) noexcept
+      : NotifyPrefs(nullptr, ::std::move(from)) {}
+  inline NotifyPrefs& operator=(const NotifyPrefs& from) {
+    CopyFrom(from);
+    return *this;
+  }
+  inline NotifyPrefs& operator=(NotifyPrefs&& from) noexcept {
+    if (this == &from) return *this;
+    if (::google::protobuf::internal::CanMoveWithInternalSwap(GetArena(), from.GetArena())) {
+      InternalSwap(&from);
+    } else {
+      CopyFrom(from);
+    }
+    return *this;
+  }
+
+  inline const ::google::protobuf::UnknownFieldSet& unknown_fields() const
+      ABSL_ATTRIBUTE_LIFETIME_BOUND {
+    return _internal_metadata_.unknown_fields<::google::protobuf::UnknownFieldSet>(::google::protobuf::UnknownFieldSet::default_instance);
+  }
+  inline ::google::protobuf::UnknownFieldSet* PROTOBUF_NONNULL mutable_unknown_fields()
+      ABSL_ATTRIBUTE_LIFETIME_BOUND {
+    return _internal_metadata_.mutable_unknown_fields<::google::protobuf::UnknownFieldSet>();
+  }
+
+  static const ::google::protobuf::Descriptor* PROTOBUF_NONNULL descriptor() {
+    return GetDescriptor();
+  }
+  static const ::google::protobuf::Descriptor* PROTOBUF_NONNULL GetDescriptor() {
+    return default_instance().GetMetadata().descriptor;
+  }
+  static const ::google::protobuf::Reflection* PROTOBUF_NONNULL GetReflection() {
+    return default_instance().GetMetadata().reflection;
+  }
+  static const NotifyPrefs& default_instance() {
+    return *reinterpret_cast<const NotifyPrefs*>(
+        &_NotifyPrefs_default_instance_);
+  }
+  static constexpr int kIndexInFileMessages = 30;
+  friend void swap(NotifyPrefs& a, NotifyPrefs& b) { a.Swap(&b); }
+  inline void Swap(NotifyPrefs* PROTOBUF_NONNULL other) {
+    if (other == this) return;
+    if (::google::protobuf::internal::CanUseInternalSwap(GetArena(), other->GetArena())) {
+      InternalSwap(other);
+    } else {
+      ::google::protobuf::internal::GenericSwap(this, other);
+    }
+  }
+  void UnsafeArenaSwap(NotifyPrefs* PROTOBUF_NONNULL other) {
+    if (other == this) return;
+    ABSL_DCHECK(GetArena() == other->GetArena());
+    InternalSwap(other);
+  }
+
+  // implements Message ----------------------------------------------
+
+  NotifyPrefs* PROTOBUF_NONNULL New(::google::protobuf::Arena* PROTOBUF_NULLABLE arena = nullptr) const {
+    return ::google::protobuf::Message::DefaultConstruct<NotifyPrefs>(arena);
+  }
+  using ::google::protobuf::Message::CopyFrom;
+  void CopyFrom(const NotifyPrefs& from);
+  using ::google::protobuf::Message::MergeFrom;
+  void MergeFrom(const NotifyPrefs& from) { NotifyPrefs::MergeImpl(*this, from); }
+
+  private:
+  static void MergeImpl(::google::protobuf::MessageLite& to_msg,
+                        const ::google::protobuf::MessageLite& from_msg);
+
+  public:
+  bool IsInitialized() const {
+    return true;
+  }
+  ABSL_ATTRIBUTE_REINITIALIZES void Clear() PROTOBUF_FINAL;
+  #if defined(PROTOBUF_CUSTOM_VTABLE)
+  private:
+  static ::size_t ByteSizeLong(const ::google::protobuf::MessageLite& msg);
+  static ::uint8_t* PROTOBUF_NONNULL _InternalSerialize(
+      const ::google::protobuf::MessageLite& msg, ::uint8_t* PROTOBUF_NONNULL target,
+      ::google::protobuf::io::EpsCopyOutputStream* PROTOBUF_NONNULL stream);
+
+  public:
+  ::size_t ByteSizeLong() const { return ByteSizeLong(*this); }
+  ::uint8_t* PROTOBUF_NONNULL _InternalSerialize(
+      ::uint8_t* PROTOBUF_NONNULL target,
+      ::google::protobuf::io::EpsCopyOutputStream* PROTOBUF_NONNULL stream) const {
+    return _InternalSerialize(*this, target, stream);
+  }
+  #else   // PROTOBUF_CUSTOM_VTABLE
+  ::size_t ByteSizeLong() const final;
+  ::uint8_t* PROTOBUF_NONNULL _InternalSerialize(
+      ::uint8_t* PROTOBUF_NONNULL target,
+      ::google::protobuf::io::EpsCopyOutputStream* PROTOBUF_NONNULL stream) const final;
+  #endif  // PROTOBUF_CUSTOM_VTABLE
+  int GetCachedSize() const { return _impl_._cached_size_.Get(); }
+
+  private:
+  void SharedCtor(::google::protobuf::Arena* PROTOBUF_NULLABLE arena);
+  static void SharedDtor(MessageLite& self);
+  void InternalSwap(NotifyPrefs* PROTOBUF_NONNULL other);
+ private:
+  template <typename T>
+  friend ::absl::string_view(::google::protobuf::internal::GetAnyMessageName)();
+  static ::absl::string_view FullMessageName() { return "chirp.social.NotifyPrefs"; }
+
+  explicit NotifyPrefs(::google::protobuf::Arena* PROTOBUF_NULLABLE arena);
+  NotifyPrefs(::google::protobuf::Arena* PROTOBUF_NULLABLE arena, const NotifyPrefs& from);
+  NotifyPrefs(
+      ::google::protobuf::Arena* PROTOBUF_NULLABLE arena, NotifyPrefs&& from) noexcept
+      : NotifyPrefs(arena) {
+    *this = ::std::move(from);
+  }
+  const ::google::protobuf::internal::ClassData* PROTOBUF_NONNULL GetClassData() const PROTOBUF_FINAL;
+  static void* PROTOBUF_NONNULL PlacementNew_(
+      const void* PROTOBUF_NONNULL, void* PROTOBUF_NONNULL mem,
+      ::google::protobuf::Arena* PROTOBUF_NULLABLE arena);
+  static constexpr auto InternalNewImpl_();
+
+ public:
+  static constexpr auto InternalGenerateClassData_();
+
+  ::google::protobuf::Metadata GetMetadata() const;
+  // nested types ----------------------------------------------------
+
+  // accessors -------------------------------------------------------
+  enum : int {
+    kFriendOnlineNotifyFieldNumber = 1,
+  };
+  // bool friend_online_notify = 1;
+  void clear_friend_online_notify() ;
+  bool friend_online_notify() const;
+  void set_friend_online_notify(bool value);
+
+  private:
+  bool _internal_friend_online_notify() const;
+  void _internal_set_friend_online_notify(bool value);
+
+  public:
+  // @@protoc_insertion_point(class_scope:chirp.social.NotifyPrefs)
+ private:
+  class _Internal;
+  friend class ::google::protobuf::internal::TcParser;
+  static const ::google::protobuf::internal::TcParseTable<0, 1,
+                                   0, 0,
+                                   2>
+      _table_;
+
+  friend class ::google::protobuf::MessageLite;
+  friend class ::google::protobuf::Arena;
+  template <typename T>
+  friend class ::google::protobuf::Arena::InternalHelper;
+  using InternalArenaConstructable_ = void;
+  using DestructorSkippable_ = void;
+  struct Impl_ {
+    inline explicit constexpr Impl_(::google::protobuf::internal::ConstantInitialized) noexcept;
+    inline explicit Impl_(
+        ::google::protobuf::internal::InternalVisibility visibility,
+        ::google::protobuf::Arena* PROTOBUF_NULLABLE arena);
+    inline explicit Impl_(
+        ::google::protobuf::internal::InternalVisibility visibility,
+        ::google::protobuf::Arena* PROTOBUF_NULLABLE arena, const Impl_& from,
+        const NotifyPrefs& from_msg);
+    ::google::protobuf::internal::HasBits<1> _has_bits_;
+    ::google::protobuf::internal::CachedSize _cached_size_;
+    bool friend_online_notify_;
+    PROTOBUF_TSAN_DECLARE_MEMBER
+  };
+  union { Impl_ _impl_; };
+  friend struct ::TableStruct_proto_2fsocial_2eproto;
+};
+
+extern const ::google::protobuf::internal::ClassDataFull NotifyPrefs_class_data_;
+// -------------------------------------------------------------------
+
 class GetPresenceRequest final : public ::google::protobuf::Message
 /* @@protoc_insertion_point(class_definition:chirp.social.GetPresenceRequest) */ {
  public:
@@ -2245,6 +2649,201 @@ class GetPendingRequestsRequest final : public ::google::protobuf::Message
 };
 
 extern const ::google::protobuf::internal::ClassDataFull GetPendingRequestsRequest_class_data_;
+// -------------------------------------------------------------------
+
+class GetNotifyPrefsRequest final : public ::google::protobuf::Message
+/* @@protoc_insertion_point(class_definition:chirp.social.GetNotifyPrefsRequest) */ {
+ public:
+  inline GetNotifyPrefsRequest() : GetNotifyPrefsRequest(nullptr) {}
+  ~GetNotifyPrefsRequest() PROTOBUF_FINAL;
+
+#if defined(PROTOBUF_CUSTOM_VTABLE)
+  void operator delete(GetNotifyPrefsRequest* PROTOBUF_NONNULL msg, ::std::destroying_delete_t) {
+    SharedDtor(*msg);
+    ::google::protobuf::internal::SizedDelete(msg, sizeof(GetNotifyPrefsRequest));
+  }
+#endif
+
+  template <typename = void>
+  explicit PROTOBUF_CONSTEXPR GetNotifyPrefsRequest(::google::protobuf::internal::ConstantInitialized);
+
+  inline GetNotifyPrefsRequest(const GetNotifyPrefsRequest& from) : GetNotifyPrefsRequest(nullptr, from) {}
+  inline GetNotifyPrefsRequest(GetNotifyPrefsRequest&& from) noexcept
+      : GetNotifyPrefsRequest(nullptr, ::std::move(from)) {}
+  inline GetNotifyPrefsRequest& operator=(const GetNotifyPrefsRequest& from) {
+    CopyFrom(from);
+    return *this;
+  }
+  inline GetNotifyPrefsRequest& operator=(GetNotifyPrefsRequest&& from) noexcept {
+    if (this == &from) return *this;
+    if (::google::protobuf::internal::CanMoveWithInternalSwap(GetArena(), from.GetArena())) {
+      InternalSwap(&from);
+    } else {
+      CopyFrom(from);
+    }
+    return *this;
+  }
+
+  inline const ::google::protobuf::UnknownFieldSet& unknown_fields() const
+      ABSL_ATTRIBUTE_LIFETIME_BOUND {
+    return _internal_metadata_.unknown_fields<::google::protobuf::UnknownFieldSet>(::google::protobuf::UnknownFieldSet::default_instance);
+  }
+  inline ::google::protobuf::UnknownFieldSet* PROTOBUF_NONNULL mutable_unknown_fields()
+      ABSL_ATTRIBUTE_LIFETIME_BOUND {
+    return _internal_metadata_.mutable_unknown_fields<::google::protobuf::UnknownFieldSet>();
+  }
+
+  static const ::google::protobuf::Descriptor* PROTOBUF_NONNULL descriptor() {
+    return GetDescriptor();
+  }
+  static const ::google::protobuf::Descriptor* PROTOBUF_NONNULL GetDescriptor() {
+    return default_instance().GetMetadata().descriptor;
+  }
+  static const ::google::protobuf::Reflection* PROTOBUF_NONNULL GetReflection() {
+    return default_instance().GetMetadata().reflection;
+  }
+  static const GetNotifyPrefsRequest& default_instance() {
+    return *reinterpret_cast<const GetNotifyPrefsRequest*>(
+        &_GetNotifyPrefsRequest_default_instance_);
+  }
+  static constexpr int kIndexInFileMessages = 33;
+  friend void swap(GetNotifyPrefsRequest& a, GetNotifyPrefsRequest& b) { a.Swap(&b); }
+  inline void Swap(GetNotifyPrefsRequest* PROTOBUF_NONNULL other) {
+    if (other == this) return;
+    if (::google::protobuf::internal::CanUseInternalSwap(GetArena(), other->GetArena())) {
+      InternalSwap(other);
+    } else {
+      ::google::protobuf::internal::GenericSwap(this, other);
+    }
+  }
+  void UnsafeArenaSwap(GetNotifyPrefsRequest* PROTOBUF_NONNULL other) {
+    if (other == this) return;
+    ABSL_DCHECK(GetArena() == other->GetArena());
+    InternalSwap(other);
+  }
+
+  // implements Message ----------------------------------------------
+
+  GetNotifyPrefsRequest* PROTOBUF_NONNULL New(::google::protobuf::Arena* PROTOBUF_NULLABLE arena = nullptr) const {
+    return ::google::protobuf::Message::DefaultConstruct<GetNotifyPrefsRequest>(arena);
+  }
+  using ::google::protobuf::Message::CopyFrom;
+  void CopyFrom(const GetNotifyPrefsRequest& from);
+  using ::google::protobuf::Message::MergeFrom;
+  void MergeFrom(const GetNotifyPrefsRequest& from) { GetNotifyPrefsRequest::MergeImpl(*this, from); }
+
+  private:
+  static void MergeImpl(::google::protobuf::MessageLite& to_msg,
+                        const ::google::protobuf::MessageLite& from_msg);
+
+  public:
+  bool IsInitialized() const {
+    return true;
+  }
+  ABSL_ATTRIBUTE_REINITIALIZES void Clear() PROTOBUF_FINAL;
+  #if defined(PROTOBUF_CUSTOM_VTABLE)
+  private:
+  static ::size_t ByteSizeLong(const ::google::protobuf::MessageLite& msg);
+  static ::uint8_t* PROTOBUF_NONNULL _InternalSerialize(
+      const ::google::protobuf::MessageLite& msg, ::uint8_t* PROTOBUF_NONNULL target,
+      ::google::protobuf::io::EpsCopyOutputStream* PROTOBUF_NONNULL stream);
+
+  public:
+  ::size_t ByteSizeLong() const { return ByteSizeLong(*this); }
+  ::uint8_t* PROTOBUF_NONNULL _InternalSerialize(
+      ::uint8_t* PROTOBUF_NONNULL target,
+      ::google::protobuf::io::EpsCopyOutputStream* PROTOBUF_NONNULL stream) const {
+    return _InternalSerialize(*this, target, stream);
+  }
+  #else   // PROTOBUF_CUSTOM_VTABLE
+  ::size_t ByteSizeLong() const final;
+  ::uint8_t* PROTOBUF_NONNULL _InternalSerialize(
+      ::uint8_t* PROTOBUF_NONNULL target,
+      ::google::protobuf::io::EpsCopyOutputStream* PROTOBUF_NONNULL stream) const final;
+  #endif  // PROTOBUF_CUSTOM_VTABLE
+  int GetCachedSize() const { return _impl_._cached_size_.Get(); }
+
+  private:
+  void SharedCtor(::google::protobuf::Arena* PROTOBUF_NULLABLE arena);
+  static void SharedDtor(MessageLite& self);
+  void InternalSwap(GetNotifyPrefsRequest* PROTOBUF_NONNULL other);
+ private:
+  template <typename T>
+  friend ::absl::string_view(::google::protobuf::internal::GetAnyMessageName)();
+  static ::absl::string_view FullMessageName() { return "chirp.social.GetNotifyPrefsRequest"; }
+
+  explicit GetNotifyPrefsRequest(::google::protobuf::Arena* PROTOBUF_NULLABLE arena);
+  GetNotifyPrefsRequest(::google::protobuf::Arena* PROTOBUF_NULLABLE arena, const GetNotifyPrefsRequest& from);
+  GetNotifyPrefsRequest(
+      ::google::protobuf::Arena* PROTOBUF_NULLABLE arena, GetNotifyPrefsRequest&& from) noexcept
+      : GetNotifyPrefsRequest(arena) {
+    *this = ::std::move(from);
+  }
+  const ::google::protobuf::internal::ClassData* PROTOBUF_NONNULL GetClassData() const PROTOBUF_FINAL;
+  static void* PROTOBUF_NONNULL PlacementNew_(
+      const void* PROTOBUF_NONNULL, void* PROTOBUF_NONNULL mem,
+      ::google::protobuf::Arena* PROTOBUF_NULLABLE arena);
+  static constexpr auto InternalNewImpl_();
+
+ public:
+  static constexpr auto InternalGenerateClassData_();
+
+  ::google::protobuf::Metadata GetMetadata() const;
+  // nested types ----------------------------------------------------
+
+  // accessors -------------------------------------------------------
+  enum : int {
+    kUserIdFieldNumber = 1,
+  };
+  // string user_id = 1;
+  void clear_user_id() ;
+  const ::std::string& user_id() const;
+  template <typename Arg_ = const ::std::string&, typename... Args_>
+  void set_user_id(Arg_&& arg, Args_... args);
+  ::std::string* PROTOBUF_NONNULL mutable_user_id();
+  [[nodiscard]] ::std::string* PROTOBUF_NULLABLE release_user_id();
+  void set_allocated_user_id(::std::string* PROTOBUF_NULLABLE value);
+
+  private:
+  const ::std::string& _internal_user_id() const;
+  PROTOBUF_ALWAYS_INLINE void _internal_set_user_id(const ::std::string& value);
+  ::std::string* PROTOBUF_NONNULL _internal_mutable_user_id();
+
+  public:
+  // @@protoc_insertion_point(class_scope:chirp.social.GetNotifyPrefsRequest)
+ private:
+  class _Internal;
+  friend class ::google::protobuf::internal::TcParser;
+  static const ::google::protobuf::internal::TcParseTable<0, 1,
+                                   0, 50,
+                                   2>
+      _table_;
+
+  friend class ::google::protobuf::MessageLite;
+  friend class ::google::protobuf::Arena;
+  template <typename T>
+  friend class ::google::protobuf::Arena::InternalHelper;
+  using InternalArenaConstructable_ = void;
+  using DestructorSkippable_ = void;
+  struct Impl_ {
+    inline explicit constexpr Impl_(::google::protobuf::internal::ConstantInitialized) noexcept;
+    inline explicit Impl_(
+        ::google::protobuf::internal::InternalVisibility visibility,
+        ::google::protobuf::Arena* PROTOBUF_NULLABLE arena);
+    inline explicit Impl_(
+        ::google::protobuf::internal::InternalVisibility visibility,
+        ::google::protobuf::Arena* PROTOBUF_NULLABLE arena, const Impl_& from,
+        const GetNotifyPrefsRequest& from_msg);
+    ::google::protobuf::internal::HasBits<1> _has_bits_;
+    ::google::protobuf::internal::CachedSize _cached_size_;
+    ::google::protobuf::internal::ArenaStringPtr user_id_;
+    PROTOBUF_TSAN_DECLARE_MEMBER
+  };
+  union { Impl_ _impl_; };
+  friend struct ::TableStruct_proto_2fsocial_2eproto;
+};
+
+extern const ::google::protobuf::internal::ClassDataFull GetNotifyPrefsRequest_class_data_;
 // -------------------------------------------------------------------
 
 class GetFriendListRequest final : public ::google::protobuf::Message
@@ -5646,6 +6245,437 @@ class SetPresenceRequest final : public ::google::protobuf::Message
 extern const ::google::protobuf::internal::ClassDataFull SetPresenceRequest_class_data_;
 // -------------------------------------------------------------------
 
+class SetNotifyPrefsResponse final : public ::google::protobuf::Message
+/* @@protoc_insertion_point(class_definition:chirp.social.SetNotifyPrefsResponse) */ {
+ public:
+  inline SetNotifyPrefsResponse() : SetNotifyPrefsResponse(nullptr) {}
+  ~SetNotifyPrefsResponse() PROTOBUF_FINAL;
+
+#if defined(PROTOBUF_CUSTOM_VTABLE)
+  void operator delete(SetNotifyPrefsResponse* PROTOBUF_NONNULL msg, ::std::destroying_delete_t) {
+    SharedDtor(*msg);
+    ::google::protobuf::internal::SizedDelete(msg, sizeof(SetNotifyPrefsResponse));
+  }
+#endif
+
+  template <typename = void>
+  explicit PROTOBUF_CONSTEXPR SetNotifyPrefsResponse(::google::protobuf::internal::ConstantInitialized);
+
+  inline SetNotifyPrefsResponse(const SetNotifyPrefsResponse& from) : SetNotifyPrefsResponse(nullptr, from) {}
+  inline SetNotifyPrefsResponse(SetNotifyPrefsResponse&& from) noexcept
+      : SetNotifyPrefsResponse(nullptr, ::std::move(from)) {}
+  inline SetNotifyPrefsResponse& operator=(const SetNotifyPrefsResponse& from) {
+    CopyFrom(from);
+    return *this;
+  }
+  inline SetNotifyPrefsResponse& operator=(SetNotifyPrefsResponse&& from) noexcept {
+    if (this == &from) return *this;
+    if (::google::protobuf::internal::CanMoveWithInternalSwap(GetArena(), from.GetArena())) {
+      InternalSwap(&from);
+    } else {
+      CopyFrom(from);
+    }
+    return *this;
+  }
+
+  inline const ::google::protobuf::UnknownFieldSet& unknown_fields() const
+      ABSL_ATTRIBUTE_LIFETIME_BOUND {
+    return _internal_metadata_.unknown_fields<::google::protobuf::UnknownFieldSet>(::google::protobuf::UnknownFieldSet::default_instance);
+  }
+  inline ::google::protobuf::UnknownFieldSet* PROTOBUF_NONNULL mutable_unknown_fields()
+      ABSL_ATTRIBUTE_LIFETIME_BOUND {
+    return _internal_metadata_.mutable_unknown_fields<::google::protobuf::UnknownFieldSet>();
+  }
+
+  static const ::google::protobuf::Descriptor* PROTOBUF_NONNULL descriptor() {
+    return GetDescriptor();
+  }
+  static const ::google::protobuf::Descriptor* PROTOBUF_NONNULL GetDescriptor() {
+    return default_instance().GetMetadata().descriptor;
+  }
+  static const ::google::protobuf::Reflection* PROTOBUF_NONNULL GetReflection() {
+    return default_instance().GetMetadata().reflection;
+  }
+  static const SetNotifyPrefsResponse& default_instance() {
+    return *reinterpret_cast<const SetNotifyPrefsResponse*>(
+        &_SetNotifyPrefsResponse_default_instance_);
+  }
+  static constexpr int kIndexInFileMessages = 32;
+  friend void swap(SetNotifyPrefsResponse& a, SetNotifyPrefsResponse& b) { a.Swap(&b); }
+  inline void Swap(SetNotifyPrefsResponse* PROTOBUF_NONNULL other) {
+    if (other == this) return;
+    if (::google::protobuf::internal::CanUseInternalSwap(GetArena(), other->GetArena())) {
+      InternalSwap(other);
+    } else {
+      ::google::protobuf::internal::GenericSwap(this, other);
+    }
+  }
+  void UnsafeArenaSwap(SetNotifyPrefsResponse* PROTOBUF_NONNULL other) {
+    if (other == this) return;
+    ABSL_DCHECK(GetArena() == other->GetArena());
+    InternalSwap(other);
+  }
+
+  // implements Message ----------------------------------------------
+
+  SetNotifyPrefsResponse* PROTOBUF_NONNULL New(::google::protobuf::Arena* PROTOBUF_NULLABLE arena = nullptr) const {
+    return ::google::protobuf::Message::DefaultConstruct<SetNotifyPrefsResponse>(arena);
+  }
+  using ::google::protobuf::Message::CopyFrom;
+  void CopyFrom(const SetNotifyPrefsResponse& from);
+  using ::google::protobuf::Message::MergeFrom;
+  void MergeFrom(const SetNotifyPrefsResponse& from) { SetNotifyPrefsResponse::MergeImpl(*this, from); }
+
+  private:
+  static void MergeImpl(::google::protobuf::MessageLite& to_msg,
+                        const ::google::protobuf::MessageLite& from_msg);
+
+  public:
+  bool IsInitialized() const {
+    return true;
+  }
+  ABSL_ATTRIBUTE_REINITIALIZES void Clear() PROTOBUF_FINAL;
+  #if defined(PROTOBUF_CUSTOM_VTABLE)
+  private:
+  static ::size_t ByteSizeLong(const ::google::protobuf::MessageLite& msg);
+  static ::uint8_t* PROTOBUF_NONNULL _InternalSerialize(
+      const ::google::protobuf::MessageLite& msg, ::uint8_t* PROTOBUF_NONNULL target,
+      ::google::protobuf::io::EpsCopyOutputStream* PROTOBUF_NONNULL stream);
+
+  public:
+  ::size_t ByteSizeLong() const { return ByteSizeLong(*this); }
+  ::uint8_t* PROTOBUF_NONNULL _InternalSerialize(
+      ::uint8_t* PROTOBUF_NONNULL target,
+      ::google::protobuf::io::EpsCopyOutputStream* PROTOBUF_NONNULL stream) const {
+    return _InternalSerialize(*this, target, stream);
+  }
+  #else   // PROTOBUF_CUSTOM_VTABLE
+  ::size_t ByteSizeLong() const final;
+  ::uint8_t* PROTOBUF_NONNULL _InternalSerialize(
+      ::uint8_t* PROTOBUF_NONNULL target,
+      ::google::protobuf::io::EpsCopyOutputStream* PROTOBUF_NONNULL stream) const final;
+  #endif  // PROTOBUF_CUSTOM_VTABLE
+  int GetCachedSize() const { return _impl_._cached_size_.Get(); }
+
+  private:
+  void SharedCtor(::google::protobuf::Arena* PROTOBUF_NULLABLE arena);
+  static void SharedDtor(MessageLite& self);
+  void InternalSwap(SetNotifyPrefsResponse* PROTOBUF_NONNULL other);
+ private:
+  template <typename T>
+  friend ::absl::string_view(::google::protobuf::internal::GetAnyMessageName)();
+  static ::absl::string_view FullMessageName() { return "chirp.social.SetNotifyPrefsResponse"; }
+
+  explicit SetNotifyPrefsResponse(::google::protobuf::Arena* PROTOBUF_NULLABLE arena);
+  SetNotifyPrefsResponse(::google::protobuf::Arena* PROTOBUF_NULLABLE arena, const SetNotifyPrefsResponse& from);
+  SetNotifyPrefsResponse(
+      ::google::protobuf::Arena* PROTOBUF_NULLABLE arena, SetNotifyPrefsResponse&& from) noexcept
+      : SetNotifyPrefsResponse(arena) {
+    *this = ::std::move(from);
+  }
+  const ::google::protobuf::internal::ClassData* PROTOBUF_NONNULL GetClassData() const PROTOBUF_FINAL;
+  static void* PROTOBUF_NONNULL PlacementNew_(
+      const void* PROTOBUF_NONNULL, void* PROTOBUF_NONNULL mem,
+      ::google::protobuf::Arena* PROTOBUF_NULLABLE arena);
+  static constexpr auto InternalNewImpl_();
+
+ public:
+  static constexpr auto InternalGenerateClassData_();
+
+  ::google::protobuf::Metadata GetMetadata() const;
+  // nested types ----------------------------------------------------
+
+  // accessors -------------------------------------------------------
+  enum : int {
+    kPrefsFieldNumber = 2,
+    kServerTimeFieldNumber = 3,
+    kCodeFieldNumber = 1,
+  };
+  // .chirp.social.NotifyPrefs prefs = 2;
+  bool has_prefs() const;
+  void clear_prefs() ;
+  const ::chirp::social::NotifyPrefs& prefs() const;
+  [[nodiscard]] ::chirp::social::NotifyPrefs* PROTOBUF_NULLABLE release_prefs();
+  ::chirp::social::NotifyPrefs* PROTOBUF_NONNULL mutable_prefs();
+  void set_allocated_prefs(::chirp::social::NotifyPrefs* PROTOBUF_NULLABLE value);
+  void unsafe_arena_set_allocated_prefs(::chirp::social::NotifyPrefs* PROTOBUF_NULLABLE value);
+  ::chirp::social::NotifyPrefs* PROTOBUF_NULLABLE unsafe_arena_release_prefs();
+
+  private:
+  const ::chirp::social::NotifyPrefs& _internal_prefs() const;
+  ::chirp::social::NotifyPrefs* PROTOBUF_NONNULL _internal_mutable_prefs();
+
+  public:
+  // int64 server_time = 3;
+  void clear_server_time() ;
+  ::int64_t server_time() const;
+  void set_server_time(::int64_t value);
+
+  private:
+  ::int64_t _internal_server_time() const;
+  void _internal_set_server_time(::int64_t value);
+
+  public:
+  // .chirp.common.ErrorCode code = 1;
+  void clear_code() ;
+  ::chirp::common::ErrorCode code() const;
+  void set_code(::chirp::common::ErrorCode value);
+
+  private:
+  ::chirp::common::ErrorCode _internal_code() const;
+  void _internal_set_code(::chirp::common::ErrorCode value);
+
+  public:
+  // @@protoc_insertion_point(class_scope:chirp.social.SetNotifyPrefsResponse)
+ private:
+  class _Internal;
+  friend class ::google::protobuf::internal::TcParser;
+  static const ::google::protobuf::internal::TcParseTable<2, 3,
+                                   1, 0,
+                                   2>
+      _table_;
+
+  friend class ::google::protobuf::MessageLite;
+  friend class ::google::protobuf::Arena;
+  template <typename T>
+  friend class ::google::protobuf::Arena::InternalHelper;
+  using InternalArenaConstructable_ = void;
+  using DestructorSkippable_ = void;
+  struct Impl_ {
+    inline explicit constexpr Impl_(::google::protobuf::internal::ConstantInitialized) noexcept;
+    inline explicit Impl_(
+        ::google::protobuf::internal::InternalVisibility visibility,
+        ::google::protobuf::Arena* PROTOBUF_NULLABLE arena);
+    inline explicit Impl_(
+        ::google::protobuf::internal::InternalVisibility visibility,
+        ::google::protobuf::Arena* PROTOBUF_NULLABLE arena, const Impl_& from,
+        const SetNotifyPrefsResponse& from_msg);
+    ::google::protobuf::internal::HasBits<1> _has_bits_;
+    ::google::protobuf::internal::CachedSize _cached_size_;
+    ::chirp::social::NotifyPrefs* PROTOBUF_NULLABLE prefs_;
+    ::int64_t server_time_;
+    int code_;
+    PROTOBUF_TSAN_DECLARE_MEMBER
+  };
+  union { Impl_ _impl_; };
+  friend struct ::TableStruct_proto_2fsocial_2eproto;
+};
+
+extern const ::google::protobuf::internal::ClassDataFull SetNotifyPrefsResponse_class_data_;
+// -------------------------------------------------------------------
+
+class SetNotifyPrefsRequest final : public ::google::protobuf::Message
+/* @@protoc_insertion_point(class_definition:chirp.social.SetNotifyPrefsRequest) */ {
+ public:
+  inline SetNotifyPrefsRequest() : SetNotifyPrefsRequest(nullptr) {}
+  ~SetNotifyPrefsRequest() PROTOBUF_FINAL;
+
+#if defined(PROTOBUF_CUSTOM_VTABLE)
+  void operator delete(SetNotifyPrefsRequest* PROTOBUF_NONNULL msg, ::std::destroying_delete_t) {
+    SharedDtor(*msg);
+    ::google::protobuf::internal::SizedDelete(msg, sizeof(SetNotifyPrefsRequest));
+  }
+#endif
+
+  template <typename = void>
+  explicit PROTOBUF_CONSTEXPR SetNotifyPrefsRequest(::google::protobuf::internal::ConstantInitialized);
+
+  inline SetNotifyPrefsRequest(const SetNotifyPrefsRequest& from) : SetNotifyPrefsRequest(nullptr, from) {}
+  inline SetNotifyPrefsRequest(SetNotifyPrefsRequest&& from) noexcept
+      : SetNotifyPrefsRequest(nullptr, ::std::move(from)) {}
+  inline SetNotifyPrefsRequest& operator=(const SetNotifyPrefsRequest& from) {
+    CopyFrom(from);
+    return *this;
+  }
+  inline SetNotifyPrefsRequest& operator=(SetNotifyPrefsRequest&& from) noexcept {
+    if (this == &from) return *this;
+    if (::google::protobuf::internal::CanMoveWithInternalSwap(GetArena(), from.GetArena())) {
+      InternalSwap(&from);
+    } else {
+      CopyFrom(from);
+    }
+    return *this;
+  }
+
+  inline const ::google::protobuf::UnknownFieldSet& unknown_fields() const
+      ABSL_ATTRIBUTE_LIFETIME_BOUND {
+    return _internal_metadata_.unknown_fields<::google::protobuf::UnknownFieldSet>(::google::protobuf::UnknownFieldSet::default_instance);
+  }
+  inline ::google::protobuf::UnknownFieldSet* PROTOBUF_NONNULL mutable_unknown_fields()
+      ABSL_ATTRIBUTE_LIFETIME_BOUND {
+    return _internal_metadata_.mutable_unknown_fields<::google::protobuf::UnknownFieldSet>();
+  }
+
+  static const ::google::protobuf::Descriptor* PROTOBUF_NONNULL descriptor() {
+    return GetDescriptor();
+  }
+  static const ::google::protobuf::Descriptor* PROTOBUF_NONNULL GetDescriptor() {
+    return default_instance().GetMetadata().descriptor;
+  }
+  static const ::google::protobuf::Reflection* PROTOBUF_NONNULL GetReflection() {
+    return default_instance().GetMetadata().reflection;
+  }
+  static const SetNotifyPrefsRequest& default_instance() {
+    return *reinterpret_cast<const SetNotifyPrefsRequest*>(
+        &_SetNotifyPrefsRequest_default_instance_);
+  }
+  static constexpr int kIndexInFileMessages = 31;
+  friend void swap(SetNotifyPrefsRequest& a, SetNotifyPrefsRequest& b) { a.Swap(&b); }
+  inline void Swap(SetNotifyPrefsRequest* PROTOBUF_NONNULL other) {
+    if (other == this) return;
+    if (::google::protobuf::internal::CanUseInternalSwap(GetArena(), other->GetArena())) {
+      InternalSwap(other);
+    } else {
+      ::google::protobuf::internal::GenericSwap(this, other);
+    }
+  }
+  void UnsafeArenaSwap(SetNotifyPrefsRequest* PROTOBUF_NONNULL other) {
+    if (other == this) return;
+    ABSL_DCHECK(GetArena() == other->GetArena());
+    InternalSwap(other);
+  }
+
+  // implements Message ----------------------------------------------
+
+  SetNotifyPrefsRequest* PROTOBUF_NONNULL New(::google::protobuf::Arena* PROTOBUF_NULLABLE arena = nullptr) const {
+    return ::google::protobuf::Message::DefaultConstruct<SetNotifyPrefsRequest>(arena);
+  }
+  using ::google::protobuf::Message::CopyFrom;
+  void CopyFrom(const SetNotifyPrefsRequest& from);
+  using ::google::protobuf::Message::MergeFrom;
+  void MergeFrom(const SetNotifyPrefsRequest& from) { SetNotifyPrefsRequest::MergeImpl(*this, from); }
+
+  private:
+  static void MergeImpl(::google::protobuf::MessageLite& to_msg,
+                        const ::google::protobuf::MessageLite& from_msg);
+
+  public:
+  bool IsInitialized() const {
+    return true;
+  }
+  ABSL_ATTRIBUTE_REINITIALIZES void Clear() PROTOBUF_FINAL;
+  #if defined(PROTOBUF_CUSTOM_VTABLE)
+  private:
+  static ::size_t ByteSizeLong(const ::google::protobuf::MessageLite& msg);
+  static ::uint8_t* PROTOBUF_NONNULL _InternalSerialize(
+      const ::google::protobuf::MessageLite& msg, ::uint8_t* PROTOBUF_NONNULL target,
+      ::google::protobuf::io::EpsCopyOutputStream* PROTOBUF_NONNULL stream);
+
+  public:
+  ::size_t ByteSizeLong() const { return ByteSizeLong(*this); }
+  ::uint8_t* PROTOBUF_NONNULL _InternalSerialize(
+      ::uint8_t* PROTOBUF_NONNULL target,
+      ::google::protobuf::io::EpsCopyOutputStream* PROTOBUF_NONNULL stream) const {
+    return _InternalSerialize(*this, target, stream);
+  }
+  #else   // PROTOBUF_CUSTOM_VTABLE
+  ::size_t ByteSizeLong() const final;
+  ::uint8_t* PROTOBUF_NONNULL _InternalSerialize(
+      ::uint8_t* PROTOBUF_NONNULL target,
+      ::google::protobuf::io::EpsCopyOutputStream* PROTOBUF_NONNULL stream) const final;
+  #endif  // PROTOBUF_CUSTOM_VTABLE
+  int GetCachedSize() const { return _impl_._cached_size_.Get(); }
+
+  private:
+  void SharedCtor(::google::protobuf::Arena* PROTOBUF_NULLABLE arena);
+  static void SharedDtor(MessageLite& self);
+  void InternalSwap(SetNotifyPrefsRequest* PROTOBUF_NONNULL other);
+ private:
+  template <typename T>
+  friend ::absl::string_view(::google::protobuf::internal::GetAnyMessageName)();
+  static ::absl::string_view FullMessageName() { return "chirp.social.SetNotifyPrefsRequest"; }
+
+  explicit SetNotifyPrefsRequest(::google::protobuf::Arena* PROTOBUF_NULLABLE arena);
+  SetNotifyPrefsRequest(::google::protobuf::Arena* PROTOBUF_NULLABLE arena, const SetNotifyPrefsRequest& from);
+  SetNotifyPrefsRequest(
+      ::google::protobuf::Arena* PROTOBUF_NULLABLE arena, SetNotifyPrefsRequest&& from) noexcept
+      : SetNotifyPrefsRequest(arena) {
+    *this = ::std::move(from);
+  }
+  const ::google::protobuf::internal::ClassData* PROTOBUF_NONNULL GetClassData() const PROTOBUF_FINAL;
+  static void* PROTOBUF_NONNULL PlacementNew_(
+      const void* PROTOBUF_NONNULL, void* PROTOBUF_NONNULL mem,
+      ::google::protobuf::Arena* PROTOBUF_NULLABLE arena);
+  static constexpr auto InternalNewImpl_();
+
+ public:
+  static constexpr auto InternalGenerateClassData_();
+
+  ::google::protobuf::Metadata GetMetadata() const;
+  // nested types ----------------------------------------------------
+
+  // accessors -------------------------------------------------------
+  enum : int {
+    kUserIdFieldNumber = 1,
+    kPrefsFieldNumber = 2,
+  };
+  // string user_id = 1;
+  void clear_user_id() ;
+  const ::std::string& user_id() const;
+  template <typename Arg_ = const ::std::string&, typename... Args_>
+  void set_user_id(Arg_&& arg, Args_... args);
+  ::std::string* PROTOBUF_NONNULL mutable_user_id();
+  [[nodiscard]] ::std::string* PROTOBUF_NULLABLE release_user_id();
+  void set_allocated_user_id(::std::string* PROTOBUF_NULLABLE value);
+
+  private:
+  const ::std::string& _internal_user_id() const;
+  PROTOBUF_ALWAYS_INLINE void _internal_set_user_id(const ::std::string& value);
+  ::std::string* PROTOBUF_NONNULL _internal_mutable_user_id();
+
+  public:
+  // .chirp.social.NotifyPrefs prefs = 2;
+  bool has_prefs() const;
+  void clear_prefs() ;
+  const ::chirp::social::NotifyPrefs& prefs() const;
+  [[nodiscard]] ::chirp::social::NotifyPrefs* PROTOBUF_NULLABLE release_prefs();
+  ::chirp::social::NotifyPrefs* PROTOBUF_NONNULL mutable_prefs();
+  void set_allocated_prefs(::chirp::social::NotifyPrefs* PROTOBUF_NULLABLE value);
+  void unsafe_arena_set_allocated_prefs(::chirp::social::NotifyPrefs* PROTOBUF_NULLABLE value);
+  ::chirp::social::NotifyPrefs* PROTOBUF_NULLABLE unsafe_arena_release_prefs();
+
+  private:
+  const ::chirp::social::NotifyPrefs& _internal_prefs() const;
+  ::chirp::social::NotifyPrefs* PROTOBUF_NONNULL _internal_mutable_prefs();
+
+  public:
+  // @@protoc_insertion_point(class_scope:chirp.social.SetNotifyPrefsRequest)
+ private:
+  class _Internal;
+  friend class ::google::protobuf::internal::TcParser;
+  static const ::google::protobuf::internal::TcParseTable<1, 2,
+                                   1, 50,
+                                   2>
+      _table_;
+
+  friend class ::google::protobuf::MessageLite;
+  friend class ::google::protobuf::Arena;
+  template <typename T>
+  friend class ::google::protobuf::Arena::InternalHelper;
+  using InternalArenaConstructable_ = void;
+  using DestructorSkippable_ = void;
+  struct Impl_ {
+    inline explicit constexpr Impl_(::google::protobuf::internal::ConstantInitialized) noexcept;
+    inline explicit Impl_(
+        ::google::protobuf::internal::InternalVisibility visibility,
+        ::google::protobuf::Arena* PROTOBUF_NULLABLE arena);
+    inline explicit Impl_(
+        ::google::protobuf::internal::InternalVisibility visibility,
+        ::google::protobuf::Arena* PROTOBUF_NULLABLE arena, const Impl_& from,
+        const SetNotifyPrefsRequest& from_msg);
+    ::google::protobuf::internal::HasBits<1> _has_bits_;
+    ::google::protobuf::internal::CachedSize _cached_size_;
+    ::google::protobuf::internal::ArenaStringPtr user_id_;
+    ::chirp::social::NotifyPrefs* PROTOBUF_NULLABLE prefs_;
+    PROTOBUF_TSAN_DECLARE_MEMBER
+  };
+  union { Impl_ _impl_; };
+  friend struct ::TableStruct_proto_2fsocial_2eproto;
+};
+
+extern const ::google::protobuf::internal::ClassDataFull SetNotifyPrefsRequest_class_data_;
+// -------------------------------------------------------------------
+
 class PresenceNotify final : public ::google::protobuf::Message
 /* @@protoc_insertion_point(class_definition:chirp.social.PresenceNotify) */ {
  public:
@@ -6367,6 +7397,225 @@ class GetPendingRequestsResponse final : public ::google::protobuf::Message
 extern const ::google::protobuf::internal::ClassDataFull GetPendingRequestsResponse_class_data_;
 // -------------------------------------------------------------------
 
+class GetNotifyPrefsResponse final : public ::google::protobuf::Message
+/* @@protoc_insertion_point(class_definition:chirp.social.GetNotifyPrefsResponse) */ {
+ public:
+  inline GetNotifyPrefsResponse() : GetNotifyPrefsResponse(nullptr) {}
+  ~GetNotifyPrefsResponse() PROTOBUF_FINAL;
+
+#if defined(PROTOBUF_CUSTOM_VTABLE)
+  void operator delete(GetNotifyPrefsResponse* PROTOBUF_NONNULL msg, ::std::destroying_delete_t) {
+    SharedDtor(*msg);
+    ::google::protobuf::internal::SizedDelete(msg, sizeof(GetNotifyPrefsResponse));
+  }
+#endif
+
+  template <typename = void>
+  explicit PROTOBUF_CONSTEXPR GetNotifyPrefsResponse(::google::protobuf::internal::ConstantInitialized);
+
+  inline GetNotifyPrefsResponse(const GetNotifyPrefsResponse& from) : GetNotifyPrefsResponse(nullptr, from) {}
+  inline GetNotifyPrefsResponse(GetNotifyPrefsResponse&& from) noexcept
+      : GetNotifyPrefsResponse(nullptr, ::std::move(from)) {}
+  inline GetNotifyPrefsResponse& operator=(const GetNotifyPrefsResponse& from) {
+    CopyFrom(from);
+    return *this;
+  }
+  inline GetNotifyPrefsResponse& operator=(GetNotifyPrefsResponse&& from) noexcept {
+    if (this == &from) return *this;
+    if (::google::protobuf::internal::CanMoveWithInternalSwap(GetArena(), from.GetArena())) {
+      InternalSwap(&from);
+    } else {
+      CopyFrom(from);
+    }
+    return *this;
+  }
+
+  inline const ::google::protobuf::UnknownFieldSet& unknown_fields() const
+      ABSL_ATTRIBUTE_LIFETIME_BOUND {
+    return _internal_metadata_.unknown_fields<::google::protobuf::UnknownFieldSet>(::google::protobuf::UnknownFieldSet::default_instance);
+  }
+  inline ::google::protobuf::UnknownFieldSet* PROTOBUF_NONNULL mutable_unknown_fields()
+      ABSL_ATTRIBUTE_LIFETIME_BOUND {
+    return _internal_metadata_.mutable_unknown_fields<::google::protobuf::UnknownFieldSet>();
+  }
+
+  static const ::google::protobuf::Descriptor* PROTOBUF_NONNULL descriptor() {
+    return GetDescriptor();
+  }
+  static const ::google::protobuf::Descriptor* PROTOBUF_NONNULL GetDescriptor() {
+    return default_instance().GetMetadata().descriptor;
+  }
+  static const ::google::protobuf::Reflection* PROTOBUF_NONNULL GetReflection() {
+    return default_instance().GetMetadata().reflection;
+  }
+  static const GetNotifyPrefsResponse& default_instance() {
+    return *reinterpret_cast<const GetNotifyPrefsResponse*>(
+        &_GetNotifyPrefsResponse_default_instance_);
+  }
+  static constexpr int kIndexInFileMessages = 34;
+  friend void swap(GetNotifyPrefsResponse& a, GetNotifyPrefsResponse& b) { a.Swap(&b); }
+  inline void Swap(GetNotifyPrefsResponse* PROTOBUF_NONNULL other) {
+    if (other == this) return;
+    if (::google::protobuf::internal::CanUseInternalSwap(GetArena(), other->GetArena())) {
+      InternalSwap(other);
+    } else {
+      ::google::protobuf::internal::GenericSwap(this, other);
+    }
+  }
+  void UnsafeArenaSwap(GetNotifyPrefsResponse* PROTOBUF_NONNULL other) {
+    if (other == this) return;
+    ABSL_DCHECK(GetArena() == other->GetArena());
+    InternalSwap(other);
+  }
+
+  // implements Message ----------------------------------------------
+
+  GetNotifyPrefsResponse* PROTOBUF_NONNULL New(::google::protobuf::Arena* PROTOBUF_NULLABLE arena = nullptr) const {
+    return ::google::protobuf::Message::DefaultConstruct<GetNotifyPrefsResponse>(arena);
+  }
+  using ::google::protobuf::Message::CopyFrom;
+  void CopyFrom(const GetNotifyPrefsResponse& from);
+  using ::google::protobuf::Message::MergeFrom;
+  void MergeFrom(const GetNotifyPrefsResponse& from) { GetNotifyPrefsResponse::MergeImpl(*this, from); }
+
+  private:
+  static void MergeImpl(::google::protobuf::MessageLite& to_msg,
+                        const ::google::protobuf::MessageLite& from_msg);
+
+  public:
+  bool IsInitialized() const {
+    return true;
+  }
+  ABSL_ATTRIBUTE_REINITIALIZES void Clear() PROTOBUF_FINAL;
+  #if defined(PROTOBUF_CUSTOM_VTABLE)
+  private:
+  static ::size_t ByteSizeLong(const ::google::protobuf::MessageLite& msg);
+  static ::uint8_t* PROTOBUF_NONNULL _InternalSerialize(
+      const ::google::protobuf::MessageLite& msg, ::uint8_t* PROTOBUF_NONNULL target,
+      ::google::protobuf::io::EpsCopyOutputStream* PROTOBUF_NONNULL stream);
+
+  public:
+  ::size_t ByteSizeLong() const { return ByteSizeLong(*this); }
+  ::uint8_t* PROTOBUF_NONNULL _InternalSerialize(
+      ::uint8_t* PROTOBUF_NONNULL target,
+      ::google::protobuf::io::EpsCopyOutputStream* PROTOBUF_NONNULL stream) const {
+    return _InternalSerialize(*this, target, stream);
+  }
+  #else   // PROTOBUF_CUSTOM_VTABLE
+  ::size_t ByteSizeLong() const final;
+  ::uint8_t* PROTOBUF_NONNULL _InternalSerialize(
+      ::uint8_t* PROTOBUF_NONNULL target,
+      ::google::protobuf::io::EpsCopyOutputStream* PROTOBUF_NONNULL stream) const final;
+  #endif  // PROTOBUF_CUSTOM_VTABLE
+  int GetCachedSize() const { return _impl_._cached_size_.Get(); }
+
+  private:
+  void SharedCtor(::google::protobuf::Arena* PROTOBUF_NULLABLE arena);
+  static void SharedDtor(MessageLite& self);
+  void InternalSwap(GetNotifyPrefsResponse* PROTOBUF_NONNULL other);
+ private:
+  template <typename T>
+  friend ::absl::string_view(::google::protobuf::internal::GetAnyMessageName)();
+  static ::absl::string_view FullMessageName() { return "chirp.social.GetNotifyPrefsResponse"; }
+
+  explicit GetNotifyPrefsResponse(::google::protobuf::Arena* PROTOBUF_NULLABLE arena);
+  GetNotifyPrefsResponse(::google::protobuf::Arena* PROTOBUF_NULLABLE arena, const GetNotifyPrefsResponse& from);
+  GetNotifyPrefsResponse(
+      ::google::protobuf::Arena* PROTOBUF_NULLABLE arena, GetNotifyPrefsResponse&& from) noexcept
+      : GetNotifyPrefsResponse(arena) {
+    *this = ::std::move(from);
+  }
+  const ::google::protobuf::internal::ClassData* PROTOBUF_NONNULL GetClassData() const PROTOBUF_FINAL;
+  static void* PROTOBUF_NONNULL PlacementNew_(
+      const void* PROTOBUF_NONNULL, void* PROTOBUF_NONNULL mem,
+      ::google::protobuf::Arena* PROTOBUF_NULLABLE arena);
+  static constexpr auto InternalNewImpl_();
+
+ public:
+  static constexpr auto InternalGenerateClassData_();
+
+  ::google::protobuf::Metadata GetMetadata() const;
+  // nested types ----------------------------------------------------
+
+  // accessors -------------------------------------------------------
+  enum : int {
+    kPrefsFieldNumber = 2,
+    kServerTimeFieldNumber = 3,
+    kCodeFieldNumber = 1,
+  };
+  // .chirp.social.NotifyPrefs prefs = 2;
+  bool has_prefs() const;
+  void clear_prefs() ;
+  const ::chirp::social::NotifyPrefs& prefs() const;
+  [[nodiscard]] ::chirp::social::NotifyPrefs* PROTOBUF_NULLABLE release_prefs();
+  ::chirp::social::NotifyPrefs* PROTOBUF_NONNULL mutable_prefs();
+  void set_allocated_prefs(::chirp::social::NotifyPrefs* PROTOBUF_NULLABLE value);
+  void unsafe_arena_set_allocated_prefs(::chirp::social::NotifyPrefs* PROTOBUF_NULLABLE value);
+  ::chirp::social::NotifyPrefs* PROTOBUF_NULLABLE unsafe_arena_release_prefs();
+
+  private:
+  const ::chirp::social::NotifyPrefs& _internal_prefs() const;
+  ::chirp::social::NotifyPrefs* PROTOBUF_NONNULL _internal_mutable_prefs();
+
+  public:
+  // int64 server_time = 3;
+  void clear_server_time() ;
+  ::int64_t server_time() const;
+  void set_server_time(::int64_t value);
+
+  private:
+  ::int64_t _internal_server_time() const;
+  void _internal_set_server_time(::int64_t value);
+
+  public:
+  // .chirp.common.ErrorCode code = 1;
+  void clear_code() ;
+  ::chirp::common::ErrorCode code() const;
+  void set_code(::chirp::common::ErrorCode value);
+
+  private:
+  ::chirp::common::ErrorCode _internal_code() const;
+  void _internal_set_code(::chirp::common::ErrorCode value);
+
+  public:
+  // @@protoc_insertion_point(class_scope:chirp.social.GetNotifyPrefsResponse)
+ private:
+  class _Internal;
+  friend class ::google::protobuf::internal::TcParser;
+  static const ::google::protobuf::internal::TcParseTable<2, 3,
+                                   1, 0,
+                                   2>
+      _table_;
+
+  friend class ::google::protobuf::MessageLite;
+  friend class ::google::protobuf::Arena;
+  template <typename T>
+  friend class ::google::protobuf::Arena::InternalHelper;
+  using InternalArenaConstructable_ = void;
+  using DestructorSkippable_ = void;
+  struct Impl_ {
+    inline explicit constexpr Impl_(::google::protobuf::internal::ConstantInitialized) noexcept;
+    inline explicit Impl_(
+        ::google::protobuf::internal::InternalVisibility visibility,
+        ::google::protobuf::Arena* PROTOBUF_NULLABLE arena);
+    inline explicit Impl_(
+        ::google::protobuf::internal::InternalVisibility visibility,
+        ::google::protobuf::Arena* PROTOBUF_NULLABLE arena, const Impl_& from,
+        const GetNotifyPrefsResponse& from_msg);
+    ::google::protobuf::internal::HasBits<1> _has_bits_;
+    ::google::protobuf::internal::CachedSize _cached_size_;
+    ::chirp::social::NotifyPrefs* PROTOBUF_NULLABLE prefs_;
+    ::int64_t server_time_;
+    int code_;
+    PROTOBUF_TSAN_DECLARE_MEMBER
+  };
+  union { Impl_ _impl_; };
+  friend struct ::TableStruct_proto_2fsocial_2eproto;
+};
+
+extern const ::google::protobuf::internal::ClassDataFull GetNotifyPrefsResponse_class_data_;
+// -------------------------------------------------------------------
+
 class GetFriendListResponse final : public ::google::protobuf::Message
 /* @@protoc_insertion_point(class_definition:chirp.social.GetFriendListResponse) */ {
  public:
@@ -6643,7 +7892,7 @@ class StoredPendingRequests final : public ::google::protobuf::Message
     return *reinterpret_cast<const StoredPendingRequests*>(
         &_StoredPendingRequests_default_instance_);
   }
-  static constexpr int kIndexInFileMessages = 32;
+  static constexpr int kIndexInFileMessages = 37;
   friend void swap(StoredPendingRequests& a, StoredPendingRequests& b) { a.Swap(&b); }
   inline void Swap(StoredPendingRequests* PROTOBUF_NONNULL other) {
     if (other == this) return;
@@ -10580,6 +11829,578 @@ inline void FriendRemovedNotify::_internal_set_timestamp(::int64_t value) {
 
 // -------------------------------------------------------------------
 
+// NotifyPrefs
+
+// bool friend_online_notify = 1;
+inline void NotifyPrefs::clear_friend_online_notify() {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_.friend_online_notify_ = false;
+  ClearHasBit(_impl_._has_bits_[0],
+                  0x00000001U);
+}
+inline bool NotifyPrefs::friend_online_notify() const {
+  // @@protoc_insertion_point(field_get:chirp.social.NotifyPrefs.friend_online_notify)
+  return _internal_friend_online_notify();
+}
+inline void NotifyPrefs::set_friend_online_notify(bool value) {
+  _internal_set_friend_online_notify(value);
+  SetHasBit(_impl_._has_bits_[0], 0x00000001U);
+  // @@protoc_insertion_point(field_set:chirp.social.NotifyPrefs.friend_online_notify)
+}
+inline bool NotifyPrefs::_internal_friend_online_notify() const {
+  ::google::protobuf::internal::TSanRead(&_impl_);
+  return _impl_.friend_online_notify_;
+}
+inline void NotifyPrefs::_internal_set_friend_online_notify(bool value) {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_.friend_online_notify_ = value;
+}
+
+// -------------------------------------------------------------------
+
+// SetNotifyPrefsRequest
+
+// string user_id = 1;
+inline void SetNotifyPrefsRequest::clear_user_id() {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_.user_id_.ClearToEmpty();
+  ClearHasBit(_impl_._has_bits_[0],
+                  0x00000001U);
+}
+inline const ::std::string& SetNotifyPrefsRequest::user_id() const
+    ABSL_ATTRIBUTE_LIFETIME_BOUND {
+  // @@protoc_insertion_point(field_get:chirp.social.SetNotifyPrefsRequest.user_id)
+  return _internal_user_id();
+}
+template <typename Arg_, typename... Args_>
+PROTOBUF_ALWAYS_INLINE void SetNotifyPrefsRequest::set_user_id(Arg_&& arg, Args_... args) {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  SetHasBit(_impl_._has_bits_[0], 0x00000001U);
+  _impl_.user_id_.Set(static_cast<Arg_&&>(arg), args..., GetArena());
+  // @@protoc_insertion_point(field_set:chirp.social.SetNotifyPrefsRequest.user_id)
+}
+inline ::std::string* PROTOBUF_NONNULL SetNotifyPrefsRequest::mutable_user_id()
+    ABSL_ATTRIBUTE_LIFETIME_BOUND {
+  SetHasBit(_impl_._has_bits_[0], 0x00000001U);
+  ::std::string* _s = _internal_mutable_user_id();
+  // @@protoc_insertion_point(field_mutable:chirp.social.SetNotifyPrefsRequest.user_id)
+  return _s;
+}
+inline const ::std::string& SetNotifyPrefsRequest::_internal_user_id() const {
+  ::google::protobuf::internal::TSanRead(&_impl_);
+  return _impl_.user_id_.Get();
+}
+inline void SetNotifyPrefsRequest::_internal_set_user_id(const ::std::string& value) {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_.user_id_.Set(value, GetArena());
+}
+inline ::std::string* PROTOBUF_NONNULL SetNotifyPrefsRequest::_internal_mutable_user_id() {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  return _impl_.user_id_.Mutable( GetArena());
+}
+inline ::std::string* PROTOBUF_NULLABLE SetNotifyPrefsRequest::release_user_id() {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  // @@protoc_insertion_point(field_release:chirp.social.SetNotifyPrefsRequest.user_id)
+  if (!CheckHasBit(_impl_._has_bits_[0], 0x00000001U)) {
+    return nullptr;
+  }
+  ClearHasBit(_impl_._has_bits_[0], 0x00000001U);
+  auto* released = _impl_.user_id_.Release();
+  if (::google::protobuf::internal::DebugHardenForceCopyDefaultString()) {
+    _impl_.user_id_.Set("", GetArena());
+  }
+  return released;
+}
+inline void SetNotifyPrefsRequest::set_allocated_user_id(::std::string* PROTOBUF_NULLABLE value) {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  if (value != nullptr) {
+    SetHasBit(_impl_._has_bits_[0], 0x00000001U);
+  } else {
+    ClearHasBit(_impl_._has_bits_[0], 0x00000001U);
+  }
+  _impl_.user_id_.SetAllocated(value, GetArena());
+  if (::google::protobuf::internal::DebugHardenForceCopyDefaultString() && _impl_.user_id_.IsDefault()) {
+    _impl_.user_id_.Set("", GetArena());
+  }
+  // @@protoc_insertion_point(field_set_allocated:chirp.social.SetNotifyPrefsRequest.user_id)
+}
+
+// .chirp.social.NotifyPrefs prefs = 2;
+inline bool SetNotifyPrefsRequest::has_prefs() const {
+  bool value = CheckHasBit(_impl_._has_bits_[0], 0x00000002U);
+  PROTOBUF_ASSUME(!value || _impl_.prefs_ != nullptr);
+  return value;
+}
+inline void SetNotifyPrefsRequest::clear_prefs() {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  if (_impl_.prefs_ != nullptr) _impl_.prefs_->Clear();
+  ClearHasBit(_impl_._has_bits_[0],
+                  0x00000002U);
+}
+inline const ::chirp::social::NotifyPrefs& SetNotifyPrefsRequest::_internal_prefs() const {
+  ::google::protobuf::internal::TSanRead(&_impl_);
+  const ::chirp::social::NotifyPrefs* p = _impl_.prefs_;
+  return p != nullptr ? *p : reinterpret_cast<const ::chirp::social::NotifyPrefs&>(::chirp::social::_NotifyPrefs_default_instance_);
+}
+inline const ::chirp::social::NotifyPrefs& SetNotifyPrefsRequest::prefs() const ABSL_ATTRIBUTE_LIFETIME_BOUND {
+  // @@protoc_insertion_point(field_get:chirp.social.SetNotifyPrefsRequest.prefs)
+  return _internal_prefs();
+}
+inline void SetNotifyPrefsRequest::unsafe_arena_set_allocated_prefs(
+    ::chirp::social::NotifyPrefs* PROTOBUF_NULLABLE value) {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  if (GetArena() == nullptr) {
+    delete reinterpret_cast<::google::protobuf::MessageLite*>(_impl_.prefs_);
+  }
+  _impl_.prefs_ = reinterpret_cast<::chirp::social::NotifyPrefs*>(value);
+  if (value != nullptr) {
+    SetHasBit(_impl_._has_bits_[0], 0x00000002U);
+  } else {
+    ClearHasBit(_impl_._has_bits_[0], 0x00000002U);
+  }
+  // @@protoc_insertion_point(field_unsafe_arena_set_allocated:chirp.social.SetNotifyPrefsRequest.prefs)
+}
+inline ::chirp::social::NotifyPrefs* PROTOBUF_NULLABLE SetNotifyPrefsRequest::release_prefs() {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+
+  ClearHasBit(_impl_._has_bits_[0], 0x00000002U);
+  ::chirp::social::NotifyPrefs* released = _impl_.prefs_;
+  _impl_.prefs_ = nullptr;
+  if (::google::protobuf::internal::DebugHardenForceCopyInRelease()) {
+    auto* old = reinterpret_cast<::google::protobuf::MessageLite*>(released);
+    released = ::google::protobuf::internal::DuplicateIfNonNull(released);
+    if (GetArena() == nullptr) {
+      delete old;
+    }
+  } else {
+    if (GetArena() != nullptr) {
+      released = ::google::protobuf::internal::DuplicateIfNonNull(released);
+    }
+  }
+  return released;
+}
+inline ::chirp::social::NotifyPrefs* PROTOBUF_NULLABLE SetNotifyPrefsRequest::unsafe_arena_release_prefs() {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  // @@protoc_insertion_point(field_release:chirp.social.SetNotifyPrefsRequest.prefs)
+
+  ClearHasBit(_impl_._has_bits_[0], 0x00000002U);
+  ::chirp::social::NotifyPrefs* temp = _impl_.prefs_;
+  _impl_.prefs_ = nullptr;
+  return temp;
+}
+inline ::chirp::social::NotifyPrefs* PROTOBUF_NONNULL SetNotifyPrefsRequest::_internal_mutable_prefs() {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  if (_impl_.prefs_ == nullptr) {
+    auto* p = ::google::protobuf::Message::DefaultConstruct<::chirp::social::NotifyPrefs>(GetArena());
+    _impl_.prefs_ = reinterpret_cast<::chirp::social::NotifyPrefs*>(p);
+  }
+  return _impl_.prefs_;
+}
+inline ::chirp::social::NotifyPrefs* PROTOBUF_NONNULL SetNotifyPrefsRequest::mutable_prefs()
+    ABSL_ATTRIBUTE_LIFETIME_BOUND {
+  SetHasBit(_impl_._has_bits_[0], 0x00000002U);
+  ::chirp::social::NotifyPrefs* _msg = _internal_mutable_prefs();
+  // @@protoc_insertion_point(field_mutable:chirp.social.SetNotifyPrefsRequest.prefs)
+  return _msg;
+}
+inline void SetNotifyPrefsRequest::set_allocated_prefs(::chirp::social::NotifyPrefs* PROTOBUF_NULLABLE value) {
+  ::google::protobuf::Arena* message_arena = GetArena();
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  if (message_arena == nullptr) {
+    delete reinterpret_cast<::google::protobuf::MessageLite*>(_impl_.prefs_);
+  }
+
+  if (value != nullptr) {
+    ::google::protobuf::Arena* submessage_arena = value->GetArena();
+    if (message_arena != submessage_arena) {
+      value = ::google::protobuf::internal::GetOwnedMessage(message_arena, value, submessage_arena);
+    }
+    SetHasBit(_impl_._has_bits_[0], 0x00000002U);
+  } else {
+    ClearHasBit(_impl_._has_bits_[0], 0x00000002U);
+  }
+
+  _impl_.prefs_ = reinterpret_cast<::chirp::social::NotifyPrefs*>(value);
+  // @@protoc_insertion_point(field_set_allocated:chirp.social.SetNotifyPrefsRequest.prefs)
+}
+
+// -------------------------------------------------------------------
+
+// SetNotifyPrefsResponse
+
+// .chirp.common.ErrorCode code = 1;
+inline void SetNotifyPrefsResponse::clear_code() {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_.code_ = 0;
+  ClearHasBit(_impl_._has_bits_[0],
+                  0x00000004U);
+}
+inline ::chirp::common::ErrorCode SetNotifyPrefsResponse::code() const {
+  // @@protoc_insertion_point(field_get:chirp.social.SetNotifyPrefsResponse.code)
+  return _internal_code();
+}
+inline void SetNotifyPrefsResponse::set_code(::chirp::common::ErrorCode value) {
+  _internal_set_code(value);
+  SetHasBit(_impl_._has_bits_[0], 0x00000004U);
+  // @@protoc_insertion_point(field_set:chirp.social.SetNotifyPrefsResponse.code)
+}
+inline ::chirp::common::ErrorCode SetNotifyPrefsResponse::_internal_code() const {
+  ::google::protobuf::internal::TSanRead(&_impl_);
+  return static_cast<::chirp::common::ErrorCode>(_impl_.code_);
+}
+inline void SetNotifyPrefsResponse::_internal_set_code(::chirp::common::ErrorCode value) {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_.code_ = value;
+}
+
+// .chirp.social.NotifyPrefs prefs = 2;
+inline bool SetNotifyPrefsResponse::has_prefs() const {
+  bool value = CheckHasBit(_impl_._has_bits_[0], 0x00000001U);
+  PROTOBUF_ASSUME(!value || _impl_.prefs_ != nullptr);
+  return value;
+}
+inline void SetNotifyPrefsResponse::clear_prefs() {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  if (_impl_.prefs_ != nullptr) _impl_.prefs_->Clear();
+  ClearHasBit(_impl_._has_bits_[0],
+                  0x00000001U);
+}
+inline const ::chirp::social::NotifyPrefs& SetNotifyPrefsResponse::_internal_prefs() const {
+  ::google::protobuf::internal::TSanRead(&_impl_);
+  const ::chirp::social::NotifyPrefs* p = _impl_.prefs_;
+  return p != nullptr ? *p : reinterpret_cast<const ::chirp::social::NotifyPrefs&>(::chirp::social::_NotifyPrefs_default_instance_);
+}
+inline const ::chirp::social::NotifyPrefs& SetNotifyPrefsResponse::prefs() const ABSL_ATTRIBUTE_LIFETIME_BOUND {
+  // @@protoc_insertion_point(field_get:chirp.social.SetNotifyPrefsResponse.prefs)
+  return _internal_prefs();
+}
+inline void SetNotifyPrefsResponse::unsafe_arena_set_allocated_prefs(
+    ::chirp::social::NotifyPrefs* PROTOBUF_NULLABLE value) {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  if (GetArena() == nullptr) {
+    delete reinterpret_cast<::google::protobuf::MessageLite*>(_impl_.prefs_);
+  }
+  _impl_.prefs_ = reinterpret_cast<::chirp::social::NotifyPrefs*>(value);
+  if (value != nullptr) {
+    SetHasBit(_impl_._has_bits_[0], 0x00000001U);
+  } else {
+    ClearHasBit(_impl_._has_bits_[0], 0x00000001U);
+  }
+  // @@protoc_insertion_point(field_unsafe_arena_set_allocated:chirp.social.SetNotifyPrefsResponse.prefs)
+}
+inline ::chirp::social::NotifyPrefs* PROTOBUF_NULLABLE SetNotifyPrefsResponse::release_prefs() {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+
+  ClearHasBit(_impl_._has_bits_[0], 0x00000001U);
+  ::chirp::social::NotifyPrefs* released = _impl_.prefs_;
+  _impl_.prefs_ = nullptr;
+  if (::google::protobuf::internal::DebugHardenForceCopyInRelease()) {
+    auto* old = reinterpret_cast<::google::protobuf::MessageLite*>(released);
+    released = ::google::protobuf::internal::DuplicateIfNonNull(released);
+    if (GetArena() == nullptr) {
+      delete old;
+    }
+  } else {
+    if (GetArena() != nullptr) {
+      released = ::google::protobuf::internal::DuplicateIfNonNull(released);
+    }
+  }
+  return released;
+}
+inline ::chirp::social::NotifyPrefs* PROTOBUF_NULLABLE SetNotifyPrefsResponse::unsafe_arena_release_prefs() {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  // @@protoc_insertion_point(field_release:chirp.social.SetNotifyPrefsResponse.prefs)
+
+  ClearHasBit(_impl_._has_bits_[0], 0x00000001U);
+  ::chirp::social::NotifyPrefs* temp = _impl_.prefs_;
+  _impl_.prefs_ = nullptr;
+  return temp;
+}
+inline ::chirp::social::NotifyPrefs* PROTOBUF_NONNULL SetNotifyPrefsResponse::_internal_mutable_prefs() {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  if (_impl_.prefs_ == nullptr) {
+    auto* p = ::google::protobuf::Message::DefaultConstruct<::chirp::social::NotifyPrefs>(GetArena());
+    _impl_.prefs_ = reinterpret_cast<::chirp::social::NotifyPrefs*>(p);
+  }
+  return _impl_.prefs_;
+}
+inline ::chirp::social::NotifyPrefs* PROTOBUF_NONNULL SetNotifyPrefsResponse::mutable_prefs()
+    ABSL_ATTRIBUTE_LIFETIME_BOUND {
+  SetHasBit(_impl_._has_bits_[0], 0x00000001U);
+  ::chirp::social::NotifyPrefs* _msg = _internal_mutable_prefs();
+  // @@protoc_insertion_point(field_mutable:chirp.social.SetNotifyPrefsResponse.prefs)
+  return _msg;
+}
+inline void SetNotifyPrefsResponse::set_allocated_prefs(::chirp::social::NotifyPrefs* PROTOBUF_NULLABLE value) {
+  ::google::protobuf::Arena* message_arena = GetArena();
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  if (message_arena == nullptr) {
+    delete reinterpret_cast<::google::protobuf::MessageLite*>(_impl_.prefs_);
+  }
+
+  if (value != nullptr) {
+    ::google::protobuf::Arena* submessage_arena = value->GetArena();
+    if (message_arena != submessage_arena) {
+      value = ::google::protobuf::internal::GetOwnedMessage(message_arena, value, submessage_arena);
+    }
+    SetHasBit(_impl_._has_bits_[0], 0x00000001U);
+  } else {
+    ClearHasBit(_impl_._has_bits_[0], 0x00000001U);
+  }
+
+  _impl_.prefs_ = reinterpret_cast<::chirp::social::NotifyPrefs*>(value);
+  // @@protoc_insertion_point(field_set_allocated:chirp.social.SetNotifyPrefsResponse.prefs)
+}
+
+// int64 server_time = 3;
+inline void SetNotifyPrefsResponse::clear_server_time() {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_.server_time_ = ::int64_t{0};
+  ClearHasBit(_impl_._has_bits_[0],
+                  0x00000002U);
+}
+inline ::int64_t SetNotifyPrefsResponse::server_time() const {
+  // @@protoc_insertion_point(field_get:chirp.social.SetNotifyPrefsResponse.server_time)
+  return _internal_server_time();
+}
+inline void SetNotifyPrefsResponse::set_server_time(::int64_t value) {
+  _internal_set_server_time(value);
+  SetHasBit(_impl_._has_bits_[0], 0x00000002U);
+  // @@protoc_insertion_point(field_set:chirp.social.SetNotifyPrefsResponse.server_time)
+}
+inline ::int64_t SetNotifyPrefsResponse::_internal_server_time() const {
+  ::google::protobuf::internal::TSanRead(&_impl_);
+  return _impl_.server_time_;
+}
+inline void SetNotifyPrefsResponse::_internal_set_server_time(::int64_t value) {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_.server_time_ = value;
+}
+
+// -------------------------------------------------------------------
+
+// GetNotifyPrefsRequest
+
+// string user_id = 1;
+inline void GetNotifyPrefsRequest::clear_user_id() {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_.user_id_.ClearToEmpty();
+  ClearHasBit(_impl_._has_bits_[0],
+                  0x00000001U);
+}
+inline const ::std::string& GetNotifyPrefsRequest::user_id() const
+    ABSL_ATTRIBUTE_LIFETIME_BOUND {
+  // @@protoc_insertion_point(field_get:chirp.social.GetNotifyPrefsRequest.user_id)
+  return _internal_user_id();
+}
+template <typename Arg_, typename... Args_>
+PROTOBUF_ALWAYS_INLINE void GetNotifyPrefsRequest::set_user_id(Arg_&& arg, Args_... args) {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  SetHasBit(_impl_._has_bits_[0], 0x00000001U);
+  _impl_.user_id_.Set(static_cast<Arg_&&>(arg), args..., GetArena());
+  // @@protoc_insertion_point(field_set:chirp.social.GetNotifyPrefsRequest.user_id)
+}
+inline ::std::string* PROTOBUF_NONNULL GetNotifyPrefsRequest::mutable_user_id()
+    ABSL_ATTRIBUTE_LIFETIME_BOUND {
+  SetHasBit(_impl_._has_bits_[0], 0x00000001U);
+  ::std::string* _s = _internal_mutable_user_id();
+  // @@protoc_insertion_point(field_mutable:chirp.social.GetNotifyPrefsRequest.user_id)
+  return _s;
+}
+inline const ::std::string& GetNotifyPrefsRequest::_internal_user_id() const {
+  ::google::protobuf::internal::TSanRead(&_impl_);
+  return _impl_.user_id_.Get();
+}
+inline void GetNotifyPrefsRequest::_internal_set_user_id(const ::std::string& value) {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_.user_id_.Set(value, GetArena());
+}
+inline ::std::string* PROTOBUF_NONNULL GetNotifyPrefsRequest::_internal_mutable_user_id() {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  return _impl_.user_id_.Mutable( GetArena());
+}
+inline ::std::string* PROTOBUF_NULLABLE GetNotifyPrefsRequest::release_user_id() {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  // @@protoc_insertion_point(field_release:chirp.social.GetNotifyPrefsRequest.user_id)
+  if (!CheckHasBit(_impl_._has_bits_[0], 0x00000001U)) {
+    return nullptr;
+  }
+  ClearHasBit(_impl_._has_bits_[0], 0x00000001U);
+  auto* released = _impl_.user_id_.Release();
+  if (::google::protobuf::internal::DebugHardenForceCopyDefaultString()) {
+    _impl_.user_id_.Set("", GetArena());
+  }
+  return released;
+}
+inline void GetNotifyPrefsRequest::set_allocated_user_id(::std::string* PROTOBUF_NULLABLE value) {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  if (value != nullptr) {
+    SetHasBit(_impl_._has_bits_[0], 0x00000001U);
+  } else {
+    ClearHasBit(_impl_._has_bits_[0], 0x00000001U);
+  }
+  _impl_.user_id_.SetAllocated(value, GetArena());
+  if (::google::protobuf::internal::DebugHardenForceCopyDefaultString() && _impl_.user_id_.IsDefault()) {
+    _impl_.user_id_.Set("", GetArena());
+  }
+  // @@protoc_insertion_point(field_set_allocated:chirp.social.GetNotifyPrefsRequest.user_id)
+}
+
+// -------------------------------------------------------------------
+
+// GetNotifyPrefsResponse
+
+// .chirp.common.ErrorCode code = 1;
+inline void GetNotifyPrefsResponse::clear_code() {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_.code_ = 0;
+  ClearHasBit(_impl_._has_bits_[0],
+                  0x00000004U);
+}
+inline ::chirp::common::ErrorCode GetNotifyPrefsResponse::code() const {
+  // @@protoc_insertion_point(field_get:chirp.social.GetNotifyPrefsResponse.code)
+  return _internal_code();
+}
+inline void GetNotifyPrefsResponse::set_code(::chirp::common::ErrorCode value) {
+  _internal_set_code(value);
+  SetHasBit(_impl_._has_bits_[0], 0x00000004U);
+  // @@protoc_insertion_point(field_set:chirp.social.GetNotifyPrefsResponse.code)
+}
+inline ::chirp::common::ErrorCode GetNotifyPrefsResponse::_internal_code() const {
+  ::google::protobuf::internal::TSanRead(&_impl_);
+  return static_cast<::chirp::common::ErrorCode>(_impl_.code_);
+}
+inline void GetNotifyPrefsResponse::_internal_set_code(::chirp::common::ErrorCode value) {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_.code_ = value;
+}
+
+// .chirp.social.NotifyPrefs prefs = 2;
+inline bool GetNotifyPrefsResponse::has_prefs() const {
+  bool value = CheckHasBit(_impl_._has_bits_[0], 0x00000001U);
+  PROTOBUF_ASSUME(!value || _impl_.prefs_ != nullptr);
+  return value;
+}
+inline void GetNotifyPrefsResponse::clear_prefs() {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  if (_impl_.prefs_ != nullptr) _impl_.prefs_->Clear();
+  ClearHasBit(_impl_._has_bits_[0],
+                  0x00000001U);
+}
+inline const ::chirp::social::NotifyPrefs& GetNotifyPrefsResponse::_internal_prefs() const {
+  ::google::protobuf::internal::TSanRead(&_impl_);
+  const ::chirp::social::NotifyPrefs* p = _impl_.prefs_;
+  return p != nullptr ? *p : reinterpret_cast<const ::chirp::social::NotifyPrefs&>(::chirp::social::_NotifyPrefs_default_instance_);
+}
+inline const ::chirp::social::NotifyPrefs& GetNotifyPrefsResponse::prefs() const ABSL_ATTRIBUTE_LIFETIME_BOUND {
+  // @@protoc_insertion_point(field_get:chirp.social.GetNotifyPrefsResponse.prefs)
+  return _internal_prefs();
+}
+inline void GetNotifyPrefsResponse::unsafe_arena_set_allocated_prefs(
+    ::chirp::social::NotifyPrefs* PROTOBUF_NULLABLE value) {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  if (GetArena() == nullptr) {
+    delete reinterpret_cast<::google::protobuf::MessageLite*>(_impl_.prefs_);
+  }
+  _impl_.prefs_ = reinterpret_cast<::chirp::social::NotifyPrefs*>(value);
+  if (value != nullptr) {
+    SetHasBit(_impl_._has_bits_[0], 0x00000001U);
+  } else {
+    ClearHasBit(_impl_._has_bits_[0], 0x00000001U);
+  }
+  // @@protoc_insertion_point(field_unsafe_arena_set_allocated:chirp.social.GetNotifyPrefsResponse.prefs)
+}
+inline ::chirp::social::NotifyPrefs* PROTOBUF_NULLABLE GetNotifyPrefsResponse::release_prefs() {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+
+  ClearHasBit(_impl_._has_bits_[0], 0x00000001U);
+  ::chirp::social::NotifyPrefs* released = _impl_.prefs_;
+  _impl_.prefs_ = nullptr;
+  if (::google::protobuf::internal::DebugHardenForceCopyInRelease()) {
+    auto* old = reinterpret_cast<::google::protobuf::MessageLite*>(released);
+    released = ::google::protobuf::internal::DuplicateIfNonNull(released);
+    if (GetArena() == nullptr) {
+      delete old;
+    }
+  } else {
+    if (GetArena() != nullptr) {
+      released = ::google::protobuf::internal::DuplicateIfNonNull(released);
+    }
+  }
+  return released;
+}
+inline ::chirp::social::NotifyPrefs* PROTOBUF_NULLABLE GetNotifyPrefsResponse::unsafe_arena_release_prefs() {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  // @@protoc_insertion_point(field_release:chirp.social.GetNotifyPrefsResponse.prefs)
+
+  ClearHasBit(_impl_._has_bits_[0], 0x00000001U);
+  ::chirp::social::NotifyPrefs* temp = _impl_.prefs_;
+  _impl_.prefs_ = nullptr;
+  return temp;
+}
+inline ::chirp::social::NotifyPrefs* PROTOBUF_NONNULL GetNotifyPrefsResponse::_internal_mutable_prefs() {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  if (_impl_.prefs_ == nullptr) {
+    auto* p = ::google::protobuf::Message::DefaultConstruct<::chirp::social::NotifyPrefs>(GetArena());
+    _impl_.prefs_ = reinterpret_cast<::chirp::social::NotifyPrefs*>(p);
+  }
+  return _impl_.prefs_;
+}
+inline ::chirp::social::NotifyPrefs* PROTOBUF_NONNULL GetNotifyPrefsResponse::mutable_prefs()
+    ABSL_ATTRIBUTE_LIFETIME_BOUND {
+  SetHasBit(_impl_._has_bits_[0], 0x00000001U);
+  ::chirp::social::NotifyPrefs* _msg = _internal_mutable_prefs();
+  // @@protoc_insertion_point(field_mutable:chirp.social.GetNotifyPrefsResponse.prefs)
+  return _msg;
+}
+inline void GetNotifyPrefsResponse::set_allocated_prefs(::chirp::social::NotifyPrefs* PROTOBUF_NULLABLE value) {
+  ::google::protobuf::Arena* message_arena = GetArena();
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  if (message_arena == nullptr) {
+    delete reinterpret_cast<::google::protobuf::MessageLite*>(_impl_.prefs_);
+  }
+
+  if (value != nullptr) {
+    ::google::protobuf::Arena* submessage_arena = value->GetArena();
+    if (message_arena != submessage_arena) {
+      value = ::google::protobuf::internal::GetOwnedMessage(message_arena, value, submessage_arena);
+    }
+    SetHasBit(_impl_._has_bits_[0], 0x00000001U);
+  } else {
+    ClearHasBit(_impl_._has_bits_[0], 0x00000001U);
+  }
+
+  _impl_.prefs_ = reinterpret_cast<::chirp::social::NotifyPrefs*>(value);
+  // @@protoc_insertion_point(field_set_allocated:chirp.social.GetNotifyPrefsResponse.prefs)
+}
+
+// int64 server_time = 3;
+inline void GetNotifyPrefsResponse::clear_server_time() {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_.server_time_ = ::int64_t{0};
+  ClearHasBit(_impl_._has_bits_[0],
+                  0x00000002U);
+}
+inline ::int64_t GetNotifyPrefsResponse::server_time() const {
+  // @@protoc_insertion_point(field_get:chirp.social.GetNotifyPrefsResponse.server_time)
+  return _internal_server_time();
+}
+inline void GetNotifyPrefsResponse::set_server_time(::int64_t value) {
+  _internal_set_server_time(value);
+  SetHasBit(_impl_._has_bits_[0], 0x00000002U);
+  // @@protoc_insertion_point(field_set:chirp.social.GetNotifyPrefsResponse.server_time)
+}
+inline ::int64_t GetNotifyPrefsResponse::_internal_server_time() const {
+  ::google::protobuf::internal::TSanRead(&_impl_);
+  return _impl_.server_time_;
+}
+inline void GetNotifyPrefsResponse::_internal_set_server_time(::int64_t value) {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_.server_time_ = value;
+}
+
+// -------------------------------------------------------------------
+
 // StoredFriendList
 
 // repeated string friend_user_ids = 1;
@@ -10690,6 +12511,35 @@ inline ::google::protobuf::Map<::std::string, ::chirp::social::FriendRequest>* P
   SetHasBitForRepeated(_impl_._has_bits_[0], 0x00000001U);
   // @@protoc_insertion_point(field_mutable_map:chirp.social.StoredPendingRequests.requests)
   return _internal_mutable_requests();
+}
+
+// -------------------------------------------------------------------
+
+// StoredNotifyPrefs
+
+// bool friend_online_notify = 1;
+inline void StoredNotifyPrefs::clear_friend_online_notify() {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_.friend_online_notify_ = false;
+  ClearHasBit(_impl_._has_bits_[0],
+                  0x00000001U);
+}
+inline bool StoredNotifyPrefs::friend_online_notify() const {
+  // @@protoc_insertion_point(field_get:chirp.social.StoredNotifyPrefs.friend_online_notify)
+  return _internal_friend_online_notify();
+}
+inline void StoredNotifyPrefs::set_friend_online_notify(bool value) {
+  _internal_set_friend_online_notify(value);
+  SetHasBit(_impl_._has_bits_[0], 0x00000001U);
+  // @@protoc_insertion_point(field_set:chirp.social.StoredNotifyPrefs.friend_online_notify)
+}
+inline bool StoredNotifyPrefs::_internal_friend_online_notify() const {
+  ::google::protobuf::internal::TSanRead(&_impl_);
+  return _impl_.friend_online_notify_;
+}
+inline void StoredNotifyPrefs::_internal_set_friend_online_notify(bool value) {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_.friend_online_notify_ = value;
 }
 
 // -------------------------------------------------------------------
