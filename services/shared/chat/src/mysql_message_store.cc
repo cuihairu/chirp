@@ -47,6 +47,15 @@ bool HexDecode(const std::string& hex, std::string* out) {
   }
   return true;
 }
+
+// metadata 落库值：空元数据写 SQL NULL，非空走 HEX 编码列（纯 ASCII，
+// 字节面含 NUL/引号也无须转义）。
+std::string MetadataValueSql(const std::string& metadata) {
+  if (metadata.empty()) {
+    return "NULL";
+  }
+  return "UNHEX('" + HexEncode(metadata) + "')";
+}
 } // namespace
 
 // MySQLConnection implementation
@@ -311,10 +320,7 @@ bool MySQLMessageStore::StoreMessage(const StoredMessage& message) {
 
   // metadata（链接元数据）走 HEX 编码列：字节面含 NUL/引号也无须转义,
   // 空 metadata 落 NULL（不是 UNHEX('')）。
-  const std::string metadata_value =
-      message.metadata.empty()
-          ? std::string("NULL")
-          : "UNHEX('" + HexEncode(message.metadata) + "')";
+  const std::string metadata_value = MetadataValueSql(message.metadata);
   std::string query = "INSERT INTO messages (message_id, sender_id, receiver_id, channel_id, "
                      "channel_type, msg_type, content, timestamp, created_at, reply_to, "
                      "is_recalled, sender_kind, metadata) VALUES ('" +

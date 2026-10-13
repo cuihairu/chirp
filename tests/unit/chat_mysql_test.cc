@@ -325,6 +325,34 @@ TEST_F(MySqlStoreTest, HistoryParsesMetadataHexColumnAndToleratesLegacyRows) {
   EXPECT_TRUE(legacy_rows[0].metadata.empty());
 }
 
+TEST_F(MySqlStoreTest, HistoryToleratesMalformedMetadataHex) {
+  auto pool = std::make_shared<MySQLConnectionPool>(1, "h", 3306, "db", "u", "p");
+  MySQLMessageStore store(pool);
+
+  // 小写 HEX 与大写等价：同一字节串，不拒收、不丢数据。
+  fake_mysql::PushRows({{"m1", "s", "r", "ch", "0", "15", "c1", "1000", "", "0", "0",
+                         "0a036d2d31"}});
+  auto lowercase = store.GetHistory("ch", 0, 0, 10);
+  ASSERT_EQ(lowercase.size(), 1u);
+  EXPECT_EQ(lowercase[0].metadata, std::string("\x0A" "\x03" "m-1", 5));
+
+  // 奇数字长无法成对：该单元格丢弃，metadata 留空，行照收。
+  fake_mysql::PushRows({{"m2", "s", "r", "ch", "0", "15", "c2", "2000", "", "0", "0", "ABC"}});
+  auto odd = store.GetHistory("ch", 0, 0, 10);
+  ASSERT_EQ(odd.size(), 1u);
+  EXPECT_TRUE(odd[0].metadata.empty());
+
+  // 非 HEX 字符同样丢弃，且不中断整页：同页合法行照常解回。
+  fake_mysql::PushRows({{"m3", "s", "r", "ch", "0", "15", "c3", "3000", "", "0", "0", "ZZ"},
+                        {"m4", "s", "r", "ch", "0", "15", "c4", "4000", "", "0", "0",
+                         "0A036D2D32"}});
+  auto mixed = store.GetHistory("ch", 0, 0, 10);
+  ASSERT_EQ(mixed.size(), 2u);
+  // GetHistory 按时间正序返回（内部反转），故 m4 在前。
+  EXPECT_EQ(mixed[0].metadata, std::string("\x0A" "\x03" "m-2", 5));
+  EXPECT_TRUE(mixed[1].metadata.empty());
+}
+
 TEST_F(MySqlStoreTest, StoreMessageWritesReplyColumn) {
   auto pool = std::make_shared<MySQLConnectionPool>(1, "h", 3306, "db", "u", "p");
   MySQLMessageStore store(pool);
