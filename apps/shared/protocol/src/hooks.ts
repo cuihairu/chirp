@@ -158,6 +158,12 @@ export interface ChatEventListener {
     mutedUntilTs: number,
     operatorId: string,
   ): void;
+  /**
+   * 好友上线通知(FRIEND_ONLINE_NOTIFY 3029):好友有效状态 OFFLINE→非 OFFLINE
+   * 跃迁时的显式上线事件,逐收件人过对方 SET_NOTIFY_PREFS 开关(缺省开)。
+   * 花名册 PRESENCE_NOTIFY(3021)不经此钩子——那是名册快照链路,不受开关影响。
+   */
+  onFriendOnline?(userId: string, status: number, statusMessage: string): void;
 }
 
 export interface CommandHandler {

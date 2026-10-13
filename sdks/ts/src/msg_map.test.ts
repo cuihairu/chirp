@@ -1,5 +1,9 @@
 import { LoginResponse, LogoutResponse } from '@chirp/proto/auth';
 import {
+  GetNotifyPrefsResponse,
+  SetNotifyPrefsResponse,
+} from '@chirp/proto/social';
+import {
   GetHistoryResponse,
   SearchMessageResponse,
   SendMessageResponse,
@@ -12,6 +16,7 @@ import { describe, expect, it } from 'vitest';
 import {
   CREATE_ROOM,
   GET_HISTORY,
+  GET_NOTIFY_PREFS,
   GET_ROOM_INFO,
   JOIN_ROOM,
   LOGIN,
@@ -20,6 +25,7 @@ import {
   SEND_MESSAGE,
   SET_GROUP_MUTE,
   SET_MEMBER_ALIAS,
+  SET_NOTIFY_PREFS,
 } from './msg_map';
 
 describe('message specs', () => {
@@ -137,5 +143,34 @@ describe('message specs', () => {
       SetGroupMuteResponse.fromPartial({ code: 0, mutedUntilTs: 1700000000000 }),
     ).finish();
     expect(SET_GROUP_MUTE.decodeResponse(muteResp).mutedUntilTs).toBe(1700000000000);
+  });
+
+  it('roundtrips the friend-online notify prefs specs (3025-3028)', () => {
+    expect(SET_NOTIFY_PREFS.reqMsgId).toBe(MsgID.SET_NOTIFY_PREFS_REQ);
+    expect(SET_NOTIFY_PREFS.respMsgId).toBe(MsgID.SET_NOTIFY_PREFS_RESP);
+    expect(GET_NOTIFY_PREFS.reqMsgId).toBe(MsgID.GET_NOTIFY_PREFS_REQ);
+    expect(GET_NOTIFY_PREFS.respMsgId).toBe(MsgID.GET_NOTIFY_PREFS_RESP);
+
+    // Lock the "off" request: the explicit false must ride the wire (the
+    // server treats a missing prefs submessage as INVALID_PARAM).
+    const off = SET_NOTIFY_PREFS.encodeRequest({
+      userId: 'u1',
+      prefs: { friendOnlineNotify: false },
+    });
+    expect(off.length).toBeGreaterThan(0);
+    const setResp = SetNotifyPrefsResponse.encode(
+      SetNotifyPrefsResponse.fromPartial({ code: 0, prefs: { friendOnlineNotify: false }, serverTime: 42 }),
+    ).finish();
+    const decoded = SET_NOTIFY_PREFS.decodeResponse(setResp);
+    expect(decoded.code).toBe(0);
+    expect(decoded.prefs?.friendOnlineNotify).toBe(false);
+    expect(decoded.serverTime).toBe(42);
+
+    const get = GET_NOTIFY_PREFS.encodeRequest({ userId: 'u1' });
+    expect(get.length).toBeGreaterThan(0);
+    const getResp = GetNotifyPrefsResponse.encode(
+      GetNotifyPrefsResponse.fromPartial({ code: 0, prefs: { friendOnlineNotify: true } }),
+    ).finish();
+    expect(GET_NOTIFY_PREFS.decodeResponse(getResp).prefs?.friendOnlineNotify).toBe(true);
   });
 });

@@ -16,6 +16,7 @@ import {
 } from '@chirp/proto/chat';
 import { ErrorCode } from '@chirp/proto/common';
 import { KickNotify } from '@chirp/proto/auth';
+import { PresenceNotify } from '@chirp/proto/social';
 import { MsgID, Packet } from '@chirp/proto/gateway';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { ChirpClient, WebSocketLike } from './chirp_client';
@@ -853,6 +854,32 @@ describe('ChatPipeline inbound edges', () => {
       expect(seen).toEqual([['g1', 'u9', 1700000000000, 'mod1']]); // thrower contained
 
       ws.serverFrame(MsgID.GROUP_MEMBER_MUTED_NOTIFY, 0, new Uint8Array([0xff])); // undecodable
+      expect(seen.length).toBe(1);
+    });
+  });
+
+  it('fans friend-online notifies out; garbage bodies are no-ops', async () => {
+    await makeHarness(async (_client, pipeline, ws) => {
+      const seen: Array<[string, number, string]> = [];
+      pipeline.addListener({
+        onFriendOnline: (userId, status, statusMessage) => seen.push([userId, status, statusMessage]),
+      });
+      pipeline.addListener({
+        onFriendOnline: () => {
+          throw new Error('bad listener');
+        },
+      });
+
+      ws.serverFrame(MsgID.FRIEND_ONLINE_NOTIFY, 0,
+        PresenceNotify.encode(PresenceNotify.fromPartial({
+          userId: 'u9',
+          status: 1, // ONLINE
+          statusMessage: '',
+          timestamp: 1700000000000,
+        })).finish());
+      expect(seen).toEqual([['u9', 1, '']]); // thrower contained
+
+      ws.serverFrame(MsgID.FRIEND_ONLINE_NOTIFY, 0, new Uint8Array([0xff])); // undecodable
       expect(seen.length).toBe(1);
     });
   });

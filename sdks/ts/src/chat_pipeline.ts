@@ -24,6 +24,7 @@ import {
 } from '@chirp/proto/chat';
 import { ErrorCode } from '@chirp/proto/common';
 import { DevicesPresenceNotify, KickNotify } from '@chirp/proto/auth';
+import { PresenceNotify } from '@chirp/proto/social';
 import type { DevicePresence } from '@chirp/proto/auth';
 import { MsgID } from '@chirp/proto/gateway';
 import type { ConnStatus } from './chirp_client';
@@ -150,6 +151,7 @@ export class ChatPipeline {
         this.onGroupMemberAliasUpdated(body)),
       this.conn.onNotify(MsgID.GROUP_MEMBER_MUTED_NOTIFY, (body) =>
         this.onGroupMemberMutedUpdated(body)),
+      this.conn.onNotify(MsgID.FRIEND_ONLINE_NOTIFY, (body) => this.onFriendOnlineBody(body)),
       this.conn.onStatus((status) => {
         for (const { listener } of this.snapshotListeners()) {
           try {
@@ -495,6 +497,22 @@ export class ChatPipeline {
     for (const { listener } of this.snapshotListeners()) {
       try {
         listener.onGroupMemberAliasUpdated?.(notify.groupId, notify.userId, notify.alias);
+      } catch {
+        // Same isolation rule.
+      }
+    }
+  }
+
+  private onFriendOnlineBody(body: Uint8Array): void {
+    let notify: PresenceNotify;
+    try {
+      notify = PresenceNotify.decode(body);
+    } catch {
+      return; // malformed notify: ignore
+    }
+    for (const { listener } of this.snapshotListeners()) {
+      try {
+        listener.onFriendOnline?.(notify.userId, notify.status, notify.statusMessage);
       } catch {
         // Same isolation rule.
       }
