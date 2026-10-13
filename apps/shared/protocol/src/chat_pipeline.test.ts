@@ -2,6 +2,7 @@ import { DevicesPresenceNotify, LoginRequest, LoginResponse } from '@chirp/proto
 import {
   ChannelType,
   ChatMessage,
+  CoordMetadata,
   GroupMemberAliasUpdatedNotify,
   GroupMemberMutedNotify,
   MsgType,
@@ -733,6 +734,41 @@ describe('ChatPipeline listener wiring', () => {
       expect(SendMessageRequest.decode(ws.lastSentPacket().body).msgType).toBe(MsgType.EMOJI);
       settle(ws, MsgID.SEND_MESSAGE_RESP, sendResp(ErrorCode.OK));
       await sending;
+    });
+  });
+
+  it('carries msgType and metadata to the wire and into the local archive', async () => {
+    await makeHarness(async (_client, pipeline, ws) => {
+      const metadata = CoordMetadata.encode(
+        CoordMetadata.fromPartial({ mapId: 'field-7', x: 120, y: 88, z: 3, label: 'BOSS 刷新点' }),
+      ).finish();
+      const sending = pipeline.send(
+        {
+          channelType: ChannelType.PRIVATE,
+          receiverId: 'p',
+          msgType: MsgType.COORD_LINK,
+          metadata,
+        },
+        'BOSS 刷新点',
+      );
+      const req = SendMessageRequest.decode(ws.lastSentPacket().body);
+      expect(req.msgType).toBe(MsgType.COORD_LINK);
+      expect(CoordMetadata.decode(req.metadata ?? new Uint8Array())).toMatchObject({
+        mapId: 'field-7',
+        x: 120,
+        y: 88,
+        z: 3,
+        label: 'BOSS 刷新点',
+      });
+
+      // 本地存档副本同样带出坐标，刷新会话不降级成空消息。
+      const archived = pipeline.loadHistory(ChannelType.PRIVATE, 'p|u1', 10);
+      expect(archived).toHaveLength(1);
+      expect(archived[0].msgType).toBe(MsgType.COORD_LINK);
+      expect(CoordMetadata.decode(archived[0].metadata ?? new Uint8Array()).mapId).toBe('field-7');
+
+      settle(ws, MsgID.SEND_MESSAGE_RESP, sendResp(ErrorCode.OK));
+      expect(await sending).toMatchObject({ code: ErrorCode.OK });
     });
   });
 });

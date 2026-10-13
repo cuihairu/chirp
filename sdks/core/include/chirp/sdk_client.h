@@ -178,6 +178,8 @@ public:
     std::string channel_id;            // 非 PRIVATE 必填
     std::string receiver_id;           // PRIVATE 必填
     std::string reply_to_message_id;   // 引用的消息 id,空 = 非引用
+    chirp::chat::MsgType msg_type = chirp::chat::TEXT;  // 消息类型,默认纯文本
+    std::string metadata;              // 链接元数据字节(如 COORD_LINK 的 CoordMetadata)
   };
   void SendMessage(const SendOptions& opts, const std::string& content,
                    SendResponseCallback cb);

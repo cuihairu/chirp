@@ -898,6 +898,7 @@ void HandlePacket(const std::shared_ptr<MessageStore>& store,
     msg.set_channel_type(req.channel_type());
     msg.set_msg_type(req.msg_type());
     msg.set_content(req.content());
+    msg.set_metadata(req.metadata());
     msg.set_timestamp(chirp::chat::runtime::NowMs());
     if (req.channel_type() == chirp::chat::PRIVATE) {
       msg.set_channel_id(store->PrivateChannelId(req.sender_id(), req.receiver_id()));

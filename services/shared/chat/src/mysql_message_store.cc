@@ -1,6 +1,7 @@
 #include "mysql_message_store.h"
 
 #include <cstring>
+#include <utility>
 
 #include "logger.h"
 
@@ -9,6 +10,43 @@ namespace chat {
 
 namespace {
 using Logger = chirp::common::Logger;
+
+// 链接元数据（P1 COORD_LINK = CoordMetadata 序列化字节）走 HEX 列存取：
+// FetchResults 按行值原样拼串，含 NUL 的字节会被截断，读回必损；
+// HEX 编码是纯 ASCII，写入 UNHEX()、读取 HEX()，二进制安全。
+std::string HexEncode(const std::string& bytes) {
+  static const char* kHex = "0123456789ABCDEF";
+  std::string out;
+  out.reserve(bytes.size() * 2);
+  for (unsigned char c : bytes) {
+    out.push_back(kHex[c >> 4]);
+    out.push_back(kHex[c & 0x0F]);
+  }
+  return out;
+}
+
+bool HexDecode(const std::string& hex, std::string* out) {
+  if (hex.size() % 2 != 0) {
+    return false;
+  }
+  static const auto kNibble = [](char c) -> int {
+    if (c >= '0' && c <= '9') return c - '0';
+    if (c >= 'A' && c <= 'F') return c - 'A' + 10;
+    if (c >= 'a' && c <= 'f') return c - 'a' + 10;
+    return -1;
+  };
+  out->clear();
+  out->reserve(hex.size() / 2);
+  for (size_t i = 0; i < hex.size(); i += 2) {
+    const int hi = kNibble(hex[i]);
+    const int lo = kNibble(hex[i + 1]);
+    if (hi < 0 || lo < 0) {
+      return false;
+    }
+    out->push_back(static_cast<char>((hi << 4) | lo));
+  }
+  return true;
+}
 } // namespace
 
 // MySQLConnection implementation
@@ -187,6 +225,7 @@ bool MySQLMessageStore::Initialize() {
       reply_to VARCHAR(255),
       is_recalled TINYINT NOT NULL DEFAULT 0,
       sender_kind INT NOT NULL DEFAULT 0,
+      metadata BLOB,
       INDEX idx_channel (channel_id, channel_type, timestamp),
       INDEX idx_receiver (receiver_id, timestamp),
       INDEX idx_timestamp (timestamp)
@@ -217,6 +256,12 @@ bool MySQLMessageStore::Initialize() {
   if (!conn->Execute(
           "ALTER TABLE messages ADD COLUMN sender_kind INT NOT NULL DEFAULT 0")) {
     Logger::Instance().Info("messages.sender_kind column already present (or ALTER unsupported); keeping schema as-is");
+  }
+
+  // 链接元数据（P1 COORD_LINK = CoordMetadata 序列化字节）。BLOB 可空：
+  // 空 metadata 落 NULL，老库无此列时按空元数据处理。
+  if (!conn->Execute("ALTER TABLE messages ADD COLUMN metadata BLOB")) {
+    Logger::Instance().Info("messages.metadata column already present (or ALTER unsupported); keeping schema as-is");
   }
 
   // Create read_receipts table
@@ -264,9 +309,15 @@ bool MySQLMessageStore::StoreMessage(const StoredMessage& message) {
     return false;
   }
 
+  // metadata（链接元数据）走 HEX 编码列：字节面含 NUL/引号也无须转义,
+  // 空 metadata 落 NULL（不是 UNHEX('')）。
+  const std::string metadata_value =
+      message.metadata.empty()
+          ? std::string("NULL")
+          : "UNHEX('" + HexEncode(message.metadata) + "')";
   std::string query = "INSERT INTO messages (message_id, sender_id, receiver_id, channel_id, "
                      "channel_type, msg_type, content, timestamp, created_at, reply_to, "
-                     "is_recalled, sender_kind) VALUES ('" +
+                     "is_recalled, sender_kind, metadata) VALUES ('" +
                      conn->Escape(message.message_id) + "', '" +
                      conn->Escape(message.sender_id) + "', '" +
                      conn->Escape(message.receiver_id) + "', '" +
@@ -278,7 +329,8 @@ bool MySQLMessageStore::StoreMessage(const StoredMessage& message) {
                      std::to_string(message.created_at) + ", '" +
                      conn->Escape(message.reply_to_message_id) + "', " +
                      (message.is_recalled ? "1" : "0") + ", " +
-                     std::to_string(message.sender_kind) + ")";
+                     std::to_string(message.sender_kind) + ", " +
+                     metadata_value + ")";
 
   bool result = conn->Execute(query);
   if (!result) {
@@ -300,7 +352,7 @@ std::vector<StoredMessage> MySQLMessageStore::GetHistory(const std::string& chan
 
   std::string query = "SELECT message_id, sender_id, receiver_id, channel_id, "
                      "channel_type, msg_type, content, timestamp, reply_to, is_recalled, "
-                     "sender_kind FROM messages WHERE "
+                     "sender_kind, HEX(metadata) FROM messages WHERE "
                      "channel_id = '" + conn->Escape(channel_id) + "' AND "
                      "channel_type = " + std::to_string(channel_type);
 
@@ -339,6 +391,11 @@ std::vector<StoredMessage> MySQLMessageStore::GetHistory(const std::string& chan
     // 老库尚未补 sender_kind 列时按普通玩家处理（同上旧 schema 容忍）。
     if (row.size() > 10) {
       msg.sender_kind = std::stoi(row[10]);
+    }
+    // 老库尚未补 metadata 列时按无元数据处理（同上旧 schema 容忍）；
+    // 列为空时 HEX() 返回 NULL（此处渲染成字面 "NULL"）。
+    if (row.size() > 11 && row[11] != "NULL") {
+      std::ignore = HexDecode(row[11], &msg.metadata);  // 非 HEX 输入丢弃，不中断整页
     }
     messages.push_back(std::move(msg));
   }

@@ -35,6 +35,7 @@ struct MessageData {
   std::string reply_to_message_id;  // 消息引用（P1）：空 = 非引用
   bool is_recalled{false};          // 撤回墓碑（P0）：随序列化往返，历史读回带出
   int sender_kind{0};               // 发送者类型（chat::SenderKind 数值）：随序列化往返，历史读回带出
+  std::string metadata;             // 链接元数据字节（P1 COORD_LINK = CoordMetadata）：随序列化往返
 
   std::string SerializeAsString() const;
   bool ParseFromArray(const void* data, int size);

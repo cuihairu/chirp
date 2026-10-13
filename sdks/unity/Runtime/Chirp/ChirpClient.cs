@@ -509,6 +509,7 @@ namespace Chirp.Sdk
                 ChannelId = channelId,
                 MsgType = options.MsgType,
                 ReplyToMessageId = options.ReplyToMessageId,
+                Metadata = options.Metadata,
                 Content = Google.Protobuf.ByteString.CopyFrom(
                     Encoding.UTF8.GetBytes(content)),
                 ClientTimestamp = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds(),
@@ -529,6 +530,7 @@ namespace Chirp.Sdk
                 Content = request.Content,
                 Timestamp = request.ClientTimestamp,
                 ReplyToMessageId = request.ReplyToMessageId,
+                Metadata = request.Metadata,
             };
         }
 

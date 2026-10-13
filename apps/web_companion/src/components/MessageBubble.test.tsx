@@ -48,6 +48,40 @@ describe('MessageBubble', () => {
     expect(screen.queryByText('hello')).toBeNull();
   });
 
+  it('renders the coordinate card and copies the coordinates on click', () => {
+    const writeText = vi.fn().mockResolvedValue(undefined);
+    Object.assign(navigator, { clipboard: { writeText } });
+    render(
+      <MessageBubble
+        message={message({
+          content: '矿点',
+          coord: { mapId: 'field-7', x: 120, y: 88, z: 3, label: 'BOSS 刷新点' },
+        })}
+        selfId="user_a"
+        onToggleReaction={noop}
+      />,
+    );
+    const card = screen.getByTestId('coord-m1');
+    expect(card.textContent).toContain('BOSS 刷新点');
+    expect(card.textContent).toContain('field-7');
+    expect(card.textContent).toContain('120, 88, 3');
+    fireEvent.click(card);
+    expect(writeText).toHaveBeenCalledWith('120, 88, 3');
+  });
+
+  it('omits the zero height from the coordinate card text', () => {
+    render(
+      <MessageBubble
+        message={message({ coord: { mapId: 'map-1', x: 4, y: 9, z: 0, label: '' } })}
+        selfId="user_a"
+        onToggleReaction={noop}
+      />,
+    );
+    const card = screen.getByTestId('coord-m1');
+    expect(card.textContent).toContain('4, 9');
+    expect(card.textContent).not.toContain('4, 9, 0');
+  });
+
   it('keeps pending own messages visually unconfirmed', () => {
     render(<MessageBubble message={message({ senderId: 'user_a', pending: true })} selfId="user_a" onToggleReaction={noop} />);
     expect(screen.getByText(/发送中/)).toBeTruthy();

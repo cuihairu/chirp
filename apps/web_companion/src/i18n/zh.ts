@@ -40,6 +40,7 @@ export const zh = {
     read: '已读',
     typing: (user: string) => `${user} 正在输入…`,
     addReaction: '添加表情',
+    copyCoord: '点击复制坐标',
     edit: '编辑',
     delete: '删除',
     report: '举报',

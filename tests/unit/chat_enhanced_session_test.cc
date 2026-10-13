@@ -879,6 +879,157 @@ TEST_F(EnhancedSessionTest, PrivateSendRejectsEmptyReceiverAndDanglingReply) {
   EXPECT_EQ(SendReq(req, alice, live.store, live.recall.handlers.get()), chirp::common::OK);
 }
 
+// --- 坐标链接（COORD_LINK，game_chat_features P1）：enhanced 形态端到端 ----
+// enhanced 发送路径逐字段重建 ChatMessage（补投 + 历史读回两处），metadata
+// 只在 proto 层存在、重建臂漏拷就等于丢坐标；这里经生产派发把三条臂钉住。
+
+TEST_F(EnhancedSessionTest, CoordLinkCarriesMetadataThroughNotifyHistoryAndRefill) {
+  LiveHistoryRecall live;
+  StartLiveHistory(live);
+  auto alice = std::make_shared<MockSession>();
+  auto bob = std::make_shared<MockSession>();
+  Login(bob, "bob", "b1", 2);
+
+  auto CoordOf = [](const std::string& bytes) {
+    chirp::chat::CoordMetadata c;
+    EXPECT_TRUE(c.ParseFromString(bytes));
+    return c;
+  };
+
+  chirp::chat::CoordMetadata coord;
+  coord.set_map_id("field-7");
+  coord.set_x(120);
+  coord.set_y(88);
+  coord.set_z(3);
+  coord.set_label("BOSS 刷新点");
+
+  chirp::chat::SendMessageRequest req;
+  req.set_sender_id("alice");
+  req.set_receiver_id("bob");
+  req.set_channel_type(chirp::chat::PRIVATE);
+  req.set_content("BOSS 刷新点");
+  req.set_msg_type(chirp::chat::COORD_LINK);
+  req.set_metadata(coord.SerializeAsString());
+
+  std::string mid;
+  ASSERT_EQ(SendReq(req, alice, live.store, live.recall.handlers.get(), nullptr, "",
+                    nullptr, "", nullptr, nullptr, &mid),
+            chirp::common::OK);
+  ASSERT_FALSE(mid.empty());
+
+  // 在线投递臂：notify 帧带出 msg_type 与坐标字节。
+  const auto notifies = FramesOf(*bob, chirp::gateway::CHAT_MESSAGE_NOTIFY);
+  ASSERT_EQ(notifies.size(), 1u);
+  chirp::chat::ChatMessage notify;
+  ASSERT_TRUE(notify.ParseFromString(notifies[0].body()));
+  EXPECT_EQ(notify.msg_type(), chirp::chat::COORD_LINK);
+  const auto live_coord = CoordOf(notify.metadata());
+  EXPECT_EQ(live_coord.map_id(), "field-7");
+  EXPECT_EQ(live_coord.x(), 120);
+  EXPECT_EQ(live_coord.y(), 88);
+  EXPECT_EQ(live_coord.z(), 3);
+  EXPECT_EQ(live_coord.label(), "BOSS 刷新点");
+
+  // 历史读回臂：HandleGetHistory 逐字段重建，坐标不能丢。
+  auto retriever = std::make_shared<chirp::chat::PaginatedHistoryRetriever>(live.store);
+  chirp::chat::GetHistoryRequest history_req;
+  history_req.set_channel_id("alice|bob");
+  history_req.set_channel_type(chirp::chat::PRIVATE);
+  history_req.set_limit(10);
+  HandleGetHistory(history_req, alice, retriever, /*seq=*/5);
+  const auto resps = FramesOf(*alice, chirp::gateway::GET_HISTORY_RESP);
+  ASSERT_EQ(resps.size(), 1u);
+  chirp::chat::GetHistoryResponse history_resp;
+  ASSERT_TRUE(history_resp.ParseFromString(resps[0].body()));
+  ASSERT_EQ(history_resp.messages_size(), 1);
+  EXPECT_EQ(history_resp.messages(0).msg_type(), chirp::chat::COORD_LINK);
+  const auto hist_coord = CoordOf(history_resp.messages(0).metadata());
+  EXPECT_EQ(hist_coord.map_id(), "field-7");
+  EXPECT_EQ(hist_coord.x(), 120);
+
+  // 离线补投臂：carol 从未在线 → 入离线队列；carol 登录回填的消息带出坐标。
+  // 换一枚独立坐标（mine-3）：断言 map_id 不同即证明补投携带的是本条消息的
+  // metadata，而非上一条（field-7）的残留。
+  chirp::chat::CoordMetadata mine_coord;
+  mine_coord.set_map_id("mine-3");
+  mine_coord.set_x(9);
+  mine_coord.set_label("矿点");
+  req.set_metadata(mine_coord.SerializeAsString());
+  req.set_receiver_id("carol");
+  req.set_content("矿点");
+  EXPECT_EQ(SendReq(req, alice, live.store, live.recall.handlers.get(), nullptr, "",
+                    nullptr, "", nullptr, nullptr, nullptr),
+            chirp::common::OK);
+
+  auto carol = std::make_shared<MockSession>();
+  chirp::auth::LoginRequest login_req;
+  login_req.set_token("carol");
+  login_req.set_device_id("c1");
+  login_req.set_platform("web");
+  InvokeLogin(login_req, carol, state_, live.store, router_, nullptr, nullptr,
+              &delivery_prefs_, /*seq=*/6);
+
+  const auto refills = FramesOf(*carol, chirp::gateway::CHAT_MESSAGE_NOTIFY);
+  ASSERT_EQ(refills.size(), 1u);
+  chirp::chat::ChatMessage refill;
+  ASSERT_TRUE(refill.ParseFromString(refills[0].body()));
+  EXPECT_EQ(refill.msg_type(), chirp::chat::COORD_LINK);
+  EXPECT_EQ(refill.receiver_id(), "carol");
+  const auto refill_coord = CoordOf(refill.metadata());
+  EXPECT_EQ(refill_coord.map_id(), "mine-3");
+  EXPECT_EQ(refill_coord.label(), "矿点");
+}
+
+TEST_F(EnhancedSessionTest, CoordLinkRejectsGarbageMetadataAndEmptyMapId) {
+  LiveHistoryRecall live;
+  StartLiveHistory(live);
+  auto alice = std::make_shared<MockSession>();
+  auto bob = std::make_shared<MockSession>();
+  Login(bob, "bob", "b1", 2);
+
+  auto SendCoord = [&](const std::string& meta) {
+    chirp::chat::SendMessageRequest req;
+    req.set_sender_id("alice");
+    req.set_receiver_id("bob");
+    req.set_channel_type(chirp::chat::PRIVATE);
+    req.set_content("coord");
+    req.set_msg_type(chirp::chat::COORD_LINK);
+    req.set_metadata(meta);
+    return SendReq(req, alice, live.store, live.recall.handlers.get(), nullptr, "",
+                   nullptr, "", nullptr, nullptr, nullptr);
+  };
+
+  // 截断的长度分隔字段：解析即失败，不能静默落库成空坐标消息。
+  EXPECT_EQ(SendCoord(std::string("\x0A" "\x05" "ab")), chirp::common::INVALID_PARAM);
+
+  // 空 map_id：坐标没有落点，客户端渲染不出卡片。
+  chirp::chat::CoordMetadata no_map;
+  no_map.set_x(1);
+  no_map.set_y(2);
+  EXPECT_EQ(SendCoord(no_map.SerializeAsString()), chirp::common::INVALID_PARAM);
+
+  // 拒绝的消息零投递、零落库。
+  EXPECT_EQ(FramesOf(*bob, chirp::gateway::CHAT_MESSAGE_NOTIFY).size(), 0u);
+  EXPECT_TRUE(live.store->GetHistory("alice|bob", 0, 0, 10).empty());
+
+  // 合法坐标放行（校验门的通过臂）。
+  chirp::chat::CoordMetadata ok;
+  ok.set_map_id("m-1");
+  ok.set_x(5);
+  EXPECT_EQ(SendCoord(ok.SerializeAsString()), chirp::common::OK);
+
+  // 门只针对 COORD_LINK：TEXT 消息带任意字节 metadata 照样放行。
+  chirp::chat::SendMessageRequest plain;
+  plain.set_sender_id("alice");
+  plain.set_receiver_id("bob");
+  plain.set_channel_type(chirp::chat::PRIVATE);
+  plain.set_content("plain text");
+  plain.set_metadata(std::string("\x00" "\x01" "\x02", 3));
+  EXPECT_EQ(SendReq(plain, alice, live.store, live.recall.handlers.get(), nullptr, "",
+                    nullptr, "", nullptr, nullptr, nullptr),
+            chirp::common::OK);
+}
+
 // --- 黑名单：私聊静默成功，两端都不送、不入离线队列 -------------------------
 
 TEST_F(EnhancedSessionTest, PrivateSendSilentlyDropsBlockedReceiver) {

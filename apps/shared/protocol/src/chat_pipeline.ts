@@ -419,6 +419,7 @@ export class ChatPipeline {
       content: encoder.encode(content),
       clientTimestamp: Date.now(),
       replyToMessageId: options.replyToMessageId ?? '',
+      metadata: options.metadata,
     });
   }
 
@@ -432,6 +433,7 @@ export class ChatPipeline {
       content: request.content,
       timestamp: request.clientTimestamp,
       replyToMessageId: request.replyToMessageId,
+      metadata: request.metadata,
     });
   }
 

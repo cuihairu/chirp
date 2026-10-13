@@ -269,6 +269,62 @@ TEST_F(MySqlStoreTest, HistoryQueriesAndParsing) {
   EXPECT_TRUE(store.GetOfflineMessages("r").empty());
 }
 
+TEST_F(MySqlStoreTest, StoreMessageWritesMetadataAsHexColumn) {
+  auto pool = std::make_shared<MySQLConnectionPool>(1, "h", 3306, "db", "u", "p");
+  MySQLMessageStore store(pool);
+
+  StoredMessage msg;
+  msg.message_id = "m1";
+  msg.sender_id = "s";
+  msg.channel_id = "ch";
+  msg.channel_type = 0;
+  msg.msg_type = 15;  // COORD_LINK
+  msg.timestamp = 1000;
+  msg.created_at = 1000;
+  // 含 NUL 与高位字节的 metadata：走 HEX 落库（FetchResults 按 NUL 截断，
+  // 裸 bytes 列读回必损；HEX 列是纯 ASCII，往返无损）。
+  msg.metadata = std::string("\x0A" "\x03" "m-1" "\x10" "\x05" "\x00" "\xC3", 9);
+  EXPECT_TRUE(store.StoreMessage(msg));
+
+  auto queries = fake_mysql::TakeQueries();
+  ASSERT_FALSE(queries.empty());
+  EXPECT_NE(queries.back().find("INSERT INTO messages"), std::string::npos);
+  EXPECT_NE(queries.back().find(", metadata)"), std::string::npos);
+  EXPECT_NE(queries.back().find("UNHEX('0A036D2D31100500C3')"), std::string::npos);
+
+  // 空 metadata 写 NULL（不产生 UNHEX('')）。
+  msg.metadata.clear();
+  EXPECT_TRUE(store.StoreMessage(msg));
+  queries = fake_mysql::TakeQueries();
+  EXPECT_NE(queries.back().find("NULL)"), std::string::npos);
+  EXPECT_EQ(queries.back().find("UNHEX"), std::string::npos);
+}
+
+TEST_F(MySqlStoreTest, HistoryParsesMetadataHexColumnAndToleratesLegacyRows) {
+  auto pool = std::make_shared<MySQLConnectionPool>(1, "h", 3306, "db", "u", "p");
+  MySQLMessageStore store(pool);
+
+  // 新 schema：第 12 列 HEX(metadata)——"0A036D2D31" 解回 "\x0A\x03m-1"。
+  fake_mysql::PushRows({{"m1", "s", "r", "ch", "0", "15", "c1", "1000", "", "0", "0",
+                         "0A036D2D31"}});
+  auto history = store.GetHistory("ch", 0, 0, 10);
+  ASSERT_EQ(history.size(), 1u);
+  EXPECT_EQ(history[0].metadata, std::string("\x0A" "\x03" "m-1", 5));
+
+  // NULL 单元格（空 metadata）→ 空串。
+  fake_mysql::PushRows({{"m2", "s", "r", "ch", "0", "15", "c2", "2000", "", "0", "0",
+                         std::nullopt}});
+  auto null_rows = store.GetHistory("ch", 0, 0, 10);
+  ASSERT_EQ(null_rows.size(), 1u);
+  EXPECT_TRUE(null_rows[0].metadata.empty());
+
+  // 老库缺列（11 列行）→ 空串容忍。
+  fake_mysql::PushRows({{"m3", "s", "r", "ch", "0", "15", "c3", "3000", "", "0", "0"}});
+  auto legacy_rows = store.GetHistory("ch", 0, 0, 10);
+  ASSERT_EQ(legacy_rows.size(), 1u);
+  EXPECT_TRUE(legacy_rows[0].metadata.empty());
+}
+
 TEST_F(MySqlStoreTest, StoreMessageWritesReplyColumn) {
   auto pool = std::make_shared<MySQLConnectionPool>(1, "h", 3306, "db", "u", "p");
   MySQLMessageStore store(pool);
@@ -319,14 +375,15 @@ TEST_F(MySqlStoreTest, StoreMessageWritesRecalledColumn) {
   ASSERT_FALSE(queries.empty());
   EXPECT_NE(queries.back().find("INSERT INTO messages"), std::string::npos);
   EXPECT_NE(queries.back().find("is_recalled"), std::string::npos);
-  // 尾两列 = is_recalled, sender_kind（ActorKind 收敛后 INSERT 恒带 11 列）。
-  EXPECT_NE(queries.back().find(", 1, 0)"), std::string::npos);
+  // 尾三列 = is_recalled, sender_kind, metadata（坐标链接批次后 INSERT 恒带
+  // 12 列；本用例无 metadata，末列按 NULL 收尾）。
+  EXPECT_NE(queries.back().find(", 1, 0, NULL)"), std::string::npos);
 
   // 未置位时落库为 0（默认未撤回、默认玩家）。
   EXPECT_TRUE(store.StoreMessage(ToMySql(MakeMessage("m2"))));
   queries = fake_mysql::TakeQueries();
   ASSERT_FALSE(queries.empty());
-  EXPECT_NE(queries.back().find(", 0, 0)"), std::string::npos);
+  EXPECT_NE(queries.back().find(", 0, 0, NULL)"), std::string::npos);
 }
 
 TEST_F(MySqlStoreTest, StoreMessageWritesSenderKindColumn) {
@@ -341,7 +398,8 @@ TEST_F(MySqlStoreTest, StoreMessageWritesSenderKindColumn) {
   ASSERT_FALSE(queries.empty());
   EXPECT_NE(queries.back().find("INSERT INTO messages"), std::string::npos);
   EXPECT_NE(queries.back().find("sender_kind"), std::string::npos);
-  EXPECT_NE(queries.back().find(", 0, 2)"), std::string::npos);
+  // metadata 成为末列后，sender_kind 不再收尾：空 metadata 写 NULL。
+  EXPECT_NE(queries.back().find(", 0, 2, NULL)"), std::string::npos);
 }
 
 TEST_F(MySqlStoreTest, HistoryParsesSenderKindColumnAndToleratesLegacyRows) {
@@ -607,6 +665,24 @@ TEST_F(HybridStoreTest, StoreMessageWritesHistoryTiersOnly) {
   EXPECT_FALSE(store_->StoreMessage(MakeMessage("m3")));
 }
 
+TEST_F(HybridStoreTest, MessageDataSerializationCarriesMetadata) {
+  MessageData msg = MakeMessage("m1");
+  // 坐标链接（P1）：COORD_LINK + CoordMetadata 序列化字节（map_id="m-1", x=5）
+  // 随存储往返。
+  msg.msg_type = 15;  // COORD_LINK
+  msg.metadata = std::string("\x0A" "\x03" "m-1" "\x10" "\x05", 7);
+  const std::string blob = msg.SerializeAsString();
+  MessageData parsed;
+  ASSERT_TRUE(parsed.ParseFromArray(blob.data(), static_cast<int>(blob.size())));
+  EXPECT_EQ(parsed.msg_type, 15);
+  EXPECT_EQ(parsed.metadata, msg.metadata);
+  // 空 metadata：往返后仍是空。
+  MessageData plain = MakeMessage("m2");
+  ASSERT_TRUE(parsed.ParseFromArray(plain.SerializeAsString().data(),
+                                    static_cast<int>(plain.SerializeAsString().size())));
+  EXPECT_TRUE(parsed.metadata.empty());
+}
+
 TEST_F(HybridStoreTest, StoreMessageAsyncDeliversCallback) {
   ASSERT_TRUE(store_->Initialize());
 
@@ -638,7 +714,31 @@ TEST_F(HybridStoreTest, StoreMessageAsyncCarriesSenderKindToColdTier) {
   auto queries = fake_mysql::TakeQueries();
   ASSERT_FALSE(queries.empty());
   EXPECT_NE(queries.back().find("INSERT INTO messages"), std::string::npos);
-  EXPECT_NE(queries.back().find(", 0, 2)"), std::string::npos);
+  // metadata 列尾随 sender_kind 之后（末列）：空 metadata 写 NULL 收尾。
+  EXPECT_NE(queries.back().find(", 0, 2, NULL)"), std::string::npos);
+}
+
+TEST_F(HybridStoreTest, StoreMessageAsyncCarriesMetadataToColdTier) {
+  ASSERT_TRUE(store_->Initialize());
+
+  // 异步路径与同步路径同字段集：漏拷 metadata 会让 COORD_LINK 消息的
+  // 坐标只活在 Redis 热层，冷层（MySQL 档案）读回降级成空坐标。
+  MessageData coord = MakeMessage("m1", "ch1", 1000, "r1");
+  coord.msg_type = 15;  // COORD_LINK
+  coord.metadata = std::string("\x0A" "\x03" "m-1" "\x10" "\x05", 7);
+
+  std::promise<bool> done;
+  auto future = done.get_future();
+  store_->StoreMessageAsync(coord, [&](bool ok) { done.set_value(ok); });
+  io_.run();
+  ASSERT_EQ(future.wait_for(std::chrono::seconds(2)), std::future_status::ready);
+  EXPECT_TRUE(future.get());
+
+  auto queries = fake_mysql::TakeQueries();
+  ASSERT_FALSE(queries.empty());
+  EXPECT_NE(queries.back().find("INSERT INTO messages"), std::string::npos);
+  EXPECT_NE(queries.back().find(", metadata)"), std::string::npos);
+  EXPECT_NE(queries.back().find("UNHEX('0A036D2D311005')"), std::string::npos);
 }
 
 TEST_F(HybridStoreTest, GetHistoryMergesRedisAndMysqlWithoutDuplicates) {
@@ -744,6 +844,26 @@ TEST_F(HybridStoreTest, GetHistoryMysqlMergeCarriesSenderKind) {
       EXPECT_EQ(m.sender_kind, 2);  // NPC，冷层档案带出
     } else if (m.message_id == "m2") {
       EXPECT_EQ(m.sender_kind, 0);  // 玩家，热层镜像带出
+    }
+  }
+}
+
+TEST_F(HybridStoreTest, GetHistoryMysqlMergeCarriesMetadata) {
+  ASSERT_TRUE(store_->Initialize());
+
+  // 热层一条普通消息（Redis blob 全字段往返）；MySQL 冷层一条 COORD_LINK
+  // （12 列新 schema，第 12 列 HEX(metadata)）→ 合并页两侧 metadata 都不丢。
+  ASSERT_TRUE(store_->StoreMessage(MakeMessage("m2", "ch", 2000)));
+  fake_mysql::PushRows({{"m1", "s", "r", "ch", "0", "15", "hello m1", "1000",
+                         "", "0", "0", "0A036D2D31"}});
+  auto page = store_->GetHistory("ch", 0, 0, 2);
+  ASSERT_EQ(page.size(), 2u);
+  for (const auto& m : page) {
+    if (m.message_id == "m1") {
+      EXPECT_EQ(m.msg_type, 15);
+      EXPECT_EQ(m.metadata, std::string("\x0A" "\x03" "m-1", 5));  // 坐标字节，冷层档案带出
+    } else if (m.message_id == "m2") {
+      EXPECT_TRUE(m.metadata.empty());
     }
   }
 }

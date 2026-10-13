@@ -1106,6 +1106,111 @@ TEST_F(BasicChatTest, PrivateSendEdgesBlockedNpcDanglingReplyValidReply) {
   EXPECT_EQ(resp.code(), chirp::common::INVALID_PARAM);
 }
 
+// --- 坐标链接（COORD_LINK）：metadata 全链透传 + 参数校验 -----------------------
+
+TEST_F(BasicChatTest, CoordLinkSendCarriesMetadataThroughHistory) {
+  auto alice = std::make_shared<MockSession>();
+  auto bob = std::make_shared<MockSession>();
+  ASSERT_EQ(Login(alice, "alice").code(), chirp::common::OK);
+  ASSERT_EQ(Login(bob, "bob").code(), chirp::common::OK);
+
+  // COORD_LINK 消息：metadata = CoordMetadata，content 是展示标签（与
+  // 普通文本同一套敏感词/长度守门）。
+  chirp::chat::SendMessageRequest req;
+  req.set_sender_id("alice");
+  req.set_receiver_id("bob");
+  req.set_channel_type(chirp::chat::PRIVATE);
+  req.set_msg_type(chirp::chat::COORD_LINK);
+  req.set_content("BOSS 刷新点");
+  chirp::chat::CoordMetadata meta;
+  meta.set_map_id("field-7");
+  meta.set_x(120);
+  meta.set_y(88);
+  meta.set_z(3);
+  meta.set_label("BOSS 刷新点");
+  req.set_metadata(meta.SerializeAsString());
+  DispatchReq(chirp::gateway::SEND_MESSAGE_REQ, req, alice);
+  const auto frames = FramesOf(*alice, chirp::gateway::SEND_MESSAGE_RESP);
+  ASSERT_EQ(frames.size(), 1u);
+  chirp::chat::SendMessageResponse send_resp;
+  ASSERT_TRUE(send_resp.ParseFromString(frames[0].body()));
+  ASSERT_EQ(send_resp.code(), chirp::common::OK);
+
+  // 实时 notify 到 bob：msg_type + metadata 原样到达。
+  const auto notifies = FramesOf(*bob, chirp::gateway::CHAT_MESSAGE_NOTIFY);
+  ASSERT_EQ(notifies.size(), 1u);
+  chirp::chat::ChatMessage live;
+  ASSERT_TRUE(live.ParseFromString(notifies[0].body()));
+  EXPECT_EQ(live.msg_type(), chirp::chat::COORD_LINK);
+  chirp::chat::CoordMetadata live_meta;
+  ASSERT_TRUE(live_meta.ParseFromString(live.metadata()));
+  EXPECT_EQ(live_meta.map_id(), "field-7");
+  EXPECT_EQ(live_meta.x(), 120);
+  EXPECT_EQ(live_meta.y(), 88);
+
+  // 历史读回：basic 内存/Redis 直存 ChatMessage，metadata 保真。
+  chirp::chat::GetHistoryRequest hist;
+  hist.set_user_id("alice");
+  hist.set_channel_type(chirp::chat::PRIVATE);
+  hist.set_channel_id("alice|bob");
+  hist.set_limit(10);
+  DispatchReq(chirp::gateway::GET_HISTORY_REQ, hist, alice);
+  chirp::chat::GetHistoryResponse history;
+  const auto hist_frames = FramesOf(*alice, chirp::gateway::GET_HISTORY_RESP);
+  ASSERT_EQ(hist_frames.size(), 1u);
+  ASSERT_TRUE(history.ParseFromString(hist_frames[0].body()));
+  ASSERT_EQ(history.code(), chirp::common::OK);
+  ASSERT_EQ(history.messages_size(), 1);
+  EXPECT_EQ(history.messages(0).msg_type(), chirp::chat::COORD_LINK);
+  chirp::chat::CoordMetadata hist_meta;
+  ASSERT_TRUE(hist_meta.ParseFromString(history.messages(0).metadata()));
+  EXPECT_EQ(hist_meta.map_id(), "field-7");
+  EXPECT_EQ(hist_meta.label(), "BOSS 刷新点");
+  EXPECT_EQ(hist_meta.z(), 3);
+}
+
+TEST_F(BasicChatTest, CoordLinkRejectsGarbageMetadataAndEmptyMapId) {
+  auto alice = std::make_shared<MockSession>();
+  auto bob = std::make_shared<MockSession>();
+  ASSERT_EQ(Login(alice, "alice").code(), chirp::common::OK);
+  ASSERT_EQ(Login(bob, "bob").code(), chirp::common::OK);
+
+  auto SendCoord = [this, &alice](const std::string& metadata) {
+    chirp::chat::SendMessageRequest req;
+    req.set_sender_id("alice");
+    req.set_receiver_id("bob");
+    req.set_channel_type(chirp::chat::PRIVATE);
+    req.set_msg_type(chirp::chat::COORD_LINK);
+    req.set_content("点我");
+    req.set_metadata(metadata);
+    DispatchReq(chirp::gateway::SEND_MESSAGE_REQ, req, alice);
+    const auto frames = FramesOf(*alice, chirp::gateway::SEND_MESSAGE_RESP);
+    chirp::chat::SendMessageResponse resp;
+    if (!frames.empty()) {
+      resp.ParseFromString(frames.back().body());
+    }
+    return resp;
+  };
+
+  // 垃圾 metadata（截断的 length-delimited 字段，解析必败）→ INVALID_PARAM，
+  // 不落任何存储、不产生 notify。
+  EXPECT_EQ(SendCoord("\x0A" "\x05" "ab").code(), chirp::common::INVALID_PARAM);
+  EXPECT_TRUE(FramesOf(*bob, chirp::gateway::CHAT_MESSAGE_NOTIFY).empty());
+  // map_id 为空的坐标悬空（游戏端无处寻路）→ INVALID_PARAM。
+  chirp::chat::CoordMetadata no_map;
+  no_map.set_x(1);
+  no_map.set_y(2);
+  EXPECT_EQ(SendCoord(no_map.SerializeAsString()).code(), chirp::common::INVALID_PARAM);
+  // 拒收的消息不进历史：后续合法发送读回只应有这一条。
+  chirp::chat::CoordMetadata good;
+  good.set_map_id("m-1");
+  good.set_x(5);
+  ASSERT_EQ(SendCoord(good.SerializeAsString()).code(), chirp::common::OK);
+
+  // TEXT 消息不受影响（无 metadata 照常走通）。
+  EXPECT_EQ(Send(alice, "alice", "bob", "plain text").code(), chirp::common::OK);
+}
+
 // --- 群组频道：成员广播 + 离线成员入队 + 非成员拒收 ------------------------------
 
 TEST_F(BasicChatTest, GroupSendBroadcastsToMembersAndRefusesNonMember) {

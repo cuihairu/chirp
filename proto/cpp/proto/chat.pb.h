@@ -159,6 +159,10 @@ class ConfirmFileUploadResponse;
 struct ConfirmFileUploadResponseDefaultTypeInternal;
 extern ConfirmFileUploadResponseDefaultTypeInternal _ConfirmFileUploadResponse_default_instance_;
 extern const ::google::protobuf::internal::ClassDataFull ConfirmFileUploadResponse_class_data_;
+class CoordMetadata;
+struct CoordMetadataDefaultTypeInternal;
+extern CoordMetadataDefaultTypeInternal _CoordMetadata_default_instance_;
+extern const ::google::protobuf::internal::ClassDataFull CoordMetadata_class_data_;
 class CreateCategoryRequest;
 struct CreateCategoryRequestDefaultTypeInternal;
 extern CreateCategoryRequestDefaultTypeInternal _CreateCategoryRequest_default_instance_;
@@ -709,6 +713,7 @@ enum MsgType : int {
   ACHIEVEMENT = 12,
   NPC_DIALOG = 13,
   TRADE_STATUS = 14,
+  COORD_LINK = 15,
   SYSTEM = 99,
   MsgType_INT_MIN_SENTINEL_DO_NOT_USE_ =
       ::std::numeric_limits<::int32_t>::min(),
@@ -1141,7 +1146,7 @@ class WordFilterLexicon final : public ::google::protobuf::Message
     return *reinterpret_cast<const WordFilterLexicon*>(
         &_WordFilterLexicon_default_instance_);
   }
-  static constexpr int kIndexInFileMessages = 128;
+  static constexpr int kIndexInFileMessages = 129;
   friend void swap(WordFilterLexicon& a, WordFilterLexicon& b) { a.Swap(&b); }
   inline void Swap(WordFilterLexicon* PROTOBUF_NONNULL other) {
     if (other == this) return;
@@ -1389,7 +1394,7 @@ class WordFilterFetchRequest final : public ::google::protobuf::Message
     return *reinterpret_cast<const WordFilterFetchRequest*>(
         &_WordFilterFetchRequest_default_instance_);
   }
-  static constexpr int kIndexInFileMessages = 127;
+  static constexpr int kIndexInFileMessages = 128;
   friend void swap(WordFilterFetchRequest& a, WordFilterFetchRequest& b) { a.Swap(&b); }
   inline void Swap(WordFilterFetchRequest* PROTOBUF_NONNULL other) {
     if (other == this) return;
@@ -1579,7 +1584,7 @@ class UnblockMessageSenderResponse final : public ::google::protobuf::Message
     return *reinterpret_cast<const UnblockMessageSenderResponse*>(
         &_UnblockMessageSenderResponse_default_instance_);
   }
-  static constexpr int kIndexInFileMessages = 124;
+  static constexpr int kIndexInFileMessages = 125;
   friend void swap(UnblockMessageSenderResponse& a, UnblockMessageSenderResponse& b) { a.Swap(&b); }
   inline void Swap(UnblockMessageSenderResponse* PROTOBUF_NONNULL other) {
     if (other == this) return;
@@ -1786,7 +1791,7 @@ class UnblockMessageSenderRequest final : public ::google::protobuf::Message
     return *reinterpret_cast<const UnblockMessageSenderRequest*>(
         &_UnblockMessageSenderRequest_default_instance_);
   }
-  static constexpr int kIndexInFileMessages = 123;
+  static constexpr int kIndexInFileMessages = 124;
   friend void swap(UnblockMessageSenderRequest& a, UnblockMessageSenderRequest& b) { a.Swap(&b); }
   inline void Swap(UnblockMessageSenderRequest* PROTOBUF_NONNULL other) {
     if (other == this) return;
@@ -4378,7 +4383,7 @@ class SetChannelMuteResponse final : public ::google::protobuf::Message
     return *reinterpret_cast<const SetChannelMuteResponse*>(
         &_SetChannelMuteResponse_default_instance_);
   }
-  static constexpr int kIndexInFileMessages = 117;
+  static constexpr int kIndexInFileMessages = 118;
   friend void swap(SetChannelMuteResponse& a, SetChannelMuteResponse& b) { a.Swap(&b); }
   inline void Swap(SetChannelMuteResponse* PROTOBUF_NONNULL other) {
     if (other == this) return;
@@ -4592,7 +4597,7 @@ class SetChannelMuteRequest final : public ::google::protobuf::Message
     return *reinterpret_cast<const SetChannelMuteRequest*>(
         &_SetChannelMuteRequest_default_instance_);
   }
-  static constexpr int kIndexInFileMessages = 116;
+  static constexpr int kIndexInFileMessages = 117;
   friend void swap(SetChannelMuteRequest& a, SetChannelMuteRequest& b) { a.Swap(&b); }
   inline void Swap(SetChannelMuteRequest* PROTOBUF_NONNULL other) {
     if (other == this) return;
@@ -5353,7 +5358,7 @@ class SearchMessageRequest final : public ::google::protobuf::Message
     return *reinterpret_cast<const SearchMessageRequest*>(
         &_SearchMessageRequest_default_instance_);
   }
-  static constexpr int kIndexInFileMessages = 131;
+  static constexpr int kIndexInFileMessages = 132;
   friend void swap(SearchMessageRequest& a, SearchMessageRequest& b) { a.Swap(&b); }
   inline void Swap(SearchMessageRequest* PROTOBUF_NONNULL other) {
     if (other == this) return;
@@ -5627,7 +5632,7 @@ class SearchMessageMatch final : public ::google::protobuf::Message
     return *reinterpret_cast<const SearchMessageMatch*>(
         &_SearchMessageMatch_default_instance_);
   }
-  static constexpr int kIndexInFileMessages = 132;
+  static constexpr int kIndexInFileMessages = 133;
   friend void swap(SearchMessageMatch& a, SearchMessageMatch& b) { a.Swap(&b); }
   inline void Swap(SearchMessageMatch* PROTOBUF_NONNULL other) {
     if (other == this) return;
@@ -16922,7 +16927,7 @@ class GetChannelMutesRequest final : public ::google::protobuf::internal::ZeroFi
     return *reinterpret_cast<const GetChannelMutesRequest*>(
         &_GetChannelMutesRequest_default_instance_);
   }
-  static constexpr int kIndexInFileMessages = 119;
+  static constexpr int kIndexInFileMessages = 120;
   friend void swap(GetChannelMutesRequest& a, GetChannelMutesRequest& b) { a.Swap(&b); }
   inline void Swap(GetChannelMutesRequest* PROTOBUF_NONNULL other) {
     if (other == this) return;
@@ -17057,7 +17062,7 @@ class GetBlockedSendersResponse final : public ::google::protobuf::Message
     return *reinterpret_cast<const GetBlockedSendersResponse*>(
         &_GetBlockedSendersResponse_default_instance_);
   }
-  static constexpr int kIndexInFileMessages = 126;
+  static constexpr int kIndexInFileMessages = 127;
   friend void swap(GetBlockedSendersResponse& a, GetBlockedSendersResponse& b) { a.Swap(&b); }
   inline void Swap(GetBlockedSendersResponse* PROTOBUF_NONNULL other) {
     if (other == this) return;
@@ -17270,7 +17275,7 @@ class GetBlockedSendersRequest final : public ::google::protobuf::internal::Zero
     return *reinterpret_cast<const GetBlockedSendersRequest*>(
         &_GetBlockedSendersRequest_default_instance_);
   }
-  static constexpr int kIndexInFileMessages = 125;
+  static constexpr int kIndexInFileMessages = 126;
   friend void swap(GetBlockedSendersRequest& a, GetBlockedSendersRequest& b) { a.Swap(&b); }
   inline void Swap(GetBlockedSendersRequest* PROTOBUF_NONNULL other) {
     if (other == this) return;
@@ -19795,6 +19800,254 @@ class CreateCategoryRequest final : public ::google::protobuf::Message
 extern const ::google::protobuf::internal::ClassDataFull CreateCategoryRequest_class_data_;
 // -------------------------------------------------------------------
 
+class CoordMetadata final : public ::google::protobuf::Message
+/* @@protoc_insertion_point(class_definition:chirp.chat.CoordMetadata) */ {
+ public:
+  inline CoordMetadata() : CoordMetadata(nullptr) {}
+  ~CoordMetadata() PROTOBUF_FINAL;
+
+#if defined(PROTOBUF_CUSTOM_VTABLE)
+  void operator delete(CoordMetadata* PROTOBUF_NONNULL msg, ::std::destroying_delete_t) {
+    SharedDtor(*msg);
+    ::google::protobuf::internal::SizedDelete(msg, sizeof(CoordMetadata));
+  }
+#endif
+
+  template <typename = void>
+  explicit PROTOBUF_CONSTEXPR CoordMetadata(::google::protobuf::internal::ConstantInitialized);
+
+  inline CoordMetadata(const CoordMetadata& from) : CoordMetadata(nullptr, from) {}
+  inline CoordMetadata(CoordMetadata&& from) noexcept
+      : CoordMetadata(nullptr, ::std::move(from)) {}
+  inline CoordMetadata& operator=(const CoordMetadata& from) {
+    CopyFrom(from);
+    return *this;
+  }
+  inline CoordMetadata& operator=(CoordMetadata&& from) noexcept {
+    if (this == &from) return *this;
+    if (::google::protobuf::internal::CanMoveWithInternalSwap(GetArena(), from.GetArena())) {
+      InternalSwap(&from);
+    } else {
+      CopyFrom(from);
+    }
+    return *this;
+  }
+
+  inline const ::google::protobuf::UnknownFieldSet& unknown_fields() const
+      ABSL_ATTRIBUTE_LIFETIME_BOUND {
+    return _internal_metadata_.unknown_fields<::google::protobuf::UnknownFieldSet>(::google::protobuf::UnknownFieldSet::default_instance);
+  }
+  inline ::google::protobuf::UnknownFieldSet* PROTOBUF_NONNULL mutable_unknown_fields()
+      ABSL_ATTRIBUTE_LIFETIME_BOUND {
+    return _internal_metadata_.mutable_unknown_fields<::google::protobuf::UnknownFieldSet>();
+  }
+
+  static const ::google::protobuf::Descriptor* PROTOBUF_NONNULL descriptor() {
+    return GetDescriptor();
+  }
+  static const ::google::protobuf::Descriptor* PROTOBUF_NONNULL GetDescriptor() {
+    return default_instance().GetMetadata().descriptor;
+  }
+  static const ::google::protobuf::Reflection* PROTOBUF_NONNULL GetReflection() {
+    return default_instance().GetMetadata().reflection;
+  }
+  static const CoordMetadata& default_instance() {
+    return *reinterpret_cast<const CoordMetadata*>(
+        &_CoordMetadata_default_instance_);
+  }
+  static constexpr int kIndexInFileMessages = 116;
+  friend void swap(CoordMetadata& a, CoordMetadata& b) { a.Swap(&b); }
+  inline void Swap(CoordMetadata* PROTOBUF_NONNULL other) {
+    if (other == this) return;
+    if (::google::protobuf::internal::CanUseInternalSwap(GetArena(), other->GetArena())) {
+      InternalSwap(other);
+    } else {
+      ::google::protobuf::internal::GenericSwap(this, other);
+    }
+  }
+  void UnsafeArenaSwap(CoordMetadata* PROTOBUF_NONNULL other) {
+    if (other == this) return;
+    ABSL_DCHECK(GetArena() == other->GetArena());
+    InternalSwap(other);
+  }
+
+  // implements Message ----------------------------------------------
+
+  CoordMetadata* PROTOBUF_NONNULL New(::google::protobuf::Arena* PROTOBUF_NULLABLE arena = nullptr) const {
+    return ::google::protobuf::Message::DefaultConstruct<CoordMetadata>(arena);
+  }
+  using ::google::protobuf::Message::CopyFrom;
+  void CopyFrom(const CoordMetadata& from);
+  using ::google::protobuf::Message::MergeFrom;
+  void MergeFrom(const CoordMetadata& from) { CoordMetadata::MergeImpl(*this, from); }
+
+  private:
+  static void MergeImpl(::google::protobuf::MessageLite& to_msg,
+                        const ::google::protobuf::MessageLite& from_msg);
+
+  public:
+  bool IsInitialized() const {
+    return true;
+  }
+  ABSL_ATTRIBUTE_REINITIALIZES void Clear() PROTOBUF_FINAL;
+  #if defined(PROTOBUF_CUSTOM_VTABLE)
+  private:
+  static ::size_t ByteSizeLong(const ::google::protobuf::MessageLite& msg);
+  static ::uint8_t* PROTOBUF_NONNULL _InternalSerialize(
+      const ::google::protobuf::MessageLite& msg, ::uint8_t* PROTOBUF_NONNULL target,
+      ::google::protobuf::io::EpsCopyOutputStream* PROTOBUF_NONNULL stream);
+
+  public:
+  ::size_t ByteSizeLong() const { return ByteSizeLong(*this); }
+  ::uint8_t* PROTOBUF_NONNULL _InternalSerialize(
+      ::uint8_t* PROTOBUF_NONNULL target,
+      ::google::protobuf::io::EpsCopyOutputStream* PROTOBUF_NONNULL stream) const {
+    return _InternalSerialize(*this, target, stream);
+  }
+  #else   // PROTOBUF_CUSTOM_VTABLE
+  ::size_t ByteSizeLong() const final;
+  ::uint8_t* PROTOBUF_NONNULL _InternalSerialize(
+      ::uint8_t* PROTOBUF_NONNULL target,
+      ::google::protobuf::io::EpsCopyOutputStream* PROTOBUF_NONNULL stream) const final;
+  #endif  // PROTOBUF_CUSTOM_VTABLE
+  int GetCachedSize() const { return _impl_._cached_size_.Get(); }
+
+  private:
+  void SharedCtor(::google::protobuf::Arena* PROTOBUF_NULLABLE arena);
+  static void SharedDtor(MessageLite& self);
+  void InternalSwap(CoordMetadata* PROTOBUF_NONNULL other);
+ private:
+  template <typename T>
+  friend ::absl::string_view(::google::protobuf::internal::GetAnyMessageName)();
+  static ::absl::string_view FullMessageName() { return "chirp.chat.CoordMetadata"; }
+
+  explicit CoordMetadata(::google::protobuf::Arena* PROTOBUF_NULLABLE arena);
+  CoordMetadata(::google::protobuf::Arena* PROTOBUF_NULLABLE arena, const CoordMetadata& from);
+  CoordMetadata(
+      ::google::protobuf::Arena* PROTOBUF_NULLABLE arena, CoordMetadata&& from) noexcept
+      : CoordMetadata(arena) {
+    *this = ::std::move(from);
+  }
+  const ::google::protobuf::internal::ClassData* PROTOBUF_NONNULL GetClassData() const PROTOBUF_FINAL;
+  static void* PROTOBUF_NONNULL PlacementNew_(
+      const void* PROTOBUF_NONNULL, void* PROTOBUF_NONNULL mem,
+      ::google::protobuf::Arena* PROTOBUF_NULLABLE arena);
+  static constexpr auto InternalNewImpl_();
+
+ public:
+  static constexpr auto InternalGenerateClassData_();
+
+  ::google::protobuf::Metadata GetMetadata() const;
+  // nested types ----------------------------------------------------
+
+  // accessors -------------------------------------------------------
+  enum : int {
+    kMapIdFieldNumber = 1,
+    kLabelFieldNumber = 5,
+    kXFieldNumber = 2,
+    kYFieldNumber = 3,
+    kZFieldNumber = 4,
+  };
+  // string map_id = 1;
+  void clear_map_id() ;
+  const ::std::string& map_id() const;
+  template <typename Arg_ = const ::std::string&, typename... Args_>
+  void set_map_id(Arg_&& arg, Args_... args);
+  ::std::string* PROTOBUF_NONNULL mutable_map_id();
+  [[nodiscard]] ::std::string* PROTOBUF_NULLABLE release_map_id();
+  void set_allocated_map_id(::std::string* PROTOBUF_NULLABLE value);
+
+  private:
+  const ::std::string& _internal_map_id() const;
+  PROTOBUF_ALWAYS_INLINE void _internal_set_map_id(const ::std::string& value);
+  ::std::string* PROTOBUF_NONNULL _internal_mutable_map_id();
+
+  public:
+  // string label = 5;
+  void clear_label() ;
+  const ::std::string& label() const;
+  template <typename Arg_ = const ::std::string&, typename... Args_>
+  void set_label(Arg_&& arg, Args_... args);
+  ::std::string* PROTOBUF_NONNULL mutable_label();
+  [[nodiscard]] ::std::string* PROTOBUF_NULLABLE release_label();
+  void set_allocated_label(::std::string* PROTOBUF_NULLABLE value);
+
+  private:
+  const ::std::string& _internal_label() const;
+  PROTOBUF_ALWAYS_INLINE void _internal_set_label(const ::std::string& value);
+  ::std::string* PROTOBUF_NONNULL _internal_mutable_label();
+
+  public:
+  // int32 x = 2;
+  void clear_x() ;
+  ::int32_t x() const;
+  void set_x(::int32_t value);
+
+  private:
+  ::int32_t _internal_x() const;
+  void _internal_set_x(::int32_t value);
+
+  public:
+  // int32 y = 3;
+  void clear_y() ;
+  ::int32_t y() const;
+  void set_y(::int32_t value);
+
+  private:
+  ::int32_t _internal_y() const;
+  void _internal_set_y(::int32_t value);
+
+  public:
+  // int32 z = 4;
+  void clear_z() ;
+  ::int32_t z() const;
+  void set_z(::int32_t value);
+
+  private:
+  ::int32_t _internal_z() const;
+  void _internal_set_z(::int32_t value);
+
+  public:
+  // @@protoc_insertion_point(class_scope:chirp.chat.CoordMetadata)
+ private:
+  class _Internal;
+  friend class ::google::protobuf::internal::TcParser;
+  static const ::google::protobuf::internal::TcParseTable<3, 5,
+                                   0, 44,
+                                   2>
+      _table_;
+
+  friend class ::google::protobuf::MessageLite;
+  friend class ::google::protobuf::Arena;
+  template <typename T>
+  friend class ::google::protobuf::Arena::InternalHelper;
+  using InternalArenaConstructable_ = void;
+  using DestructorSkippable_ = void;
+  struct Impl_ {
+    inline explicit constexpr Impl_(::google::protobuf::internal::ConstantInitialized) noexcept;
+    inline explicit Impl_(
+        ::google::protobuf::internal::InternalVisibility visibility,
+        ::google::protobuf::Arena* PROTOBUF_NULLABLE arena);
+    inline explicit Impl_(
+        ::google::protobuf::internal::InternalVisibility visibility,
+        ::google::protobuf::Arena* PROTOBUF_NULLABLE arena, const Impl_& from,
+        const CoordMetadata& from_msg);
+    ::google::protobuf::internal::HasBits<1> _has_bits_;
+    ::google::protobuf::internal::CachedSize _cached_size_;
+    ::google::protobuf::internal::ArenaStringPtr map_id_;
+    ::google::protobuf::internal::ArenaStringPtr label_;
+    ::int32_t x_;
+    ::int32_t y_;
+    ::int32_t z_;
+    PROTOBUF_TSAN_DECLARE_MEMBER
+  };
+  union { Impl_ _impl_; };
+  friend struct ::TableStruct_proto_2fchat_2eproto;
+};
+
+extern const ::google::protobuf::internal::ClassDataFull CoordMetadata_class_data_;
+// -------------------------------------------------------------------
+
 class ConfirmFileUploadRequest final : public ::google::protobuf::Message
 /* @@protoc_insertion_point(class_definition:chirp.chat.ConfirmFileUploadRequest) */ {
  public:
@@ -20715,7 +20968,7 @@ class ChannelMuteState final : public ::google::protobuf::Message
     return *reinterpret_cast<const ChannelMuteState*>(
         &_ChannelMuteState_default_instance_);
   }
-  static constexpr int kIndexInFileMessages = 118;
+  static constexpr int kIndexInFileMessages = 119;
   friend void swap(ChannelMuteState& a, ChannelMuteState& b) { a.Swap(&b); }
   inline void Swap(ChannelMuteState* PROTOBUF_NONNULL other) {
     if (other == this) return;
@@ -21880,7 +22133,7 @@ class BlockMessageSenderResponse final : public ::google::protobuf::Message
     return *reinterpret_cast<const BlockMessageSenderResponse*>(
         &_BlockMessageSenderResponse_default_instance_);
   }
-  static constexpr int kIndexInFileMessages = 122;
+  static constexpr int kIndexInFileMessages = 123;
   friend void swap(BlockMessageSenderResponse& a, BlockMessageSenderResponse& b) { a.Swap(&b); }
   inline void Swap(BlockMessageSenderResponse* PROTOBUF_NONNULL other) {
     if (other == this) return;
@@ -22087,7 +22340,7 @@ class BlockMessageSenderRequest final : public ::google::protobuf::Message
     return *reinterpret_cast<const BlockMessageSenderRequest*>(
         &_BlockMessageSenderRequest_default_instance_);
   }
-  static constexpr int kIndexInFileMessages = 121;
+  static constexpr int kIndexInFileMessages = 122;
   friend void swap(BlockMessageSenderRequest& a, BlockMessageSenderRequest& b) { a.Swap(&b); }
   inline void Swap(BlockMessageSenderRequest* PROTOBUF_NONNULL other) {
     if (other == this) return;
@@ -22769,7 +23022,7 @@ class WordFilterUpdateNotify final : public ::google::protobuf::Message
     return *reinterpret_cast<const WordFilterUpdateNotify*>(
         &_WordFilterUpdateNotify_default_instance_);
   }
-  static constexpr int kIndexInFileMessages = 130;
+  static constexpr int kIndexInFileMessages = 131;
   friend void swap(WordFilterUpdateNotify& a, WordFilterUpdateNotify& b) { a.Swap(&b); }
   inline void Swap(WordFilterUpdateNotify* PROTOBUF_NONNULL other) {
     if (other == this) return;
@@ -22964,7 +23217,7 @@ class WordFilterFetchResponse final : public ::google::protobuf::Message
     return *reinterpret_cast<const WordFilterFetchResponse*>(
         &_WordFilterFetchResponse_default_instance_);
   }
-  static constexpr int kIndexInFileMessages = 129;
+  static constexpr int kIndexInFileMessages = 130;
   friend void swap(WordFilterFetchResponse& a, WordFilterFetchResponse& b) { a.Swap(&b); }
   inline void Swap(WordFilterFetchResponse* PROTOBUF_NONNULL other) {
     if (other == this) return;
@@ -23171,7 +23424,7 @@ class SearchMessageResponse final : public ::google::protobuf::Message
     return *reinterpret_cast<const SearchMessageResponse*>(
         &_SearchMessageResponse_default_instance_);
   }
-  static constexpr int kIndexInFileMessages = 133;
+  static constexpr int kIndexInFileMessages = 134;
   friend void swap(SearchMessageResponse& a, SearchMessageResponse& b) { a.Swap(&b); }
   inline void Swap(SearchMessageResponse* PROTOBUF_NONNULL other) {
     if (other == this) return;
@@ -26783,7 +27036,7 @@ class GetChannelMutesResponse final : public ::google::protobuf::Message
     return *reinterpret_cast<const GetChannelMutesResponse*>(
         &_GetChannelMutesResponse_default_instance_);
   }
-  static constexpr int kIndexInFileMessages = 120;
+  static constexpr int kIndexInFileMessages = 121;
   friend void swap(GetChannelMutesResponse& a, GetChannelMutesResponse& b) { a.Swap(&b); }
   inline void Swap(GetChannelMutesResponse* PROTOBUF_NONNULL other) {
     if (other == this) return;
@@ -55516,6 +55769,215 @@ inline ::google::protobuf::RepeatedPtrField<::std::string>* PROTOBUF_NONNULL
 NpcDialogMetadata::_internal_mutable_options() {
   ::google::protobuf::internal::TSanRead(&_impl_);
   return &_impl_.options_;
+}
+
+// -------------------------------------------------------------------
+
+// CoordMetadata
+
+// string map_id = 1;
+inline void CoordMetadata::clear_map_id() {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_.map_id_.ClearToEmpty();
+  ClearHasBit(_impl_._has_bits_[0],
+                  0x00000001U);
+}
+inline const ::std::string& CoordMetadata::map_id() const
+    ABSL_ATTRIBUTE_LIFETIME_BOUND {
+  // @@protoc_insertion_point(field_get:chirp.chat.CoordMetadata.map_id)
+  return _internal_map_id();
+}
+template <typename Arg_, typename... Args_>
+PROTOBUF_ALWAYS_INLINE void CoordMetadata::set_map_id(Arg_&& arg, Args_... args) {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  SetHasBit(_impl_._has_bits_[0], 0x00000001U);
+  _impl_.map_id_.Set(static_cast<Arg_&&>(arg), args..., GetArena());
+  // @@protoc_insertion_point(field_set:chirp.chat.CoordMetadata.map_id)
+}
+inline ::std::string* PROTOBUF_NONNULL CoordMetadata::mutable_map_id()
+    ABSL_ATTRIBUTE_LIFETIME_BOUND {
+  SetHasBit(_impl_._has_bits_[0], 0x00000001U);
+  ::std::string* _s = _internal_mutable_map_id();
+  // @@protoc_insertion_point(field_mutable:chirp.chat.CoordMetadata.map_id)
+  return _s;
+}
+inline const ::std::string& CoordMetadata::_internal_map_id() const {
+  ::google::protobuf::internal::TSanRead(&_impl_);
+  return _impl_.map_id_.Get();
+}
+inline void CoordMetadata::_internal_set_map_id(const ::std::string& value) {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_.map_id_.Set(value, GetArena());
+}
+inline ::std::string* PROTOBUF_NONNULL CoordMetadata::_internal_mutable_map_id() {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  return _impl_.map_id_.Mutable( GetArena());
+}
+inline ::std::string* PROTOBUF_NULLABLE CoordMetadata::release_map_id() {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  // @@protoc_insertion_point(field_release:chirp.chat.CoordMetadata.map_id)
+  if (!CheckHasBit(_impl_._has_bits_[0], 0x00000001U)) {
+    return nullptr;
+  }
+  ClearHasBit(_impl_._has_bits_[0], 0x00000001U);
+  auto* released = _impl_.map_id_.Release();
+  if (::google::protobuf::internal::DebugHardenForceCopyDefaultString()) {
+    _impl_.map_id_.Set("", GetArena());
+  }
+  return released;
+}
+inline void CoordMetadata::set_allocated_map_id(::std::string* PROTOBUF_NULLABLE value) {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  if (value != nullptr) {
+    SetHasBit(_impl_._has_bits_[0], 0x00000001U);
+  } else {
+    ClearHasBit(_impl_._has_bits_[0], 0x00000001U);
+  }
+  _impl_.map_id_.SetAllocated(value, GetArena());
+  if (::google::protobuf::internal::DebugHardenForceCopyDefaultString() && _impl_.map_id_.IsDefault()) {
+    _impl_.map_id_.Set("", GetArena());
+  }
+  // @@protoc_insertion_point(field_set_allocated:chirp.chat.CoordMetadata.map_id)
+}
+
+// int32 x = 2;
+inline void CoordMetadata::clear_x() {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_.x_ = 0;
+  ClearHasBit(_impl_._has_bits_[0],
+                  0x00000004U);
+}
+inline ::int32_t CoordMetadata::x() const {
+  // @@protoc_insertion_point(field_get:chirp.chat.CoordMetadata.x)
+  return _internal_x();
+}
+inline void CoordMetadata::set_x(::int32_t value) {
+  _internal_set_x(value);
+  SetHasBit(_impl_._has_bits_[0], 0x00000004U);
+  // @@protoc_insertion_point(field_set:chirp.chat.CoordMetadata.x)
+}
+inline ::int32_t CoordMetadata::_internal_x() const {
+  ::google::protobuf::internal::TSanRead(&_impl_);
+  return _impl_.x_;
+}
+inline void CoordMetadata::_internal_set_x(::int32_t value) {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_.x_ = value;
+}
+
+// int32 y = 3;
+inline void CoordMetadata::clear_y() {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_.y_ = 0;
+  ClearHasBit(_impl_._has_bits_[0],
+                  0x00000008U);
+}
+inline ::int32_t CoordMetadata::y() const {
+  // @@protoc_insertion_point(field_get:chirp.chat.CoordMetadata.y)
+  return _internal_y();
+}
+inline void CoordMetadata::set_y(::int32_t value) {
+  _internal_set_y(value);
+  SetHasBit(_impl_._has_bits_[0], 0x00000008U);
+  // @@protoc_insertion_point(field_set:chirp.chat.CoordMetadata.y)
+}
+inline ::int32_t CoordMetadata::_internal_y() const {
+  ::google::protobuf::internal::TSanRead(&_impl_);
+  return _impl_.y_;
+}
+inline void CoordMetadata::_internal_set_y(::int32_t value) {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_.y_ = value;
+}
+
+// int32 z = 4;
+inline void CoordMetadata::clear_z() {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_.z_ = 0;
+  ClearHasBit(_impl_._has_bits_[0],
+                  0x00000010U);
+}
+inline ::int32_t CoordMetadata::z() const {
+  // @@protoc_insertion_point(field_get:chirp.chat.CoordMetadata.z)
+  return _internal_z();
+}
+inline void CoordMetadata::set_z(::int32_t value) {
+  _internal_set_z(value);
+  SetHasBit(_impl_._has_bits_[0], 0x00000010U);
+  // @@protoc_insertion_point(field_set:chirp.chat.CoordMetadata.z)
+}
+inline ::int32_t CoordMetadata::_internal_z() const {
+  ::google::protobuf::internal::TSanRead(&_impl_);
+  return _impl_.z_;
+}
+inline void CoordMetadata::_internal_set_z(::int32_t value) {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_.z_ = value;
+}
+
+// string label = 5;
+inline void CoordMetadata::clear_label() {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_.label_.ClearToEmpty();
+  ClearHasBit(_impl_._has_bits_[0],
+                  0x00000002U);
+}
+inline const ::std::string& CoordMetadata::label() const
+    ABSL_ATTRIBUTE_LIFETIME_BOUND {
+  // @@protoc_insertion_point(field_get:chirp.chat.CoordMetadata.label)
+  return _internal_label();
+}
+template <typename Arg_, typename... Args_>
+PROTOBUF_ALWAYS_INLINE void CoordMetadata::set_label(Arg_&& arg, Args_... args) {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  SetHasBit(_impl_._has_bits_[0], 0x00000002U);
+  _impl_.label_.Set(static_cast<Arg_&&>(arg), args..., GetArena());
+  // @@protoc_insertion_point(field_set:chirp.chat.CoordMetadata.label)
+}
+inline ::std::string* PROTOBUF_NONNULL CoordMetadata::mutable_label()
+    ABSL_ATTRIBUTE_LIFETIME_BOUND {
+  SetHasBit(_impl_._has_bits_[0], 0x00000002U);
+  ::std::string* _s = _internal_mutable_label();
+  // @@protoc_insertion_point(field_mutable:chirp.chat.CoordMetadata.label)
+  return _s;
+}
+inline const ::std::string& CoordMetadata::_internal_label() const {
+  ::google::protobuf::internal::TSanRead(&_impl_);
+  return _impl_.label_.Get();
+}
+inline void CoordMetadata::_internal_set_label(const ::std::string& value) {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_.label_.Set(value, GetArena());
+}
+inline ::std::string* PROTOBUF_NONNULL CoordMetadata::_internal_mutable_label() {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  return _impl_.label_.Mutable( GetArena());
+}
+inline ::std::string* PROTOBUF_NULLABLE CoordMetadata::release_label() {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  // @@protoc_insertion_point(field_release:chirp.chat.CoordMetadata.label)
+  if (!CheckHasBit(_impl_._has_bits_[0], 0x00000002U)) {
+    return nullptr;
+  }
+  ClearHasBit(_impl_._has_bits_[0], 0x00000002U);
+  auto* released = _impl_.label_.Release();
+  if (::google::protobuf::internal::DebugHardenForceCopyDefaultString()) {
+    _impl_.label_.Set("", GetArena());
+  }
+  return released;
+}
+inline void CoordMetadata::set_allocated_label(::std::string* PROTOBUF_NULLABLE value) {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  if (value != nullptr) {
+    SetHasBit(_impl_._has_bits_[0], 0x00000002U);
+  } else {
+    ClearHasBit(_impl_._has_bits_[0], 0x00000002U);
+  }
+  _impl_.label_.SetAllocated(value, GetArena());
+  if (::google::protobuf::internal::DebugHardenForceCopyDefaultString() && _impl_.label_.IsDefault()) {
+    _impl_.label_.Set("", GetArena());
+  }
+  // @@protoc_insertion_point(field_set_allocated:chirp.chat.CoordMetadata.label)
 }
 
 // -------------------------------------------------------------------

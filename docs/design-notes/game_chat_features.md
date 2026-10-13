@@ -67,7 +67,7 @@ title: 游戏聊天特征
 
 ### 消息展示
 
-- **坐标链接**：`msg_type = COORD_LINK`，可点击自动寻路到指定坐标。
+- **坐标链接**（已落地 2026-10-13，消息展示形态）：`msg_type = COORD_LINK = 15`，坐标载荷走 `ChatMessage.metadata`（`CoordMetadata{map_id, x, y, z, label}`）。发送侧校验 `ValidateCoordMetadata`：垃圾 metadata / 缺 `map_id` 回 `INVALID_PARAM`（与正文长度校验同档，basic/enhanced 两形态同接线，落任何存储之前拦截）；非 COORD_LINK 的 metadata 原样透传（协议层不越权校验未启用消息类型）。存储链全通：basic 内存/Redis 直存 `ChatMessage`，enhanced 经 `MessageData`（离线队列 + 历史）与 MySQL 冷层 BLOB 列（HEX/UNHEX 二进制安全，幂等 ALTER，旧库无列容忍）。SDK 四端 sendMessage 带 metadata：C++ core `SendOptions{msg_type, metadata}`（本地存档同写）、sdks/ts 与 apps/shared/protocol 双包 `SendOptions.metadata`（wire + 本地档案双落）、C# `SendOptions.Metadata`。**范围裁决**：文档原文"可点击自动寻路到指定坐标"需要游戏内客户端的寻路面，伴侣面（web/desktop）无寻路——落地为坐标卡片（点击复制 "x, y[, z]"，零高度省略），游戏内接入走 SDK 自渲染。
 - **成就分享**：卡片式展示（图标 + 名称 + 稀有度 + 获得时间）。
 - **公会招募**：公会招募信息卡片（公会名 + 等级 + 人数 + 一键加入按钮）。
 - **组队招募**：队伍招募信息卡片（副本名 + 人数需求 + 一键申请按钮）。

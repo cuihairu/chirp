@@ -107,6 +107,46 @@ export default function MessageBubble({
       <Typography variant="body2" sx={{ wordBreak: 'break-word', whiteSpace: 'pre-wrap' }}>
         {message.deleted ? zh.chat.deleted : message.content}
       </Typography>
+      {!message.deleted && message.coord && (
+        <Box
+          component="button"
+          type="button"
+          data-testid={`coord-${message.messageId}`}
+          title={zh.chat.copyCoord}
+          onClick={() => {
+            const { x, y, z } = message.coord!;
+            navigator.clipboard?.writeText(z === 0 ? `${x}, ${y}` : `${x}, ${y}, ${z}`);
+          }}
+          sx={{
+            display: 'block',
+            width: '100%',
+            mb: 0.5,
+            px: 1,
+            py: 0.5,
+            textAlign: 'left',
+            cursor: 'pointer',
+            border: '1px solid',
+            borderColor: mine ? 'primary.contrastText' : 'divider',
+            borderRadius: 1,
+            background: 'transparent',
+            color: 'inherit',
+          }}
+        >
+          {message.coord.label && (
+            <Typography variant="caption" sx={{ display: 'block', fontWeight: 600 }}>
+              {message.coord.label}
+            </Typography>
+          )}
+          <Typography variant="caption" sx={{ display: 'block', opacity: 0.75 }}>
+            {message.coord.mapId}
+          </Typography>
+          <Typography variant="caption" sx={{ display: 'block', fontFamily: 'monospace' }}>
+            {message.coord.z === 0
+              ? `${message.coord.x}, ${message.coord.y}`
+              : `${message.coord.x}, ${message.coord.y}, ${message.coord.z}`}
+          </Typography>
+        </Box>
+      )}
       <Typography variant="caption" sx={{ opacity: 0.75 }}>
         {timeLabel(message.timestamp)}
         {mine && message.pending && ` · ${zh.chat.statusPending}`}

@@ -447,6 +447,7 @@ private:
     msg.set_channel_id(req.channel_id());
     msg.set_msg_type(req.msg_type());
     msg.set_content(req.content());
+    msg.set_metadata(req.metadata());
     msg.set_timestamp(req.client_timestamp());
     if (!req.reply_to_message_id().empty()) {
       msg.set_reply_to_message_id(req.reply_to_message_id());
@@ -975,8 +976,11 @@ public:
         }
         req.set_channel_id(opts.channel_id);
       }
-      req.set_msg_type(chirp::chat::TEXT);
+      req.set_msg_type(opts.msg_type);
       req.set_content(content);
+      if (!opts.metadata.empty()) {
+        req.set_metadata(opts.metadata);
+      }
       req.set_client_timestamp(NowMs());
       if (!opts.reply_to_message_id.empty()) {
         req.set_reply_to_message_id(opts.reply_to_message_id);

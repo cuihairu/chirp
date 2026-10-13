@@ -203,6 +203,7 @@ chirp::chat::MessageData ToMessageData(const chirp::chat::ChatMessage& msg) {
   data.content = msg.content();
   data.timestamp = msg.timestamp();
   data.reply_to_message_id = msg.reply_to_message_id();
+  data.metadata = msg.metadata();
   data.sender_kind = static_cast<int>(msg.sender_kind());
   data.created_at = chirp::chat::runtime::NowMs();
   return data;
@@ -265,6 +266,19 @@ void HandleSendMessage(const chirp::chat::SendMessageRequest& req,
     return;
   }
   msg.set_reply_to_message_id(req.reply_to_message_id());
+
+  // 坐标链接（P1 COORD_LINK）：metadata 与回复目标同层校验——解析不出或
+  // map_id 为空的坐标不落任何存储（basic 形态经 ValidateSendMessageRequest）。
+  if (const chirp::common::ErrorCode coord_code = chirp::chat::ValidateCoordMetadata(req);
+      coord_code != chirp::common::OK) {
+    chirp::chat::SendMessageResponse resp;
+    resp.set_code(coord_code);
+    resp.set_server_timestamp(chirp::chat::runtime::NowMs());
+    chirp::chat::runtime::SendPacket(sender_session, chirp::gateway::SEND_MESSAGE_RESP,
+                                     seq, resp.SerializeAsString());
+    return;
+  }
+  msg.set_metadata(req.metadata());
 
   // 群频道成员门（web e2e 权限回码契约，与 basic 群分支同语义）：频道命中
   // 群台账而发送者不在名册，回 AUTH_FAILED、不落任何存储。台账外频道
@@ -950,6 +964,7 @@ void HandleLogin(const chirp::auth::LoginRequest& req,
       msg.set_content(msg_data.content);
       msg.set_timestamp(msg_data.timestamp);
       msg.set_sender_kind(static_cast<chirp::chat::SenderKind>(msg_data.sender_kind));
+      msg.set_metadata(msg_data.metadata);
       // Refills are tracked like live deliveries: an unacked refill returns
       // to the offline queue instead of dying with the connection.
       if (acks && acks->IsCapable(session.get())) {
@@ -988,6 +1003,7 @@ void HandleGetHistory(const chirp::chat::GetHistoryRequest& req,
     msg->set_sender_kind(static_cast<chirp::chat::SenderKind>(msg_data.sender_kind));
     msg->set_reply_to_message_id(msg_data.reply_to_message_id);
     msg->set_is_recalled(msg_data.is_recalled);
+    msg->set_metadata(msg_data.metadata);
   }
 
   chirp::chat::runtime::SendPacket(session, chirp::gateway::GET_HISTORY_RESP, seq, resp.SerializeAsString());

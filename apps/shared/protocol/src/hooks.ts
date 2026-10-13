@@ -31,6 +31,8 @@ export interface SendOptions {
   /** Quoted message id; empty string = not a reply. */
   replyToMessageId?: string;
   msgType?: MsgType;
+  /** Link metadata bytes (e.g. CoordMetadata for COORD_LINK). */
+  metadata?: Uint8Array;
 }
 
 export interface MessageInterceptor {

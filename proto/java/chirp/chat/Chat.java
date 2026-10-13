@@ -109,6 +109,14 @@ public final class Chat extends com.google.protobuf.GeneratedFile {
     TRADE_STATUS(14),
     /**
      * <pre>
+     * 坐标链接（metadata = CoordMetadata）
+     * </pre>
+     *
+     * <code>COORD_LINK = 15;</code>
+     */
+    COORD_LINK(15),
+    /**
+     * <pre>
      * 系统消息
      * </pre>
      *
@@ -201,6 +209,14 @@ public final class Chat extends com.google.protobuf.GeneratedFile {
     public static final int TRADE_STATUS_VALUE = 14;
     /**
      * <pre>
+     * 坐标链接（metadata = CoordMetadata）
+     * </pre>
+     *
+     * <code>COORD_LINK = 15;</code>
+     */
+    public static final int COORD_LINK_VALUE = 15;
+    /**
+     * <pre>
      * 系统消息
      * </pre>
      *
@@ -242,6 +258,7 @@ public final class Chat extends com.google.protobuf.GeneratedFile {
         case 12: return ACHIEVEMENT;
         case 13: return NPC_DIALOG;
         case 14: return TRADE_STATUS;
+        case 15: return COORD_LINK;
         case 99: return SYSTEM;
         default: return null;
       }
@@ -109345,6 +109362,988 @@ java.lang.String defaultValue) {
 
   }
 
+  public interface CoordMetadataOrBuilder extends
+      // @@protoc_insertion_point(interface_extends:chirp.chat.CoordMetadata)
+      com.google.protobuf.MessageOrBuilder {
+
+    /**
+     * <pre>
+     * 地图/区域 ID
+     * </pre>
+     *
+     * <code>string map_id = 1;</code>
+     * @return The mapId.
+     */
+    java.lang.String getMapId();
+    /**
+     * <pre>
+     * 地图/区域 ID
+     * </pre>
+     *
+     * <code>string map_id = 1;</code>
+     * @return The bytes for mapId.
+     */
+    com.google.protobuf.ByteString
+        getMapIdBytes();
+
+    /**
+     * <code>int32 x = 2;</code>
+     * @return The x.
+     */
+    int getX();
+
+    /**
+     * <code>int32 y = 3;</code>
+     * @return The y.
+     */
+    int getY();
+
+    /**
+     * <pre>
+     * 高度，缺省 0
+     * </pre>
+     *
+     * <code>int32 z = 4;</code>
+     * @return The z.
+     */
+    int getZ();
+
+    /**
+     * <pre>
+     * 展示标签（如「BOSS 刷新点」）；渲染标题
+     * </pre>
+     *
+     * <code>string label = 5;</code>
+     * @return The label.
+     */
+    java.lang.String getLabel();
+    /**
+     * <pre>
+     * 展示标签（如「BOSS 刷新点」）；渲染标题
+     * </pre>
+     *
+     * <code>string label = 5;</code>
+     * @return The bytes for label.
+     */
+    com.google.protobuf.ByteString
+        getLabelBytes();
+  }
+  /**
+   * <pre>
+   * 坐标链接（msg_type = COORD_LINK 时，metadata 序列化为此消息；game_chat_features
+   * P1「坐标链接」）：游戏客户端点击后自动寻路到 (x, y, z)。坐标是地图格坐标
+   * (int32，米/格由游戏约定)；伴侣面（web/desktop）无寻路引擎，渲染为坐标卡片、
+   * 点击复制。服务端在发送门校验 metadata 能按 CoordMetadata 解析且 map_id 非空，
+   * 拒悬空坐标回 INVALID_PARAM（与 reply_to 校验同一档）。
+   * </pre>
+   *
+   * Protobuf type {@code chirp.chat.CoordMetadata}
+   */
+  public static final class CoordMetadata extends
+      com.google.protobuf.GeneratedMessage implements
+      // @@protoc_insertion_point(message_implements:chirp.chat.CoordMetadata)
+      CoordMetadataOrBuilder {
+  private static final long serialVersionUID = 0L;
+    static {
+      com.google.protobuf.RuntimeVersion.validateProtobufGencodeVersion(
+        com.google.protobuf.RuntimeVersion.RuntimeDomain.PUBLIC,
+        /* major= */ 4,
+        /* minor= */ 33,
+        /* patch= */ 4,
+        /* suffix= */ "",
+        "CoordMetadata");
+    }
+    // Use CoordMetadata.newBuilder() to construct.
+    private CoordMetadata(com.google.protobuf.GeneratedMessage.Builder<?> builder) {
+      super(builder);
+    }
+    private CoordMetadata() {
+      mapId_ = "";
+      label_ = "";
+    }
+
+    public static final com.google.protobuf.Descriptors.Descriptor
+        getDescriptor() {
+      return chirp.chat.Chat.internal_static_chirp_chat_CoordMetadata_descriptor;
+    }
+
+    @java.lang.Override
+    protected com.google.protobuf.GeneratedMessage.FieldAccessorTable
+        internalGetFieldAccessorTable() {
+      return chirp.chat.Chat.internal_static_chirp_chat_CoordMetadata_fieldAccessorTable
+          .ensureFieldAccessorsInitialized(
+              chirp.chat.Chat.CoordMetadata.class, chirp.chat.Chat.CoordMetadata.Builder.class);
+    }
+
+    public static final int MAP_ID_FIELD_NUMBER = 1;
+    @SuppressWarnings("serial")
+    private volatile java.lang.Object mapId_ = "";
+    /**
+     * <pre>
+     * 地图/区域 ID
+     * </pre>
+     *
+     * <code>string map_id = 1;</code>
+     * @return The mapId.
+     */
+    @java.lang.Override
+    public java.lang.String getMapId() {
+      java.lang.Object ref = mapId_;
+      if (ref instanceof java.lang.String) {
+        return (java.lang.String) ref;
+      } else {
+        com.google.protobuf.ByteString bs = 
+            (com.google.protobuf.ByteString) ref;
+        java.lang.String s = bs.toStringUtf8();
+        mapId_ = s;
+        return s;
+      }
+    }
+    /**
+     * <pre>
+     * 地图/区域 ID
+     * </pre>
+     *
+     * <code>string map_id = 1;</code>
+     * @return The bytes for mapId.
+     */
+    @java.lang.Override
+    public com.google.protobuf.ByteString
+        getMapIdBytes() {
+      java.lang.Object ref = mapId_;
+      if (ref instanceof java.lang.String) {
+        com.google.protobuf.ByteString b = 
+            com.google.protobuf.ByteString.copyFromUtf8(
+                (java.lang.String) ref);
+        mapId_ = b;
+        return b;
+      } else {
+        return (com.google.protobuf.ByteString) ref;
+      }
+    }
+
+    public static final int X_FIELD_NUMBER = 2;
+    private int x_ = 0;
+    /**
+     * <code>int32 x = 2;</code>
+     * @return The x.
+     */
+    @java.lang.Override
+    public int getX() {
+      return x_;
+    }
+
+    public static final int Y_FIELD_NUMBER = 3;
+    private int y_ = 0;
+    /**
+     * <code>int32 y = 3;</code>
+     * @return The y.
+     */
+    @java.lang.Override
+    public int getY() {
+      return y_;
+    }
+
+    public static final int Z_FIELD_NUMBER = 4;
+    private int z_ = 0;
+    /**
+     * <pre>
+     * 高度，缺省 0
+     * </pre>
+     *
+     * <code>int32 z = 4;</code>
+     * @return The z.
+     */
+    @java.lang.Override
+    public int getZ() {
+      return z_;
+    }
+
+    public static final int LABEL_FIELD_NUMBER = 5;
+    @SuppressWarnings("serial")
+    private volatile java.lang.Object label_ = "";
+    /**
+     * <pre>
+     * 展示标签（如「BOSS 刷新点」）；渲染标题
+     * </pre>
+     *
+     * <code>string label = 5;</code>
+     * @return The label.
+     */
+    @java.lang.Override
+    public java.lang.String getLabel() {
+      java.lang.Object ref = label_;
+      if (ref instanceof java.lang.String) {
+        return (java.lang.String) ref;
+      } else {
+        com.google.protobuf.ByteString bs = 
+            (com.google.protobuf.ByteString) ref;
+        java.lang.String s = bs.toStringUtf8();
+        label_ = s;
+        return s;
+      }
+    }
+    /**
+     * <pre>
+     * 展示标签（如「BOSS 刷新点」）；渲染标题
+     * </pre>
+     *
+     * <code>string label = 5;</code>
+     * @return The bytes for label.
+     */
+    @java.lang.Override
+    public com.google.protobuf.ByteString
+        getLabelBytes() {
+      java.lang.Object ref = label_;
+      if (ref instanceof java.lang.String) {
+        com.google.protobuf.ByteString b = 
+            com.google.protobuf.ByteString.copyFromUtf8(
+                (java.lang.String) ref);
+        label_ = b;
+        return b;
+      } else {
+        return (com.google.protobuf.ByteString) ref;
+      }
+    }
+
+    private byte memoizedIsInitialized = -1;
+    @java.lang.Override
+    public final boolean isInitialized() {
+      byte isInitialized = memoizedIsInitialized;
+      if (isInitialized == 1) return true;
+      if (isInitialized == 0) return false;
+
+      memoizedIsInitialized = 1;
+      return true;
+    }
+
+    @java.lang.Override
+    public void writeTo(com.google.protobuf.CodedOutputStream output)
+                        throws java.io.IOException {
+      if (!com.google.protobuf.GeneratedMessage.isStringEmpty(mapId_)) {
+        com.google.protobuf.GeneratedMessage.writeString(output, 1, mapId_);
+      }
+      if (x_ != 0) {
+        output.writeInt32(2, x_);
+      }
+      if (y_ != 0) {
+        output.writeInt32(3, y_);
+      }
+      if (z_ != 0) {
+        output.writeInt32(4, z_);
+      }
+      if (!com.google.protobuf.GeneratedMessage.isStringEmpty(label_)) {
+        com.google.protobuf.GeneratedMessage.writeString(output, 5, label_);
+      }
+      getUnknownFields().writeTo(output);
+    }
+
+    @java.lang.Override
+    public int getSerializedSize() {
+      int size = memoizedSize;
+      if (size != -1) return size;
+
+      size = 0;
+      if (!com.google.protobuf.GeneratedMessage.isStringEmpty(mapId_)) {
+        size += com.google.protobuf.GeneratedMessage.computeStringSize(1, mapId_);
+      }
+      if (x_ != 0) {
+        size += com.google.protobuf.CodedOutputStream
+          .computeInt32Size(2, x_);
+      }
+      if (y_ != 0) {
+        size += com.google.protobuf.CodedOutputStream
+          .computeInt32Size(3, y_);
+      }
+      if (z_ != 0) {
+        size += com.google.protobuf.CodedOutputStream
+          .computeInt32Size(4, z_);
+      }
+      if (!com.google.protobuf.GeneratedMessage.isStringEmpty(label_)) {
+        size += com.google.protobuf.GeneratedMessage.computeStringSize(5, label_);
+      }
+      size += getUnknownFields().getSerializedSize();
+      memoizedSize = size;
+      return size;
+    }
+
+    @java.lang.Override
+    public boolean equals(final java.lang.Object obj) {
+      if (obj == this) {
+       return true;
+      }
+      if (!(obj instanceof chirp.chat.Chat.CoordMetadata)) {
+        return super.equals(obj);
+      }
+      chirp.chat.Chat.CoordMetadata other = (chirp.chat.Chat.CoordMetadata) obj;
+
+      if (!getMapId()
+          .equals(other.getMapId())) return false;
+      if (getX()
+          != other.getX()) return false;
+      if (getY()
+          != other.getY()) return false;
+      if (getZ()
+          != other.getZ()) return false;
+      if (!getLabel()
+          .equals(other.getLabel())) return false;
+      if (!getUnknownFields().equals(other.getUnknownFields())) return false;
+      return true;
+    }
+
+    @java.lang.Override
+    public int hashCode() {
+      if (memoizedHashCode != 0) {
+        return memoizedHashCode;
+      }
+      int hash = 41;
+      hash = (19 * hash) + getDescriptor().hashCode();
+      hash = (37 * hash) + MAP_ID_FIELD_NUMBER;
+      hash = (53 * hash) + getMapId().hashCode();
+      hash = (37 * hash) + X_FIELD_NUMBER;
+      hash = (53 * hash) + getX();
+      hash = (37 * hash) + Y_FIELD_NUMBER;
+      hash = (53 * hash) + getY();
+      hash = (37 * hash) + Z_FIELD_NUMBER;
+      hash = (53 * hash) + getZ();
+      hash = (37 * hash) + LABEL_FIELD_NUMBER;
+      hash = (53 * hash) + getLabel().hashCode();
+      hash = (29 * hash) + getUnknownFields().hashCode();
+      memoizedHashCode = hash;
+      return hash;
+    }
+
+    public static chirp.chat.Chat.CoordMetadata parseFrom(
+        java.nio.ByteBuffer data)
+        throws com.google.protobuf.InvalidProtocolBufferException {
+      return PARSER.parseFrom(data);
+    }
+    public static chirp.chat.Chat.CoordMetadata parseFrom(
+        java.nio.ByteBuffer data,
+        com.google.protobuf.ExtensionRegistryLite extensionRegistry)
+        throws com.google.protobuf.InvalidProtocolBufferException {
+      return PARSER.parseFrom(data, extensionRegistry);
+    }
+    public static chirp.chat.Chat.CoordMetadata parseFrom(
+        com.google.protobuf.ByteString data)
+        throws com.google.protobuf.InvalidProtocolBufferException {
+      return PARSER.parseFrom(data);
+    }
+    public static chirp.chat.Chat.CoordMetadata parseFrom(
+        com.google.protobuf.ByteString data,
+        com.google.protobuf.ExtensionRegistryLite extensionRegistry)
+        throws com.google.protobuf.InvalidProtocolBufferException {
+      return PARSER.parseFrom(data, extensionRegistry);
+    }
+    public static chirp.chat.Chat.CoordMetadata parseFrom(byte[] data)
+        throws com.google.protobuf.InvalidProtocolBufferException {
+      return PARSER.parseFrom(data);
+    }
+    public static chirp.chat.Chat.CoordMetadata parseFrom(
+        byte[] data,
+        com.google.protobuf.ExtensionRegistryLite extensionRegistry)
+        throws com.google.protobuf.InvalidProtocolBufferException {
+      return PARSER.parseFrom(data, extensionRegistry);
+    }
+    public static chirp.chat.Chat.CoordMetadata parseFrom(java.io.InputStream input)
+        throws java.io.IOException {
+      return com.google.protobuf.GeneratedMessage
+          .parseWithIOException(PARSER, input);
+    }
+    public static chirp.chat.Chat.CoordMetadata parseFrom(
+        java.io.InputStream input,
+        com.google.protobuf.ExtensionRegistryLite extensionRegistry)
+        throws java.io.IOException {
+      return com.google.protobuf.GeneratedMessage
+          .parseWithIOException(PARSER, input, extensionRegistry);
+    }
+
+    public static chirp.chat.Chat.CoordMetadata parseDelimitedFrom(java.io.InputStream input)
+        throws java.io.IOException {
+      return com.google.protobuf.GeneratedMessage
+          .parseDelimitedWithIOException(PARSER, input);
+    }
+
+    public static chirp.chat.Chat.CoordMetadata parseDelimitedFrom(
+        java.io.InputStream input,
+        com.google.protobuf.ExtensionRegistryLite extensionRegistry)
+        throws java.io.IOException {
+      return com.google.protobuf.GeneratedMessage
+          .parseDelimitedWithIOException(PARSER, input, extensionRegistry);
+    }
+    public static chirp.chat.Chat.CoordMetadata parseFrom(
+        com.google.protobuf.CodedInputStream input)
+        throws java.io.IOException {
+      return com.google.protobuf.GeneratedMessage
+          .parseWithIOException(PARSER, input);
+    }
+    public static chirp.chat.Chat.CoordMetadata parseFrom(
+        com.google.protobuf.CodedInputStream input,
+        com.google.protobuf.ExtensionRegistryLite extensionRegistry)
+        throws java.io.IOException {
+      return com.google.protobuf.GeneratedMessage
+          .parseWithIOException(PARSER, input, extensionRegistry);
+    }
+
+    @java.lang.Override
+    public Builder newBuilderForType() { return newBuilder(); }
+    public static Builder newBuilder() {
+      return DEFAULT_INSTANCE.toBuilder();
+    }
+    public static Builder newBuilder(chirp.chat.Chat.CoordMetadata prototype) {
+      return DEFAULT_INSTANCE.toBuilder().mergeFrom(prototype);
+    }
+    @java.lang.Override
+    public Builder toBuilder() {
+      return this == DEFAULT_INSTANCE
+          ? new Builder() : new Builder().mergeFrom(this);
+    }
+
+    @java.lang.Override
+    protected Builder newBuilderForType(
+        com.google.protobuf.GeneratedMessage.BuilderParent parent) {
+      Builder builder = new Builder(parent);
+      return builder;
+    }
+    /**
+     * <pre>
+     * 坐标链接（msg_type = COORD_LINK 时，metadata 序列化为此消息；game_chat_features
+     * P1「坐标链接」）：游戏客户端点击后自动寻路到 (x, y, z)。坐标是地图格坐标
+     * (int32，米/格由游戏约定)；伴侣面（web/desktop）无寻路引擎，渲染为坐标卡片、
+     * 点击复制。服务端在发送门校验 metadata 能按 CoordMetadata 解析且 map_id 非空，
+     * 拒悬空坐标回 INVALID_PARAM（与 reply_to 校验同一档）。
+     * </pre>
+     *
+     * Protobuf type {@code chirp.chat.CoordMetadata}
+     */
+    public static final class Builder extends
+        com.google.protobuf.GeneratedMessage.Builder<Builder> implements
+        // @@protoc_insertion_point(builder_implements:chirp.chat.CoordMetadata)
+        chirp.chat.Chat.CoordMetadataOrBuilder {
+      public static final com.google.protobuf.Descriptors.Descriptor
+          getDescriptor() {
+        return chirp.chat.Chat.internal_static_chirp_chat_CoordMetadata_descriptor;
+      }
+
+      @java.lang.Override
+      protected com.google.protobuf.GeneratedMessage.FieldAccessorTable
+          internalGetFieldAccessorTable() {
+        return chirp.chat.Chat.internal_static_chirp_chat_CoordMetadata_fieldAccessorTable
+            .ensureFieldAccessorsInitialized(
+                chirp.chat.Chat.CoordMetadata.class, chirp.chat.Chat.CoordMetadata.Builder.class);
+      }
+
+      // Construct using chirp.chat.Chat.CoordMetadata.newBuilder()
+      private Builder() {
+
+      }
+
+      private Builder(
+          com.google.protobuf.GeneratedMessage.BuilderParent parent) {
+        super(parent);
+
+      }
+      @java.lang.Override
+      public Builder clear() {
+        super.clear();
+        bitField0_ = 0;
+        mapId_ = "";
+        x_ = 0;
+        y_ = 0;
+        z_ = 0;
+        label_ = "";
+        return this;
+      }
+
+      @java.lang.Override
+      public com.google.protobuf.Descriptors.Descriptor
+          getDescriptorForType() {
+        return chirp.chat.Chat.internal_static_chirp_chat_CoordMetadata_descriptor;
+      }
+
+      @java.lang.Override
+      public chirp.chat.Chat.CoordMetadata getDefaultInstanceForType() {
+        return chirp.chat.Chat.CoordMetadata.getDefaultInstance();
+      }
+
+      @java.lang.Override
+      public chirp.chat.Chat.CoordMetadata build() {
+        chirp.chat.Chat.CoordMetadata result = buildPartial();
+        if (!result.isInitialized()) {
+          throw newUninitializedMessageException(result);
+        }
+        return result;
+      }
+
+      @java.lang.Override
+      public chirp.chat.Chat.CoordMetadata buildPartial() {
+        chirp.chat.Chat.CoordMetadata result = new chirp.chat.Chat.CoordMetadata(this);
+        if (bitField0_ != 0) { buildPartial0(result); }
+        onBuilt();
+        return result;
+      }
+
+      private void buildPartial0(chirp.chat.Chat.CoordMetadata result) {
+        int from_bitField0_ = bitField0_;
+        if (((from_bitField0_ & 0x00000001) != 0)) {
+          result.mapId_ = mapId_;
+        }
+        if (((from_bitField0_ & 0x00000002) != 0)) {
+          result.x_ = x_;
+        }
+        if (((from_bitField0_ & 0x00000004) != 0)) {
+          result.y_ = y_;
+        }
+        if (((from_bitField0_ & 0x00000008) != 0)) {
+          result.z_ = z_;
+        }
+        if (((from_bitField0_ & 0x00000010) != 0)) {
+          result.label_ = label_;
+        }
+      }
+
+      @java.lang.Override
+      public Builder mergeFrom(com.google.protobuf.Message other) {
+        if (other instanceof chirp.chat.Chat.CoordMetadata) {
+          return mergeFrom((chirp.chat.Chat.CoordMetadata)other);
+        } else {
+          super.mergeFrom(other);
+          return this;
+        }
+      }
+
+      public Builder mergeFrom(chirp.chat.Chat.CoordMetadata other) {
+        if (other == chirp.chat.Chat.CoordMetadata.getDefaultInstance()) return this;
+        if (!other.getMapId().isEmpty()) {
+          mapId_ = other.mapId_;
+          bitField0_ |= 0x00000001;
+          onChanged();
+        }
+        if (other.getX() != 0) {
+          setX(other.getX());
+        }
+        if (other.getY() != 0) {
+          setY(other.getY());
+        }
+        if (other.getZ() != 0) {
+          setZ(other.getZ());
+        }
+        if (!other.getLabel().isEmpty()) {
+          label_ = other.label_;
+          bitField0_ |= 0x00000010;
+          onChanged();
+        }
+        this.mergeUnknownFields(other.getUnknownFields());
+        onChanged();
+        return this;
+      }
+
+      @java.lang.Override
+      public final boolean isInitialized() {
+        return true;
+      }
+
+      @java.lang.Override
+      public Builder mergeFrom(
+          com.google.protobuf.CodedInputStream input,
+          com.google.protobuf.ExtensionRegistryLite extensionRegistry)
+          throws java.io.IOException {
+        if (extensionRegistry == null) {
+          throw new java.lang.NullPointerException();
+        }
+        try {
+          boolean done = false;
+          while (!done) {
+            int tag = input.readTag();
+            switch (tag) {
+              case 0:
+                done = true;
+                break;
+              case 10: {
+                mapId_ = input.readStringRequireUtf8();
+                bitField0_ |= 0x00000001;
+                break;
+              } // case 10
+              case 16: {
+                x_ = input.readInt32();
+                bitField0_ |= 0x00000002;
+                break;
+              } // case 16
+              case 24: {
+                y_ = input.readInt32();
+                bitField0_ |= 0x00000004;
+                break;
+              } // case 24
+              case 32: {
+                z_ = input.readInt32();
+                bitField0_ |= 0x00000008;
+                break;
+              } // case 32
+              case 42: {
+                label_ = input.readStringRequireUtf8();
+                bitField0_ |= 0x00000010;
+                break;
+              } // case 42
+              default: {
+                if (!super.parseUnknownField(input, extensionRegistry, tag)) {
+                  done = true; // was an endgroup tag
+                }
+                break;
+              } // default:
+            } // switch (tag)
+          } // while (!done)
+        } catch (com.google.protobuf.InvalidProtocolBufferException e) {
+          throw e.unwrapIOException();
+        } finally {
+          onChanged();
+        } // finally
+        return this;
+      }
+      private int bitField0_;
+
+      private java.lang.Object mapId_ = "";
+      /**
+       * <pre>
+       * 地图/区域 ID
+       * </pre>
+       *
+       * <code>string map_id = 1;</code>
+       * @return The mapId.
+       */
+      public java.lang.String getMapId() {
+        java.lang.Object ref = mapId_;
+        if (!(ref instanceof java.lang.String)) {
+          com.google.protobuf.ByteString bs =
+              (com.google.protobuf.ByteString) ref;
+          java.lang.String s = bs.toStringUtf8();
+          mapId_ = s;
+          return s;
+        } else {
+          return (java.lang.String) ref;
+        }
+      }
+      /**
+       * <pre>
+       * 地图/区域 ID
+       * </pre>
+       *
+       * <code>string map_id = 1;</code>
+       * @return The bytes for mapId.
+       */
+      public com.google.protobuf.ByteString
+          getMapIdBytes() {
+        java.lang.Object ref = mapId_;
+        if (ref instanceof String) {
+          com.google.protobuf.ByteString b = 
+              com.google.protobuf.ByteString.copyFromUtf8(
+                  (java.lang.String) ref);
+          mapId_ = b;
+          return b;
+        } else {
+          return (com.google.protobuf.ByteString) ref;
+        }
+      }
+      /**
+       * <pre>
+       * 地图/区域 ID
+       * </pre>
+       *
+       * <code>string map_id = 1;</code>
+       * @param value The mapId to set.
+       * @return This builder for chaining.
+       */
+      public Builder setMapId(
+          java.lang.String value) {
+        if (value == null) { throw new NullPointerException(); }
+        mapId_ = value;
+        bitField0_ |= 0x00000001;
+        onChanged();
+        return this;
+      }
+      /**
+       * <pre>
+       * 地图/区域 ID
+       * </pre>
+       *
+       * <code>string map_id = 1;</code>
+       * @return This builder for chaining.
+       */
+      public Builder clearMapId() {
+        mapId_ = getDefaultInstance().getMapId();
+        bitField0_ = (bitField0_ & ~0x00000001);
+        onChanged();
+        return this;
+      }
+      /**
+       * <pre>
+       * 地图/区域 ID
+       * </pre>
+       *
+       * <code>string map_id = 1;</code>
+       * @param value The bytes for mapId to set.
+       * @return This builder for chaining.
+       */
+      public Builder setMapIdBytes(
+          com.google.protobuf.ByteString value) {
+        if (value == null) { throw new NullPointerException(); }
+        checkByteStringIsUtf8(value);
+        mapId_ = value;
+        bitField0_ |= 0x00000001;
+        onChanged();
+        return this;
+      }
+
+      private int x_ ;
+      /**
+       * <code>int32 x = 2;</code>
+       * @return The x.
+       */
+      @java.lang.Override
+      public int getX() {
+        return x_;
+      }
+      /**
+       * <code>int32 x = 2;</code>
+       * @param value The x to set.
+       * @return This builder for chaining.
+       */
+      public Builder setX(int value) {
+
+        x_ = value;
+        bitField0_ |= 0x00000002;
+        onChanged();
+        return this;
+      }
+      /**
+       * <code>int32 x = 2;</code>
+       * @return This builder for chaining.
+       */
+      public Builder clearX() {
+        bitField0_ = (bitField0_ & ~0x00000002);
+        x_ = 0;
+        onChanged();
+        return this;
+      }
+
+      private int y_ ;
+      /**
+       * <code>int32 y = 3;</code>
+       * @return The y.
+       */
+      @java.lang.Override
+      public int getY() {
+        return y_;
+      }
+      /**
+       * <code>int32 y = 3;</code>
+       * @param value The y to set.
+       * @return This builder for chaining.
+       */
+      public Builder setY(int value) {
+
+        y_ = value;
+        bitField0_ |= 0x00000004;
+        onChanged();
+        return this;
+      }
+      /**
+       * <code>int32 y = 3;</code>
+       * @return This builder for chaining.
+       */
+      public Builder clearY() {
+        bitField0_ = (bitField0_ & ~0x00000004);
+        y_ = 0;
+        onChanged();
+        return this;
+      }
+
+      private int z_ ;
+      /**
+       * <pre>
+       * 高度，缺省 0
+       * </pre>
+       *
+       * <code>int32 z = 4;</code>
+       * @return The z.
+       */
+      @java.lang.Override
+      public int getZ() {
+        return z_;
+      }
+      /**
+       * <pre>
+       * 高度，缺省 0
+       * </pre>
+       *
+       * <code>int32 z = 4;</code>
+       * @param value The z to set.
+       * @return This builder for chaining.
+       */
+      public Builder setZ(int value) {
+
+        z_ = value;
+        bitField0_ |= 0x00000008;
+        onChanged();
+        return this;
+      }
+      /**
+       * <pre>
+       * 高度，缺省 0
+       * </pre>
+       *
+       * <code>int32 z = 4;</code>
+       * @return This builder for chaining.
+       */
+      public Builder clearZ() {
+        bitField0_ = (bitField0_ & ~0x00000008);
+        z_ = 0;
+        onChanged();
+        return this;
+      }
+
+      private java.lang.Object label_ = "";
+      /**
+       * <pre>
+       * 展示标签（如「BOSS 刷新点」）；渲染标题
+       * </pre>
+       *
+       * <code>string label = 5;</code>
+       * @return The label.
+       */
+      public java.lang.String getLabel() {
+        java.lang.Object ref = label_;
+        if (!(ref instanceof java.lang.String)) {
+          com.google.protobuf.ByteString bs =
+              (com.google.protobuf.ByteString) ref;
+          java.lang.String s = bs.toStringUtf8();
+          label_ = s;
+          return s;
+        } else {
+          return (java.lang.String) ref;
+        }
+      }
+      /**
+       * <pre>
+       * 展示标签（如「BOSS 刷新点」）；渲染标题
+       * </pre>
+       *
+       * <code>string label = 5;</code>
+       * @return The bytes for label.
+       */
+      public com.google.protobuf.ByteString
+          getLabelBytes() {
+        java.lang.Object ref = label_;
+        if (ref instanceof String) {
+          com.google.protobuf.ByteString b = 
+              com.google.protobuf.ByteString.copyFromUtf8(
+                  (java.lang.String) ref);
+          label_ = b;
+          return b;
+        } else {
+          return (com.google.protobuf.ByteString) ref;
+        }
+      }
+      /**
+       * <pre>
+       * 展示标签（如「BOSS 刷新点」）；渲染标题
+       * </pre>
+       *
+       * <code>string label = 5;</code>
+       * @param value The label to set.
+       * @return This builder for chaining.
+       */
+      public Builder setLabel(
+          java.lang.String value) {
+        if (value == null) { throw new NullPointerException(); }
+        label_ = value;
+        bitField0_ |= 0x00000010;
+        onChanged();
+        return this;
+      }
+      /**
+       * <pre>
+       * 展示标签（如「BOSS 刷新点」）；渲染标题
+       * </pre>
+       *
+       * <code>string label = 5;</code>
+       * @return This builder for chaining.
+       */
+      public Builder clearLabel() {
+        label_ = getDefaultInstance().getLabel();
+        bitField0_ = (bitField0_ & ~0x00000010);
+        onChanged();
+        return this;
+      }
+      /**
+       * <pre>
+       * 展示标签（如「BOSS 刷新点」）；渲染标题
+       * </pre>
+       *
+       * <code>string label = 5;</code>
+       * @param value The bytes for label to set.
+       * @return This builder for chaining.
+       */
+      public Builder setLabelBytes(
+          com.google.protobuf.ByteString value) {
+        if (value == null) { throw new NullPointerException(); }
+        checkByteStringIsUtf8(value);
+        label_ = value;
+        bitField0_ |= 0x00000010;
+        onChanged();
+        return this;
+      }
+
+      // @@protoc_insertion_point(builder_scope:chirp.chat.CoordMetadata)
+    }
+
+    // @@protoc_insertion_point(class_scope:chirp.chat.CoordMetadata)
+    private static final chirp.chat.Chat.CoordMetadata DEFAULT_INSTANCE;
+    static {
+      DEFAULT_INSTANCE = new chirp.chat.Chat.CoordMetadata();
+    }
+
+    public static chirp.chat.Chat.CoordMetadata getDefaultInstance() {
+      return DEFAULT_INSTANCE;
+    }
+
+    private static final com.google.protobuf.Parser<CoordMetadata>
+        PARSER = new com.google.protobuf.AbstractParser<CoordMetadata>() {
+      @java.lang.Override
+      public CoordMetadata parsePartialFrom(
+          com.google.protobuf.CodedInputStream input,
+          com.google.protobuf.ExtensionRegistryLite extensionRegistry)
+          throws com.google.protobuf.InvalidProtocolBufferException {
+        Builder builder = newBuilder();
+        try {
+          builder.mergeFrom(input, extensionRegistry);
+        } catch (com.google.protobuf.InvalidProtocolBufferException e) {
+          throw e.setUnfinishedMessage(builder.buildPartial());
+        } catch (com.google.protobuf.UninitializedMessageException e) {
+          throw e.asInvalidProtocolBufferException().setUnfinishedMessage(builder.buildPartial());
+        } catch (java.io.IOException e) {
+          throw new com.google.protobuf.InvalidProtocolBufferException(e)
+              .setUnfinishedMessage(builder.buildPartial());
+        }
+        return builder.buildPartial();
+      }
+    };
+
+    public static com.google.protobuf.Parser<CoordMetadata> parser() {
+      return PARSER;
+    }
+
+    @java.lang.Override
+    public com.google.protobuf.Parser<CoordMetadata> getParserForType() {
+      return PARSER;
+    }
+
+    @java.lang.Override
+    public chirp.chat.Chat.CoordMetadata getDefaultInstanceForType() {
+      return DEFAULT_INSTANCE;
+    }
+
+  }
+
   public interface SetChannelMuteRequestOrBuilder extends
       // @@protoc_insertion_point(interface_extends:chirp.chat.SetChannelMuteRequest)
       com.google.protobuf.MessageOrBuilder {
@@ -122986,6 +123985,11 @@ java.lang.String defaultValue) {
     com.google.protobuf.GeneratedMessage.FieldAccessorTable
       internal_static_chirp_chat_NpcDialogMetadata_fieldAccessorTable;
   private static final com.google.protobuf.Descriptors.Descriptor
+    internal_static_chirp_chat_CoordMetadata_descriptor;
+  private static final 
+    com.google.protobuf.GeneratedMessage.FieldAccessorTable
+      internal_static_chirp_chat_CoordMetadata_fieldAccessorTable;
+  private static final com.google.protobuf.Descriptors.Descriptor
     internal_static_chirp_chat_SetChannelMuteRequest_descriptor;
   private static final 
     com.google.protobuf.GeneratedMessage.FieldAccessorTable
@@ -123443,76 +124447,78 @@ java.lang.String defaultValue) {
       "(\003\022\021\n\titem_name\030\004 \001(\t\022\022\n\nitem_count\030\005 \001(" +
       "\005\"Y\n\021NpcDialogMetadata\022\016\n\006npc_id\030\001 \001(\t\022\020" +
       "\n\010npc_name\030\002 \001(\t\022\021\n\tdialog_id\030\003 \001(\t\022\017\n\007o" +
-      "ptions\030\004 \003(\t\"U\n\025SetChannelMuteRequest\022-\n" +
-      "\014channel_type\030\001 \001(\0162\027.chirp.chat.Channel" +
-      "Type\022\r\n\005muted\030\002 \001(\010\"}\n\026SetChannelMuteRes" +
-      "ponse\022%\n\004code\030\001 \001(\0162\027.chirp.common.Error" +
-      "Code\022-\n\014channel_type\030\002 \001(\0162\027.chirp.chat." +
-      "ChannelType\022\r\n\005muted\030\003 \001(\010\"P\n\020ChannelMut" +
-      "eState\022-\n\014channel_type\030\001 \001(\0162\027.chirp.cha" +
-      "t.ChannelType\022\r\n\005muted\030\002 \001(\010\"\030\n\026GetChann" +
-      "elMutesRequest\"n\n\027GetChannelMutesRespons" +
-      "e\022%\n\004code\030\001 \001(\0162\027.chirp.common.ErrorCode" +
-      "\022,\n\006states\030\002 \003(\0132\034.chirp.chat.ChannelMut" +
-      "eState\"3\n\031BlockMessageSenderRequest\022\026\n\016t" +
-      "arget_user_id\030\001 \001(\t\"[\n\032BlockMessageSende" +
-      "rResponse\022%\n\004code\030\001 \001(\0162\027.chirp.common.E" +
-      "rrorCode\022\026\n\016target_user_id\030\002 \001(\t\"5\n\033Unbl" +
-      "ockMessageSenderRequest\022\026\n\016target_user_i" +
-      "d\030\001 \001(\t\"]\n\034UnblockMessageSenderResponse\022" +
-      "%\n\004code\030\001 \001(\0162\027.chirp.common.ErrorCode\022\026" +
-      "\n\016target_user_id\030\002 \001(\t\"\032\n\030GetBlockedSend" +
-      "ersRequest\"[\n\031GetBlockedSendersResponse\022" +
-      "%\n\004code\030\001 \001(\0162\027.chirp.common.ErrorCode\022\027" +
-      "\n\017target_user_ids\030\002 \003(\t\"/\n\026WordFilterFet" +
-      "chRequest\022\025\n\rknown_version\030\001 \001(\003\"\221\001\n\021Wor" +
-      "dFilterLexicon\022\017\n\007version\030\001 \001(\003\022\017\n\007enabl" +
-      "ed\030\002 \001(\010\0224\n\006policy\030\003 \001(\0162$.chirp.chat.Wo" +
-      "rdFilterDeliveryPolicy\022\023\n\013replacement\030\004 " +
-      "\001(\t\022\017\n\007lexicon\030\005 \001(\t\"p\n\027WordFilterFetchR" +
+      "ptions\030\004 \003(\t\"O\n\rCoordMetadata\022\016\n\006map_id\030" +
+      "\001 \001(\t\022\t\n\001x\030\002 \001(\005\022\t\n\001y\030\003 \001(\005\022\t\n\001z\030\004 \001(\005\022\r" +
+      "\n\005label\030\005 \001(\t\"U\n\025SetChannelMuteRequest\022-" +
+      "\n\014channel_type\030\001 \001(\0162\027.chirp.chat.Channe" +
+      "lType\022\r\n\005muted\030\002 \001(\010\"}\n\026SetChannelMuteRe" +
+      "sponse\022%\n\004code\030\001 \001(\0162\027.chirp.common.Erro" +
+      "rCode\022-\n\014channel_type\030\002 \001(\0162\027.chirp.chat" +
+      ".ChannelType\022\r\n\005muted\030\003 \001(\010\"P\n\020ChannelMu" +
+      "teState\022-\n\014channel_type\030\001 \001(\0162\027.chirp.ch" +
+      "at.ChannelType\022\r\n\005muted\030\002 \001(\010\"\030\n\026GetChan" +
+      "nelMutesRequest\"n\n\027GetChannelMutesRespon" +
+      "se\022%\n\004code\030\001 \001(\0162\027.chirp.common.ErrorCod" +
+      "e\022,\n\006states\030\002 \003(\0132\034.chirp.chat.ChannelMu" +
+      "teState\"3\n\031BlockMessageSenderRequest\022\026\n\016" +
+      "target_user_id\030\001 \001(\t\"[\n\032BlockMessageSend" +
+      "erResponse\022%\n\004code\030\001 \001(\0162\027.chirp.common." +
+      "ErrorCode\022\026\n\016target_user_id\030\002 \001(\t\"5\n\033Unb" +
+      "lockMessageSenderRequest\022\026\n\016target_user_" +
+      "id\030\001 \001(\t\"]\n\034UnblockMessageSenderResponse" +
+      "\022%\n\004code\030\001 \001(\0162\027.chirp.common.ErrorCode\022" +
+      "\026\n\016target_user_id\030\002 \001(\t\"\032\n\030GetBlockedSen" +
+      "dersRequest\"[\n\031GetBlockedSendersResponse" +
+      "\022%\n\004code\030\001 \001(\0162\027.chirp.common.ErrorCode\022" +
+      "\027\n\017target_user_ids\030\002 \003(\t\"/\n\026WordFilterFe" +
+      "tchRequest\022\025\n\rknown_version\030\001 \001(\003\"\221\001\n\021Wo" +
+      "rdFilterLexicon\022\017\n\007version\030\001 \001(\003\022\017\n\007enab" +
+      "led\030\002 \001(\010\0224\n\006policy\030\003 \001(\0162$.chirp.chat.W" +
+      "ordFilterDeliveryPolicy\022\023\n\013replacement\030\004" +
+      " \001(\t\022\017\n\007lexicon\030\005 \001(\t\"p\n\027WordFilterFetch" +
+      "Response\022%\n\004code\030\001 \001(\0162\027.chirp.common.Er" +
+      "rorCode\022.\n\007lexicon\030\002 \001(\0132\035.chirp.chat.Wo" +
+      "rdFilterLexicon\"H\n\026WordFilterUpdateNotif" +
+      "y\022.\n\007lexicon\030\001 \001(\0132\035.chirp.chat.WordFilt" +
+      "erLexicon\"\226\001\n\024SearchMessageRequest\022\017\n\007ke" +
+      "yword\030\001 \001(\t\022\022\n\nchannel_id\030\002 \001(\t\022\025\n\rconte" +
+      "nt_types\030\003 \003(\005\022\030\n\020before_timestamp\030\004 \001(\003" +
+      "\022\031\n\021before_message_id\030\005 \001(\t\022\r\n\005limit\030\006 \001" +
+      "(\005\"\260\001\n\022SearchMessageMatch\022\022\n\nmessage_id\030" +
+      "\001 \001(\t\022\022\n\nchannel_id\030\002 \001(\t\022\024\n\014channel_typ" +
+      "e\030\003 \001(\005\022\021\n\tsender_id\030\004 \001(\t\022\023\n\013sender_kin" +
+      "d\030\005 \001(\005\022\020\n\010msg_type\030\006 \001(\005\022\021\n\ttimestamp\030\007",
+      " \001(\003\022\017\n\007content\030\010 \001(\t\"\201\001\n\025SearchMessageR" +
       "esponse\022%\n\004code\030\001 \001(\0162\027.chirp.common.Err" +
-      "orCode\022.\n\007lexicon\030\002 \001(\0132\035.chirp.chat.Wor" +
-      "dFilterLexicon\"H\n\026WordFilterUpdateNotify" +
-      "\022.\n\007lexicon\030\001 \001(\0132\035.chirp.chat.WordFilte" +
-      "rLexicon\"\226\001\n\024SearchMessageRequest\022\017\n\007key" +
-      "word\030\001 \001(\t\022\022\n\nchannel_id\030\002 \001(\t\022\025\n\rconten" +
-      "t_types\030\003 \003(\005\022\030\n\020before_timestamp\030\004 \001(\003\022" +
-      "\031\n\021before_message_id\030\005 \001(\t\022\r\n\005limit\030\006 \001(" +
-      "\005\"\260\001\n\022SearchMessageMatch\022\022\n\nmessage_id\030\001" +
-      " \001(\t\022\022\n\nchannel_id\030\002 \001(\t\022\024\n\014channel_type" +
-      "\030\003 \001(\005\022\021\n\tsender_id\030\004 \001(\t\022\023\n\013sender_kind" +
-      "\030\005 \001(\005\022\020\n\010msg_type\030\006 \001(\005\022\021\n\ttimestamp\030\007 " +
-      "\001(\003\022\017\n\007content\030\010 \001(\t\"\201\001\n\025SearchMessageRe" +
-      "sponse\022%\n\004code\030\001 \001(\0162\027.chirp.common.Erro",
-      "rCode\022/\n\007matches\030\002 \003(\0132\036.chirp.chat.Sear" +
-      "chMessageMatch\022\020\n\010has_more\030\003 \001(\010*\222\001\n\007Msg" +
-      "Type\022\010\n\004TEXT\020\000\022\t\n\005EMOJI\020\001\022\t\n\005VOICE\020\002\022\t\n\005" +
-      "IMAGE\020\003\022\r\n\tITEM_LINK\020\n\022\016\n\nSKILL_LINK\020\013\022\017" +
-      "\n\013ACHIEVEMENT\020\014\022\016\n\nNPC_DIALOG\020\r\022\020\n\014TRADE" +
-      "_STATUS\020\016\022\n\n\006SYSTEM\020c*[\n\013ChannelType\022\013\n\007" +
-      "PRIVATE\020\000\022\010\n\004TEAM\020\001\022\t\n\005GUILD\020\002\022\t\n\005WORLD\020" +
-      "\003\022\022\n\016SYSTEM_CHANNEL\020\004\022\013\n\007MARQUEE\020\005*Y\n\010Pr" +
-      "iority\022\020\n\014PRIORITY_LOW\020\000\022\023\n\017PRIORITY_NOR" +
-      "MAL\020\001\022\021\n\rPRIORITY_HIGH\020\002\022\023\n\017PRIORITY_URG" +
-      "ENT\020\003*T\n\nSenderKind\022\017\n\013SENDER_USER\020\000\022\021\n\r" +
-      "SENDER_SYSTEM\020\001\022\016\n\nSENDER_NPC\020\002\022\022\n\016SENDE" +
-      "R_SERVICE\020\003*B\n\017GroupMemberRole\022\n\n\006MEMBER" +
-      "\020\000\022\r\n\tMODERATOR\020\001\022\t\n\005ADMIN\020\002\022\t\n\005OWNER\020\003*" +
-      "\213\001\n\013ChannelKind\022\025\n\021CHANNEL_KIND_TEXT\020\000\022\026" +
-      "\n\022CHANNEL_KIND_VOICE\020\001\022\035\n\031CHANNEL_KIND_A" +
-      "NNOUNCEMENT\020\002\022\026\n\022CHANNEL_KIND_STAGE\020\003\022\026\n" +
-      "\022CHANNEL_KIND_FORUM\020\004*D\n\016PermissionType\022" +
-      "\030\n\024PERMISSION_TYPE_ROLE\020\000\022\030\n\024PERMISSION_" +
-      "TYPE_USER\020\001*6\n\022PermissionOverride\022\013\n\007INH" +
-      "ERIT\020\000\022\t\n\005ALLOW\020\001\022\010\n\004DENY\020\002*\207\001\n\013MentionT" +
-      "ype\022\025\n\021MENTION_TYPE_USER\020\000\022\025\n\021MENTION_TY" +
-      "PE_ROLE\020\001\022\030\n\024MENTION_TYPE_CHANNEL\020\002\022\031\n\025M" +
-      "ENTION_TYPE_EVERYONE\020\003\022\025\n\021MENTION_TYPE_H" +
-      "ERE\020\004*x\n\030WordFilterDeliveryPolicy\022\036\n\032WOR" +
-      "D_FILTER_POLICY_REPLACE\020\000\022\035\n\031WORD_FILTER" +
-      "_POLICY_REJECT\020\001\022\035\n\031WORD_FILTER_POLICY_R" +
-      "ECORD\020\002B$Z\"github.com/cui/chirp/proto/go" +
-      "/chatb\006proto3"
+      "orCode\022/\n\007matches\030\002 \003(\0132\036.chirp.chat.Sea" +
+      "rchMessageMatch\022\020\n\010has_more\030\003 \001(\010*\242\001\n\007Ms" +
+      "gType\022\010\n\004TEXT\020\000\022\t\n\005EMOJI\020\001\022\t\n\005VOICE\020\002\022\t\n" +
+      "\005IMAGE\020\003\022\r\n\tITEM_LINK\020\n\022\016\n\nSKILL_LINK\020\013\022" +
+      "\017\n\013ACHIEVEMENT\020\014\022\016\n\nNPC_DIALOG\020\r\022\020\n\014TRAD" +
+      "E_STATUS\020\016\022\016\n\nCOORD_LINK\020\017\022\n\n\006SYSTEM\020c*[" +
+      "\n\013ChannelType\022\013\n\007PRIVATE\020\000\022\010\n\004TEAM\020\001\022\t\n\005" +
+      "GUILD\020\002\022\t\n\005WORLD\020\003\022\022\n\016SYSTEM_CHANNEL\020\004\022\013" +
+      "\n\007MARQUEE\020\005*Y\n\010Priority\022\020\n\014PRIORITY_LOW\020" +
+      "\000\022\023\n\017PRIORITY_NORMAL\020\001\022\021\n\rPRIORITY_HIGH\020" +
+      "\002\022\023\n\017PRIORITY_URGENT\020\003*T\n\nSenderKind\022\017\n\013" +
+      "SENDER_USER\020\000\022\021\n\rSENDER_SYSTEM\020\001\022\016\n\nSEND" +
+      "ER_NPC\020\002\022\022\n\016SENDER_SERVICE\020\003*B\n\017GroupMem" +
+      "berRole\022\n\n\006MEMBER\020\000\022\r\n\tMODERATOR\020\001\022\t\n\005AD" +
+      "MIN\020\002\022\t\n\005OWNER\020\003*\213\001\n\013ChannelKind\022\025\n\021CHAN" +
+      "NEL_KIND_TEXT\020\000\022\026\n\022CHANNEL_KIND_VOICE\020\001\022" +
+      "\035\n\031CHANNEL_KIND_ANNOUNCEMENT\020\002\022\026\n\022CHANNE" +
+      "L_KIND_STAGE\020\003\022\026\n\022CHANNEL_KIND_FORUM\020\004*D" +
+      "\n\016PermissionType\022\030\n\024PERMISSION_TYPE_ROLE" +
+      "\020\000\022\030\n\024PERMISSION_TYPE_USER\020\001*6\n\022Permissi" +
+      "onOverride\022\013\n\007INHERIT\020\000\022\t\n\005ALLOW\020\001\022\010\n\004DE" +
+      "NY\020\002*\207\001\n\013MentionType\022\025\n\021MENTION_TYPE_USE" +
+      "R\020\000\022\025\n\021MENTION_TYPE_ROLE\020\001\022\030\n\024MENTION_TY" +
+      "PE_CHANNEL\020\002\022\031\n\025MENTION_TYPE_EVERYONE\020\003\022" +
+      "\025\n\021MENTION_TYPE_HERE\020\004*x\n\030WordFilterDeli" +
+      "veryPolicy\022\036\n\032WORD_FILTER_POLICY_REPLACE" +
+      "\020\000\022\035\n\031WORD_FILTER_POLICY_REJECT\020\001\022\035\n\031WOR" +
+      "D_FILTER_POLICY_RECORD\020\002B$Z\"github.com/c" +
+      "ui/chirp/proto/go/chatb\006proto3"
     };
     descriptor = com.google.protobuf.Descriptors.FileDescriptor
       .internalBuildGeneratedFileFrom(descriptorData,
@@ -124215,110 +125221,116 @@ java.lang.String defaultValue) {
       com.google.protobuf.GeneratedMessage.FieldAccessorTable(
         internal_static_chirp_chat_NpcDialogMetadata_descriptor,
         new java.lang.String[] { "NpcId", "NpcName", "DialogId", "Options", });
-    internal_static_chirp_chat_SetChannelMuteRequest_descriptor =
+    internal_static_chirp_chat_CoordMetadata_descriptor =
       getDescriptor().getMessageType(112);
+    internal_static_chirp_chat_CoordMetadata_fieldAccessorTable = new
+      com.google.protobuf.GeneratedMessage.FieldAccessorTable(
+        internal_static_chirp_chat_CoordMetadata_descriptor,
+        new java.lang.String[] { "MapId", "X", "Y", "Z", "Label", });
+    internal_static_chirp_chat_SetChannelMuteRequest_descriptor =
+      getDescriptor().getMessageType(113);
     internal_static_chirp_chat_SetChannelMuteRequest_fieldAccessorTable = new
       com.google.protobuf.GeneratedMessage.FieldAccessorTable(
         internal_static_chirp_chat_SetChannelMuteRequest_descriptor,
         new java.lang.String[] { "ChannelType", "Muted", });
     internal_static_chirp_chat_SetChannelMuteResponse_descriptor =
-      getDescriptor().getMessageType(113);
+      getDescriptor().getMessageType(114);
     internal_static_chirp_chat_SetChannelMuteResponse_fieldAccessorTable = new
       com.google.protobuf.GeneratedMessage.FieldAccessorTable(
         internal_static_chirp_chat_SetChannelMuteResponse_descriptor,
         new java.lang.String[] { "Code", "ChannelType", "Muted", });
     internal_static_chirp_chat_ChannelMuteState_descriptor =
-      getDescriptor().getMessageType(114);
+      getDescriptor().getMessageType(115);
     internal_static_chirp_chat_ChannelMuteState_fieldAccessorTable = new
       com.google.protobuf.GeneratedMessage.FieldAccessorTable(
         internal_static_chirp_chat_ChannelMuteState_descriptor,
         new java.lang.String[] { "ChannelType", "Muted", });
     internal_static_chirp_chat_GetChannelMutesRequest_descriptor =
-      getDescriptor().getMessageType(115);
+      getDescriptor().getMessageType(116);
     internal_static_chirp_chat_GetChannelMutesRequest_fieldAccessorTable = new
       com.google.protobuf.GeneratedMessage.FieldAccessorTable(
         internal_static_chirp_chat_GetChannelMutesRequest_descriptor,
         new java.lang.String[] { });
     internal_static_chirp_chat_GetChannelMutesResponse_descriptor =
-      getDescriptor().getMessageType(116);
+      getDescriptor().getMessageType(117);
     internal_static_chirp_chat_GetChannelMutesResponse_fieldAccessorTable = new
       com.google.protobuf.GeneratedMessage.FieldAccessorTable(
         internal_static_chirp_chat_GetChannelMutesResponse_descriptor,
         new java.lang.String[] { "Code", "States", });
     internal_static_chirp_chat_BlockMessageSenderRequest_descriptor =
-      getDescriptor().getMessageType(117);
+      getDescriptor().getMessageType(118);
     internal_static_chirp_chat_BlockMessageSenderRequest_fieldAccessorTable = new
       com.google.protobuf.GeneratedMessage.FieldAccessorTable(
         internal_static_chirp_chat_BlockMessageSenderRequest_descriptor,
         new java.lang.String[] { "TargetUserId", });
     internal_static_chirp_chat_BlockMessageSenderResponse_descriptor =
-      getDescriptor().getMessageType(118);
+      getDescriptor().getMessageType(119);
     internal_static_chirp_chat_BlockMessageSenderResponse_fieldAccessorTable = new
       com.google.protobuf.GeneratedMessage.FieldAccessorTable(
         internal_static_chirp_chat_BlockMessageSenderResponse_descriptor,
         new java.lang.String[] { "Code", "TargetUserId", });
     internal_static_chirp_chat_UnblockMessageSenderRequest_descriptor =
-      getDescriptor().getMessageType(119);
+      getDescriptor().getMessageType(120);
     internal_static_chirp_chat_UnblockMessageSenderRequest_fieldAccessorTable = new
       com.google.protobuf.GeneratedMessage.FieldAccessorTable(
         internal_static_chirp_chat_UnblockMessageSenderRequest_descriptor,
         new java.lang.String[] { "TargetUserId", });
     internal_static_chirp_chat_UnblockMessageSenderResponse_descriptor =
-      getDescriptor().getMessageType(120);
+      getDescriptor().getMessageType(121);
     internal_static_chirp_chat_UnblockMessageSenderResponse_fieldAccessorTable = new
       com.google.protobuf.GeneratedMessage.FieldAccessorTable(
         internal_static_chirp_chat_UnblockMessageSenderResponse_descriptor,
         new java.lang.String[] { "Code", "TargetUserId", });
     internal_static_chirp_chat_GetBlockedSendersRequest_descriptor =
-      getDescriptor().getMessageType(121);
+      getDescriptor().getMessageType(122);
     internal_static_chirp_chat_GetBlockedSendersRequest_fieldAccessorTable = new
       com.google.protobuf.GeneratedMessage.FieldAccessorTable(
         internal_static_chirp_chat_GetBlockedSendersRequest_descriptor,
         new java.lang.String[] { });
     internal_static_chirp_chat_GetBlockedSendersResponse_descriptor =
-      getDescriptor().getMessageType(122);
+      getDescriptor().getMessageType(123);
     internal_static_chirp_chat_GetBlockedSendersResponse_fieldAccessorTable = new
       com.google.protobuf.GeneratedMessage.FieldAccessorTable(
         internal_static_chirp_chat_GetBlockedSendersResponse_descriptor,
         new java.lang.String[] { "Code", "TargetUserIds", });
     internal_static_chirp_chat_WordFilterFetchRequest_descriptor =
-      getDescriptor().getMessageType(123);
+      getDescriptor().getMessageType(124);
     internal_static_chirp_chat_WordFilterFetchRequest_fieldAccessorTable = new
       com.google.protobuf.GeneratedMessage.FieldAccessorTable(
         internal_static_chirp_chat_WordFilterFetchRequest_descriptor,
         new java.lang.String[] { "KnownVersion", });
     internal_static_chirp_chat_WordFilterLexicon_descriptor =
-      getDescriptor().getMessageType(124);
+      getDescriptor().getMessageType(125);
     internal_static_chirp_chat_WordFilterLexicon_fieldAccessorTable = new
       com.google.protobuf.GeneratedMessage.FieldAccessorTable(
         internal_static_chirp_chat_WordFilterLexicon_descriptor,
         new java.lang.String[] { "Version", "Enabled", "Policy", "Replacement", "Lexicon", });
     internal_static_chirp_chat_WordFilterFetchResponse_descriptor =
-      getDescriptor().getMessageType(125);
+      getDescriptor().getMessageType(126);
     internal_static_chirp_chat_WordFilterFetchResponse_fieldAccessorTable = new
       com.google.protobuf.GeneratedMessage.FieldAccessorTable(
         internal_static_chirp_chat_WordFilterFetchResponse_descriptor,
         new java.lang.String[] { "Code", "Lexicon", });
     internal_static_chirp_chat_WordFilterUpdateNotify_descriptor =
-      getDescriptor().getMessageType(126);
+      getDescriptor().getMessageType(127);
     internal_static_chirp_chat_WordFilterUpdateNotify_fieldAccessorTable = new
       com.google.protobuf.GeneratedMessage.FieldAccessorTable(
         internal_static_chirp_chat_WordFilterUpdateNotify_descriptor,
         new java.lang.String[] { "Lexicon", });
     internal_static_chirp_chat_SearchMessageRequest_descriptor =
-      getDescriptor().getMessageType(127);
+      getDescriptor().getMessageType(128);
     internal_static_chirp_chat_SearchMessageRequest_fieldAccessorTable = new
       com.google.protobuf.GeneratedMessage.FieldAccessorTable(
         internal_static_chirp_chat_SearchMessageRequest_descriptor,
         new java.lang.String[] { "Keyword", "ChannelId", "ContentTypes", "BeforeTimestamp", "BeforeMessageId", "Limit", });
     internal_static_chirp_chat_SearchMessageMatch_descriptor =
-      getDescriptor().getMessageType(128);
+      getDescriptor().getMessageType(129);
     internal_static_chirp_chat_SearchMessageMatch_fieldAccessorTable = new
       com.google.protobuf.GeneratedMessage.FieldAccessorTable(
         internal_static_chirp_chat_SearchMessageMatch_descriptor,
         new java.lang.String[] { "MessageId", "ChannelId", "ChannelType", "SenderId", "SenderKind", "MsgType", "Timestamp", "Content", });
     internal_static_chirp_chat_SearchMessageResponse_descriptor =
-      getDescriptor().getMessageType(129);
+      getDescriptor().getMessageType(130);
     internal_static_chirp_chat_SearchMessageResponse_fieldAccessorTable = new
       com.google.protobuf.GeneratedMessage.FieldAccessorTable(
         internal_static_chirp_chat_SearchMessageResponse_descriptor,
