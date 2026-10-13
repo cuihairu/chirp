@@ -11,6 +11,8 @@ import {
   REMOVE_FRIEND,
   SET_PRESENCE,
   UNBLOCK_USER,
+  SET_NOTIFY_PREFS,
+  GET_NOTIFY_PREFS,
 } from '@chirp/app-protocol/msg_map';
 import { setPresence } from '../state/presence_store';
 import {
@@ -49,6 +51,9 @@ export class SocialApi {
   private readonly presence: Store<PresenceState>;
   private readonly friends: Store<FriendState>;
   private unsubs: Array<() => void> = [];
+  private friendOnlineListeners = new Set<
+    (userId: string, status: PresenceStatus, statusMessage: string) => void
+  >();
 
   constructor(deps: SocialApiDeps) {
     this.conn = deps.conn;
@@ -180,10 +185,43 @@ export class SocialApi {
     return resp.code;
   }
 
+  /**
+   * 好友上线通知(FRIEND_ONLINE_NOTIFY 3029)订阅:服务端只在有效状态
+   * OFFLINE→非 OFFLINE 跃迁时补发,api 层再做两道去重——自己不弹、名册外
+   * 用户不弹(初次拉名单前/已删除好友不会误报)。返回退订函数。
+   */
+  onFriendOnline(
+    listener: (userId: string, status: PresenceStatus, statusMessage: string) => void,
+  ): () => void {
+    this.friendOnlineListeners.add(listener);
+    return () => this.friendOnlineListeners.delete(listener);
+  }
+
+  /** 好友上线通知开关(3025/3026):缺省全开,显式值上线。 */
+  async setNotifyPrefs(friendOnlineNotify: boolean): Promise<number> {
+    const userId = this.auth.get().userId;
+    if (!userId) return -1;
+    const resp = await this.conn.request(SET_NOTIFY_PREFS, {
+      userId,
+      prefs: { friendOnlineNotify },
+    });
+    return resp.code;
+  }
+
+  /** 读取开关(3027/3028):无记录回全开;社交面不可用回 null。 */
+  async getNotifyPrefs(): Promise<boolean | null> {
+    const userId = this.auth.get().userId;
+    if (!userId) return null;
+    const resp = await this.conn.request(GET_NOTIFY_PREFS, { userId });
+    if (resp.code !== 0) return null;
+    return resp.prefs?.friendOnlineNotify ?? true;
+  }
+
   private start(): void {
     if (this.unsubs.length > 0) return;
     this.unsubs = [
       this.conn.onNotify(MsgID.PRESENCE_NOTIFY, (body) => this.onPresenceNotify(body)),
+      this.conn.onNotify(MsgID.FRIEND_ONLINE_NOTIFY, (body) => this.onFriendOnlineNotify(body)),
       this.conn.onNotify(MsgID.FRIEND_REQUEST_NOTIFY, (body) => this.onFriendRequestNotify(body)),
       this.conn.onNotify(MsgID.FRIEND_ACCEPTED_NOTIFY, (body) => this.onFriendAcceptedNotify(body)),
       this.conn.onNotify(MsgID.FRIEND_REMOVED_NOTIFY, (body) => this.onFriendRemovedNotify(body)),
@@ -198,6 +236,24 @@ export class SocialApi {
       return;
     }
     setPresence(this.presence, notify.userId, notify.status, notify.statusMessage, Date.now());
+  }
+
+  private onFriendOnlineNotify(body: Uint8Array): void {
+    let notify: PresenceNotify;
+    try {
+      notify = PresenceNotify.decode(body);
+    } catch {
+      return;
+    }
+    if (!notify.userId || notify.userId === this.auth.get().userId) return;
+    if (!this.friends.get().friends.includes(notify.userId)) return;
+    for (const listener of this.friendOnlineListeners) {
+      try {
+        listener(notify.userId, notify.status, notify.statusMessage);
+      } catch {
+        // A throwing listener must not starve the others.
+      }
+    }
   }
 
   private onFriendRequestNotify(body: Uint8Array): void {
