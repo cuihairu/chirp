@@ -1088,7 +1088,7 @@ describe('ChatApi.reportMessage', () => {
     const h = makeHarness();
     await login(h);
     h.conn.setResponder(async (_msgId, req) => {
-      expect(req.reason).toBe('');
+      expect((req as { reason?: string }).reason).toBe('');
       return { code: 0, messageId: 'm2', reportCount: 1 };
     });
     expect(await h.api.reportMessage('m2')).toMatchObject({ reportCount: 1 });
