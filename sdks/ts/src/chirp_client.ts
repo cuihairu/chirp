@@ -24,7 +24,9 @@ export interface WebSocketLike {
   onmessage: ((ev: MessageEvent) => void) | null;
   onclose: ((ev: CloseEvent) => void) | null;
   onerror: ((ev: Event) => void) | null;
-  send(data: ArrayBufferView): void;
+  /** Accepts everything the platform send accepts, incl. views over a detached
+   *  or ArrayBufferLike buffer; keeps the abstraction step with lib.dom. */
+  send(data: string | Blob | ArrayBufferView<ArrayBufferLike> | BufferSource): void;
   close(code?: number, reason?: string): void;
 }
 
