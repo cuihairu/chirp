@@ -79,7 +79,7 @@ function MessageRow(props: {
                 opacity: 0.85,
               }}
             >
-              <Typography variant="caption" fontWeight={600} component="div">
+              <Typography variant="caption" component="div" sx={{ fontWeight: 600 }}>
                 {props.quoted ? `回复 · ${props.quoted.senderName}` : '原消息已删除或不可见'}
               </Typography>
               {props.quoted ? (
@@ -264,8 +264,8 @@ export default function ChatPanel(props: {
           borderColor: 'divider',
         }}
       >
-        <Stack direction="row" alignItems="center" spacing={1}>
-          <Typography variant="subtitle1" fontWeight={600} noWrap>
+        <Stack direction="row" spacing={1} sx={{ alignItems: 'center' }}>
+          <Typography variant="subtitle1" noWrap sx={{ fontWeight: 600 }}>
             {conversation.title}
           </Typography>
           <Chip
@@ -339,9 +339,8 @@ export default function ChatPanel(props: {
         {replying ? (
           <Stack
             direction="row"
-            alignItems="center"
             spacing={0.5}
-            sx={{ mb: 0.5, px: 1, py: 0.25, bgcolor: 'action.hover', borderRadius: 1 }}
+            sx={{ alignItems: 'center', mb: 0.5, px: 1, py: 0.25, bgcolor: 'action.hover', borderRadius: 1 }}
           >
             <Typography
               variant="caption"
@@ -356,7 +355,7 @@ export default function ChatPanel(props: {
             </IconButton>
           </Stack>
         ) : null}
-        <Stack direction="row" spacing={1} alignItems="flex-end">
+        <Stack direction="row" spacing={1} sx={{ alignItems: 'flex-end' }}>
           <InputBase
             fullWidth
             multiline
