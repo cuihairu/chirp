@@ -82,6 +82,9 @@ export const zh = {
     empty: '还没有好友,输入对方用户 ID 发送请求。',
     pendingOut: (users: string) => `等待对方同意:${users}`,
     unavailable: '社交服务未连接',
+    friendOnlineNotify: '好友上线通知',
+    friendOnlineNow: (user: string) => `${user} 上线了`,
+    friendOnlineGame: (user: string, game: string) => `${user} 进入了 ${game}`,
   },
   party: {
     title: '组队',

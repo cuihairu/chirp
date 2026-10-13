@@ -264,3 +264,56 @@ describe('SocialApi friends', () => {
     expect(presenceOf(h.presence.get(), 'user_b')).toBeUndefined();
   });
 });
+
+describe('SocialApi friend-online notify', () => {
+  const frame = (partial: Partial<PresenceNotify>): Uint8Array =>
+    PresenceNotify.encode(PresenceNotify.fromPartial(partial)).finish();
+
+  it('fans FRIEND_ONLINE_NOTIFY out for roster friends only', async () => {
+    const h = makeHarness();
+    h.conn.setResponder(async (msgId) => {
+      if (msgId === MsgID.GET_FRIEND_LIST_REQ) {
+        return { code: 0, friends: [{ userId: 'user_b', status: 2 }], totalCount: 1 };
+      }
+      return { code: 0 };
+    });
+    await h.api.login('user_a');
+    const seen: Array<[string, PresenceStatus, string]> = [];
+    const off = h.api.onFriendOnline((userId, status, statusMessage) =>
+      seen.push([userId, status, statusMessage]));
+
+    h.conn.emit(MsgID.FRIEND_ONLINE_NOTIFY, frame({ userId: 'user_b', status: PresenceStatus.ONLINE }));
+    // 自己不弹；名册外用户不弹（初次拉名单前/已删除好友不会误报）。
+    h.conn.emit(MsgID.FRIEND_ONLINE_NOTIFY, frame({ userId: 'user_a', status: PresenceStatus.ONLINE }));
+    h.conn.emit(MsgID.FRIEND_ONLINE_NOTIFY, frame({ userId: 'user_ghost', status: PresenceStatus.ONLINE }));
+    // 畸形体静默丢弃。
+    h.conn.emit(MsgID.FRIEND_ONLINE_NOTIFY, new Uint8Array([0xff]));
+    expect(seen).toEqual([['user_b', PresenceStatus.ONLINE, '']]);
+
+    off();
+    h.conn.emit(MsgID.FRIEND_ONLINE_NOTIFY, frame({ userId: 'user_b', status: PresenceStatus.ONLINE }));
+    expect(seen.length).toBe(1);
+  });
+
+  it('roundtrips the notify prefs (3025/3027)', async () => {
+    const h = makeHarness();
+    let setReq: unknown;
+    h.conn.setResponder(async (msgId, req) => {
+      if (msgId === MsgID.SET_NOTIFY_PREFS_REQ) setReq = req;
+      if (msgId === MsgID.GET_NOTIFY_PREFS_REQ) {
+        return { code: 0, prefs: { friendOnlineNotify: false } };
+      }
+      return { code: 0 };
+    });
+    expect(await h.api.setNotifyPrefs(false)).toBe(0);
+    expect(setReq).toMatchObject({ userId: 'user_a', prefs: { friendOnlineNotify: false } });
+    expect(await h.api.getNotifyPrefs()).toBe(false);
+  });
+
+  it('degrades prefs calls without a login', async () => {
+    const h = makeHarness();
+    h.auth.set(() => ({ userId: '', kicked: false, deviceId: '', loggedIn: false }));
+    expect(await h.api.setNotifyPrefs(false)).toBe(-1);
+    expect(await h.api.getNotifyPrefs()).toBeNull();
+  });
+});
