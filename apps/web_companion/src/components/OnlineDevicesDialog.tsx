@@ -49,7 +49,7 @@ export default function OnlineDevicesDialog({
     <Dialog open={open} onClose={onClose} maxWidth="xs" fullWidth>
       <DialogTitle>{zh.onlineDevices.title}</DialogTitle>
       <DialogContent>
-        <Typography variant="caption" color="text.secondary" display="block" sx={{ mb: 1 }}>
+        <Typography variant="caption" color="text.secondary" sx={{ display: 'block', mb: 1 }}>
           {zh.onlineDevices.note}
         </Typography>
         {devices.length === 0 ? (
@@ -93,11 +93,11 @@ export default function OnlineDevicesDialog({
               }
               label={zh.gamePresence.title}
             />
-            <Typography variant="caption" color="text.secondary" display="block">
+            <Typography variant="caption" color="text.secondary" sx={{ display: 'block' }}>
               {zh.gamePresence.note}
             </Typography>
             {presence.loaded && (
-              <Typography variant="caption" color="text.secondary" display="block" data-testid="game-presence-state">
+              <Typography variant="caption" color="text.secondary" sx={{ display: 'block' }} data-testid="game-presence-state">
                 {!presence.enabled
                   ? zh.gamePresence.off
                   : presence.games.length > 0
@@ -106,7 +106,7 @@ export default function OnlineDevicesDialog({
               </Typography>
             )}
             {failed && (
-              <Typography variant="caption" color="error" display="block" data-testid="game-presence-failed">
+              <Typography variant="caption" color="error" sx={{ display: 'block' }} data-testid="game-presence-failed">
                 {zh.gamePresence.failed}
               </Typography>
             )}
