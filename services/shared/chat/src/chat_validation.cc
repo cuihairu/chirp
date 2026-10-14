@@ -166,6 +166,23 @@ chirp::common::ErrorCode ValidateTradeMetadata(const SendMessageRequest& req) {
   return chirp::common::OK;
 }
 
+chirp::common::ErrorCode ValidateRecruitMetadata(const SendMessageRequest& req) {
+  // 公会/组队招募同门：各自按对应 Metadata 解析且 id 非空（空判同时覆盖
+  // 「没带 metadata」与「解析不出」），其余 msg_type 原样透传。
+  if (req.msg_type() == GUILD_RECRUIT) {
+    GuildRecruitMetadata guild;
+    if (!guild.ParseFromString(req.metadata()) || guild.guild_id().empty()) {
+      return chirp::common::INVALID_PARAM;
+    }
+  } else if (req.msg_type() == PARTY_RECRUIT) {
+    PartyRecruitMetadata party;
+    if (!party.ParseFromString(req.metadata()) || party.party_id().empty()) {
+      return chirp::common::INVALID_PARAM;
+    }
+  }
+  return chirp::common::OK;
+}
+
 chirp::common::ErrorCode ValidateSendMessageRequest(const SendMessageRequest& req,
                                                     std::string_view authenticated_user_id) {
   if (!IsAuthenticated(authenticated_user_id)) {
@@ -201,6 +218,12 @@ chirp::common::ErrorCode ValidateSendMessageRequest(const SendMessageRequest& re
   if (const chirp::common::ErrorCode trade_code = ValidateTradeMetadata(req);
       trade_code != chirp::common::OK) {
     return trade_code;
+  }
+  // 招募卡片（P1 GUILD_RECRUIT/PARTY_RECRUIT）同层：垃圾/缺 id 的 metadata
+  // 同样在落任何存储之前拦下。
+  if (const chirp::common::ErrorCode recruit_code = ValidateRecruitMetadata(req);
+      recruit_code != chirp::common::OK) {
+    return recruit_code;
   }
 
   if (req.channel_type() == PRIVATE) {

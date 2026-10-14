@@ -49,6 +49,11 @@ chirp::common::ErrorCode ValidateAchievementMetadata(const SendMessageRequest& r
 // status 为展示文本不锁枚举（新状态值不应被旧服务端挡下）。
 chirp::common::ErrorCode ValidateTradeMetadata(const SendMessageRequest& req);
 
+// 招募卡片（P1 GUILD_RECRUIT/PARTY_RECRUIT）：metadata 必须能按对应
+// Metadata 解析且 guild_id/party_id 非空，否则 INVALID_PARAM。与坐标/
+// 物品/成就/交易链接同层同口径。
+chirp::common::ErrorCode ValidateRecruitMetadata(const SendMessageRequest& req);
+
 chirp::common::ErrorCode ValidateSendMessageRequest(const SendMessageRequest& req,
                                                     std::string_view authenticated_user_id);
 

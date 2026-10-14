@@ -311,6 +311,18 @@ void HandleSendMessage(const chirp::chat::SendMessageRequest& req,
                                      seq, resp.SerializeAsString());
     return;
   }
+  // 招募卡片（P1 GUILD_RECRUIT/PARTY_RECRUIT）：与交易/成就链接同层同口径——
+  // 解析不出或 guild_id/party_id 为空的不落任何存储（basic 形态经
+  // ValidateSendMessageRequest）。
+  if (const chirp::common::ErrorCode recruit_code = chirp::chat::ValidateRecruitMetadata(req);
+      recruit_code != chirp::common::OK) {
+    chirp::chat::SendMessageResponse resp;
+    resp.set_code(recruit_code);
+    resp.set_server_timestamp(chirp::chat::runtime::NowMs());
+    chirp::chat::runtime::SendPacket(sender_session, chirp::gateway::SEND_MESSAGE_RESP,
+                                     seq, resp.SerializeAsString());
+    return;
+  }
   msg.set_metadata(req.metadata());
 
   // 群频道成员门（web e2e 权限回码契约，与 basic 群分支同语义）：频道命中

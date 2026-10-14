@@ -206,6 +206,57 @@ describe('ChatPanel trade cards (P1 TRADE_STATUS)', () => {
   });
 });
 
+describe('ChatPanel recruit cards (P1 GUILD/PARTY_RECRUIT)', () => {
+  it('renders the guild recruit card with level, headcount and blurb', async () => {
+    renderPanel([
+      message({
+        messageId: 'gu1',
+        content: '招募成员',
+        guildRecruit: {
+          guildId: 'guild-3001',
+          guildName: '烈焰军团',
+          level: 7,
+          memberCount: 48,
+          maxMembers: 60,
+          description: '周三晚开荒',
+        },
+      }),
+    ]);
+    await waitFor(() => expect(screen.getByText('招募成员')).toBeTruthy());
+    const card = screen.getByTestId('guild-gu1');
+    expect(card.textContent).toContain('公会招募');
+    expect(card.textContent).toContain('烈焰军团');
+    expect(card.textContent).toContain('等级 7');
+    expect(card.textContent).toContain('人数 48/60');
+    expect(card.textContent).toContain('周三晚开荒');
+    expect(card.textContent).toContain('guild-3001');
+  });
+
+  it('renders the party recruit card with headcount need and leader', async () => {
+    renderPanel([
+      message({
+        messageId: 'pa1',
+        content: '缺 2 人',
+        partyRecruit: {
+          partyId: 'party-4001',
+          dungeonName: '熔岩之心',
+          needed: 5,
+          current: 3,
+          leaderName: 'alice',
+        },
+      }),
+    ]);
+    await waitFor(() => expect(screen.getByText('缺 2 人')).toBeTruthy());
+    const card = screen.getByTestId('party-pa1');
+    expect(card.textContent).toContain('组队招募');
+    expect(card.textContent).toContain('熔岩之心');
+    expect(card.textContent).toContain('缺 2 人');
+    expect(card.textContent).toContain('3/5');
+    expect(card.textContent).toContain('队长 alice');
+    expect(card.textContent).toContain('party-4001');
+  });
+});
+
 describe('ChatPanel emoji codes (P1 表情/贴图)', () => {
   it('expands emoji codes in the message text and keeps unknown codes literal', async () => {
     renderPanel([message({ messageId: 'e1', content: 'hi [emoji:fire] [emoji:zzz]' })]);

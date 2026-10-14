@@ -1,5 +1,5 @@
 import { describe, expect, it, vi } from 'vitest';
-import { AchievementMetadata, ChannelType, ChatMessage, ItemMetadata, MsgType, Priority, SenderKind, TradeMetadata } from '@chirp/proto/chat';
+import { AchievementMetadata, ChannelType, ChatMessage, GuildRecruitMetadata, ItemMetadata, MsgType, PartyRecruitMetadata, Priority, SenderKind, TradeMetadata } from '@chirp/proto/chat';
 import { MsgID } from '@chirp/proto/gateway';
 import { ChatApi, channelRefOf, type ChannelRef, type SystemSurface } from './chat_api';
 import { createStore } from '../state/store';
@@ -356,6 +356,91 @@ describe('ChatApi item link cards (P0 ITEM_LINK)', () => {
     );
     const second = h.messages.get().byChannel['p:user_a|user_b'][1];
     expect(second.trade).toBeUndefined();
+    expect(second.content).toBe('hi');
+  });
+
+  it('parses the recruit cards out of GUILD/PARTY_RECRUIT notify metadata', async () => {
+    const h = makeHarness();
+    await login(h);
+    h.conn.emit(
+      MsgID.CHAT_MESSAGE_NOTIFY,
+      chatBody({
+        msgType: MsgType.GUILD_RECRUIT,
+        content: new TextEncoder().encode('招募成员'),
+        metadata: GuildRecruitMetadata.encode(
+          GuildRecruitMetadata.fromPartial({
+            guildId: 'guild-3001',
+            guildName: '烈焰军团',
+            level: 7,
+            memberCount: 48,
+            maxMembers: 60,
+            description: '周三晚开荒',
+          }),
+        ).finish(),
+      }),
+    );
+    expect(h.messages.get().byChannel['p:user_a|user_b'][0]).toMatchObject({
+      guildRecruit: {
+        guildId: 'guild-3001',
+        guildName: '烈焰军团',
+        level: 7,
+        memberCount: 48,
+        maxMembers: 60,
+        description: '周三晚开荒',
+      },
+    });
+
+    h.conn.emit(
+      MsgID.CHAT_MESSAGE_NOTIFY,
+      chatBody({
+        messageId: 'm2',
+        msgType: MsgType.PARTY_RECRUIT,
+        content: new TextEncoder().encode('缺 2 人'),
+        metadata: PartyRecruitMetadata.encode(
+          PartyRecruitMetadata.fromPartial({
+            partyId: 'party-4001',
+            dungeonName: '熔岩之心',
+            needed: 5,
+            current: 3,
+            leaderName: 'alice',
+          }),
+        ).finish(),
+      }),
+    );
+    expect(h.messages.get().byChannel['p:user_a|user_b'][1]).toMatchObject({
+      partyRecruit: {
+        partyId: 'party-4001',
+        dungeonName: '熔岩之心',
+        needed: 5,
+        current: 3,
+        leaderName: 'alice',
+      },
+    });
+  });
+
+  it('drops the recruit cards when the metadata does not parse or lacks ids', async () => {
+    const h = makeHarness();
+    await login(h);
+    h.conn.emit(
+      MsgID.CHAT_MESSAGE_NOTIFY,
+      chatBody({ msgType: MsgType.GUILD_RECRUIT, metadata: new Uint8Array([0xde, 0xad, 0xbe, 0xef]) }),
+    );
+    const first = h.messages.get().byChannel['p:user_a|user_b'][0];
+    expect(first.guildRecruit).toBeUndefined();
+    expect(first.content).toBe('hi');
+
+    h.conn.emit(
+      MsgID.CHAT_MESSAGE_NOTIFY,
+      chatBody({
+        messageId: 'm2',
+        msgType: MsgType.PARTY_RECRUIT,
+        metadata: PartyRecruitMetadata.encode(
+          PartyRecruitMetadata.fromPartial({ dungeonName: '熔岩之心' }),
+        ).finish(),
+      }),
+    );
+    const second = h.messages.get().byChannel['p:user_a|user_b'][1];
+    expect(second.partyRecruit).toBeUndefined();
     expect(second.content).toBe('hi');
   });
 });

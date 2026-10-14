@@ -7,7 +7,9 @@ import {
   GroupMemberKickedNotify,
   GroupMemberMutedNotify,
   AchievementMetadata,
+  GuildRecruitMetadata,
   ItemMetadata,
+  PartyRecruitMetadata,
   TradeMetadata,
   ReportMessageResponse,
   MessageAck,
@@ -63,6 +65,8 @@ import {
   type CoordView,
   type Conversation,
   type AchievementView,
+  type GuildRecruitView,
+  type PartyRecruitView,
   type TradeView,
   type ItemView,
   type MessageReactionView,
@@ -330,6 +334,21 @@ export class ChatApi {
       itemName?: string;
       itemCount?: number;
     },
+    guildRecruit?: {
+      guildId: string;
+      guildName?: string;
+      level?: number;
+      memberCount?: number;
+      maxMembers?: number;
+      description?: string;
+    },
+    partyRecruit?: {
+      partyId: string;
+      dungeonName?: string;
+      needed?: number;
+      current?: number;
+      leaderName?: string;
+    },
   ): Promise<void> {
     const senderId = this.auth.get().userId;
     if (!senderId) return;
@@ -352,7 +371,11 @@ export class ChatApi {
             ? MsgType.ACHIEVEMENT
             : trade
               ? MsgType.TRADE_STATUS
-              : MsgType.TEXT,
+              : guildRecruit
+                ? MsgType.GUILD_RECRUIT
+                : partyRecruit
+                  ? MsgType.PARTY_RECRUIT
+                  : MsgType.TEXT,
       content: contentBytes,
       clientTimestamp: Date.now(),
     };
@@ -408,6 +431,31 @@ export class ChatApi {
         }),
       ).finish();
     }
+    // 招募卡片（P1 GUILD_RECRUIT/PARTY_RECRUIT）：带 recruit 入参即切对应
+    // msg_type，招募进 metadata（同一 metadata 通道；数值缺省 0）。
+    if (guildRecruit) {
+      wire.metadata = GuildRecruitMetadata.encode(
+        GuildRecruitMetadata.fromPartial({
+          guildId: guildRecruit.guildId,
+          guildName: guildRecruit.guildName,
+          level: guildRecruit.level,
+          memberCount: guildRecruit.memberCount,
+          maxMembers: guildRecruit.maxMembers,
+          description: guildRecruit.description,
+        }),
+      ).finish();
+    }
+    if (partyRecruit) {
+      wire.metadata = PartyRecruitMetadata.encode(
+        PartyRecruitMetadata.fromPartial({
+          partyId: partyRecruit.partyId,
+          dungeonName: partyRecruit.dungeonName,
+          needed: partyRecruit.needed,
+          current: partyRecruit.current,
+          leaderName: partyRecruit.leaderName,
+        }),
+      ).finish();
+    }
     // 预检只读写 content（两面在我们手上非缺省），断言为完整消息面。
     const blocked = !this.wordFilter.onBeforeSend(wire as SendMessageRequest);
     const clientId = `pending-${Date.now().toString(36)}-${pendingCounter++}`;
@@ -451,6 +499,25 @@ export class ChatApi {
             amount: trade.amount ?? 0,
             itemName: trade.itemName ?? '',
             itemCount: trade.itemCount ?? 0,
+          }
+        : undefined,
+      guildRecruit: guildRecruit
+        ? {
+            guildId: guildRecruit.guildId,
+            guildName: guildRecruit.guildName ?? '',
+            level: guildRecruit.level ?? 0,
+            memberCount: guildRecruit.memberCount ?? 0,
+            maxMembers: guildRecruit.maxMembers ?? 0,
+            description: guildRecruit.description ?? '',
+          }
+        : undefined,
+      partyRecruit: partyRecruit
+        ? {
+            partyId: partyRecruit.partyId,
+            dungeonName: partyRecruit.dungeonName ?? '',
+            needed: partyRecruit.needed ?? 0,
+            current: partyRecruit.current ?? 0,
+            leaderName: partyRecruit.leaderName ?? '',
           }
         : undefined,
     };
@@ -1080,6 +1147,45 @@ const tradeViewOf = (msg: ChatMessage): TradeView | undefined => {
   };
 };
 
+// 招募卡片解析（P1 GUILD_RECRUIT/PARTY_RECRUIT）：解析口径与服务端校验门
+// 一致——非对应类型或 metadata 空/解析不出/缺 id 的不当卡片。
+const guildRecruitViewOf = (msg: ChatMessage): GuildRecruitView | undefined => {
+  if (msg.msgType !== MsgType.GUILD_RECRUIT || msg.metadata.length === 0) return undefined;
+  let guild: GuildRecruitMetadata;
+  try {
+    guild = GuildRecruitMetadata.decode(msg.metadata);
+  } catch {
+    return undefined;
+  }
+  if (!guild.guildId) return undefined;
+  return {
+    guildId: guild.guildId,
+    guildName: guild.guildName,
+    level: guild.level,
+    memberCount: guild.memberCount,
+    maxMembers: guild.maxMembers,
+    description: guild.description,
+  };
+};
+
+const partyRecruitViewOf = (msg: ChatMessage): PartyRecruitView | undefined => {
+  if (msg.msgType !== MsgType.PARTY_RECRUIT || msg.metadata.length === 0) return undefined;
+  let party: PartyRecruitMetadata;
+  try {
+    party = PartyRecruitMetadata.decode(msg.metadata);
+  } catch {
+    return undefined;
+  }
+  if (!party.partyId) return undefined;
+  return {
+    partyId: party.partyId,
+    dungeonName: party.dungeonName,
+    needed: party.needed,
+    current: party.current,
+    leaderName: party.leaderName,
+  };
+};
+
 const toView = (msg: ChatMessage, channel: ChannelRef): ChatMessageView => ({
   messageId: msg.messageId,
   senderId: msg.senderId,
@@ -1094,6 +1200,8 @@ const toView = (msg: ChatMessage, channel: ChannelRef): ChatMessageView => ({
   item: itemViewOf(msg),
   achievement: achievementViewOf(msg),
   trade: tradeViewOf(msg),
+  guildRecruit: guildRecruitViewOf(msg),
+  partyRecruit: partyRecruitViewOf(msg),
   priority: msg.priority,
   ttlSeconds: msg.ttlSeconds,
   senderKind: msg.senderKind,

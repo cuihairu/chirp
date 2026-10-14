@@ -30,7 +30,9 @@ import type {
   ChatMessageView,
   Conversation,
   CoordView,
+  GuildRecruitView,
   ItemView,
+  PartyRecruitView,
   TradeView,
 } from '../state/models';
 import type { MessageState } from '../state/message_store';
@@ -127,6 +129,10 @@ function MessageRow(props: {
   achievement?: AchievementView;
   /** 交易卡片（P1 TRADE_STATUS）；缺省 = 纯文本气泡。状态徽章+物品摘要+金额。 */
   trade?: TradeView;
+  /** 公会招募卡片（P1 GUILD_RECRUIT）；缺省 = 纯文本气泡。展示性卡片。 */
+  guildRecruit?: GuildRecruitView;
+  /** 组队招募卡片（P1 PARTY_RECRUIT）；缺省 = 纯文本气泡。展示性卡片。 */
+  partyRecruit?: PartyRecruitView;
   /** 发送者类别（P0 消息展示）：决定气泡底色，自己的消息恒走主色。 */
   senderKind?: SenderKind;
   onReply?: () => void;
@@ -390,6 +396,99 @@ function MessageRow(props: {
               </Typography>
             </Box>
           ) : null}
+          {props.guildRecruit ? (
+            <Box
+              data-testid={`guild-${props.messageId}`}
+              sx={{
+                display: 'block',
+                width: '100%',
+                mt: 0.5,
+                p: 1,
+                textAlign: 'left',
+                border: '1px solid',
+                borderColor: props.mine ? 'primary.contrastText' : 'divider',
+                borderRadius: 1,
+                background: 'transparent',
+                color: 'inherit',
+              }}
+            >
+              <Typography
+                variant="caption"
+                component="div"
+                sx={{ px: 0.5, borderRadius: 0.5, bgcolor: 'action.hover', fontWeight: 600, width: 'fit-content' }}
+              >
+                公会招募
+              </Typography>
+              <Typography variant="caption" component="div" sx={{ fontWeight: 600, mt: 0.5 }}>
+                {props.guildRecruit.guildName || props.guildRecruit.guildId}
+              </Typography>
+              {props.guildRecruit.level > 0 || props.guildRecruit.memberCount > 0 ? (
+                <Typography variant="caption" component="div" sx={{ opacity: 0.75 }}>
+                  {props.guildRecruit.level > 0 ? `等级 ${props.guildRecruit.level}` : ''}
+                  {props.guildRecruit.level > 0 && props.guildRecruit.memberCount > 0 ? ' · ' : ''}
+                  {props.guildRecruit.memberCount > 0
+                    ? `人数 ${
+                        props.guildRecruit.maxMembers > 0
+                          ? `${props.guildRecruit.memberCount}/${props.guildRecruit.maxMembers}`
+                          : `${props.guildRecruit.memberCount}`
+                      }`
+                    : ''}
+                </Typography>
+              ) : null}
+              {props.guildRecruit.description ? (
+                <Typography variant="caption" component="div" sx={{ mt: 0.5, opacity: 0.85 }}>
+                  {props.guildRecruit.description}
+                </Typography>
+              ) : null}
+              <Typography variant="caption" component="div" sx={{ opacity: 0.6 }}>
+                {props.guildRecruit.guildId}
+              </Typography>
+            </Box>
+          ) : null}
+          {props.partyRecruit ? (
+            <Box
+              data-testid={`party-${props.messageId}`}
+              sx={{
+                display: 'block',
+                width: '100%',
+                mt: 0.5,
+                p: 1,
+                textAlign: 'left',
+                border: '1px solid',
+                borderColor: props.mine ? 'primary.contrastText' : 'divider',
+                borderRadius: 1,
+                background: 'transparent',
+                color: 'inherit',
+              }}
+            >
+              <Typography
+                variant="caption"
+                component="div"
+                sx={{ px: 0.5, borderRadius: 0.5, bgcolor: 'action.hover', fontWeight: 600, width: 'fit-content' }}
+              >
+                组队招募
+              </Typography>
+              <Typography variant="caption" component="div" sx={{ fontWeight: 600, mt: 0.5 }}>
+                {props.partyRecruit.dungeonName || props.partyRecruit.partyId}
+              </Typography>
+              {props.partyRecruit.needed > 0 ? (
+                <Typography variant="caption" component="div" sx={{ opacity: 0.75 }}>
+                  {`缺 ${
+                    props.partyRecruit.needed - (props.partyRecruit.current > 0 ? props.partyRecruit.current : 0)
+                  } 人`}
+                  {props.partyRecruit.current > 0 ? ` · ${props.partyRecruit.current}/${props.partyRecruit.needed}` : ''}
+                </Typography>
+              ) : null}
+              {props.partyRecruit.leaderName ? (
+                <Typography variant="caption" component="div" sx={{ opacity: 0.75 }}>
+                  {`队长 ${props.partyRecruit.leaderName}`}
+                </Typography>
+              ) : null}
+              <Typography variant="caption" component="div" sx={{ opacity: 0.6 }}>
+                {props.partyRecruit.partyId}
+              </Typography>
+            </Box>
+          ) : null}
         </Paper>
         <Stack
           direction="row"
@@ -619,6 +718,8 @@ export default function ChatPanel(props: {
             item={m.deleted ? undefined : m.item}
             achievement={m.deleted ? undefined : m.achievement}
             trade={m.deleted ? undefined : m.trade}
+            guildRecruit={m.deleted ? undefined : m.guildRecruit}
+            partyRecruit={m.deleted ? undefined : m.partyRecruit}
             senderKind={m.senderKind}
             onReply={m.deleted ? undefined : () => setReplying(m)}
             onReport={m.deleted || m.senderId === selfId ? undefined : () => {

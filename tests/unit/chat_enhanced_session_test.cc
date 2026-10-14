@@ -1462,6 +1462,161 @@ TEST_F(EnhancedSessionTest, TradeStatusRejectsGarbageMetadataAndEmptyTradeId) {
             chirp::common::OK);
 }
 
+// --- 招募卡片（公会/组队）：notify/历史/离线补投三臂透传 + 校验拒绝 --------------
+
+TEST_F(EnhancedSessionTest, RecruitCardsCarryMetadataThroughNotifyHistoryAndRefill) {
+  LiveHistoryRecall live;
+  StartLiveHistory(live);
+  auto alice = std::make_shared<MockSession>();
+  auto bob = std::make_shared<MockSession>();
+  Login(bob, "bob", "b1", 2);
+
+  chirp::chat::GuildRecruitMetadata guild;
+  guild.set_guild_id("guild-3001");
+  guild.set_guild_name("烈焰军团");
+  guild.set_level(7);
+  guild.set_member_count(48);
+  guild.set_max_members(60);
+
+  chirp::chat::SendMessageRequest req;
+  req.set_sender_id("alice");
+  req.set_receiver_id("bob");
+  req.set_channel_type(chirp::chat::PRIVATE);
+  req.set_content("招募成员");
+  req.set_msg_type(chirp::chat::GUILD_RECRUIT);
+  req.set_metadata(guild.SerializeAsString());
+
+  std::string mid;
+  ASSERT_EQ(SendReq(req, alice, live.store, live.recall.handlers.get(), nullptr, "",
+                    nullptr, "", nullptr, nullptr, &mid),
+            chirp::common::OK);
+  ASSERT_FALSE(mid.empty());
+
+  // 在线投递臂：notify 帧带出 msg_type 与公会招募字节。
+  const auto notifies = FramesOf(*bob, chirp::gateway::CHAT_MESSAGE_NOTIFY);
+  ASSERT_EQ(notifies.size(), 1u);
+  chirp::chat::ChatMessage notify;
+  ASSERT_TRUE(notify.ParseFromString(notifies[0].body()));
+  EXPECT_EQ(notify.msg_type(), chirp::chat::GUILD_RECRUIT);
+  chirp::chat::GuildRecruitMetadata live_guild;
+  ASSERT_TRUE(live_guild.ParseFromString(notify.metadata()));
+  EXPECT_EQ(live_guild.guild_id(), "guild-3001");
+  EXPECT_EQ(live_guild.guild_name(), "烈焰军团");
+  EXPECT_EQ(live_guild.level(), 7);
+
+  // 历史读回臂：HandleGetHistory 逐字段重建，招募不能丢。
+  auto retriever = std::make_shared<chirp::chat::PaginatedHistoryRetriever>(live.store);
+  chirp::chat::GetHistoryRequest history_req;
+  history_req.set_channel_id("alice|bob");
+  history_req.set_channel_type(chirp::chat::PRIVATE);
+  history_req.set_limit(10);
+  HandleGetHistory(history_req, alice, retriever, /*seq=*/5);
+  const auto resps = FramesOf(*alice, chirp::gateway::GET_HISTORY_RESP);
+  ASSERT_EQ(resps.size(), 1u);
+  chirp::chat::GetHistoryResponse history_resp;
+  ASSERT_TRUE(history_resp.ParseFromString(resps[0].body()));
+  ASSERT_EQ(history_resp.messages_size(), 1);
+  EXPECT_EQ(history_resp.messages(0).msg_type(), chirp::chat::GUILD_RECRUIT);
+  chirp::chat::GuildRecruitMetadata hist_guild;
+  ASSERT_TRUE(hist_guild.ParseFromString(history_resp.messages(0).metadata()));
+  EXPECT_EQ(hist_guild.guild_id(), "guild-3001");
+
+  // 离线补投臂：carol 从未在线 → 入离线队列；组队招募换独立 party_id 证明
+  // 不是上一条的残留。
+  chirp::chat::PartyRecruitMetadata party;
+  party.set_party_id("party-42");
+  party.set_dungeon_name("熔岩之心");
+  party.set_needed(5);
+  party.set_current(3);
+  req.set_msg_type(chirp::chat::PARTY_RECRUIT);
+  req.set_metadata(party.SerializeAsString());
+  req.set_receiver_id("carol");
+  req.set_content("缺 2 人");
+  ASSERT_EQ(SendReq(req, alice, live.store, live.recall.handlers.get(), nullptr, "",
+                    nullptr, "", nullptr, nullptr, nullptr),
+            chirp::common::OK);
+
+  auto carol = std::make_shared<MockSession>();
+  chirp::auth::LoginRequest login_req;
+  login_req.set_token("carol");
+  login_req.set_device_id("c1");
+  login_req.set_platform("web");
+  InvokeLogin(login_req, carol, state_, live.store, router_, nullptr, nullptr,
+              &delivery_prefs_, /*seq=*/6);
+
+  const auto refills = FramesOf(*carol, chirp::gateway::CHAT_MESSAGE_NOTIFY);
+  ASSERT_EQ(refills.size(), 1u);
+  chirp::chat::ChatMessage refill;
+  ASSERT_TRUE(refill.ParseFromString(refills[0].body()));
+  EXPECT_EQ(refill.msg_type(), chirp::chat::PARTY_RECRUIT);
+  EXPECT_EQ(refill.receiver_id(), "carol");
+  chirp::chat::PartyRecruitMetadata refill_party;
+  ASSERT_TRUE(refill_party.ParseFromString(refill.metadata()));
+  EXPECT_EQ(refill_party.party_id(), "party-42");
+  EXPECT_EQ(refill_party.dungeon_name(), "熔岩之心");
+}
+
+TEST_F(EnhancedSessionTest, RecruitCardsRejectGarbageMetadataAndEmptyIds) {
+  LiveHistoryRecall live;
+  StartLiveHistory(live);
+  auto alice = std::make_shared<MockSession>();
+  auto bob = std::make_shared<MockSession>();
+  Login(bob, "bob", "b1", 2);
+
+  auto SendTyped = [&](chirp::chat::MsgType type, const std::string& meta) {
+    chirp::chat::SendMessageRequest req;
+    req.set_sender_id("alice");
+    req.set_receiver_id("bob");
+    req.set_channel_type(chirp::chat::PRIVATE);
+    req.set_content("recruit");
+    req.set_msg_type(type);
+    req.set_metadata(meta);
+    return SendReq(req, alice, live.store, live.recall.handlers.get(), nullptr, "",
+                   nullptr, "", nullptr, nullptr, nullptr);
+  };
+
+  // 截断的长度分隔字段：解析即失败，不能静默落库成空招募消息。
+  EXPECT_EQ(SendTyped(chirp::chat::GUILD_RECRUIT, std::string("\x0A" "\x05" "ab")),
+            chirp::common::INVALID_PARAM);
+  EXPECT_EQ(SendTyped(chirp::chat::PARTY_RECRUIT, std::string("\x0A" "\x05" "ab")),
+            chirp::common::INVALID_PARAM);
+
+  // 空 guild_id / party_id：卡片没有可回查的落点。
+  chirp::chat::GuildRecruitMetadata no_guild;
+  no_guild.set_guild_name("无名公会");
+  EXPECT_EQ(SendTyped(chirp::chat::GUILD_RECRUIT, no_guild.SerializeAsString()),
+            chirp::common::INVALID_PARAM);
+  chirp::chat::PartyRecruitMetadata no_party;
+  no_party.set_dungeon_name("无名副本");
+  EXPECT_EQ(SendTyped(chirp::chat::PARTY_RECRUIT, no_party.SerializeAsString()),
+            chirp::common::INVALID_PARAM);
+
+  // 拒绝的消息零投递、零落库。
+  EXPECT_EQ(FramesOf(*bob, chirp::gateway::CHAT_MESSAGE_NOTIFY).size(), 0u);
+  EXPECT_TRUE(live.store->GetHistory("alice|bob", 0, 0, 10).empty());
+
+  // 合法招募放行（校验门的通过臂）。
+  chirp::chat::GuildRecruitMetadata ok;
+  ok.set_guild_id("guild-1");
+  EXPECT_EQ(SendTyped(chirp::chat::GUILD_RECRUIT, ok.SerializeAsString()),
+            chirp::common::OK);
+  chirp::chat::PartyRecruitMetadata ok_party;
+  ok_party.set_party_id("party-1");
+  EXPECT_EQ(SendTyped(chirp::chat::PARTY_RECRUIT, ok_party.SerializeAsString()),
+            chirp::common::OK);
+
+  // 门只针对招募类型：TEXT 消息带任意字节 metadata 照样放行（与坐标门同款）。
+  chirp::chat::SendMessageRequest plain;
+  plain.set_sender_id("alice");
+  plain.set_receiver_id("bob");
+  plain.set_channel_type(chirp::chat::PRIVATE);
+  plain.set_content("plain text");
+  plain.set_metadata(std::string("\x00" "\x01" "\x02", 3));
+  EXPECT_EQ(SendReq(plain, alice, live.store, live.recall.handlers.get(), nullptr, "",
+                    nullptr, "", nullptr, nullptr, nullptr),
+            chirp::common::OK);
+}
+
 // --- 黑名单：私聊静默成功，两端都不送、不入离线队列 -------------------------
 
 TEST_F(EnhancedSessionTest, PrivateSendSilentlyDropsBlockedReceiver) {

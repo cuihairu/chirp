@@ -33,6 +33,10 @@ export enum MsgType {
   TRADE_STATUS = 14,
   /** COORD_LINK - 坐标链接（metadata = CoordMetadata） */
   COORD_LINK = 15,
+  /** GUILD_RECRUIT - 公会招募（metadata = GuildRecruitMetadata） */
+  GUILD_RECRUIT = 16,
+  /** PARTY_RECRUIT - 组队招募（metadata = PartyRecruitMetadata） */
+  PARTY_RECRUIT = 17,
   /** SYSTEM - 系统消息 */
   SYSTEM = 99,
   UNRECOGNIZED = -1,
@@ -70,6 +74,12 @@ export function msgTypeFromJSON(object: any): MsgType {
     case 15:
     case "COORD_LINK":
       return MsgType.COORD_LINK;
+    case 16:
+    case "GUILD_RECRUIT":
+      return MsgType.GUILD_RECRUIT;
+    case 17:
+    case "PARTY_RECRUIT":
+      return MsgType.PARTY_RECRUIT;
     case 99:
     case "SYSTEM":
       return MsgType.SYSTEM;
@@ -102,6 +112,10 @@ export function msgTypeToJSON(object: MsgType): string {
       return "TRADE_STATUS";
     case MsgType.COORD_LINK:
       return "COORD_LINK";
+    case MsgType.GUILD_RECRUIT:
+      return "GUILD_RECRUIT";
+    case MsgType.PARTY_RECRUIT:
+      return "PARTY_RECRUIT";
     case MsgType.SYSTEM:
       return "SYSTEM";
     case MsgType.UNRECOGNIZED:
@@ -1679,6 +1693,43 @@ export interface TradeMetadata {
   amount: number;
   itemName: string;
   itemCount: number;
+}
+
+/**
+ * 公会招募卡片（msg_type = GUILD_RECRUIT 时；game_chat_features P1「公会招募」）。
+ * 伴侣面无公会加入动作面（一键加入待公会申请协议），渲染为展示性卡片；
+ * 游戏内客户端的加入自渲染走 SDK 侧。
+ */
+export interface GuildRecruitMetadata {
+  /** 公会唯一 id（校验落点：空拒绝） */
+  guildId: string;
+  guildName: string;
+  /** 公会等级 */
+  level: number;
+  /** 当前人数 */
+  memberCount: number;
+  /** 人数上限（0 = 不展示） */
+  maxMembers: number;
+  /** 招募语（可选） */
+  description: string;
+}
+
+/**
+ * 组队招募卡片（msg_type = PARTY_RECRUIT 时；game_chat_features P1「组队招募」）。
+ * 伴侣面无申请动作面（一键申请待队伍申请协议），渲染为展示性卡片；
+ * 游戏内客户端的申请自渲染走 SDK 侧。
+ */
+export interface PartyRecruitMetadata {
+  /** 队伍唯一 id（校验落点：空拒绝） */
+  partyId: string;
+  /** 副本名 */
+  dungeonName: string;
+  /** 人数需求 */
+  needed: number;
+  /** 当前已组人数（0 = 不展示） */
+  current: number;
+  /** 队长名（可选） */
+  leaderName: string;
 }
 
 /** NPC 对话（msg_type = NPC_DIALOG 时） */
@@ -14136,6 +14187,259 @@ export const TradeMetadata = {
     message.amount = object.amount ?? 0;
     message.itemName = object.itemName ?? "";
     message.itemCount = object.itemCount ?? 0;
+    return message;
+  },
+};
+
+function createBaseGuildRecruitMetadata(): GuildRecruitMetadata {
+  return { guildId: "", guildName: "", level: 0, memberCount: 0, maxMembers: 0, description: "" };
+}
+
+export const GuildRecruitMetadata = {
+  encode(message: GuildRecruitMetadata, writer: _m0.Writer = _m0.Writer.create()): _m0.Writer {
+    if (message.guildId !== "") {
+      writer.uint32(10).string(message.guildId);
+    }
+    if (message.guildName !== "") {
+      writer.uint32(18).string(message.guildName);
+    }
+    if (message.level !== 0) {
+      writer.uint32(24).int32(message.level);
+    }
+    if (message.memberCount !== 0) {
+      writer.uint32(32).int32(message.memberCount);
+    }
+    if (message.maxMembers !== 0) {
+      writer.uint32(40).int32(message.maxMembers);
+    }
+    if (message.description !== "") {
+      writer.uint32(50).string(message.description);
+    }
+    return writer;
+  },
+
+  decode(input: _m0.Reader | Uint8Array, length?: number): GuildRecruitMetadata {
+    const reader = input instanceof _m0.Reader ? input : _m0.Reader.create(input);
+    let end = length === undefined ? reader.len : reader.pos + length;
+    const message = createBaseGuildRecruitMetadata();
+    while (reader.pos < end) {
+      const tag = reader.uint32();
+      switch (tag >>> 3) {
+        case 1:
+          if (tag !== 10) {
+            break;
+          }
+
+          message.guildId = reader.string();
+          continue;
+        case 2:
+          if (tag !== 18) {
+            break;
+          }
+
+          message.guildName = reader.string();
+          continue;
+        case 3:
+          if (tag !== 24) {
+            break;
+          }
+
+          message.level = reader.int32();
+          continue;
+        case 4:
+          if (tag !== 32) {
+            break;
+          }
+
+          message.memberCount = reader.int32();
+          continue;
+        case 5:
+          if (tag !== 40) {
+            break;
+          }
+
+          message.maxMembers = reader.int32();
+          continue;
+        case 6:
+          if (tag !== 50) {
+            break;
+          }
+
+          message.description = reader.string();
+          continue;
+      }
+      if ((tag & 7) === 4 || tag === 0) {
+        break;
+      }
+      reader.skipType(tag & 7);
+    }
+    return message;
+  },
+
+  fromJSON(object: any): GuildRecruitMetadata {
+    return {
+      guildId: isSet(object.guildId) ? globalThis.String(object.guildId) : "",
+      guildName: isSet(object.guildName) ? globalThis.String(object.guildName) : "",
+      level: isSet(object.level) ? globalThis.Number(object.level) : 0,
+      memberCount: isSet(object.memberCount) ? globalThis.Number(object.memberCount) : 0,
+      maxMembers: isSet(object.maxMembers) ? globalThis.Number(object.maxMembers) : 0,
+      description: isSet(object.description) ? globalThis.String(object.description) : "",
+    };
+  },
+
+  toJSON(message: GuildRecruitMetadata): unknown {
+    const obj: any = {};
+    if (message.guildId !== "") {
+      obj.guildId = message.guildId;
+    }
+    if (message.guildName !== "") {
+      obj.guildName = message.guildName;
+    }
+    if (message.level !== 0) {
+      obj.level = Math.round(message.level);
+    }
+    if (message.memberCount !== 0) {
+      obj.memberCount = Math.round(message.memberCount);
+    }
+    if (message.maxMembers !== 0) {
+      obj.maxMembers = Math.round(message.maxMembers);
+    }
+    if (message.description !== "") {
+      obj.description = message.description;
+    }
+    return obj;
+  },
+
+  create<I extends Exact<DeepPartial<GuildRecruitMetadata>, I>>(base?: I): GuildRecruitMetadata {
+    return GuildRecruitMetadata.fromPartial(base ?? ({} as any));
+  },
+  fromPartial<I extends Exact<DeepPartial<GuildRecruitMetadata>, I>>(object: I): GuildRecruitMetadata {
+    const message = createBaseGuildRecruitMetadata();
+    message.guildId = object.guildId ?? "";
+    message.guildName = object.guildName ?? "";
+    message.level = object.level ?? 0;
+    message.memberCount = object.memberCount ?? 0;
+    message.maxMembers = object.maxMembers ?? 0;
+    message.description = object.description ?? "";
+    return message;
+  },
+};
+
+function createBasePartyRecruitMetadata(): PartyRecruitMetadata {
+  return { partyId: "", dungeonName: "", needed: 0, current: 0, leaderName: "" };
+}
+
+export const PartyRecruitMetadata = {
+  encode(message: PartyRecruitMetadata, writer: _m0.Writer = _m0.Writer.create()): _m0.Writer {
+    if (message.partyId !== "") {
+      writer.uint32(10).string(message.partyId);
+    }
+    if (message.dungeonName !== "") {
+      writer.uint32(18).string(message.dungeonName);
+    }
+    if (message.needed !== 0) {
+      writer.uint32(24).int32(message.needed);
+    }
+    if (message.current !== 0) {
+      writer.uint32(32).int32(message.current);
+    }
+    if (message.leaderName !== "") {
+      writer.uint32(42).string(message.leaderName);
+    }
+    return writer;
+  },
+
+  decode(input: _m0.Reader | Uint8Array, length?: number): PartyRecruitMetadata {
+    const reader = input instanceof _m0.Reader ? input : _m0.Reader.create(input);
+    let end = length === undefined ? reader.len : reader.pos + length;
+    const message = createBasePartyRecruitMetadata();
+    while (reader.pos < end) {
+      const tag = reader.uint32();
+      switch (tag >>> 3) {
+        case 1:
+          if (tag !== 10) {
+            break;
+          }
+
+          message.partyId = reader.string();
+          continue;
+        case 2:
+          if (tag !== 18) {
+            break;
+          }
+
+          message.dungeonName = reader.string();
+          continue;
+        case 3:
+          if (tag !== 24) {
+            break;
+          }
+
+          message.needed = reader.int32();
+          continue;
+        case 4:
+          if (tag !== 32) {
+            break;
+          }
+
+          message.current = reader.int32();
+          continue;
+        case 5:
+          if (tag !== 42) {
+            break;
+          }
+
+          message.leaderName = reader.string();
+          continue;
+      }
+      if ((tag & 7) === 4 || tag === 0) {
+        break;
+      }
+      reader.skipType(tag & 7);
+    }
+    return message;
+  },
+
+  fromJSON(object: any): PartyRecruitMetadata {
+    return {
+      partyId: isSet(object.partyId) ? globalThis.String(object.partyId) : "",
+      dungeonName: isSet(object.dungeonName) ? globalThis.String(object.dungeonName) : "",
+      needed: isSet(object.needed) ? globalThis.Number(object.needed) : 0,
+      current: isSet(object.current) ? globalThis.Number(object.current) : 0,
+      leaderName: isSet(object.leaderName) ? globalThis.String(object.leaderName) : "",
+    };
+  },
+
+  toJSON(message: PartyRecruitMetadata): unknown {
+    const obj: any = {};
+    if (message.partyId !== "") {
+      obj.partyId = message.partyId;
+    }
+    if (message.dungeonName !== "") {
+      obj.dungeonName = message.dungeonName;
+    }
+    if (message.needed !== 0) {
+      obj.needed = Math.round(message.needed);
+    }
+    if (message.current !== 0) {
+      obj.current = Math.round(message.current);
+    }
+    if (message.leaderName !== "") {
+      obj.leaderName = message.leaderName;
+    }
+    return obj;
+  },
+
+  create<I extends Exact<DeepPartial<PartyRecruitMetadata>, I>>(base?: I): PartyRecruitMetadata {
+    return PartyRecruitMetadata.fromPartial(base ?? ({} as any));
+  },
+  fromPartial<I extends Exact<DeepPartial<PartyRecruitMetadata>, I>>(object: I): PartyRecruitMetadata {
+    const message = createBasePartyRecruitMetadata();
+    message.partyId = object.partyId ?? "";
+    message.dungeonName = object.dungeonName ?? "";
+    message.needed = object.needed ?? 0;
+    message.current = object.current ?? 0;
+    message.leaderName = object.leaderName ?? "";
     return message;
   },
 };

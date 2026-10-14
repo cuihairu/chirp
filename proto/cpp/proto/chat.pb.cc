@@ -959,6 +959,41 @@ struct PrepareFileUploadRequestDefaultTypeInternal {
 PROTOBUF_ATTRIBUTE_NO_DESTROY PROTOBUF_CONSTINIT
     PROTOBUF_ATTRIBUTE_INIT_PRIORITY1 PrepareFileUploadRequestDefaultTypeInternal _PrepareFileUploadRequest_default_instance_;
 
+inline constexpr PartyRecruitMetadata::Impl_::Impl_(
+    ::_pbi::ConstantInitialized) noexcept
+      : _cached_size_{0},
+        party_id_(
+            &::google::protobuf::internal::fixed_address_empty_string,
+            ::_pbi::ConstantInitialized()),
+        dungeon_name_(
+            &::google::protobuf::internal::fixed_address_empty_string,
+            ::_pbi::ConstantInitialized()),
+        leader_name_(
+            &::google::protobuf::internal::fixed_address_empty_string,
+            ::_pbi::ConstantInitialized()),
+        needed_{0},
+        current_{0} {}
+
+template <typename>
+PROTOBUF_CONSTEXPR PartyRecruitMetadata::PartyRecruitMetadata(::_pbi::ConstantInitialized)
+#if defined(PROTOBUF_CUSTOM_VTABLE)
+    : ::google::protobuf::Message(PartyRecruitMetadata_class_data_.base()),
+#else   // PROTOBUF_CUSTOM_VTABLE
+    : ::google::protobuf::Message(),
+#endif  // PROTOBUF_CUSTOM_VTABLE
+      _impl_(::_pbi::ConstantInitialized()) {
+}
+struct PartyRecruitMetadataDefaultTypeInternal {
+  PROTOBUF_CONSTEXPR PartyRecruitMetadataDefaultTypeInternal() : _instance(::_pbi::ConstantInitialized{}) {}
+  ~PartyRecruitMetadataDefaultTypeInternal() {}
+  union {
+    PartyRecruitMetadata _instance;
+  };
+};
+
+PROTOBUF_ATTRIBUTE_NO_DESTROY PROTOBUF_CONSTINIT
+    PROTOBUF_ATTRIBUTE_INIT_PRIORITY1 PartyRecruitMetadataDefaultTypeInternal _PartyRecruitMetadata_default_instance_;
+
 inline constexpr PaginationToken::Impl_::Impl_(
     ::_pbi::ConstantInitialized) noexcept
       : _cached_size_{0},
@@ -1654,6 +1689,42 @@ struct InviteToGroupRequestDefaultTypeInternal {
 
 PROTOBUF_ATTRIBUTE_NO_DESTROY PROTOBUF_CONSTINIT
     PROTOBUF_ATTRIBUTE_INIT_PRIORITY1 InviteToGroupRequestDefaultTypeInternal _InviteToGroupRequest_default_instance_;
+
+inline constexpr GuildRecruitMetadata::Impl_::Impl_(
+    ::_pbi::ConstantInitialized) noexcept
+      : _cached_size_{0},
+        guild_id_(
+            &::google::protobuf::internal::fixed_address_empty_string,
+            ::_pbi::ConstantInitialized()),
+        guild_name_(
+            &::google::protobuf::internal::fixed_address_empty_string,
+            ::_pbi::ConstantInitialized()),
+        description_(
+            &::google::protobuf::internal::fixed_address_empty_string,
+            ::_pbi::ConstantInitialized()),
+        level_{0},
+        member_count_{0},
+        max_members_{0} {}
+
+template <typename>
+PROTOBUF_CONSTEXPR GuildRecruitMetadata::GuildRecruitMetadata(::_pbi::ConstantInitialized)
+#if defined(PROTOBUF_CUSTOM_VTABLE)
+    : ::google::protobuf::Message(GuildRecruitMetadata_class_data_.base()),
+#else   // PROTOBUF_CUSTOM_VTABLE
+    : ::google::protobuf::Message(),
+#endif  // PROTOBUF_CUSTOM_VTABLE
+      _impl_(::_pbi::ConstantInitialized()) {
+}
+struct GuildRecruitMetadataDefaultTypeInternal {
+  PROTOBUF_CONSTEXPR GuildRecruitMetadataDefaultTypeInternal() : _instance(::_pbi::ConstantInitialized{}) {}
+  ~GuildRecruitMetadataDefaultTypeInternal() {}
+  union {
+    GuildRecruitMetadata _instance;
+  };
+};
+
+PROTOBUF_ATTRIBUTE_NO_DESTROY PROTOBUF_CONSTINIT
+    PROTOBUF_ATTRIBUTE_INIT_PRIORITY1 GuildRecruitMetadataDefaultTypeInternal _GuildRecruitMetadata_default_instance_;
 
 inline constexpr GroupMemberMutedNotify::Impl_::Impl_(
     ::_pbi::ConstantInitialized) noexcept
@@ -5509,6 +5580,34 @@ const ::uint32_t
         2,
         4,
         0x081, // bitmap
+        PROTOBUF_FIELD_OFFSET(::chirp::chat::GuildRecruitMetadata, _impl_._has_bits_),
+        9, // hasbit index offset
+        PROTOBUF_FIELD_OFFSET(::chirp::chat::GuildRecruitMetadata, _impl_.guild_id_),
+        PROTOBUF_FIELD_OFFSET(::chirp::chat::GuildRecruitMetadata, _impl_.guild_name_),
+        PROTOBUF_FIELD_OFFSET(::chirp::chat::GuildRecruitMetadata, _impl_.level_),
+        PROTOBUF_FIELD_OFFSET(::chirp::chat::GuildRecruitMetadata, _impl_.member_count_),
+        PROTOBUF_FIELD_OFFSET(::chirp::chat::GuildRecruitMetadata, _impl_.max_members_),
+        PROTOBUF_FIELD_OFFSET(::chirp::chat::GuildRecruitMetadata, _impl_.description_),
+        0,
+        1,
+        3,
+        4,
+        5,
+        2,
+        0x081, // bitmap
+        PROTOBUF_FIELD_OFFSET(::chirp::chat::PartyRecruitMetadata, _impl_._has_bits_),
+        8, // hasbit index offset
+        PROTOBUF_FIELD_OFFSET(::chirp::chat::PartyRecruitMetadata, _impl_.party_id_),
+        PROTOBUF_FIELD_OFFSET(::chirp::chat::PartyRecruitMetadata, _impl_.dungeon_name_),
+        PROTOBUF_FIELD_OFFSET(::chirp::chat::PartyRecruitMetadata, _impl_.needed_),
+        PROTOBUF_FIELD_OFFSET(::chirp::chat::PartyRecruitMetadata, _impl_.current_),
+        PROTOBUF_FIELD_OFFSET(::chirp::chat::PartyRecruitMetadata, _impl_.leader_name_),
+        0,
+        1,
+        3,
+        4,
+        2,
+        0x081, // bitmap
         PROTOBUF_FIELD_OFFSET(::chirp::chat::NpcDialogMetadata, _impl_._has_bits_),
         7, // hasbit index offset
         PROTOBUF_FIELD_OFFSET(::chirp::chat::NpcDialogMetadata, _impl_.npc_id_),
@@ -5787,26 +5886,28 @@ static const ::_pbi::MigrationSchema
         {1236, sizeof(::chirp::chat::SkillMetadata)},
         {1249, sizeof(::chirp::chat::AchievementMetadata)},
         {1262, sizeof(::chirp::chat::TradeMetadata)},
-        {1275, sizeof(::chirp::chat::NpcDialogMetadata)},
-        {1286, sizeof(::chirp::chat::CoordMetadata)},
-        {1299, sizeof(::chirp::chat::SetChannelMuteRequest)},
-        {1306, sizeof(::chirp::chat::SetChannelMuteResponse)},
-        {1315, sizeof(::chirp::chat::ChannelMuteState)},
-        {1322, sizeof(::chirp::chat::GetChannelMutesRequest)},
-        {1323, sizeof(::chirp::chat::GetChannelMutesResponse)},
-        {1330, sizeof(::chirp::chat::BlockMessageSenderRequest)},
-        {1335, sizeof(::chirp::chat::BlockMessageSenderResponse)},
-        {1342, sizeof(::chirp::chat::UnblockMessageSenderRequest)},
-        {1347, sizeof(::chirp::chat::UnblockMessageSenderResponse)},
-        {1354, sizeof(::chirp::chat::GetBlockedSendersRequest)},
-        {1355, sizeof(::chirp::chat::GetBlockedSendersResponse)},
-        {1362, sizeof(::chirp::chat::WordFilterFetchRequest)},
-        {1367, sizeof(::chirp::chat::WordFilterLexicon)},
-        {1380, sizeof(::chirp::chat::WordFilterFetchResponse)},
-        {1387, sizeof(::chirp::chat::WordFilterUpdateNotify)},
-        {1392, sizeof(::chirp::chat::SearchMessageRequest)},
-        {1407, sizeof(::chirp::chat::SearchMessageMatch)},
-        {1426, sizeof(::chirp::chat::SearchMessageResponse)},
+        {1275, sizeof(::chirp::chat::GuildRecruitMetadata)},
+        {1290, sizeof(::chirp::chat::PartyRecruitMetadata)},
+        {1303, sizeof(::chirp::chat::NpcDialogMetadata)},
+        {1314, sizeof(::chirp::chat::CoordMetadata)},
+        {1327, sizeof(::chirp::chat::SetChannelMuteRequest)},
+        {1334, sizeof(::chirp::chat::SetChannelMuteResponse)},
+        {1343, sizeof(::chirp::chat::ChannelMuteState)},
+        {1350, sizeof(::chirp::chat::GetChannelMutesRequest)},
+        {1351, sizeof(::chirp::chat::GetChannelMutesResponse)},
+        {1358, sizeof(::chirp::chat::BlockMessageSenderRequest)},
+        {1363, sizeof(::chirp::chat::BlockMessageSenderResponse)},
+        {1370, sizeof(::chirp::chat::UnblockMessageSenderRequest)},
+        {1375, sizeof(::chirp::chat::UnblockMessageSenderResponse)},
+        {1382, sizeof(::chirp::chat::GetBlockedSendersRequest)},
+        {1383, sizeof(::chirp::chat::GetBlockedSendersResponse)},
+        {1390, sizeof(::chirp::chat::WordFilterFetchRequest)},
+        {1395, sizeof(::chirp::chat::WordFilterLexicon)},
+        {1408, sizeof(::chirp::chat::WordFilterFetchResponse)},
+        {1415, sizeof(::chirp::chat::WordFilterUpdateNotify)},
+        {1420, sizeof(::chirp::chat::SearchMessageRequest)},
+        {1435, sizeof(::chirp::chat::SearchMessageMatch)},
+        {1454, sizeof(::chirp::chat::SearchMessageResponse)},
 };
 static const ::_pb::Message* PROTOBUF_NONNULL const file_default_instances[] = {
     &::chirp::chat::_SendMessageRequest_default_instance_._instance,
@@ -5924,6 +6025,8 @@ static const ::_pb::Message* PROTOBUF_NONNULL const file_default_instances[] = {
     &::chirp::chat::_SkillMetadata_default_instance_._instance,
     &::chirp::chat::_AchievementMetadata_default_instance_._instance,
     &::chirp::chat::_TradeMetadata_default_instance_._instance,
+    &::chirp::chat::_GuildRecruitMetadata_default_instance_._instance,
+    &::chirp::chat::_PartyRecruitMetadata_default_instance_._instance,
     &::chirp::chat::_NpcDialogMetadata_default_instance_._instance,
     &::chirp::chat::_CoordMetadata_default_instance_._instance,
     &::chirp::chat::_SetChannelMuteRequest_default_instance_._instance,
@@ -6304,80 +6407,88 @@ const char descriptor_table_protodef_proto_2fchat_2eproto[] ABSL_ATTRIBUTE_SECTI
     "\016\n\006rarity\030\005 \001(\005\"h\n\rTradeMetadata\022\020\n\010trad"
     "e_id\030\001 \001(\t\022\016\n\006status\030\002 \001(\t\022\016\n\006amount\030\003 \001"
     "(\003\022\021\n\titem_name\030\004 \001(\t\022\022\n\nitem_count\030\005 \001("
-    "\005\"Y\n\021NpcDialogMetadata\022\016\n\006npc_id\030\001 \001(\t\022\020"
-    "\n\010npc_name\030\002 \001(\t\022\021\n\tdialog_id\030\003 \001(\t\022\017\n\007o"
-    "ptions\030\004 \003(\t\"O\n\rCoordMetadata\022\016\n\006map_id\030"
-    "\001 \001(\t\022\t\n\001x\030\002 \001(\005\022\t\n\001y\030\003 \001(\005\022\t\n\001z\030\004 \001(\005\022\r"
-    "\n\005label\030\005 \001(\t\"U\n\025SetChannelMuteRequest\022-"
-    "\n\014channel_type\030\001 \001(\0162\027.chirp.chat.Channe"
-    "lType\022\r\n\005muted\030\002 \001(\010\"}\n\026SetChannelMuteRe"
-    "sponse\022%\n\004code\030\001 \001(\0162\027.chirp.common.Erro"
-    "rCode\022-\n\014channel_type\030\002 \001(\0162\027.chirp.chat"
-    ".ChannelType\022\r\n\005muted\030\003 \001(\010\"P\n\020ChannelMu"
-    "teState\022-\n\014channel_type\030\001 \001(\0162\027.chirp.ch"
-    "at.ChannelType\022\r\n\005muted\030\002 \001(\010\"\030\n\026GetChan"
-    "nelMutesRequest\"n\n\027GetChannelMutesRespon"
-    "se\022%\n\004code\030\001 \001(\0162\027.chirp.common.ErrorCod"
-    "e\022,\n\006states\030\002 \003(\0132\034.chirp.chat.ChannelMu"
-    "teState\"3\n\031BlockMessageSenderRequest\022\026\n\016"
-    "target_user_id\030\001 \001(\t\"[\n\032BlockMessageSend"
-    "erResponse\022%\n\004code\030\001 \001(\0162\027.chirp.common."
-    "ErrorCode\022\026\n\016target_user_id\030\002 \001(\t\"5\n\033Unb"
-    "lockMessageSenderRequest\022\026\n\016target_user_"
-    "id\030\001 \001(\t\"]\n\034UnblockMessageSenderResponse"
-    "\022%\n\004code\030\001 \001(\0162\027.chirp.common.ErrorCode\022"
-    "\026\n\016target_user_id\030\002 \001(\t\"\032\n\030GetBlockedSen"
-    "dersRequest\"[\n\031GetBlockedSendersResponse"
-    "\022%\n\004code\030\001 \001(\0162\027.chirp.common.ErrorCode\022"
-    "\027\n\017target_user_ids\030\002 \003(\t\"/\n\026WordFilterFe"
-    "tchRequest\022\025\n\rknown_version\030\001 \001(\003\"\221\001\n\021Wo"
-    "rdFilterLexicon\022\017\n\007version\030\001 \001(\003\022\017\n\007enab"
-    "led\030\002 \001(\010\0224\n\006policy\030\003 \001(\0162$.chirp.chat.W"
-    "ordFilterDeliveryPolicy\022\023\n\013replacement\030\004"
-    " \001(\t\022\017\n\007lexicon\030\005 \001(\t\"p\n\027WordFilterFetch"
-    "Response\022%\n\004code\030\001 \001(\0162\027.chirp.common.Er"
-    "rorCode\022.\n\007lexicon\030\002 \001(\0132\035.chirp.chat.Wo"
-    "rdFilterLexicon\"H\n\026WordFilterUpdateNotif"
-    "y\022.\n\007lexicon\030\001 \001(\0132\035.chirp.chat.WordFilt"
-    "erLexicon\"\226\001\n\024SearchMessageRequest\022\017\n\007ke"
-    "yword\030\001 \001(\t\022\022\n\nchannel_id\030\002 \001(\t\022\025\n\rconte"
-    "nt_types\030\003 \003(\005\022\030\n\020before_timestamp\030\004 \001(\003"
-    "\022\031\n\021before_message_id\030\005 \001(\t\022\r\n\005limit\030\006 \001"
-    "(\005\"\260\001\n\022SearchMessageMatch\022\022\n\nmessage_id\030"
-    "\001 \001(\t\022\022\n\nchannel_id\030\002 \001(\t\022\024\n\014channel_typ"
-    "e\030\003 \001(\005\022\021\n\tsender_id\030\004 \001(\t\022\023\n\013sender_kin"
-    "d\030\005 \001(\005\022\020\n\010msg_type\030\006 \001(\005\022\021\n\ttimestamp\030\007"
-    " \001(\003\022\017\n\007content\030\010 \001(\t\"\201\001\n\025SearchMessageR"
-    "esponse\022%\n\004code\030\001 \001(\0162\027.chirp.common.Err"
-    "orCode\022/\n\007matches\030\002 \003(\0132\036.chirp.chat.Sea"
-    "rchMessageMatch\022\020\n\010has_more\030\003 \001(\010*\242\001\n\007Ms"
-    "gType\022\010\n\004TEXT\020\000\022\t\n\005EMOJI\020\001\022\t\n\005VOICE\020\002\022\t\n"
-    "\005IMAGE\020\003\022\r\n\tITEM_LINK\020\n\022\016\n\nSKILL_LINK\020\013\022"
-    "\017\n\013ACHIEVEMENT\020\014\022\016\n\nNPC_DIALOG\020\r\022\020\n\014TRAD"
-    "E_STATUS\020\016\022\016\n\nCOORD_LINK\020\017\022\n\n\006SYSTEM\020c*["
-    "\n\013ChannelType\022\013\n\007PRIVATE\020\000\022\010\n\004TEAM\020\001\022\t\n\005"
-    "GUILD\020\002\022\t\n\005WORLD\020\003\022\022\n\016SYSTEM_CHANNEL\020\004\022\013"
-    "\n\007MARQUEE\020\005*Y\n\010Priority\022\020\n\014PRIORITY_LOW\020"
-    "\000\022\023\n\017PRIORITY_NORMAL\020\001\022\021\n\rPRIORITY_HIGH\020"
-    "\002\022\023\n\017PRIORITY_URGENT\020\003*T\n\nSenderKind\022\017\n\013"
-    "SENDER_USER\020\000\022\021\n\rSENDER_SYSTEM\020\001\022\016\n\nSEND"
-    "ER_NPC\020\002\022\022\n\016SENDER_SERVICE\020\003*B\n\017GroupMem"
-    "berRole\022\n\n\006MEMBER\020\000\022\r\n\tMODERATOR\020\001\022\t\n\005AD"
-    "MIN\020\002\022\t\n\005OWNER\020\003*\213\001\n\013ChannelKind\022\025\n\021CHAN"
-    "NEL_KIND_TEXT\020\000\022\026\n\022CHANNEL_KIND_VOICE\020\001\022"
-    "\035\n\031CHANNEL_KIND_ANNOUNCEMENT\020\002\022\026\n\022CHANNE"
-    "L_KIND_STAGE\020\003\022\026\n\022CHANNEL_KIND_FORUM\020\004*D"
-    "\n\016PermissionType\022\030\n\024PERMISSION_TYPE_ROLE"
-    "\020\000\022\030\n\024PERMISSION_TYPE_USER\020\001*6\n\022Permissi"
-    "onOverride\022\013\n\007INHERIT\020\000\022\t\n\005ALLOW\020\001\022\010\n\004DE"
-    "NY\020\002*\207\001\n\013MentionType\022\025\n\021MENTION_TYPE_USE"
-    "R\020\000\022\025\n\021MENTION_TYPE_ROLE\020\001\022\030\n\024MENTION_TY"
-    "PE_CHANNEL\020\002\022\031\n\025MENTION_TYPE_EVERYONE\020\003\022"
-    "\025\n\021MENTION_TYPE_HERE\020\004*x\n\030WordFilterDeli"
-    "veryPolicy\022\036\n\032WORD_FILTER_POLICY_REPLACE"
-    "\020\000\022\035\n\031WORD_FILTER_POLICY_REJECT\020\001\022\035\n\031WOR"
-    "D_FILTER_POLICY_RECORD\020\002B$Z\"github.com/c"
-    "ui/chirp/proto/go/chatb\006proto3"
+    "\005\"\213\001\n\024GuildRecruitMetadata\022\020\n\010guild_id\030\001"
+    " \001(\t\022\022\n\nguild_name\030\002 \001(\t\022\r\n\005level\030\003 \001(\005\022"
+    "\024\n\014member_count\030\004 \001(\005\022\023\n\013max_members\030\005 \001"
+    "(\005\022\023\n\013description\030\006 \001(\t\"t\n\024PartyRecruitM"
+    "etadata\022\020\n\010party_id\030\001 \001(\t\022\024\n\014dungeon_nam"
+    "e\030\002 \001(\t\022\016\n\006needed\030\003 \001(\005\022\017\n\007current\030\004 \001(\005"
+    "\022\023\n\013leader_name\030\005 \001(\t\"Y\n\021NpcDialogMetada"
+    "ta\022\016\n\006npc_id\030\001 \001(\t\022\020\n\010npc_name\030\002 \001(\t\022\021\n\t"
+    "dialog_id\030\003 \001(\t\022\017\n\007options\030\004 \003(\t\"O\n\rCoor"
+    "dMetadata\022\016\n\006map_id\030\001 \001(\t\022\t\n\001x\030\002 \001(\005\022\t\n\001"
+    "y\030\003 \001(\005\022\t\n\001z\030\004 \001(\005\022\r\n\005label\030\005 \001(\t\"U\n\025Set"
+    "ChannelMuteRequest\022-\n\014channel_type\030\001 \001(\016"
+    "2\027.chirp.chat.ChannelType\022\r\n\005muted\030\002 \001(\010"
+    "\"}\n\026SetChannelMuteResponse\022%\n\004code\030\001 \001(\016"
+    "2\027.chirp.common.ErrorCode\022-\n\014channel_typ"
+    "e\030\002 \001(\0162\027.chirp.chat.ChannelType\022\r\n\005mute"
+    "d\030\003 \001(\010\"P\n\020ChannelMuteState\022-\n\014channel_t"
+    "ype\030\001 \001(\0162\027.chirp.chat.ChannelType\022\r\n\005mu"
+    "ted\030\002 \001(\010\"\030\n\026GetChannelMutesRequest\"n\n\027G"
+    "etChannelMutesResponse\022%\n\004code\030\001 \001(\0162\027.c"
+    "hirp.common.ErrorCode\022,\n\006states\030\002 \003(\0132\034."
+    "chirp.chat.ChannelMuteState\"3\n\031BlockMess"
+    "ageSenderRequest\022\026\n\016target_user_id\030\001 \001(\t"
+    "\"[\n\032BlockMessageSenderResponse\022%\n\004code\030\001"
+    " \001(\0162\027.chirp.common.ErrorCode\022\026\n\016target_"
+    "user_id\030\002 \001(\t\"5\n\033UnblockMessageSenderReq"
+    "uest\022\026\n\016target_user_id\030\001 \001(\t\"]\n\034UnblockM"
+    "essageSenderResponse\022%\n\004code\030\001 \001(\0162\027.chi"
+    "rp.common.ErrorCode\022\026\n\016target_user_id\030\002 "
+    "\001(\t\"\032\n\030GetBlockedSendersRequest\"[\n\031GetBl"
+    "ockedSendersResponse\022%\n\004code\030\001 \001(\0162\027.chi"
+    "rp.common.ErrorCode\022\027\n\017target_user_ids\030\002"
+    " \003(\t\"/\n\026WordFilterFetchRequest\022\025\n\rknown_"
+    "version\030\001 \001(\003\"\221\001\n\021WordFilterLexicon\022\017\n\007v"
+    "ersion\030\001 \001(\003\022\017\n\007enabled\030\002 \001(\010\0224\n\006policy\030"
+    "\003 \001(\0162$.chirp.chat.WordFilterDeliveryPol"
+    "icy\022\023\n\013replacement\030\004 \001(\t\022\017\n\007lexicon\030\005 \001("
+    "\t\"p\n\027WordFilterFetchResponse\022%\n\004code\030\001 \001"
+    "(\0162\027.chirp.common.ErrorCode\022.\n\007lexicon\030\002"
+    " \001(\0132\035.chirp.chat.WordFilterLexicon\"H\n\026W"
+    "ordFilterUpdateNotify\022.\n\007lexicon\030\001 \001(\0132\035"
+    ".chirp.chat.WordFilterLexicon\"\226\001\n\024Search"
+    "MessageRequest\022\017\n\007keyword\030\001 \001(\t\022\022\n\nchann"
+    "el_id\030\002 \001(\t\022\025\n\rcontent_types\030\003 \003(\005\022\030\n\020be"
+    "fore_timestamp\030\004 \001(\003\022\031\n\021before_message_i"
+    "d\030\005 \001(\t\022\r\n\005limit\030\006 \001(\005\"\260\001\n\022SearchMessage"
+    "Match\022\022\n\nmessage_id\030\001 \001(\t\022\022\n\nchannel_id\030"
+    "\002 \001(\t\022\024\n\014channel_type\030\003 \001(\005\022\021\n\tsender_id"
+    "\030\004 \001(\t\022\023\n\013sender_kind\030\005 \001(\005\022\020\n\010msg_type\030"
+    "\006 \001(\005\022\021\n\ttimestamp\030\007 \001(\003\022\017\n\007content\030\010 \001("
+    "\t\"\201\001\n\025SearchMessageResponse\022%\n\004code\030\001 \001("
+    "\0162\027.chirp.common.ErrorCode\022/\n\007matches\030\002 "
+    "\003(\0132\036.chirp.chat.SearchMessageMatch\022\020\n\010h"
+    "as_more\030\003 \001(\010*\310\001\n\007MsgType\022\010\n\004TEXT\020\000\022\t\n\005E"
+    "MOJI\020\001\022\t\n\005VOICE\020\002\022\t\n\005IMAGE\020\003\022\r\n\tITEM_LIN"
+    "K\020\n\022\016\n\nSKILL_LINK\020\013\022\017\n\013ACHIEVEMENT\020\014\022\016\n\n"
+    "NPC_DIALOG\020\r\022\020\n\014TRADE_STATUS\020\016\022\016\n\nCOORD_"
+    "LINK\020\017\022\021\n\rGUILD_RECRUIT\020\020\022\021\n\rPARTY_RECRU"
+    "IT\020\021\022\n\n\006SYSTEM\020c*[\n\013ChannelType\022\013\n\007PRIVA"
+    "TE\020\000\022\010\n\004TEAM\020\001\022\t\n\005GUILD\020\002\022\t\n\005WORLD\020\003\022\022\n\016"
+    "SYSTEM_CHANNEL\020\004\022\013\n\007MARQUEE\020\005*Y\n\010Priorit"
+    "y\022\020\n\014PRIORITY_LOW\020\000\022\023\n\017PRIORITY_NORMAL\020\001"
+    "\022\021\n\rPRIORITY_HIGH\020\002\022\023\n\017PRIORITY_URGENT\020\003"
+    "*T\n\nSenderKind\022\017\n\013SENDER_USER\020\000\022\021\n\rSENDE"
+    "R_SYSTEM\020\001\022\016\n\nSENDER_NPC\020\002\022\022\n\016SENDER_SER"
+    "VICE\020\003*B\n\017GroupMemberRole\022\n\n\006MEMBER\020\000\022\r\n"
+    "\tMODERATOR\020\001\022\t\n\005ADMIN\020\002\022\t\n\005OWNER\020\003*\213\001\n\013C"
+    "hannelKind\022\025\n\021CHANNEL_KIND_TEXT\020\000\022\026\n\022CHA"
+    "NNEL_KIND_VOICE\020\001\022\035\n\031CHANNEL_KIND_ANNOUN"
+    "CEMENT\020\002\022\026\n\022CHANNEL_KIND_STAGE\020\003\022\026\n\022CHAN"
+    "NEL_KIND_FORUM\020\004*D\n\016PermissionType\022\030\n\024PE"
+    "RMISSION_TYPE_ROLE\020\000\022\030\n\024PERMISSION_TYPE_"
+    "USER\020\001*6\n\022PermissionOverride\022\013\n\007INHERIT\020"
+    "\000\022\t\n\005ALLOW\020\001\022\010\n\004DENY\020\002*\207\001\n\013MentionType\022\025"
+    "\n\021MENTION_TYPE_USER\020\000\022\025\n\021MENTION_TYPE_RO"
+    "LE\020\001\022\030\n\024MENTION_TYPE_CHANNEL\020\002\022\031\n\025MENTIO"
+    "N_TYPE_EVERYONE\020\003\022\025\n\021MENTION_TYPE_HERE\020\004"
+    "*x\n\030WordFilterDeliveryPolicy\022\036\n\032WORD_FIL"
+    "TER_POLICY_REPLACE\020\000\022\035\n\031WORD_FILTER_POLI"
+    "CY_REJECT\020\001\022\035\n\031WORD_FILTER_POLICY_RECORD"
+    "\020\002B$Z\"github.com/cui/chirp/proto/go/chat"
+    "b\006proto3"
 };
 static const ::_pbi::DescriptorTable* PROTOBUF_NONNULL const
     descriptor_table_proto_2fchat_2eproto_deps[1] = {
@@ -6387,13 +6498,13 @@ static ::absl::once_flag descriptor_table_proto_2fchat_2eproto_once;
 PROTOBUF_CONSTINIT const ::_pbi::DescriptorTable descriptor_table_proto_2fchat_2eproto = {
     false,
     false,
-    17230,
+    17528,
     descriptor_table_protodef_proto_2fchat_2eproto,
     "proto/chat.proto",
     &descriptor_table_proto_2fchat_2eproto_once,
     descriptor_table_proto_2fchat_2eproto_deps,
     1,
-    135,
+    137,
     schemas,
     file_default_instances,
     TableStruct_proto_2fchat_2eproto::offsets,
@@ -6413,7 +6524,7 @@ const ::google::protobuf::EnumDescriptor* PROTOBUF_NONNULL MsgType_descriptor() 
   return file_level_enum_descriptors_proto_2fchat_2eproto[1];
 }
 PROTOBUF_CONSTINIT const uint32_t MsgType_internal_data_[] = {
-    262144u, 65568u, 4032u, 99u, };
+    262144u, 65568u, 16320u, 99u, };
 const ::google::protobuf::EnumDescriptor* PROTOBUF_NONNULL ChannelType_descriptor() {
   ::google::protobuf::internal::AssignDescriptors(&descriptor_table_proto_2fchat_2eproto);
   return file_level_enum_descriptors_proto_2fchat_2eproto[2];
@@ -51131,6 +51242,914 @@ void TradeMetadata::InternalSwap(TradeMetadata* PROTOBUF_RESTRICT PROTOBUF_NONNU
 }
 
 ::google::protobuf::Metadata TradeMetadata::GetMetadata() const {
+  return ::google::protobuf::Message::GetMetadataImpl(GetClassData()->full());
+}
+// ===================================================================
+
+class GuildRecruitMetadata::_Internal {
+ public:
+  using HasBits =
+      decltype(::std::declval<GuildRecruitMetadata>()._impl_._has_bits_);
+  static constexpr ::int32_t kHasBitsOffset =
+      8 * PROTOBUF_FIELD_OFFSET(GuildRecruitMetadata, _impl_._has_bits_);
+};
+
+GuildRecruitMetadata::GuildRecruitMetadata(::google::protobuf::Arena* PROTOBUF_NULLABLE arena)
+#if defined(PROTOBUF_CUSTOM_VTABLE)
+    : ::google::protobuf::Message(arena, GuildRecruitMetadata_class_data_.base()) {
+#else   // PROTOBUF_CUSTOM_VTABLE
+    : ::google::protobuf::Message(arena) {
+#endif  // PROTOBUF_CUSTOM_VTABLE
+  SharedCtor(arena);
+  // @@protoc_insertion_point(arena_constructor:chirp.chat.GuildRecruitMetadata)
+}
+PROTOBUF_NDEBUG_INLINE GuildRecruitMetadata::Impl_::Impl_(
+    [[maybe_unused]] ::google::protobuf::internal::InternalVisibility visibility,
+    [[maybe_unused]] ::google::protobuf::Arena* PROTOBUF_NULLABLE arena, const Impl_& from,
+    [[maybe_unused]] const ::chirp::chat::GuildRecruitMetadata& from_msg)
+      : _has_bits_{from._has_bits_},
+        _cached_size_{0},
+        guild_id_(arena, from.guild_id_),
+        guild_name_(arena, from.guild_name_),
+        description_(arena, from.description_) {}
+
+GuildRecruitMetadata::GuildRecruitMetadata(
+    ::google::protobuf::Arena* PROTOBUF_NULLABLE arena,
+    const GuildRecruitMetadata& from)
+#if defined(PROTOBUF_CUSTOM_VTABLE)
+    : ::google::protobuf::Message(arena, GuildRecruitMetadata_class_data_.base()) {
+#else   // PROTOBUF_CUSTOM_VTABLE
+    : ::google::protobuf::Message(arena) {
+#endif  // PROTOBUF_CUSTOM_VTABLE
+  GuildRecruitMetadata* const _this = this;
+  (void)_this;
+  _internal_metadata_.MergeFrom<::google::protobuf::UnknownFieldSet>(
+      from._internal_metadata_);
+  new (&_impl_) Impl_(internal_visibility(), arena, from._impl_, from);
+  ::memcpy(reinterpret_cast<char*>(&_impl_) +
+               offsetof(Impl_, level_),
+           reinterpret_cast<const char*>(&from._impl_) +
+               offsetof(Impl_, level_),
+           offsetof(Impl_, max_members_) -
+               offsetof(Impl_, level_) +
+               sizeof(Impl_::max_members_));
+
+  // @@protoc_insertion_point(copy_constructor:chirp.chat.GuildRecruitMetadata)
+}
+PROTOBUF_NDEBUG_INLINE GuildRecruitMetadata::Impl_::Impl_(
+    [[maybe_unused]] ::google::protobuf::internal::InternalVisibility visibility,
+    [[maybe_unused]] ::google::protobuf::Arena* PROTOBUF_NULLABLE arena)
+      : _cached_size_{0},
+        guild_id_(arena),
+        guild_name_(arena),
+        description_(arena) {}
+
+inline void GuildRecruitMetadata::SharedCtor(::_pb::Arena* PROTOBUF_NULLABLE arena) {
+  new (&_impl_) Impl_(internal_visibility(), arena);
+  ::memset(reinterpret_cast<char*>(&_impl_) +
+               offsetof(Impl_, level_),
+           0,
+           offsetof(Impl_, max_members_) -
+               offsetof(Impl_, level_) +
+               sizeof(Impl_::max_members_));
+}
+GuildRecruitMetadata::~GuildRecruitMetadata() {
+  // @@protoc_insertion_point(destructor:chirp.chat.GuildRecruitMetadata)
+  SharedDtor(*this);
+}
+inline void GuildRecruitMetadata::SharedDtor(MessageLite& self) {
+  GuildRecruitMetadata& this_ = static_cast<GuildRecruitMetadata&>(self);
+  if constexpr (::_pbi::DebugHardenCheckHasBitConsistency()) {
+    this_.CheckHasBitConsistency();
+  }
+  this_._internal_metadata_.Delete<::google::protobuf::UnknownFieldSet>();
+  ABSL_DCHECK(this_.GetArena() == nullptr);
+  this_._impl_.guild_id_.Destroy();
+  this_._impl_.guild_name_.Destroy();
+  this_._impl_.description_.Destroy();
+  this_._impl_.~Impl_();
+}
+
+inline void* PROTOBUF_NONNULL GuildRecruitMetadata::PlacementNew_(
+    const void* PROTOBUF_NONNULL, void* PROTOBUF_NONNULL mem,
+    ::google::protobuf::Arena* PROTOBUF_NULLABLE arena) {
+  return ::new (mem) GuildRecruitMetadata(arena);
+}
+constexpr auto GuildRecruitMetadata::InternalNewImpl_() {
+  return ::google::protobuf::internal::MessageCreator::CopyInit(sizeof(GuildRecruitMetadata),
+                                            alignof(GuildRecruitMetadata));
+}
+constexpr auto GuildRecruitMetadata::InternalGenerateClassData_() {
+  return ::google::protobuf::internal::ClassDataFull{
+      ::google::protobuf::internal::ClassData{
+          &_GuildRecruitMetadata_default_instance_._instance,
+          &_table_.header,
+          nullptr,  // OnDemandRegisterArenaDtor
+          nullptr,  // IsInitialized
+          &GuildRecruitMetadata::MergeImpl,
+          ::google::protobuf::Message::GetNewImpl<GuildRecruitMetadata>(),
+#if defined(PROTOBUF_CUSTOM_VTABLE)
+          &GuildRecruitMetadata::SharedDtor,
+          ::google::protobuf::Message::GetClearImpl<GuildRecruitMetadata>(), &GuildRecruitMetadata::ByteSizeLong,
+              &GuildRecruitMetadata::_InternalSerialize,
+#endif  // PROTOBUF_CUSTOM_VTABLE
+          PROTOBUF_FIELD_OFFSET(GuildRecruitMetadata, _impl_._cached_size_),
+          false,
+      },
+      &GuildRecruitMetadata::kDescriptorMethods,
+      &descriptor_table_proto_2fchat_2eproto,
+      nullptr,  // tracker
+  };
+}
+
+PROTOBUF_CONSTINIT PROTOBUF_ATTRIBUTE_INIT_PRIORITY1 const
+    ::google::protobuf::internal::ClassDataFull GuildRecruitMetadata_class_data_ =
+        GuildRecruitMetadata::InternalGenerateClassData_();
+
+PROTOBUF_ATTRIBUTE_WEAK const ::google::protobuf::internal::ClassData* PROTOBUF_NONNULL
+GuildRecruitMetadata::GetClassData() const {
+  ::google::protobuf::internal::PrefetchToLocalCache(&GuildRecruitMetadata_class_data_);
+  ::google::protobuf::internal::PrefetchToLocalCache(GuildRecruitMetadata_class_data_.tc_table);
+  return GuildRecruitMetadata_class_data_.base();
+}
+PROTOBUF_CONSTINIT PROTOBUF_ATTRIBUTE_INIT_PRIORITY1
+const ::_pbi::TcParseTable<3, 6, 0, 69, 2>
+GuildRecruitMetadata::_table_ = {
+  {
+    PROTOBUF_FIELD_OFFSET(GuildRecruitMetadata, _impl_._has_bits_),
+    0, // no _extensions_
+    6, 56,  // max_field_number, fast_idx_mask
+    offsetof(decltype(_table_), field_lookup_table),
+    4294967232,  // skipmap
+    offsetof(decltype(_table_), field_entries),
+    6,  // num_field_entries
+    0,  // num_aux_entries
+    offsetof(decltype(_table_), field_names),  // no aux_entries
+    GuildRecruitMetadata_class_data_.base(),
+    nullptr,  // post_loop_handler
+    ::_pbi::TcParser::GenericFallback,  // fallback
+    #ifdef PROTOBUF_PREFETCH_PARSE_TABLE
+    ::_pbi::TcParser::GetTable<::chirp::chat::GuildRecruitMetadata>(),  // to_prefetch
+    #endif  // PROTOBUF_PREFETCH_PARSE_TABLE
+  }, {{
+    {::_pbi::TcParser::MiniParse, {}},
+    // string guild_id = 1;
+    {::_pbi::TcParser::FastUS1,
+     {10, 0, 0,
+      PROTOBUF_FIELD_OFFSET(GuildRecruitMetadata, _impl_.guild_id_)}},
+    // string guild_name = 2;
+    {::_pbi::TcParser::FastUS1,
+     {18, 1, 0,
+      PROTOBUF_FIELD_OFFSET(GuildRecruitMetadata, _impl_.guild_name_)}},
+    // int32 level = 3;
+    {::_pbi::TcParser::SingularVarintNoZag1<::uint32_t, offsetof(GuildRecruitMetadata, _impl_.level_), 3>(),
+     {24, 3, 0,
+      PROTOBUF_FIELD_OFFSET(GuildRecruitMetadata, _impl_.level_)}},
+    // int32 member_count = 4;
+    {::_pbi::TcParser::SingularVarintNoZag1<::uint32_t, offsetof(GuildRecruitMetadata, _impl_.member_count_), 4>(),
+     {32, 4, 0,
+      PROTOBUF_FIELD_OFFSET(GuildRecruitMetadata, _impl_.member_count_)}},
+    // int32 max_members = 5;
+    {::_pbi::TcParser::SingularVarintNoZag1<::uint32_t, offsetof(GuildRecruitMetadata, _impl_.max_members_), 5>(),
+     {40, 5, 0,
+      PROTOBUF_FIELD_OFFSET(GuildRecruitMetadata, _impl_.max_members_)}},
+    // string description = 6;
+    {::_pbi::TcParser::FastUS1,
+     {50, 2, 0,
+      PROTOBUF_FIELD_OFFSET(GuildRecruitMetadata, _impl_.description_)}},
+    {::_pbi::TcParser::MiniParse, {}},
+  }}, {{
+    65535, 65535
+  }}, {{
+    // string guild_id = 1;
+    {PROTOBUF_FIELD_OFFSET(GuildRecruitMetadata, _impl_.guild_id_), _Internal::kHasBitsOffset + 0, 0, (0 | ::_fl::kFcOptional | ::_fl::kUtf8String | ::_fl::kRepAString)},
+    // string guild_name = 2;
+    {PROTOBUF_FIELD_OFFSET(GuildRecruitMetadata, _impl_.guild_name_), _Internal::kHasBitsOffset + 1, 0, (0 | ::_fl::kFcOptional | ::_fl::kUtf8String | ::_fl::kRepAString)},
+    // int32 level = 3;
+    {PROTOBUF_FIELD_OFFSET(GuildRecruitMetadata, _impl_.level_), _Internal::kHasBitsOffset + 3, 0, (0 | ::_fl::kFcOptional | ::_fl::kInt32)},
+    // int32 member_count = 4;
+    {PROTOBUF_FIELD_OFFSET(GuildRecruitMetadata, _impl_.member_count_), _Internal::kHasBitsOffset + 4, 0, (0 | ::_fl::kFcOptional | ::_fl::kInt32)},
+    // int32 max_members = 5;
+    {PROTOBUF_FIELD_OFFSET(GuildRecruitMetadata, _impl_.max_members_), _Internal::kHasBitsOffset + 5, 0, (0 | ::_fl::kFcOptional | ::_fl::kInt32)},
+    // string description = 6;
+    {PROTOBUF_FIELD_OFFSET(GuildRecruitMetadata, _impl_.description_), _Internal::kHasBitsOffset + 2, 0, (0 | ::_fl::kFcOptional | ::_fl::kUtf8String | ::_fl::kRepAString)},
+  }},
+  // no aux_entries
+  {{
+    "\37\10\12\0\0\0\13\0"
+    "chirp.chat.GuildRecruitMetadata"
+    "guild_id"
+    "guild_name"
+    "description"
+  }},
+};
+PROTOBUF_NOINLINE void GuildRecruitMetadata::Clear() {
+// @@protoc_insertion_point(message_clear_start:chirp.chat.GuildRecruitMetadata)
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  ::uint32_t cached_has_bits = 0;
+  // Prevent compiler warnings about cached_has_bits being unused
+  (void) cached_has_bits;
+
+  cached_has_bits = _impl_._has_bits_[0];
+  if (BatchCheckHasBit(cached_has_bits, 0x00000007U)) {
+    if (CheckHasBit(cached_has_bits, 0x00000001U)) {
+      _impl_.guild_id_.ClearNonDefaultToEmpty();
+    }
+    if (CheckHasBit(cached_has_bits, 0x00000002U)) {
+      _impl_.guild_name_.ClearNonDefaultToEmpty();
+    }
+    if (CheckHasBit(cached_has_bits, 0x00000004U)) {
+      _impl_.description_.ClearNonDefaultToEmpty();
+    }
+  }
+  if (BatchCheckHasBit(cached_has_bits, 0x00000038U)) {
+    ::memset(&_impl_.level_, 0, static_cast<::size_t>(
+        reinterpret_cast<char*>(&_impl_.max_members_) -
+        reinterpret_cast<char*>(&_impl_.level_)) + sizeof(_impl_.max_members_));
+  }
+  _impl_._has_bits_.Clear();
+  _internal_metadata_.Clear<::google::protobuf::UnknownFieldSet>();
+}
+
+#if defined(PROTOBUF_CUSTOM_VTABLE)
+::uint8_t* PROTOBUF_NONNULL GuildRecruitMetadata::_InternalSerialize(
+    const ::google::protobuf::MessageLite& base, ::uint8_t* PROTOBUF_NONNULL target,
+    ::google::protobuf::io::EpsCopyOutputStream* PROTOBUF_NONNULL stream) {
+  const GuildRecruitMetadata& this_ = static_cast<const GuildRecruitMetadata&>(base);
+#else   // PROTOBUF_CUSTOM_VTABLE
+::uint8_t* PROTOBUF_NONNULL GuildRecruitMetadata::_InternalSerialize(
+    ::uint8_t* PROTOBUF_NONNULL target,
+    ::google::protobuf::io::EpsCopyOutputStream* PROTOBUF_NONNULL stream) const {
+  const GuildRecruitMetadata& this_ = *this;
+#endif  // PROTOBUF_CUSTOM_VTABLE
+  if constexpr (::_pbi::DebugHardenCheckHasBitConsistency()) {
+    this_.CheckHasBitConsistency();
+  }
+  // @@protoc_insertion_point(serialize_to_array_start:chirp.chat.GuildRecruitMetadata)
+  ::uint32_t cached_has_bits = 0;
+  (void)cached_has_bits;
+
+  cached_has_bits = this_._impl_._has_bits_[0];
+  // string guild_id = 1;
+  if (CheckHasBit(cached_has_bits, 0x00000001U)) {
+    if (!this_._internal_guild_id().empty()) {
+      const ::std::string& _s = this_._internal_guild_id();
+      ::google::protobuf::internal::WireFormatLite::VerifyUtf8String(
+          _s.data(), static_cast<int>(_s.length()), ::google::protobuf::internal::WireFormatLite::SERIALIZE, "chirp.chat.GuildRecruitMetadata.guild_id");
+      target = stream->WriteStringMaybeAliased(1, _s, target);
+    }
+  }
+
+  // string guild_name = 2;
+  if (CheckHasBit(cached_has_bits, 0x00000002U)) {
+    if (!this_._internal_guild_name().empty()) {
+      const ::std::string& _s = this_._internal_guild_name();
+      ::google::protobuf::internal::WireFormatLite::VerifyUtf8String(
+          _s.data(), static_cast<int>(_s.length()), ::google::protobuf::internal::WireFormatLite::SERIALIZE, "chirp.chat.GuildRecruitMetadata.guild_name");
+      target = stream->WriteStringMaybeAliased(2, _s, target);
+    }
+  }
+
+  // int32 level = 3;
+  if (CheckHasBit(cached_has_bits, 0x00000008U)) {
+    if (this_._internal_level() != 0) {
+      target =
+          ::google::protobuf::internal::WireFormatLite::WriteInt32ToArrayWithField<3>(
+              stream, this_._internal_level(), target);
+    }
+  }
+
+  // int32 member_count = 4;
+  if (CheckHasBit(cached_has_bits, 0x00000010U)) {
+    if (this_._internal_member_count() != 0) {
+      target =
+          ::google::protobuf::internal::WireFormatLite::WriteInt32ToArrayWithField<4>(
+              stream, this_._internal_member_count(), target);
+    }
+  }
+
+  // int32 max_members = 5;
+  if (CheckHasBit(cached_has_bits, 0x00000020U)) {
+    if (this_._internal_max_members() != 0) {
+      target =
+          ::google::protobuf::internal::WireFormatLite::WriteInt32ToArrayWithField<5>(
+              stream, this_._internal_max_members(), target);
+    }
+  }
+
+  // string description = 6;
+  if (CheckHasBit(cached_has_bits, 0x00000004U)) {
+    if (!this_._internal_description().empty()) {
+      const ::std::string& _s = this_._internal_description();
+      ::google::protobuf::internal::WireFormatLite::VerifyUtf8String(
+          _s.data(), static_cast<int>(_s.length()), ::google::protobuf::internal::WireFormatLite::SERIALIZE, "chirp.chat.GuildRecruitMetadata.description");
+      target = stream->WriteStringMaybeAliased(6, _s, target);
+    }
+  }
+
+  if (ABSL_PREDICT_FALSE(this_._internal_metadata_.have_unknown_fields())) {
+    target =
+        ::_pbi::WireFormat::InternalSerializeUnknownFieldsToArray(
+            this_._internal_metadata_.unknown_fields<::google::protobuf::UnknownFieldSet>(::google::protobuf::UnknownFieldSet::default_instance), target, stream);
+  }
+  // @@protoc_insertion_point(serialize_to_array_end:chirp.chat.GuildRecruitMetadata)
+  return target;
+}
+
+#if defined(PROTOBUF_CUSTOM_VTABLE)
+::size_t GuildRecruitMetadata::ByteSizeLong(const MessageLite& base) {
+  const GuildRecruitMetadata& this_ = static_cast<const GuildRecruitMetadata&>(base);
+#else   // PROTOBUF_CUSTOM_VTABLE
+::size_t GuildRecruitMetadata::ByteSizeLong() const {
+  const GuildRecruitMetadata& this_ = *this;
+#endif  // PROTOBUF_CUSTOM_VTABLE
+  // @@protoc_insertion_point(message_byte_size_start:chirp.chat.GuildRecruitMetadata)
+  ::size_t total_size = 0;
+
+  ::uint32_t cached_has_bits = 0;
+  // Prevent compiler warnings about cached_has_bits being unused
+  (void)cached_has_bits;
+
+  ::_pbi::Prefetch5LinesFrom7Lines(&this_);
+  cached_has_bits = this_._impl_._has_bits_[0];
+  if (BatchCheckHasBit(cached_has_bits, 0x0000003fU)) {
+    // string guild_id = 1;
+    if (CheckHasBit(cached_has_bits, 0x00000001U)) {
+      if (!this_._internal_guild_id().empty()) {
+        total_size += 1 + ::google::protobuf::internal::WireFormatLite::StringSize(
+                                        this_._internal_guild_id());
+      }
+    }
+    // string guild_name = 2;
+    if (CheckHasBit(cached_has_bits, 0x00000002U)) {
+      if (!this_._internal_guild_name().empty()) {
+        total_size += 1 + ::google::protobuf::internal::WireFormatLite::StringSize(
+                                        this_._internal_guild_name());
+      }
+    }
+    // string description = 6;
+    if (CheckHasBit(cached_has_bits, 0x00000004U)) {
+      if (!this_._internal_description().empty()) {
+        total_size += 1 + ::google::protobuf::internal::WireFormatLite::StringSize(
+                                        this_._internal_description());
+      }
+    }
+    // int32 level = 3;
+    if (CheckHasBit(cached_has_bits, 0x00000008U)) {
+      if (this_._internal_level() != 0) {
+        total_size += ::_pbi::WireFormatLite::Int32SizePlusOne(
+            this_._internal_level());
+      }
+    }
+    // int32 member_count = 4;
+    if (CheckHasBit(cached_has_bits, 0x00000010U)) {
+      if (this_._internal_member_count() != 0) {
+        total_size += ::_pbi::WireFormatLite::Int32SizePlusOne(
+            this_._internal_member_count());
+      }
+    }
+    // int32 max_members = 5;
+    if (CheckHasBit(cached_has_bits, 0x00000020U)) {
+      if (this_._internal_max_members() != 0) {
+        total_size += ::_pbi::WireFormatLite::Int32SizePlusOne(
+            this_._internal_max_members());
+      }
+    }
+  }
+  return this_.MaybeComputeUnknownFieldsSize(total_size,
+                                             &this_._impl_._cached_size_);
+}
+
+void GuildRecruitMetadata::MergeImpl(::google::protobuf::MessageLite& to_msg,
+                            const ::google::protobuf::MessageLite& from_msg) {
+   auto* const _this =
+      static_cast<GuildRecruitMetadata*>(&to_msg);
+  auto& from = static_cast<const GuildRecruitMetadata&>(from_msg);
+  if constexpr (::_pbi::DebugHardenCheckHasBitConsistency()) {
+    from.CheckHasBitConsistency();
+  }
+  // @@protoc_insertion_point(class_specific_merge_from_start:chirp.chat.GuildRecruitMetadata)
+  ABSL_DCHECK_NE(&from, _this);
+  ::uint32_t cached_has_bits = 0;
+  (void)cached_has_bits;
+
+  cached_has_bits = from._impl_._has_bits_[0];
+  if (BatchCheckHasBit(cached_has_bits, 0x0000003fU)) {
+    if (CheckHasBit(cached_has_bits, 0x00000001U)) {
+      if (!from._internal_guild_id().empty()) {
+        _this->_internal_set_guild_id(from._internal_guild_id());
+      } else {
+        if (_this->_impl_.guild_id_.IsDefault()) {
+          _this->_internal_set_guild_id("");
+        }
+      }
+    }
+    if (CheckHasBit(cached_has_bits, 0x00000002U)) {
+      if (!from._internal_guild_name().empty()) {
+        _this->_internal_set_guild_name(from._internal_guild_name());
+      } else {
+        if (_this->_impl_.guild_name_.IsDefault()) {
+          _this->_internal_set_guild_name("");
+        }
+      }
+    }
+    if (CheckHasBit(cached_has_bits, 0x00000004U)) {
+      if (!from._internal_description().empty()) {
+        _this->_internal_set_description(from._internal_description());
+      } else {
+        if (_this->_impl_.description_.IsDefault()) {
+          _this->_internal_set_description("");
+        }
+      }
+    }
+    if (CheckHasBit(cached_has_bits, 0x00000008U)) {
+      if (from._internal_level() != 0) {
+        _this->_impl_.level_ = from._impl_.level_;
+      }
+    }
+    if (CheckHasBit(cached_has_bits, 0x00000010U)) {
+      if (from._internal_member_count() != 0) {
+        _this->_impl_.member_count_ = from._impl_.member_count_;
+      }
+    }
+    if (CheckHasBit(cached_has_bits, 0x00000020U)) {
+      if (from._internal_max_members() != 0) {
+        _this->_impl_.max_members_ = from._impl_.max_members_;
+      }
+    }
+  }
+  _this->_impl_._has_bits_[0] |= cached_has_bits;
+  _this->_internal_metadata_.MergeFrom<::google::protobuf::UnknownFieldSet>(
+      from._internal_metadata_);
+}
+
+void GuildRecruitMetadata::CopyFrom(const GuildRecruitMetadata& from) {
+  // @@protoc_insertion_point(class_specific_copy_from_start:chirp.chat.GuildRecruitMetadata)
+  if (&from == this) return;
+  Clear();
+  MergeFrom(from);
+}
+
+
+void GuildRecruitMetadata::InternalSwap(GuildRecruitMetadata* PROTOBUF_RESTRICT PROTOBUF_NONNULL other) {
+  using ::std::swap;
+  auto* arena = GetArena();
+  ABSL_DCHECK_EQ(arena, other->GetArena());
+  _internal_metadata_.InternalSwap(&other->_internal_metadata_);
+  swap(_impl_._has_bits_[0], other->_impl_._has_bits_[0]);
+  ::_pbi::ArenaStringPtr::InternalSwap(&_impl_.guild_id_, &other->_impl_.guild_id_, arena);
+  ::_pbi::ArenaStringPtr::InternalSwap(&_impl_.guild_name_, &other->_impl_.guild_name_, arena);
+  ::_pbi::ArenaStringPtr::InternalSwap(&_impl_.description_, &other->_impl_.description_, arena);
+  ::google::protobuf::internal::memswap<
+      PROTOBUF_FIELD_OFFSET(GuildRecruitMetadata, _impl_.max_members_)
+      + sizeof(GuildRecruitMetadata::_impl_.max_members_)
+      - PROTOBUF_FIELD_OFFSET(GuildRecruitMetadata, _impl_.level_)>(
+          reinterpret_cast<char*>(&_impl_.level_),
+          reinterpret_cast<char*>(&other->_impl_.level_));
+}
+
+::google::protobuf::Metadata GuildRecruitMetadata::GetMetadata() const {
+  return ::google::protobuf::Message::GetMetadataImpl(GetClassData()->full());
+}
+// ===================================================================
+
+class PartyRecruitMetadata::_Internal {
+ public:
+  using HasBits =
+      decltype(::std::declval<PartyRecruitMetadata>()._impl_._has_bits_);
+  static constexpr ::int32_t kHasBitsOffset =
+      8 * PROTOBUF_FIELD_OFFSET(PartyRecruitMetadata, _impl_._has_bits_);
+};
+
+PartyRecruitMetadata::PartyRecruitMetadata(::google::protobuf::Arena* PROTOBUF_NULLABLE arena)
+#if defined(PROTOBUF_CUSTOM_VTABLE)
+    : ::google::protobuf::Message(arena, PartyRecruitMetadata_class_data_.base()) {
+#else   // PROTOBUF_CUSTOM_VTABLE
+    : ::google::protobuf::Message(arena) {
+#endif  // PROTOBUF_CUSTOM_VTABLE
+  SharedCtor(arena);
+  // @@protoc_insertion_point(arena_constructor:chirp.chat.PartyRecruitMetadata)
+}
+PROTOBUF_NDEBUG_INLINE PartyRecruitMetadata::Impl_::Impl_(
+    [[maybe_unused]] ::google::protobuf::internal::InternalVisibility visibility,
+    [[maybe_unused]] ::google::protobuf::Arena* PROTOBUF_NULLABLE arena, const Impl_& from,
+    [[maybe_unused]] const ::chirp::chat::PartyRecruitMetadata& from_msg)
+      : _has_bits_{from._has_bits_},
+        _cached_size_{0},
+        party_id_(arena, from.party_id_),
+        dungeon_name_(arena, from.dungeon_name_),
+        leader_name_(arena, from.leader_name_) {}
+
+PartyRecruitMetadata::PartyRecruitMetadata(
+    ::google::protobuf::Arena* PROTOBUF_NULLABLE arena,
+    const PartyRecruitMetadata& from)
+#if defined(PROTOBUF_CUSTOM_VTABLE)
+    : ::google::protobuf::Message(arena, PartyRecruitMetadata_class_data_.base()) {
+#else   // PROTOBUF_CUSTOM_VTABLE
+    : ::google::protobuf::Message(arena) {
+#endif  // PROTOBUF_CUSTOM_VTABLE
+  PartyRecruitMetadata* const _this = this;
+  (void)_this;
+  _internal_metadata_.MergeFrom<::google::protobuf::UnknownFieldSet>(
+      from._internal_metadata_);
+  new (&_impl_) Impl_(internal_visibility(), arena, from._impl_, from);
+  ::memcpy(reinterpret_cast<char*>(&_impl_) +
+               offsetof(Impl_, needed_),
+           reinterpret_cast<const char*>(&from._impl_) +
+               offsetof(Impl_, needed_),
+           offsetof(Impl_, current_) -
+               offsetof(Impl_, needed_) +
+               sizeof(Impl_::current_));
+
+  // @@protoc_insertion_point(copy_constructor:chirp.chat.PartyRecruitMetadata)
+}
+PROTOBUF_NDEBUG_INLINE PartyRecruitMetadata::Impl_::Impl_(
+    [[maybe_unused]] ::google::protobuf::internal::InternalVisibility visibility,
+    [[maybe_unused]] ::google::protobuf::Arena* PROTOBUF_NULLABLE arena)
+      : _cached_size_{0},
+        party_id_(arena),
+        dungeon_name_(arena),
+        leader_name_(arena) {}
+
+inline void PartyRecruitMetadata::SharedCtor(::_pb::Arena* PROTOBUF_NULLABLE arena) {
+  new (&_impl_) Impl_(internal_visibility(), arena);
+  ::memset(reinterpret_cast<char*>(&_impl_) +
+               offsetof(Impl_, needed_),
+           0,
+           offsetof(Impl_, current_) -
+               offsetof(Impl_, needed_) +
+               sizeof(Impl_::current_));
+}
+PartyRecruitMetadata::~PartyRecruitMetadata() {
+  // @@protoc_insertion_point(destructor:chirp.chat.PartyRecruitMetadata)
+  SharedDtor(*this);
+}
+inline void PartyRecruitMetadata::SharedDtor(MessageLite& self) {
+  PartyRecruitMetadata& this_ = static_cast<PartyRecruitMetadata&>(self);
+  if constexpr (::_pbi::DebugHardenCheckHasBitConsistency()) {
+    this_.CheckHasBitConsistency();
+  }
+  this_._internal_metadata_.Delete<::google::protobuf::UnknownFieldSet>();
+  ABSL_DCHECK(this_.GetArena() == nullptr);
+  this_._impl_.party_id_.Destroy();
+  this_._impl_.dungeon_name_.Destroy();
+  this_._impl_.leader_name_.Destroy();
+  this_._impl_.~Impl_();
+}
+
+inline void* PROTOBUF_NONNULL PartyRecruitMetadata::PlacementNew_(
+    const void* PROTOBUF_NONNULL, void* PROTOBUF_NONNULL mem,
+    ::google::protobuf::Arena* PROTOBUF_NULLABLE arena) {
+  return ::new (mem) PartyRecruitMetadata(arena);
+}
+constexpr auto PartyRecruitMetadata::InternalNewImpl_() {
+  return ::google::protobuf::internal::MessageCreator::CopyInit(sizeof(PartyRecruitMetadata),
+                                            alignof(PartyRecruitMetadata));
+}
+constexpr auto PartyRecruitMetadata::InternalGenerateClassData_() {
+  return ::google::protobuf::internal::ClassDataFull{
+      ::google::protobuf::internal::ClassData{
+          &_PartyRecruitMetadata_default_instance_._instance,
+          &_table_.header,
+          nullptr,  // OnDemandRegisterArenaDtor
+          nullptr,  // IsInitialized
+          &PartyRecruitMetadata::MergeImpl,
+          ::google::protobuf::Message::GetNewImpl<PartyRecruitMetadata>(),
+#if defined(PROTOBUF_CUSTOM_VTABLE)
+          &PartyRecruitMetadata::SharedDtor,
+          ::google::protobuf::Message::GetClearImpl<PartyRecruitMetadata>(), &PartyRecruitMetadata::ByteSizeLong,
+              &PartyRecruitMetadata::_InternalSerialize,
+#endif  // PROTOBUF_CUSTOM_VTABLE
+          PROTOBUF_FIELD_OFFSET(PartyRecruitMetadata, _impl_._cached_size_),
+          false,
+      },
+      &PartyRecruitMetadata::kDescriptorMethods,
+      &descriptor_table_proto_2fchat_2eproto,
+      nullptr,  // tracker
+  };
+}
+
+PROTOBUF_CONSTINIT PROTOBUF_ATTRIBUTE_INIT_PRIORITY1 const
+    ::google::protobuf::internal::ClassDataFull PartyRecruitMetadata_class_data_ =
+        PartyRecruitMetadata::InternalGenerateClassData_();
+
+PROTOBUF_ATTRIBUTE_WEAK const ::google::protobuf::internal::ClassData* PROTOBUF_NONNULL
+PartyRecruitMetadata::GetClassData() const {
+  ::google::protobuf::internal::PrefetchToLocalCache(&PartyRecruitMetadata_class_data_);
+  ::google::protobuf::internal::PrefetchToLocalCache(PartyRecruitMetadata_class_data_.tc_table);
+  return PartyRecruitMetadata_class_data_.base();
+}
+PROTOBUF_CONSTINIT PROTOBUF_ATTRIBUTE_INIT_PRIORITY1
+const ::_pbi::TcParseTable<3, 5, 0, 71, 2>
+PartyRecruitMetadata::_table_ = {
+  {
+    PROTOBUF_FIELD_OFFSET(PartyRecruitMetadata, _impl_._has_bits_),
+    0, // no _extensions_
+    5, 56,  // max_field_number, fast_idx_mask
+    offsetof(decltype(_table_), field_lookup_table),
+    4294967264,  // skipmap
+    offsetof(decltype(_table_), field_entries),
+    5,  // num_field_entries
+    0,  // num_aux_entries
+    offsetof(decltype(_table_), field_names),  // no aux_entries
+    PartyRecruitMetadata_class_data_.base(),
+    nullptr,  // post_loop_handler
+    ::_pbi::TcParser::GenericFallback,  // fallback
+    #ifdef PROTOBUF_PREFETCH_PARSE_TABLE
+    ::_pbi::TcParser::GetTable<::chirp::chat::PartyRecruitMetadata>(),  // to_prefetch
+    #endif  // PROTOBUF_PREFETCH_PARSE_TABLE
+  }, {{
+    {::_pbi::TcParser::MiniParse, {}},
+    // string party_id = 1;
+    {::_pbi::TcParser::FastUS1,
+     {10, 0, 0,
+      PROTOBUF_FIELD_OFFSET(PartyRecruitMetadata, _impl_.party_id_)}},
+    // string dungeon_name = 2;
+    {::_pbi::TcParser::FastUS1,
+     {18, 1, 0,
+      PROTOBUF_FIELD_OFFSET(PartyRecruitMetadata, _impl_.dungeon_name_)}},
+    // int32 needed = 3;
+    {::_pbi::TcParser::SingularVarintNoZag1<::uint32_t, offsetof(PartyRecruitMetadata, _impl_.needed_), 3>(),
+     {24, 3, 0,
+      PROTOBUF_FIELD_OFFSET(PartyRecruitMetadata, _impl_.needed_)}},
+    // int32 current = 4;
+    {::_pbi::TcParser::SingularVarintNoZag1<::uint32_t, offsetof(PartyRecruitMetadata, _impl_.current_), 4>(),
+     {32, 4, 0,
+      PROTOBUF_FIELD_OFFSET(PartyRecruitMetadata, _impl_.current_)}},
+    // string leader_name = 5;
+    {::_pbi::TcParser::FastUS1,
+     {42, 2, 0,
+      PROTOBUF_FIELD_OFFSET(PartyRecruitMetadata, _impl_.leader_name_)}},
+    {::_pbi::TcParser::MiniParse, {}},
+    {::_pbi::TcParser::MiniParse, {}},
+  }}, {{
+    65535, 65535
+  }}, {{
+    // string party_id = 1;
+    {PROTOBUF_FIELD_OFFSET(PartyRecruitMetadata, _impl_.party_id_), _Internal::kHasBitsOffset + 0, 0, (0 | ::_fl::kFcOptional | ::_fl::kUtf8String | ::_fl::kRepAString)},
+    // string dungeon_name = 2;
+    {PROTOBUF_FIELD_OFFSET(PartyRecruitMetadata, _impl_.dungeon_name_), _Internal::kHasBitsOffset + 1, 0, (0 | ::_fl::kFcOptional | ::_fl::kUtf8String | ::_fl::kRepAString)},
+    // int32 needed = 3;
+    {PROTOBUF_FIELD_OFFSET(PartyRecruitMetadata, _impl_.needed_), _Internal::kHasBitsOffset + 3, 0, (0 | ::_fl::kFcOptional | ::_fl::kInt32)},
+    // int32 current = 4;
+    {PROTOBUF_FIELD_OFFSET(PartyRecruitMetadata, _impl_.current_), _Internal::kHasBitsOffset + 4, 0, (0 | ::_fl::kFcOptional | ::_fl::kInt32)},
+    // string leader_name = 5;
+    {PROTOBUF_FIELD_OFFSET(PartyRecruitMetadata, _impl_.leader_name_), _Internal::kHasBitsOffset + 2, 0, (0 | ::_fl::kFcOptional | ::_fl::kUtf8String | ::_fl::kRepAString)},
+  }},
+  // no aux_entries
+  {{
+    "\37\10\14\0\0\13\0\0"
+    "chirp.chat.PartyRecruitMetadata"
+    "party_id"
+    "dungeon_name"
+    "leader_name"
+  }},
+};
+PROTOBUF_NOINLINE void PartyRecruitMetadata::Clear() {
+// @@protoc_insertion_point(message_clear_start:chirp.chat.PartyRecruitMetadata)
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  ::uint32_t cached_has_bits = 0;
+  // Prevent compiler warnings about cached_has_bits being unused
+  (void) cached_has_bits;
+
+  cached_has_bits = _impl_._has_bits_[0];
+  if (BatchCheckHasBit(cached_has_bits, 0x00000007U)) {
+    if (CheckHasBit(cached_has_bits, 0x00000001U)) {
+      _impl_.party_id_.ClearNonDefaultToEmpty();
+    }
+    if (CheckHasBit(cached_has_bits, 0x00000002U)) {
+      _impl_.dungeon_name_.ClearNonDefaultToEmpty();
+    }
+    if (CheckHasBit(cached_has_bits, 0x00000004U)) {
+      _impl_.leader_name_.ClearNonDefaultToEmpty();
+    }
+  }
+  if (BatchCheckHasBit(cached_has_bits, 0x00000018U)) {
+    ::memset(&_impl_.needed_, 0, static_cast<::size_t>(
+        reinterpret_cast<char*>(&_impl_.current_) -
+        reinterpret_cast<char*>(&_impl_.needed_)) + sizeof(_impl_.current_));
+  }
+  _impl_._has_bits_.Clear();
+  _internal_metadata_.Clear<::google::protobuf::UnknownFieldSet>();
+}
+
+#if defined(PROTOBUF_CUSTOM_VTABLE)
+::uint8_t* PROTOBUF_NONNULL PartyRecruitMetadata::_InternalSerialize(
+    const ::google::protobuf::MessageLite& base, ::uint8_t* PROTOBUF_NONNULL target,
+    ::google::protobuf::io::EpsCopyOutputStream* PROTOBUF_NONNULL stream) {
+  const PartyRecruitMetadata& this_ = static_cast<const PartyRecruitMetadata&>(base);
+#else   // PROTOBUF_CUSTOM_VTABLE
+::uint8_t* PROTOBUF_NONNULL PartyRecruitMetadata::_InternalSerialize(
+    ::uint8_t* PROTOBUF_NONNULL target,
+    ::google::protobuf::io::EpsCopyOutputStream* PROTOBUF_NONNULL stream) const {
+  const PartyRecruitMetadata& this_ = *this;
+#endif  // PROTOBUF_CUSTOM_VTABLE
+  if constexpr (::_pbi::DebugHardenCheckHasBitConsistency()) {
+    this_.CheckHasBitConsistency();
+  }
+  // @@protoc_insertion_point(serialize_to_array_start:chirp.chat.PartyRecruitMetadata)
+  ::uint32_t cached_has_bits = 0;
+  (void)cached_has_bits;
+
+  cached_has_bits = this_._impl_._has_bits_[0];
+  // string party_id = 1;
+  if (CheckHasBit(cached_has_bits, 0x00000001U)) {
+    if (!this_._internal_party_id().empty()) {
+      const ::std::string& _s = this_._internal_party_id();
+      ::google::protobuf::internal::WireFormatLite::VerifyUtf8String(
+          _s.data(), static_cast<int>(_s.length()), ::google::protobuf::internal::WireFormatLite::SERIALIZE, "chirp.chat.PartyRecruitMetadata.party_id");
+      target = stream->WriteStringMaybeAliased(1, _s, target);
+    }
+  }
+
+  // string dungeon_name = 2;
+  if (CheckHasBit(cached_has_bits, 0x00000002U)) {
+    if (!this_._internal_dungeon_name().empty()) {
+      const ::std::string& _s = this_._internal_dungeon_name();
+      ::google::protobuf::internal::WireFormatLite::VerifyUtf8String(
+          _s.data(), static_cast<int>(_s.length()), ::google::protobuf::internal::WireFormatLite::SERIALIZE, "chirp.chat.PartyRecruitMetadata.dungeon_name");
+      target = stream->WriteStringMaybeAliased(2, _s, target);
+    }
+  }
+
+  // int32 needed = 3;
+  if (CheckHasBit(cached_has_bits, 0x00000008U)) {
+    if (this_._internal_needed() != 0) {
+      target =
+          ::google::protobuf::internal::WireFormatLite::WriteInt32ToArrayWithField<3>(
+              stream, this_._internal_needed(), target);
+    }
+  }
+
+  // int32 current = 4;
+  if (CheckHasBit(cached_has_bits, 0x00000010U)) {
+    if (this_._internal_current() != 0) {
+      target =
+          ::google::protobuf::internal::WireFormatLite::WriteInt32ToArrayWithField<4>(
+              stream, this_._internal_current(), target);
+    }
+  }
+
+  // string leader_name = 5;
+  if (CheckHasBit(cached_has_bits, 0x00000004U)) {
+    if (!this_._internal_leader_name().empty()) {
+      const ::std::string& _s = this_._internal_leader_name();
+      ::google::protobuf::internal::WireFormatLite::VerifyUtf8String(
+          _s.data(), static_cast<int>(_s.length()), ::google::protobuf::internal::WireFormatLite::SERIALIZE, "chirp.chat.PartyRecruitMetadata.leader_name");
+      target = stream->WriteStringMaybeAliased(5, _s, target);
+    }
+  }
+
+  if (ABSL_PREDICT_FALSE(this_._internal_metadata_.have_unknown_fields())) {
+    target =
+        ::_pbi::WireFormat::InternalSerializeUnknownFieldsToArray(
+            this_._internal_metadata_.unknown_fields<::google::protobuf::UnknownFieldSet>(::google::protobuf::UnknownFieldSet::default_instance), target, stream);
+  }
+  // @@protoc_insertion_point(serialize_to_array_end:chirp.chat.PartyRecruitMetadata)
+  return target;
+}
+
+#if defined(PROTOBUF_CUSTOM_VTABLE)
+::size_t PartyRecruitMetadata::ByteSizeLong(const MessageLite& base) {
+  const PartyRecruitMetadata& this_ = static_cast<const PartyRecruitMetadata&>(base);
+#else   // PROTOBUF_CUSTOM_VTABLE
+::size_t PartyRecruitMetadata::ByteSizeLong() const {
+  const PartyRecruitMetadata& this_ = *this;
+#endif  // PROTOBUF_CUSTOM_VTABLE
+  // @@protoc_insertion_point(message_byte_size_start:chirp.chat.PartyRecruitMetadata)
+  ::size_t total_size = 0;
+
+  ::uint32_t cached_has_bits = 0;
+  // Prevent compiler warnings about cached_has_bits being unused
+  (void)cached_has_bits;
+
+  ::_pbi::Prefetch5LinesFrom7Lines(&this_);
+  cached_has_bits = this_._impl_._has_bits_[0];
+  if (BatchCheckHasBit(cached_has_bits, 0x0000001fU)) {
+    // string party_id = 1;
+    if (CheckHasBit(cached_has_bits, 0x00000001U)) {
+      if (!this_._internal_party_id().empty()) {
+        total_size += 1 + ::google::protobuf::internal::WireFormatLite::StringSize(
+                                        this_._internal_party_id());
+      }
+    }
+    // string dungeon_name = 2;
+    if (CheckHasBit(cached_has_bits, 0x00000002U)) {
+      if (!this_._internal_dungeon_name().empty()) {
+        total_size += 1 + ::google::protobuf::internal::WireFormatLite::StringSize(
+                                        this_._internal_dungeon_name());
+      }
+    }
+    // string leader_name = 5;
+    if (CheckHasBit(cached_has_bits, 0x00000004U)) {
+      if (!this_._internal_leader_name().empty()) {
+        total_size += 1 + ::google::protobuf::internal::WireFormatLite::StringSize(
+                                        this_._internal_leader_name());
+      }
+    }
+    // int32 needed = 3;
+    if (CheckHasBit(cached_has_bits, 0x00000008U)) {
+      if (this_._internal_needed() != 0) {
+        total_size += ::_pbi::WireFormatLite::Int32SizePlusOne(
+            this_._internal_needed());
+      }
+    }
+    // int32 current = 4;
+    if (CheckHasBit(cached_has_bits, 0x00000010U)) {
+      if (this_._internal_current() != 0) {
+        total_size += ::_pbi::WireFormatLite::Int32SizePlusOne(
+            this_._internal_current());
+      }
+    }
+  }
+  return this_.MaybeComputeUnknownFieldsSize(total_size,
+                                             &this_._impl_._cached_size_);
+}
+
+void PartyRecruitMetadata::MergeImpl(::google::protobuf::MessageLite& to_msg,
+                            const ::google::protobuf::MessageLite& from_msg) {
+   auto* const _this =
+      static_cast<PartyRecruitMetadata*>(&to_msg);
+  auto& from = static_cast<const PartyRecruitMetadata&>(from_msg);
+  if constexpr (::_pbi::DebugHardenCheckHasBitConsistency()) {
+    from.CheckHasBitConsistency();
+  }
+  // @@protoc_insertion_point(class_specific_merge_from_start:chirp.chat.PartyRecruitMetadata)
+  ABSL_DCHECK_NE(&from, _this);
+  ::uint32_t cached_has_bits = 0;
+  (void)cached_has_bits;
+
+  cached_has_bits = from._impl_._has_bits_[0];
+  if (BatchCheckHasBit(cached_has_bits, 0x0000001fU)) {
+    if (CheckHasBit(cached_has_bits, 0x00000001U)) {
+      if (!from._internal_party_id().empty()) {
+        _this->_internal_set_party_id(from._internal_party_id());
+      } else {
+        if (_this->_impl_.party_id_.IsDefault()) {
+          _this->_internal_set_party_id("");
+        }
+      }
+    }
+    if (CheckHasBit(cached_has_bits, 0x00000002U)) {
+      if (!from._internal_dungeon_name().empty()) {
+        _this->_internal_set_dungeon_name(from._internal_dungeon_name());
+      } else {
+        if (_this->_impl_.dungeon_name_.IsDefault()) {
+          _this->_internal_set_dungeon_name("");
+        }
+      }
+    }
+    if (CheckHasBit(cached_has_bits, 0x00000004U)) {
+      if (!from._internal_leader_name().empty()) {
+        _this->_internal_set_leader_name(from._internal_leader_name());
+      } else {
+        if (_this->_impl_.leader_name_.IsDefault()) {
+          _this->_internal_set_leader_name("");
+        }
+      }
+    }
+    if (CheckHasBit(cached_has_bits, 0x00000008U)) {
+      if (from._internal_needed() != 0) {
+        _this->_impl_.needed_ = from._impl_.needed_;
+      }
+    }
+    if (CheckHasBit(cached_has_bits, 0x00000010U)) {
+      if (from._internal_current() != 0) {
+        _this->_impl_.current_ = from._impl_.current_;
+      }
+    }
+  }
+  _this->_impl_._has_bits_[0] |= cached_has_bits;
+  _this->_internal_metadata_.MergeFrom<::google::protobuf::UnknownFieldSet>(
+      from._internal_metadata_);
+}
+
+void PartyRecruitMetadata::CopyFrom(const PartyRecruitMetadata& from) {
+  // @@protoc_insertion_point(class_specific_copy_from_start:chirp.chat.PartyRecruitMetadata)
+  if (&from == this) return;
+  Clear();
+  MergeFrom(from);
+}
+
+
+void PartyRecruitMetadata::InternalSwap(PartyRecruitMetadata* PROTOBUF_RESTRICT PROTOBUF_NONNULL other) {
+  using ::std::swap;
+  auto* arena = GetArena();
+  ABSL_DCHECK_EQ(arena, other->GetArena());
+  _internal_metadata_.InternalSwap(&other->_internal_metadata_);
+  swap(_impl_._has_bits_[0], other->_impl_._has_bits_[0]);
+  ::_pbi::ArenaStringPtr::InternalSwap(&_impl_.party_id_, &other->_impl_.party_id_, arena);
+  ::_pbi::ArenaStringPtr::InternalSwap(&_impl_.dungeon_name_, &other->_impl_.dungeon_name_, arena);
+  ::_pbi::ArenaStringPtr::InternalSwap(&_impl_.leader_name_, &other->_impl_.leader_name_, arena);
+  ::google::protobuf::internal::memswap<
+      PROTOBUF_FIELD_OFFSET(PartyRecruitMetadata, _impl_.current_)
+      + sizeof(PartyRecruitMetadata::_impl_.current_)
+      - PROTOBUF_FIELD_OFFSET(PartyRecruitMetadata, _impl_.needed_)>(
+          reinterpret_cast<char*>(&_impl_.needed_),
+          reinterpret_cast<char*>(&other->_impl_.needed_));
+}
+
+::google::protobuf::Metadata PartyRecruitMetadata::GetMetadata() const {
   return ::google::protobuf::Message::GetMetadataImpl(GetClassData()->full());
 }
 // ===================================================================

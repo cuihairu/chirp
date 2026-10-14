@@ -258,6 +258,59 @@ describe('MessageBubble', () => {
     expect(card.textContent).not.toContain('undefined');
   });
 
+  it('renders the guild recruit card with level, headcount and blurb', () => {
+    render(
+      <MessageBubble
+        message={message({
+          content: '招募成员',
+          guildRecruit: {
+            guildId: 'guild-3001',
+            guildName: '烈焰军团',
+            level: 7,
+            memberCount: 48,
+            maxMembers: 60,
+            description: '周三晚开荒',
+          },
+        })}
+        selfId="user_a"
+        onToggleReaction={noop}
+      />,
+    );
+    const card = screen.getByTestId('guild-m1');
+    expect(card.textContent).toContain('公会招募');
+    expect(card.textContent).toContain('烈焰军团');
+    expect(card.textContent).toContain('等级 7');
+    expect(card.textContent).toContain('人数 48/60');
+    expect(card.textContent).toContain('周三晚开荒');
+    expect(card.textContent).toContain('guild-3001');
+  });
+
+  it('renders the party recruit card with headcount need and leader', () => {
+    render(
+      <MessageBubble
+        message={message({
+          content: '缺 2 人',
+          partyRecruit: {
+            partyId: 'party-4001',
+            dungeonName: '熔岩之心',
+            needed: 5,
+            current: 3,
+            leaderName: 'alice',
+          },
+        })}
+        selfId="user_a"
+        onToggleReaction={noop}
+      />,
+    );
+    const card = screen.getByTestId('party-m1');
+    expect(card.textContent).toContain('组队招募');
+    expect(card.textContent).toContain('熔岩之心');
+    expect(card.textContent).toContain('缺 2 人');
+    expect(card.textContent).toContain('3/5');
+    expect(card.textContent).toContain('队长 alice');
+    expect(card.textContent).toContain('party-4001');
+  });
+
   it('keeps pending own messages visually unconfirmed', () => {
     render(<MessageBubble message={message({ senderId: 'user_a', pending: true })} selfId="user_a" onToggleReaction={noop} />);
     expect(screen.getByText(/发送中/)).toBeTruthy();

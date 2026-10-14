@@ -117,6 +117,22 @@ public final class Chat extends com.google.protobuf.GeneratedFile {
     COORD_LINK(15),
     /**
      * <pre>
+     * 公会招募（metadata = GuildRecruitMetadata）
+     * </pre>
+     *
+     * <code>GUILD_RECRUIT = 16;</code>
+     */
+    GUILD_RECRUIT(16),
+    /**
+     * <pre>
+     * 组队招募（metadata = PartyRecruitMetadata）
+     * </pre>
+     *
+     * <code>PARTY_RECRUIT = 17;</code>
+     */
+    PARTY_RECRUIT(17),
+    /**
+     * <pre>
      * 系统消息
      * </pre>
      *
@@ -217,6 +233,22 @@ public final class Chat extends com.google.protobuf.GeneratedFile {
     public static final int COORD_LINK_VALUE = 15;
     /**
      * <pre>
+     * 公会招募（metadata = GuildRecruitMetadata）
+     * </pre>
+     *
+     * <code>GUILD_RECRUIT = 16;</code>
+     */
+    public static final int GUILD_RECRUIT_VALUE = 16;
+    /**
+     * <pre>
+     * 组队招募（metadata = PartyRecruitMetadata）
+     * </pre>
+     *
+     * <code>PARTY_RECRUIT = 17;</code>
+     */
+    public static final int PARTY_RECRUIT_VALUE = 17;
+    /**
+     * <pre>
      * 系统消息
      * </pre>
      *
@@ -259,6 +291,8 @@ public final class Chat extends com.google.protobuf.GeneratedFile {
         case 13: return NPC_DIALOG;
         case 14: return TRADE_STATUS;
         case 15: return COORD_LINK;
+        case 16: return GUILD_RECRUIT;
+        case 17: return PARTY_RECRUIT;
         case 99: return SYSTEM;
         default: return null;
       }
@@ -108230,6 +108264,2282 @@ java.lang.String defaultValue) {
 
   }
 
+  public interface GuildRecruitMetadataOrBuilder extends
+      // @@protoc_insertion_point(interface_extends:chirp.chat.GuildRecruitMetadata)
+      com.google.protobuf.MessageOrBuilder {
+
+    /**
+     * <pre>
+     * 公会唯一 id（校验落点：空拒绝）
+     * </pre>
+     *
+     * <code>string guild_id = 1;</code>
+     * @return The guildId.
+     */
+    java.lang.String getGuildId();
+    /**
+     * <pre>
+     * 公会唯一 id（校验落点：空拒绝）
+     * </pre>
+     *
+     * <code>string guild_id = 1;</code>
+     * @return The bytes for guildId.
+     */
+    com.google.protobuf.ByteString
+        getGuildIdBytes();
+
+    /**
+     * <code>string guild_name = 2;</code>
+     * @return The guildName.
+     */
+    java.lang.String getGuildName();
+    /**
+     * <code>string guild_name = 2;</code>
+     * @return The bytes for guildName.
+     */
+    com.google.protobuf.ByteString
+        getGuildNameBytes();
+
+    /**
+     * <pre>
+     * 公会等级
+     * </pre>
+     *
+     * <code>int32 level = 3;</code>
+     * @return The level.
+     */
+    int getLevel();
+
+    /**
+     * <pre>
+     * 当前人数
+     * </pre>
+     *
+     * <code>int32 member_count = 4;</code>
+     * @return The memberCount.
+     */
+    int getMemberCount();
+
+    /**
+     * <pre>
+     * 人数上限（0 = 不展示）
+     * </pre>
+     *
+     * <code>int32 max_members = 5;</code>
+     * @return The maxMembers.
+     */
+    int getMaxMembers();
+
+    /**
+     * <pre>
+     * 招募语（可选）
+     * </pre>
+     *
+     * <code>string description = 6;</code>
+     * @return The description.
+     */
+    java.lang.String getDescription();
+    /**
+     * <pre>
+     * 招募语（可选）
+     * </pre>
+     *
+     * <code>string description = 6;</code>
+     * @return The bytes for description.
+     */
+    com.google.protobuf.ByteString
+        getDescriptionBytes();
+  }
+  /**
+   * <pre>
+   * 公会招募卡片（msg_type = GUILD_RECRUIT 时；game_chat_features P1「公会招募」）。
+   * 伴侣面无公会加入动作面（一键加入待公会申请协议），渲染为展示性卡片；
+   * 游戏内客户端的加入自渲染走 SDK 侧。
+   * </pre>
+   *
+   * Protobuf type {@code chirp.chat.GuildRecruitMetadata}
+   */
+  public static final class GuildRecruitMetadata extends
+      com.google.protobuf.GeneratedMessage implements
+      // @@protoc_insertion_point(message_implements:chirp.chat.GuildRecruitMetadata)
+      GuildRecruitMetadataOrBuilder {
+  private static final long serialVersionUID = 0L;
+    static {
+      com.google.protobuf.RuntimeVersion.validateProtobufGencodeVersion(
+        com.google.protobuf.RuntimeVersion.RuntimeDomain.PUBLIC,
+        /* major= */ 4,
+        /* minor= */ 33,
+        /* patch= */ 4,
+        /* suffix= */ "",
+        "GuildRecruitMetadata");
+    }
+    // Use GuildRecruitMetadata.newBuilder() to construct.
+    private GuildRecruitMetadata(com.google.protobuf.GeneratedMessage.Builder<?> builder) {
+      super(builder);
+    }
+    private GuildRecruitMetadata() {
+      guildId_ = "";
+      guildName_ = "";
+      description_ = "";
+    }
+
+    public static final com.google.protobuf.Descriptors.Descriptor
+        getDescriptor() {
+      return chirp.chat.Chat.internal_static_chirp_chat_GuildRecruitMetadata_descriptor;
+    }
+
+    @java.lang.Override
+    protected com.google.protobuf.GeneratedMessage.FieldAccessorTable
+        internalGetFieldAccessorTable() {
+      return chirp.chat.Chat.internal_static_chirp_chat_GuildRecruitMetadata_fieldAccessorTable
+          .ensureFieldAccessorsInitialized(
+              chirp.chat.Chat.GuildRecruitMetadata.class, chirp.chat.Chat.GuildRecruitMetadata.Builder.class);
+    }
+
+    public static final int GUILD_ID_FIELD_NUMBER = 1;
+    @SuppressWarnings("serial")
+    private volatile java.lang.Object guildId_ = "";
+    /**
+     * <pre>
+     * 公会唯一 id（校验落点：空拒绝）
+     * </pre>
+     *
+     * <code>string guild_id = 1;</code>
+     * @return The guildId.
+     */
+    @java.lang.Override
+    public java.lang.String getGuildId() {
+      java.lang.Object ref = guildId_;
+      if (ref instanceof java.lang.String) {
+        return (java.lang.String) ref;
+      } else {
+        com.google.protobuf.ByteString bs = 
+            (com.google.protobuf.ByteString) ref;
+        java.lang.String s = bs.toStringUtf8();
+        guildId_ = s;
+        return s;
+      }
+    }
+    /**
+     * <pre>
+     * 公会唯一 id（校验落点：空拒绝）
+     * </pre>
+     *
+     * <code>string guild_id = 1;</code>
+     * @return The bytes for guildId.
+     */
+    @java.lang.Override
+    public com.google.protobuf.ByteString
+        getGuildIdBytes() {
+      java.lang.Object ref = guildId_;
+      if (ref instanceof java.lang.String) {
+        com.google.protobuf.ByteString b = 
+            com.google.protobuf.ByteString.copyFromUtf8(
+                (java.lang.String) ref);
+        guildId_ = b;
+        return b;
+      } else {
+        return (com.google.protobuf.ByteString) ref;
+      }
+    }
+
+    public static final int GUILD_NAME_FIELD_NUMBER = 2;
+    @SuppressWarnings("serial")
+    private volatile java.lang.Object guildName_ = "";
+    /**
+     * <code>string guild_name = 2;</code>
+     * @return The guildName.
+     */
+    @java.lang.Override
+    public java.lang.String getGuildName() {
+      java.lang.Object ref = guildName_;
+      if (ref instanceof java.lang.String) {
+        return (java.lang.String) ref;
+      } else {
+        com.google.protobuf.ByteString bs = 
+            (com.google.protobuf.ByteString) ref;
+        java.lang.String s = bs.toStringUtf8();
+        guildName_ = s;
+        return s;
+      }
+    }
+    /**
+     * <code>string guild_name = 2;</code>
+     * @return The bytes for guildName.
+     */
+    @java.lang.Override
+    public com.google.protobuf.ByteString
+        getGuildNameBytes() {
+      java.lang.Object ref = guildName_;
+      if (ref instanceof java.lang.String) {
+        com.google.protobuf.ByteString b = 
+            com.google.protobuf.ByteString.copyFromUtf8(
+                (java.lang.String) ref);
+        guildName_ = b;
+        return b;
+      } else {
+        return (com.google.protobuf.ByteString) ref;
+      }
+    }
+
+    public static final int LEVEL_FIELD_NUMBER = 3;
+    private int level_ = 0;
+    /**
+     * <pre>
+     * 公会等级
+     * </pre>
+     *
+     * <code>int32 level = 3;</code>
+     * @return The level.
+     */
+    @java.lang.Override
+    public int getLevel() {
+      return level_;
+    }
+
+    public static final int MEMBER_COUNT_FIELD_NUMBER = 4;
+    private int memberCount_ = 0;
+    /**
+     * <pre>
+     * 当前人数
+     * </pre>
+     *
+     * <code>int32 member_count = 4;</code>
+     * @return The memberCount.
+     */
+    @java.lang.Override
+    public int getMemberCount() {
+      return memberCount_;
+    }
+
+    public static final int MAX_MEMBERS_FIELD_NUMBER = 5;
+    private int maxMembers_ = 0;
+    /**
+     * <pre>
+     * 人数上限（0 = 不展示）
+     * </pre>
+     *
+     * <code>int32 max_members = 5;</code>
+     * @return The maxMembers.
+     */
+    @java.lang.Override
+    public int getMaxMembers() {
+      return maxMembers_;
+    }
+
+    public static final int DESCRIPTION_FIELD_NUMBER = 6;
+    @SuppressWarnings("serial")
+    private volatile java.lang.Object description_ = "";
+    /**
+     * <pre>
+     * 招募语（可选）
+     * </pre>
+     *
+     * <code>string description = 6;</code>
+     * @return The description.
+     */
+    @java.lang.Override
+    public java.lang.String getDescription() {
+      java.lang.Object ref = description_;
+      if (ref instanceof java.lang.String) {
+        return (java.lang.String) ref;
+      } else {
+        com.google.protobuf.ByteString bs = 
+            (com.google.protobuf.ByteString) ref;
+        java.lang.String s = bs.toStringUtf8();
+        description_ = s;
+        return s;
+      }
+    }
+    /**
+     * <pre>
+     * 招募语（可选）
+     * </pre>
+     *
+     * <code>string description = 6;</code>
+     * @return The bytes for description.
+     */
+    @java.lang.Override
+    public com.google.protobuf.ByteString
+        getDescriptionBytes() {
+      java.lang.Object ref = description_;
+      if (ref instanceof java.lang.String) {
+        com.google.protobuf.ByteString b = 
+            com.google.protobuf.ByteString.copyFromUtf8(
+                (java.lang.String) ref);
+        description_ = b;
+        return b;
+      } else {
+        return (com.google.protobuf.ByteString) ref;
+      }
+    }
+
+    private byte memoizedIsInitialized = -1;
+    @java.lang.Override
+    public final boolean isInitialized() {
+      byte isInitialized = memoizedIsInitialized;
+      if (isInitialized == 1) return true;
+      if (isInitialized == 0) return false;
+
+      memoizedIsInitialized = 1;
+      return true;
+    }
+
+    @java.lang.Override
+    public void writeTo(com.google.protobuf.CodedOutputStream output)
+                        throws java.io.IOException {
+      if (!com.google.protobuf.GeneratedMessage.isStringEmpty(guildId_)) {
+        com.google.protobuf.GeneratedMessage.writeString(output, 1, guildId_);
+      }
+      if (!com.google.protobuf.GeneratedMessage.isStringEmpty(guildName_)) {
+        com.google.protobuf.GeneratedMessage.writeString(output, 2, guildName_);
+      }
+      if (level_ != 0) {
+        output.writeInt32(3, level_);
+      }
+      if (memberCount_ != 0) {
+        output.writeInt32(4, memberCount_);
+      }
+      if (maxMembers_ != 0) {
+        output.writeInt32(5, maxMembers_);
+      }
+      if (!com.google.protobuf.GeneratedMessage.isStringEmpty(description_)) {
+        com.google.protobuf.GeneratedMessage.writeString(output, 6, description_);
+      }
+      getUnknownFields().writeTo(output);
+    }
+
+    @java.lang.Override
+    public int getSerializedSize() {
+      int size = memoizedSize;
+      if (size != -1) return size;
+
+      size = 0;
+      if (!com.google.protobuf.GeneratedMessage.isStringEmpty(guildId_)) {
+        size += com.google.protobuf.GeneratedMessage.computeStringSize(1, guildId_);
+      }
+      if (!com.google.protobuf.GeneratedMessage.isStringEmpty(guildName_)) {
+        size += com.google.protobuf.GeneratedMessage.computeStringSize(2, guildName_);
+      }
+      if (level_ != 0) {
+        size += com.google.protobuf.CodedOutputStream
+          .computeInt32Size(3, level_);
+      }
+      if (memberCount_ != 0) {
+        size += com.google.protobuf.CodedOutputStream
+          .computeInt32Size(4, memberCount_);
+      }
+      if (maxMembers_ != 0) {
+        size += com.google.protobuf.CodedOutputStream
+          .computeInt32Size(5, maxMembers_);
+      }
+      if (!com.google.protobuf.GeneratedMessage.isStringEmpty(description_)) {
+        size += com.google.protobuf.GeneratedMessage.computeStringSize(6, description_);
+      }
+      size += getUnknownFields().getSerializedSize();
+      memoizedSize = size;
+      return size;
+    }
+
+    @java.lang.Override
+    public boolean equals(final java.lang.Object obj) {
+      if (obj == this) {
+       return true;
+      }
+      if (!(obj instanceof chirp.chat.Chat.GuildRecruitMetadata)) {
+        return super.equals(obj);
+      }
+      chirp.chat.Chat.GuildRecruitMetadata other = (chirp.chat.Chat.GuildRecruitMetadata) obj;
+
+      if (!getGuildId()
+          .equals(other.getGuildId())) return false;
+      if (!getGuildName()
+          .equals(other.getGuildName())) return false;
+      if (getLevel()
+          != other.getLevel()) return false;
+      if (getMemberCount()
+          != other.getMemberCount()) return false;
+      if (getMaxMembers()
+          != other.getMaxMembers()) return false;
+      if (!getDescription()
+          .equals(other.getDescription())) return false;
+      if (!getUnknownFields().equals(other.getUnknownFields())) return false;
+      return true;
+    }
+
+    @java.lang.Override
+    public int hashCode() {
+      if (memoizedHashCode != 0) {
+        return memoizedHashCode;
+      }
+      int hash = 41;
+      hash = (19 * hash) + getDescriptor().hashCode();
+      hash = (37 * hash) + GUILD_ID_FIELD_NUMBER;
+      hash = (53 * hash) + getGuildId().hashCode();
+      hash = (37 * hash) + GUILD_NAME_FIELD_NUMBER;
+      hash = (53 * hash) + getGuildName().hashCode();
+      hash = (37 * hash) + LEVEL_FIELD_NUMBER;
+      hash = (53 * hash) + getLevel();
+      hash = (37 * hash) + MEMBER_COUNT_FIELD_NUMBER;
+      hash = (53 * hash) + getMemberCount();
+      hash = (37 * hash) + MAX_MEMBERS_FIELD_NUMBER;
+      hash = (53 * hash) + getMaxMembers();
+      hash = (37 * hash) + DESCRIPTION_FIELD_NUMBER;
+      hash = (53 * hash) + getDescription().hashCode();
+      hash = (29 * hash) + getUnknownFields().hashCode();
+      memoizedHashCode = hash;
+      return hash;
+    }
+
+    public static chirp.chat.Chat.GuildRecruitMetadata parseFrom(
+        java.nio.ByteBuffer data)
+        throws com.google.protobuf.InvalidProtocolBufferException {
+      return PARSER.parseFrom(data);
+    }
+    public static chirp.chat.Chat.GuildRecruitMetadata parseFrom(
+        java.nio.ByteBuffer data,
+        com.google.protobuf.ExtensionRegistryLite extensionRegistry)
+        throws com.google.protobuf.InvalidProtocolBufferException {
+      return PARSER.parseFrom(data, extensionRegistry);
+    }
+    public static chirp.chat.Chat.GuildRecruitMetadata parseFrom(
+        com.google.protobuf.ByteString data)
+        throws com.google.protobuf.InvalidProtocolBufferException {
+      return PARSER.parseFrom(data);
+    }
+    public static chirp.chat.Chat.GuildRecruitMetadata parseFrom(
+        com.google.protobuf.ByteString data,
+        com.google.protobuf.ExtensionRegistryLite extensionRegistry)
+        throws com.google.protobuf.InvalidProtocolBufferException {
+      return PARSER.parseFrom(data, extensionRegistry);
+    }
+    public static chirp.chat.Chat.GuildRecruitMetadata parseFrom(byte[] data)
+        throws com.google.protobuf.InvalidProtocolBufferException {
+      return PARSER.parseFrom(data);
+    }
+    public static chirp.chat.Chat.GuildRecruitMetadata parseFrom(
+        byte[] data,
+        com.google.protobuf.ExtensionRegistryLite extensionRegistry)
+        throws com.google.protobuf.InvalidProtocolBufferException {
+      return PARSER.parseFrom(data, extensionRegistry);
+    }
+    public static chirp.chat.Chat.GuildRecruitMetadata parseFrom(java.io.InputStream input)
+        throws java.io.IOException {
+      return com.google.protobuf.GeneratedMessage
+          .parseWithIOException(PARSER, input);
+    }
+    public static chirp.chat.Chat.GuildRecruitMetadata parseFrom(
+        java.io.InputStream input,
+        com.google.protobuf.ExtensionRegistryLite extensionRegistry)
+        throws java.io.IOException {
+      return com.google.protobuf.GeneratedMessage
+          .parseWithIOException(PARSER, input, extensionRegistry);
+    }
+
+    public static chirp.chat.Chat.GuildRecruitMetadata parseDelimitedFrom(java.io.InputStream input)
+        throws java.io.IOException {
+      return com.google.protobuf.GeneratedMessage
+          .parseDelimitedWithIOException(PARSER, input);
+    }
+
+    public static chirp.chat.Chat.GuildRecruitMetadata parseDelimitedFrom(
+        java.io.InputStream input,
+        com.google.protobuf.ExtensionRegistryLite extensionRegistry)
+        throws java.io.IOException {
+      return com.google.protobuf.GeneratedMessage
+          .parseDelimitedWithIOException(PARSER, input, extensionRegistry);
+    }
+    public static chirp.chat.Chat.GuildRecruitMetadata parseFrom(
+        com.google.protobuf.CodedInputStream input)
+        throws java.io.IOException {
+      return com.google.protobuf.GeneratedMessage
+          .parseWithIOException(PARSER, input);
+    }
+    public static chirp.chat.Chat.GuildRecruitMetadata parseFrom(
+        com.google.protobuf.CodedInputStream input,
+        com.google.protobuf.ExtensionRegistryLite extensionRegistry)
+        throws java.io.IOException {
+      return com.google.protobuf.GeneratedMessage
+          .parseWithIOException(PARSER, input, extensionRegistry);
+    }
+
+    @java.lang.Override
+    public Builder newBuilderForType() { return newBuilder(); }
+    public static Builder newBuilder() {
+      return DEFAULT_INSTANCE.toBuilder();
+    }
+    public static Builder newBuilder(chirp.chat.Chat.GuildRecruitMetadata prototype) {
+      return DEFAULT_INSTANCE.toBuilder().mergeFrom(prototype);
+    }
+    @java.lang.Override
+    public Builder toBuilder() {
+      return this == DEFAULT_INSTANCE
+          ? new Builder() : new Builder().mergeFrom(this);
+    }
+
+    @java.lang.Override
+    protected Builder newBuilderForType(
+        com.google.protobuf.GeneratedMessage.BuilderParent parent) {
+      Builder builder = new Builder(parent);
+      return builder;
+    }
+    /**
+     * <pre>
+     * 公会招募卡片（msg_type = GUILD_RECRUIT 时；game_chat_features P1「公会招募」）。
+     * 伴侣面无公会加入动作面（一键加入待公会申请协议），渲染为展示性卡片；
+     * 游戏内客户端的加入自渲染走 SDK 侧。
+     * </pre>
+     *
+     * Protobuf type {@code chirp.chat.GuildRecruitMetadata}
+     */
+    public static final class Builder extends
+        com.google.protobuf.GeneratedMessage.Builder<Builder> implements
+        // @@protoc_insertion_point(builder_implements:chirp.chat.GuildRecruitMetadata)
+        chirp.chat.Chat.GuildRecruitMetadataOrBuilder {
+      public static final com.google.protobuf.Descriptors.Descriptor
+          getDescriptor() {
+        return chirp.chat.Chat.internal_static_chirp_chat_GuildRecruitMetadata_descriptor;
+      }
+
+      @java.lang.Override
+      protected com.google.protobuf.GeneratedMessage.FieldAccessorTable
+          internalGetFieldAccessorTable() {
+        return chirp.chat.Chat.internal_static_chirp_chat_GuildRecruitMetadata_fieldAccessorTable
+            .ensureFieldAccessorsInitialized(
+                chirp.chat.Chat.GuildRecruitMetadata.class, chirp.chat.Chat.GuildRecruitMetadata.Builder.class);
+      }
+
+      // Construct using chirp.chat.Chat.GuildRecruitMetadata.newBuilder()
+      private Builder() {
+
+      }
+
+      private Builder(
+          com.google.protobuf.GeneratedMessage.BuilderParent parent) {
+        super(parent);
+
+      }
+      @java.lang.Override
+      public Builder clear() {
+        super.clear();
+        bitField0_ = 0;
+        guildId_ = "";
+        guildName_ = "";
+        level_ = 0;
+        memberCount_ = 0;
+        maxMembers_ = 0;
+        description_ = "";
+        return this;
+      }
+
+      @java.lang.Override
+      public com.google.protobuf.Descriptors.Descriptor
+          getDescriptorForType() {
+        return chirp.chat.Chat.internal_static_chirp_chat_GuildRecruitMetadata_descriptor;
+      }
+
+      @java.lang.Override
+      public chirp.chat.Chat.GuildRecruitMetadata getDefaultInstanceForType() {
+        return chirp.chat.Chat.GuildRecruitMetadata.getDefaultInstance();
+      }
+
+      @java.lang.Override
+      public chirp.chat.Chat.GuildRecruitMetadata build() {
+        chirp.chat.Chat.GuildRecruitMetadata result = buildPartial();
+        if (!result.isInitialized()) {
+          throw newUninitializedMessageException(result);
+        }
+        return result;
+      }
+
+      @java.lang.Override
+      public chirp.chat.Chat.GuildRecruitMetadata buildPartial() {
+        chirp.chat.Chat.GuildRecruitMetadata result = new chirp.chat.Chat.GuildRecruitMetadata(this);
+        if (bitField0_ != 0) { buildPartial0(result); }
+        onBuilt();
+        return result;
+      }
+
+      private void buildPartial0(chirp.chat.Chat.GuildRecruitMetadata result) {
+        int from_bitField0_ = bitField0_;
+        if (((from_bitField0_ & 0x00000001) != 0)) {
+          result.guildId_ = guildId_;
+        }
+        if (((from_bitField0_ & 0x00000002) != 0)) {
+          result.guildName_ = guildName_;
+        }
+        if (((from_bitField0_ & 0x00000004) != 0)) {
+          result.level_ = level_;
+        }
+        if (((from_bitField0_ & 0x00000008) != 0)) {
+          result.memberCount_ = memberCount_;
+        }
+        if (((from_bitField0_ & 0x00000010) != 0)) {
+          result.maxMembers_ = maxMembers_;
+        }
+        if (((from_bitField0_ & 0x00000020) != 0)) {
+          result.description_ = description_;
+        }
+      }
+
+      @java.lang.Override
+      public Builder mergeFrom(com.google.protobuf.Message other) {
+        if (other instanceof chirp.chat.Chat.GuildRecruitMetadata) {
+          return mergeFrom((chirp.chat.Chat.GuildRecruitMetadata)other);
+        } else {
+          super.mergeFrom(other);
+          return this;
+        }
+      }
+
+      public Builder mergeFrom(chirp.chat.Chat.GuildRecruitMetadata other) {
+        if (other == chirp.chat.Chat.GuildRecruitMetadata.getDefaultInstance()) return this;
+        if (!other.getGuildId().isEmpty()) {
+          guildId_ = other.guildId_;
+          bitField0_ |= 0x00000001;
+          onChanged();
+        }
+        if (!other.getGuildName().isEmpty()) {
+          guildName_ = other.guildName_;
+          bitField0_ |= 0x00000002;
+          onChanged();
+        }
+        if (other.getLevel() != 0) {
+          setLevel(other.getLevel());
+        }
+        if (other.getMemberCount() != 0) {
+          setMemberCount(other.getMemberCount());
+        }
+        if (other.getMaxMembers() != 0) {
+          setMaxMembers(other.getMaxMembers());
+        }
+        if (!other.getDescription().isEmpty()) {
+          description_ = other.description_;
+          bitField0_ |= 0x00000020;
+          onChanged();
+        }
+        this.mergeUnknownFields(other.getUnknownFields());
+        onChanged();
+        return this;
+      }
+
+      @java.lang.Override
+      public final boolean isInitialized() {
+        return true;
+      }
+
+      @java.lang.Override
+      public Builder mergeFrom(
+          com.google.protobuf.CodedInputStream input,
+          com.google.protobuf.ExtensionRegistryLite extensionRegistry)
+          throws java.io.IOException {
+        if (extensionRegistry == null) {
+          throw new java.lang.NullPointerException();
+        }
+        try {
+          boolean done = false;
+          while (!done) {
+            int tag = input.readTag();
+            switch (tag) {
+              case 0:
+                done = true;
+                break;
+              case 10: {
+                guildId_ = input.readStringRequireUtf8();
+                bitField0_ |= 0x00000001;
+                break;
+              } // case 10
+              case 18: {
+                guildName_ = input.readStringRequireUtf8();
+                bitField0_ |= 0x00000002;
+                break;
+              } // case 18
+              case 24: {
+                level_ = input.readInt32();
+                bitField0_ |= 0x00000004;
+                break;
+              } // case 24
+              case 32: {
+                memberCount_ = input.readInt32();
+                bitField0_ |= 0x00000008;
+                break;
+              } // case 32
+              case 40: {
+                maxMembers_ = input.readInt32();
+                bitField0_ |= 0x00000010;
+                break;
+              } // case 40
+              case 50: {
+                description_ = input.readStringRequireUtf8();
+                bitField0_ |= 0x00000020;
+                break;
+              } // case 50
+              default: {
+                if (!super.parseUnknownField(input, extensionRegistry, tag)) {
+                  done = true; // was an endgroup tag
+                }
+                break;
+              } // default:
+            } // switch (tag)
+          } // while (!done)
+        } catch (com.google.protobuf.InvalidProtocolBufferException e) {
+          throw e.unwrapIOException();
+        } finally {
+          onChanged();
+        } // finally
+        return this;
+      }
+      private int bitField0_;
+
+      private java.lang.Object guildId_ = "";
+      /**
+       * <pre>
+       * 公会唯一 id（校验落点：空拒绝）
+       * </pre>
+       *
+       * <code>string guild_id = 1;</code>
+       * @return The guildId.
+       */
+      public java.lang.String getGuildId() {
+        java.lang.Object ref = guildId_;
+        if (!(ref instanceof java.lang.String)) {
+          com.google.protobuf.ByteString bs =
+              (com.google.protobuf.ByteString) ref;
+          java.lang.String s = bs.toStringUtf8();
+          guildId_ = s;
+          return s;
+        } else {
+          return (java.lang.String) ref;
+        }
+      }
+      /**
+       * <pre>
+       * 公会唯一 id（校验落点：空拒绝）
+       * </pre>
+       *
+       * <code>string guild_id = 1;</code>
+       * @return The bytes for guildId.
+       */
+      public com.google.protobuf.ByteString
+          getGuildIdBytes() {
+        java.lang.Object ref = guildId_;
+        if (ref instanceof String) {
+          com.google.protobuf.ByteString b = 
+              com.google.protobuf.ByteString.copyFromUtf8(
+                  (java.lang.String) ref);
+          guildId_ = b;
+          return b;
+        } else {
+          return (com.google.protobuf.ByteString) ref;
+        }
+      }
+      /**
+       * <pre>
+       * 公会唯一 id（校验落点：空拒绝）
+       * </pre>
+       *
+       * <code>string guild_id = 1;</code>
+       * @param value The guildId to set.
+       * @return This builder for chaining.
+       */
+      public Builder setGuildId(
+          java.lang.String value) {
+        if (value == null) { throw new NullPointerException(); }
+        guildId_ = value;
+        bitField0_ |= 0x00000001;
+        onChanged();
+        return this;
+      }
+      /**
+       * <pre>
+       * 公会唯一 id（校验落点：空拒绝）
+       * </pre>
+       *
+       * <code>string guild_id = 1;</code>
+       * @return This builder for chaining.
+       */
+      public Builder clearGuildId() {
+        guildId_ = getDefaultInstance().getGuildId();
+        bitField0_ = (bitField0_ & ~0x00000001);
+        onChanged();
+        return this;
+      }
+      /**
+       * <pre>
+       * 公会唯一 id（校验落点：空拒绝）
+       * </pre>
+       *
+       * <code>string guild_id = 1;</code>
+       * @param value The bytes for guildId to set.
+       * @return This builder for chaining.
+       */
+      public Builder setGuildIdBytes(
+          com.google.protobuf.ByteString value) {
+        if (value == null) { throw new NullPointerException(); }
+        checkByteStringIsUtf8(value);
+        guildId_ = value;
+        bitField0_ |= 0x00000001;
+        onChanged();
+        return this;
+      }
+
+      private java.lang.Object guildName_ = "";
+      /**
+       * <code>string guild_name = 2;</code>
+       * @return The guildName.
+       */
+      public java.lang.String getGuildName() {
+        java.lang.Object ref = guildName_;
+        if (!(ref instanceof java.lang.String)) {
+          com.google.protobuf.ByteString bs =
+              (com.google.protobuf.ByteString) ref;
+          java.lang.String s = bs.toStringUtf8();
+          guildName_ = s;
+          return s;
+        } else {
+          return (java.lang.String) ref;
+        }
+      }
+      /**
+       * <code>string guild_name = 2;</code>
+       * @return The bytes for guildName.
+       */
+      public com.google.protobuf.ByteString
+          getGuildNameBytes() {
+        java.lang.Object ref = guildName_;
+        if (ref instanceof String) {
+          com.google.protobuf.ByteString b = 
+              com.google.protobuf.ByteString.copyFromUtf8(
+                  (java.lang.String) ref);
+          guildName_ = b;
+          return b;
+        } else {
+          return (com.google.protobuf.ByteString) ref;
+        }
+      }
+      /**
+       * <code>string guild_name = 2;</code>
+       * @param value The guildName to set.
+       * @return This builder for chaining.
+       */
+      public Builder setGuildName(
+          java.lang.String value) {
+        if (value == null) { throw new NullPointerException(); }
+        guildName_ = value;
+        bitField0_ |= 0x00000002;
+        onChanged();
+        return this;
+      }
+      /**
+       * <code>string guild_name = 2;</code>
+       * @return This builder for chaining.
+       */
+      public Builder clearGuildName() {
+        guildName_ = getDefaultInstance().getGuildName();
+        bitField0_ = (bitField0_ & ~0x00000002);
+        onChanged();
+        return this;
+      }
+      /**
+       * <code>string guild_name = 2;</code>
+       * @param value The bytes for guildName to set.
+       * @return This builder for chaining.
+       */
+      public Builder setGuildNameBytes(
+          com.google.protobuf.ByteString value) {
+        if (value == null) { throw new NullPointerException(); }
+        checkByteStringIsUtf8(value);
+        guildName_ = value;
+        bitField0_ |= 0x00000002;
+        onChanged();
+        return this;
+      }
+
+      private int level_ ;
+      /**
+       * <pre>
+       * 公会等级
+       * </pre>
+       *
+       * <code>int32 level = 3;</code>
+       * @return The level.
+       */
+      @java.lang.Override
+      public int getLevel() {
+        return level_;
+      }
+      /**
+       * <pre>
+       * 公会等级
+       * </pre>
+       *
+       * <code>int32 level = 3;</code>
+       * @param value The level to set.
+       * @return This builder for chaining.
+       */
+      public Builder setLevel(int value) {
+
+        level_ = value;
+        bitField0_ |= 0x00000004;
+        onChanged();
+        return this;
+      }
+      /**
+       * <pre>
+       * 公会等级
+       * </pre>
+       *
+       * <code>int32 level = 3;</code>
+       * @return This builder for chaining.
+       */
+      public Builder clearLevel() {
+        bitField0_ = (bitField0_ & ~0x00000004);
+        level_ = 0;
+        onChanged();
+        return this;
+      }
+
+      private int memberCount_ ;
+      /**
+       * <pre>
+       * 当前人数
+       * </pre>
+       *
+       * <code>int32 member_count = 4;</code>
+       * @return The memberCount.
+       */
+      @java.lang.Override
+      public int getMemberCount() {
+        return memberCount_;
+      }
+      /**
+       * <pre>
+       * 当前人数
+       * </pre>
+       *
+       * <code>int32 member_count = 4;</code>
+       * @param value The memberCount to set.
+       * @return This builder for chaining.
+       */
+      public Builder setMemberCount(int value) {
+
+        memberCount_ = value;
+        bitField0_ |= 0x00000008;
+        onChanged();
+        return this;
+      }
+      /**
+       * <pre>
+       * 当前人数
+       * </pre>
+       *
+       * <code>int32 member_count = 4;</code>
+       * @return This builder for chaining.
+       */
+      public Builder clearMemberCount() {
+        bitField0_ = (bitField0_ & ~0x00000008);
+        memberCount_ = 0;
+        onChanged();
+        return this;
+      }
+
+      private int maxMembers_ ;
+      /**
+       * <pre>
+       * 人数上限（0 = 不展示）
+       * </pre>
+       *
+       * <code>int32 max_members = 5;</code>
+       * @return The maxMembers.
+       */
+      @java.lang.Override
+      public int getMaxMembers() {
+        return maxMembers_;
+      }
+      /**
+       * <pre>
+       * 人数上限（0 = 不展示）
+       * </pre>
+       *
+       * <code>int32 max_members = 5;</code>
+       * @param value The maxMembers to set.
+       * @return This builder for chaining.
+       */
+      public Builder setMaxMembers(int value) {
+
+        maxMembers_ = value;
+        bitField0_ |= 0x00000010;
+        onChanged();
+        return this;
+      }
+      /**
+       * <pre>
+       * 人数上限（0 = 不展示）
+       * </pre>
+       *
+       * <code>int32 max_members = 5;</code>
+       * @return This builder for chaining.
+       */
+      public Builder clearMaxMembers() {
+        bitField0_ = (bitField0_ & ~0x00000010);
+        maxMembers_ = 0;
+        onChanged();
+        return this;
+      }
+
+      private java.lang.Object description_ = "";
+      /**
+       * <pre>
+       * 招募语（可选）
+       * </pre>
+       *
+       * <code>string description = 6;</code>
+       * @return The description.
+       */
+      public java.lang.String getDescription() {
+        java.lang.Object ref = description_;
+        if (!(ref instanceof java.lang.String)) {
+          com.google.protobuf.ByteString bs =
+              (com.google.protobuf.ByteString) ref;
+          java.lang.String s = bs.toStringUtf8();
+          description_ = s;
+          return s;
+        } else {
+          return (java.lang.String) ref;
+        }
+      }
+      /**
+       * <pre>
+       * 招募语（可选）
+       * </pre>
+       *
+       * <code>string description = 6;</code>
+       * @return The bytes for description.
+       */
+      public com.google.protobuf.ByteString
+          getDescriptionBytes() {
+        java.lang.Object ref = description_;
+        if (ref instanceof String) {
+          com.google.protobuf.ByteString b = 
+              com.google.protobuf.ByteString.copyFromUtf8(
+                  (java.lang.String) ref);
+          description_ = b;
+          return b;
+        } else {
+          return (com.google.protobuf.ByteString) ref;
+        }
+      }
+      /**
+       * <pre>
+       * 招募语（可选）
+       * </pre>
+       *
+       * <code>string description = 6;</code>
+       * @param value The description to set.
+       * @return This builder for chaining.
+       */
+      public Builder setDescription(
+          java.lang.String value) {
+        if (value == null) { throw new NullPointerException(); }
+        description_ = value;
+        bitField0_ |= 0x00000020;
+        onChanged();
+        return this;
+      }
+      /**
+       * <pre>
+       * 招募语（可选）
+       * </pre>
+       *
+       * <code>string description = 6;</code>
+       * @return This builder for chaining.
+       */
+      public Builder clearDescription() {
+        description_ = getDefaultInstance().getDescription();
+        bitField0_ = (bitField0_ & ~0x00000020);
+        onChanged();
+        return this;
+      }
+      /**
+       * <pre>
+       * 招募语（可选）
+       * </pre>
+       *
+       * <code>string description = 6;</code>
+       * @param value The bytes for description to set.
+       * @return This builder for chaining.
+       */
+      public Builder setDescriptionBytes(
+          com.google.protobuf.ByteString value) {
+        if (value == null) { throw new NullPointerException(); }
+        checkByteStringIsUtf8(value);
+        description_ = value;
+        bitField0_ |= 0x00000020;
+        onChanged();
+        return this;
+      }
+
+      // @@protoc_insertion_point(builder_scope:chirp.chat.GuildRecruitMetadata)
+    }
+
+    // @@protoc_insertion_point(class_scope:chirp.chat.GuildRecruitMetadata)
+    private static final chirp.chat.Chat.GuildRecruitMetadata DEFAULT_INSTANCE;
+    static {
+      DEFAULT_INSTANCE = new chirp.chat.Chat.GuildRecruitMetadata();
+    }
+
+    public static chirp.chat.Chat.GuildRecruitMetadata getDefaultInstance() {
+      return DEFAULT_INSTANCE;
+    }
+
+    private static final com.google.protobuf.Parser<GuildRecruitMetadata>
+        PARSER = new com.google.protobuf.AbstractParser<GuildRecruitMetadata>() {
+      @java.lang.Override
+      public GuildRecruitMetadata parsePartialFrom(
+          com.google.protobuf.CodedInputStream input,
+          com.google.protobuf.ExtensionRegistryLite extensionRegistry)
+          throws com.google.protobuf.InvalidProtocolBufferException {
+        Builder builder = newBuilder();
+        try {
+          builder.mergeFrom(input, extensionRegistry);
+        } catch (com.google.protobuf.InvalidProtocolBufferException e) {
+          throw e.setUnfinishedMessage(builder.buildPartial());
+        } catch (com.google.protobuf.UninitializedMessageException e) {
+          throw e.asInvalidProtocolBufferException().setUnfinishedMessage(builder.buildPartial());
+        } catch (java.io.IOException e) {
+          throw new com.google.protobuf.InvalidProtocolBufferException(e)
+              .setUnfinishedMessage(builder.buildPartial());
+        }
+        return builder.buildPartial();
+      }
+    };
+
+    public static com.google.protobuf.Parser<GuildRecruitMetadata> parser() {
+      return PARSER;
+    }
+
+    @java.lang.Override
+    public com.google.protobuf.Parser<GuildRecruitMetadata> getParserForType() {
+      return PARSER;
+    }
+
+    @java.lang.Override
+    public chirp.chat.Chat.GuildRecruitMetadata getDefaultInstanceForType() {
+      return DEFAULT_INSTANCE;
+    }
+
+  }
+
+  public interface PartyRecruitMetadataOrBuilder extends
+      // @@protoc_insertion_point(interface_extends:chirp.chat.PartyRecruitMetadata)
+      com.google.protobuf.MessageOrBuilder {
+
+    /**
+     * <pre>
+     * 队伍唯一 id（校验落点：空拒绝）
+     * </pre>
+     *
+     * <code>string party_id = 1;</code>
+     * @return The partyId.
+     */
+    java.lang.String getPartyId();
+    /**
+     * <pre>
+     * 队伍唯一 id（校验落点：空拒绝）
+     * </pre>
+     *
+     * <code>string party_id = 1;</code>
+     * @return The bytes for partyId.
+     */
+    com.google.protobuf.ByteString
+        getPartyIdBytes();
+
+    /**
+     * <pre>
+     * 副本名
+     * </pre>
+     *
+     * <code>string dungeon_name = 2;</code>
+     * @return The dungeonName.
+     */
+    java.lang.String getDungeonName();
+    /**
+     * <pre>
+     * 副本名
+     * </pre>
+     *
+     * <code>string dungeon_name = 2;</code>
+     * @return The bytes for dungeonName.
+     */
+    com.google.protobuf.ByteString
+        getDungeonNameBytes();
+
+    /**
+     * <pre>
+     * 人数需求
+     * </pre>
+     *
+     * <code>int32 needed = 3;</code>
+     * @return The needed.
+     */
+    int getNeeded();
+
+    /**
+     * <pre>
+     * 当前已组人数（0 = 不展示）
+     * </pre>
+     *
+     * <code>int32 current = 4;</code>
+     * @return The current.
+     */
+    int getCurrent();
+
+    /**
+     * <pre>
+     * 队长名（可选）
+     * </pre>
+     *
+     * <code>string leader_name = 5;</code>
+     * @return The leaderName.
+     */
+    java.lang.String getLeaderName();
+    /**
+     * <pre>
+     * 队长名（可选）
+     * </pre>
+     *
+     * <code>string leader_name = 5;</code>
+     * @return The bytes for leaderName.
+     */
+    com.google.protobuf.ByteString
+        getLeaderNameBytes();
+  }
+  /**
+   * <pre>
+   * 组队招募卡片（msg_type = PARTY_RECRUIT 时；game_chat_features P1「组队招募」）。
+   * 伴侣面无申请动作面（一键申请待队伍申请协议），渲染为展示性卡片；
+   * 游戏内客户端的申请自渲染走 SDK 侧。
+   * </pre>
+   *
+   * Protobuf type {@code chirp.chat.PartyRecruitMetadata}
+   */
+  public static final class PartyRecruitMetadata extends
+      com.google.protobuf.GeneratedMessage implements
+      // @@protoc_insertion_point(message_implements:chirp.chat.PartyRecruitMetadata)
+      PartyRecruitMetadataOrBuilder {
+  private static final long serialVersionUID = 0L;
+    static {
+      com.google.protobuf.RuntimeVersion.validateProtobufGencodeVersion(
+        com.google.protobuf.RuntimeVersion.RuntimeDomain.PUBLIC,
+        /* major= */ 4,
+        /* minor= */ 33,
+        /* patch= */ 4,
+        /* suffix= */ "",
+        "PartyRecruitMetadata");
+    }
+    // Use PartyRecruitMetadata.newBuilder() to construct.
+    private PartyRecruitMetadata(com.google.protobuf.GeneratedMessage.Builder<?> builder) {
+      super(builder);
+    }
+    private PartyRecruitMetadata() {
+      partyId_ = "";
+      dungeonName_ = "";
+      leaderName_ = "";
+    }
+
+    public static final com.google.protobuf.Descriptors.Descriptor
+        getDescriptor() {
+      return chirp.chat.Chat.internal_static_chirp_chat_PartyRecruitMetadata_descriptor;
+    }
+
+    @java.lang.Override
+    protected com.google.protobuf.GeneratedMessage.FieldAccessorTable
+        internalGetFieldAccessorTable() {
+      return chirp.chat.Chat.internal_static_chirp_chat_PartyRecruitMetadata_fieldAccessorTable
+          .ensureFieldAccessorsInitialized(
+              chirp.chat.Chat.PartyRecruitMetadata.class, chirp.chat.Chat.PartyRecruitMetadata.Builder.class);
+    }
+
+    public static final int PARTY_ID_FIELD_NUMBER = 1;
+    @SuppressWarnings("serial")
+    private volatile java.lang.Object partyId_ = "";
+    /**
+     * <pre>
+     * 队伍唯一 id（校验落点：空拒绝）
+     * </pre>
+     *
+     * <code>string party_id = 1;</code>
+     * @return The partyId.
+     */
+    @java.lang.Override
+    public java.lang.String getPartyId() {
+      java.lang.Object ref = partyId_;
+      if (ref instanceof java.lang.String) {
+        return (java.lang.String) ref;
+      } else {
+        com.google.protobuf.ByteString bs = 
+            (com.google.protobuf.ByteString) ref;
+        java.lang.String s = bs.toStringUtf8();
+        partyId_ = s;
+        return s;
+      }
+    }
+    /**
+     * <pre>
+     * 队伍唯一 id（校验落点：空拒绝）
+     * </pre>
+     *
+     * <code>string party_id = 1;</code>
+     * @return The bytes for partyId.
+     */
+    @java.lang.Override
+    public com.google.protobuf.ByteString
+        getPartyIdBytes() {
+      java.lang.Object ref = partyId_;
+      if (ref instanceof java.lang.String) {
+        com.google.protobuf.ByteString b = 
+            com.google.protobuf.ByteString.copyFromUtf8(
+                (java.lang.String) ref);
+        partyId_ = b;
+        return b;
+      } else {
+        return (com.google.protobuf.ByteString) ref;
+      }
+    }
+
+    public static final int DUNGEON_NAME_FIELD_NUMBER = 2;
+    @SuppressWarnings("serial")
+    private volatile java.lang.Object dungeonName_ = "";
+    /**
+     * <pre>
+     * 副本名
+     * </pre>
+     *
+     * <code>string dungeon_name = 2;</code>
+     * @return The dungeonName.
+     */
+    @java.lang.Override
+    public java.lang.String getDungeonName() {
+      java.lang.Object ref = dungeonName_;
+      if (ref instanceof java.lang.String) {
+        return (java.lang.String) ref;
+      } else {
+        com.google.protobuf.ByteString bs = 
+            (com.google.protobuf.ByteString) ref;
+        java.lang.String s = bs.toStringUtf8();
+        dungeonName_ = s;
+        return s;
+      }
+    }
+    /**
+     * <pre>
+     * 副本名
+     * </pre>
+     *
+     * <code>string dungeon_name = 2;</code>
+     * @return The bytes for dungeonName.
+     */
+    @java.lang.Override
+    public com.google.protobuf.ByteString
+        getDungeonNameBytes() {
+      java.lang.Object ref = dungeonName_;
+      if (ref instanceof java.lang.String) {
+        com.google.protobuf.ByteString b = 
+            com.google.protobuf.ByteString.copyFromUtf8(
+                (java.lang.String) ref);
+        dungeonName_ = b;
+        return b;
+      } else {
+        return (com.google.protobuf.ByteString) ref;
+      }
+    }
+
+    public static final int NEEDED_FIELD_NUMBER = 3;
+    private int needed_ = 0;
+    /**
+     * <pre>
+     * 人数需求
+     * </pre>
+     *
+     * <code>int32 needed = 3;</code>
+     * @return The needed.
+     */
+    @java.lang.Override
+    public int getNeeded() {
+      return needed_;
+    }
+
+    public static final int CURRENT_FIELD_NUMBER = 4;
+    private int current_ = 0;
+    /**
+     * <pre>
+     * 当前已组人数（0 = 不展示）
+     * </pre>
+     *
+     * <code>int32 current = 4;</code>
+     * @return The current.
+     */
+    @java.lang.Override
+    public int getCurrent() {
+      return current_;
+    }
+
+    public static final int LEADER_NAME_FIELD_NUMBER = 5;
+    @SuppressWarnings("serial")
+    private volatile java.lang.Object leaderName_ = "";
+    /**
+     * <pre>
+     * 队长名（可选）
+     * </pre>
+     *
+     * <code>string leader_name = 5;</code>
+     * @return The leaderName.
+     */
+    @java.lang.Override
+    public java.lang.String getLeaderName() {
+      java.lang.Object ref = leaderName_;
+      if (ref instanceof java.lang.String) {
+        return (java.lang.String) ref;
+      } else {
+        com.google.protobuf.ByteString bs = 
+            (com.google.protobuf.ByteString) ref;
+        java.lang.String s = bs.toStringUtf8();
+        leaderName_ = s;
+        return s;
+      }
+    }
+    /**
+     * <pre>
+     * 队长名（可选）
+     * </pre>
+     *
+     * <code>string leader_name = 5;</code>
+     * @return The bytes for leaderName.
+     */
+    @java.lang.Override
+    public com.google.protobuf.ByteString
+        getLeaderNameBytes() {
+      java.lang.Object ref = leaderName_;
+      if (ref instanceof java.lang.String) {
+        com.google.protobuf.ByteString b = 
+            com.google.protobuf.ByteString.copyFromUtf8(
+                (java.lang.String) ref);
+        leaderName_ = b;
+        return b;
+      } else {
+        return (com.google.protobuf.ByteString) ref;
+      }
+    }
+
+    private byte memoizedIsInitialized = -1;
+    @java.lang.Override
+    public final boolean isInitialized() {
+      byte isInitialized = memoizedIsInitialized;
+      if (isInitialized == 1) return true;
+      if (isInitialized == 0) return false;
+
+      memoizedIsInitialized = 1;
+      return true;
+    }
+
+    @java.lang.Override
+    public void writeTo(com.google.protobuf.CodedOutputStream output)
+                        throws java.io.IOException {
+      if (!com.google.protobuf.GeneratedMessage.isStringEmpty(partyId_)) {
+        com.google.protobuf.GeneratedMessage.writeString(output, 1, partyId_);
+      }
+      if (!com.google.protobuf.GeneratedMessage.isStringEmpty(dungeonName_)) {
+        com.google.protobuf.GeneratedMessage.writeString(output, 2, dungeonName_);
+      }
+      if (needed_ != 0) {
+        output.writeInt32(3, needed_);
+      }
+      if (current_ != 0) {
+        output.writeInt32(4, current_);
+      }
+      if (!com.google.protobuf.GeneratedMessage.isStringEmpty(leaderName_)) {
+        com.google.protobuf.GeneratedMessage.writeString(output, 5, leaderName_);
+      }
+      getUnknownFields().writeTo(output);
+    }
+
+    @java.lang.Override
+    public int getSerializedSize() {
+      int size = memoizedSize;
+      if (size != -1) return size;
+
+      size = 0;
+      if (!com.google.protobuf.GeneratedMessage.isStringEmpty(partyId_)) {
+        size += com.google.protobuf.GeneratedMessage.computeStringSize(1, partyId_);
+      }
+      if (!com.google.protobuf.GeneratedMessage.isStringEmpty(dungeonName_)) {
+        size += com.google.protobuf.GeneratedMessage.computeStringSize(2, dungeonName_);
+      }
+      if (needed_ != 0) {
+        size += com.google.protobuf.CodedOutputStream
+          .computeInt32Size(3, needed_);
+      }
+      if (current_ != 0) {
+        size += com.google.protobuf.CodedOutputStream
+          .computeInt32Size(4, current_);
+      }
+      if (!com.google.protobuf.GeneratedMessage.isStringEmpty(leaderName_)) {
+        size += com.google.protobuf.GeneratedMessage.computeStringSize(5, leaderName_);
+      }
+      size += getUnknownFields().getSerializedSize();
+      memoizedSize = size;
+      return size;
+    }
+
+    @java.lang.Override
+    public boolean equals(final java.lang.Object obj) {
+      if (obj == this) {
+       return true;
+      }
+      if (!(obj instanceof chirp.chat.Chat.PartyRecruitMetadata)) {
+        return super.equals(obj);
+      }
+      chirp.chat.Chat.PartyRecruitMetadata other = (chirp.chat.Chat.PartyRecruitMetadata) obj;
+
+      if (!getPartyId()
+          .equals(other.getPartyId())) return false;
+      if (!getDungeonName()
+          .equals(other.getDungeonName())) return false;
+      if (getNeeded()
+          != other.getNeeded()) return false;
+      if (getCurrent()
+          != other.getCurrent()) return false;
+      if (!getLeaderName()
+          .equals(other.getLeaderName())) return false;
+      if (!getUnknownFields().equals(other.getUnknownFields())) return false;
+      return true;
+    }
+
+    @java.lang.Override
+    public int hashCode() {
+      if (memoizedHashCode != 0) {
+        return memoizedHashCode;
+      }
+      int hash = 41;
+      hash = (19 * hash) + getDescriptor().hashCode();
+      hash = (37 * hash) + PARTY_ID_FIELD_NUMBER;
+      hash = (53 * hash) + getPartyId().hashCode();
+      hash = (37 * hash) + DUNGEON_NAME_FIELD_NUMBER;
+      hash = (53 * hash) + getDungeonName().hashCode();
+      hash = (37 * hash) + NEEDED_FIELD_NUMBER;
+      hash = (53 * hash) + getNeeded();
+      hash = (37 * hash) + CURRENT_FIELD_NUMBER;
+      hash = (53 * hash) + getCurrent();
+      hash = (37 * hash) + LEADER_NAME_FIELD_NUMBER;
+      hash = (53 * hash) + getLeaderName().hashCode();
+      hash = (29 * hash) + getUnknownFields().hashCode();
+      memoizedHashCode = hash;
+      return hash;
+    }
+
+    public static chirp.chat.Chat.PartyRecruitMetadata parseFrom(
+        java.nio.ByteBuffer data)
+        throws com.google.protobuf.InvalidProtocolBufferException {
+      return PARSER.parseFrom(data);
+    }
+    public static chirp.chat.Chat.PartyRecruitMetadata parseFrom(
+        java.nio.ByteBuffer data,
+        com.google.protobuf.ExtensionRegistryLite extensionRegistry)
+        throws com.google.protobuf.InvalidProtocolBufferException {
+      return PARSER.parseFrom(data, extensionRegistry);
+    }
+    public static chirp.chat.Chat.PartyRecruitMetadata parseFrom(
+        com.google.protobuf.ByteString data)
+        throws com.google.protobuf.InvalidProtocolBufferException {
+      return PARSER.parseFrom(data);
+    }
+    public static chirp.chat.Chat.PartyRecruitMetadata parseFrom(
+        com.google.protobuf.ByteString data,
+        com.google.protobuf.ExtensionRegistryLite extensionRegistry)
+        throws com.google.protobuf.InvalidProtocolBufferException {
+      return PARSER.parseFrom(data, extensionRegistry);
+    }
+    public static chirp.chat.Chat.PartyRecruitMetadata parseFrom(byte[] data)
+        throws com.google.protobuf.InvalidProtocolBufferException {
+      return PARSER.parseFrom(data);
+    }
+    public static chirp.chat.Chat.PartyRecruitMetadata parseFrom(
+        byte[] data,
+        com.google.protobuf.ExtensionRegistryLite extensionRegistry)
+        throws com.google.protobuf.InvalidProtocolBufferException {
+      return PARSER.parseFrom(data, extensionRegistry);
+    }
+    public static chirp.chat.Chat.PartyRecruitMetadata parseFrom(java.io.InputStream input)
+        throws java.io.IOException {
+      return com.google.protobuf.GeneratedMessage
+          .parseWithIOException(PARSER, input);
+    }
+    public static chirp.chat.Chat.PartyRecruitMetadata parseFrom(
+        java.io.InputStream input,
+        com.google.protobuf.ExtensionRegistryLite extensionRegistry)
+        throws java.io.IOException {
+      return com.google.protobuf.GeneratedMessage
+          .parseWithIOException(PARSER, input, extensionRegistry);
+    }
+
+    public static chirp.chat.Chat.PartyRecruitMetadata parseDelimitedFrom(java.io.InputStream input)
+        throws java.io.IOException {
+      return com.google.protobuf.GeneratedMessage
+          .parseDelimitedWithIOException(PARSER, input);
+    }
+
+    public static chirp.chat.Chat.PartyRecruitMetadata parseDelimitedFrom(
+        java.io.InputStream input,
+        com.google.protobuf.ExtensionRegistryLite extensionRegistry)
+        throws java.io.IOException {
+      return com.google.protobuf.GeneratedMessage
+          .parseDelimitedWithIOException(PARSER, input, extensionRegistry);
+    }
+    public static chirp.chat.Chat.PartyRecruitMetadata parseFrom(
+        com.google.protobuf.CodedInputStream input)
+        throws java.io.IOException {
+      return com.google.protobuf.GeneratedMessage
+          .parseWithIOException(PARSER, input);
+    }
+    public static chirp.chat.Chat.PartyRecruitMetadata parseFrom(
+        com.google.protobuf.CodedInputStream input,
+        com.google.protobuf.ExtensionRegistryLite extensionRegistry)
+        throws java.io.IOException {
+      return com.google.protobuf.GeneratedMessage
+          .parseWithIOException(PARSER, input, extensionRegistry);
+    }
+
+    @java.lang.Override
+    public Builder newBuilderForType() { return newBuilder(); }
+    public static Builder newBuilder() {
+      return DEFAULT_INSTANCE.toBuilder();
+    }
+    public static Builder newBuilder(chirp.chat.Chat.PartyRecruitMetadata prototype) {
+      return DEFAULT_INSTANCE.toBuilder().mergeFrom(prototype);
+    }
+    @java.lang.Override
+    public Builder toBuilder() {
+      return this == DEFAULT_INSTANCE
+          ? new Builder() : new Builder().mergeFrom(this);
+    }
+
+    @java.lang.Override
+    protected Builder newBuilderForType(
+        com.google.protobuf.GeneratedMessage.BuilderParent parent) {
+      Builder builder = new Builder(parent);
+      return builder;
+    }
+    /**
+     * <pre>
+     * 组队招募卡片（msg_type = PARTY_RECRUIT 时；game_chat_features P1「组队招募」）。
+     * 伴侣面无申请动作面（一键申请待队伍申请协议），渲染为展示性卡片；
+     * 游戏内客户端的申请自渲染走 SDK 侧。
+     * </pre>
+     *
+     * Protobuf type {@code chirp.chat.PartyRecruitMetadata}
+     */
+    public static final class Builder extends
+        com.google.protobuf.GeneratedMessage.Builder<Builder> implements
+        // @@protoc_insertion_point(builder_implements:chirp.chat.PartyRecruitMetadata)
+        chirp.chat.Chat.PartyRecruitMetadataOrBuilder {
+      public static final com.google.protobuf.Descriptors.Descriptor
+          getDescriptor() {
+        return chirp.chat.Chat.internal_static_chirp_chat_PartyRecruitMetadata_descriptor;
+      }
+
+      @java.lang.Override
+      protected com.google.protobuf.GeneratedMessage.FieldAccessorTable
+          internalGetFieldAccessorTable() {
+        return chirp.chat.Chat.internal_static_chirp_chat_PartyRecruitMetadata_fieldAccessorTable
+            .ensureFieldAccessorsInitialized(
+                chirp.chat.Chat.PartyRecruitMetadata.class, chirp.chat.Chat.PartyRecruitMetadata.Builder.class);
+      }
+
+      // Construct using chirp.chat.Chat.PartyRecruitMetadata.newBuilder()
+      private Builder() {
+
+      }
+
+      private Builder(
+          com.google.protobuf.GeneratedMessage.BuilderParent parent) {
+        super(parent);
+
+      }
+      @java.lang.Override
+      public Builder clear() {
+        super.clear();
+        bitField0_ = 0;
+        partyId_ = "";
+        dungeonName_ = "";
+        needed_ = 0;
+        current_ = 0;
+        leaderName_ = "";
+        return this;
+      }
+
+      @java.lang.Override
+      public com.google.protobuf.Descriptors.Descriptor
+          getDescriptorForType() {
+        return chirp.chat.Chat.internal_static_chirp_chat_PartyRecruitMetadata_descriptor;
+      }
+
+      @java.lang.Override
+      public chirp.chat.Chat.PartyRecruitMetadata getDefaultInstanceForType() {
+        return chirp.chat.Chat.PartyRecruitMetadata.getDefaultInstance();
+      }
+
+      @java.lang.Override
+      public chirp.chat.Chat.PartyRecruitMetadata build() {
+        chirp.chat.Chat.PartyRecruitMetadata result = buildPartial();
+        if (!result.isInitialized()) {
+          throw newUninitializedMessageException(result);
+        }
+        return result;
+      }
+
+      @java.lang.Override
+      public chirp.chat.Chat.PartyRecruitMetadata buildPartial() {
+        chirp.chat.Chat.PartyRecruitMetadata result = new chirp.chat.Chat.PartyRecruitMetadata(this);
+        if (bitField0_ != 0) { buildPartial0(result); }
+        onBuilt();
+        return result;
+      }
+
+      private void buildPartial0(chirp.chat.Chat.PartyRecruitMetadata result) {
+        int from_bitField0_ = bitField0_;
+        if (((from_bitField0_ & 0x00000001) != 0)) {
+          result.partyId_ = partyId_;
+        }
+        if (((from_bitField0_ & 0x00000002) != 0)) {
+          result.dungeonName_ = dungeonName_;
+        }
+        if (((from_bitField0_ & 0x00000004) != 0)) {
+          result.needed_ = needed_;
+        }
+        if (((from_bitField0_ & 0x00000008) != 0)) {
+          result.current_ = current_;
+        }
+        if (((from_bitField0_ & 0x00000010) != 0)) {
+          result.leaderName_ = leaderName_;
+        }
+      }
+
+      @java.lang.Override
+      public Builder mergeFrom(com.google.protobuf.Message other) {
+        if (other instanceof chirp.chat.Chat.PartyRecruitMetadata) {
+          return mergeFrom((chirp.chat.Chat.PartyRecruitMetadata)other);
+        } else {
+          super.mergeFrom(other);
+          return this;
+        }
+      }
+
+      public Builder mergeFrom(chirp.chat.Chat.PartyRecruitMetadata other) {
+        if (other == chirp.chat.Chat.PartyRecruitMetadata.getDefaultInstance()) return this;
+        if (!other.getPartyId().isEmpty()) {
+          partyId_ = other.partyId_;
+          bitField0_ |= 0x00000001;
+          onChanged();
+        }
+        if (!other.getDungeonName().isEmpty()) {
+          dungeonName_ = other.dungeonName_;
+          bitField0_ |= 0x00000002;
+          onChanged();
+        }
+        if (other.getNeeded() != 0) {
+          setNeeded(other.getNeeded());
+        }
+        if (other.getCurrent() != 0) {
+          setCurrent(other.getCurrent());
+        }
+        if (!other.getLeaderName().isEmpty()) {
+          leaderName_ = other.leaderName_;
+          bitField0_ |= 0x00000010;
+          onChanged();
+        }
+        this.mergeUnknownFields(other.getUnknownFields());
+        onChanged();
+        return this;
+      }
+
+      @java.lang.Override
+      public final boolean isInitialized() {
+        return true;
+      }
+
+      @java.lang.Override
+      public Builder mergeFrom(
+          com.google.protobuf.CodedInputStream input,
+          com.google.protobuf.ExtensionRegistryLite extensionRegistry)
+          throws java.io.IOException {
+        if (extensionRegistry == null) {
+          throw new java.lang.NullPointerException();
+        }
+        try {
+          boolean done = false;
+          while (!done) {
+            int tag = input.readTag();
+            switch (tag) {
+              case 0:
+                done = true;
+                break;
+              case 10: {
+                partyId_ = input.readStringRequireUtf8();
+                bitField0_ |= 0x00000001;
+                break;
+              } // case 10
+              case 18: {
+                dungeonName_ = input.readStringRequireUtf8();
+                bitField0_ |= 0x00000002;
+                break;
+              } // case 18
+              case 24: {
+                needed_ = input.readInt32();
+                bitField0_ |= 0x00000004;
+                break;
+              } // case 24
+              case 32: {
+                current_ = input.readInt32();
+                bitField0_ |= 0x00000008;
+                break;
+              } // case 32
+              case 42: {
+                leaderName_ = input.readStringRequireUtf8();
+                bitField0_ |= 0x00000010;
+                break;
+              } // case 42
+              default: {
+                if (!super.parseUnknownField(input, extensionRegistry, tag)) {
+                  done = true; // was an endgroup tag
+                }
+                break;
+              } // default:
+            } // switch (tag)
+          } // while (!done)
+        } catch (com.google.protobuf.InvalidProtocolBufferException e) {
+          throw e.unwrapIOException();
+        } finally {
+          onChanged();
+        } // finally
+        return this;
+      }
+      private int bitField0_;
+
+      private java.lang.Object partyId_ = "";
+      /**
+       * <pre>
+       * 队伍唯一 id（校验落点：空拒绝）
+       * </pre>
+       *
+       * <code>string party_id = 1;</code>
+       * @return The partyId.
+       */
+      public java.lang.String getPartyId() {
+        java.lang.Object ref = partyId_;
+        if (!(ref instanceof java.lang.String)) {
+          com.google.protobuf.ByteString bs =
+              (com.google.protobuf.ByteString) ref;
+          java.lang.String s = bs.toStringUtf8();
+          partyId_ = s;
+          return s;
+        } else {
+          return (java.lang.String) ref;
+        }
+      }
+      /**
+       * <pre>
+       * 队伍唯一 id（校验落点：空拒绝）
+       * </pre>
+       *
+       * <code>string party_id = 1;</code>
+       * @return The bytes for partyId.
+       */
+      public com.google.protobuf.ByteString
+          getPartyIdBytes() {
+        java.lang.Object ref = partyId_;
+        if (ref instanceof String) {
+          com.google.protobuf.ByteString b = 
+              com.google.protobuf.ByteString.copyFromUtf8(
+                  (java.lang.String) ref);
+          partyId_ = b;
+          return b;
+        } else {
+          return (com.google.protobuf.ByteString) ref;
+        }
+      }
+      /**
+       * <pre>
+       * 队伍唯一 id（校验落点：空拒绝）
+       * </pre>
+       *
+       * <code>string party_id = 1;</code>
+       * @param value The partyId to set.
+       * @return This builder for chaining.
+       */
+      public Builder setPartyId(
+          java.lang.String value) {
+        if (value == null) { throw new NullPointerException(); }
+        partyId_ = value;
+        bitField0_ |= 0x00000001;
+        onChanged();
+        return this;
+      }
+      /**
+       * <pre>
+       * 队伍唯一 id（校验落点：空拒绝）
+       * </pre>
+       *
+       * <code>string party_id = 1;</code>
+       * @return This builder for chaining.
+       */
+      public Builder clearPartyId() {
+        partyId_ = getDefaultInstance().getPartyId();
+        bitField0_ = (bitField0_ & ~0x00000001);
+        onChanged();
+        return this;
+      }
+      /**
+       * <pre>
+       * 队伍唯一 id（校验落点：空拒绝）
+       * </pre>
+       *
+       * <code>string party_id = 1;</code>
+       * @param value The bytes for partyId to set.
+       * @return This builder for chaining.
+       */
+      public Builder setPartyIdBytes(
+          com.google.protobuf.ByteString value) {
+        if (value == null) { throw new NullPointerException(); }
+        checkByteStringIsUtf8(value);
+        partyId_ = value;
+        bitField0_ |= 0x00000001;
+        onChanged();
+        return this;
+      }
+
+      private java.lang.Object dungeonName_ = "";
+      /**
+       * <pre>
+       * 副本名
+       * </pre>
+       *
+       * <code>string dungeon_name = 2;</code>
+       * @return The dungeonName.
+       */
+      public java.lang.String getDungeonName() {
+        java.lang.Object ref = dungeonName_;
+        if (!(ref instanceof java.lang.String)) {
+          com.google.protobuf.ByteString bs =
+              (com.google.protobuf.ByteString) ref;
+          java.lang.String s = bs.toStringUtf8();
+          dungeonName_ = s;
+          return s;
+        } else {
+          return (java.lang.String) ref;
+        }
+      }
+      /**
+       * <pre>
+       * 副本名
+       * </pre>
+       *
+       * <code>string dungeon_name = 2;</code>
+       * @return The bytes for dungeonName.
+       */
+      public com.google.protobuf.ByteString
+          getDungeonNameBytes() {
+        java.lang.Object ref = dungeonName_;
+        if (ref instanceof String) {
+          com.google.protobuf.ByteString b = 
+              com.google.protobuf.ByteString.copyFromUtf8(
+                  (java.lang.String) ref);
+          dungeonName_ = b;
+          return b;
+        } else {
+          return (com.google.protobuf.ByteString) ref;
+        }
+      }
+      /**
+       * <pre>
+       * 副本名
+       * </pre>
+       *
+       * <code>string dungeon_name = 2;</code>
+       * @param value The dungeonName to set.
+       * @return This builder for chaining.
+       */
+      public Builder setDungeonName(
+          java.lang.String value) {
+        if (value == null) { throw new NullPointerException(); }
+        dungeonName_ = value;
+        bitField0_ |= 0x00000002;
+        onChanged();
+        return this;
+      }
+      /**
+       * <pre>
+       * 副本名
+       * </pre>
+       *
+       * <code>string dungeon_name = 2;</code>
+       * @return This builder for chaining.
+       */
+      public Builder clearDungeonName() {
+        dungeonName_ = getDefaultInstance().getDungeonName();
+        bitField0_ = (bitField0_ & ~0x00000002);
+        onChanged();
+        return this;
+      }
+      /**
+       * <pre>
+       * 副本名
+       * </pre>
+       *
+       * <code>string dungeon_name = 2;</code>
+       * @param value The bytes for dungeonName to set.
+       * @return This builder for chaining.
+       */
+      public Builder setDungeonNameBytes(
+          com.google.protobuf.ByteString value) {
+        if (value == null) { throw new NullPointerException(); }
+        checkByteStringIsUtf8(value);
+        dungeonName_ = value;
+        bitField0_ |= 0x00000002;
+        onChanged();
+        return this;
+      }
+
+      private int needed_ ;
+      /**
+       * <pre>
+       * 人数需求
+       * </pre>
+       *
+       * <code>int32 needed = 3;</code>
+       * @return The needed.
+       */
+      @java.lang.Override
+      public int getNeeded() {
+        return needed_;
+      }
+      /**
+       * <pre>
+       * 人数需求
+       * </pre>
+       *
+       * <code>int32 needed = 3;</code>
+       * @param value The needed to set.
+       * @return This builder for chaining.
+       */
+      public Builder setNeeded(int value) {
+
+        needed_ = value;
+        bitField0_ |= 0x00000004;
+        onChanged();
+        return this;
+      }
+      /**
+       * <pre>
+       * 人数需求
+       * </pre>
+       *
+       * <code>int32 needed = 3;</code>
+       * @return This builder for chaining.
+       */
+      public Builder clearNeeded() {
+        bitField0_ = (bitField0_ & ~0x00000004);
+        needed_ = 0;
+        onChanged();
+        return this;
+      }
+
+      private int current_ ;
+      /**
+       * <pre>
+       * 当前已组人数（0 = 不展示）
+       * </pre>
+       *
+       * <code>int32 current = 4;</code>
+       * @return The current.
+       */
+      @java.lang.Override
+      public int getCurrent() {
+        return current_;
+      }
+      /**
+       * <pre>
+       * 当前已组人数（0 = 不展示）
+       * </pre>
+       *
+       * <code>int32 current = 4;</code>
+       * @param value The current to set.
+       * @return This builder for chaining.
+       */
+      public Builder setCurrent(int value) {
+
+        current_ = value;
+        bitField0_ |= 0x00000008;
+        onChanged();
+        return this;
+      }
+      /**
+       * <pre>
+       * 当前已组人数（0 = 不展示）
+       * </pre>
+       *
+       * <code>int32 current = 4;</code>
+       * @return This builder for chaining.
+       */
+      public Builder clearCurrent() {
+        bitField0_ = (bitField0_ & ~0x00000008);
+        current_ = 0;
+        onChanged();
+        return this;
+      }
+
+      private java.lang.Object leaderName_ = "";
+      /**
+       * <pre>
+       * 队长名（可选）
+       * </pre>
+       *
+       * <code>string leader_name = 5;</code>
+       * @return The leaderName.
+       */
+      public java.lang.String getLeaderName() {
+        java.lang.Object ref = leaderName_;
+        if (!(ref instanceof java.lang.String)) {
+          com.google.protobuf.ByteString bs =
+              (com.google.protobuf.ByteString) ref;
+          java.lang.String s = bs.toStringUtf8();
+          leaderName_ = s;
+          return s;
+        } else {
+          return (java.lang.String) ref;
+        }
+      }
+      /**
+       * <pre>
+       * 队长名（可选）
+       * </pre>
+       *
+       * <code>string leader_name = 5;</code>
+       * @return The bytes for leaderName.
+       */
+      public com.google.protobuf.ByteString
+          getLeaderNameBytes() {
+        java.lang.Object ref = leaderName_;
+        if (ref instanceof String) {
+          com.google.protobuf.ByteString b = 
+              com.google.protobuf.ByteString.copyFromUtf8(
+                  (java.lang.String) ref);
+          leaderName_ = b;
+          return b;
+        } else {
+          return (com.google.protobuf.ByteString) ref;
+        }
+      }
+      /**
+       * <pre>
+       * 队长名（可选）
+       * </pre>
+       *
+       * <code>string leader_name = 5;</code>
+       * @param value The leaderName to set.
+       * @return This builder for chaining.
+       */
+      public Builder setLeaderName(
+          java.lang.String value) {
+        if (value == null) { throw new NullPointerException(); }
+        leaderName_ = value;
+        bitField0_ |= 0x00000010;
+        onChanged();
+        return this;
+      }
+      /**
+       * <pre>
+       * 队长名（可选）
+       * </pre>
+       *
+       * <code>string leader_name = 5;</code>
+       * @return This builder for chaining.
+       */
+      public Builder clearLeaderName() {
+        leaderName_ = getDefaultInstance().getLeaderName();
+        bitField0_ = (bitField0_ & ~0x00000010);
+        onChanged();
+        return this;
+      }
+      /**
+       * <pre>
+       * 队长名（可选）
+       * </pre>
+       *
+       * <code>string leader_name = 5;</code>
+       * @param value The bytes for leaderName to set.
+       * @return This builder for chaining.
+       */
+      public Builder setLeaderNameBytes(
+          com.google.protobuf.ByteString value) {
+        if (value == null) { throw new NullPointerException(); }
+        checkByteStringIsUtf8(value);
+        leaderName_ = value;
+        bitField0_ |= 0x00000010;
+        onChanged();
+        return this;
+      }
+
+      // @@protoc_insertion_point(builder_scope:chirp.chat.PartyRecruitMetadata)
+    }
+
+    // @@protoc_insertion_point(class_scope:chirp.chat.PartyRecruitMetadata)
+    private static final chirp.chat.Chat.PartyRecruitMetadata DEFAULT_INSTANCE;
+    static {
+      DEFAULT_INSTANCE = new chirp.chat.Chat.PartyRecruitMetadata();
+    }
+
+    public static chirp.chat.Chat.PartyRecruitMetadata getDefaultInstance() {
+      return DEFAULT_INSTANCE;
+    }
+
+    private static final com.google.protobuf.Parser<PartyRecruitMetadata>
+        PARSER = new com.google.protobuf.AbstractParser<PartyRecruitMetadata>() {
+      @java.lang.Override
+      public PartyRecruitMetadata parsePartialFrom(
+          com.google.protobuf.CodedInputStream input,
+          com.google.protobuf.ExtensionRegistryLite extensionRegistry)
+          throws com.google.protobuf.InvalidProtocolBufferException {
+        Builder builder = newBuilder();
+        try {
+          builder.mergeFrom(input, extensionRegistry);
+        } catch (com.google.protobuf.InvalidProtocolBufferException e) {
+          throw e.setUnfinishedMessage(builder.buildPartial());
+        } catch (com.google.protobuf.UninitializedMessageException e) {
+          throw e.asInvalidProtocolBufferException().setUnfinishedMessage(builder.buildPartial());
+        } catch (java.io.IOException e) {
+          throw new com.google.protobuf.InvalidProtocolBufferException(e)
+              .setUnfinishedMessage(builder.buildPartial());
+        }
+        return builder.buildPartial();
+      }
+    };
+
+    public static com.google.protobuf.Parser<PartyRecruitMetadata> parser() {
+      return PARSER;
+    }
+
+    @java.lang.Override
+    public com.google.protobuf.Parser<PartyRecruitMetadata> getParserForType() {
+      return PARSER;
+    }
+
+    @java.lang.Override
+    public chirp.chat.Chat.PartyRecruitMetadata getDefaultInstanceForType() {
+      return DEFAULT_INSTANCE;
+    }
+
+  }
+
   public interface NpcDialogMetadataOrBuilder extends
       // @@protoc_insertion_point(interface_extends:chirp.chat.NpcDialogMetadata)
       com.google.protobuf.MessageOrBuilder {
@@ -123980,6 +126290,16 @@ java.lang.String defaultValue) {
     com.google.protobuf.GeneratedMessage.FieldAccessorTable
       internal_static_chirp_chat_TradeMetadata_fieldAccessorTable;
   private static final com.google.protobuf.Descriptors.Descriptor
+    internal_static_chirp_chat_GuildRecruitMetadata_descriptor;
+  private static final 
+    com.google.protobuf.GeneratedMessage.FieldAccessorTable
+      internal_static_chirp_chat_GuildRecruitMetadata_fieldAccessorTable;
+  private static final com.google.protobuf.Descriptors.Descriptor
+    internal_static_chirp_chat_PartyRecruitMetadata_descriptor;
+  private static final 
+    com.google.protobuf.GeneratedMessage.FieldAccessorTable
+      internal_static_chirp_chat_PartyRecruitMetadata_fieldAccessorTable;
+  private static final com.google.protobuf.Descriptors.Descriptor
     internal_static_chirp_chat_NpcDialogMetadata_descriptor;
   private static final 
     com.google.protobuf.GeneratedMessage.FieldAccessorTable
@@ -124445,80 +126765,88 @@ java.lang.String defaultValue) {
       "\016\n\006rarity\030\005 \001(\005\"h\n\rTradeMetadata\022\020\n\010trad" +
       "e_id\030\001 \001(\t\022\016\n\006status\030\002 \001(\t\022\016\n\006amount\030\003 \001" +
       "(\003\022\021\n\titem_name\030\004 \001(\t\022\022\n\nitem_count\030\005 \001(" +
-      "\005\"Y\n\021NpcDialogMetadata\022\016\n\006npc_id\030\001 \001(\t\022\020" +
-      "\n\010npc_name\030\002 \001(\t\022\021\n\tdialog_id\030\003 \001(\t\022\017\n\007o" +
-      "ptions\030\004 \003(\t\"O\n\rCoordMetadata\022\016\n\006map_id\030" +
-      "\001 \001(\t\022\t\n\001x\030\002 \001(\005\022\t\n\001y\030\003 \001(\005\022\t\n\001z\030\004 \001(\005\022\r" +
-      "\n\005label\030\005 \001(\t\"U\n\025SetChannelMuteRequest\022-" +
-      "\n\014channel_type\030\001 \001(\0162\027.chirp.chat.Channe" +
-      "lType\022\r\n\005muted\030\002 \001(\010\"}\n\026SetChannelMuteRe" +
-      "sponse\022%\n\004code\030\001 \001(\0162\027.chirp.common.Erro" +
-      "rCode\022-\n\014channel_type\030\002 \001(\0162\027.chirp.chat" +
-      ".ChannelType\022\r\n\005muted\030\003 \001(\010\"P\n\020ChannelMu" +
-      "teState\022-\n\014channel_type\030\001 \001(\0162\027.chirp.ch" +
-      "at.ChannelType\022\r\n\005muted\030\002 \001(\010\"\030\n\026GetChan" +
-      "nelMutesRequest\"n\n\027GetChannelMutesRespon" +
-      "se\022%\n\004code\030\001 \001(\0162\027.chirp.common.ErrorCod" +
-      "e\022,\n\006states\030\002 \003(\0132\034.chirp.chat.ChannelMu" +
-      "teState\"3\n\031BlockMessageSenderRequest\022\026\n\016" +
-      "target_user_id\030\001 \001(\t\"[\n\032BlockMessageSend" +
-      "erResponse\022%\n\004code\030\001 \001(\0162\027.chirp.common." +
-      "ErrorCode\022\026\n\016target_user_id\030\002 \001(\t\"5\n\033Unb" +
-      "lockMessageSenderRequest\022\026\n\016target_user_" +
-      "id\030\001 \001(\t\"]\n\034UnblockMessageSenderResponse" +
-      "\022%\n\004code\030\001 \001(\0162\027.chirp.common.ErrorCode\022" +
-      "\026\n\016target_user_id\030\002 \001(\t\"\032\n\030GetBlockedSen" +
-      "dersRequest\"[\n\031GetBlockedSendersResponse" +
-      "\022%\n\004code\030\001 \001(\0162\027.chirp.common.ErrorCode\022" +
-      "\027\n\017target_user_ids\030\002 \003(\t\"/\n\026WordFilterFe" +
-      "tchRequest\022\025\n\rknown_version\030\001 \001(\003\"\221\001\n\021Wo" +
-      "rdFilterLexicon\022\017\n\007version\030\001 \001(\003\022\017\n\007enab" +
-      "led\030\002 \001(\010\0224\n\006policy\030\003 \001(\0162$.chirp.chat.W" +
-      "ordFilterDeliveryPolicy\022\023\n\013replacement\030\004" +
-      " \001(\t\022\017\n\007lexicon\030\005 \001(\t\"p\n\027WordFilterFetch" +
-      "Response\022%\n\004code\030\001 \001(\0162\027.chirp.common.Er" +
-      "rorCode\022.\n\007lexicon\030\002 \001(\0132\035.chirp.chat.Wo" +
-      "rdFilterLexicon\"H\n\026WordFilterUpdateNotif" +
-      "y\022.\n\007lexicon\030\001 \001(\0132\035.chirp.chat.WordFilt" +
-      "erLexicon\"\226\001\n\024SearchMessageRequest\022\017\n\007ke" +
-      "yword\030\001 \001(\t\022\022\n\nchannel_id\030\002 \001(\t\022\025\n\rconte" +
-      "nt_types\030\003 \003(\005\022\030\n\020before_timestamp\030\004 \001(\003" +
-      "\022\031\n\021before_message_id\030\005 \001(\t\022\r\n\005limit\030\006 \001" +
-      "(\005\"\260\001\n\022SearchMessageMatch\022\022\n\nmessage_id\030" +
-      "\001 \001(\t\022\022\n\nchannel_id\030\002 \001(\t\022\024\n\014channel_typ" +
-      "e\030\003 \001(\005\022\021\n\tsender_id\030\004 \001(\t\022\023\n\013sender_kin" +
-      "d\030\005 \001(\005\022\020\n\010msg_type\030\006 \001(\005\022\021\n\ttimestamp\030\007",
-      " \001(\003\022\017\n\007content\030\010 \001(\t\"\201\001\n\025SearchMessageR" +
-      "esponse\022%\n\004code\030\001 \001(\0162\027.chirp.common.Err" +
-      "orCode\022/\n\007matches\030\002 \003(\0132\036.chirp.chat.Sea" +
-      "rchMessageMatch\022\020\n\010has_more\030\003 \001(\010*\242\001\n\007Ms" +
-      "gType\022\010\n\004TEXT\020\000\022\t\n\005EMOJI\020\001\022\t\n\005VOICE\020\002\022\t\n" +
-      "\005IMAGE\020\003\022\r\n\tITEM_LINK\020\n\022\016\n\nSKILL_LINK\020\013\022" +
-      "\017\n\013ACHIEVEMENT\020\014\022\016\n\nNPC_DIALOG\020\r\022\020\n\014TRAD" +
-      "E_STATUS\020\016\022\016\n\nCOORD_LINK\020\017\022\n\n\006SYSTEM\020c*[" +
-      "\n\013ChannelType\022\013\n\007PRIVATE\020\000\022\010\n\004TEAM\020\001\022\t\n\005" +
-      "GUILD\020\002\022\t\n\005WORLD\020\003\022\022\n\016SYSTEM_CHANNEL\020\004\022\013" +
-      "\n\007MARQUEE\020\005*Y\n\010Priority\022\020\n\014PRIORITY_LOW\020" +
-      "\000\022\023\n\017PRIORITY_NORMAL\020\001\022\021\n\rPRIORITY_HIGH\020" +
-      "\002\022\023\n\017PRIORITY_URGENT\020\003*T\n\nSenderKind\022\017\n\013" +
-      "SENDER_USER\020\000\022\021\n\rSENDER_SYSTEM\020\001\022\016\n\nSEND" +
-      "ER_NPC\020\002\022\022\n\016SENDER_SERVICE\020\003*B\n\017GroupMem" +
-      "berRole\022\n\n\006MEMBER\020\000\022\r\n\tMODERATOR\020\001\022\t\n\005AD" +
-      "MIN\020\002\022\t\n\005OWNER\020\003*\213\001\n\013ChannelKind\022\025\n\021CHAN" +
-      "NEL_KIND_TEXT\020\000\022\026\n\022CHANNEL_KIND_VOICE\020\001\022" +
-      "\035\n\031CHANNEL_KIND_ANNOUNCEMENT\020\002\022\026\n\022CHANNE" +
-      "L_KIND_STAGE\020\003\022\026\n\022CHANNEL_KIND_FORUM\020\004*D" +
-      "\n\016PermissionType\022\030\n\024PERMISSION_TYPE_ROLE" +
-      "\020\000\022\030\n\024PERMISSION_TYPE_USER\020\001*6\n\022Permissi" +
-      "onOverride\022\013\n\007INHERIT\020\000\022\t\n\005ALLOW\020\001\022\010\n\004DE" +
-      "NY\020\002*\207\001\n\013MentionType\022\025\n\021MENTION_TYPE_USE" +
-      "R\020\000\022\025\n\021MENTION_TYPE_ROLE\020\001\022\030\n\024MENTION_TY" +
-      "PE_CHANNEL\020\002\022\031\n\025MENTION_TYPE_EVERYONE\020\003\022" +
-      "\025\n\021MENTION_TYPE_HERE\020\004*x\n\030WordFilterDeli" +
-      "veryPolicy\022\036\n\032WORD_FILTER_POLICY_REPLACE" +
-      "\020\000\022\035\n\031WORD_FILTER_POLICY_REJECT\020\001\022\035\n\031WOR" +
-      "D_FILTER_POLICY_RECORD\020\002B$Z\"github.com/c" +
-      "ui/chirp/proto/go/chatb\006proto3"
+      "\005\"\213\001\n\024GuildRecruitMetadata\022\020\n\010guild_id\030\001" +
+      " \001(\t\022\022\n\nguild_name\030\002 \001(\t\022\r\n\005level\030\003 \001(\005\022" +
+      "\024\n\014member_count\030\004 \001(\005\022\023\n\013max_members\030\005 \001" +
+      "(\005\022\023\n\013description\030\006 \001(\t\"t\n\024PartyRecruitM" +
+      "etadata\022\020\n\010party_id\030\001 \001(\t\022\024\n\014dungeon_nam" +
+      "e\030\002 \001(\t\022\016\n\006needed\030\003 \001(\005\022\017\n\007current\030\004 \001(\005" +
+      "\022\023\n\013leader_name\030\005 \001(\t\"Y\n\021NpcDialogMetada" +
+      "ta\022\016\n\006npc_id\030\001 \001(\t\022\020\n\010npc_name\030\002 \001(\t\022\021\n\t" +
+      "dialog_id\030\003 \001(\t\022\017\n\007options\030\004 \003(\t\"O\n\rCoor" +
+      "dMetadata\022\016\n\006map_id\030\001 \001(\t\022\t\n\001x\030\002 \001(\005\022\t\n\001" +
+      "y\030\003 \001(\005\022\t\n\001z\030\004 \001(\005\022\r\n\005label\030\005 \001(\t\"U\n\025Set" +
+      "ChannelMuteRequest\022-\n\014channel_type\030\001 \001(\016" +
+      "2\027.chirp.chat.ChannelType\022\r\n\005muted\030\002 \001(\010" +
+      "\"}\n\026SetChannelMuteResponse\022%\n\004code\030\001 \001(\016" +
+      "2\027.chirp.common.ErrorCode\022-\n\014channel_typ" +
+      "e\030\002 \001(\0162\027.chirp.chat.ChannelType\022\r\n\005mute" +
+      "d\030\003 \001(\010\"P\n\020ChannelMuteState\022-\n\014channel_t" +
+      "ype\030\001 \001(\0162\027.chirp.chat.ChannelType\022\r\n\005mu" +
+      "ted\030\002 \001(\010\"\030\n\026GetChannelMutesRequest\"n\n\027G" +
+      "etChannelMutesResponse\022%\n\004code\030\001 \001(\0162\027.c" +
+      "hirp.common.ErrorCode\022,\n\006states\030\002 \003(\0132\034." +
+      "chirp.chat.ChannelMuteState\"3\n\031BlockMess" +
+      "ageSenderRequest\022\026\n\016target_user_id\030\001 \001(\t" +
+      "\"[\n\032BlockMessageSenderResponse\022%\n\004code\030\001" +
+      " \001(\0162\027.chirp.common.ErrorCode\022\026\n\016target_" +
+      "user_id\030\002 \001(\t\"5\n\033UnblockMessageSenderReq" +
+      "uest\022\026\n\016target_user_id\030\001 \001(\t\"]\n\034UnblockM" +
+      "essageSenderResponse\022%\n\004code\030\001 \001(\0162\027.chi" +
+      "rp.common.ErrorCode\022\026\n\016target_user_id\030\002 " +
+      "\001(\t\"\032\n\030GetBlockedSendersRequest\"[\n\031GetBl" +
+      "ockedSendersResponse\022%\n\004code\030\001 \001(\0162\027.chi" +
+      "rp.common.ErrorCode\022\027\n\017target_user_ids\030\002" +
+      " \003(\t\"/\n\026WordFilterFetchRequest\022\025\n\rknown_" +
+      "version\030\001 \001(\003\"\221\001\n\021WordFilterLexicon\022\017\n\007v" +
+      "ersion\030\001 \001(\003\022\017\n\007enabled\030\002 \001(\010\0224\n\006policy\030" +
+      "\003 \001(\0162$.chirp.chat.WordFilterDeliveryPol" +
+      "icy\022\023\n\013replacement\030\004 \001(\t\022\017\n\007lexicon\030\005 \001(" +
+      "\t\"p\n\027WordFilterFetchResponse\022%\n\004code\030\001 \001" +
+      "(\0162\027.chirp.common.ErrorCode\022.\n\007lexicon\030\002" +
+      " \001(\0132\035.chirp.chat.WordFilterLexicon\"H\n\026W" +
+      "ordFilterUpdateNotify\022.\n\007lexicon\030\001 \001(\0132\035" +
+      ".chirp.chat.WordFilterLexicon\"\226\001\n\024Search" +
+      "MessageRequest\022\017\n\007keyword\030\001 \001(\t\022\022\n\nchann",
+      "el_id\030\002 \001(\t\022\025\n\rcontent_types\030\003 \003(\005\022\030\n\020be" +
+      "fore_timestamp\030\004 \001(\003\022\031\n\021before_message_i" +
+      "d\030\005 \001(\t\022\r\n\005limit\030\006 \001(\005\"\260\001\n\022SearchMessage" +
+      "Match\022\022\n\nmessage_id\030\001 \001(\t\022\022\n\nchannel_id\030" +
+      "\002 \001(\t\022\024\n\014channel_type\030\003 \001(\005\022\021\n\tsender_id" +
+      "\030\004 \001(\t\022\023\n\013sender_kind\030\005 \001(\005\022\020\n\010msg_type\030" +
+      "\006 \001(\005\022\021\n\ttimestamp\030\007 \001(\003\022\017\n\007content\030\010 \001(" +
+      "\t\"\201\001\n\025SearchMessageResponse\022%\n\004code\030\001 \001(" +
+      "\0162\027.chirp.common.ErrorCode\022/\n\007matches\030\002 " +
+      "\003(\0132\036.chirp.chat.SearchMessageMatch\022\020\n\010h" +
+      "as_more\030\003 \001(\010*\310\001\n\007MsgType\022\010\n\004TEXT\020\000\022\t\n\005E" +
+      "MOJI\020\001\022\t\n\005VOICE\020\002\022\t\n\005IMAGE\020\003\022\r\n\tITEM_LIN" +
+      "K\020\n\022\016\n\nSKILL_LINK\020\013\022\017\n\013ACHIEVEMENT\020\014\022\016\n\n" +
+      "NPC_DIALOG\020\r\022\020\n\014TRADE_STATUS\020\016\022\016\n\nCOORD_" +
+      "LINK\020\017\022\021\n\rGUILD_RECRUIT\020\020\022\021\n\rPARTY_RECRU" +
+      "IT\020\021\022\n\n\006SYSTEM\020c*[\n\013ChannelType\022\013\n\007PRIVA" +
+      "TE\020\000\022\010\n\004TEAM\020\001\022\t\n\005GUILD\020\002\022\t\n\005WORLD\020\003\022\022\n\016" +
+      "SYSTEM_CHANNEL\020\004\022\013\n\007MARQUEE\020\005*Y\n\010Priorit" +
+      "y\022\020\n\014PRIORITY_LOW\020\000\022\023\n\017PRIORITY_NORMAL\020\001" +
+      "\022\021\n\rPRIORITY_HIGH\020\002\022\023\n\017PRIORITY_URGENT\020\003" +
+      "*T\n\nSenderKind\022\017\n\013SENDER_USER\020\000\022\021\n\rSENDE" +
+      "R_SYSTEM\020\001\022\016\n\nSENDER_NPC\020\002\022\022\n\016SENDER_SER" +
+      "VICE\020\003*B\n\017GroupMemberRole\022\n\n\006MEMBER\020\000\022\r\n" +
+      "\tMODERATOR\020\001\022\t\n\005ADMIN\020\002\022\t\n\005OWNER\020\003*\213\001\n\013C" +
+      "hannelKind\022\025\n\021CHANNEL_KIND_TEXT\020\000\022\026\n\022CHA" +
+      "NNEL_KIND_VOICE\020\001\022\035\n\031CHANNEL_KIND_ANNOUN" +
+      "CEMENT\020\002\022\026\n\022CHANNEL_KIND_STAGE\020\003\022\026\n\022CHAN" +
+      "NEL_KIND_FORUM\020\004*D\n\016PermissionType\022\030\n\024PE" +
+      "RMISSION_TYPE_ROLE\020\000\022\030\n\024PERMISSION_TYPE_" +
+      "USER\020\001*6\n\022PermissionOverride\022\013\n\007INHERIT\020" +
+      "\000\022\t\n\005ALLOW\020\001\022\010\n\004DENY\020\002*\207\001\n\013MentionType\022\025" +
+      "\n\021MENTION_TYPE_USER\020\000\022\025\n\021MENTION_TYPE_RO" +
+      "LE\020\001\022\030\n\024MENTION_TYPE_CHANNEL\020\002\022\031\n\025MENTIO" +
+      "N_TYPE_EVERYONE\020\003\022\025\n\021MENTION_TYPE_HERE\020\004" +
+      "*x\n\030WordFilterDeliveryPolicy\022\036\n\032WORD_FIL" +
+      "TER_POLICY_REPLACE\020\000\022\035\n\031WORD_FILTER_POLI" +
+      "CY_REJECT\020\001\022\035\n\031WORD_FILTER_POLICY_RECORD" +
+      "\020\002B$Z\"github.com/cui/chirp/proto/go/chat" +
+      "b\006proto3"
     };
     descriptor = com.google.protobuf.Descriptors.FileDescriptor
       .internalBuildGeneratedFileFrom(descriptorData,
@@ -125215,122 +127543,134 @@ java.lang.String defaultValue) {
       com.google.protobuf.GeneratedMessage.FieldAccessorTable(
         internal_static_chirp_chat_TradeMetadata_descriptor,
         new java.lang.String[] { "TradeId", "Status", "Amount", "ItemName", "ItemCount", });
-    internal_static_chirp_chat_NpcDialogMetadata_descriptor =
+    internal_static_chirp_chat_GuildRecruitMetadata_descriptor =
       getDescriptor().getMessageType(111);
+    internal_static_chirp_chat_GuildRecruitMetadata_fieldAccessorTable = new
+      com.google.protobuf.GeneratedMessage.FieldAccessorTable(
+        internal_static_chirp_chat_GuildRecruitMetadata_descriptor,
+        new java.lang.String[] { "GuildId", "GuildName", "Level", "MemberCount", "MaxMembers", "Description", });
+    internal_static_chirp_chat_PartyRecruitMetadata_descriptor =
+      getDescriptor().getMessageType(112);
+    internal_static_chirp_chat_PartyRecruitMetadata_fieldAccessorTable = new
+      com.google.protobuf.GeneratedMessage.FieldAccessorTable(
+        internal_static_chirp_chat_PartyRecruitMetadata_descriptor,
+        new java.lang.String[] { "PartyId", "DungeonName", "Needed", "Current", "LeaderName", });
+    internal_static_chirp_chat_NpcDialogMetadata_descriptor =
+      getDescriptor().getMessageType(113);
     internal_static_chirp_chat_NpcDialogMetadata_fieldAccessorTable = new
       com.google.protobuf.GeneratedMessage.FieldAccessorTable(
         internal_static_chirp_chat_NpcDialogMetadata_descriptor,
         new java.lang.String[] { "NpcId", "NpcName", "DialogId", "Options", });
     internal_static_chirp_chat_CoordMetadata_descriptor =
-      getDescriptor().getMessageType(112);
+      getDescriptor().getMessageType(114);
     internal_static_chirp_chat_CoordMetadata_fieldAccessorTable = new
       com.google.protobuf.GeneratedMessage.FieldAccessorTable(
         internal_static_chirp_chat_CoordMetadata_descriptor,
         new java.lang.String[] { "MapId", "X", "Y", "Z", "Label", });
     internal_static_chirp_chat_SetChannelMuteRequest_descriptor =
-      getDescriptor().getMessageType(113);
+      getDescriptor().getMessageType(115);
     internal_static_chirp_chat_SetChannelMuteRequest_fieldAccessorTable = new
       com.google.protobuf.GeneratedMessage.FieldAccessorTable(
         internal_static_chirp_chat_SetChannelMuteRequest_descriptor,
         new java.lang.String[] { "ChannelType", "Muted", });
     internal_static_chirp_chat_SetChannelMuteResponse_descriptor =
-      getDescriptor().getMessageType(114);
+      getDescriptor().getMessageType(116);
     internal_static_chirp_chat_SetChannelMuteResponse_fieldAccessorTable = new
       com.google.protobuf.GeneratedMessage.FieldAccessorTable(
         internal_static_chirp_chat_SetChannelMuteResponse_descriptor,
         new java.lang.String[] { "Code", "ChannelType", "Muted", });
     internal_static_chirp_chat_ChannelMuteState_descriptor =
-      getDescriptor().getMessageType(115);
+      getDescriptor().getMessageType(117);
     internal_static_chirp_chat_ChannelMuteState_fieldAccessorTable = new
       com.google.protobuf.GeneratedMessage.FieldAccessorTable(
         internal_static_chirp_chat_ChannelMuteState_descriptor,
         new java.lang.String[] { "ChannelType", "Muted", });
     internal_static_chirp_chat_GetChannelMutesRequest_descriptor =
-      getDescriptor().getMessageType(116);
+      getDescriptor().getMessageType(118);
     internal_static_chirp_chat_GetChannelMutesRequest_fieldAccessorTable = new
       com.google.protobuf.GeneratedMessage.FieldAccessorTable(
         internal_static_chirp_chat_GetChannelMutesRequest_descriptor,
         new java.lang.String[] { });
     internal_static_chirp_chat_GetChannelMutesResponse_descriptor =
-      getDescriptor().getMessageType(117);
+      getDescriptor().getMessageType(119);
     internal_static_chirp_chat_GetChannelMutesResponse_fieldAccessorTable = new
       com.google.protobuf.GeneratedMessage.FieldAccessorTable(
         internal_static_chirp_chat_GetChannelMutesResponse_descriptor,
         new java.lang.String[] { "Code", "States", });
     internal_static_chirp_chat_BlockMessageSenderRequest_descriptor =
-      getDescriptor().getMessageType(118);
+      getDescriptor().getMessageType(120);
     internal_static_chirp_chat_BlockMessageSenderRequest_fieldAccessorTable = new
       com.google.protobuf.GeneratedMessage.FieldAccessorTable(
         internal_static_chirp_chat_BlockMessageSenderRequest_descriptor,
         new java.lang.String[] { "TargetUserId", });
     internal_static_chirp_chat_BlockMessageSenderResponse_descriptor =
-      getDescriptor().getMessageType(119);
+      getDescriptor().getMessageType(121);
     internal_static_chirp_chat_BlockMessageSenderResponse_fieldAccessorTable = new
       com.google.protobuf.GeneratedMessage.FieldAccessorTable(
         internal_static_chirp_chat_BlockMessageSenderResponse_descriptor,
         new java.lang.String[] { "Code", "TargetUserId", });
     internal_static_chirp_chat_UnblockMessageSenderRequest_descriptor =
-      getDescriptor().getMessageType(120);
+      getDescriptor().getMessageType(122);
     internal_static_chirp_chat_UnblockMessageSenderRequest_fieldAccessorTable = new
       com.google.protobuf.GeneratedMessage.FieldAccessorTable(
         internal_static_chirp_chat_UnblockMessageSenderRequest_descriptor,
         new java.lang.String[] { "TargetUserId", });
     internal_static_chirp_chat_UnblockMessageSenderResponse_descriptor =
-      getDescriptor().getMessageType(121);
+      getDescriptor().getMessageType(123);
     internal_static_chirp_chat_UnblockMessageSenderResponse_fieldAccessorTable = new
       com.google.protobuf.GeneratedMessage.FieldAccessorTable(
         internal_static_chirp_chat_UnblockMessageSenderResponse_descriptor,
         new java.lang.String[] { "Code", "TargetUserId", });
     internal_static_chirp_chat_GetBlockedSendersRequest_descriptor =
-      getDescriptor().getMessageType(122);
+      getDescriptor().getMessageType(124);
     internal_static_chirp_chat_GetBlockedSendersRequest_fieldAccessorTable = new
       com.google.protobuf.GeneratedMessage.FieldAccessorTable(
         internal_static_chirp_chat_GetBlockedSendersRequest_descriptor,
         new java.lang.String[] { });
     internal_static_chirp_chat_GetBlockedSendersResponse_descriptor =
-      getDescriptor().getMessageType(123);
+      getDescriptor().getMessageType(125);
     internal_static_chirp_chat_GetBlockedSendersResponse_fieldAccessorTable = new
       com.google.protobuf.GeneratedMessage.FieldAccessorTable(
         internal_static_chirp_chat_GetBlockedSendersResponse_descriptor,
         new java.lang.String[] { "Code", "TargetUserIds", });
     internal_static_chirp_chat_WordFilterFetchRequest_descriptor =
-      getDescriptor().getMessageType(124);
+      getDescriptor().getMessageType(126);
     internal_static_chirp_chat_WordFilterFetchRequest_fieldAccessorTable = new
       com.google.protobuf.GeneratedMessage.FieldAccessorTable(
         internal_static_chirp_chat_WordFilterFetchRequest_descriptor,
         new java.lang.String[] { "KnownVersion", });
     internal_static_chirp_chat_WordFilterLexicon_descriptor =
-      getDescriptor().getMessageType(125);
+      getDescriptor().getMessageType(127);
     internal_static_chirp_chat_WordFilterLexicon_fieldAccessorTable = new
       com.google.protobuf.GeneratedMessage.FieldAccessorTable(
         internal_static_chirp_chat_WordFilterLexicon_descriptor,
         new java.lang.String[] { "Version", "Enabled", "Policy", "Replacement", "Lexicon", });
     internal_static_chirp_chat_WordFilterFetchResponse_descriptor =
-      getDescriptor().getMessageType(126);
+      getDescriptor().getMessageType(128);
     internal_static_chirp_chat_WordFilterFetchResponse_fieldAccessorTable = new
       com.google.protobuf.GeneratedMessage.FieldAccessorTable(
         internal_static_chirp_chat_WordFilterFetchResponse_descriptor,
         new java.lang.String[] { "Code", "Lexicon", });
     internal_static_chirp_chat_WordFilterUpdateNotify_descriptor =
-      getDescriptor().getMessageType(127);
+      getDescriptor().getMessageType(129);
     internal_static_chirp_chat_WordFilterUpdateNotify_fieldAccessorTable = new
       com.google.protobuf.GeneratedMessage.FieldAccessorTable(
         internal_static_chirp_chat_WordFilterUpdateNotify_descriptor,
         new java.lang.String[] { "Lexicon", });
     internal_static_chirp_chat_SearchMessageRequest_descriptor =
-      getDescriptor().getMessageType(128);
+      getDescriptor().getMessageType(130);
     internal_static_chirp_chat_SearchMessageRequest_fieldAccessorTable = new
       com.google.protobuf.GeneratedMessage.FieldAccessorTable(
         internal_static_chirp_chat_SearchMessageRequest_descriptor,
         new java.lang.String[] { "Keyword", "ChannelId", "ContentTypes", "BeforeTimestamp", "BeforeMessageId", "Limit", });
     internal_static_chirp_chat_SearchMessageMatch_descriptor =
-      getDescriptor().getMessageType(129);
+      getDescriptor().getMessageType(131);
     internal_static_chirp_chat_SearchMessageMatch_fieldAccessorTable = new
       com.google.protobuf.GeneratedMessage.FieldAccessorTable(
         internal_static_chirp_chat_SearchMessageMatch_descriptor,
         new java.lang.String[] { "MessageId", "ChannelId", "ChannelType", "SenderId", "SenderKind", "MsgType", "Timestamp", "Content", });
     internal_static_chirp_chat_SearchMessageResponse_descriptor =
-      getDescriptor().getMessageType(130);
+      getDescriptor().getMessageType(132);
     internal_static_chirp_chat_SearchMessageResponse_fieldAccessorTable = new
       com.google.protobuf.GeneratedMessage.FieldAccessorTable(
         internal_static_chirp_chat_SearchMessageResponse_descriptor,

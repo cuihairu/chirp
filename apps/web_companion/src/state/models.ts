@@ -74,6 +74,28 @@ export interface TradeView {
   itemCount: number;
 }
 
+/** Guild recruit card (P1 GUILD_RECRUIT): name + level + headcount + blurb. */
+export interface GuildRecruitView {
+  guildId: string;
+  guildName: string;
+  level: number;
+  memberCount: number;
+  /** 人数上限；0 = 不展示。 */
+  maxMembers: number;
+  /** 招募语（可选）。 */
+  description: string;
+}
+
+/** Party recruit card (P1 PARTY_RECRUIT): dungeon + headcount need + leader. */
+export interface PartyRecruitView {
+  partyId: string;
+  dungeonName: string;
+  needed: number;
+  /** 当前已组人数；0 = 不展示。 */
+  current: number;
+  leaderName: string;
+}
+
 export interface ChatMessageView {
   /** Server message id; optimistic sends carry a local id until confirmed. */
   messageId: string;
@@ -106,6 +128,10 @@ export interface ChatMessageView {
   achievement?: AchievementView;
   /** Trade status card (P1 TRADE_STATUS); absent = plain text bubble. */
   trade?: TradeView;
+  /** Guild recruit card (P1 GUILD_RECRUIT); absent = plain text bubble. */
+  guildRecruit?: GuildRecruitView;
+  /** Party recruit card (P1 PARTY_RECRUIT); absent = plain text bubble. */
+  partyRecruit?: PartyRecruitView;
   // P0 消息展示：wire 三字段透传（ChatMessage priority/ttl_seconds/sender_kind）。
   // 缺省（proto3 零值）= 普通玩家、普通优先级、无走马灯时长。
   priority?: Priority;

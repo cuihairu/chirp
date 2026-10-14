@@ -7,7 +7,9 @@ import {
   GroupMemberKickedNotify,
   GroupMemberMutedNotify,
   AchievementMetadata,
+  GuildRecruitMetadata,
   ItemMetadata,
+  PartyRecruitMetadata,
   TradeMetadata,
   MessageAck,
   MessageDeletedNotify,
@@ -364,6 +366,51 @@ describe('ChatApi.sendMessage (optimistic)', () => {
     });
   });
 
+  it('sends GUILD_RECRUIT with guild metadata and shows the card optimistically', async () => {
+    const h = makeHarness();
+    await login(h);
+    h.conn.setResponder(async (msgId, req) => {
+      expect(msgId).toBe(MsgID.SEND_MESSAGE_REQ);
+      expect(req).toMatchObject({ msgType: MsgType.GUILD_RECRUIT });
+      return { code: 0, messageId: 'srv-g1' };
+    });
+    await h.api.sendMessage(
+      channel,
+      '招募成员',
+      undefined,
+      undefined,
+      undefined,
+      undefined,
+      undefined,
+      {
+        guildId: 'guild-3001',
+        guildName: '烈焰军团',
+        level: 7,
+        memberCount: 48,
+        maxMembers: 60,
+        description: '周三晚开荒',
+      },
+    );
+    const wire = h.conn.requests.find((r) => r.msgId === MsgID.SEND_MESSAGE_REQ)!;
+    const guild = GuildRecruitMetadata.decode(
+      (wire.req as { metadata?: Uint8Array }).metadata ?? new Uint8Array(),
+    );
+    expect(guild.guildId).toBe('guild-3001');
+    expect(guild.guildName).toBe('烈焰军团');
+    expect(guild.level).toBe(7);
+    expect(guild.maxMembers).toBe(60);
+    expect(h.messages.get().byChannel[channel.key][0]).toMatchObject({
+      messageId: 'srv-g1',
+      guildRecruit: {
+        guildId: 'guild-3001',
+        guildName: '烈焰军团',
+        level: 7,
+        memberCount: 48,
+        maxMembers: 60,
+      },
+    });
+  });
+
   it('leaves plain sends as TEXT without metadata on the wire', async () => {
     const h = makeHarness();
     await login(h);
@@ -562,6 +609,76 @@ describe('ChatApi incoming notifies', () => {
     );
     const second = h.messages.get().byChannel['p:user_a|user_b'][1];
     expect(second.trade).toBeUndefined();
+    expect(second.content).toBe('hi');
+  });
+
+  it('parses the recruit cards out of GUILD/PARTY_RECRUIT notify metadata', async () => {
+    const h = makeHarness();
+    await login(h);
+    h.conn.emit(
+      MsgID.CHAT_MESSAGE_NOTIFY,
+      chatBody({
+        msgType: MsgType.GUILD_RECRUIT,
+        content: new TextEncoder().encode('招募成员'),
+        metadata: GuildRecruitMetadata.encode(
+          GuildRecruitMetadata.fromPartial({
+            guildId: 'guild-3001',
+            guildName: '烈焰军团',
+            level: 7,
+            memberCount: 48,
+            maxMembers: 60,
+          }),
+        ).finish(),
+      }),
+    );
+    expect(h.messages.get().byChannel['p:user_a|user_b'][0]).toMatchObject({
+      guildRecruit: { guildId: 'guild-3001', guildName: '烈焰军团', level: 7, memberCount: 48, maxMembers: 60 },
+    });
+
+    h.conn.emit(
+      MsgID.CHAT_MESSAGE_NOTIFY,
+      chatBody({
+        messageId: 'm2',
+        msgType: MsgType.PARTY_RECRUIT,
+        metadata: PartyRecruitMetadata.encode(
+          PartyRecruitMetadata.fromPartial({
+            partyId: 'party-4001',
+            dungeonName: '熔岩之心',
+            needed: 5,
+            current: 3,
+            leaderName: 'alice',
+          }),
+        ).finish(),
+      }),
+    );
+    expect(h.messages.get().byChannel['p:user_a|user_b'][1]).toMatchObject({
+      partyRecruit: { partyId: 'party-4001', dungeonName: '熔岩之心', needed: 5, current: 3, leaderName: 'alice' },
+    });
+  });
+
+  it('drops the recruit cards when the metadata does not parse or lacks ids', async () => {
+    const h = makeHarness();
+    await login(h);
+    h.conn.emit(
+      MsgID.CHAT_MESSAGE_NOTIFY,
+      chatBody({ msgType: MsgType.GUILD_RECRUIT, metadata: new Uint8Array([0xde, 0xad, 0xbe, 0xef]) }),
+    );
+    const first = h.messages.get().byChannel['p:user_a|user_b'][0];
+    expect(first.guildRecruit).toBeUndefined();
+    expect(first.content).toBe('hi');
+
+    h.conn.emit(
+      MsgID.CHAT_MESSAGE_NOTIFY,
+      chatBody({
+        messageId: 'm2',
+        msgType: MsgType.PARTY_RECRUIT,
+        metadata: PartyRecruitMetadata.encode(
+          PartyRecruitMetadata.fromPartial({ dungeonName: '无名副本' }),
+        ).finish(),
+      }),
+    );
+    const second = h.messages.get().byChannel['p:user_a|user_b'][1];
+    expect(second.partyRecruit).toBeUndefined();
     expect(second.content).toBe('hi');
   });
 

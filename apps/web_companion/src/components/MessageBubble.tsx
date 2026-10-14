@@ -382,6 +382,97 @@ export default function MessageBubble({
           </Typography>
         </Box>
       )}
+      {!message.deleted && message.guildRecruit && (
+        <Box
+          data-testid={`guild-${message.messageId}`}
+          sx={{
+            display: 'block',
+            width: '100%',
+            mb: 0.5,
+            p: 1,
+            border: '1px solid',
+            borderColor: mine ? 'primary.contrastText' : 'divider',
+            borderRadius: 1,
+            background: 'transparent',
+            textAlign: 'left',
+          }}
+        >
+          <Typography
+            variant="caption"
+            component="div"
+            sx={{ px: 0.5, borderRadius: 0.5, bgcolor: 'action.hover', fontWeight: 600, width: 'fit-content' }}
+          >
+            {zh.chat.guildRecruit}
+          </Typography>
+          <Typography variant="caption" component="div" sx={{ fontWeight: 600, mt: 0.5 }}>
+            {message.guildRecruit.guildName || message.guildRecruit.guildId}
+          </Typography>
+          {(message.guildRecruit.level > 0 || message.guildRecruit.memberCount > 0) && (
+            <Typography variant="caption" component="div" sx={{ opacity: 0.75 }}>
+              {message.guildRecruit.level > 0 && `${zh.chat.guildLevel} ${message.guildRecruit.level}`}
+              {message.guildRecruit.level > 0 && message.guildRecruit.memberCount > 0 && ' · '}
+              {message.guildRecruit.memberCount > 0 &&
+                `${zh.chat.guildMembers} ${
+                  message.guildRecruit.maxMembers > 0
+                    ? `${message.guildRecruit.memberCount}/${message.guildRecruit.maxMembers}`
+                    : `${message.guildRecruit.memberCount}`
+                }`}
+            </Typography>
+          )}
+          {message.guildRecruit.description && (
+            <Typography variant="caption" component="div" sx={{ mt: 0.5, opacity: 0.85 }}>
+              {message.guildRecruit.description}
+            </Typography>
+          )}
+          <Typography variant="caption" component="div" sx={{ opacity: 0.6 }}>
+            {message.guildRecruit.guildId}
+          </Typography>
+        </Box>
+      )}
+      {!message.deleted && message.partyRecruit && (
+        <Box
+          data-testid={`party-${message.messageId}`}
+          sx={{
+            display: 'block',
+            width: '100%',
+            mb: 0.5,
+            p: 1,
+            border: '1px solid',
+            borderColor: mine ? 'primary.contrastText' : 'divider',
+            borderRadius: 1,
+            background: 'transparent',
+            textAlign: 'left',
+          }}
+        >
+          <Typography
+            variant="caption"
+            component="div"
+            sx={{ px: 0.5, borderRadius: 0.5, bgcolor: 'action.hover', fontWeight: 600, width: 'fit-content' }}
+          >
+            {zh.chat.partyRecruit}
+          </Typography>
+          <Typography variant="caption" component="div" sx={{ fontWeight: 600, mt: 0.5 }}>
+            {message.partyRecruit.dungeonName || message.partyRecruit.partyId}
+          </Typography>
+          {message.partyRecruit.needed > 0 && (
+            <Typography variant="caption" component="div" sx={{ opacity: 0.75 }}>
+              {`${zh.chat.partyNeeded} ${
+                message.partyRecruit.needed -
+                (message.partyRecruit.current > 0 ? message.partyRecruit.current : 0)
+              } 人`}
+              {message.partyRecruit.current > 0 && ` · ${message.partyRecruit.current}/${message.partyRecruit.needed}`}
+            </Typography>
+          )}
+          {message.partyRecruit.leaderName && (
+            <Typography variant="caption" component="div" sx={{ opacity: 0.75 }}>
+              {`${zh.chat.partyLeader} ${message.partyRecruit.leaderName}`}
+            </Typography>
+          )}
+          <Typography variant="caption" component="div" sx={{ opacity: 0.6 }}>
+            {message.partyRecruit.partyId}
+          </Typography>
+        </Box>
+      )}
       <Typography variant="caption" sx={{ opacity: 0.75 }}>
         {timeLabel(message.timestamp)}
         {mine && message.pending && ` · ${zh.chat.statusPending}`}

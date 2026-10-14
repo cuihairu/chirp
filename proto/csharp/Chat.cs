@@ -341,72 +341,79 @@ namespace Chirp.Chat {
             "cHRpb24YAyABKAkSEAoIaWNvbl91cmwYBCABKAkSDgoGcmFyaXR5GAUgASgF",
             "ImgKDVRyYWRlTWV0YWRhdGESEAoIdHJhZGVfaWQYASABKAkSDgoGc3RhdHVz",
             "GAIgASgJEg4KBmFtb3VudBgDIAEoAxIRCglpdGVtX25hbWUYBCABKAkSEgoK",
-            "aXRlbV9jb3VudBgFIAEoBSJZChFOcGNEaWFsb2dNZXRhZGF0YRIOCgZucGNf",
-            "aWQYASABKAkSEAoIbnBjX25hbWUYAiABKAkSEQoJZGlhbG9nX2lkGAMgASgJ",
-            "Eg8KB29wdGlvbnMYBCADKAkiTwoNQ29vcmRNZXRhZGF0YRIOCgZtYXBfaWQY",
-            "ASABKAkSCQoBeBgCIAEoBRIJCgF5GAMgASgFEgkKAXoYBCABKAUSDQoFbGFi",
-            "ZWwYBSABKAkiVQoVU2V0Q2hhbm5lbE11dGVSZXF1ZXN0Ei0KDGNoYW5uZWxf",
-            "dHlwZRgBIAEoDjIXLmNoaXJwLmNoYXQuQ2hhbm5lbFR5cGUSDQoFbXV0ZWQY",
-            "AiABKAgifQoWU2V0Q2hhbm5lbE11dGVSZXNwb25zZRIlCgRjb2RlGAEgASgO",
-            "MhcuY2hpcnAuY29tbW9uLkVycm9yQ29kZRItCgxjaGFubmVsX3R5cGUYAiAB",
-            "KA4yFy5jaGlycC5jaGF0LkNoYW5uZWxUeXBlEg0KBW11dGVkGAMgASgIIlAK",
-            "EENoYW5uZWxNdXRlU3RhdGUSLQoMY2hhbm5lbF90eXBlGAEgASgOMhcuY2hp",
-            "cnAuY2hhdC5DaGFubmVsVHlwZRINCgVtdXRlZBgCIAEoCCIYChZHZXRDaGFu",
-            "bmVsTXV0ZXNSZXF1ZXN0Im4KF0dldENoYW5uZWxNdXRlc1Jlc3BvbnNlEiUK",
-            "BGNvZGUYASABKA4yFy5jaGlycC5jb21tb24uRXJyb3JDb2RlEiwKBnN0YXRl",
-            "cxgCIAMoCzIcLmNoaXJwLmNoYXQuQ2hhbm5lbE11dGVTdGF0ZSIzChlCbG9j",
-            "a01lc3NhZ2VTZW5kZXJSZXF1ZXN0EhYKDnRhcmdldF91c2VyX2lkGAEgASgJ",
-            "IlsKGkJsb2NrTWVzc2FnZVNlbmRlclJlc3BvbnNlEiUKBGNvZGUYASABKA4y",
-            "Fy5jaGlycC5jb21tb24uRXJyb3JDb2RlEhYKDnRhcmdldF91c2VyX2lkGAIg",
-            "ASgJIjUKG1VuYmxvY2tNZXNzYWdlU2VuZGVyUmVxdWVzdBIWCg50YXJnZXRf",
-            "dXNlcl9pZBgBIAEoCSJdChxVbmJsb2NrTWVzc2FnZVNlbmRlclJlc3BvbnNl",
-            "EiUKBGNvZGUYASABKA4yFy5jaGlycC5jb21tb24uRXJyb3JDb2RlEhYKDnRh",
-            "cmdldF91c2VyX2lkGAIgASgJIhoKGEdldEJsb2NrZWRTZW5kZXJzUmVxdWVz",
-            "dCJbChlHZXRCbG9ja2VkU2VuZGVyc1Jlc3BvbnNlEiUKBGNvZGUYASABKA4y",
-            "Fy5jaGlycC5jb21tb24uRXJyb3JDb2RlEhcKD3RhcmdldF91c2VyX2lkcxgC",
-            "IAMoCSIvChZXb3JkRmlsdGVyRmV0Y2hSZXF1ZXN0EhUKDWtub3duX3ZlcnNp",
-            "b24YASABKAMikQEKEVdvcmRGaWx0ZXJMZXhpY29uEg8KB3ZlcnNpb24YASAB",
-            "KAMSDwoHZW5hYmxlZBgCIAEoCBI0CgZwb2xpY3kYAyABKA4yJC5jaGlycC5j",
-            "aGF0LldvcmRGaWx0ZXJEZWxpdmVyeVBvbGljeRITCgtyZXBsYWNlbWVudBgE",
-            "IAEoCRIPCgdsZXhpY29uGAUgASgJInAKF1dvcmRGaWx0ZXJGZXRjaFJlc3Bv",
-            "bnNlEiUKBGNvZGUYASABKA4yFy5jaGlycC5jb21tb24uRXJyb3JDb2RlEi4K",
-            "B2xleGljb24YAiABKAsyHS5jaGlycC5jaGF0LldvcmRGaWx0ZXJMZXhpY29u",
-            "IkgKFldvcmRGaWx0ZXJVcGRhdGVOb3RpZnkSLgoHbGV4aWNvbhgBIAEoCzId",
-            "LmNoaXJwLmNoYXQuV29yZEZpbHRlckxleGljb24ilgEKFFNlYXJjaE1lc3Nh",
-            "Z2VSZXF1ZXN0Eg8KB2tleXdvcmQYASABKAkSEgoKY2hhbm5lbF9pZBgCIAEo",
-            "CRIVCg1jb250ZW50X3R5cGVzGAMgAygFEhgKEGJlZm9yZV90aW1lc3RhbXAY",
-            "BCABKAMSGQoRYmVmb3JlX21lc3NhZ2VfaWQYBSABKAkSDQoFbGltaXQYBiAB",
-            "KAUisAEKElNlYXJjaE1lc3NhZ2VNYXRjaBISCgptZXNzYWdlX2lkGAEgASgJ",
-            "EhIKCmNoYW5uZWxfaWQYAiABKAkSFAoMY2hhbm5lbF90eXBlGAMgASgFEhEK",
-            "CXNlbmRlcl9pZBgEIAEoCRITCgtzZW5kZXJfa2luZBgFIAEoBRIQCghtc2df",
-            "dHlwZRgGIAEoBRIRCgl0aW1lc3RhbXAYByABKAMSDwoHY29udGVudBgIIAEo",
-            "CSKBAQoVU2VhcmNoTWVzc2FnZVJlc3BvbnNlEiUKBGNvZGUYASABKA4yFy5j",
-            "aGlycC5jb21tb24uRXJyb3JDb2RlEi8KB21hdGNoZXMYAiADKAsyHi5jaGly",
-            "cC5jaGF0LlNlYXJjaE1lc3NhZ2VNYXRjaBIQCghoYXNfbW9yZRgDIAEoCCqi",
-            "AQoHTXNnVHlwZRIICgRURVhUEAASCQoFRU1PSkkQARIJCgVWT0lDRRACEgkK",
-            "BUlNQUdFEAMSDQoJSVRFTV9MSU5LEAoSDgoKU0tJTExfTElOSxALEg8KC0FD",
-            "SElFVkVNRU5UEAwSDgoKTlBDX0RJQUxPRxANEhAKDFRSQURFX1NUQVRVUxAO",
-            "Eg4KCkNPT1JEX0xJTksQDxIKCgZTWVNURU0QYypbCgtDaGFubmVsVHlwZRIL",
-            "CgdQUklWQVRFEAASCAoEVEVBTRABEgkKBUdVSUxEEAISCQoFV09STEQQAxIS",
-            "Cg5TWVNURU1fQ0hBTk5FTBAEEgsKB01BUlFVRUUQBSpZCghQcmlvcml0eRIQ",
-            "CgxQUklPUklUWV9MT1cQABITCg9QUklPUklUWV9OT1JNQUwQARIRCg1QUklP",
-            "UklUWV9ISUdIEAISEwoPUFJJT1JJVFlfVVJHRU5UEAMqVAoKU2VuZGVyS2lu",
-            "ZBIPCgtTRU5ERVJfVVNFUhAAEhEKDVNFTkRFUl9TWVNURU0QARIOCgpTRU5E",
-            "RVJfTlBDEAISEgoOU0VOREVSX1NFUlZJQ0UQAypCCg9Hcm91cE1lbWJlclJv",
-            "bGUSCgoGTUVNQkVSEAASDQoJTU9ERVJBVE9SEAESCQoFQURNSU4QAhIJCgVP",
-            "V05FUhADKosBCgtDaGFubmVsS2luZBIVChFDSEFOTkVMX0tJTkRfVEVYVBAA",
-            "EhYKEkNIQU5ORUxfS0lORF9WT0lDRRABEh0KGUNIQU5ORUxfS0lORF9BTk5P",
-            "VU5DRU1FTlQQAhIWChJDSEFOTkVMX0tJTkRfU1RBR0UQAxIWChJDSEFOTkVM",
-            "X0tJTkRfRk9SVU0QBCpECg5QZXJtaXNzaW9uVHlwZRIYChRQRVJNSVNTSU9O",
-            "X1RZUEVfUk9MRRAAEhgKFFBFUk1JU1NJT05fVFlQRV9VU0VSEAEqNgoSUGVy",
-            "bWlzc2lvbk92ZXJyaWRlEgsKB0lOSEVSSVQQABIJCgVBTExPVxABEggKBERF",
-            "TlkQAiqHAQoLTWVudGlvblR5cGUSFQoRTUVOVElPTl9UWVBFX1VTRVIQABIV",
-            "ChFNRU5USU9OX1RZUEVfUk9MRRABEhgKFE1FTlRJT05fVFlQRV9DSEFOTkVM",
-            "EAISGQoVTUVOVElPTl9UWVBFX0VWRVJZT05FEAMSFQoRTUVOVElPTl9UWVBF",
-            "X0hFUkUQBCp4ChhXb3JkRmlsdGVyRGVsaXZlcnlQb2xpY3kSHgoaV09SRF9G",
-            "SUxURVJfUE9MSUNZX1JFUExBQ0UQABIdChlXT1JEX0ZJTFRFUl9QT0xJQ1lf",
-            "UkVKRUNUEAESHQoZV09SRF9GSUxURVJfUE9MSUNZX1JFQ09SRBACQiRaImdp",
-            "dGh1Yi5jb20vY3VpL2NoaXJwL3Byb3RvL2dvL2NoYXRiBnByb3RvMw=="));
+            "aXRlbV9jb3VudBgFIAEoBSKLAQoUR3VpbGRSZWNydWl0TWV0YWRhdGESEAoI",
+            "Z3VpbGRfaWQYASABKAkSEgoKZ3VpbGRfbmFtZRgCIAEoCRINCgVsZXZlbBgD",
+            "IAEoBRIUCgxtZW1iZXJfY291bnQYBCABKAUSEwoLbWF4X21lbWJlcnMYBSAB",
+            "KAUSEwoLZGVzY3JpcHRpb24YBiABKAkidAoUUGFydHlSZWNydWl0TWV0YWRh",
+            "dGESEAoIcGFydHlfaWQYASABKAkSFAoMZHVuZ2Vvbl9uYW1lGAIgASgJEg4K",
+            "Bm5lZWRlZBgDIAEoBRIPCgdjdXJyZW50GAQgASgFEhMKC2xlYWRlcl9uYW1l",
+            "GAUgASgJIlkKEU5wY0RpYWxvZ01ldGFkYXRhEg4KBm5wY19pZBgBIAEoCRIQ",
+            "CghucGNfbmFtZRgCIAEoCRIRCglkaWFsb2dfaWQYAyABKAkSDwoHb3B0aW9u",
+            "cxgEIAMoCSJPCg1Db29yZE1ldGFkYXRhEg4KBm1hcF9pZBgBIAEoCRIJCgF4",
+            "GAIgASgFEgkKAXkYAyABKAUSCQoBehgEIAEoBRINCgVsYWJlbBgFIAEoCSJV",
+            "ChVTZXRDaGFubmVsTXV0ZVJlcXVlc3QSLQoMY2hhbm5lbF90eXBlGAEgASgO",
+            "MhcuY2hpcnAuY2hhdC5DaGFubmVsVHlwZRINCgVtdXRlZBgCIAEoCCJ9ChZT",
+            "ZXRDaGFubmVsTXV0ZVJlc3BvbnNlEiUKBGNvZGUYASABKA4yFy5jaGlycC5j",
+            "b21tb24uRXJyb3JDb2RlEi0KDGNoYW5uZWxfdHlwZRgCIAEoDjIXLmNoaXJw",
+            "LmNoYXQuQ2hhbm5lbFR5cGUSDQoFbXV0ZWQYAyABKAgiUAoQQ2hhbm5lbE11",
+            "dGVTdGF0ZRItCgxjaGFubmVsX3R5cGUYASABKA4yFy5jaGlycC5jaGF0LkNo",
+            "YW5uZWxUeXBlEg0KBW11dGVkGAIgASgIIhgKFkdldENoYW5uZWxNdXRlc1Jl",
+            "cXVlc3QibgoXR2V0Q2hhbm5lbE11dGVzUmVzcG9uc2USJQoEY29kZRgBIAEo",
+            "DjIXLmNoaXJwLmNvbW1vbi5FcnJvckNvZGUSLAoGc3RhdGVzGAIgAygLMhwu",
+            "Y2hpcnAuY2hhdC5DaGFubmVsTXV0ZVN0YXRlIjMKGUJsb2NrTWVzc2FnZVNl",
+            "bmRlclJlcXVlc3QSFgoOdGFyZ2V0X3VzZXJfaWQYASABKAkiWwoaQmxvY2tN",
+            "ZXNzYWdlU2VuZGVyUmVzcG9uc2USJQoEY29kZRgBIAEoDjIXLmNoaXJwLmNv",
+            "bW1vbi5FcnJvckNvZGUSFgoOdGFyZ2V0X3VzZXJfaWQYAiABKAkiNQobVW5i",
+            "bG9ja01lc3NhZ2VTZW5kZXJSZXF1ZXN0EhYKDnRhcmdldF91c2VyX2lkGAEg",
+            "ASgJIl0KHFVuYmxvY2tNZXNzYWdlU2VuZGVyUmVzcG9uc2USJQoEY29kZRgB",
+            "IAEoDjIXLmNoaXJwLmNvbW1vbi5FcnJvckNvZGUSFgoOdGFyZ2V0X3VzZXJf",
+            "aWQYAiABKAkiGgoYR2V0QmxvY2tlZFNlbmRlcnNSZXF1ZXN0IlsKGUdldEJs",
+            "b2NrZWRTZW5kZXJzUmVzcG9uc2USJQoEY29kZRgBIAEoDjIXLmNoaXJwLmNv",
+            "bW1vbi5FcnJvckNvZGUSFwoPdGFyZ2V0X3VzZXJfaWRzGAIgAygJIi8KFldv",
+            "cmRGaWx0ZXJGZXRjaFJlcXVlc3QSFQoNa25vd25fdmVyc2lvbhgBIAEoAyKR",
+            "AQoRV29yZEZpbHRlckxleGljb24SDwoHdmVyc2lvbhgBIAEoAxIPCgdlbmFi",
+            "bGVkGAIgASgIEjQKBnBvbGljeRgDIAEoDjIkLmNoaXJwLmNoYXQuV29yZEZp",
+            "bHRlckRlbGl2ZXJ5UG9saWN5EhMKC3JlcGxhY2VtZW50GAQgASgJEg8KB2xl",
+            "eGljb24YBSABKAkicAoXV29yZEZpbHRlckZldGNoUmVzcG9uc2USJQoEY29k",
+            "ZRgBIAEoDjIXLmNoaXJwLmNvbW1vbi5FcnJvckNvZGUSLgoHbGV4aWNvbhgC",
+            "IAEoCzIdLmNoaXJwLmNoYXQuV29yZEZpbHRlckxleGljb24iSAoWV29yZEZp",
+            "bHRlclVwZGF0ZU5vdGlmeRIuCgdsZXhpY29uGAEgASgLMh0uY2hpcnAuY2hh",
+            "dC5Xb3JkRmlsdGVyTGV4aWNvbiKWAQoUU2VhcmNoTWVzc2FnZVJlcXVlc3QS",
+            "DwoHa2V5d29yZBgBIAEoCRISCgpjaGFubmVsX2lkGAIgASgJEhUKDWNvbnRl",
+            "bnRfdHlwZXMYAyADKAUSGAoQYmVmb3JlX3RpbWVzdGFtcBgEIAEoAxIZChFi",
+            "ZWZvcmVfbWVzc2FnZV9pZBgFIAEoCRINCgVsaW1pdBgGIAEoBSKwAQoSU2Vh",
+            "cmNoTWVzc2FnZU1hdGNoEhIKCm1lc3NhZ2VfaWQYASABKAkSEgoKY2hhbm5l",
+            "bF9pZBgCIAEoCRIUCgxjaGFubmVsX3R5cGUYAyABKAUSEQoJc2VuZGVyX2lk",
+            "GAQgASgJEhMKC3NlbmRlcl9raW5kGAUgASgFEhAKCG1zZ190eXBlGAYgASgF",
+            "EhEKCXRpbWVzdGFtcBgHIAEoAxIPCgdjb250ZW50GAggASgJIoEBChVTZWFy",
+            "Y2hNZXNzYWdlUmVzcG9uc2USJQoEY29kZRgBIAEoDjIXLmNoaXJwLmNvbW1v",
+            "bi5FcnJvckNvZGUSLwoHbWF0Y2hlcxgCIAMoCzIeLmNoaXJwLmNoYXQuU2Vh",
+            "cmNoTWVzc2FnZU1hdGNoEhAKCGhhc19tb3JlGAMgASgIKsgBCgdNc2dUeXBl",
+            "EggKBFRFWFQQABIJCgVFTU9KSRABEgkKBVZPSUNFEAISCQoFSU1BR0UQAxIN",
+            "CglJVEVNX0xJTksQChIOCgpTS0lMTF9MSU5LEAsSDwoLQUNISUVWRU1FTlQQ",
+            "DBIOCgpOUENfRElBTE9HEA0SEAoMVFJBREVfU1RBVFVTEA4SDgoKQ09PUkRf",
+            "TElOSxAPEhEKDUdVSUxEX1JFQ1JVSVQQEBIRCg1QQVJUWV9SRUNSVUlUEBES",
+            "CgoGU1lTVEVNEGMqWwoLQ2hhbm5lbFR5cGUSCwoHUFJJVkFURRAAEggKBFRF",
+            "QU0QARIJCgVHVUlMRBACEgkKBVdPUkxEEAMSEgoOU1lTVEVNX0NIQU5ORUwQ",
+            "BBILCgdNQVJRVUVFEAUqWQoIUHJpb3JpdHkSEAoMUFJJT1JJVFlfTE9XEAAS",
+            "EwoPUFJJT1JJVFlfTk9STUFMEAESEQoNUFJJT1JJVFlfSElHSBACEhMKD1BS",
+            "SU9SSVRZX1VSR0VOVBADKlQKClNlbmRlcktpbmQSDwoLU0VOREVSX1VTRVIQ",
+            "ABIRCg1TRU5ERVJfU1lTVEVNEAESDgoKU0VOREVSX05QQxACEhIKDlNFTkRF",
+            "Ul9TRVJWSUNFEAMqQgoPR3JvdXBNZW1iZXJSb2xlEgoKBk1FTUJFUhAAEg0K",
+            "CU1PREVSQVRPUhABEgkKBUFETUlOEAISCQoFT1dORVIQAyqLAQoLQ2hhbm5l",
+            "bEtpbmQSFQoRQ0hBTk5FTF9LSU5EX1RFWFQQABIWChJDSEFOTkVMX0tJTkRf",
+            "Vk9JQ0UQARIdChlDSEFOTkVMX0tJTkRfQU5OT1VOQ0VNRU5UEAISFgoSQ0hB",
+            "Tk5FTF9LSU5EX1NUQUdFEAMSFgoSQ0hBTk5FTF9LSU5EX0ZPUlVNEAQqRAoO",
+            "UGVybWlzc2lvblR5cGUSGAoUUEVSTUlTU0lPTl9UWVBFX1JPTEUQABIYChRQ",
+            "RVJNSVNTSU9OX1RZUEVfVVNFUhABKjYKElBlcm1pc3Npb25PdmVycmlkZRIL",
+            "CgdJTkhFUklUEAASCQoFQUxMT1cQARIICgRERU5ZEAIqhwEKC01lbnRpb25U",
+            "eXBlEhUKEU1FTlRJT05fVFlQRV9VU0VSEAASFQoRTUVOVElPTl9UWVBFX1JP",
+            "TEUQARIYChRNRU5USU9OX1RZUEVfQ0hBTk5FTBACEhkKFU1FTlRJT05fVFlQ",
+            "RV9FVkVSWU9ORRADEhUKEU1FTlRJT05fVFlQRV9IRVJFEAQqeAoYV29yZEZp",
+            "bHRlckRlbGl2ZXJ5UG9saWN5Eh4KGldPUkRfRklMVEVSX1BPTElDWV9SRVBM",
+            "QUNFEAASHQoZV09SRF9GSUxURVJfUE9MSUNZX1JFSkVDVBABEh0KGVdPUkRf",
+            "RklMVEVSX1BPTElDWV9SRUNPUkQQAkIkWiJnaXRodWIuY29tL2N1aS9jaGly",
+            "cC9wcm90by9nby9jaGF0YgZwcm90bzM="));
       descriptor = pbr::FileDescriptor.FromGeneratedCode(descriptorData,
           new pbr::FileDescriptor[] { global::Chirp.Common.CommonReflection.Descriptor, },
           new pbr::GeneratedClrTypeInfo(new[] {typeof(global::Chirp.Chat.MsgType), typeof(global::Chirp.Chat.ChannelType), typeof(global::Chirp.Chat.Priority), typeof(global::Chirp.Chat.SenderKind), typeof(global::Chirp.Chat.GroupMemberRole), typeof(global::Chirp.Chat.ChannelKind), typeof(global::Chirp.Chat.PermissionType), typeof(global::Chirp.Chat.PermissionOverride), typeof(global::Chirp.Chat.MentionType), typeof(global::Chirp.Chat.WordFilterDeliveryPolicy), }, null, new pbr::GeneratedClrTypeInfo[] {
@@ -521,6 +528,8 @@ namespace Chirp.Chat {
             new pbr::GeneratedClrTypeInfo(typeof(global::Chirp.Chat.SkillMetadata), global::Chirp.Chat.SkillMetadata.Parser, new[]{ "SkillId", "SkillName", "Level", "IconUrl", "Description" }, null, null, null, null),
             new pbr::GeneratedClrTypeInfo(typeof(global::Chirp.Chat.AchievementMetadata), global::Chirp.Chat.AchievementMetadata.Parser, new[]{ "AchievementId", "AchievementName", "Description", "IconUrl", "Rarity" }, null, null, null, null),
             new pbr::GeneratedClrTypeInfo(typeof(global::Chirp.Chat.TradeMetadata), global::Chirp.Chat.TradeMetadata.Parser, new[]{ "TradeId", "Status", "Amount", "ItemName", "ItemCount" }, null, null, null, null),
+            new pbr::GeneratedClrTypeInfo(typeof(global::Chirp.Chat.GuildRecruitMetadata), global::Chirp.Chat.GuildRecruitMetadata.Parser, new[]{ "GuildId", "GuildName", "Level", "MemberCount", "MaxMembers", "Description" }, null, null, null, null),
+            new pbr::GeneratedClrTypeInfo(typeof(global::Chirp.Chat.PartyRecruitMetadata), global::Chirp.Chat.PartyRecruitMetadata.Parser, new[]{ "PartyId", "DungeonName", "Needed", "Current", "LeaderName" }, null, null, null, null),
             new pbr::GeneratedClrTypeInfo(typeof(global::Chirp.Chat.NpcDialogMetadata), global::Chirp.Chat.NpcDialogMetadata.Parser, new[]{ "NpcId", "NpcName", "DialogId", "Options" }, null, null, null, null),
             new pbr::GeneratedClrTypeInfo(typeof(global::Chirp.Chat.CoordMetadata), global::Chirp.Chat.CoordMetadata.Parser, new[]{ "MapId", "X", "Y", "Z", "Label" }, null, null, null, null),
             new pbr::GeneratedClrTypeInfo(typeof(global::Chirp.Chat.SetChannelMuteRequest), global::Chirp.Chat.SetChannelMuteRequest.Parser, new[]{ "ChannelType", "Muted" }, null, null, null, null),
@@ -591,6 +600,14 @@ namespace Chirp.Chat {
     /// 坐标链接（metadata = CoordMetadata）
     /// </summary>
     [pbr::OriginalName("COORD_LINK")] CoordLink = 15,
+    /// <summary>
+    /// 公会招募（metadata = GuildRecruitMetadata）
+    /// </summary>
+    [pbr::OriginalName("GUILD_RECRUIT")] GuildRecruit = 16,
+    /// <summary>
+    /// 组队招募（metadata = PartyRecruitMetadata）
+    /// </summary>
+    [pbr::OriginalName("PARTY_RECRUIT")] PartyRecruit = 17,
     /// <summary>
     /// 系统消息
     /// </summary>
@@ -36384,6 +36401,775 @@ namespace Chirp.Chat {
   }
 
   /// <summary>
+  /// 公会招募卡片（msg_type = GUILD_RECRUIT 时；game_chat_features P1「公会招募」）。
+  /// 伴侣面无公会加入动作面（一键加入待公会申请协议），渲染为展示性卡片；
+  /// 游戏内客户端的加入自渲染走 SDK 侧。
+  /// </summary>
+  [global::System.Diagnostics.DebuggerDisplayAttribute("{ToString(),nq}")]
+  public sealed partial class GuildRecruitMetadata : pb::IMessage<GuildRecruitMetadata>
+  #if !GOOGLE_PROTOBUF_REFSTRUCT_COMPATIBILITY_MODE
+      , pb::IBufferMessage
+  #endif
+  {
+    private static readonly pb::MessageParser<GuildRecruitMetadata> _parser = new pb::MessageParser<GuildRecruitMetadata>(() => new GuildRecruitMetadata());
+    private pb::UnknownFieldSet _unknownFields;
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    public static pb::MessageParser<GuildRecruitMetadata> Parser { get { return _parser; } }
+
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    public static pbr::MessageDescriptor Descriptor {
+      get { return global::Chirp.Chat.ChatReflection.Descriptor.MessageTypes[111]; }
+    }
+
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    pbr::MessageDescriptor pb::IMessage.Descriptor {
+      get { return Descriptor; }
+    }
+
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    public GuildRecruitMetadata() {
+      OnConstruction();
+    }
+
+    partial void OnConstruction();
+
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    public GuildRecruitMetadata(GuildRecruitMetadata other) : this() {
+      guildId_ = other.guildId_;
+      guildName_ = other.guildName_;
+      level_ = other.level_;
+      memberCount_ = other.memberCount_;
+      maxMembers_ = other.maxMembers_;
+      description_ = other.description_;
+      _unknownFields = pb::UnknownFieldSet.Clone(other._unknownFields);
+    }
+
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    public GuildRecruitMetadata Clone() {
+      return new GuildRecruitMetadata(this);
+    }
+
+    /// <summary>Field number for the "guild_id" field.</summary>
+    public const int GuildIdFieldNumber = 1;
+    private string guildId_ = "";
+    /// <summary>
+    /// 公会唯一 id（校验落点：空拒绝）
+    /// </summary>
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    public string GuildId {
+      get { return guildId_; }
+      set {
+        guildId_ = pb::ProtoPreconditions.CheckNotNull(value, "value");
+      }
+    }
+
+    /// <summary>Field number for the "guild_name" field.</summary>
+    public const int GuildNameFieldNumber = 2;
+    private string guildName_ = "";
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    public string GuildName {
+      get { return guildName_; }
+      set {
+        guildName_ = pb::ProtoPreconditions.CheckNotNull(value, "value");
+      }
+    }
+
+    /// <summary>Field number for the "level" field.</summary>
+    public const int LevelFieldNumber = 3;
+    private int level_;
+    /// <summary>
+    /// 公会等级
+    /// </summary>
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    public int Level {
+      get { return level_; }
+      set {
+        level_ = value;
+      }
+    }
+
+    /// <summary>Field number for the "member_count" field.</summary>
+    public const int MemberCountFieldNumber = 4;
+    private int memberCount_;
+    /// <summary>
+    /// 当前人数
+    /// </summary>
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    public int MemberCount {
+      get { return memberCount_; }
+      set {
+        memberCount_ = value;
+      }
+    }
+
+    /// <summary>Field number for the "max_members" field.</summary>
+    public const int MaxMembersFieldNumber = 5;
+    private int maxMembers_;
+    /// <summary>
+    /// 人数上限（0 = 不展示）
+    /// </summary>
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    public int MaxMembers {
+      get { return maxMembers_; }
+      set {
+        maxMembers_ = value;
+      }
+    }
+
+    /// <summary>Field number for the "description" field.</summary>
+    public const int DescriptionFieldNumber = 6;
+    private string description_ = "";
+    /// <summary>
+    /// 招募语（可选）
+    /// </summary>
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    public string Description {
+      get { return description_; }
+      set {
+        description_ = pb::ProtoPreconditions.CheckNotNull(value, "value");
+      }
+    }
+
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    public override bool Equals(object other) {
+      return Equals(other as GuildRecruitMetadata);
+    }
+
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    public bool Equals(GuildRecruitMetadata other) {
+      if (ReferenceEquals(other, null)) {
+        return false;
+      }
+      if (ReferenceEquals(other, this)) {
+        return true;
+      }
+      if (GuildId != other.GuildId) return false;
+      if (GuildName != other.GuildName) return false;
+      if (Level != other.Level) return false;
+      if (MemberCount != other.MemberCount) return false;
+      if (MaxMembers != other.MaxMembers) return false;
+      if (Description != other.Description) return false;
+      return Equals(_unknownFields, other._unknownFields);
+    }
+
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    public override int GetHashCode() {
+      int hash = 1;
+      if (GuildId.Length != 0) hash ^= GuildId.GetHashCode();
+      if (GuildName.Length != 0) hash ^= GuildName.GetHashCode();
+      if (Level != 0) hash ^= Level.GetHashCode();
+      if (MemberCount != 0) hash ^= MemberCount.GetHashCode();
+      if (MaxMembers != 0) hash ^= MaxMembers.GetHashCode();
+      if (Description.Length != 0) hash ^= Description.GetHashCode();
+      if (_unknownFields != null) {
+        hash ^= _unknownFields.GetHashCode();
+      }
+      return hash;
+    }
+
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    public override string ToString() {
+      return pb::JsonFormatter.ToDiagnosticString(this);
+    }
+
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    public void WriteTo(pb::CodedOutputStream output) {
+    #if !GOOGLE_PROTOBUF_REFSTRUCT_COMPATIBILITY_MODE
+      output.WriteRawMessage(this);
+    #else
+      if (GuildId.Length != 0) {
+        output.WriteRawTag(10);
+        output.WriteString(GuildId);
+      }
+      if (GuildName.Length != 0) {
+        output.WriteRawTag(18);
+        output.WriteString(GuildName);
+      }
+      if (Level != 0) {
+        output.WriteRawTag(24);
+        output.WriteInt32(Level);
+      }
+      if (MemberCount != 0) {
+        output.WriteRawTag(32);
+        output.WriteInt32(MemberCount);
+      }
+      if (MaxMembers != 0) {
+        output.WriteRawTag(40);
+        output.WriteInt32(MaxMembers);
+      }
+      if (Description.Length != 0) {
+        output.WriteRawTag(50);
+        output.WriteString(Description);
+      }
+      if (_unknownFields != null) {
+        _unknownFields.WriteTo(output);
+      }
+    #endif
+    }
+
+    #if !GOOGLE_PROTOBUF_REFSTRUCT_COMPATIBILITY_MODE
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    void pb::IBufferMessage.InternalWriteTo(ref pb::WriteContext output) {
+      if (GuildId.Length != 0) {
+        output.WriteRawTag(10);
+        output.WriteString(GuildId);
+      }
+      if (GuildName.Length != 0) {
+        output.WriteRawTag(18);
+        output.WriteString(GuildName);
+      }
+      if (Level != 0) {
+        output.WriteRawTag(24);
+        output.WriteInt32(Level);
+      }
+      if (MemberCount != 0) {
+        output.WriteRawTag(32);
+        output.WriteInt32(MemberCount);
+      }
+      if (MaxMembers != 0) {
+        output.WriteRawTag(40);
+        output.WriteInt32(MaxMembers);
+      }
+      if (Description.Length != 0) {
+        output.WriteRawTag(50);
+        output.WriteString(Description);
+      }
+      if (_unknownFields != null) {
+        _unknownFields.WriteTo(ref output);
+      }
+    }
+    #endif
+
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    public int CalculateSize() {
+      int size = 0;
+      if (GuildId.Length != 0) {
+        size += 1 + pb::CodedOutputStream.ComputeStringSize(GuildId);
+      }
+      if (GuildName.Length != 0) {
+        size += 1 + pb::CodedOutputStream.ComputeStringSize(GuildName);
+      }
+      if (Level != 0) {
+        size += 1 + pb::CodedOutputStream.ComputeInt32Size(Level);
+      }
+      if (MemberCount != 0) {
+        size += 1 + pb::CodedOutputStream.ComputeInt32Size(MemberCount);
+      }
+      if (MaxMembers != 0) {
+        size += 1 + pb::CodedOutputStream.ComputeInt32Size(MaxMembers);
+      }
+      if (Description.Length != 0) {
+        size += 1 + pb::CodedOutputStream.ComputeStringSize(Description);
+      }
+      if (_unknownFields != null) {
+        size += _unknownFields.CalculateSize();
+      }
+      return size;
+    }
+
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    public void MergeFrom(GuildRecruitMetadata other) {
+      if (other == null) {
+        return;
+      }
+      if (other.GuildId.Length != 0) {
+        GuildId = other.GuildId;
+      }
+      if (other.GuildName.Length != 0) {
+        GuildName = other.GuildName;
+      }
+      if (other.Level != 0) {
+        Level = other.Level;
+      }
+      if (other.MemberCount != 0) {
+        MemberCount = other.MemberCount;
+      }
+      if (other.MaxMembers != 0) {
+        MaxMembers = other.MaxMembers;
+      }
+      if (other.Description.Length != 0) {
+        Description = other.Description;
+      }
+      _unknownFields = pb::UnknownFieldSet.MergeFrom(_unknownFields, other._unknownFields);
+    }
+
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    public void MergeFrom(pb::CodedInputStream input) {
+    #if !GOOGLE_PROTOBUF_REFSTRUCT_COMPATIBILITY_MODE
+      input.ReadRawMessage(this);
+    #else
+      uint tag;
+      while ((tag = input.ReadTag()) != 0) {
+      if ((tag & 7) == 4) {
+        // Abort on any end group tag.
+        return;
+      }
+      switch(tag) {
+          default:
+            _unknownFields = pb::UnknownFieldSet.MergeFieldFrom(_unknownFields, input);
+            break;
+          case 10: {
+            GuildId = input.ReadString();
+            break;
+          }
+          case 18: {
+            GuildName = input.ReadString();
+            break;
+          }
+          case 24: {
+            Level = input.ReadInt32();
+            break;
+          }
+          case 32: {
+            MemberCount = input.ReadInt32();
+            break;
+          }
+          case 40: {
+            MaxMembers = input.ReadInt32();
+            break;
+          }
+          case 50: {
+            Description = input.ReadString();
+            break;
+          }
+        }
+      }
+    #endif
+    }
+
+    #if !GOOGLE_PROTOBUF_REFSTRUCT_COMPATIBILITY_MODE
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    void pb::IBufferMessage.InternalMergeFrom(ref pb::ParseContext input) {
+      uint tag;
+      while ((tag = input.ReadTag()) != 0) {
+      if ((tag & 7) == 4) {
+        // Abort on any end group tag.
+        return;
+      }
+      switch(tag) {
+          default:
+            _unknownFields = pb::UnknownFieldSet.MergeFieldFrom(_unknownFields, ref input);
+            break;
+          case 10: {
+            GuildId = input.ReadString();
+            break;
+          }
+          case 18: {
+            GuildName = input.ReadString();
+            break;
+          }
+          case 24: {
+            Level = input.ReadInt32();
+            break;
+          }
+          case 32: {
+            MemberCount = input.ReadInt32();
+            break;
+          }
+          case 40: {
+            MaxMembers = input.ReadInt32();
+            break;
+          }
+          case 50: {
+            Description = input.ReadString();
+            break;
+          }
+        }
+      }
+    }
+    #endif
+
+  }
+
+  /// <summary>
+  /// 组队招募卡片（msg_type = PARTY_RECRUIT 时；game_chat_features P1「组队招募」）。
+  /// 伴侣面无申请动作面（一键申请待队伍申请协议），渲染为展示性卡片；
+  /// 游戏内客户端的申请自渲染走 SDK 侧。
+  /// </summary>
+  [global::System.Diagnostics.DebuggerDisplayAttribute("{ToString(),nq}")]
+  public sealed partial class PartyRecruitMetadata : pb::IMessage<PartyRecruitMetadata>
+  #if !GOOGLE_PROTOBUF_REFSTRUCT_COMPATIBILITY_MODE
+      , pb::IBufferMessage
+  #endif
+  {
+    private static readonly pb::MessageParser<PartyRecruitMetadata> _parser = new pb::MessageParser<PartyRecruitMetadata>(() => new PartyRecruitMetadata());
+    private pb::UnknownFieldSet _unknownFields;
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    public static pb::MessageParser<PartyRecruitMetadata> Parser { get { return _parser; } }
+
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    public static pbr::MessageDescriptor Descriptor {
+      get { return global::Chirp.Chat.ChatReflection.Descriptor.MessageTypes[112]; }
+    }
+
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    pbr::MessageDescriptor pb::IMessage.Descriptor {
+      get { return Descriptor; }
+    }
+
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    public PartyRecruitMetadata() {
+      OnConstruction();
+    }
+
+    partial void OnConstruction();
+
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    public PartyRecruitMetadata(PartyRecruitMetadata other) : this() {
+      partyId_ = other.partyId_;
+      dungeonName_ = other.dungeonName_;
+      needed_ = other.needed_;
+      current_ = other.current_;
+      leaderName_ = other.leaderName_;
+      _unknownFields = pb::UnknownFieldSet.Clone(other._unknownFields);
+    }
+
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    public PartyRecruitMetadata Clone() {
+      return new PartyRecruitMetadata(this);
+    }
+
+    /// <summary>Field number for the "party_id" field.</summary>
+    public const int PartyIdFieldNumber = 1;
+    private string partyId_ = "";
+    /// <summary>
+    /// 队伍唯一 id（校验落点：空拒绝）
+    /// </summary>
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    public string PartyId {
+      get { return partyId_; }
+      set {
+        partyId_ = pb::ProtoPreconditions.CheckNotNull(value, "value");
+      }
+    }
+
+    /// <summary>Field number for the "dungeon_name" field.</summary>
+    public const int DungeonNameFieldNumber = 2;
+    private string dungeonName_ = "";
+    /// <summary>
+    /// 副本名
+    /// </summary>
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    public string DungeonName {
+      get { return dungeonName_; }
+      set {
+        dungeonName_ = pb::ProtoPreconditions.CheckNotNull(value, "value");
+      }
+    }
+
+    /// <summary>Field number for the "needed" field.</summary>
+    public const int NeededFieldNumber = 3;
+    private int needed_;
+    /// <summary>
+    /// 人数需求
+    /// </summary>
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    public int Needed {
+      get { return needed_; }
+      set {
+        needed_ = value;
+      }
+    }
+
+    /// <summary>Field number for the "current" field.</summary>
+    public const int CurrentFieldNumber = 4;
+    private int current_;
+    /// <summary>
+    /// 当前已组人数（0 = 不展示）
+    /// </summary>
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    public int Current {
+      get { return current_; }
+      set {
+        current_ = value;
+      }
+    }
+
+    /// <summary>Field number for the "leader_name" field.</summary>
+    public const int LeaderNameFieldNumber = 5;
+    private string leaderName_ = "";
+    /// <summary>
+    /// 队长名（可选）
+    /// </summary>
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    public string LeaderName {
+      get { return leaderName_; }
+      set {
+        leaderName_ = pb::ProtoPreconditions.CheckNotNull(value, "value");
+      }
+    }
+
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    public override bool Equals(object other) {
+      return Equals(other as PartyRecruitMetadata);
+    }
+
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    public bool Equals(PartyRecruitMetadata other) {
+      if (ReferenceEquals(other, null)) {
+        return false;
+      }
+      if (ReferenceEquals(other, this)) {
+        return true;
+      }
+      if (PartyId != other.PartyId) return false;
+      if (DungeonName != other.DungeonName) return false;
+      if (Needed != other.Needed) return false;
+      if (Current != other.Current) return false;
+      if (LeaderName != other.LeaderName) return false;
+      return Equals(_unknownFields, other._unknownFields);
+    }
+
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    public override int GetHashCode() {
+      int hash = 1;
+      if (PartyId.Length != 0) hash ^= PartyId.GetHashCode();
+      if (DungeonName.Length != 0) hash ^= DungeonName.GetHashCode();
+      if (Needed != 0) hash ^= Needed.GetHashCode();
+      if (Current != 0) hash ^= Current.GetHashCode();
+      if (LeaderName.Length != 0) hash ^= LeaderName.GetHashCode();
+      if (_unknownFields != null) {
+        hash ^= _unknownFields.GetHashCode();
+      }
+      return hash;
+    }
+
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    public override string ToString() {
+      return pb::JsonFormatter.ToDiagnosticString(this);
+    }
+
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    public void WriteTo(pb::CodedOutputStream output) {
+    #if !GOOGLE_PROTOBUF_REFSTRUCT_COMPATIBILITY_MODE
+      output.WriteRawMessage(this);
+    #else
+      if (PartyId.Length != 0) {
+        output.WriteRawTag(10);
+        output.WriteString(PartyId);
+      }
+      if (DungeonName.Length != 0) {
+        output.WriteRawTag(18);
+        output.WriteString(DungeonName);
+      }
+      if (Needed != 0) {
+        output.WriteRawTag(24);
+        output.WriteInt32(Needed);
+      }
+      if (Current != 0) {
+        output.WriteRawTag(32);
+        output.WriteInt32(Current);
+      }
+      if (LeaderName.Length != 0) {
+        output.WriteRawTag(42);
+        output.WriteString(LeaderName);
+      }
+      if (_unknownFields != null) {
+        _unknownFields.WriteTo(output);
+      }
+    #endif
+    }
+
+    #if !GOOGLE_PROTOBUF_REFSTRUCT_COMPATIBILITY_MODE
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    void pb::IBufferMessage.InternalWriteTo(ref pb::WriteContext output) {
+      if (PartyId.Length != 0) {
+        output.WriteRawTag(10);
+        output.WriteString(PartyId);
+      }
+      if (DungeonName.Length != 0) {
+        output.WriteRawTag(18);
+        output.WriteString(DungeonName);
+      }
+      if (Needed != 0) {
+        output.WriteRawTag(24);
+        output.WriteInt32(Needed);
+      }
+      if (Current != 0) {
+        output.WriteRawTag(32);
+        output.WriteInt32(Current);
+      }
+      if (LeaderName.Length != 0) {
+        output.WriteRawTag(42);
+        output.WriteString(LeaderName);
+      }
+      if (_unknownFields != null) {
+        _unknownFields.WriteTo(ref output);
+      }
+    }
+    #endif
+
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    public int CalculateSize() {
+      int size = 0;
+      if (PartyId.Length != 0) {
+        size += 1 + pb::CodedOutputStream.ComputeStringSize(PartyId);
+      }
+      if (DungeonName.Length != 0) {
+        size += 1 + pb::CodedOutputStream.ComputeStringSize(DungeonName);
+      }
+      if (Needed != 0) {
+        size += 1 + pb::CodedOutputStream.ComputeInt32Size(Needed);
+      }
+      if (Current != 0) {
+        size += 1 + pb::CodedOutputStream.ComputeInt32Size(Current);
+      }
+      if (LeaderName.Length != 0) {
+        size += 1 + pb::CodedOutputStream.ComputeStringSize(LeaderName);
+      }
+      if (_unknownFields != null) {
+        size += _unknownFields.CalculateSize();
+      }
+      return size;
+    }
+
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    public void MergeFrom(PartyRecruitMetadata other) {
+      if (other == null) {
+        return;
+      }
+      if (other.PartyId.Length != 0) {
+        PartyId = other.PartyId;
+      }
+      if (other.DungeonName.Length != 0) {
+        DungeonName = other.DungeonName;
+      }
+      if (other.Needed != 0) {
+        Needed = other.Needed;
+      }
+      if (other.Current != 0) {
+        Current = other.Current;
+      }
+      if (other.LeaderName.Length != 0) {
+        LeaderName = other.LeaderName;
+      }
+      _unknownFields = pb::UnknownFieldSet.MergeFrom(_unknownFields, other._unknownFields);
+    }
+
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    public void MergeFrom(pb::CodedInputStream input) {
+    #if !GOOGLE_PROTOBUF_REFSTRUCT_COMPATIBILITY_MODE
+      input.ReadRawMessage(this);
+    #else
+      uint tag;
+      while ((tag = input.ReadTag()) != 0) {
+      if ((tag & 7) == 4) {
+        // Abort on any end group tag.
+        return;
+      }
+      switch(tag) {
+          default:
+            _unknownFields = pb::UnknownFieldSet.MergeFieldFrom(_unknownFields, input);
+            break;
+          case 10: {
+            PartyId = input.ReadString();
+            break;
+          }
+          case 18: {
+            DungeonName = input.ReadString();
+            break;
+          }
+          case 24: {
+            Needed = input.ReadInt32();
+            break;
+          }
+          case 32: {
+            Current = input.ReadInt32();
+            break;
+          }
+          case 42: {
+            LeaderName = input.ReadString();
+            break;
+          }
+        }
+      }
+    #endif
+    }
+
+    #if !GOOGLE_PROTOBUF_REFSTRUCT_COMPATIBILITY_MODE
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    void pb::IBufferMessage.InternalMergeFrom(ref pb::ParseContext input) {
+      uint tag;
+      while ((tag = input.ReadTag()) != 0) {
+      if ((tag & 7) == 4) {
+        // Abort on any end group tag.
+        return;
+      }
+      switch(tag) {
+          default:
+            _unknownFields = pb::UnknownFieldSet.MergeFieldFrom(_unknownFields, ref input);
+            break;
+          case 10: {
+            PartyId = input.ReadString();
+            break;
+          }
+          case 18: {
+            DungeonName = input.ReadString();
+            break;
+          }
+          case 24: {
+            Needed = input.ReadInt32();
+            break;
+          }
+          case 32: {
+            Current = input.ReadInt32();
+            break;
+          }
+          case 42: {
+            LeaderName = input.ReadString();
+            break;
+          }
+        }
+      }
+    }
+    #endif
+
+  }
+
+  /// <summary>
   /// NPC 对话（msg_type = NPC_DIALOG 时）
   /// </summary>
   [global::System.Diagnostics.DebuggerDisplayAttribute("{ToString(),nq}")]
@@ -36401,7 +37187,7 @@ namespace Chirp.Chat {
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
     public static pbr::MessageDescriptor Descriptor {
-      get { return global::Chirp.Chat.ChatReflection.Descriptor.MessageTypes[111]; }
+      get { return global::Chirp.Chat.ChatReflection.Descriptor.MessageTypes[113]; }
     }
 
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
@@ -36712,7 +37498,7 @@ namespace Chirp.Chat {
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
     public static pbr::MessageDescriptor Descriptor {
-      get { return global::Chirp.Chat.ChatReflection.Descriptor.MessageTypes[112]; }
+      get { return global::Chirp.Chat.ChatReflection.Descriptor.MessageTypes[114]; }
     }
 
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
@@ -37075,7 +37861,7 @@ namespace Chirp.Chat {
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
     public static pbr::MessageDescriptor Descriptor {
-      get { return global::Chirp.Chat.ChatReflection.Descriptor.MessageTypes[113]; }
+      get { return global::Chirp.Chat.ChatReflection.Descriptor.MessageTypes[115]; }
     }
 
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
@@ -37310,7 +38096,7 @@ namespace Chirp.Chat {
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
     public static pbr::MessageDescriptor Descriptor {
-      get { return global::Chirp.Chat.ChatReflection.Descriptor.MessageTypes[114]; }
+      get { return global::Chirp.Chat.ChatReflection.Descriptor.MessageTypes[116]; }
     }
 
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
@@ -37588,7 +38374,7 @@ namespace Chirp.Chat {
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
     public static pbr::MessageDescriptor Descriptor {
-      get { return global::Chirp.Chat.ChatReflection.Descriptor.MessageTypes[115]; }
+      get { return global::Chirp.Chat.ChatReflection.Descriptor.MessageTypes[117]; }
     }
 
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
@@ -37823,7 +38609,7 @@ namespace Chirp.Chat {
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
     public static pbr::MessageDescriptor Descriptor {
-      get { return global::Chirp.Chat.ChatReflection.Descriptor.MessageTypes[116]; }
+      get { return global::Chirp.Chat.ChatReflection.Descriptor.MessageTypes[118]; }
     }
 
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
@@ -37984,7 +38770,7 @@ namespace Chirp.Chat {
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
     public static pbr::MessageDescriptor Descriptor {
-      get { return global::Chirp.Chat.ChatReflection.Descriptor.MessageTypes[117]; }
+      get { return global::Chirp.Chat.ChatReflection.Descriptor.MessageTypes[119]; }
     }
 
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
@@ -38217,7 +39003,7 @@ namespace Chirp.Chat {
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
     public static pbr::MessageDescriptor Descriptor {
-      get { return global::Chirp.Chat.ChatReflection.Descriptor.MessageTypes[118]; }
+      get { return global::Chirp.Chat.ChatReflection.Descriptor.MessageTypes[120]; }
     }
 
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
@@ -38415,7 +39201,7 @@ namespace Chirp.Chat {
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
     public static pbr::MessageDescriptor Descriptor {
-      get { return global::Chirp.Chat.ChatReflection.Descriptor.MessageTypes[119]; }
+      get { return global::Chirp.Chat.ChatReflection.Descriptor.MessageTypes[121]; }
     }
 
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
@@ -38653,7 +39439,7 @@ namespace Chirp.Chat {
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
     public static pbr::MessageDescriptor Descriptor {
-      get { return global::Chirp.Chat.ChatReflection.Descriptor.MessageTypes[120]; }
+      get { return global::Chirp.Chat.ChatReflection.Descriptor.MessageTypes[122]; }
     }
 
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
@@ -38851,7 +39637,7 @@ namespace Chirp.Chat {
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
     public static pbr::MessageDescriptor Descriptor {
-      get { return global::Chirp.Chat.ChatReflection.Descriptor.MessageTypes[121]; }
+      get { return global::Chirp.Chat.ChatReflection.Descriptor.MessageTypes[123]; }
     }
 
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
@@ -39089,7 +39875,7 @@ namespace Chirp.Chat {
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
     public static pbr::MessageDescriptor Descriptor {
-      get { return global::Chirp.Chat.ChatReflection.Descriptor.MessageTypes[122]; }
+      get { return global::Chirp.Chat.ChatReflection.Descriptor.MessageTypes[124]; }
     }
 
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
@@ -39250,7 +40036,7 @@ namespace Chirp.Chat {
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
     public static pbr::MessageDescriptor Descriptor {
-      get { return global::Chirp.Chat.ChatReflection.Descriptor.MessageTypes[123]; }
+      get { return global::Chirp.Chat.ChatReflection.Descriptor.MessageTypes[125]; }
     }
 
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
@@ -39474,7 +40260,7 @@ namespace Chirp.Chat {
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
     public static pbr::MessageDescriptor Descriptor {
-      get { return global::Chirp.Chat.ChatReflection.Descriptor.MessageTypes[124]; }
+      get { return global::Chirp.Chat.ChatReflection.Descriptor.MessageTypes[126]; }
     }
 
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
@@ -39678,7 +40464,7 @@ namespace Chirp.Chat {
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
     public static pbr::MessageDescriptor Descriptor {
-      get { return global::Chirp.Chat.ChatReflection.Descriptor.MessageTypes[125]; }
+      get { return global::Chirp.Chat.ChatReflection.Descriptor.MessageTypes[127]; }
     }
 
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
@@ -40036,7 +40822,7 @@ namespace Chirp.Chat {
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
     public static pbr::MessageDescriptor Descriptor {
-      get { return global::Chirp.Chat.ChatReflection.Descriptor.MessageTypes[126]; }
+      get { return global::Chirp.Chat.ChatReflection.Descriptor.MessageTypes[128]; }
     }
 
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
@@ -40283,7 +41069,7 @@ namespace Chirp.Chat {
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
     public static pbr::MessageDescriptor Descriptor {
-      get { return global::Chirp.Chat.ChatReflection.Descriptor.MessageTypes[127]; }
+      get { return global::Chirp.Chat.ChatReflection.Descriptor.MessageTypes[129]; }
     }
 
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
@@ -40493,7 +41279,7 @@ namespace Chirp.Chat {
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
     public static pbr::MessageDescriptor Descriptor {
-      get { return global::Chirp.Chat.ChatReflection.Descriptor.MessageTypes[128]; }
+      get { return global::Chirp.Chat.ChatReflection.Descriptor.MessageTypes[130]; }
     }
 
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
@@ -40884,7 +41670,7 @@ namespace Chirp.Chat {
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
     public static pbr::MessageDescriptor Descriptor {
-      get { return global::Chirp.Chat.ChatReflection.Descriptor.MessageTypes[129]; }
+      get { return global::Chirp.Chat.ChatReflection.Descriptor.MessageTypes[131]; }
     }
 
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
@@ -41353,7 +42139,7 @@ namespace Chirp.Chat {
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
     public static pbr::MessageDescriptor Descriptor {
-      get { return global::Chirp.Chat.ChatReflection.Descriptor.MessageTypes[130]; }
+      get { return global::Chirp.Chat.ChatReflection.Descriptor.MessageTypes[132]; }
     }
 
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]

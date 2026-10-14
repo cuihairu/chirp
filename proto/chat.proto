@@ -19,6 +19,8 @@ enum MsgType {
   NPC_DIALOG = 13;    // NPC 对话
   TRADE_STATUS = 14;  // 交易状态
   COORD_LINK = 15;    // 坐标链接（metadata = CoordMetadata）
+  GUILD_RECRUIT = 16; // 公会招募（metadata = GuildRecruitMetadata）
+  PARTY_RECRUIT = 17; // 组队招募（metadata = PartyRecruitMetadata）
 
   SYSTEM = 99;        // 系统消息
 }
@@ -1035,6 +1037,29 @@ message TradeMetadata {
   int64 amount = 3;              // 交易金额
   string item_name = 4;
   int32 item_count = 5;
+}
+
+// 公会招募卡片（msg_type = GUILD_RECRUIT 时；game_chat_features P1「公会招募」）。
+// 伴侣面无公会加入动作面（一键加入待公会申请协议），渲染为展示性卡片；
+// 游戏内客户端的加入自渲染走 SDK 侧。
+message GuildRecruitMetadata {
+  string guild_id = 1;           // 公会唯一 id（校验落点：空拒绝）
+  string guild_name = 2;
+  int32 level = 3;               // 公会等级
+  int32 member_count = 4;        // 当前人数
+  int32 max_members = 5;         // 人数上限（0 = 不展示）
+  string description = 6;        // 招募语（可选）
+}
+
+// 组队招募卡片（msg_type = PARTY_RECRUIT 时；game_chat_features P1「组队招募」）。
+// 伴侣面无申请动作面（一键申请待队伍申请协议），渲染为展示性卡片；
+// 游戏内客户端的申请自渲染走 SDK 侧。
+message PartyRecruitMetadata {
+  string party_id = 1;           // 队伍唯一 id（校验落点：空拒绝）
+  string dungeon_name = 2;       // 副本名
+  int32 needed = 3;              // 人数需求
+  int32 current = 4;             // 当前已组人数（0 = 不展示）
+  string leader_name = 5;        // 队长名（可选）
 }
 
 // NPC 对话（msg_type = NPC_DIALOG 时）
