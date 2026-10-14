@@ -198,6 +198,22 @@ describe('MessageBubble', () => {
     expect(card.textContent).not.toContain('undefined');
   });
 
+  it('expands emoji codes in the message text into system emoji spans', () => {
+    render(
+      <MessageBubble message={message({ content: 'hi [emoji:fire] boom' })} selfId="user_a" onToggleReaction={noop} />,
+    );
+    expect(screen.getByTestId('emoji-m1-fire').textContent).toBe('🔥');
+    expect(screen.getByTestId('msg-text-m1').textContent).toBe('hi 🔥 boom');
+  });
+
+  it('keeps unknown emoji codes as literal text', () => {
+    render(
+      <MessageBubble message={message({ content: '[emoji:zzz] hi' })} selfId="user_a" onToggleReaction={noop} />,
+    );
+    expect(screen.queryByTestId('emoji-m1-zzz')).toBeNull();
+    expect(screen.getByTestId('msg-text-m1').textContent).toContain('[emoji:zzz]');
+  });
+
   it('keeps pending own messages visually unconfirmed', () => {
     render(<MessageBubble message={message({ senderId: 'user_a', pending: true })} selfId="user_a" onToggleReaction={noop} />);
     expect(screen.getByText(/发送中/)).toBeTruthy();

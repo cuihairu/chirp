@@ -48,7 +48,7 @@ title: 游戏聊天特征
 ### 消息处理
 
 - **消息编辑**：已发送消息可编辑一次。编辑后显示"已编辑"标记。编辑历史不保留。
-- **表情/贴图**：系统表情包（内置 N 个）。消息中插入表情码 `[emoji:xxx]`。
+- **表情/贴图**（已落地 2026-10-15，伴侣面形态）：16 个内置系统表情（web_companion `components/emoji.ts` 与 desktop `ui/emoji.ts` 同文 `SYSTEM_EMOJIS`）。消息文本中的 `[emoji:code]` 经 `expandEmojiCodes` 分片展开渲染为 emoji 字符（正则 `[a-z0-9_]+`，未知 code 原样保留字面——向前兼容，与 sender_kind/品质/稀有度回落同口径）；输入面带表情选择器（表情按钮 + Popover 网格，点击向草稿插入 `[emoji:code]`）。**服务端零改动**：表情走 TEXT 内容透传，长度/敏感词门照常生效；SDK 四端零改动（metadata 管线不涉及）。贴图（大图包）未做——待贴图资源与 metadata 载体（参照 ACHIEVEMENT 批形状）另批。
 - **消息引用**：回复特定消息。显示被引用消息的摘要。
 - **富文本**：支持粗体、斜体、颜色（VIP 特权）。
 

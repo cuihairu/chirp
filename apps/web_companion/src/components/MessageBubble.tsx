@@ -6,6 +6,7 @@ import ReplyIcon from '@mui/icons-material/ReplyOutlined';
 import { useState } from 'react';
 import { SenderKind } from '@chirp/proto/chat';
 import { QUICK_REACTIONS } from './quick_reactions';
+import { expandEmojiCodes } from './emoji';
 import type { ChatMessageView } from '../state/models';
 import { zh } from '../i18n/zh';
 
@@ -164,8 +165,22 @@ export default function MessageBubble({
           )}
         </Box>
       )}
-      <Typography variant="body2" sx={{ wordBreak: 'break-word', whiteSpace: 'pre-wrap' }}>
-        {message.deleted ? zh.chat.deleted : message.content}
+      <Typography
+        variant="body2"
+        sx={{ wordBreak: 'break-word', whiteSpace: 'pre-wrap' }}
+        data-testid={`msg-text-${message.messageId}`}
+      >
+        {message.deleted
+          ? zh.chat.deleted
+          : expandEmojiCodes(message.content).map((seg, i) =>
+              seg.kind === 'text' ? (
+                <span key={i}>{seg.value}</span>
+              ) : (
+                <span key={i} data-testid={`emoji-${message.messageId}-${seg.code}`}>
+                  {seg.emoji}
+                </span>
+              ),
+            )}
       </Typography>
       {!message.deleted && message.coord && (
         <Box

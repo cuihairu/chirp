@@ -174,3 +174,20 @@ describe('ChatPanel achievement cards (P1 ACHIEVEMENT)', () => {
     expect(screen.queryByTestId('achievement-t1')).toBeNull();
   });
 });
+
+describe('ChatPanel emoji codes (P1 表情/贴图)', () => {
+  it('expands emoji codes in the message text and keeps unknown codes literal', async () => {
+    renderPanel([message({ messageId: 'e1', content: 'hi [emoji:fire] [emoji:zzz]' })]);
+    await waitFor(() => expect(screen.getByTestId('msg-text-e1')).toBeTruthy());
+    expect(screen.getByTestId('emoji-e1-fire').textContent).toBe('🔥');
+    expect(screen.getByTestId('msg-text-e1').textContent).toContain('[emoji:zzz]');
+  });
+
+  it('inserts the picked emoji code into the draft', async () => {
+    renderPanel([message({ messageId: 'm1', content: 'hi' })]);
+    await waitFor(() => expect(screen.getByText('hi')).toBeTruthy());
+    fireEvent.click(screen.getByTestId('emoji-picker-toggle'));
+    fireEvent.click(screen.getByTestId('emoji-pick-smile'));
+    expect((screen.getByRole('textbox') as HTMLTextAreaElement).value).toContain('[emoji:smile]');
+  });
+});

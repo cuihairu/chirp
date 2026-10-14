@@ -1,9 +1,11 @@
 import { useState } from 'react';
 import type { KeyboardEvent } from 'react';
-import { Box, IconButton, InputAdornment, TextField, Typography } from '@mui/material';
+import { Box, IconButton, InputAdornment, Popover, TextField, Typography } from '@mui/material';
 import CloseIcon from '@mui/icons-material/Close';
+import EmojiEmotionsIcon from '@mui/icons-material/EmojiEmotionsOutlined';
 import SendIcon from '@mui/icons-material/Send';
 import { zh } from '../i18n/zh';
+import { SYSTEM_EMOJIS } from './emoji';
 
 /** Presentational face of the pending reply (ChatWindow owns the state). */
 export interface ReplyPreview {
@@ -28,6 +30,7 @@ export default function MessageInput({
   onCancelReply?: () => void;
 }) {
   const [text, setText] = useState('');
+  const [emojiAnchor, setEmojiAnchor] = useState<HTMLElement | null>(null);
 
   const submit = (): void => {
     const trimmed = text.trim();
@@ -88,6 +91,15 @@ export default function MessageInput({
           input: {
             endAdornment: (
               <InputAdornment position="end">
+                <IconButton
+                  size="small"
+                  aria-label={zh.chat.emojiPicker}
+                  data-testid="emoji-picker-toggle"
+                  onClick={(e) => setEmojiAnchor(e.currentTarget)}
+                  disabled={disabled}
+                >
+                  <EmojiEmotionsIcon />
+                </IconButton>
                 <IconButton onClick={submit} disabled={disabled || text.trim() === ''} aria-label="send">
                   <SendIcon />
                 </IconButton>
@@ -96,6 +108,29 @@ export default function MessageInput({
           },
         }}
       />
+      <Popover
+        open={emojiAnchor !== null}
+        anchorEl={emojiAnchor}
+        onClose={() => setEmojiAnchor(null)}
+        anchorOrigin={{ vertical: 'top', horizontal: 'right' }}
+        transformOrigin={{ vertical: 'bottom', horizontal: 'right' }}
+      >
+        <Box sx={{ display: 'grid', gridTemplateColumns: 'repeat(8, 36px)', gap: 0.25, p: 1 }}>
+          {SYSTEM_EMOJIS.map((e) => (
+            <IconButton
+              key={e.code}
+              data-testid={`emoji-pick-${e.code}`}
+              onClick={() => {
+                setText((t) => `${t}[emoji:${e.code}]`);
+                setEmojiAnchor(null);
+              }}
+              sx={{ fontSize: 18, borderRadius: 1 }}
+            >
+              {e.emoji}
+            </IconButton>
+          ))}
+        </Box>
+      </Popover>
     </Box>
   );
 }

@@ -1,5 +1,6 @@
 import ArrowUpwardIcon from '@mui/icons-material/ArrowUpward';
 import CloseIcon from '@mui/icons-material/Close';
+import EmojiEmotionsIcon from '@mui/icons-material/EmojiEmotionsOutlined';
 import FlagIcon from '@mui/icons-material/FlagOutlined';
 import ReplyIcon from '@mui/icons-material/ReplyOutlined';
 import SendIcon from '@mui/icons-material/Send';
@@ -15,6 +16,7 @@ import {
   IconButton,
   InputBase,
   Paper,
+  Popover,
   Stack,
   Tooltip,
   Typography,
@@ -33,6 +35,7 @@ import type {
 import type { MessageState } from '../state/message_store';
 import { useStoreValue, type Store } from '../state/store';
 import { TYPING_TTL_MS, type TypingState } from '../state/typing_store';
+import { expandEmojiCodes, SYSTEM_EMOJIS } from './emoji';
 
 const fmtTime = (ts: number): string => {
   const d = new Date(ts);
@@ -177,8 +180,20 @@ function MessageRow(props: {
               ) : null}
             </Box>
           ) : null}
-          <Typography variant="body2" sx={{ whiteSpace: 'pre-wrap', wordBreak: 'break-word' }}>
-            {props.content}
+          <Typography
+            variant="body2"
+            sx={{ whiteSpace: 'pre-wrap', wordBreak: 'break-word' }}
+            data-testid={`msg-text-${props.messageId}`}
+          >
+            {expandEmojiCodes(props.content).map((seg, i) =>
+              seg.kind === 'text' ? (
+                <span key={i}>{seg.value}</span>
+              ) : (
+                <span key={i} data-testid={`emoji-${props.messageId}-${seg.code}`}>
+                  {seg.emoji}
+                </span>
+              ),
+            )}
           </Typography>
           {props.coord ? (
             <Box
@@ -407,6 +422,7 @@ export default function ChatPanel(props: {
   const [draft, setDraft] = useState('');
   const [error, setError] = useState<string | null>(null);
   const [replying, setReplying] = useState<ChatMessageView | null>(null);
+  const [emojiAnchor, setEmojiAnchor] = useState<HTMLElement | null>(null);
   const bottomRef = useRef<HTMLDivElement | null>(null);
   const cursors = messages.readCursors[conversation.key] ?? {};
 
@@ -619,6 +635,38 @@ export default function ChatPanel(props: {
             onKeyDown={onDraftKeyDown}
             sx={{ bgcolor: 'background.default', borderRadius: 2, px: 1.5, py: 0.75 }}
           />
+          <Tooltip title="表情">
+            <IconButton
+              aria-label="表情"
+              data-testid="emoji-picker-toggle"
+              onClick={(e) => setEmojiAnchor(e.currentTarget)}
+            >
+              <EmojiEmotionsIcon />
+            </IconButton>
+          </Tooltip>
+          <Popover
+            open={emojiAnchor !== null}
+            anchorEl={emojiAnchor}
+            onClose={() => setEmojiAnchor(null)}
+            anchorOrigin={{ vertical: 'top', horizontal: 'right' }}
+            transformOrigin={{ vertical: 'bottom', horizontal: 'right' }}
+          >
+            <Box sx={{ display: 'grid', gridTemplateColumns: 'repeat(8, 36px)', gap: 0.25, p: 1 }}>
+              {SYSTEM_EMOJIS.map((e) => (
+                <IconButton
+                  key={e.code}
+                  data-testid={`emoji-pick-${e.code}`}
+                  onClick={() => {
+                    setDraft((d) => `${d}[emoji:${e.code}]`);
+                    setEmojiAnchor(null);
+                  }}
+                  sx={{ fontSize: 18, borderRadius: 1 }}
+                >
+                  {e.emoji}
+                </IconButton>
+              ))}
+            </Box>
+          </Popover>
           <Tooltip title="发送">
             <span>
               <IconButton color="primary" onClick={() => void send()} disabled={!draft.trim()}>
