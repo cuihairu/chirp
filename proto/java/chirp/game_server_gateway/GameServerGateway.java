@@ -2585,6 +2585,29 @@ public final class GameServerGateway extends com.google.protobuf.GeneratedFile {
      */
     com.google.protobuf.ByteString
         getGameIdBytes();
+
+    /**
+     * <pre>
+     * 展示面元数据（值域契约：与 chat.Priority 对齐——0 LOW / 1 NORMAL /
+     * 2 HIGH / 3 URGENT）。chat 侧按值直传（channel_type 同款口径），落入
+     * ChatMessage.priority。缺省 0 = 普通消息，旧游戏侧零感知。
+     * </pre>
+     *
+     * <code>int32 priority = 9;</code>
+     * @return The priority.
+     */
+    int getPriority();
+
+    /**
+     * <pre>
+     * 走马灯/公告的显示时长（秒），直传 ChatMessage.ttl_seconds；与
+     * priority=URGENT 同置才点亮走马灯（systemSurfaceOf 判定二要素）。
+     * </pre>
+     *
+     * <code>int32 ttl_seconds = 10;</code>
+     * @return The ttlSeconds.
+     */
+    int getTtlSeconds();
   }
   /**
    * <pre>
@@ -2920,6 +2943,39 @@ public final class GameServerGateway extends com.google.protobuf.GeneratedFile {
       }
     }
 
+    public static final int PRIORITY_FIELD_NUMBER = 9;
+    private int priority_ = 0;
+    /**
+     * <pre>
+     * 展示面元数据（值域契约：与 chat.Priority 对齐——0 LOW / 1 NORMAL /
+     * 2 HIGH / 3 URGENT）。chat 侧按值直传（channel_type 同款口径），落入
+     * ChatMessage.priority。缺省 0 = 普通消息，旧游戏侧零感知。
+     * </pre>
+     *
+     * <code>int32 priority = 9;</code>
+     * @return The priority.
+     */
+    @java.lang.Override
+    public int getPriority() {
+      return priority_;
+    }
+
+    public static final int TTL_SECONDS_FIELD_NUMBER = 10;
+    private int ttlSeconds_ = 0;
+    /**
+     * <pre>
+     * 走马灯/公告的显示时长（秒），直传 ChatMessage.ttl_seconds；与
+     * priority=URGENT 同置才点亮走马灯（systemSurfaceOf 判定二要素）。
+     * </pre>
+     *
+     * <code>int32 ttl_seconds = 10;</code>
+     * @return The ttlSeconds.
+     */
+    @java.lang.Override
+    public int getTtlSeconds() {
+      return ttlSeconds_;
+    }
+
     private byte memoizedIsInitialized = -1;
     @java.lang.Override
     public final boolean isInitialized() {
@@ -2958,6 +3014,12 @@ public final class GameServerGateway extends com.google.protobuf.GeneratedFile {
       if (!com.google.protobuf.GeneratedMessage.isStringEmpty(gameId_)) {
         com.google.protobuf.GeneratedMessage.writeString(output, 8, gameId_);
       }
+      if (priority_ != 0) {
+        output.writeInt32(9, priority_);
+      }
+      if (ttlSeconds_ != 0) {
+        output.writeInt32(10, ttlSeconds_);
+      }
       getUnknownFields().writeTo(output);
     }
 
@@ -2994,6 +3056,14 @@ public final class GameServerGateway extends com.google.protobuf.GeneratedFile {
       if (!com.google.protobuf.GeneratedMessage.isStringEmpty(gameId_)) {
         size += com.google.protobuf.GeneratedMessage.computeStringSize(8, gameId_);
       }
+      if (priority_ != 0) {
+        size += com.google.protobuf.CodedOutputStream
+          .computeInt32Size(9, priority_);
+      }
+      if (ttlSeconds_ != 0) {
+        size += com.google.protobuf.CodedOutputStream
+          .computeInt32Size(10, ttlSeconds_);
+      }
       size += getUnknownFields().getSerializedSize();
       memoizedSize = size;
       return size;
@@ -3024,6 +3094,10 @@ public final class GameServerGateway extends com.google.protobuf.GeneratedFile {
           .equals(other.getContent())) return false;
       if (!getGameId()
           .equals(other.getGameId())) return false;
+      if (getPriority()
+          != other.getPriority()) return false;
+      if (getTtlSeconds()
+          != other.getTtlSeconds()) return false;
       if (!getUnknownFields().equals(other.getUnknownFields())) return false;
       return true;
     }
@@ -3051,6 +3125,10 @@ public final class GameServerGateway extends com.google.protobuf.GeneratedFile {
       hash = (53 * hash) + getContent().hashCode();
       hash = (37 * hash) + GAME_ID_FIELD_NUMBER;
       hash = (53 * hash) + getGameId().hashCode();
+      hash = (37 * hash) + PRIORITY_FIELD_NUMBER;
+      hash = (53 * hash) + getPriority();
+      hash = (37 * hash) + TTL_SECONDS_FIELD_NUMBER;
+      hash = (53 * hash) + getTtlSeconds();
       hash = (29 * hash) + getUnknownFields().hashCode();
       memoizedHashCode = hash;
       return hash;
@@ -3195,6 +3273,8 @@ public final class GameServerGateway extends com.google.protobuf.GeneratedFile {
         receiverId_ = "";
         content_ = com.google.protobuf.ByteString.EMPTY;
         gameId_ = "";
+        priority_ = 0;
+        ttlSeconds_ = 0;
         return this;
       }
 
@@ -3252,6 +3332,12 @@ public final class GameServerGateway extends com.google.protobuf.GeneratedFile {
         if (((from_bitField0_ & 0x00000080) != 0)) {
           result.gameId_ = gameId_;
         }
+        if (((from_bitField0_ & 0x00000100) != 0)) {
+          result.priority_ = priority_;
+        }
+        if (((from_bitField0_ & 0x00000200) != 0)) {
+          result.ttlSeconds_ = ttlSeconds_;
+        }
       }
 
       @java.lang.Override
@@ -3299,6 +3385,12 @@ public final class GameServerGateway extends com.google.protobuf.GeneratedFile {
           gameId_ = other.gameId_;
           bitField0_ |= 0x00000080;
           onChanged();
+        }
+        if (other.getPriority() != 0) {
+          setPriority(other.getPriority());
+        }
+        if (other.getTtlSeconds() != 0) {
+          setTtlSeconds(other.getTtlSeconds());
         }
         this.mergeUnknownFields(other.getUnknownFields());
         onChanged();
@@ -3366,6 +3458,16 @@ public final class GameServerGateway extends com.google.protobuf.GeneratedFile {
                 bitField0_ |= 0x00000080;
                 break;
               } // case 66
+              case 72: {
+                priority_ = input.readInt32();
+                bitField0_ |= 0x00000100;
+                break;
+              } // case 72
+              case 80: {
+                ttlSeconds_ = input.readInt32();
+                bitField0_ |= 0x00000200;
+                break;
+              } // case 80
               default: {
                 if (!super.parseUnknownField(input, extensionRegistry, tag)) {
                   done = true; // was an endgroup tag
@@ -3979,6 +4081,103 @@ public final class GameServerGateway extends com.google.protobuf.GeneratedFile {
         checkByteStringIsUtf8(value);
         gameId_ = value;
         bitField0_ |= 0x00000080;
+        onChanged();
+        return this;
+      }
+
+      private int priority_ ;
+      /**
+       * <pre>
+       * 展示面元数据（值域契约：与 chat.Priority 对齐——0 LOW / 1 NORMAL /
+       * 2 HIGH / 3 URGENT）。chat 侧按值直传（channel_type 同款口径），落入
+       * ChatMessage.priority。缺省 0 = 普通消息，旧游戏侧零感知。
+       * </pre>
+       *
+       * <code>int32 priority = 9;</code>
+       * @return The priority.
+       */
+      @java.lang.Override
+      public int getPriority() {
+        return priority_;
+      }
+      /**
+       * <pre>
+       * 展示面元数据（值域契约：与 chat.Priority 对齐——0 LOW / 1 NORMAL /
+       * 2 HIGH / 3 URGENT）。chat 侧按值直传（channel_type 同款口径），落入
+       * ChatMessage.priority。缺省 0 = 普通消息，旧游戏侧零感知。
+       * </pre>
+       *
+       * <code>int32 priority = 9;</code>
+       * @param value The priority to set.
+       * @return This builder for chaining.
+       */
+      public Builder setPriority(int value) {
+
+        priority_ = value;
+        bitField0_ |= 0x00000100;
+        onChanged();
+        return this;
+      }
+      /**
+       * <pre>
+       * 展示面元数据（值域契约：与 chat.Priority 对齐——0 LOW / 1 NORMAL /
+       * 2 HIGH / 3 URGENT）。chat 侧按值直传（channel_type 同款口径），落入
+       * ChatMessage.priority。缺省 0 = 普通消息，旧游戏侧零感知。
+       * </pre>
+       *
+       * <code>int32 priority = 9;</code>
+       * @return This builder for chaining.
+       */
+      public Builder clearPriority() {
+        bitField0_ = (bitField0_ & ~0x00000100);
+        priority_ = 0;
+        onChanged();
+        return this;
+      }
+
+      private int ttlSeconds_ ;
+      /**
+       * <pre>
+       * 走马灯/公告的显示时长（秒），直传 ChatMessage.ttl_seconds；与
+       * priority=URGENT 同置才点亮走马灯（systemSurfaceOf 判定二要素）。
+       * </pre>
+       *
+       * <code>int32 ttl_seconds = 10;</code>
+       * @return The ttlSeconds.
+       */
+      @java.lang.Override
+      public int getTtlSeconds() {
+        return ttlSeconds_;
+      }
+      /**
+       * <pre>
+       * 走马灯/公告的显示时长（秒），直传 ChatMessage.ttl_seconds；与
+       * priority=URGENT 同置才点亮走马灯（systemSurfaceOf 判定二要素）。
+       * </pre>
+       *
+       * <code>int32 ttl_seconds = 10;</code>
+       * @param value The ttlSeconds to set.
+       * @return This builder for chaining.
+       */
+      public Builder setTtlSeconds(int value) {
+
+        ttlSeconds_ = value;
+        bitField0_ |= 0x00000200;
+        onChanged();
+        return this;
+      }
+      /**
+       * <pre>
+       * 走马灯/公告的显示时长（秒），直传 ChatMessage.ttl_seconds；与
+       * priority=URGENT 同置才点亮走马灯（systemSurfaceOf 判定二要素）。
+       * </pre>
+       *
+       * <code>int32 ttl_seconds = 10;</code>
+       * @return This builder for chaining.
+       */
+      public Builder clearTtlSeconds() {
+        bitField0_ = (bitField0_ & ~0x00000200);
+        ttlSeconds_ = 0;
         onChanged();
         return this;
       }
@@ -31058,99 +31257,100 @@ public final class GameServerGateway extends com.google.protobuf.GeneratedFile {
       "ms\030\002 \001(\003\022\"\n\032heartbeat_interval_seconds\030\003" +
       " \001(\005\"-\n\023ServerHeartbeatPing\022\026\n\016client_ti" +
       "me_ms\030\001 \001(\003\"-\n\023ServerHeartbeatPong\022\026\n\016se" +
-      "rver_time_ms\030\001 \001(\003\"\331\001\n\024MessageInjectRequ" +
+      "rver_time_ms\030\001 \001(\003\"\200\002\n\024MessageInjectRequ" +
       "est\022\021\n\tinject_id\030\001 \001(\t\022:\n\013sender_kind\030\002 " +
       "\001(\0162%.chirp.game_server_gateway.SenderKi" +
       "nd\022\021\n\tsender_id\030\003 \001(\t\022\024\n\014channel_type\030\004 " +
       "\001(\005\022\022\n\nchannel_id\030\005 \001(\t\022\023\n\013receiver_id\030\006" +
-      " \001(\t\022\017\n\007content\030\007 \001(\014\022\017\n\007game_id\030\010 \001(\t\"Q" +
-      "\n\025MessageInjectResponse\022%\n\004code\030\001 \001(\0162\027." +
-      "chirp.common.ErrorCode\022\021\n\tinject_id\030\002 \001(" +
-      "\t\"W\n\023InjectMessageNotify\022@\n\007message\030\001 \001(" +
-      "\0132/.chirp.game_server_gateway.MessageInj" +
-      "ectRequest\"g\n\023EventPublishRequest\022\020\n\010eve" +
-      "nt_id\030\001 \001(\t\022\031\n\021target_service_id\030\002 \001(\t\022\022" +
-      "\n\nevent_type\030\003 \001(\t\022\017\n\007payload\030\004 \001(\014\"_\n\024E" +
-      "ventPublishResponse\022%\n\004code\030\001 \001(\0162\027.chir" +
-      "p.common.ErrorCode\022\020\n\010event_id\030\002 \001(\t\022\016\n\006" +
-      "queued\030\003 \001(\010\"u\n\022EventDeliverNotify\022\020\n\010ev" +
-      "ent_id\030\001 \001(\t\022\022\n\nevent_type\030\002 \001(\t\022\017\n\007payl" +
-      "oad\030\003 \001(\014\022\027\n\017published_at_ms\030\004 \001(\003\022\017\n\007at" +
-      "tempt\030\005 \001(\005\"$\n\017EventAckRequest\022\021\n\tevent_" +
-      "ids\030\001 \003(\t\"9\n\020EventAckResponse\022%\n\004code\030\001 " +
-      "\001(\0162\027.chirp.common.ErrorCode\"z\n\025StoredId" +
-      "entityBinding\022\022\n\nbinding_id\030\001 \001(\t\022\021\n\tpla" +
-      "yer_id\030\002 \001(\t\022\017\n\007game_id\030\003 \001(\t\022\024\n\014game_us" +
-      "er_id\030\004 \001(\t\022\023\n\013bound_at_ms\030\005 \001(\003\"i\n\031Bind" +
-      "PlayerIdentityRequest\022\022\n\nbinding_id\030\001 \001(" +
-      "\t\022\021\n\tplayer_id\030\002 \001(\t\022\017\n\007game_id\030\003 \001(\t\022\024\n" +
-      "\014game_user_id\030\004 \001(\t\"h\n\032BindPlayerIdentit" +
-      "yResponse\022%\n\004code\030\001 \001(\0162\027.chirp.common.E" +
-      "rrorCode\022\022\n\nbinding_id\030\002 \001(\t\022\017\n\007existed\030" +
-      "\003 \001(\010\"X\n\033UnbindPlayerIdentityRequest\022\022\n\n" +
-      "binding_id\030\001 \001(\t\022\017\n\007game_id\030\002 \001(\t\022\024\n\014gam" +
-      "e_user_id\030\003 \001(\t\"E\n\034UnbindPlayerIdentityR" +
-      "esponse\022%\n\004code\030\001 \001(\0162\027.chirp.common.Err" +
-      "orCode\"/\n\032GetPlayerIdentitiesRequest\022\021\n\t" +
-      "player_id\030\001 \001(\t\"\210\001\n\033GetPlayerIdentitiesR" +
-      "esponse\022%\n\004code\030\001 \001(\0162\027.chirp.common.Err" +
-      "orCode\022B\n\010bindings\030\002 \003(\01320.chirp.game_se" +
-      "rver_gateway.StoredIdentityBinding\"?\n\026Re" +
-      "solveGameUserRequest\022\017\n\007game_id\030\001 \001(\t\022\024\n" +
-      "\014game_user_id\030\002 \001(\t\"S\n\027ResolveGameUserRe" +
+      " \001(\t\022\017\n\007content\030\007 \001(\014\022\017\n\007game_id\030\010 \001(\t\022\020" +
+      "\n\010priority\030\t \001(\005\022\023\n\013ttl_seconds\030\n \001(\005\"Q\n" +
+      "\025MessageInjectResponse\022%\n\004code\030\001 \001(\0162\027.c" +
+      "hirp.common.ErrorCode\022\021\n\tinject_id\030\002 \001(\t" +
+      "\"W\n\023InjectMessageNotify\022@\n\007message\030\001 \001(\013" +
+      "2/.chirp.game_server_gateway.MessageInje" +
+      "ctRequest\"g\n\023EventPublishRequest\022\020\n\010even" +
+      "t_id\030\001 \001(\t\022\031\n\021target_service_id\030\002 \001(\t\022\022\n" +
+      "\nevent_type\030\003 \001(\t\022\017\n\007payload\030\004 \001(\014\"_\n\024Ev" +
+      "entPublishResponse\022%\n\004code\030\001 \001(\0162\027.chirp" +
+      ".common.ErrorCode\022\020\n\010event_id\030\002 \001(\t\022\016\n\006q" +
+      "ueued\030\003 \001(\010\"u\n\022EventDeliverNotify\022\020\n\010eve" +
+      "nt_id\030\001 \001(\t\022\022\n\nevent_type\030\002 \001(\t\022\017\n\007paylo" +
+      "ad\030\003 \001(\014\022\027\n\017published_at_ms\030\004 \001(\003\022\017\n\007att" +
+      "empt\030\005 \001(\005\"$\n\017EventAckRequest\022\021\n\tevent_i" +
+      "ds\030\001 \003(\t\"9\n\020EventAckResponse\022%\n\004code\030\001 \001" +
+      "(\0162\027.chirp.common.ErrorCode\"z\n\025StoredIde" +
+      "ntityBinding\022\022\n\nbinding_id\030\001 \001(\t\022\021\n\tplay" +
+      "er_id\030\002 \001(\t\022\017\n\007game_id\030\003 \001(\t\022\024\n\014game_use" +
+      "r_id\030\004 \001(\t\022\023\n\013bound_at_ms\030\005 \001(\003\"i\n\031BindP" +
+      "layerIdentityRequest\022\022\n\nbinding_id\030\001 \001(\t" +
+      "\022\021\n\tplayer_id\030\002 \001(\t\022\017\n\007game_id\030\003 \001(\t\022\024\n\014" +
+      "game_user_id\030\004 \001(\t\"h\n\032BindPlayerIdentity" +
+      "Response\022%\n\004code\030\001 \001(\0162\027.chirp.common.Er" +
+      "rorCode\022\022\n\nbinding_id\030\002 \001(\t\022\017\n\007existed\030\003" +
+      " \001(\010\"X\n\033UnbindPlayerIdentityRequest\022\022\n\nb" +
+      "inding_id\030\001 \001(\t\022\017\n\007game_id\030\002 \001(\t\022\024\n\014game" +
+      "_user_id\030\003 \001(\t\"E\n\034UnbindPlayerIdentityRe" +
       "sponse\022%\n\004code\030\001 \001(\0162\027.chirp.common.Erro" +
-      "rCode\022\021\n\tplayer_id\030\002 \001(\t\"\206\001\n\031StoredChann" +
-      "elSubscription\022\027\n\017subscription_id\030\001 \001(\t\022" +
-      "\021\n\tplayer_id\030\002 \001(\t\022\017\n\007game_id\030\003 \001(\t\022\022\n\nc" +
-      "hannel_id\030\004 \001(\t\022\030\n\020subscribed_at_ms\030\005 \001(" +
-      "\003\"p\n\035SubscribePlayerChannelRequest\022\027\n\017su" +
-      "bscription_id\030\001 \001(\t\022\021\n\tplayer_id\030\002 \001(\t\022\017" +
-      "\n\007game_id\030\003 \001(\t\022\022\n\nchannel_id\030\004 \001(\t\"q\n\036S" +
-      "ubscribePlayerChannelResponse\022%\n\004code\030\001 " +
-      "\001(\0162\027.chirp.common.ErrorCode\022\027\n\017subscrip" +
-      "tion_id\030\002 \001(\t\022\017\n\007existed\030\003 \001(\010\"r\n\037Unsubs" +
-      "cribePlayerChannelRequest\022\027\n\017subscriptio" +
-      "n_id\030\001 \001(\t\022\021\n\tplayer_id\030\002 \001(\t\022\017\n\007game_id" +
-      "\030\003 \001(\t\022\022\n\nchannel_id\030\004 \001(\t\"I\n Unsubscrib" +
-      "ePlayerChannelResponse\022%\n\004code\030\001 \001(\0162\027.c" +
-      "hirp.common.ErrorCode\"C\n\035GetPlayerSubscr" +
-      "iptionsRequest\022\021\n\tplayer_id\030\001 \001(\t\022\017\n\007gam" +
-      "e_id\030\002 \001(\t\"\224\001\n\036GetPlayerSubscriptionsRes" +
+      "rCode\"/\n\032GetPlayerIdentitiesRequest\022\021\n\tp" +
+      "layer_id\030\001 \001(\t\"\210\001\n\033GetPlayerIdentitiesRe" +
+      "sponse\022%\n\004code\030\001 \001(\0162\027.chirp.common.Erro" +
+      "rCode\022B\n\010bindings\030\002 \003(\01320.chirp.game_ser" +
+      "ver_gateway.StoredIdentityBinding\"?\n\026Res" +
+      "olveGameUserRequest\022\017\n\007game_id\030\001 \001(\t\022\024\n\014" +
+      "game_user_id\030\002 \001(\t\"S\n\027ResolveGameUserRes" +
       "ponse\022%\n\004code\030\001 \001(\0162\027.chirp.common.Error" +
-      "Code\022K\n\rsubscriptions\030\002 \003(\01324.chirp.game" +
-      "_server_gateway.StoredChannelSubscriptio" +
-      "n\"a\n\021StoredUnreadEntry\022\021\n\tplayer_id\030\001 \001(" +
-      "\t\022\017\n\007game_id\030\002 \001(\t\022\022\n\nchannel_id\030\003 \001(\t\022\024" +
-      "\n\014unread_count\030\004 \001(\005\"Q\n\027MarkChannelsRead" +
-      "Request\022\021\n\tplayer_id\030\001 \001(\t\022\017\n\007game_id\030\002 " +
-      "\001(\t\022\022\n\nchannel_id\030\003 \001(\t\"R\n\030MarkChannelsR" +
-      "eadResponse\022%\n\004code\030\001 \001(\0162\027.chirp.common" +
-      ".ErrorCode\022\017\n\007cleared\030\002 \001(\005\"O\n\022UnreadSum" +
-      "maryEntry\022\017\n\007game_id\030\001 \001(\t\022\022\n\nchannel_id" +
-      "\030\002 \001(\t\022\024\n\014unread_count\030\003 \001(\005\"=\n\027GetUnrea" +
-      "dSummaryRequest\022\021\n\tplayer_id\030\001 \001(\t\022\017\n\007ga" +
-      "me_id\030\002 \001(\t\"\227\001\n\030GetUnreadSummaryResponse" +
-      "\022%\n\004code\030\001 \001(\0162\027.chirp.common.ErrorCode\022" +
-      ">\n\007entries\030\002 \003(\0132-.chirp.game_server_gat" +
-      "eway.UnreadSummaryEntry\022\024\n\014total_unread\030" +
-      "\003 \001(\005\"?\n\031StoredGamePresenceSetting\022\021\n\tpl" +
-      "ayer_id\030\001 \001(\t\022\017\n\007enabled\030\002 \001(\010\"G\n\021GamePr" +
-      "esenceEvent\022\021\n\tplayer_id\030\001 \001(\t\022\017\n\007game_i" +
-      "d\030\002 \001(\t\022\016\n\006online\030\003 \001(\010\"C\n\035SetGamePresen" +
-      "ceEnabledRequest\022\021\n\tplayer_id\030\001 \001(\t\022\017\n\007e" +
-      "nabled\030\002 \001(\010\"G\n\036SetGamePresenceEnabledRe" +
-      "sponse\022%\n\004code\030\001 \001(\0162\027.chirp.common.Erro" +
-      "rCode\":\n\021GamePresenceEntry\022\017\n\007game_id\030\001 " +
-      "\001(\t\022\024\n\014game_user_id\030\002 \001(\t\"+\n\026GetGamePres" +
-      "enceRequest\022\021\n\tplayer_id\030\001 \001(\t\"\220\001\n\027GetGa" +
-      "mePresenceResponse\022%\n\004code\030\001 \001(\0162\027.chirp" +
-      ".common.ErrorCode\022\017\n\007enabled\030\002 \001(\010\022=\n\007en" +
-      "tries\030\003 \003(\0132,.chirp.game_server_gateway." +
-      "GamePresenceEntry*W\n\nSenderKind\022\022\n\016SENDE" +
-      "R_UNKNOWN\020\000\022\021\n\rSENDER_SYSTEM\020\001\022\016\n\nSENDER" +
-      "_NPC\020\002\022\022\n\016SENDER_SERVICE\020\003B3Z1github.com" +
-      "/cui/chirp/proto/go/game_server_gatewayb" +
-      "\006proto3"
+      "Code\022\021\n\tplayer_id\030\002 \001(\t\"\206\001\n\031StoredChanne" +
+      "lSubscription\022\027\n\017subscription_id\030\001 \001(\t\022\021" +
+      "\n\tplayer_id\030\002 \001(\t\022\017\n\007game_id\030\003 \001(\t\022\022\n\nch" +
+      "annel_id\030\004 \001(\t\022\030\n\020subscribed_at_ms\030\005 \001(\003" +
+      "\"p\n\035SubscribePlayerChannelRequest\022\027\n\017sub" +
+      "scription_id\030\001 \001(\t\022\021\n\tplayer_id\030\002 \001(\t\022\017\n" +
+      "\007game_id\030\003 \001(\t\022\022\n\nchannel_id\030\004 \001(\t\"q\n\036Su" +
+      "bscribePlayerChannelResponse\022%\n\004code\030\001 \001" +
+      "(\0162\027.chirp.common.ErrorCode\022\027\n\017subscript" +
+      "ion_id\030\002 \001(\t\022\017\n\007existed\030\003 \001(\010\"r\n\037Unsubsc" +
+      "ribePlayerChannelRequest\022\027\n\017subscription" +
+      "_id\030\001 \001(\t\022\021\n\tplayer_id\030\002 \001(\t\022\017\n\007game_id\030" +
+      "\003 \001(\t\022\022\n\nchannel_id\030\004 \001(\t\"I\n Unsubscribe" +
+      "PlayerChannelResponse\022%\n\004code\030\001 \001(\0162\027.ch" +
+      "irp.common.ErrorCode\"C\n\035GetPlayerSubscri" +
+      "ptionsRequest\022\021\n\tplayer_id\030\001 \001(\t\022\017\n\007game" +
+      "_id\030\002 \001(\t\"\224\001\n\036GetPlayerSubscriptionsResp" +
+      "onse\022%\n\004code\030\001 \001(\0162\027.chirp.common.ErrorC" +
+      "ode\022K\n\rsubscriptions\030\002 \003(\01324.chirp.game_" +
+      "server_gateway.StoredChannelSubscription" +
+      "\"a\n\021StoredUnreadEntry\022\021\n\tplayer_id\030\001 \001(\t" +
+      "\022\017\n\007game_id\030\002 \001(\t\022\022\n\nchannel_id\030\003 \001(\t\022\024\n" +
+      "\014unread_count\030\004 \001(\005\"Q\n\027MarkChannelsReadR" +
+      "equest\022\021\n\tplayer_id\030\001 \001(\t\022\017\n\007game_id\030\002 \001" +
+      "(\t\022\022\n\nchannel_id\030\003 \001(\t\"R\n\030MarkChannelsRe" +
+      "adResponse\022%\n\004code\030\001 \001(\0162\027.chirp.common." +
+      "ErrorCode\022\017\n\007cleared\030\002 \001(\005\"O\n\022UnreadSumm" +
+      "aryEntry\022\017\n\007game_id\030\001 \001(\t\022\022\n\nchannel_id\030" +
+      "\002 \001(\t\022\024\n\014unread_count\030\003 \001(\005\"=\n\027GetUnread" +
+      "SummaryRequest\022\021\n\tplayer_id\030\001 \001(\t\022\017\n\007gam" +
+      "e_id\030\002 \001(\t\"\227\001\n\030GetUnreadSummaryResponse\022" +
+      "%\n\004code\030\001 \001(\0162\027.chirp.common.ErrorCode\022>" +
+      "\n\007entries\030\002 \003(\0132-.chirp.game_server_gate" +
+      "way.UnreadSummaryEntry\022\024\n\014total_unread\030\003" +
+      " \001(\005\"?\n\031StoredGamePresenceSetting\022\021\n\tpla" +
+      "yer_id\030\001 \001(\t\022\017\n\007enabled\030\002 \001(\010\"G\n\021GamePre" +
+      "senceEvent\022\021\n\tplayer_id\030\001 \001(\t\022\017\n\007game_id" +
+      "\030\002 \001(\t\022\016\n\006online\030\003 \001(\010\"C\n\035SetGamePresenc" +
+      "eEnabledRequest\022\021\n\tplayer_id\030\001 \001(\t\022\017\n\007en" +
+      "abled\030\002 \001(\010\"G\n\036SetGamePresenceEnabledRes" +
+      "ponse\022%\n\004code\030\001 \001(\0162\027.chirp.common.Error" +
+      "Code\":\n\021GamePresenceEntry\022\017\n\007game_id\030\001 \001" +
+      "(\t\022\024\n\014game_user_id\030\002 \001(\t\"+\n\026GetGamePrese" +
+      "nceRequest\022\021\n\tplayer_id\030\001 \001(\t\"\220\001\n\027GetGam" +
+      "ePresenceResponse\022%\n\004code\030\001 \001(\0162\027.chirp." +
+      "common.ErrorCode\022\017\n\007enabled\030\002 \001(\010\022=\n\007ent" +
+      "ries\030\003 \003(\0132,.chirp.game_server_gateway.G" +
+      "amePresenceEntry*W\n\nSenderKind\022\022\n\016SENDER" +
+      "_UNKNOWN\020\000\022\021\n\rSENDER_SYSTEM\020\001\022\016\n\nSENDER_" +
+      "NPC\020\002\022\022\n\016SENDER_SERVICE\020\003B3Z1github.com/" +
+      "cui/chirp/proto/go/game_server_gatewayb\006" +
+      "proto3"
     };
     descriptor = com.google.protobuf.Descriptors.FileDescriptor
       .internalBuildGeneratedFileFrom(descriptorData,
@@ -31186,7 +31386,7 @@ public final class GameServerGateway extends com.google.protobuf.GeneratedFile {
     internal_static_chirp_game_server_gateway_MessageInjectRequest_fieldAccessorTable = new
       com.google.protobuf.GeneratedMessage.FieldAccessorTable(
         internal_static_chirp_game_server_gateway_MessageInjectRequest_descriptor,
-        new java.lang.String[] { "InjectId", "SenderKind", "SenderId", "ChannelType", "ChannelId", "ReceiverId", "Content", "GameId", });
+        new java.lang.String[] { "InjectId", "SenderKind", "SenderId", "ChannelType", "ChannelId", "ReceiverId", "Content", "GameId", "Priority", "TtlSeconds", });
     internal_static_chirp_game_server_gateway_MessageInjectResponse_descriptor =
       getDescriptor().getMessageType(5);
     internal_static_chirp_game_server_gateway_MessageInjectResponse_fieldAccessorTable = new

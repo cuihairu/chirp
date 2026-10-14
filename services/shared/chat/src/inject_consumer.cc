@@ -41,6 +41,12 @@ InjectOutcome InjectConsumer::HandleInject(
   // SYSTEM=1 / NPC=2 / SERVICE=3 ↔ chat 同值），UNKNOWN 已在上方拒绝。值域
   // 契约见 chat.proto / game_server_gateway.proto 两侧 SenderKind 注释。
   msg.set_sender_kind(static_cast<chirp::chat::SenderKind>(req.sender_kind()));
+  // 展示面元数据同款直传（int32 值域与 chat.Priority 对齐；channel_type 同
+  // 口径）：priority/ttl_seconds 是走马灯（URGENT+ttl>0）与系统弹窗（HIGH）
+  // 的判定二要素，缺省 0 = 普通消息，旧游戏侧注入零感知。枚举外值客户端
+  // 回落普通气泡，不做服务端拦截（与「不越权校验」同口径）。
+  msg.set_priority(static_cast<chirp::chat::Priority>(req.priority()));
+  msg.set_ttl_seconds(req.ttl_seconds());
 
   hooks_.store_message(msg);
 

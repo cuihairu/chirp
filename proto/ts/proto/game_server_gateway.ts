@@ -117,6 +117,17 @@ export interface MessageInjectRequest {
    * fan-out or a 1:1 inject, never an ambiguous both.
    */
   gameId: string;
+  /**
+   * 展示面元数据（值域契约：与 chat.Priority 对齐——0 LOW / 1 NORMAL /
+   * 2 HIGH / 3 URGENT）。chat 侧按值直传（channel_type 同款口径），落入
+   * ChatMessage.priority。缺省 0 = 普通消息，旧游戏侧零感知。
+   */
+  priority: number;
+  /**
+   * 走马灯/公告的显示时长（秒），直传 ChatMessage.ttl_seconds；与
+   * priority=URGENT 同置才点亮走马灯（systemSurfaceOf 判定二要素）。
+   */
+  ttlSeconds: number;
 }
 
 export interface MessageInjectResponse {
@@ -692,6 +703,8 @@ function createBaseMessageInjectRequest(): MessageInjectRequest {
     receiverId: "",
     content: new Uint8Array(0),
     gameId: "",
+    priority: 0,
+    ttlSeconds: 0,
   };
 }
 
@@ -720,6 +733,12 @@ export const MessageInjectRequest = {
     }
     if (message.gameId !== "") {
       writer.uint32(66).string(message.gameId);
+    }
+    if (message.priority !== 0) {
+      writer.uint32(72).int32(message.priority);
+    }
+    if (message.ttlSeconds !== 0) {
+      writer.uint32(80).int32(message.ttlSeconds);
     }
     return writer;
   },
@@ -787,6 +806,20 @@ export const MessageInjectRequest = {
 
           message.gameId = reader.string();
           continue;
+        case 9:
+          if (tag !== 72) {
+            break;
+          }
+
+          message.priority = reader.int32();
+          continue;
+        case 10:
+          if (tag !== 80) {
+            break;
+          }
+
+          message.ttlSeconds = reader.int32();
+          continue;
       }
       if ((tag & 7) === 4 || tag === 0) {
         break;
@@ -806,6 +839,8 @@ export const MessageInjectRequest = {
       receiverId: isSet(object.receiverId) ? globalThis.String(object.receiverId) : "",
       content: isSet(object.content) ? bytesFromBase64(object.content) : new Uint8Array(0),
       gameId: isSet(object.gameId) ? globalThis.String(object.gameId) : "",
+      priority: isSet(object.priority) ? globalThis.Number(object.priority) : 0,
+      ttlSeconds: isSet(object.ttlSeconds) ? globalThis.Number(object.ttlSeconds) : 0,
     };
   },
 
@@ -835,6 +870,12 @@ export const MessageInjectRequest = {
     if (message.gameId !== "") {
       obj.gameId = message.gameId;
     }
+    if (message.priority !== 0) {
+      obj.priority = Math.round(message.priority);
+    }
+    if (message.ttlSeconds !== 0) {
+      obj.ttlSeconds = Math.round(message.ttlSeconds);
+    }
     return obj;
   },
 
@@ -851,6 +892,8 @@ export const MessageInjectRequest = {
     message.receiverId = object.receiverId ?? "";
     message.content = object.content ?? new Uint8Array(0);
     message.gameId = object.gameId ?? "";
+    message.priority = object.priority ?? 0;
+    message.ttlSeconds = object.ttlSeconds ?? 0;
     return message;
   },
 };

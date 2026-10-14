@@ -75,8 +75,8 @@ title: 游戏聊天特征
 
 ### 游戏特色
 
-- **NPC 对话**：玩家与 NPC 聊天。NPC 回复走关键词规则引擎（当前已实现），未来可替换为 LLM。
-- **系统播报**：全服播报（BOSS 刷新、首杀、稀有掉落、玩家成就）。走世界频道 + 走马灯。
+- **NPC 对话**（已落地 2026-09-13）：`services/game/npc_dialog`——`NpcEngine` 关键词规则表（ASCII 大小写不敏感子串匹配，`*` 兜底回复）+ `npc_responder` 应答面 + chat 上行链路（`chat_npc_uplink`）；`--metrics_port` 埋点（事件/回复计数）。接口是替换更聪明引擎（如 LLM 服务）的接缝。
+- **系统播报**（已落地 2026-10-15，inject 展示面元数据形态）：game 平面 `MessageInjectRequest`（proto/game_server_gateway.proto）带 `priority`/`ttl_seconds` 展示面字段（值域与 chat.Priority 对齐，缺省 0 零感知）；chat 侧 `InjectConsumer` 直传 `ChatMessage.priority`/`ttl_seconds`，server_gateway 整消息转发零改动。走马灯判定二要素（URGENT + ttl>0，客户端 `systemSurfaceOf` 与频道无关）与系统弹窗（HIGH）经注入即点亮；渲染面（走马灯/弹窗/气泡分色）2026-10-14 已落地。**范围边界**：事件源（BOSS 刷新/首杀/稀有掉落/玩家成就）在游戏侧；inject 合法频道域为 PRIVATE..WORLD（`InjectConsumer` 校验），走 WORLD 频道注入即可。
 - **交易消息**（已落地 2026-10-15，协议+消费面形态）：`msg_type = TRADE_STATUS`，卡片式展示（状态徽章 + 物品摘要 ×N + 金额 + trade_id caption）。服务端在发送门校验 metadata——解析不出 `TradeMetadata` 或缺 `trade_id` 回 INVALID_PARAM（与坐标/物品/成就链接同层同口径，basic/enhanced 双形态同接线）；`status` 为展示文本不锁枚举（proto 约定 CREATED/ACCEPTED/COMPLETED/CANCELLED，未知名值原样渲染，新状态值不被旧服务端挡下）；web `MessageBubble` 与 desktop `ChatPanel` 渲染交易卡片（`data-trade-status` 标签供测试断言）。SDK 四端零改动（metadata 通用管线承载）。**范围边界**：文档原文的"上架/出价/成交/过期状态变更走系统频道"事件源在游戏侧拍卖行系统；当前 game 平面 inject 面（`MessageInjectRequest`）只有 content 无 msg_type/metadata 字段，注入卡片消息需先扩 inject 协议（metadata 透传）——属后续增强，玩家/SDK 侧消费链（发送门 + 存储 + 渲染）本批已就绪。
 - **好友上线通知**：好友上线时推送通知（可关闭）。✅ 服务端已落地（3025-3029，2026-10-13）：`SET/GET_NOTIFY_PREFS` 用户级开关（缺省全开，Redis 持久化）+ `FRIEND_ONLINE_NOTIFY` 只在有效状态 OFFLINE→非 OFFLINE 跃迁时补发（登录/SET_PRESENCE/游戏断言三链路，逐收件人过滤），body 复用 `PresenceNotify`、花名册 3021 不受影响；TS 双包与 web/desktop 消费进行中。
 - **邮件通知**：新邮件到达时推送通知。
