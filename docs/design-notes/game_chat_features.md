@@ -4,7 +4,7 @@ title: 游戏聊天特征
 
 # 游戏聊天特征
 
-最后更新：2026-09-27（enhanced 形态接入撤回端点：游戏平面部署形态补上 `DELETE_MESSAGE`，撤回在两种形态均可用）
+最后更新：2026-10-14（P0 消息处理/频道管理/用户行为/消息展示各节补已落地注记——16 项以源码为真相对账，标注实测落地日期与差异裁决；成就分享落地）
 
 本文档列出游戏聊天系统需要支持的特征，按优先级分阶段实现。
 
@@ -12,21 +12,21 @@ title: 游戏聊天特征
 
 ### 消息处理
 
-- **敏感词过滤**：三级策略（替换为 `**`、直接拒绝、记录待审核）。本地词库加载，支持热更新。覆盖脏话、政治敏感、外挂/私服/代练广告。
-- **消息长度限制**：不同频道不同上限。私聊 200 字、世界 100 字、公告 500 字。超长截断或拒绝。
-- **发送频率限制**：按用户 + 频道限流。世界频道 5 秒一条、公会 2 秒一条、私聊 1 秒一条。超频返回 `RATE_LIMITED`。
-- **重复消息检测**：连续 3 条相同内容自动禁言 5 分钟。防刷屏。
+- **敏感词过滤**（已落地 2026-09-22，服务端+客户端双形态）：服务端发送链 `WordFilter::Filter` 两级策略——Replace（替换，连续命中塌缩）/Reject（拦截）；词库 5 秒热更下发（登录后 `HandleWordFilterFetch`，条件 GET + 守卫），加载失败 fail-open 不拦发送；只滤发送侧。客户端预检三语言同款 `WordFilterInterceptor`（C++/C#/TS，与服务端共用同一词库文件）。**与文档差异**：原文三级（替换/拒绝/记录待审核）落地为两级——Record（审计）是服务端治理职责，不进客户端过滤链。
+- **消息长度限制**（已落地）：`ValidateContentLength` 按 `MaxContentChars` 频道上限——私聊 200 / 世界 100 / 系统公告 500 码点，TEAM/GUILD/MARQUEE 协调面无上限；按 Unicode 码点计数（非 UTF-8 字节），超长回 `CONTENT_TOO_LONG`（不截断）；挂在 `ValidateSendMessageRequest`（basic/enhanced 两形态同链）。
+- **发送频率限制**（已落地 2026-09-14）：按用户 60s 固定窗口（Redis 计数，`ChatRateLimiter::CheckSend`；登录另有按 IP 的 `CheckLogin` 模糊限流）+ 按频道节奏（世界 5s / 公会 2s / 私聊 1s，ChannelPacer），超频回 `RATE_LIMITED`。
+- **重复消息检测**（已落地 2026-09-22）：`RepeatGuard`——同一用户连续 3 条相同内容自动禁言 5 分钟（`kRepeatTriggerCount=3` / `kRepeatMuteMs=5min`），位于发送链节奏限流之后、敏感词之前；禁言窗口内发送回 `MUTED`。
 - **消息撤回**（已落地：`MessageEditManager::RecallMessage`，窗口 `--recall_window_sec` 默认 120s、可撤回频道 `--recall_channels` 默认 `private,guild`；版主删除走 `DeleteMessage` 治理路径，不受窗口约束。回码：非发送者 `AUTH_FAILED`、超窗/非撤回频道/重复撤回 `INVALID_PARAM`、本进程无台账 `USER_NOT_FOUND`）：发送后 2 分钟内可撤回（私聊/公会）。撤回后对方通过 `MESSAGE_DELETED_NOTIFY`（`is_hard_delete=false`、`deleted_by=作者`）把气泡换成"消息已撤回"墓碑，接收方离线队列里已入队的副本同步按 `message_id` 回收。**历史存档墓碑已贯通（2026-09-27）**：墓碑的语义是「置位 `is_recalled` + 抹除正文」，只置位等于原文仍躺在存档里——`MessageStore::MarkMessageRecalled` 与基础形态的 `MarkRecalled` 都连 `content` 一并清空（MySQL `UPDATE ... SET is_recalled = 1, content = ''`；Hybrid 双 tier：Redis 热层 `LSet` 原位改写、列表顺序与其余条目不动，冷层同上 UPDATE；镜像就是 `ChatMessage` proto 字节，抹除逻辑收敛为 `recall_tombstone.{h,cc}` 供三种存储实现共用）。因此重拉 `GET_HISTORY` 只剩"这条被撤回过"的事实，读不出原文；`BULK_DELETE` 的软删与单体软删同语义（成功每条立碑、每成员回收副本）。**两种部署形态都有撤回入口（2026-09-27）**：basic 之外，enhanced（`MYSQL_FOUND` 下实际构建的 `main_enhanced.cc`）此前根本没有 `DELETE_MESSAGE` 槽位，现已接入同一套 `MessageEditManager`/`MessageEditHandlers`——发送侧记台账，撤回侧经 session registry 把墓碑扇出到接收方的每一条在线设备，marker/purger 分别接 `HybridMessageStore::MarkMessageRecalled`（双 tier 抹除）与 `PurgeOfflineByMessageId`（Redis 与 Redis-down 回退队列都扫）。两条已记账的形态差异：游戏平面没有群组订阅登记，成员解析只覆盖私聊（规范 `a|b` 键取对方），公会撤回的 notify/离线回收对空成员列表是 no-op——与频道屏蔽同缺口，随群聊扇出路径一起落地；无角色体系则版主恒判 false（fail-closed），`is_hard_delete=true` 一律 `AUTH_FAILED`。gateway 侧零改动：已认证连接原样转发 2001-2999，`MESSAGE_DELETED_NOTIFY`(2232) 经 ServiceBridge 的 verbatim 管道可达客户端。
-- **@提及**：`@某人`、`@全体成员`。被 @ 的玩家收到高亮提示。
+- **@提及**（已落地 2026-09-21）：`MentionManager`/`MentionHandlers`——发送侧 `ProcessOutgoingMessage` 提取提及并随消息下发（`ChatMessage.mentions` / `mentioned_user_ids` / `mentions_everyone` / `mentions_here`，接收端按字段渲染高亮）；群成员建议 `GetMentionSuggestions`（`@某人` 补全）。
 
 ### 频道管理
 
-- **世界频道**：全服广播。发言有等级门槛（默认 10 级）。每人每 5 秒一条。
-- **公会频道**：公会成员自动加入，退出/被踢自动移除。公会管理者可设置发言权限。
-- **队伍频道**：组队自动创建，解散/离队自动销毁。仅队长可解散。
-- **私聊**：1v1 对话。支持离线消息（离线期间存队列，上线推送）。
-- **系统公告频道**：全服推送，只读（玩家不能发言）。管理后台发布。
-- **频道屏蔽**：玩家可屏蔽特定频道（如关闭世界频道）。屏蔽后不接收该频道消息。
+- **世界频道**（已落地）：全服广播；发言等级门槛见 P1 聊天等级门槛行（`LEVEL_REQUIRED = 13`，`--world_channel_min_level` 缺省 0 = 关）；节奏每 5 秒一条。
+- **公会频道**（已落地）：群成员自动加入、退出/被踢自动移除（`GroupManager` 内存台账，与群本体同生命周期）；公会管理者可设发言权限（MODERATOR+，见 P1 禁言行）。
+- **队伍频道**（已落地）：组队自动创建、解散/离队自动销毁（party 服务）；仅队长可解散。
+- **私聊**（已落地）：1v1 对话；离线消息入队（上限 200 条），上线登录时推送补投（enhanced 形态离线队列 + 历史重建双臂）。
+- **系统公告频道**（已落地）：全服只读广播，经 game 平面 inject 投递（chat 服务按只读广播处理，不产生玩家发言路径）；公告正文上限 500 码点。
+- **频道屏蔽**（已落地 2026-09-23）：`DeliveryPrefs.SetChannelMuted` / `GetChannelMutes`——世界/公会/队伍三个频道可屏蔽（推送过滤：历史仍可浏览，屏蔽前已入队的离线消息登录时仍补投）；MARQUEE / SYSTEM_CHANNEL 服务广播不可屏蔽（`kMuteableChannels` 白名单）；「不听此人的消息」属黑名单维度（见下行）。
 
 ### 消息展示
 
@@ -34,14 +34,14 @@ title: 游戏聊天特征
 - **系统弹窗**（已落地 2026-10-14，伴侣面形态）：`priority = HIGH` 的系统消息弹窗显示（维护通知、全服奖励）。web/desktop `SystemAnnounceDialog`（确认即关，多行正文保留换行）；消息本体仍按普通气泡留在会话流里，不因弹窗而消失。
 - **消息气泡**（已落地 2026-10-14，伴侣面形态）：按 `sender_kind` 区分样式——普通玩家纸色、系统黄色、NPC 绿色、交易橙色。web `MessageBubble` 与 desktop `ChatPanel` 的 MessageRow 同款映射（`KIND_FACE` 表 + `data-sender-kind` 标签供测试断言）；自己的消息恒走主色（客户端结构上只能以玩家身份发送，故按 `mine` 收口而非按类别）；枚举外的未知值回落玩家面色（向前兼容不留 undefined 底色）。`ChatMessage.priority / ttl_seconds / sender_kind` 三字段由 web/desktop `toView` 透传，历史与实时两条路同口径。
 - **物品链接**（已落地 2026-10-14，伴侣面形态）：`msg_type = ITEM_LINK`，可点击查看详情弹窗。品质颜色：白(普通)/绿(优秀)/蓝(精良)/紫(史诗)/橙(传说)（0-4 整数编码，枚举外未知值回落白渲染）。服务端在发送门校验 metadata——解析不出 `ItemMetadata` 或缺 `item_id` 回 INVALID_PARAM（basic/enhanced 双形态同口径，非 ITEM_LINK 的 metadata 原样透传）；web `MessageBubble` 与 desktop `ChatPanel` 渲染物品卡片（名称按品质分色、count>1 显 ×N、item_id caption），点击开详情弹窗（itemId/iconUrl/count/attrs 键值列表，`data-quality` 标签供测试断言）。游戏内客户端的物品详情自渲染走 SDK 侧（批形状与坐标链接同款：`ItemMetadata` 随 ChatMessage.metadata 通用管线承载，SDK 四端零改动）。
-- **历史消息**：离线期间的消息，上线时拉取。支持分页加载（`GetHistoryRequest`）。
-- **消息已读**：私聊消息标记已读/未读。未读数 badge。
+- **历史消息**（已落地）：离线期间的消息上线时拉取，`GetHistoryRequest` 分页加载（`limit` + `before_timestamp` 游标 + `has_more`）；enhanced 形态历史与离线队列双臂重建（metadata 全链保真）。
+- **消息已读**（已落地）：`unread_ledger` 未读 badge（`MarkRead` / `GetUnreadSummary`，经 game_server_gateway 5035-5036 与多端在线设备面共用）；已读回执 `StoreReadReceipt` / `GetReadReceipts`（MySQL 冷层按 message_id 留痕）；私聊气泡按对方已读游标渲染「已读」标记。
 
 ### 用户行为
 
-- **黑名单**：屏蔽特定玩家。屏蔽后不接收该玩家的私聊和频道消息（在频道中显示为"已屏蔽用户的消息"）。
-- **在线状态**：在线/忙碌/离开/隐身。好友可见。
-- **正在输入**：私聊时显示"对方正在输入..."。
+- **黑名单**（已落地 2026-09-23）：`DeliveryPrefs.BlockUser` / `UnblockUser` / `IsUserBlocked`——拉黑后对方的私聊静默丢弃（对发送者返回成功、不入离线队列），频道消息按成员过滤不投递；解封幂等（解封从未拉黑的人仍报成功）；`GetBlockedUsers` 列表。**与文档差异**：频道消息对被拉黑者直接不投递（接收方无感知），无「已屏蔽用户的消息」占位渲染。
+- **在线状态**（已落地）：`services/social` `PresenceManager` 服务端权威（在线/忙碌/离开/隐身），好友可见；社交 RPC 3001-3029（好友花名册 + 上线通知开关见 P1 好友上线行）。
+- **正在输入**（已落地）：`TypingIndicator` 频道广播（proto 899-902），接收端按会话聚合显示「对方正在输入…」（web/desktop typing store 本地 TTL 状态）。
 
 ## P1 — 增强（上线后迭代）
 
