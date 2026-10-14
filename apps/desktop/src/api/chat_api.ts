@@ -143,9 +143,9 @@ export class ChatApi {
   /** The channel currently open on screen; it never accumulates local unread. */
   private activeChannelKey: string | null = null;
   private unsubs: Array<() => void> = [];
-  /** UI hooks for live incoming messages (desktop notifications). */
   /** UI hooks for the system display surfaces (marquee / announce popup). */
   private systemSurfaceListeners = new Set<(surface: SystemSurface) => void>();
+  /** UI hooks for live incoming messages (desktop notifications). */
   private messageListeners = new Set<
     (message: { channel: ChannelRef; fromUserId: string; content: string; messageId: string }) => void
   >();
