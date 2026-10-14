@@ -125,7 +125,7 @@
 - [x] crashpad_handler 打包进 install/nightly
 - [x] crashpad 批 CI 连环红修复（b6d3300，44/44）
 - [x] smoke-edge 偶发 chirp_chat 启动 Aborted 修复（6b3a03d）
-- [x] 构建链 npm → pnpm 迁移——根 workspace（pnpm-workspace.yaml + pnpm-lock.yaml）+ desktop/admin 独立锁，docs 原有 pnpm 核验不动；CI web/nightly/docs 全换 pnpm；幽灵依赖转显式（根 long/protobufjs 给 proto/ts、三包 @types/node、web_companion @testing-library/dom、lint 工具链挂根配 typescript 5.9.3 复刻 npm 布局语义）；版本对账 desktop/admin 0 漂移，根 9 项均属 peer 双装消除与 browserslist 数据表单版差，无代码语义漂移
+- [x] 构建链 npm 到 pnpm 迁移（38a35ff，本地全绿：sdk 136 / protocol 126 / web 290 / admin 25）
 
 ## 接入方支持（2026-09-25 批次）
 
