@@ -113,11 +113,11 @@
 - [x] 更新 CI
 - [x] 更新单元测试（34/34）
 - [x] 全量构建验证（333/333）
-- [ ] dependabot #18 glib（medium，upstream-blocked）
+- [ ] dependabot #18 glib 0.18.5（medium，upstream-blocked：Tauri 2.12.x 是最后的稳定 2.x，2.12.3 为补丁版仍锁 glib 0.18 栈，`cargo update -p tauri --dry-run` 锁 0 包；能带 gtk-rs 0.20 的 Tauri 3.0 仍 alpha。alert 已 dismiss tolerable_risk，等 Tauri 3 稳定再升）
 - [x] dependabot #21 katex（a32be7e）
 - [x] dependabot #20/#22 source-map-js（117/117）
 - [x] dependabot #6 source-map-js（b343d6f，53/54）
-- [ ] dependabot 框架大批次 2026-10-12/13（actions 5 + npm/docker/cargo 17）——四项真实破损修复全落地；5 个冲突 PR（#16/#17/#18/#21/#24）已 merge-main 解冲突并推送（e613fe0/f0020d8/fb2fca0/1836d1f/d8c40c6），全部 MERGEABLE，CI 验证中；顺带修复 main 上 eslint-plugin-react-hooks v7 缺 @babel/core 的 lint 红灯（根 package.json devDep + lockfile，随各 PR 合入），合并决策待用户
+- [ ] dependabot 框架大批次 2026-10-12/13（actions 5 + npm/docker/cargo 17）——四项真实破损修复全落地。已合并：#24 mui 9（50a77a7，顺带修复 eslint-plugin-react-hooks v7 缺 @babel/core 的 main lint 红灯，根 package.json devDep + lockfile）、#21 plugin-react 6（65a47a2）、#17 date-fns 4（2cac305）；待合：#18 仅剩 @types/react-dom ^19→^19.3.0（5b89a65）、#16 仅剩 vite 8.3.4（233d1dc，typescript-eslint 8.71 升级回退：8.71.x 声明 peer typescript <6.1.0 与 main 的 TS 7.0.2 冲突，之前用 --force 硬解会把根 typescript 5.9.3 挪到 6.0.3，等 typescript-eslint 声明支持 TS 7 再升），合并决策待用户
 - [x] dependabot #13 dompurify
 - [x] Deploy Docker 演示账号 18 连败修复（1e2d034）
 - [x] auth 注册面空 email 撞唯一键
