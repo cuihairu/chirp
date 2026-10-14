@@ -113,11 +113,11 @@
 - [x] 更新 CI
 - [x] 更新单元测试（34/34）
 - [x] 全量构建验证（333/333）
-- [ ] dependabot #18 glib（medium，upstream-blocked）
+- [x] dependabot #18 glib（medium）——告警 2026-10-13 由 cuihairu 以 tolerable_risk 驳回闭环（glib 0.15-0.20 Iterator unsoundness，Tauri 传递依赖，upstream 无 patched 版本，维持驳回）
 - [x] dependabot #21 katex（a32be7e）
 - [x] dependabot #20/#22 source-map-js（117/117）
 - [x] dependabot #6 source-map-js（b343d6f，53/54）
-- [ ] dependabot 框架大批次 2026-10-12/13（actions 5 + npm/docker/cargo 17）——四项真实破损修复全落地；5 个冲突 PR（#16/#17/#18/#21/#24）已 merge-main 解冲突并推送（e613fe0/f0020d8/fb2fca0/1836d1f/d8c40c6），全部 MERGEABLE，CI 验证中；顺带修复 main 上 eslint-plugin-react-hooks v7 缺 @babel/core 的 lint 红灯（根 package.json devDep + lockfile，随各 PR 合入），合并决策待用户
+- [ ] dependabot 框架大批次 2026-10-12/13（actions 5 + npm/docker/cargo 17）——四项真实破损修复全落地；#17/#21/#24 已合入 main（2cac305/65a47a2/50a77a7，2026-10-14）；#16（workspace-npm 2 updates）与 #18（react-dom + @types/react-dom）仍 OPEN、MERGEABLE 且 CI 全绿（#16 CLEAN；#18 仅 codecov/project 红），合并决策待用户
 - [x] dependabot #13 dompurify
 - [x] Deploy Docker 演示账号 18 连败修复（1e2d034）
 - [x] auth 注册面空 email 撞唯一键
@@ -192,7 +192,7 @@
 - [x] Android M4 — chat 管线
 - [x] Android M3.5 — 推送接入（80/0）
 - [x] Android 接收侧（103/103）
-- [ ] iOS 推送（APNs）——真投递凭据项
+- [ ] iOS 推送（APNs）——真投递凭据项（保持挂起不代决；解锁条件：用户给 APNs 凭据——Team ID / Key ID / .p8 私钥 / Bundle ID——到位后落地 iOS 端真实投递联调）
 - [x] iOS — Swift 协议包
 - [x] iOS — Swift 协议包（70/70）
 - [x] iOS — Swift 协议包（M3.5 核：DeviceRegistrar + 推送 token 缝，2026-09-29）（77/77）
@@ -208,14 +208,14 @@
 - [x] iOS — 伴侣 App P5（214/214）
 - [x] iOS — 伴侣 App P6（221/221）
 - [x] HarmonyOS — ArkTS（fe17f8d）
-- [ ] 手机端原型图——二审中
+- [ ] 手机端原型图——二审中（保持挂起不代决；解锁条件：用户二审拍板）
 - [x] darwin/windows 编译证明腿（1101a4b）
 - [x] 每日构建后续——四腿矩阵 + 桌面打包腿 + 安装器全平台放开（a6e7bf0）
 - [x] 收尾（4 例）
 
 ## 实验性服务（暂不动）
 
-- [ ] social/voice/party/search 服务保持原样，按需迁移到对应平面目录（social 已接游戏在线状态事件；voice/party 已接 smoke 与 web 伴侣；search 未动）
+- [x] social/voice/party/search 服务保持原样，按需迁移（已代决 巡检 R1：实验服务维持顶层目录不迁移，P0-3 已标非核心、迁移无收益；2026-10-14 复核三条事实成立——social presence_manager 接游戏在线状态、voice/party 接 smoke 与 web 伴侣、search 仍在 services/search 未动）
 
 ## 近期批次（2026-10-08 起）
 
