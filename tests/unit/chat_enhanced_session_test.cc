@@ -1177,6 +1177,146 @@ TEST_F(EnhancedSessionTest, ItemLinkRejectsGarbageMetadataAndEmptyItemId) {
             chirp::common::OK);
 }
 
+TEST_F(EnhancedSessionTest, AchievementShareCarriesMetadataThroughNotifyHistoryAndRefill) {
+  LiveHistoryRecall live;
+  StartLiveHistory(live);
+  auto alice = std::make_shared<MockSession>();
+  auto bob = std::make_shared<MockSession>();
+  Login(bob, "bob", "b1", 2);
+
+  auto AchievementOf = [](const std::string& bytes) {
+    chirp::chat::AchievementMetadata a;
+    EXPECT_TRUE(a.ParseFromString(bytes));
+    return a;
+  };
+
+  chirp::chat::AchievementMetadata achievement;
+  achievement.set_achievement_id("achievement-7001");
+  achievement.set_achievement_name("全服首杀·烈焰巨龙");
+  achievement.set_description("首次击杀世界 BOSS 烈焰巨龙");
+  achievement.set_rarity(3);
+
+  chirp::chat::SendMessageRequest req;
+  req.set_sender_id("alice");
+  req.set_receiver_id("bob");
+  req.set_channel_type(chirp::chat::PRIVATE);
+  req.set_content("解锁了新成就");
+  req.set_msg_type(chirp::chat::ACHIEVEMENT);
+  req.set_metadata(achievement.SerializeAsString());
+
+  std::string mid;
+  ASSERT_EQ(SendReq(req, alice, live.store, live.recall.handlers.get(), nullptr, "",
+                    nullptr, "", nullptr, nullptr, &mid),
+            chirp::common::OK);
+  ASSERT_FALSE(mid.empty());
+
+  // 在线投递臂：notify 帧带出 msg_type 与成就字节。
+  const auto notifies = FramesOf(*bob, chirp::gateway::CHAT_MESSAGE_NOTIFY);
+  ASSERT_EQ(notifies.size(), 1u);
+  chirp::chat::ChatMessage notify;
+  ASSERT_TRUE(notify.ParseFromString(notifies[0].body()));
+  EXPECT_EQ(notify.msg_type(), chirp::chat::ACHIEVEMENT);
+  const auto live_achievement = AchievementOf(notify.metadata());
+  EXPECT_EQ(live_achievement.achievement_id(), "achievement-7001");
+  EXPECT_EQ(live_achievement.achievement_name(), "全服首杀·烈焰巨龙");
+  EXPECT_EQ(live_achievement.rarity(), 3);
+
+  // 历史读回臂：HandleGetHistory 逐字段重建，成就不能丢。
+  auto retriever = std::make_shared<chirp::chat::PaginatedHistoryRetriever>(live.store);
+  chirp::chat::GetHistoryRequest history_req;
+  history_req.set_channel_id("alice|bob");
+  history_req.set_channel_type(chirp::chat::PRIVATE);
+  history_req.set_limit(10);
+  HandleGetHistory(history_req, alice, retriever, /*seq=*/5);
+  const auto resps = FramesOf(*alice, chirp::gateway::GET_HISTORY_RESP);
+  ASSERT_EQ(resps.size(), 1u);
+  chirp::chat::GetHistoryResponse history_resp;
+  ASSERT_TRUE(history_resp.ParseFromString(resps[0].body()));
+  ASSERT_EQ(history_resp.messages_size(), 1);
+  EXPECT_EQ(history_resp.messages(0).msg_type(), chirp::chat::ACHIEVEMENT);
+  const auto hist_achievement = AchievementOf(history_resp.messages(0).metadata());
+  EXPECT_EQ(hist_achievement.achievement_id(), "achievement-7001");
+  EXPECT_EQ(hist_achievement.rarity(), 3);
+
+  // 离线补投臂：carol 从未在线 → 入离线队列；登录回填的消息带出本条成就
+  // （换一枚独立 achievement_id 证明不是上一条的残留）。
+  chirp::chat::AchievementMetadata mine_achievement;
+  mine_achievement.set_achievement_id("achievement-42");
+  mine_achievement.set_achievement_name("铁矿大亨");
+  req.set_metadata(mine_achievement.SerializeAsString());
+  req.set_receiver_id("carol");
+  req.set_content("成就");
+  EXPECT_EQ(SendReq(req, alice, live.store, live.recall.handlers.get(), nullptr, "",
+                    nullptr, "", nullptr, nullptr, nullptr),
+            chirp::common::OK);
+
+  auto carol = std::make_shared<MockSession>();
+  chirp::auth::LoginRequest login_req;
+  login_req.set_token("carol");
+  login_req.set_device_id("c1");
+  login_req.set_platform("web");
+  InvokeLogin(login_req, carol, state_, live.store, router_, nullptr, nullptr,
+              &delivery_prefs_, /*seq=*/6);
+
+  const auto refills = FramesOf(*carol, chirp::gateway::CHAT_MESSAGE_NOTIFY);
+  ASSERT_EQ(refills.size(), 1u);
+  chirp::chat::ChatMessage refill;
+  ASSERT_TRUE(refill.ParseFromString(refills[0].body()));
+  EXPECT_EQ(refill.msg_type(), chirp::chat::ACHIEVEMENT);
+  EXPECT_EQ(refill.receiver_id(), "carol");
+  const auto refill_achievement = AchievementOf(refill.metadata());
+  EXPECT_EQ(refill_achievement.achievement_id(), "achievement-42");
+  EXPECT_EQ(refill_achievement.achievement_name(), "铁矿大亨");
+}
+
+TEST_F(EnhancedSessionTest, AchievementShareRejectsGarbageMetadataAndEmptyAchievementId) {
+  LiveHistoryRecall live;
+  StartLiveHistory(live);
+  auto alice = std::make_shared<MockSession>();
+  auto bob = std::make_shared<MockSession>();
+  Login(bob, "bob", "b1", 2);
+
+  auto SendAchievement = [&](const std::string& meta) {
+    chirp::chat::SendMessageRequest req;
+    req.set_sender_id("alice");
+    req.set_receiver_id("bob");
+    req.set_channel_type(chirp::chat::PRIVATE);
+    req.set_content("achievement");
+    req.set_msg_type(chirp::chat::ACHIEVEMENT);
+    req.set_metadata(meta);
+    return SendReq(req, alice, live.store, live.recall.handlers.get(), nullptr, "",
+                   nullptr, "", nullptr, nullptr, nullptr);
+  };
+
+  // 截断的长度分隔字段：解析即失败，不能静默落库成空成就消息。
+  EXPECT_EQ(SendAchievement(std::string("\x0A" "\x05" "ab")), chirp::common::INVALID_PARAM);
+
+  // 空 achievement_id：卡片没有可查详情的落点。
+  chirp::chat::AchievementMetadata no_id;
+  no_id.set_achievement_name("无名成就");
+  EXPECT_EQ(SendAchievement(no_id.SerializeAsString()), chirp::common::INVALID_PARAM);
+
+  // 拒绝的消息零投递、零落库。
+  EXPECT_EQ(FramesOf(*bob, chirp::gateway::CHAT_MESSAGE_NOTIFY).size(), 0u);
+  EXPECT_TRUE(live.store->GetHistory("alice|bob", 0, 0, 10).empty());
+
+  // 合法成就放行（校验门的通过臂）。
+  chirp::chat::AchievementMetadata ok;
+  ok.set_achievement_id("achievement-1");
+  EXPECT_EQ(SendAchievement(ok.SerializeAsString()), chirp::common::OK);
+
+  // 门只针对 ACHIEVEMENT：TEXT 消息带任意字节 metadata 照样放行（与坐标门同款）。
+  chirp::chat::SendMessageRequest plain;
+  plain.set_sender_id("alice");
+  plain.set_receiver_id("bob");
+  plain.set_channel_type(chirp::chat::PRIVATE);
+  plain.set_content("plain text");
+  plain.set_metadata(std::string("\x00" "\x01" "\x02", 3));
+  EXPECT_EQ(SendReq(plain, alice, live.store, live.recall.handlers.get(), nullptr, "",
+                    nullptr, "", nullptr, nullptr, nullptr),
+            chirp::common::OK);
+}
+
 // --- 黑名单：私聊静默成功，两端都不送、不入离线队列 -------------------------
 
 TEST_F(EnhancedSessionTest, PrivateSendSilentlyDropsBlockedReceiver) {

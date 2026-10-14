@@ -278,6 +278,17 @@ void HandleSendMessage(const chirp::chat::SendMessageRequest& req,
                                      seq, resp.SerializeAsString());
     return;
   }
+  // 成就分享（P1 ACHIEVEMENT）：与坐标/物品链接同层同口径——解析不出或
+  // achievement_id 为空的不落任何存储（basic 形态经 ValidateSendMessageRequest）。
+  if (const chirp::common::ErrorCode achievement_code = chirp::chat::ValidateAchievementMetadata(req);
+      achievement_code != chirp::common::OK) {
+    chirp::chat::SendMessageResponse resp;
+    resp.set_code(achievement_code);
+    resp.set_server_timestamp(chirp::chat::runtime::NowMs());
+    chirp::chat::runtime::SendPacket(sender_session, chirp::gateway::SEND_MESSAGE_RESP,
+                                     seq, resp.SerializeAsString());
+    return;
+  }
   // 物品链接（P0 ITEM_LINK）：与坐标链接同层同口径——解析不出或 item_id
   // 为空的不落任何存储（basic 形态经 ValidateSendMessageRequest）。
   if (const chirp::common::ErrorCode item_code = chirp::chat::ValidateItemMetadata(req);

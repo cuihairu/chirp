@@ -44,6 +44,7 @@ export const zh = {
     itemDetails: '物品详情',
     itemCountLabel: '数量',
     itemAttrsLabel: '属性',
+    achievementRarity: '稀有度',
     announceTitle: '系统公告',
     announceAck: '知道了',
     edit: '编辑',

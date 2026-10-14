@@ -1,5 +1,5 @@
 import { describe, expect, it, vi } from 'vitest';
-import { ChannelType, ChatMessage, ItemMetadata, MsgType, Priority, SenderKind } from '@chirp/proto/chat';
+import { AchievementMetadata, ChannelType, ChatMessage, ItemMetadata, MsgType, Priority, SenderKind } from '@chirp/proto/chat';
 import { MsgID } from '@chirp/proto/gateway';
 import { ChatApi, channelRefOf, type ChannelRef, type SystemSurface } from './chat_api';
 import { createStore } from '../state/store';
@@ -247,6 +247,59 @@ describe('ChatApi item link cards (P0 ITEM_LINK)', () => {
     );
     const second = h.messages.get().byChannel['p:user_a|user_b'][1];
     expect(second.item).toBeUndefined();
+    expect(second.content).toBe('hi');
+  });
+
+  it('parses the achievement card out of an ACHIEVEMENT notify metadata', async () => {
+    const h = makeHarness();
+    await login(h);
+    h.conn.emit(
+      MsgID.CHAT_MESSAGE_NOTIFY,
+      chatBody({
+        msgType: MsgType.ACHIEVEMENT,
+        content: new TextEncoder().encode('解锁了新成就'),
+        metadata: AchievementMetadata.encode(
+          AchievementMetadata.fromPartial({
+            achievementId: 'achievement-7001',
+            achievementName: '全服首杀·烈焰巨龙',
+            description: '首次击杀世界 BOSS 烈焰巨龙',
+            rarity: 3,
+          }),
+        ).finish(),
+      }),
+    );
+    expect(h.messages.get().byChannel['p:user_a|user_b'][0]).toMatchObject({
+      achievement: {
+        achievementId: 'achievement-7001',
+        achievementName: '全服首杀·烈焰巨龙',
+        rarity: 3,
+      },
+    });
+  });
+
+  it('drops the achievement card when the metadata does not parse or lacks achievement_id', async () => {
+    const h = makeHarness();
+    await login(h);
+    h.conn.emit(
+      MsgID.CHAT_MESSAGE_NOTIFY,
+      chatBody({ msgType: MsgType.ACHIEVEMENT, metadata: new Uint8Array([0xde, 0xad, 0xbe, 0xef]) }),
+    );
+    const first = h.messages.get().byChannel['p:user_a|user_b'][0];
+    expect(first.achievement).toBeUndefined();
+    expect(first.content).toBe('hi');
+
+    h.conn.emit(
+      MsgID.CHAT_MESSAGE_NOTIFY,
+      chatBody({
+        messageId: 'm2',
+        msgType: MsgType.ACHIEVEMENT,
+        metadata: AchievementMetadata.encode(
+          AchievementMetadata.fromPartial({ achievementName: '无名成就' }),
+        ).finish(),
+      }),
+    );
+    const second = h.messages.get().byChannel['p:user_a|user_b'][1];
+    expect(second.achievement).toBeUndefined();
     expect(second.content).toBe('hi');
   });
 });

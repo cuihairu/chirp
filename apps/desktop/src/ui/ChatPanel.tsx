@@ -23,7 +23,13 @@ import { useEffect, useReducer, useRef, useState } from 'react';
 import { SenderKind } from '@chirp/proto/chat';
 import type { KeyboardEvent as ReactKeyboardEvent } from 'react';
 import type { ChatApi, ChannelRef } from '../api/chat_api';
-import type { ChatMessageView, Conversation, CoordView, ItemView } from '../state/models';
+import type {
+  AchievementView,
+  ChatMessageView,
+  Conversation,
+  CoordView,
+  ItemView,
+} from '../state/models';
 import type { MessageState } from '../state/message_store';
 import { useStoreValue, type Store } from '../state/store';
 import { TYPING_TTL_MS, type TypingState } from '../state/typing_store';
@@ -63,6 +69,28 @@ const QUALITY_COLORS: Record<number, string> = {
 
 const qualityColorOf = (quality: number): string => QUALITY_COLORS[quality] ?? QUALITY_COLORS[0];
 
+// P1 成就分享：稀有度分色与物品品质同一阶梯（普通→优秀→稀有→史诗→传说），
+// 枚举外未知值回落普通（向前兼容）。与 web_companion 的 MessageBubble 同款。
+const RARITY_COLORS: Record<number, string> = {
+  0: '#9e9e9e',
+  1: '#4caf50',
+  2: '#2196f3',
+  3: '#9c27b0',
+  4: '#ff9800',
+};
+
+const RARITY_FACES: Record<number, string> = {
+  0: '普通',
+  1: '优秀',
+  2: '稀有',
+  3: '史诗',
+  4: '传说',
+};
+
+const rarityColorOf = (rarity: number): string => RARITY_COLORS[rarity] ?? RARITY_COLORS[0];
+
+const rarityFaceOf = (rarity: number): string => RARITY_FACES[rarity] ?? RARITY_FACES[0];
+
 const faceOf = (props: { mine: boolean; senderKind?: SenderKind }): { tag: string; bgcolor: string } => {
   if (props.mine) return { tag: 'mine', bgcolor: 'primary.main' };
   return KIND_FACE[props.senderKind as SenderKind] ?? USER_FACE;
@@ -91,6 +119,8 @@ function MessageRow(props: {
   coord?: CoordView;
   /** 物品卡片（P0 ITEM_LINK）；缺省 = 纯文本气泡。点击打开详情弹窗。 */
   item?: ItemView;
+  /** 成就卡片（P1 ACHIEVEMENT）；缺省 = 纯文本气泡。图标+名称+稀有度+描述。 */
+  achievement?: AchievementView;
   /** 发送者类别（P0 消息展示）：决定气泡底色，自己的消息恒走主色。 */
   senderKind?: SenderKind;
   onReply?: () => void;
@@ -259,6 +289,51 @@ function MessageRow(props: {
                 </DialogContent>
               </Dialog>
             </>
+          ) : null}
+          {props.achievement ? (
+            <Box
+              data-testid={`achievement-${props.messageId}`}
+              data-rarity={props.achievement.rarity}
+              sx={{
+                display: 'block',
+                width: '100%',
+                mt: 0.5,
+                p: 1,
+                textAlign: 'left',
+                border: '1px solid',
+                borderColor: props.mine ? 'primary.contrastText' : 'divider',
+                borderRadius: 1,
+                background: 'transparent',
+                color: 'inherit',
+              }}
+            >
+              {props.achievement.iconUrl ? (
+                <Box
+                  component="img"
+                  src={props.achievement.iconUrl}
+                  alt={props.achievement.achievementName || props.achievement.achievementId}
+                  sx={{ width: 40, height: 40, mb: 0.5, display: 'block' }}
+                />
+              ) : null}
+              <Typography
+                variant="caption"
+                component="div"
+                sx={{ fontWeight: 600, color: rarityColorOf(props.achievement.rarity) }}
+              >
+                {props.achievement.achievementName || props.achievement.achievementId}
+              </Typography>
+              <Typography variant="caption" component="div" sx={{ opacity: 0.75 }}>
+                {`稀有度 ${rarityFaceOf(props.achievement.rarity)}`}
+              </Typography>
+              {props.achievement.description ? (
+                <Typography variant="caption" component="div" sx={{ mt: 0.5, opacity: 0.85 }}>
+                  {props.achievement.description}
+                </Typography>
+              ) : null}
+              <Typography variant="caption" component="div" sx={{ opacity: 0.6 }}>
+                {props.achievement.achievementId}
+              </Typography>
+            </Box>
           ) : null}
         </Paper>
         <Stack
@@ -486,6 +561,7 @@ export default function ChatPanel(props: {
             replyToMessageId={m.replyToMessageId}
             coord={m.coord}
             item={m.deleted ? undefined : m.item}
+            achievement={m.deleted ? undefined : m.achievement}
             senderKind={m.senderKind}
             onReply={m.deleted ? undefined : () => setReplying(m)}
             onReport={m.deleted || m.senderId === selfId ? undefined : () => {

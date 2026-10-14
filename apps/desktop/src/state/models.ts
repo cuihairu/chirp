@@ -54,6 +54,16 @@ export interface ItemView {
   attrs: Record<string, string>;
 }
 
+/** Achievement share card (P1 ACHIEVEMENT): icon + name + rarity + description. */
+export interface AchievementView {
+  achievementId: string;
+  achievementName: string;
+  description: string;
+  iconUrl: string;
+  /** 稀有度 0 普通/1 优秀/2 稀有/3 史诗/4 传说；枚举外未知值按普通渲染。 */
+  rarity: number;
+}
+
 export interface ChatMessageView {
   /** Server message id; optimistic sends carry a local id until confirmed. */
   messageId: string;
@@ -82,6 +92,8 @@ export interface ChatMessageView {
   coord?: CoordView;
   /** Item link card (P0 ITEM_LINK); absent = plain text bubble. */
   item?: ItemView;
+  /** Achievement share card (P1 ACHIEVEMENT); absent = plain text bubble. */
+  achievement?: AchievementView;
   // P0 消息展示：wire 三字段透传（ChatMessage priority/ttl_seconds/sender_kind）。
   // 缺省（proto3 零值）= 普通玩家、普通优先级、无走马灯时长。
   priority?: Priority;

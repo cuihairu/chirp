@@ -139,6 +139,19 @@ chirp::common::ErrorCode ValidateItemMetadata(const SendMessageRequest& req) {
   return chirp::common::OK;
 }
 
+chirp::common::ErrorCode ValidateAchievementMetadata(const SendMessageRequest& req) {
+  if (req.msg_type() != ACHIEVEMENT) {
+    return chirp::common::OK;
+  }
+  AchievementMetadata achievement;
+  // 空串同上：achievement_id 空判同时覆盖「没带 metadata」与「解析不出」。
+  if (!achievement.ParseFromString(req.metadata()) ||
+      achievement.achievement_id().empty()) {
+    return chirp::common::INVALID_PARAM;
+  }
+  return chirp::common::OK;
+}
+
 chirp::common::ErrorCode ValidateSendMessageRequest(const SendMessageRequest& req,
                                                     std::string_view authenticated_user_id) {
   if (!IsAuthenticated(authenticated_user_id)) {
@@ -162,6 +175,12 @@ chirp::common::ErrorCode ValidateSendMessageRequest(const SendMessageRequest& re
   if (const chirp::common::ErrorCode item_code = ValidateItemMetadata(req);
       item_code != chirp::common::OK) {
     return item_code;
+  }
+  // 成就分享（P1 ACHIEVEMENT）与坐标/物品链接同层：垃圾/缺 achievement_id
+  // 的 metadata 同样在落任何存储之前拦下。
+  if (const chirp::common::ErrorCode achievement_code = ValidateAchievementMetadata(req);
+      achievement_code != chirp::common::OK) {
+    return achievement_code;
   }
 
   if (req.channel_type() == PRIVATE) {

@@ -6,6 +6,7 @@ import {
   GroupMemberAliasUpdatedNotify,
   GroupMemberKickedNotify,
   GroupMemberMutedNotify,
+  AchievementMetadata,
   ItemMetadata,
   ReportMessageResponse,
   MessageAck,
@@ -60,6 +61,7 @@ import {
   type ChatMessageView,
   type CoordView,
   type Conversation,
+  type AchievementView,
   type ItemView,
   type MessageReactionView,
 } from '../state/models';
@@ -312,6 +314,13 @@ export class ChatApi {
       count?: number;
       attrs?: Record<string, string>;
     },
+    achievement?: {
+      achievementId: string;
+      achievementName: string;
+      description?: string;
+      iconUrl?: string;
+      rarity?: number;
+    },
   ): Promise<void> {
     const senderId = this.auth.get().userId;
     if (!senderId) return;
@@ -326,7 +335,13 @@ export class ChatApi {
       receiverId: channel.kind === 'private' ? channel.peerId : '',
       channelType: channelTypeOf(channel.kind),
       channelId: channel.channelId,
-      msgType: coord ? MsgType.COORD_LINK : item ? MsgType.ITEM_LINK : MsgType.TEXT,
+      msgType: coord
+        ? MsgType.COORD_LINK
+        : item
+          ? MsgType.ITEM_LINK
+          : achievement
+            ? MsgType.ACHIEVEMENT
+            : MsgType.TEXT,
       content: contentBytes,
       clientTimestamp: Date.now(),
     };
@@ -356,6 +371,19 @@ export class ChatApi {
         }),
       ).finish();
     }
+    // 成就分享（P1 ACHIEVEMENT）：带 achievement 入参即切 ACHIEVEMENT，成就进
+    // metadata（与坐标/物品链接同一 metadata 通道；rarity 缺省 0）。
+    if (achievement) {
+      wire.metadata = AchievementMetadata.encode(
+        AchievementMetadata.fromPartial({
+          achievementId: achievement.achievementId,
+          achievementName: achievement.achievementName,
+          description: achievement.description,
+          iconUrl: achievement.iconUrl,
+          rarity: achievement.rarity ?? 0,
+        }),
+      ).finish();
+    }
     // 预检只读写 content（两面在我们手上非缺省），断言为完整消息面。
     const blocked = !this.wordFilter.onBeforeSend(wire as SendMessageRequest);
     const clientId = `pending-${Date.now().toString(36)}-${pendingCounter++}`;
@@ -381,6 +409,15 @@ export class ChatApi {
             iconUrl: item.iconUrl ?? '',
             count: item.count ?? 0,
             attrs: item.attrs ?? {},
+          }
+        : undefined,
+      achievement: achievement
+        ? {
+            achievementId: achievement.achievementId,
+            achievementName: achievement.achievementName,
+            description: achievement.description ?? '',
+            iconUrl: achievement.iconUrl ?? '',
+            rarity: achievement.rarity ?? 0,
           }
         : undefined,
     };
@@ -970,6 +1007,26 @@ const itemViewOf = (msg: ChatMessage): ItemView | undefined => {
   };
 };
 
+// 成就卡片解析：非 ACHIEVEMENT 或 metadata 解析不出 / 缺 achievement_id 一律
+// undefined（气泡当普通文本渲染），与服务端 ValidateAchievementMetadata 的拒绝口径一致。
+const achievementViewOf = (msg: ChatMessage): AchievementView | undefined => {
+  if (msg.msgType !== MsgType.ACHIEVEMENT || msg.metadata.length === 0) return undefined;
+  let achievement: AchievementMetadata;
+  try {
+    achievement = AchievementMetadata.decode(msg.metadata);
+  } catch {
+    return undefined;
+  }
+  if (!achievement.achievementId) return undefined;
+  return {
+    achievementId: achievement.achievementId,
+    achievementName: achievement.achievementName,
+    description: achievement.description,
+    iconUrl: achievement.iconUrl,
+    rarity: achievement.rarity,
+  };
+};
+
 const toView = (msg: ChatMessage, channel: ChannelRef): ChatMessageView => ({
   messageId: msg.messageId,
   senderId: msg.senderId,
@@ -982,6 +1039,7 @@ const toView = (msg: ChatMessage, channel: ChannelRef): ChatMessageView => ({
   replyToMessageId: msg.replyToMessageId || undefined,
   coord: coordViewOf(msg),
   item: itemViewOf(msg),
+  achievement: achievementViewOf(msg),
   priority: msg.priority,
   ttlSeconds: msg.ttlSeconds,
   senderKind: msg.senderKind,

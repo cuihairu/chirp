@@ -150,6 +150,54 @@ describe('MessageBubble', () => {
     expect(card.textContent).not.toContain('×');
   });
 
+  it('renders the achievement card with the rarity face and description', () => {
+    render(
+      <MessageBubble
+        message={message({
+          content: '解锁了新成就',
+          achievement: {
+            achievementId: 'achievement-7001',
+            achievementName: '全服首杀·烈焰巨龙',
+            description: '首次击杀世界 BOSS 烈焰巨龙',
+            iconUrl: '',
+            rarity: 3,
+          },
+        })}
+        selfId="user_a"
+        onToggleReaction={noop}
+      />,
+    );
+    const card = screen.getByTestId('achievement-m1');
+    expect(card.getAttribute('data-rarity')).toBe('3');
+    expect(card.textContent).toContain('全服首杀·烈焰巨龙');
+    expect(card.textContent).toContain('稀有度 史诗');
+    expect(card.textContent).toContain('首次击杀世界 BOSS 烈焰巨龙');
+    expect(card.textContent).toContain('achievement-7001');
+  });
+
+  it('falls back to the plain rarity face for an unknown rarity value', () => {
+    render(
+      <MessageBubble
+        message={message({
+          achievement: {
+            achievementId: 'achievement-x',
+            achievementName: '未知成就',
+            description: '',
+            iconUrl: '',
+            rarity: 99,
+          },
+        })}
+        selfId="user_a"
+        onToggleReaction={noop}
+      />,
+    );
+    const card = screen.getByTestId('achievement-m1');
+    expect(card.getAttribute('data-rarity')).toBe('99');
+    expect(card.textContent).toContain('未知成就');
+    expect(card.textContent).toContain('稀有度 普通');
+    expect(card.textContent).not.toContain('undefined');
+  });
+
   it('keeps pending own messages visually unconfirmed', () => {
     render(<MessageBubble message={message({ senderId: 'user_a', pending: true })} selfId="user_a" onToggleReaction={noop} />);
     expect(screen.getByText(/发送中/)).toBeTruthy();

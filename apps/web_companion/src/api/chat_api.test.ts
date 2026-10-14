@@ -6,6 +6,7 @@ import {
   GroupMemberAliasUpdatedNotify,
   GroupMemberKickedNotify,
   GroupMemberMutedNotify,
+  AchievementMetadata,
   ItemMetadata,
   MessageAck,
   MessageDeletedNotify,
@@ -303,6 +304,33 @@ describe('ChatApi.sendMessage (optimistic)', () => {
     });
   });
 
+  it('sends ACHIEVEMENT with achievement metadata and shows the card optimistically', async () => {
+    const h = makeHarness();
+    await login(h);
+    h.conn.setResponder(async (msgId, req) => {
+      expect(msgId).toBe(MsgID.SEND_MESSAGE_REQ);
+      expect(req).toMatchObject({ msgType: MsgType.ACHIEVEMENT });
+      return { code: 0, messageId: 'srv-a1' };
+    });
+    await h.api.sendMessage(channel, '解锁了新成就', undefined, undefined, undefined, {
+      achievementId: 'achievement-7001',
+      achievementName: '全服首杀·烈焰巨龙',
+      description: '首次击杀世界 BOSS 烈焰巨龙',
+      rarity: 3,
+    });
+    const wire = h.conn.requests.find((r) => r.msgId === MsgID.SEND_MESSAGE_REQ)!;
+    const achievement = AchievementMetadata.decode(
+      (wire.req as { metadata?: Uint8Array }).metadata ?? new Uint8Array(),
+    );
+    expect(achievement.achievementId).toBe('achievement-7001');
+    expect(achievement.achievementName).toBe('全服首杀·烈焰巨龙');
+    expect(achievement.rarity).toBe(3);
+    expect(h.messages.get().byChannel[channel.key][0]).toMatchObject({
+      messageId: 'srv-a1',
+      achievement: { achievementId: 'achievement-7001', achievementName: '全服首杀·烈焰巨龙', rarity: 3 },
+    });
+  });
+
   it('leaves plain sends as TEXT without metadata on the wire', async () => {
     const h = makeHarness();
     await login(h);
@@ -392,6 +420,59 @@ describe('ChatApi incoming notifies', () => {
     );
     const second = h.messages.get().byChannel['p:user_a|user_b'][1];
     expect(second.item).toBeUndefined();
+    expect(second.content).toBe('hi');
+  });
+
+  it('parses the achievement card out of an ACHIEVEMENT notify metadata', async () => {
+    const h = makeHarness();
+    await login(h);
+    h.conn.emit(
+      MsgID.CHAT_MESSAGE_NOTIFY,
+      chatBody({
+        msgType: MsgType.ACHIEVEMENT,
+        content: new TextEncoder().encode('解锁了新成就'),
+        metadata: AchievementMetadata.encode(
+          AchievementMetadata.fromPartial({
+            achievementId: 'achievement-7001',
+            achievementName: '全服首杀·烈焰巨龙',
+            description: '首次击杀世界 BOSS 烈焰巨龙',
+            rarity: 3,
+          }),
+        ).finish(),
+      }),
+    );
+    expect(h.messages.get().byChannel['p:user_a|user_b'][0]).toMatchObject({
+      achievement: {
+        achievementId: 'achievement-7001',
+        achievementName: '全服首杀·烈焰巨龙',
+        rarity: 3,
+      },
+    });
+  });
+
+  it('drops the achievement card when the metadata does not parse or lacks achievement_id', async () => {
+    const h = makeHarness();
+    await login(h);
+    h.conn.emit(
+      MsgID.CHAT_MESSAGE_NOTIFY,
+      chatBody({ msgType: MsgType.ACHIEVEMENT, metadata: new Uint8Array([0xde, 0xad, 0xbe, 0xef]) }),
+    );
+    const first = h.messages.get().byChannel['p:user_a|user_b'][0];
+    expect(first.achievement).toBeUndefined();
+    expect(first.content).toBe('hi');
+
+    h.conn.emit(
+      MsgID.CHAT_MESSAGE_NOTIFY,
+      chatBody({
+        messageId: 'm2',
+        msgType: MsgType.ACHIEVEMENT,
+        metadata: AchievementMetadata.encode(
+          AchievementMetadata.fromPartial({ achievementName: '无名成就' }),
+        ).finish(),
+      }),
+    );
+    const second = h.messages.get().byChannel['p:user_a|user_b'][1];
+    expect(second.achievement).toBeUndefined();
     expect(second.content).toBe('hi');
   });
 

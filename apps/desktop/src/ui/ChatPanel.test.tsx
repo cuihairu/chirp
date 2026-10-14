@@ -143,3 +143,34 @@ describe('ChatPanel item link cards (P0 ITEM_LINK)', () => {
     expect(screen.queryByTestId('item-t1')).toBeNull();
   });
 });
+
+describe('ChatPanel achievement cards (P1 ACHIEVEMENT)', () => {
+  it('renders the achievement card with the rarity face and description', async () => {
+    renderPanel([
+      message({
+        messageId: 'ac1',
+        content: '解锁了新成就',
+        achievement: {
+          achievementId: 'achievement-7001',
+          achievementName: '全服首杀·烈焰巨龙',
+          description: '首次击杀世界 BOSS 烈焰巨龙',
+          iconUrl: '',
+          rarity: 3,
+        },
+      }),
+    ]);
+    await waitFor(() => expect(screen.getByText('解锁了新成就')).toBeTruthy());
+    const card = screen.getByTestId('achievement-ac1');
+    expect(card.getAttribute('data-rarity')).toBe('3');
+    expect(card.textContent).toContain('全服首杀·烈焰巨龙');
+    expect(card.textContent).toContain('稀有度 史诗');
+    expect(card.textContent).toContain('首次击杀世界 BOSS 烈焰巨龙');
+    expect(card.textContent).toContain('achievement-7001');
+  });
+
+  it('renders no achievement card for plain text messages', async () => {
+    renderPanel([message({ messageId: 't1', content: '纯文本' })]);
+    await waitFor(() => expect(screen.getByText('纯文本')).toBeTruthy());
+    expect(screen.queryByTestId('achievement-t1')).toBeNull();
+  });
+});

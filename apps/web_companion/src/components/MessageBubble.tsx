@@ -25,6 +25,28 @@ const QUALITY_COLORS: Record<number, string> = {
 
 const qualityColorOf = (quality: number): string => QUALITY_COLORS[quality] ?? QUALITY_COLORS[0];
 
+// P1 成就分享：稀有度分色与物品品质同一阶梯（普通→优秀→稀有→史诗→传说），
+// 枚举外未知值回落普通（向前兼容，与品质回落同口径）。
+const RARITY_COLORS: Record<number, string> = {
+  0: '#9e9e9e',
+  1: '#4caf50',
+  2: '#2196f3',
+  3: '#9c27b0',
+  4: '#ff9800',
+};
+
+const RARITY_FACES: Record<number, string> = {
+  0: '普通',
+  1: '优秀',
+  2: '稀有',
+  3: '史诗',
+  4: '传说',
+};
+
+const rarityColorOf = (rarity: number): string => RARITY_COLORS[rarity] ?? RARITY_COLORS[0];
+
+const rarityFaceOf = (rarity: number): string => RARITY_FACES[rarity] ?? RARITY_FACES[0];
+
 // P0 消息展示：气泡底色按 sender_kind 区分——系统黄、NPC 绿、服务橙（交易）；
 // 玩家走纸色。自己的消息不受类别影响，恒走 primary 主色（客户端结构上只能
 // 以玩家身份发送，故按 mine 收口而非按类别）。tag 落在 data-sender-kind 上
@@ -258,6 +280,49 @@ export default function MessageBubble({
             </DialogContent>
           </Dialog>
         </>
+      )}
+      {!message.deleted && message.achievement && (
+        <Box
+          data-testid={`achievement-${message.messageId}`}
+          data-rarity={message.achievement.rarity}
+          sx={{
+            display: 'block',
+            width: '100%',
+            mb: 0.5,
+            p: 1,
+            border: '1px solid',
+            borderColor: mine ? 'primary.contrastText' : 'divider',
+            borderRadius: 1,
+            background: 'transparent',
+            textAlign: 'left',
+          }}
+        >
+          {message.achievement.iconUrl && (
+            <Box
+              component="img"
+              src={message.achievement.iconUrl}
+              alt={message.achievement.achievementName || message.achievement.achievementId}
+              sx={{ width: 40, height: 40, mb: 0.5, display: 'block' }}
+            />
+          )}
+          <Typography
+            variant="caption"
+            sx={{ display: 'block', fontWeight: 600, color: rarityColorOf(message.achievement.rarity) }}
+          >
+            {message.achievement.achievementName || message.achievement.achievementId}
+          </Typography>
+          <Typography variant="caption" sx={{ display: 'block', opacity: 0.75 }}>
+            {zh.chat.achievementRarity} {rarityFaceOf(message.achievement.rarity)}
+          </Typography>
+          {message.achievement.description && (
+            <Typography variant="caption" sx={{ display: 'block', mt: 0.5, opacity: 0.85 }}>
+              {message.achievement.description}
+            </Typography>
+          )}
+          <Typography variant="caption" sx={{ display: 'block', opacity: 0.6 }}>
+            {message.achievement.achievementId}
+          </Typography>
+        </Box>
       )}
       <Typography variant="caption" sx={{ opacity: 0.75 }}>
         {timeLabel(message.timestamp)}

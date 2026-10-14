@@ -40,6 +40,10 @@ chirp::common::ErrorCode ValidateCoordMetadata(const SendMessageRequest& req);
 // metadata 原样透传。
 chirp::common::ErrorCode ValidateItemMetadata(const SendMessageRequest& req);
 
+// 成就分享（P1 ACHIEVEMENT）：metadata 必须能按 AchievementMetadata 解析且
+// achievement_id 非空，否则 INVALID_PARAM。与坐标/物品链接同层同口径。
+chirp::common::ErrorCode ValidateAchievementMetadata(const SendMessageRequest& req);
+
 chirp::common::ErrorCode ValidateSendMessageRequest(const SendMessageRequest& req,
                                                     std::string_view authenticated_user_id);
 
