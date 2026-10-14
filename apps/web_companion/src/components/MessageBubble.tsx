@@ -339,6 +339,49 @@ export default function MessageBubble({
           </Typography>
         </Box>
       )}
+      {!message.deleted && message.trade && (
+        <Box
+          data-testid={`trade-${message.messageId}`}
+          data-trade-status={message.trade.status}
+          sx={{
+            display: 'block',
+            width: '100%',
+            mb: 0.5,
+            p: 1,
+            border: '1px solid',
+            borderColor: mine ? 'primary.contrastText' : 'divider',
+            borderRadius: 1,
+            background: 'transparent',
+            textAlign: 'left',
+          }}
+        >
+          <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
+            <Typography
+              variant="caption"
+              sx={{
+                px: 0.5,
+                borderRadius: 0.5,
+                bgcolor: 'action.hover',
+                fontWeight: 600,
+              }}
+            >
+              {zh.chat.tradeStatus}
+              {message.trade.status && ` · ${message.trade.status}`}
+            </Typography>
+          </Box>
+          {(message.trade.itemName || message.trade.amount > 0) && (
+            <Typography variant="caption" sx={{ display: 'block', fontWeight: 600, mt: 0.5 }}>
+              {message.trade.itemName}
+              {message.trade.itemCount > 1 && ` ×${message.trade.itemCount}`}
+              {message.trade.itemName && message.trade.amount > 0 && ' · '}
+              {message.trade.amount > 0 && `${zh.chat.tradeAmount} ${message.trade.amount}`}
+            </Typography>
+          )}
+          <Typography variant="caption" sx={{ display: 'block', opacity: 0.6 }}>
+            {message.trade.tradeId}
+          </Typography>
+        </Box>
+      )}
       <Typography variant="caption" sx={{ opacity: 0.75 }}>
         {timeLabel(message.timestamp)}
         {mine && message.pending && ` · ${zh.chat.statusPending}`}

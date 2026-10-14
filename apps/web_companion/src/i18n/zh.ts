@@ -46,6 +46,8 @@ export const zh = {
     itemAttrsLabel: '属性',
     achievementRarity: '稀有度',
     emojiPicker: '表情',
+    tradeAmount: '金额',
+    tradeStatus: '交易状态',
     announceTitle: '系统公告',
     announceAck: '知道了',
     edit: '编辑',

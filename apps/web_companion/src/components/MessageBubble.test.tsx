@@ -214,6 +214,50 @@ describe('MessageBubble', () => {
     expect(screen.getByTestId('msg-text-m1').textContent).toContain('[emoji:zzz]');
   });
 
+  it('renders the trade card with the status badge, amount and item summary', () => {
+    render(
+      <MessageBubble
+        message={message({
+          content: '交易已成交',
+          trade: {
+            tradeId: 'trade-9001',
+            status: 'COMPLETED',
+            amount: 1500,
+            itemName: '烈焰剑',
+            itemCount: 2,
+          },
+        })}
+        selfId="user_a"
+        onToggleReaction={noop}
+      />,
+    );
+    const card = screen.getByTestId('trade-m1');
+    expect(card.getAttribute('data-trade-status')).toBe('COMPLETED');
+    expect(card.textContent).toContain('交易状态 · COMPLETED');
+    expect(card.textContent).toContain('烈焰剑 ×2');
+    expect(card.textContent).toContain('金额 1500');
+    expect(card.textContent).toContain('trade-9001');
+  });
+
+  it('falls back to a status-only trade card when the item fields are empty', () => {
+    render(
+      <MessageBubble
+        message={message({
+          trade: { tradeId: 'trade-x', status: '', amount: 0, itemName: '', itemCount: 0 },
+        })}
+        selfId="user_a"
+        onToggleReaction={noop}
+      />,
+    );
+    const card = screen.getByTestId('trade-m1');
+    expect(card.getAttribute('data-trade-status')).toBe('');
+    expect(card.textContent).toContain('交易状态');
+    expect(card.textContent).toContain('trade-x');
+    expect(card.textContent).not.toContain('金额');
+    expect(card.textContent).not.toContain('×');
+    expect(card.textContent).not.toContain('undefined');
+  });
+
   it('keeps pending own messages visually unconfirmed', () => {
     render(<MessageBubble message={message({ senderId: 'user_a', pending: true })} selfId="user_a" onToggleReaction={noop} />);
     expect(screen.getByText(/发送中/)).toBeTruthy();

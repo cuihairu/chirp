@@ -31,6 +31,7 @@ import type {
   Conversation,
   CoordView,
   ItemView,
+  TradeView,
 } from '../state/models';
 import type { MessageState } from '../state/message_store';
 import { useStoreValue, type Store } from '../state/store';
@@ -124,6 +125,8 @@ function MessageRow(props: {
   item?: ItemView;
   /** 成就卡片（P1 ACHIEVEMENT）；缺省 = 纯文本气泡。图标+名称+稀有度+描述。 */
   achievement?: AchievementView;
+  /** 交易卡片（P1 TRADE_STATUS）；缺省 = 纯文本气泡。状态徽章+物品摘要+金额。 */
+  trade?: TradeView;
   /** 发送者类别（P0 消息展示）：决定气泡底色，自己的消息恒走主色。 */
   senderKind?: SenderKind;
   onReply?: () => void;
@@ -347,6 +350,43 @@ function MessageRow(props: {
               ) : null}
               <Typography variant="caption" component="div" sx={{ opacity: 0.6 }}>
                 {props.achievement.achievementId}
+              </Typography>
+            </Box>
+          ) : null}
+          {props.trade ? (
+            <Box
+              data-testid={`trade-${props.messageId}`}
+              data-trade-status={props.trade.status}
+              sx={{
+                display: 'block',
+                width: '100%',
+                mt: 0.5,
+                p: 1,
+                textAlign: 'left',
+                border: '1px solid',
+                borderColor: props.mine ? 'primary.contrastText' : 'divider',
+                borderRadius: 1,
+                background: 'transparent',
+                color: 'inherit',
+              }}
+            >
+              <Typography
+                variant="caption"
+                component="div"
+                sx={{ px: 0.5, borderRadius: 0.5, bgcolor: 'action.hover', fontWeight: 600, width: 'fit-content' }}
+              >
+                {props.trade.status ? `交易状态 · ${props.trade.status}` : '交易状态'}
+              </Typography>
+              {props.trade.itemName || props.trade.amount > 0 ? (
+                <Typography variant="caption" component="div" sx={{ fontWeight: 600, mt: 0.5 }}>
+                  {props.trade.itemName}
+                  {props.trade.itemCount > 1 ? ` ×${props.trade.itemCount}` : ''}
+                  {props.trade.itemName && props.trade.amount > 0 ? ' · ' : ''}
+                  {props.trade.amount > 0 ? `金额 ${props.trade.amount}` : ''}
+                </Typography>
+              ) : null}
+              <Typography variant="caption" component="div" sx={{ opacity: 0.6 }}>
+                {props.trade.tradeId}
               </Typography>
             </Box>
           ) : null}
@@ -578,6 +618,7 @@ export default function ChatPanel(props: {
             coord={m.coord}
             item={m.deleted ? undefined : m.item}
             achievement={m.deleted ? undefined : m.achievement}
+            trade={m.deleted ? undefined : m.trade}
             senderKind={m.senderKind}
             onReply={m.deleted ? undefined : () => setReplying(m)}
             onReport={m.deleted || m.senderId === selfId ? undefined : () => {

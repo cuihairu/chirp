@@ -175,6 +175,37 @@ describe('ChatPanel achievement cards (P1 ACHIEVEMENT)', () => {
   });
 });
 
+describe('ChatPanel trade cards (P1 TRADE_STATUS)', () => {
+  it('renders the trade card with the status badge, amount and item summary', async () => {
+    renderPanel([
+      message({
+        messageId: 'tr1',
+        content: '交易已成交',
+        trade: {
+          tradeId: 'trade-9001',
+          status: 'COMPLETED',
+          amount: 1500,
+          itemName: '烈焰剑',
+          itemCount: 2,
+        },
+      }),
+    ]);
+    await waitFor(() => expect(screen.getByText('交易已成交')).toBeTruthy());
+    const card = screen.getByTestId('trade-tr1');
+    expect(card.getAttribute('data-trade-status')).toBe('COMPLETED');
+    expect(card.textContent).toContain('交易状态 · COMPLETED');
+    expect(card.textContent).toContain('烈焰剑 ×2');
+    expect(card.textContent).toContain('金额 1500');
+    expect(card.textContent).toContain('trade-9001');
+  });
+
+  it('renders no trade card for plain text messages', async () => {
+    renderPanel([message({ messageId: 't2', content: '纯文本' })]);
+    await waitFor(() => expect(screen.getByText('纯文本')).toBeTruthy());
+    expect(screen.queryByTestId('trade-t2')).toBeNull();
+  });
+});
+
 describe('ChatPanel emoji codes (P1 表情/贴图)', () => {
   it('expands emoji codes in the message text and keeps unknown codes literal', async () => {
     renderPanel([message({ messageId: 'e1', content: 'hi [emoji:fire] [emoji:zzz]' })]);

@@ -1,5 +1,5 @@
 import { describe, expect, it, vi } from 'vitest';
-import { AchievementMetadata, ChannelType, ChatMessage, ItemMetadata, MsgType, Priority, SenderKind } from '@chirp/proto/chat';
+import { AchievementMetadata, ChannelType, ChatMessage, ItemMetadata, MsgType, Priority, SenderKind, TradeMetadata } from '@chirp/proto/chat';
 import { MsgID } from '@chirp/proto/gateway';
 import { ChatApi, channelRefOf, type ChannelRef, type SystemSurface } from './chat_api';
 import { createStore } from '../state/store';
@@ -300,6 +300,62 @@ describe('ChatApi item link cards (P0 ITEM_LINK)', () => {
     );
     const second = h.messages.get().byChannel['p:user_a|user_b'][1];
     expect(second.achievement).toBeUndefined();
+    expect(second.content).toBe('hi');
+  });
+
+  it('parses the trade card out of a TRADE_STATUS notify metadata', async () => {
+    const h = makeHarness();
+    await login(h);
+    h.conn.emit(
+      MsgID.CHAT_MESSAGE_NOTIFY,
+      chatBody({
+        msgType: MsgType.TRADE_STATUS,
+        content: new TextEncoder().encode('交易已成交'),
+        metadata: TradeMetadata.encode(
+          TradeMetadata.fromPartial({
+            tradeId: 'trade-9001',
+            status: 'COMPLETED',
+            amount: 1500,
+            itemName: '烈焰剑',
+            itemCount: 2,
+          }),
+        ).finish(),
+      }),
+    );
+    expect(h.messages.get().byChannel['p:user_a|user_b'][0]).toMatchObject({
+      trade: {
+        tradeId: 'trade-9001',
+        status: 'COMPLETED',
+        amount: 1500,
+        itemName: '烈焰剑',
+        itemCount: 2,
+      },
+    });
+  });
+
+  it('drops the trade card when the metadata does not parse or lacks trade_id', async () => {
+    const h = makeHarness();
+    await login(h);
+    h.conn.emit(
+      MsgID.CHAT_MESSAGE_NOTIFY,
+      chatBody({ msgType: MsgType.TRADE_STATUS, metadata: new Uint8Array([0xde, 0xad, 0xbe, 0xef]) }),
+    );
+    const first = h.messages.get().byChannel['p:user_a|user_b'][0];
+    expect(first.trade).toBeUndefined();
+    expect(first.content).toBe('hi');
+
+    h.conn.emit(
+      MsgID.CHAT_MESSAGE_NOTIFY,
+      chatBody({
+        messageId: 'm2',
+        msgType: MsgType.TRADE_STATUS,
+        metadata: TradeMetadata.encode(
+          TradeMetadata.fromPartial({ status: 'CREATED', amount: 100 }),
+        ).finish(),
+      }),
+    );
+    const second = h.messages.get().byChannel['p:user_a|user_b'][1];
+    expect(second.trade).toBeUndefined();
     expect(second.content).toBe('hi');
   });
 });

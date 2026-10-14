@@ -8,6 +8,7 @@ import {
   GroupMemberMutedNotify,
   AchievementMetadata,
   ItemMetadata,
+  TradeMetadata,
   ReportMessageResponse,
   MessageAck,
   MessageDeletedNotify,
@@ -62,6 +63,7 @@ import {
   type CoordView,
   type Conversation,
   type AchievementView,
+  type TradeView,
   type ItemView,
   type MessageReactionView,
 } from '../state/models';
@@ -321,6 +323,13 @@ export class ChatApi {
       iconUrl?: string;
       rarity?: number;
     },
+    trade?: {
+      tradeId: string;
+      status?: string;
+      amount?: number;
+      itemName?: string;
+      itemCount?: number;
+    },
   ): Promise<void> {
     const senderId = this.auth.get().userId;
     if (!senderId) return;
@@ -341,7 +350,9 @@ export class ChatApi {
           ? MsgType.ITEM_LINK
           : achievement
             ? MsgType.ACHIEVEMENT
-            : MsgType.TEXT,
+            : trade
+              ? MsgType.TRADE_STATUS
+              : MsgType.TEXT,
       content: contentBytes,
       clientTimestamp: Date.now(),
     };
@@ -384,6 +395,19 @@ export class ChatApi {
         }),
       ).finish();
     }
+    // 交易状态（P1 TRADE_STATUS）：带 trade 入参即切 TRADE_STATUS，交易进
+    // metadata（与坐标/物品/成就链接同一 metadata 通道；amount/count 缺省 0）。
+    if (trade) {
+      wire.metadata = TradeMetadata.encode(
+        TradeMetadata.fromPartial({
+          tradeId: trade.tradeId,
+          status: trade.status,
+          amount: trade.amount,
+          itemName: trade.itemName,
+          itemCount: trade.itemCount,
+        }),
+      ).finish();
+    }
     // 预检只读写 content（两面在我们手上非缺省），断言为完整消息面。
     const blocked = !this.wordFilter.onBeforeSend(wire as SendMessageRequest);
     const clientId = `pending-${Date.now().toString(36)}-${pendingCounter++}`;
@@ -418,6 +442,15 @@ export class ChatApi {
             description: achievement.description ?? '',
             iconUrl: achievement.iconUrl ?? '',
             rarity: achievement.rarity ?? 0,
+          }
+        : undefined,
+      trade: trade
+        ? {
+            tradeId: trade.tradeId,
+            status: trade.status ?? '',
+            amount: trade.amount ?? 0,
+            itemName: trade.itemName ?? '',
+            itemCount: trade.itemCount ?? 0,
           }
         : undefined,
     };
@@ -1027,6 +1060,26 @@ const achievementViewOf = (msg: ChatMessage): AchievementView | undefined => {
   };
 };
 
+// 交易状态卡片（P1 TRADE_STATUS）：解析口径与服务端校验门一致——非
+// TRADE_STATUS 或 metadata 空/解析不出/缺 trade_id 的不当卡片。
+const tradeViewOf = (msg: ChatMessage): TradeView | undefined => {
+  if (msg.msgType !== MsgType.TRADE_STATUS || msg.metadata.length === 0) return undefined;
+  let trade: TradeMetadata;
+  try {
+    trade = TradeMetadata.decode(msg.metadata);
+  } catch {
+    return undefined;
+  }
+  if (!trade.tradeId) return undefined;
+  return {
+    tradeId: trade.tradeId,
+    status: trade.status,
+    amount: trade.amount,
+    itemName: trade.itemName,
+    itemCount: trade.itemCount,
+  };
+};
+
 const toView = (msg: ChatMessage, channel: ChannelRef): ChatMessageView => ({
   messageId: msg.messageId,
   senderId: msg.senderId,
@@ -1040,6 +1093,7 @@ const toView = (msg: ChatMessage, channel: ChannelRef): ChatMessageView => ({
   coord: coordViewOf(msg),
   item: itemViewOf(msg),
   achievement: achievementViewOf(msg),
+  trade: tradeViewOf(msg),
   priority: msg.priority,
   ttlSeconds: msg.ttlSeconds,
   senderKind: msg.senderKind,

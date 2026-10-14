@@ -8,6 +8,7 @@ import {
   GroupMemberMutedNotify,
   AchievementMetadata,
   ItemMetadata,
+  TradeMetadata,
   MessageAck,
   MessageDeletedNotify,
   MessageEditedNotify,
@@ -331,6 +332,38 @@ describe('ChatApi.sendMessage (optimistic)', () => {
     });
   });
 
+  it('sends TRADE_STATUS with trade metadata and shows the card optimistically', async () => {
+    const h = makeHarness();
+    await login(h);
+    h.conn.setResponder(async (msgId, req) => {
+      expect(msgId).toBe(MsgID.SEND_MESSAGE_REQ);
+      expect(req).toMatchObject({ msgType: MsgType.TRADE_STATUS });
+      return { code: 0, messageId: 'srv-tr1' };
+    });
+    await h.api.sendMessage(
+      channel,
+      '交易已成交',
+      undefined,
+      undefined,
+      undefined,
+      undefined,
+      { tradeId: 'trade-9001', status: 'COMPLETED', amount: 1500, itemName: '烈焰剑', itemCount: 2 },
+    );
+    const wire = h.conn.requests.find((r) => r.msgId === MsgID.SEND_MESSAGE_REQ)!;
+    const trade = TradeMetadata.decode(
+      (wire.req as { metadata?: Uint8Array }).metadata ?? new Uint8Array(),
+    );
+    expect(trade.tradeId).toBe('trade-9001');
+    expect(trade.status).toBe('COMPLETED');
+    expect(trade.amount).toBe(1500);
+    expect(trade.itemName).toBe('烈焰剑');
+    expect(trade.itemCount).toBe(2);
+    expect(h.messages.get().byChannel[channel.key][0]).toMatchObject({
+      messageId: 'srv-tr1',
+      trade: { tradeId: 'trade-9001', status: 'COMPLETED', amount: 1500, itemName: '烈焰剑', itemCount: 2 },
+    });
+  });
+
   it('leaves plain sends as TEXT without metadata on the wire', async () => {
     const h = makeHarness();
     await login(h);
@@ -473,6 +506,62 @@ describe('ChatApi incoming notifies', () => {
     );
     const second = h.messages.get().byChannel['p:user_a|user_b'][1];
     expect(second.achievement).toBeUndefined();
+    expect(second.content).toBe('hi');
+  });
+
+  it('parses the trade card out of a TRADE_STATUS notify metadata', async () => {
+    const h = makeHarness();
+    await login(h);
+    h.conn.emit(
+      MsgID.CHAT_MESSAGE_NOTIFY,
+      chatBody({
+        msgType: MsgType.TRADE_STATUS,
+        content: new TextEncoder().encode('交易已成交'),
+        metadata: TradeMetadata.encode(
+          TradeMetadata.fromPartial({
+            tradeId: 'trade-9001',
+            status: 'COMPLETED',
+            amount: 1500,
+            itemName: '烈焰剑',
+            itemCount: 2,
+          }),
+        ).finish(),
+      }),
+    );
+    expect(h.messages.get().byChannel['p:user_a|user_b'][0]).toMatchObject({
+      trade: {
+        tradeId: 'trade-9001',
+        status: 'COMPLETED',
+        amount: 1500,
+        itemName: '烈焰剑',
+        itemCount: 2,
+      },
+    });
+  });
+
+  it('drops the trade card when the metadata does not parse or lacks trade_id', async () => {
+    const h = makeHarness();
+    await login(h);
+    h.conn.emit(
+      MsgID.CHAT_MESSAGE_NOTIFY,
+      chatBody({ msgType: MsgType.TRADE_STATUS, metadata: new Uint8Array([0xde, 0xad, 0xbe, 0xef]) }),
+    );
+    const first = h.messages.get().byChannel['p:user_a|user_b'][0];
+    expect(first.trade).toBeUndefined();
+    expect(first.content).toBe('hi');
+
+    h.conn.emit(
+      MsgID.CHAT_MESSAGE_NOTIFY,
+      chatBody({
+        messageId: 'm2',
+        msgType: MsgType.TRADE_STATUS,
+        metadata: TradeMetadata.encode(
+          TradeMetadata.fromPartial({ status: 'CREATED', amount: 100 }),
+        ).finish(),
+      }),
+    );
+    const second = h.messages.get().byChannel['p:user_a|user_b'][1];
+    expect(second.trade).toBeUndefined();
     expect(second.content).toBe('hi');
   });
 

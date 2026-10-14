@@ -64,6 +64,16 @@ export interface AchievementView {
   rarity: number;
 }
 
+/** Trade status card (P1 TRADE_STATUS): id + status + amount + item summary. */
+export interface TradeView {
+  tradeId: string;
+  /** 展示文本（proto 约定 CREATED/ACCEPTED/COMPLETED/CANCELLED；未知名值原样渲染）。 */
+  status: string;
+  amount: number;
+  itemName: string;
+  itemCount: number;
+}
+
 export interface ChatMessageView {
   /** Server message id; optimistic sends carry a local id until confirmed. */
   messageId: string;
@@ -94,6 +104,8 @@ export interface ChatMessageView {
   item?: ItemView;
   /** Achievement share card (P1 ACHIEVEMENT); absent = plain text bubble. */
   achievement?: AchievementView;
+  /** Trade status card (P1 TRADE_STATUS); absent = plain text bubble. */
+  trade?: TradeView;
   // P0 消息展示：wire 三字段透传（ChatMessage priority/ttl_seconds/sender_kind）。
   // 缺省（proto3 零值）= 普通玩家、普通优先级、无走马灯时长。
   priority?: Priority;

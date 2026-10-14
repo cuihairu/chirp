@@ -77,7 +77,7 @@ title: 游戏聊天特征
 
 - **NPC 对话**：玩家与 NPC 聊天。NPC 回复走关键词规则引擎（当前已实现），未来可替换为 LLM。
 - **系统播报**：全服播报（BOSS 刷新、首杀、稀有掉落、玩家成就）。走世界频道 + 走马灯。
-- **交易消息**：拍卖行/交易行状态变更（上架、出价、成交、过期）。走系统频道。
+- **交易消息**（已落地 2026-10-15，协议+消费面形态）：`msg_type = TRADE_STATUS`，卡片式展示（状态徽章 + 物品摘要 ×N + 金额 + trade_id caption）。服务端在发送门校验 metadata——解析不出 `TradeMetadata` 或缺 `trade_id` 回 INVALID_PARAM（与坐标/物品/成就链接同层同口径，basic/enhanced 双形态同接线）；`status` 为展示文本不锁枚举（proto 约定 CREATED/ACCEPTED/COMPLETED/CANCELLED，未知名值原样渲染，新状态值不被旧服务端挡下）；web `MessageBubble` 与 desktop `ChatPanel` 渲染交易卡片（`data-trade-status` 标签供测试断言）。SDK 四端零改动（metadata 通用管线承载）。**范围边界**：文档原文的"上架/出价/成交/过期状态变更走系统频道"事件源在游戏侧拍卖行系统；当前 game 平面 inject 面（`MessageInjectRequest`）只有 content 无 msg_type/metadata 字段，注入卡片消息需先扩 inject 协议（metadata 透传）——属后续增强，玩家/SDK 侧消费链（发送门 + 存储 + 渲染）本批已就绪。
 - **好友上线通知**：好友上线时推送通知（可关闭）。✅ 服务端已落地（3025-3029，2026-10-13）：`SET/GET_NOTIFY_PREFS` 用户级开关（缺省全开，Redis 持久化）+ `FRIEND_ONLINE_NOTIFY` 只在有效状态 OFFLINE→非 OFFLINE 跃迁时补发（登录/SET_PRESENCE/游戏断言三链路，逐收件人过滤），body 复用 `PresenceNotify`、花名册 3021 不受影响；TS 双包与 web/desktop 消费进行中。
 - **邮件通知**：新邮件到达时推送通知。
 

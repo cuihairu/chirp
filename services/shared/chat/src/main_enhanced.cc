@@ -300,6 +300,17 @@ void HandleSendMessage(const chirp::chat::SendMessageRequest& req,
                                      seq, resp.SerializeAsString());
     return;
   }
+  // 交易状态（P1 TRADE_STATUS）：与坐标/物品/成就链接同层同口径——解析不出
+  // 或 trade_id 为空的不落任何存储（basic 形态经 ValidateSendMessageRequest）。
+  if (const chirp::common::ErrorCode trade_code = chirp::chat::ValidateTradeMetadata(req);
+      trade_code != chirp::common::OK) {
+    chirp::chat::SendMessageResponse resp;
+    resp.set_code(trade_code);
+    resp.set_server_timestamp(chirp::chat::runtime::NowMs());
+    chirp::chat::runtime::SendPacket(sender_session, chirp::gateway::SEND_MESSAGE_RESP,
+                                     seq, resp.SerializeAsString());
+    return;
+  }
   msg.set_metadata(req.metadata());
 
   // 群频道成员门（web e2e 权限回码契约，与 basic 群分支同语义）：频道命中

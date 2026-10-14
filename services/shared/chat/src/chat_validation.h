@@ -44,6 +44,11 @@ chirp::common::ErrorCode ValidateItemMetadata(const SendMessageRequest& req);
 // achievement_id 非空，否则 INVALID_PARAM。与坐标/物品链接同层同口径。
 chirp::common::ErrorCode ValidateAchievementMetadata(const SendMessageRequest& req);
 
+// 交易状态（P1 TRADE_STATUS）：metadata 必须能按 TradeMetadata 解析且
+// trade_id 非空，否则 INVALID_PARAM。与坐标/物品/成就链接同层同口径；
+// status 为展示文本不锁枚举（新状态值不应被旧服务端挡下）。
+chirp::common::ErrorCode ValidateTradeMetadata(const SendMessageRequest& req);
+
 chirp::common::ErrorCode ValidateSendMessageRequest(const SendMessageRequest& req,
                                                     std::string_view authenticated_user_id);
 
