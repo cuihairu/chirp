@@ -1,0 +1,26 @@
+# 根 workspace:三个 TS 包共用一把锁文件。apps/desktop 与
+# apps/admin_dashboard 是独立项目(各自的 pnpm-lock.yaml),不在这里收。
+#
+# 根 package.json 里显式声明 long/protobufjs 不是多余:proto/ts/proto/*.ts
+# (ts-proto 生成物,import "long" / "protobufjs/minimal")住在仓库根目录下,
+# 不属于任何 workspace 包,裸导入只能沿目录向上找到根 node_modules。npm
+# 时代靠 workspaces 提升把这两个包顶到根;pnpm 严格布局下必须由根声明。
+packages:
+  - apps/shared/protocol
+  - apps/web_companion
+  - sdks/ts
+
+# 平移自根 package.json 的 npm overrides(docs/pnpm-workspace.yaml 同款
+# 安全下限;pnpm 只认这里的 overrides,不读 package.json 的 overrides 字段)。
+overrides:
+  source-map-js: ^1.2.2
+
+# 平移自根 package.json 的 allowScripts(esbuild@0.28.2 / protobufjs@7.6.6)。
+# pnpm 默认不跑依赖的生命周期脚本,未显式决定时 CI 里直接报错退出
+# (ERR_PNPM_IGNORED_BUILDS)。esbuild 的 postinstall 校验平台二进制,
+# protobufjs 的 postinstall 生成动态反注入代码,都放行。
+allowBuilds:
+  esbuild: true
+  protobufjs: true
+
+  typescript-eslint@8.70.0: patches/typescript-eslint@8.70.0.patch

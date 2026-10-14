@@ -436,7 +436,7 @@ install_ts_pkg() {
 	pkg_version="$(tar -xzOf "$dir/chirp-protocol.tgz" package/package.json 2>/dev/null |
 		sed -n 's/.*"version"[[:space:]]*:[[:space:]]*"\([^"]*\)".*/\1/p' | head -1 || true)"
 	info "已安装: @chirp/protocol ${pkg_version:-?} -> $dir/chirp-protocol.tgz"
-	info "  接入: 在项目里执行 npm install $dir/chirp-protocol.tgz"
+	info "  接入: 在项目里执行 pnpm install $dir/chirp-protocol.tgz"
 }
 
 # ---------- 执行 ----------

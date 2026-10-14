@@ -3,7 +3,7 @@ name: Web
 # The web companion lives in its own workflow: its node toolchain has nothing
 # to do with the C++ jobs, and paths filtering keeps C++ pushes from spinning
 # node runners (and vice versa — CI/CMake/Mobile do not watch web sources).
-# The package-lock.json sits at the repo root (npm workspaces), so installs
+# The pnpm-lock.yaml sits at the repo root (pnpm workspace), so installs
 # run there; scripts run inside apps/web_companion. @chirp/protocol (sdks/ts)
 # is a workspace of the same lockfile and gets its own test step below.
 # apps/shared/protocol (@chirp/app-protocol) is the companion apps' own
@@ -17,7 +17,8 @@ on:
       - 'sdks/ts/**'
       - 'proto/**'
       - 'package.json'
-      - 'package-lock.json'
+      - 'pnpm-lock.yaml'
+      - 'pnpm-workspace.yaml'
       - '.github/workflows/web.yml'
   pull_request:
     branches: [ main, develop ]
@@ -27,7 +28,8 @@ on:
       - 'sdks/ts/**'
       - 'proto/**'
       - 'package.json'
-      - 'package-lock.json'
+      - 'pnpm-lock.yaml'
+      - 'pnpm-workspace.yaml'
       - '.github/workflows/web.yml'
 
 jobs:
@@ -39,41 +41,46 @@ jobs:
     steps:
     - uses: actions/checkout@v7
 
+    - uses: pnpm/action-setup@v6
+      with:
+        # Same major as local and docs.yml; the lockfile is v9 format.
+        version: 12
+
     - uses: actions/setup-node@v6
       with:
         # Pinned to the version development actually runs (vite 8 needs
         # >=22.12; 24 is the current dev node, CI verifies what devs use).
         node-version: 24
-        cache: npm
-        cache-dependency-path: package-lock.json
+        cache: pnpm
+        cache-dependency-path: pnpm-lock.yaml
 
     - name: Install dependencies
       working-directory: .
-      run: npm ci
+      run: pnpm install --frozen-lockfile
 
     - name: Test @chirp/protocol
       working-directory: sdks/ts
       run: |
-        npm run typecheck
-        npm test -- --coverage
+        pnpm run typecheck
+        pnpm test -- --coverage
 
     - name: Test @chirp/app-protocol
       working-directory: apps/shared/protocol
       run: |
-        npm run typecheck
-        npm test -- --coverage
+        pnpm run typecheck
+        pnpm test -- --coverage
 
     - name: Typecheck
-      run: npm run typecheck
+      run: pnpm run typecheck
 
     - name: Lint
-      run: npm run lint
+      run: pnpm run lint
 
     - name: Test with coverage
-      run: npm run test -- --coverage
+      run: pnpm test -- --coverage
 
     - name: Build
-      run: npm run build
+      run: pnpm run build
 
   proto-sync:
     # The generated TS is committed; regenerate and fail on drift so the
@@ -87,18 +94,24 @@ jobs:
         timeout 900 sudo apt-get -o Acquire::Retries=1 -o Acquire::http::Timeout=20 update || true
         timeout 300 sudo apt-get -o Acquire::Retries=3 -o Acquire::http::Timeout=30 install -y protobuf-compiler
 
+    - uses: pnpm/action-setup@v6
+      with:
+        version: 12
+
     - uses: actions/setup-node@v6
       with:
         # Pinned to the version development actually runs (vite 8 needs
         # >=22.12; 24 is the current dev node, CI verifies what devs use).
         node-version: 24
-        cache: npm
-        cache-dependency-path: package-lock.json
+        cache: pnpm
+        cache-dependency-path: pnpm-lock.yaml
 
-    # Root install: the workspaces layout hoists the ts-proto plugin to
-    # node_modules/.bin, where gen_proto.sh looks for it.
+    # Root install: ts-proto is a devDependency of apps/web_companion, so its
+    # protoc plugin lands in apps/web_companion/node_modules/.bin — the path
+    # gen_proto.sh prefers (its fallback to the repo-root bin is the legacy
+    # npm-workspaces hoisting layout).
     - name: Install dependencies
-      run: npm ci
+      run: pnpm install --frozen-lockfile
 
     - name: Regenerate TypeScript protos
       run: bash gen_proto.sh

@@ -35,17 +35,20 @@ jobs:
         with:
           fetch-depth: 0
 
-      - name: Setup Node.js
-        uses: actions/setup-node@v7
-        with:
-          node-version: '24'
-
       - name: Setup pnpm
         uses: pnpm/action-setup@v6
         with:
           # 与本地一致(pnpm 12)。pnpm 9 读不了 v12 生成的锁文件,
           # 也不认 pnpm-workspace.yaml 里的 overrides(pnpm 10+ 的配置位)。
           version: 12
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v7
+        with:
+          node-version: '24'
+          # setup-node 的 pnpm 缓存要求 pnpm 已在场(上一步装好)才能算 store 路径。
+          cache: pnpm
+          cache-dependency-path: docs/pnpm-lock.yaml
 
       - name: Install dependencies
         working-directory: ./docs

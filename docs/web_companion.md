@@ -30,9 +30,9 @@ Status: **Experimental** —— 一期已交付:登录、私聊、群组、好�
 ./build/services/app/notification/chirp_app_notification --port 5006 --ws_port 5016 &
 ./build/services/app/sdk_gateway/chirp_app_sdk_gateway --port 5200 --ws_port 5201 --notification_host 127.0.0.1 --notification_port 5006 &
 
-# 2. 前端(npm workspaces:仓库根安装依赖)
-npm ci
-cd apps/web_companion && npm run dev    # http://localhost:3001
+# 2. 前端(pnpm workspace:仓库根安装依赖)
+pnpm install
+cd apps/web_companion && pnpm run dev    # http://localhost:3001
 ```
 
 开发代理(`vite.config.ts`)把 `/ws/chat` → 7001、`/ws/social` → 8001、`/ws/party` → 7501、`/ws/device` → 5201,页面同源无 CORS。直连后端(生产/绕过代理)用 `VITE_CHAT_WS_URL` / `VITE_SOCIAL_WS_URL` / `VITE_PARTY_WS_URL` / `VITE_DEVICE_WS_URL` 指向真实地址;反代部署时同样以这四个变量指到 wss:// 入口。缺哪个后端就少哪块功能(可降级)。
@@ -41,10 +41,10 @@ cd apps/web_companion && npm run dev    # http://localhost:3001
 
 ```bash
 cd apps/web_companion
-npm run typecheck && npm run lint
-npm test -- --coverage        # 门槛:全局 ≥70%(协议核心连同 ≥90% 门禁
+pnpm run typecheck && pnpm run lint
+pnpm test -- --coverage        # 门槛:全局 ≥70%(协议核心连同 ≥90% 门禁
                               # 已迁至 sdks/ts=@chirp/protocol 包)
-npm run build
+pnpm run build
 
 # E2E:脚本起真实 chirp_chat + chirp_social(有 app_gateway+notification 二进制时一并起,
 #    设备面 3 例才跑,否则自动跳过)再跑集成套件(18 例:chat 6 + device 3 + social 5 + voice 4)
@@ -84,7 +84,7 @@ src/
 
 `.github/workflows/web.yml`(paths 过滤 `apps/web_companion/**`、`proto/**`,C++ 推送不会空跑):
 
-- **test**:node 24(与开发环境一致)→ `npm ci`(仓库根,workspaces)→ typecheck → lint → vitest --coverage(阈值硬卡)→ build。
+- **test**:node 24(与开发环境一致)→ `pnpm install --frozen-lockfile`(仓库根,pnpm workspace)→ typecheck → lint → vitest --coverage(阈值硬卡)→ build。
 - **proto-sync**:重跑 `gen_proto.sh` 后 `git diff` 校验 `proto/ts` 无漂移(protoc 版本注释行除外)。
 
 ## 路线图（Roadmap）

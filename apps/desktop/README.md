@@ -42,10 +42,10 @@ cd apps/desktop/dev
 ### 2) 启动前端开发服务器
 ```bash
 cd apps/desktop
-npm run dev
+pnpm run dev
 ```
 - vite 监听 5180（5173 被占用）
-- Tauri dev 模式：`npm run tauri dev`（同时启动 vite + cargo run）
+- Tauri dev 模式：`pnpm run tauri dev`（同时启动 vite + cargo run）
 
 ### 3) 收尾
 ```bash
@@ -58,7 +58,7 @@ cd apps/desktop/dev
 ### 构建 .deb（Linux）
 ```bash
 cd apps/desktop
-npm run tauri build
+pnpm run tauri build
 ```
 产物：`src-tauri/target/release/bundle/deb/Chirp_0.1.0_amd64.deb` (约 4 MB)
 依赖：`libwebkit2gtk-4.1-0`、`libgtk-3-0`
