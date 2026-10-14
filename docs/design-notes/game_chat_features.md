@@ -50,8 +50,6 @@ title: 游戏聊天特征
 - **消息编辑**（已落地 2026-09-18）：`EDIT_MESSAGE_REQ/RESP = 2225/2226`（gateway.proto:116）。服务端 `MessageEditHandlers` + `MessageEditManager` 内存台账（编辑次数上限 `max_edit_count=100`、编辑历史容量 `max_edit_history_size`，超限拒绝；`is_edited`/`edit_count`/`edit_history` 随 ChatMessageFull 下发）。SDK 四端对齐（C++ core `ChatClient::EditMessage`、sdks/ts 与 apps/shared/protocol 双包 msg_map spec、C# 同批）；web/desktop `editMessage`（chat_api.ts:540 双端镜像）+ 气泡"已编辑"标记。**与文档差异**：文档原文"可编辑一次、编辑历史不保留"——实际为最多 100 次编辑（可配），且编辑历史保留并随消息下发。
 - **表情/贴图**（已落地 2026-10-15，伴侣面形态）：16 个内置系统表情（web_companion `components/emoji.ts` 与 desktop `ui/emoji.ts` 同文 `SYSTEM_EMOJIS`）。消息文本中的 `[emoji:code]` 经 `expandEmojiCodes` 分片展开渲染为 emoji 字符（正则 `[a-z0-9_]+`，未知 code 原样保留字面——向前兼容，与 sender_kind/品质/稀有度回落同口径）；输入面带表情选择器（表情按钮 + Popover 网格，点击向草稿插入 `[emoji:code]`）。**服务端零改动**：表情走 TEXT 内容透传，长度/敏感词门照常生效；SDK 四端零改动（metadata 管线不涉及）。贴图（大图包）未做——待贴图资源与 metadata 载体（参照 ACHIEVEMENT 批形状）另批。
 - **消息引用**（已落地 2026-10-11）：`replyToMessageId` 随 SEND_MESSAGE 全链透传（发送侧第 4 参 + wire 字段 + 历史回读映射，web chat_api.ts:307/348/400/1039，desktop 镜像）；气泡渲染引用摘要块（`MessageBubble` quoted 区，web/desktop 同形；被引用方已删除或不可见时显示"原消息已删除或不可见"占位）。服务端按普通字段透传（无独立校验门）。
-- **表情/贴图**（已落地 2026-10-15，伴侣面形态）：16 个内置系统表情（web_companion `components/emoji.ts` 与 desktop `ui/emoji.ts` 同文 `SYSTEM_EMOJIS`）。消息文本中的 `[emoji:code]` 经 `expandEmojiCodes` 分片展开渲染为 emoji 字符（正则 `[a-z0-9_]+`，未知 code 原样保留字面——向前兼容，与 sender_kind/品质/稀有度回落同口径）；输入面带表情选择器（表情按钮 + Popover 网格，点击向草稿插入 `[emoji:code]`）。**服务端零改动**：表情走 TEXT 内容透传，长度/敏感词门照常生效；SDK 四端零改动（metadata 管线不涉及）。贴图（大图包）未做——待贴图资源与 metadata 载体（参照 ACHIEVEMENT 批形状）另批。
-- **消息引用**：回复特定消息。显示被引用消息的摘要。
 - **富文本**：支持粗体、斜体、颜色（VIP 特权）。
 
 ### 频道管理
