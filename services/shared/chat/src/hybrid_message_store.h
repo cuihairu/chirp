@@ -107,6 +107,12 @@ public:
   // GetHistory/GetHistoryV2 的读回由此带出 is_recalled。
   bool MarkMessageRecalled(const std::string& channel_id, const std::string& message_id);
 
+  /// @brief 消息过期（P2）：热层（Redis history 列表）逐 blob 解析按频道类型
+  /// 各用各的 cutoff 逐条 LRem；冷层（MySQL 档案）一条 DELETE 两 cutoff。
+  /// cutoff <= 0 = 该类不清理（保留窗旗标缺省 0 = 关的同款语义落到存储层）。
+  /// 返回两层删除条目总数（尽力而为，失败计 0 不抛错）。
+  size_t ExpireBefore(int64_t private_cutoff_ms, int64_t other_cutoff_ms);
+
   /// @brief Enqueue an offline message for a user (serialized MessageData).
   /// Writes to Redis; when Redis is unavailable the message is kept in an
   /// in-memory fallback so single-node deployments (no Redis) still refill

@@ -27,6 +27,7 @@
 #include "login_token_verifier.h"
 #include "message_delivery_tracker.h"
 #include "group_handlers.h"
+#include "history_retention_sweeper.h"
 #include "message_edit_manager.h"
 #include "message_handlers.h"
 #include "message_migration_worker.h"
@@ -1110,6 +1111,17 @@ int main(int argc, char** argv) {
   const int world_channel_min_level =
       chirp::chat::runtime::ParseIntArg(argc, argv, "--world_channel_min_level", 0);
 
+  // 历史保留窗（game_chat_features P2 消息过期）：天数计，0 = 关（缺省，
+  // app/companion 部署零 I/O）。私聊窗未配时跟随普通窗——「私聊保留更久」
+  // 是把它配得更大的旋钮，不是硬规则。
+  const int history_retention_days =
+      chirp::chat::runtime::ParseIntArg(argc, argv, "--history_retention_days", 0);
+  const int private_history_retention_days_raw =
+      chirp::chat::runtime::ParseIntArg(argc, argv, "--private_history_retention_days", 0);
+  const int private_history_retention_days =
+      private_history_retention_days_raw > 0 ? private_history_retention_days_raw
+                                             : history_retention_days;
+
   std::string instance_id = chirp::chat::runtime::GetArg(argc, argv, "--instance_id", "");
   if (instance_id.empty()) {
     instance_id = "chat_" + chirp::chat::runtime::RandomHex(8);
@@ -1155,6 +1167,13 @@ int main(int argc, char** argv) {
 
   auto migration_worker = std::make_shared<MessageMigrationWorker>(io, store, store_config);
   migration_worker->Start();
+
+  // 消息过期（P2）：保留窗周期清理（双 0 = 关，Start 内部自判零 I/O）。
+  auto retention_sweeper = std::make_shared<chirp::chat::HistoryRetentionSweeper>(
+      io, store,
+      static_cast<int64_t>(history_retention_days) * 24 * 60 * 60 * 1000,
+      static_cast<int64_t>(private_history_retention_days) * 24 * 60 * 60 * 1000);
+  retention_sweeper->Start();
 
   auto router = std::make_shared<chirp::network::MessageRouter>(io, redis_host, redis_port);
   if (!router->Start()) {
@@ -2058,6 +2077,7 @@ int main(int argc, char** argv) {
     router->Stop();
     delivery_tracker->Stop();
     migration_worker->Stop();
+    retention_sweeper->Stop();
     if (metrics_server) {
       metrics_server->Stop();
     }

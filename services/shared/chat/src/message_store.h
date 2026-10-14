@@ -64,6 +64,16 @@ public:
   virtual bool MarkMessageRecalled(const std::string& channel_id,
                                    const std::string& message_id) = 0;
 
+  // 消息过期（P2）：删除私聊（channel_type = 0）timestamp < private_cutoff_ms
+  // 及其余频道 timestamp < other_cutoff_ms 的行，返回删除行数。epoch 毫秒恒正，
+  // cutoff <= 0 的子句天然匹配不到行（= 该类不清理；保留窗旗标缺省 0 = 关）。
+  // 缺省 0 行 = 后端未实现（调用方按尽力而为处理，清理失败不拉倒服务）。
+  virtual uint64_t ExpireBefore(int64_t private_cutoff_ms, int64_t other_cutoff_ms) {
+    (void)private_cutoff_ms;  // NOLINT(readability-named-parameter) — 缺省无实现
+    (void)other_cutoff_ms;
+    return 0;
+  }
+
   // Get offline messages for a user
   virtual std::vector<StoredMessage> GetOfflineMessages(const std::string& user_id) = 0;
 

@@ -15,6 +15,7 @@ list(FILTER CHAT_BASE_SRCS EXCLUDE REGEX ".*message_store_config\\.cc")
 list(FILTER CHAT_BASE_SRCS EXCLUDE REGEX ".*hybrid_message_store\\.cc")
 list(FILTER CHAT_BASE_SRCS EXCLUDE REGEX ".*message_delivery_tracker\\.cc")
 list(FILTER CHAT_BASE_SRCS EXCLUDE REGEX ".*message_migration_worker\\.cc")
+list(FILTER CHAT_BASE_SRCS EXCLUDE REGEX ".*history_retention_sweeper\\.cc")
 list(FILTER CHAT_BASE_SRCS EXCLUDE REGEX ".*paginated_history_retriever\\.cc")
 list(FILTER CHAT_BASE_SRCS EXCLUDE REGEX ".*channel_manager\\.cc")
 
@@ -64,6 +65,9 @@ if(MYSQL_FOUND)
         src/hybrid_message_store.cc
         src/message_delivery_tracker.cc
         src/message_migration_worker.cc
+        # 历史保留窗清理（game_chat_features P2 消息过期）：周期把
+        # now - retention 换算成 cutoff 交给 HybridMessageStore::ExpireBefore。
+        src/history_retention_sweeper.cc
         src/paginated_history_retriever.cc
         src/recall_tombstone.cc
         # Server-plane integration and the notification push bridge: the

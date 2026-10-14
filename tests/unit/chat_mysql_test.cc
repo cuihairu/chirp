@@ -12,6 +12,7 @@
 #include "delivery_ack_manager.h"
 #include "fake_mysql.h"
 #include "fake_servers.h"
+#include "history_retention_sweeper.h"
 #include "hybrid_message_store.h"
 #include "in_memory_redis.h"
 #include "message_delivery_tracker.h"
@@ -25,6 +26,8 @@ namespace {
 using chirp::chat::HybridMessageStore;
 using chirp::chat::MessageData;
 using chirp::chat::MessageDeliveryTracker;
+using chirp::chat::MessageStore;
+using chirp::chat::ReadReceiptData;
 using chirp::chat::MessageMigrationWorker;
 using chirp::chat::MessageStoreConfig;
 using chirp::chat::MySQLConnection;
@@ -64,6 +67,36 @@ StoredMessage ToMySql(const MessageData& msg) {
   out.created_at = msg.created_at;
   out.sender_kind = msg.sender_kind;
   return out;
+}
+
+// 最小 MessageStore 实现：不覆写 ExpireBefore——走基类缺省（后端未实现时
+// 返回 0 行，调用方按尽力而为处理）。
+class NoExpireStore : public MessageStore {
+ public:
+  bool Initialize() override { return true; }
+  bool StoreMessage(const StoredMessage&) override { return true; }
+  std::vector<StoredMessage> GetHistory(const std::string&, int, int64_t, int32_t) override {
+    return {};
+  }
+  bool MessageExists(const std::string&, const std::string&) override { return false; }
+  bool MarkMessageRecalled(const std::string&, const std::string&) override { return true; }
+  std::vector<StoredMessage> GetOfflineMessages(const std::string&) override { return {}; }
+  bool ClearOfflineMessages(const std::string&) override { return true; }
+  bool StoreReadReceipt(const std::string&, const std::string&, int64_t) override { return true; }
+  std::vector<ReadReceiptData> GetReadReceipts(const std::string&) override { return {}; }
+  bool MarkAsRead(const std::string&, const std::string&, int, const std::string&, int64_t) override {
+    return true;
+  }
+  int32_t GetUnreadCount(const std::string&) override { return 0; }
+  std::vector<std::pair<std::string, int32_t>> GetAllUnread(const std::string&) override {
+    return {};
+  }
+};
+
+TEST(NoExpireStoreTest, BaseExpireBeforeDefaultReturnsZeroRows) {
+  NoExpireStore store;
+  EXPECT_EQ(store.ExpireBefore(5000, 2000), 0u);
+  EXPECT_EQ(store.ExpireBefore(0, 0), 0u);
 }
 
 // ---------------------------------------------------------------------------
@@ -1852,6 +1885,218 @@ TEST_F(HybridStoreTest, FailMessageCarriesLongLastError) {
   ASSERT_TRUE(status.has_value());
   EXPECT_EQ(status->status, chirp::chat::DeliveryState::kFailed);
   EXPECT_EQ(status->last_error, long_err);
+}
+
+// ---------------------------------------------------------------------------
+// 消息过期（game_chat_features P2）：保留窗清理——热层（Redis history 列表）
+// 逐 blob 按频道类型各用各的 cutoff，冷层（MySQL 档案）一条 DELETE 两 cutoff。
+// ---------------------------------------------------------------------------
+
+TEST_F(MySqlStoreTest, ExpireBeforeDeletesRowsPastChannelTypeCutoffs) {
+  auto pool = std::make_shared<MySQLConnectionPool>(1, "h", 3306, "db", "u", "p");
+  MySQLMessageStore store(pool);
+
+  fake_mysql::SetAffectedRows(3);
+  EXPECT_EQ(store.ExpireBefore(5000, 2000), 3u);
+  auto queries = fake_mysql::TakeQueries();
+  ASSERT_FALSE(queries.empty());
+  // 私聊（channel_type = 0）用私聊 cutoff，其余频道用普通 cutoff；两条子句
+  // 都在一条 DELETE 里（epoch 毫秒恒正，cutoff <= 0 的子句天然匹配不到行）。
+  EXPECT_NE(queries.back().find("DELETE FROM messages"), std::string::npos);
+  EXPECT_NE(queries.back().find("channel_type = 0 AND timestamp < 5000"), std::string::npos);
+  EXPECT_NE(queries.back().find("channel_type != 0 AND timestamp < 2000"), std::string::npos);
+
+  // 连接不可用回 0（清理是尽力而为，不拉倒服务）——已连过的池不重连，
+  // 用全新池走 connect 失败路径。
+  fake_mysql::SetConnectShouldFail(true);
+  MySQLMessageStore dead_store(
+      std::make_shared<MySQLConnectionPool>(1, "h", 3306, "db", "u", "p"));
+  EXPECT_EQ(dead_store.ExpireBefore(5000, 2000), 0u);
+  fake_mysql::SetConnectShouldFail(false);
+
+  // DELETE 执行失败同样回 0，不抛。
+  fake_mysql::FailQueriesMatching("DELETE FROM messages");
+  EXPECT_EQ(store.ExpireBefore(5000, 2000), 0u);
+  fake_mysql::Reset();
+}
+
+TEST_F(HybridStoreTest, ExpireBeforeSweepsHotAndColdTiersPerChannelType) {
+  ASSERT_TRUE(store_->Initialize());
+
+  // 私聊窗更长（cutoff 1000 < 普通 cutoff 9000）：旧私聊 500 落在私聊窗内被清，
+  // 新私聊 1500 已过私聊窗保留；旧公会 8000 早于普通 cutoff 9000 被清。
+  MessageData old_private = MakeMessage("m-old-p", "a|b", 500, "b");
+  old_private.channel_type = 0;  // PRIVATE
+  MessageData new_private = MakeMessage("m-new-p", "a|b", 1500, "b");
+  new_private.channel_type = 0;
+  MessageData old_guild = MakeMessage("m-old-g", "guild-1", 8000);
+  old_guild.channel_type = 2;  // GUILD（非 0 即走普通窗）
+  MessageData new_guild = MakeMessage("m-new-g", "guild-1", 9500);
+  new_guild.channel_type = 2;
+  for (const MessageData* m : {&old_private, &new_private, &old_guild, &new_guild}) {
+    ASSERT_TRUE(store_->StoreMessage(*m));
+  }
+
+  fake_mysql::SetAffectedRows(2);  // 冷层脚本：旧私聊 + 旧公会两行。
+  // 热层 2 blob + 冷层 2 行。
+  EXPECT_EQ(store_->ExpireBefore(1000, 9000), 4u);
+
+  EXPECT_EQ(redis_->ListDirect("chirp:chat:history:a|b").size(), 1u);
+  EXPECT_EQ(redis_->ListDirect("chirp:chat:history:a|b")[0], new_private.SerializeAsString());
+  EXPECT_EQ(redis_->ListDirect("chirp:chat:history:guild-1").size(), 1u);
+  EXPECT_EQ(redis_->ListDirect("chirp:chat:history:guild-1")[0], new_guild.SerializeAsString());
+
+  auto queries = fake_mysql::TakeQueries();
+  ASSERT_FALSE(queries.empty());
+  EXPECT_NE(queries.back().find("DELETE FROM messages"), std::string::npos);
+
+  // 幂等：同一组 cutoff 再扫，热层无可清，冷层按脚本回 0。
+  fake_mysql::SetAffectedRows(0);
+  EXPECT_EQ(store_->ExpireBefore(1000, 9000), 0u);
+}
+
+TEST_F(HybridStoreTest, ExpireBeforeKeepsEverythingWithZeroCutoffs) {
+  ASSERT_TRUE(store_->Initialize());
+  ASSERT_TRUE(store_->StoreMessage(MakeMessage("m1", "ch1", 1000)));
+
+  // cutoff <= 0 = 该类不清理（保留窗旗标缺省 0 = 关的同款语义落到存储层）。
+  fake_mysql::SetAffectedRows(0);
+  EXPECT_EQ(store_->ExpireBefore(0, 0), 0u);
+  EXPECT_EQ(redis_->ListDirect("chirp:chat:history:ch1").size(), 1u);
+}
+
+TEST_F(HybridStoreTest, ExpireBeforeLeavesGarbageBlobsAlone) {
+  ASSERT_TRUE(store_->Initialize());
+  // 历史列表里混进一个解析不出的 blob（直灌 InMemoryRedis，不经序列化）。
+  const std::string key = "chirp:chat:history:ch1";
+  ASSERT_TRUE(store_->StoreMessage(MakeMessage("m1", "ch1", 1000)));
+  redis_->Handle({"RPUSH", key, "garbage-blob"});
+  ASSERT_EQ(redis_->ListDirect(key).size(), 2u);
+
+  // 清扫跳过垃圾 blob，只删解析得出的过期条目（m1 ts=1000 早于 cutoff 1500）；
+  // 垃圾 blob 原位保留（保留窗不做数据清洗）。
+  fake_mysql::SetAffectedRows(0);
+  EXPECT_EQ(store_->ExpireBefore(1500, 1500), 1u);
+  const auto blobs = redis_->ListDirect(key);
+  ASSERT_EQ(blobs.size(), 1u);
+  EXPECT_EQ(blobs[0], "garbage-blob");
+}
+
+TEST_F(HybridStoreTest, RetentionSweeperSweepsOnceWithResolvedRetention) {
+  ASSERT_TRUE(store_->Initialize());
+  MessageData old_guild = MakeMessage("m-old-g", "guild-1", 8000);
+  old_guild.channel_type = 2;
+  ASSERT_TRUE(store_->StoreMessage(old_guild));
+  ASSERT_TRUE(store_->StoreMessage(MakeMessage("m-new", "guild-1", 9500)));
+
+  // 非 owning shared_ptr（空删除器，不夺 fixture 的所有权，TearDown 仍归它管）。
+  std::shared_ptr<HybridMessageStore> alias(store_.get(), [](HybridMessageStore*) {});
+  chirp::chat::HistoryRetentionSweeper sweeper(io_, alias, /*other_retention_ms=*/1000,
+                                               /*private_retention_ms=*/9000);
+  fake_mysql::SetAffectedRows(1);
+  // now = 10000 → 普通 cutoff 9000、私聊 cutoff 1000（与直接调 SweepOnce 相同的
+  // 裁决面）。旧公会 8000 < 9000 被清，9500 保留。
+  EXPECT_EQ(sweeper.SweepOnce(10000), 2u);  // 1 blob + 1 行
+  EXPECT_EQ(redis_->ListDirect("chirp:chat:history:guild-1").size(), 1u);
+}
+
+TEST_F(HybridStoreTest, RetentionSweeperNoopWhenDisabled) {
+  ASSERT_TRUE(store_->Initialize());
+  ASSERT_TRUE(store_->StoreMessage(MakeMessage("m1", "ch1", 1000)));
+
+  std::shared_ptr<HybridMessageStore> alias(store_.get(), [](HybridMessageStore*) {});
+  chirp::chat::HistoryRetentionSweeper sweeper(io_, alias, /*other_retention_ms=*/0,
+                                               /*private_retention_ms=*/0);
+  fake_mysql::SetAffectedRows(0);
+  EXPECT_EQ(sweeper.SweepOnce(10000), 0u);
+  EXPECT_EQ(redis_->ListDirect("chirp:chat:history:ch1").size(), 1u);
+  // 保留窗双 0 → 连 DELETE 都不发（缺省部署零 I/O）；Start 同样自判关闭，
+  // 不挂定时器（io 无工作即回，不会挂死）。
+  fake_mysql::TakeQueries();  // 清掉 Initialize 期的建表语句。
+  sweeper.Start();
+  (void)io_.run_for(std::chrono::milliseconds(50));
+  (void)sweeper.SweepOnce(10000);
+  EXPECT_TRUE(fake_mysql::TakeQueries().empty());
+}
+
+TEST_F(HybridStoreTest, RetentionSweeperTimerLoopSweepsAndStops) {
+  ASSERT_TRUE(store_->Initialize());
+  MessageData old_guild = MakeMessage("m-old-g", "guild-1", 8000);
+  old_guild.channel_type = 2;
+  ASSERT_TRUE(store_->StoreMessage(old_guild));
+
+  std::shared_ptr<HybridMessageStore> alias(store_.get(), [](HybridMessageStore*) {});
+  chirp::chat::HistoryRetentionSweeper sweeper(io_, alias, /*other_retention_ms=*/1000,
+                                               /*private_retention_ms=*/9000,
+                                               /*interval_ms=*/10);
+  fake_mysql::SetAffectedRows(1);
+  sweeper.Start();
+  sweeper.Start();  // 幂等：重复 Start 不挂第二个定时器链。
+  // 定时器 10ms 一拍：墙钟 cutoff 对 1970 年的测试消息恒命中（都过期），
+  // 第一拍就把热层清空、冷层发一条 DELETE。
+  (void)io_.run_for(std::chrono::milliseconds(120));
+  EXPECT_TRUE(redis_->ListDirect("chirp:chat:history:guild-1").empty());
+  const auto queries = fake_mysql::TakeQueries();
+  ASSERT_FALSE(queries.empty());
+  EXPECT_NE(queries.back().find("DELETE FROM messages"), std::string::npos);
+
+  sweeper.Stop();
+  // 排干 cancel 的 strand post：待决 wait 以 ec 回调走停机臂（不再重排）。
+  (void)io_.run_for(std::chrono::milliseconds(50));
+}
+
+TEST_F(HybridStoreTest, RetentionSweeperStopBeforeFirstRunCancelsSchedule) {
+  ASSERT_TRUE(store_->Initialize());
+  ASSERT_TRUE(store_->StoreMessage(MakeMessage("m1", "ch1", 1000)));
+
+  std::shared_ptr<HybridMessageStore> alias(store_.get(), [](HybridMessageStore*) {});
+  chirp::chat::HistoryRetentionSweeper sweeper(io_, alias, /*other_retention_ms=*/1000,
+                                               /*private_retention_ms=*/1000,
+                                               /*interval_ms=*/10);
+  fake_mysql::SetAffectedRows(1);
+  fake_mysql::TakeQueries();  // 清掉 Initialize 期的建表语句。
+  // Start 的 strand post 入队后、io 尚未跑时 Stop 抢先入队：ScheduleNextRun
+  // 执行时 running_ 已为 false → 早退臂，定时器不挂、零清理（关停竞态）。
+  sweeper.Start();
+  sweeper.Stop();
+  (void)io_.run_for(std::chrono::milliseconds(50));
+  EXPECT_EQ(redis_->ListDirect("chirp:chat:history:ch1").size(), 1u);
+  EXPECT_TRUE(fake_mysql::TakeQueries().empty());
+}
+
+TEST_F(HybridStoreTest, RetentionSweeperAsymmetricWindowsUseOwnCutoff) {
+  ASSERT_TRUE(store_->Initialize());
+  // 单窗关闭：普通窗 0（关）+ 私聊窗 9000ms——只有私聊 cutoff 生效。
+  MessageData old_private = MakeMessage("m-old-p", "a|b", 500);
+  old_private.channel_type = 0;  // PRIVATE
+  MessageData fresh_guild = MakeMessage("m-fresh-g", "guild-1", 9500);
+  fresh_guild.channel_type = 2;  // GUILD（非 0 即走普通窗）
+  ASSERT_TRUE(store_->StoreMessage(old_private));
+  ASSERT_TRUE(store_->StoreMessage(fresh_guild));
+
+  std::shared_ptr<HybridMessageStore> alias(store_.get(), [](HybridMessageStore*) {});
+  chirp::chat::HistoryRetentionSweeper sweeper(io_, alias, /*other_retention_ms=*/0,
+                                               /*private_retention_ms=*/9000);
+  fake_mysql::SetAffectedRows(1);
+  // now = 10000 → 私聊 cutoff 1000（旧私聊 500 被清）、普通 cutoff 0（9500 保留）。
+  EXPECT_EQ(sweeper.SweepOnce(10000), 2u);  // 1 blob + 冷层 1 行
+  EXPECT_EQ(redis_->ListDirect("chirp:chat:history:a|b").size(), 0u);
+  EXPECT_EQ(redis_->ListDirect("chirp:chat:history:guild-1").size(), 1u);
+
+  // 反向：普通窗 1000ms + 私聊窗 0（关）——私聊一条不清，旧公会清。
+  MessageData fresh_private = MakeMessage("m-fresh-p", "c|d", 500);
+  fresh_private.channel_type = 0;
+  MessageData old_guild = MakeMessage("m-old-g", "guild-2", 8000);
+  old_guild.channel_type = 2;
+  ASSERT_TRUE(store_->StoreMessage(fresh_private));
+  ASSERT_TRUE(store_->StoreMessage(old_guild));
+
+  chirp::chat::HistoryRetentionSweeper reverse(io_, alias, /*other_retention_ms=*/1000,
+                                               /*private_retention_ms=*/0);
+  fake_mysql::SetAffectedRows(1);
+  EXPECT_EQ(reverse.SweepOnce(10000), 2u);
+  EXPECT_EQ(redis_->ListDirect("chirp:chat:history:c|d").size(), 1u);
+  EXPECT_EQ(redis_->ListDirect("chirp:chat:history:guild-2").size(), 0u);
 }
 
 TEST_F(PaginatedRetrieverTest, DeserializeSinglePipeYieldsEmptyCursor) {

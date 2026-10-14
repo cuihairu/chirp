@@ -340,6 +340,32 @@ bool HybridMessageStore::MarkMessageRecalled(const std::string& channel_id,
   return redis_ok && mysql_ok;
 }
 
+size_t HybridMessageStore::ExpireBefore(int64_t private_cutoff_ms, int64_t other_cutoff_ms) {
+  size_t removed = 0;
+
+  // 热层：history 列表按频道一个键，逐 blob 解析拿 channel_type/timestamp
+  // （键名不含频道类型，blob 里才有）。解析失败的 blob 不动——保留窗不做
+  // 数据清洗，那是 migration worker 的活。cutoff <= 0 的类天然匹配不到行（关闭）。
+  for (const auto& key : redis_->Keys("chirp:chat:history:*")) {
+    for (const auto& blob : redis_->LRange(key, 0, -1)) {
+      MessageData parsed;
+      if (!parsed.ParseFromArray(blob.data(), static_cast<int>(blob.size()))) {
+        continue;
+      }
+      const int64_t cutoff =
+          parsed.channel_type == 0 ? private_cutoff_ms : other_cutoff_ms;
+      if (cutoff > 0 && parsed.timestamp < cutoff) {
+        removed += static_cast<size_t>(redis_->LRem(key, 1, blob) > 0);
+      }
+    }
+  }
+
+  // 冷层：一条 DELETE 两个 cutoff（MessageStore 缺省实现回 0 = 后端未实现）。
+  removed += static_cast<size_t>(
+      mysql_store_->ExpireBefore(private_cutoff_ms, other_cutoff_ms));
+  return removed;
+}
+
 bool HybridMessageStore::AddOfflineMessage(const std::string& user_id,
                                            const std::string& slot,
                                            const std::string& serialized) {

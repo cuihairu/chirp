@@ -951,6 +951,7 @@ add_test(NAME auth_basic_session_tests COMMAND auth_basic_session_tests)
 add_executable(chat_mysql_tests
   chat_mysql_test.cc
   fake_mysql.cc
+  ${CMAKE_SOURCE_DIR}/services/shared/chat/src/history_retention_sweeper.cc
   ${CMAKE_SOURCE_DIR}/services/shared/chat/src/hybrid_message_store.cc
   ${CMAKE_SOURCE_DIR}/services/shared/chat/src/message_delivery_tracker.cc
   ${CMAKE_SOURCE_DIR}/services/shared/chat/src/message_migration_worker.cc
