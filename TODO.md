@@ -192,7 +192,7 @@
 - [x] Android M4 — chat 管线
 - [x] Android M3.5 — 推送接入（80/0）
 - [x] Android 接收侧（103/103）
-- [ ] iOS 推送（APNs）——真投递凭据项（保持挂起不代决；解锁条件：用户给 APNs 凭据——Team ID / Key ID / .p8 私钥 / Bundle ID——到位后落地 iOS 端真实投递联调）
+- [ ] iOS 推送（APNs）——真投递凭据项（保持挂起不代决；解锁条件：用户给 APNs 凭据——Team ID / Key ID / .p8 私钥 / Bundle ID——到位后落地 iOS 端真实投递联调。2026-10-15 复核：服务端仅有旗标与 header 骨架（`--apns-key/-key-id/-team-id/-bundle-id/-sandbox`、`apns-topic/push-type/priority/collapse-id`），**ES256 provider JWT（Authorization: Bearer）签名与 .p8 PEM 载入未实现**（`private_key_path` 无消费方）、无 mTLS 客户端证书回退、HTTP/1.1 传输不含 APNs 必需 HTTP/2（生产需前置协议转换）——凭据之外还需补服务端签名实现）
 - [x] iOS — Swift 协议包
 - [x] iOS — Swift 协议包（70/70）
 - [x] iOS — Swift 协议包（M3.5 核：DeviceRegistrar + 推送 token 缝，2026-09-29）（77/77）
