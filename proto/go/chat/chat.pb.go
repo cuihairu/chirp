@@ -1141,10 +1141,16 @@ func (x *GetHistoryRequest) GetLimit() int32 {
 
 // 拉取历史消息响应
 type GetHistoryResponse struct {
-	state         protoimpl.MessageState `protogen:"open.v1"`
-	Code          common.ErrorCode       `protobuf:"varint,1,opt,name=code,proto3,enum=chirp.common.ErrorCode" json:"code,omitempty"`
-	Messages      []*ChatMessage         `protobuf:"bytes,2,rep,name=messages,proto3" json:"messages,omitempty"`
-	HasMore       bool                   `protobuf:"varint,3,opt,name=has_more,json=hasMore,proto3" json:"has_more,omitempty"` // 是否还有更多历史消息
+	state    protoimpl.MessageState `protogen:"open.v1"`
+	Code     common.ErrorCode       `protobuf:"varint,1,opt,name=code,proto3,enum=chirp.common.ErrorCode" json:"code,omitempty"`
+	Messages []*ChatMessage         `protobuf:"bytes,2,rep,name=messages,proto3" json:"messages,omitempty"`
+	HasMore  bool                   `protobuf:"varint,3,opt,name=has_more,json=hasMore,proto3" json:"has_more,omitempty"` // 是否还有更多历史消息
+	// gzip (RFC 1952) container of a GetHistoryResponse that carries only the
+	// messages list. Set instead of `messages` for sessions that declared
+	// LoginRequest.supports_gzip: clients inflate it and parse the bytes back
+	// as this message, then read `.messages`. On gzip failure the server
+	// keeps the plain form, so this field is only ever set with valid bytes.
+	MessagesGzip  []byte `protobuf:"bytes,4,opt,name=messages_gzip,json=messagesGzip,proto3" json:"messages_gzip,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -1198,6 +1204,13 @@ func (x *GetHistoryResponse) GetHasMore() bool {
 		return x.HasMore
 	}
 	return false
+}
+
+func (x *GetHistoryResponse) GetMessagesGzip() []byte {
+	if x != nil {
+		return x.MessagesGzip
+	}
+	return nil
 }
 
 // Create group request
@@ -9851,11 +9864,12 @@ const file_proto_chat_proto_rawDesc = "" +
 	"\n" +
 	"channel_id\x18\x03 \x01(\tR\tchannelId\x12)\n" +
 	"\x10before_timestamp\x18\x04 \x01(\x03R\x0fbeforeTimestamp\x12\x14\n" +
-	"\x05limit\x18\x05 \x01(\x05R\x05limit\"\x91\x01\n" +
+	"\x05limit\x18\x05 \x01(\x05R\x05limit\"\xb6\x01\n" +
 	"\x12GetHistoryResponse\x12+\n" +
 	"\x04code\x18\x01 \x01(\x0e2\x17.chirp.common.ErrorCodeR\x04code\x123\n" +
 	"\bmessages\x18\x02 \x03(\v2\x17.chirp.chat.ChatMessageR\bmessages\x12\x19\n" +
-	"\bhas_more\x18\x03 \x01(\bR\ahasMore\"\xdd\x01\n" +
+	"\bhas_more\x18\x03 \x01(\bR\ahasMore\x12#\n" +
+	"\rmessages_gzip\x18\x04 \x01(\fR\fmessagesGzip\"\xdd\x01\n" +
 	"\x12CreateGroupRequest\x12\x1d\n" +
 	"\n" +
 	"creator_id\x18\x01 \x01(\tR\tcreatorId\x12\x1d\n" +

@@ -8,12 +8,14 @@
 #include <random>
 #include <string>
 #include <unordered_map>
+#include <unordered_set>
 #include <vector>
 
 #include <asio.hpp>
 
 #include "logger.h"
 #include "delivery_ack_manager.h"
+#include "history_compression.h"
 #include "distributed_dispatch.h"
 #include "common/metrics.h"
 #include "common/metrics_http_server.h"
@@ -38,6 +40,23 @@ namespace {
 using chirp::common::Logger;
 
 struct DistributedChatState {
+  // 消息压缩（game_chat_features P2）：登录声明 supports_gzip 的会话集合。
+  // 登录时 Set（insert/erase 双向覆盖，指针复用不会继承旧声明），断开时随
+  // session_to_user 一起清理。
+  void SetGzipCapable(chirp::network::Session* session, bool capable) {
+    std::lock_guard<std::mutex> lock(mu);
+    if (capable) {
+      gzip_sessions.insert(session);
+    } else {
+      gzip_sessions.erase(session);
+    }
+  }
+
+  bool IsGzipCapable(chirp::network::Session* session) {
+    std::lock_guard<std::mutex> lock(mu);
+    return gzip_sessions.count(session) > 0;
+  }
+
   void AddSession(const std::string& user_id, const std::shared_ptr<chirp::network::Session>& session) {
     bool newly_bound = false;
     {
@@ -71,6 +90,7 @@ struct DistributedChatState {
         local_sessions.erase(sit);
       }
       session_to_user.erase(it);
+      gzip_sessions.erase(session);
       released = true;
     }
     if (released) {
@@ -101,6 +121,7 @@ struct DistributedChatState {
   std::mutex mu;
   std::unordered_map<std::string, std::weak_ptr<chirp::network::Session>> local_sessions;
   std::unordered_map<void*, std::string> session_to_user;
+  std::unordered_set<void*> gzip_sessions;
   std::string instance_id;
 };
 
@@ -343,6 +364,9 @@ void HandleLogin(const chirp::auth::LoginRequest& req,
     state->AddSession(user_id, session);
     CHIRP_COUNTER("chirp_chat_distributed_logins_total", 1);
 
+    // 消息压缩（game_chat_features P2）：登录声明随会话记录。
+    state->SetGzipCapable(session.get(), req.supports_gzip());
+
     if (acks && req.supports_message_ack()) {
       acks->MarkCapable(session);
     }
@@ -397,6 +421,7 @@ void HandleLogin(const chirp::auth::LoginRequest& req,
 void HandleGetHistory(const chirp::chat::GetHistoryRequest& req,
                       const std::shared_ptr<chirp::network::Session>& session,
                       const std::shared_ptr<DistributedMessageStore>& store,
+                      bool supports_gzip,
                       int64_t seq) {
   chirp::chat::GetHistoryResponse resp;
   resp.set_code(chirp::common::OK);
@@ -410,6 +435,9 @@ void HandleGetHistory(const chirp::chat::GetHistoryRequest& req,
   }
 
   resp.set_has_more(false);
+  // 消息压缩（game_chat_features P2）：登录声明 supports_gzip 的会话收
+  // gzip 形态，其余保持明文 repeated 字段不变。
+  chirp::chat::CompressHistoryResponse(&resp, supports_gzip);
   chirp::chat::runtime::SendPacket(session, chirp::gateway::GET_HISTORY_RESP, seq, resp.SerializeAsString());
 }
 
@@ -505,10 +533,10 @@ int main(int argc, char** argv) {
                                  int64_t seq) {
     HandleSendMessage(req, session, state, store, router, push, acks.get(), seq);
   };
-  handlers.on_get_history = [store](const std::shared_ptr<chirp::network::Session>& session,
+  handlers.on_get_history = [store, state](const std::shared_ptr<chirp::network::Session>& session,
                                     const chirp::chat::GetHistoryRequest& req,
                                     int64_t seq) {
-    HandleGetHistory(req, session, store, seq);
+    HandleGetHistory(req, session, store, state->IsGzipCapable(session.get()), seq);
   };
   handlers.on_logout = [state, acks](const std::shared_ptr<chirp::network::Session>& session,
                                      const chirp::auth::LogoutRequest&,

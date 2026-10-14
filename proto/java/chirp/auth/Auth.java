@@ -100,6 +100,20 @@ public final class Auth extends com.google.protobuf.GeneratedFile {
      * @return The level.
      */
     int getLevel();
+
+    /**
+     * <pre>
+     * Declared by clients that can read gzip-compressed history payloads: a
+     * GetHistoryResponse with messages_gzip set carries the message list in a
+     * gzip (RFC 1952) container instead of the plain repeated field. The
+     * server keeps the plain form for sessions that do not declare this, so
+     * legacy clients are unaffected (game_chat_features P2 消息压缩, 2026-10-15).
+     * </pre>
+     *
+     * <code>bool supports_gzip = 6;</code>
+     * @return The supportsGzip.
+     */
+    boolean getSupportsGzip();
   }
   /**
    * Protobuf type {@code chirp.auth.LoginRequest}
@@ -303,6 +317,25 @@ public final class Auth extends com.google.protobuf.GeneratedFile {
       return level_;
     }
 
+    public static final int SUPPORTS_GZIP_FIELD_NUMBER = 6;
+    private boolean supportsGzip_ = false;
+    /**
+     * <pre>
+     * Declared by clients that can read gzip-compressed history payloads: a
+     * GetHistoryResponse with messages_gzip set carries the message list in a
+     * gzip (RFC 1952) container instead of the plain repeated field. The
+     * server keeps the plain form for sessions that do not declare this, so
+     * legacy clients are unaffected (game_chat_features P2 消息压缩, 2026-10-15).
+     * </pre>
+     *
+     * <code>bool supports_gzip = 6;</code>
+     * @return The supportsGzip.
+     */
+    @java.lang.Override
+    public boolean getSupportsGzip() {
+      return supportsGzip_;
+    }
+
     private byte memoizedIsInitialized = -1;
     @java.lang.Override
     public final boolean isInitialized() {
@@ -332,6 +365,9 @@ public final class Auth extends com.google.protobuf.GeneratedFile {
       if (level_ != 0) {
         output.writeInt32(5, level_);
       }
+      if (supportsGzip_ != false) {
+        output.writeBool(6, supportsGzip_);
+      }
       getUnknownFields().writeTo(output);
     }
 
@@ -358,6 +394,10 @@ public final class Auth extends com.google.protobuf.GeneratedFile {
         size += com.google.protobuf.CodedOutputStream
           .computeInt32Size(5, level_);
       }
+      if (supportsGzip_ != false) {
+        size += com.google.protobuf.CodedOutputStream
+          .computeBoolSize(6, supportsGzip_);
+      }
       size += getUnknownFields().getSerializedSize();
       memoizedSize = size;
       return size;
@@ -383,6 +423,8 @@ public final class Auth extends com.google.protobuf.GeneratedFile {
           != other.getSupportsMessageAck()) return false;
       if (getLevel()
           != other.getLevel()) return false;
+      if (getSupportsGzip()
+          != other.getSupportsGzip()) return false;
       if (!getUnknownFields().equals(other.getUnknownFields())) return false;
       return true;
     }
@@ -405,6 +447,9 @@ public final class Auth extends com.google.protobuf.GeneratedFile {
           getSupportsMessageAck());
       hash = (37 * hash) + LEVEL_FIELD_NUMBER;
       hash = (53 * hash) + getLevel();
+      hash = (37 * hash) + SUPPORTS_GZIP_FIELD_NUMBER;
+      hash = (53 * hash) + com.google.protobuf.Internal.hashBoolean(
+          getSupportsGzip());
       hash = (29 * hash) + getUnknownFields().hashCode();
       memoizedHashCode = hash;
       return hash;
@@ -541,6 +586,7 @@ public final class Auth extends com.google.protobuf.GeneratedFile {
         platform_ = "";
         supportsMessageAck_ = false;
         level_ = 0;
+        supportsGzip_ = false;
         return this;
       }
 
@@ -589,6 +635,9 @@ public final class Auth extends com.google.protobuf.GeneratedFile {
         if (((from_bitField0_ & 0x00000010) != 0)) {
           result.level_ = level_;
         }
+        if (((from_bitField0_ & 0x00000020) != 0)) {
+          result.supportsGzip_ = supportsGzip_;
+        }
       }
 
       @java.lang.Override
@@ -623,6 +672,9 @@ public final class Auth extends com.google.protobuf.GeneratedFile {
         }
         if (other.getLevel() != 0) {
           setLevel(other.getLevel());
+        }
+        if (other.getSupportsGzip() != false) {
+          setSupportsGzip(other.getSupportsGzip());
         }
         this.mergeUnknownFields(other.getUnknownFields());
         onChanged();
@@ -675,6 +727,11 @@ public final class Auth extends com.google.protobuf.GeneratedFile {
                 bitField0_ |= 0x00000010;
                 break;
               } // case 40
+              case 48: {
+                supportsGzip_ = input.readBool();
+                bitField0_ |= 0x00000020;
+                break;
+              } // case 48
               default: {
                 if (!super.parseUnknownField(input, extensionRegistry, tag)) {
                   done = true; // was an endgroup tag
@@ -1033,6 +1090,62 @@ public final class Auth extends com.google.protobuf.GeneratedFile {
       public Builder clearLevel() {
         bitField0_ = (bitField0_ & ~0x00000010);
         level_ = 0;
+        onChanged();
+        return this;
+      }
+
+      private boolean supportsGzip_ ;
+      /**
+       * <pre>
+       * Declared by clients that can read gzip-compressed history payloads: a
+       * GetHistoryResponse with messages_gzip set carries the message list in a
+       * gzip (RFC 1952) container instead of the plain repeated field. The
+       * server keeps the plain form for sessions that do not declare this, so
+       * legacy clients are unaffected (game_chat_features P2 消息压缩, 2026-10-15).
+       * </pre>
+       *
+       * <code>bool supports_gzip = 6;</code>
+       * @return The supportsGzip.
+       */
+      @java.lang.Override
+      public boolean getSupportsGzip() {
+        return supportsGzip_;
+      }
+      /**
+       * <pre>
+       * Declared by clients that can read gzip-compressed history payloads: a
+       * GetHistoryResponse with messages_gzip set carries the message list in a
+       * gzip (RFC 1952) container instead of the plain repeated field. The
+       * server keeps the plain form for sessions that do not declare this, so
+       * legacy clients are unaffected (game_chat_features P2 消息压缩, 2026-10-15).
+       * </pre>
+       *
+       * <code>bool supports_gzip = 6;</code>
+       * @param value The supportsGzip to set.
+       * @return This builder for chaining.
+       */
+      public Builder setSupportsGzip(boolean value) {
+
+        supportsGzip_ = value;
+        bitField0_ |= 0x00000020;
+        onChanged();
+        return this;
+      }
+      /**
+       * <pre>
+       * Declared by clients that can read gzip-compressed history payloads: a
+       * GetHistoryResponse with messages_gzip set carries the message list in a
+       * gzip (RFC 1952) container instead of the plain repeated field. The
+       * server keeps the plain form for sessions that do not declare this, so
+       * legacy clients are unaffected (game_chat_features P2 消息压缩, 2026-10-15).
+       * </pre>
+       *
+       * <code>bool supports_gzip = 6;</code>
+       * @return This builder for chaining.
+       */
+      public Builder clearSupportsGzip() {
+        bitField0_ = (bitField0_ & ~0x00000020);
+        supportsGzip_ = false;
         onChanged();
         return this;
       }
@@ -17271,61 +17384,61 @@ public final class Auth extends com.google.protobuf.GeneratedFile {
   static {
     java.lang.String[] descriptorData = {
       "\n\020proto/auth.proto\022\nchirp.auth\032\022proto/co" +
-      "mmon.proto\"o\n\014LoginRequest\022\r\n\005token\030\001 \001(" +
-      "\t\022\021\n\tdevice_id\030\002 \001(\t\022\020\n\010platform\030\003 \001(\t\022\034" +
-      "\n\024supports_message_ack\030\004 \001(\010\022\r\n\005level\030\005 " +
-      "\001(\005\"\034\n\nKickNotify\022\016\n\006reason\030\001 \001(\t\"Q\n\016Dev" +
-      "icePresence\022\020\n\010platform\030\001 \001(\t\022\021\n\tdevice_" +
-      "id\030\002 \001(\t\022\016\n\006online\030\003 \001(\010\022\n\n\002ts\030\004 \001(\003\"D\n\025" +
-      "DevicesPresenceNotify\022+\n\007devices\030\001 \003(\0132\032" +
-      ".chirp.auth.DevicePresence\"\341\001\n\rLoginResp" +
-      "onse\022%\n\004code\030\001 \001(\0162\027.chirp.common.ErrorC" +
-      "ode\022\022\n\nsession_id\030\002 \001(\t\022\023\n\013server_time\030\003" +
-      " \001(\003\022\017\n\007user_id\030\004 \001(\t\022\025\n\rkick_previous\030\005" +
-      " \001(\010\022$\n\004kick\030\006 \001(\0132\026.chirp.auth.KickNoti" +
-      "fy\0222\n\016online_devices\030\007 \003(\0132\032.chirp.auth." +
-      "DevicePresence\"4\n\rLogoutRequest\022\017\n\007user_" +
-      "id\030\001 \001(\t\022\022\n\nsession_id\030\002 \001(\t\"L\n\016LogoutRe" +
-      "sponse\022%\n\004code\030\001 \001(\0162\027.chirp.common.Erro" +
-      "rCode\022\023\n\013server_time\030\002 \001(\003\"Z\n\017RegisterRe" +
-      "quest\022\020\n\010username\030\001 \001(\t\022\r\n\005email\030\002 \001(\t\022\020" +
-      "\n\010password\030\003 \001(\t\022\024\n\014display_name\030\004 \001(\t\"v" +
-      "\n\020RegisterResponse\022%\n\004code\030\001 \001(\0162\027.chirp" +
-      ".common.ErrorCode\022\017\n\007user_id\030\002 \001(\t\022\023\n\013se" +
-      "rver_time\030\003 \001(\003\022\025\n\rerror_message\030\004 \001(\t\"a" +
-      "\n\024PasswordLoginRequest\022\022\n\nidentifier\030\001 \001" +
-      "(\t\022\020\n\010password\030\002 \001(\t\022\021\n\tdevice_id\030\003 \001(\t\022" +
-      "\020\n\010platform\030\004 \001(\t\"\250\002\n\025PasswordLoginRespo" +
-      "nse\022%\n\004code\030\001 \001(\0162\027.chirp.common.ErrorCo" +
-      "de\022\017\n\007user_id\030\002 \001(\t\022\020\n\010username\030\003 \001(\t\022\022\n" +
-      "\nsession_id\030\004 \001(\t\022\024\n\014access_token\030\005 \001(\t\022" +
-      "\025\n\rrefresh_token\030\006 \001(\t\022\037\n\027access_token_e" +
-      "xpires_at\030\007 \001(\003\022 \n\030refresh_token_expires" +
-      "_at\030\010 \001(\003\022\023\n\013server_time\030\t \001(\003\022\025\n\rkick_p" +
-      "revious\030\n \001(\010\022\025\n\rerror_message\030\013 \001(\t\",\n\023" +
-      "RefreshTokenRequest\022\025\n\rrefresh_token\030\001 \001" +
-      "(\t\"\240\001\n\024RefreshTokenResponse\022%\n\004code\030\001 \001(" +
-      "\0162\027.chirp.common.ErrorCode\022\024\n\014access_tok" +
-      "en\030\002 \001(\t\022\037\n\027access_token_expires_at\030\003 \001(" +
-      "\003\022\023\n\013server_time\030\004 \001(\003\022\025\n\rerror_message\030" +
-      "\005 \001(\t\"%\n\022GetSessionsRequest\022\017\n\007user_id\030\001" +
-      " \001(\t\"\210\001\n\013SessionInfo\022\022\n\nsession_id\030\001 \001(\t" +
-      "\022\021\n\tdevice_id\030\002 \001(\t\022\020\n\010platform\030\003 \001(\t\022\022\n" +
-      "\ncreated_at\030\004 \001(\003\022\030\n\020last_activity_at\030\005 " +
-      "\001(\003\022\022\n\nis_current\030\006 \001(\010\"|\n\023GetSessionsRe" +
-      "sponse\022%\n\004code\030\001 \001(\0162\027.chirp.common.Erro" +
-      "rCode\022)\n\010sessions\030\002 \003(\0132\027.chirp.auth.Ses" +
-      "sionInfo\022\023\n\013server_time\030\003 \001(\003\";\n\024RevokeS" +
-      "essionRequest\022\017\n\007user_id\030\001 \001(\t\022\022\n\nsessio" +
-      "n_id\030\002 \001(\t\"S\n\025RevokeSessionResponse\022%\n\004c" +
-      "ode\030\001 \001(\0162\027.chirp.common.ErrorCode\022\023\n\013se" +
-      "rver_time\030\002 \001(\003\"T\n\025ChangePasswordRequest" +
-      "\022\017\n\007user_id\030\001 \001(\t\022\024\n\014old_password\030\002 \001(\t\022" +
-      "\024\n\014new_password\030\003 \001(\t\"k\n\026ChangePasswordR" +
-      "esponse\022%\n\004code\030\001 \001(\0162\027.chirp.common.Err" +
-      "orCode\022\023\n\013server_time\030\002 \001(\003\022\025\n\rerror_mes" +
-      "sage\030\003 \001(\tB$Z\"github.com/cui/chirp/proto" +
-      "/go/authb\006proto3"
+      "mmon.proto\"\206\001\n\014LoginRequest\022\r\n\005token\030\001 \001" +
+      "(\t\022\021\n\tdevice_id\030\002 \001(\t\022\020\n\010platform\030\003 \001(\t\022" +
+      "\034\n\024supports_message_ack\030\004 \001(\010\022\r\n\005level\030\005" +
+      " \001(\005\022\025\n\rsupports_gzip\030\006 \001(\010\"\034\n\nKickNotif" +
+      "y\022\016\n\006reason\030\001 \001(\t\"Q\n\016DevicePresence\022\020\n\010p" +
+      "latform\030\001 \001(\t\022\021\n\tdevice_id\030\002 \001(\t\022\016\n\006onli" +
+      "ne\030\003 \001(\010\022\n\n\002ts\030\004 \001(\003\"D\n\025DevicesPresenceN" +
+      "otify\022+\n\007devices\030\001 \003(\0132\032.chirp.auth.Devi" +
+      "cePresence\"\341\001\n\rLoginResponse\022%\n\004code\030\001 \001" +
+      "(\0162\027.chirp.common.ErrorCode\022\022\n\nsession_i" +
+      "d\030\002 \001(\t\022\023\n\013server_time\030\003 \001(\003\022\017\n\007user_id\030" +
+      "\004 \001(\t\022\025\n\rkick_previous\030\005 \001(\010\022$\n\004kick\030\006 \001" +
+      "(\0132\026.chirp.auth.KickNotify\0222\n\016online_dev" +
+      "ices\030\007 \003(\0132\032.chirp.auth.DevicePresence\"4" +
+      "\n\rLogoutRequest\022\017\n\007user_id\030\001 \001(\t\022\022\n\nsess" +
+      "ion_id\030\002 \001(\t\"L\n\016LogoutResponse\022%\n\004code\030\001" +
+      " \001(\0162\027.chirp.common.ErrorCode\022\023\n\013server_" +
+      "time\030\002 \001(\003\"Z\n\017RegisterRequest\022\020\n\010usernam" +
+      "e\030\001 \001(\t\022\r\n\005email\030\002 \001(\t\022\020\n\010password\030\003 \001(\t" +
+      "\022\024\n\014display_name\030\004 \001(\t\"v\n\020RegisterRespon" +
+      "se\022%\n\004code\030\001 \001(\0162\027.chirp.common.ErrorCod" +
+      "e\022\017\n\007user_id\030\002 \001(\t\022\023\n\013server_time\030\003 \001(\003\022" +
+      "\025\n\rerror_message\030\004 \001(\t\"a\n\024PasswordLoginR" +
+      "equest\022\022\n\nidentifier\030\001 \001(\t\022\020\n\010password\030\002" +
+      " \001(\t\022\021\n\tdevice_id\030\003 \001(\t\022\020\n\010platform\030\004 \001(" +
+      "\t\"\250\002\n\025PasswordLoginResponse\022%\n\004code\030\001 \001(" +
+      "\0162\027.chirp.common.ErrorCode\022\017\n\007user_id\030\002 " +
+      "\001(\t\022\020\n\010username\030\003 \001(\t\022\022\n\nsession_id\030\004 \001(" +
+      "\t\022\024\n\014access_token\030\005 \001(\t\022\025\n\rrefresh_token" +
+      "\030\006 \001(\t\022\037\n\027access_token_expires_at\030\007 \001(\003\022" +
+      " \n\030refresh_token_expires_at\030\010 \001(\003\022\023\n\013ser" +
+      "ver_time\030\t \001(\003\022\025\n\rkick_previous\030\n \001(\010\022\025\n" +
+      "\rerror_message\030\013 \001(\t\",\n\023RefreshTokenRequ" +
+      "est\022\025\n\rrefresh_token\030\001 \001(\t\"\240\001\n\024RefreshTo" +
+      "kenResponse\022%\n\004code\030\001 \001(\0162\027.chirp.common" +
+      ".ErrorCode\022\024\n\014access_token\030\002 \001(\t\022\037\n\027acce" +
+      "ss_token_expires_at\030\003 \001(\003\022\023\n\013server_time" +
+      "\030\004 \001(\003\022\025\n\rerror_message\030\005 \001(\t\"%\n\022GetSess" +
+      "ionsRequest\022\017\n\007user_id\030\001 \001(\t\"\210\001\n\013Session" +
+      "Info\022\022\n\nsession_id\030\001 \001(\t\022\021\n\tdevice_id\030\002 " +
+      "\001(\t\022\020\n\010platform\030\003 \001(\t\022\022\n\ncreated_at\030\004 \001(" +
+      "\003\022\030\n\020last_activity_at\030\005 \001(\003\022\022\n\nis_curren" +
+      "t\030\006 \001(\010\"|\n\023GetSessionsResponse\022%\n\004code\030\001" +
+      " \001(\0162\027.chirp.common.ErrorCode\022)\n\010session" +
+      "s\030\002 \003(\0132\027.chirp.auth.SessionInfo\022\023\n\013serv" +
+      "er_time\030\003 \001(\003\";\n\024RevokeSessionRequest\022\017\n" +
+      "\007user_id\030\001 \001(\t\022\022\n\nsession_id\030\002 \001(\t\"S\n\025Re" +
+      "vokeSessionResponse\022%\n\004code\030\001 \001(\0162\027.chir" +
+      "p.common.ErrorCode\022\023\n\013server_time\030\002 \001(\003\"" +
+      "T\n\025ChangePasswordRequest\022\017\n\007user_id\030\001 \001(" +
+      "\t\022\024\n\014old_password\030\002 \001(\t\022\024\n\014new_password\030" +
+      "\003 \001(\t\"k\n\026ChangePasswordResponse\022%\n\004code\030" +
+      "\001 \001(\0162\027.chirp.common.ErrorCode\022\023\n\013server" +
+      "_time\030\002 \001(\003\022\025\n\rerror_message\030\003 \001(\tB$Z\"gi" +
+      "thub.com/cui/chirp/proto/go/authb\006proto3"
     };
     descriptor = com.google.protobuf.Descriptors.FileDescriptor
       .internalBuildGeneratedFileFrom(descriptorData,
@@ -17337,7 +17450,7 @@ public final class Auth extends com.google.protobuf.GeneratedFile {
     internal_static_chirp_auth_LoginRequest_fieldAccessorTable = new
       com.google.protobuf.GeneratedMessage.FieldAccessorTable(
         internal_static_chirp_auth_LoginRequest_descriptor,
-        new java.lang.String[] { "Token", "DeviceId", "Platform", "SupportsMessageAck", "Level", });
+        new java.lang.String[] { "Token", "DeviceId", "Platform", "SupportsMessageAck", "Level", "SupportsGzip", });
     internal_static_chirp_auth_KickNotify_descriptor =
       getDescriptor().getMessageType(1);
     internal_static_chirp_auth_KickNotify_fieldAccessorTable = new

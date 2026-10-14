@@ -37,7 +37,13 @@ type LoginRequest struct {
 	// client is trusted at the same level as the login token it presented.
 	// Consumed only by the world-channel send gate (--world_channel_min_level,
 	// 0 = gate disabled); unset / 0 means "no level claimed".
-	Level         int32 `protobuf:"varint,5,opt,name=level,proto3" json:"level,omitempty"`
+	Level int32 `protobuf:"varint,5,opt,name=level,proto3" json:"level,omitempty"`
+	// Declared by clients that can read gzip-compressed history payloads: a
+	// GetHistoryResponse with messages_gzip set carries the message list in a
+	// gzip (RFC 1952) container instead of the plain repeated field. The
+	// server keeps the plain form for sessions that do not declare this, so
+	// legacy clients are unaffected (game_chat_features P2 消息压缩, 2026-10-15).
+	SupportsGzip  bool `protobuf:"varint,6,opt,name=supports_gzip,json=supportsGzip,proto3" json:"supports_gzip,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -105,6 +111,13 @@ func (x *LoginRequest) GetLevel() int32 {
 		return x.Level
 	}
 	return 0
+}
+
+func (x *LoginRequest) GetSupportsGzip() bool {
+	if x != nil {
+		return x.SupportsGzip
+	}
+	return false
 }
 
 type KickNotify struct {
@@ -1345,13 +1358,14 @@ var File_proto_auth_proto protoreflect.FileDescriptor
 const file_proto_auth_proto_rawDesc = "" +
 	"\n" +
 	"\x10proto/auth.proto\x12\n" +
-	"chirp.auth\x1a\x12proto/common.proto\"\xa5\x01\n" +
+	"chirp.auth\x1a\x12proto/common.proto\"\xca\x01\n" +
 	"\fLoginRequest\x12\x14\n" +
 	"\x05token\x18\x01 \x01(\tR\x05token\x12\x1b\n" +
 	"\tdevice_id\x18\x02 \x01(\tR\bdeviceId\x12\x1a\n" +
 	"\bplatform\x18\x03 \x01(\tR\bplatform\x120\n" +
 	"\x14supports_message_ack\x18\x04 \x01(\bR\x12supportsMessageAck\x12\x14\n" +
-	"\x05level\x18\x05 \x01(\x05R\x05level\"$\n" +
+	"\x05level\x18\x05 \x01(\x05R\x05level\x12#\n" +
+	"\rsupports_gzip\x18\x06 \x01(\bR\fsupportsGzip\"$\n" +
 	"\n" +
 	"KickNotify\x12\x16\n" +
 	"\x06reason\x18\x01 \x01(\tR\x06reason\"q\n" +

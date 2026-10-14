@@ -2899,8 +2899,9 @@ class LoginRequest final : public ::google::protobuf::Message
     kTokenFieldNumber = 1,
     kDeviceIdFieldNumber = 2,
     kPlatformFieldNumber = 3,
-    kSupportsMessageAckFieldNumber = 4,
     kLevelFieldNumber = 5,
+    kSupportsMessageAckFieldNumber = 4,
+    kSupportsGzipFieldNumber = 6,
   };
   // string token = 1;
   void clear_token() ;
@@ -2947,16 +2948,6 @@ class LoginRequest final : public ::google::protobuf::Message
   ::std::string* PROTOBUF_NONNULL _internal_mutable_platform();
 
   public:
-  // bool supports_message_ack = 4;
-  void clear_supports_message_ack() ;
-  bool supports_message_ack() const;
-  void set_supports_message_ack(bool value);
-
-  private:
-  bool _internal_supports_message_ack() const;
-  void _internal_set_supports_message_ack(bool value);
-
-  public:
   // int32 level = 5;
   void clear_level() ;
   ::int32_t level() const;
@@ -2967,11 +2958,31 @@ class LoginRequest final : public ::google::protobuf::Message
   void _internal_set_level(::int32_t value);
 
   public:
+  // bool supports_message_ack = 4;
+  void clear_supports_message_ack() ;
+  bool supports_message_ack() const;
+  void set_supports_message_ack(bool value);
+
+  private:
+  bool _internal_supports_message_ack() const;
+  void _internal_set_supports_message_ack(bool value);
+
+  public:
+  // bool supports_gzip = 6;
+  void clear_supports_gzip() ;
+  bool supports_gzip() const;
+  void set_supports_gzip(bool value);
+
+  private:
+  bool _internal_supports_gzip() const;
+  void _internal_set_supports_gzip(bool value);
+
+  public:
   // @@protoc_insertion_point(class_scope:chirp.auth.LoginRequest)
  private:
   class _Internal;
   friend class ::google::protobuf::internal::TcParser;
-  static const ::google::protobuf::internal::TcParseTable<3, 5,
+  static const ::google::protobuf::internal::TcParseTable<3, 6,
                                    0, 54,
                                    2>
       _table_;
@@ -2996,8 +3007,9 @@ class LoginRequest final : public ::google::protobuf::Message
     ::google::protobuf::internal::ArenaStringPtr token_;
     ::google::protobuf::internal::ArenaStringPtr device_id_;
     ::google::protobuf::internal::ArenaStringPtr platform_;
-    bool supports_message_ack_;
     ::int32_t level_;
+    bool supports_message_ack_;
+    bool supports_gzip_;
     PROTOBUF_TSAN_DECLARE_MEMBER
   };
   union { Impl_ _impl_; };
@@ -4998,7 +5010,7 @@ inline void LoginRequest::clear_supports_message_ack() {
   ::google::protobuf::internal::TSanWrite(&_impl_);
   _impl_.supports_message_ack_ = false;
   ClearHasBit(_impl_._has_bits_[0],
-                  0x00000008U);
+                  0x00000010U);
 }
 inline bool LoginRequest::supports_message_ack() const {
   // @@protoc_insertion_point(field_get:chirp.auth.LoginRequest.supports_message_ack)
@@ -5006,7 +5018,7 @@ inline bool LoginRequest::supports_message_ack() const {
 }
 inline void LoginRequest::set_supports_message_ack(bool value) {
   _internal_set_supports_message_ack(value);
-  SetHasBit(_impl_._has_bits_[0], 0x00000008U);
+  SetHasBit(_impl_._has_bits_[0], 0x00000010U);
   // @@protoc_insertion_point(field_set:chirp.auth.LoginRequest.supports_message_ack)
 }
 inline bool LoginRequest::_internal_supports_message_ack() const {
@@ -5023,7 +5035,7 @@ inline void LoginRequest::clear_level() {
   ::google::protobuf::internal::TSanWrite(&_impl_);
   _impl_.level_ = 0;
   ClearHasBit(_impl_._has_bits_[0],
-                  0x00000010U);
+                  0x00000008U);
 }
 inline ::int32_t LoginRequest::level() const {
   // @@protoc_insertion_point(field_get:chirp.auth.LoginRequest.level)
@@ -5031,7 +5043,7 @@ inline ::int32_t LoginRequest::level() const {
 }
 inline void LoginRequest::set_level(::int32_t value) {
   _internal_set_level(value);
-  SetHasBit(_impl_._has_bits_[0], 0x00000010U);
+  SetHasBit(_impl_._has_bits_[0], 0x00000008U);
   // @@protoc_insertion_point(field_set:chirp.auth.LoginRequest.level)
 }
 inline ::int32_t LoginRequest::_internal_level() const {
@@ -5041,6 +5053,31 @@ inline ::int32_t LoginRequest::_internal_level() const {
 inline void LoginRequest::_internal_set_level(::int32_t value) {
   ::google::protobuf::internal::TSanWrite(&_impl_);
   _impl_.level_ = value;
+}
+
+// bool supports_gzip = 6;
+inline void LoginRequest::clear_supports_gzip() {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_.supports_gzip_ = false;
+  ClearHasBit(_impl_._has_bits_[0],
+                  0x00000020U);
+}
+inline bool LoginRequest::supports_gzip() const {
+  // @@protoc_insertion_point(field_get:chirp.auth.LoginRequest.supports_gzip)
+  return _internal_supports_gzip();
+}
+inline void LoginRequest::set_supports_gzip(bool value) {
+  _internal_set_supports_gzip(value);
+  SetHasBit(_impl_._has_bits_[0], 0x00000020U);
+  // @@protoc_insertion_point(field_set:chirp.auth.LoginRequest.supports_gzip)
+}
+inline bool LoginRequest::_internal_supports_gzip() const {
+  ::google::protobuf::internal::TSanRead(&_impl_);
+  return _impl_.supports_gzip_;
+}
+inline void LoginRequest::_internal_set_supports_gzip(bool value) {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_.supports_gzip_ = value;
 }
 
 // -------------------------------------------------------------------

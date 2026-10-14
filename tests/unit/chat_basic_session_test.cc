@@ -39,6 +39,8 @@
 
 #include "fake_servers.h"
 #include "in_memory_redis.h"
+#include "gzip.h"
+#include "history_compression.h"
 #include "jwt.h"
 #include "network/tcp_client.h"
 #include "network/websocket_client.h"
@@ -281,13 +283,15 @@ class BasicChatTest : public ::testing::Test {
                                    const std::string& device_id = "d1",
                                    const std::string& platform = "web",
                                    bool supports_ack = false, int64_t seq = 1,
-                                   int32_t level = 0) {
+                                   int32_t level = 0,
+                                   bool supports_gzip = false) {
     chirp::auth::LoginRequest req;
     req.set_token(token);
     req.set_device_id(device_id);
     req.set_platform(platform);
     req.set_supports_message_ack(supports_ack);
     req.set_level(level);
+    req.set_supports_gzip(supports_gzip);
     DispatchReq(chirp::gateway::LOGIN_REQ, req, session, seq);
     chirp::auth::LoginResponse resp;
     const auto frames = FramesOf(*session, chirp::gateway::LOGIN_RESP);
@@ -1167,6 +1171,97 @@ TEST_F(BasicChatTest, CoordLinkSendCarriesMetadataThroughHistory) {
   EXPECT_EQ(hist_meta.map_id(), "field-7");
   EXPECT_EQ(hist_meta.label(), "BOSS 刷新点");
   EXPECT_EQ(hist_meta.z(), 3);
+}
+
+// --- 消息压缩（game_chat_features P2 消息压缩）：登录声明 supports_gzip 的
+// 会话历史读回收 gzip 形态，未声明的保持明文 -------------------------------
+
+TEST_F(BasicChatTest, HistoryGzipForCapableSessionAndPlainForOthers) {
+  auto alice = std::make_shared<MockSession>();
+  auto bob = std::make_shared<MockSession>();
+  ASSERT_EQ(Login(alice, "alice", "d1", "web", /*supports_ack=*/false, /*seq=*/1,
+                  /*level=*/0, /*supports_gzip=*/true).code(),
+            chirp::common::OK);
+  ASSERT_EQ(Login(bob, "bob").code(), chirp::common::OK);
+
+  ASSERT_EQ(Send(alice, "alice", "bob", "first message", chirp::chat::PRIVATE).code(),
+            chirp::common::OK);
+  ASSERT_EQ(Send(alice, "alice", "bob", "second message", chirp::chat::PRIVATE).code(),
+            chirp::common::OK);
+
+  // 声明能力的会话：明文清单搬空，gzip 容器在场；code/has_more 留在外层。
+  chirp::chat::GetHistoryRequest hist;
+  hist.set_user_id("alice");
+  hist.set_channel_type(chirp::chat::PRIVATE);
+  hist.set_channel_id("alice|bob");
+  hist.set_limit(10);
+  DispatchReq(chirp::gateway::GET_HISTORY_REQ, hist, alice);
+  const auto gz_frames = FramesOf(*alice, chirp::gateway::GET_HISTORY_RESP);
+  ASSERT_EQ(gz_frames.size(), 1u);
+  chirp::chat::GetHistoryResponse gz_resp;
+  ASSERT_TRUE(gz_resp.ParseFromString(gz_frames[0].body()));
+  ASSERT_EQ(gz_resp.code(), chirp::common::OK);
+  EXPECT_EQ(gz_resp.messages_size(), 0);
+  ASSERT_FALSE(gz_resp.messages_gzip().empty());
+
+  // 解压回 GetHistoryResponse：消息清单原样回来（与消费端同一套解法）。
+  std::string raw;
+  ASSERT_TRUE(chirp::common::GzipDecompress(gz_resp.messages_gzip(), &raw));
+  chirp::chat::GetHistoryResponse inflated;
+  ASSERT_TRUE(inflated.ParseFromString(raw));
+  ASSERT_EQ(inflated.messages_size(), 2);
+  const std::string& first = inflated.messages(0).content();
+  const std::string& second = inflated.messages(1).content();
+  EXPECT_TRUE((first == "first message" && second == "second message") ||
+              (first == "second message" && second == "first message"));
+
+  // 同频道、未声明能力的会话照旧收明文。
+  chirp::chat::GetHistoryRequest hist_bob = hist;
+  hist_bob.set_user_id("bob");
+  DispatchReq(chirp::gateway::GET_HISTORY_REQ, hist_bob, bob);
+  const auto plain_frames = FramesOf(*bob, chirp::gateway::GET_HISTORY_RESP);
+  ASSERT_EQ(plain_frames.size(), 1u);
+  chirp::chat::GetHistoryResponse plain;
+  ASSERT_TRUE(plain.ParseFromString(plain_frames[0].body()));
+  ASSERT_EQ(plain.code(), chirp::common::OK);
+  EXPECT_TRUE(plain.messages_gzip().empty());
+  EXPECT_EQ(plain.messages_size(), 2);
+}
+
+TEST_F(BasicChatTest, HistoryGzipFallsBackToPlainOnEmptyAndAllDefault) {
+  auto alice = std::make_shared<MockSession>();
+  ASSERT_EQ(Login(alice, "alice", "d1", "web", /*supports_ack=*/false, /*seq=*/1,
+                  /*level=*/0, /*supports_gzip=*/true).code(),
+            chirp::common::OK);
+
+  // 空历史：没有可压内容，gzip 场不开，明文空清单照走。
+  chirp::chat::GetHistoryRequest hist;
+  hist.set_user_id("alice");
+  hist.set_channel_type(chirp::chat::PRIVATE);
+  hist.set_channel_id("alice|bob");
+  hist.set_limit(10);
+  DispatchReq(chirp::gateway::GET_HISTORY_REQ, hist, alice);
+  const auto frames = FramesOf(*alice, chirp::gateway::GET_HISTORY_RESP);
+  ASSERT_EQ(frames.size(), 1u);
+  chirp::chat::GetHistoryResponse empty;
+  ASSERT_TRUE(empty.ParseFromString(frames[0].body()));
+  EXPECT_EQ(empty.code(), chirp::common::OK);
+  EXPECT_TRUE(empty.messages_gzip().empty());
+  EXPECT_EQ(empty.messages_size(), 0);
+
+  // 全默认 ChatMessage：repeated message 元素逐个写长度前缀，序列化非空 →
+  // gzip 路径照常走，解压回两条（正文为空）。
+  chirp::chat::GetHistoryResponse all_default;
+  all_default.add_messages();
+  all_default.add_messages();
+  chirp::chat::CompressHistoryResponse(&all_default, /*supports_gzip=*/true);
+  EXPECT_EQ(all_default.messages_size(), 0);
+  ASSERT_FALSE(all_default.messages_gzip().empty());
+  std::string raw;
+  ASSERT_TRUE(chirp::common::GzipDecompress(all_default.messages_gzip(), &raw));
+  chirp::chat::GetHistoryResponse inflated;
+  ASSERT_TRUE(inflated.ParseFromString(raw));
+  EXPECT_EQ(inflated.messages_size(), 2);
 }
 
 TEST_F(BasicChatTest, CoordLinkRejectsGarbageMetadataAndEmptyMapId) {

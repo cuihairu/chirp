@@ -21,6 +21,7 @@
 #include "channel_pacer.h"
 #include "chat_validation.h"
 #include "delivery_ack_manager.h"
+#include "history_compression.h"
 #include "delivery_prefs.h"
 #include "repeat_guard.h"
 #include "inject_consumer.h"
@@ -99,10 +100,11 @@ struct DistributedChatState {
       const std::string& user_id, const std::string& device_id,
       const std::string& session_id,
       const std::shared_ptr<chirp::network::Session>& session,
-      const std::string& platform, int32_t level = 0) {
+      const std::string& platform, int32_t level = 0,
+      bool supports_gzip = false) {
     return chirp::network::BindAuthenticatedSession(registry, user_id, session_id,
                                                     device_id, session, platform,
-                                                    level);
+                                                    level, supports_gzip);
   }
 
   // Only releases the (user, platform) slot while it still points at THIS
@@ -931,7 +933,7 @@ void HandleLogin(const chirp::auth::LoginRequest& req,
     // listing (self excluded) rides in the response, and the user's other
     // devices learn this device came online.
     auto old = state->AddSession(user_id, req.device_id(), resp.session_id(), session,
-                                 req.platform(), req.level());
+                                 req.platform(), req.level(), req.supports_gzip());
     if (old && old.get() != session.get()) {
       KickSession(old, chirp::network::LoginKickReason(req.platform()));
     }
@@ -1026,6 +1028,7 @@ void HandleLogin(const chirp::auth::LoginRequest& req,
 void HandleGetHistory(const chirp::chat::GetHistoryRequest& req,
                     const std::shared_ptr<chirp::network::Session>& session,
                     const std::shared_ptr<PaginatedHistoryRetriever>& retriever,
+                    bool supports_gzip,
                     int64_t seq) {
   std::string channel_id = req.channel_id();
 
@@ -1052,6 +1055,9 @@ void HandleGetHistory(const chirp::chat::GetHistoryRequest& req,
     msg->set_metadata(msg_data.metadata);
   }
 
+  // 消息压缩（game_chat_features P2）：登录声明 supports_gzip 的会话收
+  // gzip 形态，其余保持明文 repeated 字段不变。
+  chirp::chat::CompressHistoryResponse(&resp, supports_gzip);
   chirp::chat::runtime::SendPacket(session, chirp::gateway::GET_HISTORY_RESP, seq, resp.SerializeAsString());
 }
 
@@ -1802,10 +1808,11 @@ int main(int argc, char** argv) {
                       spoke_game_id, edit_handlers, &directory, hub, &group_handlers,
                       &reaction_handlers, seq);
   };
-  handlers.on_get_history = [retriever](const std::shared_ptr<chirp::network::Session>& session,
+  handlers.on_get_history = [retriever, state](const std::shared_ptr<chirp::network::Session>& session,
                                         const chirp::chat::GetHistoryRequest& req,
                                         int64_t seq) {
-    HandleGetHistory(req, session, retriever, seq);
+    HandleGetHistory(req, session, retriever,
+                     chirp::network::SessionSupportsGzip(state->registry, session.get()), seq);
   };
   handlers.on_get_history_v2 = [](const std::shared_ptr<chirp::network::Session>& session,
                                   const std::string& body,

@@ -86,6 +86,32 @@ TEST(SessionRegistryTest, DeclaredLevelRidesBindGetAndRemove) {
   EXPECT_EQ(GetAuthenticatedSession(state, session).level, 0);
 }
 
+TEST(SessionRegistryTest, DeclaredGzipCapabilityRidesBindReadAndRemove) {
+  // LoginRequest.supports_gzip (game_chat_features P2 消息压缩) rides the
+  // registry like the level above: set at login bind, read by the history
+  // send paths, wiped together with the session.
+  auto state = std::make_shared<SessionRegistry>();
+  auto session = std::make_shared<FakeSession>();
+
+  EXPECT_FALSE(BindAuthenticatedSession(state, "alice", "s1", "phone-a", session,
+                                        "web", /*level=*/0, /*supports_gzip=*/true));
+  EXPECT_TRUE(SessionSupportsGzip(state, session.get()));
+
+  // Rebind without a declaration (legacy or changed-mind login shape)
+  // clears the capability on the same connection.
+  EXPECT_FALSE(BindAuthenticatedSession(state, "bob", "s2", "phone-a", session, "web"));
+  EXPECT_FALSE(SessionSupportsGzip(state, session.get()));
+
+  EXPECT_FALSE(BindAuthenticatedSession(state, "alice", "s3", "phone-a", session,
+                                        "web", /*level=*/0, /*supports_gzip=*/true));
+  EXPECT_TRUE(RemoveAuthenticatedSession(state, session));
+  EXPECT_FALSE(SessionSupportsGzip(state, session.get()));
+
+  // Unbound sessions (and services that never pass the flag) read false -
+  // exactly the plain-response legacy behavior.
+  EXPECT_FALSE(SessionSupportsGzip(state, nullptr));
+}
+
 TEST(SessionRegistryTest, RebindingSameConnectionRemovesPreviousUserMapping) {
   auto state = std::make_shared<SessionRegistry>();
   auto session = std::make_shared<FakeSession>();

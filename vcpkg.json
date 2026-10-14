@@ -11,6 +11,7 @@
     "openssl",
     "pkgconf",
     "asio",
+    "zlib",
     {
       "name": "sqlite3",
       "features": ["fts5"]

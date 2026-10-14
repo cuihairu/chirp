@@ -4,6 +4,7 @@
 #include <memory>
 #include <mutex>
 #include <string>
+#include <unordered_set>
 #include <unordered_map>
 #include <vector>
 
@@ -40,6 +41,10 @@ struct SessionRegistry {
   // authorization beyond that gate, and 0 for everyone who does not declare
   // one (app/companion logins, other services' clients).
   std::unordered_map<void*, int32_t> session_to_level;
+  // Sessions that declared LoginRequest.supports_gzip at login: the chat
+  // plane compresses history readbacks for them. Presence-only metadata like
+  // the level above - absence means plain responses (every non-chat client).
+  std::unordered_set<const void*> gzip_sessions;
 };
 
 /// @brief The authenticated identity recorded for a session.
@@ -72,11 +77,18 @@ std::shared_ptr<Session> BindAuthenticatedSession(const std::shared_ptr<SessionR
                                                   const std::string& device_id,
                                                   const std::shared_ptr<Session>& session,
                                                   const std::string& platform = "",
-                                                  int32_t level = 0);
+                                                  int32_t level = 0,
+                                                  bool supports_gzip = false);
 
 /// @brief Looks up the authenticated identity recorded for a session.
 AuthenticatedSession GetAuthenticatedSession(const std::shared_ptr<SessionRegistry>& state,
                                              const std::shared_ptr<Session>& session);
+
+/// @brief Whether the session declared LoginRequest.supports_gzip at its
+/// login bind. Unbound sessions and services that never pass the flag read
+/// false, which is exactly the legacy plain-response behavior.
+bool SessionSupportsGzip(const std::shared_ptr<SessionRegistry>& state,
+                         const Session* session);
 
 /// @brief Removes a session's registration. Returns true only when the
 /// session's own (user, platform) slot was released - it pointed at this

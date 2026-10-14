@@ -7,6 +7,10 @@ file(GLOB HEADERS "*.h")
 
 add_library(chirp_common STATIC ${SRCS} ${SRC_SUB_SRCS} ${HEADERS})
 
+# gzip.cc: history-readback compression (game_chat_features P2 消息压缩).
+find_package(ZLIB REQUIRED)
+target_link_libraries(chirp_common PUBLIC ZLIB::ZLIB)
+
 if(TARGET chirp_asio)
   # The mini metrics HTTP server is ASIO-based.
   target_link_libraries(chirp_common PUBLIC chirp_asio)

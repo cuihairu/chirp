@@ -398,8 +398,9 @@ inline constexpr LoginRequest::Impl_::Impl_(
         platform_(
             &::google::protobuf::internal::fixed_address_empty_string,
             ::_pbi::ConstantInitialized()),
+        level_{0},
         supports_message_ack_{false},
-        level_{0} {}
+        supports_gzip_{false} {}
 
 template <typename>
 PROTOBUF_CONSTEXPR LoginRequest::LoginRequest(::_pbi::ConstantInitialized)
@@ -666,17 +667,19 @@ const ::uint32_t
         protodesc_cold) = {
         0x081, // bitmap
         PROTOBUF_FIELD_OFFSET(::chirp::auth::LoginRequest, _impl_._has_bits_),
-        8, // hasbit index offset
+        9, // hasbit index offset
         PROTOBUF_FIELD_OFFSET(::chirp::auth::LoginRequest, _impl_.token_),
         PROTOBUF_FIELD_OFFSET(::chirp::auth::LoginRequest, _impl_.device_id_),
         PROTOBUF_FIELD_OFFSET(::chirp::auth::LoginRequest, _impl_.platform_),
         PROTOBUF_FIELD_OFFSET(::chirp::auth::LoginRequest, _impl_.supports_message_ack_),
         PROTOBUF_FIELD_OFFSET(::chirp::auth::LoginRequest, _impl_.level_),
+        PROTOBUF_FIELD_OFFSET(::chirp::auth::LoginRequest, _impl_.supports_gzip_),
         0,
         1,
         2,
-        3,
         4,
+        3,
+        5,
         0x081, // bitmap
         PROTOBUF_FIELD_OFFSET(::chirp::auth::KickNotify, _impl_._has_bits_),
         4, // hasbit index offset
@@ -871,25 +874,25 @@ const ::uint32_t
 static const ::_pbi::MigrationSchema
     schemas[] ABSL_ATTRIBUTE_SECTION_VARIABLE(protodesc_cold) = {
         {0, sizeof(::chirp::auth::LoginRequest)},
-        {13, sizeof(::chirp::auth::KickNotify)},
-        {18, sizeof(::chirp::auth::DevicePresence)},
-        {29, sizeof(::chirp::auth::DevicesPresenceNotify)},
-        {34, sizeof(::chirp::auth::LoginResponse)},
-        {51, sizeof(::chirp::auth::LogoutRequest)},
-        {58, sizeof(::chirp::auth::LogoutResponse)},
-        {65, sizeof(::chirp::auth::RegisterRequest)},
-        {76, sizeof(::chirp::auth::RegisterResponse)},
-        {87, sizeof(::chirp::auth::PasswordLoginRequest)},
-        {98, sizeof(::chirp::auth::PasswordLoginResponse)},
-        {123, sizeof(::chirp::auth::RefreshTokenRequest)},
-        {128, sizeof(::chirp::auth::RefreshTokenResponse)},
-        {141, sizeof(::chirp::auth::GetSessionsRequest)},
-        {146, sizeof(::chirp::auth::SessionInfo)},
-        {161, sizeof(::chirp::auth::GetSessionsResponse)},
-        {170, sizeof(::chirp::auth::RevokeSessionRequest)},
-        {177, sizeof(::chirp::auth::RevokeSessionResponse)},
-        {184, sizeof(::chirp::auth::ChangePasswordRequest)},
-        {193, sizeof(::chirp::auth::ChangePasswordResponse)},
+        {15, sizeof(::chirp::auth::KickNotify)},
+        {20, sizeof(::chirp::auth::DevicePresence)},
+        {31, sizeof(::chirp::auth::DevicesPresenceNotify)},
+        {36, sizeof(::chirp::auth::LoginResponse)},
+        {53, sizeof(::chirp::auth::LogoutRequest)},
+        {60, sizeof(::chirp::auth::LogoutResponse)},
+        {67, sizeof(::chirp::auth::RegisterRequest)},
+        {78, sizeof(::chirp::auth::RegisterResponse)},
+        {89, sizeof(::chirp::auth::PasswordLoginRequest)},
+        {100, sizeof(::chirp::auth::PasswordLoginResponse)},
+        {125, sizeof(::chirp::auth::RefreshTokenRequest)},
+        {130, sizeof(::chirp::auth::RefreshTokenResponse)},
+        {143, sizeof(::chirp::auth::GetSessionsRequest)},
+        {148, sizeof(::chirp::auth::SessionInfo)},
+        {163, sizeof(::chirp::auth::GetSessionsResponse)},
+        {172, sizeof(::chirp::auth::RevokeSessionRequest)},
+        {179, sizeof(::chirp::auth::RevokeSessionResponse)},
+        {186, sizeof(::chirp::auth::ChangePasswordRequest)},
+        {195, sizeof(::chirp::auth::ChangePasswordResponse)},
 };
 static const ::_pb::Message* PROTOBUF_NONNULL const file_default_instances[] = {
     &::chirp::auth::_LoginRequest_default_instance_._instance,
@@ -916,61 +919,61 @@ static const ::_pb::Message* PROTOBUF_NONNULL const file_default_instances[] = {
 const char descriptor_table_protodef_proto_2fauth_2eproto[] ABSL_ATTRIBUTE_SECTION_VARIABLE(
     protodesc_cold) = {
     "\n\020proto/auth.proto\022\nchirp.auth\032\022proto/co"
-    "mmon.proto\"o\n\014LoginRequest\022\r\n\005token\030\001 \001("
-    "\t\022\021\n\tdevice_id\030\002 \001(\t\022\020\n\010platform\030\003 \001(\t\022\034"
-    "\n\024supports_message_ack\030\004 \001(\010\022\r\n\005level\030\005 "
-    "\001(\005\"\034\n\nKickNotify\022\016\n\006reason\030\001 \001(\t\"Q\n\016Dev"
-    "icePresence\022\020\n\010platform\030\001 \001(\t\022\021\n\tdevice_"
-    "id\030\002 \001(\t\022\016\n\006online\030\003 \001(\010\022\n\n\002ts\030\004 \001(\003\"D\n\025"
-    "DevicesPresenceNotify\022+\n\007devices\030\001 \003(\0132\032"
-    ".chirp.auth.DevicePresence\"\341\001\n\rLoginResp"
-    "onse\022%\n\004code\030\001 \001(\0162\027.chirp.common.ErrorC"
-    "ode\022\022\n\nsession_id\030\002 \001(\t\022\023\n\013server_time\030\003"
-    " \001(\003\022\017\n\007user_id\030\004 \001(\t\022\025\n\rkick_previous\030\005"
-    " \001(\010\022$\n\004kick\030\006 \001(\0132\026.chirp.auth.KickNoti"
-    "fy\0222\n\016online_devices\030\007 \003(\0132\032.chirp.auth."
-    "DevicePresence\"4\n\rLogoutRequest\022\017\n\007user_"
-    "id\030\001 \001(\t\022\022\n\nsession_id\030\002 \001(\t\"L\n\016LogoutRe"
-    "sponse\022%\n\004code\030\001 \001(\0162\027.chirp.common.Erro"
-    "rCode\022\023\n\013server_time\030\002 \001(\003\"Z\n\017RegisterRe"
-    "quest\022\020\n\010username\030\001 \001(\t\022\r\n\005email\030\002 \001(\t\022\020"
-    "\n\010password\030\003 \001(\t\022\024\n\014display_name\030\004 \001(\t\"v"
-    "\n\020RegisterResponse\022%\n\004code\030\001 \001(\0162\027.chirp"
-    ".common.ErrorCode\022\017\n\007user_id\030\002 \001(\t\022\023\n\013se"
-    "rver_time\030\003 \001(\003\022\025\n\rerror_message\030\004 \001(\t\"a"
-    "\n\024PasswordLoginRequest\022\022\n\nidentifier\030\001 \001"
-    "(\t\022\020\n\010password\030\002 \001(\t\022\021\n\tdevice_id\030\003 \001(\t\022"
-    "\020\n\010platform\030\004 \001(\t\"\250\002\n\025PasswordLoginRespo"
-    "nse\022%\n\004code\030\001 \001(\0162\027.chirp.common.ErrorCo"
-    "de\022\017\n\007user_id\030\002 \001(\t\022\020\n\010username\030\003 \001(\t\022\022\n"
-    "\nsession_id\030\004 \001(\t\022\024\n\014access_token\030\005 \001(\t\022"
-    "\025\n\rrefresh_token\030\006 \001(\t\022\037\n\027access_token_e"
-    "xpires_at\030\007 \001(\003\022 \n\030refresh_token_expires"
-    "_at\030\010 \001(\003\022\023\n\013server_time\030\t \001(\003\022\025\n\rkick_p"
-    "revious\030\n \001(\010\022\025\n\rerror_message\030\013 \001(\t\",\n\023"
-    "RefreshTokenRequest\022\025\n\rrefresh_token\030\001 \001"
-    "(\t\"\240\001\n\024RefreshTokenResponse\022%\n\004code\030\001 \001("
-    "\0162\027.chirp.common.ErrorCode\022\024\n\014access_tok"
-    "en\030\002 \001(\t\022\037\n\027access_token_expires_at\030\003 \001("
-    "\003\022\023\n\013server_time\030\004 \001(\003\022\025\n\rerror_message\030"
-    "\005 \001(\t\"%\n\022GetSessionsRequest\022\017\n\007user_id\030\001"
-    " \001(\t\"\210\001\n\013SessionInfo\022\022\n\nsession_id\030\001 \001(\t"
-    "\022\021\n\tdevice_id\030\002 \001(\t\022\020\n\010platform\030\003 \001(\t\022\022\n"
-    "\ncreated_at\030\004 \001(\003\022\030\n\020last_activity_at\030\005 "
-    "\001(\003\022\022\n\nis_current\030\006 \001(\010\"|\n\023GetSessionsRe"
-    "sponse\022%\n\004code\030\001 \001(\0162\027.chirp.common.Erro"
-    "rCode\022)\n\010sessions\030\002 \003(\0132\027.chirp.auth.Ses"
-    "sionInfo\022\023\n\013server_time\030\003 \001(\003\";\n\024RevokeS"
-    "essionRequest\022\017\n\007user_id\030\001 \001(\t\022\022\n\nsessio"
-    "n_id\030\002 \001(\t\"S\n\025RevokeSessionResponse\022%\n\004c"
-    "ode\030\001 \001(\0162\027.chirp.common.ErrorCode\022\023\n\013se"
-    "rver_time\030\002 \001(\003\"T\n\025ChangePasswordRequest"
-    "\022\017\n\007user_id\030\001 \001(\t\022\024\n\014old_password\030\002 \001(\t\022"
-    "\024\n\014new_password\030\003 \001(\t\"k\n\026ChangePasswordR"
-    "esponse\022%\n\004code\030\001 \001(\0162\027.chirp.common.Err"
-    "orCode\022\023\n\013server_time\030\002 \001(\003\022\025\n\rerror_mes"
-    "sage\030\003 \001(\tB$Z\"github.com/cui/chirp/proto"
-    "/go/authb\006proto3"
+    "mmon.proto\"\206\001\n\014LoginRequest\022\r\n\005token\030\001 \001"
+    "(\t\022\021\n\tdevice_id\030\002 \001(\t\022\020\n\010platform\030\003 \001(\t\022"
+    "\034\n\024supports_message_ack\030\004 \001(\010\022\r\n\005level\030\005"
+    " \001(\005\022\025\n\rsupports_gzip\030\006 \001(\010\"\034\n\nKickNotif"
+    "y\022\016\n\006reason\030\001 \001(\t\"Q\n\016DevicePresence\022\020\n\010p"
+    "latform\030\001 \001(\t\022\021\n\tdevice_id\030\002 \001(\t\022\016\n\006onli"
+    "ne\030\003 \001(\010\022\n\n\002ts\030\004 \001(\003\"D\n\025DevicesPresenceN"
+    "otify\022+\n\007devices\030\001 \003(\0132\032.chirp.auth.Devi"
+    "cePresence\"\341\001\n\rLoginResponse\022%\n\004code\030\001 \001"
+    "(\0162\027.chirp.common.ErrorCode\022\022\n\nsession_i"
+    "d\030\002 \001(\t\022\023\n\013server_time\030\003 \001(\003\022\017\n\007user_id\030"
+    "\004 \001(\t\022\025\n\rkick_previous\030\005 \001(\010\022$\n\004kick\030\006 \001"
+    "(\0132\026.chirp.auth.KickNotify\0222\n\016online_dev"
+    "ices\030\007 \003(\0132\032.chirp.auth.DevicePresence\"4"
+    "\n\rLogoutRequest\022\017\n\007user_id\030\001 \001(\t\022\022\n\nsess"
+    "ion_id\030\002 \001(\t\"L\n\016LogoutResponse\022%\n\004code\030\001"
+    " \001(\0162\027.chirp.common.ErrorCode\022\023\n\013server_"
+    "time\030\002 \001(\003\"Z\n\017RegisterRequest\022\020\n\010usernam"
+    "e\030\001 \001(\t\022\r\n\005email\030\002 \001(\t\022\020\n\010password\030\003 \001(\t"
+    "\022\024\n\014display_name\030\004 \001(\t\"v\n\020RegisterRespon"
+    "se\022%\n\004code\030\001 \001(\0162\027.chirp.common.ErrorCod"
+    "e\022\017\n\007user_id\030\002 \001(\t\022\023\n\013server_time\030\003 \001(\003\022"
+    "\025\n\rerror_message\030\004 \001(\t\"a\n\024PasswordLoginR"
+    "equest\022\022\n\nidentifier\030\001 \001(\t\022\020\n\010password\030\002"
+    " \001(\t\022\021\n\tdevice_id\030\003 \001(\t\022\020\n\010platform\030\004 \001("
+    "\t\"\250\002\n\025PasswordLoginResponse\022%\n\004code\030\001 \001("
+    "\0162\027.chirp.common.ErrorCode\022\017\n\007user_id\030\002 "
+    "\001(\t\022\020\n\010username\030\003 \001(\t\022\022\n\nsession_id\030\004 \001("
+    "\t\022\024\n\014access_token\030\005 \001(\t\022\025\n\rrefresh_token"
+    "\030\006 \001(\t\022\037\n\027access_token_expires_at\030\007 \001(\003\022"
+    " \n\030refresh_token_expires_at\030\010 \001(\003\022\023\n\013ser"
+    "ver_time\030\t \001(\003\022\025\n\rkick_previous\030\n \001(\010\022\025\n"
+    "\rerror_message\030\013 \001(\t\",\n\023RefreshTokenRequ"
+    "est\022\025\n\rrefresh_token\030\001 \001(\t\"\240\001\n\024RefreshTo"
+    "kenResponse\022%\n\004code\030\001 \001(\0162\027.chirp.common"
+    ".ErrorCode\022\024\n\014access_token\030\002 \001(\t\022\037\n\027acce"
+    "ss_token_expires_at\030\003 \001(\003\022\023\n\013server_time"
+    "\030\004 \001(\003\022\025\n\rerror_message\030\005 \001(\t\"%\n\022GetSess"
+    "ionsRequest\022\017\n\007user_id\030\001 \001(\t\"\210\001\n\013Session"
+    "Info\022\022\n\nsession_id\030\001 \001(\t\022\021\n\tdevice_id\030\002 "
+    "\001(\t\022\020\n\010platform\030\003 \001(\t\022\022\n\ncreated_at\030\004 \001("
+    "\003\022\030\n\020last_activity_at\030\005 \001(\003\022\022\n\nis_curren"
+    "t\030\006 \001(\010\"|\n\023GetSessionsResponse\022%\n\004code\030\001"
+    " \001(\0162\027.chirp.common.ErrorCode\022)\n\010session"
+    "s\030\002 \003(\0132\027.chirp.auth.SessionInfo\022\023\n\013serv"
+    "er_time\030\003 \001(\003\";\n\024RevokeSessionRequest\022\017\n"
+    "\007user_id\030\001 \001(\t\022\022\n\nsession_id\030\002 \001(\t\"S\n\025Re"
+    "vokeSessionResponse\022%\n\004code\030\001 \001(\0162\027.chir"
+    "p.common.ErrorCode\022\023\n\013server_time\030\002 \001(\003\""
+    "T\n\025ChangePasswordRequest\022\017\n\007user_id\030\001 \001("
+    "\t\022\024\n\014old_password\030\002 \001(\t\022\024\n\014new_password\030"
+    "\003 \001(\t\"k\n\026ChangePasswordResponse\022%\n\004code\030"
+    "\001 \001(\0162\027.chirp.common.ErrorCode\022\023\n\013server"
+    "_time\030\002 \001(\003\022\025\n\rerror_message\030\003 \001(\tB$Z\"gi"
+    "thub.com/cui/chirp/proto/go/authb\006proto3"
 };
 static const ::_pbi::DescriptorTable* PROTOBUF_NONNULL const
     descriptor_table_proto_2fauth_2eproto_deps[1] = {
@@ -980,7 +983,7 @@ static ::absl::once_flag descriptor_table_proto_2fauth_2eproto_once;
 PROTOBUF_CONSTINIT const ::_pbi::DescriptorTable descriptor_table_proto_2fauth_2eproto = {
     false,
     false,
-    2216,
+    2240,
     descriptor_table_protodef_proto_2fauth_2eproto,
     "proto/auth.proto",
     &descriptor_table_proto_2fauth_2eproto_once,
@@ -1038,12 +1041,12 @@ LoginRequest::LoginRequest(
       from._internal_metadata_);
   new (&_impl_) Impl_(internal_visibility(), arena, from._impl_, from);
   ::memcpy(reinterpret_cast<char*>(&_impl_) +
-               offsetof(Impl_, supports_message_ack_),
+               offsetof(Impl_, level_),
            reinterpret_cast<const char*>(&from._impl_) +
-               offsetof(Impl_, supports_message_ack_),
-           offsetof(Impl_, level_) -
-               offsetof(Impl_, supports_message_ack_) +
-               sizeof(Impl_::level_));
+               offsetof(Impl_, level_),
+           offsetof(Impl_, supports_gzip_) -
+               offsetof(Impl_, level_) +
+               sizeof(Impl_::supports_gzip_));
 
   // @@protoc_insertion_point(copy_constructor:chirp.auth.LoginRequest)
 }
@@ -1058,11 +1061,11 @@ PROTOBUF_NDEBUG_INLINE LoginRequest::Impl_::Impl_(
 inline void LoginRequest::SharedCtor(::_pb::Arena* PROTOBUF_NULLABLE arena) {
   new (&_impl_) Impl_(internal_visibility(), arena);
   ::memset(reinterpret_cast<char*>(&_impl_) +
-               offsetof(Impl_, supports_message_ack_),
+               offsetof(Impl_, level_),
            0,
-           offsetof(Impl_, level_) -
-               offsetof(Impl_, supports_message_ack_) +
-               sizeof(Impl_::level_));
+           offsetof(Impl_, supports_gzip_) -
+               offsetof(Impl_, level_) +
+               sizeof(Impl_::supports_gzip_));
 }
 LoginRequest::~LoginRequest() {
   // @@protoc_insertion_point(destructor:chirp.auth.LoginRequest)
@@ -1124,16 +1127,16 @@ LoginRequest::GetClassData() const {
   return LoginRequest_class_data_.base();
 }
 PROTOBUF_CONSTINIT PROTOBUF_ATTRIBUTE_INIT_PRIORITY1
-const ::_pbi::TcParseTable<3, 5, 0, 54, 2>
+const ::_pbi::TcParseTable<3, 6, 0, 54, 2>
 LoginRequest::_table_ = {
   {
     PROTOBUF_FIELD_OFFSET(LoginRequest, _impl_._has_bits_),
     0, // no _extensions_
-    5, 56,  // max_field_number, fast_idx_mask
+    6, 56,  // max_field_number, fast_idx_mask
     offsetof(decltype(_table_), field_lookup_table),
-    4294967264,  // skipmap
+    4294967232,  // skipmap
     offsetof(decltype(_table_), field_entries),
-    5,  // num_field_entries
+    6,  // num_field_entries
     0,  // num_aux_entries
     offsetof(decltype(_table_), field_names),  // no aux_entries
     LoginRequest_class_data_.base(),
@@ -1157,14 +1160,17 @@ LoginRequest::_table_ = {
      {26, 2, 0,
       PROTOBUF_FIELD_OFFSET(LoginRequest, _impl_.platform_)}},
     // bool supports_message_ack = 4;
-    {::_pbi::TcParser::SingularVarintNoZag1<bool, offsetof(LoginRequest, _impl_.supports_message_ack_), 3>(),
-     {32, 3, 0,
+    {::_pbi::TcParser::SingularVarintNoZag1<bool, offsetof(LoginRequest, _impl_.supports_message_ack_), 4>(),
+     {32, 4, 0,
       PROTOBUF_FIELD_OFFSET(LoginRequest, _impl_.supports_message_ack_)}},
     // int32 level = 5;
-    {::_pbi::TcParser::SingularVarintNoZag1<::uint32_t, offsetof(LoginRequest, _impl_.level_), 4>(),
-     {40, 4, 0,
+    {::_pbi::TcParser::SingularVarintNoZag1<::uint32_t, offsetof(LoginRequest, _impl_.level_), 3>(),
+     {40, 3, 0,
       PROTOBUF_FIELD_OFFSET(LoginRequest, _impl_.level_)}},
-    {::_pbi::TcParser::MiniParse, {}},
+    // bool supports_gzip = 6;
+    {::_pbi::TcParser::SingularVarintNoZag1<bool, offsetof(LoginRequest, _impl_.supports_gzip_), 5>(),
+     {48, 5, 0,
+      PROTOBUF_FIELD_OFFSET(LoginRequest, _impl_.supports_gzip_)}},
     {::_pbi::TcParser::MiniParse, {}},
   }}, {{
     65535, 65535
@@ -1176,9 +1182,11 @@ LoginRequest::_table_ = {
     // string platform = 3;
     {PROTOBUF_FIELD_OFFSET(LoginRequest, _impl_.platform_), _Internal::kHasBitsOffset + 2, 0, (0 | ::_fl::kFcOptional | ::_fl::kUtf8String | ::_fl::kRepAString)},
     // bool supports_message_ack = 4;
-    {PROTOBUF_FIELD_OFFSET(LoginRequest, _impl_.supports_message_ack_), _Internal::kHasBitsOffset + 3, 0, (0 | ::_fl::kFcOptional | ::_fl::kBool)},
+    {PROTOBUF_FIELD_OFFSET(LoginRequest, _impl_.supports_message_ack_), _Internal::kHasBitsOffset + 4, 0, (0 | ::_fl::kFcOptional | ::_fl::kBool)},
     // int32 level = 5;
-    {PROTOBUF_FIELD_OFFSET(LoginRequest, _impl_.level_), _Internal::kHasBitsOffset + 4, 0, (0 | ::_fl::kFcOptional | ::_fl::kInt32)},
+    {PROTOBUF_FIELD_OFFSET(LoginRequest, _impl_.level_), _Internal::kHasBitsOffset + 3, 0, (0 | ::_fl::kFcOptional | ::_fl::kInt32)},
+    // bool supports_gzip = 6;
+    {PROTOBUF_FIELD_OFFSET(LoginRequest, _impl_.supports_gzip_), _Internal::kHasBitsOffset + 5, 0, (0 | ::_fl::kFcOptional | ::_fl::kBool)},
   }},
   // no aux_entries
   {{
@@ -1208,10 +1216,10 @@ PROTOBUF_NOINLINE void LoginRequest::Clear() {
       _impl_.platform_.ClearNonDefaultToEmpty();
     }
   }
-  if (BatchCheckHasBit(cached_has_bits, 0x00000018U)) {
-    ::memset(&_impl_.supports_message_ack_, 0, static_cast<::size_t>(
-        reinterpret_cast<char*>(&_impl_.level_) -
-        reinterpret_cast<char*>(&_impl_.supports_message_ack_)) + sizeof(_impl_.level_));
+  if (BatchCheckHasBit(cached_has_bits, 0x00000038U)) {
+    ::memset(&_impl_.level_, 0, static_cast<::size_t>(
+        reinterpret_cast<char*>(&_impl_.supports_gzip_) -
+        reinterpret_cast<char*>(&_impl_.level_)) + sizeof(_impl_.supports_gzip_));
   }
   _impl_._has_bits_.Clear();
   _internal_metadata_.Clear<::google::protobuf::UnknownFieldSet>();
@@ -1267,7 +1275,7 @@ PROTOBUF_NOINLINE void LoginRequest::Clear() {
   }
 
   // bool supports_message_ack = 4;
-  if (CheckHasBit(cached_has_bits, 0x00000008U)) {
+  if (CheckHasBit(cached_has_bits, 0x00000010U)) {
     if (this_._internal_supports_message_ack() != 0) {
       target = stream->EnsureSpace(target);
       target = ::_pbi::WireFormatLite::WriteBoolToArray(
@@ -1276,11 +1284,20 @@ PROTOBUF_NOINLINE void LoginRequest::Clear() {
   }
 
   // int32 level = 5;
-  if (CheckHasBit(cached_has_bits, 0x00000010U)) {
+  if (CheckHasBit(cached_has_bits, 0x00000008U)) {
     if (this_._internal_level() != 0) {
       target =
           ::google::protobuf::internal::WireFormatLite::WriteInt32ToArrayWithField<5>(
               stream, this_._internal_level(), target);
+    }
+  }
+
+  // bool supports_gzip = 6;
+  if (CheckHasBit(cached_has_bits, 0x00000020U)) {
+    if (this_._internal_supports_gzip() != 0) {
+      target = stream->EnsureSpace(target);
+      target = ::_pbi::WireFormatLite::WriteBoolToArray(
+          6, this_._internal_supports_gzip(), target);
     }
   }
 
@@ -1309,7 +1326,7 @@ PROTOBUF_NOINLINE void LoginRequest::Clear() {
 
   ::_pbi::Prefetch5LinesFrom7Lines(&this_);
   cached_has_bits = this_._impl_._has_bits_[0];
-  if (BatchCheckHasBit(cached_has_bits, 0x0000001fU)) {
+  if (BatchCheckHasBit(cached_has_bits, 0x0000003fU)) {
     // string token = 1;
     if (CheckHasBit(cached_has_bits, 0x00000001U)) {
       if (!this_._internal_token().empty()) {
@@ -1331,17 +1348,23 @@ PROTOBUF_NOINLINE void LoginRequest::Clear() {
                                         this_._internal_platform());
       }
     }
-    // bool supports_message_ack = 4;
+    // int32 level = 5;
     if (CheckHasBit(cached_has_bits, 0x00000008U)) {
+      if (this_._internal_level() != 0) {
+        total_size += ::_pbi::WireFormatLite::Int32SizePlusOne(
+            this_._internal_level());
+      }
+    }
+    // bool supports_message_ack = 4;
+    if (CheckHasBit(cached_has_bits, 0x00000010U)) {
       if (this_._internal_supports_message_ack() != 0) {
         total_size += 2;
       }
     }
-    // int32 level = 5;
-    if (CheckHasBit(cached_has_bits, 0x00000010U)) {
-      if (this_._internal_level() != 0) {
-        total_size += ::_pbi::WireFormatLite::Int32SizePlusOne(
-            this_._internal_level());
+    // bool supports_gzip = 6;
+    if (CheckHasBit(cached_has_bits, 0x00000020U)) {
+      if (this_._internal_supports_gzip() != 0) {
+        total_size += 2;
       }
     }
   }
@@ -1363,7 +1386,7 @@ void LoginRequest::MergeImpl(::google::protobuf::MessageLite& to_msg,
   (void)cached_has_bits;
 
   cached_has_bits = from._impl_._has_bits_[0];
-  if (BatchCheckHasBit(cached_has_bits, 0x0000001fU)) {
+  if (BatchCheckHasBit(cached_has_bits, 0x0000003fU)) {
     if (CheckHasBit(cached_has_bits, 0x00000001U)) {
       if (!from._internal_token().empty()) {
         _this->_internal_set_token(from._internal_token());
@@ -1392,13 +1415,18 @@ void LoginRequest::MergeImpl(::google::protobuf::MessageLite& to_msg,
       }
     }
     if (CheckHasBit(cached_has_bits, 0x00000008U)) {
+      if (from._internal_level() != 0) {
+        _this->_impl_.level_ = from._impl_.level_;
+      }
+    }
+    if (CheckHasBit(cached_has_bits, 0x00000010U)) {
       if (from._internal_supports_message_ack() != 0) {
         _this->_impl_.supports_message_ack_ = from._impl_.supports_message_ack_;
       }
     }
-    if (CheckHasBit(cached_has_bits, 0x00000010U)) {
-      if (from._internal_level() != 0) {
-        _this->_impl_.level_ = from._impl_.level_;
+    if (CheckHasBit(cached_has_bits, 0x00000020U)) {
+      if (from._internal_supports_gzip() != 0) {
+        _this->_impl_.supports_gzip_ = from._impl_.supports_gzip_;
       }
     }
   }
@@ -1425,11 +1453,11 @@ void LoginRequest::InternalSwap(LoginRequest* PROTOBUF_RESTRICT PROTOBUF_NONNULL
   ::_pbi::ArenaStringPtr::InternalSwap(&_impl_.device_id_, &other->_impl_.device_id_, arena);
   ::_pbi::ArenaStringPtr::InternalSwap(&_impl_.platform_, &other->_impl_.platform_, arena);
   ::google::protobuf::internal::memswap<
-      PROTOBUF_FIELD_OFFSET(LoginRequest, _impl_.level_)
-      + sizeof(LoginRequest::_impl_.level_)
-      - PROTOBUF_FIELD_OFFSET(LoginRequest, _impl_.supports_message_ack_)>(
-          reinterpret_cast<char*>(&_impl_.supports_message_ack_),
-          reinterpret_cast<char*>(&other->_impl_.supports_message_ack_));
+      PROTOBUF_FIELD_OFFSET(LoginRequest, _impl_.supports_gzip_)
+      + sizeof(LoginRequest::_impl_.supports_gzip_)
+      - PROTOBUF_FIELD_OFFSET(LoginRequest, _impl_.level_)>(
+          reinterpret_cast<char*>(&_impl_.level_),
+          reinterpret_cast<char*>(&other->_impl_.level_));
 }
 
 ::google::protobuf::Metadata LoginRequest::GetMetadata() const {

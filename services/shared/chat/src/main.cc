@@ -15,6 +15,7 @@
 
 #include "chat_rate_limiter.h"
 #include "delivery_ack_manager.h"
+#include "history_compression.h"
 #include "network/device_presence.h"
 #include "network/session_registry.h"
 #include "login_token_verifier.h"
@@ -684,7 +685,8 @@ void HandlePacket(const std::shared_ptr<MessageStore>& store,
           chirp::network::BindAuthenticatedSession(state, user_id, login_resp.session_id(),
                                                    login_req.device_id(), session,
                                                    login_req.platform(),
-                                                   login_req.level());
+                                                   login_req.level(),
+                                                   login_req.supports_gzip());
       if (old && old.get() != session.get()) {
         KickSession(old, chirp::network::LoginKickReason(login_req.platform()));
       }
@@ -1212,6 +1214,10 @@ void HandlePacket(const std::shared_ptr<MessageStore>& store,
     for (auto& m : msgs) {
       *resp.add_messages() = std::move(m);
     }
+    // 消息压缩（game_chat_features P2）：登录声明 supports_gzip 的会话收
+    // gzip 形态，其余保持明文 repeated 字段不变。
+    chirp::chat::CompressHistoryResponse(
+        &resp, chirp::network::SessionSupportsGzip(state, session.get()));
     chirp::chat::runtime::SendPacket(session, chirp::gateway::GET_HISTORY_RESP, pkt.sequence(), resp.SerializeAsString());
     break;
   }

@@ -45,7 +45,8 @@ std::shared_ptr<Session> BindAuthenticatedSession(const std::shared_ptr<SessionR
                                                   const std::string& device_id,
                                                   const std::shared_ptr<Session>& session,
                                                   const std::string& platform,
-                                                  int32_t level) {
+                                                  int32_t level,
+                                                  bool supports_gzip) {
   const std::string normalized_device = NormalizeDeviceId(device_id);
   const std::string normalized_platform = NormalizePlatformId(platform);
   std::shared_ptr<Session> old_pair_session;
@@ -80,6 +81,13 @@ std::shared_ptr<Session> BindAuthenticatedSession(const std::shared_ptr<SessionR
   state->session_to_device[session.get()] = normalized_device;
   state->session_to_session_id[session.get()] = session_id;
   state->session_to_level[session.get()] = level;
+  if (supports_gzip) {
+    state->gzip_sessions.insert(session.get());
+  } else {
+    // A relogin of the same connection may clear a capability it declared
+    // the previous time (or the slot may be reused by a fresh connection).
+    state->gzip_sessions.erase(session.get());
+  }
 
   return old_pair_session;
 }
@@ -113,6 +121,12 @@ AuthenticatedSession GetAuthenticatedSession(const std::shared_ptr<SessionRegist
   return result;
 }
 
+bool SessionSupportsGzip(const std::shared_ptr<SessionRegistry>& state,
+                         const Session* session) {
+  std::lock_guard<std::mutex> lock(state->mu);
+  return state->gzip_sessions.count(session) > 0;
+}
+
 bool RemoveAuthenticatedSession(const std::shared_ptr<SessionRegistry>& state,
                                 const std::shared_ptr<Session>& session,
                                 std::string* user_id,
@@ -136,6 +150,7 @@ bool RemoveAuthenticatedSession(const std::shared_ptr<SessionRegistry>& state,
   state->session_to_device.erase(session.get());
   state->session_to_session_id.erase(session.get());
   state->session_to_level.erase(session.get());
+  state->gzip_sessions.erase(session.get());
 
   // Only report a release when this session owned the slot (or it was
   // stale): a newer session of the same pair keeps its claim.

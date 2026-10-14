@@ -936,7 +936,7 @@ TEST_F(EnhancedSessionTest, CoordLinkCarriesMetadataThroughNotifyHistoryAndRefil
   history_req.set_channel_id("alice|bob");
   history_req.set_channel_type(chirp::chat::PRIVATE);
   history_req.set_limit(10);
-  HandleGetHistory(history_req, alice, retriever, /*seq=*/5);
+  HandleGetHistory(history_req, alice, retriever, /*supports_gzip=*/false, /*seq=*/5);
   const auto resps = FramesOf(*alice, chirp::gateway::GET_HISTORY_RESP);
   ASSERT_EQ(resps.size(), 1u);
   chirp::chat::GetHistoryResponse history_resp;
@@ -1087,7 +1087,7 @@ TEST_F(EnhancedSessionTest, ItemLinkCarriesMetadataThroughNotifyHistoryAndRefill
   history_req.set_channel_id("alice|bob");
   history_req.set_channel_type(chirp::chat::PRIVATE);
   history_req.set_limit(10);
-  HandleGetHistory(history_req, alice, retriever, /*seq=*/5);
+  HandleGetHistory(history_req, alice, retriever, /*supports_gzip=*/false, /*seq=*/5);
   const auto resps = FramesOf(*alice, chirp::gateway::GET_HISTORY_RESP);
   ASSERT_EQ(resps.size(), 1u);
   chirp::chat::GetHistoryResponse history_resp;
@@ -1227,7 +1227,7 @@ TEST_F(EnhancedSessionTest, AchievementShareCarriesMetadataThroughNotifyHistoryA
   history_req.set_channel_id("alice|bob");
   history_req.set_channel_type(chirp::chat::PRIVATE);
   history_req.set_limit(10);
-  HandleGetHistory(history_req, alice, retriever, /*seq=*/5);
+  HandleGetHistory(history_req, alice, retriever, /*supports_gzip=*/false, /*seq=*/5);
   const auto resps = FramesOf(*alice, chirp::gateway::GET_HISTORY_RESP);
   ASSERT_EQ(resps.size(), 1u);
   chirp::chat::GetHistoryResponse history_resp;
@@ -1370,7 +1370,7 @@ TEST_F(EnhancedSessionTest, TradeStatusCarriesMetadataThroughNotifyHistoryAndRef
   history_req.set_channel_id("alice|bob");
   history_req.set_channel_type(chirp::chat::PRIVATE);
   history_req.set_limit(10);
-  HandleGetHistory(history_req, alice, retriever, /*seq=*/5);
+  HandleGetHistory(history_req, alice, retriever, /*supports_gzip=*/false, /*seq=*/5);
   const auto resps = FramesOf(*alice, chirp::gateway::GET_HISTORY_RESP);
   ASSERT_EQ(resps.size(), 1u);
   chirp::chat::GetHistoryResponse history_resp;
@@ -1510,7 +1510,7 @@ TEST_F(EnhancedSessionTest, RecruitCardsCarryMetadataThroughNotifyHistoryAndRefi
   history_req.set_channel_id("alice|bob");
   history_req.set_channel_type(chirp::chat::PRIVATE);
   history_req.set_limit(10);
-  HandleGetHistory(history_req, alice, retriever, /*seq=*/5);
+  HandleGetHistory(history_req, alice, retriever, /*supports_gzip=*/false, /*seq=*/5);
   const auto resps = FramesOf(*alice, chirp::gateway::GET_HISTORY_RESP);
   ASSERT_EQ(resps.size(), 1u);
   chirp::chat::GetHistoryResponse history_resp;
@@ -1900,7 +1900,7 @@ TEST_F(EnhancedSessionTest, GetHistoryServesPaginationAndTombstones) {
   history_req.set_channel_id("alice|bob");
   history_req.set_channel_type(chirp::chat::PRIVATE);
   history_req.set_limit(2);
-  HandleGetHistory(history_req, alice, retriever, /*seq=*/5);
+  HandleGetHistory(history_req, alice, retriever, /*supports_gzip=*/false, /*seq=*/5);
 
   const auto resps = FramesOf(*alice, chirp::gateway::GET_HISTORY_RESP);
   ASSERT_EQ(resps.size(), 1u);

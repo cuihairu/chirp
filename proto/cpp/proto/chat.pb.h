@@ -26697,6 +26697,7 @@ class GetHistoryResponse final : public ::google::protobuf::Message
   // accessors -------------------------------------------------------
   enum : int {
     kMessagesFieldNumber = 2,
+    kMessagesGzipFieldNumber = 4,
     kCodeFieldNumber = 1,
     kHasMoreFieldNumber = 3,
   };
@@ -26717,6 +26718,21 @@ class GetHistoryResponse final : public ::google::protobuf::Message
   const ::chirp::chat::ChatMessage& messages(int index) const;
   ::chirp::chat::ChatMessage* PROTOBUF_NONNULL add_messages();
   const ::google::protobuf::RepeatedPtrField<::chirp::chat::ChatMessage>& messages() const;
+  // bytes messages_gzip = 4;
+  void clear_messages_gzip() ;
+  const ::std::string& messages_gzip() const;
+  template <typename Arg_ = const ::std::string&, typename... Args_>
+  void set_messages_gzip(Arg_&& arg, Args_... args);
+  ::std::string* PROTOBUF_NONNULL mutable_messages_gzip();
+  [[nodiscard]] ::std::string* PROTOBUF_NULLABLE release_messages_gzip();
+  void set_allocated_messages_gzip(::std::string* PROTOBUF_NULLABLE value);
+
+  private:
+  const ::std::string& _internal_messages_gzip() const;
+  PROTOBUF_ALWAYS_INLINE void _internal_set_messages_gzip(const ::std::string& value);
+  ::std::string* PROTOBUF_NONNULL _internal_mutable_messages_gzip();
+
+  public:
   // .chirp.common.ErrorCode code = 1;
   void clear_code() ;
   ::chirp::common::ErrorCode code() const;
@@ -26741,7 +26757,7 @@ class GetHistoryResponse final : public ::google::protobuf::Message
  private:
   class _Internal;
   friend class ::google::protobuf::internal::TcParser;
-  static const ::google::protobuf::internal::TcParseTable<2, 3,
+  static const ::google::protobuf::internal::TcParseTable<2, 4,
                                    1, 0,
                                    2>
       _table_;
@@ -26764,6 +26780,7 @@ class GetHistoryResponse final : public ::google::protobuf::Message
     ::google::protobuf::internal::HasBits<1> _has_bits_;
     ::google::protobuf::internal::CachedSize _cached_size_;
     ::google::protobuf::RepeatedPtrField< ::chirp::chat::ChatMessage > messages_;
+    ::google::protobuf::internal::ArenaStringPtr messages_gzip_;
     int code_;
     bool has_more_;
     PROTOBUF_TSAN_DECLARE_MEMBER
@@ -34739,7 +34756,7 @@ inline void GetHistoryResponse::clear_code() {
   ::google::protobuf::internal::TSanWrite(&_impl_);
   _impl_.code_ = 0;
   ClearHasBit(_impl_._has_bits_[0],
-                  0x00000002U);
+                  0x00000004U);
 }
 inline ::chirp::common::ErrorCode GetHistoryResponse::code() const {
   // @@protoc_insertion_point(field_get:chirp.chat.GetHistoryResponse.code)
@@ -34747,7 +34764,7 @@ inline ::chirp::common::ErrorCode GetHistoryResponse::code() const {
 }
 inline void GetHistoryResponse::set_code(::chirp::common::ErrorCode value) {
   _internal_set_code(value);
-  SetHasBit(_impl_._has_bits_[0], 0x00000002U);
+  SetHasBit(_impl_._has_bits_[0], 0x00000004U);
   // @@protoc_insertion_point(field_set:chirp.chat.GetHistoryResponse.code)
 }
 inline ::chirp::common::ErrorCode GetHistoryResponse::_internal_code() const {
@@ -34820,7 +34837,7 @@ inline void GetHistoryResponse::clear_has_more() {
   ::google::protobuf::internal::TSanWrite(&_impl_);
   _impl_.has_more_ = false;
   ClearHasBit(_impl_._has_bits_[0],
-                  0x00000004U);
+                  0x00000008U);
 }
 inline bool GetHistoryResponse::has_more() const {
   // @@protoc_insertion_point(field_get:chirp.chat.GetHistoryResponse.has_more)
@@ -34828,7 +34845,7 @@ inline bool GetHistoryResponse::has_more() const {
 }
 inline void GetHistoryResponse::set_has_more(bool value) {
   _internal_set_has_more(value);
-  SetHasBit(_impl_._has_bits_[0], 0x00000004U);
+  SetHasBit(_impl_._has_bits_[0], 0x00000008U);
   // @@protoc_insertion_point(field_set:chirp.chat.GetHistoryResponse.has_more)
 }
 inline bool GetHistoryResponse::_internal_has_more() const {
@@ -34838,6 +34855,71 @@ inline bool GetHistoryResponse::_internal_has_more() const {
 inline void GetHistoryResponse::_internal_set_has_more(bool value) {
   ::google::protobuf::internal::TSanWrite(&_impl_);
   _impl_.has_more_ = value;
+}
+
+// bytes messages_gzip = 4;
+inline void GetHistoryResponse::clear_messages_gzip() {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_.messages_gzip_.ClearToEmpty();
+  ClearHasBit(_impl_._has_bits_[0],
+                  0x00000002U);
+}
+inline const ::std::string& GetHistoryResponse::messages_gzip() const
+    ABSL_ATTRIBUTE_LIFETIME_BOUND {
+  // @@protoc_insertion_point(field_get:chirp.chat.GetHistoryResponse.messages_gzip)
+  return _internal_messages_gzip();
+}
+template <typename Arg_, typename... Args_>
+PROTOBUF_ALWAYS_INLINE void GetHistoryResponse::set_messages_gzip(Arg_&& arg, Args_... args) {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  SetHasBit(_impl_._has_bits_[0], 0x00000002U);
+  _impl_.messages_gzip_.SetBytes(static_cast<Arg_&&>(arg), args..., GetArena());
+  // @@protoc_insertion_point(field_set:chirp.chat.GetHistoryResponse.messages_gzip)
+}
+inline ::std::string* PROTOBUF_NONNULL GetHistoryResponse::mutable_messages_gzip()
+    ABSL_ATTRIBUTE_LIFETIME_BOUND {
+  SetHasBit(_impl_._has_bits_[0], 0x00000002U);
+  ::std::string* _s = _internal_mutable_messages_gzip();
+  // @@protoc_insertion_point(field_mutable:chirp.chat.GetHistoryResponse.messages_gzip)
+  return _s;
+}
+inline const ::std::string& GetHistoryResponse::_internal_messages_gzip() const {
+  ::google::protobuf::internal::TSanRead(&_impl_);
+  return _impl_.messages_gzip_.Get();
+}
+inline void GetHistoryResponse::_internal_set_messages_gzip(const ::std::string& value) {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_.messages_gzip_.Set(value, GetArena());
+}
+inline ::std::string* PROTOBUF_NONNULL GetHistoryResponse::_internal_mutable_messages_gzip() {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  return _impl_.messages_gzip_.Mutable( GetArena());
+}
+inline ::std::string* PROTOBUF_NULLABLE GetHistoryResponse::release_messages_gzip() {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  // @@protoc_insertion_point(field_release:chirp.chat.GetHistoryResponse.messages_gzip)
+  if (!CheckHasBit(_impl_._has_bits_[0], 0x00000002U)) {
+    return nullptr;
+  }
+  ClearHasBit(_impl_._has_bits_[0], 0x00000002U);
+  auto* released = _impl_.messages_gzip_.Release();
+  if (::google::protobuf::internal::DebugHardenForceCopyDefaultString()) {
+    _impl_.messages_gzip_.Set("", GetArena());
+  }
+  return released;
+}
+inline void GetHistoryResponse::set_allocated_messages_gzip(::std::string* PROTOBUF_NULLABLE value) {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  if (value != nullptr) {
+    SetHasBit(_impl_._has_bits_[0], 0x00000002U);
+  } else {
+    ClearHasBit(_impl_._has_bits_[0], 0x00000002U);
+  }
+  _impl_.messages_gzip_.SetAllocated(value, GetArena());
+  if (::google::protobuf::internal::DebugHardenForceCopyDefaultString() && _impl_.messages_gzip_.IsDefault()) {
+    _impl_.messages_gzip_.Set("", GetArena());
+  }
+  // @@protoc_insertion_point(field_set_allocated:chirp.chat.GetHistoryResponse.messages_gzip)
 }
 
 // -------------------------------------------------------------------

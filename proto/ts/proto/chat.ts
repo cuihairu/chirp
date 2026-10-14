@@ -672,6 +672,14 @@ export interface GetHistoryResponse {
   messages: ChatMessage[];
   /** 是否还有更多历史消息 */
   hasMore: boolean;
+  /**
+   * gzip (RFC 1952) container of a GetHistoryResponse that carries only the
+   * messages list. Set instead of `messages` for sessions that declared
+   * LoginRequest.supports_gzip: clients inflate it and parse the bytes back
+   * as this message, then read `.messages`. On gzip failure the server
+   * keeps the plain form, so this field is only ever set with valid bytes.
+   */
+  messagesGzip: Uint8Array;
 }
 
 /** Create group request */
@@ -2739,7 +2747,7 @@ export const GetHistoryRequest = {
 };
 
 function createBaseGetHistoryResponse(): GetHistoryResponse {
-  return { code: 0, messages: [], hasMore: false };
+  return { code: 0, messages: [], hasMore: false, messagesGzip: new Uint8Array(0) };
 }
 
 export const GetHistoryResponse = {
@@ -2752,6 +2760,9 @@ export const GetHistoryResponse = {
     }
     if (message.hasMore !== false) {
       writer.uint32(24).bool(message.hasMore);
+    }
+    if (message.messagesGzip.length !== 0) {
+      writer.uint32(34).bytes(message.messagesGzip);
     }
     return writer;
   },
@@ -2784,6 +2795,13 @@ export const GetHistoryResponse = {
 
           message.hasMore = reader.bool();
           continue;
+        case 4:
+          if (tag !== 34) {
+            break;
+          }
+
+          message.messagesGzip = reader.bytes();
+          continue;
       }
       if ((tag & 7) === 4 || tag === 0) {
         break;
@@ -2800,6 +2818,7 @@ export const GetHistoryResponse = {
         ? object.messages.map((e: any) => ChatMessage.fromJSON(e))
         : [],
       hasMore: isSet(object.hasMore) ? globalThis.Boolean(object.hasMore) : false,
+      messagesGzip: isSet(object.messagesGzip) ? bytesFromBase64(object.messagesGzip) : new Uint8Array(0),
     };
   },
 
@@ -2814,6 +2833,9 @@ export const GetHistoryResponse = {
     if (message.hasMore !== false) {
       obj.hasMore = message.hasMore;
     }
+    if (message.messagesGzip.length !== 0) {
+      obj.messagesGzip = base64FromBytes(message.messagesGzip);
+    }
     return obj;
   },
 
@@ -2825,6 +2847,7 @@ export const GetHistoryResponse = {
     message.code = object.code ?? 0;
     message.messages = object.messages?.map((e) => ChatMessage.fromPartial(e)) || [];
     message.hasMore = object.hasMore ?? false;
+    message.messagesGzip = object.messagesGzip ?? new Uint8Array(0);
     return message;
   },
 };

@@ -142,6 +142,14 @@ KNOWN_UNCOVERABLE = {
     # entry for the same condition (crash_handler.cc arm set, line 92) carries
     # the full rationale - keep the two in sync.
     ("libs/common/crash_handler.cc", 93),
+    # gzip.cc zlib-internal failure arms with fixed valid arguments:
+    # deflateInit2/inflateInit2 return non-OK only on allocation failure,
+    # and the compress Z_STREAM_END check cannot trip because deflateBound
+    # already includes the gzip wrapper, so one Z_FINISH always fits the
+    # buffer. Same defensive class as the framing guards below.
+    ("libs/common/gzip.cc", 22),
+    ("libs/common/gzip.cc", 36),
+    ("libs/common/gzip.cc", 51),
     # HttpPushTransport connect-vs-deadline race: the timer arm only fires
     # against a packet-blackhole address. Sandboxes whose gateway SYN-proxies
     # every destination complete the handshake instead, so no
@@ -255,6 +263,13 @@ KNOWN_UNCOVERABLE = {
     # (all three enumerators covered by the enhanced policy-mirror test); the
     # trailing return only satisfies the compiler.
     ("services/shared/chat/src/word_filter_push.cc", 18),
+    # CompressHistoryResponse's gzip-failure fallback (put the plain list
+    # back, return): a non-empty repeated message list always serializes
+    # non-empty (every element writes its length-delimited tag), and the
+    # compress itself only fails on the zlib-internal errors pinned for
+    # gzip.cc above - so the arm cannot be reached through the test surface.
+    ("services/shared/chat/src/history_compression.cc", 25),
+    ("services/shared/chat/src/history_compression.cc", 26),
     # GetChannels skips ids missing from channels_: both maps are updated
     # together under the same lock, so the skip cannot trigger.
     ("services/shared/chat/src/channel_manager.cc", 365),

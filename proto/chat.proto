@@ -126,6 +126,13 @@ message GetHistoryResponse {
   common.ErrorCode code = 1;
   repeated ChatMessage messages = 2;
   bool has_more = 3;           // 是否还有更多历史消息
+
+  // gzip (RFC 1952) container of a GetHistoryResponse that carries only the
+  // messages list. Set instead of `messages` for sessions that declared
+  // LoginRequest.supports_gzip: clients inflate it and parse the bytes back
+  // as this message, then read `.messages`. On gzip failure the server
+  // keeps the plain form, so this field is only ever set with valid bytes.
+  bytes messages_gzip = 4;
 }
 
 // ========== Group Chat ==========
