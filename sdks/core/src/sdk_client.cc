@@ -447,6 +447,7 @@ private:
     msg.set_channel_id(req.channel_id());
     msg.set_msg_type(req.msg_type());
     msg.set_content(req.content());
+    msg.set_metadata(req.metadata());
     msg.set_timestamp(req.client_timestamp());
     if (!req.reply_to_message_id().empty()) {
       msg.set_reply_to_message_id(req.reply_to_message_id());
@@ -975,8 +976,11 @@ public:
         }
         req.set_channel_id(opts.channel_id);
       }
-      req.set_msg_type(chirp::chat::TEXT);
+      req.set_msg_type(opts.msg_type);
       req.set_content(content);
+      if (!opts.metadata.empty()) {
+        req.set_metadata(opts.metadata);
+      }
       req.set_client_timestamp(NowMs());
       if (!opts.reply_to_message_id.empty()) {
         req.set_reply_to_message_id(opts.reply_to_message_id);
@@ -1460,6 +1464,22 @@ public:
     });
   }
 
+  // 举报消息(REPORT_MESSAGE_REQ/RESP 2253/2254):内存台账按
+  // (message_id, reporter_id) 去重幂等,回去重后的累计举报数。
+  void ReportMessage(const std::string& message_id, const std::string& reason,
+                     ReportMessageCallback cb) {
+    asio::post(io_context_, [this, message_id, reason, cb = std::move(cb)] {
+      if (!ReadyForRequests()) {
+        cb(MakeEc(ChatError::NotConnected), {});
+        return;
+      }
+      chirp::chat::ReportMessageRequest req;
+      req.set_message_id(message_id);
+      req.set_reason(reason);
+      TypedRequest(MsgID::REPORT_MESSAGE_REQ, MsgID::REPORT_MESSAGE_RESP, req, std::move(cb));
+    });
+  }
+
 private:
   ChatConfig config_;
   std::atomic<ConnectionState> state_;
@@ -1765,6 +1785,11 @@ void ChatClient::SetMemberAlias(const std::string& group_id, const std::string& 
 void ChatClient::SetGroupMute(const std::string& group_id, const std::string& target_user_id,
                               int64_t duration_sec, SetGroupMuteCallback cb) {
   impl_->SetGroupMute(group_id, target_user_id, duration_sec, std::move(cb));
+}
+
+void ChatClient::ReportMessage(const std::string& message_id, const std::string& reason,
+                               ReportMessageCallback cb) {
+  impl_->ReportMessage(message_id, reason, std::move(cb));
 }
 
 } // namespace sdk

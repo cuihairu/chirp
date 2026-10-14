@@ -56,6 +56,7 @@ std::string MessageData::SerializeAsString() const {
   msg.set_reply_to_message_id(reply_to_message_id);
   msg.set_is_recalled(is_recalled);
   msg.set_sender_kind(static_cast<SenderKind>(sender_kind));
+  msg.set_metadata(metadata);
   return msg.SerializeAsString();
 }
 
@@ -76,6 +77,7 @@ bool MessageData::ParseFromArray(const void* data, int size) {
   reply_to_message_id = msg.reply_to_message_id();
   is_recalled = msg.is_recalled();
   sender_kind = static_cast<int>(msg.sender_kind());
+  metadata = msg.metadata();
   created_at = msg.timestamp();
   return true;
 }
@@ -156,6 +158,7 @@ bool HybridMessageStore::StoreMessage(const MessageData& message) {
   mysql_msg.reply_to_message_id = message.reply_to_message_id;
   mysql_msg.is_recalled = message.is_recalled;
   mysql_msg.sender_kind = message.sender_kind;
+  mysql_msg.metadata = message.metadata;
 
   bool mysql_result = mysql_store_->StoreMessage(mysql_msg);
 
@@ -191,6 +194,8 @@ void HybridMessageStore::StoreMessageAsync(const MessageData& message,
     // 与同步 StoreMessage 同一字段集：漏拷会把异步路径落库的
     // sender_kind 恒写成默认值，冷层读回丢 NPC/SYSTEM 种类。
     mysql_msg.sender_kind = message.sender_kind;
+    // 同上：漏 metadata 会让 COORD_LINK 的坐标只活在热层。
+    mysql_msg.metadata = message.metadata;
 
     bool result = mysql_store_->StoreMessage(mysql_msg);
 
@@ -251,6 +256,7 @@ std::vector<MessageData> HybridMessageStore::GetHistory(const std::string& chann
         converted.reply_to_message_id = msg.reply_to_message_id;
         converted.is_recalled = msg.is_recalled;
         converted.sender_kind = msg.sender_kind;
+        converted.metadata = msg.metadata;
         results.push_back(std::move(converted));
       }
     }

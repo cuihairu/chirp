@@ -166,6 +166,19 @@ Docker Compose (container orchestration):
 docker compose up --build
 ```
 
+
+## 本地测试口径
+
+CI 与本地开发按改动面三路分流——改一行文档不该全量编译。
+
+1. **文档改动**（`*.md`、`docs/**`、图片）：不编译。主 CI workflow 的
+   `paths-ignore` 已跳过这些路径。
+2. **代码改动**：只跑改动子集，不全量。
+   - `npm test -- --testPathPatterns=<改动>`
+   - `ctest -R '<改动测试>'`
+3. **全量**（`npm test -- --coverage + ctest`）：仅以下情形触发——package.json / pnpm-lock.yaml / CMakeLists.txt、
+   `.github/**`、Docker/Compose 配置、发布前。
+
 ## Protocol Essentials
 
 TCP and WebSocket share the same binary payload:

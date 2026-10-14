@@ -18,6 +18,7 @@ enum MsgType {
   ACHIEVEMENT = 12;   // 成就分享
   NPC_DIALOG = 13;    // NPC 对话
   TRADE_STATUS = 14;  // 交易状态
+  COORD_LINK = 15;    // 坐标链接（metadata = CoordMetadata）
 
   SYSTEM = 99;        // 系统消息
 }
@@ -239,6 +240,26 @@ message GroupMemberMutedNotify {
   int64 muted_until_ts = 3;    // 新的截止时刻；0 = 已解禁
   string operator_id = 4;      // 执行禁言/解禁的操作者
   int64 timestamp = 5;
+}
+
+// 举报（2253）：玩家举报一条消息。服务端内存台账按 (message_id, reporter_id)
+// 去重幂等——同一玩家重复举报同一消息不重复计数，响应回显去重后的累计数。
+// 被举报消息必须在本进程编辑台账里（即本实例实际投递过的消息），台账外回
+// USER_NOT_FOUND：与撤回的「台账外消息」同一语义，也挡住垃圾 message_id 刷
+// 台账的内存增长。管理后台审核队列待全局管理员面另批（同群域禁言范围裁决），
+// 台账按时间留痕（每消息封顶 100 条理由）供其消费。
+message ReportMessageRequest {
+  string message_id = 1;
+  string reason = 2;           // 可选；上限 500 码点（服务端校验，超限
+                               // INVALID_PARAM）
+}
+
+message ReportMessageResponse {
+  common.ErrorCode code = 1;   // OK / AUTH_FAILED（未登录）/ USER_NOT_FOUND
+                               // （消息不在本进程台账）/ INVALID_PARAM（垃圾
+                               // body / 空 message_id / 理由超长）
+  string message_id = 2;
+  int32 report_count = 3;      // 去重后的累计举报数（重复举报幂等回显）
 }
 
 // Join group request
@@ -1022,6 +1043,19 @@ message NpcDialogMetadata {
   string npc_name = 2;
   string dialog_id = 3;          // 对话树节点 ID
   repeated string options = 4;   // 玩家可选的回复选项
+}
+
+// 坐标链接（msg_type = COORD_LINK 时，metadata 序列化为此消息；game_chat_features
+// P1「坐标链接」）：游戏客户端点击后自动寻路到 (x, y, z)。坐标是地图格坐标
+// (int32，米/格由游戏约定)；伴侣面（web/desktop）无寻路引擎，渲染为坐标卡片、
+// 点击复制。服务端在发送门校验 metadata 能按 CoordMetadata 解析且 map_id 非空，
+// 拒悬空坐标回 INVALID_PARAM（与 reply_to 校验同一档）。
+message CoordMetadata {
+  string map_id = 1;             // 地图/区域 ID
+  int32 x = 2;
+  int32 y = 3;
+  int32 z = 4;                   // 高度，缺省 0
+  string label = 5;              // 展示标签（如「BOSS 刷新点」）；渲染标题
 }
 
 // ---- 频道屏蔽（玩家级推送过滤） ----

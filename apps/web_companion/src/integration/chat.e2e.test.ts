@@ -75,6 +75,10 @@ suite('chat integration (CHIRP_WS_URL)', () => {
   it('pages private history with before_timestamp', async () => {
     const channel = privateChannelId(A, B);
     for (const text of ['e2e-page-1', 'e2e-page-2', 'e2e-page-3']) {
+      // The server paces sends per user+channel_type (private 1s, P0 batch);
+      // bursting here just buys RATE_LIMITED. Honor the contract and the
+      // carryover from the previous case's private send.
+      await new Promise((resolve) => setTimeout(resolve, 1050));
       const resp = await userA.request(SEND_MESSAGE, {
         senderId: A,
         receiverId: B,

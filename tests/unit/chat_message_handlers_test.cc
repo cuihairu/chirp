@@ -56,6 +56,8 @@ class MessageHandlersTest : public ::testing::Test {
     typing_handlers_ = std::make_unique<chirp::chat::TypingHandlers>(typing_, resolver_, notifier_);
     reaction_handlers_ =
         std::make_unique<chirp::chat::ReactionHandlers>(reactions_, resolver_, notifier_);
+    // 举报面：存在性校验借编辑台账，记录进内存举报台账（按举报人去重）。
+    report_handlers_ = std::make_unique<chirp::chat::ReportHandlers>(reports_, edits_);
   }
 
   int CountNotifications(const std::string& user_id, chirp::gateway::MsgID msg_id) const {
@@ -76,10 +78,13 @@ class MessageHandlersTest : public ::testing::Test {
   chirp::chat::ReadReceiptManager receipts_;
   chirp::chat::TypingManager typing_;
   chirp::chat::ReactionManager reactions_;
+  chirp::chat::MessageEditManager edits_;
+  chirp::chat::ReportLedger reports_;
 
   std::unique_ptr<chirp::chat::ReadReceiptHandlers> receipt_handlers_;
   std::unique_ptr<chirp::chat::TypingHandlers> typing_handlers_;
   std::unique_ptr<chirp::chat::ReactionHandlers> reaction_handlers_;
+  std::unique_ptr<chirp::chat::ReportHandlers> report_handlers_;
 };
 
 // ---------------------------------------------------------------------------
@@ -467,6 +472,97 @@ TEST_F(MessageHandlersTest, SameUserRejectsEmptyClaimedId) {
   chirp::chat::TypingIndicator typing;
   typing.set_channel_id("alice|bob");
   EXPECT_FALSE(typing_handlers_->HandleTypingIndicator(typing, "alice"));
+}
+
+// ---------------------------------------------------------------------------
+// Message reports (REPORT_MESSAGE 2253/2254)
+// ---------------------------------------------------------------------------
+
+TEST_F(MessageHandlersTest, ReportLedgerDedupsPerReporter) {
+  edits_.RegisterMessage("msg_r", "carol", "bad stuff");
+
+  chirp::chat::ReportMessageRequest req;
+  req.set_message_id("msg_r");
+  req.set_reason("spam");
+  const auto first = report_handlers_->HandleReportMessage(req, "alice");
+  EXPECT_EQ(first.code(), chirp::common::OK);
+  EXPECT_EQ(first.message_id(), "msg_r");
+  EXPECT_EQ(first.report_count(), 1);
+
+  // 第二个举报人计入；同一举报人重复举报幂等，计数不再涨。
+  chirp::chat::ReportMessageRequest second;
+  second.set_message_id("msg_r");
+  EXPECT_EQ(report_handlers_->HandleReportMessage(second, "bob").report_count(), 2);
+  const auto again = report_handlers_->HandleReportMessage(second, "bob");
+  EXPECT_EQ(again.code(), chirp::common::OK);
+  EXPECT_EQ(again.report_count(), 2);
+  EXPECT_EQ(reports_.ReportCount("msg_r"), 2);
+  EXPECT_EQ(reports_.ReportCount("msg_unknown"), 0);
+  EXPECT_EQ(reports_.TrackedMessageCount(), 1);
+}
+
+TEST_F(MessageHandlersTest, ReportMessageRejectsUnknownMessage) {
+  // 台账外消息（本实例没投递过）拒收，也挡住垃圾 message_id 刷台账。
+  chirp::chat::ReportMessageRequest req;
+  req.set_message_id("never-delivered");
+  const auto resp = report_handlers_->HandleReportMessage(req, "alice");
+  EXPECT_EQ(resp.code(), chirp::common::USER_NOT_FOUND);
+  EXPECT_EQ(reports_.TrackedMessageCount(), 0);
+}
+
+TEST_F(MessageHandlersTest, ReportMessageRejectsEmptyMessageId) {
+  chirp::chat::ReportMessageRequest req;
+  const auto resp = report_handlers_->HandleReportMessage(req, "alice");
+  EXPECT_EQ(resp.code(), chirp::common::INVALID_PARAM);
+  EXPECT_TRUE(resp.message_id().empty());
+}
+
+TEST_F(MessageHandlersTest, ReportMessageRefusesUnauthenticated) {
+  edits_.RegisterMessage("msg_r2", "carol", "bad stuff");
+  chirp::chat::ReportMessageRequest req;
+  req.set_message_id("msg_r2");
+  EXPECT_EQ(report_handlers_->HandleReportMessage(req, "").code(), chirp::common::AUTH_FAILED);
+  EXPECT_EQ(reports_.TrackedMessageCount(), 0);
+}
+
+TEST_F(MessageHandlersTest, ReportMessageCountsReasonByCodePoints) {
+  edits_.RegisterMessage("msg_r3", "carol", "bad stuff");
+
+  // 码点口径（非字节数）：500 个中文（1500 字节）放行，501 个拒收。
+  // 字面量用转义构造，避免源码编码把多字节字符压成单字节。
+  const std::string kHan = "\xE6\xB1\x89";  // 3 字节的中文
+  auto TryReport = [this, &kHan](int codepoints) {
+    std::string reason;
+    reason.reserve(static_cast<size_t>(codepoints) * kHan.size());
+    for (int i = 0; i < codepoints; ++i) {
+      reason += kHan;
+    }
+    chirp::chat::ReportMessageRequest req;
+    req.set_message_id("msg_r3");
+    req.set_reason(reason);
+    return report_handlers_->HandleReportMessage(req, "alice");
+  };
+  EXPECT_EQ(TryReport(500).code(), chirp::common::OK);
+  EXPECT_EQ(TryReport(501).code(), chirp::common::INVALID_PARAM);
+  // 多字节超长不回写台账。
+  EXPECT_EQ(reports_.ReportCount("msg_r3"), 1);
+}
+
+TEST_F(MessageHandlersTest, ReportLedgerCapsKeptReasonsAndKeepsCounting) {
+  // 每消息理由封顶 100 条（审核队列留料上限），计数不受封顶影响。
+  constexpr int kMaxReasonsPerMessage = 100;
+  edits_.RegisterMessage("msg_many", "carol", "spam");
+
+  chirp::chat::ReportMessageRequest req;
+  req.set_message_id("msg_many");
+  int32_t last = 0;
+  for (int i = 0; i <= kMaxReasonsPerMessage + 2; ++i) {
+    const auto resp = report_handlers_->HandleReportMessage(req, "reporter-" + std::to_string(i));
+    EXPECT_EQ(resp.code(), chirp::common::OK);
+    last = resp.report_count();
+  }
+  EXPECT_EQ(last, kMaxReasonsPerMessage + 3);
+  EXPECT_EQ(reports_.TrackedMessageCount(), 1);
 }
 
 }  // namespace

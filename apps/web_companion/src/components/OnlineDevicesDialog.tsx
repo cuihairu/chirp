@@ -25,10 +25,17 @@ export default function OnlineDevicesDialog({
   const presence = useStoreValue(gamePresence);
   const [failed, setFailed] = useState(false);
 
+  // 重新打开时清上次的失败横幅:「按 open 变更调 render 期重置」是 react.dev
+  // 认可的调整状态形态(effect 体内同步 setState 会被 react-hooks 规则拦下)。
+  const [prevOpen, setPrevOpen] = useState(open);
+  if (prevOpen !== open) {
+    setPrevOpen(open);
+    setFailed(false);
+  }
+
   // 打开即取权威快照:开关默认值(未设置过 → true)与生效游戏清单只有服务端知道。
   useEffect(() => {
     if (open && gamePresenceApi) {
-      setFailed(false);
       void gamePresenceApi.refresh();
     }
   }, [open, gamePresenceApi]);

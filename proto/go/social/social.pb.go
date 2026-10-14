@@ -1718,6 +1718,269 @@ func (x *FriendRemovedNotify) GetTimestamp() int64 {
 }
 
 // ---------------------------------------------------------------------------
+// 好友上线通知偏好（P1，可关闭）。按用户存，缺省全开——只显式关掉的用户
+// 不再收到 FRIEND_ONLINE_NOTIFY(3029)；花名册 PRESENCE_NOTIFY 不受影响。
+type NotifyPrefs struct {
+	state              protoimpl.MessageState `protogen:"open.v1"`
+	FriendOnlineNotify bool                   `protobuf:"varint,1,opt,name=friend_online_notify,json=friendOnlineNotify,proto3" json:"friend_online_notify,omitempty"`
+	unknownFields      protoimpl.UnknownFields
+	sizeCache          protoimpl.SizeCache
+}
+
+func (x *NotifyPrefs) Reset() {
+	*x = NotifyPrefs{}
+	mi := &file_proto_social_proto_msgTypes[27]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *NotifyPrefs) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*NotifyPrefs) ProtoMessage() {}
+
+func (x *NotifyPrefs) ProtoReflect() protoreflect.Message {
+	mi := &file_proto_social_proto_msgTypes[27]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use NotifyPrefs.ProtoReflect.Descriptor instead.
+func (*NotifyPrefs) Descriptor() ([]byte, []int) {
+	return file_proto_social_proto_rawDescGZIP(), []int{27}
+}
+
+func (x *NotifyPrefs) GetFriendOnlineNotify() bool {
+	if x != nil {
+		return x.FriendOnlineNotify
+	}
+	return false
+}
+
+type SetNotifyPrefsRequest struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	UserId        string                 `protobuf:"bytes,1,opt,name=user_id,json=userId,proto3" json:"user_id,omitempty"`
+	Prefs         *NotifyPrefs           `protobuf:"bytes,2,opt,name=prefs,proto3" json:"prefs,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *SetNotifyPrefsRequest) Reset() {
+	*x = SetNotifyPrefsRequest{}
+	mi := &file_proto_social_proto_msgTypes[28]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *SetNotifyPrefsRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*SetNotifyPrefsRequest) ProtoMessage() {}
+
+func (x *SetNotifyPrefsRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_proto_social_proto_msgTypes[28]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use SetNotifyPrefsRequest.ProtoReflect.Descriptor instead.
+func (*SetNotifyPrefsRequest) Descriptor() ([]byte, []int) {
+	return file_proto_social_proto_rawDescGZIP(), []int{28}
+}
+
+func (x *SetNotifyPrefsRequest) GetUserId() string {
+	if x != nil {
+		return x.UserId
+	}
+	return ""
+}
+
+func (x *SetNotifyPrefsRequest) GetPrefs() *NotifyPrefs {
+	if x != nil {
+		return x.Prefs
+	}
+	return nil
+}
+
+type SetNotifyPrefsResponse struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Code          common.ErrorCode       `protobuf:"varint,1,opt,name=code,proto3,enum=chirp.common.ErrorCode" json:"code,omitempty"`
+	Prefs         *NotifyPrefs           `protobuf:"bytes,2,opt,name=prefs,proto3" json:"prefs,omitempty"` // 回显生效值
+	ServerTime    int64                  `protobuf:"varint,3,opt,name=server_time,json=serverTime,proto3" json:"server_time,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *SetNotifyPrefsResponse) Reset() {
+	*x = SetNotifyPrefsResponse{}
+	mi := &file_proto_social_proto_msgTypes[29]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *SetNotifyPrefsResponse) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*SetNotifyPrefsResponse) ProtoMessage() {}
+
+func (x *SetNotifyPrefsResponse) ProtoReflect() protoreflect.Message {
+	mi := &file_proto_social_proto_msgTypes[29]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use SetNotifyPrefsResponse.ProtoReflect.Descriptor instead.
+func (*SetNotifyPrefsResponse) Descriptor() ([]byte, []int) {
+	return file_proto_social_proto_rawDescGZIP(), []int{29}
+}
+
+func (x *SetNotifyPrefsResponse) GetCode() common.ErrorCode {
+	if x != nil {
+		return x.Code
+	}
+	return common.ErrorCode(0)
+}
+
+func (x *SetNotifyPrefsResponse) GetPrefs() *NotifyPrefs {
+	if x != nil {
+		return x.Prefs
+	}
+	return nil
+}
+
+func (x *SetNotifyPrefsResponse) GetServerTime() int64 {
+	if x != nil {
+		return x.ServerTime
+	}
+	return 0
+}
+
+type GetNotifyPrefsRequest struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	UserId        string                 `protobuf:"bytes,1,opt,name=user_id,json=userId,proto3" json:"user_id,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *GetNotifyPrefsRequest) Reset() {
+	*x = GetNotifyPrefsRequest{}
+	mi := &file_proto_social_proto_msgTypes[30]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *GetNotifyPrefsRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*GetNotifyPrefsRequest) ProtoMessage() {}
+
+func (x *GetNotifyPrefsRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_proto_social_proto_msgTypes[30]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use GetNotifyPrefsRequest.ProtoReflect.Descriptor instead.
+func (*GetNotifyPrefsRequest) Descriptor() ([]byte, []int) {
+	return file_proto_social_proto_rawDescGZIP(), []int{30}
+}
+
+func (x *GetNotifyPrefsRequest) GetUserId() string {
+	if x != nil {
+		return x.UserId
+	}
+	return ""
+}
+
+type GetNotifyPrefsResponse struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Code          common.ErrorCode       `protobuf:"varint,1,opt,name=code,proto3,enum=chirp.common.ErrorCode" json:"code,omitempty"`
+	Prefs         *NotifyPrefs           `protobuf:"bytes,2,opt,name=prefs,proto3" json:"prefs,omitempty"`
+	ServerTime    int64                  `protobuf:"varint,3,opt,name=server_time,json=serverTime,proto3" json:"server_time,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *GetNotifyPrefsResponse) Reset() {
+	*x = GetNotifyPrefsResponse{}
+	mi := &file_proto_social_proto_msgTypes[31]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *GetNotifyPrefsResponse) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*GetNotifyPrefsResponse) ProtoMessage() {}
+
+func (x *GetNotifyPrefsResponse) ProtoReflect() protoreflect.Message {
+	mi := &file_proto_social_proto_msgTypes[31]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use GetNotifyPrefsResponse.ProtoReflect.Descriptor instead.
+func (*GetNotifyPrefsResponse) Descriptor() ([]byte, []int) {
+	return file_proto_social_proto_rawDescGZIP(), []int{31}
+}
+
+func (x *GetNotifyPrefsResponse) GetCode() common.ErrorCode {
+	if x != nil {
+		return x.Code
+	}
+	return common.ErrorCode(0)
+}
+
+func (x *GetNotifyPrefsResponse) GetPrefs() *NotifyPrefs {
+	if x != nil {
+		return x.Prefs
+	}
+	return nil
+}
+
+func (x *GetNotifyPrefsResponse) GetServerTime() int64 {
+	if x != nil {
+		return x.ServerTime
+	}
+	return 0
+}
+
+// ---------------------------------------------------------------------------
 // Server-side storage snapshots. These are Redis VALUES (one key per user,
 // e.g. "chirp:social:friends:<uid>"), never wire messages. Keeping them
 // separate from the response messages lets the storage schema evolve without
@@ -1734,7 +1997,7 @@ type StoredFriendList struct {
 
 func (x *StoredFriendList) Reset() {
 	*x = StoredFriendList{}
-	mi := &file_proto_social_proto_msgTypes[27]
+	mi := &file_proto_social_proto_msgTypes[32]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1746,7 +2009,7 @@ func (x *StoredFriendList) String() string {
 func (*StoredFriendList) ProtoMessage() {}
 
 func (x *StoredFriendList) ProtoReflect() protoreflect.Message {
-	mi := &file_proto_social_proto_msgTypes[27]
+	mi := &file_proto_social_proto_msgTypes[32]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1759,7 +2022,7 @@ func (x *StoredFriendList) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use StoredFriendList.ProtoReflect.Descriptor instead.
 func (*StoredFriendList) Descriptor() ([]byte, []int) {
-	return file_proto_social_proto_rawDescGZIP(), []int{27}
+	return file_proto_social_proto_rawDescGZIP(), []int{32}
 }
 
 func (x *StoredFriendList) GetFriendUserIds() []string {
@@ -1778,7 +2041,7 @@ type StoredPendingRequests struct {
 
 func (x *StoredPendingRequests) Reset() {
 	*x = StoredPendingRequests{}
-	mi := &file_proto_social_proto_msgTypes[28]
+	mi := &file_proto_social_proto_msgTypes[33]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1790,7 +2053,7 @@ func (x *StoredPendingRequests) String() string {
 func (*StoredPendingRequests) ProtoMessage() {}
 
 func (x *StoredPendingRequests) ProtoReflect() protoreflect.Message {
-	mi := &file_proto_social_proto_msgTypes[28]
+	mi := &file_proto_social_proto_msgTypes[33]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1803,7 +2066,7 @@ func (x *StoredPendingRequests) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use StoredPendingRequests.ProtoReflect.Descriptor instead.
 func (*StoredPendingRequests) Descriptor() ([]byte, []int) {
-	return file_proto_social_proto_rawDescGZIP(), []int{28}
+	return file_proto_social_proto_rawDescGZIP(), []int{33}
 }
 
 func (x *StoredPendingRequests) GetRequests() map[string]*FriendRequest {
@@ -1811,6 +2074,50 @@ func (x *StoredPendingRequests) GetRequests() map[string]*FriendRequest {
 		return x.Requests
 	}
 	return nil
+}
+
+type StoredNotifyPrefs struct {
+	state              protoimpl.MessageState `protogen:"open.v1"`
+	FriendOnlineNotify bool                   `protobuf:"varint,1,opt,name=friend_online_notify,json=friendOnlineNotify,proto3" json:"friend_online_notify,omitempty"`
+	unknownFields      protoimpl.UnknownFields
+	sizeCache          protoimpl.SizeCache
+}
+
+func (x *StoredNotifyPrefs) Reset() {
+	*x = StoredNotifyPrefs{}
+	mi := &file_proto_social_proto_msgTypes[34]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *StoredNotifyPrefs) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*StoredNotifyPrefs) ProtoMessage() {}
+
+func (x *StoredNotifyPrefs) ProtoReflect() protoreflect.Message {
+	mi := &file_proto_social_proto_msgTypes[34]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use StoredNotifyPrefs.ProtoReflect.Descriptor instead.
+func (*StoredNotifyPrefs) Descriptor() ([]byte, []int) {
+	return file_proto_social_proto_rawDescGZIP(), []int{34}
+}
+
+func (x *StoredNotifyPrefs) GetFriendOnlineNotify() bool {
+	if x != nil {
+		return x.FriendOnlineNotify
+	}
+	return false
 }
 
 type StoredBlockedList struct {
@@ -1822,7 +2129,7 @@ type StoredBlockedList struct {
 
 func (x *StoredBlockedList) Reset() {
 	*x = StoredBlockedList{}
-	mi := &file_proto_social_proto_msgTypes[29]
+	mi := &file_proto_social_proto_msgTypes[35]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1834,7 +2141,7 @@ func (x *StoredBlockedList) String() string {
 func (*StoredBlockedList) ProtoMessage() {}
 
 func (x *StoredBlockedList) ProtoReflect() protoreflect.Message {
-	mi := &file_proto_social_proto_msgTypes[29]
+	mi := &file_proto_social_proto_msgTypes[35]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1847,7 +2154,7 @@ func (x *StoredBlockedList) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use StoredBlockedList.ProtoReflect.Descriptor instead.
 func (*StoredBlockedList) Descriptor() ([]byte, []int) {
-	return file_proto_social_proto_rawDescGZIP(), []int{29}
+	return file_proto_social_proto_rawDescGZIP(), []int{35}
 }
 
 func (x *StoredBlockedList) GetBlockedUserIds() []string {
@@ -1987,14 +2294,33 @@ const file_proto_social_proto_rawDesc = "" +
 	"\ttimestamp\x18\x03 \x01(\x03R\ttimestamp\"L\n" +
 	"\x13FriendRemovedNotify\x12\x17\n" +
 	"\auser_id\x18\x01 \x01(\tR\x06userId\x12\x1c\n" +
-	"\ttimestamp\x18\x02 \x01(\x03R\ttimestamp\":\n" +
+	"\ttimestamp\x18\x02 \x01(\x03R\ttimestamp\"?\n" +
+	"\vNotifyPrefs\x120\n" +
+	"\x14friend_online_notify\x18\x01 \x01(\bR\x12friendOnlineNotify\"a\n" +
+	"\x15SetNotifyPrefsRequest\x12\x17\n" +
+	"\auser_id\x18\x01 \x01(\tR\x06userId\x12/\n" +
+	"\x05prefs\x18\x02 \x01(\v2\x19.chirp.social.NotifyPrefsR\x05prefs\"\x97\x01\n" +
+	"\x16SetNotifyPrefsResponse\x12+\n" +
+	"\x04code\x18\x01 \x01(\x0e2\x17.chirp.common.ErrorCodeR\x04code\x12/\n" +
+	"\x05prefs\x18\x02 \x01(\v2\x19.chirp.social.NotifyPrefsR\x05prefs\x12\x1f\n" +
+	"\vserver_time\x18\x03 \x01(\x03R\n" +
+	"serverTime\"0\n" +
+	"\x15GetNotifyPrefsRequest\x12\x17\n" +
+	"\auser_id\x18\x01 \x01(\tR\x06userId\"\x97\x01\n" +
+	"\x16GetNotifyPrefsResponse\x12+\n" +
+	"\x04code\x18\x01 \x01(\x0e2\x17.chirp.common.ErrorCodeR\x04code\x12/\n" +
+	"\x05prefs\x18\x02 \x01(\v2\x19.chirp.social.NotifyPrefsR\x05prefs\x12\x1f\n" +
+	"\vserver_time\x18\x03 \x01(\x03R\n" +
+	"serverTime\":\n" +
 	"\x10StoredFriendList\x12&\n" +
 	"\x0ffriend_user_ids\x18\x01 \x03(\tR\rfriendUserIds\"\xc0\x01\n" +
 	"\x15StoredPendingRequests\x12M\n" +
 	"\brequests\x18\x01 \x03(\v21.chirp.social.StoredPendingRequests.RequestsEntryR\brequests\x1aX\n" +
 	"\rRequestsEntry\x12\x10\n" +
 	"\x03key\x18\x01 \x01(\tR\x03key\x121\n" +
-	"\x05value\x18\x02 \x01(\v2\x1b.chirp.social.FriendRequestR\x05value:\x028\x01\"=\n" +
+	"\x05value\x18\x02 \x01(\v2\x1b.chirp.social.FriendRequestR\x05value:\x028\x01\"E\n" +
+	"\x11StoredNotifyPrefs\x120\n" +
+	"\x14friend_online_notify\x18\x01 \x01(\bR\x12friendOnlineNotify\"=\n" +
 	"\x11StoredBlockedList\x12(\n" +
 	"\x10blocked_user_ids\x18\x01 \x03(\tR\x0eblockedUserIds*X\n" +
 	"\x0ePresenceStatus\x12\v\n" +
@@ -2024,7 +2350,7 @@ func file_proto_social_proto_rawDescGZIP() []byte {
 }
 
 var file_proto_social_proto_enumTypes = make([]protoimpl.EnumInfo, 2)
-var file_proto_social_proto_msgTypes = make([]protoimpl.MessageInfo, 34)
+var file_proto_social_proto_msgTypes = make([]protoimpl.MessageInfo, 40)
 var file_proto_social_proto_goTypes = []any{
 	(PresenceStatus)(0),                 // 0: chirp.social.PresenceStatus
 	(FriendStatus)(0),                   // 1: chirp.social.FriendStatus
@@ -2055,43 +2381,54 @@ var file_proto_social_proto_goTypes = []any{
 	(*FriendRequestNotify)(nil),         // 26: chirp.social.FriendRequestNotify
 	(*FriendAcceptedNotify)(nil),        // 27: chirp.social.FriendAcceptedNotify
 	(*FriendRemovedNotify)(nil),         // 28: chirp.social.FriendRemovedNotify
-	(*StoredFriendList)(nil),            // 29: chirp.social.StoredFriendList
-	(*StoredPendingRequests)(nil),       // 30: chirp.social.StoredPendingRequests
-	(*StoredBlockedList)(nil),           // 31: chirp.social.StoredBlockedList
-	nil,                                 // 32: chirp.social.SetPresenceRequest.MetadataEntry
-	nil,                                 // 33: chirp.social.PresenceInfo.MetadataEntry
-	nil,                                 // 34: chirp.social.PresenceNotify.MetadataEntry
-	nil,                                 // 35: chirp.social.StoredPendingRequests.RequestsEntry
-	(common.ErrorCode)(0),               // 36: chirp.common.ErrorCode
+	(*NotifyPrefs)(nil),                 // 29: chirp.social.NotifyPrefs
+	(*SetNotifyPrefsRequest)(nil),       // 30: chirp.social.SetNotifyPrefsRequest
+	(*SetNotifyPrefsResponse)(nil),      // 31: chirp.social.SetNotifyPrefsResponse
+	(*GetNotifyPrefsRequest)(nil),       // 32: chirp.social.GetNotifyPrefsRequest
+	(*GetNotifyPrefsResponse)(nil),      // 33: chirp.social.GetNotifyPrefsResponse
+	(*StoredFriendList)(nil),            // 34: chirp.social.StoredFriendList
+	(*StoredPendingRequests)(nil),       // 35: chirp.social.StoredPendingRequests
+	(*StoredNotifyPrefs)(nil),           // 36: chirp.social.StoredNotifyPrefs
+	(*StoredBlockedList)(nil),           // 37: chirp.social.StoredBlockedList
+	nil,                                 // 38: chirp.social.SetPresenceRequest.MetadataEntry
+	nil,                                 // 39: chirp.social.PresenceInfo.MetadataEntry
+	nil,                                 // 40: chirp.social.PresenceNotify.MetadataEntry
+	nil,                                 // 41: chirp.social.StoredPendingRequests.RequestsEntry
+	(common.ErrorCode)(0),               // 42: chirp.common.ErrorCode
 }
 var file_proto_social_proto_depIdxs = []int32{
 	1,  // 0: chirp.social.FriendInfo.status:type_name -> chirp.social.FriendStatus
-	36, // 1: chirp.social.AddFriendResponse.code:type_name -> chirp.common.ErrorCode
-	36, // 2: chirp.social.FriendRequestActionResponse.code:type_name -> chirp.common.ErrorCode
-	36, // 3: chirp.social.RemoveFriendResponse.code:type_name -> chirp.common.ErrorCode
-	36, // 4: chirp.social.GetFriendListResponse.code:type_name -> chirp.common.ErrorCode
+	42, // 1: chirp.social.AddFriendResponse.code:type_name -> chirp.common.ErrorCode
+	42, // 2: chirp.social.FriendRequestActionResponse.code:type_name -> chirp.common.ErrorCode
+	42, // 3: chirp.social.RemoveFriendResponse.code:type_name -> chirp.common.ErrorCode
+	42, // 4: chirp.social.GetFriendListResponse.code:type_name -> chirp.common.ErrorCode
 	3,  // 5: chirp.social.GetFriendListResponse.friends:type_name -> chirp.social.FriendInfo
-	36, // 6: chirp.social.GetPendingRequestsResponse.code:type_name -> chirp.common.ErrorCode
+	42, // 6: chirp.social.GetPendingRequestsResponse.code:type_name -> chirp.common.ErrorCode
 	2,  // 7: chirp.social.GetPendingRequestsResponse.requests:type_name -> chirp.social.FriendRequest
-	36, // 8: chirp.social.BlockUserResponse.code:type_name -> chirp.common.ErrorCode
-	36, // 9: chirp.social.UnblockUserResponse.code:type_name -> chirp.common.ErrorCode
-	36, // 10: chirp.social.GetBlockedListResponse.code:type_name -> chirp.common.ErrorCode
+	42, // 8: chirp.social.BlockUserResponse.code:type_name -> chirp.common.ErrorCode
+	42, // 9: chirp.social.UnblockUserResponse.code:type_name -> chirp.common.ErrorCode
+	42, // 10: chirp.social.GetBlockedListResponse.code:type_name -> chirp.common.ErrorCode
 	0,  // 11: chirp.social.SetPresenceRequest.status:type_name -> chirp.social.PresenceStatus
-	32, // 12: chirp.social.SetPresenceRequest.metadata:type_name -> chirp.social.SetPresenceRequest.MetadataEntry
-	36, // 13: chirp.social.SetPresenceResponse.code:type_name -> chirp.common.ErrorCode
+	38, // 12: chirp.social.SetPresenceRequest.metadata:type_name -> chirp.social.SetPresenceRequest.MetadataEntry
+	42, // 13: chirp.social.SetPresenceResponse.code:type_name -> chirp.common.ErrorCode
 	0,  // 14: chirp.social.PresenceInfo.status:type_name -> chirp.social.PresenceStatus
-	33, // 15: chirp.social.PresenceInfo.metadata:type_name -> chirp.social.PresenceInfo.MetadataEntry
-	36, // 16: chirp.social.GetPresenceResponse.code:type_name -> chirp.common.ErrorCode
+	39, // 15: chirp.social.PresenceInfo.metadata:type_name -> chirp.social.PresenceInfo.MetadataEntry
+	42, // 16: chirp.social.GetPresenceResponse.code:type_name -> chirp.common.ErrorCode
 	22, // 17: chirp.social.GetPresenceResponse.presences:type_name -> chirp.social.PresenceInfo
 	0,  // 18: chirp.social.PresenceNotify.status:type_name -> chirp.social.PresenceStatus
-	34, // 19: chirp.social.PresenceNotify.metadata:type_name -> chirp.social.PresenceNotify.MetadataEntry
-	35, // 20: chirp.social.StoredPendingRequests.requests:type_name -> chirp.social.StoredPendingRequests.RequestsEntry
-	2,  // 21: chirp.social.StoredPendingRequests.RequestsEntry.value:type_name -> chirp.social.FriendRequest
-	22, // [22:22] is the sub-list for method output_type
-	22, // [22:22] is the sub-list for method input_type
-	22, // [22:22] is the sub-list for extension type_name
-	22, // [22:22] is the sub-list for extension extendee
-	0,  // [0:22] is the sub-list for field type_name
+	40, // 19: chirp.social.PresenceNotify.metadata:type_name -> chirp.social.PresenceNotify.MetadataEntry
+	29, // 20: chirp.social.SetNotifyPrefsRequest.prefs:type_name -> chirp.social.NotifyPrefs
+	42, // 21: chirp.social.SetNotifyPrefsResponse.code:type_name -> chirp.common.ErrorCode
+	29, // 22: chirp.social.SetNotifyPrefsResponse.prefs:type_name -> chirp.social.NotifyPrefs
+	42, // 23: chirp.social.GetNotifyPrefsResponse.code:type_name -> chirp.common.ErrorCode
+	29, // 24: chirp.social.GetNotifyPrefsResponse.prefs:type_name -> chirp.social.NotifyPrefs
+	41, // 25: chirp.social.StoredPendingRequests.requests:type_name -> chirp.social.StoredPendingRequests.RequestsEntry
+	2,  // 26: chirp.social.StoredPendingRequests.RequestsEntry.value:type_name -> chirp.social.FriendRequest
+	27, // [27:27] is the sub-list for method output_type
+	27, // [27:27] is the sub-list for method input_type
+	27, // [27:27] is the sub-list for extension type_name
+	27, // [27:27] is the sub-list for extension extendee
+	0,  // [0:27] is the sub-list for field type_name
 }
 
 func init() { file_proto_social_proto_init() }
@@ -2105,7 +2442,7 @@ func file_proto_social_proto_init() {
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_proto_social_proto_rawDesc), len(file_proto_social_proto_rawDesc)),
 			NumEnums:      2,
-			NumMessages:   34,
+			NumMessages:   40,
 			NumExtensions: 0,
 			NumServices:   0,
 		},

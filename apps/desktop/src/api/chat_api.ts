@@ -1,6 +1,7 @@
 import {
   ChannelType,
   ChatMessage,
+  CoordMetadata,
   GroupInfo,
   GroupMemberKickedNotify,
   GroupMemberAliasUpdatedNotify,
@@ -13,6 +14,7 @@ import {
   MsgType,
   ReactionAddedNotify,
   ReactionRemovedNotify,
+  ReportMessageResponse,
   SearchMessageResponse,
   SetGroupMuteResponse,
   SetMemberAliasResponse,
@@ -41,6 +43,7 @@ import {
   LOGOUT,
   MARK_READ,
   REMOVE_REACTION,
+  REPORT_MESSAGE,
   SEARCH_MESSAGE,
   SEND_MESSAGE,
   SET_GROUP_MUTE,
@@ -53,6 +56,7 @@ import {
   groupKey,
   privateKey,
   type ChatMessageView,
+  type CoordView,
   type Conversation,
   type MessageReactionView,
 } from '../state/models';
@@ -280,24 +284,41 @@ export class ChatApi {
    * the server already queued the message for the recipient. A reply carries
    * the quoted parent id (empty = not a reply, field stays off the wire).
    */
-  async sendMessage(channel: ChannelRef, text: string, replyToMessageId?: string): Promise<void> {
+  async sendMessage(
+    channel: ChannelRef,
+    text: string,
+    replyToMessageId?: string,
+    coord?: { mapId: string; x: number; y: number; z: number; label?: string },
+  ): Promise<void> {
     const senderId = this.auth.get().userId;
     if (!senderId) return;
     // 发送侧预检（词库下发同步）：REPLACE 在上线前就地改写，REJECT 拦下。
     // 气泡以实际上线的文本上屏——本地所见与线上/服务端一致。
     const contentBytes = new TextEncoder().encode(text);
     // Partial 与改造前 conn.request 的入参面一致（缺省字段保持缺省，不上线）。
+    // 坐标链接（P1 COORD_LINK）：带 coord 入参即切 COORD_LINK，坐标进 metadata。
     const wire: Partial<SendMessageRequest> = {
       senderId,
       // Group sends MUST leave receiver empty (chat_validation.cc rejects it).
       receiverId: channel.kind === 'private' ? channel.peerId : '',
       channelType: channelTypeOf(channel.kind),
       channelId: channel.channelId,
-      msgType: MsgType.TEXT,
+      msgType: coord ? MsgType.COORD_LINK : MsgType.TEXT,
       content: contentBytes,
       clientTimestamp: Date.now(),
     };
     if (replyToMessageId) wire.replyToMessageId = replyToMessageId;
+    if (coord) {
+      wire.metadata = CoordMetadata.encode(
+        CoordMetadata.fromPartial({
+          mapId: coord.mapId,
+          x: coord.x,
+          y: coord.y,
+          z: coord.z,
+          label: coord.label,
+        }),
+      ).finish();
+    }
     // 预检只读写 content（两面在我们手上非缺省），断言为完整消息面。
     const blocked = !this.wordFilter.onBeforeSend(wire as SendMessageRequest);
     const clientId = `pending-${Date.now().toString(36)}-${pendingCounter++}`;
@@ -312,6 +333,9 @@ export class ChatApi {
       timestamp: Date.now(),
       pending: true,
       replyToMessageId: wire.replyToMessageId || undefined,
+      coord: coord
+        ? { mapId: coord.mapId, x: coord.x, y: coord.y, z: coord.z, label: coord.label ?? '' }
+        : undefined,
     };
     addPendingMessage(this.messages, optimistic);
 
@@ -611,6 +635,15 @@ export class ChatApi {
     return resp;
   }
 
+  // ---- 举报(REPORT_MESSAGE_REQ/RESP 2253/2254) ----
+  // 按 (message_id, reporter_id) 去重幂等;reason 可选,上限 500 码点。
+  // 响应回显该消息去重后的累计举报数 reportCount。
+  async reportMessage(messageId: string, reason = ''): Promise<ReportMessageResponse> {
+    if (!messageId) return { code: ErrorCode.INVALID_PARAM, messageId, reportCount: 0 };
+    const resp = await this.conn.request(REPORT_MESSAGE, { messageId, reason });
+    return resp;
+  }
+
   /** 2120: someone was kicked. If it was me, forget the group locally. */
   private onKickedNotify(body: Uint8Array): void {
     let notify: GroupMemberKickedNotify;
@@ -819,6 +852,20 @@ export class ChatApi {
 
 const decodeText = (bytes: Uint8Array): string => new TextDecoder().decode(bytes);
 
+// 坐标卡片解析：非 COORD_LINK 或 metadata 解析不出 / 缺 map_id 一律 undefined
+// （气泡当普通文本渲染），与服务端 ValidateCoordMetadata 的拒绝口径一致。
+const coordViewOf = (msg: ChatMessage): CoordView | undefined => {
+  if (msg.msgType !== MsgType.COORD_LINK || msg.metadata.length === 0) return undefined;
+  let coord: CoordMetadata;
+  try {
+    coord = CoordMetadata.decode(msg.metadata);
+  } catch {
+    return undefined;
+  }
+  if (!coord.mapId) return undefined;
+  return { mapId: coord.mapId, x: coord.x, y: coord.y, z: coord.z, label: coord.label };
+};
+
 const toView = (msg: ChatMessage, channel: ChannelRef): ChatMessageView => ({
   messageId: msg.messageId,
   senderId: msg.senderId,
@@ -829,6 +876,7 @@ const toView = (msg: ChatMessage, channel: ChannelRef): ChatMessageView => ({
   timestamp: msg.timestamp,
   pending: false,
   replyToMessageId: msg.replyToMessageId || undefined,
+  coord: coordViewOf(msg),
 });
 
 const toReactionView = (reaction: MessageReaction, selfId: string): MessageReactionView => ({

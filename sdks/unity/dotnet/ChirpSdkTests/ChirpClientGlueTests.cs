@@ -331,6 +331,54 @@ public class ChirpClientGlueTests
     }
 
     [Fact]
+    public async Task ReportMessageAsync_RoundTrip_PassesThroughCount()
+    {
+        var transport = new GlueTransport();
+        var client = NewClient(_ => transport);
+        await client.ConnectAsync();
+
+        var pending = client.ReportMessageAsync("m1", "spam");
+        var request = transport.LastSentPacket();
+        Assert.Equal(MsgID.ReportMessageReq, request.MsgId);
+        var req = Chirp.Chat.ReportMessageRequest.Parser.ParseFrom(request.Body);
+        Assert.Equal("m1", req.MessageId);
+        Assert.Equal("spam", req.Reason);
+
+        transport.ServerPacket(new Packet
+        {
+            MsgId = MsgID.ReportMessageResp,
+            Sequence = request.Sequence,
+            Body = ByteString.CopyFrom(new Chirp.Chat.ReportMessageResponse
+            {
+                Code = Chirp.Common.ErrorCode.Ok,
+                MessageId = "m1",
+                ReportCount = 2,
+            }.ToByteArray()),
+        });
+        var resp = await pending;
+        Assert.Equal(Chirp.Common.ErrorCode.Ok, resp.Code);
+        Assert.Equal("m1", resp.MessageId);
+        Assert.Equal(2, resp.ReportCount);
+
+        // 理由缺省留空(可选项)。
+        var quiet = client.ReportMessageAsync("m2");
+        var quietReq = Chirp.Chat.ReportMessageRequest.Parser.ParseFrom(
+            transport.LastSentPacket().Body);
+        Assert.Equal("", quietReq.Reason);
+        transport.ServerPacket(new Packet
+        {
+            MsgId = MsgID.ReportMessageResp,
+            Sequence = transport.LastSentPacket().Sequence,
+            Body = ByteString.CopyFrom(new Chirp.Chat.ReportMessageResponse
+            {
+                Code = Chirp.Common.ErrorCode.Ok,
+                ReportCount = 1,
+            }.ToByteArray()),
+        });
+        Assert.Equal(1, (await quiet).ReportCount);
+    }
+
+    [Fact]
     public async Task SearchMessagesAsync_ValidationOrder_ConnectionThenKeyword()
     {
         var transport = new GlueTransport();

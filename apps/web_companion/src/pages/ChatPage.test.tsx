@@ -2,6 +2,7 @@ import { afterEach, describe, expect, it, vi } from 'vitest';
 import { act, fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { MemoryRouter, Route, Routes } from 'react-router-dom';
 import { MsgID } from '@chirp/proto/gateway';
+import { PresenceNotify, PresenceStatus } from '@chirp/proto/social';
 import { ChannelType, ChatMessage, MsgType } from '@chirp/proto/chat';
 import ChatPage from './ChatPage';
 import LoginPage from './LoginPage';
@@ -67,7 +68,7 @@ interface PlaneHarness {
  * themselves are ChatPage's job.
  */
 const mountChatPage = async (
-  options: { socialResponder?: () => Promise<unknown> } = {},
+  options: { socialResponder?: (msgId: MsgID) => Promise<unknown> } = {},
 ): Promise<PlaneHarness> => {
   const conn = new FakeChatConnection();
   conn.setResponder(historyResponder);
@@ -129,6 +130,40 @@ const flushAsync = async (): Promise<void> => {
 afterEach(() => {
   vi.unstubAllGlobals();
   vi.restoreAllMocks();
+});
+
+describe('ChatPage friend-online toast', () => {
+  const onlineBody = (userId: string): Uint8Array =>
+    PresenceNotify.encode(PresenceNotify.fromPartial({ userId, status: PresenceStatus.ONLINE })).finish();
+  const gameBody = (userId: string, game: string): Uint8Array =>
+    PresenceNotify.encode(
+      PresenceNotify.fromPartial({ userId, status: PresenceStatus.IN_GAME, statusMessage: game }),
+    ).finish();
+
+  it('toasts roster friends coming online; one toast at a time', async () => {
+    const { socialConn } = await mountChatPage({
+      socialResponder: async (msgId) =>
+        msgId === MsgID.GET_FRIEND_LIST_REQ
+          ? { code: 0, friends: [{ userId: 'user_b', status: 2 }, { userId: 'user_c', status: 2 }], totalCount: 2 }
+          : { code: 0 },
+    });
+    await waitFor(() =>
+      expect(socialConn.requests.some((r) => r.msgId === MsgID.GET_FRIEND_LIST_REQ)).toBe(true),
+    );
+
+    act(() => {
+      socialConn.emit(MsgID.FRIEND_ONLINE_NOTIFY, onlineBody('user_b'));
+    });
+    expect(screen.getByTestId('friend-online-toast')).toBeTruthy();
+    expect(screen.getByText(zh.social.friendOnlineNow('user_b'))).toBeTruthy();
+
+    // 新事件替换当前 toast（单槽去重，不叠加）。
+    act(() => {
+      socialConn.emit(MsgID.FRIEND_ONLINE_NOTIFY, gameBody('user_c', 'g1'));
+    });
+    expect(screen.getByText(zh.social.friendOnlineGame('user_c', 'g1'))).toBeTruthy();
+    expect(screen.queryByText(zh.social.friendOnlineNow('user_b'))).toBeNull();
+  });
 });
 
 describe('ChatPage plane logins', () => {

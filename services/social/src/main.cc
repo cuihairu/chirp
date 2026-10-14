@@ -77,6 +77,7 @@ std::string RandomHex(size_t bytes) {
 constexpr const char* kFriendsPrefix = "chirp:social:friends:";
 constexpr const char* kPendingPrefix = "chirp:social:pending:";
 constexpr const char* kBlockedPrefix = "chirp:social:blocked:";
+constexpr const char* kNotifyPrefsPrefix = "chirp:social:notify_prefs:";
 
 // Social service state. Lock discipline: never call a SessionRegistry free
 // function while holding `mu` - the registry has its own lock and the two are
@@ -96,6 +97,10 @@ struct SocialState {
 
   // Blocked users: user_id -> set of blocked_user_ids
   std::unordered_map<std::string, std::unordered_set<std::string>> blocked;
+
+  // 好友上线通知偏好（3025-3029）：user_id -> prefs。缺省全开——表里没有该
+  // 用户的行就视为开，只有显式 SET 过的用户才落表（快照也按需写）。
+  std::unordered_map<std::string, chirp::social::NotifyPrefs> notify_prefs;
 
   // Presence: user_id -> presence info
   std::unordered_map<std::string, chirp::social::PresenceInfo> presence;
@@ -174,12 +179,6 @@ void BroadcastToFriends(const std::shared_ptr<SocialState>& state,
   }
 }
 
-// ---------------------------------------------------------------------------
-// Redis persistence. Best-effort write-through: the in-memory state is the
-// working authority, Redis only restores it after a restart, so a failed
-// write costs durability, never the in-flight request.
-// ---------------------------------------------------------------------------
-
 void PersistFriends(const std::shared_ptr<chirp::network::RedisClient>& redis,
                     const std::string& user_id,
                     const std::unordered_set<std::string>& friend_ids) {
@@ -228,6 +227,19 @@ void PersistBlocked(const std::shared_ptr<chirp::network::RedisClient>& redis,
   }
   if (!redis->Set(std::string(kBlockedPrefix) + user_id, stored.SerializeAsString())) {
     chirp::common::Logger::Instance().Warn("social: failed to persist blocked list of " + user_id);
+  }
+}
+
+void PersistNotifyPrefs(const std::shared_ptr<chirp::network::RedisClient>& redis,
+                        const std::string& user_id,
+                        const chirp::social::NotifyPrefs& prefs) {
+  if (!redis) {
+    return;
+  }
+  chirp::social::StoredNotifyPrefs stored;
+  stored.set_friend_online_notify(prefs.friend_online_notify());
+  if (!redis->Set(std::string(kNotifyPrefsPrefix) + user_id, stored.SerializeAsString())) {
+    chirp::common::Logger::Instance().Warn("social: failed to persist notify prefs of " + user_id);
   }
 }
 
@@ -291,6 +303,19 @@ bool LoadSocialState(const std::shared_ptr<chirp::network::RedisClient>& redis,
       ids.insert(id);
     }
   }
+
+  for (const auto& key : redis->Keys(std::string(kNotifyPrefsPrefix) + "*")) {
+    const std::string user_id = key.substr(std::string_view(kNotifyPrefsPrefix).size());
+    const auto value = redis->Get(key);
+    chirp::social::StoredNotifyPrefs stored;
+    if (user_id.empty() || !value || !stored.ParseFromString(*value)) {
+      Logger::Instance().Warn("social: skipping corrupt notify prefs snapshot " + key);
+      continue;
+    }
+    std::lock_guard<std::mutex> lock(state->mu);
+    chirp::social::NotifyPrefs& prefs = state->notify_prefs[user_id];
+    prefs.set_friend_online_notify(stored.friend_online_notify());
+  }
   return true;
 }
 
@@ -308,6 +333,49 @@ chirp::social::PresenceNotify MakePresenceNotify(const std::string& user_id,
   notify.set_timestamp(NowMs());
   return notify;
 }
+
+// FRIEND_ONLINE_NOTIFY(3029)：只在有效状态 OFFLINE→非 OFFLINE 跃迁时补发，
+// 逐好友过各自的 SET_NOTIFY_PREFS 开关（缺省开）。body 复用 PresenceNotify
+// （与花名册 PRESENCE_NOTIFY 同形：谁/什么状态/状态文案/时间戳），靠 msgid
+// 区分——花名册链路不受开关影响。
+bool FriendOnlineNotifyEnabled(const std::shared_ptr<SocialState>& state,
+                               const std::string& user_id) {
+  std::lock_guard<std::mutex> lock(state->mu);
+  const auto it = state->notify_prefs.find(user_id);
+  return it == state->notify_prefs.end() || it->second.friend_online_notify();
+}
+
+void BroadcastFriendOnline(const std::shared_ptr<SocialState>& state,
+                           const std::string& user_id,
+                           chirp::social::PresenceStatus now,
+                           const std::string& status_message,
+                           chirp::social::PresenceStatus before) {
+  // 没有跃迁（出发状态本来就可见），或跃迁后仍不可见（显式下线/退回游戏外），
+  // 都不算"上线"，不补发。
+  if (before != chirp::social::OFFLINE || now == chirp::social::OFFLINE) {
+    return;
+  }
+  const auto body = MakePresenceNotify(user_id, now, status_message).SerializeAsString();
+  std::vector<std::string> friend_ids;
+  {
+    std::lock_guard<std::mutex> lock(state->mu);
+    auto it = state->friends.find(user_id);
+    if (it != state->friends.end()) {
+      friend_ids.assign(it->second.begin(), it->second.end());
+    }
+  }
+  for (const auto& friend_id : friend_ids) {
+    if (FriendOnlineNotifyEnabled(state, friend_id)) {
+      SendToUser(state, friend_id, chirp::gateway::FRIEND_ONLINE_NOTIFY, body);
+    }
+  }
+}
+
+// ---------------------------------------------------------------------------
+// Redis persistence. Best-effort write-through: the in-memory state is the
+// working authority, Redis only restores it after a restart, so a failed
+// write costs durability, never the in-flight request.
+// ---------------------------------------------------------------------------
 
 // Merges the base presence (connection lifecycle + explicit SET_PRESENCE)
 // with the 游戏在线状态 overlay: a non-empty overlay always presents as
@@ -399,9 +467,12 @@ void ConsumeGamePresenceEvent(const std::shared_ptr<SocialState>& state,
     chirp::common::Logger::Instance().Warn("social: failed to parse GamePresenceEvent");
     return;
   }
+  const auto presence_before = EffectivePresence(state, event.player_id()).status();
   const auto notify = ApplyGamePresenceEvent(state, event);
   BroadcastToFriends(state, event.player_id(), chirp::gateway::PRESENCE_NOTIFY,
                      notify.SerializeAsString());
+  BroadcastFriendOnline(state, event.player_id(), notify.status(), notify.status_message(),
+                        presence_before);
 }
 
 // Guards a business handler: the caller must be a logged-in session, and a
@@ -513,6 +584,7 @@ void HandleLogin(const std::shared_ptr<SocialState>& state,
 
   // Presence: flip to ONLINE but keep the user's own status message and
   // metadata (they belong to setPresence, not to the connection lifecycle).
+  const auto presence_before = EffectivePresence(state, user_id).status();
   chirp::social::PresenceInfo info;
   {
     std::lock_guard<std::mutex> lock(state->mu);
@@ -529,6 +601,8 @@ void HandleLogin(const std::shared_ptr<SocialState>& state,
   BroadcastToFriends(state, user_id, chirp::gateway::PRESENCE_NOTIFY,
                      MakePresenceNotify(user_id, effective.status(), effective.status_message())
                          .SerializeAsString());
+  BroadcastFriendOnline(state, user_id, effective.status(), effective.status_message(),
+                        presence_before);
 }
 
 void HandleAddFriend(const std::shared_ptr<SocialState>& state,
@@ -1034,6 +1108,7 @@ void HandleSetPresence(const std::shared_ptr<SocialState>& state,
     (*info.mutable_metadata())[kv.first] = kv.second;
   }
 
+  const auto presence_before = EffectivePresence(state, user_id).status();
   {
     std::lock_guard<std::mutex> lock(state->mu);
     state->presence[user_id] = info;
@@ -1055,6 +1130,8 @@ void HandleSetPresence(const std::shared_ptr<SocialState>& state,
   BroadcastToFriends(state, user_id, chirp::gateway::PRESENCE_NOTIFY,
                      MakePresenceNotify(user_id, effective.status(), effective.status_message())
                          .SerializeAsString());
+  BroadcastFriendOnline(state, user_id, effective.status(), effective.status_message(),
+                        presence_before);
 
   resp.set_code(chirp::common::OK);
   resp.set_server_time(NowMs());
@@ -1087,6 +1164,89 @@ void HandleGetPresence(const std::shared_ptr<SocialState>& state,
   }
 
   SendPacket(session, chirp::gateway::GET_PRESENCE_RESP, pkt.sequence(), resp.SerializeAsString());
+}
+
+// SET_NOTIFY_PREFS_REQ（3025）：好友上线通知的用户级开关。SET 必须带 prefs
+// 子消息（proto3 对 message 字段有 presence 语义，缺 prefs 回 INVALID_PARAM，
+// 不静默当成"关"——与缺省全开保持一致）；生效值回显给客户端。
+void HandleSetNotifyPrefs(const std::shared_ptr<SocialState>& state,
+                          const std::shared_ptr<chirp::network::RedisClient>& redis,
+                          const std::shared_ptr<chirp::network::Session>& session,
+                          const chirp::gateway::Packet& pkt) {
+  chirp::social::SetNotifyPrefsRequest req;
+  chirp::social::SetNotifyPrefsResponse resp;
+  if (!req.ParseFromArray(pkt.body().data(), static_cast<int>(pkt.body().size()))) {
+    resp.set_code(chirp::common::INVALID_PARAM);
+    resp.set_server_time(NowMs());
+    SendPacket(session, chirp::gateway::SET_NOTIFY_PREFS_RESP, pkt.sequence(),
+               resp.SerializeAsString());
+    return;
+  }
+
+  const std::string user_id = RequireUser(state, session, pkt,
+                                          chirp::gateway::SET_NOTIFY_PREFS_RESP,
+                                          req.user_id(), &resp);
+  if (user_id.empty()) {
+    return;
+  }
+
+  if (!req.has_prefs()) {
+    resp.set_code(chirp::common::INVALID_PARAM);
+    resp.set_server_time(NowMs());
+    SendPacket(session, chirp::gateway::SET_NOTIFY_PREFS_RESP, pkt.sequence(),
+               resp.SerializeAsString());
+    return;
+  }
+
+  {
+    std::lock_guard<std::mutex> lock(state->mu);
+    state->notify_prefs[user_id] = req.prefs();
+  }
+  PersistNotifyPrefs(redis, user_id, req.prefs());
+
+  resp.set_code(chirp::common::OK);
+  *resp.mutable_prefs() = req.prefs();
+  resp.set_server_time(NowMs());
+  SendPacket(session, chirp::gateway::SET_NOTIFY_PREFS_RESP, pkt.sequence(),
+             resp.SerializeAsString());
+}
+
+// GET_NOTIFY_PREFS_REQ（3027）：没有任何记录时也回全开（缺省语义读出来）。
+void HandleGetNotifyPrefs(const std::shared_ptr<SocialState>& state,
+                          const std::shared_ptr<chirp::network::Session>& session,
+                          const chirp::gateway::Packet& pkt) {
+  chirp::social::GetNotifyPrefsRequest req;
+  chirp::social::GetNotifyPrefsResponse resp;
+  if (!req.ParseFromArray(pkt.body().data(), static_cast<int>(pkt.body().size()))) {
+    resp.set_code(chirp::common::INVALID_PARAM);
+    resp.set_server_time(NowMs());
+    SendPacket(session, chirp::gateway::GET_NOTIFY_PREFS_RESP, pkt.sequence(),
+               resp.SerializeAsString());
+    return;
+  }
+
+  const std::string user_id = RequireUser(state, session, pkt,
+                                          chirp::gateway::GET_NOTIFY_PREFS_RESP,
+                                          req.user_id(), &resp);
+  if (user_id.empty()) {
+    return;
+  }
+
+  chirp::social::NotifyPrefs prefs;
+  prefs.set_friend_online_notify(true);
+  {
+    std::lock_guard<std::mutex> lock(state->mu);
+    const auto it = state->notify_prefs.find(user_id);
+    if (it != state->notify_prefs.end()) {
+      prefs = it->second;
+    }
+  }
+
+  resp.set_code(chirp::common::OK);
+  *resp.mutable_prefs() = prefs;
+  resp.set_server_time(NowMs());
+  SendPacket(session, chirp::gateway::GET_NOTIFY_PREFS_RESP, pkt.sequence(),
+             resp.SerializeAsString());
 }
 
 void HandleDisconnect(const std::shared_ptr<SocialState>& state,
@@ -1179,6 +1339,12 @@ void HandlePacket(const std::shared_ptr<SocialState>& state,
     break;
   case chirp::gateway::GET_PRESENCE_REQ:
     HandleGetPresence(state, session, pkt);
+    break;
+  case chirp::gateway::SET_NOTIFY_PREFS_REQ:
+    HandleSetNotifyPrefs(state, redis, session, pkt);
+    break;
+  case chirp::gateway::GET_NOTIFY_PREFS_REQ:
+    HandleGetNotifyPrefs(state, session, pkt);
     break;
   case chirp::gateway::HEARTBEAT_PING: {
     chirp::gateway::HeartbeatPing ping;
