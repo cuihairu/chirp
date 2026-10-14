@@ -43,6 +43,6 @@ chirp 的接入面是纯协议(TCP/WebSocket + Protobuf 小帧),SDK 按"协议�
 
 ## 测试口径备注
 
-- 各 SDK 的数字以仓库当前为准,统计命令:`dotnet test sdks/unity/dotnet/ChirpSdkTests`、`go test -race ./sdks/go/...`、`sdks/ts` 下 `npx vitest run`、`ctest -R sdk_core_tests`;
+- 各 SDK 的数字以仓库当前为准,统计命令:`dotnet test sdks/unity/dotnet/ChirpSdkTests`、`go test -race ./sdks/go/...`、`sdks/ts` 下 `pnpm exec vitest run`、`ctest -R sdk_core_tests`;
 - 覆盖率口径:C++/Go/TS 走各自 CI 的原生覆盖管线;Unity 用 coverlet cobertura,**剔除 `proto/csharp` 生成代码后按文件行去重**(89.2%,1436/1609);
 - Unreal 壳没有独立测试目标:它的行为契约就是 native 核心的行为契约(转发层无协议逻辑)。

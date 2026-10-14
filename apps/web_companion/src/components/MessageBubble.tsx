@@ -1,14 +1,49 @@
-import { Box, Paper, Typography } from '@mui/material';
+import { Box, Dialog, DialogContent, DialogTitle, Paper, Typography } from '@mui/material';
 import DeleteIcon from '@mui/icons-material/DeleteOutline';
 import EditIcon from '@mui/icons-material/EditOutlined';
 import FlagIcon from '@mui/icons-material/FlagOutlined';
 import ReplyIcon from '@mui/icons-material/ReplyOutlined';
+import { useState } from 'react';
+import { SenderKind } from '@chirp/proto/chat';
 import { QUICK_REACTIONS } from './quick_reactions';
 import type { ChatMessageView } from '../state/models';
 import { zh } from '../i18n/zh';
 
 const timeLabel = (timestamp: number): string =>
   new Date(timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+
+// P0 物品链接：品质配色——白(普通)/绿(优秀)/蓝(精良)/紫(史诗)/橙(传说)。
+// 白品质在浅色底上渲染为灰白（可读性适配）；枚举外未知值回落白（向前
+// 兼容，与 sender_kind 回落同口径）。
+const QUALITY_COLORS: Record<number, string> = {
+  0: '#9e9e9e',
+  1: '#4caf50',
+  2: '#2196f3',
+  3: '#9c27b0',
+  4: '#ff9800',
+};
+
+const qualityColorOf = (quality: number): string => QUALITY_COLORS[quality] ?? QUALITY_COLORS[0];
+
+// P0 消息展示：气泡底色按 sender_kind 区分——系统黄、NPC 绿、服务橙（交易）；
+// 玩家走纸色。自己的消息不受类别影响，恒走 primary 主色（客户端结构上只能
+// 以玩家身份发送，故按 mine 收口而非按类别）。tag 落在 data-sender-kind 上
+// 供测试断言解析结果。
+// Partial: a wire value outside the known enum (UNRECOGNIZED) falls back to
+// the player face rather than rendering an undefined bubble color.
+const KIND_FACE: Partial<Record<SenderKind, { tag: string; bgcolor: string }>> = {
+  [SenderKind.SENDER_USER]: { tag: 'user', bgcolor: 'background.paper' },
+  [SenderKind.SENDER_SYSTEM]: { tag: 'system', bgcolor: 'warning.light' },
+  [SenderKind.SENDER_NPC]: { tag: 'npc', bgcolor: 'success.light' },
+  [SenderKind.SENDER_SERVICE]: { tag: 'service', bgcolor: 'warning.main' },
+};
+
+const USER_FACE = { tag: 'user', bgcolor: 'background.paper' };
+
+const faceOf = (message: ChatMessageView, mine: boolean): { tag: string; bgcolor: string } => {
+  if (mine) return { tag: 'mine', bgcolor: 'primary.main' };
+  return KIND_FACE[message.senderKind as SenderKind] ?? USER_FACE;
+};
 
 /** Resolved display face of the quoted parent (ChatWindow resolves the id). */
 export interface QuotedSummary {
@@ -54,10 +89,13 @@ export default function MessageBubble({
   // Server message ids are "msg_<ms>_<n>" and monotonic, so string compare
   // orders them correctly; optimistic pending-* ids never compare below.
   const read = mine && !message.pending && !!peerReadMessageId && message.messageId <= peerReadMessageId;
+  const [itemOpen, setItemOpen] = useState(false);
 
+  const face = faceOf(message, mine);
   return (
     <Paper
       variant="outlined"
+      data-sender-kind={face.tag}
       sx={{
         maxWidth: '72%',
         px: 1.5,
@@ -65,7 +103,7 @@ export default function MessageBubble({
         my: 0.5,
         ml: mine ? 'auto' : 0,
         mr: mine ? 0 : 'auto',
-        bgcolor: mine ? 'primary.main' : 'background.paper',
+        bgcolor: face.bgcolor,
         color: mine ? 'primary.contrastText' : 'text.primary',
         opacity: message.pending ? 0.6 : 1,
       }}
@@ -146,6 +184,80 @@ export default function MessageBubble({
               : `${message.coord.x}, ${message.coord.y}, ${message.coord.z}`}
           </Typography>
         </Box>
+      )}
+      {!message.deleted && message.item && (
+        <>
+          <Box
+            component="button"
+            type="button"
+            data-testid={`item-${message.messageId}`}
+            data-quality={message.item.quality}
+            title={zh.chat.itemDetails}
+            onClick={() => setItemOpen(true)}
+            sx={{
+              display: 'block',
+              width: '100%',
+              mb: 0.5,
+              px: 1,
+              py: 0.5,
+              textAlign: 'left',
+              cursor: 'pointer',
+              border: '1px solid',
+              borderColor: mine ? 'primary.contrastText' : 'divider',
+              borderRadius: 1,
+              background: 'transparent',
+              color: 'inherit',
+            }}
+          >
+            <Typography
+              variant="caption"
+              sx={{ display: 'block', fontWeight: 600, color: qualityColorOf(message.item.quality) }}
+            >
+              {message.item.itemName || message.item.itemId}
+              {message.item.count > 1 && ` ×${message.item.count}`}
+            </Typography>
+            <Typography variant="caption" sx={{ display: 'block', opacity: 0.75 }}>
+              {message.item.itemId}
+            </Typography>
+          </Box>
+          <Dialog
+            open={itemOpen}
+            onClose={() => setItemOpen(false)}
+            data-testid={`item-dialog-${message.messageId}`}
+          >
+            <DialogTitle sx={{ color: qualityColorOf(message.item.quality) }}>
+              {message.item.itemName || message.item.itemId}
+            </DialogTitle>
+            <DialogContent dividers>
+              <Typography variant="caption" sx={{ display: 'block', opacity: 0.75 }}>
+                {message.item.itemId}
+              </Typography>
+              {message.item.iconUrl && (
+                <Box
+                  component="img"
+                  src={message.item.iconUrl}
+                  alt={message.item.itemName || message.item.itemId}
+                  sx={{ width: 48, height: 48, my: 1, display: 'block' }}
+                />
+              )}
+              {message.item.count > 1 && (
+                <Typography variant="caption" sx={{ display: 'block' }}>
+                  {zh.chat.itemCountLabel} ×{message.item.count}
+                </Typography>
+              )}
+              {Object.keys(message.item.attrs).length > 0 && (
+                <Typography variant="caption" sx={{ display: 'block', fontWeight: 600, mt: 1 }}>
+                  {zh.chat.itemAttrsLabel}
+                </Typography>
+              )}
+              {Object.entries(message.item.attrs).map(([key, value]) => (
+                <Typography key={key} variant="caption" sx={{ display: 'block' }}>
+                  {key}: {value}
+                </Typography>
+              ))}
+            </DialogContent>
+          </Dialog>
+        </>
       )}
       <Typography variant="caption" sx={{ opacity: 0.75 }}>
         {timeLabel(message.timestamp)}

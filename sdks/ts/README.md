@@ -46,7 +46,7 @@ show the pattern).
 ## Development
 
 ```bash
-cd sdks/ts     # from the repo root (npm workspaces)
-npm run typecheck
-npm test -- --coverage   # threshold: 90% statements/branches/functions/lines
+cd sdks/ts     # from the repo root (pnpm workspace)
+pnpm run typecheck
+pnpm test -- --coverage   # threshold: 90% statements/branches/functions/lines
 ```

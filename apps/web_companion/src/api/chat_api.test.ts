@@ -6,19 +6,22 @@ import {
   GroupMemberAliasUpdatedNotify,
   GroupMemberKickedNotify,
   GroupMemberMutedNotify,
+  ItemMetadata,
   MessageAck,
   MessageDeletedNotify,
   MessageEditedNotify,
   MessageReadNotify,
   MessageReaction,
   MsgType,
+  Priority,
   ReactionAddedNotify,
   ReactionRemovedNotify,
+  SenderKind,
   TypingIndicator,
 } from '@chirp/proto/chat';
 import { ErrorCode } from '@chirp/proto/common';
 import { MsgID } from '@chirp/proto/gateway';
-import { ChatApi, channelRefOf, type ChannelRef } from './chat_api';
+import { ChatApi, channelRefOf, type ChannelRef, type SystemSurface } from './chat_api';
 import { createStore } from '../state/store';
 import { createConversationStore } from '../state/conversation_store';
 import { createMessageStore, readCursorOf } from '../state/message_store';
@@ -270,6 +273,36 @@ describe('ChatApi.sendMessage (optimistic)', () => {
     });
   });
 
+  it('sends ITEM_LINK with item metadata and shows the card optimistically', async () => {
+    const h = makeHarness();
+    await login(h);
+    h.conn.setResponder(async (msgId, req) => {
+      expect(msgId).toBe(MsgID.SEND_MESSAGE_REQ);
+      expect(req).toMatchObject({ msgType: MsgType.ITEM_LINK });
+      return { code: 0, messageId: 'srv-i1' };
+    });
+    await h.api.sendMessage(channel, '出了把橙武', undefined, undefined, {
+      itemId: 'item-9001',
+      itemName: '烈焰之刃',
+      quality: 4,
+      count: 2,
+      attrs: { 攻击力: '120' },
+    });
+    const wire = h.conn.requests.find((r) => r.msgId === MsgID.SEND_MESSAGE_REQ)!;
+    const item = ItemMetadata.decode(
+      (wire.req as { metadata?: Uint8Array }).metadata ?? new Uint8Array(),
+    );
+    expect(item.itemId).toBe('item-9001');
+    expect(item.itemName).toBe('烈焰之刃');
+    expect(item.quality).toBe(4);
+    expect(item.count).toBe(2);
+    expect(item.attrs['攻击力']).toBe('120');
+    expect(h.messages.get().byChannel[channel.key][0]).toMatchObject({
+      messageId: 'srv-i1',
+      item: { itemId: 'item-9001', itemName: '烈焰之刃', quality: 4, count: 2 },
+    });
+  });
+
   it('leaves plain sends as TEXT without metadata on the wire', async () => {
     const h = makeHarness();
     await login(h);
@@ -311,6 +344,55 @@ describe('ChatApi incoming notifies', () => {
     const view = h.messages.get().byChannel['p:user_a|user_b'][0];
     expect(view.coord).toBeUndefined();
     expect(view.content).toBe('hi');
+  });
+
+  it('parses the item card out of an ITEM_LINK notify metadata', async () => {
+    const h = makeHarness();
+    await login(h);
+    h.conn.emit(
+      MsgID.CHAT_MESSAGE_NOTIFY,
+      chatBody({
+        msgType: MsgType.ITEM_LINK,
+        content: new TextEncoder().encode('出了把橙武'),
+        metadata: ItemMetadata.encode(
+          ItemMetadata.fromPartial({
+            itemId: 'item-9001',
+            itemName: '烈焰之刃',
+            quality: 4,
+            count: 2,
+            attrs: { 攻击力: '120' },
+          }),
+        ).finish(),
+      }),
+    );
+    const view = h.messages.get().byChannel['p:user_a|user_b'][0];
+    expect(view).toMatchObject({
+      item: { itemId: 'item-9001', itemName: '烈焰之刃', quality: 4, count: 2, attrs: { 攻击力: '120' } },
+    });
+  });
+
+  it('drops the item card when the metadata does not parse or lacks item_id', async () => {
+    const h = makeHarness();
+    await login(h);
+    h.conn.emit(
+      MsgID.CHAT_MESSAGE_NOTIFY,
+      chatBody({ msgType: MsgType.ITEM_LINK, metadata: new Uint8Array([0xde, 0xad, 0xbe, 0xef]) }),
+    );
+    const first = h.messages.get().byChannel['p:user_a|user_b'][0];
+    expect(first.item).toBeUndefined();
+    expect(first.content).toBe('hi');
+
+    h.conn.emit(
+      MsgID.CHAT_MESSAGE_NOTIFY,
+      chatBody({
+        messageId: 'm2',
+        msgType: MsgType.ITEM_LINK,
+        metadata: ItemMetadata.encode(ItemMetadata.fromPartial({ itemName: '无名之物' })).finish(),
+      }),
+    );
+    const second = h.messages.get().byChannel['p:user_a|user_b'][1];
+    expect(second.item).toBeUndefined();
+    expect(second.content).toBe('hi');
   });
 
   it('creates conversations for strangers and bumps unread when not active', async () => {
@@ -399,6 +481,79 @@ describe('ChatApi incoming notifies', () => {
     expect(h.conversations.get().conversations.find((c) => c.key === 'g:guild-1')?.title).toBe(
       'Raiders',
     );
+  });
+});
+
+describe('ChatApi system display surfaces (P0)', () => {
+  it('fires marquee for URGENT with ttl and carries the wire fields on the view', async () => {
+    const h = makeHarness();
+    await login(h);
+    const surfaces: SystemSurface[] = [];
+    h.api.onSystemSurface((s) => surfaces.push(s));
+    h.conn.emit(
+      MsgID.CHAT_MESSAGE_NOTIFY,
+      chatBody({
+        messageId: 'm9',
+        priority: Priority.PRIORITY_URGENT,
+        ttlSeconds: 12,
+        senderKind: SenderKind.SENDER_SYSTEM,
+        content: new TextEncoder().encode('维护公告'),
+      }),
+    );
+    expect(surfaces).toEqual([
+      { type: 'marquee', content: '维护公告', ttlSeconds: 12, messageId: 'm9' },
+    ]);
+    const view = h.messages.get().byChannel['p:user_a|user_b'][0];
+    expect(view).toMatchObject({
+      priority: Priority.PRIORITY_URGENT,
+      ttlSeconds: 12,
+      senderKind: SenderKind.SENDER_SYSTEM,
+    });
+  });
+
+  it('fires announce for HIGH priority, announce wins over the marquee rule', async () => {
+    const h = makeHarness();
+    await login(h);
+    const surfaces: SystemSurface[] = [];
+    h.api.onSystemSurface((s) => surfaces.push(s));
+    h.conn.emit(
+      MsgID.CHAT_MESSAGE_NOTIFY,
+      chatBody({
+        messageId: 'm10',
+        priority: Priority.PRIORITY_HIGH,
+        ttlSeconds: 30,
+        content: new TextEncoder().encode('全服奖励'),
+      }),
+    );
+    expect(surfaces).toEqual([
+      { type: 'announce', content: '全服奖励', ttlSeconds: 0, messageId: 'm10' },
+    ]);
+  });
+
+  it('keeps normal and URGENT-without-ttl messages off the system surfaces', async () => {
+    const h = makeHarness();
+    await login(h);
+    const surfaces: SystemSurface[] = [];
+    h.api.onSystemSurface((s) => surfaces.push(s));
+    h.conn.emit(MsgID.CHAT_MESSAGE_NOTIFY, chatBody({ messageId: 'm11' }));
+    h.conn.emit(
+      MsgID.CHAT_MESSAGE_NOTIFY,
+      chatBody({ messageId: 'm12', priority: Priority.PRIORITY_URGENT }),
+    );
+    expect(surfaces).toEqual([]);
+  });
+
+  it('stops firing after unsubscribe', async () => {
+    const h = makeHarness();
+    await login(h);
+    const surfaces: SystemSurface[] = [];
+    const off = h.api.onSystemSurface((s) => surfaces.push(s));
+    off();
+    h.conn.emit(
+      MsgID.CHAT_MESSAGE_NOTIFY,
+      chatBody({ messageId: 'm13', priority: Priority.PRIORITY_HIGH }),
+    );
+    expect(surfaces).toEqual([]);
   });
 });
 

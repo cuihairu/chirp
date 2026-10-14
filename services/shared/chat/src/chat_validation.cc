@@ -127,6 +127,18 @@ chirp::common::ErrorCode ValidateCoordMetadata(const SendMessageRequest& req) {
   return chirp::common::OK;
 }
 
+chirp::common::ErrorCode ValidateItemMetadata(const SendMessageRequest& req) {
+  if (req.msg_type() != ITEM_LINK) {
+    return chirp::common::OK;
+  }
+  ItemMetadata item;
+  // 空串同上：item_id 空判同时覆盖「没带 metadata」与「解析不出」。
+  if (!item.ParseFromString(req.metadata()) || item.item_id().empty()) {
+    return chirp::common::INVALID_PARAM;
+  }
+  return chirp::common::OK;
+}
+
 chirp::common::ErrorCode ValidateSendMessageRequest(const SendMessageRequest& req,
                                                     std::string_view authenticated_user_id) {
   if (!IsAuthenticated(authenticated_user_id)) {
@@ -144,6 +156,12 @@ chirp::common::ErrorCode ValidateSendMessageRequest(const SendMessageRequest& re
   if (const chirp::common::ErrorCode coord_code = ValidateCoordMetadata(req);
       coord_code != chirp::common::OK) {
     return coord_code;
+  }
+  // 物品链接（P0 ITEM_LINK）与坐标链接同层：垃圾/缺 item_id 的 metadata
+  // 同样在落任何存储之前拦下。
+  if (const chirp::common::ErrorCode item_code = ValidateItemMetadata(req);
+      item_code != chirp::common::OK) {
+    return item_code;
   }
 
   if (req.channel_type() == PRIVATE) {

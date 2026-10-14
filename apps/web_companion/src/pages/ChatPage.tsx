@@ -7,6 +7,9 @@ import { PresenceStatus } from '@chirp/proto/social';
 import { shouldNotifyFor } from '../api/desktop_notify';
 import ChatWindow from '../components/ChatWindow';
 import ConversationList from '../components/ConversationList';
+import MarqueeStrip from '../components/MarqueeStrip';
+import SystemAnnounceDialog from '../components/SystemAnnounceDialog';
+import type { SystemSurface } from '../api/chat_api';
 import { zh } from '../i18n/zh';
 
 /** Two-pane chat shell: conversation list on the left, open channel right. */
@@ -33,6 +36,18 @@ export default function ChatPage() {
       setFriendOnlineToast({ userId, status, statusMessage }),
     );
   }, [socialApi]);
+
+  // P0 消息展示：走马灯（URGENT+ttl）与系统弹窗（HIGH），单槽展示——
+  // 新事件替换当前槽位，不叠加；不依赖通知权限、与当前打开频道无关。
+  const [marquee, setMarquee] = useState<SystemSurface | null>(null);
+  const [announce, setAnnounce] = useState<SystemSurface | null>(null);
+  useEffect(() => {
+    if (!api) return;
+    return api.onSystemSurface((surface) => {
+      if (surface.type === 'marquee') setMarquee(surface);
+      else setAnnounce(surface);
+    });
+  }, [api]);
 
   // Group roster bootstrap: conversation-list group entries must not rely
   // solely on create/invite notifies — after a relogin those are all missed
@@ -141,49 +156,58 @@ export default function ChatPage() {
   };
 
   return (
-    <Box sx={{ display: 'flex', height: '100vh', overflow: 'hidden' }}>
-      <Box sx={{ width: 260, flexShrink: 0, display: 'flex', flexDirection: 'column' }}>
-        <Box sx={{ px: 2, py: 1.5, display: 'flex', alignItems: 'baseline', gap: 1 }}>
-          <Typography variant="subtitle1">{zh.appName}</Typography>
-          <Typography variant="caption" color="text.secondary">
-            {userId}
-          </Typography>
-        </Box>
-        <ConversationList activeKey={channelKey} onOpen={openChannel} />
-        <Box sx={{ p: 1.5, display: 'flex', flexDirection: 'column', gap: 0.5 }}>
-          {notifyPerm === 'default' && (
+    <Box sx={{ display: 'flex', flexDirection: 'column', height: '100vh', overflow: 'hidden' }}>
+      {marquee && (
+        <MarqueeStrip
+          content={marquee.content}
+          ttlSeconds={marquee.ttlSeconds}
+          onExpire={() => setMarquee(null)}
+        />
+      )}
+      <Box sx={{ display: 'flex', flex: 1, minHeight: 0 }}>
+        <Box sx={{ width: 260, flexShrink: 0, display: 'flex', flexDirection: 'column' }}>
+          <Box sx={{ px: 2, py: 1.5, display: 'flex', alignItems: 'baseline', gap: 1 }}>
+            <Typography variant="subtitle1">{zh.appName}</Typography>
+            <Typography variant="caption" color="text.secondary">
+              {userId}
+            </Typography>
+          </Box>
+          <ConversationList activeKey={channelKey} onOpen={openChannel} />
+          <Box sx={{ p: 1.5, display: 'flex', flexDirection: 'column', gap: 0.5 }}>
+            {notifyPerm === 'default' && (
+              <Typography
+                variant="caption"
+                color="text.secondary"
+                sx={{ cursor: 'pointer', textDecoration: 'underline' }}
+                onClick={requestNotify}
+                data-testid="notify-enable"
+              >
+                {zh.notify.enable}
+              </Typography>
+            )}
+            {notifyPerm === 'granted' && (
+              <Typography variant="caption" color="text.secondary">
+                {zh.notify.enabled}
+              </Typography>
+            )}
             <Typography
               variant="caption"
               color="text.secondary"
               sx={{ cursor: 'pointer', textDecoration: 'underline' }}
-              onClick={requestNotify}
-              data-testid="notify-enable"
+              onClick={() => void signOut()}
             >
-              {zh.notify.enable}
+              {zh.chat.signOut}
             </Typography>
-          )}
-          {notifyPerm === 'granted' && (
-            <Typography variant="caption" color="text.secondary">
-              {zh.notify.enabled}
-            </Typography>
-          )}
-          <Typography
-            variant="caption"
-            color="text.secondary"
-            sx={{ cursor: 'pointer', textDecoration: 'underline' }}
-            onClick={() => void signOut()}
-          >
-            {zh.chat.signOut}
-          </Typography>
+          </Box>
         </Box>
+        {channelKey ? (
+          <ChatWindow key={channelKey} channelKey={channelKey} />
+        ) : (
+          <Box sx={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+            <Typography color="text.secondary">{zh.chat.emptyChannel}</Typography>
+          </Box>
+        )}
       </Box>
-      {channelKey ? (
-        <ChatWindow key={channelKey} channelKey={channelKey} />
-      ) : (
-        <Box sx={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-          <Typography color="text.secondary">{zh.chat.emptyChannel}</Typography>
-        </Box>
-      )}
       <Snackbar
         open={friendOnlineToast !== null}
         autoHideDuration={4000}
@@ -199,6 +223,7 @@ export default function ChatPage() {
         }
         data-testid="friend-online-toast"
       />
+      {announce && <SystemAnnounceDialog content={announce.content} onClose={() => setAnnounce(null)} />}
     </Box>
   );
 }

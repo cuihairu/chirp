@@ -1,9 +1,9 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
-import { act, fireEvent, render, screen, waitFor } from '@testing-library/react';
+import { act, fireEvent, render, screen, waitFor, within } from '@testing-library/react';
 import { MemoryRouter, Route, Routes } from 'react-router-dom';
 import { MsgID } from '@chirp/proto/gateway';
 import { PresenceNotify, PresenceStatus } from '@chirp/proto/social';
-import { ChannelType, ChatMessage, MsgType } from '@chirp/proto/chat';
+import { ChannelType, ChatMessage, MsgType, Priority, SenderKind } from '@chirp/proto/chat';
 import ChatPage from './ChatPage';
 import LoginPage from './LoginPage';
 import { createServices, ServicesProvider, type Services } from '../api/services';
@@ -254,5 +254,42 @@ describe('ChatPage sign-out', () => {
     await waitFor(() => expect(screen.getByText(zh.login.title)).toBeTruthy());
     expect(harness.conn.requests.some((r) => r.msgId === MsgID.LOGOUT_REQ)).toBe(true);
     for (const disconnect of disconnects) expect(disconnect).toHaveBeenCalled();
+  });
+});
+
+describe('ChatPage system display surfaces (P0)', () => {
+  it('shows the marquee for URGENT+ttl and the popup for HIGH, closing on ack', async () => {
+    const { conn, unmount } = await mountChatPage();
+    conn.emit(
+      MsgID.CHAT_MESSAGE_NOTIFY,
+      chatBody({
+        messageId: 'm-urgent',
+        priority: Priority.PRIORITY_URGENT,
+        ttlSeconds: 60,
+        senderKind: SenderKind.SENDER_SYSTEM,
+        content: enc('全服维护 30 分钟'),
+      }),
+    );
+    conn.emit(
+      MsgID.CHAT_MESSAGE_NOTIFY,
+      chatBody({ messageId: 'm-high', priority: Priority.PRIORITY_HIGH, content: enc('全服奖励已发放') }),
+    );
+    await flushAsync();
+    expect(screen.getByTestId('marquee-strip')).toBeTruthy();
+    expect(screen.getByText('全服维护 30 分钟')).toBeTruthy();
+    const dialog = screen.getByTestId('system-announce-dialog');
+    expect(within(dialog).getByText('全服奖励已发放')).toBeTruthy();
+    fireEvent.click(within(dialog).getByTestId('announce-ack'));
+    expect(screen.queryByTestId('system-announce-dialog')).toBeNull();
+    unmount();
+  });
+
+  it('raises no system surface for ordinary messages', async () => {
+    const { conn, unmount } = await mountChatPage();
+    conn.emit(MsgID.CHAT_MESSAGE_NOTIFY, chatBody({ messageId: 'm-plain' }));
+    await flushAsync();
+    expect(screen.queryByTestId('marquee-strip')).toBeNull();
+    expect(screen.queryByTestId('system-announce-dialog')).toBeNull();
+    unmount();
   });
 });

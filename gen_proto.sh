@@ -110,7 +110,7 @@ if [ -x "${PROTOC_BIN}" ] && [ -x "$TS_PROTO_PLUGIN" ]; then
          proto/app_notification.proto \
          proto/game_server_gateway.proto
 else
-  echo "warning: protoc or ts-proto plugin not found; skipping TS code generation (npm install in apps/web_companion to enable)"
+  echo "warning: protoc or ts-proto plugin not found; skipping TS code generation (pnpm install in apps/web_companion to enable)"
 fi
 
 # Generate C# code (protoc built-in csharp_out), used by sdks/unity: the

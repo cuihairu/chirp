@@ -35,6 +35,11 @@ chirp::common::ErrorCode ValidateContentLength(const SendMessageRequest& req);
 // 原样透传（协议层不越权校验未启用消息类型的载荷）。
 chirp::common::ErrorCode ValidateCoordMetadata(const SendMessageRequest& req);
 
+// 物品链接（P0 ITEM_LINK）：metadata 必须能按 ItemMetadata 解析且 item_id
+// 非空，否则 INVALID_PARAM。与坐标链接同层同一口径——其余 msg_type 的
+// metadata 原样透传。
+chirp::common::ErrorCode ValidateItemMetadata(const SendMessageRequest& req);
+
 chirp::common::ErrorCode ValidateSendMessageRequest(const SendMessageRequest& req,
                                                     std::string_view authenticated_user_id);
 

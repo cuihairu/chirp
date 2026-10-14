@@ -113,11 +113,11 @@
 - [x] 更新 CI
 - [x] 更新单元测试（34/34）
 - [x] 全量构建验证（333/333）
-- [ ] dependabot #18 glib（medium，upstream-blocked）
+- [x] dependabot #18 glib（medium）——告警 2026-10-13 由 cuihairu 以 tolerable_risk 驳回闭环（glib 0.15-0.20 Iterator unsoundness，Tauri 传递依赖，upstream 无 patched 版本，维持驳回）
 - [x] dependabot #21 katex（a32be7e）
 - [x] dependabot #20/#22 source-map-js（117/117）
 - [x] dependabot #6 source-map-js（b343d6f，53/54）
-- [ ] dependabot 框架大批次 2026-10-12/13（actions 5 + npm/docker/cargo 17）——四项真实破损修复全落地；5 个冲突 PR（#16/#17/#18/#21/#24）已 merge-main 解冲突并推送（e613fe0/f0020d8/fb2fca0/1836d1f/d8c40c6），全部 MERGEABLE，CI 验证中；顺带修复 main 上 eslint-plugin-react-hooks v7 缺 @babel/core 的 lint 红灯（根 package.json devDep + lockfile，随各 PR 合入），合并决策待用户
+- [x] dependabot 框架大批次 2026-10-12/13（actions 5 + npm/docker/cargo 17）——四项真实破损修复全落地；全部合入 main：#17/#21/#24（2cac305/65a47a2/50a77a7）+ #16/#18（4de3963/18f10e7，已代决 巡检 chrp41b：vite 8.0.6→8.3.4 同主版本、@types/react-dom ^19→^19.3.0 仅类型定义，均非 major 跳变；#18 codecov/project 红为基线 0.02% 四舍五入漂移且 patch 本身 Coverage not affected，无实质风险）；合入后 merge-main 修 #34 冲突（85a8af9：pnpm 世界删两份 npm 锁、web manifest 取 vite ^8.3.4 并集），pnpm12 三锁 frozen 全过，web 304/protocol 126/sdk 136/desktop 16/admin 25 全绿
 - [x] dependabot #13 dompurify
 - [x] Deploy Docker 演示账号 18 连败修复（1e2d034）
 - [x] auth 注册面空 email 撞唯一键
@@ -125,6 +125,7 @@
 - [x] crashpad_handler 打包进 install/nightly
 - [x] crashpad 批 CI 连环红修复（b6d3300，44/44）
 - [x] smoke-edge 偶发 chirp_chat 启动 Aborted 修复（6b3a03d）
+- [x] 构建链 npm 到 pnpm 迁移（38a35ff，本地全绿：sdk 136 / protocol 126 / web 290 / admin 25）
 
 ## 接入方支持（2026-09-25 批次）
 
@@ -191,7 +192,7 @@
 - [x] Android M4 — chat 管线
 - [x] Android M3.5 — 推送接入（80/0）
 - [x] Android 接收侧（103/103）
-- [ ] iOS 推送（APNs）——真投递凭据项
+- [ ] iOS 推送（APNs）——真投递凭据项（保持挂起不代决；解锁条件：用户给 APNs 凭据——Team ID / Key ID / .p8 私钥 / Bundle ID——到位后落地 iOS 端真实投递联调）
 - [x] iOS — Swift 协议包
 - [x] iOS — Swift 协议包（70/70）
 - [x] iOS — Swift 协议包（M3.5 核：DeviceRegistrar + 推送 token 缝，2026-09-29）（77/77）
@@ -207,14 +208,14 @@
 - [x] iOS — 伴侣 App P5（214/214）
 - [x] iOS — 伴侣 App P6（221/221）
 - [x] HarmonyOS — ArkTS（fe17f8d）
-- [ ] 手机端原型图——二审中
+- [ ] 手机端原型图——二审中（保持挂起不代决；解锁条件：用户二审拍板）
 - [x] darwin/windows 编译证明腿（1101a4b）
 - [x] 每日构建后续——四腿矩阵 + 桌面打包腿 + 安装器全平台放开（a6e7bf0）
 - [x] 收尾（4 例）
 
 ## 实验性服务（暂不动）
 
-- [ ] social/voice/party/search 服务保持原样，按需迁移到对应平面目录（social 已接游戏在线状态事件；voice/party 已接 smoke 与 web 伴侣；search 未动）
+- [x] social/voice/party/search 服务保持原样，按需迁移（已代决 巡检 R1：实验服务维持顶层目录不迁移，P0-3 已标非核心、迁移无收益；2026-10-14 复核三条事实成立——social presence_manager 接游戏在线状态、voice/party 接 smoke 与 web 伴侣、search 仍在 services/search 未动）
 
 ## 近期批次（2026-10-08 起）
 
@@ -231,4 +232,6 @@
 - [x] 鸿蒙 GroupPage 群管 UI + ChatPage 别名署名
 - [x] 站点 530 已恢复——cloudflared 陈旧边缘地址（5a88792，530/1033）
 - [x] 举报（report_message，game_chat_features P1 用户行为）：REPORT_MESSAGE_REQ/RESP 2253/2254——玩家举报消息，服务端内存台账 + 按 (message_id, reporter_id) 去重幂等，回 report_count；管理后台审核队列待全局管理员面另批（同群域禁言范围裁决）。落地 2026-10-13：ReportLedger（内存台账，理由封顶 100 条/消息）+ ReportHandlers（未登录 AUTH_FAILED / 空 message_id INVALID_PARAM / 理由超 500 码点 INVALID_PARAM / 台账外消息 USER_NOT_FOUND，与撤回同语义）+ basic/enhanced 双形态派发；SDK 四端（C++ core ReportMessage、sdks/ts 与 apps/shared/protocol 双包 reportMessage、C# ReportMessageAsync）；web 气泡举报入口（Flag 按钮 + confirm）+ desktop 同形入口。测试：ctest 44/44（sdk_core 131）、sdks/ts 135、app-protocol 125、web 282、dotnet 126 全绿，desktop tsc+vite build 绿。期次 P1 下批
-- [x] 坐标链接（coord_link，game_chat_features P1 消息展示）：msg_type COORD_LINK = 15 + CoordMetadata 端到端激活。落地 2026-10-14：proto `COORD_LINK = 15` + `CoordMetadata{map_id,x,y,z,label}`；发送侧 `ValidateCoordMetadata`（垃圾 metadata/缺 map_id 回 INVALID_PARAM，与正文长度校验同层、落存储之前拦截，非 COORD_LINK 的 metadata 原样透传）；metadata 全链透传——basic 发送直存 ChatMessage、enhanced 经 ToMessageData/MessageData（离线队列+历史逐字段重建双臂）与 MySQL 冷层 BLOB 列（HEX/UNHEX 二进制安全，幂等 ALTER，旧库无列容忍）；SDK 四端 sendMessage 带 metadata（C++ core `SendOptions{msg_type,metadata}` 含本地存档、sdks/ts 与 apps/shared/protocol 双包 `SendOptions.metadata`、C# `SendOptions.Metadata`）；web/desktop 坐标卡片渲染（点击复制 "x, y[, z]"，零高度省略；web `MessageBubble` + desktop `ChatPanel` MessageRow，解析口径与服务端校验一致：畸形体不当卡片渲染）。测试：ctest 44/44（sdk_core 132、enhanced 34）、sdks/ts 136、app-protocol 126、web 288、dotnet 127 全绿，desktop tsc+vite build 绿。原生端（Swift/Kotlin/ArkTS）消费按移动端令留空档，不卡主线
+- [x] 坐标链接（coord_link，game_chat_features P1 消息展示）：msg_type COORD_LINK = 15 + CoordMetadata 端到端激活。落地 2026-10-14：proto `COORD_LINK = 15` + `CoordMetadata{map_id,x,y,z,label}`；发送侧 `ValidateCoordMetadata`（垃圾 metadata/缺 map_id 回 INVALID_PARAM，与正文长度校验同层、落存储之前拦截，非 COORD_LINK 的 metadata 原样透传）；metadata 全链透传——basic 发送直存 ChatMessage、enhanced 经 ToMessageData/MessageData（离线队列+历史逐字段重建双臂）与 MySQL 冷层 BLOB 列（HEX/UNHEX 二进制安全、幂等 ALTER、旧库无列容忍）；SDK 四端 sendMessage 带 metadata（C++ core `SendOptions{msg_type,metadata}` 含本地存档、sdks/ts 与 apps/shared/protocol 双包 `SendOptions.metadata`、C# `SendOptions.Metadata`）；web/desktop 坐标卡片渲染（点击复制 "x, y[, z]"，零高度省略；web `MessageBubble` + desktop `ChatPanel` MessageRow，解析口径与服务端校验一致：畸形体不当卡片渲染）。测试：ctest 44/44（sdk_core 132、enhanced 34）、sdks/ts 136、app-protocol 126、web 288、dotnet 127 全绿，desktop tsc+vite build 绿。原生端（Swift/Kotlin/ArkTS）消费按移动端令留空档，不卡主线
+- [x] P0 消息展示（走马灯/系统弹窗/气泡分色，game_chat_features P0 消息展示）：伴侣面收口 ChatMessage 的 priority/ttl_seconds/sender_kind 三字段。落地 2026-10-14：web/desktop `toView` 透传三字段；`systemSurfaceOf` 判定（HIGH→announce 先判、URGENT+ttl>0→marquee）+ `ChatApi.onSystemSurface` 单槽派发（不叠加、与通知权限和当前会话无关）；web `MarqueeStrip`（到点收起、换内容重置计时）+ `SystemAnnounceDialog`，desktop 同款挂 MainWindow 顶栏；气泡按 sender_kind 分色（系统黄/NPC 绿/服务橙，自己的消息恒主色，枚举外未知值回落玩家面色）。desktop 首次接入 vitest（vitest.config + test-setup + FakeChatConnection 桩 + `pnpm test`，nightly 桌面腿加 typecheck+test 门禁）。测试：web 304、desktop 16 全绿，web typecheck+lint+build 绿，desktop typecheck+build 绿。游戏内客户端自渲染（可点跳转）走 SDK 侧，另批
+- [x] 物品链接（item_link，game_chat_features P0 消息展示——批内唯一未落地的 P0 项）：`msg_type = ITEM_LINK = 10` + `ItemMetadata` 消费面激活（proto 面既有，服务端校验+伴侣面渲染全缺）。落地 2026-10-14：发送侧 `ValidateItemMetadata`（解析不出或缺 item_id 回 INVALID_PARAM，坐标链接同层同口径，非 ITEM_LINK 的 metadata 原样透传；basic 在 `ValidateSendMessageRequest` coord 检查后串联、enhanced 在 reply 校验后独立回包块）；web/desktop `ItemView` 模型 + `itemViewOf`（镜像 coordViewOf：畸形体/缺 item_id 不当卡片）+ `sendMessage` 第 5 参 item + 物品卡片渲染（品质 0-4 分色 QUALITY_COLORS、count>1 显 ×N、item_id caption、`data-quality` 供测试断言）+ 详情弹窗（itemId/iconUrl/count/attrs 键值；web 走 i18n `itemDetails`，desktop 硬编码同文案）；未知品质值回落白。SDK 四端零改动（COORD_LINK 批的 metadata 通用管线直接承载）。测试：ctest 44/44 全绿（chat basic/enhanced 各 +2 ITEM_LINK 例：全链透传+校验拒绝），web typecheck + 310 例全绿（+6：api 3 + MessageBubble 3），desktop typecheck + 20 例全绿（+4：api 2 + ChatPanel 2）。原生端（Swift/Kotlin/ArkTS）消费按移动端令留空档，不卡主线

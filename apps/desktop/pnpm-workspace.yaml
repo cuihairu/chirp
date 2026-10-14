@@ -1,0 +1,11 @@
+# apps/desktop 是独立项目(不在根 pnpm-workspace.yaml 的 packages 里),
+# 自带一把锁文件。packages: ['.'] 把 workspace 根钉在本目录,pnpm 向上找
+# workspace 根时在这里停下,不会并进仓库根那把锁。
+packages:
+  - '.'
+
+# pnpm 12 默认不跑依赖的生命周期脚本,未显式决定时直接报错退出
+# (ERR_PNPM_IGNORED_BUILDS)。protobufjs 的 postinstall 生成动态反注入代码
+# (运行时 protobuf 反射要用),放行。
+allowBuilds:
+  protobufjs: true

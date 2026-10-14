@@ -16,6 +16,7 @@
     "protobufjs": "^7.2.0"
   },
   "devDependencies": {
+    "@types/node": "^26.6.1",
     "@vitest/coverage-v8": "^4.1.11",
     "jsdom": "^24.0.0",
     "typescript": "^7.0.2",

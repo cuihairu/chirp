@@ -1,5 +1,6 @@
 import { describe, expect, it, vi } from 'vitest';
 import { fireEvent, render, screen } from '@testing-library/react';
+import { SenderKind } from '@chirp/proto/chat';
 import MessageBubble from './MessageBubble';
 import type { ChatMessageView } from '../state/models';
 import { zh } from '../i18n/zh';
@@ -80,6 +81,73 @@ describe('MessageBubble', () => {
     const card = screen.getByTestId('coord-m1');
     expect(card.textContent).toContain('4, 9');
     expect(card.textContent).not.toContain('4, 9, 0');
+  });
+
+  it('renders the item card with the quality face and count', () => {
+    render(
+      <MessageBubble
+        message={message({
+          content: '出了把橙武',
+          item: {
+            itemId: 'item-9001',
+            itemName: '烈焰之刃',
+            quality: 4,
+            iconUrl: '',
+            count: 2,
+            attrs: { 攻击力: '120' },
+          },
+        })}
+        selfId="user_a"
+        onToggleReaction={noop}
+      />,
+    );
+    const card = screen.getByTestId('item-m1');
+    expect(card.getAttribute('data-quality')).toBe('4');
+    expect(card.textContent).toContain('烈焰之刃');
+    expect(card.textContent).toContain('×2');
+    expect(card.textContent).toContain('item-9001');
+  });
+
+  it('opens the item detail dialog with count and attrs on click', () => {
+    render(
+      <MessageBubble
+        message={message({
+          item: {
+            itemId: 'item-9001',
+            itemName: '烈焰之刃',
+            quality: 2,
+            iconUrl: '',
+            count: 3,
+            attrs: { 攻击力: '120', 暴击: '15%' },
+          },
+        })}
+        selfId="user_a"
+        onToggleReaction={noop}
+      />,
+    );
+    fireEvent.click(screen.getByTestId('item-m1'));
+    const dialog = screen.getByRole('dialog');
+    expect(dialog.textContent).toContain('烈焰之刃');
+    expect(dialog.textContent).toContain(zh.chat.itemCountLabel);
+    expect(dialog.textContent).toContain('×3');
+    expect(dialog.textContent).toContain('攻击力: 120');
+    expect(dialog.textContent).toContain('暴击: 15%');
+  });
+
+  it('falls back to the plain quality face for an unknown quality value', () => {
+    render(
+      <MessageBubble
+        message={message({
+          item: { itemId: 'item-x', itemName: '未知之物', quality: 99, iconUrl: '', count: 0, attrs: {} },
+        })}
+        selfId="user_a"
+        onToggleReaction={noop}
+      />,
+    );
+    const card = screen.getByTestId('item-m1');
+    expect(card.getAttribute('data-quality')).toBe('99');
+    expect(card.textContent).toContain('未知之物');
+    expect(card.textContent).not.toContain('×');
   });
 
   it('keeps pending own messages visually unconfirmed', () => {
@@ -237,5 +305,45 @@ describe('MessageBubble', () => {
   it('renders no report action without a handler', () => {
     render(<MessageBubble message={message({})} selfId="user_a" onToggleReaction={noop} />);
     expect(screen.queryByTestId('report-m1')).toBeNull();
+  });
+
+  it('tags peer bubbles with the sender_kind face (P0)', () => {
+    const cases: Array<[SenderKind, string]> = [
+      [SenderKind.SENDER_USER, 'user'],
+      [SenderKind.SENDER_SYSTEM, 'system'],
+      [SenderKind.SENDER_NPC, 'npc'],
+      [SenderKind.SENDER_SERVICE, 'service'],
+    ];
+    for (const [kind, tag] of cases) {
+      const { container, unmount } = render(
+        <MessageBubble message={message({ senderKind: kind })} selfId="user_a" onToggleReaction={noop} />,
+      );
+      expect(container.querySelector(`[data-sender-kind="${tag}"]`)).toBeTruthy();
+      unmount();
+    }
+  });
+
+  it('keeps own bubbles on the primary face even with a system sender_kind', () => {
+    const { container } = render(
+      <MessageBubble
+        message={message({ senderId: 'user_a', senderKind: SenderKind.SENDER_SYSTEM })}
+        selfId="user_a"
+        onToggleReaction={noop}
+      />,
+    );
+    expect(container.querySelector('[data-sender-kind="mine"]')).toBeTruthy();
+  });
+
+  it('falls back to the player face for an unknown sender_kind on the wire', () => {
+    // A value the generated enum does not know (forward-compat gap) must not
+    // render an undefined bubble color.
+    const { container } = render(
+      <MessageBubble
+        message={message({ senderKind: 99 as SenderKind })}
+        selfId="user_a"
+        onToggleReaction={noop}
+      />,
+    );
+    expect(container.querySelector('[data-sender-kind="user"]')).toBeTruthy();
   });
 });

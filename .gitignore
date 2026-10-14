@@ -83,7 +83,6 @@ build-cov/
 # `build` is a symlink into a build dir — the `build*/` pattern above matches
 # directories only, so a symlink slips through it.
 /build
-docs/package-lock.json
 overlay-ports/
 .build/
 

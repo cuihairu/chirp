@@ -185,34 +185,51 @@ jobs:
         go vet ./sdks/go/... ./proto/go/...
         go build ./sdks/go/...
 
+    - uses: pnpm/action-setup@v6
+      with:
+        # Same major as local and docs.yml; the lockfile is v9 format.
+        version: 12
+
     - uses: actions/setup-node@v7
       with:
         node-version: 24
-        cache: npm
-        cache-dependency-path: apps/desktop/package-lock.json
+        cache: pnpm
+        cache-dependency-path: |
+          pnpm-lock.yaml
+          apps/desktop/pnpm-lock.yaml
 
-    - name: Install desktop npm dependencies
+    - name: Install desktop dependencies
       working-directory: apps/desktop
-      run: npm ci
+      run: pnpm install --frozen-lockfile
+
+    # The desktop app carries its own vitest suite (P0 消息展示 surfaces live
+    # in MainWindow/ChatPanel); run it here so a red desktop test blocks the
+    # bundle instead of shipping.
+    - name: Test desktop app
+      working-directory: apps/desktop
+      run: |
+        pnpm run typecheck
+        pnpm test
 
     # 桌面 tauri build 会把 ../../proto/ts/proto/*.ts 一起编进去,那些文件
-    # 的 import(long/protobufjs)从文件所在目录向上找 node_modules——只有根
-    # 安装能接住,所以根 npm ci 四条腿都要跑(x64 腿独跑时 arm 桌面构建
-    # TS2307 的根因)。Verify/Pack @chirp/protocol 仍只在 x64 腿(一次)。
-    - name: Install npm dependencies (root, for @chirp/protocol + desktop build)
-      run: npm ci
+    # 的 import(long/protobufjs/minimal)从文件所在目录向上找 node_modules——
+    # proto/ts 不属于任何 workspace 包,pnpm 严格布局下由根声明这两个依赖
+    # (pnpm-workspace.yaml 注释),所以根安装四条腿都要跑(x64 腿独跑时 arm
+    # 桌面构建 TS2307 的根因)。Verify/Pack @chirp/protocol 仍只在 x64 腿(一次)。
+    - name: Install root workspace dependencies (for @chirp/protocol + desktop build)
+      run: pnpm install --frozen-lockfile
 
     # The TS package that ships is validated by its own suite first, mirroring
     # web.yml's Test @chirp/protocol step.
     - name: Verify @chirp/protocol
       if: matrix.host_sdks
       working-directory: sdks/ts
-      run: npm test
+      run: pnpm test
 
     - name: Pack @chirp/protocol
       if: matrix.host_sdks
       working-directory: sdks/ts
-      run: npm pack
+      run: pnpm pack
 
     - name: Setup Rust
       uses: dtolnay/rust-toolchain@stable
@@ -233,7 +250,7 @@ jobs:
       working-directory: apps/desktop
       shell: bash
       run: |
-        npm run tauri build
+        pnpm run tauri build
         # Verify the bundle for this leg's platform/architecture
         case "$(uname -s)" in
         Linux)
@@ -471,10 +488,10 @@ jobs:
         chirp TS 协议栈(@chirp/protocol)- 每日构建
 
         包内容:
-          chirp-protocol-<version>.tgz   npm pack 产物(src/ 源码 + package.json,
+          chirp-protocol-<version>.tgz   pnpm pack 产物(src/ 源码 + package.json,
                                          依赖 long / protobufjs 由安装方解析)
 
-        安装: npm install <tgz 路径>;入口见包内 README(web/小游戏/Cocos/
+        安装: pnpm install <tgz 路径>;入口见包内 README(web/小游戏/Cocos/
         LayaAir 共用,微信小游戏配 adapters/wx_socket)。
 
         验证命令(应列出 src/ 文件清单):
@@ -550,7 +567,7 @@ jobs:
 
         # 固定文件名(安装脚本不追版本号):cpp 打成单 tarball(windows 腿
         # 多一个 bin/ 目录),桌面按平台改名为 .deb/.dmg/-setup.exe,ts tgz
-        # 定名 chirp-protocol.tgz(npm install 认文件不认名)。
+        # 定名 chirp-protocol.tgz(pnpm install 认文件不认名)。
         for arch_dir in stage/cpp/*/; do
           if [ ! -d "$arch_dir" ]; then continue; fi
           arch="$(basename "$arch_dir")"
