@@ -6,6 +6,7 @@ import {
   GroupMemberAliasUpdatedNotify,
   GroupMemberKickedNotify,
   GroupMemberMutedNotify,
+  ItemMetadata,
   ReportMessageResponse,
   MessageAck,
   MessageDeletedNotify,
@@ -59,6 +60,7 @@ import {
   type ChatMessageView,
   type CoordView,
   type Conversation,
+  type ItemView,
   type MessageReactionView,
 } from '../state/models';
 import {
@@ -302,6 +304,14 @@ export class ChatApi {
     text: string,
     replyToMessageId?: string,
     coord?: { mapId: string; x: number; y: number; z: number; label?: string },
+    item?: {
+      itemId: string;
+      itemName: string;
+      quality?: number;
+      iconUrl?: string;
+      count?: number;
+      attrs?: Record<string, string>;
+    },
   ): Promise<void> {
     const senderId = this.auth.get().userId;
     if (!senderId) return;
@@ -316,7 +326,7 @@ export class ChatApi {
       receiverId: channel.kind === 'private' ? channel.peerId : '',
       channelType: channelTypeOf(channel.kind),
       channelId: channel.channelId,
-      msgType: coord ? MsgType.COORD_LINK : MsgType.TEXT,
+      msgType: coord ? MsgType.COORD_LINK : item ? MsgType.ITEM_LINK : MsgType.TEXT,
       content: contentBytes,
       clientTimestamp: Date.now(),
     };
@@ -329,6 +339,20 @@ export class ChatApi {
           y: coord.y,
           z: coord.z,
           label: coord.label,
+        }),
+      ).finish();
+    }
+    // 物品链接（P0 ITEM_LINK）：带 item 入参即切 ITEM_LINK，物品进 metadata
+    // （与坐标链接同一 metadata 通道；quality/count 缺省 0）。
+    if (item) {
+      wire.metadata = ItemMetadata.encode(
+        ItemMetadata.fromPartial({
+          itemId: item.itemId,
+          itemName: item.itemName,
+          quality: item.quality ?? 0,
+          iconUrl: item.iconUrl,
+          count: item.count,
+          attrs: item.attrs,
         }),
       ).finish();
     }
@@ -348,6 +372,16 @@ export class ChatApi {
       replyToMessageId: wire.replyToMessageId || undefined,
       coord: coord
         ? { mapId: coord.mapId, x: coord.x, y: coord.y, z: coord.z, label: coord.label ?? '' }
+        : undefined,
+      item: item
+        ? {
+            itemId: item.itemId,
+            itemName: item.itemName,
+            quality: item.quality ?? 0,
+            iconUrl: item.iconUrl ?? '',
+            count: item.count ?? 0,
+            attrs: item.attrs ?? {},
+          }
         : undefined,
     };
     addPendingMessage(this.messages, optimistic);
@@ -915,6 +949,27 @@ const coordViewOf = (msg: ChatMessage): CoordView | undefined => {
   return { mapId: coord.mapId, x: coord.x, y: coord.y, z: coord.z, label: coord.label };
 };
 
+// 物品卡片解析：非 ITEM_LINK 或 metadata 解析不出 / 缺 item_id 一律 undefined
+// （气泡当普通文本渲染），与服务端 ValidateItemMetadata 的拒绝口径一致。
+const itemViewOf = (msg: ChatMessage): ItemView | undefined => {
+  if (msg.msgType !== MsgType.ITEM_LINK || msg.metadata.length === 0) return undefined;
+  let item: ItemMetadata;
+  try {
+    item = ItemMetadata.decode(msg.metadata);
+  } catch {
+    return undefined;
+  }
+  if (!item.itemId) return undefined;
+  return {
+    itemId: item.itemId,
+    itemName: item.itemName,
+    quality: item.quality,
+    iconUrl: item.iconUrl,
+    count: item.count,
+    attrs: item.attrs,
+  };
+};
+
 const toView = (msg: ChatMessage, channel: ChannelRef): ChatMessageView => ({
   messageId: msg.messageId,
   senderId: msg.senderId,
@@ -926,6 +981,7 @@ const toView = (msg: ChatMessage, channel: ChannelRef): ChatMessageView => ({
   pending: false,
   replyToMessageId: msg.replyToMessageId || undefined,
   coord: coordViewOf(msg),
+  item: itemViewOf(msg),
   priority: msg.priority,
   ttlSeconds: msg.ttlSeconds,
   senderKind: msg.senderKind,

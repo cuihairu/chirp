@@ -43,6 +43,17 @@ export interface CoordView {
   label: string;
 }
 
+/** Item link card (P0 ITEM_LINK): tap to open the detail dialog. */
+export interface ItemView {
+  itemId: string;
+  itemName: string;
+  /** 品质 0 白/1 绿/2 蓝/3 紫/4 橙；枚举外未知值按白渲染（向前兼容）。 */
+  quality: number;
+  iconUrl: string;
+  count: number;
+  attrs: Record<string, string>;
+}
+
 export interface ChatMessageView {
   /** Server message id; optimistic sends carry a local id until confirmed. */
   messageId: string;
@@ -69,6 +80,8 @@ export interface ChatMessageView {
   replyToMessageId?: string;
   /** Coordinate card (P1 COORD_LINK); absent = plain text bubble. */
   coord?: CoordView;
+  /** Item link card (P0 ITEM_LINK); absent = plain text bubble. */
+  item?: ItemView;
   // P0 消息展示：wire 三字段透传（ChatMessage priority/ttl_seconds/sender_kind）。
   // 缺省（proto3 零值）= 普通玩家、普通优先级、无走马灯时长。
   priority?: Priority;

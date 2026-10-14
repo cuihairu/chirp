@@ -1030,6 +1030,153 @@ TEST_F(EnhancedSessionTest, CoordLinkRejectsGarbageMetadataAndEmptyMapId) {
             chirp::common::OK);
 }
 
+// --- 物品链接（ITEM_LINK，P0）：enhanced 形态端到端 -------------------------
+// 与 COORD_LINK 同理：enhanced 逐字段重建的三条臂（notify/历史/补投）都不能
+// 丢 metadata；校验门与 basic 同口径。
+
+TEST_F(EnhancedSessionTest, ItemLinkCarriesMetadataThroughNotifyHistoryAndRefill) {
+  LiveHistoryRecall live;
+  StartLiveHistory(live);
+  auto alice = std::make_shared<MockSession>();
+  auto bob = std::make_shared<MockSession>();
+  Login(bob, "bob", "b1", 2);
+
+  auto ItemOf = [](const std::string& bytes) {
+    chirp::chat::ItemMetadata i;
+    EXPECT_TRUE(i.ParseFromString(bytes));
+    return i;
+  };
+
+  chirp::chat::ItemMetadata item;
+  item.set_item_id("item-9001");
+  item.set_item_name("烈焰之刃");
+  item.set_quality(4);
+  item.set_count(2);
+  (*item.mutable_attrs())["攻击力"] = "120";
+
+  chirp::chat::SendMessageRequest req;
+  req.set_sender_id("alice");
+  req.set_receiver_id("bob");
+  req.set_channel_type(chirp::chat::PRIVATE);
+  req.set_content("出了把橙武");
+  req.set_msg_type(chirp::chat::ITEM_LINK);
+  req.set_metadata(item.SerializeAsString());
+
+  std::string mid;
+  ASSERT_EQ(SendReq(req, alice, live.store, live.recall.handlers.get(), nullptr, "",
+                    nullptr, "", nullptr, nullptr, &mid),
+            chirp::common::OK);
+  ASSERT_FALSE(mid.empty());
+
+  // 在线投递臂：notify 帧带出 msg_type 与物品字节。
+  const auto notifies = FramesOf(*bob, chirp::gateway::CHAT_MESSAGE_NOTIFY);
+  ASSERT_EQ(notifies.size(), 1u);
+  chirp::chat::ChatMessage notify;
+  ASSERT_TRUE(notify.ParseFromString(notifies[0].body()));
+  EXPECT_EQ(notify.msg_type(), chirp::chat::ITEM_LINK);
+  const auto live_item = ItemOf(notify.metadata());
+  EXPECT_EQ(live_item.item_id(), "item-9001");
+  EXPECT_EQ(live_item.item_name(), "烈焰之刃");
+  EXPECT_EQ(live_item.quality(), 4);
+  EXPECT_EQ(live_item.count(), 2);
+  EXPECT_EQ(live_item.attrs().at("攻击力"), "120");
+
+  // 历史读回臂：HandleGetHistory 逐字段重建，物品不能丢。
+  auto retriever = std::make_shared<chirp::chat::PaginatedHistoryRetriever>(live.store);
+  chirp::chat::GetHistoryRequest history_req;
+  history_req.set_channel_id("alice|bob");
+  history_req.set_channel_type(chirp::chat::PRIVATE);
+  history_req.set_limit(10);
+  HandleGetHistory(history_req, alice, retriever, /*seq=*/5);
+  const auto resps = FramesOf(*alice, chirp::gateway::GET_HISTORY_RESP);
+  ASSERT_EQ(resps.size(), 1u);
+  chirp::chat::GetHistoryResponse history_resp;
+  ASSERT_TRUE(history_resp.ParseFromString(resps[0].body()));
+  ASSERT_EQ(history_resp.messages_size(), 1);
+  EXPECT_EQ(history_resp.messages(0).msg_type(), chirp::chat::ITEM_LINK);
+  const auto hist_item = ItemOf(history_resp.messages(0).metadata());
+  EXPECT_EQ(hist_item.item_id(), "item-9001");
+  EXPECT_EQ(hist_item.quality(), 4);
+
+  // 离线补投臂：carol 从未在线 → 入离线队列；登录回填的消息带出本条物品
+  // （换一枚独立 item_id 证明不是上一条的残留）。
+  chirp::chat::ItemMetadata mine_item;
+  mine_item.set_item_id("item-42");
+  mine_item.set_item_name("铁矿");
+  req.set_metadata(mine_item.SerializeAsString());
+  req.set_receiver_id("carol");
+  req.set_content("铁矿");
+  EXPECT_EQ(SendReq(req, alice, live.store, live.recall.handlers.get(), nullptr, "",
+                    nullptr, "", nullptr, nullptr, nullptr),
+            chirp::common::OK);
+
+  auto carol = std::make_shared<MockSession>();
+  chirp::auth::LoginRequest login_req;
+  login_req.set_token("carol");
+  login_req.set_device_id("c1");
+  login_req.set_platform("web");
+  InvokeLogin(login_req, carol, state_, live.store, router_, nullptr, nullptr,
+              &delivery_prefs_, /*seq=*/6);
+
+  const auto refills = FramesOf(*carol, chirp::gateway::CHAT_MESSAGE_NOTIFY);
+  ASSERT_EQ(refills.size(), 1u);
+  chirp::chat::ChatMessage refill;
+  ASSERT_TRUE(refill.ParseFromString(refills[0].body()));
+  EXPECT_EQ(refill.msg_type(), chirp::chat::ITEM_LINK);
+  EXPECT_EQ(refill.receiver_id(), "carol");
+  const auto refill_item = ItemOf(refill.metadata());
+  EXPECT_EQ(refill_item.item_id(), "item-42");
+  EXPECT_EQ(refill_item.item_name(), "铁矿");
+}
+
+TEST_F(EnhancedSessionTest, ItemLinkRejectsGarbageMetadataAndEmptyItemId) {
+  LiveHistoryRecall live;
+  StartLiveHistory(live);
+  auto alice = std::make_shared<MockSession>();
+  auto bob = std::make_shared<MockSession>();
+  Login(bob, "bob", "b1", 2);
+
+  auto SendItem = [&](const std::string& meta) {
+    chirp::chat::SendMessageRequest req;
+    req.set_sender_id("alice");
+    req.set_receiver_id("bob");
+    req.set_channel_type(chirp::chat::PRIVATE);
+    req.set_content("item");
+    req.set_msg_type(chirp::chat::ITEM_LINK);
+    req.set_metadata(meta);
+    return SendReq(req, alice, live.store, live.recall.handlers.get(), nullptr, "",
+                   nullptr, "", nullptr, nullptr, nullptr);
+  };
+
+  // 截断的长度分隔字段：解析即失败，不能静默落库成空物品消息。
+  EXPECT_EQ(SendItem(std::string("\x0A" "\x05" "ab")), chirp::common::INVALID_PARAM);
+
+  // 空 item_id：卡片没有可查详情的落点。
+  chirp::chat::ItemMetadata no_id;
+  no_id.set_item_name("无名之物");
+  EXPECT_EQ(SendItem(no_id.SerializeAsString()), chirp::common::INVALID_PARAM);
+
+  // 拒绝的消息零投递、零落库。
+  EXPECT_EQ(FramesOf(*bob, chirp::gateway::CHAT_MESSAGE_NOTIFY).size(), 0u);
+  EXPECT_TRUE(live.store->GetHistory("alice|bob", 0, 0, 10).empty());
+
+  // 合法物品放行（校验门的通过臂）。
+  chirp::chat::ItemMetadata ok;
+  ok.set_item_id("item-1");
+  EXPECT_EQ(SendItem(ok.SerializeAsString()), chirp::common::OK);
+
+  // 门只针对 ITEM_LINK：TEXT 消息带任意字节 metadata 照样放行（与坐标门同款）。
+  chirp::chat::SendMessageRequest plain;
+  plain.set_sender_id("alice");
+  plain.set_receiver_id("bob");
+  plain.set_channel_type(chirp::chat::PRIVATE);
+  plain.set_content("plain text");
+  plain.set_metadata(std::string("\x00" "\x01" "\x02", 3));
+  EXPECT_EQ(SendReq(plain, alice, live.store, live.recall.handlers.get(), nullptr, "",
+                    nullptr, "", nullptr, nullptr, nullptr),
+            chirp::common::OK);
+}
+
 // --- 黑名单：私聊静默成功，两端都不送、不入离线队列 -------------------------
 
 TEST_F(EnhancedSessionTest, PrivateSendSilentlyDropsBlockedReceiver) {

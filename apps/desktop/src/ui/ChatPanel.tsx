@@ -8,6 +8,9 @@ import {
   Button,
   Chip,
   CircularProgress,
+  Dialog,
+  DialogContent,
+  DialogTitle,
   Divider,
   IconButton,
   InputBase,
@@ -20,7 +23,7 @@ import { useEffect, useReducer, useRef, useState } from 'react';
 import { SenderKind } from '@chirp/proto/chat';
 import type { KeyboardEvent as ReactKeyboardEvent } from 'react';
 import type { ChatApi, ChannelRef } from '../api/chat_api';
-import type { ChatMessageView, Conversation, CoordView } from '../state/models';
+import type { ChatMessageView, Conversation, CoordView, ItemView } from '../state/models';
 import type { MessageState } from '../state/message_store';
 import { useStoreValue, type Store } from '../state/store';
 import { TYPING_TTL_MS, type TypingState } from '../state/typing_store';
@@ -47,6 +50,19 @@ const KIND_FACE: Partial<Record<SenderKind, { tag: string; bgcolor: string }>> =
 
 const USER_FACE = { tag: 'user', bgcolor: 'background.paper' };
 
+// P0 物品链接：品质配色——白(普通)/绿(优秀)/蓝(精良)/紫(史诗)/橙(传说)。
+// 白品质在浅色底上渲染为灰白（可读性适配）；枚举外未知值回落白（向前
+// 兼容，与 sender_kind 回落同口径）。与 web_companion 的 MessageBubble 同款。
+const QUALITY_COLORS: Record<number, string> = {
+  0: '#9e9e9e',
+  1: '#4caf50',
+  2: '#2196f3',
+  3: '#9c27b0',
+  4: '#ff9800',
+};
+
+const qualityColorOf = (quality: number): string => QUALITY_COLORS[quality] ?? QUALITY_COLORS[0];
+
 const faceOf = (props: { mine: boolean; senderKind?: SenderKind }): { tag: string; bgcolor: string } => {
   if (props.mine) return { tag: 'mine', bgcolor: 'primary.main' };
   return KIND_FACE[props.senderKind as SenderKind] ?? USER_FACE;
@@ -54,6 +70,8 @@ const faceOf = (props: { mine: boolean; senderKind?: SenderKind }): { tag: strin
 
 /** 单条消息行：发送者 + 时间 + 正文 + 本地状态标记 + 引用块/回复入口。 */
 function MessageRow(props: {
+  /** 消息 id：卡片/操作的 testid 锚点。 */
+  messageId: string;
   mine: boolean;
   senderId: string;
   /** 群聊归属名（群昵称优先，回退本名）；私聊不传。 */
@@ -71,12 +89,15 @@ function MessageRow(props: {
   replyToMessageId?: string;
   /** 坐标卡片（P1 COORD_LINK）；缺省 = 纯文本气泡。点击复制坐标。 */
   coord?: CoordView;
+  /** 物品卡片（P0 ITEM_LINK）；缺省 = 纯文本气泡。点击打开详情弹窗。 */
+  item?: ItemView;
   /** 发送者类别（P0 消息展示）：决定气泡底色，自己的消息恒走主色。 */
   senderKind?: SenderKind;
   onReply?: () => void;
   /** 举报对方消息（REPORT_MESSAGE 2253）；自己的消息不可举报。 */
   onReport?: () => void;
 }) {
+  const [itemOpen, setItemOpen] = useState(false);
   return (
     <Box sx={{ display: 'flex', justifyContent: props.mine ? 'flex-end' : 'flex-start', mb: 1 }}>
       <Box sx={{ maxWidth: '72%' }}>
@@ -167,6 +188,77 @@ function MessageRow(props: {
                   : `${props.coord.x}, ${props.coord.y}, ${props.coord.z}`}
               </Typography>
             </Box>
+          ) : null}
+          {props.item ? (
+            <>
+              <Box
+                component="button"
+                type="button"
+                data-testid={`item-${props.messageId}`}
+                data-quality={props.item.quality}
+                title="物品详情"
+                onClick={() => setItemOpen(true)}
+                sx={{
+                  display: 'block',
+                  width: '100%',
+                  mt: 0.5,
+                  px: 1,
+                  py: 0.5,
+                  textAlign: 'left',
+                  cursor: 'pointer',
+                  border: '1px solid',
+                  borderColor: props.mine ? 'primary.contrastText' : 'divider',
+                  borderRadius: 1,
+                  background: 'transparent',
+                  color: 'inherit',
+                }}
+              >
+                <Typography
+                  variant="caption"
+                  component="div"
+                  sx={{ fontWeight: 600, color: qualityColorOf(props.item.quality) }}
+                >
+                  {props.item.itemName || props.item.itemId}
+                  {props.item.count > 1 ? ` ×${props.item.count}` : ''}
+                </Typography>
+                <Typography variant="caption" component="div" sx={{ opacity: 0.75 }}>
+                  {props.item.itemId}
+                </Typography>
+              </Box>
+              <Dialog open={itemOpen} onClose={() => setItemOpen(false)}>
+                <DialogTitle sx={{ color: qualityColorOf(props.item.quality) }}>
+                  {props.item.itemName || props.item.itemId}
+                </DialogTitle>
+                <DialogContent dividers>
+                  <Typography variant="caption" component="div" sx={{ opacity: 0.75 }}>
+                    {props.item.itemId}
+                  </Typography>
+                  {props.item.iconUrl ? (
+                    <Box
+                      component="img"
+                      src={props.item.iconUrl}
+                      alt={props.item.itemName || props.item.itemId}
+                      sx={{ width: 48, height: 48, my: 1, display: 'block' }}
+                    />
+                  ) : null}
+                  {props.item.count > 1 ? (
+                    <Typography variant="caption" component="div">
+                      {`数量 ×${props.item.count}`}
+                    </Typography>
+                  ) : null}
+                  {Object.keys(props.item.attrs).length > 0 ? (
+                    <Typography variant="caption" component="div" sx={{ fontWeight: 600, mt: 1 }}>
+                      属性
+                    </Typography>
+                  ) : null}
+                  {Object.entries(props.item.attrs).map(([key, value]) => (
+                    <Typography key={key} variant="caption" component="div">
+                      {`${key}: ${value}`}
+                    </Typography>
+                  ))}
+                </DialogContent>
+              </Dialog>
+            </>
           ) : null}
         </Paper>
         <Stack
@@ -374,6 +466,7 @@ export default function ChatPanel(props: {
         {list.map((m) => (
           <MessageRow
             key={m.messageId}
+            messageId={m.messageId}
             mine={m.senderId === selfId}
             senderId={m.senderId}
             senderName={
@@ -392,6 +485,7 @@ export default function ChatPanel(props: {
             quoted={m.replyToMessageId ? quotedSummary(m.replyToMessageId) : undefined}
             replyToMessageId={m.replyToMessageId}
             coord={m.coord}
+            item={m.deleted ? undefined : m.item}
             senderKind={m.senderKind}
             onReply={m.deleted ? undefined : () => setReplying(m)}
             onReport={m.deleted || m.senderId === selfId ? undefined : () => {

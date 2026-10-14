@@ -1,4 +1,4 @@
-import { render, screen, waitFor } from '@testing-library/react';
+import { fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { describe, expect, it, vi } from 'vitest';
 import { ChannelType, SenderKind } from '@chirp/proto/chat';
 import type { ChatApi, ChannelRef } from '../api/chat_api';
@@ -104,5 +104,42 @@ describe('ChatPanel sender-kind bubble faces (P0 消息展示)', () => {
     ]);
     await waitFor(() => expect(screen.getByText('我发的')).toBeTruthy());
     expect(screen.getByText('我发的').closest('[data-sender-kind]')?.getAttribute('data-sender-kind')).toBe('mine');
+  });
+});
+
+describe('ChatPanel item link cards (P0 ITEM_LINK)', () => {
+  it('renders the item card with quality face and count, and opens the detail dialog', async () => {
+    renderPanel([
+      message({
+        messageId: 'it1',
+        content: '出了把橙武',
+        item: {
+          itemId: 'item-9001',
+          itemName: '烈焰之刃',
+          quality: 4,
+          iconUrl: '',
+          count: 2,
+          attrs: { 攻击力: '120' },
+        },
+      }),
+    ]);
+    await waitFor(() => expect(screen.getByText('出了把橙武')).toBeTruthy());
+    const card = screen.getByTestId('item-it1');
+    expect(card.getAttribute('data-quality')).toBe('4');
+    expect(card.textContent).toContain('烈焰之刃');
+    expect(card.textContent).toContain('×2');
+    expect(card.textContent).toContain('item-9001');
+
+    fireEvent.click(card);
+    const dialog = screen.getByRole('dialog');
+    expect(dialog.textContent).toContain('烈焰之刃');
+    expect(dialog.textContent).toContain('数量 ×2');
+    expect(dialog.textContent).toContain('攻击力: 120');
+  });
+
+  it('renders no item card for plain text messages', async () => {
+    renderPanel([message({ messageId: 't1', content: '纯文本' })]);
+    await waitFor(() => expect(screen.getByText('纯文本')).toBeTruthy());
+    expect(screen.queryByTestId('item-t1')).toBeNull();
   });
 });

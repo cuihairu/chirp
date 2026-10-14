@@ -83,6 +83,73 @@ describe('MessageBubble', () => {
     expect(card.textContent).not.toContain('4, 9, 0');
   });
 
+  it('renders the item card with the quality face and count', () => {
+    render(
+      <MessageBubble
+        message={message({
+          content: '出了把橙武',
+          item: {
+            itemId: 'item-9001',
+            itemName: '烈焰之刃',
+            quality: 4,
+            iconUrl: '',
+            count: 2,
+            attrs: { 攻击力: '120' },
+          },
+        })}
+        selfId="user_a"
+        onToggleReaction={noop}
+      />,
+    );
+    const card = screen.getByTestId('item-m1');
+    expect(card.getAttribute('data-quality')).toBe('4');
+    expect(card.textContent).toContain('烈焰之刃');
+    expect(card.textContent).toContain('×2');
+    expect(card.textContent).toContain('item-9001');
+  });
+
+  it('opens the item detail dialog with count and attrs on click', () => {
+    render(
+      <MessageBubble
+        message={message({
+          item: {
+            itemId: 'item-9001',
+            itemName: '烈焰之刃',
+            quality: 2,
+            iconUrl: '',
+            count: 3,
+            attrs: { 攻击力: '120', 暴击: '15%' },
+          },
+        })}
+        selfId="user_a"
+        onToggleReaction={noop}
+      />,
+    );
+    fireEvent.click(screen.getByTestId('item-m1'));
+    const dialog = screen.getByRole('dialog');
+    expect(dialog.textContent).toContain('烈焰之刃');
+    expect(dialog.textContent).toContain(zh.chat.itemCountLabel);
+    expect(dialog.textContent).toContain('×3');
+    expect(dialog.textContent).toContain('攻击力: 120');
+    expect(dialog.textContent).toContain('暴击: 15%');
+  });
+
+  it('falls back to the plain quality face for an unknown quality value', () => {
+    render(
+      <MessageBubble
+        message={message({
+          item: { itemId: 'item-x', itemName: '未知之物', quality: 99, iconUrl: '', count: 0, attrs: {} },
+        })}
+        selfId="user_a"
+        onToggleReaction={noop}
+      />,
+    );
+    const card = screen.getByTestId('item-m1');
+    expect(card.getAttribute('data-quality')).toBe('99');
+    expect(card.textContent).toContain('未知之物');
+    expect(card.textContent).not.toContain('×');
+  });
+
   it('keeps pending own messages visually unconfirmed', () => {
     render(<MessageBubble message={message({ senderId: 'user_a', pending: true })} selfId="user_a" onToggleReaction={noop} />);
     expect(screen.getByText(/发送中/)).toBeTruthy();

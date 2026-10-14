@@ -33,7 +33,7 @@ title: 游戏聊天特征
 - **走马灯**（已落地 2026-10-14，伴侣面形态）：`priority = URGENT` + `ttl_seconds > 0` 的消息在屏幕顶部滚动。同时只显示一条，新的替换旧的。判定函数在伴侣面 api 层（`chat_api.ts` 的 `systemSurfaceOf`，web/desktop 同款口径）：`PRIORITY_HIGH` 先判（归弹窗），`PRIORITY_URGENT` 且 `ttl > 0` 归走马灯；事件由 `ChatApi.onSystemSurface` 单槽派发——新的替换当前槽位不叠加，与通知权限、当前打开的会话/频道无关。web `MarqueeStrip`（顶部条，到点自动收起，换内容重置计时）、desktop `MarqueeStrip`（窗口顶栏同款）。**范围裁决**：滚动动画、时长与替换语义与文档一致；游戏内客户端的自渲染（真实滚动速度与可点跳转）走 SDK 侧，伴侣面只做展示。
 - **系统弹窗**（已落地 2026-10-14，伴侣面形态）：`priority = HIGH` 的系统消息弹窗显示（维护通知、全服奖励）。web/desktop `SystemAnnounceDialog`（确认即关，多行正文保留换行）；消息本体仍按普通气泡留在会话流里，不因弹窗而消失。
 - **消息气泡**（已落地 2026-10-14，伴侣面形态）：按 `sender_kind` 区分样式——普通玩家纸色、系统黄色、NPC 绿色、交易橙色。web `MessageBubble` 与 desktop `ChatPanel` 的 MessageRow 同款映射（`KIND_FACE` 表 + `data-sender-kind` 标签供测试断言）；自己的消息恒走主色（客户端结构上只能以玩家身份发送，故按 `mine` 收口而非按类别）；枚举外的未知值回落玩家面色（向前兼容不留 undefined 底色）。`ChatMessage.priority / ttl_seconds / sender_kind` 三字段由 web/desktop `toView` 透传，历史与实时两条路同口径。
-- **物品链接**：`msg_type = ITEM_LINK`，可点击查看详情弹窗。品质颜色：白(普通)/绿(优秀)/蓝(精良)/紫(史诗)/橙(传说)。
+- **物品链接**（已落地 2026-10-14，伴侣面形态）：`msg_type = ITEM_LINK`，可点击查看详情弹窗。品质颜色：白(普通)/绿(优秀)/蓝(精良)/紫(史诗)/橙(传说)（0-4 整数编码，枚举外未知值回落白渲染）。服务端在发送门校验 metadata——解析不出 `ItemMetadata` 或缺 `item_id` 回 INVALID_PARAM（basic/enhanced 双形态同口径，非 ITEM_LINK 的 metadata 原样透传）；web `MessageBubble` 与 desktop `ChatPanel` 渲染物品卡片（名称按品质分色、count>1 显 ×N、item_id caption），点击开详情弹窗（itemId/iconUrl/count/attrs 键值列表，`data-quality` 标签供测试断言）。游戏内客户端的物品详情自渲染走 SDK 侧（批形状与坐标链接同款：`ItemMetadata` 随 ChatMessage.metadata 通用管线承载，SDK 四端零改动）。
 - **历史消息**：离线期间的消息，上线时拉取。支持分页加载（`GetHistoryRequest`）。
 - **消息已读**：私聊消息标记已读/未读。未读数 badge。
 

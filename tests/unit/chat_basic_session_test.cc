@@ -1211,6 +1211,111 @@ TEST_F(BasicChatTest, CoordLinkRejectsGarbageMetadataAndEmptyMapId) {
   EXPECT_EQ(Send(alice, "alice", "bob", "plain text").code(), chirp::common::OK);
 }
 
+// --- 物品链接（ITEM_LINK，P0）：metadata 全链透传 + 参数校验 ---------------------
+
+TEST_F(BasicChatTest, ItemLinkSendCarriesMetadataThroughHistory) {
+  auto alice = std::make_shared<MockSession>();
+  auto bob = std::make_shared<MockSession>();
+  ASSERT_EQ(Login(alice, "alice").code(), chirp::common::OK);
+  ASSERT_EQ(Login(bob, "bob").code(), chirp::common::OK);
+
+  // ITEM_LINK 消息：metadata = ItemMetadata，content 是展示文本（与普通
+  // 文本同一套敏感词/长度守门）。
+  chirp::chat::SendMessageRequest req;
+  req.set_sender_id("alice");
+  req.set_receiver_id("bob");
+  req.set_channel_type(chirp::chat::PRIVATE);
+  req.set_msg_type(chirp::chat::ITEM_LINK);
+  req.set_content("出了把橙武");
+  chirp::chat::ItemMetadata meta;
+  meta.set_item_id("item-9001");
+  meta.set_item_name("烈焰之刃");
+  meta.set_quality(4);
+  meta.set_count(2);
+  (*meta.mutable_attrs())["攻击力"] = "120";
+  req.set_metadata(meta.SerializeAsString());
+  DispatchReq(chirp::gateway::SEND_MESSAGE_REQ, req, alice);
+  const auto frames = FramesOf(*alice, chirp::gateway::SEND_MESSAGE_RESP);
+  ASSERT_EQ(frames.size(), 1u);
+  chirp::chat::SendMessageResponse send_resp;
+  ASSERT_TRUE(send_resp.ParseFromString(frames[0].body()));
+  ASSERT_EQ(send_resp.code(), chirp::common::OK);
+
+  // 实时 notify 到 bob：msg_type + metadata 原样到达。
+  const auto notifies = FramesOf(*bob, chirp::gateway::CHAT_MESSAGE_NOTIFY);
+  ASSERT_EQ(notifies.size(), 1u);
+  chirp::chat::ChatMessage live;
+  ASSERT_TRUE(live.ParseFromString(notifies[0].body()));
+  EXPECT_EQ(live.msg_type(), chirp::chat::ITEM_LINK);
+  chirp::chat::ItemMetadata live_meta;
+  ASSERT_TRUE(live_meta.ParseFromString(live.metadata()));
+  EXPECT_EQ(live_meta.item_id(), "item-9001");
+  EXPECT_EQ(live_meta.item_name(), "烈焰之刃");
+  EXPECT_EQ(live_meta.quality(), 4);
+  EXPECT_EQ(live_meta.count(), 2);
+  EXPECT_EQ(live_meta.attrs().at("攻击力"), "120");
+
+  // 历史读回：basic 内存/Redis 直存 ChatMessage，metadata 保真。
+  chirp::chat::GetHistoryRequest hist;
+  hist.set_user_id("alice");
+  hist.set_channel_type(chirp::chat::PRIVATE);
+  hist.set_channel_id("alice|bob");
+  hist.set_limit(10);
+  DispatchReq(chirp::gateway::GET_HISTORY_REQ, hist, alice);
+  chirp::chat::GetHistoryResponse history;
+  const auto hist_frames = FramesOf(*alice, chirp::gateway::GET_HISTORY_RESP);
+  ASSERT_EQ(hist_frames.size(), 1u);
+  ASSERT_TRUE(history.ParseFromString(hist_frames[0].body()));
+  ASSERT_EQ(history.code(), chirp::common::OK);
+  ASSERT_EQ(history.messages_size(), 1);
+  EXPECT_EQ(history.messages(0).msg_type(), chirp::chat::ITEM_LINK);
+  chirp::chat::ItemMetadata hist_meta;
+  ASSERT_TRUE(hist_meta.ParseFromString(history.messages(0).metadata()));
+  EXPECT_EQ(hist_meta.item_id(), "item-9001");
+  EXPECT_EQ(hist_meta.quality(), 4);
+  EXPECT_EQ(hist_meta.count(), 2);
+}
+
+TEST_F(BasicChatTest, ItemLinkRejectsGarbageMetadataAndEmptyItemId) {
+  auto alice = std::make_shared<MockSession>();
+  auto bob = std::make_shared<MockSession>();
+  ASSERT_EQ(Login(alice, "alice").code(), chirp::common::OK);
+  ASSERT_EQ(Login(bob, "bob").code(), chirp::common::OK);
+
+  auto SendItem = [this, &alice](const std::string& metadata) {
+    chirp::chat::SendMessageRequest req;
+    req.set_sender_id("alice");
+    req.set_receiver_id("bob");
+    req.set_channel_type(chirp::chat::PRIVATE);
+    req.set_msg_type(chirp::chat::ITEM_LINK);
+    req.set_content("点我");
+    req.set_metadata(metadata);
+    DispatchReq(chirp::gateway::SEND_MESSAGE_REQ, req, alice);
+    const auto frames = FramesOf(*alice, chirp::gateway::SEND_MESSAGE_RESP);
+    chirp::chat::SendMessageResponse resp;
+    if (!frames.empty()) {
+      resp.ParseFromString(frames.back().body());
+    }
+    return resp;
+  };
+
+  // 垃圾 metadata（截断的 length-delimited 字段，解析必败）→ INVALID_PARAM，
+  // 不落任何存储、不产生 notify。
+  EXPECT_EQ(SendItem("\x0A" "\x05" "ab").code(), chirp::common::INVALID_PARAM);
+  EXPECT_TRUE(FramesOf(*bob, chirp::gateway::CHAT_MESSAGE_NOTIFY).empty());
+  // item_id 为空的物品没有可查详情的落点（卡片无从渲染）→ INVALID_PARAM。
+  chirp::chat::ItemMetadata no_id;
+  no_id.set_item_name("无名之物");
+  EXPECT_EQ(SendItem(no_id.SerializeAsString()).code(), chirp::common::INVALID_PARAM);
+  // 拒收的消息不进历史：后续合法发送读回只应有这一条。
+  chirp::chat::ItemMetadata good;
+  good.set_item_id("item-1");
+  ASSERT_EQ(SendItem(good.SerializeAsString()).code(), chirp::common::OK);
+
+  // TEXT 消息不受影响（无 metadata 照常走通）。
+  EXPECT_EQ(Send(alice, "alice", "bob", "plain text").code(), chirp::common::OK);
+}
+
 // --- 群组频道：成员广播 + 离线成员入队 + 非成员拒收 ------------------------------
 
 TEST_F(BasicChatTest, GroupSendBroadcastsToMembersAndRefusesNonMember) {

@@ -1,5 +1,5 @@
 import { describe, expect, it, vi } from 'vitest';
-import { ChannelType, ChatMessage, MsgType, Priority, SenderKind } from '@chirp/proto/chat';
+import { ChannelType, ChatMessage, ItemMetadata, MsgType, Priority, SenderKind } from '@chirp/proto/chat';
 import { MsgID } from '@chirp/proto/gateway';
 import { ChatApi, channelRefOf, type ChannelRef, type SystemSurface } from './chat_api';
 import { createStore } from '../state/store';
@@ -197,5 +197,56 @@ describe('ChatApi sender_kind passthrough', () => {
     // proto3 zero value is PRIORITY_LOW, not PRIORITY_NORMAL.
     expect(view.priority).toBe(Priority.PRIORITY_LOW);
     expect(onMessage).toHaveBeenCalledTimes(1);
+  });
+});
+
+describe('ChatApi item link cards (P0 ITEM_LINK)', () => {
+  it('parses the item card out of an ITEM_LINK notify metadata', async () => {
+    const h = makeHarness();
+    await login(h);
+    h.conn.emit(
+      MsgID.CHAT_MESSAGE_NOTIFY,
+      chatBody({
+        msgType: MsgType.ITEM_LINK,
+        content: new TextEncoder().encode('出了把橙武'),
+        metadata: ItemMetadata.encode(
+          ItemMetadata.fromPartial({
+            itemId: 'item-9001',
+            itemName: '烈焰之刃',
+            quality: 4,
+            count: 2,
+            attrs: { 攻击力: '120' },
+          }),
+        ).finish(),
+      }),
+    );
+    const view = h.messages.get().byChannel['p:user_a|user_b'][0];
+    expect(view).toMatchObject({
+      item: { itemId: 'item-9001', itemName: '烈焰之刃', quality: 4, count: 2, attrs: { 攻击力: '120' } },
+    });
+  });
+
+  it('drops the item card when the metadata does not parse or lacks item_id', async () => {
+    const h = makeHarness();
+    await login(h);
+    h.conn.emit(
+      MsgID.CHAT_MESSAGE_NOTIFY,
+      chatBody({ msgType: MsgType.ITEM_LINK, metadata: new Uint8Array([0xde, 0xad, 0xbe, 0xef]) }),
+    );
+    const first = h.messages.get().byChannel['p:user_a|user_b'][0];
+    expect(first.item).toBeUndefined();
+    expect(first.content).toBe('hi');
+
+    h.conn.emit(
+      MsgID.CHAT_MESSAGE_NOTIFY,
+      chatBody({
+        messageId: 'm2',
+        msgType: MsgType.ITEM_LINK,
+        metadata: ItemMetadata.encode(ItemMetadata.fromPartial({ itemName: '无名之物' })).finish(),
+      }),
+    );
+    const second = h.messages.get().byChannel['p:user_a|user_b'][1];
+    expect(second.item).toBeUndefined();
+    expect(second.content).toBe('hi');
   });
 });

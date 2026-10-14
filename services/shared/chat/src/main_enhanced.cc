@@ -278,6 +278,17 @@ void HandleSendMessage(const chirp::chat::SendMessageRequest& req,
                                      seq, resp.SerializeAsString());
     return;
   }
+  // 物品链接（P0 ITEM_LINK）：与坐标链接同层同口径——解析不出或 item_id
+  // 为空的不落任何存储（basic 形态经 ValidateSendMessageRequest）。
+  if (const chirp::common::ErrorCode item_code = chirp::chat::ValidateItemMetadata(req);
+      item_code != chirp::common::OK) {
+    chirp::chat::SendMessageResponse resp;
+    resp.set_code(item_code);
+    resp.set_server_timestamp(chirp::chat::runtime::NowMs());
+    chirp::chat::runtime::SendPacket(sender_session, chirp::gateway::SEND_MESSAGE_RESP,
+                                     seq, resp.SerializeAsString());
+    return;
+  }
   msg.set_metadata(req.metadata());
 
   // 群频道成员门（web e2e 权限回码契约，与 basic 群分支同语义）：频道命中
