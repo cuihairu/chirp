@@ -1,5 +1,6 @@
 import ArrowUpwardIcon from '@mui/icons-material/ArrowUpward';
 import CloseIcon from '@mui/icons-material/Close';
+import FlagIcon from '@mui/icons-material/FlagOutlined';
 import ReplyIcon from '@mui/icons-material/ReplyOutlined';
 import SendIcon from '@mui/icons-material/Send';
 import {
@@ -18,7 +19,7 @@ import {
 import { useEffect, useReducer, useRef, useState } from 'react';
 import type { KeyboardEvent as ReactKeyboardEvent } from 'react';
 import type { ChatApi, ChannelRef } from '../api/chat_api';
-import type { ChatMessageView, Conversation } from '../state/models';
+import type { ChatMessageView, Conversation, CoordView } from '../state/models';
 import type { MessageState } from '../state/message_store';
 import { useStoreValue, type Store } from '../state/store';
 import { TYPING_TTL_MS, type TypingState } from '../state/typing_store';
@@ -47,7 +48,11 @@ function MessageRow(props: {
   /** 被引用父消息的展示面（ChatPanel 解析 id）；null = 引用目标不可见。 */
   quoted?: { senderName: string; content: string } | null;
   replyToMessageId?: string;
+  /** 坐标卡片（P1 COORD_LINK）；缺省 = 纯文本气泡。点击复制坐标。 */
+  coord?: CoordView;
   onReply?: () => void;
+  /** 举报对方消息（REPORT_MESSAGE 2253）；自己的消息不可举报。 */
+  onReport?: () => void;
 }) {
   return (
     <Box sx={{ display: 'flex', justifyContent: props.mine ? 'flex-end' : 'flex-start', mb: 1 }}>
@@ -79,7 +84,7 @@ function MessageRow(props: {
                 opacity: 0.85,
               }}
             >
-              <Typography variant="caption" fontWeight={600} component="div">
+              <Typography variant="caption" component="div" sx={{ fontWeight: 600 }}>
                 {props.quoted ? `回复 · ${props.quoted.senderName}` : '原消息已删除或不可见'}
               </Typography>
               {props.quoted ? (
@@ -100,6 +105,45 @@ function MessageRow(props: {
           <Typography variant="body2" sx={{ whiteSpace: 'pre-wrap', wordBreak: 'break-word' }}>
             {props.content}
           </Typography>
+          {props.coord ? (
+            <Box
+              component="button"
+              type="button"
+              title="点击复制坐标"
+              onClick={() => {
+                const { x, y, z } = props.coord!;
+                navigator.clipboard?.writeText(z === 0 ? `${x}, ${y}` : `${x}, ${y}, ${z}`);
+              }}
+              sx={{
+                display: 'block',
+                width: '100%',
+                mt: 0.5,
+                px: 1,
+                py: 0.5,
+                textAlign: 'left',
+                cursor: 'pointer',
+                border: '1px solid',
+                borderColor: props.mine ? 'primary.contrastText' : 'divider',
+                borderRadius: 1,
+                background: 'transparent',
+                color: 'inherit',
+              }}
+            >
+              {props.coord.label ? (
+                <Typography variant="caption" component="div" sx={{ fontWeight: 600 }}>
+                  {props.coord.label}
+                </Typography>
+              ) : null}
+              <Typography variant="caption" component="div" sx={{ opacity: 0.75 }}>
+                {props.coord.mapId}
+              </Typography>
+              <Typography variant="caption" component="div" sx={{ fontFamily: 'monospace' }}>
+                {props.coord.z === 0
+                  ? `${props.coord.x}, ${props.coord.y}`
+                  : `${props.coord.x}, ${props.coord.y}, ${props.coord.z}`}
+              </Typography>
+            </Box>
+          ) : null}
         </Paper>
         <Stack
           direction="row"
@@ -114,6 +158,13 @@ function MessageRow(props: {
             <Tooltip title="回复">
               <IconButton size="small" aria-label="回复" onClick={props.onReply} sx={{ p: 0.25 }}>
                 <ReplyIcon sx={{ fontSize: 14 }} />
+              </IconButton>
+            </Tooltip>
+          ) : null}
+          {!props.mine && props.onReport ? (
+            <Tooltip title="举报">
+              <IconButton size="small" aria-label="举报" onClick={props.onReport} sx={{ p: 0.25 }}>
+                <FlagIcon sx={{ fontSize: 14 }} />
               </IconButton>
             </Tooltip>
           ) : null}
@@ -264,8 +315,8 @@ export default function ChatPanel(props: {
           borderColor: 'divider',
         }}
       >
-        <Stack direction="row" alignItems="center" spacing={1}>
-          <Typography variant="subtitle1" fontWeight={600} noWrap>
+        <Stack direction="row" spacing={1} sx={{ alignItems: 'center' }}>
+          <Typography variant="subtitle1" noWrap sx={{ fontWeight: 600 }}>
             {conversation.title}
           </Typography>
           <Chip
@@ -316,7 +367,11 @@ export default function ChatPanel(props: {
             readByPeer={peerRead}
             quoted={m.replyToMessageId ? quotedSummary(m.replyToMessageId) : undefined}
             replyToMessageId={m.replyToMessageId}
+            coord={m.coord}
             onReply={m.deleted ? undefined : () => setReplying(m)}
+            onReport={m.deleted || m.senderId === selfId ? undefined : () => {
+              if (window.confirm('举报这条消息?')) void api.reportMessage(m.messageId);
+            }}
           />
         ))}
         <div ref={bottomRef} />
@@ -339,9 +394,8 @@ export default function ChatPanel(props: {
         {replying ? (
           <Stack
             direction="row"
-            alignItems="center"
             spacing={0.5}
-            sx={{ mb: 0.5, px: 1, py: 0.25, bgcolor: 'action.hover', borderRadius: 1 }}
+            sx={{ alignItems: 'center', mb: 0.5, px: 1, py: 0.25, bgcolor: 'action.hover', borderRadius: 1 }}
           >
             <Typography
               variant="caption"
@@ -356,7 +410,7 @@ export default function ChatPanel(props: {
             </IconButton>
           </Stack>
         ) : null}
-        <Stack direction="row" spacing={1} alignItems="flex-end">
+        <Stack direction="row" spacing={1} sx={{ alignItems: 'flex-end' }}>
           <InputBase
             fullWidth
             multiline

@@ -166,6 +166,14 @@ export enum MsgID {
   SET_GROUP_MUTE_REQ = 2250,
   SET_GROUP_MUTE_RESP = 2251,
   GROUP_MEMBER_MUTED_NOTIFY = 2252,
+  /**
+   * REPORT_MESSAGE_REQ - 举报（game_chat_features P1，2026-10-13）：玩家举报一条消息。服务端内存
+   * 台账按 (message_id, reporter_id) 去重幂等，回该消息去重后的累计举报数；
+   * 管理后台审核队列待全局管理员面另批（同群域禁言范围裁决）。body 见
+   * chat.proto 的 ReportMessageRequest / ReportMessageResponse。
+   */
+  REPORT_MESSAGE_REQ = 2253,
+  REPORT_MESSAGE_RESP = 2254,
   /** ADD_FRIEND_REQ - Social service */
   ADD_FRIEND_REQ = 3001,
   ADD_FRIEND_RESP = 3002,
@@ -191,6 +199,18 @@ export enum MsgID {
   FRIEND_REQUEST_NOTIFY = 3022,
   FRIEND_ACCEPTED_NOTIFY = 3023,
   FRIEND_REMOVED_NOTIFY = 3024,
+  /**
+   * SET_NOTIFY_PREFS_REQ - 好友上线通知偏好与显式上线通知（P1，可关闭）。prefs 按用户存、缺省全开；
+   * FRIEND_ONLINE_NOTIFY 只在有效状态 OFFLINE→非 OFFLINE 跃迁时补发（逐好友
+   * 过 SET_NOTIFY_PREFS 开关），body 复用 social.proto 的 PresenceNotify
+   * （同形负载：谁/什么状态/状态文案/时间戳），靠 msgid 区分于花名册更新
+   * 用的 PRESENCE_NOTIFY(3021)——花名册链路不受开关影响。
+   */
+  SET_NOTIFY_PREFS_REQ = 3025,
+  SET_NOTIFY_PREFS_RESP = 3026,
+  GET_NOTIFY_PREFS_REQ = 3027,
+  GET_NOTIFY_PREFS_RESP = 3028,
+  FRIEND_ONLINE_NOTIFY = 3029,
   /** CREATE_ROOM_REQ - Voice service */
   CREATE_ROOM_REQ = 4001,
   CREATE_ROOM_RESP = 4002,
@@ -654,6 +674,12 @@ export function msgIDFromJSON(object: any): MsgID {
     case 2252:
     case "GROUP_MEMBER_MUTED_NOTIFY":
       return MsgID.GROUP_MEMBER_MUTED_NOTIFY;
+    case 2253:
+    case "REPORT_MESSAGE_REQ":
+      return MsgID.REPORT_MESSAGE_REQ;
+    case 2254:
+    case "REPORT_MESSAGE_RESP":
+      return MsgID.REPORT_MESSAGE_RESP;
     case 3001:
     case "ADD_FRIEND_REQ":
       return MsgID.ADD_FRIEND_REQ;
@@ -726,6 +752,21 @@ export function msgIDFromJSON(object: any): MsgID {
     case 3024:
     case "FRIEND_REMOVED_NOTIFY":
       return MsgID.FRIEND_REMOVED_NOTIFY;
+    case 3025:
+    case "SET_NOTIFY_PREFS_REQ":
+      return MsgID.SET_NOTIFY_PREFS_REQ;
+    case 3026:
+    case "SET_NOTIFY_PREFS_RESP":
+      return MsgID.SET_NOTIFY_PREFS_RESP;
+    case 3027:
+    case "GET_NOTIFY_PREFS_REQ":
+      return MsgID.GET_NOTIFY_PREFS_REQ;
+    case 3028:
+    case "GET_NOTIFY_PREFS_RESP":
+      return MsgID.GET_NOTIFY_PREFS_RESP;
+    case 3029:
+    case "FRIEND_ONLINE_NOTIFY":
+      return MsgID.FRIEND_ONLINE_NOTIFY;
     case 4001:
     case "CREATE_ROOM_REQ":
       return MsgID.CREATE_ROOM_REQ;
@@ -1227,6 +1268,10 @@ export function msgIDToJSON(object: MsgID): string {
       return "SET_GROUP_MUTE_RESP";
     case MsgID.GROUP_MEMBER_MUTED_NOTIFY:
       return "GROUP_MEMBER_MUTED_NOTIFY";
+    case MsgID.REPORT_MESSAGE_REQ:
+      return "REPORT_MESSAGE_REQ";
+    case MsgID.REPORT_MESSAGE_RESP:
+      return "REPORT_MESSAGE_RESP";
     case MsgID.ADD_FRIEND_REQ:
       return "ADD_FRIEND_REQ";
     case MsgID.ADD_FRIEND_RESP:
@@ -1275,6 +1320,16 @@ export function msgIDToJSON(object: MsgID): string {
       return "FRIEND_ACCEPTED_NOTIFY";
     case MsgID.FRIEND_REMOVED_NOTIFY:
       return "FRIEND_REMOVED_NOTIFY";
+    case MsgID.SET_NOTIFY_PREFS_REQ:
+      return "SET_NOTIFY_PREFS_REQ";
+    case MsgID.SET_NOTIFY_PREFS_RESP:
+      return "SET_NOTIFY_PREFS_RESP";
+    case MsgID.GET_NOTIFY_PREFS_REQ:
+      return "GET_NOTIFY_PREFS_REQ";
+    case MsgID.GET_NOTIFY_PREFS_RESP:
+      return "GET_NOTIFY_PREFS_RESP";
+    case MsgID.FRIEND_ONLINE_NOTIFY:
+      return "FRIEND_ONLINE_NOTIFY";
     case MsgID.CREATE_ROOM_REQ:
       return "CREATE_ROOM_REQ";
     case MsgID.CREATE_ROOM_RESP:

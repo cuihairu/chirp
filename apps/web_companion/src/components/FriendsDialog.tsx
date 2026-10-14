@@ -11,12 +11,14 @@ import {
   ListItem,
   ListItemButton,
   ListItemText,
+  Switch,
   TextField,
   Typography,
 } from '@mui/material';
 import { useServices } from '../api/services';
 import { useStoreValue } from '../state/store';
 import { presenceFresh, presenceOf } from '../state/presence_store';
+import { useNow } from '../state/useNow';
 import { privateKey } from '../state/models';
 import { upsertConversation } from '../state/conversation_store';
 import { PresenceStatus } from '@chirp/proto/social';
@@ -41,8 +43,21 @@ export default function FriendsDialog({
   const selfId = useStoreValue(auth).userId ?? '';
   const friendState = useStoreValue(friends);
   const presenceState = useStoreValue(presence);
+  // 在线新鲜度按墙上时钟判 TTL 过期;时钟走状态(渲染期禁 Date.now())。
+  const now = useNow(15_000);
   const [addId, setAddId] = useState('');
   const [error, setError] = useState<string | null>(null);
+  // 好友上线通知开关(3025/3027):打开面板拉当前偏好,切换即 SET。社交面
+  // 不可用时 getNotifyPrefs 回 null,按缺省全开渲染并保持可切(SET 失败静默,
+  // 下次打开重拉)。
+  const [notifyOn, setNotifyOn] = useState(true);
+  useEffect(() => {
+    if (!open || !socialApi) return;
+    void socialApi.getNotifyPrefs().then((value) => {
+      if (value !== null) setNotifyOn(value);
+    });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [open]);
 
   // Refresh presence for the whole roster whenever the panel opens.
   useEffect(() => {
@@ -62,6 +77,11 @@ export default function FriendsDialog({
     });
     onClose();
     onOpenChannel(key);
+  };
+
+  const toggleNotify = (checked: boolean): void => {
+    setNotifyOn(checked);
+    void socialApi?.setNotifyPrefs(checked);
   };
 
   const add = async (): Promise<void> => {
@@ -104,6 +124,16 @@ export default function FriendsDialog({
           </Button>
         </Box>
 
+        <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 1 }}>
+          <Typography variant="body2">{zh.social.friendOnlineNotify}</Typography>
+          <Switch
+            size="small"
+            checked={notifyOn}
+            onChange={(e) => toggleNotify(e.target.checked)}
+            data-testid="friend-online-notify-switch"
+          />
+        </Box>
+
         <List dense data-testid="friend-requests">
           {friendState.pendingIn.map((request) => (
             <ListItem
@@ -141,7 +171,7 @@ export default function FriendsDialog({
             const entry = presenceOf(presenceState, friend);
             // A stale snapshot (missed disconnect notify) renders offline.
             const online =
-              presenceFresh(presenceState, friend, Date.now()) &&
+              presenceFresh(presenceState, friend, now) &&
               entry?.status === PresenceStatus.ONLINE;
             return (
               <ListItem

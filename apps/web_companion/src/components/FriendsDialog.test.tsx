@@ -119,6 +119,40 @@ describe('FriendsDialog', () => {
     await waitFor(() => expect(screen.getByText('user_b')).toBeTruthy());
   });
 
+  it('loads the friend-online notify pref and toggles it (3025/3027)', async () => {
+    const social = new FakeChatConnection();
+    let pref = false; // 服务端记着的值：关
+    social.setResponder(async (msgId, req) => {
+      if (msgId === MsgID.GET_NOTIFY_PREFS_REQ) {
+        return { code: 0, prefs: { friendOnlineNotify: pref } };
+      }
+      if (msgId === MsgID.SET_NOTIFY_PREFS_REQ) {
+        pref = (req as { prefs?: { friendOnlineNotify?: boolean } }).prefs?.friendOnlineNotify ?? true;
+        return { code: 0, prefs: { friendOnlineNotify: pref } };
+      }
+      return { code: 0 };
+    });
+    await renderLoggedIn(<FriendsDialog open onClose={vi.fn()} onOpenChannel={vi.fn()} />, {
+      socialConn: social,
+    });
+
+    // 打开面板拉当前偏好（服务端记着关）。
+    await waitFor(() =>
+      expect(social.requests.some((r) => r.msgId === MsgID.GET_NOTIFY_PREFS_REQ)).toBe(true),
+    );
+    const input = screen
+      .getByTestId('friend-online-notify-switch')
+      .querySelector('input') as HTMLInputElement;
+    await waitFor(() => expect(input.checked).toBe(false));
+
+    // 打开开关 → SET_NOTIFY_PREFS 带显式 true 上线。
+    fireEvent.click(input);
+    await waitFor(() => expect(input.checked).toBe(true));
+    const setReq = social.requests.find((r) => r.msgId === MsgID.SET_NOTIFY_PREFS_REQ);
+    expect(setReq).toBeDefined();
+    expect(setReq!.req).toMatchObject({ prefs: { friendOnlineNotify: true } });
+  });
+
   it('opens a private channel when messaging a friend', async () => {
     const onOpenChannel = vi.fn();
     const social = new FakeChatConnection();

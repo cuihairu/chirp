@@ -2,9 +2,12 @@ import { DevicesPresenceNotify, LoginRequest, LoginResponse } from '@chirp/proto
 import {
   ChannelType,
   ChatMessage,
+  CoordMetadata,
   GroupMemberAliasUpdatedNotify,
   GroupMemberMutedNotify,
   MsgType,
+  ReportMessageRequest,
+  ReportMessageResponse,
   SearchMessageRequest,
   SearchMessageResponse,
   SendMessageRequest,
@@ -16,6 +19,7 @@ import {
 } from '@chirp/proto/chat';
 import { ErrorCode } from '@chirp/proto/common';
 import { KickNotify } from '@chirp/proto/auth';
+import { PresenceNotify } from '@chirp/proto/social';
 import { MsgID, Packet } from '@chirp/proto/gateway';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { ChirpClient, WebSocketLike } from './chirp_client';
@@ -376,6 +380,33 @@ describe('ChatPipeline send pipeline', () => {
     });
   });
 
+  it('reportMessage: wire round-trip; empty messageId is a client-side RangeError', async () => {
+    await makeHarness(async (_client, pipeline, ws) => {
+      // Argument check fires while connected (C++ INVALID_PARAM parity).
+      await expect(pipeline.reportMessage('')).rejects.toThrow(RangeError);
+
+      const pending = pipeline.reportMessage('m1', 'spam');
+      expect(ws.lastSentPacket().msgId).toBe(MsgID.REPORT_MESSAGE_REQ);
+      const req = ReportMessageRequest.decode(ws.lastSentPacket().body);
+      expect(req.messageId).toBe('m1');
+      expect(req.reason).toBe('spam');
+
+      settle(ws, MsgID.REPORT_MESSAGE_RESP, ReportMessageResponse.encode(
+        ReportMessageResponse.fromPartial({ code: ErrorCode.OK, reportCount: 2 }),
+      ).finish());
+      const resp = await pending;
+      expect(resp.code).toBe(ErrorCode.OK);
+      expect(resp.reportCount).toBe(2);
+
+      // reason is optional: the default empty string rides the same spec.
+      const plain = pipeline.reportMessage('m2');
+      settle(ws, MsgID.REPORT_MESSAGE_RESP, ReportMessageResponse.encode(
+        ReportMessageResponse.fromPartial({ code: ErrorCode.OK, reportCount: 1 }),
+      ).finish());
+      expect((await plain).reportCount).toBe(1);
+    });
+  });
+
   it('archives both directions newest-first; unread is 0 without tracking', async () => {
     await makeHarness(async (_client, pipeline, ws) => {
       const pending = pipeline.login('u1');
@@ -705,6 +736,41 @@ describe('ChatPipeline listener wiring', () => {
       await sending;
     });
   });
+
+  it('carries msgType and metadata to the wire and into the local archive', async () => {
+    await makeHarness(async (_client, pipeline, ws) => {
+      const metadata = CoordMetadata.encode(
+        CoordMetadata.fromPartial({ mapId: 'field-7', x: 120, y: 88, z: 3, label: 'BOSS 刷新点' }),
+      ).finish();
+      const sending = pipeline.send(
+        {
+          channelType: ChannelType.PRIVATE,
+          receiverId: 'p',
+          msgType: MsgType.COORD_LINK,
+          metadata,
+        },
+        'BOSS 刷新点',
+      );
+      const req = SendMessageRequest.decode(ws.lastSentPacket().body);
+      expect(req.msgType).toBe(MsgType.COORD_LINK);
+      expect(CoordMetadata.decode(req.metadata ?? new Uint8Array())).toMatchObject({
+        mapId: 'field-7',
+        x: 120,
+        y: 88,
+        z: 3,
+        label: 'BOSS 刷新点',
+      });
+
+      // 本地存档副本同样带出坐标，刷新会话不降级成空消息。
+      const archived = pipeline.loadHistory(ChannelType.PRIVATE, 'p|u1', 10);
+      expect(archived).toHaveLength(1);
+      expect(archived[0].msgType).toBe(MsgType.COORD_LINK);
+      expect(CoordMetadata.decode(archived[0].metadata ?? new Uint8Array()).mapId).toBe('field-7');
+
+      settle(ws, MsgID.SEND_MESSAGE_RESP, sendResp(ErrorCode.OK));
+      expect(await sending).toMatchObject({ code: ErrorCode.OK });
+    });
+  });
 });
 
 describe('MemoryMessageStore', () => {
@@ -853,6 +919,32 @@ describe('ChatPipeline inbound edges', () => {
       expect(seen).toEqual([['g1', 'u9', 1700000000000, 'mod1']]); // thrower contained
 
       ws.serverFrame(MsgID.GROUP_MEMBER_MUTED_NOTIFY, 0, new Uint8Array([0xff])); // undecodable
+      expect(seen.length).toBe(1);
+    });
+  });
+
+  it('fans friend-online notifies out; garbage bodies are no-ops', async () => {
+    await makeHarness(async (_client, pipeline, ws) => {
+      const seen: Array<[string, number, string]> = [];
+      pipeline.addListener({
+        onFriendOnline: (userId, status, statusMessage) => seen.push([userId, status, statusMessage]),
+      });
+      pipeline.addListener({
+        onFriendOnline: () => {
+          throw new Error('bad listener');
+        },
+      });
+
+      ws.serverFrame(MsgID.FRIEND_ONLINE_NOTIFY, 0,
+        PresenceNotify.encode(PresenceNotify.fromPartial({
+          userId: 'u9',
+          status: 1, // ONLINE
+          statusMessage: '',
+          timestamp: 1700000000000,
+        })).finish());
+      expect(seen).toEqual([['u9', 1, '']]); // thrower contained
+
+      ws.serverFrame(MsgID.FRIEND_ONLINE_NOTIFY, 0, new Uint8Array([0xff])); // undecodable
       expect(seen.length).toBe(1);
     });
   });

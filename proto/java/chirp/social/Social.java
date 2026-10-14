@@ -20874,6 +20874,3233 @@ java.lang.String defaultValue) {
 
   }
 
+  public interface NotifyPrefsOrBuilder extends
+      // @@protoc_insertion_point(interface_extends:chirp.social.NotifyPrefs)
+      com.google.protobuf.MessageOrBuilder {
+
+    /**
+     * <code>bool friend_online_notify = 1;</code>
+     * @return The friendOnlineNotify.
+     */
+    boolean getFriendOnlineNotify();
+  }
+  /**
+   * <pre>
+   * ---------------------------------------------------------------------------
+   * 好友上线通知偏好（P1，可关闭）。按用户存，缺省全开——只显式关掉的用户
+   * 不再收到 FRIEND_ONLINE_NOTIFY(3029)；花名册 PRESENCE_NOTIFY 不受影响。
+   * </pre>
+   *
+   * Protobuf type {@code chirp.social.NotifyPrefs}
+   */
+  public static final class NotifyPrefs extends
+      com.google.protobuf.GeneratedMessage implements
+      // @@protoc_insertion_point(message_implements:chirp.social.NotifyPrefs)
+      NotifyPrefsOrBuilder {
+  private static final long serialVersionUID = 0L;
+    static {
+      com.google.protobuf.RuntimeVersion.validateProtobufGencodeVersion(
+        com.google.protobuf.RuntimeVersion.RuntimeDomain.PUBLIC,
+        /* major= */ 4,
+        /* minor= */ 33,
+        /* patch= */ 4,
+        /* suffix= */ "",
+        "NotifyPrefs");
+    }
+    // Use NotifyPrefs.newBuilder() to construct.
+    private NotifyPrefs(com.google.protobuf.GeneratedMessage.Builder<?> builder) {
+      super(builder);
+    }
+    private NotifyPrefs() {
+    }
+
+    public static final com.google.protobuf.Descriptors.Descriptor
+        getDescriptor() {
+      return chirp.social.Social.internal_static_chirp_social_NotifyPrefs_descriptor;
+    }
+
+    @java.lang.Override
+    protected com.google.protobuf.GeneratedMessage.FieldAccessorTable
+        internalGetFieldAccessorTable() {
+      return chirp.social.Social.internal_static_chirp_social_NotifyPrefs_fieldAccessorTable
+          .ensureFieldAccessorsInitialized(
+              chirp.social.Social.NotifyPrefs.class, chirp.social.Social.NotifyPrefs.Builder.class);
+    }
+
+    public static final int FRIEND_ONLINE_NOTIFY_FIELD_NUMBER = 1;
+    private boolean friendOnlineNotify_ = false;
+    /**
+     * <code>bool friend_online_notify = 1;</code>
+     * @return The friendOnlineNotify.
+     */
+    @java.lang.Override
+    public boolean getFriendOnlineNotify() {
+      return friendOnlineNotify_;
+    }
+
+    private byte memoizedIsInitialized = -1;
+    @java.lang.Override
+    public final boolean isInitialized() {
+      byte isInitialized = memoizedIsInitialized;
+      if (isInitialized == 1) return true;
+      if (isInitialized == 0) return false;
+
+      memoizedIsInitialized = 1;
+      return true;
+    }
+
+    @java.lang.Override
+    public void writeTo(com.google.protobuf.CodedOutputStream output)
+                        throws java.io.IOException {
+      if (friendOnlineNotify_ != false) {
+        output.writeBool(1, friendOnlineNotify_);
+      }
+      getUnknownFields().writeTo(output);
+    }
+
+    @java.lang.Override
+    public int getSerializedSize() {
+      int size = memoizedSize;
+      if (size != -1) return size;
+
+      size = 0;
+      if (friendOnlineNotify_ != false) {
+        size += com.google.protobuf.CodedOutputStream
+          .computeBoolSize(1, friendOnlineNotify_);
+      }
+      size += getUnknownFields().getSerializedSize();
+      memoizedSize = size;
+      return size;
+    }
+
+    @java.lang.Override
+    public boolean equals(final java.lang.Object obj) {
+      if (obj == this) {
+       return true;
+      }
+      if (!(obj instanceof chirp.social.Social.NotifyPrefs)) {
+        return super.equals(obj);
+      }
+      chirp.social.Social.NotifyPrefs other = (chirp.social.Social.NotifyPrefs) obj;
+
+      if (getFriendOnlineNotify()
+          != other.getFriendOnlineNotify()) return false;
+      if (!getUnknownFields().equals(other.getUnknownFields())) return false;
+      return true;
+    }
+
+    @java.lang.Override
+    public int hashCode() {
+      if (memoizedHashCode != 0) {
+        return memoizedHashCode;
+      }
+      int hash = 41;
+      hash = (19 * hash) + getDescriptor().hashCode();
+      hash = (37 * hash) + FRIEND_ONLINE_NOTIFY_FIELD_NUMBER;
+      hash = (53 * hash) + com.google.protobuf.Internal.hashBoolean(
+          getFriendOnlineNotify());
+      hash = (29 * hash) + getUnknownFields().hashCode();
+      memoizedHashCode = hash;
+      return hash;
+    }
+
+    public static chirp.social.Social.NotifyPrefs parseFrom(
+        java.nio.ByteBuffer data)
+        throws com.google.protobuf.InvalidProtocolBufferException {
+      return PARSER.parseFrom(data);
+    }
+    public static chirp.social.Social.NotifyPrefs parseFrom(
+        java.nio.ByteBuffer data,
+        com.google.protobuf.ExtensionRegistryLite extensionRegistry)
+        throws com.google.protobuf.InvalidProtocolBufferException {
+      return PARSER.parseFrom(data, extensionRegistry);
+    }
+    public static chirp.social.Social.NotifyPrefs parseFrom(
+        com.google.protobuf.ByteString data)
+        throws com.google.protobuf.InvalidProtocolBufferException {
+      return PARSER.parseFrom(data);
+    }
+    public static chirp.social.Social.NotifyPrefs parseFrom(
+        com.google.protobuf.ByteString data,
+        com.google.protobuf.ExtensionRegistryLite extensionRegistry)
+        throws com.google.protobuf.InvalidProtocolBufferException {
+      return PARSER.parseFrom(data, extensionRegistry);
+    }
+    public static chirp.social.Social.NotifyPrefs parseFrom(byte[] data)
+        throws com.google.protobuf.InvalidProtocolBufferException {
+      return PARSER.parseFrom(data);
+    }
+    public static chirp.social.Social.NotifyPrefs parseFrom(
+        byte[] data,
+        com.google.protobuf.ExtensionRegistryLite extensionRegistry)
+        throws com.google.protobuf.InvalidProtocolBufferException {
+      return PARSER.parseFrom(data, extensionRegistry);
+    }
+    public static chirp.social.Social.NotifyPrefs parseFrom(java.io.InputStream input)
+        throws java.io.IOException {
+      return com.google.protobuf.GeneratedMessage
+          .parseWithIOException(PARSER, input);
+    }
+    public static chirp.social.Social.NotifyPrefs parseFrom(
+        java.io.InputStream input,
+        com.google.protobuf.ExtensionRegistryLite extensionRegistry)
+        throws java.io.IOException {
+      return com.google.protobuf.GeneratedMessage
+          .parseWithIOException(PARSER, input, extensionRegistry);
+    }
+
+    public static chirp.social.Social.NotifyPrefs parseDelimitedFrom(java.io.InputStream input)
+        throws java.io.IOException {
+      return com.google.protobuf.GeneratedMessage
+          .parseDelimitedWithIOException(PARSER, input);
+    }
+
+    public static chirp.social.Social.NotifyPrefs parseDelimitedFrom(
+        java.io.InputStream input,
+        com.google.protobuf.ExtensionRegistryLite extensionRegistry)
+        throws java.io.IOException {
+      return com.google.protobuf.GeneratedMessage
+          .parseDelimitedWithIOException(PARSER, input, extensionRegistry);
+    }
+    public static chirp.social.Social.NotifyPrefs parseFrom(
+        com.google.protobuf.CodedInputStream input)
+        throws java.io.IOException {
+      return com.google.protobuf.GeneratedMessage
+          .parseWithIOException(PARSER, input);
+    }
+    public static chirp.social.Social.NotifyPrefs parseFrom(
+        com.google.protobuf.CodedInputStream input,
+        com.google.protobuf.ExtensionRegistryLite extensionRegistry)
+        throws java.io.IOException {
+      return com.google.protobuf.GeneratedMessage
+          .parseWithIOException(PARSER, input, extensionRegistry);
+    }
+
+    @java.lang.Override
+    public Builder newBuilderForType() { return newBuilder(); }
+    public static Builder newBuilder() {
+      return DEFAULT_INSTANCE.toBuilder();
+    }
+    public static Builder newBuilder(chirp.social.Social.NotifyPrefs prototype) {
+      return DEFAULT_INSTANCE.toBuilder().mergeFrom(prototype);
+    }
+    @java.lang.Override
+    public Builder toBuilder() {
+      return this == DEFAULT_INSTANCE
+          ? new Builder() : new Builder().mergeFrom(this);
+    }
+
+    @java.lang.Override
+    protected Builder newBuilderForType(
+        com.google.protobuf.GeneratedMessage.BuilderParent parent) {
+      Builder builder = new Builder(parent);
+      return builder;
+    }
+    /**
+     * <pre>
+     * ---------------------------------------------------------------------------
+     * 好友上线通知偏好（P1，可关闭）。按用户存，缺省全开——只显式关掉的用户
+     * 不再收到 FRIEND_ONLINE_NOTIFY(3029)；花名册 PRESENCE_NOTIFY 不受影响。
+     * </pre>
+     *
+     * Protobuf type {@code chirp.social.NotifyPrefs}
+     */
+    public static final class Builder extends
+        com.google.protobuf.GeneratedMessage.Builder<Builder> implements
+        // @@protoc_insertion_point(builder_implements:chirp.social.NotifyPrefs)
+        chirp.social.Social.NotifyPrefsOrBuilder {
+      public static final com.google.protobuf.Descriptors.Descriptor
+          getDescriptor() {
+        return chirp.social.Social.internal_static_chirp_social_NotifyPrefs_descriptor;
+      }
+
+      @java.lang.Override
+      protected com.google.protobuf.GeneratedMessage.FieldAccessorTable
+          internalGetFieldAccessorTable() {
+        return chirp.social.Social.internal_static_chirp_social_NotifyPrefs_fieldAccessorTable
+            .ensureFieldAccessorsInitialized(
+                chirp.social.Social.NotifyPrefs.class, chirp.social.Social.NotifyPrefs.Builder.class);
+      }
+
+      // Construct using chirp.social.Social.NotifyPrefs.newBuilder()
+      private Builder() {
+
+      }
+
+      private Builder(
+          com.google.protobuf.GeneratedMessage.BuilderParent parent) {
+        super(parent);
+
+      }
+      @java.lang.Override
+      public Builder clear() {
+        super.clear();
+        bitField0_ = 0;
+        friendOnlineNotify_ = false;
+        return this;
+      }
+
+      @java.lang.Override
+      public com.google.protobuf.Descriptors.Descriptor
+          getDescriptorForType() {
+        return chirp.social.Social.internal_static_chirp_social_NotifyPrefs_descriptor;
+      }
+
+      @java.lang.Override
+      public chirp.social.Social.NotifyPrefs getDefaultInstanceForType() {
+        return chirp.social.Social.NotifyPrefs.getDefaultInstance();
+      }
+
+      @java.lang.Override
+      public chirp.social.Social.NotifyPrefs build() {
+        chirp.social.Social.NotifyPrefs result = buildPartial();
+        if (!result.isInitialized()) {
+          throw newUninitializedMessageException(result);
+        }
+        return result;
+      }
+
+      @java.lang.Override
+      public chirp.social.Social.NotifyPrefs buildPartial() {
+        chirp.social.Social.NotifyPrefs result = new chirp.social.Social.NotifyPrefs(this);
+        if (bitField0_ != 0) { buildPartial0(result); }
+        onBuilt();
+        return result;
+      }
+
+      private void buildPartial0(chirp.social.Social.NotifyPrefs result) {
+        int from_bitField0_ = bitField0_;
+        if (((from_bitField0_ & 0x00000001) != 0)) {
+          result.friendOnlineNotify_ = friendOnlineNotify_;
+        }
+      }
+
+      @java.lang.Override
+      public Builder mergeFrom(com.google.protobuf.Message other) {
+        if (other instanceof chirp.social.Social.NotifyPrefs) {
+          return mergeFrom((chirp.social.Social.NotifyPrefs)other);
+        } else {
+          super.mergeFrom(other);
+          return this;
+        }
+      }
+
+      public Builder mergeFrom(chirp.social.Social.NotifyPrefs other) {
+        if (other == chirp.social.Social.NotifyPrefs.getDefaultInstance()) return this;
+        if (other.getFriendOnlineNotify() != false) {
+          setFriendOnlineNotify(other.getFriendOnlineNotify());
+        }
+        this.mergeUnknownFields(other.getUnknownFields());
+        onChanged();
+        return this;
+      }
+
+      @java.lang.Override
+      public final boolean isInitialized() {
+        return true;
+      }
+
+      @java.lang.Override
+      public Builder mergeFrom(
+          com.google.protobuf.CodedInputStream input,
+          com.google.protobuf.ExtensionRegistryLite extensionRegistry)
+          throws java.io.IOException {
+        if (extensionRegistry == null) {
+          throw new java.lang.NullPointerException();
+        }
+        try {
+          boolean done = false;
+          while (!done) {
+            int tag = input.readTag();
+            switch (tag) {
+              case 0:
+                done = true;
+                break;
+              case 8: {
+                friendOnlineNotify_ = input.readBool();
+                bitField0_ |= 0x00000001;
+                break;
+              } // case 8
+              default: {
+                if (!super.parseUnknownField(input, extensionRegistry, tag)) {
+                  done = true; // was an endgroup tag
+                }
+                break;
+              } // default:
+            } // switch (tag)
+          } // while (!done)
+        } catch (com.google.protobuf.InvalidProtocolBufferException e) {
+          throw e.unwrapIOException();
+        } finally {
+          onChanged();
+        } // finally
+        return this;
+      }
+      private int bitField0_;
+
+      private boolean friendOnlineNotify_ ;
+      /**
+       * <code>bool friend_online_notify = 1;</code>
+       * @return The friendOnlineNotify.
+       */
+      @java.lang.Override
+      public boolean getFriendOnlineNotify() {
+        return friendOnlineNotify_;
+      }
+      /**
+       * <code>bool friend_online_notify = 1;</code>
+       * @param value The friendOnlineNotify to set.
+       * @return This builder for chaining.
+       */
+      public Builder setFriendOnlineNotify(boolean value) {
+
+        friendOnlineNotify_ = value;
+        bitField0_ |= 0x00000001;
+        onChanged();
+        return this;
+      }
+      /**
+       * <code>bool friend_online_notify = 1;</code>
+       * @return This builder for chaining.
+       */
+      public Builder clearFriendOnlineNotify() {
+        bitField0_ = (bitField0_ & ~0x00000001);
+        friendOnlineNotify_ = false;
+        onChanged();
+        return this;
+      }
+
+      // @@protoc_insertion_point(builder_scope:chirp.social.NotifyPrefs)
+    }
+
+    // @@protoc_insertion_point(class_scope:chirp.social.NotifyPrefs)
+    private static final chirp.social.Social.NotifyPrefs DEFAULT_INSTANCE;
+    static {
+      DEFAULT_INSTANCE = new chirp.social.Social.NotifyPrefs();
+    }
+
+    public static chirp.social.Social.NotifyPrefs getDefaultInstance() {
+      return DEFAULT_INSTANCE;
+    }
+
+    private static final com.google.protobuf.Parser<NotifyPrefs>
+        PARSER = new com.google.protobuf.AbstractParser<NotifyPrefs>() {
+      @java.lang.Override
+      public NotifyPrefs parsePartialFrom(
+          com.google.protobuf.CodedInputStream input,
+          com.google.protobuf.ExtensionRegistryLite extensionRegistry)
+          throws com.google.protobuf.InvalidProtocolBufferException {
+        Builder builder = newBuilder();
+        try {
+          builder.mergeFrom(input, extensionRegistry);
+        } catch (com.google.protobuf.InvalidProtocolBufferException e) {
+          throw e.setUnfinishedMessage(builder.buildPartial());
+        } catch (com.google.protobuf.UninitializedMessageException e) {
+          throw e.asInvalidProtocolBufferException().setUnfinishedMessage(builder.buildPartial());
+        } catch (java.io.IOException e) {
+          throw new com.google.protobuf.InvalidProtocolBufferException(e)
+              .setUnfinishedMessage(builder.buildPartial());
+        }
+        return builder.buildPartial();
+      }
+    };
+
+    public static com.google.protobuf.Parser<NotifyPrefs> parser() {
+      return PARSER;
+    }
+
+    @java.lang.Override
+    public com.google.protobuf.Parser<NotifyPrefs> getParserForType() {
+      return PARSER;
+    }
+
+    @java.lang.Override
+    public chirp.social.Social.NotifyPrefs getDefaultInstanceForType() {
+      return DEFAULT_INSTANCE;
+    }
+
+  }
+
+  public interface SetNotifyPrefsRequestOrBuilder extends
+      // @@protoc_insertion_point(interface_extends:chirp.social.SetNotifyPrefsRequest)
+      com.google.protobuf.MessageOrBuilder {
+
+    /**
+     * <code>string user_id = 1;</code>
+     * @return The userId.
+     */
+    java.lang.String getUserId();
+    /**
+     * <code>string user_id = 1;</code>
+     * @return The bytes for userId.
+     */
+    com.google.protobuf.ByteString
+        getUserIdBytes();
+
+    /**
+     * <code>.chirp.social.NotifyPrefs prefs = 2;</code>
+     * @return Whether the prefs field is set.
+     */
+    boolean hasPrefs();
+    /**
+     * <code>.chirp.social.NotifyPrefs prefs = 2;</code>
+     * @return The prefs.
+     */
+    chirp.social.Social.NotifyPrefs getPrefs();
+    /**
+     * <code>.chirp.social.NotifyPrefs prefs = 2;</code>
+     */
+    chirp.social.Social.NotifyPrefsOrBuilder getPrefsOrBuilder();
+  }
+  /**
+   * Protobuf type {@code chirp.social.SetNotifyPrefsRequest}
+   */
+  public static final class SetNotifyPrefsRequest extends
+      com.google.protobuf.GeneratedMessage implements
+      // @@protoc_insertion_point(message_implements:chirp.social.SetNotifyPrefsRequest)
+      SetNotifyPrefsRequestOrBuilder {
+  private static final long serialVersionUID = 0L;
+    static {
+      com.google.protobuf.RuntimeVersion.validateProtobufGencodeVersion(
+        com.google.protobuf.RuntimeVersion.RuntimeDomain.PUBLIC,
+        /* major= */ 4,
+        /* minor= */ 33,
+        /* patch= */ 4,
+        /* suffix= */ "",
+        "SetNotifyPrefsRequest");
+    }
+    // Use SetNotifyPrefsRequest.newBuilder() to construct.
+    private SetNotifyPrefsRequest(com.google.protobuf.GeneratedMessage.Builder<?> builder) {
+      super(builder);
+    }
+    private SetNotifyPrefsRequest() {
+      userId_ = "";
+    }
+
+    public static final com.google.protobuf.Descriptors.Descriptor
+        getDescriptor() {
+      return chirp.social.Social.internal_static_chirp_social_SetNotifyPrefsRequest_descriptor;
+    }
+
+    @java.lang.Override
+    protected com.google.protobuf.GeneratedMessage.FieldAccessorTable
+        internalGetFieldAccessorTable() {
+      return chirp.social.Social.internal_static_chirp_social_SetNotifyPrefsRequest_fieldAccessorTable
+          .ensureFieldAccessorsInitialized(
+              chirp.social.Social.SetNotifyPrefsRequest.class, chirp.social.Social.SetNotifyPrefsRequest.Builder.class);
+    }
+
+    private int bitField0_;
+    public static final int USER_ID_FIELD_NUMBER = 1;
+    @SuppressWarnings("serial")
+    private volatile java.lang.Object userId_ = "";
+    /**
+     * <code>string user_id = 1;</code>
+     * @return The userId.
+     */
+    @java.lang.Override
+    public java.lang.String getUserId() {
+      java.lang.Object ref = userId_;
+      if (ref instanceof java.lang.String) {
+        return (java.lang.String) ref;
+      } else {
+        com.google.protobuf.ByteString bs = 
+            (com.google.protobuf.ByteString) ref;
+        java.lang.String s = bs.toStringUtf8();
+        userId_ = s;
+        return s;
+      }
+    }
+    /**
+     * <code>string user_id = 1;</code>
+     * @return The bytes for userId.
+     */
+    @java.lang.Override
+    public com.google.protobuf.ByteString
+        getUserIdBytes() {
+      java.lang.Object ref = userId_;
+      if (ref instanceof java.lang.String) {
+        com.google.protobuf.ByteString b = 
+            com.google.protobuf.ByteString.copyFromUtf8(
+                (java.lang.String) ref);
+        userId_ = b;
+        return b;
+      } else {
+        return (com.google.protobuf.ByteString) ref;
+      }
+    }
+
+    public static final int PREFS_FIELD_NUMBER = 2;
+    private chirp.social.Social.NotifyPrefs prefs_;
+    /**
+     * <code>.chirp.social.NotifyPrefs prefs = 2;</code>
+     * @return Whether the prefs field is set.
+     */
+    @java.lang.Override
+    public boolean hasPrefs() {
+      return ((bitField0_ & 0x00000001) != 0);
+    }
+    /**
+     * <code>.chirp.social.NotifyPrefs prefs = 2;</code>
+     * @return The prefs.
+     */
+    @java.lang.Override
+    public chirp.social.Social.NotifyPrefs getPrefs() {
+      return prefs_ == null ? chirp.social.Social.NotifyPrefs.getDefaultInstance() : prefs_;
+    }
+    /**
+     * <code>.chirp.social.NotifyPrefs prefs = 2;</code>
+     */
+    @java.lang.Override
+    public chirp.social.Social.NotifyPrefsOrBuilder getPrefsOrBuilder() {
+      return prefs_ == null ? chirp.social.Social.NotifyPrefs.getDefaultInstance() : prefs_;
+    }
+
+    private byte memoizedIsInitialized = -1;
+    @java.lang.Override
+    public final boolean isInitialized() {
+      byte isInitialized = memoizedIsInitialized;
+      if (isInitialized == 1) return true;
+      if (isInitialized == 0) return false;
+
+      memoizedIsInitialized = 1;
+      return true;
+    }
+
+    @java.lang.Override
+    public void writeTo(com.google.protobuf.CodedOutputStream output)
+                        throws java.io.IOException {
+      if (!com.google.protobuf.GeneratedMessage.isStringEmpty(userId_)) {
+        com.google.protobuf.GeneratedMessage.writeString(output, 1, userId_);
+      }
+      if (((bitField0_ & 0x00000001) != 0)) {
+        output.writeMessage(2, getPrefs());
+      }
+      getUnknownFields().writeTo(output);
+    }
+
+    @java.lang.Override
+    public int getSerializedSize() {
+      int size = memoizedSize;
+      if (size != -1) return size;
+
+      size = 0;
+      if (!com.google.protobuf.GeneratedMessage.isStringEmpty(userId_)) {
+        size += com.google.protobuf.GeneratedMessage.computeStringSize(1, userId_);
+      }
+      if (((bitField0_ & 0x00000001) != 0)) {
+        size += com.google.protobuf.CodedOutputStream
+          .computeMessageSize(2, getPrefs());
+      }
+      size += getUnknownFields().getSerializedSize();
+      memoizedSize = size;
+      return size;
+    }
+
+    @java.lang.Override
+    public boolean equals(final java.lang.Object obj) {
+      if (obj == this) {
+       return true;
+      }
+      if (!(obj instanceof chirp.social.Social.SetNotifyPrefsRequest)) {
+        return super.equals(obj);
+      }
+      chirp.social.Social.SetNotifyPrefsRequest other = (chirp.social.Social.SetNotifyPrefsRequest) obj;
+
+      if (!getUserId()
+          .equals(other.getUserId())) return false;
+      if (hasPrefs() != other.hasPrefs()) return false;
+      if (hasPrefs()) {
+        if (!getPrefs()
+            .equals(other.getPrefs())) return false;
+      }
+      if (!getUnknownFields().equals(other.getUnknownFields())) return false;
+      return true;
+    }
+
+    @java.lang.Override
+    public int hashCode() {
+      if (memoizedHashCode != 0) {
+        return memoizedHashCode;
+      }
+      int hash = 41;
+      hash = (19 * hash) + getDescriptor().hashCode();
+      hash = (37 * hash) + USER_ID_FIELD_NUMBER;
+      hash = (53 * hash) + getUserId().hashCode();
+      if (hasPrefs()) {
+        hash = (37 * hash) + PREFS_FIELD_NUMBER;
+        hash = (53 * hash) + getPrefs().hashCode();
+      }
+      hash = (29 * hash) + getUnknownFields().hashCode();
+      memoizedHashCode = hash;
+      return hash;
+    }
+
+    public static chirp.social.Social.SetNotifyPrefsRequest parseFrom(
+        java.nio.ByteBuffer data)
+        throws com.google.protobuf.InvalidProtocolBufferException {
+      return PARSER.parseFrom(data);
+    }
+    public static chirp.social.Social.SetNotifyPrefsRequest parseFrom(
+        java.nio.ByteBuffer data,
+        com.google.protobuf.ExtensionRegistryLite extensionRegistry)
+        throws com.google.protobuf.InvalidProtocolBufferException {
+      return PARSER.parseFrom(data, extensionRegistry);
+    }
+    public static chirp.social.Social.SetNotifyPrefsRequest parseFrom(
+        com.google.protobuf.ByteString data)
+        throws com.google.protobuf.InvalidProtocolBufferException {
+      return PARSER.parseFrom(data);
+    }
+    public static chirp.social.Social.SetNotifyPrefsRequest parseFrom(
+        com.google.protobuf.ByteString data,
+        com.google.protobuf.ExtensionRegistryLite extensionRegistry)
+        throws com.google.protobuf.InvalidProtocolBufferException {
+      return PARSER.parseFrom(data, extensionRegistry);
+    }
+    public static chirp.social.Social.SetNotifyPrefsRequest parseFrom(byte[] data)
+        throws com.google.protobuf.InvalidProtocolBufferException {
+      return PARSER.parseFrom(data);
+    }
+    public static chirp.social.Social.SetNotifyPrefsRequest parseFrom(
+        byte[] data,
+        com.google.protobuf.ExtensionRegistryLite extensionRegistry)
+        throws com.google.protobuf.InvalidProtocolBufferException {
+      return PARSER.parseFrom(data, extensionRegistry);
+    }
+    public static chirp.social.Social.SetNotifyPrefsRequest parseFrom(java.io.InputStream input)
+        throws java.io.IOException {
+      return com.google.protobuf.GeneratedMessage
+          .parseWithIOException(PARSER, input);
+    }
+    public static chirp.social.Social.SetNotifyPrefsRequest parseFrom(
+        java.io.InputStream input,
+        com.google.protobuf.ExtensionRegistryLite extensionRegistry)
+        throws java.io.IOException {
+      return com.google.protobuf.GeneratedMessage
+          .parseWithIOException(PARSER, input, extensionRegistry);
+    }
+
+    public static chirp.social.Social.SetNotifyPrefsRequest parseDelimitedFrom(java.io.InputStream input)
+        throws java.io.IOException {
+      return com.google.protobuf.GeneratedMessage
+          .parseDelimitedWithIOException(PARSER, input);
+    }
+
+    public static chirp.social.Social.SetNotifyPrefsRequest parseDelimitedFrom(
+        java.io.InputStream input,
+        com.google.protobuf.ExtensionRegistryLite extensionRegistry)
+        throws java.io.IOException {
+      return com.google.protobuf.GeneratedMessage
+          .parseDelimitedWithIOException(PARSER, input, extensionRegistry);
+    }
+    public static chirp.social.Social.SetNotifyPrefsRequest parseFrom(
+        com.google.protobuf.CodedInputStream input)
+        throws java.io.IOException {
+      return com.google.protobuf.GeneratedMessage
+          .parseWithIOException(PARSER, input);
+    }
+    public static chirp.social.Social.SetNotifyPrefsRequest parseFrom(
+        com.google.protobuf.CodedInputStream input,
+        com.google.protobuf.ExtensionRegistryLite extensionRegistry)
+        throws java.io.IOException {
+      return com.google.protobuf.GeneratedMessage
+          .parseWithIOException(PARSER, input, extensionRegistry);
+    }
+
+    @java.lang.Override
+    public Builder newBuilderForType() { return newBuilder(); }
+    public static Builder newBuilder() {
+      return DEFAULT_INSTANCE.toBuilder();
+    }
+    public static Builder newBuilder(chirp.social.Social.SetNotifyPrefsRequest prototype) {
+      return DEFAULT_INSTANCE.toBuilder().mergeFrom(prototype);
+    }
+    @java.lang.Override
+    public Builder toBuilder() {
+      return this == DEFAULT_INSTANCE
+          ? new Builder() : new Builder().mergeFrom(this);
+    }
+
+    @java.lang.Override
+    protected Builder newBuilderForType(
+        com.google.protobuf.GeneratedMessage.BuilderParent parent) {
+      Builder builder = new Builder(parent);
+      return builder;
+    }
+    /**
+     * Protobuf type {@code chirp.social.SetNotifyPrefsRequest}
+     */
+    public static final class Builder extends
+        com.google.protobuf.GeneratedMessage.Builder<Builder> implements
+        // @@protoc_insertion_point(builder_implements:chirp.social.SetNotifyPrefsRequest)
+        chirp.social.Social.SetNotifyPrefsRequestOrBuilder {
+      public static final com.google.protobuf.Descriptors.Descriptor
+          getDescriptor() {
+        return chirp.social.Social.internal_static_chirp_social_SetNotifyPrefsRequest_descriptor;
+      }
+
+      @java.lang.Override
+      protected com.google.protobuf.GeneratedMessage.FieldAccessorTable
+          internalGetFieldAccessorTable() {
+        return chirp.social.Social.internal_static_chirp_social_SetNotifyPrefsRequest_fieldAccessorTable
+            .ensureFieldAccessorsInitialized(
+                chirp.social.Social.SetNotifyPrefsRequest.class, chirp.social.Social.SetNotifyPrefsRequest.Builder.class);
+      }
+
+      // Construct using chirp.social.Social.SetNotifyPrefsRequest.newBuilder()
+      private Builder() {
+        maybeForceBuilderInitialization();
+      }
+
+      private Builder(
+          com.google.protobuf.GeneratedMessage.BuilderParent parent) {
+        super(parent);
+        maybeForceBuilderInitialization();
+      }
+      private void maybeForceBuilderInitialization() {
+        if (com.google.protobuf.GeneratedMessage
+                .alwaysUseFieldBuilders) {
+          internalGetPrefsFieldBuilder();
+        }
+      }
+      @java.lang.Override
+      public Builder clear() {
+        super.clear();
+        bitField0_ = 0;
+        userId_ = "";
+        prefs_ = null;
+        if (prefsBuilder_ != null) {
+          prefsBuilder_.dispose();
+          prefsBuilder_ = null;
+        }
+        return this;
+      }
+
+      @java.lang.Override
+      public com.google.protobuf.Descriptors.Descriptor
+          getDescriptorForType() {
+        return chirp.social.Social.internal_static_chirp_social_SetNotifyPrefsRequest_descriptor;
+      }
+
+      @java.lang.Override
+      public chirp.social.Social.SetNotifyPrefsRequest getDefaultInstanceForType() {
+        return chirp.social.Social.SetNotifyPrefsRequest.getDefaultInstance();
+      }
+
+      @java.lang.Override
+      public chirp.social.Social.SetNotifyPrefsRequest build() {
+        chirp.social.Social.SetNotifyPrefsRequest result = buildPartial();
+        if (!result.isInitialized()) {
+          throw newUninitializedMessageException(result);
+        }
+        return result;
+      }
+
+      @java.lang.Override
+      public chirp.social.Social.SetNotifyPrefsRequest buildPartial() {
+        chirp.social.Social.SetNotifyPrefsRequest result = new chirp.social.Social.SetNotifyPrefsRequest(this);
+        if (bitField0_ != 0) { buildPartial0(result); }
+        onBuilt();
+        return result;
+      }
+
+      private void buildPartial0(chirp.social.Social.SetNotifyPrefsRequest result) {
+        int from_bitField0_ = bitField0_;
+        if (((from_bitField0_ & 0x00000001) != 0)) {
+          result.userId_ = userId_;
+        }
+        int to_bitField0_ = 0;
+        if (((from_bitField0_ & 0x00000002) != 0)) {
+          result.prefs_ = prefsBuilder_ == null
+              ? prefs_
+              : prefsBuilder_.build();
+          to_bitField0_ |= 0x00000001;
+        }
+        result.bitField0_ |= to_bitField0_;
+      }
+
+      @java.lang.Override
+      public Builder mergeFrom(com.google.protobuf.Message other) {
+        if (other instanceof chirp.social.Social.SetNotifyPrefsRequest) {
+          return mergeFrom((chirp.social.Social.SetNotifyPrefsRequest)other);
+        } else {
+          super.mergeFrom(other);
+          return this;
+        }
+      }
+
+      public Builder mergeFrom(chirp.social.Social.SetNotifyPrefsRequest other) {
+        if (other == chirp.social.Social.SetNotifyPrefsRequest.getDefaultInstance()) return this;
+        if (!other.getUserId().isEmpty()) {
+          userId_ = other.userId_;
+          bitField0_ |= 0x00000001;
+          onChanged();
+        }
+        if (other.hasPrefs()) {
+          mergePrefs(other.getPrefs());
+        }
+        this.mergeUnknownFields(other.getUnknownFields());
+        onChanged();
+        return this;
+      }
+
+      @java.lang.Override
+      public final boolean isInitialized() {
+        return true;
+      }
+
+      @java.lang.Override
+      public Builder mergeFrom(
+          com.google.protobuf.CodedInputStream input,
+          com.google.protobuf.ExtensionRegistryLite extensionRegistry)
+          throws java.io.IOException {
+        if (extensionRegistry == null) {
+          throw new java.lang.NullPointerException();
+        }
+        try {
+          boolean done = false;
+          while (!done) {
+            int tag = input.readTag();
+            switch (tag) {
+              case 0:
+                done = true;
+                break;
+              case 10: {
+                userId_ = input.readStringRequireUtf8();
+                bitField0_ |= 0x00000001;
+                break;
+              } // case 10
+              case 18: {
+                input.readMessage(
+                    internalGetPrefsFieldBuilder().getBuilder(),
+                    extensionRegistry);
+                bitField0_ |= 0x00000002;
+                break;
+              } // case 18
+              default: {
+                if (!super.parseUnknownField(input, extensionRegistry, tag)) {
+                  done = true; // was an endgroup tag
+                }
+                break;
+              } // default:
+            } // switch (tag)
+          } // while (!done)
+        } catch (com.google.protobuf.InvalidProtocolBufferException e) {
+          throw e.unwrapIOException();
+        } finally {
+          onChanged();
+        } // finally
+        return this;
+      }
+      private int bitField0_;
+
+      private java.lang.Object userId_ = "";
+      /**
+       * <code>string user_id = 1;</code>
+       * @return The userId.
+       */
+      public java.lang.String getUserId() {
+        java.lang.Object ref = userId_;
+        if (!(ref instanceof java.lang.String)) {
+          com.google.protobuf.ByteString bs =
+              (com.google.protobuf.ByteString) ref;
+          java.lang.String s = bs.toStringUtf8();
+          userId_ = s;
+          return s;
+        } else {
+          return (java.lang.String) ref;
+        }
+      }
+      /**
+       * <code>string user_id = 1;</code>
+       * @return The bytes for userId.
+       */
+      public com.google.protobuf.ByteString
+          getUserIdBytes() {
+        java.lang.Object ref = userId_;
+        if (ref instanceof String) {
+          com.google.protobuf.ByteString b = 
+              com.google.protobuf.ByteString.copyFromUtf8(
+                  (java.lang.String) ref);
+          userId_ = b;
+          return b;
+        } else {
+          return (com.google.protobuf.ByteString) ref;
+        }
+      }
+      /**
+       * <code>string user_id = 1;</code>
+       * @param value The userId to set.
+       * @return This builder for chaining.
+       */
+      public Builder setUserId(
+          java.lang.String value) {
+        if (value == null) { throw new NullPointerException(); }
+        userId_ = value;
+        bitField0_ |= 0x00000001;
+        onChanged();
+        return this;
+      }
+      /**
+       * <code>string user_id = 1;</code>
+       * @return This builder for chaining.
+       */
+      public Builder clearUserId() {
+        userId_ = getDefaultInstance().getUserId();
+        bitField0_ = (bitField0_ & ~0x00000001);
+        onChanged();
+        return this;
+      }
+      /**
+       * <code>string user_id = 1;</code>
+       * @param value The bytes for userId to set.
+       * @return This builder for chaining.
+       */
+      public Builder setUserIdBytes(
+          com.google.protobuf.ByteString value) {
+        if (value == null) { throw new NullPointerException(); }
+        checkByteStringIsUtf8(value);
+        userId_ = value;
+        bitField0_ |= 0x00000001;
+        onChanged();
+        return this;
+      }
+
+      private chirp.social.Social.NotifyPrefs prefs_;
+      private com.google.protobuf.SingleFieldBuilder<
+          chirp.social.Social.NotifyPrefs, chirp.social.Social.NotifyPrefs.Builder, chirp.social.Social.NotifyPrefsOrBuilder> prefsBuilder_;
+      /**
+       * <code>.chirp.social.NotifyPrefs prefs = 2;</code>
+       * @return Whether the prefs field is set.
+       */
+      public boolean hasPrefs() {
+        return ((bitField0_ & 0x00000002) != 0);
+      }
+      /**
+       * <code>.chirp.social.NotifyPrefs prefs = 2;</code>
+       * @return The prefs.
+       */
+      public chirp.social.Social.NotifyPrefs getPrefs() {
+        if (prefsBuilder_ == null) {
+          return prefs_ == null ? chirp.social.Social.NotifyPrefs.getDefaultInstance() : prefs_;
+        } else {
+          return prefsBuilder_.getMessage();
+        }
+      }
+      /**
+       * <code>.chirp.social.NotifyPrefs prefs = 2;</code>
+       */
+      public Builder setPrefs(chirp.social.Social.NotifyPrefs value) {
+        if (prefsBuilder_ == null) {
+          if (value == null) {
+            throw new NullPointerException();
+          }
+          prefs_ = value;
+        } else {
+          prefsBuilder_.setMessage(value);
+        }
+        bitField0_ |= 0x00000002;
+        onChanged();
+        return this;
+      }
+      /**
+       * <code>.chirp.social.NotifyPrefs prefs = 2;</code>
+       */
+      public Builder setPrefs(
+          chirp.social.Social.NotifyPrefs.Builder builderForValue) {
+        if (prefsBuilder_ == null) {
+          prefs_ = builderForValue.build();
+        } else {
+          prefsBuilder_.setMessage(builderForValue.build());
+        }
+        bitField0_ |= 0x00000002;
+        onChanged();
+        return this;
+      }
+      /**
+       * <code>.chirp.social.NotifyPrefs prefs = 2;</code>
+       */
+      public Builder mergePrefs(chirp.social.Social.NotifyPrefs value) {
+        if (prefsBuilder_ == null) {
+          if (((bitField0_ & 0x00000002) != 0) &&
+            prefs_ != null &&
+            prefs_ != chirp.social.Social.NotifyPrefs.getDefaultInstance()) {
+            getPrefsBuilder().mergeFrom(value);
+          } else {
+            prefs_ = value;
+          }
+        } else {
+          prefsBuilder_.mergeFrom(value);
+        }
+        if (prefs_ != null) {
+          bitField0_ |= 0x00000002;
+          onChanged();
+        }
+        return this;
+      }
+      /**
+       * <code>.chirp.social.NotifyPrefs prefs = 2;</code>
+       */
+      public Builder clearPrefs() {
+        bitField0_ = (bitField0_ & ~0x00000002);
+        prefs_ = null;
+        if (prefsBuilder_ != null) {
+          prefsBuilder_.dispose();
+          prefsBuilder_ = null;
+        }
+        onChanged();
+        return this;
+      }
+      /**
+       * <code>.chirp.social.NotifyPrefs prefs = 2;</code>
+       */
+      public chirp.social.Social.NotifyPrefs.Builder getPrefsBuilder() {
+        bitField0_ |= 0x00000002;
+        onChanged();
+        return internalGetPrefsFieldBuilder().getBuilder();
+      }
+      /**
+       * <code>.chirp.social.NotifyPrefs prefs = 2;</code>
+       */
+      public chirp.social.Social.NotifyPrefsOrBuilder getPrefsOrBuilder() {
+        if (prefsBuilder_ != null) {
+          return prefsBuilder_.getMessageOrBuilder();
+        } else {
+          return prefs_ == null ?
+              chirp.social.Social.NotifyPrefs.getDefaultInstance() : prefs_;
+        }
+      }
+      /**
+       * <code>.chirp.social.NotifyPrefs prefs = 2;</code>
+       */
+      private com.google.protobuf.SingleFieldBuilder<
+          chirp.social.Social.NotifyPrefs, chirp.social.Social.NotifyPrefs.Builder, chirp.social.Social.NotifyPrefsOrBuilder> 
+          internalGetPrefsFieldBuilder() {
+        if (prefsBuilder_ == null) {
+          prefsBuilder_ = new com.google.protobuf.SingleFieldBuilder<
+              chirp.social.Social.NotifyPrefs, chirp.social.Social.NotifyPrefs.Builder, chirp.social.Social.NotifyPrefsOrBuilder>(
+                  getPrefs(),
+                  getParentForChildren(),
+                  isClean());
+          prefs_ = null;
+        }
+        return prefsBuilder_;
+      }
+
+      // @@protoc_insertion_point(builder_scope:chirp.social.SetNotifyPrefsRequest)
+    }
+
+    // @@protoc_insertion_point(class_scope:chirp.social.SetNotifyPrefsRequest)
+    private static final chirp.social.Social.SetNotifyPrefsRequest DEFAULT_INSTANCE;
+    static {
+      DEFAULT_INSTANCE = new chirp.social.Social.SetNotifyPrefsRequest();
+    }
+
+    public static chirp.social.Social.SetNotifyPrefsRequest getDefaultInstance() {
+      return DEFAULT_INSTANCE;
+    }
+
+    private static final com.google.protobuf.Parser<SetNotifyPrefsRequest>
+        PARSER = new com.google.protobuf.AbstractParser<SetNotifyPrefsRequest>() {
+      @java.lang.Override
+      public SetNotifyPrefsRequest parsePartialFrom(
+          com.google.protobuf.CodedInputStream input,
+          com.google.protobuf.ExtensionRegistryLite extensionRegistry)
+          throws com.google.protobuf.InvalidProtocolBufferException {
+        Builder builder = newBuilder();
+        try {
+          builder.mergeFrom(input, extensionRegistry);
+        } catch (com.google.protobuf.InvalidProtocolBufferException e) {
+          throw e.setUnfinishedMessage(builder.buildPartial());
+        } catch (com.google.protobuf.UninitializedMessageException e) {
+          throw e.asInvalidProtocolBufferException().setUnfinishedMessage(builder.buildPartial());
+        } catch (java.io.IOException e) {
+          throw new com.google.protobuf.InvalidProtocolBufferException(e)
+              .setUnfinishedMessage(builder.buildPartial());
+        }
+        return builder.buildPartial();
+      }
+    };
+
+    public static com.google.protobuf.Parser<SetNotifyPrefsRequest> parser() {
+      return PARSER;
+    }
+
+    @java.lang.Override
+    public com.google.protobuf.Parser<SetNotifyPrefsRequest> getParserForType() {
+      return PARSER;
+    }
+
+    @java.lang.Override
+    public chirp.social.Social.SetNotifyPrefsRequest getDefaultInstanceForType() {
+      return DEFAULT_INSTANCE;
+    }
+
+  }
+
+  public interface SetNotifyPrefsResponseOrBuilder extends
+      // @@protoc_insertion_point(interface_extends:chirp.social.SetNotifyPrefsResponse)
+      com.google.protobuf.MessageOrBuilder {
+
+    /**
+     * <code>.chirp.common.ErrorCode code = 1;</code>
+     * @return The enum numeric value on the wire for code.
+     */
+    int getCodeValue();
+    /**
+     * <code>.chirp.common.ErrorCode code = 1;</code>
+     * @return The code.
+     */
+    chirp.common.Common.ErrorCode getCode();
+
+    /**
+     * <pre>
+     * 回显生效值
+     * </pre>
+     *
+     * <code>.chirp.social.NotifyPrefs prefs = 2;</code>
+     * @return Whether the prefs field is set.
+     */
+    boolean hasPrefs();
+    /**
+     * <pre>
+     * 回显生效值
+     * </pre>
+     *
+     * <code>.chirp.social.NotifyPrefs prefs = 2;</code>
+     * @return The prefs.
+     */
+    chirp.social.Social.NotifyPrefs getPrefs();
+    /**
+     * <pre>
+     * 回显生效值
+     * </pre>
+     *
+     * <code>.chirp.social.NotifyPrefs prefs = 2;</code>
+     */
+    chirp.social.Social.NotifyPrefsOrBuilder getPrefsOrBuilder();
+
+    /**
+     * <code>int64 server_time = 3;</code>
+     * @return The serverTime.
+     */
+    long getServerTime();
+  }
+  /**
+   * Protobuf type {@code chirp.social.SetNotifyPrefsResponse}
+   */
+  public static final class SetNotifyPrefsResponse extends
+      com.google.protobuf.GeneratedMessage implements
+      // @@protoc_insertion_point(message_implements:chirp.social.SetNotifyPrefsResponse)
+      SetNotifyPrefsResponseOrBuilder {
+  private static final long serialVersionUID = 0L;
+    static {
+      com.google.protobuf.RuntimeVersion.validateProtobufGencodeVersion(
+        com.google.protobuf.RuntimeVersion.RuntimeDomain.PUBLIC,
+        /* major= */ 4,
+        /* minor= */ 33,
+        /* patch= */ 4,
+        /* suffix= */ "",
+        "SetNotifyPrefsResponse");
+    }
+    // Use SetNotifyPrefsResponse.newBuilder() to construct.
+    private SetNotifyPrefsResponse(com.google.protobuf.GeneratedMessage.Builder<?> builder) {
+      super(builder);
+    }
+    private SetNotifyPrefsResponse() {
+      code_ = 0;
+    }
+
+    public static final com.google.protobuf.Descriptors.Descriptor
+        getDescriptor() {
+      return chirp.social.Social.internal_static_chirp_social_SetNotifyPrefsResponse_descriptor;
+    }
+
+    @java.lang.Override
+    protected com.google.protobuf.GeneratedMessage.FieldAccessorTable
+        internalGetFieldAccessorTable() {
+      return chirp.social.Social.internal_static_chirp_social_SetNotifyPrefsResponse_fieldAccessorTable
+          .ensureFieldAccessorsInitialized(
+              chirp.social.Social.SetNotifyPrefsResponse.class, chirp.social.Social.SetNotifyPrefsResponse.Builder.class);
+    }
+
+    private int bitField0_;
+    public static final int CODE_FIELD_NUMBER = 1;
+    private int code_ = 0;
+    /**
+     * <code>.chirp.common.ErrorCode code = 1;</code>
+     * @return The enum numeric value on the wire for code.
+     */
+    @java.lang.Override public int getCodeValue() {
+      return code_;
+    }
+    /**
+     * <code>.chirp.common.ErrorCode code = 1;</code>
+     * @return The code.
+     */
+    @java.lang.Override public chirp.common.Common.ErrorCode getCode() {
+      chirp.common.Common.ErrorCode result = chirp.common.Common.ErrorCode.forNumber(code_);
+      return result == null ? chirp.common.Common.ErrorCode.UNRECOGNIZED : result;
+    }
+
+    public static final int PREFS_FIELD_NUMBER = 2;
+    private chirp.social.Social.NotifyPrefs prefs_;
+    /**
+     * <pre>
+     * 回显生效值
+     * </pre>
+     *
+     * <code>.chirp.social.NotifyPrefs prefs = 2;</code>
+     * @return Whether the prefs field is set.
+     */
+    @java.lang.Override
+    public boolean hasPrefs() {
+      return ((bitField0_ & 0x00000001) != 0);
+    }
+    /**
+     * <pre>
+     * 回显生效值
+     * </pre>
+     *
+     * <code>.chirp.social.NotifyPrefs prefs = 2;</code>
+     * @return The prefs.
+     */
+    @java.lang.Override
+    public chirp.social.Social.NotifyPrefs getPrefs() {
+      return prefs_ == null ? chirp.social.Social.NotifyPrefs.getDefaultInstance() : prefs_;
+    }
+    /**
+     * <pre>
+     * 回显生效值
+     * </pre>
+     *
+     * <code>.chirp.social.NotifyPrefs prefs = 2;</code>
+     */
+    @java.lang.Override
+    public chirp.social.Social.NotifyPrefsOrBuilder getPrefsOrBuilder() {
+      return prefs_ == null ? chirp.social.Social.NotifyPrefs.getDefaultInstance() : prefs_;
+    }
+
+    public static final int SERVER_TIME_FIELD_NUMBER = 3;
+    private long serverTime_ = 0L;
+    /**
+     * <code>int64 server_time = 3;</code>
+     * @return The serverTime.
+     */
+    @java.lang.Override
+    public long getServerTime() {
+      return serverTime_;
+    }
+
+    private byte memoizedIsInitialized = -1;
+    @java.lang.Override
+    public final boolean isInitialized() {
+      byte isInitialized = memoizedIsInitialized;
+      if (isInitialized == 1) return true;
+      if (isInitialized == 0) return false;
+
+      memoizedIsInitialized = 1;
+      return true;
+    }
+
+    @java.lang.Override
+    public void writeTo(com.google.protobuf.CodedOutputStream output)
+                        throws java.io.IOException {
+      if (code_ != chirp.common.Common.ErrorCode.OK.getNumber()) {
+        output.writeEnum(1, code_);
+      }
+      if (((bitField0_ & 0x00000001) != 0)) {
+        output.writeMessage(2, getPrefs());
+      }
+      if (serverTime_ != 0L) {
+        output.writeInt64(3, serverTime_);
+      }
+      getUnknownFields().writeTo(output);
+    }
+
+    @java.lang.Override
+    public int getSerializedSize() {
+      int size = memoizedSize;
+      if (size != -1) return size;
+
+      size = 0;
+      if (code_ != chirp.common.Common.ErrorCode.OK.getNumber()) {
+        size += com.google.protobuf.CodedOutputStream
+          .computeEnumSize(1, code_);
+      }
+      if (((bitField0_ & 0x00000001) != 0)) {
+        size += com.google.protobuf.CodedOutputStream
+          .computeMessageSize(2, getPrefs());
+      }
+      if (serverTime_ != 0L) {
+        size += com.google.protobuf.CodedOutputStream
+          .computeInt64Size(3, serverTime_);
+      }
+      size += getUnknownFields().getSerializedSize();
+      memoizedSize = size;
+      return size;
+    }
+
+    @java.lang.Override
+    public boolean equals(final java.lang.Object obj) {
+      if (obj == this) {
+       return true;
+      }
+      if (!(obj instanceof chirp.social.Social.SetNotifyPrefsResponse)) {
+        return super.equals(obj);
+      }
+      chirp.social.Social.SetNotifyPrefsResponse other = (chirp.social.Social.SetNotifyPrefsResponse) obj;
+
+      if (code_ != other.code_) return false;
+      if (hasPrefs() != other.hasPrefs()) return false;
+      if (hasPrefs()) {
+        if (!getPrefs()
+            .equals(other.getPrefs())) return false;
+      }
+      if (getServerTime()
+          != other.getServerTime()) return false;
+      if (!getUnknownFields().equals(other.getUnknownFields())) return false;
+      return true;
+    }
+
+    @java.lang.Override
+    public int hashCode() {
+      if (memoizedHashCode != 0) {
+        return memoizedHashCode;
+      }
+      int hash = 41;
+      hash = (19 * hash) + getDescriptor().hashCode();
+      hash = (37 * hash) + CODE_FIELD_NUMBER;
+      hash = (53 * hash) + code_;
+      if (hasPrefs()) {
+        hash = (37 * hash) + PREFS_FIELD_NUMBER;
+        hash = (53 * hash) + getPrefs().hashCode();
+      }
+      hash = (37 * hash) + SERVER_TIME_FIELD_NUMBER;
+      hash = (53 * hash) + com.google.protobuf.Internal.hashLong(
+          getServerTime());
+      hash = (29 * hash) + getUnknownFields().hashCode();
+      memoizedHashCode = hash;
+      return hash;
+    }
+
+    public static chirp.social.Social.SetNotifyPrefsResponse parseFrom(
+        java.nio.ByteBuffer data)
+        throws com.google.protobuf.InvalidProtocolBufferException {
+      return PARSER.parseFrom(data);
+    }
+    public static chirp.social.Social.SetNotifyPrefsResponse parseFrom(
+        java.nio.ByteBuffer data,
+        com.google.protobuf.ExtensionRegistryLite extensionRegistry)
+        throws com.google.protobuf.InvalidProtocolBufferException {
+      return PARSER.parseFrom(data, extensionRegistry);
+    }
+    public static chirp.social.Social.SetNotifyPrefsResponse parseFrom(
+        com.google.protobuf.ByteString data)
+        throws com.google.protobuf.InvalidProtocolBufferException {
+      return PARSER.parseFrom(data);
+    }
+    public static chirp.social.Social.SetNotifyPrefsResponse parseFrom(
+        com.google.protobuf.ByteString data,
+        com.google.protobuf.ExtensionRegistryLite extensionRegistry)
+        throws com.google.protobuf.InvalidProtocolBufferException {
+      return PARSER.parseFrom(data, extensionRegistry);
+    }
+    public static chirp.social.Social.SetNotifyPrefsResponse parseFrom(byte[] data)
+        throws com.google.protobuf.InvalidProtocolBufferException {
+      return PARSER.parseFrom(data);
+    }
+    public static chirp.social.Social.SetNotifyPrefsResponse parseFrom(
+        byte[] data,
+        com.google.protobuf.ExtensionRegistryLite extensionRegistry)
+        throws com.google.protobuf.InvalidProtocolBufferException {
+      return PARSER.parseFrom(data, extensionRegistry);
+    }
+    public static chirp.social.Social.SetNotifyPrefsResponse parseFrom(java.io.InputStream input)
+        throws java.io.IOException {
+      return com.google.protobuf.GeneratedMessage
+          .parseWithIOException(PARSER, input);
+    }
+    public static chirp.social.Social.SetNotifyPrefsResponse parseFrom(
+        java.io.InputStream input,
+        com.google.protobuf.ExtensionRegistryLite extensionRegistry)
+        throws java.io.IOException {
+      return com.google.protobuf.GeneratedMessage
+          .parseWithIOException(PARSER, input, extensionRegistry);
+    }
+
+    public static chirp.social.Social.SetNotifyPrefsResponse parseDelimitedFrom(java.io.InputStream input)
+        throws java.io.IOException {
+      return com.google.protobuf.GeneratedMessage
+          .parseDelimitedWithIOException(PARSER, input);
+    }
+
+    public static chirp.social.Social.SetNotifyPrefsResponse parseDelimitedFrom(
+        java.io.InputStream input,
+        com.google.protobuf.ExtensionRegistryLite extensionRegistry)
+        throws java.io.IOException {
+      return com.google.protobuf.GeneratedMessage
+          .parseDelimitedWithIOException(PARSER, input, extensionRegistry);
+    }
+    public static chirp.social.Social.SetNotifyPrefsResponse parseFrom(
+        com.google.protobuf.CodedInputStream input)
+        throws java.io.IOException {
+      return com.google.protobuf.GeneratedMessage
+          .parseWithIOException(PARSER, input);
+    }
+    public static chirp.social.Social.SetNotifyPrefsResponse parseFrom(
+        com.google.protobuf.CodedInputStream input,
+        com.google.protobuf.ExtensionRegistryLite extensionRegistry)
+        throws java.io.IOException {
+      return com.google.protobuf.GeneratedMessage
+          .parseWithIOException(PARSER, input, extensionRegistry);
+    }
+
+    @java.lang.Override
+    public Builder newBuilderForType() { return newBuilder(); }
+    public static Builder newBuilder() {
+      return DEFAULT_INSTANCE.toBuilder();
+    }
+    public static Builder newBuilder(chirp.social.Social.SetNotifyPrefsResponse prototype) {
+      return DEFAULT_INSTANCE.toBuilder().mergeFrom(prototype);
+    }
+    @java.lang.Override
+    public Builder toBuilder() {
+      return this == DEFAULT_INSTANCE
+          ? new Builder() : new Builder().mergeFrom(this);
+    }
+
+    @java.lang.Override
+    protected Builder newBuilderForType(
+        com.google.protobuf.GeneratedMessage.BuilderParent parent) {
+      Builder builder = new Builder(parent);
+      return builder;
+    }
+    /**
+     * Protobuf type {@code chirp.social.SetNotifyPrefsResponse}
+     */
+    public static final class Builder extends
+        com.google.protobuf.GeneratedMessage.Builder<Builder> implements
+        // @@protoc_insertion_point(builder_implements:chirp.social.SetNotifyPrefsResponse)
+        chirp.social.Social.SetNotifyPrefsResponseOrBuilder {
+      public static final com.google.protobuf.Descriptors.Descriptor
+          getDescriptor() {
+        return chirp.social.Social.internal_static_chirp_social_SetNotifyPrefsResponse_descriptor;
+      }
+
+      @java.lang.Override
+      protected com.google.protobuf.GeneratedMessage.FieldAccessorTable
+          internalGetFieldAccessorTable() {
+        return chirp.social.Social.internal_static_chirp_social_SetNotifyPrefsResponse_fieldAccessorTable
+            .ensureFieldAccessorsInitialized(
+                chirp.social.Social.SetNotifyPrefsResponse.class, chirp.social.Social.SetNotifyPrefsResponse.Builder.class);
+      }
+
+      // Construct using chirp.social.Social.SetNotifyPrefsResponse.newBuilder()
+      private Builder() {
+        maybeForceBuilderInitialization();
+      }
+
+      private Builder(
+          com.google.protobuf.GeneratedMessage.BuilderParent parent) {
+        super(parent);
+        maybeForceBuilderInitialization();
+      }
+      private void maybeForceBuilderInitialization() {
+        if (com.google.protobuf.GeneratedMessage
+                .alwaysUseFieldBuilders) {
+          internalGetPrefsFieldBuilder();
+        }
+      }
+      @java.lang.Override
+      public Builder clear() {
+        super.clear();
+        bitField0_ = 0;
+        code_ = 0;
+        prefs_ = null;
+        if (prefsBuilder_ != null) {
+          prefsBuilder_.dispose();
+          prefsBuilder_ = null;
+        }
+        serverTime_ = 0L;
+        return this;
+      }
+
+      @java.lang.Override
+      public com.google.protobuf.Descriptors.Descriptor
+          getDescriptorForType() {
+        return chirp.social.Social.internal_static_chirp_social_SetNotifyPrefsResponse_descriptor;
+      }
+
+      @java.lang.Override
+      public chirp.social.Social.SetNotifyPrefsResponse getDefaultInstanceForType() {
+        return chirp.social.Social.SetNotifyPrefsResponse.getDefaultInstance();
+      }
+
+      @java.lang.Override
+      public chirp.social.Social.SetNotifyPrefsResponse build() {
+        chirp.social.Social.SetNotifyPrefsResponse result = buildPartial();
+        if (!result.isInitialized()) {
+          throw newUninitializedMessageException(result);
+        }
+        return result;
+      }
+
+      @java.lang.Override
+      public chirp.social.Social.SetNotifyPrefsResponse buildPartial() {
+        chirp.social.Social.SetNotifyPrefsResponse result = new chirp.social.Social.SetNotifyPrefsResponse(this);
+        if (bitField0_ != 0) { buildPartial0(result); }
+        onBuilt();
+        return result;
+      }
+
+      private void buildPartial0(chirp.social.Social.SetNotifyPrefsResponse result) {
+        int from_bitField0_ = bitField0_;
+        if (((from_bitField0_ & 0x00000001) != 0)) {
+          result.code_ = code_;
+        }
+        int to_bitField0_ = 0;
+        if (((from_bitField0_ & 0x00000002) != 0)) {
+          result.prefs_ = prefsBuilder_ == null
+              ? prefs_
+              : prefsBuilder_.build();
+          to_bitField0_ |= 0x00000001;
+        }
+        if (((from_bitField0_ & 0x00000004) != 0)) {
+          result.serverTime_ = serverTime_;
+        }
+        result.bitField0_ |= to_bitField0_;
+      }
+
+      @java.lang.Override
+      public Builder mergeFrom(com.google.protobuf.Message other) {
+        if (other instanceof chirp.social.Social.SetNotifyPrefsResponse) {
+          return mergeFrom((chirp.social.Social.SetNotifyPrefsResponse)other);
+        } else {
+          super.mergeFrom(other);
+          return this;
+        }
+      }
+
+      public Builder mergeFrom(chirp.social.Social.SetNotifyPrefsResponse other) {
+        if (other == chirp.social.Social.SetNotifyPrefsResponse.getDefaultInstance()) return this;
+        if (other.code_ != 0) {
+          setCodeValue(other.getCodeValue());
+        }
+        if (other.hasPrefs()) {
+          mergePrefs(other.getPrefs());
+        }
+        if (other.getServerTime() != 0L) {
+          setServerTime(other.getServerTime());
+        }
+        this.mergeUnknownFields(other.getUnknownFields());
+        onChanged();
+        return this;
+      }
+
+      @java.lang.Override
+      public final boolean isInitialized() {
+        return true;
+      }
+
+      @java.lang.Override
+      public Builder mergeFrom(
+          com.google.protobuf.CodedInputStream input,
+          com.google.protobuf.ExtensionRegistryLite extensionRegistry)
+          throws java.io.IOException {
+        if (extensionRegistry == null) {
+          throw new java.lang.NullPointerException();
+        }
+        try {
+          boolean done = false;
+          while (!done) {
+            int tag = input.readTag();
+            switch (tag) {
+              case 0:
+                done = true;
+                break;
+              case 8: {
+                code_ = input.readEnum();
+                bitField0_ |= 0x00000001;
+                break;
+              } // case 8
+              case 18: {
+                input.readMessage(
+                    internalGetPrefsFieldBuilder().getBuilder(),
+                    extensionRegistry);
+                bitField0_ |= 0x00000002;
+                break;
+              } // case 18
+              case 24: {
+                serverTime_ = input.readInt64();
+                bitField0_ |= 0x00000004;
+                break;
+              } // case 24
+              default: {
+                if (!super.parseUnknownField(input, extensionRegistry, tag)) {
+                  done = true; // was an endgroup tag
+                }
+                break;
+              } // default:
+            } // switch (tag)
+          } // while (!done)
+        } catch (com.google.protobuf.InvalidProtocolBufferException e) {
+          throw e.unwrapIOException();
+        } finally {
+          onChanged();
+        } // finally
+        return this;
+      }
+      private int bitField0_;
+
+      private int code_ = 0;
+      /**
+       * <code>.chirp.common.ErrorCode code = 1;</code>
+       * @return The enum numeric value on the wire for code.
+       */
+      @java.lang.Override public int getCodeValue() {
+        return code_;
+      }
+      /**
+       * <code>.chirp.common.ErrorCode code = 1;</code>
+       * @param value The enum numeric value on the wire for code to set.
+       * @return This builder for chaining.
+       */
+      public Builder setCodeValue(int value) {
+        code_ = value;
+        bitField0_ |= 0x00000001;
+        onChanged();
+        return this;
+      }
+      /**
+       * <code>.chirp.common.ErrorCode code = 1;</code>
+       * @return The code.
+       */
+      @java.lang.Override
+      public chirp.common.Common.ErrorCode getCode() {
+        chirp.common.Common.ErrorCode result = chirp.common.Common.ErrorCode.forNumber(code_);
+        return result == null ? chirp.common.Common.ErrorCode.UNRECOGNIZED : result;
+      }
+      /**
+       * <code>.chirp.common.ErrorCode code = 1;</code>
+       * @param value The code to set.
+       * @return This builder for chaining.
+       */
+      public Builder setCode(chirp.common.Common.ErrorCode value) {
+        if (value == null) { throw new NullPointerException(); }
+        bitField0_ |= 0x00000001;
+        code_ = value.getNumber();
+        onChanged();
+        return this;
+      }
+      /**
+       * <code>.chirp.common.ErrorCode code = 1;</code>
+       * @return This builder for chaining.
+       */
+      public Builder clearCode() {
+        bitField0_ = (bitField0_ & ~0x00000001);
+        code_ = 0;
+        onChanged();
+        return this;
+      }
+
+      private chirp.social.Social.NotifyPrefs prefs_;
+      private com.google.protobuf.SingleFieldBuilder<
+          chirp.social.Social.NotifyPrefs, chirp.social.Social.NotifyPrefs.Builder, chirp.social.Social.NotifyPrefsOrBuilder> prefsBuilder_;
+      /**
+       * <pre>
+       * 回显生效值
+       * </pre>
+       *
+       * <code>.chirp.social.NotifyPrefs prefs = 2;</code>
+       * @return Whether the prefs field is set.
+       */
+      public boolean hasPrefs() {
+        return ((bitField0_ & 0x00000002) != 0);
+      }
+      /**
+       * <pre>
+       * 回显生效值
+       * </pre>
+       *
+       * <code>.chirp.social.NotifyPrefs prefs = 2;</code>
+       * @return The prefs.
+       */
+      public chirp.social.Social.NotifyPrefs getPrefs() {
+        if (prefsBuilder_ == null) {
+          return prefs_ == null ? chirp.social.Social.NotifyPrefs.getDefaultInstance() : prefs_;
+        } else {
+          return prefsBuilder_.getMessage();
+        }
+      }
+      /**
+       * <pre>
+       * 回显生效值
+       * </pre>
+       *
+       * <code>.chirp.social.NotifyPrefs prefs = 2;</code>
+       */
+      public Builder setPrefs(chirp.social.Social.NotifyPrefs value) {
+        if (prefsBuilder_ == null) {
+          if (value == null) {
+            throw new NullPointerException();
+          }
+          prefs_ = value;
+        } else {
+          prefsBuilder_.setMessage(value);
+        }
+        bitField0_ |= 0x00000002;
+        onChanged();
+        return this;
+      }
+      /**
+       * <pre>
+       * 回显生效值
+       * </pre>
+       *
+       * <code>.chirp.social.NotifyPrefs prefs = 2;</code>
+       */
+      public Builder setPrefs(
+          chirp.social.Social.NotifyPrefs.Builder builderForValue) {
+        if (prefsBuilder_ == null) {
+          prefs_ = builderForValue.build();
+        } else {
+          prefsBuilder_.setMessage(builderForValue.build());
+        }
+        bitField0_ |= 0x00000002;
+        onChanged();
+        return this;
+      }
+      /**
+       * <pre>
+       * 回显生效值
+       * </pre>
+       *
+       * <code>.chirp.social.NotifyPrefs prefs = 2;</code>
+       */
+      public Builder mergePrefs(chirp.social.Social.NotifyPrefs value) {
+        if (prefsBuilder_ == null) {
+          if (((bitField0_ & 0x00000002) != 0) &&
+            prefs_ != null &&
+            prefs_ != chirp.social.Social.NotifyPrefs.getDefaultInstance()) {
+            getPrefsBuilder().mergeFrom(value);
+          } else {
+            prefs_ = value;
+          }
+        } else {
+          prefsBuilder_.mergeFrom(value);
+        }
+        if (prefs_ != null) {
+          bitField0_ |= 0x00000002;
+          onChanged();
+        }
+        return this;
+      }
+      /**
+       * <pre>
+       * 回显生效值
+       * </pre>
+       *
+       * <code>.chirp.social.NotifyPrefs prefs = 2;</code>
+       */
+      public Builder clearPrefs() {
+        bitField0_ = (bitField0_ & ~0x00000002);
+        prefs_ = null;
+        if (prefsBuilder_ != null) {
+          prefsBuilder_.dispose();
+          prefsBuilder_ = null;
+        }
+        onChanged();
+        return this;
+      }
+      /**
+       * <pre>
+       * 回显生效值
+       * </pre>
+       *
+       * <code>.chirp.social.NotifyPrefs prefs = 2;</code>
+       */
+      public chirp.social.Social.NotifyPrefs.Builder getPrefsBuilder() {
+        bitField0_ |= 0x00000002;
+        onChanged();
+        return internalGetPrefsFieldBuilder().getBuilder();
+      }
+      /**
+       * <pre>
+       * 回显生效值
+       * </pre>
+       *
+       * <code>.chirp.social.NotifyPrefs prefs = 2;</code>
+       */
+      public chirp.social.Social.NotifyPrefsOrBuilder getPrefsOrBuilder() {
+        if (prefsBuilder_ != null) {
+          return prefsBuilder_.getMessageOrBuilder();
+        } else {
+          return prefs_ == null ?
+              chirp.social.Social.NotifyPrefs.getDefaultInstance() : prefs_;
+        }
+      }
+      /**
+       * <pre>
+       * 回显生效值
+       * </pre>
+       *
+       * <code>.chirp.social.NotifyPrefs prefs = 2;</code>
+       */
+      private com.google.protobuf.SingleFieldBuilder<
+          chirp.social.Social.NotifyPrefs, chirp.social.Social.NotifyPrefs.Builder, chirp.social.Social.NotifyPrefsOrBuilder> 
+          internalGetPrefsFieldBuilder() {
+        if (prefsBuilder_ == null) {
+          prefsBuilder_ = new com.google.protobuf.SingleFieldBuilder<
+              chirp.social.Social.NotifyPrefs, chirp.social.Social.NotifyPrefs.Builder, chirp.social.Social.NotifyPrefsOrBuilder>(
+                  getPrefs(),
+                  getParentForChildren(),
+                  isClean());
+          prefs_ = null;
+        }
+        return prefsBuilder_;
+      }
+
+      private long serverTime_ ;
+      /**
+       * <code>int64 server_time = 3;</code>
+       * @return The serverTime.
+       */
+      @java.lang.Override
+      public long getServerTime() {
+        return serverTime_;
+      }
+      /**
+       * <code>int64 server_time = 3;</code>
+       * @param value The serverTime to set.
+       * @return This builder for chaining.
+       */
+      public Builder setServerTime(long value) {
+
+        serverTime_ = value;
+        bitField0_ |= 0x00000004;
+        onChanged();
+        return this;
+      }
+      /**
+       * <code>int64 server_time = 3;</code>
+       * @return This builder for chaining.
+       */
+      public Builder clearServerTime() {
+        bitField0_ = (bitField0_ & ~0x00000004);
+        serverTime_ = 0L;
+        onChanged();
+        return this;
+      }
+
+      // @@protoc_insertion_point(builder_scope:chirp.social.SetNotifyPrefsResponse)
+    }
+
+    // @@protoc_insertion_point(class_scope:chirp.social.SetNotifyPrefsResponse)
+    private static final chirp.social.Social.SetNotifyPrefsResponse DEFAULT_INSTANCE;
+    static {
+      DEFAULT_INSTANCE = new chirp.social.Social.SetNotifyPrefsResponse();
+    }
+
+    public static chirp.social.Social.SetNotifyPrefsResponse getDefaultInstance() {
+      return DEFAULT_INSTANCE;
+    }
+
+    private static final com.google.protobuf.Parser<SetNotifyPrefsResponse>
+        PARSER = new com.google.protobuf.AbstractParser<SetNotifyPrefsResponse>() {
+      @java.lang.Override
+      public SetNotifyPrefsResponse parsePartialFrom(
+          com.google.protobuf.CodedInputStream input,
+          com.google.protobuf.ExtensionRegistryLite extensionRegistry)
+          throws com.google.protobuf.InvalidProtocolBufferException {
+        Builder builder = newBuilder();
+        try {
+          builder.mergeFrom(input, extensionRegistry);
+        } catch (com.google.protobuf.InvalidProtocolBufferException e) {
+          throw e.setUnfinishedMessage(builder.buildPartial());
+        } catch (com.google.protobuf.UninitializedMessageException e) {
+          throw e.asInvalidProtocolBufferException().setUnfinishedMessage(builder.buildPartial());
+        } catch (java.io.IOException e) {
+          throw new com.google.protobuf.InvalidProtocolBufferException(e)
+              .setUnfinishedMessage(builder.buildPartial());
+        }
+        return builder.buildPartial();
+      }
+    };
+
+    public static com.google.protobuf.Parser<SetNotifyPrefsResponse> parser() {
+      return PARSER;
+    }
+
+    @java.lang.Override
+    public com.google.protobuf.Parser<SetNotifyPrefsResponse> getParserForType() {
+      return PARSER;
+    }
+
+    @java.lang.Override
+    public chirp.social.Social.SetNotifyPrefsResponse getDefaultInstanceForType() {
+      return DEFAULT_INSTANCE;
+    }
+
+  }
+
+  public interface GetNotifyPrefsRequestOrBuilder extends
+      // @@protoc_insertion_point(interface_extends:chirp.social.GetNotifyPrefsRequest)
+      com.google.protobuf.MessageOrBuilder {
+
+    /**
+     * <code>string user_id = 1;</code>
+     * @return The userId.
+     */
+    java.lang.String getUserId();
+    /**
+     * <code>string user_id = 1;</code>
+     * @return The bytes for userId.
+     */
+    com.google.protobuf.ByteString
+        getUserIdBytes();
+  }
+  /**
+   * Protobuf type {@code chirp.social.GetNotifyPrefsRequest}
+   */
+  public static final class GetNotifyPrefsRequest extends
+      com.google.protobuf.GeneratedMessage implements
+      // @@protoc_insertion_point(message_implements:chirp.social.GetNotifyPrefsRequest)
+      GetNotifyPrefsRequestOrBuilder {
+  private static final long serialVersionUID = 0L;
+    static {
+      com.google.protobuf.RuntimeVersion.validateProtobufGencodeVersion(
+        com.google.protobuf.RuntimeVersion.RuntimeDomain.PUBLIC,
+        /* major= */ 4,
+        /* minor= */ 33,
+        /* patch= */ 4,
+        /* suffix= */ "",
+        "GetNotifyPrefsRequest");
+    }
+    // Use GetNotifyPrefsRequest.newBuilder() to construct.
+    private GetNotifyPrefsRequest(com.google.protobuf.GeneratedMessage.Builder<?> builder) {
+      super(builder);
+    }
+    private GetNotifyPrefsRequest() {
+      userId_ = "";
+    }
+
+    public static final com.google.protobuf.Descriptors.Descriptor
+        getDescriptor() {
+      return chirp.social.Social.internal_static_chirp_social_GetNotifyPrefsRequest_descriptor;
+    }
+
+    @java.lang.Override
+    protected com.google.protobuf.GeneratedMessage.FieldAccessorTable
+        internalGetFieldAccessorTable() {
+      return chirp.social.Social.internal_static_chirp_social_GetNotifyPrefsRequest_fieldAccessorTable
+          .ensureFieldAccessorsInitialized(
+              chirp.social.Social.GetNotifyPrefsRequest.class, chirp.social.Social.GetNotifyPrefsRequest.Builder.class);
+    }
+
+    public static final int USER_ID_FIELD_NUMBER = 1;
+    @SuppressWarnings("serial")
+    private volatile java.lang.Object userId_ = "";
+    /**
+     * <code>string user_id = 1;</code>
+     * @return The userId.
+     */
+    @java.lang.Override
+    public java.lang.String getUserId() {
+      java.lang.Object ref = userId_;
+      if (ref instanceof java.lang.String) {
+        return (java.lang.String) ref;
+      } else {
+        com.google.protobuf.ByteString bs = 
+            (com.google.protobuf.ByteString) ref;
+        java.lang.String s = bs.toStringUtf8();
+        userId_ = s;
+        return s;
+      }
+    }
+    /**
+     * <code>string user_id = 1;</code>
+     * @return The bytes for userId.
+     */
+    @java.lang.Override
+    public com.google.protobuf.ByteString
+        getUserIdBytes() {
+      java.lang.Object ref = userId_;
+      if (ref instanceof java.lang.String) {
+        com.google.protobuf.ByteString b = 
+            com.google.protobuf.ByteString.copyFromUtf8(
+                (java.lang.String) ref);
+        userId_ = b;
+        return b;
+      } else {
+        return (com.google.protobuf.ByteString) ref;
+      }
+    }
+
+    private byte memoizedIsInitialized = -1;
+    @java.lang.Override
+    public final boolean isInitialized() {
+      byte isInitialized = memoizedIsInitialized;
+      if (isInitialized == 1) return true;
+      if (isInitialized == 0) return false;
+
+      memoizedIsInitialized = 1;
+      return true;
+    }
+
+    @java.lang.Override
+    public void writeTo(com.google.protobuf.CodedOutputStream output)
+                        throws java.io.IOException {
+      if (!com.google.protobuf.GeneratedMessage.isStringEmpty(userId_)) {
+        com.google.protobuf.GeneratedMessage.writeString(output, 1, userId_);
+      }
+      getUnknownFields().writeTo(output);
+    }
+
+    @java.lang.Override
+    public int getSerializedSize() {
+      int size = memoizedSize;
+      if (size != -1) return size;
+
+      size = 0;
+      if (!com.google.protobuf.GeneratedMessage.isStringEmpty(userId_)) {
+        size += com.google.protobuf.GeneratedMessage.computeStringSize(1, userId_);
+      }
+      size += getUnknownFields().getSerializedSize();
+      memoizedSize = size;
+      return size;
+    }
+
+    @java.lang.Override
+    public boolean equals(final java.lang.Object obj) {
+      if (obj == this) {
+       return true;
+      }
+      if (!(obj instanceof chirp.social.Social.GetNotifyPrefsRequest)) {
+        return super.equals(obj);
+      }
+      chirp.social.Social.GetNotifyPrefsRequest other = (chirp.social.Social.GetNotifyPrefsRequest) obj;
+
+      if (!getUserId()
+          .equals(other.getUserId())) return false;
+      if (!getUnknownFields().equals(other.getUnknownFields())) return false;
+      return true;
+    }
+
+    @java.lang.Override
+    public int hashCode() {
+      if (memoizedHashCode != 0) {
+        return memoizedHashCode;
+      }
+      int hash = 41;
+      hash = (19 * hash) + getDescriptor().hashCode();
+      hash = (37 * hash) + USER_ID_FIELD_NUMBER;
+      hash = (53 * hash) + getUserId().hashCode();
+      hash = (29 * hash) + getUnknownFields().hashCode();
+      memoizedHashCode = hash;
+      return hash;
+    }
+
+    public static chirp.social.Social.GetNotifyPrefsRequest parseFrom(
+        java.nio.ByteBuffer data)
+        throws com.google.protobuf.InvalidProtocolBufferException {
+      return PARSER.parseFrom(data);
+    }
+    public static chirp.social.Social.GetNotifyPrefsRequest parseFrom(
+        java.nio.ByteBuffer data,
+        com.google.protobuf.ExtensionRegistryLite extensionRegistry)
+        throws com.google.protobuf.InvalidProtocolBufferException {
+      return PARSER.parseFrom(data, extensionRegistry);
+    }
+    public static chirp.social.Social.GetNotifyPrefsRequest parseFrom(
+        com.google.protobuf.ByteString data)
+        throws com.google.protobuf.InvalidProtocolBufferException {
+      return PARSER.parseFrom(data);
+    }
+    public static chirp.social.Social.GetNotifyPrefsRequest parseFrom(
+        com.google.protobuf.ByteString data,
+        com.google.protobuf.ExtensionRegistryLite extensionRegistry)
+        throws com.google.protobuf.InvalidProtocolBufferException {
+      return PARSER.parseFrom(data, extensionRegistry);
+    }
+    public static chirp.social.Social.GetNotifyPrefsRequest parseFrom(byte[] data)
+        throws com.google.protobuf.InvalidProtocolBufferException {
+      return PARSER.parseFrom(data);
+    }
+    public static chirp.social.Social.GetNotifyPrefsRequest parseFrom(
+        byte[] data,
+        com.google.protobuf.ExtensionRegistryLite extensionRegistry)
+        throws com.google.protobuf.InvalidProtocolBufferException {
+      return PARSER.parseFrom(data, extensionRegistry);
+    }
+    public static chirp.social.Social.GetNotifyPrefsRequest parseFrom(java.io.InputStream input)
+        throws java.io.IOException {
+      return com.google.protobuf.GeneratedMessage
+          .parseWithIOException(PARSER, input);
+    }
+    public static chirp.social.Social.GetNotifyPrefsRequest parseFrom(
+        java.io.InputStream input,
+        com.google.protobuf.ExtensionRegistryLite extensionRegistry)
+        throws java.io.IOException {
+      return com.google.protobuf.GeneratedMessage
+          .parseWithIOException(PARSER, input, extensionRegistry);
+    }
+
+    public static chirp.social.Social.GetNotifyPrefsRequest parseDelimitedFrom(java.io.InputStream input)
+        throws java.io.IOException {
+      return com.google.protobuf.GeneratedMessage
+          .parseDelimitedWithIOException(PARSER, input);
+    }
+
+    public static chirp.social.Social.GetNotifyPrefsRequest parseDelimitedFrom(
+        java.io.InputStream input,
+        com.google.protobuf.ExtensionRegistryLite extensionRegistry)
+        throws java.io.IOException {
+      return com.google.protobuf.GeneratedMessage
+          .parseDelimitedWithIOException(PARSER, input, extensionRegistry);
+    }
+    public static chirp.social.Social.GetNotifyPrefsRequest parseFrom(
+        com.google.protobuf.CodedInputStream input)
+        throws java.io.IOException {
+      return com.google.protobuf.GeneratedMessage
+          .parseWithIOException(PARSER, input);
+    }
+    public static chirp.social.Social.GetNotifyPrefsRequest parseFrom(
+        com.google.protobuf.CodedInputStream input,
+        com.google.protobuf.ExtensionRegistryLite extensionRegistry)
+        throws java.io.IOException {
+      return com.google.protobuf.GeneratedMessage
+          .parseWithIOException(PARSER, input, extensionRegistry);
+    }
+
+    @java.lang.Override
+    public Builder newBuilderForType() { return newBuilder(); }
+    public static Builder newBuilder() {
+      return DEFAULT_INSTANCE.toBuilder();
+    }
+    public static Builder newBuilder(chirp.social.Social.GetNotifyPrefsRequest prototype) {
+      return DEFAULT_INSTANCE.toBuilder().mergeFrom(prototype);
+    }
+    @java.lang.Override
+    public Builder toBuilder() {
+      return this == DEFAULT_INSTANCE
+          ? new Builder() : new Builder().mergeFrom(this);
+    }
+
+    @java.lang.Override
+    protected Builder newBuilderForType(
+        com.google.protobuf.GeneratedMessage.BuilderParent parent) {
+      Builder builder = new Builder(parent);
+      return builder;
+    }
+    /**
+     * Protobuf type {@code chirp.social.GetNotifyPrefsRequest}
+     */
+    public static final class Builder extends
+        com.google.protobuf.GeneratedMessage.Builder<Builder> implements
+        // @@protoc_insertion_point(builder_implements:chirp.social.GetNotifyPrefsRequest)
+        chirp.social.Social.GetNotifyPrefsRequestOrBuilder {
+      public static final com.google.protobuf.Descriptors.Descriptor
+          getDescriptor() {
+        return chirp.social.Social.internal_static_chirp_social_GetNotifyPrefsRequest_descriptor;
+      }
+
+      @java.lang.Override
+      protected com.google.protobuf.GeneratedMessage.FieldAccessorTable
+          internalGetFieldAccessorTable() {
+        return chirp.social.Social.internal_static_chirp_social_GetNotifyPrefsRequest_fieldAccessorTable
+            .ensureFieldAccessorsInitialized(
+                chirp.social.Social.GetNotifyPrefsRequest.class, chirp.social.Social.GetNotifyPrefsRequest.Builder.class);
+      }
+
+      // Construct using chirp.social.Social.GetNotifyPrefsRequest.newBuilder()
+      private Builder() {
+
+      }
+
+      private Builder(
+          com.google.protobuf.GeneratedMessage.BuilderParent parent) {
+        super(parent);
+
+      }
+      @java.lang.Override
+      public Builder clear() {
+        super.clear();
+        bitField0_ = 0;
+        userId_ = "";
+        return this;
+      }
+
+      @java.lang.Override
+      public com.google.protobuf.Descriptors.Descriptor
+          getDescriptorForType() {
+        return chirp.social.Social.internal_static_chirp_social_GetNotifyPrefsRequest_descriptor;
+      }
+
+      @java.lang.Override
+      public chirp.social.Social.GetNotifyPrefsRequest getDefaultInstanceForType() {
+        return chirp.social.Social.GetNotifyPrefsRequest.getDefaultInstance();
+      }
+
+      @java.lang.Override
+      public chirp.social.Social.GetNotifyPrefsRequest build() {
+        chirp.social.Social.GetNotifyPrefsRequest result = buildPartial();
+        if (!result.isInitialized()) {
+          throw newUninitializedMessageException(result);
+        }
+        return result;
+      }
+
+      @java.lang.Override
+      public chirp.social.Social.GetNotifyPrefsRequest buildPartial() {
+        chirp.social.Social.GetNotifyPrefsRequest result = new chirp.social.Social.GetNotifyPrefsRequest(this);
+        if (bitField0_ != 0) { buildPartial0(result); }
+        onBuilt();
+        return result;
+      }
+
+      private void buildPartial0(chirp.social.Social.GetNotifyPrefsRequest result) {
+        int from_bitField0_ = bitField0_;
+        if (((from_bitField0_ & 0x00000001) != 0)) {
+          result.userId_ = userId_;
+        }
+      }
+
+      @java.lang.Override
+      public Builder mergeFrom(com.google.protobuf.Message other) {
+        if (other instanceof chirp.social.Social.GetNotifyPrefsRequest) {
+          return mergeFrom((chirp.social.Social.GetNotifyPrefsRequest)other);
+        } else {
+          super.mergeFrom(other);
+          return this;
+        }
+      }
+
+      public Builder mergeFrom(chirp.social.Social.GetNotifyPrefsRequest other) {
+        if (other == chirp.social.Social.GetNotifyPrefsRequest.getDefaultInstance()) return this;
+        if (!other.getUserId().isEmpty()) {
+          userId_ = other.userId_;
+          bitField0_ |= 0x00000001;
+          onChanged();
+        }
+        this.mergeUnknownFields(other.getUnknownFields());
+        onChanged();
+        return this;
+      }
+
+      @java.lang.Override
+      public final boolean isInitialized() {
+        return true;
+      }
+
+      @java.lang.Override
+      public Builder mergeFrom(
+          com.google.protobuf.CodedInputStream input,
+          com.google.protobuf.ExtensionRegistryLite extensionRegistry)
+          throws java.io.IOException {
+        if (extensionRegistry == null) {
+          throw new java.lang.NullPointerException();
+        }
+        try {
+          boolean done = false;
+          while (!done) {
+            int tag = input.readTag();
+            switch (tag) {
+              case 0:
+                done = true;
+                break;
+              case 10: {
+                userId_ = input.readStringRequireUtf8();
+                bitField0_ |= 0x00000001;
+                break;
+              } // case 10
+              default: {
+                if (!super.parseUnknownField(input, extensionRegistry, tag)) {
+                  done = true; // was an endgroup tag
+                }
+                break;
+              } // default:
+            } // switch (tag)
+          } // while (!done)
+        } catch (com.google.protobuf.InvalidProtocolBufferException e) {
+          throw e.unwrapIOException();
+        } finally {
+          onChanged();
+        } // finally
+        return this;
+      }
+      private int bitField0_;
+
+      private java.lang.Object userId_ = "";
+      /**
+       * <code>string user_id = 1;</code>
+       * @return The userId.
+       */
+      public java.lang.String getUserId() {
+        java.lang.Object ref = userId_;
+        if (!(ref instanceof java.lang.String)) {
+          com.google.protobuf.ByteString bs =
+              (com.google.protobuf.ByteString) ref;
+          java.lang.String s = bs.toStringUtf8();
+          userId_ = s;
+          return s;
+        } else {
+          return (java.lang.String) ref;
+        }
+      }
+      /**
+       * <code>string user_id = 1;</code>
+       * @return The bytes for userId.
+       */
+      public com.google.protobuf.ByteString
+          getUserIdBytes() {
+        java.lang.Object ref = userId_;
+        if (ref instanceof String) {
+          com.google.protobuf.ByteString b = 
+              com.google.protobuf.ByteString.copyFromUtf8(
+                  (java.lang.String) ref);
+          userId_ = b;
+          return b;
+        } else {
+          return (com.google.protobuf.ByteString) ref;
+        }
+      }
+      /**
+       * <code>string user_id = 1;</code>
+       * @param value The userId to set.
+       * @return This builder for chaining.
+       */
+      public Builder setUserId(
+          java.lang.String value) {
+        if (value == null) { throw new NullPointerException(); }
+        userId_ = value;
+        bitField0_ |= 0x00000001;
+        onChanged();
+        return this;
+      }
+      /**
+       * <code>string user_id = 1;</code>
+       * @return This builder for chaining.
+       */
+      public Builder clearUserId() {
+        userId_ = getDefaultInstance().getUserId();
+        bitField0_ = (bitField0_ & ~0x00000001);
+        onChanged();
+        return this;
+      }
+      /**
+       * <code>string user_id = 1;</code>
+       * @param value The bytes for userId to set.
+       * @return This builder for chaining.
+       */
+      public Builder setUserIdBytes(
+          com.google.protobuf.ByteString value) {
+        if (value == null) { throw new NullPointerException(); }
+        checkByteStringIsUtf8(value);
+        userId_ = value;
+        bitField0_ |= 0x00000001;
+        onChanged();
+        return this;
+      }
+
+      // @@protoc_insertion_point(builder_scope:chirp.social.GetNotifyPrefsRequest)
+    }
+
+    // @@protoc_insertion_point(class_scope:chirp.social.GetNotifyPrefsRequest)
+    private static final chirp.social.Social.GetNotifyPrefsRequest DEFAULT_INSTANCE;
+    static {
+      DEFAULT_INSTANCE = new chirp.social.Social.GetNotifyPrefsRequest();
+    }
+
+    public static chirp.social.Social.GetNotifyPrefsRequest getDefaultInstance() {
+      return DEFAULT_INSTANCE;
+    }
+
+    private static final com.google.protobuf.Parser<GetNotifyPrefsRequest>
+        PARSER = new com.google.protobuf.AbstractParser<GetNotifyPrefsRequest>() {
+      @java.lang.Override
+      public GetNotifyPrefsRequest parsePartialFrom(
+          com.google.protobuf.CodedInputStream input,
+          com.google.protobuf.ExtensionRegistryLite extensionRegistry)
+          throws com.google.protobuf.InvalidProtocolBufferException {
+        Builder builder = newBuilder();
+        try {
+          builder.mergeFrom(input, extensionRegistry);
+        } catch (com.google.protobuf.InvalidProtocolBufferException e) {
+          throw e.setUnfinishedMessage(builder.buildPartial());
+        } catch (com.google.protobuf.UninitializedMessageException e) {
+          throw e.asInvalidProtocolBufferException().setUnfinishedMessage(builder.buildPartial());
+        } catch (java.io.IOException e) {
+          throw new com.google.protobuf.InvalidProtocolBufferException(e)
+              .setUnfinishedMessage(builder.buildPartial());
+        }
+        return builder.buildPartial();
+      }
+    };
+
+    public static com.google.protobuf.Parser<GetNotifyPrefsRequest> parser() {
+      return PARSER;
+    }
+
+    @java.lang.Override
+    public com.google.protobuf.Parser<GetNotifyPrefsRequest> getParserForType() {
+      return PARSER;
+    }
+
+    @java.lang.Override
+    public chirp.social.Social.GetNotifyPrefsRequest getDefaultInstanceForType() {
+      return DEFAULT_INSTANCE;
+    }
+
+  }
+
+  public interface GetNotifyPrefsResponseOrBuilder extends
+      // @@protoc_insertion_point(interface_extends:chirp.social.GetNotifyPrefsResponse)
+      com.google.protobuf.MessageOrBuilder {
+
+    /**
+     * <code>.chirp.common.ErrorCode code = 1;</code>
+     * @return The enum numeric value on the wire for code.
+     */
+    int getCodeValue();
+    /**
+     * <code>.chirp.common.ErrorCode code = 1;</code>
+     * @return The code.
+     */
+    chirp.common.Common.ErrorCode getCode();
+
+    /**
+     * <code>.chirp.social.NotifyPrefs prefs = 2;</code>
+     * @return Whether the prefs field is set.
+     */
+    boolean hasPrefs();
+    /**
+     * <code>.chirp.social.NotifyPrefs prefs = 2;</code>
+     * @return The prefs.
+     */
+    chirp.social.Social.NotifyPrefs getPrefs();
+    /**
+     * <code>.chirp.social.NotifyPrefs prefs = 2;</code>
+     */
+    chirp.social.Social.NotifyPrefsOrBuilder getPrefsOrBuilder();
+
+    /**
+     * <code>int64 server_time = 3;</code>
+     * @return The serverTime.
+     */
+    long getServerTime();
+  }
+  /**
+   * Protobuf type {@code chirp.social.GetNotifyPrefsResponse}
+   */
+  public static final class GetNotifyPrefsResponse extends
+      com.google.protobuf.GeneratedMessage implements
+      // @@protoc_insertion_point(message_implements:chirp.social.GetNotifyPrefsResponse)
+      GetNotifyPrefsResponseOrBuilder {
+  private static final long serialVersionUID = 0L;
+    static {
+      com.google.protobuf.RuntimeVersion.validateProtobufGencodeVersion(
+        com.google.protobuf.RuntimeVersion.RuntimeDomain.PUBLIC,
+        /* major= */ 4,
+        /* minor= */ 33,
+        /* patch= */ 4,
+        /* suffix= */ "",
+        "GetNotifyPrefsResponse");
+    }
+    // Use GetNotifyPrefsResponse.newBuilder() to construct.
+    private GetNotifyPrefsResponse(com.google.protobuf.GeneratedMessage.Builder<?> builder) {
+      super(builder);
+    }
+    private GetNotifyPrefsResponse() {
+      code_ = 0;
+    }
+
+    public static final com.google.protobuf.Descriptors.Descriptor
+        getDescriptor() {
+      return chirp.social.Social.internal_static_chirp_social_GetNotifyPrefsResponse_descriptor;
+    }
+
+    @java.lang.Override
+    protected com.google.protobuf.GeneratedMessage.FieldAccessorTable
+        internalGetFieldAccessorTable() {
+      return chirp.social.Social.internal_static_chirp_social_GetNotifyPrefsResponse_fieldAccessorTable
+          .ensureFieldAccessorsInitialized(
+              chirp.social.Social.GetNotifyPrefsResponse.class, chirp.social.Social.GetNotifyPrefsResponse.Builder.class);
+    }
+
+    private int bitField0_;
+    public static final int CODE_FIELD_NUMBER = 1;
+    private int code_ = 0;
+    /**
+     * <code>.chirp.common.ErrorCode code = 1;</code>
+     * @return The enum numeric value on the wire for code.
+     */
+    @java.lang.Override public int getCodeValue() {
+      return code_;
+    }
+    /**
+     * <code>.chirp.common.ErrorCode code = 1;</code>
+     * @return The code.
+     */
+    @java.lang.Override public chirp.common.Common.ErrorCode getCode() {
+      chirp.common.Common.ErrorCode result = chirp.common.Common.ErrorCode.forNumber(code_);
+      return result == null ? chirp.common.Common.ErrorCode.UNRECOGNIZED : result;
+    }
+
+    public static final int PREFS_FIELD_NUMBER = 2;
+    private chirp.social.Social.NotifyPrefs prefs_;
+    /**
+     * <code>.chirp.social.NotifyPrefs prefs = 2;</code>
+     * @return Whether the prefs field is set.
+     */
+    @java.lang.Override
+    public boolean hasPrefs() {
+      return ((bitField0_ & 0x00000001) != 0);
+    }
+    /**
+     * <code>.chirp.social.NotifyPrefs prefs = 2;</code>
+     * @return The prefs.
+     */
+    @java.lang.Override
+    public chirp.social.Social.NotifyPrefs getPrefs() {
+      return prefs_ == null ? chirp.social.Social.NotifyPrefs.getDefaultInstance() : prefs_;
+    }
+    /**
+     * <code>.chirp.social.NotifyPrefs prefs = 2;</code>
+     */
+    @java.lang.Override
+    public chirp.social.Social.NotifyPrefsOrBuilder getPrefsOrBuilder() {
+      return prefs_ == null ? chirp.social.Social.NotifyPrefs.getDefaultInstance() : prefs_;
+    }
+
+    public static final int SERVER_TIME_FIELD_NUMBER = 3;
+    private long serverTime_ = 0L;
+    /**
+     * <code>int64 server_time = 3;</code>
+     * @return The serverTime.
+     */
+    @java.lang.Override
+    public long getServerTime() {
+      return serverTime_;
+    }
+
+    private byte memoizedIsInitialized = -1;
+    @java.lang.Override
+    public final boolean isInitialized() {
+      byte isInitialized = memoizedIsInitialized;
+      if (isInitialized == 1) return true;
+      if (isInitialized == 0) return false;
+
+      memoizedIsInitialized = 1;
+      return true;
+    }
+
+    @java.lang.Override
+    public void writeTo(com.google.protobuf.CodedOutputStream output)
+                        throws java.io.IOException {
+      if (code_ != chirp.common.Common.ErrorCode.OK.getNumber()) {
+        output.writeEnum(1, code_);
+      }
+      if (((bitField0_ & 0x00000001) != 0)) {
+        output.writeMessage(2, getPrefs());
+      }
+      if (serverTime_ != 0L) {
+        output.writeInt64(3, serverTime_);
+      }
+      getUnknownFields().writeTo(output);
+    }
+
+    @java.lang.Override
+    public int getSerializedSize() {
+      int size = memoizedSize;
+      if (size != -1) return size;
+
+      size = 0;
+      if (code_ != chirp.common.Common.ErrorCode.OK.getNumber()) {
+        size += com.google.protobuf.CodedOutputStream
+          .computeEnumSize(1, code_);
+      }
+      if (((bitField0_ & 0x00000001) != 0)) {
+        size += com.google.protobuf.CodedOutputStream
+          .computeMessageSize(2, getPrefs());
+      }
+      if (serverTime_ != 0L) {
+        size += com.google.protobuf.CodedOutputStream
+          .computeInt64Size(3, serverTime_);
+      }
+      size += getUnknownFields().getSerializedSize();
+      memoizedSize = size;
+      return size;
+    }
+
+    @java.lang.Override
+    public boolean equals(final java.lang.Object obj) {
+      if (obj == this) {
+       return true;
+      }
+      if (!(obj instanceof chirp.social.Social.GetNotifyPrefsResponse)) {
+        return super.equals(obj);
+      }
+      chirp.social.Social.GetNotifyPrefsResponse other = (chirp.social.Social.GetNotifyPrefsResponse) obj;
+
+      if (code_ != other.code_) return false;
+      if (hasPrefs() != other.hasPrefs()) return false;
+      if (hasPrefs()) {
+        if (!getPrefs()
+            .equals(other.getPrefs())) return false;
+      }
+      if (getServerTime()
+          != other.getServerTime()) return false;
+      if (!getUnknownFields().equals(other.getUnknownFields())) return false;
+      return true;
+    }
+
+    @java.lang.Override
+    public int hashCode() {
+      if (memoizedHashCode != 0) {
+        return memoizedHashCode;
+      }
+      int hash = 41;
+      hash = (19 * hash) + getDescriptor().hashCode();
+      hash = (37 * hash) + CODE_FIELD_NUMBER;
+      hash = (53 * hash) + code_;
+      if (hasPrefs()) {
+        hash = (37 * hash) + PREFS_FIELD_NUMBER;
+        hash = (53 * hash) + getPrefs().hashCode();
+      }
+      hash = (37 * hash) + SERVER_TIME_FIELD_NUMBER;
+      hash = (53 * hash) + com.google.protobuf.Internal.hashLong(
+          getServerTime());
+      hash = (29 * hash) + getUnknownFields().hashCode();
+      memoizedHashCode = hash;
+      return hash;
+    }
+
+    public static chirp.social.Social.GetNotifyPrefsResponse parseFrom(
+        java.nio.ByteBuffer data)
+        throws com.google.protobuf.InvalidProtocolBufferException {
+      return PARSER.parseFrom(data);
+    }
+    public static chirp.social.Social.GetNotifyPrefsResponse parseFrom(
+        java.nio.ByteBuffer data,
+        com.google.protobuf.ExtensionRegistryLite extensionRegistry)
+        throws com.google.protobuf.InvalidProtocolBufferException {
+      return PARSER.parseFrom(data, extensionRegistry);
+    }
+    public static chirp.social.Social.GetNotifyPrefsResponse parseFrom(
+        com.google.protobuf.ByteString data)
+        throws com.google.protobuf.InvalidProtocolBufferException {
+      return PARSER.parseFrom(data);
+    }
+    public static chirp.social.Social.GetNotifyPrefsResponse parseFrom(
+        com.google.protobuf.ByteString data,
+        com.google.protobuf.ExtensionRegistryLite extensionRegistry)
+        throws com.google.protobuf.InvalidProtocolBufferException {
+      return PARSER.parseFrom(data, extensionRegistry);
+    }
+    public static chirp.social.Social.GetNotifyPrefsResponse parseFrom(byte[] data)
+        throws com.google.protobuf.InvalidProtocolBufferException {
+      return PARSER.parseFrom(data);
+    }
+    public static chirp.social.Social.GetNotifyPrefsResponse parseFrom(
+        byte[] data,
+        com.google.protobuf.ExtensionRegistryLite extensionRegistry)
+        throws com.google.protobuf.InvalidProtocolBufferException {
+      return PARSER.parseFrom(data, extensionRegistry);
+    }
+    public static chirp.social.Social.GetNotifyPrefsResponse parseFrom(java.io.InputStream input)
+        throws java.io.IOException {
+      return com.google.protobuf.GeneratedMessage
+          .parseWithIOException(PARSER, input);
+    }
+    public static chirp.social.Social.GetNotifyPrefsResponse parseFrom(
+        java.io.InputStream input,
+        com.google.protobuf.ExtensionRegistryLite extensionRegistry)
+        throws java.io.IOException {
+      return com.google.protobuf.GeneratedMessage
+          .parseWithIOException(PARSER, input, extensionRegistry);
+    }
+
+    public static chirp.social.Social.GetNotifyPrefsResponse parseDelimitedFrom(java.io.InputStream input)
+        throws java.io.IOException {
+      return com.google.protobuf.GeneratedMessage
+          .parseDelimitedWithIOException(PARSER, input);
+    }
+
+    public static chirp.social.Social.GetNotifyPrefsResponse parseDelimitedFrom(
+        java.io.InputStream input,
+        com.google.protobuf.ExtensionRegistryLite extensionRegistry)
+        throws java.io.IOException {
+      return com.google.protobuf.GeneratedMessage
+          .parseDelimitedWithIOException(PARSER, input, extensionRegistry);
+    }
+    public static chirp.social.Social.GetNotifyPrefsResponse parseFrom(
+        com.google.protobuf.CodedInputStream input)
+        throws java.io.IOException {
+      return com.google.protobuf.GeneratedMessage
+          .parseWithIOException(PARSER, input);
+    }
+    public static chirp.social.Social.GetNotifyPrefsResponse parseFrom(
+        com.google.protobuf.CodedInputStream input,
+        com.google.protobuf.ExtensionRegistryLite extensionRegistry)
+        throws java.io.IOException {
+      return com.google.protobuf.GeneratedMessage
+          .parseWithIOException(PARSER, input, extensionRegistry);
+    }
+
+    @java.lang.Override
+    public Builder newBuilderForType() { return newBuilder(); }
+    public static Builder newBuilder() {
+      return DEFAULT_INSTANCE.toBuilder();
+    }
+    public static Builder newBuilder(chirp.social.Social.GetNotifyPrefsResponse prototype) {
+      return DEFAULT_INSTANCE.toBuilder().mergeFrom(prototype);
+    }
+    @java.lang.Override
+    public Builder toBuilder() {
+      return this == DEFAULT_INSTANCE
+          ? new Builder() : new Builder().mergeFrom(this);
+    }
+
+    @java.lang.Override
+    protected Builder newBuilderForType(
+        com.google.protobuf.GeneratedMessage.BuilderParent parent) {
+      Builder builder = new Builder(parent);
+      return builder;
+    }
+    /**
+     * Protobuf type {@code chirp.social.GetNotifyPrefsResponse}
+     */
+    public static final class Builder extends
+        com.google.protobuf.GeneratedMessage.Builder<Builder> implements
+        // @@protoc_insertion_point(builder_implements:chirp.social.GetNotifyPrefsResponse)
+        chirp.social.Social.GetNotifyPrefsResponseOrBuilder {
+      public static final com.google.protobuf.Descriptors.Descriptor
+          getDescriptor() {
+        return chirp.social.Social.internal_static_chirp_social_GetNotifyPrefsResponse_descriptor;
+      }
+
+      @java.lang.Override
+      protected com.google.protobuf.GeneratedMessage.FieldAccessorTable
+          internalGetFieldAccessorTable() {
+        return chirp.social.Social.internal_static_chirp_social_GetNotifyPrefsResponse_fieldAccessorTable
+            .ensureFieldAccessorsInitialized(
+                chirp.social.Social.GetNotifyPrefsResponse.class, chirp.social.Social.GetNotifyPrefsResponse.Builder.class);
+      }
+
+      // Construct using chirp.social.Social.GetNotifyPrefsResponse.newBuilder()
+      private Builder() {
+        maybeForceBuilderInitialization();
+      }
+
+      private Builder(
+          com.google.protobuf.GeneratedMessage.BuilderParent parent) {
+        super(parent);
+        maybeForceBuilderInitialization();
+      }
+      private void maybeForceBuilderInitialization() {
+        if (com.google.protobuf.GeneratedMessage
+                .alwaysUseFieldBuilders) {
+          internalGetPrefsFieldBuilder();
+        }
+      }
+      @java.lang.Override
+      public Builder clear() {
+        super.clear();
+        bitField0_ = 0;
+        code_ = 0;
+        prefs_ = null;
+        if (prefsBuilder_ != null) {
+          prefsBuilder_.dispose();
+          prefsBuilder_ = null;
+        }
+        serverTime_ = 0L;
+        return this;
+      }
+
+      @java.lang.Override
+      public com.google.protobuf.Descriptors.Descriptor
+          getDescriptorForType() {
+        return chirp.social.Social.internal_static_chirp_social_GetNotifyPrefsResponse_descriptor;
+      }
+
+      @java.lang.Override
+      public chirp.social.Social.GetNotifyPrefsResponse getDefaultInstanceForType() {
+        return chirp.social.Social.GetNotifyPrefsResponse.getDefaultInstance();
+      }
+
+      @java.lang.Override
+      public chirp.social.Social.GetNotifyPrefsResponse build() {
+        chirp.social.Social.GetNotifyPrefsResponse result = buildPartial();
+        if (!result.isInitialized()) {
+          throw newUninitializedMessageException(result);
+        }
+        return result;
+      }
+
+      @java.lang.Override
+      public chirp.social.Social.GetNotifyPrefsResponse buildPartial() {
+        chirp.social.Social.GetNotifyPrefsResponse result = new chirp.social.Social.GetNotifyPrefsResponse(this);
+        if (bitField0_ != 0) { buildPartial0(result); }
+        onBuilt();
+        return result;
+      }
+
+      private void buildPartial0(chirp.social.Social.GetNotifyPrefsResponse result) {
+        int from_bitField0_ = bitField0_;
+        if (((from_bitField0_ & 0x00000001) != 0)) {
+          result.code_ = code_;
+        }
+        int to_bitField0_ = 0;
+        if (((from_bitField0_ & 0x00000002) != 0)) {
+          result.prefs_ = prefsBuilder_ == null
+              ? prefs_
+              : prefsBuilder_.build();
+          to_bitField0_ |= 0x00000001;
+        }
+        if (((from_bitField0_ & 0x00000004) != 0)) {
+          result.serverTime_ = serverTime_;
+        }
+        result.bitField0_ |= to_bitField0_;
+      }
+
+      @java.lang.Override
+      public Builder mergeFrom(com.google.protobuf.Message other) {
+        if (other instanceof chirp.social.Social.GetNotifyPrefsResponse) {
+          return mergeFrom((chirp.social.Social.GetNotifyPrefsResponse)other);
+        } else {
+          super.mergeFrom(other);
+          return this;
+        }
+      }
+
+      public Builder mergeFrom(chirp.social.Social.GetNotifyPrefsResponse other) {
+        if (other == chirp.social.Social.GetNotifyPrefsResponse.getDefaultInstance()) return this;
+        if (other.code_ != 0) {
+          setCodeValue(other.getCodeValue());
+        }
+        if (other.hasPrefs()) {
+          mergePrefs(other.getPrefs());
+        }
+        if (other.getServerTime() != 0L) {
+          setServerTime(other.getServerTime());
+        }
+        this.mergeUnknownFields(other.getUnknownFields());
+        onChanged();
+        return this;
+      }
+
+      @java.lang.Override
+      public final boolean isInitialized() {
+        return true;
+      }
+
+      @java.lang.Override
+      public Builder mergeFrom(
+          com.google.protobuf.CodedInputStream input,
+          com.google.protobuf.ExtensionRegistryLite extensionRegistry)
+          throws java.io.IOException {
+        if (extensionRegistry == null) {
+          throw new java.lang.NullPointerException();
+        }
+        try {
+          boolean done = false;
+          while (!done) {
+            int tag = input.readTag();
+            switch (tag) {
+              case 0:
+                done = true;
+                break;
+              case 8: {
+                code_ = input.readEnum();
+                bitField0_ |= 0x00000001;
+                break;
+              } // case 8
+              case 18: {
+                input.readMessage(
+                    internalGetPrefsFieldBuilder().getBuilder(),
+                    extensionRegistry);
+                bitField0_ |= 0x00000002;
+                break;
+              } // case 18
+              case 24: {
+                serverTime_ = input.readInt64();
+                bitField0_ |= 0x00000004;
+                break;
+              } // case 24
+              default: {
+                if (!super.parseUnknownField(input, extensionRegistry, tag)) {
+                  done = true; // was an endgroup tag
+                }
+                break;
+              } // default:
+            } // switch (tag)
+          } // while (!done)
+        } catch (com.google.protobuf.InvalidProtocolBufferException e) {
+          throw e.unwrapIOException();
+        } finally {
+          onChanged();
+        } // finally
+        return this;
+      }
+      private int bitField0_;
+
+      private int code_ = 0;
+      /**
+       * <code>.chirp.common.ErrorCode code = 1;</code>
+       * @return The enum numeric value on the wire for code.
+       */
+      @java.lang.Override public int getCodeValue() {
+        return code_;
+      }
+      /**
+       * <code>.chirp.common.ErrorCode code = 1;</code>
+       * @param value The enum numeric value on the wire for code to set.
+       * @return This builder for chaining.
+       */
+      public Builder setCodeValue(int value) {
+        code_ = value;
+        bitField0_ |= 0x00000001;
+        onChanged();
+        return this;
+      }
+      /**
+       * <code>.chirp.common.ErrorCode code = 1;</code>
+       * @return The code.
+       */
+      @java.lang.Override
+      public chirp.common.Common.ErrorCode getCode() {
+        chirp.common.Common.ErrorCode result = chirp.common.Common.ErrorCode.forNumber(code_);
+        return result == null ? chirp.common.Common.ErrorCode.UNRECOGNIZED : result;
+      }
+      /**
+       * <code>.chirp.common.ErrorCode code = 1;</code>
+       * @param value The code to set.
+       * @return This builder for chaining.
+       */
+      public Builder setCode(chirp.common.Common.ErrorCode value) {
+        if (value == null) { throw new NullPointerException(); }
+        bitField0_ |= 0x00000001;
+        code_ = value.getNumber();
+        onChanged();
+        return this;
+      }
+      /**
+       * <code>.chirp.common.ErrorCode code = 1;</code>
+       * @return This builder for chaining.
+       */
+      public Builder clearCode() {
+        bitField0_ = (bitField0_ & ~0x00000001);
+        code_ = 0;
+        onChanged();
+        return this;
+      }
+
+      private chirp.social.Social.NotifyPrefs prefs_;
+      private com.google.protobuf.SingleFieldBuilder<
+          chirp.social.Social.NotifyPrefs, chirp.social.Social.NotifyPrefs.Builder, chirp.social.Social.NotifyPrefsOrBuilder> prefsBuilder_;
+      /**
+       * <code>.chirp.social.NotifyPrefs prefs = 2;</code>
+       * @return Whether the prefs field is set.
+       */
+      public boolean hasPrefs() {
+        return ((bitField0_ & 0x00000002) != 0);
+      }
+      /**
+       * <code>.chirp.social.NotifyPrefs prefs = 2;</code>
+       * @return The prefs.
+       */
+      public chirp.social.Social.NotifyPrefs getPrefs() {
+        if (prefsBuilder_ == null) {
+          return prefs_ == null ? chirp.social.Social.NotifyPrefs.getDefaultInstance() : prefs_;
+        } else {
+          return prefsBuilder_.getMessage();
+        }
+      }
+      /**
+       * <code>.chirp.social.NotifyPrefs prefs = 2;</code>
+       */
+      public Builder setPrefs(chirp.social.Social.NotifyPrefs value) {
+        if (prefsBuilder_ == null) {
+          if (value == null) {
+            throw new NullPointerException();
+          }
+          prefs_ = value;
+        } else {
+          prefsBuilder_.setMessage(value);
+        }
+        bitField0_ |= 0x00000002;
+        onChanged();
+        return this;
+      }
+      /**
+       * <code>.chirp.social.NotifyPrefs prefs = 2;</code>
+       */
+      public Builder setPrefs(
+          chirp.social.Social.NotifyPrefs.Builder builderForValue) {
+        if (prefsBuilder_ == null) {
+          prefs_ = builderForValue.build();
+        } else {
+          prefsBuilder_.setMessage(builderForValue.build());
+        }
+        bitField0_ |= 0x00000002;
+        onChanged();
+        return this;
+      }
+      /**
+       * <code>.chirp.social.NotifyPrefs prefs = 2;</code>
+       */
+      public Builder mergePrefs(chirp.social.Social.NotifyPrefs value) {
+        if (prefsBuilder_ == null) {
+          if (((bitField0_ & 0x00000002) != 0) &&
+            prefs_ != null &&
+            prefs_ != chirp.social.Social.NotifyPrefs.getDefaultInstance()) {
+            getPrefsBuilder().mergeFrom(value);
+          } else {
+            prefs_ = value;
+          }
+        } else {
+          prefsBuilder_.mergeFrom(value);
+        }
+        if (prefs_ != null) {
+          bitField0_ |= 0x00000002;
+          onChanged();
+        }
+        return this;
+      }
+      /**
+       * <code>.chirp.social.NotifyPrefs prefs = 2;</code>
+       */
+      public Builder clearPrefs() {
+        bitField0_ = (bitField0_ & ~0x00000002);
+        prefs_ = null;
+        if (prefsBuilder_ != null) {
+          prefsBuilder_.dispose();
+          prefsBuilder_ = null;
+        }
+        onChanged();
+        return this;
+      }
+      /**
+       * <code>.chirp.social.NotifyPrefs prefs = 2;</code>
+       */
+      public chirp.social.Social.NotifyPrefs.Builder getPrefsBuilder() {
+        bitField0_ |= 0x00000002;
+        onChanged();
+        return internalGetPrefsFieldBuilder().getBuilder();
+      }
+      /**
+       * <code>.chirp.social.NotifyPrefs prefs = 2;</code>
+       */
+      public chirp.social.Social.NotifyPrefsOrBuilder getPrefsOrBuilder() {
+        if (prefsBuilder_ != null) {
+          return prefsBuilder_.getMessageOrBuilder();
+        } else {
+          return prefs_ == null ?
+              chirp.social.Social.NotifyPrefs.getDefaultInstance() : prefs_;
+        }
+      }
+      /**
+       * <code>.chirp.social.NotifyPrefs prefs = 2;</code>
+       */
+      private com.google.protobuf.SingleFieldBuilder<
+          chirp.social.Social.NotifyPrefs, chirp.social.Social.NotifyPrefs.Builder, chirp.social.Social.NotifyPrefsOrBuilder> 
+          internalGetPrefsFieldBuilder() {
+        if (prefsBuilder_ == null) {
+          prefsBuilder_ = new com.google.protobuf.SingleFieldBuilder<
+              chirp.social.Social.NotifyPrefs, chirp.social.Social.NotifyPrefs.Builder, chirp.social.Social.NotifyPrefsOrBuilder>(
+                  getPrefs(),
+                  getParentForChildren(),
+                  isClean());
+          prefs_ = null;
+        }
+        return prefsBuilder_;
+      }
+
+      private long serverTime_ ;
+      /**
+       * <code>int64 server_time = 3;</code>
+       * @return The serverTime.
+       */
+      @java.lang.Override
+      public long getServerTime() {
+        return serverTime_;
+      }
+      /**
+       * <code>int64 server_time = 3;</code>
+       * @param value The serverTime to set.
+       * @return This builder for chaining.
+       */
+      public Builder setServerTime(long value) {
+
+        serverTime_ = value;
+        bitField0_ |= 0x00000004;
+        onChanged();
+        return this;
+      }
+      /**
+       * <code>int64 server_time = 3;</code>
+       * @return This builder for chaining.
+       */
+      public Builder clearServerTime() {
+        bitField0_ = (bitField0_ & ~0x00000004);
+        serverTime_ = 0L;
+        onChanged();
+        return this;
+      }
+
+      // @@protoc_insertion_point(builder_scope:chirp.social.GetNotifyPrefsResponse)
+    }
+
+    // @@protoc_insertion_point(class_scope:chirp.social.GetNotifyPrefsResponse)
+    private static final chirp.social.Social.GetNotifyPrefsResponse DEFAULT_INSTANCE;
+    static {
+      DEFAULT_INSTANCE = new chirp.social.Social.GetNotifyPrefsResponse();
+    }
+
+    public static chirp.social.Social.GetNotifyPrefsResponse getDefaultInstance() {
+      return DEFAULT_INSTANCE;
+    }
+
+    private static final com.google.protobuf.Parser<GetNotifyPrefsResponse>
+        PARSER = new com.google.protobuf.AbstractParser<GetNotifyPrefsResponse>() {
+      @java.lang.Override
+      public GetNotifyPrefsResponse parsePartialFrom(
+          com.google.protobuf.CodedInputStream input,
+          com.google.protobuf.ExtensionRegistryLite extensionRegistry)
+          throws com.google.protobuf.InvalidProtocolBufferException {
+        Builder builder = newBuilder();
+        try {
+          builder.mergeFrom(input, extensionRegistry);
+        } catch (com.google.protobuf.InvalidProtocolBufferException e) {
+          throw e.setUnfinishedMessage(builder.buildPartial());
+        } catch (com.google.protobuf.UninitializedMessageException e) {
+          throw e.asInvalidProtocolBufferException().setUnfinishedMessage(builder.buildPartial());
+        } catch (java.io.IOException e) {
+          throw new com.google.protobuf.InvalidProtocolBufferException(e)
+              .setUnfinishedMessage(builder.buildPartial());
+        }
+        return builder.buildPartial();
+      }
+    };
+
+    public static com.google.protobuf.Parser<GetNotifyPrefsResponse> parser() {
+      return PARSER;
+    }
+
+    @java.lang.Override
+    public com.google.protobuf.Parser<GetNotifyPrefsResponse> getParserForType() {
+      return PARSER;
+    }
+
+    @java.lang.Override
+    public chirp.social.Social.GetNotifyPrefsResponse getDefaultInstanceForType() {
+      return DEFAULT_INSTANCE;
+    }
+
+  }
+
   public interface StoredFriendListOrBuilder extends
       // @@protoc_insertion_point(interface_extends:chirp.social.StoredFriendList)
       com.google.protobuf.MessageOrBuilder {
@@ -22174,6 +25401,441 @@ chirp.social.Social.FriendRequest defaultValue) {
 
   }
 
+  public interface StoredNotifyPrefsOrBuilder extends
+      // @@protoc_insertion_point(interface_extends:chirp.social.StoredNotifyPrefs)
+      com.google.protobuf.MessageOrBuilder {
+
+    /**
+     * <code>bool friend_online_notify = 1;</code>
+     * @return The friendOnlineNotify.
+     */
+    boolean getFriendOnlineNotify();
+  }
+  /**
+   * Protobuf type {@code chirp.social.StoredNotifyPrefs}
+   */
+  public static final class StoredNotifyPrefs extends
+      com.google.protobuf.GeneratedMessage implements
+      // @@protoc_insertion_point(message_implements:chirp.social.StoredNotifyPrefs)
+      StoredNotifyPrefsOrBuilder {
+  private static final long serialVersionUID = 0L;
+    static {
+      com.google.protobuf.RuntimeVersion.validateProtobufGencodeVersion(
+        com.google.protobuf.RuntimeVersion.RuntimeDomain.PUBLIC,
+        /* major= */ 4,
+        /* minor= */ 33,
+        /* patch= */ 4,
+        /* suffix= */ "",
+        "StoredNotifyPrefs");
+    }
+    // Use StoredNotifyPrefs.newBuilder() to construct.
+    private StoredNotifyPrefs(com.google.protobuf.GeneratedMessage.Builder<?> builder) {
+      super(builder);
+    }
+    private StoredNotifyPrefs() {
+    }
+
+    public static final com.google.protobuf.Descriptors.Descriptor
+        getDescriptor() {
+      return chirp.social.Social.internal_static_chirp_social_StoredNotifyPrefs_descriptor;
+    }
+
+    @java.lang.Override
+    protected com.google.protobuf.GeneratedMessage.FieldAccessorTable
+        internalGetFieldAccessorTable() {
+      return chirp.social.Social.internal_static_chirp_social_StoredNotifyPrefs_fieldAccessorTable
+          .ensureFieldAccessorsInitialized(
+              chirp.social.Social.StoredNotifyPrefs.class, chirp.social.Social.StoredNotifyPrefs.Builder.class);
+    }
+
+    public static final int FRIEND_ONLINE_NOTIFY_FIELD_NUMBER = 1;
+    private boolean friendOnlineNotify_ = false;
+    /**
+     * <code>bool friend_online_notify = 1;</code>
+     * @return The friendOnlineNotify.
+     */
+    @java.lang.Override
+    public boolean getFriendOnlineNotify() {
+      return friendOnlineNotify_;
+    }
+
+    private byte memoizedIsInitialized = -1;
+    @java.lang.Override
+    public final boolean isInitialized() {
+      byte isInitialized = memoizedIsInitialized;
+      if (isInitialized == 1) return true;
+      if (isInitialized == 0) return false;
+
+      memoizedIsInitialized = 1;
+      return true;
+    }
+
+    @java.lang.Override
+    public void writeTo(com.google.protobuf.CodedOutputStream output)
+                        throws java.io.IOException {
+      if (friendOnlineNotify_ != false) {
+        output.writeBool(1, friendOnlineNotify_);
+      }
+      getUnknownFields().writeTo(output);
+    }
+
+    @java.lang.Override
+    public int getSerializedSize() {
+      int size = memoizedSize;
+      if (size != -1) return size;
+
+      size = 0;
+      if (friendOnlineNotify_ != false) {
+        size += com.google.protobuf.CodedOutputStream
+          .computeBoolSize(1, friendOnlineNotify_);
+      }
+      size += getUnknownFields().getSerializedSize();
+      memoizedSize = size;
+      return size;
+    }
+
+    @java.lang.Override
+    public boolean equals(final java.lang.Object obj) {
+      if (obj == this) {
+       return true;
+      }
+      if (!(obj instanceof chirp.social.Social.StoredNotifyPrefs)) {
+        return super.equals(obj);
+      }
+      chirp.social.Social.StoredNotifyPrefs other = (chirp.social.Social.StoredNotifyPrefs) obj;
+
+      if (getFriendOnlineNotify()
+          != other.getFriendOnlineNotify()) return false;
+      if (!getUnknownFields().equals(other.getUnknownFields())) return false;
+      return true;
+    }
+
+    @java.lang.Override
+    public int hashCode() {
+      if (memoizedHashCode != 0) {
+        return memoizedHashCode;
+      }
+      int hash = 41;
+      hash = (19 * hash) + getDescriptor().hashCode();
+      hash = (37 * hash) + FRIEND_ONLINE_NOTIFY_FIELD_NUMBER;
+      hash = (53 * hash) + com.google.protobuf.Internal.hashBoolean(
+          getFriendOnlineNotify());
+      hash = (29 * hash) + getUnknownFields().hashCode();
+      memoizedHashCode = hash;
+      return hash;
+    }
+
+    public static chirp.social.Social.StoredNotifyPrefs parseFrom(
+        java.nio.ByteBuffer data)
+        throws com.google.protobuf.InvalidProtocolBufferException {
+      return PARSER.parseFrom(data);
+    }
+    public static chirp.social.Social.StoredNotifyPrefs parseFrom(
+        java.nio.ByteBuffer data,
+        com.google.protobuf.ExtensionRegistryLite extensionRegistry)
+        throws com.google.protobuf.InvalidProtocolBufferException {
+      return PARSER.parseFrom(data, extensionRegistry);
+    }
+    public static chirp.social.Social.StoredNotifyPrefs parseFrom(
+        com.google.protobuf.ByteString data)
+        throws com.google.protobuf.InvalidProtocolBufferException {
+      return PARSER.parseFrom(data);
+    }
+    public static chirp.social.Social.StoredNotifyPrefs parseFrom(
+        com.google.protobuf.ByteString data,
+        com.google.protobuf.ExtensionRegistryLite extensionRegistry)
+        throws com.google.protobuf.InvalidProtocolBufferException {
+      return PARSER.parseFrom(data, extensionRegistry);
+    }
+    public static chirp.social.Social.StoredNotifyPrefs parseFrom(byte[] data)
+        throws com.google.protobuf.InvalidProtocolBufferException {
+      return PARSER.parseFrom(data);
+    }
+    public static chirp.social.Social.StoredNotifyPrefs parseFrom(
+        byte[] data,
+        com.google.protobuf.ExtensionRegistryLite extensionRegistry)
+        throws com.google.protobuf.InvalidProtocolBufferException {
+      return PARSER.parseFrom(data, extensionRegistry);
+    }
+    public static chirp.social.Social.StoredNotifyPrefs parseFrom(java.io.InputStream input)
+        throws java.io.IOException {
+      return com.google.protobuf.GeneratedMessage
+          .parseWithIOException(PARSER, input);
+    }
+    public static chirp.social.Social.StoredNotifyPrefs parseFrom(
+        java.io.InputStream input,
+        com.google.protobuf.ExtensionRegistryLite extensionRegistry)
+        throws java.io.IOException {
+      return com.google.protobuf.GeneratedMessage
+          .parseWithIOException(PARSER, input, extensionRegistry);
+    }
+
+    public static chirp.social.Social.StoredNotifyPrefs parseDelimitedFrom(java.io.InputStream input)
+        throws java.io.IOException {
+      return com.google.protobuf.GeneratedMessage
+          .parseDelimitedWithIOException(PARSER, input);
+    }
+
+    public static chirp.social.Social.StoredNotifyPrefs parseDelimitedFrom(
+        java.io.InputStream input,
+        com.google.protobuf.ExtensionRegistryLite extensionRegistry)
+        throws java.io.IOException {
+      return com.google.protobuf.GeneratedMessage
+          .parseDelimitedWithIOException(PARSER, input, extensionRegistry);
+    }
+    public static chirp.social.Social.StoredNotifyPrefs parseFrom(
+        com.google.protobuf.CodedInputStream input)
+        throws java.io.IOException {
+      return com.google.protobuf.GeneratedMessage
+          .parseWithIOException(PARSER, input);
+    }
+    public static chirp.social.Social.StoredNotifyPrefs parseFrom(
+        com.google.protobuf.CodedInputStream input,
+        com.google.protobuf.ExtensionRegistryLite extensionRegistry)
+        throws java.io.IOException {
+      return com.google.protobuf.GeneratedMessage
+          .parseWithIOException(PARSER, input, extensionRegistry);
+    }
+
+    @java.lang.Override
+    public Builder newBuilderForType() { return newBuilder(); }
+    public static Builder newBuilder() {
+      return DEFAULT_INSTANCE.toBuilder();
+    }
+    public static Builder newBuilder(chirp.social.Social.StoredNotifyPrefs prototype) {
+      return DEFAULT_INSTANCE.toBuilder().mergeFrom(prototype);
+    }
+    @java.lang.Override
+    public Builder toBuilder() {
+      return this == DEFAULT_INSTANCE
+          ? new Builder() : new Builder().mergeFrom(this);
+    }
+
+    @java.lang.Override
+    protected Builder newBuilderForType(
+        com.google.protobuf.GeneratedMessage.BuilderParent parent) {
+      Builder builder = new Builder(parent);
+      return builder;
+    }
+    /**
+     * Protobuf type {@code chirp.social.StoredNotifyPrefs}
+     */
+    public static final class Builder extends
+        com.google.protobuf.GeneratedMessage.Builder<Builder> implements
+        // @@protoc_insertion_point(builder_implements:chirp.social.StoredNotifyPrefs)
+        chirp.social.Social.StoredNotifyPrefsOrBuilder {
+      public static final com.google.protobuf.Descriptors.Descriptor
+          getDescriptor() {
+        return chirp.social.Social.internal_static_chirp_social_StoredNotifyPrefs_descriptor;
+      }
+
+      @java.lang.Override
+      protected com.google.protobuf.GeneratedMessage.FieldAccessorTable
+          internalGetFieldAccessorTable() {
+        return chirp.social.Social.internal_static_chirp_social_StoredNotifyPrefs_fieldAccessorTable
+            .ensureFieldAccessorsInitialized(
+                chirp.social.Social.StoredNotifyPrefs.class, chirp.social.Social.StoredNotifyPrefs.Builder.class);
+      }
+
+      // Construct using chirp.social.Social.StoredNotifyPrefs.newBuilder()
+      private Builder() {
+
+      }
+
+      private Builder(
+          com.google.protobuf.GeneratedMessage.BuilderParent parent) {
+        super(parent);
+
+      }
+      @java.lang.Override
+      public Builder clear() {
+        super.clear();
+        bitField0_ = 0;
+        friendOnlineNotify_ = false;
+        return this;
+      }
+
+      @java.lang.Override
+      public com.google.protobuf.Descriptors.Descriptor
+          getDescriptorForType() {
+        return chirp.social.Social.internal_static_chirp_social_StoredNotifyPrefs_descriptor;
+      }
+
+      @java.lang.Override
+      public chirp.social.Social.StoredNotifyPrefs getDefaultInstanceForType() {
+        return chirp.social.Social.StoredNotifyPrefs.getDefaultInstance();
+      }
+
+      @java.lang.Override
+      public chirp.social.Social.StoredNotifyPrefs build() {
+        chirp.social.Social.StoredNotifyPrefs result = buildPartial();
+        if (!result.isInitialized()) {
+          throw newUninitializedMessageException(result);
+        }
+        return result;
+      }
+
+      @java.lang.Override
+      public chirp.social.Social.StoredNotifyPrefs buildPartial() {
+        chirp.social.Social.StoredNotifyPrefs result = new chirp.social.Social.StoredNotifyPrefs(this);
+        if (bitField0_ != 0) { buildPartial0(result); }
+        onBuilt();
+        return result;
+      }
+
+      private void buildPartial0(chirp.social.Social.StoredNotifyPrefs result) {
+        int from_bitField0_ = bitField0_;
+        if (((from_bitField0_ & 0x00000001) != 0)) {
+          result.friendOnlineNotify_ = friendOnlineNotify_;
+        }
+      }
+
+      @java.lang.Override
+      public Builder mergeFrom(com.google.protobuf.Message other) {
+        if (other instanceof chirp.social.Social.StoredNotifyPrefs) {
+          return mergeFrom((chirp.social.Social.StoredNotifyPrefs)other);
+        } else {
+          super.mergeFrom(other);
+          return this;
+        }
+      }
+
+      public Builder mergeFrom(chirp.social.Social.StoredNotifyPrefs other) {
+        if (other == chirp.social.Social.StoredNotifyPrefs.getDefaultInstance()) return this;
+        if (other.getFriendOnlineNotify() != false) {
+          setFriendOnlineNotify(other.getFriendOnlineNotify());
+        }
+        this.mergeUnknownFields(other.getUnknownFields());
+        onChanged();
+        return this;
+      }
+
+      @java.lang.Override
+      public final boolean isInitialized() {
+        return true;
+      }
+
+      @java.lang.Override
+      public Builder mergeFrom(
+          com.google.protobuf.CodedInputStream input,
+          com.google.protobuf.ExtensionRegistryLite extensionRegistry)
+          throws java.io.IOException {
+        if (extensionRegistry == null) {
+          throw new java.lang.NullPointerException();
+        }
+        try {
+          boolean done = false;
+          while (!done) {
+            int tag = input.readTag();
+            switch (tag) {
+              case 0:
+                done = true;
+                break;
+              case 8: {
+                friendOnlineNotify_ = input.readBool();
+                bitField0_ |= 0x00000001;
+                break;
+              } // case 8
+              default: {
+                if (!super.parseUnknownField(input, extensionRegistry, tag)) {
+                  done = true; // was an endgroup tag
+                }
+                break;
+              } // default:
+            } // switch (tag)
+          } // while (!done)
+        } catch (com.google.protobuf.InvalidProtocolBufferException e) {
+          throw e.unwrapIOException();
+        } finally {
+          onChanged();
+        } // finally
+        return this;
+      }
+      private int bitField0_;
+
+      private boolean friendOnlineNotify_ ;
+      /**
+       * <code>bool friend_online_notify = 1;</code>
+       * @return The friendOnlineNotify.
+       */
+      @java.lang.Override
+      public boolean getFriendOnlineNotify() {
+        return friendOnlineNotify_;
+      }
+      /**
+       * <code>bool friend_online_notify = 1;</code>
+       * @param value The friendOnlineNotify to set.
+       * @return This builder for chaining.
+       */
+      public Builder setFriendOnlineNotify(boolean value) {
+
+        friendOnlineNotify_ = value;
+        bitField0_ |= 0x00000001;
+        onChanged();
+        return this;
+      }
+      /**
+       * <code>bool friend_online_notify = 1;</code>
+       * @return This builder for chaining.
+       */
+      public Builder clearFriendOnlineNotify() {
+        bitField0_ = (bitField0_ & ~0x00000001);
+        friendOnlineNotify_ = false;
+        onChanged();
+        return this;
+      }
+
+      // @@protoc_insertion_point(builder_scope:chirp.social.StoredNotifyPrefs)
+    }
+
+    // @@protoc_insertion_point(class_scope:chirp.social.StoredNotifyPrefs)
+    private static final chirp.social.Social.StoredNotifyPrefs DEFAULT_INSTANCE;
+    static {
+      DEFAULT_INSTANCE = new chirp.social.Social.StoredNotifyPrefs();
+    }
+
+    public static chirp.social.Social.StoredNotifyPrefs getDefaultInstance() {
+      return DEFAULT_INSTANCE;
+    }
+
+    private static final com.google.protobuf.Parser<StoredNotifyPrefs>
+        PARSER = new com.google.protobuf.AbstractParser<StoredNotifyPrefs>() {
+      @java.lang.Override
+      public StoredNotifyPrefs parsePartialFrom(
+          com.google.protobuf.CodedInputStream input,
+          com.google.protobuf.ExtensionRegistryLite extensionRegistry)
+          throws com.google.protobuf.InvalidProtocolBufferException {
+        Builder builder = newBuilder();
+        try {
+          builder.mergeFrom(input, extensionRegistry);
+        } catch (com.google.protobuf.InvalidProtocolBufferException e) {
+          throw e.setUnfinishedMessage(builder.buildPartial());
+        } catch (com.google.protobuf.UninitializedMessageException e) {
+          throw e.asInvalidProtocolBufferException().setUnfinishedMessage(builder.buildPartial());
+        } catch (java.io.IOException e) {
+          throw new com.google.protobuf.InvalidProtocolBufferException(e)
+              .setUnfinishedMessage(builder.buildPartial());
+        }
+        return builder.buildPartial();
+      }
+    };
+
+    public static com.google.protobuf.Parser<StoredNotifyPrefs> parser() {
+      return PARSER;
+    }
+
+    @java.lang.Override
+    public com.google.protobuf.Parser<StoredNotifyPrefs> getParserForType() {
+      return PARSER;
+    }
+
+    @java.lang.Override
+    public chirp.social.Social.StoredNotifyPrefs getDefaultInstanceForType() {
+      return DEFAULT_INSTANCE;
+    }
+
+  }
+
   public interface StoredBlockedListOrBuilder extends
       // @@protoc_insertion_point(interface_extends:chirp.social.StoredBlockedList)
       com.google.protobuf.MessageOrBuilder {
@@ -22901,6 +26563,31 @@ chirp.social.Social.FriendRequest defaultValue) {
     com.google.protobuf.GeneratedMessage.FieldAccessorTable
       internal_static_chirp_social_FriendRemovedNotify_fieldAccessorTable;
   private static final com.google.protobuf.Descriptors.Descriptor
+    internal_static_chirp_social_NotifyPrefs_descriptor;
+  private static final 
+    com.google.protobuf.GeneratedMessage.FieldAccessorTable
+      internal_static_chirp_social_NotifyPrefs_fieldAccessorTable;
+  private static final com.google.protobuf.Descriptors.Descriptor
+    internal_static_chirp_social_SetNotifyPrefsRequest_descriptor;
+  private static final 
+    com.google.protobuf.GeneratedMessage.FieldAccessorTable
+      internal_static_chirp_social_SetNotifyPrefsRequest_fieldAccessorTable;
+  private static final com.google.protobuf.Descriptors.Descriptor
+    internal_static_chirp_social_SetNotifyPrefsResponse_descriptor;
+  private static final 
+    com.google.protobuf.GeneratedMessage.FieldAccessorTable
+      internal_static_chirp_social_SetNotifyPrefsResponse_fieldAccessorTable;
+  private static final com.google.protobuf.Descriptors.Descriptor
+    internal_static_chirp_social_GetNotifyPrefsRequest_descriptor;
+  private static final 
+    com.google.protobuf.GeneratedMessage.FieldAccessorTable
+      internal_static_chirp_social_GetNotifyPrefsRequest_fieldAccessorTable;
+  private static final com.google.protobuf.Descriptors.Descriptor
+    internal_static_chirp_social_GetNotifyPrefsResponse_descriptor;
+  private static final 
+    com.google.protobuf.GeneratedMessage.FieldAccessorTable
+      internal_static_chirp_social_GetNotifyPrefsResponse_fieldAccessorTable;
+  private static final com.google.protobuf.Descriptors.Descriptor
     internal_static_chirp_social_StoredFriendList_descriptor;
   private static final 
     com.google.protobuf.GeneratedMessage.FieldAccessorTable
@@ -22915,6 +26602,11 @@ chirp.social.Social.FriendRequest defaultValue) {
   private static final 
     com.google.protobuf.GeneratedMessage.FieldAccessorTable
       internal_static_chirp_social_StoredPendingRequests_RequestsEntry_fieldAccessorTable;
+  private static final com.google.protobuf.Descriptors.Descriptor
+    internal_static_chirp_social_StoredNotifyPrefs_descriptor;
+  private static final 
+    com.google.protobuf.GeneratedMessage.FieldAccessorTable
+      internal_static_chirp_social_StoredNotifyPrefs_fieldAccessorTable;
   private static final com.google.protobuf.Descriptors.Descriptor
     internal_static_chirp_social_StoredBlockedList_descriptor;
   private static final 
@@ -22998,18 +26690,30 @@ chirp.social.Social.FriendRequest defaultValue) {
       "eptedNotify\022\017\n\007user_id\030\001 \001(\t\022\020\n\010username" +
       "\030\002 \001(\t\022\021\n\ttimestamp\030\003 \001(\003\"9\n\023FriendRemov" +
       "edNotify\022\017\n\007user_id\030\001 \001(\t\022\021\n\ttimestamp\030\002" +
-      " \001(\003\"+\n\020StoredFriendList\022\027\n\017friend_user_" +
-      "ids\030\001 \003(\t\"\252\001\n\025StoredPendingRequests\022C\n\010r" +
-      "equests\030\001 \003(\01321.chirp.social.StoredPendi" +
-      "ngRequests.RequestsEntry\032L\n\rRequestsEntr" +
-      "y\022\013\n\003key\030\001 \001(\t\022*\n\005value\030\002 \001(\0132\033.chirp.so" +
-      "cial.FriendRequest:\0028\001\"-\n\021StoredBlockedL" +
-      "ist\022\030\n\020blocked_user_ids\030\001 \003(\t*X\n\016Presenc" +
-      "eStatus\022\013\n\007OFFLINE\020\000\022\n\n\006ONLINE\020\001\022\010\n\004AWAY" +
-      "\020\002\022\007\n\003DND\020\003\022\013\n\007IN_GAME\020\004\022\r\n\tIN_BATTLE\020\005*" +
-      "@\n\014FriendStatus\022\010\n\004NONE\020\000\022\013\n\007PENDING\020\001\022\014" +
-      "\n\010ACCEPTED\020\002\022\013\n\007BLOCKED\020\003B&Z$github.com/" +
-      "cui/chirp/proto/go/socialb\006proto3"
+      " \001(\003\"+\n\013NotifyPrefs\022\034\n\024friend_online_not" +
+      "ify\030\001 \001(\010\"R\n\025SetNotifyPrefsRequest\022\017\n\007us" +
+      "er_id\030\001 \001(\t\022(\n\005prefs\030\002 \001(\0132\031.chirp.socia" +
+      "l.NotifyPrefs\"~\n\026SetNotifyPrefsResponse\022" +
+      "%\n\004code\030\001 \001(\0162\027.chirp.common.ErrorCode\022(" +
+      "\n\005prefs\030\002 \001(\0132\031.chirp.social.NotifyPrefs" +
+      "\022\023\n\013server_time\030\003 \001(\003\"(\n\025GetNotifyPrefsR" +
+      "equest\022\017\n\007user_id\030\001 \001(\t\"~\n\026GetNotifyPref" +
+      "sResponse\022%\n\004code\030\001 \001(\0162\027.chirp.common.E" +
+      "rrorCode\022(\n\005prefs\030\002 \001(\0132\031.chirp.social.N" +
+      "otifyPrefs\022\023\n\013server_time\030\003 \001(\003\"+\n\020Store" +
+      "dFriendList\022\027\n\017friend_user_ids\030\001 \003(\t\"\252\001\n" +
+      "\025StoredPendingRequests\022C\n\010requests\030\001 \003(\013" +
+      "21.chirp.social.StoredPendingRequests.Re" +
+      "questsEntry\032L\n\rRequestsEntry\022\013\n\003key\030\001 \001(" +
+      "\t\022*\n\005value\030\002 \001(\0132\033.chirp.social.FriendRe" +
+      "quest:\0028\001\"1\n\021StoredNotifyPrefs\022\034\n\024friend" +
+      "_online_notify\030\001 \001(\010\"-\n\021StoredBlockedLis" +
+      "t\022\030\n\020blocked_user_ids\030\001 \003(\t*X\n\016PresenceS" +
+      "tatus\022\013\n\007OFFLINE\020\000\022\n\n\006ONLINE\020\001\022\010\n\004AWAY\020\002" +
+      "\022\007\n\003DND\020\003\022\013\n\007IN_GAME\020\004\022\r\n\tIN_BATTLE\020\005*@\n" +
+      "\014FriendStatus\022\010\n\004NONE\020\000\022\013\n\007PENDING\020\001\022\014\n\010" +
+      "ACCEPTED\020\002\022\013\n\007BLOCKED\020\003B&Z$github.com/cu" +
+      "i/chirp/proto/go/socialb\006proto3"
     };
     descriptor = com.google.protobuf.Descriptors.FileDescriptor
       .internalBuildGeneratedFileFrom(descriptorData,
@@ -23196,14 +26900,44 @@ chirp.social.Social.FriendRequest defaultValue) {
       com.google.protobuf.GeneratedMessage.FieldAccessorTable(
         internal_static_chirp_social_FriendRemovedNotify_descriptor,
         new java.lang.String[] { "UserId", "Timestamp", });
-    internal_static_chirp_social_StoredFriendList_descriptor =
+    internal_static_chirp_social_NotifyPrefs_descriptor =
       getDescriptor().getMessageType(27);
+    internal_static_chirp_social_NotifyPrefs_fieldAccessorTable = new
+      com.google.protobuf.GeneratedMessage.FieldAccessorTable(
+        internal_static_chirp_social_NotifyPrefs_descriptor,
+        new java.lang.String[] { "FriendOnlineNotify", });
+    internal_static_chirp_social_SetNotifyPrefsRequest_descriptor =
+      getDescriptor().getMessageType(28);
+    internal_static_chirp_social_SetNotifyPrefsRequest_fieldAccessorTable = new
+      com.google.protobuf.GeneratedMessage.FieldAccessorTable(
+        internal_static_chirp_social_SetNotifyPrefsRequest_descriptor,
+        new java.lang.String[] { "UserId", "Prefs", });
+    internal_static_chirp_social_SetNotifyPrefsResponse_descriptor =
+      getDescriptor().getMessageType(29);
+    internal_static_chirp_social_SetNotifyPrefsResponse_fieldAccessorTable = new
+      com.google.protobuf.GeneratedMessage.FieldAccessorTable(
+        internal_static_chirp_social_SetNotifyPrefsResponse_descriptor,
+        new java.lang.String[] { "Code", "Prefs", "ServerTime", });
+    internal_static_chirp_social_GetNotifyPrefsRequest_descriptor =
+      getDescriptor().getMessageType(30);
+    internal_static_chirp_social_GetNotifyPrefsRequest_fieldAccessorTable = new
+      com.google.protobuf.GeneratedMessage.FieldAccessorTable(
+        internal_static_chirp_social_GetNotifyPrefsRequest_descriptor,
+        new java.lang.String[] { "UserId", });
+    internal_static_chirp_social_GetNotifyPrefsResponse_descriptor =
+      getDescriptor().getMessageType(31);
+    internal_static_chirp_social_GetNotifyPrefsResponse_fieldAccessorTable = new
+      com.google.protobuf.GeneratedMessage.FieldAccessorTable(
+        internal_static_chirp_social_GetNotifyPrefsResponse_descriptor,
+        new java.lang.String[] { "Code", "Prefs", "ServerTime", });
+    internal_static_chirp_social_StoredFriendList_descriptor =
+      getDescriptor().getMessageType(32);
     internal_static_chirp_social_StoredFriendList_fieldAccessorTable = new
       com.google.protobuf.GeneratedMessage.FieldAccessorTable(
         internal_static_chirp_social_StoredFriendList_descriptor,
         new java.lang.String[] { "FriendUserIds", });
     internal_static_chirp_social_StoredPendingRequests_descriptor =
-      getDescriptor().getMessageType(28);
+      getDescriptor().getMessageType(33);
     internal_static_chirp_social_StoredPendingRequests_fieldAccessorTable = new
       com.google.protobuf.GeneratedMessage.FieldAccessorTable(
         internal_static_chirp_social_StoredPendingRequests_descriptor,
@@ -23214,8 +26948,14 @@ chirp.social.Social.FriendRequest defaultValue) {
       com.google.protobuf.GeneratedMessage.FieldAccessorTable(
         internal_static_chirp_social_StoredPendingRequests_RequestsEntry_descriptor,
         new java.lang.String[] { "Key", "Value", });
+    internal_static_chirp_social_StoredNotifyPrefs_descriptor =
+      getDescriptor().getMessageType(34);
+    internal_static_chirp_social_StoredNotifyPrefs_fieldAccessorTable = new
+      com.google.protobuf.GeneratedMessage.FieldAccessorTable(
+        internal_static_chirp_social_StoredNotifyPrefs_descriptor,
+        new java.lang.String[] { "FriendOnlineNotify", });
     internal_static_chirp_social_StoredBlockedList_descriptor =
-      getDescriptor().getMessageType(29);
+      getDescriptor().getMessageType(35);
     internal_static_chirp_social_StoredBlockedList_fieldAccessorTable = new
       com.google.protobuf.GeneratedMessage.FieldAccessorTable(
         internal_static_chirp_social_StoredBlockedList_descriptor,

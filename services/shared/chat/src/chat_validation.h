@@ -30,6 +30,11 @@ size_t MaxContentChars(ChannelType type);
 // ValidateSendMessageRequest, so both binary forms enforce it.
 chirp::common::ErrorCode ValidateContentLength(const SendMessageRequest& req);
 
+// 坐标链接（P1 COORD_LINK）：metadata 必须能按 CoordMetadata 解析且 map_id
+// 非空，否则 INVALID_PARAM。只对 COORD_LINK 生效——其他 msg_type 的 metadata
+// 原样透传（协议层不越权校验未启用消息类型的载荷）。
+chirp::common::ErrorCode ValidateCoordMetadata(const SendMessageRequest& req);
+
 chirp::common::ErrorCode ValidateSendMessageRequest(const SendMessageRequest& req,
                                                     std::string_view authenticated_user_id);
 
