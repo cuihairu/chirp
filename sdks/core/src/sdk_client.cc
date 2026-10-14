@@ -10,6 +10,7 @@
 #include <vector>
 
 #include "common/logger.h"
+#include "common/gzip.h"
 #include "network/length_prefixed_framer.h"
 #include "network/protobuf_framing.h"
 #include "proto/auth.pb.h"
@@ -38,6 +39,26 @@ int64_t NowMs() {
 }
 
 std::error_code MakeEc(ChatError e) { return make_error_code(e); }
+// 拆封 gzip 形态的历史回包(消息压缩,game_chat_features P2):登录已声明
+// supports_gzip,服务端会把消息清单装进同型 GetHistoryResponse 压缩后放
+// messages_gzip。解压搬回明文 messages 并清掉压缩字段,上层回调只见统一
+// 形态;坏容器/坏载荷报 BadResponse,不吞错。
+bool InflateGzipHistory(chirp::chat::GetHistoryResponse* resp) {
+  if (resp->messages_gzip().empty()) {
+    return true;
+  }
+  std::string inflated;
+  if (!common::GzipDecompress(resp->messages_gzip(), &inflated)) {
+    return false;
+  }
+  chirp::chat::GetHistoryResponse inner;
+  if (!inner.ParseFromString(inflated)) {
+    return false;
+  }
+  resp->mutable_messages()->Swap(inner.mutable_messages());
+  resp->clear_messages_gzip();
+  return true;
+}
 
 // 一个 sequence 关联的待完成请求。
 struct PendingRequest {
@@ -144,6 +165,9 @@ public:
     req.set_device_id("sdk_device");
     req.set_platform("pc");
     req.set_level(login_level_);
+    // 消息压缩消费面(game_chat_features P2):SDK 自带解压路径,登录即声明,
+    // 服务端历史读回可对本会话发 gzip 形态。
+    req.set_supports_gzip(true);
     SendRequest(MsgID::LOGIN_REQ, MsgID::LOGIN_RESP, req.SerializeAsString(),
         [this, cb = std::move(cb)](const std::error_code& ec, const std::string& body) mutable {
           if (ec) {
@@ -1016,7 +1040,23 @@ public:
       req.set_channel_id(channel_id);
       req.set_before_timestamp(before_timestamp);
       req.set_limit(limit);
-      TypedRequest(MsgID::GET_HISTORY_REQ, MsgID::GET_HISTORY_RESP, req, std::move(cb));
+      // 消息压缩消费面:先走本地拆封,gzip 形态(服务端只对声明 supports_gzip
+      // 的会话发)解压回明文清单再交回调,与明文形态汇合。
+      SendRequest(
+          MsgID::GET_HISTORY_REQ, MsgID::GET_HISTORY_RESP, req.SerializeAsString(),
+          [cb = std::move(cb)](const std::error_code& ec,
+                               const std::string& body) mutable {
+            if (ec) {
+              cb(ec, chirp::chat::GetHistoryResponse{});
+              return;
+            }
+            chirp::chat::GetHistoryResponse resp;
+            if (!resp.ParseFromString(body) || !InflateGzipHistory(&resp)) {
+              cb(MakeEc(ChatError::BadResponse), chirp::chat::GetHistoryResponse{});
+              return;
+            }
+            cb(std::error_code{}, resp);
+          });
     });
   }
 

@@ -225,19 +225,19 @@ KNOWN_UNCOVERABLE = {
     # erased only together with timer->cancel(); a handler already dispatched
     # before the cancel exits at the timer_ec arm above, so the find-miss
     # return is unreachable by construction.
-    ("sdks/core/src/sdk_client.cc", 474),
+    ("sdks/core/src/sdk_client.cc", 498),
     # ChatClient::Impl::SendRequest pending_.emplace: next_seq_ is monotonic,
     # so the red-black insert comparison always walks the greater side; the
     # less/duplicate arms would require a 2^32 sequence wrap.
-    ("sdks/core/src/sdk_client.cc", 483),
+    ("sdks/core/src/sdk_client.cc", 507),
     # SendPacket null-socket arm: every caller is state-guarded via
     # ReadyForRequests(), so socket_ is only null inside the teardown window
     # between DoClose dropping the socket and the state flip - a disconnect
     # race no public-API sequence reaches deterministically.
-    ("sdks/core/src/sdk_client.cc", 768),
+    ("sdks/core/src/sdk_client.cc", 792),
     # HandleFrame pong match: the untaken arm is the throw edge into landing
     # pad block 83 (string/stdexcept during logging).
-    ("sdks/core/src/sdk_client.cc", 604),
+    ("sdks/core/src/sdk_client.cc", 628),
     # Login/Request/SendMessage asio::post lines: untaken arms are (a) throw
     # edges, (b) the out-edges of pad blocks 13/11 which have no in-edges,
     # and (c) the fall arm of the same-destination merge emitted for the
@@ -246,13 +246,13 @@ KNOWN_UNCOVERABLE = {
     # SBO/heap std::function captures -- takes the tree arm; the fall arm is
     # the untaken half of an always-equal allocator/equality check (same
     # shape as the asio chrono_time_traits comparisons excluded above).
-    ("sdks/core/src/sdk_client.cc", 107),
-    ("sdks/core/src/sdk_client.cc", 250),
-    ("sdks/core/src/sdk_client.cc", 295),
+    ("sdks/core/src/sdk_client.cc", 128),
+    ("sdks/core/src/sdk_client.cc", 274),
+    ("sdks/core/src/sdk_client.cc", 319),
     # ChatClient::Impl::SendPacket socket guard: every caller checks the
     # connection state on the same io thread immediately before sending, and
     # only DoClose (same thread) clears socket_.
-    ("sdks/core/src/sdk_client.cc", 762),
+    ("sdks/core/src/sdk_client.cc", 786),
     # Logger::LevelToString fallthrough: every enumerator has a case; the
     # trailing return only exists to satisfy the compiler.
     ("libs/common/logger.cc", 40),
@@ -549,40 +549,40 @@ KNOWN_UNCOVERABLE = {
     # plus the always-equal allocator half of inlined moves inside the
     # closure. Semantic arms (NotConnected guard, connected path) are covered
     # by AllConvenienceMethodsFailFastWhenNotConnected + the per-API matrix.
-    ("sdks/core/src/sdk_client.cc", 949),
-    ("sdks/core/src/sdk_client.cc", 1018),
-    ("sdks/core/src/sdk_client.cc", 1046),
-    ("sdks/core/src/sdk_client.cc", 1059),
-    ("sdks/core/src/sdk_client.cc", 1109),
-    ("sdks/core/src/sdk_client.cc", 1127),
-    ("sdks/core/src/sdk_client.cc", 1141),
-    ("sdks/core/src/sdk_client.cc", 1157),
-    ("sdks/core/src/sdk_client.cc", 1187),
-    ("sdks/core/src/sdk_client.cc", 1202),
-    ("sdks/core/src/sdk_client.cc", 1228),
-    ("sdks/core/src/sdk_client.cc", 1275),
-    ("sdks/core/src/sdk_client.cc", 1288),
-    ("sdks/core/src/sdk_client.cc", 1317),
-    ("sdks/core/src/sdk_client.cc", 1331),
-    ("sdks/core/src/sdk_client.cc", 1344),
+    ("sdks/core/src/sdk_client.cc", 973),
+    ("sdks/core/src/sdk_client.cc", 1042),
+    ("sdks/core/src/sdk_client.cc", 1086),
+    ("sdks/core/src/sdk_client.cc", 1099),
+    ("sdks/core/src/sdk_client.cc", 1149),
+    ("sdks/core/src/sdk_client.cc", 1167),
+    ("sdks/core/src/sdk_client.cc", 1181),
+    ("sdks/core/src/sdk_client.cc", 1197),
+    ("sdks/core/src/sdk_client.cc", 1227),
+    ("sdks/core/src/sdk_client.cc", 1242),
+    ("sdks/core/src/sdk_client.cc", 1268),
+    ("sdks/core/src/sdk_client.cc", 1315),
+    ("sdks/core/src/sdk_client.cc", 1328),
+    ("sdks/core/src/sdk_client.cc", 1357),
+    ("sdks/core/src/sdk_client.cc", 1371),
+    ("sdks/core/src/sdk_client.cc", 1384),
     # RecallMessage (the recall alias) repeats the closure shape of
     # DeleteMessage above, plus the always-equal comparison half of the bool
     # setter on the shared request message. Both semantic paths (NotConnected
     # fail-fast and the typed round trip) are asserted by
     # AllConvenienceMethodsFailFastWhenNotConnected +
     # RecallSendsSoftDeleteForTheAuthor.
-    ("sdks/core/src/sdk_client.cc", 1171),
+    ("sdks/core/src/sdk_client.cc", 1211),
     # TypedRequest lambda: untaken arms are EH pads for Resp{}/
     # ParseFromString failure construction and the std::function invoke
     # landing pads; ec-ok, BadResponse and success arms are covered by
     # UnparseableResponseReportsBadResponse + the typed-request matrix.
-    ("sdks/core/src/sdk_client.cc", 933),
-    ("sdks/core/src/sdk_client.cc", 938),
+    ("sdks/core/src/sdk_client.cc", 957),
+    ("sdks/core/src/sdk_client.cc", 962),
     # SendMessage private channel_id ternary string concat: untaken arms
     # are throw edges into the `a + "|" + b` landing pads (bad_alloc); both
     # orderings (user<=peer and peer<user) are covered by the SSO/heap
     # receiver probes.
-    ("sdks/core/src/sdk_client.cc", 966),
+    ("sdks/core/src/sdk_client.cc", 990),
 }
 
 # Whole functions tests can never execute: deleting-dtors of abstract
@@ -709,25 +709,25 @@ KNOWN_UNCOVERABLE_ARMS = {
         "UNSUBSCRIBE command-argument construction unwind edges"),
     ("libs/network/session_registry.cc", 39): ((8, 9),
         "NormalizePlatformId ternary result construction unwind edges"),
-    ("sdks/core/src/sdk_client.cc", 1217): ((6, 8, 10, 11, 12, 13),
+    ("sdks/core/src/sdk_client.cc", 1257): ((6, 8, 10, 11, 12, 13),
         "FetchReactions post-closure construction unwind edges"),
-    ("sdks/core/src/sdk_client.cc", 1230): ((4, 6, 7),
+    ("sdks/core/src/sdk_client.cc", 1270): ((4, 6, 7),
         "FetchReadReceipts post-closure construction unwind edges"),
-    ("sdks/core/src/sdk_client.cc", 1243): ((6, 8, 10, 11, 12, 13),
+    ("sdks/core/src/sdk_client.cc", 1283): ((6, 8, 10, 11, 12, 13),
         "BulkDeleteMessages post-closure construction unwind edges"),
-    ("sdks/core/src/sdk_client.cc", 1260): ((6, 8, 10, 11, 12, 13),
+    ("sdks/core/src/sdk_client.cc", 1300): ((6, 8, 10, 11, 12, 13),
         "FetchMentionSuggestions post-closure construction unwind edges"),
-    ("sdks/core/src/sdk_client.cc", 1276): ((6, 8, 10, 11, 12, 13),
+    ("sdks/core/src/sdk_client.cc", 1316): ((6, 8, 10, 11, 12, 13),
         "CreateGroup post-closure construction unwind edges"),
-    ("sdks/core/src/sdk_client.cc", 1290): ((4, 6, 7),
+    ("sdks/core/src/sdk_client.cc", 1330): ((4, 6, 7),
         "JoinGroup post-closure construction unwind edges"),
-    ("sdks/core/src/sdk_client.cc", 1303): ((4, 6, 7),
+    ("sdks/core/src/sdk_client.cc", 1343): ((4, 6, 7),
         "LeaveGroup post-closure construction unwind edges"),
-    ("sdks/core/src/sdk_client.cc", 1332): ((6, 8, 10, 11, 12, 13),
+    ("sdks/core/src/sdk_client.cc", 1372): ((6, 8, 10, 11, 12, 13),
         "InviteToGroup post-closure construction unwind edges"),
-    ("sdks/core/src/sdk_client.cc", 1346): ((4, 6, 7),
+    ("sdks/core/src/sdk_client.cc", 1386): ((4, 6, 7),
         "KickMember post-closure construction unwind edges"),
-    ("sdks/core/src/sdk_client.cc", 1359): ((4, 6, 7),
+    ("sdks/core/src/sdk_client.cc", 1399): ((4, 6, 7),
         "FetchGroupInfo post-closure construction unwind edges"),
     # -- 覆盖率批次5（hybrid_message_store.cc 逐臂审计）----------------------
     # All semantic input classes are exercised for each of the lines below
@@ -913,19 +913,19 @@ KNOWN_UNCOVERABLE_ARMS = {
         "batch-8 migration from a stale whole-line pin; dead arm(s) in every gcda context of the audit run"),
     ("sdks/core/src/sdk.cc", 41): ((3,),
         "batch-8 migration from a stale whole-line pin; dead arm(s) in every gcda context of the audit run"),
-    ("sdks/core/src/sdk_client.cc", 212): ((2,),
+    ("sdks/core/src/sdk_client.cc", 236): ((2,),
         "batch-8 migration from a stale whole-line pin; dead arm(s) in every gcda context of the audit run"),
-    ("sdks/core/src/sdk_client.cc", 271): ((14, 15, 16, 17),
+    ("sdks/core/src/sdk_client.cc", 295): ((14, 15, 16, 17),
         "batch-8 migration from a stale whole-line pin; dead arm(s) in every gcda context of the audit run"),
-    ("sdks/core/src/sdk_client.cc", 421): ((8, 9),
+    ("sdks/core/src/sdk_client.cc", 445): ((8, 9),
         "batch-8 migration from a stale whole-line pin; dead arm(s) in every gcda context of the audit run"),
-    ("sdks/core/src/sdk_client.cc", 429): ((10, 11),
+    ("sdks/core/src/sdk_client.cc", 453): ((10, 11),
         "batch-8 migration from a stale whole-line pin; dead arm(s) in every gcda context of the audit run"),
-    ("sdks/core/src/sdk_client.cc", 469): ((0,),
+    ("sdks/core/src/sdk_client.cc", 493): ((0,),
         "batch-8 migration from a stale whole-line pin; dead arm(s) in every gcda context of the audit run"),
-    ("sdks/core/src/sdk_client.cc", 923): ((1,),
+    ("sdks/core/src/sdk_client.cc", 947): ((1,),
         "batch-8 migration from a stale whole-line pin; dead arm(s) in every gcda context of the audit run"),
-    ("sdks/core/src/sdk_client.cc", 967): ((3, 4, 6, 7),
+    ("sdks/core/src/sdk_client.cc", 991): ((3, 4, 6, 7),
         "batch-8 migration from a stale whole-line pin; dead arm(s) in every gcda context of the audit run"),
     ("services/app/auth/src/auth_service.cc", 76): ((0, 1),
         "batch-8 migration from a stale whole-line pin; dead arm(s) in every gcda context of the audit run"),

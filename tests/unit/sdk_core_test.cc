@@ -18,6 +18,7 @@
 #include "chirp/sdk.h"
 #include "chirp/sdk_client.h"
 #include "chirp/word_filter.h"
+#include "common/gzip.h"
 
 using chirp::sdk::ChatClient;
 using chirp::sdk::ChatConfig;
@@ -735,6 +736,42 @@ TEST_F(ChatClientLoopbackTest, LoginCarriesDeclaredLevel) {
   ASSERT_EQ(future.wait_for(std::chrono::milliseconds(5000)), std::future_status::ready);
   EXPECT_FALSE(future.get());
   EXPECT_EQ(seen.level(), 42);
+  client.Disconnect();
+}
+
+TEST_F(ChatClientLoopbackTest, LoginDeclaresGzipCapability) {
+  // 消息压缩消费面(game_chat_features P2):SDK 自带 gzip 解压路径,登录即
+  // 声明 supports_gzip,服务端历史读回可对本会话发 gzip 形态。
+  chirp::auth::LoginRequest seen;
+  FakeGateway gateway([&](const chirp::gateway::Packet& pkt, auto send) {
+    if (pkt.msg_id() == chirp::gateway::LOGIN_REQ) {
+      seen.ParseFromArray(pkt.body().data(), static_cast<int>(pkt.body().size()));
+      chirp::auth::LoginResponse resp;
+      resp.set_code(chirp::common::OK);
+      resp.set_user_id("user-1");
+      chirp::gateway::Packet out;
+      out.set_msg_id(chirp::gateway::LOGIN_RESP);
+      out.set_sequence(pkt.sequence());
+      out.set_body(resp.SerializeAsString());
+      send(out);
+    }
+  });
+
+  ChatClient client(LoopbackConfig(gateway.port()));
+  client.Connect();
+  for (int i = 0; i < 2500 && client.GetState() != ConnectionState::Connected; ++i) {
+    std::this_thread::sleep_for(std::chrono::milliseconds(2));
+  }
+  ASSERT_EQ(client.GetState(), ConnectionState::Connected);
+
+  std::promise<std::error_code> done;
+  auto future = done.get_future();
+  client.Login("token-1", [&done](const std::error_code& ec, const std::string&) {
+    done.set_value(ec);
+  });
+  ASSERT_EQ(future.wait_for(std::chrono::milliseconds(5000)), std::future_status::ready);
+  EXPECT_FALSE(future.get());
+  EXPECT_TRUE(seen.supports_gzip());
   client.Disconnect();
 }
 
@@ -4632,6 +4669,91 @@ TEST_F(ConvenienceApiTest, UnparseableResponseReportsBadResponse) {
   EXPECT_EQ(ec, chirp::sdk::make_error_code(chirp::sdk::ChatError::BadResponse));
 }
 
+TEST_F(ConvenienceApiTest, FetchHistoryInflatesGzipFormAndAcceptsPlainForm) {
+  // gzip 形态拆封(消息压缩消费面):服务端把消息清单装进同型 GetHistory-
+  // Response 压缩后放 messages_gzip;SDK 解压搬回明文 messages,回调只见
+  // 统一形态。明文形态照旧直读。
+  StartGateway([&](const chirp::gateway::Packet& pkt, auto send) {
+    if (pkt.msg_id() != chirp::gateway::GET_HISTORY_REQ) {
+      return;
+    }
+    chirp::chat::GetHistoryRequest req;
+    req.ParseFromArray(pkt.body().data(), static_cast<int>(pkt.body().size()));
+    chirp::chat::GetHistoryResponse plain;
+    plain.set_code(chirp::common::OK);
+    auto* m = plain.add_messages();
+    m->set_message_id("m1");
+    m->set_content("hist-" + req.channel_id());
+    chirp::chat::GetHistoryResponse wrapped;
+    wrapped.set_code(chirp::common::OK);
+    if (req.channel_id() == "gz-ch") {
+      std::string container;
+      ASSERT_TRUE(chirp::common::GzipCompress(plain.SerializeAsString(), &container));
+      wrapped.set_messages_gzip(std::move(container));
+    } else {
+      wrapped.mutable_messages()->Swap(plain.mutable_messages());
+    }
+    send(RespFor(pkt, chirp::gateway::GET_HISTORY_RESP, wrapped.SerializeAsString()));
+  });
+  ConnectAndLogin();
+
+  std::error_code ec;
+  auto gz = WaitRpc<chirp::chat::GetHistoryResponse>([&](auto cb) {
+    client_->FetchHistory(chirp::chat::WORLD, "gz-ch", 10, 0, cb);
+  }, ec);
+  ASSERT_FALSE(ec);
+  EXPECT_EQ(gz.messages_gzip(), "");
+  ASSERT_EQ(gz.messages_size(), 1);
+  EXPECT_EQ(gz.messages(0).content(), "hist-gz-ch");
+
+  auto plain = WaitRpc<chirp::chat::GetHistoryResponse>([&](auto cb) {
+    client_->FetchHistory(chirp::chat::WORLD, "pl-ch", 10, 0, cb);
+  }, ec);
+  ASSERT_FALSE(ec);
+  ASSERT_EQ(plain.messages_size(), 1);
+  EXPECT_EQ(plain.messages(0).content(), "hist-pl-ch");
+}
+
+TEST_F(ConvenienceApiTest, FetchHistoryRejectsCorruptGzipAsBadResponse) {
+  // 坏容器:messages_gzip 不是合法 gzip 流,拆封失败上抛 BadResponse,不吞错。
+  StartGateway([&](const chirp::gateway::Packet& pkt, auto send) {
+    if (pkt.msg_id() != chirp::gateway::GET_HISTORY_REQ) {
+      return;
+    }
+    chirp::chat::GetHistoryResponse wrapped;
+    wrapped.set_code(chirp::common::OK);
+    wrapped.set_messages_gzip("not-a-gzip-stream");
+    send(RespFor(pkt, chirp::gateway::GET_HISTORY_RESP, wrapped.SerializeAsString()));
+  });
+  ConnectAndLogin();
+  std::error_code ec;
+  (void)WaitRpc<chirp::chat::GetHistoryResponse>([&](auto cb) {
+    client_->FetchHistory(chirp::chat::WORLD, "w", 10, 0, cb);
+  }, ec);
+  EXPECT_EQ(ec, chirp::sdk::make_error_code(chirp::sdk::ChatError::BadResponse));
+}
+
+TEST_F(ConvenienceApiTest, FetchHistoryRejectsGarbageGzipPayloadAsBadResponse) {
+  // 坏载荷:容器可解压但内容不是合法 GetHistoryResponse,同样 BadResponse。
+  StartGateway([&](const chirp::gateway::Packet& pkt, auto send) {
+    if (pkt.msg_id() != chirp::gateway::GET_HISTORY_REQ) {
+      return;
+    }
+    std::string container;
+    ASSERT_TRUE(chirp::common::GzipCompress("###not-a-response###", &container));
+    chirp::chat::GetHistoryResponse wrapped;
+    wrapped.set_code(chirp::common::OK);
+    wrapped.set_messages_gzip(std::move(container));
+    send(RespFor(pkt, chirp::gateway::GET_HISTORY_RESP, wrapped.SerializeAsString()));
+  });
+  ConnectAndLogin();
+  std::error_code ec;
+  (void)WaitRpc<chirp::chat::GetHistoryResponse>([&](auto cb) {
+    client_->FetchHistory(chirp::chat::WORLD, "w", 10, 0, cb);
+  }, ec);
+  EXPECT_EQ(ec, chirp::sdk::make_error_code(chirp::sdk::ChatError::BadResponse));
+}
+
 TEST_F(ConvenienceApiTest, UnansweredConvenienceRequestTimesOut) {
   StartGateway([](const chirp::gateway::Packet&, auto) {});
   auto config = LoopbackConfig(gateway_->port());
@@ -4650,6 +4772,49 @@ TEST_F(ConvenienceApiTest, UnansweredConvenienceRequestTimesOut) {
     client_->FetchUnreadCount(cb);
   }, ec);
   EXPECT_EQ(ec, chirp::sdk::make_error_code(chirp::sdk::ChatError::Timeout));
+}
+
+TEST_F(ConvenienceApiTest, UnparseableUnreadResponseReportsBadResponse) {
+  // TypedRequest 的解析失败臂:FetchUnreadCount 回不可解析 body 时报
+  // BadResponse(消息压缩把 FetchHistory 拆出 TypedRequest 后,该臂由其余
+  // API 续保覆盖)。
+  StartGateway([&](const chirp::gateway::Packet& pkt, auto send) {
+    if (pkt.msg_id() != chirp::gateway::GET_UNREAD_COUNT_REQ) {
+      return;
+    }
+    send(RespFor(pkt, chirp::gateway::GET_UNREAD_COUNT_RESP, "not-proto"));
+  });
+  ConnectAndLogin();
+  std::error_code ec;
+  (void)WaitRpc<chirp::chat::GetUnreadCountResponse>([&](auto cb) {
+    client_->FetchUnreadCount(cb);
+  }, ec);
+  EXPECT_EQ(ec, chirp::sdk::make_error_code(chirp::sdk::ChatError::BadResponse));
+}
+
+TEST_F(ConvenienceApiTest, FetchHistoryTimeoutReportsTimeout) {
+  // FetchHistory 的传输错误臂:网关沉默超时,ec 上抛 Timeout,回调收到空响应。
+  StartGateway([](const chirp::gateway::Packet&, auto) {});
+  auto config = LoopbackConfig(gateway_->port());
+  config.request_timeout_ms = 200;
+  client_ = std::make_unique<ChatClient>(config);
+  client_->Connect();
+  WaitState(*client_, ConnectionState::Connected, kWaitMs);
+  std::promise<std::error_code> done;
+  auto future = done.get_future();
+  client_->Login("tok", [&](const std::error_code& ec, const std::string&) {
+    done.set_value(ec);
+  });
+  ASSERT_EQ(future.wait_for(std::chrono::milliseconds(kWaitMs)), std::future_status::ready);
+  ASSERT_FALSE(future.get());
+  ASSERT_EQ(client_->GetState(), ConnectionState::LoggedIn);
+
+  std::error_code ec;
+  auto resp = WaitRpc<chirp::chat::GetHistoryResponse>([&](auto cb) {
+    client_->FetchHistory(chirp::chat::WORLD, "w", 10, 0, cb);
+  }, ec);
+  EXPECT_EQ(ec, chirp::sdk::make_error_code(chirp::sdk::ChatError::Timeout));
+  EXPECT_EQ(resp.messages_size(), 0);
 }
 
 // ---------------------------------------------------------------------------
