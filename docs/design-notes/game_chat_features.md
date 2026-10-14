@@ -4,7 +4,7 @@ title: 游戏聊天特征
 
 # 游戏聊天特征
 
-最后更新：2026-10-14（P0 消息处理/频道管理/用户行为/消息展示各节补已落地注记——16 项以源码为真相对账，标注实测落地日期与差异裁决；成就分享落地）
+最后更新：2026-10-15（表情/贴图落地注记；P1 消息处理消息编辑/消息引用与 P0 消息搜索补已落地注记——以源码为真相对账，标注实测落地日期与差异裁决）
 
 本文档列出游戏聊天系统需要支持的特征，按优先级分阶段实现。
 
@@ -47,7 +47,9 @@ title: 游戏聊天特征
 
 ### 消息处理
 
-- **消息编辑**：已发送消息可编辑一次。编辑后显示"已编辑"标记。编辑历史不保留。
+- **消息编辑**（已落地 2026-09-18）：`EDIT_MESSAGE_REQ/RESP = 2225/2226`（gateway.proto:116）。服务端 `MessageEditHandlers` + `MessageEditManager` 内存台账（编辑次数上限 `max_edit_count=100`、编辑历史容量 `max_edit_history_size`，超限拒绝；`is_edited`/`edit_count`/`edit_history` 随 ChatMessageFull 下发）。SDK 四端对齐（C++ core `ChatClient::EditMessage`、sdks/ts 与 apps/shared/protocol 双包 msg_map spec、C# 同批）；web/desktop `editMessage`（chat_api.ts:540 双端镜像）+ 气泡"已编辑"标记。**与文档差异**：文档原文"可编辑一次、编辑历史不保留"——实际为最多 100 次编辑（可配），且编辑历史保留并随消息下发。
+- **表情/贴图**（已落地 2026-10-15，伴侣面形态）：16 个内置系统表情（web_companion `components/emoji.ts` 与 desktop `ui/emoji.ts` 同文 `SYSTEM_EMOJIS`）。消息文本中的 `[emoji:code]` 经 `expandEmojiCodes` 分片展开渲染为 emoji 字符（正则 `[a-z0-9_]+`，未知 code 原样保留字面——向前兼容，与 sender_kind/品质/稀有度回落同口径）；输入面带表情选择器（表情按钮 + Popover 网格，点击向草稿插入 `[emoji:code]`）。**服务端零改动**：表情走 TEXT 内容透传，长度/敏感词门照常生效；SDK 四端零改动（metadata 管线不涉及）。贴图（大图包）未做——待贴图资源与 metadata 载体（参照 ACHIEVEMENT 批形状）另批。
+- **消息引用**（已落地 2026-10-11）：`replyToMessageId` 随 SEND_MESSAGE 全链透传（发送侧第 4 参 + wire 字段 + 历史回读映射，web chat_api.ts:307/348/400/1039，desktop 镜像）；气泡渲染引用摘要块（`MessageBubble` quoted 区，web/desktop 同形；被引用方已删除或不可见时显示"原消息已删除或不可见"占位）。服务端按普通字段透传（无独立校验门）。
 - **表情/贴图**（已落地 2026-10-15，伴侣面形态）：16 个内置系统表情（web_companion `components/emoji.ts` 与 desktop `ui/emoji.ts` 同文 `SYSTEM_EMOJIS`）。消息文本中的 `[emoji:code]` 经 `expandEmojiCodes` 分片展开渲染为 emoji 字符（正则 `[a-z0-9_]+`，未知 code 原样保留字面——向前兼容，与 sender_kind/品质/稀有度回落同口径）；输入面带表情选择器（表情按钮 + Popover 网格，点击向草稿插入 `[emoji:code]`）。**服务端零改动**：表情走 TEXT 内容透传，长度/敏感词门照常生效；SDK 四端零改动（metadata 管线不涉及）。贴图（大图包）未做——待贴图资源与 metadata 载体（参照 ACHIEVEMENT 批形状）另批。
 - **消息引用**：回复特定消息。显示被引用消息的摘要。
 - **富文本**：支持粗体、斜体、颜色（VIP 特权）。
@@ -71,7 +73,7 @@ title: 游戏聊天特征
 - **成就分享**（已落地 2026-10-14，伴侣面形态）：`msg_type = ACHIEVEMENT`，卡片式展示（图标 + 名称 + 稀有度 + 描述；获得时间由气泡既有时间标签承担）。服务端在发送门校验 metadata——解析不出 `AchievementMetadata` 或缺 `achievement_id` 回 INVALID_PARAM（与坐标/物品链接同层同口径，非 ACHIEVEMENT 的 metadata 原样透传；basic/enhanced 双形态同接线）；web `MessageBubble` 与 desktop `ChatPanel` 渲染成就卡片（名称按稀有度分色、稀有度文案、描述、achievement_id caption、iconUrl 图标，`data-rarity` 标签供测试断言）；稀有度 0-4 整数编码（普通/优秀/稀有/史诗/传说，与品质同阶梯配色），枚举外未知值回落普通渲染。游戏内客户端的成就卡片自渲染走 SDK 侧（批形状与物品链接同款：`AchievementMetadata` 随 ChatMessage.metadata 通用管线承载，SDK 四端零改动）。
 - **公会招募**：公会招募信息卡片（公会名 + 等级 + 人数 + 一键加入按钮）。
 - **组队招募**：队伍招募信息卡片（副本名 + 人数需求 + 一键申请按钮）。
-- **消息搜索**：搜索聊天历史。按关键词、时间范围、频道过滤。
+- **消息搜索**（已落地 2026-10-08/10-10）：`SEARCH_MESSAGE_REQ/RESP = 2248/2249`（gateway.proto:158）。服务端 chirp_search（TCP 5007）维护 SQLite FTS5 持久索引（MySQL 核对自愈，失败关闭不降级；决策记录 docs/design-notes/message_search.md）：CJK 单字成 token + 拉丁按词的两侧一致分词做 FTS5 短语匹配，`channel_id`/`content_types` 过滤，`(before_timestamp, before_message_id)` 复合游标分页（limit 钳到 [1,50]，缺省 20），原文回传高亮由客户端做（服务端不回 snippet）。desktop `ChatApi.searchMessages`（226d912）+ web `SearchDialog`（7e7a190，5 例单测）；apps/shared/protocol `chat_pipeline.searchMessages`（wire 往返 + 连接/关键词校验顺序单测）。**与文档差异**：文档原文"按关键词、时间范围、频道过滤"——频道过滤已落地（channel_id），时间范围无独立范围参数（before_* 是排序分页游标，非区间过滤）；消息类型过滤额外支持。
 
 ### 游戏特色
 
