@@ -90,6 +90,12 @@ class GroupHandlers {
     return groups_.IsMember(group_id, user_id);
   }
 
+  // 发送门（SEND_MESSAGE 的 GUILD 分支）用：频道是否命中群台账。台账外频道
+  // （Redis 扇出路径）不经成员门。
+  bool HasGroup(const std::string& group_id) {
+    return groups_.HasGroup(group_id);
+  }
+
   // 发送门（SEND_MESSAGE 的 GUILD 分支）用：成员在 now_ms 时刻是否处于
   // 禁言中。false = 未禁言/已到点/不在台账。
   bool IsMuted(const std::string& group_id, const std::string& user_id,

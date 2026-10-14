@@ -15,7 +15,6 @@
     "forceConsistentCasingInFileNames": true,
     "noEmit": true,
     "types": ["vite/client"],
-    "baseUrl": ".",
     "paths": {
       "@chirp/proto/*": ["../../proto/ts/proto/*"],
       "@chirp/app-protocol/*": ["../shared/protocol/src/*"]

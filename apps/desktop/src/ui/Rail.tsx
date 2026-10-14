@@ -31,9 +31,7 @@ function SectionTitle(props: { children: string; action?: ReactNode }) {
   return (
     <Stack
       direction="row"
-      alignItems="center"
-      justifyContent="space-between"
-      sx={{ px: 2, pt: 2, pb: 0.5 }}
+      sx={{ px: 2, pt: 2, pb: 0.5, alignItems: 'center', justifyContent: 'space-between' }}
     >
       <Typography variant="overline" color="text.secondary">
         {props.children}
@@ -57,7 +55,7 @@ function ConversationRow(props: {
     >
       <ListItemText
         primary={
-          <Stack direction="row" alignItems="center" spacing={1}>
+          <Stack direction="row" spacing={1} sx={{ alignItems: 'center' }}>
             {conversation.kind === 'group' ? (
               <GroupsIcon fontSize="small" color="secondary" />
             ) : null}

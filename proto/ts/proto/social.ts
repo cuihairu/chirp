@@ -322,6 +322,37 @@ export interface FriendRemovedNotify {
 
 /**
  * ---------------------------------------------------------------------------
+ * 好友上线通知偏好（P1，可关闭）。按用户存，缺省全开——只显式关掉的用户
+ * 不再收到 FRIEND_ONLINE_NOTIFY(3029)；花名册 PRESENCE_NOTIFY 不受影响。
+ */
+export interface NotifyPrefs {
+  friendOnlineNotify: boolean;
+}
+
+export interface SetNotifyPrefsRequest {
+  userId: string;
+  prefs: NotifyPrefs | undefined;
+}
+
+export interface SetNotifyPrefsResponse {
+  code: ErrorCode;
+  /** 回显生效值 */
+  prefs: NotifyPrefs | undefined;
+  serverTime: number;
+}
+
+export interface GetNotifyPrefsRequest {
+  userId: string;
+}
+
+export interface GetNotifyPrefsResponse {
+  code: ErrorCode;
+  prefs: NotifyPrefs | undefined;
+  serverTime: number;
+}
+
+/**
+ * ---------------------------------------------------------------------------
  * Server-side storage snapshots. These are Redis VALUES (one key per user,
  * e.g. "chirp:social:friends:<uid>"), never wire messages. Keeping them
  * separate from the response messages lets the storage schema evolve without
@@ -341,6 +372,10 @@ export interface StoredPendingRequests {
 export interface StoredPendingRequests_RequestsEntry {
   key: string;
   value: FriendRequest | undefined;
+}
+
+export interface StoredNotifyPrefs {
+  friendOnlineNotify: boolean;
 }
 
 export interface StoredBlockedList {
@@ -2930,6 +2965,380 @@ export const FriendRemovedNotify = {
   },
 };
 
+function createBaseNotifyPrefs(): NotifyPrefs {
+  return { friendOnlineNotify: false };
+}
+
+export const NotifyPrefs = {
+  encode(message: NotifyPrefs, writer: _m0.Writer = _m0.Writer.create()): _m0.Writer {
+    if (message.friendOnlineNotify !== false) {
+      writer.uint32(8).bool(message.friendOnlineNotify);
+    }
+    return writer;
+  },
+
+  decode(input: _m0.Reader | Uint8Array, length?: number): NotifyPrefs {
+    const reader = input instanceof _m0.Reader ? input : _m0.Reader.create(input);
+    let end = length === undefined ? reader.len : reader.pos + length;
+    const message = createBaseNotifyPrefs();
+    while (reader.pos < end) {
+      const tag = reader.uint32();
+      switch (tag >>> 3) {
+        case 1:
+          if (tag !== 8) {
+            break;
+          }
+
+          message.friendOnlineNotify = reader.bool();
+          continue;
+      }
+      if ((tag & 7) === 4 || tag === 0) {
+        break;
+      }
+      reader.skipType(tag & 7);
+    }
+    return message;
+  },
+
+  fromJSON(object: any): NotifyPrefs {
+    return {
+      friendOnlineNotify: isSet(object.friendOnlineNotify) ? globalThis.Boolean(object.friendOnlineNotify) : false,
+    };
+  },
+
+  toJSON(message: NotifyPrefs): unknown {
+    const obj: any = {};
+    if (message.friendOnlineNotify !== false) {
+      obj.friendOnlineNotify = message.friendOnlineNotify;
+    }
+    return obj;
+  },
+
+  create<I extends Exact<DeepPartial<NotifyPrefs>, I>>(base?: I): NotifyPrefs {
+    return NotifyPrefs.fromPartial(base ?? ({} as any));
+  },
+  fromPartial<I extends Exact<DeepPartial<NotifyPrefs>, I>>(object: I): NotifyPrefs {
+    const message = createBaseNotifyPrefs();
+    message.friendOnlineNotify = object.friendOnlineNotify ?? false;
+    return message;
+  },
+};
+
+function createBaseSetNotifyPrefsRequest(): SetNotifyPrefsRequest {
+  return { userId: "", prefs: undefined };
+}
+
+export const SetNotifyPrefsRequest = {
+  encode(message: SetNotifyPrefsRequest, writer: _m0.Writer = _m0.Writer.create()): _m0.Writer {
+    if (message.userId !== "") {
+      writer.uint32(10).string(message.userId);
+    }
+    if (message.prefs !== undefined) {
+      NotifyPrefs.encode(message.prefs, writer.uint32(18).fork()).ldelim();
+    }
+    return writer;
+  },
+
+  decode(input: _m0.Reader | Uint8Array, length?: number): SetNotifyPrefsRequest {
+    const reader = input instanceof _m0.Reader ? input : _m0.Reader.create(input);
+    let end = length === undefined ? reader.len : reader.pos + length;
+    const message = createBaseSetNotifyPrefsRequest();
+    while (reader.pos < end) {
+      const tag = reader.uint32();
+      switch (tag >>> 3) {
+        case 1:
+          if (tag !== 10) {
+            break;
+          }
+
+          message.userId = reader.string();
+          continue;
+        case 2:
+          if (tag !== 18) {
+            break;
+          }
+
+          message.prefs = NotifyPrefs.decode(reader, reader.uint32());
+          continue;
+      }
+      if ((tag & 7) === 4 || tag === 0) {
+        break;
+      }
+      reader.skipType(tag & 7);
+    }
+    return message;
+  },
+
+  fromJSON(object: any): SetNotifyPrefsRequest {
+    return {
+      userId: isSet(object.userId) ? globalThis.String(object.userId) : "",
+      prefs: isSet(object.prefs) ? NotifyPrefs.fromJSON(object.prefs) : undefined,
+    };
+  },
+
+  toJSON(message: SetNotifyPrefsRequest): unknown {
+    const obj: any = {};
+    if (message.userId !== "") {
+      obj.userId = message.userId;
+    }
+    if (message.prefs !== undefined) {
+      obj.prefs = NotifyPrefs.toJSON(message.prefs);
+    }
+    return obj;
+  },
+
+  create<I extends Exact<DeepPartial<SetNotifyPrefsRequest>, I>>(base?: I): SetNotifyPrefsRequest {
+    return SetNotifyPrefsRequest.fromPartial(base ?? ({} as any));
+  },
+  fromPartial<I extends Exact<DeepPartial<SetNotifyPrefsRequest>, I>>(object: I): SetNotifyPrefsRequest {
+    const message = createBaseSetNotifyPrefsRequest();
+    message.userId = object.userId ?? "";
+    message.prefs = (object.prefs !== undefined && object.prefs !== null)
+      ? NotifyPrefs.fromPartial(object.prefs)
+      : undefined;
+    return message;
+  },
+};
+
+function createBaseSetNotifyPrefsResponse(): SetNotifyPrefsResponse {
+  return { code: 0, prefs: undefined, serverTime: 0 };
+}
+
+export const SetNotifyPrefsResponse = {
+  encode(message: SetNotifyPrefsResponse, writer: _m0.Writer = _m0.Writer.create()): _m0.Writer {
+    if (message.code !== 0) {
+      writer.uint32(8).int32(message.code);
+    }
+    if (message.prefs !== undefined) {
+      NotifyPrefs.encode(message.prefs, writer.uint32(18).fork()).ldelim();
+    }
+    if (message.serverTime !== 0) {
+      writer.uint32(24).int64(message.serverTime);
+    }
+    return writer;
+  },
+
+  decode(input: _m0.Reader | Uint8Array, length?: number): SetNotifyPrefsResponse {
+    const reader = input instanceof _m0.Reader ? input : _m0.Reader.create(input);
+    let end = length === undefined ? reader.len : reader.pos + length;
+    const message = createBaseSetNotifyPrefsResponse();
+    while (reader.pos < end) {
+      const tag = reader.uint32();
+      switch (tag >>> 3) {
+        case 1:
+          if (tag !== 8) {
+            break;
+          }
+
+          message.code = reader.int32() as any;
+          continue;
+        case 2:
+          if (tag !== 18) {
+            break;
+          }
+
+          message.prefs = NotifyPrefs.decode(reader, reader.uint32());
+          continue;
+        case 3:
+          if (tag !== 24) {
+            break;
+          }
+
+          message.serverTime = longToNumber(reader.int64() as Long);
+          continue;
+      }
+      if ((tag & 7) === 4 || tag === 0) {
+        break;
+      }
+      reader.skipType(tag & 7);
+    }
+    return message;
+  },
+
+  fromJSON(object: any): SetNotifyPrefsResponse {
+    return {
+      code: isSet(object.code) ? errorCodeFromJSON(object.code) : 0,
+      prefs: isSet(object.prefs) ? NotifyPrefs.fromJSON(object.prefs) : undefined,
+      serverTime: isSet(object.serverTime) ? globalThis.Number(object.serverTime) : 0,
+    };
+  },
+
+  toJSON(message: SetNotifyPrefsResponse): unknown {
+    const obj: any = {};
+    if (message.code !== 0) {
+      obj.code = errorCodeToJSON(message.code);
+    }
+    if (message.prefs !== undefined) {
+      obj.prefs = NotifyPrefs.toJSON(message.prefs);
+    }
+    if (message.serverTime !== 0) {
+      obj.serverTime = Math.round(message.serverTime);
+    }
+    return obj;
+  },
+
+  create<I extends Exact<DeepPartial<SetNotifyPrefsResponse>, I>>(base?: I): SetNotifyPrefsResponse {
+    return SetNotifyPrefsResponse.fromPartial(base ?? ({} as any));
+  },
+  fromPartial<I extends Exact<DeepPartial<SetNotifyPrefsResponse>, I>>(object: I): SetNotifyPrefsResponse {
+    const message = createBaseSetNotifyPrefsResponse();
+    message.code = object.code ?? 0;
+    message.prefs = (object.prefs !== undefined && object.prefs !== null)
+      ? NotifyPrefs.fromPartial(object.prefs)
+      : undefined;
+    message.serverTime = object.serverTime ?? 0;
+    return message;
+  },
+};
+
+function createBaseGetNotifyPrefsRequest(): GetNotifyPrefsRequest {
+  return { userId: "" };
+}
+
+export const GetNotifyPrefsRequest = {
+  encode(message: GetNotifyPrefsRequest, writer: _m0.Writer = _m0.Writer.create()): _m0.Writer {
+    if (message.userId !== "") {
+      writer.uint32(10).string(message.userId);
+    }
+    return writer;
+  },
+
+  decode(input: _m0.Reader | Uint8Array, length?: number): GetNotifyPrefsRequest {
+    const reader = input instanceof _m0.Reader ? input : _m0.Reader.create(input);
+    let end = length === undefined ? reader.len : reader.pos + length;
+    const message = createBaseGetNotifyPrefsRequest();
+    while (reader.pos < end) {
+      const tag = reader.uint32();
+      switch (tag >>> 3) {
+        case 1:
+          if (tag !== 10) {
+            break;
+          }
+
+          message.userId = reader.string();
+          continue;
+      }
+      if ((tag & 7) === 4 || tag === 0) {
+        break;
+      }
+      reader.skipType(tag & 7);
+    }
+    return message;
+  },
+
+  fromJSON(object: any): GetNotifyPrefsRequest {
+    return { userId: isSet(object.userId) ? globalThis.String(object.userId) : "" };
+  },
+
+  toJSON(message: GetNotifyPrefsRequest): unknown {
+    const obj: any = {};
+    if (message.userId !== "") {
+      obj.userId = message.userId;
+    }
+    return obj;
+  },
+
+  create<I extends Exact<DeepPartial<GetNotifyPrefsRequest>, I>>(base?: I): GetNotifyPrefsRequest {
+    return GetNotifyPrefsRequest.fromPartial(base ?? ({} as any));
+  },
+  fromPartial<I extends Exact<DeepPartial<GetNotifyPrefsRequest>, I>>(object: I): GetNotifyPrefsRequest {
+    const message = createBaseGetNotifyPrefsRequest();
+    message.userId = object.userId ?? "";
+    return message;
+  },
+};
+
+function createBaseGetNotifyPrefsResponse(): GetNotifyPrefsResponse {
+  return { code: 0, prefs: undefined, serverTime: 0 };
+}
+
+export const GetNotifyPrefsResponse = {
+  encode(message: GetNotifyPrefsResponse, writer: _m0.Writer = _m0.Writer.create()): _m0.Writer {
+    if (message.code !== 0) {
+      writer.uint32(8).int32(message.code);
+    }
+    if (message.prefs !== undefined) {
+      NotifyPrefs.encode(message.prefs, writer.uint32(18).fork()).ldelim();
+    }
+    if (message.serverTime !== 0) {
+      writer.uint32(24).int64(message.serverTime);
+    }
+    return writer;
+  },
+
+  decode(input: _m0.Reader | Uint8Array, length?: number): GetNotifyPrefsResponse {
+    const reader = input instanceof _m0.Reader ? input : _m0.Reader.create(input);
+    let end = length === undefined ? reader.len : reader.pos + length;
+    const message = createBaseGetNotifyPrefsResponse();
+    while (reader.pos < end) {
+      const tag = reader.uint32();
+      switch (tag >>> 3) {
+        case 1:
+          if (tag !== 8) {
+            break;
+          }
+
+          message.code = reader.int32() as any;
+          continue;
+        case 2:
+          if (tag !== 18) {
+            break;
+          }
+
+          message.prefs = NotifyPrefs.decode(reader, reader.uint32());
+          continue;
+        case 3:
+          if (tag !== 24) {
+            break;
+          }
+
+          message.serverTime = longToNumber(reader.int64() as Long);
+          continue;
+      }
+      if ((tag & 7) === 4 || tag === 0) {
+        break;
+      }
+      reader.skipType(tag & 7);
+    }
+    return message;
+  },
+
+  fromJSON(object: any): GetNotifyPrefsResponse {
+    return {
+      code: isSet(object.code) ? errorCodeFromJSON(object.code) : 0,
+      prefs: isSet(object.prefs) ? NotifyPrefs.fromJSON(object.prefs) : undefined,
+      serverTime: isSet(object.serverTime) ? globalThis.Number(object.serverTime) : 0,
+    };
+  },
+
+  toJSON(message: GetNotifyPrefsResponse): unknown {
+    const obj: any = {};
+    if (message.code !== 0) {
+      obj.code = errorCodeToJSON(message.code);
+    }
+    if (message.prefs !== undefined) {
+      obj.prefs = NotifyPrefs.toJSON(message.prefs);
+    }
+    if (message.serverTime !== 0) {
+      obj.serverTime = Math.round(message.serverTime);
+    }
+    return obj;
+  },
+
+  create<I extends Exact<DeepPartial<GetNotifyPrefsResponse>, I>>(base?: I): GetNotifyPrefsResponse {
+    return GetNotifyPrefsResponse.fromPartial(base ?? ({} as any));
+  },
+  fromPartial<I extends Exact<DeepPartial<GetNotifyPrefsResponse>, I>>(object: I): GetNotifyPrefsResponse {
+    const message = createBaseGetNotifyPrefsResponse();
+    message.code = object.code ?? 0;
+    message.prefs = (object.prefs !== undefined && object.prefs !== null)
+      ? NotifyPrefs.fromPartial(object.prefs)
+      : undefined;
+    message.serverTime = object.serverTime ?? 0;
+    return message;
+  },
+};
+
 function createBaseStoredFriendList(): StoredFriendList {
   return { friendUserIds: [] };
 }
@@ -3148,6 +3557,65 @@ export const StoredPendingRequests_RequestsEntry = {
     message.value = (object.value !== undefined && object.value !== null)
       ? FriendRequest.fromPartial(object.value)
       : undefined;
+    return message;
+  },
+};
+
+function createBaseStoredNotifyPrefs(): StoredNotifyPrefs {
+  return { friendOnlineNotify: false };
+}
+
+export const StoredNotifyPrefs = {
+  encode(message: StoredNotifyPrefs, writer: _m0.Writer = _m0.Writer.create()): _m0.Writer {
+    if (message.friendOnlineNotify !== false) {
+      writer.uint32(8).bool(message.friendOnlineNotify);
+    }
+    return writer;
+  },
+
+  decode(input: _m0.Reader | Uint8Array, length?: number): StoredNotifyPrefs {
+    const reader = input instanceof _m0.Reader ? input : _m0.Reader.create(input);
+    let end = length === undefined ? reader.len : reader.pos + length;
+    const message = createBaseStoredNotifyPrefs();
+    while (reader.pos < end) {
+      const tag = reader.uint32();
+      switch (tag >>> 3) {
+        case 1:
+          if (tag !== 8) {
+            break;
+          }
+
+          message.friendOnlineNotify = reader.bool();
+          continue;
+      }
+      if ((tag & 7) === 4 || tag === 0) {
+        break;
+      }
+      reader.skipType(tag & 7);
+    }
+    return message;
+  },
+
+  fromJSON(object: any): StoredNotifyPrefs {
+    return {
+      friendOnlineNotify: isSet(object.friendOnlineNotify) ? globalThis.Boolean(object.friendOnlineNotify) : false,
+    };
+  },
+
+  toJSON(message: StoredNotifyPrefs): unknown {
+    const obj: any = {};
+    if (message.friendOnlineNotify !== false) {
+      obj.friendOnlineNotify = message.friendOnlineNotify;
+    }
+    return obj;
+  },
+
+  create<I extends Exact<DeepPartial<StoredNotifyPrefs>, I>>(base?: I): StoredNotifyPrefs {
+    return StoredNotifyPrefs.fromPartial(base ?? ({} as any));
+  },
+  fromPartial<I extends Exact<DeepPartial<StoredNotifyPrefs>, I>>(object: I): StoredNotifyPrefs {
+    const message = createBaseStoredNotifyPrefs();
+    message.friendOnlineNotify = object.friendOnlineNotify ?? false;
     return message;
   },
 };

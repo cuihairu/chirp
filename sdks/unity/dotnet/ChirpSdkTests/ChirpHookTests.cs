@@ -438,6 +438,41 @@ public class ChirpHookTests
     }
 
     [Fact]
+    public async Task MsgTypeAndMetadata_ReachesWire_AndArchive()
+    {
+        var transport = new FakeTransport();
+        var client = await LoginAsync(transport);
+        client.SetMessageStore(new MemoryMessageStore());
+
+        // 坐标链接（P1）：msg_type + metadata 一起上链并存档。
+        var coord = new Chirp.Chat.CoordMetadata
+        {
+            MapId = "field-7",
+            X = 120,
+            Y = 88,
+            Z = 3,
+            Label = "BOSS 刷新点",
+        };
+        var options = WorldOptions();
+        options.MsgType = Chirp.Chat.MsgType.CoordLink;
+        options.Metadata = coord.ToByteString();
+        await SendEchoAsync(client, transport, options, "BOSS 刷新点");
+
+        var wire = SentRequest(transport);
+        Assert.Equal(Chirp.Chat.MsgType.CoordLink, wire.MsgType);
+        var wireCoord = Chirp.Chat.CoordMetadata.Parser.ParseFrom(wire.Metadata);
+        Assert.Equal("field-7", wireCoord.MapId);
+        Assert.Equal(120, wireCoord.X);
+        Assert.Equal("BOSS 刷新点", wireCoord.Label);
+
+        var archived = client.LoadHistory(Chirp.Chat.ChannelType.World, "world-0", 10).Single();
+        Assert.Equal(Chirp.Chat.MsgType.CoordLink, archived.MsgType);
+        var archivedCoord = Chirp.Chat.CoordMetadata.Parser.ParseFrom(archived.Metadata);
+        Assert.Equal("field-7", archivedCoord.MapId);
+        Assert.Equal(88, archivedCoord.Y);
+    }
+
+    [Fact]
     public async Task PrivateChannel_NormalizesSortedPair()
     {
         var transport = new FakeTransport();

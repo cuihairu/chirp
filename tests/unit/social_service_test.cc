@@ -717,6 +717,134 @@ TEST_F(SocialServiceTest, DisconnectWithoutLoginIsSilent) {
 }
 
 // ---------------------------------------------------------------------------
+// 好友上线通知（P1，可关闭）：3025-3029
+// ---------------------------------------------------------------------------
+
+TEST_F(SocialServiceTest, LoginTransitionFiresFriendOnlineNotify) {
+  // a 的花名册行决定 a 上线时谁收通知（与 LoginBroadcastsOnlineToFriendsOnly
+  // 的播种方向一致）；b 是好友、x 不是。
+  state_->friends["user_a"].insert("user_b");
+  state_->friends["user_x"];
+
+  auto b = Login("user_b");
+  auto x = Login("user_x");
+  (void)x;
+
+  Login("user_a");
+
+  ASSERT_EQ(CountNotify(*b, chirp::gateway::FRIEND_ONLINE_NOTIFY), 1);
+  chirp::social::PresenceNotify notify;
+  std::string body;
+  ASSERT_TRUE(LastNotifyOf(*b, chirp::gateway::FRIEND_ONLINE_NOTIFY, &body));
+  ASSERT_TRUE(notify.ParseFromString(body));
+  EXPECT_EQ(notify.user_id(), "user_a");
+  EXPECT_EQ(notify.status(), chirp::social::ONLINE);
+  // 非好友不收；花名册 PRESENCE_NOTIFY 照常（不受本功能影响）。
+  EXPECT_EQ(CountNotify(*x, chirp::gateway::FRIEND_ONLINE_NOTIFY), 0);
+  EXPECT_EQ(CountNotify(*b, chirp::gateway::PRESENCE_NOTIFY), 1);
+}
+
+TEST_F(SocialServiceTest, FriendOnlineNotifySuppressedByPrefs) {
+  state_->friends["user_a"].insert("user_b");
+
+  auto b = Login("user_b");
+  chirp::social::SetNotifyPrefsRequest set;
+  set.set_user_id("user_b");
+  set.mutable_prefs()->set_friend_online_notify(false);
+  Deliver(chirp::gateway::SET_NOTIFY_PREFS_REQ, 1, set.SerializeAsString(), b);
+  chirp::social::SetNotifyPrefsResponse set_resp;
+  ASSERT_TRUE(LastBody(*b, &set_resp));
+  ASSERT_EQ(set_resp.code(), chirp::common::OK);
+  ASSERT_FALSE(set_resp.prefs().friend_online_notify());
+
+  Login("user_a");
+
+  // 开关只压 FRIEND_ONLINE_NOTIFY：花名册 PRESENCE_NOTIFY 仍到达。
+  EXPECT_EQ(CountNotify(*b, chirp::gateway::FRIEND_ONLINE_NOTIFY), 0);
+  EXPECT_EQ(CountNotify(*b, chirp::gateway::PRESENCE_NOTIFY), 1);
+}
+
+TEST_F(SocialServiceTest, NotifyPrefsDefaultOnAndRoundTrip) {
+  auto a = Login("user_a");
+
+  chirp::social::GetNotifyPrefsRequest get;
+  get.set_user_id("user_a");
+  Deliver(chirp::gateway::GET_NOTIFY_PREFS_REQ, 1, get.SerializeAsString(), a);
+  chirp::social::GetNotifyPrefsResponse get_resp;
+  ASSERT_TRUE(LastBody(*a, &get_resp));
+  ASSERT_EQ(get_resp.code(), chirp::common::OK);
+  EXPECT_TRUE(get_resp.prefs().friend_online_notify());  // 缺省全开
+
+  chirp::social::SetNotifyPrefsRequest set;
+  set.set_user_id("user_a");
+  set.mutable_prefs()->set_friend_online_notify(false);
+  Deliver(chirp::gateway::SET_NOTIFY_PREFS_REQ, 2, set.SerializeAsString(), a);
+  chirp::social::SetNotifyPrefsResponse set_resp;
+  ASSERT_TRUE(LastBody(*a, &set_resp));
+  ASSERT_EQ(set_resp.code(), chirp::common::OK);
+  EXPECT_FALSE(set_resp.prefs().friend_online_notify());
+
+  Deliver(chirp::gateway::GET_NOTIFY_PREFS_REQ, 3, get.SerializeAsString(), a);
+  ASSERT_TRUE(LastBody(*a, &get_resp));
+  EXPECT_FALSE(get_resp.prefs().friend_online_notify());
+
+  set.mutable_prefs()->set_friend_online_notify(true);
+  Deliver(chirp::gateway::SET_NOTIFY_PREFS_REQ, 4, set.SerializeAsString(), a);
+  ASSERT_TRUE(LastBody(*a, &set_resp));
+  EXPECT_TRUE(set_resp.prefs().friend_online_notify());
+
+  // prefs 子消息缺失 = 参数不完整，不静默当关。
+  chirp::social::SetNotifyPrefsRequest bare;
+  bare.set_user_id("user_a");
+  Deliver(chirp::gateway::SET_NOTIFY_PREFS_REQ, 5, bare.SerializeAsString(), a);
+  ASSERT_TRUE(LastBody(*a, &set_resp));
+  EXPECT_EQ(set_resp.code(), chirp::common::INVALID_PARAM);
+
+  // 未登录会话过不了 RequireUser。
+  chirp::social::GetNotifyPrefsRequest anon;
+  anon.set_user_id("user_a");
+  Deliver(chirp::gateway::GET_NOTIFY_PREFS_REQ, 6, anon.SerializeAsString());
+  chirp::social::GetNotifyPrefsResponse anon_resp;
+  ASSERT_TRUE(LastBody(*session_, &anon_resp));
+  EXPECT_EQ(anon_resp.code(), chirp::common::AUTH_FAILED);
+}
+
+TEST_F(SocialServiceTest, FriendOnlineNotifyOnlyOnOfflineFlip) {
+  state_->friends["user_a"].insert("user_b");
+  auto a = Login("user_a");
+  auto b = Login("user_b");
+
+  // a 已在线：AWAY/DND 等非 OFFLINE 间切换不算上线，不补发。
+  chirp::social::SetPresenceRequest set;
+  set.set_user_id("user_a");
+  set.set_status(chirp::social::AWAY);
+  Deliver(chirp::gateway::SET_PRESENCE_REQ, 1, set.SerializeAsString(), a);
+  chirp::social::SetPresenceResponse resp;
+  ASSERT_TRUE(LastBody(*a, &resp));
+  ASSERT_EQ(resp.code(), chirp::common::OK);
+  EXPECT_EQ(CountNotify(*b, chirp::gateway::FRIEND_ONLINE_NOTIFY), 0);
+  EXPECT_EQ(CountNotify(*b, chirp::gateway::PRESENCE_NOTIFY), 1);
+
+  // 显式下线再回 ONLINE 是一次 OFFLINE→非 OFFLINE 跃迁：补发一次。
+  set.set_status(chirp::social::OFFLINE);
+  Deliver(chirp::gateway::SET_PRESENCE_REQ, 2, set.SerializeAsString(), a);
+  ASSERT_TRUE(LastBody(*a, &resp));
+  ASSERT_EQ(resp.code(), chirp::common::OK);
+  set.set_status(chirp::social::ONLINE);
+  Deliver(chirp::gateway::SET_PRESENCE_REQ, 3, set.SerializeAsString(), a);
+  ASSERT_TRUE(LastBody(*a, &resp));
+  ASSERT_EQ(resp.code(), chirp::common::OK);
+
+  ASSERT_EQ(CountNotify(*b, chirp::gateway::FRIEND_ONLINE_NOTIFY), 1);
+  chirp::social::PresenceNotify notify;
+  std::string body;
+  ASSERT_TRUE(LastNotifyOf(*b, chirp::gateway::FRIEND_ONLINE_NOTIFY, &body));
+  ASSERT_TRUE(notify.ParseFromString(body));
+  EXPECT_EQ(notify.user_id(), "user_a");
+  EXPECT_EQ(notify.status(), chirp::social::ONLINE);
+}
+
+// ---------------------------------------------------------------------------
 // Redis write-through + restore
 // ---------------------------------------------------------------------------
 
@@ -786,6 +914,31 @@ TEST_F(SocialRedisTest, LoadRestoresStateFromSnapshots) {
   EXPECT_EQ(restored->friends["user_b"].count("user_a"), 1u);
   ASSERT_EQ(restored->pending_requests.size(), 1u);  // c->d stored on both sides, deduped
   EXPECT_EQ(restored->blocked["user_c"].count("user_e"), 1u);
+}
+
+TEST_F(SocialRedisTest, NotifyPrefsSurviveRestore) {
+  auto a = Login("user_a");
+  auto b = Login("user_b");  // keeps the default (no SET ever issued)
+  (void)b;
+
+  chirp::social::SetNotifyPrefsRequest set;
+  set.set_user_id("user_a");
+  set.mutable_prefs()->set_friend_online_notify(false);
+  Deliver(chirp::gateway::SET_NOTIFY_PREFS_REQ, 1, set.SerializeAsString(), a);
+  chirp::social::SetNotifyPrefsResponse set_resp;
+  ASSERT_TRUE(LastBody(*a, &set_resp));
+  ASSERT_EQ(set_resp.code(), chirp::common::OK);
+
+  chirp::social::StoredNotifyPrefs stored;
+  ASSERT_TRUE(stored.ParseFromString(mem_->GetDirect("chirp:social:notify_prefs:user_a")));
+  EXPECT_FALSE(stored.friend_online_notify());
+
+  auto restored = std::make_shared<SocialState>();
+  ASSERT_TRUE(LoadSocialState(redis_, restored));
+  ASSERT_EQ(restored->notify_prefs.count("user_a"), 1u);
+  EXPECT_FALSE(restored->notify_prefs["user_a"].friend_online_notify());
+  // 未显式设置过的用户没有快照，装载后仍走缺省全开。
+  EXPECT_EQ(restored->notify_prefs.count("user_b"), 0u);
 }
 
 TEST_F(SocialRedisTest, UnreachableRedisStillServesRequests) {
@@ -1040,6 +1193,37 @@ TEST_F(SocialServiceTest, SetPresenceAfterGameAssertionStillPresentsInGame) {
   EXPECT_EQ(info.status_message(), "g1");
   // The base keeps the explicit AWAY for when the game assertion goes away.
   EXPECT_EQ(state_->presence["user_b"].status(), chirp::social::AWAY);
+}
+
+TEST_F(SocialServiceTest, GameAssertionFromOfflineFiresFriendOnline) {
+  state_->friends["user_a"].insert("user_b");
+  auto b = Login("user_b");
+
+  // 无会话玩家被游戏平面断言进游戏：有效状态 OFFLINE→IN_GAME，补发。
+  ConsumeGamePresenceEvent(state_, kEventsChannel,
+                           PresenceEventBody("user_a", "g1", true));
+  ASSERT_EQ(CountNotify(*b, chirp::gateway::FRIEND_ONLINE_NOTIFY), 1);
+  chirp::social::PresenceNotify notify;
+  std::string body;
+  ASSERT_TRUE(LastNotifyOf(*b, chirp::gateway::FRIEND_ONLINE_NOTIFY, &body));
+  ASSERT_TRUE(notify.ParseFromString(body));
+  EXPECT_EQ(notify.user_id(), "user_a");
+  EXPECT_EQ(notify.status(), chirp::social::IN_GAME);
+  EXPECT_EQ(notify.status_message(), "g1");
+
+  // IN_GAME→IN_GAME（换游戏）不是上线，不重复补发；逐个退到 OFFLINE 也不发。
+  ConsumeGamePresenceEvent(state_, kEventsChannel,
+                           PresenceEventBody("user_a", "g2", true));
+  ConsumeGamePresenceEvent(state_, kEventsChannel,
+                           PresenceEventBody("user_a", "g2", false));  // 还在 g1，仍 IN_GAME
+  ConsumeGamePresenceEvent(state_, kEventsChannel,
+                           PresenceEventBody("user_a", "g1", false));  // 退光 → OFFLINE
+  EXPECT_EQ(CountNotify(*b, chirp::gateway::FRIEND_ONLINE_NOTIFY), 1);
+
+  // 再次上线（OFFLINE→IN_GAME）再发一次。
+  ConsumeGamePresenceEvent(state_, kEventsChannel,
+                           PresenceEventBody("user_a", "g1", true));
+  EXPECT_EQ(CountNotify(*b, chirp::gateway::FRIEND_ONLINE_NOTIFY), 2);
 }
 
 // ---------------------------------------------------------------------------

@@ -449,6 +449,25 @@ namespace Chirp.Sdk
             return await RequestAsync(Specs.SetGroupMute, request, timeoutMs).ConfigureAwait(false);
         }
 
+        /// <summary>举报消息(REPORT_MESSAGE_REQ/RESP 2253/2254):服务端内存台账
+        /// 按 (message_id, reporter_id) 去重幂等,响应回显累计举报数。reason 可选
+        /// (上限 500 码点,服务端校验)。返回 ReportMessageResponse。连接态检查先于
+        /// 参数校验,非连接态抛 RequestError(Closed)。</summary>
+        public async Task<Chirp.Chat.ReportMessageResponse> ReportMessageAsync(string messageId,
+            string reason = "", int? timeoutMs = null)
+        {
+            if (Status != ConnStatus.Connected)
+            {
+                throw new RequestError(RequestErrorKind.Closed);
+            }
+            var request = new Chirp.Chat.ReportMessageRequest
+            {
+                MessageId = messageId ?? "",
+                Reason = reason ?? "",
+            };
+            return await RequestAsync(Specs.ReportMessage, request, timeoutMs).ConfigureAwait(false);
+        }
+
         // ----- hook internals -----
 
         // level: client-declared game level (world-channel level gate,
@@ -490,6 +509,7 @@ namespace Chirp.Sdk
                 ChannelId = channelId,
                 MsgType = options.MsgType,
                 ReplyToMessageId = options.ReplyToMessageId,
+                Metadata = options.Metadata,
                 Content = Google.Protobuf.ByteString.CopyFrom(
                     Encoding.UTF8.GetBytes(content)),
                 ClientTimestamp = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds(),
@@ -510,6 +530,7 @@ namespace Chirp.Sdk
                 Content = request.Content,
                 Timestamp = request.ClientTimestamp,
                 ReplyToMessageId = request.ReplyToMessageId,
+                Metadata = request.Metadata,
             };
         }
 

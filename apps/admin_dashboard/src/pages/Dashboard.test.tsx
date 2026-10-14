@@ -1,4 +1,5 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
+import { act } from 'react';
 import { render, screen, waitFor } from '@testing-library/react';
 import Dashboard from './Dashboard';
 
@@ -20,7 +21,9 @@ describe('Dashboard', () => {
 
   it('renders metric cards with formatted prop stats after the gate opens', async () => {
     render(<Dashboard stats={STATS} />);
-    await vi.advanceTimersByTimeAsync(500);
+    await act(async () => {
+      await vi.advanceTimersByTimeAsync(500);
+    });
 
     expect(screen.getByText('Dashboard')).toBeTruthy();
     expect(screen.getByText('Total Users')).toBeTruthy();
@@ -32,7 +35,9 @@ describe('Dashboard', () => {
 
   it('renders the service status table and recent alerts', async () => {
     render(<Dashboard stats={STATS} />);
-    await vi.advanceTimersByTimeAsync(500);
+    await act(async () => {
+      await vi.advanceTimersByTimeAsync(500);
+    });
 
     // Six services, all healthy
     for (const service of ['Gateway', 'Chat', 'Social', 'Voice', 'Auth', 'Notification']) {

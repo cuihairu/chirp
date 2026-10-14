@@ -18,6 +18,7 @@
 #include "typing_manager.h"
 #include "message_edit_manager.h"
 #include "mention_manager.h"
+#include "report_ledger.h"
 
 namespace chirp::chat {
 
@@ -234,6 +235,28 @@ class MentionHandlers {
  private:
   MentionManager& mentions_;
   ChannelModeratorChecker is_moderator_;
+};
+
+// Handlers for message reports (REPORT_MESSAGE 2253/2254). A report is
+// recorded in the process-lifetime ReportLedger, deduped per
+// (message_id, reporter_id); the target message must exist in the edit
+// ledger (this instance actually delivered it), which keeps garbage
+// message_ids from growing the ledger. The admin review queue is a future
+// batch (same scope ruling as group-domain mute).
+class ReportHandlers {
+ public:
+  ReportHandlers(ReportLedger& reports, MessageEditManager& edits)
+      : reports_(reports), edits_(edits) {}
+
+  chirp::chat::ReportMessageResponse HandleReportMessage(
+      const chirp::chat::ReportMessageRequest& req,
+      std::string_view authenticated_user_id);
+
+ private:
+  static constexpr size_t kMaxReasonCodePoints = 500;
+
+  ReportLedger& reports_;
+  MessageEditManager& edits_;
 };
 
 }  // namespace chirp::chat

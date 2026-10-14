@@ -207,6 +207,22 @@ export const GET_PRESENCE = defineSpec(
   Social.GetPresenceResponse,
 );
 
+// 好友上线通知偏好(3025-3028):按用户存、缺省全开。SET 必须带 prefs 子消息
+// (服务端对缺失子消息回 INVALID_PARAM,不静默当成"关")。3029 FRIEND_ONLINE_NOTIFY
+// 是服务器单向推送,无 REQ/RESP 配对,走 conn.onNotify。
+export const SET_NOTIFY_PREFS = defineSpec(
+  MsgID.SET_NOTIFY_PREFS_REQ,
+  MsgID.SET_NOTIFY_PREFS_RESP,
+  Social.SetNotifyPrefsRequest,
+  Social.SetNotifyPrefsResponse,
+);
+export const GET_NOTIFY_PREFS = defineSpec(
+  MsgID.GET_NOTIFY_PREFS_REQ,
+  MsgID.GET_NOTIFY_PREFS_RESP,
+  Social.GetNotifyPrefsRequest,
+  Social.GetNotifyPrefsResponse,
+);
+
 // Party plane (WS 7501): cross-game team-up. Invite-accept only, snapshot
 // sync (PARTY_STATE_CHANGED carries the full PartyInfo to every member).
 export const CREATE_PARTY = defineSpec(
@@ -390,4 +406,13 @@ export const SET_GROUP_MUTE = defineSpec(
   MsgID.SET_GROUP_MUTE_RESP,
   Chat.SetGroupMuteRequest,
   Chat.SetGroupMuteResponse,
+);
+
+// 举报(REPORT_MESSAGE_REQ/RESP 2253/2254):按 (message_id, reporter_id)
+// 去重幂等,重复举报不重复计数,响应回显 reportCount。理由上限 500 码点。
+export const REPORT_MESSAGE = defineSpec(
+  MsgID.REPORT_MESSAGE_REQ,
+  MsgID.REPORT_MESSAGE_RESP,
+  Chat.ReportMessageRequest,
+  Chat.ReportMessageResponse,
 );

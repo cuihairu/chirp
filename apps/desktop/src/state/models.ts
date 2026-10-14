@@ -34,6 +34,15 @@ export interface MessageReactionView {
   mine: boolean;
 }
 
+/** Coordinate card (P1 COORD_LINK): tap to copy "x, y[, z]". */
+export interface CoordView {
+  mapId: string;
+  x: number;
+  y: number;
+  z: number;
+  label: string;
+}
+
 export interface ChatMessageView {
   /** Server message id; optimistic sends carry a local id until confirmed. */
   messageId: string;
@@ -58,6 +67,8 @@ export interface ChatMessageView {
   deleted?: boolean;
   /** Quoted parent message id (P1 reply); absent = not a reply. */
   replyToMessageId?: string;
+  /** Coordinate card (P1 COORD_LINK); absent = plain text bubble. */
+  coord?: CoordView;
   /** Emoji → aggregate, updated by reaction RESP/notify. */
   reactions?: Record<string, MessageReactionView>;
 }

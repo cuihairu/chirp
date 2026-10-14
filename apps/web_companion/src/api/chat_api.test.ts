@@ -2,6 +2,7 @@ import { describe, expect, it, vi } from 'vitest';
 import {
   ChannelType,
   ChatMessage,
+  CoordMetadata,
   GroupMemberAliasUpdatedNotify,
   GroupMemberKickedNotify,
   GroupMemberMutedNotify,
@@ -240,9 +241,78 @@ describe('ChatApi.sendMessage (optimistic)', () => {
     const list = h.messages.get().byChannel[channel.key];
     expect(list[0].replyToMessageId).toBeUndefined();
   });
+
+  it('sends COORD_LINK with coord metadata and shows the card optimistically', async () => {
+    const h = makeHarness();
+    await login(h);
+    h.conn.setResponder(async (msgId, req) => {
+      expect(msgId).toBe(MsgID.SEND_MESSAGE_REQ);
+      expect(req).toMatchObject({ msgType: MsgType.COORD_LINK });
+      return { code: 0, messageId: 'srv-c1' };
+    });
+    await h.api.sendMessage(channel, '矿点', undefined, {
+      mapId: 'field-7',
+      x: 120,
+      y: 88,
+      z: 3,
+      label: '矿点',
+    });
+    const wire = h.conn.requests.find((r) => r.msgId === MsgID.SEND_MESSAGE_REQ)!;
+    const coord = CoordMetadata.decode((wire.req as { metadata?: Uint8Array }).metadata ?? new Uint8Array());
+    expect(coord.mapId).toBe('field-7');
+    expect(coord.x).toBe(120);
+    expect(coord.y).toBe(88);
+    expect(coord.z).toBe(3);
+    expect(coord.label).toBe('矿点');
+    expect(h.messages.get().byChannel[channel.key][0]).toMatchObject({
+      messageId: 'srv-c1',
+      coord: { mapId: 'field-7', x: 120, y: 88, z: 3, label: '矿点' },
+    });
+  });
+
+  it('leaves plain sends as TEXT without metadata on the wire', async () => {
+    const h = makeHarness();
+    await login(h);
+    h.conn.setResponder(async (_msgId, req) => {
+      expect(req).toMatchObject({ msgType: MsgType.TEXT });
+      expect((req as { metadata?: Uint8Array }).metadata).toBeUndefined();
+      return { code: 0, messageId: 'srv-t1' };
+    });
+    await h.api.sendMessage(channel, 'plain text');
+    expect(h.messages.get().byChannel[channel.key][0].coord).toBeUndefined();
+  });
 });
 
 describe('ChatApi incoming notifies', () => {
+  it('parses the coordinate card out of a COORD_LINK notify metadata', async () => {
+    const h = makeHarness();
+    await login(h);
+    h.conn.emit(
+      MsgID.CHAT_MESSAGE_NOTIFY,
+      chatBody({
+        msgType: MsgType.COORD_LINK,
+        content: new TextEncoder().encode('矿点'),
+        metadata: CoordMetadata.encode(
+          CoordMetadata.fromPartial({ mapId: 'field-7', x: 120, y: 88, label: '矿点' }),
+        ).finish(),
+      }),
+    );
+    const view = h.messages.get().byChannel['p:user_a|user_b'][0];
+    expect(view).toMatchObject({ coord: { mapId: 'field-7', x: 120, y: 88, z: 0, label: '矿点' } });
+  });
+
+  it('drops the coordinate card when the metadata does not parse', async () => {
+    const h = makeHarness();
+    await login(h);
+    h.conn.emit(
+      MsgID.CHAT_MESSAGE_NOTIFY,
+      chatBody({ msgType: MsgType.COORD_LINK, metadata: new Uint8Array([0xde, 0xad, 0xbe, 0xef]) }),
+    );
+    const view = h.messages.get().byChannel['p:user_a|user_b'][0];
+    expect(view.coord).toBeUndefined();
+    expect(view.content).toBe('hi');
+  });
+
   it('creates conversations for strangers and bumps unread when not active', async () => {
     const h = makeHarness();
     await login(h);
@@ -1061,6 +1131,37 @@ describe('ChatApi.setGroupMute', () => {
       return { code: 0, groupId: 'guild-1', userId: PEER, mutedUntilTs: 12345 };
     });
     expect(await h.api.setGroupMute('guild-1', PEER, 600)).toMatchObject({ code: 0 });
+  });
+});
+
+describe('ChatApi.reportMessage', () => {
+  it('short-circuits an empty messageId without a network call', async () => {
+    const h = makeHarness();
+    const resp = await h.api.reportMessage('');
+    expect(resp).toMatchObject({ code: ErrorCode.INVALID_PARAM, messageId: '', reportCount: 0 });
+    expect(h.conn.requests).toHaveLength(0);
+  });
+
+  it('sends REPORT_MESSAGE_REQ with the reason and passes the count through', async () => {
+    const h = makeHarness();
+    await login(h);
+    h.conn.setResponder(async (msgId, req) => {
+      expect(msgId).toBe(MsgID.REPORT_MESSAGE_REQ);
+      expect(req).toMatchObject({ messageId: 'm1', reason: 'spam' });
+      return { code: 0, messageId: 'm1', reportCount: 2 };
+    });
+    const resp = await h.api.reportMessage('m1', 'spam');
+    expect(resp).toMatchObject({ code: 0, messageId: 'm1', reportCount: 2 });
+  });
+
+  it('leaves reason empty by default', async () => {
+    const h = makeHarness();
+    await login(h);
+    h.conn.setResponder(async (_msgId, req) => {
+      expect((req as { reason?: string }).reason).toBe('');
+      return { code: 0, messageId: 'm2', reportCount: 1 };
+    });
+    expect(await h.api.reportMessage('m2')).toMatchObject({ reportCount: 1 });
   });
 });
 

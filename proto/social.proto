@@ -199,6 +199,34 @@ message FriendRemovedNotify {
 }
 
 // ---------------------------------------------------------------------------
+// 好友上线通知偏好（P1，可关闭）。按用户存，缺省全开——只显式关掉的用户
+// 不再收到 FRIEND_ONLINE_NOTIFY(3029)；花名册 PRESENCE_NOTIFY 不受影响。
+message NotifyPrefs {
+  bool friend_online_notify = 1;
+}
+
+message SetNotifyPrefsRequest {
+  string user_id = 1;
+  NotifyPrefs prefs = 2;
+}
+
+message SetNotifyPrefsResponse {
+  common.ErrorCode code = 1;
+  NotifyPrefs prefs = 2;  // 回显生效值
+  int64 server_time = 3;
+}
+
+message GetNotifyPrefsRequest {
+  string user_id = 1;
+}
+
+message GetNotifyPrefsResponse {
+  common.ErrorCode code = 1;
+  NotifyPrefs prefs = 2;
+  int64 server_time = 3;
+}
+
+// ---------------------------------------------------------------------------
 // Server-side storage snapshots. These are Redis VALUES (one key per user,
 // e.g. "chirp:social:friends:<uid>"), never wire messages. Keeping them
 // separate from the response messages lets the storage schema evolve without
@@ -212,6 +240,10 @@ message StoredFriendList {
 
 message StoredPendingRequests {
   map<string, FriendRequest> requests = 1;
+}
+
+message StoredNotifyPrefs {
+  bool friend_online_notify = 1;
 }
 
 message StoredBlockedList {

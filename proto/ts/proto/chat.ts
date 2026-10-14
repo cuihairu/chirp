@@ -31,6 +31,8 @@ export enum MsgType {
   NPC_DIALOG = 13,
   /** TRADE_STATUS - 交易状态 */
   TRADE_STATUS = 14,
+  /** COORD_LINK - 坐标链接（metadata = CoordMetadata） */
+  COORD_LINK = 15,
   /** SYSTEM - 系统消息 */
   SYSTEM = 99,
   UNRECOGNIZED = -1,
@@ -65,6 +67,9 @@ export function msgTypeFromJSON(object: any): MsgType {
     case 14:
     case "TRADE_STATUS":
       return MsgType.TRADE_STATUS;
+    case 15:
+    case "COORD_LINK":
+      return MsgType.COORD_LINK;
     case 99:
     case "SYSTEM":
       return MsgType.SYSTEM;
@@ -95,6 +100,8 @@ export function msgTypeToJSON(object: MsgType): string {
       return "NPC_DIALOG";
     case MsgType.TRADE_STATUS:
       return "TRADE_STATUS";
+    case MsgType.COORD_LINK:
+      return "COORD_LINK";
     case MsgType.SYSTEM:
       return "SYSTEM";
     case MsgType.UNRECOGNIZED:
@@ -791,6 +798,32 @@ export interface GroupMemberMutedNotify {
   /** 执行禁言/解禁的操作者 */
   operatorId: string;
   timestamp: number;
+}
+
+/**
+ * 举报（2253）：玩家举报一条消息。服务端内存台账按 (message_id, reporter_id)
+ * 去重幂等——同一玩家重复举报同一消息不重复计数，响应回显去重后的累计数。
+ * 被举报消息必须在本进程编辑台账里（即本实例实际投递过的消息），台账外回
+ * USER_NOT_FOUND：与撤回的「台账外消息」同一语义，也挡住垃圾 message_id 刷
+ * 台账的内存增长。管理后台审核队列待全局管理员面另批（同群域禁言范围裁决），
+ * 台账按时间留痕（每消息封顶 100 条理由）供其消费。
+ */
+export interface ReportMessageRequest {
+  messageId: string;
+  /** 可选；上限 500 码点（服务端校验，超限 */
+  reason: string;
+}
+
+export interface ReportMessageResponse {
+  /** OK / AUTH_FAILED（未登录）/ USER_NOT_FOUND */
+  code: ErrorCode;
+  /**
+   * （消息不在本进程台账）/ INVALID_PARAM（垃圾
+   * body / 空 message_id / 理由超长）
+   */
+  messageId: string;
+  /** 去重后的累计举报数（重复举报幂等回显） */
+  reportCount: number;
 }
 
 /** Join group request */
@@ -1656,6 +1689,24 @@ export interface NpcDialogMetadata {
   dialogId: string;
   /** 玩家可选的回复选项 */
   options: string[];
+}
+
+/**
+ * 坐标链接（msg_type = COORD_LINK 时，metadata 序列化为此消息；game_chat_features
+ * P1「坐标链接」）：游戏客户端点击后自动寻路到 (x, y, z)。坐标是地图格坐标
+ * (int32，米/格由游戏约定)；伴侣面（web/desktop）无寻路引擎，渲染为坐标卡片、
+ * 点击复制。服务端在发送门校验 metadata 能按 CoordMetadata 解析且 map_id 非空，
+ * 拒悬空坐标回 INVALID_PARAM（与 reply_to 校验同一档）。
+ */
+export interface CoordMetadata {
+  /** 地图/区域 ID */
+  mapId: string;
+  x: number;
+  y: number;
+  /** 高度，缺省 0 */
+  z: number;
+  /** 展示标签（如「BOSS 刷新点」）；渲染标题 */
+  label: string;
 }
 
 /**
@@ -3990,6 +4041,169 @@ export const GroupMemberMutedNotify = {
     message.mutedUntilTs = object.mutedUntilTs ?? 0;
     message.operatorId = object.operatorId ?? "";
     message.timestamp = object.timestamp ?? 0;
+    return message;
+  },
+};
+
+function createBaseReportMessageRequest(): ReportMessageRequest {
+  return { messageId: "", reason: "" };
+}
+
+export const ReportMessageRequest = {
+  encode(message: ReportMessageRequest, writer: _m0.Writer = _m0.Writer.create()): _m0.Writer {
+    if (message.messageId !== "") {
+      writer.uint32(10).string(message.messageId);
+    }
+    if (message.reason !== "") {
+      writer.uint32(18).string(message.reason);
+    }
+    return writer;
+  },
+
+  decode(input: _m0.Reader | Uint8Array, length?: number): ReportMessageRequest {
+    const reader = input instanceof _m0.Reader ? input : _m0.Reader.create(input);
+    let end = length === undefined ? reader.len : reader.pos + length;
+    const message = createBaseReportMessageRequest();
+    while (reader.pos < end) {
+      const tag = reader.uint32();
+      switch (tag >>> 3) {
+        case 1:
+          if (tag !== 10) {
+            break;
+          }
+
+          message.messageId = reader.string();
+          continue;
+        case 2:
+          if (tag !== 18) {
+            break;
+          }
+
+          message.reason = reader.string();
+          continue;
+      }
+      if ((tag & 7) === 4 || tag === 0) {
+        break;
+      }
+      reader.skipType(tag & 7);
+    }
+    return message;
+  },
+
+  fromJSON(object: any): ReportMessageRequest {
+    return {
+      messageId: isSet(object.messageId) ? globalThis.String(object.messageId) : "",
+      reason: isSet(object.reason) ? globalThis.String(object.reason) : "",
+    };
+  },
+
+  toJSON(message: ReportMessageRequest): unknown {
+    const obj: any = {};
+    if (message.messageId !== "") {
+      obj.messageId = message.messageId;
+    }
+    if (message.reason !== "") {
+      obj.reason = message.reason;
+    }
+    return obj;
+  },
+
+  create<I extends Exact<DeepPartial<ReportMessageRequest>, I>>(base?: I): ReportMessageRequest {
+    return ReportMessageRequest.fromPartial(base ?? ({} as any));
+  },
+  fromPartial<I extends Exact<DeepPartial<ReportMessageRequest>, I>>(object: I): ReportMessageRequest {
+    const message = createBaseReportMessageRequest();
+    message.messageId = object.messageId ?? "";
+    message.reason = object.reason ?? "";
+    return message;
+  },
+};
+
+function createBaseReportMessageResponse(): ReportMessageResponse {
+  return { code: 0, messageId: "", reportCount: 0 };
+}
+
+export const ReportMessageResponse = {
+  encode(message: ReportMessageResponse, writer: _m0.Writer = _m0.Writer.create()): _m0.Writer {
+    if (message.code !== 0) {
+      writer.uint32(8).int32(message.code);
+    }
+    if (message.messageId !== "") {
+      writer.uint32(18).string(message.messageId);
+    }
+    if (message.reportCount !== 0) {
+      writer.uint32(24).int32(message.reportCount);
+    }
+    return writer;
+  },
+
+  decode(input: _m0.Reader | Uint8Array, length?: number): ReportMessageResponse {
+    const reader = input instanceof _m0.Reader ? input : _m0.Reader.create(input);
+    let end = length === undefined ? reader.len : reader.pos + length;
+    const message = createBaseReportMessageResponse();
+    while (reader.pos < end) {
+      const tag = reader.uint32();
+      switch (tag >>> 3) {
+        case 1:
+          if (tag !== 8) {
+            break;
+          }
+
+          message.code = reader.int32() as any;
+          continue;
+        case 2:
+          if (tag !== 18) {
+            break;
+          }
+
+          message.messageId = reader.string();
+          continue;
+        case 3:
+          if (tag !== 24) {
+            break;
+          }
+
+          message.reportCount = reader.int32();
+          continue;
+      }
+      if ((tag & 7) === 4 || tag === 0) {
+        break;
+      }
+      reader.skipType(tag & 7);
+    }
+    return message;
+  },
+
+  fromJSON(object: any): ReportMessageResponse {
+    return {
+      code: isSet(object.code) ? errorCodeFromJSON(object.code) : 0,
+      messageId: isSet(object.messageId) ? globalThis.String(object.messageId) : "",
+      reportCount: isSet(object.reportCount) ? globalThis.Number(object.reportCount) : 0,
+    };
+  },
+
+  toJSON(message: ReportMessageResponse): unknown {
+    const obj: any = {};
+    if (message.code !== 0) {
+      obj.code = errorCodeToJSON(message.code);
+    }
+    if (message.messageId !== "") {
+      obj.messageId = message.messageId;
+    }
+    if (message.reportCount !== 0) {
+      obj.reportCount = Math.round(message.reportCount);
+    }
+    return obj;
+  },
+
+  create<I extends Exact<DeepPartial<ReportMessageResponse>, I>>(base?: I): ReportMessageResponse {
+    return ReportMessageResponse.fromPartial(base ?? ({} as any));
+  },
+  fromPartial<I extends Exact<DeepPartial<ReportMessageResponse>, I>>(object: I): ReportMessageResponse {
+    const message = createBaseReportMessageResponse();
+    message.code = object.code ?? 0;
+    message.messageId = object.messageId ?? "";
+    message.reportCount = object.reportCount ?? 0;
     return message;
   },
 };
@@ -14026,6 +14240,125 @@ export const NpcDialogMetadata = {
     message.npcName = object.npcName ?? "";
     message.dialogId = object.dialogId ?? "";
     message.options = object.options?.map((e) => e) || [];
+    return message;
+  },
+};
+
+function createBaseCoordMetadata(): CoordMetadata {
+  return { mapId: "", x: 0, y: 0, z: 0, label: "" };
+}
+
+export const CoordMetadata = {
+  encode(message: CoordMetadata, writer: _m0.Writer = _m0.Writer.create()): _m0.Writer {
+    if (message.mapId !== "") {
+      writer.uint32(10).string(message.mapId);
+    }
+    if (message.x !== 0) {
+      writer.uint32(16).int32(message.x);
+    }
+    if (message.y !== 0) {
+      writer.uint32(24).int32(message.y);
+    }
+    if (message.z !== 0) {
+      writer.uint32(32).int32(message.z);
+    }
+    if (message.label !== "") {
+      writer.uint32(42).string(message.label);
+    }
+    return writer;
+  },
+
+  decode(input: _m0.Reader | Uint8Array, length?: number): CoordMetadata {
+    const reader = input instanceof _m0.Reader ? input : _m0.Reader.create(input);
+    let end = length === undefined ? reader.len : reader.pos + length;
+    const message = createBaseCoordMetadata();
+    while (reader.pos < end) {
+      const tag = reader.uint32();
+      switch (tag >>> 3) {
+        case 1:
+          if (tag !== 10) {
+            break;
+          }
+
+          message.mapId = reader.string();
+          continue;
+        case 2:
+          if (tag !== 16) {
+            break;
+          }
+
+          message.x = reader.int32();
+          continue;
+        case 3:
+          if (tag !== 24) {
+            break;
+          }
+
+          message.y = reader.int32();
+          continue;
+        case 4:
+          if (tag !== 32) {
+            break;
+          }
+
+          message.z = reader.int32();
+          continue;
+        case 5:
+          if (tag !== 42) {
+            break;
+          }
+
+          message.label = reader.string();
+          continue;
+      }
+      if ((tag & 7) === 4 || tag === 0) {
+        break;
+      }
+      reader.skipType(tag & 7);
+    }
+    return message;
+  },
+
+  fromJSON(object: any): CoordMetadata {
+    return {
+      mapId: isSet(object.mapId) ? globalThis.String(object.mapId) : "",
+      x: isSet(object.x) ? globalThis.Number(object.x) : 0,
+      y: isSet(object.y) ? globalThis.Number(object.y) : 0,
+      z: isSet(object.z) ? globalThis.Number(object.z) : 0,
+      label: isSet(object.label) ? globalThis.String(object.label) : "",
+    };
+  },
+
+  toJSON(message: CoordMetadata): unknown {
+    const obj: any = {};
+    if (message.mapId !== "") {
+      obj.mapId = message.mapId;
+    }
+    if (message.x !== 0) {
+      obj.x = Math.round(message.x);
+    }
+    if (message.y !== 0) {
+      obj.y = Math.round(message.y);
+    }
+    if (message.z !== 0) {
+      obj.z = Math.round(message.z);
+    }
+    if (message.label !== "") {
+      obj.label = message.label;
+    }
+    return obj;
+  },
+
+  create<I extends Exact<DeepPartial<CoordMetadata>, I>>(base?: I): CoordMetadata {
+    return CoordMetadata.fromPartial(base ?? ({} as any));
+  },
+  fromPartial<I extends Exact<DeepPartial<CoordMetadata>, I>>(object: I): CoordMetadata {
+    const message = createBaseCoordMetadata();
+    message.mapId = object.mapId ?? "";
+    message.x = object.x ?? 0;
+    message.y = object.y ?? 0;
+    message.z = object.z ?? 0;
+    message.label = object.label ?? "";
     return message;
   },
 };

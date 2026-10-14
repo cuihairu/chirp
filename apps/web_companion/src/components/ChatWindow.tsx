@@ -34,7 +34,7 @@ export default function ChatWindow({ channelKey }: { channelKey: string }) {
   const typingRef = useRef({ lastStart: 0, stopTimer: 0 as ReturnType<typeof setTimeout> | 0 });
 
   // Re-render once a second so expired typing entries drop off.
-  const [now, setNow] = useState(Date.now());
+  const [now, setNow] = useState(() => Date.now());
   const [editing, setEditing] = useState<ChatMessageView | null>(null);
   const [editText, setEditText] = useState('');
   const [replying, setReplying] = useState<ChatMessageView | null>(null);
@@ -58,7 +58,8 @@ export default function ChatWindow({ channelKey }: { channelKey: string }) {
     api.setActiveChannel(channelKey);
     clearUnread(conversations, channelKey);
     clearTypingTimer(typingRef);
-    setReplying(null);
+    // 换频道即重挂载(ChatPage 以 channelKey 为 key),回复态随卸载清零,
+    // 无需在此重置(react-hooks/set-state-in-effect 也禁止)。
     if (historyLoadedFor.current !== channelKey) {
       historyLoadedFor.current = channelKey;
       void api.loadHistory(channel).then(() => {
@@ -210,6 +211,11 @@ export default function ChatWindow({ channelKey }: { channelKey: string }) {
             onEdit={openEdit}
             onDelete={(message) => {
               if (window.confirm(zh.chat.deleteConfirm)) void api.deleteMessage(message.messageId);
+            }}
+            onReport={(message) => {
+              if (window.confirm(zh.chat.reportConfirm)) {
+                void api.reportMessage(message.messageId);
+              }
             }}
           />
         ))}

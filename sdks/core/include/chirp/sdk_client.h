@@ -84,6 +84,8 @@ using SetMemberAliasCallback =
     std::function<void(const std::error_code& ec, const chirp::chat::SetMemberAliasResponse&)>;
 using SetGroupMuteCallback =
     std::function<void(const std::error_code& ec, const chirp::chat::SetGroupMuteResponse&)>;
+using ReportMessageCallback =
+    std::function<void(const std::error_code& ec, const chirp::chat::ReportMessageResponse&)>;
 
 // 聊天客户端 SDK:直连 chat 网关的 TCP 长连接,[u32_be len][Packet protobuf]
 // 帧。sequence 关联请求响应,25s 心跳(pong 回声校验,连续丢失判定死亡),
@@ -176,6 +178,8 @@ public:
     std::string channel_id;            // 非 PRIVATE 必填
     std::string receiver_id;           // PRIVATE 必填
     std::string reply_to_message_id;   // 引用的消息 id,空 = 非引用
+    chirp::chat::MsgType msg_type = chirp::chat::TEXT;  // 消息类型,默认纯文本
+    std::string metadata;              // 链接元数据字节(如 COORD_LINK 的 CoordMetadata)
   };
   void SendMessage(const SendOptions& opts, const std::string& content,
                    SendResponseCallback cb);
@@ -264,6 +268,13 @@ public:
   // 返回 SetGroupMuteResponse{code, group_id, user_id, muted_until_ts}。
   void SetGroupMute(const std::string& group_id, const std::string& target_user_id,
                     int64_t duration_sec, SetGroupMuteCallback cb);
+
+  // 举报消息(REPORT_MESSAGE_REQ/RESP 2253/2254):服务端内存台账按
+  // (message_id, reporter_id) 去重幂等,响应回显去重后的累计举报数。
+  // 理由可选(上限 500 码点,服务端校验)。返回
+  // ReportMessageResponse{code, message_id, report_count}。
+  void ReportMessage(const std::string& message_id, const std::string& reason,
+                     ReportMessageCallback cb);
 
 private:
   class Impl;
