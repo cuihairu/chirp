@@ -4,17 +4,20 @@
 FROM node:26-alpine AS build
 
 WORKDIR /repo
-# 先只拷 package.json 集合让 npm ci 吃层缓存(workspaces 缺一不可)。
-COPY package.json package-lock.json ./
+# 先只拷 workspace 清单让 pnpm install 吃层缓存(pnpm workspace 缺一不可,
+# 锁文件在仓库根)。pnpm 12 与根锁文件版本一致(web.yml 同款)。
+COPY package.json pnpm-lock.yaml pnpm-workspace.yaml ./
 COPY apps/shared/protocol/package.json apps/shared/protocol/
 COPY apps/web_companion/package.json apps/web_companion/
 COPY sdks/ts/package.json sdks/ts/
-RUN npm ci
+# Node 26 镜像不再自带 corepack:先试 corepack,失败只退回 npm 装 pnpm 本体。
+RUN (corepack enable && corepack prepare pnpm@12 --activate) || npm i -g pnpm@12
+RUN pnpm install --frozen-lockfile
 
 COPY proto/ts proto/ts
 COPY apps/shared/protocol apps/shared/protocol
 COPY apps/web_companion apps/web_companion
-RUN npm run build -w apps/web_companion
+RUN pnpm --filter ./apps/web_companion run build
 
 # unprivileged 变体:默认监听 8080,全部运行时目录已归 nginx 用户,
 # 无需 root(master 也以 nginx 跑)。
