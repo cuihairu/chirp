@@ -117,7 +117,7 @@
 - [x] dependabot #21 katex（a32be7e）
 - [x] dependabot #20/#22 source-map-js（117/117）
 - [x] dependabot #6 source-map-js（b343d6f，53/54）
-- [ ] dependabot 框架大批次 2026-10-12/13（actions 5 + npm/docker/cargo 17）——四项真实破损修复全落地；#17/#21/#24 已合入 main（2cac305/65a47a2/50a77a7，2026-10-14）；#16（workspace-npm 2 updates）与 #18（react-dom + @types/react-dom）仍 OPEN、MERGEABLE 且 CI 全绿（#16 CLEAN；#18 仅 codecov/project 红），合并决策待用户
+- [x] dependabot 框架大批次 2026-10-12/13（actions 5 + npm/docker/cargo 17）——四项真实破损修复全落地；全部合入 main：#17/#21/#24（2cac305/65a47a2/50a77a7）+ #16/#18（4de3963/18f10e7，已代决 巡检 chrp41b：vite 8.0.6→8.3.4 同主版本、@types/react-dom ^19→^19.3.0 仅类型定义，均非 major 跳变；#18 codecov/project 红为基线 0.02% 四舍五入漂移且 patch 本身 Coverage not affected，无实质风险）；合入后 merge-main 修 #34 冲突（85a8af9：pnpm 世界删两份 npm 锁、web manifest 取 vite ^8.3.4 并集），pnpm12 三锁 frozen 全过，web 304/protocol 126/sdk 136/desktop 16/admin 25 全绿
 - [x] dependabot #13 dompurify
 - [x] Deploy Docker 演示账号 18 连败修复（1e2d034）
 - [x] auth 注册面空 email 撞唯一键
