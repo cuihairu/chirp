@@ -92,12 +92,12 @@ title: 游戏聊天特征
 
 ### 性能与运维
 
-- **消息持久化**：离线消息、历史记录存储（Redis 热数据 + MySQL 冷数据）。
+- **消息持久化**（已落地，2026-10-11/12 hybrid store 形态）：`HybridMessageStore`（services/shared/chat/src/hybrid_message_store.h）双写 Redis 热层 + MySQL 冷层；Redis 不可用时消息落内存待发队列，恢复后补灌。历史查询热层先行、冷层兜底；撤回墓碑热层原位改写 + 冷层置位；私聊引用目标先扫 Redis 同步写的热层。MySQL 经连接池（HEX/UNHEX 二进制安全，幂等 ALTER 旧库无列容忍）。
 - **消息过期**：自动清理 N 天前的消息（可配置）。私聊保留更久。
 - **消息压缩**：大量消息传输时启用 gzip 压缩。
-- **多设备同步**：同账号多设备消息同步。已读状态同步。
-- **消息去重**：重连后不重复显示已收到的消息（靠 `message_id` 去重）。
-- **连接保活**：心跳检测、断线重连、消息补发。
+- **多设备同步**（已落地，2026-09-14 起多平台会话形态）：会话注册表按 (user_id, platform) 每平台一个槽（libs/network/session_registry.h，同对重绑踢旧会话——登录顶号）；投递扇出 `GetUserSessions` 覆盖同账号全部在线会话，多设备同收实时消息；已读光标经 `MESSAGE_READ_NOTIFY` 广播给相关成员（多设备已读同步）；设备清单经 `online_devices` 种子 + `DEVICES_PRESENCE_NOTIFY`（1020）实时增减。
+- **消息去重**（已落地，2026-09-18 伴侣面形态）：web/desktop `message_store` 按服务端 message_id 丢弃重复追加（实时 notify 与 SEND_MESSAGE_RESP 确认/历史回灌同 id 只渲染一次）；C++ core 本地存档同 key 归一。服务端无状态（按 (channel, message_id) 天然幂等）。
+- **连接保活**（已落地，2026-09-14/20 分批）：C++ core 25s 心跳（pong 回声校验 + 连续未答判死）、500ms→15s 带抖动指数退避重连、KICK 终态不重连（sdks/core/src/backoff.h）；SDK 四端同形（TS/C#/native）。消息补发：服务端离线队列（hybrid store pending 副本带 expires_at，上线补投、迟到 ACK 清理 `hybrid_message_store.cc:368`）+ 客户端 OfflineSendQueue（Swift/Kotlin 原生协议核，断网期间发送排队重试）。
 
 ## 客户端渲染决策矩阵
 
