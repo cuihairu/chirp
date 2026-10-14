@@ -117,7 +117,7 @@
 - [x] dependabot #21 katex（a32be7e）
 - [x] dependabot #20/#22 source-map-js（117/117）
 - [x] dependabot #6 source-map-js（b343d6f，53/54）
-- [ ] dependabot 框架大批次 2026-10-12/13（actions 5 + npm/docker/cargo 17）——四项真实破损修复全落地，合并决策待用户
+- [ ] dependabot 框架大批次 2026-10-12/13（actions 5 + npm/docker/cargo 17）——四项真实破损修复全落地；5 个冲突 PR（#16/#17/#18/#21/#24）已 merge-main 解冲突并推送（e613fe0/f0020d8/fb2fca0/1836d1f/d8c40c6），全部 MERGEABLE，CI 验证中；顺带修复 main 上 eslint-plugin-react-hooks v7 缺 @babel/core 的 lint 红灯（根 package.json devDep + lockfile，随各 PR 合入），合并决策待用户
 - [x] dependabot #13 dompurify
 - [x] Deploy Docker 演示账号 18 连败修复（1e2d034）
 - [x] auth 注册面空 email 撞唯一键
