@@ -1044,9 +1044,9 @@ TEST_F(SdkClientTest, IdleLogoutAndSendPostsAreExecuted) {
   EXPECT_EQ(client.GetState(), ConnectionState::Disconnected);
 }
 
-TEST_F(SdkClientTest, SearchAndAliasWithoutConnectionReportNotConnected) {
+TEST_F(SdkClientTest, RequestsWithoutConnectionReportNotConnected) {
   ChatClient client(TcpConfig());
-  std::promise<std::error_code> search_done, alias_done, mute_done;
+  std::promise<std::error_code> search_done, alias_done, mute_done, report_done;
   client.SearchMessages("kw",
       [&](const std::error_code& ec, const chirp::chat::SearchMessageResponse&) {
         search_done.set_value(ec);
@@ -1059,9 +1059,14 @@ TEST_F(SdkClientTest, SearchAndAliasWithoutConnectionReportNotConnected) {
       [&](const std::error_code& ec, const chirp::chat::SetGroupMuteResponse&) {
         mute_done.set_value(ec);
       });
+  client.ReportMessage("m", "spam",
+      [&](const std::error_code& ec, const chirp::chat::ReportMessageResponse&) {
+        report_done.set_value(ec);
+      });
   auto search_future = search_done.get_future();
   auto alias_future = alias_done.get_future();
   auto mute_future = mute_done.get_future();
+  auto report_future = report_done.get_future();
   ASSERT_EQ(search_future.wait_for(std::chrono::milliseconds(5000)),
             std::future_status::ready);
   EXPECT_EQ(search_future.get(), make_error_code(ChatError::NotConnected));
@@ -1071,6 +1076,9 @@ TEST_F(SdkClientTest, SearchAndAliasWithoutConnectionReportNotConnected) {
   ASSERT_EQ(mute_future.wait_for(std::chrono::milliseconds(5000)),
             std::future_status::ready);
   EXPECT_EQ(mute_future.get(), make_error_code(ChatError::NotConnected));
+  ASSERT_EQ(report_future.wait_for(std::chrono::milliseconds(5000)),
+            std::future_status::ready);
+  EXPECT_EQ(report_future.get(), make_error_code(ChatError::NotConnected));
 }
 
 TEST_F(ChatClientLoopbackTest, ConnectWhileAlreadyConnectedIsIgnored) {
@@ -3600,6 +3608,56 @@ TEST_F(ConvenienceApiTest, SendOptionsNonPrivateCarriesExplicitChannelId) {
   EXPECT_EQ(seen_type, chirp::chat::WORLD);
 }
 
+TEST_F(ConvenienceApiTest, SendOptionsCarriesMsgTypeAndMetadata) {
+  std::string seen_metadata;
+  int seen_type = -1;
+  StartGateway([&](const chirp::gateway::Packet& pkt, auto send) {
+    if (pkt.msg_id() != chirp::gateway::SEND_MESSAGE_REQ) {
+      return;
+    }
+    chirp::chat::SendMessageRequest req;
+    ASSERT_TRUE(req.ParseFromString(pkt.body()));
+    seen_type = req.msg_type();
+    seen_metadata = req.metadata();
+    chirp::chat::SendMessageResponse resp;
+    resp.set_code(chirp::common::OK);
+    resp.set_message_id("m-c1");
+    send(RespFor(pkt, chirp::gateway::SEND_MESSAGE_RESP, resp.SerializeAsString()));
+  });
+  ConnectAndLogin();
+
+  // 坐标链接（P1）：扩展口带 msg_type + metadata 一起上链。
+  ChatClient::SendOptions opts;
+  opts.receiver_id = "alice";
+  opts.msg_type = chirp::chat::COORD_LINK;
+  chirp::chat::CoordMetadata coord;
+  coord.set_map_id("field-7");
+  coord.set_x(120);
+  coord.set_y(88);
+  opts.metadata = coord.SerializeAsString();
+  std::error_code ec;
+  (void)WaitRpc<chirp::chat::SendMessageResponse>([&](auto cb) {
+    client_->SendMessage(opts, "BOSS 刷新点", cb);
+  }, ec);
+  EXPECT_FALSE(ec);
+  EXPECT_EQ(seen_type, chirp::chat::COORD_LINK);
+  chirp::chat::CoordMetadata parsed;
+  ASSERT_TRUE(parsed.ParseFromString(seen_metadata));
+  EXPECT_EQ(parsed.map_id(), "field-7");
+  EXPECT_EQ(parsed.x(), 120);
+  EXPECT_EQ(parsed.y(), 88);
+
+  // 未设置的调用方字节不变：msg_type 仍 TEXT、metadata 仍空。
+  ChatClient::SendOptions plain;
+  plain.receiver_id = "alice";
+  (void)WaitRpc<chirp::chat::SendMessageResponse>([&](auto cb) {
+    client_->SendMessage(plain, "hi", cb);
+  }, ec);
+  EXPECT_FALSE(ec);
+  EXPECT_EQ(seen_type, chirp::chat::TEXT);
+  EXPECT_TRUE(seen_metadata.empty());
+}
+
 TEST_F(ConvenienceApiTest, SendOptionsValidatesLocallyWithoutServerRoundTrip) {
   std::atomic<int> non_login_packets{0};
   StartGateway([&](const chirp::gateway::Packet&, auto) { ++non_login_packets; });
@@ -4248,6 +4306,43 @@ TEST_F(ConvenienceApiTest, SetGroupMuteRoundTrip) {
   }, ec);
   EXPECT_FALSE(ec);
   EXPECT_EQ(unmute.code(), chirp::common::OK);
+}
+
+TEST_F(ConvenienceApiTest, ReportMessageRoundTrip) {
+  int report_calls = 0;
+  StartGateway([&](const chirp::gateway::Packet& pkt, auto send) {
+    if (pkt.msg_id() == chirp::gateway::REPORT_MESSAGE_REQ) {
+      chirp::chat::ReportMessageRequest req;
+      ASSERT_TRUE(req.ParseFromString(pkt.body()));
+      EXPECT_EQ(req.message_id(), "m-1");
+      // 首次带理由,再次调用理由为空,同一 msg_id 分支按序断言
+      ++report_calls;
+      EXPECT_EQ(req.reason(), report_calls == 1 ? "spam" : "");
+      chirp::chat::ReportMessageResponse resp;
+      resp.set_code(chirp::common::OK);
+      resp.set_message_id("m-1");
+      resp.set_report_count(report_calls);
+      send(RespFor(pkt, chirp::gateway::REPORT_MESSAGE_RESP, resp.SerializeAsString()));
+      return;
+    }
+  });
+  ConnectAndLogin();
+
+  std::error_code ec;
+  const auto report = WaitRpc<chirp::chat::ReportMessageResponse>([&](auto cb) {
+    client_->ReportMessage("m-1", "spam", cb);
+  }, ec);
+  EXPECT_FALSE(ec);
+  EXPECT_EQ(report.code(), chirp::common::OK);
+  EXPECT_EQ(report.report_count(), 1);
+
+  // 再次调用原样透传(去重幂等语义由服务端单测覆盖)。
+  ec.clear();
+  const auto again = WaitRpc<chirp::chat::ReportMessageResponse>([&](auto cb) {
+    client_->ReportMessage("m-1", "", cb);
+  }, ec);
+  EXPECT_FALSE(ec);
+  EXPECT_EQ(again.report_count(), 2);
 }
 
 TEST_F(ConvenienceApiTest, GroupLifecycleRoundTrip) {

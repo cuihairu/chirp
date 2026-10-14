@@ -46,6 +46,11 @@ std::string GroupManager::CreateGroup(const std::string& creator_id,
   return group->group_id;
 }
 
+bool GroupManager::HasGroup(const std::string& group_id) {
+  std::lock_guard<std::mutex> lock(mu_);
+  return groups_.count(group_id) > 0;
+}
+
 bool GroupManager::GetGroup(const std::string& group_id, chirp::chat::GroupInfo* info) {
   std::lock_guard<std::mutex> lock(mu_);
   auto it = groups_.find(group_id);

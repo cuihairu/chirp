@@ -50,6 +50,9 @@ public:
   // Get group info
   bool GetGroup(const std::string& group_id, chirp::chat::GroupInfo* info);
 
+  // Existence probe without materializing group info
+  bool HasGroup(const std::string& group_id);
+
   // Add member to group
   bool AddMember(const std::string& group_id, const std::string& user_id,
                 chirp::chat::GroupMemberRole role = chirp::chat::MEMBER);

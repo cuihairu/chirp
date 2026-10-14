@@ -55,6 +55,9 @@ if(MYSQL_FOUND)
         src/reaction_manager.cc
         src/message_edit_manager.cc
         src/mention_manager.cc
+        # Report ledger (game_chat_features P1 举报): REPORT_MESSAGE 2253 的
+        # 进程内存台账，按 (message_id, reporter_id) 去重。
+        src/report_ledger.cc
         src/mysql_message_store.cc
         src/message_store_factory.cc
         src/message_store_config.cc

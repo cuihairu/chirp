@@ -118,7 +118,7 @@ message Packet {
 
 ### 聊天(Chat,2xxx)
 
-发送链路在服务端经过一组顺序固定的防线(细节与默认阈值见 [接入避坑指南](../guide/integration-pitfalls.md)):登录校验 → 内容长度(`CONTENT_TOO_LONG`)→ 世界频道等级门槛(`LEVEL_REQUIRED`,`--world_channel_min_level` 缺省 0 关闭)→ 模糊限流(`RATE_LIMITED`)→ 发送节奏(`RATE_LIMITED`)→ 重复禁言(`RATE_LIMITED`)→ 敏感词(`WORD_FILTERED` 或静默替换)。
+发送链路在服务端经过一组顺序固定的防线(细节与默认阈值见 [接入避坑指南](../guide/integration-pitfalls.md)):登录校验 → 内容长度(`CONTENT_TOO_LONG`)→ 世界频道等级门槛(`LEVEL_REQUIRED`,`--world_channel_min_level` 缺省 0 关闭)→ 模糊限流(`RATE_LIMITED`)→ 发送节奏(`RATE_LIMITED`)→ 重复禁言(`RATE_LIMITED`)→ 敏感词(`WORD_FILTERED` 或静默替换)→ 群频道门(命中群台账的频道:非成员 `AUTH_FAILED`、被禁言成员 `MUTED`;台账外频道不经此门)。
 
 | MsgID | 名称 | 方向 | 说明 |
 | --- | --- | --- | --- |
@@ -128,6 +128,7 @@ message Packet {
 | 2101-2116 | 群组全套 | 客户端 <-> Chat | 建/进/出/邀/踢/查 + 群事件 notify(2117-2121) |
 | 2122-2124 | 群昵称 alias | 客户端 <-> Chat | `SET_MEMBER_ALIAS_REQ/RESP` + `GROUP_MEMBER_ALIAS_UPDATED_NOTIFY`;本人或 MODERATOR+ 设他人;别名随 `GroupMember.alias` 下发,渲染消费成员列表与消息发送者名两处 |
 | 2250-2252 | 群管理员禁言 | 客户端 <-> Chat | `SET_GROUP_MUTE_REQ/RESP` + `GROUP_MEMBER_MUTED_NOTIFY`;MODERATOR+ 禁言/解禁本群成员(秒数,0=解禁,上限 30 天);禁言中成员群频道发言被拒 `MUTED`,禁言态随 `GroupMember.muted_until_ts` 下发 |
+| 2253-2254 | 举报 | 客户端 <-> Chat | `REPORT_MESSAGE_REQ/RESP`;玩家举报消息,内存台账按 (message_id, reporter_id) 去重幂等,回去重后累计 `report_count`;被举报消息须在本实例编辑台账(与撤回台账外同语义 `USER_NOT_FOUND`);理由可选上限 500 码点,超限/空 message_id 回 `INVALID_PARAM`,未登录回 `AUTH_FAILED` |
 | 2201 / 2202 | `MARK_READ_REQ` / `RESP` | 客户端 -> Chat | 标记已读(服务端游标) |
 | 2203 / 2204 | `GET_READ_RECEIPTS_REQ` / `RESP` | 客户端 -> Chat | 消息已读回执查询 |
 | 2205 / 2206 | `GET_UNREAD_COUNT_REQ` / `RESP` | 客户端 -> Chat | 未读数 |
@@ -147,7 +148,13 @@ message Packet {
 
 ### 社交/语音/实验面(3xxx/4xxx)
 
-3001-3024(社交:好友/黑名单/在线状态)与 4001+(语音房)由实验性服务提供,不在受支持路径内;接入前先核对 [能力矩阵](../CAPABILITY_MATRIX.md)。
+3001-3029(社交:好友/黑名单/在线状态/上线通知)与 4001+(语音房)由实验性服务提供,不在受支持路径内;接入前先核对 [能力矩阵](../CAPABILITY_MATRIX.md)。
+
+| MsgID | 名称 | 方向 | 语义 |
+| --- | --- | --- | --- |
+| 3025 / 3026 | `SET_NOTIFY_PREFS_REQ` / `RESP` | 客户端 <-> Social | 好友上线通知开关(按用户存,缺省全开);`prefs` 子消息必带,缺省回 `INVALID_PARAM` |
+| 3027 / 3028 | `GET_NOTIFY_PREFS_REQ` / `RESP` | 客户端 <-> Social | 读取开关;无记录时回全开 |
+| 3029 | `FRIEND_ONLINE_NOTIFY` | Social -> 客户端 | 好友有效状态 OFFLINE→非 OFFLINE 跃迁时的显式上线通知(body 复用 `PresenceNotify`),逐收件人过 3025 开关;花名册 `PRESENCE_NOTIFY`(3021)不受开关影响,登录/SET_PRESENCE/游戏断言三条链路都会触发 |
 
 ### 服务面(Server plane,5xxx)
 
