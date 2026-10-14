@@ -168,5 +168,9 @@ namespace Chirp.Sdk
         public string ReplyToMessageId { get; set; } = "";
 
         public Chirp.Chat.MsgType MsgType { get; set; } = Chirp.Chat.MsgType.Text;
+
+        /// <summary>链接元数据字节(如 COORD_LINK 的 CoordMetadata)。</summary>
+        public Google.Protobuf.ByteString Metadata { get; set; } =
+            Google.Protobuf.ByteString.Empty;
     }
 }

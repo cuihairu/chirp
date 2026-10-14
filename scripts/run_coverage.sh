@@ -217,19 +217,19 @@ KNOWN_UNCOVERABLE = {
     # erased only together with timer->cancel(); a handler already dispatched
     # before the cancel exits at the timer_ec arm above, so the find-miss
     # return is unreachable by construction.
-    ("sdks/core/src/sdk_client.cc", 473),
+    ("sdks/core/src/sdk_client.cc", 474),
     # ChatClient::Impl::SendRequest pending_.emplace: next_seq_ is monotonic,
     # so the red-black insert comparison always walks the greater side; the
     # less/duplicate arms would require a 2^32 sequence wrap.
-    ("sdks/core/src/sdk_client.cc", 482),
+    ("sdks/core/src/sdk_client.cc", 483),
     # SendPacket null-socket arm: every caller is state-guarded via
     # ReadyForRequests(), so socket_ is only null inside the teardown window
     # between DoClose dropping the socket and the state flip - a disconnect
     # race no public-API sequence reaches deterministically.
-    ("sdks/core/src/sdk_client.cc", 767),
+    ("sdks/core/src/sdk_client.cc", 768),
     # HandleFrame pong match: the untaken arm is the throw edge into landing
     # pad block 83 (string/stdexcept during logging).
-    ("sdks/core/src/sdk_client.cc", 603),
+    ("sdks/core/src/sdk_client.cc", 604),
     # Login/Request/SendMessage asio::post lines: untaken arms are (a) throw
     # edges, (b) the out-edges of pad blocks 13/11 which have no in-edges,
     # and (c) the fall arm of the same-destination merge emitted for the
@@ -244,7 +244,7 @@ KNOWN_UNCOVERABLE = {
     # ChatClient::Impl::SendPacket socket guard: every caller checks the
     # connection state on the same io thread immediately before sending, and
     # only DoClose (same thread) clears socket_.
-    ("sdks/core/src/sdk_client.cc", 761),
+    ("sdks/core/src/sdk_client.cc", 762),
     # Logger::LevelToString fallthrough: every enumerator has a case; the
     # trailing return only exists to satisfy the compiler.
     ("libs/common/logger.cc", 40),
@@ -723,7 +723,7 @@ KNOWN_UNCOVERABLE_ARMS = {
     # exempted arms are the residual edges that stayed 0 under every input:
     # post-inline dead blocks / allocation-failure unwind paths that no
     # argument shape can reach.
-    ("services/shared/chat/src/hybrid_message_store.cc", 542): ((8, 9),
+    ("services/shared/chat/src/hybrid_message_store.cc", 548): ((8, 9),
         "GetDeliveryStatus: dead post-inline duplicate of the second "
         "ParseI64 entry block (46->47/46->48 with the never-returning call); "
         "every live edge of both parses is taken across empty, non-numeric, "
@@ -735,7 +735,7 @@ KNOWN_UNCOVERABLE_ARMS = {
         "Line re-pinned 524->528 for the ActorKind sender_kind +4-line "
         "upstream drift; 528->542 for the redis-probe retry +14-line "
         "upstream drift; block layout unchanged.)"),
-    ("services/shared/chat/src/hybrid_message_store.cc", 574): ((3,),
+    ("services/shared/chat/src/hybrid_message_store.cc", 580): ((3,),
         "GetPendingDeliveries expiry parse: structurally dead edge in the "
         "inlined ParseI64/substr block layout (12->14); empty, non-numeric, "
         "17-digit heap, overflow and INT64_MAX-exact expiry inputs all "
@@ -743,7 +743,7 @@ KNOWN_UNCOVERABLE_ARMS = {
         "P1-5 per-device split's upstream line drift; 556->560 for the "
         "ActorKind sender_kind +4-line upstream drift; 560->574 for the "
         "redis-probe retry +14-line upstream drift.)"),
-    ("services/shared/chat/src/hybrid_message_store.cc", 599): ((14, 15, 16, 17),
+    ("services/shared/chat/src/hybrid_message_store.cc", 605): ((14, 15, 16, 17),
         "PrivateChannelId string-concat fragments attributed to the "
         "push_back line: operator+ allocation-failure blocks (calls with "
         "returned=0, bad_alloc unwind); the live SSO and heap-concat edges "

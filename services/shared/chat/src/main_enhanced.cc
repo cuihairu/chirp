@@ -203,6 +203,7 @@ chirp::chat::MessageData ToMessageData(const chirp::chat::ChatMessage& msg) {
   data.content = msg.content();
   data.timestamp = msg.timestamp();
   data.reply_to_message_id = msg.reply_to_message_id();
+  data.metadata = msg.metadata();
   data.sender_kind = static_cast<int>(msg.sender_kind());
   data.created_at = chirp::chat::runtime::NowMs();
   return data;
@@ -265,6 +266,34 @@ void HandleSendMessage(const chirp::chat::SendMessageRequest& req,
     return;
   }
   msg.set_reply_to_message_id(req.reply_to_message_id());
+
+  // 坐标链接（P1 COORD_LINK）：metadata 与回复目标同层校验——解析不出或
+  // map_id 为空的坐标不落任何存储（basic 形态经 ValidateSendMessageRequest）。
+  if (const chirp::common::ErrorCode coord_code = chirp::chat::ValidateCoordMetadata(req);
+      coord_code != chirp::common::OK) {
+    chirp::chat::SendMessageResponse resp;
+    resp.set_code(coord_code);
+    resp.set_server_timestamp(chirp::chat::runtime::NowMs());
+    chirp::chat::runtime::SendPacket(sender_session, chirp::gateway::SEND_MESSAGE_RESP,
+                                     seq, resp.SerializeAsString());
+    return;
+  }
+  msg.set_metadata(req.metadata());
+
+  // 群频道成员门（web e2e 权限回码契约，与 basic 群分支同语义）：频道命中
+  // 群台账而发送者不在名册，回 AUTH_FAILED、不落任何存储。台账外频道
+  // （Redis 扇出路径）不经此门——分布式形态承接游戏平面自管频道的扇出，
+  // 不能一刀切。放在禁言门之前：禁言门只看成员，非成员在此先拦。
+  if (group_handlers != nullptr && req.channel_type() != chirp::chat::PRIVATE &&
+      group_handlers->HasGroup(channel_id) &&
+      !group_handlers->IsMember(channel_id, req.sender_id())) {
+    chirp::chat::SendMessageResponse resp;
+    resp.set_code(chirp::common::AUTH_FAILED);
+    resp.set_server_timestamp(chirp::chat::runtime::NowMs());
+    chirp::chat::runtime::SendPacket(sender_session, chirp::gateway::SEND_MESSAGE_RESP,
+                                     seq, resp.SerializeAsString());
+    return;
+  }
 
   // 群管理员禁言（game_chat_features P1，与 basic 同一门）：群频道发送前查
   // GroupManager 台账，禁言中的成员回 MUTED、消息不进 Redis/MySQL 任何一层。
@@ -542,7 +571,8 @@ bool DispatchClientFeaturePacket(
     chirp::chat::TypingHandlers* typing_handlers,
     chirp::chat::ReactionHandlers* reaction_handlers,
     chirp::chat::ReadReceiptHandlers* receipt_handlers,
-    chirp::chat::MessageEditHandlers* edit_handlers) {
+    chirp::chat::MessageEditHandlers* edit_handlers,
+    chirp::chat::ReportHandlers* report_handlers = nullptr) {
   switch (pkt.msg_id()) {
     case chirp::gateway::CREATE_GROUP_REQ: {
       chirp::chat::CreateGroupRequest req;
@@ -661,6 +691,22 @@ bool DispatchClientFeaturePacket(
         resp = group_handlers->HandleSetGroupMute(req, authenticated_user);
       }
       chirp::chat::runtime::SendPacket(session, chirp::gateway::SET_GROUP_MUTE_RESP,
+                                       pkt.sequence(), resp.SerializeAsString());
+      break;
+    }
+    case chirp::gateway::REPORT_MESSAGE_REQ: {
+      // 举报（game_chat_features P1）：存在性校验借撤回管道的编辑台账，与
+      // basic 分发表同一套回码契约。report_handlers 为空时按未装配拒绝。
+      chirp::chat::ReportMessageRequest req;
+      chirp::chat::ReportMessageResponse resp;
+      if (report_handlers == nullptr) {
+        resp.set_code(chirp::common::AUTH_FAILED);
+      } else if (!req.ParseFromArray(pkt.body().data(), static_cast<int>(pkt.body().size()))) {
+        resp.set_code(chirp::common::INVALID_PARAM);
+      } else {
+        resp = report_handlers->HandleReportMessage(req, authenticated_user);
+      }
+      chirp::chat::runtime::SendPacket(session, chirp::gateway::REPORT_MESSAGE_RESP,
                                        pkt.sequence(), resp.SerializeAsString());
       break;
     }
@@ -918,6 +964,7 @@ void HandleLogin(const chirp::auth::LoginRequest& req,
       msg.set_content(msg_data.content);
       msg.set_timestamp(msg_data.timestamp);
       msg.set_sender_kind(static_cast<chirp::chat::SenderKind>(msg_data.sender_kind));
+      msg.set_metadata(msg_data.metadata);
       // Refills are tracked like live deliveries: an unacked refill returns
       // to the offline queue instead of dying with the connection.
       if (acks && acks->IsCapable(session.get())) {
@@ -956,6 +1003,7 @@ void HandleGetHistory(const chirp::chat::GetHistoryRequest& req,
     msg->set_sender_kind(static_cast<chirp::chat::SenderKind>(msg_data.sender_kind));
     msg->set_reply_to_message_id(msg_data.reply_to_message_id);
     msg->set_is_recalled(msg_data.is_recalled);
+    msg->set_metadata(msg_data.metadata);
   }
 
   chirp::chat::runtime::SendPacket(session, chirp::gateway::GET_HISTORY_RESP, seq, resp.SerializeAsString());
@@ -1466,6 +1514,9 @@ int main(int argc, char** argv) {
   // 踢人/名单）、群消息成员扇出、typing/已读/表情的群频道成员解析共用。
   // 与 basic 同样是单实例台账；跨实例成员通知与既有 notify 一致是尽力而为。
   chirp::chat::GroupManager groups;
+  // 举报台账（basic 同一 ReportLedger，内存态）：REPORT_MESSAGE 2253 的记录面，
+  // 存在性校验借撤回管道的编辑台账。
+  chirp::chat::ReportLedger reports;
   chirp::chat::EditConfig recall_edit_config;
   recall_edit_config.recall_time_window_ms =
       recall_window_sec > 0 ? static_cast<int64_t>(recall_window_sec) * 1000 : 0;
@@ -1530,6 +1581,7 @@ int main(int argc, char** argv) {
   };
   chirp::chat::ReadReceiptHandlers receipt_handlers(receipts, resolve_members, notify_member);
   chirp::chat::GroupHandlers group_handlers(groups, notify_member);
+  chirp::chat::ReportHandlers report_handlers(reports, *recall_runtime.edits);
   // Typing（2208 notify 族 + 2223 查询）与表情（2215-2220）：与 basic 同一套
   // handlers 单元，成员解析与通知都落在群台账/私聊规范 id 上。
   chirp::chat::TypingConfig typing_config;
@@ -1833,7 +1885,7 @@ int main(int argc, char** argv) {
 
   auto on_packet = [handlers, gateway_service_secret, trusted_conns, &edge_rate_limiter,
                     &directory, &word_filter, &receipt_handlers, state, &group_handlers,
-                    &typing_handlers, &reaction_handlers,
+                    &typing_handlers, &reaction_handlers, &report_handlers,
                     edit_handlers = recall_runtime.handlers.get()](
                        const std::shared_ptr<chirp::network::Session>& session,
                        const chirp::gateway::Packet& pkt) {
@@ -1880,7 +1932,7 @@ int main(int argc, char** argv) {
     if (DispatchClientFeaturePacket(pkt, session, state->GetUserId(session),
                                     &group_handlers, &typing_handlers,
                                     &reaction_handlers, &receipt_handlers,
-                                    edit_handlers)) {
+                                    edit_handlers, &report_handlers)) {
       return;
     }
     if (pkt.msg_id() == chirp::gateway::LOGIN_REQ &&

@@ -1,6 +1,7 @@
 import { Box, Paper, Typography } from '@mui/material';
 import DeleteIcon from '@mui/icons-material/DeleteOutline';
 import EditIcon from '@mui/icons-material/EditOutlined';
+import FlagIcon from '@mui/icons-material/FlagOutlined';
 import ReplyIcon from '@mui/icons-material/ReplyOutlined';
 import { QUICK_REACTIONS } from './quick_reactions';
 import type { ChatMessageView } from '../state/models';
@@ -28,6 +29,8 @@ export interface MessageBubbleProps {
   onReply?: (message: ChatMessageView) => void;
   onEdit?: (message: ChatMessageView) => void;
   onDelete?: (message: ChatMessageView) => void;
+  /** Report a peer's message (REPORT_MESSAGE 2253); own messages are never reportable. */
+  onReport?: (message: ChatMessageView) => void;
 }
 
 /**
@@ -45,6 +48,7 @@ export default function MessageBubble({
   onReply,
   onEdit,
   onDelete,
+  onReport,
 }: MessageBubbleProps) {
   const mine = message.senderId === selfId;
   // Server message ids are "msg_<ms>_<n>" and monotonic, so string compare
@@ -103,6 +107,46 @@ export default function MessageBubble({
       <Typography variant="body2" sx={{ wordBreak: 'break-word', whiteSpace: 'pre-wrap' }}>
         {message.deleted ? zh.chat.deleted : message.content}
       </Typography>
+      {!message.deleted && message.coord && (
+        <Box
+          component="button"
+          type="button"
+          data-testid={`coord-${message.messageId}`}
+          title={zh.chat.copyCoord}
+          onClick={() => {
+            const { x, y, z } = message.coord!;
+            navigator.clipboard?.writeText(z === 0 ? `${x}, ${y}` : `${x}, ${y}, ${z}`);
+          }}
+          sx={{
+            display: 'block',
+            width: '100%',
+            mb: 0.5,
+            px: 1,
+            py: 0.5,
+            textAlign: 'left',
+            cursor: 'pointer',
+            border: '1px solid',
+            borderColor: mine ? 'primary.contrastText' : 'divider',
+            borderRadius: 1,
+            background: 'transparent',
+            color: 'inherit',
+          }}
+        >
+          {message.coord.label && (
+            <Typography variant="caption" sx={{ display: 'block', fontWeight: 600 }}>
+              {message.coord.label}
+            </Typography>
+          )}
+          <Typography variant="caption" sx={{ display: 'block', opacity: 0.75 }}>
+            {message.coord.mapId}
+          </Typography>
+          <Typography variant="caption" sx={{ display: 'block', fontFamily: 'monospace' }}>
+            {message.coord.z === 0
+              ? `${message.coord.x}, ${message.coord.y}`
+              : `${message.coord.x}, ${message.coord.y}, ${message.coord.z}`}
+          </Typography>
+        </Box>
+      )}
       <Typography variant="caption" sx={{ opacity: 0.75 }}>
         {timeLabel(message.timestamp)}
         {mine && message.pending && ` · ${zh.chat.statusPending}`}
@@ -184,6 +228,17 @@ export default function MessageBubble({
                 sx={{ background: 'transparent', border: 'none', cursor: 'pointer', fontSize: 11, p: 0 }}
               >
                 <DeleteIcon sx={{ fontSize: 13 }} />
+              </Typography>
+            )}
+            {!mine && !message.deleted && onReport && (
+              <Typography
+                component="button"
+                aria-label={zh.chat.report}
+                data-testid={`report-${message.messageId}`}
+                onClick={() => onReport(message)}
+                sx={{ background: 'transparent', border: 'none', cursor: 'pointer', fontSize: 11, p: 0 }}
+              >
+                <FlagIcon sx={{ fontSize: 13 }} />
               </Typography>
             )}
           </Typography>

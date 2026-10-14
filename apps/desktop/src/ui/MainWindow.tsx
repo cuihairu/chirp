@@ -2,12 +2,14 @@ import LogoutIcon from '@mui/icons-material/Logout';
 import {
   Box,
   Button,
+  Snackbar,
   Stack,
   Toolbar,
   Tooltip,
   Typography,
 } from '@mui/material';
 import { useEffect, useMemo, useState } from 'react';
+import { PresenceStatus } from '@chirp/proto/social';
 import type { ChannelRef } from '../api/chat_api';
 import { conversationOf, groupKey, privateKey, type Conversation } from '../state/models';
 import { clearUnread, upsertConversation } from '../state/conversation_store';
@@ -62,6 +64,28 @@ export default function MainWindow(props: {
     void api.refreshGroups();
   }, [api]);
 
+  // 好友上线 toast(3029)与开关(3025/3027)：api 层已做自己/名册外去重，
+  // 这里单槽展示——新事件替换当前 toast，不叠加。
+  const [friendToast, setFriendToast] = useState<{
+    userId: string;
+    status: PresenceStatus;
+    statusMessage: string;
+  } | null>(null);
+  useEffect(() => {
+    if (!socialApi) return;
+    return socialApi.onFriendOnline((userId, status, statusMessage) =>
+      setFriendToast({ userId, status, statusMessage }),
+    );
+  }, [socialApi]);
+
+  const [onlineNotifyOn, setOnlineNotifyOn] = useState<boolean | null>(null);
+  useEffect(() => {
+    if (!socialApi || !planeUp.social) return;
+    void socialApi.getNotifyPrefs().then((value) => {
+      if (value !== null) setOnlineNotifyOn(value);
+    });
+  }, [socialApi, planeUp.social]);
+
   // 实验平面登录：各平面独立降级（unreachable → 隐藏对应功能面）。
   useEffect(() => {
     const userId = services.auth.get().userId;
@@ -100,6 +124,13 @@ export default function MainWindow(props: {
       fireNotify(title, message.content, message.channel.key, () => setActiveKey(message.channel.key));
     });
   }, [api, notifyOn, activeKey, services]);
+
+  const toggleOnlineNotify = (): void => {
+    if (onlineNotifyOn === null) return;
+    const next = !onlineNotifyOn;
+    setOnlineNotifyOn(next);
+    void socialApi?.setNotifyPrefs(next);
+  };
 
   const toggleNotify = async (): Promise<void> => {
     if (notifyOn) {
@@ -156,7 +187,7 @@ export default function MainWindow(props: {
   return (
     <Box sx={{ display: 'flex', flexDirection: 'column', height: '100vh' }}>
       <Toolbar variant="dense" sx={{ bgcolor: 'background.paper', borderBottom: '1px solid', borderColor: 'divider' }}>
-        <Typography variant="h6" fontWeight={700} sx={{ mr: 2 }}>
+        <Typography variant="h6" sx={{ mr: 2, fontWeight: 700 }}>
           Chirp
         </Typography>
         <Typography variant="body2" color="text.secondary">
@@ -171,6 +202,17 @@ export default function MainWindow(props: {
           <Tooltip title={notifyOn ? '桌面通知已开启' : '开启桌面通知'}>
             <Button size="small" variant={notifyOn ? 'contained' : 'outlined'} onClick={() => void toggleNotify()}>
               通知
+            </Button>
+          </Tooltip>
+          <Tooltip title={onlineNotifyOn === false ? '好友上线通知已关闭' : '好友上线通知开启中'}>
+            <Button
+              size="small"
+              variant={onlineNotifyOn === false ? 'outlined' : 'contained'}
+              disabled={onlineNotifyOn === null}
+              onClick={toggleOnlineNotify}
+              data-testid="friend-online-notify"
+            >
+              上线通知
             </Button>
           </Tooltip>
           <Button size="small" startIcon={<LogoutIcon />} onClick={() => void api.logout().then(onSignOut)}>
@@ -255,6 +297,21 @@ export default function MainWindow(props: {
         state={services.voiceState}
         open={voiceOpen}
         onClose={() => setVoiceOpen(false)}
+      />
+      <Snackbar
+        open={friendToast !== null}
+        autoHideDuration={4000}
+        onClose={() => setFriendToast(null)}
+        message={
+          friendToast
+            ? friendToast.statusMessage &&
+              (friendToast.status === PresenceStatus.IN_GAME ||
+                friendToast.status === PresenceStatus.IN_BATTLE)
+              ? `${friendToast.userId} 进入了 ${friendToast.statusMessage}`
+              : `${friendToast.userId} 上线了`
+            : undefined
+        }
+        data-testid="friend-online-toast"
       />
       <DevicesDialog
         state={services.onlineDevices}

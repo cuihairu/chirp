@@ -62,6 +62,11 @@ namespace Chirp.Sdk
         // target。duration_sec=0 解禁,上限 30 天;2252 全群通知禁言态变更。
         public static readonly MessageSpec<Chirp.Chat.SetGroupMuteResponse> SetGroupMute =
             new(MsgID.SetGroupMuteReq, MsgID.SetGroupMuteResp, Chirp.Chat.SetGroupMuteResponse.Parser);
+        // 举报消息(REPORT_MESSAGE_REQ/RESP 2253/2254):服务端内存台账按
+        // (message_id, reporter_id) 去重幂等,回累计举报数。reason 可选,
+        // 上限 500 码点。
+        public static readonly MessageSpec<Chirp.Chat.ReportMessageResponse> ReportMessage =
+            new(MsgID.ReportMessageReq, MsgID.ReportMessageResp, Chirp.Chat.ReportMessageResponse.Parser);
 
         // Social plane (WS 8001): friends and presence.
         public static readonly MessageSpec<Chirp.Social.AddFriendResponse> AddFriend =

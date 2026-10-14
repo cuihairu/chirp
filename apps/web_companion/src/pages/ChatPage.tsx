@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
-import { Box, Typography } from '@mui/material';
+import { Box, Snackbar, Typography } from '@mui/material';
 import { useServices } from '../api/services';
 import { useStoreValue } from '../state/store';
 import { PresenceStatus } from '@chirp/proto/social';
@@ -19,6 +19,20 @@ export default function ChatPage() {
   const [notifyPerm, setNotifyPerm] = useState<string>(
     typeof Notification !== 'undefined' ? Notification.permission : 'denied',
   );
+
+  // 好友上线 toast(3029):api 层已做自己/名册外去重,这里是单槽展示——
+  // 新事件替换当前 toast,不叠加。
+  const [friendOnlineToast, setFriendOnlineToast] = useState<{
+    userId: string;
+    status: PresenceStatus;
+    statusMessage: string;
+  } | null>(null);
+  useEffect(() => {
+    if (!socialApi) return;
+    return socialApi.onFriendOnline((userId, status, statusMessage) =>
+      setFriendOnlineToast({ userId, status, statusMessage }),
+    );
+  }, [socialApi]);
 
   // Group roster bootstrap: conversation-list group entries must not rely
   // solely on create/invite notifies — after a relogin those are all missed
@@ -170,6 +184,21 @@ export default function ChatPage() {
           <Typography color="text.secondary">{zh.chat.emptyChannel}</Typography>
         </Box>
       )}
+      <Snackbar
+        open={friendOnlineToast !== null}
+        autoHideDuration={4000}
+        onClose={() => setFriendOnlineToast(null)}
+        message={
+          friendOnlineToast
+            ? friendOnlineToast.statusMessage &&
+              (friendOnlineToast.status === PresenceStatus.IN_GAME ||
+                friendOnlineToast.status === PresenceStatus.IN_BATTLE)
+              ? zh.social.friendOnlineGame(friendOnlineToast.userId, friendOnlineToast.statusMessage)
+              : zh.social.friendOnlineNow(friendOnlineToast.userId)
+            : undefined
+        }
+        data-testid="friend-online-toast"
+      />
     </Box>
   );
 }

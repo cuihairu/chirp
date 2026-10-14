@@ -263,7 +263,7 @@ export function GroupManageDialog(props: {
         </Stack>
         {error ? <Alert severity="error">{error}</Alert> : null}
         {muteTarget ? (
-          <Stack direction="row" spacing={1} alignItems="center">
+          <Stack direction="row" spacing={1} sx={{ alignItems: 'center' }}>
             <Typography variant="body2" sx={{ whiteSpace: 'nowrap' }}>
               禁言 {muteTarget}（分钟）
             </Typography>
@@ -284,7 +284,7 @@ export function GroupManageDialog(props: {
           </Stack>
         ) : null}
         {aliasTarget ? (
-          <Stack direction="row" spacing={1} alignItems="center">
+          <Stack direction="row" spacing={1} sx={{ alignItems: 'center' }}>
             <Typography variant="body2" sx={{ whiteSpace: 'nowrap' }}>
               群昵称 {aliasTarget}（留空清除）
             </Typography>
@@ -318,7 +318,7 @@ export function GroupManageDialog(props: {
               const muted = m.mutedUntilTs > Date.now();
               return (
                 <ListItem key={m.userId} secondaryAction={
-                  <Stack direction="row" spacing={0.5} alignItems="center">
+                  <Stack direction="row" spacing={0.5} sx={{ alignItems: 'center' }}>
                     {m.userId === props.selfId ? <Chip size="small" label="我" /> : null}
                     {m.userId === props.selfId || canMute ? (
                       <Button
@@ -433,7 +433,7 @@ export function PartyDialog(props: {
           </>
         ) : (
           <>
-            <Stack direction="row" spacing={1} alignItems="center">
+            <Stack direction="row" spacing={1} sx={{ alignItems: 'center' }}>
               <Chip size="small" label={`队长 ${party.leaderId}`} />
               <Chip size="small" label={`${party.members.length}/${party.maxMembers || '∞'}`} />
             </Stack>
@@ -549,7 +549,7 @@ export function VoiceDialog(props: {
           </>
         ) : (
           <>
-            <Stack direction="row" spacing={1} alignItems="center">
+            <Stack direction="row" spacing={1} sx={{ alignItems: 'center' }}>
               <Chip size="small" label={`房间 ${room.roomId}`} />
               <Chip size="small" label={`${room.participants?.length ?? 0} 人`} />
             </Stack>

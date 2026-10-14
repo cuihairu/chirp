@@ -165,6 +165,12 @@ const (
 	MsgID_SET_GROUP_MUTE_REQ        MsgID = 2250
 	MsgID_SET_GROUP_MUTE_RESP       MsgID = 2251
 	MsgID_GROUP_MEMBER_MUTED_NOTIFY MsgID = 2252
+	// 举报（game_chat_features P1，2026-10-13）：玩家举报一条消息。服务端内存
+	// 台账按 (message_id, reporter_id) 去重幂等，回该消息去重后的累计举报数；
+	// 管理后台审核队列待全局管理员面另批（同群域禁言范围裁决）。body 见
+	// chat.proto 的 ReportMessageRequest / ReportMessageResponse。
+	MsgID_REPORT_MESSAGE_REQ  MsgID = 2253
+	MsgID_REPORT_MESSAGE_RESP MsgID = 2254
 	// Social service
 	MsgID_ADD_FRIEND_REQ             MsgID = 3001
 	MsgID_ADD_FRIEND_RESP            MsgID = 3002
@@ -190,6 +196,16 @@ const (
 	MsgID_FRIEND_REQUEST_NOTIFY      MsgID = 3022
 	MsgID_FRIEND_ACCEPTED_NOTIFY     MsgID = 3023
 	MsgID_FRIEND_REMOVED_NOTIFY      MsgID = 3024
+	// 好友上线通知偏好与显式上线通知（P1，可关闭）。prefs 按用户存、缺省全开；
+	// FRIEND_ONLINE_NOTIFY 只在有效状态 OFFLINE→非 OFFLINE 跃迁时补发（逐好友
+	// 过 SET_NOTIFY_PREFS 开关），body 复用 social.proto 的 PresenceNotify
+	// （同形负载：谁/什么状态/状态文案/时间戳），靠 msgid 区分于花名册更新
+	// 用的 PRESENCE_NOTIFY(3021)——花名册链路不受开关影响。
+	MsgID_SET_NOTIFY_PREFS_REQ  MsgID = 3025
+	MsgID_SET_NOTIFY_PREFS_RESP MsgID = 3026
+	MsgID_GET_NOTIFY_PREFS_REQ  MsgID = 3027
+	MsgID_GET_NOTIFY_PREFS_RESP MsgID = 3028
+	MsgID_FRIEND_ONLINE_NOTIFY  MsgID = 3029
 	// Voice service
 	MsgID_CREATE_ROOM_REQ                  MsgID = 4001
 	MsgID_CREATE_ROOM_RESP                 MsgID = 4002
@@ -420,6 +436,8 @@ var (
 		2250: "SET_GROUP_MUTE_REQ",
 		2251: "SET_GROUP_MUTE_RESP",
 		2252: "GROUP_MEMBER_MUTED_NOTIFY",
+		2253: "REPORT_MESSAGE_REQ",
+		2254: "REPORT_MESSAGE_RESP",
 		3001: "ADD_FRIEND_REQ",
 		3002: "ADD_FRIEND_RESP",
 		3003: "FRIEND_REQUEST_ACTION_REQ",
@@ -444,6 +462,11 @@ var (
 		3022: "FRIEND_REQUEST_NOTIFY",
 		3023: "FRIEND_ACCEPTED_NOTIFY",
 		3024: "FRIEND_REMOVED_NOTIFY",
+		3025: "SET_NOTIFY_PREFS_REQ",
+		3026: "SET_NOTIFY_PREFS_RESP",
+		3027: "GET_NOTIFY_PREFS_REQ",
+		3028: "GET_NOTIFY_PREFS_RESP",
+		3029: "FRIEND_ONLINE_NOTIFY",
 		4001: "CREATE_ROOM_REQ",
 		4002: "CREATE_ROOM_RESP",
 		4003: "JOIN_ROOM_REQ",
@@ -644,6 +667,8 @@ var (
 		"SET_GROUP_MUTE_REQ":                2250,
 		"SET_GROUP_MUTE_RESP":               2251,
 		"GROUP_MEMBER_MUTED_NOTIFY":         2252,
+		"REPORT_MESSAGE_REQ":                2253,
+		"REPORT_MESSAGE_RESP":               2254,
 		"ADD_FRIEND_REQ":                    3001,
 		"ADD_FRIEND_RESP":                   3002,
 		"FRIEND_REQUEST_ACTION_REQ":         3003,
@@ -668,6 +693,11 @@ var (
 		"FRIEND_REQUEST_NOTIFY":             3022,
 		"FRIEND_ACCEPTED_NOTIFY":            3023,
 		"FRIEND_REMOVED_NOTIFY":             3024,
+		"SET_NOTIFY_PREFS_REQ":              3025,
+		"SET_NOTIFY_PREFS_RESP":             3026,
+		"GET_NOTIFY_PREFS_REQ":              3027,
+		"GET_NOTIFY_PREFS_RESP":             3028,
+		"FRIEND_ONLINE_NOTIFY":              3029,
 		"CREATE_ROOM_REQ":                   4001,
 		"CREATE_ROOM_RESP":                  4002,
 		"JOIN_ROOM_REQ":                     4003,
@@ -1357,7 +1387,7 @@ const file_proto_gateway_proto_rawDesc = "" +
 	"channel_id\x18\x01 \x01(\tR\tchannelId\x12\x1b\n" +
 	"\tsender_id\x18\x02 \x01(\tR\bsenderId\x12\x18\n" +
 	"\acontent\x18\x03 \x01(\fR\acontent\x12\"\n" +
-	"\rclient_msg_id\x18\x04 \x01(\tR\vclientMsgId*\xc6-\n" +
+	"\rclient_msg_id\x18\x04 \x01(\tR\vclientMsgId*\x82/\n" +
 	"\x05MsgID\x12\v\n" +
 	"\aUNKNOWN\x10\x00\x12\x13\n" +
 	"\x0eHEARTBEAT_PING\x10\xe9\a\x12\x13\n" +
@@ -1462,7 +1492,9 @@ const file_proto_gateway_proto_rawDesc = "" +
 	"\x13SEARCH_MESSAGE_RESP\x10\xc9\x11\x12\x17\n" +
 	"\x12SET_GROUP_MUTE_REQ\x10\xca\x11\x12\x18\n" +
 	"\x13SET_GROUP_MUTE_RESP\x10\xcb\x11\x12\x1e\n" +
-	"\x19GROUP_MEMBER_MUTED_NOTIFY\x10\xcc\x11\x12\x13\n" +
+	"\x19GROUP_MEMBER_MUTED_NOTIFY\x10\xcc\x11\x12\x17\n" +
+	"\x12REPORT_MESSAGE_REQ\x10\xcd\x11\x12\x18\n" +
+	"\x13REPORT_MESSAGE_RESP\x10\xce\x11\x12\x13\n" +
 	"\x0eADD_FRIEND_REQ\x10\xb9\x17\x12\x14\n" +
 	"\x0fADD_FRIEND_RESP\x10\xba\x17\x12\x1e\n" +
 	"\x19FRIEND_REQUEST_ACTION_REQ\x10\xbb\x17\x12\x1f\n" +
@@ -1486,7 +1518,12 @@ const file_proto_gateway_proto_rawDesc = "" +
 	"\x0fPRESENCE_NOTIFY\x10\xcd\x17\x12\x1a\n" +
 	"\x15FRIEND_REQUEST_NOTIFY\x10\xce\x17\x12\x1b\n" +
 	"\x16FRIEND_ACCEPTED_NOTIFY\x10\xcf\x17\x12\x1a\n" +
-	"\x15FRIEND_REMOVED_NOTIFY\x10\xd0\x17\x12\x14\n" +
+	"\x15FRIEND_REMOVED_NOTIFY\x10\xd0\x17\x12\x19\n" +
+	"\x14SET_NOTIFY_PREFS_REQ\x10\xd1\x17\x12\x1a\n" +
+	"\x15SET_NOTIFY_PREFS_RESP\x10\xd2\x17\x12\x19\n" +
+	"\x14GET_NOTIFY_PREFS_REQ\x10\xd3\x17\x12\x1a\n" +
+	"\x15GET_NOTIFY_PREFS_RESP\x10\xd4\x17\x12\x19\n" +
+	"\x14FRIEND_ONLINE_NOTIFY\x10\xd5\x17\x12\x14\n" +
 	"\x0fCREATE_ROOM_REQ\x10\xa1\x1f\x12\x15\n" +
 	"\x10CREATE_ROOM_RESP\x10\xa2\x1f\x12\x12\n" +
 	"\rJOIN_ROOM_REQ\x10\xa3\x1f\x12\x13\n" +

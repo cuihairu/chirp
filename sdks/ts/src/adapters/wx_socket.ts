@@ -47,6 +47,10 @@ export function createWxSocketFactory(
       onclose: null,
       onerror: null,
       send(data) {
+        // wx 只收二进制视图;宽接口下先挡掉文本/裸 buffer 分支。
+        if (typeof data === 'string' || data instanceof Blob || data instanceof ArrayBuffer) {
+          return;
+        }
         // wx wants a true ArrayBuffer; slice views that don't own their
         // buffer whole (Uint8Array frames normally do).
         const src = data.buffer as ArrayBuffer;

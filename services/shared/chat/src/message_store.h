@@ -24,6 +24,7 @@ struct StoredMessage {
   std::string reply_to_message_id;  // 消息引用（P1）：空 = 非引用
   bool is_recalled{false};          // 撤回墓碑（P0）：发送者撤回/版主软删后置位
   int sender_kind{0};               // 发送者类型（chat::SenderKind 数值）：随档案行往返
+  std::string metadata;             // 链接元数据字节（P1 COORD_LINK = CoordMetadata）：随档案行往返
 };
 
 // Read receipt data

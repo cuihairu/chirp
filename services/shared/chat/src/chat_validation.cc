@@ -114,6 +114,19 @@ bool PrivateChannelContainsUser(std::string_view channel_id, std::string_view us
   return left == user_id || right == user_id;
 }
 
+chirp::common::ErrorCode ValidateCoordMetadata(const SendMessageRequest& req) {
+  if (req.msg_type() != COORD_LINK) {
+    return chirp::common::OK;
+  }
+  CoordMetadata coord;
+  // ParseFromString 对空串返回 true（空消息合法），所以 map_id 空判覆盖
+  // 「没带 metadata」与「metadata 解析不出」两种输入。
+  if (!coord.ParseFromString(req.metadata()) || coord.map_id().empty()) {
+    return chirp::common::INVALID_PARAM;
+  }
+  return chirp::common::OK;
+}
+
 chirp::common::ErrorCode ValidateSendMessageRequest(const SendMessageRequest& req,
                                                     std::string_view authenticated_user_id) {
   if (!IsAuthenticated(authenticated_user_id)) {
@@ -125,6 +138,12 @@ chirp::common::ErrorCode ValidateSendMessageRequest(const SendMessageRequest& re
   if (const chirp::common::ErrorCode length_code = ValidateContentLength(req);
       length_code != chirp::common::OK) {
     return length_code;
+  }
+  // 坐标链接的载荷校验与正文长度同层：垃圾/缺 map_id 的 metadata 在落任何
+  // 存储之前就拦下，不留「坐标卡片但坐标是空的」幽灵消息。
+  if (const chirp::common::ErrorCode coord_code = ValidateCoordMetadata(req);
+      coord_code != chirp::common::OK) {
+    return coord_code;
   }
 
   if (req.channel_type() == PRIVATE) {

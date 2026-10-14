@@ -2,7 +2,7 @@ import { describe, it, expect, vi, afterEach } from 'vitest';
 import { render, screen, fireEvent, act } from '@testing-library/react';
 import Settings from './Settings';
 
-const switches = () => screen.getAllByRole('checkbox');
+const switches = () => screen.getAllByRole('switch');
 
 describe('Settings page', () => {
   afterEach(() => {
