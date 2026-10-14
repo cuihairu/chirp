@@ -12,13 +12,15 @@ import {
   MessageReadNotify,
   MessageReaction,
   MsgType,
+  Priority,
   ReactionAddedNotify,
   ReactionRemovedNotify,
+  SenderKind,
   TypingIndicator,
 } from '@chirp/proto/chat';
 import { ErrorCode } from '@chirp/proto/common';
 import { MsgID } from '@chirp/proto/gateway';
-import { ChatApi, channelRefOf, type ChannelRef } from './chat_api';
+import { ChatApi, channelRefOf, type ChannelRef, type SystemSurface } from './chat_api';
 import { createStore } from '../state/store';
 import { createConversationStore } from '../state/conversation_store';
 import { createMessageStore, readCursorOf } from '../state/message_store';
@@ -399,6 +401,79 @@ describe('ChatApi incoming notifies', () => {
     expect(h.conversations.get().conversations.find((c) => c.key === 'g:guild-1')?.title).toBe(
       'Raiders',
     );
+  });
+});
+
+describe('ChatApi system display surfaces (P0)', () => {
+  it('fires marquee for URGENT with ttl and carries the wire fields on the view', async () => {
+    const h = makeHarness();
+    await login(h);
+    const surfaces: SystemSurface[] = [];
+    h.api.onSystemSurface((s) => surfaces.push(s));
+    h.conn.emit(
+      MsgID.CHAT_MESSAGE_NOTIFY,
+      chatBody({
+        messageId: 'm9',
+        priority: Priority.PRIORITY_URGENT,
+        ttlSeconds: 12,
+        senderKind: SenderKind.SENDER_SYSTEM,
+        content: new TextEncoder().encode('维护公告'),
+      }),
+    );
+    expect(surfaces).toEqual([
+      { type: 'marquee', content: '维护公告', ttlSeconds: 12, messageId: 'm9' },
+    ]);
+    const view = h.messages.get().byChannel['p:user_a|user_b'][0];
+    expect(view).toMatchObject({
+      priority: Priority.PRIORITY_URGENT,
+      ttlSeconds: 12,
+      senderKind: SenderKind.SENDER_SYSTEM,
+    });
+  });
+
+  it('fires announce for HIGH priority, announce wins over the marquee rule', async () => {
+    const h = makeHarness();
+    await login(h);
+    const surfaces: SystemSurface[] = [];
+    h.api.onSystemSurface((s) => surfaces.push(s));
+    h.conn.emit(
+      MsgID.CHAT_MESSAGE_NOTIFY,
+      chatBody({
+        messageId: 'm10',
+        priority: Priority.PRIORITY_HIGH,
+        ttlSeconds: 30,
+        content: new TextEncoder().encode('全服奖励'),
+      }),
+    );
+    expect(surfaces).toEqual([
+      { type: 'announce', content: '全服奖励', ttlSeconds: 0, messageId: 'm10' },
+    ]);
+  });
+
+  it('keeps normal and URGENT-without-ttl messages off the system surfaces', async () => {
+    const h = makeHarness();
+    await login(h);
+    const surfaces: SystemSurface[] = [];
+    h.api.onSystemSurface((s) => surfaces.push(s));
+    h.conn.emit(MsgID.CHAT_MESSAGE_NOTIFY, chatBody({ messageId: 'm11' }));
+    h.conn.emit(
+      MsgID.CHAT_MESSAGE_NOTIFY,
+      chatBody({ messageId: 'm12', priority: Priority.PRIORITY_URGENT }),
+    );
+    expect(surfaces).toEqual([]);
+  });
+
+  it('stops firing after unsubscribe', async () => {
+    const h = makeHarness();
+    await login(h);
+    const surfaces: SystemSurface[] = [];
+    const off = h.api.onSystemSurface((s) => surfaces.push(s));
+    off();
+    h.conn.emit(
+      MsgID.CHAT_MESSAGE_NOTIFY,
+      chatBody({ messageId: 'm13', priority: Priority.PRIORITY_HIGH }),
+    );
+    expect(surfaces).toEqual([]);
   });
 });
 

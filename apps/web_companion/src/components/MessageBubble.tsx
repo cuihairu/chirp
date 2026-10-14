@@ -3,12 +3,33 @@ import DeleteIcon from '@mui/icons-material/DeleteOutline';
 import EditIcon from '@mui/icons-material/EditOutlined';
 import FlagIcon from '@mui/icons-material/FlagOutlined';
 import ReplyIcon from '@mui/icons-material/ReplyOutlined';
+import { SenderKind } from '@chirp/proto/chat';
 import { QUICK_REACTIONS } from './quick_reactions';
 import type { ChatMessageView } from '../state/models';
 import { zh } from '../i18n/zh';
 
 const timeLabel = (timestamp: number): string =>
   new Date(timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+
+// P0 消息展示：气泡底色按 sender_kind 区分——系统黄、NPC 绿、服务橙（交易）；
+// 玩家走纸色。自己的消息不受类别影响，恒走 primary 主色（客户端结构上只能
+// 以玩家身份发送，故按 mine 收口而非按类别）。tag 落在 data-sender-kind 上
+// 供测试断言解析结果。
+// Partial: a wire value outside the known enum (UNRECOGNIZED) falls back to
+// the player face rather than rendering an undefined bubble color.
+const KIND_FACE: Partial<Record<SenderKind, { tag: string; bgcolor: string }>> = {
+  [SenderKind.SENDER_USER]: { tag: 'user', bgcolor: 'background.paper' },
+  [SenderKind.SENDER_SYSTEM]: { tag: 'system', bgcolor: 'warning.light' },
+  [SenderKind.SENDER_NPC]: { tag: 'npc', bgcolor: 'success.light' },
+  [SenderKind.SENDER_SERVICE]: { tag: 'service', bgcolor: 'warning.main' },
+};
+
+const USER_FACE = { tag: 'user', bgcolor: 'background.paper' };
+
+const faceOf = (message: ChatMessageView, mine: boolean): { tag: string; bgcolor: string } => {
+  if (mine) return { tag: 'mine', bgcolor: 'primary.main' };
+  return KIND_FACE[message.senderKind as SenderKind] ?? USER_FACE;
+};
 
 /** Resolved display face of the quoted parent (ChatWindow resolves the id). */
 export interface QuotedSummary {
@@ -55,9 +76,11 @@ export default function MessageBubble({
   // orders them correctly; optimistic pending-* ids never compare below.
   const read = mine && !message.pending && !!peerReadMessageId && message.messageId <= peerReadMessageId;
 
+  const face = faceOf(message, mine);
   return (
     <Paper
       variant="outlined"
+      data-sender-kind={face.tag}
       sx={{
         maxWidth: '72%',
         px: 1.5,
@@ -65,7 +88,7 @@ export default function MessageBubble({
         my: 0.5,
         ml: mine ? 'auto' : 0,
         mr: mine ? 0 : 'auto',
-        bgcolor: mine ? 'primary.main' : 'background.paper',
+        bgcolor: face.bgcolor,
         color: mine ? 'primary.contrastText' : 'text.primary',
         opacity: message.pending ? 0.6 : 1,
       }}

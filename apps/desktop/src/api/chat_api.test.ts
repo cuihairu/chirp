@@ -1,0 +1,201 @@
+import { describe, expect, it, vi } from 'vitest';
+import { ChannelType, ChatMessage, MsgType, Priority, SenderKind } from '@chirp/proto/chat';
+import { MsgID } from '@chirp/proto/gateway';
+import { ChatApi, channelRefOf, type ChannelRef, type SystemSurface } from './chat_api';
+import { createStore } from '../state/store';
+import { createConversationStore } from '../state/conversation_store';
+import { createMessageStore } from '../state/message_store';
+import { createTypingStore } from '../state/typing_store';
+import { FakeChatConnection } from '../state/test_helpers';
+import type { AuthState } from '../state/auth_store';
+
+const SELF = 'user_a';
+const PEER = 'user_b';
+
+const privateChannel = (): ChannelRef => ({
+  key: 'p:user_a|user_b',
+  kind: 'private',
+  channelId: 'user_a|user_b',
+  peerId: PEER,
+});
+
+const chatBody = (over: Partial<ChatMessage>): Uint8Array =>
+  ChatMessage.encode(
+    ChatMessage.fromPartial({
+      messageId: 'm1',
+      senderId: PEER,
+      channelType: ChannelType.PRIVATE,
+      channelId: 'user_a|user_b',
+      msgType: MsgType.TEXT,
+      content: new TextEncoder().encode('hi'),
+      timestamp: 100,
+      ...over,
+    }),
+  ).finish();
+
+interface Harness {
+  conn: FakeChatConnection;
+  api: ChatApi;
+  messages: ReturnType<typeof createMessageStore>;
+}
+
+const makeHarness = (): Harness => {
+  const conn = new FakeChatConnection();
+  const auth = createStore<AuthState>({
+    userId: null,
+    kicked: false,
+    deviceId: 'dev-1',
+    loggedIn: false,
+  });
+  const conversations = createConversationStore();
+  const messages = createMessageStore();
+  const typing = createTypingStore();
+  const api = new ChatApi({ conn, auth, conversations, messages, typing });
+  return { conn, api, messages };
+};
+
+const login = async (h: Harness): Promise<void> => {
+  h.conn.setResponder(async (msgId) => {
+    if (msgId === MsgID.LOGIN_REQ) return { code: 0, userId: SELF };
+    return { code: 0 };
+  });
+  await h.api.login(SELF);
+};
+
+describe('ChatApi system display surfaces (P0)', () => {
+  it('fires marquee for URGENT with ttl and carries the wire fields on the view', async () => {
+    const h = makeHarness();
+    await login(h);
+    const surfaces: SystemSurface[] = [];
+    h.api.onSystemSurface((s) => surfaces.push(s));
+    h.conn.emit(
+      MsgID.CHAT_MESSAGE_NOTIFY,
+      chatBody({
+        messageId: 'm9',
+        priority: Priority.PRIORITY_URGENT,
+        ttlSeconds: 12,
+        senderKind: SenderKind.SENDER_SYSTEM,
+        content: new TextEncoder().encode('维护公告'),
+      }),
+    );
+    expect(surfaces).toEqual([
+      { type: 'marquee', content: '维护公告', ttlSeconds: 12, messageId: 'm9' },
+    ]);
+    const view = h.messages.get().byChannel['p:user_a|user_b'][0];
+    expect(view).toMatchObject({
+      priority: Priority.PRIORITY_URGENT,
+      ttlSeconds: 12,
+      senderKind: SenderKind.SENDER_SYSTEM,
+    });
+  });
+
+  it('fires announce for HIGH priority, announce wins over the marquee rule', async () => {
+    const h = makeHarness();
+    await login(h);
+    const surfaces: SystemSurface[] = [];
+    h.api.onSystemSurface((s) => surfaces.push(s));
+    h.conn.emit(
+      MsgID.CHAT_MESSAGE_NOTIFY,
+      chatBody({
+        messageId: 'm10',
+        priority: Priority.PRIORITY_HIGH,
+        ttlSeconds: 30,
+        content: new TextEncoder().encode('全服奖励'),
+      }),
+    );
+    expect(surfaces).toEqual([
+      { type: 'announce', content: '全服奖励', ttlSeconds: 0, messageId: 'm10' },
+    ]);
+  });
+
+  it('keeps normal and URGENT-without-ttl messages off the system surfaces', async () => {
+    const h = makeHarness();
+    await login(h);
+    const surfaces: SystemSurface[] = [];
+    h.api.onSystemSurface((s) => surfaces.push(s));
+    h.conn.emit(MsgID.CHAT_MESSAGE_NOTIFY, chatBody({ messageId: 'm11' }));
+    h.conn.emit(
+      MsgID.CHAT_MESSAGE_NOTIFY,
+      chatBody({ messageId: 'm12', priority: Priority.PRIORITY_URGENT }),
+    );
+    expect(surfaces).toEqual([]);
+  });
+
+  it('stops firing after unsubscribe', async () => {
+    const h = makeHarness();
+    await login(h);
+    const surfaces: SystemSurface[] = [];
+    const off = h.api.onSystemSurface((s) => surfaces.push(s));
+    off();
+    h.conn.emit(
+      MsgID.CHAT_MESSAGE_NOTIFY,
+      chatBody({ messageId: 'm13', priority: Priority.PRIORITY_HIGH }),
+    );
+    expect(surfaces).toEqual([]);
+  });
+});
+
+describe('ChatApi.history surfaces', () => {
+  it('back-fills priority/ttl/sender_kind on history messages', async () => {
+    const h = makeHarness();
+    await login(h);
+    const channel = channelRefOf(privateChannel().key, SELF);
+    h.conn.setResponder(async (msgId) => {
+      if (msgId === MsgID.GET_HISTORY_REQ) {
+        return {
+          code: 0,
+          hasMore: false,
+          messages: [
+            ChatMessage.fromPartial({
+              messageId: 'h1',
+              senderId: PEER,
+              channelType: ChannelType.PRIVATE,
+              channelId: 'user_a|user_b',
+              msgType: MsgType.TEXT,
+              content: new TextEncoder().encode('历史公告'),
+              timestamp: 60,
+              priority: Priority.PRIORITY_URGENT,
+              ttlSeconds: 5,
+              senderKind: SenderKind.SENDER_SYSTEM,
+            }),
+          ],
+        };
+      }
+      return { code: 0 };
+    });
+    await h.api.loadHistory(channel);
+    const view = h.messages.get().byChannel[channel.key][0];
+    expect(view).toMatchObject({
+      priority: Priority.PRIORITY_URGENT,
+      ttlSeconds: 5,
+      senderKind: SenderKind.SENDER_SYSTEM,
+    });
+  });
+
+  it('leaves the channel list empty when history comes back with no messages', async () => {
+    const h = makeHarness();
+    await login(h);
+    const channel = channelRefOf(privateChannel().key, SELF);
+    h.conn.setResponder(async (msgId) => {
+      if (msgId === MsgID.GET_HISTORY_REQ) return { code: 0, hasMore: false, messages: [] };
+      return { code: 0 };
+    });
+    await expect(h.api.loadHistory(channel)).resolves.toBeUndefined();
+    expect(h.messages.get().byChannel[channel.key]).toEqual([]);
+  });
+});
+
+describe('ChatApi sender_kind passthrough', () => {
+  it('leaves plain player messages at the proto zero values', async () => {
+    const h = makeHarness();
+    await login(h);
+    const onMessage = vi.fn();
+    h.api.onMessage(onMessage);
+    h.conn.emit(MsgID.CHAT_MESSAGE_NOTIFY, chatBody({ messageId: 'm14' }));
+    const view = h.messages.get().byChannel['p:user_a|user_b'][0];
+    expect(view.senderKind).toBe(SenderKind.SENDER_USER);
+    // proto3 zero value is PRIORITY_LOW, not PRIORITY_NORMAL.
+    expect(view.priority).toBe(Priority.PRIORITY_LOW);
+    expect(onMessage).toHaveBeenCalledTimes(1);
+  });
+});

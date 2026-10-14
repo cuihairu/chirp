@@ -1,4 +1,4 @@
-import { ChannelType } from '@chirp/proto/chat';
+import { ChannelType, Priority, SenderKind } from '@chirp/proto/chat';
 
 /**
  * UI-layer models. Channel keys are local-only: the server keys private
@@ -69,6 +69,11 @@ export interface ChatMessageView {
   replyToMessageId?: string;
   /** Coordinate card (P1 COORD_LINK); absent = plain text bubble. */
   coord?: CoordView;
+  // P0 消息展示：wire 三字段透传（ChatMessage priority/ttl_seconds/sender_kind）。
+  // 缺省（proto3 零值）= 普通玩家、普通优先级、无走马灯时长。
+  priority?: Priority;
+  ttlSeconds?: number;
+  senderKind?: SenderKind;
   /** Emoji → aggregate, updated by reaction RESP/notify. */
   reactions?: Record<string, MessageReactionView>;
 }

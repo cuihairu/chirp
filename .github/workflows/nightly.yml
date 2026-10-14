@@ -202,6 +202,15 @@ jobs:
       working-directory: apps/desktop
       run: pnpm install --frozen-lockfile
 
+    # The desktop app carries its own vitest suite (P0 消息展示 surfaces live
+    # in MainWindow/ChatPanel); run it here so a red desktop test blocks the
+    # bundle instead of shipping.
+    - name: Test desktop app
+      working-directory: apps/desktop
+      run: |
+        pnpm run typecheck
+        pnpm test
+
     # 桌面 tauri build 会把 ../../proto/ts/proto/*.ts 一起编进去,那些文件
     # 的 import(long/protobufjs/minimal)从文件所在目录向上找 node_modules——
     # proto/ts 不属于任何 workspace 包,pnpm 严格布局下由根声明这两个依赖

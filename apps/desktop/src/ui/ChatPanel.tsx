@@ -17,6 +17,7 @@ import {
   Typography,
 } from '@mui/material';
 import { useEffect, useReducer, useRef, useState } from 'react';
+import { SenderKind } from '@chirp/proto/chat';
 import type { KeyboardEvent as ReactKeyboardEvent } from 'react';
 import type { ChatApi, ChannelRef } from '../api/chat_api';
 import type { ChatMessageView, Conversation, CoordView } from '../state/models';
@@ -29,6 +30,26 @@ const fmtTime = (ts: number): string => {
   const hh = String(d.getHours()).padStart(2, '0');
   const mm = String(d.getMinutes()).padStart(2, '0');
   return `${hh}:${mm}`;
+};
+
+// P0 消息展示：气泡底色按 sender_kind 区分——系统黄、NPC 绿、服务橙（交易）；
+// 玩家走纸色。自己的消息不受类别影响，恒走主色（客户端结构上只能以玩家
+// 身份发送，故按 mine 收口而非按类别）。tag 落在 data-sender-kind 上供测试
+// 断言解析结果。与 web_companion 的 MessageBubble 同款口径。
+// Partial: a wire value outside the known enum (UNRECOGNIZED) falls back to
+// the player face rather than rendering an undefined bubble color.
+const KIND_FACE: Partial<Record<SenderKind, { tag: string; bgcolor: string }>> = {
+  [SenderKind.SENDER_USER]: { tag: 'user', bgcolor: 'background.paper' },
+  [SenderKind.SENDER_SYSTEM]: { tag: 'system', bgcolor: 'warning.light' },
+  [SenderKind.SENDER_NPC]: { tag: 'npc', bgcolor: 'success.light' },
+  [SenderKind.SENDER_SERVICE]: { tag: 'service', bgcolor: 'warning.main' },
+};
+
+const USER_FACE = { tag: 'user', bgcolor: 'background.paper' };
+
+const faceOf = (props: { mine: boolean; senderKind?: SenderKind }): { tag: string; bgcolor: string } => {
+  if (props.mine) return { tag: 'mine', bgcolor: 'primary.main' };
+  return KIND_FACE[props.senderKind as SenderKind] ?? USER_FACE;
 };
 
 /** 单条消息行：发送者 + 时间 + 正文 + 本地状态标记 + 引用块/回复入口。 */
@@ -50,6 +71,8 @@ function MessageRow(props: {
   replyToMessageId?: string;
   /** 坐标卡片（P1 COORD_LINK）；缺省 = 纯文本气泡。点击复制坐标。 */
   coord?: CoordView;
+  /** 发送者类别（P0 消息展示）：决定气泡底色，自己的消息恒走主色。 */
+  senderKind?: SenderKind;
   onReply?: () => void;
   /** 举报对方消息（REPORT_MESSAGE 2253）；自己的消息不可举报。 */
   onReport?: () => void;
@@ -64,10 +87,11 @@ function MessageRow(props: {
         ) : null}
         <Paper
           elevation={0}
+          data-sender-kind={faceOf(props).tag}
           sx={{
             px: 1.5,
             py: 1,
-            bgcolor: props.mine ? 'primary.main' : 'background.paper',
+            bgcolor: faceOf(props).bgcolor,
             color: props.mine ? '#08130f' : 'text.primary',
             opacity: props.pending ? 0.6 : 1,
             border: props.failed ? '1px solid #e57373' : 'none',
@@ -368,6 +392,7 @@ export default function ChatPanel(props: {
             quoted={m.replyToMessageId ? quotedSummary(m.replyToMessageId) : undefined}
             replyToMessageId={m.replyToMessageId}
             coord={m.coord}
+            senderKind={m.senderKind}
             onReply={m.deleted ? undefined : () => setReplying(m)}
             onReport={m.deleted || m.senderId === selfId ? undefined : () => {
               if (window.confirm('举报这条消息?')) void api.reportMessage(m.messageId);

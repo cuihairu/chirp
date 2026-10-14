@@ -1,5 +1,6 @@
 import { describe, expect, it, vi } from 'vitest';
 import { fireEvent, render, screen } from '@testing-library/react';
+import { SenderKind } from '@chirp/proto/chat';
 import MessageBubble from './MessageBubble';
 import type { ChatMessageView } from '../state/models';
 import { zh } from '../i18n/zh';
@@ -237,5 +238,45 @@ describe('MessageBubble', () => {
   it('renders no report action without a handler', () => {
     render(<MessageBubble message={message({})} selfId="user_a" onToggleReaction={noop} />);
     expect(screen.queryByTestId('report-m1')).toBeNull();
+  });
+
+  it('tags peer bubbles with the sender_kind face (P0)', () => {
+    const cases: Array<[SenderKind, string]> = [
+      [SenderKind.SENDER_USER, 'user'],
+      [SenderKind.SENDER_SYSTEM, 'system'],
+      [SenderKind.SENDER_NPC, 'npc'],
+      [SenderKind.SENDER_SERVICE, 'service'],
+    ];
+    for (const [kind, tag] of cases) {
+      const { container, unmount } = render(
+        <MessageBubble message={message({ senderKind: kind })} selfId="user_a" onToggleReaction={noop} />,
+      );
+      expect(container.querySelector(`[data-sender-kind="${tag}"]`)).toBeTruthy();
+      unmount();
+    }
+  });
+
+  it('keeps own bubbles on the primary face even with a system sender_kind', () => {
+    const { container } = render(
+      <MessageBubble
+        message={message({ senderId: 'user_a', senderKind: SenderKind.SENDER_SYSTEM })}
+        selfId="user_a"
+        onToggleReaction={noop}
+      />,
+    );
+    expect(container.querySelector('[data-sender-kind="mine"]')).toBeTruthy();
+  });
+
+  it('falls back to the player face for an unknown sender_kind on the wire', () => {
+    // A value the generated enum does not know (forward-compat gap) must not
+    // render an undefined bubble color.
+    const { container } = render(
+      <MessageBubble
+        message={message({ senderKind: 99 as SenderKind })}
+        selfId="user_a"
+        onToggleReaction={noop}
+      />,
+    );
+    expect(container.querySelector('[data-sender-kind="user"]')).toBeTruthy();
   });
 });

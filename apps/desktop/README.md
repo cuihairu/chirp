@@ -53,6 +53,15 @@ cd apps/desktop/dev
 ./stack-down.sh
 ```
 
+## 测试与类型检查
+```bash
+cd apps/desktop
+pnpm run typecheck   # tsc --noEmit
+pnpm test            # vitest run（桌面自有套件）
+```
+独立 pnpm 项目（自有 `pnpm-lock.yaml`），测试经 `vitest.config.ts` 的别名解析
+`@chirp/proto` 与 `@chirp/app-protocol`，与 tsc paths、vite 一致。
+
 ## 打包发布
 
 ### 构建 .deb（Linux）

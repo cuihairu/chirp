@@ -13,6 +13,7 @@ import {
   MessageReadNotify,
   MessageReaction,
   MsgType,
+  Priority,
   ReactionAddedNotify,
   ReactionRemovedNotify,
   SearchMessageResponse,
@@ -146,6 +147,8 @@ export class ChatApi {
   private messageListeners = new Set<
     (message: { channel: ChannelRef; fromUserId: string; content: string; messageId: string }) => void
   >();
+  /** UI hooks for the system display surfaces (marquee / announce popup). */
+  private systemSurfaceListeners = new Set<(surface: SystemSurface) => void>();
   // ---- 群昵称快照（渲染两处消费：成员列表行 + 群聊消息发送者名） ----
   // groupId → userId → alias；缺键 = 未设或已清除。名册拉取与 2124 通知双路
   // 维护，订阅者（群会话发送者名映射）在变更后重渲。ChatMessageView 无 alias
@@ -219,6 +222,16 @@ export class ChatApi {
   ): () => void {
     this.messageListeners.add(listener);
     return () => this.messageListeners.delete(listener);
+  }
+
+  /**
+   * Fires for messages that own a system display surface (P0 消息展示):
+   * marquee (PRIORITY_URGENT + ttl) or the announce popup (PRIORITY_HIGH).
+   * Returns the unsubscribe fn.
+   */
+  onSystemSurface(listener: (surface: SystemSurface) => void): () => void {
+    this.systemSurfaceListeners.add(listener);
+    return () => this.systemSurfaceListeners.delete(listener);
   }
 
   setActiveChannel(key: string | null): void {
@@ -754,6 +767,11 @@ export class ChatApi {
         messageId: msg.messageId,
       });
     }
+    // P0 消息展示：走马灯/系统弹窗事件独立于通知权限与当前频道。
+    const surface = systemSurfaceOf(msg);
+    if (surface) {
+      for (const listener of this.systemSurfaceListeners) listener(surface);
+    }
   }
 
   /**
@@ -855,6 +873,34 @@ export class ChatApi {
 
 const decodeText = (bytes: Uint8Array): string => new TextDecoder().decode(bytes);
 
+/**
+ * 系统级消息面（P0 消息展示）：走马灯 = PRIORITY_URGENT 且 ttl_seconds > 0
+ * （屏幕顶部滚动，新的替换旧的）；系统弹窗 = PRIORITY_HIGH（维护通知、全服
+ * 奖励）。其余优先级按普通气泡渲染，不产生系统面事件。
+ */
+export interface SystemSurface {
+  type: 'marquee' | 'announce';
+  content: string;
+  /** 走马灯展示时长（秒）；announce 无时长语义，恒 0。 */
+  ttlSeconds: number;
+  messageId: string;
+}
+
+const systemSurfaceOf = (msg: ChatMessage): SystemSurface | null => {
+  if (msg.priority === Priority.PRIORITY_HIGH) {
+    return { type: 'announce', content: decodeText(msg.content), ttlSeconds: 0, messageId: msg.messageId };
+  }
+  if (msg.priority === Priority.PRIORITY_URGENT && msg.ttlSeconds > 0) {
+    return {
+      type: 'marquee',
+      content: decodeText(msg.content),
+      ttlSeconds: msg.ttlSeconds,
+      messageId: msg.messageId,
+    };
+  }
+  return null;
+};
+
 // 坐标卡片解析：非 COORD_LINK 或 metadata 解析不出 / 缺 map_id 一律 undefined
 // （气泡当普通文本渲染），与服务端 ValidateCoordMetadata 的拒绝口径一致。
 const coordViewOf = (msg: ChatMessage): CoordView | undefined => {
@@ -880,6 +926,9 @@ const toView = (msg: ChatMessage, channel: ChannelRef): ChatMessageView => ({
   pending: false,
   replyToMessageId: msg.replyToMessageId || undefined,
   coord: coordViewOf(msg),
+  priority: msg.priority,
+  ttlSeconds: msg.ttlSeconds,
+  senderKind: msg.senderKind,
 });
 
 const toReactionView = (reaction: MessageReaction, selfId: string): MessageReactionView => ({

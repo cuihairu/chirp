@@ -11,6 +11,7 @@ import {
 import { useEffect, useMemo, useState } from 'react';
 import { PresenceStatus } from '@chirp/proto/social';
 import type { ChannelRef } from '../api/chat_api';
+import type { SystemSurface } from '../api/chat_api';
 import { conversationOf, groupKey, privateKey, type Conversation } from '../state/models';
 import { clearUnread, upsertConversation } from '../state/conversation_store';
 import { useStoreValue } from '../state/store';
@@ -18,6 +19,8 @@ import type { Services } from '../api/services';
 import ChatPanel from './ChatPanel';
 import Rail from './Rail';
 import SearchDialog from './SearchDialog';
+import MarqueeStrip from './MarqueeStrip';
+import SystemAnnounceDialog from './SystemAnnounceDialog';
 import {
   CreateGroupDialog,
   DevicesDialog,
@@ -48,6 +51,16 @@ export default function MainWindow(props: {
   const [voiceOpen, setVoiceOpen] = useState(false);
   const [devicesOpen, setDevicesOpen] = useState(false);
   const [searchOpen, setSearchOpen] = useState(false);
+  // P0 消息展示：走马灯（URGENT+ttl）与系统弹窗（HIGH），单槽展示——
+  // 新事件替换当前槽位，不叠加；不依赖通知权限、与当前打开会话无关。
+  const [marquee, setMarquee] = useState<SystemSurface | null>(null);
+  const [announce, setAnnounce] = useState<SystemSurface | null>(null);
+  useEffect(() => {
+    return api.onSystemSurface((surface) => {
+      if (surface.type === 'marquee') setMarquee(surface);
+      else setAnnounce(surface);
+    });
+  }, [api]);
   const [planeUp, setPlaneUp] = useState({ social: false, party: false, voice: false });
   const friends = useStoreValue(services.friends);
 
@@ -186,6 +199,13 @@ export default function MainWindow(props: {
 
   return (
     <Box sx={{ display: 'flex', flexDirection: 'column', height: '100vh' }}>
+      {marquee && (
+        <MarqueeStrip
+          content={marquee.content}
+          ttlSeconds={marquee.ttlSeconds}
+          onExpire={() => setMarquee(null)}
+        />
+      )}
       <Toolbar variant="dense" sx={{ bgcolor: 'background.paper', borderBottom: '1px solid', borderColor: 'divider' }}>
         <Typography variant="h6" sx={{ mr: 2, fontWeight: 700 }}>
           Chirp
@@ -330,6 +350,7 @@ export default function MainWindow(props: {
           setActiveKey(key);
         }}
       />
+      {announce && <SystemAnnounceDialog content={announce.content} onClose={() => setAnnounce(null)} />}
     </Box>
   );
 }

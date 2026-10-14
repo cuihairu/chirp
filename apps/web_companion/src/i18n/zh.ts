@@ -41,6 +41,8 @@ export const zh = {
     typing: (user: string) => `${user} 正在输入…`,
     addReaction: '添加表情',
     copyCoord: '点击复制坐标',
+    announceTitle: '系统公告',
+    announceAck: '知道了',
     edit: '编辑',
     delete: '删除',
     report: '举报',
