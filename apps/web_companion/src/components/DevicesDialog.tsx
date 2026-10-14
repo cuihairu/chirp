@@ -50,11 +50,11 @@ export default function DevicesDialog({ open, onClose }: { open: boolean; onClos
                 {zh.device.notRegistered}
               </Typography>
             )}
-            <Typography variant="caption" color="text.secondary" display="block" sx={{ mb: 1 }}>
+            <Typography variant="caption" color="text.secondary" sx={{ display: 'block', mb: 1 }}>
               {zh.device.pushNote}
             </Typography>
             {error !== null && (
-              <Typography variant="caption" color="error" display="block">
+              <Typography variant="caption" color="error" sx={{ display: 'block' }}>
                 {error}
               </Typography>
             )}

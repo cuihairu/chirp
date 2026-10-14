@@ -147,7 +147,7 @@ export default function ConversationList({
                     </Badge>
                   }
                   secondary={
-                    <Typography variant="caption" noWrap sx={{ maxWidth: 160 }} display="block">
+                    <Typography variant="caption" noWrap sx={{ maxWidth: 160, display: 'block' }}>
                       {conversation.lastMessagePreview ?? ''}
                     </Typography>
                   }
