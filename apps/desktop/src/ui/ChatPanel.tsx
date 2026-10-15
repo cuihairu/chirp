@@ -39,6 +39,7 @@ import type { MessageState } from '../state/message_store';
 import { useStoreValue, type Store } from '../state/store';
 import { TYPING_TTL_MS, type TypingState } from '../state/typing_store';
 import { expandEmojiCodes, SYSTEM_EMOJIS } from './emoji';
+import { parseRichText } from './rich_text';
 
 const fmtTime = (ts: number): string => {
   const d = new Date(ts);
@@ -194,15 +195,25 @@ function MessageRow(props: {
             sx={{ whiteSpace: 'pre-wrap', wordBreak: 'break-word' }}
             data-testid={`msg-text-${props.messageId}`}
           >
-            {expandEmojiCodes(props.content).map((seg, i) =>
-              seg.kind === 'text' ? (
-                <span key={i}>{seg.value}</span>
-              ) : (
-                <span key={i} data-testid={`emoji-${props.messageId}-${seg.code}`}>
-                  {seg.emoji}
-                </span>
-              ),
-            )}
+            {/* P1 富文本：**粗体** 与 *斜体* 先切样式串，表情码再在每个串内
+                展开（串级样式天然覆盖其中的表情）。 */}
+            {parseRichText(props.content).map((run, r) => (
+              <Typography
+                key={`run-${r}`}
+                component={run.bold ? 'strong' : run.italic ? 'em' : 'span'}
+                sx={run.bold ? { fontWeight: 700 } : run.italic ? { fontStyle: 'italic' } : undefined}
+              >
+                {expandEmojiCodes(run.text).map((seg, i) =>
+                  seg.kind === 'text' ? (
+                    <span key={i}>{seg.value}</span>
+                  ) : (
+                    <span key={i} data-testid={`emoji-${props.messageId}-${seg.code}`}>
+                      {seg.emoji}
+                    </span>
+                  ),
+                )}
+              </Typography>
+            ))}
           </Typography>
           {props.coord ? (
             <Box

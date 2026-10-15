@@ -45,6 +45,13 @@ public nonisolated struct Chirp_Auth_LoginRequest: Sendable {
   /// 0 = gate disabled); unset / 0 means "no level claimed".
   public var level: Int32 = 0
 
+  /// Declared by clients that can read gzip-compressed history payloads: a
+  /// GetHistoryResponse with messages_gzip set carries the message list in a
+  /// gzip (RFC 1952) container instead of the plain repeated field. The
+  /// server keeps the plain form for sessions that do not declare this, so
+  /// legacy clients are unaffected (game_chat_features P2 消息压缩, 2026-10-15).
+  public var supportsGzip: Bool = false
+
   public var unknownFields = SwiftProtobuf.UnknownStorage()
 
   public init() {}
@@ -411,7 +418,7 @@ fileprivate nonisolated let _protobuf_package = "chirp.auth"
 
 nonisolated extension Chirp_Auth_LoginRequest: SwiftProtobuf.Message, SwiftProtobuf._MessageImplementationBase, SwiftProtobuf._ProtoNameProviding {
   public static let protoMessageName: String = _protobuf_package + ".LoginRequest"
-  public static let _protobuf_nameMap = SwiftProtobuf._NameMap(bytecode: "\0\u{1}token\0\u{3}device_id\0\u{1}platform\0\u{3}supports_message_ack\0\u{1}level\0")
+  public static let _protobuf_nameMap = SwiftProtobuf._NameMap(bytecode: "\0\u{1}token\0\u{3}device_id\0\u{1}platform\0\u{3}supports_message_ack\0\u{1}level\0\u{3}supports_gzip\0")
 
   public mutating func decodeMessage<D: SwiftProtobuf.Decoder>(decoder: inout D) throws {
     while let fieldNumber = try decoder.nextFieldNumber() {
@@ -424,6 +431,7 @@ nonisolated extension Chirp_Auth_LoginRequest: SwiftProtobuf.Message, SwiftProto
       case 3: try { try decoder.decodeSingularStringField(value: &self.platform) }()
       case 4: try { try decoder.decodeSingularBoolField(value: &self.supportsMessageAck) }()
       case 5: try { try decoder.decodeSingularInt32Field(value: &self.level) }()
+      case 6: try { try decoder.decodeSingularBoolField(value: &self.supportsGzip) }()
       default: break
       }
     }
@@ -445,6 +453,9 @@ nonisolated extension Chirp_Auth_LoginRequest: SwiftProtobuf.Message, SwiftProto
     if self.level != 0 {
       try visitor.visitSingularInt32Field(value: self.level, fieldNumber: 5)
     }
+    if self.supportsGzip != false {
+      try visitor.visitSingularBoolField(value: self.supportsGzip, fieldNumber: 6)
+    }
     try unknownFields.traverse(visitor: &visitor)
   }
 
@@ -454,6 +465,7 @@ nonisolated extension Chirp_Auth_LoginRequest: SwiftProtobuf.Message, SwiftProto
     if lhs.platform != rhs.platform {return false}
     if lhs.supportsMessageAck != rhs.supportsMessageAck {return false}
     if lhs.level != rhs.level {return false}
+    if lhs.supportsGzip != rhs.supportsGzip {return false}
     if lhs.unknownFields != rhs.unknownFields {return false}
     return true
   }

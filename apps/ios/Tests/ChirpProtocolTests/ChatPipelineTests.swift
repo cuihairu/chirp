@@ -275,6 +275,17 @@ final class ChatPipelineTests: XCTestCase {
         XCTAssertEqual(Chirp_Common_ErrorCode.ok, try first.get())
     }
 
+    func testLoginDeclaresTheGzipCapability() throws {
+        // 消息压缩消费面：登录一次性声明能力，服务端只对声明会话回 gzip 形态
+        // 历史；spec 侧挂了拆封钩子才敢声明。
+        let (pipeline, transport) = try connectedPipeline()
+        let future = pipeline.login(userId: "user-1")
+        let sent = try sentPacket(transport)
+        XCTAssertTrue(try Chirp_Auth_LoginRequest(serializedBytes: sent.body).supportsGzip)
+        transport.deliverWsMessage(try wsMessage(.loginResp, sent.sequence, loginResponse(.ok)))
+        XCTAssertEqual(Chirp_Common_ErrorCode.ok, try future.get())
+    }
+
     func testAuthFailedWithoutProviderOrRenewalIsTerminal() throws {
         let (pipeline, transport) = try connectedPipeline()
         let collector = LoginResultCollector()

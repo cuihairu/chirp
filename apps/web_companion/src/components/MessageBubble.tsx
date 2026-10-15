@@ -7,6 +7,7 @@ import { useState } from 'react';
 import { SenderKind } from '@chirp/proto/chat';
 import { QUICK_REACTIONS } from './quick_reactions';
 import { expandEmojiCodes } from './emoji';
+import { parseRichText } from './rich_text';
 import type { ChatMessageView } from '../state/models';
 import { zh } from '../i18n/zh';
 
@@ -172,15 +173,25 @@ export default function MessageBubble({
       >
         {message.deleted
           ? zh.chat.deleted
-          : expandEmojiCodes(message.content).map((seg, i) =>
-              seg.kind === 'text' ? (
-                <span key={i}>{seg.value}</span>
-              ) : (
-                <span key={i} data-testid={`emoji-${message.messageId}-${seg.code}`}>
-                  {seg.emoji}
-                </span>
-              ),
-            )}
+          : // P1 富文本：**粗体**/*斜体* 先切样式串，表情码再在每个串内展开
+            // （串级样式天然覆盖其中的表情，与 sender_kind 分色互不干扰）。
+            parseRichText(message.content).map((run, r) => (
+              <Typography
+                key={`run-${r}`}
+                component={run.bold ? 'strong' : run.italic ? 'em' : 'span'}
+                sx={run.bold ? { fontWeight: 700 } : run.italic ? { fontStyle: 'italic' } : undefined}
+              >
+                {expandEmojiCodes(run.text).map((seg, i) =>
+                  seg.kind === 'text' ? (
+                    <span key={i}>{seg.value}</span>
+                  ) : (
+                    <span key={i} data-testid={`emoji-${message.messageId}-${seg.code}`}>
+                      {seg.emoji}
+                    </span>
+                  ),
+                )}
+              </Typography>
+            ))}
       </Typography>
       {!message.deleted && message.coord && (
         <Box

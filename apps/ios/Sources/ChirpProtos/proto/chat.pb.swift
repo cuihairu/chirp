@@ -56,6 +56,15 @@ public nonisolated enum Chirp_Chat_MsgType: SwiftProtobuf.Enum, Swift.CaseIterab
   /// 交易状态
   case tradeStatus // = 14
 
+  /// 坐标链接（metadata = CoordMetadata）
+  case coordLink // = 15
+
+  /// 公会招募（metadata = GuildRecruitMetadata）
+  case guildRecruit // = 16
+
+  /// 组队招募（metadata = PartyRecruitMetadata）
+  case partyRecruit // = 17
+
   /// 系统消息
   case system // = 99
   case UNRECOGNIZED(Int)
@@ -75,6 +84,9 @@ public nonisolated enum Chirp_Chat_MsgType: SwiftProtobuf.Enum, Swift.CaseIterab
     case 12: self = .achievement
     case 13: self = .npcDialog
     case 14: self = .tradeStatus
+    case 15: self = .coordLink
+    case 16: self = .guildRecruit
+    case 17: self = .partyRecruit
     case 99: self = .system
     default: self = .UNRECOGNIZED(rawValue)
     }
@@ -91,6 +103,9 @@ public nonisolated enum Chirp_Chat_MsgType: SwiftProtobuf.Enum, Swift.CaseIterab
     case .achievement: return 12
     case .npcDialog: return 13
     case .tradeStatus: return 14
+    case .coordLink: return 15
+    case .guildRecruit: return 16
+    case .partyRecruit: return 17
     case .system: return 99
     case .UNRECOGNIZED(let i): return i
     }
@@ -107,6 +122,9 @@ public nonisolated enum Chirp_Chat_MsgType: SwiftProtobuf.Enum, Swift.CaseIterab
     .achievement,
     .npcDialog,
     .tradeStatus,
+    .coordLink,
+    .guildRecruit,
+    .partyRecruit,
     .system,
   ]
 
@@ -739,6 +757,13 @@ public nonisolated struct Chirp_Chat_GetHistoryResponse: Sendable {
   /// 是否还有更多历史消息
   public var hasMore_p: Bool = false
 
+  /// gzip (RFC 1952) container of a GetHistoryResponse that carries only the
+  /// messages list. Set instead of `messages` for sessions that declared
+  /// LoginRequest.supports_gzip: clients inflate it and parse the bytes back
+  /// as this message, then read `.messages`. On gzip failure the server
+  /// keeps the plain form, so this field is only ever set with valid bytes.
+  public var messagesGzip: Data = Data()
+
   public var unknownFields = SwiftProtobuf.UnknownStorage()
 
   public init() {}
@@ -975,6 +1000,47 @@ public nonisolated struct Chirp_Chat_GroupMemberMutedNotify: Sendable {
   public var operatorID: String = String()
 
   public var timestamp: Int64 = 0
+
+  public var unknownFields = SwiftProtobuf.UnknownStorage()
+
+  public init() {}
+}
+
+/// 举报（2253）：玩家举报一条消息。服务端内存台账按 (message_id, reporter_id)
+/// 去重幂等——同一玩家重复举报同一消息不重复计数，响应回显去重后的累计数。
+/// 被举报消息必须在本进程编辑台账里（即本实例实际投递过的消息），台账外回
+/// USER_NOT_FOUND：与撤回的「台账外消息」同一语义，也挡住垃圾 message_id 刷
+/// 台账的内存增长。管理后台审核队列待全局管理员面另批（同群域禁言范围裁决），
+/// 台账按时间留痕（每消息封顶 100 条理由）供其消费。
+public nonisolated struct Chirp_Chat_ReportMessageRequest: Sendable {
+  // SwiftProtobuf.Message conformance is added in an extension below. See the
+  // `Message` and `Message+*Additions` files in the SwiftProtobuf library for
+  // methods supported on all messages.
+
+  public var messageID: String = String()
+
+  /// 可选；上限 500 码点（服务端校验，超限
+  public var reason: String = String()
+
+  public var unknownFields = SwiftProtobuf.UnknownStorage()
+
+  public init() {}
+}
+
+public nonisolated struct Chirp_Chat_ReportMessageResponse: Sendable {
+  // SwiftProtobuf.Message conformance is added in an extension below. See the
+  // `Message` and `Message+*Additions` files in the SwiftProtobuf library for
+  // methods supported on all messages.
+
+  /// OK / AUTH_FAILED（未登录）/ USER_NOT_FOUND
+  public var code: Chirp_Common_ErrorCode = .ok
+
+  /// （消息不在本进程台账）/ INVALID_PARAM（垃圾
+  /// body / 空 message_id / 理由超长）
+  public var messageID: String = String()
+
+  /// 去重后的累计举报数（重复举报幂等回显）
+  public var reportCount: Int32 = 0
 
   public var unknownFields = SwiftProtobuf.UnknownStorage()
 
@@ -3121,6 +3187,64 @@ public nonisolated struct Chirp_Chat_TradeMetadata: Sendable {
   public init() {}
 }
 
+/// 公会招募卡片（msg_type = GUILD_RECRUIT 时；game_chat_features P1「公会招募」）。
+/// 伴侣面无公会加入动作面（一键加入待公会申请协议），渲染为展示性卡片；
+/// 游戏内客户端的加入自渲染走 SDK 侧。
+public nonisolated struct Chirp_Chat_GuildRecruitMetadata: Sendable {
+  // SwiftProtobuf.Message conformance is added in an extension below. See the
+  // `Message` and `Message+*Additions` files in the SwiftProtobuf library for
+  // methods supported on all messages.
+
+  /// 公会唯一 id（校验落点：空拒绝）
+  public var guildID: String = String()
+
+  public var guildName: String = String()
+
+  /// 公会等级
+  public var level: Int32 = 0
+
+  /// 当前人数
+  public var memberCount: Int32 = 0
+
+  /// 人数上限（0 = 不展示）
+  public var maxMembers: Int32 = 0
+
+  /// 招募语（可选）
+  public var description_p: String = String()
+
+  public var unknownFields = SwiftProtobuf.UnknownStorage()
+
+  public init() {}
+}
+
+/// 组队招募卡片（msg_type = PARTY_RECRUIT 时；game_chat_features P1「组队招募」）。
+/// 伴侣面无申请动作面（一键申请待队伍申请协议），渲染为展示性卡片；
+/// 游戏内客户端的申请自渲染走 SDK 侧。
+public nonisolated struct Chirp_Chat_PartyRecruitMetadata: Sendable {
+  // SwiftProtobuf.Message conformance is added in an extension below. See the
+  // `Message` and `Message+*Additions` files in the SwiftProtobuf library for
+  // methods supported on all messages.
+
+  /// 队伍唯一 id（校验落点：空拒绝）
+  public var partyID: String = String()
+
+  /// 副本名
+  public var dungeonName: String = String()
+
+  /// 人数需求
+  public var needed: Int32 = 0
+
+  /// 当前已组人数（0 = 不展示）
+  public var current: Int32 = 0
+
+  /// 队长名（可选）
+  public var leaderName: String = String()
+
+  public var unknownFields = SwiftProtobuf.UnknownStorage()
+
+  public init() {}
+}
+
 /// NPC 对话（msg_type = NPC_DIALOG 时）
 public nonisolated struct Chirp_Chat_NpcDialogMetadata: Sendable {
   // SwiftProtobuf.Message conformance is added in an extension below. See the
@@ -3136,6 +3260,34 @@ public nonisolated struct Chirp_Chat_NpcDialogMetadata: Sendable {
 
   /// 玩家可选的回复选项
   public var options: [String] = []
+
+  public var unknownFields = SwiftProtobuf.UnknownStorage()
+
+  public init() {}
+}
+
+/// 坐标链接（msg_type = COORD_LINK 时，metadata 序列化为此消息；game_chat_features
+/// P1「坐标链接」）：游戏客户端点击后自动寻路到 (x, y, z)。坐标是地图格坐标
+/// (int32，米/格由游戏约定)；伴侣面（web/desktop）无寻路引擎，渲染为坐标卡片、
+/// 点击复制。服务端在发送门校验 metadata 能按 CoordMetadata 解析且 map_id 非空，
+/// 拒悬空坐标回 INVALID_PARAM（与 reply_to 校验同一档）。
+public nonisolated struct Chirp_Chat_CoordMetadata: Sendable {
+  // SwiftProtobuf.Message conformance is added in an extension below. See the
+  // `Message` and `Message+*Additions` files in the SwiftProtobuf library for
+  // methods supported on all messages.
+
+  /// 地图/区域 ID
+  public var mapID: String = String()
+
+  public var x: Int32 = 0
+
+  public var y: Int32 = 0
+
+  /// 高度，缺省 0
+  public var z: Int32 = 0
+
+  /// 展示标签（如「BOSS 刷新点」）；渲染标题
+  public var label: String = String()
 
   public var unknownFields = SwiftProtobuf.UnknownStorage()
 
@@ -3469,7 +3621,7 @@ public nonisolated struct Chirp_Chat_SearchMessageResponse: Sendable {
 fileprivate nonisolated let _protobuf_package = "chirp.chat"
 
 nonisolated extension Chirp_Chat_MsgType: SwiftProtobuf._ProtoNameProviding {
-  public static let _protobuf_nameMap = SwiftProtobuf._NameMap(bytecode: "\0\u{2}\0TEXT\0\u{1}EMOJI\0\u{1}VOICE\0\u{1}IMAGE\0\u{2}\u{7}ITEM_LINK\0\u{1}SKILL_LINK\0\u{1}ACHIEVEMENT\0\u{1}NPC_DIALOG\0\u{1}TRADE_STATUS\0\u{2}U\u{1}SYSTEM\0")
+  public static let _protobuf_nameMap = SwiftProtobuf._NameMap(bytecode: "\0\u{2}\0TEXT\0\u{1}EMOJI\0\u{1}VOICE\0\u{1}IMAGE\0\u{2}\u{7}ITEM_LINK\0\u{1}SKILL_LINK\0\u{1}ACHIEVEMENT\0\u{1}NPC_DIALOG\0\u{1}TRADE_STATUS\0\u{1}COORD_LINK\0\u{1}GUILD_RECRUIT\0\u{1}PARTY_RECRUIT\0\u{2}R\u{1}SYSTEM\0")
 }
 
 nonisolated extension Chirp_Chat_ChannelType: SwiftProtobuf._ProtoNameProviding {
@@ -3830,7 +3982,7 @@ nonisolated extension Chirp_Chat_GetHistoryRequest: SwiftProtobuf.Message, Swift
 
 nonisolated extension Chirp_Chat_GetHistoryResponse: SwiftProtobuf.Message, SwiftProtobuf._MessageImplementationBase, SwiftProtobuf._ProtoNameProviding {
   public static let protoMessageName: String = _protobuf_package + ".GetHistoryResponse"
-  public static let _protobuf_nameMap = SwiftProtobuf._NameMap(bytecode: "\0\u{1}code\0\u{1}messages\0\u{3}has_more\0")
+  public static let _protobuf_nameMap = SwiftProtobuf._NameMap(bytecode: "\0\u{1}code\0\u{1}messages\0\u{3}has_more\0\u{3}messages_gzip\0")
 
   public mutating func decodeMessage<D: SwiftProtobuf.Decoder>(decoder: inout D) throws {
     while let fieldNumber = try decoder.nextFieldNumber() {
@@ -3841,6 +3993,7 @@ nonisolated extension Chirp_Chat_GetHistoryResponse: SwiftProtobuf.Message, Swif
       case 1: try { try decoder.decodeSingularEnumField(value: &self.code) }()
       case 2: try { try decoder.decodeRepeatedMessageField(value: &self.messages) }()
       case 3: try { try decoder.decodeSingularBoolField(value: &self.hasMore_p) }()
+      case 4: try { try decoder.decodeSingularBytesField(value: &self.messagesGzip) }()
       default: break
       }
     }
@@ -3856,6 +4009,9 @@ nonisolated extension Chirp_Chat_GetHistoryResponse: SwiftProtobuf.Message, Swif
     if self.hasMore_p != false {
       try visitor.visitSingularBoolField(value: self.hasMore_p, fieldNumber: 3)
     }
+    if !self.messagesGzip.isEmpty {
+      try visitor.visitSingularBytesField(value: self.messagesGzip, fieldNumber: 4)
+    }
     try unknownFields.traverse(visitor: &visitor)
   }
 
@@ -3863,6 +4019,7 @@ nonisolated extension Chirp_Chat_GetHistoryResponse: SwiftProtobuf.Message, Swif
     if lhs.code != rhs.code {return false}
     if lhs.messages != rhs.messages {return false}
     if lhs.hasMore_p != rhs.hasMore_p {return false}
+    if lhs.messagesGzip != rhs.messagesGzip {return false}
     if lhs.unknownFields != rhs.unknownFields {return false}
     return true
   }
@@ -4353,6 +4510,81 @@ nonisolated extension Chirp_Chat_GroupMemberMutedNotify: SwiftProtobuf.Message, 
     if lhs.mutedUntilTs != rhs.mutedUntilTs {return false}
     if lhs.operatorID != rhs.operatorID {return false}
     if lhs.timestamp != rhs.timestamp {return false}
+    if lhs.unknownFields != rhs.unknownFields {return false}
+    return true
+  }
+}
+
+nonisolated extension Chirp_Chat_ReportMessageRequest: SwiftProtobuf.Message, SwiftProtobuf._MessageImplementationBase, SwiftProtobuf._ProtoNameProviding {
+  public static let protoMessageName: String = _protobuf_package + ".ReportMessageRequest"
+  public static let _protobuf_nameMap = SwiftProtobuf._NameMap(bytecode: "\0\u{3}message_id\0\u{1}reason\0")
+
+  public mutating func decodeMessage<D: SwiftProtobuf.Decoder>(decoder: inout D) throws {
+    while let fieldNumber = try decoder.nextFieldNumber() {
+      // The use of inline closures is to circumvent an issue where the compiler
+      // allocates stack space for every case branch when no optimizations are
+      // enabled. https://github.com/apple/swift-protobuf/issues/1034
+      switch fieldNumber {
+      case 1: try { try decoder.decodeSingularStringField(value: &self.messageID) }()
+      case 2: try { try decoder.decodeSingularStringField(value: &self.reason) }()
+      default: break
+      }
+    }
+  }
+
+  public func traverse<V: SwiftProtobuf.Visitor>(visitor: inout V) throws {
+    if !self.messageID.isEmpty {
+      try visitor.visitSingularStringField(value: self.messageID, fieldNumber: 1)
+    }
+    if !self.reason.isEmpty {
+      try visitor.visitSingularStringField(value: self.reason, fieldNumber: 2)
+    }
+    try unknownFields.traverse(visitor: &visitor)
+  }
+
+  public static func ==(lhs: Chirp_Chat_ReportMessageRequest, rhs: Chirp_Chat_ReportMessageRequest) -> Bool {
+    if lhs.messageID != rhs.messageID {return false}
+    if lhs.reason != rhs.reason {return false}
+    if lhs.unknownFields != rhs.unknownFields {return false}
+    return true
+  }
+}
+
+nonisolated extension Chirp_Chat_ReportMessageResponse: SwiftProtobuf.Message, SwiftProtobuf._MessageImplementationBase, SwiftProtobuf._ProtoNameProviding {
+  public static let protoMessageName: String = _protobuf_package + ".ReportMessageResponse"
+  public static let _protobuf_nameMap = SwiftProtobuf._NameMap(bytecode: "\0\u{1}code\0\u{3}message_id\0\u{3}report_count\0")
+
+  public mutating func decodeMessage<D: SwiftProtobuf.Decoder>(decoder: inout D) throws {
+    while let fieldNumber = try decoder.nextFieldNumber() {
+      // The use of inline closures is to circumvent an issue where the compiler
+      // allocates stack space for every case branch when no optimizations are
+      // enabled. https://github.com/apple/swift-protobuf/issues/1034
+      switch fieldNumber {
+      case 1: try { try decoder.decodeSingularEnumField(value: &self.code) }()
+      case 2: try { try decoder.decodeSingularStringField(value: &self.messageID) }()
+      case 3: try { try decoder.decodeSingularInt32Field(value: &self.reportCount) }()
+      default: break
+      }
+    }
+  }
+
+  public func traverse<V: SwiftProtobuf.Visitor>(visitor: inout V) throws {
+    if self.code != .ok {
+      try visitor.visitSingularEnumField(value: self.code, fieldNumber: 1)
+    }
+    if !self.messageID.isEmpty {
+      try visitor.visitSingularStringField(value: self.messageID, fieldNumber: 2)
+    }
+    if self.reportCount != 0 {
+      try visitor.visitSingularInt32Field(value: self.reportCount, fieldNumber: 3)
+    }
+    try unknownFields.traverse(visitor: &visitor)
+  }
+
+  public static func ==(lhs: Chirp_Chat_ReportMessageResponse, rhs: Chirp_Chat_ReportMessageResponse) -> Bool {
+    if lhs.code != rhs.code {return false}
+    if lhs.messageID != rhs.messageID {return false}
+    if lhs.reportCount != rhs.reportCount {return false}
     if lhs.unknownFields != rhs.unknownFields {return false}
     return true
   }
@@ -8732,6 +8964,111 @@ nonisolated extension Chirp_Chat_TradeMetadata: SwiftProtobuf.Message, SwiftProt
   }
 }
 
+nonisolated extension Chirp_Chat_GuildRecruitMetadata: SwiftProtobuf.Message, SwiftProtobuf._MessageImplementationBase, SwiftProtobuf._ProtoNameProviding {
+  public static let protoMessageName: String = _protobuf_package + ".GuildRecruitMetadata"
+  public static let _protobuf_nameMap = SwiftProtobuf._NameMap(bytecode: "\0\u{3}guild_id\0\u{3}guild_name\0\u{1}level\0\u{3}member_count\0\u{3}max_members\0\u{1}description\0")
+
+  public mutating func decodeMessage<D: SwiftProtobuf.Decoder>(decoder: inout D) throws {
+    while let fieldNumber = try decoder.nextFieldNumber() {
+      // The use of inline closures is to circumvent an issue where the compiler
+      // allocates stack space for every case branch when no optimizations are
+      // enabled. https://github.com/apple/swift-protobuf/issues/1034
+      switch fieldNumber {
+      case 1: try { try decoder.decodeSingularStringField(value: &self.guildID) }()
+      case 2: try { try decoder.decodeSingularStringField(value: &self.guildName) }()
+      case 3: try { try decoder.decodeSingularInt32Field(value: &self.level) }()
+      case 4: try { try decoder.decodeSingularInt32Field(value: &self.memberCount) }()
+      case 5: try { try decoder.decodeSingularInt32Field(value: &self.maxMembers) }()
+      case 6: try { try decoder.decodeSingularStringField(value: &self.description_p) }()
+      default: break
+      }
+    }
+  }
+
+  public func traverse<V: SwiftProtobuf.Visitor>(visitor: inout V) throws {
+    if !self.guildID.isEmpty {
+      try visitor.visitSingularStringField(value: self.guildID, fieldNumber: 1)
+    }
+    if !self.guildName.isEmpty {
+      try visitor.visitSingularStringField(value: self.guildName, fieldNumber: 2)
+    }
+    if self.level != 0 {
+      try visitor.visitSingularInt32Field(value: self.level, fieldNumber: 3)
+    }
+    if self.memberCount != 0 {
+      try visitor.visitSingularInt32Field(value: self.memberCount, fieldNumber: 4)
+    }
+    if self.maxMembers != 0 {
+      try visitor.visitSingularInt32Field(value: self.maxMembers, fieldNumber: 5)
+    }
+    if !self.description_p.isEmpty {
+      try visitor.visitSingularStringField(value: self.description_p, fieldNumber: 6)
+    }
+    try unknownFields.traverse(visitor: &visitor)
+  }
+
+  public static func ==(lhs: Chirp_Chat_GuildRecruitMetadata, rhs: Chirp_Chat_GuildRecruitMetadata) -> Bool {
+    if lhs.guildID != rhs.guildID {return false}
+    if lhs.guildName != rhs.guildName {return false}
+    if lhs.level != rhs.level {return false}
+    if lhs.memberCount != rhs.memberCount {return false}
+    if lhs.maxMembers != rhs.maxMembers {return false}
+    if lhs.description_p != rhs.description_p {return false}
+    if lhs.unknownFields != rhs.unknownFields {return false}
+    return true
+  }
+}
+
+nonisolated extension Chirp_Chat_PartyRecruitMetadata: SwiftProtobuf.Message, SwiftProtobuf._MessageImplementationBase, SwiftProtobuf._ProtoNameProviding {
+  public static let protoMessageName: String = _protobuf_package + ".PartyRecruitMetadata"
+  public static let _protobuf_nameMap = SwiftProtobuf._NameMap(bytecode: "\0\u{3}party_id\0\u{3}dungeon_name\0\u{1}needed\0\u{1}current\0\u{3}leader_name\0")
+
+  public mutating func decodeMessage<D: SwiftProtobuf.Decoder>(decoder: inout D) throws {
+    while let fieldNumber = try decoder.nextFieldNumber() {
+      // The use of inline closures is to circumvent an issue where the compiler
+      // allocates stack space for every case branch when no optimizations are
+      // enabled. https://github.com/apple/swift-protobuf/issues/1034
+      switch fieldNumber {
+      case 1: try { try decoder.decodeSingularStringField(value: &self.partyID) }()
+      case 2: try { try decoder.decodeSingularStringField(value: &self.dungeonName) }()
+      case 3: try { try decoder.decodeSingularInt32Field(value: &self.needed) }()
+      case 4: try { try decoder.decodeSingularInt32Field(value: &self.current) }()
+      case 5: try { try decoder.decodeSingularStringField(value: &self.leaderName) }()
+      default: break
+      }
+    }
+  }
+
+  public func traverse<V: SwiftProtobuf.Visitor>(visitor: inout V) throws {
+    if !self.partyID.isEmpty {
+      try visitor.visitSingularStringField(value: self.partyID, fieldNumber: 1)
+    }
+    if !self.dungeonName.isEmpty {
+      try visitor.visitSingularStringField(value: self.dungeonName, fieldNumber: 2)
+    }
+    if self.needed != 0 {
+      try visitor.visitSingularInt32Field(value: self.needed, fieldNumber: 3)
+    }
+    if self.current != 0 {
+      try visitor.visitSingularInt32Field(value: self.current, fieldNumber: 4)
+    }
+    if !self.leaderName.isEmpty {
+      try visitor.visitSingularStringField(value: self.leaderName, fieldNumber: 5)
+    }
+    try unknownFields.traverse(visitor: &visitor)
+  }
+
+  public static func ==(lhs: Chirp_Chat_PartyRecruitMetadata, rhs: Chirp_Chat_PartyRecruitMetadata) -> Bool {
+    if lhs.partyID != rhs.partyID {return false}
+    if lhs.dungeonName != rhs.dungeonName {return false}
+    if lhs.needed != rhs.needed {return false}
+    if lhs.current != rhs.current {return false}
+    if lhs.leaderName != rhs.leaderName {return false}
+    if lhs.unknownFields != rhs.unknownFields {return false}
+    return true
+  }
+}
+
 nonisolated extension Chirp_Chat_NpcDialogMetadata: SwiftProtobuf.Message, SwiftProtobuf._MessageImplementationBase, SwiftProtobuf._ProtoNameProviding {
   public static let protoMessageName: String = _protobuf_package + ".NpcDialogMetadata"
   public static let _protobuf_nameMap = SwiftProtobuf._NameMap(bytecode: "\0\u{3}npc_id\0\u{3}npc_name\0\u{3}dialog_id\0\u{1}options\0")
@@ -8772,6 +9109,56 @@ nonisolated extension Chirp_Chat_NpcDialogMetadata: SwiftProtobuf.Message, Swift
     if lhs.npcName != rhs.npcName {return false}
     if lhs.dialogID != rhs.dialogID {return false}
     if lhs.options != rhs.options {return false}
+    if lhs.unknownFields != rhs.unknownFields {return false}
+    return true
+  }
+}
+
+nonisolated extension Chirp_Chat_CoordMetadata: SwiftProtobuf.Message, SwiftProtobuf._MessageImplementationBase, SwiftProtobuf._ProtoNameProviding {
+  public static let protoMessageName: String = _protobuf_package + ".CoordMetadata"
+  public static let _protobuf_nameMap = SwiftProtobuf._NameMap(bytecode: "\0\u{3}map_id\0\u{1}x\0\u{1}y\0\u{1}z\0\u{1}label\0")
+
+  public mutating func decodeMessage<D: SwiftProtobuf.Decoder>(decoder: inout D) throws {
+    while let fieldNumber = try decoder.nextFieldNumber() {
+      // The use of inline closures is to circumvent an issue where the compiler
+      // allocates stack space for every case branch when no optimizations are
+      // enabled. https://github.com/apple/swift-protobuf/issues/1034
+      switch fieldNumber {
+      case 1: try { try decoder.decodeSingularStringField(value: &self.mapID) }()
+      case 2: try { try decoder.decodeSingularInt32Field(value: &self.x) }()
+      case 3: try { try decoder.decodeSingularInt32Field(value: &self.y) }()
+      case 4: try { try decoder.decodeSingularInt32Field(value: &self.z) }()
+      case 5: try { try decoder.decodeSingularStringField(value: &self.label) }()
+      default: break
+      }
+    }
+  }
+
+  public func traverse<V: SwiftProtobuf.Visitor>(visitor: inout V) throws {
+    if !self.mapID.isEmpty {
+      try visitor.visitSingularStringField(value: self.mapID, fieldNumber: 1)
+    }
+    if self.x != 0 {
+      try visitor.visitSingularInt32Field(value: self.x, fieldNumber: 2)
+    }
+    if self.y != 0 {
+      try visitor.visitSingularInt32Field(value: self.y, fieldNumber: 3)
+    }
+    if self.z != 0 {
+      try visitor.visitSingularInt32Field(value: self.z, fieldNumber: 4)
+    }
+    if !self.label.isEmpty {
+      try visitor.visitSingularStringField(value: self.label, fieldNumber: 5)
+    }
+    try unknownFields.traverse(visitor: &visitor)
+  }
+
+  public static func ==(lhs: Chirp_Chat_CoordMetadata, rhs: Chirp_Chat_CoordMetadata) -> Bool {
+    if lhs.mapID != rhs.mapID {return false}
+    if lhs.x != rhs.x {return false}
+    if lhs.y != rhs.y {return false}
+    if lhs.z != rhs.z {return false}
+    if lhs.label != rhs.label {return false}
     if lhs.unknownFields != rhs.unknownFields {return false}
     return true
   }

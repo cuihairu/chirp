@@ -273,3 +273,21 @@ describe('ChatPanel emoji codes (P1 表情/贴图)', () => {
     expect((screen.getByRole('textbox') as HTMLTextAreaElement).value).toContain('[emoji:smile]');
   });
 });
+
+describe('ChatPanel rich text (P1 富文本)', () => {
+  it('renders bold and italic markers as strong/em and keeps the rest literal', async () => {
+    renderPanel([message({ messageId: 'rt1', content: '上分**一波推**了*真的* 2 * 3' })]);
+    await waitFor(() => expect(screen.getByTestId('msg-text-rt1')).toBeTruthy());
+    const text = screen.getByTestId('msg-text-rt1');
+    expect(text.querySelector('strong')?.textContent).toBe('一波推');
+    expect(text.querySelector('em')?.textContent).toBe('真的');
+    expect(text.textContent).toBe('上分一波推了真的 2 * 3');
+  });
+
+  it('carries the run style into an emoji inside the styled span', async () => {
+    renderPanel([message({ messageId: 'rt2', content: '**火[emoji:fire]**' })]);
+    await waitFor(() => expect(screen.getByTestId('msg-text-rt2')).toBeTruthy());
+    const bold = screen.getByTestId('msg-text-rt2').querySelector('strong');
+    expect(bold?.textContent).toBe('火🔥');
+  });
+});

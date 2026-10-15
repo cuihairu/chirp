@@ -214,6 +214,32 @@ describe('MessageBubble', () => {
     expect(screen.getByTestId('msg-text-m1').textContent).toContain('[emoji:zzz]');
   });
 
+  it('renders bold and italic markers as strong/em and keeps the rest literal', () => {
+    render(
+      <MessageBubble
+        message={message({ content: '上分**一波推**了*真的* 2 * 3' })}
+        selfId="user_a"
+        onToggleReaction={noop}
+      />,
+    );
+    const text = screen.getByTestId('msg-text-m1');
+    expect(text.querySelector('strong')?.textContent).toBe('一波推');
+    expect(text.querySelector('em')?.textContent).toBe('真的');
+    expect(text.textContent).toBe('上分一波推了真的 2 * 3');
+  });
+
+  it('carries the run style into an emoji inside the styled span', () => {
+    render(
+      <MessageBubble
+        message={message({ content: '**火[emoji:fire]**' })}
+        selfId="user_a"
+        onToggleReaction={noop}
+      />,
+    );
+    const bold = screen.getByTestId('msg-text-m1').querySelector('strong');
+    expect(bold?.textContent).toBe('火🔥');
+  });
+
   it('renders the trade card with the status badge, amount and item summary', () => {
     render(
       <MessageBubble

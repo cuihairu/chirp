@@ -174,6 +174,8 @@ public final class ChatPipeline {
         request.deviceID = deviceId()
         // Kotlin reports "android"; this port runs on iOS.
         request.platform = "ios"
+        // 消息压缩消费面：MsgSpecs.getHistory 解码侧拆封 messages_gzip。
+        request.supportsGzip = true
         request.level = level
         return conn.request(spec: MsgSpecs.login, body: request).map { [weak self] response in
             if response.code == .ok {
