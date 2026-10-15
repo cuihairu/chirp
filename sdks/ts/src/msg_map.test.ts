@@ -1,3 +1,7 @@
+import { gzipSync } from 'node:zlib';
+
+import { GzipError } from './gzip';
+
 import { LoginResponse, LogoutResponse } from '@chirp/proto/auth';
 import {
   GetNotifyPrefsResponse,
@@ -107,6 +111,33 @@ describe('message specs', () => {
     expect(GET_HISTORY.decodeResponse(resp).code).toBe(0);
     const logout = LogoutResponse.encode(LogoutResponse.fromPartial({})).finish();
     expect(LOGOUT.decodeResponse(logout).code).toBe(0);
+  });
+
+  it('inflates the gzip history form into plain messages', async () => {
+    // 服务端形态：清单装进同型 GetHistoryResponse 压缩后放 messagesGzip。
+    const inner = GetHistoryResponse.encode(
+      GetHistoryResponse.fromPartial({
+        code: 0,
+        messages: [{ content: new TextEncoder().encode('gz-hello') }],
+      }),
+    ).finish();
+    const wrapped = GetHistoryResponse.encode(
+      GetHistoryResponse.fromPartial({ code: 0, messagesGzip: gzipSync(inner) }),
+    ).finish();
+    const decoded = await GET_HISTORY.inflateResponse!(GET_HISTORY.decodeResponse(wrapped));
+    expect(decoded.messagesGzip).toEqual(new Uint8Array(0));
+    expect(decoded.messages.length).toBe(1);
+    // Realm-safe byte compare: jsdom exposes its own Uint8Array constructor.
+    expect(Array.from(decoded.messages[0].content)).toEqual(Array.from(new TextEncoder().encode('gz-hello')));
+  });
+
+  it('rejects a corrupt gzip history container', async () => {
+    const wrapped = GetHistoryResponse.encode(
+      GetHistoryResponse.fromPartial({ code: 0, messagesGzip: new Uint8Array([1, 2, 3, 4]) }),
+    ).finish();
+    await expect(
+      GET_HISTORY.inflateResponse!(GET_HISTORY.decodeResponse(wrapped)),
+    ).rejects.toThrow(GzipError);
   });
 
   it('roundtrips the search and member-alias specs', () => {

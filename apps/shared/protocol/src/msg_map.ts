@@ -7,6 +7,8 @@ import * as Social from '@chirp/proto/social';
 import * as Voice from '@chirp/proto/voice';
 import { MsgID } from '@chirp/proto/gateway';
 
+import { gzipDecompress } from './gzip';
+
 /**
  * A typed request/response pair. On this protocol a response is correlated by
  * Packet.sequence, not by msgId — the server answers with the RESP msgId and
@@ -19,6 +21,12 @@ export interface MessageSpec<Req, Resp> {
   /** Accepts a partial; unset fields fall back to proto defaults via fromPartial. */
   encodeRequest(message: Partial<Req>): Uint8Array;
   decodeResponse(bytes: Uint8Array): Resp;
+  /**
+   * Optional async post-decode, present only for the compressed-history shape
+   * (GET_HISTORY) which inflates messagesGzip before handing the response up.
+   * conn.request awaits it; specs without the hook stay fully synchronous.
+   */
+  inflateResponse?: (resp: Resp) => Promise<Resp>;
 }
 
 interface ProtoMessage<T> {
@@ -62,12 +70,30 @@ export const SEND_MESSAGE = defineSpec(
   Chat.SendMessageRequest,
   Chat.SendMessageResponse,
 );
-export const GET_HISTORY = defineSpec(
-  MsgID.GET_HISTORY_REQ,
-  MsgID.GET_HISTORY_RESP,
-  Chat.GetHistoryRequest,
-  Chat.GetHistoryResponse,
-);
+/**
+ * 消息压缩消费面（game_chat_features P2 消息压缩）：声明 supports_gzip 的会话
+ * 收到 messages_gzip（gzip 容器 RFC 1952），载荷是只带 messages 清单的同型
+ * GetHistoryResponse。这里解压取清单并清掉压缩字段，调用方只见明文形态；容器
+ * 损坏或超限时报 GzipError 让上层看到失败，不静默丢历史。
+ */
+export const GET_HISTORY: MessageSpec<Chat.GetHistoryRequest, Chat.GetHistoryResponse> = {
+  reqMsgId: MsgID.GET_HISTORY_REQ,
+  respMsgId: MsgID.GET_HISTORY_RESP,
+  encodeRequest: (message) =>
+    Chat.GetHistoryRequest.encode(Chat.GetHistoryRequest.fromPartial(message)).finish(),
+  decodeResponse: (bytes) => Chat.GetHistoryResponse.decode(bytes),
+  inflateResponse: async (resp) => {
+    if (resp.messagesGzip.length === 0) return resp;
+    const inner = Chat.GetHistoryResponse.decode(await gzipDecompress(resp.messagesGzip));
+    // Only the envelope fields and the inflated list survive; fromPartial
+    // resets messagesGzip to the empty default.
+    return Chat.GetHistoryResponse.fromPartial({
+      code: resp.code,
+      hasMore: resp.hasMore,
+      messages: inner.messages,
+    });
+  },
+};
 export const MARK_READ = defineSpec(
   MsgID.MARK_READ_REQ,
   MsgID.MARK_READ_RESP,

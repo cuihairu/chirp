@@ -17,6 +17,7 @@ export async function loginClient(userId: string, deviceId: string): Promise<Chi
     deviceId,
     platform: 'web',
     supportsMessageAck: true,
+    supportsGzip: true,
   });
   if (resp.code !== 0) {
     client.disconnect();

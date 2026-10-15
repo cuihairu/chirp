@@ -265,7 +265,11 @@ export class ChirpClient {
         this.pending.delete(sequence);
         reject(err instanceof RequestError ? err : new RequestError('closed'));
       }
-    }).then((body) => spec.decodeResponse(body));
+    }).then((body) => {
+        const resp = spec.decodeResponse(body);
+        // 消息压缩消费面：GET_HISTORY 在此异步拆封 messages_gzip。
+        return spec.inflateResponse ? spec.inflateResponse(resp) : resp;
+      });
   }
 
   /** Immediate heartbeat, e.g. when a background tab comes back to the foreground. */

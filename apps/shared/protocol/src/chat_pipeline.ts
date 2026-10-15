@@ -570,6 +570,8 @@ export class ChatPipeline {
       deviceId: this.deviceId(),
       platform: 'web',
       level: this.level?.() ?? 0,
+      // 消息压缩消费面：本包 GET_HISTORY 解码侧会拆封 messages_gzip。
+      supportsGzip: true,
     });
     if (resp.code === 0) {
       this.conn.resetBackoff();

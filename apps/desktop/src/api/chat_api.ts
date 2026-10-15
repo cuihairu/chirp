@@ -262,6 +262,8 @@ export class ChatApi {
       deviceId: this.auth.get().deviceId,
       platform: 'web',
       supportsMessageAck: true,
+      // 消息压缩消费面：GET_HISTORY 解码侧会拆封 messages_gzip。
+      supportsGzip: true,
       level,
     });
     if (resp.code === 0) {
