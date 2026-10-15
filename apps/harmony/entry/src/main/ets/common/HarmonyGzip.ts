@@ -21,8 +21,19 @@ class HarmonyGzipError extends Error {}
  * 错——与服务端 16 MiB 压缩上限对称。历史清单远小于该上限，单缓冲一趟即
  * 完成，无需流式续读循环。
  *
- * 注意：@ohos.zlib 的 Zip/ZStream 绑定细节（枚举名、totalOut 回填）未经本
- * 机编译验证——环境内无 OHOS 工具链，工具链到位后的第一件事是编译本文件。
+ * 符号核对（2026-10-15）：本文件用到的 12 个符号已逐条对照 OpenHarmony
+ * `interface_sdk-js/api/@ohos.zlib.d.ts`——`createZipSync(): Zip`、
+ * `Zip.inflateInit2(strm: ZStream, windowBits: int)`、`Zip.inflate(strm, flush:
+ * CompressFlushMode)`、`Zip.inflateEnd(strm: ZStream)`（四者均 @since 12
+ * dynamic，与本工程 compatibleSdkVersion 5.0.0(12) 对齐）、`ReturnStatus.OK=0`
+ * / `STREAM_END=1`、`CompressFlushMode.FINISH=4`、ZStream 的 nextIn/nextOut
+ * (`ArrayBuffer`)、availableIn/availableOut(`int`)、totalOut(`long`) 全部存在。
+ * 其中 `totalOut` 在 d.ts 里是 `long`（官方 API 文档表格作 `number`），直接喂给
+ * `ArrayBuffer.slice(begin: number)` 有类型不匹配风险，故显式 `Number()` 归一
+ * ——`long` 解析为 number 或 bigint 两种口径下都成立。
+ *
+ * 边界：上述是**符号级静态核对**，仍非编译验证——环境内无 OHOS 工具链，
+ * 工具链到位后的第一件事仍是编译本文件。
  */
 export async function harmonyGzipDecompress(bytes: Uint8Array): Promise<Uint8Array> {
   if (bytes.length === 0) {
@@ -45,8 +56,9 @@ export async function harmonyGzipDecompress(bytes: Uint8Array): Promise<Uint8Arr
     if (status !== zlib.ReturnStatus.STREAM_END) {
       throw new HarmonyGzipError('gzip: corrupt, truncated, or over the cap');
     }
-    // totalOut = 实际解压字节数；slice 拷出精确区间，及时释放 16 MiB 大缓冲。
-    return new Uint8Array(dest.slice(0, strm.totalOut ?? 0));
+    // totalOut = 实际解压字节数（d.ts 声明为 long）；Number() 归一到 slice 要
+    // 求的 number 后拷出精确区间，及时释放 16 MiB 大缓冲。
+    return new Uint8Array(dest.slice(0, Number(strm.totalOut ?? 0)));
   } finally {
     await zip.inflateEnd(strm);
   }
