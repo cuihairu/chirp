@@ -29,7 +29,7 @@ import type { DevicePresence } from '@chirp/proto/auth';
 import { MsgID } from '@chirp/proto/gateway';
 import type { ConnStatus } from './chirp_client';
 import { RequestError } from './errors';
-import { LOGIN, SEND_MESSAGE, SEARCH_MESSAGE, SET_MEMBER_ALIAS, SET_GROUP_MUTE, REPORT_MESSAGE } from './msg_map';
+import { LOGIN, SEND_MESSAGE, SEARCH_MESSAGE, SET_MEMBER_ALIAS, SET_GROUP_MUTE, REPORT_MESSAGE, SET_DM_RESTRICTION, GET_DM_RESTRICTION } from './msg_map';
 import type { MessageSpec } from './msg_map';
 import {
   SearchMessageRequest,
@@ -42,6 +42,10 @@ import {
   ReportMessageRequest,
   ReportMessageResponse,
   GroupMemberMutedNotify,
+  SetDmRestrictionRequest,
+  SetDmRestrictionResponse,
+  GetDmRestrictionRequest,
+  GetDmRestrictionResponse,
 } from '@chirp/proto/chat';
 import type {
   AuthProvider,
@@ -376,6 +380,27 @@ export class ChatPipeline {
       reason,
     });
     return this.conn.request(REPORT_MESSAGE, request);
+  }
+
+  // ---- 防骚扰私聊限制(SET/GET_DM_RESTRICTION 2255-2258) ----
+  // 接收方开关,缺省关。开启后陌生人的私聊被拒 DM_RESTRICTED(消息不落
+  // 任何存储)。开关是服务端 io 线程内存态,进程重启即复位。
+  async setDmRestriction(enabled: boolean): Promise<SetDmRestrictionResponse> {
+    if (this.conn.status !== 'connected') {
+      throw new RequestError('closed');
+    }
+    const request: SetDmRestrictionRequest = SetDmRestrictionRequest.fromPartial({
+      enabled,
+    });
+    return this.conn.request(SET_DM_RESTRICTION, request);
+  }
+
+  async getDmRestriction(): Promise<GetDmRestrictionResponse> {
+    if (this.conn.status !== 'connected') {
+      throw new RequestError('closed');
+    }
+    const request = GetDmRestrictionRequest.fromPartial({});
+    return this.conn.request(GET_DM_RESTRICTION, request);
   }
 
   // ---- 内部 -----------------------------------------------------------

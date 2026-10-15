@@ -1527,6 +1527,33 @@ public:
     });
   }
 
+  // 防骚扰私聊限制(SET/GET_DM_RESTRICTION 2255-2258):接收方开关,缺省关。
+  // 开启后陌生人的私聊被拒 DM_RESTRICTED(门在存储之前)。
+  void SetDmRestriction(bool enabled, SetDmRestrictionCallback cb) {
+    asio::post(io_context_, [this, enabled, cb = std::move(cb)] {
+      if (!ReadyForRequests()) {
+        cb(MakeEc(ChatError::NotConnected), {});
+        return;
+      }
+      chirp::chat::SetDmRestrictionRequest req;
+      req.set_enabled(enabled);
+      TypedRequest(MsgID::SET_DM_RESTRICTION_REQ, MsgID::SET_DM_RESTRICTION_RESP, req,
+                   std::move(cb));
+    });
+  }
+
+  void FetchDmRestriction(GetDmRestrictionCallback cb) {
+    asio::post(io_context_, [this, cb = std::move(cb)] {
+      if (!ReadyForRequests()) {
+        cb(MakeEc(ChatError::NotConnected), {});
+        return;
+      }
+      chirp::chat::GetDmRestrictionRequest req;
+      TypedRequest(MsgID::GET_DM_RESTRICTION_REQ, MsgID::GET_DM_RESTRICTION_RESP, req,
+                   std::move(cb));
+    });
+  }
+
 private:
   ChatConfig config_;
   std::atomic<ConnectionState> state_;
@@ -1842,6 +1869,14 @@ void ChatClient::SetGroupMute(const std::string& group_id, const std::string& ta
 void ChatClient::ReportMessage(const std::string& message_id, const std::string& reason,
                                ReportMessageCallback cb) {
   impl_->ReportMessage(message_id, reason, std::move(cb));
+}
+
+void ChatClient::SetDmRestriction(bool enabled, SetDmRestrictionCallback cb) {
+  impl_->SetDmRestriction(enabled, std::move(cb));
+}
+
+void ChatClient::FetchDmRestriction(GetDmRestrictionCallback cb) {
+  impl_->FetchDmRestriction(std::move(cb));
 }
 
 } // namespace sdk

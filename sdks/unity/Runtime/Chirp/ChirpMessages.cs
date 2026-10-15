@@ -92,6 +92,14 @@ namespace Chirp.Sdk
         public static readonly MessageSpec<Chirp.Chat.ReportMessageResponse> ReportMessage =
             new(MsgID.ReportMessageReq, MsgID.ReportMessageResp, Chirp.Chat.ReportMessageResponse.Parser);
 
+        // 防骚扰私聊限制(SET/GET_DM_RESTRICTION_REQ/RESP 2255-2258):接收方
+        // 开关,缺省关。开启后陌生人的私聊被拒 DM_RESTRICTED(消息不落任何
+        // 存储)。
+        public static readonly MessageSpec<Chirp.Chat.SetDmRestrictionResponse> SetDmRestriction =
+            new(MsgID.SetDmRestrictionReq, MsgID.SetDmRestrictionResp, Chirp.Chat.SetDmRestrictionResponse.Parser);
+        public static readonly MessageSpec<Chirp.Chat.GetDmRestrictionResponse> GetDmRestriction =
+            new(MsgID.GetDmRestrictionReq, MsgID.GetDmRestrictionResp, Chirp.Chat.GetDmRestrictionResponse.Parser);
+
         // Social plane (WS 8001): friends and presence.
         public static readonly MessageSpec<Chirp.Social.AddFriendResponse> AddFriend =
             new(MsgID.AddFriendReq, MsgID.AddFriendResp, Chirp.Social.AddFriendResponse.Parser);

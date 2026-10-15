@@ -8,11 +8,13 @@ import {
   SetNotifyPrefsResponse,
 } from '@chirp/proto/social';
 import {
+  GetDmRestrictionResponse,
   GetHistoryResponse,
   GetUserGroupsResponse,
   ReportMessageResponse,
   SearchMessageResponse,
   SendMessageResponse,
+  SetDmRestrictionResponse,
   SetGroupMuteResponse,
   SetMemberAliasResponse,
 } from '@chirp/proto/chat';
@@ -22,6 +24,7 @@ import { describe, expect, it } from 'vitest';
 import {
   CREATE_GROUP,
   CREATE_ROOM,
+  GET_DM_RESTRICTION,
   GET_HISTORY,
   GET_USER_GROUPS,
   GET_NOTIFY_PREFS,
@@ -32,6 +35,7 @@ import {
   REPORT_MESSAGE,
   SEARCH_MESSAGE,
   SEND_MESSAGE,
+  SET_DM_RESTRICTION,
   SET_GROUP_MUTE,
   SET_MEMBER_ALIAS,
   SET_NOTIFY_PREFS,
@@ -213,6 +217,26 @@ describe('message specs', () => {
       ReportMessageResponse.fromPartial({ code: 0, reportCount: 2 }),
     ).finish();
     expect(REPORT_MESSAGE.decodeResponse(reportResp).reportCount).toBe(2);
+  });
+
+  it('roundtrips the dm restriction specs (2255-2258)', () => {
+    expect(SET_DM_RESTRICTION.reqMsgId).toBe(MsgID.SET_DM_RESTRICTION_REQ);
+    expect(SET_DM_RESTRICTION.respMsgId).toBe(MsgID.SET_DM_RESTRICTION_RESP);
+    expect(GET_DM_RESTRICTION.reqMsgId).toBe(MsgID.GET_DM_RESTRICTION_REQ);
+    expect(GET_DM_RESTRICTION.respMsgId).toBe(MsgID.GET_DM_RESTRICTION_RESP);
+    const set = SET_DM_RESTRICTION.encodeRequest({ enabled: true });
+    expect(set.length).toBeGreaterThan(0);
+    const setResp = SetDmRestrictionResponse.encode(
+      SetDmRestrictionResponse.fromPartial({ code: 0, enabled: true }),
+    ).finish();
+    expect(SET_DM_RESTRICTION.decodeResponse(setResp).enabled).toBe(true);
+    // GET request is an empty message; response carries the switch state.
+    const get = GET_DM_RESTRICTION.encodeRequest({});
+    expect(get.length).toBe(0);
+    const getResp = GetDmRestrictionResponse.encode(
+      GetDmRestrictionResponse.fromPartial({ code: 0, enabled: false }),
+    ).finish();
+    expect(GET_DM_RESTRICTION.decodeResponse(getResp).enabled).toBe(false);
   });
 
   it('roundtrips the friend-online notify prefs specs (3025-3028)', () => {

@@ -86,6 +86,10 @@ using SetGroupMuteCallback =
     std::function<void(const std::error_code& ec, const chirp::chat::SetGroupMuteResponse&)>;
 using ReportMessageCallback =
     std::function<void(const std::error_code& ec, const chirp::chat::ReportMessageResponse&)>;
+using SetDmRestrictionCallback =
+    std::function<void(const std::error_code& ec, const chirp::chat::SetDmRestrictionResponse&)>;
+using GetDmRestrictionCallback =
+    std::function<void(const std::error_code& ec, const chirp::chat::GetDmRestrictionResponse&)>;
 
 // 聊天客户端 SDK:直连 chat 网关的 TCP 长连接,[u32_be len][Packet protobuf]
 // 帧。sequence 关联请求响应,25s 心跳(pong 回声校验,连续丢失判定死亡),
@@ -279,6 +283,13 @@ public:
   // ReportMessageResponse{code, message_id, report_count}。
   void ReportMessage(const std::string& message_id, const std::string& reason,
                      ReportMessageCallback cb);
+
+  // 防骚扰私聊限制(SET/GET_DM_RESTRICTION_REQ/RESP 2255-2258, 2026-10-15):
+  // 接收方开关(缺省关),开启后陌生人的私聊被拒 DM_RESTRICTED(消息不落任何
+  // 存储)。陌生人 = 非 social 平面好友且无共同群;好友/同群/本人/NPC 豁免。
+  // 开关是 io 线程内存态,进程重启即复位。
+  void SetDmRestriction(bool enabled, SetDmRestrictionCallback cb);
+  void FetchDmRestriction(GetDmRestrictionCallback cb);
 
 private:
   class Impl;
