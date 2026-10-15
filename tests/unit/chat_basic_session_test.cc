@@ -1857,6 +1857,58 @@ TEST_F(BasicChatTest, GroupMuteBlocksMemberSendUntilUnmute) {
             chirp::common::OK);
 }
 
+// --- 临时频道：ttl 到点后群视同不存在（发送 AUTH_FAILED、群列表消失） ---------
+
+TEST_F(BasicChatTest, TempGroupExpiryBlocksSendAndDropsFromList) {
+  auto alice = std::make_shared<MockSession>();
+  ASSERT_EQ(Login(alice, "alice").code(), chirp::common::OK);
+
+  // ttl=1s 的临时频道。e2e 走真实墙钟：GroupManager 的时钟接缝是私有接缝，
+  // 会话层碰不到；sleep 越过到点时刻（1.2s 留 20% 余量）。
+  chirp::chat::CreateGroupRequest create;
+  create.set_creator_id("alice");
+  create.set_group_name("raid");
+  create.add_initial_members("alice");
+  create.set_ttl_seconds(1);
+  DispatchReq(chirp::gateway::CREATE_GROUP_REQ, create, alice);
+  const auto created = FramesOf(*alice, chirp::gateway::CREATE_GROUP_RESP);
+  ASSERT_EQ(created.size(), 1u);
+  chirp::chat::CreateGroupResponse create_resp;
+  ASSERT_TRUE(create_resp.ParseFromString(created[0].body()));
+  ASSERT_EQ(create_resp.code(), chirp::common::OK);
+  const std::string group_id = create_resp.group_id();
+
+  // 到点前：成员发送正常，群列表带出 expires_at（客户端据此倒计时）。
+  EXPECT_EQ(Send(alice, "alice", "", "raid start", chirp::chat::TEAM, group_id).code(),
+            chirp::common::OK);
+
+  chirp::chat::GetUserGroupsRequest list_req;
+  list_req.set_user_id("alice");
+  DispatchReq(chirp::gateway::GET_USER_GROUPS_REQ, list_req, alice);
+  const auto listed = FramesOf(*alice, chirp::gateway::GET_USER_GROUPS_RESP);
+  ASSERT_EQ(listed.size(), 1u);
+  chirp::chat::GetUserGroupsResponse list_resp;
+  ASSERT_TRUE(list_resp.ParseFromString(listed[0].body()));
+  ASSERT_EQ(list_resp.groups_size(), 1);
+  EXPECT_EQ(list_resp.groups(0).group_id(), group_id);
+  EXPECT_GT(list_resp.groups(0).expires_at(), 0);
+
+  std::this_thread::sleep_for(std::chrono::milliseconds(1200));
+
+  // 到点后：惰性摘除已发生——发送 AUTH_FAILED（与非成员同语义）、群列表消失。
+  EXPECT_EQ(Send(alice, "alice", "", "after end", chirp::chat::TEAM, group_id).code(),
+            chirp::common::AUTH_FAILED);
+
+  alice->sent.clear();
+  DispatchReq(chirp::gateway::GET_USER_GROUPS_REQ, list_req, alice);
+  const auto relisted = FramesOf(*alice, chirp::gateway::GET_USER_GROUPS_RESP);
+  ASSERT_EQ(relisted.size(), 1u);
+  chirp::chat::GetUserGroupsResponse relist_resp;
+  ASSERT_TRUE(relist_resp.ParseFromString(relisted[0].body()));
+  EXPECT_EQ(relist_resp.total_count(), 0);
+  EXPECT_EQ(relist_resp.groups_size(), 0);
+}
+
 // --- 举报：玩家举报消息（去重幂等，台账外消息拒收） --------------------------
 
 TEST_F(BasicChatTest, ReportMessageDedupsAndRefusesUnknownMessage) {

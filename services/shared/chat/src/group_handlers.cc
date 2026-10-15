@@ -48,16 +48,27 @@ chirp::chat::CreateGroupResponse GroupHandlers::HandleCreateGroup(
     resp.set_code(chirp::common::INVALID_PARAM);
     return resp;
   }
+  // 临时频道（P1）：ttl_seconds 上限 30 天（与群禁言同款封顶），负数一并
+  // 拒绝；0 = 永久群。到点时刻在这里一次算清交给台账。
+  constexpr int64_t kMaxGroupTtlSec = 30LL * 24 * 60 * 60;
+  if (req.ttl_seconds() < 0 || req.ttl_seconds() > kMaxGroupTtlSec) {
+    resp.set_code(chirp::common::INVALID_PARAM);
+    return resp;
+  }
   if (!req.creator_id().empty() && !SameUser(authenticated_user_id, req.creator_id())) {
     resp.set_code(chirp::common::AUTH_FAILED);
     return resp;
   }
 
+  const int64_t expires_at_ms = req.ttl_seconds() == 0
+      ? 0
+      : chirp::chat::runtime::NowMs() + req.ttl_seconds() * 1000;
   const std::string creator_id(authenticated_user_id);
   resp.set_group_id(groups_.CreateGroup(creator_id, req.group_name(), req.description(),
                                         req.avatar_url(), req.max_members(),
                                         std::vector<std::string>(req.initial_members().begin(),
-                                                                 req.initial_members().end())));
+                                                                 req.initial_members().end()),
+                                        expires_at_ms));
   resp.set_code(chirp::common::OK);
 
   chirp::chat::GroupInfo info;

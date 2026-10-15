@@ -1222,8 +1222,12 @@ type CreateGroupRequest struct {
 	AvatarUrl      string                 `protobuf:"bytes,4,opt,name=avatar_url,json=avatarUrl,proto3" json:"avatar_url,omitempty"`
 	MaxMembers     int32                  `protobuf:"varint,5,opt,name=max_members,json=maxMembers,proto3" json:"max_members,omitempty"` // 0 for unlimited
 	InitialMembers []string               `protobuf:"bytes,6,rep,name=initial_members,json=initialMembers,proto3" json:"initial_members,omitempty"`
-	unknownFields  protoimpl.UnknownFields
-	sizeCache      protoimpl.SizeCache
+	// 临时频道（P1，2026-10-15）：有效期秒数，0 = 永久群。上限 30 天
+	// （2592000），超限或负数回 INVALID_PARAM。到点后群视同不存在——成员
+	// 的本群频道发送回 AUTH_FAILED，群从 GET_USER_GROUPS 消失。
+	TtlSeconds    int64 `protobuf:"varint,7,opt,name=ttl_seconds,json=ttlSeconds,proto3" json:"ttl_seconds,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
 }
 
 func (x *CreateGroupRequest) Reset() {
@@ -1298,6 +1302,13 @@ func (x *CreateGroupRequest) GetInitialMembers() []string {
 	return nil
 }
 
+func (x *CreateGroupRequest) GetTtlSeconds() int64 {
+	if x != nil {
+		return x.TtlSeconds
+	}
+	return 0
+}
+
 type CreateGroupResponse struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	Code          common.ErrorCode       `protobuf:"varint,1,opt,name=code,proto3,enum=chirp.common.ErrorCode" json:"code,omitempty"`
@@ -1360,16 +1371,20 @@ func (x *CreateGroupResponse) GetServerTime() int64 {
 
 // Group information
 type GroupInfo struct {
-	state         protoimpl.MessageState `protogen:"open.v1"`
-	GroupId       string                 `protobuf:"bytes,1,opt,name=group_id,json=groupId,proto3" json:"group_id,omitempty"`
-	GroupName     string                 `protobuf:"bytes,2,opt,name=group_name,json=groupName,proto3" json:"group_name,omitempty"`
-	Description   string                 `protobuf:"bytes,3,opt,name=description,proto3" json:"description,omitempty"`
-	AvatarUrl     string                 `protobuf:"bytes,4,opt,name=avatar_url,json=avatarUrl,proto3" json:"avatar_url,omitempty"`
-	OwnerId       string                 `protobuf:"bytes,5,opt,name=owner_id,json=ownerId,proto3" json:"owner_id,omitempty"`
-	MemberCount   int32                  `protobuf:"varint,6,opt,name=member_count,json=memberCount,proto3" json:"member_count,omitempty"`
-	MaxMembers    int32                  `protobuf:"varint,7,opt,name=max_members,json=maxMembers,proto3" json:"max_members,omitempty"`
-	CreatedAt     int64                  `protobuf:"varint,8,opt,name=created_at,json=createdAt,proto3" json:"created_at,omitempty"`
-	Metadata      map[string]string      `protobuf:"bytes,9,rep,name=metadata,proto3" json:"metadata,omitempty" protobuf_key:"bytes,1,opt,name=key" protobuf_val:"bytes,2,opt,name=value"`
+	state       protoimpl.MessageState `protogen:"open.v1"`
+	GroupId     string                 `protobuf:"bytes,1,opt,name=group_id,json=groupId,proto3" json:"group_id,omitempty"`
+	GroupName   string                 `protobuf:"bytes,2,opt,name=group_name,json=groupName,proto3" json:"group_name,omitempty"`
+	Description string                 `protobuf:"bytes,3,opt,name=description,proto3" json:"description,omitempty"`
+	AvatarUrl   string                 `protobuf:"bytes,4,opt,name=avatar_url,json=avatarUrl,proto3" json:"avatar_url,omitempty"`
+	OwnerId     string                 `protobuf:"bytes,5,opt,name=owner_id,json=ownerId,proto3" json:"owner_id,omitempty"`
+	MemberCount int32                  `protobuf:"varint,6,opt,name=member_count,json=memberCount,proto3" json:"member_count,omitempty"`
+	MaxMembers  int32                  `protobuf:"varint,7,opt,name=max_members,json=maxMembers,proto3" json:"max_members,omitempty"`
+	CreatedAt   int64                  `protobuf:"varint,8,opt,name=created_at,json=createdAt,proto3" json:"created_at,omitempty"`
+	Metadata    map[string]string      `protobuf:"bytes,9,rep,name=metadata,proto3" json:"metadata,omitempty" protobuf_key:"bytes,1,opt,name=key" protobuf_val:"bytes,2,opt,name=value"`
+	// 临时频道：过期时刻（epoch 毫秒）；0 = 永久群。随 GET_GROUP_INFO /
+	// GET_USER_GROUPS / GROUP_CREATED_NOTIFY 下发，客户端据此显示倒计时并在
+	// 到点后本地移除该群。
+	ExpiresAt     int64 `protobuf:"varint,10,opt,name=expires_at,json=expiresAt,proto3" json:"expires_at,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -1465,6 +1480,13 @@ func (x *GroupInfo) GetMetadata() map[string]string {
 		return x.Metadata
 	}
 	return nil
+}
+
+func (x *GroupInfo) GetExpiresAt() int64 {
+	if x != nil {
+		return x.ExpiresAt
+	}
+	return 0
 }
 
 // Group member information
@@ -9869,7 +9891,7 @@ const file_proto_chat_proto_rawDesc = "" +
 	"\x04code\x18\x01 \x01(\x0e2\x17.chirp.common.ErrorCodeR\x04code\x123\n" +
 	"\bmessages\x18\x02 \x03(\v2\x17.chirp.chat.ChatMessageR\bmessages\x12\x19\n" +
 	"\bhas_more\x18\x03 \x01(\bR\ahasMore\x12#\n" +
-	"\rmessages_gzip\x18\x04 \x01(\fR\fmessagesGzip\"\xdd\x01\n" +
+	"\rmessages_gzip\x18\x04 \x01(\fR\fmessagesGzip\"\xfe\x01\n" +
 	"\x12CreateGroupRequest\x12\x1d\n" +
 	"\n" +
 	"creator_id\x18\x01 \x01(\tR\tcreatorId\x12\x1d\n" +
@@ -9880,12 +9902,14 @@ const file_proto_chat_proto_rawDesc = "" +
 	"avatar_url\x18\x04 \x01(\tR\tavatarUrl\x12\x1f\n" +
 	"\vmax_members\x18\x05 \x01(\x05R\n" +
 	"maxMembers\x12'\n" +
-	"\x0finitial_members\x18\x06 \x03(\tR\x0einitialMembers\"~\n" +
+	"\x0finitial_members\x18\x06 \x03(\tR\x0einitialMembers\x12\x1f\n" +
+	"\vttl_seconds\x18\a \x01(\x03R\n" +
+	"ttlSeconds\"~\n" +
 	"\x13CreateGroupResponse\x12+\n" +
 	"\x04code\x18\x01 \x01(\x0e2\x17.chirp.common.ErrorCodeR\x04code\x12\x19\n" +
 	"\bgroup_id\x18\x02 \x01(\tR\agroupId\x12\x1f\n" +
 	"\vserver_time\x18\x03 \x01(\x03R\n" +
-	"serverTime\"\x82\x03\n" +
+	"serverTime\"\xa1\x03\n" +
 	"\tGroupInfo\x12\x19\n" +
 	"\bgroup_id\x18\x01 \x01(\tR\agroupId\x12\x1d\n" +
 	"\n" +
@@ -9899,7 +9923,10 @@ const file_proto_chat_proto_rawDesc = "" +
 	"maxMembers\x12\x1d\n" +
 	"\n" +
 	"created_at\x18\b \x01(\x03R\tcreatedAt\x12?\n" +
-	"\bmetadata\x18\t \x03(\v2#.chirp.chat.GroupInfo.MetadataEntryR\bmetadata\x1a;\n" +
+	"\bmetadata\x18\t \x03(\v2#.chirp.chat.GroupInfo.MetadataEntryR\bmetadata\x12\x1d\n" +
+	"\n" +
+	"expires_at\x18\n" +
+	" \x01(\x03R\texpiresAt\x1a;\n" +
 	"\rMetadataEntry\x12\x10\n" +
 	"\x03key\x18\x01 \x01(\tR\x03key\x12\x14\n" +
 	"\x05value\x18\x02 \x01(\tR\x05value:\x028\x01\"\x8d\x02\n" +

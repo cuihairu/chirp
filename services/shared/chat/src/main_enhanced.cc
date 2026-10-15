@@ -27,6 +27,7 @@
 #include "inject_consumer.h"
 #include "login_token_verifier.h"
 #include "message_delivery_tracker.h"
+#include "group_expiry_sweeper.h"
 #include "group_handlers.h"
 #include "history_retention_sweeper.h"
 #include "message_edit_manager.h"
@@ -1584,6 +1585,10 @@ int main(int argc, char** argv) {
   // 踢人/名单）、群消息成员扇出、typing/已读/表情的群频道成员解析共用。
   // 与 basic 同样是单实例台账；跨实例成员通知与既有 notify 一致是尽力而为。
   chirp::chat::GroupManager groups;
+  // 临时频道过期清扫（P1）：周期回收到点的临时群（读路径惰性摘除只覆盖
+  // 被读到的那些）。与保留清扫同一 io context，Start 内部零 I/O 兜底。
+  chirp::chat::GroupExpirySweeper group_expiry_sweeper(io, groups);
+  group_expiry_sweeper.Start();
   // 举报台账（basic 同一 ReportLedger，内存态）：REPORT_MESSAGE 2253 的记录面，
   // 存在性校验借撤回管道的编辑台账。
   chirp::chat::ReportLedger reports;
@@ -2085,6 +2090,7 @@ int main(int argc, char** argv) {
     delivery_tracker->Stop();
     migration_worker->Stop();
     retention_sweeper->Stop();
+    group_expiry_sweeper.Stop();
     if (metrics_server) {
       metrics_server->Stop();
     }

@@ -205,6 +205,7 @@ add_executable(chat_managers_tests
   ${CMAKE_SOURCE_DIR}/services/shared/chat/src/delivery_ack_manager.cc
   ${CMAKE_SOURCE_DIR}/services/shared/chat/src/history_compression.cc
   ${CMAKE_SOURCE_DIR}/services/shared/chat/src/group_manager.cc
+  ${CMAKE_SOURCE_DIR}/services/shared/chat/src/group_expiry_sweeper.cc
   ${CMAKE_SOURCE_DIR}/services/shared/chat/src/group_handlers.cc
   ${CMAKE_SOURCE_DIR}/services/shared/chat/src/message_handlers.cc
   ${CMAKE_SOURCE_DIR}/services/shared/chat/src/reaction_manager.cc

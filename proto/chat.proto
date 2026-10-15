@@ -153,6 +153,10 @@ message CreateGroupRequest {
   string avatar_url = 4;
   int32 max_members = 5;       // 0 for unlimited
   repeated string initial_members = 6;
+  // 临时频道（P1，2026-10-15）：有效期秒数，0 = 永久群。上限 30 天
+  // （2592000），超限或负数回 INVALID_PARAM。到点后群视同不存在——成员
+  // 的本群频道发送回 AUTH_FAILED，群从 GET_USER_GROUPS 消失。
+  int64 ttl_seconds = 7;
 }
 
 message CreateGroupResponse {
@@ -172,6 +176,10 @@ message GroupInfo {
   int32 max_members = 7;
   int64 created_at = 8;
   map<string, string> metadata = 9;
+  // 临时频道：过期时刻（epoch 毫秒）；0 = 永久群。随 GET_GROUP_INFO /
+  // GET_USER_GROUPS / GROUP_CREATED_NOTIFY 下发，客户端据此显示倒计时并在
+  // 到点后本地移除该群。
+  int64 expires_at = 10;
 }
 
 // Group member information

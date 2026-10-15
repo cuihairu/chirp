@@ -19952,6 +19952,7 @@ class CreateGroupRequest final : public ::google::protobuf::Message
     kGroupNameFieldNumber = 2,
     kDescriptionFieldNumber = 3,
     kAvatarUrlFieldNumber = 4,
+    kTtlSecondsFieldNumber = 7,
     kMaxMembersFieldNumber = 5,
   };
   // repeated string initial_members = 6;
@@ -20036,6 +20037,16 @@ class CreateGroupRequest final : public ::google::protobuf::Message
   ::std::string* PROTOBUF_NONNULL _internal_mutable_avatar_url();
 
   public:
+  // int64 ttl_seconds = 7;
+  void clear_ttl_seconds() ;
+  ::int64_t ttl_seconds() const;
+  void set_ttl_seconds(::int64_t value);
+
+  private:
+  ::int64_t _internal_ttl_seconds() const;
+  void _internal_set_ttl_seconds(::int64_t value);
+
+  public:
   // int32 max_members = 5;
   void clear_max_members() ;
   ::int32_t max_members() const;
@@ -20050,7 +20061,7 @@ class CreateGroupRequest final : public ::google::protobuf::Message
  private:
   class _Internal;
   friend class ::google::protobuf::internal::TcParser;
-  static const ::google::protobuf::internal::TcParseTable<3, 6,
+  static const ::google::protobuf::internal::TcParseTable<3, 7,
                                    0, 94,
                                    2>
       _table_;
@@ -20077,6 +20088,7 @@ class CreateGroupRequest final : public ::google::protobuf::Message
     ::google::protobuf::internal::ArenaStringPtr group_name_;
     ::google::protobuf::internal::ArenaStringPtr description_;
     ::google::protobuf::internal::ArenaStringPtr avatar_url_;
+    ::int64_t ttl_seconds_;
     ::int32_t max_members_;
     PROTOBUF_TSAN_DECLARE_MEMBER
   };
@@ -25286,6 +25298,7 @@ class GroupInfo final : public ::google::protobuf::Message
     kMemberCountFieldNumber = 6,
     kMaxMembersFieldNumber = 7,
     kCreatedAtFieldNumber = 8,
+    kExpiresAtFieldNumber = 10,
     kMetadataFieldNumber = 9,
   };
   // string group_id = 1;
@@ -25393,6 +25406,16 @@ class GroupInfo final : public ::google::protobuf::Message
   void _internal_set_created_at(::int64_t value);
 
   public:
+  // int64 expires_at = 10;
+  void clear_expires_at() ;
+  ::int64_t expires_at() const;
+  void set_expires_at(::int64_t value);
+
+  private:
+  ::int64_t _internal_expires_at() const;
+  void _internal_set_expires_at(::int64_t value);
+
+  public:
   // map<string, string> metadata = 9;
   int metadata_size() const;
   private:
@@ -25412,7 +25435,7 @@ class GroupInfo final : public ::google::protobuf::Message
  private:
   class _Internal;
   friend class ::google::protobuf::internal::TcParser;
-  static const ::google::protobuf::internal::TcParseTable<3, 9,
+  static const ::google::protobuf::internal::TcParseTable<4, 10,
                                    1, 92,
                                    2>
       _table_;
@@ -25442,6 +25465,7 @@ class GroupInfo final : public ::google::protobuf::Message
     ::int32_t member_count_;
     ::int32_t max_members_;
     ::int64_t created_at_;
+    ::int64_t expires_at_;
     ::google::protobuf::internal::MapField<GroupInfo_MetadataEntry_DoNotUse, ::std::string, ::std::string,
                       ::google::protobuf::internal::WireFormatLite::TYPE_STRING,
                       ::google::protobuf::internal::WireFormatLite::TYPE_STRING>
@@ -35191,7 +35215,7 @@ inline void CreateGroupRequest::clear_max_members() {
   ::google::protobuf::internal::TSanWrite(&_impl_);
   _impl_.max_members_ = 0;
   ClearHasBit(_impl_._has_bits_[0],
-                  0x00000020U);
+                  0x00000040U);
 }
 inline ::int32_t CreateGroupRequest::max_members() const {
   // @@protoc_insertion_point(field_get:chirp.chat.CreateGroupRequest.max_members)
@@ -35199,7 +35223,7 @@ inline ::int32_t CreateGroupRequest::max_members() const {
 }
 inline void CreateGroupRequest::set_max_members(::int32_t value) {
   _internal_set_max_members(value);
-  SetHasBit(_impl_._has_bits_[0], 0x00000020U);
+  SetHasBit(_impl_._has_bits_[0], 0x00000040U);
   // @@protoc_insertion_point(field_set:chirp.chat.CreateGroupRequest.max_members)
 }
 inline ::int32_t CreateGroupRequest::_internal_max_members() const {
@@ -35281,6 +35305,31 @@ inline ::google::protobuf::RepeatedPtrField<::std::string>* PROTOBUF_NONNULL
 CreateGroupRequest::_internal_mutable_initial_members() {
   ::google::protobuf::internal::TSanRead(&_impl_);
   return &_impl_.initial_members_;
+}
+
+// int64 ttl_seconds = 7;
+inline void CreateGroupRequest::clear_ttl_seconds() {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_.ttl_seconds_ = ::int64_t{0};
+  ClearHasBit(_impl_._has_bits_[0],
+                  0x00000020U);
+}
+inline ::int64_t CreateGroupRequest::ttl_seconds() const {
+  // @@protoc_insertion_point(field_get:chirp.chat.CreateGroupRequest.ttl_seconds)
+  return _internal_ttl_seconds();
+}
+inline void CreateGroupRequest::set_ttl_seconds(::int64_t value) {
+  _internal_set_ttl_seconds(value);
+  SetHasBit(_impl_._has_bits_[0], 0x00000020U);
+  // @@protoc_insertion_point(field_set:chirp.chat.CreateGroupRequest.ttl_seconds)
+}
+inline ::int64_t CreateGroupRequest::_internal_ttl_seconds() const {
+  ::google::protobuf::internal::TSanRead(&_impl_);
+  return _impl_.ttl_seconds_;
+}
+inline void CreateGroupRequest::_internal_set_ttl_seconds(::int64_t value) {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_.ttl_seconds_ = value;
 }
 
 // -------------------------------------------------------------------
@@ -35819,7 +35868,7 @@ inline void GroupInfo::clear_metadata() {
   ::google::protobuf::internal::TSanWrite(&_impl_);
   _impl_.metadata_.Clear();
   ClearHasBitForRepeated(_impl_._has_bits_[0],
-                  0x00000100U);
+                  0x00000200U);
 }
 inline const ::google::protobuf::Map<::std::string, ::std::string>& GroupInfo::_internal_metadata() const {
   ::google::protobuf::internal::TSanRead(&_impl_);
@@ -35835,9 +35884,34 @@ inline ::google::protobuf::Map<::std::string, ::std::string>* PROTOBUF_NONNULL G
 }
 inline ::google::protobuf::Map<::std::string, ::std::string>* PROTOBUF_NONNULL GroupInfo::mutable_metadata()
     ABSL_ATTRIBUTE_LIFETIME_BOUND {
-  SetHasBitForRepeated(_impl_._has_bits_[0], 0x00000100U);
+  SetHasBitForRepeated(_impl_._has_bits_[0], 0x00000200U);
   // @@protoc_insertion_point(field_mutable_map:chirp.chat.GroupInfo.metadata)
   return _internal_mutable_metadata();
+}
+
+// int64 expires_at = 10;
+inline void GroupInfo::clear_expires_at() {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_.expires_at_ = ::int64_t{0};
+  ClearHasBit(_impl_._has_bits_[0],
+                  0x00000100U);
+}
+inline ::int64_t GroupInfo::expires_at() const {
+  // @@protoc_insertion_point(field_get:chirp.chat.GroupInfo.expires_at)
+  return _internal_expires_at();
+}
+inline void GroupInfo::set_expires_at(::int64_t value) {
+  _internal_set_expires_at(value);
+  SetHasBit(_impl_._has_bits_[0], 0x00000100U);
+  // @@protoc_insertion_point(field_set:chirp.chat.GroupInfo.expires_at)
+}
+inline ::int64_t GroupInfo::_internal_expires_at() const {
+  ::google::protobuf::internal::TSanRead(&_impl_);
+  return _impl_.expires_at_;
+}
+inline void GroupInfo::_internal_set_expires_at(::int64_t value) {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_.expires_at_ = value;
 }
 
 // -------------------------------------------------------------------

@@ -9733,6 +9733,18 @@ public final class Chat extends com.google.protobuf.GeneratedFile {
      */
     com.google.protobuf.ByteString
         getInitialMembersBytes(int index);
+
+    /**
+     * <pre>
+     * 临时频道（P1，2026-10-15）：有效期秒数，0 = 永久群。上限 30 天
+     * （2592000），超限或负数回 INVALID_PARAM。到点后群视同不存在——成员
+     * 的本群频道发送回 AUTH_FAILED，群从 GET_USER_GROUPS 消失。
+     * </pre>
+     *
+     * <code>int64 ttl_seconds = 7;</code>
+     * @return The ttlSeconds.
+     */
+    long getTtlSeconds();
   }
   /**
    * <pre>
@@ -9989,6 +10001,23 @@ public final class Chat extends com.google.protobuf.GeneratedFile {
       return initialMembers_.getByteString(index);
     }
 
+    public static final int TTL_SECONDS_FIELD_NUMBER = 7;
+    private long ttlSeconds_ = 0L;
+    /**
+     * <pre>
+     * 临时频道（P1，2026-10-15）：有效期秒数，0 = 永久群。上限 30 天
+     * （2592000），超限或负数回 INVALID_PARAM。到点后群视同不存在——成员
+     * 的本群频道发送回 AUTH_FAILED，群从 GET_USER_GROUPS 消失。
+     * </pre>
+     *
+     * <code>int64 ttl_seconds = 7;</code>
+     * @return The ttlSeconds.
+     */
+    @java.lang.Override
+    public long getTtlSeconds() {
+      return ttlSeconds_;
+    }
+
     private byte memoizedIsInitialized = -1;
     @java.lang.Override
     public final boolean isInitialized() {
@@ -10020,6 +10049,9 @@ public final class Chat extends com.google.protobuf.GeneratedFile {
       }
       for (int i = 0; i < initialMembers_.size(); i++) {
         com.google.protobuf.GeneratedMessage.writeString(output, 6, initialMembers_.getRaw(i));
+      }
+      if (ttlSeconds_ != 0L) {
+        output.writeInt64(7, ttlSeconds_);
       }
       getUnknownFields().writeTo(output);
     }
@@ -10054,6 +10086,10 @@ public final class Chat extends com.google.protobuf.GeneratedFile {
         size += dataSize;
         size += 1 * getInitialMembersList().size();
       }
+      if (ttlSeconds_ != 0L) {
+        size += com.google.protobuf.CodedOutputStream
+          .computeInt64Size(7, ttlSeconds_);
+      }
       size += getUnknownFields().getSerializedSize();
       memoizedSize = size;
       return size;
@@ -10081,6 +10117,8 @@ public final class Chat extends com.google.protobuf.GeneratedFile {
           != other.getMaxMembers()) return false;
       if (!getInitialMembersList()
           .equals(other.getInitialMembersList())) return false;
+      if (getTtlSeconds()
+          != other.getTtlSeconds()) return false;
       if (!getUnknownFields().equals(other.getUnknownFields())) return false;
       return true;
     }
@@ -10106,6 +10144,9 @@ public final class Chat extends com.google.protobuf.GeneratedFile {
         hash = (37 * hash) + INITIAL_MEMBERS_FIELD_NUMBER;
         hash = (53 * hash) + getInitialMembersList().hashCode();
       }
+      hash = (37 * hash) + TTL_SECONDS_FIELD_NUMBER;
+      hash = (53 * hash) + com.google.protobuf.Internal.hashLong(
+          getTtlSeconds());
       hash = (29 * hash) + getUnknownFields().hashCode();
       memoizedHashCode = hash;
       return hash;
@@ -10248,6 +10289,7 @@ public final class Chat extends com.google.protobuf.GeneratedFile {
         maxMembers_ = 0;
         initialMembers_ =
             com.google.protobuf.LazyStringArrayList.emptyList();
+        ttlSeconds_ = 0L;
         return this;
       }
 
@@ -10300,6 +10342,9 @@ public final class Chat extends com.google.protobuf.GeneratedFile {
           initialMembers_.makeImmutable();
           result.initialMembers_ = initialMembers_;
         }
+        if (((from_bitField0_ & 0x00000040) != 0)) {
+          result.ttlSeconds_ = ttlSeconds_;
+        }
       }
 
       @java.lang.Override
@@ -10346,6 +10391,9 @@ public final class Chat extends com.google.protobuf.GeneratedFile {
             initialMembers_.addAll(other.initialMembers_);
           }
           onChanged();
+        }
+        if (other.getTtlSeconds() != 0L) {
+          setTtlSeconds(other.getTtlSeconds());
         }
         this.mergeUnknownFields(other.getUnknownFields());
         onChanged();
@@ -10404,6 +10452,11 @@ public final class Chat extends com.google.protobuf.GeneratedFile {
                 initialMembers_.add(s);
                 break;
               } // case 50
+              case 56: {
+                ttlSeconds_ = input.readInt64();
+                bitField0_ |= 0x00000040;
+                break;
+              } // case 56
               default: {
                 if (!super.parseUnknownField(input, extensionRegistry, tag)) {
                   done = true; // was an endgroup tag
@@ -10860,6 +10913,56 @@ public final class Chat extends com.google.protobuf.GeneratedFile {
         ensureInitialMembersIsMutable();
         initialMembers_.add(value);
         bitField0_ |= 0x00000020;
+        onChanged();
+        return this;
+      }
+
+      private long ttlSeconds_ ;
+      /**
+       * <pre>
+       * 临时频道（P1，2026-10-15）：有效期秒数，0 = 永久群。上限 30 天
+       * （2592000），超限或负数回 INVALID_PARAM。到点后群视同不存在——成员
+       * 的本群频道发送回 AUTH_FAILED，群从 GET_USER_GROUPS 消失。
+       * </pre>
+       *
+       * <code>int64 ttl_seconds = 7;</code>
+       * @return The ttlSeconds.
+       */
+      @java.lang.Override
+      public long getTtlSeconds() {
+        return ttlSeconds_;
+      }
+      /**
+       * <pre>
+       * 临时频道（P1，2026-10-15）：有效期秒数，0 = 永久群。上限 30 天
+       * （2592000），超限或负数回 INVALID_PARAM。到点后群视同不存在——成员
+       * 的本群频道发送回 AUTH_FAILED，群从 GET_USER_GROUPS 消失。
+       * </pre>
+       *
+       * <code>int64 ttl_seconds = 7;</code>
+       * @param value The ttlSeconds to set.
+       * @return This builder for chaining.
+       */
+      public Builder setTtlSeconds(long value) {
+
+        ttlSeconds_ = value;
+        bitField0_ |= 0x00000040;
+        onChanged();
+        return this;
+      }
+      /**
+       * <pre>
+       * 临时频道（P1，2026-10-15）：有效期秒数，0 = 永久群。上限 30 天
+       * （2592000），超限或负数回 INVALID_PARAM。到点后群视同不存在——成员
+       * 的本群频道发送回 AUTH_FAILED，群从 GET_USER_GROUPS 消失。
+       * </pre>
+       *
+       * <code>int64 ttl_seconds = 7;</code>
+       * @return This builder for chaining.
+       */
+      public Builder clearTtlSeconds() {
+        bitField0_ = (bitField0_ & ~0x00000040);
+        ttlSeconds_ = 0L;
         onChanged();
         return this;
       }
@@ -11716,6 +11819,18 @@ java.lang.String defaultValue);
      */
     java.lang.String getMetadataOrThrow(
         java.lang.String key);
+
+    /**
+     * <pre>
+     * 临时频道：过期时刻（epoch 毫秒）；0 = 永久群。随 GET_GROUP_INFO /
+     * GET_USER_GROUPS / GROUP_CREATED_NOTIFY 下发，客户端据此显示倒计时并在
+     * 到点后本地移除该群。
+     * </pre>
+     *
+     * <code>int64 expires_at = 10;</code>
+     * @return The expiresAt.
+     */
+    long getExpiresAt();
   }
   /**
    * <pre>
@@ -12082,6 +12197,23 @@ java.lang.String defaultValue) {
       return map.get(key);
     }
 
+    public static final int EXPIRES_AT_FIELD_NUMBER = 10;
+    private long expiresAt_ = 0L;
+    /**
+     * <pre>
+     * 临时频道：过期时刻（epoch 毫秒）；0 = 永久群。随 GET_GROUP_INFO /
+     * GET_USER_GROUPS / GROUP_CREATED_NOTIFY 下发，客户端据此显示倒计时并在
+     * 到点后本地移除该群。
+     * </pre>
+     *
+     * <code>int64 expires_at = 10;</code>
+     * @return The expiresAt.
+     */
+    @java.lang.Override
+    public long getExpiresAt() {
+      return expiresAt_;
+    }
+
     private byte memoizedIsInitialized = -1;
     @java.lang.Override
     public final boolean isInitialized() {
@@ -12126,6 +12258,9 @@ java.lang.String defaultValue) {
           internalGetMetadata(),
           MetadataDefaultEntryHolder.defaultEntry,
           9);
+      if (expiresAt_ != 0L) {
+        output.writeInt64(10, expiresAt_);
+      }
       getUnknownFields().writeTo(output);
     }
 
@@ -12172,6 +12307,10 @@ java.lang.String defaultValue) {
         size += com.google.protobuf.CodedOutputStream
             .computeMessageSize(9, metadata__);
       }
+      if (expiresAt_ != 0L) {
+        size += com.google.protobuf.CodedOutputStream
+          .computeInt64Size(10, expiresAt_);
+      }
       size += getUnknownFields().getSerializedSize();
       memoizedSize = size;
       return size;
@@ -12205,6 +12344,8 @@ java.lang.String defaultValue) {
           != other.getCreatedAt()) return false;
       if (!internalGetMetadata().equals(
           other.internalGetMetadata())) return false;
+      if (getExpiresAt()
+          != other.getExpiresAt()) return false;
       if (!getUnknownFields().equals(other.getUnknownFields())) return false;
       return true;
     }
@@ -12237,6 +12378,9 @@ java.lang.String defaultValue) {
         hash = (37 * hash) + METADATA_FIELD_NUMBER;
         hash = (53 * hash) + internalGetMetadata().hashCode();
       }
+      hash = (37 * hash) + EXPIRES_AT_FIELD_NUMBER;
+      hash = (53 * hash) + com.google.protobuf.Internal.hashLong(
+          getExpiresAt());
       hash = (29 * hash) + getUnknownFields().hashCode();
       memoizedHashCode = hash;
       return hash;
@@ -12403,6 +12547,7 @@ java.lang.String defaultValue) {
         maxMembers_ = 0;
         createdAt_ = 0L;
         internalGetMutableMetadata().clear();
+        expiresAt_ = 0L;
         return this;
       }
 
@@ -12464,6 +12609,9 @@ java.lang.String defaultValue) {
           result.metadata_ = internalGetMetadata();
           result.metadata_.makeImmutable();
         }
+        if (((from_bitField0_ & 0x00000200) != 0)) {
+          result.expiresAt_ = expiresAt_;
+        }
       }
 
       @java.lang.Override
@@ -12515,6 +12663,9 @@ java.lang.String defaultValue) {
         internalGetMutableMetadata().mergeFrom(
             other.internalGetMetadata());
         bitField0_ |= 0x00000100;
+        if (other.getExpiresAt() != 0L) {
+          setExpiresAt(other.getExpiresAt());
+        }
         this.mergeUnknownFields(other.getUnknownFields());
         onChanged();
         return this;
@@ -12590,6 +12741,11 @@ java.lang.String defaultValue) {
                 bitField0_ |= 0x00000100;
                 break;
               } // case 74
+              case 80: {
+                expiresAt_ = input.readInt64();
+                bitField0_ |= 0x00000200;
+                break;
+              } // case 80
               default: {
                 if (!super.parseUnknownField(input, extensionRegistry, tag)) {
                   done = true; // was an endgroup tag
@@ -13187,6 +13343,56 @@ java.lang.String defaultValue) {
         internalGetMutableMetadata().getMutableMap()
             .putAll(values);
         bitField0_ |= 0x00000100;
+        return this;
+      }
+
+      private long expiresAt_ ;
+      /**
+       * <pre>
+       * 临时频道：过期时刻（epoch 毫秒）；0 = 永久群。随 GET_GROUP_INFO /
+       * GET_USER_GROUPS / GROUP_CREATED_NOTIFY 下发，客户端据此显示倒计时并在
+       * 到点后本地移除该群。
+       * </pre>
+       *
+       * <code>int64 expires_at = 10;</code>
+       * @return The expiresAt.
+       */
+      @java.lang.Override
+      public long getExpiresAt() {
+        return expiresAt_;
+      }
+      /**
+       * <pre>
+       * 临时频道：过期时刻（epoch 毫秒）；0 = 永久群。随 GET_GROUP_INFO /
+       * GET_USER_GROUPS / GROUP_CREATED_NOTIFY 下发，客户端据此显示倒计时并在
+       * 到点后本地移除该群。
+       * </pre>
+       *
+       * <code>int64 expires_at = 10;</code>
+       * @param value The expiresAt to set.
+       * @return This builder for chaining.
+       */
+      public Builder setExpiresAt(long value) {
+
+        expiresAt_ = value;
+        bitField0_ |= 0x00000200;
+        onChanged();
+        return this;
+      }
+      /**
+       * <pre>
+       * 临时频道：过期时刻（epoch 毫秒）；0 = 永久群。随 GET_GROUP_INFO /
+       * GET_USER_GROUPS / GROUP_CREATED_NOTIFY 下发，客户端据此显示倒计时并在
+       * 到点后本地移除该群。
+       * </pre>
+       *
+       * <code>int64 expires_at = 10;</code>
+       * @return This builder for chaining.
+       */
+      public Builder clearExpiresAt() {
+        bitField0_ = (bitField0_ & ~0x00000200);
+        expiresAt_ = 0L;
+        onChanged();
         return this;
       }
 
@@ -126553,413 +126759,414 @@ java.lang.String defaultValue) {
       "istoryResponse\022%\n\004code\030\001 \001(\0162\027.chirp.com" +
       "mon.ErrorCode\022)\n\010messages\030\002 \003(\0132\027.chirp." +
       "chat.ChatMessage\022\020\n\010has_more\030\003 \001(\010\022\025\n\rme" +
-      "ssages_gzip\030\004 \001(\014\"\223\001\n\022CreateGroupRequest" +
+      "ssages_gzip\030\004 \001(\014\"\250\001\n\022CreateGroupRequest" +
       "\022\022\n\ncreator_id\030\001 \001(\t\022\022\n\ngroup_name\030\002 \001(\t" +
       "\022\023\n\013description\030\003 \001(\t\022\022\n\navatar_url\030\004 \001(" +
       "\t\022\023\n\013max_members\030\005 \001(\005\022\027\n\017initial_member" +
-      "s\030\006 \003(\t\"c\n\023CreateGroupResponse\022%\n\004code\030\001" +
-      " \001(\0162\027.chirp.common.ErrorCode\022\020\n\010group_i" +
-      "d\030\002 \001(\t\022\023\n\013server_time\030\003 \001(\003\"\223\002\n\tGroupIn" +
-      "fo\022\020\n\010group_id\030\001 \001(\t\022\022\n\ngroup_name\030\002 \001(\t" +
-      "\022\023\n\013description\030\003 \001(\t\022\022\n\navatar_url\030\004 \001(" +
-      "\t\022\020\n\010owner_id\030\005 \001(\t\022\024\n\014member_count\030\006 \001(" +
-      "\005\022\023\n\013max_members\030\007 \001(\005\022\022\n\ncreated_at\030\010 \001" +
-      "(\003\0225\n\010metadata\030\t \003(\0132#.chirp.chat.GroupI" +
-      "nfo.MetadataEntry\032/\n\rMetadataEntry\022\013\n\003ke" +
-      "y\030\001 \001(\t\022\r\n\005value\030\002 \001(\t:\0028\001\"\277\001\n\013GroupMemb" +
-      "er\022\017\n\007user_id\030\001 \001(\t\022\020\n\010username\030\002 \001(\t\022\022\n" +
-      "\navatar_url\030\003 \001(\t\022)\n\004role\030\004 \001(\0162\033.chirp." +
-      "chat.GroupMemberRole\022\021\n\tjoined_at\030\005 \001(\003\022" +
-      "\024\n\014last_read_at\030\006 \001(\003\022\r\n\005alias\030\007 \001(\t\022\026\n\016" +
-      "muted_until_ts\030\010 \001(\003\"P\n\025SetMemberAliasRe" +
-      "quest\022\020\n\010group_id\030\001 \001(\t\022\026\n\016target_user_i" +
-      "d\030\002 \001(\t\022\r\n\005alias\030\003 \001(\t\"q\n\026SetMemberAlias" +
-      "Response\022%\n\004code\030\001 \001(\0162\027.chirp.common.Er" +
-      "rorCode\022\020\n\010group_id\030\002 \001(\t\022\017\n\007user_id\030\003 \001" +
-      "(\t\022\r\n\005alias\030\004 \001(\t\"Q\n\035GroupMemberAliasUpd" +
-      "atedNotify\022\020\n\010group_id\030\001 \001(\t\022\017\n\007user_id\030" +
-      "\002 \001(\t\022\r\n\005alias\030\003 \001(\t\"U\n\023SetGroupMuteRequ" +
-      "est\022\020\n\010group_id\030\001 \001(\t\022\026\n\016target_user_id\030" +
-      "\002 \001(\t\022\024\n\014duration_sec\030\003 \001(\003\"x\n\024SetGroupM" +
-      "uteResponse\022%\n\004code\030\001 \001(\0162\027.chirp.common" +
-      ".ErrorCode\022\020\n\010group_id\030\002 \001(\t\022\017\n\007user_id\030" +
-      "\003 \001(\t\022\026\n\016muted_until_ts\030\004 \001(\003\"{\n\026GroupMe" +
-      "mberMutedNotify\022\020\n\010group_id\030\001 \001(\t\022\017\n\007use" +
-      "r_id\030\002 \001(\t\022\026\n\016muted_until_ts\030\003 \001(\003\022\023\n\013op" +
-      "erator_id\030\004 \001(\t\022\021\n\ttimestamp\030\005 \001(\003\":\n\024Re" +
-      "portMessageRequest\022\022\n\nmessage_id\030\001 \001(\t\022\016" +
-      "\n\006reason\030\002 \001(\t\"h\n\025ReportMessageResponse\022" +
-      "%\n\004code\030\001 \001(\0162\027.chirp.common.ErrorCode\022\022" +
-      "\n\nmessage_id\030\002 \001(\t\022\024\n\014report_count\030\003 \001(\005" +
-      "\"J\n\020JoinGroupRequest\022\017\n\007user_id\030\001 \001(\t\022\020\n" +
-      "\010group_id\030\002 \001(\t\022\023\n\013invite_code\030\003 \001(\t\"u\n\021" +
-      "JoinGroupResponse\022%\n\004code\030\001 \001(\0162\027.chirp." +
-      "common.ErrorCode\022$\n\005group\030\002 \001(\0132\025.chirp." +
-      "chat.GroupInfo\022\023\n\013server_time\030\003 \001(\003\"6\n\021L" +
-      "eaveGroupRequest\022\017\n\007user_id\030\001 \001(\t\022\020\n\010gro" +
-      "up_id\030\002 \001(\t\"P\n\022LeaveGroupResponse\022%\n\004cod" +
-      "e\030\001 \001(\0162\027.chirp.common.ErrorCode\022\023\n\013serv" +
-      "er_time\030\002 \001(\003\"S\n\021KickMemberRequest\022\024\n\014re" +
-      "quester_id\030\001 \001(\t\022\020\n\010group_id\030\002 \001(\t\022\026\n\016ta" +
-      "rget_user_id\030\003 \001(\t\"P\n\022KickMemberResponse" +
+      "s\030\006 \003(\t\022\023\n\013ttl_seconds\030\007 \001(\003\"c\n\023CreateGr" +
+      "oupResponse\022%\n\004code\030\001 \001(\0162\027.chirp.common" +
+      ".ErrorCode\022\020\n\010group_id\030\002 \001(\t\022\023\n\013server_t" +
+      "ime\030\003 \001(\003\"\247\002\n\tGroupInfo\022\020\n\010group_id\030\001 \001(" +
+      "\t\022\022\n\ngroup_name\030\002 \001(\t\022\023\n\013description\030\003 \001" +
+      "(\t\022\022\n\navatar_url\030\004 \001(\t\022\020\n\010owner_id\030\005 \001(\t" +
+      "\022\024\n\014member_count\030\006 \001(\005\022\023\n\013max_members\030\007 " +
+      "\001(\005\022\022\n\ncreated_at\030\010 \001(\003\0225\n\010metadata\030\t \003(" +
+      "\0132#.chirp.chat.GroupInfo.MetadataEntry\022\022" +
+      "\n\nexpires_at\030\n \001(\003\032/\n\rMetadataEntry\022\013\n\003k" +
+      "ey\030\001 \001(\t\022\r\n\005value\030\002 \001(\t:\0028\001\"\277\001\n\013GroupMem" +
+      "ber\022\017\n\007user_id\030\001 \001(\t\022\020\n\010username\030\002 \001(\t\022\022" +
+      "\n\navatar_url\030\003 \001(\t\022)\n\004role\030\004 \001(\0162\033.chirp" +
+      ".chat.GroupMemberRole\022\021\n\tjoined_at\030\005 \001(\003" +
+      "\022\024\n\014last_read_at\030\006 \001(\003\022\r\n\005alias\030\007 \001(\t\022\026\n" +
+      "\016muted_until_ts\030\010 \001(\003\"P\n\025SetMemberAliasR" +
+      "equest\022\020\n\010group_id\030\001 \001(\t\022\026\n\016target_user_" +
+      "id\030\002 \001(\t\022\r\n\005alias\030\003 \001(\t\"q\n\026SetMemberAlia" +
+      "sResponse\022%\n\004code\030\001 \001(\0162\027.chirp.common.E" +
+      "rrorCode\022\020\n\010group_id\030\002 \001(\t\022\017\n\007user_id\030\003 " +
+      "\001(\t\022\r\n\005alias\030\004 \001(\t\"Q\n\035GroupMemberAliasUp" +
+      "datedNotify\022\020\n\010group_id\030\001 \001(\t\022\017\n\007user_id" +
+      "\030\002 \001(\t\022\r\n\005alias\030\003 \001(\t\"U\n\023SetGroupMuteReq" +
+      "uest\022\020\n\010group_id\030\001 \001(\t\022\026\n\016target_user_id" +
+      "\030\002 \001(\t\022\024\n\014duration_sec\030\003 \001(\003\"x\n\024SetGroup" +
+      "MuteResponse\022%\n\004code\030\001 \001(\0162\027.chirp.commo" +
+      "n.ErrorCode\022\020\n\010group_id\030\002 \001(\t\022\017\n\007user_id" +
+      "\030\003 \001(\t\022\026\n\016muted_until_ts\030\004 \001(\003\"{\n\026GroupM" +
+      "emberMutedNotify\022\020\n\010group_id\030\001 \001(\t\022\017\n\007us" +
+      "er_id\030\002 \001(\t\022\026\n\016muted_until_ts\030\003 \001(\003\022\023\n\013o" +
+      "perator_id\030\004 \001(\t\022\021\n\ttimestamp\030\005 \001(\003\":\n\024R" +
+      "eportMessageRequest\022\022\n\nmessage_id\030\001 \001(\t\022" +
+      "\016\n\006reason\030\002 \001(\t\"h\n\025ReportMessageResponse" +
       "\022%\n\004code\030\001 \001(\0162\027.chirp.common.ErrorCode\022" +
-      "\023\n\013server_time\030\002 \001(\003\"\'\n\023GetGroupInfoRequ" +
-      "est\022\020\n\010group_id\030\001 \001(\t\"c\n\024GetGroupInfoRes" +
-      "ponse\022%\n\004code\030\001 \001(\0162\027.chirp.common.Error" +
-      "Code\022$\n\005group\030\002 \001(\0132\025.chirp.chat.GroupIn" +
-      "fo\"I\n\026GetGroupMembersRequest\022\020\n\010group_id" +
-      "\030\001 \001(\t\022\r\n\005limit\030\002 \001(\005\022\016\n\006offset\030\003 \001(\005\"\177\n" +
-      "\027GetGroupMembersResponse\022%\n\004code\030\001 \001(\0162\027" +
-      ".chirp.common.ErrorCode\022(\n\007members\030\002 \003(\013" +
-      "2\027.chirp.chat.GroupMember\022\023\n\013total_count" +
-      "\030\003 \001(\005\"F\n\024GetUserGroupsRequest\022\017\n\007user_i" +
-      "d\030\001 \001(\t\022\r\n\005limit\030\002 \001(\005\022\016\n\006offset\030\003 \001(\005\"z" +
-      "\n\025GetUserGroupsResponse\022%\n\004code\030\001 \001(\0162\027." +
-      "chirp.common.ErrorCode\022%\n\006groups\030\002 \003(\0132\025" +
-      ".chirp.chat.GroupInfo\022\023\n\013total_count\030\003 \001" +
-      "(\005\"T\n\024InviteToGroupRequest\022\022\n\ninviter_id" +
-      "\030\001 \001(\t\022\020\n\010group_id\030\002 \001(\t\022\026\n\016target_user_" +
-      "id\030\003 \001(\t\"S\n\025InviteToGroupResponse\022%\n\004cod" +
-      "e\030\001 \001(\0162\027.chirp.common.ErrorCode\022\023\n\013serv" +
-      "er_time\030\002 \001(\003\"M\n\022GroupCreatedNotify\022$\n\005g" +
-      "roup\030\001 \001(\0132\025.chirp.chat.GroupInfo\022\021\n\ttim" +
-      "estamp\030\002 \001(\003\"g\n\027GroupMemberJoinedNotify\022" +
-      "\020\n\010group_id\030\001 \001(\t\022\'\n\006member\030\002 \001(\0132\027.chir" +
-      "p.chat.GroupMember\022\021\n\ttimestamp\030\003 \001(\003\"M\n" +
-      "\025GroupMemberLeftNotify\022\020\n\010group_id\030\001 \001(\t" +
-      "\022\017\n\007user_id\030\002 \001(\t\022\021\n\ttimestamp\030\003 \001(\003\"b\n\027" +
-      "GroupMemberKickedNotify\022\020\n\010group_id\030\001 \001(" +
-      "\t\022\017\n\007user_id\030\002 \001(\t\022\021\n\tkicked_by\030\003 \001(\t\022\021\n" +
-      "\ttimestamp\030\004 \001(\003\"M\n\022GroupUpdatedNotify\022$" +
-      "\n\005group\030\001 \001(\0132\025.chirp.chat.GroupInfo\022\021\n\t" +
-      "timestamp\030\002 \001(\003\"\221\001\n\017MarkReadRequest\022\017\n\007u" +
-      "ser_id\030\001 \001(\t\022\022\n\nchannel_id\030\002 \001(\t\022-\n\014chan" +
-      "nel_type\030\003 \001(\0162\027.chirp.chat.ChannelType\022" +
-      "\022\n\nmessage_id\030\004 \001(\t\022\026\n\016read_timestamp\030\005 " +
-      "\001(\003\"N\n\020MarkReadResponse\022%\n\004code\030\001 \001(\0162\027." +
-      "chirp.common.ErrorCode\022\023\n\013server_time\030\002 " +
-      "\001(\003\"C\n\013ReadReceipt\022\017\n\007user_id\030\001 \001(\t\022\022\n\nm" +
-      "essage_id\030\002 \001(\t\022\017\n\007read_at\030\003 \001(\003\",\n\026GetR" +
-      "eadReceiptsRequest\022\022\n\nmessage_id\030\001 \001(\t\"k" +
-      "\n\027GetReadReceiptsResponse\022%\n\004code\030\001 \001(\0162" +
-      "\027.chirp.common.ErrorCode\022)\n\010receipts\030\002 \003" +
-      "(\0132\027.chirp.chat.ReadReceipt\"(\n\025GetUnread" +
-      "CountRequest\022\017\n\007user_id\030\001 \001(\t\"\225\002\n\026GetUnr" +
-      "eadCountResponse\022%\n\004code\030\001 \001(\0162\027.chirp.c" +
-      "ommon.ErrorCode\022\024\n\014total_unread\030\002 \001(\005\022B\n" +
-      "\010channels\030\003 \003(\01320.chirp.chat.GetUnreadCo" +
-      "untResponse.ChannelUnread\032z\n\rChannelUnre" +
-      "ad\022\022\n\nchannel_id\030\001 \001(\t\022-\n\014channel_type\030\002" +
-      " \001(\0162\027.chirp.chat.ChannelType\022\r\n\005count\030\003" +
-      " \001(\005\022\027\n\017last_message_id\030\004 \001(\t\"\223\001\n\021Messag" +
-      "eReadNotify\022\022\n\nchannel_id\030\001 \001(\t\022-\n\014chann" +
-      "el_type\030\002 \001(\0162\027.chirp.chat.ChannelType\022\022" +
-      "\n\nmessage_id\030\003 \001(\t\022\026\n\016reader_user_id\030\004 \001" +
-      "(\t\022\017\n\007read_at\030\005 \001(\003\"\220\001\n\024TypingIndicatorS" +
-      "tate\022\022\n\nchannel_id\030\001 \001(\t\022-\n\014channel_type" +
-      "\030\002 \001(\0162\027.chirp.chat.ChannelType\022\017\n\007user_" +
-      "id\030\003 \001(\t\022\021\n\tis_typing\030\004 \001(\010\022\021\n\ttimestamp" +
-      "\030\005 \001(\003\"[\n\nMessageAck\022\022\n\nmessage_id\030\001 \001(\t" +
-      "\022\017\n\007user_id\030\002 \001(\t\022\023\n\013received_at\030\003 \001(\003\022\023" +
-      "\n\013delivery_id\030\004 \001(\t\"\236\001\n\013MessageNack\022\022\n\nm" +
-      "essage_id\030\001 \001(\t\022\017\n\007user_id\030\002 \001(\t\022+\n\nerro" +
-      "r_code\030\003 \001(\0162\027.chirp.common.ErrorCode\022\025\n" +
-      "\rerror_message\030\004 \001(\t\022\021\n\tfailed_at\030\005 \001(\003\022" +
-      "\023\n\013delivery_id\030\006 \001(\t\"\324\001\n\016DeliveryStatus\022" +
-      "\022\n\nmessage_id\030\001 \001(\t\022\017\n\007user_id\030\002 \001(\t\0221\n\006" +
-      "status\030\003 \001(\0162!.chirp.chat.DeliveryStatus" +
-      ".Status\022\021\n\ttimestamp\030\004 \001(\003\022\023\n\013retry_coun" +
-      "t\030\005 \001(\005\"B\n\006Status\022\013\n\007PENDING\020\000\022\r\n\tDELIVE" +
-      "RED\020\001\022\n\n\006FAILED\020\002\022\020\n\014ACKNOWLEDGED\020\003\"G\n\017P" +
-      "aginationToken\022\016\n\006cursor\030\001 \001(\t\022\021\n\ttimest" +
-      "amp\030\002 \001(\003\022\021\n\tpage_size\030\003 \001(\005\"\333\001\n\023GetHist" +
-      "oryRequestV2\022\017\n\007user_id\030\001 \001(\t\022-\n\014channel" +
-      "_type\030\002 \001(\0162\027.chirp.chat.ChannelType\022\022\n\n" +
-      "channel_id\030\003 \001(\t\022/\n\npagination\030\004 \001(\0132\033.c" +
-      "hirp.chat.PaginationToken\022\r\n\005limit\030\005 \001(\005" +
-      "\022\027\n\017include_deleted\030\006 \001(\010\022\027\n\017since_times" +
-      "tamp\030\007 \001(\003\"\277\001\n\024GetHistoryResponseV2\022%\n\004c" +
-      "ode\030\001 \001(\0162\027.chirp.common.ErrorCode\022)\n\010me" +
-      "ssages\030\002 \003(\0132\027.chirp.chat.ChatMessage\022.\n" +
-      "\tnext_page\030\003 \001(\0132\033.chirp.chat.Pagination" +
-      "Token\022\020\n\010has_more\030\004 \001(\010\022\023\n\013total_count\030\005" +
-      " \001(\005\"R\n\023TrackMessageRequest\022\022\n\nmessage_i" +
-      "d\030\001 \001(\t\022\023\n\013receiver_id\030\002 \001(\t\022\022\n\nexpires_" +
-      "at\030\003 \001(\003\"g\n\024TrackMessageResponse\022%\n\004code" +
-      "\030\001 \001(\0162\027.chirp.common.ErrorCode\022\023\n\013track" +
-      "ing_id\030\002 \001(\t\022\023\n\013server_time\030\003 \001(\003\"r\n\022Cha" +
-      "nnelPermissions\022\020\n\010can_read\030\001 \001(\010\022\021\n\tcan" +
-      "_write\030\002 \001(\010\022\021\n\tcan_speak\030\003 \001(\010\022\020\n\010can_j" +
-      "oin\030\004 \001(\010\022\022\n\ncan_manage\030\005 \001(\010\"\341\001\n\027Permis" +
-      "sionOverrideEntry\022(\n\004type\030\001 \001(\0162\032.chirp." +
-      "chat.PermissionType\022\n\n\002id\030\002 \001(\t\0223\n\013permi" +
-      "ssions\030\003 \001(\0132\036.chirp.chat.ChannelPermiss" +
-      "ions\022-\n\005allow\030\004 \001(\0162\036.chirp.chat.Permiss" +
-      "ionOverride\022,\n\004deny\030\005 \001(\0162\036.chirp.chat.P" +
-      "ermissionOverride\"\202\001\n\017ChannelCategory\022\023\n" +
-      "\013category_id\030\001 \001(\t\022\020\n\010group_id\030\002 \001(\t\022\014\n\004" +
-      "name\030\003 \001(\t\022\020\n\010position\030\004 \001(\005\022\024\n\014is_colla" +
-      "psed\030\005 \001(\010\022\022\n\ncreated_at\030\006 \001(\003\"\333\002\n\007Chann" +
-      "el\022\022\n\nchannel_id\030\001 \001(\t\022\020\n\010group_id\030\002 \001(\t" +
-      "\022\023\n\013category_id\030\003 \001(\t\022\014\n\004name\030\004 \001(\t\022%\n\004k" +
-      "ind\030\005 \001(\0162\027.chirp.chat.ChannelKind\022\020\n\010po" +
-      "sition\030\006 \001(\005\022\023\n\013description\030\007 \001(\t\022\017\n\007is_" +
-      "nsfw\030\010 \001(\010\022\022\n\ncreated_at\030\t \001(\003\022\030\n\020slowmo" +
-      "de_seconds\030\n \001(\003\022A\n\024permission_overrides" +
-      "\030\013 \003(\0132#.chirp.chat.PermissionOverrideEn" +
-      "try\022\017\n\007bitrate\030\014 \001(\005\022\022\n\nuser_limit\030\r \001(\005" +
-      "\022\022\n\nrtc_region\030\016 \001(\t\"\362\001\n\024CreateChannelRe" +
-      "quest\022\020\n\010group_id\030\001 \001(\t\022\024\n\014requester_id\030" +
-      "\002 \001(\t\022\014\n\004name\030\003 \001(\t\022%\n\004kind\030\004 \001(\0162\027.chir" +
-      "p.chat.ChannelKind\022\023\n\013category_id\030\005 \001(\t\022" +
-      "\023\n\013description\030\006 \001(\t\022A\n\024permission_overr" +
-      "ides\030\007 \003(\0132#.chirp.chat.PermissionOverri" +
-      "deEntry\022\020\n\010position\030\010 \001(\005\"y\n\025CreateChann" +
-      "elResponse\022%\n\004code\030\001 \001(\0162\027.chirp.common." +
-      "ErrorCode\022$\n\007channel\030\002 \001(\0132\023.chirp.chat." +
-      "Channel\022\023\n\013server_time\030\003 \001(\003\"\227\002\n\024UpdateC" +
-      "hannelRequest\022\022\n\nchannel_id\030\001 \001(\t\022\024\n\014req" +
-      "uester_id\030\002 \001(\t\022\021\n\004name\030\003 \001(\tH\000\210\001\001\022\030\n\013de" +
-      "scription\030\004 \001(\tH\001\210\001\001\022\025\n\010position\030\005 \001(\005H\002" +
-      "\210\001\001\022\030\n\013category_id\030\006 \001(\tH\003\210\001\001\022A\n\024permiss" +
-      "ion_overrides\030\007 \003(\0132#.chirp.chat.Permiss" +
-      "ionOverrideEntryB\007\n\005_nameB\016\n\014_descriptio" +
-      "nB\013\n\t_positionB\016\n\014_category_id\"y\n\025Update" +
-      "ChannelResponse\022%\n\004code\030\001 \001(\0162\027.chirp.co" +
-      "mmon.ErrorCode\022$\n\007channel\030\002 \001(\0132\023.chirp." +
-      "chat.Channel\022\023\n\013server_time\030\003 \001(\003\"@\n\024Del" +
-      "eteChannelRequest\022\022\n\nchannel_id\030\001 \001(\t\022\024\n" +
-      "\014requester_id\030\002 \001(\t\"S\n\025DeleteChannelResp" +
-      "onse\022%\n\004code\030\001 \001(\0162\027.chirp.common.ErrorC" +
-      "ode\022\023\n\013server_time\030\002 \001(\003\"7\n\022GetChannelsR" +
-      "equest\022\020\n\010group_id\030\001 \001(\t\022\017\n\007user_id\030\002 \001(" +
-      "\t\"\224\001\n\023GetChannelsResponse\022%\n\004code\030\001 \001(\0162" +
-      "\027.chirp.common.ErrorCode\022%\n\010channels\030\002 \003" +
-      "(\0132\023.chirp.chat.Channel\022/\n\ncategories\030\003 " +
-      "\003(\0132\033.chirp.chat.ChannelCategory\"_\n\025Crea" +
-      "teCategoryRequest\022\020\n\010group_id\030\001 \001(\t\022\024\n\014r" +
-      "equester_id\030\002 \001(\t\022\014\n\004name\030\003 \001(\t\022\020\n\010posit" +
-      "ion\030\004 \001(\005\"\203\001\n\026CreateCategoryResponse\022%\n\004" +
-      "code\030\001 \001(\0162\027.chirp.common.ErrorCode\022-\n\010c" +
-      "ategory\030\002 \001(\0132\033.chirp.chat.ChannelCatego" +
-      "ry\022\023\n\013server_time\030\003 \001(\003\"O\n\024ChannelCreate" +
-      "dNotify\022$\n\007channel\030\001 \001(\0132\023.chirp.chat.Ch" +
-      "annel\022\021\n\ttimestamp\030\002 \001(\003\"O\n\024ChannelUpdat" +
-      "edNotify\022$\n\007channel\030\001 \001(\0132\023.chirp.chat.C" +
-      "hannel\022\021\n\ttimestamp\030\002 \001(\003\"O\n\024ChannelDele" +
-      "tedNotify\022\022\n\nchannel_id\030\001 \001(\t\022\020\n\010group_i" +
-      "d\030\002 \001(\t\022\021\n\ttimestamp\030\003 \001(\003\"l\n\017MessageRea" +
-      "ction\022\022\n\nmessage_id\030\001 \001(\t\022\r\n\005emoji\030\002 \001(\t" +
-      "\022\r\n\005count\030\003 \001(\005\022\020\n\010user_ids\030\004 \003(\t\022\025\n\rrea" +
-      "cted_by_me\030\005 \001(\010\"H\n\022AddReactionRequest\022\022" +
-      "\n\nmessage_id\030\001 \001(\t\022\017\n\007user_id\030\002 \001(\t\022\r\n\005e" +
-      "moji\030\003 \001(\t\"\200\001\n\023AddReactionResponse\022%\n\004co" +
-      "de\030\001 \001(\0162\027.chirp.common.ErrorCode\022-\n\010rea" +
-      "ction\030\002 \001(\0132\033.chirp.chat.MessageReaction" +
-      "\022\023\n\013server_time\030\003 \001(\003\"K\n\025RemoveReactionR" +
-      "equest\022\022\n\nmessage_id\030\001 \001(\t\022\017\n\007user_id\030\002 " +
-      "\001(\t\022\r\n\005emoji\030\003 \001(\t\"T\n\026RemoveReactionResp" +
-      "onse\022%\n\004code\030\001 \001(\0162\027.chirp.common.ErrorC" +
-      "ode\022\023\n\013server_time\030\002 \001(\003\"8\n\023GetReactions" +
-      "Request\022\022\n\nmessage_id\030\001 \001(\t\022\r\n\005emoji\030\002 \001" +
-      "(\t\"m\n\024GetReactionsResponse\022%\n\004code\030\001 \001(\016" +
-      "2\027.chirp.common.ErrorCode\022.\n\treactions\030\002" +
-      " \003(\0132\033.chirp.chat.MessageReaction\"p\n\023Rea" +
-      "ctionAddedNotify\022\022\n\nmessage_id\030\001 \001(\t\022\022\n\n" +
-      "channel_id\030\002 \001(\t\022\r\n\005emoji\030\003 \001(\t\022\017\n\007user_" +
-      "id\030\004 \001(\t\022\021\n\ttimestamp\030\005 \001(\003\"r\n\025ReactionR" +
-      "emovedNotify\022\022\n\nmessage_id\030\001 \001(\t\022\022\n\nchan" +
-      "nel_id\030\002 \001(\t\022\r\n\005emoji\030\003 \001(\t\022\017\n\007user_id\030\004" +
-      " \001(\t\022\021\n\ttimestamp\030\005 \001(\003\"a\n\007Mention\022%\n\004ty" +
-      "pe\030\001 \001(\0162\027.chirp.chat.MentionType\022\n\n\002id\030" +
-      "\002 \001(\t\022\023\n\013start_index\030\003 \001(\005\022\016\n\006length\030\004 \001" +
-      "(\005\"\263\001\n\rChatMessageEx\022-\n\014base_message\030\001 \001" +
-      "(\0132\027.chirp.chat.ChatMessage\022%\n\010mentions\030" +
-      "\002 \003(\0132\023.chirp.chat.Mention\022\032\n\022mentioned_" +
-      "user_ids\030\003 \003(\t\022\031\n\021mentions_everyone\030\004 \001(" +
-      "\010\022\025\n\rmentions_here\030\005 \001(\010\"n\n\021MentionSugge" +
-      "stion\022\024\n\014display_text\030\001 \001(\t\022\n\n\002id\030\002 \001(\t\022" +
-      "%\n\004type\030\003 \001(\0162\027.chirp.chat.MentionType\022\020" +
-      "\n\010icon_url\030\004 \001(\t\"R\n\034GetMentionSuggestion" +
-      "sRequest\022\017\n\007user_id\030\001 \001(\t\022\022\n\nchannel_id\030" +
-      "\002 \001(\t\022\r\n\005query\030\003 \001(\t\"z\n\035GetMentionSugges" +
-      "tionsResponse\022%\n\004code\030\001 \001(\0162\027.chirp.comm" +
-      "on.ErrorCode\0222\n\013suggestions\030\002 \003(\0132\035.chir" +
-      "p.chat.MentionSuggestion\"]\n\013MessageEdit\022" +
-      "\023\n\013old_content\030\001 \001(\014\022\023\n\013new_content\030\002 \001(" +
-      "\014\022\021\n\tedited_at\030\003 \001(\003\022\021\n\tedited_by\030\004 \001(\t\"" +
-      "\211\004\n\017ChatMessageFull\022\022\n\nmessage_id\030\001 \001(\t\022" +
-      "\021\n\tsender_id\030\002 \001(\t\022\023\n\013receiver_id\030\003 \001(\t\022" +
-      "-\n\014channel_type\030\004 \001(\0162\027.chirp.chat.Chann" +
-      "elType\022\022\n\nchannel_id\030\005 \001(\t\022%\n\010msg_type\030\006" +
-      " \001(\0162\023.chirp.chat.MsgType\022\017\n\007content\030\007 \001" +
-      "(\014\022\021\n\ttimestamp\030\010 \001(\003\022\022\n\nis_deleted\030\t \001(" +
-      "\010\022\022\n\ndeleted_at\030\n \001(\003\022\022\n\ndeleted_by\030\013 \001(" +
-      "\t\022\021\n\tis_edited\030\014 \001(\010\022\021\n\tedited_at\030\r \001(\003\022" +
-      "\022\n\nedit_count\030\016 \001(\005\022-\n\014edit_history\030\017 \003(" +
-      "\0132\027.chirp.chat.MessageEdit\022\033\n\023reply_to_m" +
-      "essage_id\030\020 \001(\t\022\023\n\013reply_count\030\021 \001(\005\022.\n\t" +
-      "reactions\030\022 \003(\0132\033.chirp.chat.MessageReac" +
-      "tion\022%\n\010mentions\030\023 \003(\0132\023.chirp.chat.Ment" +
-      "ion\"f\n\022EditMessageRequest\022\022\n\nmessage_id\030" +
-      "\001 \001(\t\022\017\n\007user_id\030\002 \001(\t\022\023\n\013new_content\030\003 " +
-      "\001(\014\022\026\n\016edit_timestamp\030\004 \001(\003\"\177\n\023EditMessa" +
-      "geResponse\022%\n\004code\030\001 \001(\0162\027.chirp.common." +
-      "ErrorCode\022,\n\007message\030\002 \001(\0132\033.chirp.chat." +
-      "ChatMessageFull\022\023\n\013server_time\030\003 \001(\003\"S\n\024" +
-      "DeleteMessageRequest\022\022\n\nmessage_id\030\001 \001(\t" +
-      "\022\017\n\007user_id\030\002 \001(\t\022\026\n\016is_hard_delete\030\003 \001(" +
-      "\010\"t\n\025DeleteMessageResponse\022%\n\004code\030\001 \001(\016" +
-      "2\027.chirp.common.ErrorCode\022\023\n\013server_time" +
-      "\030\002 \001(\003\022\037\n\027was_permanently_deleted\030\003 \001(\010\"" +
-      "R\n\021BulkDeleteRequest\022\023\n\013message_ids\030\001 \003(" +
-      "\t\022\024\n\014requester_id\030\002 \001(\t\022\022\n\nchannel_id\030\003 " +
-      "\001(\t\"\203\001\n\022BulkDeleteResponse\022%\n\004code\030\001 \001(\016" +
-      "2\027.chirp.common.ErrorCode\022\025\n\rdeleted_cou" +
-      "nt\030\002 \001(\005\022\032\n\022failed_message_ids\030\003 \003(\t\022\023\n\013" +
-      "server_time\030\004 \001(\003\"x\n\023MessageEditedNotify" +
-      "\022\022\n\nmessage_id\030\001 \001(\t\022\022\n\nchannel_id\030\002 \001(\t" +
-      "\022\023\n\013new_content\030\003 \001(\014\022\021\n\tedited_at\030\004 \001(\003" +
-      "\022\021\n\tedited_by\030\005 \001(\t\"~\n\024MessageDeletedNot" +
-      "ify\022\022\n\nmessage_id\030\001 \001(\t\022\022\n\nchannel_id\030\002 " +
-      "\001(\t\022\026\n\016is_hard_delete\030\003 \001(\010\022\022\n\ndeleted_b" +
-      "y\030\004 \001(\t\022\022\n\ndeleted_at\030\005 \001(\003\"\235\001\n\017TypingIn" +
-      "dicator\022\022\n\nchannel_id\030\001 \001(\t\022-\n\014channel_t" +
-      "ype\030\002 \001(\0162\027.chirp.chat.ChannelType\022\017\n\007us" +
-      "er_id\030\003 \001(\t\022\020\n\010username\030\004 \001(\t\022\021\n\tis_typi" +
-      "ng\030\005 \001(\010\022\021\n\ttimestamp\030\006 \001(\003\"Z\n\025GetTyping" +
-      "UsersRequest\022\022\n\nchannel_id\030\001 \001(\t\022-\n\014chan" +
-      "nel_type\030\002 \001(\0162\027.chirp.chat.ChannelType\"" +
-      "k\n\026GetTypingUsersResponse\022%\n\004code\030\001 \001(\0162" +
-      "\027.chirp.common.ErrorCode\022\027\n\017typing_user_" +
-      "ids\030\002 \003(\t\022\021\n\tusernames\030\003 \003(\t\"\325\001\n\010FileInf" +
-      "o\022\017\n\007file_id\030\001 \001(\t\022\020\n\010filename\030\002 \001(\t\022\021\n\t" +
-      "file_size\030\003 \001(\003\022\021\n\tmime_type\030\004 \001(\t\022\020\n\010ch" +
-      "ecksum\030\005 \001(\t\022\023\n\013storage_url\030\006 \001(\t\022\023\n\013upl" +
-      "oaded_at\030\007 \001(\003\022\023\n\013uploaded_by\030\010 \001(\t\022\r\n\005w" +
-      "idth\030\t \001(\005\022\016\n\006height\030\n \001(\005\022\020\n\010duration\030\013" +
-      " \001(\005\"\270\001\n\030PrepareFileUploadRequest\022\017\n\007use" +
-      "r_id\030\001 \001(\t\022\022\n\nchannel_id\030\002 \001(\t\022-\n\014channe" +
-      "l_type\030\003 \001(\0162\027.chirp.chat.ChannelType\022\020\n" +
-      "\010filename\030\004 \001(\t\022\021\n\tfile_size\030\005 \001(\003\022\021\n\tmi" +
-      "me_type\030\006 \001(\t\022\020\n\010checksum\030\007 \001(\t\"\203\002\n\031Prep" +
-      "areFileUploadResponse\022%\n\004code\030\001 \001(\0162\027.ch" +
-      "irp.common.ErrorCode\022\021\n\tupload_id\030\002 \001(\t\022" +
-      "\022\n\nupload_url\030\003 \001(\t\022\022\n\nexpires_at\030\004 \001(\003\022" +
-      "\017\n\007file_id\030\005 \001(\t\022C\n\007headers\030\006 \003(\01322.chir" +
-      "p.chat.PrepareFileUploadResponse.Headers" +
-      "Entry\032.\n\014HeadersEntry\022\013\n\003key\030\001 \001(\t\022\r\n\005va" +
-      "lue\030\002 \001(\t:\0028\001\"R\n\030ConfirmFileUploadReques" +
-      "t\022\021\n\tupload_id\030\001 \001(\t\022\017\n\007file_id\030\002 \001(\t\022\022\n" +
-      "\nmessage_id\030\003 \001(\t\"\200\001\n\031ConfirmFileUploadR" +
-      "esponse\022%\n\004code\030\001 \001(\0162\027.chirp.common.Err" +
-      "orCode\022\'\n\tfile_info\030\002 \001(\0132\024.chirp.chat.F" +
-      "ileInfo\022\023\n\013server_time\030\003 \001(\003\":\n\026GetFileD" +
-      "ownloadRequest\022\017\n\007file_id\030\001 \001(\t\022\017\n\007user_" +
-      "id\030\002 \001(\t\"\223\001\n\027GetFileDownloadResponse\022%\n\004" +
-      "code\030\001 \001(\0162\027.chirp.common.ErrorCode\022\024\n\014d" +
-      "ownload_url\030\002 \001(\t\022\022\n\nexpires_at\030\003 \001(\003\022\'\n" +
-      "\tfile_info\030\004 \001(\0132\024.chirp.chat.FileInfo\"Z" +
-      "\n\016FileAttachment\022\"\n\004file\030\001 \001(\0132\024.chirp.c" +
-      "hat.FileInfo\022\022\n\nis_spoiler\030\002 \001(\010\022\020\n\010alt_" +
-      "text\030\003 \001(\t\"m\n\013FileMessage\022-\n\014base_messag" +
-      "e\030\001 \001(\0132\027.chirp.chat.ChatMessage\022/\n\013atta" +
-      "chments\030\002 \003(\0132\032.chirp.chat.FileAttachmen" +
-      "t\"\306\001\n\014ItemMetadata\022\017\n\007item_id\030\001 \001(\t\022\021\n\ti" +
-      "tem_name\030\002 \001(\t\022\017\n\007quality\030\003 \001(\005\022\020\n\010icon_" +
-      "url\030\004 \001(\t\022\r\n\005count\030\005 \001(\005\0222\n\005attrs\030\006 \003(\0132" +
-      "#.chirp.chat.ItemMetadata.AttrsEntry\032,\n\n" +
-      "AttrsEntry\022\013\n\003key\030\001 \001(\t\022\r\n\005value\030\002 \001(\t:\002" +
-      "8\001\"k\n\rSkillMetadata\022\020\n\010skill_id\030\001 \001(\t\022\022\n" +
-      "\nskill_name\030\002 \001(\t\022\r\n\005level\030\003 \001(\005\022\020\n\010icon" +
-      "_url\030\004 \001(\t\022\023\n\013description\030\005 \001(\t\"~\n\023Achie" +
-      "vementMetadata\022\026\n\016achievement_id\030\001 \001(\t\022\030" +
-      "\n\020achievement_name\030\002 \001(\t\022\023\n\013description\030" +
-      "\003 \001(\t\022\020\n\010icon_url\030\004 \001(\t\022\016\n\006rarity\030\005 \001(\005\"" +
-      "h\n\rTradeMetadata\022\020\n\010trade_id\030\001 \001(\t\022\016\n\006st" +
-      "atus\030\002 \001(\t\022\016\n\006amount\030\003 \001(\003\022\021\n\titem_name\030" +
-      "\004 \001(\t\022\022\n\nitem_count\030\005 \001(\005\"\213\001\n\024GuildRecru" +
-      "itMetadata\022\020\n\010guild_id\030\001 \001(\t\022\022\n\nguild_na" +
-      "me\030\002 \001(\t\022\r\n\005level\030\003 \001(\005\022\024\n\014member_count\030" +
-      "\004 \001(\005\022\023\n\013max_members\030\005 \001(\005\022\023\n\013descriptio" +
-      "n\030\006 \001(\t\"t\n\024PartyRecruitMetadata\022\020\n\010party" +
-      "_id\030\001 \001(\t\022\024\n\014dungeon_name\030\002 \001(\t\022\016\n\006neede" +
-      "d\030\003 \001(\005\022\017\n\007current\030\004 \001(\005\022\023\n\013leader_name\030" +
-      "\005 \001(\t\"Y\n\021NpcDialogMetadata\022\016\n\006npc_id\030\001 \001" +
-      "(\t\022\020\n\010npc_name\030\002 \001(\t\022\021\n\tdialog_id\030\003 \001(\t\022" +
-      "\017\n\007options\030\004 \003(\t\"O\n\rCoordMetadata\022\016\n\006map" +
-      "_id\030\001 \001(\t\022\t\n\001x\030\002 \001(\005\022\t\n\001y\030\003 \001(\005\022\t\n\001z\030\004 \001" +
-      "(\005\022\r\n\005label\030\005 \001(\t\"U\n\025SetChannelMuteReque" +
-      "st\022-\n\014channel_type\030\001 \001(\0162\027.chirp.chat.Ch" +
-      "annelType\022\r\n\005muted\030\002 \001(\010\"}\n\026SetChannelMu" +
-      "teResponse\022%\n\004code\030\001 \001(\0162\027.chirp.common." +
-      "ErrorCode\022-\n\014channel_type\030\002 \001(\0162\027.chirp." +
-      "chat.ChannelType\022\r\n\005muted\030\003 \001(\010\"P\n\020Chann" +
-      "elMuteState\022-\n\014channel_type\030\001 \001(\0162\027.chir" +
-      "p.chat.ChannelType\022\r\n\005muted\030\002 \001(\010\"\030\n\026Get" +
-      "ChannelMutesRequest\"n\n\027GetChannelMutesRe" +
+      "\022\n\nmessage_id\030\002 \001(\t\022\024\n\014report_count\030\003 \001(" +
+      "\005\"J\n\020JoinGroupRequest\022\017\n\007user_id\030\001 \001(\t\022\020" +
+      "\n\010group_id\030\002 \001(\t\022\023\n\013invite_code\030\003 \001(\t\"u\n" +
+      "\021JoinGroupResponse\022%\n\004code\030\001 \001(\0162\027.chirp" +
+      ".common.ErrorCode\022$\n\005group\030\002 \001(\0132\025.chirp" +
+      ".chat.GroupInfo\022\023\n\013server_time\030\003 \001(\003\"6\n\021" +
+      "LeaveGroupRequest\022\017\n\007user_id\030\001 \001(\t\022\020\n\010gr" +
+      "oup_id\030\002 \001(\t\"P\n\022LeaveGroupResponse\022%\n\004co" +
+      "de\030\001 \001(\0162\027.chirp.common.ErrorCode\022\023\n\013ser" +
+      "ver_time\030\002 \001(\003\"S\n\021KickMemberRequest\022\024\n\014r" +
+      "equester_id\030\001 \001(\t\022\020\n\010group_id\030\002 \001(\t\022\026\n\016t" +
+      "arget_user_id\030\003 \001(\t\"P\n\022KickMemberRespons" +
+      "e\022%\n\004code\030\001 \001(\0162\027.chirp.common.ErrorCode" +
+      "\022\023\n\013server_time\030\002 \001(\003\"\'\n\023GetGroupInfoReq" +
+      "uest\022\020\n\010group_id\030\001 \001(\t\"c\n\024GetGroupInfoRe" +
       "sponse\022%\n\004code\030\001 \001(\0162\027.chirp.common.Erro" +
-      "rCode\022,\n\006states\030\002 \003(\0132\034.chirp.chat.Chann" +
-      "elMuteState\"3\n\031BlockMessageSenderRequest" +
-      "\022\026\n\016target_user_id\030\001 \001(\t\"[\n\032BlockMessage" +
-      "SenderResponse\022%\n\004code\030\001 \001(\0162\027.chirp.com" +
-      "mon.ErrorCode\022\026\n\016target_user_id\030\002 \001(\t\"5\n" +
-      "\033UnblockMessageSenderRequest\022\026\n\016target_u" +
-      "ser_id\030\001 \001(\t\"]\n\034UnblockMessageSenderResp" +
-      "onse\022%\n\004code\030\001 \001(\0162\027.chirp.common.ErrorC" +
-      "ode\022\026\n\016target_user_id\030\002 \001(\t\"\032\n\030GetBlocke" +
-      "dSendersRequest\"[\n\031GetBlockedSendersResp" +
-      "onse\022%\n\004code\030\001 \001(\0162\027.chirp.common.ErrorC" +
-      "ode\022\027\n\017target_user_ids\030\002 \003(\t\"/\n\026WordFilt" +
-      "erFetchRequest\022\025\n\rknown_version\030\001 \001(\003\"\221\001" +
-      "\n\021WordFilterLexicon\022\017\n\007version\030\001 \001(\003\022\017\n\007" +
-      "enabled\030\002 \001(\010\0224\n\006policy\030\003 \001(\0162$.chirp.ch" +
-      "at.WordFilterDeliveryPolicy\022\023\n\013replaceme" +
-      "nt\030\004 \001(\t\022\017\n\007lexicon\030\005 \001(\t\"p\n\027WordFilterF" +
-      "etchResponse\022%\n\004code\030\001 \001(\0162\027.chirp.commo" +
-      "n.ErrorCode\022.\n\007lexicon\030\002 \001(\0132\035.chirp.cha" +
-      "t.WordFilterLexicon\"H\n\026WordFilterUpdateN" +
-      "otify\022.\n\007lexicon\030\001 \001(\0132\035.chirp.chat.Word" +
-      "FilterLexicon\"\226\001\n\024SearchMessageRequest\022\017",
-      "\n\007keyword\030\001 \001(\t\022\022\n\nchannel_id\030\002 \001(\t\022\025\n\rc" +
-      "ontent_types\030\003 \003(\005\022\030\n\020before_timestamp\030\004" +
-      " \001(\003\022\031\n\021before_message_id\030\005 \001(\t\022\r\n\005limit" +
-      "\030\006 \001(\005\"\260\001\n\022SearchMessageMatch\022\022\n\nmessage" +
-      "_id\030\001 \001(\t\022\022\n\nchannel_id\030\002 \001(\t\022\024\n\014channel" +
-      "_type\030\003 \001(\005\022\021\n\tsender_id\030\004 \001(\t\022\023\n\013sender" +
-      "_kind\030\005 \001(\005\022\020\n\010msg_type\030\006 \001(\005\022\021\n\ttimesta" +
-      "mp\030\007 \001(\003\022\017\n\007content\030\010 \001(\t\"\201\001\n\025SearchMess" +
+      "rCode\022$\n\005group\030\002 \001(\0132\025.chirp.chat.GroupI" +
+      "nfo\"I\n\026GetGroupMembersRequest\022\020\n\010group_i" +
+      "d\030\001 \001(\t\022\r\n\005limit\030\002 \001(\005\022\016\n\006offset\030\003 \001(\005\"\177" +
+      "\n\027GetGroupMembersResponse\022%\n\004code\030\001 \001(\0162" +
+      "\027.chirp.common.ErrorCode\022(\n\007members\030\002 \003(" +
+      "\0132\027.chirp.chat.GroupMember\022\023\n\013total_coun" +
+      "t\030\003 \001(\005\"F\n\024GetUserGroupsRequest\022\017\n\007user_" +
+      "id\030\001 \001(\t\022\r\n\005limit\030\002 \001(\005\022\016\n\006offset\030\003 \001(\005\"" +
+      "z\n\025GetUserGroupsResponse\022%\n\004code\030\001 \001(\0162\027" +
+      ".chirp.common.ErrorCode\022%\n\006groups\030\002 \003(\0132" +
+      "\025.chirp.chat.GroupInfo\022\023\n\013total_count\030\003 " +
+      "\001(\005\"T\n\024InviteToGroupRequest\022\022\n\ninviter_i" +
+      "d\030\001 \001(\t\022\020\n\010group_id\030\002 \001(\t\022\026\n\016target_user" +
+      "_id\030\003 \001(\t\"S\n\025InviteToGroupResponse\022%\n\004co" +
+      "de\030\001 \001(\0162\027.chirp.common.ErrorCode\022\023\n\013ser" +
+      "ver_time\030\002 \001(\003\"M\n\022GroupCreatedNotify\022$\n\005" +
+      "group\030\001 \001(\0132\025.chirp.chat.GroupInfo\022\021\n\tti" +
+      "mestamp\030\002 \001(\003\"g\n\027GroupMemberJoinedNotify" +
+      "\022\020\n\010group_id\030\001 \001(\t\022\'\n\006member\030\002 \001(\0132\027.chi" +
+      "rp.chat.GroupMember\022\021\n\ttimestamp\030\003 \001(\003\"M" +
+      "\n\025GroupMemberLeftNotify\022\020\n\010group_id\030\001 \001(" +
+      "\t\022\017\n\007user_id\030\002 \001(\t\022\021\n\ttimestamp\030\003 \001(\003\"b\n" +
+      "\027GroupMemberKickedNotify\022\020\n\010group_id\030\001 \001" +
+      "(\t\022\017\n\007user_id\030\002 \001(\t\022\021\n\tkicked_by\030\003 \001(\t\022\021" +
+      "\n\ttimestamp\030\004 \001(\003\"M\n\022GroupUpdatedNotify\022" +
+      "$\n\005group\030\001 \001(\0132\025.chirp.chat.GroupInfo\022\021\n" +
+      "\ttimestamp\030\002 \001(\003\"\221\001\n\017MarkReadRequest\022\017\n\007" +
+      "user_id\030\001 \001(\t\022\022\n\nchannel_id\030\002 \001(\t\022-\n\014cha" +
+      "nnel_type\030\003 \001(\0162\027.chirp.chat.ChannelType" +
+      "\022\022\n\nmessage_id\030\004 \001(\t\022\026\n\016read_timestamp\030\005" +
+      " \001(\003\"N\n\020MarkReadResponse\022%\n\004code\030\001 \001(\0162\027" +
+      ".chirp.common.ErrorCode\022\023\n\013server_time\030\002" +
+      " \001(\003\"C\n\013ReadReceipt\022\017\n\007user_id\030\001 \001(\t\022\022\n\n" +
+      "message_id\030\002 \001(\t\022\017\n\007read_at\030\003 \001(\003\",\n\026Get" +
+      "ReadReceiptsRequest\022\022\n\nmessage_id\030\001 \001(\t\"" +
+      "k\n\027GetReadReceiptsResponse\022%\n\004code\030\001 \001(\016" +
+      "2\027.chirp.common.ErrorCode\022)\n\010receipts\030\002 " +
+      "\003(\0132\027.chirp.chat.ReadReceipt\"(\n\025GetUnrea" +
+      "dCountRequest\022\017\n\007user_id\030\001 \001(\t\"\225\002\n\026GetUn" +
+      "readCountResponse\022%\n\004code\030\001 \001(\0162\027.chirp." +
+      "common.ErrorCode\022\024\n\014total_unread\030\002 \001(\005\022B" +
+      "\n\010channels\030\003 \003(\01320.chirp.chat.GetUnreadC" +
+      "ountResponse.ChannelUnread\032z\n\rChannelUnr" +
+      "ead\022\022\n\nchannel_id\030\001 \001(\t\022-\n\014channel_type\030" +
+      "\002 \001(\0162\027.chirp.chat.ChannelType\022\r\n\005count\030" +
+      "\003 \001(\005\022\027\n\017last_message_id\030\004 \001(\t\"\223\001\n\021Messa" +
+      "geReadNotify\022\022\n\nchannel_id\030\001 \001(\t\022-\n\014chan" +
+      "nel_type\030\002 \001(\0162\027.chirp.chat.ChannelType\022" +
+      "\022\n\nmessage_id\030\003 \001(\t\022\026\n\016reader_user_id\030\004 " +
+      "\001(\t\022\017\n\007read_at\030\005 \001(\003\"\220\001\n\024TypingIndicator" +
+      "State\022\022\n\nchannel_id\030\001 \001(\t\022-\n\014channel_typ" +
+      "e\030\002 \001(\0162\027.chirp.chat.ChannelType\022\017\n\007user" +
+      "_id\030\003 \001(\t\022\021\n\tis_typing\030\004 \001(\010\022\021\n\ttimestam" +
+      "p\030\005 \001(\003\"[\n\nMessageAck\022\022\n\nmessage_id\030\001 \001(" +
+      "\t\022\017\n\007user_id\030\002 \001(\t\022\023\n\013received_at\030\003 \001(\003\022" +
+      "\023\n\013delivery_id\030\004 \001(\t\"\236\001\n\013MessageNack\022\022\n\n" +
+      "message_id\030\001 \001(\t\022\017\n\007user_id\030\002 \001(\t\022+\n\nerr" +
+      "or_code\030\003 \001(\0162\027.chirp.common.ErrorCode\022\025" +
+      "\n\rerror_message\030\004 \001(\t\022\021\n\tfailed_at\030\005 \001(\003" +
+      "\022\023\n\013delivery_id\030\006 \001(\t\"\324\001\n\016DeliveryStatus" +
+      "\022\022\n\nmessage_id\030\001 \001(\t\022\017\n\007user_id\030\002 \001(\t\0221\n" +
+      "\006status\030\003 \001(\0162!.chirp.chat.DeliveryStatu" +
+      "s.Status\022\021\n\ttimestamp\030\004 \001(\003\022\023\n\013retry_cou" +
+      "nt\030\005 \001(\005\"B\n\006Status\022\013\n\007PENDING\020\000\022\r\n\tDELIV" +
+      "ERED\020\001\022\n\n\006FAILED\020\002\022\020\n\014ACKNOWLEDGED\020\003\"G\n\017" +
+      "PaginationToken\022\016\n\006cursor\030\001 \001(\t\022\021\n\ttimes" +
+      "tamp\030\002 \001(\003\022\021\n\tpage_size\030\003 \001(\005\"\333\001\n\023GetHis" +
+      "toryRequestV2\022\017\n\007user_id\030\001 \001(\t\022-\n\014channe" +
+      "l_type\030\002 \001(\0162\027.chirp.chat.ChannelType\022\022\n" +
+      "\nchannel_id\030\003 \001(\t\022/\n\npagination\030\004 \001(\0132\033." +
+      "chirp.chat.PaginationToken\022\r\n\005limit\030\005 \001(" +
+      "\005\022\027\n\017include_deleted\030\006 \001(\010\022\027\n\017since_time" +
+      "stamp\030\007 \001(\003\"\277\001\n\024GetHistoryResponseV2\022%\n\004" +
+      "code\030\001 \001(\0162\027.chirp.common.ErrorCode\022)\n\010m" +
+      "essages\030\002 \003(\0132\027.chirp.chat.ChatMessage\022." +
+      "\n\tnext_page\030\003 \001(\0132\033.chirp.chat.Paginatio" +
+      "nToken\022\020\n\010has_more\030\004 \001(\010\022\023\n\013total_count\030" +
+      "\005 \001(\005\"R\n\023TrackMessageRequest\022\022\n\nmessage_" +
+      "id\030\001 \001(\t\022\023\n\013receiver_id\030\002 \001(\t\022\022\n\nexpires" +
+      "_at\030\003 \001(\003\"g\n\024TrackMessageResponse\022%\n\004cod" +
+      "e\030\001 \001(\0162\027.chirp.common.ErrorCode\022\023\n\013trac" +
+      "king_id\030\002 \001(\t\022\023\n\013server_time\030\003 \001(\003\"r\n\022Ch" +
+      "annelPermissions\022\020\n\010can_read\030\001 \001(\010\022\021\n\tca" +
+      "n_write\030\002 \001(\010\022\021\n\tcan_speak\030\003 \001(\010\022\020\n\010can_" +
+      "join\030\004 \001(\010\022\022\n\ncan_manage\030\005 \001(\010\"\341\001\n\027Permi" +
+      "ssionOverrideEntry\022(\n\004type\030\001 \001(\0162\032.chirp" +
+      ".chat.PermissionType\022\n\n\002id\030\002 \001(\t\0223\n\013perm" +
+      "issions\030\003 \001(\0132\036.chirp.chat.ChannelPermis" +
+      "sions\022-\n\005allow\030\004 \001(\0162\036.chirp.chat.Permis" +
+      "sionOverride\022,\n\004deny\030\005 \001(\0162\036.chirp.chat." +
+      "PermissionOverride\"\202\001\n\017ChannelCategory\022\023" +
+      "\n\013category_id\030\001 \001(\t\022\020\n\010group_id\030\002 \001(\t\022\014\n" +
+      "\004name\030\003 \001(\t\022\020\n\010position\030\004 \001(\005\022\024\n\014is_coll" +
+      "apsed\030\005 \001(\010\022\022\n\ncreated_at\030\006 \001(\003\"\333\002\n\007Chan" +
+      "nel\022\022\n\nchannel_id\030\001 \001(\t\022\020\n\010group_id\030\002 \001(" +
+      "\t\022\023\n\013category_id\030\003 \001(\t\022\014\n\004name\030\004 \001(\t\022%\n\004" +
+      "kind\030\005 \001(\0162\027.chirp.chat.ChannelKind\022\020\n\010p" +
+      "osition\030\006 \001(\005\022\023\n\013description\030\007 \001(\t\022\017\n\007is" +
+      "_nsfw\030\010 \001(\010\022\022\n\ncreated_at\030\t \001(\003\022\030\n\020slowm" +
+      "ode_seconds\030\n \001(\003\022A\n\024permission_override" +
+      "s\030\013 \003(\0132#.chirp.chat.PermissionOverrideE" +
+      "ntry\022\017\n\007bitrate\030\014 \001(\005\022\022\n\nuser_limit\030\r \001(" +
+      "\005\022\022\n\nrtc_region\030\016 \001(\t\"\362\001\n\024CreateChannelR" +
+      "equest\022\020\n\010group_id\030\001 \001(\t\022\024\n\014requester_id" +
+      "\030\002 \001(\t\022\014\n\004name\030\003 \001(\t\022%\n\004kind\030\004 \001(\0162\027.chi" +
+      "rp.chat.ChannelKind\022\023\n\013category_id\030\005 \001(\t" +
+      "\022\023\n\013description\030\006 \001(\t\022A\n\024permission_over" +
+      "rides\030\007 \003(\0132#.chirp.chat.PermissionOverr" +
+      "ideEntry\022\020\n\010position\030\010 \001(\005\"y\n\025CreateChan" +
+      "nelResponse\022%\n\004code\030\001 \001(\0162\027.chirp.common" +
+      ".ErrorCode\022$\n\007channel\030\002 \001(\0132\023.chirp.chat" +
+      ".Channel\022\023\n\013server_time\030\003 \001(\003\"\227\002\n\024Update" +
+      "ChannelRequest\022\022\n\nchannel_id\030\001 \001(\t\022\024\n\014re" +
+      "quester_id\030\002 \001(\t\022\021\n\004name\030\003 \001(\tH\000\210\001\001\022\030\n\013d" +
+      "escription\030\004 \001(\tH\001\210\001\001\022\025\n\010position\030\005 \001(\005H" +
+      "\002\210\001\001\022\030\n\013category_id\030\006 \001(\tH\003\210\001\001\022A\n\024permis" +
+      "sion_overrides\030\007 \003(\0132#.chirp.chat.Permis" +
+      "sionOverrideEntryB\007\n\005_nameB\016\n\014_descripti" +
+      "onB\013\n\t_positionB\016\n\014_category_id\"y\n\025Updat" +
+      "eChannelResponse\022%\n\004code\030\001 \001(\0162\027.chirp.c" +
+      "ommon.ErrorCode\022$\n\007channel\030\002 \001(\0132\023.chirp" +
+      ".chat.Channel\022\023\n\013server_time\030\003 \001(\003\"@\n\024De" +
+      "leteChannelRequest\022\022\n\nchannel_id\030\001 \001(\t\022\024" +
+      "\n\014requester_id\030\002 \001(\t\"S\n\025DeleteChannelRes" +
+      "ponse\022%\n\004code\030\001 \001(\0162\027.chirp.common.Error" +
+      "Code\022\023\n\013server_time\030\002 \001(\003\"7\n\022GetChannels" +
+      "Request\022\020\n\010group_id\030\001 \001(\t\022\017\n\007user_id\030\002 \001" +
+      "(\t\"\224\001\n\023GetChannelsResponse\022%\n\004code\030\001 \001(\016" +
+      "2\027.chirp.common.ErrorCode\022%\n\010channels\030\002 " +
+      "\003(\0132\023.chirp.chat.Channel\022/\n\ncategories\030\003" +
+      " \003(\0132\033.chirp.chat.ChannelCategory\"_\n\025Cre" +
+      "ateCategoryRequest\022\020\n\010group_id\030\001 \001(\t\022\024\n\014" +
+      "requester_id\030\002 \001(\t\022\014\n\004name\030\003 \001(\t\022\020\n\010posi" +
+      "tion\030\004 \001(\005\"\203\001\n\026CreateCategoryResponse\022%\n" +
+      "\004code\030\001 \001(\0162\027.chirp.common.ErrorCode\022-\n\010" +
+      "category\030\002 \001(\0132\033.chirp.chat.ChannelCateg" +
+      "ory\022\023\n\013server_time\030\003 \001(\003\"O\n\024ChannelCreat" +
+      "edNotify\022$\n\007channel\030\001 \001(\0132\023.chirp.chat.C" +
+      "hannel\022\021\n\ttimestamp\030\002 \001(\003\"O\n\024ChannelUpda" +
+      "tedNotify\022$\n\007channel\030\001 \001(\0132\023.chirp.chat." +
+      "Channel\022\021\n\ttimestamp\030\002 \001(\003\"O\n\024ChannelDel" +
+      "etedNotify\022\022\n\nchannel_id\030\001 \001(\t\022\020\n\010group_" +
+      "id\030\002 \001(\t\022\021\n\ttimestamp\030\003 \001(\003\"l\n\017MessageRe" +
+      "action\022\022\n\nmessage_id\030\001 \001(\t\022\r\n\005emoji\030\002 \001(" +
+      "\t\022\r\n\005count\030\003 \001(\005\022\020\n\010user_ids\030\004 \003(\t\022\025\n\rre" +
+      "acted_by_me\030\005 \001(\010\"H\n\022AddReactionRequest\022" +
+      "\022\n\nmessage_id\030\001 \001(\t\022\017\n\007user_id\030\002 \001(\t\022\r\n\005" +
+      "emoji\030\003 \001(\t\"\200\001\n\023AddReactionResponse\022%\n\004c" +
+      "ode\030\001 \001(\0162\027.chirp.common.ErrorCode\022-\n\010re" +
+      "action\030\002 \001(\0132\033.chirp.chat.MessageReactio" +
+      "n\022\023\n\013server_time\030\003 \001(\003\"K\n\025RemoveReaction" +
+      "Request\022\022\n\nmessage_id\030\001 \001(\t\022\017\n\007user_id\030\002" +
+      " \001(\t\022\r\n\005emoji\030\003 \001(\t\"T\n\026RemoveReactionRes" +
+      "ponse\022%\n\004code\030\001 \001(\0162\027.chirp.common.Error" +
+      "Code\022\023\n\013server_time\030\002 \001(\003\"8\n\023GetReaction" +
+      "sRequest\022\022\n\nmessage_id\030\001 \001(\t\022\r\n\005emoji\030\002 " +
+      "\001(\t\"m\n\024GetReactionsResponse\022%\n\004code\030\001 \001(" +
+      "\0162\027.chirp.common.ErrorCode\022.\n\treactions\030" +
+      "\002 \003(\0132\033.chirp.chat.MessageReaction\"p\n\023Re" +
+      "actionAddedNotify\022\022\n\nmessage_id\030\001 \001(\t\022\022\n" +
+      "\nchannel_id\030\002 \001(\t\022\r\n\005emoji\030\003 \001(\t\022\017\n\007user" +
+      "_id\030\004 \001(\t\022\021\n\ttimestamp\030\005 \001(\003\"r\n\025Reaction" +
+      "RemovedNotify\022\022\n\nmessage_id\030\001 \001(\t\022\022\n\ncha" +
+      "nnel_id\030\002 \001(\t\022\r\n\005emoji\030\003 \001(\t\022\017\n\007user_id\030" +
+      "\004 \001(\t\022\021\n\ttimestamp\030\005 \001(\003\"a\n\007Mention\022%\n\004t" +
+      "ype\030\001 \001(\0162\027.chirp.chat.MentionType\022\n\n\002id" +
+      "\030\002 \001(\t\022\023\n\013start_index\030\003 \001(\005\022\016\n\006length\030\004 " +
+      "\001(\005\"\263\001\n\rChatMessageEx\022-\n\014base_message\030\001 " +
+      "\001(\0132\027.chirp.chat.ChatMessage\022%\n\010mentions" +
+      "\030\002 \003(\0132\023.chirp.chat.Mention\022\032\n\022mentioned" +
+      "_user_ids\030\003 \003(\t\022\031\n\021mentions_everyone\030\004 \001" +
+      "(\010\022\025\n\rmentions_here\030\005 \001(\010\"n\n\021MentionSugg" +
+      "estion\022\024\n\014display_text\030\001 \001(\t\022\n\n\002id\030\002 \001(\t" +
+      "\022%\n\004type\030\003 \001(\0162\027.chirp.chat.MentionType\022" +
+      "\020\n\010icon_url\030\004 \001(\t\"R\n\034GetMentionSuggestio" +
+      "nsRequest\022\017\n\007user_id\030\001 \001(\t\022\022\n\nchannel_id" +
+      "\030\002 \001(\t\022\r\n\005query\030\003 \001(\t\"z\n\035GetMentionSugge" +
+      "stionsResponse\022%\n\004code\030\001 \001(\0162\027.chirp.com" +
+      "mon.ErrorCode\0222\n\013suggestions\030\002 \003(\0132\035.chi" +
+      "rp.chat.MentionSuggestion\"]\n\013MessageEdit" +
+      "\022\023\n\013old_content\030\001 \001(\014\022\023\n\013new_content\030\002 \001" +
+      "(\014\022\021\n\tedited_at\030\003 \001(\003\022\021\n\tedited_by\030\004 \001(\t" +
+      "\"\211\004\n\017ChatMessageFull\022\022\n\nmessage_id\030\001 \001(\t" +
+      "\022\021\n\tsender_id\030\002 \001(\t\022\023\n\013receiver_id\030\003 \001(\t" +
+      "\022-\n\014channel_type\030\004 \001(\0162\027.chirp.chat.Chan" +
+      "nelType\022\022\n\nchannel_id\030\005 \001(\t\022%\n\010msg_type\030" +
+      "\006 \001(\0162\023.chirp.chat.MsgType\022\017\n\007content\030\007 " +
+      "\001(\014\022\021\n\ttimestamp\030\010 \001(\003\022\022\n\nis_deleted\030\t \001" +
+      "(\010\022\022\n\ndeleted_at\030\n \001(\003\022\022\n\ndeleted_by\030\013 \001" +
+      "(\t\022\021\n\tis_edited\030\014 \001(\010\022\021\n\tedited_at\030\r \001(\003" +
+      "\022\022\n\nedit_count\030\016 \001(\005\022-\n\014edit_history\030\017 \003" +
+      "(\0132\027.chirp.chat.MessageEdit\022\033\n\023reply_to_" +
+      "message_id\030\020 \001(\t\022\023\n\013reply_count\030\021 \001(\005\022.\n" +
+      "\treactions\030\022 \003(\0132\033.chirp.chat.MessageRea" +
+      "ction\022%\n\010mentions\030\023 \003(\0132\023.chirp.chat.Men" +
+      "tion\"f\n\022EditMessageRequest\022\022\n\nmessage_id" +
+      "\030\001 \001(\t\022\017\n\007user_id\030\002 \001(\t\022\023\n\013new_content\030\003" +
+      " \001(\014\022\026\n\016edit_timestamp\030\004 \001(\003\"\177\n\023EditMess" +
       "ageResponse\022%\n\004code\030\001 \001(\0162\027.chirp.common" +
-      ".ErrorCode\022/\n\007matches\030\002 \003(\0132\036.chirp.chat" +
-      ".SearchMessageMatch\022\020\n\010has_more\030\003 \001(\010*\310\001" +
-      "\n\007MsgType\022\010\n\004TEXT\020\000\022\t\n\005EMOJI\020\001\022\t\n\005VOICE\020" +
-      "\002\022\t\n\005IMAGE\020\003\022\r\n\tITEM_LINK\020\n\022\016\n\nSKILL_LIN" +
-      "K\020\013\022\017\n\013ACHIEVEMENT\020\014\022\016\n\nNPC_DIALOG\020\r\022\020\n\014" +
-      "TRADE_STATUS\020\016\022\016\n\nCOORD_LINK\020\017\022\021\n\rGUILD_" +
-      "RECRUIT\020\020\022\021\n\rPARTY_RECRUIT\020\021\022\n\n\006SYSTEM\020c" +
-      "*[\n\013ChannelType\022\013\n\007PRIVATE\020\000\022\010\n\004TEAM\020\001\022\t" +
-      "\n\005GUILD\020\002\022\t\n\005WORLD\020\003\022\022\n\016SYSTEM_CHANNEL\020\004" +
-      "\022\013\n\007MARQUEE\020\005*Y\n\010Priority\022\020\n\014PRIORITY_LO" +
-      "W\020\000\022\023\n\017PRIORITY_NORMAL\020\001\022\021\n\rPRIORITY_HIG" +
-      "H\020\002\022\023\n\017PRIORITY_URGENT\020\003*T\n\nSenderKind\022\017" +
-      "\n\013SENDER_USER\020\000\022\021\n\rSENDER_SYSTEM\020\001\022\016\n\nSE" +
-      "NDER_NPC\020\002\022\022\n\016SENDER_SERVICE\020\003*B\n\017GroupM" +
-      "emberRole\022\n\n\006MEMBER\020\000\022\r\n\tMODERATOR\020\001\022\t\n\005" +
-      "ADMIN\020\002\022\t\n\005OWNER\020\003*\213\001\n\013ChannelKind\022\025\n\021CH" +
-      "ANNEL_KIND_TEXT\020\000\022\026\n\022CHANNEL_KIND_VOICE\020" +
-      "\001\022\035\n\031CHANNEL_KIND_ANNOUNCEMENT\020\002\022\026\n\022CHAN" +
-      "NEL_KIND_STAGE\020\003\022\026\n\022CHANNEL_KIND_FORUM\020\004" +
-      "*D\n\016PermissionType\022\030\n\024PERMISSION_TYPE_RO" +
-      "LE\020\000\022\030\n\024PERMISSION_TYPE_USER\020\001*6\n\022Permis" +
-      "sionOverride\022\013\n\007INHERIT\020\000\022\t\n\005ALLOW\020\001\022\010\n\004" +
-      "DENY\020\002*\207\001\n\013MentionType\022\025\n\021MENTION_TYPE_U" +
-      "SER\020\000\022\025\n\021MENTION_TYPE_ROLE\020\001\022\030\n\024MENTION_" +
-      "TYPE_CHANNEL\020\002\022\031\n\025MENTION_TYPE_EVERYONE\020" +
-      "\003\022\025\n\021MENTION_TYPE_HERE\020\004*x\n\030WordFilterDe" +
-      "liveryPolicy\022\036\n\032WORD_FILTER_POLICY_REPLA" +
-      "CE\020\000\022\035\n\031WORD_FILTER_POLICY_REJECT\020\001\022\035\n\031W" +
-      "ORD_FILTER_POLICY_RECORD\020\002B$Z\"github.com" +
-      "/cui/chirp/proto/go/chatb\006proto3"
+      ".ErrorCode\022,\n\007message\030\002 \001(\0132\033.chirp.chat" +
+      ".ChatMessageFull\022\023\n\013server_time\030\003 \001(\003\"S\n" +
+      "\024DeleteMessageRequest\022\022\n\nmessage_id\030\001 \001(" +
+      "\t\022\017\n\007user_id\030\002 \001(\t\022\026\n\016is_hard_delete\030\003 \001" +
+      "(\010\"t\n\025DeleteMessageResponse\022%\n\004code\030\001 \001(" +
+      "\0162\027.chirp.common.ErrorCode\022\023\n\013server_tim" +
+      "e\030\002 \001(\003\022\037\n\027was_permanently_deleted\030\003 \001(\010" +
+      "\"R\n\021BulkDeleteRequest\022\023\n\013message_ids\030\001 \003" +
+      "(\t\022\024\n\014requester_id\030\002 \001(\t\022\022\n\nchannel_id\030\003" +
+      " \001(\t\"\203\001\n\022BulkDeleteResponse\022%\n\004code\030\001 \001(" +
+      "\0162\027.chirp.common.ErrorCode\022\025\n\rdeleted_co" +
+      "unt\030\002 \001(\005\022\032\n\022failed_message_ids\030\003 \003(\t\022\023\n" +
+      "\013server_time\030\004 \001(\003\"x\n\023MessageEditedNotif" +
+      "y\022\022\n\nmessage_id\030\001 \001(\t\022\022\n\nchannel_id\030\002 \001(" +
+      "\t\022\023\n\013new_content\030\003 \001(\014\022\021\n\tedited_at\030\004 \001(" +
+      "\003\022\021\n\tedited_by\030\005 \001(\t\"~\n\024MessageDeletedNo" +
+      "tify\022\022\n\nmessage_id\030\001 \001(\t\022\022\n\nchannel_id\030\002" +
+      " \001(\t\022\026\n\016is_hard_delete\030\003 \001(\010\022\022\n\ndeleted_" +
+      "by\030\004 \001(\t\022\022\n\ndeleted_at\030\005 \001(\003\"\235\001\n\017TypingI" +
+      "ndicator\022\022\n\nchannel_id\030\001 \001(\t\022-\n\014channel_" +
+      "type\030\002 \001(\0162\027.chirp.chat.ChannelType\022\017\n\007u" +
+      "ser_id\030\003 \001(\t\022\020\n\010username\030\004 \001(\t\022\021\n\tis_typ" +
+      "ing\030\005 \001(\010\022\021\n\ttimestamp\030\006 \001(\003\"Z\n\025GetTypin" +
+      "gUsersRequest\022\022\n\nchannel_id\030\001 \001(\t\022-\n\014cha" +
+      "nnel_type\030\002 \001(\0162\027.chirp.chat.ChannelType" +
+      "\"k\n\026GetTypingUsersResponse\022%\n\004code\030\001 \001(\016" +
+      "2\027.chirp.common.ErrorCode\022\027\n\017typing_user" +
+      "_ids\030\002 \003(\t\022\021\n\tusernames\030\003 \003(\t\"\325\001\n\010FileIn" +
+      "fo\022\017\n\007file_id\030\001 \001(\t\022\020\n\010filename\030\002 \001(\t\022\021\n" +
+      "\tfile_size\030\003 \001(\003\022\021\n\tmime_type\030\004 \001(\t\022\020\n\010c" +
+      "hecksum\030\005 \001(\t\022\023\n\013storage_url\030\006 \001(\t\022\023\n\013up" +
+      "loaded_at\030\007 \001(\003\022\023\n\013uploaded_by\030\010 \001(\t\022\r\n\005" +
+      "width\030\t \001(\005\022\016\n\006height\030\n \001(\005\022\020\n\010duration\030" +
+      "\013 \001(\005\"\270\001\n\030PrepareFileUploadRequest\022\017\n\007us" +
+      "er_id\030\001 \001(\t\022\022\n\nchannel_id\030\002 \001(\t\022-\n\014chann" +
+      "el_type\030\003 \001(\0162\027.chirp.chat.ChannelType\022\020" +
+      "\n\010filename\030\004 \001(\t\022\021\n\tfile_size\030\005 \001(\003\022\021\n\tm" +
+      "ime_type\030\006 \001(\t\022\020\n\010checksum\030\007 \001(\t\"\203\002\n\031Pre" +
+      "pareFileUploadResponse\022%\n\004code\030\001 \001(\0162\027.c" +
+      "hirp.common.ErrorCode\022\021\n\tupload_id\030\002 \001(\t" +
+      "\022\022\n\nupload_url\030\003 \001(\t\022\022\n\nexpires_at\030\004 \001(\003" +
+      "\022\017\n\007file_id\030\005 \001(\t\022C\n\007headers\030\006 \003(\01322.chi" +
+      "rp.chat.PrepareFileUploadResponse.Header" +
+      "sEntry\032.\n\014HeadersEntry\022\013\n\003key\030\001 \001(\t\022\r\n\005v" +
+      "alue\030\002 \001(\t:\0028\001\"R\n\030ConfirmFileUploadReque" +
+      "st\022\021\n\tupload_id\030\001 \001(\t\022\017\n\007file_id\030\002 \001(\t\022\022" +
+      "\n\nmessage_id\030\003 \001(\t\"\200\001\n\031ConfirmFileUpload" +
+      "Response\022%\n\004code\030\001 \001(\0162\027.chirp.common.Er" +
+      "rorCode\022\'\n\tfile_info\030\002 \001(\0132\024.chirp.chat." +
+      "FileInfo\022\023\n\013server_time\030\003 \001(\003\":\n\026GetFile" +
+      "DownloadRequest\022\017\n\007file_id\030\001 \001(\t\022\017\n\007user" +
+      "_id\030\002 \001(\t\"\223\001\n\027GetFileDownloadResponse\022%\n" +
+      "\004code\030\001 \001(\0162\027.chirp.common.ErrorCode\022\024\n\014" +
+      "download_url\030\002 \001(\t\022\022\n\nexpires_at\030\003 \001(\003\022\'" +
+      "\n\tfile_info\030\004 \001(\0132\024.chirp.chat.FileInfo\"" +
+      "Z\n\016FileAttachment\022\"\n\004file\030\001 \001(\0132\024.chirp." +
+      "chat.FileInfo\022\022\n\nis_spoiler\030\002 \001(\010\022\020\n\010alt" +
+      "_text\030\003 \001(\t\"m\n\013FileMessage\022-\n\014base_messa" +
+      "ge\030\001 \001(\0132\027.chirp.chat.ChatMessage\022/\n\013att" +
+      "achments\030\002 \003(\0132\032.chirp.chat.FileAttachme" +
+      "nt\"\306\001\n\014ItemMetadata\022\017\n\007item_id\030\001 \001(\t\022\021\n\t" +
+      "item_name\030\002 \001(\t\022\017\n\007quality\030\003 \001(\005\022\020\n\010icon" +
+      "_url\030\004 \001(\t\022\r\n\005count\030\005 \001(\005\0222\n\005attrs\030\006 \003(\013" +
+      "2#.chirp.chat.ItemMetadata.AttrsEntry\032,\n" +
+      "\nAttrsEntry\022\013\n\003key\030\001 \001(\t\022\r\n\005value\030\002 \001(\t:" +
+      "\0028\001\"k\n\rSkillMetadata\022\020\n\010skill_id\030\001 \001(\t\022\022" +
+      "\n\nskill_name\030\002 \001(\t\022\r\n\005level\030\003 \001(\005\022\020\n\010ico" +
+      "n_url\030\004 \001(\t\022\023\n\013description\030\005 \001(\t\"~\n\023Achi" +
+      "evementMetadata\022\026\n\016achievement_id\030\001 \001(\t\022" +
+      "\030\n\020achievement_name\030\002 \001(\t\022\023\n\013description" +
+      "\030\003 \001(\t\022\020\n\010icon_url\030\004 \001(\t\022\016\n\006rarity\030\005 \001(\005" +
+      "\"h\n\rTradeMetadata\022\020\n\010trade_id\030\001 \001(\t\022\016\n\006s" +
+      "tatus\030\002 \001(\t\022\016\n\006amount\030\003 \001(\003\022\021\n\titem_name" +
+      "\030\004 \001(\t\022\022\n\nitem_count\030\005 \001(\005\"\213\001\n\024GuildRecr" +
+      "uitMetadata\022\020\n\010guild_id\030\001 \001(\t\022\022\n\nguild_n" +
+      "ame\030\002 \001(\t\022\r\n\005level\030\003 \001(\005\022\024\n\014member_count" +
+      "\030\004 \001(\005\022\023\n\013max_members\030\005 \001(\005\022\023\n\013descripti" +
+      "on\030\006 \001(\t\"t\n\024PartyRecruitMetadata\022\020\n\010part" +
+      "y_id\030\001 \001(\t\022\024\n\014dungeon_name\030\002 \001(\t\022\016\n\006need" +
+      "ed\030\003 \001(\005\022\017\n\007current\030\004 \001(\005\022\023\n\013leader_name" +
+      "\030\005 \001(\t\"Y\n\021NpcDialogMetadata\022\016\n\006npc_id\030\001 " +
+      "\001(\t\022\020\n\010npc_name\030\002 \001(\t\022\021\n\tdialog_id\030\003 \001(\t" +
+      "\022\017\n\007options\030\004 \003(\t\"O\n\rCoordMetadata\022\016\n\006ma" +
+      "p_id\030\001 \001(\t\022\t\n\001x\030\002 \001(\005\022\t\n\001y\030\003 \001(\005\022\t\n\001z\030\004 " +
+      "\001(\005\022\r\n\005label\030\005 \001(\t\"U\n\025SetChannelMuteRequ" +
+      "est\022-\n\014channel_type\030\001 \001(\0162\027.chirp.chat.C" +
+      "hannelType\022\r\n\005muted\030\002 \001(\010\"}\n\026SetChannelM" +
+      "uteResponse\022%\n\004code\030\001 \001(\0162\027.chirp.common" +
+      ".ErrorCode\022-\n\014channel_type\030\002 \001(\0162\027.chirp" +
+      ".chat.ChannelType\022\r\n\005muted\030\003 \001(\010\"P\n\020Chan" +
+      "nelMuteState\022-\n\014channel_type\030\001 \001(\0162\027.chi" +
+      "rp.chat.ChannelType\022\r\n\005muted\030\002 \001(\010\"\030\n\026Ge" +
+      "tChannelMutesRequest\"n\n\027GetChannelMutesR" +
+      "esponse\022%\n\004code\030\001 \001(\0162\027.chirp.common.Err" +
+      "orCode\022,\n\006states\030\002 \003(\0132\034.chirp.chat.Chan" +
+      "nelMuteState\"3\n\031BlockMessageSenderReques" +
+      "t\022\026\n\016target_user_id\030\001 \001(\t\"[\n\032BlockMessag" +
+      "eSenderResponse\022%\n\004code\030\001 \001(\0162\027.chirp.co" +
+      "mmon.ErrorCode\022\026\n\016target_user_id\030\002 \001(\t\"5" +
+      "\n\033UnblockMessageSenderRequest\022\026\n\016target_" +
+      "user_id\030\001 \001(\t\"]\n\034UnblockMessageSenderRes" +
+      "ponse\022%\n\004code\030\001 \001(\0162\027.chirp.common.Error" +
+      "Code\022\026\n\016target_user_id\030\002 \001(\t\"\032\n\030GetBlock" +
+      "edSendersRequest\"[\n\031GetBlockedSendersRes" +
+      "ponse\022%\n\004code\030\001 \001(\0162\027.chirp.common.Error" +
+      "Code\022\027\n\017target_user_ids\030\002 \003(\t\"/\n\026WordFil" +
+      "terFetchRequest\022\025\n\rknown_version\030\001 \001(\003\"\221" +
+      "\001\n\021WordFilterLexicon\022\017\n\007version\030\001 \001(\003\022\017\n" +
+      "\007enabled\030\002 \001(\010\0224\n\006policy\030\003 \001(\0162$.chirp.c" +
+      "hat.WordFilterDeliveryPolicy\022\023\n\013replacem" +
+      "ent\030\004 \001(\t\022\017\n\007lexicon\030\005 \001(\t\"p\n\027WordFilter" +
+      "FetchResponse\022%\n\004code\030\001 \001(\0162\027.chirp.comm" +
+      "on.ErrorCode\022.\n\007lexicon\030\002 \001(\0132\035.chirp.ch" +
+      "at.WordFilterLexicon\"H\n\026WordFilterUpdate" +
+      "Notify\022.\n\007lexicon\030\001 \001(\0132\035.chirp.chat.Wor",
+      "dFilterLexicon\"\226\001\n\024SearchMessageRequest\022" +
+      "\017\n\007keyword\030\001 \001(\t\022\022\n\nchannel_id\030\002 \001(\t\022\025\n\r" +
+      "content_types\030\003 \003(\005\022\030\n\020before_timestamp\030" +
+      "\004 \001(\003\022\031\n\021before_message_id\030\005 \001(\t\022\r\n\005limi" +
+      "t\030\006 \001(\005\"\260\001\n\022SearchMessageMatch\022\022\n\nmessag" +
+      "e_id\030\001 \001(\t\022\022\n\nchannel_id\030\002 \001(\t\022\024\n\014channe" +
+      "l_type\030\003 \001(\005\022\021\n\tsender_id\030\004 \001(\t\022\023\n\013sende" +
+      "r_kind\030\005 \001(\005\022\020\n\010msg_type\030\006 \001(\005\022\021\n\ttimest" +
+      "amp\030\007 \001(\003\022\017\n\007content\030\010 \001(\t\"\201\001\n\025SearchMes" +
+      "sageResponse\022%\n\004code\030\001 \001(\0162\027.chirp.commo" +
+      "n.ErrorCode\022/\n\007matches\030\002 \003(\0132\036.chirp.cha" +
+      "t.SearchMessageMatch\022\020\n\010has_more\030\003 \001(\010*\310" +
+      "\001\n\007MsgType\022\010\n\004TEXT\020\000\022\t\n\005EMOJI\020\001\022\t\n\005VOICE" +
+      "\020\002\022\t\n\005IMAGE\020\003\022\r\n\tITEM_LINK\020\n\022\016\n\nSKILL_LI" +
+      "NK\020\013\022\017\n\013ACHIEVEMENT\020\014\022\016\n\nNPC_DIALOG\020\r\022\020\n" +
+      "\014TRADE_STATUS\020\016\022\016\n\nCOORD_LINK\020\017\022\021\n\rGUILD" +
+      "_RECRUIT\020\020\022\021\n\rPARTY_RECRUIT\020\021\022\n\n\006SYSTEM\020" +
+      "c*[\n\013ChannelType\022\013\n\007PRIVATE\020\000\022\010\n\004TEAM\020\001\022" +
+      "\t\n\005GUILD\020\002\022\t\n\005WORLD\020\003\022\022\n\016SYSTEM_CHANNEL\020" +
+      "\004\022\013\n\007MARQUEE\020\005*Y\n\010Priority\022\020\n\014PRIORITY_L" +
+      "OW\020\000\022\023\n\017PRIORITY_NORMAL\020\001\022\021\n\rPRIORITY_HI" +
+      "GH\020\002\022\023\n\017PRIORITY_URGENT\020\003*T\n\nSenderKind\022" +
+      "\017\n\013SENDER_USER\020\000\022\021\n\rSENDER_SYSTEM\020\001\022\016\n\nS" +
+      "ENDER_NPC\020\002\022\022\n\016SENDER_SERVICE\020\003*B\n\017Group" +
+      "MemberRole\022\n\n\006MEMBER\020\000\022\r\n\tMODERATOR\020\001\022\t\n" +
+      "\005ADMIN\020\002\022\t\n\005OWNER\020\003*\213\001\n\013ChannelKind\022\025\n\021C" +
+      "HANNEL_KIND_TEXT\020\000\022\026\n\022CHANNEL_KIND_VOICE" +
+      "\020\001\022\035\n\031CHANNEL_KIND_ANNOUNCEMENT\020\002\022\026\n\022CHA" +
+      "NNEL_KIND_STAGE\020\003\022\026\n\022CHANNEL_KIND_FORUM\020" +
+      "\004*D\n\016PermissionType\022\030\n\024PERMISSION_TYPE_R" +
+      "OLE\020\000\022\030\n\024PERMISSION_TYPE_USER\020\001*6\n\022Permi" +
+      "ssionOverride\022\013\n\007INHERIT\020\000\022\t\n\005ALLOW\020\001\022\010\n" +
+      "\004DENY\020\002*\207\001\n\013MentionType\022\025\n\021MENTION_TYPE_" +
+      "USER\020\000\022\025\n\021MENTION_TYPE_ROLE\020\001\022\030\n\024MENTION" +
+      "_TYPE_CHANNEL\020\002\022\031\n\025MENTION_TYPE_EVERYONE" +
+      "\020\003\022\025\n\021MENTION_TYPE_HERE\020\004*x\n\030WordFilterD" +
+      "eliveryPolicy\022\036\n\032WORD_FILTER_POLICY_REPL" +
+      "ACE\020\000\022\035\n\031WORD_FILTER_POLICY_REJECT\020\001\022\035\n\031" +
+      "WORD_FILTER_POLICY_RECORD\020\002B$Z\"github.co" +
+      "m/cui/chirp/proto/go/chatb\006proto3"
     };
     descriptor = com.google.protobuf.Descriptors.FileDescriptor
       .internalBuildGeneratedFileFrom(descriptorData,
@@ -127007,7 +127214,7 @@ java.lang.String defaultValue) {
     internal_static_chirp_chat_CreateGroupRequest_fieldAccessorTable = new
       com.google.protobuf.GeneratedMessage.FieldAccessorTable(
         internal_static_chirp_chat_CreateGroupRequest_descriptor,
-        new java.lang.String[] { "CreatorId", "GroupName", "Description", "AvatarUrl", "MaxMembers", "InitialMembers", });
+        new java.lang.String[] { "CreatorId", "GroupName", "Description", "AvatarUrl", "MaxMembers", "InitialMembers", "TtlSeconds", });
     internal_static_chirp_chat_CreateGroupResponse_descriptor =
       getDescriptor().getMessageType(7);
     internal_static_chirp_chat_CreateGroupResponse_fieldAccessorTable = new
@@ -127019,7 +127226,7 @@ java.lang.String defaultValue) {
     internal_static_chirp_chat_GroupInfo_fieldAccessorTable = new
       com.google.protobuf.GeneratedMessage.FieldAccessorTable(
         internal_static_chirp_chat_GroupInfo_descriptor,
-        new java.lang.String[] { "GroupId", "GroupName", "Description", "AvatarUrl", "OwnerId", "MemberCount", "MaxMembers", "CreatedAt", "Metadata", });
+        new java.lang.String[] { "GroupId", "GroupName", "Description", "AvatarUrl", "OwnerId", "MemberCount", "MaxMembers", "CreatedAt", "Metadata", "ExpiresAt", });
     internal_static_chirp_chat_GroupInfo_MetadataEntry_descriptor =
       internal_static_chirp_chat_GroupInfo_descriptor.getNestedType(0);
     internal_static_chirp_chat_GroupInfo_MetadataEntry_fieldAccessorTable = new

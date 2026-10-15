@@ -68,6 +68,9 @@ if(MYSQL_FOUND)
         # 历史保留窗清理（game_chat_features P2 消息过期）：周期把
         # now - retention 换算成 cutoff 交给 HybridMessageStore::ExpireBefore。
         src/history_retention_sweeper.cc
+        # 临时频道过期清扫（game_chat_features P1 临时频道）：周期回收到点的
+        # 临时群（读路径惰性摘除只覆盖被读到的那些）。
+        src/group_expiry_sweeper.cc
         # 历史读回压缩（game_chat_features P2 消息压缩）：登录声明
         # supports_gzip 的会话收 gzip 形态消息清单。
         src/history_compression.cc

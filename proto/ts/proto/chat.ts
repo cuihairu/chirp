@@ -691,6 +691,12 @@ export interface CreateGroupRequest {
   /** 0 for unlimited */
   maxMembers: number;
   initialMembers: string[];
+  /**
+   * 临时频道（P1，2026-10-15）：有效期秒数，0 = 永久群。上限 30 天
+   * （2592000），超限或负数回 INVALID_PARAM。到点后群视同不存在——成员
+   * 的本群频道发送回 AUTH_FAILED，群从 GET_USER_GROUPS 消失。
+   */
+  ttlSeconds: number;
 }
 
 export interface CreateGroupResponse {
@@ -710,6 +716,12 @@ export interface GroupInfo {
   maxMembers: number;
   createdAt: number;
   metadata: { [key: string]: string };
+  /**
+   * 临时频道：过期时刻（epoch 毫秒）；0 = 永久群。随 GET_GROUP_INFO /
+   * GET_USER_GROUPS / GROUP_CREATED_NOTIFY 下发，客户端据此显示倒计时并在
+   * 到点后本地移除该群。
+   */
+  expiresAt: number;
 }
 
 export interface GroupInfo_MetadataEntry {
@@ -2853,7 +2865,15 @@ export const GetHistoryResponse = {
 };
 
 function createBaseCreateGroupRequest(): CreateGroupRequest {
-  return { creatorId: "", groupName: "", description: "", avatarUrl: "", maxMembers: 0, initialMembers: [] };
+  return {
+    creatorId: "",
+    groupName: "",
+    description: "",
+    avatarUrl: "",
+    maxMembers: 0,
+    initialMembers: [],
+    ttlSeconds: 0,
+  };
 }
 
 export const CreateGroupRequest = {
@@ -2875,6 +2895,9 @@ export const CreateGroupRequest = {
     }
     for (const v of message.initialMembers) {
       writer.uint32(50).string(v!);
+    }
+    if (message.ttlSeconds !== 0) {
+      writer.uint32(56).int64(message.ttlSeconds);
     }
     return writer;
   },
@@ -2928,6 +2951,13 @@ export const CreateGroupRequest = {
 
           message.initialMembers.push(reader.string());
           continue;
+        case 7:
+          if (tag !== 56) {
+            break;
+          }
+
+          message.ttlSeconds = longToNumber(reader.int64() as Long);
+          continue;
       }
       if ((tag & 7) === 4 || tag === 0) {
         break;
@@ -2947,6 +2977,7 @@ export const CreateGroupRequest = {
       initialMembers: globalThis.Array.isArray(object?.initialMembers)
         ? object.initialMembers.map((e: any) => globalThis.String(e))
         : [],
+      ttlSeconds: isSet(object.ttlSeconds) ? globalThis.Number(object.ttlSeconds) : 0,
     };
   },
 
@@ -2970,6 +3001,9 @@ export const CreateGroupRequest = {
     if (message.initialMembers?.length) {
       obj.initialMembers = message.initialMembers;
     }
+    if (message.ttlSeconds !== 0) {
+      obj.ttlSeconds = Math.round(message.ttlSeconds);
+    }
     return obj;
   },
 
@@ -2984,6 +3018,7 @@ export const CreateGroupRequest = {
     message.avatarUrl = object.avatarUrl ?? "";
     message.maxMembers = object.maxMembers ?? 0;
     message.initialMembers = object.initialMembers?.map((e) => e) || [];
+    message.ttlSeconds = object.ttlSeconds ?? 0;
     return message;
   },
 };
@@ -3088,6 +3123,7 @@ function createBaseGroupInfo(): GroupInfo {
     maxMembers: 0,
     createdAt: 0,
     metadata: {},
+    expiresAt: 0,
   };
 }
 
@@ -3120,6 +3156,9 @@ export const GroupInfo = {
     Object.entries(message.metadata).forEach(([key, value]) => {
       GroupInfo_MetadataEntry.encode({ key: key as any, value }, writer.uint32(74).fork()).ldelim();
     });
+    if (message.expiresAt !== 0) {
+      writer.uint32(80).int64(message.expiresAt);
+    }
     return writer;
   },
 
@@ -3196,6 +3235,13 @@ export const GroupInfo = {
             message.metadata[entry9.key] = entry9.value;
           }
           continue;
+        case 10:
+          if (tag !== 80) {
+            break;
+          }
+
+          message.expiresAt = longToNumber(reader.int64() as Long);
+          continue;
       }
       if ((tag & 7) === 4 || tag === 0) {
         break;
@@ -3221,6 +3267,7 @@ export const GroupInfo = {
           return acc;
         }, {})
         : {},
+      expiresAt: isSet(object.expiresAt) ? globalThis.Number(object.expiresAt) : 0,
     };
   },
 
@@ -3259,6 +3306,9 @@ export const GroupInfo = {
         });
       }
     }
+    if (message.expiresAt !== 0) {
+      obj.expiresAt = Math.round(message.expiresAt);
+    }
     return obj;
   },
 
@@ -3281,6 +3331,7 @@ export const GroupInfo = {
       }
       return acc;
     }, {});
+    message.expiresAt = object.expiresAt ?? 0;
     return message;
   },
 };
