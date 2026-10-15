@@ -73,7 +73,8 @@ object MsgSpecs {
         Gateway.MsgID.GET_GROUP_MEMBERS_REQ, Gateway.MsgID.GET_GROUP_MEMBERS_RESP, Chat.GetGroupMembersResponse::parseFrom,
     )
 
-    // Group-domain moderation/search (alias 2122/2123, search 2248/2249, mute 2250/2251).
+    // Group-domain moderation/search (alias 2122/2123, search 2248/2249, mute
+    // 2250/2251) and report/dm-restriction (2253/2254, 2255-2258).
     val setMemberAlias = MessageSpec(
         Gateway.MsgID.SET_MEMBER_ALIAS_REQ, Gateway.MsgID.SET_MEMBER_ALIAS_RESP, Chat.SetMemberAliasResponse::parseFrom,
     )
@@ -82,6 +83,15 @@ object MsgSpecs {
     )
     val setGroupMute = MessageSpec(
         Gateway.MsgID.SET_GROUP_MUTE_REQ, Gateway.MsgID.SET_GROUP_MUTE_RESP, Chat.SetGroupMuteResponse::parseFrom,
+    )
+    val reportMessage = MessageSpec(
+        Gateway.MsgID.REPORT_MESSAGE_REQ, Gateway.MsgID.REPORT_MESSAGE_RESP, Chat.ReportMessageResponse::parseFrom,
+    )
+    val setDmRestriction = MessageSpec(
+        Gateway.MsgID.SET_DM_RESTRICTION_REQ, Gateway.MsgID.SET_DM_RESTRICTION_RESP, Chat.SetDmRestrictionResponse::parseFrom,
+    )
+    val getDmRestriction = MessageSpec(
+        Gateway.MsgID.GET_DM_RESTRICTION_REQ, Gateway.MsgID.GET_DM_RESTRICTION_RESP, Chat.GetDmRestrictionResponse::parseFrom,
     )
 
     // Reactions, edit/delete (typing has no REQ: it is fire-and-forget 2208).
@@ -233,6 +243,7 @@ object MsgSpecs {
         sendMessage, getHistory, markRead, getUserGroups, createGroup, inviteToGroup,
         leaveGroup, kickMember, getGroupMembers,
         setMemberAlias, searchMessages, setGroupMute,
+        reportMessage, setDmRestriction, getDmRestriction,
         addReaction, removeReaction, editMessage, deleteMessage,
         addFriend, friendRequestAction, removeFriend, getFriendList, getPendingRequests,
         blockUser, unblockUser, getBlockedList, setPresence, getPresence,

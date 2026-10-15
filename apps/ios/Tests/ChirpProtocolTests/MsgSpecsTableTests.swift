@@ -21,10 +21,17 @@ final class MsgSpecsTableTests: XCTestCase {
         XCTAssertEqual(Chirp_Gateway_MsgID.setGroupMuteReq.rawValue, 2250)
         XCTAssertEqual(Chirp_Gateway_MsgID.setGroupMuteResp.rawValue, 2251)
         XCTAssertEqual(Chirp_Gateway_MsgID.groupMemberMutedNotify.rawValue, 2252)
+        XCTAssertEqual(Chirp_Gateway_MsgID.reportMessageReq.rawValue, 2253)
+        XCTAssertEqual(Chirp_Gateway_MsgID.reportMessageResp.rawValue, 2254)
+        XCTAssertEqual(Chirp_Gateway_MsgID.setDmRestrictionReq.rawValue, 2255)
+        XCTAssertEqual(Chirp_Gateway_MsgID.setDmRestrictionResp.rawValue, 2256)
+        XCTAssertEqual(Chirp_Gateway_MsgID.getDmRestrictionReq.rawValue, 2257)
+        XCTAssertEqual(Chirp_Gateway_MsgID.getDmRestrictionResp.rawValue, 2258)
+        XCTAssertEqual(Chirp_Common_ErrorCode.dmRestricted.rawValue, 14)
     }
 
     func testSpecTableIsCompleteAndPairsStayDistinct() {
-        XCTAssertEqual(MsgSpecs.all.count, 51)
+        XCTAssertEqual(MsgSpecs.all.count, 54)
         for spec in MsgSpecs.all {
             XCTAssertNotEqual(spec.reqMsgId, spec.respMsgId, "req/resp ids must differ for \(spec.reqMsgId)")
         }
@@ -49,8 +56,48 @@ final class MsgSpecsTableTests: XCTestCase {
             try MsgSpecs.searchMessages.decodeResponse([]) is Chirp_Chat_SearchMessageResponse)
         XCTAssertTrue(
             try MsgSpecs.setGroupMute.decodeResponse([]) is Chirp_Chat_SetGroupMuteResponse)
+        XCTAssertTrue(
+            try MsgSpecs.reportMessage.decodeResponse([]) is Chirp_Chat_ReportMessageResponse)
+        XCTAssertTrue(
+            try MsgSpecs.setDmRestriction.decodeResponse([]) is Chirp_Chat_SetDmRestrictionResponse)
+        XCTAssertTrue(
+            try MsgSpecs.getDmRestriction.decodeResponse([]) is Chirp_Chat_GetDmRestrictionResponse)
         for spec in MsgSpecs.all {
             try spec.decodeEmpty() // must not throw for any spec
         }
+    }
+
+    func testDmRestrictionRoundTripsSwitchStateAndRejectCode() throws {
+        // The stranger-DM switch is one bool; the rejection code a separate
+        // enum case. Both round-trip through the generated classes so the
+        // companion can show the current state and the blocked-DM hint.
+        var setResp = Chirp_Chat_SetDmRestrictionResponse()
+        setResp.enabled = true
+        setResp.code = .dmRestricted
+        let decoded = try MsgSpecs.setDmRestriction.decodeResponse(
+            [UInt8](try setResp.serializedData()))
+        XCTAssertTrue(decoded.enabled)
+        XCTAssertEqual(decoded.code, .dmRestricted)
+
+        var getResp = Chirp_Chat_GetDmRestrictionResponse()
+        getResp.enabled = false
+        let gotState = try MsgSpecs.getDmRestriction.decodeResponse(
+            [UInt8](try getResp.serializedData()))
+        XCTAssertFalse(gotState.enabled)
+        XCTAssertEqual(gotState.code, .ok)
+    }
+
+    func testTextFormatResolvesTheNewEnumNames() {
+        // The generated enum nameMaps are compressed bytecode. They are only
+        // walked by text/JSON formatting, so the binary round-trips above stay
+        // green even when a bytecode byte is malformed. Rendering to text here
+        // pins the nameMaps behind the new ids and codes.
+        var packet = Chirp_Gateway_Packet()
+        packet.msgID = .getDmRestrictionResp
+        XCTAssertTrue(packet.textFormatString().contains("GET_DM_RESTRICTION_RESP"))
+
+        var resp = Chirp_Chat_SetDmRestrictionResponse()
+        resp.code = .dmRestricted
+        XCTAssertTrue(resp.textFormatString().contains("DM_RESTRICTED"))
     }
 }

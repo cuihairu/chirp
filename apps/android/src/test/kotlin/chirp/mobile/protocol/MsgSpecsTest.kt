@@ -30,11 +30,17 @@ class MsgSpecsTest {
         assertEquals(2250, Gateway.MsgID.SET_GROUP_MUTE_REQ_VALUE)
         assertEquals(2251, Gateway.MsgID.SET_GROUP_MUTE_RESP_VALUE)
         assertEquals(2252, Gateway.MsgID.GROUP_MEMBER_MUTED_NOTIFY_VALUE)
+        assertEquals(2253, Gateway.MsgID.REPORT_MESSAGE_REQ_VALUE)
+        assertEquals(2254, Gateway.MsgID.REPORT_MESSAGE_RESP_VALUE)
+        assertEquals(2255, Gateway.MsgID.SET_DM_RESTRICTION_REQ_VALUE)
+        assertEquals(2256, Gateway.MsgID.SET_DM_RESTRICTION_RESP_VALUE)
+        assertEquals(2257, Gateway.MsgID.GET_DM_RESTRICTION_REQ_VALUE)
+        assertEquals(2258, Gateway.MsgID.GET_DM_RESTRICTION_RESP_VALUE)
     }
 
     @Test
     fun specTableIsCompleteAndPairsStayDistinct() {
-        assertEquals(51, MsgSpecs.all.size)
+        assertEquals(54, MsgSpecs.all.size)
         for (spec in MsgSpecs.all) {
             assertTrue(
                 spec.reqMsgId != spec.respMsgId,
@@ -53,6 +59,9 @@ class MsgSpecsTest {
         assertTrue(MsgSpecs.setMemberAlias.decodeResponse(ByteArray(0)) is Chat.SetMemberAliasResponse)
         assertTrue(MsgSpecs.searchMessages.decodeResponse(ByteArray(0)) is Chat.SearchMessageResponse)
         assertTrue(MsgSpecs.setGroupMute.decodeResponse(ByteArray(0)) is Chat.SetGroupMuteResponse)
+        assertTrue(MsgSpecs.reportMessage.decodeResponse(ByteArray(0)) is Chat.ReportMessageResponse)
+        assertTrue(MsgSpecs.setDmRestriction.decodeResponse(ByteArray(0)) is Chat.SetDmRestrictionResponse)
+        assertTrue(MsgSpecs.getDmRestriction.decodeResponse(ByteArray(0)) is Chat.GetDmRestrictionResponse)
         assertTrue(MsgSpecs.getHistory.decodeResponse(ByteArray(0)) is Chat.GetHistoryResponse)
         assertTrue(MsgSpecs.addFriend.decodeResponse(ByteArray(0)) is Social.AddFriendResponse)
         assertTrue(MsgSpecs.createParty.decodeResponse(ByteArray(0)) is Party.CreatePartyResponse)
