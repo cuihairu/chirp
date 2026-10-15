@@ -162,7 +162,7 @@ final class GzipTests: XCTestCase {
 
         let resp = try MsgSpecs.getHistory.decodeResponse([UInt8](body.serializedData()))
 
-        XCTAssertEqual(resp.messages.map(\.messageID), ["m9"])
+        XCTAssertEqual(["m9"], resp.messages.map { $0.messageID })
     }
 
     func testGetHistoryRejectsACorruptContainer() {
