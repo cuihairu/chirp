@@ -44,8 +44,10 @@ MAIN_CP := $(PROTOBUF_JAR):$(OKHTTP_JAR):$(OKIO_JAR)
 TEST_CP := $(MAIN_CP):$(MOCKWEBSERVER_JAR):$(JUNIT4_JAR)
 
 BUILD_DIR := build
-# Kotlin stdlib + kotlin-test ship with the compiler distribution.
-KOTLIN_LIB := $(dir $(shell command -v $(KOTLINC)))../lib
+# Kotlin stdlib + kotlin-test ship with the compiler distribution. Resolved
+# through readlink so a symlinked shim (sdkman's current/bin, /usr/local/bin)
+# still finds its own lib/ dir; override KOTLIN_LIB when that is unavailable.
+KOTLIN_LIB ?= $(dir $(shell readlink -f $(shell command -v $(KOTLINC))))../lib
 KOTLIN_STDLIB := $(KOTLIN_LIB)/kotlin-stdlib.jar
 # kotlin-test façade + its JUnit5 binding (tests run on the JUnit console).
 KOTLIN_TEST := $(KOTLIN_LIB)/kotlin-test.jar:$(KOTLIN_LIB)/kotlin-test-junit5.jar
