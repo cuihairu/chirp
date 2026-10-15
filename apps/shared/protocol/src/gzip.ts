@@ -3,8 +3,10 @@
  * P2 消息压缩). A session that declared supports_gzip at login gets the history
  * message list inside GetHistoryResponse.messagesGzip: a gzip (RFC 1952)
  * container holding a same-shape GetHistoryResponse. DecompressionStream is
- * the cross-runtime decoder (browsers, Node >= 18, jsdom), so no dependency is
- * added; the container format is the reason every runtime reads it unconfigured.
+ * the default cross-runtime decoder (browsers, Node >= 18, jsdom), so no
+ * dependency is added; the container format is the reason every runtime reads
+ * it unconfigured. Runtimes without that web API (ArkTS) install their own
+ * platform decoder through setGzipDecompressor.
  */
 
 /** Decompression-bomb cap; the C++ core primitive uses the same bound. */
@@ -13,12 +15,33 @@ export const MAX_DECOMPRESSED_BYTES = 16 * 1024 * 1024;
 /** Raised for empty input, a corrupt/truncated container, or the size cap. */
 export class GzipError extends Error {}
 
+/** Platform decoder shape: raw gzip container in, inflated bytes out. */
+export type GzipDecompressor = (bytes: Uint8Array) => Promise<Uint8Array>;
+
+// Active decoder; starts on the DecompressionStream implementation below.
+let decompressor: GzipDecompressor = webGzipDecompress;
+
 /**
- * Inflate a gzip container. Streaming the transform keeps the memory bound:
- * the reader bails as soon as the inflated size crosses the cap instead of
+ * Injection seam for the history-decompression consumer. Pass `null` to
+ * restore the built-in DecompressionStream decoder. Hosts whose runtime lacks
+ * that API (ArkTS ships no Compression Streams) install their platform
+ * decoder once at startup — the message spec itself stays untouched.
+ */
+export function setGzipDecompressor(fn: GzipDecompressor | null): void {
+  decompressor = fn ?? webGzipDecompress;
+}
+
+/** Inflate a gzip container through the active decoder. */
+export function gzipDecompress(bytes: Uint8Array): Promise<Uint8Array> {
+  return decompressor(bytes);
+}
+
+/**
+ * Default decoder: streaming the transform keeps the memory bound — the
+ * reader bails as soon as the inflated size crosses the cap instead of
  * buffering an unbounded body.
  */
-export async function gzipDecompress(bytes: Uint8Array): Promise<Uint8Array> {
+async function webGzipDecompress(bytes: Uint8Array): Promise<Uint8Array> {
   if (bytes.length === 0) {
     throw new GzipError('gzip: empty input');
   }

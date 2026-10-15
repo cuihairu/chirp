@@ -1,7 +1,7 @@
 import { gzipSync } from 'node:zlib';
 import { describe, expect, it } from 'vitest';
 
-import { GzipError, MAX_DECOMPRESSED_BYTES, gzipDecompress } from './gzip';
+import { GzipError, MAX_DECOMPRESSED_BYTES, gzipDecompress, setGzipDecompressor } from './gzip';
 
 const encoder = new TextEncoder();
 const text = (value: string) => encoder.encode(value);
@@ -52,5 +52,30 @@ describe('gzipDecompress', () => {
     // 17 MiB of zeros compresses to a few kilobytes but inflates past the cap.
     const bomb = new Uint8Array(MAX_DECOMPRESSED_BYTES + 1024 * 1024);
     await expect(gzipDecompress(compressed(bomb))).rejects.toThrow(/cap/);
+  });
+});
+
+describe('setGzipDecompressor', () => {
+  it('routes gzipDecompress through an injected platform decoder', async () => {
+    const input = compressed(text('the built-in decoder never sees this'));
+    const seen: Uint8Array[] = [];
+    setGzipDecompressor(async (bytes) => {
+      seen.push(bytes);
+      return text('platform decoder payload');
+    });
+    try {
+      expectBytes(await gzipDecompress(input), text('platform decoder payload'));
+      expect(seen).toHaveLength(1);
+      expectBytes(seen[0], input);
+    } finally {
+      setGzipDecompressor(null);
+    }
+  });
+
+  it('restores the built-in decoder when passed null', async () => {
+    setGzipDecompressor(async () => text('stub that would fail a real container'));
+    setGzipDecompressor(null);
+    const payload = text('back on the DecompressionStream decoder');
+    expectBytes(await gzipDecompress(compressed(payload)), payload);
   });
 });
