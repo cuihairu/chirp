@@ -141,10 +141,11 @@ final class GzipTests: XCTestCase {
                 Chirp_Chat_ChatMessage.with { $0.messageID = "m2"; $0.senderID = "u2" },
             ]
         }
-        // serializedData() throws, so the rethrowing builder needs try here.
+        // serializedData() throws inside the builder closure, so the call
+        // needs its own try and the rethrowing builder needs one too.
         let outer = try Chirp_Chat_GetHistoryResponse.with {
             $0.hasMore_p = true
-            $0.messagesGzip = Data(gzip([UInt8](inner.serializedData())))
+            $0.messagesGzip = Data(gzip([UInt8](try inner.serializedData())))
         }
 
         let resp = try MsgSpecs.getHistory.decodeResponse([UInt8](outer.serializedData()))
