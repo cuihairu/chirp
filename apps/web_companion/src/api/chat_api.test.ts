@@ -927,6 +927,56 @@ describe('ChatApi receipts and groups', () => {
     expect(h.conversations.get().conversations.some((c) => c.key === 'g:guild-9')).toBe(true);
   });
 
+  it('createGroup forwards ttl seconds and the roster carries the expiry', async () => {
+    const h = makeHarness();
+    await login(h, {
+      [MsgID.CREATE_GROUP_REQ]: { code: 0, groupId: 'guild-ttl' },
+      [MsgID.GET_USER_GROUPS_REQ]: {
+        code: 0,
+        groups: [{ groupId: 'guild-ttl', groupName: 'Raid', expiresAt: 1792032098833 }],
+      },
+    });
+    expect(await h.api.createGroup('Raid', '', 3600)).toBe('guild-ttl');
+    const create = h.conn.requests.find((r) => r.msgId === MsgID.CREATE_GROUP_REQ);
+    expect(create?.req).toMatchObject({ ttlSeconds: 3600 });
+    expect(
+      h.conversations.get().conversations.find((c) => c.key === 'g:guild-ttl')?.expiresAt,
+    ).toBe(1792032098833);
+  });
+
+  it('refreshGroups prunes group conversations missing from the roster', async () => {
+    const h = makeHarness();
+    await login(h, { [MsgID.GET_USER_GROUPS_REQ]: { code: 0, groups: [] } });
+    h.conversations.set((prev) => ({
+      conversations: [
+        ...prev.conversations,
+        {
+          kind: 'group',
+          key: 'g:gone',
+          channelId: 'gone',
+          peerId: 'gone',
+          title: 'Gone',
+          unreadLocal: 1,
+        },
+        {
+          kind: 'private',
+          key: 'p:user_a|user_x',
+          channelId: 'user_a|user_x',
+          peerId: 'user_x',
+          title: 'user_x',
+          unreadLocal: 0,
+        },
+      ],
+    }));
+
+    await h.api.refreshGroups();
+
+    const keys = h.conversations.get().conversations.map((c) => c.key);
+    // 名册外群（临时频道到点 / 退群）本地消失；私聊不参与名册修剪。
+    expect(keys).not.toContain('g:gone');
+    expect(keys).toContain('p:user_a|user_x');
+  });
+
   it('loadGroupMembers returns members on success and [] otherwise', async () => {
     const h = makeHarness();
     await login(h, {

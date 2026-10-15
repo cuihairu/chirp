@@ -9,6 +9,7 @@ import {
 } from '@chirp/proto/social';
 import {
   GetHistoryResponse,
+  GetUserGroupsResponse,
   ReportMessageResponse,
   SearchMessageResponse,
   SendMessageResponse,
@@ -19,8 +20,10 @@ import { MsgID } from '@chirp/proto/gateway';
 import { GetRoomInfoResponse, JoinRoomResponse, RoomType } from '@chirp/proto/voice';
 import { describe, expect, it } from 'vitest';
 import {
+  CREATE_GROUP,
   CREATE_ROOM,
   GET_HISTORY,
+  GET_USER_GROUPS,
   GET_NOTIFY_PREFS,
   GET_ROOM_INFO,
   JOIN_ROOM,
@@ -104,6 +107,26 @@ describe('message specs', () => {
       SendMessageResponse.fromPartial({ code: 0, messageId: 'm9' }),
     ).finish();
     expect(SEND_MESSAGE.decodeResponse(resp).messageId).toBe('m9');
+  });
+
+  it('carries the temp channel ttl in and the expiry out (P1 group TTL)', () => {
+    // 临时频道:ttl_seconds 进建群请求;到点时刻(expires_at)随群信息
+    // (GET_USER_GROUPS / GET_GROUP_INFO / GROUP_CREATED_NOTIFY)下发。
+    const bytes = CREATE_GROUP.encodeRequest({
+      creatorId: 'u1',
+      groupName: 'raid',
+      ttlSeconds: 3600,
+    });
+    expect(bytes.length).toBeGreaterThan(0);
+
+    const resp = GetUserGroupsResponse.encode(
+      GetUserGroupsResponse.fromPartial({
+        code: 0,
+        groups: [{ groupId: 'g-ttl', groupName: 'raid', expiresAt: 1792032098833 }],
+      }),
+    ).finish();
+    const decoded = GET_USER_GROUPS.decodeResponse(resp);
+    expect(decoded.groups?.[0]?.expiresAt).toBe(1792032098833);
   });
 
   it('decodes history responses', () => {

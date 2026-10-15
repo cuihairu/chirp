@@ -10,6 +10,7 @@ import {
   List,
   ListItemButton,
   ListItemText,
+  MenuItem,
   TextField,
   Typography,
 } from '@mui/material';
@@ -27,6 +28,25 @@ import DevicesDialog, { DevicesButton } from './DevicesDialog';
 import OnlineDevicesDialog, { OnlineDevicesButton } from './OnlineDevicesDialog';
 import SearchDialog from './SearchDialog';
 import { zh } from '../i18n/zh';
+
+/** 建群对话框的有效期档位：秒数 → 文案。0 = 永久群。 */
+export const GROUP_TTL_OPTIONS: Array<[number, string]> = [
+  [0, '永久'],
+  [3600, '1 小时'],
+  [86400, '1 天'],
+  [604800, '7 天'],
+];
+
+/** 临时频道剩余时长（15s 时钟粒度：分钟/小时/天三档）。到点返回 null——
+ *  名册刷新后该群从列表消失，不留"已过期"残影。 */
+export const groupExpiryLabel = (expiresAt: number, now: number): string | null => {
+  const minutes = Math.ceil((expiresAt - now) / 60_000);
+  if (minutes <= 0) return null;
+  if (minutes < 60) return `剩 ${minutes} 分`;
+  const hours = Math.ceil(minutes / 60);
+  if (hours < 48) return `剩 ${hours} 小时`;
+  return `剩 ${Math.ceil(hours / 24)} 天`;
+};
 
 /** Left pane: conversations, newest first, plus the start-private-chat entry. */
 export default function ConversationList({
@@ -49,6 +69,7 @@ export default function ConversationList({
   const [error, setError] = useState<string | null>(null);
   const [groupOpen, setGroupOpen] = useState(false);
   const [groupName, setGroupName] = useState('');
+  const [groupTtl, setGroupTtl] = useState(0);
   const [friendsOpen, setFriendsOpen] = useState(false);
   const [partyOpen, setPartyOpen] = useState(false);
   const [voiceOpen, setVoiceOpen] = useState(false);
@@ -81,9 +102,10 @@ export default function ConversationList({
   const createGroup = async (): Promise<void> => {
     const name = groupName.trim();
     if (!name) return;
-    const groupId = await api.createGroup(name);
+    const groupId = await api.createGroup(name, '', groupTtl);
     setGroupOpen(false);
     setGroupName('');
+    setGroupTtl(0);
     if (groupId) onOpen(groupKey(groupId));
   };
 
@@ -123,6 +145,10 @@ export default function ConversationList({
             conversation.kind === 'private' &&
             presenceFresh(presenceState, conversation.peerId, now) &&
             presenceOf(presenceState, conversation.peerId)?.status === PresenceStatus.ONLINE;
+          const expiry =
+            conversation.kind === 'group' && conversation.expiresAt
+              ? groupExpiryLabel(conversation.expiresAt, now)
+              : null;
           return (
             <ListItemButton
               key={conversation.key}
@@ -148,6 +174,11 @@ export default function ConversationList({
                   }
                   secondary={
                     <Typography variant="caption" noWrap sx={{ maxWidth: 160, display: 'block' }}>
+                      {expiry && (
+                        <Box component="span" data-testid={`group-expiry-${conversation.channelId}`}>
+                          {expiry} ·{' '}
+                        </Box>
+                      )}
                       {conversation.lastMessagePreview ?? ''}
                     </Typography>
                   }
@@ -200,6 +231,21 @@ export default function ConversationList({
             onKeyDown={(e) => e.key === 'Enter' && void createGroup()}
             data-testid="group-name-input"
           />
+          <TextField
+            select
+            fullWidth
+            margin="dense"
+            label={zh.chat.groupTtlLabel}
+            value={groupTtl}
+            onChange={(e) => setGroupTtl(Number(e.target.value))}
+            data-testid="group-ttl-select"
+          >
+            {GROUP_TTL_OPTIONS.map(([seconds, label]) => (
+              <MenuItem key={seconds} value={seconds}>
+                {label}
+              </MenuItem>
+            ))}
+          </TextField>
         </DialogContent>
         <DialogActions>
           <Button onClick={() => setGroupOpen(false)}>{zh.chat.cancel}</Button>

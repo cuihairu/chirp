@@ -1320,7 +1320,13 @@ public:
 
   void CreateGroup(const std::string& group_name, const std::string& description,
                    CreateGroupCallback cb) {
-    asio::post(io_context_, [this, group_name, description, cb = std::move(cb)] {
+    CreateGroup(group_name, description, /*ttl_seconds=*/0, std::move(cb));
+  }
+
+  void CreateGroup(const std::string& group_name, const std::string& description,
+                   int64_t ttl_seconds, CreateGroupCallback cb) {
+    asio::post(io_context_, [this, group_name, description, ttl_seconds,
+                             cb = std::move(cb)] {
       if (!ReadyForRequests()) {
         cb(MakeEc(ChatError::NotConnected), {});
         return;
@@ -1329,6 +1335,7 @@ public:
       req.set_creator_id(user_id_);
       req.set_group_name(group_name);
       req.set_description(description);
+      req.set_ttl_seconds(ttl_seconds);
       TypedRequest(MsgID::CREATE_GROUP_REQ, MsgID::CREATE_GROUP_RESP, req, std::move(cb));
     });
   }
@@ -1774,6 +1781,11 @@ void ChatClient::FetchMentionSuggestions(const std::string& channel_id,
 void ChatClient::CreateGroup(const std::string& group_name, const std::string& description,
                              CreateGroupCallback cb) {
   impl_->CreateGroup(group_name, description, std::move(cb));
+}
+
+void ChatClient::CreateGroup(const std::string& group_name, const std::string& description,
+                             int64_t ttl_seconds, CreateGroupCallback cb) {
+  impl_->CreateGroup(group_name, description, ttl_seconds, std::move(cb));
 }
 
 void ChatClient::JoinGroup(const std::string& group_id, JoinGroupCallback cb) {

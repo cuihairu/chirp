@@ -672,17 +672,27 @@ export class ChatApi {
     const resp = await this.conn.request(GET_USER_GROUPS, { userId });
     if (resp.code !== 0) return [];
     const existing = this.conversations.get().conversations;
+    const rosterIds = new Set((resp.groups ?? []).map((group: GroupInfo) => group.groupId));
+    // 名册为准修剪群会话：退群/被踢/临时频道到点（服务端惰性摘除后不再返回）
+    // 的群本地同步消失。
+    for (const conversation of existing) {
+      if (conversation.kind === 'group' && !rosterIds.has(conversation.channelId)) {
+        removeConversation(this.conversations, conversation.key);
+      }
+    }
     const conversations = (resp.groups ?? []).map((group: GroupInfo) => {
       const key = groupKey(group.groupId);
       const prev = existing.find((c) => c.key === key);
+      const expiresAt = group.expiresAt > 0 ? group.expiresAt : undefined;
       return (
-        prev ?? {
+        prev ? { ...prev, expiresAt } : {
           kind: 'group' as const,
           key,
           channelId: group.groupId,
           peerId: group.groupId,
           title: group.groupName,
           ownerId: group.ownerId,
+          expiresAt,
           unreadLocal: 0,
         }
       );
@@ -880,10 +890,16 @@ export class ChatApi {
     void this.refreshGroups();
   }
 
-  async createGroup(name: string, description = ''): Promise<string | null> {
+  async createGroup(name: string, description = '', ttlSeconds = 0): Promise<string | null> {
     const userId = this.auth.get().userId;
     if (!userId) return null;
-    const resp = await this.conn.request(CREATE_GROUP, { creatorId: userId, groupName: name, description });
+    const resp = await this.conn.request(CREATE_GROUP, {
+      creatorId: userId,
+      groupName: name,
+      description,
+      // 0 = 永久群（proto3 零值不上线）；临时频道到点后服务端摘除、名册刷新本地同步消失。
+      ttlSeconds,
+    });
     if (resp.code !== 0) return null;
     await this.refreshGroups();
     return resp.groupId;

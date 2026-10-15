@@ -11,6 +11,7 @@ import {
   List,
   ListItem,
   ListItemText,
+  MenuItem,
   Stack,
   TextField,
   Typography,
@@ -25,6 +26,7 @@ import { useStoreValue, type Store } from '../state/store';
 import type { OnlineDevicesState } from '../state/online_devices_store';
 import type { PartyState } from '../state/party_store';
 import type { VoiceState } from '../state/voice_store';
+import { GROUP_TTL_OPTIONS } from './Rail';
 
 function Shell(props: {
   title: string;
@@ -46,7 +48,7 @@ function Shell(props: {
   );
 }
 
-/** 建群：名称（+ 可选描述）→ 返回群 ID 并打开群会话。 */
+/** 建群：名称（+ 可选描述 + 有效期档位）→ 返回群 ID 并打开群会话。 */
 export function CreateGroupDialog(props: {
   api: ChatApi;
   open: boolean;
@@ -54,6 +56,7 @@ export function CreateGroupDialog(props: {
   onCreated: (groupId: string) => void;
 }) {
   const [name, setName] = useState('');
+  const [ttl, setTtl] = useState(0);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -62,9 +65,10 @@ export function CreateGroupDialog(props: {
     setBusy(true);
     setError(null);
     try {
-      const groupId = await props.api.createGroup(name.trim());
+      const groupId = await props.api.createGroup(name.trim(), '', ttl);
       if (groupId) {
         setName('');
+        setTtl(0);
         props.onCreated(groupId);
         props.onClose();
       } else {
@@ -97,6 +101,19 @@ export function CreateGroupDialog(props: {
           onChange={(e) => setName(e.target.value)}
           autoFocus
         />
+        <TextField
+          select
+          size="small"
+          label="有效期"
+          value={ttl}
+          onChange={(e) => setTtl(Number(e.target.value))}
+        >
+          {GROUP_TTL_OPTIONS.map(([seconds, label]) => (
+            <MenuItem key={seconds} value={seconds}>
+              {label}
+            </MenuItem>
+          ))}
+        </TextField>
         {error ? <Alert severity="error">{error}</Alert> : null}
       </Stack>
     </Shell>

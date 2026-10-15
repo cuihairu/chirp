@@ -164,4 +164,50 @@ describe('ConversationList', () => {
       ownerId: 'user_a',
     });
   });
+
+  it('creates a temp channel with the chosen ttl', async () => {
+    const onOpen = vi.fn();
+    const mounted = await renderLoggedIn(<ConversationList onOpen={onOpen} />, {
+      responder: async (msgId) =>
+        msgId === MsgID.CREATE_GROUP_REQ
+          ? { code: 0, groupId: 'guild-ttl' }
+          : { code: 0, groups: [{ groupId: 'guild-ttl', groupName: 'Raid' }] },
+    });
+
+    fireEvent.click(screen.getByRole('button', { name: zh.chat.newGroup }));
+    fireEvent.change(screen.getByTestId('group-name-input').querySelector('input')!, {
+      target: { value: 'Raid' },
+    });
+    fireEvent.mouseDown(
+      screen.getByTestId('group-ttl-select').querySelector('[role="combobox"]')!,
+    );
+    fireEvent.click(await screen.findByRole('option', { name: '1 小时' }));
+    fireEvent.click(screen.getByTestId('group-create-confirm'));
+
+    await waitFor(() => expect(onOpen).toHaveBeenCalledWith('g:guild-ttl'));
+    const create = mounted.conn.requests.find((r) => r.msgId === MsgID.CREATE_GROUP_REQ);
+    expect(create?.req).toMatchObject({ ttlSeconds: 3600 });
+  });
+
+  it('shows the temp channel countdown on expiring groups', async () => {
+    await renderLoggedIn(<ConversationList onOpen={vi.fn()} />, {
+      prepare: ({ services }) => {
+        services.conversations.set(() => ({
+          conversations: [
+            {
+              kind: 'group',
+              key: 'g:guild-ttl',
+              channelId: 'guild-ttl',
+              peerId: 'guild-ttl',
+              title: 'Raid',
+              // 到点还有约半小时：secondary 行带「剩 N 分」前缀。
+              expiresAt: Date.now() + 30 * 60_000,
+              unreadLocal: 0,
+            },
+          ],
+        }));
+      },
+    });
+    expect(screen.getByTestId('group-expiry-guild-ttl').textContent).toMatch(/^剩 \d+ 分/);
+  });
 });

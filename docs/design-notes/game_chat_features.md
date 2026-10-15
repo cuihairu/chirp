@@ -54,7 +54,7 @@ title: 游戏聊天特征
 
 ### 频道管理
 
-- **临时频道**（已落地 2026-10-15，群域承接）：活动/副本临时频道 = 带 TTL 的群——`CreateGroupRequest.ttl_seconds`（字段 7，0 = 永久群；上限 30 天，超限/负数回 `INVALID_PARAM`），到点时刻换算成 `GroupInfo.expires_at`（epoch 毫秒）随 `GET_GROUP_INFO` / `GET_USER_GROUPS` / `GROUP_CREATED_NOTIFY` 下发，客户端据此显示倒计时并在到点后本地移除该群。**到点语义**：群视同不存在——成员的本群频道发送回 `AUTH_FAILED`（与非成员同语义，发送门零改动），读路径惰性摘除（`GroupManager::LookupLocked` 命中到点群即从台账与 `user_to_groups_` 摘除），无人访问的过期群由 `GroupExpirySweeper` 周期回收（enhanced 形态接线，5 分钟一拍；basic 惰性摘除已覆盖语义，清扫只是内存回收）。「参与者自动加入」由既有 `CreateGroupRequest.initial_members` 覆盖，零新增。Inc 2（SDK 四端建群 TTL 入参与客户端倒计时渲染）另批。
+- **临时频道**（已落地 2026-10-15，群域承接）：活动/副本临时频道 = 带 TTL 的群——`CreateGroupRequest.ttl_seconds`（字段 7，0 = 永久群；上限 30 天，超限/负数回 `INVALID_PARAM`），到点时刻换算成 `GroupInfo.expires_at`（epoch 毫秒）随 `GET_GROUP_INFO` / `GET_USER_GROUPS` / `GROUP_CREATED_NOTIFY` 下发，客户端据此显示倒计时并在到点后本地移除该群。**到点语义**：群视同不存在——成员的本群频道发送回 `AUTH_FAILED`（与非成员同语义，发送门零改动），读路径惰性摘除（`GroupManager::LookupLocked` 命中到点群即从台账与 `user_to_groups_` 摘除），无人访问的过期群由 `GroupExpirySweeper` 周期回收（enhanced 形态接线，5 分钟一拍；basic 惰性摘除已覆盖语义，清扫只是内存回收）。「参与者自动加入」由既有 `CreateGroupRequest.initial_members` 覆盖，零新增。Inc 2（SDK 四端建群 TTL 入参与客户端倒计时渲染）已落地 2026-10-15：C++ core `CreateGroup` 加 `ttl_seconds` 重载（0 = 永久群，两参版保持不变）；TS 双包 schema 驱动自动携带（wire-lock 测试补向量）；web/desktop 伴侣端建群对话框加有效期档位（永久/1 小时/1 天/7 天），群会话凭 `expiresAt` 显示「剩 N 分/小时/天」倒计时（15s 时钟粒度），名册为准修剪（退群/被踢/到点本地消失，私聊不参与修剪）。
 - **跨服频道**：合服后的跨服聊天。按 server_id 路由。
 - **自定义频道**（范围裁决 2026-10-15，群域承接）：玩家建频道 = 建群——`CREATE_GROUP`（2101/2102）即玩家创建的命名频道（群 id 即频道 id，GUILD 频道域），创建者为 OWNER、可授 ADMIN/MODERATOR（`GroupMemberRole` 阶梯：踢人/禁言/别名等管理面齐备）。**裁决**：不再做独立的"自定义频道"频道类型——语义与群组系统完全重叠（交易频道/组队频道用建群承接），独立频道命名空间（跨群检索/目录/按主题聚合）留待出现真实需求另批。
 

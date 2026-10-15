@@ -235,9 +235,13 @@ public:
   void FetchMentionSuggestions(const std::string& channel_id, const std::string& query,
                                MentionSuggestionsCallback cb);
 
-  // 群组:建/进/出/邀/踢/查。
+  // 群组:建/进/出/邀/踢/查。ttl_seconds = 临时频道(P1,2026-10-15):0 = 永久
+  // 群,正值服务端换算成 GroupInfo.expires_at 下发(上限 30 天,超限回
+  // INVALID_PARAM);到点后群视同不存在。
   void CreateGroup(const std::string& group_name, const std::string& description,
                    CreateGroupCallback cb);
+  void CreateGroup(const std::string& group_name, const std::string& description,
+                   int64_t ttl_seconds, CreateGroupCallback cb);
   void JoinGroup(const std::string& group_id, JoinGroupCallback cb);
   void LeaveGroup(const std::string& group_id, LeaveGroupCallback cb);
   void InviteToGroup(const std::string& group_id, const std::string& user_id,

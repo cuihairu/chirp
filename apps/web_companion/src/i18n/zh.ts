@@ -68,6 +68,7 @@ export const zh = {
     newGroup: '新建群组',
     newGroupTitle: '创建群组',
     newGroupLabel: '群组名称',
+    groupTtlLabel: '有效期',
     groupSettings: (title: string) => `群组设置:${title}`,
     groupSettingsButton: '群设置',
     ownerTag: '群主',

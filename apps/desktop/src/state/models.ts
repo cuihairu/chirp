@@ -19,6 +19,9 @@ export interface Conversation {
   title: string;
   /** Group owner (groups only) — gates the kick affordance in the UI. */
   ownerId?: string;
+  /** 临时频道过期时刻（epoch ms）；缺省 = 永久群。到点后服务端摘除，
+   *  名册刷新本地同步消失。 */
+  expiresAt?: number;
   /** Tail of the conversation, kept in sync by message_store. */
   lastMessagePreview?: string;
   lastMessageAt?: number;

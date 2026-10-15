@@ -444,3 +444,73 @@ describe('ChatApi item link cards (P0 ITEM_LINK)', () => {
     expect(second.content).toBe('hi');
   });
 });
+/** 临时频道（P1 群 TTL）：建群带 ttl、名册下发过期时刻、名册外群修剪。 */
+describe('ChatApi temp channel ttl (P1 group TTL)', () => {
+  const makeGroupHarness = () => {
+    const conn = new FakeChatConnection();
+    const auth = createStore<AuthState>({
+      userId: SELF,
+      kicked: false,
+      deviceId: 'dev-1',
+      loggedIn: true,
+    });
+    const conversations = createConversationStore();
+    const messages = createMessageStore();
+    const typing = createTypingStore();
+    const api = new ChatApi({ conn, auth, conversations, messages, typing });
+    return { conn, api, conversations };
+  };
+
+  it('createGroup forwards ttl seconds and the roster carries the expiry', async () => {
+    const h = makeGroupHarness();
+    h.conn.setResponder(async (msgId) => {
+      if (msgId === MsgID.CREATE_GROUP_REQ) return { code: 0, groupId: 'guild-ttl' };
+      if (msgId === MsgID.GET_USER_GROUPS_REQ) {
+        return { code: 0, groups: [{ groupId: 'guild-ttl', groupName: 'Raid', expiresAt: 1792032098833 }] };
+      }
+      return { code: 0 };
+    });
+    expect(await h.api.createGroup('Raid', '', 3600)).toBe('guild-ttl');
+    const create = h.conn.requests.find((r) => r.msgId === MsgID.CREATE_GROUP_REQ);
+    expect(create?.req).toMatchObject({ ttlSeconds: 3600 });
+    expect(
+      h.conversations.get().conversations.find((c) => c.key === 'g:guild-ttl')?.expiresAt,
+    ).toBe(1792032098833);
+  });
+
+  it('refreshGroups prunes group conversations missing from the roster', async () => {
+    const h = makeGroupHarness();
+    h.conn.setResponder(async (msgId) => {
+      if (msgId === MsgID.GET_USER_GROUPS_REQ) return { code: 0, groups: [] };
+      return { code: 0 };
+    });
+    h.conversations.set((prev) => ({
+      conversations: [
+        ...prev.conversations,
+        {
+          kind: 'group',
+          key: 'g:gone',
+          channelId: 'gone',
+          peerId: 'gone',
+          title: 'Gone',
+          unreadLocal: 1,
+        },
+        {
+          kind: 'private',
+          key: 'p:user_a|user_x',
+          channelId: 'user_a|user_x',
+          peerId: 'user_x',
+          title: 'user_x',
+          unreadLocal: 0,
+        },
+      ],
+    }));
+
+    await h.api.refreshGroups();
+
+    const keys = h.conversations.get().conversations.map((c) => c.key);
+    // 名册外群（临时频道到点 / 退群）本地消失；私聊不参与名册修剪。
+    expect(keys).not.toContain('g:gone');
+    expect(keys).toContain('p:user_a|user_x');
+  });
+});

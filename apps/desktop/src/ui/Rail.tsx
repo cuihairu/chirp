@@ -22,6 +22,7 @@ import { useState } from 'react';
 import type { ReactNode } from 'react';
 import type { Conversation } from '../state/models';
 import { useStoreValue, type Store } from '../state/store';
+import { useNow } from '../state/useNow';
 import type { FriendState } from '../state/friend_store';
 import type { OnlineDevicesState } from '../state/online_devices_store';
 import type { PartyState } from '../state/party_store';
@@ -41,12 +42,36 @@ function SectionTitle(props: { children: string; action?: ReactNode }) {
   );
 }
 
+/** 建群对话框的有效期档位：秒数 → 文案。0 = 永久群。 */
+export const GROUP_TTL_OPTIONS: Array<[number, string]> = [
+  [0, '永久'],
+  [3600, '1 小时'],
+  [86400, '1 天'],
+  [604800, '7 天'],
+];
+
+/** 临时频道剩余时长（分钟/小时/天三档）。到点返回 null——名册刷新后
+ *  该群从列表消失，不留"已过期"残影。 */
+export const groupExpiryLabel = (expiresAt: number, now: number): string | null => {
+  const minutes = Math.ceil((expiresAt - now) / 60_000);
+  if (minutes <= 0) return null;
+  if (minutes < 60) return `剩 ${minutes} 分`;
+  const hours = Math.ceil(minutes / 60);
+  if (hours < 48) return `剩 ${hours} 小时`;
+  return `剩 ${Math.ceil(hours / 24)} 天`;
+};
+
 function ConversationRow(props: {
   conversation: Conversation;
   active: boolean;
   onOpen: () => void;
 }) {
   const { conversation } = props;
+  const now = useNow(15_000);
+  const expiry =
+    conversation.kind === 'group' && conversation.expiresAt
+      ? groupExpiryLabel(conversation.expiresAt, now)
+      : null;
   return (
     <ListItemButton
       selected={props.active}
@@ -73,9 +98,10 @@ function ConversationRow(props: {
           </Stack>
         }
         secondary={
-          conversation.lastMessagePreview ? (
+          expiry || conversation.lastMessagePreview ? (
             <Typography variant="caption" color="text.secondary" noWrap>
-              {conversation.lastMessagePreview}
+              {expiry ? <Box component="span">{expiry} · </Box> : null}
+              {conversation.lastMessagePreview ?? ''}
             </Typography>
           ) : null
         }

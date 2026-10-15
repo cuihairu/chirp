@@ -4391,6 +4391,7 @@ TEST_F(ConvenienceApiTest, GroupLifecycleRoundTrip) {
       EXPECT_EQ(req.creator_id(), "sdk-user");
       EXPECT_EQ(req.group_name(), "guild");
       EXPECT_EQ(req.description(), "desc");
+      EXPECT_EQ(req.ttl_seconds(), 0);  // 两参形态 = 永久群
       chirp::chat::CreateGroupResponse resp;
       resp.set_code(chirp::common::OK);
       resp.set_group_id("g-1");
@@ -4505,6 +4506,28 @@ TEST_F(ConvenienceApiTest, GroupLifecycleRoundTrip) {
   }, ec);
   EXPECT_FALSE(ec);
   EXPECT_EQ(groups.total_count(), 1);
+}
+
+TEST_F(ConvenienceApiTest, CreateGroupTtlOverloadCarriesSeconds) {
+  StartGateway([&](const chirp::gateway::Packet& pkt, auto send) {
+    if (pkt.msg_id() != chirp::gateway::CREATE_GROUP_REQ) return;
+    chirp::chat::CreateGroupRequest req;
+    ASSERT_TRUE(req.ParseFromString(pkt.body()));
+    EXPECT_EQ(req.group_name(), "event");
+    EXPECT_EQ(req.ttl_seconds(), 3600);  // 四参形态透传 ttl
+    chirp::chat::CreateGroupResponse resp;
+    resp.set_code(chirp::common::OK);
+    resp.set_group_id("g-ttl");
+    send(RespFor(pkt, chirp::gateway::CREATE_GROUP_RESP, resp.SerializeAsString()));
+  });
+  ConnectAndLogin();
+
+  std::error_code ec;
+  const auto created = WaitRpc<chirp::chat::CreateGroupResponse>([&](auto cb) {
+    client_->CreateGroup("event", "desc", /*ttl_seconds=*/3600, cb);
+  }, ec);
+  EXPECT_FALSE(ec);
+  EXPECT_EQ(created.group_id(), "g-ttl");
 }
 
 TEST_F(SdkClientTest, ConvenienceRequestsFailFastWhenNotConnected) {
