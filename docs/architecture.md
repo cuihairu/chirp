@@ -1,6 +1,4 @@
----
-title: 整体架构
----
+> 🌐 Language: **中文** (this page) | [English](./architecture.en.md)
 
 # Chirp 整体架构
 

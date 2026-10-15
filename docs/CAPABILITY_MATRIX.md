@@ -1,3 +1,5 @@
+> 🌐 Language: **中文** (this page) | [English](./CAPABILITY_MATRIX.en.md)
+
 # Chirp 能力矩阵(Capability Matrix)
 
 最后核对:2026-10-13
