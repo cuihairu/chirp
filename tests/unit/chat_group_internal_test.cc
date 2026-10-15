@@ -245,4 +245,29 @@ TEST(GroupExpirySweeperTest, TimerLoopSweepsAndStops) {
   io.run();        // 排干 strand 上待决的 cancel post（stop 臂不再重排）。
 }
 
+// Stop 抢在首次到期处理之前：Start() 先 post 了一次 ScheduleNextRun，
+// Stop() 随后清掉 running_ 并把 cancel 排在它后面，io.run() 排干时那条
+// ScheduleNextRun 命中 !running_ 早退，链就此停摆（cancel 时定时器还没挂）。
+TEST(GroupExpirySweeperTest, StopBeforeFirstTickLeavesChainDead) {
+  asio::io_context io;
+  chirp::chat::GroupManager mgr;
+  // 已过期的临时群：若定时器臂真的跑过一遍，它在此前就被摘除了。
+  const std::string temp =
+      mgr.CreateGroup("alice", "event", "", "", 0, {},
+                      /*expires_at_ms=*/1);
+  ASSERT_FALSE(temp.empty());
+
+  chirp::chat::GroupExpirySweeper sweeper(io, mgr, /*interval_ms=*/10);
+  sweeper.Start();
+  sweeper.Stop();
+  io.run();  // 排干：ScheduleNextRun 命中 !running_ 早退，cancel 为空转
+
+  // 链已死：若上面那条 ScheduleNextRun 没早退、把定时器重排上，这段虚拟
+  // 时间里的十几次到期处理就会把临时群扫掉。
+  io.run_for(std::chrono::milliseconds(200));
+  const auto removed = mgr.SweepExpired(1000);
+  ASSERT_EQ(removed.size(), 1u);
+  EXPECT_EQ(removed[0], temp);
+}
+
 }  // namespace
