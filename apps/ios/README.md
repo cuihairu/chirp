@@ -111,7 +111,7 @@ swift test
 |---|---|---|
 | P1 | 工程结构 + CI 构建腿(macos-latest:xcodegen + iOS Simulator 编译证明 + 包测试上 CI);SwiftUI 三屏骨架(登录/会话/聊天,静态);`ChirpAppCore` 入包(DeviceIdentity / HostConfig / LoginDraft) | ✅ 2026-10-03 |
 | P2 | 登录+会话+收发最小闭环:`ChatSessionService`(蓝本 MainActivity.kt 接线——ChatConnection/ChatPipeline/MemoryMessageStore/WordFilterSync 拦截器/OfflineSendQueue/MESSAGE_ACK 回执先于渲染/事件流)+ `SessionIndex` 会话列表 + SwiftUI 三屏真接线(连接横幅/KICK 踢下线/离线入队重放提示);服务级单测 11 例(假 transport+虚拟时钟,对拍协议包手法) | ✅ 2026-10-03 |
-| P3 | 推送 APNs 客户端注册链:`AwaitedPushTokenSource`(offer-then-fetch 等待器,10s 超时 nil 降级)+ `DevicePlaneService`(设备面 5201 独连→LOGIN(GetAuthenticatedSession 守卫)→RegisterDevice)+ `DeviceRegistrar` 加 `PushTokenSlot`(iOS 写 `apns_token` 槽,Swift 侧增量)+ 壳层 `UIApplicationDelegateAdaptor` 桥(didRegister→hex token→offer,didFail→nil 降级)+ 通知授权请求;服务端投递链核对(`--apns-key/-key-id/-team-id/-bundle-id/-sandbox` 旗标、`APNsConfig`、`apns-topic`/`apns-push-type`/`apns-priority`/`apns-collapse-id` 头已有;**ES256 provider JWT(`Authorization: Bearer`)签名与 `.p8` PEM 载入未实现**——`--apns-key` 只落到 `APNsConfig.private_key_path` 无任何消费方,亦无 mTLS 客户端证书回退;HTTP/1.1 传输不含 APNs 官方端点必需的 HTTP/2,生产需前置协议转换——真实投递另需补签名实现,见 TODO.md APNs 项) | ✅ 2026-10-03 |
+| P3 | 推送 APNs 客户端注册链:`AwaitedPushTokenSource`(offer-then-fetch 等待器,10s 超时 nil 降级)+ `DevicePlaneService`(设备面 5201 独连→LOGIN(GetAuthenticatedSession 守卫)→RegisterDevice)+ `DeviceRegistrar` 加 `PushTokenSlot`(iOS 写 `apns_token` 槽,Swift 侧增量)+ 壳层 `UIApplicationDelegateAdaptor` 桥(didRegister→hex token→offer,didFail→nil 降级)+ 通知授权请求;服务端投递链核对(`--apns-key/-key-id/-team-id/-bundle-id/-sandbox` 旗标、`APNsConfig`、`apns-topic`/`apns-push-type`/`apns-priority`/`apns-collapse-id` 头已有;**ES256 provider JWT(`Authorization: Bearer`)签名与 `.p8` PEM 载入已落地**(2026-10-15——`apns_jwt.cc` 建 token:PEM 载入 inline/key 路径、曲线校验 P-256、DER→raw 签名、50 分钟窗口缓存,13 例单测;凭据之外余 HTTP/2 前置协议转换,见 TODO.md APNs 项) | ✅ 2026-10-03 |
 | P4a | 快捷反应 + 输入状态 + 服务端历史:`ReactionIndex`(八枚 QUICK_REACTIONS,notify 增量/应答聚合覆盖,操作者不在 notify 扇出面 web 同款)+ `TypingIndex`(6s TTL,排自己)+ `ChatSessionService` 四方法(add/remove/sendTyping/loadServerHistory)+ 壳层接线(长按快捷反应、chips 切换、正在输入横幅、3s/5s 输入上报节流、打开会话拉服务端历史按 messageID 去重合并) | ✅ 2026-10-03 |
 | P4b | 多端在线镜像 + 设备面板:`OnlineDeviceIndex`(platform 键控/offline 留 last-seen)+ `DEVICES_PRESENCE_NOTIFY` 接线 + `DevicePlaneService.loadDevices` + `DevicesView`(设备面挂只降级不伤聊天) | ✅ 2026-10-03 |
 | P4c | social 好友名册 + 在线状态面:`FriendIndex`/`PresenceIndex` + 请求面六方法(字段逐条对齐 web social_api.ts)+ `FriendsView` + 登录即 `setPresence(.online)` | ✅ 2026-10-03 |
@@ -122,9 +122,11 @@ swift test
 | P6 | 会话列表持久化 + 会话删除:`SessionIndex.SnapshotIO` 快照缝(load/save 闭包,DeviceIdentity 同款)——构造回灌 v1 JSON、变更即落盘(载入过键结构门 + DM 含自己侧的成员门、kind/peerId 从键反解、负未读钳 0、破损/异版本当全新)+ `ChatSessionService.sessionSnapshot` 注参 + 壳层 UserDefaults 按用户分键 + 列表行 DM 滑动删除(群行走退群/被踢,名单引导会重建故不开放) | ✅ 2026-10-04 |
 
 Out of scope until credentials exist: a signed build with the
-aps-environment entitlement (real device token), provisioning for physical
-devices, and the server-side ES256 `.p8` JWT signing (not yet implemented —
-flags and APNs headers exist, the `Authorization: Bearer` signing does not) —
-the P3 structure keeps all of it degradable without them (empty-token
-registration, server falls back to log delivery).
+aps-environment entitlement (real device token), and provisioning for physical
+devices. The server-side ES256 `.p8` JWT signing is implemented
+(`services/app/notification/src/apns_jwt.cc`, unit-tested); what remains is
+the user-supplied key material and the HTTP/2 fronting that APNs requires,
+neither of which this checkout can supply. The P3 structure keeps all of it
+degradable without them (empty-token registration, server falls back to log
+delivery).
 

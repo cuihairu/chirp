@@ -215,12 +215,26 @@ KNOWN_UNCOVERABLE = {
     # SendKickAndClose reason.empty() ? "kicked" : reason — every FailClient
     # call site passes a non-empty literal; empty-reason is dead.
     ("libs/network/service_bridge.cc", 37),
+    # apns_jwt SignSha256 OOM-only returns: EVP_MD_CTX_new and the two
+    # EVP_DigestSign calls fail only on allocation failure (the key was
+    # already validated as a P-256 EC key before signing), and an
+    # always-throwing new_handler cannot be scoped to one helper. Same
+    # defensive class as the gzip arms above.
+    ("services/app/notification/src/apns_jwt.cc", 60),
+    ("services/app/notification/src/apns_jwt.cc", 68),
+    ("services/app/notification/src/apns_jwt.cc", 75),
+    # BuildApnsProviderToken propagation returns: SignSha256 only fails
+    # through the OOM arms above, and DerEcdsaSigToRaw only fails on a DER
+    # parse error or an integer wider than 32 bytes - impossible for a
+    # validated P-256 key, whose r/s are < p and always pad into 32 bytes.
+    ("services/app/notification/src/apns_jwt.cc", 180),
+    ("services/app/notification/src/apns_jwt.cc", 185),
     # notification_service/handlers defensive arms: deferred by decision
     # (other session owns those files).
     ("services/app/notification/src/notification_handlers.cc", 94),
-    ("services/app/notification/src/notification_service.cc", 128),
-    ("services/app/notification/src/notification_service.cc", 223),
-    ("services/app/notification/src/notification_service.cc", 394),
+    ("services/app/notification/src/notification_service.cc", 133),
+    ("services/app/notification/src/notification_service.cc", 228),
+    ("services/app/notification/src/notification_service.cc", 399),
     # ChatClient::Impl::SendRequest timeout sweep: the pending entry is
     # erased only together with timer->cancel(); a handler already dispatched
     # before the cancel exits at the timer_ec arm above, so the find-miss

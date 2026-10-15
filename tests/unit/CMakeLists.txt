@@ -401,9 +401,11 @@ add_test(NAME service_bridge_tests COMMAND service_bridge_tests)
 add_executable(notification_tests
   notification_test.cc
   notification_internal_test.cc
+  notification_apns_jwt_test.cc
   push_transport_http_test.cc
   push_transport_tls_test.cc
   ${CMAKE_SOURCE_DIR}/services/app/notification/src/notification_service.cc
+  ${CMAKE_SOURCE_DIR}/services/app/notification/src/apns_jwt.cc
   ${CMAKE_SOURCE_DIR}/services/app/notification/src/push_transport.cc
   ${CMAKE_SOURCE_DIR}/services/app/notification/src/http_push_transport.cc
 )
@@ -433,6 +435,7 @@ add_executable(notification_handlers_tests
   notification_handlers_test.cc
   ${CMAKE_SOURCE_DIR}/services/app/notification/src/notification_handlers.cc
   ${CMAKE_SOURCE_DIR}/services/app/notification/src/notification_service.cc
+  ${CMAKE_SOURCE_DIR}/services/app/notification/src/apns_jwt.cc
   ${CMAKE_SOURCE_DIR}/services/app/notification/src/push_transport.cc
 )
 
@@ -457,6 +460,7 @@ add_executable(notification_client_tests
   notification_client_test.cc
   ${CMAKE_SOURCE_DIR}/services/app/notification/src/notification_handlers.cc
   ${CMAKE_SOURCE_DIR}/services/app/notification/src/notification_service.cc
+  ${CMAKE_SOURCE_DIR}/services/app/notification/src/apns_jwt.cc
   ${CMAKE_SOURCE_DIR}/services/app/notification/src/push_transport.cc
   ${CMAKE_SOURCE_DIR}/services/shared/chat/src/push_bridge.cc
 )
@@ -483,6 +487,7 @@ add_executable(notification_main_session_tests
   notification_main_session_test.cc
   ${CMAKE_SOURCE_DIR}/services/app/notification/src/notification_handlers.cc
   ${CMAKE_SOURCE_DIR}/services/app/notification/src/notification_service.cc
+  ${CMAKE_SOURCE_DIR}/services/app/notification/src/apns_jwt.cc
   ${CMAKE_SOURCE_DIR}/services/app/notification/src/push_transport.cc
   ${CMAKE_SOURCE_DIR}/services/app/notification/src/http_push_transport.cc
 )

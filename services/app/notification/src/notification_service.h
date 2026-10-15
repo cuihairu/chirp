@@ -2,6 +2,7 @@
 #define CHIRP_SERVICES_NOTIFICATION_NOTIFICATION_SERVICE_H_
 
 #include <atomic>
+#include <chrono>
 #include <functional>
 #include <memory>
 #include <mutex>
@@ -167,6 +168,11 @@ private:
   bool SendAPNs(const DeviceRegistration& device,
                const NotificationPayload& payload);
 
+  // Current APNs provider token ("Bearer ..." payload), or empty when the
+  // provider config is incomplete. Cached per PEM and refreshed past the
+  // 50-minute window: APNs rejects provider tokens older than one hour.
+  std::string ApnsBearerToken();
+
   std::string BuildFCMPayload(const NotificationPayload& payload);
   std::string BuildFCMPayload(const std::string& device_token,
                               const NotificationPayload& payload);
@@ -178,6 +184,19 @@ private:
   APNsConfig apns_config_;
   // Never null after the ctor; defaults to the logging stub.
   std::shared_ptr<PushTransport> transport_;
+
+  // Cached APNs provider token plus the PEM/key material it was built from.
+  std::mutex apns_token_mu_;
+  std::string apns_token_;
+  std::string apns_token_pem_;
+  int64_t apns_token_iat_ = 0;
+  // Wall clock in epoch seconds; the internal tests pin it to exercise the
+  // refresh window.
+  std::function<int64_t()> apns_now_ = [] {
+    return std::chrono::duration_cast<std::chrono::seconds>(
+               std::chrono::system_clock::now().time_since_epoch())
+        .count();
+  };
 
   mutable std::mutex mu_;
 
