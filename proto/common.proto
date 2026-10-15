@@ -36,6 +36,12 @@ enum ErrorCode {
   // --world_channel_min_level. The send is refused before any budget or
   // store is touched; other channels are unaffected.
   LEVEL_REQUIRED = 13;
+  // Game-plane DM restriction (game_chat_features P2 专码): the receiver
+  // enabled the stranger-DM switch (SET_DM_RESTRICTION_REQ 2255) and the
+  // sender is neither a social-plane friend nor a co-member of any group.
+  // The send is refused without touching any store; other channels are
+  // unaffected.
+  DM_RESTRICTED = 14;
 }
 
 message Empty {}

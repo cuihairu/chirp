@@ -103,6 +103,12 @@ class GroupHandlers {
     return groups_.MutedUntil(group_id, user_id, now_ms) > 0;
   }
 
+  // 防骚扰私聊门（game_chat_features P2，2255-2258）用：两用户是否共享
+  // 至少一个存活群（到点临时群不算）。
+  bool ShareAnyGroup(const std::string& user_a, const std::string& user_b) {
+    return groups_.ShareAnyGroup(user_a, user_b);
+  }
+
  private:
   void NotifyMembers(const std::string& group_id, chirp::gateway::MsgID msg_id,
                      const google::protobuf::Message& body);

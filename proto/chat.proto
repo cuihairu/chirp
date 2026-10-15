@@ -279,6 +279,30 @@ message ReportMessageResponse {
   int32 report_count = 3;      // 去重后的累计举报数（重复举报幂等回显）
 }
 
+// 防骚扰私聊限制（2255-2258，game_chat_features P2）：接收方开关，开启后
+// 陌生人（非好友且无任何共同群）发给本用户的私聊被拒（DM_RESTRICTED，
+// 消息不落任何存储）；好友、同群成员、本人会话与 NPC 接收方不受影响。
+// 缺省关——既有部署零行为变化。好友判定读 social 平面持久化的好友快照
+// （chirp:social:friends:<receiver>，services/social 落盘，快照无 TTL）；
+// 无共享 Redis 时好友半边不可判定，仅同群半边生效（friend_graph.h 边界
+// 注记）。开关态与黑名单同一 io 线程内存生命周期（进程重启回缺省关）。
+message SetDmRestrictionRequest {
+  bool enabled = 1;
+}
+
+message SetDmRestrictionResponse {
+  common.ErrorCode code = 1;   // OK / AUTH_FAILED（未登录）/ INVALID_PARAM
+                               // （垃圾 body）
+  bool enabled = 2;            // 生效后的开关态（回显）
+}
+
+message GetDmRestrictionRequest {}
+
+message GetDmRestrictionResponse {
+  common.ErrorCode code = 1;   // OK / AUTH_FAILED（未登录）
+  bool enabled = 2;            // 当前开关态
+}
+
 // Join group request
 message JoinGroupRequest {
   string user_id = 1;

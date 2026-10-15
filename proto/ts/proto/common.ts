@@ -55,6 +55,14 @@ export enum ErrorCode {
    * store is touched; other channels are unaffected.
    */
   LEVEL_REQUIRED = 13,
+  /**
+   * DM_RESTRICTED - Game-plane DM restriction (game_chat_features P2 专码): the receiver
+   * enabled the stranger-DM switch (SET_DM_RESTRICTION_REQ 2255) and the
+   * sender is neither a social-plane friend nor a co-member of any group.
+   * The send is refused without touching any store; other channels are
+   * unaffected.
+   */
+  DM_RESTRICTED = 14,
   UNRECOGNIZED = -1,
 }
 
@@ -102,6 +110,9 @@ export function errorCodeFromJSON(object: any): ErrorCode {
     case 13:
     case "LEVEL_REQUIRED":
       return ErrorCode.LEVEL_REQUIRED;
+    case 14:
+    case "DM_RESTRICTED":
+      return ErrorCode.DM_RESTRICTED;
     case -1:
     case "UNRECOGNIZED":
     default:
@@ -139,6 +150,8 @@ export function errorCodeToJSON(object: ErrorCode): string {
       return "MUTED";
     case ErrorCode.LEVEL_REQUIRED:
       return "LEVEL_REQUIRED";
+    case ErrorCode.DM_RESTRICTED:
+      return "DM_RESTRICTED";
     case ErrorCode.UNRECOGNIZED:
     default:
       return "UNRECOGNIZED";

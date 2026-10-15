@@ -111,6 +111,9 @@ if(MYSQL_FOUND)
         # Channel mutes (game_chat_features P0 频道屏蔽): per-user push
         # filters over world/guild/team.
         src/delivery_prefs.cc
+        # Friend-graph reader (game_chat_features P2 防骚扰): read-only access
+        # to the social plane's persisted friend snapshots.
+        src/friend_graph.cc
     )
 
     chirp_configure_chat_target(chirp_chat)

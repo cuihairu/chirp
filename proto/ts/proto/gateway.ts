@@ -174,6 +174,17 @@ export enum MsgID {
    */
   REPORT_MESSAGE_REQ = 2253,
   REPORT_MESSAGE_RESP = 2254,
+  /**
+   * SET_DM_RESTRICTION_REQ - 防骚扰私聊限制（game_chat_features P2，2026-10-15）：接收方开关，开启后
+   * 陌生人（非 social 平面好友且无共同群）发给本用户的私聊被拒
+   * （DM_RESTRICTED）；缺省关，好友/同群/本人/NPC 接收方不受影响。body 见
+   * chat.proto 的 SetDmRestrictionRequest / SetDmRestrictionResponse /
+   * GetDmRestrictionRequest / GetDmRestrictionResponse。
+   */
+  SET_DM_RESTRICTION_REQ = 2255,
+  SET_DM_RESTRICTION_RESP = 2256,
+  GET_DM_RESTRICTION_REQ = 2257,
+  GET_DM_RESTRICTION_RESP = 2258,
   /** ADD_FRIEND_REQ - Social service */
   ADD_FRIEND_REQ = 3001,
   ADD_FRIEND_RESP = 3002,
@@ -680,6 +691,18 @@ export function msgIDFromJSON(object: any): MsgID {
     case 2254:
     case "REPORT_MESSAGE_RESP":
       return MsgID.REPORT_MESSAGE_RESP;
+    case 2255:
+    case "SET_DM_RESTRICTION_REQ":
+      return MsgID.SET_DM_RESTRICTION_REQ;
+    case 2256:
+    case "SET_DM_RESTRICTION_RESP":
+      return MsgID.SET_DM_RESTRICTION_RESP;
+    case 2257:
+    case "GET_DM_RESTRICTION_REQ":
+      return MsgID.GET_DM_RESTRICTION_REQ;
+    case 2258:
+    case "GET_DM_RESTRICTION_RESP":
+      return MsgID.GET_DM_RESTRICTION_RESP;
     case 3001:
     case "ADD_FRIEND_REQ":
       return MsgID.ADD_FRIEND_REQ;
@@ -1272,6 +1295,14 @@ export function msgIDToJSON(object: MsgID): string {
       return "REPORT_MESSAGE_REQ";
     case MsgID.REPORT_MESSAGE_RESP:
       return "REPORT_MESSAGE_RESP";
+    case MsgID.SET_DM_RESTRICTION_REQ:
+      return "SET_DM_RESTRICTION_REQ";
+    case MsgID.SET_DM_RESTRICTION_RESP:
+      return "SET_DM_RESTRICTION_RESP";
+    case MsgID.GET_DM_RESTRICTION_REQ:
+      return "GET_DM_RESTRICTION_REQ";
+    case MsgID.GET_DM_RESTRICTION_RESP:
+      return "GET_DM_RESTRICTION_RESP";
     case MsgID.ADD_FRIEND_REQ:
       return "ADD_FRIEND_REQ";
     case MsgID.ADD_FRIEND_RESP:

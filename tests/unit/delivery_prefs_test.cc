@@ -137,5 +137,20 @@ TEST(DeliveryPrefsTest, GetBlockedUsersListsEveryBlockedSender) {
   EXPECT_EQ(blocked, (std::vector<std::string>{"bob", "carol"}));
 }
 
+TEST(DeliveryPrefsTest, DmRestrictionDefaultsOff) {
+  DeliveryPrefs prefs;
+  EXPECT_FALSE(prefs.IsDmRestricted("alice"));
+}
+
+TEST(DeliveryPrefsTest, DmRestrictionTogglesPerUser) {
+  DeliveryPrefs prefs;
+  prefs.SetDmRestricted("alice", true);
+  EXPECT_TRUE(prefs.IsDmRestricted("alice"));
+  // Isolated per user; toggling back off clears it again.
+  EXPECT_FALSE(prefs.IsDmRestricted("bob"));
+  prefs.SetDmRestricted("alice", false);
+  EXPECT_FALSE(prefs.IsDmRestricted("alice"));
+}
+
 } // namespace
 } // namespace chirp::chat

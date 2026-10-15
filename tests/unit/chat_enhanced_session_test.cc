@@ -22,6 +22,7 @@
 
 #include "common/jwt.h"
 #include "delivery_ack_manager.h"
+#include "friend_graph.h"
 #include "network/chat_peer_hub.h"
 #include "network/chat_peer_link.h"
 #include "network/message_router.h"
@@ -150,7 +151,8 @@ using HandleSendMessageWithPrefsFn = void (*)(
     const std::shared_ptr<chirp::network::MessageRouter>&, chirp::network::ServerGatewayPeer*,
     const std::string&, const std::string&, chirp::network::ChatPeerLink*, const std::string&,
     chirp::chat::MessageEditHandlers*, chirp::chat::PlayerDirectory*, chirp::network::ChatPeerHub*,
-    chirp::chat::GroupHandlers*, chirp::chat::ReactionHandlers*, int64_t);
+    chirp::chat::GroupHandlers*, chirp::chat::ReactionHandlers*,
+    chirp::chat::FriendGraph*, int64_t);
 
 template <typename Fn, typename = void>
 struct CanCastHandleLogin : std::false_type {};
@@ -196,11 +198,12 @@ void InvokeSendMessage(const chirp::chat::SendMessageRequest& req,
                        chirp::chat::MessageEditHandlers* edits,
                        chirp::chat::PlayerDirectory* directory, chirp::network::ChatPeerHub* hub,
                        chirp::chat::GroupHandlers* groups,
-                       chirp::chat::ReactionHandlers* reactions, int64_t seq) {
+                       chirp::chat::ReactionHandlers* reactions,
+                       chirp::chat::FriendGraph* friend_graph, int64_t seq) {
   if constexpr (CanCastHandleSendMessage<HandleSendMessageWithPrefsFn>::value) {
     HandleSendMessage(req, session, state, store, tracker, acks, prefs, router, hub_peer,
                       npc_service_id, npc_prefix, spoke_link, spoke_game_id, edits, directory, hub,
-                      groups, reactions, seq);
+                      groups, reactions, friend_graph, seq);
   } else {
     HandleSendMessage(req, session, state, store, tracker, acks, router, hub_peer,
                       npc_service_id, npc_prefix, spoke_link, spoke_game_id,
@@ -250,7 +253,7 @@ class EnhancedSessionTest : public ::testing::Test {
                       /*npc_prefix=*/"npc:", /*spoke_link=*/nullptr, /*spoke_game_id=*/"",
                       edits_override ? edits_override : recall_.handlers.get(),
                       /*directory=*/nullptr, /*hub=*/nullptr, /*groups=*/nullptr,
-                      /*reactions=*/nullptr, /*seq=*/1);
+                      /*reactions=*/nullptr, &friend_graph_, /*seq=*/1);
     // 同会话多次发送会累积历史帧，这里只断言"有响应"并取最新一帧。
     const auto resps = FramesOf(*sender_session, chirp::gateway::SEND_MESSAGE_RESP);
     EXPECT_FALSE(resps.empty());
@@ -342,7 +345,7 @@ class EnhancedSessionTest : public ::testing::Test {
                       tracker_, /*acks=*/nullptr, &delivery_prefs_, router_, hub_peer,
                       npc_service_id, /*npc_prefix=*/"npc:", spoke_link, spoke_game_id,
                       edits_override, directory, hub, /*groups=*/nullptr,
-                      /*reactions=*/nullptr, /*seq=*/1);
+                      /*reactions=*/nullptr, &friend_graph_, /*seq=*/1);
     const auto resps = FramesOf(*sender_session, chirp::gateway::SEND_MESSAGE_RESP);
     chirp::chat::SendMessageResponse resp;
     if (resps.empty() || !resp.ParseFromString(resps.back().body())) {
@@ -375,6 +378,9 @@ class EnhancedSessionTest : public ::testing::Test {
   // form drops it (the in-flight one dereferences it per delivery, with no
   // null guard), so hand them a real, empty instance either way.
   chirp::chat::DeliveryPrefs delivery_prefs_;
+  // 防骚扰好友判定：空 Redis 站桩（AreFriends 恒 false），私聊限制用例经
+  // delivery_prefs_ 开关只验拒绝语义；好友半边由 basic 形态带真快照覆盖。
+  chirp::chat::FriendGraph friend_graph_{nullptr};
   // 撤回装配：默认 EditConfig（窗口 2 分钟、private+guild 可撤回）。
   chirp::chat::EditConfig edit_config_;
   EnhancedRecallRuntime recall_;
@@ -607,7 +613,7 @@ TEST_F(EnhancedSessionTest, PrivateSendFansOutToEveryDevice) {
                     router_, /*hub_peer=*/nullptr, /*npc_service_id=*/"", /*npc_prefix=*/"npc:",
                     /*spoke_link=*/nullptr, /*spoke_game_id=*/"", recall_.handlers.get(),
                     /*directory=*/nullptr, /*hub=*/nullptr, /*groups=*/nullptr,
-                    /*reactions=*/nullptr, /*seq=*/3);
+                    /*reactions=*/nullptr, &friend_graph_, /*seq=*/3);
 
   auto resps = FramesOf(*sender, chirp::gateway::SEND_MESSAGE_RESP);
   ASSERT_EQ(resps.size(), 1u);
@@ -644,7 +650,7 @@ TEST_F(EnhancedSessionTest, PrivateSendQueuesOfflineWhenEveryDeviceHalfClosed) {
                     router_, /*hub_peer=*/nullptr, /*npc_service_id=*/"", /*npc_prefix=*/"npc:",
                     /*spoke_link=*/nullptr, /*spoke_game_id=*/"", recall_.handlers.get(),
                     /*directory=*/nullptr, /*hub=*/nullptr, /*groups=*/nullptr,
-                    /*reactions=*/nullptr, /*seq=*/4);
+                    /*reactions=*/nullptr, &friend_graph_, /*seq=*/4);
 
   // A half-closed connection counts as offline: nothing is written to it.
   EXPECT_TRUE(bob->sent.empty());
@@ -780,7 +786,7 @@ TEST_F(EnhancedSessionTest, RecallRejectsNonSenderUnknownWorldChannelAndHardDele
                     &delivery_prefs_, router_, /*hub_peer=*/nullptr, /*npc_service_id=*/"",
                     /*npc_prefix=*/"npc:", /*spoke_link=*/nullptr, /*spoke_game_id=*/"",
                     live.recall.handlers.get(), /*directory=*/nullptr, /*hub=*/nullptr,
-                    /*groups=*/nullptr, /*reactions=*/nullptr, /*seq=*/2);
+                    /*groups=*/nullptr, /*reactions=*/nullptr, &friend_graph_, /*seq=*/2);
   std::string world_mid;
   {
     const auto resps = FramesOf(*alice, chirp::gateway::SEND_MESSAGE_RESP);
@@ -2267,7 +2273,7 @@ TEST_F(EnhancedSessionTest, GroupMuteBlocksGuildSendBeforeStore) {
                     &delivery_prefs_, router_, /*hub_peer=*/nullptr, /*npc_service_id=*/"",
                     /*npc_prefix=*/"npc:", /*spoke_link=*/nullptr, /*spoke_game_id=*/"",
                     /*edits=*/nullptr, /*directory=*/nullptr, /*hub=*/nullptr, /*groups=*/&handlers,
-                    /*reactions=*/nullptr, /*seq=*/1);
+                    /*reactions=*/nullptr, &friend_graph_, /*seq=*/1);
   const auto resps = FramesOf(*sender, chirp::gateway::SEND_MESSAGE_RESP);
   ASSERT_EQ(resps.size(), 1u);
   chirp::chat::SendMessageResponse resp;
@@ -2282,7 +2288,7 @@ TEST_F(EnhancedSessionTest, GroupMuteBlocksGuildSendBeforeStore) {
                     &delivery_prefs_, router_, /*hub_peer=*/nullptr, /*npc_service_id=*/"",
                     /*npc_prefix=*/"npc:", /*spoke_link=*/nullptr, /*spoke_game_id=*/"",
                     /*edits=*/nullptr, /*directory=*/nullptr, /*hub=*/nullptr, /*groups=*/&handlers,
-                    /*reactions=*/nullptr, /*seq=*/2);
+                    /*reactions=*/nullptr, &friend_graph_, /*seq=*/2);
   const auto world_resps = FramesOf(*sender, chirp::gateway::SEND_MESSAGE_RESP);
   ASSERT_EQ(world_resps.size(), 2u);
   chirp::chat::SendMessageResponse world_resp;
@@ -2298,7 +2304,7 @@ TEST_F(EnhancedSessionTest, GroupMuteBlocksGuildSendBeforeStore) {
                     &delivery_prefs_, router_, /*hub_peer=*/nullptr, /*npc_service_id=*/"",
                     /*npc_prefix=*/"npc:", /*spoke_link=*/nullptr, /*spoke_game_id=*/"",
                     /*edits=*/nullptr, /*directory=*/nullptr, /*hub=*/nullptr, /*groups=*/&handlers,
-                    /*reactions=*/nullptr, /*seq=*/3);
+                    /*reactions=*/nullptr, &friend_graph_, /*seq=*/3);
   const auto resumed = FramesOf(*sender, chirp::gateway::SEND_MESSAGE_RESP);
   ASSERT_EQ(resumed.size(), 3u);
   chirp::chat::SendMessageResponse resumed_resp;
@@ -2327,7 +2333,7 @@ TEST_F(EnhancedSessionTest, GroupChannelRejectsNonMemberSend) {
                     &delivery_prefs_, router_, /*hub_peer=*/nullptr, /*npc_service_id=*/"",
                     /*npc_prefix=*/"npc:", /*spoke_link=*/nullptr, /*spoke_game_id=*/"",
                     /*edits=*/nullptr, /*directory=*/nullptr, /*hub=*/nullptr, /*groups=*/&handlers,
-                    /*reactions=*/nullptr, /*seq=*/1);
+                    /*reactions=*/nullptr, &friend_graph_, /*seq=*/1);
   const auto resps = FramesOf(*sender, chirp::gateway::SEND_MESSAGE_RESP);
   ASSERT_EQ(resps.size(), 1u);
   chirp::chat::SendMessageResponse resp;
@@ -2342,12 +2348,52 @@ TEST_F(EnhancedSessionTest, GroupChannelRejectsNonMemberSend) {
                     &delivery_prefs_, router_, /*hub_peer=*/nullptr, /*npc_service_id=*/"",
                     /*npc_prefix=*/"npc:", /*spoke_link=*/nullptr, /*spoke_game_id=*/"",
                     /*edits=*/nullptr, /*directory=*/nullptr, /*hub=*/nullptr, /*groups=*/&handlers,
-                    /*reactions=*/nullptr, /*seq=*/2);
+                    /*reactions=*/nullptr, &friend_graph_, /*seq=*/2);
   const auto member_resps = FramesOf(*sender, chirp::gateway::SEND_MESSAGE_RESP);
   ASSERT_EQ(member_resps.size(), 2u);
   chirp::chat::SendMessageResponse member_resp;
   ASSERT_TRUE(member_resp.ParseFromString(member_resps[1].body()));
   EXPECT_EQ(member_resp.code(), chirp::common::OK);
+}
+
+// --- 防骚扰私聊限制（2255-2258）：enhanced 形态同款接收方门 ---------------
+//
+// 好友半边由 basic 形态的 StubRedisClient 用例带真快照覆盖；此处 friend_graph_
+// 是空桩（恒非好友），只钉门本身：缺省关 / 开启拒陌生人 / 本人会话豁免 /
+// 关闭即恢复，且被拒消息不落任何存储（无消息 id）。
+
+TEST_F(EnhancedSessionTest, DmRestrictionRejectsStrangerButNotSelfOrToggleOff) {
+  auto alice = std::make_shared<MockSession>();
+  auto bob = std::make_shared<MockSession>();
+  state_->AddSession("alice", "p1", "s1", alice, "web");
+
+  // 缺省关：陌生人私聊照常受理并投递。
+  std::string mid;
+  ASSERT_EQ(SendPrivate(bob, "bob", "alice", "before switch", &mid),
+            chirp::common::OK);
+  ASSERT_FALSE(mid.empty());
+
+  // 开启：无共同群（groups=nullptr）且非好友 → 陌生人被拒 DM_RESTRICTED，
+  // 门在存储之前：不铸消息 id，接收方会话零通知帧。
+  delivery_prefs_.SetDmRestricted("alice", true);
+  const auto notify_before =
+      FramesOf(*alice, chirp::gateway::CHAT_MESSAGE_NOTIFY).size();
+  EXPECT_EQ(SendPrivate(bob, "bob", "alice", "stranger words", &mid),
+            chirp::common::DM_RESTRICTED);
+  EXPECT_TRUE(mid.empty());  // 门在存储之前
+  EXPECT_EQ(FramesOf(*alice, chirp::gateway::CHAT_MESSAGE_NOTIFY).size(),
+            notify_before);
+  EXPECT_TRUE(store_->PopOfflineMessages("alice", chirp::chat::kDefaultOfflineSlot)
+                  .empty());
+
+  // 本人会话豁免（对话面无门槛语义）。
+  EXPECT_EQ(SendPrivate(alice, "alice", "alice", "note to self", nullptr),
+            chirp::common::OK);
+
+  // 关闭即恢复：陌生人重新可发。
+  delivery_prefs_.SetDmRestricted("alice", false);
+  EXPECT_EQ(SendPrivate(bob, "bob", "alice", "after switch off", &mid),
+            chirp::common::OK);
 }
 
 }  // namespace

@@ -860,6 +860,36 @@ export interface ReportMessageResponse {
   reportCount: number;
 }
 
+/**
+ * 防骚扰私聊限制（2255-2258，game_chat_features P2）：接收方开关，开启后
+ * 陌生人（非好友且无任何共同群）发给本用户的私聊被拒（DM_RESTRICTED，
+ * 消息不落任何存储）；好友、同群成员、本人会话与 NPC 接收方不受影响。
+ * 缺省关——既有部署零行为变化。好友判定读 social 平面持久化的好友快照
+ * （chirp:social:friends:<receiver>，services/social 落盘，快照无 TTL）；
+ * 无共享 Redis 时好友半边不可判定，仅同群半边生效（friend_graph.h 边界
+ * 注记）。开关态与黑名单同一 io 线程内存生命周期（进程重启回缺省关）。
+ */
+export interface SetDmRestrictionRequest {
+  enabled: boolean;
+}
+
+export interface SetDmRestrictionResponse {
+  /** OK / AUTH_FAILED（未登录）/ INVALID_PARAM */
+  code: ErrorCode;
+  /** （垃圾 body） */
+  enabled: boolean;
+}
+
+export interface GetDmRestrictionRequest {
+}
+
+export interface GetDmRestrictionResponse {
+  /** OK / AUTH_FAILED（未登录） */
+  code: ErrorCode;
+  /** 当前开关态 */
+  enabled: boolean;
+}
+
 /** Join group request */
 export interface JoinGroupRequest {
   userId: string;
@@ -4329,6 +4359,254 @@ export const ReportMessageResponse = {
     message.code = object.code ?? 0;
     message.messageId = object.messageId ?? "";
     message.reportCount = object.reportCount ?? 0;
+    return message;
+  },
+};
+
+function createBaseSetDmRestrictionRequest(): SetDmRestrictionRequest {
+  return { enabled: false };
+}
+
+export const SetDmRestrictionRequest = {
+  encode(message: SetDmRestrictionRequest, writer: _m0.Writer = _m0.Writer.create()): _m0.Writer {
+    if (message.enabled !== false) {
+      writer.uint32(8).bool(message.enabled);
+    }
+    return writer;
+  },
+
+  decode(input: _m0.Reader | Uint8Array, length?: number): SetDmRestrictionRequest {
+    const reader = input instanceof _m0.Reader ? input : _m0.Reader.create(input);
+    let end = length === undefined ? reader.len : reader.pos + length;
+    const message = createBaseSetDmRestrictionRequest();
+    while (reader.pos < end) {
+      const tag = reader.uint32();
+      switch (tag >>> 3) {
+        case 1:
+          if (tag !== 8) {
+            break;
+          }
+
+          message.enabled = reader.bool();
+          continue;
+      }
+      if ((tag & 7) === 4 || tag === 0) {
+        break;
+      }
+      reader.skipType(tag & 7);
+    }
+    return message;
+  },
+
+  fromJSON(object: any): SetDmRestrictionRequest {
+    return { enabled: isSet(object.enabled) ? globalThis.Boolean(object.enabled) : false };
+  },
+
+  toJSON(message: SetDmRestrictionRequest): unknown {
+    const obj: any = {};
+    if (message.enabled !== false) {
+      obj.enabled = message.enabled;
+    }
+    return obj;
+  },
+
+  create<I extends Exact<DeepPartial<SetDmRestrictionRequest>, I>>(base?: I): SetDmRestrictionRequest {
+    return SetDmRestrictionRequest.fromPartial(base ?? ({} as any));
+  },
+  fromPartial<I extends Exact<DeepPartial<SetDmRestrictionRequest>, I>>(object: I): SetDmRestrictionRequest {
+    const message = createBaseSetDmRestrictionRequest();
+    message.enabled = object.enabled ?? false;
+    return message;
+  },
+};
+
+function createBaseSetDmRestrictionResponse(): SetDmRestrictionResponse {
+  return { code: 0, enabled: false };
+}
+
+export const SetDmRestrictionResponse = {
+  encode(message: SetDmRestrictionResponse, writer: _m0.Writer = _m0.Writer.create()): _m0.Writer {
+    if (message.code !== 0) {
+      writer.uint32(8).int32(message.code);
+    }
+    if (message.enabled !== false) {
+      writer.uint32(16).bool(message.enabled);
+    }
+    return writer;
+  },
+
+  decode(input: _m0.Reader | Uint8Array, length?: number): SetDmRestrictionResponse {
+    const reader = input instanceof _m0.Reader ? input : _m0.Reader.create(input);
+    let end = length === undefined ? reader.len : reader.pos + length;
+    const message = createBaseSetDmRestrictionResponse();
+    while (reader.pos < end) {
+      const tag = reader.uint32();
+      switch (tag >>> 3) {
+        case 1:
+          if (tag !== 8) {
+            break;
+          }
+
+          message.code = reader.int32() as any;
+          continue;
+        case 2:
+          if (tag !== 16) {
+            break;
+          }
+
+          message.enabled = reader.bool();
+          continue;
+      }
+      if ((tag & 7) === 4 || tag === 0) {
+        break;
+      }
+      reader.skipType(tag & 7);
+    }
+    return message;
+  },
+
+  fromJSON(object: any): SetDmRestrictionResponse {
+    return {
+      code: isSet(object.code) ? errorCodeFromJSON(object.code) : 0,
+      enabled: isSet(object.enabled) ? globalThis.Boolean(object.enabled) : false,
+    };
+  },
+
+  toJSON(message: SetDmRestrictionResponse): unknown {
+    const obj: any = {};
+    if (message.code !== 0) {
+      obj.code = errorCodeToJSON(message.code);
+    }
+    if (message.enabled !== false) {
+      obj.enabled = message.enabled;
+    }
+    return obj;
+  },
+
+  create<I extends Exact<DeepPartial<SetDmRestrictionResponse>, I>>(base?: I): SetDmRestrictionResponse {
+    return SetDmRestrictionResponse.fromPartial(base ?? ({} as any));
+  },
+  fromPartial<I extends Exact<DeepPartial<SetDmRestrictionResponse>, I>>(object: I): SetDmRestrictionResponse {
+    const message = createBaseSetDmRestrictionResponse();
+    message.code = object.code ?? 0;
+    message.enabled = object.enabled ?? false;
+    return message;
+  },
+};
+
+function createBaseGetDmRestrictionRequest(): GetDmRestrictionRequest {
+  return {};
+}
+
+export const GetDmRestrictionRequest = {
+  encode(_: GetDmRestrictionRequest, writer: _m0.Writer = _m0.Writer.create()): _m0.Writer {
+    return writer;
+  },
+
+  decode(input: _m0.Reader | Uint8Array, length?: number): GetDmRestrictionRequest {
+    const reader = input instanceof _m0.Reader ? input : _m0.Reader.create(input);
+    let end = length === undefined ? reader.len : reader.pos + length;
+    const message = createBaseGetDmRestrictionRequest();
+    while (reader.pos < end) {
+      const tag = reader.uint32();
+      switch (tag >>> 3) {
+      }
+      if ((tag & 7) === 4 || tag === 0) {
+        break;
+      }
+      reader.skipType(tag & 7);
+    }
+    return message;
+  },
+
+  fromJSON(_: any): GetDmRestrictionRequest {
+    return {};
+  },
+
+  toJSON(_: GetDmRestrictionRequest): unknown {
+    const obj: any = {};
+    return obj;
+  },
+
+  create<I extends Exact<DeepPartial<GetDmRestrictionRequest>, I>>(base?: I): GetDmRestrictionRequest {
+    return GetDmRestrictionRequest.fromPartial(base ?? ({} as any));
+  },
+  fromPartial<I extends Exact<DeepPartial<GetDmRestrictionRequest>, I>>(_: I): GetDmRestrictionRequest {
+    const message = createBaseGetDmRestrictionRequest();
+    return message;
+  },
+};
+
+function createBaseGetDmRestrictionResponse(): GetDmRestrictionResponse {
+  return { code: 0, enabled: false };
+}
+
+export const GetDmRestrictionResponse = {
+  encode(message: GetDmRestrictionResponse, writer: _m0.Writer = _m0.Writer.create()): _m0.Writer {
+    if (message.code !== 0) {
+      writer.uint32(8).int32(message.code);
+    }
+    if (message.enabled !== false) {
+      writer.uint32(16).bool(message.enabled);
+    }
+    return writer;
+  },
+
+  decode(input: _m0.Reader | Uint8Array, length?: number): GetDmRestrictionResponse {
+    const reader = input instanceof _m0.Reader ? input : _m0.Reader.create(input);
+    let end = length === undefined ? reader.len : reader.pos + length;
+    const message = createBaseGetDmRestrictionResponse();
+    while (reader.pos < end) {
+      const tag = reader.uint32();
+      switch (tag >>> 3) {
+        case 1:
+          if (tag !== 8) {
+            break;
+          }
+
+          message.code = reader.int32() as any;
+          continue;
+        case 2:
+          if (tag !== 16) {
+            break;
+          }
+
+          message.enabled = reader.bool();
+          continue;
+      }
+      if ((tag & 7) === 4 || tag === 0) {
+        break;
+      }
+      reader.skipType(tag & 7);
+    }
+    return message;
+  },
+
+  fromJSON(object: any): GetDmRestrictionResponse {
+    return {
+      code: isSet(object.code) ? errorCodeFromJSON(object.code) : 0,
+      enabled: isSet(object.enabled) ? globalThis.Boolean(object.enabled) : false,
+    };
+  },
+
+  toJSON(message: GetDmRestrictionResponse): unknown {
+    const obj: any = {};
+    if (message.code !== 0) {
+      obj.code = errorCodeToJSON(message.code);
+    }
+    if (message.enabled !== false) {
+      obj.enabled = message.enabled;
+    }
+    return obj;
+  },
+
+  create<I extends Exact<DeepPartial<GetDmRestrictionResponse>, I>>(base?: I): GetDmRestrictionResponse {
+    return GetDmRestrictionResponse.fromPartial(base ?? ({} as any));
+  },
+  fromPartial<I extends Exact<DeepPartial<GetDmRestrictionResponse>, I>>(object: I): GetDmRestrictionResponse {
+    const message = createBaseGetDmRestrictionResponse();
+    message.code = object.code ?? 0;
+    message.enabled = object.enabled ?? false;
     return message;
   },
 };
