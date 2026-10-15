@@ -1781,6 +1781,108 @@ TEST_F(BasicChatTest, RecruitCardsRejectGarbageMetadataAndEmptyIds) {
   EXPECT_EQ(Send(alice, "alice", "bob", "plain text").code(), chirp::common::OK);
 }
 
+TEST_F(BasicChatTest, SkillCardCarriesMetadataThroughHistory) {
+  auto alice = std::make_shared<MockSession>();
+  auto bob = std::make_shared<MockSession>();
+  ASSERT_EQ(Login(alice, "alice").code(), chirp::common::OK);
+  ASSERT_EQ(Login(bob, "bob").code(), chirp::common::OK);
+
+  // 技能链接：metadata = SkillMetadata，content 是展示文本。
+  chirp::chat::SendMessageRequest req;
+  req.set_sender_id("alice");
+  req.set_receiver_id("bob");
+  req.set_channel_type(chirp::chat::PRIVATE);
+  req.set_msg_type(chirp::chat::SKILL_LINK);
+  req.set_content("分享技能");
+  chirp::chat::SkillMetadata skill;
+  skill.set_skill_id("skill-5001");
+  skill.set_skill_name("烈焰斩");
+  skill.set_level(10);
+  skill.set_icon_url("https://cdn.example.com/skill/5001.png");
+  skill.set_description("对目标造成 120% 攻击力的火焰伤害");
+  req.set_metadata(skill.SerializeAsString());
+  DispatchReq(chirp::gateway::SEND_MESSAGE_REQ, req, alice);
+  const auto frames = FramesOf(*alice, chirp::gateway::SEND_MESSAGE_RESP);
+  ASSERT_EQ(frames.size(), 1u);
+  chirp::chat::SendMessageResponse send_resp;
+  ASSERT_TRUE(send_resp.ParseFromString(frames[0].body()));
+  ASSERT_EQ(send_resp.code(), chirp::common::OK);
+
+  // 实时 notify 到 bob：msg_type + metadata 原样到达。
+  const auto notifies = FramesOf(*bob, chirp::gateway::CHAT_MESSAGE_NOTIFY);
+  ASSERT_EQ(notifies.size(), 1u);
+  chirp::chat::ChatMessage live;
+  ASSERT_TRUE(live.ParseFromString(notifies[0].body()));
+  EXPECT_EQ(live.msg_type(), chirp::chat::SKILL_LINK);
+  chirp::chat::SkillMetadata live_skill;
+  ASSERT_TRUE(live_skill.ParseFromString(live.metadata()));
+  EXPECT_EQ(live_skill.skill_id(), "skill-5001");
+  EXPECT_EQ(live_skill.skill_name(), "烈焰斩");
+  EXPECT_EQ(live_skill.level(), 10);
+  EXPECT_EQ(live_skill.description(), "对目标造成 120% 攻击力的火焰伤害");
+
+  // 历史读回：metadata 保真。
+  chirp::chat::GetHistoryRequest hist;
+  hist.set_user_id("alice");
+  hist.set_channel_type(chirp::chat::PRIVATE);
+  hist.set_channel_id("alice|bob");
+  hist.set_limit(10);
+  DispatchReq(chirp::gateway::GET_HISTORY_REQ, hist, alice);
+  chirp::chat::GetHistoryResponse history;
+  const auto hist_frames = FramesOf(*alice, chirp::gateway::GET_HISTORY_RESP);
+  ASSERT_EQ(hist_frames.size(), 1u);
+  ASSERT_TRUE(history.ParseFromString(hist_frames[0].body()));
+  ASSERT_EQ(history.code(), chirp::common::OK);
+  ASSERT_EQ(history.messages_size(), 1);
+  EXPECT_EQ(history.messages(0).msg_type(), chirp::chat::SKILL_LINK);
+  chirp::chat::SkillMetadata hist_skill;
+  ASSERT_TRUE(hist_skill.ParseFromString(history.messages(0).metadata()));
+  EXPECT_EQ(hist_skill.skill_id(), "skill-5001");
+}
+
+TEST_F(BasicChatTest, SkillCardRejectsGarbageMetadataAndEmptyIds) {
+  auto alice = std::make_shared<MockSession>();
+  auto bob = std::make_shared<MockSession>();
+  ASSERT_EQ(Login(alice, "alice").code(), chirp::common::OK);
+  ASSERT_EQ(Login(bob, "bob").code(), chirp::common::OK);
+
+  auto SendTyped = [this, &alice](chirp::chat::MsgType type, const std::string& metadata) {
+    chirp::chat::SendMessageRequest req;
+    req.set_sender_id("alice");
+    req.set_receiver_id("bob");
+    req.set_channel_type(chirp::chat::PRIVATE);
+    req.set_msg_type(type);
+    req.set_content("技能");
+    req.set_metadata(metadata);
+    DispatchReq(chirp::gateway::SEND_MESSAGE_REQ, req, alice);
+    const auto frames = FramesOf(*alice, chirp::gateway::SEND_MESSAGE_RESP);
+    chirp::chat::SendMessageResponse resp;
+    if (!frames.empty()) {
+      resp.ParseFromString(frames.back().body());
+    }
+    return resp;
+  };
+
+  // 垃圾 metadata → INVALID_PARAM，不落任何存储、不产生 notify。
+  EXPECT_EQ(SendTyped(chirp::chat::SKILL_LINK, "\x0A" "\x05" "ab").code(),
+            chirp::common::INVALID_PARAM);
+  // skill_id 为空的技能卡片没有可回查的落点 → INVALID_PARAM。
+  chirp::chat::SkillMetadata no_skill;
+  no_skill.set_skill_name("无名技能");
+  EXPECT_EQ(SendTyped(chirp::chat::SKILL_LINK, no_skill.SerializeAsString()).code(),
+            chirp::common::INVALID_PARAM);
+  EXPECT_TRUE(FramesOf(*bob, chirp::gateway::CHAT_MESSAGE_NOTIFY).empty());
+
+  // 合法技能放行（校验门的通过臂）。
+  chirp::chat::SkillMetadata good;
+  good.set_skill_id("skill-1");
+  ASSERT_EQ(SendTyped(chirp::chat::SKILL_LINK, good.SerializeAsString()).code(),
+            chirp::common::OK);
+
+  // TEXT 消息不受影响（无 metadata 照常走通）。
+  EXPECT_EQ(Send(alice, "alice", "bob", "plain text").code(), chirp::common::OK);
+}
+
 TEST_F(BasicChatTest, GroupSendBroadcastsToMembersAndRefusesNonMember) {
   auto alice = std::make_shared<MockSession>();
   auto carol = std::make_shared<MockSession>();

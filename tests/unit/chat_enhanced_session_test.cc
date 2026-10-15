@@ -1623,6 +1623,53 @@ TEST_F(EnhancedSessionTest, RecruitCardsRejectGarbageMetadataAndEmptyIds) {
             chirp::common::OK);
 }
 
+TEST_F(EnhancedSessionTest, SkillCardCarriesMetadataAndRejectsGarbage) {
+  LiveHistoryRecall live;
+  StartLiveHistory(live);
+  auto alice = std::make_shared<MockSession>();
+  auto bob = std::make_shared<MockSession>();
+  Login(bob, "bob", "b1", 2);
+
+  auto SendSkill = [&](const std::string& meta) {
+    chirp::chat::SendMessageRequest req;
+    req.set_sender_id("alice");
+    req.set_receiver_id("bob");
+    req.set_channel_type(chirp::chat::PRIVATE);
+    req.set_content("分享技能");
+    req.set_msg_type(chirp::chat::SKILL_LINK);
+    req.set_metadata(meta);
+    return SendReq(req, alice, live.store, live.recall.handlers.get(), nullptr, "",
+                   nullptr, "", nullptr, nullptr, nullptr);
+  };
+
+  // 截断的长度分隔字段与空 skill_id：不落任何存储、零投递。
+  EXPECT_EQ(SendSkill(std::string("\x0A" "\x05" "ab")), chirp::common::INVALID_PARAM);
+  chirp::chat::SkillMetadata no_skill;
+  no_skill.set_skill_name("无名技能");
+  EXPECT_EQ(SendSkill(no_skill.SerializeAsString()), chirp::common::INVALID_PARAM);
+  EXPECT_EQ(FramesOf(*bob, chirp::gateway::CHAT_MESSAGE_NOTIFY).size(), 0u);
+  EXPECT_TRUE(live.store->GetHistory("alice|bob", 0, 0, 10).empty());
+
+  // 合法技能链接：notify 带出 msg_type 与技能字节，历史读回保真。
+  chirp::chat::SkillMetadata skill;
+  skill.set_skill_id("skill-5001");
+  skill.set_skill_name("烈焰斩");
+  skill.set_level(10);
+  skill.set_description("对目标造成 120% 攻击力的火焰伤害");
+  EXPECT_EQ(SendSkill(skill.SerializeAsString()), chirp::common::OK);
+
+  const auto notifies = FramesOf(*bob, chirp::gateway::CHAT_MESSAGE_NOTIFY);
+  ASSERT_EQ(notifies.size(), 1u);
+  chirp::chat::ChatMessage notify;
+  ASSERT_TRUE(notify.ParseFromString(notifies[0].body()));
+  EXPECT_EQ(notify.msg_type(), chirp::chat::SKILL_LINK);
+  chirp::chat::SkillMetadata live_skill;
+  ASSERT_TRUE(live_skill.ParseFromString(notify.metadata()));
+  EXPECT_EQ(live_skill.skill_id(), "skill-5001");
+  EXPECT_EQ(live_skill.skill_name(), "烈焰斩");
+  EXPECT_EQ(live_skill.level(), 10);
+}
+
 // --- 黑名单：私聊静默成功，两端都不送、不入离线队列 -------------------------
 
 TEST_F(EnhancedSessionTest, PrivateSendSilentlyDropsBlockedReceiver) {

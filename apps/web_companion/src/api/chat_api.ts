@@ -24,6 +24,7 @@ import {
   SearchMessageResponse,
   SetGroupMuteResponse,
   SetMemberAliasResponse,
+  SkillMetadata,
   type SendMessageRequest,
   TypingIndicator,
 } from '@chirp/proto/chat';
@@ -69,6 +70,7 @@ import {
   type AchievementView,
   type GuildRecruitView,
   type PartyRecruitView,
+  type SkillView,
   type TradeView,
   type ItemView,
   type MessageReactionView,
@@ -353,6 +355,13 @@ export class ChatApi {
       current?: number;
       leaderName?: string;
     },
+    skill?: {
+      skillId: string;
+      skillName?: string;
+      level?: number;
+      iconUrl?: string;
+      description?: string;
+    },
   ): Promise<void> {
     const senderId = this.auth.get().userId;
     if (!senderId) return;
@@ -379,7 +388,9 @@ export class ChatApi {
                 ? MsgType.GUILD_RECRUIT
                 : partyRecruit
                   ? MsgType.PARTY_RECRUIT
-                  : MsgType.TEXT,
+                  : skill
+                    ? MsgType.SKILL_LINK
+                    : MsgType.TEXT,
       content: contentBytes,
       clientTimestamp: Date.now(),
     };
@@ -460,6 +471,19 @@ export class ChatApi {
         }),
       ).finish();
     }
+    // 技能链接（P1 SKILL_LINK）：带 skill 入参即切 SKILL_LINK，技能进
+    // metadata（与坐标/物品/成就/招募同一 metadata 通道；level 缺省 0）。
+    if (skill) {
+      wire.metadata = SkillMetadata.encode(
+        SkillMetadata.fromPartial({
+          skillId: skill.skillId,
+          skillName: skill.skillName,
+          level: skill.level,
+          iconUrl: skill.iconUrl,
+          description: skill.description,
+        }),
+      ).finish();
+    }
     // 预检只读写 content（两面在我们手上非缺省），断言为完整消息面。
     const blocked = !this.wordFilter.onBeforeSend(wire as SendMessageRequest);
     const clientId = `pending-${Date.now().toString(36)}-${pendingCounter++}`;
@@ -522,6 +546,15 @@ export class ChatApi {
             needed: partyRecruit.needed ?? 0,
             current: partyRecruit.current ?? 0,
             leaderName: partyRecruit.leaderName ?? '',
+          }
+        : undefined,
+      skill: skill
+        ? {
+            skillId: skill.skillId,
+            skillName: skill.skillName ?? '',
+            level: skill.level ?? 0,
+            iconUrl: skill.iconUrl ?? '',
+            description: skill.description ?? '',
           }
         : undefined,
     };
@@ -1229,6 +1262,26 @@ const partyRecruitViewOf = (msg: ChatMessage): PartyRecruitView | undefined => {
   };
 };
 
+// 技能卡片解析（P1 SKILL_LINK）：解析口径与服务端校验门一致——非
+// SKILL_LINK 或 metadata 空/解析不出/缺 skill_id 的不当卡片。
+const skillViewOf = (msg: ChatMessage): SkillView | undefined => {
+  if (msg.msgType !== MsgType.SKILL_LINK || msg.metadata.length === 0) return undefined;
+  let skill: SkillMetadata;
+  try {
+    skill = SkillMetadata.decode(msg.metadata);
+  } catch {
+    return undefined;
+  }
+  if (!skill.skillId) return undefined;
+  return {
+    skillId: skill.skillId,
+    skillName: skill.skillName,
+    level: skill.level,
+    iconUrl: skill.iconUrl,
+    description: skill.description,
+  };
+};
+
 const toView = (msg: ChatMessage, channel: ChannelRef): ChatMessageView => ({
   messageId: msg.messageId,
   senderId: msg.senderId,
@@ -1242,6 +1295,7 @@ const toView = (msg: ChatMessage, channel: ChannelRef): ChatMessageView => ({
   coord: coordViewOf(msg),
   item: itemViewOf(msg),
   achievement: achievementViewOf(msg),
+  skill: skillViewOf(msg),
   trade: tradeViewOf(msg),
   guildRecruit: guildRecruitViewOf(msg),
   partyRecruit: partyRecruitViewOf(msg),

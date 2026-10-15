@@ -10,6 +10,7 @@ import {
   GuildRecruitMetadata,
   ItemMetadata,
   PartyRecruitMetadata,
+  SkillMetadata,
   TradeMetadata,
   MessageAck,
   MessageDeletedNotify,
@@ -423,6 +424,44 @@ describe('ChatApi.sendMessage (optimistic)', () => {
     });
   });
 
+  it('sends SKILL_LINK with skill metadata and shows the card optimistically', async () => {
+    const h = makeHarness();
+    await login(h);
+    h.conn.setResponder(async (msgId, req) => {
+      expect(msgId).toBe(MsgID.SEND_MESSAGE_REQ);
+      expect(req).toMatchObject({ msgType: MsgType.SKILL_LINK });
+      return { code: 0, messageId: 'srv-s1' };
+    });
+    await h.api.sendMessage(
+      channel,
+      '分享技能',
+      undefined,
+      undefined,
+      undefined,
+      undefined,
+      undefined,
+      undefined,
+      undefined,
+      {
+        skillId: 'skill-5001',
+        skillName: '烈焰斩',
+        level: 10,
+        description: '对目标造成 120% 攻击力的火焰伤害',
+      },
+    );
+    const wire = h.conn.requests.find((r) => r.msgId === MsgID.SEND_MESSAGE_REQ)!;
+    const skill = SkillMetadata.decode(
+      (wire.req as { metadata?: Uint8Array }).metadata ?? new Uint8Array(),
+    );
+    expect(skill.skillId).toBe('skill-5001');
+    expect(skill.skillName).toBe('烈焰斩');
+    expect(skill.level).toBe(10);
+    expect(h.messages.get().byChannel[channel.key][0]).toMatchObject({
+      messageId: 'srv-s1',
+      skill: { skillId: 'skill-5001', skillName: '烈焰斩', level: 10 },
+    });
+  });
+
   it('leaves plain sends as TEXT without metadata on the wire', async () => {
     const h = makeHarness();
     await login(h);
@@ -691,6 +730,55 @@ describe('ChatApi incoming notifies', () => {
     );
     const second = h.messages.get().byChannel['p:user_a|user_b'][1];
     expect(second.partyRecruit).toBeUndefined();
+    expect(second.content).toBe('hi');
+  });
+
+  it('parses the skill card out of a SKILL_LINK notify metadata', async () => {
+    const h = makeHarness();
+    await login(h);
+    h.conn.emit(
+      MsgID.CHAT_MESSAGE_NOTIFY,
+      chatBody({
+        msgType: MsgType.SKILL_LINK,
+        content: new TextEncoder().encode('分享技能'),
+        metadata: SkillMetadata.encode(
+          SkillMetadata.fromPartial({
+            skillId: 'skill-5001',
+            skillName: '烈焰斩',
+            level: 10,
+            description: '对目标造成 120% 攻击力的火焰伤害',
+          }),
+        ).finish(),
+      }),
+    );
+    expect(h.messages.get().byChannel['p:user_a|user_b'][0]).toMatchObject({
+      skill: { skillId: 'skill-5001', skillName: '烈焰斩', level: 10, description: '对目标造成 120% 攻击力的火焰伤害' },
+    });
+  });
+
+  it('drops the skill card when the metadata does not parse or lacks skill_id', async () => {
+    const h = makeHarness();
+    await login(h);
+    h.conn.emit(
+      MsgID.CHAT_MESSAGE_NOTIFY,
+      chatBody({ msgType: MsgType.SKILL_LINK, metadata: new Uint8Array([0xde, 0xad, 0xbe, 0xef]) }),
+    );
+    const first = h.messages.get().byChannel['p:user_a|user_b'][0];
+    expect(first.skill).toBeUndefined();
+    expect(first.content).toBe('hi');
+
+    h.conn.emit(
+      MsgID.CHAT_MESSAGE_NOTIFY,
+      chatBody({
+        messageId: 'm2',
+        msgType: MsgType.SKILL_LINK,
+        metadata: SkillMetadata.encode(
+          SkillMetadata.fromPartial({ skillName: '无名技能' }),
+        ).finish(),
+      }),
+    );
+    const second = h.messages.get().byChannel['p:user_a|user_b'][1];
+    expect(second.skill).toBeUndefined();
     expect(second.content).toBe('hi');
   });
 

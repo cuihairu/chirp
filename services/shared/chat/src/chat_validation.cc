@@ -183,6 +183,18 @@ chirp::common::ErrorCode ValidateRecruitMetadata(const SendMessageRequest& req) 
   return chirp::common::OK;
 }
 
+chirp::common::ErrorCode ValidateSkillMetadata(const SendMessageRequest& req) {
+  if (req.msg_type() != SKILL_LINK) {
+    return chirp::common::OK;
+  }
+  SkillMetadata skill;
+  // 空串同上：skill_id 空判同时覆盖「没带 metadata」与「解析不出」。
+  if (!skill.ParseFromString(req.metadata()) || skill.skill_id().empty()) {
+    return chirp::common::INVALID_PARAM;
+  }
+  return chirp::common::OK;
+}
+
 chirp::common::ErrorCode ValidateSendMessageRequest(const SendMessageRequest& req,
                                                     std::string_view authenticated_user_id) {
   if (!IsAuthenticated(authenticated_user_id)) {
@@ -224,6 +236,12 @@ chirp::common::ErrorCode ValidateSendMessageRequest(const SendMessageRequest& re
   if (const chirp::common::ErrorCode recruit_code = ValidateRecruitMetadata(req);
       recruit_code != chirp::common::OK) {
     return recruit_code;
+  }
+  // 技能链接（P1 SKILL_LINK）同层：垃圾/缺 skill_id 的 metadata 同样在落
+  // 任何存储之前拦下。
+  if (const chirp::common::ErrorCode skill_code = ValidateSkillMetadata(req);
+      skill_code != chirp::common::OK) {
+    return skill_code;
   }
 
   if (req.channel_type() == PRIVATE) {

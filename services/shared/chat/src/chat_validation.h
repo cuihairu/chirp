@@ -54,6 +54,11 @@ chirp::common::ErrorCode ValidateTradeMetadata(const SendMessageRequest& req);
 // 物品/成就/交易链接同层同口径。
 chirp::common::ErrorCode ValidateRecruitMetadata(const SendMessageRequest& req);
 
+// 技能链接（P1 SKILL_LINK）：metadata 必须能按 SkillMetadata 解析且
+// skill_id 非空，否则 INVALID_PARAM。与坐标/物品/成就/交易/招募卡片同层
+// 同口径。
+chirp::common::ErrorCode ValidateSkillMetadata(const SendMessageRequest& req);
+
 chirp::common::ErrorCode ValidateSendMessageRequest(const SendMessageRequest& req,
                                                     std::string_view authenticated_user_id);
 

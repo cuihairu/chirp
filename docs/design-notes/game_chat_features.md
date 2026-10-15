@@ -4,7 +4,7 @@ title: 游戏聊天特征
 
 # 游戏聊天特征
 
-最后更新：2026-10-15（表情/贴图落地注记；P1 消息处理消息编辑/消息引用与 P0 消息搜索补已落地注记——以源码为真相对账，标注实测落地日期与差异裁决）
+最后更新：2026-10-15（表情/贴图落地注记；P1 技能链接卡片落地——以源码为真相对账，标注实测落地日期与差异裁决）
 
 本文档列出游戏聊天系统需要支持的特征，按优先级分阶段实现。
 
@@ -71,6 +71,7 @@ title: 游戏聊天特征
 - **成就分享**（已落地 2026-10-14，伴侣面形态）：`msg_type = ACHIEVEMENT`，卡片式展示（图标 + 名称 + 稀有度 + 描述；获得时间由气泡既有时间标签承担）。服务端在发送门校验 metadata——解析不出 `AchievementMetadata` 或缺 `achievement_id` 回 INVALID_PARAM（与坐标/物品链接同层同口径，非 ACHIEVEMENT 的 metadata 原样透传；basic/enhanced 双形态同接线）；web `MessageBubble` 与 desktop `ChatPanel` 渲染成就卡片（名称按稀有度分色、稀有度文案、描述、achievement_id caption、iconUrl 图标，`data-rarity` 标签供测试断言）；稀有度 0-4 整数编码（普通/优秀/稀有/史诗/传说，与品质同阶梯配色），枚举外未知值回落普通渲染。游戏内客户端的成就卡片自渲染走 SDK 侧（批形状与物品链接同款：`AchievementMetadata` 随 ChatMessage.metadata 通用管线承载，SDK 四端零改动）。
 - **公会招募**（已落地 2026-10-15，伴侣面形态）：`msg_type = GUILD_RECRUIT = 16`，卡片式展示（公会名 + `等级 N · 人数 M[/K]` + 招募语 + guild_id caption）。载荷走 `GuildRecruitMetadata{guild_id, guild_name, level, member_count, max_members, description}`（metadata 通用管线，SDK 四端零改动）；服务端发送门校验——解析不出或缺 `guild_id` 回 INVALID_PARAM（与交易/成就链接同层同口径，basic/enhanced 双形态同接线）；web `MessageBubble` 与 desktop `ChatPanel` 渲染公会卡片（max_members=0 只显 M）。**范围裁决**：文档原文"一键加入按钮"需要公会系统与加入协议面（伴侣面无此动作面）——落地为展示性卡片，游戏内接入走 SDK 自渲染。
 - **组队招募**（已落地 2026-10-15，伴侣面形态）：`msg_type = PARTY_RECRUIT = 17`，卡片式展示（副本名 + `缺 N 人 · M/K` + 队长 + party_id caption）。载荷走 `PartyRecruitMetadata{party_id, dungeon_name, needed, current, leader_name}`；服务端发送门校验——解析不出或缺 `party_id` 回 INVALID_PARAM（同上同口径）；web/desktop 渲染组队卡片（current=0 只显缺 N 人）。**范围裁决**："一键申请按钮"同上——展示性卡片，游戏内自渲染走 SDK。
+- **技能链接**（已落地 2026-10-15，伴侣面形态）：`msg_type = SKILL_LINK`（proto 早有的类型，本批补齐消费链），卡片式展示（图标 + 名称 + `Lv.N` + 描述 + skill_id caption）。载荷走 `SkillMetadata{skill_id, skill_name, level, icon_url, description}`（metadata 通用管线，SDK 四端零改动）；服务端发送门校验——解析不出或缺 `skill_id` 回 INVALID_PARAM（与坐标/物品/成就/交易/招募同层同口径，basic/enhanced 双形态同接线）；web `MessageBubble` 与 desktop `ChatPanel` 渲染技能卡片（level=0 不显等级面，名称缺省回落 skill_id）。**范围裁决**：渲染矩阵原文"可点击技能卡片"——落地为展示性卡片（与成就分享同裁决：详情即卡片正文，无可展开的二级数据面）；游戏内接入走 SDK 自渲染。
 - **消息搜索**（已落地 2026-10-08/10-10）：`SEARCH_MESSAGE_REQ/RESP = 2248/2249`（gateway.proto:158）。服务端 chirp_search（TCP 5007）维护 SQLite FTS5 持久索引（MySQL 核对自愈，失败关闭不降级；决策记录 docs/design-notes/message_search.md）：CJK 单字成 token + 拉丁按词的两侧一致分词做 FTS5 短语匹配，`channel_id`/`content_types` 过滤，`(before_timestamp, before_message_id)` 复合游标分页（limit 钳到 [1,50]，缺省 20），原文回传高亮由客户端做（服务端不回 snippet）。desktop `ChatApi.searchMessages`（226d912）+ web `SearchDialog`（7e7a190，5 例单测）；apps/shared/protocol `chat_pipeline.searchMessages`（wire 往返 + 连接/关键词校验顺序单测）。**与文档差异**：文档原文"按关键词、时间范围、频道过滤"——频道过滤已落地（channel_id），时间范围无独立范围参数（before_* 是排序分页游标，非区间过滤）；消息类型过滤额外支持。
 
 ### 游戏特色
